@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-06-01
+## [Unreleased] - 2026-06-02
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 版本時間線改為焦點輪播 + 詳情頁台陸版切換 + 甘特圖雙表格版面 (`143b296`)
 - PLAN-019 Layer 1-3 型別基礎建設（EntityRef / Boss / Stage）+ 修正圖示 URL 解析 (`196c8c5`)
 - PLAN-018 彩甲升級規劃器工具頁完成（規劃器 UI、計算結果展示與路由整合） (`79e3051`)
 - **ui**: 新增 Email 密碼重設功能 (`3a6bb24`)
