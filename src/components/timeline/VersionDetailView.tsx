@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import type { PatchVersion } from '../../data/patchVersions'
 import VersionExpandedPanel from './VersionExpandedPanel'
 
@@ -10,6 +10,7 @@ interface Props {
 }
 
 export default function VersionDetailView({ versions, activeIndex, onNavigate, onClose }: Props) {
+  const [side, setSide] = useState<'tw' | 'cn'>('tw')
   const version = versions[activeIndex]
   const hasPrev = activeIndex > 0
   const hasNext = activeIndex < versions.length - 1
@@ -76,6 +77,12 @@ export default function VersionDetailView({ versions, activeIndex, onNavigate, o
               ★ 台服當前
             </span>
           )}
+          <button
+            onClick={() => setSide(s => (s === 'tw' ? 'cn' : 'tw'))}
+            className="px-2 py-1 text-[11px] rounded border border-accent-purple/50 bg-accent-purple/10 text-accent-purple hover:bg-accent-purple/20 transition-colors font-medium tracking-wide"
+          >
+            {side === 'tw' ? '台版' : '陸版'} ⇄ {side === 'tw' ? '切換陸版' : '切換台版'}
+          </button>
         </div>
 
         <div className="flex gap-1.5">
@@ -85,33 +92,19 @@ export default function VersionDetailView({ versions, activeIndex, onNavigate, o
         </div>
       </div>
 
-      {/* Version quick-select pills */}
-      <div className="flex gap-1.5 px-4 py-2 border-b border-border/50 overflow-x-auto shrink-0 bg-bg-card/30 backdrop-blur-md">
-        {versions.map((v, i) => (
-          <button
-            key={v.version}
-            onClick={() => onNavigate(i)}
-            className={`
-              shrink-0 text-[10px] px-2 py-1 rounded font-[Orbitron,sans-serif] transition-colors whitespace-nowrap
-              ${i === activeIndex
-                ? 'bg-accent-orange/20 text-accent-orange border border-accent-orange/40'
-                : 'text-text-dim border border-transparent hover:border-border hover:text-text-secondary'
-              }
-            `}
-          >
-            v{v.version}{v.name ? ` ${v.name}` : ''}
-          </button>
-        ))}
-      </div>
-
+      {/* 暫時註解，縮減版面 */}    
       {/* Keyboard hint */}
-      <div className="text-center text-[10px] text-text-dim/40 py-1 shrink-0 select-none">
+      {/*<div className="text-center text-[10px] text-text-dim/40 py-1 shrink-0 select-none">
         方向鍵切換版本 · Esc 返回
-      </div>
+      </div>*/}
 
-      {/* Detail content */}
-      <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-1">
-        <VersionExpandedPanel version={version} isExpanded={true} />
+      {/* Detail content (folder tabs rendered as the card header) */}
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden px-4 pb-4 pt-1">
+        <VersionExpandedPanel
+          version={version}
+          isExpanded={true}
+          side={side}
+        />
       </div>
     </div>
   )

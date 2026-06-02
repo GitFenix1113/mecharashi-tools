@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import type { PatchVersion, PatchHalf, TimedActivity, ActivityType } from '../../data/patchVersions/types'
 import PatchInfoRow from './PatchInfoRow'
 
@@ -88,9 +88,9 @@ const COLORS: Record<ActivityType, { dot: string; line: string; text: string; la
 
 // ── CSS 常數 ──────────────────────────────────────────────────────────────────
 
-const TD = 'border border-[#2a3040] px-2 py-1.5 text-[13px] text-center align-middle text-text-secondary'
+const TD = 'border border-[#2a3040] px-2 py-1.5 text-[15px] text-center align-middle text-text-secondary'
 const TH = 'border border-[#2a3040] px-2 py-1.5 text-center align-middle'
-const LABEL = 'border border-[#2a3040] px-3 py-1.5 text-left text-[12px] text-text-dim bg-[#0e1119] whitespace-nowrap'
+const LABEL = 'border border-[#2a3040] px-3 py-1.5 text-left text-[14px] text-text-dim bg-[#0e1119] whitespace-nowrap'
 
 // ── C-4: VersionInfoRows ───────────────────────────────────────────────────────
 
@@ -116,19 +116,19 @@ function VersionInfoRows({
   const raidNamesL = (lower.armamentRaids ?? []).map(r => r.name).join('、')
   const weaponsU = (upper.armamentRaids ?? [])
     .filter(r => r.weapons?.length)
-    .map(r => `${r.name}：${r.weapons!.join('/')}`)
+    .map(r => r.weapons!.join('/'))
     .join('　')
   const weaponsL = (lower.armamentRaids ?? [])
     .filter(r => r.weapons?.length)
-    .map(r => `${r.name}：${r.weapons!.join('/')}`)
+    .map(r => r.weapons!.join('/'))
     .join('　')
   const backpacksU = (upper.armamentRaids ?? [])
     .filter(r => r.backpacks?.length)
-    .map(r => `${r.name}：${r.backpacks!.join('/')}`)
+    .map(r => `${r.backpacks!.join('/')}`)
     .join('　')
   const backpacksL = (lower.armamentRaids ?? [])
     .filter(r => r.backpacks?.length)
-    .map(r => `${r.name}：${r.backpacks!.join('/')}`)
+    .map(r => `${r.backpacks!.join('/')}`)
     .join('　')
 
   const bpPilots = (upper.battlePass?.pilots ?? lower.battlePass?.pilots ?? []).join('、')
@@ -221,7 +221,7 @@ function ActivityGanttRow({
           <div className="flex items-center">
             <div className={`w-3 h-3 rounded-full shrink-0 ${c.dot}`} />
             <div className={`flex-1 h-px ${c.line}`} />
-            <span className={`text-[11px] font-medium px-1.5 py-0.5 border rounded shrink-0 whitespace-nowrap ${c.text} border-current/50`}>
+            <span className={`text-[13px] font-medium px-1.5 py-0.5 border rounded shrink-0 whitespace-nowrap ${c.text} border-current/50`}>
               {act.name}
             </span>
             <div className={`flex-1 h-px ${c.line}`} />
@@ -238,7 +238,7 @@ function ActivityGanttRow({
 
   return (
     <tr>
-      <td className="border-r border-[#2a3040] px-3 py-1.5 text-left text-[12px] text-text-dim bg-[#0e1119] whitespace-nowrap">
+      <td className="border-r border-[#2a3040] px-3 py-1.5 text-left text-[14px] text-text-dim bg-[#0e1119] whitespace-nowrap">
         <span className={c.text}>{c.label}</span>
       </td>
       {cells}
@@ -252,8 +252,6 @@ function VersionLevelInfo({ version }: { version: PatchVersion }) {
   const hasExtra = !!(
     version.crisisShop?.length ||
     version.memoryStorm ||
-    version.borderShop ||
-    version.arenaShop ||
     version.notes
   )
   if (!hasExtra) return null
@@ -261,29 +259,47 @@ function VersionLevelInfo({ version }: { version: PatchVersion }) {
   return (
     <div className="mt-3 pt-3 border-t border-border/40 space-y-0.5">
       {version.crisisShop?.length ? (
-        <PatchInfoRow icon="🏪" label="危境重構" items={version.crisisShop} color="purple" />
+        <PatchInfoRow icon="🏪" label="危境重構" items={version.crisisShop} color="purple" size="md" />
       ) : null}
       {version.memoryStorm ? (
-        <PatchInfoRow icon="🌀" label="記憶風暴" items={[version.memoryStorm]} color="cyan" />
-      ) : null}
-      {version.borderShop ? (
-        <PatchInfoRow icon="🛒" label="邊境商店" items={[version.borderShop]} color="yellow" />
-      ) : null}
-      {version.arenaShop ? (
-        <PatchInfoRow icon="🏆" label="鬥技場" items={[version.arenaShop]} color="orange" />
+        <PatchInfoRow icon="🌀" label="記憶風暴" items={[version.memoryStorm]} color="cyan" size="md" />
       ) : null}
       {version.notes ? (
-        <PatchInfoRow icon="📝" label="備註" items={[version.notes]} color="blue" />
+        <PatchInfoRow icon="📝" label="備註" items={[version.notes]} color="blue" size="md" />
       ) : null}
+    </div>
+  )
+}
+
+// ── 商店資訊（邊境商店 / 鬥技場）— 左右並列於主要資訊與甘特圖之間 ──────────────────
+function ShopRow({ version }: { version: PatchVersion }) {
+  if (!version.borderShop && !version.arenaShop) return null
+
+  return (
+    <div className="mt-2 shrink-0 flex flex-col sm:flex-row gap-2">
+      {version.borderShop && (
+        <div className="flex-1 rounded-lg border border-border bg-bg-dark/40 px-3 py-2">
+          <PatchInfoRow icon="🛒" label="邊境商店" items={[version.borderShop]} color="yellow" size="md" />
+        </div>
+      )}
+      {version.arenaShop && (
+        <div className="flex-1 rounded-lg border border-border bg-bg-dark/40 px-3 py-2">
+          <PatchInfoRow icon="🏆" label="鬥技場" items={[version.arenaShop]} color="orange" size="md" />
+        </div>
+      )}
     </div>
   )
 }
 
 // ── C-2: Main — VersionGanttPanel ─────────────────────────────────────────────
 
-export default function VersionGanttPanel({ version }: { version: PatchVersion }) {
-  const [side, setSide] = useState<'tw' | 'cn'>('tw')
-
+export default function VersionGanttPanel({
+  version,
+  side = 'tw',
+}: {
+  version: PatchVersion
+  side?: 'tw' | 'cn'
+}) {
   const { upperWeeks, lowerWeeks, allWeeks, upperActs, lowerActs, upperStartStr, lowerStartStr } =
     useMemo(() => {
       const upperStartStr =
@@ -316,124 +332,126 @@ export default function VersionGanttPanel({ version }: { version: PatchVersion }
   const upperLabel = upperStartStr ? fmtShort(parseDate(upperStartStr)) : '—'
   const lowerLabel = lowerStartStr ? fmtShort(parseDate(lowerStartStr)) : '—'
 
+  // 兩個表格共用相同欄寬定義，確保固定內容與活動甘特的欄位對齊
+  const Colgroup = () => (
+    <colgroup>
+      <col style={{ width: '110px', minWidth: '110px' }} />
+      {allWeeks.map((_, i) => (
+        <col key={i} style={{ minWidth: '80px' }} />
+      ))}
+      {/* Placeholder cols when no dates */}
+      {totalWeeks === 0 &&
+        Array.from({ length: 6 }).map((_, i) => (
+          <col key={i} style={{ minWidth: '80px' }} />
+        ))}
+    </colgroup>
+  )
+
   return (
-    <div>
-      {/* C-2: 切換按鈕 */}
-      <div className="flex justify-end mb-2">
-        <button
-          onClick={() => setSide(s => (s === 'tw' ? 'cn' : 'tw'))}
-          className="px-3 py-1.5 text-[13px] rounded border border-accent-purple/50 bg-accent-purple/10 text-accent-purple hover:bg-accent-purple/20 transition-colors font-medium tracking-wide"
+    <div className="flex-1 min-h-0 flex flex-col">
+      {/* 共用橫向捲動容器：讓兩個表格欄位寬度對齊、同步橫向捲動 */}
+      <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
+        <div
+          className="flex-1 min-h-0 flex flex-col"
+          style={{ minWidth: `${110 + Math.max(totalWeeks, 6) * 80}px` }}
         >
-          {side === 'tw' ? '台版' : '陸版'} ⇄ {side === 'tw' ? '切換陸版' : '切換台版'}
-        </button>
-      </div>
+          {/* ── 容器 1：固定版本內容（機師 / 機甲 / 武裝關卡 / 討伐專武 / 討伐背包 / 角色戰令 / 機甲戰令）── */}
+          <div className="shrink-0 rounded-lg border border-border bg-bg-dark/40 overflow-hidden">
+            <table className="border-collapse text-[13px] w-full" style={{ tableLayout: 'fixed' }}>
+              <Colgroup />
+              <thead>
+                <tr>
+                  <th
+                    rowSpan={2}
+                    className={`${LABEL} text-[13px] text-center tracking-[2px] uppercase text-text-dim`}
+                  >
+                    {side === 'tw' ? '台版' : '陸版'}
+                  </th>
+                  {upperCount > 0 && (
+                    <th
+                      colSpan={upperCount}
+                      className={`${TH} bg-[rgba(255,107,43,0.08)] text-accent-orange text-[14px] font-[Orbitron,sans-serif] tracking-wide py-2`}
+                    >
+                      上半版本
+                      <span className="ml-1.5 text-[12px] opacity-70">{upperLabel}～</span>
+                    </th>
+                  )}
+                  {lowerCount > 0 && (
+                    <th
+                      colSpan={lowerCount}
+                      className={`${TH} bg-[rgba(6,182,212,0.08)] text-accent-cyan text-[14px] font-[Orbitron,sans-serif] tracking-wide py-2`}
+                    >
+                      下半版本
+                      <span className="ml-1.5 text-[12px] opacity-70">{lowerLabel}～</span>
+                    </th>
+                  )}
+                  {totalWeeks === 0 && (
+                    <th colSpan={6} className={`${TH} text-text-dim text-[14px]`}>
+                      （{side === 'tw' ? '台版' : '陸版'}日期未定）
+                    </th>
+                  )}
+                </tr>
+                <tr>
+                  {allWeeks.map((week, i) => (
+                    <th
+                      key={i}
+                      className={`${TH} text-[13px] py-1.5 ${
+                        i < upperCount ? 'bg-[#151a24]' : 'bg-[#0e1820]'
+                      }`}
+                    >
+                      <div className={i < upperCount ? 'text-accent-orange/70' : 'text-accent-cyan/70'}>
+                        {fmtShort(week)}
+                      </div>
+                    </th>
+                  ))}
+                  {totalWeeks === 0 &&
+                    Array.from({ length: 6 }).map((_, i) => (
+                      <th key={i} className={`${TH} bg-[#151a24]`} />
+                    ))}
+                </tr>
+              </thead>
+              <tbody>
+                {totalWeeks > 0 && (
+                  <VersionInfoRows
+                    upper={version.upper}
+                    lower={version.lower}
+                    upperCount={upperCount}
+                    lowerCount={lowerCount}
+                    totalWeeks={totalWeeks}
+                  />
+                )}
+              </tbody>
+            </table>
+          </div>
 
-      {/* C-3 + C-4 + C-5: 甘特表格 */}
-      <div className="overflow-x-auto">
-        <table
-          className="border-collapse text-[13px] w-full"
-          style={{
-            minWidth: `${110 + Math.max(totalWeeks, 6) * 80}px`,
-            tableLayout: 'fixed',
-          }}
-        >
-          <colgroup>
-            <col style={{ width: '110px', minWidth: '110px' }} />
-            {allWeeks.map((_, i) => (
-              <col key={i} style={{ minWidth: '80px' }} />
-            ))}
-            {/* Placeholder cols when no dates */}
-            {totalWeeks === 0 &&
-              Array.from({ length: 6 }).map((_, i) => (
-                <col key={i} style={{ minWidth: '80px' }} />
-              ))}
-          </colgroup>
+          {/* ── 商店資訊：邊境商店 / 鬥技場（左右並列）── */}
+          <ShopRow version={version} />
 
-          {/* C-3: 欄標題列 */}
-          <thead>
-            <tr>
-              <th
-                rowSpan={2}
-                className={`${LABEL} text-[11px] text-center tracking-[2px] uppercase text-text-dim`}
-              >
-                {side === 'tw' ? '台版' : '陸版'}
-              </th>
-              {upperCount > 0 && (
-                <th
-                  colSpan={upperCount}
-                  className={`${TH} bg-[rgba(255,107,43,0.08)] text-accent-orange text-[12px] font-[Orbitron,sans-serif] tracking-wide py-2`}
-                >
-                  上半版本
-                  <span className="ml-1.5 text-[11px] opacity-70">{upperLabel}～</span>
-                </th>
-              )}
-              {lowerCount > 0 && (
-                <th
-                  colSpan={lowerCount}
-                  className={`${TH} bg-[rgba(6,182,212,0.08)] text-accent-cyan text-[12px] font-[Orbitron,sans-serif] tracking-wide py-2`}
-                >
-                  下半版本
-                  <span className="ml-1.5 text-[11px] opacity-70">{lowerLabel}～</span>
-                </th>
-              )}
-              {totalWeeks === 0 && (
-                <th colSpan={6} className={`${TH} text-text-dim text-[12px]`}>
-                  （{side === 'tw' ? '台版' : '陸版'}日期未定）
-                </th>
-              )}
-            </tr>
-            <tr>
-              {allWeeks.map((week, i) => (
-                <th
-                  key={i}
-                  className={`${TH} text-[11px] py-1.5 ${
-                    i < upperCount ? 'bg-[#151a24]' : 'bg-[#0e1820]'
-                  }`}
-                >
-                  <div className="text-text-dim">第{i + 1}週</div>
-                  <div className={i < upperCount ? 'text-accent-orange/70' : 'text-accent-cyan/70'}>
-                    {fmtShort(week)}
-                  </div>
-                </th>
-              ))}
-              {totalWeeks === 0 &&
-                Array.from({ length: 6 }).map((_, i) => (
-                  <th key={i} className={`${TH} bg-[#151a24]`} />
+          {/* ── 容器 2：活動甘特（數量不定，內部垂直捲動）── */}
+          <div className="mt-2 flex-1 min-h-0 rounded-lg border border-border bg-bg-dark/40 overflow-y-auto overflow-x-hidden">
+            <table className="border-collapse text-[13px] w-full" style={{ tableLayout: 'fixed' }}>
+              <Colgroup />
+              <tbody>
+                {allActs.map((act, i) => (
+                  <ActivityGanttRow key={i} act={act} allWeeks={allWeeks} totalWeeks={totalWeeks} />
                 ))}
-            </tr>
-          </thead>
 
-          <tbody>
-            {/* C-4: 版本內容行 */}
-            {totalWeeks > 0 && (
-              <VersionInfoRows
-                upper={version.upper}
-                lower={version.lower}
-                upperCount={upperCount}
-                lowerCount={lowerCount}
-                totalWeeks={totalWeeks}
-              />
-            )}
-
-            {/* C-5: 活動甘特條行 */}
-            {allActs.map((act, i) => (
-              <ActivityGanttRow key={i} act={act} allWeeks={allWeeks} totalWeeks={totalWeeks} />
-            ))}
-
-            {/* 無資料時的提示列 */}
-            {totalWeeks > 0 && allActs.length === 0 && (
-              <tr>
-                <td className={LABEL} />
-                <td
-                  colSpan={totalWeeks}
-                  className={`${TD} text-text-dim text-[10px] py-2`}
-                >
-                  （暫無活動甘特資料）
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                {/* 無資料時的提示列 */}
+                {allActs.length === 0 && (
+                  <tr>
+                    <td className={LABEL} />
+                    <td
+                      colSpan={Math.max(totalWeeks, 6)}
+                      className={`${TD} text-text-dim text-[10px] py-2`}
+                    >
+                      （暫無活動甘特資料）
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <VersionLevelInfo version={version} />

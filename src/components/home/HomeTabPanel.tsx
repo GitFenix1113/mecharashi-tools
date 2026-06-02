@@ -31,7 +31,7 @@ export default function HomeTabPanel({ versions, loading, error, expanded, onTog
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-5 py-3 text-sm font-[Orbitron,sans-serif] tracking-wider transition-colors cursor-pointer border-b-2 -mb-px ${
+            className={`px-5 py-1.5 text-lg font-[Orbitron,sans-serif] tracking-wider transition-colors cursor-pointer border-b-2 -mb-px ${
               activeTab === tab.id
                 ? 'border-accent-orange text-text-primary'
                 : 'border-transparent text-text-dim hover:text-text-primary'
@@ -48,7 +48,7 @@ export default function HomeTabPanel({ versions, loading, error, expanded, onTog
         <button
           onClick={onToggleExpand}
           title={expanded ? '收縮版面' : '展開版面'}
-          className="px-4 py-3 text-xs font-[Orbitron,sans-serif] tracking-widest text-text-dim hover:text-accent-orange transition-colors cursor-pointer border-b-2 border-transparent -mb-px select-none"
+          className="px-4 py-1.5 text-xs font-[Orbitron,sans-serif] tracking-widest text-text-dim hover:text-accent-orange transition-colors cursor-pointer border-b-2 border-transparent -mb-px select-none"
         >
           {expanded ? '◀◀' : '▶▶'}
         </button>

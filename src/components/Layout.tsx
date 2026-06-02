@@ -67,7 +67,7 @@ export default function Layout() {
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-bg-dark/95 backdrop-blur border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 h-12 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2 no-underline shrink-0">
             <span className="text-accent-orange font-bold text-xl tracking-wider font-[Orbitron,sans-serif]">
               米赫瑪超吉情豹站

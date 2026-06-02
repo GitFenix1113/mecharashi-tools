@@ -3,6 +3,8 @@ interface PatchInfoRowProps {
   label: string
   items: string[]
   color?: 'blue' | 'orange' | 'purple' | 'green' | 'yellow' | 'cyan'
+  /** 'sm'（預設）維持原尺寸；'md' 放大字體（用於時間線甘特內容） */
+  size?: 'sm' | 'md'
 }
 
 const badgeColors = {
@@ -14,20 +16,25 @@ const badgeColors = {
   cyan:   'bg-accent-cyan/10 text-accent-cyan border-accent-cyan/30',
 }
 
-export default function PatchInfoRow({ icon, label, items, color = 'blue' }: PatchInfoRowProps) {
+export default function PatchInfoRow({ icon, label, items, color = 'blue', size = 'sm' }: PatchInfoRowProps) {
   if (!items || items.length === 0) return null
+
+  const isMd = size === 'md'
+  const iconCls = isMd ? 'text-sm' : 'text-xs'
+  const labelCls = isMd ? 'text-[13px]' : 'text-[10px]'
+  const itemCls = isMd ? 'text-[14px]' : 'text-[11px]'
 
   return (
     <div className="flex items-start gap-2 py-1">
       <div className="flex items-center gap-1 shrink-0 pt-0.5 min-w-[5rem]">
-        {icon && <span className="text-xs">{icon}</span>}
-        <span className="text-[10px] text-text-dim whitespace-nowrap tracking-wide">{label}</span>
+        {icon && <span className={iconCls}>{icon}</span>}
+        <span className={`${labelCls} text-text-dim whitespace-nowrap tracking-wide`}>{label}</span>
       </div>
       <div className="flex flex-wrap gap-1">
         {items.map((item, i) => (
           <span
             key={i}
-            className={`text-[11px] px-1.5 py-0.5 rounded border leading-tight ${badgeColors[color]}`}
+            className={`${itemCls} px-1.5 py-0.5 rounded border leading-tight ${badgeColors[color]}`}
           >
             {item}
           </span>
