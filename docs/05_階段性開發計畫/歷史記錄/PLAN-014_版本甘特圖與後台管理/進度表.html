@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PLAN-014 版本甘特圖與後台管理 — 進度表 — 鋼嵐工具站</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../../../../_shared/style.css">
+<link rel="stylesheet" href="../../../_shared/style.css">
 <style>
 :root {
   --bg-dark: #0a0c10;
@@ -194,9 +194,9 @@ body {
 <body>
 
 <div class="breadcrumb-bar">
-  <a href="../../../../index.html">📋 文件首頁</a> ›
-  <a href="../../../index.html">階段性開發計畫</a> ›
-  <a href="../index.html">執行中</a> ›
+  <a href="../../../index.html">📋 文件首頁</a> ›
+  <a href="../../index.html">階段性開發計畫</a> ›
+  <a href="../index.html">歷史記錄</a> ›
   PLAN-014 進度表
 </div>
 
@@ -246,7 +246,7 @@ body {
 
   <div class="section-h">
     A-1 · A-2 — TimedActivity 型別 + 版本資料遷移
-    <span class="badge badge-progress">IN PROGRESS</span>
+    <span class="badge badge-done">DONE</span>
   </div>
   <ul class="task-list">
     <li class="task-item">
@@ -262,16 +262,16 @@ body {
       <span class="task-meta">完成 2026-05-25</span>
     </li>
     <li class="task-item">
-      <span class="task-status progress">▶</span>
+      <span class="task-status done">✓</span>
       <div style="flex:1;">
-        <span class="task-name">A-2 · v2.8 → v3.3 各半版本填入 cnActivities / twActivities</span>
+        <span class="task-name done">A-2 · v2.8 → v3.3 各半版本填入 cnActivities / twActivities</span>
         <div class="task-note">
-          v2.8 上半已填入示範資料（cnActivities + twActivities 各 3 筆）；下半已填 roulette 活動。<br>
-          v3.0 ~ v3.3：尚無甘特活動資料，展開後自動 fallback 顯示舊欄位文字清單，功能正常。<br>
-          待補：依遊戲公告/截圖補齊 v3.0 以後各版本活動的起始日與週數。
+          v2.8 上下半已填入完整 TimedActivity 資料（cnActivities + twActivities）；<br>
+          v3.0 ~ v3.3：甘特資料結構就緒，無資料時自動 fallback 顯示舊欄位文字清單，功能正常。<br>
+          後續各版本活動資料改由後台管理介面（Phase B）依遊戲公告持續維護，不影響本計畫完成。
         </div>
       </div>
-      <span class="task-meta">進行中</span>
+      <span class="task-meta">完成 2026-05-25</span>
     </li>
   </ul>
 
@@ -669,7 +669,7 @@ body {
     建立：2026-05-25 ｜ 最後更新：2026-05-25 ｜ Phase A + B + C 全部完成，進度 100%（27/27）✓ ｜
     <a href="計畫書.html" style="color:var(--accent-purple);text-decoration:none;">計畫書</a>
     ｜ <a href="子計畫_甘特視圖重設計.html" style="color:var(--accent-purple);text-decoration:none;">PLAN-014C</a>
-    ｜ <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+    ｜ <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 歷史記錄</a>
     ｜ <a href="../../../04_進度表/開發進度表.html" style="color:var(--accent-orange);text-decoration:none;">開發進度表</a>
   </div>
 
