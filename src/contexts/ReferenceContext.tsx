@@ -1,0 +1,179 @@
+import {
+  createContext, useContext, useState, useCallback, useRef, useEffect, useLayoutEffect,
+  type ReactNode,
+} from 'react'
+import { createPortal } from 'react-dom'
+import type { EntityRef } from '../types'
+import { useIsMobile } from '../hooks/useIsMobile'
+import { BottomSheet } from '../components/BottomSheet'
+import { EntityRefView } from '../components/EntityRefView'
+
+/**
+ * PLAN-019 Layer 1 — 引用互動 Context。
+ *
+ * 桌面：hover 引用 → 浮窗預覽（不可互動，移開即收）；click → 釘選浮窗（可互動，
+ *       內部巢狀引用可 drill 向下鑽，附返回／關閉，點外部或 ESC 關閉）。
+ * 手機：tap → BottomSheet（可互動，可 drill / 返回）。
+ */
+
+type Rect = { top: number; bottom: number; left: number; right: number }
+function rectOf(el: HTMLElement): Rect {
+  const r = el.getBoundingClientRect()
+  return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }
+}
+
+interface ReferenceContextValue {
+  hoverRef: (ref: EntityRef, el: HTMLElement) => void
+  leaveRef: () => void
+  pinRef: (ref: EntityRef, el: HTMLElement) => void
+  drillRef: (ref: EntityRef) => void
+  back: () => void
+  close: () => void
+  canBack: boolean
+}
+
+const ReferenceContext = createContext<ReferenceContextValue | null>(null)
+
+const PREVIEW_W = 300
+const PINNED_W = 340
+
+// ── 桌面浮動卡片（定位） ───────────────────────────────────────────────────────
+function FloatingCard({ rect, width, interactive, containerRef, children }: {
+  rect: Rect
+  width: number
+  interactive: boolean
+  containerRef?: (el: HTMLDivElement | null) => void
+  children: ReactNode
+}) {
+  const innerRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ left: rect.left, top: rect.bottom + 6 })
+
+  useLayoutEffect(() => {
+    const h = innerRef.current?.offsetHeight ?? 0
+    const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))
+    let top = rect.bottom + 6
+    if (top + h > window.innerHeight - 8) {
+      const above = rect.top - h - 6
+      top = above >= 8 ? above : Math.max(8, window.innerHeight - h - 8)
+    }
+    setPos({ left, top })
+  }, [rect, width, children])
+
+  return createPortal(
+    <div
+      ref={(el) => { innerRef.current = el; containerRef?.(el) }}
+      className={`fixed z-[60] ${interactive ? '' : 'pointer-events-none'}`}
+      style={{ left: pos.left, top: pos.top, width }}
+    >
+      <div className="bg-bg-card border border-border-accent rounded-xl shadow-2xl max-h-[70vh] overflow-hidden">
+        {children}
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+export function ReferenceProvider({ children }: { children: ReactNode }) {
+  const isMobile = useIsMobile()
+
+  const [preview, setPreview] = useState<{ ref: EntityRef; rect: Rect } | null>(null)
+  // 釘選浮窗：以 stack 表達向下鑽的歷史，當前 ref = stack 最後一項（純更新，StrictMode 安全）
+  const [pinned, setPinned] = useState<{ rect: Rect; stack: EntityRef[] } | null>(null)
+
+  const pinnedRef = useRef(pinned)
+  pinnedRef.current = pinned
+  const hideTimer = useRef<number | undefined>(undefined)
+  const pinnedCardEl = useRef<HTMLDivElement | null>(null)
+
+  const hoverRef = useCallback((ref: EntityRef, el: HTMLElement) => {
+    if (isMobile || pinnedRef.current) return
+    window.clearTimeout(hideTimer.current)
+    setPreview({ ref, rect: rectOf(el) })
+  }, [isMobile])
+
+  const leaveRef = useCallback(() => {
+    window.clearTimeout(hideTimer.current)
+    hideTimer.current = window.setTimeout(() => setPreview(null), 140)
+  }, [])
+
+  const pinRef = useCallback((ref: EntityRef, el: HTMLElement) => {
+    window.clearTimeout(hideTimer.current)
+    setPreview(null)
+    setPinned({ rect: rectOf(el), stack: [ref] })
+  }, [])
+
+  const drillRef = useCallback((ref: EntityRef) => {
+    setPinned(s => (s ? { ...s, stack: [...s.stack, ref] } : s))
+  }, [])
+
+  const back = useCallback(() => {
+    setPinned(s => (s && s.stack.length > 1 ? { ...s, stack: s.stack.slice(0, -1) } : s))
+  }, [])
+
+  const close = useCallback(() => {
+    setPinned(null)
+    setPreview(null)
+  }, [])
+
+  // ESC 關閉釘選浮窗 / sheet
+  useEffect(() => {
+    if (!pinned) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [pinned, close])
+
+  // 點外部關閉（桌面釘選浮窗）；ref chip 已 stopPropagation，不會誤關
+  useEffect(() => {
+    if (!pinned || isMobile) return
+    const onDown = (e: MouseEvent) => {
+      if (pinnedCardEl.current && !pinnedCardEl.current.contains(e.target as Node)) close()
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [pinned, isMobile, close])
+
+  const pinnedRefCurrent = pinned ? pinned.stack[pinned.stack.length - 1] : null
+  const value: ReferenceContextValue = {
+    hoverRef, leaveRef, pinRef, drillRef, back, close,
+    canBack: pinned ? pinned.stack.length > 1 : false,
+  }
+
+  return (
+    <ReferenceContext.Provider value={value}>
+      {children}
+
+      {/* 桌面：hover 預覽（不可互動） */}
+      {!isMobile && preview && !pinned && (
+        <FloatingCard rect={preview.rect} width={PREVIEW_W} interactive={false}>
+          <EntityRefView entityRef={preview.ref} interactive={false} />
+        </FloatingCard>
+      )}
+
+      {/* 桌面：釘選浮窗（可互動 / drill / 關閉） */}
+      {!isMobile && pinned && pinnedRefCurrent && (
+        <FloatingCard
+          rect={pinned.rect}
+          width={PINNED_W}
+          interactive
+          containerRef={(el) => { pinnedCardEl.current = el }}
+        >
+          <EntityRefView entityRef={pinnedRefCurrent} interactive showClose />
+        </FloatingCard>
+      )}
+
+      {/* 手機：BottomSheet */}
+      {isMobile && (
+        <BottomSheet open={!!pinned} onClose={close}>
+          {pinnedRefCurrent && <EntityRefView entityRef={pinnedRefCurrent} interactive />}
+        </BottomSheet>
+      )}
+    </ReferenceContext.Provider>
+  )
+}
+
+export function useReference(): ReferenceContextValue {
+  const ctx = useContext(ReferenceContext)
+  if (!ctx) throw new Error('useReference must be used within ReferenceProvider')
+  return ctx
+}

@@ -13,7 +13,7 @@ import {
   QueryConstraint,
 } from 'firebase/firestore'
 import { db } from './firebase'
-import type { Pilot, Mech, Module, Weapon, Backpack, Component, PilotResearch, GlobalResearch, GrayOpsRoster, GrayOpsMechEntry } from '../types'
+import type { Pilot, Mech, Module, Weapon, Backpack, Component, PilotResearch, GlobalResearch, GrayOpsRoster, GrayOpsMechEntry, GameBuff } from '../types'
 
 // ── 通用輔助 ──────────────────────────────────────────────────────────────────
 
@@ -71,6 +71,10 @@ export const getBackpacks = () =>
 export const getComponents = () =>
   fetchCollection<Component>('components')
 
+/** buffs Collection（PLAN-019 Layer 2）：BUFF / 狀態 / 形態定義庫 */
+export const getBuffs = () =>
+  fetchCollection<GameBuff>('buffs')
+
 export const getPilotResearch = (pilotId: string) =>
   fetchCollection<PilotResearch>('pilotResearch', [where('pilotId', '==', pilotId)])
 
@@ -79,6 +83,31 @@ export const getAllPilotResearch = () =>
 
 export const getGlobalResearch = async (): Promise<GlobalResearch | null> =>
   fetchDocument<GlobalResearch>('globalResearch', 'global')
+
+// ── 遊戲資料版本（PLAN-017 跨 session localStorage 快取）───────────────────────
+
+/**
+ * 讀取 meta/gameData 的版本號（1 次 read）。
+ * 文件不存在或讀取失敗 → 回傳 null（快取層退化為直接讀取，不影響功能）。
+ */
+export const getDataVersion = async (): Promise<string | null> => {
+  try {
+    const snap = await getDoc(doc(db, 'meta', 'gameData'))
+    return snap.exists() ? ((snap.data().version as string) ?? null) : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 更新 meta/gameData 版本號（時間戳），使所有 client 的 localStorage 快取失效。
+ * 任何 game collection 寫入後呼叫；merge 寫入，文件不存在時自動建立。
+ */
+export const bumpDataVersion = async (): Promise<string> => {
+  const version = new Date().toISOString()
+  await setDoc(doc(db, 'meta', 'gameData'), { version, updatedAt: serverTimestamp() }, { merge: true })
+  return version
+}
 
 // ── 管理後台寫入 ──────────────────────────────────────────────────────────────
 
@@ -97,31 +126,37 @@ function stripUndefined<T>(val: T): T {
 export const updateModule = async (module: Module): Promise<void> => {
   const { id, ...data } = module
   await setDoc(doc(db, 'modules', id), stripUndefined(data))
+  await bumpDataVersion().catch(() => {})
 }
 
 export const updateMech = async (mech: Mech): Promise<void> => {
   const { id, ...data } = mech
   await setDoc(doc(db, 'mechs', id), stripUndefined(data))
+  await bumpDataVersion().catch(() => {})
 }
 
 export const updatePilot = async (pilot: Pilot): Promise<void> => {
   const { id, ...data } = pilot
   await setDoc(doc(db, 'pilots', id), stripUndefined(data))
+  await bumpDataVersion().catch(() => {})
 }
 
 export const updateWeapon = async (weapon: Weapon): Promise<void> => {
   const { id, ...data } = weapon
   await setDoc(doc(db, 'weapons', id), stripUndefined(data))
+  await bumpDataVersion().catch(() => {})
 }
 
 export const updateComponent = async (component: Component): Promise<void> => {
   const { id, ...data } = component
   await setDoc(doc(db, 'components', id), stripUndefined(data))
+  await bumpDataVersion().catch(() => {})
 }
 
 export const updateBackpack = async (backpack: Backpack): Promise<void> => {
   const { id, ...data } = backpack
   await setDoc(doc(db, 'backpacks', id), stripUndefined(data))
+  await bumpDataVersion().catch(() => {})
 }
 
 export const getBackpacksPage = async (opts: {
@@ -169,4 +204,5 @@ export const updateGrayOpsRoster = async (roster: GrayOpsRoster): Promise<void> 
       })
     )
   )
+  await bumpDataVersion().catch(() => {})
 }

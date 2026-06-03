@@ -73,6 +73,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    // 系統 meta（PLAN-017 遊戲資料版本號；所有人可讀，管理員可 bump）
+    match /meta/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
 
     // ── 用戶資料（本人可讀寫）────────────────────────────────────────────────
     match /users/{userId} {

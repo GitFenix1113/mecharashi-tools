@@ -1,3 +1,7 @@
+import type { ReactNode } from 'react'
+import type { DescriptionRefs } from '../types'
+import { RefChip } from './RefChip'
+
 function lcsMatched(a: string[], b: string[]): boolean[] {
   const m = a.length, n = b.length
   const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
@@ -14,20 +18,37 @@ function lcsMatched(a: string[], b: string[]): boolean[] {
   return matched
 }
 
-export function DiffHighlight({ base, enhanced }: { base: string; enhanced: string }) {
+/**
+ * 差異高亮：以 base 為基準，標出 enhanced 中變動的 token（黃）與數字（紅）。
+ * PLAN-019：傳入 refs 時，描述內 [xxx] 群組會渲染為 RefChip（descriptionMax 也吃引用層）。
+ */
+export function DiffHighlight({ base, enhanced, refs }: { base: string; enhanced: string; refs?: DescriptionRefs }) {
   const tokenize = (s: string) =>
     s.match(/\d+(?:\.\d+)?%?|[a-zA-Z]+|[一-鿿]+|[^\w\d一-鿿\s]|\s+/g) ?? []
   const baseTokens = tokenize(base)
   const enhTokens  = tokenize(enhanced)
   const matched    = lcsMatched(baseTokens, enhTokens)
-  return (
-    <>
-      {enhTokens.map((token, i) => {
-        if (/^\s+$/.test(token)) return <span key={i}>{token}</span>
-        if (!matched[i]) return <strong key={i} className="text-accent-yellow font-bold">{token}</strong>
-        if (/^\d+(?:\.\d+)?%?$/.test(token)) return <span key={i} className="text-accent-red font-bold">{token}</span>
-        return <span key={i}>{token}</span>
-      })}
-    </>
-  )
+
+  const out: ReactNode[] = []
+  for (let i = 0; i < enhTokens.length;) {
+    // 偵測 [ ... ] 群組，若 refs 命中則整段渲染為 RefChip
+    if (refs && enhTokens[i] === '[') {
+      let j = i + 1
+      let inner = ''
+      while (j < enhTokens.length && enhTokens[j] !== ']') { inner += enhTokens[j]; j++ }
+      if (j < enhTokens.length && refs[inner]) {
+        out.push(<RefChip key={i} inner={inner} entity={refs[inner]} />)
+        i = j + 1
+        continue
+      }
+    }
+
+    const token = enhTokens[i]
+    if (/^\s+$/.test(token)) out.push(<span key={i}>{token}</span>)
+    else if (!matched[i]) out.push(<strong key={i} className="text-accent-yellow font-bold">{token}</strong>)
+    else if (/^\d+(?:\.\d+)?%?$/.test(token)) out.push(<span key={i} className="text-accent-red font-bold">{token}</span>)
+    else out.push(<span key={i}>{token}</span>)
+    i++
+  }
+  return <>{out}</>
 }

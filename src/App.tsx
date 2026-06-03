@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { GameDataProvider } from './contexts/GameDataContext'
+import { ReferenceProvider } from './contexts/ReferenceContext'
 import Layout from './components/Layout'
 import AdminRoute from './components/AdminRoute'
 import HomePage from './pages/home/HomePage'
@@ -29,6 +30,7 @@ function App() {
     <AuthProvider>
       <GameDataProvider>
       <BrowserRouter basename={import.meta.env.BASE_URL}>
+        <ReferenceProvider>
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<HomePage />} />
@@ -58,6 +60,7 @@ function App() {
             />
           </Route>
         </Routes>
+        </ReferenceProvider>
       </BrowserRouter>
       </GameDataProvider>
     </AuthProvider>

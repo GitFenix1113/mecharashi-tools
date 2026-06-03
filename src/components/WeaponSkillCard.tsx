@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { WeaponActivationBadge } from './WeaponBadges'
-import { highlightNumbers } from '../utils/moduleStats'
+import { RefText } from './RefText'
 import { assetUrl } from '../utils/assets'
 import type { WeaponSkill } from '../types'
 
@@ -34,7 +34,7 @@ export function WeaponSkillCard({ skill }: { skill: WeaponSkill }) {
             <h4 className="font-bold text-sm text-text-primary">{skill.name}</h4>
           </div>
           <p className="text-sm text-text-secondary leading-relaxed">
-            {highlightNumbers(skill.description)}
+            <RefText text={skill.description} refs={skill.descriptionRefs} />
           </p>
         </div>
       </div>

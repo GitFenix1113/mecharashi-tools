@@ -165,9 +165,14 @@
   <div class="section-label green">Progress</div>
   <div class="section-title">總進度</div>
 
+  <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-left:3px solid var(--accent-green);border-radius:0 10px 10px 0;padding:14px 18px;margin:0 0 20px;font-size:13px;color:var(--text-secondary);line-height:1.8;">
+    ✅ <strong>2026-06-03 已實作並上線</strong>（隨 PLAN-019 引用層的查詢量需求一併完成）。採 per-collection 版本 gate 快取（<code>mecharashi_gd_&lt;collection&gt;</code>），保留懶載模型，未來新集合自動納入。
+    <code>meta/gameData</code> 已建立、安全規則已部署、<code>bumpDataVersion</code> 已接入所有 <code>updateX()</code>。瀏覽器驗證：cache hit 0 collection reads、bump 後正確失效。詳見<a href="計畫書.html" style="color:var(--accent-green);text-decoration:none;">計畫書 › 實作說明</a>。
+  </div>
+
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +180,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">8</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +192,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">0 / 8</span>
+      <span style="color:var(--accent-green);">8 / 8</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 

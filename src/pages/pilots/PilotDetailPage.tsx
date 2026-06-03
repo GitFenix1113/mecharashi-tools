@@ -10,7 +10,7 @@ import { assetUrl } from '../../utils/assets'
 import { usePilot, usePilotExclusiveWeapons } from '../../hooks/useFirestore'
 import { WeaponIcon } from '../../components/WeaponIcon'
 import { DiffHighlight } from '../../components/DiffHighlight'
-import { highlightNumbers } from '../../utils/moduleStats'
+import { RefText } from '../../components/RefText'
 
 // ─── Radar Chart ─────────────────────────────────────────────────────────────
 
@@ -227,7 +227,7 @@ function WeaponDetailContent({ weapon }: { weapon: Weapon }) {
                   {ACTIVATION_LABEL[sk.activation] ?? sk.activation}
                 </span>
               </div>
-              <p className="text-text-secondary leading-relaxed">{highlightNumbers(sk.description)}</p>
+              <p className="text-text-secondary leading-relaxed"><RefText text={sk.description} refs={sk.descriptionRefs} /></p>
             </div>
           ))}
         </div>
@@ -352,7 +352,7 @@ function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, st
                 {sk.enhancesTalentName && (
                   <p className="text-[13px] text-accent-yellow/70 mb-0.5">▶ {sk.enhancesTalentName}</p>
                 )}
-                <p className="text-xs text-text-secondary leading-relaxed">{highlightNumbers(sk.description)}</p>
+                <p className="text-xs text-text-secondary leading-relaxed"><RefText text={sk.description} refs={sk.descriptionRefs} /></p>
               </div>
             ))}
           </div>
@@ -386,7 +386,7 @@ function NdLevelContent({ level }: { level: NdLevel }) {
         <span className="text-sm font-bold">{level.skillName}</span>
       </div>
       <p className="text-[13px] text-text-dim">芯片總計 ≥{level.minSum}</p>
-      <p className="text-xs text-text-secondary leading-relaxed">{highlightNumbers(level.effect)}</p>
+      <p className="text-xs text-text-secondary leading-relaxed"><RefText text={level.effect} /></p>
     </div>
   )
 }
@@ -490,7 +490,7 @@ function NeuralDriveZoneCard({ nd, zoneName, className, expanded, onLevelHover, 
                   Lv.{lv.level}（芯片總計 ≥{lv.minSum}）
                 </span>
               </div>
-              <p className="text-sm text-text-secondary leading-relaxed">{highlightNumbers(lv.effect)}</p>
+              <p className="text-sm text-text-secondary leading-relaxed"><RefText text={lv.effect} /></p>
             </div>
           </div>
         ))}
@@ -684,12 +684,12 @@ export default function PilotDetailPage() {
                       <span className="font-bold text-base">{t.name}</span>
                       <SkillTypeBadge type={t.type} />
                     </div>
-                    <p className="text-sm text-text-secondary leading-relaxed">{highlightNumbers(t.description)}</p>
+                    <p className="text-sm text-text-secondary leading-relaxed"><RefText text={t.description} refs={t.descriptionRefs} /></p>
                     {t.descriptionMax && t.descriptionMax !== t.description && (
                       <div className="mt-2.5 rounded-lg bg-accent-cyan/5 border border-accent-cyan/25 px-3 py-2.5">
                         <span className="text-[13px] font-bold text-accent-cyan tracking-widest uppercase">▶ 最大強化</span>
                         <p className="text-sm text-text-secondary leading-relaxed mt-1.5">
-                          <DiffHighlight base={t.description} enhanced={t.descriptionMax} />
+                          <DiffHighlight base={t.description} enhanced={t.descriptionMax} refs={t.descriptionRefs} />
                         </p>
                       </div>
                     )}
@@ -702,6 +702,7 @@ export default function PilotDetailPage() {
                           <DiffHighlight
                             base={t.descriptionMax && t.descriptionMax !== t.description ? t.descriptionMax : t.description}
                             enhanced={talentEnhancementMap.get(t.name)!}
+                            refs={t.descriptionRefs}
                           />
                         </p>
                       </div>
@@ -748,7 +749,7 @@ export default function PilotDetailPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-text-secondary leading-relaxed">{highlightNumbers(sk.description)}</p>
+                    <p className="text-sm text-text-secondary leading-relaxed"><RefText text={sk.description} refs={sk.descriptionRefs} /></p>
                   </div>
                 </div>
               ))}
@@ -791,7 +792,7 @@ export default function PilotDetailPage() {
                             <span className="font-bold text-base">{sk.name}</span>
                             <SkillTypeBadge type={sk.type} />
                           </div>
-                          <p className="text-sm text-text-secondary leading-relaxed">{highlightNumbers(sk.description)}</p>
+                          <p className="text-sm text-text-secondary leading-relaxed"><RefText text={sk.description} refs={sk.descriptionRefs} /></p>
                         </div>
                       </div>
                     ))}

@@ -80,8 +80,8 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <div class="meta-item"><a href="計畫書.html" style="color:var(--accent-purple);font-size:13px;font-weight:600;">→ 計畫書</a></div>
   </div>
 
-  <div class="progress-bar"><div class="progress-bar-fill" style="width:12%;"></div></div>
-  <div class="progress-percent">約 12% — Layer 1 型別骨架已落地，子計畫待拆解執行</div>
+  <div class="progress-bar"><div class="progress-bar-fill" style="width:32%;"></div></div>
+  <div class="progress-percent">約 32% — 總綱型別 + 019-A 引用層已落地；019-B~E 待執行</div>
 
   <!-- 總綱基礎 -->
   <div class="section-h">總綱基礎 <span class="badge badge-progress">IN PROGRESS</span></div>
@@ -115,14 +115,20 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
   </ul>
 
   <!-- 子計畫 -->
-  <div class="section-h">子計畫 <span class="badge badge-pending">PENDING</span></div>
+  <div class="section-h">子計畫 <span class="badge badge-progress">IN PROGRESS</span></div>
 
-  <div class="phase-label">PLAN-019-A · 引用層（Layer 1）</div>
-  <div class="phase-note">EntityRef + descriptionRefs + &lt;RefText&gt; tokenizer + 點擊→Drawer（複用 PLAN-010 EntityDetailDrawer）。A 是其餘一切的基礎。</div>
+  <div class="phase-label">PLAN-019-A · 引用層（Layer 1）<span class="badge badge-done" style="margin-left:8px;">DONE</span></div>
+  <div class="phase-note">EntityRef + descriptionRefs + &lt;RefText&gt; tokenizer + 點擊→右側 Drawer。A 是其餘一切的基礎。</div>
   <ul class="task-list">
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">RefText.tsx：tokenize [xxx] + 查 descriptionRefs + 可點擊渲染 + 優雅降級</span></li>
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">EntityDetailDrawer：依 refType 分派詳情（複用既有詳情元件）</span></li>
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">前台天賦/技能/武器描述改用 RefText 渲染</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">RefText.tsx：tokenize [xxx] + 查 descriptionRefs + 可點擊渲染 + 數字高亮 + 優雅降級</span><span class="task-meta">components/RefText.tsx</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">EntityDetailDrawer：依 refType 從 GameData 解析（pilot/mech/weapon/module/backpack/component/stat），buff/skill/term 優雅佔位</span><span class="task-meta">components/EntityDetailDrawer.tsx</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">ReferenceContext Provider + useReference，掛載於 App（Router 內）</span><span class="task-meta">contexts/ReferenceContext.tsx</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">PilotDetailPage 天賦/技能/神經驅動 + WeaponSkillCard 改用 RefText 渲染</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">互動升級：hover 浮窗預覽（不可互動，移開即收）+ click 釘選（可互動）+ 巢狀引用 drill 向下鑽 + ← 返回 + 點外部/ESC 關閉；手機 fallback 為 BottomSheet</span><span class="task-meta">RefChip · EntityRefView · ReferenceContext</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">DiffHighlight 支援引用層：descriptionMax「最大強化」區塊的 [xxx] 也可點擊（保留差異/數字高亮）</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">瀏覽器端到端驗證：海莉絲「悖想先驅」hover/pin [形態增益]、drill 虛粒子形態→激發能→返回、descriptionMax [激發能] 可點、點外部關閉</span><span class="task-meta">seed-plan019-demo.mjs</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">附帶：buffs 集合接入 GameDataContext（getBuffs + 懶載）+ buff 解析（019-B/C 資料路徑先行）</span></li>
+    <li class="task-item"><span class="task-status progress">▶</span><span class="task-name">RefPicker 後台填值 UI（與 019-C/E 一併）；目前 descriptionRefs 需由資料端填入才會出現可點擊引用</span></li>
   </ul>
 
   <div class="phase-label">PLAN-019-B · BUFF / 形態圖（Layer 2）</div>

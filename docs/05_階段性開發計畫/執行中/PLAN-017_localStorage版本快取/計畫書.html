@@ -178,12 +178,24 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value yellow">待開始</div>
+      <div class="meta-value green">✓ 已實作（2026-06-03）</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">前置依賴</div>
       <div class="meta-value cyan">PLAN-016 完成</div>
     </div>
+  </div>
+
+  <div class="decision-block">
+    <strong>實作說明（與原設計的差異）</strong><br>
+    實際採 <strong>per-collection 版本 gate 快取</strong>，而非單一 <code>mecharashi_game_data</code> blob：<br>
+    · localStorage key 為 <code>mecharashi_gd_&lt;collection&gt;</code>，值為 <code>{ v: 版本, d: 資料 }</code>。<br>
+    · 保留 PLAN-016 的<strong>懶載模型</strong>（只載入當前頁需要的 collection），快取也只存被用到的集合，較單一 blob 更省記憶體、避免 localStorage 配額壓力。<br>
+    · <strong>任何 CollectionKey（含未來新集合 buffs / bosses / stages / glossaryTerms）自動納入</strong>，無需維護清單。<br>
+    · 版本來源 <code>meta/gameData.version</code>；<code>getDataVersion()</code> 啟動讀一次；<code>bumpDataVersion()</code> 已接入所有 <code>updateX()</code> 寫入函式（admin 編輯即失效快取）。<br>
+    · 安全規則新增 <code>match /meta/{docId}</code>（公開讀 / 管理員寫）。<br>
+    · 降級：<code>meta/gameData</code> 不存在或讀取失敗 → version=null → 直接讀取（等同 PLAN-016），不影響功能。<br>
+    驗證：cache miss→fetch→寫快取；同版本 reload→cache hit（0 collection reads）；bump 版本→reload→cache miss 重抓。
   </div>
 </section>
 
