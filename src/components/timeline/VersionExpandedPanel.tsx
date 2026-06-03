@@ -1,4 +1,5 @@
 import type { PatchVersion } from '../../data/patchVersions'
+import { resolveBannerSrc } from '../../utils/assets'
 import VersionGanttPanel from './VersionGanttPanel'
 
 interface Props {
@@ -10,7 +11,7 @@ interface Props {
 
 export default function VersionExpandedPanel({ version, isExpanded, side = 'tw' }: Props) {
   const bannerSrc = version.bannerImage
-    ? `${import.meta.env.BASE_URL}${version.bannerImage.replace(/^\//, '')}`
+    ? resolveBannerSrc(version.bannerImage)
     : null
 
   return (

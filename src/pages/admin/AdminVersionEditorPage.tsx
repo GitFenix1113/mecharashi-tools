@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { db, storage } from '../../lib/firebase'
+import { db } from '../../lib/firebase'
+import { uploadImage } from '../../lib/imageUpload'
 import type { PatchVersion, PatchHalf, VersionIconUrls } from '../../data/patchVersions/types'
 import type { Pilot, Mech, Weapon, Backpack } from '../../types'
 import { resolveIconSrc } from '../../utils/assets'
@@ -281,13 +281,11 @@ export default function AdminVersionEditorPage() {
     if (!file) return
     setUploading(true)
     try {
-      const fileRef = storageRef(storage, `banners/${Date.now()}_${file.name}`)
-      await uploadBytes(fileRef, file)
-      const url = await getDownloadURL(fileRef)
+      const url = await uploadImage(file, 'banners')
       setFormData(prev => ({ ...prev, bannerImage: url }))
     } catch (err) {
       console.error('[AdminVersionEditorPage] upload error:', err)
-      alert('圖片上傳失敗，請確認 Firebase Storage 設定。')
+      alert(err instanceof Error ? err.message : '圖片上傳失敗，請重試。')
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''

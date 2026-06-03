@@ -1,4 +1,5 @@
 import type { PatchVersion } from '../../data/patchVersions'
+import { resolveBannerSrc } from '../../utils/assets'
 
 interface Props {
   version: PatchVersion
@@ -31,7 +32,7 @@ export default function VersionDot({ version, onExpand }: Props) {
       <span className="absolute inset-0 rounded-full overflow-hidden">
         {version.bannerImage && (
           <img
-            src={`${import.meta.env.BASE_URL}${version.bannerImage.replace(/^\//, '')}`}
+            src={resolveBannerSrc(version.bannerImage)}
             alt=""
             className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
             draggable={false}

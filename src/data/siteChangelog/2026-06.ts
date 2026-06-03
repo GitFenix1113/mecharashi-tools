@@ -3,6 +3,7 @@ import type { ChangelogMonth } from './types'
 const jun2026: ChangelogMonth = {
   month: '2026-06',
   entries: [
+    { date: '2026-06-03', type: 'refactor', summary: '管理後台版本前瞻圖上傳改用 Cloudinary（與頭像上傳一致），並支援前瞻圖以遠端網址正常顯示' },
     { date: '2026-06-03', type: 'feat', summary: '版本時間線改為焦點輪播設計：可用滾輪或方向鍵切換版本，點擊中央項目開啟詳情' },
     { date: '2026-06-03', type: 'feat', summary: '版本詳情頁新增台版／陸版一鍵切換按鈕' },
     { date: '2026-06-03', type: 'style', summary: '版本詳情甘特圖改為固定內容與活動甘特分離的雙表格版面，欄位對齊並放大字體；邊境商店／鬥技場改為左右並列顯示' },

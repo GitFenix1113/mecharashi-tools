@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { flushSync } from 'react-dom'
 import type { PatchVersion } from '../../data/patchVersions'
+import { resolveBannerSrc } from '../../utils/assets'
 import VersionDetailView from './VersionDetailView'
 
 interface Props {
@@ -90,7 +91,7 @@ export default function VersionTimeline({ versions, loading }: Props) {
 
   const currentVersion = versions.find(v => v.isTwCurrent)
   const currentBannerSrc = currentVersion?.bannerImage
-    ? `${import.meta.env.BASE_URL}${currentVersion.bannerImage.replace(/^\//, '')}`
+    ? resolveBannerSrc(currentVersion.bannerImage)
     : null
 
   return (
@@ -154,7 +155,7 @@ export default function VersionTimeline({ versions, loading }: Props) {
               const isCurrent = version.isTwCurrent
               const isPredicted = !isCurrent && (version.upper.twIsPredicted || version.lower.twIsPredicted)
               const bannerSrc = version.bannerImage
-                ? `${import.meta.env.BASE_URL}${version.bannerImage.replace(/^\//, '')}`
+                ? resolveBannerSrc(version.bannerImage)
                 : null
               const opacity = abs === 3 ? 0.18 : abs === 2 ? 0.45 : abs === 1 ? 0.75 : 1
 
