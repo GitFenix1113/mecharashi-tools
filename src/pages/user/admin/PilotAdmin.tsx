@@ -175,14 +175,17 @@ function PilotSkillItem({
   expanded,
   onToggle,
   onChange,
+  onRemove,
 }: {
   skill: PilotSkill
   expanded: boolean
   onToggle: () => void
   onChange: (updated: PilotSkill) => void
+  onRemove?: () => void
 }) {
   const effects = skill.effects ?? []
   const buffIds = skill.buffIds ?? []
+  const isManual = skill.manual === true
 
   function updateEffects(next: SkillEffect[]) { onChange({ ...skill, effects: next }) }
   function updateBuffIds(val: string) {
@@ -196,7 +199,7 @@ function PilotSkillItem({
                                        'text-accent-orange border-accent-orange/30 bg-accent-orange/10'
 
   return (
-    <div className="border border-border/60 rounded-lg bg-bg-dark/50">
+    <div className={`border rounded-lg bg-bg-dark/50 ${isManual ? 'border-accent-orange/40' : 'border-border/60'}`}>
       <div className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none" onClick={onToggle}>
         {skill.iconLocal && (
           <img
@@ -207,7 +210,8 @@ function PilotSkillItem({
           />
         )}
         <span className="text-[13px] text-text-dim w-3 shrink-0">{expanded ? '▼' : '▶'}</span>
-        <span className="text-sm font-medium flex-1 truncate">{skill.name}</span>
+        <span className="text-sm font-medium flex-1 truncate">{skill.name || '（未命名技能）'}</span>
+        {isManual && <span className="text-[12px] px-1.5 py-0.5 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange shrink-0">手動</span>}
         <span className={`text-[13px] px-1.5 py-0.5 rounded border shrink-0 ${typeColor}`}>{skill.type}</span>
         {skill.ap   && <span className="text-[13px] text-accent-green shrink-0">AP {skill.ap}</span>}
         {skill.cd   && <span className="text-[13px] text-accent-orange shrink-0">CD {skill.cd}</span>}
@@ -219,6 +223,17 @@ function PilotSkillItem({
 
       {expanded && (
         <div className="px-3 pb-3 border-t border-border/40 pt-2.5 space-y-3">
+          {isManual && (
+            <Field label="技能名稱 name">
+              <input
+                type="text"
+                value={skill.name}
+                onChange={(e) => onChange({ ...skill, name: e.target.value })}
+                className="input-field"
+                placeholder="如：虛粒子形態"
+              />
+            </Field>
+          )}
           <div className="grid grid-cols-3 gap-2">
             <Field label="技能類型 type">
               <select value={skill.type} onChange={(e) => onChange({ ...skill, type: e.target.value })} className="input-field">
@@ -234,10 +249,14 @@ function PilotSkillItem({
               <input type="text" value={skill.cd ?? ''} onChange={(e) => onChange({ ...skill, cd: e.target.value || undefined })} className="input-field" placeholder="—" />
             </Field>
           </div>
-          <div className="p-2 bg-bg-card/40 rounded border border-border/40">
-            <p className="text-[13px] text-text-dim font-medium uppercase mb-1">效果說明（唯讀，由腳本管理）</p>
-            <p className="text-xs text-text-secondary leading-relaxed">{skill.description || '—'}</p>
-          </div>
+          <Field label={isManual ? '效果說明 description' : '效果說明 description（手動覆寫後，爬蟲補丁會保留你的版本，不再跟進官網更新）'}>
+            <textarea
+              value={skill.description}
+              onChange={(e) => onChange({ ...skill, description: e.target.value })}
+              className="input-field min-h-[64px] resize-y text-xs leading-relaxed"
+              placeholder="技能效果文字描述"
+            />
+          </Field>
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">可計算效果 effects</span>
@@ -274,6 +293,16 @@ function PilotSkillItem({
               placeholder="buff_001, buff_002"
             />
           </Field>
+          {isManual && onRemove && (
+            <div className="pt-1 flex justify-end">
+              <button
+                onClick={onRemove}
+                className="text-[13px] px-2 py-1 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10"
+              >
+                ✕ 刪除此手動技能
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -294,25 +323,58 @@ function PilotSkillsTab({
     const next = [...skills]; next[idx] = updated; onChange(next)
   }
 
-  if (skills.length === 0) {
-    return (
-      <p className="text-text-dim text-sm text-center py-8">
-        無技能資料（技能由爬蟲腳本寫入，效果欄位可在此填入）
-      </p>
-    )
+  function addManualSkill() {
+    const newSkill: PilotSkill = {
+      name: '',
+      type: SkillType.PASSIVE,
+      description: '',
+      icon: '',
+      iconLocal: '',
+      effects: [],
+      buffIds: [],
+      manual: true,
+    }
+    onChange([...skills, newSkill])
+    setExpandedIdx(skills.length)
+  }
+
+  function removeSkill(idx: number) {
+    onChange(skills.filter((_, i) => i !== idx))
+    setExpandedIdx(null)
   }
 
   return (
-    <div className="space-y-1.5">
-      {skills.map((skill, idx) => (
-        <PilotSkillItem
-          key={idx}
-          skill={skill}
-          expanded={expandedIdx === idx}
-          onToggle={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
-          onChange={(updated) => updateSkill(idx, updated)}
-        />
-      ))}
+    <div className="space-y-2.5">
+      <div className="flex items-center justify-between">
+        <p className="text-[13px] text-text-dim">
+          技能由爬蟲腳本寫入，效果欄位可在此填入；天生自帶、官網查無的技能可手動新增。
+        </p>
+        <button
+          onClick={addManualSkill}
+          className="shrink-0 text-[13px] px-2.5 py-1 text-accent-orange border border-accent-orange/40 rounded hover:bg-accent-orange/10 transition-colors"
+        >
+          + 手動新增技能
+        </button>
+      </div>
+
+      {skills.length === 0 ? (
+        <p className="text-text-dim text-sm text-center py-8">
+          無技能資料，可點右上角「手動新增技能」建立
+        </p>
+      ) : (
+        <div className="space-y-1.5">
+          {skills.map((skill, idx) => (
+            <PilotSkillItem
+              key={idx}
+              skill={skill}
+              expanded={expandedIdx === idx}
+              onToggle={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
+              onChange={(updated) => updateSkill(idx, updated)}
+              onRemove={() => removeSkill(idx)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

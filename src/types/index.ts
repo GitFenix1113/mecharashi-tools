@@ -130,6 +130,12 @@ export interface PilotSkill {
   iconLocal: string
   effects:  SkillEffect[]
   buffIds:  string[]
+  /**
+   * 管理者手動新增的技能（PLAN：機師天生自帶、官網查無的技能）。
+   * true = 後台手動建立，name/description 等欄位可在後台編輯；爬蟲補丁模式不會覆寫或刪除。
+   * 未設定 / false = 由爬蟲腳本管理，後台僅能編輯 effects / buffIds。
+   */
+  manual?: boolean
 }
 
 export interface PilotTalent {

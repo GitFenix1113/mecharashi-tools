@@ -3,6 +3,7 @@ import type { ChangelogMonth } from './types'
 const jun2026: ChangelogMonth = {
   month: '2026-06',
   entries: [
+    { date: '2026-06-03', type: 'feat', summary: '機師後台技能分頁可手動新增技能（機師天生自帶、官網查無者），並可編輯技能名稱與效果說明；手動覆寫的描述爬蟲補丁不再覆寫' },
     { date: '2026-06-03', type: 'refactor', summary: '管理後台版本前瞻圖上傳改用 Cloudinary（與頭像上傳一致），並支援前瞻圖以遠端網址正常顯示' },
     { date: '2026-06-03', type: 'feat', summary: '版本時間線改為焦點輪播設計：可用滾輪或方向鍵切換版本，點擊中央項目開啟詳情' },
     { date: '2026-06-03', type: 'feat', summary: '版本詳情頁新增台版／陸版一鍵切換按鈕' },

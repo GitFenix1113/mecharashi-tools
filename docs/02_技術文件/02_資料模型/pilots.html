@@ -64,7 +64,8 @@
       <tr><td>&nbsp;├ description</td><td>string</td><td>效果描述文字</td></tr>
       <tr><td>&nbsp;├ icon / iconLocal</td><td>string</td><td>技能圖示路徑</td></tr>
       <tr><td>&nbsp;├ effects</td><td>SkillEffect[]</td><td>可量化效果列表（空陣列 = 待填入）；計算器加總所有 active 技能的 effects</td></tr>
-      <tr><td>&nbsp;└ buffIds</td><td>string[]</td><td>技能觸發的 Buff ID 列表（API BufCarried 以 "/" 分割轉換）</td></tr>
+      <tr><td>&nbsp;├ buffIds</td><td>string[]</td><td>技能觸發的 Buff ID 列表（API BufCarried 以 "/" 分割轉換）</td></tr>
+      <tr><td>&nbsp;└ manual</td><td>boolean?</td><td>後台手動新增的技能（機師天生自帶、官網查無者）。<strong>true</strong> = 後台可編輯 name / type / ap / cd / description，爬蟲補丁模式不覆寫亦不刪除；未設定 / false = 由爬蟲管理，後台僅能編輯 effects / buffIds</td></tr>
       <tr class="group-header"><td colspan="3">▎天賦列表 talents[] — PilotTalent（PLAN-001）</td></tr>
       <tr><td>&nbsp;├ name</td><td>string</td><td>天賦名稱</td></tr>
       <tr><td>&nbsp;├ type</td><td>string</td><td>技能類型（通常為「被動技能」）</td></tr>

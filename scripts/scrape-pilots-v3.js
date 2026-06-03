@@ -570,9 +570,12 @@ async function downloadPilotImages(pilot, detail) {
 
 /**
  * 以技能名稱為 key，合併 fresh API 資料與 Firestore 現有資料。
- * - 覆寫：所有 API 欄位（cd / type / weapon / description / icon …）
+ * - 覆寫：API 欄位（cd / type / weapon / icon …）
  * - 保護：effects / buffIds（手動維護，不覆寫）
+ * - 保護：description（選項 A）— 若 Firestore 描述與官網不同，視為管理者手動覆寫過，保留之；
+ *         相同則沿用 API（無差異）。代價：官網日後真的更新描述時不會自動跟進。
  * - 保護：Firestore 有但 API 沒有的技能（直接保留）
+ * - 保護：manual 旗標（手動新增技能）
  */
 function mergeSkillsArray(existing, fresh) {
   if (!Array.isArray(existing)) return fresh || [];
@@ -580,10 +583,16 @@ function mergeSkillsArray(existing, fresh) {
   const merged = existing.map(skill => {
     const freshSkill = freshMap.get(skill.name);
     if (!freshSkill) return skill;
+    // 選項 A：描述與官網不同 → 保留現有（手動覆寫）；相同 → 用 API 值
+    const description = (skill.description != null && skill.description !== freshSkill.description)
+      ? skill.description
+      : freshSkill.description;
     return {
       ...freshSkill,
+      description,
       effects:  skill.effects  ?? [],
       buffIds:  skill.buffIds  ?? [],
+      ...(skill.manual ? { manual: true } : {}),
     };
   });
   // 新增在 Firestore 沒有的技能（補全，不影響現有）
