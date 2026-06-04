@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pilotSkills — 共用技能庫 Schema — Firebase 資料庫設計 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../../index.html">技術文件</a>
+    <span>›</span>
+    <a href="Firebase資料庫設計文件.html">Firebase 資料庫設計</a>
+    <span>›</span>
+    <span class="current">pilotSkills — 共用技能庫</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge cyan">◆ COLLECTION SCHEMA</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    pilotSkills — 共用技能庫
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-004</span>
+  </h1>
+  <p class="hero-sub">技能單一資料源 · 被 [xxx] 引用（refType:'skill'）· 共用技能集中維護</p>
+  <div class="version-badge" style="background:var(--accent-cyan);color:#000;">PLAN-004 — 2026-06-04</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label cyan">01 — 用途</div>
+  <div class="section-title">pilotSkills Collection</div>
+
+  <div class="info-block">
+    <strong>📌 用途說明</strong><br>
+    PLAN-004 技能庫抽離前，技能以嵌入方式存於每個 pilots 文件的 <code>skills[]</code>（同名共用技能各存一份副本）。<br>
+    抽離後，技能本體集中存於 <strong>pilotSkills 集合（單一資料源）</strong>，<code>Pilot.skills</code> 改為此集合的<strong>文件 ID 陣列</strong>。<br>
+    · 共用技能（如職業被動「協同作戰1」）多位機師指向同一文件 → <strong>編輯一次全站生效</strong>。<br>
+    · 技能可被任意描述中的 <code>[xxx]</code> 引用（PLAN-019 <code>refType:'skill'</code>）→ 懸停／點擊顯示 icon、類型與效果。<br>
+    · 前台讀取走 GameDataContext 一次預載 + PLAN-017 版本快取（回訪 0 讀取）。
+  </div>
+
+  <div class="sub-h">🗃️ pilotSkills — 技能文件（PilotSkillDoc）</div>
+  <div class="data-table-wrap">
+    <table class="data-table cyan-head">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td>文件 ID。格式 <code>skill_&lt;技能名&gt;</code>；同名不同效時加 <code>_&lt;pilotId&gt;</code> 後綴；後台手動新增為 <code>skill_manual_&lt;時間碼&gt;</code></td></tr>
+      <tr><td>name</td><td>string</td><td>技能名稱</td></tr>
+      <tr><td>type</td><td>SkillType</td><td>技能類型：被動技能 / 主動技能 / 指令技能 / 必殺技能 / 武器技能</td></tr>
+      <tr><td>unitType</td><td>string?</td><td>仿生電腦單元類型："0"=核心單元 "6"=職業單元</td></tr>
+      <tr><td>ap</td><td>string?</td><td>AP 消耗；主動 / 指令 / 必殺 / 武器技能適用</td></tr>
+      <tr><td>cd</td><td>string?</td><td>冷卻回合數；指令技能才有</td></tr>
+      <tr><td>weapon</td><td>WeaponRequirement | string?</td><td>限定武器需求；武器技能才有</td></tr>
+      <tr><td>description</td><td>string</td><td>效果描述文字（遊戲原文，含 [xxx] 標記）</td></tr>
+      <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>描述內 [xxx] → 實體引用側錄（PLAN-019 Layer 1）</td></tr>
+      <tr><td>icon / iconLocal</td><td>string</td><td>技能圖示（遠端 URL / 本地 /images/skills/…）</td></tr>
+      <tr><td>effects</td><td>SkillEffect[]</td><td>可量化效果列表（空陣列 = 待填入）；計算器加總用</td></tr>
+      <tr><td>buffIds</td><td>string[]</td><td>此技能賦予的 BUFF ID 列表 → 引用 buffs 集合（PLAN-019 Layer 2 賦予邊）</td></tr>
+      <tr><td>manual</td><td>boolean?</td><td>後台手動新增（機師天生自帶、官網查無 / form-gated 條件技能）。爬蟲補丁模式不覆寫亦不刪除</td></tr>
+      <tr><td>variants</td><td>SkillVariant[]?</td><td>模擬層預留：條件變體（如萬序擬合依形態/武器發動不同子技能）。暫不填</td></tr>
+      <tr><td>area</td><td>SkillArea?</td><td>模擬層預留：作用範圍/形狀（如龍雷拳 面前3×4格）。暫不填</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">02 — 維護與遷移</div>
+  <div class="section-title">資料維護</div>
+
+  <div class="info-block">
+    <strong>🛠️ 後台編輯</strong><br>
+    機師後台「技能效果」分頁編輯的是 pilotSkills 文件本體（共用技能編輯會同步影響所有持有它的機師）。手動新增技能會建立新文件並把其 ID 附加到該機師的 <code>skills</code>。
+  </div>
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔁 遷移腳本</strong><br>
+    · <code>scripts/migrate-plan004-skills.mjs</code>（Stage 1）：攤平 pilots.skills、name+description 去重 → 寫入 pilotSkills。<br>
+    · <code>scripts/migrate-plan004-pilots.mjs</code>（Stage 2）：把 pilots.skills flip 成 ID 陣列。<br>
+    · <code>scripts/seed-manual-skills.mjs</code>：補爬蟲無法擷取的 form-gated 條件技能（如粒子爆發）。<br>
+    · 安全規則：<code>pilotSkills</code> 所有人可讀、管理員可寫（見 security-rules）。
+  </div>
+</section>
+
+</main>
+
+</body>
+</html>

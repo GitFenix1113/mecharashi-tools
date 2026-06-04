@@ -701,6 +701,7 @@ async function runPatchMode() {
   console.log('');
 
   const patches = []; // { id, name, updates, diffSummary }
+  let idFormatSkillPilots = 0; // PLAN-004：skills 已是 ID 格式、本次跳過 skills 補丁的機師數
 
   for (let i = 0; i < targets.length; i++) {
     const pilot = targets[i];
@@ -712,14 +713,19 @@ async function runPatchMode() {
       const detail = await fetchPilotDetail(pilot.ID);
       const fresh = buildPilotJson(detail, 0);
 
-      const mergedSkills     = mergeSkillsArray(existing.skills, fresh.skills);
-      const mergedTalents    = mergeTalentsArray(existing.talents, fresh.talents);
+      // PLAN-004：skills 已抽離為 pilotSkills 集合。若機師的 skills 已是 ID 陣列（新格式），
+      // 舊的 name-keyed 合併會破壞資料 → 跳過 skills 補丁（技能改版改走後台或 collection-aware 流程）。
+      const skillsAreIds = Array.isArray(existing.skills) && existing.skills.length > 0
+        && existing.skills.every(s => typeof s === 'string');
+      if (skillsAreIds) idFormatSkillPilots++;
+      const mergedSkills      = skillsAreIds ? existing.skills : mergeSkillsArray(existing.skills, fresh.skills);
+      const mergedTalents     = mergeTalentsArray(existing.talents, fresh.talents);
       const mergedNeuralDrive = mergeNeuralDriveArray(existing.neuralDrive, fresh.neuralDrive);
 
       const updates = {};
       const diffSummary = [];
 
-      if (isDifferent(existing.skills, mergedSkills)) {
+      if (!skillsAreIds && isDifferent(existing.skills, mergedSkills)) {
         updates.skills = mergedSkills;
         diffSummary.push('skills');
       }
@@ -752,6 +758,11 @@ async function runPatchMode() {
   console.log(`📊 補丁報告  — 需要更新：${patches.length} / ${targets.length} 個機師`);
   if (patches.length > 0) {
     patches.forEach(p => console.log(`   ✎  ${p.name.padEnd(12)} → ${p.diffSummary.join('、')}`));
+  }
+  if (idFormatSkillPilots > 0) {
+    console.log('');
+    console.log(`⚠  ${idFormatSkillPilots} 位機師的 skills 已是 PLAN-004 ID 格式 → 本次未補丁 skills`);
+    console.log('   （技能改版請於後台「技能效果」分頁編輯 pilotSkills 共用技能庫）');
   }
   console.log('');
 

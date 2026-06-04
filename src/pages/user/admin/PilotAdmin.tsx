@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
-import type { Pilot, PilotSkill, SkillEffect, SkillCondition } from '../../../types'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import type { Pilot, PilotSkillDoc, SkillEffect, SkillCondition } from '../../../types'
 import { formatWeaponReq } from '../../../types'
 import { ItemRarity, PilotClass, MechLicense, SkillType, WeaponType } from '../../../types/enums'
 import { Field, AdminModal, useServerPaged, LoadMoreButton } from './shared'
-import { getCollectionPage, updatePilot } from '../../../lib/firestoreApi'
+import { getCollectionPage, updatePilot, updatePilotSkill } from '../../../lib/firestoreApi'
+import { useGameData } from '../../../contexts/GameDataContext'
+import { resolvePilotSkills, buildSkillMap, docToEmbedded } from '../../../utils/pilotSkills'
 import { PILOT_RARITY_CLASS, TRIGGER_DISPLAY, STAT_OPTIONS } from './constants'
 
 type PilotFilters = { rarity: string; class: string }
@@ -180,10 +182,10 @@ function PilotSkillItem({
   onChange,
   onRemove,
 }: {
-  skill: PilotSkill
+  skill: PilotSkillDoc
   expanded: boolean
   onToggle: () => void
-  onChange: (updated: PilotSkill) => void
+  onChange: (updated: PilotSkillDoc) => void
   onRemove?: () => void
 }) {
   const effects = skill.effects ?? []
@@ -316,18 +318,21 @@ function PilotSkillItem({
 function PilotSkillsTab({
   skills,
   onChange,
+  flipped,
 }: {
-  skills: PilotSkill[]
-  onChange: (updated: PilotSkill[]) => void
+  skills: PilotSkillDoc[]
+  onChange: (updated: PilotSkillDoc[]) => void
+  flipped: boolean
 }) {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
 
-  function updateSkill(idx: number, updated: PilotSkill) {
+  function updateSkill(idx: number, updated: PilotSkillDoc) {
     const next = [...skills]; next[idx] = updated; onChange(next)
   }
 
   function addManualSkill() {
-    const newSkill: PilotSkill = {
+    const newSkill: PilotSkillDoc = {
+      id: `skill_manual_${Date.now().toString(36)}`,
       name: '',
       type: SkillType.PASSIVE,
       description: '',
@@ -348,9 +353,11 @@ function PilotSkillsTab({
 
   return (
     <div className="space-y-2.5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <p className="text-[13px] text-text-dim">
-          技能由爬蟲腳本寫入，效果欄位可在此填入；天生自帶、官網查無的技能可手動新增。
+          {flipped
+            ? '技能來自共用技能庫（pilotSkills）。編輯共用技能會同步影響所有持有它的機師。'
+            : '技能由爬蟲腳本寫入，效果欄位可在此填入；天生自帶、官網查無的技能可手動新增。'}
         </p>
         <button
           onClick={addManualSkill}
@@ -368,7 +375,7 @@ function PilotSkillsTab({
         <div className="space-y-1.5">
           {skills.map((skill, idx) => (
             <PilotSkillItem
-              key={idx}
+              key={skill.id || idx}
               skill={skill}
               expanded={expandedIdx === idx}
               onToggle={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
@@ -409,6 +416,20 @@ function PilotEditPanel({
 
   useEffect(() => { setForm({ ...pilot }); setEditTab('basic') }, [pilot])
 
+  // PLAN-004：技能改由 pilotSkills 集合管理（過渡期相容嵌入舊格式）
+  const gd = useGameData()
+  useEffect(() => { gd.ensureLoaded(['pilotSkills']) }, [gd])
+  const skillMap = useMemo(() => buildSkillMap(gd.pilotSkills), [gd.pilotSkills])
+  // flipped：此機師的 skills 是否已是 ID 字串（新格式單一資料源）
+  const flipped = useMemo(() => (pilot.skills ?? []).every((s) => typeof s === 'string'), [pilot])
+  const [skillDocs, setSkillDocs] = useState<PilotSkillDoc[]>([])
+  const originalDocsRef = useRef<Map<string, string>>(new Map())
+  useEffect(() => {
+    const docs = resolvePilotSkills(pilot.skills, skillMap)
+    setSkillDocs(docs)
+    originalDocsRef.current = new Map(docs.map((d) => [d.id, JSON.stringify(d)]))
+  }, [pilot, skillMap])
+
   function update<K extends keyof Pilot>(key: K, value: Pilot[K]) { setForm((f) => ({ ...f, [key]: value })) }
   function updateStats(key: keyof Pilot['stats'], value: number) { setForm((f) => ({ ...f, stats: { ...f.stats, [key]: value } })) }
   function updateAp(key: 'init' | 'max' | 'recovery', value: number) { setForm((f) => ({ ...f, ap: { ...f.ap, [key]: value } })) }
@@ -416,8 +437,20 @@ function PilotEditPanel({
 
   async function handleSubmit() {
     setSaving(true); setError(null)
-    try { await onSave(form) }
-    catch (e) { setError(e instanceof Error ? e.message : '儲存失敗，請重試'); setSaving(false) }
+    try {
+      if (flipped) {
+        // 新格式：只寫入有變更／新增的技能文件到 pilotSkills 集合，機師文件存技能 ID 順序
+        const orig = originalDocsRef.current
+        const changed = skillDocs.filter((d) => orig.get(d.id) !== JSON.stringify(d))
+        await Promise.all(changed.map((d) => updatePilotSkill(d)))
+        await onSave({ ...form, skills: skillDocs.map((d) => d.id) })
+      } else {
+        // 過渡前舊格式：技能仍嵌入機師文件
+        await onSave({ ...form, skills: skillDocs.map(docToEmbedded) })
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '儲存失敗，請重試'); setSaving(false)
+    }
   }
 
   return (
@@ -437,7 +470,7 @@ function PilotEditPanel({
             <span className="text-text-dim text-sm font-normal ml-1">{form.id}</span>
           </h3>
           <p className="text-[14px] text-text-dim mt-0.5">
-            技能 {form.skills?.length ?? 0}（效果可在「技能效果」分頁填入）· 天賦 {form.talents?.length ?? 0} · 神經驅動 {form.neuralDrive?.length ?? 0}（由爬蟲腳本管理）
+            技能 {skillDocs.length}（效果可在「技能效果」分頁填入）· 天賦 {form.talents?.length ?? 0} · 神經驅動 {form.neuralDrive?.length ?? 0}（由爬蟲腳本管理）
           </p>
         </div>
       </div>
@@ -446,7 +479,7 @@ function PilotEditPanel({
       <div className="flex gap-1 mb-4 shrink-0 flex-wrap">
         {PILOT_EDIT_TABS.map((t) => {
           const filledSkills = t.id === 'skills'
-            ? (form.skills ?? []).filter((s) => (s.effects ?? []).length > 0).length
+            ? skillDocs.filter((s) => (s.effects ?? []).length > 0).length
             : 0
           const hasBadge = t.id === 'skills' && filledSkills > 0
           return (
@@ -577,8 +610,9 @@ function PilotEditPanel({
 
         {editTab === 'skills' && (
           <PilotSkillsTab
-            skills={form.skills ?? []}
-            onChange={(updated) => update('skills', updated)}
+            skills={skillDocs}
+            onChange={setSkillDocs}
+            flipped={flipped}
           />
         )}
       </div>

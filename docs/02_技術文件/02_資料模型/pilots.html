@@ -54,8 +54,8 @@
       <tr><td>masterLevel</td><td>string</td><td>駕駛等級</td></tr>
       <tr><td>attack</td><td>number</td><td>攻擊素質</td></tr>
       <tr><td>defense</td><td>number</td><td>防禦素質</td></tr>
-      <tr class="group-header"><td colspan="3">▎技能列表 skills[] — PilotSkill（PLAN-001）</td></tr>
-      <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);padding:4px 14px;">涵蓋仿生電腦各核心單元解鎖的所有技能：職業技能（職業單元）、主動/指令/必殺/被動/武器技能（核心單元）</td></tr>
+      <tr class="group-header"><td colspan="3">▎技能列表 skills[]：string[]（PLAN-004）— pilotSkills 集合文件 ID 陣列</td></tr>
+      <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);padding:4px 14px;">PLAN-004 技能庫抽離後，<strong>skills 改為 pilotSkills 文件 ID 陣列（單一資料源）</strong>，技能本體存於 <a href="../04_Firebase/資料庫設計文件/pilotSkills.html" style="color:var(--accent-cyan)">pilotSkills 集合</a>。共用技能（如職業被動）多位機師指向同一文件，編輯一次全站生效。以下欄位為被引用的 <strong>PilotSkillDoc</strong>（與舊嵌入 PilotSkill 同構，另有頂層 id）。涵蓋仿生電腦各核心單元解鎖的所有技能。</td></tr>
       <tr><td>&nbsp;├ name</td><td>string</td><td>技能名稱</td></tr>
       <tr><td>&nbsp;├ type</td><td>SkillType (Enum)</td><td>技能類型：<strong>被動技能</strong> / <strong>主動技能</strong> / <strong>指令技能</strong>（Order，有 CD）</td></tr>
       <tr><td>&nbsp;├ ap</td><td>string?</td><td>AP 消耗；主動 / 指令 / 必殺 / 武器技能適用</td></tr>

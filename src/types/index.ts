@@ -240,7 +240,11 @@ export interface Pilot {
   ap: { init: number; max: number; recovery: number }
   apBase: { init: number; max: number; recovery: number }
   talents: PilotTalent[]
-  skills: PilotSkill[]
+  /**
+   * PLAN-004 過渡型別：技能可能是嵌入物件（舊格式）或 pilotSkills 集合的 ID 字串（新格式／單一資料源）。
+   * 以 resolvePilotSkills() 解析；遷移與爬蟲改寫完成後可收斂為 string[]。
+   */
+  skills: (string | PilotSkill)[]
   neuralDrive: NeuralDrive[]
   portrait: string
   portraitUrl?: string

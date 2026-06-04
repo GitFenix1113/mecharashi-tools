@@ -212,6 +212,17 @@
     </div>
   </div>
 
+  <div class="changed-block" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);border-left-color:var(--accent-green);">
+    <strong>執行現況（2026-06-04）— 依 <a href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html" style="color:var(--accent-green);">PLAN-019</a> 重新定位執行</strong><br>
+    與原規劃的差異：技能 ID 採 <code>skill_&lt;技能名&gt;</code>（type 不進 ID）；前端採<strong>雙格式相容</strong>（不直接破壞性 flip 型別，過渡更安全）；<strong>本輪只做 pilotSkills，neuralDrives 留待下半場</strong>。<br><br>
+    · ✅ <strong>Phase 1</strong>：PilotSkillDoc 型別 + getPilotSkills + GameDataContext + EntityRefView 解析 refType:'skill'<br>
+    · ✅ <strong>Stage 1</strong>：migrate-plan004-skills.mjs 已寫入 pilotSkills 集合 <strong>512 筆</strong>（35 共用、3 碰撞）+ rules 部署 + 版本 bump<br>
+    · ✅ <strong>前端</strong>：PilotDetailPage / PilotAdmin 改為經 resolvePilotSkills 讀寫（共用技能集中編輯）<br>
+    · ⏳ <strong>Stage 2</strong>：migrate-plan004-pilots.mjs 已就緒（dry-run 通過），待前端雙格式版本部署上線後執行 flip<br>
+    · ⏳ <strong>爬蟲</strong>：scrape-pilots-v3.js 已加 ID 格式安全防呆；完整 collection-aware 改寫待 flip 後以 dry-run 驗證<br>
+    · ⏸ <strong>neuralDrives</strong>：本輪不做，沿用同套模式留作 PLAN-004 下半場
+  </div>
+
   <div class="changed-block" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.25);border-left-color:var(--accent-red);">
     <strong>執行前置條件</strong><br>
     本計畫涉及 Pilot interface 破壞性改變。執行前需確認：<br>

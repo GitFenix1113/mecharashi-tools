@@ -201,6 +201,13 @@ export const updatePilot = async (pilot: Pilot): Promise<void> => {
   await bumpDataVersion().catch(() => {})
 }
 
+/** PLAN-004：寫入/更新單一技能文件（單一資料源；編輯共用技能會影響所有持有它的機師） */
+export const updatePilotSkill = async (skill: PilotSkillDoc): Promise<void> => {
+  const { id, ...data } = skill
+  await setDoc(doc(db, 'pilotSkills', id), stripUndefined(data))
+  await bumpDataVersion().catch(() => {})
+}
+
 export const updateWeapon = async (weapon: Weapon): Promise<void> => {
   const { id, ...data } = weapon
   await setDoc(doc(db, 'weapons', id), stripUndefined(data))

@@ -8,6 +8,8 @@ import { formatWeaponReq } from '../../types'
 type NdLevel = NeuralDrive['levels'][number]
 import { assetUrl } from '../../utils/assets'
 import { usePilot, usePilotExclusiveWeapons } from '../../hooks/useFirestore'
+import { useGameData } from '../../contexts/GameDataContext'
+import { resolvePilotSkills, buildSkillMap } from '../../utils/pilotSkills'
 import { WeaponIcon } from '../../components/WeaponIcon'
 import { DiffHighlight } from '../../components/DiffHighlight'
 import { RefText } from '../../components/RefText'
@@ -519,6 +521,11 @@ export default function PilotDetailPage() {
   const exclusiveWeapon = exclusiveWeapons[exclusiveWeaponIdx] ?? null
   const isMobile = useIsMobile()
   const [activeSkillTab, setActiveSkillTab] = useState<'技能' | '天賦' | '神經驅動'>('天賦')
+
+  // PLAN-004：技能改由 pilotSkills 集合解析（過渡期亦相容嵌入舊格式）
+  const gd = useGameData()
+  useEffect(() => { gd.ensureLoaded(['pilotSkills']) }, [gd])
+  const skillMap = useMemo(() => buildSkillMap(gd.pilotSkills), [gd.pilotSkills])
   useEffect(() => { setExclusiveWeaponIdx(0) }, [id])
   const [ndExpanded, setNdExpanded] = useState(false)
   const [ndHoverState, setNdHoverState] = useState<{ level: NdLevel; x: number; anchorTop: number } | null>(null)
@@ -561,8 +568,9 @@ export default function PilotDetailPage() {
   biomUnits.forEach(u => { if (u.skill?.name) unitTypeByName[u.skill.name] = u.unitType })
 
   const getUnitType = (sk: { name: string; unitType?: string }) => sk.unitType ?? unitTypeByName[sk.name]
-  const classSkills  = pilot.skills.filter(sk => getUnitType(sk) === '6')
-  const regularSkills = pilot.skills.filter(sk => getUnitType(sk) !== '6')
+  const resolvedSkills = resolvePilotSkills(pilot.skills, skillMap)
+  const classSkills  = resolvedSkills.filter(sk => getUnitType(sk) === '6')
+  const regularSkills = resolvedSkills.filter(sk => getUnitType(sk) !== '6')
 
   const handleNdLevelHover = (level: NdLevel, el: HTMLElement) => {
     if (isMobile) return
