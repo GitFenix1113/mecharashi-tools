@@ -45,8 +45,9 @@ yarn-error.log*
 .cache/
 .parcel-cache/
 
-# Claude Code
-.claude/
+# Claude Code（忽略本機設定，但版控開發者 skill）
+.claude/*
+!.claude/skills/
 
 # Debug artifacts
 public/debug/

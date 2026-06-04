@@ -1,0 +1,34 @@
+#!/bin/sh
+# .githooks/commit-msg
+# 防呆：feat/fix/perf/style/refactor 類 commit 必須同步更新 src/data/siteChangelog/
+# （CLAUDE.md 規則 1）。其他類型（chore/ci/docs/test/build/revert/merge…）一律豁免。
+
+MSG_FILE="$1"
+SUBJECT=$(head -n1 "$MSG_FILE")
+
+# 取冒號前的 conventional type（去掉 scope，如 feat(admin) → feat），轉小寫
+TYPE=$(printf '%s' "$SUBJECT" | sed -n 's/^\([a-zA-Z]*\).*/\1/p' | tr 'A-Z' 'a-z')
+
+case "$TYPE" in
+  feat|fix|perf|style|refactor)
+    # 這幾類屬使用者可見變更，需更新履歷，往下檢查
+    ;;
+  *)
+    # 其餘類型不需更新履歷，直接放行
+    exit 0 ;;
+esac
+
+# 檢查本次 commit 是否有把 src/data/siteChangelog/ 納入
+if git diff --cached --name-only | grep -q "^src/data/siteChangelog/"; then
+  exit 0
+fi
+
+echo "❌  commit 已中止：偵測到「$TYPE」類變更，但本次未更新 src/data/siteChangelog/"
+echo ""
+echo "    依 CLAUDE.md 規則 1，使用者可見的變更需在 src/data/siteChangelog/ 對應月份檔"
+echo "    的 entries 陣列最前面新增一筆 { date, type, summary }（使用者視角摘要）。"
+echo ""
+echo "    解法：補上 siteChangelog 後 git add 再重新 commit；"
+echo "    若其實是內部維護，改用 chore: / ci: / docs: 前綴即可豁免；"
+echo "    確定要略過此次檢查：git commit --no-verify"
+exit 1

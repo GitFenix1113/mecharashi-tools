@@ -1,0 +1,2 @@
+# Git hook 腳本必須維持 LF 行尾，否則 #!/bin/sh 在 Git Bash（Windows）會因 CRLF 而無法執行
+.githooks/** text eol=lf

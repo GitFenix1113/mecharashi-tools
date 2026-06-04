@@ -1,7 +1,18 @@
 #!/bin/sh
 # .githooks/pre-push
-# 在每次 push 前自動更新 CHANGELOG.md，並將變更一併推送。
+# 在每次 push 前：(1) build 把關 → (2) 更新 CHANGELOG.md，並將變更一併推送。
 
+# ── (1) Build 把關（CLAUDE.md 規則 3：push 前 build 必須成功）──────────────
+echo "🔨  執行 pre-push：npm run build（tsc -b + vite build）..."
+npm run build
+if [ $? -ne 0 ]; then
+  echo "❌  build 失敗，已中止 push。請修正 TypeScript / 打包錯誤後再推。"
+  echo "    （build 太慢想暫時略過：git push --no-verify，但不建議）"
+  exit 1
+fi
+echo "✅  build 通過"
+
+# ── (2) 更新 CHANGELOG.md ─────────────────────────────────────────────────
 echo "🔄  執行 pre-push：更新 CHANGELOG.md ..."
 
 # 收集即將推送的 commit 摘要（排除 changelog 更新本身，最多 10 筆）
