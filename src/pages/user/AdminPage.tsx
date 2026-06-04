@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import type { Module, Mech, Pilot, Weapon, Component, GrayOpsRoster } from '../../types'
-import { ComponentType, ComponentsWType } from '../../types/enums'
-import { updateModule, updateMech, updatePilot, updateWeapon, updateComponent, updateGrayOpsRoster } from '../../lib/firestoreApi'
+import type { GrayOpsRoster } from '../../types'
+import { updateGrayOpsRoster } from '../../lib/firestoreApi'
 import { useAuth } from '../../contexts/AuthContext'
-import { useGameData } from '../../contexts/GameDataContext'
-import { TabButton } from './admin/shared'
+import { useGameData, type CollectionKey } from '../../contexts/GameDataContext'
+import { TabButton, AdminLoadGate } from './admin/shared'
 import ModuleAdmin from './admin/ModuleAdmin'
 import MechAdmin from './admin/MechAdmin'
 import PilotAdmin from './admin/PilotAdmin'
@@ -15,14 +14,31 @@ import UserAdmin from './admin/UserAdmin'
 import GrayOpsAdmin from './admin/GrayOpsAdmin'
 import BackpackAdmin from './admin/BackpackAdmin'
 
+type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpacks' | 'users' | 'grayops'
+
+// 各分頁的延遲載入設定：
+//   keys       — 需透過 GameDataContext 整包載入的「關聯集合」（供編輯面板下拉用）
+//   searchable — 閘門是否提供搜尋框（可帶入分頁的開頭搜尋）
+//   selfLoading— 分頁元件自行管理主資料載入（伺服器端分頁查詢）；armed 後直接掛載
+// 主資料（pilots/weapons/...）一律由分頁元件以 getCollectionPage 分頁查詢，不整包載入。
+// keys 只保留「關聯集合」：weapons→pilots、modules→mechs、mechs→modules。
+const TAB_CONFIG: Record<Tab, { keys: CollectionKey[]; searchable: boolean; selfLoading: boolean }> = {
+  modules:    { keys: ['mechs'],          searchable: true,  selfLoading: true  },
+  mechs:      { keys: ['modules'],        searchable: true,  selfLoading: true  },
+  pilots:     { keys: [],                 searchable: true,  selfLoading: true  },
+  weapons:    { keys: ['pilots'],         searchable: true,  selfLoading: true  },
+  components: { keys: [],                 searchable: true,  selfLoading: true  },
+  grayops:    { keys: ['grayOpsRoster'],  searchable: false, selfLoading: false },
+  backpacks:  { keys: [],                 searchable: true,  selfLoading: true  },
+  users:      { keys: [],                 searchable: false, selfLoading: true  },
+}
+
 export default function AdminPage() {
   const { user, userProfile, loading: authLoading } = useAuth()
   const {
-    modules: ctxModules,
     mechs: ctxMechs,
     pilots: ctxPilots,
-    weapons: ctxWeapons,
-    components: ctxComponents,
+    modules: ctxModules,
     grayOpsRoster: ctxGrayOpsRoster,
     loadedKeys,
     errorMap,
@@ -30,66 +46,27 @@ export default function AdminPage() {
     reloadTick,
   } = useGameData()
 
-  const ADMIN_KEYS = ['modules', 'mechs', 'pilots', 'weapons', 'components', 'grayOpsRoster'] as const
-  useEffect(() => { void ensureLoaded([...ADMIN_KEYS]) }, [ensureLoaded, reloadTick])
+  const [tab, setTab] = useState<Tab>('modules')
 
-  const loading   = !ADMIN_KEYS.every(k => loadedKeys.has(k))
-  const loadError = ADMIN_KEYS.map(k => errorMap[k]).find(Boolean)?.message ?? null
+  // 已「啟用」（按下載入或使用篩選）的分頁；以及閘門帶入的初始搜尋字串
+  const [armedTabs, setArmedTabs]     = useState<Set<Tab>>(new Set())
+  const [searchSeeds, setSearchSeeds] = useState<Partial<Record<Tab, string>>>({})
 
-  const [tab, setTab] = useState<'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpacks' | 'users' | 'grayops'>('modules')
-  const [modules, setModules]       = useState<Module[]>([])
-  const [mechs, setMechs]           = useState<Mech[]>([])
-  const [pilots, setPilots]         = useState<Pilot[]>([])
-  const [weapons, setWeapons]       = useState<Weapon[]>([])
-  const [components, setComponents] = useState<Component[]>([])
+  const armTab = useCallback((t: Tab, initialSearch: string) => {
+    setSearchSeeds(prev => ({ ...prev, [t]: initialSearch }))
+    setArmedTabs(prev => (prev.has(t) ? prev : new Set(prev).add(t)))
+    const { keys } = TAB_CONFIG[t]
+    if (keys.length) void ensureLoaded(keys)
+  }, [ensureLoaded])
 
-  // Sync local editable copies from context once loaded (or after context reload).
-  // Intentionally excludes ctx* from deps — we only want to reset on loading state change,
-  // not on every context reference update, to preserve in-progress optimistic edits.
+  // 重新載入（reload 清空快取後）→ 重新拉取目前已啟用分頁的關聯集合
   useEffect(() => {
-    if (!loading) {
-      setModules(ctxModules)
-      setMechs(ctxMechs)
-      setPilots(ctxPilots)
-      setWeapons(ctxWeapons)
-      setComponents(ctxComponents)
-    }
+    armedTabs.forEach(t => {
+      const { keys } = TAB_CONFIG[t]
+      if (keys.length) void ensureLoaded(keys)
+    })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading])
-
-  async function handleModuleSave(updated: Module) {
-    await updateModule(updated)
-    setModules((prev) => {
-      const exists = prev.some((m) => m.id === updated.id)
-      return exists ? prev.map((m) => (m.id === updated.id ? updated : m)) : [...prev, updated]
-    })
-  }
-
-  async function handleMechSave(updated: Mech) {
-    await updateMech(updated)
-    setMechs((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
-  }
-
-  async function handlePilotSave(updated: Pilot) {
-    await updatePilot(updated)
-    setPilots((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
-  }
-
-  async function handleWeaponSave(updated: Weapon) {
-    await updateWeapon(updated)
-    setWeapons((prev) => {
-      const exists = prev.some((w) => w.id === updated.id)
-      return exists ? prev.map((w) => (w.id === updated.id ? updated : w)) : [...prev, updated]
-    })
-  }
-
-  async function handleComponentSave(updated: Component) {
-    await updateComponent(updated)
-    setComponents((prev) => {
-      const exists = prev.some((c) => c.id === updated.id)
-      return exists ? prev.map((c) => (c.id === updated.id ? updated : c)) : [...prev, updated]
-    })
-  }
+  }, [reloadTick])
 
   async function handleGrayOpsSave(updated: GrayOpsRoster) {
     await updateGrayOpsRoster(updated)
@@ -115,21 +92,12 @@ export default function AdminPage() {
     )
   }
 
-  if (loading) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        <p className="text-text-dim">載入中...</p>
-      </div>
-    )
-  }
-
-  if (loadError) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        <p className="text-accent-red">載入失敗：{loadError}</p>
-      </div>
-    )
-  }
+  const cfg         = TAB_CONFIG[tab]
+  const isArmed     = armedTabs.has(tab)
+  const tabLoaded   = cfg.keys.every(k => loadedKeys.has(k))
+  const tabError    = cfg.keys.map(k => errorMap[k]).find(Boolean)?.message ?? null
+  const searchSeed  = searchSeeds[tab] ?? ''
+  const showContent = isArmed && (cfg.selfLoading || tabLoaded)
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
@@ -141,6 +109,15 @@ export default function AdminPage() {
         <p className="text-text-secondary mt-2 text-sm">
           維護模組數值、機甲模組綁定、機師基本資料、用戶權限。儲存後直接更新 Firestore，無需手動匯出。
         </p>
+        <div className="mt-4 flex items-start gap-2 text-xs bg-accent-cyan/5 border border-accent-cyan/20 rounded-lg px-3 py-2 text-text-secondary">
+          <span className="text-accent-cyan shrink-0">💡</span>
+          <span>
+            為降低資料庫查詢量，各分頁資料<span className="text-accent-cyan font-medium">不會自動載入</span>，且改為
+            <span className="text-accent-cyan font-medium">依條件分頁查詢</span>。
+            切換分頁後請<span className="text-accent-cyan font-medium">輸入名稱開頭搜尋</span>或選擇下拉條件，
+            再以「載入更多」翻頁。
+          </span>
+        </div>
       </div>
 
       {/* 版本管理入口 */}
@@ -172,61 +149,43 @@ export default function AdminPage() {
 
       {/* 分頁內容 */}
       <div className="bg-bg-card border border-border rounded-xl p-6">
-        {tab === 'modules' && (
-          <ModuleAdmin modules={modules} mechs={mechs} onModuleSave={handleModuleSave} />
+        {/* 載入閘門：尚未啟用 → 顯示提示與篩選 / 載入按鈕 */}
+        {!isArmed && (
+          <AdminLoadGate searchable={cfg.searchable} onLoad={(q) => armTab(tab, q)} />
         )}
-        {tab === 'mechs' && (
-          <MechAdmin mechs={mechs} modules={modules} onMechSave={handleMechSave} />
+
+        {/* 已啟用、關聯集合載入中（僅非 selfLoading 分頁）*/}
+        {isArmed && !cfg.selfLoading && !tabLoaded && !tabError && (
+          <p className="text-text-dim text-sm text-center py-10">載入中...</p>
         )}
-        {tab === 'pilots' && (
-          <PilotAdmin pilots={pilots} onPilotSave={handlePilotSave} />
+
+        {/* 已啟用、載入失敗 */}
+        {isArmed && tabError && (
+          <p className="text-accent-red text-sm text-center py-10">載入失敗：{tabError}</p>
         )}
-        {tab === 'weapons' && (
-          <WeaponAdmin weapons={weapons} pilots={pilots} onWeaponSave={handleWeaponSave} />
+
+        {/* 已啟用 → 顯示分頁內容 */}
+        {showContent && tab === 'modules' && (
+          <ModuleAdmin initialSearch={searchSeed} mechs={ctxMechs} />
         )}
-        {tab === 'components' && (
-          <ComponentAdmin components={components} onComponentSave={handleComponentSave} />
+        {showContent && tab === 'mechs' && (
+          <MechAdmin initialSearch={searchSeed} modules={ctxModules} />
         )}
-        {tab === 'backpacks' && <BackpackAdmin />}
-        {tab === 'users' && <UserAdmin currentUid={user.uid} />}
-        {tab === 'grayops' && (
+        {showContent && tab === 'pilots' && (
+          <PilotAdmin initialSearch={searchSeed} />
+        )}
+        {showContent && tab === 'weapons' && (
+          <WeaponAdmin initialSearch={searchSeed} pilots={ctxPilots} />
+        )}
+        {showContent && tab === 'components' && (
+          <ComponentAdmin initialSearch={searchSeed} />
+        )}
+        {showContent && tab === 'backpacks' && <BackpackAdmin initialSearch={searchSeed} />}
+        {showContent && tab === 'users' && <UserAdmin currentUid={user.uid} />}
+        {showContent && tab === 'grayops' && (
           <GrayOpsAdmin roster={ctxGrayOpsRoster} onSave={handleGrayOpsSave} />
         )}
       </div>
-
-      {/* 統計資訊 */}
-      {tab !== 'users' && tab !== 'backpacks' && (
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {(tab === 'components' ? [
-            { label: '元件總數',  value: components.length, color: 'text-accent-cyan' },
-            { label: '觸元件',    value: components.filter((c) => c.componentType === ComponentType.CONDITION).length, color: 'text-accent-purple' },
-            { label: '應元件',    value: components.filter((c) => c.componentType === ComponentType.FUNCTION).length, color: 'text-accent-cyan' },
-            { label: 'W型元件',   value: components.filter((c) => c.componentsWType === ComponentsWType.W).length, color: 'text-accent-orange' },
-          ] : tab === 'pilots' ? [
-            { label: '機師總數',  value: pilots.length, color: 'text-accent-cyan' },
-            { label: 'S 稀有度',  value: pilots.filter((p) => p.rarity === 'S').length, color: 'text-accent-orange' },
-            { label: 'A 稀有度',  value: pilots.filter((p) => p.rarity === 'A').length, color: 'text-accent-green' },
-            { label: 'EX 稀有度', value: pilots.filter((p) => p.rarity === 'EX').length, color: 'text-accent-purple' },
-          ] : tab === 'weapons' ? [
-            { label: '武器總數',  value: weapons.length, color: 'text-accent-cyan' },
-            { label: '專屬武器',  value: weapons.filter((w) => w.isExclusive).length, color: 'text-accent-purple' },
-            { label: 'SS 稀有度', value: weapons.filter((w) => w.rarity === 'SS').length, color: 'text-accent-orange' },
-            { label: '有技能',    value: weapons.filter((w) => (w.skills ?? []).length > 0).length, color: 'text-accent-green' },
-          ] : [
-            { label: '模組總數', value: modules.length, color: 'text-accent-cyan' },
-            { label: '已綁定',   value: modules.filter((m) => m.boundMechId).length, color: 'text-accent-orange' },
-            { label: '已填數值', value: modules.filter((m) => m.dmg > 0 || (m.crit_rate ?? 0) > 0 || m.critDmg > 0 || (m.acc_rate ?? 0) > 0 || (m.firepower_rate ?? 0) > 0 || (m.output_bonus ?? 0) > 0).length, color: 'text-accent-green' },
-            { label: '機甲總數', value: mechs.length, color: 'text-accent-purple' },
-          ]).map((stat) => (
-            <div key={stat.label} className="bg-bg-card border border-border rounded-lg p-3 text-center">
-              <div className={`text-2xl font-bold font-[Orbitron,sans-serif] ${stat.color}`}>
-                {stat.value}
-              </div>
-              <div className="text-xs text-text-dim mt-1">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }

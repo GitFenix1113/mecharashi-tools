@@ -251,13 +251,13 @@ function BackpackEditPanel({
 }
 
 // ─── 背包管理列表 ──────────────────────────────────────────────────────────────
-export default function BackpackAdmin() {
+export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [items, setItems]     = useState<Backpack[]>([])
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [cursor, setCursor]   = useState<string | null>(null)
-  const [search, setSearch]   = useState('')
-  const [activeSearch, setActiveSearch] = useState('')
+  const [search, setSearch]   = useState(initialSearch)
+  const [activeSearch, setActiveSearch] = useState(initialSearch)
   const [editing, setEditing] = useState<Backpack | null>(null)
 
   const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate } =
@@ -279,7 +279,7 @@ export default function BackpackAdmin() {
     }
   }
 
-  useEffect(() => { void loadPage('', null, false) }, [])
+  useEffect(() => { void loadPage(initialSearch, null, false) }, [])
 
   function handleSearch() {
     setActiveSearch(search)

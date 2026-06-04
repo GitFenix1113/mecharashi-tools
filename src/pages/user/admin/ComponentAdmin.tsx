@@ -1,14 +1,17 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import type { Component, ComponentBase, ConditionComponent, FunctionComponent } from '../../../types'
 import {
   ComponentType, ConditionType, EffectType, ModuleSubtype, ItemRarity, WeaponType, ComponentsWType,
 } from '../../../types/enums'
 import { assetUrl } from '../../../utils/assets'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
+import { getCollectionPage, updateComponent, docExists } from '../../../lib/firestoreApi'
 import {
   COMPONENT_TYPE_LABEL, CONDITION_TYPE_LABEL, EFFECT_TYPE_LABEL,
   MODULE_SUBTYPE_LABEL, COMPONENT_RARITY_CLASS,
 } from './constants'
+
+type ComponentFilters = { type: string; rarity: string; wType: string; subtype: number | 'all' }
 
 // ─── 預設值工廠 ────────────────────────────────────────────────────────────────
 function makeDefaultComponent(id: string): Component {
@@ -282,33 +285,44 @@ function ComponentEditPanel({
 }
 
 // ─── 元件管理列表 ──────────────────────────────────────────────────────────────
-export default function ComponentAdmin({
-  components,
-  onComponentSave,
-}: {
-  components: Component[]
-  onComponentSave: (updated: Component) => Promise<void>
-}) {
-  const [search, setSearch]             = useState('')
-  const [filterType, setFilterType]     = useState<'all' | string>('all')
-  const [filterRarity, setFilterRarity] = useState<'all' | string>('all')
-  const [filterWType, setFilterWType]   = useState<'all' | string>('all')
-  const [filterSubtype, setFilterSubtype] = useState<'all' | number>('all')
-  const [editing, setEditing]           = useState<Component | null>(null)
+export default function ComponentAdmin({ initialSearch = '' }: { initialSearch?: string }) {
+  const [editing, setEditing] = useState<Component | null>(null)
+
+  const {
+    items: filtered, loading, error, hasMore, search, setSearch,
+    filters, setFilter, submitSearch, loadMore, upsert,
+  } = useServerPaged<Component, ComponentFilters>({
+    fetchPage: (opts) => getCollectionPage<Component>('components', opts),
+    initialSearch,
+    initialFilters: { type: 'all', rarity: 'all', wType: 'all', subtype: 'all' },
+    toEquals: (f) => ({
+      ...(f.type !== 'all' ? { componentType: f.type } : {}),
+      ...(f.rarity !== 'all' ? { rarity: f.rarity } : {}),
+      ...(f.wType !== 'all' ? { componentsWType: f.wType } : {}),
+      ...(f.subtype !== 'all' ? { moduleSubtype: f.subtype } : {}),
+    }),
+    matchFilters: (c, f) =>
+      (f.type === 'all' || c.componentType === f.type) &&
+      (f.rarity === 'all' || c.rarity === f.rarity) &&
+      (f.wType === 'all' || c.componentsWType === f.wType) &&
+      (f.subtype === 'all' || c.moduleSubtype === f.subtype),
+  })
 
   const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate } =
-    useNewItemCreation(components, (c) => c.id, makeDefaultComponent)
+    useNewItemCreation(filtered, (c) => c.id, makeDefaultComponent)
 
-  const filtered = useMemo(() => {
-    return components.filter((c) => {
-      const matchSearch  = !search || c.name.includes(search) || c.id.includes(search)
-      const matchType    = filterType === 'all' || c.componentType === filterType
-      const matchRarity  = filterRarity === 'all' || c.rarity === filterRarity
-      const matchWType   = filterWType === 'all' || c.componentsWType === filterWType
-      const matchSubtype = filterSubtype === 'all' || c.moduleSubtype === filterSubtype
-      return matchSearch && matchType && matchRarity && matchWType && matchSubtype
-    })
-  }, [components, search, filterType, filterRarity, filterWType, filterSubtype])
+  async function confirmCreateChecked() {
+    const id = newId.trim()
+    if (id && await docExists('components', id)) { setNewIdError(`ID「${id}」已存在`); return }
+    const item = confirmCreate()
+    if (item) setEditing(item)
+  }
+
+  async function handleSave(updated: Component) {
+    await updateComponent(updated)
+    upsert(updated)
+    setEditing(null)
+  }
 
   const conditions = filtered.filter((c): c is ConditionComponent => c.componentType === ComponentType.CONDITION)
   const functions_ = filtered.filter((c): c is FunctionComponent  => c.componentType === ComponentType.FUNCTION)
@@ -321,25 +335,32 @@ export default function ComponentAdmin({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="搜尋名稱 / ID..."
+          onKeyDown={(e) => { if (e.key === 'Enter') submitSearch() }}
+          placeholder="搜尋名稱開頭（Enter 搜尋）..."
           className="flex-1 min-w-[180px] px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm focus:outline-none focus:border-accent-orange"
         />
-        <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
+        <button
+          onClick={submitSearch}
+          className="px-3 py-2 bg-bg-dark border border-border text-text-secondary text-sm rounded-lg hover:border-border-accent hover:text-text-primary transition-colors"
+        >
+          搜尋
+        </button>
+        <select value={filters.type} onChange={(e) => setFilter('type', e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部類型</option>
           {Object.values(ComponentType).map((v) => <option key={v} value={v}>{COMPONENT_TYPE_LABEL[v] ?? v}</option>)}
         </select>
-        <select value={filterRarity} onChange={(e) => setFilterRarity(e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
+        <select value={filters.rarity} onChange={(e) => setFilter('rarity', e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部稀有度</option>
           {Object.values(ItemRarity).map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
-        <select value={filterWType} onChange={(e) => setFilterWType(e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
+        <select value={filters.wType} onChange={(e) => setFilter('wType', e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部 W 類型</option>
           <option value={ComponentsWType.NORMAL}>Normal — 一般</option>
           <option value={ComponentsWType.W}>W — W型元件</option>
         </select>
         <select
-          value={filterSubtype === 'all' ? 'all' : String(filterSubtype)}
-          onChange={(e) => setFilterSubtype(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+          value={filters.subtype === 'all' ? 'all' : String(filters.subtype)}
+          onChange={(e) => setFilter('subtype', e.target.value === 'all' ? 'all' : Number(e.target.value))}
           className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm"
         >
           <option value="all">全部子類型</option>
@@ -352,9 +373,13 @@ export default function ComponentAdmin({
       {/* 計數 + 新增 */}
       <div className="flex items-center justify-between mb-3">
         <p className="text-text-dim text-xs">
-          共 {filtered.length} / {components.length} 個元件
-          <span className="ml-2 text-accent-purple">觸元件 {conditions.length}</span>
-          <span className="ml-2 text-accent-cyan">應元件 {functions_.length}</span>
+          {error ? <span className="text-accent-red">載入失敗：{error}</span>
+            : loading ? '載入中...'
+            : `顯示 ${filtered.length} 個元件${hasMore ? '（可載入更多）' : ''}`}
+          {!error && <>
+            <span className="ml-2 text-accent-purple">觸元件 {conditions.length}</span>
+            <span className="ml-2 text-accent-cyan">應元件 {functions_.length}</span>
+          </>}
         </p>
         <button
           onClick={openCreate}
@@ -371,10 +396,7 @@ export default function ComponentAdmin({
         placeholder="comp_"
         hint={<>輸入新元件 ID（格式如 <span className="text-accent-cyan">comp_12345</span>，儲存後不可更改）</>}
         onChangeId={(v) => { setNewId(v); setNewIdError('') }}
-        onConfirm={() => {
-          const item = confirmCreate()
-          if (item) setEditing(item)
-        }}
+        onConfirm={() => { void confirmCreateChecked() }}
         onCancel={cancelCreate}
       />
 
@@ -436,15 +458,17 @@ export default function ComponentAdmin({
             </div>
           )
         })}
-        {filtered.length === 0 && (
+        {filtered.length === 0 && !loading && (
           <p className="text-text-dim text-sm text-center py-8">找不到符合條件的元件</p>
         )}
       </div>
 
+      <LoadMoreButton hasMore={hasMore} loading={loading} onClick={loadMore} />
+
       {editing && (
         <ComponentEditPanel
           component={editing}
-          onSave={async (updated) => { await onComponentSave(updated); setEditing(null) }}
+          onSave={handleSave}
           onCancel={() => setEditing(null)}
         />
       )}

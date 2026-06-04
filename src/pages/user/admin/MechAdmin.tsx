@@ -1,37 +1,35 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { Mech, Module } from '../../../types'
-import { ModuleSlot } from '../../../types/enums'
-import { Field, AdminModal } from './shared'
+import { ModuleSlot, ArmorType } from '../../../types/enums'
+import { Field, AdminModal, useServerPaged, LoadMoreButton } from './shared'
+import { getCollectionPage, updateMech } from '../../../lib/firestoreApi'
+
+type MechFilters = { armorType: string }
 
 // ─── 機甲管理列表 ──────────────────────────────────────────────────────────────
 export default function MechAdmin({
-  mechs,
   modules,
-  onMechSave,
+  initialSearch = '',
 }: {
-  mechs: Mech[]
   modules: Module[]
-  onMechSave: (updated: Mech) => Promise<void>
+  initialSearch?: string
 }) {
-  const [search, setSearch]         = useState('')
-  const [filterType, setFilterType] = useState('all')
-  const [editing, setEditing]       = useState<Mech | null>(null)
+  const [editing, setEditing] = useState<Mech | null>(null)
 
-  const armorTypes = useMemo(
-    () => ['all', ...Array.from(new Set(mechs.map((m) => m.armorType)))],
-    [mechs]
-  )
-
-  const filtered = useMemo(() => {
-    return mechs.filter((m) => {
-      const matchSearch = !search || m.name.includes(search) || m.id.includes(search)
-      const matchType   = filterType === 'all' || m.armorType === filterType
-      return matchSearch && matchType
-    })
-  }, [mechs, search, filterType])
+  const {
+    items: filtered, loading, error, hasMore, search, setSearch,
+    filters, setFilter, submitSearch, loadMore, upsert,
+  } = useServerPaged<Mech, MechFilters>({
+    fetchPage: (opts) => getCollectionPage<Mech>('mechs', opts),
+    initialSearch,
+    initialFilters: { armorType: 'all' },
+    toEquals: (f) => ({ ...(f.armorType !== 'all' ? { armorType: f.armorType } : {}) }),
+    matchFilters: (m, f) => f.armorType === 'all' || m.armorType === f.armorType,
+  })
 
   async function handleSave(updated: Mech) {
-    await onMechSave(updated)
+    await updateMech(updated)
+    upsert(updated)
     setEditing(null)
   }
 
@@ -42,21 +40,31 @@ export default function MechAdmin({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="搜尋機甲名稱..."
+          onKeyDown={(e) => { if (e.key === 'Enter') submitSearch() }}
+          placeholder="搜尋機甲名稱開頭（Enter 搜尋）..."
           className="flex-1 min-w-[200px] px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm focus:outline-none focus:border-accent-orange"
         />
+        <button
+          onClick={submitSearch}
+          className="px-3 py-2 bg-bg-dark border border-border text-text-secondary text-sm rounded-lg hover:border-border-accent hover:text-text-primary transition-colors"
+        >
+          搜尋
+        </button>
         <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
+          value={filters.armorType}
+          onChange={(e) => setFilter('armorType', e.target.value)}
           className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm"
         >
-          {armorTypes.map((t) => (
-            <option key={t} value={t}>{t === 'all' ? '全部類型' : t}</option>
-          ))}
+          <option value="all">全部類型</option>
+          {Object.values(ArmorType).map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
       </div>
 
-      <p className="text-text-dim text-xs mb-3">共 {filtered.length} / {mechs.length} 台機甲</p>
+      <p className="text-text-dim text-xs mb-3">
+        {error ? <span className="text-accent-red">載入失敗：{error}</span>
+          : loading ? '載入中...'
+          : `顯示 ${filtered.length} 台機甲${hasMore ? '（可載入更多）' : ''}`}
+      </p>
 
       <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-1">
         {filtered.map((mech) => {
@@ -105,10 +113,12 @@ export default function MechAdmin({
             </div>
           )
         })}
-        {filtered.length === 0 && (
+        {filtered.length === 0 && !loading && (
           <p className="text-text-dim text-sm text-center py-8">找不到符合條件的機甲</p>
         )}
       </div>
+
+      <LoadMoreButton hasMore={hasMore} loading={loading} onClick={loadMore} />
 
       {editing && (
         <MechEditPanel

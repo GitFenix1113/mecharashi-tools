@@ -11,6 +11,8 @@ import {
   limit,
   startAfter,
   QueryConstraint,
+  type QueryDocumentSnapshot,
+  type DocumentData,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import type { Pilot, Mech, Module, Weapon, Backpack, Component, PilotResearch, GlobalResearch, GrayOpsRoster, GrayOpsMechEntry, GameBuff } from '../types'
@@ -27,6 +29,60 @@ async function fetchCollection<T>(collectionName: string, constraints: QueryCons
 async function fetchDocument<T>(collectionName: string, id: string): Promise<T | null> {
   const snap = await getDoc(doc(db, collectionName, id))
   return snap.exists() ? ({ ...snap.data(), id: snap.id } as T) : null
+}
+
+/** 後台某 ID 是否已存在（建立前防呆，避免分頁載入時 setDoc 覆蓋未載入的既有文件）。 */
+export const docExists = async (collectionName: string, id: string): Promise<boolean> => {
+  const snap = await getDoc(doc(db, collectionName, id))
+  return snap.exists()
+}
+
+// ── 後台分頁查詢（PLAN：降低查詢量）─────────────────────────────────────────────
+// 後台列表不再整包載入；改成依條件分頁查詢，只抓符合的文件。
+//  • 有 namePrefix → 以 name 開頭比對（orderBy name + 範圍查詢；單欄位索引，免複合索引）
+//  • 無 namePrefix → 以下拉條件做等值查詢（equality-only；免複合索引）
+//  • cursor 為前一頁最後一筆 snapshot，傳回給 startAfter 接續下一頁
+export type PageCursor = unknown
+export interface CollectionPage<T> {
+  items: T[]
+  hasMore: boolean
+  cursor: PageCursor
+}
+export interface PageQuery {
+  namePrefix?: string
+  equals?: Record<string, string | number | boolean | null>
+  cursor?: PageCursor
+  pageSize?: number
+}
+
+const PREFIX_END = ''
+
+export const getCollectionPage = async <T extends { id: string }>(
+  collectionName: string,
+  { namePrefix = '', equals = {}, cursor = null, pageSize = 30 }: PageQuery = {},
+): Promise<CollectionPage<T>> => {
+  const term = namePrefix.trim()
+  const constraints: QueryConstraint[] = []
+
+  if (term) {
+    constraints.push(orderBy('name'))
+    constraints.push(where('name', '>=', term))
+    constraints.push(where('name', '<', term + PREFIX_END))
+  } else {
+    for (const [field, value] of Object.entries(equals)) {
+      constraints.push(where(field, '==', value))
+    }
+  }
+  if (cursor) constraints.push(startAfter(cursor as QueryDocumentSnapshot<DocumentData>))
+  constraints.push(limit(pageSize))
+
+  const snap = await getDocs(query(collection(db, collectionName), ...constraints))
+  const items = snap.docs.map(d => ({ ...d.data(), id: d.id }) as T)
+  return {
+    items,
+    hasMore: snap.docs.length === pageSize,
+    cursor: snap.docs[snap.docs.length - 1] ?? null,
+  }
 }
 
 // ── 遊戲資料 API ──────────────────────────────────────────────────────────────

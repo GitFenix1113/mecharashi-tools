@@ -1,12 +1,15 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import type { Weapon, Pilot, WeaponSkill } from '../../../types'
 import {
   WeaponType, WeaponKind, WeaponRarity, MechRestriction, WeaponEquipSlot,
   RangeType, SkillType, SkillActivation,
 } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
+import { getCollectionPage, updateWeapon, docExists } from '../../../lib/firestoreApi'
 import { WEAPON_RARITY_CLASS, WEAPON_KIND_BY_TYPE, ALL_WEAPON_KINDS } from './constants'
 import { SkillEffectItem } from './PilotAdmin'
+
+type WeaponFilters = { rarity: string; type: string; exclusive: 'all' | 'yes' | 'no' }
 
 // ─── 預設值工廠 ────────────────────────────────────────────────────────────────
 function makeDefaultWeapon(id: string): Weapon {
@@ -569,38 +572,45 @@ function WeaponEditPanel({
 
 // ─── 武器管理列表 ──────────────────────────────────────────────────────────────
 export default function WeaponAdmin({
-  weapons,
   pilots,
-  onWeaponSave,
+  initialSearch = '',
 }: {
-  weapons: Weapon[]
   pilots: Pilot[]
-  onWeaponSave: (updated: Weapon) => Promise<void>
+  initialSearch?: string
 }) {
-  const [search, setSearch]                   = useState('')
-  const [filterRarity, setFilterRarity]       = useState<'all' | string>('all')
-  const [filterType, setFilterType]           = useState<'all' | string>('all')
-  const [filterExclusive, setFilterExclusive] = useState<'all' | 'yes' | 'no'>('all')
-  const [editing, setEditing]                 = useState<Weapon | null>(null)
+  const [editing, setEditing] = useState<Weapon | null>(null)
+
+  const {
+    items: filtered, loading, error, hasMore, search, setSearch,
+    filters, setFilter, submitSearch, loadMore, upsert,
+  } = useServerPaged<Weapon, WeaponFilters>({
+    fetchPage: (opts) => getCollectionPage<Weapon>('weapons', opts),
+    initialSearch,
+    initialFilters: { rarity: 'all', type: 'all', exclusive: 'all' },
+    toEquals: (f) => ({
+      ...(f.rarity !== 'all' ? { rarity: f.rarity } : {}),
+      ...(f.type !== 'all' ? { type: f.type } : {}),
+      ...(f.exclusive !== 'all' ? { isExclusive: f.exclusive === 'yes' } : {}),
+    }),
+    matchFilters: (w, f) =>
+      (f.rarity === 'all' || w.rarity === f.rarity) &&
+      (f.type === 'all' || w.type === f.type) &&
+      (f.exclusive === 'all' || (f.exclusive === 'yes' ? !!w.isExclusive : !w.isExclusive)),
+  })
 
   const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate } =
-    useNewItemCreation(weapons, (w) => w.id, makeDefaultWeapon)
+    useNewItemCreation(filtered, (w) => w.id, makeDefaultWeapon)
 
-  const filtered = useMemo(() => {
-    return weapons.filter((w) => {
-      const matchSearch    = !search || w.name.includes(search) || w.id.includes(search)
-      const matchRarity    = filterRarity === 'all' || w.rarity === filterRarity
-      const matchType      = filterType === 'all' || w.type === filterType
-      const matchExclusive =
-        filterExclusive === 'all' ||
-        (filterExclusive === 'yes' && w.isExclusive) ||
-        (filterExclusive === 'no' && !w.isExclusive)
-      return matchSearch && matchRarity && matchType && matchExclusive
-    })
-  }, [weapons, search, filterRarity, filterType, filterExclusive])
+  async function confirmCreateChecked() {
+    const id = newId.trim()
+    if (id && await docExists('weapons', id)) { setNewIdError(`ID「${id}」已存在`); return }
+    const item = confirmCreate()
+    if (item) setEditing(item)
+  }
 
   async function handleSave(updated: Weapon) {
-    await onWeaponSave(updated)
+    await updateWeapon(updated)
+    upsert(updated)
     setEditing(null)
   }
 
@@ -611,18 +621,25 @@ export default function WeaponAdmin({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="搜尋武器名稱 / ID..."
+          onKeyDown={(e) => { if (e.key === 'Enter') submitSearch() }}
+          placeholder="搜尋武器名稱開頭（Enter 搜尋）..."
           className="flex-1 min-w-[180px] px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm focus:outline-none focus:border-accent-orange"
         />
-        <select value={filterRarity} onChange={(e) => setFilterRarity(e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
+        <button
+          onClick={submitSearch}
+          className="px-3 py-2 bg-bg-dark border border-border text-text-secondary text-sm rounded-lg hover:border-border-accent hover:text-text-primary transition-colors"
+        >
+          搜尋
+        </button>
+        <select value={filters.rarity} onChange={(e) => setFilter('rarity', e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部稀有度</option>
           {Object.values(WeaponRarity).map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
-        <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
+        <select value={filters.type} onChange={(e) => setFilter('type', e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部類型</option>
           {Object.values(WeaponType).map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <select value={filterExclusive} onChange={(e) => setFilterExclusive(e.target.value as typeof filterExclusive)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
+        <select value={filters.exclusive} onChange={(e) => setFilter('exclusive', e.target.value as WeaponFilters['exclusive'])} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部武器</option>
           <option value="yes">專屬武器</option>
           <option value="no">通用武器</option>
@@ -630,7 +647,11 @@ export default function WeaponAdmin({
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <p className="text-text-dim text-xs">共 {filtered.length} / {weapons.length} 把武器</p>
+        <p className="text-text-dim text-xs">
+          {error ? <span className="text-accent-red">載入失敗：{error}</span>
+            : loading ? '載入中...'
+            : `顯示 ${filtered.length} 把武器${hasMore ? '（可載入更多）' : ''}`}
+        </p>
         <button
           onClick={openCreate}
           className="text-xs px-3 py-1.5 bg-accent-orange text-black font-bold rounded-lg hover:opacity-90 transition-opacity"
@@ -646,10 +667,7 @@ export default function WeaponAdmin({
         placeholder="weapon_"
         hint={<>輸入新武器 ID（格式如 <span className="text-accent-cyan">weapon_10001</span>，儲存後不可更改）</>}
         onChangeId={(v) => { setNewId(v); setNewIdError('') }}
-        onConfirm={() => {
-          const item = confirmCreate()
-          if (item) setEditing(item)
-        }}
+        onConfirm={() => { void confirmCreateChecked() }}
         onCancel={cancelCreate}
       />
 
@@ -686,10 +704,12 @@ export default function WeaponAdmin({
             </div>
           )
         })}
-        {filtered.length === 0 && (
+        {filtered.length === 0 && !loading && (
           <p className="text-text-dim text-sm text-center py-8">找不到符合條件的武器</p>
         )}
       </div>
+
+      <LoadMoreButton hasMore={hasMore} loading={loading} onClick={loadMore} />
 
       {editing && (
         <WeaponEditPanel weapon={editing} pilots={pilots} onSave={handleSave} onCancel={() => setEditing(null)} />

@@ -65,7 +65,10 @@ function FloatingCard({ rect, width, interactive, containerRef, children }: {
       className={`fixed z-[60] ${interactive ? '' : 'pointer-events-none'}`}
       style={{ left: pos.left, top: pos.top, width }}
     >
-      <div className="bg-bg-card border border-border-accent rounded-xl shadow-2xl max-h-[70vh] overflow-hidden">
+      <div
+        className="border border-border-accent rounded-xl shadow-2xl max-h-[70vh] overflow-hidden backdrop-blur-md"
+        style={{ backgroundColor: 'rgb(15 18 25 / 0.97)' }}
+      >
         {children}
       </div>
     </div>,

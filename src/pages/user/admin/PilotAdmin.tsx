@@ -1,9 +1,12 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import type { Pilot, PilotSkill, SkillEffect, SkillCondition } from '../../../types'
 import { formatWeaponReq } from '../../../types'
 import { ItemRarity, PilotClass, MechLicense, SkillType, WeaponType } from '../../../types/enums'
-import { Field, AdminModal } from './shared'
+import { Field, AdminModal, useServerPaged, LoadMoreButton } from './shared'
+import { getCollectionPage, updatePilot } from '../../../lib/firestoreApi'
 import { PILOT_RARITY_CLASS, TRIGGER_DISPLAY, STAT_OPTIONS } from './constants'
+
+type PilotFilters = { rarity: string; class: string }
 
 // ─── 技能條件編輯器 ────────────────────────────────────────────────────────────
 function SkillConditionEditor({
@@ -584,29 +587,28 @@ function PilotEditPanel({
 }
 
 // ─── 機師管理列表 ──────────────────────────────────────────────────────────────
-export default function PilotAdmin({
-  pilots,
-  onPilotSave,
-}: {
-  pilots: Pilot[]
-  onPilotSave: (updated: Pilot) => Promise<void>
-}) {
-  const [search, setSearch]             = useState('')
-  const [filterRarity, setFilterRarity] = useState('all')
-  const [filterClass, setFilterClass]   = useState('all')
-  const [editing, setEditing]           = useState<Pilot | null>(null)
+export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: string }) {
+  const [editing, setEditing] = useState<Pilot | null>(null)
 
-  const filtered = useMemo(() => {
-    return pilots.filter((p) => {
-      const matchSearch  = !search || p.name.includes(search) || p.id.includes(search) || (p.fullName ?? '').includes(search)
-      const matchRarity  = filterRarity === 'all' || p.rarity === filterRarity
-      const matchClass   = filterClass  === 'all' || p.class  === filterClass
-      return matchSearch && matchRarity && matchClass
-    })
-  }, [pilots, search, filterRarity, filterClass])
+  const {
+    items: filtered, loading, error, hasMore, search, setSearch,
+    filters, setFilter, submitSearch, loadMore, upsert,
+  } = useServerPaged<Pilot, PilotFilters>({
+    fetchPage: (opts) => getCollectionPage<Pilot>('pilots', opts),
+    initialSearch,
+    initialFilters: { rarity: 'all', class: 'all' },
+    toEquals: (f) => ({
+      ...(f.rarity !== 'all' ? { rarity: f.rarity } : {}),
+      ...(f.class !== 'all' ? { class: f.class } : {}),
+    }),
+    matchFilters: (p, f) =>
+      (f.rarity === 'all' || p.rarity === f.rarity) &&
+      (f.class === 'all' || p.class === f.class),
+  })
 
   async function handleSave(updated: Pilot) {
-    await onPilotSave(updated)
+    await updatePilot(updated)
+    upsert(updated)
     setEditing(null)
   }
 
@@ -617,20 +619,31 @@ export default function PilotAdmin({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="搜尋名稱 / ID..."
+          onKeyDown={(e) => { if (e.key === 'Enter') submitSearch() }}
+          placeholder="搜尋名稱開頭（Enter 搜尋）..."
           className="flex-1 min-w-[180px] px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm focus:outline-none focus:border-accent-orange"
         />
-        <select value={filterRarity} onChange={(e) => setFilterRarity(e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
+        <button
+          onClick={submitSearch}
+          className="px-3 py-2 bg-bg-dark border border-border text-text-secondary text-sm rounded-lg hover:border-border-accent hover:text-text-primary transition-colors"
+        >
+          搜尋
+        </button>
+        <select value={filters.rarity} onChange={(e) => setFilter('rarity', e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部稀有度</option>
           {Object.values(ItemRarity).map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
-        <select value={filterClass} onChange={(e) => setFilterClass(e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
+        <select value={filters.class} onChange={(e) => setFilter('class', e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部職業</option>
           {Object.values(PilotClass).map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
 
-      <p className="text-text-dim text-xs mb-3">共 {filtered.length} / {pilots.length} 位機師</p>
+      <p className="text-text-dim text-xs mb-3">
+        {error ? <span className="text-accent-red">載入失敗：{error}</span>
+          : loading ? '載入中...'
+          : `顯示 ${filtered.length} 位機師${hasMore ? '（可載入更多）' : ''}`}
+      </p>
 
       <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-1">
         {filtered.map((pilot) => (
@@ -665,10 +678,12 @@ export default function PilotAdmin({
             </div>
           </div>
         ))}
-        {filtered.length === 0 && (
+        {filtered.length === 0 && !loading && (
           <p className="text-text-dim text-sm text-center py-8">找不到符合條件的機師</p>
         )}
       </div>
+
+      <LoadMoreButton hasMore={hasMore} loading={loading} onClick={loadMore} />
 
       {editing && (
         <PilotEditPanel

@@ -1,10 +1,18 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import type { Module, Mech, ConditionalEffect, ModuleLevel } from '../../../types'
 import {
   ModuleRarity, ModuleSlot, ModuleSource, ModuleDataSource, ConditionalTrigger,
 } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
+import { getCollectionPage, updateModule, docExists } from '../../../lib/firestoreApi'
 import { SLOT_OPTIONS, SLOT_LABEL, PART_OPTIONS, TRIGGER_LABEL, STAT_OPTIONS } from './constants'
+
+type ModuleFilters = {
+  slot: string
+  bound: 'all' | 'bound' | 'unbound'
+  stats: 'all' | 'has' | 'none'
+  source: string
+}
 
 // ─── 預設值與輔助 ──────────────────────────────────────────────────────────────
 export function makeDefaultModule(id: string): Module {
@@ -598,49 +606,46 @@ function ModuleEditPanel({
 
 // ─── 模組管理列表 ──────────────────────────────────────────────────────────────
 export default function ModuleAdmin({
-  modules,
   mechs,
-  onModuleSave,
+  initialSearch = '',
 }: {
-  modules: Module[]
   mechs: Mech[]
-  onModuleSave: (updated: Module) => Promise<void>
+  initialSearch?: string
 }) {
-  const [search, setSearch]             = useState('')
-  const [filterBound, setFilterBound]   = useState<'all' | 'bound' | 'unbound'>('all')
-  const [filterSlot, setFilterSlot]     = useState<'all' | string>('all')
-  const [filterStats, setFilterStats]   = useState<'all' | 'has' | 'none'>('all')
-  const [filterSource, setFilterSource] = useState<'all' | string>('all')
-  const [editing, setEditing]           = useState<Module | null>(null)
+  const [editing, setEditing] = useState<Module | null>(null)
+
+  const {
+    items: filtered, loading, error, hasMore, search, setSearch,
+    filters, setFilter, submitSearch, loadMore, upsert,
+  } = useServerPaged<Module, ModuleFilters>({
+    fetchPage: (opts) => getCollectionPage<Module>('modules', opts),
+    initialSearch,
+    initialFilters: { slot: 'all', bound: 'all', stats: 'all', source: 'all' },
+    // 伺服器端只放可乾淨等值表達者：slot。
+    // 綁定狀態（boundMechId 可能為 null 或欄位不存在，== null 查不到後者）、
+    // 數值有無、來源（陣列）一律由 matchFilters 前端過濾，避免漏抓。
+    toEquals: (f) => ({ ...(f.slot !== 'all' ? { slot: f.slot } : {}) }),
+    matchFilters: (m, f) =>
+      (f.slot === 'all' || m.slot === f.slot) &&
+      (f.bound === 'all' || (f.bound === 'bound' ? !!m.boundMechId : !m.boundMechId)) &&
+      (f.stats === 'all' || (f.stats === 'has' ? moduleHasStats(m) : !moduleHasStats(m))) &&
+      (f.source === 'all' ||
+        (Array.isArray(m.source) ? m.source.includes(f.source) : m.source === f.source)),
+  })
 
   const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate } =
-    useNewItemCreation(modules, (m) => m.id, makeDefaultModule)
+    useNewItemCreation(filtered, (m) => m.id, makeDefaultModule)
 
-  const filtered = useMemo(() => {
-    return modules.filter((m) => {
-      const matchSearch =
-        !search ||
-        m.name.includes(search) ||
-        m.id.includes(search) ||
-        (m.description || '').includes(search)
-      const matchBound =
-        filterBound === 'all' ||
-        (filterBound === 'bound' && m.boundMechId) ||
-        (filterBound === 'unbound' && !m.boundMechId)
-      const matchSlot   = filterSlot === 'all' || m.slot === filterSlot
-      const matchStats  =
-        filterStats === 'all' ||
-        (filterStats === 'has' && moduleHasStats(m)) ||
-        (filterStats === 'none' && !moduleHasStats(m))
-      const matchSource =
-        filterSource === 'all' ||
-        (Array.isArray(m.source) ? m.source.includes(filterSource) : m.source === filterSource)
-      return matchSearch && matchBound && matchSlot && matchStats && matchSource
-    })
-  }, [modules, search, filterBound, filterSlot, filterStats, filterSource])
+  async function confirmCreateChecked() {
+    const id = newId.trim()
+    if (id && await docExists('modules', id)) { setNewIdError(`ID「${id}」已存在`); return }
+    const item = confirmCreate()
+    if (item) setEditing(item)
+  }
 
   async function handleSave(updated: Module) {
-    await onModuleSave(updated)
+    await updateModule(updated)
+    upsert(updated)
     setEditing(null)
   }
 
@@ -651,31 +656,42 @@ export default function ModuleAdmin({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="搜尋名稱 / ID / 描述..."
+          onKeyDown={(e) => { if (e.key === 'Enter') submitSearch() }}
+          placeholder="搜尋名稱開頭（Enter 搜尋）..."
           className="flex-1 min-w-[180px] px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm focus:outline-none focus:border-accent-orange"
         />
-        <select value={filterSlot} onChange={(e) => setFilterSlot(e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
+        <button
+          onClick={submitSearch}
+          className="px-3 py-2 bg-bg-dark border border-border text-text-secondary text-sm rounded-lg hover:border-border-accent hover:text-text-primary transition-colors"
+        >
+          搜尋
+        </button>
+        <select value={filters.slot} onChange={(e) => setFilter('slot', e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部槽位</option>
           {SLOT_OPTIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
         </select>
-        <select value={filterBound} onChange={(e) => setFilterBound(e.target.value as typeof filterBound)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
+        <select value={filters.bound} onChange={(e) => setFilter('bound', e.target.value as ModuleFilters['bound'])} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部綁定</option>
           <option value="bound">已綁定機甲</option>
           <option value="unbound">未綁定（通用）</option>
         </select>
-        <select value={filterStats} onChange={(e) => setFilterStats(e.target.value as typeof filterStats)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
+        <select value={filters.stats} onChange={(e) => setFilter('stats', e.target.value as ModuleFilters['stats'])} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部數值</option>
           <option value="has">已填數值</option>
           <option value="none">尚未填值</option>
         </select>
-        <select value={filterSource} onChange={(e) => setFilterSource(e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
+        <select value={filters.source} onChange={(e) => setFilter('source', e.target.value)} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部來源</option>
           {Object.values(ModuleSource).map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <p className="text-text-dim text-xs">共 {filtered.length} / {modules.length} 個模組</p>
+        <p className="text-text-dim text-xs">
+          {error ? <span className="text-accent-red">載入失敗：{error}</span>
+            : loading ? '載入中...'
+            : `顯示 ${filtered.length} 個模組${hasMore ? '（可載入更多）' : ''}`}
+        </p>
         <button
           onClick={openCreate}
           className="text-xs px-3 py-1.5 bg-accent-orange text-black font-bold rounded-lg hover:opacity-90 transition-opacity"
@@ -691,10 +707,7 @@ export default function ModuleAdmin({
         placeholder="mod_"
         hint={<>輸入新模組 ID（格式如 <span className="text-accent-cyan">mod_123</span>，儲存後不可更改）</>}
         onChangeId={(v) => { setNewId(v); setNewIdError('') }}
-        onConfirm={() => {
-          const item = confirmCreate()
-          if (item) setEditing(item)
-        }}
+        onConfirm={() => { void confirmCreateChecked() }}
         onCancel={cancelCreate}
       />
 
@@ -748,10 +761,12 @@ export default function ModuleAdmin({
             </div>
           </div>
         ))}
-        {filtered.length === 0 && (
+        {filtered.length === 0 && !loading && (
           <p className="text-text-dim text-sm text-center py-8">找不到符合條件的模組</p>
         )}
       </div>
+
+      <LoadMoreButton hasMore={hasMore} loading={loading} onClick={loadMore} />
 
       {editing && (
         <ModuleEditPanel
