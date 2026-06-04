@@ -15,7 +15,7 @@ import {
   type DocumentData,
 } from 'firebase/firestore'
 import { db } from './firebase'
-import type { Pilot, Mech, Module, Weapon, Backpack, Component, PilotResearch, GlobalResearch, GrayOpsRoster, GrayOpsMechEntry, GameBuff } from '../types'
+import type { Pilot, Mech, Module, Weapon, Backpack, Component, PilotResearch, GlobalResearch, GrayOpsRoster, GrayOpsMechEntry, GameBuff, PilotSkillDoc } from '../types'
 
 // ── 通用輔助 ──────────────────────────────────────────────────────────────────
 
@@ -130,6 +130,10 @@ export const getComponents = () =>
 /** buffs Collection（PLAN-019 Layer 2）：BUFF / 狀態 / 形態定義庫 */
 export const getBuffs = () =>
   fetchCollection<GameBuff>('buffs')
+
+/** pilotSkills Collection（PLAN-004 技能庫抽離）：可共用、可被引用的技能定義庫 */
+export const getPilotSkills = () =>
+  fetchCollection<PilotSkillDoc>('pilotSkills')
 
 export const getPilotResearch = (pilotId: string) =>
   fetchCollection<PilotResearch>('pilotResearch', [where('pilotId', '==', pilotId)])

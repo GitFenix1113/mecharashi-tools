@@ -4,7 +4,7 @@ import type { EntityRef, RefType, DescriptionRefs } from '../types'
 import { useGameData, type CollectionKey } from '../contexts/GameDataContext'
 import { useReference } from '../contexts/ReferenceContext'
 import { STAT_LABELS } from '../utils/moduleStats'
-import { assetUrl } from '../utils/assets'
+import { assetUrl, resolveIconSrc } from '../utils/assets'
 import { RefText } from './RefText'
 import { RefScopeContext } from './RefChip'
 
@@ -22,6 +22,7 @@ const REF_TYPE_LABEL: Record<RefType, string> = {
 const REF_TO_COLLECTION: Partial<Record<RefType, CollectionKey>> = {
   pilot: 'pilots', mech: 'mechs', weapon: 'weapons',
   module: 'modules', backpack: 'backpacks', component: 'components', buff: 'buffs',
+  skill: 'pilotSkills',
 }
 
 const REF_TO_ROUTE: Partial<Record<RefType, string>> = {
@@ -119,6 +120,18 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
         descriptionRefs: b.descriptionRefs,
       }
     }
+    case 'skill': {
+      const s = gd.pilotSkills.find(x => x.id === ref.refId)
+      if (!s) return null
+      return {
+        title: s.name,
+        subtitle: [s.type, s.ap ? `AP ${s.ap}` : '', s.cd ? `CD ${s.cd}` : '']
+          .filter(Boolean).join(' · '),
+        image: (s.iconLocal || s.icon) ? resolveIconSrc(s.iconLocal || s.icon) : undefined,
+        description: s.description,
+        descriptionRefs: s.descriptionRefs,
+      }
+    }
     case 'stat': {
       const s = STAT_LABELS.find(x => x.key === ref.refId)
       return {
@@ -127,7 +140,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
         description: s ? `對應屬性欄位：${s.key}` : undefined,
       }
     }
-    // skill / term：集合尚未建立（PLAN-004 / PLAN-019-C）
+    // term：集合尚未建立（PLAN-019-C）
     default:
       return { title: ref.label || ref.refId, pending: true }
   }
@@ -206,7 +219,7 @@ export function EntityRefView({ entityRef, interactive, showClose = false }: { e
             {resolved.pending && (
               <div className="rounded-lg bg-accent-purple/5 border border-accent-purple/25 px-3 py-2.5 text-[12px] text-text-secondary leading-relaxed">
                 此引用為「{REF_TYPE_LABEL[entityRef.refType]}」，詳情資料庫將由後續子計畫提供
-                （詞條 → PLAN-019-C、獨立技能 → PLAN-004）。目前先以名稱呈現。
+                （詞條庫 → PLAN-019-C）。目前先以名稱呈現。
               </div>
             )}
           </div>

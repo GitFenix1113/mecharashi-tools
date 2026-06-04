@@ -49,6 +49,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    // PLAN-004 技能庫抽離：可共用、可被引用的技能定義庫
+    match /pilotSkills/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
     match /buffs/{docId} {
       allow read: if true;
       allow write: if isAdmin();
