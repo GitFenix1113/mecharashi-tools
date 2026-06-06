@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-06-03
+## [Unreleased] - 2026-06-06
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,8 @@
 
 ### ✨ 新功能
 
+- PLAN-004 技能庫抽離 Phase 1+2 — pilotSkills 集合與技能引用解析 (`9a5d998`)
+- PLAN-019 引用層互動 + descriptionMax 吃引用 + PLAN-017 跨 session 版本快取 (`ff66ec8`)
 - 機師後台技能分頁支援手動新增技能 + 描述可編輯 (`c0abc7a`)
 - 版本時間線改為焦點輪播 + 詳情頁台陸版切換 + 甘特圖雙表格版面 (`143b296`)
 - PLAN-019 Layer 1-3 型別基礎建設（EntityRef / Boss / Stage）+ 修正圖示 URL 解析 (`196c8c5`)
@@ -97,6 +99,7 @@
 
 ### ♻️ 重構
 
+- 後台改為伺服器端分頁查詢與延遲載入閘門 (`351b9f4`)
 - 圖片上傳抽出共用模組 imageUpload + 版本前瞻圖改用 Cloudinary (`d41fe4e`)
 - AdminPage 拆分為子模組，修正活動日期計算與灰燼行動資料 (`806c09a`)
 - 重構頁面目錄結構並新增背包功能 (`e4845db`)
@@ -107,6 +110,7 @@
 
 ### 📚 文件
 
+- PLAN-014 版本甘特圖與後台管理 移至歷史記錄 (`4a54369`)
 - 將已完成的文件轉移目錄 (`7003c97`)
 - 新增武器圖片 (`fe33ab6`)
 - 更新README文件 (`805c834`)
@@ -128,6 +132,8 @@
 
 ### 🔧 維護
 
+- PLAN-004 技能庫抽離 Phase 3 — pilots 改引用 pilotSkills 單一資料源 (`d3be774`)
+- 版控開發者 skill 與 git hooks 防呆 (`ed5fa22`)
 - 觸發重新部署以套用 Cloudinary upload preset (`267911c`)
 - 觸發重新部署以修復頭像上傳問題 (`8b2a838`)
 - **layout**: 更新頁尾免責聲明文字 (`2a6abe7`)
