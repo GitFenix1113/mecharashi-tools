@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>引用標記（RefPicker）使用說明 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../_shared/style.css">
+<style>
+.container { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+
+/* 區塊 */
+.section { padding: 36px 0 8px; border-top: 1px solid var(--border); }
+.section:first-of-type { border-top: none; }
+.section-label {
+  font-size: 11px; font-family: 'Orbitron', sans-serif; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--accent-cyan); margin-bottom: 6px;
+}
+.section-title { font-size: 22px; font-weight: 900; margin-bottom: 14px; }
+.section-title .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 8px; margin-right: 10px;
+  background: rgba(6,182,212,0.15); color: var(--accent-cyan);
+  font-family: 'Orbitron', sans-serif; font-size: 15px;
+}
+p.lead { font-size: 15px; color: var(--text-secondary); line-height: 1.9; margin-bottom: 8px; }
+
+/* 警告 / 提示框 */
+.callout { border-radius: 12px; padding: 18px 22px; margin: 18px 0; font-size: 14.5px; line-height: 1.9; }
+.callout strong { font-weight: 700; }
+.callout.danger  { background: rgba(239,68,68,0.07);  border: 1px solid rgba(239,68,68,0.3);  border-left: 4px solid var(--accent-red); }
+.callout.danger strong { color: var(--accent-red); }
+.callout.info    { background: rgba(6,182,212,0.06);  border: 1px solid rgba(6,182,212,0.25); border-left: 4px solid var(--accent-cyan); }
+.callout.info strong { color: var(--accent-cyan); }
+.callout.good    { background: rgba(34,197,94,0.06);  border: 1px solid rgba(34,197,94,0.25); border-left: 4px solid var(--accent-green); }
+.callout.good strong { color: var(--accent-green); }
+.callout.warn    { background: rgba(234,179,8,0.06);  border: 1px solid rgba(234,179,8,0.25); border-left: 4px solid var(--accent-yellow); }
+.callout.warn strong { color: var(--accent-yellow); }
+
+/* token / chip 示意 */
+.tok { font-family: 'JetBrains Mono', monospace; background: rgba(168,85,247,0.12); color: var(--accent-purple); border: 1px solid rgba(168,85,247,0.3); border-radius: 5px; padding: 1px 6px; font-size: 0.92em; white-space: nowrap; }
+.chip { font-family: 'JetBrains Mono', monospace; background: rgba(6,182,212,0.12); color: var(--accent-cyan); border: 1px solid rgba(6,182,212,0.35); border-radius: 5px; padding: 1px 6px; font-size: 0.92em; white-space: nowrap; }
+code.kbd { font-family: 'JetBrains Mono', monospace; background: var(--bg-card); border: 1px solid var(--border-accent); border-radius: 5px; padding: 1px 7px; color: var(--text-primary); font-size: 0.9em; }
+
+/* 步驟卡 */
+.step { display: grid; grid-template-columns: 44px 1fr; gap: 16px; margin: 26px 0; }
+.step-no {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  color: #04121a; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 19px;
+  display: flex; align-items: center; justify-content: center;
+}
+.step-body h3 { font-size: 16px; margin-bottom: 6px; }
+.step-body p { font-size: 14px; color: var(--text-secondary); line-height: 1.85; margin-bottom: 6px; }
+
+/* 圖片 */
+figure { margin: 14px 0 4px; }
+figure img {
+  width: 100%; max-width: 760px; display: block;
+  border: 1px solid var(--border-accent); border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+figcaption { font-size: 12.5px; color: var(--text-dim); margin-top: 8px; line-height: 1.7; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+@media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+/* 表格 */
+.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 14px 0; }
+.tbl th { background: rgba(255,255,255,0.04); border: 1px solid var(--border); padding: 10px 13px; text-align: left; font-size: 12px; font-family: 'Orbitron', sans-serif; letter-spacing: 1px; color: var(--text-dim); }
+.tbl td { border: 1px solid var(--border); padding: 10px 13px; color: var(--text-secondary); vertical-align: top; }
+.tbl td:first-child { color: var(--text-primary); font-weight: 600; white-space: nowrap; }
+.tbl tr:hover td { background: rgba(255,255,255,0.02); }
+
+ul.tight { margin: 6px 0 6px 18px; line-height: 1.95; color: var(--text-secondary); font-size: 14px; }
+ul.tight li { margin-bottom: 4px; }
+.footer { text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 13px; border-top: 1px solid var(--border); margin-top: 40px; }
+.footer a { color: var(--accent-cyan); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="index.html">使用說明</a>
+    <span>›</span>
+    <span class="current">引用標記使用說明</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge" style="border-color:var(--accent-cyan);color:var(--accent-cyan);">◆ 後台維護指南</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:34px;">
+    描述引用標記 使用說明
+  </h1>
+  <p class="hero-sub" style="max-width:680px;">在後台編輯描述時，把 <span class="tok">[關鍵詞]</span> 標成可點擊的引用。本指南說明方括號的作用、引用挑選器（RefPicker）的操作，以及實際呈現效果。</p>
+</header>
+
+<main class="container">
+
+<!-- 0. 最重要 -->
+<section class="section">
+  <div class="section-label">Read First</div>
+  <div class="section-title"><span class="num">!</span>最重要的一件事</div>
+  <div class="callout danger">
+    <strong>描述裡的方括號 [ ] 請勿手動刪除。</strong><br>
+    它<u>不是</u>多餘符號、也<u>不是</u>顯示錯誤——它是「引用標記」。系統靠這對方括號辨識「這個詞要做成可點擊的引用」。
+    一旦把 <span class="tok">[激發能]</span> 的方括號刪成「激發能」，這個詞就會<strong>失去可點連結</strong>，前台不再能懸停預覽或點擊查看詳情。
+  </div>
+  <p class="lead">
+    如果你在前台看到帶著方括號的純文字（例如 <span class="tok">[固定傷害]</span>），那代表「這個詞還沒被指派引用」的正常狀態，<strong>不是錯字</strong>。
+    正確的處理方式是到後台用引用挑選器把它指派掉，<strong>而不是把方括號刪掉</strong>。
+  </p>
+</section>
+
+<!-- 1. 觀念 -->
+<section class="section">
+  <div class="section-label">Concept</div>
+  <div class="section-title"><span class="num">1</span>引用標記是什麼</div>
+  <p class="lead">系統把一段描述拆成兩部分保存：</p>
+  <ul class="tight">
+    <li><strong>描述原文</strong>：保留遊戲原文，<span class="tok">[xxx]</span> 方括號原樣保留。</li>
+    <li><strong>引用側錄（descriptionRefs）</strong>：一張對照表，把每個 <span class="tok">[xxx]</span> 指向某個實體（詞條、BUFF、技能、機師、武器…）。這張表由你在後台用引用挑選器填寫。</li>
+  </ul>
+  <div class="callout info">
+    <strong>顯示規則：</strong>前台顯示時會掃描描述裡的每個 <span class="tok">[xxx]</span>——
+    <strong>有指派</strong>的渲染成可點擊的彩色引用 <span class="chip">[激發能]</span>；
+    <strong>沒指派</strong>的就原樣顯示 <span class="tok">[激發能]</span>，不會報錯（優雅降級）。
+  </div>
+  <div class="callout warn">
+    <strong>辨識條件只有方括號。</strong>想讓哪個詞變成可引用，就用 <code class="kbd">[ ]</code> 把它框起來；不想要引用就不要框。沒有其他符號（不是大括號、不是 @），就是方括號。
+  </div>
+</section>
+
+<!-- 2. 哪裡可標 -->
+<section class="section">
+  <div class="section-label">Where</div>
+  <div class="section-title"><span class="num">2</span>哪些地方可以標引用</div>
+  <p class="lead">後台所有「描述欄位」的下方都掛了引用挑選器，做法完全一致：</p>
+  <table class="tbl">
+    <tr><th>後台分頁</th><th>可標引用的描述欄位</th></tr>
+    <tr><td>模組管理</td><td>編輯模組 → 基本資訊 → <strong>效果描述</strong></td></tr>
+    <tr><td>武器管理</td><td>編輯武器 → 技能編輯器 → 每一筆技能的 <strong>技能描述</strong></td></tr>
+    <tr><td>元件管理</td><td>編輯元件 → <strong>完整效果描述</strong></td></tr>
+    <tr><td>背包管理</td><td>編輯背包 → 勾「有主技能」→ <strong>技能描述</strong></td></tr>
+    <tr><td>詞條管理</td><td>編輯詞條 → <strong>詞條解釋</strong>（詞條本身的說明裡也可再引用其他詞）</td></tr>
+    <tr><td>機師管理</td><td>技能分頁 → 每一筆技能的 <strong>效果說明</strong></td></tr>
+  </table>
+</section>
+
+<!-- 3. 操作步驟 -->
+<section class="section">
+  <div class="section-label">How to</div>
+  <div class="section-title"><span class="num">3</span>操作步驟（以模組管理為例）</div>
+
+  <div class="step">
+    <div class="step-no">1</div>
+    <div class="step-body">
+      <h3>進入後台、開啟要編輯的項目</h3>
+      <p>登入管理者帳號後進入「管理後台」，切到對應分頁（此處示範「模組管理」），用名稱搜尋或「瀏覽全部」找到項目並點開編輯。</p>
+      <figure>
+        <img src="images/01-後台總覽.png" alt="管理後台分頁總覽">
+        <figcaption>管理後台首頁。為降低資料庫查詢量，各分頁不會自動載入，需先搜尋或按「瀏覽全部」。</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-no">2</div>
+    <div class="step-body">
+      <h3>在描述裡用方括號框住要引用的詞</h3>
+      <p>在描述欄位把關鍵詞用 <code class="kbd">[ ]</code> 框起來（例如 <span class="tok">[固定傷害]</span>、<span class="tok">[暈眩]</span>）。描述欄下方的「引用標記」區會<strong>即時列出</strong>所有方括號詞，並顯示「已指派 0 / 2」。下方還有「前台預覽」即時呈現實際效果。</p>
+      <figure>
+        <img src="images/02-模組-token辨識.png" alt="RefPicker 自動辨識方括號詞">
+        <figcaption>剛框起來、還沒指派時，每個詞標示「未指派（前台原樣顯示）」；前台預覽中 <span class="tok">[固定傷害]</span>、<span class="tok">[暈眩]</span> 維持方括號原樣。</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-no">3</div>
+    <div class="step-body">
+      <h3>點「指派引用」，選類型並挑選目標</h3>
+      <p>點某個詞右側的「指派引用」，會展開挑選介面：先選<strong>引用類型</strong>（詞條 / BUFF / 技能 / 屬性 / 機師 / 機甲 / 武器 / 模組 / 背包 / 元件），再用搜尋框找到目標，點清單裡的候選即完成指派。</p>
+      <figure>
+        <img src="images/03-指派介面.png" alt="選擇引用類型與候選清單">
+        <figcaption>挑選介面：上方下拉選引用類型，輸入關鍵字過濾，下方列出候選（圖中以「屬性」為例搜尋「暴」）。</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-no">4</div>
+    <div class="step-body">
+      <h3>確認指派結果與前台預覽</h3>
+      <p>指派完成後，該詞會顯示一枚藍色 chip（<span class="chip">類型 · 目標名稱</span>），計數變成「已指派 1 / 2」，「前台預覽」裡這個詞也立刻變成<strong>可點擊的彩色樣式</strong>。仍未指派的詞（如 <span class="tok">[暈眩]</span>）維持原樣。需要時可按「清除」或「變更」。</p>
+      <figure>
+        <img src="images/04-已指派.png" alt="指派完成後的 chip 與前台預覽">
+        <figcaption>已指派的 <span class="chip">[固定傷害]</span> 在預覽中變色；未指派的 <span class="tok">[暈眩]</span> 仍是原樣方括號。（此處為操作示範；實務上機制詞建議指向「詞條 term」，見下方注意事項。）</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-no">5</div>
+    <div class="step-body">
+      <h3>儲存變更</h3>
+      <p>按下「儲存變更」即寫入資料庫並更新全站快取。前台對應頁面隨即生效——無須任何額外匯出或工程介入。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4. 前台效果 -->
+<section class="section">
+  <div class="section-label">Result</div>
+  <div class="section-title"><span class="num">4</span>指派後，前台長這樣</div>
+  <p class="lead">以機師海莉絲的天賦「悖想先驅」為例，描述裡已指派的詞全部成為綠色可點引用：</p>
+  <div class="two-col">
+    <figure>
+      <img src="images/05-前台-引用可點.png" alt="前台天賦描述中的可點引用">
+      <figcaption><span class="chip">[啟動]</span>、<span class="chip">[激發能]</span>、<span class="chip">[粒子爆發]</span>、<span class="chip">[虛粒子形態]</span>、<span class="chip">[形態增益]</span> 都成為綠色可點引用（連「最大強化」區也是）。</figcaption>
+    </figure>
+    <figure>
+      <img src="images/06-前台-引用詳情.png" alt="點擊引用後的詳情浮卡">
+      <figcaption>點擊 <span class="chip">[虛粒子形態]</span> 浮出詳情卡；卡片內的 <span class="chip">[激發能]</span>、<span class="chip">[粒子爆發]</span> 還能繼續往下點（巢狀引用）。</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 5. 注意事項 -->
+<section class="section">
+  <div class="section-label">Notes</div>
+  <div class="section-title"><span class="num">5</span>注意事項與常見問題</div>
+
+  <div class="callout danger">
+    <strong>Q：前台看到帶方括號的字，是不是錯字？能不能把括號刪掉？</strong><br>
+    不是錯字，<strong>請勿刪括號</strong>。那只是「該詞尚未指派引用」的正常顯示。正解是到後台把它指派掉；刪掉方括號會讓它永遠無法成為引用，且原本已建好的引用也會失效。
+  </div>
+
+  <ul class="tight">
+    <li><strong>方括號內文字要完全一致</strong>：含空白與大小寫。<span class="tok">[ 固定傷害 ]</span> 和 <span class="tok">[固定傷害]</span> 會被視為兩個不同的詞。</li>
+    <li><strong>同名的詞共用一次指派</strong>：描述裡出現多次 <span class="tok">[固定傷害]</span>，只要指派一次，全部位置都會生效。</li>
+    <li><strong>空括號不算</strong>：<code class="kbd">[]</code> 中間至少要有一個字才會被辨識。</li>
+    <li><strong>不支援巢狀</strong>：不要寫 <span class="tok">[外層[內層]]</span>，會被截斷成非預期結果。</li>
+    <li><strong>機制詞（如固定傷害、啟動）建議指向「詞條 term」</strong>：但詞條要能被指派，必須先到「詞條管理」分頁建立該詞條；若詞條庫尚未建立，挑選清單會顯示「查無候選」，此時先去新增詞條即可。</li>
+    <li><strong>不指派也沒關係</strong>：沒指派的詞前台原樣顯示、不會報錯。引用是「加分」，不是「必填」。</li>
+  </ul>
+</section>
+
+<!-- 6. 類型對照 -->
+<section class="section">
+  <div class="section-label">Reference</div>
+  <div class="section-title"><span class="num">6</span>引用類型對照</div>
+  <table class="tbl">
+    <tr><th>類型</th><th>指向</th><th>候選來源</th></tr>
+    <tr><td>詞條 term</td><td>機制關鍵詞的解釋（固定傷害、啟動…）</td><td>詞條管理（需先建立）</td></tr>
+    <tr><td>BUFF / 狀態 buff</td><td>增益／減益／形態狀態</td><td>BUFF 資料</td></tr>
+    <tr><td>技能 skill</td><td>機師技能</td><td>機師技能庫</td></tr>
+    <tr><td>屬性 stat</td><td>數值屬性（暴擊、命中…）</td><td>內建屬性表（一律可用）</td></tr>
+    <tr><td>機師 / 機甲 / 武器 / 模組 / 背包 / 元件</td><td>對應的實體頁</td><td>各自的資料集合</td></tr>
+  </table>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 後台維護指南 — <a href="index.html">← 使用說明</a>
+</footer>
+
+</body>
+</html>
