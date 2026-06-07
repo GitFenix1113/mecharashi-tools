@@ -140,6 +140,7 @@
 
 ### 🔧 維護
 
+- 移除圖檔 manifest 未使用的 generatedAt 欄位 (`6628e4e`)
 - PLAN-004 技能庫抽離 Phase 3 — pilots 改引用 pilotSkills 單一資料源 (`d3be774`)
 - 版控開發者 skill 與 git hooks 防呆 (`ed5fa22`)
 - 觸發重新部署以套用 Cloudinary upload preset (`267911c`)
