@@ -4,6 +4,8 @@ import { BuffType } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updateBuff, docExists } from '../../../lib/firestoreApi'
 import { RefPicker } from '../../../components/admin/RefPicker'
+import { IconField } from '../../../components/admin/IconPicker'
+import { resolveIconSrc } from '../../../utils/assets'
 import { SkillEffectItem } from './PilotAdmin'
 
 // ─── BuffType 顯示對照 ──────────────────────────────────────────────────────────
@@ -87,7 +89,7 @@ function BuffEditPanel({
           onChange={(refs) => update('descriptionRefs', refs)}
         />
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Field label="最大疊加 maxStack（選填）">
             <input
               type="number"
@@ -104,10 +106,14 @@ function BuffEditPanel({
               className="input-field"
             />
           </Field>
-          <Field label="圖示 icon（選填）">
-            <input value={form.icon ?? ''} onChange={(e) => update('icon', e.target.value || undefined)} className="input-field" placeholder="Icon_buff_..." />
-          </Field>
         </div>
+
+        <IconField
+          label="圖示 icon（選填）"
+          value={form.icon}
+          onChange={(v) => update('icon', v || undefined)}
+          defaultFolder="skills"
+        />
 
         <Field label="互斥群組 mutexGroup（選填；同群形態一次只能存在一個）">
           <input
@@ -235,6 +241,9 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
             className="bg-bg-dark border border-accent-orange/20 rounded-lg px-3 py-2.5 flex items-center gap-3 hover:border-border-accent transition-colors cursor-pointer"
             onClick={() => setEditing(buff)}
           >
+            {buff.icon && (
+              <img src={resolveIconSrc(buff.icon)} alt="" className="w-8 h-8 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
+            )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-sm text-text-primary truncate">

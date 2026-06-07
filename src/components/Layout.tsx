@@ -2,21 +2,35 @@ import { Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-do
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import AvatarDisplay from './profile/AvatarDisplay'
+import ContentNavDropdown, { type ContentNavItem } from './ContentNavDropdown'
 
 type FontSize = 'sm' | 'md' | 'lg'
 const FONT_SIZE_MAP: Record<FontSize, string> = { sm: '17px', md: '19px', lg: '21px' }
 const FONT_SIZE_LABELS: Record<FontSize, string> = { sm: '小', md: '中', lg: '大' }
 
+// 桌面版直接平鋪的頂層項目（首頁）
 const navItems = [
   { to: '/', label: '首頁', icon: '🏠' },
-  { to: '/pilots', label: '機師圖鑑', icon: '👤' },
-  { to: '/mechs', label: '機甲圖鑑', icon: '🤖' },
-  { to: '/weapons', label: '武器圖鑑', icon: '🔫' },
-  { to: '/backpacks', label: '背包圖鑑', icon: '🎒' },
-  { to: '/modules', label: '模組圖鑑', icon: '🧩' },
-  { to: '/components', label: '元件圖鑑', icon: '⚙️' },
-  { to: '/simulator', label: '配裝模擬器', icon: '⚔️' },
-  { to: '/guides', label: '攻略專區', icon: '📚' },
+]
+
+// 「資料圖鑑」下拉的子項：桌面版以 ContentNavDropdown 懸停展開，行動版攤平進 More 面板
+const catalogNavItems: ContentNavItem[] = [
+  { to: '/pilots', label: '機師', icon: '👤' },
+  { to: '/mechs', label: '機甲', icon: '🤖' },
+  { to: '/weapons', label: '武器', icon: '🔫' },
+  { to: '/backpacks', label: '背包', icon: '🎒' },
+  { to: '/modules', label: '模組', icon: '🧩' },
+  { to: '/components', label: '元件', icon: '⚙️' },
+]
+
+// 配裝模擬器：頂層平鋪項，僅管理員可見
+const simulatorItem = { to: '/simulator', label: '配裝模擬器', icon: '⚔️' }
+
+// 「攻略專區」下拉的子項
+const contentNavItems: ContentNavItem[] = [
+  { to: '/guides', label: '攻略', icon: '📚' },
+  { to: '/tools', label: '工具', icon: '🛠️' },
+  { to: '/documents', label: '文件', icon: '📄' },
 ]
 
 const tabBarItems = [
@@ -28,7 +42,12 @@ const tabBarItems = [
 ]
 
 const tabBarPaths = new Set(tabBarItems.map((i) => i.to))
-const moreNavItems = navItems.filter((item) => !tabBarPaths.has(item.to))
+// 行動版 More 面板：所有不在底部 Tab Bar 的項目（圖鑑剩餘 + 模擬器 + 攻略專區）
+const moreNavItems = [
+  ...catalogNavItems.filter((item) => !tabBarPaths.has(item.to)),
+  simulatorItem,
+  ...contentNavItems,
+]
 
 export default function Layout() {
   const [moreOpen, setMoreOpen] = useState(false)
@@ -41,7 +60,6 @@ export default function Layout() {
 
   const isHome = location.pathname === '/'
   const isAdmin = userProfile?.role === 'ADMIN' || userProfile?.role === 'OWNER'
-  const visibleNavItems = navItems.filter((item) => item.to !== '/simulator' || isAdmin)
   const visibleMoreNavItems = moreNavItems.filter((item) => item.to !== '/simulator' || isAdmin)
   const isMoreActive = visibleMoreNavItems.some((item) =>
     item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
@@ -76,7 +94,7 @@ export default function Layout() {
 
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-1 overflow-x-auto">
-            {visibleNavItems.map((item) => (
+            {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -92,6 +110,22 @@ export default function Layout() {
                 {item.label}
               </NavLink>
             ))}
+            <ContentNavDropdown label="資料圖鑑" items={catalogNavItems} />
+            {isAdmin && (
+              <NavLink
+                to={simulatorItem.to}
+                className={({ isActive }) =>
+                  `px-3 py-2 rounded-lg text-sm no-underline transition-colors whitespace-nowrap ${
+                    isActive
+                      ? 'bg-accent-orange/10 text-accent-orange'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-bg-card'
+                  }`
+                }
+              >
+                {simulatorItem.label}
+              </NavLink>
+            )}
+            <ContentNavDropdown label="攻略/工具/文件" items={contentNavItems} />
             {(userProfile?.role === 'ADMIN' || userProfile?.role === 'OWNER') && (
               <NavLink
                 to="/admin"

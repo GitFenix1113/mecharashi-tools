@@ -15,8 +15,9 @@ import GrayOpsAdmin from './admin/GrayOpsAdmin'
 import BackpackAdmin from './admin/BackpackAdmin'
 import GlossaryAdmin from './admin/GlossaryAdmin'
 import BuffAdmin from './admin/BuffAdmin'
+import SkillAdmin from './admin/SkillAdmin'
 
-type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpacks' | 'glossary' | 'buffs' | 'users' | 'grayops'
+type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpacks' | 'glossary' | 'skills' | 'buffs' | 'users' | 'grayops'
 
 // 各分頁的延遲載入設定：
 //   keys       — 需透過 GameDataContext 整包載入的「關聯集合」（供編輯面板下拉用）
@@ -33,6 +34,7 @@ const TAB_CONFIG: Record<Tab, { keys: CollectionKey[]; searchable: boolean; self
   grayops:    { keys: ['grayOpsRoster'],  searchable: false, selfLoading: false },
   backpacks:  { keys: [],                 searchable: true,  selfLoading: true  },
   glossary:   { keys: [],                 searchable: true,  selfLoading: true  },
+  skills:     { keys: [],                 searchable: true,  selfLoading: true  },
   buffs:      { keys: [],                 searchable: true,  selfLoading: true  },
   users:      { keys: [],                 searchable: false, selfLoading: true  },
 }
@@ -148,6 +150,7 @@ export default function AdminPage() {
         <TabButton active={tab === 'components'} onClick={() => setTab('components')}>元件管理</TabButton>
         <TabButton active={tab === 'backpacks'}  onClick={() => setTab('backpacks')}>背包管理</TabButton>
         <TabButton active={tab === 'glossary'}   onClick={() => setTab('glossary')}>詞條管理</TabButton>
+        <TabButton active={tab === 'skills'}      onClick={() => setTab('skills')}>技能管理</TabButton>
         <TabButton active={tab === 'buffs'}      onClick={() => setTab('buffs')}>BUFF 管理</TabButton>
         <TabButton active={tab === 'users'}      onClick={() => setTab('users')}>用戶管理</TabButton>
         <TabButton active={tab === 'grayops'}    onClick={() => setTab('grayops')}>灰燼行動</TabButton>
@@ -188,6 +191,7 @@ export default function AdminPage() {
         )}
         {showContent && tab === 'backpacks' && <BackpackAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'glossary' && <GlossaryAdmin initialSearch={searchSeed} />}
+        {showContent && tab === 'skills' && <SkillAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'buffs' && <BuffAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'users' && <UserAdmin currentUid={user.uid} />}
         {showContent && tab === 'grayops' && (

@@ -6,6 +6,7 @@ import {
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updateModule, docExists } from '../../../lib/firestoreApi'
 import { RefPicker } from '../../../components/admin/RefPicker'
+import { IconField } from '../../../components/admin/IconPicker'
 import { SLOT_OPTIONS, SLOT_LABEL, PART_OPTIONS, TRIGGER_LABEL, STAT_OPTIONS } from './constants'
 
 type ModuleFilters = {
@@ -332,6 +333,7 @@ function ModuleEditPanel({
             <Field label="名稱">
               <input value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" />
             </Field>
+            <IconField label="圖示 icon" value={form.icon} onChange={(v) => update('icon', v || undefined)} defaultFolder="modules" />
             <Field label="效果描述">
               <textarea value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field min-h-[80px] resize-y" />
             </Field>

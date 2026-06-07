@@ -52,5 +52,8 @@ yarn-error.log*
 # Debug artifacts
 public/debug/
 
+# 文件頁靜態文件（由 scripts/copy-docs.mjs 從 docs/ 複製產生）
+public/docs/
+
 # Temp scripts
 scripts/temp_scripts/

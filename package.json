@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "predev": "node scripts/generate-image-manifest.mjs && node scripts/copy-docs.mjs",
+    "build": "node scripts/generate-image-manifest.mjs && node scripts/copy-docs.mjs && tsc -b && vite build",
+    "manifest:images": "node scripts/generate-image-manifest.mjs",
+    "docs:copy": "node scripts/copy-docs.mjs",
+    "docs:stamp": "node scripts/stamp-docs.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "prepare": "git config commit.template .gitmessage && git config core.hooksPath .githooks",

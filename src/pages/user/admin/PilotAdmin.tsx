@@ -1,12 +1,13 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
-import type { Pilot, PilotSkillDoc, SkillEffect, SkillCondition } from '../../../types'
+import { useState, useEffect, useMemo } from 'react'
+import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, SkillEffect, SkillCondition } from '../../../types'
 import { formatWeaponReq } from '../../../types'
-import { ItemRarity, PilotClass, MechLicense, SkillType, WeaponType } from '../../../types/enums'
+import { ItemRarity, PilotClass, MechLicense, WeaponType } from '../../../types/enums'
 import { Field, AdminModal, useServerPaged, LoadMoreButton } from './shared'
-import { getCollectionPage, updatePilot, updatePilotSkill } from '../../../lib/firestoreApi'
+import { getCollectionPage, updatePilot } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
-import { resolvePilotSkills, buildSkillMap, docToEmbedded } from '../../../utils/pilotSkills'
+import { buildSkillMap } from '../../../utils/pilotSkills'
 import { RefPicker } from '../../../components/admin/RefPicker'
+import { IconField } from '../../../components/admin/IconPicker'
 import { PILOT_RARITY_CLASS, TRIGGER_DISPLAY, STAT_OPTIONS } from './constants'
 
 type PilotFilters = { rarity: string; class: string }
@@ -175,218 +176,374 @@ export function SkillEffectItem({
   )
 }
 
-// ─── 機師技能項目 ──────────────────────────────────────────────────────────────
-function PilotSkillItem({
-  skill,
-  expanded,
-  onToggle,
+// ─── 可計算效果清單編輯器（天賦 effects / enhancedEffects 共用）────────────────
+function EffectListEditor({
+  label,
+  effects,
   onChange,
-  onRemove,
 }: {
-  skill: PilotSkillDoc
-  expanded: boolean
-  onToggle: () => void
-  onChange: (updated: PilotSkillDoc) => void
-  onRemove?: () => void
+  label: string
+  effects: SkillEffect[]
+  onChange: (next: SkillEffect[]) => void
 }) {
-  const effects = skill.effects ?? []
-  const buffIds = skill.buffIds ?? []
-  const isManual = skill.manual === true
-
-  function updateEffects(next: SkillEffect[]) { onChange({ ...skill, effects: next }) }
-  function updateBuffIds(val: string) {
-    const ids = val.split(/[,\n]/).map((s) => s.trim()).filter(Boolean)
-    onChange({ ...skill, buffIds: ids })
-  }
-
-  const typeColor =
-    skill.type === SkillType.PASSIVE ? 'text-text-dim border-border bg-bg-card' :
-    skill.type === SkillType.ACTIVE  ? 'text-accent-cyan border-accent-cyan/30 bg-accent-cyan/10' :
-                                       'text-accent-orange border-accent-orange/30 bg-accent-orange/10'
-
   return (
-    <div className={`border rounded-lg bg-bg-dark/50 ${isManual ? 'border-accent-orange/40' : 'border-border/60'}`}>
-      <div className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none" onClick={onToggle}>
-        {skill.iconLocal && (
-          <img
-            src={skill.iconLocal}
-            alt=""
-            className="w-6 h-6 rounded shrink-0"
-            onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-          />
-        )}
-        <span className="text-[13px] text-text-dim w-3 shrink-0">{expanded ? '▼' : '▶'}</span>
-        <span className="text-sm font-medium flex-1 truncate">{skill.name || '（未命名技能）'}</span>
-        {isManual && <span className="text-[12px] px-1.5 py-0.5 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange shrink-0">手動</span>}
-        <span className={`text-[13px] px-1.5 py-0.5 rounded border shrink-0 ${typeColor}`}>{skill.type}</span>
-        {skill.ap   && <span className="text-[13px] text-accent-green shrink-0">AP {skill.ap}</span>}
-        {skill.cd   && <span className="text-[13px] text-accent-orange shrink-0">CD {skill.cd}</span>}
-        {skill.weapon && <span className="text-[13px] text-accent-purple shrink-0">{formatWeaponReq(skill.weapon)}</span>}
-        <span className={`text-[13px] shrink-0 ml-1 ${effects.length > 0 ? 'text-accent-cyan' : 'text-text-dim'}`}>
-          效果 {effects.length}
-        </span>
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">{label}</span>
+        <button
+          onClick={() => onChange([...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }])}
+          className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+        >
+          + 新增效果
+        </button>
       </div>
-
-      {expanded && (
-        <div className="px-3 pb-3 border-t border-border/40 pt-2.5 space-y-3">
-          {isManual && (
-            <Field label="技能名稱 name">
-              <input
-                type="text"
-                value={skill.name}
-                onChange={(e) => onChange({ ...skill, name: e.target.value })}
-                className="input-field"
-                placeholder="如：虛粒子形態"
-              />
-            </Field>
-          )}
-          <div className="grid grid-cols-3 gap-2">
-            <Field label="技能類型 type">
-              <select value={skill.type} onChange={(e) => onChange({ ...skill, type: e.target.value })} className="input-field">
-                <option value={SkillType.PASSIVE}>{SkillType.PASSIVE}</option>
-                <option value={SkillType.ACTIVE}>{SkillType.ACTIVE}</option>
-                <option value={SkillType.COMMAND}>{SkillType.COMMAND}</option>
-              </select>
-            </Field>
-            <Field label="AP 消耗 ap">
-              <input type="text" value={skill.ap ?? ''} onChange={(e) => onChange({ ...skill, ap: e.target.value || undefined })} className="input-field" placeholder="—" />
-            </Field>
-            <Field label="冷卻回合 cd">
-              <input type="text" value={skill.cd ?? ''} onChange={(e) => onChange({ ...skill, cd: e.target.value || undefined })} className="input-field" placeholder="—" />
-            </Field>
-          </div>
-          <Field label={isManual ? '效果說明 description' : '效果說明 description（手動覆寫後，爬蟲補丁會保留你的版本，不再跟進官網更新）'}>
-            <textarea
-              value={skill.description}
-              onChange={(e) => onChange({ ...skill, description: e.target.value })}
-              className="input-field min-h-[64px] resize-y text-xs leading-relaxed"
-              placeholder="技能效果文字描述"
+      {effects.length === 0 ? (
+        <p className="text-xs text-text-dim py-2 text-center">尚未填入</p>
+      ) : (
+        <div className="space-y-2">
+          {effects.map((eff, i) => (
+            <SkillEffectItem
+              key={i}
+              effect={eff}
+              index={i}
+              onChange={(updated) => { const next = [...effects]; next[i] = updated; onChange(next) }}
+              onRemove={() => onChange(effects.filter((_, idx) => idx !== i))}
             />
-          </Field>
-          <RefPicker
-            text={skill.description}
-            value={skill.descriptionRefs}
-            onChange={(refs) => onChange({ ...skill, descriptionRefs: refs })}
-          />
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">可計算效果 effects</span>
-              <button
-                onClick={() => updateEffects([...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }])}
-                className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
-              >
-                + 新增效果
-              </button>
-            </div>
-            {effects.length === 0 ? (
-              <p className="text-xs text-text-dim py-2 text-center">尚未填入（計算器不計此技能）</p>
-            ) : (
-              <div className="space-y-2">
-                {effects.map((eff, effIdx) => (
-                  <SkillEffectItem
-                    key={effIdx}
-                    effect={eff}
-                    index={effIdx}
-                    onChange={(updated) => {
-                      const next = [...effects]; next[effIdx] = updated; updateEffects(next)
-                    }}
-                    onRemove={() => updateEffects(effects.filter((_, i) => i !== effIdx))}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-          <Field label="觸發 Buff ID buffIds（逗號分隔）">
-            <textarea
-              value={buffIds.join(', ')}
-              onChange={(e) => updateBuffIds(e.target.value)}
-              className="input-field min-h-[44px] resize-none text-xs"
-              placeholder="buff_001, buff_002"
-            />
-          </Field>
-          {isManual && onRemove && (
-            <div className="pt-1 flex justify-end">
-              <button
-                onClick={onRemove}
-                className="text-[13px] px-2 py-1 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10"
-              >
-                ✕ 刪除此手動技能
-              </button>
-            </div>
-          )}
+          ))}
         </div>
       )}
     </div>
   )
 }
 
-// ─── 技能效果分頁 ──────────────────────────────────────────────────────────────
-function PilotSkillsTab({
-  skills,
-  onChange,
-  flipped,
+// ─── 已指派技能列（唯讀；效果/描述請至「技能管理」分頁編輯）──────────────────────
+function AssignedSkillRow({
+  id,
+  skill,
+  index,
+  count,
+  onMove,
+  onRemove,
 }: {
-  skills: PilotSkillDoc[]
-  onChange: (updated: PilotSkillDoc[]) => void
-  flipped: boolean
+  id: string
+  skill: PilotSkillDoc | null
+  index: number
+  count: number
+  onMove: (dir: -1 | 1) => void
+  onRemove: () => void
+}) {
+  const effCount = skill ? (skill.effects ?? []).length : 0
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 bg-bg-dark/50">
+      <div className="flex flex-col shrink-0">
+        <button type="button" onClick={() => onMove(-1)} disabled={index === 0}
+          className="text-[11px] leading-none text-text-dim hover:text-text-primary disabled:opacity-20">▲</button>
+        <button type="button" onClick={() => onMove(1)} disabled={index === count - 1}
+          className="text-[11px] leading-none text-text-dim hover:text-text-primary disabled:opacity-20">▼</button>
+      </div>
+      {skill?.iconLocal && (
+        <img src={skill.iconLocal} alt="" className="w-6 h-6 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
+      )}
+      <div className="flex-1 min-w-0">
+        {skill ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium truncate">{skill.name || '（未命名技能）'}</span>
+            <span className="text-[12px] px-1.5 py-0.5 rounded bg-bg-card border border-border text-text-dim shrink-0">{skill.type}</span>
+            {skill.manual && <span className="text-[11px] px-1.5 py-0.5 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange shrink-0">手動</span>}
+            {skill.ap && <span className="text-[12px] text-accent-green shrink-0">AP {skill.ap}</span>}
+            {skill.cd && <span className="text-[12px] text-accent-orange shrink-0">CD {skill.cd}</span>}
+            {skill.weapon && <span className="text-[12px] text-accent-purple shrink-0">{formatWeaponReq(skill.weapon)}</span>}
+            <span className={`text-[12px] shrink-0 ${effCount > 0 ? 'text-accent-cyan' : 'text-text-dim'}`}>效果 {effCount}</span>
+          </div>
+        ) : (
+          <span className="text-sm text-accent-red">⚠ 技能庫查無 <span className="font-mono text-[12px]">{id}</span></span>
+        )}
+      </div>
+      <button type="button" onClick={onRemove}
+        className="shrink-0 text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10">✕ 移除</button>
+    </div>
+  )
+}
+
+// ─── 技能庫挑選器（加入引用）────────────────────────────────────────────────────
+function SkillRefPicker({
+  allSkills,
+  assignedIds,
+  onAdd,
+}: {
+  allSkills: PilotSkillDoc[]
+  assignedIds: string[]
+  onAdd: (id: string) => void
+}) {
+  const [open, setOpen]     = useState(false)
+  const [search, setSearch] = useState('')
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const assigned = new Set(assignedIds)
+    return allSkills
+      .filter((s) => !assigned.has(s.id))
+      .filter((s) => !q || (s.name || '').toLowerCase().includes(q) || s.id.toLowerCase().includes(q))
+      .slice(0, 50)
+  }, [allSkills, search, assignedIds])
+
+  return (
+    <div className="border border-accent-orange/40 rounded-lg">
+      <button
+        type="button"
+        onClick={() => { setOpen((o) => !o); setSearch('') }}
+        className="w-full text-left px-3 py-2 text-[13px] text-accent-orange hover:bg-accent-orange/10 transition-colors flex items-center justify-between"
+      >
+        <span>+ 從技能庫加入技能</span>
+        <span className="text-text-dim text-xs">{open ? '收合' : '展開'}</span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 pt-1 space-y-2 border-t border-border/40">
+          <input
+            autoFocus
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="搜尋技能名稱 / ID…"
+            className="input-field text-sm"
+          />
+          <div className="max-h-52 overflow-y-auto rounded border border-border/40 divide-y divide-border/30">
+            {filtered.length === 0 ? (
+              <p className="text-xs text-text-dim text-center py-3">查無可加入的技能（請先到「技能管理」分頁建立）</p>
+            ) : filtered.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => onAdd(s.id)}
+                className="w-full text-left px-2.5 py-1.5 text-xs hover:bg-bg-card transition-colors flex items-center gap-2"
+              >
+                {s.iconLocal && <img src={s.iconLocal} alt="" className="w-5 h-5 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />}
+                <span className="flex-1 truncate text-text-secondary">{s.name || '（未命名）'}</span>
+                <span className="text-[11px] px-1 rounded bg-bg-card border border-border text-text-dim shrink-0">{s.type}</span>
+                <span className="text-text-dim font-mono text-[11px] truncate max-w-[40%]">{s.id}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── 機師技能分頁（純引用 / 指派模式）──────────────────────────────────────────
+function PilotSkillRefsTab({
+  assignedIds,
+  onChange,
+  skillMap,
+  allSkills,
+  legacyEmbedded,
+  embeddedSkills,
+}: {
+  assignedIds: string[]
+  onChange: (ids: string[]) => void
+  skillMap: Map<string, PilotSkillDoc>
+  allSkills: PilotSkillDoc[]
+  legacyEmbedded: boolean
+  embeddedSkills: PilotSkill[]
+}) {
+  function move(idx: number, dir: -1 | 1) {
+    const j = idx + dir
+    if (j < 0 || j >= assignedIds.length) return
+    const next = [...assignedIds]
+    ;[next[idx], next[j]] = [next[j], next[idx]]
+    onChange(next)
+  }
+  function remove(idx: number) { onChange(assignedIds.filter((_, i) => i !== idx)) }
+  function add(id: string) { if (!assignedIds.includes(id)) onChange([...assignedIds, id]) }
+
+  if (legacyEmbedded) {
+    return (
+      <div className="space-y-2.5">
+        <p className="text-[13px] text-accent-yellow bg-accent-yellow/10 border border-accent-yellow/30 rounded-lg px-3 py-2">
+          ⚠ 此機師技能仍是舊版內嵌格式，尚未遷移為引用。請先執行 <code>migrate-plan004</code> 腳本後再以此處管理；本面板儲存不會更動既有技能。
+        </p>
+        <div className="space-y-1.5">
+          {embeddedSkills.map((s, i) => (
+            <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 bg-bg-dark/50">
+              {s.iconLocal && <img src={s.iconLocal} alt="" className="w-6 h-6 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />}
+              <span className="text-sm font-medium flex-1 truncate">{s.name || '（未命名技能）'}</span>
+              <span className="text-[12px] px-1.5 py-0.5 rounded bg-bg-card border border-border text-text-dim shrink-0">{s.type}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2.5">
+      <p className="text-[13px] text-text-dim">
+        此分頁管理「這位機師擁有哪些技能」（引用技能庫 pilotSkills）。
+        技能的名稱、效果、描述請至上方「技能管理」分頁編輯——一處修改、所有持有它的機師同步生效。
+      </p>
+
+      {assignedIds.length === 0 ? (
+        <p className="text-text-dim text-sm text-center py-6">尚未指派技能，請從下方技能庫加入</p>
+      ) : (
+        <div className="space-y-1.5">
+          {assignedIds.map((id, idx) => (
+            <AssignedSkillRow
+              key={id}
+              id={id}
+              skill={skillMap.get(id) ?? null}
+              index={idx}
+              count={assignedIds.length}
+              onMove={(dir) => move(idx, dir)}
+              onRemove={() => remove(idx)}
+            />
+          ))}
+        </div>
+      )}
+
+      <SkillRefPicker allSkills={allSkills} assignedIds={assignedIds} onAdd={add} />
+    </div>
+  )
+}
+
+// ─── 天賦項目編輯 ──────────────────────────────────────────────────────────────
+function TalentItem({
+  talent,
+  expanded,
+  onToggle,
+  onChange,
+  onRemove,
+}: {
+  talent: PilotTalent
+  expanded: boolean
+  onToggle: () => void
+  onChange: (updated: PilotTalent) => void
+  onRemove: () => void
+}) {
+  const effects  = talent.effects ?? []
+  const enhanced = talent.enhancedEffects ?? []
+  const buffIds  = talent.buffIds ?? []
+  function upd<K extends keyof PilotTalent>(key: K, value: PilotTalent[K]) { onChange({ ...talent, [key]: value }) }
+  function updBuffIds(val: string) { upd('buffIds', val.split(/[,\n]/).map((s) => s.trim()).filter(Boolean)) }
+  const refText = [talent.description, talent.descriptionMax].filter(Boolean).join('\n')
+
+  return (
+    <div className="border border-border/60 rounded-lg bg-bg-dark/50">
+      <div className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none" onClick={onToggle}>
+        <span className="text-[13px] text-text-dim w-3 shrink-0">{expanded ? '▼' : '▶'}</span>
+        {talent.iconLocal && (
+          <img src={talent.iconLocal} alt="" className="w-6 h-6 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
+        )}
+        <span className="text-sm font-medium flex-1 truncate">{talent.name || '（未命名天賦）'}</span>
+        {talent.type && <span className="text-[12px] px-1.5 py-0.5 rounded bg-bg-card border border-border text-text-dim shrink-0">{talent.type}</span>}
+        <span className={`text-[12px] shrink-0 ${effects.length > 0 ? 'text-accent-cyan' : 'text-text-dim'}`}>效果 {effects.length}</span>
+      </div>
+
+      {expanded && (
+        <div className="px-3 pb-3 border-t border-border/40 pt-2.5 space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="天賦名稱 name">
+              <input value={talent.name} onChange={(e) => upd('name', e.target.value)} className="input-field" placeholder="如：核心天賦" />
+            </Field>
+            <Field label="類型 type">
+              <input value={talent.type} onChange={(e) => upd('type', e.target.value)} className="input-field" placeholder="如：核心 / 職業" />
+            </Field>
+          </div>
+          <IconField label="圖示 iconLocal（本地圖檔）" value={talent.iconLocal} onChange={(v) => upd('iconLocal', v)} defaultFolder="skills" />
+          <Field label="效果說明 description">
+            <textarea
+              value={talent.description}
+              onChange={(e) => upd('description', e.target.value)}
+              className="input-field min-h-[64px] resize-y text-xs leading-relaxed"
+              placeholder="天賦效果文字描述（可含 [xxx] 引用其他實體）"
+            />
+          </Field>
+          <Field label="滿級效果 descriptionMax（選填）">
+            <textarea
+              value={talent.descriptionMax}
+              onChange={(e) => upd('descriptionMax', e.target.value)}
+              className="input-field min-h-[48px] resize-y text-xs leading-relaxed"
+              placeholder="滿級 / 強化後的效果說明"
+            />
+          </Field>
+          {/* description 與 descriptionMax 共用一份 descriptionRefs（兩者的 [xxx] 都在此指派）*/}
+          <RefPicker text={refText} value={talent.descriptionRefs} onChange={(refs) => upd('descriptionRefs', refs)} />
+          <EffectListEditor label="可計算效果 effects" effects={effects} onChange={(n) => upd('effects', n)} />
+          <EffectListEditor
+            label="強化效果 enhancedEffects（選填）"
+            effects={enhanced}
+            onChange={(n) => upd('enhancedEffects', n.length ? n : undefined)}
+          />
+          <Field label="觸發 Buff ID buffIds（逗號分隔）">
+            <textarea
+              value={buffIds.join(', ')}
+              onChange={(e) => updBuffIds(e.target.value)}
+              className="input-field min-h-[44px] resize-none text-xs"
+              placeholder="buff_001, buff_002"
+            />
+          </Field>
+          <div className="pt-1 flex justify-end">
+            <button
+              onClick={onRemove}
+              className="text-[13px] px-2 py-1 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10"
+            >
+              ✕ 刪除此天賦
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── 機師天賦分頁 ──────────────────────────────────────────────────────────────
+function PilotTalentsTab({
+  talents,
+  onChange,
+}: {
+  talents: PilotTalent[]
+  onChange: (updated: PilotTalent[]) => void
 }) {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
 
-  function updateSkill(idx: number, updated: PilotSkillDoc) {
-    const next = [...skills]; next[idx] = updated; onChange(next)
+  function updateTalent(idx: number, updated: PilotTalent) {
+    const next = [...talents]; next[idx] = updated; onChange(next)
   }
-
-  function addManualSkill() {
-    const newSkill: PilotSkillDoc = {
-      id: `skill_manual_${Date.now().toString(36)}`,
-      name: '',
-      type: SkillType.PASSIVE,
-      description: '',
-      icon: '',
-      iconLocal: '',
-      effects: [],
-      buffIds: [],
-      manual: true,
-    }
-    onChange([...skills, newSkill])
-    setExpandedIdx(skills.length)
+  function addTalent() {
+    onChange([...talents, {
+      name: '', type: '', description: '', descriptionMax: '', descriptionRefs: {},
+      icon: '', iconLocal: '', effects: [], buffIds: [],
+    }])
+    setExpandedIdx(talents.length)
   }
-
-  function removeSkill(idx: number) {
-    onChange(skills.filter((_, i) => i !== idx))
+  function removeTalent(idx: number) {
+    onChange(talents.filter((_, i) => i !== idx))
     setExpandedIdx(null)
   }
 
   return (
     <div className="space-y-2.5">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-[13px] text-text-dim">
-          {flipped
-            ? '技能來自共用技能庫（pilotSkills）。編輯共用技能會同步影響所有持有它的機師。'
-            : '技能由爬蟲腳本寫入，效果欄位可在此填入；天生自帶、官網查無的技能可手動新增。'}
-        </p>
+        <p className="text-[13px] text-text-dim">天賦資料可在此編輯；描述中的 <code>[xxx]</code> 可指派引用。儲存後寫入機師文件。</p>
         <button
-          onClick={addManualSkill}
+          onClick={addTalent}
           className="shrink-0 text-[13px] px-2.5 py-1 text-accent-orange border border-accent-orange/40 rounded hover:bg-accent-orange/10 transition-colors"
         >
-          + 手動新增技能
+          + 新增天賦
         </button>
       </div>
 
-      {skills.length === 0 ? (
-        <p className="text-text-dim text-sm text-center py-8">
-          無技能資料，可點右上角「手動新增技能」建立
-        </p>
+      {talents.length === 0 ? (
+        <p className="text-text-dim text-sm text-center py-8">無天賦資料，可點右上角「新增天賦」建立</p>
       ) : (
         <div className="space-y-1.5">
-          {skills.map((skill, idx) => (
-            <PilotSkillItem
-              key={skill.id || idx}
-              skill={skill}
+          {talents.map((t, idx) => (
+            <TalentItem
+              key={idx}
+              talent={t}
               expanded={expandedIdx === idx}
               onToggle={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
-              onChange={(updated) => updateSkill(idx, updated)}
-              onRemove={() => removeSkill(idx)}
+              onChange={(updated) => updateTalent(idx, updated)}
+              onRemove={() => removeTalent(idx)}
             />
           ))}
         </div>
@@ -396,14 +553,15 @@ function PilotSkillsTab({
 }
 
 // ─── 機師編輯面板 ──────────────────────────────────────────────────────────────
-type PilotEditTab = 'basic' | 'stats' | 'ap' | 'profile' | 'skills'
+type PilotEditTab = 'basic' | 'stats' | 'ap' | 'profile' | 'talents' | 'skills'
 
 const PILOT_EDIT_TABS: { id: PilotEditTab; label: string }[] = [
   { id: 'basic',   label: '基本資訊' },
   { id: 'stats',   label: '屬性數值' },
   { id: 'ap',      label: 'AP 系統' },
   { id: 'profile', label: '個人資料' },
-  { id: 'skills',  label: '技能效果' },
+  { id: 'talents', label: '天賦' },
+  { id: 'skills',  label: '技能' },
 ]
 
 function PilotEditPanel({
@@ -422,19 +580,20 @@ function PilotEditPanel({
 
   useEffect(() => { setForm({ ...pilot }); setEditTab('basic') }, [pilot])
 
-  // PLAN-004：技能改由 pilotSkills 集合管理（過渡期相容嵌入舊格式）
+  // PLAN-004：技能改由 pilotSkills 集合管理；機師文件僅存技能 ID 順序（引用）
   const gd = useGameData()
   useEffect(() => { gd.ensureLoaded(['pilotSkills']) }, [gd])
   const skillMap = useMemo(() => buildSkillMap(gd.pilotSkills), [gd.pilotSkills])
-  // flipped：此機師的 skills 是否已是 ID 字串（新格式單一資料源）
-  const flipped = useMemo(() => (pilot.skills ?? []).every((s) => typeof s === 'string'), [pilot])
-  const [skillDocs, setSkillDocs] = useState<PilotSkillDoc[]>([])
-  const originalDocsRef = useRef<Map<string, string>>(new Map())
+  // 舊版相容：若機師 skills 仍含內嵌物件（非 ID 字串）視為未遷移
+  const legacyEmbedded = useMemo(() => (pilot.skills ?? []).some((s) => typeof s !== 'string'), [pilot])
+  const embeddedSkills = useMemo(
+    () => (pilot.skills ?? []).filter((s): s is PilotSkill => typeof s !== 'string'),
+    [pilot],
+  )
+  const [assignedIds, setAssignedIds] = useState<string[]>([])
   useEffect(() => {
-    const docs = resolvePilotSkills(pilot.skills, skillMap)
-    setSkillDocs(docs)
-    originalDocsRef.current = new Map(docs.map((d) => [d.id, JSON.stringify(d)]))
-  }, [pilot, skillMap])
+    setAssignedIds((pilot.skills ?? []).filter((s): s is string => typeof s === 'string'))
+  }, [pilot])
 
   function update<K extends keyof Pilot>(key: K, value: Pilot[K]) { setForm((f) => ({ ...f, [key]: value })) }
   function updateStats(key: keyof Pilot['stats'], value: number) { setForm((f) => ({ ...f, stats: { ...f.stats, [key]: value } })) }
@@ -444,20 +603,15 @@ function PilotEditPanel({
   async function handleSubmit() {
     setSaving(true); setError(null)
     try {
-      if (flipped) {
-        // 新格式：只寫入有變更／新增的技能文件到 pilotSkills 集合，機師文件存技能 ID 順序
-        const orig = originalDocsRef.current
-        const changed = skillDocs.filter((d) => orig.get(d.id) !== JSON.stringify(d))
-        await Promise.all(changed.map((d) => updatePilotSkill(d)))
-        await onSave({ ...form, skills: skillDocs.map((d) => d.id) })
-      } else {
-        // 過渡前舊格式：技能仍嵌入機師文件
-        await onSave({ ...form, skills: skillDocs.map(docToEmbedded) })
-      }
+      // 新格式：機師文件只存技能 ID 順序；舊版內嵌格式則原樣保留（待腳本遷移）
+      const skills: Pilot['skills'] = legacyEmbedded ? (form.skills ?? []) : assignedIds
+      await onSave({ ...form, skills })
     } catch (e) {
       setError(e instanceof Error ? e.message : '儲存失敗，請重試'); setSaving(false)
     }
   }
+
+  const skillCount = legacyEmbedded ? embeddedSkills.length : assignedIds.length
 
   return (
     <AdminModal saving={saving} error={error} onSave={handleSubmit} onCancel={onCancel}>
@@ -476,7 +630,7 @@ function PilotEditPanel({
             <span className="text-text-dim text-sm font-normal ml-1">{form.id}</span>
           </h3>
           <p className="text-[14px] text-text-dim mt-0.5">
-            技能 {skillDocs.length}（效果可在「技能效果」分頁填入）· 天賦 {form.talents?.length ?? 0} · 神經驅動 {form.neuralDrive?.length ?? 0}（由爬蟲腳本管理）
+            技能 {skillCount}（效果於「技能管理」分頁編輯）· 天賦 {form.talents?.length ?? 0}（可編輯）· 神經驅動 {form.neuralDrive?.length ?? 0}（由爬蟲腳本管理）
           </p>
         </div>
       </div>
@@ -484,10 +638,10 @@ function PilotEditPanel({
       {/* Tab 列 */}
       <div className="flex gap-1 mb-4 shrink-0 flex-wrap">
         {PILOT_EDIT_TABS.map((t) => {
-          const filledSkills = t.id === 'skills'
-            ? skillDocs.filter((s) => (s.effects ?? []).length > 0).length
-            : 0
-          const hasBadge = t.id === 'skills' && filledSkills > 0
+          const badge =
+            t.id === 'skills'  ? skillCount :
+            t.id === 'talents' ? (form.talents?.length ?? 0) : 0
+          const hasBadge = badge > 0
           return (
             <button
               key={t.id}
@@ -501,7 +655,7 @@ function PilotEditPanel({
               {t.label}
               {hasBadge && (
                 <span className={`ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-[12px] font-bold ${editTab === t.id ? 'bg-black/20 text-black' : 'bg-accent-cyan/20 text-accent-cyan'}`}>
-                  {filledSkills}
+                  {badge}
                 </span>
               )}
             </button>
@@ -537,7 +691,7 @@ function PilotEditPanel({
               <Field label="陣營 faction"><input value={form.faction || ''} onChange={(e) => update('faction', e.target.value)} className="input-field" /></Field>
               <Field label="駕駛等級 masterLevel"><input value={form.masterLevel || ''} onChange={(e) => update('masterLevel', e.target.value)} className="input-field" /></Field>
             </div>
-            <Field label="立繪路徑 portrait"><input value={form.portrait || ''} onChange={(e) => update('portrait', e.target.value)} className="input-field" /></Field>
+            <IconField label="立繪路徑 portrait" value={form.portrait} onChange={(v) => update('portrait', v)} defaultFolder="pilots" />
             <Field label="故事 lore（Markdown）">
               <textarea value={form.lore || ''} onChange={(e) => update('lore', e.target.value)} className="input-field min-h-[100px] resize-y" />
             </Field>
@@ -607,18 +761,28 @@ function PilotEditPanel({
             )}
             <div className="p-3 bg-bg-dark/60 border border-border/40 rounded-lg">
               <p className="text-[14px] text-text-dim">
-                天賦、神經驅動等複雜欄位由爬蟲腳本管理，請透過 <code className="text-accent-cyan">npm run migrate</code> 更新至 Firestore。<br />
-                技能的名稱與描述同樣由腳本管理，但可在「技能效果」分頁填入 effects 供計算器使用。
+                神經驅動等複雜欄位由爬蟲腳本管理，請透過 <code className="text-accent-cyan">npm run migrate</code> 更新至 Firestore。<br />
+                天賦可於「天賦」分頁編輯；技能的名稱、效果與描述請於「技能管理」分頁編輯。
               </p>
             </div>
           </div>
         )}
 
+        {editTab === 'talents' && (
+          <PilotTalentsTab
+            talents={form.talents ?? []}
+            onChange={(t) => update('talents', t)}
+          />
+        )}
+
         {editTab === 'skills' && (
-          <PilotSkillsTab
-            skills={skillDocs}
-            onChange={setSkillDocs}
-            flipped={flipped}
+          <PilotSkillRefsTab
+            assignedIds={assignedIds}
+            onChange={setAssignedIds}
+            skillMap={skillMap}
+            allSkills={gd.pilotSkills}
+            legacyEmbedded={legacyEmbedded}
+            embeddedSkills={embeddedSkills}
           />
         )}
       </div>

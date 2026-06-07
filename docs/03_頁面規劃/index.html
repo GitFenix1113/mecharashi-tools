@@ -27,7 +27,7 @@
 <section class="section">
   <div class="section-label purple">Site Map</div>
   <div class="section-title">完整頁面地圖</div>
-  <div class="section-desc">深色主題搭配橘色/藍色強調色，貼近鋼嵐遊戲介面。每個頁面均有獨立設計文件，點擊可開啟詳情。</div>
+  <div class="section-desc">深色主題搭配橘色/藍色強調色，貼近鋼嵐遊戲介面。每個頁面均有獨立設計文件，點擊可開啟詳情。導覽列以滑鼠懸停下拉收納：各圖鑑頁歸入「資料圖鑑」，攻略／工具／文件歸為一組。</div>
 
   <div class="page-map">
     <a class="page-item" href="01_首頁/index.html">
@@ -91,9 +91,19 @@
       <p>時間軸式改版預告與更新記錄</p>
     </a>
     <a class="page-item" href="#guides">
-      <h4>📚 攻略專區</h4>
+      <h4>📚 攻略</h4>
       <div class="route">/guides</div>
-      <p>關卡攻略文章列表與詳情</p>
+      <p>關卡攻略文章列表與詳情（開發中）</p>
+    </a>
+    <a class="page-item" href="#tools">
+      <h4>🛠️ 工具</h4>
+      <div class="route">/tools</div>
+      <p>配裝與計算輔助工具（含彩甲升級規劃器）</p>
+    </a>
+    <a class="page-item" href="#documents">
+      <h4>📄 文件</h4>
+      <div class="route">/documents</div>
+      <p>對外展示本站的規劃與設計文件（白名單）</p>
     </a>
     <a class="page-item" href="09_個人中心/index.html">
       <h4>🔐 個人中心</h4>
@@ -194,11 +204,19 @@
 │   └── BackpacksPage.tsx
 ├── modules/
 │   └── ModulesPage.tsx
+├── components/
+│   └── ComponentsPage.tsx
 ├── simulator/
 │   ├── SimulatorPage.tsx
 │   └── ResearchPage.tsx
 ├── guides/
-│   └── GuidesPage.tsx
+│   ├── GuidesPage.tsx                     ← 攻略（開發中）
+│   └── tools/
+│       └── RainbowMechPlannerPage.tsx     ← lazy，彩甲升級規劃器
+├── tools/
+│   └── ToolsPage.tsx                      ← 工具入口
+├── documents/
+│   └── DocumentsPage.tsx                  ← 文件（docs 白名單展示）
 ├── news/
 │   └── NewsPage.tsx
 └── user/
@@ -241,5 +259,8 @@
   鋼嵐工具站 頁面規劃 — 回到 <a href="../01_規劃書/鋼嵐工具站_規劃書.html" style="color:var(--accent-cyan);text-decoration:none;">專案規劃書</a>
 </footer>
 
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
 </body>
 </html>

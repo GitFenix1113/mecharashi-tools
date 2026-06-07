@@ -17,6 +17,8 @@ import SimulatorPage from './pages/simulator/SimulatorPage'
 import ResearchPage from './pages/simulator/ResearchPage'
 import NewsPage from './pages/news/NewsPage'
 import GuidesPage from './pages/guides/GuidesPage'
+import ToolsPage from './pages/tools/ToolsPage'
+import DocumentsPage from './pages/documents/DocumentsPage'
 import ProfilePage from './pages/user/ProfilePage'
 import AdminPage from './pages/user/AdminPage'
 import ComponentsPage from './pages/components/ComponentsPage'
@@ -47,7 +49,9 @@ function App() {
             <Route path="research" element={<ResearchPage />} />
             <Route path="news" element={<NewsPage />} />
             <Route path="guides" element={<GuidesPage />} />
-            <Route path="guides/tools/rainbow-planner" element={<Suspense fallback={null}><RainbowMechPlannerPage /></Suspense>} />
+            <Route path="tools" element={<ToolsPage />} />
+            <Route path="documents" element={<DocumentsPage />} />
+            <Route path="tools/rainbow-planner" element={<Suspense fallback={null}><RainbowMechPlannerPage /></Suspense>} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="admin" element={<AdminPage />} />
             <Route

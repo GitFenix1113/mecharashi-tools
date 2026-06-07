@@ -146,7 +146,7 @@ export default function RainbowMechPlannerPage() {
 
       {/* 麵包屑 */}
       <div className="flex items-center gap-1.5 text-[12px] text-text-dim">
-        <Link to="/guides" className="hover:text-text-secondary transition-colors">攻略專區</Link>
+        <Link to="/tools" className="hover:text-text-secondary transition-colors">工具</Link>
         <span>›</span>
         <span className="text-text-secondary">彩甲升級規劃器</span>
       </div>
