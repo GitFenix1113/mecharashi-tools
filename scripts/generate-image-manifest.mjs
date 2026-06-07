@@ -7,7 +7,6 @@
  *
  * 結構（依資料夾分組、只存檔名以壓縮體積）：
  *   {
- *     "generatedAt": "<ISO>",
  *     "folders": {
  *       ".":            ["cat_no_bg.png", ...],   // 直接放在 images/ 下的檔
  *       "skills":       ["Icon_skill_main_1020.png", ...],
@@ -58,7 +57,7 @@ function main() {
   collect(IMAGES_DIR, '', folders)
 
   const total = Object.values(folders).reduce((n, arr) => n + arr.length, 0)
-  const manifest = { generatedAt: new Date().toISOString(), folders }
+  const manifest = { folders }
   fs.writeFileSync(OUT_FILE, JSON.stringify(manifest), 'utf-8')
   console.log(`✅ 圖檔清單已產生：${path.relative(ROOT, OUT_FILE)}（${Object.keys(folders).length} 個資料夾、${total} 個檔案）`)
 }

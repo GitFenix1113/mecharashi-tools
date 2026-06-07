@@ -14,7 +14,6 @@ import { resolveIconSrc } from '../../utils/assets'
  */
 
 interface Manifest {
-  generatedAt: string
   folders: Record<string, string[]>
 }
 
