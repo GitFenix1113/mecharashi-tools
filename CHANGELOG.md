@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-06-06
+## [Unreleased] - 2026-06-07
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- PLAN-019-C 詞條庫與引用挑選器 — glossaryTerms 集合 + RefPicker (`ef38cf6`)
 - PLAN-004 技能庫抽離 Phase 1+2 — pilotSkills 集合與技能引用解析 (`9a5d998`)
 - PLAN-019 引用層互動 + descriptionMax 吃引用 + PLAN-017 跨 session 版本快取 (`ff66ec8`)
 - 機師後台技能分頁支援手動新增技能 + 描述可編輯 (`c0abc7a`)
