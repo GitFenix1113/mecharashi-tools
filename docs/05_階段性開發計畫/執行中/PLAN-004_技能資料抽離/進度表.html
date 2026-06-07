@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-004 技能資料抽離 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(234,179,8,0.15);  color: var(--accent-yellow); border: 1px solid rgba(234,179,8,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+.status.admin    { background: rgba(168,85,247,0.15); color: var(--accent-purple); border: 1px solid rgba(168,85,247,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-cyan);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Note ── */
+.note-inline {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(234,179,8,0.1);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--accent-yellow);
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.warn-inline {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--accent-red);
+  margin-left: 6px;
+  vertical-align: middle;
+}
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-004 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-004</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">技能資料抽離</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-05-19</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-yellow)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">16</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-purple)">4</div>
+      <div class="summary-lbl">管理員任務</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">16</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>開發者任務完成度</span>
+      <span style="color:var(--accent-cyan);">0 / 16</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="changed-block" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);border-left-color:var(--accent-green);">
+    <strong>執行現況（2026-06-04）— 依 <a href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html" style="color:var(--accent-green);">PLAN-019</a> 重新定位執行</strong><br>
+    與原規劃的差異：技能 ID 採 <code>skill_&lt;技能名&gt;</code>（type 不進 ID）；前端採<strong>雙格式相容</strong>（不直接破壞性 flip 型別，過渡更安全）；<strong>本輪只做 pilotSkills，neuralDrives 留待下半場</strong>。<br><br>
+    · ✅ <strong>Phase 1</strong>：PilotSkillDoc 型別 + getPilotSkills + GameDataContext + EntityRefView 解析 refType:'skill'<br>
+    · ✅ <strong>Stage 1</strong>：migrate-plan004-skills.mjs 已寫入 pilotSkills 集合 <strong>512 筆</strong>（35 共用、3 碰撞）+ rules 部署 + 版本 bump<br>
+    · ✅ <strong>前端</strong>：PilotDetailPage / PilotAdmin 改為經 resolvePilotSkills 讀寫（共用技能集中編輯）<br>
+    · ⏳ <strong>Stage 2</strong>：migrate-plan004-pilots.mjs 已就緒（dry-run 通過），待前端雙格式版本部署上線後執行 flip<br>
+    · ⏳ <strong>爬蟲</strong>：scrape-pilots-v3.js 已加 ID 格式安全防呆；完整 collection-aware 改寫待 flip 後以 dry-run 驗證<br>
+    · ⏸ <strong>neuralDrives</strong>：本輪不做，沿用同套模式留作 PLAN-004 下半場
+  </div>
+
+  <div class="changed-block" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.25);border-left-color:var(--accent-red);">
+    <strong>執行前置條件</strong><br>
+    本計畫涉及 Pilot interface 破壞性改變。執行前需確認：<br>
+    · PLAN-001 的 TypeScript Phase 已全部合入主線（PilotSkill / NeuralDrive interface 版本穩定）<br>
+    · 建議在非功能開發衝刺期間執行，避免與其他 PR 產生衝突<br>
+    · Stage 1 遷移腳本須通過 dry-run 人工審查，才能執行 Stage 2 寫入
+  </div>
+</section>
+
+<!-- Phase A: TypeScript 型別定義 -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">TypeScript 型別定義</div>
+  <div class="section-desc">新增 PilotSkillDoc / NeuralDriveDoc interface，修改 Pilot interface 的技能相關欄位。Phase B–C 依賴此 Phase 完成。</div>
+
+  <!-- A-1 -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 新增 PilotSkillDoc interface</div>
+      <div class="task-group-meta">src/types/index.ts</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">定義 PilotSkillDoc interface（pilotSkills Collection 的文件型別）</div>
+        <div class="task-desc">
+          欄位與現有 PilotSkill 幾乎相同（id / name / type / unitType / ap / cd / weapon / description / icon / iconLocal / effects / buffIds）。
+          差別在於 PilotSkillDoc 是頂層 Firestore 文件，有 <code>id: string</code> 作為文件識別碼。<br>
+          現有 <code>PilotSkill</code> interface 在本 Phase 暫時保留，留待 Phase C 前端改完後再移除或轉為別名。
+        </div>
+        <div class="task-file">src/types/index.ts · 新增 PilotSkillDoc</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+  </div>
+
+  <!-- A-2 -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 新增 NeuralDriveDoc interface</div>
+      <div class="task-group-meta">src/types/index.ts</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">定義 NeuralDriveDoc interface（含 scope / pilotClass / pilotId 欄位）</div>
+        <div class="task-desc">
+          基於現有 NeuralDrive interface 擴充，新增三個欄位：<br>
+          · <code>scope: 'class' | 'pilot'</code>：區分職業共用 vs 機師專屬<br>
+          · <code>pilotClass?: string</code>：scope='class' 時，填入 PilotClass enum 值（如 "突擊手"）<br>
+          · <code>pilotId?: string</code>：scope='pilot' 時，填入所屬機師 ID<br>
+          ID slug 規則：<code>class_{職業}_{區塊識別}</code> 或 <code>pilot_{機師ID}_{區塊識別}</code>
+        </div>
+        <div class="task-file">src/types/index.ts · 新增 NeuralDriveDoc</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+  </div>
+
+  <!-- A-3 -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 修改 Pilot interface</div>
+      <div class="task-group-meta">src/types/index.ts</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Pilot.skills：PilotSkill[] → string[]（pilotSkills ID 陣列）</div>
+        <div class="task-desc">
+          欄位型別由物件陣列改為 ID 字串陣列，順序保留（第 0 項 = 仿生電腦第一個技能）。
+          TypeScript 編譯器將在此改動後標出所有需要修正的使用位置，在 Phase C 前統一修正。
+        </div>
+        <div class="task-file">src/types/index.ts · Pilot.skills</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Pilot.neuralDrive：NeuralDrive[] → string[]（neuralDrives ID 陣列）</div>
+        <div class="task-desc">
+          同上，欄位型別改為 ID 字串陣列。
+          <code>Pilot.talents: PilotTalent[]</code> 不變（保留嵌入）。
+        </div>
+        <div class="task-file">src/types/index.ts · Pilot.neuralDrive</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B: 資料遷移腳本 -->
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow)">Phase B</div>
+  <div class="section-title">資料遷移腳本 <span class="warn-inline">高風險，需先 dry-run</span></div>
+  <div class="section-desc">兩個腳本分兩個 Stage 執行，Stage 1 先建立新 Collection 並人工審查，確認後才執行 Stage 2 更新 Pilot docs。</div>
+
+  <!-- B-1 -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; Stage 1：提取並建立新 Collection（不動 Pilot docs）</div>
+      <div class="task-group-meta">scripts/migrate-plan004-extract.mjs</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">技能提取與去重：讀取所有 Pilot.skills，建立 pilotSkills Collection</div>
+        <div class="task-desc">
+          掃描所有 Pilot docs，提取所有 PilotSkill 物件，依「名稱相同 + description 相同」去重。<br>
+          · 相同：合併為一份 pilotSkillDoc，以 <code>passive_名稱</code> / <code>active_名稱</code> 等 slug 作為 ID<br>
+          · 同名不同效：各自保留，ID 加上 <code>_{pilotId}</code> 後綴<br>
+          Dry-run 模式輸出去重報告（哪些技能被合併、哪些同名未合併），供人工審查後再執行寫入。
+        </div>
+        <div class="task-file">scripts/migrate-plan004-extract.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">神經驅動提取與 scope 識別：建立 neuralDrives Collection</div>
+        <div class="task-desc">
+          掃描所有 Pilot docs 的 neuralDrive 陣列；比對同職業多名機師中 name + levels 完全相同的區塊，
+          自動標記為 <code>scope:'class'</code>（填入 pilotClass）；其餘標記為 <code>scope:'pilot'</code>（填入 pilotId）。<br>
+          無法自動判斷的邊界情況輸出 <code>__REVIEW__</code> 警告，由管理員人工確認。
+        </div>
+        <div class="task-file">scripts/migrate-plan004-extract.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+  </div>
+
+  <!-- B-1 Admin review -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1a &nbsp; Stage 1 資料審查</div>
+      <div class="task-group-meta">Firestore · pilotSkills · neuralDrives — 人工確認</div>
+      <span class="status admin">◆ Admin</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">審查 pilotSkills 去重報告，確認無誤合併</div>
+        <div class="task-desc">
+          確認每個「被合併」的技能在各機師中確實效果相同；確認「同名未合並」的技能確實有差異。
+          有疑慮者人工補充 ID 後綴或修正 description。
+        </div>
+        <div class="task-file">Firestore → pilotSkills（dry-run 輸出報告）</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status admin">◆ Admin</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">確認 neuralDrives scope 標記，補填 __REVIEW__ 項目</div>
+        <div class="task-desc">
+          人工確認各神經驅動區塊的 scope 是否正確；
+          對 __REVIEW__ 警告的區塊，人工判斷是 class 還是 pilot scope 並補填。
+        </div>
+        <div class="task-file">Firestore → neuralDrives（dry-run 輸出報告）</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status admin">◆ Admin</span>
+    </div>
+  </div>
+
+  <!-- B-2 -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; Stage 2：更新 Pilot docs（Stage 1 審查通過後執行）</div>
+      <div class="task-group-meta">scripts/migrate-plan004-pilots.mjs</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">將 Pilot.skills 欄位改為 pilotSkillDoc ID 陣列</div>
+        <div class="task-desc">
+          讀取 Stage 1 建立的 pilotSkills Collection，產生 PilotSkillDoc ID 映射表。
+          逐一更新每份 Pilot doc：舊的 <code>skills: PilotSkill[]</code> → 新的 <code>skills: string[]</code>（ID 陣列，順序保留）。
+          使用 Firestore batch write 確保原子性。
+        </div>
+        <div class="task-file">scripts/migrate-plan004-pilots.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">將 Pilot.neuralDrive 欄位改為 neuralDriveDoc ID 陣列</div>
+        <div class="task-desc">
+          同上，更新 <code>neuralDrive: NeuralDrive[]</code> → <code>neuralDrive: string[]</code>（ID 陣列）。
+          確認遷移後所有 Pilot doc 的 skills / neuralDrive 欄位均為字串陣列。
+        </div>
+        <div class="task-file">scripts/migrate-plan004-pilots.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C: 前端修改 -->
+<section class="section">
+  <div class="section-label cyan">Phase C</div>
+  <div class="section-title">前端修改</div>
+  <div class="section-desc">Stage 2 資料遷移完成後才能部署前端改動。TypeScript 編譯器在 Phase A 完成後將標出所有需修正位置。</div>
+
+  <!-- C-1 -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 全域快取層</div>
+      <div class="task-group-meta">src/lib/firestoreApi.ts · App 層</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 fetchAllPilotSkills() 函式</div>
+        <div class="task-desc">
+          一次性讀取整個 pilotSkills Collection，回傳 <code>Map&lt;string, PilotSkillDoc&gt;</code>（key = doc ID）。
+          App 啟動時呼叫一次並快取，後續不再重複 fetch。
+        </div>
+        <div class="task-file">src/lib/firestoreApi.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 fetchAllNeuralDrives() 函式</div>
+        <div class="task-desc">
+          一次性讀取整個 neuralDrives Collection，回傳 <code>Map&lt;string, NeuralDriveDoc&gt;</code>。
+          同樣在 App 層預載快取。
+        </div>
+        <div class="task-file">src/lib/firestoreApi.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">在 App 層整合快取（Context 或 Zustand store）</div>
+        <div class="task-desc">
+          App 啟動時呼叫上述兩個 fetch 函式，將結果存入全域狀態。
+          PilotDetailPage / SimulatorPage 透過 hook 或 selector 消費快取，不直接 fetch。
+          具體使用 React Context 或 Zustand store 由實作時決定，兩者皆可。
+        </div>
+        <div class="task-file">src/App.tsx 或 src/store/cacheStore.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+  </div>
+
+  <!-- C-2 -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; PilotDetailPage 更新</div>
+      <div class="task-group-meta">src/pages/PilotDetailPage.tsx</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">技能渲染：改為從快取 Map 以 ID 查詢技能物件</div>
+        <div class="task-desc">
+          原本直接讀取 <code>pilot.skills</code>（PilotSkill[]）；
+          改為 <code>pilot.skills.map(id =&gt; skillMap.get(id))</code>，
+          過濾 undefined 後渲染。技能渲染 UI 元件（技能名、類型、效果描述等）不需要改動。
+        </div>
+        <div class="task-file">src/pages/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">神經驅動渲染：改為從快取 Map 以 ID 查詢</div>
+        <div class="task-desc">
+          同上，<code>pilot.neuralDrive.map(id =&gt; neuralDriveMap.get(id))</code>。
+          渲染邏輯（激活閾值、分層效果等）不變，只是資料來源改變。
+        </div>
+        <div class="task-file">src/pages/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+  </div>
+
+  <!-- C-3 -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; SimulatorPage 更新</div>
+      <div class="task-group-meta">src/pages/SimulatorPage.tsx</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">計算器技能取得：改為快取 Map lookup</div>
+        <div class="task-desc">
+          計算器加總技能 effects[] 的邏輯本身不變（SkillEffect 結構不受影響）。
+          只需修改「取得機師技能列表」的方式：原本讀 <code>pilot.skills</code>（物件陣列）
+          改為先以 ID 從 skillMap 查詢，再做 effects[] 加總。
+        </div>
+        <div class="task-file">src/pages/SimulatorPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+  </div>
+
+  <!-- C-4 -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; AdminPage 更新</div>
+      <div class="task-group-meta">src/pages/AdminPage.tsx</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 pilotSkills Collection 管理入口</div>
+        <div class="task-desc">
+          在 AdminPage 新增「技能管理」頁籤，可列表瀏覽所有 pilotSkills 文件。
+          標記 <code>effects: []</code> 空陣列的技能（待填入），方便集中追蹤補填進度。
+          可在此直接編輯技能的 description / effects / buffIds，修改後自動更新 Firestore。
+        </div>
+        <div class="task-file">src/pages/AdminPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 neuralDrives Collection 管理入口</div>
+        <div class="task-desc">
+          在 AdminPage 新增「神經驅動管理」頁籤，可依 scope（class / pilot）篩選瀏覽。
+          支援編輯各層 effects[] 結構化數值。
+        </div>
+        <div class="task-file">src/pages/AdminPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D: 文件更新 -->
+<section class="section">
+  <div class="section-label purple">Phase D</div>
+  <div class="section-title">技術文件更新</div>
+  <div class="section-desc">前端改動完成後同步更新文件，反映新的資料模型。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 更新 pilots.html</div>
+      <div class="task-group-meta">docs/02_技術文件/02_資料模型/pilots.html</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">欄位定義表更新：skills / neuralDrive 欄位型別說明修改</div>
+        <div class="task-desc">
+          將 skills / neuralDrive 欄位的型別說明從「物件陣列」改為「ID 字串陣列（指向獨立 Collection）」；
+          新增連結指向 pilotSkills.html / neuralDrives.html；
+          補充說明天賦（talents）為何保留嵌入。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/pilots.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 新增 pilotSkills.html</div>
+      <div class="task-group-meta">docs/02_技術文件/02_資料模型/pilotSkills.html</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">撰寫 pilotSkills Collection 資料模型文件</div>
+        <div class="task-desc">
+          說明 PilotSkillDoc 欄位定義、ID slug 命名規則、去重策略；
+          說明技能類型分類（被動 / 主動 / 指令 / 必殺 / 武器技能）；
+          說明 effects[] 填寫優先序（計算器依賴）。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/pilotSkills.html（新建）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 新增 neuralDrives.html</div>
+      <div class="task-group-meta">docs/02_技術文件/02_資料模型/neuralDrives.html</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">撰寫 neuralDrives Collection 資料模型文件</div>
+        <div class="task-desc">
+          說明 NeuralDriveDoc 欄位定義、scope 欄位（class / pilot）的語義與填值規則；
+          說明激活算力值閾值規則（α / β / γ 分區最多層數）；
+          列出已知的職業共用神經驅動清單（便於管理員填值參考）。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/neuralDrives.html（新建）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">○ 待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- 管理員長期任務 -->
+<section class="section">
+  <div class="section-label" style="color:var(--accent-purple)">Admin</div>
+  <div class="section-title">管理員長期任務 <span class="note-inline">不阻塞功能開發</span></div>
+  <div class="section-desc">遷移完成後，持續補填技能與神經驅動的 effects[] 結構化數值，供計算器使用。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">Admin-1 &nbsp; 補填 pilotSkills 技能 effects[]</div>
+      <div class="task-group-meta">Firestore → pilotSkills — 長期持續</div>
+      <span class="status admin">◆ Admin</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">依計算器優先序，補填空 effects[] 的技能結構化數值</div>
+        <div class="task-desc">
+          透過 AdminPage 技能管理頁籤，篩選出 effects 為空陣列的技能，依照計算器需求優先補填：<br>
+          1. 主動技能 / 指令技能（直接影響輸出計算）<br>
+          2. 被動技能（條件增傷、AP 回復等）<br>
+          3. 武器技能、必殺技（特殊條件，優先序較低）<br>
+          共用技能只需填一次，所有引用該技能的機師自動受益。
+        </div>
+        <div class="task-file">Firestore → pilotSkills（AdminPage 技能管理頁籤）</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status admin">◆ Admin</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補填 neuralDrives 激活層 effects[]</div>
+        <div class="task-desc">
+          透過 AdminPage 神經驅動管理頁籤，補填各激活層的結構化 effects[]。
+          職業共用的神經驅動只需填一次。
+        </div>
+        <div class="task-file">Firestore → neuralDrives（AdminPage 神經驅動管理頁籤）</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status admin">◆ Admin</span>
+    </div>
+  </div>
+</section>
+
+<!-- 相依關係 -->
+<section class="section">
+  <div class="section-label cyan">Dependencies</div>
+  <div class="section-title">執行順序與相依</div>
+
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>Phase</th><th>工作</th><th>相依</th><th>說明</th></tr>
+      <tr>
+        <td>A-1 ～ A-3</td>
+        <td>TypeScript 型別定義</td>
+        <td>—</td>
+        <td>可先執行，但會讓 tsc 報錯直到 Phase C 完成。可設 <code>// @ts-ignore</code> 過渡。</td>
+      </tr>
+      <tr>
+        <td>B-1</td>
+        <td>Stage 1 提取腳本</td>
+        <td>A-1, A-2</td>
+        <td>需要新 interface 定義才能寫腳本輸出型別</td>
+      </tr>
+      <tr>
+        <td>B-1a</td>
+        <td>Stage 1 人工審查</td>
+        <td>B-1 dry-run</td>
+        <td>必須先做 dry-run，審查通過才能寫入 Firestore</td>
+      </tr>
+      <tr>
+        <td>B-2</td>
+        <td>Stage 2 Pilot docs 更新</td>
+        <td>B-1a 通過</td>
+        <td>最高風險步驟；執行後 Pilot docs 格式改變，必須前後端同時就緒</td>
+      </tr>
+      <tr>
+        <td>C-1</td>
+        <td>全域快取層</td>
+        <td>A-1, A-2</td>
+        <td>可在 B-1 期間並行開發，不依賴 Pilot docs 已更新</td>
+      </tr>
+      <tr>
+        <td>C-2, C-3, C-4</td>
+        <td>各頁面更新</td>
+        <td>C-1, A-3</td>
+        <td>快取層就緒後，各頁面可並行修改</td>
+      </tr>
+      <tr>
+        <td>部署</td>
+        <td>前端上線</td>
+        <td>B-2 + C-1～C-4</td>
+        <td>Pilot docs 格式更新（B-2）與前端改動（C）必須同步部署，不能分開上線</td>
+      </tr>
+      <tr>
+        <td>D-1 ～ D-3</td>
+        <td>文件更新</td>
+        <td>B-2 + C 全部完成</td>
+        <td>確認最終實作後再更新文件，避免文件與程式碼不同步</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="changed-block" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.25);border-left-color:var(--accent-cyan);">
+    <strong>與 PLAN-001 的關係</strong><br>
+    本計畫不修改 <code>SkillEffect</code>、<code>SkillCondition</code>、<code>NeuralDriveLevel</code> 等子型別（這些是 PLAN-001 定義的）。
+    僅修改 Pilot 頂層欄位（skills / neuralDrive）的型別，以及新增兩個 Collection 的文件型別。
+    執行前確認 PLAN-001 的所有 Phase 已完成並穩定。
+  </div>
+</section>
+
+<!-- 相關文件 -->
+<section class="section">
+  <div class="section-label">Links</div>
+  <div class="section-title">相關文件</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="計畫書.html">
+      <div class="doc-tag">Plan</div>
+      <h4>◆ 計畫書</h4>
+      <p>完整問題分析、方案比較、設計決策、Schema 規格、風險分析</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/02_資料模型/pilots.html">
+      <div class="doc-tag">Document</div>
+      <h4>pilots 資料模型</h4>
+      <p>機師 Schema 欄位定義（D-1 完成後更新）</p>
+    </a>
+    <a class="doc-item" href="../PLAN-001_技能Buff架構重構/計畫書.html">
+      <div class="doc-tag">Related Plan</div>
+      <h4>PLAN-001 技能/Buff 架構重構</h4>
+      <p>SkillEffect / SkillCondition / NeuralDriveLevel 定義來源</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · PLAN-004 · 進度表 —
+  <a href="計畫書.html" style="color:var(--accent-cyan);text-decoration:none;">← 查看計畫書</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-05 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

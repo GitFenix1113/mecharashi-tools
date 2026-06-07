@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-017 localStorage 版本快取 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-017 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-017</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">localStorage 版本快取</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-05-27</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label green">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-left:3px solid var(--accent-green);border-radius:0 10px 10px 0;padding:14px 18px;margin:0 0 20px;font-size:13px;color:var(--text-secondary);line-height:1.8;">
+    ✅ <strong>2026-06-03 已實作並上線</strong>（隨 PLAN-019 引用層的查詢量需求一併完成）。採 per-collection 版本 gate 快取（<code>mecharashi_gd_&lt;collection&gt;</code>），保留懶載模型，未來新集合自動納入。
+    <code>meta/gameData</code> 已建立、安全規則已部署、<code>bumpDataVersion</code> 已接入所有 <code>updateX()</code>。瀏覽器驗證：cache hit 0 collection reads、bump 後正確失效。詳見<a href="計畫書.html" style="color:var(--accent-green);text-decoration:none;">計畫書 › 實作說明</a>。
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">8</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-green);">8 / 8</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    回訪用戶每次 session 的 Firestore 讀取從 11 次降至 1 次（版本檢查），降幅 91%。
+    搭配 PLAN-016，從零開始的冷啟動讀取數為 12 次，回訪熱啟動僅 1 次。
+    免費配額（5 萬/天）可支撐約 8,000 位日活用戶的正常使用。
+  </div>
+</section>
+
+<!-- Phase A: localStorage 核心邏輯 -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">GameDataContext localStorage 快取邏輯</div>
+  <div class="section-desc">在 GameDataContext 啟動流程中插入版本比對與 localStorage 讀寫，實現回訪用戶零 Firestore 讀取。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 新增 localStorage 工具函式</div>
+      <div class="task-group-meta">src/lib/gameDataCache.ts（新建）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">建立 readGameDataCache / writeGameDataCache / clearGameDataCache</div>
+        <div class="task-desc">
+          新建 <code>src/lib/gameDataCache.ts</code>，封裝 localStorage 讀寫邏輯：<br>
+          <code>readGameDataCache()</code>：讀取並 <code>JSON.parse</code>，失敗時清除 key 並回傳 null。<br>
+          <code>writeGameDataCache(version, data)</code>：<code>JSON.stringify</code> 後分別寫入 version 與 data key。<br>
+          <code>clearGameDataCache()</code>：清除兩個 key，供手動刷新使用。<br>
+          localStorage key 常數：<code>mecharashi_game_version</code>、<code>mecharashi_game_data</code>。
+        </div>
+        <div class="task-file">src/lib/gameDataCache.ts（新建）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; GameDataContext 讀取流程加入版本比對</div>
+      <div class="task-group-meta">src/contexts/GameDataContext.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">useEffect 啟動時先讀 meta/gameData，命中快取則跳過 11 次讀取</div>
+        <div class="task-desc">
+          修改 <code>GameDataContext.tsx</code> 的 <code>useEffect</code>：<br>
+          1. <code>getDoc(doc(db, 'meta', 'gameData'))</code>（1 read）<br>
+          2. 比對 <code>readGameDataCache().version</code><br>
+          3. 版本相同 → <code>setState</code> from cache，<code>setLoading(false)</code>，return<br>
+          4. 版本不同 → 走原 <code>Promise.all</code> 讀取流程，完成後 <code>writeGameDataCache</code><br>
+          5. <code>meta/gameData</code> 不存在（remoteVersion = null）→ 直接走原流程，不寫 localStorage
+        </div>
+        <div class="task-file">src/contexts/GameDataContext.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; reload() 支援強制清除快取</div>
+      <div class="task-group-meta">src/contexts/GameDataContext.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">reload() 呼叫前先清除 localStorage 快取，確保強制重讀行為正確</div>
+        <div class="task-desc">
+          現有 <code>reload()</code> 透過 <code>setTick</code> 觸發 useEffect 重跑。
+          若不清除 localStorage，重跑時仍會命中舊快取而讀取到舊資料。<br>
+          修改 <code>reload</code> callback：先呼叫 <code>clearGameDataCache()</code>，再 <code>setTick</code>。
+          Admin 更新資料後按 reload 可立即看到新資料（並在完成後重建快取）。
+        </div>
+        <div class="task-file">src/contexts/GameDataContext.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B: Firestore meta 設置 -->
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">Firestore meta/gameData 文件設置</div>
+  <div class="section-desc">admin 一次性作業，建立 Firestore 版本文件，啟動快取機制。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 在 Firestore 建立 meta/gameData 文件</div>
+      <div class="task-group-meta">Firebase Console / Admin SDK</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">手動在 Firebase Console 新增 meta collection 與 gameData 文件</div>
+        <div class="task-desc">
+          欄位：<code>version: "2026.05.27.1"</code>（格式：日期.流水號）、
+          <code>updatedAt: &lt;Timestamp&gt;</code>、<code>updatedBy: "&lt;admin_uid&gt;"</code>。<br>
+          此版本號代表「目前快取有效版本」，admin 每次更新遊戲資料後需 bump 此值。
+          版本號設計採日期加流水號，方便辨識更新時間，不需語義版本管理。
+        </div>
+        <div class="task-file">Firebase Console → Firestore → meta → gameData</div>
+      </div>
+      <div class="task-assignee">Admin</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C: Admin Bump 機制 -->
+<section class="section">
+  <div class="section-label green">Phase C</div>
+  <div class="section-title">Admin 版本 Bump 機制</div>
+  <div class="section-desc">讓 admin 更新資料後可一鍵失效所有用戶的 localStorage 快取，無需手動到 Firebase Console 修改。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; Admin Panel 新增「更新遊戲資料版本」按鈕</div>
+      <div class="task-group-meta">src/pages/admin/AdminPage.tsx（或相關 Admin 頁面）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">點擊後寫入新版本號至 meta/gameData，使全站用戶快取失效</div>
+        <div class="task-desc">
+          新增按鈕「🔄 Bump 遊戲資料版本（使快取失效）」，點擊後：<br>
+          1. 產生新版本號：<code>`${YYYYMMDD}.${n}`</code>（今日日期 + 自動流水號）<br>
+          2. <code>setDoc(doc(db, 'meta', 'gameData'), { version, updatedAt: serverTimestamp(), updatedBy: uid })</code><br>
+          3. 顯示確認 toast：「已更新至版本 2026.05.27.2，所有用戶快取將在下次訪問時自動更新」<br>
+          需加確認對話框防止誤觸，Firestore security rules 限制僅 admin 可寫 meta collection。
+        </div>
+        <div class="task-file">src/pages/admin/AdminPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; Firestore Security Rules 新增 meta collection 保護</div>
+      <div class="task-group-meta">firestore.rules</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">meta collection：所有人可讀（版本比對需要），僅 admin 可寫</div>
+        <div class="task-desc">
+          在 <code>firestore.rules</code> 新增：<br>
+          <code>match /meta/{doc} { allow read: if true; allow write: if isAdmin(); }</code><br>
+          沿用既有 <code>isAdmin()</code> helper（或 custom claims 判斷）。
+          避免一般用戶能偽造版本號觸發全站快取失效。
+        </div>
+        <div class="task-file">firestore.rules</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D: 驗收 -->
+<section class="section">
+  <div class="section-label green">Phase D</div>
+  <div class="section-title">驗收與監控</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 快取命中 / 失效流程測試</div>
+      <div class="task-group-meta">Chrome DevTools → Application → Storage</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">驗證首次訪問、回訪命中、版本 bump 後失效三個場景</div>
+        <div class="task-desc">
+          測試場景一（首次訪問）：清除 localStorage，開啟頁面，Network tab 應看到 11+ 次 Firestore 請求，
+          localStorage 中應出現兩個 key。<br>
+          測試場景二（回訪命中）：不清除 localStorage，重新整理，Network tab 應只看到 1 次 meta/gameData 請求。<br>
+          測試場景三（版本 bump）：Admin 按 Bump 按鈕，回到前台重整，應重新讀取全部 collection 並更新 localStorage 版本號。<br>
+          測試場景四（降級）：手動在 DevTools 損壞 mecharashi_game_data 值，重整後應靜默清除並正常讀取。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; Firebase 控制台讀取數監控（部署後 24 小時）</div>
+      <div class="task-group-meta">Firebase Console · 計費指標</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">確認部署後讀取數顯著下降，趨勢符合預期</div>
+        <div class="task-desc">
+          部署後觀察 Firebase Console 計費指標頁（Firestore → Usage → Read）。<br>
+          預期讀取曲線出現明顯斷層（搭配 PLAN-016 + 017 後比 5/26 的 16 萬次應下降 95%+）。<br>
+          若讀取數未明顯下降，排查 meta/gameData 是否正確設置，以及 localStorage 寫入是否成功。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-017 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-03 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

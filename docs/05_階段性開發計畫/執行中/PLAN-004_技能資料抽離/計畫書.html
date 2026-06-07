@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-004 技能資料抽離 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+
+.tag {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+}
+.tag.cyan   { background: rgba(34,211,238,0.15); color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.tag.green  { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.tag.yellow { background: rgba(234,179,8,0.15);  color: var(--accent-yellow); border: 1px solid rgba(234,179,8,0.3); }
+.tag.red    { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+.tag.purple { background: rgba(168,85,247,0.15); color: var(--accent-purple); border: 1px solid rgba(168,85,247,0.3); }
+
+/* Option comparison table */
+.option-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+.option-table th {
+  text-align: left; padding: 10px 14px;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--accent-cyan);
+  border-bottom: 2px solid var(--border-accent);
+}
+.option-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
+.option-table td:first-child { font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+.option-recommended { background: rgba(34,211,238,0.05); }
+
+/* Scope table */
+.scope-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+.scope-table th {
+  text-align: left; padding: 9px 14px;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--accent-yellow);
+  border-bottom: 2px solid var(--border-accent);
+}
+.scope-table td { padding: 8px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.scope-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan); font-weight: 700; }
+
+.risk-block {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 0;
+}
+.risk-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.risk-level { font-size: 11px; font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+.risk-level.high   { color: var(--accent-red); }
+.risk-level.medium { color: var(--accent-yellow); }
+.risk-level.low    { color: var(--accent-green); }
+.risk-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+.risk-mitigation { font-size: 12px; color: var(--text-dim); margin-top: 6px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-004 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge cyan">◆ PLAN-004</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    技能資料抽離<span style="-webkit-text-fill-color:var(--text-secondary);">pilotSkills · neuralDrives · PilotTalent 保留</span>
+  </h1>
+  <p class="hero-sub">將 PilotSkill 與職業共用 NeuralDrive 從 Pilot 文件中抽離為獨立 Collection，解決共用被動重複維護問題，同時釐清技能/天賦/神經驅動的管理邊界</p>
+</header>
+
+<main class="container">
+
+<div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3);border-left:3px solid var(--accent-purple);border-radius:0 10px 10px 0;padding:12px 18px;margin:20px 0;font-size:13px;color:var(--text-secondary);">
+  📐 本計畫為 <a href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html" style="color:var(--accent-purple);text-decoration:none;font-weight:600;">PLAN-019 實體引用與模擬基礎（總綱）</a> 之子計畫，負責 <strong>技能/神經驅動抽成集合 + 預載 Map</strong>（Layer 4 快取基礎）。
+</div>
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value cyan">PLAN-004</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-05-19</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">Collection · Schema · Frontend · Migration</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MEDIUM-HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value" style="color:var(--text-dim);">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">關聯文件</div>
+      <div class="meta-value"><a href="../../../02_技術文件/02_資料模型/pilots.html" style="color:var(--accent-cyan);text-decoration:none;">pilots.html</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+  <div class="section-desc">技能資料目前全數嵌入於 Pilot 文件，隨著遊戲機師增加，已暴露三個結構性維護問題。</div>
+
+  <div class="problem-block">
+    <strong>問題一：共用被動技能需要在多份 Pilot 文件中各自維護一份副本</strong><br><br>
+    現有 <code>Pilot.skills: PilotSkill[]</code> 將所有技能直接嵌入機師文件。
+    當多名機師共用同一個被動技能（相同名稱、相同效果）時，該技能的
+    <code>description</code>、<code>effects[]</code>、<code>buffIds[]</code> 等欄位在每份 Pilot 文件中各有一份副本。<br><br>
+    若日後遊戲更新導致某個共用被動的數值調整，需逐一找出並更新所有持有該技能的機師文件，
+    既費時又容易漏改，且無法保證一致性。隨著機師數量增加，此問題的維護成本將持續上升。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：神經驅動職業共用 / 機師專屬混存，現有結構無法區分</strong><br><br>
+    <code>Pilot.neuralDrive: NeuralDrive[]</code> 嵌入所有神經驅動區塊。
+    部分神經驅動區塊（如某些 α / β 分區）為同職業所有機師共用（相同激活閾值、相同效果），
+    部分則為特定機師專屬（γ 分區常見此情況）。<br><br>
+    現有 <code>NeuralDrive</code> interface 沒有任何欄位說明此區塊的歸屬（職業共用 vs 機師專屬），
+    無法在 Admin 工具中做結構化管理。職業共用的部分同樣面臨問題一的重複維護問題——
+    同職業多位機師各存一份，更新時必須全部手動同步。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：<code>effects[]</code> 結構化數值填寫進度無法集中追蹤</strong><br><br>
+    計算器依賴每個技能的 <code>effects: SkillEffect[]</code> 做數值加總。
+    目前技能分散在各 Pilot 文件中，無法在單一位置概覽「哪些技能已填完 effects[]」、
+    「哪些仍為空陣列待補」。若要做 Admin 工具批次補填，必須逐份掃描 Pilot 文件，
+    極為不便。
+  </div>
+</section>
+
+<!-- 範圍界定 -->
+<section class="section">
+  <div class="section-label yellow">Scope</div>
+  <div class="section-title">範圍界定</div>
+  <div class="section-desc">三種技能相關資料的處理方式不同，根據各自特性決定是否抽離。</div>
+
+  <div class="data-table-wrap">
+    <table class="scope-table">
+      <tr><th>資料類型</th><th>現有位置</th><th>處置</th><th>原因</th></tr>
+      <tr>
+        <td>PilotSkill</td>
+        <td>Pilot.skills[]（嵌入）</td>
+        <td><span class="tag cyan">✓ 抽離</span> → <code>pilotSkills</code> collection</td>
+        <td>存在跨機師共用情況；需單一管理入口追蹤 effects[] 補填進度</td>
+      </tr>
+      <tr>
+        <td>NeuralDrive</td>
+        <td>Pilot.neuralDrive[]（嵌入）</td>
+        <td><span class="tag cyan">✓ 抽離</span> → <code>neuralDrives</code> collection</td>
+        <td>存在職業共用 / 機師專屬之分；需 <code>scope</code> 欄位結構化區分</td>
+      </tr>
+      <tr>
+        <td>PilotTalent</td>
+        <td>Pilot.talents[]（嵌入）</td>
+        <td><span class="tag green">✗ 保留嵌入</span></td>
+        <td>天賦為機師個別屬性；<code>enhancedEffects</code> 依賴專武觸發，本質上與機師文件強耦合，抽離無實際效益</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="note-block">
+    <strong>天賦不抽離的補充說明</strong><br>
+    天賦名稱與效果在每個機師中均唯一，不存在跨機師共用的情況。
+    武器端透過 <code>WeaponSkill.enhancesTalentName</code> 來對應要強化的天賦，
+    而強化後的效果 (<code>enhancedEffects</code>) 儲存於 Pilot 文件中，是機師個別配置的一部份。
+    此設計已在 PLAN-001 中確立，本次不調整。
+  </div>
+</section>
+
+<!-- 方案比較 -->
+<section class="section">
+  <div class="section-label cyan">Options</div>
+  <div class="section-title">方案比較</div>
+  <div class="section-desc">針對 PilotSkill 與 NeuralDrive 的三種可行處理方式。</div>
+
+  <div class="data-table-wrap">
+    <table class="option-table">
+      <tr>
+        <th>方案</th>
+        <th>描述</th>
+        <th>優點</th>
+        <th>缺點</th>
+        <th>改動幅度</th>
+      </tr>
+      <tr class="option-recommended">
+        <td>
+          <span class="tag cyan">推薦</span><br>
+          方案 A<br>
+          <small style="color:var(--text-dim)">全抽離<br>+ 全域快取</small>
+        </td>
+        <td>
+          技能 / 神經驅動抽至獨立 Collection。<br>
+          Pilot.skills / neuralDrive 改為 <code>string[]</code>（ID 陣列）。<br>
+          前端在 App 層預載兩個 Collection，以 ID 快速 lookup，不需 per-pilot 額外 fetch。
+        </td>
+        <td>
+          ✅ 真正單一資料源<br>
+          ✅ 共用技能只需維護一份<br>
+          ✅ Admin 工具可集中管理<br>
+          ✅ 可追蹤 effects[] 補填進度<br>
+          ✅ 神經驅動職業共用可結構化
+        </td>
+        <td>
+          ❌ 前端讀取路徑需修改<br>
+          ❌ 需要遷移腳本 + 資料驗證<br>
+          ❌ Pilot interface 破壞性改變<br>
+          ❌ App 層需新增全域快取邏輯
+        </td>
+        <td><span class="tag yellow">中-高</span></td>
+      </tr>
+      <tr>
+        <td>
+          方案 B<br>
+          <small style="color:var(--text-dim)">技能登錄冊<br>（保留嵌入）</small>
+        </td>
+        <td>
+          新增 <code>pilotSkills</code> 作為主控清單（master registry）。<br>
+          PilotSkill 增加選填 <code>skillId?: string</code> 欄位。<br>
+          Pilot 仍保留嵌入的完整技能物件；Admin 工具在 master 更改後，自動推送到所有引用同一 skillId 的 Pilot docs。
+        </td>
+        <td>
+          ✅ 前端讀取路徑完全不變<br>
+          ✅ 不需額外 fetch<br>
+          ✅ 可漸進式遷移（不急著全部同步）
+        </td>
+        <td>
+          ❌ 資料仍有重複（嵌入 + master 兩份）<br>
+          ❌ 需要 Admin sync 機制，有版本漂移風險<br>
+          ❌ 精神模型複雜（「到底以哪份為準？」）<br>
+          ❌ 沒有解決 effects[] 追蹤問題
+        </td>
+        <td><span class="tag green">低-中</span></td>
+      </tr>
+      <tr>
+        <td>
+          方案 C<br>
+          <small style="color:var(--text-dim)">僅處理<br>NeuralDrive</small>
+        </td>
+        <td>
+          僅將 <code>NeuralDrive</code> 抽至獨立 Collection，加入 <code>scope</code> 欄位區分職業共用 / 機師專屬。<br>
+          <code>PilotSkill</code> 不動，問題一不處理。
+        </td>
+        <td>
+          ✅ 改動範圍最小<br>
+          ✅ 解決神經驅動結構問題
+        </td>
+        <td>
+          ❌ 共用被動維護問題未解<br>
+          ❌ 之後仍需進行技能抽離，等於做兩次<br>
+          ❌ 沒有解決 effects[] 集中追蹤
+        </td>
+        <td><span class="tag green">低</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="note-block">
+    <strong>推薦方案 A 的核心理由</strong><br>
+    方案 A 的前端改動看似大，但 <strong>pilotSkills 和 neuralDrives 屬於靜態參考資料（與遊戲版本同步，不常變動）</strong>，
+    可在 App 啟動時一次性預載並快取到 React Context 或 Zustand store，
+    之後任何頁面查詢技能時都是 O(1) 的 Map lookup，效能不劣於嵌入方案。
+    方案 B 的「同步」機制反而引入額外的操作風險（忘記同步、只改了 master 沒推送），
+    是一種把問題藏起來而非真正解決的做法。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+  <div class="section-desc">採用方案 A（全抽離 + 全域快取），以下說明各項具體決策。</div>
+
+  <div class="decision-block">
+    <strong>決策一：PilotSkill 全數抽離至 <code>pilotSkills</code> Collection</strong><br><br>
+    將 Pilot 文件中的 <code>skills[]</code> 陣列拆解為獨立文件，每份文件對應一個技能（含被動、主動、指令、武器技能）。
+    技能 ID 採 slug 格式：<code>{type}_{技能名稱}</code>（如 <code>passive_突擊強化</code>）。<br><br>
+    <strong>去重策略</strong>：名稱相同且 description 一致者視為同一技能，共用一份文件。
+    名稱相同但 description 不同（同名不同效）者，視為不同文件，以 <code>_{pilotId}</code> 後綴區分。<br><br>
+    <code>Pilot.skills</code> 欄位由 <code>PilotSkill[]</code> 改為 <code>string[]</code>（pilotSkills 的文件 ID 陣列，順序保留）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：NeuralDrive 全數抽離至 <code>neuralDrives</code> Collection，新增 <code>scope</code> 欄位</strong><br><br>
+    每個神經驅動區塊（如「進攻者α」、「技術者γ」）獨立為一份文件。
+    新增 <code>scope: 'pilot' | 'class'</code> 欄位區分歸屬：<br>
+    · <code>scope = 'class'</code>：職業共用，搭配 <code>pilotClass: string</code> 記錄適用職業<br>
+    · <code>scope = 'pilot'</code>：機師專屬，搭配 <code>pilotId: string</code> 記錄所屬機師<br><br>
+    <code>Pilot.neuralDrive</code> 欄位由 <code>NeuralDrive[]</code> 改為 <code>string[]</code>（neuralDrives 的文件 ID 陣列）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：PilotTalent 保留嵌入，不納入本次計畫</strong><br><br>
+    天賦是機師個別屬性，不存在跨機師共用的情況。
+    <code>enhancedEffects</code> 為機師持有專武時的強化效果，與機師文件強耦合。
+    保持現狀可避免引入不必要的關聯複雜度。<br><br>
+    若未來有「複製天賦到新機師」的需求，可再評估，但目前不在範圍內。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：前端採用全域預載 + Map 快取，不做 per-pilot lazy fetch</strong><br><br>
+    <code>pilotSkills</code> 與 <code>neuralDrives</code> 屬於靜態參考資料，整個 Collection 體積小（預估數百條記錄）。
+    在 App 啟動時一次性 fetch 並建立 <code>Map&lt;id, object&gt;</code>，
+    之後所有頁面（PilotDetailPage、SimulatorPage 等）直接從 Map 查詢，
+    無需發送額外 Firestore 請求，效能等同嵌入方案。<br><br>
+    快取層位置：React Context（<code>SkillCacheContext</code>）或 Zustand global store，
+    具體實作由開發時決定，本計畫不限定。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：遷移採兩階段策略，先建新 Collection 再更新 Pilot docs</strong><br><br>
+    Stage 1：遷移腳本讀取所有 Pilot docs，提取 skills / neuralDrive，去重後寫入
+    <code>pilotSkills</code> / <code>neuralDrives</code> Collection，<strong>不修改</strong>既有 Pilot docs（保留舊格式，可 dry-run 驗證）。<br>
+    Stage 2：確認新 Collection 資料正確後，執行第二腳本將 Pilot.skills / neuralDrive 欄位改為 ID 陣列。<br><br>
+    兩個階段之間可做完整的資料驗證，降低遷移失敗風險。
+  </div>
+</section>
+
+<!-- Schema 規格 -->
+<section class="section">
+  <div class="section-label purple">Schema</div>
+  <div class="section-title">Schema 規格</div>
+  <div class="section-desc">新增與修改的 TypeScript interface 完整定義。</div>
+
+  <div class="section-title" style="font-size:16px;margin-top:24px;margin-bottom:12px;">1. 新增：PilotSkillDoc interface（pilotSkills collection）</div>
+
+  <div class="code-block">
+<span class="cm">// pilotSkills Collection：每份文件為一個可共用的技能</span>
+<span class="kw">export interface</span> <span class="ty">PilotSkillDoc</span> {
+  id:          <span class="ty">string</span>           <span class="cm">// slug，如 "passive_突擊強化"</span>
+  name:        <span class="ty">string</span>           <span class="cm">// 技能顯示名稱</span>
+  <span class="cm">/** SkillType：被動技能 / 主動技能 / 指令技能 / 必殺技能 / 武器技能 */</span>
+  type:        <span class="ty">string</span>
+  <span class="cm">/** 仿生電腦單元類型："0"=核心單元 "6"=職業單元 */</span>
+  unitType?:   <span class="ty">string</span>
+  ap?:         <span class="ty">string</span>           <span class="cm">// 主動 / 指令 / 必殺技能才有</span>
+  cd?:         <span class="ty">string</span>           <span class="cm">// 指令技能才有（冷卻回合數）</span>
+  weapon?:     <span class="ty">WeaponRequirement</span> | <span class="ty">string</span>  <span class="cm">// 武器技能才有</span>
+  description: <span class="ty">string</span>
+  icon:        <span class="ty">string</span>
+  iconLocal:   <span class="ty">string</span>
+  effects:     <span class="ty">SkillEffect</span>[]    <span class="cm">// 空陣列 = 待填入</span>
+  buffIds:     <span class="ty">string</span>[]
+}
+  </div>
+
+  <div class="note-block">
+    <strong>PilotSkillDoc 與現有 PilotSkill interface 的差異</strong><br>
+    兩者欄位幾乎相同，差別在於 PilotSkillDoc 是 Firestore 文件（有頂層 id），
+    而 PilotSkill 是嵌入陣列元素。
+    遷移完成後，<code>PilotSkill</code> interface 可以直接改為 <code>PilotSkillDoc</code> 的別名或刪除。
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:32px;margin-bottom:12px;">2. 新增：NeuralDriveDoc interface（neuralDrives collection）</div>
+
+  <div class="code-block">
+<span class="cm">// neuralDrives Collection：每份文件為一個神經驅動區塊</span>
+<span class="kw">export interface</span> <span class="ty">NeuralDriveDoc</span> {
+  id:         <span class="ty">string</span>          <span class="cm">// slug，如 "class_突擊手_alpha" 或 "pilot_赤瞳_gamma"</span>
+  name:       <span class="ty">string</span>          <span class="cm">// 區塊顯示名稱（如「進攻者α」）</span>
+  icon:       <span class="ty">string</span>
+  slots:      <span class="ty">string</span>[]        <span class="cm">// 插槽類型說明列表</span>
+  levels:     <span class="ty">NeuralDriveLevel</span>[]
+
+  <span class="cm">// ─── 新增：歸屬範圍 ──────────────────────────────────────────────</span>
+  <span class="cm">/** 'class' = 職業共用；'pilot' = 機師專屬 */</span>
+  scope:      <span class="st">'class'</span> | <span class="st">'pilot'</span>
+  <span class="cm">/** scope='class' 時：適用職業（PilotClass enum 值，如 "突擊手"） */</span>
+  pilotClass?: <span class="ty">string</span>
+  <span class="cm">/** scope='pilot' 時：所屬機師 ID */</span>
+  pilotId?:   <span class="ty">string</span>
+}
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:32px;margin-bottom:12px;">3. 修改：Pilot interface（index.ts）</div>
+
+  <div class="code-block">
+<span class="kw">export interface</span> <span class="ty">Pilot</span> {
+  id:          <span class="ty">string</span>
+  name:        <span class="ty">string</span>
+  <span class="cm">// ... 其他欄位不變 ...</span>
+
+  talents:     <span class="ty">PilotTalent</span>[]    <span class="cm">// 不變（保留嵌入，機師個別天賦）</span>
+
+  <span class="cm">// ─── 改變 ──────────────────────────────────────────────────────</span>
+  <span class="cm">/** 原 PilotSkill[]，改為 pilotSkills Collection 的文件 ID 陣列（順序保留） */</span>
+  skills:      <span class="ty">string</span>[]
+
+  <span class="cm">/** 原 NeuralDrive[]，改為 neuralDrives Collection 的文件 ID 陣列（順序保留） */</span>
+  neuralDrive: <span class="ty">string</span>[]
+}
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:32px;margin-bottom:12px;">4. 前端快取結構建議（App 層）</div>
+
+  <div class="code-block">
+<span class="cm">// App 啟動時預載，建立快速 lookup Map</span>
+<span class="kw">const</span> skillMap = <span class="kw">new</span> <span class="ty">Map</span>&lt;<span class="ty">string</span>, <span class="ty">PilotSkillDoc</span>&gt;()     <span class="cm">// id → skill</span>
+<span class="kw">const</span> neuralDriveMap = <span class="kw">new</span> <span class="ty">Map</span>&lt;<span class="ty">string</span>, <span class="ty">NeuralDriveDoc</span>&gt;() <span class="cm">// id → drive</span>
+
+<span class="cm">// PilotDetailPage 使用方式</span>
+<span class="kw">const</span> pilotSkills = pilot.skills.map(id => skillMap.get(id)).filter(<span class="ty">Boolean</span>)
+<span class="kw">const</span> pilotDrives = pilot.neuralDrive.map(id => neuralDriveMap.get(id)).filter(<span class="ty">Boolean</span>)
+  </div>
+</section>
+
+<!-- 影響範圍 -->
+<section class="section">
+  <div class="section-label cyan">Impact</div>
+  <div class="section-title">影響範圍</div>
+
+  <div class="doc-grid">
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-cyan)">TypeScript</div>
+      <h4>src/types/index.ts</h4>
+      <p>新增 PilotSkillDoc、NeuralDriveDoc interface；修改 Pilot interface（skills / neuralDrive 改為 string[]）；PilotSkill 可保留為向後相容別名或移除</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-cyan)">Frontend</div>
+      <h4>src/lib/firestoreApi.ts</h4>
+      <p>新增 fetchAllPilotSkills()、fetchAllNeuralDrives() 兩個全域預載函式；傳回 Map&lt;string, T&gt; 供快取層使用</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-cyan)">Frontend</div>
+      <h4>src/hooks/useFirestore.ts</h4>
+      <p>新增或調整 skill / neuralDrive 的資料讀取路徑；若採用 Context 快取，在此層 consume context 而非直接 fetch</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-cyan)">Frontend</div>
+      <h4>src/pages/PilotDetailPage.tsx</h4>
+      <p>技能 / 神經驅動的渲染改由 Map lookup 取得；不再讀取嵌入物件，改由 pilot.skills / neuralDrive 的 ID 陣列 join</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-cyan)">Frontend</div>
+      <h4>src/pages/SimulatorPage.tsx</h4>
+      <p>計算器取得機師技能的路徑同樣需要改為 Map lookup；effects[] 加總邏輯不變，只是技能物件來源改變</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-purple)">Admin</div>
+      <h4>src/pages/AdminPage.tsx</h4>
+      <p>新增 pilotSkills / neuralDrives Collection 的管理入口：可在此集中瀏覽、編輯技能 effects[]，並查看哪些技能尚未填完</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-yellow)">Script</div>
+      <h4>scripts/migrate-plan004-skills.mjs（新增）</h4>
+      <p>Stage 1：讀取所有 Pilot docs，提取並去重 skills / neuralDrive，寫入新 Collection（dry-run 模式先確認）</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-yellow)">Script</div>
+      <h4>scripts/migrate-plan004-pilots.mjs（新增）</h4>
+      <p>Stage 2：更新 Pilot.skills 與 Pilot.neuralDrive 欄位為 ID 陣列（Stage 1 驗證完成後才執行）</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-purple)">Document</div>
+      <h4>docs/.../pilots.html + 新增 pilotSkills.html、neuralDrives.html</h4>
+      <p>更新 pilots 資料模型文件（欄位改動）；新增 pilotSkills、neuralDrives 兩個新 Collection 的 Schema 說明文件</p>
+    </div>
+  </div>
+</section>
+
+<!-- 風險分析 -->
+<section class="section">
+  <div class="section-label red">Risk</div>
+  <div class="section-title">風險分析</div>
+
+  <div class="risk-block">
+    <div class="risk-item">
+      <div class="risk-level high">⚠ HIGH — 前端讀取路徑全面修改</div>
+      <div class="risk-desc">
+        Pilot.skills 與 neuralDrive 欄位型別由物件陣列改為 ID 字串陣列，
+        TypeScript 編譯器會在全域標出所有受影響的使用位置（PilotDetailPage、SimulatorPage 等），
+        需逐一修改。遺漏修改會導致運行時 undefined 錯誤。
+      </div>
+      <div class="risk-mitigation">
+        緩解：TypeScript 型別改動是自我揭露的——編譯失敗代表修改不完整。
+        先跑 <code>tsc --noEmit</code> 確認所有錯誤，再逐一修正。
+        全域快取層統一封裝 lookup 邏輯，前端不直接存取 Map，降低遺漏機率。
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-level high">⚠ HIGH — 遷移期間資料狀態不一致</div>
+      <div class="risk-desc">
+        Stage 1（新 Collection 寫入）完成後、Stage 2（Pilot docs 更新）執行前，
+        新舊格式並存。若此期間前端已改成讀 ID 陣列，
+        但 Pilot docs 仍是嵌入格式，會導致頁面空白。
+      </div>
+      <div class="risk-mitigation">
+        緩解：前端改動（Interface / fetch 路徑）應在 Stage 2 完成後才部署，
+        不能在遷移中途上線。建議整個 PLAN-004 在非主要開發週期中的短維護窗口執行。
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-level medium">⚡ MEDIUM — 去重邏輯判斷失誤</div>
+      <div class="risk-desc">
+        共用被動的識別依賴「名稱相同 + description 相同」。
+        若遊戲中存在名稱相同但效果微妙不同的技能版本（如機師升星後技能升級），
+        去重邏輯可能將其錯誤合併，導致部分機師技能資料遺失。
+      </div>
+      <div class="risk-mitigation">
+        緩解：遷移腳本 dry-run 後人工審查輸出的去重報告；
+        有疑慮的同名技能先各自保留，標記為待確認。
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-level medium">⚡ MEDIUM — 全域快取首次載入延遲</div>
+      <div class="risk-desc">
+        App 啟動時需一次性 fetch pilotSkills / neuralDrives 兩個 Collection，
+        若 Collection 體積成長到數千條記錄，
+        首次載入時間可能明顯增加。
+      </div>
+      <div class="risk-mitigation">
+        緩解：目前遊戲機師數量有限，預估 pilotSkills &lt; 500 筆、
+        neuralDrives &lt; 200 筆，單次 fetch 在合理範圍內。
+        若未來規模成長，可評估改用 Firestore 分頁或 CDN 靜態 JSON。
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-level low">✓ LOW — TypeScript 型別改動</div>
+      <div class="risk-desc">
+        Pilot interface 的 skills / neuralDrive 欄位型別改變，
+        所有引用位置會在編譯期產生型別錯誤，確保不會有遺漏。
+      </div>
+      <div class="risk-mitigation">
+        這是有利風險——讓靜態分析幫你找出所有需要修改的地方，
+        相比嵌入方案的無型別保護更安全。
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-level low">✓ LOW — 神經驅動 scope 填值錯誤</div>
+      <div class="risk-desc">
+        遷移時需要人工判斷每個 NeuralDrive 區塊是 class 還是 pilot scope。
+        若判斷錯誤，class-shared 的區塊可能被當作 pilot-specific，
+        導致其他機師缺少該驅動。
+      </div>
+      <div class="risk-mitigation">
+        緩解：可透過比對同職業多名機師的 neuralDrive 陣列，
+        找出相同 name + levels 的區塊，自動標記為 class scope。
+        人工確認例外情況。
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · PLAN-004 · 計畫書 —
+  <a href="進度表.html" style="color:var(--accent-cyan);text-decoration:none;">→ 查看進度表</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-01 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

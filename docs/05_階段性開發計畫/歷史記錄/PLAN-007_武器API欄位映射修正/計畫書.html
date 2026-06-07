@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-007 武器 API 欄位映射修正 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.info-block {
+  background: rgba(6,182,212,0.06);
+  border: 1px solid rgba(6,182,212,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+
+.tag {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+}
+.tag.cyan   { background: rgba(6,182,212,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(6,182,212,0.3); }
+.tag.green  { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.tag.orange { background: rgba(255,107,43,0.15); color: var(--accent-orange); border: 1px solid rgba(255,107,43,0.3); }
+.tag.red    { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+.mapping-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+.mapping-table th {
+  text-align: left; padding: 9px 14px;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--accent-cyan);
+  border-bottom: 2px solid var(--border-accent);
+}
+.mapping-table td { padding: 8px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 13px; }
+.mapping-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--accent-red);    font-size: 12px; font-weight: 700; }
+.mapping-table td:nth-child(2){ font-family: 'JetBrains Mono', monospace; color: var(--accent-green);  font-size: 12px; font-weight: 700; }
+.mapping-table td:nth-child(3){ font-family: 'JetBrains Mono', monospace; color: var(--accent-orange); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-007 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge cyan">◆ PLAN-007</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    武器 API 欄位映射修正<span style="-webkit-text-fill-color:var(--text-secondary);">PassiveSkill · WeaponHitPoint · WeaponUnderstanding · 機甲限制 · 裝備部位</span>
+  </h1>
+  <p class="hero-sub">修正擷取腳本的 API 欄位名稱映射錯誤，補充型別對照注解，更新文件，並全量重刷 Firebase 武器資料</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value cyan">PLAN-007</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-05-20</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">Script · Enum · Docs · Firebase</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value cyan">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置計畫</div>
+      <div class="meta-value"><a href="../../執行中/PLAN-003_武器資料模型優化/計畫書.html" style="color:var(--accent-cyan);text-decoration:none;">PLAN-003</a></div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>發現背景</strong><br>
+    在為擷取腳本新增 SS/S+ 武器技能自動填入功能（PLAN-003 後續工作）時，實際比對 Chrome DevTools
+    的 Network 請求發現：API 對 <code>weapon_data detail</code> 端點的確有回傳技能資料，
+    但擷取腳本一直以來查找的欄位名稱與 API 實際欄位名稱不符，導致技能（及多個基礎屬性）全部漏抓。
+    此計畫旨在系統性修正所有已知欄位名稱映射錯誤。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+  <div class="section-desc">透過 Chrome DevTools 直接比對 API 原始回應，發現以下欄位名稱錯誤。</div>
+
+  <div class="info-block">
+    <strong>API 實際回應範例（weapon_data detail，武器：爝火）</strong>
+    <div class="code-block" style="margin-top:10px;">
+<span class="cm">// GET https://ma-activity.zlongame.com/common/infodata/mQuery.do</span>
+<span class="cm">//   ?appkey=1616148215678&amp;target=weapon_data&amp;type=detail&amp;query=爝火</span>
+{
+  <span class="st">"ID"</span>: <span class="st">"20315121"</span>,
+  <span class="st">"name"</span>: <span class="st">"爝火"</span>,
+  <span class="st">"quality"</span>: <span class="st">"SSSR"</span>,
+  <span class="st">"WeaponType1"</span>: <span class="st">"Assault"</span>,
+  <span class="st">"WeaponType2"</span>: <span class="st">"ShotGun"</span>,
+  <span class="st">"LimitedModelOfWeapon"</span>: <span class="st">"Light/Medium/Heavy"</span>,  <span class="cm">// 機甲限制</span>
+  <span class="st">"RestrictionsPositionOfWeapon"</span>: <span class="st">"Hand"</span>,           <span class="cm">// 裝備部位</span>
+  <span class="st">"range"</span>: <span class="st">"1-2"</span>,
+  <span class="st">"WeaponWeight"</span>: <span class="st">"450"</span>,                             <span class="cm">// 重量</span>
+  <span class="st">"WeaponBasicAttackingPower"</span>: <span class="st">"1663"</span>,               <span class="cm">// 基礎攻擊力（總計）</span>
+  <span class="st">"WeaponHitPoint"</span>: <span class="st">"3182"</span>,                          <span class="cm">// 命中</span>
+  <span class="st">"WeaponUnderstanding"</span>: <span class="st">"4603"</span>,                     <span class="cm">// 暴擊值</span>
+  <span class="st">"PassiveSkill"</span>: [                                    <span class="cm">// 武器技能陣列</span>
+    {
+      <span class="st">"ID"</span>: <span class="st">"53035"</span>,
+      <span class="st">"name"</span>: <span class="st">"阔步"</span>,
+      <span class="st">"SpecificEffects"</span>: <span class="st">"主动攻击对战前，若移动大于等于&lt;color=#F74848&gt;4&lt;/color&gt;格..."</span>,
+      <span class="st">"BufCarried"</span>: <span class="st">"530351"</span>,
+      <span class="st">"SkillIcon"</span>: <span class="st">"Icon_skill_passive_5161"</span>,
+      <span class="st">"icon"</span>: <span class="st">"Icon_skill_passive_5161"</span>
+    }
+    <span class="cm">// ... 更多技能</span>
+  ]
+}
+    </div>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題一：武器技能（PassiveSkill）完全未擷取</strong><br>
+    腳本 <code>buildWeaponSkills()</code> 查找 <code>Skills</code> / <code>skills</code> / <code>WeaponSkills</code> 三個欄位名，
+    但 API 實際欄位為 <code>PassiveSkill</code>。導致所有武器（含 SS/S+）的技能陣列永遠為空，
+    技能資料需要管理員全部手動輸入，無法自動化。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：命中（accuracy）一直為 0</strong><br>
+    腳本查找 <code>Accuracy</code> / <code>accuracy</code>，但 API 欄位為 <code>WeaponHitPoint</code>。
+    Firebase 中所有武器的 <code>accuracy</code> 欄位因此均為 0（預設值），為錯誤資料。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：暴擊值（critValue）一直為 0</strong><br>
+    腳本查找 <code>CritValue</code> / <code>critValue</code> / <code>Crit</code>，但 API 欄位為 <code>WeaponUnderstanding</code>。
+    Firebase 中所有武器的 <code>critValue</code> 均為 0，為錯誤資料。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題四：重量（weight）一直為 0</strong><br>
+    腳本查找 <code>Weight</code> / <code>weight</code>，但 API 欄位為 <code>WeaponWeight</code>。
+    Firebase 中所有武器的 <code>weight</code> 均為 0，為錯誤資料。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題五：裝備部位（equipSlot）永遠從 KIND_DEFAULTS 取值</strong><br>
+    腳本查找 <code>EquipSlot</code> / <code>equipSlot</code> / <code>WeaponSlot</code>，但 API 欄位為
+    <code>RestrictionsPositionOfWeapon</code>（值如 <code>"Hand"</code>、<code>"DualHand"</code>、<code>"Shoulder"</code>、<code>"Back"</code>）。
+    雖然 KIND_DEFAULTS 的預設值對多數武器正確，但有例外的武器無法被正確修正。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題六：機甲限制（mechRestriction）永遠從 KIND_DEFAULTS 取值</strong><br>
+    腳本查找 <code>MechRestriction</code> / <code>mechRestriction</code>，但 API 欄位為
+    <code>LimitedModelOfWeapon</code>（值如 <code>"Light"</code>、<code>"Medium"</code>、<code>"Heavy"</code>，
+    或斜線分隔的組合如 <code>"Light/Medium/Heavy"</code> 表示無限制）。
+    種類預設值（戰術類全部為 medium）對多數武器正確，但無法處理個別武器有不同限制的情況。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題七：型別定義缺少 API 欄位對照注解</strong><br>
+    <code>src/types/index.ts</code> 的 <code>Weapon</code> interface 與 <code>src/types/enums.ts</code>
+    的 <code>WeaponEquipSlot</code>、<code>MechRestriction</code> 等 enum，
+    均未標注與 API 欄位名稱的對應關係，維護者難以在不查官方 API 的情況下理解欄位來源。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：TypeScript 內部欄位名稱不隨 API 命名更改，改以注解標注對應關係</strong><br>
+    <code>accuracy</code>、<code>critValue</code>、<code>weight</code> 等欄位語意清晰，
+    若改為 <code>hitPoint</code>（WeaponHitPoint）或 <code>understanding</code>（WeaponUnderstanding）
+    反而降低可讀性（API 命名為內部代碼，非語意名稱）。<br>
+    <strong>做法</strong>：在 interface 欄位上加 <code>// API: WeaponHitPoint</code> 形式的注解，
+    enum 值也加注 API 對應字串，供腳本維護者查閱。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：LimitedModelOfWeapon 斜線組合值 → 以包含的類型數量判斷是否有限制</strong><br>
+    <code>"Light/Medium/Heavy"</code>（三種都含）→ <code>mechRestriction: 'none'</code><br>
+    <code>"Light"</code> / <code>"Medium"</code> / <code>"Heavy"</code>（單一）→ 對應 enum 值<br>
+    <code>"Light/Medium"</code> 等組合（兩種）→ 標記 <code>__REVIEW__</code> 待人工確認（目前遊戲中未見此情況）
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：PassiveSkill 技能的 activation 欄位以技能類型推斷，預設 'carry'</strong><br>
+    API 不提供 <code>activation</code> 欄位。武器被動技能性質上屬於「攜帶即生效」，
+    預設填入 <code>'carry'</code>。管理員可在 Firebase 針對特殊技能手動修改為 <code>'equip'</code> 或 <code>'use'</code>。<br>
+    腳本以 <code>prev?.skills != null</code> 保護手動填入資料，不會覆蓋已有值。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：WeaponBasicAttackingPower 為總攻擊力，暫不改動 attack 欄位的計算邏輯</strong><br>
+    API 的 <code>WeaponBasicAttackingPower</code> 是總攻擊力（如 1663），而遊戲顯示為 139×12
+    （單次攻擊力 × 連擊數）。現行腳本的 attack 欄位來自 list 端點的 <code>MinAttack</code>/<code>MaxAttack</code>，
+    detail 端點提供的是總值，兩者格式不同。<br>
+    <strong>本計畫暫不修改 attack 欄位邏輯，僅補充欄位對照注解，留待後續確認 list 端點欄位格式。</strong>
+  </div>
+</section>
+
+<!-- API 欄位映射規格 -->
+<section class="section">
+  <div class="section-label cyan">Spec</div>
+  <div class="section-title">API 欄位映射規格</div>
+  <div class="section-desc">腳本修正後，detail 端點欄位與 Firestore/TypeScript 欄位的對應關係。</div>
+
+  <table class="mapping-table">
+    <tr>
+      <th>API 欄位（detail 端點）</th>
+      <th>Firestore / TS 欄位</th>
+      <th>備注</th>
+    </tr>
+    <tr>
+      <td>PassiveSkill[]</td>
+      <td>skills: WeaponSkill[]</td>
+      <td>技能陣列；管理員已填入時不覆蓋（prev?.skills != null 保護）</td>
+    </tr>
+    <tr>
+      <td>WeaponHitPoint</td>
+      <td>accuracy: number</td>
+      <td>命中值；parseInt 轉換</td>
+    </tr>
+    <tr>
+      <td>WeaponUnderstanding</td>
+      <td>critValue: number</td>
+      <td>暴擊值；parseInt 轉換</td>
+    </tr>
+    <tr>
+      <td>WeaponWeight</td>
+      <td>weight: number</td>
+      <td>重量；parseInt 轉換</td>
+    </tr>
+    <tr>
+      <td>RestrictionsPositionOfWeapon</td>
+      <td>equipSlot: WeaponEquipSlot</td>
+      <td>Hand→singleHand / DualHand→dualHand / Shoulder→shoulder / Back→back；API優先於KIND_DEFAULTS</td>
+    </tr>
+    <tr>
+      <td>LimitedModelOfWeapon</td>
+      <td>mechRestriction: MechRestriction</td>
+      <td>Light/Medium/Heavy（三含）→none；單一值→對應enum；組合→__REVIEW__</td>
+    </tr>
+    <tr>
+      <td>PassiveSkill[].BufCarried</td>
+      <td>skills[].buffIds: string[]</td>
+      <td>以 "/" 分割，filter(Boolean)</td>
+    </tr>
+    <tr>
+      <td>PassiveSkill[].SkillIcon / icon</td>
+      <td>skills[].icon: string</td>
+      <td>key 格式，如 "Icon_skill_passive_5161"；iconLocal 自動補填</td>
+    </tr>
+  </table>
+</section>
+
+<!-- enum 注解規格 -->
+<section class="section">
+  <div class="section-label cyan">Annotation</div>
+  <div class="section-title">Enum / Interface 注解補充規格</div>
+  <div class="section-desc">在現有 TypeScript 定義上加上 API 欄位對照注解，不重命名欄位或 enum key。</div>
+
+  <div class="code-block">
+<span class="cm">// src/types/enums.ts — WeaponEquipSlot 加注 API 對應值</span>
+<span class="kw">export const</span> <span class="ty">WeaponEquipSlot</span> = {
+  SINGLE_HAND: <span class="st">'singleHand'</span>, <span class="cm">// API RestrictionsPositionOfWeapon: "Hand"</span>
+  DUAL_HAND:   <span class="st">'dualHand'</span>,   <span class="cm">// API RestrictionsPositionOfWeapon: "DualHand"</span>
+  SHOULDER:    <span class="st">'shoulder'</span>,   <span class="cm">// API RestrictionsPositionOfWeapon: "Shoulder"</span>
+  BACK:        <span class="st">'back'</span>,       <span class="cm">// API RestrictionsPositionOfWeapon: "Back"</span>
+} <span class="kw">as const</span>;
+
+<span class="cm">// src/types/enums.ts — MechRestriction 加注 API 對應值</span>
+<span class="kw">export const</span> <span class="ty">MechRestriction</span> = {
+  NONE:        <span class="st">'none'</span>,   <span class="cm">// API LimitedModelOfWeapon: "Light/Medium/Heavy"（三種均含）</span>
+  LIGHT_ONLY:  <span class="st">'light'</span>,  <span class="cm">// API LimitedModelOfWeapon: "Light"</span>
+  MEDIUM_ONLY: <span class="st">'medium'</span>, <span class="cm">// API LimitedModelOfWeapon: "Medium"</span>
+  HEAVY_ONLY:  <span class="st">'heavy'</span>,  <span class="cm">// API LimitedModelOfWeapon: "Heavy"</span>
+} <span class="kw">as const</span>;
+
+<span class="cm">// src/types/index.ts — Weapon interface 基礎屬性加注 API 欄位名</span>
+<span class="kw">export interface</span> <span class="ty">Weapon</span> {
+  <span class="nm">accuracy</span>: <span class="ty">number</span>   <span class="cm">// API: WeaponHitPoint（命中）</span>
+  <span class="nm">critValue</span>: <span class="ty">number</span>  <span class="cm">// API: WeaponUnderstanding（暴擊值）</span>
+  <span class="nm">weight</span>: <span class="ty">number</span>     <span class="cm">// API: WeaponWeight（重量）</span>
+  <span class="nm">equipSlot</span>: <span class="ty">string</span>  <span class="cm">// API: RestrictionsPositionOfWeapon → WeaponEquipSlot enum</span>
+  <span class="cm">// ... mechRestriction API: LimitedModelOfWeapon → MechRestriction enum</span>
+  <span class="nm">skills</span>: <span class="ty">WeaponSkill</span>[]  <span class="cm">// API: PassiveSkill[]</span>
+}
+  </div>
+</section>
+
+<!-- 執行範圍 -->
+<section class="section">
+  <div class="section-label cyan">Scope</div>
+  <div class="section-title">執行範圍</div>
+
+  <div class="info-block">
+    <strong>Phase A — 擷取腳本修正</strong>（<code>scripts/scrape-weapons.js</code>）<br>
+    修正 6 個 API 欄位名稱映射；補充 <code>LimitedModelOfWeapon</code> 斜線組合解析；
+    補充 <code>RestrictionsPositionOfWeapon</code> 值映射；修正 <code>buildWeaponSkills()</code>。
+  </div>
+
+  <div class="info-block">
+    <strong>Phase B — TypeScript 型別注解補充</strong>（<code>src/types/enums.ts</code>、<code>src/types/index.ts</code>）<br>
+    為 6 個受影響欄位加上 API 欄位對照注解；不重命名任何欄位或 enum key；不變更型別定義本身。
+  </div>
+
+  <div class="info-block">
+    <strong>Phase C — 技術文件更新</strong>（<code>docs/02_技術文件/02_資料模型/weapons.html</code>）<br>
+    補充技能欄位（WeaponSkill）說明；新增「API 欄位對照表」section；
+    補充 <code>BufCarried</code> / <code>SkillIcon</code> 子欄位說明。
+  </div>
+
+  <div class="info-block">
+    <strong>Phase D — Firebase 資料重刷</strong><br>
+    執行修正後的腳本全量重刷武器資料（<code>--auto --no-images</code>）；
+    確認命中 / 暴擊 / 重量 / 機甲限制 / 裝備部位 / 技能全數正確寫入。
+    技能 icon 另外執行一次含圖示下載的完整更新。
+  </div>
+</section>
+
+<!-- 相關文件 -->
+<section class="section">
+  <div class="section-label">Links</div>
+  <div class="section-title">相關文件</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Plan</div>
+      <h4>◆ 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/02_資料模型/weapons.html">
+      <div class="doc-tag">Document</div>
+      <h4>weapons 資料模型</h4>
+      <p>武器 Schema 欄位定義（Phase C 更新目標）</p>
+    </a>
+    <a class="doc-item" href="../../執行中/PLAN-003_武器資料模型優化/計畫書.html">
+      <div class="doc-tag">Related Plan</div>
+      <h4>PLAN-003 武器資料模型優化</h4>
+      <p>本計畫的前置工作，確立 Weapon interface 欄位結構</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · PLAN-007 · 計畫書 —
+  <a href="進度表.html" style="color:var(--accent-cyan);text-decoration:none;">→ 查看進度表</a>
+</footer>
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-05-21 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

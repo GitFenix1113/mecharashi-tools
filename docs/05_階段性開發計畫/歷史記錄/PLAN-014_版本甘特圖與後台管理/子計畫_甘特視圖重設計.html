@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-014C 甘特視圖重設計 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+.meta-label { font-size: 10px; font-family: 'Orbitron', sans-serif; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+.meta-value { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+
+.problem-block  { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.25); border-left: 3px solid var(--accent-red); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); }
+.decision-block { background: rgba(6,182,212,0.06); border: 1px solid rgba(6,182,212,0.2); border-left: 3px solid var(--accent-cyan); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); }
+.warning-block  { background: rgba(234,179,8,0.06); border: 1px solid rgba(234,179,8,0.2); border-left: 3px solid var(--accent-yellow); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); }
+.green-block    { background: rgba(34,197,94,0.06); border: 1px solid rgba(34,197,94,0.2); border-left: 3px solid var(--accent-green); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); }
+.info-block     { background: rgba(168,85,247,0.06); border: 1px solid rgba(168,85,247,0.2); border-left: 3px solid var(--accent-purple); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); }
+
+.code-block {
+  background: #0d1117; border: 1px solid var(--border); border-radius: 10px;
+  padding: 20px 22px; margin: 14px 0; font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; line-height: 1.9; overflow-x: auto; color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.task-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+.task-table th { background: rgba(255,107,43,0.08); color: var(--accent-orange); font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 2px; padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
+.task-table td { padding: 10px 14px; border: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
+.task-table tr:hover td { background: var(--bg-card-hover); }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.badge-green  { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+.badge-yellow { background: rgba(234,179,8,0.15); color: var(--accent-yellow); }
+.badge-red    { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+.badge-purple { background: rgba(168,85,247,0.15); color: var(--accent-purple); }
+.badge-cyan   { background: rgba(6,182,212,0.15); color: var(--accent-cyan); }
+.badge-orange { background: rgba(255,107,43,0.15); color: var(--accent-orange); }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 16px 0; }
+@media (max-width: 900px) { .three-col { grid-template-columns: 1fr; } }
+
+.arch-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+.arch-box h4 { font-size: 13px; color: var(--accent-orange); margin-bottom: 8px; font-family: 'Orbitron', sans-serif; letter-spacing: 1px; }
+.arch-box ul { padding-left: 16px; font-size: 13px; color: var(--text-secondary); line-height: 2; }
+
+.timeline-mockup {
+  background: #0a0c10; border: 1px solid var(--border); border-radius: 10px;
+  padding: 24px; margin: 16px 0; font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; line-height: 1.8; color: #8b949e; overflow-x: auto;
+}
+.tm-orange { color: var(--accent-orange); font-weight: 700; }
+.tm-green  { color: var(--accent-green); font-weight: 700; }
+.tm-cyan   { color: var(--accent-cyan); }
+.tm-purple { color: var(--accent-purple); }
+.tm-yellow { color: var(--accent-yellow); }
+.tm-dim    { color: #444; }
+.tm-bar    { color: #22c55e; }
+.tm-bar2   { color: #f97316; }
+.tm-bar3   { color: #06b6d4; }
+.tm-bar4   { color: #a855f7; }
+.tm-bg     { color: #555; }
+
+.phase-header { font-family: 'Orbitron', sans-serif; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent-orange); padding: 8px 0 4px; margin-top: 20px; border-bottom: 1px solid var(--border); }
+
+/* 版面示意表格 */
+.mockup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  margin: 16px 0;
+  table-layout: fixed;
+}
+.mockup-table th, .mockup-table td {
+  border: 1px solid #2a3040;
+  padding: 6px 8px;
+  text-align: center;
+  vertical-align: middle;
+  color: var(--text-secondary);
+}
+.mockup-table th { background: #151a24; color: var(--accent-orange); font-size: 10px; letter-spacing: 1px; }
+.mockup-table .label-col { text-align: left; color: var(--text-dim); background: #0e1119; width: 100px; }
+.mockup-table .upper-header { background: rgba(255,107,43,0.1); color: var(--accent-orange); }
+.mockup-table .lower-header { background: rgba(6,182,212,0.1); color: var(--accent-cyan); }
+.mockup-table .week-header  { background: #0e1119; color: var(--text-dim); font-size: 10px; }
+.mockup-table .value-cell   { background: #111827; }
+.mockup-table .span-upper   { background: rgba(255,107,43,0.08); color: var(--text-primary); }
+.mockup-table .span-lower   { background: rgba(6,182,212,0.08); color: var(--text-primary); }
+.mockup-table .span-full    { background: rgba(168,85,247,0.08); color: var(--accent-purple); }
+.mockup-table .bar-tw       { background: rgba(34,197,94,0.3); color: var(--accent-green); border-radius: 4px; }
+.mockup-table .bar-tw-end   { background: rgba(34,197,94,0.1); color: var(--text-dim); }
+.mockup-table .bar-cn       { background: rgba(255,107,43,0.3); color: var(--accent-orange); border-radius: 4px; }
+.mockup-table .btn-toggle   { background: rgba(168,85,247,0.15); color: var(--accent-purple); border: 1px solid rgba(168,85,247,0.4); border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <a href="計畫書.html">PLAN-014</a>
+    <span>›</span>
+    <span class="current">子計畫：甘特視圖重設計</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-014C</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    甘特視圖重設計<span style="-webkit-text-fill-color:var(--text-secondary);">版本週軸 · 陸台切換 · 橫向排版</span>
+  </h1>
+  <p class="hero-sub">
+    將 PLAN-014 Phase A 的縱向週列式甘特圖全面改版為橫向週欄式版面。
+    以「第N週更新時間點」為橫軸，上下半版本左右並排，並加入陸版／台版一鍵切換功能。
+  </p>
+</header>
+
+<main class="container">
+
+<!-- ── 計畫概要 ── -->
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">子計畫編號</div>
+      <div class="meta-value purple">PLAN-014C</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-05-25</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">母計畫</div>
+      <div class="meta-value orange">PLAN-014（版本甘特圖與後台管理）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">✅ DONE</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">完成日期</div>
+      <div class="meta-value green">2026-05-25</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">實際工期</div>
+      <div class="meta-value orange">1 天</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響元件</div>
+      <div class="meta-value cyan">VersionGanttPanel · ActivityTimeline → 取代</div>
+    </div>
+  </div>
+
+  <div class="decision-block">
+    <strong>背景與動機</strong><br><br>
+    PLAN-014 Phase A 實作了縱向週列甘特圖（<code>ActivityTimeline.tsx</code>），以「每一橫列 = 一週」的方式呈現活動期間。
+    雖然功能完整，但視覺呈現方式與使用者對版本排程的直覺不完全一致：<br><br>
+    使用者更習慣「時間由左至右流動」的橫向排版，且希望一眼看到
+    <strong>上半版本、下半版本並排</strong>、搭配<strong>第 N 週更新時間點</strong>作為橫軸，
+    這樣就能直接對照「某個活動在第幾週開始、持續幾週」。<br><br>
+    此外，陸服和台服的活動資料雖獨立維護，但使用者希望能<strong>一鍵切換</strong>陸版／台版顯示，
+    而非在兩個獨立面板中左右對比——特別是台服玩家只需要台版資訊時更為直觀。
+  </div>
+
+  <div class="warning-block">
+    <strong>與 PLAN-014 Phase A 的關係</strong><br><br>
+    本子計畫<strong>取代</strong> Phase A 的 <code>ActivityTimeline.tsx</code>（縱向）和 <code>VersionExpandedPanel.tsx</code>（三欄式），
+    改用新的 <code>VersionGanttPanel.tsx</code>（橫向週欄式）。<br>
+    資料模型（<code>TimedActivity</code>、<code>cnActivities</code>、<code>twActivities</code>）<strong>保持不變</strong>，
+    不需修改型別定義或現有資料。<br>
+    Phase B 的後台管理 UI 完全不受影響。
+  </div>
+</section>
+
+<!-- ── 新版面設計 ── -->
+<section class="section">
+  <div class="section-label purple">UI Design</div>
+  <div class="section-title">新版面設計規格</div>
+
+  <div class="decision-block">
+    <strong>版面概念：橫軸 = 週、縱軸 = 內容類型、上下半左右並排</strong><br><br>
+    整個版面是一張表格，橫軸代表時間（以週為單位），縱軸代表版本內容類型（機師、機甲、活動等）。
+    上半版本佔前 3 欄、下半版本佔後 3 欄，合計 6 欄（預設，可隨版本延長）。<br><br>
+    右上角切換按鈕選擇「台版」或「陸版」後，整個表格的週時間點（欄標）和活動甘特條<strong>同步重繪</strong>。
+  </div>
+
+  <!-- 版面示意表格 -->
+  <div style="overflow-x:auto; margin: 20px 0;">
+    <table class="mockup-table">
+      <colgroup>
+        <col style="width:90px">
+        <col><col><col><col><col><col>
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="label-col" rowspan="2" style="vertical-align:bottom;">
+            <div style="text-align:right; padding-bottom:4px; color:var(--accent-purple);">台版 ⇄ 陸版</div>
+            <div style="font-size:9px;color:var(--text-dim);text-align:left;">[切換按鈕]</div>
+          </th>
+          <th class="upper-header" colspan="3">上半版本 + 版本時間</th>
+          <th class="lower-header" colspan="3">下半版本 + 版本時間</th>
+        </tr>
+        <tr>
+          <th class="week-header">第1週<br><span style="font-size:9px;color:var(--accent-green);">4/23</span></th>
+          <th class="week-header">第2週<br><span style="font-size:9px;color:var(--accent-green);">4/30</span></th>
+          <th class="week-header">第3週<br><span style="font-size:9px;color:var(--accent-green);">5/7</span></th>
+          <th class="week-header">第4週<br><span style="font-size:9px;color:var(--accent-cyan);">5/14</span></th>
+          <th class="week-header">第5週<br><span style="font-size:9px;color:var(--accent-cyan);">5/21</span></th>
+          <th class="week-header">第6週<br><span style="font-size:9px;color:var(--accent-cyan);">5/28</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label-col">機師</td>
+          <td class="span-upper" colspan="3" style="text-align:center;">角色 A</td>
+          <td class="span-lower" colspan="3" style="text-align:center;">角色 B</td>
+        </tr>
+        <tr>
+          <td class="label-col">機甲</td>
+          <td class="span-upper" colspan="3" style="text-align:center;">機甲 A</td>
+          <td class="span-lower" colspan="3" style="text-align:center;">機甲 B</td>
+        </tr>
+        <tr>
+          <td class="label-col">武裝關卡</td>
+          <td class="span-upper" colspan="3" style="text-align:center;">關卡</td>
+          <td class="span-lower" colspan="3" style="text-align:center;">關卡</td>
+        </tr>
+        <tr>
+          <td class="label-col">武裝討伐專武</td>
+          <td class="span-upper" colspan="3" style="text-align:center;">武器</td>
+          <td class="span-lower" colspan="3" style="text-align:center;">武器</td>
+        </tr>
+        <tr>
+          <td class="label-col">武裝討伐背包</td>
+          <td class="span-upper" colspan="3" style="text-align:center;">背包</td>
+          <td class="span-lower" colspan="3" style="text-align:center;">背包</td>
+        </tr>
+        <tr>
+          <td class="label-col">角色戰令</td>
+          <td class="span-full" colspan="6" style="text-align:center;">戰令（跨整個版本）</td>
+        </tr>
+        <tr>
+          <td class="label-col">機甲戰令</td>
+          <td class="span-full" colspan="6" style="text-align:center;">戰令（跨整個版本）</td>
+        </tr>
+        <tr>
+          <td class="label-col" style="color:var(--text-dim);font-size:10px;">台版/陸版活動</td>
+          <td class="value-cell"></td>
+          <td class="bar-tw" colspan="2" style="text-align:center; font-size:10px;">▅ 刮刮樂</td>
+          <td class="bar-tw" colspan="1" style="text-align:center; font-size:10px;">▅ 特遣</td>
+          <td class="bar-tw-end" colspan="2" style="color:var(--text-dim);font-size:10px;"></td>
+        </tr>
+        <tr>
+          <td class="label-col" style="color:var(--text-dim);font-size:10px;"></td>
+          <td class="value-cell" colspan="2"></td>
+          <td class="bar-cn" colspan="3" style="text-align:center; font-size:10px;">▅ 限時活動</td>
+          <td class="bar-tw-end"></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="font-size:11px;color:var(--text-dim);text-align:center;margin-top:4px;">
+      ↑ 版面示意（以 v2.8 台版為例）｜週欄寬度等比｜切換為陸版後週日期與活動列全部重繪
+    </div>
+  </div>
+
+  <div class="three-col">
+    <div class="arch-box">
+      <h4>表格橫軸：週欄</h4>
+      <ul>
+        <li>每欄 = 一個版本週（週四 → 下週三）</li>
+        <li>欄標 = 「第 N 週」+ 週四日期</li>
+        <li>上半版本預設 3 週，下半版本預設 3 週</li>
+        <li>若有活動超出預設週數則自動延伸欄數</li>
+        <li>切換陸版後週日期全部重新計算</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>表格縱軸：內容行</h4>
+      <ul>
+        <li>機師（新角色池）</li>
+        <li>機甲（新機甲池）</li>
+        <li>武裝關卡名稱</li>
+        <li>武裝討伐專武掉落</li>
+        <li>武裝討伐背包製作</li>
+        <li>角色戰令（跨全版本）</li>
+        <li>機甲戰令（跨全版本）</li>
+        <li>各活動甘特條（可多行）</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>陸版 ⇄ 台版切換</h4>
+      <ul>
+        <li>預設顯示台版</li>
+        <li>右上角切換按鈕，點擊切換</li>
+        <li>切換後：欄標週日期更新</li>
+        <li>切換後：活動甘特條以對應服的活動資料重繪</li>
+        <li>切換後：欄數可能改變（陸台活動數量不同）</li>
+        <li>狀態以 React useState 管理</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── 週軸計算 ── -->
+<section class="section">
+  <div class="section-label purple">Algorithm</div>
+  <div class="section-title">週軸計算演算法</div>
+
+  <div class="decision-block">
+    <strong>核心原則：版本起始日（週四）為第 1 週週四，之後每 7 天為下一週</strong><br><br>
+    鋼嵐所有版本更新固定於<strong>星期四</strong>。
+    每個「版本週」為週四 00:00 到下週三 23:59。
+    因此只需版本起始日，即可推算第 N 週的日期。
+  </div>
+
+  <div class="code-block">
+<span class="cm">// 週軸推算（以台版為例）</span>
+<span class="kw">const</span> side = <span class="st">'tw'</span>  <span class="cm">// 或 'cn'，由切換狀態決定</span>
+
+<span class="cm">// Step 1：取得上半、下半起始日</span>
+<span class="kw">const</span> upperStart = <span class="fn">parseDate</span>(side === <span class="st">'tw'</span> ? version.upper.twDate : version.upper.cnDate)
+<span class="kw">const</span> lowerStart = <span class="fn">parseDate</span>(side === <span class="st">'tw'</span> ? version.lower.twDate : version.lower.cnDate)
+
+<span class="cm">// Step 2：計算上半的週列（預設 3 週，可延伸）</span>
+<span class="cm">// upperWeeks = [upperStart, upperStart+7, upperStart+14, ...]</span>
+<span class="cm">// 以 lowerStart 為終點，最少 3 週：</span>
+<span class="kw">function</span> <span class="fn">generateWeeks</span>(startDate, endDate, minWeeks = <span class="nm">3</span>) {
+  <span class="kw">const</span> minEnd = <span class="fn">addDays</span>(startDate, minWeeks * <span class="nm">7</span>)
+  <span class="kw">const</span> actualEnd = endDate &gt; minEnd ? endDate : minEnd
+  <span class="kw">const</span> weeks = []
+  <span class="kw">let</span> cur = startDate
+  <span class="kw">while</span> (cur &lt; actualEnd) {
+    weeks.push(cur)
+    cur = <span class="fn">addDays</span>(cur, <span class="nm">7</span>)
+  }
+  <span class="kw">return</span> weeks  <span class="cm">// 每個元素 = 該週的週四日期</span>
+}
+
+<span class="cm">// 上半週：upperStart → lowerStart（自然邊界，min 3 週）</span>
+<span class="kw">const</span> upperWeeks = <span class="fn">generateWeeks</span>(upperStart, lowerStart)
+
+<span class="cm">// 下半週：lowerStart → 最後活動結束日（min 3 週）</span>
+<span class="kw">const</span> acts = version.lower[side === <span class="st">'tw'</span> ? <span class="st">'twActivities'</span> : <span class="st">'cnActivities'</span>] ?? []
+<span class="kw">const</span> lowerEnd = <span class="fn">maxActivityEnd</span>(acts, <span class="fn">addDays</span>(lowerStart, <span class="nm">21</span>))
+<span class="kw">const</span> lowerWeeks = <span class="fn">generateWeeks</span>(lowerStart, lowerEnd)
+
+<span class="cm">// Step 3：週欄標題</span>
+<span class="cm">// upperWeeks[0] = 第1週（4/23），upperWeeks[1] = 第2週（4/30），依此類推</span>
+<span class="cm">// lowerWeeks[0] = 第4週（5/14），lowerWeeks[1] = 第5週（5/21）</span>
+<span class="cm">// 整體週序號 = 1 ~ upperWeeks.length + lowerWeeks.length</span>
+  </div>
+
+  <div class="decision-block">
+    <strong>活動甘特條定位：對應到第幾個欄位</strong><br><br>
+    每個 <code>TimedActivity</code> 有 <code>startDate</code>（週四）和 <code>weeks</code>（持續週數）。<br>
+    活動條的<strong>起始欄</strong>：在所有週欄中找到 <code>startDate</code> 對應的欄索引。<br>
+    活動條的<strong>欄寬</strong>：= <code>weeks</code> 欄（每個週數佔一欄）。<br><br>
+    若 <code>startDate</code> 早於版本開始（如復刻卡池從前一版本延續），則欄索引 = 0（從第一欄開始）。<br>
+    若 <code>startDate</code> 晚於最後一欄的週四，該活動不顯示。<br>
+    若活動跨越上半/下半邊界（例如 startDate 在上半末週，weeks=2 延伸到下半第一週），條的寬度自然跨越中間的分隔線。
+  </div>
+
+  <div class="code-block">
+<span class="cm">// 活動條欄位計算</span>
+<span class="kw">function</span> <span class="fn">activityToColumns</span>(act, allWeeks) {
+  <span class="cm">// allWeeks = [...upperWeeks, ...lowerWeeks]，每個元素是週四日期</span>
+  <span class="kw">const</span> startDt = <span class="fn">parseDate</span>(act.startDate)
+  <span class="kw">const</span> endDt   = <span class="fn">addDays</span>(startDt, act.weeks * <span class="nm">7</span>)  <span class="cm">// 結束週四（不含）</span>
+
+  <span class="cm">// 起始欄索引：找第一個 week >= startDt</span>
+  <span class="kw">let</span> colStart = allWeeks.<span class="fn">findIndex</span>(w =&gt; w >= startDt)
+  <span class="kw">if</span> (colStart === -<span class="nm">1</span>) <span class="kw">return null</span>  <span class="cm">// 活動在顯示範圍外</span>
+
+  <span class="cm">// 結束欄索引：找最後一個 week < endDt</span>
+  <span class="kw">let</span> colEnd = allWeeks.<span class="fn">findLastIndex</span>(w =&gt; w &lt; endDt)
+  <span class="kw">if</span> (colEnd &lt; colStart) <span class="kw">return null</span>
+
+  <span class="kw">return</span> { colStart, colSpan: colEnd - colStart + <span class="nm">1</span> }
+}
+
+<span class="cm">// 使用 CSS grid 或 table colspan 定位甘特條</span>
+<span class="cm">// colStart + 1 = grid-column-start（1-indexed）</span>
+<span class="cm">// colSpan = grid-column-end span</span>
+  </div>
+</section>
+
+<!-- ── 元件架構 ── -->
+<section class="section">
+  <div class="section-label purple">Architecture</div>
+  <div class="section-title">元件架構</div>
+
+  <div class="info-block">
+    <strong>目標：用一個 <code>VersionGanttPanel</code> 取代舊的三欄式 <code>VersionExpandedPanel</code></strong><br><br>
+    現有的 <code>ActivityTimeline.tsx</code>（縱向）+ <code>CoreInfoPanel.tsx</code>（中欄）+ 三欄布局<br>
+    → 全部整合成 <code>VersionGanttPanel.tsx</code>（橫向週欄式）<br><br>
+    <code>VersionDetailView.tsx</code> 和 <code>VersionTimeline.tsx</code> <strong>不需要修改</strong>，
+    只有 <code>VersionExpandedPanel.tsx</code> 改為使用 <code>VersionGanttPanel</code>。
+  </div>
+
+  <div class="code-block">
+<span class="cm">// 元件結構</span>
+<span class="ty">VersionGanttPanel</span>     <span class="cm">← 主元件，接收 version: PatchVersion</span>
+  ├── <span class="st">side</span> state         <span class="cm">← 'tw' | 'cn'，預設 'tw'</span>
+  ├── <span class="ty">ToggleButton</span>       <span class="cm">← 右上角 台版⇄陸版 切換按鈕</span>
+  ├── <span class="ty">ContentTable</span>      <span class="cm">← 整個表格（版本資訊行 + 活動甘特行）</span>
+  │     ├── ColHeaders         <span class="cm">← 上半/下半標題行 + 第N週欄標行</span>
+  │     ├── VersionInfoRows    <span class="cm">← 機師/機甲/武裝/戰令（靜態跨欄內容）</span>
+  │     └── ActivityGanttRows  <span class="cm">← 活動甘特條行（動態，每個活動一行）</span>
+  └── <span class="ty">VersionLevelInfo</span>   <span class="cm">← 危境重構/邊境商店等版本層級資訊（表格外）</span>
+
+<span class="cm">// props 設計</span>
+<span class="kw">interface</span> <span class="ty">VersionGanttPanelProps</span> {
+  version: <span class="ty">PatchVersion</span>
+}
+<span class="cm">// side 狀態內部管理，不透傳給父元件</span>
+  </div>
+
+  <div class="two-col">
+    <div class="arch-box">
+      <h4>ColHeaders（欄標題列）</h4>
+      <ul>
+        <li>第一行：空白 label 欄 ＋「上半版本 + 版本起始日」colspan=3 ＋「下半版本 + 版本起始日」colspan=3</li>
+        <li>第二行：label 欄 ＋ 第1週(日期) / 第2週(日期) / ... 逐欄</li>
+        <li>週日期依 side 切換後重新計算（cn/tw 的起始日不同）</li>
+        <li>欄數 = upperWeeks.length + lowerWeeks.length（動態）</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>VersionInfoRows（版本內容行）</h4>
+      <ul>
+        <li>每行：label ＋ 上半內容（colspan=上半週數）＋ 下半內容（colspan=下半週數）</li>
+        <li>機師：pilots 列表以逗號分隔，跨上半所有欄</li>
+        <li>武裝：armamentRaids 各自一行，名稱 + 武器/背包</li>
+        <li>戰令：跨整個版本（colspan = 上半週數 + 下半週數）</li>
+        <li>欄位無資料時自動隱藏該行（不顯示空行）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="arch-box" style="margin:16px 0;">
+    <h4>ActivityGanttRows（活動甘特條行）</h4>
+    <ul>
+      <li>依 side（cn/tw）選擇 upper.cnActivities/twActivities + lower.cnActivities/twActivities</li>
+      <li>每個 TimedActivity 各佔一行，label 欄顯示活動名稱（或短代碼）</li>
+      <li>以 <code>activityToColumns()</code> 計算 colStart + colSpan，用 CSS grid 或 table 定位彩色甘特條</li>
+      <li>同顏色系統：ActivityType → COLORS map（與 Phase A 相同）</li>
+      <li>甘特條 hover tooltip 顯示：活動名稱 + 起訖日（自動計算）</li>
+      <li>跨越上半/下半邊界的活動自然橫跨分隔線（colspan 涵蓋兩側欄位）</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>實作選擇：HTML &lt;table&gt; vs CSS Grid</strong><br><br>
+    <strong>推薦使用 HTML &lt;table&gt;</strong>：因為 colspan 的跨欄邏輯天然符合表格結構，
+    且「欄寬等比」在 table-layout: fixed 下較易控制。<br><br>
+    <strong>CSS Grid 方案</strong>：使用 <code>grid-column: colStart / span colSpan</code> 可以達到相同效果，
+    但需要為每個格子明確設定 grid-column，程式碼較為繁瑣。<br><br>
+    建議以 HTML table 為主，Tailwind 的 CSS 仍可正常套用；
+    若未來需要拖曳排序活動列，再評估改用 Grid。
+  </div>
+</section>
+
+<!-- ── 手機版策略 ── -->
+<section class="section">
+  <div class="section-label purple">Mobile</div>
+  <div class="section-title">手機版策略</div>
+
+  <div class="warning-block">
+    <strong>橫向寬表格在手機版需要橫向捲動</strong><br><br>
+    6 欄（或更多）的週欄表格在 375px 寬的手機上無法完整顯示。<br>
+    解決方案：將整個 <code>VersionGanttPanel</code> 包裹在 <code>overflow-x: auto</code> 的容器中，
+    允許使用者左右滑動查看完整週欄。<br><br>
+    <strong>最小欄寬設定</strong>：每週欄至少 64px，label 欄至少 80px，確保文字不被壓縮到無法閱讀。<br>
+    整個表格最小寬度 = 80 + 64 × (週欄數)，在手機上觸發橫向捲動。<br><br>
+    此策略比 Tab 切換更直觀：使用者可以直接拖動，不需在三個 Tab 之間切換上下文。
+  </div>
+</section>
+
+<!-- ── 工作項目 ── -->
+<section class="section">
+  <div class="section-label purple">Tasks</div>
+  <div class="section-title">工作項目明細</div>
+
+  <table class="task-table">
+    <tr>
+      <th>編號</th>
+      <th>工作項目</th>
+      <th>說明</th>
+      <th>難度</th>
+      <th>估時</th>
+    </tr>
+    <tr>
+      <td><strong>C-1</strong></td>
+      <td>週軸計算邏輯</td>
+      <td>
+        <code>generateWeeks(start, end, minWeeks)</code>：從版本起始日（週四）推算所有週的週四日期；
+        <code>activityToColumns(act, allWeeks)</code>：將 TimedActivity 的 startDate + weeks 轉換為欄索引（colStart, colSpan）；
+        自動延伸邏輯（有活動超出預設 3 週時新增欄）；
+        單元測試：v2.8 台版 4/23 起始，驗證週欄列表與欄位計算正確
+      </td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>C-2</strong></td>
+      <td>VersionGanttPanel 骨架 + 切換按鈕</td>
+      <td>
+        <code>src/components/timeline/VersionGanttPanel.tsx</code> 主元件骨架；
+        <code>side</code> state（'tw' | 'cn'，預設 'tw'）；
+        右上角切換按鈕（「台版」/ 「陸版」，點擊切換）；
+        依 side 選擇上半/下半的起始日（twDate vs cnDate）與活動資料（twActivities vs cnActivities）；
+        傳入子元件 props
+      </td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>C-3</strong></td>
+      <td>ColHeaders — 週欄標題列</td>
+      <td>
+        第一行：label 欄（空）+ 上半版本 header（colspan=上半週數，含版本起始日）+ 下半版本 header（colspan=下半週數，含版本起始日）；
+        第二行：label 欄 + 各週欄標（「第N週」+ 週四日期，如「第1週 4/23」）；
+        切換 side 後標題自動更新（date 重新計算，版本起始日顯示切換）；
+        上半 header 橙色系、下半 header 青色系，視覺區分
+      </td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>C-4</strong></td>
+      <td>VersionInfoRows — 版本內容行</td>
+      <td>
+        機師行：上半 pilots 逗號連接（colspan=上半週數）+ 下半 pilots（colspan=下半週數）；
+        機甲行：同上；
+        武裝討伐關卡名稱行（可能有多筆，每筆一行）：上半 armamentRaids 名稱 + 下半；
+        武裝討伐專武行（按關卡對應）；
+        武裝討伐背包行（按關卡對應）；
+        角色戰令行（跨全版本 colspan = 所有欄數）；
+        機甲戰令行（同上）；
+        任何行若上半下半都無資料則隱藏整行
+      </td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1 天</td>
+    </tr>
+    <tr>
+      <td><strong>C-5</strong></td>
+      <td>ActivityGanttRows — 活動甘特條行</td>
+      <td>
+        依 side 選取活動列表（upper + lower 的 cn/twActivities 合併）；
+        每個活動一行：label 欄（活動名稱 / 短代碼）+ 甘特條格（colspan + colStart 定位）；
+        甘特條：ActivityType 顏色系（同 Phase A COLORS map）；
+        hover tooltip：活動名稱 + 機師/機甲列表 + 起訖日；
+        空欄格填空白（<code>&lt;td&gt;</code>）；
+        切換 side 後整個活動列重繪
+      </td>
+      <td><span class="badge badge-red">高</span></td>
+      <td>1 天</td>
+    </tr>
+    <tr>
+      <td><strong>C-6</strong></td>
+      <td>VersionExpandedPanel 更新</td>
+      <td>
+        <code>src/components/timeline/VersionExpandedPanel.tsx</code> 改用 <code>VersionGanttPanel</code>；
+        移除舊的三欄 grid（ActivityTimeline × 2 + CoreInfoPanel）和 mobile Tab 邏輯；
+        改為 <code>overflow-x: auto</code> 容器包裹 <code>VersionGanttPanel</code>（支援手機橫向捲動）；
+        banner 圖、version badge、台服當前版本標籤維持不變
+      </td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>C-7</strong></td>
+      <td>Build 驗證 + 視覺調整</td>
+      <td>
+        <code>tsc --noEmit</code> + <code>vite build</code> 通過；
+        桌面 / 手機版橫向捲動正常；
+        切換陸/台版後週欄日期更新、甘特條正確重繪；
+        版本資訊行正確跨欄顯示；
+        無活動資料時（v3.x fallback）版本資訊行仍正常顯示（甘特條區域為空）；
+        色塊 hover tooltip 顯示正確起訖日
+      </td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+  </table>
+
+  <div class="decision-block">
+    <strong>執行順序</strong>：C-1（計算邏輯）→ C-2（骨架 + 切換）→ C-3（欄標題）→ C-4（版本內容行）→ C-5（甘特條）→ C-6（整合）→ C-7（驗證）<br><br>
+    C-1 和 C-2 可在同一天完成；C-3 ~ C-5 可在第二天完成；C-6 ~ C-7 收尾半天。<br>
+    <strong>估計總工期：3–4 天</strong>
+  </div>
+</section>
+
+<!-- ── 資料現況 ── -->
+<section class="section">
+  <div class="section-label purple">Data Status</div>
+  <div class="section-title">資料現況與後續填充</div>
+
+  <div class="warning-block">
+    <strong>目前僅 v2.8 有 cnActivities / twActivities 示範資料</strong><br><br>
+    v3.0 ~ v3.3 目前只有舊欄位（<code>specialEvents</code>、<code>skinGacha</code> 等字串）。
+    新版面的甘特條區域對這些版本將顯示空白；版本資訊行（機師/機甲/武裝/戰令）仍可從舊欄位正常讀取顯示。<br><br>
+    建議在 C-5 完成後，從遊戲官方公告逐步補填各版本的 <code>cnActivities</code> / <code>twActivities</code>，
+    後台管理 UI（PLAN-014 Phase B）已完成，可直接透過後台介面輸入。
+  </div>
+
+  <div class="green-block">
+    <strong>驗收標準</strong>
+    <ol style="margin-top:8px;padding-left:18px;line-height:2.5;">
+      <li>v2.8 台版：6 週欄正確顯示（4/23、4/30、5/7、5/14、5/21、5/28），活動條正確定位</li>
+      <li>切換為陸版後：週日期換為陸服日期，活動條以 cnActivities 重繪</li>
+      <li>v3.1~v3.3：版本資訊行正常顯示（機師/機甲/武裝/戰令），甘特條區域空白但不報錯</li>
+      <li>手機版橫向捲動正常，最小欄寬 64px 確保可讀</li>
+      <li>tsc + vite build 無錯誤</li>
+    </ol>
+  </div>
+
+  <div class="green-block" style="margin-top:16px;">
+    <strong>✅ 實作完成備注（2026-05-25）</strong><br><br>
+    所有驗收標準均已達成。額外完成項目：<br>
+    <ul style="margin-top:8px;padding-left:18px;line-height:2;">
+      <li>活動條改為「線段 + 端點圓點」設計（dot+line），滑鼠懸停顯示詳情 tooltip，視覺更精簡</li>
+      <li>單週活動只顯示一個居中圓點</li>
+      <li>甘特列取消表格框線（只保留標籤欄右框線），版面更清爽</li>
+      <li>PC 版時間軸容器加大（max-w-4xl → max-w-5xl），時間軸字體放大，提升可讀性</li>
+      <li>週欄最小寬度從 64px 調整為 80px（PC 版）以配合放大版面</li>
+      <li>關鍵 Bug 修復：上半週數計算改用空陣列作為活動邊界，避免跨半活動造成上半週數溢出至下半起始日</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ── 相關文件 ── -->
+<section class="section">
+  <div class="section-label purple">References</div>
+  <div class="section-title">相關文件</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="計畫書.html">
+      <div class="doc-tag">Parent Plan</div>
+      <h4>◆ PLAN-014 計畫書</h4>
+      <p>母計畫：Phase A 資料模型 + Phase B Firebase Admin</p>
+    </a>
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-014 進度表</h4>
+      <p>Phase A / Phase B 各工作項目狀態</p>
+    </a>
+    <a class="doc-item" href="../index.html">
+      <div class="doc-tag">Overview</div>
+      <h4>📋 歷史記錄</h4>
+      <p>已完成 PLAN 總覽</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · PLAN-014 子計畫 · 甘特視圖重設計 —
+  <a href="計畫書.html" style="color:var(--accent-purple);text-decoration:none;">← PLAN-014</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-03 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>首頁規劃 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../index.html">頁面規劃</a>
+    <span>›</span>
+    <span class="current">首頁</span>
+  </div>
+</nav>
+
+<header class="hero orange">
+  <div class="hero-badge">◆ Page Design</div>
+  <h1>首頁<span>HOME PAGE · /</span></h1>
+  <p class="hero-sub">吉祥物 Hero、歡迎訊息卡、貼章</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label">基本資訊</div>
+  <div class="section-title">頁面規格</div>
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/</code></td></tr>
+    <tr><th>開發階段</th><td>Phase 2</td></tr>
+    <tr><th>登入需求</th><td>不需要（公開頁面）</td></tr>
+    <tr><th>資料來源</th><td>靜態（無需 Firestore）</td></tr>
+  </table>
+</section>
+
+<section class="section">
+  <div class="section-label">版面設計</div>
+  <div class="section-title">UI 區塊規劃</div>
+
+  <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">🎯</div>
+      <h3>Hero Banner</h3>
+      <p>標題「獾迎！」搭配吉祥物貓咪圖（cat_no_bg.png），橘色漸層主調。下方一行文字列出網站功能概覽，不換行。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">💬</div>
+      <h3>歡迎訊息卡</h3>
+      <p>暗色卡片，上下橘色漸層細線裝飾，滑鼠懸停時有橘紫光暈效果。顯示歡迎語與免費承諾文字。</p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">🏷️</div>
+      <h3>意見接受貼章</h3>
+      <p>黑黃雙色貼章造型（略帶傾斜），強調會認真聆聽使用者建議的態度。</p>
+    </div>
+  </div>
+
+  <div class="info-block" style="margin-top:1rem;">
+    <strong>⚠️ 已移除區塊</strong>：快速入口（圖示卡片格）、公告欄、最新改版資訊、最新攻略 — 改版時一併拆除，目前首頁為純視覺歡迎頁。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label">UI 草圖</div>
+  <div class="section-title">區塊順序</div>
+  <div class="wireframe">
+    <div class="wf-icon">🏠</div>
+    <p>Hero Banner（標題 + 吉祥物 + 功能列）<br>↓<br>歡迎訊息卡<br>↓<br>意見接受貼章</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label">設計備註</div>
+  <div class="section-title">開發注意事項</div>
+  <div class="info-block">
+    <strong>✅ 已實作</strong>
+    · 吉祥物圖片路徑：<code>public/images/cat_no_bg.png</code>，以 <code>import.meta.env.BASE_URL</code> 拼接（相容 GitHub Pages base 路徑）<br>
+    · 功能概覽文字使用 <code>whitespace-nowrap</code> 防止換行<br>
+    · 歡迎卡片：hover 光暈動畫（duration-700）、上下橘色漸層細線<br>
+    · 貼章：<code>rotate(-1.5deg)</code> 微傾斜，視覺仿貼紙感
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label">全域 Layout 功能</div>
+  <div class="section-title">Header 工具列</div>
+  <div class="info-block">
+    <strong>✅ 字體大小切換（小 / 中 / 大）</strong><br>
+    · 位置：Header 右側 User Area 左方<br>
+    · 點選後修改 <code>document.documentElement.style.fontSize</code>（14px / 16px / 18px），所有 <code>rem</code> 單位全站等比縮放<br>
+    · 選擇以 <code>localStorage</code> 持久化，下次造訪自動套用<br>
+    · 實作位置：<code>src/components/Layout.tsx</code>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 頁面規劃 · 首頁 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 頁面規劃總覽</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-05-17 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

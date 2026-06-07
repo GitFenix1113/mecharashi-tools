@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-011 個人檔案管理 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.decision-block {
+  background: rgba(6,182,212,0.06);
+  border: 1px solid rgba(6,182,212,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.phase-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.phase-table th {
+  background: rgba(168,85,247,0.08);
+  color: var(--accent-purple);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 10px 14px;
+  text-align: left;
+  border: 1px solid var(--border);
+}
+.phase-table td {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.phase-table tr:hover td {
+  background: var(--bg-card-hover);
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-green  { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+.badge-yellow { background: rgba(234,179,8,0.15); color: var(--accent-yellow); }
+.badge-red    { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+.badge-purple { background: rgba(168,85,247,0.15); color: var(--accent-purple); }
+.badge-cyan   { background: rgba(6,182,212,0.15); color: var(--accent-cyan); }
+.badge-orange { background: rgba(255,107,43,0.15); color: var(--accent-orange); }
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+.arch-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+.arch-box h4 {
+  font-size: 13px;
+  color: var(--accent-purple);
+  margin-bottom: 8px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+}
+.arch-box ul {
+  padding-left: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 2;
+}
+.ui-mockup {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #8b949e;
+  white-space: pre;
+  overflow-x: auto;
+}
+.ui-mockup .hi { color: #e3b341; }
+.ui-mockup .lbl { color: #79c0ff; }
+.ui-mockup .val { color: #a5d6ff; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-011 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-011</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    個人檔案管理<span style="-webkit-text-fill-color:var(--text-secondary);">Profile Management · Avatar · Game Info</span>
+  </h1>
+  <p class="hero-sub">讓用戶自訂顯示名稱、頭像（自訂上傳或機師庫選取）、遊戲暱稱、伺服器與公會</p>
+</header>
+
+<main class="container">
+
+<!-- ── 計畫概要 ── -->
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value purple">PLAN-011</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-05-23</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">對應階段</div>
+      <div class="meta-value purple">Phase 5 — 個人中心</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MEDIUM</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">前端 · Firestore · Firebase Storage · Enum</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">DONE</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">估計工期</div>
+      <div class="meta-value orange">4–5 天</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置條件</div>
+      <div class="meta-value">Firebase Auth 用戶系統（已完成）</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 需求定義 ── -->
+<section class="section">
+  <div class="section-label purple">Requirements</div>
+  <div class="section-title">需求定義</div>
+
+  <div class="decision-block">
+    <strong>核心需求</strong>
+    <ul style="margin-top:8px;padding-left:18px;line-height:2.2;">
+      <li>用戶可在個人中心修改網站顯示名稱（<code>displayName</code>）</li>
+      <li>用戶可自訂頭像：上傳圖片（→ Firebase Storage）或從機師庫中選取機師頭像</li>
+      <li>用戶可選填遊戲暱稱（<code>gameNickname</code>，可空白）</li>
+      <li>用戶可選填遊戲伺服器（<code>gameServer</code>，enum，可空白）：獵豹物流 / 灰燼之子 / 破曉世紀</li>
+      <li>用戶可選填遊戲公會（<code>guild</code>，可空白）</li>
+      <li>以上所有欄位均為選填，不影響核心功能使用</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠️ 頭像設計決策</strong><br>
+    頭像來源分為兩種模式，以 <code>avatarType</code> 欄位區分：
+    <ul style="margin-top:8px;padding-left:18px;line-height:2.2;">
+      <li><strong>upload</strong>：用戶自行上傳圖片，壓縮為 WebP 後存入 Firebase Storage，URL 存於 <code>avatarUrl</code></li>
+      <li><strong>pilot</strong>：從機師庫選取機師，儲存機師 ID（<code>avatarPilotId</code>），顯示時即時取得機師頭像圖片</li>
+    </ul>
+    未設定頭像時（<code>avatarType: null</code>），顯示預設 Avatar（以顯示名稱首字母產生）。
+  </div>
+</section>
+
+<!-- ── 資料模型 ── -->
+<section class="section">
+  <div class="section-label purple">Data Model</div>
+  <div class="section-title">資料模型變更</div>
+
+  <div class="sub-h">新增欄位：users/{uid}/profile</div>
+  <div class="data-table-wrap">
+    <table class="data-table" style="--head-bg:rgba(168,85,247,0.08);--head-color:var(--accent-purple);">
+      <tr><th>欄位</th><th>型別</th><th>預設值</th><th>說明</th></tr>
+      <tr><td>displayName</td><td>string</td><td>（已存在）</td><td>網站顯示名稱，用戶可修改</td></tr>
+      <tr><td>avatarType</td><td>'upload' | 'pilot' | null</td><td>null</td><td>頭像來源模式</td></tr>
+      <tr><td>avatarUrl</td><td>string | null</td><td>null</td><td>上傳頭像的 Storage 公開 URL（avatarType='upload' 時有值）</td></tr>
+      <tr><td>avatarPilotId</td><td>string | null</td><td>null</td><td>選取機師的 pilotId（avatarType='pilot' 時有值）</td></tr>
+      <tr><td>gameNickname</td><td>string | null</td><td>null</td><td>遊戲內暱稱（選填）</td></tr>
+      <tr><td>gameServer</td><td>GameServer | null</td><td>null</td><td>遊戲伺服器（選填，enum）</td></tr>
+      <tr><td>guild</td><td>string | null</td><td>null</td><td>遊戲公會名稱（選填）</td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h" style="margin-top:20px;">新增 Enum：GameServer</div>
+  <div class="code-block">
+<span class="cm">// src/types/enums.ts — 新增</span>
+<span class="kw">export const</span> <span class="ty">GameServer</span> = {
+  LEOPARD_LOGISTICS: <span class="st">'獵豹物流'</span>,
+  ASHES_OF_FIRE:     <span class="st">'灰燼之子'</span>,
+  DAWN_CENTURY:      <span class="st">'破曉世紀'</span>,
+} <span class="kw">as const</span>;
+<span class="kw">export type</span> <span class="ty">GameServer</span> = <span class="kw">typeof</span> GameServer[<span class="kw">keyof typeof</span> GameServer];
+  </div>
+
+  <div class="sub-h" style="margin-top:20px;">Firebase Storage — 頭像路徑</div>
+  <div class="code-block">
+<span class="cm">// 上傳頭像的 Storage 路徑（每次上傳覆蓋同一個檔案）</span>
+avatars/{uid}/avatar.webp
+
+<span class="cm">// Firestore Security Rules 新增段落</span>
+<span class="kw">match</span> /avatars/{uid}/{allPaths=**} {
+  <span class="cm">// 頭像圖片公開可讀（用於顯示）</span>
+  <span class="kw">allow</span> read: <span class="kw">if true</span>;
+
+  <span class="cm">// 只有本人可寫入自己的頭像，限制 2MB + 圖片格式</span>
+  <span class="kw">allow</span> write: <span class="kw">if</span> request.auth.uid == uid
+    &amp;&amp; request.resource.size &lt; 2 * 1024 * 1024
+    &amp;&amp; request.resource.contentType.matches(<span class="st">'image/.*'</span>);
+}
+  </div>
+
+  <div class="decision-block">
+    <strong>為何上傳前壓縮為 WebP？</strong><br>
+    WebP 相較 PNG/JPG 體積約小 25–35%，節省 Storage 費用與讀取頻寬。
+    壓縮在前端進行（使用 <code>canvas.toBlob('image/webp', 0.85)</code>），不需後端。
+    舊版 Safari（iOS 13 以下）不支援 WebP，但本專案目標平台可接受此限制。
+  </div>
+</section>
+
+<!-- ── 整體架構 ── -->
+<section class="section">
+  <div class="section-label purple">Architecture</div>
+  <div class="section-title">整體架構設計</div>
+
+  <div class="two-col">
+    <div class="arch-box">
+      <h4>資料層</h4>
+      <ul>
+        <li>Firestore <code>users/{uid}/profile</code> — 新增 7 個欄位</li>
+        <li>Firebase Storage <code>avatars/{uid}/avatar.webp</code> — 上傳頭像</li>
+        <li><code>src/lib/profileApi.ts</code> — 封裝讀寫邏輯</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>頭像解析邏輯</h4>
+      <ul>
+        <li><code>avatarType = null</code> → 顯示名稱首字母預設 Avatar</li>
+        <li><code>avatarType = 'upload'</code> → 顯示 <code>avatarUrl</code>（Storage 圖）</li>
+        <li><code>avatarType = 'pilot'</code> → 從 pilots collection 取 <code>avatarPilotId</code> 對應的機師頭像</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>UI — 頭像選取器</h4>
+      <ul>
+        <li>兩個分頁：「上傳圖片」/ 「機師頭像」</li>
+        <li>上傳頁：拖放區 + 按鈕、預覽、確認上傳</li>
+        <li>機師頁：搜尋欄 + 格狀機師列表、點擊選取、高亮已選</li>
+        <li>以 Modal 或 Drawer 呈現（非跳頁）</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>UI — 個人資料表單</h4>
+      <ul>
+        <li>位於 <code>/profile</code> 頁的「個人資料」Tab</li>
+        <li>顯示名稱：text input</li>
+        <li>遊戲暱稱：text input（選填提示）</li>
+        <li>遊戲伺服器：select（含「未設定」空值選項）</li>
+        <li>遊戲公會：text input（選填提示）</li>
+        <li>儲存按鈕：單次提交至 Firestore</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── UI 草圖 ── -->
+<section class="section">
+  <div class="section-label purple">UI Design</div>
+  <div class="section-title">UI 版面草圖</div>
+
+  <div class="sub-h">個人資料 Tab — /profile</div>
+  <div class="ui-mockup"><span class="hi">┌─ 個人資料 Tab ──────────────────────────────────────┐</span>
+│                                                        │
+│  <span class="lbl">頭像</span>                                                   │
+│  ┌────────┐                                            │
+│  │  [圖]  │  [更換頭像]                                │
+│  │  Avatar│   → 開啟 AvatarPicker Modal                │
+│  └────────┘                                            │
+│                                                        │
+│  <span class="lbl">顯示名稱</span>                                               │
+│  ┌──────────────────────────────┐                      │
+│  │ <span class="val">GitFenix1113</span>                   │                      │
+│  └──────────────────────────────┘                      │
+│  <span class="cm">（登入 Email 於此頁唯讀顯示）</span>                            │
+│                                                        │
+│  <span class="lbl">遊戲暱稱</span>  <span class="cm">（選填）</span>                                    │
+│  ┌──────────────────────────────┐                      │
+│  │                              │                      │
+│  └──────────────────────────────┘                      │
+│                                                        │
+│  <span class="lbl">遊戲伺服器</span>  <span class="cm">（選填）</span>                                  │
+│  ┌──────────────────────────────┐                      │
+│  │ 未設定              ▼        │                      │
+│  └──────────────────────────────┘                      │
+│  <span class="cm">獵豹物流 / 灰燼之子 / 破曉世紀</span>                          │
+│                                                        │
+│  <span class="lbl">遊戲公會</span>  <span class="cm">（選填）</span>                                    │
+│  ┌──────────────────────────────┐                      │
+│  │                              │                      │
+│  └──────────────────────────────┘                      │
+│                                                        │
+│  [   儲存變更   ]                                      │
+<span class="hi">└────────────────────────────────────────────────────────┘</span></div>
+
+  <div class="sub-h" style="margin-top:20px;">AvatarPicker Modal</div>
+  <div class="ui-mockup"><span class="hi">┌─ 更換頭像 ──────────────────────────────────────────┐</span>
+│  [ 上傳圖片 ]  [ 機師頭像 ]         ✕               │
+├────────────────────────────────────────────────────────┤
+│  <span class="hi">── 上傳圖片 Tab ──</span>                                    │
+│                                                        │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │                                                  │  │
+│  │   拖曳圖片至此，或點擊選取檔案                  │  │
+│  │   支援 JPG / PNG / WebP，最大 2MB               │  │
+│  │                                                  │  │
+│  └──────────────────────────────────────────────────┘  │
+│  <span class="cm">（選取後顯示預覽縮圖）</span>                                  │
+│                                                        │
+│  [   確認上傳   ]                                      │
+├────────────────────────────────────────────────────────┤
+│  <span class="hi">── 機師頭像 Tab ──</span>                                    │
+│  ┌────────────────────────────┐                        │
+│  │ 🔍 搜尋機師名稱...         │                        │
+│  └────────────────────────────┘                        │
+│                                                        │
+│  ┌──┐ ┌──┐ ┌──┐ ┌──┐ ┌──┐ ┌──┐                      │
+│  │凱│ │艾│ │薩│ │██│ │  │ │  │   ← 已選（高亮）    │
+│  └──┘ └──┘ └──┘ └──┘ └──┘ └──┘                      │
+│  <span class="cm">機師名稱</span>  <span class="cm">機師名稱</span>  ...                                │
+│                                                        │
+│  [   確認選取   ]                                      │
+<span class="hi">└────────────────────────────────────────────────────────┘</span></div>
+</section>
+
+<!-- ── Phase A ── -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">Phase A — 型別定義與 Enum（0.5 天）</div>
+
+  <table class="phase-table">
+    <tr>
+      <th>工作項目</th>
+      <th>說明</th>
+      <th>難度</th>
+      <th>估時</th>
+    </tr>
+    <tr>
+      <td><strong>A-1</strong> GameServer enum</td>
+      <td><code>src/types/enums.ts</code> 新增 <code>GameServer</code> enum，三個伺服器值：獵豹物流 / 灰燼之子 / 破曉世紀</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.25 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-2</strong> UserProfile 型別更新</td>
+      <td><code>src/types/index.ts</code>（或對應 user 型別檔案）的 <code>UserProfile</code> interface 新增 <code>avatarType / avatarUrl / avatarPilotId / gameNickname / gameServer / guild</code> 六個欄位（均為 optional）</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.25 天</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ── Phase B ── -->
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">Phase B — Firebase Storage Rules & API（1 天）</div>
+
+  <table class="phase-table">
+    <tr>
+      <th>工作項目</th>
+      <th>說明</th>
+      <th>難度</th>
+      <th>估時</th>
+    </tr>
+    <tr>
+      <td><strong>B-1</strong> Storage Security Rules</td>
+      <td>在 Firebase Storage Rules 中新增 <code>avatars/{uid}/</code> 路徑規則：公開讀 + 本人限寫（含 2MB 與 image/* 格式限制）</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.25 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-2</strong> profileApi.ts</td>
+      <td>
+        建立 <code>src/lib/profileApi.ts</code>，封裝以下操作：<br>
+        • <code>updateProfileInfo(uid, data)</code> — 更新 displayName / gameNickname / gameServer / guild<br>
+        • <code>uploadAvatar(uid, file)</code> — 壓縮為 WebP → Storage 上傳 → 更新 avatarType / avatarUrl<br>
+        • <code>setPilotAvatar(uid, pilotId)</code> — 更新 avatarType='pilot' / avatarPilotId / 清除 avatarUrl
+      </td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>0.75 天</td>
+    </tr>
+  </table>
+
+  <div class="code-block">
+<span class="cm">// profileApi.ts 概念骨架</span>
+<span class="kw">import</span> { <span class="ty">doc, updateDoc</span> } <span class="kw">from</span> <span class="st">'firebase/firestore'</span>
+<span class="kw">import</span> { <span class="ty">ref, uploadBytes, getDownloadURL</span> } <span class="kw">from</span> <span class="st">'firebase/storage'</span>
+
+<span class="cm">// 壓縮圖片為 WebP（在 canvas 上重繪）</span>
+<span class="kw">async function</span> <span class="fn">compressToWebP</span>(file: <span class="ty">File</span>, quality = <span class="nm">0.85</span>): <span class="ty">Promise</span>&lt;<span class="ty">Blob</span>&gt; { ... }
+
+<span class="kw">export async function</span> <span class="fn">uploadAvatar</span>(uid: <span class="ty">string</span>, file: <span class="ty">File</span>) {
+  <span class="kw">const</span> webp = <span class="kw">await</span> <span class="fn">compressToWebP</span>(file)
+  <span class="kw">const</span> storageRef = <span class="fn">ref</span>(storage, <span class="st">`avatars/<span class="nm">${uid}</span>/avatar.webp`</span>)
+  <span class="kw">await</span> <span class="fn">uploadBytes</span>(storageRef, webp, { contentType: <span class="st">'image/webp'</span> })
+  <span class="kw">const</span> url = <span class="kw">await</span> <span class="fn">getDownloadURL</span>(storageRef)
+  <span class="kw">await</span> <span class="fn">updateDoc</span>(<span class="fn">doc</span>(db, <span class="st">`users/<span class="nm">${uid}</span>/profile`</span>), {
+    avatarType: <span class="st">'upload'</span>,
+    avatarUrl:  url,
+    avatarPilotId: <span class="kw">null</span>,
+  })
+}
+
+<span class="kw">export async function</span> <span class="fn">setPilotAvatar</span>(uid: <span class="ty">string</span>, pilotId: <span class="ty">string</span>) {
+  <span class="kw">await</span> <span class="fn">updateDoc</span>(<span class="fn">doc</span>(db, <span class="st">`users/<span class="nm">${uid}</span>/profile`</span>), {
+    avatarType:    <span class="st">'pilot'</span>,
+    avatarPilotId: pilotId,
+    avatarUrl:     <span class="kw">null</span>,
+  })
+}
+  </div>
+</section>
+
+<!-- ── Phase C ── -->
+<section class="section">
+  <div class="section-label yellow">Phase C</div>
+  <div class="section-title">Phase C — UI 元件（2–2.5 天）</div>
+
+  <table class="phase-table">
+    <tr>
+      <th>工作項目</th>
+      <th>說明</th>
+      <th>難度</th>
+      <th>估時</th>
+    </tr>
+    <tr>
+      <td><strong>C-1</strong> AvatarDisplay 元件</td>
+      <td>
+        通用頭像顯示元件，依 <code>avatarType</code> 自動選擇顯示模式：<br>
+        • null → 顯示名稱首字母彩色圓形<br>
+        • 'upload' → <code>&lt;img src={avatarUrl}&gt;</code><br>
+        • 'pilot' → 根據 pilotId 取機師頭像圖片 URL<br>
+        可傳入 <code>size</code> prop（sm / md / lg）控制大小。可複用於 Header 用戶選單。
+      </td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>C-2</strong> AvatarPicker — 上傳 Tab</td>
+      <td>
+        拖放區（<code>onDrop</code>）+ 按鈕（<code>&lt;input type="file"&gt;</code>）。
+        選取後即時顯示本地預覽（<code>URL.createObjectURL</code>）。
+        點擊「確認上傳」呼叫 <code>uploadAvatar()</code>，顯示進度或 loading 狀態。
+        選取超過 2MB 時顯示錯誤訊息。
+      </td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>0.75 天</td>
+    </tr>
+    <tr>
+      <td><strong>C-3</strong> AvatarPicker — 機師頭像 Tab</td>
+      <td>
+        從 Firestore <code>pilots</code> collection 讀取所有機師（複用現有 hook）。
+        顯示機師名稱搜尋欄 + 格狀機師頭像列表（每格顯示頭像圖 + 機師名）。
+        點擊後高亮選取，「確認選取」呼叫 <code>setPilotAvatar()</code>。
+      </td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>0.75 天</td>
+    </tr>
+    <tr>
+      <td><strong>C-4</strong> ProfileEditForm 元件</td>
+      <td>
+        顯示名稱 text input + 遊戲暱稱 / 公會 text input + 遊戲伺服器 select（含「未設定」空選項）。
+        內部以 local state 管理，按「儲存」後呼叫 <code>updateProfileInfo()</code>。
+        顯示成功 / 錯誤 toast。
+      </td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ── Phase D ── -->
+<section class="section">
+  <div class="section-label yellow">Phase D</div>
+  <div class="section-title">Phase D — 頁面整合（0.75 天）</div>
+
+  <table class="phase-table">
+    <tr>
+      <th>工作項目</th>
+      <th>說明</th>
+      <th>難度</th>
+      <th>估時</th>
+    </tr>
+    <tr>
+      <td><strong>D-1</strong> ProfilePage — 個人資料 Tab</td>
+      <td>
+        在 <code>src/pages/ProfilePage.tsx</code>（或對應路由元件）新增「個人資料」Tab。
+        Tab 內容：大尺寸 AvatarDisplay + 「更換頭像」按鈕（開啟 AvatarPicker Modal）+ ProfileEditForm。
+        Email 唯讀顯示（來自 Firebase Auth）。
+      </td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>D-2</strong> Header 用戶頭像</td>
+      <td>
+        Header 導覽列的登入狀態用戶選單，將現有預設 Avatar 替換為 <code>AvatarDisplay</code> 元件（小尺寸）。
+        需要在 Auth context 中讀取 profile.avatarType / avatarUrl / avatarPilotId。
+      </td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.25 天</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ── Phase E ── -->
+<section class="section">
+  <div class="section-label cyan">Phase E</div>
+  <div class="section-title">Phase E — 技術文件更新（0.5 天）</div>
+
+  <table class="phase-table">
+    <tr>
+      <th>工作項目</th>
+      <th>說明</th>
+      <th>難度</th>
+      <th>估時</th>
+    </tr>
+    <tr>
+      <td><strong>E-1</strong> users.html 更新</td>
+      <td><code>docs/02_技術文件/04_Firebase/資料庫設計文件/users.html</code> — profile schema 表格補上 7 個新欄位</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.25 天</td>
+    </tr>
+    <tr>
+      <td><strong>E-2</strong> enums.html 更新</td>
+      <td><code>docs/02_技術文件/04_Firebase/資料庫設計文件/enums.html</code> — 新增 GameServer enum 卡片（資料維護 / 用戶權限 section）</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.1 天</td>
+    </tr>
+    <tr>
+      <td><strong>E-3</strong> security-rules.html 更新</td>
+      <td><code>docs/02_技術文件/04_Firebase/資料庫設計文件/security-rules.html</code> — 新增 Firebase Storage <code>avatars/{uid}/</code> 規則段落</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.15 天</td>
+    </tr>
+  </table>
+
+  <div class="decision-block">
+    <strong>Phase E 合計估時：約 0.5 天</strong>
+  </div>
+</section>
+
+<!-- ── 新增檔案 ── -->
+<section class="section">
+  <div class="section-label purple">Files</div>
+  <div class="section-title">新增 / 修改檔案一覽</div>
+
+  <div class="code-block">
+<span class="cm">── 新增 ────────────────────────────────────────────────</span>
+src/lib/<span class="nm">profileApi.ts</span>                    <span class="cm">// 頭像上傳 / 個人資料更新 API</span>
+src/components/profile/<span class="nm">AvatarDisplay.tsx</span>   <span class="cm">// 通用頭像顯示元件（三模式）</span>
+src/components/profile/<span class="nm">AvatarPicker.tsx</span>    <span class="cm">// 頭像選取 Modal（兩 Tab）</span>
+src/components/profile/<span class="nm">PilotAvatarGallery.tsx</span>  <span class="cm">// 機師頭像格狀列表</span>
+src/components/profile/<span class="nm">ProfileEditForm.tsx</span> <span class="cm">// 個人資料表單</span>
+
+<span class="cm">── 修改 ────────────────────────────────────────────────</span>
+src/types/<span class="nm">enums.ts</span>                      <span class="cm">// 新增 GameServer enum</span>
+src/types/<span class="nm">index.ts</span>                      <span class="cm">// UserProfile interface 新增欄位</span>
+src/pages/<span class="nm">ProfilePage.tsx</span>              <span class="cm">// 新增「個人資料」Tab</span>
+src/components/<span class="nm">Header.tsx</span>               <span class="cm">// 登入狀態頭像改用 AvatarDisplay</span>
+firebase/<span class="nm">storage.rules</span>                 <span class="cm">// 新增 avatars/{uid}/ 規則</span>
+  </div>
+</section>
+
+<!-- ── 注意事項 ── -->
+<section class="section">
+  <div class="section-label purple">Notes</div>
+  <div class="section-title">注意事項 / 邊界條件</div>
+
+  <div class="warning-block">
+    <strong>⚠️ 機師頭像讀取效能</strong><br>
+    AvatarPicker 機師 Tab 需讀取所有機師列表。若機師數量多，應使用現有的 usePilots hook（已有快取）或一次性讀取靜態列表，避免每次開啟 Modal 都發出 Firestore 請求。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠️ avatarType='pilot' 的頭像來源</strong><br>
+    機師頭像的實際圖片 URL 需在顯示時動態取得（從 pilots collection 讀取），<strong>不</strong>儲存靜態 URL 至 profile。
+    這樣管理員更新機師頭像後，所有選用該機師頭像的用戶會自動同步最新圖片。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠️ 顯示名稱長度限制</strong><br>
+    建議前端限制 displayName 最長 30 字元，gameNickname / guild 最長 30 字元，
+    避免 UI 溢出。Firestore Rules 端可選擇性加驗，但非強制。
+  </div>
+</section>
+
+<!-- ── 相關文件 ── -->
+<section class="section">
+  <div class="section-label purple">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-011 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../../../03_頁面規劃/09_個人中心/index.html">
+      <div class="doc-tag">Page Design</div>
+      <h4>👤 個人中心頁面規劃</h4>
+      <p>/profile 頁面的整體版面規劃</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/04_Firebase/資料庫設計文件/users.html">
+      <div class="doc-tag">Firebase</div>
+      <h4>🗃️ users Schema</h4>
+      <p>profile 欄位設計，本計畫將新增 7 個欄位</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/04_Firebase/資料庫設計文件/enums.html">
+      <div class="doc-tag">Firebase</div>
+      <h4>📋 Enum 定義</h4>
+      <p>GameServer enum 將新增至此文件</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/04_Firebase/資料庫設計文件/security-rules.html">
+      <div class="doc-tag">Firebase</div>
+      <h4>🔒 Security Rules</h4>
+      <p>Storage avatars 規則需更新至此文件</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-011 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-05-24 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

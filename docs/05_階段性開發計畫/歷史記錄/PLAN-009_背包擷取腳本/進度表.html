@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-009 背包擷取腳本 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(234,179,8,0.15);  color: var(--accent-yellow); border: 1px solid rgba(234,179,8,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.admin    { background: rgba(168,85,247,0.15); color: var(--accent-purple); border: 1px solid rgba(168,85,247,0.3); }
+
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+}
+.task-row:last-child { border-bottom: none; }
+.task-name { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+.task-detail { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+.task-file { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent-cyan); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-009 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge" style="border-color:var(--accent-pink);color:var(--accent-pink);background:rgba(236,72,153,0.06);">◆ PLAN-009</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    背包擷取腳本<span style="-webkit-text-fill-color:var(--text-secondary);">進度追蹤</span>
+  </h1>
+  <p class="hero-sub">建立 scrape-backpacks.js · 更新 Backpack Schema · 新增 BackpackType / AssemblableArmorType enum</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-pink)">Tasks</div>
+  <div class="section-title">任務清單</div>
+
+  <!-- Phase 1: Schema & Enum -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">Phase 1 — Schema / Enum 更新</div>
+      <div class="task-group-meta">enums.ts · index.ts</div>
+      <span class="status done">✓ Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 BackpackType enum（7 種）</div>
+        <div class="task-detail task-file">src/types/enums.ts</div>
+        <div class="task-detail">Heal / Ammo / Interference / Invisible / BackupEquipment / MovePointAdd / Flow</div>
+      </div>
+      <span class="status done">Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 AssemblableArmorType enum（正向邏輯）</div>
+        <div class="task-detail task-file">src/types/enums.ts</div>
+        <div class="task-detail">All / Light / Medium / Heavy；與 MechRestriction 反向邏輯，後續考慮統一</div>
+      </div>
+      <span class="status done">Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">更新 Backpack interface</div>
+        <div class="task-detail task-file">src/types/index.ts</div>
+        <div class="task-detail">新增 rarity / assemblableArmorType / repairAmount；skill → mainSkill（補 id / icon / buffIds / description）；mechRestriction 標記 deprecated</div>
+      </div>
+      <span class="status done">Done</span>
+    </div>
+  </div>
+
+  <!-- Phase 2: Script -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">Phase 2 — 擷取腳本開發</div>
+      <div class="task-group-meta">scripts/scrape-backpacks.js</div>
+      <span class="status done">✓ Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">建立 scrape-backpacks.js 基礎架構</div>
+        <div class="task-detail task-file">scripts/scrape-backpacks.js</div>
+        <div class="task-detail">對齊 scrape-weapons.js 架構：CLI 參數（--probe / --dry-run / --limit / --rarity / --auto）、Firebase 連線、readline 互動確認</div>
+      </div>
+      <span class="status done">Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">實作 API list → detail 流程</div>
+        <div class="task-detail task-file">scripts/scrape-backpacks.js</div>
+        <div class="task-detail">target=backpack_data&amp;type=list 取得所有 ID，逐一呼叫 type=detail 端點</div>
+      </div>
+      <span class="status done">Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">實作欄位映射與轉換邏輯</div>
+        <div class="task-detail task-file">scripts/scrape-backpacks.js</div>
+        <div class="task-detail">RARITY_MAP / ASSEMBLABLE_MAP / repairAmount parseInt / s2t() 繁體化 / SpecificEffects rich text 清洗</div>
+      </div>
+      <span class="status done">Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">實作 SS 背包 mainSkill 自動填入</div>
+        <div class="task-detail task-file">scripts/scrape-backpacks.js</div>
+        <div class="task-detail">SSSR 品質才讀取 WithPassiveSkills[0]；保護既有 dmg/crit/critDmg/acc/specialEffects 手動欄位</div>
+      </div>
+      <span class="status done">Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">測試腳本（--probe / --dry-run）</div>
+        <div class="task-detail task-file">scripts/scrape-backpacks.js</div>
+        <div class="task-detail">驗證 SSSR 背包解析正確（拯救者背包 60701106 為測試案例）；驗證 non-SSSR 無 mainSkill 欄位</div>
+      </div>
+      <span class="status done">✓ Done</span>
+    </div>
+  </div>
+
+  <!-- Phase 3: Data -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">Phase 3 — 資料匯入與管理員補填</div>
+      <div class="task-group-meta">Firestore backpacks collection</div>
+      <span class="status done">✓ Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">全量執行腳本寫入 Firestore</div>
+        <div class="task-detail">node scripts/scrape-backpacks.js（互動確認）</div>
+      </div>
+      <span class="status done">Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">管理員補填非 SS 背包 mainSkill 手動欄位</div>
+        <div class="task-detail">dmg / crit / critDmg / acc / specialEffects（非 SS 背包無 API 資料，需人工填入）</div>
+      </div>
+      <span class="status done">Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">驗證 assemblableArmorType 填值正確性</div>
+        <div class="task-detail">確認各背包的機甲類型限制正確，特別是原本 mechRestriction 為 null 的背包</div>
+      </div>
+      <span class="status done">Done</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · PLAN-009 · 進度表 —
+  <a href="計畫書.html" style="color:var(--accent-cyan);text-decoration:none;">← 查看計畫書</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-05-22 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

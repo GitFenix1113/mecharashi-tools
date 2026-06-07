@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>歷史記錄 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <span class="current">歷史記錄</span>
+  </div>
+</nav>
+
+<header class="hero green">
+  <div class="hero-badge green">◆ History</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    歷史記錄<span style="-webkit-text-fill-color:var(--text-secondary);">已完成的開發計畫</span>
+  </h1>
+  <p class="hero-sub">歸檔的完成計畫，供日後回顧與參考</p>
+</header>
+
+<main class="container">
+<section class="section">
+  <div class="section-label green">Archive</div>
+  <div class="section-title">已完成計畫</div>
+  <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-019-F · BUFF 後台管理</h3>
+      <p>【019 子計畫】為 buffs 集合補上 updateBuff 寫入 API 與 BuffAdmin 後台分頁，讓非工程人員也能新增／編輯 BUFF（狀態／形態效果）並在描述下方掛 RefPicker 標引用。補完 019 引用層唯一「只能讀、不能在後台維護」的實體。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-06-07 · 7 / 7 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-019-F_BUFF後台管理/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-019-F_BUFF後台管理/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-019-C · 詞條庫與引用挑選器</h3>
+      <p>【019 子計畫】建 glossaryTerms 詞條庫，讓 [固定傷害]/[啟動] 這類無專屬集合的機制關鍵字 term 引用有資料源可解析；並提供後台 RefPicker，讓任何維護者把描述裡的 [xxx] 標成可點引用（詞條管理與技能效果兩處）。補完 019-A 引用層最後一塊、打通非工程人員輸入。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-06-07 · 13 / 13 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-019-C_詞條庫與引用挑選器/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-019-C_詞條庫與引用挑選器/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-019-E · 引用挑選器全面接線</h3>
+      <p>【019 子計畫】把 019-C 的 RefPicker 接進模組／武器／元件／背包四個既有後台描述面板，並為 ComponentBase、Backpack.mainSkill 補上 descriptionRefs 欄位，讓裝備／道具描述在輸入時就能把 [xxx] 標成可點引用。寫入與前台顯示皆複用既有機制，零新元件、零新集合、零前台改動。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-06-07 · 9 / 9 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-019-E_引用挑選器全面接線/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-019-E_引用挑選器全面接線/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card purple" style="border-color:rgba(168,85,247,0.4);">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-014 · 版本甘特圖與後台管理</h3>
+      <p>Phase A：為版本展開面板加入活動區間甘特圖（起始日＋持續週數），陸台各自獨立輸入；Phase B：版本資料遷移至 Firebase Firestore，建立圖形化後台管理介面，讓非技術維護者無須碰程式碼即可更新版本內容；Phase C：甘特視圖重設計為橫向週欄式雙表格，活動以線段＋圓點呈現、陸版／台版一鍵切換。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-05-27 · 27 / 27 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-014_版本甘特圖與後台管理/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-014_版本甘特圖與後台管理/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card purple" style="border-color:rgba(168,85,247,0.4);">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-018 · 彩甲升級規劃器</h3>
+      <p>玩家輸入手上的部件庫存與改進模組數量，即時計算彩甲最短升級路線與最優資源分配。特別支援超級工廠活動資源（通用×2 / 金二肥料×2 / 核心金三×2）的最大化運用策略。純前端計算器，無 Firebase 依賴。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-06-01 · 6 / 6 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-018_彩甲升級規劃器/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-018_彩甲升級規劃器/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-002 · 機師詳情頁面 UX 改版</h3>
+      <p>壓縮六維雷達圖佔用空間，重組 Hero 三欄布局，讓 1920×1080 下主要資訊一屏呈現；神經驅動改為 2×2 四象限；天賦欄位旁新增專武面板。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-05-17 · 9 / 9 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-002_機師詳情UX改版/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-002_機師詳情UX改版/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-007 · 武器 API 欄位映射修正</h3>
+      <p>修正擷取腳本六個 API 欄位名稱映射錯誤（PassiveSkill / WeaponHitPoint / WeaponUnderstanding / WeaponWeight / RestrictionsPositionOfWeapon / LimitedModelOfWeapon），補充型別對照注解，更新技術文件，並全量重刷 Firebase 武器資料。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-05-20 · 15 / 15 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-007_武器API欄位映射修正/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-007_武器API欄位映射修正/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card" style="border-color:rgba(236,72,153,0.3);background:rgba(236,72,153,0.04);">
+      <div class="card-icon" style="color:var(--accent-pink);">◆</div>
+      <h3 style="color:var(--accent-pink);">PLAN-009 · 背包擷取腳本</h3>
+      <p>建立 scrape-backpacks.js，以 mQuery backpack_data API 自動填充 Firestore。新增 BackpackType / AssemblableArmorType enum，更新 Backpack interface（rarity / assemblableArmorType / repairAmount / mainSkill），SS 背包技能資料自動填入。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-05-21 · 8 / 8 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-009_背包擷取腳本/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-009_背包擷取腳本/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-011 · 個人檔案管理</h3>
+      <p>讓用戶在個人中心自訂顯示名稱與頭像（上傳圖片或從機師庫選取），並可填寫遊戲暱稱、遊戲伺服器（獵豹物流 / 灰燼之子 / 破曉世紀）與公會。新增 GameServer enum，Firebase Storage avatars 規則，以及 AvatarDisplay / AvatarPicker 元件。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-05-24 · 14 / 14 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-011_個人檔案管理/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-011_個人檔案管理/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-015 · 首頁全屏 Tab 改版</h3>
+      <p>仿照官方網站布局，將首頁改為全螢幕 Page Snap 捲動體驗（CSS scroll-snap，零依賴）。三個資料面板合併為左側 HomeTabPanel，右側透出背景角色立繪。VersionQuickTable 新增縮圖預覽與機師/機甲雙欄分離；Timeline 高度壓縮。前置：PLAN-013。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-05-27 · 8 / 8 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-015_首頁全屏Tab改版/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-015_首頁全屏Tab改版/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-012 · 元件圖鑑</h3>
+      <p>建立元件圖鑑頁面（/components），展示觸元件（Condition）與應元件（Function）完整清單。含稀有度 / conditionType / effectType / W型 / Boss 關卡篩選、雙層圖示渲染、行動裝置 BottomSheet 詳情展開，以及 BossDropTooltip 懸停掉落資訊顯示。追加實作 bossDrops.ts 靜態掉落資料表（11–16 關）。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-05-24 · 11 / 11 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-012_元件圖鑑/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-012_元件圖鑑/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · 歷史記錄
+</footer>
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-07 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

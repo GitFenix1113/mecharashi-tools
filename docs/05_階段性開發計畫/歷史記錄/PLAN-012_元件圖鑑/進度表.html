@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-012 元件圖鑑 — 進度表 — 鋼嵐工具站</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+:root {
+  --bg-dark: #0a0c10;
+  --bg-card: #12151c;
+  --bg-card-hover: #181c26;
+  --accent-orange: #ff6b2b;
+  --accent-blue: #3b82f6;
+  --accent-cyan: #06b6d4;
+  --accent-green: #22c55e;
+  --accent-yellow: #eab308;
+  --accent-red: #ef4444;
+  --accent-purple: #a855f7;
+  --text-primary: #e8eaed;
+  --text-secondary: #9ca3af;
+  --text-dim: #6b7280;
+  --border: #1e2330;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: 'Noto Sans TC', sans-serif;
+  line-height: 1.8;
+}
+.header {
+  padding: 60px 24px 40px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(234,179,8,0.08) 0%, transparent 60%);
+}
+.header h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 28px;
+  background: linear-gradient(135deg, #fff, var(--accent-yellow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+.header p { color: var(--text-secondary); font-size: 14px; }
+.breadcrumb-bar {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.breadcrumb-bar a { color: var(--accent-cyan); text-decoration: none; }
+.breadcrumb-bar a:hover { text-decoration: underline; }
+.container { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+.meta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+}
+.meta-item .label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 2px;
+}
+.meta-item .val { font-weight: 600; }
+.meta-item .val.yellow { color: var(--accent-yellow); }
+.meta-item .val.green  { color: var(--accent-green); }
+.meta-item .val.orange { color: var(--accent-orange); }
+.meta-item .val.cyan   { color: var(--accent-cyan); }
+
+.section-h {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 32px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-h .badge {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 2px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+.badge-pending { background: rgba(107,114,128,0.15); color: var(--text-dim); border: 1px solid var(--text-dim); }
+.badge-progress { background: rgba(234,179,8,0.15); color: var(--accent-yellow); border: 1px solid var(--accent-yellow); }
+.badge-done    { background: rgba(34,197,94,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+
+.task-list { list-style: none; }
+.task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+.task-item:hover { background: var(--bg-card); }
+.task-status {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.task-status.done    { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+.task-status.progress{ background: rgba(234,179,8,0.15); color: var(--accent-yellow); }
+.task-status.pending { background: rgba(107,114,128,0.1); color: var(--text-dim); }
+.task-name { flex: 1; }
+.task-name.done { color: var(--text-secondary); text-decoration: line-through; }
+.task-meta { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+.task-note {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.progress-bar {
+  height: 6px;
+  background: var(--bg-card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 16px 0 4px;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent-yellow);
+  transition: width 0.3s;
+}
+.progress-percent {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: right;
+  margin-bottom: 12px;
+}
+.updated {
+  padding: 24px 0;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+}
+</style>
+</head>
+<body>
+
+<div class="breadcrumb-bar">
+  <a href="../../../index.html">📋 文件首頁</a> ›
+  <a href="../../index.html">階段性開發計畫</a> ›
+  <a href="../index.html">歷史記錄</a> ›
+  PLAN-012 進度表
+</div>
+
+<header class="header">
+  <h1>PLAN-012 · 元件圖鑑</h1>
+  <p>Component Encyclopedia · /components — 進度追蹤</p>
+</header>
+
+<div class="container">
+
+  <div class="meta-bar">
+    <div class="meta-item">
+      <span class="label">狀態</span>
+      <span class="val green">DONE</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">優先級</span>
+      <span class="val orange">HIGH</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">建立日期</span>
+      <span class="val">2026-05-24</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">估計工期</span>
+      <span class="val orange">2–3 天</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">對應階段</span>
+      <span class="val cyan">Phase 3 補完</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">計畫書</span>
+      <a href="計畫書.html" style="color:var(--accent-yellow);font-size:13px;font-weight:600;">→ 計畫書</a>
+    </div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-bar-fill" style="width:100%;background:var(--accent-green);"></div>
+  </div>
+  <div class="progress-percent" style="color:var(--accent-green);">100%（8 / 8）</div>
+
+  <!-- 前置確認 -->
+  <div class="section-h">
+    前置確認
+    <span class="badge badge-done">READY</span>
+  </div>
+  <ul class="task-list">
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">Firestore components Collection 遷移完成（Phase 4）</span>
+      <span class="task-meta">2026-05-16</span>
+    </li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">src/types/index.ts — Component / ConditionComponent / FunctionComponent 型別已定義</span>
+      <span class="task-meta">2026-05-22</span>
+    </li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">src/types/enums.ts — ComponentType / ConditionType / EffectType / ComponentsWType Enum 已定義</span>
+      <span class="task-meta">2026-05-15</span>
+    </li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">src/hooks/useFirestore.ts — useComponents() Hook 已建立</span>
+      <span class="task-meta">2026-05-16</span>
+    </li>
+  </ul>
+
+  <!-- 開發任務 -->
+  <div class="section-h">
+    開發任務
+    <span class="badge badge-done">DONE</span>
+  </div>
+  <ul class="task-list">
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">T-1 · 確認圖示資源 — public/images/components/ 框架圖 + 技能圖示檔案存在性</span>
+      <div class="task-note">確認 statetype_Condition.png / statetype_Function.png；盤點已下載技能圖示數量；缺少圖示記錄待補</div>
+      <span class="task-meta">2026-05-24</span>
+    </li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">T-2 · ComponentIcon.tsx — 雙層圖示元件（框架圖底 + 技能圖示上層疊合）</span>
+      <div class="task-note">CSS position:relative/absolute 疊合；依 componentType 切換框架圖；onError 時隱藏圖示避免破圖</div>
+      <span class="task-meta">2026-05-24</span>
+    </li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">T-3 · ComponentBadges.tsx — 稀有度 / 類型 / conditionType / effectType / W型 標籤元件</span>
+      <div class="task-note">複用現有 Badge 樣式系統；conditionType 標籤色：雙持橘/單持藍/首次攻擊黃/AP消耗紫/攻擊軀幹紅/每次攻擊青</div>
+      <span class="task-meta">2026-05-24</span>
+    </li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">T-4 · ComponentsPage.tsx — 主頁面（/components）完整實作</span>
+      <div class="task-note">
+        · useComponents() 讀取資料<br>
+        · 類型切換：觸元件 / 應元件 / 全部<br>
+        · 篩選：稀有度 / conditionType / effectType / W型 / Boss 關卡 / 關鍵字<br>
+        · 格線卡片（1/2/3 欄自適應）<br>
+        · 行動裝置 BottomSheet 整合<br>
+        · 描述數字高亮（highlightNumbers()）<br>
+        · BossDropTooltip（桌面懸停）/ BossDropSection（行動版 BottomSheet）掉落資訊顯示
+      </div>
+      <span class="task-meta">2026-05-24</span>
+    </li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">T-5 · App.tsx — 新增路由 Route path="components"</span>
+      <span class="task-meta">2026-05-24</span>
+    </li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">T-6 · Layout.tsx — Header 導覽與行動版 Toolbar 新增「元件」入口</span>
+      <span class="task-meta">2026-05-24</span>
+    </li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">T-7 · HomePage.tsx — 新增元件圖鑑快速入口卡片</span>
+      <span class="task-meta">2026-05-24</span>
+    </li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">T-8 · Build 驗證 — tsc + vite build 通過；手機 / 桌面版式確認</span>
+      <span class="task-meta">2026-05-24</span>
+    </li>
+  </ul>
+
+  <!-- 追加任務 -->
+  <div class="section-h">
+    追加任務（計畫外新增）
+    <span class="badge badge-done">DONE</span>
+  </div>
+  <ul class="task-list">
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">T-9 · bossDrops.ts — Boss 掉落靜態資料表（11–16 關，Function/Condition × Normal/W）</span>
+      <div class="task-note">BOSS_DROPS 資料結構；getAllStages / componentDropsFromStage / getComponentDrops / getBossImagePath 工具函式</div>
+      <span class="task-meta">2026-05-24</span>
+    </li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">T-10 · BossDropTooltip.tsx — 桌面懸停 Tooltip + 行動版 BossDropSection 元件</span>
+      <div class="task-note">@floating-ui/react 浮動定位；safePolygon() 防誤觸；BossDropContent 共用渲染（關卡分組 + Boss 頭像）</div>
+      <span class="task-meta">2026-05-24</span>
+    </li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">T-11 · ComponentsPage.tsx — 新增 Boss 關卡篩選器（stageFilter state + STAGES 按鈕列）</span>
+      <div class="task-note">stageFilter: number | null；getAllStages() 動態產生按鈕；componentDropsFromStage() 過濾邏輯</div>
+      <span class="task-meta">2026-05-24</span>
+    </li>
+  </ul>
+
+  <div class="updated">
+    建立：2026-05-24 ｜ 完成：2026-05-24 ｜
+    <a href="計畫書.html" style="color:var(--accent-yellow);text-decoration:none;">計畫書</a>
+    ｜ <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 歷史記錄</a>
+    ｜ <a href="../../../04_進度表/開發進度表.html" style="color:var(--accent-orange);text-decoration:none;">開發進度表</a>
+  </div>
+
+</div>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-05-24 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

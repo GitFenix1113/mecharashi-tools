@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>元件圖鑑頁面規劃 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../index.html">頁面規劃</a>
+    <span>›</span>
+    <span class="current">元件</span>
+  </div>
+</nav>
+
+<header class="hero yellow">
+  <div class="hero-badge yellow">◆ Page Design</div>
+  <h1>元件圖鑑<span>COMPONENT PAGE · /components</span></h1>
+  <p class="hero-sub">觸元件（Condition）與應元件（Function）完整圖鑑，篩選觸發條件與效果類型</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow);">頁面規格</div>
+  <div class="section-title">元件圖鑑 /components</div>
+
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/components</code></td></tr>
+    <tr><th>開發階段</th><td>Phase 3（與模組圖鑑同期）</td></tr>
+    <tr><th>登入需求</th><td>不需要</td></tr>
+    <tr><th>資料來源</th><td>Firestore: components（全部，按 componentType 分為觸元件 / 應元件）</td></tr>
+  </table>
+
+  <div class="info-block" style="margin-top:16px;">
+    <strong>⚡ 元件系統說明</strong><br>
+    元件插入武器槽位（觸元件槽 / 應元件槽），組合成「觸發條件 → 應用效果」的效果對。<br>
+    <strong>觸元件（Condition）</strong>定義何時生效，<strong>應元件（Function）</strong>定義發生什麼效果。<br>
+    模擬器計算範圍僅涵蓋 6 類效果：增傷 / 增彈 / 增倍率 / 破甲 / AP增傷 / 軀幹增傷。
+  </div>
+
+  <div class="sub-h" style="margin-top:24px;">篩選功能</div>
+  <div class="tech-row">
+    <span class="tech-tag primary">元件類型切換（觸元件 / 應元件 / 全部）</span>
+    <span class="tech-tag secondary">依稀有度（EX / S / A / B，對應 API quality SSR/SR/R/N；標籤配色：EX=橙、S=金、A=紫、B=藍）</span>
+    <span class="tech-tag tertiary">W 類型（W型 / 一般，傷害計算機相關）</span>
+    <span class="tech-tag">觸發條件類型（觸元件用：雙持 / 單持 / 首次攻擊 / AP消耗 / 攻擊軀幹 / 每次攻擊）</span>
+    <span class="tech-tag">效果類型（應元件用：增傷 / 增彈 / 增倍率 / 破甲 / AP增傷 / 軀幹增傷）</span>
+    <span class="tech-tag">Boss 關卡篩選（第 11–16 關；依 <code>src/data/bossDrops.ts</code> 靜態資料動態產生按鈕，<code>getAllStages()</code>）</span>
+    <span class="tech-tag">關鍵字搜尋（元件名稱 / 描述文字）</span>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow);">版面設計</div>
+  <div class="section-title">UI 區塊規劃</div>
+
+  <div class="card-grid">
+    <div class="card yellow">
+      <div class="card-icon">⚙️</div>
+      <h3>元件卡片</h3>
+      <p>
+        元件圖示（雙層疊合：框架圖 + 技能圖示）、名稱、稀有度標籤、componentType 標籤（觸元件 / 應元件）、W 類型標籤（W / 一般）。<br>
+        觸元件顯示 <strong>conditionType 觸發標籤</strong>（雙持 / 單持 / 首次攻擊 / AP消耗 / 攻擊軀幹 / 每次攻擊）；<br>
+        應元件顯示 <strong>effectType 效果標籤</strong>（增傷 / 增彈 / 增倍率 / 破甲 / AP增傷 / 軀幹增傷）。
+      </p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">🖼️</div>
+      <h3>元件圖示雙層結構</h3>
+      <p>
+        圖示由兩層圖片疊合（CSS <code>position: relative/absolute</code>）：<br>
+        ① <strong>框架圖（底層）</strong>：路徑優先取 <code>outerFrameLocal</code> 欄位（由 patch 腳本寫入），若空則自動推算 <code>/images/components/OuterFrame/statetype_{componentType}{_W}.png</code>。共四種：
+        <code>statetype_Condition.png</code>、<code>statetype_Condition_W.png</code>、<code>statetype_Function.png</code>、<code>statetype_Function_W.png</code>，依 <strong>componentType × componentsWType</strong> 決定。
+        框架圖佔容器 <strong>80%</strong>，置中顯示。<br>
+        ② <strong>技能圖示（上層）</strong>：取 <code>iconLocal</code> 欄位（擷取腳本下載後的本地路徑，如 <code>/images/components/Icon_skill_passive_5223.png</code>）。
+        圖示佔容器 <strong>48%</strong>，以 <code>translate(-51%, -52%) rotate(16deg)</code> 略微偏移並旋轉以貼合框架設計。<br>
+        技能圖示不存在時（<code>onError</code>）隱藏；框架圖固定存在，不需 fallback。
+      </p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">📝</div>
+      <h3>效果描述</h3>
+      <p>
+        觸元件：顯示 <code>condition</code> 觸發條件文字（如「同時使用兩把武器攻擊時」）。<br>
+        應元件：顯示 <code>description</code> 完整效果描述文字。<br>
+        描述中的<strong>數字與 % 符號以醒目色標示</strong>（參考 <code>highlightNumbers()</code> 實作）。
+      </p>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">🔗</div>
+      <h3>武器限制標籤</h3>
+      <p>
+        <code>allowedWeaponTypes</code> 列出允許裝備的武器大類（射擊 / 格鬥 / 突擊 / 戰術）。<br>
+        若非全類型皆可裝備，以標籤列形式顯示限制條件。<br>
+        W 型元件（<code>componentsWType = "W"</code>）額外標示「僅限雙手 / 背後武器」提示。
+      </p>
+    </div>
+    <div class="card green">
+      <div class="card-icon">📊</div>
+      <h3>元件子類型標示</h3>
+      <p>
+        <code>moduleSubtype</code>（1–11）以小標籤顯示對應中文分類，如「命中相關」、「攻擊結果」等。<br>
+        可作為次要篩選維度，供進階用戶篩選特定類別的元件。
+      </p>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">📱</div>
+      <h3>行動裝置底部彈層</h3>
+      <p>
+        行動裝置點擊卡片時，以 <code>BottomSheet</code> 展示完整元件詳細資訊（觸發條件、效果類型、武器限制、probabilityLevel 等）。<br>
+        參考模組圖鑑的 <code>BottomSheet</code> 實作模式。
+      </p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">🏆</div>
+      <h3>Boss 掉落資訊</h3>
+      <p>
+        顯示每個元件的 Boss 掉落來源（關卡 + Boss 編號 + 頭像）。<br>
+        <strong>桌面版</strong>：<code>BossDropTooltip</code> — 滑鼠懸停卡片時以 @floating-ui/react Tooltip 浮出顯示，延遲 200ms 開 / 80ms 關，搭配 <code>safePolygon()</code> 防誤觸。<br>
+        <strong>行動版</strong>：<code>BossDropSection</code> — 內嵌於 BottomSheet 底部，直接列出所有掉落來源；無掉落資料時不渲染。<br>
+        資料來源：<code>src/data/bossDrops.ts</code>（靜態 TS 檔案，非 Firestore）。
+      </p>
+    </div>
+  </div>
+
+  <div class="info-block" style="margin-top:16px;">
+    <strong>📐 版面</strong>
+    格線卡片（1 欄 / 平板 2 欄 / 寬螢幕 3 欄），與模組圖鑑相同佈局。<br>
+    頁面頂部設置類型切換標籤（觸元件 / 應元件 / 全部），作為主要分類入口；切換後篩選條件（conditionType / effectType）即時替換。<br>
+    篩選區域固定於內容區頂部，不含側欄。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow);">Enum 對應</div>
+  <div class="section-title">標籤顯示對應表</div>
+
+  <div class="sub-h">conditionType（觸元件觸發條件）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>Enum Key</th><th>值</th><th>顯示文字</th><th>建議標籤色</th></tr>
+      <tr><td>DUAL_WIELD</td><td>dualWield</td><td>雙持攻擊</td><td>橘色</td></tr>
+      <tr><td>SINGLE_WIELD</td><td>singleWield</td><td>單持攻擊</td><td>藍色</td></tr>
+      <tr><td>FIRST_ATTACK</td><td>firstAttack</td><td>首次攻擊</td><td>黃色</td></tr>
+      <tr><td>AP_COST</td><td>apCost</td><td>AP消耗</td><td>紫色</td></tr>
+      <tr><td>TARGET_TORSO</td><td>targetTorso</td><td>攻擊軀幹</td><td>紅色</td></tr>
+      <tr><td>ALWAYS</td><td>always</td><td>每次攻擊</td><td>青色</td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h" style="margin-top:20px;">effectType（應元件效果類型）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>Enum Key</th><th>值</th><th>顯示文字</th><th>傷害計算機</th></tr>
+      <tr><td>DMG_BOOST</td><td>dmgBoost</td><td>增傷</td><td>✅ 計算</td></tr>
+      <tr><td>BULLET_ADD</td><td>bulletAdd</td><td>增加子彈</td><td>✅ 計算</td></tr>
+      <tr><td>MULTIPLIER</td><td>multiplierBoost</td><td>增加倍率</td><td>✅ 計算</td></tr>
+      <tr><td>ARMOR_BREAK</td><td>armorBreak</td><td>破甲</td><td>✅ 計算</td></tr>
+      <tr><td>AP_DMG_BOOST</td><td>apDmgBoost</td><td>AP增傷</td><td>✅ 計算</td></tr>
+      <tr><td>TORSO_DMG</td><td>torsoDmgBoost</td><td>軀幹增傷</td><td>✅ 計算</td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h" style="margin-top:20px;">componentsWType（W 類型）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>Enum Key</th><th>值</th><th>說明</th></tr>
+      <tr><td>W</td><td>W</td><td>W 型元件：僅限 WeaponEquipSlot 為 DUAL_HAND（雙手）或 BACK（背後）的武器可裝備</td></tr>
+      <tr><td>NORMAL</td><td>Normal</td><td>一般元件：無裝備槽限制</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow);">開發備註</div>
+  <div class="section-title">實作注意事項</div>
+
+  <div class="note-block">
+    <strong>元件圖示渲染（對應 AdminPage.tsx ComponentAdmin 實作）</strong><br>
+    · 外框圖路徑：優先讀取 <code>comp.outerFrameLocal</code>（由 <code>patch-component-outerframe.mjs</code> 寫入）；若空白則自動推算：<br>
+    &emsp;<code>/images/components/OuterFrame/statetype_{componentType}{_W}.png</code><br>
+    &emsp;四種變體：<code>statetype_Condition.png</code> / <code>statetype_Condition_W.png</code> / <code>statetype_Function.png</code> / <code>statetype_Function_W.png</code><br>
+    · 技能圖示路徑：取 <code>comp.iconLocal</code>（完整本地路徑，如 <code>/images/components/Icon_skill_passive_5223.png</code>）。<code>icon</code> 欄位僅為 key，不直接用於 &lt;img src&gt;<br>
+    · CSS 疊合：容器 <code>position: relative</code>；外框圖 <code>absolute</code>，<code>width/height: 80%</code>，<code>translate(-50%, -50%)</code> 置中；技能圖示 <code>absolute</code>，<code>width/height: 48%</code>，<code>translate(-51%, -52%) rotate(16deg)</code>（略微偏移旋轉以貼合框架外形）<br>
+    · 圖示不存在時（<code>onError</code>）設 <code>display:none</code>，避免破圖；外框圖固定存在，不需 fallback
+  </div>
+
+  <div class="note-block" style="margin-top:12px;">
+    <strong>篩選切換行為</strong><br>
+    · 切換 componentType（觸元件 / 應元件）時，conditionType 篩選器與 effectType 篩選器互斥顯示<br>
+    · 選「全部」時，conditionType 與 effectType 篩選器同時顯示，各自獨立過濾<br>
+    · W 類型篩選器在觸元件 / 應元件 / 全部 模式下均顯示<br>
+    · Boss 關卡篩選器在所有模式下均顯示；<code>getAllStages()</code> 動態從 bossDrops.ts 產生按鈕，無需硬編碼關卡清單
+  </div>
+
+  <div class="note-block" style="margin-top:12px;">
+    <strong>Boss 掉落資訊顯示</strong><br>
+    · 掉落資料存放於 <code>src/data/bossDrops.ts</code>（靜態 TypeScript，非 Firestore）<br>
+    · <code>componentDropsFromStage(componentType, componentsWType, fullName, stage)</code> 用於關卡篩選<br>
+    · <code>getComponentDrops(componentType, componentsWType, fullName)</code> 用於 Tooltip / BottomSheet 展示<br>
+    · Boss 頭像路徑規則：<code>/images/components/Stage{N}_Boss/character_{N}_{bossNum}.png</code>
+  </div>
+
+  <div class="note-block" style="margin-top:12px;">
+    <strong>probabilityLevel 說明</strong><br>
+    · 對應 WIKI ProbabilityLevel 欄位，代表元件等級<br>
+    · 圖鑑頁可顯示等級數字，未來需確認是否影響效果數值（目前僅作標示用）
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow);">資料需求</div>
+  <div class="section-title">Firestore 讀取 &amp; 關聯文件</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="../../02_技術文件/02_資料模型/components.html">
+      <div class="doc-tag">Data Model</div>
+      <h4>⚙️ components 資料模型</h4>
+      <p>觸元件 / 應元件欄位定義、Enum 清單</p>
+    </a>
+    <a class="doc-item" href="../../02_技術文件/04_Firebase/資料庫設計文件/components.html">
+      <div class="doc-tag">Collection Schema</div>
+      <h4>🗃️ Firestore components</h4>
+      <p>Schema 欄位、複合索引（componentType + rarity / moduleSubtype）</p>
+    </a>
+    <a class="doc-item" href="../../02_技術文件/04_Firebase/資料庫設計文件/enums.html">
+      <div class="doc-tag">Enums</div>
+      <h4>📋 型別枚舉定義</h4>
+      <p>ComponentType / ConditionType / EffectType / ComponentsWType 完整定義</p>
+    </a>
+    <a class="doc-item" href="../../02_技術文件/02_資料模型/weapons.html">
+      <div class="doc-tag">Related</div>
+      <h4>🔫 weapons</h4>
+      <p>triggerSlots / effectSlots 決定武器可裝備的元件插槽數量</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 頁面規劃 · 元件 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 頁面規劃總覽</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-05-24 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

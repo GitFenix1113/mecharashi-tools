@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-007 武器 API 欄位映射修正 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(234,179,8,0.15);  color: var(--accent-yellow); border: 1px solid rgba(234,179,8,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+.status.admin    { background: rgba(168,85,247,0.15); color: var(--accent-purple); border: 1px solid rgba(168,85,247,0.3); }
+
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-cyan);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+  transition: width 0.4s ease;
+}
+
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+.note-inline {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(234,179,8,0.1);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--accent-yellow);
+  margin-left: 6px;
+  vertical-align: middle;
+}
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-007 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(6,182,212,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-007</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">武器 API 欄位映射修正</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-05-20</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">15</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-yellow)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-purple)">0</div>
+      <div class="summary-lbl">管理員任務</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">13</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>全部任務完成度</span>
+      <span style="color:var(--accent-cyan);">15 / 15</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Phase A: 擷取腳本修正 -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">擷取腳本修正</div>
+  <div class="section-desc">修正 <code>scripts/scrape-weapons.js</code> 的 API 欄位映射錯誤。</div>
+
+  <!-- A-1 -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; buildWeaponSkills 技能欄位修正</div>
+      <div class="task-group-meta">scripts/scrape-weapons.js</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">PassiveSkill 欄位映射</div>
+        <div class="task-desc">
+          將 <code>buildWeaponSkills()</code> 的欄位查找由<br>
+          <code>detail.Skills ?? detail.skills ?? detail.WeaponSkills ?? []</code><br>
+          修正為<br>
+          <code>detail.PassiveSkill ?? detail.Skills ?? detail.skills ?? []</code><br>
+          保留舊欄位名作為 fallback，確保向後相容。
+        </div>
+        <div class="task-file">scripts/scrape-weapons.js · buildWeaponSkills()</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">技能子欄位：BufCarried → buffIds</div>
+        <div class="task-desc">
+          <code>BufCarried</code> 為斜線分隔字串（如 <code>"530361/530362"</code>），
+          解析為 <code>buffIds: string[]</code>（split('/').filter(Boolean)）。
+          技能的 <code>activation</code> 預設為 <code>'carry'</code>（武器被動技能語意）。
+        </div>
+        <div class="task-file">scripts/scrape-weapons.js · buildWeaponSkills()</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <!-- A-2 -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 基礎屬性欄位修正</div>
+      <div class="task-group-meta">scripts/scrape-weapons.js · buildWeaponJson()</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">命中：WeaponHitPoint → accuracy</div>
+        <div class="task-desc">
+          <code>parseInt(src.Accuracy ?? src.accuracy ?? prev?.accuracy ?? 0)</code><br>
+          → 在查找鏈前端加入 <code>src.WeaponHitPoint ?? src.HitPoint ??</code>
+        </div>
+        <div class="task-file">scripts/scrape-weapons.js · buildWeaponJson()</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">暴擊值：WeaponUnderstanding → critValue</div>
+        <div class="task-desc">
+          在 critValue 查找鏈前端加入 <code>src.WeaponUnderstanding ?? src.Understanding ??</code>
+        </div>
+        <div class="task-file">scripts/scrape-weapons.js · buildWeaponJson()</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">重量：WeaponWeight → weight</div>
+        <div class="task-desc">
+          在 weight 查找鏈前端加入 <code>src.WeaponWeight ??</code>
+        </div>
+        <div class="task-file">scripts/scrape-weapons.js · buildWeaponJson()</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <!-- A-3 -->
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 裝備部位與機甲限制修正</div>
+      <div class="task-group-meta">scripts/scrape-weapons.js · buildWeaponJson()</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">裝備部位：RestrictionsPositionOfWeapon → equipSlot</div>
+        <div class="task-desc">
+          在 equipSlot 查找鏈前端加入 <code>src.RestrictionsPositionOfWeapon ??</code>；
+          值映射補充：<code>Hand→singleHand</code> / <code>DualHand→dualHand</code> /
+          <code>Shoulder→shoulder</code> / <code>Back→back</code>
+        </div>
+        <div class="task-file">scripts/scrape-weapons.js · equipSlotMap</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機甲限制：LimitedModelOfWeapon → mechRestriction</div>
+        <div class="task-desc">
+          在 mechRestriction 查找鏈前端加入 <code>src.LimitedModelOfWeapon ??</code>；
+          解析規則：<br>
+          · 包含三種類型（如 <code>"Light/Medium/Heavy"</code>）→ <code>'none'</code><br>
+          · 單一值 <code>"Light"/"Medium"/"Heavy"</code> → 對應 enum<br>
+          · 其他組合 → <code>'__REVIEW__none'</code> 標記
+        </div>
+        <div class="task-file">scripts/scrape-weapons.js · parseMechRestriction()</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B: TypeScript 注解補充 -->
+<section class="section">
+  <div class="section-label" style="color:var(--accent-purple)">Phase B</div>
+  <div class="section-title">TypeScript 型別注解補充</div>
+  <div class="section-desc">不修改型別定義本身，僅加上 API 欄位對照注解，方便腳本維護者查閱。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; enums.ts 注解補充</div>
+      <div class="task-group-meta">src/types/enums.ts</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">WeaponEquipSlot：補充 API 對應字串注解</div>
+        <div class="task-desc">
+          每個 enum 值加上 <code>// API RestrictionsPositionOfWeapon: "Hand"</code> 形式注解。
+        </div>
+        <div class="task-file">src/types/enums.ts · WeaponEquipSlot</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">MechRestriction：補充 API 對應字串注解</div>
+        <div class="task-desc">
+          每個 enum 值加上 <code>// API LimitedModelOfWeapon: "Light"</code> 形式注解；
+          並補充「三種均含 = none」的說明。
+        </div>
+        <div class="task-file">src/types/enums.ts · MechRestriction</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; Weapon interface 注解補充</div>
+      <div class="task-group-meta">src/types/index.ts</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">6 個受影響欄位加上 API 欄位名注解</div>
+        <div class="task-desc">
+          <code>accuracy</code> / <code>critValue</code> / <code>weight</code> /
+          <code>equipSlot</code> / <code>mechRestriction</code> / <code>skills</code>
+          各加一行 <code>// API: &lt;欄位名&gt;</code> 注解。
+        </div>
+        <div class="task-file">src/types/index.ts · Weapon interface</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C: 文件更新 -->
+<section class="section">
+  <div class="section-label" style="color:var(--accent-purple)">Phase C</div>
+  <div class="section-title">技術文件更新</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; weapons.html 補充說明</div>
+      <div class="task-group-meta">docs/02_技術文件/02_資料模型/weapons.html</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增「API 欄位對照表」section</div>
+        <div class="task-desc">
+          列出 TypeScript 欄位名 ↔ API 欄位名的對照表，涵蓋本計畫修正的 6 個欄位。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/weapons.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補充 WeaponSkill 技能子欄位說明</div>
+        <div class="task-desc">
+          補充 <code>PassiveSkill</code> 子欄位說明：<code>BufCarried</code>（→buffIds）、
+          <code>SkillIcon</code>（→icon/iconLocal）、<code>SpecificEffects</code>（→description，含 rich text 清洗）。
+          說明 <code>activation</code> 預設為 <code>'carry'</code> 的理由。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/weapons.html · WeaponSkill 區塊</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D: Firebase 資料重刷 -->
+<section class="section">
+  <div class="section-label" style="color:var(--accent-purple)">Phase D</div>
+  <div class="section-title">Firebase 資料重刷 <span class="note-inline">含管理員驗收</span></div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 全量重刷（文字欄位）</div>
+      <div class="task-group-meta">node scripts/scrape-weapons.js --auto --no-images</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">執行全量重刷，修正命中 / 暴擊 / 重量 / 裝備部位 / 機甲限制 / 技能</div>
+        <div class="task-desc">
+          Phase A 完成後執行。先以 <code>--dry-run --limit=5</code> 確認輸出正確，再執行完整寫入。
+          預期結果：Firebase 中所有武器的 <code>accuracy</code>、<code>critValue</code>、<code>weight</code>
+          將從 0 更新為實際數值；SS/S+ 武器自動填入技能資料。
+        </div>
+        <div class="task-file">Firestore · weapons collection（全部）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">執行技能圖示下載</div>
+        <div class="task-desc">
+          執行 <code>--rarity=SS,S+</code> 含圖示下載，將 SS/S+ 武器技能的
+          <code>Icon_skill_passive_XXXX.png</code> 下載至 <code>public/images/skills/</code>。
+        </div>
+        <div class="task-file">public/images/skills/ · Firestore（技能 iconLocal 欄位）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 管理員驗收</div>
+      <div class="task-group-meta">Firestore · weapons collection — 人工抽查</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">抽查數筆武器，確認命中 / 暴擊 / 重量與遊戲內數值吻合</div>
+        <div class="task-desc">
+          對照遊戲內武器詳情頁，確認 Firebase 中的 accuracy（命中）、critValue（暴擊）、weight（重量）已正確填入。
+        </div>
+        <div class="task-file">Firestore → weapons（人工抽查）</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">SS/S+ 武器技能補填（API 無技能者）</div>
+        <div class="task-desc">
+          腳本執行後，對照腳本產出的「尚無技能」清單，逐一手動填入 Firebase 中的 skills 陣列。
+          已有技能的武器（如啟明星MK7）不需動作。
+        </div>
+        <div class="task-file">Firestore → weapons（SS/S+ 技能為空者）</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- 執行順序 -->
+<section class="section">
+  <div class="section-label cyan">Dependencies</div>
+  <div class="section-title">執行順序與相依</div>
+
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>Phase</th><th>工作</th><th>相依</th><th>說明</th></tr>
+      <tr>
+        <td>A-1</td>
+        <td>buildWeaponSkills 修正</td>
+        <td>—</td>
+        <td>可優先執行，無相依</td>
+      </tr>
+      <tr>
+        <td>A-2</td>
+        <td>基礎屬性欄位修正</td>
+        <td>—</td>
+        <td>可與 A-1 並行，無相依</td>
+      </tr>
+      <tr>
+        <td>A-3</td>
+        <td>裝備部位 / 機甲限制修正</td>
+        <td>—</td>
+        <td>可與 A-1/A-2 並行，無相依</td>
+      </tr>
+      <tr>
+        <td>B-1</td>
+        <td>enums.ts 注解補充</td>
+        <td>—</td>
+        <td>純注解，不影響執行，可最後補</td>
+      </tr>
+      <tr>
+        <td>B-2</td>
+        <td>Weapon interface 注解補充</td>
+        <td>—</td>
+        <td>純注解，可與 Phase A 並行</td>
+      </tr>
+      <tr>
+        <td>C-1</td>
+        <td>weapons.html 補充說明</td>
+        <td>A-1（確認技能欄位設計後）</td>
+        <td>可在 A-1 確認後立即更新</td>
+      </tr>
+      <tr>
+        <td>D-1</td>
+        <td>全量重刷</td>
+        <td>A-1 + A-2 + A-3</td>
+        <td>腳本全部修正後才執行，避免多次重刷</td>
+      </tr>
+      <tr>
+        <td>D-2</td>
+        <td>管理員驗收</td>
+        <td>D-1</td>
+        <td>D-1 完成後進行</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- 相關文件 -->
+<section class="section">
+  <div class="section-label">Links</div>
+  <div class="section-title">相關文件</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="計畫書.html">
+      <div class="doc-tag">Plan</div>
+      <h4>◆ 計畫書</h4>
+      <p>問題背景、API 欄位映射規格、設計決策</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/02_資料模型/weapons.html">
+      <div class="doc-tag">Document</div>
+      <h4>weapons 資料模型</h4>
+      <p>武器 Schema 欄位定義（C-1 更新目標）</p>
+    </a>
+    <a class="doc-item" href="../../執行中/PLAN-003_武器資料模型優化/進度表.html">
+      <div class="doc-tag">Related Plan</div>
+      <h4>PLAN-003 進度表</h4>
+      <p>前置工作：確立 Weapon interface 欄位結構</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · PLAN-007 · 進度表 —
+  <a href="計畫書.html" style="color:var(--accent-cyan);text-decoration:none;">← 查看計畫書</a>
+</footer>
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-05-21 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

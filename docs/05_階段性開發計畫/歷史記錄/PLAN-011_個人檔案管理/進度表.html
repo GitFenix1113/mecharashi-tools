@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-011 個人檔案管理 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(234,179,8,0.15);  color: var(--accent-yellow); border: 1px solid rgba(234,179,8,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-cyan);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-011 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-011</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">個人檔案管理</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-05-23</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label purple">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">14</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-yellow)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">14</div>
+      <div class="summary-lbl">總任務數</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-purple);">14 / 14</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">型別定義與 Enum</div>
+  <div class="section-desc">所有新欄位的型別源頭，後續 Phase 均依賴此 Phase 完成。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; GameServer enum 新增</div>
+      <div class="task-group-meta">src/types/enums.ts</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 GameServer as const 物件 + type</div>
+        <div class="task-desc">
+          三個值：<code>'獵豹物流'</code> / <code>'灰燼之子'</code> / <code>'破曉世紀'</code>。
+          Key 命名：<code>LEOPARD_LOGISTICS</code> / <code>ASHES_OF_FIRE</code> / <code>DAWN_CENTURY</code>。
+        </div>
+        <div class="task-file">src/types/enums.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; UserProfile 型別更新</div>
+      <div class="task-group-meta">src/types/index.ts</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">UserProfile interface 新增 6 個 optional 欄位</div>
+        <div class="task-desc">
+          <code>avatarType?: 'upload' | 'pilot' | null</code>、
+          <code>avatarUrl?: string | null</code>、
+          <code>avatarPilotId?: string | null</code>、
+          <code>gameNickname?: string | null</code>、
+          <code>gameServer?: GameServer | null</code>、
+          <code>guild?: string | null</code>。
+          所有欄位皆 optional，確保向後相容（舊 profile 文件無此欄位時不報 TS 錯誤）。
+        </div>
+        <div class="task-file">src/types/index.ts · UserProfile</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">Firebase Storage Rules & API</div>
+  <div class="section-desc">Storage 安全規則部署與資料讀寫封裝。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; Firebase Storage Security Rules 更新</div>
+      <div class="task-group-meta">storage.rules</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 avatars/{uid}/ 規則段落</div>
+        <div class="task-desc">
+          公開讀（<code>allow read: if true</code>）；
+          寫入限本人（<code>request.auth.uid == uid</code>），
+          且檔案大小 &lt; 2MB、格式為 <code>image/*</code>。
+          部署後至 Firebase Console 確認規則生效。
+        </div>
+        <div class="task-file">storage.rules · firebase.json（新增 storage 設定）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; profileApi.ts 建立</div>
+      <div class="task-group-meta">src/lib/profileApi.ts</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">實作 compressToWebP() 圖片壓縮工具函式</div>
+        <div class="task-desc">
+          以 <code>canvas.toBlob('image/webp', 0.85)</code> 壓縮任意圖片格式。
+          輸入 File，輸出 Blob。壓縮前先檢查 2MB 限制，壓縮後仍超過則 throw Error。
+        </div>
+        <div class="task-file">src/lib/profileApi.ts · compressToWebP</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">實作 uploadAvatar(uid, file)</div>
+        <div class="task-desc">
+          壓縮 → 上傳至 <code>avatars/{uid}/avatar.webp</code> → 取得 Download URL → 更新 profile 文件
+          （<code>avatarType: 'upload', avatarUrl: url, avatarPilotId: null</code>）。
+          同時新增 <code>getStorage</code> export 至 <code>src/lib/firebase.ts</code>。
+        </div>
+        <div class="task-file">src/lib/profileApi.ts · uploadAvatar · src/lib/firebase.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">實作 setPilotAvatar(uid, pilotId) 與 updateProfileInfo(uid, data)</div>
+        <div class="task-desc">
+          <code>setPilotAvatar</code>：更新 <code>avatarType: 'pilot', avatarPilotId: pilotId, avatarUrl: null</code>。<br>
+          <code>updateProfileInfo</code>：部分更新 displayName / gameNickname / gameServer / guild，
+          空字串轉為 <code>null</code> 再寫入。
+        </div>
+        <div class="task-file">src/lib/profileApi.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label yellow">Phase C</div>
+  <div class="section-title">UI 元件開發</div>
+  <div class="section-desc">核心互動元件，供 ProfilePage 使用。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; AvatarDisplay 元件</div>
+      <div class="task-group-meta">src/components/profile/AvatarDisplay.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">依 avatarType 自動選擇顯示模式，支援三種尺寸</div>
+        <div class="task-desc">
+          Props：<code>profile: AvatarProfile</code>（Pick 縮減型別）、<code>size?: 'sm' | 'md' | 'lg'</code>、<code>className?</code>。
+          <code>null</code>：displayName hash → 六色圓形首字母；
+          <code>'upload'</code>：<code>&lt;img src={avatarUrl}&gt;</code>；
+          <code>'pilot'</code>：內部呼叫 <code>usePilot(avatarPilotId)</code>，顯示 <code>assetUrl(pilot.portrait)</code>。
+        </div>
+        <div class="task-file">src/components/profile/AvatarDisplay.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; AvatarPicker — 上傳圖片 Tab</div>
+      <div class="task-group-meta">src/components/profile/AvatarPicker.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">拖放區 + 檔案選取 + 本地預覽 + 確認上傳</div>
+        <div class="task-desc">
+          拖放 / <code>onChange</code> 取得 File → <code>URL.createObjectURL</code> 顯示預覽。
+          確認上傳呼叫 <code>uploadAvatar()</code>，上傳中顯示「上傳中...」禁用按鈕，完成後呼叫 onSuccess + 關閉 Modal。
+          超過 2MB 顯示紅色錯誤訊息並禁用確認按鈕。
+        </div>
+        <div class="task-file">src/components/profile/AvatarPicker.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; AvatarPicker — 機師頭像 Tab</div>
+      <div class="task-group-meta">src/components/profile/PilotAvatarGallery.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機師格狀列表 + 搜尋 + 選取高亮 + 確認選取</div>
+        <div class="task-desc">
+          使用 <code>usePilots()</code> hook 取得機師列表，名稱搜尋過濾。
+          4–5 列格狀排版，點擊後 accent-purple 邊框高亮，未選取時禁用確認按鈕。
+          「確認選取」呼叫 <code>setPilotAvatar()</code>，完成後呼叫 onSuccess 關閉 Modal。
+        </div>
+        <div class="task-file">src/components/profile/PilotAvatarGallery.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; ProfileEditForm 元件</div>
+      <div class="task-group-meta">src/components/profile/ProfileEditForm.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">顯示名稱 / 遊戲資訊表單 + 儲存</div>
+        <div class="task-desc">
+          local state 管理表單值，初始值從 profile prop 讀取。
+          欄位：displayName（必填，最長 30 字）、gameNickname（選填）、gameServer（select，含「未設定」）、guild（選填）。
+          空字串欄位寫入 null，呼叫 <code>updateProfileInfo()</code> 後顯示 inline 成功/錯誤訊息；儲存中禁用按鈕。
+        </div>
+        <div class="task-file">src/components/profile/ProfileEditForm.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label yellow">Phase D</div>
+  <div class="section-title">頁面整合</div>
+  <div class="section-desc">將新元件整合至 ProfilePage 與全站 Header。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; ProfilePage — 個人資料 Tab</div>
+      <div class="task-group-meta">src/pages/user/ProfilePage.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增「個人資料」Tab，整合 AvatarDisplay + AvatarPicker + ProfileEditForm</div>
+        <div class="task-desc">
+          Tab 頂部：大尺寸 AvatarDisplay + 「更換頭像」按鈕（開啟 AvatarPicker Modal）。
+          Email 唯讀顯示（從 Firebase Auth <code>currentUser.email</code> 取得）。
+          表單區：ProfileEditForm。
+          另新增「我的配裝」Tab 承接原配裝列表。
+          AvatarPicker 支援第三方登入用戶的 Google 頭像選項（新增 avatarType='google'）。
+        </div>
+        <div class="task-file">src/pages/user/ProfilePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; Header 用戶頭像更新</div>
+      <div class="task-group-meta">src/components/Layout.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">登入狀態的用戶 Avatar 改用 AvatarDisplay（sm 尺寸）</div>
+        <div class="task-desc">
+          Layout.tsx 導入 AvatarDisplay，登入後從 AuthContext 的 userProfile 取得頭像資料。
+          profile 尚未載入時退回首字母文字 Avatar。
+          同步新增 refreshProfile() 至 AuthContext，供更換頭像/儲存資料後即時更新 context 資料。
+        </div>
+        <div class="task-file">src/components/Layout.tsx · src/contexts/AuthContext.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label cyan">Phase E</div>
+  <div class="section-title">技術文件更新</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; users.html — profile schema 更新</div>
+      <div class="task-group-meta">docs/02_技術文件/04_Firebase/資料庫設計文件/users.html</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">profile 表格新增 6 個欄位說明列</div>
+        <div class="task-desc">
+          avatarType / avatarUrl / avatarPilotId / gameNickname / gameServer / guild，
+          加註型別與說明。版本號更新為 V1.2。
+        </div>
+        <div class="task-file">docs/02_技術文件/04_Firebase/資料庫設計文件/users.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; enums.html — GameServer 新增</div>
+      <div class="task-group-meta">docs/02_技術文件/04_Firebase/資料庫設計文件/enums.html</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">資料維護 / 用戶權限 section 新增 GameServer enum 卡片</div>
+        <div class="task-desc">
+          三個值：LEOPARD_LOGISTICS → 獵豹物流、ASHES_OF_FIRE → 灰燼之子、DAWN_CENTURY → 破曉世紀。
+          加入完整 Enum 定義範例 section（程式碼區塊）。
+        </div>
+        <div class="task-file">docs/02_技術文件/04_Firebase/資料庫設計文件/enums.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; security-rules.html — Storage avatars 規則</div>
+      <div class="task-group-meta">docs/02_技術文件/04_Firebase/資料庫設計文件/security-rules.html</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 Firebase Storage avatars/{uid}/ 安全規則說明段落</div>
+        <div class="task-desc">
+          說明公開讀 + 本人限寫邏輯，補充 2MB 大小限制與 image/* 格式限制的理由。
+        </div>
+        <div class="task-file">docs/02_技術文件/04_Firebase/資料庫設計文件/security-rules.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-011 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-05-24 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

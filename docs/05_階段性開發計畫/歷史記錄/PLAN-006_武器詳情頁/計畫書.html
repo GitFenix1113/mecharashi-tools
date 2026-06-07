@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-006 武器詳情頁 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.layout-block {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 2;
+  color: var(--text-secondary);
+}
+.layout-block .section-marker {
+  color: var(--accent-orange);
+  font-weight: 700;
+}
+.layout-block .section-detail {
+  color: var(--text-dim);
+  padding-left: 20px;
+}
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-006 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-006</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    武器詳情頁<span style="-webkit-text-fill-color:var(--text-secondary);">/weapons/:id · WeaponDetailPage</span>
+  </h1>
+  <p class="hero-sub">為武器建立獨立詳情頁，完整展示技能、改裝、元件插槽與專武天賦強化資訊</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-006</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-05-20</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">Router · UI · Components</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value orange">MEDIUM</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value yellow">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">關聯文件</div>
+      <div class="meta-value">
+        <a href="../../../02_技術文件/02_資料模型/weapons.html" style="color:var(--accent-cyan);text-decoration:none;">weapons.html</a>
+        ·
+        <a href="../../../03_頁面規劃/04_武器/index.html" style="color:var(--accent-cyan);text-decoration:none;">武器頁面規劃</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：武器資料量增長，列表頁無法完整展示</strong><br>
+    PLAN-003 重構後，武器 Schema 包含：基礎屬性、三種射程欄位、技能列表（含 effects[]）、固定改裝、浮動改裝、元件插槽。
+    若再加上 PLAN-005 引入的專武天賦強化（<code>enhancedTalentDescription</code>），
+    全部資訊在列表行展開顯示將導致嚴重的版面擁擠與閱讀困難。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：專武天賦強化 DiffHighlight 需要充足的版面空間</strong><br>
+    PLAN-005 實作的專武天賦強化 DiffHighlight 區塊（黃色）包含原始天賦文字與強化後版本的差異對比，
+    文字量不小，在列表頁展開無法給予適當的閱讀空間與視覺層次。
+    只有在獨立詳情頁才能以卡片式佈局清晰呈現「有無專武的天賦差異」。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：改裝浮動效果的可能選項多達 8–12 條</strong><br>
+    浮動改裝的 <code>possibleEffects[]</code> 包含所有可能效果、觸發條件與數值範圍，
+    在列表頁無法完整顯示，使用者無法評估改裝潛力。詳情頁可提供完整的改裝效果表格。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題四：武器圖鑑頁（/weapons）已有「待確認」備註需要解決</strong><br>
+    武器頁面規劃文件明確記錄「武器詳情是否需要獨立頁面？」為待確認項目。
+    隨著武器資料量與功能複雜度的增加，本計畫正式確認答案為是，並提供完整的設計規格。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：新增獨立路由 /weapons/:id</strong><br>
+    在 React Router 設定中新增 <code>/weapons/:id</code> 路由，對應 <code>WeaponDetailPage</code> 元件。
+    武器圖鑑列表頁（<code>WeaponsPage</code>）的每一行武器名稱加入點擊連結，導向詳情頁。
+    詳情頁提供「← 返回武器圖鑑」的 breadcrumb 導航。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：頁面佈局採垂直單欄堆疊</strong><br>
+    由上至下依序：Hero 區塊 → 基礎屬性面板 → 技能列表 → 改裝資訊（固定 + 浮動並排）→ 元件插槽資訊。
+    若 <code>isExclusive = true</code>，技能列表中有 <code>enhancedTalentDescription</code> 的技能卡片下方附加黃色天賦強化 DiffHighlight 區塊，
+    並在 Hero 下方顯示「專武對應機師」標籤（連結至機師詳情頁）。
+    此佈局與現有 PilotDetailPage 的垂直堆疊設計一致。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：射程以視覺格式呈現</strong><br>
+    · <code>manhattan</code> / <code>orthogonal</code>：顯示 <code>${minRange}-${maxRange}</code>（如 "2-4"），並加 <code>rangeType</code> 標籤說明型態<br>
+    · <code>ring</code>：顯示 <code>${maxRange}+</code>（如 "2+"），標示「方形擴散」型態<br>
+    射程型態標籤（manhattan / orthogonal / ring）以小字輔助說明，不佔主要空間。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：技能生效方式使用顏色標籤</strong><br>
+    · <code>carry</code>（攜帶即生效）→ 紫色標籤<br>
+    · <code>equip</code>（裝備中生效）→ 青色標籤<br>
+    · <code>use</code>（使用時生效）→ 橘色標籤<br>
+    與 PilotDetailPage 技能區塊的顏色語意保持一致（主動=紅在武器無此概念，不使用）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：浮動改裝顯示所有可能效果</strong><br>
+    <code>possibleEffects[]</code> 以表格呈現，欄位包含：效果類型（stat）、觸發條件（condition，若無則顯示「無條件」）、數值範圍（min ~ max）。
+    表格上方顯示「可填槽位數（slots）」，讓使用者清楚知道能同時選幾個效果。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：複用 WeaponRarityBadge 元件</strong><br>
+    已有 <code>WeaponRarityBadge</code> 元件（PLAN-004 產出），Hero 區塊直接複用。
+    新增的分類標籤（type / kind）、機甲限制（mechRestriction）、裝備部位（equipSlot）
+    以同樣的 badge 視覺呈現，可視情況抽出為共用的 <code>WeaponBadges</code> 元件。
+  </div>
+</section>
+
+<!-- 版面規劃 -->
+<section class="section">
+  <div class="section-label orange">Layout</div>
+  <div class="section-title">版面結構</div>
+
+  <div class="layout-block">
+<span class="section-marker">[ Hero 區塊 ]</span>
+<span class="section-detail">  武器名稱（h1）</span>
+<span class="section-detail">  稀有度徽章 · 大類標籤 · 種類標籤 · 裝備部位 · 機甲限制</span>
+<span class="section-detail">  （若 isExclusive=true）→ 專武標記 + 對應機師連結</span>
+
+<span class="section-marker">[ 基礎屬性 ]</span>
+<span class="section-detail">  攻擊力 / 命中 / 暴擊 / 重量 / 射程 / 彈藥量 / 連擊數</span>
+<span class="section-detail">  6-欄 stat grid（mobile: 2欄）</span>
+
+<span class="section-marker">[ 技能列表 ]</span>
+<span class="section-detail">  每個技能卡片：生效方式標籤 · 技能名稱 · 描述 · effects[]</span>
+<span class="section-detail">  若 enhancedTalentDescription 有值：黃色 DiffHighlight 區塊（強化天賦名稱 + 差異對比）</span>
+
+<span class="section-marker">[ 改裝資訊 ]（左右並排，mobile 上下）</span>
+<span class="section-detail">  固定改裝（fixedMod）：方案名稱 · 改裝上限等級 · 效果列表</span>
+<span class="section-detail">  浮動改裝（floatingMod）：方案名稱 · 可填槽位數 · 可能效果表格</span>
+
+<span class="section-marker">[ 元件插槽 ]</span>
+<span class="section-detail">  觸元件槽位 N 格 · 應元件槽位 N 格 · 元件上限 componentLimit</span>
+  </div>
+</section>
+
+<!-- 相關文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-006 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/02_資料模型/weapons.html">
+      <div class="doc-tag">Data Model</div>
+      <h4>🔫 weapons 資料模型</h4>
+      <p>武器完整欄位定義、射程型態、技能結構</p>
+    </a>
+    <a class="doc-item" href="../../../03_頁面規劃/04_武器/index.html">
+      <div class="doc-tag">Page</div>
+      <h4>🔫 武器頁面規劃</h4>
+      <p>列表頁 + 詳情頁規格</p>
+    </a>
+    <a class="doc-item" href="../PLAN-005_專武天賦強化顯示/計畫書.html">
+      <div class="doc-tag">Plan</div>
+      <h4>◆ PLAN-005 計畫書</h4>
+      <p>專武天賦 DiffHighlight 設計（詳情頁會複用此成果）</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-006 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-05-21 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

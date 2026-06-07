@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-019-F BUFF 後台管理 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 24px 0; }
+.meta-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+.meta-label { font-size: 10px; font-family: 'Orbitron', sans-serif; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+.meta-value { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.25); border-left: 3px solid var(--accent-red); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
+.decision-block { background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.2); border-left: 3px solid var(--accent-orange); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
+.warning-block { background: rgba(234,179,8,0.06); border: 1px solid rgba(234,179,8,0.2); border-left: 3px solid var(--accent-yellow); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
+.info-block { background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.2); border-left: 3px solid var(--accent-orange); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
+
+.code-block { background: #0d1117; border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.9; overflow-x: auto; color: #e6edf3; }
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+.impact-table th { background: rgba(255,255,255,0.04); border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 11px; font-family: 'Orbitron', sans-serif; letter-spacing: 1px; color: var(--text-dim); }
+.impact-table td { border: 1px solid var(--border); padding: 10px 14px; color: var(--text-secondary); vertical-align: top; }
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.impact-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--text-primary); white-space: nowrap; }
+.badge-good { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med  { background: rgba(234,179,8,0.15); color: #fbbf24; border: 1px solid rgba(234,179,8,0.3); border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-019-F 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge" style="border-color:var(--accent-orange);color:var(--accent-orange);">◆ PLAN-019-F · 019 子計畫</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    BUFF 後台管理<span style="-webkit-text-fill-color:var(--text-secondary);">BuffAdmin · buffs CRUD · 引用挑選器</span>
+  </h1>
+  <p class="hero-sub">為 <code>buffs</code> 集合補上寫入 API 與後台管理面板，讓非工程人員也能新增／編輯 BUFF，並在描述裡標引用——補完 019 引用層最後一個「只能讀、不能在後台維護」的實體。</p>
+</header>
+
+<main class="container">
+
+<!-- 概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item"><div class="meta-label">計畫編號</div><div class="meta-value orange">PLAN-019-F</div></div>
+    <div class="meta-item"><div class="meta-label">建立日期</div><div class="meta-value">2026-06-07</div></div>
+    <div class="meta-item"><div class="meta-label">影響範圍</div><div class="meta-value purple">firestoreApi · AdminPage · BuffAdmin(新) · docs · siteChangelog</div></div>
+    <div class="meta-item"><div class="meta-label">優先級</div><div class="meta-value yellow">MID</div></div>
+    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value orange">✅ 已完成（2026-06-07）</div></div>
+    <div class="meta-item"><div class="meta-label">前置依賴</div><div class="meta-value cyan">PLAN-019-A（引用層）· PLAN-019-C（RefPicker）— 皆已上線</div></div>
+  </div>
+
+  <div class="info-block">
+    <strong>一句話：</strong>其他帶描述的實體（模組／武器／元件／背包／技能／詞條）都已能在後台 CRUD 並標引用，唯獨
+    <code>buffs</code> 至今<strong>只有 <code>getBuffs</code> 讀取、沒有寫入 API、也沒有後台 UI</strong>，新增一筆 BUFF 只能靠 seed 腳本或 Firestore console。
+    本子計畫補上 <code>updateBuff</code> 與一個 <code>BuffAdmin</code> 分頁，讓 BUFF 也能像其他實體一樣在後台維護、並在描述下方掛 RefPicker 標引用。屬總綱 019-E「引用型 Admin」收尾的一塊。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>buffs 沒有寫入路徑：</strong><code>src/lib/firestoreApi.ts</code> 只有 <code>getBuffs()</code>（讀），沒有對應的 <code>updateBuff</code>。
+    <code>AdminPage</code> 的分頁列也沒有 BUFF。維護者要新增／修改一筆 BUFF，只能改 seed 腳本（firebase-admin）或直接進 Firestore console 手動建文件——非工程人員無法操作，與「讓維護者自助維護資料」的目標衝突。
+  </div>
+
+  <div class="problem-block">
+    <strong>引用閉環缺一角：</strong>RefPicker 已能把描述裡的 <code>[xxx]</code> 指向 <code>buff</code>，前台 <code>EntityRefView</code> 也能解析 buff 並顯示詳情；
+    但由於 buff 本身無法在後台建立/補資料，<code>buffs</code> 集合長期偏空，導致「指向 buff 的引用」常常查無候選或內容不全。先讓 BUFF 能被維護，引用體驗才完整。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：補 <code>updateBuff</code> 寫入 API（仿 updateComponent）</strong><br>
+    走既有寫入慣例：剝離 <code>id</code> → <code>setDoc</code> 寫入 <code>buffs/{id}</code>（<code>stripUndefined</code>）→ <code>bumpDataVersion()</code> 使快取失效。
+    <code>firestore.rules</code> 的 <code>buffs</code> 已具備 <code>allow write: if isAdmin()</code>，<strong>無需改安全規則</strong>。
+  </div>
+  <div class="code-block">
+<span class="cm">// src/lib/firestoreApi.ts</span>
+<span class="kw">export const</span> <span class="fn">updateBuff</span> = <span class="kw">async</span> (buff: <span class="ty">GameBuff</span>): <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt; => {
+  <span class="kw">const</span> { id, ...data } = buff
+  <span class="kw">await</span> <span class="fn">setDoc</span>(<span class="fn">doc</span>(db, <span class="st">'buffs'</span>, id), <span class="fn">stripUndefined</span>(data))
+  <span class="kw">await</span> <span class="fn">bumpDataVersion</span>().<span class="fn">catch</span>(() => {})
+}
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：新增「BUFF 管理」分頁 + BuffAdmin 面板（仿 ComponentAdmin / GlossaryAdmin）</strong><br>
+    <code>AdminPage</code> 的 <code>Tab</code> 型別與 <code>TAB_CONFIG</code> 加 <code>'buffs'</code>（<code>keys: []</code>、<code>selfLoading: true</code>、<code>searchable: true</code>），
+    加一顆 <code>TabButton「BUFF 管理」</code> 與對應渲染。新檔 <code>BuffAdmin.tsx</code>：列表以 <code>getCollectionPage('buffs')</code> 分頁查詢 + 名稱開頭搜尋；
+    新增（id 規則 <code>buff_&lt;名稱&gt;</code>）；編輯面板欄位如下。
+  </div>
+  <div class="code-block">
+<span class="cm">// BuffAdmin 編輯面板欄位（對應 GameBuff）</span>
+name        <span class="cm">// 名稱</span>
+buffType    <span class="cm">// 下拉，用 BuffType enum：statBoost/resource/state/debuff/control</span>
+maxStack?   duration?   mutexGroup?   <span class="cm">// 疊加 / 持續回合 / 互斥群組</span>
+description <span class="cm">// 描述；下方掛 &lt;RefPicker&gt; 標 [xxx]（buff 也可引用其他 buff）</span>
+effects[]   <span class="cm">// 複用 PilotAdmin export 的 &lt;SkillEffectItem&gt; 編輯器</span>
+icon?
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：最大化複用，零新元件骨架</strong><br>
+    效果編輯器複用 <code>SkillEffectItem</code>（PilotAdmin 已 export）、引用挑選器複用 <code>RefPicker</code>、列表/Modal/搜尋複用 <code>shared.tsx</code>
+    的 <code>AdminModal / Field / useServerPaged / LoadMoreButton / useNewItemCreation</code>。<code>buffs</code> 已接入 <code>GameDataContext</code>（讀、預載、reload），
+    寫入後 <code>bumpDataVersion</code> 即同步全站；前台引用顯示無需任何改動。
+  </div>
+</section>
+
+<!-- 範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>updateBuff</code> 寫入 API</li>
+      <li>AdminPage「BUFF 管理」分頁接線</li>
+      <li>BuffAdmin 面板：列表 + 新增 + 編輯（含 buffType 下拉 / effects 編輯器 / 描述掛 RefPicker）</li>
+      <li>docs（skills_buffs 資料模型、Firebase buffs 設計文件）、019 總綱進度、siteChangelog feat</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>PLAN-019-B 的模擬器 buff 反向索引／形態互斥面板（可用 buff = ⋃ 配裝 buffIds[]）—— 屬 Layer 2 模擬層</li>
+      <li>buff 刪除：先做 新增/編輯（C+R+U）；刪除涉及「是否仍被 descriptionRefs / buffIds 引用」的連動檢查，視需求後議</li>
+      <li>buff 圖示上傳（沿用既有 icon 字串欄位即可）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 影響 -->
+<section class="section">
+  <div class="section-label orange">Impact</div>
+  <div class="section-title">影響檔案</div>
+  <div class="data-table-wrap">
+    <table class="impact-table">
+      <tr><th>檔案</th><th>變更</th><th>風險</th></tr>
+      <tr><td>src/lib/firestoreApi.ts</td><td>新增 <code>updateBuff</code></td><td><span class="badge-good">低</span></td></tr>
+      <tr><td>src/pages/user/AdminPage.tsx</td><td>Tab/TAB_CONFIG/TabButton 加 buffs + 渲染 BuffAdmin</td><td><span class="badge-good">低</span></td></tr>
+      <tr><td>src/pages/user/admin/BuffAdmin.tsx</td><td>新檔：列表 + 新增 + 編輯面板</td><td><span class="badge-med">中</span></td></tr>
+      <tr><td>docs / siteChangelog</td><td>skills_buffs 資料模型、Firebase buffs 設計、019 總綱進度、feat 履歷</td><td><span class="badge-good">低</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 驗證 -->
+<section class="section">
+  <div class="section-label orange">Verification</div>
+  <div class="section-title">驗證方式</div>
+  <div class="info-block">
+    <ol style="margin:0;padding-left:18px;line-height:2.2;">
+      <li><strong>型別/建置</strong>：<code>npm run build</code> 通過。</li>
+      <li><strong>新增</strong>：後台 BUFF 管理 → 新增一筆 BUFF（buff_xxx）→ 填名稱/類型/描述/效果 → 儲存後列表可見。</li>
+      <li><strong>引用</strong>：描述含 <code>[xxx]</code> → 下方 RefPicker 可指派；前台某描述指向此 buff → 可懸停預覽、點擊看詳情。</li>
+      <li><strong>持久化</strong>：儲存走 <code>updateBuff</code> + <code>bumpDataVersion</code>，重整後資料仍在、快取更新；其他分頁/前台同步看得到。</li>
+    </ol>
+  </div>
+</section>
+
+<!-- 關聯 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-019-F 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../../執行中/PLAN-019_實體引用與模擬基礎_總綱/計畫書.html">
+      <div class="doc-tag">Master</div>
+      <h4>◆ PLAN-019 總綱計畫書</h4>
+      <p>四層抽象與子計畫重組</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-019-F — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-07 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>
