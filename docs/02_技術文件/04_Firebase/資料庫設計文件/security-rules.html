@@ -88,6 +88,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    match /glossaryTerms/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
     match /buffs/{docId} {
       allow read: if true;
       allow write: if isAdmin();

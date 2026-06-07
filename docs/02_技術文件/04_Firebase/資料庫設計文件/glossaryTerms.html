@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>glossaryTerms — 詞條庫 Schema — Firebase 資料庫設計 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../../index.html">技術文件</a>
+    <span>›</span>
+    <a href="Firebase資料庫設計文件.html">Firebase 資料庫設計</a>
+    <span>›</span>
+    <span class="current">glossaryTerms — 詞條庫</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge cyan">◆ COLLECTION SCHEMA</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    glossaryTerms — 詞條庫
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-019-C</span>
+  </h1>
+  <p class="hero-sub">機制關鍵字單一資料源 · 被 [xxx] 引用（refType:'term'）· 無專屬集合者的歸宿</p>
+  <div class="version-badge" style="background:var(--accent-cyan);color:#000;">PLAN-019-C — 2026-06-07</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label cyan">01 — 用途</div>
+  <div class="section-title">glossaryTerms Collection</div>
+
+  <div class="info-block">
+    <strong>📌 用途說明</strong><br>
+    PLAN-019 引用層把描述文字中的 <code>[xxx]</code> 一般化為型別化引用（<code>EntityRef</code>）。技能有 <strong>pilotSkills</strong>、BUFF 有 <strong>buffs</strong>、機體/武器/模組各有集合；<br>
+    唯獨 <code>固定傷害</code>、<code>啟動</code>、<code>形態增益</code> 這類<strong>無專屬集合可放</strong>的機制關鍵字沒有歸宿。<br>
+    <strong>glossaryTerms</strong> 即為這些關鍵字的單一資料源，作為 <code>refType:'term'</code> 引用的查詢目標。<br>
+    · 任意 description 中的 <code>[xxx]</code> 可指向此集合（PLAN-019 <code>refType:'term'</code>）→ 懸停／點擊顯示說明，並可逐層 drill。<br>
+    · 後台「詞條管理」分頁維護；描述欄位旁的 <strong>RefPicker</strong> 讓任何維護者把 <code>[xxx]</code> 標成可點引用。<br>
+    · 前台讀取走 GameDataContext 一次預載 + PLAN-017 版本快取（回訪 0 讀取）。
+  </div>
+
+  <div class="sub-h">🗃️ glossaryTerms — 詞條文件（GlossaryTerm）</div>
+  <div class="data-table-wrap">
+    <table class="data-table cyan-head">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td>文件 ID。格式 <code>term_&lt;名稱&gt;</code>（與 skill_/buff_ 一致）</td></tr>
+      <tr><td>name</td><td>string</td><td>詞條名稱（= <code>[xxx]</code> 內文字）</td></tr>
+      <tr><td>category</td><td>string?</td><td>機制分類（傷害／狀態／資源／通用…）；自由字串，供列表標籤與篩選</td></tr>
+      <tr><td>description</td><td>string</td><td>詞條解釋文字（可含 <code>[xxx]</code> 標記，再引用其他實體）</td></tr>
+      <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>解釋內 <code>[xxx]</code> → 實體引用側錄（PLAN-019 Layer 1）</td></tr>
+      <tr><td>aliases</td><td>string[]?</td><td>同義詞：別名 <code>[xxx]</code> 對應同一詞條</td></tr>
+      <tr><td>icon</td><td>string?</td><td>選填圖示（遠端 URL 或本地 /images/…）</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">02 — 維護</div>
+  <div class="section-title">資料維護</div>
+
+  <div class="info-block">
+    <strong>🛠️ 後台編輯</strong><br>
+    管理後台「詞條管理」分頁新增 / 編輯詞條文件。新增時 ID 採 <code>term_&lt;名稱&gt;</code>。詞條解釋本身也能用 RefPicker 標記內部引用。
+  </div>
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔗 RefPicker（引用挑選器）</strong><br>
+    通用元件 <code>src/components/admin/RefPicker.tsx</code>：自動 tokenize 描述中的 <code>[xxx]</code>，逐 token 指派 <code>refType</code> + 候選實體（讀 GameDataContext in-memory 陣列 + 屬性 stat），寫入 <code>descriptionRefs</code>，並即時 <code>RefText</code> 預覽。<br>
+    本輪已接進「詞條管理」與機師後台「技能效果（pilotSkills）」；其餘描述面板的 RefPicker retrofit 列於 PLAN-019-E。
+  </div>
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔒 安全規則</strong><br>
+    <code>glossaryTerms</code> 所有人可讀、管理員可寫（見 security-rules）。寫入後自動 <code>bumpDataVersion</code> 使全站快取失效。
+  </div>
+</section>
+
+</main>
+
+</body>
+</html>

@@ -6,6 +6,7 @@ import { Field, AdminModal, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updatePilot, updatePilotSkill } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { resolvePilotSkills, buildSkillMap, docToEmbedded } from '../../../utils/pilotSkills'
+import { RefPicker } from '../../../components/admin/RefPicker'
 import { PILOT_RARITY_CLASS, TRIGGER_DISPLAY, STAT_OPTIONS } from './constants'
 
 type PilotFilters = { rarity: string; class: string }
@@ -262,6 +263,11 @@ function PilotSkillItem({
               placeholder="技能效果文字描述"
             />
           </Field>
+          <RefPicker
+            text={skill.description}
+            value={skill.descriptionRefs}
+            onChange={(refs) => onChange({ ...skill, descriptionRefs: refs })}
+          />
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">可計算效果 effects</span>

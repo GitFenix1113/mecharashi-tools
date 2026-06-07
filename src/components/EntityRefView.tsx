@@ -22,7 +22,7 @@ const REF_TYPE_LABEL: Record<RefType, string> = {
 const REF_TO_COLLECTION: Partial<Record<RefType, CollectionKey>> = {
   pilot: 'pilots', mech: 'mechs', weapon: 'weapons',
   module: 'modules', backpack: 'backpacks', component: 'components', buff: 'buffs',
-  skill: 'pilotSkills',
+  skill: 'pilotSkills', term: 'glossaryTerms',
 }
 
 const REF_TO_ROUTE: Partial<Record<RefType, string>> = {
@@ -140,7 +140,17 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
         description: s ? `對應屬性欄位：${s.key}` : undefined,
       }
     }
-    // term：集合尚未建立（PLAN-019-C）
+    case 'term': {
+      const t = gd.glossaryTerms.find(x => x.id === ref.refId)
+      if (!t) return null
+      return {
+        title: t.name,
+        subtitle: t.category,
+        image: t.icon ? resolveIconSrc(t.icon) : undefined,
+        description: t.description,
+        descriptionRefs: t.descriptionRefs,
+      }
+    }
     default:
       return { title: ref.label || ref.refId, pending: true }
   }
@@ -218,8 +228,7 @@ export function EntityRefView({ entityRef, interactive, showClose = false }: { e
 
             {resolved.pending && (
               <div className="rounded-lg bg-accent-purple/5 border border-accent-purple/25 px-3 py-2.5 text-[12px] text-text-secondary leading-relaxed">
-                此引用為「{REF_TYPE_LABEL[entityRef.refType]}」，詳情資料庫將由後續子計畫提供
-                （詞條庫 → PLAN-019-C）。目前先以名稱呈現。
+                此引用為「{REF_TYPE_LABEL[entityRef.refType]}」，目前尚無對應詳情資料，先以名稱呈現。
               </div>
             )}
           </div>

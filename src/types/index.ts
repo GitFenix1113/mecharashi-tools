@@ -24,6 +24,28 @@ export interface EntityRef {
  */
 export type DescriptionRefs = Record<string, EntityRef>
 
+/**
+ * 詞條庫文件（PLAN-019-C）。
+ * 收「無專屬集合可放」的機制關鍵字（如 固定傷害 / 啟動 / 形態增益），
+ * 作為 refType:'term' 引用的資料源。被任意 description 內的 [xxx] 引用。
+ */
+export interface GlossaryTerm {
+  /** 文件 ID。格式 term_<名稱>（與 skill_/buff_ 一致） */
+  id: string
+  /** 詞條名稱（= [xxx] 內文字） */
+  name: string
+  /** 機制分類（傷害 / 狀態 / 資源 / 通用…）；自由字串 */
+  category?: string
+  /** 詞條解釋文字（可含 [xxx] 標記） */
+  description: string
+  /** 解釋內 [xxx] → 實體引用側錄（解釋本身也能再引用） */
+  descriptionRefs?: DescriptionRefs
+  /** 同義詞：別名 [xxx] 對應同一詞條 */
+  aliases?: string[]
+  /** 選填圖示（遠端 URL 或本地 /images/…） */
+  icon?: string
+}
+
 // ─── 技能 / Buff 共用型別（PLAN-001）────────────────────────────────────────
 
 /**

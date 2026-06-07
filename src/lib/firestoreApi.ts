@@ -15,7 +15,7 @@ import {
   type DocumentData,
 } from 'firebase/firestore'
 import { db } from './firebase'
-import type { Pilot, Mech, Module, Weapon, Backpack, Component, PilotResearch, GlobalResearch, GrayOpsRoster, GrayOpsMechEntry, GameBuff, PilotSkillDoc } from '../types'
+import type { Pilot, Mech, Module, Weapon, Backpack, Component, PilotResearch, GlobalResearch, GrayOpsRoster, GrayOpsMechEntry, GameBuff, PilotSkillDoc, GlossaryTerm } from '../types'
 
 // ── 通用輔助 ──────────────────────────────────────────────────────────────────
 
@@ -135,6 +135,10 @@ export const getBuffs = () =>
 export const getPilotSkills = () =>
   fetchCollection<PilotSkillDoc>('pilotSkills')
 
+/** glossaryTerms Collection（PLAN-019-C 詞條庫）：無專屬集合的機制關鍵字，refType:'term' 的資料源 */
+export const getGlossaryTerms = () =>
+  fetchCollection<GlossaryTerm>('glossaryTerms')
+
 export const getPilotResearch = (pilotId: string) =>
   fetchCollection<PilotResearch>('pilotResearch', [where('pilotId', '==', pilotId)])
 
@@ -205,6 +209,13 @@ export const updatePilot = async (pilot: Pilot): Promise<void> => {
 export const updatePilotSkill = async (skill: PilotSkillDoc): Promise<void> => {
   const { id, ...data } = skill
   await setDoc(doc(db, 'pilotSkills', id), stripUndefined(data))
+  await bumpDataVersion().catch(() => {})
+}
+
+/** PLAN-019-C：寫入/更新單一詞條文件（refType:'term' 的單一資料源） */
+export const updateGlossaryTerm = async (term: GlossaryTerm): Promise<void> => {
+  const { id, ...data } = term
+  await setDoc(doc(db, 'glossaryTerms', id), stripUndefined(data))
   await bumpDataVersion().catch(() => {})
 }
 

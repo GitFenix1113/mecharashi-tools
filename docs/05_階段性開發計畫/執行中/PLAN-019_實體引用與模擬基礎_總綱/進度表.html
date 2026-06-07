@@ -80,8 +80,8 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <div class="meta-item"><a href="計畫書.html" style="color:var(--accent-purple);font-size:13px;font-weight:600;">→ 計畫書</a></div>
   </div>
 
-  <div class="progress-bar"><div class="progress-bar-fill" style="width:32%;"></div></div>
-  <div class="progress-percent">約 32% — 總綱型別 + 019-A 引用層已落地；019-B~E 待執行</div>
+  <div class="progress-bar"><div class="progress-bar-fill" style="width:48%;"></div></div>
+  <div class="progress-percent">約 48% — 總綱型別 + 019-A 引用層 + 019-C 詞條庫/RefPicker 已落地；019-B/D/E 待執行</div>
 
   <!-- 總綱基礎 -->
   <div class="section-h">總綱基礎 <span class="badge badge-progress">IN PROGRESS</span></div>
@@ -128,7 +128,7 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">DiffHighlight 支援引用層：descriptionMax「最大強化」區塊的 [xxx] 也可點擊（保留差異/數字高亮）</span></li>
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">瀏覽器端到端驗證：海莉絲「悖想先驅」hover/pin [形態增益]、drill 虛粒子形態→激發能→返回、descriptionMax [激發能] 可點、點外部關閉</span><span class="task-meta">seed-plan019-demo.mjs</span></li>
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">附帶：buffs 集合接入 GameDataContext（getBuffs + 懶載）+ buff 解析（019-B/C 資料路徑先行）</span></li>
-    <li class="task-item"><span class="task-status progress">▶</span><span class="task-name">RefPicker 後台填值 UI（與 019-C/E 一併）；目前 descriptionRefs 需由資料端填入才會出現可點擊引用</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">RefPicker 後台填值 UI（PLAN-019-C 落地）：詞條管理與技能效果可直接把 [xxx] 標成可點引用</span><span class="task-meta">components/admin/RefPicker.tsx</span></li>
   </ul>
 
   <div class="phase-label">PLAN-019-B · BUFF / 形態圖（Layer 2）</div>
@@ -138,11 +138,12 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <li class="task-item"><span class="task-status pending">○</span><span class="task-name">模擬器 Buff 面板：同群形態擇一、active 切換、SkillEffect 加總</span></li>
   </ul>
 
-  <div class="phase-label">PLAN-019-C · 詞條庫</div>
-  <div class="phase-note">glossaryTerms 集合（收無專屬集合可放的機制關鍵字，如 固定傷害）+ Admin 詞條挑選器 RefPicker。</div>
+  <div class="phase-label">PLAN-019-C · 詞條庫<span class="badge badge-done" style="margin-left:8px;">DONE</span></div>
+  <div class="phase-note">glossaryTerms 集合 + Admin 詞條挑選器 RefPicker。詳見子計畫 <a href="../PLAN-019-C_詞條庫與引用挑選器/計畫書.html" style="color:var(--accent-cyan);">PLAN-019-C 計畫書</a> / <a href="../PLAN-019-C_詞條庫與引用挑選器/進度表.html" style="color:var(--accent-cyan);">進度表</a>。</div>
   <ul class="task-list">
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">glossaryTerms 型別 + Firestore 集合 + getGlossaryTerms 預載</span></li>
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">RefPicker：搜尋既有實體/詞條 → 寫入 descriptionRefs 一筆</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">glossaryTerms 型別 + Firestore 集合 + getGlossaryTerms 預載 + 安全規則</span><span class="task-meta">types · firestoreApi · GameDataContext</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">EntityRefView 解析 term（移除 pending 佔位）</span><span class="task-meta">EntityRefView.tsx</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">RefPicker 通用元件 + GlossaryAdmin 詞條管理分頁 + 接進技能效果</span><span class="task-meta">RefPicker · GlossaryAdmin · PilotAdmin</span></li>
   </ul>
 
   <div class="phase-label">PLAN-019-D · BOSS / 關卡（Layer 3）</div>
@@ -161,7 +162,7 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <li class="task-item"><span class="task-status pending">○</span><span class="task-name">新集合納入 GameDataContext 預載 + meta/gameData 版本 gate</span></li>
   </ul>
 
-  <div class="updated">最後更新：2026-06-01 · 本表隨子計畫拆解持續更新</div>
+  <div class="updated">最後更新：2026-06-07 · 本表隨子計畫拆解持續更新</div>
 
 </div>
 

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react'
-import type { Pilot, Mech, Module, Weapon, Backpack, Component, GlobalResearch, GrayOpsRoster, GameBuff, PilotSkillDoc } from '../types'
+import type { Pilot, Mech, Module, Weapon, Backpack, Component, GlobalResearch, GrayOpsRoster, GameBuff, PilotSkillDoc, GlossaryTerm } from '../types'
 import {
-  getPilots, getMechs, getModules, getWeapons, getBackpacks, getComponents, getBuffs, getPilotSkills,
+  getPilots, getMechs, getModules, getWeapons, getBackpacks, getComponents, getBuffs, getPilotSkills, getGlossaryTerms,
   getGlobalResearch, getGrayOpsRoster, getDataVersion,
 } from '../lib/firestoreApi'
 
@@ -13,11 +13,11 @@ export const EMPTY_GLOBAL_RESEARCH: GlobalResearch = {
 
 export type CollectionKey =
   | 'pilots' | 'mechs' | 'modules' | 'weapons'
-  | 'backpacks' | 'components' | 'buffs' | 'pilotSkills' | 'globalResearch' | 'grayOpsRoster'
+  | 'backpacks' | 'components' | 'buffs' | 'pilotSkills' | 'glossaryTerms' | 'globalResearch' | 'grayOpsRoster'
 
 export const ALL_COLLECTION_KEYS: CollectionKey[] = [
   'pilots', 'mechs', 'modules', 'weapons',
-  'backpacks', 'components', 'buffs', 'pilotSkills', 'globalResearch', 'grayOpsRoster',
+  'backpacks', 'components', 'buffs', 'pilotSkills', 'glossaryTerms', 'globalResearch', 'grayOpsRoster',
 ]
 
 // ── PLAN-017：版本 gate 的 per-collection localStorage 快取 ─────────────────────
@@ -66,6 +66,7 @@ export interface GameDataState {
   components:     Component[]
   buffs:          GameBuff[]
   pilotSkills:    PilotSkillDoc[]
+  glossaryTerms:  GlossaryTerm[]
   globalResearch: GlobalResearch
   grayOpsRoster:  GrayOpsRoster | null
   loadedKeys:     ReadonlySet<CollectionKey>
@@ -86,6 +87,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
   const [components,     setComponents]     = useState<Component[]>([])
   const [buffs,          setBuffs]          = useState<GameBuff[]>([])
   const [pilotSkills,    setPilotSkills]    = useState<PilotSkillDoc[]>([])
+  const [glossaryTerms,  setGlossaryTerms]  = useState<GlossaryTerm[]>([])
   const [globalResearch, setGlobalResearch] = useState<GlobalResearch>(EMPTY_GLOBAL_RESEARCH)
   const [grayOpsRoster,  setGrayOpsRoster]  = useState<GrayOpsRoster | null>(null)
   const [loadedKeys,     setLoadedKeys]     = useState<Set<CollectionKey>>(new Set())
@@ -108,6 +110,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'components':     setComponents(data as Component[]); break
       case 'buffs':          setBuffs(data as GameBuff[]); break
       case 'pilotSkills':    setPilotSkills(data as PilotSkillDoc[]); break
+      case 'glossaryTerms':  setGlossaryTerms(data as GlossaryTerm[]); break
       case 'globalResearch': setGlobalResearch(data as GlobalResearch); break
       case 'grayOpsRoster':  setGrayOpsRoster(data as GrayOpsRoster | null); break
     }
@@ -123,6 +126,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'components':     return getComponents()
       case 'buffs':          return getBuffs()
       case 'pilotSkills':    return getPilotSkills()
+      case 'glossaryTerms':  return getGlossaryTerms()
       case 'globalResearch': return (await getGlobalResearch()) ?? EMPTY_GLOBAL_RESEARCH
       case 'grayOpsRoster':  return getGrayOpsRoster()
     }
@@ -176,7 +180,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
 
   return (
     <GameDataContext.Provider value={{
-      pilots, mechs, weapons, backpacks, modules, components, buffs, pilotSkills,
+      pilots, mechs, weapons, backpacks, modules, components, buffs, pilotSkills, glossaryTerms,
       globalResearch, grayOpsRoster,
       loadedKeys, errorMap, reloadTick,
       ensureLoaded, reload,
