@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Backpack } from '../../../types'
 import { WeaponEquipSlot } from '../../../types/enums'
 import { updateBackpack, getBackpacksPage } from '../../../lib/firestoreApi'
+import { RefPicker } from '../../../components/admin/RefPicker'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog } from './shared'
 import { BACKPACK_TYPE_CONFIG, ASSEMBLABLE_ARMOR_CONFIG } from '../../../components/BackpackBadges'
 
@@ -172,6 +173,11 @@ function BackpackEditPanel({
               <Field label="技能描述 description">
                 <textarea value={skill.description} onChange={e => updateSkill('description', e.target.value)} className="input-field min-h-[72px] resize-y" />
               </Field>
+              <RefPicker
+                text={skill.description}
+                value={skill.descriptionRefs}
+                onChange={refs => updateSkill('descriptionRefs', refs)}
+              />
               <Field label="圖示 icon（選填，填圖示檔名如 Icon_skill_passive_1234）">
                 <input
                   value={skill.icon ?? ''}

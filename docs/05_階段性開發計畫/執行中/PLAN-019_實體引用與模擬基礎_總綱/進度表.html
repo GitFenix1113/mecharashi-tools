@@ -80,8 +80,8 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <div class="meta-item"><a href="計畫書.html" style="color:var(--accent-purple);font-size:13px;font-weight:600;">→ 計畫書</a></div>
   </div>
 
-  <div class="progress-bar"><div class="progress-bar-fill" style="width:48%;"></div></div>
-  <div class="progress-percent">約 48% — 總綱型別 + 019-A 引用層 + 019-C 詞條庫/RefPicker 已落地；019-B/D/E 待執行</div>
+  <div class="progress-bar"><div class="progress-bar-fill" style="width:54%;"></div></div>
+  <div class="progress-percent">約 54% — 總綱型別 + 019-A 引用層 + 019-C 詞條庫/RefPicker + 019-E 插入引用 UI（四面板）已落地；019-B/D 與 019-E 其餘（表單頁/稽核）待執行</div>
 
   <!-- 總綱基礎 -->
   <div class="section-h">總綱基礎 <span class="badge badge-progress">IN PROGRESS</span></div>
@@ -154,9 +154,10 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <li class="task-item"><span class="task-status pending">○</span><span class="task-name">關卡列表 / BOSS 詳情前台頁（BOSS 技能描述吃 RefText）</span></li>
   </ul>
 
-  <div class="phase-label">PLAN-019-E · 引用型 Admin（Layer 4）</div>
-  <div class="phase-note">各集合表單頁 + 插入引用 UI + 角色/稽核/版本快取（沿用 PLAN-014/016/017）。先表單後 TipTap。</div>
+  <div class="phase-label">PLAN-019-E · 引用型 Admin（Layer 4）<span class="badge badge-progress" style="margin-left:8px;">IN PROGRESS</span></div>
+  <div class="phase-note">各集合表單頁 + 插入引用 UI + 角色/稽核/版本快取（沿用 PLAN-014/016/017）。先表單後 TipTap。「插入引用 UI」部分已由子計畫 <a href="../PLAN-019-E_引用挑選器全面接線/計畫書.html" style="color:var(--accent-cyan);">PLAN-019-E 計畫書</a> / <a href="../PLAN-019-E_引用挑選器全面接線/進度表.html" style="color:var(--accent-cyan);">進度表</a> 落地。</div>
   <ul class="task-list">
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">插入引用 UI：RefPicker 接進 ModuleAdmin / WeaponAdmin / ComponentAdmin / BackpackAdmin（ComponentBase / Backpack.mainSkill 補 descriptionRefs）</span><span class="task-meta">PLAN-019-E</span></li>
     <li class="task-item"><span class="task-status pending">○</span><span class="task-name">GlossaryAdmin / BossAdmin / StageAdmin（仿 PilotAdmin）</span></li>
     <li class="task-item"><span class="task-status pending">○</span><span class="task-name">updatedBy/updatedAt 稽核 + 補填進度儀表</span></li>
     <li class="task-item"><span class="task-status pending">○</span><span class="task-name">新集合納入 GameDataContext 預載 + meta/gameData 版本 gate</span></li>

@@ -6,6 +6,7 @@ import {
 } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updateWeapon, docExists } from '../../../lib/firestoreApi'
+import { RefPicker } from '../../../components/admin/RefPicker'
 import { WEAPON_RARITY_CLASS, WEAPON_KIND_BY_TYPE, ALL_WEAPON_KINDS } from './constants'
 import { SkillEffectItem } from './PilotAdmin'
 
@@ -125,6 +126,11 @@ function WeaponSkillItem({
           <Field label="技能描述 description">
             <textarea value={skill.description} onChange={(e) => onChange({ ...skill, description: e.target.value })} className="input-field min-h-[72px] resize-y" />
           </Field>
+          <RefPicker
+            text={skill.description}
+            value={skill.descriptionRefs}
+            onChange={(refs) => onChange({ ...skill, descriptionRefs: refs })}
+          />
           {skill.enhancesTalentName && (
             <Field label="強化後天賦描述 enhancedTalentDescription（遊戲原文，用於差異對比）">
               <textarea

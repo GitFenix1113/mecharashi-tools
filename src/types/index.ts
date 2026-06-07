@@ -575,6 +575,8 @@ export interface Backpack {
     name: string          // API: WithPassiveSkills[0].name
     icon?: string         // API: WithPassiveSkills[0].SkillIcon / .icon（鍵名格式）
     description: string   // API: WithPassiveSkills[0].SpecificEffects（清洗 rich text 標籤後）
+    /** 描述內 [xxx] 引用側錄（PLAN-019 Layer 1） */
+    descriptionRefs?: DescriptionRefs
     buffIds: string[]     // API: WithPassiveSkills[0].BufCarried（'/' 分隔 → split）
     // 以下為管理員手動填入的結構化效果數值
     dmg?: number
@@ -593,6 +595,8 @@ export interface ComponentBase {
   moduleSubtype: number        // 1–11，對應 ModuleSubtype enum
   probabilityLevel: number     // 對應 WIKI ProbabilityLevel
   description: string
+  /** 描述內 [xxx] 引用側錄（PLAN-019 Layer 1） */
+  descriptionRefs?: DescriptionRefs
   allowedWeaponTypes: string[] // WeaponType[]，預設全給
   rarity: string               // ItemRarity
   icon?: string                // 技能圖示 key（如 "Icon_skill_passive_5223"）

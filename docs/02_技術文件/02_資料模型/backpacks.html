@@ -196,6 +196,7 @@
       <tr><td>&nbsp;├ name</td><td>string</td><td>技能名稱（如 "拯救者驅動·攻擊"）<br><small style="color:var(--text-dim)">API: WithPassiveSkills[0].name</small></td></tr>
       <tr><td>&nbsp;├ icon</td><td>string?</td><td>技能圖示鍵名（如 "Icon_skill_passive_3130"）<br><small style="color:var(--text-dim)">API: WithPassiveSkills[0].SkillIcon / .icon</small></td></tr>
       <tr><td>&nbsp;├ description</td><td>string</td><td>技能效果描述（清洗 rich text 標籤後）<br><small style="color:var(--text-dim)">API: WithPassiveSkills[0].SpecificEffects · 清除 &lt;color=#…&gt;…&lt;/color&gt; 後寫入</small></td></tr>
+      <tr><td>&nbsp;├ descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-019：描述內 [xxx] 引用側錄；可於後台「背包管理」用引用挑選器指派，顯示層查表後將命中的 [xxx] 渲染為可點擊引用，未命中原樣顯示</td></tr>
       <tr><td>&nbsp;├ buffIds</td><td>string[]</td><td>觸發的 Buff ID 列表<br><small style="color:var(--text-dim)">API: WithPassiveSkills[0].BufCarried · '/' 分隔字串 → split('/').filter(Boolean)</small></td></tr>
       <tr><td>&nbsp;├ dmg</td><td>number?</td><td>增傷加成 %（管理員手動填入）</td></tr>
       <tr><td>&nbsp;├ crit</td><td>number?</td><td>暴擊率加成（管理員手動填入）</td></tr>

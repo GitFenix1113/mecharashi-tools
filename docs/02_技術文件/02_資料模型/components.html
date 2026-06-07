@@ -112,6 +112,7 @@
         torsoDmgBoost = 對軀幹增傷
       </td></tr>
       <tr><td>description</td><td>string</td><td>完整效果描述文字</td></tr>
+      <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-019：描述內 [xxx] 引用側錄；可於後台「元件管理」用引用挑選器指派，顯示層查表後將命中的 [xxx] 渲染為可點擊引用，未命中原樣顯示</td></tr>
       <tr><td>allowedWeaponTypes</td><td>WeaponType[]</td><td>允許裝備的武器種類（預設全給，管理者手動刪除不符合的）</td></tr>
       <tr><td>rarity</td><td>ItemRarity (Enum)</td><td>稀有度：EX（橙）/ S（金）/ A（紫）/ B（藍）</td></tr>
       <tr><td>icon</td><td>string</td><td>技能圖示 key（如 <code>"Icon_skill_passive_5223"</code>），由 API IconPath 欄位取得</td></tr>

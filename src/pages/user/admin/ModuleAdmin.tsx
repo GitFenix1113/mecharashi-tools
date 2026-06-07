@@ -5,6 +5,7 @@ import {
 } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updateModule, docExists } from '../../../lib/firestoreApi'
+import { RefPicker } from '../../../components/admin/RefPicker'
 import { SLOT_OPTIONS, SLOT_LABEL, PART_OPTIONS, TRIGGER_LABEL, STAT_OPTIONS } from './constants'
 
 type ModuleFilters = {
@@ -334,6 +335,11 @@ function ModuleEditPanel({
             <Field label="效果描述">
               <textarea value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field min-h-[80px] resize-y" />
             </Field>
+            <RefPicker
+              text={form.description}
+              value={form.descriptionRefs}
+              onChange={(refs) => update('descriptionRefs', refs)}
+            />
             <Field label="模組增加等級 moduleAddLevel（配裝模擬器用，預設 1）">
               <input type="number" min={0} value={form.moduleAddLevel ?? 1} onChange={(e) => update('moduleAddLevel', Number(e.target.value))} className="input-field" />
             </Field>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-019-E 引用挑選器全面接線 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.impact-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--text-primary); white-space: nowrap; }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-019-E 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-019-E · 019 子計畫</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    引用挑選器全面接線<span style="-webkit-text-fill-color:var(--text-secondary);">RefPicker · 模組／武器／元件／背包</span>
+  </h1>
+  <p class="hero-sub">把 019-C 的 RefPicker 接進其餘既有描述面板，讓裝備／道具描述在輸入時就能把 <code>[xxx]</code> 標成可點引用。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label green">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item"><div class="meta-label">計畫編號</div><div class="meta-value green">PLAN-019-E</div></div>
+    <div class="meta-item"><div class="meta-label">建立日期</div><div class="meta-value">2026-06-07</div></div>
+    <div class="meta-item"><div class="meta-label">影響範圍</div><div class="meta-value purple">Types(Component/Backpack) · ModuleAdmin · WeaponAdmin · ComponentAdmin · BackpackAdmin</div></div>
+    <div class="meta-item"><div class="meta-label">優先級</div><div class="meta-value yellow">MID</div></div>
+    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value green">規劃中</div></div>
+    <div class="meta-item"><div class="meta-label">前置依賴</div><div class="meta-value cyan">PLAN-019-A（引用層）· PLAN-019-C（RefPicker 元件）— 皆已上線</div></div>
+  </div>
+
+  <div class="info-block">
+    <strong>一句話：</strong>019-A 引用層 + 019-C 的 RefPicker 已上線，但 RefPicker 目前只接在「詞條管理」與機師「技能效果」兩處。
+    本子計畫把同一個 RefPicker 元件<strong>接進其餘既有描述面板</strong>（模組／武器／元件／背包），並為缺欄位的型別補上 <code>descriptionRefs</code>，
+    讓資料輸入期能在編輯描述的同時把 <code>[xxx]</code> 標成可點引用。屬總綱 019-E「插入引用 UI」部分。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>RefPicker 只接了兩處：</strong>019-C 完成的引用挑選器目前僅出現在「詞條管理」與機師「技能效果（pilotSkills）」。
+    其餘帶描述的後台面板（模組／武器技能／元件／背包技能）編輯描述後，描述裡的 <code>[xxx]</code> <strong>無法在後台指派引用</strong>，
+    仍需回頭靠工程介入填 <code>descriptionRefs</code>，與「讓非工程人員在輸入期一併標好引用」的目標衝突。
+  </div>
+
+  <div class="problem-block">
+    <strong>兩個型別還沒有 <code>descriptionRefs</code> 欄位：</strong><code>ComponentBase</code> 與 <code>Backpack.mainSkill</code> 目前只有 <code>description</code>，
+    沒有對應的 <code>descriptionRefs</code> 可存引用 → 需先補欄位才能掛 RefPicker。（<code>Module</code>、<code>WeaponSkill</code> 已具備該欄位。）
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：型別補欄位（選填、向後相容）</strong><br>
+    <code>ComponentBase</code> 與 <code>Backpack.mainSkill</code> 各加 <code>descriptionRefs?: DescriptionRefs</code>。
+    <code>Module</code> / <code>WeaponSkill</code> 已有，無需動。
+  </div>
+  <div class="code-block">
+<span class="cm">// src/types/index.ts</span>
+<span class="kw">export interface</span> <span class="ty">ComponentBase</span> { <span class="cm">/* …既有… */</span> descriptionRefs?: <span class="ty">DescriptionRefs</span> }
+
+<span class="kw">export interface</span> <span class="ty">Backpack</span> {
+  <span class="cm">/* … */</span>
+  mainSkill?: { <span class="cm">/* …既有… */</span> descriptionRefs?: <span class="ty">DescriptionRefs</span> }
+}
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：四面板掛 RefPicker（模式同 PilotSkillsTab：描述 Field 下方）</strong><br>
+    複用既有元件 <code>src/components/admin/RefPicker.tsx</code>，於各編輯面板的描述欄位下方插入一個 RefPicker：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>ModuleAdmin</strong>：頂層 <code>form.description</code> / <code>form.descriptionRefs</code>（per-level 描述不掛）</li>
+      <li><strong>WeaponAdmin</strong>：技能編輯器內每筆 <code>skill.description</code> / <code>skill.descriptionRefs</code></li>
+      <li><strong>ComponentAdmin</strong>：<code>form.description</code> / <code>form.descriptionRefs</code></li>
+      <li><strong>BackpackAdmin</strong>：<code>mainSkill.description</code> / <code>mainSkill.descriptionRefs</code></li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：零新元件 / 零新集合 / 零前台改動</strong><br>
+    寫入走既有 <code>updateModule</code> / <code>updateWeapon</code> / <code>updateComponent</code> / <code>updateBackpack</code>（皆已 <code>stripUndefined</code> + <code>bumpDataVersion</code>）。
+    前台 <code>EntityRefView</code> 在 019-C 後已能解析全部 refType（含 term），這些面板的引用顯示無需任何前台修改。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label green">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>ComponentBase + Backpack.mainSkill 補 <code>descriptionRefs?</code> 欄位</li>
+      <li>RefPicker 接進 ModuleAdmin / WeaponAdmin / ComponentAdmin / BackpackAdmin 四面板</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>BuffAdmin（buffs 目前無後台，屬另一項工作）</li>
+      <li>天賦（PilotTalent）描述編輯（目前爬蟲管理，無編輯 UI）</li>
+      <li><code>ModuleLevel</code> per-level 描述、<code>Weapon.description</code> 背景故事 lore</li>
+      <li>BossAdmin / StageAdmin（待 PLAN-019-D）</li>
+      <li>稽核 updatedBy / updatedAt（019-E 後續增量）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 影響範圍 -->
+<section class="section">
+  <div class="section-label green">Impact</div>
+  <div class="section-title">影響檔案</div>
+  <div class="data-table-wrap">
+    <table class="impact-table">
+      <tr><th>檔案</th><th>變更</th><th>風險</th></tr>
+      <tr><td>src/types/index.ts</td><td>ComponentBase + Backpack.mainSkill 加 <code>descriptionRefs?</code></td><td><span class="badge-good">低</span></td></tr>
+      <tr><td>src/pages/user/admin/ModuleAdmin.tsx</td><td>頂層描述下方掛 RefPicker</td><td><span class="badge-good">低</span></td></tr>
+      <tr><td>src/pages/user/admin/WeaponAdmin.tsx</td><td>技能描述下方掛 RefPicker</td><td><span class="badge-good">低</span></td></tr>
+      <tr><td>src/pages/user/admin/ComponentAdmin.tsx</td><td>描述下方掛 RefPicker</td><td><span class="badge-good">低</span></td></tr>
+      <tr><td>src/pages/user/admin/BackpackAdmin.tsx</td><td>mainSkill 描述下方掛 RefPicker</td><td><span class="badge-good">低</span></td></tr>
+      <tr><td>docs / siteChangelog</td><td>資料模型 docs（components/backpacks 補欄位）、019 總綱進度、feat 履歷</td><td><span class="badge-good">低</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 驗證 -->
+<section class="section">
+  <div class="section-label green">Verification</div>
+  <div class="section-title">驗證方式</div>
+  <div class="info-block">
+    <ol style="margin:0;padding-left:18px;line-height:2.2;">
+      <li><strong>型別</strong>：<code>npm run build</code> 通過；新欄位皆選填、不破壞既有頁面。</li>
+      <li><strong>接線</strong>：四面板各開一筆含 <code>[xxx]</code> 的描述 → RefPicker 列出 token、可指派引用、即時預覽。</li>
+      <li><strong>持久化</strong>：儲存後前台對應頁面該詞變可點擊；未指派者原樣顯示不報錯。</li>
+      <li><strong>查詢量</strong>：寫入後 <code>bumpDataVersion</code> 使快取失效；無新增集合、無前台改動。</li>
+    </ol>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label green">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-019-E 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-019-C_詞條庫與引用挑選器/計畫書.html">
+      <div class="doc-tag">Prereq</div>
+      <h4>◆ PLAN-019-C 計畫書</h4>
+      <p>RefPicker 元件與詞條庫（前置）</p>
+    </a>
+    <a class="doc-item" href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html">
+      <div class="doc-tag">Master</div>
+      <h4>◆ PLAN-019 總綱計畫書</h4>
+      <p>四層抽象與子計畫重組</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-019-E — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

@@ -6,6 +6,7 @@ import {
 import { assetUrl } from '../../../utils/assets'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updateComponent, docExists } from '../../../lib/firestoreApi'
+import { RefPicker } from '../../../components/admin/RefPicker'
 import {
   COMPONENT_TYPE_LABEL, CONDITION_TYPE_LABEL, EFFECT_TYPE_LABEL,
   MODULE_SUBTYPE_LABEL, COMPONENT_RARITY_CLASS,
@@ -196,6 +197,11 @@ function ComponentEditPanel({
         <Field label="完整效果描述 description">
           <textarea value={form.description} onChange={(e) => updateBase('description', e.target.value)} className="input-field min-h-[72px] resize-y" />
         </Field>
+        <RefPicker
+          text={form.description}
+          value={form.descriptionRefs}
+          onChange={(refs) => updateBase('descriptionRefs', refs)}
+        />
 
         {isCondition ? (
           <>
