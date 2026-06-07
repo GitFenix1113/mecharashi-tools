@@ -95,6 +95,14 @@
       <tr><td>buffType</td><td>string?</td><td>BUFF 類型分類（增益 / 減益 / 控制 / 護盾）— 待枚舉</td></tr>
     </table>
   </div>
+
+  <div class="changed-block">
+    <strong>🆕 PLAN-019-F：BUFF 後台管理上線</strong>
+    buffs 已可於管理後台「BUFF 管理」分頁新增／編輯（寫入走 <code>updateBuff</code>，安全規則已具備 admin write）。
+    上表的「預留欄位」<code>effects</code> / <code>buffType</code>（已枚舉 BuffType）/ <code>maxStack</code> / <code>duration</code>，
+    以及 <code>mutexGroup</code> / <code>descriptionRefs</code> 均已落地；完整欄位以
+    <a href="../../02_資料模型/skills_buffs.html" style="color:var(--accent-cyan);">資料模型 · GameBuff</a> 為準。
+  </div>
 </section>
 
 </main>

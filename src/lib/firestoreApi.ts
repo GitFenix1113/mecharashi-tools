@@ -131,6 +131,13 @@ export const getComponents = () =>
 export const getBuffs = () =>
   fetchCollection<GameBuff>('buffs')
 
+/** PLAN-019-F：BUFF 後台寫入（buffs 安全規則已具備 admin write）。 */
+export const updateBuff = async (buff: GameBuff): Promise<void> => {
+  const { id, ...data } = buff
+  await setDoc(doc(db, 'buffs', id), stripUndefined(data))
+  await bumpDataVersion().catch(() => {})
+}
+
 /** pilotSkills Collection（PLAN-004 技能庫抽離）：可共用、可被引用的技能定義庫 */
 export const getPilotSkills = () =>
   fetchCollection<PilotSkillDoc>('pilotSkills')

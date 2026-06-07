@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-019-F BUFF 後台管理 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.status { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; font-family: 'Orbitron', sans-serif; letter-spacing: 1px; white-space: nowrap; }
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+
+.task-group { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 16px; }
+.task-group-header { display: flex; align-items: center; gap: 12px; padding: 16px 22px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); }
+.task-group-title { font-weight: 700; font-size: 15px; flex: 1; }
+.task-group-meta { font-size: 12px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+.task-row { display: grid; grid-template-columns: 1fr auto auto; align-items: start; gap: 16px; padding: 14px 22px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+.task-name { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.task-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+.task-file { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent-orange); margin-top: 5px; }
+.task-assignee { font-size: 11px; color: var(--text-dim); white-space: nowrap; text-align: right; padding-top: 2px; }
+
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+.progress-bar-bg { height: 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.progress-bar-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, var(--accent-orange), var(--accent-yellow)); transition: width 0.4s ease; }
+
+.summary-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.summary-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+.impact-note { background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.2); border-radius: 10px; padding: 14px 18px; font-size: 13px; color: var(--text-secondary); margin: 16px 0 28px; }
+.impact-note strong { color: var(--accent-orange); }
+.section-desc { font-size: 13px; color: var(--text-secondary); margin: 4px 0 14px; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-019-F 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge" style="border-color:var(--accent-orange);color:var(--accent-orange);">◆ PLAN-019-F</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">BUFF 後台管理</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-06-07 · ✅ 已完成</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label orange">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">7</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">7</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-orange);">7 / 7</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    讓 <code>buffs</code> 能像其他實體一樣在後台新增／編輯，並在描述下方掛 RefPicker 標引用——補完 019 引用層唯一「只能讀、不能在後台維護」的實體。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label orange">Phase A</div>
+  <div class="section-title">寫入層</div>
+  <div class="section-desc">為 buffs 補上寫入 API（安全規則已就緒）。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A &nbsp; 寫入 API</div>
+      <div class="task-group-meta">src/lib/firestoreApi.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A-1 updateBuff</div>
+        <div class="task-desc">剝離 id → setDoc 寫入 buffs/{id}（stripUndefined）→ bumpDataVersion；仿 updateComponent。firestore.rules buffs 已有 admin write，不需改規則。</div>
+        <div class="task-file">src/lib/firestoreApi.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label orange">Phase B</div>
+  <div class="section-title">後台 UI</div>
+  <div class="section-desc">新增「BUFF 管理」分頁與 BuffAdmin 面板，最大化複用既有元件。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B &nbsp; BuffAdmin</div>
+      <div class="task-group-meta">AdminPage · BuffAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">B-1 AdminPage 分頁接線</div>
+        <div class="task-desc">Tab 型別 + TAB_CONFIG 加 'buffs'（keys:[]、selfLoading、searchable）；加 TabButton「BUFF 管理」與渲染 &lt;BuffAdmin&gt;。</div>
+        <div class="task-file">src/pages/user/AdminPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">B-2 BuffAdmin 列表 + 新增</div>
+        <div class="task-desc">仿 ComponentAdmin/GlossaryAdmin：getCollectionPage('buffs') 分頁查詢 + 名稱開頭搜尋 + LoadMoreButton；新增（id=buff_&lt;名稱&gt;）。</div>
+        <div class="task-file">src/pages/user/admin/BuffAdmin.tsx（新）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">B-3 BuffAdmin 編輯面板</div>
+        <div class="task-desc">name / buffType 下拉（BuffType enum）/ maxStack / duration / mutexGroup / icon；description 下方掛 RefPicker；effects 複用 SkillEffectItem。儲存走 updateBuff。</div>
+        <div class="task-file">src/pages/user/admin/BuffAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label orange">Phase C</div>
+  <div class="section-title">文件 + 履歷收尾</div>
+  <div class="section-desc">同步資料模型 / Firebase docs、總綱進度與使用者可見履歷。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C &nbsp; 收尾</div>
+      <div class="task-group-meta">docs · siteChangelog</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C-1 docs 補後台管理說明</div>
+        <div class="task-desc">skills_buffs 資料模型頁與 Firebase buffs 設計文件補上「可於後台 BUFF 管理維護」。</div>
+        <div class="task-file">docs/02_技術文件/...</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C-2 更新 019 總綱進度表</div>
+        <div class="task-desc">在子計畫區新增 PLAN-019-F 條目（BUFF 後台），標記狀態。</div>
+        <div class="task-file">docs/05_.../PLAN-019_實體引用與模擬基礎_總綱/進度表.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C-3 siteChangelog feat</div>
+        <div class="task-desc">加一筆使用者可見履歷：管理後台新增「BUFF 管理」，可維護 BUFF 並標引用。</div>
+        <div class="task-file">src/data/siteChangelog/2026-06.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-019-F — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

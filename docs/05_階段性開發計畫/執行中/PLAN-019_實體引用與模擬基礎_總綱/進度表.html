@@ -80,8 +80,8 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <div class="meta-item"><a href="計畫書.html" style="color:var(--accent-purple);font-size:13px;font-weight:600;">→ 計畫書</a></div>
   </div>
 
-  <div class="progress-bar"><div class="progress-bar-fill" style="width:54%;"></div></div>
-  <div class="progress-percent">約 54% — 總綱型別 + 019-A 引用層 + 019-C 詞條庫/RefPicker + 019-E 插入引用 UI（四面板）已落地；019-B/D 與 019-E 其餘（表單頁/稽核）待執行</div>
+  <div class="progress-bar"><div class="progress-bar-fill" style="width:58%;"></div></div>
+  <div class="progress-percent">約 58% — 總綱型別 + 019-A 引用層 + 019-C 詞條庫/RefPicker + 019-E 插入引用 UI（四面板）+ 019-F BUFF 後台 已落地；019-B/D 與 019-E 其餘（表單頁/稽核）待執行</div>
 
   <!-- 總綱基礎 -->
   <div class="section-h">總綱基礎 <span class="badge badge-progress">IN PROGRESS</span></div>
@@ -161,6 +161,13 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <li class="task-item"><span class="task-status pending">○</span><span class="task-name">GlossaryAdmin / BossAdmin / StageAdmin（仿 PilotAdmin）</span></li>
     <li class="task-item"><span class="task-status pending">○</span><span class="task-name">updatedBy/updatedAt 稽核 + 補填進度儀表</span></li>
     <li class="task-item"><span class="task-status pending">○</span><span class="task-name">新集合納入 GameDataContext 預載 + meta/gameData 版本 gate</span></li>
+  </ul>
+
+  <div class="phase-label">PLAN-019-F · BUFF 後台管理<span class="badge badge-done" style="margin-left:8px;">DONE</span></div>
+  <div class="phase-note">buffs 寫入 API（updateBuff）+ BuffAdmin 後台分頁，補完唯一「只能讀、不能後台維護」的引用實體。詳見子計畫 <a href="../PLAN-019-F_BUFF後台管理/計畫書.html" style="color:var(--accent-cyan);">PLAN-019-F 計畫書</a> / <a href="../PLAN-019-F_BUFF後台管理/進度表.html" style="color:var(--accent-cyan);">進度表</a>。</div>
+  <ul class="task-list">
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">updateBuff 寫入 API（buffs 安全規則已具備 admin write，免改規則）</span><span class="task-meta">firestoreApi</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">AdminPage「BUFF 管理」分頁 + BuffAdmin 面板：列表/新增/編輯，buffType 下拉 + effects 編輯器 + 描述掛 RefPicker（複用 SkillEffectItem / RefPicker / shared）</span><span class="task-meta">AdminPage · BuffAdmin.tsx</span></li>
   </ul>
 
   <div class="updated">最後更新：2026-06-07 · 本表隨子計畫拆解持續更新</div>

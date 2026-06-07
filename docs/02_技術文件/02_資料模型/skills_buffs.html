@@ -143,6 +143,12 @@
     <code>debuff</code> — 對敵減益<br>
     <code>control</code> — 控制效果
   </div>
+
+  <div class="note-block">
+    <strong>🆕 PLAN-019-F：後台維護</strong>
+    buffs 現可於管理後台「BUFF 管理」分頁新增／編輯（寫入走 <code>updateBuff</code>，安全規則已具備 admin write），
+    描述下方掛 RefPicker 可標 <code>[xxx]</code> 引用、effects 複用技能效果編輯器；不再只能靠 seed 腳本或 Firestore console。
+  </div>
 </section>
 
 <!-- EntityRef / DescriptionRefs（PLAN-019 Layer 1）-->
