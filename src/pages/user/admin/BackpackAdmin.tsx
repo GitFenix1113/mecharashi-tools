@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Backpack } from '../../../types'
 import { WeaponEquipSlot } from '../../../types/enums'
 import { updateBackpack, getBackpacksPage } from '../../../lib/firestoreApi'
+import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog } from './shared'
 import { BACKPACK_TYPE_CONFIG, ASSEMBLABLE_ARMOR_CONFIG } from '../../../components/BackpackBadges'
@@ -265,6 +266,7 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
   const [search, setSearch]   = useState(initialSearch)
   const [activeSearch, setActiveSearch] = useState(initialSearch)
   const [editing, setEditing] = useState<Backpack | null>(null)
+  const gd = useGameData()
 
   const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate } =
     useNewItemCreation(items, b => b.id, makeDefaultBackpack)
@@ -297,11 +299,12 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
   }
 
   async function handleSave(updated: Backpack) {
-    await updateBackpack(updated)
+    const version = await updateBackpack(updated)
     setItems(prev => {
       const exists = prev.some(b => b.id === updated.id)
       return exists ? prev.map(b => b.id === updated.id ? updated : b) : [updated, ...prev]
     })
+    gd.patchCollectionItem('backpacks', updated, version)
     setEditing(null)
   }
 

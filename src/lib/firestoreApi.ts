@@ -132,10 +132,10 @@ export const getBuffs = () =>
   fetchCollection<GameBuff>('buffs')
 
 /** PLAN-019-F：BUFF 後台寫入（buffs 安全規則已具備 admin write）。 */
-export const updateBuff = async (buff: GameBuff): Promise<void> => {
+export const updateBuff = async (buff: GameBuff): Promise<string> => {
   const { id, ...data } = buff
   await setDoc(doc(db, 'buffs', id), stripUndefined(data))
-  await bumpDataVersion().catch(() => {})
+  return bumpDataVersion('buffs').catch(() => '')
 }
 
 /** pilotSkills Collection（PLAN-004 技能庫抽離）：可共用、可被引用的技能定義庫 */
@@ -157,26 +157,44 @@ export const getGlobalResearch = async (): Promise<GlobalResearch | null> =>
 
 // ── 遊戲資料版本（PLAN-017 跨 session localStorage 快取）───────────────────────
 
+/** meta/gameData 的版本資訊：每集合各一個版本號 + 全域 fallback。 */
+export interface DataVersions {
+  /** 舊版全域版本號；未被單獨 bump 過的集合沿用此值（向後相容、部署零衝擊）。 */
+  global: string | null
+  /** 每集合版本號（key = CollectionKey）；只有被編輯過的集合才有條目。 */
+  byKey: Record<string, string>
+}
+
 /**
- * 讀取 meta/gameData 的版本號（1 次 read）。
- * 文件不存在或讀取失敗 → 回傳 null（快取層退化為直接讀取，不影響功能）。
+ * 讀取 meta/gameData 的版本資訊（1 次 read）。
+ * 文件不存在或讀取失敗 → global:null / byKey:{}（快取層退化為直接讀取，不影響功能）。
  */
-export const getDataVersion = async (): Promise<string | null> => {
+export const getDataVersions = async (): Promise<DataVersions> => {
   try {
     const snap = await getDoc(doc(db, 'meta', 'gameData'))
-    return snap.exists() ? ((snap.data().version as string) ?? null) : null
+    if (!snap.exists()) return { global: null, byKey: {} }
+    const d = snap.data()
+    return {
+      global: (d.version as string) ?? null,
+      byKey: (d.versions as Record<string, string>) ?? {},
+    }
   } catch {
-    return null
+    return { global: null, byKey: {} }
   }
 }
 
 /**
- * 更新 meta/gameData 版本號（時間戳），使所有 client 的 localStorage 快取失效。
- * 任何 game collection 寫入後呼叫；merge 寫入，文件不存在時自動建立。
+ * 更新某集合的版本號（時間戳），只使該集合在所有 client 的 localStorage 快取失效。
+ * 對應集合寫入後呼叫；merge 深層寫入 versions.<key>，不影響其他集合與全域版本。
+ * 回傳新版本號，供編輯者就地同步自己的快取（GameDataContext.patchCollectionItem）。
  */
-export const bumpDataVersion = async (): Promise<string> => {
+export const bumpDataVersion = async (key: string): Promise<string> => {
   const version = new Date().toISOString()
-  await setDoc(doc(db, 'meta', 'gameData'), { version, updatedAt: serverTimestamp() }, { merge: true })
+  await setDoc(
+    doc(db, 'meta', 'gameData'),
+    { versions: { [key]: version }, updatedAt: serverTimestamp() },
+    { merge: true },
+  )
   return version
 }
 
@@ -194,54 +212,54 @@ function stripUndefined<T>(val: T): T {
   return val
 }
 
-export const updateModule = async (module: Module): Promise<void> => {
+export const updateModule = async (module: Module): Promise<string> => {
   const { id, ...data } = module
   await setDoc(doc(db, 'modules', id), stripUndefined(data))
-  await bumpDataVersion().catch(() => {})
+  return bumpDataVersion('modules').catch(() => '')
 }
 
-export const updateMech = async (mech: Mech): Promise<void> => {
+export const updateMech = async (mech: Mech): Promise<string> => {
   const { id, ...data } = mech
   await setDoc(doc(db, 'mechs', id), stripUndefined(data))
-  await bumpDataVersion().catch(() => {})
+  return bumpDataVersion('mechs').catch(() => '')
 }
 
-export const updatePilot = async (pilot: Pilot): Promise<void> => {
+export const updatePilot = async (pilot: Pilot): Promise<string> => {
   const { id, ...data } = pilot
   await setDoc(doc(db, 'pilots', id), stripUndefined(data))
-  await bumpDataVersion().catch(() => {})
+  return bumpDataVersion('pilots').catch(() => '')
 }
 
 /** PLAN-004：寫入/更新單一技能文件（單一資料源；編輯共用技能會影響所有持有它的機師） */
-export const updatePilotSkill = async (skill: PilotSkillDoc): Promise<void> => {
+export const updatePilotSkill = async (skill: PilotSkillDoc): Promise<string> => {
   const { id, ...data } = skill
   await setDoc(doc(db, 'pilotSkills', id), stripUndefined(data))
-  await bumpDataVersion().catch(() => {})
+  return bumpDataVersion('pilotSkills').catch(() => '')
 }
 
 /** PLAN-019-C：寫入/更新單一詞條文件（refType:'term' 的單一資料源） */
-export const updateGlossaryTerm = async (term: GlossaryTerm): Promise<void> => {
+export const updateGlossaryTerm = async (term: GlossaryTerm): Promise<string> => {
   const { id, ...data } = term
   await setDoc(doc(db, 'glossaryTerms', id), stripUndefined(data))
-  await bumpDataVersion().catch(() => {})
+  return bumpDataVersion('glossaryTerms').catch(() => '')
 }
 
-export const updateWeapon = async (weapon: Weapon): Promise<void> => {
+export const updateWeapon = async (weapon: Weapon): Promise<string> => {
   const { id, ...data } = weapon
   await setDoc(doc(db, 'weapons', id), stripUndefined(data))
-  await bumpDataVersion().catch(() => {})
+  return bumpDataVersion('weapons').catch(() => '')
 }
 
-export const updateComponent = async (component: Component): Promise<void> => {
+export const updateComponent = async (component: Component): Promise<string> => {
   const { id, ...data } = component
   await setDoc(doc(db, 'components', id), stripUndefined(data))
-  await bumpDataVersion().catch(() => {})
+  return bumpDataVersion('components').catch(() => '')
 }
 
-export const updateBackpack = async (backpack: Backpack): Promise<void> => {
+export const updateBackpack = async (backpack: Backpack): Promise<string> => {
   const { id, ...data } = backpack
   await setDoc(doc(db, 'backpacks', id), stripUndefined(data))
-  await bumpDataVersion().catch(() => {})
+  return bumpDataVersion('backpacks').catch(() => '')
 }
 
 export const getBackpacksPage = async (opts: {
@@ -280,7 +298,7 @@ export const getGrayOpsRoster = async (): Promise<GrayOpsRoster | null> => {
   return { companies }
 }
 
-export const updateGrayOpsRoster = async (roster: GrayOpsRoster): Promise<void> => {
+export const updateGrayOpsRoster = async (roster: GrayOpsRoster): Promise<string> => {
   await Promise.all(
     Object.entries(roster.companies).map(([company, mechs]) =>
       setDoc(doc(db, 'grayOps', company), {
@@ -289,5 +307,5 @@ export const updateGrayOpsRoster = async (roster: GrayOpsRoster): Promise<void> 
       })
     )
   )
-  await bumpDataVersion().catch(() => {})
+  return bumpDataVersion('grayOpsRoster').catch(() => '')
 }

@@ -6,6 +6,7 @@ import {
 } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updateWeapon, docExists } from '../../../lib/firestoreApi'
+import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { WEAPON_RARITY_CLASS, WEAPON_KIND_BY_TYPE, ALL_WEAPON_KINDS } from './constants'
 import { SkillEffectItem } from './PilotAdmin'
@@ -585,6 +586,7 @@ export default function WeaponAdmin({
   initialSearch?: string
 }) {
   const [editing, setEditing] = useState<Weapon | null>(null)
+  const gd = useGameData()
 
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
@@ -615,8 +617,9 @@ export default function WeaponAdmin({
   }
 
   async function handleSave(updated: Weapon) {
-    await updateWeapon(updated)
+    const version = await updateWeapon(updated)
     upsert(updated)
+    gd.patchCollectionItem('weapons', updated, version)
     setEditing(null)
   }
 

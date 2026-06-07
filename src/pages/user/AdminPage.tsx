@@ -50,6 +50,7 @@ export default function AdminPage() {
     errorMap,
     ensureLoaded,
     reloadTick,
+    patchSingleton,
   } = useGameData()
 
   const [tab, setTab] = useState<Tab>('modules')
@@ -75,7 +76,8 @@ export default function AdminPage() {
   }, [reloadTick])
 
   async function handleGrayOpsSave(updated: GrayOpsRoster) {
-    await updateGrayOpsRoster(updated)
+    const version = await updateGrayOpsRoster(updated)
+    patchSingleton('grayOpsRoster', updated, version)
   }
 
   if (authLoading) {

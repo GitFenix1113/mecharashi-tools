@@ -3,6 +3,7 @@ import type { Mech, Module } from '../../../types'
 import { ModuleSlot, ArmorType } from '../../../types/enums'
 import { Field, AdminModal, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updateMech } from '../../../lib/firestoreApi'
+import { useGameData } from '../../../contexts/GameDataContext'
 
 type MechFilters = { armorType: string }
 
@@ -15,6 +16,7 @@ export default function MechAdmin({
   initialSearch?: string
 }) {
   const [editing, setEditing] = useState<Mech | null>(null)
+  const gd = useGameData()
 
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
@@ -28,8 +30,9 @@ export default function MechAdmin({
   })
 
   async function handleSave(updated: Mech) {
-    await updateMech(updated)
+    const version = await updateMech(updated)
     upsert(updated)
+    gd.patchCollectionItem('mechs', updated, version)
     setEditing(null)
   }
 

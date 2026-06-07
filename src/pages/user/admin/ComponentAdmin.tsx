@@ -6,6 +6,7 @@ import {
 import { assetUrl } from '../../../utils/assets'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updateComponent, docExists } from '../../../lib/firestoreApi'
+import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import {
   COMPONENT_TYPE_LABEL, CONDITION_TYPE_LABEL, EFFECT_TYPE_LABEL,
@@ -293,6 +294,7 @@ function ComponentEditPanel({
 // ─── 元件管理列表 ──────────────────────────────────────────────────────────────
 export default function ComponentAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<Component | null>(null)
+  const gd = useGameData()
 
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
@@ -325,8 +327,9 @@ export default function ComponentAdmin({ initialSearch = '' }: { initialSearch?:
   }
 
   async function handleSave(updated: Component) {
-    await updateComponent(updated)
+    const version = await updateComponent(updated)
     upsert(updated)
+    gd.patchCollectionItem('components', updated, version)
     setEditing(null)
   }
 

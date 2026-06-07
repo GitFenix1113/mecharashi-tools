@@ -76,7 +76,7 @@
   </div>
   <div class="info-block" style="margin-top:12px;">
     <strong>🔒 安全規則</strong><br>
-    <code>glossaryTerms</code> 所有人可讀、管理員可寫（見 security-rules）。寫入後自動 <code>bumpDataVersion</code> 使全站快取失效。
+    <code>glossaryTerms</code> 所有人可讀、管理員可寫（見 security-rules）。寫入後自動 <code>bumpDataVersion('glossaryTerms')</code> 只使<b>該集合</b>快取失效（每集合各一版本號）。
   </div>
 </section>
 

@@ -3,6 +3,7 @@ import type { GameBuff, SkillEffect } from '../../../types'
 import { BuffType } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updateBuff, docExists } from '../../../lib/firestoreApi'
+import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
 import { resolveIconSrc } from '../../../utils/assets'
@@ -159,6 +160,7 @@ function BuffEditPanel({
 // ─── BUFF 管理列表 ──────────────────────────────────────────────────────────────
 export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<GameBuff | null>(null)
+  const gd = useGameData()
 
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
@@ -182,8 +184,9 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
   }
 
   async function handleSave(updated: GameBuff) {
-    await updateBuff(updated)
+    const version = await updateBuff(updated)
     upsert(updated)
+    gd.patchCollectionItem('buffs', updated, version)
     setEditing(null)
   }
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { GlossaryTerm } from '../../../types'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updateGlossaryTerm, docExists } from '../../../lib/firestoreApi'
+import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 
 // ─── 預設值工廠 ────────────────────────────────────────────────────────────────
@@ -90,6 +91,7 @@ function GlossaryEditPanel({
 // ─── 詞條管理列表 ──────────────────────────────────────────────────────────────
 export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<GlossaryTerm | null>(null)
+  const gd = useGameData()
 
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
@@ -113,8 +115,9 @@ export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: 
   }
 
   async function handleSave(updated: GlossaryTerm) {
-    await updateGlossaryTerm(updated)
+    const version = await updateGlossaryTerm(updated)
     upsert(updated)
+    gd.patchCollectionItem('glossaryTerms', updated, version)
     setEditing(null)
   }
 

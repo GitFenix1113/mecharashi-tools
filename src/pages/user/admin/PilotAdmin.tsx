@@ -793,6 +793,7 @@ function PilotEditPanel({
 // ─── 機師管理列表 ──────────────────────────────────────────────────────────────
 export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<Pilot | null>(null)
+  const gd = useGameData()
 
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
@@ -811,8 +812,9 @@ export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: str
   })
 
   async function handleSave(updated: Pilot) {
-    await updatePilot(updated)
+    const version = await updatePilot(updated)
     upsert(updated)
+    gd.patchCollectionItem('pilots', updated, version)
     setEditing(null)
   }
 

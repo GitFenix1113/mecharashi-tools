@@ -4,6 +4,7 @@ import { formatWeaponReq } from '../../../types'
 import { SkillType } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updatePilotSkill, docExists } from '../../../lib/firestoreApi'
+import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
 import { SkillEffectItem } from './PilotAdmin'
@@ -160,6 +161,7 @@ function SkillEditPanel({
 // ─── 技能管理列表 ──────────────────────────────────────────────────────────────
 export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<PilotSkillDoc | null>(null)
+  const gd = useGameData()
 
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
@@ -186,8 +188,9 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
   }
 
   async function handleSave(updated: PilotSkillDoc) {
-    await updatePilotSkill(updated)
+    const version = await updatePilotSkill(updated)
     upsert(updated)
+    gd.patchCollectionItem('pilotSkills', updated, version)
     setEditing(null)
   }
 

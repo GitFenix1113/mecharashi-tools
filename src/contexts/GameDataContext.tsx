@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, useRef, type ReactNod
 import type { Pilot, Mech, Module, Weapon, Backpack, Component, GlobalResearch, GrayOpsRoster, GameBuff, PilotSkillDoc, GlossaryTerm } from '../types'
 import {
   getPilots, getMechs, getModules, getWeapons, getBackpacks, getComponents, getBuffs, getPilotSkills, getGlossaryTerms,
-  getGlobalResearch, getGrayOpsRoster, getDataVersion,
+  getGlobalResearch, getGrayOpsRoster, getDataVersions, type DataVersions,
 } from '../lib/firestoreApi'
 
 export const EMPTY_GLOBAL_RESEARCH: GlobalResearch = {
@@ -47,6 +47,11 @@ function writeCache(key: string, version: string, data: unknown): void {
   } catch { /* 配額超限等 → 略過快取，不影響功能 */ }
 }
 
+function removeCache(key: string): void {
+  if (typeof localStorage === 'undefined') return
+  try { localStorage.removeItem(CACHE_PREFIX + key) } catch { /* ignore */ }
+}
+
 function clearCache(): void {
   if (typeof localStorage === 'undefined') return
   try {
@@ -74,6 +79,14 @@ export interface GameDataState {
   reloadTick:     number
   ensureLoaded:   (keys: CollectionKey[]) => void
   reload:         () => void
+  /**
+   * PLAN-017 Part 1：後台儲存陣列集合單筆後，就地同步編輯者自己的快取（免重讀）。
+   * 該集合本 session 已載入 → upsert 進記憶體 + 以新版本號改寫 localStorage；
+   * 未載入 → 僅清掉該集合 localStorage，下次自然抓最新。version 為 bumpDataVersion 回傳值。
+   */
+  patchCollectionItem: (key: CollectionKey, item: { id: string }, version: string) => void
+  /** 同上，但用於 singleton 集合（如 grayOpsRoster）：以整個物件替換。 */
+  patchSingleton: (key: CollectionKey, value: unknown, version: string) => void
 }
 
 const GameDataContext = createContext<GameDataState | null>(null)
@@ -96,9 +109,16 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
 
   // Tracks keys that are already in-flight or done (synchronous check, prevents double-fetch)
   const fetchedRef = useRef<Set<CollectionKey>>(new Set())
-  // 版本：undefined=尚未讀取；null=無 meta 文件（退化）；string=遠端版本
-  const versionRef = useRef<string | null | undefined>(undefined)
-  const versionPromiseRef = useRef<Promise<void> | null>(null)
+  // 版本：undefined=尚未讀取；DataVersions=已讀（global + 每集合 byKey）
+  const versionsRef = useRef<DataVersions | undefined>(undefined)
+  const versionsPromiseRef = useRef<Promise<void> | null>(null)
+
+  // 某集合的有效版本 = byKey[key] ?? global；皆無 → null（該集合退化為直接讀取、不快取）
+  const effectiveVersion = useCallback((key: CollectionKey): string | null => {
+    const v = versionsRef.current
+    if (!v) return null
+    return v.byKey[key] ?? v.global
+  }, [])
 
   const applyData = useCallback((key: CollectionKey, data: unknown) => {
     switch (key) {
@@ -137,19 +157,19 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
     if (toFetch.length === 0) return
     toFetch.forEach(k => fetchedRef.current.add(k))
 
-    // 讀版本一次/ session（1 次 Firestore read；失敗 → null 退化）
-    if (versionRef.current === undefined) {
-      if (!versionPromiseRef.current) {
-        versionPromiseRef.current = getDataVersion()
-          .then(v => { versionRef.current = v })
-          .catch(() => { versionRef.current = null })
+    // 讀版本一次/ session（1 次 Firestore read；失敗 → 空版本退化）
+    if (versionsRef.current === undefined) {
+      if (!versionsPromiseRef.current) {
+        versionsPromiseRef.current = getDataVersions()
+          .then(v => { versionsRef.current = v })
+          .catch(() => { versionsRef.current = { global: null, byKey: {} } })
       }
-      await versionPromiseRef.current
+      await versionsPromiseRef.current
     }
-    const version = versionRef.current
 
     await Promise.all(toFetch.map(async (key) => {
       try {
+        const version = effectiveVersion(key)
         // 命中版本相符的 localStorage → 0 Firestore reads
         const cached = version ? readCache(key, version) : undefined
         if (cached !== undefined) {
@@ -166,24 +186,64 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
         setErrorMap(prev => ({ ...prev, [key]: err }))
       }
     }))
-  }, [applyData, fetchFromFirestore])
+  }, [applyData, fetchFromFirestore, effectiveVersion])
 
   const reload = useCallback(() => {
     fetchedRef.current.clear()
-    versionRef.current = undefined
-    versionPromiseRef.current = null
+    versionsRef.current = undefined
+    versionsPromiseRef.current = null
     clearCache()
     setLoadedKeys(new Set())
     setErrorMap({})
     setReloadTick(t => t + 1)
   }, [])
 
+  // ── PLAN-017 Part 1：儲存後就地同步編輯者自己的快取 ──────────────────────────
+  // 只在「版本已讀且該集合本 session 已載入」時就地 patch；否則僅清掉該集合
+  // localStorage（下次 ensureLoaded 會讀到伺服器最新版本並重抓），確保不會殘留舊資料。
+  const patchCollectionItem = useCallback((key: CollectionKey, item: { id: string }, version: string) => {
+    if (!version || versionsRef.current === undefined || !fetchedRef.current.has(key)) {
+      removeCache(key)
+      return
+    }
+    versionsRef.current.byKey[key] = version
+    const upsert = <T extends { id: string }>(prev: T[]): T[] => {
+      const next = prev.some(i => i.id === item.id)
+        ? prev.map(i => (i.id === item.id ? (item as T) : i))
+        : [item as T, ...prev]
+      writeCache(key, version, next)
+      return next
+    }
+    switch (key) {
+      case 'pilots':        setPilots(upsert);        break
+      case 'mechs':         setMechs(upsert);         break
+      case 'modules':       setModules(upsert);       break
+      case 'weapons':       setWeapons(upsert);       break
+      case 'backpacks':     setBackpacks(upsert);     break
+      case 'components':    setComponents(upsert);    break
+      case 'buffs':         setBuffs(upsert);         break
+      case 'pilotSkills':   setPilotSkills(upsert);   break
+      case 'glossaryTerms': setGlossaryTerms(upsert); break
+      default: break // singleton / 無 id 集合不走此路徑
+    }
+  }, [])
+
+  const patchSingleton = useCallback((key: CollectionKey, value: unknown, version: string) => {
+    if (!version || versionsRef.current === undefined || !fetchedRef.current.has(key)) {
+      removeCache(key)
+      return
+    }
+    versionsRef.current.byKey[key] = version
+    applyData(key, value)
+    writeCache(key, version, value)
+  }, [applyData])
+
   return (
     <GameDataContext.Provider value={{
       pilots, mechs, weapons, backpacks, modules, components, buffs, pilotSkills, glossaryTerms,
       globalResearch, grayOpsRoster,
       loadedKeys, errorMap, reloadTick,
-      ensureLoaded, reload,
+      ensureLoaded, reload, patchCollectionItem, patchSingleton,
     }}>
       {children}
     </GameDataContext.Provider>

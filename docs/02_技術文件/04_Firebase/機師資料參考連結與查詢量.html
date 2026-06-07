@@ -50,7 +50,7 @@
     <span>MECHARASHI — DATA REFERENCES &amp; READ COST</span>
   </h1>
   <p class="hero-sub">機師文件如何引用其他 Firebase 資料 · 三層快取如何把「萬人瀏覽」壓成「極少次查詢」</p>
-  <div class="version-badge" style="background:var(--accent-cyan);color:#000;">快照 2026-06-06 · PLAN-004 / PLAN-016 / PLAN-017</div>
+  <div class="version-badge" style="background:var(--accent-cyan);color:#000;">快照 2026-06-08 · PLAN-004 / PLAN-016 / PLAN-017（每集合版本號 + 編輯者就地同步快取）</div>
 </header>
 
 <main class="container">
@@ -72,7 +72,7 @@
       <tr><td class="mono">backpacks</td><td class="num">180</td><td>背包</td><td>引用 refType:'backpack'</td></tr>
       <tr><td class="mono">components</td><td class="num">208</td><td>元件</td><td>引用 refType:'component'</td></tr>
       <tr><td class="mono">globalResearch</td><td class="num">1</td><td>全域科研加成</td><td>模擬器</td></tr>
-      <tr><td class="mono">meta/gameData</td><td class="num">1</td><td><b>版本號 gate</b>（PLAN-017）</td><td>每 session 讀 1 次，決定快取是否失效</td></tr>
+      <tr><td class="mono">meta/gameData</td><td class="num">1</td><td><b>版本號 gate</b>（PLAN-017，每集合各一版本號）</td><td>每 session 讀 1 次；<code>versions.&lt;集合&gt;</code> 決定各集合快取是否失效，<code>version</code> 為全域 fallback</td></tr>
       <tr style="color:var(--text-dim)"><td class="mono">glossaryTerms</td><td class="num">—</td><td>詞條庫（PLAN-019-C，<b>尚未建立</b>）</td><td>引用 refType:'term'（目前降級顯示名稱）</td></tr>
     </table>
   </div>
@@ -197,11 +197,11 @@
     </div>
     <div class="flow-step">
       <div class="flow-num" style="background:rgba(34,197,94,.15);color:var(--accent-green)">1</div>
-      <div class="body"><strong>跨 session 版本快取（PLAN-017，localStorage）</strong><br>每 session 先讀 <span class="mono">meta/gameData.version</span><b>（1 次讀取）</b>。各集合以 <span class="mono">{version, data}</span> 存在 localStorage：版本相符 → 直接用快取 = <b>0 Firestore 讀取</b>；版本不符或無快取 → 進入第 2 層。</div>
+      <div class="body"><strong>跨 session 版本快取（PLAN-017，localStorage，每集合各一版本號）</strong><br>每 session 先讀 <span class="mono">meta/gameData</span> 的 <span class="mono">versions</span> 對照表<b>（1 次讀取）</b>。各集合的<b>有效版本 = <span class="mono">versions[集合] ?? version</span></b>（未被單獨編輯過的集合沿用全域 fallback）。各集合以 <span class="mono">{version, data}</span> 存在 localStorage：版本相符 → 直接用快取 = <b>0 Firestore 讀取</b>；版本不符或無快取 → 進入第 2 層。</div>
     </div>
     <div class="flow-step">
       <div class="flow-num" style="background:rgba(168,85,247,.15);color:var(--accent-purple)">2</div>
-      <div class="body"><strong>實際讀取（Firestore）</strong><br><span class="mono">fetchCollection</span> = <span class="mono">getDocs(collection)</span>，一次取回整個集合 = <b>N 筆文件讀取</b>（N = 該集合文件數），讀完寫回 localStorage 快取。Admin 寫入時 <span class="mono">bumpDataVersion()</span> 改版本 → 讓所有人的快取於下次造訪失效。</div>
+      <div class="body"><strong>實際讀取（Firestore）</strong><br><span class="mono">fetchCollection</span> = <span class="mono">getDocs(collection)</span>，一次取回整個集合 = <b>N 筆文件讀取</b>（N = 該集合文件數），讀完寫回 localStorage 快取。Admin 寫入時 <span class="mono">bumpDataVersion('集合')</span> 只改<b>該集合</b>版本 → 僅該集合在所有人的快取於下次造訪失效（其餘集合快取存活）。編輯者自己的瀏覽器另以 <span class="mono">GameDataContext.patchCollectionItem</span> 就地同步該筆，免重讀。</div>
     </div>
   </div>
 
@@ -222,7 +222,7 @@
       <tr><td>冷啟動 · 首次造訪機師詳情頁</td><td class="num">1</td><td class="num">82</td><td class="num">168</td><td class="num">512</td><td class="num">763</td></tr>
       <tr class="zero"><td>同 session 切換到其他機師 / 其他機師頁</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
       <tr class="zero"><td>暖快取回訪（版本未變）</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">1</td></tr>
-      <tr><td>Admin 編輯後（版本 bump）· 下位訪客該頁</td><td class="num">1</td><td class="num">82</td><td class="num">168</td><td class="num">512</td><td class="num">763</td></tr>
+      <tr><td>Admin 編輯<b>某機師</b>後 · 下位訪客該頁（只有 <span class="mono">pilots</span> 失效）</td><td class="num">1</td><td class="num">82</td><td class="num">0</td><td class="num">0</td><td class="num">83</td></tr>
     </table>
   </div>
 

@@ -5,6 +5,7 @@ import {
 } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updateModule, docExists } from '../../../lib/firestoreApi'
+import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
 import { SLOT_OPTIONS, SLOT_LABEL, PART_OPTIONS, TRIGGER_LABEL, STAT_OPTIONS } from './constants'
@@ -621,6 +622,7 @@ export default function ModuleAdmin({
   initialSearch?: string
 }) {
   const [editing, setEditing] = useState<Module | null>(null)
+  const gd = useGameData()
 
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
@@ -652,8 +654,9 @@ export default function ModuleAdmin({
   }
 
   async function handleSave(updated: Module) {
-    await updateModule(updated)
+    const version = await updateModule(updated)
     upsert(updated)
+    gd.patchCollectionItem('modules', updated, version)
     setEditing(null)
   }
 
