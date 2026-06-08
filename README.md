@@ -128,6 +128,22 @@ mecharashi-tools/
 
 詳見 [docs/03_進度表/開發進度表.html](./docs/03_進度表/開發進度表.html)（含連結至規劃書對應章節）
 
-## License
+## 授權 License
 
-© 2026 鋼嵐工具站 All rights reserved.
+本專案**原始碼公開，但僅限非商業使用**（source-available, noncommercial）。
+
+- ✅ **歡迎**：學習、研究、fork、二次開發、個人與非營利用途
+- ❌ **禁止**：未經書面同意的**商業／營利**用途（如掛廣告、付費服務、販售、商業託管等）
+
+| 內容 | 授權 |
+|---|---|
+| **程式碼**（`src/`、`scripts/` 等） | [PolyForm Noncommercial License 1.0.0](./LICENSE) |
+| **文件與整理的資料**（`docs/`、`src/data/` 等） | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) |
+| **遊戲原始素材**（圖片、遊戲數值） | 智慧財產權屬《鋼嵐 Mecharashi》原廠，本站為非商業同好用途 |
+
+### 商業合作 / 授權洽詢
+
+如有商業使用或合作需求，歡迎聯絡我（**我很少看 Email，請以 Discord 為主**）：
+
+- **Discord**：`fenix_nkodpm` ← 優先
+- Email：fenix1113@gmail.com
