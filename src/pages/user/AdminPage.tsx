@@ -19,24 +19,25 @@ import SkillAdmin from './admin/SkillAdmin'
 
 type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpacks' | 'glossary' | 'skills' | 'buffs' | 'users' | 'grayops'
 
-// 各分頁的延遲載入設定：
-//   keys       — 需透過 GameDataContext 整包載入的「關聯集合」（供編輯面板下拉用）
-//   searchable — 閘門是否提供搜尋框（可帶入分頁的開頭搜尋）
-//   selfLoading— 分頁元件自行管理主資料載入（伺服器端分頁查詢）；armed 後直接掛載
-// 主資料（pilots/weapons/...）一律由分頁元件以 getCollectionPage 分頁查詢，不整包載入。
-// keys 只保留「關聯集合」：weapons→pilots、modules→mechs、mechs→modules。
-const TAB_CONFIG: Record<Tab, { keys: CollectionKey[]; searchable: boolean; selfLoading: boolean }> = {
-  modules:    { keys: ['mechs'],          searchable: true,  selfLoading: true  },
-  mechs:      { keys: ['modules'],        searchable: true,  selfLoading: true  },
-  pilots:     { keys: [],                 searchable: true,  selfLoading: true  },
-  weapons:    { keys: ['pilots'],         searchable: true,  selfLoading: true  },
-  components: { keys: [],                 searchable: true,  selfLoading: true  },
-  grayops:    { keys: ['grayOpsRoster'],  searchable: false, selfLoading: false },
-  backpacks:  { keys: [],                 searchable: true,  selfLoading: true  },
-  glossary:   { keys: [],                 searchable: true,  selfLoading: true  },
-  skills:     { keys: [],                 searchable: true,  selfLoading: true  },
-  buffs:      { keys: [],                 searchable: true,  selfLoading: true  },
-  users:      { keys: [],                 searchable: false, selfLoading: true  },
+// 各分頁的載入設定：
+//   keys       — 此分頁需要整包載入的集合（主資料 + 編輯面板下拉用的關聯集合）。
+//                一律經 GameDataContext 載入（版本快取 gate，命中快取＝0 讀取）。
+//   searchable — 閘門是否提供搜尋框（僅未預載入、仍走伺服器端分頁的分頁會用到閘門）。
+//   selfLoading— 分頁元件自行管理主資料載入（伺服器端分頁查詢）；armed 後直接掛載。
+//   preload    — true：切到此分頁即整包預載入主資料，支援前端「片段」搜尋（useClientPaged）。
+// 註：backpacks / components 資料量較大，仍維持伺服器端分頁查詢（不整包載入、沿用閘門）。
+const TAB_CONFIG: Record<Tab, { keys: CollectionKey[]; searchable: boolean; selfLoading: boolean; preload: boolean }> = {
+  modules:    { keys: ['modules', 'mechs'],  searchable: true,  selfLoading: false, preload: true  },
+  mechs:      { keys: ['mechs', 'modules'],  searchable: true,  selfLoading: false, preload: true  },
+  pilots:     { keys: ['pilots'],            searchable: true,  selfLoading: false, preload: true  },
+  weapons:    { keys: ['weapons', 'pilots'], searchable: true,  selfLoading: false, preload: true  },
+  components: { keys: [],                     searchable: true,  selfLoading: true,  preload: false },
+  grayops:    { keys: ['grayOpsRoster'],     searchable: false, selfLoading: false, preload: false },
+  backpacks:  { keys: [],                     searchable: true,  selfLoading: true,  preload: false },
+  glossary:   { keys: ['glossaryTerms'],     searchable: true,  selfLoading: false, preload: true  },
+  skills:     { keys: ['pilotSkills'],       searchable: true,  selfLoading: false, preload: true  },
+  buffs:      { keys: ['buffs'],             searchable: true,  selfLoading: false, preload: true  },
+  users:      { keys: [],                     searchable: false, selfLoading: true,  preload: false },
 }
 
 export default function AdminPage() {
@@ -75,6 +76,11 @@ export default function AdminPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reloadTick])
 
+  // 預載入分頁：切到該分頁即自動 arm（整包載入主資料，支援前端片段搜尋；不顯示載入閘門）
+  useEffect(() => {
+    if (TAB_CONFIG[tab].preload && !armedTabs.has(tab)) armTab(tab, '')
+  }, [tab, armedTabs, armTab])
+
   async function handleGrayOpsSave(updated: GrayOpsRoster) {
     const version = await updateGrayOpsRoster(updated)
     patchSingleton('grayOpsRoster', updated, version)
@@ -101,7 +107,8 @@ export default function AdminPage() {
   }
 
   const cfg         = TAB_CONFIG[tab]
-  const isArmed     = armedTabs.has(tab)
+  // 預載入分頁視為已啟用（不顯示閘門；由上方 effect 觸發整包載入）
+  const isArmed     = armedTabs.has(tab) || cfg.preload
   const tabLoaded   = cfg.keys.every(k => loadedKeys.has(k))
   const tabError    = cfg.keys.map(k => errorMap[k]).find(Boolean)?.message ?? null
   const searchSeed  = searchSeeds[tab] ?? ''
@@ -120,10 +127,11 @@ export default function AdminPage() {
         <div className="mt-4 flex items-start gap-2 text-xs bg-accent-cyan/5 border border-accent-cyan/20 rounded-lg px-3 py-2 text-text-secondary">
           <span className="text-accent-cyan shrink-0">💡</span>
           <span>
-            為降低資料庫查詢量，各分頁資料<span className="text-accent-cyan font-medium">不會自動載入</span>，且改為
-            <span className="text-accent-cyan font-medium">依條件分頁查詢</span>。
-            切換分頁後請<span className="text-accent-cyan font-medium">輸入名稱開頭搜尋</span>或選擇下拉條件，
-            再以「載入更多」翻頁。
+            多數分頁切換後會<span className="text-accent-cyan font-medium">自動預載入</span>
+            （透過版本快取，未改版時不重複計費），並可用
+            <span className="text-accent-cyan font-medium">片段關鍵字</span>即時搜尋名稱 / ID。
+            <span className="text-accent-cyan font-medium">背包 / 元件</span>資料量較大，仍維持
+            <span className="text-accent-cyan font-medium">輸入名稱開頭分頁查詢</span>。
           </span>
         </div>
       </div>

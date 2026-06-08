@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { Mech, Module } from '../../../types'
 import { ModuleSlot, ArmorType } from '../../../types/enums'
-import { Field, AdminModal, useServerPaged, LoadMoreButton } from './shared'
-import { getCollectionPage, updateMech } from '../../../lib/firestoreApi'
+import { Field, AdminModal, useClientPaged, LoadMoreButton } from './shared'
+import { updateMech } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 
 type MechFilters = { armorType: string }
@@ -21,11 +21,10 @@ export default function MechAdmin({
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
     filters, setFilter, submitSearch, loadMore, upsert,
-  } = useServerPaged<Mech, MechFilters>({
-    fetchPage: (opts) => getCollectionPage<Mech>('mechs', opts),
+  } = useClientPaged<Mech, MechFilters>({
+    source: gd.mechs,
     initialSearch,
     initialFilters: { armorType: 'all' },
-    toEquals: (f) => ({ ...(f.armorType !== 'all' ? { armorType: f.armorType } : {}) }),
     matchFilters: (m, f) => f.armorType === 'all' || m.armorType === f.armorType,
   })
 

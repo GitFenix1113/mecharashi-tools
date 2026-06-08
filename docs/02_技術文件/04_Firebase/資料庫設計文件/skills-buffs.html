@@ -103,6 +103,33 @@
     以及 <code>mutexGroup</code> / <code>descriptionRefs</code> 均已落地；完整欄位以
     <a href="../../02_資料模型/skills_buffs.html" style="color:var(--accent-cyan);">資料模型 · GameBuff</a> 為準。
   </div>
+
+  <div class="info-block">
+    <strong>📐 PLAN-020：文件 ID 命名規則（新建適用）</strong>
+    <ul style="margin:8px 0 0 18px;line-height:1.9;">
+      <li><strong>新建 ID 由系統生成</strong>：維護者只輸入名稱、選分類，ID 一律為
+        <code>buff_&lt;slug(name)&gt;</code>（前綴固定 <code>buff_</code>，分類只寫入
+        <code>buffType</code> 欄位、不進 ID）。對話框即時預覽生成的唯讀 ID。</li>
+      <li><strong>slug 規則</strong>對齊 <code>scrape-pilots-v3.js</code> 的 <code>safeName</code>
+        （見 <code>src/utils/idSlug.ts</code> 的 <code>makeEntityId</code>）：保留中文 / 英數 / 全形字，
+        去除半形空白、ASCII 標點、斜線等 Firestore 不合法字元；清理後為空則擋下建立。</li>
+      <li><strong>前綴防呆</strong>：維護者在名稱欄位若誤打 <code>buff_</code> 前綴
+        （不分大小寫、可連續重複，如 <code>buff_</code> / <code>BUFF_</code> / <code>buff_buff_</code>），
+        由 <code>stripIdPrefix</code> 自動消除，ID 與 name 皆不會殘留多餘前綴。</li>
+      <li><strong>撞名 = 撞 ID（不分大小寫）</strong>：建立當下以 <code>docExists('buffs', id)</code>（伺服器）＋
+        全集合 in-memory 雙重檢查，命中即擋下並導引「編輯既有項目」，<em>不</em>自動加序號。
+        in-memory 比對<strong>不分大小寫</strong>，避免
+        <code>buff_事不宜遲</code> 與 <code>BUFF_事不宜遲</code> 這類大小寫孿生
+        （Firestore 文件 ID 區分大小寫，會被視為兩筆不同文件）。</li>
+      <li><strong>出生即凍結</strong>：建立後改 <code>name</code> 只改欄位、<strong>不動 ID</strong>；
+        引用以 ID 精準比對（<code>x.id === refId</code>），不受 name 變動影響。</li>
+      <li><strong>舊資料維持原狀</strong>：既有
+        <code>BUFF_…</code> / <code>buff_…</code> / 無前綴 等歷史風格不遷移
+        （無程式碼解析 ID 前綴判斷型別，型別存於 <code>buffType</code>）。</li>
+      <li>本規則由共用 <code>useNewItemCreation</code> 的 <code>deriveId</code> 可選模式提供，
+        其他集合（pilots / weapons / modules…）日後可逐一 opt-in。</li>
+    </ul>
+  </div>
 </section>
 
 </main>

@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, SkillEffect, SkillCondition } from '../../../types'
 import { formatWeaponReq } from '../../../types'
 import { ItemRarity, PilotClass, MechLicense, WeaponType } from '../../../types/enums'
-import { Field, AdminModal, useServerPaged, LoadMoreButton } from './shared'
-import { getCollectionPage, updatePilot } from '../../../lib/firestoreApi'
+import { Field, AdminModal, useClientPaged, LoadMoreButton } from './shared'
+import { updatePilot } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { buildSkillMap } from '../../../utils/pilotSkills'
 import { RefPicker } from '../../../components/admin/RefPicker'
@@ -798,14 +798,10 @@ export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: str
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
     filters, setFilter, submitSearch, loadMore, upsert,
-  } = useServerPaged<Pilot, PilotFilters>({
-    fetchPage: (opts) => getCollectionPage<Pilot>('pilots', opts),
+  } = useClientPaged<Pilot, PilotFilters>({
+    source: gd.pilots,
     initialSearch,
     initialFilters: { rarity: 'all', class: 'all' },
-    toEquals: (f) => ({
-      ...(f.rarity !== 'all' ? { rarity: f.rarity } : {}),
-      ...(f.class !== 'all' ? { class: f.class } : {}),
-    }),
     matchFilters: (p, f) =>
       (f.rarity === 'all' || p.rarity === f.rarity) &&
       (f.class === 'all' || p.class === f.class),

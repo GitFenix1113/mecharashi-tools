@@ -3,8 +3,8 @@ import type { Module, Mech, ConditionalEffect, ModuleLevel } from '../../../type
 import {
   ModuleRarity, ModuleSlot, ModuleSource, ModuleDataSource, ConditionalTrigger,
 } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
-import { getCollectionPage, updateModule, docExists } from '../../../lib/firestoreApi'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
+import { updateModule, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
@@ -627,14 +627,10 @@ export default function ModuleAdmin({
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
     filters, setFilter, submitSearch, loadMore, upsert,
-  } = useServerPaged<Module, ModuleFilters>({
-    fetchPage: (opts) => getCollectionPage<Module>('modules', opts),
+  } = useClientPaged<Module, ModuleFilters>({
+    source: gd.modules,
     initialSearch,
     initialFilters: { slot: 'all', bound: 'all', stats: 'all', source: 'all' },
-    // 伺服器端只放可乾淨等值表達者：slot。
-    // 綁定狀態（boundMechId 可能為 null 或欄位不存在，== null 查不到後者）、
-    // 數值有無、來源（陣列）一律由 matchFilters 前端過濾，避免漏抓。
-    toEquals: (f) => ({ ...(f.slot !== 'all' ? { slot: f.slot } : {}) }),
     matchFilters: (m, f) =>
       (f.slot === 'all' || m.slot === f.slot) &&
       (f.bound === 'all' || (f.bound === 'bound' ? !!m.boundMechId : !m.boundMechId)) &&

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { GlossaryTerm } from '../../../types'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
-import { getCollectionPage, updateGlossaryTerm, docExists } from '../../../lib/firestoreApi'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
+import { updateGlossaryTerm, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 
@@ -96,11 +96,10 @@ export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: 
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
     submitSearch, loadMore, upsert,
-  } = useServerPaged<GlossaryTerm, Record<string, never>>({
-    fetchPage: (opts) => getCollectionPage<GlossaryTerm>('glossaryTerms', opts),
+  } = useClientPaged<GlossaryTerm, Record<string, never>>({
+    source: gd.glossaryTerms,
     initialSearch,
     initialFilters: {},
-    toEquals: () => ({}),
     matchFilters: () => true,
   })
 

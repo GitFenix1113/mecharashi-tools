@@ -11,6 +11,7 @@
     "docs:copy": "node scripts/copy-docs.mjs",
     "docs:stamp": "node scripts/stamp-docs.mjs",
     "lint": "eslint .",
+    "test": "node --test \"src/**/*.test.ts\"",
     "preview": "vite preview",
     "prepare": "git config commit.template .gitmessage && git config core.hooksPath .githooks",
     "changelog": "node scripts/update-changelog.js",

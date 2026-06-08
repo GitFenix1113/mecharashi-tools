@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import type { PilotSkillDoc, SkillEffect } from '../../../types'
 import { formatWeaponReq } from '../../../types'
 import { SkillType } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
-import { getCollectionPage, updatePilotSkill, docExists } from '../../../lib/firestoreApi'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
+import { updatePilotSkill, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
@@ -166,12 +166,10 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
     filters, setFilter, submitSearch, loadMore, upsert,
-  } = useServerPaged<PilotSkillDoc, SkillFilters>({
-    fetchPage: (opts) => getCollectionPage<PilotSkillDoc>('pilotSkills', opts),
+  } = useClientPaged<PilotSkillDoc, SkillFilters>({
+    source: gd.pilotSkills,
     initialSearch,
     initialFilters: { type: 'all', manual: 'all' },
-    // type 為乾淨等值欄位可走伺服器端；manual 欄位可能不存在（auto 文件無此欄）故前端過濾
-    toEquals: (f) => ({ ...(f.type !== 'all' ? { type: f.type } : {}) }),
     matchFilters: (s, f) =>
       (f.type === 'all' || s.type === f.type) &&
       (f.manual === 'all' || (f.manual === 'manual' ? s.manual === true : s.manual !== true)),

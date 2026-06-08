@@ -177,6 +177,60 @@ export function useServerPaged<T extends { id: string }, F>({
   return { items, loading, error, hasMore, search, setSearch, filters, setFilter, submitSearch, loadMore, upsert, activeSearch }
 }
 
+// ── useClientPaged：整包快取 + 前端片段搜尋 + 前端分頁 ──────────────────────────
+// 搭配 GameDataContext 的版本快取使用：整個集合已在記憶體（命中快取＝0 讀取），
+// 因此可做 name / id「任意位置片段」比對，並以前端分頁限制單次渲染的列數。
+// 介面與 useServerPaged 對齊，分頁元件可最小改動替換；清單直接讀 source，
+// 儲存後由 patchCollectionItem 就地更新來源，故 upsert 為相容用的空操作。
+export interface UseClientPagedArgs<T, F> {
+  /** 來自 GameDataContext 的整包集合（已由 AdminPage ensureLoaded 載入）。 */
+  source: T[]
+  initialFilters: F
+  /** 下拉條件比對（涵蓋所有條件，前端即時過濾）。 */
+  matchFilters: (item: T, filters: F) => boolean
+  /** 文字片段比對；預設比對 name 與 id（轉小寫、includes 任意位置）。 */
+  matchText?: (item: T, lowerQuery: string) => boolean
+  initialSearch?: string
+  pageSize?: number
+}
+
+function defaultMatchText<T extends { id: string }>(item: T, q: string): boolean {
+  const name = (item as { name?: string }).name
+  return (name ? name.toLowerCase().includes(q) : false) || item.id.toLowerCase().includes(q)
+}
+
+export function useClientPaged<T extends { id: string }, F>({
+  source, initialFilters, matchFilters, matchText, initialSearch = '', pageSize = 30,
+}: UseClientPagedArgs<T, F>) {
+  const [search, setSearchState] = useState(initialSearch)
+  const [filters, setFilters]    = useState<F>(initialFilters)
+  const [page, setPage]          = useState(1)
+
+  // 改搜尋字串 / 改條件 → 回到第一頁（避免停在超出新結果集的頁碼）
+  const setSearch    = useCallback((v: string) => { setSearchState(v); setPage(1) }, [])
+  const submitSearch = useCallback(() => setPage(1), [])
+  const loadMore     = useCallback(() => setPage(p => p + 1), [])
+  const setFilter = useCallback(<K extends keyof F>(key: K, value: F[K]) => {
+    setFilters(prev => ({ ...prev, [key]: value }) as F)
+    setPage(1)
+  }, [])
+
+  const q       = search.trim().toLowerCase()
+  const test    = matchText ?? defaultMatchText
+  const matched = source.filter(i => (!q || test(i, q)) && matchFilters(i, filters))
+  const items   = matched.slice(0, page * pageSize)
+  const hasMore = matched.length > items.length
+
+  // 清單直接讀 GameDataContext，儲存後由 patchCollectionItem 就地更新來源 → 此處留空。
+  const upsert = useCallback((_item: T) => {}, [])
+
+  return {
+    items, loading: false, error: null as string | null, hasMore,
+    search, setSearch, filters, setFilter, submitSearch, loadMore, upsert,
+    activeSearch: search,
+  }
+}
+
 // ── LoadMoreButton：分頁「載入更多」按鈕 ───────────────────────────────────────
 export function LoadMoreButton({ hasMore, loading, onClick }: { hasMore: boolean; loading: boolean; onClick: () => void }) {
   if (!hasMore) return null
@@ -240,33 +294,59 @@ export function AdminModal({
 }
 
 // ── useNewItemCreation：新建 ID 對話框邏輯（模組/武器/元件共用）─────────────────
+// 兩種模式（PLAN-020）：
+//  • 預設（不傳 deriveId）：維護者手打文件 ID，沿用既有行為（撞名為精準比對）。
+//  • deriveId 模式：輸入框收「名稱」，ID 由 deriveId(name) 系統生成；
+//    confirmCreate 先生成 ID 再做 in-memory 撞名檢查；空 slug（生成 ID 為空）擋下。
+//    撞名比對「不分大小寫」——Firestore 文件 ID 區分大小寫，buff_x 與 BUFF_x
+//    是兩筆不同文件，會造成大小寫孿生；deriveId 模式一律視為重複並擋下。
+// makeDefault 第二參數 name 在預設模式下等於 ID（呼叫端可忽略），故向後相容。
 export function useNewItemCreation<T>(
   existingItems: T[],
   getId: (item: T) => string,
-  makeDefault: (id: string) => T,
+  makeDefault: (id: string, name: string) => T,
+  deriveId?: (name: string) => string,
 ) {
   const [creating, setCreating] = useState(false)
   const [newId, setNewId]       = useState('')
   const [newIdError, setNewIdError] = useState('')
 
+  // deriveId 模式下 newId 存的是「名稱」，derivedId 為即時預覽用的生成 ID。
+  const deriveMode = !!deriveId
+  const derivedId  = deriveId ? deriveId(newId) : newId.trim()
+
   function openCreate()  { setCreating(true); setNewId(''); setNewIdError('') }
   function cancelCreate() { setCreating(false) }
 
   function confirmCreate(): T | null {
-    const trimmed = newId.trim()
-    if (!trimmed) { setNewIdError('請輸入 ID'); return null }
-    if (existingItems.some((item) => getId(item) === trimmed)) {
-      setNewIdError(`ID「${trimmed}」已存在`)
+    const name = newId.trim()
+    const id   = deriveId ? deriveId(name) : name
+    if (!id) {
+      setNewIdError(deriveMode ? '名稱無法產生有效 ID，請改用其他名稱' : '請輸入 ID')
+      return null
+    }
+    // deriveId 模式：ID 不分大小寫都視為重複（擋掉 buff_x 與 BUFF_x 的大小寫孿生）
+    const lower = id.toLowerCase()
+    const clash = deriveMode
+      ? existingItems.find((item) => getId(item).toLowerCase() === lower)
+      : existingItems.find((item) => getId(item) === id)
+    if (clash) {
+      const clashId = getId(clash)
+      setNewIdError(deriveMode
+        ? `已有同名項目（ID：${clashId}），請改名或編輯既有項目`
+        : `ID「${id}」已存在`)
       return null
     }
     setCreating(false); setNewId(''); setNewIdError('')
-    return makeDefault(trimmed)
+    return makeDefault(id, name)
   }
 
-  return { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate }
+  return { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate, derivedId, deriveMode }
 }
 
 // ── NewItemDialog：新建 ID 輸入框 UI ─────────────────────────────────────────
+// deriveMode（PLAN-020）：輸入框收「名稱」，下方即時預覽系統生成的唯讀 ID；
+// 生成 ID 為空（名稱無有效字元）時提示並停用「建立」。extra 供額外欄位（如分類選擇）。
 export function NewItemDialog({
   creating,
   newId,
@@ -276,6 +356,9 @@ export function NewItemDialog({
   onChangeId,
   onConfirm,
   onCancel,
+  deriveMode = false,
+  derivedId = '',
+  extra,
 }: {
   creating: boolean
   newId: string
@@ -285,8 +368,13 @@ export function NewItemDialog({
   onChangeId: (v: string) => void
   onConfirm: () => void
   onCancel: () => void
+  deriveMode?: boolean
+  derivedId?: string
+  extra?: React.ReactNode
 }) {
   if (!creating) return null
+  const slugEmpty   = deriveMode && newId.trim().length > 0 && derivedId.length === 0
+  const confirmable = !deriveMode || derivedId.length > 0
   return (
     <div className="mb-4 p-4 bg-bg-dark border border-accent-orange/40 rounded-xl">
       <p className="text-xs text-text-dim mb-2 font-medium">{hint}</p>
@@ -296,13 +384,14 @@ export function NewItemDialog({
           type="text"
           value={newId}
           onChange={(e) => onChangeId(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') onConfirm() }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && confirmable) onConfirm() }}
           placeholder={placeholder}
           className="flex-1 px-3 py-2 rounded-lg bg-bg-card border border-border text-text-primary text-sm focus:outline-none focus:border-accent-orange"
         />
         <button
           onClick={onConfirm}
-          className="px-4 py-2 bg-accent-orange text-black text-sm font-bold rounded-lg hover:opacity-90"
+          disabled={!confirmable}
+          className="px-4 py-2 bg-accent-orange text-black text-sm font-bold rounded-lg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           建立
         </button>
@@ -313,6 +402,21 @@ export function NewItemDialog({
           取消
         </button>
       </div>
+      {extra && <div className="mt-2">{extra}</div>}
+      {deriveMode && (
+        <p className="text-xs mt-2">
+          {derivedId ? (
+            <>
+              將建立文件 ID：<span className="text-accent-cyan font-mono">{derivedId}</span>
+              <span className="text-text-dim">（系統生成、儲存後不可更改）</span>
+            </>
+          ) : slugEmpty ? (
+            <span className="text-accent-red">⚠ 名稱無法產生有效 ID，請改用其他名稱</span>
+          ) : (
+            <span className="text-text-dim">輸入名稱後將自動生成文件 ID</span>
+          )}
+        </p>
+      )}
       {newIdError && <p className="text-xs text-accent-red mt-1.5">⚠ {newIdError}</p>}
     </div>
   )

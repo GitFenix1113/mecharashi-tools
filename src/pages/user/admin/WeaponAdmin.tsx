@@ -4,8 +4,8 @@ import {
   WeaponType, WeaponKind, WeaponRarity, MechRestriction, WeaponEquipSlot,
   RangeType, SkillType, SkillActivation,
 } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
-import { getCollectionPage, updateWeapon, docExists } from '../../../lib/firestoreApi'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
+import { updateWeapon, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { WEAPON_RARITY_CLASS, WEAPON_KIND_BY_TYPE, ALL_WEAPON_KINDS } from './constants'
@@ -591,15 +591,10 @@ export default function WeaponAdmin({
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
     filters, setFilter, submitSearch, loadMore, upsert,
-  } = useServerPaged<Weapon, WeaponFilters>({
-    fetchPage: (opts) => getCollectionPage<Weapon>('weapons', opts),
+  } = useClientPaged<Weapon, WeaponFilters>({
+    source: gd.weapons,
     initialSearch,
     initialFilters: { rarity: 'all', type: 'all', exclusive: 'all' },
-    toEquals: (f) => ({
-      ...(f.rarity !== 'all' ? { rarity: f.rarity } : {}),
-      ...(f.type !== 'all' ? { type: f.type } : {}),
-      ...(f.exclusive !== 'all' ? { isExclusive: f.exclusive === 'yes' } : {}),
-    }),
     matchFilters: (w, f) =>
       (f.rarity === 'all' || w.rarity === f.rarity) &&
       (f.type === 'all' || w.type === f.type) &&

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import type { GameBuff, SkillEffect } from '../../../types'
 import { BuffType } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
-import { getCollectionPage, updateBuff, docExists } from '../../../lib/firestoreApi'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
+import { updateBuff, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
 import { resolveIconSrc } from '../../../utils/assets'
+import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { SkillEffectItem } from './PilotAdmin'
 
 // ─── BuffType 顯示對照 ──────────────────────────────────────────────────────────
@@ -22,8 +23,9 @@ const BUFF_TYPE_LABEL: Record<string, string> = {
 }
 
 // ─── 預設值工廠 ────────────────────────────────────────────────────────────────
-function makeDefaultBuff(id: string): GameBuff {
-  return { id, name: '', description: '', descriptionRefs: {}, buffType: BuffType.STATE, effects: [], icon: undefined }
+// PLAN-020：建立時帶入名稱與分類，編輯面板開啟時 name / buffType 已預填。
+function makeDefaultBuff(id: string, name = '', buffType: string = BuffType.STATE): GameBuff {
+  return { id, name, description: '', descriptionRefs: {}, buffType, effects: [], icon: undefined }
 }
 
 // ─── BUFF 編輯面板 ──────────────────────────────────────────────────────────────
@@ -165,21 +167,35 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
     submitSearch, loadMore, upsert,
-  } = useServerPaged<GameBuff, Record<string, never>>({
-    fetchPage: (opts) => getCollectionPage<GameBuff>('buffs', opts),
+  } = useClientPaged<GameBuff, Record<string, never>>({
+    source: gd.buffs,
     initialSearch,
     initialFilters: {},
-    toEquals: () => ({}),
     matchFilters: () => true,
   })
 
-  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate } =
-    useNewItemCreation(filtered, (b) => b.id, makeDefaultBuff)
+  // 新建對話框先選分類，分類寫入 buffType 欄位、不進 ID（決策二：前綴統一 buff_）
+  const [newBuffType, setNewBuffType] = useState<string>(BuffType.STATE)
+
+  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate, derivedId } =
+    useNewItemCreation(
+      gd.buffs,                                          // 全集合 in-memory 撞名（涵蓋未在當前分頁者）
+      (b) => b.id,
+      (id, name) => makeDefaultBuff(id, stripIdPrefix('buff', name), newBuffType), // name 也剝除誤打前綴
+      (name) => makeEntityId('buff', name),             // deriveId：buff_<slug(name)>
+    )
+
+  function startCreate() { setNewBuffType(BuffType.STATE); openCreate() }
 
   async function confirmCreateChecked() {
-    const id = newId.trim()
-    if (id && await docExists('buffs', id)) { setNewIdError(`ID「${id}」已存在`); return }
-    const item = confirmCreate()
+    const id = makeEntityId('buff', newId)
+    if (!id) { setNewIdError('名稱無法產生有效 ID，請改用其他名稱'); return }
+    // 伺服器端撞 ID 檢查：涵蓋不在記憶體中的 BUFF（撞名 = 撞 ID，導引去編輯既有項）
+    if (await docExists('buffs', id)) {
+      setNewIdError(`已有同名 BUFF（ID：${id}），請改名或編輯既有項目`)
+      return
+    }
+    const item = confirmCreate()                         // 頁內 in-memory 撞名 + 生成預設值
     if (item) setEditing(item)
   }
 
@@ -218,7 +234,7 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
             : `顯示 ${filtered.length} 個 BUFF${hasMore ? '（可載入更多）' : ''}`}
         </p>
         <button
-          onClick={openCreate}
+          onClick={startCreate}
           className="text-xs px-3 py-1.5 bg-accent-orange text-black font-bold rounded-lg hover:opacity-90 transition-opacity"
         >
           + 新增 BUFF
@@ -229,11 +245,25 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
         creating={creating}
         newId={newId}
         newIdError={newIdError}
-        placeholder="buff_虛粒子形態"
-        hint={<>輸入新 BUFF ID（格式如 <span className="text-accent-cyan">buff_虛粒子形態</span>，儲存後不可更改）</>}
+        placeholder="輸入 BUFF 名稱，如：虛粒子形態"
+        hint={<>輸入 BUFF 名稱，系統自動生成文件 ID（前綴固定 <span className="text-accent-cyan">buff_</span>）</>}
         onChangeId={(v) => { setNewId(v); setNewIdError('') }}
         onConfirm={() => { void confirmCreateChecked() }}
         onCancel={cancelCreate}
+        deriveMode
+        derivedId={derivedId}
+        extra={
+          <label className="flex items-center gap-2 text-xs text-text-dim">
+            分類 buffType
+            <select
+              value={newBuffType}
+              onChange={(e) => setNewBuffType(e.target.value)}
+              className="px-2 py-1 rounded-lg bg-bg-card border border-border text-text-primary text-sm focus:outline-none focus:border-accent-orange"
+            >
+              {BUFF_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </label>
+        }
       />
 
       {/* BUFF 列表 */}
