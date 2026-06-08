@@ -25,10 +25,12 @@ const app = isNewApp ? initializeApp(firebaseConfig) : getApps()[0]
 // ── App Check：擋下非授權網域的請求（防止他站盜用我的 Firestore）──
 // 只在首次初始化時設定一次，避免 HMR 重複呼叫
 if (isNewApp) {
-  // 本機開發：啟用 debug token，讓 localhost 不必真的過 reCAPTCHA
-  // token 會印在瀏覽器 Console，需到 Firebase Console > App Check 註冊該 token
+  // 本機開發：使用固定的 debug token（值存在 .env.local，不進版控）
+  // 釘死成固定值，避免「清除網站資料」後 SDK 重新產生隨機 token、與 Console 註冊的對不上
+  // 未設環境變數時退回 true（SDK 自動產生隨機 token）
   if (import.meta.env.DEV) {
-    (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true
+    (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean | string }).FIREBASE_APPCHECK_DEBUG_TOKEN =
+      import.meta.env.VITE_APPCHECK_DEBUG_TOKEN || true
   }
   initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider(import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY),
