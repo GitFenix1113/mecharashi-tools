@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-06-07
+## [Unreleased] - 2026-06-08
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- PLAN-020 文件 ID 自動生成與撞名防呆；後台分頁改 useClientPaged 預載入 (`3b01ae8`)
 - 導覽列下拉改版＋工具/文件分頁、後台技能管理與圖示挑選器、文件發布管線 (`19a448f`)
 - PLAN-019-F BUFF 後台管理（BuffAdmin） (`9771ae3`)
 - PLAN-019-E 引用挑選器接進模組／武器／元件／背包四面板 (`c1828e7`)
