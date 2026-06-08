@@ -144,6 +144,7 @@
 
 ### 🔧 維護
 
+- 資料管線腳本與 data-patch skill 移出公開 repo（防線 C 輕量版） (`89e16d9`)
 - App Check debug token 改用固定值避免清快取後變動 (`c0ca05a`)
 - 導入 Firebase App Check 防止他站盜用 Firestore (`234789c`)
 - 移除圖檔 manifest 未使用的 generatedAt 欄位 (`6628e4e`)
