@@ -49,4 +49,26 @@ export const db = isNewApp
 
 export const auth = getAuth(app)
 export const storage = getStorage(app)
+
+// ── 申請持久化儲存,降低「用著用著就登出」──
+// 裝置儲存空間吃緊時,瀏覽器(尤其 Android Chrome)會自動清除(evict)本站的 IndexedDB,
+// 連帶清掉 Firebase Auth 的登入狀態與上方 Firestore 離線快取 → 使用者表現為「莫名登出」。
+// navigator.storage.persist() 申請「持久化」級別,獲准後瀏覽器不會在空間壓力下清除本站資料。
+// Chrome 依互動程度等啟發式自動決定是否核准,通常不跳提示;不支援或被拒也無副作用。
+if (
+  isNewApp &&
+  typeof navigator !== 'undefined' &&
+  navigator.storage &&
+  typeof navigator.storage.persist === 'function'
+) {
+  navigator.storage
+    .persisted()
+    .then((alreadyPersisted) => {
+      if (!alreadyPersisted) return navigator.storage.persist()
+    })
+    .catch(() => {
+      /* 不支援或被拒,忽略即可 */
+    })
+}
+
 export default app

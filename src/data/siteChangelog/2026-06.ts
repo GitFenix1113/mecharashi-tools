@@ -3,6 +3,7 @@ import type { ChangelogMonth } from './types'
 const jun2026: ChangelogMonth = {
   month: '2026-06',
   entries: [
+    { date: '2026-06-09', type: 'fix', summary: '改善部分使用者偶爾莫名被登出的問題：向瀏覽器申請持久化儲存，避免裝置空間不足時登入狀態被清除' },
     { date: '2026-06-09', type: 'feat', summary: '管理後台新增 BUFF 時，文件 ID 改由系統依名稱自動生成（buff_名稱），維護者只需輸入名稱與分類並即時預覽 ID；建立當下擋下同名／同 ID 重複（不分大小寫、誤打 buff_ 前綴自動消除），並導向編輯既有項' },
     { date: '2026-06-08', type: 'feat', summary: '管理後台新增「技能管理」分頁，維護者可分頁搜尋全部機師技能，並直接編輯技能名稱、類型、效果與引用標記' },
     { date: '2026-06-08', type: 'feat', summary: '管理後台各編輯面板新增「圖示挑選器」，維護者可從圖庫直接挑選 icon（免手填路徑），模組／BUFF 等列表並顯示對應圖示' },
