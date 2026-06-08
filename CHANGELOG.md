@@ -143,6 +143,7 @@
 
 ### 🔧 維護
 
+- App Check debug token 改用固定值避免清快取後變動 (`c0ca05a`)
 - 導入 Firebase App Check 防止他站盜用 Firestore (`234789c`)
 - 移除圖檔 manifest 未使用的 generatedAt 欄位 (`6628e4e`)
 - PLAN-004 技能庫抽離 Phase 3 — pilots 改引用 pilotSkills 單一資料源 (`d3be774`)
