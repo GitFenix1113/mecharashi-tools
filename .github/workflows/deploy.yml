@@ -40,6 +40,8 @@ jobs:
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_CLOUDINARY_CLOUD_NAME: ${{ secrets.VITE_CLOUDINARY_CLOUD_NAME }}
           VITE_CLOUDINARY_UPLOAD_PRESET: ${{ secrets.VITE_CLOUDINARY_UPLOAD_PRESET }}
+          # reCAPTCHA v3 網站金鑰：公開值（本來就會出現在前端），直接寫即可、無需設為 secret
+          VITE_FIREBASE_APPCHECK_SITE_KEY: 6Le8JBQtAAAAAMC0zaC78TTcIqp4MjJWIbjcUEvZ
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

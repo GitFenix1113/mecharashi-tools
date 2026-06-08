@@ -57,3 +57,6 @@ public/docs/
 
 # Temp scripts
 scripts/temp_scripts/
+
+# 本地開發參考筆記（不提交，僅本機參考）
+_local-notes/

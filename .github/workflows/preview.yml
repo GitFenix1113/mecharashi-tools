@@ -54,6 +54,8 @@ jobs:
           VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          # reCAPTCHA v3 網站金鑰：公開值，直接寫即可、無需設為 secret
+          VITE_FIREBASE_APPCHECK_SITE_KEY: 6Le8JBQtAAAAAMC0zaC78TTcIqp4MjJWIbjcUEvZ
 
       - name: Deploy to preview subdirectory
         uses: peaceiris/actions-gh-pages@v4
