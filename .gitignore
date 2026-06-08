@@ -60,3 +60,12 @@ scripts/temp_scripts/
 
 # 本地開發參考筆記（不提交，僅本機參考）
 _local-notes/
+
+# 防線 C — 資料管線私有化（保留本機可用，不進公開 repo；墊高「複製貼上就營利」的成本）
+scripts/scrape-*.js
+scripts/seed-*.mjs
+scripts/migrate-plan004-*.mjs
+scripts/init-patch-versions.mjs
+scripts/patch-component-outerframe.mjs
+scripts/bump-data-version.mjs
+.claude/skills/data-patch/
