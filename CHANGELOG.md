@@ -72,6 +72,7 @@
 
 ### 🐛 修復
 
+- 申請持久化儲存，降低使用者莫名被登出的機率 (`a8d37cc`)
 - 更新首頁 Discord 社群邀請連結 (`3171c83`)
 - 強化密碼重設流程，避免揭露帳號是否存在並移除無效 UI (`8a6a9a3`)
 - 修正以 Email 註冊時 photoURL undefined 導致 Firestore setDoc 失敗 (`b2d5c64`)
