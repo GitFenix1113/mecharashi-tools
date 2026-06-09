@@ -26,7 +26,7 @@ npm run preview  # 預覽生產版本
 npm run lint     # ESLint 檢查
 
 # 資料蒐集（需 Playwright）
-npm run scrape:pilots     # 爬取飛行員資料
+npm run scrape:pilots     # 爬取機師資料
 npm run scrape:mechs      # 爬取機體資料
 npm run scrape:weapons    # 爬取武器資料
 npm run scrape:modules    # 爬取模組資料
