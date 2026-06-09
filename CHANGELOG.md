@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-06-08
+## [Unreleased] - 2026-06-09
 
 ### ⚠ 重大變更
 
@@ -146,6 +146,7 @@
 
 ### 🔧 維護
 
+- types 與 firestoreApi 按 domain 拆分為 per-collection 模組 (`4ee4ecf`)
 - 資料管線腳本與 data-patch skill 移出公開 repo（防線 C 輕量版） (`89e16d9`)
 - App Check debug token 改用固定值避免清快取後變動 (`c0ca05a`)
 - 導入 Firebase App Check 防止他站盜用 Firestore (`234789c`)
