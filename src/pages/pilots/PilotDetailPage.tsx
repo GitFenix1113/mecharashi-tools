@@ -140,11 +140,15 @@ function NdPowerBar({
 
 /** 天賦卡的神經驅動強化面板：讀配置列狀態，顯示生效中的改寫敘述（Q-B：差異高亮預設開） */
 function TalentNdPanel({
-  talent, drives, levels,
+  talent, drives, levels, baseText, viewMax,
 }: {
   talent: PilotTalent
   drives: NeuralDrive[]
   levels: Record<string, number>
+  /** 差異高亮的對照基準：跟隨天賦卡的 初始/最大強化 切換 */
+  baseText: string
+  /** 天賦卡目前是否切在「最大強化」：是 → 顯示變體的 descriptionMax（滿星版改寫） */
+  viewMax: boolean
 }) {
   const [diffOn, setDiffOn] = useState(true)
   const variants = talent.ndVariants ?? []
@@ -187,18 +191,21 @@ function TalentNdPanel({
           <p className="text-sm text-text-secondary leading-relaxed mt-2">
             {diffOn ? (
               <DiffHighlight
-                base={talent.description}
-                enhanced={active.description}
+                base={baseText}
+                enhanced={viewMax ? active.descriptionMax ?? active.description : active.description}
                 refs={{ ...talent.descriptionRefs, ...active.descriptionRefs }}
               />
             ) : (
               <RefText
-                text={active.description}
+                text={viewMax ? active.descriptionMax ?? active.description : active.description}
                 refs={{ ...talent.descriptionRefs, ...active.descriptionRefs }}
               />
             )}
           </p>
-          <p className="text-[11px] text-text-dim mt-1.5">※ 各算力階互斥，實戰只生效達標的最高階。</p>
+          <p className="text-[11px] text-text-dim mt-1.5">
+            ※ 各算力階互斥，實戰只生效達標的最高階。
+            {viewMax && !active.descriptionMax && '（此階尚未補錄滿星版改寫，目前顯示初始版）'}
+          </p>
         </>
       ) : (
         <p className="text-[11px] text-text-dim mt-1.5">
@@ -206,6 +213,73 @@ function TalentNdPanel({
           {variants.map(v => ndVariantLabel(v)).join('、')}）。
         </p>
       )}
+    </div>
+  )
+}
+
+// ─── 天賦卡（PLAN-021）─────────────────────────────────────────────────────────
+// 仿遊戲：頂部「初始天賦 ⇌ 最大強化」切換按鈕，一次只顯示一版（預設初始，不展開最大強化）。
+// 最大強化版以 DiffHighlight 對初始高亮；專武 / 神經驅動強化的對照基準跟隨此切換。
+function TalentCard({
+  talent, drives, levels, weaponEnhanceText, weaponName,
+}: {
+  talent: PilotTalent
+  drives: NeuralDrive[]
+  levels: Record<string, number>
+  weaponEnhanceText?: string
+  weaponName?: string
+}) {
+  const hasMax = !!talent.descriptionMax && talent.descriptionMax !== talent.description
+  const [showMax, setShowMax] = useState(false)
+  const viewMax = hasMax && showMax
+  // 當前主敘述（也是各強化區塊的差異對照基準）
+  const currentBase = viewMax ? talent.descriptionMax! : talent.description
+
+  return (
+    <div className="flex gap-3 p-3 bg-bg-dark rounded-xl border border-border">
+      <SkillIcon iconLocal={talent.iconLocal} name={talent.name} />
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+          <span className="font-bold text-base">{talent.name}</span>
+          {/* 天賦區塊顯示覆寫：不論原始 type（多為被動技能），一律標示「天賦技能」 */}
+          <SkillTypeBadge type="天賦技能" />
+          {hasMax && (
+            <button
+              type="button"
+              onClick={() => setShowMax(v => !v)}
+              title="切換 初始天賦 / 最大強化（滿星效果）"
+              className={`ml-auto text-[12px] px-2.5 py-1 rounded-full border font-medium transition-colors cursor-pointer ${
+                viewMax
+                  ? 'text-accent-cyan border-accent-cyan/45 bg-accent-cyan/15'
+                  : 'text-text-secondary border-border bg-bg-card hover:text-text-primary hover:border-border-accent'
+              }`}
+            >
+              ⇌ {viewMax ? '最大強化' : '初始天賦'}
+            </button>
+          )}
+        </div>
+
+        <p className="text-sm text-text-secondary leading-relaxed">
+          {viewMax ? (
+            <DiffHighlight base={talent.description} enhanced={talent.descriptionMax!} refs={talent.descriptionRefs} />
+          ) : (
+            <RefText text={talent.description} refs={talent.descriptionRefs} />
+          )}
+        </p>
+
+        {weaponEnhanceText && (
+          <div className="mt-2 rounded-lg bg-accent-yellow/5 border border-accent-yellow/25 px-3 py-2.5">
+            <span className="text-[13px] font-bold text-accent-yellow tracking-widest uppercase">
+              ▶ 專武強化{weaponName ? ` · ${weaponName}` : ''}
+            </span>
+            <p className="text-sm text-text-secondary leading-relaxed mt-1.5">
+              <DiffHighlight base={currentBase} enhanced={weaponEnhanceText} refs={talent.descriptionRefs} />
+            </p>
+          </div>
+        )}
+
+        <TalentNdPanel talent={talent} drives={drives} levels={levels} baseText={currentBase} viewMax={viewMax} />
+      </div>
     </div>
   )
 }
@@ -904,40 +978,14 @@ export default function PilotDetailPage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
             <div className="flex-1 min-w-0 space-y-3">
               {pilot.talents.map((t, i) => (
-                <div key={i} className="flex gap-3 p-3 bg-bg-dark rounded-xl border border-border">
-                  <SkillIcon iconLocal={t.iconLocal} name={t.name} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                      <span className="font-bold text-base">{t.name}</span>
-                      {/* 天賦區塊顯示覆寫：不論原始 type（多為被動技能），一律標示「天賦技能」 */}
-                      <SkillTypeBadge type="天賦技能" />
-                    </div>
-                    <p className="text-sm text-text-secondary leading-relaxed"><RefText text={t.description} refs={t.descriptionRefs} /></p>
-                    {t.descriptionMax && t.descriptionMax !== t.description && (
-                      <div className="mt-2.5 rounded-lg bg-accent-cyan/5 border border-accent-cyan/25 px-3 py-2.5">
-                        <span className="text-[13px] font-bold text-accent-cyan tracking-widest uppercase">▶ 最大強化</span>
-                        <p className="text-sm text-text-secondary leading-relaxed mt-1.5">
-                          <DiffHighlight base={t.description} enhanced={t.descriptionMax} refs={t.descriptionRefs} />
-                        </p>
-                      </div>
-                    )}
-                    {talentEnhancementMap.has(t.name) && (
-                      <div className="mt-2 rounded-lg bg-accent-yellow/5 border border-accent-yellow/25 px-3 py-2.5">
-                        <span className="text-[13px] font-bold text-accent-yellow tracking-widest uppercase">
-                          ▶ 專武強化 · {exclusiveWeapon?.name}
-                        </span>
-                        <p className="text-sm text-text-secondary leading-relaxed mt-1.5">
-                          <DiffHighlight
-                            base={t.descriptionMax && t.descriptionMax !== t.description ? t.descriptionMax : t.description}
-                            enhanced={talentEnhancementMap.get(t.name)!}
-                            refs={t.descriptionRefs}
-                          />
-                        </p>
-                      </div>
-                    )}
-                    <TalentNdPanel talent={t} drives={pilot.neuralDrive ?? []} levels={ndLevels} />
-                  </div>
-                </div>
+                <TalentCard
+                  key={i}
+                  talent={t}
+                  drives={pilot.neuralDrive ?? []}
+                  levels={ndLevels}
+                  weaponEnhanceText={talentEnhancementMap.get(t.name)}
+                  weaponName={exclusiveWeapon?.name}
+                />
               ))}
             </div>
             <div className="w-full lg:w-72 lg:flex-shrink-0">

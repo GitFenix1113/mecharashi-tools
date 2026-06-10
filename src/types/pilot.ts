@@ -106,6 +106,11 @@ export interface TalentNdVariant {
   label?: string
   /** 改寫後天賦正文（token 用該階 buff 名，如 [凝勢III]） */
   description: string
+  /**
+   * 滿星版改寫正文（= talent.descriptionMax 被此算力階改寫後的樣子，含滿星專屬子句）。
+   * 省略時前台退回顯示 description 並提示待補。
+   */
+  descriptionMax?: string
   /** 此正文的 [xxx]→buff 對照；與天賦 descriptionRefs 合併後解析 */
   descriptionRefs?: DescriptionRefs
 }

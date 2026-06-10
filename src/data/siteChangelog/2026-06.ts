@@ -3,6 +3,7 @@ import type { ChangelogMonth } from './types'
 const jun2026: ChangelogMonth = {
   month: '2026-06',
   entries: [
+    { date: '2026-06-11', type: 'style', summary: '機師天賦改為「初始天賦 ⇌ 最大強化」切換按鈕，預設只顯示初始版、點按鈕切換到滿星版並高亮差異；神經驅動強化的差異對照也跟隨切換' },
     { date: '2026-06-11', type: 'fix', summary: 'BUFF 引用浮卡不再顯示內部互斥群組代號（維護用資訊，與玩家無關）' },
     { date: '2026-06-11', type: 'style', summary: '機師詳情頁的天賦區塊改標示「天賦技能」（原顯示被動技能），避免與一般被動技能混淆' },
     { date: '2026-06-11', type: 'feat', summary: '機師頁新增「神經驅動算力」配置列：仿遊戲內 Lv 條點選各區算力（含 γ 區合計上限 23 檢查），天賦敘述即時切換為對應算力階的改寫版本，並以差異高亮標出與基礎的不同' },
