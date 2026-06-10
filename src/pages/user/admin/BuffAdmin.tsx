@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import type { GameBuff, SkillEffect } from '../../../types'
 import { BuffType } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
@@ -26,6 +26,118 @@ const BUFF_TYPE_LABEL: Record<string, string> = {
 // PLAN-020：建立時帶入名稱與分類，編輯面板開啟時 name / buffType 已預填。
 function makeDefaultBuff(id: string, name = '', buffType: string = BuffType.STATE): GameBuff {
   return { id, name, description: '', descriptionRefs: {}, buffType, effects: [], icon: undefined }
+}
+
+// ─── 互斥群組選擇器（防呆）──────────────────────────────────────────────────────
+// 自由文字易因「跨筆字串必須完全一致」而出錯：改為「從現有群組挑選」為主、「建立新群組」為輔。
+// 加入既有群組 = 從清單選同一字串（不可能打錯）；建新才打字並即時擋大小寫變體重複 + NFC/trim 正規化。
+// 群組命名中立：不限定 pilot 前綴，全域互斥（如「傷害提升」）也只是清單裡的一筆。
+const MUTEX_NONE = '__mutex_none__'
+const MUTEX_NEW = '__mutex_new__'
+const MUTEX_CURRENT = '__mutex_current__'
+const normalizeMutex = (s: string) => s.normalize('NFC').trim()
+
+function MutexGroupField({
+  value,
+  currentBuffId,
+  onChange,
+}: {
+  value: string | undefined
+  currentBuffId: string
+  onChange: (v: string | undefined) => void
+}) {
+  const gd = useGameData()
+  const [creating, setCreating] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [note, setNote] = useState<string | null>(null)
+
+  // group → 其他成員名稱[]（排除目前編輯中的 buff，避免自身重複計數）
+  const groupMembers = useMemo(() => {
+    const m = new Map<string, string[]>()
+    for (const b of gd.buffs) {
+      if (!b.mutexGroup || b.id === currentBuffId) continue
+      const arr = m.get(b.mutexGroup) ?? []
+      arr.push(b.name || b.id)
+      m.set(b.mutexGroup, arr)
+    }
+    return m
+  }, [gd.buffs, currentBuffId])
+
+  const groups = useMemo(() => [...groupMembers.keys()].sort(), [groupMembers])
+  const valueIsKnown = value != null && groups.includes(value)
+  const others = value != null ? groupMembers.get(value) ?? [] : []
+
+  function handleSelect(v: string) {
+    setNote(null)
+    if (v === MUTEX_NONE) { onChange(undefined); return }
+    if (v === MUTEX_NEW) { setDraft(''); setCreating(true); return }
+    onChange(v)
+  }
+
+  function confirmNew() {
+    const norm = normalizeMutex(draft)
+    if (!norm) { setNote('請輸入群組名稱'); return }
+    // 不分大小寫命中既有群組 → 改用既有正規寫法，避免大小寫變體造成「看起來同組、實則不同」
+    const hit = groups.find((g) => g.toLowerCase() === norm.toLowerCase())
+    onChange(hit ?? norm)
+    setCreating(false)
+    setDraft('')
+    setNote(hit ? `已對應現有群組「${hit}」` : null)
+  }
+
+  const draftNorm = normalizeMutex(draft)
+  const draftHit = groups.find((g) => g.toLowerCase() === draftNorm.toLowerCase())
+
+  return (
+    <Field label="互斥群組 mutexGroup（選填；同群一次只能存在一個，計算器取最高）">
+      {!creating ? (
+        <>
+          <select
+            value={valueIsKnown ? value! : value != null ? MUTEX_CURRENT : MUTEX_NONE}
+            onChange={(e) => handleSelect(e.target.value)}
+            className="input-field"
+          >
+            <option value={MUTEX_NONE}>（無互斥）</option>
+            {value != null && !valueIsKnown && <option value={MUTEX_CURRENT}>{value}（新群組）</option>}
+            {groups.map((g) => (
+              <option key={g} value={g}>{g} · {groupMembers.get(g)!.length} 個成員</option>
+            ))}
+            <option value={MUTEX_NEW}>＋ 建立新群組…</option>
+          </select>
+          {value != null && (
+            <p className="text-[12px] text-text-dim mt-1">
+              {others.length > 0
+                ? <>同群：{others.join('、')}（連同此 BUFF 共 {others.length + 1} 個）</>
+                : '新群組，目前僅此 BUFF'}
+            </p>
+          )}
+          {note && <p className="text-[12px] text-accent-cyan mt-1">{note}</p>}
+        </>
+      ) : (
+        <div className="space-y-1.5">
+          <div className="flex gap-2">
+            <input
+              autoFocus
+              value={draft}
+              onChange={(e) => { setDraft(e.target.value); setNote(null) }}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmNew() } }}
+              className="input-field flex-1"
+              placeholder="如：pilot_0XX_艾達_凝勢 或 傷害提升·全域"
+            />
+            <button type="button" onClick={confirmNew} className="px-3 py-1.5 bg-accent-orange text-black font-bold rounded-lg text-sm shrink-0">確認</button>
+            <button type="button" onClick={() => { setCreating(false); setDraft('') }} className="px-3 py-1.5 bg-bg-dark border border-border text-text-secondary rounded-lg text-sm shrink-0">取消</button>
+          </div>
+          {draftNorm && (
+            <p className="text-[12px] text-text-dim">
+              將{draftHit ? '改用既有群組' : '建立'}：<span className="text-accent-cyan">{draftHit ?? draftNorm}</span>
+              {draftHit && '（已存在相近群組，避免重複）'}
+            </p>
+          )}
+          {note && <p className="text-[12px] text-accent-red">{note}</p>}
+        </div>
+      )}
+    </Field>
+  )
 }
 
 // ─── BUFF 編輯面板 ──────────────────────────────────────────────────────────────
@@ -118,14 +230,11 @@ function BuffEditPanel({
           defaultFolder="skills"
         />
 
-        <Field label="互斥群組 mutexGroup（選填；同群形態一次只能存在一個）">
-          <input
-            value={form.mutexGroup ?? ''}
-            onChange={(e) => update('mutexGroup', e.target.value || undefined)}
-            className="input-field"
-            placeholder="如：pilot_049_海莉絲_forms"
-          />
-        </Field>
+        <MutexGroupField
+          value={form.mutexGroup}
+          currentBuffId={form.id}
+          onChange={(v) => update('mutexGroup', v)}
+        />
 
         {/* 可計算效果 */}
         <div>

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useParams, Link } from 'react-router-dom'
 import { BottomSheet } from '../../components/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import type { PilotStats, NeuralDrive, Weapon } from '../../types'
+import type { PilotStats, NeuralDrive, Weapon, PilotTalent, TalentNdVariant } from '../../types'
 import { formatWeaponReq } from '../../types'
 type NdLevel = NeuralDrive['levels'][number]
 import { assetUrl } from '../../utils/assets'
@@ -13,6 +13,202 @@ import { resolvePilotSkills, buildSkillMap } from '../../utils/pilotSkills'
 import { WeaponIcon } from '../../components/WeaponIcon'
 import { DiffHighlight } from '../../components/DiffHighlight'
 import { RefText } from '../../components/RefText'
+
+// ─── 神經驅動「全區算力選擇器」（PLAN-021 · 1-6）─────────────────────────────
+// 玩家在 tab 卡頂部點選各區 Lv（仿遊戲內 Lv 條），天賦敘述隨配置即時改寫。
+// 規則引擎集中於 ND_RULES，未來官方開放上限（超頻）只改數字。
+
+const ND_RULES = {
+  /** γ 區（名稱以 γ 開頭）合計算力上限：上下16（16+7 / 7+16） */
+  gammaPairCap: 23,
+  /** 各區預設 Lv；未列出的區預設滿級（α/β 可並存、通常不影響天賦） */
+  defaultLevels: { 'γ1': 3, 'γ2': 1 } as Record<string, number>,
+}
+
+const isGammaZone = (name: string) => name.startsWith('γ')
+
+/** 該區選到 Lv 時的算力值（讀該機師資料的 minSum，不寫死 1/4/7/10/13/16） */
+function zonePower(drive: NeuralDrive, lv: number): number {
+  return lv > 0 ? drive.levels[lv - 1]?.minSum ?? 0 : 0
+}
+
+function defaultNdLevels(drives: NeuralDrive[] | undefined): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const d of drives ?? []) {
+    const max = d.levels?.length ?? 0
+    out[d.name] = Math.min(ND_RULES.defaultLevels[d.name] ?? max, max)
+  }
+  return out
+}
+
+function ndVariantLabel(v: TalentNdVariant): string {
+  return v.label ?? `${v.zone ? `${v.zone} ` : ''}算力 ≥ ${v.minSum}`
+}
+
+/** tab 卡頂部的算力配置列（三分頁常駐）。★ = 此區算力會改寫天賦（由 ndVariants.zone 推導） */
+function NdPowerBar({
+  drives, levels, affectZones, onChange,
+}: {
+  drives: NeuralDrive[]
+  levels: Record<string, number>
+  affectZones: Set<string>
+  onChange: (next: Record<string, number>) => void
+}) {
+  const [capHint, setCapHint] = useState(false)
+  const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const gammaSum = drives
+    .filter(d => isGammaZone(d.name))
+    .reduce((s, d) => s + zonePower(d, levels[d.name] ?? 0), 0)
+
+  function canSet(drive: NeuralDrive, lv: number): boolean {
+    if (!isGammaZone(drive.name)) return true
+    const others = drives
+      .filter(d => isGammaZone(d.name) && d.name !== drive.name)
+      .reduce((s, d) => s + zonePower(d, levels[d.name] ?? 0), 0)
+    return others + zonePower(drive, lv) <= ND_RULES.gammaPairCap
+  }
+
+  function clickSquare(drive: NeuralDrive, lv: number) {
+    const cur = levels[drive.name] ?? 0
+    const target = cur === lv ? lv - 1 : lv // 點最上面那格 = 降一級
+    if (target > cur && !canSet(drive, target)) {
+      setCapHint(true)
+      if (hintTimer.current) clearTimeout(hintTimer.current)
+      hintTimer.current = setTimeout(() => setCapHint(false), 2600)
+      return
+    }
+    onChange({ ...levels, [drive.name]: target })
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 px-4 py-2 bg-accent-pink/[0.04] border-b border-border">
+      <span className="text-[11px] font-bold tracking-[2px] text-accent-pink uppercase whitespace-nowrap">
+        ▶ 神經驅動算力
+      </span>
+      {drives.map((d) => {
+        const cur = levels[d.name] ?? 0
+        return (
+          <span key={d.name} className="flex items-center gap-1.5">
+            <span className="relative text-[13px] font-bold text-text-primary">
+              {d.name}
+              {affectZones.has(d.name) && (
+                <span className="absolute -top-1.5 -right-2 text-[9px] text-accent-pink" title="此區算力會改寫天賦">★</span>
+              )}
+            </span>
+            <span className="flex gap-[3px] ml-1.5">
+              {d.levels.map((lvl, i) => {
+                const lv = i + 1
+                const on = cur >= lv
+                const locked = !on && !canSet(d, lv)
+                return (
+                  <button
+                    key={lv}
+                    type="button"
+                    title={`Lv${lv}（算力 ${lvl.minSum}）`}
+                    onClick={() => clickSquare(d, lv)}
+                    className={`w-3.5 h-3.5 rounded-[3px] border transition-all ${
+                      on
+                        ? 'bg-accent-yellow border-accent-yellow shadow-[0_0_5px_rgba(251,191,36,0.45)]'
+                        : locked
+                          ? 'bg-bg-dark border-border border-dashed opacity-25 cursor-not-allowed'
+                          : 'bg-bg-dark border-[#4a4f5e] hover:border-accent-yellow cursor-pointer'
+                    }`}
+                  />
+                )
+              })}
+            </span>
+            <span className="text-[11px] text-text-dim font-mono whitespace-nowrap">
+              {zonePower(d, cur)}
+            </span>
+          </span>
+        )
+      })}
+      <span className={`ml-auto text-[11.5px] font-mono px-2.5 py-0.5 rounded-md border border-border bg-bg-dark ${
+        gammaSum >= ND_RULES.gammaPairCap ? 'text-accent-red' : 'text-text-secondary'
+      }`}>
+        γ合計 {gammaSum} / {ND_RULES.gammaPairCap}
+      </span>
+      {capHint && (
+        <span className="w-full text-[11.5px] text-accent-red">
+          ⚠ γ 區合計算力上限 {ND_RULES.gammaPairCap}（上下16）—— 先降低另一個 γ 區。
+        </span>
+      )}
+    </div>
+  )
+}
+
+/** 天賦卡的神經驅動強化面板：讀配置列狀態，顯示生效中的改寫敘述（Q-B：差異高亮預設開） */
+function TalentNdPanel({
+  talent, drives, levels,
+}: {
+  talent: PilotTalent
+  drives: NeuralDrive[]
+  levels: Record<string, number>
+}) {
+  const [diffOn, setDiffOn] = useState(true)
+  const variants = talent.ndVariants ?? []
+  if (variants.length === 0) return null
+
+  const powerByZone = new Map(drives.map(d => [d.name, zonePower(d, levels[d.name] ?? 0)]))
+  // 資料缺 zone 時優雅退化：取所有 γ 區的最大算力判定
+  const maxGamma = Math.max(0, ...drives.filter(d => isGammaZone(d.name)).map(d => powerByZone.get(d.name) ?? 0))
+  const powerOf = (zone?: string) => (zone ? powerByZone.get(zone) ?? 0 : maxGamma)
+
+  const active = variants
+    .filter(v => powerOf(v.zone) >= v.minSum)
+    .sort((a, b) => b.minSum - a.minSum)[0] ?? null
+
+  return (
+    <div className="mt-2 rounded-lg bg-accent-pink/5 border border-accent-pink/25 px-3 py-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[13px] font-bold text-accent-pink tracking-widest uppercase">
+          ▶ 神經驅動強化
+        </span>
+        <span className={`text-[11px] px-2 py-0.5 rounded-md border ${
+          active
+            ? 'text-accent-pink border-accent-pink/45 bg-accent-pink/10 font-bold'
+            : 'text-text-dim border-border bg-bg-dark'
+        }`}>
+          {active ? `${ndVariantLabel(active)} 生效中` : '基礎（未達改寫門檻）'}
+        </span>
+        {active && (
+          <button
+            type="button"
+            onClick={() => setDiffOn(o => !o)}
+            className="text-[11px] text-accent-cyan underline decoration-dotted underline-offset-2 cursor-pointer"
+          >
+            差異高亮：{diffOn ? '開' : '關'}
+          </button>
+        )}
+      </div>
+      {active ? (
+        <>
+          <p className="text-sm text-text-secondary leading-relaxed mt-2">
+            {diffOn ? (
+              <DiffHighlight
+                base={talent.description}
+                enhanced={active.description}
+                refs={{ ...talent.descriptionRefs, ...active.descriptionRefs }}
+              />
+            ) : (
+              <RefText
+                text={active.description}
+                refs={{ ...talent.descriptionRefs, ...active.descriptionRefs }}
+              />
+            )}
+          </p>
+          <p className="text-[11px] text-text-dim mt-1.5">※ 各算力階互斥，實戰只生效達標的最高階。</p>
+        </>
+      ) : (
+        <p className="text-[11px] text-text-dim mt-1.5">
+          調整上方「神經驅動算力」配置，即可預覽天賦被改寫後的敘述（門檻：
+          {variants.map(v => ndVariantLabel(v)).join('、')}）。
+        </p>
+      )}
+    </div>
+  )
+}
 
 // ─── Radar Chart ─────────────────────────────────────────────────────────────
 
@@ -540,6 +736,18 @@ export default function PilotDetailPage() {
     return map
   }, [exclusiveWeapon])
 
+  // PLAN-021 · 1-6：神經驅動算力配置（tab 卡頂部常駐；換機師時重置回預設）
+  const ndDefaults = useMemo(() => defaultNdLevels(pilot?.neuralDrive), [pilot])
+  const [ndLevelsOverride, setNdLevelsOverride] = useState<Record<string, number> | null>(null)
+  useEffect(() => { setNdLevelsOverride(null) }, [id])
+  const ndLevels = ndLevelsOverride ?? ndDefaults
+  const ndAffectZones = useMemo(
+    () => new Set(
+      (pilot?.talents ?? []).flatMap(t => (t.ndVariants ?? []).map(v => v.zone)).filter((z): z is string => !!z)
+    ),
+    [pilot]
+  )
+
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-12">
@@ -680,6 +888,15 @@ export default function PilotDetailPage() {
           ))}
         </div>
 
+        {(pilot.neuralDrive?.length ?? 0) > 0 && (
+          <NdPowerBar
+            drives={pilot.neuralDrive}
+            levels={ndLevels}
+            affectZones={ndAffectZones}
+            onChange={setNdLevelsOverride}
+          />
+        )}
+
         <div className="p-4">
           {activeSkillTab === '天賦' && (
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
@@ -715,6 +932,7 @@ export default function PilotDetailPage() {
                         </p>
                       </div>
                     )}
+                    <TalentNdPanel talent={t} drives={pilot.neuralDrive ?? []} levels={ndLevels} />
                   </div>
                 </div>
               ))}

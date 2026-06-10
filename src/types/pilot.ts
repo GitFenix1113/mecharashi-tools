@@ -88,6 +88,28 @@ export interface PilotSkillDoc {
   area?: SkillArea
 }
 
+/**
+ * 神經驅動算力改寫變體（PLAN-021）。
+ * 當神經驅動算力跨過 minSum 門檻，遊戲把天賦正文就地改寫（引用更高階 buff、層數/數值變動）。
+ * 以 minSum 鬆耦合到 NeuralDriveLevel.minSum；本變體 descriptionRefs 與天賦 descriptionRefs 合併解析。
+ * 多階互斥、計算器取最高（對應的 buff 共用 GameBuff.mutexGroup）。
+ */
+export interface TalentNdVariant {
+  /** 算力門檻（對應 NeuralDriveLevel.minSum） */
+  minSum: number
+  /**
+   * 門檻所屬的神經驅動分區名（對應 NeuralDrive.name，如 'γ2'）。
+   * 同機師多區可能有相同 minSum（艾達 γ1/γ2 各有 10/13），缺 zone 會歧義。
+   */
+  zone?: string
+  /** 顯示用標籤；省略時前端以 zone+minSum 生成「γ2 算力 ≥ N」 */
+  label?: string
+  /** 改寫後天賦正文（token 用該階 buff 名，如 [凝勢III]） */
+  description: string
+  /** 此正文的 [xxx]→buff 對照；與天賦 descriptionRefs 合併後解析 */
+  descriptionRefs?: DescriptionRefs
+}
+
 export interface PilotTalent {
   name: string
   type: string
@@ -100,6 +122,8 @@ export interface PilotTalent {
   effects:          SkillEffect[]
   enhancedEffects?: SkillEffect[]
   buffIds:          string[]
+  /** 神經驅動算力改寫變體（PLAN-021）；建議依 minSum 升序排列 */
+  ndVariants?:      TalentNdVariant[]
 }
 
 export interface NeuralDriveLevel {
