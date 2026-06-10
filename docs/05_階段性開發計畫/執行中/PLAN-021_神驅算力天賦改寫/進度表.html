@@ -197,15 +197,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">8</div>
+      <div class="summary-num" style="color:var(--accent-green)">10</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">2</div>
+      <div class="summary-num" style="color:var(--text-dim)">1</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -217,10 +217,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-pink);">8 / 11</span>
+      <span style="color:var(--accent-pink);">10 / 11</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 73%"></div>
+      <div class="progress-bar-fill" style="width: 91%"></div>
     </div>
   </div>
 
@@ -422,42 +422,44 @@
     <div class="task-group-header">
       <div class="task-group-title">2-2 &nbsp; seed 艾達 ndVariants + 端到端驗收</div>
       <div class="task-group-meta">scripts/seed-plan021-ada.mjs · Firestore</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ Done</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">一次性腳本灌入艾達凝勢 I/II/III 三階，對照實機驗收</div>
         <div class="task-desc">
-          基礎(I,5層) / 算力≥10(II,7層) / 算力≥13(III,7層+暴擊) 三階；確認 DiffHighlight、三 buff mutex tooltip、優雅降級皆正確。
-          <strong>此關通過才開批次 3。</strong><br>
-          <span style="color:var(--accent-cyan)">進展：資料已寫入（含 base 7→5 修正）、本機 dev 驗證切換器正常；
-          待重跑 seed 補寫 zone:'γ2'，並部署程式碼後於正式站完成驗收。</span>
+          <strong>完成（2026-06-11）：</strong>Firestore 確認 base 去污染（5層/3AP/無星爆）、
+          ndVariants 三階齊備 [10,13,16]（II / III / III+5AP+星爆）、zone:'γ2'、manual=true；
+          配置列 ★ 標記與生效判定、DiffHighlight、mutex tooltip 皆驗證正確。
+          程式碼已部署（commit 21ff6c6）。
         </div>
         <div class="task-file">scripts/seed-plan021-ada.mjs · Firestore pilots</div>
       </div>
       <div class="task-assignee">開發者 / 管理員</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">✓ Done</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">2-3 &nbsp; 遊戲內確認 γ2≥16 第三階與 base AP 數值</div>
-      <div class="task-group-meta">遊戲實機 / 官方 WIKI</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">遊戲實機（2026-06-11 截圖確認）</div>
+      <span class="status done">✓ Done</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">雙生星芒4（算力16）「天賦效果提升為回復5AP，並額外獲得星爆」疑為第三改寫階</div>
+        <div class="task-name">已確認：基礎=3AP無星爆；γ2≥16 才升為 5AP+[星爆] → 污染源為官方 API</div>
         <div class="task-desc">
-          需確認：① ≥16 時天賦正文如何改寫（補第三個 ndVariant）；
-          ② base 正文的「獲得5AP」是否為 ≥16 才有的值（base 可能是更低 AP 數，同 7層/5層 誤植模式）。
-          確認後改 seed DATA 區重跑。
+          實機 γ2≥10 截圖：「獲得3AP及對應的[臨時AP上限]」、全文無[星爆] →
+          <strong>官方 API 的天賦正文是「滿晶片狀態」文本</strong>（7層/5AP/星爆 皆 γ2≥16 值）。
+          處置：① seed 全階去污染（基礎與 ≥10/≥13 改 3AP 無星爆，含 descriptionMax regex 修正）+ 新增 ≥16 變體（凝勢III+5AP+星爆）；
+          ② <code>PilotTalent.manual</code> 新欄位 + 爬蟲補丁保護（manual=true 時不覆寫 description/descriptionMax，比照 PilotSkill.manual），
+          否則下次補丁會把修正洗回污染版。AP/星爆 變化不需 buff——ndVariants 存整段正文，僅 [xxx] token 需 ref（[星爆] 已有 buff_星爆）。
         </div>
-        <div class="task-file">scripts/seed-plan021-ada.mjs · DATA 區</div>
+        <div class="task-file">scripts/seed-plan021-ada.mjs · scrape-pilots-v3.js mergeTalentsArray · src/types/pilot.ts</div>
       </div>
-      <div class="task-assignee">管理員（遊戲內）</div>
-      <span class="status pending">待開始</span>
+      <div class="task-assignee">管理員（遊戲內）+ 開發者</div>
+      <span class="status done">✓ Done</span>
     </div>
   </div>
 </section>

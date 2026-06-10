@@ -124,6 +124,12 @@ export interface PilotTalent {
   buffIds:          string[]
   /** 神經驅動算力改寫變體（PLAN-021）；建議依 minSum 升序排列 */
   ndVariants?:      TalentNdVariant[]
+  /**
+   * 手動修正過的天賦正文（PLAN-021）。官方 API 的天賦正文可能是「滿晶片狀態」文本
+   * （艾達案例：7層/5AP/星爆 皆為 γ2≥16 才有的值），人工去污染後設 true，
+   * 爬蟲補丁模式不再覆寫 description / descriptionMax。語意比照 PilotSkill.manual。
+   */
+  manual?:          boolean
 }
 
 export interface NeuralDriveLevel {

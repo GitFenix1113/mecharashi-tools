@@ -358,6 +358,8 @@ const SKILL_TYPE_CLS: Record<string, string> = {
   被動技能: 'text-accent-blue bg-accent-blue/10 border-accent-blue/30',
   主動技能: 'text-accent-red bg-accent-red/10 border-accent-red/30',
   指令技能: 'text-accent-purple bg-accent-purple/10 border-accent-purple/30',
+  // 顯示層專用：機師天賦區塊一律顯示「天賦技能」（資料仍存原始 type，多為被動技能），避免與一般被動混淆
+  天賦技能: 'text-accent-orange bg-accent-orange/10 border-accent-orange/30',
 }
 
 function SkillTypeBadge({ type }: { type: string }) {
@@ -907,7 +909,8 @@ export default function PilotDetailPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
                       <span className="font-bold text-base">{t.name}</span>
-                      <SkillTypeBadge type={t.type} />
+                      {/* 天賦區塊顯示覆寫：不論原始 type（多為被動技能），一律標示「天賦技能」 */}
+                      <SkillTypeBadge type="天賦技能" />
                     </div>
                     <p className="text-sm text-text-secondary leading-relaxed"><RefText text={t.description} refs={t.descriptionRefs} /></p>
                     {t.descriptionMax && t.descriptionMax !== t.description && (

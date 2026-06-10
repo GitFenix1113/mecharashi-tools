@@ -113,8 +113,8 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       if (!b) return null
       return {
         title: b.name,
-        subtitle: [BUFF_TYPE_LABEL[b.buffType] ?? b.buffType, b.mutexGroup ? `形態群組：${b.mutexGroup}` : '']
-          .filter(Boolean).join(' · '),
+        // mutexGroup 為內部互斥 key（如 pilot_038_艾達_凝勢），屬維護用資訊，不顯示給玩家
+        subtitle: BUFF_TYPE_LABEL[b.buffType] ?? b.buffType,
         image: b.icon ? assetUrl(b.icon) : undefined,
         description: b.description,
         descriptionRefs: b.descriptionRefs,
