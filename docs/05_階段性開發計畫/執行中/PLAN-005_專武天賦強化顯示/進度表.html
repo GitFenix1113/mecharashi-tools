@@ -195,6 +195,15 @@
       <div class="progress-bar-fill" style="width: 0%; background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));"></div>
     </div>
   </div>
+
+  <div class="changed-block" style="background:rgba(168,85,247,0.06);border-color:rgba(168,85,247,0.25);border-left-color:var(--accent-purple);">
+    <strong>後續演進（2026-06-10）</strong><br>
+    開發者任務（型別 / UI / Admin）8/8 已完成且運作中，僅餘管理員長期填值。後續演進：<br>
+    · <strong>DiffHighlight 已接上引用層</strong>：<a href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html" style="color:var(--accent-purple);">PLAN-019-A</a>
+      讓「最大強化 / 專武強化」區塊 <code>descriptionMax</code> 內的 <code>[xxx]</code> 也能點擊開 Drawer（保留差異 / 數字高亮）。<br>
+    · 相關型別（<code>WeaponSkill.enhancedTalentDescription</code>、<code>SkillEffect.valueType</code>、<code>SkillCondition.hasBuff</code>）
+      已隨專案重構移至 per-collection 模組（<code>src/types/weapon.ts</code> / <code>buff.ts</code> / <code>common.ts</code>）。
+  </div>
 </section>
 
 <!-- Phase A: TypeScript 型別定義 -->
@@ -482,7 +491,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-05-21 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-10 · 補後續演進（PLAN-019-A 引用層接上 DiffHighlight）</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

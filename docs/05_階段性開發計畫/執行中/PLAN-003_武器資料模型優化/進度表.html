@@ -169,7 +169,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">13</div>
+      <div class="summary-num" style="color:var(--accent-green)">15</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -177,7 +177,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">2</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -193,11 +193,25 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>開發者任務完成度</span>
-      <span style="color:var(--accent-orange);">13 / 15</span>
+      <span style="color:var(--accent-orange);">15 / 15</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 87%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
+  </div>
+
+  <div class="changed-block" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);border-left-color:var(--accent-green);">
+    <strong>執行現況（2026-06-10）</strong><br>
+    開發者任務已全數完成：Weapon interface（<code>src/types/weapon.ts</code>）已採新欄位
+    <code>type / kind / kindCoefficient</code>、<code>rangeType / minRange / maxRange</code>、
+    <code>rarity</code>、<code>mechRestriction</code>，且前台武器頁正常運作 → Firestore 資料已遷移完成。<br><br>
+    <strong>與原計畫的方案變更（已採用）：</strong><br>
+    · <strong>C-1 遷移</strong>未另寫 <code>migrate-plan003-weapons.js</code>，改由 collection-aware 的
+      <code>scrape-weapons.js</code> 重抓直接輸出新 schema 完成（併入資料管線改版）<br>
+    · <strong>RangeType</strong> 由原規劃 <code>linear | ring</code> 改為 <code>manhattan | orthogonal | ring</code>（更貼近遊戲格狀射程）<br>
+    · <strong>WeaponRarity</strong> 由 <code>SS | S+ | S</code> 擴充為 <code>SS | S+ | S | A | B</code><br>
+    · Weapon 另由 PLAN-006 / PLAN-012 補入 <code>equipSlot / triggerSlots / effectSlots / componentLimit / fixedMod / floatingMod</code> 等欄位<br>
+    僅餘 C-2 管理員人工補填（rarity / mechRestriction / 專武 carry effects[]）為長期任務。
   </div>
 </section>
 
@@ -430,37 +444,36 @@
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">C-1 &nbsp; 撰寫遷移腳本</div>
-      <div class="task-group-meta">scripts/migrate-plan003-weapons.js</div>
-      <span class="status pending">○ 待開始</span>
+      <div class="task-group-title">C-1 &nbsp; 遷移至新 schema（改以 collection-aware 重抓完成）</div>
+      <div class="task-group-meta">scripts/scrape-weapons.js</div>
+      <span class="status done">✓ 完成</span>
     </div>
 
     <div class="task-row">
       <div>
         <div class="task-name">射程欄位拆分：range 字串 → minRange / maxRange / rangeType</div>
         <div class="task-desc">
-          解析現有 range 字串（"2-4" / "2+" 等），推斷 rangeType 並拆分數值。<br>
-          支援 <code>--dry-run</code> 模式先列印預計變更，確認後再執行寫入。
-          無法自動解析的格式標記為 <code>__REVIEW__</code> 由管理員人工處理。
+          <strong>已完成（方案變更）。</strong>未另寫 <code>migrate-plan003-weapons.js</code>，改由
+          collection-aware 的 <code>scrape-weapons.js</code> 重抓官方資料直接輸出 <code>rangeType / minRange / maxRange</code>。<br>
+          <code>rangeType</code> 最終採 <code>manhattan | orthogonal | ring</code>（非原規劃 <code>linear | ring</code>），更貼近遊戲格狀射程。
         </div>
-        <div class="task-file">scripts/migrate-plan003-weapons.js</div>
+        <div class="task-file">scripts/scrape-weapons.js ✅</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">○ 待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
 
     <div class="task-row">
       <div>
         <div class="task-name">欄位重命名遷移：Firestore 文件欄位同步更新</div>
         <div class="task-desc">
-          Firestore 文件欄位：<code>category</code> → <code>type</code>、<code>type</code> → <code>kind</code>、
-          <code>typeCoefficient</code> → <code>kindCoefficient</code>。<br>
-          補上 <code>mechRestriction: 'none'</code> 預設值（所有現有武器預設無限制）。
+          <strong>已完成。</strong>Firestore 文件已為新欄位 <code>type</code> / <code>kind</code> / <code>kindCoefficient</code>，
+          並有 <code>mechRestriction</code>、<code>rarity</code>（<code>SS | S+ | S | A | B</code>）。前台武器頁正常運作即為佐證。
         </div>
-        <div class="task-file">scripts/migrate-plan003-weapons.js</div>
+        <div class="task-file">scripts/scrape-weapons.js ✅</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">○ 待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 
@@ -609,7 +622,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-05-21 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-10 · 依現況重新評估（C-1 標記完成、補方案變更）</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

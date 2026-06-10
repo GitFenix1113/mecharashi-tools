@@ -171,12 +171,25 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value" style="color:var(--text-dim);">規劃中</div>
+      <div class="meta-value green">開發完成 · 剩 Admin 補填</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">關聯文件</div>
       <div class="meta-value"><a href="../../../02_技術文件/02_資料模型/weapons.html" style="color:var(--accent-cyan);text-decoration:none;">weapons.html</a></div>
     </div>
+  </div>
+
+  <div class="decision-block">
+    <strong>執行進展（2026-06-10）</strong><br><br>
+    開發者任務（Phase A 型別、Phase B 文件、Phase C-1 遷移）已全數完成，Weapon interface
+    （<code>src/types/weapon.ts</code>）已採新欄位且前台正常運作。<strong>方案變更（與本計畫書原規劃不同，已採用）：</strong><br>
+    · <strong>RangeType</strong> 由 <code>linear | ring</code> 改為 <code>manhattan | orthogonal | ring</code>（更貼近遊戲格狀射程）<br>
+    · <strong>WeaponRarity</strong> 由 <code>SS | S+ | S</code> 擴充為 <code>SS | S+ | S | A | B</code><br>
+    · <strong>C-1 遷移</strong>未另寫 <code>migrate-plan003-weapons.js</code>，改由 collection-aware 的
+      <code>scrape-weapons.js</code> 重抓輸出新 schema 完成<br>
+    · Weapon 另由 PLAN-006 / PLAN-012 補入 <code>equipSlot / triggerSlots / effectSlots / componentLimit / fixedMod / floatingMod</code><br>
+    僅餘 C-2 管理員人工補填（rarity / mechRestriction / 專武 carry effects[]）為長期任務。
+    詳見 <a href="進度表.html" style="color:var(--accent-green);text-decoration:none;">→ 進度表</a>。
   </div>
 </section>
 
