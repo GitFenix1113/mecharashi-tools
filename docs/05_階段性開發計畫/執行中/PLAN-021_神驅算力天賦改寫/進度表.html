@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-021 神驅算力天賦改寫 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+.status.defer    { background: rgba(234,179,8,0.12);  color: var(--accent-yellow); border: 1px solid rgba(234,179,8,0.3); }
+
+/* ── Batch tag ── */
+.batch-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.batch-tag.code { background: rgba(236,72,153,0.15); color: var(--accent-pink);  border: 1px solid rgba(236,72,153,0.3); }
+.batch-tag.data { background: rgba(34,211,238,0.15); color: var(--accent-cyan);  border: 1px solid rgba(34,211,238,0.3); }
+.batch-tag.defer{ background: rgba(234,179,8,0.12);  color: var(--accent-yellow);border: 1px solid rgba(234,179,8,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact / Dependency Notes ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+.dep-note {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+  line-height: 1.85;
+}
+.dep-note strong { color: var(--accent-cyan); }
+.dep-note .ok { color: var(--accent-green); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-021 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge pink">◆ PLAN-021</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> 神驅算力天賦改寫</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-06-10 · 依對帳重整為三批</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label pink">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">2</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">8</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-pink);">8 / 11</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 73%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    玩家在機師詳情頁的天賦卡，能一眼看到「換上某算力的神經驅動後，天賦正文如何被改寫」——
+    與專武強化同一套 DiffHighlight 視覺語彙，零學習成本；資料走 manual，與 PLAN-004 神驅抽離解耦、可獨立上線。
+  </div>
+
+  <!-- ① 前置依賴對帳 -->
+  <div class="dep-note">
+    <strong>前置依賴對帳（2026-06-10）：本計畫所需基礎皆已 <span class="ok">live</span>，021 為純加法、無前置阻塞。</strong><br>
+    · <strong>PLAN-001</strong>：<span class="ok">✓</span> <code>GameBuff</code> + <code>mutexGroup</code> + <code>descriptionRefs</code>、<code>SkillEffect.valueType</code>、buffs 後台（BuffAdmin）+ GameDataContext 預載皆完成（型別 8/9，僅 D-2 長期填值）。<br>
+    · <strong>PLAN-004</strong>：<span class="ok">✓</span> 決策三明訂 <code>PilotTalent</code> <strong>永久保留嵌入</strong> → 與其尚未開工的 neuralDrives 抽離（下半場）<strong>零交集</strong>，不阻塞本計畫。pilotSkills 上半場已落地可作 manual/後台範本。<br>
+    · <strong>PLAN-005</strong>：<span class="ok">✓</span> <code>DiffHighlight({base,enhanced,refs})</code> 與天賦卡「最大強化 / 專武強化」diff 區塊已上線（<code>PilotDetailPage.tsx:696-711</code>），021 要插入的位置與元件皆現成。
+  </div>
+</section>
+
+<!-- ════════ 批次 1 · PR1 程式碼 ════════ -->
+<section class="section">
+  <div class="section-label pink">Batch 1 · PR1</div>
+  <div class="section-title">程式碼 <span class="batch-tag code">✓ PR1 完成 · 2026-06-10</span></div>
+  <div class="section-desc">一次 PR 完成「型別 + 渲染 + 文件」。選填欄位非破壞、無資料時整塊不出現（優雅降級），合併即上線，等資料補進來自動顯示。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">1-1 &nbsp; PilotTalent 新增 ndVariants 欄位</div>
+      <div class="task-group-meta">src/types/pilot.ts</div>
+      <span class="status done">✓ Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">ndVariants?: &#123; minSum; label?; description; descriptionRefs? &#125;[]</div>
+        <div class="task-desc">
+          每個算力門檻對應一段改寫後天賦正文 + 自帶 refs。<strong>選填欄位 → 非破壞、零遷移</strong>，現有 54 機師不受影響，<code>tsc</code> 直接過。
+          鬆耦合到神驅（以 minSum 對應、ref 對應 buff），不依賴 NeuralDriveLevel 物件 identity。
+        </div>
+        <div class="task-file">src/types/pilot.ts · PilotTalent</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ Done</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">1-2 &nbsp; 天賦卡新增「神經驅動強化」DiffHighlight 區塊</div>
+      <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx</div>
+      <span class="status done">✓ Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">接在「專武強化」區塊後（~L711）map 出 ▶ 神經驅動強化 · 算力≥N</div>
+        <div class="task-desc">
+          約 10 行，沿用相鄰 diff 區塊樣式：
+          <code>&lt;DiffHighlight base={t.description} enhanced={v.description} refs=&#123;...t.descriptionRefs, ...v.descriptionRefs&#125; /&gt;</code>；
+          補「I/II/III 互斥，取最高」小註。無 ndVariants 時不渲染。
+        </div>
+        <div class="task-file">src/pages/pilots/PilotDetailPage.tsx:711</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ Done</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">1-3 &nbsp; refs 合併與 RefText 解析驗證</div>
+      <div class="task-group-meta">src/components/DiffHighlight.tsx · RefChip.tsx</div>
+      <span class="status done">✓ Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">驗證改寫正文內 [凝勢III] 解析跳 tooltip、未命中優雅降級</div>
+        <div class="task-desc">
+          合併 talent.descriptionRefs 與 variant.descriptionRefs；確認三 buff 名稱不撞、各跳對 tooltip；
+          LV3 與基礎差異大時 DiffHighlight 高亮不破版。
+        </div>
+        <div class="task-file">src/components/DiffHighlight.tsx · RefChip.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ Done</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">1-5 &nbsp; 天賦卡「算力切換器」+ zone 分區欄位（UI 迭代）</div>
+      <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx · src/types/pilot.ts</div>
+      <span class="status done">✓ Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">堆疊區塊 → 玩家點選算力門檻切換敘述（TalentNdPanel）</div>
+        <div class="task-desc">
+          多階堆疊顯示凌亂且手機不友善 → 改為 pill 切換器 [基礎 | γ2≥10 | γ2≥13]，一次只顯示一版，
+          切階時以 DiffHighlight 對 base 高亮。γ 區為戰略性配置（總和上限 23、上下16），不預設、停在基礎由玩家點選。
+          同步 TalentNdVariant 加 zone 欄位（艾達 γ1/γ2 各有 10/13 門檻，缺 zone 會歧義）。
+        </div>
+        <div class="task-file">PilotDetailPage.tsx · TalentNdPanel / pilot.ts · TalentNdVariant.zone</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ Done</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">1-6 &nbsp; 神經驅動「全區算力配置列」NdPowerBar（UI 迭代二，取代 1-5 pills）</div>
+      <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx</div>
+      <span class="status done">✓ Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">tab 卡頂部四區 Lv 條（仿遊戲）+ γ 合計上限引擎 + 天賦敘述即時改寫</div>
+        <div class="task-desc">
+          依視覺化提案拍板（_local-notes/神經驅動算力選擇器_視覺化提案.html）：
+          <strong>Q-A</strong> 配置列三分頁常駐；<strong>Q-B</strong> 差異高亮預設開（可切純文字）；
+          <strong>Q-C</strong> 預設 α/β 滿級、γ1=Lv3、γ2=Lv1。
+          規則引擎 <code>ND_RULES</code>：<code>gammaPairCap: 23</code>（上下16，官方開放上限只改數字）、<code>defaultLevels</code>。
+          四區皆可點、★ 標記影響天賦的區（由 ndVariants.zone 推導，未來 α/β 影響天賦零程式碼支援）；
+          門檻讀各機師 levels[].minSum 不寫死。生效判定：該區算力 ≥ minSum 取最高；
+          缺 zone 資料時退化為「γ 區最大算力」判定。換機師自動重置預設。
+        </div>
+        <div class="task-file">PilotDetailPage.tsx · ND_RULES / NdPowerBar / TalentNdPanel</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ Done</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">1-4 &nbsp; docs 資料模型同步 + siteChangelog</div>
+      <div class="task-group-meta">docs/02_技術文件 · src/data/siteChangelog</div>
+      <span class="status done">✓ Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">pilots 資料模型頁補 ndVariants；履歷補一筆</div>
+        <div class="task-desc">
+          依 CLAUDE.md 第 1、2 條：型別結構變更同步 docs HTML，並在 siteChangelog 加一筆使用者視角摘要（同 PR）。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/pilots.html · src/data/siteChangelog/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ Done</span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 批次 2 · 資料 ════════ -->
+<section class="section">
+  <div class="section-label pink">Batch 2 · Data</div>
+  <div class="section-title">資料填入與驗收 <span class="batch-tag data">無程式碼 · 後台既有</span></div>
+  <div class="section-desc">PR1 上線後進行。已為 BuffAdmin 的 mutexGroup 加上群組選擇器防呆（2-1a），其餘為純資料工。以艾達端到端驗收整條鏈。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-1a &nbsp; BuffAdmin mutexGroup 群組選擇器（防呆）</div>
+      <div class="task-group-meta">src/pages/user/admin/BuffAdmin.tsx</div>
+      <span class="status done">✓ Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">自由文字框 → 下拉選現有群組 / 建新（成員預覽 + NFC 正規化 + 大小寫去重）</div>
+        <div class="task-desc">
+          加入既有群組從清單挑選，杜絕「跨筆字串不一致」；建新才打字並即時擋大小寫變體重複。
+          命名中立，全域互斥（如「傷害提升」）亦適用，不限 pilot 前綴。
+        </div>
+        <div class="task-file">src/pages/user/admin/BuffAdmin.tsx · MutexGroupField</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ Done</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-1 &nbsp; 三階 buff 補 mutexGroup</div>
+      <div class="task-group-meta">後台 BuffAdmin（PLAN-019-F 已上線）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">命名規則 &lt;pilotId&gt;_&lt;buff家族&gt; + BuffAdmin 填入</div>
+        <div class="task-desc">
+          群友已手 KEY 三個具名 buff，只需補同一個 <code>mutexGroup</code> 表達「I/II/III 不共存、取最高」，並確認 effects / maxStack。
+          <strong>唯一要查的點：</strong>確認 BuffAdmin 已暴露 mutexGroup 輸入框（grep 命中，動工時瞄一眼）。
+        </div>
+        <div class="task-file">Firestore buffs · src/pages/user/admin/BuffAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">管理員 / 群友</div>
+      <span class="status done">✓ Done</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-2 &nbsp; seed 艾達 ndVariants + 端到端驗收</div>
+      <div class="task-group-meta">scripts/seed-plan021-ada.mjs · Firestore</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">一次性腳本灌入艾達凝勢 I/II/III 三階，對照實機驗收</div>
+        <div class="task-desc">
+          基礎(I,5層) / 算力≥10(II,7層) / 算力≥13(III,7層+暴擊) 三階；確認 DiffHighlight、三 buff mutex tooltip、優雅降級皆正確。
+          <strong>此關通過才開批次 3。</strong><br>
+          <span style="color:var(--accent-cyan)">進展：資料已寫入（含 base 7→5 修正）、本機 dev 驗證切換器正常；
+          待重跑 seed 補寫 zone:'γ2'，並部署程式碼後於正式站完成驗收。</span>
+        </div>
+        <div class="task-file">scripts/seed-plan021-ada.mjs · Firestore pilots</div>
+      </div>
+      <div class="task-assignee">開發者 / 管理員</div>
+      <span class="status doing">進行中</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-3 &nbsp; 遊戲內確認 γ2≥16 第三階與 base AP 數值</div>
+      <div class="task-group-meta">遊戲實機 / 官方 WIKI</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">雙生星芒4（算力16）「天賦效果提升為回復5AP，並額外獲得星爆」疑為第三改寫階</div>
+        <div class="task-desc">
+          需確認：① ≥16 時天賦正文如何改寫（補第三個 ndVariant）；
+          ② base 正文的「獲得5AP」是否為 ≥16 才有的值（base 可能是更低 AP 數，同 7層/5層 誤植模式）。
+          確認後改 seed DATA 區重跑。
+        </div>
+        <div class="task-file">scripts/seed-plan021-ada.mjs · DATA 區</div>
+      </div>
+      <div class="task-assignee">管理員（遊戲內）</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 批次 3 · PR2 後台（可延後）════════ -->
+<section class="section">
+  <div class="section-label pink">Batch 3 · PR2</div>
+  <div class="section-title">後台編輯器 <span class="batch-tag defer">可延後 · 驗收後再做</span></div>
+  <div class="section-desc">批次 2 端到端驗收通過後才動工。先 seed 驗證資料形狀，再據此設計最省群友事的 UI，一次到位不返工。在那之前用 seed 腳本即可維護。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">3-1 &nbsp; PilotAdmin 天賦「算力階改寫」輸入 UI</div>
+      <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
+      <span class="status defer">驗收後再做</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">天賦編輯區新增 ndVariants 列表（門檻 + 正文 + RefPicker）</div>
+        <div class="task-desc">
+          每個天賦可新增多筆算力階改寫；正文支援 [xxx] 引用挑選器（沿用 PLAN-019-E RefPicker）。
+          複製貼上 WIKI 完整正文即可，低維護負擔。<strong>確定要讓群友自助維護多個機師時才補；在那之前 seed 腳本足矣。</strong>
+        </div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx · RefPicker</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status defer">驗收後再做</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-021 — <a href="../index.html" style="color:var(--accent-pink);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

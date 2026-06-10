@@ -31,6 +31,24 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-022 · 數值引用層</h3>
+      <p>讓描述內的層數／回合數綁定 buff/skill 屬性：維護者照抄遊戲原文、打 $1/%1 一鍵代入為 <code>&lt;refId.attr&gt;</code> token，前台從 GameDataContext 解析顯示真值。「正文寫 7、buff 是 5」的漂移結構性消失；接入集中於 numRefs util + RefText / DiffHighlight / RefPicker 三樞紐，天賦／技能／晶片驅動／武器全站生效、零逐頁實作。PLAN-019 引用層的數值延伸。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-022_數值引用層/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-022_數值引用層/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card pink">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-021 · 神驅算力天賦改寫</h3>
+      <p>讓「神經驅動算力跨過門檻 → 天賦正文就地改寫」可視化。<code>PilotTalent</code> 新增 <code>ndVariants[]</code> 存各算力階改寫正文，複用 PLAN-005 的 DiffHighlight 強化層呈現差異；三階 buff 以 <code>mutexGroup</code> 表達 I/II/III 不共存、取最高。改寫掛在天賦上，與 PLAN-004 神驅抽離解耦、可獨立上線；資料走 manual 手動維護。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-021_神驅算力天賦改寫/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-021_神驅算力天賦改寫/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-019 · 實體引用與模擬基礎（總綱）</h3>

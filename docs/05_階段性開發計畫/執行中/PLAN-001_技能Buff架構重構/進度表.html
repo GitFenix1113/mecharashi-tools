@@ -199,6 +199,17 @@
       <div class="progress-bar-fill" style="width: 89%"></div>
     </div>
   </div>
+
+  <div class="changed-block" style="background:rgba(168,85,247,0.06);border-color:rgba(168,85,247,0.25);border-left-color:var(--accent-purple);">
+    <strong>後續演進（2026-06-10）— 本計畫定義的型別已被後續 PLAN 延伸採用</strong><br>
+    PLAN-001 開發目標已達成（型別全落地、爬蟲與遷移完成），僅餘 D-2 長期填值。以下為後續演進，已反映於程式碼：<br>
+    · <strong>buffs 集合已後台化</strong>：原 PLAN-001 未規劃後台，現由 <a href="../../歷史記錄/PLAN-019-F_BUFF後台管理/計畫書.html" style="color:var(--accent-purple);">PLAN-019-F</a>
+      補上 <code>updateBuff</code> + BuffAdmin 後台分頁；buffs 已納入 GameDataContext 預載。<br>
+    · <strong>GameBuff 擴充</strong>：PLAN-019 加 <code>mutexGroup</code>（形態互斥）、<code>descriptionRefs</code>（引用層）。<br>
+    · <strong>SkillCondition 擴充</strong>：PLAN-003 以 <code>weaponType / weaponKind</code> 取代 <code>weaponCategory</code>；PLAN-005 加 <code>hasBuff</code>。<br>
+    · <strong>SkillEffect 擴充</strong>：PLAN-005 加 <code>valueType: 'add' | 'override'</code>（覆蓋型效果）。<br>
+    · 型別已隨專案重構拆至 per-collection 模組（<code>src/types/buff.ts</code> 等）。
+  </div>
 </section>
 
 <!-- Phase A: TypeScript 型別定義 -->
@@ -658,7 +669,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-05-21 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-10 · 補後續演進（buffs 後台化、型別被後續 PLAN 擴充）</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>
