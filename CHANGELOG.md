@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-06-09
+## [Unreleased] - 2026-06-10
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 機師頁神經驅動算力配置列與天賦算力改寫顯示（PLAN-021） (`21ff6c6`)
 - PLAN-020 文件 ID 自動生成與撞名防呆；後台分頁改 useClientPaged 預載入 (`3b01ae8`)
 - 導覽列下拉改版＋工具/文件分頁、後台技能管理與圖示挑選器、文件發布管線 (`19a448f`)
 - PLAN-019-F BUFF 後台管理（BuffAdmin） (`9771ae3`)
@@ -117,6 +118,7 @@
 
 ### 📚 文件
 
+- 對帳 PLAN-001/003/004/005/019 文件與實際程式碼進度 (`99433fb`)
 - 修正錯誤用詞 (`ea1886d`)
 - 授權聯絡語氣改為「商用須事先取得同意」 (`6170c6d`)
 - 改用 PolyForm Noncommercial（程式碼）+ CC BY-NC-SA（文件/資料）授權 (`252897d`)
