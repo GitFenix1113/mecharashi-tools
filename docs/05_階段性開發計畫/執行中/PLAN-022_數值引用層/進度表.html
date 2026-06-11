@@ -200,6 +200,14 @@
     維護者照抄遊戲原文 + 打 $1/%1 一鍵代入，不需懂程式碼；
     天賦／技能／晶片驅動／武器等所有描述<strong>一次接線、全站生效</strong>（RefText / DiffHighlight / RefPicker 三樞紐），零逐頁實作。
   </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">對帳（2026-06-11）：</strong>
+    尚未動工（<code>src/utils/numRefs.ts</code> 不存在），0/8 屬實。範圍補充：PLAN-021 收尾期間新增
+    <code>TalentNdVariant.descriptionMax</code>（滿星版改寫正文）與天賦卡「初始 ⇌ 最大強化」切換 ——
+    B-1/B-2 的 token 解析與 D-1 驗收需同時涵蓋 <code>description</code> 與 <code>descriptionMax</code> 兩版正文；
+    另 <code>PilotTalent.manual</code> 已保護人工正文不被爬蟲補丁覆寫，token 化後的正文同受此保護。
+  </div>
 </section>
 
 <!-- Phase A -->

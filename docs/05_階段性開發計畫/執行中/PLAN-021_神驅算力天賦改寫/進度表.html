@@ -185,7 +185,7 @@
   <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
     進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> 神驅算力天賦改寫</span>
   </h1>
-  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-06-10 · 依對帳重整為三批</p>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-06-10 · 最後對帳 2026-06-11</p>
 </header>
 
 <main class="container">
@@ -197,7 +197,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">10</div>
+      <div class="summary-num" style="color:var(--accent-green)">11</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -209,7 +209,7 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">8</div>
+      <div class="summary-num" style="color:var(--text-primary)">9</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -217,10 +217,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-pink);">10 / 11</span>
+      <span style="color:var(--accent-pink);">11 / 12</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 91%"></div>
+      <div class="progress-bar-fill" style="width: 92%"></div>
     </div>
   </div>
 
@@ -354,6 +354,29 @@
 
   <div class="task-group">
     <div class="task-group-header">
+      <div class="task-group-title">1-7 &nbsp; 天賦卡「初始天賦 ⇌ 最大強化」切換 + 滿星版變體正文（UI 迭代三）</div>
+      <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx · src/types/pilot.ts</div>
+      <span class="status done">✓ Done</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">header 切換鈕一次只顯示一版（預設初始）+ TalentNdVariant.descriptionMax</div>
+        <div class="task-desc">
+          仿遊戲內呈現：天賦卡預設只顯示初始天賦，切到「最大強化」時滿星版以 DiffHighlight 對初始高亮；
+          專武強化 / 神經驅動強化的差異對照基準跟隨切換。
+          <code>TalentNdVariant.descriptionMax?</code> 新欄位存「滿星版被該算力階改寫後的正文」（星級×算力矩陣），
+          未補錄時優雅退回初始版並提示待補。艾達三階滿星版已由 seed 腳本程式化生成灌入。
+          docs pilots 資料模型已同步（commit 82ac587 · 2026-06-11）。
+        </div>
+        <div class="task-file">PilotDetailPage.tsx · pilot.ts · TalentNdVariant.descriptionMax</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ Done</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
       <div class="task-group-title">1-4 &nbsp; docs 資料模型同步 + siteChangelog</div>
       <div class="task-group-meta">docs/02_技術文件 · src/data/siteChangelog</div>
       <span class="status done">✓ Done</span>
@@ -402,14 +425,15 @@
     <div class="task-group-header">
       <div class="task-group-title">2-1 &nbsp; 三階 buff 補 mutexGroup</div>
       <div class="task-group-meta">後台 BuffAdmin（PLAN-019-F 已上線）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ Done</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">命名規則 &lt;pilotId&gt;_&lt;buff家族&gt; + BuffAdmin 填入</div>
         <div class="task-desc">
-          群友已手 KEY 三個具名 buff，只需補同一個 <code>mutexGroup</code> 表達「I/II/III 不共存、取最高」，並確認 effects / maxStack。
-          <strong>唯一要查的點：</strong>確認 BuffAdmin 已暴露 mutexGroup 輸入框（grep 命中，動工時瞄一眼）。
+          群友已手 KEY 三個具名 buff，補上同一個 <code>mutexGroup</code> 表達「I/II/III 不共存、取最高」。
+          <strong>完成：</strong>三階 buff 已填同群組，2-2 驗收時 mutex tooltip 顯示正確；
+          前台浮卡已改為不顯示內部群組代號（維護用 key，後台 BuffAdmin 列表保留）。
         </div>
         <div class="task-file">Firestore buffs · src/pages/user/admin/BuffAdmin.tsx</div>
       </div>
