@@ -93,7 +93,7 @@ function LevelTooltip({ mod, pinned, mobile = false }: { mod: Module; pinned: bo
   }
 
   return (
-    <div className="w-72 max-h-[min(90vh,_600px)] flex flex-col bg-bg-card border border-border-accent rounded-xl p-4 shadow-2xl">
+    <div className="w-72 max-h-[min(90vh,_600px)] flex flex-col bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <span className="text-xs font-bold text-accent-orange">{mod.name}</span>
         <span className="text-[13px] text-text-dim">各等級效果{pinned ? ' · 📌' : ''}</span>

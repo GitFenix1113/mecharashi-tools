@@ -209,7 +209,7 @@ function WeaponTooltipContent({ weapon, pilotNameMap }: {
 
 function WeaponTooltip({ weapon, pilotNameMap }: { weapon: Weapon; pilotNameMap: Record<string, string> }) {
   return (
-    <div className="w-80 max-h-[min(90vh,_640px)] flex flex-col bg-bg-card border border-border-accent rounded-xl p-4 shadow-2xl">
+    <div className="w-80 max-h-[min(90vh,_640px)] flex flex-col bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
       <div className="flex-1 min-h-0 overflow-y-auto p-1">
         <WeaponTooltipContent weapon={weapon} pilotNameMap={pilotNameMap} />
       </div>

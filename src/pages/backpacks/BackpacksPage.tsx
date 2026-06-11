@@ -170,7 +170,7 @@ function BackpackTooltipContent({ bp }: { bp: Backpack }) {
 
 function BackpackTooltip({ bp }: { bp: Backpack }) {
   return (
-    <div className="w-80 max-h-[min(90vh,_600px)] flex flex-col bg-bg-card border border-border-accent rounded-xl p-4 shadow-2xl">
+    <div className="w-80 max-h-[min(90vh,_600px)] flex flex-col bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
       <div className="flex-1 min-h-0 overflow-y-auto p-1">
         <BackpackTooltipContent bp={bp} />
       </div>

@@ -218,8 +218,13 @@ function TalentNdPanel({
 }
 
 // ─── 天賦卡（PLAN-021）─────────────────────────────────────────────────────────
-// 仿遊戲：頂部「初始天賦 ⇌ 最大強化」切換按鈕，一次只顯示一版（預設初始，不展開最大強化）。
-// 最大強化版以 DiffHighlight 對初始高亮；專武 / 神經驅動強化的對照基準跟隨此切換。
+// 桌面：初始正文＋「▶ 最大強化」區塊同時顯示（原始設計，一眼看到兩版）。
+// 手機：版面有限，改用頂部「初始天賦 ⇌ 最大強化」切換按鈕，一次只顯示一版。
+// 專武 / 神經驅動強化的對照基準跟隨目前顯示的最高版本（桌面固定為最大強化）。
+
+/** 專武強化敘述暫時只顯示在右側專武面板，天賦卡內的重複區塊先隱藏；要恢復改 true */
+const SHOW_WEAPON_ENHANCE_IN_TALENT: boolean = true
+
 function TalentCard({
   talent, drives, levels, weaponEnhanceText, weaponName,
 }: {
@@ -229,9 +234,10 @@ function TalentCard({
   weaponEnhanceText?: string
   weaponName?: string
 }) {
+  const isMobile = useIsMobile()
   const hasMax = !!talent.descriptionMax && talent.descriptionMax !== talent.description
   const [showMax, setShowMax] = useState(false)
-  const viewMax = hasMax && showMax
+  const viewMax = hasMax && (!isMobile || showMax)
   // 當前主敘述（也是各強化區塊的差異對照基準）
   const currentBase = viewMax ? talent.descriptionMax! : talent.description
 
@@ -243,7 +249,7 @@ function TalentCard({
           <span className="font-bold text-base">{talent.name}</span>
           {/* 天賦區塊顯示覆寫：不論原始 type（多為被動技能），一律標示「天賦技能」 */}
           <SkillTypeBadge type="天賦技能" />
-          {hasMax && (
+          {isMobile && hasMax && (
             <button
               type="button"
               onClick={() => setShowMax(v => !v)}
@@ -259,15 +265,31 @@ function TalentCard({
           )}
         </div>
 
-        <p className="text-sm text-text-secondary leading-relaxed">
-          {viewMax ? (
-            <DiffHighlight base={talent.description} enhanced={talent.descriptionMax!} refs={talent.descriptionRefs} />
-          ) : (
-            <RefText text={talent.description} refs={talent.descriptionRefs} />
-          )}
-        </p>
+        {isMobile ? (
+          <p className="text-sm text-text-secondary leading-relaxed">
+            {viewMax ? (
+              <DiffHighlight base={talent.description} enhanced={talent.descriptionMax!} refs={talent.descriptionRefs} />
+            ) : (
+              <RefText text={talent.description} refs={talent.descriptionRefs} />
+            )}
+          </p>
+        ) : (
+          <>
+            <p className="text-sm text-text-secondary leading-relaxed">
+              <RefText text={talent.description} refs={talent.descriptionRefs} />
+            </p>
+            {hasMax && (
+              <div className="mt-2.5 rounded-lg bg-accent-cyan/5 border border-accent-cyan/25 px-3 py-2.5">
+                <span className="text-[13px] font-bold text-accent-cyan tracking-widest uppercase">▶ 最大強化</span>
+                <p className="text-sm text-text-secondary leading-relaxed mt-1.5">
+                  <DiffHighlight base={talent.description} enhanced={talent.descriptionMax!} refs={talent.descriptionRefs} />
+                </p>
+              </div>
+            )}
+          </>
+        )}
 
-        {weaponEnhanceText && (
+        {SHOW_WEAPON_ENHANCE_IN_TALENT && weaponEnhanceText && (
           <div className="mt-2 rounded-lg bg-accent-yellow/5 border border-accent-yellow/25 px-3 py-2.5">
             <span className="text-[13px] font-bold text-accent-yellow tracking-widest uppercase">
               ▶ 專武強化{weaponName ? ` · ${weaponName}` : ''}
@@ -463,7 +485,7 @@ function WeaponDetailContent({ weapon }: { weapon: Weapon }) {
   const rarityCls = WEAPON_RARITY_CLS[weapon.rarity] ?? 'text-text-dim border-border'
 
   return (
-    <div className="bg-bg-card border border-border-accent rounded-xl overflow-hidden text-xs">
+    <div className="bg-bg-tooltip border border-border-accent rounded-xl overflow-hidden text-xs">
       <div className="px-4 py-3 border-b border-border bg-accent-yellow/5">
         <div className="flex items-center gap-2 mb-0.5">
           <span className="font-bold text-sm text-text-primary">{weapon.name}</span>
@@ -528,6 +550,49 @@ function WeaponDetailTooltip({ weapon, x, anchorTop }: { weapon: Weapon; x: numb
   )
 }
 
+type WeaponSkillItem = Weapon['skills'][number]
+
+/** 單一武器技能的內容（懸停浮窗 / 手機 BottomSheet 共用） */
+function WeaponSkillContent({ sk, isEnhance }: { sk: WeaponSkillItem; isEnhance: boolean }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2">
+        <SkillIcon iconLocal={sk.iconLocal ?? ''} name={sk.name} size="sm" />
+        <span className="font-bold text-sm text-text-primary">{sk.name}</span>
+        <span className="text-[13px] text-text-dim bg-bg-dark border border-border px-1.5 py-0.5 rounded">
+          {ACTIVATION_LABEL[sk.activation] ?? sk.activation}
+        </span>
+      </div>
+      {isEnhance && sk.enhancesTalentName && (
+        <p className="text-[13px] text-accent-yellow/70">▶ 強化天賦：{sk.enhancesTalentName}</p>
+      )}
+      <p className="text-xs text-text-secondary leading-relaxed"><RefText text={sk.description} refs={sk.descriptionRefs} /></p>
+    </div>
+  )
+}
+
+function WeaponSkillTooltipPortal({ sk, isEnhance, x, anchorTop }: {
+  sk: WeaponSkillItem; isEnhance: boolean; x: number; anchorTop: number
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [top, setTop] = useState(anchorTop)
+
+  useLayoutEffect(() => {
+    if (!ref.current) return
+    const h = ref.current.offsetHeight
+    setTop(Math.max(8, Math.min(anchorTop, window.innerHeight - h - 8)))
+  }, [anchorTop, sk])
+
+  return createPortal(
+    <div ref={ref} className="fixed z-50 pointer-events-none w-72" style={{ left: x, top }}>
+      <div className="bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
+        <WeaponSkillContent sk={sk} isEnhance={isEnhance} />
+      </div>
+    </div>,
+    document.body
+  )
+}
+
 function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, stageIdx = 0, onStageChange }: {
   weapon: Weapon | null; loading: boolean; talentNames: string[]
   stageCount?: number; stageIdx?: number; onStageChange?: (i: number) => void
@@ -536,6 +601,11 @@ function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, st
   const isMobile = useIsMobile()
   const [tooltipPos, setTooltipPos] = useState<{ x: number; anchorTop: number } | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
+  // 武器技能：預設縮圖（仿神經驅動收合態），展開後排列顯示全部正文；
+  // 縮圖逐一懸停顯示該技能、武器標頭懸停顯示詳細數值
+  const [expanded, setExpanded] = useState(false)
+  const [skillHover, setSkillHover] = useState<{ sk: WeaponSkillItem; x: number; anchorTop: number } | null>(null)
+  const [skillSheet, setSkillSheet] = useState<WeaponSkillItem | null>(null)
 
   const handleMouseEnter = () => {
     if (isMobile || !cardRef.current) return
@@ -543,6 +613,14 @@ function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, st
     const ttW = 320
     const x = rect.left - ttW - 12 < 8 ? rect.right + 12 : rect.left - ttW - 12
     setTooltipPos({ x, anchorTop: rect.top })
+  }
+
+  const handleSkillHover = (sk: WeaponSkillItem, el: HTMLElement) => {
+    if (isMobile) return
+    const rect = el.getBoundingClientRect()
+    const ttW = 288
+    const x = rect.right + 8 + ttW > window.innerWidth ? rect.left - ttW - 8 : rect.right + 8
+    setSkillHover({ sk, x, anchorTop: rect.top })
   }
 
   if (loading) {
@@ -559,17 +637,27 @@ function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, st
 
   const rarityCls = WEAPON_RARITY_CLS[weapon.rarity] ?? 'text-text-dim bg-bg-dark border-border'
   const talentSet = new Set(talentNames)
-  const enhancingSkills = weapon.skills.filter(
-    sk => sk.enhancesTalentName && talentSet.has(sk.enhancesTalentName)
-  )
+  const isEnhanceSkill = (sk: WeaponSkillItem) =>
+    !!sk.enhancesTalentName && talentSet.has(sk.enhancesTalentName)
 
   return (
     <>
       {tooltipPos && !isMobile && (
         <WeaponDetailTooltip weapon={weapon} x={tooltipPos.x} anchorTop={tooltipPos.anchorTop} />
       )}
+      {skillHover && !isMobile && !expanded && (
+        <WeaponSkillTooltipPortal
+          sk={skillHover.sk}
+          isEnhance={isEnhanceSkill(skillHover.sk)}
+          x={skillHover.x}
+          anchorTop={skillHover.anchorTop}
+        />
+      )}
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)}>
         <WeaponDetailContent weapon={weapon} />
+      </BottomSheet>
+      <BottomSheet open={!!skillSheet} onClose={() => setSkillSheet(null)}>
+        {skillSheet && <WeaponSkillContent sk={skillSheet} isEnhance={isEnhanceSkill(skillSheet)} />}
       </BottomSheet>
       {stageCount > 1 && onStageChange && (
         <div className="flex gap-1 mb-2">
@@ -591,12 +679,14 @@ function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, st
       <div
         ref={cardRef}
         className="bg-bg-dark border border-border rounded-xl overflow-hidden text-sm cursor-default hover:border-border-accent transition-colors"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={() => setTooltipPos(null)}
-        onClick={() => { if (isMobile) setSheetOpen(true) }}
       >
-        {/* Header: icon + name + rarity */}
-        <div className="px-3 py-3 border-b border-border bg-accent-yellow/5">
+        {/* Header: icon + name + rarity（懸停/點選 → 武器詳細數值） */}
+        <div
+          className="px-3 py-3 border-b border-border bg-accent-yellow/5"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={() => setTooltipPos(null)}
+          onClick={() => { if (isMobile) setSheetOpen(true) }}
+        >
           <div className="flex items-center gap-3">
             <WeaponIcon icon={weapon.icon} name={weapon.name} size="md" isExclusive={weapon.isExclusive} />
             <div className="min-w-0 flex-1">
@@ -611,30 +701,74 @@ function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, st
           </div>
         </div>
 
-        {/* Skills that enhance this pilot's talents */}
-        {enhancingSkills.length > 0 && (
+        {/* 武器技能：縮圖（預設，逐一懸停看該技能） ⇄ 全部排列展開（展開詳情） */}
+        {weapon.skills.length > 0 && (
           <div className="px-3 py-3 space-y-2.5">
-            <div className="text-[13px] text-accent-yellow tracking-widest uppercase">強化天賦</div>
-            {enhancingSkills.map((sk, i) => (
-              <div key={i}>
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="font-bold text-xs text-text-primary">{sk.name}</span>
-                  <span className="text-[13px] text-text-dim bg-bg-card border border-border px-1.5 py-0.5 rounded">
-                    {ACTIVATION_LABEL[sk.activation] ?? sk.activation}
-                  </span>
+            <div className="flex items-center gap-2">
+              <div className="text-[13px] text-accent-yellow tracking-widest uppercase">武器技能</div>
+              <button
+                type="button"
+                onClick={() => {
+                  setExpanded(prev => !prev)
+                  setSkillHover(null)
+                }}
+                className={`ml-auto text-xs px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                  expanded
+                    ? 'text-accent-yellow bg-accent-yellow/10 border-accent-yellow/30'
+                    : 'text-text-secondary bg-bg-card border-border hover:text-text-primary hover:border-border-accent'
+                }`}
+              >
+                {expanded ? '▼ 收合詳情' : '▶ 展開詳情'}
+              </button>
+            </div>
+            {expanded ? (
+              weapon.skills.map((sk, i) => (
+                <div key={i}>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className={`font-bold text-xs ${isEnhanceSkill(sk) ? 'text-accent-yellow' : 'text-text-primary'}`}>{sk.name}</span>
+                    <span className="text-[13px] text-text-dim bg-bg-card border border-border px-1.5 py-0.5 rounded">
+                      {ACTIVATION_LABEL[sk.activation] ?? sk.activation}
+                    </span>
+                  </div>
+                  {isEnhanceSkill(sk) && sk.enhancesTalentName && (
+                    <p className="text-[13px] text-accent-yellow/70 mb-0.5">▶ 強化天賦：{sk.enhancesTalentName}</p>
+                  )}
+                  <p className="text-xs text-text-secondary leading-relaxed"><RefText text={sk.description} refs={sk.descriptionRefs} /></p>
                 </div>
-                {sk.enhancesTalentName && (
-                  <p className="text-[13px] text-accent-yellow/70 mb-0.5">▶ {sk.enhancesTalentName}</p>
-                )}
-                <p className="text-xs text-text-secondary leading-relaxed"><RefText text={sk.description} refs={sk.descriptionRefs} /></p>
+              ))
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {weapon.skills.map((sk, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col items-center gap-1 w-16 rounded-lg p-1.5 hover:bg-bg-card cursor-default transition-colors"
+                    onMouseEnter={(e) => handleSkillHover(sk, e.currentTarget)}
+                    onMouseLeave={() => { if (!isMobile) setSkillHover(null) }}
+                    onClick={() => { if (isMobile) setSkillSheet(sk) }}
+                  >
+                    <SkillIcon iconLocal={sk.iconLocal ?? ''} name={sk.name} />
+                    <div className="text-center w-full">
+                      <div className={`text-xs font-medium leading-tight line-clamp-2 break-all ${isEnhanceSkill(sk) ? 'text-accent-yellow' : ''}`}>
+                        {sk.name}
+                      </div>
+                      <div className="text-[13px] text-text-dim leading-none mt-0.5">
+                        {ACTIVATION_LABEL[sk.activation] ?? sk.activation}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
 
-        <div className={`px-3 py-2 ${enhancingSkills.length > 0 ? 'border-t border-border' : ''}`}>
-          <p className="text-[13px] text-text-dim text-center">{isMobile ? '◈ 點選查看詳細數值' : '◈ 懸停查看詳細數值'}</p>
-        </div>
+        {!expanded && (
+          <div className={`px-3 py-2 ${weapon.skills.length > 0 ? 'border-t border-border' : ''}`}>
+            <p className="text-[13px] text-text-dim text-center">
+              {isMobile ? '◈ 點武器看數值 · 點技能看說明' : '◈ 懸停武器看數值 · 懸停技能看說明'}
+            </p>
+          </div>
+        )}
       </div>
     </>
   )
@@ -677,7 +811,7 @@ function NdLevelTooltipPortal({ level, x, anchorTop }: { level: NdLevel; x: numb
 
   return createPortal(
     <div ref={ref} className="fixed z-50 pointer-events-none w-72" style={{ left: x, top }}>
-      <div className="bg-bg-card border border-border-accent rounded-xl p-4 shadow-2xl">
+      <div className="bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
         <NdLevelContent level={level} />
       </div>
     </div>,

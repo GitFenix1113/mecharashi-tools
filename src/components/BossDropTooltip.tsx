@@ -87,7 +87,7 @@ export function BossDropTooltip({ comp, children }: BossDropTooltipProps) {
             ref={refs.setFloating}
             style={floatingStyles}
             {...getFloatingProps()}
-            className="z-50 bg-bg-card border border-border-accent rounded-xl p-4 shadow-2xl"
+            className="z-50 bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl"
           >
             <p className="text-xs text-text-dim mb-3 tracking-wide">掉落來源</p>
             <BossDropContent drops={drops} />
