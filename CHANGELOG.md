@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-06-10
+## [Unreleased] - 2026-06-11
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 專武面板武器技能縮圖/展開改版 + 桌面天賦雙版並列 + 浮窗不透明背景 (`4b956a4`)
 - 天賦卡「初始天賦 ⇌ 最大強化」切換 + 神驅變體滿星版正文 (`82ac587`)
 - 天賦顯示細修與 manual 正文保護（PLAN-021 收尾） (`6525359`)
 - 機師頁神經驅動算力配置列與天賦算力改寫顯示（PLAN-021） (`21ff6c6`)
