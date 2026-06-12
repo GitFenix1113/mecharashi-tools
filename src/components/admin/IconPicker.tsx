@@ -69,21 +69,30 @@ export function IconPicker({
       .then((m) => {
         if (!alive) return
         setManifest(m)
-        // defaultFolder 不存在時退回第一個資料夾
-        setFolder((f) => (f && (f === ALL || m.folders[f]) ? f : Object.keys(m.folders).sort()[0] ?? '.'))
+        setFolder((f) => {
+          if (f === ALL || (f && m.folders[f])) return f
+          // defaultFolder 可能是「群組」（如 "skills" 對應 skills/被動技能…），退回第一個子資料夾
+          if (f) {
+            const sub = Object.keys(m.folders).filter((k) => k.startsWith(`${f}/`)).sort((a, b) => a.localeCompare(b, 'zh-Hant'))[0]
+            if (sub) return sub
+          }
+          return Object.keys(m.folders).sort()[0] ?? '.'
+        })
       })
       .catch((e) => { if (alive) setError(e instanceof Error ? e.message : String(e)) })
     return () => { alive = false }
   }, [])
 
-  // 資料夾下拉選項：預設資料夾置頂、其次「全部」、再依字母排序
+  // 資料夾下拉選項：defaultFolder 群組（含其子資料夾，如 skills/被動技能）置頂、
+  // 其次「全部」、再依字母排序
   const folderOptions = useMemo(() => {
     if (!manifest) return [] as string[]
     const keys = Object.keys(manifest.folders).sort((a, b) => a.localeCompare(b, 'zh-Hant'))
+    const inGroup = (k: string) => !!defaultFolder && (k === defaultFolder || k.startsWith(`${defaultFolder}/`))
     const ordered: string[] = []
-    if (defaultFolder && manifest.folders[defaultFolder]) ordered.push(defaultFolder)
+    for (const k of keys) if (inGroup(k)) ordered.push(k)
     ordered.push(ALL)
-    for (const k of keys) if (k !== defaultFolder) ordered.push(k)
+    for (const k of keys) if (!inGroup(k)) ordered.push(k)
     return ordered
   }, [manifest, defaultFolder])
 
