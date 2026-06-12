@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, SkillEffect, SkillCondition } from '../../../types'
+import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, TalentNdVariant, SkillEffect, SkillCondition } from '../../../types'
 import { formatWeaponReq } from '../../../types'
 import { ItemRarity, PilotClass, MechLicense, WeaponType } from '../../../types/enums'
 import { Field, AdminModal, useClientPaged, LoadMoreButton } from './shared'
@@ -405,15 +405,127 @@ function PilotSkillRefsTab({
   )
 }
 
+// ─── 算力改寫變體編輯（PLAN-021 3-1）───────────────────────────────────────────
+function NdVariantsEditor({
+  variants,
+  zones,
+  onChange,
+}: {
+  variants: TalentNdVariant[]
+  zones: string[]
+  onChange: (next: TalentNdVariant[] | undefined) => void
+}) {
+  function upd(idx: number, patch: Partial<TalentNdVariant>) {
+    onChange(variants.map((v, i) => (i === idx ? { ...v, ...patch } : v)))
+  }
+  function add() {
+    onChange([...variants, { minSum: 0, description: '' }])
+  }
+  function remove(idx: number) {
+    const next = variants.filter((_, i) => i !== idx)
+    onChange(next.length ? next : undefined)
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-text-dim font-medium tracking-wider uppercase">神經驅動算力改寫 ndVariants（選填）</p>
+        <button
+          onClick={add}
+          className="shrink-0 text-[12px] px-2 py-0.5 text-accent-pink border border-accent-pink/40 rounded hover:bg-accent-pink/10 transition-colors"
+        >
+          + 新增算力階
+        </button>
+      </div>
+      {variants.length === 0 ? (
+        <p className="text-[12px] text-text-dim">
+          無改寫變體。僅「算力跨門檻會改寫天賦正文」的機師（如艾達）需要填；正文照抄遊戲 / WIKI 完整原文即可。
+        </p>
+      ) : (
+        <>
+          <p className="text-[12px] text-text-dim">建議依 minSum 升序排列；生效判定為「該分區算力 ≥ minSum 取最高階」。</p>
+          {variants.map((v, idx) => (
+            <div key={idx} className="p-2 bg-bg-dark/60 rounded border border-border/40 space-y-2">
+              <div className="grid grid-cols-3 gap-2">
+                <Field label="分區 zone">
+                  <select
+                    value={v.zone ?? ''}
+                    onChange={(e) => upd(idx, { zone: e.target.value || undefined })}
+                    className="input-field"
+                  >
+                    <option value="">未指定（退化判定）</option>
+                    {/* 機師現有分區之外，保留已存在但不在清單中的值，避免切換時資料遺失 */}
+                    {[...new Set([...zones, ...(v.zone && !zones.includes(v.zone) ? [v.zone] : [])])].map((z) => (
+                      <option key={z} value={z}>{z}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="算力門檻 minSum">
+                  <input
+                    type="number"
+                    value={v.minSum}
+                    onChange={(e) => upd(idx, { minSum: Number(e.target.value) })}
+                    className="input-field"
+                  />
+                </Field>
+                <Field label="標籤 label（選填）">
+                  <input
+                    value={v.label ?? ''}
+                    onChange={(e) => upd(idx, { label: e.target.value || undefined })}
+                    className="input-field"
+                    placeholder={`預設：${v.zone ?? '分區'} 算力 ≥ ${v.minSum}`}
+                  />
+                </Field>
+              </div>
+              <Field label="改寫正文 description">
+                <textarea
+                  value={v.description}
+                  onChange={(e) => upd(idx, { description: e.target.value })}
+                  className="input-field min-h-[56px] resize-y text-xs leading-relaxed"
+                  placeholder="此算力階的完整天賦正文（[xxx] 用該階 buff 名，如 [凝勢III]）"
+                />
+              </Field>
+              <Field label="滿星版改寫正文 descriptionMax（選填）">
+                <textarea
+                  value={v.descriptionMax ?? ''}
+                  onChange={(e) => upd(idx, { descriptionMax: e.target.value || undefined })}
+                  className="input-field min-h-[48px] resize-y text-xs leading-relaxed"
+                  placeholder="滿星 × 此算力階的正文；未填時前台退回顯示初始版並提示待補"
+                />
+              </Field>
+              {/* 變體 refs 與天賦 descriptionRefs 合併解析：已在天賦層指派過的 token（如 [星爆]）此處可留空 */}
+              <RefPicker
+                text={[v.description, v.descriptionMax].filter(Boolean).join('\n')}
+                value={v.descriptionRefs}
+                onChange={(refs) => upd(idx, { descriptionRefs: refs })}
+              />
+              <div className="flex justify-end">
+                <button
+                  onClick={() => remove(idx)}
+                  className="text-[12px] px-2 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10"
+                >
+                  ✕ 移除此階
+                </button>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  )
+}
+
 // ─── 天賦項目編輯 ──────────────────────────────────────────────────────────────
 function TalentItem({
   talent,
+  zones,
   expanded,
   onToggle,
   onChange,
   onRemove,
 }: {
   talent: PilotTalent
+  zones: string[]
   expanded: boolean
   onToggle: () => void
   onChange: (updated: PilotTalent) => void
@@ -434,6 +546,8 @@ function TalentItem({
           <img src={talent.iconLocal} alt="" className="w-6 h-6 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
         )}
         <span className="text-sm font-medium flex-1 truncate">{talent.name || '（未命名天賦）'}</span>
+        {talent.manual && <span className="text-[11px] px-1.5 py-0.5 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange shrink-0">手動</span>}
+        {(talent.ndVariants?.length ?? 0) > 0 && <span className="text-[12px] text-accent-pink shrink-0">算力階 {talent.ndVariants!.length}</span>}
         {talent.type && <span className="text-[12px] px-1.5 py-0.5 rounded bg-bg-card border border-border text-text-dim shrink-0">{talent.type}</span>}
         <span className={`text-[12px] shrink-0 ${effects.length > 0 ? 'text-accent-cyan' : 'text-text-dim'}`}>效果 {effects.length}</span>
       </div>
@@ -465,8 +579,21 @@ function TalentItem({
               placeholder="滿級 / 強化後的效果說明"
             />
           </Field>
+          <label className="flex items-start gap-2 text-xs text-text-secondary cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={!!talent.manual}
+              onChange={(e) => upd('manual', e.target.checked || undefined)}
+              className="mt-0.5"
+            />
+            <span>
+              手動正文保護 <code className="text-accent-orange">manual</code> —
+              勾選後爬蟲補丁不覆寫 description / descriptionMax（官方 API 正文為滿晶片狀態，人工去污染後務必勾選）
+            </span>
+          </label>
           {/* description 與 descriptionMax 共用一份 descriptionRefs（兩者的 [xxx] 都在此指派）*/}
           <RefPicker text={refText} value={talent.descriptionRefs} onChange={(refs) => upd('descriptionRefs', refs)} />
+          <NdVariantsEditor variants={talent.ndVariants ?? []} zones={zones} onChange={(n) => upd('ndVariants', n)} />
           <EffectListEditor label="可計算效果 effects" effects={effects} onChange={(n) => upd('effects', n)} />
           <EffectListEditor
             label="強化效果 enhancedEffects（選填）"
@@ -498,9 +625,11 @@ function TalentItem({
 // ─── 機師天賦分頁 ──────────────────────────────────────────────────────────────
 function PilotTalentsTab({
   talents,
+  zones,
   onChange,
 }: {
   talents: PilotTalent[]
+  zones: string[]
   onChange: (updated: PilotTalent[]) => void
 }) {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
@@ -540,6 +669,7 @@ function PilotTalentsTab({
             <TalentItem
               key={idx}
               talent={t}
+              zones={zones}
               expanded={expandedIdx === idx}
               onToggle={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
               onChange={(updated) => updateTalent(idx, updated)}
@@ -771,6 +901,7 @@ function PilotEditPanel({
         {editTab === 'talents' && (
           <PilotTalentsTab
             talents={form.talents ?? []}
+            zones={(form.neuralDrive ?? []).map((nd) => nd.name)}
             onChange={(t) => update('talents', t)}
           />
         )}

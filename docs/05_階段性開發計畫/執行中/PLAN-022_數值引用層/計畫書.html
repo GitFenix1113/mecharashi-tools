@@ -280,22 +280,24 @@
   <div class="section-title">實作範圍與不在範圍內</div>
 
   <div class="decision-block">
-    <strong>在範圍內：</strong>
+    <strong>在範圍內（第一批 · A+B+D 小步先行）：</strong>
     <ul style="margin:8px 0 0 16px;line-height:1.9;">
       <li><code>src/utils/numRefs.ts</code>：registry（maxStack / duration 起步）+ 解析 / 編譯 / 殘留偵測 + 單元測試</li>
-      <li><code>RefText</code> / <code>DiffHighlight</code> 接入（含 EntityRefView 浮卡內的描述）</li>
-      <li><code>RefPicker</code>「代入數值」按鈕（編號顯示、預覽確認、殘留警告）</li>
-      <li>驗收案例：凝勢三階（升級 PLAN-021 已 seed 的層數為 token）</li>
+      <li><code>RefText</code> / <code>DiffHighlight</code> 接入（含 EntityRefView 浮卡內的描述；解析需同時涵蓋 <code>description</code> 與 <code>descriptionMax</code> 兩版正文）</li>
+      <li>驗收案例：凝勢三階（升級 PLAN-021 已 seed 的層數為 token；token 先由開發者手寫／seed 腳本生成）</li>
       <li>docs 同步：引用層設計文件補「數值引用」一節</li>
     </ul>
   </div>
 
   <div class="warning-block">
-    <strong>不在範圍內：</strong>
+    <strong>不在範圍內 / 延後：</strong>
     <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>Phase C（RefPicker「代入數值」$n/%n 語法糖 UI）→ 延後</strong>：語法糖的受眾是「大量抄寫原文的群友」，目前僅艾達一隻、受眾尚未出現。
+        PLAN-021 任務 3-1（PilotAdmin ndVariants 編輯器）已於 2026-06-12 提前完成且使用共用 RefPicker —— C 上線時編輯器<strong>自動獲得</strong>「代入數值」按鈕、無返工；
+        <strong>觸發條件＝群友開始自助維護 / 第二隻 ndVariants 機師出現</strong></li>
       <li>maxStack / duration 以外的屬性（cd / ap / 百分比類）→ registry 預留，依需求逐筆加</li>
       <li>失效 token 的後台稽核頁 → 顯示層先優雅降級，稽核列備選</li>
-      <li>PLAN-021 的基本顯示與驗收 → 不被本計畫阻塞，021 先以純文字數字完成端到端，022 上線後回頭升級</li>
+      <li>PLAN-021 的基本顯示與驗收 → 不被本計畫阻塞，021 已以純文字數字完成端到端，022 上線後回頭升級</li>
     </ul>
   </div>
 </section>

@@ -21,6 +21,7 @@
 .status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
 .status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
 .status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+.status.defer    { background: rgba(234,179,8,0.12);  color: var(--accent-yellow); border: 1px solid rgba(234,179,8,0.3); }
 
 /* ── Task List ── */
 .task-group {
@@ -175,8 +176,12 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">8</div>
-      <div class="summary-lbl">待開始</div>
+      <div class="summary-num" style="color:var(--text-dim)">6</div>
+      <div class="summary-lbl">待開始（第一批）</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-yellow)">2</div>
+      <div class="summary-lbl">延後（Phase C）</div>
     </div>
     <div class="summary-card">
       <div class="summary-num" style="color:var(--text-primary)">8</div>
@@ -186,8 +191,8 @@
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度</span>
-      <span style="color:var(--accent-green);">0 / 8</span>
+      <span>整體完成度（第一批 A+B+D）</span>
+      <span style="color:var(--accent-green);">0 / 6</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 0%"></div>
@@ -206,7 +211,11 @@
     尚未動工（<code>src/utils/numRefs.ts</code> 不存在），0/8 屬實。範圍補充：PLAN-021 收尾期間新增
     <code>TalentNdVariant.descriptionMax</code>（滿星版改寫正文）與天賦卡「初始 ⇌ 最大強化」切換 ——
     B-1/B-2 的 token 解析與 D-1 驗收需同時涵蓋 <code>description</code> 與 <code>descriptionMax</code> 兩版正文；
-    另 <code>PilotTalent.manual</code> 已保護人工正文不被爬蟲補丁覆寫，token 化後的正文同受此保護。
+    另 <code>PilotTalent.manual</code> 已保護人工正文不被爬蟲補丁覆寫，token 化後的正文同受此保護
+    （manual 凍結的過期風險評估為可接受：官方幾乎不改既有文案，只做擴充）。<br>
+    <strong style="color:var(--accent-cyan);">重排（2026-06-12）：</strong>
+    範圍切為兩批 —— 第一批 A+B+D（小 PR 先行，token 由開發者手寫／seed 生成）；
+    Phase C 延後（021 任務 3-1 編輯器已同日先行完成，走共用 RefPicker、C 上線自動受惠），觸發條件＝群友自助 / 第二隻 ndVariants 機師。
   </div>
 </section>
 
@@ -309,14 +318,19 @@
 <!-- Phase C -->
 <section class="section">
   <div class="section-label green">Phase C</div>
-  <div class="section-title">後台編輯接入（RefPicker 一處 → 7+ 分頁）</div>
-  <div class="section-desc">RefPicker 為所有後台描述編輯的共用元件；改一次，Pilot/Skill/Buff/Glossary/Module/Weapon/Backpack/Component 全部獲得。</div>
+  <div class="section-title">後台編輯接入（RefPicker 一處 → 7+ 分頁）<span style="display:inline-block;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:700;margin-left:8px;vertical-align:middle;background:rgba(234,179,8,0.12);color:var(--accent-yellow);border:1px solid rgba(234,179,8,0.3);">延後 · 與 PLAN-021 3-1 同批</span></div>
+  <div class="section-desc">
+    RefPicker 為所有後台描述編輯的共用元件；改一次，Pilot/Skill/Buff/Glossary/Module/Weapon/Backpack/Component 全部獲得。
+    <strong>2026-06-12 重排：整個 Phase C 延後</strong> —— 語法糖受眾（群友大量抄寫）尚未出現，目前僅艾達一隻。
+    PLAN-021 任務 3-1（ndVariants 編輯器）已同日提前完成且使用共用 RefPicker，C 上線時編輯器自動獲得「代入數值」、無返工。
+    觸發條件＝群友開始自助維護 / 第二隻 ndVariants 機師出現；在那之前 token 由開發者手寫／seed 腳本生成。
+  </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; RefPicker「代入數值」按鈕</div>
       <div class="task-group-meta">src/components/admin/RefPicker.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status defer">延後 · 併 021 3-1</span>
     </div>
     <div class="task-row">
       <div>
@@ -328,7 +342,7 @@
         <div class="task-file">src/components/admin/RefPicker.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status defer">延後 · 併 021 3-1</span>
     </div>
   </div>
 
@@ -336,7 +350,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 殘留警告 + 解析預覽</div>
       <div class="task-group-meta">src/components/admin/RefPicker.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status defer">延後 · 併 021 3-1</span>
     </div>
     <div class="task-row">
       <div>
@@ -348,7 +362,7 @@
         <div class="task-file">src/components/admin/RefPicker.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status defer">延後 · 併 021 3-1</span>
     </div>
   </div>
 </section>
