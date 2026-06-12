@@ -185,7 +185,7 @@
   <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
     進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> 神驅算力天賦改寫</span>
   </h1>
-  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-06-10 · 最後對帳 2026-06-11</p>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-06-10 · 全部完成 2026-06-12</p>
 </header>
 
 <main class="container">
@@ -197,7 +197,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">11</div>
+      <div class="summary-num" style="color:var(--accent-green)">12</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -205,7 +205,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">1</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -217,10 +217,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-pink);">11 / 12</span>
+      <span style="color:var(--accent-pink);">12 / 12</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 92%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -491,26 +491,32 @@
 <!-- ════════ 批次 3 · PR2 後台（可延後）════════ -->
 <section class="section">
   <div class="section-label pink">Batch 3 · PR2</div>
-  <div class="section-title">後台編輯器 <span class="batch-tag defer">可延後 · 驗收後再做</span></div>
-  <div class="section-desc">批次 2 端到端驗收通過後才動工。先 seed 驗證資料形狀，再據此設計最省群友事的 UI，一次到位不返工。在那之前用 seed 腳本即可維護。</div>
+  <div class="section-title">後台編輯器 <span class="batch-tag code">✓ 完成 · 2026-06-12</span></div>
+  <div class="section-desc">
+    原排定延後、與 PLAN-022 Phase C 同批，後依使用者決定提前實作（manual=true 後 seed 腳本是唯一維護手段、僅開發者能跑，提前補上自助入口）。
+    編輯器走共用 RefPicker —— PLAN-022 Phase C 上線時「代入數值」按鈕自動出現於此，<strong>無返工</strong>。
+  </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">3-1 &nbsp; PilotAdmin 天賦「算力階改寫」輸入 UI</div>
       <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
-      <span class="status defer">驗收後再做</span>
+      <span class="status done">✓ Done</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">天賦編輯區新增 ndVariants 列表（門檻 + 正文 + RefPicker）</div>
+        <div class="task-name">NdVariantsEditor：每天賦多筆算力階（zone 下拉 + minSum + label + 兩版正文 + RefPicker）</div>
         <div class="task-desc">
-          每個天賦可新增多筆算力階改寫；正文支援 [xxx] 引用挑選器（沿用 PLAN-019-E RefPicker）。
-          複製貼上 WIKI 完整正文即可，低維護負擔。<strong>確定要讓群友自助維護多個機師時才補；在那之前 seed 腳本足矣。</strong>
+          <strong>完成（2026-06-12）：</strong>天賦編輯區新增 ndVariants 列表編輯器——
+          zone 從機師 neuralDrive 分區名下拉選擇（防手 KEY 錯字，比照 2-1a mutexGroup 的教訓）、
+          minSum / label、description 與 descriptionMax（滿星版）兩版正文、每變體獨立 RefPicker（與天賦 refs 合併解析）。
+          同步補 <code>manual</code> 勾選框（手動正文保護）與天賦列表「手動 / 算力階 N」徽章。
+          正文照抄 WIKI 即可、低維護負擔；022 Phase C 上線時此處自動獲得「代入數值」。
         </div>
-        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx · RefPicker</div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx · NdVariantsEditor / RefPicker</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status defer">驗收後再做</span>
+      <span class="status done">✓ Done</span>
     </div>
   </div>
 </section>
