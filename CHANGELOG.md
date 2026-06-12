@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-06-11
+## [Unreleased] - 2026-06-12
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 後台天賦算力改寫編輯器（PLAN-021 3-1）+ 技能圖示資源 (`b8f036c`)
 - 專武面板武器技能縮圖/展開改版 + 桌面天賦雙版並列 + 浮窗不透明背景 (`4b956a4`)
 - 天賦卡「初始天賦 ⇌ 最大強化」切換 + 神驅變體滿星版正文 (`82ac587`)
 - 天賦顯示細修與 manual 正文保護（PLAN-021 收尾） (`6525359`)
