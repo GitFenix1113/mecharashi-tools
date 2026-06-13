@@ -3,6 +3,7 @@ import type { ChangelogMonth } from './types'
 const jun2026: ChangelogMonth = {
   month: '2026-06',
   entries: [
+    { date: '2026-06-13', type: 'fix', summary: '修正首頁副標題的英文拼字（Milhama → Milkhama）' },
     { date: '2026-06-13', type: 'feat', summary: '彩甲升級規劃器的超級工廠資源數量改為可自行調整：已用掉部分活動零件的人，可往下扣到目前剩餘量再計算' },
     { date: '2026-06-13', type: 'feat', summary: '彩甲升級規劃器的部位輸入新增「已彩甲」勾選，已完成的部位可一鍵略過、不再列入材料計算' },
     { date: '2026-06-13', type: 'style', summary: '彩甲升級規劃器結果版面優化：隱藏搶眼的「可彩甲」標籤、每個部位改在合成樹旁顯示該部位「需備材料」清單，超級工廠最高階零件卡背景統一為深色' },

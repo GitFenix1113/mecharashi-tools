@@ -22,7 +22,7 @@ export default function HomePage() {
             <h1 className="font-[Orbitron,sans-serif] text-3xl sm:text-4xl lg:text-5xl font-black tracking-wider leading-tight bg-gradient-to-br from-white to-accent-orange bg-clip-text text-transparent">
               MECHARASHI<br />
               <span className="text-xl sm:text-2xl lg:text-3xl">
-                Milhama PawInfo Station
+                Milkhama PawInfo Station
               </span>
             </h1>
             <p className="mt-3 text-text-secondary text-base font-semibold tracking-[0.2em]">
