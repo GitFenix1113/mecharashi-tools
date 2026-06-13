@@ -147,24 +147,29 @@ function fertTNode(ferts: FertPair): TNode {
   }
 }
 
-function gold2TNode(node: Gold2Node, ctx: Ctx): TNode {
+function gold2TNode(node: Gold2Node, ctx: Ctx, isCore = false): TNode {
   if (node.source === 'owned') {
     return { box: <Cap caption="目標金二"><Glyph img={ctx.partIcon} chevron={2} tint="owned" title="已擁有金二" /></Cap> }
   }
   const kids: TNode[] = []
   if (node.gold1a) kids.push(gold1TNode(node.gold1a, '金一①', ctx))
   if (node.gold1b) kids.push(gold1TNode(node.gold1b, '金一②', ctx))
-  return { box: <Cap caption="目標金二"><Glyph img={ctx.partIcon} chevron={2} tint="plain" title="合成金二" /></Cap>, kids }
+  // 核心路線：目標金二為核心金二（核心模型圖 + 核心色 + 兩勳章 + 標題改名）
+  const g = isCore
+    ? <Glyph img={modelUrl(`${ctx.weight}_core_model`)} chevron={2} tint="core" title="核心金二" />
+    : <Glyph img={ctx.partIcon} chevron={2} tint="plain" title="合成金二" />
+  return { box: <Cap caption={isCore ? '核心金二' : '目標金二'}>{g}</Cap>, kids }
 }
 
 function gold3TNode(node: Gold3Node, idx: 1 | 2, ctx: Ctx): TNode {
   const caption = `金三${idx === 1 ? '①' : '②'}`
 
   if ((node.source === 'synth' || node.source === 'core') && node.targetGold2 && node.ferts) {
-    const g = node.source === 'core'
+    const isCore = node.source === 'core'
+    const g = isCore
       ? <Glyph img={modelUrl(`${ctx.weight}_core_model`)} chevron={3} tint="core" title="核心金三" />
       : <Glyph img={ctx.partIcon} chevron={3} tint="plain" title="合成金三" />
-    return { box: <Cap caption={caption}>{g}</Cap>, kids: [gold2TNode(node.targetGold2, ctx), fertTNode(node.ferts)] }
+    return { box: <Cap caption={caption}>{g}</Cap>, kids: [gold2TNode(node.targetGold2, ctx, isCore), fertTNode(node.ferts)] }
   }
   if (node.source === 'owned') {
     return { box: <Cap caption={caption}><Glyph img={ctx.partIcon} chevron={3} tint="owned" title="已擁有金三" /></Cap> }
@@ -194,6 +199,15 @@ function SlotResultCard({
   const hasCore = plan.gold3a.source === 'core' || plan.gold3b.source === 'core'
   // 缺真實零件時，通用(自行farm) vs 核心(用核心金三補) 才有意義
   const showToggle = plan.feasible && (isShort || hasCore)
+
+  // 此部位需準備的材料 chips（填補合成樹右側留白，並提供逐部位視角）
+  const needChips: { label: string; color: string }[] = []
+  if (plan.sfUsed.spp   > 0) needChips.push({ label: `S++ ×${plan.sfUsed.spp}`,    color: C.sf   })
+  if (plan.sfUsed.sp    > 0) needChips.push({ label: `S+ ×${plan.sfUsed.sp}`,      color: C.sf   })
+  if (plan.sfUsed.s     > 0) needChips.push({ label: `S ×${plan.sfUsed.s}`,        color: C.sf   })
+  if (plan.buy.coreRaw  > 0) needChips.push({ label: `核心原始 ×${plan.buy.coreRaw}`, color: C.core })
+  if (plan.buy.universal> 0) needChips.push({ label: `通用 ×${plan.buy.universal}`,   color: C.univ })
+  if (plan.buy.fertBuy  > 0) needChips.push({ label: `肥料 ×${plan.buy.fertBuy}`,     color: C.buy  })
 
   // 完全沒有零件：無法升級
   if (!plan.feasible) {
@@ -229,28 +243,43 @@ function SlotResultCard({
               核心
             </button>
           </div>
-        ) : (
+        ) : done ? (
           <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
             style={{ background: 'linear-gradient(90deg, #ef4444, #eab308, #22c55e, #06b6d4, #a855f7)', color: '#fff' }}>
-            {done ? '已彩甲' : '可彩甲'}
+            已彩甲
           </span>
-        )}
+        ) : null}
       </div>
 
-      {/* 金三合成樹（橫向，左→右） */}
-      <div data-tree-scroll className="bg-bg-dark/60 rounded-lg p-3 overflow-x-auto">
-        <div className="flex flex-col gap-3 w-max">
-          <HTree node={gold3TNode(plan.gold3a, 1, ctx)} />
-          <div className="h-px bg-border" />
-          <HTree node={gold3TNode(plan.gold3b, 2, ctx)} />
+      {/* 合成樹（左，撐滿並置中）＋ 逐部位需備材料（右，填補留白） */}
+      <div className="flex flex-wrap items-stretch gap-3">
+        <div data-tree-scroll className="flex-1 min-w-0 bg-bg-dark/60 rounded-lg p-3 overflow-x-auto">
+          <div className="flex flex-col gap-3 w-max mx-auto">
+            <HTree node={gold3TNode(plan.gold3a, 1, ctx)} />
+            <div className="h-px bg-border" />
+            <HTree node={gold3TNode(plan.gold3b, 2, ctx)} />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5 shrink-0 sm:w-[124px]">
+          <span className="text-[9px] font-bold tracking-[2px] text-text-dim uppercase font-[Orbitron,sans-serif]">
+            需備材料
+          </span>
+          {needChips.map((c, i) => (
+            <span key={i} className={`text-[11px] font-bold px-2 py-1 rounded border text-center ${c.color}`}>
+              {c.label}
+            </span>
+          ))}
+          {isShort && (
+            <span className="text-[11px] font-semibold text-accent-red leading-tight">
+              缺 {plan.shortage} 個真實零件，可切「核心」補
+            </span>
+          )}
+          {needChips.length === 0 && !isShort && (
+            <span className="text-[11px] font-semibold text-accent-green">✓ 材料已備齊</span>
+          )}
         </div>
       </div>
-
-      {isShort && (
-        <div className="text-[11px] text-accent-red">
-          此部位真實零件不足，點右上「核心」可改用核心金三補上。
-        </div>
-      )}
     </div>
   )
 }

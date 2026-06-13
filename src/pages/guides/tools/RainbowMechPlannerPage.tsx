@@ -25,7 +25,7 @@ const ARMOR_TYPES: { value: string; label: string; color: string }[] = [
 const mechCache = new Map<string, Mech[]>()
 
 const defaultParts = (): SlotInventory[] =>
-  ALL_SLOTS.map(slot => ({ slot, gold1: 0, gold2: 0, gold3: 0 }))
+  ALL_SLOTS.map(slot => ({ slot, gold1: 0, gold2: 0, gold3: 0, done: false }))
 
 const defaultApproaches = (): Record<MechPartPosition, SlotApproach> => ({
   torso: 'universal', leftArm: 'universal', rightArm: 'universal', legs: 'universal',

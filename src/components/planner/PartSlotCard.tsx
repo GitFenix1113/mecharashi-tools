@@ -48,6 +48,7 @@ interface PartSlotCardProps {
 
 export function PartSlotCard({ slot, partIcon, value, onChange }: PartSlotCardProps) {
   const label = SLOT_LABELS[slot] ?? slot
+  const done  = value.done ?? false
   const total = value.gold1 + value.gold3
   // 彩甲需 2 個金三。每個金三 = 2 個金一（或自有金三 1 件直接抵 1 個）。
   //   金三上限 = 2；金一上限 = 剩餘所需金三 × 2 = max(0, 4 − 2×金三)
@@ -62,7 +63,11 @@ export function PartSlotCard({ slot, partIcon, value, onChange }: PartSlotCardPr
     value.gold1 > 0 ? 'gold1' : null
 
   return (
-    <div className={`bg-bg-card border border-border rounded-xl p-4 flex flex-col gap-3 transition-opacity ${total === 0 ? 'opacity-55' : ''}`}>
+    <div className={`border rounded-xl p-4 flex flex-col gap-3 transition-all ${
+      done
+        ? 'border-accent-green/55 bg-accent-green/5'
+        : `bg-bg-card border-border ${total === 0 ? 'opacity-55' : ''}`
+    }`}>
       {/* 部位標頭：圖示 + 徽章疊加 + 標籤 */}
       <div className="flex items-center gap-3">
         <div className="relative w-12 h-12 flex-shrink-0">
@@ -71,7 +76,7 @@ export function PartSlotCard({ slot, partIcon, value, onChange }: PartSlotCardPr
           ) : (
             <div className="w-12 h-12 rounded-lg border border-border bg-bg-dark" />
           )}
-          {highestLevel && (
+          {!done && highestLevel && (
             <img
               src={assetUrl(LEVEL_CONFIG[highestLevel].badge)}
               alt={LEVEL_CONFIG[highestLevel].label}
@@ -79,34 +84,55 @@ export function PartSlotCard({ slot, partIcon, value, onChange }: PartSlotCardPr
             />
           )}
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <div className="text-[15px] font-bold text-text-primary">{label}</div>
           <div className="text-[11px] text-text-dim mt-0.5">
-            {value.gold3 >= 2 ? '雙金三齊備'
-              : enough          ? '零件已足夠'
-              : total === 0     ? '未持有部件'
+            {done              ? '已完成彩甲'
+              : value.gold3 >= 2 ? '雙金三齊備'
+              : enough           ? '零件已足夠'
+              : total === 0      ? '未持有部件'
               : `持有 ${total} 件`}
           </div>
         </div>
       </div>
 
-      {/* 各等級數量輸入 */}
-      <div className="flex flex-col gap-2">
-        {LEVELS.map((level) => {
-          const { label: lvLabel, badge, color, border, bg } = LEVEL_CONFIG[level]
-          return (
-            <div key={level} className={`flex items-center gap-2.5 rounded-lg px-3 py-2 border ${bg} ${border}`}>
-              <img src={assetUrl(badge)} alt={lvLabel} className="w-5 h-5 object-contain flex-shrink-0" />
-              <span className={`text-[13px] font-semibold ${color} flex-1`}>{lvLabel}</span>
-              <Stepper
-                value={value[level]}
-                onChange={(v) => onChange({ ...value, [level]: v })}
-                max={levelMax[level]}
-              />
-            </div>
-          )
-        })}
-      </div>
+      {/* 已彩甲勾選：勾起後此部位略過計算 */}
+      <button
+        onClick={() => onChange({ ...value, done: !done })}
+        className={`flex items-center gap-2 rounded-lg px-3 py-1.5 border text-[12px] font-bold transition-colors cursor-pointer ${
+          done
+            ? 'border-accent-green/55 bg-accent-green/15 text-accent-green'
+            : 'border-border text-text-dim hover:border-border-accent hover:text-text-secondary'
+        }`}
+        aria-pressed={done}
+      >
+        <span className={`w-4 h-4 rounded flex items-center justify-center text-[11px] leading-none border ${
+          done ? 'border-accent-green bg-accent-green text-bg-dark' : 'border-border'
+        }`}>
+          {done && '✓'}
+        </span>
+        已彩甲（略過此部位）
+      </button>
+
+      {/* 各等級數量輸入（已彩甲時隱藏，避免誤填） */}
+      {!done && (
+        <div className="flex flex-col gap-2">
+          {LEVELS.map((level) => {
+            const { label: lvLabel, badge, color, border, bg } = LEVEL_CONFIG[level]
+            return (
+              <div key={level} className={`flex items-center gap-2.5 rounded-lg px-3 py-2 border ${bg} ${border}`}>
+                <img src={assetUrl(badge)} alt={lvLabel} className="w-5 h-5 object-contain flex-shrink-0" />
+                <span className={`text-[13px] font-semibold ${color} flex-1`}>{lvLabel}</span>
+                <Stepper
+                  value={value[level]}
+                  onChange={(v) => onChange({ ...value, [level]: v })}
+                  max={levelMax[level]}
+                />
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

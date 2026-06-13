@@ -183,6 +183,17 @@ function processSlot(
 
 // ─── 主計算函式 ───────────────────────────────────────────────────────────────
 
+/** 已彩甲部位：視為兩個金三皆自有，不消耗任何資源、不需準備材料 */
+function donePlan(slot: MechPartPosition): SlotPlan {
+  return {
+    slot, approach: 'universal',
+    gold3a: { source: 'owned' }, gold3b: { source: 'owned' },
+    buy: { universal: 0, fertBuy: 0, coreRaw: 0 },
+    sfUsed: { s: 0, sp: 0, spp: 0 },
+    feasible: true, shortage: 0,
+  }
+}
+
 export function calculateRainbowPlan(
   parts:      SlotInventory[],
   sf:         SuperFactoryResources,
@@ -195,10 +206,12 @@ export function calculateRainbowPlan(
     sUsed: 0, spUsed: 0, sppUsed: 0,
   }
 
-  const sppAlloc = allocateSpp(parts, sf.enabled ? sf.sppCount : 0)
+  // 已彩甲部位不參與 S++ 分配與合成排程
+  const activeParts = parts.filter(p => !p.done)
+  const sppAlloc = allocateSpp(activeParts, sf.enabled ? sf.sppCount : 0)
 
   // 先處理會釋出剩餘金二的部位，讓跨部位肥料池盡早可用
-  const order = [...parts].sort((a, b) => {
+  const order = [...activeParts].sort((a, b) => {
     const surplus = (p: SlotInventory) => p.gold2 - 2 * Math.max(0, 2 - Math.min(p.gold3, 2))
     return surplus(b) - surplus(a)
   })
@@ -209,7 +222,7 @@ export function calculateRainbowPlan(
     slotMap.set(inv.slot, processSlot(inv, approach, sppAlloc[inv.slot] ?? 0, pool))
   }
 
-  const slots = parts.map(p => slotMap.get(p.slot)!).filter(Boolean)
+  const slots = parts.map(p => (p.done ? donePlan(p.slot) : slotMap.get(p.slot)!)).filter(Boolean)
 
   const totalBuy: BuyList = {
     universal: slots.reduce((s, p) => s + p.buy.universal, 0),

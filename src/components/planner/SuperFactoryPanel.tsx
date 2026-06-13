@@ -1,9 +1,11 @@
 import { assetUrl } from '../../utils/assets'
 import type { SuperFactoryResources } from '../../types/mechUpgrade'
+import { Stepper } from './Stepper'
 
 const SF_ITEMS = [
   {
     key:      's'   as const,
+    countKey: 'sCount'   as const,
     imgFile:  'megafactory_s_model.png',
     name:     'S 零件',
     desc:     '萬能金一（無重量限制）',
@@ -11,6 +13,7 @@ const SF_ITEMS = [
   },
   {
     key:      'sp'  as const,
+    countKey: 'spCount'  as const,
     imgFile:  'megafactory_sp_model.png',
     name:     'S+ 零件',
     desc:     '替代金二升金三所需兩個肥料',
@@ -18,6 +21,7 @@ const SF_ITEMS = [
   },
   {
     key:      'spp' as const,
+    countKey: 'sppCount' as const,
     imgFile:  'megafactory_spp_model.png',
     name:     'S++ 零件',
     desc:     '萬能金三（無重量限制）',
@@ -60,7 +64,7 @@ export function SuperFactoryPanel({ value, onChange }: SuperFactoryPanelProps) {
               年度限定
             </span>
           </div>
-          <div className="text-[11px] text-text-dim mt-0.5">超級工廠活動資源（各 ×{FIXED_COUNT}，固定值）</div>
+          <div className="text-[11px] text-text-dim mt-0.5">超級工廠活動資源（每種上限 ×{FIXED_COUNT}，可填入目前剩餘量）</div>
         </div>
 
         {/* Toggle 開關 */}
@@ -82,16 +86,15 @@ export function SuperFactoryPanel({ value, onChange }: SuperFactoryPanelProps) {
       {/* 資源卡片 */}
       {value.enabled && (
         <div className="grid grid-cols-3 gap-3">
-          {SF_ITEMS.map(({ key, imgFile, name, desc, rainbow }) => (
+          {SF_ITEMS.map(({ key, countKey, imgFile, name, desc, rainbow }) => (
             <div
               key={key}
-              className={`relative rounded-xl border overflow-hidden flex flex-col items-center gap-2 p-3 ${
-                rainbow
-                  ? 'border-transparent'
-                  : 'border-border bg-bg-dark'
+              className={`relative rounded-xl border overflow-hidden flex flex-col items-center gap-2 p-3 bg-bg-dark ${
+                rainbow ? 'border-transparent' : 'border-border'
               }`}
               style={rainbow ? {
-                background: 'linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(234,179,8,0.12) 25%, rgba(34,197,94,0.12) 50%, rgba(6,182,212,0.12) 75%, rgba(168,85,247,0.15) 100%)',
+                // 深色底 + 彩色疊層：與其他兩張卡同樣不透明，避免只有它半透明顯得突兀
+                backgroundImage: 'linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(234,179,8,0.12) 25%, rgba(34,197,94,0.12) 50%, rgba(6,182,212,0.12) 75%, rgba(168,85,247,0.15) 100%)',
                 borderImage: 'linear-gradient(135deg, #ef4444, #eab308, #22c55e, #06b6d4, #a855f7) 1',
               } : undefined}
             >
@@ -106,9 +109,12 @@ export function SuperFactoryPanel({ value, onChange }: SuperFactoryPanelProps) {
                 </div>
                 <div className="text-[10px] text-text-dim mt-0.5 leading-tight">{desc}</div>
               </div>
-              <div className={`text-[13px] font-[JetBrains_Mono,monospace] font-bold ${rainbow ? 'text-accent-yellow' : 'text-text-secondary'}`}>
-                ×{FIXED_COUNT}
-              </div>
+              <Stepper
+                value={value[countKey]}
+                onChange={(n) => onChange({ ...value, [countKey]: n })}
+                min={0}
+                max={FIXED_COUNT}
+              />
             </div>
           ))}
         </div>

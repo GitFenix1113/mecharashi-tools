@@ -12,6 +12,7 @@ export interface SlotInventory {
   gold1: number
   gold2: number
   gold3: number
+  done?: boolean   // 已彩甲：此部位已完成，計算時直接略過、不需任何材料
 }
 
 export interface ModuleInventory {
