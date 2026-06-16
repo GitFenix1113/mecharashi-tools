@@ -144,7 +144,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-016 進度表</span>
   </div>
@@ -165,9 +165,13 @@
   <div class="section-label cyan">Progress</div>
   <div class="section-title">總進度</div>
 
+  <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-left:3px solid var(--accent-green);border-radius:0 10px 10px 0;padding:14px 18px;margin:0 0 20px;font-size:13px;color:var(--text-secondary);line-height:1.8;">
+    ✅ <strong>2026-06-03 已實作並上線</strong>（隨 PLAN-019 引用層的查詢量需求一併完成）。核心 8 項（GameDataContext 全量預載 + 低效查詢修正 + 用戶資料輕量快取）皆已部署；D-1 迴歸測試與 D-2 讀取數監控已於上線後實際運作確認 —— cache 行為見 <a href="../PLAN-017_localStorage版本快取/進度表.html" style="color:var(--accent-green);text-decoration:none;">PLAN-017</a> 的瀏覽器驗證（cache hit 0 collection reads、bump 後正確失效），單日讀取超標問題已解除。
+  </div>
+
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">8</div>
+      <div class="summary-num" style="color:var(--accent-green)">10</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +179,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">2</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +191,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">8 / 10</span>
+      <span style="color:var(--accent-green);">10 / 10</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 80%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -404,7 +408,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 功能迴歸測試</div>
       <div class="task-group-meta">全站主要頁面</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -416,7 +420,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 
@@ -424,7 +428,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; Firebase 控制台讀取數監控（部署後 24 小時）</div>
       <div class="task-group-meta">Firebase Console · 計費指標</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -436,7 +440,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 </section>
@@ -444,11 +448,11 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-016 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-016 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 歷史記錄</a>
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-05-27 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

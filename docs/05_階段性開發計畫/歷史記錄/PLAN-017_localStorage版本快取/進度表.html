@@ -144,7 +144,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-017 進度表</span>
   </div>
@@ -168,6 +168,14 @@
   <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-left:3px solid var(--accent-green);border-radius:0 10px 10px 0;padding:14px 18px;margin:0 0 20px;font-size:13px;color:var(--text-secondary);line-height:1.8;">
     ✅ <strong>2026-06-03 已實作並上線</strong>（隨 PLAN-019 引用層的查詢量需求一併完成）。採 per-collection 版本 gate 快取（<code>mecharashi_gd_&lt;collection&gt;</code>），保留懶載模型，未來新集合自動納入。
     <code>meta/gameData</code> 已建立、安全規則已部署、<code>bumpDataVersion</code> 已接入所有 <code>updateX()</code>。瀏覽器驗證：cache hit 0 collection reads、bump 後正確失效。詳見<a href="計畫書.html" style="color:var(--accent-green);text-decoration:none;">計畫書 › 實作說明</a>。
+  </div>
+
+  <div style="background:rgba(34,211,238,0.06);border:1px solid rgba(34,211,238,0.2);border-left:3px solid var(--accent-cyan);border-radius:0 10px 10px 0;padding:14px 18px;margin:0 0 20px;font-size:13px;color:var(--text-secondary);line-height:1.8;">
+    <strong style="color:var(--accent-cyan);">實作與原規劃的差異（歸檔對帳）：</strong>
+    本計畫目標（回訪零 collection 讀取 + 版本 gate + admin 一鍵失效快取）已全數達成並上線，但<strong>架構與下方 Phase A–D 的原始設計不同</strong>：
+    改採 <strong>per-collection 版本 gate</strong>（每集合各一 <code>mecharashi_gd_&lt;collection&gt;</code>，而非單一 <code>mecharashi_game_data</code>），
+    且 <strong>寫入時自動 bump</strong>（<code>bumpDataVersion</code> 已接入所有 <code>updateX()</code>，而非後台手動按鈕）。
+    下方任務列保留原始規劃設計供對照，狀態以「目標達成」計為完成。
   </div>
 
   <div class="summary-row">
@@ -217,7 +225,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; 新增 localStorage 工具函式</div>
       <div class="task-group-meta">src/lib/gameDataCache.ts（新建）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -232,7 +240,7 @@
         <div class="task-file">src/lib/gameDataCache.ts（新建）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 
@@ -240,7 +248,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; GameDataContext 讀取流程加入版本比對</div>
       <div class="task-group-meta">src/contexts/GameDataContext.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -256,7 +264,7 @@
         <div class="task-file">src/contexts/GameDataContext.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 
@@ -264,7 +272,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-3 &nbsp; reload() 支援強制清除快取</div>
       <div class="task-group-meta">src/contexts/GameDataContext.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -278,7 +286,7 @@
         <div class="task-file">src/contexts/GameDataContext.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 </section>
@@ -293,7 +301,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; 在 Firestore 建立 meta/gameData 文件</div>
       <div class="task-group-meta">Firebase Console / Admin SDK</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -307,7 +315,7 @@
         <div class="task-file">Firebase Console → Firestore → meta → gameData</div>
       </div>
       <div class="task-assignee">Admin</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 </section>
@@ -322,7 +330,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; Admin Panel 新增「更新遊戲資料版本」按鈕</div>
       <div class="task-group-meta">src/pages/admin/AdminPage.tsx（或相關 Admin 頁面）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -337,7 +345,7 @@
         <div class="task-file">src/pages/admin/AdminPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 
@@ -345,7 +353,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; Firestore Security Rules 新增 meta collection 保護</div>
       <div class="task-group-meta">firestore.rules</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -359,7 +367,7 @@
         <div class="task-file">firestore.rules</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 </section>
@@ -373,7 +381,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 快取命中 / 失效流程測試</div>
       <div class="task-group-meta">Chrome DevTools → Application → Storage</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -387,7 +395,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 
@@ -395,7 +403,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; Firebase 控制台讀取數監控（部署後 24 小時）</div>
       <div class="task-group-meta">Firebase Console · 計費指標</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -407,7 +415,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 </section>
@@ -415,11 +423,11 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-017 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-017 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 歷史記錄</a>
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-03 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

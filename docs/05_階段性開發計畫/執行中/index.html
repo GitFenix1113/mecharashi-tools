@@ -40,16 +40,6 @@
         <a class="card-link" href="PLAN-022_數值引用層/進度表.html">→ 進度表</a>
       </div>
     </div>
-    <div class="card pink">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-021 · 神驅算力天賦改寫</h3>
-      <p>讓「神經驅動算力跨過門檻 → 天賦正文就地改寫」可視化。<code>PilotTalent</code> 新增 <code>ndVariants[]</code> 存各算力階改寫正文，複用 PLAN-005 的 DiffHighlight 強化層呈現差異；三階 buff 以 <code>mutexGroup</code> 表達 I/II/III 不共存、取最高。改寫掛在天賦上，與 PLAN-004 神驅抽離解耦、可獨立上線；資料走 manual 手動維護。</p>
-      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">全部完成 12 / 12（2026-06-12）· 待歸檔</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-021_神驅算力天賦改寫/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-021_神驅算力天賦改寫/進度表.html">→ 進度表</a>
-      </div>
-    </div>
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-019 · 實體引用與模擬基礎（總綱）</h3>
@@ -95,57 +85,12 @@
         <a class="card-link" href="PLAN-005_專武天賦強化顯示/進度表.html">→ 進度表</a>
       </div>
     </div>
-    <div class="card orange">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-006 · 武器詳情頁</h3>
-      <p>為武器建立獨立詳情頁 /weapons/:id，完整展示基礎屬性、技能列表（含 carry/equip/use 生效方式）、固定 / 浮動改裝、元件插槽，以及專武的天賦強化 DiffHighlight 區塊。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-006_武器詳情頁/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-006_武器詳情頁/進度表.html">→ 進度表</a>
-      </div>
-    </div>
-    <div class="card orange">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-008 · 手機版響應式排版</h3>
-      <p>以 Tailwind CSS 斷點（lg:）取代獨立 mobile 頁面路線，修正 PilotDetailPage Hero 三欄爆版、天賦 tab 專武面板固定寬溢出，以及 PilotsPage 2 欄卡片過擠問題。純 className 調整，不影響資料模型與 Admin。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-008_手機版響應式排版/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-008_手機版響應式排版/進度表.html">→ 進度表</a>
-      </div>
-    </div>
-    <div class="card orange">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-013 · 首頁版本時間線</h3>
-      <p>以垂直魚骨時間線取代現有首頁，左右骨呈現上下半版本資訊（新角色/機甲、武裝討伐、戰令、商店更新），預設捲動定位到台服當前版本，支援向上（過去）/向下（未來預測）瀏覽。靜態 TypeScript 資料層，維護者只需 append 新物件。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-013_首頁版本時間線/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-013_首頁版本時間線/進度表.html">→ 進度表</a>
-      </div>
-    </div>
     <div class="card cyan">
       <div class="card-icon">◆</div>
       <h3>PLAN-010 · 攻略系統</h3>
       <p>以 TipTap WYSIWYG 編輯器建立攻略 CMS，支援圖文並茂內容與 Firebase Storage 圖片上傳（Phase A）。Phase B 擴充自訂 EntityReferenceNode，可嵌入遊戲資料庫物件（機師/機甲/武器卡片），前台局部 Drawer 展開詳情，不跳頁。管理員寫、玩家讀。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-010_攻略系統/計畫書.html">→ 計畫書</a>
-      </div>
-    </div>
-    <div class="card cyan">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-016 · Firebase 快取層</h3>
-      <p>建立 GameDataContext 全局快取層，App 啟動時一次讀取全部 11 個 game data collection，頁面切換完全走 in-memory。同步修正 usePilotExclusiveWeapon/s、useMechWithModules 的全量讀取查詢，以及 usePatchVersions 的 real-time listener。估計降低 70–80% Firestore 讀取次數，解決單日超出免費配額問題。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-016_Firebase快取層/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-016_Firebase快取層/進度表.html">→ 進度表</a>
-      </div>
-    </div>
-    <div class="card green">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-017 · localStorage 版本快取</h3>
-      <p>在 PLAN-016 的基礎上，讓回訪用戶的遊戲資料完全從 localStorage 讀取，每次 session 僅消耗 1 次 Firestore 讀取（版本比對）。Firestore 新增 <code>meta/gameData</code> 版本文件，GameDataContext 啟動時先讀版本，命中快取則跳過 11 次讀取。Admin 一鍵 Bump 版本號即可使全站快取失效。估計回訪用戶讀取降幅 91%。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-017_localStorage版本快取/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-017_localStorage版本快取/進度表.html">→ 進度表</a>
       </div>
     </div>
   </div>
@@ -156,7 +101,7 @@
   鋼嵐工具站 · 階段性開發計畫 · 執行中
 </footer>
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-07 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>
