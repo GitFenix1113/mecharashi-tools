@@ -7,7 +7,7 @@ import {
 } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth'
 import { getStorage } from 'firebase/storage'
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check'
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -33,9 +33,9 @@ if (isNewApp) {
       import.meta.env.VITE_APPCHECK_DEBUG_TOKEN || true
   }
   initializeAppCheck(app, {
-    // 金鑰為 reCAPTCHA Enterprise 型（Google Cloud 管理），須用 Enterprise provider；
-    // 用 classic ReCaptchaV3Provider 會載入 api.js 而非 enterprise.js → 拿不到 token（UNKNOWN_ERROR）
-    provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY),
+    // 金鑰雖由 Google Cloud (reCAPTCHA Enterprise) 建立，但搭配其「舊版 secret key」
+    // 走 classic reCAPTCHA v3 流程（api.js），對應 Firebase App Check 的「reCAPTCHA」provider
+    provider: new ReCaptchaV3Provider(import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY),
     isTokenAutoRefreshEnabled: true,
   })
 }
