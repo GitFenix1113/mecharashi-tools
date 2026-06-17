@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-06-13
+## [Unreleased] - 2026-06-17
 
 ### ⚠ 重大變更
 
@@ -125,6 +125,7 @@
 
 ### 📚 文件
 
+- 歸檔 PLAN-016/017/021 並修正計畫索引漂移 (`5611622`)
 - 對帳 PLAN-001/003/004/005/019 文件與實際程式碼進度 (`99433fb`)
 - 修正錯誤用詞 (`ea1886d`)
 - 授權聯絡語氣改為「商用須事先取得同意」 (`6170c6d`)
@@ -157,6 +158,7 @@
 
 ### 🔧 維護
 
+- 修正 App Check provider 為 reCAPTCHA Enterprise (`25a2755`)
 - types 與 firestoreApi 按 domain 拆分為 per-collection 模組 (`4ee4ecf`)
 - 資料管線腳本與 data-patch skill 移出公開 repo（防線 C 輕量版） (`89e16d9`)
 - App Check debug token 改用固定值避免清快取後變動 (`c0ca05a`)
