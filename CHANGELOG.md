@@ -158,6 +158,7 @@
 
 ### 🔧 維護
 
+- App Check 改回 classic reCAPTCHA v3 provider + 換用新金鑰 (`98bd9a3`)
 - 修正 App Check provider 為 reCAPTCHA Enterprise (`25a2755`)
 - types 與 firestoreApi 按 domain 拆分為 per-collection 模組 (`4ee4ecf`)
 - 資料管線腳本與 data-patch skill 移出公開 repo（防線 C 輕量版） (`89e16d9`)
