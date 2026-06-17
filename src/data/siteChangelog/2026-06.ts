@@ -3,6 +3,7 @@ import type { ChangelogMonth } from './types'
 const jun2026: ChangelogMonth = {
   month: '2026-06',
   entries: [
+    { date: '2026-06-17', type: 'feat', summary: '天賦／技能描述中的層數（如艾達凝勢「可疊加N層」）改為與對應 BUFF 屬性連動顯示：滑鼠移到數字可看見來源，維護者更新 BUFF 數值即全站同步，杜絕正文與實際效果數字不一致' },
     { date: '2026-06-14', type: 'style', summary: '更新機師「瑪阿特」的立繪與頭像為新造型圖' },
     { date: '2026-06-13', type: 'fix', summary: '修正首頁副標題的英文拼字（Milhama → Milkhama）' },
     { date: '2026-06-13', type: 'feat', summary: '彩甲升級規劃器的超級工廠資源數量改為可自行調整：已用掉部分活動零件的人，可往下扣到目前剩餘量再計算' },

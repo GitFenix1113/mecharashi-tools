@@ -182,6 +182,46 @@
   </div>
 </section>
 
+<!-- PLAN-022 數值引用 -->
+<section class="section">
+  <div class="section-label green">PLAN-022</div>
+  <div class="section-title">數值引用 — &lt;refId.attr&gt; token</div>
+
+  <div class="changed-block">
+    <strong>🆕 PLAN-022：把描述內的層數／回合數綁定 BUFF 屬性，根除「正文寫 7、buff.maxStack 是 5」的漂移</strong>
+    繼 [xxx] 實體引用之後的第二種 token。描述正文以 <code>&lt;refId.attr&gt;</code> 內嵌「對某 BUFF 屬性的引用」，
+    顯示層從 GameDataContext 查 refId 取屬性真值 —— 數字只有 BUFF 一份，正文不再各處手抄。
+    與 [xxx] 不同：數值 token <strong>自描述、不需 descriptionRefs</strong>，且同一 token 可重複出現不限次數。
+  </div>
+
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>三層</th><th>內容</th><th>範例</th></tr>
+      <tr><td>編輯期語法糖</td><td>維護者打 $n（可疊加層數）/ %n（持續回合），n = 描述中第 n 個「有引用的 [xxx]」；按鈕當場編譯、<strong>永不落地</strong>（Phase C，延後）</td><td>可疊加$1層</td></tr>
+      <tr><td>儲存的正式 token</td><td><code>&lt;refId.attr&gt;</code>：refId 為實體文件 ID、attr 為屬性註冊表的鍵</td><td>可疊加&lt;buff_凝勢I.maxStack&gt;層</td></tr>
+      <tr><td>顯示真值</td><td>前台 RefText / DiffHighlight 解析；查無（buff 被刪／尚未載入）優雅降級為暗色 ?</td><td>可疊加5層</td></tr>
+    </table>
+  </div>
+
+  <div class="section-desc">屬性註冊表 <code>NUM_ATTRS</code>（<code>src/utils/numRefs.ts</code>，單一資料源；新增可綁屬性 = 加一筆，解析／編譯／降級自動跟上）：</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>attr</th><th>語法糖 sigil</th><th>標籤</th><th>適用 refType</th><th>取值</th></tr>
+      <tr><td>maxStack</td><td>$</td><td>可疊加層數</td><td>buff</td><td>GameBuff.maxStack</td></tr>
+      <tr><td>duration</td><td>%</td><td>持續回合</td><td>buff</td><td>GameBuff.duration</td></tr>
+      <tr><td colspan="5" style="color:var(--text-dim);">未來低頻屬性（cd / ap…）可不配 sigil，走「選取數字 → 下拉選屬性」的 UI 路徑</td></tr>
+    </table>
+  </div>
+
+  <div class="note-block">
+    <strong>邊界：不是所有數字都該綁</strong>
+    「可疊加 <u>5</u> 層」是 BUFF 的 maxStack → 綁；「若攜帶 5 層及以上」「移除 5 層」「獲得 2 層」是天賦的觸發／消耗／獲得門檻、非實體屬性 → <strong>留純文字</strong>。
+    接入集中於 <code>numRefs</code> util + RefText / DiffHighlight / RefPicker 三樞紐，天賦／技能／晶片驅動／武器全站<strong>一次接線、零逐頁實作</strong>。
+    驗收案例：艾達凝勢三階（基礎讀 buff_凝勢I.maxStack=5、神經驅動強化讀 凝勢II/III=7，DiffHighlight 標出 5→7）。詳見
+    <a href="../../05_階段性開發計畫/執行中/PLAN-022_數值引用層/計畫書.html" style="color:var(--accent-green);text-decoration:none;">PLAN-022 計畫書</a>。
+  </div>
+</section>
+
 <!-- 相關文件 -->
 <section class="section">
   <div class="section-label purple">相關文件</div>

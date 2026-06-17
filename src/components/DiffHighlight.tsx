@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import type { DescriptionRefs } from '../types'
 import { RefChip } from './RefChip'
+import { useNumRefLookup } from '../hooks/useNumRefLookup'
+import { resolveNumRefs, hasNumRef } from '../utils/numRefs'
 
 function lcsMatched(a: string[], b: string[]): boolean[] {
   const m = a.length, n = b.length
@@ -23,10 +25,13 @@ function lcsMatched(a: string[], b: string[]): boolean[] {
  * PLAN-019：傳入 refs 時，描述內 [xxx] 群組會渲染為 RefChip（descriptionMax 也吃引用層）。
  */
 export function DiffHighlight({ base, enhanced, refs }: { base: string; enhanced: string; refs?: DescriptionRefs }) {
+  // PLAN-022：先把 <refId.attr> 數值引用解析為真值再 tokenize —— base 綁凝勢I(5)、變體綁凝勢II(7)，
+  // 解析後 5→7 照常被 LCS 標紅；[xxx] 群組不受影響（resolveNumRefs 只動 <...>）。
+  const lookup = useNumRefLookup(hasNumRef(base) || hasNumRef(enhanced))
   const tokenize = (s: string) =>
     s.match(/\d+(?:\.\d+)?%?|[a-zA-Z]+|[一-鿿]+|[^\w\d一-鿿\s]|\s+/g) ?? []
-  const baseTokens = tokenize(base)
-  const enhTokens  = tokenize(enhanced)
+  const baseTokens = tokenize(resolveNumRefs(base, lookup))
+  const enhTokens  = tokenize(resolveNumRefs(enhanced, lookup))
   const matched    = lcsMatched(baseTokens, enhTokens)
 
   const out: ReactNode[] = []
