@@ -3,6 +3,7 @@ import type { ChangelogMonth } from './types'
 const jun2026: ChangelogMonth = {
   month: '2026-06',
   entries: [
+    { date: '2026-06-19', type: 'feat', summary: '模組圖鑑改為顯示「採用此模組的機甲」：被多台機甲共用的 8 級模組會列出全部機甲，單一機甲的特性模組則顯示對應機甲名；同時移除來源欄與機甲名重複的括號' },
     { date: '2026-06-17', type: 'feat', summary: '天賦／技能描述中的層數（如艾達凝勢「可疊加N層」）改為與對應 BUFF 屬性連動顯示：滑鼠移到數字可看見來源，維護者更新 BUFF 數值即全站同步，杜絕正文與實際效果數字不一致' },
     { date: '2026-06-14', type: 'style', summary: '更新機師「瑪阿特」的立繪與頭像為新造型圖' },
     { date: '2026-06-13', type: 'fix', summary: '修正首頁副標題的英文拼字（Milhama → Milkhama）' },

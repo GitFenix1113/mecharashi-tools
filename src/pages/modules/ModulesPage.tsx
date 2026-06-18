@@ -1,9 +1,9 @@
-﻿import { useState, useLayoutEffect, useRef } from 'react'
+﻿import { useState, useLayoutEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { assetUrl } from '../../utils/assets'
-import { useModules, useMechNameMap } from '../../hooks/useFirestore'
+import { useModules, useMechNameMap, useMechs } from '../../hooks/useFirestore'
 import { ModuleSlot, ModuleRarity, MechPartPosition } from '../../types/enums'
-import type { Module } from '../../types'
+import type { Module, Mech } from '../../types'
 import { STAT_LABELS, highlightNumbers } from '../../utils/moduleStats'
 import { BottomSheet } from '../../components/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
@@ -137,6 +137,30 @@ function TooltipPortal({ mod, pinned, x, anchorTop }: {
 export default function ModulesPage() {
   const { data: modules, loading, error: modulesError } = useModules()
   const { data: mechNameMap } = useMechNameMap()
+  const { data: mechs } = useMechs()
+
+  // 反查索引：模組 ID → 採用此模組的機甲清單。
+  // 機甲透過 module4Id（特性）/ module8Id（8級）/ moduleFixedIds（固定）引用模組；
+  // 同一個 8 級模組可被多台機甲共用，正向資料只存在 mechs 端，需反查才能得知。
+  // mechs 集合已由 useMechNameMap 載入並快取，建索引為純記憶體運算，無額外 Firestore 讀取。
+  const mechsByModuleId = useMemo(() => {
+    const map = new Map<string, Mech[]>()
+    const add = (modId: string | null | undefined, mech: Mech) => {
+      if (!modId) return
+      const arr = map.get(modId)
+      if (arr) {
+        if (!arr.some((m) => m.id === mech.id)) arr.push(mech)
+      } else {
+        map.set(modId, [mech])
+      }
+    }
+    for (const mech of mechs) {
+      add(mech.module4Id, mech)
+      add(mech.module8Id, mech)
+      for (const fid of mech.moduleFixedIds ?? []) add(fid, mech)
+    }
+    return map
+  }, [mechs])
 
   const [searchText, setSearchText] = useState('')
   const [searchByName, setSearchByName] = useState(true)
@@ -346,6 +370,15 @@ export default function ModulesPage() {
             const rarityStyle = RARITY_STYLES[mod.rarity] || ''
             const hasLevels = (mod.levels?.length ?? 0) > 0
             const isPinned = pinnedTooltip?.modId === mod.id
+            // 採用此模組的機甲名稱（反查索引優先；查無時退回模組自身 boundMechId）
+            const usedByMechs = mechsByModuleId.get(mod.id) ?? []
+            const adopterNames = (
+              usedByMechs.length > 0
+                ? usedByMechs.map((m) => m.name)
+                : mod.boundMechId
+                  ? [mechNameMap[mod.boundMechId] ?? mod.boundMechId]
+                  : []
+            ).sort((a, b) => a.localeCompare(b, 'zh-Hant'))
             return (
               <div
                 key={mod.id}
@@ -380,9 +413,10 @@ export default function ModulesPage() {
                         </span>
                       )}
                     </div>
-                    {mod.boundMechId && (
+                    {adopterNames.length > 0 && (
                       <div className="text-[14px] text-text-dim mb-1">
-                        對應機甲：<span className="text-accent-cyan">{mod.boundMechId}</span>
+                        {adopterNames.length > 1 ? '採用機甲' : '對應機甲'}：
+                        <span className="text-accent-cyan">{adopterNames.join('、')}</span>
                         {mod.boundPart && (Array.isArray(mod.boundPart) ? mod.boundPart.length > 0 : true) && (
                           <span className="ml-2 text-accent-purple">
                             ({(Array.isArray(mod.boundPart) ? mod.boundPart : [mod.boundPart as string])
@@ -395,9 +429,6 @@ export default function ModulesPage() {
                     {(Array.isArray(mod.source) && mod.source.length > 0) && (
                       <div className="text-[14px] text-text-dim mb-1">
                         來源：<span className="text-text-secondary">{mod.source.join('、')}</span>
-                        {Array.isArray(mod.dismantleMechIds) && mod.dismantleMechIds.length > 0 && (
-                          <span className="ml-1 text-accent-cyan">（{mod.dismantleMechIds.map((id) => mechNameMap[id] ?? id).join('・')}）</span>
-                        )}
                       </div>
                     )}
                     <p className="text-xs text-text-secondary leading-relaxed whitespace-pre-line">
