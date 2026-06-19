@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-024 · 階梯式 BUFF 等級化重構</h3>
+      <p>把同概念多等級的 BUFF/DEBUFF（傷害提升 I~V、凝勢 I/II/III…，全站 27 族 85 份）由「N 份文件 + mutexGroup」合併為「單一文件 + levels[]」，用 level 表示各等級能力；新增數值引用 .lvN 段、level↔stack 雙維度、mutexGroup→level max 收斂，並順手把全空的 effects 結構化，為傷害模擬鋪路。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-024_BUFF等級化重構/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-024_BUFF等級化重構/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card green">
       <div class="card-icon">◆</div>
       <h3>PLAN-023 · 神經驅動能力庫與模擬接入</h3>

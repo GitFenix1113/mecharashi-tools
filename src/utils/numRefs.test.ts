@@ -22,6 +22,8 @@ const BUFFS: Record<string, NumRefSource> = {
   buff_凝勢II: { maxStack: 7, duration: 3 },
   buff_凝勢III: { maxStack: 7 }, // 無 duration
   buff_星爆: { maxStack: 3 },
+  // PLAN-024 階梯 buff：各級收進 levels[]（凝勢 5/7/7、lv3 無 duration）
+  buff_凝勢: { levels: [{ maxStack: 5, duration: 2 }, { maxStack: 7, duration: 3 }, { maxStack: 7 }] },
 }
 const lookup = (refId: string) => BUFFS[refId]
 
@@ -162,4 +164,57 @@ test('detectLeftoverSugar：已編譯成 token 的正文無殘留', () => {
 
 test('detectLeftoverSugar：引用不足時，未代入者仍被抓出', () => {
   assert.deepEqual(detectLeftoverSugar(compileSugar('$1與$2', ['buff_凝勢I'])), ['$2'])
+})
+
+// ─── .lvN 段：階梯 buff 等級化（PLAN-024 A-2） ──────────────────────────────────
+
+test('parseNumRefs：解析 .lvN 段為 level；無 lv 段不帶 level 屬性（向後相容）', () => {
+  assert.deepEqual(parseNumRefs('可疊加<buff_凝勢.lv3.maxStack>層'), [
+    { type: 'text', value: '可疊加' },
+    { type: 'numRef', raw: '<buff_凝勢.lv3.maxStack>', refId: 'buff_凝勢', attr: 'maxStack', level: 3 },
+    { type: 'text', value: '層' },
+  ])
+  assert.deepEqual(parseNumRefs('<buff_凝勢I.maxStack>'), [
+    { type: 'numRef', raw: '<buff_凝勢I.maxStack>', refId: 'buff_凝勢I', attr: 'maxStack' },
+  ])
+})
+
+test('hasNumRef：含 .lvN 段也偵測得到', () => {
+  assert.equal(hasNumRef('可疊加<buff_凝勢.lv2.maxStack>層'), true)
+})
+
+test('resolveNumValue：.lvN 取 levels[N-1]；超範圍 / 無值 / leveled buff 無頂層值皆降級', () => {
+  assert.equal(resolveNumValue('buff_凝勢', 'maxStack', lookup, 1), 5)
+  assert.equal(resolveNumValue('buff_凝勢', 'maxStack', lookup, 2), 7)
+  assert.equal(resolveNumValue('buff_凝勢', 'duration', lookup, 2), 3)
+  assert.equal(resolveNumValue('buff_凝勢', 'duration', lookup, 3), undefined) // lv3 無 duration
+  assert.equal(resolveNumValue('buff_凝勢', 'maxStack', lookup, 9), undefined) // 超出 levels 範圍
+  assert.equal(resolveNumValue('buff_凝勢', 'maxStack', lookup), undefined)    // leveled buff 無頂層 maxStack
+})
+
+test('resolveNumRefs：一份正文、級別由 .lvN token 決定真值（取代三份獨立 token）', () => {
+  assert.equal(resolveNumRefs('可疊加<buff_凝勢.lv1.maxStack>層', lookup), '可疊加5層')
+  assert.equal(resolveNumRefs('可疊加<buff_凝勢.lv2.maxStack>層', lookup), '可疊加7層')
+  assert.equal(
+    resolveNumRefs('base <buff_凝勢.lv1.maxStack> / 強化 <buff_凝勢.lv2.maxStack>', lookup),
+    'base 5 / 強化 7',
+  )
+})
+
+test('resolveNumRefs：.lvN 失效 token 優雅降級為 fallback', () => {
+  assert.equal(resolveNumRefs('上限<buff_凝勢.lv9.maxStack>層', lookup), '上限?層') // 超範圍
+  assert.equal(resolveNumRefs('<buff_不存在.lv1.maxStack>', lookup), '?')           // refId 查無
+})
+
+test('orderRefsByFirstMention + compileSugar：EntityRef.level → 產生 .lvN token（PLAN-024 B-2）', () => {
+  const leveledRefs = { 凝勢: { refType: 'buff', refId: 'buff_凝勢', level: 3 } }
+  const ordered = orderRefsByFirstMention('攜帶[凝勢]觸發', leveledRefs)
+  assert.deepEqual(ordered, ['buff_凝勢.lv3'])
+  assert.equal(compileSugar('可疊加$1層', ordered), '可疊加<buff_凝勢.lv3.maxStack>層')
+  // 端到端：代入後解析回該級真值（lv3 maxStack = 7）
+  assert.equal(resolveNumRefs(compileSugar('可疊加$1層', ordered), lookup), '可疊加7層')
+})
+
+test('orderRefsByFirstMention：無 level 的 ref 仍回純 refId（向後相容）', () => {
+  assert.deepEqual(orderRefsByFirstMention('攜帶[凝勢I]', refs), ['buff_凝勢I'])
 })

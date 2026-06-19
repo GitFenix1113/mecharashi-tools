@@ -96,9 +96,16 @@ function TokenRow({
   const [pickerType, setPickerType] = useState<RefType | ''>(assigned?.refType ?? 'term')
   const [search, setSearch]       = useState('')
 
+  const gd = useGameData()
   const candidates = useCandidates(open ? pickerType : '')
   // 已指派實體所屬集合一律載入，使收合狀態的 chip 也能顯示名稱
   const assignedCandidates = useCandidates(assigned?.refType ?? '')
+
+  // 階梯 buff（PLAN-024）：指派為帶 levels 的 buff 時，提供「引用哪一級」下拉 → 寫進 ref.level。
+  const buffLevels = useMemo(() => {
+    if (assigned?.refType !== 'buff') return []
+    return (gd.buffs.find((b) => b.id === assigned.refId)?.levels ?? []).map((l) => l.level)
+  }, [assigned, gd.buffs])
 
   // 已指派實體的顯示名稱（載入後查得到，查不到則退回 refId）
   const assignedName = useMemo(() => {
@@ -126,6 +133,17 @@ function TokenRow({
           </span>
         ) : (
           <span className="text-xs text-text-dim">未指派（前台原樣顯示 [{token}]）</span>
+        )}
+        {assigned && buffLevels.length > 0 && (
+          <select
+            value={assigned.level ?? ''}
+            onChange={(e) => onAssign({ ...assigned, level: e.target.value === '' ? undefined : Number(e.target.value) })}
+            className="text-[11px] bg-bg-card border border-border rounded px-1.5 py-0.5 text-text-secondary focus:outline-none focus:border-accent-cyan"
+            title="引用此階梯 buff 的哪一級（數值代入時產生 .lvN）"
+          >
+            <option value="">不限級</option>
+            {buffLevels.map((lv) => <option key={lv} value={lv}>Lv{lv}</option>)}
+          </select>
         )}
         <div className="ml-auto flex items-center gap-2">
           {assigned && (

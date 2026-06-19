@@ -27,6 +27,8 @@ export interface NumRefSource {
   maxStack?: number
   /** 持續回合 */
   duration?: number
+  /** 階梯 buff 各級（PLAN-024）；<id.lvN.attr> 從 levels[N-1] 取屬性 */
+  levels?: NumRefSource[]
 }
 
 /** 由 refId 取得可供取值的實體；查無 (被刪 / 改 ID) 回傳 undefined → 優雅降級。 */
@@ -49,10 +51,11 @@ export const NUM_ATTRS: Record<string, NumAttrDef> = {
   // 未來：cd: { label: '冷卻回合', refTypes: ['skill'], get: e => e.cd } —— 低頻可不配 sigil，走 UI 選單。
 }
 
-// ─── 正式 token 格式：<refId.attr> ───────────────────────────────────────────────
-// refId 為實體文件 ID (slugify 後，含中英數與底線、無 '.'，如 buff_凝勢I / buff_凝勢III)；
+// ─── 正式 token 格式：<refId(.lvN)?.attr> ────────────────────────────────────────
+// refId 為實體文件 ID (slugify 後，含中英數與底線、無 '.'，如 buff_凝勢I / buff_凝勢)；
+// 選填 .lvN 段 (PLAN-024)：指定階梯 buff 第 N 級，如 <buff_凝勢.lv3.maxStack>；無 lv 段 = 取頂層 (普通 buff)。
 // attr 為 NUM_ATTRS 的鍵 (ASCII)。token 自描述、可重複，不依賴出現位置。
-const NUM_REF_RE = '<([^<>.]+)\\.([A-Za-z][A-Za-z0-9]*)>'
+const NUM_REF_RE = '<([^<>.]+)(?:\\.lv(\\d+))?\\.([A-Za-z][A-Za-z0-9]*)>'
 
 /** [xxx] 實體引用標記 (對齊 RefText 的 tokenizer)。 */
 const KEYWORD_RE = '\\[([^\\]]+)\\]'
@@ -71,7 +74,7 @@ export function hasNumRef(text: string): boolean {
 
 export type NumRefSegment =
   | { type: 'text'; value: string }
-  | { type: 'numRef'; raw: string; refId: string; attr: string }
+  | { type: 'numRef'; raw: string; refId: string; attr: string; level?: number }
 
 /**
  * 將正文切成 text / numRef 片段，供 RefText 結構化渲染 (每個 numRef 各自決定顯示真值或暗色 ?)。
@@ -84,7 +87,11 @@ export function parseNumRefs(text: string): NumRefSegment[] {
   let m: RegExpExecArray | null
   while ((m = re.exec(text)) !== null) {
     if (m.index > lastIndex) segments.push({ type: 'text', value: text.slice(lastIndex, m.index) })
-    segments.push({ type: 'numRef', raw: m[0], refId: m[1], attr: m[2] })
+    segments.push(
+      m[2]
+        ? { type: 'numRef', raw: m[0], refId: m[1], attr: m[3], level: Number(m[2]) }
+        : { type: 'numRef', raw: m[0], refId: m[1], attr: m[3] },
+    )
     lastIndex = m.index + m[0].length
   }
   if (lastIndex < text.length) segments.push({ type: 'text', value: text.slice(lastIndex) })
@@ -94,12 +101,15 @@ export function parseNumRefs(text: string): NumRefSegment[] {
 /**
  * 解析單一 token 的真值。attr 不在 registry、refId 查無、或屬性無值 → undefined (呼叫端決定降級樣式)。
  */
-export function resolveNumValue(refId: string, attr: string, lookup: NumRefLookup): number | undefined {
+export function resolveNumValue(refId: string, attr: string, lookup: NumRefLookup, level?: number): number | undefined {
   const def = NUM_ATTRS[attr]
   if (!def) return undefined
   const entity = lookup(refId)
   if (!entity) return undefined
-  const v = def.get(entity)
+  // 有 lvN 段 → 取該級 (levels[N-1])；超範圍 / 無 levels → 降級 undefined。無 lv 段取頂層。
+  const source = level != null ? entity.levels?.[level - 1] : entity
+  if (!source) return undefined
+  const v = def.get(source)
   return typeof v === 'number' ? v : undefined
 }
 
@@ -112,7 +122,7 @@ export function resolveNumRefs(text: string, lookup: NumRefLookup, fallback = '?
   return parseNumRefs(text)
     .map((seg) => {
       if (seg.type === 'text') return seg.value
-      const v = resolveNumValue(seg.refId, seg.attr, lookup)
+      const v = resolveNumValue(seg.refId, seg.attr, lookup, seg.level)
       return v === undefined ? fallback : String(v)
     })
     .join('')
@@ -125,6 +135,7 @@ export function resolveNumRefs(text: string, lookup: NumRefLookup, fallback = '?
  * (對齊 RefPicker 顯示的編號清單)。
  *  · 依關鍵詞 (keyword) 去重：同一個 [xxx] 出現多次只算一次。
  *  · 略過 refs 查無的 [xxx] (無資料源、不可綁屬性)，使編號與「可綁清單」一致。
+ *  · 階梯 buff (EntityRef.level) → refId 帶 .lvN 段，compileSugar 直接拼成 <refId.lvN.attr> (PLAN-024)。
  */
 export function orderRefsByFirstMention(text: string, refs: DescriptionRefs): string[] {
   const seen = new Set<string>()
@@ -135,8 +146,9 @@ export function orderRefsByFirstMention(text: string, refs: DescriptionRefs): st
     const kw = m[1]
     if (seen.has(kw)) continue
     seen.add(kw)
-    const refId = refs?.[kw]?.refId
-    if (refId) out.push(refId)
+    const ref = refs?.[kw]
+    // 階梯 buff（ref.level）→ 帶 .lvN 段，使 compileSugar 直接拼出 <refId.lvN.attr>（PLAN-024）。
+    if (ref?.refId) out.push(ref.level != null ? `${ref.refId}.lv${ref.level}` : ref.refId)
   }
   return out
 }

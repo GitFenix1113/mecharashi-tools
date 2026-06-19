@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { GameBuff, SkillEffect } from '../../../types'
+import type { GameBuff, SkillEffect, BuffLevel } from '../../../types'
 import { BuffType } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
 import { updateBuff, docExists } from '../../../lib/firestoreApi'
@@ -140,6 +140,99 @@ function MutexGroupField({
   )
 }
 
+// ─── 階梯等級項（PLAN-024）：折疊式單級編輯，比照 ModuleLevelItem ──────────────────
+function BuffLevelItem({
+  levelData,
+  onChange,
+  onRemove,
+}: {
+  levelData: BuffLevel
+  onChange: (updated: BuffLevel) => void
+  onRemove: () => void
+}) {
+  const [collapsed, setCollapsed] = useState(false)
+  function upd<K extends keyof BuffLevel>(key: K, value: BuffLevel[K]) {
+    onChange({ ...levelData, [key]: value })
+  }
+  const effects = levelData.effects ?? []
+  return (
+    <div className="border border-border/60 rounded-lg bg-bg-dark/50">
+      <div className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none" onClick={() => setCollapsed(!collapsed)}>
+        <span className="text-[13px] text-text-dim w-3">{collapsed ? '▶' : '▼'}</span>
+        <span className="text-[14px] text-text-dim font-medium flex-1 truncate">
+          Lv.{levelData.level}
+          {levelData.description && (
+            <span className="ml-2 text-text-secondary font-normal">{levelData.description.slice(0, 40)}</span>
+          )}
+        </span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onRemove() }}
+          className="text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10 shrink-0"
+        >
+          ✕ 移除
+        </button>
+      </div>
+
+      {!collapsed && (
+        <div className="px-3 pb-3 border-t border-border/40 pt-2.5 space-y-2.5">
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="等級 level">
+              <input type="number" value={levelData.level} onChange={(e) => upd('level', Number(e.target.value))} className="input-field" />
+            </Field>
+            <Field label="該級描述 description（選填）">
+              <input type="text" value={levelData.description ?? ''} onChange={(e) => upd('description', e.target.value || undefined)} className="input-field" />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="最大疊加 maxStack（選填）">
+              <input
+                type="number"
+                value={levelData.maxStack ?? ''}
+                onChange={(e) => upd('maxStack', e.target.value === '' ? undefined : Number(e.target.value))}
+                className="input-field"
+              />
+            </Field>
+            <Field label="持續回合 duration（選填）">
+              <input
+                type="number"
+                value={levelData.duration ?? ''}
+                onChange={(e) => upd('duration', e.target.value === '' ? undefined : Number(e.target.value))}
+                className="input-field"
+              />
+            </Field>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12px] text-text-dim font-medium uppercase tracking-wider">該級效果 effects</span>
+              <button
+                onClick={() => upd('effects', [...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }])}
+                className="text-[12px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+              >
+                + 新增效果
+              </button>
+            </div>
+            {effects.length === 0 ? (
+              <p className="text-xs text-text-dim py-1 text-center">尚未填入（數值型階梯各級在此填 dmg 等增益）</p>
+            ) : (
+              <div className="space-y-2">
+                {effects.map((eff, i) => (
+                  <SkillEffectItem
+                    key={i}
+                    effect={eff}
+                    index={i}
+                    onChange={(updated) => { const next = [...effects]; next[i] = updated; upd('effects', next) }}
+                    onRemove={() => upd('effects', effects.filter((_, idx) => idx !== i))}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── BUFF 編輯面板 ──────────────────────────────────────────────────────────────
 function BuffEditPanel({
   buff,
@@ -262,6 +355,40 @@ function BuffEditPanel({
                 />
               ))}
             </div>
+          )}
+        </div>
+
+        {/* 階梯等級 levels（PLAN-024）：填了即為階梯 buff，各級獨立 maxStack/effects */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">階梯等級 levels（選填）</span>
+            <button
+              onClick={() => update('levels', [...(form.levels ?? []), { level: (form.levels?.length ?? 0) + 1 }])}
+              className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+            >
+              + 新增等級
+            </button>
+          </div>
+          {(form.levels ?? []).length === 0 ? (
+            <p className="text-xs text-text-dim py-2 text-center">
+              無等級資料。填了即為「階梯 buff」：各級獨立 maxStack / effects，同 buff 不同 level 天然互斥（取代 mutexGroup）。
+            </p>
+          ) : (
+            <>
+              <p className="text-[11px] text-accent-yellow/80 mb-2 leading-relaxed">
+                ⚡ 此為階梯 buff：頂層 maxStack / 互斥群組可留空，由各級提供；數值引用以 <code>&lt;id.lvN.attr&gt;</code> 指定級、buffIds 以 <code>id@N</code> 賦予級。
+              </p>
+              <div className="space-y-2">
+                {(form.levels ?? []).map((lv, idx) => (
+                  <BuffLevelItem
+                    key={idx}
+                    levelData={lv}
+                    onChange={(updated) => { const arr = [...(form.levels ?? [])]; arr[idx] = updated; update('levels', arr) }}
+                    onRemove={() => update('levels', (form.levels ?? []).filter((_, i) => i !== idx))}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>

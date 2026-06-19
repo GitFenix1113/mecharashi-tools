@@ -15,6 +15,11 @@ export interface EntityRef {
   refId: string
   /** 顯示文字；預設取目標 name，可覆寫（原文用別名時） */
   label?: string
+  /**
+   * 引用階梯 buff 的特定等級（PLAN-024）。數值代入時 orderRefsByFirstMention 會帶出 .lvN 段，
+   * 使 compileSugar 產生 <refId.lvN.attr>。未指定 = 不限級（沿用頂層 / base）。
+   */
+  level?: number
 }
 
 /**
