@@ -61,7 +61,8 @@
       <tr><td>&nbsp;├ ap</td><td>string?</td><td>AP 消耗；主動 / 指令 / 必殺 / 武器技能適用</td></tr>
       <tr><td>&nbsp;├ cd</td><td>string?</td><td>冷卻回合數；指令技能才有，對應 API 的 CD 欄位（計算器不用此欄位，僅供顯示）</td></tr>
       <tr><td>&nbsp;├ weapon</td><td>string?</td><td>限定武器類別；主動技能中需特定武器者填入，對應 API matchingWeaponType</td></tr>
-      <tr><td>&nbsp;├ description</td><td>string</td><td>效果描述文字</td></tr>
+      <tr><td>&nbsp;├ description</td><td>string</td><td>效果描述文字（遊戲原文，含 [xxx] 標記）</td></tr>
+      <tr><td>&nbsp;├ descriptionRefs</td><td>DescriptionRefs?</td><td>描述內 [xxx] → 實體引用側錄（PLAN-019 Layer 1）</td></tr>
       <tr><td>&nbsp;├ icon / iconLocal</td><td>string</td><td>技能圖示路徑</td></tr>
       <tr><td>&nbsp;├ effects</td><td>SkillEffect[]</td><td>可量化效果列表（空陣列 = 待填入）；計算器加總所有 active 技能的 effects</td></tr>
       <tr><td>&nbsp;├ buffIds</td><td>string[]</td><td>技能觸發的 Buff ID 列表（API BufCarried 以 "/" 分割轉換）</td></tr>
