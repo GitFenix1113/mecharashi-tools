@@ -192,7 +192,7 @@ function BuffEditPanel({
           <textarea
             value={form.description}
             onChange={(e) => update('description', e.target.value)}
-            className="input-field min-h-[72px] resize-y text-sm leading-relaxed"
+            className="input-field min-h-[150px] resize-y text-sm leading-relaxed"
             placeholder="BUFF 效果說明（可含 [xxx] 引用其他實體，含其他 buff）"
           />
         </Field>

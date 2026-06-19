@@ -481,7 +481,7 @@ function NdVariantsEditor({
                 <textarea
                   value={v.description}
                   onChange={(e) => upd(idx, { description: e.target.value })}
-                  className="input-field min-h-[56px] resize-y text-xs leading-relaxed"
+                  className="input-field min-h-[130px] resize-y text-xs leading-relaxed"
                   placeholder="此算力階的完整天賦正文（[xxx] 用該階 buff 名，如 [凝勢III]）"
                 />
               </Field>
@@ -489,7 +489,7 @@ function NdVariantsEditor({
                 <textarea
                   value={v.descriptionMax ?? ''}
                   onChange={(e) => upd(idx, { descriptionMax: e.target.value || undefined })}
-                  className="input-field min-h-[48px] resize-y text-xs leading-relaxed"
+                  className="input-field min-h-[130px] resize-y text-xs leading-relaxed"
                   placeholder="滿星 × 此算力階的正文；未填時前台退回顯示初始版並提示待補"
                 />
               </Field>
@@ -571,7 +571,7 @@ function TalentItem({
             <textarea
               value={talent.description}
               onChange={(e) => upd('description', e.target.value)}
-              className="input-field min-h-[64px] resize-y text-xs leading-relaxed"
+              className="input-field min-h-[150px] resize-y text-xs leading-relaxed"
               placeholder="天賦效果文字描述（可含 [xxx] 引用其他實體）"
             />
           </Field>
@@ -579,7 +579,7 @@ function TalentItem({
             <textarea
               value={talent.descriptionMax}
               onChange={(e) => upd('descriptionMax', e.target.value)}
-              className="input-field min-h-[48px] resize-y text-xs leading-relaxed"
+              className="input-field min-h-[150px] resize-y text-xs leading-relaxed"
               placeholder="滿級 / 強化後的效果說明"
             />
           </Field>
@@ -645,7 +645,8 @@ function PilotTalentsTab({
   zones: string[]
   onChange: (updated: PilotTalent[]) => void
 }) {
-  const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
+  // 預設展開第一筆天賦（遊戲天賦目前僅一筆，等同開啟即展開）
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(talents.length > 0 ? 0 : null)
 
   function updateTalent(idx: number, updated: PilotTalent) {
     const next = [...talents]; next[idx] = updated; onChange(next)
@@ -666,12 +667,15 @@ function PilotTalentsTab({
     <div className="space-y-2.5">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[13px] text-text-dim">天賦資料可在此編輯；描述中的 <code>[xxx]</code> 可指派引用。儲存後寫入機師文件。</p>
-        <button
-          onClick={addTalent}
-          className="shrink-0 text-[13px] px-2.5 py-1 text-accent-orange border border-accent-orange/40 rounded hover:bg-accent-orange/10 transition-colors"
-        >
-          + 新增天賦
-        </button>
+        {/* 遊戲天賦目前僅一筆 —— 已存在天賦時隱藏新增鈕，避免誤建第二筆 */}
+        {talents.length === 0 && (
+          <button
+            onClick={addTalent}
+            className="shrink-0 text-[13px] px-2.5 py-1 text-accent-orange border border-accent-orange/40 rounded hover:bg-accent-orange/10 transition-colors"
+          >
+            + 新增天賦
+          </button>
+        )}
       </div>
 
       {talents.length === 0 ? (
@@ -836,7 +840,7 @@ function PilotEditPanel({
             </div>
             <IconField label="立繪路徑 portrait" value={form.portrait} onChange={(v) => update('portrait', v)} defaultFolder="pilots" />
             <Field label="故事 lore（Markdown）">
-              <textarea value={form.lore || ''} onChange={(e) => update('lore', e.target.value)} className="input-field min-h-[100px] resize-y" />
+              <textarea value={form.lore || ''} onChange={(e) => update('lore', e.target.value)} className="input-field min-h-[150px] resize-y" />
             </Field>
           </div>
         )}

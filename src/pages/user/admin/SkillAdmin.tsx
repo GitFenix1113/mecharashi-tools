@@ -106,7 +106,7 @@ function SkillEditPanel({
           <textarea
             value={form.description}
             onChange={(e) => update('description', e.target.value)}
-            className="input-field min-h-[72px] resize-y text-sm leading-relaxed"
+            className="input-field min-h-[150px] resize-y text-sm leading-relaxed"
             placeholder="技能效果文字描述（可含 [xxx] 引用其他實體）"
           />
         </Field>

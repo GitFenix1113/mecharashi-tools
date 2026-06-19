@@ -196,7 +196,7 @@ function ComponentEditPanel({
         </Field>
 
         <Field label="完整效果描述 description">
-          <textarea value={form.description} onChange={(e) => updateBase('description', e.target.value)} className="input-field min-h-[72px] resize-y" />
+          <textarea value={form.description} onChange={(e) => updateBase('description', e.target.value)} className="input-field min-h-[150px] resize-y" />
         </Field>
         <RefPicker
           text={form.description}

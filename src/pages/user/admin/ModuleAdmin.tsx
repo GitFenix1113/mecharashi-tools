@@ -336,7 +336,7 @@ function ModuleEditPanel({
             </Field>
             <IconField label="圖示 icon" value={form.icon} onChange={(v) => update('icon', v || undefined)} defaultFolder="modules" />
             <Field label="效果描述">
-              <textarea value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field min-h-[80px] resize-y" />
+              <textarea value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field min-h-[150px] resize-y" />
             </Field>
             <RefPicker
               text={form.description}

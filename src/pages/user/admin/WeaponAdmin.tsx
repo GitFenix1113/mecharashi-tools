@@ -125,7 +125,7 @@ function WeaponSkillItem({
             </Field>
           </div>
           <Field label="技能描述 description">
-            <textarea value={skill.description} onChange={(e) => onChange({ ...skill, description: e.target.value })} className="input-field min-h-[72px] resize-y" />
+            <textarea value={skill.description} onChange={(e) => onChange({ ...skill, description: e.target.value })} className="input-field min-h-[150px] resize-y" />
           </Field>
           <RefPicker
             text={skill.description}
@@ -138,7 +138,7 @@ function WeaponSkillItem({
               <textarea
                 value={skill.enhancedTalentDescription ?? ''}
                 onChange={(e) => onChange({ ...skill, enhancedTalentDescription: e.target.value || undefined })}
-                className="input-field min-h-[88px] resize-y"
+                className="input-field min-h-[150px] resize-y"
                 placeholder="填入天賦被此專武強化後的完整描述文字（複製遊戲原文）"
               />
             </Field>

@@ -58,7 +58,7 @@ function GlossaryEditPanel({
           <textarea
             value={form.description}
             onChange={(e) => update('description', e.target.value)}
-            className="input-field min-h-[72px] resize-y text-sm leading-relaxed"
+            className="input-field min-h-[150px] resize-y text-sm leading-relaxed"
             placeholder="解釋此機制關鍵字的意義（可含 [xxx] 再引用其他實體）"
           />
         </Field>

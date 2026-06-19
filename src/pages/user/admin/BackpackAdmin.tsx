@@ -172,7 +172,7 @@ function BackpackEditPanel({
                 </Field>
               </div>
               <Field label="技能描述 description">
-                <textarea value={skill.description} onChange={e => updateSkill('description', e.target.value)} className="input-field min-h-[72px] resize-y" />
+                <textarea value={skill.description} onChange={e => updateSkill('description', e.target.value)} className="input-field min-h-[150px] resize-y" />
               </Field>
               <RefPicker
                 text={skill.description}
