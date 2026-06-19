@@ -131,6 +131,7 @@ function WeaponSkillItem({
             text={skill.description}
             value={skill.descriptionRefs}
             onChange={(refs) => onChange({ ...skill, descriptionRefs: refs })}
+            onCompileText={(tf) => onChange({ ...skill, description: tf(skill.description) })}
           />
           {skill.enhancesTalentName && (
             <Field label="強化後天賦描述 enhancedTalentDescription（遊戲原文，用於差異對比）">

@@ -3,6 +3,12 @@ import type { EntityRef, RefType, DescriptionRefs } from '../../types'
 import { useGameData, type CollectionKey } from '../../contexts/GameDataContext'
 import { STAT_LABELS } from '../../utils/moduleStats'
 import { RefText } from '../RefText'
+import { compileSugar, orderRefsByFirstMention, detectLeftoverSugar, NUM_ATTRS } from '../../utils/numRefs'
+
+// PLAN-022 Phase C：語法糖速查（registry 驅動）。$n=可疊加層數、%n=持續回合，n=已指派 [xxx] 的首次出現序。
+const SIGIL_HINTS = Object.values(NUM_ATTRS)
+  .filter((d) => !!d.sigil)
+  .map((d) => `${d.sigil}n = ${d.label}`)
 
 /**
  * PLAN-019-C — 引用挑選器（後台填值 UI）。
@@ -186,10 +192,18 @@ export function RefPicker({
   text,
   value,
   onChange,
+  onCompileText,
 }: {
   text: string
   value?: DescriptionRefs
   onChange: (refs: DescriptionRefs) => void
+  /**
+   * PLAN-022 Phase C：把編輯期語法糖 $n/%n 編譯成正式 token 寫回正文。
+   * RefPicker 依（可能由多欄 join 的）text 算出引用順序，傳一個 transform 給消費端，
+   * 由消費端對自己擁有的各欄位（如 description / descriptionMax）分別套用 —— 邏輯集中、消費端只接一行。
+   * 未傳則不顯示「代入數值」按鈕（既有面板零回歸）。
+   */
+  onCompileText?: (transform: (s: string) => string) => void
 }) {
   const tokens = useMemo(() => extractTokens(text || ''), [text])
   const refs = value ?? {}
@@ -204,6 +218,16 @@ export function RefPicker({
   }
 
   const assignedCount = tokens.filter(t => refs[t]).length
+
+  // ── PLAN-022 Phase C：數值語法糖代入 ───────────────────────────────────────────
+  // orderedRefs：已指派 [xxx] 依首次出現序的 refId 清單，作為 $n/%n 的 n 對照（對齊 numbered 顯示）。
+  const orderedRefs   = useMemo(() => orderRefsByFirstMention(text || '', value ?? {}), [text, value])
+  const leftoverSugar = useMemo(() => detectLeftoverSugar(text || ''), [text])
+  const numberedRefs  = useMemo(
+    () => tokens.filter(t => (value ?? {})[t]).map((t, i) => ({ n: i + 1, token: t })),
+    [tokens, value],
+  )
+  const [previewing, setPreviewing] = useState(false)
 
   return (
     <div className="space-y-2.5">
@@ -236,9 +260,59 @@ export function RefPicker({
             ))}
           </div>
 
-          {/* 即時預覽 */}
+          {/* PLAN-022 Phase C：數值語法糖待代入（僅編輯期；存檔前需編譯為 <refId.attr> token）*/}
+          {onCompileText && leftoverSugar.length > 0 && (
+            <div className="rounded-lg border border-accent-yellow/30 bg-accent-yellow/5 px-3 py-2.5 space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[12px] font-semibold text-accent-yellow">⚡ 數值語法糖待代入</span>
+                <span className="text-[11px] text-text-dim">
+                  尚有 <span className="text-accent-yellow font-semibold">{leftoverSugar.length}</span> 個未代入：
+                  <code className="text-accent-yellow ml-1">{leftoverSugar.join('  ')}</code>
+                </span>
+              </div>
+              <div className="text-[11px] text-text-dim leading-relaxed">
+                <div>語法糖 <code className="text-text-secondary">{SIGIL_HINTS.join('、')}</code>（n = 下列引用編號）</div>
+                {numberedRefs.length > 0 ? (
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                    {numberedRefs.map(({ n, token }) => (
+                      <span key={token}><span className="text-accent-cyan font-semibold">{n}</span>. [{token}]</span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-accent-red mt-1">尚未指派任何引用 —— 請先在上方把 [xxx] 指派到實體，再代入數值。</div>
+                )}
+              </div>
+              {!previewing ? (
+                <button
+                  type="button"
+                  onClick={() => setPreviewing(true)}
+                  disabled={numberedRefs.length === 0}
+                  className="text-[12px] px-2.5 py-1 rounded border border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow hover:bg-accent-yellow/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                >預覽代入結果</button>
+              ) : (
+                <div className="space-y-1.5">
+                  <div className="text-[11px] text-text-dim">代入後（<code>&lt;refId.attr&gt;</code> token，存檔後前台顯示屬性真值）：</div>
+                  <pre className="text-[11px] whitespace-pre-wrap break-all rounded bg-bg-dark border border-border/40 px-2.5 py-2 text-text-secondary">{compileSugar(text || '', orderedRefs)}</pre>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { onCompileText((s) => compileSugar(s, orderedRefs)); setPreviewing(false) }}
+                      className="text-[12px] px-2.5 py-1 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green hover:bg-accent-green/20"
+                    >✓ 確認代入</button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewing(false)}
+                      className="text-[12px] px-2.5 py-1 rounded border border-border text-text-dim hover:text-text-secondary"
+                    >取消</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 即時預覽（含 [xxx] 引用 chip 與 <refId.attr> 數值引用解析）*/}
           <div className="mt-2 rounded-lg bg-bg-dark/60 border border-border/40 px-3 py-2">
-            <div className="text-[11px] text-text-dim mb-1 uppercase tracking-wider">前台預覽</div>
+            <div className="text-[11px] text-text-dim mb-1 uppercase tracking-wider">前台預覽（已解析數值引用）</div>
             <p className="text-xs text-text-secondary leading-relaxed whitespace-pre-wrap">
               <RefText text={text} refs={refs} />
             </p>

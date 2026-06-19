@@ -168,7 +168,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">6</div>
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -177,11 +177,11 @@
     </div>
     <div class="summary-card">
       <div class="summary-num" style="color:var(--text-dim)">0</div>
-      <div class="summary-lbl">待開始（第一批）</div>
+      <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-yellow)">2</div>
-      <div class="summary-lbl">延後（Phase C）</div>
+      <div class="summary-num" style="color:var(--accent-yellow)">0</div>
+      <div class="summary-lbl">延後</div>
     </div>
     <div class="summary-card">
       <div class="summary-num" style="color:var(--text-primary)">8</div>
@@ -191,8 +191,8 @@
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度（第一批 A+B+D）</span>
-      <span style="color:var(--accent-green);">6 / 6</span>
+      <span>整體完成度（A+B+C+D 全數完成）</span>
+      <span style="color:var(--accent-green);">8 / 8</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 100%"></div>
@@ -226,7 +226,13 @@
     D-2 文件完成（skills_buffs 補「數值引用」節：token 格式 / registry 屬性表 / 語法糖規則 / 邊界 + siteChangelog 一筆）；
     D-1 seed 腳本 <code>seed-plan022-ada-numrefs.mjs</code> 已對正式 Firestore 寫入 token + <code>bump-data-version</code> 失效快取，
     本機實機驗收 OK（5/7/7、DiffHighlight 標 5→7、hover 顯示來源）——
-    <strong>第一批 A+B+D 全數完成（6/6）</strong>；Phase C 維持延後（觸發＝群友自助 / 第二隻 ndVariants 機師）。
+    <strong>第一批 A+B+D 全數完成（6/6）</strong>。<br>
+    <strong style="color:var(--accent-green);">Phase C 完成（2026-06-19，提前解鎖）：</strong>
+    <code>RefPicker</code> 加 <code>onCompileText</code> 可選回呼 + 「數值語法糖待代入」區塊 —— 編號圖例（$n/%n = 第 n 個已指派 [xxx]）、
+    殘留 <code>$n/%n</code> 警告、<strong>預覽 → 確認代入</strong>（<code>compileSugar</code> 編譯成 <code>&lt;refId.attr&gt;</code> token）。
+    一處改動，Pilot（天賦含 ndVariants 雙欄）/ Skill / Buff / Glossary / Module / Weapon / Component / Backpack <strong>共 9 個 RefPicker 呼叫點全部接上</strong>；
+    未傳 <code>onCompileText</code> 的零回歸。語法糖永不落地、僅編輯期存在，存檔前以預覽把關避免誤代入。tsc + 27 測試 + vite build 全過。
+    <strong>PLAN-022 全計畫（A+B+C+D）100% 完成，可歸檔。</strong>
   </div>
 </section>
 
@@ -329,19 +335,20 @@
 <!-- Phase C -->
 <section class="section">
   <div class="section-label green">Phase C</div>
-  <div class="section-title">後台編輯接入（RefPicker 一處 → 7+ 分頁）<span style="display:inline-block;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:700;margin-left:8px;vertical-align:middle;background:rgba(234,179,8,0.12);color:var(--accent-yellow);border:1px solid rgba(234,179,8,0.3);">延後 · 與 PLAN-021 3-1 同批</span></div>
+  <div class="section-title">後台編輯接入（RefPicker 一處 → 9 個呼叫點）<span style="display:inline-block;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:700;margin-left:8px;vertical-align:middle;background:rgba(34,197,94,0.15);color:var(--accent-green);border:1px solid rgba(34,197,94,0.3);">✓ 完成 2026-06-19</span></div>
   <div class="section-desc">
     RefPicker 為所有後台描述編輯的共用元件；改一次，Pilot/Skill/Buff/Glossary/Module/Weapon/Backpack/Component 全部獲得。
-    <strong>2026-06-12 重排：整個 Phase C 延後</strong> —— 語法糖受眾（群友大量抄寫）尚未出現，目前僅艾達一隻。
-    PLAN-021 任務 3-1（ndVariants 編輯器）已同日提前完成且使用共用 RefPicker，C 上線時編輯器自動獲得「代入數值」、無返工。
-    觸發條件＝群友開始自助維護 / 第二隻 ndVariants 機師出現；在那之前 token 由開發者手寫／seed 腳本生成。
+    <strong>2026-06-12 曾因受眾未現而延後</strong>（語法糖受眾＝群友大量抄寫，當時僅艾達一隻），token 暫由開發者手寫／seed 腳本生成。
+    <strong style="color:var(--accent-green);">2026-06-19 提前解鎖落地</strong>：考量「編輯期解析預覽 + 殘留警告」對單一開發者亦有價值（不再盲改 token）、
+    且 Phase A 已備妥 <code>compileSugar</code>／<code>orderRefsByFirstMention</code>／<code>detectLeftoverSugar</code>、RefPicker 為單一接點零返工，故一次補齊 C-1 + C-2。
+    多欄正文（Pilot 天賦 description + descriptionMax、ndVariants 同理）以「傳入 transform 閉包、消費端各自套回欄位」解決回寫問題。
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; RefPicker「代入數值」按鈕</div>
       <div class="task-group-meta">src/components/admin/RefPicker.tsx</div>
-      <span class="status defer">延後 · 併 021 3-1</span>
+      <span class="status done">✓ 完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -353,7 +360,7 @@
         <div class="task-file">src/components/admin/RefPicker.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status defer">延後 · 併 021 3-1</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 
@@ -361,7 +368,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 殘留警告 + 解析預覽</div>
       <div class="task-group-meta">src/components/admin/RefPicker.tsx</div>
-      <span class="status defer">延後 · 併 021 3-1</span>
+      <span class="status done">✓ 完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -373,7 +380,7 @@
         <div class="task-file">src/components/admin/RefPicker.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status defer">延後 · 併 021 3-1</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 </section>

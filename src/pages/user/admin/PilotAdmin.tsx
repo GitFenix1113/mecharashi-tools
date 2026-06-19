@@ -498,6 +498,10 @@ function NdVariantsEditor({
                 text={[v.description, v.descriptionMax].filter(Boolean).join('\n')}
                 value={v.descriptionRefs}
                 onChange={(refs) => upd(idx, { descriptionRefs: refs })}
+                onCompileText={(tf) => upd(idx, {
+                  description: tf(v.description),
+                  descriptionMax: v.descriptionMax ? tf(v.descriptionMax) : v.descriptionMax,
+                })}
               />
               <div className="flex justify-end">
                 <button
@@ -592,7 +596,16 @@ function TalentItem({
             </span>
           </label>
           {/* description 與 descriptionMax 共用一份 descriptionRefs（兩者的 [xxx] 都在此指派）*/}
-          <RefPicker text={refText} value={talent.descriptionRefs} onChange={(refs) => upd('descriptionRefs', refs)} />
+          <RefPicker
+            text={refText}
+            value={talent.descriptionRefs}
+            onChange={(refs) => upd('descriptionRefs', refs)}
+            onCompileText={(tf) => onChange({
+              ...talent,
+              description: tf(talent.description),
+              descriptionMax: talent.descriptionMax ? tf(talent.descriptionMax) : talent.descriptionMax,
+            })}
+          />
           <NdVariantsEditor variants={talent.ndVariants ?? []} zones={zones} onChange={(n) => upd('ndVariants', n)} />
           <EffectListEditor label="可計算效果 effects" effects={effects} onChange={(n) => upd('effects', n)} />
           <EffectListEditor

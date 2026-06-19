@@ -342,6 +342,7 @@ function ModuleEditPanel({
               text={form.description}
               value={form.descriptionRefs}
               onChange={(refs) => update('descriptionRefs', refs)}
+              onCompileText={(tf) => update('description', tf(form.description))}
             />
             <Field label="模組增加等級 moduleAddLevel（配裝模擬器用，預設 1）">
               <input type="number" min={0} value={form.moduleAddLevel ?? 1} onChange={(e) => update('moduleAddLevel', Number(e.target.value))} className="input-field" />

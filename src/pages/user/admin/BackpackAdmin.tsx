@@ -178,6 +178,7 @@ function BackpackEditPanel({
                 text={skill.description}
                 value={skill.descriptionRefs}
                 onChange={refs => updateSkill('descriptionRefs', refs)}
+                onCompileText={tf => updateSkill('description', tf(skill.description))}
               />
               <Field label="圖示 icon（選填，填圖示檔名如 Icon_skill_passive_1234）">
                 <input

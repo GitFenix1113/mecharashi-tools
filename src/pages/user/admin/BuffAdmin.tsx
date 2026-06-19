@@ -202,6 +202,7 @@ function BuffEditPanel({
           text={form.description}
           value={form.descriptionRefs}
           onChange={(refs) => update('descriptionRefs', refs)}
+          onCompileText={(tf) => update('description', tf(form.description))}
         />
 
         <div className="grid grid-cols-2 gap-3">
