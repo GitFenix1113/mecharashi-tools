@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 數值引用層 Phase C（PLAN-022）— RefPicker 語法糖一鍵代入 (`4a7a4b9`)
 - 模組圖鑑顯示採用該模組的機甲（含 8 級模組多機甲共用） (`77bcff1`)
 - 數值引用層（PLAN-022 A+B+D）— 描述層數與 BUFF 屬性連動 (`f2b75a2`)
 - 彩甲規劃器超工數量可調/已彩甲勾選 + 結果版面與核心金二顯示優化 (`42a21f4`)
@@ -161,6 +162,7 @@
 
 ### 🔧 維護
 
+- 後台編輯器 UX — 描述框加大 + 天賦預設展開/已存在則隱藏新增鈕 (`a10fff2`)
 - App Check 改回 classic reCAPTCHA v3 provider + 換用新金鑰 (`98bd9a3`)
 - 修正 App Check provider 為 reCAPTCHA Enterprise (`25a2755`)
 - types 與 firestoreApi 按 domain 拆分為 per-collection 模組 (`4ee4ecf`)
