@@ -134,7 +134,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-022 計畫書</span>
   </div>
@@ -178,7 +178,7 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value green">規劃中</div>
+      <div class="meta-value green">已完成（2026-06-19 · 8/8）</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">前置依賴</div>
@@ -292,9 +292,9 @@
   <div class="warning-block">
     <strong>不在範圍內 / 延後：</strong>
     <ul style="margin:8px 0 0 16px;line-height:1.9;">
-      <li><strong>Phase C（RefPicker「代入數值」$n/%n 語法糖 UI）→ 延後</strong>：語法糖的受眾是「大量抄寫原文的群友」，目前僅艾達一隻、受眾尚未出現。
-        PLAN-021 任務 3-1（PilotAdmin ndVariants 編輯器）已於 2026-06-12 提前完成且使用共用 RefPicker —— C 上線時編輯器<strong>自動獲得</strong>「代入數值」按鈕、無返工；
-        <strong>觸發條件＝群友開始自助維護 / 第二隻 ndVariants 機師出現</strong></li>
+      <li><strong>Phase C（RefPicker「代入數值」$n/%n 語法糖 UI）→ 原訂延後，2026-06-19 提前解鎖完成</strong>：語法糖受眾（大量抄寫原文的群友）尚未出現、當時僅艾達一隻，故原訂延後。
+        後因「編輯期解析預覽 + 殘留警告」對單一維護者亦有價值（不再盲改 token），且 Phase A 已備妥 <code>compileSugar</code> 等純函式、RefPicker 為單一接點零返工，遂提前補齊 C-1 + C-2，
+        9 個 RefPicker 呼叫點全部接上（未傳 <code>onCompileText</code> 者零回歸）。<del>觸發條件＝群友開始自助維護 / 第二隻 ndVariants 機師出現</del></li>
       <li>maxStack / duration 以外的屬性（cd / ap / 百分比類）→ registry 預留，依需求逐筆加</li>
       <li>失效 token 的後台稽核頁 → 顯示層先優雅降級，稽核列備選</li>
       <li>PLAN-021 的基本顯示與驗收 → 不被本計畫阻塞，021 已以純文字數字完成端到端，022 上線後回頭升級</li>
@@ -328,7 +328,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-022 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-022 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 歷史記錄</a>
 </footer>
 
 <!--LAST-UPDATED-->
