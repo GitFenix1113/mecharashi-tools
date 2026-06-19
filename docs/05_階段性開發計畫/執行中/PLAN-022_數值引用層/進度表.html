@@ -168,11 +168,11 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">5</div>
+      <div class="summary-num" style="color:var(--accent-green)">6</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
@@ -192,10 +192,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度（第一批 A+B+D）</span>
-      <span style="color:var(--accent-green);">5 / 6</span>
+      <span style="color:var(--accent-green);">6 / 6</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 83%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -222,10 +222,11 @@
     <code>RefText</code> 非 [xxx] 片段解析 <code>&lt;refId.attr&gt;</code> → 顯示 buff 屬性真值（淡底線 + title，查無暗色 ?）；
     <code>DiffHighlight</code> base/enhanced 先 <code>resolveNumRefs</code> 再 tokenize（5→7 照常標紅）。
     共用 <code>useNumRefLookup</code> hook 懶載 buffs；PilotDetailPage / EntityRefView / WeaponSkillCard 等所有 RefText 使用處自動生效，無 token 描述零回歸。27 測試 + tsc + eslint 全過。<br>
-    <strong style="color:var(--accent-green);">Phase D（2026-06-17）：</strong>
+    <strong style="color:var(--accent-green);">Phase D 完成（D-2 2026-06-17 · D-1 2026-06-19）：</strong>
     D-2 文件完成（skills_buffs 補「數值引用」節：token 格式 / registry 屬性表 / 語法糖規則 / 邊界 + siteChangelog 一筆）；
-    D-1 seed 腳本 <code>seed-plan022-ada-numrefs.mjs</code> 完成，<code>--inspect</code> 已驗證 token 化精準、buff maxStack 現況 5/7/7 ✓ ——
-    <strong>待管理員執行寫入 + bump + 實機驗收</strong>（prod 資料寫入由管理員把關，腳本含互動確認）。
+    D-1 seed 腳本 <code>seed-plan022-ada-numrefs.mjs</code> 已對正式 Firestore 寫入 token + <code>bump-data-version</code> 失效快取，
+    本機實機驗收 OK（5/7/7、DiffHighlight 標 5→7、hover 顯示來源）——
+    <strong>第一批 A+B+D 全數完成（6/6）</strong>；Phase C 維持延後（觸發＝群友自助 / 第二隻 ndVariants 機師）。
   </div>
 </section>
 
@@ -387,7 +388,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 凝勢三階升級為數值引用（驗收案例）</div>
       <div class="task-group-meta">Firestore pilots/pilot_038_艾達 · BuffAdmin</div>
-      <span class="status doing">▶ 待執行</span>
+      <span class="status done">✓ 完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -397,12 +398,13 @@
           DiffHighlight 標出 5→7、PLAN-021 發現的「正文7 vs buff 5」矛盾就此根除。
           <strong style="color:var(--accent-cyan);">2026-06-17：</strong>seed 腳本 <code>seed-plan022-ada-numrefs.mjs</code> 完成，
           <code>--inspect</code> 已驗證 token 化精準（只動「可疊加N層」、攜帶/移除/獲得門檻保持純文字）、buff maxStack 現況 5/7/7 ✓。
-          <strong>待管理員執行寫入 + <code>bump-data-version</code> + 實機驗收</strong>。
+          <strong style="color:var(--accent-green);">2026-06-19 完成：</strong>已對正式 Firestore 寫入 token、跑 <code>bump-data-version</code> 失效快取，
+          本機實機驗收 OK（base「可疊加5層」、算力≥10/13/16「可疊加7層」、DiffHighlight 標出 5→7、數字 hover 顯示來源）；矛盾根除。
         </div>
         <div class="task-file">scripts/seed-plan022-ada-numrefs.mjs · Firestore pilots · buffs</div>
       </div>
       <div class="task-assignee">開發者 / 管理員</div>
-      <span class="status doing">▶ 待執行</span>
+      <span class="status done">✓ 完成</span>
     </div>
   </div>
 
