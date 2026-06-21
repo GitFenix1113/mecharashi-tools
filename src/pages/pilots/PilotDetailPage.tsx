@@ -10,6 +10,7 @@ import { assetUrl } from '../../utils/assets'
 import { usePilot, usePilotExclusiveWeapons } from '../../hooks/useFirestore'
 import { useGameData } from '../../contexts/GameDataContext'
 import { resolvePilotSkills, buildSkillMap } from '../../utils/pilotSkills'
+import { resolveNeuralDriveLevel, buildNdAbilityMap } from '../../utils/neuralDriveAbilities'
 import { WeaponIcon } from '../../components/WeaponIcon'
 import { DiffHighlight } from '../../components/DiffHighlight'
 import { RefText } from '../../components/RefText'
@@ -930,8 +931,22 @@ export default function PilotDetailPage() {
 
   // PLAN-004：技能改由 pilotSkills 集合解析（過渡期亦相容嵌入舊格式）
   const gd = useGameData()
-  useEffect(() => { gd.ensureLoaded(['pilotSkills']) }, [gd])
+  useEffect(() => { gd.ensureLoaded(['pilotSkills', 'neuralDriveAbilities']) }, [gd])
   const skillMap = useMemo(() => buildSkillMap(gd.pilotSkills), [gd.pilotSkills])
+
+  // PLAN-023 N1-5：神驅 level 改走 resolve（相容 abilityId 引用／嵌入舊格式）。
+  // 目前 level 尚無 abilityId → 回退嵌入、輸出不變；N1-6 flip 後改吃能力庫（單一資料源）。
+  const ndAbilityMap = useMemo(() => buildNdAbilityMap(gd.neuralDriveAbilities), [gd.neuralDriveAbilities])
+  const resolvedNeuralDrive = useMemo<NeuralDrive[] | undefined>(() => {
+    if (!pilot?.neuralDrive) return pilot?.neuralDrive
+    return pilot.neuralDrive.map(zone => ({
+      ...zone,
+      levels: zone.levels.map(lv => {
+        const a = resolveNeuralDriveLevel(lv, ndAbilityMap)
+        return { ...lv, skillName: a.name, effect: a.description, skillIcon: a.icon ?? lv.skillIcon, iconLocal: a.iconLocal ?? lv.iconLocal, effects: a.effects, buffIds: a.buffIds }
+      }),
+    }))
+  }, [pilot?.neuralDrive, ndAbilityMap])
   useEffect(() => { setExclusiveWeaponIdx(0) }, [id])
   const [ndExpanded, setNdExpanded] = useState(false)
   const [ndHoverState, setNdHoverState] = useState<{ level: NdLevel; x: number; anchorTop: number } | null>(null)
@@ -1053,7 +1068,7 @@ export default function PilotDetailPage() {
 
           {/* AP */}
           {(() => {
-            const ndAp = parseNdApBonus(pilot.neuralDrive)
+            const ndAp = parseNdApBonus(resolvedNeuralDrive)
             const hasNdBonus = ndAp.init + ndAp.max + ndAp.recovery > 0
             return (
               <div className="mt-1">
@@ -1100,7 +1115,7 @@ export default function PilotDetailPage() {
 
         {(pilot.neuralDrive?.length ?? 0) > 0 && (
           <NdPowerBar
-            drives={pilot.neuralDrive}
+            drives={resolvedNeuralDrive ?? []}
             levels={ndLevels}
             affectZones={ndAffectZones}
             onChange={setNdLevelsOverride}
@@ -1115,7 +1130,7 @@ export default function PilotDetailPage() {
                 <TalentCard
                   key={i}
                   talent={t}
-                  drives={pilot.neuralDrive ?? []}
+                  drives={resolvedNeuralDrive ?? []}
                   levels={ndLevels}
                   weaponEnhanceText={talentEnhancementMap.get(t.name)}
                   weaponName={exclusiveWeapon?.name}
@@ -1212,7 +1227,7 @@ export default function PilotDetailPage() {
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-rows-2 gap-3">
                 {ND_ORDER.map((zoneName) => {
-                  const nd = (pilot.neuralDrive ?? []).find((d) => d.name === zoneName)
+                  const nd = (resolvedNeuralDrive ?? []).find((d) => d.name === zoneName)
                   return (
                     <NeuralDriveZoneCard
                       key={zoneName}
