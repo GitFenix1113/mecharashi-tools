@@ -1,9 +1,9 @@
 // ─── 實體引用層（PLAN-019 Layer 1）──────────────────────────────────────────
 
-/** 可被引用的實體類型。'stat' 指向屬性 key（如 'dmg'）；'term' 指向 glossaryTerms 詞條 */
+/** 可被引用的實體類型。'stat' 指向屬性 key（如 'dmg'）；'term' 指向 glossaryTerms 詞條；'neuralDrive' 指向 neuralDriveAbilities */
 export type RefType =
   | 'buff' | 'skill' | 'pilot' | 'mech' | 'weapon'
-  | 'module' | 'backpack' | 'component' | 'stat' | 'term'
+  | 'module' | 'backpack' | 'component' | 'stat' | 'term' | 'neuralDrive'
 
 /**
  * 對另一個實體的型別化、可解析引用。

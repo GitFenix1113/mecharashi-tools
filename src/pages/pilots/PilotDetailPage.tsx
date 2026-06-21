@@ -795,7 +795,7 @@ function NdLevelContent({ level }: { level: NdLevel }) {
         <span className="text-sm font-bold">{level.skillName}</span>
       </div>
       <p className="text-[13px] text-text-dim">芯片總計 ≥{level.minSum}</p>
-      <p className="text-xs text-text-secondary leading-relaxed"><RefText text={level.effect} /></p>
+      <p className="text-xs text-text-secondary leading-relaxed"><RefText text={level.effect} refs={level.descriptionRefs} /></p>
     </div>
   )
 }
@@ -899,7 +899,7 @@ function NeuralDriveZoneCard({ nd, zoneName, className, expanded, onLevelHover, 
                   Lv.{lv.level}（芯片總計 ≥{lv.minSum}）
                 </span>
               </div>
-              <p className="text-sm text-text-secondary leading-relaxed"><RefText text={lv.effect} /></p>
+              <p className="text-sm text-text-secondary leading-relaxed"><RefText text={lv.effect} refs={lv.descriptionRefs} /></p>
             </div>
           </div>
         ))}
@@ -943,7 +943,7 @@ export default function PilotDetailPage() {
       ...zone,
       levels: zone.levels.map(lv => {
         const a = resolveNeuralDriveLevel(lv, ndAbilityMap)
-        return { ...lv, skillName: a.name, effect: a.description, skillIcon: a.icon ?? lv.skillIcon, iconLocal: a.iconLocal ?? lv.iconLocal, effects: a.effects, buffIds: a.buffIds }
+        return { ...lv, skillName: a.name, effect: a.description, skillIcon: a.icon ?? lv.skillIcon, iconLocal: a.iconLocal ?? lv.iconLocal, effects: a.effects, buffIds: a.buffIds, descriptionRefs: a.descriptionRefs ?? lv.descriptionRefs }
       }),
     }))
   }, [pilot?.neuralDrive, ndAbilityMap])

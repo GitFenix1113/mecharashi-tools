@@ -177,6 +177,8 @@ export interface NeuralDriveLevel {
   iconLocal: string
   effects: SkillEffect[]
   buffIds: string[]
+  /** 描述內 [xxx] 引用側錄（PLAN-023 N2-1）；flip 後由 resolve 從 NeuralDriveAbility 帶入。 */
+  descriptionRefs?: DescriptionRefs
 }
 
 export interface NeuralDrive {

@@ -20,27 +20,28 @@ const SIGIL_HINTS = Object.values(NUM_ATTRS)
  */
 
 const REF_TYPE_OPTIONS: { value: RefType; label: string }[] = [
-  { value: 'term',      label: '詞條 term' },
-  { value: 'buff',      label: 'BUFF / 狀態 buff' },
-  { value: 'skill',     label: '技能 skill' },
-  { value: 'stat',      label: '屬性 stat' },
-  { value: 'pilot',     label: '機師 pilot' },
-  { value: 'mech',      label: '機甲 mech' },
-  { value: 'weapon',    label: '武器 weapon' },
-  { value: 'module',    label: '模組 module' },
-  { value: 'backpack',  label: '背包 backpack' },
-  { value: 'component', label: '元件 component' },
+  { value: 'term',       label: '詞條 term' },
+  { value: 'buff',       label: 'BUFF / 狀態 buff' },
+  { value: 'skill',      label: '技能 skill' },
+  { value: 'neuralDrive', label: '神經驅動 neuralDrive' },
+  { value: 'stat',       label: '屬性 stat' },
+  { value: 'pilot',      label: '機師 pilot' },
+  { value: 'mech',       label: '機甲 mech' },
+  { value: 'weapon',     label: '武器 weapon' },
+  { value: 'module',     label: '模組 module' },
+  { value: 'backpack',   label: '背包 backpack' },
+  { value: 'component',  label: '元件 component' },
 ]
 
 const REF_TYPE_LABEL: Record<RefType, string> = {
   buff: 'BUFF', skill: '技能', pilot: '機師', mech: '機甲', weapon: '武器',
-  module: '模組', backpack: '背包', component: '元件', stat: '屬性', term: '詞條',
+  module: '模組', backpack: '背包', component: '元件', stat: '屬性', term: '詞條', neuralDrive: '神經驅動',
 }
 
 const REF_TO_COLLECTION: Partial<Record<RefType, CollectionKey>> = {
   pilot: 'pilots', mech: 'mechs', weapon: 'weapons', module: 'modules',
   backpack: 'backpacks', component: 'components', buff: 'buffs',
-  skill: 'pilotSkills', term: 'glossaryTerms',
+  skill: 'pilotSkills', term: 'glossaryTerms', neuralDrive: 'neuralDriveAbilities',
 }
 
 interface Candidate { id: string; name: string }
@@ -74,10 +75,11 @@ function useCandidates(refType: RefType | ''): Candidate[] {
       case 'buff':      return gd.buffs.map(b => ({ id: b.id, name: b.name }))
       case 'skill':     return gd.pilotSkills.map(s => ({ id: s.id, name: s.name }))
       case 'term':      return gd.glossaryTerms.map(t => ({ id: t.id, name: t.name }))
+      case 'neuralDrive': return gd.neuralDriveAbilities.map(a => ({ id: a.id, name: a.name }))
       case 'stat':      return STAT_LABELS.map(s => ({ id: s.key, name: s.label }))
       default:          return []
     }
-  }, [refType, gd.pilots, gd.mechs, gd.weapons, gd.modules, gd.backpacks, gd.components, gd.buffs, gd.pilotSkills, gd.glossaryTerms])
+  }, [refType, gd.pilots, gd.mechs, gd.weapons, gd.modules, gd.backpacks, gd.components, gd.buffs, gd.pilotSkills, gd.glossaryTerms, gd.neuralDriveAbilities])
 }
 
 // ── 單一 token 的指派列 ────────────────────────────────────────────────────────
