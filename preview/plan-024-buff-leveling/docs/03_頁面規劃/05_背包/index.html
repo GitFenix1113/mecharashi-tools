@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>背包頁面規劃 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../index.html">頁面規劃</a>
+    <span>›</span>
+    <span class="current">背包</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge" style="border-color:var(--accent-pink);color:var(--accent-pink);background:rgba(236,72,153,0.06);">◆ Page Design</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">背包圖鑑<span style="-webkit-text-fill-color:var(--text-secondary);">BACKPACK PAGE · /backpacks</span></h1>
+  <p class="hero-sub">所有背包裝備、裝配限制標籤、技能效果</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label">頁面規格</div>
+  <div class="section-title">背包圖鑑 /backpacks</div>
+
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/backpacks</code></td></tr>
+    <tr><th>開發階段</th><td>Phase 2</td></tr>
+    <tr><th>登入需求</th><td>不需要</td></tr>
+    <tr><th>資料來源</th><td>Firestore: backpacks（全部）</td></tr>
+  </table>
+
+  <div class="sub-h" style="margin-top:24px;">篩選功能</div>
+  <div class="tech-row">
+    <span class="tech-tag primary">依機甲限制（全部/輕甲/中甲/重甲）</span>
+    <span class="tech-tag secondary">依效果類型</span>
+    <span class="tech-tag">關鍵字搜尋</span>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label">版面設計</div>
+  <div class="section-title">UI 區塊規劃</div>
+
+  <div class="card-grid">
+    <div class="card pink" style="--accent-pink:#ec4899;">
+      <div class="card-icon">🎒</div>
+      <h3>背包卡片</h3>
+      <p>背包名稱、效果類型標籤、重量、裝配位置、機甲限制標籤（若有限制則顯示警示色）。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">✨</div>
+      <h3>技能效果展示</h3>
+      <p>技能名稱、完整描述、可量化加成數值（增傷/爆率/爆傷/命中）、特殊效果說明。</p>
+    </div>
+  </div>
+
+  <div class="info-block" style="margin-top:16px;">
+    <strong>📋 機甲限制標籤設計</strong>
+    · 無限制 → 無標籤（或顯示「通用」）<br>
+    · 僅限輕甲 → 橘色標籤「⚡ 僅限輕型」<br>
+    · 僅限重甲 → 藍色標籤「🛡️ 僅限重型」
+  </div>
+
+  <div class="wireframe" style="margin-top:20px;">
+    <div class="wf-icon">🎒</div>
+    <p>背包圖鑑版面草圖待規劃</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label">資料需求</div>
+  <div class="section-title">Firestore 讀取</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="../../02_技術文件/02_資料模型/backpacks.html">
+      <div class="doc-tag">Collection</div>
+      <h4>🎒 backpacks</h4>
+      <p>技能、重量、機甲裝甲類型限制</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 頁面規劃 · 背包 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 頁面規劃總覽</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

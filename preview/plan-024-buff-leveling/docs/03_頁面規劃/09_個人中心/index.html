@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>個人中心頁面規劃 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../index.html">頁面規劃</a>
+    <span>›</span>
+    <span class="current">個人中心</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ Page Design</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">個人中心<span style="-webkit-text-fill-color:var(--text-secondary);">PROFILE PAGE · /profile</span></h1>
+  <p class="hero-sub">用戶個人資料管理、頭像設定、配裝紀錄管理</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label purple">頁面規格</div>
+  <div class="section-title">個人中心 /profile</div>
+
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/profile</code></td></tr>
+    <tr><th>開發階段</th><td>Phase 5</td></tr>
+    <tr><th>登入需求</th><td>需要（未登入顯示引導登入畫面）</td></tr>
+    <tr><th>資料來源</th><td>Firestore: users/{uid}/profile (main) + users/{uid}/builds</td></tr>
+    <tr><th>相關計畫</th><td><a href="../../05_階段性開發計畫/歷史記錄/PLAN-011_個人檔案管理/計畫書.html">PLAN-011 個人檔案管理</a></td></tr>
+    <tr><th>狀態</th><td>✅ 已完成實作</td></tr>
+  </table>
+</section>
+
+<section class="section">
+  <div class="section-label purple">Tab 結構</div>
+  <div class="section-title">頁面分頁配置</div>
+
+  <div class="card-grid">
+    <div class="card purple">
+      <div class="card-icon">👤</div>
+      <h3>個人資料 Tab</h3>
+      <p>頭像顯示與更換、Email 唯讀、顯示名稱 / 遊戲暱稱 / 伺服器 / 公會編輯、登出按鈕。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">📁</div>
+      <h3>我的配裝 Tab</h3>
+      <p>已儲存的配裝列表，顯示配裝名稱、機師/機甲/武器摘要、更新時間。可刪除、可載入至模擬器。</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">個人資料 Tab</div>
+  <div class="section-title">版面與元件</div>
+
+  <table class="spec-table">
+    <tr>
+      <th>區塊</th>
+      <th>元件</th>
+      <th>說明</th>
+    </tr>
+    <tr>
+      <td>頭像區</td>
+      <td><code>AvatarDisplay</code>（size=lg）</td>
+      <td>依 avatarType 顯示：首字母預設 / 上傳圖片 / 機師頭像 / Google 頭像</td>
+    </tr>
+    <tr>
+      <td>更換頭像</td>
+      <td><code>AvatarPicker</code> Modal</td>
+      <td>三個 Tab：上傳圖片（拖放＋預覽）/ 機師頭像（搜尋＋格狀選取）/ Google 頭像（第三方登入用戶限定）</td>
+    </tr>
+    <tr>
+      <td>Email</td>
+      <td>唯讀文字</td>
+      <td>來自 Firebase Auth，不可修改</td>
+    </tr>
+    <tr>
+      <td>個人資料表單</td>
+      <td><code>ProfileEditForm</code></td>
+      <td>顯示名稱（必填）、遊戲暱稱（選填）、遊戲伺服器 select（獵豹物流/灰燼之子/破曉世紀）、遊戲公會（選填）</td>
+    </tr>
+    <tr>
+      <td>登出</td>
+      <td>按鈕</td>
+      <td>呼叫 Firebase Auth signOut</td>
+    </tr>
+  </table>
+</section>
+
+<section class="section">
+  <div class="section-label blue">我的配裝 Tab</div>
+  <div class="section-title">版面與互動</div>
+
+  <table class="spec-table">
+    <tr>
+      <th>項目</th>
+      <th>說明</th>
+    </tr>
+    <tr>
+      <td>配裝列表</td>
+      <td>從 Firestore <code>users/{uid}/builds</code> 讀取，依 updatedAt 降序排列</td>
+    </tr>
+    <tr>
+      <td>配裝卡片</td>
+      <td>顯示：配裝名稱、機師名稱、機甲名稱、武器 ID、最後更新日期</td>
+    </tr>
+    <tr>
+      <td>載入配裝</td>
+      <td>點擊「載入配裝」按鈕，使用 React Router navigate state 將配裝資料帶至 <code>/simulator</code>，並直接跳到結果步驟</td>
+    </tr>
+    <tr>
+      <td>刪除配裝</td>
+      <td>點擊垃圾桶圖示，確認後呼叫 <code>deleteBuild(uid, buildId)</code> 刪除</td>
+    </tr>
+    <tr>
+      <td>空狀態</td>
+      <td>顯示引導前往 <code>/simulator</code> 新增配裝的提示</td>
+    </tr>
+  </table>
+</section>
+
+<section class="section">
+  <div class="section-label purple">頭像來源邏輯</div>
+  <div class="section-title">AvatarDisplay 顯示規則</div>
+
+  <table class="spec-table">
+    <tr>
+      <th>avatarType</th>
+      <th>顯示內容</th>
+      <th>資料來源</th>
+    </tr>
+    <tr>
+      <td><code>null</code>（預設）</td>
+      <td>顯示名稱首字母彩色圓形（依名稱 hash 決定顏色）</td>
+      <td>— （本地計算）</td>
+    </tr>
+    <tr>
+      <td><code>'upload'</code></td>
+      <td>用戶上傳的圖片</td>
+      <td>Firebase Storage <code>avatars/{uid}/avatar.webp</code>，URL 存於 <code>avatarUrl</code></td>
+    </tr>
+    <tr>
+      <td><code>'pilot'</code></td>
+      <td>選取機師的頭像</td>
+      <td>從 pilots collection 即時取得（<code>avatarPilotId</code> 對應機師的 portrait）</td>
+    </tr>
+    <tr>
+      <td><code>'google'</code></td>
+      <td>Google 帳號頭像</td>
+      <td>Firebase Auth <code>photoURL</code>（第三方登入用戶）</td>
+    </tr>
+  </table>
+</section>
+
+<section class="section">
+  <div class="section-label purple">關聯資料</div>
+  <div class="section-title">相關文件</div>
+
+  <div class="doc-grid">
+    <a class="doc-item" href="../../05_階段性開發計畫/歷史記錄/PLAN-011_個人檔案管理/計畫書.html">
+      <div class="doc-tag">PLAN-011</div>
+      <h4>◆ 個人檔案管理計畫書</h4>
+      <p>詳細需求、資料模型、UI 草圖、實作進度</p>
+    </a>
+    <a class="doc-item" href="../../02_技術文件/04_Firebase/資料庫設計文件/users.html">
+      <div class="doc-tag">Firebase</div>
+      <h4>🗃️ users Schema</h4>
+      <p>profile 欄位完整定義（包含 PLAN-011 新增欄位）</p>
+    </a>
+    <a class="doc-item" href="../../02_技術文件/04_Firebase/資料庫設計文件/enums.html">
+      <div class="doc-tag">Firebase</div>
+      <h4>📋 Enum 定義</h4>
+      <p>GameServer enum（獵豹物流 / 灰燼之子 / 破曉世紀）</p>
+    </a>
+    <a class="doc-item" href="../../02_技術文件/04_Firebase/資料庫設計文件/security-rules.html">
+      <div class="doc-tag">Firebase</div>
+      <h4>🔒 Security Rules</h4>
+      <p>Storage avatars/{uid}/ 讀寫規則</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 頁面規劃 · 個人中心 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 頁面規劃總覽</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

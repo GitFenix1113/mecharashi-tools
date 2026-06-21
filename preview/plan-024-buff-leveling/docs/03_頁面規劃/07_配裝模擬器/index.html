@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>配裝模擬器頁面規劃 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../index.html">頁面規劃</a>
+    <span>›</span>
+    <span class="current">配裝模擬器</span>
+  </div>
+</nav>
+
+<header class="hero orange">
+  <div class="hero-badge">◆ Page Design</div>
+  <h1>配裝模擬器<span>SIMULATOR PAGE · /simulator</span></h1>
+  <p class="hero-sub">核心工具頁：選配裝 → 自動篩選 → 匯出分享圖（傷害計算為 Phase 8）</p>
+  <div class="version-badge">Phase 3 — 配裝選擇 + 匯出 | Phase 8 — 傷害計算</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label">頁面規格</div>
+  <div class="section-title">配裝模擬器 /simulator</div>
+
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/simulator</code></td></tr>
+    <tr><th>開發階段</th><td>Phase 3（配裝）/ Phase 8（傷害計算）</td></tr>
+    <tr><th>登入需求</th><td>不需要（未登入可用，登入後可存檔）</td></tr>
+    <tr><th>資料來源</th><td>Firestore: pilots / mechs / weapons / backpacks / modules / components / pilotResearch</td></tr>
+  </table>
+</section>
+
+<section class="section">
+  <div class="section-label">UI 設計</div>
+  <div class="section-title">分步選配介面</div>
+
+  <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">📐</div>
+      <h3>版面策略</h3>
+      <p>左側：分步選配面板（Step 1~8）。右側：配裝預覽卡片（即時更新）。行動版：上下分割或 Tab 切換。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">⚡</div>
+      <h3>自動篩選提示</h3>
+      <p>選機甲後，武器選單自動過濾超重選項，背包選單過濾不相容裝甲類型。不可選的項目變灰但保留。</p>
+    </div>
+    <div class="card green">
+      <div class="card-icon">📸</div>
+      <h3>匯出分享圖（Phase 3）</h3>
+      <p>html2canvas 截圖 → PNG。1200×675px 分享卡片，含機師/機甲/武器/背包/模組/元件資訊。傷害欄位預留。</p>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">🔖</div>
+      <h3>配裝存檔（Phase 5）</h3>
+      <p>登入用戶點擊「儲存配裝」後存入 Firestore users/{uid}/builds，可命名並在個人中心查看。</p>
+    </div>
+    <div class="card red">
+      <div class="card-icon">⚔️</div>
+      <h3>傷害計算（Phase 8）</h3>
+      <p>填入敵方參數後顯示期望傷害，支援 A/B 組合對比。傷害來源拆解面板。</p>
+    </div>
+  </div>
+
+  <div class="wireframe" style="margin-top:20px;">
+    <div class="wf-icon">⚔️</div>
+    <p>配裝模擬器版面草圖待規劃<br>左側選配步驟 + 右側即時預覽（桌面版）<br>行動版：步驟折疊，預覽在底部</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label">技術設計</div>
+  <div class="section-title">關聯技術文件</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="../../02_技術文件/03_遊戲機制/配裝模擬器流程.html">
+      <div class="doc-tag">Mechanic</div>
+      <h4>🔧 配裝模擬器流程</h4>
+      <p>Step 1-8 詳細操作流程、自動篩選邏輯、匯出規格</p>
+    </a>
+    <a class="doc-item" href="../../02_技術文件/03_遊戲機制/傷害公式.html">
+      <div class="doc-tag">Mechanic</div>
+      <h4>⚔️ 傷害公式</h4>
+      <p>Phase 8 傷害計算引擎的完整公式</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 頁面規劃 · 配裝模擬器 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 頁面規劃總覽</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

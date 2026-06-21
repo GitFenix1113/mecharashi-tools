@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-014 版本甘特圖與後台管理 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.decision-block {
+  background: rgba(6,182,212,0.06);
+  border: 1px solid rgba(6,182,212,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.green-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.info-block {
+  background: rgba(168,85,247,0.06);
+  border: 1px solid rgba(168,85,247,0.2);
+  border-left: 3px solid var(--accent-purple);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.task-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.task-table th {
+  background: rgba(255,107,43,0.08);
+  color: var(--accent-orange);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 10px 14px;
+  text-align: left;
+  border: 1px solid var(--border);
+}
+.task-table td {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.task-table tr:hover td { background: var(--bg-card-hover); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-green  { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+.badge-yellow { background: rgba(234,179,8,0.15); color: var(--accent-yellow); }
+.badge-red    { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+.badge-purple { background: rgba(168,85,247,0.15); color: var(--accent-purple); }
+.badge-cyan   { background: rgba(6,182,212,0.15); color: var(--accent-cyan); }
+.badge-orange { background: rgba(255,107,43,0.15); color: var(--accent-orange); }
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+.three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+@media (max-width: 900px) { .three-col { grid-template-columns: 1fr; } }
+.arch-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+.arch-box h4 {
+  font-size: 13px;
+  color: var(--accent-orange);
+  margin-bottom: 8px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+}
+.arch-box ul {
+  padding-left: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 2;
+}
+
+.timeline-mockup {
+  background: #0a0c10;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin: 16px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #8b949e;
+  overflow-x: auto;
+}
+.tm-version { color: var(--accent-orange); font-weight: 700; }
+.tm-current { color: var(--accent-green); font-weight: 700; }
+.tm-future  { color: var(--accent-cyan); }
+.tm-dim     { color: #444; }
+.tm-pilot   { color: #e3b341; }
+.tm-mech    { color: #79c0ff; }
+.tm-event   { color: #d2a8ff; }
+.tm-bar     { color: #22c55e; }
+.tm-bar2    { color: #a855f7; }
+.tm-bar3    { color: #06b6d4; }
+.tm-spine   { color: #333; }
+
+.phase-header {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent-orange);
+  padding: 8px 0 4px;
+  margin-top: 20px;
+  border-bottom: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-014 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-014</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    版本甘特圖與後台管理<span style="-webkit-text-fill-color:var(--text-secondary);">Gantt View · Firebase Admin UI</span>
+  </h1>
+  <p class="hero-sub">為版本時間線加入活動區間甘特圖展示（起始日 + 週數），並建立 Firebase 後台管理介面，讓非技術維護者可透過圖形表單更新版本資料，無須直接修改程式碼。</p>
+</header>
+
+<main class="container">
+
+<!-- ── 計畫概要 ── -->
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value purple">PLAN-014</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-05-25</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">對應階段</div>
+      <div class="meta-value purple">Phase 6 — 內容系統 + 管理擴充</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value cyan">MEDIUM-HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value orange">資料模型 · 首頁展示 · Firebase · Admin 路由</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">✓ 已完成（2026-05-27）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">估計工期</div>
+      <div class="meta-value orange">Phase A: 5–7 天 / Phase B: 8–10 天</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置條件</div>
+      <div class="meta-value green">✓ PLAN-013 已完成（時間線元件）</div>
+    </div>
+  </div>
+
+  <div class="decision-block">
+    <strong>背景與動機</strong><br><br>
+    PLAN-013 已完成版本時間線的核心展示（圓點展開 + 陸台雙欄資訊），但目前所有活動（復刻卡池、限時活動、刮刮樂等）只有「屬於上半或下半」的模糊時間資訊，無法得知活動的實際開始日與持續時間。<br><br>
+    此外，原始資料以 TypeScript 靜態檔案維護，需要有程式碼編輯能力才能更新。若未來維護者轉換，高門檻將造成資料停滯。<br><br>
+    本計畫分兩階段：<strong>Phase A</strong> 重構資料模型並建立甘特圖展示；<strong>Phase B</strong> 將資料遷移至 Firebase Firestore，並建立圖形化後台管理介面。
+  </div>
+</section>
+
+<!-- ── 核心設計決策 ── -->
+<section class="section">
+  <div class="section-label purple">Design Decisions</div>
+  <div class="section-title">核心設計決策</div>
+
+  <div class="warning-block">
+    <strong>遊戲規律：所有更新固定於星期四</strong><br><br>
+    鋼嵐的版本更新、活動開始、活動結束均以星期四為單位。因此活動的時間資訊可用「起始日（星期四）+ 持續週數」完整描述。<br>
+    例：5/21（週四）開始、1週的活動 → 結束於 5/27（週三）。<br>
+    結束日公式：<code>endDate = startDate + weeks × 7 − 1 天</code>
+  </div>
+
+  <div class="decision-block">
+    <strong>活動時間線版面：三欄式 + 垂直時間軸</strong><br><br>
+    版本展開面板維持<strong>三欄式佈局</strong>：<br>
+    左欄 = 陸版活動時間線（CN）、中欄 = 版本核心資訊、右欄 = 台版活動時間線（TW）<br><br>
+    左右兩欄的時間軸為<strong>縱向</strong>（由上而下），每一列 = 一週（週四 → 下週三）。<br>
+    每個活動佔用一條縱向欄道（track），活動期間的週格填充對應顏色色塊，持續多週則色塊連續填充。<br>
+    跨越上/下半版本界線的活動，其色塊會在<strong>分界線兩側都出現</strong>，視覺上一目了然。<br><br>
+    核心資訊（機師、機甲、武裝討伐、戰令）不隨活動時間變動，顯示於中欄即可，不需要色塊欄道。<br>
+    活動類資訊（復刻卡池、限時活動、刮刮樂、輪盤）各佔一條欄道，以週為單位呈現持續時間。
+  </div>
+
+  <div class="info-block">
+    <strong>陸台分離資料輸入</strong><br><br>
+    同一個活動在陸服與台服的起始日不同（通常差約半年），且台服有時會調整活動順序。<br>
+    因此甘特圖的活動（<code>TimedActivity</code>）採用「陸服、台服各自輸入」的模式，<strong>不從陸服日期自動推算台服日期</strong>。<br>
+    這也是為何版面設計左右兩側獨立，而非共用同一份資料。
+  </div>
+</section>
+
+<!-- ── Phase A：資料模型重構 ── -->
+<section class="section">
+  <div class="section-label purple">Phase A — Data Model</div>
+  <div class="section-title">Phase A：TimedActivity 資料模型擴充</div>
+
+  <div class="decision-block">
+    <strong>重構範圍</strong>：<code>PatchHalf</code> 中的活動欄位從 <code>string[]</code> 升級為 <code>TimedActivity[]</code><br><br>
+    目前 <code>specialEvents</code>、<code>revivedBanners</code>、<code>skinGacha</code>、<code>rouletteEvent</code> 均缺乏時間維度。<br>
+    重構後每筆活動帶有 <code>startDate</code>（起始日）與 <code>weeks</code>（持續週數），UI 可計算結束日並繪製甘特條。<br>
+    核心欄位（<code>pilots</code>、<code>mechs</code>、<code>armamentRaids</code>、<code>battlePass</code>）保持不變，因為它們以版本半起始日為準，不需獨立時間區間。
+  </div>
+
+  <div class="code-block">
+<span class="cm">// src/data/patchVersions/types.ts — 新增 TimedActivity</span>
+
+<span class="kw">export interface</span> <span class="ty">TimedActivity</span> {
+  name: <span class="ty">string</span>          <span class="cm">// 活動名稱，如「角雕刮刮樂」、「環島物流節」</span>
+  startDate: <span class="ty">string</span>     <span class="cm">// 起始日（YYYY/MM/DD，固定為星期四）</span>
+  weeks: <span class="ty">number</span>         <span class="cm">// 持續週數（1 = 單週，即當週四到下週三）</span>
+  type: <span class="ty">ActivityType</span>    <span class="cm">// 活動類型，用於甘特條顏色分類</span>
+  pilots?: <span class="ty">string</span>[]     <span class="cm">// pilotMission 時的機師列表（複數）</span>
+  mechs?: <span class="ty">string</span>[]       <span class="cm">// crossShipping 時的機甲列表（複數）</span>
+}
+
+<span class="kw">export type</span> <span class="ty">ActivityType</span> =
+  | <span class="st">'skinGacha'</span>           <span class="cm">// 角雕刮刮樂</span>
+  | <span class="st">'roulette'</span>            <span class="cm">// 角雕輪盤</span>
+  | <span class="st">'pilotMission'</span>        <span class="cm">// 角雕特遣（含複數機師）</span>
+  | <span class="st">'crossShipping'</span>       <span class="cm">// 跨域海運（含複數機甲）</span>
+  | <span class="st">'specificPilotBanner'</span> <span class="cm">// 特定角色池</span>
+  | <span class="st">'specificMechBanner'</span>  <span class="cm">// 特定機甲池</span>
+  | <span class="st">'limitedEvent'</span>        <span class="cm">// 限時活動（邏輯類，如環島物流節）</span>
+  | <span class="st">'loginEvent'</span>          <span class="cm">// 限時簽到活動（碼區補給等）</span>
+  | <span class="st">'battlePass'</span>          <span class="cm">// 版本戰令（通常貫穿整個半版本）</span>
+
+<span class="cm">// PatchHalf 新增欄位，舊欄位保留以維持向下相容直到資料完成遷移</span>
+<span class="kw">export interface</span> <span class="ty">PatchHalf</span> {
+  cnDate: <span class="ty">string</span>
+  twDate?: <span class="ty">string</span>
+  twIsPredicted?: <span class="ty">boolean</span>
+  pilots?: <span class="ty">string</span>[]
+  mechs?: <span class="ty">string</span>[]
+  pilotSelection?: <span class="ty">string</span>[]
+  mechSelection?: <span class="ty">string</span>[]
+  armamentRaids?: <span class="ty">ArmamentRaid</span>[]
+  battlePass?: <span class="ty">BattlePass</span>
+  <span class="cm">// 新增：甘特圖活動（陸服）</span>
+  cnActivities?: <span class="ty">TimedActivity</span>[]
+  <span class="cm">// 新增：甘特圖活動（台服，與陸服獨立維護）</span>
+  twActivities?: <span class="ty">TimedActivity</span>[]
+  <span class="cm">// 以下舊欄位保留相容，Phase B 後可逐步移除</span>
+  skinGacha?: <span class="ty">string</span>
+  rouletteEvent?: <span class="ty">boolean</span>
+  specialEvents?: <span class="ty">string</span>[]
+  revivedBanners?: <span class="ty">string</span>[]
+}
+  </div>
+
+  <div class="warning-block">
+    <strong>遷移策略：漸進式，不破壞現有顯示</strong><br><br>
+    舊欄位（<code>skinGacha</code>、<code>rouletteEvent</code>、<code>specialEvents</code>、<code>revivedBanners</code>）保留，UI 優先讀取新的 <code>cnActivities</code> / <code>twActivities</code>；若新欄位不存在則 fallback 顯示舊欄位的文字清單。<br>
+    這樣可以邊填新資料邊保持現有功能正常，不需要一次性完成所有版本的資料遷移。
+  </div>
+
+  <div class="code-block">
+<span class="cm">// v2.8 資料遷移範例（上半）</span>
+upper: {
+  cnDate: <span class="st">'2025/11/06'</span>,
+  twDate: <span class="st">'2026/04/23'</span>,
+  pilots: [<span class="st">'鄭樂萱'</span>],
+  mechs: [<span class="st">'霸王（中甲）'</span>],
+  armamentRaids: [
+    { name: <span class="st">'帕洛瑪'</span>, weapons: [<span class="st">'焰刀'</span>] },
+    { name: <span class="st">'維護者'</span>, backpacks: [<span class="st">'修理型背包'</span>] },
+  ],
+  battlePass: { pilots: [<span class="st">'阿黛勒'</span>, <span class="st">'懷亞特'</span>], mechs: [<span class="st">'影武者'</span>, <span class="st">'芬里厄'</span>] },
+  <span class="cm">// 新增：陸服甘特圖活動</span>
+  cnActivities: [
+    { name: <span class="st">'角雕刮刮樂'</span>,    startDate: <span class="st">'2025/11/13'</span>, weeks: <span class="nm">2</span>, type: <span class="st">'skinGacha'</span> },
+    { name: <span class="st">'角雕特遣'</span>,      startDate: <span class="st">'2025/11/20'</span>, weeks: <span class="nm">1</span>, type: <span class="st">'pilotMission'</span>,  pilots: [<span class="st">'白夜凍鋒'</span>, <span class="st">'十字線上的明光'</span>] },
+    { name: <span class="st">'環島物流節'</span>,    startDate: <span class="st">'2025/11/20'</span>, weeks: <span class="nm">2</span>, type: <span class="st">'limitedEvent'</span> },
+  ],
+  <span class="cm">// 新增：台服甘特圖活動（各自輸入，與陸服無關）</span>
+  twActivities: [
+    { name: <span class="st">'角雕刮刮樂'</span>,    startDate: <span class="st">'2026/04/30'</span>, weeks: <span class="nm">2</span>, type: <span class="st">'skinGacha'</span> },
+    { name: <span class="st">'角雕特遣'</span>,      startDate: <span class="st">'2026/05/07'</span>, weeks: <span class="nm">1</span>, type: <span class="st">'pilotMission'</span>,  pilots: [<span class="st">'白夜凍鋒'</span>, <span class="st">'十字線上的明光'</span>] },
+    { name: <span class="st">'環島物流節'</span>,    startDate: <span class="st">'2026/05/07'</span>, weeks: <span class="nm">2</span>, type: <span class="st">'limitedEvent'</span> },
+  ],
+},
+  </div>
+</section>
+
+<!-- ── Phase A：甘特圖 UI ── -->
+<section class="section">
+  <div class="section-label purple">Phase A — Gantt UI</div>
+  <div class="section-title">Phase A：甘特圖版面設計</div>
+
+  <div class="decision-block">
+    <strong>三欄式活動時間線概念</strong><br><br>
+    現有 <code>VersionExpandedPanel</code> 的陸台雙欄改為三欄：<br>
+    左欄（陸版活動時間線）、中欄（版本核心資訊）、右欄（台版活動時間線）<br><br>
+    左右欄的時間軸為<strong>縱向</strong>：每一列代表一週（週四到下週三），從各自半版本起始日向下排列。<br>
+    每個活動各佔一條獨立欄道（track），活動期間的週格填充色塊，持續多週的活動形成連續色條。<br>
+    跨越上/下半界線的活動（如卡池持續到下半第一週）其色塊在<strong>分界線兩側連續延伸</strong>，視覺上直觀呈現橫跨版本的事實。<br>
+    不同 <code>ActivityType</code> 使用不同顏色，方便一眼區分角雕特遣、跨域海運、卡池、刮刮樂、限時活動等。
+  </div>
+
+  <div class="timeline-mockup">
+<pre>
+  v2.8 展開面板（三欄式，垂直活動時間線）
+
+  ┌──────────────────────────┬───────────────────────────────────┬──────────────────────────┐
+  │  陸版活動時間線（CN）      │         版本核心資訊               │  台版活動時間線（TW）      │
+  │  戰令 刮刮 復刻 限時       │                                   │    戰令 刮刮 復刻 限時     │
+  ├────┬────┬────┬────┤                                   ├────┬────┬────┬────┤
+  │<span class="tm-bar"> ██ </span>│    │    │    │  上半 2025/11/06（陸）/ 04/23（台）│<span class="tm-bar"> ██ </span>│    │    │    │ <span class="tm-dim">04/23~04/29</span>
+  │<span class="tm-bar"> ██ </span>│    │    │    │  角色  鄭樂萱                      │<span class="tm-bar"> ██ </span>│    │    │    │
+  │<span class="tm-bar"> ██ </span>│<span class="tm-bar2"> ██ </span>│    │    │  機甲  霸王（中甲）                │<span class="tm-bar"> ██ </span>│<span class="tm-bar2"> ██ </span>│    │    │ <span class="tm-dim">04/30~05/06</span>
+  │<span class="tm-bar"> ██ </span>│<span class="tm-bar2"> ██ </span>│    │    │  武裝  帕洛瑪 › 焰刀               │<span class="tm-bar"> ██ </span>│<span class="tm-bar2"> ██ </span>│    │    │
+  │<span class="tm-bar"> ██ </span>│<span class="tm-bar2"> ██ </span>│<span class="tm-bar"> ██ </span>│<span class="tm-bar3"> ██ </span>│        維護者 › 修理包              │<span class="tm-bar"> ██ </span>│<span class="tm-bar2"> ██ </span>│<span class="tm-bar"> ██ </span>│<span class="tm-bar3"> ██ </span>│ <span class="tm-dim">05/07~05/13</span>
+  │<span class="tm-bar"> ██ </span>│    │<span class="tm-bar"> ██ </span>│<span class="tm-bar3"> ██ </span>│  戰令  阿黛勒 / 懷亞特              │<span class="tm-bar"> ██ </span>│<span class="tm-bar2"> ██ </span>│<span class="tm-bar"> ██ </span>│<span class="tm-bar3"> ██ </span>│ <span class="tm-current">← 刮刮跨半！</span>
+  ├────┼────┼────┼────┤         影武者 / 芬里厄 ════════════╪════╪════╪════╪════╡ <span class="tm-dim">分界線</span>
+  │<span class="tm-bar"> ██ </span>│    │    │    │  下半 2025/11/27（陸）/ 05/14（台）│<span class="tm-bar"> ██ </span>│<span class="tm-bar2"> ██ </span>│    │<span class="tm-bar3"> ██ </span>│ <span class="tm-dim">05/14~05/20</span>
+  │<span class="tm-bar"> ██ </span>│    │    │    │  角色  奧德莉                      │<span class="tm-bar"> ██ </span>│    │    │<span class="tm-bar3"> ██ </span>│ <span class="tm-current">← 限時跨半！</span>
+  │<span class="tm-bar"> ██ </span>│    │    │<span class="tm-bar3"> ██ </span>│  機甲  君權（重甲）                │<span class="tm-bar"> ██ </span>│    │    │    │ <span class="tm-dim">05/21~05/27</span>
+  │<span class="tm-bar"> ██ </span>│    │    │    │  武裝  鐵幕法典                    │<span class="tm-bar"> ██ </span>│    │    │    │
+  │<span class="tm-bar2"> ▓▓ </span>│    │    │    │  角雕輪盤（末週）                  │<span class="tm-bar2"> ▓▓ </span>│    │    │    │ <span class="tm-dim">05/28~06/03</span>
+  └────┴────┴────┴────┴───────────────────────────────────┴────┴────┴────┴────┘
+  <span class="tm-dim">一格 = 一週   連續格 = 活動持續多週   色塊跨越分界線 = 直觀呈現橫跨上/下半版本</span>
+  <span class="tm-bar">██ 戰令 / 復刻卡池</span>   <span class="tm-bar2">██ 刮刮樂 / 輪盤</span>   <span class="tm-bar3">██ 限時 / 簽到活動</span>
+</pre>
+  </div>
+
+  <div class="three-col">
+    <div class="arch-box">
+      <h4>左 / 右欄：ActivityTimeline</h4>
+      <ul>
+        <li>縱向時間軸：每列 = 1 週（週四 ~ 週三）</li>
+        <li>每個活動各佔一條欄道（track），並排排列</li>
+        <li>活動期間的週格填充對應顏色色塊</li>
+        <li>持續多週的活動形成連續色條</li>
+        <li>跨越上/下半界線的色塊在分界線兩側連續呈現</li>
+        <li>hover tooltip 顯示活動名稱 + 起訖日（自動計算）</li>
+        <li>陸版 / 台版各自獨立時間軸，不互相對齊</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>中欄：CoreInfoPanel</h4>
+      <ul>
+        <li>上半起始日 + 下半起始日（陸/台各別）</li>
+        <li>機師 / 機甲（名稱 badge）</li>
+        <li>角雕特遣 / 跨域海運（若有）</li>
+        <li>武裝討伐 + 背包製作（條列）</li>
+        <li>戰令角色 / 機甲選項</li>
+        <li>危境重構 / 商店更新（版本層級）</li>
+        <li>上/下半分界線對齊左右兩欄的分界列</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>活動色塊顏色對應</h4>
+      <ul>
+        <li><span style="color:var(--accent-orange)">■</span> skinGacha — 刮刮樂</li>
+        <li><span style="color:var(--accent-yellow)">■</span> roulette — 角雕輪盤</li>
+        <li><span style="color:var(--accent-purple)">■</span> pilotMission — 角雕特遣</li>
+        <li><span style="color:#c9a0dc">■</span> crossShipping — 跨域海運</li>
+        <li><span style="color:#79c0ff">■</span> specificPilotBanner — 特定角色池</li>
+        <li><span style="color:#58a6d4">■</span> specificMechBanner — 特定機甲池</li>
+        <li><span style="color:var(--accent-cyan)">■</span> limitedEvent — 限時活動</li>
+        <li><span style="color:var(--accent-green)">■</span> loginEvent — 簽到活動</li>
+        <li><span style="color:#aaa">■</span> battlePass — 戰令</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warning-block">
+    <strong>手機版降格策略</strong><br><br>
+    三欄佈局在手機版（&lt; 768px）無法正常顯示。手機版降格為 Tab 切換模式：<br>
+    Tab 1「核心資訊」—— 中欄 <code>CoreInfoPanel</code> 全寬展示（機師/機甲/武裝/戰令）<br>
+    Tab 2「陸版活動」—— 陸版 <code>ActivityTimeline</code> 全寬顯示（垂直週列色塊）<br>
+    Tab 3「台版活動」—— 台版 <code>ActivityTimeline</code> 全寬顯示（同上）<br><br>
+    垂直週列結構在手機版全寬顯示不需要更動，只是不再三欄並排。
+  </div>
+</section>
+
+<!-- ── Phase B：Firebase 後台 ── -->
+<section class="section">
+  <div class="section-label purple">Phase B — Firebase Admin</div>
+  <div class="section-title">Phase B：Firebase Firestore 遷移 + 後台管理 UI</div>
+
+  <div class="decision-block">
+    <strong>核心目標</strong>：讓非技術維護者透過網站內的管理介面更新版本資料，無須接觸程式碼或 TypeScript 語法。<br><br>
+    資料從靜態 TypeScript 檔案遷移至 Firebase Firestore。前台讀取改用 Firestore hook；後台管理頁提供完整的表單介面，覆蓋所有欄位（含 TimedActivity 的日期選擇器和週數輸入）。
+  </div>
+
+  <div class="info-block">
+    <strong>暫定技術選型：Firebase Storage（圖片）+ Firebase Firestore（資料）</strong><br><br>
+    <strong>圖片儲存 → Firebase Storage</strong><br>
+    Admin UI 提供「上傳圖片」按鈕，維護者選擇本機檔案後自動上傳至 Firebase Storage，URL 自動回填 Firestore，不需手動複製路徑。<br>
+    Storage 安全規則：<code>isAdmin</code> 才可寫入；所有人可讀取（公開 URL）。<br>
+    免費額度：5 GB 儲存 / 月 1 GB 下載，對此規模完全足夠。<br><br>
+    <strong>版本資料 → Firebase Firestore</strong><br>
+    專案已使用 Firebase Auth，同一 project 內加 Firestore 無額外設定；安全規則直接綁定 Auth 的 <code>isAdmin</code> 欄位，不需後端 API。<br>
+    <code>onSnapshot</code> 即時同步：Admin 存檔後前台立即反映，無需刷頁。<br>
+    免費額度：每日 5 萬次讀取 / 2 萬次寫入，版本資料讀多寫少完全足夠。<br><br>
+    選用理由：統一在 Firebase 生態，最小化新增依賴；若未來有調整需求，Fallback 至靜態 TS 資料的機制已在 Phase A 規劃中預留。
+  </div>
+
+  <div class="code-block">
+<span class="cm">// Firestore 集合結構</span>
+patchVersions/              <span class="cm">← Collection（對應 PatchVersion[]）</span>
+  v2.8/                     <span class="cm">← Document ID = version 號</span>
+    version: "2.8"
+    bannerImage: "/images/banners/v2.8.jpg"
+    isTwCurrent: false
+    upper: { ... }          <span class="cm">← PatchHalf（含 cnActivities / twActivities）</span>
+    lower: { ... }
+    crisisShop: [...]
+    ...
+  v3.0/
+    isTwCurrent: true
+    ...
+
+<span class="cm">// 讀取端：替換靜態 import</span>
+<span class="cm">// Before: import { PATCH_VERSIONS } from '../data/patchVersions'</span>
+<span class="cm">// After:  const { data: PATCH_VERSIONS } = usePatchVersions()</span>
+  </div>
+
+  <div class="two-col">
+    <div class="arch-box">
+      <h4>Firestore 安全規則</h4>
+      <ul>
+        <li>所有人可讀取 patchVersions</li>
+        <li>寫入需 <code>isAdmin: true</code> 於 users profile</li>
+        <li>Admin 認定：由現有管理員於 Firebase Console 手動設定 <code>users/{uid}/profile/main.isAdmin</code></li>
+        <li>無需 Firebase Admin SDK 或 Cloud Functions</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>usePatchVersions hook 設計</h4>
+      <ul>
+        <li>讀取 Firestore <code>patchVersions</code>，依 version 號排序</li>
+        <li>Firestore 讀取失敗時 fallback 至靜態 TS 資料</li>
+        <li>loading / error 狀態管理</li>
+        <li>快取：onSnapshot 保持即時同步（管理員更新後前台立即反映）</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── Admin UI 設計 ── -->
+<section class="section">
+  <div class="section-label purple">Admin UI</div>
+  <div class="section-title">後台管理介面設計</div>
+
+  <div class="decision-block">
+    <strong>路由設計</strong>：Admin 入口掛在 <code>/admin</code> 路由，僅 <code>isAdmin: true</code> 的使用者可進入。未登入或無 admin 權限則導回首頁。
+  </div>
+
+  <div class="timeline-mockup">
+<pre>
+  <span class="tm-version">/admin</span>
+  │
+  ├── <span class="tm-version">/admin/versions</span>
+  │     版本列表頁：所有版本卡片（版本號、台服狀態、最後更新時間）
+  │     操作：建立新版本 / 點擊進入編輯
+  │
+  ├── <span class="tm-version">/admin/versions/:versionId</span>
+  │     版本編輯頁：分三個分頁 Tab
+  │     Tab 1「核心資訊」：版本號、bannerImage路徑、isTwCurrent、crisisShop 等
+  │     Tab 2「上半」：上半起始日、機師/機甲 輸入、武裝討伐、戰令、陸/台活動清單
+  │     Tab 3「下半」：同上半結構
+  │
+  └── <span class="tm-dim">（未來擴充：/admin/grayops — 灰燼行動機甲管理）</span>
+</pre>
+  </div>
+
+  <div class="two-col">
+    <div class="arch-box">
+      <h4>核心資訊 Tab 欄位</h4>
+      <ul>
+        <li>版本號（文字，如 2.8）</li>
+        <li>版本名稱（選填）</li>
+        <li>版本前瞻圖（Firebase Storage 上傳按鈕，URL 自動回填）</li>
+        <li>★ 台服當前版本（checkbox）</li>
+        <li>危境重構機師（動態新增/刪除列表）</li>
+        <li>記憶風暴說明（文字欄，選填）</li>
+        <li>邊境商店 / 鬥技場更新（文字欄）</li>
+        <li>備註（textarea）</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>上半 / 下半 Tab 欄位</h4>
+      <ul>
+        <li>陸服起始日（Date picker，固定週四）</li>
+        <li>台服起始日（Date picker）+ 預測勾選</li>
+        <li>機師名稱列表（動態輸入列）</li>
+        <li>機甲名稱列表（動態輸入列）</li>
+        <li>角雕特遣 / 跨域海運（動態列表）</li>
+        <li>武裝討伐（名稱 + 武器/背包子清單）</li>
+        <li>戰令（角色選項 / 機甲選項）</li>
+        <li>陸服活動（TimedActivity 列表）</li>
+        <li>台服活動（TimedActivity 列表）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="arch-box" style="margin: 16px 0;">
+    <h4>TimedActivity 單筆輸入元件</h4>
+    <ul>
+      <li>活動名稱（文字欄，如「白夜凍鋒（復刻）」）</li>
+      <li>起始日（Date picker，驗證必須是星期四）</li>
+      <li>持續週數（數字輸入，min=1，顯示自動計算的結束日）</li>
+      <li>活動類型（下拉選單：復刻卡池 / 刮刮樂 / 輪盤 / 限時活動 / 簽到活動 / 戰令）</li>
+      <li>刪除此筆活動按鈕</li>
+    </ul>
+  </div>
+
+  <div class="info-block">
+    <strong>UX 細節</strong>
+    <ul style="margin-top:8px;padding-left:18px;line-height:2.2;">
+      <li>Date picker 旁顯示「星期幾」提示，非週四時顯示紅色警告（遊戲固定週四改版）</li>
+      <li>週數輸入旁即時顯示計算出的結束日，例如輸入 1 顯示「結束：05/27（週三）」</li>
+      <li>儲存前顯示摘要確認，防止誤操作</li>
+      <li>儲存成功後 toast 通知，前台（Firestore onSnapshot）即時更新</li>
+      <li>版本列表顯示各版本「陸服活動」/ 「台服活動」填寫進度，方便知道哪些版本資料不完整</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ── 工作項目 ── -->
+<section class="section">
+  <div class="section-label purple">Tasks</div>
+  <div class="section-title">工作項目明細</div>
+
+  <div class="phase-header">Phase A — 資料模型 + 甘特圖展示</div>
+
+  <table class="task-table">
+    <tr>
+      <th>編號</th>
+      <th>工作項目</th>
+      <th>說明</th>
+      <th>難度</th>
+      <th>估時</th>
+    </tr>
+    <tr>
+      <td><strong>A-1</strong></td>
+      <td>TimedActivity 型別定義</td>
+      <td><code>TimedActivity</code> interface + <code>ActivityType</code> union；更新 <code>PatchHalf</code> 加入 <code>cnActivities</code> / <code>twActivities</code>；舊欄位標記 deprecated 但保留（相容期）</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-2</strong></td>
+      <td>現有版本資料遷移</td>
+      <td>為 v2.8 → v3.3 各半版本填入 <code>cnActivities</code> 與 <code>twActivities</code>；陸台各自輸入起始日與週數；從截圖資料、遊戲公告補齊歷史活動資訊</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>2–3 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-3</strong></td>
+      <td>ActivityTimeline 週列色塊元件</td>
+      <td>縱向時間線元件：接受 <code>activities: TimedActivity[]</code> + 半版本起始日；展開所有週列（每列 = 週四到下週三）；每列橫向排列各活動欄道（track），活動期間對應欄位填充色塊（<code>startDate ≤ weekStart &lt; endDate</code>）；hover tooltip 顯示名稱 + 計算後的起訖日</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-4</strong></td>
+      <td>ActivityTimeline.tsx 整合 + 分界線</td>
+      <td>整合上半 / 下半兩段時間線，在兩段之間插入分界列（視覺上為加粗橫線）；跨上/下半的活動色塊在分界列前後連續延伸，無縫對齊；自動計算所有週列範圍（從上半起始日到下半最後一個活動結束）；週次日期範圍顯示於各列左側或右側</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-5</strong></td>
+      <td>CoreInfoPanel.tsx</td>
+      <td>中欄核心資訊面板：上半/下半起始日（陸/台各別）+ 機師/機甲（badge）+ 武裝討伐 + 戰令等資訊；上/下半分界線位置與左右欄的分界列對齊，確保視覺上水平一致；從現有 <code>VersionSidePanel</code> 中抽取核心部分重構</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-6</strong></td>
+      <td>VersionExpandedPanel 三欄式改版</td>
+      <td>現有雙欄（陸服/台服）改為三欄：陸版 <code>ActivityTimeline</code>（左）+ <code>CoreInfoPanel</code>（中）+ 台版 <code>ActivityTimeline</code>（右）；三欄的上/下半分界線水平對齊，跨半活動色塊在分界線兩側連續延伸；版本 banner 圖維持頂部全寬；手機版降格為 Tab 切換（核心資訊 / 陸版活動 / 台版活動）</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-7</strong></td>
+      <td>Build 驗證 + 樣式調整</td>
+      <td><code>tsc</code> + <code>vite build</code> 通過；桌面三欄正確對齊；手機版 Tab 切換正常；甘特條 hover tooltip 顯示正確日期；舊欄位 fallback 顯示確認</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+  </table>
+
+  <div class="phase-header">Phase B — Firebase Firestore + Admin UI</div>
+
+  <table class="task-table">
+    <tr>
+      <th>編號</th>
+      <th>工作項目</th>
+      <th>說明</th>
+      <th>難度</th>
+      <th>估時</th>
+    </tr>
+    <tr>
+      <td><strong>B-1</strong></td>
+      <td>Firestore 初始化腳本</td>
+      <td>一次性腳本：讀取現有靜態 <code>PATCH_VERSIONS</code> 資料，批次寫入 Firestore <code>patchVersions</code> Collection；本地執行一次即可，不需部署</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-2</strong></td>
+      <td>Firestore 安全規則更新</td>
+      <td><code>patchVersions</code>：所有人可讀，<code>isAdmin: true</code> 才可寫；確認 <code>users/{uid}/profile/main.isAdmin</code> 欄位已可由 Firebase Console 手動設定</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-3</strong></td>
+      <td>usePatchVersions hook</td>
+      <td>onSnapshot 訂閱 <code>patchVersions</code> Collection；依 version 欄位排序；Firestore 錯誤時自動 fallback 至靜態 <code>PATCH_VERSIONS</code> 資料；export <code>loading</code>、<code>error</code>、<code>data</code></td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-4</strong></td>
+      <td>前台資料來源切換</td>
+      <td>將 <code>VersionTimeline</code>、<code>VersionQuickTable</code>、<code>GrayOpsPanel</code> 的靜態 import 改為 <code>usePatchVersions()</code>；加入 loading skeleton + error state 顯示</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-5</strong></td>
+      <td>AdminRoute guard</td>
+      <td>HOC 或 wrapper：檢查 <code>useAuth()</code> 已登入 + <code>userProfile.isAdmin === true</code>；未通過時導向首頁並顯示無權限 toast；Header 中 admin 連結僅對 admin 顯示</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-6</strong></td>
+      <td>AdminVersionListPage</td>
+      <td>路由 <code>/admin/versions</code>：顯示所有版本卡片（版本號 / isTwCurrent / 陸台活動填寫進度百分比 / 最後更新時間）；「建立新版本」按鈕導向空白編輯頁；版本卡片點擊進入編輯</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-7</strong></td>
+      <td>AdminVersionEditorPage — 核心資訊 Tab</td>
+      <td>路由 <code>/admin/versions/:id</code>：Tab 1 核心資訊表單；<code>version</code>、<code>bannerImage</code>、<code>isTwCurrent</code>（checkbox）、<code>crisisShop</code>（動態列）、<code>memoryStorm</code>、<code>borderShop</code>、<code>arenaShop</code>、<code>notes</code>；儲存至 Firestore</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-8</strong></td>
+      <td>AdminHalfEditorPanel — 上下半 Tab</td>
+      <td>Tab 2 / Tab 3 各對應 upper / lower；欄位：<code>cnDate</code>（Date picker + 星期驗證）/ <code>twDate</code>（同）/ <code>twIsPredicted</code>（checkbox）/ pilots / mechs / pilotSelection / mechSelection（動態列）/ armamentRaids（子表單）/ battlePass；儲存至 Firestore</td>
+      <td><span class="badge badge-red">高</span></td>
+      <td>2 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-9</strong></td>
+      <td>AdminTimedActivityEditor</td>
+      <td>Tab 2 / Tab 3 下方「陸服活動」/「台服活動」子區塊；TimedActivity 列表（動態新增 / 刪除 / 排序）；單筆：名稱 + 起始日 picker（星期四驗證）+ 週數（即時計算結束日）+ 活動類型下拉；批次儲存</td>
+      <td><span class="badge badge-red">高</span></td>
+      <td>2 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-10</strong></td>
+      <td>E2E 驗證 + 收尾</td>
+      <td>Admin 新增版本 → 前台即時出現；修改活動週數 → 甘特條長度即時更新；非 admin 帳號無法進入 /admin；Firestore 斷線時 fallback 靜態資料顯示正常；<code>tsc</code> + build 通過</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+  </table>
+
+  <div class="decision-block">
+    <strong>Phase A 工期估計</strong>：5–7 天（A-1 → A-7）<br>
+    A-1 → A-2 可同步（型別設計後即可填資料）；A-3 → A-4 → A-5 → A-6 順序執行；A-7 最後<br><br>
+    <strong>Phase B 工期估計</strong>：8–10 天（B-1 → B-10）<br>
+    B-1、B-2、B-3 可並行；B-4 依賴 B-3；B-5、B-6 依賴 B-4；B-7、B-8、B-9 依賴 B-5，可並行；B-10 最後
+  </div>
+</section>
+
+<!-- ── 維護指南 ── -->
+<section class="section">
+  <div class="section-label purple">Maintenance</div>
+  <div class="section-title">Phase B 完成後：非技術維護者操作流程</div>
+
+  <div class="green-block">
+    <strong>台服版本更新時（每約 3 週）</strong>
+    <ol style="margin-top:8px;padding-left:18px;line-height:2.5;">
+      <li>打開工具站，以管理員帳號登入</li>
+      <li>進入「後台管理」→「版本列表」</li>
+      <li>點擊需要更新的版本（如 v3.0）</li>
+      <li>Tab「上半」或「下半」：修改台服起始日、移除「預測」勾選</li>
+      <li>「陸服活動」/ 「台服活動」：新增或修改本次確認的活動資訊（名稱、起始日、週數、類型）</li>
+      <li>切換「核心資訊」Tab：若此版本已成為台服當前版本，勾選「★ 台服當前版本」，並取消舊版本的同一勾選</li>
+      <li>按「儲存」，網站即時更新</li>
+    </ol>
+  </div>
+
+  <div class="green-block">
+    <strong>新陸服版本上線時</strong>
+    <ol style="margin-top:8px;padding-left:18px;line-height:2.5;">
+      <li>後台管理 → 「建立新版本」</li>
+      <li>填入版本號（如 3.4）、版本前瞻圖路徑（圖片先上傳至 public/images/banners/）</li>
+      <li>Tab「上半」：填陸服起始日（精確）、機師/機甲名稱；台服日期填預測值並勾選「預測」</li>
+      <li>逐步填入武裝討伐、戰令、各週活動（起始日 + 週數）</li>
+      <li>儲存後，版本濃縮資訊表和時間線自動出現此版本</li>
+    </ol>
+  </div>
+
+  <div class="warning-block">
+    <strong>Phase B 的前提條件</strong><br><br>
+    Phase B 實作前需先完成 Phase A（TimedActivity 資料模型），因為後台 UI 的 <code>AdminTimedActivityEditor</code> 依賴此型別。<br>
+    另外，Phase B 需要有至少一個 Firebase 管理員帳號（在 Firebase Console 手動設定 <code>isAdmin: true</code>）才能驗證後台功能。
+  </div>
+</section>
+
+<!-- ── 相關文件 ── -->
+<section class="section">
+  <div class="section-label purple">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-014 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-013_首頁版本時間線/計畫書.html">
+      <div class="doc-tag">Prerequisite</div>
+      <h4>◆ PLAN-013 計畫書</h4>
+      <p>版本時間線基礎實作（前置計畫）</p>
+    </a>
+    <a class="doc-item" href="../../../04_進度表/開發進度表.html">
+      <div class="doc-tag">Roadmap</div>
+      <h4>📊 開發進度表</h4>
+      <p>Phase 系列進度與 PLAN 追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-014 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

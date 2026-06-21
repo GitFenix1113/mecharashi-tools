@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>機甲頁面規劃 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../index.html">頁面規劃</a>
+    <span>›</span>
+    <span class="current">機甲</span>
+  </div>
+</nav>
+
+<header class="hero green">
+  <div class="hero-badge green">◆ Page Design</div>
+  <h1>機甲頁面<span>MECH PAGES · /mechs</span></h1>
+  <p class="hero-sub">機甲圖鑑（列表）+ 機甲詳情（座艙式排版）</p>
+</header>
+
+<main class="container">
+
+<section class="section" id="list">
+  <div class="section-label green">LIST PAGE</div>
+  <div class="section-title">機甲圖鑑 /mechs</div>
+
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/mechs</code></td></tr>
+    <tr><th>開發階段</th><td>Phase 2</td></tr>
+    <tr><th>資料來源</th><td>Firestore: mechs（全部）</td></tr>
+  </table>
+
+  <div class="sub-h" style="margin-top:24px;">篩選功能</div>
+  <div class="tech-row">
+    <span class="tech-tag primary">依裝甲類型篩選（輕/中/重）</span>
+    <span class="tech-tag secondary">依稀有度篩選</span>
+    <span class="tech-tag">關鍵字搜尋</span>
+  </div>
+
+  <div class="sub-h">卡片內容</div>
+  <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">機甲立繪（頂部圖片區）、裝甲類型標籤（疊加於圖片左上角）、機甲名稱、出力/重量簡覽、火力/閃避/移動力長條圖、各部件耐久數值。</p>
+
+  <div class="sub-h">立繪圖片來源優先序</div>
+  <div class="tech-row">
+    <span class="tech-tag primary">Firestore mech.portrait 欄位</span>
+    <span class="tech-tag secondary">Fallback：/images/mechs/{機甲名}.png</span>
+    <span class="tech-tag">載入失敗則隱藏圖片區</span>
+  </div>
+
+  <div class="sub-h">卡片互動</div>
+  <div class="tech-row">
+    <span class="tech-tag">Hover 立繪輕微放大（scale-105）</span>
+    <span class="tech-tag">圖片底部漸層融合卡片背景</span>
+  </div>
+</section>
+
+<section class="section" id="detail">
+  <div class="section-label green">DETAIL PAGE</div>
+  <div class="section-title">機甲詳情 /mechs/:id</div>
+
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/mechs/:id</code></td></tr>
+    <tr><th>開發階段</th><td>Phase 2（基本）/ Phase 4（副模組連結）</td></tr>
+    <tr><th>資料來源</th><td>Firestore: mechs/{id} + modules（副模組）</td></tr>
+  </table>
+
+  <div class="sub-h" style="margin-top:24px;">座艙式排版（3×3 格）</div>
+  <div class="info-block">
+    <strong>📐 機甲詳情版面設計</strong>
+    仿「機甲整備」介面：3×3 格式排版。<br>
+    · 中央（中間格）：機甲立繪<br>
+    · 左上角：左臂部件屬性卡<br>
+    · 右上角：右臂部件屬性卡<br>
+    · 左下角：軀幹部件屬性卡<br>
+    · 右下角：腿部部件屬性卡<br>
+    · 上方：機甲基本資訊（出力/重量/裝甲類型）<br>
+    · 下方：副模組展示（4模/8模/固定模組）
+  </div>
+
+  <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">🤖</div>
+      <h3>部件屬性卡</h3>
+      <p>各部件（軀幹/左臂/右臂/腿部）的耐久/護甲/火力/重量/接口類型，以卡片呈現。</p>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">🧩</div>
+      <h3>副模組展示</h3>
+      <p>4模槽 / 8模槽 / 固定模組的名稱與效果描述，點擊可跳轉至 /modules/:id。</p>
+    </div>
+  </div>
+
+  <div class="wireframe" style="margin-top:20px;">
+    <div class="wf-icon">🤖</div>
+    <p>座艙式版面草圖待規劃<br>3×3 格，中央立繪，四角部件卡，底部模組區</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label green">資料需求</div>
+  <div class="section-title">Firestore 讀取</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="../../02_技術文件/02_資料模型/mechs.html">
+      <div class="doc-tag">Collection</div>
+      <h4>🤖 mechs</h4>
+      <p>部件資料、出力、副模組引用 ID</p>
+    </a>
+    <a class="doc-item" href="../../02_技術文件/02_資料模型/modules.html">
+      <div class="doc-tag">Collection</div>
+      <h4>🧩 modules</h4>
+      <p>副模組詳細效果（透過 module4Id / module8Id / moduleFixedIds）</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 頁面規劃 · 機甲 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 頁面規劃總覽</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>
