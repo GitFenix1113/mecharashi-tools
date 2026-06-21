@@ -132,7 +132,19 @@
       <tr><td>mutexGroup</td><td>string?</td><td>🆕 PLAN-019</td><td>形態互斥群組；同 group 的形態/狀態一次只能存在一個（虛粒子形態 ⟷ 實粒子形態）</td></tr>
       <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-019</td><td>描述內 [xxx] 引用側錄；buff 也可引用其他 buff</td></tr>
       <tr><td>effects</td><td>SkillEffect[]</td><td>✅ PLAN-001</td><td>Buff active 時提供的效果列表</td></tr>
+      <tr><td>levels</td><td>BuffLevel[]?</td><td>🆕 PLAN-024</td><td>階梯 buff 各等級能力；無 = 普通 buff。各級 maxStack/effects 由此提供，同 buff 不同 level 天然互斥（取代 mutexGroup）；引用以 &lt;id.lvN.attr&gt; 指定級、buffIds 以 id@N 賦予級</td></tr>
+      <tr><td>termRef</td><td>string?</td><td>🆕 PLAN-024</td><td>掛載 glossaryTerm ID；填了則詳情卡改以該詞條的官方說明為顯示來源（取代本 buff description，單一真相源，為技能庫鋪路）</td></tr>
     </table>
+  </div>
+
+  <div class="note-block">
+    <strong>🆕 PLAN-024：flat XOR leveled — 能力資料單一權威來源</strong>
+    一顆 buff 只能二擇一：<code>flat</code>（無 <code>levels</code>，能力資料來自頂層 <code>maxStack</code>/<code>duration</code>/<code>effects</code>）
+    或 <code>leveled</code>（有 <code>levels</code>，能力資料一律由各 <code>BuffLevel</code> 提供，頂層三欄停用且應為空）。
+    <strong>buff-wide 欄位</strong>（兩態共用）：<code>name</code>/<code>buffType</code>/<code>description</code>/<code>descriptionRefs</code>/<code>icon</code>/<code>mutexGroup</code>/<code>termRef</code>；
+    <strong>level-exclusive 欄位</strong>（有 levels 只能填在各級）：<code>maxStack</code>/<code>duration</code>/<code>effects</code>。
+    後台 BuffAdmin 於有 levels 時停用頂層三欄並在儲存時清空，杜絕「頂層 vs 各級」雙來源衝突。
+    引用 leveled buff 須帶 level（<code>id@N</code> / <code>&lt;id.lvN.attr&gt;</code> / EntityRef.level）才取得能力數值；不帶 level 僅顯示 buff-wide 資訊。
   </div>
 
   <div class="note-block">

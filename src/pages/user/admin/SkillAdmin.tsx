@@ -4,6 +4,7 @@ import { formatWeaponReq } from '../../../types'
 import { SkillType } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
 import { updatePilotSkill, docExists } from '../../../lib/firestoreApi'
+import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
@@ -12,10 +13,10 @@ import { SkillEffectItem } from './PilotAdmin'
 type SkillFilters = { type: string; manual: 'all' | 'manual' | 'auto' }
 
 // ─── 預設值工廠 ────────────────────────────────────────────────────────────────
-function makeDefaultSkill(id: string): PilotSkillDoc {
+function makeDefaultSkill(id: string, name = ''): PilotSkillDoc {
   return {
     id,
-    name: '',
+    name,
     type: SkillType.PASSIVE,
     description: '',
     descriptionRefs: {},
@@ -176,12 +177,22 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
       (f.manual === 'all' || (f.manual === 'manual' ? s.manual === true : s.manual !== true)),
   })
 
-  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate } =
-    useNewItemCreation(filtered, (s) => s.id, makeDefaultSkill)
+  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate, derivedId } =
+    useNewItemCreation(
+      gd.pilotSkills,                                          // 全集合 in-memory 撞名（涵蓋未在當前分頁者）
+      (s) => s.id,
+      (id, name) => makeDefaultSkill(id, stripIdPrefix('skill', name)), // name 也剝除誤打前綴
+      (name) => makeEntityId('skill', name),                  // deriveId：skill_<slug(name)>
+    )
 
   async function confirmCreateChecked() {
-    const id = newId.trim()
-    if (id && await docExists('pilotSkills', id)) { setNewIdError(`ID「${id}」已存在`); return }
+    const id = makeEntityId('skill', newId)
+    if (!id) { setNewIdError('名稱無法產生有效 ID，請改用其他名稱'); return }
+    // 伺服器端撞 ID 檢查：涵蓋不在記憶體中的技能（撞名 = 撞 ID，導引去編輯既有項）
+    if (await docExists('pilotSkills', id)) {
+      setNewIdError(`已有同名技能（ID：${id}），請改名或編輯既有項目`)
+      return
+    }
     const item = confirmCreate()
     if (item) setEditing(item)
   }
@@ -243,11 +254,13 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
         creating={creating}
         newId={newId}
         newIdError={newIdError}
-        placeholder="skill_虛粒子形態"
-        hint={<>輸入新技能 ID（格式如 <span className="text-accent-cyan">skill_虛粒子形態</span>，儲存後不可更改）</>}
+        placeholder="輸入技能名稱，如：虛粒子形態"
+        hint={<>輸入技能名稱，系統自動生成文件 ID（前綴固定 <span className="text-accent-cyan">skill_</span>）</>}
         onChangeId={(v) => { setNewId(v); setNewIdError('') }}
         onConfirm={() => { void confirmCreateChecked() }}
         onCancel={cancelCreate}
+        deriveMode
+        derivedId={derivedId}
       />
 
       {/* 技能列表 */}

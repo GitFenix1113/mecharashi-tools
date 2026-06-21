@@ -102,4 +102,10 @@ export interface GameBuff {
    * 數值引用以 <id.lvN.attr> 指定級；buffIds 以 id@N 賦予指定級。
    */
   levels?:     BuffLevel[]
+  /**
+   * 掛載 glossaryTerm 文件 ID（PLAN-024）。填了則詳情卡改以該詞條的官方關鍵字說明為顯示來源，
+   * 取代本 buff 的 description（單一真相源，避免未來技能庫重複貼同一段關鍵字說明）。
+   * 目前無計算意義，純為顯示/技能資料庫鋪路。
+   */
+  termRef?:    string
 }
