@@ -61,7 +61,8 @@
       <tr><td>&nbsp;├ ap</td><td>string?</td><td>AP 消耗；主動 / 指令 / 必殺 / 武器技能適用</td></tr>
       <tr><td>&nbsp;├ cd</td><td>string?</td><td>冷卻回合數；指令技能才有，對應 API 的 CD 欄位（計算器不用此欄位，僅供顯示）</td></tr>
       <tr><td>&nbsp;├ weapon</td><td>string?</td><td>限定武器類別；主動技能中需特定武器者填入，對應 API matchingWeaponType</td></tr>
-      <tr><td>&nbsp;├ description</td><td>string</td><td>效果描述文字</td></tr>
+      <tr><td>&nbsp;├ description</td><td>string</td><td>效果描述文字（遊戲原文，含 [xxx] 標記）</td></tr>
+      <tr><td>&nbsp;├ descriptionRefs</td><td>DescriptionRefs?</td><td>描述內 [xxx] → 實體引用側錄（PLAN-019 Layer 1）</td></tr>
       <tr><td>&nbsp;├ icon / iconLocal</td><td>string</td><td>技能圖示路徑</td></tr>
       <tr><td>&nbsp;├ effects</td><td>SkillEffect[]</td><td>可量化效果列表（空陣列 = 待填入）；計算器加總所有 active 技能的 effects</td></tr>
       <tr><td>&nbsp;├ buffIds</td><td>string[]</td><td>技能觸發的 Buff ID 列表（API BufCarried 以 "/" 分割轉換）</td></tr>
@@ -77,17 +78,18 @@
       <tr><td>&nbsp;├ buffIds</td><td>string[]</td><td>天賦觸發的 Buff ID 列表</td></tr>
       <tr><td>&nbsp;├ manual</td><td>boolean?</td><td>正文經人工去污染（官方 API 天賦文本可能為「滿晶片狀態」，如艾達 7層/5AP/星爆 皆為 γ2≥16 值）；true 時爬蟲補丁不覆寫 description / descriptionMax（語意比照 PilotSkill.manual）</td></tr>
       <tr><td>&nbsp;└ ndVariants</td><td>TalentNdVariant[]?</td><td>神經驅動算力改寫變體（PLAN-021）；省略 = 無。每筆 = minSum（算力門檻，對應 NeuralDriveLevel.minSum）＋ zone?（門檻所屬分區名，如 'γ2'；同機師多區可能有相同 minSum，缺 zone 會歧義）＋ label?（顯示標籤，省略則生成「γ2 算力 ≥ N」）＋ description（改寫後天賦正文，初始星級版）＋ descriptionMax?（滿星版改寫正文，含滿星專屬子句；省略時前台退回 description 並提示待補）＋ descriptionRefs?（與天賦 descriptionRefs 合併解析）<br><small style="color:var(--text-dim)">前台天賦卡頂部有「初始天賦 ⇌ 最大強化」切換鈕（預設初始；最大強化版 DiffHighlight 對初始高亮）。另有「神經驅動算力配置列」（NdPowerBar，tab 卡頂部三分頁常駐）：玩家點選各區 Lv，依「該 zone 算力 ≥ minSum 取最高」即時改寫敘述、以 DiffHighlight 高亮差異（對照基準跟隨初始/最大切換）；γ 區合計受 ND_RULES.gammaPairCap=23 約束；多階互斥、計算器取最高（對應 buff 共用 GameBuff.mutexGroup）；資料走 manual 手動維護</small></td></tr>
-      <tr class="group-header"><td colspan="3">▎神經驅動 neuralDrive[] — NeuralDrive（PLAN-001）</td></tr>
-      <tr><td>&nbsp;├ name</td><td>string</td><td>神經驅動區塊名稱</td></tr>
+      <tr class="group-header"><td colspan="3">▎神經驅動 neuralDrive[] — NeuralDrive（PLAN-001；能力內容 PLAN-023 抽離至 <a href="neuralDriveAbilities.html">neuralDriveAbilities</a>）</td></tr>
+      <tr><td>&nbsp;├ name</td><td>string</td><td>神經驅動區塊名稱（如 α / β / γ1 / γ2）</td></tr>
       <tr><td>&nbsp;├ icon</td><td>string</td><td>圖示路徑</td></tr>
       <tr><td>&nbsp;├ slots</td><td>string[]</td><td>插槽類型說明列表</td></tr>
       <tr class="group-header"><td colspan="3">&nbsp;└ levels[] — NeuralDriveLevel（每個激活閾值）</td></tr>
       <tr><td>&nbsp;&nbsp;&nbsp;├ level</td><td>number</td><td>激活層級（1 起；α / β 分區最多 3 層，γ 分區最多 6 層）</td></tr>
       <tr><td>&nbsp;&nbsp;&nbsp;├ minSum</td><td>number</td><td>最低激活算力值；α / β 通常為 1 / 4 / 7，γ 可達 1 / 4 / 7 / 10 / 13 / 16</td></tr>
-      <tr><td>&nbsp;&nbsp;&nbsp;├ effect</td><td>string</td><td>效果描述文字</td></tr>
-      <tr><td>&nbsp;&nbsp;&nbsp;├ skillName / skillIcon / iconLocal</td><td>string</td><td>此層被動技能名稱與圖示</td></tr>
-      <tr><td>&nbsp;&nbsp;&nbsp;├ effects</td><td>SkillEffect[]</td><td>可量化效果列表（空陣列 = 待填入）</td></tr>
-      <tr><td>&nbsp;&nbsp;&nbsp;└ buffIds</td><td>string[]</td><td>激活此層時觸發的 Buff ID 列表</td></tr>
+      <tr><td>&nbsp;&nbsp;&nbsp;├ <b>abilityId</b></td><td>string?</td><td>🆕 PLAN-023 雙格式：填了則本層能力內容由 <a href="neuralDriveAbilities.html">neuralDriveAbilities</a> 此 ID 提供（單一資料源），以 <code>resolveNeuralDriveLevel()</code> 解析；未填 = 沿用下方嵌入欄位（舊格式）。已對全 82 機師 flip 補上，嵌入欄位保留為安全網（resolve 優先 abilityId、查不到回退嵌入）</td></tr>
+      <tr><td>&nbsp;&nbsp;&nbsp;├ effect / skillName / skillIcon / iconLocal</td><td>string</td><td>嵌入舊格式：效果文字與被動名稱／圖示。flip 後由 abilityId 對應能力提供，此處為安全網備份</td></tr>
+      <tr><td>&nbsp;&nbsp;&nbsp;├ effects</td><td>SkillEffect[]</td><td>嵌入舊格式可量化效果（多為空；flip 後改由能力庫提供）</td></tr>
+      <tr><td>&nbsp;&nbsp;&nbsp;├ buffIds</td><td>string[]</td><td>嵌入舊格式：激活此層觸發的 Buff ID</td></tr>
+      <tr><td>&nbsp;&nbsp;&nbsp;└ descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-023 N2-1：描述內 [xxx] 引用側錄；flip 後由 resolve 從能力庫帶入，使神驅描述的 [xxx] 可點擊</td></tr>
       <tr><td>lore</td><td>string</td><td>角色故事（Markdown 格式）</td></tr>
       <tr><td>portrait</td><td>string</td><td>立繪圖片路徑 /images/pilots/{id}.png</td></tr>
     </table>
@@ -98,6 +100,11 @@
   <div class="section-label cyan">相關文件</div>
   <div class="section-title">關聯資料</div>
   <div class="doc-grid">
+    <a class="doc-item" href="neuralDriveAbilities.html">
+      <div class="doc-tag">Collection</div>
+      <h4>◆ neuralDriveAbilities</h4>
+      <p>神經驅動能力庫（PLAN-023）；neuralDrive[].levels[] 以 abilityId 引用</p>
+    </a>
     <a class="doc-item" href="pilotResearch.html">
       <div class="doc-tag">Collection</div>
       <h4>🔬 pilotResearch</h4>

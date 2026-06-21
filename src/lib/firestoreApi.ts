@@ -7,6 +7,7 @@ export * from './api/firestoreCore'   // fetchCollection / fetchDocument / docEx
 export * from './api/versions'        // DataVersions / getDataVersions / bumpDataVersion
 export * from './api/pilots'          // getPilots / getPilot / getPilotsByClass / updatePilot
 export * from './api/skills'          // getPilotSkills / updatePilotSkill
+export * from './api/neuralDriveAbilities' // getNeuralDriveAbilities / updateNeuralDriveAbility
 export * from './api/research'        // getGlobalResearch / getPilotResearch / getAllPilotResearch
 export * from './api/mechs'           // getMechs / getMech / getMechsByArmorType / updateMech
 export * from './api/modules'         // getModules / getAvailableModules / getModulesByMech / updateModule

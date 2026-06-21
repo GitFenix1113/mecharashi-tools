@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react'
 import type { GlossaryTerm } from '../../../types'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
 import { updateGlossaryTerm, docExists } from '../../../lib/firestoreApi'
+import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 
 // ─── 預設值工廠 ────────────────────────────────────────────────────────────────
-function makeDefaultTerm(id: string): GlossaryTerm {
-  return { id, name: '', category: '', description: '', descriptionRefs: {}, aliases: [], icon: undefined }
+function makeDefaultTerm(id: string, name = ''): GlossaryTerm {
+  return { id, name, category: '', description: '', descriptionRefs: {}, aliases: [], icon: undefined }
 }
 
 // ─── 詞條編輯面板 ──────────────────────────────────────────────────────────────
@@ -104,12 +105,22 @@ export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: 
     matchFilters: () => true,
   })
 
-  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate } =
-    useNewItemCreation(filtered, (t) => t.id, makeDefaultTerm)
+  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate, derivedId } =
+    useNewItemCreation(
+      gd.glossaryTerms,                                       // 全集合 in-memory 撞名（涵蓋未在當前分頁者）
+      (t) => t.id,
+      (id, name) => makeDefaultTerm(id, stripIdPrefix('term', name)), // name 也剝除誤打前綴
+      (name) => makeEntityId('term', name),                   // deriveId：term_<slug(name)>
+    )
 
   async function confirmCreateChecked() {
-    const id = newId.trim()
-    if (id && await docExists('glossaryTerms', id)) { setNewIdError(`ID「${id}」已存在`); return }
+    const id = makeEntityId('term', newId)
+    if (!id) { setNewIdError('名稱無法產生有效 ID，請改用其他名稱'); return }
+    // 伺服器端撞 ID 檢查：涵蓋不在記憶體中的詞條（撞名 = 撞 ID，導引去編輯既有項）
+    if (await docExists('glossaryTerms', id)) {
+      setNewIdError(`已有同名詞條（ID：${id}），請改名或編輯既有項目`)
+      return
+    }
     const item = confirmCreate()
     if (item) setEditing(item)
   }
@@ -160,11 +171,13 @@ export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: 
         creating={creating}
         newId={newId}
         newIdError={newIdError}
-        placeholder="term_固定傷害"
-        hint={<>輸入新詞條 ID（格式如 <span className="text-accent-cyan">term_固定傷害</span>，儲存後不可更改）</>}
+        placeholder="輸入詞條名稱，如：固定傷害"
+        hint={<>輸入詞條名稱，系統自動生成文件 ID（前綴固定 <span className="text-accent-cyan">term_</span>）</>}
         onChangeId={(v) => { setNewId(v); setNewIdError('') }}
         onConfirm={() => { void confirmCreateChecked() }}
         onCancel={cancelCreate}
+        deriveMode
+        derivedId={derivedId}
       />
 
       {/* 詞條列表 */}

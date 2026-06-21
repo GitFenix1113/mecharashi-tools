@@ -1,9 +1,9 @@
 // ─── 實體引用層（PLAN-019 Layer 1）──────────────────────────────────────────
 
-/** 可被引用的實體類型。'stat' 指向屬性 key（如 'dmg'）；'term' 指向 glossaryTerms 詞條 */
+/** 可被引用的實體類型。'stat' 指向屬性 key（如 'dmg'）；'term' 指向 glossaryTerms 詞條；'neuralDrive' 指向 neuralDriveAbilities */
 export type RefType =
   | 'buff' | 'skill' | 'pilot' | 'mech' | 'weapon'
-  | 'module' | 'backpack' | 'component' | 'stat' | 'term'
+  | 'module' | 'backpack' | 'component' | 'stat' | 'term' | 'neuralDrive'
 
 /**
  * 對另一個實體的型別化、可解析引用。
@@ -15,6 +15,11 @@ export interface EntityRef {
   refId: string
   /** 顯示文字；預設取目標 name，可覆寫（原文用別名時） */
   label?: string
+  /**
+   * 引用階梯 buff 的特定等級（PLAN-024）。數值代入時 orderRefsByFirstMention 會帶出 .lvN 段，
+   * 使 compileSugar 產生 <refId.lvN.attr>。未指定 = 不限級（沿用頂層 / base）。
+   */
+  level?: number
 }
 
 /**

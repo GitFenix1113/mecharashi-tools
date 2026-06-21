@@ -16,8 +16,9 @@ import BackpackAdmin from './admin/BackpackAdmin'
 import GlossaryAdmin from './admin/GlossaryAdmin'
 import BuffAdmin from './admin/BuffAdmin'
 import SkillAdmin from './admin/SkillAdmin'
+import NeuralDriveAdmin from './admin/NeuralDriveAdmin'
 
-type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpacks' | 'glossary' | 'skills' | 'buffs' | 'users' | 'grayops'
+type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpacks' | 'glossary' | 'skills' | 'neuralDrive' | 'buffs' | 'users' | 'grayops'
 
 // 各分頁的載入設定：
 //   keys       — 此分頁需要整包載入的集合（主資料 + 編輯面板下拉用的關聯集合）。
@@ -36,6 +37,7 @@ const TAB_CONFIG: Record<Tab, { keys: CollectionKey[]; searchable: boolean; self
   backpacks:  { keys: [],                     searchable: true,  selfLoading: true,  preload: false },
   glossary:   { keys: ['glossaryTerms'],     searchable: true,  selfLoading: false, preload: true  },
   skills:     { keys: ['pilotSkills'],       searchable: true,  selfLoading: false, preload: true  },
+  neuralDrive:{ keys: ['neuralDriveAbilities', 'pilots'], searchable: true, selfLoading: false, preload: true },
   buffs:      { keys: ['buffs'],             searchable: true,  selfLoading: false, preload: true  },
   users:      { keys: [],                     searchable: false, selfLoading: true,  preload: false },
 }
@@ -161,6 +163,7 @@ export default function AdminPage() {
         <TabButton active={tab === 'backpacks'}  onClick={() => setTab('backpacks')}>背包管理</TabButton>
         <TabButton active={tab === 'glossary'}   onClick={() => setTab('glossary')}>詞條管理</TabButton>
         <TabButton active={tab === 'skills'}      onClick={() => setTab('skills')}>技能管理</TabButton>
+        <TabButton active={tab === 'neuralDrive'} onClick={() => setTab('neuralDrive')}>神經驅動</TabButton>
         <TabButton active={tab === 'buffs'}      onClick={() => setTab('buffs')}>BUFF 管理</TabButton>
         <TabButton active={tab === 'users'}      onClick={() => setTab('users')}>用戶管理</TabButton>
         <TabButton active={tab === 'grayops'}    onClick={() => setTab('grayops')}>灰燼行動</TabButton>
@@ -202,6 +205,7 @@ export default function AdminPage() {
         {showContent && tab === 'backpacks' && <BackpackAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'glossary' && <GlossaryAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'skills' && <SkillAdmin initialSearch={searchSeed} />}
+        {showContent && tab === 'neuralDrive' && <NeuralDriveAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'buffs' && <BuffAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'users' && <UserAdmin currentUid={user.uid} />}
         {showContent && tab === 'grayops' && (

@@ -9,17 +9,17 @@ import { parseNumRefs, resolveNumValue, NUM_ATTRS, hasNumRef } from '../utils/nu
 type NumRefLookup = (refId: string) => GameBuff | undefined
 
 /** 單一 <refId.attr> 數值引用：顯示綁定 buff 屬性的真值（淡底線 + title）；查無 / 未載入降級為暗色 ?。 */
-function NumRefValue({ refId, attr, lookup }: { refId: string; attr: string; lookup: NumRefLookup }) {
-  const value = resolveNumValue(refId, attr, lookup)
+function NumRefValue({ refId, attr, level, lookup }: { refId: string; attr: string; level?: number; lookup: NumRefLookup }) {
+  const value = resolveNumValue(refId, attr, lookup, level)
   if (value === undefined) {
-    return <span className="text-text-dim" title={`數值引用未解析（${refId}.${attr}）`}>?</span>
+    return <span className="text-text-dim" title={`數值引用未解析（${refId}${level ? `.lv${level}` : ''}.${attr}）`}>?</span>
   }
   const label = NUM_ATTRS[attr]?.label ?? attr
   const name = lookup(refId)?.name ?? refId
   return (
     <span
       className="underline decoration-dotted decoration-text-dim/60 underline-offset-2"
-      title={`= ${name}・${label}`}
+      title={`= ${name}・${label}${level ? `（Lv${level}）` : ''}`}
     >
       {value}
     </span>
@@ -34,7 +34,7 @@ function renderNumRefSegments(text: string, lookup: NumRefLookup, keyPrefix: num
     seg.type === 'text' ? (
       <React.Fragment key={`${keyPrefix}-${k}`}>{highlightNumbers(seg.value)}</React.Fragment>
     ) : (
-      <NumRefValue key={`${keyPrefix}-${k}`} refId={seg.refId} attr={seg.attr} lookup={lookup} />
+      <NumRefValue key={`${keyPrefix}-${k}`} refId={seg.refId} attr={seg.attr} level={seg.level} lookup={lookup} />
     ),
   )
 }

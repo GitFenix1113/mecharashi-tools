@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>neuralDriveAbilities — 神經驅動能力庫 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../index.html">技術文件</a>
+    <span>›</span>
+    <span>資料模型</span>
+    <span>›</span>
+    <span class="current">neuralDriveAbilities</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge cyan">◆ Data Model</div>
+  <h1>neuralDriveAbilities<span>神經驅動能力庫 · NEURAL DRIVE ABILITIES</span></h1>
+  <p class="hero-sub">PLAN-023 · 從各機師 neuralDrive 抽出去重的共用／專屬能力，單一資料源</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="changed-block">
+    <strong>🆕 PLAN-023：把散在 82 機師 neuralDrive 裡的能力抽成獨立集合</strong>
+    原本同一個能力（如「運動戰2」「AP優化1」）嵌在每位持有機師的 <code>neuralDrive[].levels[]</code> 內、重複維護。
+    本集合以<strong>能力名為鍵</strong>去重，<code>Pilot.neuralDrive</code> 的各 level 改以 <code>abilityId</code> 引用本實體，
+    共用能力<strong>維護一份、改一次全機師生效</strong>。結構比照 pilotSkills（PLAN-004）：collection + ID 引用 + resolve 雙格式過渡。
+    <br>規模：1416 個能力實例 → <strong>395 份能力文件</strong>（去重 72.3%；共用 65、專屬 327、職業變體拆分 +3）。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">Schema</div>
+  <div class="section-title">NeuralDriveAbility 欄位定義</div>
+
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td>文件 ID，格式 <code>nd_&lt;能力名 slug&gt;</code>（slug 規則同 idSlug.ts，與 buff_/skill_/term_ 一致）。職業變體加職業後綴，如 <code>nd_AP優化2_戰術家</code></td></tr>
+      <tr><td>name</td><td>string</td><td>能力名（= 原 NeuralDriveLevel.skillName，亦為描述內 [xxx] 的指派目標）</td></tr>
+      <tr><td>description</td><td>string</td><td>能力效果描述（= 原 NeuralDriveLevel.effect）；可含 [xxx] 引用其他能力／詞條／buff</td></tr>
+      <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>描述內 [xxx] 引用側錄（PLAN-019 Layer 1）。神驅描述常互引其他能力（[協同作戰1] 等），以 refType <code>'neuralDrive'</code> 指向本集合</td></tr>
+      <tr><td>icon / iconLocal</td><td>string?</td><td>圖示（= 原 skillIcon / iconLocal）</td></tr>
+      <tr><td>effects</td><td>SkillEffect[]</td><td>可量化效果（模擬器用）。建庫時多為空，由後台 NeuralDriveAdmin 長期補填（共用能力填一次全機師受益）</td></tr>
+      <tr><td>buffIds</td><td>string[]</td><td>賦予的 buff（id 或 id@N，比照技能／天賦）</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">Design</div>
+  <div class="section-title">設計重點</div>
+
+  <div class="note-block">
+    <strong>能力名為鍵 + 職業真變體</strong>
+    去重以「能力名」為主鍵。盤點發現 3 個能力同名卻因<strong>職業</strong>而效果不同，拆成獨立文件（少數版以職業名為 ID 後綴）：<br>
+    · <code>AP優化2</code>：戰術家「上限+2」（<code>nd_AP優化2_戰術家</code>）／其他「上限+1」（<code>nd_AP優化2</code>）<br>
+    · <code>動力革新2</code>：戰術家「AP回復+1」（<code>nd_動力革新2_戰術家</code>）／其他「擊破回1AP」<br>
+    · <code>協同作戰3</code>：機械師「的」版（<code>nd_協同作戰3_機械師</code>）／突擊手版<br>
+    flip 時各機師依其職業指到對的 abilityId；少量亂碼（編碼壞字）以「該組多數文本」收斂。
+  </div>
+
+  <div class="note-block">
+    <strong>雙格式過渡（與 <a href="pilots.html">pilots</a> 的關係）</strong>
+    <code>Pilot.neuralDrive[].levels[]</code> 加選填 <code>abilityId</code>。填了則內容由本集合提供，未填則用嵌入舊欄位；
+    <code>resolveNeuralDriveLevel(lv, abilityMap)</code> 統一兩種格式（優先 abilityId、查不到回退嵌入，優雅降級）。
+    已對全 82 機師 flip，<strong>嵌入欄位保留為安全網</strong>。爬蟲補丁以 <code>ndAreIds</code> 守門：已 flip 的機師跳過 neuralDrive 嵌入式合併，避免 API 值洗回。
+    <code>zone</code> / <code>minSum</code> / <code>slots</code>（門檻、分區、插槽）仍留在 Pilot，屬「機師如何取得此能力」資訊，與能力本身解耦。
+  </div>
+
+  <div class="note-block">
+    <strong>引用與後台</strong>
+    新增 refType <code>'neuralDrive'</code>：任意 description 的 [xxx] 可指向本集合，前台以實體浮窗呈現（EntityRefView）。
+    後台「神經驅動」分頁（NeuralDriveAdmin）可列表／編輯能力，RefPicker 支援 neuralDrive 目標，並顯示「此能力被幾位機師引用」（反查推導）；
+    寫入走 <code>updateNeuralDriveAbility</code>（自動 bump 版本）。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="pilots.html">
+      <div class="doc-tag">Collection</div>
+      <h4>👤 pilots</h4>
+      <p>機師的 neuralDrive[].levels[] 以 abilityId 引用本能力庫</p>
+    </a>
+    <a class="doc-item" href="skills_buffs.html">
+      <div class="doc-tag">Collection</div>
+      <h4>⚡ pilotSkills / buffs</h4>
+      <p>同構的能力／效果定義庫；neuralDriveAbilities 比照 pilotSkills 設計</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 技術文件 · 資料模型 — neuralDriveAbilities（PLAN-023）
+</footer>
+
+</body>
+</html>

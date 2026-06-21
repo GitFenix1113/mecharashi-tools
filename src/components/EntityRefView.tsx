@@ -16,13 +16,13 @@ import { RefScopeContext } from './RefChip'
 
 const REF_TYPE_LABEL: Record<RefType, string> = {
   buff: 'BUFF / 狀態', skill: '技能', pilot: '機師', mech: '機甲', weapon: '武器',
-  module: '模組', backpack: '背包', component: '元件', stat: '屬性', term: '詞條',
+  module: '模組', backpack: '背包', component: '元件', stat: '屬性', term: '詞條', neuralDrive: '神經驅動',
 }
 
 const REF_TO_COLLECTION: Partial<Record<RefType, CollectionKey>> = {
   pilot: 'pilots', mech: 'mechs', weapon: 'weapons',
   module: 'modules', backpack: 'backpacks', component: 'components', buff: 'buffs',
-  skill: 'pilotSkills', term: 'glossaryTerms',
+  skill: 'pilotSkills', term: 'glossaryTerms', neuralDrive: 'neuralDriveAbilities',
 }
 
 const REF_TO_ROUTE: Partial<Record<RefType, string>> = {
@@ -111,13 +111,29 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
     case 'buff': {
       const b = gd.buffs.find(x => x.id === ref.refId)
       if (!b) return null
+      const buffTypeLabel = BUFF_TYPE_LABEL[b.buffType] ?? b.buffType
+      // PLAN-024：引用指定 level → 優先顯示該級資料（[凝勢I] 看 lv1、[凝勢III] 看 lv3）
+      const lv = ref.level != null ? b.levels?.find(l => l.level === ref.level) : undefined
+      // termRef：掛了詞條則以官方關鍵字說明為通用/補充顯示來源
+      const term = b.termRef ? gd.glossaryTerms.find(t => t.id === b.termRef) : undefined
+      // 描述優先序：該級描述 > 詞條說明 > buff 自身描述
+      const description = lv?.description || term?.description || b.description
+      const descriptionRefs = lv?.description ? lv.descriptionRefs : (term ? term.descriptionRefs : b.descriptionRefs)
+      const maxStack = lv?.maxStack ?? b.maxStack
+      // mutexGroup 為內部互斥 key（屬維護用資訊，不顯示給玩家）
+      const subtitle = [
+        buffTypeLabel,
+        lv ? `Lv${lv.level}` : '',
+        maxStack != null ? `最大疊加 ${maxStack}` : '',
+        term ? `源自詞條：${term.name}` : '',
+      ].filter(Boolean).join(' · ')
+      const icon = lv?.icon || b.icon
       return {
         title: b.name,
-        // mutexGroup 為內部互斥 key（如 pilot_038_艾達_凝勢），屬維護用資訊，不顯示給玩家
-        subtitle: BUFF_TYPE_LABEL[b.buffType] ?? b.buffType,
-        image: b.icon ? assetUrl(b.icon) : undefined,
-        description: b.description,
-        descriptionRefs: b.descriptionRefs,
+        subtitle,
+        image: icon ? assetUrl(icon) : (term?.icon ? resolveIconSrc(term.icon) : undefined),
+        description,
+        descriptionRefs,
       }
     }
     case 'skill': {
@@ -151,6 +167,18 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
         descriptionRefs: t.descriptionRefs,
       }
     }
+    case 'neuralDrive': {
+      const a = gd.neuralDriveAbilities.find(x => x.id === ref.refId)
+      if (!a) return null
+      const ndIcon = a.iconLocal || a.icon
+      return {
+        title: a.name,
+        subtitle: '神經驅動能力',
+        image: ndIcon ? resolveIconSrc(ndIcon) : undefined,
+        description: a.description,
+        descriptionRefs: a.descriptionRefs,
+      }
+    }
     default:
       return { title: ref.label || ref.refId, pending: true }
   }
@@ -162,7 +190,15 @@ export function EntityRefView({ entityRef, interactive, showClose = false }: { e
   const navigate = useNavigate()
 
   const collectionKey = REF_TO_COLLECTION[entityRef.refType]
-  useEffect(() => { if (collectionKey) gd.ensureLoaded([collectionKey]) }, [collectionKey, gd])
+  // PLAN-024：buff 掛 termRef 時詞條說明來自 glossaryTerms，須一併載入（僅在該 buff 確有 termRef 時才抓，省 read）
+  const buffNeedsTerm = entityRef.refType === 'buff'
+    && !!gd.buffs.find(x => x.id === entityRef.refId)?.termRef
+  useEffect(() => {
+    const keys: CollectionKey[] = []
+    if (collectionKey) keys.push(collectionKey)
+    if (buffNeedsTerm) keys.push('glossaryTerms')
+    if (keys.length) gd.ensureLoaded(keys)
+  }, [collectionKey, buffNeedsTerm, gd])
 
   const loading = collectionKey ? !gd.loadedKeys.has(collectionKey) : false
   const resolved = resolve(entityRef, gd)

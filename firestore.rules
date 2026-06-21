@@ -54,6 +54,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    // PLAN-023 神經驅動能力庫：可共用、可被引用的神驅能力定義庫
+    match /neuralDriveAbilities/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
     // PLAN-019-C 詞條庫：refType:'term' 機制關鍵字定義庫
     match /glossaryTerms/{docId} {
       allow read: if true;

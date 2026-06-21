@@ -20,27 +20,28 @@ const SIGIL_HINTS = Object.values(NUM_ATTRS)
  */
 
 const REF_TYPE_OPTIONS: { value: RefType; label: string }[] = [
-  { value: 'term',      label: '詞條 term' },
-  { value: 'buff',      label: 'BUFF / 狀態 buff' },
-  { value: 'skill',     label: '技能 skill' },
-  { value: 'stat',      label: '屬性 stat' },
-  { value: 'pilot',     label: '機師 pilot' },
-  { value: 'mech',      label: '機甲 mech' },
-  { value: 'weapon',    label: '武器 weapon' },
-  { value: 'module',    label: '模組 module' },
-  { value: 'backpack',  label: '背包 backpack' },
-  { value: 'component', label: '元件 component' },
+  { value: 'term',       label: '詞條 term' },
+  { value: 'buff',       label: 'BUFF / 狀態 buff' },
+  { value: 'skill',      label: '技能 skill' },
+  { value: 'neuralDrive', label: '神經驅動 neuralDrive' },
+  { value: 'stat',       label: '屬性 stat' },
+  { value: 'pilot',      label: '機師 pilot' },
+  { value: 'mech',       label: '機甲 mech' },
+  { value: 'weapon',     label: '武器 weapon' },
+  { value: 'module',     label: '模組 module' },
+  { value: 'backpack',   label: '背包 backpack' },
+  { value: 'component',  label: '元件 component' },
 ]
 
 const REF_TYPE_LABEL: Record<RefType, string> = {
   buff: 'BUFF', skill: '技能', pilot: '機師', mech: '機甲', weapon: '武器',
-  module: '模組', backpack: '背包', component: '元件', stat: '屬性', term: '詞條',
+  module: '模組', backpack: '背包', component: '元件', stat: '屬性', term: '詞條', neuralDrive: '神經驅動',
 }
 
 const REF_TO_COLLECTION: Partial<Record<RefType, CollectionKey>> = {
   pilot: 'pilots', mech: 'mechs', weapon: 'weapons', module: 'modules',
   backpack: 'backpacks', component: 'components', buff: 'buffs',
-  skill: 'pilotSkills', term: 'glossaryTerms',
+  skill: 'pilotSkills', term: 'glossaryTerms', neuralDrive: 'neuralDriveAbilities',
 }
 
 interface Candidate { id: string; name: string }
@@ -74,10 +75,11 @@ function useCandidates(refType: RefType | ''): Candidate[] {
       case 'buff':      return gd.buffs.map(b => ({ id: b.id, name: b.name }))
       case 'skill':     return gd.pilotSkills.map(s => ({ id: s.id, name: s.name }))
       case 'term':      return gd.glossaryTerms.map(t => ({ id: t.id, name: t.name }))
+      case 'neuralDrive': return gd.neuralDriveAbilities.map(a => ({ id: a.id, name: a.name }))
       case 'stat':      return STAT_LABELS.map(s => ({ id: s.key, name: s.label }))
       default:          return []
     }
-  }, [refType, gd.pilots, gd.mechs, gd.weapons, gd.modules, gd.backpacks, gd.components, gd.buffs, gd.pilotSkills, gd.glossaryTerms])
+  }, [refType, gd.pilots, gd.mechs, gd.weapons, gd.modules, gd.backpacks, gd.components, gd.buffs, gd.pilotSkills, gd.glossaryTerms, gd.neuralDriveAbilities])
 }
 
 // ── 單一 token 的指派列 ────────────────────────────────────────────────────────
@@ -96,9 +98,16 @@ function TokenRow({
   const [pickerType, setPickerType] = useState<RefType | ''>(assigned?.refType ?? 'term')
   const [search, setSearch]       = useState('')
 
+  const gd = useGameData()
   const candidates = useCandidates(open ? pickerType : '')
   // 已指派實體所屬集合一律載入，使收合狀態的 chip 也能顯示名稱
   const assignedCandidates = useCandidates(assigned?.refType ?? '')
+
+  // 階梯 buff（PLAN-024）：指派為帶 levels 的 buff 時，提供「引用哪一級」下拉 → 寫進 ref.level。
+  const buffLevels = useMemo(() => {
+    if (assigned?.refType !== 'buff') return []
+    return (gd.buffs.find((b) => b.id === assigned.refId)?.levels ?? []).map((l) => l.level)
+  }, [assigned, gd.buffs])
 
   // 已指派實體的顯示名稱（載入後查得到，查不到則退回 refId）
   const assignedName = useMemo(() => {
@@ -126,6 +135,17 @@ function TokenRow({
           </span>
         ) : (
           <span className="text-xs text-text-dim">未指派（前台原樣顯示 [{token}]）</span>
+        )}
+        {assigned && buffLevels.length > 0 && (
+          <select
+            value={assigned.level ?? ''}
+            onChange={(e) => onAssign({ ...assigned, level: e.target.value === '' ? undefined : Number(e.target.value) })}
+            className="text-[11px] bg-bg-card border border-border rounded px-1.5 py-0.5 text-text-secondary focus:outline-none focus:border-accent-cyan"
+            title="引用此階梯 buff 的哪一級（數值代入時產生 .lvN）"
+          >
+            <option value="">不限級</option>
+            {buffLevels.map((lv) => <option key={lv} value={lv}>Lv{lv}</option>)}
+          </select>
         )}
         <div className="ml-auto flex items-center gap-2">
           {assigned && (

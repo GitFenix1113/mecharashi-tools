@@ -55,13 +55,13 @@
       <tr><td>ap</td><td>object</td><td>滿級 AP { init, max, recovery }</td></tr>
       <tr><td>apBase</td><td>object</td><td>初始 AP（同結構）</td></tr>
       <tr><td>talents[]</td><td>array</td><td>天賦列表（嵌入式，見下方 SkillEntry 結構）</td></tr>
-      <tr><td>skills[]</td><td>array</td><td>技能列表（嵌入式，見下方 SkillEntry 結構）</td></tr>
-      <tr><td>neuralDrive[]</td><td>array</td><td>神經驅動列表（嵌入式，見下方 SkillEntry 結構）</td></tr>
+      <tr><td>skills[]</td><td>string[]</td><td>技能 ID 陣列（PLAN-004 單一資料源）：指向 <a href="pilotSkills.html" style="color:var(--accent-cyan)">pilotSkills 集合</a> 的文件 ID；共用技能多位機師指向同一文件，編輯一次全站生效。過渡期相容嵌入舊格式（<code>resolvePilotSkills</code> 解析），Stage 2 flip 後收斂為純 ID</td></tr>
+      <tr><td>neuralDrive[]</td><td>array</td><td>神經驅動列表（嵌入式，見下方 SkillEntry 結構）。<strong>PLAN-023</strong> 進行中：將比照 skills 抽離為 neuralDriveAbilities 能力庫（能力名為鍵），level 改引用 abilityId</td></tr>
       <tr><td>attack</td><td>number</td><td>攻擊素質</td></tr>
       <tr><td>defense</td><td>number</td><td>防禦素質</td></tr>
       <tr><td>lore</td><td>string</td><td>角色故事（Markdown）</td></tr>
       <tr><td>portrait</td><td>string</td><td>立繪圖片路徑</td></tr>
-      <tr><td colspan="3" style="color:var(--accent-blue);font-weight:700;">▎嵌入式 SkillEntry 結構（talents / skills / neuralDrive 共用）</td></tr>
+      <tr><td colspan="3" style="color:var(--accent-blue);font-weight:700;">▎嵌入式 SkillEntry 結構（talents / neuralDrive 共用；skills 已抽離為 pilotSkills 集合，見上）</td></tr>
       <tr><td>&nbsp;├ name</td><td>string</td><td>技能名稱</td></tr>
       <tr><td>&nbsp;├ type</td><td>SkillType</td><td>技能類型 Enum：被動技能 / 主動技能</td></tr>
       <tr><td>&nbsp;├ description</td><td>string</td><td>技能描述</td></tr>

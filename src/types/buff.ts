@@ -58,6 +58,27 @@ export interface SkillEffect {
   condition:   SkillCondition | null
 }
 
+/**
+ * 階梯 buff 的單一等級能力（PLAN-024）。
+ * 比照 ModuleLevel：結構型（凝勢）各級 maxStack/effects 不同 → 填滿；
+ * 數值型（傷害提升）各級只差數值 → 多半只填 level + effects。
+ * level 是「靜態強度階」（來源決定掛哪級），與執行期的 stack（疊加層數）為兩個維度。
+ */
+export interface BuffLevel {
+  /** 等級序號 1,2,3…（對應原羅馬尾碼） */
+  level:        number
+  /** 該級描述（選填；可被滿星 / 算力變體引用） */
+  description?: string
+  descriptionRefs?: DescriptionRefs
+  /** 結構型各級不同（凝勢 5/7/7）；數值型通常不填 */
+  maxStack?:    number
+  duration?:    number
+  /** 數值型各級的數值（傷害提升 5%/10%…）；模擬加總 */
+  effects?:     SkillEffect[]
+  /** 該級專屬圖示（選填；不填沿用 buff.icon） */
+  icon?:        string
+}
+
 /** buffs Collection 文件 */
 export interface GameBuff {
   id:          string
@@ -75,4 +96,16 @@ export interface GameBuff {
    */
   mutexGroup?: string
   effects:     SkillEffect[]
+  /**
+   * 階梯 buff 各等級能力（PLAN-024）。無 = 普通 buff，沿用上方頂層欄位、行為不變。
+   * 有 levels：各級 maxStack/effects 由此提供；同 buff 不同 level 天然互斥（取最高），取代 mutexGroup。
+   * 數值引用以 <id.lvN.attr> 指定級；buffIds 以 id@N 賦予指定級。
+   */
+  levels?:     BuffLevel[]
+  /**
+   * 掛載 glossaryTerm 文件 ID（PLAN-024）。填了則詳情卡改以該詞條的官方關鍵字說明為顯示來源，
+   * 取代本 buff 的 description（單一真相源，避免未來技能庫重複貼同一段關鍵字說明）。
+   * 目前無計算意義，純為顯示/技能資料庫鋪路。
+   */
+  termRef?:    string
 }

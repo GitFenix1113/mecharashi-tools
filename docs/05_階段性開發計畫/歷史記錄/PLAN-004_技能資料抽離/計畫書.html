@@ -146,7 +146,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-004 計畫書</span>
   </div>
@@ -163,7 +163,11 @@
 <main class="container">
 
 <div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3);border-left:3px solid var(--accent-purple);border-radius:0 10px 10px 0;padding:12px 18px;margin:20px 0;font-size:13px;color:var(--text-secondary);">
-  📐 本計畫為 <a href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html" style="color:var(--accent-purple);text-decoration:none;font-weight:600;">PLAN-019 實體引用與模擬基礎（總綱）</a> 之子計畫，負責 <strong>技能/神經驅動抽成集合 + 預載 Map</strong>（Layer 4 快取基礎）。
+  📐 本計畫為 <a href="../../執行中/PLAN-019_實體引用與模擬基礎_總綱/計畫書.html" style="color:var(--accent-purple);text-decoration:none;font-weight:600;">PLAN-019 實體引用與模擬基礎（總綱）</a> 之子計畫，負責 <strong>技能/神經驅動抽成集合 + 預載 Map</strong>（Layer 4 快取基礎）。
+</div>
+
+<div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-left:3px solid var(--accent-green);border-radius:0 10px 10px 0;padding:12px 18px;margin:20px 0;font-size:13px;color:var(--text-secondary);line-height:1.8;">
+  🔄 <strong style="color:var(--accent-green);">下半場 neuralDrives 已移轉至 <a href="../../執行中/PLAN-023_神經驅動能力庫/計畫書.html" style="color:var(--accent-green);">PLAN-023 神經驅動能力庫</a></strong>。依實機資料，神經驅動的共用單位是「能力節點」而非「分區」，原本「分區 + <code>scope</code> 欄位」的下半場模型已被更正並改由 PLAN-023 落地。<strong>本計畫範圍收束為純 pilotSkills 抽離</strong>；下方 Schema/設計中的 NeuralDrive 段落僅保留為歷史脈絡，實際以 PLAN-023 為準。
 </div>
 
 <!-- 計畫概要 -->
@@ -190,7 +194,7 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value cyan">上半場 pilotSkills 已落地 · 下半場 neuralDrives 待執行</div>
+      <div class="meta-value cyan">pilotSkills 已落地 · 下半場 neuralDrives 移轉 PLAN-023 · 剩 flip + 文件收尾</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">關聯文件</div>
@@ -203,7 +207,7 @@
     <strong>上半場 · pilotSkills（已落地）：</strong>PilotSkillDoc 型別、pilotSkills 集合（Stage 1 寫入 512 筆）、
     <code>getPilotSkills</code> / <code>updatePilotSkill</code> API、GameDataContext 預載、PilotDetailPage 經
     <code>resolvePilotSkills</code> 渲染、後台 SkillAdmin「技能管理」分頁皆已上線。同時作為
-    <a href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html" style="color:var(--accent-green);">PLAN-019</a>
+    <a href="../../執行中/PLAN-019_實體引用與模擬基礎_總綱/計畫書.html" style="color:var(--accent-green);">PLAN-019</a>
     引用層 <code>refType:'skill'</code> 的資料源。<br><br>
     <strong>下半場 · neuralDrives（尚未開始）：</strong>NeuralDriveDoc 型別、neuralDrives 集合、scope 區分、
     提取腳本、前端 Map 渲染、管理後台全部未動；<code>Pilot.neuralDrive</code> 仍為嵌入 <code>NeuralDrive[]</code>。<br><br>

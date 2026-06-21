@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-024 階梯式 BUFF 等級化重構 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+  white-space: pre;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.impact-table td:first-child { font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+
+.flow {
+  background: #0a0c10;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  color: #8b949e;
+  overflow-x: auto;
+  white-space: pre;
+}
+.flow .hl  { color: var(--accent-green); }
+.flow .hl2 { color: var(--accent-purple); }
+.flow .hl3 { color: var(--accent-cyan); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-024 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-024</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    階梯式 BUFF 等級化重構<span style="-webkit-text-fill-color:var(--text-secondary);"> · Leveled Buff · levels[] · 引用 .lvN · 去重 68%</span>
+  </h1>
+  <p class="hero-sub">把同概念、多等級的 BUFF / DEBUFF 由「N 份獨立文件 + mutexGroup」合併為「單一文件 + levels[]」，用 level 表示各等級能力（比照 Module 的 ModuleLevel）；順手把全空的數值結構化，為傷害模擬鋪路。</p>
+</header>
+
+<main class="container">
+
+<div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3);border-left:3px solid var(--accent-purple);border-radius:0 10px 10px 0;padding:12px 18px;margin:20px 0;font-size:13px;color:var(--text-secondary);line-height:1.8;">
+  📐 本計畫源自評估 <code>_local-notes/buff-等級化vs屬性覆寫_評估.md</code> 的「問題二」，經盤點腳本 <code>scripts/scan-graduated-buffs.mjs</code> 量化後拍板執行。
+  與其正交的「問題一（屬性覆寫 BuffMod）」由 <a href="../PLAN-023_神經驅動能力庫/計畫書.html" style="color:var(--accent-cyan);text-decoration:none;font-weight:600;">PLAN-023</a> 處理，<strong>不在本計畫</strong>。
+  本計畫深化 <a href="../PLAN-022_數值引用層/計畫書.html" style="color:var(--accent-purple);">PLAN-022</a> 的引用語法（新增 <code>.lvN</code> 段），趁引用 token 尚未全站鋪開的<strong>時間窗口</strong>定案。
+</div>
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value purple">PLAN-024</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-06-20</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">buffs 集合 · GameBuff/BuffLevel · numRefs(.lvN) · BuffAdmin · buffIds 消費端 · 遷移腳本 · docs</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID-HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value purple">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-019-F（BUFF後台）· PLAN-022（數值引用層，需擴 .lvN）· PLAN-021（凝勢 ndVariants 引用同步）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>一句話：</strong>「傷害提升 I~V」「凝勢 I/II/III」這種<strong>一個概念被切成 N 份 buff 文件</strong>的現象，全站有
+    <strong>27 族、85 份文件</strong>。把每族塌縮成<strong>一份文件 + <code>levels[]</code></strong>（省 58 份、68%），
+    <code>level</code> 承載各等級能力、天然互斥取代 <code>mutexGroup</code>、數值引用收斂為單一 <code>.lvN</code> token，
+    並順手把<strong>全空的 <code>effects</code>（0/266）</strong>結構化進 <code>levels[]</code>，給未來傷害模擬一個乾淨的數值來源。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：一個概念被切成 N 份文件，改一處要同步多份</strong><br>
+    盤點（<code>scan-graduated-buffs.mjs</code>，266 個 BUFF）顯示：同詞幹、僅尾碼不同（羅馬數字）的「階梯族」有
+    <strong>27 族、共 85 份文件</strong>，塌縮成單一文件可省 <strong>58 份（68%）</strong>。
+    現行每一級各存一份 <code>GameBuff</code>，名稱／描述／圖示／數值各自為政，改一個概念要逐份同步——典型的單一事實來源缺失。
+    <div class="code-block" style="margin-top:10px;"><span class="cm">傷害提升 I  傷害提升 II  傷害提升 III  傷害提升 IV  傷害提升 V   ← 5 份文件、一個概念</span>
+<span class="cm">凝勢 I       凝勢 II      凝勢 III                              ← 3 份文件 + mutexGroup 綁定</span></div>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：數值引用被迫寫三份 token，且引用窗口即將關閉</strong><br>
+    <a href="../PLAN-022_數值引用層/計畫書.html" style="color:var(--accent-cyan);">PLAN-022</a> 的 <code>&lt;buff_凝勢I.maxStack&gt;</code> 因每級是獨立 refId，
+    base/≥10/≥13 三處被迫寫 <code>&lt;buff_凝勢I/II/III.maxStack&gt;</code> 三個不同 token。目前這類 token <strong>只在艾達凝勢撒了一例</strong>——
+    趁全站尚未鋪開，現在改成 <code>&lt;buff_凝勢.lv3.maxStack&gt;</code> 是<strong>最便宜的時間點</strong>；越晚改、要遷移的既有 token 越多。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：數值全空，傷害模擬無結構化來源</strong><br>
+    盤點顯示 <strong>effects 已結構化的 buff = 0 / 266</strong>——所有數值（傷害提升 5%/10%…）目前只活在<u>描述文字</u>裡，
+    沒有任何可被模擬器消費的結構化欄位。等級化正好是把這些數值<strong>一次結構化</strong>進 <code>levels[].effects</code> 的天然時機，
+    填 27 份 <code>levels[]</code> 取代散填 85 份頂層 effects。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題四：散落模型讓資料缺漏難以察覺</strong><br>
+    健檢揪出 <strong>9 族含「無尾碼成員」</strong>（失穩、威壓光環、短路、膽怯…）與 <strong>3 族缺階</strong>（整葺從 2 起、迴避率提升從 3 起、迴避率降低從 2 起）。
+    這多半是早期維護人員<u>輸入習慣不一致</u>造成的漏填／重複——散在 N 份文件時難以發現。
+    收斂成 <code>levels[]</code> 後，「這個 buff 有哪幾級、缺哪級」一目了然，<strong>結構化本身就是資料健檢與後續補登的基礎</strong>。
+  </div>
+
+  <div class="info-block">
+    <strong>盤點關鍵結論（決定本計畫成本的核心數字）：</strong>
+    27 族裡<strong>「結構型」只有凝勢 1 族</strong>（per-level 連 <code>maxStack</code>(5/7/7) 都變、且 II→III 加暴擊），
+    其餘 <strong>26 族全是「數值型」</strong>（含 debuff 程度遞增，per-level 只差一個數值）。
+    換言之——最複雜的「各 LV 能力不同」case 全站僅一個，<strong>工程主體是最單純的那種</strong>，風險可控。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label purple">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：<code>GameBuff</code> 加選填 <code>levels[]</code>，比照 ModuleLevel；普通 buff 零影響</strong><br>
+    階梯 buff 把各等級收進 <code>levels: BuffLevel[]</code>；沒有 <code>levels</code> 的普通 buff（266 中的多數）<u>完全不受影響</u>，
+    沿用既有頂層欄位。結構型（凝勢）<code>levels[]</code> 填滿 <code>maxStack/effects</code>；數值型（傷害提升）只填 <code>level + effects</code>，
+    <strong>同一個 <code>BuffLevel</code> 結構通吃</strong>，數值型只是少填欄位。
+    <div class="code-block" style="margin-top:10px;"><span class="cm">// 【改】GameBuff —— 新增選填 levels[]（無 level = 普通 buff，行為不變）</span>
+<span class="kw">export interface</span> <span class="ty">GameBuff</span> {
+  id; name; description; buffType; <span class="cm">// 既有欄位不動</span>
+  maxStack?; duration?; effects;    <span class="cm">// 普通 buff 仍用頂層欄位</span>
+  descriptionRefs?; icon?; mutexGroup?;
+  levels?: <span class="ty">BuffLevel</span>[];             <span class="cm">// 階梯 buff：各等級能力</span>
+}
+
+<span class="cm">// 【新】BuffLevel —— 一個等級的能力（結構型填滿、數值型只填 level/effects）</span>
+<span class="kw">export interface</span> <span class="ty">BuffLevel</span> {
+  level:        <span class="ty">number</span>           <span class="cm">// 1,2,3…（= 羅馬尾碼數值）</span>
+  description?:  <span class="ty">string</span>           <span class="cm">// 該級描述（選填）</span>
+  maxStack?:     <span class="ty">number</span>           <span class="cm">// 結構型各級不同（凝勢 5/7/7）</span>
+  duration?:     <span class="ty">number</span>
+  effects?:      <span class="ty">SkillEffect</span>[]      <span class="cm">// 數值型各級數值（傷害提升 5%/10%…）</span>
+  icon?:         <span class="ty">string</span>
+}</div>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：<code>level</code>（靜態強度階）與 <code>stack</code>（runtime 疊加層）兩維度嚴格分離</strong><br>
+    這是成敗關鍵。凝勢同時有兩個維度，絕不能混：
+    <div class="code-block" style="margin-top:10px;">buff_凝勢.levels = [
+  { level: 1, maxStack: 5 },                      <span class="cm">// 算力 base</span>
+  { level: 2, maxStack: 7, effects: [暴擊+…] },    <span class="cm">// 算力 ≥10</span>
+  { level: 3, maxStack: 7, effects: [暴擊++…] },   <span class="cm">// 算力 ≥13</span>
+]
+<span class="hl2">level</span>（強度階）：來源（神驅算力）決定掛<span class="hl2">哪一級</span> ── <span class="nm">靜態、資料驅動</span>
+<span class="hl3">stack</span>（疊加層）：戰鬥中累積到該級的 maxStack ── <span class="nm">runtime 執行期狀態</span></div>
+    傷害提升只有 <code>level</code> 維度、沒有 <code>stack</code>。<code>levels[n]</code> 決定 maxStack/effects，執行期再去疊 stack，互不干涉。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：<code>mutexGroup</code> → <code>level</code> 的 <code>max()</code> 收斂</strong><br>
+    同一個 buff 的不同 level <strong>天然互斥</strong>（不可能同時是凝勢 II 又是凝勢 III）；「取最高」變成 <code>level</code> 的 <code>max()</code> 運算。
+    因此階梯 buff <u>不再需要</u> <code>mutexGroup</code> 樣板——可廢除凝勢的 <code>pilot_038_艾達_凝勢</code> 群組。
+    <span class="badge-good">淨收益</span> 非階梯的「形態互斥」（虛粒子⟷實粒子）仍保留 <code>mutexGroup</code>，兩者不衝突。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：numRef 新增選填 <code>.lvN</code> 段，向後相容；輸入靠 RefPicker 兜底</strong><br>
+    沿用既有「token 自描述、不依賴出現位置」哲學，中間插一個選填具名段。正則僅 <code>numRefs.ts</code> 一處改：
+    <div class="code-block" style="margin-top:10px;"><span class="cm">現在：</span>&lt;buff_x.maxStack&gt;                          <span class="cm">// 普通 buff，照舊合法</span>
+<span class="cm">新增：</span>&lt;buff_凝勢<span class="nm">.lv3</span>.maxStack&gt;                  <span class="cm">// 階梯 buff 指定第 3 級</span>
+<span class="cm">正則：</span>&lt;([^&lt;&gt;.]+)(?:\.(<span class="nm">lv\d+</span>))?\.([A-Za-z]\w*)&gt;
+<span class="cm">解析：</span>有 lv 段 → lookup(refId).levels[n-1] 取屬性；無 → 取頂層（普通 buff）</div>
+    維護人員<strong>不手打</strong>：RefPicker 偵測到選中的是階梯 buff 時，跳出 level 下拉（<code>Lv1/Lv2/Lv3</code>，與產品 UI「Lv.」語彙一致），選完按鈕代入。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：<code>buffIds</code> 帶 level 的表達（賦予哪一級）</strong><br>
+    技能/天賦/神驅以 <code>buffIds</code> 賦予 buff 時要能指定等級（「賦予傷害提升 III」）。
+    採與 numRef 一致的尾綴語法 <code>buff_傷害提升<span style="color:var(--accent-yellow)">@3</span></code>（保持 <code>string[]</code> 形狀、解析時拆出 level），
+    避免動到所有 <code>buffIds: string[]</code> 消費端的型別。未指定 level = 賦予 base / 該 buff 預設級。
+    <span class="badge-med">需評估</span> 確切分隔符（<code>@3</code> / <code>#3</code>）於 Phase A 與 numRef 一併定案，全專案一致。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：雙格式過渡 + dry-run + <code>__REVIEW__</code>，比照成熟模式</strong><br>
+    沿用 pilotSkills / <a href="../PLAN-023_神經驅動能力庫/計畫書.html" style="color:var(--accent-cyan);">PLAN-023</a> 的安全過渡：前端先支援「讀 <code>levels[]</code>」，
+    遷移腳本以<strong>詞幹去重</strong>（已有 <code>scan-graduated-buffs.mjs</code> 為輸入）產生合併草案，<u>同名衝突／無尾碼污染／缺階一律進 <code>__REVIEW__</code> 報告</u>人工確認，
+    確認後才寫入、再 flip。<strong>遷移前先做資料庫靜態備份</strong>（<code>backup-firestore.mjs</code>）作回滾安全網。
+  </div>
+
+  <div class="warning-block">
+    <strong>遷移要人工裁決的已知雜訊（來自盤點健檢）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>暴擊率提升</strong>的「無尾碼成員」帶 <code>stack=3</code>、而 I~IV 皆無 stack → 高度疑似<u>另一個獨立 state buff</u>，<strong>不應併入</strong>階梯。</li>
+      <li>9 族含無尾碼成員（失穩／威壓光環／短路…）：多為漏填尾碼或重複，逐族確認該無尾碼文件是「某一級的別名」還是「獨立 buff」。</li>
+      <li>3 族缺低階（整葺從 2 起…）：確認是遊戲本就無低階，還是維護漏登 → 後者於 <code>levels[]</code> 補位。</li>
+    </ul>
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:24px;">合併前後對照</div>
+  <div class="flow">
+<span class="cm">── 之前（N 文件 + mutexGroup）──</span>          <span class="cm">── 之後（1 文件 + levels[]）──</span>
+buff_凝勢I   { maxStack:5, mutex:… }            buff_凝勢 {
+buff_凝勢II  { maxStack:7, mutex:… }    ──►       levels: [ {lv1,max5}, {lv2,max7,…}, {lv3,max7,…} ]
+buff_凝勢III { maxStack:7, mutex:… }            }
+&lt;buff_凝勢<span class="hl3">I</span>.maxStack&gt; / <span class="hl3">II</span> / <span class="hl3">III</span>  ──►   &lt;buff_凝勢<span class="hl">.lv1</span>.maxStack&gt; / <span class="hl">.lv2</span> / <span class="hl">.lv3</span>
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label purple">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>資料模型</strong>：<code>BuffLevel</code> 型別 + <code>GameBuff.levels?</code>；資料模型 docs 同步（<code>skills-buffs.html</code> / <code>skills_buffs.html</code>）。</li>
+      <li><strong>數值引用層</strong>：<code>numRefs.ts</code> 加 <code>.lvN</code> 段（正則 / <code>parseNumRefs</code> / <code>resolveNumValue</code> / <code>NumRefSource.levels</code>）＋單測；前台 <code>RefText</code> 解析。</li>
+      <li><strong>buffIds 帶 level</strong>：賦予指定等級的解析（<code>@N</code> 尾綴），相容既有無 level 的 <code>string[]</code>。</li>
+      <li><strong>後台</strong>：<code>BuffAdmin</code> 的 <code>levels[]</code> 編輯（比照 <code>ModuleAdmin</code> 各 LV）＋ RefPicker level 下拉；階梯 buff 的 mutex 欄位簡化。</li>
+      <li><strong>遷移</strong>：詞幹去重遷移腳本（dry-run + <code>__REVIEW__</code>）；<code>buffIds</code> / 艾達 <code>ndVariants</code> 既有引用更新為 <code>.lvN</code>；bump 版本。</li>
+      <li><strong>端到端驗收</strong>：凝勢（艾達天賦 <code>.lv3</code> 引用 + DiffHighlight）＋ 一支數值型（傷害提升）。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內（標為後續）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>SKILL（pilotSkills）等級化</strong>：結構上可套用同一 <code>levels[]</code> 模式，但<u>尚未盤點規模</u>。本計畫先把 BUFF 做成範本，技能等級化另跑盤點後比照（可能併入或另開 PLAN）。</li>
+      <li><strong>補登全部 effects 數值</strong>：本計畫只建「容器」（<code>levels[].effects</code> 結構），把 0/266 的數值<u>填滿</u>是後續資料工作（可走 data-patch）。</li>
+      <li><strong>屬性覆寫 BuffMod</strong>（幹勁 maxStack→8）：正交機制，由 <a href="../PLAN-023_神經驅動能力庫/計畫書.html" style="color:var(--accent-cyan);">PLAN-023</a> 處理，<strong>不可</strong>用 level 表達（會組合爆炸）。</li>
+      <li><strong>傷害模擬計算核心</strong>：屬 PLAN-019-B / 未來模擬器 PLAN；本計畫只提供乾淨的結構化來源。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 遷移與風險 -->
+<section class="section">
+  <div class="section-label red">Migration &amp; Risk</div>
+  <div class="section-title">遷移與風險</div>
+
+  <table class="impact-table">
+    <tr><th>項目</th><th>做法</th><th>風險</th></tr>
+    <tr>
+      <td>資料備份</td>
+      <td>遷移寫入前先跑 <code>backup-firestore.mjs</code>，全量靜態快照存 <code>_local-notes/</code>（已 gitignore，含個資不入版控）。</td>
+      <td><span class="badge-low">低</span> 一次性、可回滾</td>
+    </tr>
+    <tr>
+      <td>詞幹去重</td>
+      <td>以 <code>scan-graduated-buffs.mjs</code> 的 27 族清單為輸入；無尾碼污染／缺階／同名衝突全進 <code>__REVIEW__</code> 人工裁決。</td>
+      <td><span class="badge-med">中</span> 暴擊率提升等需逐族確認歸屬</td>
+    </tr>
+    <tr>
+      <td>引用同步</td>
+      <td>艾達 <code>ndVariants</code> 既有 <code>&lt;buff_凝勢II/III.maxStack&gt;</code> 改為 <code>.lvN</code>；<code>buffIds</code> 指向舊分級 ID 者改 <code>@N</code>。token 尚未鋪開 → 改動面小。</td>
+      <td><span class="badge-low">低</span> 目前僅艾達一例</td>
+    </tr>
+    <tr>
+      <td>雙格式過渡</td>
+      <td>前台先支援讀 <code>levels[]</code> 與舊獨立文件並存；穩定後 flip，刪除被合併的舊 buff 文件。</td>
+      <td><span class="badge-low">低</span> 複製 pilotSkills 成熟模式</td>
+    </tr>
+    <tr>
+      <td>引用降級</td>
+      <td><code>.lvN</code> 指向不存在的 level → 比照既有慣例優雅降級（暗色 <code>?</code>），不崩。</td>
+      <td><span class="badge-low">低</span> 已有降級框架</td>
+    </tr>
+  </table>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label purple">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-024 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-022_數值引用層/計畫書.html">
+      <div class="doc-tag">Deepens</div>
+      <h4>PLAN-022 數值引用層</h4>
+      <p>本計畫新增 .lvN 段，深化其 &lt;refId.attr&gt; 語法</p>
+    </a>
+    <a class="doc-item" href="../PLAN-023_神經驅動能力庫/計畫書.html">
+      <div class="doc-tag">Orthogonal</div>
+      <h4>PLAN-023 神經驅動能力庫</h4>
+      <p>正交的「問題一 BuffMod 屬性覆寫」由其處理；本計畫不碰</p>
+    </a>
+    <a class="doc-item" href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html">
+      <div class="doc-tag">Master Plan</div>
+      <h4>PLAN-019 實體引用與模擬基礎</h4>
+      <p>本計畫為其 Layer 2（模擬可達性）提供結構化數值來源</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-024 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-06-19
+## [Unreleased] - 2026-06-21
 
 ### ⚠ 重大變更
 
@@ -128,6 +128,8 @@
 
 ### 📚 文件
 
+- 建立 PLAN-023 神經驅動能力庫、歸檔 PLAN-004 (`dd999ce`)
+- PLAN-022 數值引用層歸檔至歷史記錄（A+B+C+D · 8/8 完成） (`3f6d91c`)
 - PLAN-022 進度表 D-1 收尾 — 第一批 A+B+D 完成 6/6 (`7fad1a9`)
 - 歸檔 PLAN-016/017/021 並修正計畫索引漂移 (`5611622`)
 - 對帳 PLAN-001/003/004/005/019 文件與實際程式碼進度 (`99433fb`)
@@ -162,6 +164,10 @@
 
 ### 🔧 維護
 
+- PLAN-023 N2 神驅引用層 + 後台（neuralDrive refType + NeuralDriveAdmin + docs） (`538c399`)
+- PLAN-023 N1 神經驅動能力庫抽離（型別/API/resolve/flip 地基，前台內容不變） (`e3c309a`)
+- PLAN-024 BUFF termRef + 詳情卡級別感知 + flat/leveled 防呆；admin 名稱→ID 衍生 (`af511b8`)
+- PLAN-024 階梯式 BUFF 等級化 Phase A/B 地基（無前台可見變化） (`4acab64`)
 - 後台編輯器 UX — 描述框加大 + 天賦預設展開/已存在則隱藏新增鈕 (`a10fff2`)
 - App Check 改回 classic reCAPTCHA v3 provider + 換用新金鑰 (`98bd9a3`)
 - 修正 App Check provider 為 reCAPTCHA Enterprise (`25a2755`)

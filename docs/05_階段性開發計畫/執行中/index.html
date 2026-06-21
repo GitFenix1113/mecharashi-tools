@@ -31,13 +31,22 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-024 · 階梯式 BUFF 等級化重構</h3>
+      <p>把同概念多等級的 BUFF/DEBUFF（傷害提升 I~V、凝勢 I/II/III…，全站 27 族 85 份）由「N 份文件 + mutexGroup」合併為「單一文件 + levels[]」，用 level 表示各等級能力；新增數值引用 .lvN 段、level↔stack 雙維度、mutexGroup→level max 收斂，並順手把全空的 effects 結構化，為傷害模擬鋪路。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-024_BUFF等級化重構/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-024_BUFF等級化重構/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card green">
       <div class="card-icon">◆</div>
-      <h3>PLAN-022 · 數值引用層</h3>
-      <p>讓描述內的層數／回合數綁定 buff/skill 屬性：維護者照抄遊戲原文、打 $1/%1 一鍵代入為 <code>&lt;refId.attr&gt;</code> token，前台從 GameDataContext 解析顯示真值。「正文寫 7、buff 是 5」的漂移結構性消失；接入集中於 numRefs util + RefText / DiffHighlight / RefPicker 三樞紐，天賦／技能／晶片驅動／武器全站生效、零逐頁實作。PLAN-019 引用層的數值延伸。</p>
+      <h3>PLAN-023 · 神經驅動能力庫與模擬接入</h3>
+      <p>把神經驅動的「能力節點」（運動戰 / AP優化 / 終結者…）抽成以能力名為唯一鍵的 neuralDriveAbilities 集合，分區排列仍嵌在機師、level 改引用 abilityId。同時解掉共用節點重複維護與模擬缺結構化來源兩個問題。supersede PLAN-004 下半場。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-022_數值引用層/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-022_數值引用層/進度表.html">→ 進度表</a>
+        <a class="card-link" href="PLAN-023_神經驅動能力庫/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-023_神經驅動能力庫/進度表.html">→ 進度表</a>
       </div>
     </div>
     <div class="card purple">
@@ -65,15 +74,6 @@
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-003_武器資料模型優化/計畫書.html">→ 計畫書</a>
         <a class="card-link" href="PLAN-003_武器資料模型優化/進度表.html">→ 進度表</a>
-      </div>
-    </div>
-    <div class="card cyan">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-004 · 技能資料抽離</h3>
-      <p>將 PilotSkill 抽離至獨立 pilotSkills Collection，將 NeuralDrive 抽離至 neuralDrives Collection（含職業共用 / 機師專屬 scope 區分），解決共用被動重複維護問題。PilotTalent 保留嵌入。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-004_技能資料抽離/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-004_技能資料抽離/進度表.html">→ 進度表</a>
       </div>
     </div>
     <div class="card yellow">

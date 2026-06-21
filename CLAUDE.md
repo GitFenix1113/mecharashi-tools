@@ -100,3 +100,73 @@ npm run build
 3. 不確定一份產出該歸哪類時，**預設先放 `_local-notes/`**；「決定要做」才升級成正式 PLAN
 
 > **注意：** `_local-notes/` 已在 `.gitignore`，無需擔心誤提交；也不要主動把裡面的內容搬進版控，除非使用者要求。
+
+---
+
+## 5. 常用指令
+
+```bash
+npm run dev        # 開發伺服器（predev 會先跑 generate-image-manifest + copy-docs）
+npm run build      # = generate-image-manifest → copy-docs → tsc -b → vite build
+npm run lint       # ESLint
+npm test           # node --test，跑 src/**/*.test.ts
+node --test src/utils/idSlug.test.ts   # 跑單一測試檔
+npm run preview    # 預覽 production build
+```
+
+- **Windows + PowerShell 環境**：路徑用反斜線；POSIX 腳本（如 git hook）走 Bash 工具。
+- `npm run prepare`（postinstall）會把 `core.hooksPath` 設為 `.githooks/`，並安裝 `.gitmessage` commit template。
+- 環境變數：Firebase 設定全走 `VITE_FIREBASE_*` + App Check 的 `VITE_FIREBASE_APPCHECK_SITE_KEY` / `VITE_APPCHECK_DEBUG_TOKEN`，放 `.env.local`（不進版控）。
+
+### Git hooks（已透過 `core.hooksPath` 啟用，自動執行）
+
+- **`commit-msg`**：`feat|fix|perf|style|refactor` 類 commit 若未一併修改 `src/data/siteChangelog/` 會**擋下**（呼應規則 1）。`chore/ci/docs/...` 豁免。
+- **`pre-push`**：先跑 `npm run build` 把關（失敗中止 push），再自動更新並 commit `CHANGELOG.md`。`CHANGELOG.md` 因此**請勿手動編輯**。
+
+---
+
+## 6. 程式架構速覽（big picture）
+
+技術棧：**React 19 + TypeScript 6 + Vite 8 + Tailwind v4（CSS-first，無 config）+ React Router v7 + Firebase（Auth / Firestore / Storage / App Check）**。部署於 GitHub Pages，故 router 用 `basename={import.meta.env.BASE_URL}`。
+
+### 6.1 三層 Provider（[src/App.tsx](src/App.tsx)）
+
+`AuthProvider` → `GameDataProvider` → `ReferenceProvider`，外層到內層：
+
+- **[AuthContext](src/contexts/AuthContext.tsx)**：Firebase Auth 登入狀態 + 角色（`AdminRoute` 用來 gate `/admin/*` 路由）。
+- **[GameDataContext](src/contexts/GameDataContext.tsx)**：**全站遊戲資料的單一快取層**，見 6.2。
+- **[ReferenceContext](src/contexts/ReferenceContext.tsx)**：實體引用（`EntityRef`）的 hover 浮窗 / 釘選 / 手機 BottomSheet 互動（PLAN-019 數值引用層）。
+
+### 6.2 遊戲資料載入：版本 gate 的三層快取（最重要的架構）
+
+前台讀資料**永遠**透過 [src/hooks/useFirestore.ts](src/hooks/useFirestore.ts) 的 `useXxx()` hook（`usePilots`、`useMechWithModules`、`useAllGameData`…），**不要**在元件裡直接呼叫 `firestoreApi`。流程：
+
+1. hook 呼叫 `ensureLoaded(keys)`，`GameDataContext` 對每個 `CollectionKey` 做：
+2. **記憶體**（本 session 已抓 → 0 read）→ **localStorage**（`mecharashi_gd_*`，版本相符 → 0 Firestore read）→ **Firestore**（真的去抓並寫回快取）。
+3. 版本來源：`meta/gameData` 文件，每集合一個版本號 + 全域 fallback（[versions.ts](src/lib/api/versions.ts) 的 `DataVersions`）。整個 session 只讀版本 1 次。
+4. 後台存檔後呼叫 `bumpDataVersion(key)` 使**所有 client** 該集合快取失效；編輯者自己則用 `patchCollectionItem` / `patchSingleton` 就地同步、免重讀。
+
+> 用 `data-patch` skill 批次更新資料、或寫 migrate 腳本後，**務必 bump 版本**，否則使用者讀到舊快取。
+
+### 6.3 Firestore API 層（[src/lib/firestoreApi.ts](src/lib/firestoreApi.ts)）
+
+barrel 檔 re-export `./api/` 下按集合拆分的模組。共用基礎在 [firestoreCore.ts](src/lib/api/firestoreCore.ts)：
+
+- `fetchCollection` / `fetchDocument` / `docExists`。
+- `stripUndefined`：寫入前遞迴清掉 `undefined`（Firestore 不接受），各 `update*` 共用。
+- `getCollectionPage`：**後台分頁查詢**（降低 read 量）。前台整包載入；後台部分集合（backpacks / components）走伺服器分頁。新增集合：`./api/` 建檔 + barrel 補一行 re-export + `GameDataContext` 的 `CollectionKey` 與 switch。
+
+### 6.4 型別（[src/types/index.ts](src/types/index.ts)）
+
+barrel 按領域拆檔（`pilot` / `mech` / `weapon` / `module` / `backpack` / `component` / `research` / `buff` / `common` / `grayOps` / `boss`）。**例外**：`enums.ts`、`mechUpgrade.ts` **不在** barrel 內，沿用各自獨立 import 路徑。修改型別 / enum 時依規則 2 同步 `docs/02_技術文件/`。
+
+### 6.5 資料管線：爬蟲 → Firestore
+
+`scripts/` 下 Playwright 爬蟲（`scrape-pilots-v3.js`、`scrape-mechs.js`、`scrape-weapons.js`…）抓官網 → migrate / patch 腳本寫入 Firestore。一次性腳本放 `scripts/temp_scripts/`。`generate-image-manifest.mjs`（build/dev 前置）掃 `public/images/` 產出可用圖片清單；`copy-docs.mjs` 依白名單把 `docs/` 複製進 `dist/`（route 為 `/documents`）。**官方 API 天賦文本是「滿晶片」污染值**，人工修正存 `PilotTalent.manual` 以防被補丁洗掉。
+
+### 6.6 慣例
+
+- 註解、文件、PLAN 一律繁體中文；程式識別字保留英文。
+- Tailwind v4：用 CSS-first（`@theme` / `index.css`），**不要**寫 v3 的 `tailwind.config.js`。
+- Firestore 過濾優先 server-side `where`；靜態資料 `getDocs` 一次抓、需即時才 `onSnapshot`（注意免費額度 read 次數）。
+- 階段性開發走 PLAN 制（`docs/05_階段性開發計畫/`，由 `plan-manager` skill 管理）；遊戲改版更新資料走 `data-patch` skill。

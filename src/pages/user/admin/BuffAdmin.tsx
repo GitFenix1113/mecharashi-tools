@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { GameBuff, SkillEffect } from '../../../types'
+import type { GameBuff, SkillEffect, BuffLevel } from '../../../types'
 import { BuffType } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
 import { updateBuff, docExists } from '../../../lib/firestoreApi'
@@ -140,6 +140,133 @@ function MutexGroupField({
   )
 }
 
+// ─── 詞條來源（PLAN-024）：掛 glossaryTerm，用其官方說明取代 buff 詳情卡顯示 ──────────
+// 純顯示來源綁定，無計算意義；為未來技能資料庫鋪路（關鍵字說明單一真相源）。
+function TermRefField({
+  value,
+  onChange,
+}: {
+  value: string | undefined
+  onChange: (v: string | undefined) => void
+}) {
+  const gd = useGameData()
+  useEffect(() => { gd.ensureLoaded(['glossaryTerms']) }, [gd])
+  const terms = useMemo(
+    () => [...gd.glossaryTerms].sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant')),
+    [gd.glossaryTerms],
+  )
+  const selected = value ? gd.glossaryTerms.find((t) => t.id === value) : undefined
+  return (
+    <Field label="詞條來源 termRef（選填；填了則詳情卡改用此詞條的官方說明，取代上方說明）">
+      <select value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)} className="input-field">
+        <option value="">（不掛詞條，沿用上方說明）</option>
+        {value && !selected && <option value={value}>{value}（找不到此詞條）</option>}
+        {terms.map((t) => (
+          <option key={t.id} value={t.id}>{t.name}{t.category ? ` · ${t.category}` : ''}</option>
+        ))}
+      </select>
+      {selected && (
+        <p className="text-[12px] text-text-dim mt-1 leading-relaxed whitespace-pre-wrap">
+          詞條說明：{selected.description || '（此詞條尚無說明）'}
+        </p>
+      )}
+    </Field>
+  )
+}
+
+// ─── 階梯等級項（PLAN-024）：折疊式單級編輯，比照 ModuleLevelItem ──────────────────
+function BuffLevelItem({
+  levelData,
+  onChange,
+  onRemove,
+}: {
+  levelData: BuffLevel
+  onChange: (updated: BuffLevel) => void
+  onRemove: () => void
+}) {
+  const [collapsed, setCollapsed] = useState(false)
+  function upd<K extends keyof BuffLevel>(key: K, value: BuffLevel[K]) {
+    onChange({ ...levelData, [key]: value })
+  }
+  const effects = levelData.effects ?? []
+  return (
+    <div className="border border-border/60 rounded-lg bg-bg-dark/50">
+      <div className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none" onClick={() => setCollapsed(!collapsed)}>
+        <span className="text-[13px] text-text-dim w-3">{collapsed ? '▶' : '▼'}</span>
+        <span className="text-[14px] text-text-dim font-medium flex-1 truncate">
+          Lv.{levelData.level}
+          {levelData.description && (
+            <span className="ml-2 text-text-secondary font-normal">{levelData.description.slice(0, 40)}</span>
+          )}
+        </span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onRemove() }}
+          className="text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10 shrink-0"
+        >
+          ✕ 移除
+        </button>
+      </div>
+
+      {!collapsed && (
+        <div className="px-3 pb-3 border-t border-border/40 pt-2.5 space-y-2.5">
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="等級 level">
+              <input type="number" value={levelData.level} onChange={(e) => upd('level', Number(e.target.value))} className="input-field" />
+            </Field>
+            <Field label="該級描述 description（選填）">
+              <input type="text" value={levelData.description ?? ''} onChange={(e) => upd('description', e.target.value || undefined)} className="input-field" />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="最大疊加 maxStack（選填）">
+              <input
+                type="number"
+                value={levelData.maxStack ?? ''}
+                onChange={(e) => upd('maxStack', e.target.value === '' ? undefined : Number(e.target.value))}
+                className="input-field"
+              />
+            </Field>
+            <Field label="持續回合 duration（選填）">
+              <input
+                type="number"
+                value={levelData.duration ?? ''}
+                onChange={(e) => upd('duration', e.target.value === '' ? undefined : Number(e.target.value))}
+                className="input-field"
+              />
+            </Field>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12px] text-text-dim font-medium uppercase tracking-wider">該級效果 effects</span>
+              <button
+                onClick={() => upd('effects', [...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }])}
+                className="text-[12px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+              >
+                + 新增效果
+              </button>
+            </div>
+            {effects.length === 0 ? (
+              <p className="text-xs text-text-dim py-1 text-center">尚未填入（數值型階梯各級在此填 dmg 等增益）</p>
+            ) : (
+              <div className="space-y-2">
+                {effects.map((eff, i) => (
+                  <SkillEffectItem
+                    key={i}
+                    effect={eff}
+                    index={i}
+                    onChange={(updated) => { const next = [...effects]; next[i] = updated; upd('effects', next) }}
+                    onRemove={() => upd('effects', effects.filter((_, idx) => idx !== i))}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── BUFF 編輯面板 ──────────────────────────────────────────────────────────────
 function BuffEditPanel({
   buff,
@@ -162,9 +289,21 @@ function BuffEditPanel({
   const effects = form.effects ?? []
   function updateEffects(next: SkillEffect[]) { update('effects', next) }
 
+  // PLAN-024：flat XOR leveled — 有 levels 即為階梯 buff，能力資料權威來源轉為各級，
+  // 頂層 maxStack/duration/effects 停用（避免「頂層 vs 各級」雙來源衝突）。
+  const isLeveled = (form.levels?.length ?? 0) > 0
+  const staleTop = [
+    form.maxStack != null && 'maxStack',
+    form.duration != null && 'duration',
+    (form.effects?.length ?? 0) > 0 && 'effects',
+  ].filter(Boolean) as string[]
+  const hasStaleTop = isLeveled && staleTop.length > 0
+
   async function handleSubmit() {
     setSaving(true); setError(null)
-    try { await onSave(form) }
+    // 階梯 buff 存檔時清空頂層能力欄位，確保 DB 不殘留非權威資料
+    const payload: GameBuff = isLeveled ? { ...form, maxStack: undefined, duration: undefined, effects: [] } : form
+    try { await onSave(payload) }
     catch (e) { setError(e instanceof Error ? e.message : '儲存失敗，請重試'); setSaving(false) }
   }
 
@@ -177,6 +316,11 @@ function BuffEditPanel({
       </h3>
 
       <div className="overflow-y-auto flex-1 pr-1 space-y-3">
+        {hasStaleTop && (
+          <div className="rounded-lg border border-accent-yellow/40 bg-accent-yellow/10 px-3 py-2.5 text-[12px] text-accent-yellow leading-relaxed">
+            ⚠ 此為階梯 buff，但頂層仍殘留 <span className="font-bold">{staleTop.join(' / ')}</span>；儲存後會自動清空（能力資料改由各等級提供）。請先確認各級已填好對應數值再儲存。
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <Field label="名稱 name（= [xxx] 內文字）">
             <input value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" placeholder="如：虛粒子形態" />
@@ -205,24 +349,30 @@ function BuffEditPanel({
           onCompileText={(tf) => update('description', tf(form.description))}
         />
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="最大疊加 maxStack（選填）">
-            <input
-              type="number"
-              value={form.maxStack ?? ''}
-              onChange={(e) => update('maxStack', e.target.value === '' ? undefined : Number(e.target.value))}
-              className="input-field"
-            />
-          </Field>
-          <Field label="持續回合 duration（選填）">
-            <input
-              type="number"
-              value={form.duration ?? ''}
-              onChange={(e) => update('duration', e.target.value === '' ? undefined : Number(e.target.value))}
-              className="input-field"
-            />
-          </Field>
-        </div>
+        {!isLeveled ? (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="最大疊加 maxStack（選填）">
+              <input
+                type="number"
+                value={form.maxStack ?? ''}
+                onChange={(e) => update('maxStack', e.target.value === '' ? undefined : Number(e.target.value))}
+                className="input-field"
+              />
+            </Field>
+            <Field label="持續回合 duration（選填）">
+              <input
+                type="number"
+                value={form.duration ?? ''}
+                onChange={(e) => update('duration', e.target.value === '' ? undefined : Number(e.target.value))}
+                className="input-field"
+              />
+            </Field>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border/60 bg-bg-dark/40 px-3 py-2.5 text-[12px] text-text-dim leading-relaxed">
+            最大疊加 / 持續回合改由 <span className="text-accent-yellow">各等級</span> 提供（階梯 buff，頂層欄位已停用）。
+          </div>
+        )}
 
         <IconField
           label="圖示 icon（選填）"
@@ -237,31 +387,76 @@ function BuffEditPanel({
           onChange={(v) => update('mutexGroup', v)}
         />
 
-        {/* 可計算效果 */}
+        <TermRefField
+          value={form.termRef}
+          onChange={(v) => update('termRef', v)}
+        />
+
+        {/* 可計算效果（階梯 buff 改由各級提供，頂層停用）*/}
+        {!isLeveled ? (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">可計算效果 effects</span>
+              <button
+                onClick={() => updateEffects([...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }])}
+                className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+              >
+                + 新增效果
+              </button>
+            </div>
+            {effects.length === 0 ? (
+              <p className="text-xs text-text-dim py-2 text-center">尚未填入（計算器／模擬器不計此 BUFF）</p>
+            ) : (
+              <div className="space-y-2">
+                {effects.map((eff, i) => (
+                  <SkillEffectItem
+                    key={i}
+                    effect={eff}
+                    index={i}
+                    onChange={(updated) => { const next = [...effects]; next[i] = updated; updateEffects(next) }}
+                    onRemove={() => updateEffects(effects.filter((_, idx) => idx !== i))}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border/60 bg-bg-dark/40 px-3 py-2.5 text-[12px] text-text-dim leading-relaxed">
+            可計算效果改由 <span className="text-accent-yellow">各等級</span> 的 effects 提供（階梯 buff，頂層 effects 已停用）。
+          </div>
+        )}
+
+        {/* 階梯等級 levels（PLAN-024）：填了即為階梯 buff，各級獨立 maxStack/effects */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">可計算效果 effects</span>
+            <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">階梯等級 levels（選填）</span>
             <button
-              onClick={() => updateEffects([...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }])}
+              onClick={() => update('levels', [...(form.levels ?? []), { level: (form.levels?.length ?? 0) + 1 }])}
               className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
             >
-              + 新增效果
+              + 新增等級
             </button>
           </div>
-          {effects.length === 0 ? (
-            <p className="text-xs text-text-dim py-2 text-center">尚未填入（計算器／模擬器不計此 BUFF）</p>
+          {(form.levels ?? []).length === 0 ? (
+            <p className="text-xs text-text-dim py-2 text-center">
+              無等級資料。填了即為「階梯 buff」：各級獨立 maxStack / effects，同 buff 不同 level 天然互斥（取代 mutexGroup）。
+            </p>
           ) : (
-            <div className="space-y-2">
-              {effects.map((eff, i) => (
-                <SkillEffectItem
-                  key={i}
-                  effect={eff}
-                  index={i}
-                  onChange={(updated) => { const next = [...effects]; next[i] = updated; updateEffects(next) }}
-                  onRemove={() => updateEffects(effects.filter((_, idx) => idx !== i))}
-                />
-              ))}
-            </div>
+            <>
+              <p className="text-[11px] text-accent-yellow/80 mb-2 leading-relaxed">
+                ⚡ 此為階梯 buff：頂層 maxStack / 互斥群組可留空，由各級提供；數值引用以 <code>&lt;id.lvN.attr&gt;</code> 指定級、buffIds 以 <code>id@N</code> 賦予級。
+              </p>
+              <div className="space-y-2">
+                {(form.levels ?? []).map((lv, idx) => (
+                  <BuffLevelItem
+                    key={idx}
+                    levelData={lv}
+                    onChange={(updated) => { const arr = [...(form.levels ?? [])]; arr[idx] = updated; update('levels', arr) }}
+                    onRemove={() => update('levels', (form.levels ?? []).filter((_, i) => i !== idx))}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>

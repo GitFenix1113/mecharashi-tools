@@ -137,15 +137,48 @@ export interface PilotTalent {
   manual?:          boolean
 }
 
+/**
+ * 神經驅動能力（PLAN-023）。從各機師 Pilot.neuralDrive[].levels[] 抽出去重的共用／專屬能力，
+ * 以能力名為鍵（id: nd_<能力名 slug>）。分區 level 以 abilityId 引用本實體（單一資料源，
+ * 共用能力改一次全機師生效）。zone / minSum / slots（門檻、所屬分區、插槽）仍留在
+ * Pilot.neuralDrive，屬「機師如何取得此能力」的資訊，與能力本身解耦。
+ * 結構比照 pilotSkills（PLAN-004）：collection + ID 引用 + resolve 雙格式。
+ */
+export interface NeuralDriveAbility {
+  /** 文件 ID：nd_<能力名 slug> */
+  id: string
+  /** 能力名（= NeuralDriveLevel.skillName） */
+  name: string
+  /** 能力效果描述（= NeuralDriveLevel.effect） */
+  description: string
+  /** 描述內 [xxx] 引用側錄（PLAN-019 Layer 1；本計畫 N2-1 接線 RefText） */
+  descriptionRefs?: DescriptionRefs
+  /** 圖示（= NeuralDriveLevel.skillIcon / iconLocal） */
+  icon?: string
+  iconLocal?: string
+  /** 可計算效果（模擬器用；多數待後台 NeuralDriveAdmin 補填） */
+  effects: SkillEffect[]
+  /** 賦予的 buff（id 或 id@N，比照技能／天賦） */
+  buffIds: string[]
+}
+
 export interface NeuralDriveLevel {
   level: number
   minSum: number
+  /**
+   * PLAN-023 雙格式過渡：填了則本級能力內容改由 neuralDriveAbilities 集合的此 ID 提供
+   * （單一資料源），以 resolveNeuralDriveAbilities() 解析；未填＝沿用下方嵌入欄位（舊格式）。
+   * 嵌入欄位待 resolve 層（N1-4）與 PilotDetail 改寫（N1-5）就緒後才轉選填，供 flip（N1-6）寫最小 level。
+   */
+  abilityId?: string
   effect: string
   skillName: string
   skillIcon: string
   iconLocal: string
   effects: SkillEffect[]
   buffIds: string[]
+  /** 描述內 [xxx] 引用側錄（PLAN-023 N2-1）；flip 後由 resolve 從 NeuralDriveAbility 帶入。 */
+  descriptionRefs?: DescriptionRefs
 }
 
 export interface NeuralDrive {
