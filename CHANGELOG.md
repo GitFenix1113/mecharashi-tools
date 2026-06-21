@@ -154,6 +154,7 @@
 
 ### 🎨 樣式
 
+- 首頁「網站更新履歷」改版（橙色強調＋查看全部改年／月分頁） (`518ead8`)
 - 更新機師瑪阿特立繪／頭像為新造型，保留原圖備份 (`d732571`)
 - 調整home page樣式 (`7a1a145`)
 - 放大頭像 (`42895bb`)
@@ -164,6 +165,7 @@
 
 ### 🔧 維護
 
+- PLAN-001/003/005 歸檔至觀察維護中（plan-manager 更新 index 與 SKILL） (`281f3c0`)
 - PLAN-023 N2 神驅引用層 + 後台（neuralDrive refType + NeuralDriveAdmin + docs） (`538c399`)
 - PLAN-023 N1 神經驅動能力庫抽離（型別/API/resolve/flip 地基，前台內容不變） (`e3c309a`)
 - PLAN-024 BUFF termRef + 詳情卡級別感知 + flat/leveled 防呆；admin 名稱→ID 衍生 (`af511b8`)
