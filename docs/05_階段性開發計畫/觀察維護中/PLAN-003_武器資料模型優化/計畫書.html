@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-003 武器資料模型優化 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+
+.tag {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+}
+.tag.orange { background: rgba(255,107,43,0.15); color: var(--accent-orange); border: 1px solid rgba(255,107,43,0.3); }
+.tag.green  { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.tag.purple { background: rgba(168,85,247,0.15); color: var(--accent-purple); border: 1px solid rgba(168,85,247,0.3); }
+.tag.blue   { background: rgba(59,130,246,0.15); color: var(--accent-blue);   border: 1px solid rgba(59,130,246,0.3); }
+.tag.red    { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+.rename-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.rename-row:last-child { border-bottom: none; }
+.rename-from { color: var(--accent-red);   }
+.rename-to   { color: var(--accent-green); }
+.rename-arrow { color: var(--text-dim); }
+.rename-note { font-family: inherit; font-size: 12px; color: var(--text-dim); margin-left: 4px; }
+
+.rarity-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+.rarity-table th {
+  text-align: left; padding: 9px 14px;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--accent-yellow);
+  border-bottom: 2px solid var(--border-accent);
+}
+.rarity-table td { padding: 8px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 13px; }
+.rarity-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--accent-orange); font-size: 12px; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">觀察維護中</a>
+    <span>›</span>
+    <span class="current">PLAN-003 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero orange">
+  <div class="hero-badge orange">◆ PLAN-003</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    武器資料模型優化<span style="-webkit-text-fill-color:var(--text-secondary);">RangeType · WeaponRarity · WeaponType · MechRestriction</span>
+  </h1>
+  <p class="hero-sub">修正射程表達方式、補上機甲限制、統一類型 / 種類術語、新增武器專屬稀有度系統，並釐清專武被動效果填值模式</p>
+</header>
+
+<main class="container">
+
+<div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3);border-left:3px solid var(--accent-purple);border-radius:0 10px 10px 0;padding:12px 18px;margin:20px 0;font-size:13px;color:var(--text-secondary);">
+  📐 本計畫為 <a href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html" style="color:var(--accent-purple);text-decoration:none;font-weight:600;">PLAN-019 實體引用與模擬基礎（總綱）</a> 之子計畫，負責 <strong>武器側欄位與專武 carry 被動 → effects</strong>。
+</div>
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-003</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-05-17</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">Enum · Schema · Docs · Migration</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MEDIUM-HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">開發完成 · 剩 Admin 補填</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">關聯文件</div>
+      <div class="meta-value"><a href="../../../02_技術文件/02_資料模型/weapons.html" style="color:var(--accent-cyan);text-decoration:none;">weapons.html</a></div>
+    </div>
+  </div>
+
+  <div class="decision-block">
+    <strong>執行進展（2026-06-10）</strong><br><br>
+    開發者任務（Phase A 型別、Phase B 文件、Phase C-1 遷移）已全數完成，Weapon interface
+    （<code>src/types/weapon.ts</code>）已採新欄位且前台正常運作。<strong>方案變更（與本計畫書原規劃不同，已採用）：</strong><br>
+    · <strong>RangeType</strong> 由 <code>linear | ring</code> 改為 <code>manhattan | orthogonal | ring</code>（更貼近遊戲格狀射程）<br>
+    · <strong>WeaponRarity</strong> 由 <code>SS | S+ | S</code> 擴充為 <code>SS | S+ | S | A | B</code><br>
+    · <strong>C-1 遷移</strong>未另寫 <code>migrate-plan003-weapons.js</code>，改由 collection-aware 的
+      <code>scrape-weapons.js</code> 重抓輸出新 schema 完成<br>
+    · Weapon 另由 PLAN-006 / PLAN-012 補入 <code>equipSlot / triggerSlots / effectSlots / componentLimit / fixedMod / floatingMod</code><br>
+    僅餘 C-2 管理員人工補填（rarity / mechRestriction / 專武 carry effects[]）為長期任務。
+    詳見 <a href="進度表.html" style="color:var(--accent-green);text-decoration:none;">→ 進度表</a>。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+  <div class="section-desc">現有武器 Schema 在射程、限制、術語、稀有度上的設計缺陷。</div>
+
+  <div class="problem-block">
+    <strong>問題一：射程欄位為字串，無法結構化處理</strong><br>
+    現有 <code>range: string</code> 以 <code>"2-4"</code>、<code>"1+"</code> 等字串儲存射程，程式端需要額外解析才能比對數值。
+    此外，遊戲中射程有兩種型態：<strong>線性射程</strong>（如 "2-4"，有最小射程限制）與
+    <strong>環形 N 圈</strong>（如 "1+"、"2+"，以持有者為中心的 (2N+1)×(2N+1) 方形區域），兩者語義不同，
+    但現有欄位無法區分。計算器若需要判斷「敵人在射程內」或「模組條件：近距離」，必須依賴字串解析，容易出錯。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：缺少機甲限制欄位</strong><br>
+    部分武器有使用限制，只能裝備於特定裝甲類型的機甲（輕型 / 中甲 / 重型）。
+    目前 <code>Weapon</code> interface 沒有此欄位，無法在前端篩選或計算器中驗證裝備合法性。
+    相比之下，<code>Backpack</code> interface 已有 <code>mechRestriction</code> 欄位可作為參照。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：類型 / 種類術語混淆，欄位命名與中文概念倒置</strong><br>
+    遊戲中武器分類有兩個層級：<br>
+    · <strong>類型</strong>（大分類）：射擊 / 格鬥 / 突擊 / 戰術<br>
+    · <strong>種類</strong>（細分類）：機槍 / 狙擊步槍 / 霰彈 / 刀劍 / 拳套…<br>
+    <br>
+    但現有 interface 中 <code>category</code>（WeaponCategory）對應「類型」，而 <code>type</code> 對應「種類」，
+    英文欄位名與中文概念恰好相反。「種類」未來是模組生效條件的關鍵篩選維度，若欄位名稱混淆，
+    計算邏輯開發時將產生大量認知負擔與潛在錯誤。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題四：稀有度 Enum 不符合武器實際分級</strong><br>
+    現有通用 <code>ItemRarity</code>（EX / S / A / B）的分級邏輯與武器稀有度無關。
+    武器稀有度僅三級，且識別規則完全不同：<br>
+    · <strong>SS</strong>：專屬武器（特殊名稱，最高等級）<br>
+    · <strong>S+</strong>：名稱含「改」（強化版本）<br>
+    · <strong>S</strong>：名稱含「EX」<br>
+    <br>
+    目前 <code>rarity: string</code> 為無型別的字串，既無法靜態驗證，也無法在 UI 元件中直接對應樣式。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題六：武器種類（kind）缺乏列舉型別保護</strong><br>
+    <code>kind: string</code> 為無型別字串，填值無靜態驗證，也無法保證與模組 <code>weaponKind?</code> 條件使用一致的字串。
+    遊戲中武器種類固定（共 17 種），應建立 enum 明確定義，讓 TypeScript 在編譯期驗證填值合法性。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題七：武器缺少裝備部位欄位；機甲缺少肩膀 / 背後武器槽資訊</strong><br>
+    遊戲中武器有四種裝備部位：<strong>單手</strong>（左臂或右臂）、<strong>雙手</strong>（同時佔據左右臂）、
+    <strong>肩膀</strong>（左臂或右臂的肩膀槽）、<strong>背後</strong>（背後槽）。<br>
+    目前 <code>Weapon</code> interface 沒有裝備部位欄位，計算器無法驗證裝備合法性（如雙手武器佔用雙臂）。<br>
+    同時，<code>Mech</code> interface 沒有記錄機甲是否擁有肩膀 / 背後武器槽，
+    以及少部分機甲將特殊部件綁死於肩膀的情況，導致計算器無法驗證肩膀 / 背後武器的裝備合法性。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題五：專武被動效果填值模式不明確</strong><br>
+    專屬武器（<code>isExclusive: true</code>）有類似模組的條件式被動效果，例如「對輕型機甲攻擊時傷害 +X%」。
+    這些效果在 PLAN-001 完成後，技術上可透過 <code>skills[].activation = 'carry'</code> 搭配 <code>SkillEffect[]</code> 表達，
+    但目前文件和填值指引未說明此模式，導致管理員容易漏填或只填文字描述而不填結構化數值。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+  <div class="section-desc">針對上述問題的解決方案與設計取捨說明。</div>
+
+  <div class="decision-block">
+    <strong>決策一：射程拆分為三個結構化欄位</strong><br>
+    移除 <code>range: string</code>，改以三個欄位表達：<br>
+    · <code>rangeType: RangeType</code> — <code>'linear'</code>（線性，有最小射程限制）/ <code>'ring'</code>（環形 N 圈，以持有者為中心的方形區域）<br>
+    · <code>minRange: number</code> — 最小射程。linear 型填遊戲的下限值（如狙擊 2-4 → 2）；ring 型固定填 0（無最小限制）<br>
+    · <code>maxRange: number</code> — 最大射程（如狙擊 2-4 → 4；2+ → 2）<br>
+    <br>
+    計算器及篩選器可直接做數值比較，不再需要解析字串。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：直接採用既有 MechRestriction enum</strong><br>
+    <code>MechRestriction</code>（<code>none / light / medium / heavy</code>）已存在於 <code>enums.ts</code>，無需新增。
+    Weapon interface 新增 <code>mechRestriction: MechRestriction</code> 欄位，無限制的武器填 <code>'none'</code>。
+    此設計與 Backpack 的處理方式一致（Backpack 使用 <code>string | null</code>，武器改用 enum 更嚴格）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：欄位重命名以對齊中文術語</strong><br>
+    為消除類型 / 種類術語混淆，進行以下重命名：<br>
+    · Enum：<code>WeaponCategory</code> → <code>WeaponType</code>（對應「類型」：射擊 / 格鬥 / 突擊 / 戰術）<br>
+    · 欄位：<code>category</code> → <code>type</code>（使用 <code>WeaponType</code> enum）<br>
+    · 欄位：<code>type</code> → <code>kind</code>（機槍 / 狙擊步槍 / 刀劍…，plain string）<br>
+    · 欄位：<code>typeCoefficient</code> → <code>kindCoefficient</code>（跟隨種類重命名）<br>
+    <br>
+    同步更新 PLAN-001 定義的 <code>SkillCondition</code>：<code>weaponCategory?</code> → <code>weaponType?</code>，
+    並新增 <code>weaponKind?</code> 以支援種類層級的模組條件篩選。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：新增 WeaponRarity enum，取代無型別字串</strong><br>
+    建立武器專屬稀有度 enum：<code>SS / S_PLUS / S</code>，對應中文「SS / S+ / S」。
+    稀有度識別規則（根據武器名稱判斷）記錄於文件與 weapons.html 說明表，
+    不在 Schema 中自動推斷，管理員填資料時手動判斷並填入正確 enum 值。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：專武被動效果 = skills[] 中 activation='carry' 的技能</strong><br>
+    不新增額外欄位。專武的條件式被動效果以 <code>skills[]</code> 中一筆 <code>activation: 'carry'</code> 的
+    <code>WeaponSkill</code> 表達，其 <code>effects: SkillEffect[]</code> 依模組效果格式填入結構化數值。<br>
+    <br>
+    計算器處理武器 carry 技能的邏輯與模組效果完全相同，不需要額外的處理分支。
+    文件補充填值範例與說明，確保管理員理解此模式。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：建立 WeaponKind enum，取代無型別 kind string</strong><br>
+    定義 17 個值的 <code>WeaponKind</code> enum（格鬥類 7 種、射擊類 10 種），與
+    模組 SkillCondition 中 <code>weaponKind?</code> 欄位共用同一組字串值，確保填值一致性。<br>
+    <code>kind: string</code> 欄位在 interface 中保留為 <code>string</code>（與其他 enum 欄位慣例一致），
+    填值時參照 <code>WeaponKind</code> enum 值，TypeScript 編譯期靜態驗證由管理員工具層處理。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：新增 WeaponEquipSlot enum；機甲新增肩膀 / 背後武器欄位</strong><br>
+    建立 <code>WeaponEquipSlot</code> enum：<code>singleHand / dualHand / shoulder / back</code>。<br>
+    <code>Weapon</code> interface 新增 <code>equipSlot: WeaponEquipSlot</code>，標記武器佔用的裝備格位。<br>
+    <br>
+    <code>Mech</code> interface 新增三個選填欄位：<br>
+    · <code>leftShoulderSlot?: string | null</code> — <code>undefined</code> = 無左肩槽；<code>null</code> = 空槽；<code>string</code> = 固定武器 ID<br>
+    · <code>rightShoulderSlot?: string | null</code> — 同左肩邏輯<br>
+    · <code>backSlot?: string | null</code> — 背後武器槽，邏輯相同<br>
+    <br>
+    此設計讓計算器可直接透過 <code>equipSlot</code> 知道武器需要哪種槽位，
+    再查詢目標機甲是否有對應槽位，做出裝備合法性判斷。
+  </div>
+</section>
+
+<!-- Schema 規格 -->
+<section class="section">
+  <div class="section-label purple">Schema</div>
+  <div class="section-title">Schema 規格</div>
+  <div class="section-desc">新增與修改的 TypeScript enum / interface 完整定義。</div>
+
+  <div class="section-title" style="font-size:16px;margin-top:24px;margin-bottom:12px;">1. 新增 Enum（enums.ts）</div>
+
+  <div class="code-block">
+<span class="cm">// 武器種類（共 17 種，格鬥類 + 射擊類）</span>
+<span class="kw">export const</span> <span class="nm">WeaponKind</span> = {
+  <span class="cm">// 格鬥類</span>
+  <span class="nm">LARGE_SHIELD</span>:     <span class="st">'大盾'</span>,
+  <span class="nm">HAND_SHIELD</span>:      <span class="st">'手盾'</span>,
+  <span class="nm">BLADE</span>:            <span class="st">'刀劍'</span>,
+  <span class="nm">KNUCKLE</span>:          <span class="st">'拳套'</span>,
+  <span class="nm">PILE</span>:             <span class="st">'打樁機'</span>,
+  <span class="nm">CHAINSAW</span>:         <span class="st">'電鋸'</span>,
+  <span class="nm">POLEARM</span>:          <span class="st">'長柄'</span>,
+  <span class="cm">// 射擊類</span>
+  <span class="nm">RAILGUN</span>:          <span class="st">'電磁炮'</span>,
+  <span class="nm">FUNNEL</span>:           <span class="st">'浮游炮'</span>,
+  <span class="nm">MISSILE</span>:          <span class="st">'導彈'</span>,
+  <span class="nm">ROCKET</span>:           <span class="st">'火箭'</span>,
+  <span class="nm">SHOTGUN</span>:          <span class="st">'霰彈槍'</span>,
+  <span class="nm">MACHINEGUN</span>:       <span class="st">'機槍'</span>,
+  <span class="nm">HEAVY_MACHINEGUN</span>: <span class="st">'重機槍'</span>,
+  <span class="nm">FLAMETHROWER</span>:     <span class="st">'噴火器'</span>,
+  <span class="nm">SNIPER_LIGHT</span>:     <span class="st">'輕型狙擊步槍'</span>,
+  <span class="nm">SNIPER</span>:           <span class="st">'狙擊步槍'</span>,
+} <span class="kw">as const</span>;
+<span class="kw">export type</span> <span class="ty">WeaponKind</span> = <span class="kw">typeof</span> WeaponKind[<span class="kw">keyof typeof</span> WeaponKind];
+
+<span class="cm">// 武器裝備部位</span>
+<span class="kw">export const</span> <span class="nm">WeaponEquipSlot</span> = {
+  <span class="nm">SINGLE_HAND</span>: <span class="st">'singleHand'</span>,  <span class="cm">// 單手：左臂或右臂其中一個</span>
+  <span class="nm">DUAL_HAND</span>:   <span class="st">'dualHand'</span>,    <span class="cm">// 雙手：同時佔據左右臂</span>
+  <span class="nm">SHOULDER</span>:    <span class="st">'shoulder'</span>,    <span class="cm">// 肩膀：左臂或右臂的肩膀槽</span>
+  <span class="nm">BACK</span>:        <span class="st">'back'</span>,        <span class="cm">// 背後</span>
+} <span class="kw">as const</span>;
+<span class="kw">export type</span> <span class="ty">WeaponEquipSlot</span> = <span class="kw">typeof</span> WeaponEquipSlot[<span class="kw">keyof typeof</span> WeaponEquipSlot];
+
+<span class="cm">// 射程型態</span>
+<span class="kw">export const</span> <span class="nm">RangeType</span> = {
+  <span class="nm">LINEAR</span>: <span class="st">'linear'</span>,  <span class="cm">// 線性射程：有最小射程限制（"2-4" → minRange:2, maxRange:4）</span>
+  <span class="nm">RING</span>:   <span class="st">'ring'</span>,    <span class="cm">// 環形 N 圈：(2N+1)×(2N+1) 方形區域（"2+" → minRange:0, maxRange:2）</span>
+} <span class="kw">as const</span>;
+<span class="kw">export type</span> <span class="ty">RangeType</span> = <span class="kw">typeof</span> RangeType[<span class="kw">keyof typeof</span> RangeType];
+
+<span class="cm">// 武器稀有度（武器專屬，與通用 ItemRarity 分開）</span>
+<span class="kw">export const</span> <span class="nm">WeaponRarity</span> = {
+  <span class="nm">SS</span>:     <span class="st">'SS'</span>,  <span class="cm">// 專屬武器（特殊名稱，最高等級）</span>
+  <span class="nm">S_PLUS</span>: <span class="st">'S+'</span>,  <span class="cm">// 名稱含「改」</span>
+  <span class="nm">S</span>:      <span class="st">'S'</span>,   <span class="cm">// 名稱含「EX」</span>
+} <span class="kw">as const</span>;
+<span class="kw">export type</span> <span class="ty">WeaponRarity</span> = <span class="kw">typeof</span> WeaponRarity[<span class="kw">keyof typeof</span> WeaponRarity];
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:32px;margin-bottom:12px;">2. 重命名 Enum（enums.ts）</div>
+
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin:14px 0;">
+    <div class="rename-row">
+      <span class="rename-from">WeaponCategory</span>
+      <span class="rename-arrow">→</span>
+      <span class="rename-to">WeaponType</span>
+      <span class="rename-note">// 對應「類型」；值不變（射擊 / 格鬥 / 突擊 / 戰術）</span>
+    </div>
+  </div>
+
+  <div class="code-block">
+<span class="cm">// 重命名後（SHOOTING / MELEE / ASSAULT / TACTICAL 值不變）</span>
+<span class="kw">export const</span> <span class="nm">WeaponType</span> = {
+  <span class="nm">SHOOTING</span>: <span class="st">'射擊'</span>,
+  <span class="nm">MELEE</span>:    <span class="st">'格鬥'</span>,
+  <span class="nm">ASSAULT</span>:  <span class="st">'突擊'</span>,
+  <span class="nm">TACTICAL</span>: <span class="st">'戰術'</span>,
+} <span class="kw">as const</span>;
+<span class="kw">export type</span> <span class="ty">WeaponType</span> = <span class="kw">typeof</span> WeaponType[<span class="kw">keyof typeof</span> WeaponType];
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:32px;margin-bottom:12px;">3. 修改 Weapon Interface（index.ts）</div>
+
+  <div class="code-block">
+<span class="kw">export interface</span> <span class="ty">Weapon</span> {
+  id:               <span class="ty">string</span>
+  name:             <span class="ty">string</span>
+
+  <span class="cm">// ─── 分類 ─────────────────────────────────────</span>
+  type:             <span class="ty">WeaponType</span>   <span class="cm">// （原 category）類型：射擊 / 格鬥 / 突擊 / 戰術</span>
+  kind:             <span class="ty">string</span>       <span class="cm">// （原 type）種類：機槍 / 狙擊步槍 / 刀劍…</span>
+  kindCoefficient:  <span class="ty">number</span>       <span class="cm">// （原 typeCoefficient）武器種類係數</span>
+
+  <span class="cm">// ─── 基礎屬性 ─────────────────────────────────</span>
+  attack:           <span class="ty">string</span>
+  accuracy:         <span class="ty">number</span>
+  critValue:        <span class="ty">number</span>
+  weight:           <span class="ty">number</span>
+  rarity:           <span class="ty">WeaponRarity</span> <span class="cm">// （原 string）武器專屬稀有度 SS / S+ / S</span>
+  mechRestriction:  <span class="ty">MechRestriction</span>  <span class="cm">// 新增：none / light / medium / heavy</span>
+  equipSlot:        <span class="ty">WeaponEquipSlot</span>  <span class="cm">// 新增：singleHand / dualHand / shoulder / back</span>
+
+  <span class="cm">// ─── 射程（原 range: string 拆分為三欄位） ───────</span>
+  rangeType:        <span class="ty">RangeType</span>    <span class="cm">// 'linear' | 'ring'</span>
+  minRange:         <span class="ty">number</span>       <span class="cm">// 線性型：遊戲最小值；ring 型：固定 0</span>
+  maxRange:         <span class="ty">number</span>       <span class="cm">// 最大射程</span>
+
+  <span class="cm">// ─── 專屬武器 ─────────────────────────────────</span>
+  isExclusive:      <span class="ty">boolean</span>
+  exclusiveFor?:    <span class="ty">string</span>       <span class="cm">// 主要對應機師 ID</span>
+
+  <span class="cm">// ─── 元件插槽 ─────────────────────────────────</span>
+  triggerSlots:     <span class="ty">number</span>
+  effectSlots:      <span class="ty">number</span>
+
+  <span class="cm">// ─── 改裝（結構不變）───────────────────────────</span>
+  fixedMod: {
+    planName:  <span class="ty">string</span>
+    maxLevel:  <span class="ty">number</span>
+    effects:   <span class="ty">WeaponFixedModEffect</span>[]
+  }
+  floatingMod: {
+    planName:       <span class="ty">string</span>
+    slots:          <span class="ty">number</span>
+    possibleEffects: <span class="ty">WeaponFloatingModEffect</span>[]
+  }
+  skills:           <span class="ty">WeaponSkill</span>[]
+}
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:32px;margin-bottom:12px;">4. 修改 Mech Interface（index.ts）— 新增武器欄位</div>
+
+  <div class="code-block">
+<span class="cm">// 新增三個選填欄位（有對應槽位的機甲才填）</span>
+<span class="kw">export interface</span> <span class="ty">Mech</span> {
+  <span class="cm">// ... 既有欄位 ...</span>
+
+  <span class="cm">// ─── 武器裝備欄位（計算機用）──────────────────────────────────</span>
+  <span class="cm">// undefined = 無此槽；null = 空槽可裝備；string = 固定武器 ID（綁死）</span>
+  leftShoulderSlot?:  <span class="ty">string</span> | <span class="kw">null</span>
+  rightShoulderSlot?: <span class="ty">string</span> | <span class="kw">null</span>
+  backSlot?:          <span class="ty">string</span> | <span class="kw">null</span>
+}
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:32px;margin-bottom:12px;">6. 修改 SkillCondition Interface（index.ts，PLAN-001 定義）</div>
+
+  <div class="code-block">
+<span class="kw">export interface</span> <span class="ty">SkillCondition</span> {
+  trigger:          <span class="ty">string</span>    <span class="cm">// PilotSkillTrigger enum</span>
+  weaponType?:      <span class="ty">string</span>    <span class="cm">// （原 weaponCategory）WeaponType：限定武器類型（射擊/格鬥/突擊/戰術）</span>
+  weaponKind?:      <span class="ty">string</span>    <span class="cm">// 新增：限定武器種類（機槍/狙擊步槍/刀劍…）</span>
+  hpThreshold?:     <span class="ty">number</span>    <span class="cm">// HP% 門檻</span>
+  minApCost?:       <span class="ty">number</span>    <span class="cm">// 最低 AP 消耗</span>
+  targetClass?:     <span class="ty">string</span>    <span class="cm">// 目標職業</span>
+}
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:32px;margin-bottom:12px;">7. 武器稀有度識別規則</div>
+
+  <div class="data-table-wrap">
+    <table class="rarity-table">
+      <tr><th>Enum 值</th><th>中文顯示</th><th>識別規則</th><th>說明</th></tr>
+      <tr>
+        <td>SS</td>
+        <td>SS</td>
+        <td>特殊名稱（無規律特徵，需人工判斷）</td>
+        <td>專屬武器，isExclusive = true。遊戲中最高等級武器。</td>
+      </tr>
+      <tr>
+        <td>S+</td>
+        <td>S+</td>
+        <td>名稱含「改」字</td>
+        <td>改版武器，一般為通用高階武器。</td>
+      </tr>
+      <tr>
+        <td>S</td>
+        <td>S</td>
+        <td>名稱含「EX」字樣</td>
+        <td>EX 版本武器，標準高階武器。</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:32px;margin-bottom:12px;">8. 專武被動效果填值範例</div>
+
+  <div class="code-block">
+<span class="cm">// 專武「昏星繼光」的被動效果：對輕型機甲攻擊時傷害 +15%</span>
+<span class="cm">// → 以 activation='carry' 的 WeaponSkill 條目表達</span>
+{
+  name:       <span class="st">"昏星繼光‧被動"</span>,
+  type:       <span class="st">'被動技能'</span>,
+  activation: <span class="st">'carry'</span>,            <span class="cm">// 攜帶即生效</span>
+  description: <span class="st">"攻擊輕型機甲時，傷害提升 15%"</span>,
+  effects: [
+    {
+      stat:      <span class="st">'dmg'</span>,
+      value:     <span class="ty">15</span>,
+      scope:     <span class="st">'self'</span>,
+      condition: {
+        trigger:    <span class="st">'always'</span>,
+        targetClass: <span class="st">'light'</span>     <span class="cm">// 目標為輕型機甲</span>
+      }
+    }
+  ],
+  buffIds:    [],
+  enhancesTalentName: <span class="st">"星落天擊"</span>   <span class="cm">// 若同時強化天賦則填入</span>
+}
+  </div>
+</section>
+
+<!-- 影響範圍 -->
+<section class="section">
+  <div class="section-label orange">Impact</div>
+  <div class="section-title">影響範圍</div>
+
+  <div class="doc-grid">
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-orange)">TypeScript</div>
+      <h4>src/types/enums.ts</h4>
+      <p>新增 RangeType、WeaponRarity、WeaponKind、WeaponEquipSlot；重命名 WeaponCategory → WeaponType</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-orange)">TypeScript</div>
+      <h4>src/types/index.ts</h4>
+      <p>修改 Weapon interface（射程欄位、mechRestriction、equipSlot、欄位重命名、rarity 型別）；修改 Mech interface（新增 leftShoulderSlot / rightShoulderSlot / backSlot）；修改 SkillCondition（weaponCategory → weaponType，新增 weaponKind）</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-yellow)">Script</div>
+      <h4>scripts/migrate-plan003-weapons.js</h4>
+      <p>一次性遷移腳本：將 Firestore weapons 文件中 range 字串拆分為 minRange / maxRange / rangeType；補上 mechRestriction 預設值；將 category / type / typeCoefficient 欄位重命名</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-purple)">Document</div>
+      <h4>docs/.../weapons.html</h4>
+      <p>更新欄位定義表、新增射程型態說明、稀有度識別規則、專武被動效果填值指引</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-red)">Admin</div>
+      <h4>Firestore 資料更新</h4>
+      <p>執行遷移腳本後，管理員人工確認 mechRestriction、rangeType 填值正確性，並補填各武器 skills[] 的結構化效果數值</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · PLAN-003 · 計畫書 —
+  <a href="進度表.html" style="color:var(--accent-cyan);text-decoration:none;">→ 查看進度表</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-11 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>
