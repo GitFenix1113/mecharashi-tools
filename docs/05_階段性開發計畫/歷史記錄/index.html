@@ -31,6 +31,26 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-004 · 技能資料抽離</h3>
+      <p>將 PilotSkill 從機師文件抽離至獨立 <code>pilotSkills</code> 集合（單一資料源）：共用被動只維護一份、改一次全機師生效，並作為 PLAN-019 引用層 <code>refType:'skill'</code> 的資料源。Pilot.skills 經 Stage 2 flip 收斂為純 ID 陣列（82/82 機師），走 GameDataContext 預載 + 版本快取。PilotTalent 保留嵌入。下半場 neuralDrives 因「共用單位是能力節點而非分區」更正建模，移轉至 PLAN-023。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-06-19 · 上半場 8 / 8（下半場移轉 PLAN-023）</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-004_技能資料抽離/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-004_技能資料抽離/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-022 · 數值引用層</h3>
+      <p>讓描述內的層數／回合數綁定 buff 屬性：維護者照抄遊戲原文、打 $1/%1 一鍵代入為 <code>&lt;refId.attr&gt;</code> token，前台從 GameDataContext 解析顯示真值，「正文寫 7、buff 是 5」的漂移結構性消失。接入集中於 <code>numRefs</code> util + RefText / DiffHighlight / RefPicker 三樞紐，天賦／技能／晶片驅動／武器全站生效、零逐頁實作；後台 RefPicker 加「數值語法糖一鍵代入」（編號圖例 + 殘留警告 + 預覽確認）。以艾達凝勢三階（5/7/7）端到端驗收。PLAN-019 引用層的數值延伸。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-06-19 · 8 / 8 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-022_數值引用層/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-022_數值引用層/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card pink">
       <div class="card-icon">◆</div>
       <h3>PLAN-021 · 神驅算力天賦改寫</h3>
