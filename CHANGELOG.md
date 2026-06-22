@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-06-21
+## [Unreleased] - 2026-06-22
 
 ### ⚠ 重大變更
 
@@ -128,6 +128,7 @@
 
 ### 📚 文件
 
+- 同步資料模型與頁面規劃文件至最新型別 (`ca24ec5`)
 - 建立 PLAN-023 神經驅動能力庫、歸檔 PLAN-004 (`dd999ce`)
 - PLAN-022 數值引用層歸檔至歷史記錄（A+B+C+D · 8/8 完成） (`3f6d91c`)
 - PLAN-022 進度表 D-1 收尾 — 第一批 A+B+D 完成 6/6 (`7fad1a9`)
