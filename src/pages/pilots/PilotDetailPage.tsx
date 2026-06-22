@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useParams, Link } from 'react-router-dom'
 import { BottomSheet } from '../../components/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import type { PilotStats, NeuralDrive, Weapon, PilotTalent, TalentNdVariant } from '../../types'
+import type { PilotStats, NeuralDrive, Weapon, PilotTalent, TalentNdVariant, DescriptionRefs } from '../../types'
 import { formatWeaponReq } from '../../types'
 type NdLevel = NeuralDrive['levels'][number]
 import { assetUrl } from '../../utils/assets'
@@ -227,12 +227,13 @@ function TalentNdPanel({
 const SHOW_WEAPON_ENHANCE_IN_TALENT: boolean = true
 
 function TalentCard({
-  talent, drives, levels, weaponEnhanceText, weaponName,
+  talent, drives, levels, weaponEnhanceText, weaponEnhanceRefs, weaponName,
 }: {
   talent: PilotTalent
   drives: NeuralDrive[]
   levels: Record<string, number>
   weaponEnhanceText?: string
+  weaponEnhanceRefs?: DescriptionRefs
   weaponName?: string
 }) {
   const isMobile = useIsMobile()
@@ -296,7 +297,7 @@ function TalentCard({
               ▶ 專武強化{weaponName ? ` · ${weaponName}` : ''}
             </span>
             <p className="text-sm text-text-secondary leading-relaxed mt-1.5">
-              <DiffHighlight base={currentBase} enhanced={weaponEnhanceText} refs={talent.descriptionRefs} />
+              <DiffHighlight base={currentBase} enhanced={weaponEnhanceText} refs={{ ...talent.descriptionRefs, ...weaponEnhanceRefs }} />
             </p>
           </div>
         )}
@@ -952,11 +953,14 @@ export default function PilotDetailPage() {
   const [ndHoverState, setNdHoverState] = useState<{ level: NdLevel; x: number; anchorTop: number } | null>(null)
   const [ndSheetLevel, setNdSheetLevel] = useState<NdLevel | null>(null)
 
+  // 專武強化敘述：text 取自武器技能的 enhancedTalentDescription，refs 也一併帶出該技能的
+  // descriptionRefs —— 強化敘述新增的 [xxx]（如 [虛情實意]）只側錄在武器技能上，天賦自身的
+  // descriptionRefs 沒有，若只用天賦 refs 這些引用會降級成純文字（PLAN-019 引用渲染缺漏修正）。
   const talentEnhancementMap = useMemo(() => {
-    const map = new Map<string, string>()
+    const map = new Map<string, { text: string; refs?: DescriptionRefs }>()
     exclusiveWeapon?.skills.forEach(sk => {
       if (sk.enhancesTalentName && sk.enhancedTalentDescription)
-        map.set(sk.enhancesTalentName, sk.enhancedTalentDescription)
+        map.set(sk.enhancesTalentName, { text: sk.enhancedTalentDescription, refs: sk.descriptionRefs })
     })
     return map
   }, [exclusiveWeapon])
@@ -1132,7 +1136,8 @@ export default function PilotDetailPage() {
                   talent={t}
                   drives={resolvedNeuralDrive ?? []}
                   levels={ndLevels}
-                  weaponEnhanceText={talentEnhancementMap.get(t.name)}
+                  weaponEnhanceText={talentEnhancementMap.get(t.name)?.text}
+                  weaponEnhanceRefs={talentEnhancementMap.get(t.name)?.refs}
                   weaponName={exclusiveWeapon?.name}
                 />
               ))}
