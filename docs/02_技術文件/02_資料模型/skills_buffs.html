@@ -46,11 +46,13 @@
   <div class="data-table-wrap">
     <table class="data-table">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
-      <tr><td>trigger</td><td>PilotSkillTrigger (Enum)</td><td>觸發類型（顯示說明用，計算器不自動判斷）：<br><code>always</code> 永久被動 / <code>onAttack</code> 攻擊時 / <code>onCounter</code> 反擊時 / <code>onApSkill</code> 使用 AP 技能時<br><code>weaponCategory</code> 使用特定武器類別 / <code>dualWield</code> 雙持 / <code>hpBelow</code> HP 低於門檻<br><code>firstAttack</code> 戰鬥首次攻擊 / <code>enemyPhase</code> 敵方回合 / <code>allyHasBuff</code> 隊友持有增益</td></tr>
-      <tr><td>weaponCategory</td><td>string?</td><td>限定武器類別（WeaponCategory enum）；trigger = weaponCategory 時填入</td></tr>
+      <tr><td>trigger</td><td>PilotSkillTrigger (Enum)</td><td>觸發類型（顯示說明用，計算器不自動判斷）：<br><code>always</code> 永久被動 / <code>onAttack</code> 攻擊時 / <code>onCounter</code> 反擊時 / <code>onApSkill</code> 使用 AP 技能時<br><code>weaponType</code> 使用特定武器類型 / <code>dualWield</code> 雙持 / <code>hpBelow</code> HP 低於門檻<br><code>firstAttack</code> 戰鬥首次攻擊 / <code>enemyPhase</code> 敵方回合 / <code>allyHasBuff</code> 隊友持有增益</td></tr>
+      <tr><td>weaponType</td><td>string?</td><td>限定武器類型（WeaponType enum，大分類：射擊 / 格鬥 / 突擊 / 戰術）；trigger = weaponType 時填入<br><small style="color:var(--text-dim)">舊欄位名 weaponCategory，已更名為 weaponType</small></td></tr>
+      <tr><td>weaponKind</td><td>string?</td><td>限定武器種類（WeaponKind enum，細分類：機槍 / 狙擊步槍 / 刀劍…）；比 weaponType 更精確的種類層級篩選</td></tr>
       <tr><td>hpThreshold</td><td>number?</td><td>HP% 門檻（如 50 代表 "HP &lt; 50%"）；trigger = hpBelow 時填入</td></tr>
       <tr><td>minApCost</td><td>number?</td><td>最低 AP 消耗條件</td></tr>
       <tr><td>targetClass</td><td>string?</td><td>目標職業限制（PilotClass enum）</td></tr>
+      <tr><td>hasBuff</td><td>string?</td><td>trigger = hasBuff 時：需持有的 buff / 狀態名稱（如 '強化射擊'、'瞄準'）</td></tr>
     </table>
   </div>
 
@@ -61,6 +63,7 @@
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>stat</td><td>string</td><td>影響屬性，與 Module 欄位名稱對齊：<br><code>'dmg' | 'crit' | 'critDmg' | 'acc'</code><br><code>'dmg_assault' | 'dmg_melee' | 'dmg_shooting' | 'dmg_tactical'</code><br><code>'dmg_blade' | 'dmg_machinegun' | ...</code>（武器種類）<br><code>'range' | 'armor_rate' | 'firepower_rate' | ...</code>（其他屬性）</td></tr>
       <tr><td>value</td><td>number</td><td>數值大小（如 15 代表 15%）</td></tr>
+      <tr><td>valueType</td><td>'add' | 'override'?</td><td>數值計算方式：<code>'add'</code>（預設，加算）/ <code>'override'</code>（覆蓋原始值，如把係數 0.15 改為 0.2 而非相加）</td></tr>
       <tr><td>scope</td><td>SkillScope (Enum)</td><td>受益對象：<code>self</code>（自己）/ <code>ally</code>（其他隊友）/ <code>team</code>（全隊含自己）</td></tr>
       <tr><td>condition</td><td>SkillCondition | null</td><td>觸發條件說明；null = 此技能 active 時永遠生效</td></tr>
     </table>
@@ -137,6 +140,21 @@
     </table>
   </div>
 
+  <div class="section-title" style="font-size:16px;margin-top:24px;margin-bottom:10px;">BuffLevel — 階梯 buff 單一等級（🆕 PLAN-024）</div>
+  <div class="section-desc">階梯 buff 的 <code>levels[]</code> 各元素。比照 ModuleLevel：結構型（如凝勢）各級 maxStack / effects 不同 → 填滿；數值型（如傷害提升）各級只差數值 → 多半只填 level + effects。<code>level</code> 是「靜態強度階」（來源決定掛哪級），與執行期的 stack（疊加層數）是兩個維度。</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>level</td><td>number</td><td>等級序號 1, 2, 3…（對應原羅馬尾碼 I / II / III）</td></tr>
+      <tr><td>description</td><td>string?</td><td>該級描述（選填；可被滿星 / 算力變體引用）</td></tr>
+      <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>該級描述的 [xxx] 引用側錄（PLAN-019）</td></tr>
+      <tr><td>maxStack</td><td>number?</td><td>該級最大疊加層數（結構型各級不同，如凝勢 5 / 7 / 7；數值型通常不填）</td></tr>
+      <tr><td>duration</td><td>number?</td><td>該級持續回合數</td></tr>
+      <tr><td>effects</td><td>SkillEffect[]?</td><td>該級的數值效果（數值型各級的數值差異在此；結構型通常不填）</td></tr>
+      <tr><td>icon</td><td>string?</td><td>該級專屬圖示（選填；不填沿用 buff.icon）</td></tr>
+    </table>
+  </div>
+
   <div class="note-block">
     <strong>🆕 PLAN-024：flat XOR leveled — 能力資料單一權威來源</strong>
     一顆 buff 只能二擇一：<code>flat</code>（無 <code>levels</code>，能力資料來自頂層 <code>maxStack</code>/<code>duration</code>/<code>effects</code>）
@@ -178,9 +196,10 @@
   <div class="data-table-wrap">
     <table class="data-table">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
-      <tr><td>EntityRef.refType</td><td>RefType</td><td>buff / skill / pilot / mech / weapon / module / backpack / component / stat / term</td></tr>
-      <tr><td>EntityRef.refId</td><td>string</td><td>目標 ID（buffs/{id}、pilots/{id}、glossaryTerms/{id}），或 stat key 如 'dmg'</td></tr>
-      <tr><td>EntityRef.label</td><td>string?</td><td>顯示文字；預設取目標 name，可覆寫</td></tr>
+      <tr><td>EntityRef.refType</td><td>RefType</td><td>buff / skill / pilot / mech / weapon / module / backpack / component / stat / term / <strong>neuralDrive</strong>（🆕 PLAN-023，指向 neuralDriveAbilities）</td></tr>
+      <tr><td>EntityRef.refId</td><td>string</td><td>目標 ID（buffs/{id}、pilots/{id}、glossaryTerms/{id}、neuralDriveAbilities/{id}），或 stat key 如 'dmg'</td></tr>
+      <tr><td>EntityRef.label</td><td>string?</td><td>顯示文字；預設取目標 name，可覆寫（原文用別名時）</td></tr>
+      <tr><td>EntityRef.level</td><td>number?</td><td>🆕 PLAN-024：引用階梯 buff 的特定等級。數值代入時自動帶出 <code>&lt;refId.lvN.attr&gt;</code> 形式；未指定 = 不限級（沿用頂層 / base）</td></tr>
       <tr><td>DescriptionRefs</td><td>Record&lt;string, EntityRef&gt;</td><td>key = 括號內文字（如 "虛粒子形態"）→ 對應實體</td></tr>
     </table>
   </div>
@@ -269,7 +288,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

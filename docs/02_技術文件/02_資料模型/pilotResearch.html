@@ -72,16 +72,16 @@
       <tr class="group-header"><td colspan="3">▎武裝特質 weaponTraits[]（結構同 pilotTraits[]）</td></tr>
       <tr><td>&nbsp;└ slot / options[]</td><td>-</td><td>欄位 I / II / III，各含選項列表</td></tr>
       <tr class="group-header"><td colspan="3">▎互斥規則 exclusionRules[]</td></tr>
-      <tr><td>&nbsp;├ slotA</td><td>string</td><td>欄位 A（如 "pilotTraits.1"）</td></tr>
+      <tr><td>&nbsp;├ slotA</td><td>number</td><td>欄位 A 編號：1（I）/ 2（II）/ 3（III）</td></tr>
       <tr><td>&nbsp;├ optionA</td><td>string</td><td>能力 A 名稱</td></tr>
-      <tr><td>&nbsp;├ slotB</td><td>string</td><td>欄位 B</td></tr>
+      <tr><td>&nbsp;├ slotB</td><td>number</td><td>欄位 B 編號（1 / 2 / 3）</td></tr>
       <tr><td>&nbsp;└ optionB</td><td>string</td><td>能力 B 名稱（與 A 互斥）</td></tr>
     </table>
   </div>
 
   <div class="note-block">
-    <strong>⚠️ 待補充</strong>
-    互斥規則的具體邏輯（slotA/slotB 格式、多重互斥的處理方式）待遊戲資料確認後補充。
+    <strong>互斥規則格式</strong>
+    <code>slotA</code> / <code>slotB</code> 為欄位編號（<code>number</code>，1 / 2 / 3 對應 I / II / III），各自搭配 <code>optionA</code> / <code>optionB</code> 能力名稱，定位互斥的兩個選項。
     模擬器 Step 5 中，選到互斥選項時需顯示提示。
   </div>
 </section>
@@ -115,7 +115,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

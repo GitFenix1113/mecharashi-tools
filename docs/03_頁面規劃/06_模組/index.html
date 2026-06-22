@@ -34,7 +34,7 @@
     <tr><th>路由</th><td><code>/modules</code></td></tr>
     <tr><th>開發階段</th><td>Phase 3</td></tr>
     <tr><th>登入需求</th><td>不需要</td></tr>
-    <tr><th>資料來源</th><td>Firestore: modules（available=true 的條目，排除副模組）</td></tr>
+    <tr><th>資料來源</th><td>Firestore: modules（available=true 的條目，排除副模組）+ mechs（建立「採用機甲」反查索引）</td></tr>
   </table>
 
   <div class="info-block" style="margin-top:16px;">
@@ -72,6 +72,11 @@
       <h3>數值標籤 &amp; 來源</h3>
       <p>卡片底部顯示最高等級非零數值標籤（傷害/暴擊/爆傷/命中/火力/護甲/出力/回避/耐久/減傷/抗暴）。來源欄位顯示 source 陣列，拆機甲來源另標注對應機甲名稱。</p>
     </div>
+    <div class="card orange">
+      <div class="card-icon">🤖</div>
+      <h3>採用機甲</h3>
+      <p>顯示採用此模組的機甲名稱（單台或多台）。由機甲端 <code>module4Id</code> / <code>module8Id</code> / <code>moduleFixedIds</code> 正向引用反查建立索引（<code>mechsByModuleId</code>）；含 8 級模組多機甲共用情形。</p>
+    </div>
   </div>
 
   <div class="info-block" style="margin-top:16px;">
@@ -100,7 +105,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

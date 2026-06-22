@@ -149,6 +149,8 @@
       <tr><td>dmg_counter</td><td>number?</td><td>反擊增傷 %</td></tr>
       <tr><td>dmg_enemy_phase</td><td>number?</td><td>敵方階段增傷 %</td></tr>
       <tr><td>description</td><td>string</td><td>最高等級的效果描述文字</td></tr>
+      <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-019 Layer 1：描述內 [xxx] → 實體引用側錄；前台 RefText 渲染為可點擊引用，未命中原樣顯示</td></tr>
+      <tr><td>buffIds</td><td>string[]?</td><td>🆕 PLAN-019 Layer 2：此模組可賦予的 Buff ID 列表；模擬器以此建立反向索引（可用 buff = 當前配裝所有實體 buffIds[] 的聯集）</td></tr>
       <tr><td>rarity</td><td>ModuleRarity (Enum)</td><td>模組品質："S" / "A"（副模組繼承機甲品質；其他由管理者填寫）。<br>注意：模組使用獨立的 <code>ModuleRarity</code>，非通用的 <code>ItemRarity</code></td></tr>
       <tr><td>icon</td><td>string?</td><td>模組圖示路徑 /images/modules/{iconKey}.png</td></tr>
       <tr class="group-header"><td colspan="3">▎條件效果 conditionalEffects[]（傷害模擬器用；無條件效果或副模組為空陣列）</td></tr>
@@ -231,7 +233,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

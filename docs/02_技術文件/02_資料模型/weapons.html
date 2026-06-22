@@ -257,6 +257,7 @@
       <tr><td>&nbsp;├ iconLocal</td><td>string?</td><td>技能圖示本地路徑（如 <code>/images/weapons/skills/Icon_skill_passive_5161.png</code>）<br><small style="color:var(--text-dim)">腳本下載後自動補填；前端縮圖顯示用</small></td></tr>
       <tr><td>&nbsp;├ activation</td><td>SkillActivation (Enum)</td><td>carry = 攜帶即生效 / equip = 裝備中生效 / use = 僅使用時生效<br><small style="color:var(--text-dim)">API 無此欄位；武器被動技能語義為攜帶即生效，腳本預設填 'carry'；管理員可手動改為 'equip' 或 'use'</small></td></tr>
       <tr><td>&nbsp;├ description</td><td>string</td><td>技能效果描述（遊戲原文，已清洗 rich text 標籤）<br><small style="color:var(--text-dim)">API: PassiveSkill[].SpecificEffects；原始值含 &lt;color=#...&gt;…&lt;/color&gt; 標籤，腳本以正規表示式清洗後寫入</small></td></tr>
+      <tr><td>&nbsp;├ descriptionRefs</td><td>DescriptionRefs?</td><td>描述內 [xxx] → 實體引用側錄（PLAN-019 Layer 1）；後台 RefPicker 標註，前台 RefText 渲染為可點擊引用</td></tr>
       <tr><td>&nbsp;├ effects[]</td><td>SkillEffect[]</td><td>結構化效果數值（計算器用）</td></tr>
       <tr><td>&nbsp;├ buffIds[]</td><td>string[]</td><td>觸發的 Buff ID 列表<br><small style="color:var(--text-dim)">API: PassiveSkill[].BufCarried（斜線分隔字串）→ split('/').filter(Boolean)</small></td></tr>
       <tr><td>&nbsp;├ enhancesTalentName</td><td>string?</td><td>加強的特定機師天賦名稱（專武用）；計算器用於辨識此技能與哪個天賦關聯</td></tr>
@@ -599,7 +600,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

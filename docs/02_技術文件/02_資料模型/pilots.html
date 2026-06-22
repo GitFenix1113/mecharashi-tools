@@ -37,8 +37,15 @@
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>id</td><td>string</td><td>唯一識別碼</td></tr>
       <tr><td>name</td><td>string</td><td>機師顯示名稱</td></tr>
+      <tr><td>fullName</td><td>string</td><td>機師全名（完整稱呼）</td></tr>
       <tr><td>rarity</td><td>ItemRarity (Enum)</td><td>稀有度：S / A / B（機師不使用 EX）</td></tr>
       <tr><td>class</td><td>PilotClass (Enum)</td><td>職業：突擊手 / 狙擊手 / 戰術家 / 格鬥家 / 守護者 / 機械師 / 調構師</td></tr>
+      <tr><td>faction</td><td>string</td><td>所屬陣營 / 勢力（詳情頁顯示為「勢力」，列表頁可搜尋）</td></tr>
+      <tr class="group-header"><td colspan="3">▎個人檔案 profile</td></tr>
+      <tr><td>&nbsp;├ gender</td><td>string</td><td>性別</td></tr>
+      <tr><td>&nbsp;├ bloodType</td><td>string</td><td>血型</td></tr>
+      <tr><td>&nbsp;├ height</td><td>string</td><td>身高</td></tr>
+      <tr><td>&nbsp;└ additionalInfo</td><td>Record&lt;string, string&gt;</td><td>其他補充欄位（鍵值對，如生日、所屬部隊等）</td></tr>
       <tr class="group-header"><td colspan="3">▎六維屬性 stats</td></tr>
       <tr><td>&nbsp;├ melee</td><td>number</td><td>格鬥</td></tr>
       <tr><td>&nbsp;├ assault</td><td>number</td><td>突擊</td></tr>
@@ -46,10 +53,12 @@
       <tr><td>&nbsp;├ tactics</td><td>number</td><td>戰術</td></tr>
       <tr><td>&nbsp;├ defense</td><td>number</td><td>防禦</td></tr>
       <tr><td>&nbsp;└ engineering</td><td>number</td><td>工程</td></tr>
+      <tr><td>statsBase</td><td>Record&lt;string, number&gt;</td><td>六維屬性的<strong>基礎值版本</strong>（key 為屬性英文名）；參考用、由爬蟲腳本管理，stats 為顯示值，statsBase 保留原始基礎值供對照</td></tr>
       <tr class="group-header"><td colspan="3">▎AP 系統 ap</td></tr>
       <tr><td>&nbsp;├ init</td><td>number</td><td>初始 AP</td></tr>
       <tr><td>&nbsp;├ max</td><td>number</td><td>AP 上限</td></tr>
       <tr><td>&nbsp;└ recovery</td><td>number</td><td>AP 回復量</td></tr>
+      <tr><td>apBase</td><td>{ init, max, recovery }</td><td>AP 系統的<strong>基礎值版本</strong>（參考用，由爬蟲腳本管理；結構同 ap）</td></tr>
       <tr><td>license</td><td>LicenseType (Enum)</td><td>駕駛許可：輕型 / 中型 / 重型</td></tr>
       <tr><td>masterLevel</td><td>string</td><td>駕駛等級</td></tr>
       <tr><td>attack</td><td>number</td><td>攻擊素質</td></tr>
@@ -92,6 +101,7 @@
       <tr><td>&nbsp;&nbsp;&nbsp;└ descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-023 N2-1：描述內 [xxx] 引用側錄；flip 後由 resolve 從能力庫帶入，使神驅描述的 [xxx] 可點擊</td></tr>
       <tr><td>lore</td><td>string</td><td>角色故事（Markdown 格式）</td></tr>
       <tr><td>portrait</td><td>string</td><td>立繪圖片路徑 /images/pilots/{id}.png</td></tr>
+      <tr><td>portraitUrl</td><td>string?</td><td>立繪遠端 URL（官方 CDN 來源）；本地 portrait 缺圖時的後備來源</td></tr>
     </table>
   </div>
 </section>
@@ -130,7 +140,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-11 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

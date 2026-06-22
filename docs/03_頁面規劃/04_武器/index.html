@@ -118,8 +118,8 @@
     </div>
     <div class="card cyan">
       <div class="card-icon">✨</div>
-      <h3>技能列表</h3>
-      <p>每個技能卡片顯示：生效方式標籤（攜帶=紫 / 裝備中=青 / 使用時=橘）、技能名稱、文字描述、結構化效果數值。<br>若技能有 <code>enhancesTalentName</code>，顯示「強化天賦」區塊（黃色 DiffHighlight）。</p>
+      <h3>技能列表（縮圖 / 展開）</h3>
+      <p>每個技能以圖示縮圖 + 名稱呈現，可點擊展開完整描述（PLAN-021 改版）。卡片顯示：生效方式標籤（攜帶=紫 / 裝備中=青 / 使用時=橘）、文字描述、結構化效果數值。<br>若技能有 <code>enhancesTalentName</code>，顯示「強化天賦」區塊（黃色 DiffHighlight）。</p>
     </div>
     <div class="card blue">
       <div class="card-icon">🔧</div>
@@ -135,6 +135,11 @@
       <div class="card-icon">⭐</div>
       <h3>專武資訊（isExclusive=true）</h3>
       <p>顯示對應機師名稱及連結（<code>exclusiveFor</code>）；技能區塊會額外呈現天賦強化 DiffHighlight，讓使用者直觀看到「有此專武時天賦的強化版本」。</p>
+    </div>
+    <div class="card green">
+      <div class="card-icon">🔗</div>
+      <h3>數值引用層（PLAN-019 / 022）</h3>
+      <p>技能描述中的 <code>[xxx]</code> 實體引用（buff / 技能 / 詞條）以可點擊樣式呈現，桌面 hover 浮窗預覽、點擊釘選，手機 BottomSheet（ReferenceContext）；<code>&lt;refId.attr&gt;</code> 數值引用顯示 BUFF 屬性真值。需 WeaponSkill.descriptionRefs 側錄表，未命中原樣顯示。</p>
     </div>
   </div>
 
@@ -163,7 +168,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

@@ -171,6 +171,7 @@
   grayOpsUpdates?: <span class="ty">GrayOpsUpdate</span>[]  <span class="cm">// 灰燼行動機甲列表更新</span>
   notes?: <span class="ty">string</span>              <span class="cm">// 版本備註</span>
   isTwCurrent?: <span class="ty">boolean</span>       <span class="cm">// 此版本是否為台服當前版本（首頁標記用）</span>
+  iconUrls?: <span class="ty">VersionIconUrls</span>   <span class="cm">// 版本內容名稱 → 圖示 URL 對照（pilots/mechs/weapons/backpacks）</span>
 }
   </div>
 
@@ -214,6 +215,12 @@
       <td><span class="badge badge-opt">選填</span></td>
       <td>灰燼行動公司機甲列表更新，參見 <code>GrayOpsUpdate</code> 型別。</td>
     </tr>
+    <tr>
+      <td class="field-name">iconUrls</td>
+      <td class="field-type">VersionIconUrls?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>版本內容圖示對照表（pilots / mechs / weapons / backpacks 各為「名稱 → 圖示 URL」），供時間線與展開面板渲染媒體；參見 <code>VersionIconUrls</code> 型別。</td>
+    </tr>
   </table>
 </section>
 
@@ -253,6 +260,52 @@
     <strong>遷移策略</strong>：舊欄位（<code>skinGacha</code>、<code>rouletteEvent</code> 等）保留以維持向下相容；
     UI 優先讀取 <code>cnActivities</code> / <code>twActivities</code>，若不存在則 fallback 顯示舊欄位的文字清單。
     Phase B 完成後可逐步移除舊欄位。
+  </div>
+</section>
+
+<!-- ── 支援型別 ── -->
+<section class="section">
+  <div class="section-label purple">Supporting Types</div>
+  <div class="section-title">支援型別 — ArmamentRaid / BattlePass / GrayOpsUpdate / VersionIconUrls</div>
+
+  <div class="type-card">
+    <h4>ArmamentRaid — 武裝討伐副本（PatchHalf.armamentRaids[]）</h4>
+    <table class="field-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td class="field-name">name</td><td class="field-type">string</td><td>副本名稱（如「帕洛瑪」）</td></tr>
+      <tr><td class="field-name">weapons</td><td class="field-type">string[]?</td><td>掉落武器名稱列表</td></tr>
+      <tr><td class="field-name">weaponPilots</td><td class="field-type">string[]?</td><td>武器對應的專屬機師列表（與 <code>weapons[]</code> 依索引對齊）</td></tr>
+      <tr><td class="field-name">backpacks</td><td class="field-type">string[]?</td><td>掉落背包名稱列表</td></tr>
+    </table>
+  </div>
+
+  <div class="type-card">
+    <h4>BattlePass — 版本戰令（PatchHalf.battlePass）</h4>
+    <table class="field-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td class="field-name">pilots</td><td class="field-type">string[]?</td><td>戰令可獲得的機師列表</td></tr>
+      <tr><td class="field-name">mechs</td><td class="field-type">string[]?</td><td>戰令可獲得的機甲列表</td></tr>
+    </table>
+  </div>
+
+  <div class="type-card">
+    <h4>GrayOpsUpdate — 灰燼行動更新（PatchVersion.grayOpsUpdates[]）</h4>
+    <table class="field-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td class="field-name">company</td><td class="field-type">'武裝工坊' | '創新動力' | 'GeekX' | '火花塞'</td><td>所屬公司（四選一）</td></tr>
+      <tr><td class="field-name">newMechs</td><td class="field-type">string[]</td><td>該公司本版本新增的機甲名稱列表</td></tr>
+    </table>
+  </div>
+
+  <div class="type-card">
+    <h4>VersionIconUrls — 版本圖示對照（PatchVersion.iconUrls）</h4>
+    <table class="field-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td class="field-name">pilots</td><td class="field-type">Record&lt;string, string&gt;?</td><td>機師名稱 → 圖示 URL 對照</td></tr>
+      <tr><td class="field-name">mechs</td><td class="field-type">Record&lt;string, string&gt;?</td><td>機甲名稱 → 圖示 URL 對照</td></tr>
+      <tr><td class="field-name">weapons</td><td class="field-type">Record&lt;string, string&gt;?</td><td>武器名稱 → 圖示 URL 對照</td></tr>
+      <tr><td class="field-name">backpacks</td><td class="field-type">Record&lt;string, string&gt;?</td><td>背包名稱 → 圖示 URL 對照</td></tr>
+    </table>
   </div>
 </section>
 
@@ -496,7 +549,7 @@ upper: {
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

@@ -69,7 +69,8 @@
       <tr><td>&nbsp;├ move</td><td>number?</td><td>移動力（僅腿部有）</td></tr>
       <tr><td>&nbsp;├ output</td><td>number?</td><td>出力（僅軀幹有）</td></tr>
       <tr><td>&nbsp;├ antiRiot</td><td>number?</td><td>抗暴（僅軀幹有）</td></tr>
-      <tr><td>&nbsp;└ icon</td><td>string?</td><td>部件圖示路徑 /images/mechs/{機甲名}/{position}.png</td></tr>
+      <tr><td>&nbsp;├ icon</td><td>string?</td><td>部件圖示路徑 /images/mechs/{機甲名}/{position}.png</td></tr>
+      <tr><td>&nbsp;└ mechaIcon</td><td>string?</td><td>遊戲內部資產名（用於官方 CDN waparts/ 路徑）</td></tr>
       <tr class="group-header"><td colspan="3">▎副模組引用（指向 modules Collection）</td></tr>
       <tr><td>module4Id</td><td>string?</td><td>特性模組 ID（4模組槽位）→ modules Collection；無特性模組的機甲可省略</td></tr>
       <tr><td>module8Id</td><td>string?</td><td>8級模組 ID（8模組槽位）→ modules Collection；無8級模組的機甲可省略</td></tr>
@@ -79,8 +80,10 @@
       <tr><td>rightShoulderSlot</td><td>string | null | undefined</td><td>右肩武器槽。同上邏輯。少部分機甲僅單肩，兩欄位可獨立存在。</td></tr>
       <tr><td>backSlot</td><td>string | null | undefined</td><td>背後武器槽。<code>undefined</code> = 無背後槽；<code>null</code> = 空槽；<code>string</code> = 固定武器 ID</td></tr>
       <tr class="group-header"><td colspan="3">▎圖片路徑</td></tr>
-      <tr><td>portrait</td><td>string</td><td>完整立繪 /images/mechs/{name}/portrait.png</td></tr>
-      <tr><td>half</td><td>string</td><td>半身圖 /images/mechs/{name}/half.png</td></tr>
+      <tr><td>portrait</td><td>string?</td><td>完整立繪 /images/mechs/{name}/portrait.png</td></tr>
+      <tr><td>halfPortrait</td><td>string?</td><td>半身圖 /images/mechs/{name}/half.png<br><small style="color:var(--text-dim)">注意：欄位名為 <code>halfPortrait</code>（非 <code>half</code>）</small></td></tr>
+      <tr class="group-header"><td colspan="3">▎其他</td></tr>
+      <tr><td>quality</td><td>string?</td><td>機甲品質等級（如 S / A，對應遊戲品質標示）</td></tr>
     </table>
   </div>
 </section>
@@ -109,7 +112,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

@@ -67,8 +67,8 @@
 
   <table class="spec-table">
     <tr><th>路由</th><td><code>/pilots/:id</code></td></tr>
-    <tr><th>開發階段</th><td>Phase 2</td></tr>
-    <tr><th>資料來源</th><td>Firestore: pilots/{id} + pilotResearch/{id}</td></tr>
+    <tr><th>開發階段</th><td>Phase 2（PLAN-021 / PLAN-022 / PLAN-023 持續強化）</td></tr>
+    <tr><th>資料來源</th><td>Firestore: pilots/{id} + pilotResearch/{id}；引用解析另載 pilotSkills / neuralDriveAbilities / buffs / glossaryTerms（皆走 GameDataContext 版本快取）</td></tr>
   </table>
 
   <div class="sub-h" style="margin-top:24px;">頁面區塊</div>
@@ -90,8 +90,8 @@
     </div>
     <div class="card orange">
       <div class="card-icon">🌟</div>
-      <h3>技能 / 天賦 / 神經驅動</h3>
-      <p>各技能效果展示；技能類型以顏色區分（主動=紅、被動=藍、指令=紫），並顯示 AP 消耗、CD 冷卻、武器限制標籤。</p>
+      <h3>技能 / 天賦 / 神經驅動（tab 卡）</h3>
+      <p>三分頁卡片：各技能效果展示；技能類型以顏色區分（主動=紅、被動=藍、指令=紫），並顯示 AP 消耗、CD 冷卻、武器限制標籤。天賦／神經驅動具互動改寫，詳見下方「神經驅動算力 &amp; 天賦改寫」與「數值引用層」區塊。</p>
     </div>
     <div class="card purple">
       <div class="card-icon">🔬</div>
@@ -108,6 +108,51 @@
   <div class="wireframe" style="margin-top:20px;">
     <div class="wf-icon">👤</div>
     <p>機師詳情版面草圖待規劃<br>預計：左側立繪 + 右側資料面板，下方技能/科研 tabs</p>
+  </div>
+</section>
+
+<!-- 神經驅動算力 & 天賦改寫（PLAN-021） -->
+<section class="section">
+  <div class="section-label cyan">PLAN-021</div>
+  <div class="section-title">神經驅動算力 &amp; 天賦改寫</div>
+  <div class="section-desc">天賦正文會隨「神經驅動算力」配置與裝備專武而就地改寫。詳情頁把這層互動結構化呈現。</div>
+
+  <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">🎚️</div>
+      <h3>神經驅動算力配置列（NdPowerBar）</h3>
+      <p>tab 卡頂部常駐的算力分區（α / β / γ1 / γ2…）配置列。玩家點選各區 Lv，依「該區算力 ≥ 門檻取最高」即時改寫天賦敘述。γ 區合計受上限約束（<code>ND_RULES.gammaPairCap</code>），超額顯示警告。</p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">⇌</div>
+      <h3>天賦卡「初始天賦 ⇌ 最大強化」切換</h3>
+      <p>天賦卡頂部切換鈕（預設「初始」）。桌面版可雙欄並列初始／最大強化；手機版一次顯示一版。最大強化版以 DiffHighlight 對初始敘述高亮差異。</p>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">▶</div>
+      <h3>神經驅動強化 / 專武強化敘述</h3>
+      <p>天賦卡下方「神經驅動強化」「專武強化」區塊：依配置列狀態（<code>ndVariants</code>）／是否配備專武（<code>enhancedTalentDescription</code>）顯示改寫後敘述，並以 DiffHighlight 標出與目前主敘述的差異；對照基準跟隨初始／最大切換。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 數值引用層（PLAN-019 / PLAN-022） -->
+<section class="section">
+  <div class="section-label cyan">PLAN-019 / 022</div>
+  <div class="section-title">數值引用層（hover 浮窗 / 釘選）</div>
+  <div class="section-desc">技能 / 天賦 / 神經驅動描述中的 <code>[xxx]</code> 實體引用與 <code>&lt;refId.attr&gt;</code> 數值引用，前台統一以 RefText 渲染。</div>
+
+  <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">🔗</div>
+      <h3>實體引用 [xxx]</h3>
+      <p>描述內 <code>[技能名]</code> / <code>[buff 名]</code> / <code>[機師]</code> 等以可點擊樣式呈現；桌面 hover 浮窗預覽、點擊釘選，手機以 BottomSheet 呈現（ReferenceContext 管理）。未命中的 [xxx] 原樣顯示，優雅降級。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">🔢</div>
+      <h3>數值引用 &lt;refId.attr&gt;</h3>
+      <p>描述中的層數 / 回合數綁定 BUFF 屬性真值（如 <code>可疊加&lt;buff_凝勢I.maxStack&gt;層</code> → 顯示「可疊加 5 層」），數字只存 BUFF 一份，正文不再各處手抄；查無時降級為暗色 <code>?</code>。</p>
+    </div>
   </div>
 </section>
 
@@ -135,7 +180,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>
