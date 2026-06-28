@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-06-22
+## [Unreleased] - 2026-06-28
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- BUFF 新增「生效次數」maxTriggers 屬性 (`37c975c`)
 - 數值引用層 Phase C（PLAN-022）— RefPicker 語法糖一鍵代入 (`4a7a4b9`)
 - 模組圖鑑顯示採用該模組的機甲（含 8 級模組多機甲共用） (`77bcff1`)
 - 數值引用層（PLAN-022 A+B+D）— 描述層數與 BUFF 屬性連動 (`f2b75a2`)
