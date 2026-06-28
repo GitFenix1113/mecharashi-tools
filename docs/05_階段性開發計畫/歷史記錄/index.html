@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-024 · 階梯式 BUFF 等級化重構</h3>
+      <p>把同概念多等級的 BUFF/DEBUFF（傷害提升 I~V、凝勢 I/II/III…，全站 27 族 85 份）由「N 份文件 + mutexGroup」合併為「單一文件 + levels[]」，用 level 表示各等級能力；新增數值引用 <code>.lvN</code> 段、<code>buffIds @N</code> 帶級、level↔stack 雙維度、mutexGroup→level max 收斂，並把全空的 effects 結構化為傷害模擬鋪路。追加 <code>termRef</code>（掛詞條當顯示來源）、詳情卡級別感知、後台 flat XOR leveled 防呆。讀取層統一設計（有 .lvN 取該級、無段取頂層、查無即降級），無臨時相容死碼。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-06-28 · 12 / 12 任務 · buffs 去重 68%（85→27）</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-024_BUFF等級化重構/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-024_BUFF等級化重構/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card cyan">
       <div class="card-icon">◆</div>
       <h3>PLAN-004 · 技能資料抽離</h3>

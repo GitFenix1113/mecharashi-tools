@@ -33,24 +33,6 @@
   <div class="card-grid">
     <div class="card purple">
       <div class="card-icon">◆</div>
-      <h3>PLAN-024 · 階梯式 BUFF 等級化重構</h3>
-      <p>把同概念多等級的 BUFF/DEBUFF（傷害提升 I~V、凝勢 I/II/III…，全站 27 族 85 份）由「N 份文件 + mutexGroup」合併為「單一文件 + levels[]」，用 level 表示各等級能力；新增數值引用 .lvN 段、level↔stack 雙維度、mutexGroup→level max 收斂，並順手把全空的 effects 結構化，為傷害模擬鋪路。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-024_BUFF等級化重構/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-024_BUFF等級化重構/進度表.html">→ 進度表</a>
-      </div>
-    </div>
-    <div class="card green">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-023 · 神經驅動能力庫與模擬接入</h3>
-      <p>把神經驅動的「能力節點」（運動戰 / AP優化 / 終結者…）抽成以能力名為唯一鍵的 neuralDriveAbilities 集合，分區排列仍嵌在機師、level 改引用 abilityId。同時解掉共用節點重複維護與模擬缺結構化來源兩個問題。supersede PLAN-004 下半場。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-023_神經驅動能力庫/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-023_神經驅動能力庫/進度表.html">→ 進度表</a>
-      </div>
-    </div>
-    <div class="card purple">
-      <div class="card-icon">◆</div>
       <h3>PLAN-019 · 實體引用與模擬基礎（總綱）</h3>
       <p>【總綱 Master Plan】把「描述文字中對其他實體的引用」（如天賦內 [虛粒子形態]/[激發能]/[粒子爆發]）一般化為型別化、可解析、可模擬的關聯層。四層抽象：EntityRef 引用層、BUFF/形態模擬可達性圖、BOSS/關卡資料模型、表單式後台 + 查詢量控制。統合 PLAN-001/003/004/005 為子計畫，並拆出 019-A~E。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">

@@ -145,7 +145,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-024 進度表</span>
   </div>
@@ -168,11 +168,11 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">11</div>
+      <div class="summary-num" style="color:var(--accent-green)">12</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
       <div class="summary-lbl">觀察中</div>
     </div>
     <div class="summary-card">
@@ -188,20 +188,21 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">11 / 12 · 觀察期</span>
+      <span style="color:var(--accent-purple);">12 / 12 · 完成</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 92%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
   <div class="impact-note">
-    <strong>狀態（2026-06-21 更新）：</strong>主體完成，進入<strong>觀察期</strong>。A–C 遷移、D-1 端到端驗收、D-2 docs 同步皆已完成；
+    <strong>狀態（2026-06-28 更新）：</strong>全數完成，計畫收尾。A–C 遷移、D-1 端到端驗收、D-2 docs 同步、D-3 收束皆已完成；
     並追加 <code>termRef</code>（buff 掛詞條當顯示來源）、詳情卡<strong>級別感知</strong>（<code>EntityRef.level</code> → 顯示該級 maxStack/描述）、
     後台 <strong>flat XOR leveled</strong> 防呆（有 levels 即停用並清空頂層能力欄位）。<br>
-    <strong>觀察項（D-3）：</strong>① 部分帶尾碼 buff 資料待人工勘查（全形尾碼／無尾碼L1+II 命名的第二輪遷移，暫不影響顯示）；
-    ② 雙格式相容路徑待穩定後 flip 收束。<br>
-    <strong>原始目標效果：</strong>buffs 去重 68%（85→27）；數值引用收斂單一 <code>.lvN</code> token；空 <code>effects</code> 結構化進 <code>levels[]</code>；<code>mutexGroup→level max</code> 收斂。
+    <strong>D-3 收束結論：</strong>① 帶尾碼 buff 的問題資料已人工勘查排除；
+    ② 讀取層（<code>resolveNumValue</code> / <code>EntityRefView</code>）本即統一設計——有 <code>.lvN</code> 取該級、無段取頂層，查無即優雅降級，<strong>不存在需 flip 的臨時相容死碼</strong>；
+    全站確認無殘留 <code>buff_xxxI/II/III</code> 獨立 ID 引用（僅測試 fixture 與 docs 範例保留）。<br>
+    <strong>目標效果：</strong>buffs 去重 68%（85→27）；數值引用收斂單一 <code>.lvN</code> token；空 <code>effects</code> 結構化進 <code>levels[]</code>；<code>mutexGroup→level max</code> 收斂。
   </div>
 </section>
 
@@ -456,7 +457,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; flip 收束 + 資料勘查</div>
       <div class="task-group-meta">前台讀取邏輯 · 舊文件清理 · 第二輪尾碼遷移</div>
-      <span class="status doing">觀察中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -464,12 +465,13 @@
         <div class="task-desc">
           雙格式穩定後收斂為單一路徑；全站搜尋確認無殘留 <code>buff_xxxI/II/III</code> 獨立 ID 引用。
           另：診斷發現部分 buff 用全形尾碼／「無尾碼L1 + II」命名漏入首輪合併，待人工勘查資料缺漏後跑第二輪
-          （<code>scan-missed-tiers.mjs</code> / <code>list-tiered-buffs.mjs</code> 已備，置於 temp_scripts）。暫不影響顯示。
+          （<code>scan-missed-tiers.mjs</code> / <code>list-tiered-buffs.mjs</code> 已備，置於 temp_scripts）問題資料已人工勘查排除。
+          讀取層本即統一設計（<code>resolveNumValue</code> 有 <code>.lvN</code> 取該級、無段取頂層，查無即降級，無臨時相容死碼），無需 flip。
         </div>
         <div class="task-file">src/（讀取層） · scripts/temp_scripts/</div>
       </div>
       <div class="task-assignee">AI＋開發者</div>
-      <span class="status doing">觀察中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -477,7 +479,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-024 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-024 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 歷史記錄</a>
 </footer>
 
 <!--LAST-UPDATED-->
