@@ -73,6 +73,8 @@ export interface BuffLevel {
   /** 結構型各級不同（凝勢 5/7/7）；數值型通常不填 */
   maxStack?:    number
   duration?:    number
+  /** 生效次數：效果可觸發 N 次後耗盡（與 maxStack 疊加層數、duration 回合數為獨立維度） */
+  maxTriggers?: number
   /** 數值型各級的數值（傷害提升 5%/10%…）；模擬加總 */
   effects?:     SkillEffect[]
   /** 該級專屬圖示（選填；不填沿用 buff.icon） */
@@ -90,6 +92,8 @@ export interface GameBuff {
   buffType:    string
   maxStack?:   number
   duration?:   number
+  /** 生效次數：效果可觸發 N 次後耗盡（與 maxStack 疊加層數、duration 回合數為獨立維度） */
+  maxTriggers?: number
   /**
    * 互斥群組（PLAN-019 Layer 2）：同 group 的形態/狀態一次只能存在一個。
    * 例：虛粒子形態 ⟷ 實粒子形態，填同一個 group key（如 '<pilotId>_forms'）。

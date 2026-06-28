@@ -27,6 +27,8 @@ export interface NumRefSource {
   maxStack?: number
   /** 持續回合 */
   duration?: number
+  /** 生效次數 */
+  maxTriggers?: number
   /** 階梯 buff 各級（PLAN-024）；<id.lvN.attr> 從 levels[N-1] 取屬性 */
   levels?: NumRefSource[]
 }
@@ -48,6 +50,7 @@ export interface NumAttrDef {
 export const NUM_ATTRS: Record<string, NumAttrDef> = {
   maxStack: { sigil: '$', label: '可疊加層數', refTypes: ['buff'], get: (e) => e.maxStack },
   duration: { sigil: '%', label: '持續回合', refTypes: ['buff'], get: (e) => e.duration },
+  maxTriggers: { sigil: '#', label: '生效次數', refTypes: ['buff'], get: (e) => e.maxTriggers },
   // 未來：cd: { label: '冷卻回合', refTypes: ['skill'], get: e => e.cd } —— 低頻可不配 sigil，走 UI 選單。
 }
 

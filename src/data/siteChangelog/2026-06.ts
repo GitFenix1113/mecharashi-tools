@@ -3,6 +3,7 @@ import type { ChangelogMonth } from './types'
 const jun2026: ChangelogMonth = {
   month: '2026-06',
   entries: [
+    { date: '2026-06-28', type: 'feat', summary: 'BUFF 新增「生效次數」屬性：可記錄效果可觸發幾次後耗盡（如「可生效3次」），詳情卡會顯示，描述也可用 #1 語法糖綁定連動' },
     { date: '2026-06-23', type: 'style', summary: '首頁版本速覽表「武裝生產」卡片：滑鼠移到武器／機師縮圖時的名稱浮窗不再被卡片邊框裁切' },
     { date: '2026-06-23', type: 'fix', summary: '修正機師天賦「專武強化」區塊內部分關鍵字（如[虛情實意]）沒有引用浮窗的問題：現在專武強化新增的引用一律可滑鼠移上查看詳情' },
     { date: '2026-06-22', type: 'style', summary: '首頁「網站更新履歷」改版：改為橙色強調樣式，「查看全部」改成依年／月份分頁切換瀏覽' },

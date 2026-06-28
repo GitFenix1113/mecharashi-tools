@@ -132,6 +132,7 @@
       <tr><td>buffType</td><td>BuffType (Enum)</td><td>✅ PLAN-001</td><td>Buff 類型：statBoost / resource / state / debuff / control</td></tr>
       <tr><td>maxStack</td><td>number?</td><td>✅ PLAN-001</td><td>最大疊加層數；resource 類型用，省略表示不可疊加</td></tr>
       <tr><td>duration</td><td>number?</td><td>✅ PLAN-001</td><td>持續回合數；null = 持續到消耗 / 手動關閉</td></tr>
+      <tr><td>maxTriggers</td><td>number?</td><td>🆕</td><td>生效次數：效果可觸發 N 次後耗盡（與 maxStack 疊加層數、duration 回合數為獨立維度）</td></tr>
       <tr><td>mutexGroup</td><td>string?</td><td>🆕 PLAN-019</td><td>形態互斥群組；同 group 的形態/狀態一次只能存在一個（虛粒子形態 ⟷ 實粒子形態）</td></tr>
       <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-019</td><td>描述內 [xxx] 引用側錄；buff 也可引用其他 buff</td></tr>
       <tr><td>effects</td><td>SkillEffect[]</td><td>✅ PLAN-001</td><td>Buff active 時提供的效果列表</td></tr>
@@ -150,6 +151,7 @@
       <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>該級描述的 [xxx] 引用側錄（PLAN-019）</td></tr>
       <tr><td>maxStack</td><td>number?</td><td>該級最大疊加層數（結構型各級不同，如凝勢 5 / 7 / 7；數值型通常不填）</td></tr>
       <tr><td>duration</td><td>number?</td><td>該級持續回合數</td></tr>
+      <tr><td>maxTriggers</td><td>number?</td><td>該級生效次數（效果可觸發 N 次後耗盡）</td></tr>
       <tr><td>effects</td><td>SkillEffect[]?</td><td>該級的數值效果（數值型各級的數值差異在此；結構型通常不填）</td></tr>
       <tr><td>icon</td><td>string?</td><td>該級專屬圖示（選填；不填沿用 buff.icon）</td></tr>
     </table>
@@ -160,7 +162,7 @@
     一顆 buff 只能二擇一：<code>flat</code>（無 <code>levels</code>，能力資料來自頂層 <code>maxStack</code>/<code>duration</code>/<code>effects</code>）
     或 <code>leveled</code>（有 <code>levels</code>，能力資料一律由各 <code>BuffLevel</code> 提供，頂層三欄停用且應為空）。
     <strong>buff-wide 欄位</strong>（兩態共用）：<code>name</code>/<code>buffType</code>/<code>description</code>/<code>descriptionRefs</code>/<code>icon</code>/<code>mutexGroup</code>/<code>termRef</code>；
-    <strong>level-exclusive 欄位</strong>（有 levels 只能填在各級）：<code>maxStack</code>/<code>duration</code>/<code>effects</code>。
+    <strong>level-exclusive 欄位</strong>（有 levels 只能填在各級）：<code>maxStack</code>/<code>duration</code>/<code>maxTriggers</code>/<code>effects</code>。
     後台 BuffAdmin 於有 levels 時停用頂層三欄並在儲存時清空，杜絕「頂層 vs 各級」雙來源衝突。
     引用 leveled buff 須帶 level（<code>id@N</code> / <code>&lt;id.lvN.attr&gt;</code> / EntityRef.level）才取得能力數值；不帶 level 僅顯示 buff-wide 資訊。
   </div>
@@ -240,6 +242,7 @@
       <tr><th>attr</th><th>語法糖 sigil</th><th>標籤</th><th>適用 refType</th><th>取值</th></tr>
       <tr><td>maxStack</td><td>$</td><td>可疊加層數</td><td>buff</td><td>GameBuff.maxStack</td></tr>
       <tr><td>duration</td><td>%</td><td>持續回合</td><td>buff</td><td>GameBuff.duration</td></tr>
+      <tr><td>maxTriggers</td><td>#</td><td>生效次數</td><td>buff</td><td>GameBuff.maxTriggers</td></tr>
       <tr><td colspan="5" style="color:var(--text-dim);">未來低頻屬性（cd / ap…）可不配 sigil，走「選取數字 → 下拉選屬性」的 UI 路徑</td></tr>
     </table>
   </div>

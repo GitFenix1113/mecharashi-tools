@@ -35,11 +35,20 @@ const refs = {
 
 // ─── registry ────────────────────────────────────────────────────────────────
 
-test('NUM_ATTRS：起步兩筆，sigil 不重複', () => {
+test('NUM_ATTRS：maxStack / duration / maxTriggers sigil 不重複', () => {
   assert.equal(NUM_ATTRS.maxStack.sigil, '$')
   assert.equal(NUM_ATTRS.duration.sigil, '%')
+  assert.equal(NUM_ATTRS.maxTriggers.sigil, '#')
   const sigils = Object.values(NUM_ATTRS).map((d) => d.sigil)
   assert.equal(new Set(sigils).size, sigils.length)
+})
+
+test('maxTriggers：語法糖 #n → token，解析回真值', () => {
+  assert.equal(NUM_ATTRS.maxTriggers.get({ maxTriggers: 3 }), 3)
+  assert.equal(compileSugar('可生效#1次', ['buff_自動模組']), '可生效<buff_自動模組.maxTriggers>次')
+  const triggerLookup = (id: string) => (id === 'buff_自動模組' ? { maxTriggers: 3 } : undefined)
+  assert.equal(resolveNumRefs('可生效<buff_自動模組.maxTriggers>次', triggerLookup), '可生效3次')
+  assert.deepEqual(detectLeftoverSugar('可生效#2次'), ['#2'])
 })
 
 test('hasNumRef：偵測 <refId.attr> token，[xxx] / 純文字不誤判', () => {

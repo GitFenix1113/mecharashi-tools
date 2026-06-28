@@ -217,7 +217,7 @@ function BuffLevelItem({
               <input type="text" value={levelData.description ?? ''} onChange={(e) => upd('description', e.target.value || undefined)} className="input-field" />
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Field label="最大疊加 maxStack（選填）">
               <input
                 type="number"
@@ -231,6 +231,14 @@ function BuffLevelItem({
                 type="number"
                 value={levelData.duration ?? ''}
                 onChange={(e) => upd('duration', e.target.value === '' ? undefined : Number(e.target.value))}
+                className="input-field"
+              />
+            </Field>
+            <Field label="生效次數 maxTriggers（選填）">
+              <input
+                type="number"
+                value={levelData.maxTriggers ?? ''}
+                onChange={(e) => upd('maxTriggers', e.target.value === '' ? undefined : Number(e.target.value))}
                 className="input-field"
               />
             </Field>
@@ -295,6 +303,7 @@ function BuffEditPanel({
   const staleTop = [
     form.maxStack != null && 'maxStack',
     form.duration != null && 'duration',
+    form.maxTriggers != null && 'maxTriggers',
     (form.effects?.length ?? 0) > 0 && 'effects',
   ].filter(Boolean) as string[]
   const hasStaleTop = isLeveled && staleTop.length > 0
@@ -302,7 +311,7 @@ function BuffEditPanel({
   async function handleSubmit() {
     setSaving(true); setError(null)
     // 階梯 buff 存檔時清空頂層能力欄位，確保 DB 不殘留非權威資料
-    const payload: GameBuff = isLeveled ? { ...form, maxStack: undefined, duration: undefined, effects: [] } : form
+    const payload: GameBuff = isLeveled ? { ...form, maxStack: undefined, duration: undefined, maxTriggers: undefined, effects: [] } : form
     try { await onSave(payload) }
     catch (e) { setError(e instanceof Error ? e.message : '儲存失敗，請重試'); setSaving(false) }
   }
@@ -350,7 +359,7 @@ function BuffEditPanel({
         />
 
         {!isLeveled ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <Field label="最大疊加 maxStack（選填）">
               <input
                 type="number"
@@ -367,10 +376,18 @@ function BuffEditPanel({
                 className="input-field"
               />
             </Field>
+            <Field label="生效次數 maxTriggers（選填）">
+              <input
+                type="number"
+                value={form.maxTriggers ?? ''}
+                onChange={(e) => update('maxTriggers', e.target.value === '' ? undefined : Number(e.target.value))}
+                className="input-field"
+              />
+            </Field>
           </div>
         ) : (
           <div className="rounded-lg border border-border/60 bg-bg-dark/40 px-3 py-2.5 text-[12px] text-text-dim leading-relaxed">
-            最大疊加 / 持續回合改由 <span className="text-accent-yellow">各等級</span> 提供（階梯 buff，頂層欄位已停用）。
+            最大疊加 / 持續回合 / 生效次數改由 <span className="text-accent-yellow">各等級</span> 提供（階梯 buff，頂層欄位已停用）。
           </div>
         )}
 
