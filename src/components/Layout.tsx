@@ -4,6 +4,9 @@ import { useAuth } from '../contexts/AuthContext'
 import AvatarDisplay from './profile/AvatarDisplay'
 import ContentNavDropdown, { type ContentNavItem } from './ContentNavDropdown'
 
+// 友站：英文版 Mecharashi Wiki（對稱其站內指回本站的連結）
+const FRIEND_SITE_URL = 'https://mecharashi-wiki.cc/'
+
 type FontSize = 'sm' | 'md' | 'lg'
 const FONT_SIZE_MAP: Record<FontSize, string> = { sm: '17px', md: '19px', lg: '21px' }
 const FONT_SIZE_LABELS: Record<FontSize, string> = { sm: '小', md: '中', lg: '大' }
@@ -144,6 +147,17 @@ export default function Layout() {
 
           {/* User area */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* 友站：英文版 Wiki（桌機顯示） */}
+            <a
+              href={FRIEND_SITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-text-secondary hover:text-accent-orange border border-border hover:border-accent-orange/40 rounded-lg transition-colors no-underline whitespace-nowrap"
+              title="Mecharashi Wiki（英文版友站）"
+            >
+              EN Wiki ↗
+            </a>
+
             {/* Font size toggle */}
             <div className="flex items-center bg-bg-card border border-border rounded-lg overflow-hidden">
               {(['sm', 'md', 'lg'] as const).map((size) => (
@@ -274,6 +288,19 @@ export default function Layout() {
               <span className="text-xs">{item.label}</span>
             </NavLink>
           ))}
+        </div>
+
+        {/* 友站：英文版 Wiki（手機版 More Panel） */}
+        <div className="border-t border-border px-4 py-2">
+          <a
+            href={FRIEND_SITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setMoreOpen(false)}
+            className="block w-full py-2 text-sm text-center rounded-lg transition-colors no-underline text-text-secondary hover:text-accent-orange hover:bg-bg-card"
+          >
+            🌐 EN Wiki（英文版友站）↗
+          </a>
         </div>
 
         {/* Admin 入口（手機版 More Panel） */}
