@@ -102,6 +102,7 @@
       <tr><td>lore</td><td>string</td><td>角色故事（Markdown 格式）</td></tr>
       <tr><td>portrait</td><td>string</td><td>立繪圖片路徑 /images/pilots/{id}.png</td></tr>
       <tr><td>portraitUrl</td><td>string?</td><td>立繪遠端 URL（官方 CDN 來源）；本地 portrait 缺圖時的後備來源</td></tr>
+      <tr><td>manual</td><td>boolean?</td><td>🆕 PLAN-025：後台手動新增的機師（官方資料更新前自建）。<strong>true</strong> = 爬蟲補丁模式（scrape-pilots-v3.js）整筆跳過、不覆寫或刪除；純作後端防覆寫，前台不因此顯示標記。語意比照 PilotSkill.manual / PilotTalent.manual</td></tr>
     </table>
   </div>
 </section>

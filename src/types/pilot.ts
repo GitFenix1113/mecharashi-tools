@@ -219,4 +219,10 @@ export interface Pilot {
   lore?: string
   attack?: number
   defense?: number
+  /**
+   * 管理者手動新增的機師（PLAN-025：官方資料更新前由後台自建）。
+   * true = 後台手動建立，爬蟲補丁模式（scrape-pilots-v3.js）整筆跳過、不覆寫或刪除；
+   * 純作後端防覆寫用途，前台不因此顯示任何標記。語意比照 PilotSkill.manual / PilotTalent.manual。
+   */
+  manual?: boolean
 }

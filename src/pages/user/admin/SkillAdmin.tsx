@@ -92,6 +92,18 @@ function SkillEditPanel({
           </div>
         </div>
 
+        <Field label="單元類型 unitType（機師一開始自帶的「初始被動能力」請選「職業單元」）">
+          <select
+            value={form.unitType ?? ''}
+            onChange={(e) => update('unitType', e.target.value || undefined)}
+            className="input-field"
+          >
+            <option value="">一般技能（無）</option>
+            <option value="0">核心單元</option>
+            <option value="6">職業單元（初始被動能力）</option>
+          </select>
+        </Field>
+
         <IconField
           label="圖示 iconLocal（本地圖檔）"
           value={form.iconLocal}
@@ -282,6 +294,7 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
                     {skill.name || <span className="text-text-dim font-normal">（未命名）</span>}
                   </span>
                   <span className="text-[13px] px-1.5 py-0.5 rounded bg-bg-card border border-border text-text-dim shrink-0">{skill.type}</span>
+                  {skill.unitType === '6' && <span className="text-[12px] px-1.5 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green shrink-0">初始被動</span>}
                   {skill.manual && <span className="text-[12px] px-1.5 py-0.5 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange shrink-0">手動</span>}
                   {skill.ap && <span className="text-[13px] text-accent-green shrink-0">AP {skill.ap}</span>}
                   {skill.cd && <span className="text-[13px] text-accent-orange shrink-0">CD {skill.cd}</span>}

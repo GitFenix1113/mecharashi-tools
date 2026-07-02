@@ -790,7 +790,7 @@ const ND_POSITION_CLASS: Record<string, string> = {
 const CHIP_TYPE_STYLES: { test: RegExp; dot: string }[] = [
   { test: /attack|攻擊/i,         dot: 'bg-accent-red'    }, // Attack 芯片 → 紅
   { test: /dodge|迴避|回避/i,     dot: 'bg-accent-yellow' }, // Dodge 芯片 → 黃
-  { test: /crit/i,                dot: 'bg-accent-blue'   }, // Critical 芯片 → 藍
+  { test: /crit|暴擊/i,           dot: 'bg-accent-blue'   }, // Critical 芯片 → 藍
 ]
 
 function chipDotClass(slot: string): string {
@@ -1241,7 +1241,7 @@ export default function PilotDetailPage() {
               </div>
               {classSkills.length > 0 && (
                 <div>
-                  <div className="text-[13px] text-accent-green tracking-widest uppercase mb-2 font-[Orbitron,sans-serif]">職業技能</div>
+                  <div className="text-[13px] text-accent-green tracking-widest uppercase mb-2 font-[Orbitron,sans-serif]">初始被動能力</div>
                   <div className="space-y-2">
                     {classSkills.map((sk, i) => (
                       <div key={i} className="flex gap-3 p-3 bg-bg-dark rounded-xl border border-accent-green/20">

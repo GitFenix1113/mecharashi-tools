@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const jul2026: ChangelogMonth = {
   month: '2026-07',
   entries: [
+    { date: '2026-07-03', type: 'feat', summary: '管理後台新增「新增機師」功能，並可完整編輯神經驅動分區（插槽、各級算力門檻、連結能力庫），技能亦可標記為「初始被動能力」' },
+    { date: '2026-07-03', type: 'style', summary: '機師詳情頁「職業技能」正名為「初始被動能力」；神經驅動「暴擊」晶片正確顯示為藍色' },
     { date: '2026-07-03', type: 'feat', summary: '元件圖鑑新增「子類型」篩選，並移除觸發條件篩選' },
     { date: '2026-07-03', type: 'feat', summary: '元件的 Boss 掉落關卡改為可於後台編輯（原為固定資料）' },
     { date: '2026-07-02', type: 'style', summary: '機師神經驅動分頁的插槽改用顏色方塊標示晶片類型（紅=Attack／黃=Dodge／藍=Critical），並附色彩圖例' },

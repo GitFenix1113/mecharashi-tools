@@ -1,14 +1,43 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, TalentNdVariant, SkillEffect, SkillCondition } from '../../../types'
+import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, TalentNdVariant, SkillEffect, SkillCondition, NeuralDrive, NeuralDriveLevel, NeuralDriveAbility } from '../../../types'
 import { formatWeaponReq } from '../../../types'
 import { ItemRarity, PilotClass, MechLicense, WeaponType } from '../../../types/enums'
-import { Field, AdminModal, useClientPaged, LoadMoreButton } from './shared'
-import { updatePilot } from '../../../lib/firestoreApi'
+import { Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog } from './shared'
+import { updatePilot, docExists } from '../../../lib/firestoreApi'
+import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { buildSkillMap } from '../../../utils/pilotSkills'
+import { buildNdAbilityMap } from '../../../utils/neuralDriveAbilities'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
 import { PILOT_RARITY_CLASS, TRIGGER_DISPLAY, STAT_OPTIONS } from './constants'
+
+// ─── 新機師預設值工廠（PLAN-025）─────────────────────────────────────────────────
+// 手建機師沒有官方爬蟲來源：statsBase / additionalInfo 給空物件，apBase 複製 ap。
+// manual:true 讓爬蟲補丁整筆跳過（防日後官方同名機師覆寫人工資料）。
+function makeDefaultPilot(id: string, name = ''): Pilot {
+  const ap = { init: 0, max: 0, recovery: 0 }
+  return {
+    id,
+    name,
+    fullName: name,
+    rarity: ItemRarity.S,
+    class: PilotClass.ASSAULT,
+    faction: '',
+    license: MechLicense.MEDIUM,
+    masterLevel: '',
+    profile: { gender: '', bloodType: '', height: '', additionalInfo: {} },
+    stats: { melee: 0, assault: 0, shooting: 0, tactics: 0, defense: 0, engineering: 0 },
+    statsBase: {},
+    ap,
+    apBase: { ...ap },
+    talents: [],
+    skills: [],
+    neuralDrive: [],
+    portrait: '',
+    manual: true,
+  }
+}
 
 type PilotFilters = { rarity: string; class: string }
 
@@ -699,16 +728,376 @@ function PilotTalentsTab({
   )
 }
 
+// ─── 神驅能力挑選器（各級連結能力庫 abilityId）─────────────────────────────────
+// 內嵌展開式（非 absolute，避免在 modal 捲動區被裁切）；查無 abilityId 時標紅提示。
+function NdAbilitySelect({
+  value,
+  abilities,
+  abilityMap,
+  onChange,
+}: {
+  value: string | undefined
+  abilities: NeuralDriveAbility[]
+  abilityMap: Map<string, NeuralDriveAbility>
+  onChange: (id: string) => void
+}) {
+  const [open, setOpen]     = useState(false)
+  const [search, setSearch] = useState('')
+  const selected = value ? abilityMap.get(value) : undefined
+  const missing  = !!value && !selected
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return abilities
+      .filter((a) => !q || (a.name || '').toLowerCase().includes(q) || a.id.toLowerCase().includes(q))
+      .slice(0, 50)
+  }, [abilities, search])
+
+  return (
+    <div className="border border-border/50 rounded-lg">
+      <button
+        type="button"
+        onClick={() => { setOpen((o) => !o); setSearch('') }}
+        className={`w-full text-left px-2.5 py-1.5 text-xs flex items-center gap-2 rounded-lg transition-colors hover:bg-bg-card ${missing ? 'text-accent-red' : ''}`}
+      >
+        {selected ? (
+          <>
+            {selected.iconLocal && <img src={selected.iconLocal} alt="" className="w-5 h-5 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />}
+            <span className="flex-1 truncate text-text-secondary">{selected.name || '（未命名）'}</span>
+            <span className="text-text-dim font-mono text-[11px] truncate max-w-[40%]">{selected.id}</span>
+          </>
+        ) : missing ? (
+          <span className="flex-1 truncate">⚠ 能力庫查無 <span className="font-mono">{value}</span></span>
+        ) : (
+          <span className="flex-1 text-text-dim">— 點此連結能力庫 —</span>
+        )}
+        <span className="text-text-dim shrink-0">{open ? '收合' : '▾'}</span>
+      </button>
+      {open && (
+        <div className="px-2.5 pb-2.5 pt-1 space-y-2 border-t border-border/40">
+          <input
+            autoFocus
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="搜尋能力名稱 / ID…"
+            className="input-field text-xs"
+          />
+          <div className="max-h-44 overflow-y-auto rounded border border-border/40 divide-y divide-border/30">
+            {filtered.length === 0 ? (
+              <p className="text-xs text-text-dim text-center py-3">查無能力，請先到「神經驅動」分頁建立能力</p>
+            ) : filtered.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => { onChange(a.id); setOpen(false) }}
+                className="w-full text-left px-2.5 py-1.5 text-xs hover:bg-bg-card transition-colors flex items-center gap-2"
+              >
+                {a.iconLocal && <img src={a.iconLocal} alt="" className="w-5 h-5 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />}
+                <span className="flex-1 truncate text-text-secondary">{a.name || '（未命名）'}</span>
+                <span className="text-text-dim font-mono text-[11px] truncate max-w-[40%]">{a.id}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── 神驅分區卡（分區名 / 圖示 / 插槽 / 各級門檻）────────────────────────────────
+// 前台固定四區（PilotDetailPage 的 ND_ORDER），分區名以選單約束，避免打錯導致前台漏顯示。
+const ND_ZONE_OPTIONS = ['α', 'β', 'γ1', 'γ2']
+
+// 插槽晶片固定三種。寫入的 value 沿用官方 WIKI 命名（攻擊/迴避/暴擊，暫不動資料），
+// 但後台顯示改用「顏色」標籤——WIKI 命名與實際能力有落差、易混淆；顏色對齊前台 SlotChips。
+const CHIP_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: '攻擊', label: '🔴 紅色晶片' },
+  { value: '迴避', label: '🟡 黃色晶片' },
+  { value: '暴擊', label: '🔵 藍色晶片' },
+]
+const SLOT_POS = ['一', '二', '三']
+const slotLabel = (i: number) => SLOT_POS[i] ?? String(i + 1)
+const composeSlot = (i: number, type: string) => `插槽${slotLabel(i)}：${type}芯片`
+/** 從插槽字串解析出晶片類型 value（相容英文舊值 Attack/Dodge/Critical），對不上時預設「攻擊」。 */
+function chipTypeOf(slot: string): string {
+  const raw = /：\s*(.+?)\s*芯片/.exec(slot)?.[1] ?? slot
+  if (/attack|攻擊/i.test(raw))      return '攻擊'
+  if (/dodge|迴避|回避/i.test(raw))  return '迴避'
+  if (/crit|暴擊/i.test(raw))        return '暴擊'
+  return CHIP_TYPE_OPTIONS.some((o) => o.value === raw) ? raw : '攻擊'
+}
+
+function makeNdLevel(level: number): NeuralDriveLevel {
+  // PLAN-023 新格式：只留 abilityId 引用；嵌入欄位給空值（type 要求 required）
+  return { level, minSum: 0, abilityId: '', effect: '', skillName: '', skillIcon: '', iconLocal: '', effects: [], buffIds: [] }
+}
+
+function NdZoneCard({
+  zone,
+  index,
+  count,
+  abilities,
+  abilityMap,
+  onChange,
+  onMove,
+  onRemove,
+}: {
+  zone: NeuralDrive
+  index: number
+  count: number
+  abilities: NeuralDriveAbility[]
+  abilityMap: Map<string, NeuralDriveAbility>
+  onChange: (updated: NeuralDrive) => void
+  onMove: (dir: -1 | 1) => void
+  onRemove: () => void
+}) {
+  const slots  = zone.slots ?? []
+  const levels = zone.levels ?? []
+  function upd<K extends keyof NeuralDrive>(key: K, value: NeuralDrive[K]) { onChange({ ...zone, [key]: value }) }
+
+  // 插槽：以晶片類型陣列為真實來源，每次結構變動都依 index 重編位置字串（插槽一/二/三）
+  const slotTypes = slots.map(chipTypeOf)
+  function setTypes(types: string[]) { upd('slots', types.map((t, i) => composeSlot(i, t))) }
+  function updSlotType(i: number, t: string) { setTypes(slotTypes.map((x, xi) => (xi === i ? t : x))) }
+  function addSlot()      { setTypes([...slotTypes, '攻擊']) }
+  function removeSlot(i: number) { setTypes(slotTypes.filter((_, xi) => xi !== i)) }
+
+  // 各級
+  function updLevel(i: number, patch: Partial<NeuralDriveLevel>) {
+    upd('levels', levels.map((lv, li) => (li === i ? { ...lv, ...patch } : lv)))
+  }
+  function addLevel()      { upd('levels', [...levels, makeNdLevel(levels.length + 1)]) }
+  function removeLevel(i: number) { upd('levels', levels.filter((_, li) => li !== i)) }
+
+  return (
+    <div className="border border-accent-purple/25 rounded-lg bg-bg-dark/50">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/40">
+        <div className="flex flex-col shrink-0">
+          <button type="button" onClick={() => onMove(-1)} disabled={index === 0}
+            className="text-[11px] leading-none text-text-dim hover:text-text-primary disabled:opacity-20">▲</button>
+          <button type="button" onClick={() => onMove(1)} disabled={index === count - 1}
+            className="text-[11px] leading-none text-text-dim hover:text-text-primary disabled:opacity-20">▼</button>
+        </div>
+        <span className="text-accent-purple shrink-0">◆</span>
+        <select
+          value={zone.name}
+          onChange={(e) => upd('name', e.target.value)}
+          className="input-field flex-1"
+        >
+          <option value="">— 選擇分區 —</option>
+          {/* 保留已存在但不在標準清單中的值，避免切換時資料遺失 */}
+          {[...new Set([...ND_ZONE_OPTIONS, ...(zone.name && !ND_ZONE_OPTIONS.includes(zone.name) ? [zone.name] : [])])].map((z) => (
+            <option key={z} value={z}>{z}</option>
+          ))}
+        </select>
+        <button type="button" onClick={onRemove}
+          className="shrink-0 text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10">✕ 刪除分區</button>
+      </div>
+
+      <div className="px-3 py-2.5 space-y-3">
+        <Field label="分區圖示 icon（選填，遠端路徑）">
+          <input value={zone.icon ?? ''} onChange={(e) => upd('icon', e.target.value)} className="input-field" placeholder="留空即可" />
+        </Field>
+
+        {/* 插槽 */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">插槽 slots</span>
+            <button type="button" onClick={addSlot} className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors">+ 新增插槽</button>
+          </div>
+          {slots.length === 0 ? (
+            <p className="text-xs text-text-dim py-1">尚未填入插槽</p>
+          ) : (
+            <div className="space-y-1.5">
+              {slots.map((_, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-xs text-text-dim shrink-0 w-12">插槽{slotLabel(i)}</span>
+                  <select
+                    value={slotTypes[i]}
+                    onChange={(e) => updSlotType(i, e.target.value)}
+                    className="input-field flex-1 text-xs"
+                  >
+                    {CHIP_TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                  <button type="button" onClick={() => removeSlot(i)}
+                    className="shrink-0 text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10">✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 各級門檻 + 能力引用 */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">各級 levels（算力門檻 + 能力）</span>
+            <button type="button" onClick={addLevel} className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors">+ 新增等級</button>
+          </div>
+          {levels.length === 0 ? (
+            <p className="text-xs text-text-dim py-1">尚未填入等級</p>
+          ) : (
+            <div className="space-y-2">
+              {levels.map((lv, i) => (
+                <div key={i} className="p-2 bg-bg-card/40 rounded border border-border/40 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-2 gap-2 flex-1">
+                      <Field label="Lv level">
+                        <input type="number" value={lv.level} onChange={(e) => updLevel(i, { level: Number(e.target.value) })} className="input-field" />
+                      </Field>
+                      <Field label="算力門檻 minSum">
+                        <input type="number" value={lv.minSum} onChange={(e) => updLevel(i, { minSum: Number(e.target.value) })} className="input-field" />
+                      </Field>
+                    </div>
+                    <button type="button" onClick={() => removeLevel(i)}
+                      className="shrink-0 self-start mt-5 text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10">✕</button>
+                  </div>
+                  <NdAbilitySelect
+                    value={lv.abilityId}
+                    abilities={abilities}
+                    abilityMap={abilityMap}
+                    onChange={(id) => updLevel(i, { abilityId: id })}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── 機師神經驅動分頁 ──────────────────────────────────────────────────────────
+function PilotNeuralDriveTab({
+  neuralDrive,
+  abilities,
+  onChange,
+}: {
+  neuralDrive: NeuralDrive[]
+  abilities: NeuralDriveAbility[]
+  onChange: (nd: NeuralDrive[]) => void
+}) {
+  const abilityMap = useMemo(() => buildNdAbilityMap(abilities), [abilities])
+
+  function updateZone(idx: number, updated: NeuralDrive) { onChange(neuralDrive.map((z, i) => (i === idx ? updated : z))) }
+  function addZone() { onChange([...neuralDrive, { name: '', icon: '', slots: [], levels: [] }]) }
+  function removeZone(idx: number) { onChange(neuralDrive.filter((_, i) => i !== idx)) }
+  function moveZone(idx: number, dir: -1 | 1) {
+    const j = idx + dir
+    if (j < 0 || j >= neuralDrive.length) return
+    const next = [...neuralDrive]
+    ;[next[idx], next[j]] = [next[j], next[idx]]
+    onChange(next)
+  }
+
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[13px] text-text-dim">
+          編輯各神經驅動分區、插槽與各級算力門檻；每級以下拉<strong>連結能力庫</strong>（能力的效果 / 描述請至上方「神經驅動」分頁維護——一處修改、所有機師同步）。
+        </p>
+        <button
+          onClick={addZone}
+          className="shrink-0 text-[13px] px-2.5 py-1 text-accent-purple border border-accent-purple/40 rounded hover:bg-accent-purple/10 transition-colors"
+        >
+          + 新增分區
+        </button>
+      </div>
+
+      {neuralDrive.length === 0 ? (
+        <p className="text-text-dim text-sm text-center py-8">無神經驅動分區，可點右上角「新增分區」建立</p>
+      ) : (
+        <div className="space-y-2">
+          {neuralDrive.map((z, idx) => (
+            <NdZoneCard
+              key={idx}
+              zone={z}
+              index={idx}
+              count={neuralDrive.length}
+              abilities={abilities}
+              abilityMap={abilityMap}
+              onChange={(updated) => updateZone(idx, updated)}
+              onMove={(dir) => moveZone(idx, dir)}
+              onRemove={() => removeZone(idx)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── 個人資料自訂欄位編輯器（additionalInfo 任意鍵值）──────────────────────────
+// 機師個人資料偏「說故事」、欄位不固定：以自訂鍵值列呈現，前台依 key 當標籤直接渲染。
+// 自帶本地 pairs 狀態使打字穩定；父層以 key={pilot.id} 強制換機師時重置。
+function AdditionalInfoEditor({
+  value,
+  onChange,
+}: {
+  value: Record<string, string>
+  onChange: (v: Record<string, string>) => void
+}) {
+  const [pairs, setPairs] = useState<{ k: string; v: string }[]>(
+    () => Object.entries(value ?? {}).map(([k, v]) => ({ k, v })),
+  )
+
+  function sync(next: { k: string; v: string }[]) {
+    setPairs(next)
+    const obj: Record<string, string> = {}
+    for (const { k, v } of next) { const key = k.trim(); if (key) obj[key] = v }
+    onChange(obj)
+  }
+  const updK = (i: number, k: string) => sync(pairs.map((p, pi) => (pi === i ? { ...p, k } : p)))
+  const updV = (i: number, v: string) => sync(pairs.map((p, pi) => (pi === i ? { ...p, v } : p)))
+  const add    = () => sync([...pairs, { k: '', v: '' }])
+  const remove = (i: number) => sync(pairs.filter((_, pi) => pi !== i))
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">自訂欄位 additionalInfo</span>
+        <button type="button" onClick={add} className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors">+ 新增欄位</button>
+      </div>
+      {pairs.length === 0 ? (
+        <p className="text-xs text-text-dim py-1">尚無自訂欄位。欄位名（左）會直接當作前台顯示的標籤，值（右）為內容。</p>
+      ) : (
+        <div className="space-y-1.5">
+          {pairs.map((p, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                value={p.k}
+                onChange={(e) => updK(i, e.target.value)}
+                className="input-field w-1/3 text-xs"
+                placeholder="欄位名，如：出身"
+              />
+              <input
+                value={p.v}
+                onChange={(e) => updV(i, e.target.value)}
+                className="input-field flex-1 text-xs"
+                placeholder="內容"
+              />
+              <button type="button" onClick={() => remove(i)}
+                className="shrink-0 text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10">✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── 機師編輯面板 ──────────────────────────────────────────────────────────────
-type PilotEditTab = 'basic' | 'stats' | 'ap' | 'profile' | 'talents' | 'skills'
+type PilotEditTab = 'basic' | 'stats' | 'ap' | 'profile' | 'talents' | 'skills' | 'neuralDrive'
 
 const PILOT_EDIT_TABS: { id: PilotEditTab; label: string }[] = [
-  { id: 'basic',   label: '基本資訊' },
-  { id: 'stats',   label: '屬性數值' },
-  { id: 'ap',      label: 'AP 系統' },
-  { id: 'profile', label: '個人資料' },
-  { id: 'talents', label: '天賦' },
-  { id: 'skills',  label: '技能' },
+  { id: 'basic',       label: '基本資訊' },
+  { id: 'stats',       label: '屬性數值' },
+  { id: 'ap',          label: 'AP 系統' },
+  { id: 'profile',     label: '個人資料' },
+  { id: 'talents',     label: '天賦' },
+  { id: 'skills',      label: '技能' },
+  { id: 'neuralDrive', label: '神經驅動' },
 ]
 
 function PilotEditPanel({
@@ -729,7 +1118,7 @@ function PilotEditPanel({
 
   // PLAN-004：技能改由 pilotSkills 集合管理；機師文件僅存技能 ID 順序（引用）
   const gd = useGameData()
-  useEffect(() => { gd.ensureLoaded(['pilotSkills']) }, [gd])
+  useEffect(() => { gd.ensureLoaded(['pilotSkills', 'neuralDriveAbilities']) }, [gd])
   const skillMap = useMemo(() => buildSkillMap(gd.pilotSkills), [gd.pilotSkills])
   // 舊版相容：若機師 skills 仍含內嵌物件（非 ID 字串）視為未遷移
   const legacyEmbedded = useMemo(() => (pilot.skills ?? []).some((s) => typeof s !== 'string'), [pilot])
@@ -777,7 +1166,7 @@ function PilotEditPanel({
             <span className="text-text-dim text-sm font-normal ml-1">{form.id}</span>
           </h3>
           <p className="text-[14px] text-text-dim mt-0.5">
-            技能 {skillCount}（效果於「技能管理」分頁編輯）· 天賦 {form.talents?.length ?? 0}（可編輯）· 神經驅動 {form.neuralDrive?.length ?? 0}（由爬蟲腳本管理）
+            技能 {skillCount}（效果於「技能管理」分頁編輯）· 天賦 {form.talents?.length ?? 0}（可編輯）· 神經驅動 {form.neuralDrive?.length ?? 0} 分區（可編輯）
           </p>
         </div>
       </div>
@@ -786,8 +1175,9 @@ function PilotEditPanel({
       <div className="flex gap-1 mb-4 shrink-0 flex-wrap">
         {PILOT_EDIT_TABS.map((t) => {
           const badge =
-            t.id === 'skills'  ? skillCount :
-            t.id === 'talents' ? (form.talents?.length ?? 0) : 0
+            t.id === 'skills'      ? skillCount :
+            t.id === 'talents'     ? (form.talents?.length ?? 0) :
+            t.id === 'neuralDrive' ? (form.neuralDrive?.length ?? 0) : 0
           const hasBadge = badge > 0
           return (
             <button
@@ -888,29 +1278,21 @@ function PilotEditPanel({
 
         {editTab === 'profile' && (
           <div className="space-y-3">
+            <p className="text-[13px] text-text-dim">
+              個人資料偏「說故事」、欄位不固定。常用三欄（性別 / 血型 / 身高）留空即不顯示；
+              其餘一律用下方<strong>自訂欄位</strong>自由增減，欄位名即為前台顯示標籤。
+            </p>
             <div className="grid grid-cols-3 gap-3">
               <Field label="性別 gender"><input value={form.profile?.gender || ''} onChange={(e) => updateProfile('gender', e.target.value)} className="input-field" /></Field>
               <Field label="血型 bloodType"><input value={form.profile?.bloodType || ''} onChange={(e) => updateProfile('bloodType', e.target.value)} className="input-field" /></Field>
               <Field label="身高 height"><input value={form.profile?.height || ''} onChange={(e) => updateProfile('height', e.target.value)} className="input-field" /></Field>
             </div>
-            {Object.keys(form.profile?.additionalInfo ?? {}).length > 0 && (
-              <div className="p-3 bg-bg-dark rounded-lg border border-border/60">
-                <p className="text-[13px] text-text-dim font-medium tracking-wider uppercase mb-2">其他資料 additionalInfo（由爬蟲腳本管理）</p>
-                <div className="space-y-1">
-                  {Object.entries(form.profile?.additionalInfo ?? {}).map(([k, v]) => (
-                    <div key={k} className="flex gap-2 text-xs text-text-dim">
-                      <span className="text-text-secondary shrink-0">{k}：</span>
-                      <span>{v}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="p-3 bg-bg-dark/60 border border-border/40 rounded-lg">
-              <p className="text-[14px] text-text-dim">
-                神經驅動等複雜欄位由爬蟲腳本管理，請透過 <code className="text-accent-cyan">npm run migrate</code> 更新至 Firestore。<br />
-                天賦可於「天賦」分頁編輯；技能的名稱、效果與描述請於「技能管理」分頁編輯。
-              </p>
+            <div className="pt-2 border-t border-border/60">
+              <AdditionalInfoEditor
+                key={form.id}
+                value={form.profile?.additionalInfo ?? {}}
+                onChange={(info) => setForm((f) => ({ ...f, profile: { ...f.profile, additionalInfo: info } }))}
+              />
             </div>
           </div>
         )}
@@ -931,6 +1313,14 @@ function PilotEditPanel({
             allSkills={gd.pilotSkills}
             legacyEmbedded={legacyEmbedded}
             embeddedSkills={embeddedSkills}
+          />
+        )}
+
+        {editTab === 'neuralDrive' && (
+          <PilotNeuralDriveTab
+            neuralDrive={form.neuralDrive ?? []}
+            abilities={gd.neuralDriveAbilities}
+            onChange={(nd) => update('neuralDrive', nd)}
           />
         )}
       </div>
@@ -954,6 +1344,26 @@ export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: str
       (f.rarity === 'all' || p.rarity === f.rarity) &&
       (f.class === 'all' || p.class === f.class),
   })
+
+  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate, derivedId } =
+    useNewItemCreation(
+      gd.pilots,                                              // 全集合 in-memory 撞名
+      (p) => p.id,
+      (id, name) => makeDefaultPilot(id, stripIdPrefix('pilot', name)),
+      (name) => makeEntityId('pilot', name),                 // deriveId：pilot_<slug(name)>
+    )
+
+  async function confirmCreateChecked() {
+    const id = makeEntityId('pilot', newId)
+    if (!id) { setNewIdError('名稱無法產生有效 ID，請改用其他名稱'); return }
+    // 伺服器端撞 ID 檢查：涵蓋不在記憶體中的機師（撞名 = 撞 ID，導引去編輯既有項）
+    if (await docExists('pilots', id)) {
+      setNewIdError(`已有同名機師（ID：${id}），請改名或編輯既有項目`)
+      return
+    }
+    const item = confirmCreate()
+    if (item) setEditing(item)
+  }
 
   async function handleSave(updated: Pilot) {
     const version = await updatePilot(updated)
@@ -989,11 +1399,33 @@ export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: str
         </select>
       </div>
 
-      <p className="text-text-dim text-xs mb-3">
-        {error ? <span className="text-accent-red">載入失敗：{error}</span>
-          : loading ? '載入中...'
-          : `顯示 ${filtered.length} 位機師${hasMore ? '（可載入更多）' : ''}`}
-      </p>
+      {/* 計數 + 新增 */}
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-text-dim text-xs">
+          {error ? <span className="text-accent-red">載入失敗：{error}</span>
+            : loading ? '載入中...'
+            : `顯示 ${filtered.length} 位機師${hasMore ? '（可載入更多）' : ''}`}
+        </p>
+        <button
+          onClick={openCreate}
+          className="text-xs px-3 py-1.5 bg-accent-orange text-black font-bold rounded-lg hover:opacity-90 transition-opacity"
+        >
+          + 新增機師
+        </button>
+      </div>
+
+      <NewItemDialog
+        creating={creating}
+        newId={newId}
+        newIdError={newIdError}
+        placeholder="輸入機師名稱，如：淬鋒凱登"
+        hint={<>輸入機師名稱，系統自動生成文件 ID（前綴固定 <span className="text-accent-cyan">pilot_</span>）</>}
+        onChangeId={(v) => { setNewId(v); setNewIdError('') }}
+        onConfirm={() => { void confirmCreateChecked() }}
+        onCancel={cancelCreate}
+        deriveMode
+        derivedId={derivedId}
+      />
 
       <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-1">
         {filtered.map((pilot) => (
