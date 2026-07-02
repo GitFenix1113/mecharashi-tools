@@ -52,7 +52,7 @@ interface BossDropTooltipProps {
 export function BossDropTooltip({ comp, children }: BossDropTooltipProps) {
   const [isOpen, setIsOpen] = useState(false)
   const isMobile = useIsMobile()
-  const drops = getComponentDrops(comp.componentType, comp.componentsWType, comp.name)
+  const drops = getComponentDrops(comp)
   const hasDrops = drops.length > 0
 
   const { refs, floatingStyles, context } = useFloating({
@@ -101,7 +101,7 @@ export function BossDropTooltip({ comp, children }: BossDropTooltipProps) {
 // ─── 內嵌掉落區塊（行動版 BottomSheet 用）────────────────────────────────────
 
 export function BossDropSection({ comp }: { comp: Component }) {
-  const drops = getComponentDrops(comp.componentType, comp.componentsWType, comp.name)
+  const drops = getComponentDrops(comp)
   if (drops.length === 0) return null
 
   return (

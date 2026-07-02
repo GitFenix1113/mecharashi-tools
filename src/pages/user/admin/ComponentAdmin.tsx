@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import type { Component, ComponentBase, ConditionComponent, FunctionComponent } from '../../../types'
+import type { Component, ComponentBase, ConditionComponent, FunctionComponent, StageDrop } from '../../../types'
 import {
   ComponentType, ConditionType, EffectType, ModuleSubtype, ItemRarity, WeaponType, ComponentsWType,
 } from '../../../types/enums'
 import { assetUrl } from '../../../utils/assets'
+import { getBossImagePath } from '../../../data/bossDrops'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
 import { getCollectionPage, updateComponent, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
@@ -94,6 +95,124 @@ function ComponentIconPreview({
         <p className="text-text-dim break-all max-w-xs leading-relaxed">{outerFrameSrc}</p>
       </div>
     </div>
+  )
+}
+
+// ─── 掉落關卡編輯器 ───────────────────────────────────────────────────────────
+// 每個關卡有若干 BOSS（1–4）。資料存於 comp.dropStages（PLAN-025 由靜態表移入 Firestore）。
+const BOSS_NUMS = [1, 2, 3, 4]
+
+function DropStagesEditor({
+  value,
+  onChange,
+}: {
+  value?: StageDrop[]
+  onChange: (v: StageDrop[] | undefined) => void
+}) {
+  const drops = value ?? []
+  const [newStage, setNewStage] = useState('')
+
+  // 空陣列一律回傳 undefined，避免 Firestore 存空欄位
+  const commit = (next: StageDrop[]) =>
+    onChange(next.length ? [...next].sort((a, b) => a.stage - b.stage) : undefined)
+
+  function addStage() {
+    const s = Number(newStage)
+    if (!s || s < 1 || drops.some((d) => d.stage === s)) return
+    commit([...drops, { stage: s, bosses: [] }])
+    setNewStage('')
+  }
+  function removeStage(stage: number) {
+    commit(drops.filter((d) => d.stage !== stage))
+  }
+  function toggleBoss(stage: number, boss: number) {
+    commit(
+      drops.map((d) =>
+        d.stage !== stage
+          ? d
+          : {
+              ...d,
+              bosses: d.bosses.includes(boss)
+                ? d.bosses.filter((b) => b !== boss)
+                : [...d.bosses, boss].sort((a, b) => a - b),
+            },
+      ),
+    )
+  }
+
+  return (
+    <Field label="掉落關卡 dropStages（空 = 無掉落資料）">
+      <div className="space-y-2">
+        {drops.length === 0 && (
+          <p className="text-[13px] text-text-dim">尚無掉落關卡，於下方新增。</p>
+        )}
+
+        {drops.map((d) => (
+          <div key={d.stage} className="bg-bg-dark border border-border/60 rounded-lg px-3 py-2">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-bold text-accent-yellow">第 {d.stage} 關</span>
+              <button
+                type="button"
+                onClick={() => removeStage(d.stage)}
+                className="text-[12px] text-accent-red hover:underline"
+              >
+                移除本關
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {BOSS_NUMS.map((boss) => {
+                const active = d.bosses.includes(boss)
+                return (
+                  <button
+                    key={boss}
+                    type="button"
+                    onClick={() => toggleBoss(d.stage, boss)}
+                    className={`flex flex-col items-center gap-1 p-1 rounded-lg border transition-colors ${
+                      active
+                        ? 'border-accent-yellow/60 bg-accent-yellow/10'
+                        : 'border-border bg-bg-card opacity-50 hover:opacity-90'
+                    }`}
+                    title={`BOSS #${boss}`}
+                  >
+                    <img
+                      src={assetUrl(getBossImagePath(d.stage, boss))}
+                      alt={`Stage ${d.stage} Boss ${boss}`}
+                      className="w-10 h-10 rounded object-cover object-top border border-border"
+                      onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')}
+                    />
+                    <span className={`text-[11px] font-bold ${active ? 'text-accent-yellow' : 'text-text-dim'}`}>
+                      #{boss}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            {d.bosses.length === 0 && (
+              <p className="text-[12px] text-accent-orange mt-1.5">⚠ 本關未選任何 BOSS，儲存後仍會列出空關卡</p>
+            )}
+          </div>
+        ))}
+
+        <div className="flex items-center gap-2 pt-1">
+          <input
+            type="number"
+            min={1}
+            value={newStage}
+            onChange={(e) => setNewStage(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addStage() } }}
+            placeholder="關卡編號"
+            className="input-field w-28"
+          />
+          <button
+            type="button"
+            onClick={addStage}
+            className="text-[13px] px-3 py-1.5 bg-accent-orange/90 text-black font-bold rounded-lg hover:opacity-90"
+          >
+            + 新增關卡
+          </button>
+        </div>
+      </div>
+    </Field>
   )
 }
 
@@ -279,6 +398,11 @@ function ComponentEditPanel({
             若空白則自動推算：OuterFrame/statetype_{form.componentType}{form.componentsWType === ComponentsWType.W ? '_W' : ''}.png
           </p>
         </Field>
+
+        <DropStagesEditor
+          value={form.dropStages}
+          onChange={(v) => updateBase('dropStages', v)}
+        />
 
         {(form.icon || form.iconLocal || form.outerFrameLocal) && (
           <ComponentIconPreview

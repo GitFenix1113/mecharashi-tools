@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useComponents } from '../../hooks/useFirestore'
 import { ComponentType, ComponentsWType, ItemRarity } from '../../types/enums'
 import type { Component, ConditionComponent, FunctionComponent } from '../../types'
@@ -15,7 +15,6 @@ import {
   WTypeBadge,
   ConditionTypeBadge,
   EffectTypeBadge,
-  CONDITION_TYPE_LABELS,
   EFFECT_TYPE_LABELS,
 } from '../../components/ComponentBadges'
 
@@ -33,7 +32,6 @@ const MODULE_SUBTYPE_LABELS: Record<number, string> = {
 const ALL_WEAPON_TYPES = ['射擊', '格鬥', '突擊', '戰術']
 
 const RARITIES = [ItemRarity.EX, ItemRarity.S, ItemRarity.A, ItemRarity.B] as const
-const STAGES = getAllStages()
 
 const RARITY_ORDER: Record<string, number> = {
   [ItemRarity.EX]: 0,
@@ -140,7 +138,7 @@ export default function ComponentsPage() {
 
   const [typeFilter, setTypeFilter]               = useState<TypeFilter>('all')
   const [rarityFilter, setRarityFilter]           = useState<string | null>(null)
-  const [conditionTypeFilter, setConditionTypeFilter] = useState<string | null>(null)
+  const [subtypeFilter, setSubtypeFilter]         = useState<number | null>(null)
   const [effectTypeFilter, setEffectTypeFilter]   = useState<string | null>(null)
   const [wTypeFilter, setWTypeFilter]             = useState<WFilter>('all')
   const [stageFilter, setStageFilter]             = useState<number | null>(null)
@@ -148,18 +146,18 @@ export default function ComponentsPage() {
   const [sheetComp, setSheetComp]                 = useState<Component | null>(null)
   const [displayCount, setDisplayCount]           = useState(PAGE_SIZE)
 
-  useEffect(() => { setDisplayCount(PAGE_SIZE) }, [typeFilter, rarityFilter, conditionTypeFilter, effectTypeFilter, wTypeFilter, stageFilter, searchText])
+  const STAGES = useMemo(() => getAllStages(components), [components])
 
-  const showConditionFilter = typeFilter === 'all' || typeFilter === 'Condition'
-  const showEffectFilter    = typeFilter === 'all' || typeFilter === 'Function'
+  useEffect(() => { setDisplayCount(PAGE_SIZE) }, [typeFilter, rarityFilter, subtypeFilter, effectTypeFilter, wTypeFilter, stageFilter, searchText])
+
+  const showEffectFilter = typeFilter === 'all' || typeFilter === 'Function'
 
   const filtered = components.filter((c) => {
     if (typeFilter !== 'all' && c.componentType !== typeFilter) return false
     if (rarityFilter && c.rarity !== rarityFilter) return false
+    if (subtypeFilter !== null && c.moduleSubtype !== subtypeFilter) return false
     if (wTypeFilter !== 'all' && c.componentsWType !== wTypeFilter) return false
-    if (stageFilter !== null && !componentDropsFromStage(c.componentType, c.componentsWType, c.name, stageFilter)) return false
-    // conditionType filter applies only to Condition components
-    if (conditionTypeFilter && isCondition(c) && c.conditionType !== conditionTypeFilter) return false
+    if (stageFilter !== null && !componentDropsFromStage(c, stageFilter)) return false
     // effectType filter applies only to Function components
     if (effectTypeFilter && isFunction(c) && c.effectType !== effectTypeFilter) return false
     if (searchText.trim()) {
@@ -184,7 +182,6 @@ export default function ComponentsPage() {
   const handleTypeChange = (t: TypeFilter) => {
     setTypeFilter(t)
     if (t === 'Condition') setEffectTypeFilter(null)
-    if (t === 'Function')  setConditionTypeFilter(null)
   }
 
   return (
@@ -242,27 +239,25 @@ export default function ComponentsPage() {
           ))}
         </div>
 
-        {/* conditionType filter (Condition / All mode) */}
-        {showConditionFilter && (
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-text-dim mr-1">觸發條件</span>
-            <button
-              className={filterBtn(conditionTypeFilter === null)}
-              onClick={() => setConditionTypeFilter(null)}
-            >
-              全部
-            </button>
-            {Object.entries(CONDITION_TYPE_LABELS).map(([key, label]) => (
+        {/* moduleSubtype filter (single-select) */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-xs text-text-dim mr-1">子類型</span>
+          <button className={filterBtn(subtypeFilter === null)} onClick={() => setSubtypeFilter(null)}>
+            全部
+          </button>
+          {Object.entries(MODULE_SUBTYPE_LABELS).map(([key, label]) => {
+            const value = Number(key)
+            return (
               <button
                 key={key}
-                className={filterBtn(conditionTypeFilter === key)}
-                onClick={() => setConditionTypeFilter((prev) => (prev === key ? null : key))}
+                className={filterBtn(subtypeFilter === value)}
+                onClick={() => setSubtypeFilter((prev) => (prev === value ? null : value))}
               >
                 {label}
               </button>
-            ))}
-          </div>
-        )}
+            )
+          })}
+        </div>
 
         {/* effectType filter (Function / All mode) */}
         {showEffectFilter && (

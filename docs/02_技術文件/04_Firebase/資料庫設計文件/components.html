@@ -53,6 +53,7 @@
       <tr><td>iconLocal</td><td>string</td><td>本機技能圖示路徑（<code>/images/components/{icon}.png</code>）；由擷取腳本自動填入</td></tr>
       <tr><td>outerFrameLocal</td><td>string</td><td>本機外框圖路徑（<code>/images/components/OuterFrame/statetype_{componentType}[_W].png</code>）；依 componentType × componentsWType 決定，共四種；由 patch-component-outerframe.mjs 填入</td></tr>
       <tr><td>componentsWType</td><td>ComponentsWType</td><td>W 類型標記 Enum：W = W型元件（僅限 WeaponEquipSlot DUAL_HAND / BACK 的武器可裝備，傷害計算機用）；Normal = 一般元件；依元件名稱是否含「W」字樣自動推斷</td></tr>
+      <tr><td>dropStages?</td><td>StageDrop[]</td><td>BOSS 掉落來源關卡（可空）；PLAN-025 由靜態 <code>bossDrops.ts</code> 移入 Firestore，後台可編輯。<code>StageDrop = { stage: number; bosses: number[] }</code></td></tr>
       <tr><td colspan="3" style="color:var(--accent-blue);font-weight:700;">▎Condition 專用欄位（componentType = Condition）</td></tr>
       <tr><td>conditionType</td><td>ConditionType</td><td>觸發條件類型 Enum：dualWield / singleWield / firstAttack / apCost / targetTorso / always</td></tr>
       <tr><td>condition</td><td>string</td><td>觸發條件描述文字</td></tr>
@@ -85,16 +86,17 @@
 
 <section class="section">
   <div class="section-label blue">02b — 補充說明</div>
-  <div class="section-title">Boss 掉落資料（本機靜態，非 Firestore）</div>
-  <div class="section-desc">元件 Boss 掉落資訊不存入 Firestore，以本機靜態 TypeScript 檔案維護，無需雲端查詢即可篩選。</div>
+  <div class="section-title">Boss 掉落資料（PLAN-025 起存於 Firestore）</div>
+  <div class="section-desc">PLAN-025 起，元件 Boss 掉落資訊存於各元件文件的 <code>dropStages</code> 欄位（後台可編輯）；原本機靜態表已一次性遷入 Firestore。<code>bossDrops.ts</code> 僅保留顯示相關純函式。</div>
   <div class="data-table-wrap">
     <table class="data-table blue-head">
       <tr><th>項目</th><th>說明</th></tr>
-      <tr><td>檔案位置</td><td><code>src/data/bossDrops.ts</code></td></tr>
-      <tr><td>資料結構</td><td><code>BOSS_DROPS[componentType][componentsWType][shortName] → StageDrop[]</code>（StageDrop: <code>{ stage: number; bosses: number[] }</code>）</td></tr>
+      <tr><td>儲存位置</td><td>各元件文件的 <code>dropStages: StageDrop[]</code> 欄位（Firestore <code>components</code> 集合）</td></tr>
+      <tr><td>型別</td><td><code>StageDrop = { stage: number; bosses: number[] }</code>（定義於 <code>src/types/component.ts</code>）</td></tr>
       <tr><td>圖片路徑</td><td><code>/images/components/Stage{N}_Boss/character_{N}_{bossNum}.png</code>（存放於 <code>public/images/components/</code>）</td></tr>
-      <tr><td>維護方式</td><td>手動編輯 <code>bossDrops.ts</code>，新增關卡時在對應元件條目加入 <code>{ stage: N, bosses: [...] }</code></td></tr>
-      <tr><td>關卡篩選</td><td><code>getAllStages()</code> 動態從資料中取得所有關卡編號；<code>componentDropsFromStage()</code> 供前端篩選邏輯使用</td></tr>
+      <tr><td>維護方式</td><td>後台元件編輯面板的「掉落關卡」區塊，逐關新增/移除、勾選各關可掉落的 BOSS</td></tr>
+      <tr><td>一次性遷移</td><td><code>scripts/temp_scripts/migrate-plan025-dropstages.mjs</code> 將舊 <code>bossDrops.ts</code> 資料寫入各元件並 bump components 版本</td></tr>
+      <tr><td>關卡篩選</td><td><code>getAllStages(components)</code> 從載入的元件動態取得所有關卡編號；<code>componentDropsFromStage(comp, stage)</code> 供前端篩選邏輯使用</td></tr>
     </table>
   </div>
 </section>

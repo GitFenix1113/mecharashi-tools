@@ -72,6 +72,7 @@
       <tr><td>iconLocal</td><td>string</td><td>本機技能圖示路徑（如 <code>"/images/components/Icon_skill_passive_5223.png"</code>）</td></tr>
       <tr><td>outerFrameLocal</td><td>string</td><td>本機外框圖路徑，依 componentType × componentsWType 決定（見下方說明）；由 patch-component-outerframe.mjs 自動填入</td></tr>
       <tr><td>componentsWType</td><td>ComponentsWType (Enum)</td><td>W 類型標記：W = W型元件（僅限 WeaponEquipSlot 為 DUAL_HAND / BACK 的武器可裝備，傷害計算機用）；Normal = 一般元件</td></tr>
+      <tr><td>dropStages?</td><td>StageDrop[]</td><td>BOSS 掉落來源關卡（可空）；PLAN-025 由靜態 <code>bossDrops.ts</code> 移入 Firestore，後台可編輯。型別 <code>{ stage: number; bosses: number[] }</code></td></tr>
     </table>
   </div>
 
@@ -119,6 +120,7 @@
       <tr><td>iconLocal</td><td>string</td><td>本機技能圖示路徑（如 <code>"/images/components/Icon_skill_passive_5223.png"</code>）</td></tr>
       <tr><td>outerFrameLocal</td><td>string</td><td>本機外框圖路徑，依 componentType × componentsWType 決定；由 patch-component-outerframe.mjs 自動填入</td></tr>
       <tr><td>componentsWType</td><td>ComponentsWType (Enum)</td><td>W 類型標記：W = W型元件（僅限 WeaponEquipSlot 為 DUAL_HAND / BACK 的武器可裝備，傷害計算機用）；Normal = 一般元件</td></tr>
+      <tr><td>dropStages?</td><td>StageDrop[]</td><td>BOSS 掉落來源關卡（可空）；PLAN-025 由靜態 <code>bossDrops.ts</code> 移入 Firestore，後台可編輯。型別 <code>{ stage: number; bosses: number[] }</code></td></tr>
     </table>
   </div>
 </section>
@@ -146,24 +148,22 @@
 </section>
 
 <section class="section">
-  <div class="section-label" style="color:var(--accent-yellow);">本機靜態資料</div>
-  <div class="section-title">Boss 掉落資料（非 Firestore）</div>
-  <div class="section-desc">Boss 掉落資料以靜態 TypeScript 檔案維護，不存入 Firestore。</div>
+  <div class="section-label" style="color:var(--accent-yellow);">掉落資料</div>
+  <div class="section-title">Boss 掉落資料（PLAN-025 起存於 Firestore）</div>
+  <div class="section-desc">
+    PLAN-025 起，元件的 Boss 掉落資料改存於各元件文件的 <code>dropStages</code> 欄位（Firestore，後台可編輯）。
+    原靜態表 <code>src/data/bossDrops.ts</code> 的資料已由 <code>scripts/temp_scripts/migrate-plan025-dropstages.mjs</code> 一次性遷入，該檔僅保留掉落顯示相關的純函式。
+  </div>
 
   <div class="info-block">
-    <strong>📁 src/data/bossDrops.ts</strong><br>
-    元件 BOSS 掉落資料表，結構：<code>BOSS_DROPS[componentType][componentsWType][shortName] → StageDrop[]</code><br>
-    ・<code>componentType</code>：<code>'Function' | 'Condition'</code><br>
-    ・<code>componentsWType</code>：<code>'Normal' | 'W'</code><br>
-    ・<code>shortName</code>：元件名稱去掉前綴，如 "應元件-強擊" → "強擊"<br><br>
-    <strong>StageDrop 型別</strong><br>
+    <strong>📁 src/data/bossDrops.ts（工具函式）</strong><br>
+    <strong>StageDrop 型別</strong>（定義於 <code>src/types/component.ts</code>）<br>
     <code>{ stage: number; bosses: number[] }</code>（關卡編號 + 可掉落的 Boss 編號陣列）<br><br>
     <strong>工具函式</strong><br>
     ・<code>getBossImagePath(stage, bossNum)</code>：回傳 Boss 頭像路徑（<code>/images/components/Stage{N}_Boss/character_{N}_{M}.png</code>）<br>
-    ・<code>extractShortName(fullName)</code>：從完整元件名稱擷取短名稱（去掉"應元件W?-"/"觸元件W?-"前綴）<br>
-    ・<code>getComponentDrops(componentType, componentsWType, fullName)</code>：查詢元件所有 Boss 掉落<br>
-    ・<code>getAllStages()</code>：取得資料中所有出現過的關卡編號（已排序）<br>
-    ・<code>componentDropsFromStage(componentType, componentsWType, fullName, stage)</code>：檢查元件是否有指定關卡掉落
+    ・<code>getComponentDrops(comp)</code>：回傳該元件的 <code>dropStages</code>（依 stage 排序）<br>
+    ・<code>getAllStages(components)</code>：從一批元件蒐集所有出現過的關卡編號（已排序，供篩選器用）<br>
+    ・<code>componentDropsFromStage(comp, stage)</code>：檢查元件是否有指定關卡掉落
   </div>
 
   <div class="info-block" style="margin-top:12px;">

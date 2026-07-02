@@ -2,6 +2,17 @@
 
 import type { DescriptionRefs } from './common'
 
+/**
+ * 元件的 BOSS 掉落關卡（PLAN-025：由靜態 bossDrops.ts 移入 Firestore 各元件文件，後台可編輯）
+ * 圖片路徑規則：/images/components/Stage{stage}_Boss/character_{stage}_{bossNum}.png
+ */
+export interface StageDrop {
+  /** 關卡編號 */
+  stage: number
+  /** 該關可掉落此元件的 BOSS 編號（1 起算） */
+  bosses: number[]
+}
+
 export interface ComponentBase {
   id: string
   name: string
@@ -16,6 +27,8 @@ export interface ComponentBase {
   iconLocal?: string           // 技能圖示本機路徑（"/images/components/..."）
   outerFrameLocal?: string     // 外框圖本機路徑（"/images/components/OuterFrame/..."）
   componentsWType: 'W' | 'Normal'
+  /** BOSS 掉落來源關卡（可空；PLAN-025 移入 Firestore，後台可編輯） */
+  dropStages?: StageDrop[]
 }
 
 export interface ConditionComponent extends ComponentBase {
