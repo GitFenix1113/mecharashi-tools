@@ -112,12 +112,12 @@
     <tr><th>分頁（tab）</th><th>集合 / 路由</th><th>說明</th></tr>
     <tr><td><code>modules</code> 模組</td><td>modules（+mechs）</td><td>含各等級 levels 編輯、條件效果、enum 防呆</td></tr>
     <tr><td><code>mechs</code> 機甲</td><td>mechs（+modules）</td><td>部件數值、模組 ID 下拉（未對應警示）</td></tr>
-    <tr><td><code>pilots</code> 機師</td><td>pilots</td><td>六維 / AP / 天賦算力改寫（ndVariants）/ 神經驅動配置編輯器（PLAN-021）</td></tr>
+    <tr><td><code>pilots</code> 機師</td><td>pilots</td><td>🆕 新增機師（PLAN-025，<code>pilot_&lt;名&gt;</code> ID + manual 防覆寫）/ 六維 / AP / 個人資料自訂欄位（additionalInfo）/ 天賦算力改寫（ndVariants）/ 神經驅動分區編輯器（分區選單 α·β·γ1·γ2、插槽晶片、各級門檻連結能力庫）</td></tr>
     <tr><td><code>weapons</code> 武器</td><td>weapons（+pilots）</td><td>武器屬性、技能（含 descriptionRefs RefPicker）、改裝</td></tr>
     <tr><td><code>components</code> 元件</td><td>components（伺服器分頁）</td><td>觸 / 應元件編輯</td></tr>
     <tr><td><code>backpacks</code> 背包</td><td>backpacks（伺服器分頁）</td><td>背包主技能與裝配限制</td></tr>
     <tr><td><code>glossary</code> 遊戲術語</td><td>glossaryTerms</td><td>🆕 詞條庫（PLAN-019-C）；refType:'term' 引用資料源</td></tr>
-    <tr><td><code>skills</code> 機師技能</td><td>pilotSkills</td><td>🆕 技能庫（PLAN-004）；共用技能改一次全機師生效</td></tr>
+    <tr><td><code>skills</code> 機師技能</td><td>pilotSkills</td><td>🆕 技能庫（PLAN-004）；共用技能改一次全機師生效；<code>unitType</code> 可標「職業單元＝初始被動能力」（PLAN-025）</td></tr>
     <tr><td><code>neuralDrive</code> 神經驅動</td><td>neuralDriveAbilities（+pilots）</td><td>🆕 神經驅動能力庫（PLAN-023）；顯示「被幾位機師引用」反查</td></tr>
     <tr><td><code>buffs</code> BUFF</td><td>buffs</td><td>🆕 BUFF 管理（PLAN-019-F）；階梯等級 levels、termRef、RefPicker 標 [xxx]（PLAN-024）</td></tr>
     <tr><td><code>users</code> 用戶</td><td>users（伺服器分頁）</td><td>用戶列表、角色（ADMIN/OWNER）授予</td></tr>
