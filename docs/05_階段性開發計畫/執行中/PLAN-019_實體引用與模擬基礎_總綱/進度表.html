@@ -80,8 +80,8 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <div class="meta-item"><a href="計畫書.html" style="color:var(--accent-purple);font-size:13px;font-weight:600;">→ 計畫書</a></div>
   </div>
 
-  <div class="progress-bar"><div class="progress-bar-fill" style="width:58%;"></div></div>
-  <div class="progress-percent">約 58% — 總綱型別 + 019-A 引用層 + 019-C 詞條庫/RefPicker + 019-E 插入引用 UI（四面板）+ 019-F BUFF 後台 已落地；019-B/D 與 019-E 其餘（表單頁/稽核）待執行</div>
+  <div class="progress-bar"><div class="progress-bar-fill" style="width:80%;"></div></div>
+  <div class="progress-percent">約 80%（2026-06-28 已 descope BOSS/關卡 Layer 3）— 總綱型別 + 019-A 引用層 + 019-C 詞條庫/RefPicker + 019-E 插入引用 UI（四面板）+ 019-F BUFF 後台 已落地。殘項收斂為 <strong>019-B 模擬可達性</strong> + <strong>019-E 稽核/儀表</strong> + 總綱文件；019-D（BOSS/關卡）整層移轉 <a href="../PLAN-010_攻略系統/計畫書.html" style="color:var(--accent-cyan);">PLAN-010 攻略系統</a></div>
 
   <!-- 總綱基礎 -->
   <div class="section-h">總綱基礎 <span class="badge badge-progress">IN PROGRESS</span></div>
@@ -131,11 +131,12 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">RefPicker 後台填值 UI（PLAN-019-C 落地）：詞條管理與技能效果可直接把 [xxx] 標成可點引用</span><span class="task-meta">components/admin/RefPicker.tsx</span></li>
   </ul>
 
-  <div class="phase-label">PLAN-019-B · BUFF / 形態圖（Layer 2）</div>
-  <div class="phase-note">mutexGroup 形態互斥 + 由配裝 buffIds[] 建立反向索引，模擬器只提供可達 buff。</div>
+  <div class="phase-label">PLAN-019-B · BUFF / 形態圖（Layer 2）<span class="badge badge-progress" style="margin-left:8px;">核心殘項</span></div>
+  <div class="phase-note">由配裝 buffIds[] 建立反向索引，模擬器只提供可達 buff，再依互斥機制收斂。<strong>descope BOSS/關卡後的最高價值殘項</strong>，亦是 PLAN-023 N3-3（晶片→能力 buffIds 注入）的共同接點。</div>
   <ul class="task-list">
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">反向索引：可用 buff = ⋃ 配裝實體 buffIds[]；依 mutexGroup 分群</span></li>
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">模擬器 Buff 面板：同群形態擇一、active 切換、SkillEffect 加總</span></li>
+    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">反向索引：可用 buff 池 = ⋃ 配裝實體 buffIds[]（buffIds 帶 <code>@N</code> 指定階梯級，見 PLAN-024 buffRef）</span></li>
+    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">可達集收斂 — <strong>兩種分立互斥機制</strong>：① <code>mutexGroup</code> 形態擇一（虛粒子 ⟷ 實粒子）；② 同 buff 多 <code>level</code> 取最高（PLAN-024 階梯 buff，<strong>取代舊「階梯共用 mutexGroup」用法</strong>）</span><span class="task-meta">PLAN-024 後更新</span></li>
+    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">模擬器 Buff 面板：形態 active 切換、SkillEffect 加總 → 面板輸出</span></li>
   </ul>
 
   <div class="phase-label">PLAN-019-C · 詞條庫<span class="badge badge-done" style="margin-left:8px;">DONE</span></div>
@@ -146,21 +147,22 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">RefPicker 通用元件 + GlossaryAdmin 詞條管理分頁 + 接進技能效果</span><span class="task-meta">RefPicker · GlossaryAdmin · PilotAdmin</span></li>
   </ul>
 
-  <div class="phase-label">PLAN-019-D · BOSS / 關卡（Layer 3）</div>
-  <div class="phase-note">bosses/stages 集合 + bossDrops.ts 遷移（保留相容檢視給 BossDropTooltip）。</div>
+  <div class="phase-label">PLAN-019-D · BOSS / 關卡（Layer 3）<span class="badge" style="margin-left:8px;background:rgba(168,85,247,0.15);color:var(--accent-purple);border:1px solid var(--accent-purple);">→ 移轉 PLAN-010</span></div>
+  <div class="phase-note"><strong>2026-06-28 descope：</strong>BOSS 機制／關卡打法為各關獨特的敘事內容、重複 BUFF 相對少，結構化引用層投報率低 → 整層移交 <a href="../PLAN-010_攻略系統/計畫書.html" style="color:var(--accent-cyan);">PLAN-010 攻略系統</a>（以攻略 CMS 自由圖文 + Phase B 實體嵌入承載偶發 buff 卡片）。掉落資料 <code>bossDrops</code> 維持現狀（餵 BossDropTooltip 顯示元件掉落來源），<strong>不遷移、不建 stages/bosses 集合</strong>。</div>
   <ul class="task-list">
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">getBosses / getStages + 預載 Map（仿 firestoreApi 既有 getter）</span></li>
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">scripts/migrate-bossdrops.mjs：bossDrops → stages/bosses</span></li>
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">關卡列表 / BOSS 詳情前台頁（BOSS 技能描述吃 RefText）</span></li>
+    <li class="task-item"><span class="task-status pending">→</span><span class="task-name" style="text-decoration:line-through;color:var(--text-dim);">getBosses / getStages + 預載 Map</span><span class="task-meta">移轉 / 不再建集合</span></li>
+    <li class="task-item"><span class="task-status pending">→</span><span class="task-name" style="text-decoration:line-through;color:var(--text-dim);">scripts/migrate-bossdrops.mjs：bossDrops → stages/bosses</span><span class="task-meta">取消 / bossDrops 留原處</span></li>
+    <li class="task-item"><span class="task-status pending">→</span><span class="task-name" style="text-decoration:line-through;color:var(--text-dim);">關卡列表 / BOSS 詳情前台頁</span><span class="task-meta">改由 PLAN-010 攻略承載</span></li>
   </ul>
 
   <div class="phase-label">PLAN-019-E · 引用型 Admin（Layer 4）<span class="badge badge-progress" style="margin-left:8px;">IN PROGRESS</span></div>
-  <div class="phase-note">各集合表單頁 + 插入引用 UI + 角色/稽核/版本快取（沿用 PLAN-014/016/017）。先表單後 TipTap。「插入引用 UI」部分已由子計畫 <a href="../../歷史記錄/PLAN-019-E_引用挑選器全面接線/計畫書.html" style="color:var(--accent-cyan);">PLAN-019-E 計畫書</a> / <a href="../../歷史記錄/PLAN-019-E_引用挑選器全面接線/進度表.html" style="color:var(--accent-cyan);">進度表</a> 完成並歸檔。</div>
+  <div class="phase-note">表單頁 + 插入引用 UI + 角色/稽核/版本快取（沿用 PLAN-014/016/017）。「插入引用 UI」已由子計畫 <a href="../../歷史記錄/PLAN-019-E_引用挑選器全面接線/計畫書.html" style="color:var(--accent-cyan);">PLAN-019-E 計畫書</a> / <a href="../../歷史記錄/PLAN-019-E_引用挑選器全面接線/進度表.html" style="color:var(--accent-cyan);">進度表</a> 完成並歸檔。BOSS/Stage 相關項隨 019-D descope 移出；殘項僅剩稽核/儀表。</div>
   <ul class="task-list">
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">插入引用 UI：RefPicker 接進 ModuleAdmin / WeaponAdmin / ComponentAdmin / BackpackAdmin（ComponentBase / Backpack.mainSkill 補 descriptionRefs）</span><span class="task-meta">PLAN-019-E</span></li>
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">GlossaryAdmin / BossAdmin / StageAdmin（仿 PilotAdmin）</span></li>
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">updatedBy/updatedAt 稽核 + 補填進度儀表</span></li>
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">新集合納入 GameDataContext 預載 + meta/gameData 版本 gate</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">GlossaryAdmin 詞條管理分頁（已於 019-C 落地）</span><span class="task-meta">PLAN-019-C</span></li>
+    <li class="task-item"><span class="task-status pending">→</span><span class="task-name" style="text-decoration:line-through;color:var(--text-dim);">BossAdmin / StageAdmin（仿 PilotAdmin）</span><span class="task-meta">隨 019-D 移轉 PLAN-010</span></li>
+    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">updatedBy/updatedAt 稽核 + 補填進度儀表</span><span class="task-meta">殘項</span></li>
+    <li class="task-item"><span class="task-status pending">→</span><span class="task-name" style="text-decoration:line-through;color:var(--text-dim);">新集合納入 GameDataContext 預載 + meta/gameData 版本 gate</span><span class="task-meta">已不需：不再建 bosses/stages；glossaryTerms/buffs 已於 019-C/F 接入</span></li>
   </ul>
 
   <div class="phase-label">PLAN-019-F · BUFF 後台管理<span class="badge badge-done" style="margin-left:8px;">DONE</span></div>
@@ -170,7 +172,7 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">AdminPage「BUFF 管理」分頁 + BuffAdmin 面板：列表/新增/編輯，buffType 下拉 + effects 編輯器 + 描述掛 RefPicker（複用 SkillEffectItem / RefPicker / shared）</span><span class="task-meta">AdminPage · BuffAdmin.tsx</span></li>
   </ul>
 
-  <div class="updated">最後更新：2026-06-07 · 本表隨子計畫拆解持續更新</div>
+  <div class="updated">最後更新：2026-06-28 · 019-D（BOSS/關卡）descope 移轉 PLAN-010；殘項收斂為 019-B + 019-E 稽核 + 總綱文件</div>
 
 </div>
 
