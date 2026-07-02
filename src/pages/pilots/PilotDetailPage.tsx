@@ -786,6 +786,34 @@ const ND_POSITION_CLASS: Record<string, string> = {
   'γ2': 'sm:row-start-2 sm:col-start-2',
 }
 
+// 神經驅動插槽晶片類型 → 顏色（對應遊戲內晶片配色）。slot 字串格式：「插槽X：{Type}芯片」。
+const CHIP_TYPE_STYLES: { test: RegExp; dot: string }[] = [
+  { test: /attack|攻擊/i,         dot: 'bg-accent-red'    }, // Attack 芯片 → 紅
+  { test: /dodge|迴避|回避/i,     dot: 'bg-accent-yellow' }, // Dodge 芯片 → 黃
+  { test: /crit/i,                dot: 'bg-accent-blue'   }, // Critical 芯片 → 藍
+]
+
+function chipDotClass(slot: string): string {
+  const type = /：\s*(.+?)\s*芯片/.exec(slot)?.[1] ?? slot
+  return CHIP_TYPE_STYLES.find((c) => c.test.test(type))?.dot ?? 'bg-text-dim'
+}
+
+/** 以顏色方塊表示各插槽的晶片類型（不顯示文字；hover 顯示原始插槽說明）。 */
+function SlotChips({ slots, size = 'md' }: { slots: string[]; size?: 'sm' | 'md' }) {
+  const box = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4'
+  return (
+    <div className="flex gap-1 items-center ml-auto">
+      {slots.map((slot, si) => (
+        <span
+          key={si}
+          title={slot}
+          className={`${box} rounded-[4px] ${chipDotClass(slot)} ring-1 ring-inset ring-white/20 shadow-sm`}
+        />
+      ))}
+    </div>
+  )
+}
+
 function NdLevelContent({ level }: { level: NdLevel }) {
   return (
     <div className="space-y-2">
@@ -846,13 +874,7 @@ function NeuralDriveZoneCard({ nd, zoneName, className, expanded, onLevelHover, 
           <span className="text-accent-purple font-bold text-xs font-[Orbitron,sans-serif]">
             神經驅動 {nd.name}
           </span>
-          <div className="flex gap-1 flex-wrap ml-auto">
-            {nd.slots.map((slot, si) => (
-              <span key={si} className="text-[13px] text-text-dim bg-bg-card border border-border px-1.5 py-0.5 rounded">
-                {slot}
-              </span>
-            ))}
-          </div>
+          <SlotChips slots={nd.slots} size="sm" />
         </div>
         <div className="flex flex-wrap gap-2 p-3">
           {nd.levels.map((lv) => (
@@ -881,13 +903,7 @@ function NeuralDriveZoneCard({ nd, zoneName, className, expanded, onLevelHover, 
         <span className="text-accent-purple font-bold text-sm font-[Orbitron,sans-serif]">
           神經驅動 {nd.name}
         </span>
-        <div className="flex gap-1 flex-wrap ml-auto">
-          {nd.slots.map((slot, si) => (
-            <span key={si} className="text-[13px] text-text-dim bg-bg-card border border-border px-2 py-0.5 rounded">
-              {slot}
-            </span>
-          ))}
-        </div>
+        <SlotChips slots={nd.slots} />
       </div>
       <div className="divide-y divide-border">
         {nd.levels.map((lv) => (
@@ -1199,7 +1215,19 @@ export default function PilotDetailPage() {
               <BottomSheet open={!!ndSheetLevel && !ndExpanded} onClose={() => setNdSheetLevel(null)}>
                 {ndSheetLevel && <NdLevelContent level={ndSheetLevel} />}
               </BottomSheet>
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-x-3 gap-y-1 flex-wrap text-[11px] text-text-dim">
+                  <span className="uppercase tracking-wider">插槽晶片</span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded-[3px] bg-accent-red ring-1 ring-inset ring-white/20" />Attack 攻擊
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded-[3px] bg-accent-yellow ring-1 ring-inset ring-white/20" />Dodge 迴避
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded-[3px] bg-accent-blue ring-1 ring-inset ring-white/20" />Critical 暴擊
+                  </span>
+                </div>
                 <button
                   onClick={() => setNdExpanded(prev => !prev)}
                   className={`text-xs px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ${
