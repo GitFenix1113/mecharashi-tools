@@ -13,6 +13,7 @@ import {
 import { WeaponRarityBadge } from '../../components/WeaponRarityBadge'
 import { EQUIP_SLOT_LABELS } from '../../components/WeaponBadges'
 import { assetUrl } from '../../utils/assets'
+import { RefText } from '../../components/RefText'
 import type { Backpack } from '../../types'
 
 const PAGE_SIZE = 36
@@ -50,19 +51,6 @@ function SkillIcon({ icon, name }: { icon?: string; name: string }) {
       className="w-9 h-9 rounded-lg object-cover flex-shrink-0"
       onError={() => setErr(true)}
     />
-  )
-}
-
-function HighlightedText({ text, className }: { text: string; className?: string }) {
-  const parts = text.split(/([\+\-]?\d+(?:\.\d+)?%?)/g)
-  return (
-    <>
-      {parts.map((part, i) =>
-        /^[\+\-]?\d+(?:\.\d+)?%?$/.test(part) && /\d/.test(part)
-          ? <Num key={i} className={className}>{part}</Num>
-          : <span key={i}>{part}</span>
-      )}
-    </>
   )
 }
 
@@ -122,7 +110,7 @@ function BackpackTooltipContent({ bp }: { bp: Backpack }) {
             </div>
             <div className="p-2.5 space-y-2">
               <p className="text-[13px] text-text-secondary leading-relaxed">
-                <HighlightedText text={bp.mainSkill.description} className="text-[13px]" />
+                <RefText text={bp.mainSkill.description} refs={bp.mainSkill.descriptionRefs} />
               </p>
               {(bp.mainSkill.dmg || bp.mainSkill.crit || bp.mainSkill.critDmg || bp.mainSkill.acc) && (
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
@@ -168,12 +156,17 @@ function BackpackTooltipContent({ bp }: { bp: Backpack }) {
   )
 }
 
-function BackpackTooltip({ bp }: { bp: Backpack }) {
+function BackpackTooltip({ bp, pinned }: { bp: Backpack; pinned: boolean }) {
   return (
     <div className="w-80 max-h-[min(90vh,_600px)] flex flex-col bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
       <div className="flex-1 min-h-0 overflow-y-auto p-1">
         <BackpackTooltipContent bp={bp} />
       </div>
+      {bp.mainSkill?.descriptionRefs && Object.keys(bp.mainSkill.descriptionRefs).length > 0 && (
+        <p className="text-[13px] text-text-dim mt-2 text-center flex-shrink-0">
+          {pinned ? '📌 點擊引用查看詳情' : '點擊背包固定此視窗以查看引用'}
+        </p>
+      )}
     </div>
   )
 }
@@ -184,7 +177,7 @@ interface TooltipState {
   anchorTop: number
 }
 
-function TooltipPortal({ bp, x, anchorTop }: { bp: Backpack; x: number; anchorTop: number }) {
+function TooltipPortal({ bp, pinned, x, anchorTop }: { bp: Backpack; pinned: boolean; x: number; anchorTop: number }) {
   const ref = useRef<HTMLDivElement>(null)
   const [top, setTop] = useState(anchorTop)
 
@@ -195,8 +188,13 @@ function TooltipPortal({ bp, x, anchorTop }: { bp: Backpack; x: number; anchorTo
   }, [anchorTop, bp.id])
 
   return createPortal(
-    <div ref={ref} className="fixed z-50 pointer-events-none" style={{ left: x, top }}>
-      <BackpackTooltip bp={bp} />
+    <div
+      ref={ref}
+      className={`fixed z-50 ${pinned ? 'pointer-events-auto' : 'pointer-events-none'}`}
+      style={{ left: x, top }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <BackpackTooltip bp={bp} pinned={pinned} />
     </div>,
     document.body,
   )
@@ -215,6 +213,7 @@ export default function BackpacksPage() {
 
   const isMobile = useIsMobile()
   const [hoverTooltip, setHoverTooltip] = useState<TooltipState | null>(null)
+  const [pinnedTooltip, setPinnedTooltip] = useState<TooltipState | null>(null)
   const [sheetBp, setSheetBp] = useState<Backpack | null>(null)
 
   const toggleSet = (setter: React.Dispatch<React.SetStateAction<Set<string>>>, value: string) => {
@@ -256,10 +255,21 @@ export default function BackpacksPage() {
     return { x: Math.max(margin, Math.min(x, window.innerWidth - tooltipW - margin)), anchorTop: rect.top }
   }
 
-  const activeTooltip = hoverTooltip
+  const activeTooltip = pinnedTooltip ?? hoverTooltip
   const activeBp = activeTooltip
     ? backpacks.find((b) => b.id === activeTooltip.bpId) ?? null
     : null
+
+  const handleCardClick = (bp: Backpack, el: HTMLDivElement) => {
+    if (isMobile) { setSheetBp(bp); return }
+    // 桌面：點擊背包固定浮窗（可互動、可點引用）；再點同一張則取消固定
+    if (pinnedTooltip?.bpId === bp.id) {
+      setPinnedTooltip(null)
+    } else {
+      setPinnedTooltip({ bpId: bp.id, ...computePos(el) })
+      setHoverTooltip(null)
+    }
+  }
 
   const filterBtn = (active: boolean) =>
     `px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
@@ -283,12 +293,16 @@ export default function BackpacksPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-12 bg-bg-dark/10 backdrop-blur-sm rounded-2xl">
+    <div
+      className="max-w-7xl mx-auto px-4 py-12 bg-bg-dark/10 backdrop-blur-sm rounded-2xl"
+      onClick={() => setPinnedTooltip(null)}
+    >
 
       {activeBp && activeTooltip && !isMobile && (
         <TooltipPortal
           key={activeTooltip.bpId}
           bp={activeBp}
+          pinned={!!pinnedTooltip}
           x={activeTooltip.x}
           anchorTop={activeTooltip.anchorTop}
         />
@@ -383,10 +397,12 @@ export default function BackpacksPage() {
           {paginated.map((bp) => (
             <div
               key={bp.id}
-              className="bg-bg-card border border-border rounded-xl p-3 cursor-default transition-all select-none hover:border-border-accent hover:bg-bg-card-hover"
-              onMouseEnter={(e) => { if (!isMobile) setHoverTooltip({ bpId: bp.id, ...computePos(e.currentTarget) }) }}
-              onMouseLeave={() => { if (!isMobile) setHoverTooltip(null) }}
-              onClick={() => { if (isMobile) setSheetBp(bp) }}
+              className={`bg-bg-card border rounded-xl p-3 cursor-pointer transition-all select-none hover:bg-bg-card-hover ${
+                pinnedTooltip?.bpId === bp.id ? 'border-border-accent' : 'border-border hover:border-border-accent'
+              }`}
+              onMouseEnter={(e) => { if (!isMobile && !pinnedTooltip) setHoverTooltip({ bpId: bp.id, ...computePos(e.currentTarget) }) }}
+              onMouseLeave={() => { if (!isMobile && !pinnedTooltip) setHoverTooltip(null) }}
+              onClick={(e) => { e.stopPropagation(); handleCardClick(bp, e.currentTarget) }}
             >
               {/* Top row */}
               <div className="flex items-start gap-2 mb-2">

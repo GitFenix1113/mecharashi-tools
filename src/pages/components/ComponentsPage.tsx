@@ -3,6 +3,7 @@ import { useComponents } from '../../hooks/useFirestore'
 import { ComponentType, ComponentsWType, ItemRarity } from '../../types/enums'
 import type { Component, ConditionComponent, FunctionComponent } from '../../types'
 import { highlightNumbers } from '../../utils/moduleStats'
+import { RefText } from '../../components/RefText'
 import { BottomSheet } from '../../components/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { ComponentIcon } from '../../components/ComponentIcon'
@@ -101,7 +102,7 @@ function ComponentDetail({ comp }: { comp: Component }) {
         <div>
           <p className="text-xs text-text-dim mb-1">效果描述</p>
           <p className="text-sm text-text-secondary leading-relaxed">
-            {highlightNumbers(comp.description)}
+            <RefText text={comp.description} refs={comp.descriptionRefs} />
           </p>
         </div>
       )}
@@ -374,7 +375,7 @@ export default function ComponentsPage() {
                         <p className="text-xs text-text-secondary leading-relaxed">
                           {isCondition(comp)
                             ? highlightNumbers(comp.condition)
-                            : highlightNumbers(comp.description)}
+                            : <RefText text={comp.description} refs={comp.descriptionRefs} />}
                         </p>
 
                         {/* Weapon restriction hint */}

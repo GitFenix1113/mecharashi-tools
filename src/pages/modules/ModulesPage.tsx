@@ -6,6 +6,7 @@ import { ModuleSlot, ModuleRarity, MechPartPosition } from '../../types/enums'
 import type { Module, Mech } from '../../types'
 import { STAT_LABELS, highlightNumbers } from '../../utils/moduleStats'
 import { BottomSheet } from '../../components/BottomSheet'
+import { RefText } from '../../components/RefText'
 import { useIsMobile } from '../../hooks/useIsMobile'
 
 const SLOT_LABELS: Record<string, string> = {
@@ -432,7 +433,7 @@ export default function ModulesPage() {
                       </div>
                     )}
                     <p className="text-xs text-text-secondary leading-relaxed whitespace-pre-line">
-                      {highlightNumbers(mod.description ?? '')}
+                      <RefText text={mod.description} refs={mod.descriptionRefs} />
                     </p>
                     {(mod.dmg > 0 || (mod.crit_rate ?? 0) > 0 || mod.critDmg > 0 || (mod.acc_rate ?? 0) > 0 || (mod.firepower_rate ?? 0) > 0 || (mod.armor_rate ?? 0) > 0 || (mod.output_bonus ?? 0) > 0 || (mod.dodge_rate ?? 0) > 0 || (mod.durable_rate ?? 0) > 0 || (mod.dmg_resist_rate ?? 0) > 0 || (mod.crit_resist_rate ?? 0) > 0) && (
                       <div className="flex gap-3 mt-2 text-[14px] flex-wrap">
