@@ -1064,17 +1064,17 @@ function AdditionalInfoEditor({
       ) : (
         <div className="space-y-1.5">
           {pairs.map((p, i) => (
-            <div key={i} className="flex items-center gap-2">
+            <div key={i} className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] items-center gap-2">
               <input
                 value={p.k}
                 onChange={(e) => updK(i, e.target.value)}
-                className="input-field w-1/3 text-xs"
+                className="input-field text-xs"
                 placeholder="欄位名，如：出身"
               />
               <input
                 value={p.v}
                 onChange={(e) => updV(i, e.target.value)}
-                className="input-field flex-1 text-xs"
+                className="input-field text-xs"
                 placeholder="內容"
               />
               <button type="button" onClick={() => remove(i)}
