@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-06-28
+## [Unreleased] - 2026-07-02
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 導覽列新增英文版友站 Wiki 連結 (`bf11856`)
 - BUFF 新增「生效次數」maxTriggers 屬性 (`37c975c`)
 - 數值引用層 Phase C（PLAN-022）— RefPicker 語法糖一鍵代入 (`4a7a4b9`)
 - 模組圖鑑顯示採用該模組的機甲（含 8 級模組多機甲共用） (`77bcff1`)
@@ -130,6 +131,7 @@
 
 ### 📚 文件
 
+- PLAN 計畫維護 — PLAN-024 歸檔、PLAN-023 轉觀察、PLAN-019 descope BOSS/關卡 (`2a55144`)
 - 同步資料模型與頁面規劃文件至最新型別 (`ca24ec5`)
 - 建立 PLAN-023 神經驅動能力庫、歸檔 PLAN-004 (`dd999ce`)
 - PLAN-022 數值引用層歸檔至歷史記錄（A+B+C+D · 8/8 完成） (`3f6d91c`)
