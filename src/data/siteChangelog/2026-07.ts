@@ -3,6 +3,7 @@ import type { ChangelogMonth } from './types'
 const jul2026: ChangelogMonth = {
   month: '2026-07',
   entries: [
+    { date: '2026-07-04', type: 'feat', summary: '攻略頁新增「元件掉落總表」：可切換觸/應元件分頁、以圖示呈現各關 BOSS 掉落的元件，並可一鍵匯出成圖片' },
     { date: '2026-07-03', type: 'feat', summary: '管理後台新增「新增機師」功能，並可完整編輯神經驅動分區（插槽、各級算力門檻、連結能力庫），技能亦可標記為「初始被動能力」' },
     { date: '2026-07-03', type: 'style', summary: '機師詳情頁「職業技能」正名為「初始被動能力」；神經驅動「暴擊」晶片正確顯示為藍色' },
     { date: '2026-07-03', type: 'feat', summary: '元件圖鑑新增「子類型」篩選，並移除觸發條件篩選' },
