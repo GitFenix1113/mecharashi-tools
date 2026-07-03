@@ -81,6 +81,7 @@ function SkillEditPanel({
               <option value={SkillType.ACTIVE}>{SkillType.ACTIVE}</option>
               <option value={SkillType.COMMAND}>{SkillType.COMMAND}</option>
               <option value={SkillType.PP}>{SkillType.PP}</option>
+              <option value={SkillType.EXTRA}>{SkillType.EXTRA}</option>
             </select>
           </Field>
           <div className="grid grid-cols-3 gap-2">
@@ -244,6 +245,7 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
           <option value={SkillType.ACTIVE}>{SkillType.ACTIVE}</option>
           <option value={SkillType.COMMAND}>{SkillType.COMMAND}</option>
           <option value={SkillType.PP}>{SkillType.PP}</option>
+          <option value={SkillType.EXTRA}>{SkillType.EXTRA}</option>
         </select>
         <select value={filters.manual} onChange={(e) => setFilter('manual', e.target.value as SkillFilters['manual'])} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部來源</option>

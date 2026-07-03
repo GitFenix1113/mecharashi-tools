@@ -23,7 +23,7 @@ export interface PilotSkill {
   cd?: string
   /** PP 消耗量；PP技能（type=PP技能）才有，如「勇氣」消耗 1PP */
   pp?: string
-  /** 限定武器需求；武器技能（type=武器技能）才有 */
+  /** 限定武器需求；武器技能、額外打擊（type=額外打擊）等須指定武器的技能才有 */
   weapon?: WeaponRequirement | string
   description: string
   /** 描述內 [xxx] 引用側錄（PLAN-019 Layer 1） */

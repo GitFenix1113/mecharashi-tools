@@ -197,6 +197,7 @@ export const SkillType = {
   ACTIVE:  '主動技能',
   COMMAND: '指令技能',  // Order — 有 CD，消耗 AP
   PP:      'PP技能',    // 消耗 PP（每次出擊有限 PP 上限），如「勇氣」
+  EXTRA:   '額外打擊',  // 以特定武器發動的追加打擊（消耗 AP、限定武器），如「越界追獵」
 } as const;
 export type SkillType = typeof SkillType[keyof typeof SkillType];
 

@@ -51,7 +51,7 @@
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>id</td><td>string</td><td>文件 ID。格式 <code>skill_&lt;技能名&gt;</code>；同名不同效時加 <code>_&lt;pilotId&gt;</code> 後綴；後台手動新增為 <code>skill_manual_&lt;時間碼&gt;</code></td></tr>
       <tr><td>name</td><td>string</td><td>技能名稱</td></tr>
-      <tr><td>type</td><td>SkillType</td><td>技能類型：被動技能 / 主動技能 / 指令技能 / 必殺技能 / 武器技能</td></tr>
+      <tr><td>type</td><td>SkillType</td><td>技能類型：被動技能 / 主動技能 / 指令技能 / PP技能 / 額外打擊 / 必殺技能 / 武器技能</td></tr>
       <tr><td>unitType</td><td>string?</td><td>仿生電腦單元類型："0"=核心單元 "6"=職業單元（前台歸為「初始被動能力」＝機師一開始自帶；PLAN-025 後台可於技能編輯設定）</td></tr>
       <tr><td>ap</td><td>string?</td><td>AP 消耗；主動 / 指令 / 必殺 / 武器技能適用</td></tr>
       <tr><td>cd</td><td>string?</td><td>冷卻回合數；指令技能才有</td></tr>
