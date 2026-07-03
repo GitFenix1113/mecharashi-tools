@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-07-02
+## [Unreleased] - 2026-07-03
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 攻略頁新增「元件掉落總表」資料工具（PLAN-027） (`8cabc48`)
 - 後台可新增機師並完整編輯神經驅動（PLAN-025） (`eef3e08`)
 - 元件掉落關卡改存 Firestore 可後台編輯，圖鑑新增子類型篩選 (`ef333a2`)
 - 背包/模組/元件描述支援引用懸浮視窗 (`2e5b2b7`)
