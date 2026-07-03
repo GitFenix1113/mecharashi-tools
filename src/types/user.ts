@@ -3,6 +3,12 @@
 import type { GameServer } from './enums'
 import type { UserResearchLevels } from './research'
 
+// ─── 圖鑑列表檢視偏好 ─────────────────────────────────────────────────────────
+// compact = 極簡（頭像+名），detailed = 詳細卡片。分頁各自記憶。
+export type ViewMode = 'compact' | 'detailed'
+export type ViewPrefsKey = 'pilots' | 'mechs'
+export type ViewPrefs = Partial<Record<ViewPrefsKey, ViewMode>>
+
 export interface UserProfile {
   uid: string
   displayName: string
@@ -19,6 +25,8 @@ export interface UserProfile {
   gameNickname?: string | null
   gameServer?: GameServer | null
   guild?: string | null
+  // 圖鑑列表檢視偏好（機師/機甲各自記憶，登入時同步至帳戶）
+  viewPrefs?: ViewPrefs
 }
 
 // ─── 配裝（Firestore userBuilds / 本地快取）───────────────────────────────────

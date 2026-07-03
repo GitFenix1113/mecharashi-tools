@@ -67,6 +67,7 @@
       <tr><td>gameNickname</td><td>string | null</td><td>遊戲內暱稱（選填，最長 30 字）</td></tr>
       <tr><td>gameServer</td><td>GameServer | null</td><td>遊戲伺服器（選填，enum）：獵豹物流 / 灰燼之子 / 破曉世紀</td></tr>
       <tr><td>guild</td><td>string | null</td><td>遊戲公會名稱（選填，最長 30 字）</td></tr>
+      <tr><td>viewPrefs</td><td>object</td><td>圖鑑列表檢視偏好（機師/機甲各自記憶）：<code>{ pilots?: 'compact' | 'detailed', mechs?: 'compact' | 'detailed' }</code>。前台以 localStorage 為即時層，登入時同步至此欄位以跨裝置一致</td></tr>
     </table>
   </div>
 </section>

@@ -2,8 +2,10 @@
 import { Link } from 'react-router-dom'
 import { assetUrl } from '../../utils/assets'
 import { usePilots, useWeapons } from '../../hooks/useFirestore'
+import { useViewMode } from '../../hooks/useViewMode'
 import { WeaponIcon } from '../../components/WeaponIcon'
 import { PilotRarityBadge } from '../../components/PilotBadges'
+import { ViewModeToggle } from '../../components/ViewModeToggle'
 
 const CLASS_STYLES: Record<string, { text: string; border: string; bg: string }> = {
   守護者: { text: 'text-accent-green', border: 'border-accent-green/40', bg: 'bg-accent-green/10' },
@@ -35,6 +37,7 @@ export default function PilotsPage() {
   const [classFilter, setClassFilter] = useState('')
   const [licenseFilter, setLicenseFilter] = useState('')
   const [rarityFilter, setRarityFilter] = useState('')
+  const [viewMode, setViewMode] = useViewMode('pilots')
 
   const exclusiveWeaponMap = useMemo(() => {
     const map: Record<string, { name: string; icon?: string }> = {}
@@ -156,12 +159,17 @@ export default function PilotsPage() {
         </div>
       </div>
 
-      {/* Count */}
-      {!loading && (
-        <p className="text-xs text-text-dim mb-4">
-          顯示 {filtered.length} / {pilots.length} 位機師
-        </p>
-      )}
+      {/* Count + View toggle */}
+      <div className="flex items-center justify-between gap-3 mb-4 min-h-[28px]">
+        {!loading ? (
+          <p className="text-xs text-text-dim">
+            顯示 {filtered.length} / {pilots.length} 位機師
+          </p>
+        ) : (
+          <span />
+        )}
+        <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+      </div>
 
       {/* Grid */}
       {loading ? (
@@ -169,6 +177,49 @@ export default function PilotsPage() {
           {Array.from({ length: 10 }).map((_, i) => (
             <div key={i} className="bg-bg-card border border-border rounded-xl h-64 animate-pulse" />
           ))}
+        </div>
+      ) : viewMode === 'compact' ? (
+        /* ── 緊湊檢視：頭像 + 名 ── */
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+          {filtered.map((pilot) => {
+            const s = CLASS_STYLES[pilot.class]
+            return (
+              <Link
+                key={pilot.id}
+                to={`/pilots/${pilot.id}`}
+                className="group block bg-bg-card border border-border rounded-lg overflow-hidden no-underline transition-all hover:bg-bg-card-hover hover:border-border-accent hover:-translate-y-0.5"
+              >
+                <div className="relative aspect-square bg-bg-dark overflow-hidden">
+                  <img
+                    src={assetUrl(pilot.portrait)}
+                    alt={pilot.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover object-top transition-transform group-hover:scale-105"
+                    onError={(e) => {
+                      ;(e.target as HTMLImageElement).style.display = 'none'
+                    }}
+                  />
+                  <span className="absolute bottom-1 left-1 scale-90 origin-bottom-left">
+                    <PilotRarityBadge rarity={pilot.rarity} />
+                  </span>
+                </div>
+                <div className="px-1.5 py-1.5 text-center">
+                  <p className="text-xs font-bold text-text-primary truncate">{pilot.name}</p>
+                  {/* 職業 · 駕照（機甲類型） */}
+                  <p className="text-[10px] mt-0.5 truncate">
+                    <span className={s ? s.text : 'text-text-dim'}>{pilot.class}</span>
+                    <span className="text-text-dim"> · {pilot.license}</span>
+                  </p>
+                  {/* 專武名稱（僅名稱） */}
+                  {exclusiveWeaponMap[pilot.id] && (
+                    <p className="text-[10px] text-accent-yellow truncate mt-0.5">
+                      {exclusiveWeaponMap[pilot.id].name}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            )
+          })}
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">

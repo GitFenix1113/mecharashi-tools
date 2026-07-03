@@ -1,7 +1,9 @@
 ﻿import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMechs } from '../../hooks/useFirestore'
+import { useViewMode } from '../../hooks/useViewMode'
 import { assetUrl } from '../../utils/assets'
+import { ViewModeToggle } from '../../components/ViewModeToggle'
 
 const ARMOR_TYPES = ['輕型', '中甲', '重型']
 
@@ -50,6 +52,7 @@ function MobilityGrid({ value }: { value: number }) {
 export default function MechsPage() {
   const { data: mechs, loading } = useMechs()
   const [armorFilter, setArmorFilter] = useState('')
+  const [viewMode, setViewMode] = useViewMode('mechs')
 
   const filtered = mechs.filter((m) => !armorFilter || m.armorType === armorFilter)
 
@@ -100,17 +103,65 @@ export default function MechsPage() {
         })}
       </div>
 
-      {!loading && (
-        <p className="text-xs text-text-dim mb-4">
-          顯示 {filtered.length} / {mechs.length} 架機甲
-        </p>
-      )}
+      {/* Count + View toggle */}
+      <div className="flex items-center justify-between gap-3 mb-4 min-h-[28px]">
+        {!loading ? (
+          <p className="text-xs text-text-dim">
+            顯示 {filtered.length} / {mechs.length} 架機甲
+          </p>
+        ) : (
+          <span />
+        )}
+        <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="bg-bg-card border border-border rounded-xl h-72 animate-pulse" />
           ))}
+        </div>
+      ) : viewMode === 'compact' ? (
+        /* ── 緊湊檢視：機甲圖 + 名 ── */
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {filtered.map((mech) => {
+            const s = ARMOR_STYLES[mech.armorType]
+            return (
+              <Link
+                key={mech.id}
+                to={`/mechs/${mech.id}`}
+                className="group block bg-bg-card border border-border rounded-lg overflow-hidden no-underline transition-all hover:bg-bg-card-hover hover:border-border-accent hover:-translate-y-0.5"
+              >
+                <div className="relative aspect-square bg-bg-dark overflow-hidden">
+                  <img
+                    src={mech.portrait ? assetUrl(mech.portrait) : assetUrl(`images/mechs/${mech.name}.png`)}
+                    alt=""
+                    loading="lazy"
+                    className="w-full h-full object-contain object-center transition-transform group-hover:scale-105"
+                    onError={(e) => {
+                      const el = e.target as HTMLImageElement
+                      if (!el.dataset.fb) {
+                        el.dataset.fb = '1'
+                        el.src = assetUrl(`images/mechs/${mech.name}.png`)
+                      } else {
+                        el.style.display = 'none'
+                      }
+                    }}
+                  />
+                  {s && (
+                    <span
+                      className={`absolute top-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-bold border ${s.bg} ${s.text} ${s.border}`}
+                    >
+                      {mech.armorType}
+                    </span>
+                  )}
+                </div>
+                <p className="px-1.5 py-1.5 text-xs font-bold text-text-primary text-center truncate">
+                  {mech.name}
+                </p>
+              </Link>
+            )
+          })}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

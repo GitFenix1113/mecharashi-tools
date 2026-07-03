@@ -3,6 +3,7 @@ import type { ChangelogMonth } from './types'
 const jul2026: ChangelogMonth = {
   month: '2026-07',
   entries: [
+    { date: '2026-07-04', type: 'feat', summary: '機師與機甲圖鑑新增「緊湊／詳細」檢視切換，預設緊湊（頭像+名）更省空間；登入後會記住各頁的檢視偏好，下次自動套用' },
     { date: '2026-07-04', type: 'feat', summary: '技能新增「PP技能」分類（消耗 PP 的技能，如「勇氣」），機師詳情頁與後台可顯示與編輯 PP 消耗' },
     { date: '2026-07-04', type: 'feat', summary: '元件圖鑑頁新增「元件掉落總表」快速連結，方便查看各關 BOSS 掉落' },
     { date: '2026-07-04', type: 'feat', summary: '攻略頁新增「元件掉落總表」：可切換觸/應元件分頁、以圖示呈現各關 BOSS 掉落的元件，並可一鍵匯出成圖片' },
