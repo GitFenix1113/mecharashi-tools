@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useComponents } from '../../hooks/useFirestore'
 import { ComponentType, ComponentsWType, ItemRarity } from '../../types/enums'
 import type { Component, ConditionComponent, FunctionComponent } from '../../types'
@@ -199,6 +200,12 @@ export default function ComponentsPage() {
         <p className="text-text-secondary mt-2">
           觸元件（Condition）與應元件（Function）完整圖鑑，含觸發條件與效果類型篩選<strong className="text-red-500">（篩選條件有BUG，還在修）</strong>。
         </p>
+        <Link
+          to="/guides/component-drops"
+          className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-lg text-[13px] font-bold border border-accent-orange/50 bg-accent-orange/10 text-accent-orange transition-colors hover:bg-accent-orange/20 no-underline"
+        >
+          📋 元件掉落總表 · 看各關 BOSS 掉落 →
+        </Link>
       </div>
 
       {/* Filter panel */}
