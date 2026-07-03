@@ -196,6 +196,7 @@ export const SkillType = {
   PASSIVE: '被動技能',
   ACTIVE:  '主動技能',
   COMMAND: '指令技能',  // Order — 有 CD，消耗 AP
+  PP:      'PP技能',    // 消耗 PP（每次出擊有限 PP 上限），如「勇氣」
 } as const;
 export type SkillType = typeof SkillType[keyof typeof SkillType];
 

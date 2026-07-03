@@ -21,6 +21,8 @@ export interface PilotSkill {
   ap?: string
   /** 冷卻回合數；指令技能（type=指令技能）才有 */
   cd?: string
+  /** PP 消耗量；PP技能（type=PP技能）才有，如「勇氣」消耗 1PP */
+  pp?: string
   /** 限定武器需求；武器技能（type=武器技能）才有 */
   weapon?: WeaponRequirement | string
   description: string
@@ -71,6 +73,8 @@ export interface PilotSkillDoc {
   ap?: string
   /** 冷卻回合數；指令技能才有 */
   cd?: string
+  /** PP 消耗量；PP技能才有 */
+  pp?: string
   /** 限定武器需求；武器技能才有 */
   weapon?: WeaponRequirement | string
   description: string

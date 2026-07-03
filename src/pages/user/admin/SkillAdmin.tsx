@@ -80,14 +80,18 @@ function SkillEditPanel({
               <option value={SkillType.PASSIVE}>{SkillType.PASSIVE}</option>
               <option value={SkillType.ACTIVE}>{SkillType.ACTIVE}</option>
               <option value={SkillType.COMMAND}>{SkillType.COMMAND}</option>
+              <option value={SkillType.PP}>{SkillType.PP}</option>
             </select>
           </Field>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Field label="AP ap">
               <input type="text" value={form.ap ?? ''} onChange={(e) => update('ap', e.target.value || undefined)} className="input-field" placeholder="—" />
             </Field>
             <Field label="CD cd">
               <input type="text" value={form.cd ?? ''} onChange={(e) => update('cd', e.target.value || undefined)} className="input-field" placeholder="—" />
+            </Field>
+            <Field label="PP pp">
+              <input type="text" value={form.pp ?? ''} onChange={(e) => update('pp', e.target.value || undefined)} className="input-field" placeholder="—" />
             </Field>
           </div>
         </div>
@@ -239,6 +243,7 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
           <option value={SkillType.PASSIVE}>{SkillType.PASSIVE}</option>
           <option value={SkillType.ACTIVE}>{SkillType.ACTIVE}</option>
           <option value={SkillType.COMMAND}>{SkillType.COMMAND}</option>
+          <option value={SkillType.PP}>{SkillType.PP}</option>
         </select>
         <select value={filters.manual} onChange={(e) => setFilter('manual', e.target.value as SkillFilters['manual'])} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部來源</option>
@@ -298,6 +303,7 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
                   {skill.manual && <span className="text-[12px] px-1.5 py-0.5 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange shrink-0">手動</span>}
                   {skill.ap && <span className="text-[13px] text-accent-green shrink-0">AP {skill.ap}</span>}
                   {skill.cd && <span className="text-[13px] text-accent-orange shrink-0">CD {skill.cd}</span>}
+                  {skill.pp && <span className="text-[13px] text-accent-yellow shrink-0">PP {skill.pp}</span>}
                   <span className={`text-[13px] shrink-0 ${effCount > 0 ? 'text-accent-cyan' : 'text-text-dim'}`}>效果 {effCount}</span>
                 </div>
                 <p className="text-[13px] text-text-secondary truncate mt-0.5">{skill.description || '（無說明）'}</p>

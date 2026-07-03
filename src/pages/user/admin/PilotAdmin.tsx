@@ -281,6 +281,7 @@ function AssignedSkillRow({
             {skill.manual && <span className="text-[11px] px-1.5 py-0.5 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange shrink-0">手動</span>}
             {skill.ap && <span className="text-[12px] text-accent-green shrink-0">AP {skill.ap}</span>}
             {skill.cd && <span className="text-[12px] text-accent-orange shrink-0">CD {skill.cd}</span>}
+            {skill.pp && <span className="text-[12px] text-accent-green shrink-0">消耗 {skill.pp}PP</span>}
             {skill.weapon && <span className="text-[12px] text-accent-purple shrink-0">{formatWeaponReq(skill.weapon)}</span>}
             <span className={`text-[12px] shrink-0 ${effCount > 0 ? 'text-accent-cyan' : 'text-text-dim'}`}>效果 {effCount}</span>
           </div>

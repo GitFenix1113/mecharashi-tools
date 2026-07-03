@@ -143,7 +143,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       if (!s) return null
       return {
         title: s.name,
-        subtitle: [s.type, s.ap ? `AP ${s.ap}` : '', s.cd ? `CD ${s.cd}` : '']
+        subtitle: [s.type, s.ap ? `AP ${s.ap}` : '', s.cd ? `CD ${s.cd}` : '', s.pp ? `消耗 ${s.pp}PP` : '']
           .filter(Boolean).join(' · '),
         image: (s.iconLocal || s.icon) ? resolveIconSrc(s.iconLocal || s.icon) : undefined,
         description: s.description,

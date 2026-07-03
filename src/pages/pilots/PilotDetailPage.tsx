@@ -456,6 +456,7 @@ const SKILL_TYPE_CLS: Record<string, string> = {
   被動技能: 'text-accent-blue bg-accent-blue/10 border-accent-blue/30',
   主動技能: 'text-accent-red bg-accent-red/10 border-accent-red/30',
   指令技能: 'text-accent-purple bg-accent-purple/10 border-accent-purple/30',
+  PP技能: 'text-accent-green bg-accent-green/10 border-accent-green/30',
   // 顯示層專用：機師天賦區塊一律顯示「天賦技能」（資料仍存原始 type，多為被動技能），避免與一般被動混淆
   天賦技能: 'text-accent-orange bg-accent-orange/10 border-accent-orange/30',
 }
@@ -1188,6 +1189,11 @@ export default function PilotDetailPage() {
                       {sk.cd && (
                         <span className="text-[13px] text-accent-cyan bg-accent-cyan/10 border border-accent-cyan/30 px-2 py-0.5 rounded">
                           CD {sk.cd}
+                        </span>
+                      )}
+                      {sk.pp && (
+                        <span className="text-[13px] text-accent-green bg-accent-green/10 border border-accent-green/30 px-2 py-0.5 rounded">
+                          消耗 {sk.pp}PP
                         </span>
                       )}
                       {sk.weapon && (
