@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-07-03
+## [Unreleased] - 2026-07-04
 
 ### ⚠ 重大變更
 
@@ -180,6 +180,7 @@
 
 ### 🔧 維護
 
+- 新增莫比烏斯X機甲圖片（縮圖＋5 零件）並更新圖片 manifest (`0018415`)
 - 新增凱爾技能圖示（主動/被動/指令/PP）並更新圖片 manifest (`951398e`)
 - 修正後台機師「個人資料」自訂欄位排版 (`e61b4b6`)
 - 新增機師淬鋒凱登立繪並更新圖片清單 (`ccddad0`)
