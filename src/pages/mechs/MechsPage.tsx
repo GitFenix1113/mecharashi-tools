@@ -13,6 +13,10 @@ const ARMOR_STYLES: Record<string, { text: string; border: string; bg: string }>
   重型: { text: 'text-accent-red', border: 'border-accent-red/40', bg: 'bg-accent-red/10' },
 }
 
+// 機甲品質次要排序權重（沿用機師品質階序）。目前機甲 quality 多半未填，
+// 未填者一律 fallback 99 → 退化成依編號排序；日後補品質資料即自動生效。
+const QUALITY_ORDER: Record<string, number> = { EX: 0, S: 1, A: 2, B: 3 }
+
 function StatBar({ label, value, max }: { label: string; value: number; max: number }) {
   const pct = Math.min((value / max) * 100, 100)
   return (
@@ -53,7 +57,7 @@ export default function MechsPage() {
   const { data: mechs, loading } = useMechs()
   const [armorFilter, setArmorFilter] = useState('')
   const [versionFilter, setVersionFilter] = useState('')
-  const [sortMode, setSortMode] = useState<'default' | 'version'>('default')
+  const [sortMode, setSortMode] = useState<'versionDesc' | 'versionAsc'>('versionDesc')
   const [viewMode, setViewMode] = useViewMode('mechs')
 
   // 登場版本篩選選項：只列出資料中實際出現過的版本（降序）；全空時整區隱藏
@@ -72,16 +76,21 @@ export default function MechsPage() {
       (!armorFilter || m.armorType === armorFilter) &&
       (!versionFilter || m.debutVersion === versionFilter),
   )
-  // 登場版本 新→舊：有版本者依版本降序，無版本者排最後（依編號降序當次序）
-  const filtered =
-    sortMode === 'version'
-      ? [...base].sort((a, b) => {
-          const va = a.debutVersion ? parseFloat(a.debutVersion) : -Infinity
-          const vb = b.debutVersion ? parseFloat(b.debutVersion) : -Infinity
-          if (va !== vb) return vb - va
-          return idNum(b.id) - idNum(a.id)
-        })
-      : base
+  const filtered = [...base].sort((a, b) => {
+    // 主排序：登場版本（新→舊 或 舊→新）；無版本者永遠排最後
+    const va = a.debutVersion ? parseFloat(a.debutVersion) : null
+    const vb = b.debutVersion ? parseFloat(b.debutVersion) : null
+    if (va === null && vb !== null) return 1
+    if (vb === null && va !== null) return -1
+    if (va !== null && vb !== null && va !== vb) {
+      return sortMode === 'versionAsc' ? va - vb : vb - va
+    }
+    // 次要排序：品質（同版本、或皆無版本時皆套用；未填品質者退化成編號）
+    const qd = (QUALITY_ORDER[a.quality ?? ''] ?? 99) - (QUALITY_ORDER[b.quality ?? ''] ?? 99)
+    if (qd !== 0) return qd
+    // 第三序：編號遞減
+    return idNum(b.id) - idNum(a.id)
+  })
 
   const filterBtn = (active: boolean) =>
     `px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
@@ -161,12 +170,12 @@ export default function MechsPage() {
         <div className="flex items-center gap-2">
           <select
             value={sortMode}
-            onChange={(e) => setSortMode(e.target.value as 'default' | 'version')}
+            onChange={(e) => setSortMode(e.target.value as 'versionDesc' | 'versionAsc')}
             aria-label="排序方式"
             className="px-2.5 py-1.5 rounded-lg text-xs font-medium border bg-bg-card text-text-secondary border-border hover:border-border-accent hover:text-text-primary cursor-pointer outline-none focus:border-border-accent"
           >
-            <option value="default">預設（編號）</option>
-            <option value="version">登場版本 新→舊</option>
+            <option value="versionDesc">登場版本 新→舊</option>
+            <option value="versionAsc">登場版本 舊→新</option>
           </select>
           <ViewModeToggle mode={viewMode} onChange={setViewMode} />
         </div>
