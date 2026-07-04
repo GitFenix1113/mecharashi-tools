@@ -3,6 +3,7 @@ import type { Mech, Module } from '../../../types'
 import { ModuleSlot, ArmorType } from '../../../types/enums'
 import { Field, AdminModal, useClientPaged, LoadMoreButton } from './shared'
 import { updateMech } from '../../../lib/firestoreApi'
+import { useGameVersions } from '../../../hooks/useGameVersions'
 import { useGameData } from '../../../contexts/GameDataContext'
 
 type MechFilters = { armorType: string }
@@ -149,6 +150,7 @@ function MechEditPanel({
   const [form, setForm]   = useState<Mech>({ ...mech })
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
+  const gameVersions = useGameVersions()
 
   useEffect(() => { setForm({ ...mech }) }, [mech])
 
@@ -174,6 +176,20 @@ function MechEditPanel({
       </h3>
 
       <div className="overflow-y-auto flex-1 pr-1 space-y-4">
+        <Field label="登場版本 debutVersion">
+          <select
+            value={form.debutVersion ?? ''}
+            onChange={(e) => setForm((f) => ({ ...f, debutVersion: e.target.value || undefined }))}
+            className="input-field"
+          >
+            <option value="">（未設定）</option>
+            {gameVersions.map((v) => <option key={v} value={v}>{v}</option>)}
+            {form.debutVersion && !gameVersions.includes(form.debutVersion) && (
+              <option value={form.debutVersion}>{form.debutVersion}（清單外）</option>
+            )}
+          </select>
+        </Field>
+
         <Field label="四格模組 (4mod)">
           <select
             value={form.module4Id ?? ''}

@@ -422,6 +422,7 @@ export default function MechDetailPage() {
           <AttrRow label="閃避" value={mech.evasion.toLocaleString()} />
           <AttrRow label="移動力" value={mech.mobility} />
           <AttrRow label="重量" value={mech.weight.toLocaleString()} />
+          {mech.debutVersion && <AttrRow label="登場版本" value={`v${mech.debutVersion}`} />}
           <div className="flex justify-between items-center py-2 border-b border-border col-span-2 sm:col-span-2">
             <span className="text-text-dim text-sm">出力</span>
             <div className="flex items-center gap-3">

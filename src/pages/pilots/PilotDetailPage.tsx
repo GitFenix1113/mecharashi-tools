@@ -1077,6 +1077,7 @@ export default function PilotDetailPage() {
             <InfoRow label="勢力" value={pilot.faction} />
             <InfoRow label="駕照" value={pilot.license} />
             <InfoRow label="駕駛等級" value={pilot.masterLevel} />
+            {pilot.debutVersion && <InfoRow label="登場版本" value={`v${pilot.debutVersion}`} />}
             {pilot.profile?.gender && <InfoRow label="性別" value={pilot.profile.gender} />}
             {pilot.profile?.height && <InfoRow label="身高" value={pilot.profile.height} />}
             {pilot.profile?.bloodType && (

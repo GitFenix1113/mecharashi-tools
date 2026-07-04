@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, TalentNdVariant, SkillEffect, SkillCondition, NeuralDrive, NeuralDriveLevel, NeuralDriveAbility } from '../../../types'
 import { formatWeaponReq } from '../../../types'
 import { ItemRarity, PilotClass, MechLicense, WeaponType } from '../../../types/enums'
+import { useGameVersions } from '../../../hooks/useGameVersions'
 import { Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog } from './shared'
 import { updatePilot, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
@@ -1117,6 +1118,8 @@ function PilotEditPanel({
 
   useEffect(() => { setForm({ ...pilot }); setEditTab('basic') }, [pilot])
 
+  const gameVersions = useGameVersions()
+
   // PLAN-004：技能改由 pilotSkills 集合管理；機師文件僅存技能 ID 順序（引用）
   const gd = useGameData()
   useEffect(() => { gd.ensureLoaded(['pilotSkills', 'neuralDriveAbilities']) }, [gd])
@@ -1228,6 +1231,17 @@ function PilotEditPanel({
             <div className="grid grid-cols-2 gap-3">
               <Field label="陣營 faction"><input value={form.faction || ''} onChange={(e) => update('faction', e.target.value)} className="input-field" /></Field>
               <Field label="駕駛等級 masterLevel"><input value={form.masterLevel || ''} onChange={(e) => update('masterLevel', e.target.value)} className="input-field" /></Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="登場版本 debutVersion">
+                <select value={form.debutVersion ?? ''} onChange={(e) => update('debutVersion', e.target.value || undefined)} className="input-field">
+                  <option value="">（未設定）</option>
+                  {gameVersions.map((v) => <option key={v} value={v}>{v}</option>)}
+                  {form.debutVersion && !gameVersions.includes(form.debutVersion) && (
+                    <option value={form.debutVersion}>{form.debutVersion}（清單外）</option>
+                  )}
+                </select>
+              </Field>
             </div>
             <IconField label="立繪路徑 portrait" value={form.portrait} onChange={(v) => update('portrait', v)} defaultFolder="pilots" />
             <Field label="故事 lore（Markdown）">

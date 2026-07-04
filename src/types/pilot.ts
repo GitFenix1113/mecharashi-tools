@@ -201,6 +201,8 @@ export interface Pilot {
   faction: string
   license: string
   masterLevel: string
+  /** 登場版本：機師首次實裝的遊戲版本號（對應 patchVersions，如 '3.3'）；未設定＝尚未回填 */
+  debutVersion?: string
   profile: {
     gender: string
     bloodType: string

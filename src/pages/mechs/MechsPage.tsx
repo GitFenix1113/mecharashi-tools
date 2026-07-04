@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+﻿import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useMechs } from '../../hooks/useFirestore'
 import { useViewMode } from '../../hooks/useViewMode'
@@ -52,9 +52,36 @@ function MobilityGrid({ value }: { value: number }) {
 export default function MechsPage() {
   const { data: mechs, loading } = useMechs()
   const [armorFilter, setArmorFilter] = useState('')
+  const [versionFilter, setVersionFilter] = useState('')
+  const [sortMode, setSortMode] = useState<'default' | 'version'>('default')
   const [viewMode, setViewMode] = useViewMode('mechs')
 
-  const filtered = mechs.filter((m) => !armorFilter || m.armorType === armorFilter)
+  // 登場版本篩選選項：只列出資料中實際出現過的版本（降序）；全空時整區隱藏
+  const versions = useMemo(
+    () =>
+      Array.from(new Set(mechs.map((m) => m.debutVersion).filter(Boolean) as string[])).sort(
+        (a, b) => parseFloat(b) - parseFloat(a),
+      ),
+    [mechs],
+  )
+
+  const idNum = (id: string) => parseInt(id.match(/mech_(\d+)/)?.[1] ?? '0', 10)
+
+  const base = mechs.filter(
+    (m) =>
+      (!armorFilter || m.armorType === armorFilter) &&
+      (!versionFilter || m.debutVersion === versionFilter),
+  )
+  // 登場版本 新→舊：有版本者依版本降序，無版本者排最後（依編號降序當次序）
+  const filtered =
+    sortMode === 'version'
+      ? [...base].sort((a, b) => {
+          const va = a.debutVersion ? parseFloat(a.debutVersion) : -Infinity
+          const vb = b.debutVersion ? parseFloat(b.debutVersion) : -Infinity
+          if (va !== vb) return vb - va
+          return idNum(b.id) - idNum(a.id)
+        })
+      : base
 
   const filterBtn = (active: boolean) =>
     `px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
@@ -79,28 +106,47 @@ export default function MechsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-bg-card border border-border rounded-xl p-4 mb-6 flex flex-wrap gap-2 items-center">
-        <span className="text-xs text-text-dim mr-1">裝甲</span>
-        <button className={filterBtn(!armorFilter)} onClick={() => setArmorFilter('')}>
-          全部
-        </button>
-        {ARMOR_TYPES.map((a) => {
-          const s = ARMOR_STYLES[a]
-          const active = armorFilter === a
-          return (
-            <button
-              key={a}
-              onClick={() => setArmorFilter(active ? '' : a)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
-                active && s
-                  ? `${s.bg} ${s.text} ${s.border}`
-                  : 'bg-bg-card text-text-secondary border-border hover:border-border-accent hover:text-text-primary'
-              }`}
-            >
-              {a}
-            </button>
-          )
-        })}
+      <div className="bg-bg-card border border-border rounded-xl p-4 mb-6 flex flex-col gap-3">
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-xs text-text-dim mr-1">裝甲</span>
+          <button className={filterBtn(!armorFilter)} onClick={() => setArmorFilter('')}>
+            全部
+          </button>
+          {ARMOR_TYPES.map((a) => {
+            const s = ARMOR_STYLES[a]
+            const active = armorFilter === a
+            return (
+              <button
+                key={a}
+                onClick={() => setArmorFilter(active ? '' : a)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                  active && s
+                    ? `${s.bg} ${s.text} ${s.border}`
+                    : 'bg-bg-card text-text-secondary border-border hover:border-border-accent hover:text-text-primary'
+                }`}
+              >
+                {a}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Debut Version Filter（僅在有資料時顯示） */}
+        {versions.length > 0 && (
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-xs text-text-dim mr-1">登場版本</span>
+            <button className={filterBtn(!versionFilter)} onClick={() => setVersionFilter('')}>全部</button>
+            {versions.map((v) => (
+              <button
+                key={v}
+                onClick={() => setVersionFilter(versionFilter === v ? '' : v)}
+                className={filterBtn(versionFilter === v)}
+              >
+                v{v}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Count + View toggle */}
@@ -112,7 +158,18 @@ export default function MechsPage() {
         ) : (
           <span />
         )}
-        <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+        <div className="flex items-center gap-2">
+          <select
+            value={sortMode}
+            onChange={(e) => setSortMode(e.target.value as 'default' | 'version')}
+            aria-label="排序方式"
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium border bg-bg-card text-text-secondary border-border hover:border-border-accent hover:text-text-primary cursor-pointer outline-none focus:border-border-accent"
+          >
+            <option value="default">預設（編號）</option>
+            <option value="version">登場版本 新→舊</option>
+          </select>
+          <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+        </div>
       </div>
 
       {loading ? (

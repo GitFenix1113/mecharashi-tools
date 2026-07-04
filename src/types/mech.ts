@@ -64,6 +64,8 @@ export interface Mech {
   /** 立繪半身像路徑 */
   halfPortrait?: string
   quality?: string
+  /** 登場版本：機甲首次實裝的遊戲版本號（對應 patchVersions，如 '3.3'）；未設定＝尚未回填 */
+  debutVersion?: string
   lore?: string
 }
 

@@ -3,6 +3,7 @@ import type { ChangelogMonth } from './types'
 const jul2026: ChangelogMonth = {
   month: '2026-07',
   entries: [
+    { date: '2026-07-05', type: 'feat', summary: '機甲與機師新增「登場版本」：詳情頁顯示登場版本，圖鑑可依登場版本篩選，並可切換「登場版本 新→舊」排序' },
     { date: '2026-07-04', type: 'feat', summary: '技能新增「額外打擊」分類（以特定武器發動的追加打擊，如「越界追獵」），機師詳情頁與後台可顯示與編輯' },
     { date: '2026-07-04', type: 'feat', summary: '機師與機甲圖鑑新增「緊湊／詳細」檢視切換，預設緊湊（頭像+名）更省空間；登入後會記住各頁的檢視偏好，下次自動套用' },
     { date: '2026-07-04', type: 'feat', summary: '技能新增「PP技能」分類（消耗 PP 的技能，如「勇氣」），機師詳情頁與後台可顯示與編輯 PP 消耗' },

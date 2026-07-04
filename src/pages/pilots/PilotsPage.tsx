@@ -37,7 +37,18 @@ export default function PilotsPage() {
   const [classFilter, setClassFilter] = useState('')
   const [licenseFilter, setLicenseFilter] = useState('')
   const [rarityFilter, setRarityFilter] = useState('')
+  const [versionFilter, setVersionFilter] = useState('')
+  const [sortMode, setSortMode] = useState<'default' | 'version'>('default')
   const [viewMode, setViewMode] = useViewMode('pilots')
+
+  // 登場版本篩選選項：只列出資料中實際出現過的版本（降序）；全空時整區隱藏
+  const versions = useMemo(
+    () =>
+      Array.from(new Set(pilots.map((p) => p.debutVersion).filter(Boolean) as string[])).sort(
+        (a, b) => parseFloat(b) - parseFloat(a),
+      ),
+    [pilots],
+  )
 
   const exclusiveWeaponMap = useMemo(() => {
     const map: Record<string, { name: string; icon?: string }> = {}
@@ -54,6 +65,7 @@ export default function PilotsPage() {
       if (classFilter && p.class !== classFilter) return false
       if (licenseFilter && p.license !== licenseFilter) return false
       if (rarityFilter && p.rarity !== rarityFilter) return false
+      if (versionFilter && p.debutVersion !== versionFilter) return false
       if (search) {
         const q = search.toLowerCase()
         return p.name.toLowerCase().includes(q) || p.faction.toLowerCase().includes(q)
@@ -61,6 +73,13 @@ export default function PilotsPage() {
       return true
     })
     .sort((a, b) => {
+      // 登場版本 新→舊：有版本者依版本降序，無版本者排最後（依編號降序當次序）
+      if (sortMode === 'version') {
+        const va = a.debutVersion ? parseFloat(a.debutVersion) : -Infinity
+        const vb = b.debutVersion ? parseFloat(b.debutVersion) : -Infinity
+        if (va !== vb) return vb - va
+        return idNum(b.id) - idNum(a.id)
+      }
       const rd = (RARITY_ORDER[a.rarity] ?? 99) - (RARITY_ORDER[b.rarity] ?? 99)
       if (rd !== 0) return rd
       return idNum(b.id) - idNum(a.id)
@@ -157,6 +176,23 @@ export default function PilotsPage() {
             </button>
           ))}
         </div>
+
+        {/* Debut Version Filter（僅在有資料時顯示） */}
+        {versions.length > 0 && (
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-xs text-text-dim mr-1">登場版本</span>
+            <button className={filterBtn(!versionFilter)} onClick={() => setVersionFilter('')}>全部</button>
+            {versions.map((v) => (
+              <button
+                key={v}
+                onClick={() => setVersionFilter(versionFilter === v ? '' : v)}
+                className={filterBtn(versionFilter === v)}
+              >
+                v{v}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Count + View toggle */}
@@ -168,7 +204,18 @@ export default function PilotsPage() {
         ) : (
           <span />
         )}
-        <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+        <div className="flex items-center gap-2">
+          <select
+            value={sortMode}
+            onChange={(e) => setSortMode(e.target.value as 'default' | 'version')}
+            aria-label="排序方式"
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium border bg-bg-card text-text-secondary border-border hover:border-border-accent hover:text-text-primary cursor-pointer outline-none focus:border-border-accent"
+          >
+            <option value="default">預設（品質）</option>
+            <option value="version">登場版本 新→舊</option>
+          </select>
+          <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+        </div>
       </div>
 
       {/* Grid */}
