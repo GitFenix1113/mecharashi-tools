@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-07-04
+## [Unreleased] - 2026-07-05
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 後台新增機甲與完整編輯器（PLAN-028） (`b5d2cfe`)
 - 圖鑑排序預設改為登場版本(新→舊)，新增舊→新方向，次要依品質 (`9db04c3`)
 - 機甲/機師新增登場版本，圖鑑可篩選與排序（新→舊） (`cf760de`)
 - 技能新增「額外打擊」分類 (`8a69d0a`)
