@@ -29,7 +29,7 @@ type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpack
 // 註：backpacks / components 資料量較大，仍維持伺服器端分頁查詢（不整包載入、沿用閘門）。
 const TAB_CONFIG: Record<Tab, { keys: CollectionKey[]; searchable: boolean; selfLoading: boolean; preload: boolean }> = {
   modules:    { keys: ['modules', 'mechs'],  searchable: true,  selfLoading: false, preload: true  },
-  mechs:      { keys: ['mechs', 'modules'],  searchable: true,  selfLoading: false, preload: true  },
+  mechs:      { keys: ['mechs', 'modules', 'weapons'], searchable: true, selfLoading: false, preload: true },
   pilots:     { keys: ['pilots'],            searchable: true,  selfLoading: false, preload: true  },
   weapons:    { keys: ['weapons', 'pilots'], searchable: true,  selfLoading: false, preload: true  },
   components: { keys: [],                     searchable: true,  selfLoading: true,  preload: false },
@@ -48,6 +48,7 @@ export default function AdminPage() {
     mechs: ctxMechs,
     pilots: ctxPilots,
     modules: ctxModules,
+    weapons: ctxWeapons,
     grayOpsRoster: ctxGrayOpsRoster,
     loadedKeys,
     errorMap,
@@ -191,7 +192,7 @@ export default function AdminPage() {
           <ModuleAdmin initialSearch={searchSeed} mechs={ctxMechs} />
         )}
         {showContent && tab === 'mechs' && (
-          <MechAdmin initialSearch={searchSeed} modules={ctxModules} />
+          <MechAdmin initialSearch={searchSeed} modules={ctxModules} weapons={ctxWeapons} />
         )}
         {showContent && tab === 'pilots' && (
           <PilotAdmin initialSearch={searchSeed} />

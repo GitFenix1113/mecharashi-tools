@@ -85,6 +85,7 @@
       <tr class="group-header"><td colspan="3">▎其他</td></tr>
       <tr><td>quality</td><td>string?</td><td>機甲品質等級（如 S / A，對應遊戲品質標示）</td></tr>
       <tr><td>debutVersion</td><td>string?</td><td>登場版本：機甲首次實裝的遊戲版本號（對應 patchVersions，如 <code>3.3</code>）；未設定＝尚未回填。後台從版本清單下拉選取，圖鑑可依此篩選</td></tr>
+      <tr><td>manual</td><td>boolean?</td><td>管理者手動新增的機甲（PLAN-028）。<code>true</code> = 後台自建，爬蟲補丁模式（<code>scrape-mechs.js</code>）整筆跳過、不覆寫或刪除；純作後端防覆寫用途，前台不顯示任何標記。語意比照 <code>Pilot.manual</code></td></tr>
     </table>
   </div>
 </section>

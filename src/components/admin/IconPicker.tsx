@@ -13,7 +13,7 @@ import { resolveIconSrc } from '../../utils/assets'
  *               各後台編輯面板直接使用。
  */
 
-interface Manifest {
+export interface Manifest {
   folders: Record<string, string[]>
 }
 
@@ -21,7 +21,7 @@ interface Manifest {
 let manifestCache: Manifest | null = null
 let manifestPromise: Promise<Manifest> | null = null
 
-function loadManifest(): Promise<Manifest> {
+export function loadManifest(): Promise<Manifest> {
   if (manifestCache) return Promise.resolve(manifestCache)
   if (!manifestPromise) {
     const url = `${import.meta.env.BASE_URL}images/manifest.json`

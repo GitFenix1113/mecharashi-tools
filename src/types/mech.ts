@@ -67,6 +67,12 @@ export interface Mech {
   /** 登場版本：機甲首次實裝的遊戲版本號（對應 patchVersions，如 '3.3'）；未設定＝尚未回填 */
   debutVersion?: string
   lore?: string
+  /**
+   * 管理者手動新增的機甲（PLAN-028：官方資料更新前由後台自建）。
+   * true = 後台手動建立，爬蟲補丁模式（scrape-mechs.js）整筆跳過、不覆寫或刪除；
+   * 純作後端防覆寫用途，前台不因此顯示任何標記。語意比照 Pilot.manual。
+   */
+  manual?: boolean
 }
 
 /** 舊版部件耐久（向後相容） */
