@@ -144,7 +144,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-028 進度表</span>
   </div>
@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">9</div>
+      <div class="summary-num" style="color:var(--accent-green)">13</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -179,7 +179,7 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">9</div>
+      <div class="summary-num" style="color:var(--text-primary)">13</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,7 +187,7 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">9 / 9 · Phase A + B 完成</span>
+      <span style="color:var(--accent-orange);">13 / 13 · Phase A + B + C 完成</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 100%"></div>
@@ -403,10 +403,100 @@
   </div>
 </section>
 
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label orange">Phase C</div>
+  <div class="section-title">實測後強化（模組顯示與圖片工作流）</div>
+  <div class="section-desc">實際用破曉者-02 等特殊機甲檢視編輯器後，補上模組顯示釐清與圖片挑選／自動帶入，讓分頁對特殊機甲可讀又可編。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 固定模組顯示修正 + 唯讀專屬模組區</div>
+      <div class="task-group-meta">src/pages/user/admin/MechAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">非選項值不再誤顯示「未設定」</div>
+        <div class="task-desc">
+          <code>moduleFixedIds</code> 內含非副模組（如專屬模組）ID 時，舊下拉因無對應 option 顯示成「未設定」造成誤解。
+          改為補一個顯示用選項標出真實名稱與槽位；並新增唯讀「專屬模組」區（<code>boundMechId</code> + EXCLUSIVE 反查），
+          與前台一致，說明由「模組管理」維護。
+        </div>
+        <div class="task-file">src/pages/user/admin/MechAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 固定模組下拉納入本機甲專屬模組</div>
+      <div class="task-group-meta">src/pages/user/admin/MechAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補全「全手動特殊機甲」的死結</div>
+        <div class="task-desc">
+          <code>fixedOptions</code> 由「只有副模組」擴為「副模組 + 綁到本機甲的專屬模組」，並在選項標「（專屬）」。
+          手動新機甲的專屬模組(於模組管理設 <code>boundMechId</code>)現可在此選入 <code>moduleFixedIds</code>——
+          模擬器與模組反查以此判定搭載，缺此即半殘。
+        </div>
+        <div class="task-file">src/pages/user/admin/MechAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 部件圖片路徑欄位</div>
+      <div class="task-group-meta">src/pages/user/admin/MechAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每個部位補 icon（＋ mechaIcon）</div>
+        <div class="task-desc">
+          部件分頁四部位各補 <code>icon</code>（前台 <code>assetUrl(part.icon)</code> 渲染部件圖）與選填 <code>mechaIcon</code>（CDN 資產名）。
+          先前僅有整台立繪，遺漏部位圖路徑。
+        </div>
+        <div class="task-file">src/pages/user/admin/MechAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 圖片挑選器 + 依機甲名稱自動帶入</div>
+      <div class="task-group-meta">src/pages/user/admin/MechAdmin.tsx · src/components/admin/IconPicker.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">IconField 挑選器 + autoFillImages</div>
+        <div class="task-desc">
+          部件 <code>icon</code> 與立繪 <code>portrait</code>/<code>halfPortrait</code> 改用既有 <code>IconField</code>（預設開啟本機甲圖庫 <code>mechs/{名稱}</code>）。
+          新增「🔎 依機甲名稱自動帶入圖片」：掃 <code>manifest.json</code> 的 <code>mechs/{名稱}/</code> 標準檔名
+          （torso/leftArm/rightArm/legs/portrait/half）一次補齊路徑。<code>IconPicker</code> 匯出 <code>loadManifest</code> 供取用。
+        </div>
+        <div class="task-file">src/pages/user/admin/MechAdmin.tsx · src/components/admin/IconPicker.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-028 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-028 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 歷史記錄</a>
 </footer>
 
 </body>

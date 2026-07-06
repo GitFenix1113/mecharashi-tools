@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-026 召喚單位展示 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+.meta-value.pink   { color: var(--accent-pink); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-026 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge pink">◆ PLAN-026</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    召喚單位展示<span style="-webkit-text-fill-color:var(--text-secondary);"> · Summon · 迷你機兵 · 引用層接線</span>
+  </h1>
+  <p class="hero-sub">部分機師的特殊召喚單位（如薩普莉婭的咕咕）有自己的技能、型態與裝備；建立獨立 summons 集合並在機師頁以條件式分頁展示，天賦正文的 [咕咕] 接進引用層變成可解析實體。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label pink">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value pink">PLAN-026</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-07-04</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">types / GameDataContext / firestoreApi / PilotDetailPage / Admin / 引用層</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value pink">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-019 引用層（refType/EntityRef）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>特殊召喚單位無處展示</strong><br>
+    部分機師的天賦會「出擊時自動部署」一個獨立戰鬥單位（薩普莉婭的 <strong>咕咕</strong>）。這個單位有自己的技能組、型態切換與裝備，本質上是一個「迷你機兵」，但目前機師頁完全沒有承載它的地方，玩家只能從天賦一行文字腦補。
+  </div>
+
+  <div class="problem-block">
+    <strong>天賦正文的 [咕咕] 降級成純文字</strong><br>
+    天賦正文已寫成「出擊時自動部署<strong>[咕咕]</strong>…繼承<strong>[薩普里婭]</strong>75% 最大耐久值和 100% 的其餘屬性」。其中 [薩普里婭] 能解析成 mech，但 <strong>[咕咕] 在引用層（PLAN-019）沒有對應的 refType，只能原樣顯示成純文字</strong>，無法懸停、無法點開。
+  </div>
+
+  <div class="problem-block">
+    <strong>召喚單位資料 WIKI 也查無</strong><br>
+    官網 API 與外部 WIKI 都沒有召喚單位的結構化資料，只能<strong>人工維護</strong>。目前全遊戲僅兩個機師有召喚單位，屬長尾、低頻但深度內容。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label pink">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：獨立 <code>summons</code> 集合，而非塞進 Pilot 文件</strong><br>
+    召喚是 AI 戰鬥單位，結構近似 <code>bosses</code>（技能＋部件＋型態），比一般欄位重。關鍵理由是<strong>接進 RefType 系統</strong>：新增 <code>summon</code> refType 後，[咕咕] 在任何 description 都能解析、進 ReferenceContext 懸停浮窗——<strong>一份資料源、兩處渲染</strong>（天賦內懸停 + 分頁內展開）。比照 <code>pilotSkills</code> / <code>neuralDriveAbilities</code> 的「集合＋ID 引用」慣例，<code>ensureLoaded(['summons'])</code> 只在機師詳情頁載入，不增前台首屏；召喚改動各自 <code>bumpDataVersion('summons')</code>，不必動 pilots 版本。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：機師頁條件式第 4 分頁「召喚單位」</strong><br>
+    比照專武面板的條件式渲染——<strong>只有擁有召喚的機師才顯示這個 tab</strong>（天賦 / 技能 / 神經驅動 / 召喚單位）。分頁內版面全部<strong>複用現有元件</strong>：技能卡＝「技能」分頁的 skillrow；型態切換＝專武的「階段 I / II」切換器；裝備＝ <code>WeaponDetailContent</code> 懸停浮窗。幾乎不用做新元件。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：屬性繼承「只顯示公式」（本期不對機兵求絕對值）</strong><br>
+    召喚數值是「機兵屬性 × 繼承比例」動態算出（咕咕：最大耐久 75%、其餘屬性 100%）。本期<strong>只顯示比例公式</strong>（「來源 [薩普里婭] · 耐久 75% · 其餘 100%」），不讀機兵屬性求絕對數值。<code>SummonInheritance</code> 結構已預留 ratios/defaultRatio，未來模擬層（PLAN-019）可再對實際機兵求值。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：後台手動維護（<code>managedBy:'manual'</code>）</strong><br>
+    因為召喚單位無外部資料源，走<strong>後台手動 CRUD</strong>，比照 Boss / 手動機師（PLAN-025）的 manual 慣例——不進爬蟲補丁流程，不會被洗掉。需要一個 SummonAdmin 編輯器。技能／型態文本由管理員逐筆人工輸入，屬長期維護尾巴。
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界：技能沿用「string | 物件」過渡型別</strong><br>
+    <code>Summon.skills</code> 比照 <code>PilotSkill</code>，可為 ID 引用（<code>skill_xxx</code>）或內嵌物件。初期以內嵌為主（召喚技能多為專屬、不共享），需要時再抽到 <code>pilotSkills</code> 集合共用，向後相容。
+  </div>
+</section>
+
+<!-- 資料模型 -->
+<section class="section">
+  <div class="section-label pink">Data Model</div>
+  <div class="section-title">資料模型 <code>src/types/summon.ts</code></div>
+
+  <div class="code-block">
+<span class="cm">// ─── 召喚單位（Summon）· 複用 SkillEffect / DescriptionRefs ───</span>
+<span class="kw">export interface</span> <span class="ty">SummonStats</span> { durable?: number; armor?: number; firepower?: number; hit?: number; dodge?: number; move?: number }
+
+<span class="cm">/** 繼承規則：召喚屬性 = 機師機兵屬性 × 比例（咕咕：耐久75%、其餘100%） */</span>
+<span class="kw">export interface</span> <span class="ty">SummonInheritance</span> {
+  source: <span class="st">'mech'</span> | <span class="st">'pilot'</span>
+  ratios: Partial&lt;Record&lt;keyof SummonStats, number&gt;&gt;  <span class="cm">// { durable: 0.75 }</span>
+  defaultRatio?: number  <span class="cm">// 「其餘屬性」預設比例，咕咕 = 1.0</span>
+}
+
+<span class="kw">export interface</span> <span class="ty">SummonForm</span> {
+  name: string; icon?: string; iconLocal?: string
+  description?: string; descriptionRefs?: DescriptionRefs
+  stats?: Partial&lt;SummonStats&gt;  <span class="cm">// 此型態屬性差異</span>
+  skillIds?: string[]           <span class="cm">// 此型態可用技能子集</span>
+}
+
+<span class="kw">export interface</span> <span class="ty">SummonSkill</span> {
+  name: string; type?: string; ap?: string; cd?: string
+  description: string; descriptionRefs?: DescriptionRefs
+  icon?: string; iconLocal?: string
+  effects?: SkillEffect[]; buffIds?: string[]
+}
+
+<span class="cm">/** summons Collection 文件 · id 格式 summon_&lt;slug&gt; */</span>
+<span class="kw">export interface</span> <span class="ty">Summon</span> {
+  id: string; name: string
+  pilotId: string                   <span class="cm">// 反向連結：屬於哪個機師</span>
+  grantedByTalent?: string          <span class="cm">// '共存理論' → 天賦卡就地入口</span>
+  icon?: string; iconLocal?: string; portrait?: string
+  description?: string; descriptionRefs?: DescriptionRefs
+  baseStats?: SummonStats           <span class="cm">// 固定值部分（若有）</span>
+  inheritance?: SummonInheritance   <span class="cm">// 繼承部分</span>
+  forms?: SummonForm[]
+  skills: (string | SummonSkill)[]  <span class="cm">// 比照 PilotSkill 過渡型別</span>
+  equipmentIds?: string[]           <span class="cm">// → weapons 集合</span>
+  managedBy?: string; updatedBy?: string; updatedAt?: string
+}</div>
+
+  <div class="info-block">
+    <strong>接線清單：</strong>
+    <code>RefType</code> 加 <code>'summon'</code>（common.ts）→ <code>CollectionKey</code> 加 <code>'summons'</code> 與 switch（GameDataContext）→ 新建 <code>src/lib/api/summons.ts</code> 並在 firestoreApi barrel 補一行 → types barrel 補 <code>export * from './summon'</code> → 依規則 2 同步 <code>docs/02_技術文件/</code> 資料模型頁與 Firebase 集合文件。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label pink">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>Summon</code> 系列型別 + <code>summons</code> 集合接線（Context / api / barrel）</li>
+      <li>引用層新增 <code>summon</code> refType，[咕咕] 可解析、可懸停</li>
+      <li>機師頁條件式第 4 分頁「召喚單位」（繼承公式列 / 型態切換 / 技能卡 / 裝備，複用現有元件）</li>
+      <li>SummonAdmin 後台編輯器（手動 CRUD，<code>managedBy:'manual'</code>）</li>
+      <li>人工補建現有兩個機師的召喚單位資料（長期維護尾巴）</li>
+      <li>同步 <code>docs/02_技術文件/</code> 資料模型與 Firebase 集合文件</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>對實際機兵求召喚絕對數值（留待模擬層 PLAN-019）</li>
+      <li>爬蟲自動抓取召喚資料（無外部資料源，一律人工）</li>
+      <li>召喚單位參與傷害模擬計算（模擬層再處理）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label pink">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-026 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-026 — <a href="../index.html" style="color:var(--accent-pink);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
