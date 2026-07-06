@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import type {
   Pilot, Mech, Module, Weapon, Backpack, Component,
-  GlobalResearch,
+  GlobalResearch, GameBuff, PilotSkillDoc,
 } from '../types'
 import { ModuleSlot } from '../types/enums'
 import { useGameData, EMPTY_GLOBAL_RESEARCH, type CollectionKey } from '../contexts/GameDataContext'
@@ -198,18 +198,21 @@ export interface AllGameData {
   modules: Module[]
   components: Component[]
   globalResearch: GlobalResearch
+  /** PLAN-019-B：可達 buff 收斂用（buffs 集合 + 解析字串 ID 技能的 pilotSkills） */
+  buffs: GameBuff[]
+  pilotSkills: PilotSkillDoc[]
 }
 
-const SIMULATOR_KEYS: CollectionKey[] = ['pilots', 'mechs', 'modules', 'weapons', 'backpacks', 'components', 'globalResearch']
+const SIMULATOR_KEYS: CollectionKey[] = ['pilots', 'mechs', 'modules', 'weapons', 'backpacks', 'components', 'globalResearch', 'buffs', 'pilotSkills']
 
 export function useAllGameData(): HookResult<AllGameData | null> {
-  const { pilots, mechs, weapons, backpacks, modules, components, globalResearch } = useGameData()
+  const { pilots, mechs, weapons, backpacks, modules, components, globalResearch, buffs, pilotSkills } = useGameData()
   const { loading, error } = useCollections(SIMULATOR_KEYS)
 
   const data = useMemo<AllGameData | null>(() => {
     if (loading) return null
-    return { pilots, mechs, weapons, backpacks, modules, components, globalResearch }
-  }, [loading, pilots, mechs, weapons, backpacks, modules, components, globalResearch])
+    return { pilots, mechs, weapons, backpacks, modules, components, globalResearch, buffs, pilotSkills }
+  }, [loading, pilots, mechs, weapons, backpacks, modules, components, globalResearch, buffs, pilotSkills])
 
   return { data, loading, error }
 }

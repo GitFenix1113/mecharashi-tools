@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useCallback, useEffect } from 'react'
+﻿import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import html2canvas from 'html2canvas'
 import type {
@@ -14,9 +14,13 @@ import type {
   FloatingModSelection,
   Build,
   UserBuild,
+  SkillEffect,
 } from '../../types'
 import { useAllGameData, type AllGameData } from '../../hooks/useFirestore'
 import { getAllPilotResearch } from '../../lib/firestoreApi'
+import { buildBuffPool } from '../../utils/buffPool'
+import { resolveReachable, type ResolvedBuff } from '../../utils/reachableBuffs'
+import { resolvePilotSkills, buildSkillMap } from '../../utils/pilotSkills'
 
 type AllData = AllGameData
 import { useAuth } from '../../contexts/AuthContext'
@@ -48,6 +52,8 @@ interface SimState {
   weaponFloatingMods: FloatingModSelection[]
   triggerComponentIds: string[]
   effectComponentIds: string[]
+  /** PLAN-019-B：形態互斥組的擇一選擇（mutexGroup → 選中的 buffId） */
+  activeForms: Record<string, string>
 }
 
 const INITIAL_STATE: SimState = {
@@ -59,6 +65,7 @@ const INITIAL_STATE: SimState = {
   weaponFloatingMods: [],
   triggerComponentIds: [],
   effectComponentIds: [],
+  activeForms: {},
 }
 
 // ─── Helper components ───────────────────────────────────────────────────────
@@ -128,6 +135,7 @@ function buildToSimState(build: UserBuild): SimState {
     weaponFloatingMods: build.weaponFloatingMod ?? [],
     triggerComponentIds: build.triggerComponents ?? [],
     effectComponentIds: build.effectComponents ?? [],
+    activeForms: {},
   }
 }
 
@@ -263,6 +271,13 @@ export default function SimulatorPage() {
     })
   }
 
+  const setActiveForm = (mutexGroup: string, buffId: string) => {
+    setState((prev) => ({
+      ...prev,
+      activeForms: { ...prev.activeForms, [mutexGroup]: buffId },
+    }))
+  }
+
   // ─── Export ──────────────────────────────────────────────────────────────
 
   const handleExport = async () => {
@@ -379,6 +394,7 @@ export default function SimulatorPage() {
             onExport={handleExport}
             user={user}
             onSave={handleSaveBuild}
+            onSetForm={setActiveForm}
           />
         )}
       </div>
@@ -765,6 +781,29 @@ function ComponentsStep({
   )
 }
 
+// ── PLAN-019-B：buff 效果加總輔助 ───────────────────────────────────────────────
+
+/** 取一個 ResolvedBuff 在指定 level 的 effects（階梯 buff 取該級；無階梯取頂層） */
+function buffLevelEffects(rb: ResolvedBuff): SkillEffect[] {
+  const { buff, level } = rb
+  if (buff.levels && buff.levels.length > 0) {
+    const lv = level != null ? buff.levels.find((l) => l.level === level) : undefined
+    return (lv ?? buff.levels[buff.levels.length - 1]).effects ?? []
+  }
+  return buff.effects ?? []
+}
+
+/** 把多個 active buff 的 effects 依 stat 加總（v1 僅 add；override 留待 Phase 7 傷害公式處理） */
+function aggregateEffects(buffs: ResolvedBuff[]): { stat: string; value: number }[] {
+  const sum = new Map<string, number>()
+  for (const rb of buffs) {
+    for (const e of buffLevelEffects(rb)) {
+      sum.set(e.stat, (sum.get(e.stat) ?? 0) + e.value)
+    }
+  }
+  return [...sum.entries()].map(([stat, value]) => ({ stat, value }))
+}
+
 function ResultStep({
   data,
   state,
@@ -778,6 +817,7 @@ function ResultStep({
   onExport,
   user,
   onSave,
+  onSetForm,
 }: {
   data: AllData
   state: SimState
@@ -791,6 +831,7 @@ function ResultStep({
   onExport: () => void
   user: import('firebase/auth').User | null
   onSave: (buildName: string) => Promise<void>
+  onSetForm: (mutexGroup: string, buffId: string) => void
 }) {
   const [buildName, setBuildName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -813,9 +854,63 @@ function ResultStep({
   const triggerComps = data.components.filter((c): c is TriggerComponent => state.triggerComponentIds.includes(c.id) && c.componentType === 'Condition')
   const effectComps = data.components.filter((c): c is EffectComponent => state.effectComponentIds.includes(c.id) && c.componentType === 'Function')
 
+  // ── PLAN-019-B：可達 buff 收斂 ──────────────────────────────────────────────
+  const reachable = useMemo(() => {
+    const skillMap = buildSkillMap(data.pilotSkills)
+    const skills = resolvePilotSkills(pilot?.skills, skillMap)
+    const pool = buildBuffPool({ pilot, skills, modules, weapon, backpack })
+    const buffMap = new Map(data.buffs.map((b) => [b.id, b]))
+    return resolveReachable(pool, buffMap)
+  }, [data.pilotSkills, data.buffs, pilot, modules, weapon, backpack])
+
+  // 形態互斥組：未選時預設取第一個 option；產出「目前 active 的形態 buff」清單
+  const activeFormBuffs = reachable.formGroups.map((g) => {
+    const chosenId = state.activeForms[g.mutexGroup] ?? g.options[0]?.buff.id
+    return g.options.find((o) => o.buff.id === chosenId) ?? g.options[0]
+  })
+  // active buff 集 = 固定 buff + 各形態組擇一
+  const activeBuffs: ResolvedBuff[] = [...reachable.fixed, ...activeFormBuffs.filter(Boolean)]
+  const aggregatedEffects = aggregateEffects(activeBuffs)
+  const hasReachable = reachable.formGroups.length > 0 || reachable.fixed.length > 0
+
   return (
     <div>
       <h2 className="text-lg font-bold mb-4">配裝結果</h2>
+
+      {/* 形態切換（PLAN-019-B：mutexGroup 擇一）*/}
+      {reachable.formGroups.length > 0 && (
+        <div className="bg-bg-card border border-border rounded-xl p-4 mb-6">
+          <div className="text-sm font-bold text-accent-purple mb-3">形態切換</div>
+          <div className="space-y-3">
+            {reachable.formGroups.map((g) => {
+              const chosenId = state.activeForms[g.mutexGroup] ?? g.options[0]?.buff.id
+              return (
+                <div key={g.mutexGroup}>
+                  <div className="flex flex-wrap gap-2">
+                    {g.options.map((o) => (
+                      <button
+                        key={o.buff.id}
+                        onClick={() => onSetForm(g.mutexGroup, o.buff.id)}
+                        title={o.origins.join('、')}
+                        className={`px-3 py-1.5 rounded-lg text-xs border transition-colors cursor-pointer ${
+                          chosenId === o.buff.id
+                            ? 'bg-accent-purple/15 text-accent-purple border-accent-purple/40'
+                            : 'bg-bg-dark text-text-secondary border-border hover:border-border-accent'
+                        }`}
+                      >
+                        {o.buff.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="text-[13px] text-text-dim mt-3">
+            同一形態組一次只能存在一個（互斥）；切換會即時反映在下方「可達增益」。
+          </div>
+        </div>
+      )}
 
       {/* Export card */}
       <div ref={exportRef} className="bg-bg-dark border border-border rounded-xl p-6 mb-6" style={{ minWidth: 600 }}>
@@ -891,6 +986,39 @@ function ResultStep({
               <div className="text-xs text-text-dim">未配置</div>
             )}
           </div>
+        </div>
+
+        {/* 可達增益（PLAN-019-B）：active buff + 效果加總 */}
+        <div className="bg-bg-card rounded-lg p-3 border border-border mb-4">
+          <div className="text-[13px] text-accent-orange uppercase tracking-wider mb-2">可達增益</div>
+          {hasReachable ? (
+            <>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {activeBuffs.map((rb) => (
+                  <span
+                    key={rb.buff.id}
+                    className="text-[13px] px-2 py-0.5 rounded bg-accent-purple/10 text-accent-purple border border-accent-purple/30"
+                  >
+                    {rb.buff.name}
+                    {rb.level != null && <span className="opacity-70"> Lv.{rb.level}</span>}
+                  </span>
+                ))}
+              </div>
+              {aggregatedEffects.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-0.5">
+                  {aggregatedEffects.map((e) => (
+                    <div key={e.stat} className="text-[13px] text-text-secondary">
+                      {e.stat}: <span className="text-accent-green">+{e.value}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-[13px] text-text-dim">此配裝的可達 buff 尚無結構化數值效果</div>
+              )}
+            </>
+          ) : (
+            <div className="text-sm text-text-dim text-center py-2">此配裝無可達增益</div>
+          )}
         </div>
 
         {/* Damage placeholder */}

@@ -80,8 +80,8 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <div class="meta-item"><a href="計畫書.html" style="color:var(--accent-purple);font-size:13px;font-weight:600;">→ 計畫書</a></div>
   </div>
 
-  <div class="progress-bar"><div class="progress-bar-fill" style="width:80%;"></div></div>
-  <div class="progress-percent">約 80%（2026-06-28 已 descope BOSS/關卡 Layer 3）— 總綱型別 + 019-A 引用層 + 019-C 詞條庫/RefPicker + 019-E 插入引用 UI（四面板）+ 019-F BUFF 後台 已落地。殘項收斂為 <strong>019-B 模擬可達性</strong> + <strong>019-E 稽核/儀表</strong> + 總綱文件；019-D（BOSS/關卡）整層移轉 <a href="../PLAN-010_攻略系統/計畫書.html" style="color:var(--accent-cyan);">PLAN-010 攻略系統</a></div>
+  <div class="progress-bar"><div class="progress-bar-fill" style="width:90%;"></div></div>
+  <div class="progress-percent">約 90%（2026-06-30 019-B 可達性引擎落地）— 總綱型別 + 019-A 引用層 + 019-B 模擬可達性（反向索引/收斂/Buff 面板）+ 019-C 詞條庫/RefPicker + 019-E 插入引用 UI（四面板）+ 019-F BUFF 後台 已落地。殘項收斂為 <strong>019-E 稽核/儀表</strong> + 總綱文件（傷害數字本身屬 Phase 7，非本總綱）；019-D（BOSS/關卡）整層移轉 <a href="../PLAN-010_攻略系統/計畫書.html" style="color:var(--accent-cyan);">PLAN-010 攻略系統</a></div>
 
   <!-- 總綱基礎 -->
   <div class="section-h">總綱基礎 <span class="badge badge-progress">IN PROGRESS</span></div>
@@ -131,12 +131,12 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">RefPicker 後台填值 UI（PLAN-019-C 落地）：詞條管理與技能效果可直接把 [xxx] 標成可點引用</span><span class="task-meta">components/admin/RefPicker.tsx</span></li>
   </ul>
 
-  <div class="phase-label">PLAN-019-B · BUFF / 形態圖（Layer 2）<span class="badge badge-progress" style="margin-left:8px;">核心殘項</span></div>
-  <div class="phase-note">由配裝 buffIds[] 建立反向索引，模擬器只提供可達 buff，再依互斥機制收斂。<strong>descope BOSS/關卡後的最高價值殘項</strong>，亦是 PLAN-023 N3-3（晶片→能力 buffIds 注入）的共同接點。</div>
+  <div class="phase-label">PLAN-019-B · BUFF / 形態圖（Layer 2）<span class="badge badge-done" style="margin-left:8px;">DONE</span></div>
+  <div class="phase-note">由配裝 buffIds[] 建立反向索引，模擬器只提供可達 buff，再依互斥機制收斂。引擎為純函式（<code>src/utils/buffPool.ts</code> + <code>reachableBuffs.ts</code>，9 項單測），UI 落在配裝模擬器結果頁。亦是 PLAN-023 N3-3（晶片→能力 buffIds 注入）的共同接點。<br><strong>備註：</strong>面板顯示「可達增益 + 效果加總」已完成；最終<strong>傷害數字</strong>仍待 Phase 7 傷害公式；引擎需資料端填妥形態 buff（如海莉絲虛/實粒子 + <code>mutexGroup</code>）才看得到內容（剩填值，非工程）。</div>
   <ul class="task-list">
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">反向索引：可用 buff 池 = ⋃ 配裝實體 buffIds[]（buffIds 帶 <code>@N</code> 指定階梯級，見 PLAN-024 buffRef）</span></li>
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">可達集收斂 — <strong>兩種分立互斥機制</strong>：① <code>mutexGroup</code> 形態擇一（虛粒子 ⟷ 實粒子）；② 同 buff 多 <code>level</code> 取最高（PLAN-024 階梯 buff，<strong>取代舊「階梯共用 mutexGroup」用法</strong>）</span><span class="task-meta">PLAN-024 後更新</span></li>
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">模擬器 Buff 面板：形態 active 切換、SkillEffect 加總 → 面板輸出</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">反向索引：可用 buff 池 = ⋃ 配裝實體 buffIds[]（buffIds 帶 <code>@N</code> 指定階梯級，見 PLAN-024 buffRef）</span><span class="task-meta">utils/buffPool.ts</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">可達集收斂 — <strong>兩種分立互斥機制</strong>：① <code>mutexGroup</code> 形態擇一（虛粒子 ⟷ 實粒子）；② 同 buff 多 <code>level</code> 取最高（PLAN-024 階梯 buff，<strong>取代舊「階梯共用 mutexGroup」用法</strong>）；查無 buff 進 unresolved 優雅降級</span><span class="task-meta">utils/reachableBuffs.ts</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">模擬器 Buff 面板：形態 active 切換 + 可達增益顯示 + SkillEffect 依 stat 加總（buffs/pilotSkills 納入 useAllGameData 預載）</span><span class="task-meta">SimulatorPage · useFirestore</span></li>
   </ul>
 
   <div class="phase-label">PLAN-019-C · 詞條庫<span class="badge badge-done" style="margin-left:8px;">DONE</span></div>
@@ -172,7 +172,7 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">AdminPage「BUFF 管理」分頁 + BuffAdmin 面板：列表/新增/編輯，buffType 下拉 + effects 編輯器 + 描述掛 RefPicker（複用 SkillEffectItem / RefPicker / shared）</span><span class="task-meta">AdminPage · BuffAdmin.tsx</span></li>
   </ul>
 
-  <div class="updated">最後更新：2026-06-28 · 019-D（BOSS/關卡）descope 移轉 PLAN-010；殘項收斂為 019-B + 019-E 稽核 + 總綱文件</div>
+  <div class="updated">最後更新：2026-06-30 · 019-B 可達性引擎（buffPool/reachableBuffs + 模擬器 Buff 面板）落地；殘項收斂為 019-E 稽核 + 總綱文件</div>
 
 </div>
 
