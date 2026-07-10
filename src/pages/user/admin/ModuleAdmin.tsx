@@ -177,6 +177,9 @@ function ModuleLevelItem({
   onRemove: () => void
 }) {
   const [collapsed, setCollapsed] = useState(index > 0)
+  // 子區塊預設收合：打開某個 LV 時，兩大串數值欄位先摺起，只先看描述 / 引用（需要時再展開）
+  const [statsCollapsed, setStatsCollapsed] = useState(true)
+  const [weaponCollapsed, setWeaponCollapsed] = useState(true)
 
   function upd<K extends keyof ModuleLevel>(key: K, value: ModuleLevel[K]) {
     onChange({ ...levelData, [key]: value })
@@ -202,15 +205,30 @@ function ModuleLevelItem({
 
       {!collapsed && (
         <div className="px-3 pb-3 border-t border-border/40 pt-2.5 space-y-2.5">
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="等級 level">
-              <input type="number" value={levelData.level} onChange={(e) => upd('level', Number(e.target.value))} className="input-field" />
-            </Field>
-            <Field label="效果描述 description">
-              <input type="text" value={levelData.description} onChange={(e) => upd('description', e.target.value)} className="input-field" />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
+          <Field label="等級 level">
+            <input type="number" value={levelData.level} onChange={(e) => upd('level', Number(e.target.value))} className="input-field w-24" />
+          </Field>
+          <Field label="效果描述 description">
+            <textarea value={levelData.description} onChange={(e) => upd('description', e.target.value)} className="input-field min-h-[110px] resize-y" />
+          </Field>
+          <RefPicker
+            text={levelData.description}
+            value={levelData.descriptionRefs}
+            onChange={(refs) => upd('descriptionRefs', refs)}
+            onCompileText={(tf) => upd('description', tf(levelData.description))}
+          />
+
+          <div className="pt-2 border-t border-border/40">
+            <button
+              type="button"
+              onClick={() => setStatsCollapsed(!statsCollapsed)}
+              className="flex items-center gap-2 w-full text-left mb-2"
+            >
+              <span className="text-[13px] text-text-dim w-3">{statsCollapsed ? '▶' : '▼'}</span>
+              <span className="text-[13px] text-text-dim font-medium tracking-wider uppercase">各項能力</span>
+            </button>
+            {!statsCollapsed && (
+            <div className="grid grid-cols-2 gap-2">
             <Field label="增傷 (%)"><input type="number" value={levelData.dmg} onChange={(e) => upd('dmg', Number(e.target.value))} className="input-field" /></Field>
             <Field label="暴擊率"><input type="number" value={levelData.crit_rate} onChange={(e) => upd('crit_rate', Number(e.target.value))} className="input-field" /></Field>
             <Field label="暴擊傷害 (%)"><input type="number" value={levelData.critDmg} onChange={(e) => upd('critDmg', Number(e.target.value))} className="input-field" /></Field>
@@ -222,9 +240,19 @@ function ModuleLevelItem({
             <Field label="回避率 (%)"><input type="number" value={levelData.dodge_rate} onChange={(e) => upd('dodge_rate', Number(e.target.value))} className="input-field" /></Field>
             <Field label="耐久 (%)"><input type="number" value={levelData.durable_rate} onChange={(e) => upd('durable_rate', Number(e.target.value))} className="input-field" /></Field>
             <Field label="傷害降低 (%)"><input type="number" value={levelData.dmg_resist_rate} onChange={(e) => upd('dmg_resist_rate', Number(e.target.value))} className="input-field" /></Field>
+            </div>
+            )}
           </div>
           <div className="pt-2 border-t border-border/40">
-            <p className="text-[13px] text-text-dim font-medium tracking-wider uppercase mb-2">武器專屬增傷 (%)</p>
+            <button
+              type="button"
+              onClick={() => setWeaponCollapsed(!weaponCollapsed)}
+              className="flex items-center gap-2 w-full text-left mb-2"
+            >
+              <span className="text-[13px] text-text-dim w-3">{weaponCollapsed ? '▶' : '▼'}</span>
+              <span className="text-[13px] text-text-dim font-medium tracking-wider uppercase">武器專屬增傷 (%)</span>
+            </button>
+            {!weaponCollapsed && (
             <div className="grid grid-cols-2 gap-2">
               <Field label="突擊"><input type="number" value={levelData.dmg_assault ?? 0} onChange={(e) => upd('dmg_assault', Number(e.target.value))} className="input-field" /></Field>
               <Field label="格鬥"><input type="number" value={levelData.dmg_melee ?? 0} onChange={(e) => upd('dmg_melee', Number(e.target.value))} className="input-field" /></Field>
@@ -248,6 +276,7 @@ function ModuleLevelItem({
               <Field label="反擊"><input type="number" value={levelData.dmg_counter ?? 0} onChange={(e) => upd('dmg_counter', Number(e.target.value))} className="input-field" /></Field>
               <Field label="敵方階段"><input type="number" value={levelData.dmg_enemy_phase ?? 0} onChange={(e) => upd('dmg_enemy_phase', Number(e.target.value))} className="input-field" /></Field>
             </div>
+            )}
           </div>
         </div>
       )}
@@ -335,8 +364,11 @@ function ModuleEditPanel({
               <input value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" />
             </Field>
             <IconField label="圖示 icon" value={form.icon} onChange={(v) => update('icon', v || undefined)} defaultFolder="modules" />
-            <Field label="效果描述">
-              <textarea value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field min-h-[150px] resize-y" />
+            <Field label="效果描述（滿等效果）">
+              <p className="text-[12px] text-text-dim mb-1.5 leading-relaxed">
+                此處填<span className="text-accent-yellow">滿等（最高等級）</span>的效果描述，會直接顯示在前台模組卡片上；各等級的差異值另在「等級資料」分頁維護。
+              </p>
+              <textarea value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field min-h-[180px] resize-y" />
             </Field>
             <RefPicker
               text={form.description}

@@ -8,7 +8,8 @@ import type { MechPart, Module } from '../../types'
 import { MechPartPosition } from '../../types/enums'
 import { assetUrl } from '../../utils/assets'
 import { useMechWithModules } from '../../hooks/useFirestore'
-import { STAT_LABELS, highlightNumbers } from '../../utils/moduleStats'
+import { STAT_LABELS } from '../../utils/moduleStats'
+import { RefText } from '../../components/RefText'
 
 const ARMOR_STYLES: Record<string, string> = {
   輕型: 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/40',
@@ -56,7 +57,7 @@ function LevelTooltipRows({ mod }: { mod: Module }) {
               Lv.{lv.level}
             </span>
             {lv.description && (
-              <span className="text-[14px] text-text-secondary leading-tight">{highlightNumbers(lv.description)}</span>
+              <span className="text-[14px] text-text-secondary leading-tight"><RefText text={lv.description} refs={lv.descriptionRefs ?? mod.descriptionRefs} /></span>
             )}
           </div>
           {activeStats.length > 0 && (
@@ -169,7 +170,7 @@ function ModuleCard({ mod, showBoundPart, isPinned, onEnter, onLeave, onClick }:
       )}
 
       <p className="text-xs text-text-secondary leading-relaxed whitespace-pre-line">
-        {highlightNumbers(mod.description ?? '')}
+        <RefText text={mod.description} refs={mod.descriptionRefs} />
       </p>
 
       {(mod.dmg > 0 || (mod.crit_rate ?? 0) > 0 || mod.critDmg > 0 || (mod.acc_rate ?? 0) > 0

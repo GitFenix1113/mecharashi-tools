@@ -3,6 +3,7 @@ import type { ChangelogMonth } from './types'
 const jul2026: ChangelogMonth = {
   month: '2026-07',
   entries: [
+    { date: '2026-07-10', type: 'feat', summary: '機甲詳情頁的模組效果、以及各等級效果浮窗補上引用懸浮視窗，可查看描述中連結的 BUFF／技能詳情（原本僅模組圖鑑頁支援）' },
     { date: '2026-07-10', type: 'feat', summary: '模組、背包圖鑑與機甲詳情頁的釘選浮窗可拖曳：釘選後抓標題列即可移動視窗到順手的位置，方便同時對照多筆資料' },
     { date: '2026-07-07', type: 'feat', summary: '配裝模擬器結果頁新增「形態切換」與「可達增益」：依當前配裝自動收斂出可觸發的 BUFF，虛／實粒子等互斥形態可一鍵切換，並即時加總各項數值效果' },
     { date: '2026-07-06', type: 'style', summary: '更新莫比烏斯X的機甲部件圖示' },

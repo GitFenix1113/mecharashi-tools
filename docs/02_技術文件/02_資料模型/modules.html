@@ -166,6 +166,7 @@
       <tr class="group-header"><td colspan="3">▎各等級資料 levels[]（特性/8級/通用模組有；副模組為空陣列）</td></tr>
       <tr><td>&nbsp;├ level</td><td>number</td><td>等級上限（該筆資料的最高等級，如 4 代表此為 4 級時的數值）</td></tr>
       <tr><td>&nbsp;├ description</td><td>string</td><td>該等級的效果描述文字（腳本自動從 API 擷取）</td></tr>
+      <tr><td>&nbsp;├ descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-019 Layer 1：該等級描述內 [xxx] → 實體引用側錄；後台可逐等級指派，前台 RefText 未命中時回退父模組 descriptionRefs</td></tr>
       <tr><td>&nbsp;├ dmg</td><td>number</td><td>該等級增傷加成（預設 0）</td></tr>
       <tr><td>&nbsp;├ crit_rate</td><td>number</td><td>該等級暴擊率加成</td></tr>
       <tr><td>&nbsp;├ critDmg</td><td>number</td><td>該等級暴擊傷害加成</td></tr>

@@ -4,7 +4,7 @@ import { assetUrl } from '../../utils/assets'
 import { useModules, useMechNameMap, useMechs } from '../../hooks/useFirestore'
 import { ModuleSlot, ModuleRarity, MechPartPosition } from '../../types/enums'
 import type { Module, Mech } from '../../types'
-import { STAT_LABELS, highlightNumbers } from '../../utils/moduleStats'
+import { STAT_LABELS } from '../../utils/moduleStats'
 import { BottomSheet } from '../../components/BottomSheet'
 import { RefText } from '../../components/RefText'
 import { useIsMobile } from '../../hooks/useIsMobile'
@@ -52,7 +52,7 @@ function LevelTooltipRows({ mod }: { mod: Module }) {
               Lv.{lv.level}
             </span>
             {lv.description && (
-              <span className="text-[14px] text-text-secondary leading-tight">{highlightNumbers(lv.description)}</span>
+              <span className="text-[14px] text-text-secondary leading-tight"><RefText text={lv.description} refs={lv.descriptionRefs ?? mod.descriptionRefs} /></span>
             )}
           </div>
           {activeStats.length > 0 && (

@@ -21,6 +21,8 @@ export interface ConditionalEffect {
 export interface ModuleLevel {
   level: number
   description: string
+  /** 該等級描述內 [xxx] 引用側錄（PLAN-019 Layer 1）；未設定時前台回退用父模組 Module.descriptionRefs */
+  descriptionRefs?: DescriptionRefs
   dmg: number
   crit_rate: number
   critDmg: number
