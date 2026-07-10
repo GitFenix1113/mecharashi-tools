@@ -8,6 +8,7 @@ import { STAT_LABELS, highlightNumbers } from '../../utils/moduleStats'
 import { BottomSheet } from '../../components/BottomSheet'
 import { RefText } from '../../components/RefText'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import { useDragOffset } from '../../hooks/useDragOffset'
 
 const SLOT_LABELS: Record<string, string> = {
   [ModuleSlot.SLOT_4]:    '特性模組',
@@ -90,7 +91,11 @@ function LevelTooltip({ mod, pinned, mobile = false }: { mod: Module; pinned: bo
 
   return (
     <div className="w-72 max-h-[min(90vh,_600px)] flex flex-col bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
-      <div className="flex items-center justify-between mb-3 flex-shrink-0">
+      <div
+        data-drag-handle
+        className={`flex items-center justify-between mb-3 flex-shrink-0 ${pinned ? 'cursor-move select-none' : ''}`}
+        title={pinned ? '拖曳標題可移動視窗' : undefined}
+      >
         <span className="text-xs font-bold text-accent-orange">{mod.name}</span>
         <span className="text-[13px] text-text-dim">各等級效果{pinned ? ' · 📌' : ''}</span>
       </div>
@@ -115,6 +120,7 @@ function TooltipPortal({ mod, pinned, x, anchorTop }: {
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [top, setTop] = useState(anchorTop)
+  const { offset, dragging, dragHandlers } = useDragOffset(pinned, mod.id)
 
   useLayoutEffect(() => {
     if (!ref.current) return
@@ -125,9 +131,10 @@ function TooltipPortal({ mod, pinned, x, anchorTop }: {
   return createPortal(
     <div
       ref={ref}
-      className={`fixed z-50 ${pinned ? 'pointer-events-auto' : 'pointer-events-none'}`}
-      style={{ left: x, top }}
+      className={`fixed z-50 ${pinned ? 'pointer-events-auto' : 'pointer-events-none'} ${dragging ? 'select-none' : ''}`}
+      style={{ left: x + offset.dx, top: top + offset.dy, touchAction: pinned ? 'none' : undefined }}
       onClick={(e) => e.stopPropagation()}
+      {...(pinned ? dragHandlers : {})}
     >
       <LevelTooltip mod={mod} pinned={pinned} />
     </div>,

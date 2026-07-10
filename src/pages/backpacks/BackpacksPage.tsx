@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useBackpacks } from '../../hooks/useFirestore'
 import { BottomSheet } from '../../components/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import { useDragOffset } from '../../hooks/useDragOffset'
 import {
   BACKPACK_TYPE_CONFIG,
   ASSEMBLABLE_ARMOR_CONFIG,
@@ -54,7 +55,7 @@ function SkillIcon({ icon, name }: { icon?: string; name: string }) {
   )
 }
 
-function BackpackTooltipContent({ bp }: { bp: Backpack }) {
+function BackpackTooltipContent({ bp, pinned = false }: { bp: Backpack; pinned?: boolean }) {
   const armorLabel =
     bp.assemblableArmorType.length === 0
       ? '無限制'
@@ -64,8 +65,12 @@ function BackpackTooltipContent({ bp }: { bp: Backpack }) {
 
   return (
     <>
-      {/* Header */}
-      <div className="flex items-start gap-3 mb-3 flex-shrink-0">
+      {/* Header（釘選時兼作拖曳把手） */}
+      <div
+        data-drag-handle
+        className={`flex items-start gap-3 mb-3 flex-shrink-0 ${pinned ? 'cursor-move select-none' : ''}`}
+        title={pinned ? '拖曳標題可移動視窗' : undefined}
+      >
         <BackpackIcon icon={bp.icon} name={bp.name} rarity={bp.rarity} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-1">
@@ -160,7 +165,7 @@ function BackpackTooltip({ bp, pinned }: { bp: Backpack; pinned: boolean }) {
   return (
     <div className="w-80 max-h-[min(90vh,_600px)] flex flex-col bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
       <div className="flex-1 min-h-0 overflow-y-auto p-1">
-        <BackpackTooltipContent bp={bp} />
+        <BackpackTooltipContent bp={bp} pinned={pinned} />
       </div>
       {bp.mainSkill?.descriptionRefs && Object.keys(bp.mainSkill.descriptionRefs).length > 0 && (
         <p className="text-[13px] text-text-dim mt-2 text-center flex-shrink-0">
@@ -180,6 +185,7 @@ interface TooltipState {
 function TooltipPortal({ bp, pinned, x, anchorTop }: { bp: Backpack; pinned: boolean; x: number; anchorTop: number }) {
   const ref = useRef<HTMLDivElement>(null)
   const [top, setTop] = useState(anchorTop)
+  const { offset, dragging, dragHandlers } = useDragOffset(pinned, bp.id)
 
   useLayoutEffect(() => {
     if (!ref.current) return
@@ -190,9 +196,10 @@ function TooltipPortal({ bp, pinned, x, anchorTop }: { bp: Backpack; pinned: boo
   return createPortal(
     <div
       ref={ref}
-      className={`fixed z-50 ${pinned ? 'pointer-events-auto' : 'pointer-events-none'}`}
-      style={{ left: x, top }}
+      className={`fixed z-50 ${pinned ? 'pointer-events-auto' : 'pointer-events-none'} ${dragging ? 'select-none' : ''}`}
+      style={{ left: x + offset.dx, top: top + offset.dy, touchAction: pinned ? 'none' : undefined }}
       onClick={(e) => e.stopPropagation()}
+      {...(pinned ? dragHandlers : {})}
     >
       <BackpackTooltip bp={bp} pinned={pinned} />
     </div>,
