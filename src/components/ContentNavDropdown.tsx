@@ -12,11 +12,12 @@ import {
 } from '@floating-ui/react'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import NavIcon, { type NavIconName } from './icons/NavIcon'
 
 export interface ContentNavItem {
   to: string
   label: string
-  icon: string
+  icon: NavIconName
 }
 
 /**
@@ -79,7 +80,7 @@ export default function ContentNavDropdown({ label, items }: { label: string; it
                   }`
                 }
               >
-                <span className="text-base leading-none">{item.icon}</span>
+                <NavIcon name={item.icon} className="w-4 h-4 shrink-0" />
                 {item.label}
               </NavLink>
             ))}

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import AvatarDisplay from './profile/AvatarDisplay'
 import ContentNavDropdown, { type ContentNavItem } from './ContentNavDropdown'
+import NavIcon from './icons/NavIcon'
 
 // 友站：英文版 Mecharashi Wiki（對稱其站內指回本站的連結）
 const FRIEND_SITE_URL = 'https://mecharashi-wiki.cc/'
@@ -11,37 +12,37 @@ type FontSize = 'sm' | 'md' | 'lg'
 const FONT_SIZE_MAP: Record<FontSize, string> = { sm: '17px', md: '19px', lg: '21px' }
 const FONT_SIZE_LABELS: Record<FontSize, string> = { sm: '小', md: '中', lg: '大' }
 
-// 桌面版直接平鋪的頂層項目（首頁）
-const navItems = [
-  { to: '/', label: '首頁', icon: '🏠' },
+// 桌面版直接平鋪的頂層項目（首頁）。桌機頂層只顯示文字，icon 供行動版共用。
+const navItems: ContentNavItem[] = [
+  { to: '/', label: '首頁', icon: 'home' },
 ]
 
 // 「資料圖鑑」下拉的子項：桌面版以 ContentNavDropdown 懸停展開，行動版攤平進 More 面板
 const catalogNavItems: ContentNavItem[] = [
-  { to: '/pilots', label: '機師', icon: '👤' },
-  { to: '/mechs', label: '機甲', icon: '🤖' },
-  { to: '/weapons', label: '武器', icon: '🔫' },
-  { to: '/backpacks', label: '背包', icon: '🎒' },
-  { to: '/modules', label: '模組', icon: '🧩' },
-  { to: '/components', label: '元件', icon: '⚙️' },
+  { to: '/pilots', label: '機師', icon: 'pilot' },
+  { to: '/mechs', label: '機甲', icon: 'mech' },
+  { to: '/weapons', label: '武器', icon: 'weapon' },
+  { to: '/backpacks', label: '背包', icon: 'backpack' },
+  { to: '/modules', label: '模組', icon: 'module' },
+  { to: '/components', label: '元件', icon: 'component' },
 ]
 
 // 配裝模擬器：頂層平鋪項，僅管理員可見
-const simulatorItem = { to: '/simulator', label: '配裝模擬器', icon: '⚔️' }
+const simulatorItem: ContentNavItem = { to: '/simulator', label: '配裝模擬器', icon: 'simulator' }
 
 // 「攻略專區」下拉的子項
 const contentNavItems: ContentNavItem[] = [
-  { to: '/guides', label: '攻略', icon: '📚' },
-  { to: '/tools', label: '工具', icon: '🛠️' },
-  { to: '/documents', label: '文件', icon: '📄' },
+  { to: '/guides', label: '攻略', icon: 'guide' },
+  { to: '/tools', label: '工具', icon: 'tool' },
+  { to: '/documents', label: '文件', icon: 'doc' },
 ]
 
-const tabBarItems = [
-  { to: '/', label: '首頁', icon: '🏠' },
-  { to: '/pilots', label: '機師', icon: '👤' },
-  { to: '/mechs', label: '機甲', icon: '🤖' },
-  { to: '/weapons', label: '武器', icon: '🔫' },
-  { to: '/modules', label: '模組', icon: '🧩' },
+const tabBarItems: ContentNavItem[] = [
+  { to: '/', label: '首頁', icon: 'home' },
+  { to: '/pilots', label: '機師', icon: 'pilot' },
+  { to: '/mechs', label: '機甲', icon: 'mech' },
+  { to: '/weapons', label: '武器', icon: 'weapon' },
+  { to: '/modules', label: '模組', icon: 'module' },
 ]
 
 const tabBarPaths = new Set(tabBarItems.map((i) => i.to))
@@ -219,7 +220,7 @@ export default function Layout() {
                   className="lg:hidden w-8 h-8 rounded-full flex items-center justify-center bg-accent-orange/10 text-accent-orange border border-accent-orange/30 hover:bg-accent-orange/20 transition-colors cursor-pointer"
                   aria-label="登入 / 註冊"
                 >
-                  🔑
+                  <NavIcon name="key" className="w-4 h-4" />
                 </button>
               </>
             )}
@@ -284,7 +285,7 @@ export default function Layout() {
                 }`
               }
             >
-              <span className="text-2xl">{item.icon}</span>
+              <NavIcon name={item.icon} className="w-6 h-6" />
               <span className="text-xs">{item.label}</span>
             </NavLink>
           ))}
@@ -297,9 +298,10 @@ export default function Layout() {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setMoreOpen(false)}
-            className="block w-full py-2 text-sm text-center rounded-lg transition-colors no-underline text-text-secondary hover:text-accent-orange hover:bg-bg-card"
+            className="flex items-center justify-center gap-2 w-full py-2 text-sm text-center rounded-lg transition-colors no-underline text-text-secondary hover:text-accent-orange hover:bg-bg-card"
           >
-            🌐 EN Wiki（英文版友站）↗
+            <NavIcon name="globe" className="w-4 h-4" />
+            EN Wiki（英文版友站）↗
           </a>
         </div>
 
@@ -310,14 +312,15 @@ export default function Layout() {
               to="/admin"
               onClick={() => setMoreOpen(false)}
               className={({ isActive }) =>
-                `block w-full py-2 text-sm text-center rounded-lg transition-colors no-underline ${
+                `flex items-center justify-center gap-2 w-full py-2 text-sm text-center rounded-lg transition-colors no-underline ${
                   isActive
                     ? 'bg-accent-purple/15 text-accent-purple'
                     : 'text-accent-purple/70 hover:text-accent-purple hover:bg-accent-purple/10'
                 }`
               }
             >
-              🛠️ 後台管理
+              <NavIcon name="admin" className="w-4 h-4" />
+              後台管理
             </NavLink>
           </div>
         )}
@@ -340,9 +343,10 @@ export default function Layout() {
             ) : (
               <button
                 onClick={() => { setMoreOpen(false); openAuthModal() }}
-                className="w-full py-2.5 rounded-xl text-sm font-medium bg-accent-orange/10 text-accent-orange border border-accent-orange/30 hover:bg-accent-orange/20 transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium bg-accent-orange/10 text-accent-orange border border-accent-orange/30 hover:bg-accent-orange/20 transition-colors cursor-pointer"
               >
-                🔑 登入 / 註冊
+                <NavIcon name="key" className="w-4 h-4" />
+                登入 / 註冊
               </button>
             )
           )}
@@ -366,7 +370,7 @@ export default function Layout() {
                 }`
               }
             >
-              <span className="text-xl leading-none">{item.icon}</span>
+              <NavIcon name={item.icon} className="w-5 h-5" />
               <span className="text-[10px] leading-none">{item.label}</span>
             </NavLink>
           ))}
@@ -378,7 +382,7 @@ export default function Layout() {
               moreOpen || isMoreActive ? 'text-accent-orange' : 'text-text-dim hover:text-text-primary'
             }`}
           >
-            <span className="text-xl leading-none">≡</span>
+            <NavIcon name="menu" className="w-5 h-5" />
             <span className="text-[10px] leading-none">更多</span>
           </button>
         </div>
