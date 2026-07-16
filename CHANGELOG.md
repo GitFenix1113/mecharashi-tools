@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-07-10
+## [Unreleased] - 2026-07-16
 
 ### ⚠ 重大變更
 
@@ -174,6 +174,7 @@
 
 ### 🎨 樣式
 
+- 導覽列圖示改用單色線性 SVG 取代 emoji (`4ea97b5`)
 - 機師神經驅動插槽改用顏色標示晶片類型 (`a241ba4`)
 - 首頁版本速覽表「武裝生產」卡片移除 overflow-hidden，縮圖名稱浮窗不再被裁切 (`45c3996`)
 - 首頁「網站更新履歷」改版（橙色強調＋查看全部改年／月分頁） (`518ead8`)
