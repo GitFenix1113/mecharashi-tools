@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-030 資料變更歷史 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-030 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-030</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    資料變更歷史<span style="-webkit-text-fill-color:var(--text-secondary);"> — Change History · 級聯清除 · 快照還原</span>
+  </h1>
+  <p class="hero-sub">後台 BUFF／技能／詞條補上刪除功能：刪除時級聯清乾淨全站引用、不留混亂資料；刪除快照同時記下「被刪的文件」與「被移除的每一處引用」，可一鍵還原。所有異動寫入僅可新增的 changeHistory 集合，依「集合 × 操作」雙軸分類，並以 Firestore 原生 TTL 自動保留兩年。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label green">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value green">PLAN-030</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-07-18</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">新增 changeHistory 集合 · api/{buffs,skills,glossary} · 新增級聯清除與還原引擎 · GameDataContext · 三個後台分頁 · firestore.rules / indexes / TTL · 本地模擬器環境</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">Firebase Blaze 方案（TTL 政策） · Firebase Emulator Suite（Phase 0 自建）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>一句話：</strong>先蓋好稽核，再開放刪除，而且刪除要<strong>刪得乾淨、也救得回來</strong>。新增一個只能寫入的 <code>changeHistory</code> 集合作為所有後台資料異動的黑盒子；刪除實體時級聯清除全站對它的引用，並把「被刪文件 + 每一處被移除的引用」一併寫進快照，形成一份可反向套用的還原單。底層做成集合無關，日後其餘 8 個集合各補一行即可接上。
+  </div>
+
+  <div class="warning-block">
+    <strong>規模提醒：</strong>本計畫在初版（純 log + 刪除按鈕 + 警示）之上，追加了<strong>級聯清除</strong>與<strong>快照還原</strong>兩項要求，工程量約為初版的兩倍，且從「單文件寫入」升級為「跨集合多文件交易」。Phase C／F 是全新增加的核心複雜度來源，若需要縮減範圍，這兩個階段是唯一有意義的切點（見文末「分期取捨」）。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>① 後台從來沒有刪除功能</strong><br>
+    三個管理分頁（<code>BuffAdmin</code> / <code>SkillAdmin</code> / <code>GlossaryAdmin</code>）目前只有新增與編輯。全 repo 唯一的 <code>deleteDoc</code> 出現在 <code>src/lib/userApi.ts</code> 的 <code>deleteBuild()</code>（使用者刪自己的配裝），<strong>11 個遊戲資料集合一律沒有任何刪除路徑</strong>。誤建的 BUFF、測試用詞條、改版後作廢的技能只能放著或改名重用，垃圾資料逐月累積且會出現在引用挑選器的候選清單裡干擾維護。
+  </div>
+
+  <div class="problem-block">
+    <strong>② 任何資料異動都無跡可循</strong><br>
+    現行寫入是 <code>setDoc(ref, data)</code> <strong>不帶 <code>{ merge: true }</code></strong>，等於整份文件覆寫，舊值在寫入當下就消失。誰、在什麼時候、改了哪個 BUFF、改動了哪些欄位，系統裡沒有留下任何痕跡。
+  </div>
+
+  <div class="problem-block">
+    <strong>③ 引用散布在 9 個集合，刪除會留下大量斷裂關聯</strong><br>
+    BUFF／技能／詞條是<strong>被大量引用的底層實體</strong>。實際盤點後，可能持有引用的欄位散布在 <code>pilots</code>（天賦、技能、神驅等級三處）、<code>pilotSkills</code>、<code>buffs</code>（BUFF 互相引用）、<code>weapons</code>、<code>modules</code>、<code>backpacks</code>、<code>components</code>、<code>glossaryTerms</code>、<code>neuralDriveAbilities</code> 共 9 個集合。刪除若不處理引用，這些關聯全部變成指向空氣的死連結。
+  </div>
+
+  <div class="problem-block">
+    <strong>④ 「新增」與「修改」在程式上分不出來</strong><br>
+    <code>updateBuff</code> / <code>updatePilotSkill</code> / <code>updateGlossaryTerm</code> <strong>沒有獨立的 create 函式</strong>——建立與修改是同一個 <code>setDoc</code> 呼叫，UI 只在建立前用 <code>docExists()</code> 擋同名碰撞。稽核若要分辨這兩種操作，API 層必須自己取得寫入前的舊文件。
+  </div>
+
+  <div class="problem-block">
+    <strong>⑤ log 會無限成長</strong><br>
+    每次存檔都寫一筆記錄，且 append-only 規則下前端無法清理。若不設保留策略，這個集合只會單調增長，最終拖累儲存成本與查詢效率。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：獨立頂層集合 <code>changeHistory</code>，完全隔離在快取層之外</strong><br>
+    不做成各集合的 subcollection，也<strong>不註冊進 <code>CollectionKey</code></strong>。理由：前台永遠不需要讀這份 log，而 <code>GameDataContext</code> 的版本 gate 三層快取是為「整包載入、長期不變的靜態遊戲資料」設計的；log 是<strong>持續成長、只查最近幾頁</strong>的資料，塞進那套快取只會白白撐爆 localStorage。因此它是專案裡唯一一個「後台專用、走伺服器分頁、不進 GameDataContext」的集合。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：append-only 規則 — 連管理員都不能改自己的 log</strong><br>
+    現有集合一律是 <code>allow write: if isAdmin();</code>，而 <code>write</code> 涵蓋 create／update／delete。log 若沿用這套，管理員就能竄改或抹除自己的操作記錄，稽核價值歸零。改用：
+    <div class="code-block">
+<span class="fn">match</span> /changeHistory/{docId} {
+  <span class="kw">allow</span> read:   <span class="kw">if</span> <span class="fn">isAdmin</span>();   <span class="cm">// 僅管理員可讀（不像遊戲資料公開）</span>
+  <span class="kw">allow</span> create: <span class="kw">if</span> <span class="fn">isAdmin</span>();   <span class="cm">// 只能新增，寫下去就定型</span>
+  <span class="kw">allow</span> update, delete: <span class="kw">if</span> <span class="kw">false</span>;
+}</div>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：雙軸分類用兩個獨立欄位，不用複合字串</strong><br>
+    分類軸為<strong>集合類型</strong>（<code>target</code>）×<strong>操作類型</strong>（<code>action</code>）。關鍵是這兩者<strong>必須是各自獨立的 top-level 欄位</strong>，不能圖方便寫成 <code>'buff:create'</code> 這種複合字串——Firestore 的 <code>where</code> 只能對獨立欄位做等值比對，複合字串一旦寫死，就永遠無法查詢「所有集合的刪除記錄」。
+    <div class="code-block">
+<span class="cm">// src/types/changeHistory.ts</span>
+<span class="kw">export type</span> <span class="ty">ChangeAction</span>     = <span class="st">'create'</span> | <span class="st">'update'</span> | <span class="st">'delete'</span> | <span class="st">'restore'</span>
+<span class="kw">export type</span> <span class="ty">ChangeTargetKind</span> = <span class="st">'buff'</span> | <span class="st">'pilotSkill'</span> | <span class="st">'glossaryTerm'</span>  <span class="cm">// 可擴充</span>
+
+<span class="kw">export interface</span> <span class="ty">ChangeHistoryEntry</span> {
+  <span class="nm">id</span>:          <span class="ty">string</span>             <span class="cm">// Firestore 自動 ID（log 無自然 slug）</span>
+  <span class="nm">target</span>:      <span class="ty">ChangeTargetKind</span>   <span class="cm">// 分類軸一</span>
+  <span class="nm">action</span>:      <span class="ty">ChangeAction</span>       <span class="cm">// 分類軸二</span>
+  <span class="nm">targetId</span>:    <span class="ty">string</span>
+  <span class="nm">targetName</span>:  <span class="ty">string</span>             <span class="cm">// 去正規化，查 log 免 join</span>
+  <span class="nm">actorUid</span>:    <span class="ty">string</span>
+  <span class="nm">actorName</span>:   <span class="ty">string</span>             <span class="cm">// displayName 快照（改名後仍看得懂是誰）</span>
+  <span class="nm">at</span>:          <span class="ty">Timestamp</span>          <span class="cm">// serverTimestamp()</span>
+  <span class="nm">expireAt</span>:    <span class="ty">Timestamp</span>          <span class="cm">// at + 2 年，交給原生 TTL（決策九）</span>
+  <span class="nm">changedFields</span>?: <span class="ty">string</span>[]       <span class="cm">// 僅 update</span>
+  <span class="nm">snapshot</span>?:  <span class="ty">DeleteSnapshot</span>     <span class="cm">// 僅 delete（決策六）</span>
+  <span class="nm">restoredFrom</span>?: <span class="ty">string</span>          <span class="cm">// 僅 restore：來源 log 文件 ID</span>
+}</div>
+    需要三組複合索引：<code>(target, at↓)</code>、<code>(action, at↓)</code>、<code>(target, action, at↓)</code>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：寫入前先讀一次 pre-image，用「舊文件是否存在」判定 create / update</strong><br>
+    針對問題④。寫入前多做一次 <code>fetchDocument()</code>：回傳 <code>null</code> → <code>create</code>；有值 → <code>update</code>，並用這份 pre-image 做淺層 key 比對算出 <code>changedFields</code>。<br>
+    <strong>成本：每次存檔 +1 read。</strong>已確認可接受——後台編輯與刪除都不是經常性行為。<br>
+    <strong>不採用：</strong>從 UI 傳 <code>isNew</code> 旗標（省 1 read，但拿不到 pre-image，等於放棄 <code>changedFields</code>，且同一 helper 無法供刪除快照複用）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：級聯清除引用 — 引用是「側錄表」設計，可外科手術式移除</strong><br>
+    盤點後發現一個決定可行性的關鍵事實：引用採<strong>錨點與綁定分離</strong>的側錄表設計。<code>[虛粒子形態]</code> 這個錨點在文案字串裡，但真正的綁定關係存在<strong>獨立的結構化欄位</strong> <code>descriptionRefs</code>：
+    <div class="code-block">
+<span class="cm">// src/types/common.ts</span>
+<span class="kw">export type</span> <span class="ty">DescriptionRefs</span> = <span class="ty">Record</span>&lt;<span class="ty">string</span>, <span class="ty">EntityRef</span>&gt;
+<span class="cm">// key = 括號內文字，value = { refType, refId, label?, level? }</span>
+
+<span class="cm">// 實際儲存形狀</span>
+<span class="nm">description</span>:     <span class="st">"進入[虛粒子形態]，可疊加&lt;buff_凝勢.lv3.maxStack&gt;層"</span>
+<span class="nm">descriptionRefs</span>: { <span class="nm">虛粒子形態</span>: { <span class="nm">refType</span>: <span class="st">'buff'</span>, <span class="nm">refId</span>: <span class="st">'buff_虛粒子形態'</span> } }
+                  <span class="cm">// └─ 結構化 map，delete refs[key] 即可，完全不必動文案</span></div>
+    因此四類引用全部可機械移除：<code>descriptionRefs</code> map key、<code>buffIds[]</code> 陣列元素、<code>termRef</code> 純量欄位、<code>abilityId</code> 純量欄位。<br>
+    <strong>可直接複用：</strong><code>src/utils/buffPool.ts</code> 的 <code>buildBuffPool()</code> 已經在走訪全站每一個 <code>buffIds</code> 站點來建反向索引——級聯清除需要的 traversal 與它完全相同，不需從零寫。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策五之附帶地雷（實作務必注意）</strong><br>
+    <strong>① <code>buffIds</code> 帶 <code>@N</code> 等級後綴：</strong>陣列元素可能是 <code>"buff_傷害提升@3"</code>（PLAN-024）。用字串相等過濾會讓它在刪除 <code>buff_傷害提升</code> 後<strong>存活下來變成死連結</strong>。必須先用既有的 <code>parseBuffRef()</code>（<code>src/utils/buffRef.ts</code>）解析出 <code>buffId</code> 再比對。<br>
+    <strong>② <code>Pilot.skills</code> 是 <code>(string | PilotSkill)[]</code> 聯合型別：</strong>PLAN-004 遷移中途狀態，同一陣列裡可能混有「ID 字串」與「內嵌物件」兩種形態，走訪必須兩種都處理。<code>buffPool.ts:62-68</code> 有現成的處理範式可抄。<br>
+    <strong>③ 引用站點清單必須與 <code>buffPool.ts</code> 保持同步：</strong>兩處各走各的會逐漸偏移。實作時應讓級聯清除與 <code>buildBuffPool</code> 共用同一份站點定義。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：數值 token 用「凍結」而非移除，讓文字層也變成可機械處理</strong><br>
+    唯一不可機械移除的是內嵌在文案字串裡的數值 token：<code>&lt;buff_凝勢.lv3.maxStack&gt;</code>。要移除它就得改寫文案，風險高。<br>
+    <strong>解法：</strong>既有的 <code>resolveNumRefs(text, lookup)</code>（<code>src/utils/numRefs.ts</code>）本來就能把 token 換算成實際數值——刪除前先對受影響文案跑一次，把<strong>最後已知數值烘焙進文字</strong>：
+    <div class="code-block">
+<span class="cm">// 刪除 buff_凝勢 之前</span>
+<span class="st">"可疊加&lt;buff_凝勢.lv3.maxStack&gt;層，持續&lt;buff_凝勢.lv3.duration&gt;回合"</span>
+<span class="cm">// 凍結後（token 就地變成常數，不再依賴已刪的 BUFF）</span>
+<span class="st">"可疊加5層，持續3回合"</span></div>
+    這個函式原本是為 <code>DiffHighlight</code> 預處理寫的，但它正好就是「在來源消失前把值固定下來」所需要的原語，幾乎是一行呼叫。<br>
+    <strong>取捨：</strong>凍結後的文字失去動態連動（日後改 BUFF 數值不會跟著變），但來源都要被刪了，本來也連動不了。<strong>凍結前的原始文字必須存進快照</strong>，否則還原時無法復原成 token 形式。<br>
+    <strong>不採用「留著讓它顯示 <code>?</code>」：</strong>系統確實有優雅降級（未解析的 token 顯示為淡色 <code>?</code> 加 tooltip），但那個 <code>?</code> 對管理員與使用者而言看起來就是 bug，不符合「不造成資料混亂」的要求。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：刪除快照 ＝ 文件本體 ＋ 反向修補單，且反向修補單天然冪等</strong><br>
+    初版快照只存被刪文件本身，那不足以還原引用。改為三段式：
+    <div class="code-block">
+<span class="kw">export interface</span> <span class="ty">DeleteSnapshot</span> {
+  <span class="nm">doc</span>:     <span class="ty">Record</span>&lt;<span class="ty">string</span>, <span class="ty">unknown</span>&gt;   <span class="cm">// ① 被刪文件完整內容</span>
+  <span class="nm">patches</span>: <span class="ty">ReversePatch</span>[]             <span class="cm">// ② 每一處被移除的引用</span>
+}
+<span class="kw">export interface</span> <span class="ty">ReversePatch</span> {
+  <span class="nm">coll</span>:      <span class="ty">string</span>     <span class="cm">// 'pilots'</span>
+  <span class="nm">docId</span>:     <span class="ty">string</span>     <span class="cm">// 'pilot_艾達'</span>
+  <span class="nm">path</span>:      <span class="ty">string</span>     <span class="cm">// 'talents.2.buffIds' / 'talents.2.descriptionRefs.凝勢'</span>
+  <span class="nm">op</span>:        <span class="st">'arrayRemove'</span> | <span class="st">'mapKeyDelete'</span> | <span class="st">'fieldClear'</span> | <span class="st">'textFreeze'</span>
+  <span class="nm">value</span>:     <span class="ty">unknown</span>    <span class="cm">// 被移除的原值（textFreeze 存凍結前原始文字）</span>
+}</div>
+    <strong>關鍵性質：前三種 op 的還原都是「把元素加回集合」，天然冪等。</strong>這讓還原不需要比對整份文件是否未被改動（那等於做時光機），只需檢查「該欄位現在還缺不缺這個值」——缺就補、已有就跳過。衝突處理因此從「時光機」降級為「補一個缺項」，複雜度大幅下降。<br>
+    <code>textFreeze</code> 是唯一非冪等的（覆寫字串），還原時需比對現值是否仍等於凍結後的文字，不等於就跳過並報告。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策八：刪除是跨集合多文件交易，用 WriteBatch 保證原子性</strong><br>
+    一次刪除實際包含：1 次目標文件 <code>deleteDoc</code> + N 次引用來源 <code>update</code> + 1 次 log 寫入。若非原子，中途失敗會留下「文件刪了但引用還在」或反之的半殘狀態——比不做級聯更糟。<br>
+    <strong>做法：</strong>用 <code>writeBatch()</code> 把目標刪除與所有引用清除包成單一原子提交。<br>
+    <strong>硬限制：Firestore batch 上限 500 個操作。</strong>需防呆：引用站點數 + 1 若超過 500，中止操作並提示管理員（實務上單一 BUFF 被 500 處以上引用極不可能，但不能無聲截斷）。<br>
+    <strong>log 寫入刻意排在 batch 之外</strong>：沿用決策十的原則，log 失敗不得回滾已成功的資料操作。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策九：log 保留策略用 Firestore 原生 TTL，<u>不</u>寫 Cloud Function</strong><br>
+    針對問題⑤。雖然已有 Blaze 方案可用 Cloud Function，但原生 TTL 在這個場景嚴格更優：
+    <table class="impact-table">
+      <tr><th>項目</th><th>原生 TTL</th><th>Cloud Function 排程</th></tr>
+      <tr><td>找出過期文件</td><td><span class="badge-good">不需查詢</span></td><td>要 query，<strong>每筆計 read</strong></td></tr>
+      <tr><td>刪除</td><td>計 delete</td><td>計 delete</td></tr>
+      <tr><td>執行成本</td><td><span class="badge-good">無</span></td><td>Function 調用 + Cloud Scheduler</td></tr>
+      <tr><td>程式碼</td><td><span class="badge-good">零，純設定</span></td><td>要寫、部署、維護</td></tr>
+    </table>
+    官方文件明載「TTL delete operations count towards your document delete costs」，且<strong>不另計 read</strong>——而 Function 方案必須先讀出來才知道刪誰。你擔心的流量負擔在 TTL 方案下基本不存在。<br>
+    <strong>做法：</strong>寫入時多存 <code>expireAt = at + 2 年</code>，在 <code>changeHistory</code> 上設一條 TTL 政策指向該欄位。因此「筆數上限」的備案<strong>不需要了</strong>。
+  </div>
+
+  <div class="info-block">
+    <strong>決策九的兩個關鍵細節（容易踩雷）</strong><br>
+    <strong>① TTL 與 append-only 規則不衝突。</strong>安全規則只約束 client SDK；TTL 是後端程序，不受 <code>allow delete: if false</code> 影響。兩者可以同時存在——這正是理想組合：<strong>前端永遠刪不掉，但系統會自己過期清理</strong>。<br>
+    <strong>② TTL 欄位要設單欄位索引豁免。</strong>官方明確警告索引 timestamp 欄位會造成寫入 hotspot。<code>expireAt</code> 從不參與查詢（只有 TTL 程序讀它），保留自動索引純屬浪費且有害。<br>
+    <strong>③ 刪除延遲約 24 小時</strong>，過期文件在被實際清除前仍會出現在查詢結果。對 log 檢視而言無影響。<br>
+    <strong>④ TTL 一併帶走還原能力：</strong>兩年後 log 被清除，快照也隨之消失。誤刪兩年後才想還原並不現實，屬可接受取捨，但需明確知道。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策十：log 寫入失敗絕不可擋住主操作</strong><br>
+    順序固定為「主寫入成功 → 才寫 log」，且 <code>logChange()</code> <strong>不被 await</strong>、內部 <code>.catch()</code> 吞掉錯誤只在 console 警告——沿用既有 <code>bumpDataVersion(...).catch(() =&gt; '')</code> 的慣例。<br>
+    理由：稽核 log 是輔助設施。若因規則未部署、索引缺失或網路瞬斷導致 log 寫入失敗就讓存檔丟出錯誤，管理員會誤以為資料沒存進去而重複操作。<br>
+    <strong>代價：</strong>極端情況下會漏記。<strong>但刪除是例外</strong>——刪除的 log 承載還原用的快照，漏記等於永久失去救回能力，因此刪除路徑的 log 採<strong>先寫 log、再執行 batch</strong> 的順序，log 寫失敗則中止刪除。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十一：<code>GameDataContext</code> 補上 <code>removeCollectionItem</code></strong><br>
+    現有的 <code>patchCollectionItem</code> 是 <strong>upsert-only</strong>。刪除後若不做對稱處理，被刪項目會殘留在記憶體 state 與 localStorage 快取，直到手動 reload。<br>
+    <strong>級聯清除讓這件事變複雜：</strong>被改動的不只目標集合，還有多達 9 個引用來源集合。逐一 patch 不切實際，做法是對<strong>所有被觸及的集合</strong>呼叫 <code>bumpDataVersion</code>，讓其餘 client 自然失效；編輯者自己則直接對受影響集合走一次 reload。正確性優先於 read 數最佳化——刪除是低頻操作。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十二：測試用 Firebase Emulator Suite，<u>不</u>在網站埋開發後門</strong><br>
+    Phase C／F 是本計畫風險最高的部分，需要 AGENT 能進入管理介面實測。曾考慮「埋一個開發用旗標讓 AGENT 免登入 ADMIN」，<strong>評估後否決</strong>，改用官方模擬器：
+    <table class="impact-table">
+      <tr><th>比較項</th><th>開發後門</th><th>Emulator Suite</th></tr>
+      <tr>
+        <td>資料隔離</td>
+        <td><span class="badge-high">無</span>——繞過驗證後動的仍是正式資料庫</td>
+        <td><span class="badge-good">完全隔離</span>，本機獨立實例</td>
+      </tr>
+      <tr>
+        <td>安全規則</td>
+        <td><span class="badge-high">未受測</span>——繞過驗證＝<code>isAdmin()</code> 不執行</td>
+        <td><span class="badge-good">原封不動執行</span>，真的測到</td>
+      </tr>
+      <tr>
+        <td>production 風險</td>
+        <td><span class="badge-high">永久存在</span>——<code>import.meta.env.DEV</code> 是編譯期旗標，build 模式設錯即為線上活後門</td>
+        <td><span class="badge-good">零</span>——不留任何東西在 prod</td>
+      </tr>
+    </table>
+    <strong>關鍵：需求其實有兩個</strong>——① AGENT 要能進管理介面 ② 不要影響真實資料庫。<strong>後門只解決①</strong>，而模擬器兩個一起解決。更要命的是本計畫正好要新增一組全新的 append-only 規則（A-3），其核心就是 <code>isAdmin()</code>；用「關掉待測機制」的方式去測試待測機制，等於沒測。
+  </div>
+
+  <div class="info-block">
+    <strong>為什麼這個專案用模擬器特別便宜（三個關鍵事實）</strong><br>
+    <strong>① <code>role</code> 存在 Firestore 文件而非 custom claim。</strong>路徑是 <code>users/{uid}/profile/main</code>（<code>src/lib/userApi.ts:18</code>），所以「偽造管理員」＝<strong>寫一份 JSON 文件</strong>，不需要 mint token、不需要 <code>setCustomUserClaims</code>、不需要 client 端 claim 刷新。<br>
+    <strong>② <code>firestore.rules</code> 的 <code>isAdmin()</code> 讀的是同一份文件。</strong>因此規則檔<strong>原封不動</strong>就能在模擬器運作，種一個 <code>role: 'OWNER'</code> 同時滿足 client UI 與規則兩邊。<br>
+    <strong>③ 所有寫入腳本都走 Admin SDK。</strong><code>firebase-admin</code> 會自動識別 <code>FIRESTORE_EMULATOR_HOST</code> / <code>FIREBASE_AUTH_EMULATOR_HOST</code> 環境變數，<strong>匯出兩個環境變數即改指模擬器，零程式碼改動</strong>。<br>
+    另：<code>docs/02_技術文件/04_Firebase/Firebase設定與資料更新指南.html</code> 已提議過 <code>VITE_USE_EMULATOR</code> 旗標，本決策與既有意圖一致，非另起爐灶。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策十三：把可測邏輯盡量推成純函式，模擬器只驗證真正需要資料庫的部分</strong><br>
+    盤點後發現 Phase C／F 的高風險邏輯<strong>絕大多數是純函式</strong>，不需要驗證、不需要資料庫：
+    <table class="impact-table">
+      <tr><th>純函式（<code>node --test</code> 即可）</th><th>需要模擬器（整合測試）</th></tr>
+      <tr>
+        <td>
+          <code>findReferences()</code> 全站掃描<br>
+          <strong><code>@N</code> 後綴比對</strong>（風險表 HIGH 項）<br>
+          反向修補單產生<br>
+          <strong>修補單冪等重加</strong>（還原核心）<br>
+          數值 token 凍結
+        </td>
+        <td>
+          WriteBatch 原子性<br>
+          500 操作上限攔截<br>
+          append-only 安全規則<br>
+          端到端刪除→還原往返
+        </td>
+      </tr>
+    </table>
+    左欄涵蓋了還原正確性的主要風險，而且專案已有 5 個純函式測試（<code>src/utils/*.test.ts</code>）可直接沿用其模式與 fixture 寫法。<strong>這讓 Phase F 的風險在模擬器就緒前就能先降下來。</strong><br>
+    <strong>注意：</strong>模擬器整合測試會是本專案<strong>第一個非純函式測試</strong>——現有 5 個測試皆無 mock、無 async、不碰 Firestore。這是在建立新模式而非延伸既有模式，需自行處理 setup/teardown。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label green">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>changeHistory</code> 集合：型別、API、append-only 規則、三組複合索引、TTL 政策 + 索引豁免</li>
+      <li>集合無關的 <code>saveWithHistory</code> / <code>deleteWithHistory</code> 通用 helper</li>
+      <li>BUFF／技能／詞條的 create／update／delete／restore 稽核接線</li>
+      <li><strong>全站引用掃描與級聯清除</strong>（9 個集合、四類引用站點）</li>
+      <li><strong>數值 token 凍結</strong>（刪除前烘焙最後已知值，原文存快照）</li>
+      <li><strong>反向修補單與還原引擎</strong>（冪等重加 + 衝突跳過並報告）</li>
+      <li>刪除確認對話框（列出將被清除的引用清單）與三個分頁接線</li>
+      <li>變更歷史檢視頁：雙軸篩選、伺服器分頁、快照展開、還原入口</li>
+      <li><strong>本地 Firebase Emulator 環境</strong>：連線分支、模擬器管理員種子、真實資料切片匯入、AGENT 可獨立操作</li>
+      <li><strong>純函式單元測試</strong>（掃描／<code>@N</code> 比對／修補單產生與冪等重加）與<strong>模擬器整合測試</strong></li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>其餘 8 個集合的接線</strong>——底層已通用，日後每集合各補一行</li>
+      <li><strong>修改操作的還原</strong>——只有 delete 存快照，update 僅記 <code>changedFields</code>（見下方取捨）</li>
+      <li><strong>還原被凍結文字的自動重新連動</strong>——還原會把文字還原成 token 形式，但若期間 BUFF 數值已變，值會直接跟著新值走</li>
+      <li><strong>前台任何呈現</strong>——純後台功能，規則層即擋住非管理員</li>
+      <li><strong>Cloud Function</strong>——決策九已論證原生 TTL 更優，本計畫不引入 Function</li>
+      <li><strong>任何形式的開發後門 / 免驗證管理員捷徑</strong>——決策十二已否決，改用模擬器。此項明列於此以免日後又被當成待辦撿回來</li>
+      <li><strong>正式資料庫的寫入測試</strong>——所有 Phase C／F 的破壞性驗證一律在模擬器進行；對 prod 僅有一次唯讀匯出（資料切片）</li>
+      <li><strong>爬蟲／migrate 腳本寫入的稽核</strong>——走 Admin SDK 不經前端 API 層；批次寫入逐筆記 log 會瞬間灌爆集合</li>
+      <li><strong>未上線的 bosses / stages 集合</strong>——型別已存在但無規則、無 CollectionKey、無 API，掃描站點暫不涵蓋（PLAN-019 Layer 3 上線時補）</li>
+    </ul>
+  </div>
+
+  <div class="info-block">
+    <strong>為什麼 update 不存 before 快照：</strong>BUFF／技能含 <code>levels[]</code> 等巢狀結構，每筆修改存完整前後快照會讓 log 迅速膨脹，而修改的追溯需求通常「知道誰動了哪些欄位」就足以定位。刪除則是不可逆操作，必須留完整後路。若日後發現不夠用，加一個選填 <code>before</code> 欄位即可，不影響已寫入的舊 log。
+  </div>
+</section>
+
+<!-- 風險 -->
+<section class="section">
+  <div class="section-label red">Risk</div>
+  <div class="section-title">風險與注意事項</div>
+
+  <table class="impact-table">
+    <tr><th>風險</th><th>等級</th><th>對策</th></tr>
+    <tr>
+      <td><code>buffIds</code> 的 <code>@N</code> 後綴造成漏清，死連結存活</td>
+      <td><span class="badge-high">HIGH</span></td>
+      <td>一律用 <code>parseBuffRef()</code> 解析後比對，禁止字串相等。此項需單元測試覆蓋</td>
+    </tr>
+    <tr>
+      <td>級聯清除中途失敗留下半殘狀態</td>
+      <td><span class="badge-high">HIGH</span></td>
+      <td>決策八的 WriteBatch 原子提交 + 500 操作上限防呆</td>
+    </tr>
+    <tr>
+      <td>掃描站點與 <code>buffPool.ts</code> 偏移，漏掃某些欄位</td>
+      <td><span class="badge-high">HIGH</span></td>
+      <td>兩者共用同一份站點定義，不各自維護一份走訪邏輯</td>
+    </tr>
+    <tr>
+      <td>刪除的 log 寫入失敗 → 永久失去還原能力</td>
+      <td><span class="badge-med">MID</span></td>
+      <td>刪除路徑例外處理：先寫 log 再執行 batch，log 失敗則中止刪除（決策十）</td>
+    </tr>
+    <tr>
+      <td>索引／TTL 未部署導致查詢失敗或 log 無限成長</td>
+      <td><span class="badge-med">MID</span></td>
+      <td>Phase A 就把規則、索引、TTL 政策一起部署，先於任何寫入接線</td>
+    </tr>
+    <tr>
+      <td><code>stripUndefined</code> 會破壞 <code>serverTimestamp()</code> 哨兵</td>
+      <td><span class="badge-med">MID</span></td>
+      <td>它遞迴走物件，會把哨兵拆成普通物件。<strong>log 寫入路徑一律不經過它</strong></td>
+    </tr>
+    <tr>
+      <td><strong>模擬器旗標未生效，AGENT 帶著管理員權限打到正式資料庫</strong></td>
+      <td><span class="badge-high">HIGH</span></td>
+      <td>這是引入模擬器後<strong>最危險的失誤模式</strong>。對策：連線分支必須<strong>大聲</strong>——啟動時 console 橫幅 + 畫面上常駐可見的環境標示，讓「現在連的是哪個庫」一眼可辨，絕不做成靜默切換</td>
+    </tr>
+    <tr>
+      <td>IndexedDB 持久快取殘留正式資料，污染模擬器測試</td>
+      <td><span class="badge-med">MID</span></td>
+      <td><code>persistentLocalCache</code> 目前無條件啟用，切到模擬器後會端出先前快取的<strong>正式</strong>資料。模擬器模式必須停用持久快取（與 App Check 同一個分支處理）</td>
+    </tr>
+    <tr>
+      <td>還原時來源文件已被編輯，造成覆蓋</td>
+      <td><span class="badge-low">LOW</span></td>
+      <td>決策七的冪等設計：只補缺項不覆寫；<code>textFreeze</code> 比對現值不符則跳過並報告</td>
+    </tr>
+    <tr>
+      <td>反向修補單過大撐爆單文件 1 MiB</td>
+      <td><span class="badge-low">LOW</span></td>
+      <td>估算：100 處引用約 20 KB，遠低於上限。與 500 操作上限同一道防呆即可攔截</td>
+    </tr>
+  </table>
+</section>
+
+<!-- 分期取捨 -->
+<section class="section">
+  <div class="section-label yellow">Tradeoff</div>
+  <div class="section-title">分期取捨（若需縮減範圍）</div>
+
+  <div class="info-block">
+    本計畫的複雜度幾乎全部集中在 <strong>Phase C（級聯清除）</strong> 與 <strong>Phase F（還原）</strong>。若想先讓功能上線，這是唯一有意義的切法：
+    <table class="impact-table">
+      <tr><th>方案</th><th>含括階段</th><th>結果</th></tr>
+      <tr>
+        <td>最小可用</td>
+        <td>A + B + D + E</td>
+        <td>有稽核、有刪除、有歷史檢視。引用不清除，靠既有優雅降級（<code>[xxx]</code> 顯示為純文字、數值顯示 <code>?</code>）。<strong>不符合「不造成資料混亂」的要求</strong>，僅作為緊急上線選項</td>
+      </tr>
+      <tr>
+        <td>不含還原</td>
+        <td>A + B + C + D + E</td>
+        <td>引用清得乾淨、快照也完整存下（含反向修補單），只是<strong>還原需人工照著快照操作</strong>。省下 Phase F，但保留日後隨時補上的能力</td>
+      </tr>
+      <tr>
+        <td>完整（目前規劃）</td>
+        <td>A~F 全部</td>
+        <td>刪得乾淨、救得回來</td>
+      </tr>
+    </table>
+    建議：<strong>「不含還原」是性價比最高的停損點</strong>。因為只要 Phase C 的反向修補單有確實寫進快照，Phase F 隨時可以補做，且補做時不需回頭改動任何既有程式。
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label green">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-030 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-019 實體引用與模擬基礎</h4>
+      <p>EntityRef 側錄表設計——級聯清除可行性的根本原因</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-024_BUFF等級化重構/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-024 BUFF 等級化重構</h4>
+      <p><code>@N</code> 後綴與 <code>.lvN</code> token 的來源——級聯清除的主要地雷</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-030 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

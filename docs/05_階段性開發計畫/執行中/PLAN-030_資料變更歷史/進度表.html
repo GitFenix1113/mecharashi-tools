@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-030 資料變更歷史 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-030 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-030</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> — 資料變更歷史</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-07-18</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label green">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">32</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">32</div>
+      <div class="summary-lbl">總任務（31 開發 · 1 AGENT）</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-green);">0 / 32</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    後台終於能刪除誤建的 BUFF／技能／詞條，刪除時全站引用一併清乾淨、不留死連結；每一次異動都留下無法竄改的記錄，誤刪可從快照連同引用一起還原；log 兩年後由 Firestore 自動清理，不需維護。
+  </div>
+
+  <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);">
+    <strong style="color:var(--accent-yellow);">執行順序要求：</strong>
+    <strong>Phase 0 先行</strong>——模擬器就緒後，A-3 的全新 append-only 規則就能先在隔離環境驗證再部署到 prod，而不是直接上線試。<br>
+    Phase A（規則 + 索引 + TTL）<strong>必須先於 Phase B 部署完成</strong>，否則寫入的 log 會被規則擋下、查詢直接失敗、且 log 立即開始無限成長。<br>
+    Phase D 的刪除 UI <strong>必須等 Phase B + C 都可運作後才開放</strong>——先確保刪得乾淨、也留得下還原用的快照，再開放這個不可逆操作。<br>
+    <strong>可提前開工：</strong>C-6 的純函式測試不依賴模擬器也不依賴資料庫，Phase 0 進行中即可並行撰寫（決策十三）——本計畫最高風險的邏輯正好全在這一塊。<br>
+    <strong>停損點：</strong>做完 Phase E 即為完整可用（還原需人工照快照操作）。Phase F 可隨時後補，且後補不需回頭改動既有程式——前提是 C-2 的反向修補單有確實寫進快照。
+  </div>
+</section>
+
+<!-- Phase 0 -->
+<section class="section">
+  <div class="section-label green">Phase 0</div>
+  <div class="section-title">本地模擬器環境（前置）</div>
+  <div class="section-desc">
+    讓 AGENT 能在<strong>完全隔離的本機環境</strong>操作管理介面，驗證 Phase C／F 的破壞性功能。
+    採 Firebase Emulator Suite 而非在網站埋開發後門（決策十二）——後門只解決「進得去」，不解決「不碰正式資料」，且會讓本計畫新增的 append-only 規則失去受測機會。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">0-1 &nbsp; 模擬器連線分支</div>
+      <div class="task-group-meta">src/lib/firebase.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">加入 VITE_USE_EMULATOR 分支（唯一需改動的原始碼）</div>
+        <div class="task-desc">
+          全站的 <code>db</code> / <code>auth</code> / <code>storage</code> 都從這一個檔案匯出，因此<strong>只需改這裡</strong>。約 15 行。
+          分支內要做三件事：① <code>connectFirestoreEmulator</code> / <code>connectAuthEmulator</code> / <code>connectStorageEmulator</code>；
+          ② <strong>跳過 <code>initializeAppCheck</code></strong>——目前是無條件執行，且 debug token 仍會往真實 App Check 後端換票，離線環境會卡住；
+          ③ <strong>停用 <code>persistentLocalCache</code></strong>——IndexedDB 持久快取目前無條件啟用，切到模擬器後會端出先前快取的<strong>正式</strong>資料污染測試。
+          <strong>必須大聲：</strong>啟動時印 console 橫幅 + 畫面常駐環境標示。「現在連的是哪個庫」一眼可辨，
+          <strong>絕不做成靜默切換</strong>——旗標沒生效卻帶著管理員權限打到 prod 是引入模擬器後最危險的失誤模式（風險表 HIGH）。
+        </div>
+        <div class="task-file">src/lib/firebase.ts · .env.local</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">0-2 &nbsp; 模擬器設定與啟動指令</div>
+      <div class="task-group-meta">firebase.json · package.json</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補 emulators 區塊 + firebase-tools + npm scripts</div>
+        <div class="task-desc">
+          <code>firebase.json</code> 目前<strong>只有 firestore / storage 兩個 key，沒有 emulators 區塊</strong>，需新增（firestore 8080 / auth 9099 / storage 9199 / ui 4000）。
+          <code>firebase-tools</code> 不在 devDependencies（本機全域有 15.18.0），建議收進 devDependencies 以固定版本。
+          加 <code>npm run emu</code>（<code>--import ./emulator-data</code> 帶種子啟動）與 <code>npm run emu:seed</code>。
+          順帶修 <code>.gitignore:23-24</code> 的壞掉條目——註解寫「Firebase Emulator 匯出的測試使用者資料」但底下是個裸 <code>-</code>，只會匹配名為 <code>-</code> 的檔案，<strong>實際上沒擋到任何東西</strong>。
+        </div>
+        <div class="task-file">firebase.json · package.json · .gitignore</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">0-3 &nbsp; 種子：模擬器管理員</div>
+      <div class="task-group-meta">scripts/seed-emulator.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">建立 role: 'OWNER' 的測試帳號</div>
+        <div class="task-desc">
+          複製既有的 <code>scripts/create-test-user.mjs</code>（已經會一次建好 Auth 使用者 + profile 文件），把 <code>role: 'USER'</code> 改成 <code>'OWNER'</code>。
+          <strong>之所以只需這樣：</strong><code>role</code> 存在 Firestore 文件 <code>users/{uid}/profile/main</code> 而非 custom claim，
+          且 <code>firestore.rules</code> 的 <code>isAdmin()</code> 讀的正是同一份文件——<strong>一份 JSON 同時滿足 UI 與規則兩邊</strong>，規則檔完全不必改。
+          <strong>務必保留 <code>emailVerified: true</code></strong>：<code>AuthContext.signInWithEmail</code> 會對未驗證信箱丟 <code>auth/email-not-verified</code> 並登出。
+          Admin SDK 只需匯出 <code>FIRESTORE_EMULATOR_HOST</code> / <code>FIREBASE_AUTH_EMULATOR_HOST</code> 即改指模擬器，程式碼零改動。
+        </div>
+        <div class="task-file">scripts/seed-emulator.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">0-4 &nbsp; 種子：真實資料切片</div>
+      <div class="task-group-meta">scripts/temp_scripts/backup-firestore.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">匯出一名機師 + 關聯天賦／BUFF／詞條並匯入模擬器</div>
+        <div class="task-desc">
+          已有現成匯出器 <code>scripts/temp_scripts/backup-firestore.mjs</code>，但<strong>有個路徑 bug 要先修</strong>：
+          它算 <code>ROOT = resolve(__dirname, '..')</code>、檔頭寫著從 <code>scripts/</code> 執行，但檔案現在位於 <code>scripts/temp_scripts/</code>，
+          導致它去找 <code>scripts/.env.migration</code> 與 <code>scripts/serviceAccountKey.json</code>，<strong>目前直接跑會失敗</strong>。
+          挑一名<strong>天賦引用關係豐富</strong>的機師（如艾達，有現成的 seed-plan021/022 腳本可參考其引用結構），連同其引用到的 buffs / glossaryTerms 一併匯出。
+          <strong>對 prod 只做這一次唯讀操作</strong>；此後所有破壞性驗證都在模擬器內。
+          注意匯出器<strong>不遞迴子集合</strong>，所以 <code>users/{uid}/profile/main</code> 不會被帶出來——這無妨，管理員由 0-3 現場建立。
+        </div>
+        <div class="task-file">scripts/temp_scripts/backup-firestore.mjs · emulator-data/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">稽核層基礎建設</div>
+  <div class="section-desc">把 changeHistory 集合的型別、讀寫 API、安全規則、索引與 TTL 政策全部就位並部署。此階段尚未接上任何寫入路徑，不影響現有功能。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 型別定義</div>
+      <div class="task-group-meta">src/types/changeHistory.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">ChangeHistoryEntry + DeleteSnapshot + ReversePatch</div>
+        <div class="task-desc">
+          <code>ChangeAction</code>（create／update／delete／<strong>restore</strong>）、<code>ChangeTargetKind</code>（可擴充 union）、<code>ChangeHistoryEntry</code>（含 <code>expireAt</code>）。
+          <code>target</code> 與 <code>action</code> 務必是兩個獨立 top-level 欄位（決策三）。
+          <code>DeleteSnapshot { doc, patches }</code> 與 <code>ReversePatch { coll, docId, path, op, value }</code>，
+          <code>op</code> 為 <code>arrayRemove | mapKeyDelete | fieldClear | textFreeze</code>（決策七）。
+          依 barrel 慣例從 <code>src/types/index.ts</code> re-export。
+        </div>
+        <div class="task-file">src/types/changeHistory.ts · src/types/index.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; API 模組</div>
+      <div class="task-group-meta">src/lib/api/changeHistory.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">logChange() — 寫入單筆記錄</div>
+        <div class="task-desc">
+          用 <code>addDoc</code> 寫入自動 ID 文件（log 無自然 slug，是全專案第二個用 addDoc 的地方）。
+          <code>at</code> 用 <code>serverTimestamp()</code>；<code>expireAt</code> 用 <code>at + 2 年</code>（client 端算，TTL 只需一個 timestamp 值）；actor 由 <code>auth.currentUser</code> 直接取得，不從 UI 傳入。
+          <strong>此路徑不得經過 <code>stripUndefined</code></strong>——它會把 serverTimestamp 哨兵拆成普通物件。
+          預設自帶 <code>.catch()</code> 吞錯，但<strong>需提供一個會拋錯的變體供刪除路徑使用</strong>（決策十）。
+        </div>
+        <div class="task-file">src/lib/api/changeHistory.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">getChangeHistoryPage() — 雙軸篩選分頁查詢</div>
+        <div class="task-desc">
+          參數 <code>{ target?, action?, cursor?, pageSize }</code>，兩個篩選皆選填、可任意組合。
+          固定 <code>orderBy('at', 'desc')</code> + <code>startAfter(cursor)</code> + <code>limit</code>。
+          游標形狀可比照 <code>getCollectionPage</code> 的 <code>{ items, hasMore, cursor }</code>，但因排序鍵不同故獨立實作。
+          <strong>不</strong>納入 <code>CollectionKey</code>、<strong>不</strong>接 GameDataContext 快取（決策一）。
+        </div>
+        <div class="task-file">src/lib/api/changeHistory.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">barrel 補一行 re-export</div>
+        <div class="task-desc">
+          依 <code>CLAUDE.md</code> 6.3 慣例於 <code>src/lib/firestoreApi.ts</code> 補 re-export。
+          注意本集合<strong>不需要</strong>登記 CollectionKey 與 GameDataContext switch（那是給有快取需求的遊戲資料集合用的）。
+        </div>
+        <div class="task-file">src/lib/firestoreApi.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; append-only 安全規則</div>
+      <div class="task-group-meta">firestore.rules</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 changeHistory match 區塊並部署</div>
+        <div class="task-desc">
+          <code>read: if isAdmin()</code>（不同於遊戲資料的公開讀）、<code>create: if isAdmin()</code>、<code>update, delete: if false</code>。
+          這是專案第一個不使用 <code>allow write: if isAdmin()</code> 的集合——因為 <code>write</code> 涵蓋 update/delete，會讓管理員能竄改自己的 log（決策二）。
+          <strong>務必實際部署</strong>，否則 Phase B 寫入全數被擋。
+        </div>
+        <div class="task-file">firestore.rules</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 複合索引</div>
+      <div class="task-group-meta">firestore.indexes.json</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">加入三組索引並部署</div>
+        <div class="task-desc">
+          <code>(target ASC, at DESC)</code>、<code>(action ASC, at DESC)</code>、<code>(target ASC, action ASC, at DESC)</code>，
+          分別對應「只看某集合」「只看某操作」「雙軸同時篩選」。
+          單純只排序 <code>at</code> 的查詢用單欄位自動索引即可。
+          <strong>索引建立需要時間</strong>，先於 Phase E 部署完成才不會在檢視頁踩到查詢失敗。
+        </div>
+        <div class="task-file">firestore.indexes.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; TTL 政策（取代 Cloud Function）</div>
+      <div class="task-group-meta">Firebase Console / gcloud</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">設定 expireAt TTL 政策 + 單欄位索引豁免</div>
+        <div class="task-desc">
+          在 <code>changeHistory</code> 集合群組上設一條 TTL 政策指向 <code>expireAt</code> 欄位，保留兩年（決策九）。
+          <strong>同時要為 <code>expireAt</code> 設單欄位索引豁免</strong>——官方明確警告索引 timestamp 會造成寫入 hotspot，而此欄位從不參與查詢，保留自動索引純屬有害。
+          <strong>三個已知行為：</strong>① TTL 不受安全規則約束（是後端程序），與 A-3 的 append-only 完全相容；
+          ② 刪除延遲約 24 小時，過期文件在實際清除前仍會出現在查詢結果；
+          ③ TTL 刪除只計 delete 費用、<strong>不計 read</strong>——這正是不寫 Cloud Function 的理由。
+        </div>
+        <div class="task-file">firebase console · firestore TTL policy</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">新增／修改路徑接線</div>
+  <div class="section-desc">先接上非破壞性的寫入路徑（create / update），驗證整條稽核鏈路可運作，再進入風險較高的刪除。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 通用 saveWithHistory helper</div>
+      <div class="task-group-meta">src/lib/api/changeHistory.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">實作 pre-image 讀取與 create/update 判定</div>
+        <div class="task-desc">
+          寫入前先 <code>fetchDocument()</code> 取舊文件：<code>null</code> → <code>create</code>；有值 → <code>update</code>（決策四）。
+          再做淺層 key 比對算出 <code>changedFields</code>（<code>JSON.stringify</code> 比對巢狀值即可，不需深層 diff）。
+          順序嚴格固定：讀 pre-image → <code>setDoc</code> → <code>bumpDataVersion</code> → <code>logChange</code>（不 await）。
+          <strong>成本：每次存檔 +1 read</strong>，已確認可接受。
+        </div>
+        <div class="task-file">src/lib/api/changeHistory.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">改寫三個 update 函式改走 helper</div>
+        <div class="task-desc">
+          <code>updateBuff</code> / <code>updatePilotSkill</code> / <code>updateGlossaryTerm</code> 內容替換為呼叫 <code>saveWithHistory</code>。
+          <strong>函式簽章與回傳值（version 字串）必須維持不變</strong>——三個 Admin 頁的 <code>handleSave</code> 都依賴回傳值餵給 <code>patchCollectionItem</code>。
+          UI 層完全不需要知道稽核存在。
+        </div>
+        <div class="task-file">src/lib/api/buffs.ts · skills.ts · glossary.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 快取層刪除同步</div>
+      <div class="task-group-meta">src/contexts/GameDataContext.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 removeCollectionItem(key, id, version)</div>
+        <div class="task-desc">
+          與現有 upsert-only 的 <code>patchCollectionItem</code> 對稱：從記憶體 state <strong>與 localStorage 快取兩層</strong>同時移除，並寫入新版本號（決策十一）。
+          遺漏這步的症狀是「刪掉的項目仍留在列表上，直到手動 reload」。
+          記得一併加進 context 的 type 定義與 provider value。
+        </div>
+        <div class="task-file">src/contexts/GameDataContext.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label green">Phase C</div>
+  <div class="section-title">引用掃描與級聯清除</div>
+  <div class="section-desc">本計畫的核心複雜度所在。目標：刪除實體時把全站 9 個集合中對它的引用一併清乾淨，並把每一處移除都記成可反向套用的修補單。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 全站引用掃描</div>
+      <div class="task-group-meta">src/utils/entityRefs.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">抽出共用「引用站點定義」並改寫 buffPool 共用</div>
+        <div class="task-desc">
+          <code>src/utils/buffPool.ts</code> 的 <code>buildBuffPool()</code> <strong>已經在走訪全站每一個 buffIds 站點</strong>，級聯清除需要的 traversal 與它完全相同。
+          先把站點定義抽成單一份共用資料，讓 <code>buildBuffPool</code> 與新的掃描器都吃它——
+          <strong>兩處各自維護一份走訪邏輯必然逐漸偏移，造成漏清（風險表 HIGH）</strong>。
+          涵蓋 9 個集合：pilots（天賦／技能／神驅等級三處）、pilotSkills、buffs、weapons、modules、backpacks、components、glossaryTerms、neuralDriveAbilities。
+        </div>
+        <div class="task-file">src/utils/entityRefs.ts · src/utils/buffPool.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">findReferences(kind, id) + 兩個型別地雷防呆</div>
+        <div class="task-desc">
+          回傳每一處引用的精確位置（集合／文件 ID／欄位路徑／引用形態），供對話框列示與 C-2 產生修補單。
+          <strong>地雷①：<code>buffIds</code> 元素可能帶 <code>@N</code> 後綴</strong>（如 <code>buff_傷害提升@3</code>），
+          必須用 <code>parseBuffRef()</code> 解析後比對，<strong>字串相等會讓它存活成死連結</strong>。此項需單元測試覆蓋。
+          <strong>地雷②：<code>Pilot.skills</code> 是 <code>(string | PilotSkill)[]</code> 聯合型別</strong>（PLAN-004 遷移中途），
+          同一陣列可能混有 ID 字串與內嵌物件，兩種都要處理——<code>buffPool.ts:62-68</code> 有現成範式。
+        </div>
+        <div class="task-file">src/utils/entityRefs.ts · src/utils/buffRef.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 級聯清除與反向修補單</div>
+      <div class="task-group-meta">src/lib/api/cascadeDelete.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">四類引用的移除實作</div>
+        <div class="task-desc">
+          <code>descriptionRefs</code> map key 刪除、<code>buffIds[]</code> 陣列元素移除（解析 <code>@N</code> 後比對）、
+          <code>termRef</code> / <code>abilityId</code> 純量欄位清空。
+          因為引用採<strong>錨點與綁定分離</strong>的側錄表設計（<code>[xxx]</code> 在文案、綁定在 <code>descriptionRefs</code>），
+          這四類全部可外科手術式移除，<strong>完全不需要改動文案</strong>（決策五）。
+        </div>
+        <div class="task-file">src/lib/api/cascadeDelete.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">產生 ReversePatch[] 反向修補單</div>
+        <div class="task-desc">
+          每移除一處就記一筆 <code>{ coll, docId, path, op, value }</code>，<code>value</code> 為被移除的原值。
+          <strong>這是 Phase F 能後補的關鍵</strong>：只要修補單有確實寫進快照，還原隨時可以補做，且不需回頭改動既有程式。
+          設計上前三種 op 的還原都是「把元素加回集合」，<strong>天然冪等</strong>，這讓 F-2 不必做整份文件比對（決策七）。
+        </div>
+        <div class="task-file">src/lib/api/cascadeDelete.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 數值 token 凍結</div>
+      <div class="task-group-meta">src/utils/numRefs.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">刪除前把 &lt;refId.lvN.attr&gt; 烘焙成常數</div>
+        <div class="task-desc">
+          唯一內嵌在文案字串裡、不可機械移除的引用形態。解法是<strong>凍結而非移除</strong>：
+          用既有的 <code>resolveNumRefs(text, lookup)</code> 把 token 換算成實際數值寫回文字，
+          <code>"可疊加&lt;buff_凝勢.lv3.maxStack&gt;層"</code> → <code>"可疊加5層"</code>（決策六）。
+          該函式原為 <code>DiffHighlight</code> 預處理而寫，正好是「在來源消失前把值固定下來」所需的原語。
+          <strong>凍結前的原始文字必須以 <code>textFreeze</code> op 存進修補單</strong>，否則還原時無法復原成 token 形式。
+        </div>
+        <div class="task-file">src/lib/api/cascadeDelete.ts · src/utils/numRefs.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 原子交易與防呆</div>
+      <div class="task-group-meta">src/lib/api/cascadeDelete.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">WriteBatch 原子提交 + 500 操作上限攔截</div>
+        <div class="task-desc">
+          一次刪除 ＝ 1 次目標 <code>deleteDoc</code> + N 次引用來源 <code>update</code>。非原子的話中途失敗會留下
+          「文件刪了但引用還在」的半殘狀態，<strong>比不做級聯更糟</strong>。用 <code>writeBatch()</code> 包成單一提交（決策八）。
+          <strong>Firestore batch 硬上限 500 個操作</strong>：站點數 + 1 若超過就中止並提示，不可無聲截斷。
+          同一道檢查順帶擋下修補單過大撐爆單文件 1 MiB 的風險。
+          <strong>刪除路徑的 log 順序與其他操作相反</strong>：先寫 log（承載還原快照）成功後才執行 batch，log 失敗則中止刪除（決策十）。
+        </div>
+        <div class="task-file">src/lib/api/cascadeDelete.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-5 &nbsp; 刪除 API 對外介面</div>
+      <div class="task-group-meta">src/lib/api/{buffs,skills,glossary}.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">deleteBuff / deletePilotSkill / deleteGlossaryTerm</div>
+        <div class="task-desc">
+          包裝 C-1~C-4 成三個對外函式。若 pre-image 為 <code>null</code>（文件已不存在）則直接 return，不寫 log 也不報錯。
+          完成後對<strong>所有被觸及的集合</strong>呼叫 <code>bumpDataVersion</code>，讓其餘 client 快取失效（決策十一）。
+          <strong>現有三個集合規則的 <code>allow write: if isAdmin()</code> 已涵蓋 delete，規則不需改動。</strong>
+        </div>
+        <div class="task-file">src/lib/api/buffs.ts · skills.ts · glossary.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-6 &nbsp; 純函式單元測試</div>
+      <div class="task-group-meta">src/utils/entityRefs.test.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">掃描 / @N 比對 / 修補單產生與冪等重加</div>
+        <div class="task-desc">
+          <strong>本計畫最高風險的邏輯其實全是純函式</strong>，不需要驗證也不需要資料庫（決策十三）——
+          可在 Phase 0 模擬器就緒前就先把風險降下來。
+          必測項：① <code>findReferences</code> 對九個集合各站點的涵蓋；
+          ② <strong><code>@N</code> 後綴</strong>——<code>buff_傷害提升@3</code> 必須被刪除 <code>buff_傷害提升</code> 命中（風險表 HIGH，字串相等會漏）；
+          ③ <code>Pilot.skills</code> 的 <code>(string | PilotSkill)[]</code> 兩種形態；
+          ④ 反向修補單產生的完整性；⑤ <strong>修補單重加的冪等性</strong>——重複套用兩次結果必須相同。
+          沿用既有 5 個測試的模式（<code>node:test</code> + <code>node:assert/strict</code> + 行內 fixture），
+          <code>buffPool.test.ts</code> 的最小 fixture 寫法可直接抄。
+        </div>
+        <div class="task-file">src/utils/entityRefs.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label green">Phase D</div>
+  <div class="section-title">刪除 UI</div>
+  <div class="section-desc">開放不可逆操作。此階段開工前，Phase B + C 必須已可運作——先確保刪得乾淨、也留得下快照。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 刪除確認對話框</div>
+      <div class="task-group-meta">src/pages/user/admin/shared.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 ConfirmDeleteDialog 共用元件</div>
+        <div class="task-desc">
+          目前<strong>後台沒有任何確認對話框元件</strong>，全站只有兩處原生 <code>window.confirm</code>（ProfilePage、GrayOpsAdmin）——不足以承載引用清單。
+          需顯示：目標名稱與 ID、<strong>將被一併清除的引用清單</strong>（來源實體名稱 + 位置）、被凍結的文案數量、危險樣式確認按鈕。
+          可沿用 <code>AdminModal</code> 殼層並改 <code>saveLabel</code>，置於 <code>shared.tsx</code> 供三分頁共用。
+        </div>
+        <div class="task-file">src/pages/user/admin/shared.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 三個分頁接上刪除</div>
+      <div class="task-group-meta">Buff/Skill/Glossary Admin.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">列表列加刪除按鈕 + handleDelete</div>
+        <div class="task-desc">
+          三頁結構幾乎相同（列表列均為手刻 div），改法可直接複製。
+          流程：點刪除 → <code>findReferences</code> → 開對話框列出影響範圍 → 確認後呼叫 <code>deleteXxx</code> → 同步快取 → 關閉。
+          <strong>前置調整：</strong><code>AdminPage.tsx</code> 的 <code>TAB_CONFIG</code> 中三個分頁的 <code>keys</code> 需補上引用來源集合，
+          掃描才有資料可走訪。走版本 gate 快取，未改版時命中 localStorage ＝ <strong>0 次 Firestore read</strong>。
+          錯誤沿用既有 <code>error: string | null</code> 行內紅字慣例（全站無 toast 系統）。
+        </div>
+        <div class="task-file">src/pages/user/admin/BuffAdmin.tsx · SkillAdmin.tsx · GlossaryAdmin.tsx · AdminPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label green">Phase E</div>
+  <div class="section-title">變更歷史檢視頁</div>
+  <div class="section-desc">讓管理員真的看得到記錄。版型沿用既有的 AdminVersionListPage（麵包屑 + Orbitron 標籤 + 卡片列 + 骨架 + 空狀態），不另創風格。<strong>做完此階段即為完整可用</strong>。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 頁面骨架與路由</div>
+      <div class="task-group-meta">src/pages/admin/AdminHistoryPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">建立頁面並掛上 /admin/history 路由</div>
+        <div class="task-desc">
+          置於 <code>src/pages/admin/</code>（與版本管理頁同層，非後台分頁）。
+          於 <code>App.tsx</code> 以 <code>&lt;AdminRoute&gt;</code> 包裹 + <code>Suspense</code> lazy 載入，比照 <code>/admin/versions</code>——
+          注意 <code>/admin</code> 本身<strong>沒有</strong>被 AdminRoute 包裹（它自行內嵌檢查），此處採較嚴格的 AdminRoute 作法。
+        </div>
+        <div class="task-file">src/pages/admin/AdminHistoryPage.tsx · src/App.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 雙軸篩選與分頁</div>
+      <div class="task-group-meta">AdminHistoryPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">集合 × 操作 兩組篩選器 + 載入更多</div>
+        <div class="task-desc">
+          兩組篩選各含「全部」選項，可任意組合（對應 A-4 的三組索引）。
+          切換篩選需<strong>重置游標</strong>重新查詢，否則會接續在錯誤的分頁位置。
+          「載入更多」沿用 <code>shared.tsx</code> 的 <code>LoadMoreButton</code>。
+          <strong>不可</strong>使用 <code>useClientPaged</code> / <code>useServerPaged</code>——兩者都綁定 <code>getCollectionPage</code> 的 name 排序模型，與本頁的 <code>at</code> 時間排序不相容。
+        </div>
+        <div class="task-file">src/pages/admin/AdminHistoryPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; 記錄呈現與快照檢視</div>
+      <div class="task-group-meta">AdminHistoryPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">記錄列 + 操作色票 + 快照展開</div>
+        <div class="task-desc">
+          每列顯示：時間、操作類型色票（create 綠／update 黃／delete 紅／restore 青）、集合類型、目標名稱與 ID、操作者。
+          <code>update</code> 列出 <code>changedFields</code>；<code>delete</code> 提供展開區塊顯示 <code>snapshot.doc</code> 與
+          <strong><code>snapshot.patches</code> 的引用清單</strong>（格式化 JSON 即可，供人工照著重建）。
+          需處理 <code>at</code> 為 Firestore <code>Timestamp</code> 而非字串——要 <code>.toDate()</code> 後格式化；
+          剛寫入尚未回傳伺服器時間時可能短暫為 <code>null</code>。
+        </div>
+        <div class="task-file">src/pages/admin/AdminHistoryPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-4 &nbsp; 後台入口</div>
+      <div class="task-group-meta">src/pages/user/AdminPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">加入變更歷史入口卡片</div>
+        <div class="task-desc">
+          比照既有「版本列表」卡片的 <code>&lt;Link to="/admin/versions"&gt;</code> 作法，加一張指向 <code>/admin/history</code> 的卡片。
+          採「子頁面」而非「第 13 個 Tab」——本集合不走 GameDataContext 預載入模型，
+          硬塞進 <code>TAB_CONFIG</code> 需要一個空 <code>keys</code> 的特例，反而弄髒既有結構。
+        </div>
+        <div class="task-file">src/pages/user/AdminPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label green">Phase F</div>
+  <div class="section-title">快照還原</div>
+  <div class="section-desc">從刪除快照把文件與引用一併救回。<strong>可隨時後補的獨立階段</strong>——只要 C-2 的反向修補單有確實寫進快照，補做時不需回頭改動任何既有程式。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 還原文件本體</div>
+      <div class="task-group-meta">src/lib/api/restore.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">從 snapshot.doc 重建被刪文件</div>
+        <div class="task-desc">
+          <code>setDoc</code> 寫回 <code>snapshot.doc</code>。
+          <strong>先檢查該 ID 是否已被重新建立</strong>（管理員可能刪掉後又手動建了同名項目）——
+          已存在則中止並提示，不可無聲覆蓋。
+        </div>
+        <div class="task-file">src/lib/api/restore.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; 還原引用（冪等重加）</div>
+      <div class="task-group-meta">src/lib/api/restore.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">反向套用 ReversePatch[] + 衝突跳過並報告</div>
+        <div class="task-desc">
+          逐筆反向套用：<code>arrayRemove</code> → 加回陣列、<code>mapKeyDelete</code> → 加回 map key、<code>fieldClear</code> → 寫回純量。
+          <strong>這三種天然冪等</strong>——只需檢查「該欄位現在還缺不缺這個值」，缺就補、已有就跳過，
+          <strong>不需比對整份文件是否未被改動</strong>（決策七）。
+          <code>textFreeze</code> 是唯一非冪等的：需比對現值是否仍等於凍結後文字，不符則跳過並列入報告。
+          來源文件若已不存在（例如整個機師被刪）同樣跳過並報告。
+          還原結束回報「成功 N 筆／跳過 M 筆」與跳過原因。
+        </div>
+        <div class="task-file">src/lib/api/restore.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-3 &nbsp; 還原 UI 與稽核</div>
+      <div class="task-group-meta">AdminHistoryPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">delete 記錄列加還原按鈕 + 記進 log</div>
+        <div class="task-desc">
+          僅 <code>action === 'delete'</code> 且有 <code>snapshot</code> 的記錄顯示還原按鈕。
+          點擊先預覽將還原的內容與引用筆數，確認後執行，完成後顯示成功／跳過報告。
+          <strong>還原本身也是一次資料異動，必須寫一筆 <code>action: 'restore'</code> 的 log</strong>，
+          並以 <code>restoredFrom</code> 指回來源 log 文件 ID，形成完整的可追溯鏈。
+          同樣需對所有被觸及的集合 <code>bumpDataVersion</code>。
+        </div>
+        <div class="task-file">src/pages/admin/AdminHistoryPage.tsx · src/lib/api/restore.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-4 &nbsp; 模擬器端到端驗證（AGENT 執行）</div>
+      <div class="task-group-meta">Phase 0 環境</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">在隔離環境跑完整刪除→還原往返</div>
+        <div class="task-desc">
+          用 Phase 0 的模擬器環境與資料切片，由 AGENT 操作管理介面實測。必驗場景：<br>
+          ① <strong>正常往返</strong>：刪除一個被多處引用的 BUFF → 確認引用全清、數值 token 已凍結 → 還原 → 確認引用全數復原；<br>
+          ② <strong>衝突跳過</strong>：刪除後<em>先編輯</em>某個引用來源文件，再還原 → 確認該處被跳過並列入報告，而非硬蓋；<br>
+          ③ <strong>來源消失</strong>：刪除後把某個引用來源整份刪掉，再還原 → 確認跳過並報告；<br>
+          ④ <strong>ID 已被重建</strong>：刪除後手動新建同名項目，再還原 → 確認中止並提示，不可無聲覆蓋；<br>
+          ⑤ <strong>安全規則</strong>：以非管理員帳號嘗試讀 log、以管理員嘗試改／刪 log → 皆須被擋（驗證 A-3 的 append-only）；<br>
+          ⑥ <strong>原子性</strong>：驗證 batch 失敗時不留半殘狀態、超過 500 操作會被攔截。<br>
+          <strong>這是本專案第一個非純函式測試</strong>——現有 5 個測試皆無 mock、無 async、不碰 Firestore，需自行建立 setup/teardown 模式。
+        </div>
+        <div class="task-file">emulator integration test</div>
+      </div>
+      <div class="task-assignee">AGENT</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- 後續擴充 -->
+<section class="section">
+  <div class="section-label green">Later</div>
+  <div class="section-title">本期不做、但已預留路徑</div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">其餘 8 個集合的接線：</strong>
+    機師／機甲／武器／模組／元件／背包／神驅能力／灰域。底層 helper 已是集合無關設計，屆時每個集合只需
+    ① <code>ChangeTargetKind</code> union 加一個值 ② <code>update*</code> 改走 <code>saveWithHistory</code> ③ 需要刪除的再加 <code>delete*</code>。
+    不需重構，也不需再動規則、索引與 TTL 政策。
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">bosses / stages 引用站點：</strong>
+    型別已存在（<code>src/types/boss.ts</code> 有 <code>descriptionRefs</code> / <code>mechanicsRefs</code>），但尚無 firestore 規則、
+    無 <code>CollectionKey</code>、無 API 函式，屬 PLAN-019 Layer 3 未實作範圍。
+    <strong>該集合上線時務必回頭把站點補進 C-1 的共用站點定義</strong>，否則會成為級聯清除的漏網之魚。
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-030 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
