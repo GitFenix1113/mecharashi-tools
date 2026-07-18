@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-07-16
+## [Unreleased] - 2026-07-18
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 後台模組 ID 依類型自動生成 + 綁定機甲欄位說明 (`1f27be5`)
 - 機甲/模組頁模組效果接引用層 + 後台等級資料引用/折疊/備註 (`05dc3fa`)
 - 圖鑑釘選浮窗支援抓標題列拖曳 (`a76fc66`)
 - PLAN-019-B 可達 buff 收斂引擎 + 模擬器形態/增益面板 (`3bc5c9c`)
