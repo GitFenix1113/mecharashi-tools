@@ -5,6 +5,7 @@ import {
 } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
 import { updateModule, docExists } from '../../../lib/firestoreApi'
+import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
@@ -36,6 +37,34 @@ export function makeDefaultModule(id: string): Module {
     conditionalEffects: [],
     moduleAddLevel: 1,
   }
+}
+
+/**
+ * 機甲名轉 ID 片段：沿用爬蟲既有慣例保留原名（含 `-`，如 `破曉者-01`），
+ * 僅去掉 Firestore 文件 ID 不接受 / 易歧異的字元。
+ * 注意：不可改用 slugify()——它會把 `-` 也吃掉，導致與既有的
+ * `mod_破曉者-01_fixed_1` 命名對不上，序號會從 1 重新開始。
+ */
+function mechIdSegment(name: string): string {
+  return name.trim().replace(/[/\s]+/g, '')
+}
+
+/**
+ * 機甲專屬模組 ID：`mod_<機甲名>_fixed_<n>`。
+ * n 取該機甲現有專屬模組的最大序號 +1（不分大小寫比對，避免大小寫孿生）。
+ * 機甲名無有效字元時回傳空字串，讓呼叫端擋下。
+ */
+function makeExclusiveModuleId(mechName: string, allModules: Module[]): string {
+  const seg = mechIdSegment(mechName)
+  if (!seg) return ''
+  const esc = seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const re = new RegExp(`^mod_${esc}_fixed_(\\d+)$`, 'i')
+  let max = 0
+  for (const m of allModules) {
+    const hit = re.exec(m.id)
+    if (hit) max = Math.max(max, Number(hit[1]))
+  }
+  return `mod_${seg}_fixed_${max + 1}`
 }
 
 export function moduleHasStats(m: Module): boolean {
@@ -394,6 +423,16 @@ function ModuleEditPanel({
                 <option value="">不綁定（通用模組）</option>
                 {mechs.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
+              <p className="text-[14px] text-text-dim mt-1 leading-relaxed">
+                這是<span className="text-accent-orange">使用限制</span>，不是取得途徑：綁定後，傷害模擬時此模組
+                <span className="text-accent-orange">只能裝在該機甲上</span>，其他機甲一律無法使用。
+                <br />
+                若只是「拆這台機甲可以取得此模組」，請改在下方的
+                <span className="text-accent-cyan">拆解來源機甲</span>勾選，
+                <span className="text-accent-red">不要</span>在此綁定 —— 誤綁會讓模組在模擬器裡消失於其他機甲的可選清單。
+                <br />
+                通用模組請保持「不綁定」（機甲的8級模組只要機甲有設定就會自動對應到模組圖鑑）。
+              </p>
             </Field>
             <Field label="綁定部位（複選，空白=不限）">
               <div className="flex flex-wrap gap-4 mt-1">
@@ -446,6 +485,11 @@ function ModuleEditPanel({
               </div>
             </Field>
             <Field label="拆解來源機甲（可拆哪些機甲取得此模組）">
+              <p className="text-[14px] text-text-dim mt-1 mb-1.5 leading-relaxed">
+                只影響<span className="text-accent-cyan">取得途徑</span>的顯示，
+                <span className="text-accent-red">不會</span>限制模組能裝在哪台機甲。
+                使用限制請設上方的<span className="text-accent-orange">綁定機甲</span>。
+              </p>
               <div className="mt-1 border border-border rounded-lg max-h-44 overflow-y-auto divide-y divide-border/40">
                 {mechs.length === 0 ? (
                   <p className="text-xs text-text-dim p-2">載入機甲中...</p>
@@ -672,12 +716,52 @@ export default function ModuleAdmin({
         (Array.isArray(m.source) ? m.source.includes(f.source) : m.source === f.source)),
   })
 
-  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate } =
-    useNewItemCreation(filtered, (m) => m.id, makeDefaultModule)
+  // ── 新增模組：先選模組類型，再依類型決定 ID 前綴 ─────────────────────────
+  //   特性 / 八級 / 通用 → mod_<名稱>
+  //   機甲副模組         → sub_mod_<名稱>
+  //   機甲專屬模組       → mod_<機甲名>_fixed_<n>（n 自動接續既有序號）
+  // 機甲用下拉選而非手打，從源頭杜絕打錯字（歷史上就是手打 ID 造成 "莫日" 這類髒資料）。
+  const [newSlot, setNewSlot] = useState<ModuleSlot>(ModuleSlot.SLOT_4)
+  const [newMechId, setNewMechId] = useState('')
+
+  const isExclusive = newSlot === ModuleSlot.EXCLUSIVE
+  const idPrefix = newSlot === ModuleSlot.BUILT_IN ? 'sub_mod' : 'mod'
+  const newMech = mechs.find((m) => m.id === newMechId) ?? null
+
+  function deriveModuleId(name: string): string {
+    if (!name.trim()) return ''
+    // 專屬模組的 ID 只由機甲決定、與模組名稱無關；未選機甲則無法生成
+    if (isExclusive) return newMech ? makeExclusiveModuleId(newMech.name, gd.modules) : ''
+    return makeEntityId(idPrefix, name)
+  }
+
+  const {
+    creating, newId, setNewId, newIdError, setNewIdError,
+    openCreate, cancelCreate, confirmCreate, derivedId,
+  } = useNewItemCreation(
+    gd.modules, // 用全量而非當前分頁 filtered，否則撞名檢查會漏掉沒載入的項目
+    (m) => m.id,
+    (id, name) => ({
+      ...makeDefaultModule(id),
+      name: stripIdPrefix(idPrefix, name),
+      slot: newSlot,
+      boundMechId: isExclusive ? newMechId : null,
+    }),
+    deriveModuleId,
+  )
+
+  function openCreateReset() {
+    setNewSlot(ModuleSlot.SLOT_4)
+    setNewMechId('')
+    openCreate()
+  }
 
   async function confirmCreateChecked() {
-    const id = newId.trim()
-    if (id && await docExists('modules', id)) { setNewIdError(`ID「${id}」已存在`); return }
+    if (!derivedId) {
+      setNewIdError(isExclusive && !newMechId ? '請先選擇綁定機甲' : '請輸入名稱')
+      return
+    }
+    if (await docExists('modules', derivedId)) { setNewIdError(`ID「${derivedId}」已存在`); return }
     const item = confirmCreate()
     if (item) setEditing(item)
   }
@@ -733,7 +817,7 @@ export default function ModuleAdmin({
             : `顯示 ${filtered.length} 個模組${hasMore ? '（可載入更多）' : ''}`}
         </p>
         <button
-          onClick={openCreate}
+          onClick={openCreateReset}
           className="text-xs px-3 py-1.5 bg-accent-orange text-black font-bold rounded-lg hover:opacity-90 transition-opacity"
         >
           + 新增模組
@@ -744,8 +828,40 @@ export default function ModuleAdmin({
         creating={creating}
         newId={newId}
         newIdError={newIdError}
-        placeholder="mod_"
-        hint={<>輸入新模組 ID（格式如 <span className="text-accent-cyan">mod_123</span>，儲存後不可更改）</>}
+        placeholder="模組名稱，例：末日中樞"
+        hint={<>先選模組類型，再輸入名稱；文件 ID 由系統依類型自動生成（儲存後不可更改）</>}
+        deriveMode
+        derivedId={derivedId}
+        extra={
+          <div className="flex flex-wrap gap-2 items-center">
+            <select
+              value={newSlot}
+              onChange={(e) => { setNewSlot(e.target.value as ModuleSlot); setNewIdError('') }}
+              className="px-3 py-2 rounded-lg bg-bg-card border border-border text-text-primary text-sm"
+            >
+              {SLOT_OPTIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+            </select>
+            {isExclusive && (
+              <select
+                value={newMechId}
+                onChange={(e) => { setNewMechId(e.target.value); setNewIdError('') }}
+                className="px-3 py-2 rounded-lg bg-bg-card border border-border text-text-primary text-sm"
+              >
+                <option value="">— 選擇綁定機甲 —</option>
+                {mechs.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            )}
+            <span className="text-xs text-text-dim">
+              前綴{' '}
+              <span className="text-accent-cyan font-mono">
+                {isExclusive ? 'mod_<機甲名>_fixed_n' : `${idPrefix}_`}
+              </span>
+            </span>
+            {isExclusive && !newMechId && (
+              <span className="text-xs text-accent-red">⚠ 專屬模組需先選擇機甲才能生成 ID</span>
+            )}
+          </div>
+        }
         onChangeId={(v) => { setNewId(v); setNewIdError('') }}
         onConfirm={() => { void confirmCreateChecked() }}
         onCancel={cancelCreate}

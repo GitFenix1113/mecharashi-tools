@@ -7,11 +7,11 @@ import type { GrayOpsCompany } from '../../../data/patchVersions'
 // ── 模組槽位 ──────────────────────────────────────────────────────────────────
 
 export const SLOT_OPTIONS: { value: string; label: string }[] = [
-  { value: ModuleSlot.SLOT_4,    label: `四格特性模組（${ModuleSlot.SLOT_4}）` },
-  { value: ModuleSlot.SLOT_8,    label: `八格模組（${ModuleSlot.SLOT_8}）` },
+  { value: ModuleSlot.SLOT_4,    label: `四級特性模組（${ModuleSlot.SLOT_4}）` },
+  { value: ModuleSlot.SLOT_8,    label: `八級模組（${ModuleSlot.SLOT_8}）` },
   { value: ModuleSlot.UNIVERSAL, label: `通用模組（${ModuleSlot.UNIVERSAL}）` },
   { value: ModuleSlot.BUILT_IN,  label: `副模組・機甲內建（${ModuleSlot.BUILT_IN}）` },
-  { value: ModuleSlot.EXCLUSIVE, label: `機甲專屬模組（${ModuleSlot.EXCLUSIVE}）` },
+  { value: ModuleSlot.EXCLUSIVE, label: `機甲專屬模組（傷害模擬只有此機甲可用）（${ModuleSlot.EXCLUSIVE}）` },
 ]
 
 export const SLOT_LABEL: Record<string, string> = {
