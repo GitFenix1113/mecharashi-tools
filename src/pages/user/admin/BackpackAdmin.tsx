@@ -4,7 +4,7 @@ import { WeaponEquipSlot } from '../../../types/enums'
 import { updateBackpack, getBackpacksPage } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, GRID_AUTO_FIELDS } from './shared'
 import { BACKPACK_TYPE_CONFIG, ASSEMBLABLE_ARMOR_CONFIG } from '../../../components/BackpackBadges'
 
 const PAGE_SIZE = 20
@@ -89,7 +89,8 @@ function BackpackEditPanel({
           <input value={form.name} onChange={e => update('name', e.target.value)} className="input-field" />
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
+        {/* PLAN-033 B-4：類型／稀有度／重量／修理量原為兩組固定二欄，皆屬同質短欄位，合併為單一自動格線 */}
+        <div className={`${GRID_AUTO_FIELDS} gap-3`}>
           <Field label="類型 type">
             <select value={form.type} onChange={e => update('type', e.target.value)} className="input-field">
               {ALL_BACKPACK_TYPES.map(t => (
@@ -102,9 +103,6 @@ function BackpackEditPanel({
               {ALL_RARITIES.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </Field>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
           <Field label="重量 weight">
             <input type="number" value={form.weight} onChange={e => update('weight', Number(e.target.value))} className="input-field" />
           </Field>
@@ -188,7 +186,8 @@ function BackpackEditPanel({
                   placeholder="Icon_skill_passive_1234"
                 />
               </Field>
-              <div className="grid grid-cols-2 gap-3">
+              {/* PLAN-033 B-4：增傷／爆率／爆傷／命中四個數值欄位原為兩組固定二欄，合併為單一自動格線 */}
+              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
                 <Field label="增傷 dmg（%，選填）">
                   <input
                     type="number"
@@ -207,8 +206,6 @@ function BackpackEditPanel({
                     placeholder="留空 = 不填"
                   />
                 </Field>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <Field label="爆傷 critDmg（%，選填）">
                   <input
                     type="number"

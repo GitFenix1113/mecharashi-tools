@@ -3,7 +3,7 @@ import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, TalentNdVariant, Sk
 import { formatWeaponReq } from '../../../types'
 import { ItemRarity, PilotClass, MechLicense, WeaponType } from '../../../types/enums'
 import { useGameVersions } from '../../../hooks/useGameVersions'
-import { Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog } from './shared'
+import { Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog, GRID_AUTO_FIELDS } from './shared'
 import { updatePilot, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
@@ -145,7 +145,8 @@ export function SkillEffectItem({
           ✕ 移除
         </button>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      {/* stat / value / scope / valueType 同屬一組效果參數，原本拆成 3+1 兩排；併為單一自動格線（PLAN-033 B-2） */}
+      <div className={`${GRID_AUTO_FIELDS} gap-2`}>
         <Field label="屬性 stat">
           <select
             value={effect.stat}
@@ -174,8 +175,6 @@ export function SkillEffectItem({
             <option value="team">全隊 (team)</option>
           </select>
         </Field>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
         <Field label="計算方式 valueType">
           <select
             value={effect.valueType ?? 'add'}
@@ -477,7 +476,7 @@ function NdVariantsEditor({
           <p className="text-[12px] text-text-dim">建議依 minSum 升序排列；生效判定為「該分區算力 ≥ minSum 取最高階」。</p>
           {variants.map((v, idx) => (
             <div key={idx} className="p-2 bg-bg-dark/60 rounded border border-border/40 space-y-2">
-              <div className="grid grid-cols-3 gap-2">
+              <div className={`${GRID_AUTO_FIELDS} gap-2`}>
                 <Field label="分區 zone">
                   <select
                     value={v.zone ?? ''}
@@ -943,7 +942,7 @@ function NdZoneCard({
               {levels.map((lv, i) => (
                 <div key={i} className="p-2 bg-bg-card/40 rounded border border-border/40 space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="grid grid-cols-2 gap-2 flex-1">
+                    <div className={`${GRID_AUTO_FIELDS} gap-2 flex-1`}>
                       <Field label="Lv level">
                         <input type="number" value={lv.level} onChange={(e) => updLevel(i, { level: Number(e.target.value) })} className="input-field" />
                       </Field>
@@ -1211,7 +1210,8 @@ function PilotEditPanel({
               <Field label="顯示名稱 name"><input value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" /></Field>
               <Field label="全名 fullName"><input value={form.fullName || ''} onChange={(e) => update('fullName', e.target.value)} className="input-field" /></Field>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            {/* 分類欄位群：稀有度～登場版本 6 個短下拉／短文字原本拆成 3 排；併為單一自動格線（PLAN-033 B-2） */}
+            <div className={`${GRID_AUTO_FIELDS} gap-3`}>
               <Field label="稀有度 rarity">
                 <select value={form.rarity} onChange={(e) => update('rarity', e.target.value)} className="input-field">
                   {Object.values(ItemRarity).map((r) => <option key={r} value={r}>{r}</option>)}
@@ -1227,12 +1227,8 @@ function PilotEditPanel({
                   {Object.values(MechLicense).map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
               </Field>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
               <Field label="陣營 faction"><input value={form.faction || ''} onChange={(e) => update('faction', e.target.value)} className="input-field" /></Field>
               <Field label="駕駛等級 masterLevel"><input value={form.masterLevel || ''} onChange={(e) => update('masterLevel', e.target.value)} className="input-field" /></Field>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
               <Field label="登場版本 debutVersion">
                 <select value={form.debutVersion ?? ''} onChange={(e) => update('debutVersion', e.target.value || undefined)} className="input-field">
                   <option value="">（未設定）</option>
@@ -1253,7 +1249,8 @@ function PilotEditPanel({
         {editTab === 'stats' && (
           <div>
             <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-3">六維屬性 stats</p>
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            {/* 六維屬性原本擠在 2 欄要捲 3 排；改自動格線後寬螢幕一排看完（PLAN-033 B-2） */}
+            <div className={`${GRID_AUTO_FIELDS} gap-3 mb-4`}>
               <Field label="格鬥 melee"><input type="number" value={form.stats.melee} onChange={(e) => updateStats('melee', Number(e.target.value))} className="input-field" /></Field>
               <Field label="突擊 assault"><input type="number" value={form.stats.assault} onChange={(e) => updateStats('assault', Number(e.target.value))} className="input-field" /></Field>
               <Field label="射擊 shooting"><input type="number" value={form.stats.shooting} onChange={(e) => updateStats('shooting', Number(e.target.value))} className="input-field" /></Field>
@@ -1263,7 +1260,7 @@ function PilotEditPanel({
             </div>
             <div className="pt-3 border-t border-border/60">
               <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-3">素質</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
                 <Field label="攻擊素質 attack"><input type="number" value={form.attack ?? 0} onChange={(e) => update('attack', Number(e.target.value))} className="input-field" /></Field>
                 <Field label="防禦素質 defense (pilot)"><input type="number" value={form.defense ?? 0} onChange={(e) => update('defense', Number(e.target.value))} className="input-field" /></Field>
               </div>
@@ -1273,7 +1270,7 @@ function PilotEditPanel({
 
         {editTab === 'ap' && (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className={`${GRID_AUTO_FIELDS} gap-3`}>
               <Field label="初始 AP init"><input type="number" value={form.ap.init} onChange={(e) => updateAp('init', Number(e.target.value))} className="input-field" /></Field>
               <Field label="AP 上限 max"><input type="number" value={form.ap.max} onChange={(e) => updateAp('max', Number(e.target.value))} className="input-field" /></Field>
               <Field label="AP 回復 recovery"><input type="number" value={form.ap.recovery} onChange={(e) => updateAp('recovery', Number(e.target.value))} className="input-field" /></Field>
@@ -1297,7 +1294,7 @@ function PilotEditPanel({
               個人資料偏「說故事」、欄位不固定。常用三欄（性別 / 血型 / 身高）留空即不顯示；
               其餘一律用下方<strong>自訂欄位</strong>自由增減，欄位名即為前台顯示標籤。
             </p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className={`${GRID_AUTO_FIELDS} gap-3`}>
               <Field label="性別 gender"><input value={form.profile?.gender || ''} onChange={(e) => updateProfile('gender', e.target.value)} className="input-field" /></Field>
               <Field label="血型 bloodType"><input value={form.profile?.bloodType || ''} onChange={(e) => updateProfile('bloodType', e.target.value)} className="input-field" /></Field>
               <Field label="身高 height"><input value={form.profile?.height || ''} onChange={(e) => updateProfile('height', e.target.value)} className="input-field" /></Field>

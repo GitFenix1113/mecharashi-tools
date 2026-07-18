@@ -5,7 +5,7 @@ import {
 } from '../../../types/enums'
 import { assetUrl } from '../../../utils/assets'
 import { getBossImagePath } from '../../../data/bossDrops'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton, GRID_AUTO_FIELDS } from './shared'
 import { getCollectionPage, updateComponent, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
@@ -289,7 +289,7 @@ function ComponentEditPanel({
           </Field>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className={`${GRID_AUTO_FIELDS} gap-3`}>
           <Field label="稀有度 rarity">
             <select value={form.rarity} onChange={(e) => updateBase('rarity', e.target.value)} className="input-field">
               {Object.values(ItemRarity).map((r) => <option key={r} value={r}>{r}</option>)}

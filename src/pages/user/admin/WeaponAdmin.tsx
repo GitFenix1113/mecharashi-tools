@@ -4,7 +4,7 @@ import {
   WeaponType, WeaponKind, WeaponRarity, MechRestriction, WeaponEquipSlot,
   RangeType, SkillType, SkillActivation,
 } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, GRID_AUTO_FIELDS } from './shared'
 import { updateWeapon, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
@@ -272,7 +272,8 @@ function WeaponEditPanel({
             <Field label="武器名稱 name">
               <input value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            {/* 分類欄位群：5 個短下拉／數值合併為單一自動格線（PLAN-033 B-1） */}
+            <div className={`${GRID_AUTO_FIELDS} gap-3`}>
               <Field label="武器類型 type">
                 <select value={form.type} onChange={(e) => update('type', e.target.value)} className="input-field">
                   {Object.values(WeaponType).map((v) => <option key={v} value={v}>{v}</option>)}
@@ -283,8 +284,6 @@ function WeaponEditPanel({
                   {currentKindOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </Field>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
               <Field label="種類係數 kindCoefficient">
                 <input type="number" step="0.01" value={form.kindCoefficient} onChange={(e) => update('kindCoefficient', Number(e.target.value))} className="input-field" />
               </Field>
@@ -318,15 +317,12 @@ function WeaponEditPanel({
 
         {editTab === 'stats' && (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            {/* 6 個數值原本拆成 3 組 grid-cols-2、要捲 3 排；併為單一自動格線後寬螢幕一排看完（PLAN-033 B-1） */}
+            <div className={`${GRID_AUTO_FIELDS} gap-3`}>
               <Field label="攻擊力 attack"><input type="number" value={form.attack} onChange={(e) => update('attack', Number(e.target.value))} className="input-field" /></Field>
               <Field label="命中值 accuracy"><input type="number" value={form.accuracy} onChange={(e) => update('accuracy', Number(e.target.value))} className="input-field" /></Field>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
               <Field label="暴擊值 critValue"><input type="number" value={form.critValue} onChange={(e) => update('critValue', Number(e.target.value))} className="input-field" /></Field>
               <Field label="重量 weight"><input type="number" value={form.weight} onChange={(e) => update('weight', Number(e.target.value))} className="input-field" /></Field>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
               <Field label="彈藥量 ammoCount（0 = 無限彈藥）"><input type="number" value={form.ammoCount} onChange={(e) => update('ammoCount', Number(e.target.value))} className="input-field" /></Field>
               <Field label="連擊數 hitCount"><input type="number" value={form.hitCount} onChange={(e) => update('hitCount', Number(e.target.value))} className="input-field" /></Field>
             </div>
@@ -354,7 +350,7 @@ function WeaponEditPanel({
                 <option value={RangeType.RING}>ring — 環形N圈（含自身格，Chebyshev 距離）</option>
               </select>
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className={`${GRID_AUTO_FIELDS} gap-3`}>
               <Field label={form.rangeType === RangeType.RING ? 'minRange（ring 型固定為 0）' : '最小射程 minRange'}>
                 <input type="number" value={form.minRange} onChange={(e) => update('minRange', Number(e.target.value))} className="input-field" disabled={form.rangeType === RangeType.RING} />
               </Field>
@@ -384,7 +380,7 @@ function WeaponEditPanel({
           <div className="space-y-4">
             <div className="p-3 bg-bg-dark rounded-lg border border-border/60 space-y-3">
               <p className="text-xs text-text-dim font-medium uppercase tracking-wider">元件插槽</p>
-              <div className="grid grid-cols-3 gap-3">
+              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
                 <Field label="觸元件槽 triggerSlots"><input type="number" value={form.triggerSlots} onChange={(e) => update('triggerSlots', Number(e.target.value))} className="input-field" /></Field>
                 <Field label="應元件槽 effectSlots"><input type="number" value={form.effectSlots} onChange={(e) => update('effectSlots', Number(e.target.value))} className="input-field" /></Field>
                 <Field label="元件上限 componentLimit"><input type="number" value={form.componentLimit} onChange={(e) => update('componentLimit', Number(e.target.value))} className="input-field" /></Field>
@@ -414,7 +410,7 @@ function WeaponEditPanel({
             <div>
               <p className="text-xs text-text-dim font-medium uppercase tracking-wider mb-2">固定改裝 fixedMod（效果固定，依等級解鎖）</p>
               <div className="space-y-3 p-3 bg-bg-dark rounded-lg border border-border/60">
-                <div className="grid grid-cols-2 gap-3">
+                <div className={`${GRID_AUTO_FIELDS} gap-3`}>
                   <Field label="方案名稱 planName"><input value={form.fixedMod.planName} onChange={(e) => updateFixedMod('planName', e.target.value)} className="input-field" placeholder="如 機槍VIII" /></Field>
                   <Field label="最高等級 maxLevel"><input type="number" value={form.fixedMod.maxLevel} onChange={(e) => updateFixedMod('maxLevel', Number(e.target.value))} className="input-field" /></Field>
                 </div>
@@ -463,7 +459,7 @@ function WeaponEditPanel({
             <div>
               <p className="text-xs text-text-dim font-medium uppercase tracking-wider mb-2">浮動改裝 floatingMod（效果隨機，有範圍）</p>
               <div className="space-y-3 p-3 bg-bg-dark rounded-lg border border-border/60">
-                <div className="grid grid-cols-2 gap-3">
+                <div className={`${GRID_AUTO_FIELDS} gap-3`}>
                   <Field label="方案名稱 planName"><input value={form.floatingMod.planName} onChange={(e) => updateFloatingMod('planName', e.target.value)} className="input-field" placeholder="如 機槍IV" /></Field>
                   <Field label="效果欄位數 slots"><input type="number" value={form.floatingMod.slots} onChange={(e) => updateFloatingMod('slots', Number(e.target.value))} className="input-field" /></Field>
                 </div>
@@ -499,7 +495,7 @@ function WeaponEditPanel({
                               className="px-2 py-1.5 mb-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10 text-xs shrink-0"
                             >✕</button>
                           </div>
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className={`${GRID_AUTO_FIELDS} gap-2`}>
                             <Field label="最小值 min">
                               <input type="number" value={eff.min}
                                 onChange={(e) => { const next = [...form.floatingMod.possibleEffects]; next[idx] = { ...next[idx], min: Number(e.target.value) }; updateFloatingMod('possibleEffects', next) }}

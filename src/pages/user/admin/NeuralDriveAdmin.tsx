@@ -59,8 +59,9 @@ function NdAbilityEditPanel({
     catch (e) { setError(e instanceof Error ? e.message : '儲存失敗，請重試'); setSaving(false) }
   }
 
+  // 欄位少 → 維持窄版（PLAN-033）；吃 AdminModal 的 90vw 預設只會讓欄位漂在空白裡
   return (
-    <AdminModal saving={saving} error={error} onSave={handleSubmit} onCancel={onCancel}>
+    <AdminModal maxWidth="max-w-2xl" saving={saving} error={error} onSave={handleSubmit} onCancel={onCancel}>
       <h3 className="text-lg font-bold mb-4 flex items-center gap-2 shrink-0">
         <span className="text-accent-purple">◆</span> 編輯神驅能力
         <span className="text-text-dim text-sm font-normal ml-1">{form.id}</span>

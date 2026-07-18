@@ -3,7 +3,7 @@ import type { Module, Mech, ConditionalEffect, ModuleLevel } from '../../../type
 import {
   ModuleRarity, ModuleSlot, ModuleSource, ModuleDataSource, ConditionalTrigger,
 } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, GRID_AUTO_FIELDS } from './shared'
 import { updateModule, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
@@ -130,7 +130,8 @@ function ConditionalEffectItem({
         </select>
       </Field>
 
-      <div className="grid grid-cols-2 gap-2">
+      {/* 7 個條件效果參數原本拆成 3 組（2/3/2 欄）；併為單一自動格線（PLAN-033 B-3） */}
+      <div className={`${GRID_AUTO_FIELDS} gap-2`}>
         <Field label="觸發門檻 minCount（選填）">
           <input
             type="number"
@@ -151,9 +152,6 @@ function ConditionalEffectItem({
             <option value="turn">回合結束 (turn)</option>
           </select>
         </Field>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
         <Field label="基礎加成 base（選填）">
           <input type="number" value={effect.base ?? ''} onChange={(e) => upd('base', e.target.value === '' ? undefined : Number(e.target.value))} className="input-field" placeholder="—" />
         </Field>
@@ -163,9 +161,6 @@ function ConditionalEffectItem({
         <Field label="總加成上限 max（選填）">
           <input type="number" value={effect.max ?? ''} onChange={(e) => upd('max', e.target.value === '' ? undefined : Number(e.target.value))} className="input-field" placeholder="—" />
         </Field>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
         <Field label="最大疊加 maxStacks（選填）">
           <input type="number" value={effect.maxStacks ?? ''} onChange={(e) => upd('maxStacks', e.target.value === '' ? undefined : Number(e.target.value))} className="input-field" placeholder="—" />
         </Field>
@@ -257,7 +252,7 @@ function ModuleLevelItem({
               <span className="text-[13px] text-text-dim font-medium tracking-wider uppercase">各項能力</span>
             </button>
             {!statsCollapsed && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className={`${GRID_AUTO_FIELDS} gap-2`}>
             <Field label="增傷 (%)"><input type="number" value={levelData.dmg} onChange={(e) => upd('dmg', Number(e.target.value))} className="input-field" /></Field>
             <Field label="暴擊率"><input type="number" value={levelData.crit_rate} onChange={(e) => upd('crit_rate', Number(e.target.value))} className="input-field" /></Field>
             <Field label="暴擊傷害 (%)"><input type="number" value={levelData.critDmg} onChange={(e) => upd('critDmg', Number(e.target.value))} className="input-field" /></Field>
@@ -282,7 +277,7 @@ function ModuleLevelItem({
               <span className="text-[13px] text-text-dim font-medium tracking-wider uppercase">武器專屬增傷 (%)</span>
             </button>
             {!weaponCollapsed && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className={`${GRID_AUTO_FIELDS} gap-2`}>
               <Field label="突擊"><input type="number" value={levelData.dmg_assault ?? 0} onChange={(e) => upd('dmg_assault', Number(e.target.value))} className="input-field" /></Field>
               <Field label="格鬥"><input type="number" value={levelData.dmg_melee ?? 0} onChange={(e) => upd('dmg_melee', Number(e.target.value))} className="input-field" /></Field>
               <Field label="射擊"><input type="number" value={levelData.dmg_shooting ?? 0} onChange={(e) => upd('dmg_shooting', Number(e.target.value))} className="input-field" /></Field>
@@ -531,7 +526,7 @@ function ModuleEditPanel({
         )}
 
         {editTab === 'stats' && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className={`${GRID_AUTO_FIELDS} gap-3`}>
             <Field label="增傷 (%)"><input type="number" value={form.dmg} onChange={(e) => update('dmg', Number(e.target.value))} className="input-field" /></Field>
             <Field label="暴擊率"><input type="number" value={form.crit_rate ?? 0} onChange={(e) => update('crit_rate', Number(e.target.value))} className="input-field" /></Field>
             <Field label="暴擊傷害 (%)"><input type="number" value={form.critDmg} onChange={(e) => update('critDmg', Number(e.target.value))} className="input-field" /></Field>
@@ -550,7 +545,7 @@ function ModuleEditPanel({
           <div className="space-y-4">
             <div>
               <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">大分類增傷 (%)</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
                 <Field label="突擊武器增傷"><input type="number" value={form.dmg_assault ?? 0} onChange={(e) => update('dmg_assault', Number(e.target.value))} className="input-field" /></Field>
                 <Field label="格鬥武器增傷"><input type="number" value={form.dmg_melee ?? 0} onChange={(e) => update('dmg_melee', Number(e.target.value))} className="input-field" /></Field>
                 <Field label="射擊武器增傷"><input type="number" value={form.dmg_shooting ?? 0} onChange={(e) => update('dmg_shooting', Number(e.target.value))} className="input-field" /></Field>
@@ -559,7 +554,7 @@ function ModuleEditPanel({
             </div>
             <div className="pt-2 border-t border-border/60">
               <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">突擊細分 (%)</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
                 <Field label="機槍增傷"><input type="number" value={form.dmg_machinegun ?? 0} onChange={(e) => update('dmg_machinegun', Number(e.target.value))} className="input-field" /></Field>
                 <Field label="重機槍增傷"><input type="number" value={form.dmg_heavy_machinegun ?? 0} onChange={(e) => update('dmg_heavy_machinegun', Number(e.target.value))} className="input-field" /></Field>
                 <Field label="霰彈增傷"><input type="number" value={form.dmg_shotgun ?? 0} onChange={(e) => update('dmg_shotgun', Number(e.target.value))} className="input-field" /></Field>
@@ -568,7 +563,7 @@ function ModuleEditPanel({
             </div>
             <div className="pt-2 border-t border-border/60">
               <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">格鬥細分 (%)</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
                 <Field label="刀劍增傷"><input type="number" value={form.dmg_blade ?? 0} onChange={(e) => update('dmg_blade', Number(e.target.value))} className="input-field" /></Field>
                 <Field label="長柄增傷"><input type="number" value={form.dmg_polearm ?? 0} onChange={(e) => update('dmg_polearm', Number(e.target.value))} className="input-field" /></Field>
                 <Field label="拳套增傷"><input type="number" value={form.dmg_fist ?? 0} onChange={(e) => update('dmg_fist', Number(e.target.value))} className="input-field" /></Field>
@@ -578,14 +573,14 @@ function ModuleEditPanel({
             </div>
             <div className="pt-2 border-t border-border/60">
               <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">射擊細分 (%)</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
                 <Field label="輕型狙擊步槍增傷"><input type="number" value={form.dmg_sniper_light ?? 0} onChange={(e) => update('dmg_sniper_light', Number(e.target.value))} className="input-field" /></Field>
                 <Field label="狙擊步槍增傷"><input type="number" value={form.dmg_sniper ?? 0} onChange={(e) => update('dmg_sniper', Number(e.target.value))} className="input-field" /></Field>
               </div>
             </div>
             <div className="pt-2 border-t border-border/60">
               <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">戰術細分 (%)</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
                 <Field label="導彈增傷"><input type="number" value={form.dmg_missile ?? 0} onChange={(e) => update('dmg_missile', Number(e.target.value))} className="input-field" /></Field>
                 <Field label="火箭增傷"><input type="number" value={form.dmg_rocket ?? 0} onChange={(e) => update('dmg_rocket', Number(e.target.value))} className="input-field" /></Field>
                 <Field label="電磁炮增傷"><input type="number" value={form.dmg_railgun ?? 0} onChange={(e) => update('dmg_railgun', Number(e.target.value))} className="input-field" /></Field>
@@ -594,7 +589,7 @@ function ModuleEditPanel({
             </div>
             <div className="pt-2 border-t border-border/60">
               <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">其他觸發增傷 (%)</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
                 <Field label="反擊增傷"><input type="number" value={form.dmg_counter ?? 0} onChange={(e) => update('dmg_counter', Number(e.target.value))} className="input-field" /></Field>
                 <Field label="敵方階段增傷"><input type="number" value={form.dmg_enemy_phase ?? 0} onChange={(e) => update('dmg_enemy_phase', Number(e.target.value))} className="input-field" /></Field>
               </div>

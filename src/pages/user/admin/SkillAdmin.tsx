@@ -60,8 +60,9 @@ function SkillEditPanel({
     catch (e) { setError(e instanceof Error ? e.message : '儲存失敗，請重試'); setSaving(false) }
   }
 
+  // 欄位少 → 維持窄版（PLAN-033）；吃 AdminModal 的 90vw 預設只會讓欄位漂在空白裡
   return (
-    <AdminModal saving={saving} error={error} onSave={handleSubmit} onCancel={onCancel}>
+    <AdminModal maxWidth="max-w-2xl" saving={saving} error={error} onSave={handleSubmit} onCancel={onCancel}>
       <div className="flex items-center gap-3 mb-4 shrink-0">
         <h3 className="text-lg font-bold flex items-center gap-2">
           <span className="text-accent-orange">✎</span> 編輯技能

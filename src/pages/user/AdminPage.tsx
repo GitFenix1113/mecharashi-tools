@@ -4,7 +4,7 @@ import type { GrayOpsRoster } from '../../types'
 import { updateGrayOpsRoster } from '../../lib/firestoreApi'
 import { useAuth } from '../../contexts/AuthContext'
 import { useGameData, type CollectionKey } from '../../contexts/GameDataContext'
-import { TabButton, AdminLoadGate } from './admin/shared'
+import { TabButton, AdminLoadGate, ADMIN_WIDE_MAX_W } from './admin/shared'
 import ModuleAdmin from './admin/ModuleAdmin'
 import MechAdmin from './admin/MechAdmin'
 import PilotAdmin from './admin/PilotAdmin'
@@ -117,8 +117,10 @@ export default function AdminPage() {
   const searchSeed  = searchSeeds[tab] ?? ''
   const showContent = isArmed && (cfg.selfLoading || tabLoaded)
 
+  // 列表容器與編輯彈窗共用寬度（PLAN-033 A-4）；上方 authLoading / 無權限兩個狀態
+  // 只有一段置中短訊息，維持 max-w-6xl 較好看，故不套用。
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12">
+    <div className={`${ADMIN_WIDE_MAX_W} mx-auto px-4 py-12`}>
       <div className="mb-8">
         <span className="text-xs text-accent-orange tracking-[3px] uppercase font-[Orbitron,sans-serif]">
           Admin

@@ -1,5 +1,22 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 
+// ── 後台內容區共用寬度（PLAN-033）───────────────────────────────────────────────
+// 編輯彈窗（AdminModal）與列表容器（AdminPage）共用同一個值，避免兩者寬度各自漂移。
+// ⚠ 必須維持完整字面量字串：Tailwind 是掃描原始碼文字來產生 CSS 的，
+//   若拆成 `max-w-[min(${a},${b})]` 之類的樣板字串就掃不到，會靜默無樣式。
+export const ADMIN_WIDE_MAX_W = 'max-w-[min(90vw,1920px)]'
+
+// ── 後台表單格線（PLAN-033 Phase B）─────────────────────────────────────────────
+// 同質短欄位群（數值、短下拉）專用：auto-fill 依實際可用寬度自動決定欄數——
+// 欄位多就排滿一列，欄位少就靠左留白、不被撐胖。
+//   ⚠ 是 auto-fill 不是 auto-fit：auto-fit 會收合空軌道、讓現有欄位吃掉整列寬度，
+//     正好是本階段要消滅的「胖輸入框」。兩者只差一個字，行為相反。
+// 量的是元素自身寬度而非視窗，所以窄版彈窗（max-w-2xl）與巢狀卡片內都會自動縮成
+// 較少欄，不需要另外配斷點。
+//   ⚠ 異質長欄位群不要套用——自由文字（名稱）、圖片路徑、textarea 本來就該吃滿寬度。
+//   ⚠ 必須維持完整字面量字串，Tailwind 才掃得到。調整密度改下面的 220px 即全站生效。
+export const GRID_AUTO_FIELDS = 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))]'
+
 // ── Field：帶標籤的表單欄位包裝 ────────────────────────────────────────────────
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -250,8 +267,26 @@ export function LoadMoreButton({ hasMore, loading, onClick }: { hasMore: boolean
 // ── AdminModal：各 EditPanel 共用彈窗殼層 ─────────────────────────────────────
 // children 應包含：標題、(可選 Tab 列)、overflow-y-auto flex-1 捲動區
 // 彈窗殼自帶：錯誤行、儲存/取消按鈕列
+//
+// 寬度（PLAN-033）：預設 min(90vw, 1920px)。後台維護者只用 PC、不考慮手機，
+//   故放寬到接近滿版；1920px 上限僅為防止超寬螢幕（3440px+）把彈窗撐到荒謬寬度，
+//   在 2133px 以下的視窗完全不會觸發。欄位少的編輯器（Glossary / NeuralDrive /
+//   Skill）顯式傳 max-w-2xl 維持窄版——撐寬只會讓兩三個欄位漂在一片空白裡。
+//   ⚠ 不可改用 w-[90vw]：殼層已有 w-full，兩者都在設 width，勝負取決於 Tailwind
+//     產生的 CSS 規則順序而非你寫的 class 順序。用 max-w-* 才是確定行為。
+// ⚠ 這裡刻意「不」加 Tailwind 的容器查詢工具類（PLAN-033 踩過的坑，別加回來）：
+//   它會套用 container-type:inline-size，而該值隱含 contain:layout——layout containment
+//   會讓此元素成為 position:fixed 子孫的 containing block。多個編輯器在彈窗內使用
+//   IconField（components/admin/IconPicker），該元件是 `fixed inset-0` 的全螢幕浮層，
+//   一旦套上就會改對齊彈窗的框而非視窗，浮層直接錯位。
+//   內部格線改用 GRID_AUTO_FIELDS（見下方）達成同樣目的，且它量的是元素自身寬度，
+//   本來就不需要容器查詢。
+//   （註：產出的 CSS 裡可能仍看得到該 utility 的定義，那是 Tailwind 掃描器不解析語法、
+//     只抓字串所致——連 docs/ 的 PLAN 文件在討論它時的字面量都會被掃到（copy-docs 會把
+//     docs 複製進 public/）。那是無元素套用的死規則，判斷有沒有踩雷要看「元素上有沒有這個
+//     class」，不是看 CSS 裡有沒有這條規則。）
 export function AdminModal({
-  maxWidth = 'max-w-2xl',
+  maxWidth = ADMIN_WIDE_MAX_W,
   saving,
   error,
   onSave,

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { Mech, Module, MechPart, Weapon } from '../../../types'
 import { ModuleSlot, ArmorType } from '../../../types/enums'
-import { Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog } from './shared'
+import { Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog, GRID_AUTO_FIELDS } from './shared'
 import { IconField, loadManifest } from '../../../components/admin/IconPicker'
 import { updateMech, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
@@ -341,7 +341,7 @@ function MechEditPanel({
   }
 
   return (
-    <AdminModal maxWidth="max-w-2xl" saving={saving} error={error} onSave={handleSubmit} onCancel={onCancel}>
+    <AdminModal saving={saving} error={error} onSave={handleSubmit} onCancel={onCancel}>
       <h3 className="text-lg font-bold mb-3 flex items-center gap-2 shrink-0">
         <span className="text-accent-orange">⚙</span> 機甲編輯
         <span className="text-text-secondary text-sm font-normal ml-1">{form.name}</span>
@@ -371,7 +371,7 @@ function MechEditPanel({
         {/* ── 基本數值 ── */}
         {tab === 'basic' && (
           <>
-            <div className="grid grid-cols-2 gap-3">
+            <div className={`${GRID_AUTO_FIELDS} gap-3`}>
               <Field label="護甲類型 armorType">
                 <select className="input-field" value={form.armorType} onChange={(e) => set('armorType', e.target.value)}>
                   {Object.values(ArmorType).map((t) => <option key={t} value={t}>{t}</option>)}
@@ -607,7 +607,7 @@ function PartEditor({ label, part, defaultFolder, onChange }: { label: string; p
   return (
     <div className="border border-border rounded-lg p-3 space-y-3">
       <div className="font-bold text-sm text-accent-cyan">{label}</div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className={`${GRID_AUTO_FIELDS} gap-3`}>
         {num('durable', '耐久 durable')}
         {num('armor', '護甲 armor')}
         {num('firepower', '火力 firepower')}

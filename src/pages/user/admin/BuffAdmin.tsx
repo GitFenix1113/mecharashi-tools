@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { GameBuff, SkillEffect, BuffLevel } from '../../../types'
 import { BuffType } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, GRID_AUTO_FIELDS } from './shared'
 import { updateBuff, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
@@ -217,7 +217,7 @@ function BuffLevelItem({
               <input type="text" value={levelData.description ?? ''} onChange={(e) => upd('description', e.target.value || undefined)} className="input-field" />
             </Field>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className={`${GRID_AUTO_FIELDS} gap-2`}>
             <Field label="最大疊加 maxStack（選填）">
               <input
                 type="number"
@@ -359,7 +359,7 @@ function BuffEditPanel({
         />
 
         {!isLeveled ? (
-          <div className="grid grid-cols-3 gap-3">
+          <div className={`${GRID_AUTO_FIELDS} gap-3`}>
             <Field label="最大疊加 maxStack（選填）">
               <input
                 type="number"
