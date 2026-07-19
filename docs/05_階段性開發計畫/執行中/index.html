@@ -31,6 +31,51 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-033 · 後台編輯視窗加寬</h3>
+      <p>後台編輯彈窗固定 672px（<code>AdminModal</code> 的 <code>max-w-2xl</code>），12 個分頁中有 10 個共用這層殼；維護者只在 PC 上作業，等於為不存在的手機情境留白大半螢幕。高度早已是 <code>max-h-[90vh]</code>，問題純在寬度。但掃描後發現<b>單純加寬是負優化</b>——<code>.input-field</code> 為 <code>width:100%</code>，且 59 處格線有 58 處是固定欄數，多出的寬度會全變成胖輸入框，排數一排都沒少。故加寬（A）與格線改造（B）綁定交付。B 原訂用階梯式容器查詢，開工後改為 <b>CSS <code>auto-fill</code></b>：階梯解不掉「欄位數本來就少」的區塊（射程頁只有 2 個欄位，再多斷點也排不滿），而 auto-fill 排不滿就留白、不把空間分給現有欄位；且它量的是元素自身寬度，窄版彈窗與巢狀卡片自動得到正確欄數，校準從「35 處各配階梯」簡化為調一個數字。過程中另拆掉一顆雷：容器查詢的 <code>contain:layout</code> 會使彈窗成為 <code>position:fixed</code> 子孫的 containing block，將打壞六個編輯器共用的 IconPicker 全螢幕浮層。寬度經互動示範實測由 80% 上修為 <b>90vw</b>。四個大編輯器的 Tab 版面重構（C）已納入範圍但延後。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-033_後台編輯視窗加寬/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-033_後台編輯視窗加寬/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card pink">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-032 · 武器技能引用化</h3>
+      <p>82 把武器內散落著 170 份技能拷貝，實際上只有 124 個相異技能（重複率 27.1%），而且已經開始漂移——「起爆」在凱旋·改與獵器上是同一個官方技能，文字卻一份補了 PLAN-019 方括號、一份沒有。本計畫沿用 PLAN-004 已驗證的漸進路徑（雙格式 union + 相容層 + 兩階段 flip），把武器技能收進既有技能庫共用。實測發現該集合早已不是「機師的技能」而是全站技能字典（84% 的 skill 引用目標無任何機師持有，維護者甚至已自行放入兩個武器技能），故<b>不另開集合</b>、改用 domain 欄位分類、後台同頁篩選。使用者可見行為完全不變，換來的是「改一處全站生效」。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-032_武器技能引用化/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-032_武器技能引用化/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-031 · 武器製作關係層</h3>
+      <p>「裁決者」是用背包圖紙在【特種背包製作】做出來的，玩家卻在背包圖鑑找不到它。查核發現官方資料層其實把它放在武器表，「特種背包製作」是製作台位置而非裝備分類——所以這是呈現問題，不是儲存歸類問題。進一步推導發現更大的結構：S+ 武器是 SS 武器的材料，技能會被繼承，全站可推出 <b>41 條製作關係（0 歧義）</b>，而「裁決者←熠光」只是其中的 2 條同稀有度邊。因此本計畫用單一 <code>upgrade</code> 關係同時表達武器進階與複合製作，讓武器頁看得見前置與後續、複合武器在背包圖鑑正交投影並列。零文件搬移、零 refType 變更、單一 bump、可完整回退，並立下「跨界實體依資料形狀決定歸屬」的架構判準。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-031_複合武器歸類/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-031_複合武器歸類/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-030 · 資料變更歷史</h3>
+      <p>後台 BUFF／技能／詞條補上一直缺席的刪除功能，且刪除時級聯清除全站 9 個集合對它的引用、不留死連結（引用採錨點與綁定分離的側錄表設計，可外科手術式移除；內嵌文案的數值 token 則以「凍結最後已知值」處理）。所有異動寫入僅可新增、連管理員都改不了的 changeHistory 集合，依「集合 × 操作」雙軸分類篩選；刪除快照同時記下被刪文件與每一處被移除的引用，形成可反向套用的還原單。log 以 Firestore 原生 TTL 自動保留兩年，不需 Cloud Function。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-030_資料變更歷史/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-030_資料變更歷史/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-029 · Cloudflare 化與 App Check 退場</h3>
+      <p>用 Cloudflare 一層邊緣基建接手「反白嫖 + 反爬 + 加速」，讓 App Check／reCAPTCHA 退場。前端不再直連 Firestore，公開遊戲資料改走 Cloudflare Worker 代理、Firestore 規則收成 read:if false（比 App Check 硬）；用戶資料維持直連 Auth。反爬用 CF 現成能力（封阿里雲／騰訊雲機房 ASN + 限流），順帶盡量改善中國讀取（不碰 ICP）。分階段灰度、每步可回退。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-029_Cloudflare化與AppCheck退場/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-029_Cloudflare化與AppCheck退場/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card pink">
       <div class="card-icon">◆</div>
       <h3>PLAN-026 · 召喚單位展示</h3>
