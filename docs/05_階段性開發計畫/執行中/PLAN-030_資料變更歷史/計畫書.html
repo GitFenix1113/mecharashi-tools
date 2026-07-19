@@ -292,7 +292,21 @@
 <span class="nm">descriptionRefs</span>: { <span class="nm">虛粒子形態</span>: { <span class="nm">refType</span>: <span class="st">'buff'</span>, <span class="nm">refId</span>: <span class="st">'buff_虛粒子形態'</span> } }
                   <span class="cm">// └─ 結構化 map，delete refs[key] 即可，完全不必動文案</span></div>
     因此四類引用全部可機械移除：<code>descriptionRefs</code> map key、<code>buffIds[]</code> 陣列元素、<code>termRef</code> 純量欄位、<code>abilityId</code> 純量欄位。<br>
-    <strong>可直接複用：</strong><code>src/utils/buffPool.ts</code> 的 <code>buildBuffPool()</code> 已經在走訪全站每一個 <code>buffIds</code> 站點來建反向索引——級聯清除需要的 traversal 與它完全相同，不需從零寫。
+    <strong>但「外科手術式」只成立於資料語意層，不成立於寫入機制層（C-2 實作後補充）：</strong>
+    上面那句 <code>delete refs[key] 即可</code> 描述的是<strong>記憶體中</strong>的操作。真要把它送進 Firestore 時，
+    原本設想的 <code>arrayRemove()</code> / <code>deleteField()</code> sentinel <strong>大部分站點用不了</strong>——
+    <strong>Firestore 的 FieldPath 不能穿越陣列</strong>：<code>'talents.2.buffIds'</code> 會被解讀成 map key <code>'2'</code>，
+    而非 <code>talents</code> 的第 3 個元素。C-1 盤點的站點中帶陣列索引的佔多數
+    （<code>talents[]</code> / <code>skills[]</code> / <code>neuralDrive[].levels[]</code> / <code>weapons.skills[]</code> / <code>*.levels[]</code>）。
+    C-2 因此統一改為<strong>「載入文件 → 記憶體內修改 → 只寫回被動到的頂層欄位」</strong>，
+    並刻意不對少數可走 sentinel 的站點特例化（混用兩套機制，Phase F 就得寫兩套逆運算）。
+    連帶影響兩處：① 寫入是該頂層欄位的 last-write-wins，故 C-4 必須用「當下重讀」的文件建 plan，不可餵 GameDataContext 快取；
+    ② 同文件多處命中已合併成單筆 update，batch 500 上限的計算基準由「站點數 + 1」變為「文件數 + 1」。<br>
+    <strong>與 <code>buildBuffPool</code> 的關係（C-1 實作後更正）：</strong>本計畫初稿寫「<code>buildBuffPool()</code> 已經在走訪全站每一個 <code>buffIds</code> 站點來建反向索引，traversal 完全相同」——<strong>這句話高估了它</strong>。
+    實際上它只有一處呼叫（<code>SimulatorPage.tsx:861</code>），傳入的是<strong>單一套配裝</strong>（一個機師、幾個模組、一把武器、一個背包），產出「這套配裝能拿到哪些 buff」，<strong>完全沒有迭代任何集合</strong>；
+    而且它<strong>只處理 <code>buffIds</code></strong>，不碰 <code>descriptionRefs</code> / <code>termRef</code> / 數值 token——而那三者才是真實資料裡引用的主體。<br>
+    因此可共用的是<strong>站點路徑定義</strong>（哪些欄位持有引用），不是走訪函式本身：<code>buildBuffPool</code> 是「單配裝 → BuffSource[]」，<code>findReferences</code> 是「全資料庫 → 誰引用了 X」，形狀不同。
+    C-1 的做法是把站點定義抽成 <code>src/utils/entityRefs.ts</code> 的 registry，兩者各自消費同一份定義。
   </div>
 
   <div class="warning-block">
@@ -300,6 +314,35 @@
     <strong>① <code>buffIds</code> 帶 <code>@N</code> 等級後綴：</strong>陣列元素可能是 <code>"buff_傷害提升@3"</code>（PLAN-024）。用字串相等過濾會讓它在刪除 <code>buff_傷害提升</code> 後<strong>存活下來變成死連結</strong>。必須先用既有的 <code>parseBuffRef()</code>（<code>src/utils/buffRef.ts</code>）解析出 <code>buffId</code> 再比對。<br>
     <strong>② <code>Pilot.skills</code> 是 <code>(string | PilotSkill)[]</code> 聯合型別：</strong>PLAN-004 遷移中途狀態，同一陣列裡可能混有「ID 字串」與「內嵌物件」兩種形態，走訪必須兩種都處理。<code>buffPool.ts:62-68</code> 有現成的處理範式可抄。<br>
     <strong>③ 引用站點清單必須與 <code>buffPool.ts</code> 保持同步：</strong>兩處各走各的會逐漸偏移。實作時應讓級聯清除與 <code>buildBuffPool</code> 共用同一份站點定義。
+  </div>
+
+  <div class="warning-block">
+    <strong>C-1 實作時發現的第三顆地雷：<code>ChangeTargetKind</code> 與 <code>RefType</code> 是兩套不同字串</strong><br>
+    這顆比 <code>@N</code> 更容易犯，且症狀完全一樣（靜默漏清）：
+    <div class="code-block">
+<span class="cm">// src/types/changeHistory.ts</span>
+<span class="kw">type</span> <span class="ty">ChangeTargetKind</span> = <span class="st">'buff'</span> | <span class="st">'pilotSkill'</span> | <span class="st">'glossaryTerm'</span>
+<span class="cm">// src/types/common.ts</span>
+<span class="kw">type</span> <span class="ty">RefType</span> = <span class="st">'buff'</span> | <span class="st">'skill'</span> | <span class="st">'term'</span> | …
+<span class="cm">//                        ↑ 不同名！ ↑</span></div>
+    <code>findReferences('pilotSkill', …)</code> 若直接拿 kind 去比對 <code>EntityRef.refType</code>，<strong>所有技能與詞條引用都會零命中</strong>，
+    而且不會拋錯、不會有任何警告。已加 <code>REF_TYPE_OF</code> 顯式映射表並以單元測試 D0~D3 鎖住。<br>
+    <strong>另外兩個同類約束（皆已納入實作）：</strong><br>
+    · <strong><code>descriptionRefs</code> 的 map key 是使用者輸入的中文，可能含 <code>.</code></strong> → <code>ReversePatch.path</code> 是 <code>.</code> 分隔字串，
+      C-2 若用 <code>path.split('.')</code> 還原 FieldPath 會拆錯。故 <code>RefHit</code> 同時帶 <code>segments</code>（陣列，權威）與 <code>path</code>（字串，顯示用），C-2 只准用 segments。<br>
+    · <strong>索引式路徑不是穩定識別子</strong> → 還原時 <code>talents[]</code> 若已被重排，patch 會套到錯的天賦上。故每個站點盡量帶 <code>anchor</code>（by name / level / minSum），
+      讓 Phase F 能「先按 index 找、對不上則按 anchor 重新定位」。<strong>這個格式是 C-2/F-2 的契約，現在不加之後補不上。</strong>
+  </div>
+
+  <div class="warning-block">
+    <strong>C-1 盤點發現的第四類引用：<code>nameSoftRef</code>（以名稱而非 ID 關聯）</strong><br>
+    原本假設所有引用都是 ID 型，盤點後發現 <code>SkillCondition.hasBuff</code>（<code>src/types/buff.ts:43</code>）存的是
+    <strong>buff 的「名稱」而非文件 ID</strong>，散布在 11 處路徑（機師天賦 / 專武強化效果 / 技能 / 神驅各級 / BUFF 自身 / BUFF 各級 / 武器技能…）。<br>
+    <strong>ID 型級聯無法處理它</strong>：刪除 <code>buff_凝勢</code> 時掃不到 <code>hasBuff: '凝勢'</code>，改名也會靜默斷鏈。
+    <code>PilotAdmin.tsx:100</code> 是純文字輸入框、無任何校驗。<br>
+    <strong>處置：</strong>掃描器認得這 11 條路徑，但命中結果進 <code>softWarnings</code> 而非 <code>hits</code>——<strong>只在對話框列出讓管理員自行處理，不自動清除</strong>。
+    自動清除一個「靠名稱字串比對」的欄位風險過高（同名不同義、部分匹配）。<br>
+    實測全站 0 筆，屬「型別在、資料無」的類別。
   </div>
 
   <div class="info-block">

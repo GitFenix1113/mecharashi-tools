@@ -8,6 +8,7 @@
 
 import type { Pilot, PilotSkillDoc, Module, Weapon, Backpack } from '../types'
 import { parseBuffRef } from './buffRef.ts'
+import { SPECS, SKIP_WHEN_SKILLS_RESOLVED, type CollectionSpec } from './entityRefs.ts'
 
 /** 反向索引出的單一 buff 來源條目 */
 export interface BuffSource {
@@ -49,45 +50,43 @@ function pushBuffIds(out: BuffSource[], buffIds: string[] | undefined, origin: s
  * 反向索引：配裝各實體 buffIds[] 的聯集（帶來源、已拆 id@N）。
  * 不做去重 / 互斥收斂——那是 reachableBuffs.resolveReachable 的職責。
  */
+/**
+ * 跑一份 spec 的所有 buffIdSites，把 buffIds 推進 out。
+ * 站點宣告順序即輸出順序——buffPool.test.ts 用 deepEqual 斷言整個陣列，順序是行為的一部分。
+ */
+function runSpec<T>(out: BuffSource[], spec: CollectionSpec<T>, doc: T, skipSiteId?: string): void {
+  for (const site of spec.buffIdSites) {
+    if (site.id === skipSiteId) continue
+    for (const occ of site.enumerate(doc)) pushBuffIds(out, occ.buffIds, occ.origin)
+  }
+}
+
 export function buildBuffPool(input: BuffPoolInput): BuffSource[] {
   const out: BuffSource[] = []
   const { pilot, skills, modules, weapon, backpack } = input
 
+  // ── 以下三處順序/條件都是既有行為，改寫時逐條複製，勿「順手整理」──
+  //
+  // ① 技能的位置在「天賦與神驅之間」，不是最後。把 skills 迴圈提到 pilot 區塊外
+  //    會產出 天賦→神驅→技能，與既有 deepEqual 斷言不符。
+  // ② skills 與嵌入技能站點互斥：resolvePilotSkills 會把嵌入物件也轉成 doc，
+  //    兩邊都跑的話有嵌入技能的機師會雙計。
+  // ③ skills 只在 pilot 存在時才處理——buildBuffPool({ skills }) 不帶 pilot
+  //    在改寫前不會產出任何技能 buff，此語意一併保留。
   if (pilot) {
-    // 天賦（嵌入，恆為物件）
-    for (const t of pilot.talents ?? []) {
-      pushBuffIds(out, t.buffIds, `天賦:${t.name}`)
-    }
-    // 技能：優先用已解析的 skills；否則取 pilot.skills 內嵌入物件（字串 ID 略過）
-    if (skills) {
-      for (const s of skills) pushBuffIds(out, s.buffIds, `技能:${s.name}`)
-    } else {
-      for (const entry of pilot.skills ?? []) {
-        if (typeof entry !== 'string') pushBuffIds(out, entry.buffIds, `技能:${entry.name}`)
+    for (const site of SPECS.pilots.buffIdSites) {
+      if (site.id === SKIP_WHEN_SKILLS_RESOLVED) {
+        if (skills) for (const s of skills) runSpec(out, SPECS.pilotSkills, s)
+        else for (const occ of site.enumerate(pilot)) pushBuffIds(out, occ.buffIds, occ.origin)
+        continue
       }
-    }
-    // 神經驅動（v1 滿級假設：各級 buffIds 全收，取最高交給收斂）
-    for (const nd of pilot.neuralDrive ?? []) {
-      for (const lv of nd.levels ?? []) {
-        pushBuffIds(out, lv.buffIds, `神經驅動:${nd.name}`)
-      }
+      for (const occ of site.enumerate(pilot)) pushBuffIds(out, occ.buffIds, occ.origin)
     }
   }
 
-  for (const m of modules ?? []) {
-    pushBuffIds(out, m.buffIds, `模組:${m.name}`)
-  }
-
-  if (weapon) {
-    // 武器透過其技能（WeaponSkill）賦予 buff；Weapon 無頂層 buffIds
-    for (const ws of weapon.skills ?? []) {
-      pushBuffIds(out, ws.buffIds, `武器技能:${ws.name}`)
-    }
-  }
-
-  if (backpack?.mainSkill) {
-    pushBuffIds(out, backpack.mainSkill.buffIds, `背包:${backpack.name}`)
-  }
+  for (const m of modules ?? []) runSpec(out, SPECS.modules, m)
+  if (weapon) runSpec(out, SPECS.weapons, weapon)
+  if (backpack) runSpec(out, SPECS.backpacks, backpack)
 
   return out
 }

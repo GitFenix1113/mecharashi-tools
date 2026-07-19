@@ -1,0 +1,284 @@
+// PLAN-030 C-2：級聯清除計算層單元測試
+//   npm test   →   node --test "src/**/*.test.ts"
+//
+// 這裡守的是「刪除會不會把資料改壞」。整欄改寫策略讓每次刪除都在重寫整個 talents /
+// skills / neuralDrive 陣列，算錯一個索引就是靜默資料損毀，而且 changeHistory 的
+// 修補單同時也會記錯 —— 連還原都救不回來。
+//
+// 正式資料現況（C-1 實測）：buffIds 幾乎全空、@N 零實例、pilots.skills[] 已全面
+// flip 成字串。多數分支整合測試永遠踩不到，單元測試是唯一防線。
+
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { buildCascadePlan } from './cascadePatch.ts'
+import { findReferences, ALL_SCAN_COLLECTIONS, type RefHit, type RefScanData } from './entityRefs.ts'
+import type { Pilot, GameBuff } from '../types'
+
+const asPilot = (o: unknown) => o as unknown as Pilot
+const asBuff = (o: unknown) => o as unknown as GameBuff
+
+/** 只給指定集合、其餘視為「已載入且為空」（與 entityRefs.test.ts 同款） */
+function scanData(partial: RefScanData): RefScanData {
+  const full: Record<string, unknown[]> = {}
+  for (const c of ALL_SCAN_COLLECTIONS) full[c] = []
+  return { ...full, ...partial } as RefScanData
+}
+
+const pilotData = (p: object, id = 'p1') => scanData({ pilots: [{ ...asPilot(p), id } as never] })
+
+// ─── M. 基本轉換 ─────────────────────────────────────────────────────────────
+
+test('M1: buffIds 命中 → 改寫整個頂層 talents，並產出對應修補單', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{ name: '天賦A', buffIds: ['buff_x@3', 'buff_y'] }],
+  })
+  const { hits } = findReferences('buff', 'buff_x', data)
+  const plan = buildCascadePlan(hits, data)
+
+  assert.equal(plan.problems.length, 0)
+  assert.equal(plan.mutations.length, 1)
+
+  const m = plan.mutations[0]
+  assert.equal(m.coll, 'pilots')
+  assert.equal(m.docId, 'p1')
+  // 只寫回被動到的頂層欄位，name 不該出現
+  assert.deepEqual(Object.keys(m.set), ['talents'])
+  assert.deepEqual(m.unset, [])
+  assert.deepEqual((m.set.talents as { buffIds: string[] }[])[0].buffIds, ['buff_y'])
+
+  assert.deepEqual(plan.patches, [
+    { coll: 'pilots', docId: 'p1', path: 'talents.0.buffIds', op: 'arrayRemove', value: 'buff_x@3' },
+  ])
+})
+
+test('M2: 不改動輸入資料（copy-on-write）', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{ name: 'A', buffIds: ['buff_x'], descriptionRefs: { x: { refType: 'buff', refId: 'buff_x' } } }],
+  })
+  const before = JSON.stringify(data)
+  buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data)
+  assert.equal(JSON.stringify(data), before)
+})
+
+test('M3: 未被觸及的頂層欄位不進 set（避免整份文件覆寫）', () => {
+  const data = pilotData({
+    name: '測試', lore: '簡介', rarity: 'SSR',
+    talents: [{ name: 'A', buffIds: ['buff_x'] }],
+    neuralDrive: [{ name: 'ND', levels: [{ level: 1, buffIds: ['buff_other'] }] }],
+  })
+  const plan = buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data)
+  assert.deepEqual(Object.keys(plan.mutations[0].set), ['talents'])
+})
+
+test('M4: 同一文件多處命中合併成單一 mutation；writeCount = 文件數 + 1', () => {
+  const data = scanData({
+    pilots: [{ ...asPilot({
+      name: '測試',
+      talents: [{ name: 'A', buffIds: ['buff_x'] }],
+      neuralDrive: [{ name: 'ND', levels: [{ level: 1, buffIds: ['buff_x'] }] }],
+    }), id: 'p1' } as never],
+    buffs: [{ ...asBuff({ name: 'B', description: '[x]', descriptionRefs: { x: { refType: 'buff', refId: 'buff_x' } } }), id: 'b1' } as never],
+  })
+  const { hits } = findReferences('buff', 'buff_x', data)
+  const plan = buildCascadePlan(hits, data)
+
+  assert.equal(hits.length, 3)
+  assert.equal(plan.mutations.length, 2)              // 兩份文件，不是三筆寫入
+  assert.equal(plan.patches.length, 3)                // 修補單仍逐處記錄
+  assert.equal(plan.writeCount, 3)                    // 2 份 update + 1 份 deleteDoc
+  assert.equal(plan.mutations[0].appliedCount, 2)
+})
+
+// ─── N. arrayRemove 的兩種 segments 形狀（地雷 b）────────────────────────────
+
+test('N1: pilots.skills[] 元素移除 —— 修補單 path 正規化為陣列本身', () => {
+  const data = pilotData({ name: '測試', skills: ['skill_dead', 'skill_keep'] })
+  const { hits } = findReferences('pilotSkill', 'skill_dead', data)
+  assert.equal(hits[0].path, 'skills.0')              // hit 指向元素
+
+  const plan = buildCascadePlan(hits, data)
+  // 修補單指向陣列 —— F-2 要把元素加回「哪個陣列」，而非「哪個索引」（索引會位移）
+  assert.equal(plan.patches[0].path, 'skills')
+  assert.equal(plan.patches[0].value, 'skill_dead')
+  assert.deepEqual(plan.mutations[0].set.skills, ['skill_keep'])
+})
+
+test('N2: @N 精確移除，不誤傷同 id 其他等級以外的元素', () => {
+  const data = pilotData({ name: '測試', talents: [{ name: 'A', buffIds: ['buff_x@1', 'buff_x@2', 'buff_xy', 'buff_y'] }] })
+  const plan = buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data)
+  assert.deepEqual((plan.mutations[0].set.talents as { buffIds: string[] }[])[0].buffIds, ['buff_xy', 'buff_y'])
+  assert.equal(plan.patches.length, 2)
+})
+
+// ─── O. 索引錯位（地雷 a）——本檔案最重要的一組 ─────────────────────────────
+
+test('O1: 陣列元素移除不會讓同文件其他 hit 打到錯的物件（且與 hits 順序無關）', () => {
+  // skills[0] 是被刪技能的 ID 引用；skills[1] 是嵌入技能，其 descriptionRefs 也指向被刪技能。
+  // 若邊解析邊套用：先移除 skills[0] → 嵌入技能位移到索引 0 → 針對 skills.1 的
+  // mapKeyDelete 會落空（或在更長的陣列上刪到無辜的鄰居）。
+  const build = () => pilotData({
+    name: '測試',
+    skills: [
+      'skill_dead',
+      { name: '嵌入', description: '[參照]', descriptionRefs: { 參照: { refType: 'skill', refId: 'skill_dead' } } },
+    ],
+  })
+
+  const data = build()
+  const { hits } = findReferences('pilotSkill', 'skill_dead', data)
+  assert.equal(hits.length, 2)
+
+  const expected = [{ name: '嵌入', description: '[參照]', descriptionRefs: {} }]
+
+  const forward = buildCascadePlan(hits, data)
+  assert.equal(forward.problems.length, 0)
+  assert.deepEqual(forward.mutations[0].set.skills, expected)
+
+  // 反序餵入：hits 的順序不是 C-2 的契約，結果必須一致
+  const reversed = buildCascadePlan([...hits].reverse(), build())
+  assert.equal(reversed.problems.length, 0)
+  assert.deepEqual(reversed.mutations[0].set.skills, expected)
+})
+
+test('O2: 巢狀 buffIds 與外層陣列同時被改，兩者互不干擾', () => {
+  const data = pilotData({
+    name: '測試',
+    skills: [
+      { name: '嵌入', buffIds: ['buff_x'] },
+      { name: '嵌入2', buffIds: ['buff_x', 'buff_keep'] },
+    ],
+  })
+  const plan = buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data)
+  assert.deepEqual(plan.mutations[0].set.skills, [
+    { name: '嵌入', buffIds: [] },                    // 清空後保留空陣列，不刪欄位
+    { name: '嵌入2', buffIds: ['buff_keep'] },
+  ])
+})
+
+// ─── P. mapKeyDelete / fieldClear ────────────────────────────────────────────
+
+test('P1: descriptionRefs 的 key 含 "." 仍正確刪除（path 字串在此不可信）', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{
+      name: 'A',
+      description: '[凝勢.強化]',
+      descriptionRefs: {
+        '凝勢.強化': { refType: 'buff', refId: 'buff_x' },
+        其他:       { refType: 'buff', refId: 'buff_z' },
+      },
+    }],
+  })
+  const plan = buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data)
+  const refs = (plan.mutations[0].set.talents as { descriptionRefs: Record<string, unknown> }[])[0].descriptionRefs
+  assert.deepEqual(Object.keys(refs), ['其他'])
+  // 修補單的 value 是完整 EntityRef 物件，F-2 才還原得回 label / level
+  assert.deepEqual(plan.patches[0].value, { refType: 'buff', refId: 'buff_x' })
+})
+
+test('P2: 頂層純量欄位清除走 unset（C-4 轉 deleteField），不是寫入 undefined', () => {
+  const data = scanData({
+    buffs: [{ ...asBuff({ name: 'B', termRef: 'term_x' }), id: 'b1' } as never],
+  })
+  const plan = buildCascadePlan(findReferences('glossaryTerm', 'term_x', data).hits, data)
+  assert.deepEqual(plan.mutations[0].set, {})
+  assert.deepEqual(plan.mutations[0].unset, ['termRef'])
+  assert.deepEqual(plan.patches[0], { coll: 'buffs', docId: 'b1', path: 'termRef', op: 'fieldClear', value: 'term_x' })
+})
+
+test('P3: 巢狀純量欄位清除 → 改寫其頂層欄位，不進 unset', () => {
+  const data = pilotData({
+    name: '測試',
+    neuralDrive: [{ name: 'ND', levels: [{ level: 1, abilityId: 'nda_x' }] }],
+  })
+  // neuralDriveAbility 不在 ChangeTargetKind 內（C-1 已盤點、尚未開放刪除），手工造 hit
+  const hit: RefHit = {
+    coll: 'pilots', docId: 'p1', docName: '測試',
+    siteId: 'pilots.neuralDrive[].levels[].abilityId', kind: 'scalarRef',
+    segments: ['neuralDrive', 0, 'levels', 0, 'abilityId'],
+    path: 'neuralDrive.0.levels.0.abilityId', origin: 'ND Lv1',
+    op: 'fieldClear', value: 'nda_x',
+  }
+  const plan = buildCascadePlan([hit], data)
+  assert.deepEqual(plan.mutations[0].set, { neuralDrive: [{ name: 'ND', levels: [{ level: 1 }] }] })
+  assert.deepEqual(plan.mutations[0].unset, [])
+})
+
+// ─── Q. textFreeze 的 C-3 接縫 ───────────────────────────────────────────────
+
+test('Q1: 未提供 freezeText 時遇到數值 token 必須拋錯，不得默默跳過', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{ name: 'A', description: '可疊加<buff_x.lv3.maxStack>層' }],
+  })
+  const { hits } = findReferences('buff', 'buff_x', data)
+  assert.equal(hits[0].op, 'textFreeze')
+  // 跳過 = token 指向已刪實體、修補單也沒記 → 靜默壞掉又救不回
+  assert.throws(() => buildCascadePlan(hits, data), /C-3/)
+})
+
+test('Q2: 提供 freezeText 時覆寫文字，但修補單存的是凍結前原文', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{ name: 'A', description: '可疊加<buff_x.lv3.maxStack>層' }],
+  })
+  const { hits } = findReferences('buff', 'buff_x', data)
+  const plan = buildCascadePlan(hits, data, { freezeText: (t) => t.replace(/<[^>]+>/g, '5') })
+
+  assert.equal((plan.mutations[0].set.talents as { description: string }[])[0].description, '可疊加5層')
+  assert.equal(plan.patches[0].op, 'textFreeze')
+  assert.equal(plan.patches[0].value, '可疊加<buff_x.lv3.maxStack>層')   // 還原要回到 token 形式
+})
+
+// ─── R. 去重與問題回報 ───────────────────────────────────────────────────────
+
+test('R1: 同陣列同值的重複命中只記一筆修補單（arrayRemove 移除所有相等元素）', () => {
+  const data = pilotData({ name: '測試', talents: [{ name: 'A', buffIds: ['buff_x', 'buff_x'] }] })
+  const { hits } = findReferences('buff', 'buff_x', data)
+  assert.equal(hits.length, 2)
+
+  const plan = buildCascadePlan(hits, data)
+  assert.equal(plan.deduped, 1)
+  assert.equal(plan.patches.length, 1)
+  assert.equal(plan.problems.length, 0)               // 第二筆是去重，不是 valueMissing 假問題
+  assert.deepEqual((plan.mutations[0].set.talents as { buffIds: string[] }[])[0].buffIds, [])
+})
+
+test('R2: 引用來源文件不在 data 中 → docMissing，且不產出 mutation', () => {
+  const data = pilotData({ name: '測試', talents: [{ name: 'A', buffIds: ['buff_x'] }] })
+  const { hits } = findReferences('buff', 'buff_x', data)
+  const plan = buildCascadePlan(hits, scanData({}))    // 掃描與套用之間資料變了
+
+  assert.equal(plan.mutations.length, 0)
+  assert.equal(plan.problems.length, 1)
+  assert.equal(plan.problems[0].reason, 'docMissing')
+  assert.equal(plan.patches.length, 0)                // 沒套用就不能記修補單
+})
+
+test('R3: 路徑已被改掉 → pathMissing / valueMissing，不靜默略過', () => {
+  const stale: RefHit = {
+    coll: 'pilots', docId: 'p1', docName: '測試',
+    siteId: 'pilots.talents[].buffIds', kind: 'buffIds',
+    segments: ['talents', 5, 'buffIds'], path: 'talents.5.buffIds', origin: '天賦:不存在',
+    op: 'arrayRemove', value: 'buff_x',
+  }
+  const gone: RefHit = { ...stale, segments: ['talents', 0, 'buffIds'], path: 'talents.0.buffIds' }
+  const data = pilotData({ name: '測試', talents: [{ name: 'A', buffIds: ['buff_other'] }] })
+
+  const plan = buildCascadePlan([stale, gone], data)
+  assert.deepEqual(plan.problems.map((p) => p.reason), ['pathMissing', 'valueMissing'])
+  assert.equal(plan.mutations.length, 0)
+})
+
+// ─── S. 純函式契約 ───────────────────────────────────────────────────────────
+
+test('S1: 同一輸入連呼叫兩次結果相同（無狀態污染）', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{ name: 'A', buffIds: ['buff_x@2'], descriptionRefs: { x: { refType: 'buff', refId: 'buff_x' } } }],
+  })
+  const { hits } = findReferences('buff', 'buff_x', data)
+  assert.deepEqual(buildCascadePlan(hits, data), buildCascadePlan(hits, data))
+})

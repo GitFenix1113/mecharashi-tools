@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">12</div>
+      <div class="summary-num" style="color:var(--accent-green)">15</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">20</div>
+      <div class="summary-num" style="color:var(--text-dim)">17</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">12 / 32</span>
+      <span style="color:var(--accent-green);">15 / 32</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 37.5%"></div>
+      <div class="progress-bar-fill" style="width: 47%"></div>
     </div>
   </div>
 
@@ -259,6 +259,55 @@
       <strong>附帶觀察：</strong>缺 <code>at</code> 欄位的文件會被 <code>orderBy('at')</code> 完全排除（Firestore 行為）。
       正常路徑一定有 <code>at</code>，但這代表萬一 <code>serverTimestamp()</code> 失敗，該筆 log 會在歷史頁「無聲消失」而非顯示異常。
       E-2 實作時值得留意。
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ C-1 + C-6 已完成（2026-07-19）</strong>——共用站點定義 <code>src/utils/entityRefs.ts</code>、
+    <code>findReferences()</code>、<code>buildBuffPool</code> 改吃 registry、38 項單元測試（總計 86 項全過）。
+    <div style="margin-top:8px;font-size:12px;">
+      <strong>盤點規模遠超預期：66 個引用站點</strong>（原估四類 × 9 集合）。以四種互相獨立的方法各自列舉後交叉比對，
+      再以三個不同視角對抗式驗證。分佈：numTokenText 18 · descriptionRefs 14 · nameSoftRef 11 · buffIds 8 · scalarRef 4。<br>
+      <strong>發現第四類引用形態 <code>nameSoftRef</code></strong>（11 處）：<code>SkillCondition.hasBuff</code> 以 buff「名稱」而非 ID 關聯，
+      ID 型級聯掃不到、改名會靜默斷鏈。處置為進 <code>softWarnings</code> 只警示不自動清除（見計畫書）。<br>
+      <strong>發現第三顆靜默地雷</strong>：<code>ChangeTargetKind</code>（pilotSkill/glossaryTerm）與 <code>RefType</code>（skill/term）不同名，
+      直接比對會讓所有技能與詞條引用零命中。已加 <code>REF_TYPE_OF</code> 映射並以測試 D0~D3 鎖住。<br>
+      <strong>改寫 <code>buildBuffPool</code> 時實際引入過一個順序回歸</strong>（resolved skills 從「天賦與神驅之間」被挪到最後），
+      靠新增的 J1/J3 測試抓出。既有 4 個測試涵蓋不到「pilot + skills 同時提供」這條路徑。
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ C-2 已完成（2026-07-19）</strong>——<code>src/utils/cascadePatch.ts</code> 的
+    <code>buildCascadePlan(hits, data)</code>，產出 <code>DocMutation[]</code>（要寫回什麼）與
+    <code>ReversePatch[]</code>（怎麼還原）。新增 17 項單元測試（總計 103 項全過）。
+    <div style="margin-top:8px;font-size:12px;">
+      <strong>推翻了計畫書的寫入構想</strong>：原訂用 <code>arrayRemove()</code> / <code>deleteField()</code> sentinel 打在欄位路徑上，
+      但 <strong>Firestore 的 FieldPath 不能穿越陣列</strong>（<code>'talents.2.buffIds'</code> 會被當成 map key <code>'2'</code>），
+      而帶陣列索引的站點佔多數。改為統一「整欄改寫」，並刻意不對少數可走 sentinel 的站點特例化——
+      混用兩套機制會讓 Phase F 要寫兩套逆運算。<br>
+      <strong>檔案位置偏離計畫書</strong>：計畫書寫 <code>src/lib/api/cascadeDelete.ts</code>，實際拆成純函式層
+      <code>src/utils/cascadePatch.ts</code> ＋ 日後 C-4 的 I/O 層 <code>lib/api/cascadeDelete.ts</code>。
+      原因是 <code>src/lib/firebase.ts</code> 使用 <code>import.meta.env</code>，<code>node --test</code> 匯入即爆——
+      放同一檔會讓這 17 項測試在 C-4 落地當天全部失效。<br>
+      <strong>C-3 的接縫做成會拋錯而非略過</strong>：<code>hits</code> 含 <code>textFreeze</code> 卻未注入
+      <code>freezeText</code> 時直接 throw。略過的話是「token 指向已刪實體、修補單也沒記」——靜默壞掉又救不回。<br>
+      <strong>已用突變測試驗證測試鑑別力</strong>（呼應 C-1 那次順序回歸的教訓）：把兩階段套用退化成天真的
+      「邊解析邊套用」後，17 項中僅索引錯位那一項 O1 轉紅。
+    </div>
+  </div>
+
+  <div class="impact-note" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.25);">
+    <strong style="color:var(--accent-red);">⚠ 盤點時順帶發現的兩個既有問題（不屬 PLAN-030，另行處理）</strong>
+    <div style="margin-top:8px;font-size:12px;">
+      ① <strong>正式資料已存在斷裂引用</strong>：<code>skill_破勢</code> 與 <code>skill_輝斷終焉</code> 的
+      <code>descriptionRefs.凝勢Ⅰ.refId</code> 為 <code>'凝勢'</code>，缺少 <code>buff_</code> 前綴（其餘 998 筆皆有）。
+      這在級聯清除上線前就已經是死連結。<br>
+      ② <strong>模擬器神驅 buff 靜默歸零</strong>：<code>buffPool.ts</code> 讀 <code>neuralDrive[].levels[].buffIds</code>，
+      但實測 36/36 全為空，而同層 <code>abilityId</code> 36/36 填滿——資料已改走 PLAN-023 的
+      <code>neuralDriveAbilities</code> 集合引用，<code>buildBuffPool</code> 卻沒有 resolve。
+      <strong>C-1 刻意不順手修</strong>：C-1 的驗收標準是「行為不變」，混入行為修正會讓回歸測試失去判別力。
+      registry 化之後這個修正只需動一處。
     </div>
   </div>
 
@@ -594,7 +643,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 全站引用掃描</div>
       <div class="task-group-meta">src/utils/entityRefs.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -608,7 +657,7 @@
         <div class="task-file">src/utils/entityRefs.ts · src/utils/buffPool.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -623,15 +672,15 @@
         <div class="task-file">src/utils/entityRefs.ts · src/utils/buffRef.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 級聯清除與反向修補單</div>
-      <div class="task-group-meta">src/lib/api/cascadeDelete.ts</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">src/utils/cascadePatch.ts</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -641,11 +690,20 @@
           <code>termRef</code> / <code>abilityId</code> 純量欄位清空。
           因為引用採<strong>錨點與綁定分離</strong>的側錄表設計（<code>[xxx]</code> 在文案、綁定在 <code>descriptionRefs</code>），
           這四類全部可外科手術式移除，<strong>完全不需要改動文案</strong>（決策五）。
+          <br><br>
+          <strong>實作時修正的計畫假設：寫入不能走 Firestore sentinel，改為整欄改寫。</strong>
+          原構想是 <code>arrayRemove()</code> / <code>deleteField()</code> 直接打在欄位路徑上，但
+          <strong>Firestore 的 FieldPath 不能穿越陣列</strong>——<code>'talents.2.buffIds'</code> 會被解讀成
+          map key <code>'2'</code>，而非 talents 的第 3 個元素。C-1 盤點的站點中帶陣列索引的佔多數
+          （<code>talents[]</code> / <code>skills[]</code> / <code>neuralDrive[].levels[]</code> /
+          <code>weapons.skills[]</code> / <code>*.levels[]</code>），這些一律只能整欄寫回。
+          少數可走 sentinel 的站點（<code>pilotSkills.buffIds</code>、<code>backpacks.mainSkill.buffIds</code>、
+          <code>buffs.termRef</code>）刻意<strong>不</strong>特例化：混用兩套機制，Phase F 就得寫兩套逆運算，分歧會靜默累積。
         </div>
-        <div class="task-file">src/lib/api/cascadeDelete.ts</div>
+        <div class="task-file">src/utils/cascadePatch.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -654,11 +712,48 @@
           每移除一處就記一筆 <code>{ coll, docId, path, op, value }</code>，<code>value</code> 為被移除的原值。
           <strong>這是 Phase F 能後補的關鍵</strong>：只要修補單有確實寫進快照，還原隨時可以補做，且不需回頭改動既有程式。
           設計上前三種 op 的還原都是「把元素加回集合」，<strong>天然冪等</strong>，這讓 F-2 不必做整份文件比對（決策七）。
+          修補單維持<strong>語意層</strong>、不綁上述寫入機制，因此 F 面對的是單一契約。
+          <code>arrayRemove</code> 的 <code>path</code> 一律正規化為<strong>陣列本身</strong>
+          （<code>skills.0</code> → <code>skills</code>），因為 F-2 要知道「加回哪個陣列」而非「哪個索引」——索引會位移。
         </div>
-        <div class="task-file">src/lib/api/cascadeDelete.ts</div>
+        <div class="task-file">src/utils/cascadePatch.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">交給 C-4 的三條契約</div>
+        <div class="task-desc">
+          ① <strong><code>data</code> 必須是「當下重讀」的文件，不可用 GameDataContext 快取</strong>——整欄改寫是
+          last-write-wins，餵陳舊快取會把別人剛存的修改一併洗掉。<br>
+          ② <strong><code>problems</code> 非空時必須中止整次刪除</strong>，不可只跳過那幾筆：帶著問題送出 batch 會留下
+          「文件刪了但某些引用還在」的半殘狀態，而修補單又漏記那幾處，等於還原也救不回來。<br>
+          ③ <strong><code>writeCount</code> 語意由「站點數 + 1」收斂為「文件數 + 1」</strong>——同文件多處命中已合併成單筆
+          update，batch 500 上限的計算基準隨之改變（對上限只會更寬鬆）。<br>
+          另外 <code>DocMutation.unset</code> 需由 C-4 轉成 <code>deleteField()</code>；目前只有
+          <code>buffs.termRef</code>（頂層純量）會走到這條路。
+        </div>
+        <div class="task-file">src/utils/cascadePatch.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">單元測試 17 項（含索引錯位地雷）</div>
+        <div class="task-desc">
+          <code>src/utils/cascadePatch.test.ts</code>。最關鍵的是 <strong>O1 索引錯位</strong>：同一份文件的多個 hit，
+          其 <code>segments</code> 是對<strong>原始</strong>文件算出來的；若邊解析邊套用，先移除 <code>skills[0]</code>
+          會讓 <code>skills[1]</code> 的 <code>descriptionRefs</code> hit 落空或刪到無辜的鄰居。
+          解法是<strong>先解析完所有 hit 擷取容器參照、再統一套用</strong>兩階段。
+          已用突變測試驗證鑑別力：把實作退化成天真的「邊解析邊套用」後，17 項中<strong>僅 O1 轉紅</strong>。
+          寫入層走 copy-on-write，只複製被走訪到的路徑——既不動輸入資料，也不會把 Timestamp 之類的類別實例拆壞。
+        </div>
+        <div class="task-file">src/utils/cascadePatch.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -688,7 +783,7 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-4 &nbsp; 原子交易與防呆</div>
-      <div class="task-group-meta">src/lib/api/cascadeDelete.ts</div>
+      <div class="task-group-meta">src/lib/api/cascadeDelete.ts（I/O 層；純計算在 C-2 的 utils/cascadePatch.ts）</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
@@ -733,7 +828,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-6 &nbsp; 純函式單元測試</div>
       <div class="task-group-meta">src/utils/entityRefs.test.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -751,7 +846,7 @@
         <div class="task-file">src/utils/entityRefs.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
