@@ -297,6 +297,33 @@
     </div>
   </div>
 
+  <div class="impact-note">
+    <strong>✅ C-4 已完成（2026-07-20）</strong>——<code>src/lib/api/cascadeDelete.ts</code>，
+    <code>planCascadeDelete()</code> ＋ <code>commitCascadeDelete()</code> 兩階段，安全閘 6 項測試（總計 122 項全過）。
+    <div style="margin-top:8px;font-size:12px;">
+      <strong>經六視角對抗式審查</strong>（原子性／Firestore API 語意／資料遺失／契約遵守／規則權限／快取一致性，
+      每個發現由三個懷疑者嘗試駁倒、兩票駁回即淘汰）：<strong>提出 25 項、存活 3 項</strong>，
+      其中兩項是同一個缺陷的重複報告。兩個真實缺陷都已修正並經原始碼二次確認：<br><br>
+      <strong>① 讀取用預設 source，離線時靜默回退 IndexedDB 快取 —— 推翻本檔整份設計前提。</strong>
+      正式環境啟用了 <code>persistentLocalCache</code>（<code>firebase.ts:63-70</code>，跨 session 的持久快取），
+      而 <code>getDocs</code> / <code>getDoc</code> 在伺服器不可達時會<strong>正常 resolve 並回傳快取內容</strong>，
+      不拋錯、不外露旗標（全站 <code>fromCache</code> 檢查零命中）。
+      後果有兩層：這段期間新增的引用掃不到 → 刪完斷鏈且修補單沒記、Phase F 救不回；
+      整欄改寫用陳舊內容寫回 → 把期間內別人的編輯一次洗掉。
+      諷刺的是本檔原註解已寫「寧可整個中止也不要掃一半」，但程式碼並沒有那個行為。
+      <strong>已改用 <code>getDocsFromServer</code> / <code>getDocFromServer</code></strong>——
+      伺服器不可達時直接拒絕，失敗發生在任何寫入之前，額外 read 成本為零。<br><br>
+      <strong>② <code>versions</code> 無法區分「目標被刪」與「同集合兄弟文件被改寫」。</strong>
+      刪 BUFF 時另一個 BUFF 的 <code>descriptionRefs</code> 可能指向它（<code>entityRefs.ts:328</code> 已證實此站點存在），
+      於是同集合會同時出現「目標被刪」與「兄弟被改寫」。若呼叫端照原註解只走
+      <code>removeCollectionItem</code>，它僅 filter 掉目標 id，就把記憶體中<strong>未同步的兄弟文件</strong>
+      連同新版本號寫進 localStorage → 版本與伺服器相符即恆命中，
+      <strong>該 client 快取永不自癒</strong>，且其他 client 一切正常、只有他自己壞掉。
+      已新增 <code>targetCollHasSiblingEdits</code> 讓呼叫端安全地選擇「就地移除」或「整包重抓」。<br><br>
+      被駁回的 22 項多為 plan→commit 之間的併發窗口與重試累積幽靈 log——那些是已在文件中聲明接受的取捨。
+    </div>
+  </div>
+
   <div class="impact-note" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.25);">
     <strong style="color:var(--accent-red);">⚠ 盤點時順帶發現的兩個既有問題（不屬 PLAN-030，另行處理）</strong>
     <div style="margin-top:8px;font-size:12px;">
@@ -882,7 +909,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-4 &nbsp; 原子交易與防呆</div>
       <div class="task-group-meta">src/lib/api/cascadeDelete.ts（I/O 層；純計算在 C-2 的 utils/cascadePatch.ts）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -897,7 +924,77 @@
         <div class="task-file">src/lib/api/cascadeDelete.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">拆成 plan / commit 兩階段（偏離計畫書）</div>
+        <div class="task-desc">
+          計畫書把 C-4 寫成單一函式，實作改為 <code>planCascadeDelete()</code> ＋ <code>commitCascadeDelete()</code>。
+          理由是 <strong>D-1 的確認對話框必須在使用者按下確認「之前」就顯示影響範圍</strong>
+          （「這會動到 3 個機師、5 個 BUFF」）。讀寫綁在同一次呼叫的話，對話框只能自己再掃一次，
+          而兩次掃描之間的結果還可能不一致。
+          另提供 <code>cascadeDelete()</code> 一次做完的包裝，給腳本與測試用。
+          <br><br>
+          <strong>commit 不會重新掃描</strong>：對話框停留期間的資料變動不會被看見。
+          重掃要再跑一次安全閘、且結果可能與使用者剛才看到的不同，成本與複雜度不划算——刪除是低頻操作。
+        </div>
+        <div class="task-file">src/lib/api/cascadeDelete.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">版本 bump 併入同一 batch（偏離計畫書）</div>
+        <div class="task-desc">
+          計畫書寫「對所有被觸及的集合呼叫 <code>bumpDataVersion</code>」——那是 N 次寫入<strong>同一份</strong>
+          <code>meta/gameData</code> 文件。改為併成單一次 <code>batch.set(..., { merge: true })</code> 並<strong>納入同一個 batch</strong>。
+          省寫入是其次，關鍵是<strong>原子性</strong>：若資料改了但版本沒 bump，其他 client 會繼續從
+          localStorage 供應已刪除的資料，直到有別的操作碰巧 bump 到。
+          連帶影響安全閘的計算——實際操作數是 <code>writeCount + 1</code>，
+          少算那一筆會讓「剛好 500 個 update」在 Firestore 端整批被拒（測試 V3 鎖住）。
+        </div>
+        <div class="task-file">src/lib/api/cascadeDelete.ts · src/utils/cascadePatch.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">安全閘 checkCascadeSafety（純函式，6 項測試）</div>
+        <div class="task-desc">
+          三道閘全部是「中止」而非「截斷後照做」：<br>
+          ① <code>problems</code> 非空 ② batch 操作數超過 500 ③ 還原快照超過單文件 1 MiB 安全額度（取 900 KB 留餘裕）<br>
+          放在 <code>cascadePatch.ts</code> 而非 I/O 層，才能純函式單測——這是 C-4 唯一測得到的部分，
+          其餘 I/O 行為要等模擬器整合測試。
+          快照大小用 <code>TextEncoder</code> 取 UTF-8 真實位元組（中文 1 字 3 bytes，
+          用 <code>String.length</code> 會低估三倍）。
+          <br><br>
+          <code>commitCascadeDelete</code> <strong>會自己再檢一次</strong>，不倚賴呼叫端有沒有看 <code>blockers</code>。
+          且檢查點在任何寫入之前，所以 <code>CascadeBlockedError</code> 拋出時資料庫必然毫髮無傷。
+        </div>
+        <div class="task-file">src/utils/cascadePatch.ts · src/utils/cascadePatch.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">兩種錯誤型別與唯一的不一致視窗</div>
+        <div class="task-desc">
+          <code>CascadeBlockedError</code>——安全閘擋下，<strong>在動任何資料之前拋出</strong>，資料庫毫髮無傷。<br>
+          <code>CascadeCommitError</code>——log 已寫入但 batch 提交失敗。這是<strong>唯一</strong>會留下不一致的失敗模式：
+          有一筆 delete log，但目標其實還在。因為 batch 是原子的（失敗＝一筆都沒寫），
+          <strong>資料本身完整、不需修復</strong>，只是歷史頁多一筆與事實不符的記錄。錯誤訊息帶出 <code>logId</code> 供人工核對。
+          <br><br>
+          會接受這個視窗，是因為兩種失敗不對等：多一筆「記了但沒刪成」的 log 只是雜訊，
+          而「刪了但沒記」等於永久失去還原能力。
+        </div>
+        <div class="task-file">src/lib/api/cascadeDelete.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
     </div>
   </div>
 

@@ -10,7 +10,11 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { buildCascadePlan, createNumRefFreezer } from './cascadePatch.ts'
+import {
+  buildCascadePlan, createNumRefFreezer, checkCascadeSafety,
+  FIRESTORE_BATCH_LIMIT, BATCH_OVERHEAD_OPS, SNAPSHOT_SIZE_BUDGET_BYTES,
+  type CascadePlan,
+} from './cascadePatch.ts'
 import { findReferences, ALL_SCAN_COLLECTIONS, type RefHit, type RefScanData } from './entityRefs.ts'
 import type { Pilot, GameBuff } from '../types'
 
@@ -401,4 +405,62 @@ test('U3: 修補單可被 JSON 往返（快照要存進 Firestore）', () => {
   const plan = buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data)
   // segments 混有 string 與 number，JSON 往返後型別必須保持（number 索引不可變字串）
   assert.deepEqual(JSON.parse(JSON.stringify(plan.patches)), plan.patches)
+})
+
+// ─── V. 送出前的安全閘（C-4）─────────────────────────────────────────────────
+
+/** 造一份只有 writeCount / problems 有意義的假 plan，專測閘門 */
+const fakePlan = (over: Partial<CascadePlan> = {}): CascadePlan => ({
+  mutations: [], patches: [], problems: [], deduped: 0, writeCount: 1, ...over,
+})
+
+test('V1: 一切正常時無阻擋', () => {
+  assert.deepEqual(checkCascadeSafety(fakePlan()), [])
+})
+
+test('V2: problems 非空必定阻擋（不可只跳過有問題的那幾筆）', () => {
+  const data = pilotData({ name: '測試', talents: [{ name: 'A', buffIds: ['buff_x'] }] })
+  const { hits } = findReferences('buff', 'buff_x', data)
+  const plan = buildCascadePlan(hits, scanData({}))          // 文件不在 → docMissing
+
+  const blockers = checkCascadeSafety(plan)
+  assert.equal(blockers.length, 1)
+  assert.equal(blockers[0].kind, 'problems')
+  assert.match(blockers[0].detail, /docMissing/)
+})
+
+test('V3: batch 上限用 writeCount + 版本 bump 計算，剛好 500 放行、501 擋下', () => {
+  // writeCount = mutations + 1(deleteDoc)；再 +1 是併進同一 batch 的 meta/gameData 版本寫入。
+  // 少算那一筆會讓「剛好 500 個 update」在 Firestore 端整批被拒
+  const ok = checkCascadeSafety(fakePlan({ writeCount: FIRESTORE_BATCH_LIMIT - BATCH_OVERHEAD_OPS }))
+  assert.deepEqual(ok, [])
+
+  const over = checkCascadeSafety(fakePlan({ writeCount: FIRESTORE_BATCH_LIMIT - BATCH_OVERHEAD_OPS + 1 }))
+  assert.equal(over.length, 1)
+  assert.equal(over[0].kind, 'batchLimit')
+  assert.equal(over[0].kind === 'batchLimit' && over[0].ops, FIRESTORE_BATCH_LIMIT + 1)
+})
+
+test('V4: 快照過大時擋下（單文件 1 MiB 上限）', () => {
+  const small = { doc: { name: 'x' }, patches: [] }
+  assert.deepEqual(checkCascadeSafety(fakePlan(), small), [])
+
+  // 中文 1 字 3 bytes，故 UTF-8 長度必須實測而非用 .length
+  const huge = { doc: { lore: '鋼'.repeat(SNAPSHOT_SIZE_BUDGET_BYTES / 3) }, patches: [] }
+  const blockers = checkCascadeSafety(fakePlan(), huge)
+  assert.equal(blockers.length, 1)
+  assert.equal(blockers[0].kind, 'snapshotSize')
+})
+
+test('V5: 省略 snapshot 時跳過大小檢查（僅預覽影響範圍的情境）', () => {
+  assert.deepEqual(checkCascadeSafety(fakePlan()), [])
+})
+
+test('V6: 多個問題同時存在時全部回報，不是只回第一個', () => {
+  const plan = fakePlan({
+    writeCount: 9999,
+    problems: [{ hit: { coll: 'pilots', docId: 'p1', path: 'x' } as never, reason: 'docMissing', detail: 'd' }],
+  })
+  const kinds = checkCascadeSafety(plan, { doc: {}, patches: [] }).map((b) => b.kind)
+  assert.deepEqual(kinds.sort(), ['batchLimit', 'problems'])
 })
