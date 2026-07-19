@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import AvatarDisplay from './profile/AvatarDisplay'
 import ContentNavDropdown, { type ContentNavItem } from './ContentNavDropdown'
 import NavIcon from './icons/NavIcon'
+import EmulatorBadge from './EmulatorBadge'
 
 // 友站：英文版 Mecharashi Wiki（對稱其站內指回本站的連結）
 const FRIEND_SITE_URL = 'https://mecharashi-wiki.cc/'
@@ -87,6 +88,9 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* 本地模擬器環境標示（非模擬器模式不渲染任何東西） */}
+      <EmulatorBadge />
+
       {/* Header */}
       <header className="sticky top-0 z-50 bg-bg-dark/95 backdrop-blur border-b border-border">
         <div className="max-w-7xl mx-auto px-4 h-12 flex items-center justify-between gap-4">

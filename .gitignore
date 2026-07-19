@@ -21,7 +21,14 @@ out/
 serviceAccountKey.json
 
 # Firebase Emulator 匯出的測試使用者資料（含個人資訊）
--
+# 根目錄的 "-"：過去某次 emulators:export 把 "-" 當成輸出檔名產生的殘留檔，
+# 內含真實帳號 email，務必保留此規則（可直接刪檔，刪掉後這行留著也無害）。
+/-
+emulator-data/
+emulator-seed/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
 *.csv
 
 # Editor
@@ -66,6 +73,10 @@ scripts/scrape-*.js
 scripts/seed-*.mjs
 scripts/migrate-plan004-*.mjs
 scripts/init-patch-versions.mjs
+# 例外：模擬器種子不是資料管線，是測試基礎建設，必須進版控才能重現 Phase 0 環境。
+# 它只在 localhost 生效（腳本內有硬性防呆），且揭露的「role 存在 Firestore 文件」
+# 在已提交的 firestore.rules 裡本來就看得到，不構成防線 C 要防的資訊洩漏。
+!scripts/seed-emulator.mjs
 scripts/patch-component-outerframe.mjs
 scripts/bump-data-version.mjs
 .claude/skills/data-patch/
