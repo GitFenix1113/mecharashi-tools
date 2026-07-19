@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-07-18
+## [Unreleased] - 2026-07-19
 
 ### ⚠ 重大變更
 
@@ -146,6 +146,7 @@
 
 ### 📚 文件
 
+- 補進 PLAN-029～032 計畫文件與執行中列表卡片 (`19b48ed`)
 - PLAN 文件重整（PLAN-025 歸檔、PLAN-026 新建、PLAN-028 更新） (`9088631`)
 - PLAN 計畫維護 — PLAN-024 歸檔、PLAN-023 轉觀察、PLAN-019 descope BOSS/關卡 (`2a55144`)
 - 同步資料模型與頁面規劃文件至最新型別 (`ca24ec5`)
@@ -189,6 +190,7 @@
 
 ### 🔧 維護
 
+- 後台編輯視窗加寬至 90vw 並改用自動格線（PLAN-033 A+B） (`7a8a543`)
 - 重生 manifest 同步被動技能圖示改名結果 (`d272626`)
 - 被動技能圖示改名（凱登_神經03~06 → 安/尼爾/黑障_神經）並重生 manifest (`8b33a0e`)
 - 新增莫比烏斯X機甲圖片（縮圖＋5 零件）並更新圖片 manifest (`0018415`)
