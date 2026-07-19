@@ -785,23 +785,66 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; 數值 token 凍結</div>
-      <div class="task-group-meta">src/utils/numRefs.ts</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">src/utils/numRefs.ts · src/utils/cascadePatch.ts</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">刪除前把 &lt;refId.lvN.attr&gt; 烘焙成常數</div>
         <div class="task-desc">
           唯一內嵌在文案字串裡、不可機械移除的引用形態。解法是<strong>凍結而非移除</strong>：
-          用既有的 <code>resolveNumRefs(text, lookup)</code> 把 token 換算成實際數值寫回文字，
-          <code>"可疊加&lt;buff_凝勢.lv3.maxStack&gt;層"</code> → <code>"可疊加5層"</code>（決策六）。
-          該函式原為 <code>DiffHighlight</code> 預處理而寫，正好是「在來源消失前把值固定下來」所需的原語。
+          把 token 換算成實際數值寫回文字，
+          <code>"可疊加&lt;buff_凝勢.lv3.maxStack&gt;層"</code> → <code>"可疊加7層"</code>（決策六）。
           <strong>凍結前的原始文字必須以 <code>textFreeze</code> op 存進修補單</strong>，否則還原時無法復原成 token 形式。
+          <br><br>
+          <strong>不能直接用 <code>resolveNumRefs</code>（計畫書原訂做法）：那支無差別替換<em>所有</em> token。</strong>
+          一段文案裡常有多個 token 指向不同 buff，全部烘焙會把無辜的引用一併變成死數字——
+          日後那些 buff 改了數值，正文再也不會跟著更新，而且沒有任何跡象顯示它曾經是引用。
+          改為新增 <code>freezeNumRefs(text, targetId, source)</code>，<strong>只烘焙指向被刪實體的 token</strong>，
+          其餘原樣保留。內部仍借用 <code>resolveNumValue</code> 以共用 registry 與 <code>.lvN</code> 取級邏輯。
         </div>
-        <div class="task-file">src/lib/api/cascadeDelete.ts · src/utils/numRefs.ts</div>
+        <div class="task-file">src/utils/numRefs.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">接上 C-2 的 freezeText 接縫</div>
+        <div class="task-desc">
+          <code>createNumRefFreezer(targetId, source)</code> 產出 <code>buildCascadePlan</code> 的
+          <code>opts.freezeText</code>，並蒐集 <code>unresolved</code>。
+          <strong>刻意收「被刪實體本身」而非 <code>NumRefLookup</code></strong>：只有指向 targetId 的 token 會被凍結，
+          收 lookup 只是給呼叫端誤傳全站查詢、波及他人的機會。
+          <br><br>
+          <strong>取不到值的 token 降級為 <code>?</code> 但不中止刪除</strong>（屬性無值 / <code>.lvN</code> 超範圍）。
+          理由：這類 token 在刪除前就已經顯示為暗色 <code>?</code>（<code>RefText.tsx:15</code> 的優雅降級），
+          凍結成 <code>?</code> 視覺上等價。但仍收進 <code>unresolved</code> 並帶著命中位置，
+          C-4 / D-1 應列給管理員——那代表有文案永久失去了數值。
+          <br><br>
+          <strong>目前只有 BUFF 刪除會用到</strong>：<code>NUM_ATTRS</code> 每筆的 <code>refTypes</code> 都是 <code>['buff']</code>，
+          故刪除技能／詞條不會產生 <code>textFreeze</code> 命中。日後若新增 <code>refTypes</code> 含 <code>'skill'</code> 的屬性
+          （registry 註解已預留 <code>cd</code>），技能刪除就會開始產生 textFreeze——屆時
+          <code>buildCascadePlan</code> 會<strong>拋錯</strong>提醒補上凍結器，不會靜默略過。這是刻意設計的失敗模式。
+        </div>
+        <div class="task-file">src/utils/cascadePatch.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">單元測試 10 項</div>
+        <div class="task-desc">
+          <code>numRefs.test.ts</code> 6 項（選擇性烘焙 / <code>.lvN</code> 取級 / 重複 token /
+          取不到值回報 / source 查無 / 無 token），<code>cascadePatch.test.ts</code> 4 項端到端。
+          最關鍵的是 <strong>「只烘焙被刪 buff，其他 token 存活」</strong>——這條斷言正是計畫書原訂做法會踩的坑。
+          總計 113 項全過。
+        </div>
+        <div class="task-file">src/utils/numRefs.test.ts · src/utils/cascadePatch.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
     </div>
   </div>
 

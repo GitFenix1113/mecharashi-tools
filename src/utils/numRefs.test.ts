@@ -13,6 +13,7 @@ import {
   orderRefsByFirstMention,
   compileSugar,
   detectLeftoverSugar,
+  freezeNumRefs,
 } from './numRefs.ts'
 import type { NumRefSource } from './numRefs.ts'
 
@@ -226,4 +227,46 @@ test('orderRefsByFirstMention + compileSugar：EntityRef.level → 產生 .lvN t
 
 test('orderRefsByFirstMention：無 level 的 ref 仍回純 refId（向後相容）', () => {
   assert.deepEqual(orderRefsByFirstMention('攜帶[凝勢I]', refs), ['buff_凝勢I'])
+})
+
+// ─── 凍結（PLAN-030 C-3）────────────────────────────────────────────────────
+
+test('freezeNumRefs：只烘焙指向 targetId 的 token，其他實體的原樣保留', () => {
+  // 這是 C-3 的核心正確性——用 resolveNumRefs 會把 buff_星爆 也一起烘焙成死數字
+  const text = '疊<buff_凝勢I.maxStack>層並使[星爆]上限<buff_星爆.maxStack>層'
+  const r = freezeNumRefs(text, 'buff_凝勢I', BUFFS.buff_凝勢I)
+  assert.equal(r.text, '疊5層並使[星爆]上限<buff_星爆.maxStack>層')
+  assert.deepEqual(r.unresolved, [])
+})
+
+test('freezeNumRefs：.lvN 取該級真值（階梯 buff）', () => {
+  assert.equal(
+    freezeNumRefs('可疊加<buff_凝勢.lv3.maxStack>層', 'buff_凝勢', BUFFS.buff_凝勢).text,
+    '可疊加7層',
+  )
+})
+
+test('freezeNumRefs：同一 token 重複出現全部烘焙', () => {
+  const r = freezeNumRefs('<buff_星爆.maxStack>與<buff_星爆.maxStack>', 'buff_星爆', BUFFS.buff_星爆)
+  assert.equal(r.text, '3與3')
+})
+
+test('freezeNumRefs：取不到值降級為 ? 並回報，不靜默吞掉', () => {
+  // 屬性無值（凝勢III 無 duration）／ lv 超範圍 —— 兩者在刪除前就已顯示為暗色 ?
+  const a = freezeNumRefs('持續<buff_凝勢III.duration>回合', 'buff_凝勢III', BUFFS.buff_凝勢III)
+  assert.equal(a.text, '持續?回合')
+  assert.deepEqual(a.unresolved, ['<buff_凝勢III.duration>'])
+
+  const b = freezeNumRefs('<buff_凝勢.lv9.maxStack>', 'buff_凝勢', BUFFS.buff_凝勢)
+  assert.deepEqual(b.unresolved, ['<buff_凝勢.lv9.maxStack>'])
+})
+
+test('freezeNumRefs：source 為 undefined（實體已查無）→ 全數降級但仍不動別人的 token', () => {
+  const r = freezeNumRefs('<buff_x.maxStack>與<buff_y.maxStack>', 'buff_x', undefined)
+  assert.equal(r.text, '?與<buff_y.maxStack>')
+  assert.deepEqual(r.unresolved, ['<buff_x.maxStack>'])
+})
+
+test('freezeNumRefs：無 token 的文字原樣返回', () => {
+  assert.equal(freezeNumRefs('純文字沒有引用', 'buff_x', BUFFS.buff_星爆).text, '純文字沒有引用')
 })

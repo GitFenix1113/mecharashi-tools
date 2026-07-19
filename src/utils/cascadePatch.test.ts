@@ -10,7 +10,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { buildCascadePlan } from './cascadePatch.ts'
+import { buildCascadePlan, createNumRefFreezer } from './cascadePatch.ts'
 import { findReferences, ALL_SCAN_COLLECTIONS, type RefHit, type RefScanData } from './entityRefs.ts'
 import type { Pilot, GameBuff } from '../types'
 
@@ -281,4 +281,68 @@ test('S1: 同一輸入連呼叫兩次結果相同（無狀態污染）', () => {
   })
   const { hits } = findReferences('buff', 'buff_x', data)
   assert.deepEqual(buildCascadePlan(hits, data), buildCascadePlan(hits, data))
+})
+
+// ─── T. 凍結器端到端（C-3 接上 C-2 的接縫）─────────────────────────────────
+
+test('T1: createNumRefFreezer 端到端 —— 只烘焙被刪 buff，其他 token 存活', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{
+      name: 'A',
+      description: '疊<buff_x.maxStack>層並使[星爆]上限<buff_y.maxStack>層',
+    }],
+  })
+  const { hits } = findReferences('buff', 'buff_x', data)
+  const freezer = createNumRefFreezer('buff_x', { maxStack: 5 })
+  const plan = buildCascadePlan(hits, data, { freezeText: freezer.freezeText })
+
+  const desc = (plan.mutations[0].set.talents as { description: string }[])[0].description
+  // buff_y 的 token 必須原封不動 —— 烘焙掉它等於讓一個活著的引用變成死數字
+  assert.equal(desc, '疊5層並使[星爆]上限<buff_y.maxStack>層')
+  assert.deepEqual(freezer.unresolved, [])
+  // 修補單存凍結前原文，Phase F 才還原得回 token 形式
+  assert.equal(plan.patches[0].value, '疊<buff_x.maxStack>層並使[星爆]上限<buff_y.maxStack>層')
+})
+
+test('T2: 階梯 buff 的 .lvN token 取該級真值', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{ name: 'A', description: '可疊加<buff_x.lv3.maxStack>層' }],
+  })
+  const freezer = createNumRefFreezer('buff_x', { levels: [{ maxStack: 5 }, { maxStack: 6 }, { maxStack: 7 }] })
+  const plan = buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data, { freezeText: freezer.freezeText })
+  assert.equal((plan.mutations[0].set.talents as { description: string }[])[0].description, '可疊加7層')
+})
+
+test('T3: 取不到值的 token 進 unresolved 但不中止刪除', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{ name: 'A', description: '持續<buff_x.duration>回合' }],
+  })
+  const { hits } = findReferences('buff', 'buff_x', data)
+  const freezer = createNumRefFreezer('buff_x', { maxStack: 5 })   // 沒有 duration
+  const plan = buildCascadePlan(hits, data, { freezeText: freezer.freezeText })
+
+  assert.equal(plan.problems.length, 0)                            // 不是錯誤，刪除照走
+  assert.equal(freezer.unresolved.length, 1)
+  assert.equal(freezer.unresolved[0].token, '<buff_x.duration>')
+  assert.equal(freezer.unresolved[0].hit.origin, '天賦:A')          // 帶得出是哪一處
+  assert.equal((plan.mutations[0].set.talents as { description: string }[])[0].description, '持續?回合')
+})
+
+test('T4: 同一單元的兩段正文各自成為獨立 patch（description / descriptionMax）', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{ name: 'A', description: '疊<buff_x.maxStack>層', descriptionMax: '滿級疊<buff_x.maxStack>層' }],
+  })
+  const { hits } = findReferences('buff', 'buff_x', data)
+  const freezer = createNumRefFreezer('buff_x', { maxStack: 5 })
+  const plan = buildCascadePlan(hits, data, { freezeText: freezer.freezeText })
+
+  assert.equal(plan.patches.length, 2)
+  assert.deepEqual(plan.patches.map((p) => p.path), ['talents.0.description', 'talents.0.descriptionMax'])
+  const t = (plan.mutations[0].set.talents as { description: string; descriptionMax: string }[])[0]
+  assert.equal(t.description, '疊5層')
+  assert.equal(t.descriptionMax, '滿級疊5層')
 })

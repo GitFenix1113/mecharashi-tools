@@ -131,6 +131,51 @@ export function resolveNumRefs(text: string, lookup: NumRefLookup, fallback = '?
     .join('')
 }
 
+// ─── 凍結：來源即將被刪除時把真值烘焙進正文 (PLAN-030 C-3) ────────────────────────
+
+/**
+ * 把正文中**指向 targetId** 的 token 就地烘焙成常數，其餘 token 原樣保留。
+ *   "可疊加<buff_凝勢.lv3.maxStack>層" → "可疊加7層"
+ *
+ * 這是刪除實體時唯一無法「外科手術式移除」的引用形態——另外四類都是結構化欄位，
+ * 只有它內嵌在字串裡。解法是凍結而非移除：趁來源還在，先把值固定下來 (決策六)。
+ *
+ * **為什麼不直接用 resolveNumRefs**：那支無差別替換**所有** token。一段文案裡常有
+ * 多個 token 指向不同 buff，全部烘焙會把無辜的引用一併變成死數字——日後那些 buff
+ * 改了數值，正文就再也不會跟著更新，而且沒有任何跡象顯示它曾經是引用。
+ *
+ * @param source 被刪實體本身。**刻意收實體而非 NumRefLookup**：只有指向 targetId 的
+ *               token 會被凍結，收 lookup 只是給呼叫端誤傳全站查詢、波及他人的機會。
+ *               查無實體時傳 undefined，該實體的 token 全數降級為 fallback。
+ * @returns text 凍結後正文；unresolved 取不到值而被寫成 fallback 的 token 原文
+ */
+export function freezeNumRefs(
+  text: string,
+  targetId: string,
+  source: NumRefSource | undefined,
+  fallback = '?',
+): { text: string; unresolved: string[] } {
+  const unresolved: string[] = []
+  const frozen = parseNumRefs(text)
+    .map((seg) => {
+      if (seg.type === 'text') return seg.value
+      if (seg.refId !== targetId) return seg.raw       // 指向別人的 token：原樣保留
+      // 借用 resolveNumValue 以共用 registry / .lvN 取級邏輯，lookup 恆回同一實體
+      const v = source === undefined
+        ? undefined
+        : resolveNumValue(targetId, seg.attr, () => source, seg.level)
+      if (v === undefined) {
+        // 取不到值的 token 在刪除前就已經顯示為暗色 '?' (RefText 的優雅降級)，
+        // 故寫成 fallback 視覺上等價；但仍回報，讓管理員知道有文案失去了數值。
+        unresolved.push(seg.raw)
+        return fallback
+      }
+      return String(v)
+    })
+    .join('')
+  return { text: frozen, unresolved }
+}
+
 // ─── 編譯期：語法糖 → 正式 token (供 Phase C 的 RefPicker「代入數值」按鈕 / seed 腳本) ──────
 
 /**

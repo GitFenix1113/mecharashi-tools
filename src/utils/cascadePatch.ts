@@ -26,6 +26,7 @@
 
 import type { ReversePatch } from '../types/changeHistory'
 import { ALL_SCAN_COLLECTIONS, type RefHit, type RefScanData } from './entityRefs.ts'
+import { freezeNumRefs, type NumRefSource } from './numRefs.ts'
 
 // ─── 對外型別 ────────────────────────────────────────────────────────────────
 
@@ -80,6 +81,45 @@ export interface CascadePlan {
   deduped: number
   /** mutations.length + 1（目標本身的 deleteDoc）。C-4 據此擋 batch 500 上限 */
   writeCount: number
+}
+
+// ─── 數值 token 凍結器（C-3）─────────────────────────────────────────────────
+
+export interface NumRefFreezer {
+  /** 餵給 buildCascadePlan 的 opts.freezeText */
+  freezeText: FreezeText
+  /**
+   * 取不到值、被寫成 '?' 的 token。**不中止刪除**（這類 token 在刪除前就已顯示為 '?'），
+   * 但 C-4/D-1 應把它列給管理員——那代表有文案永久失去了數值。
+   */
+  unresolved: { hit: RefHit; token: string }[]
+}
+
+/**
+ * 建立凍結器。趁被刪實體還在，把指向它的數值 token 烘焙成常數。
+ *
+ * **目前只有 buff 刪除會用到**：NUM_ATTRS 每一筆的 refTypes 都是 ['buff']，而
+ * findReferences 產生 numTokenText 命中前會比對 refTypes，故刪除技能／詞條不會有
+ * textFreeze 命中。日後若新增 refTypes 含 'skill' 的屬性（registry 註解已預留 cd），
+ * 技能刪除就會開始產生 textFreeze——屆時 buildCascadePlan 會**拋錯**提醒補上凍結器，
+ * 不會靜默略過。這是刻意設計的失敗模式。
+ *
+ * @param targetId 即將被刪的實體 ID
+ * @param source   該實體本身（GameBuff 結構相容 NumRefSource）。查無傳 undefined
+ */
+export function createNumRefFreezer(
+  targetId: string,
+  source: NumRefSource | undefined,
+): NumRefFreezer {
+  const unresolved: NumRefFreezer['unresolved'] = []
+  return {
+    unresolved,
+    freezeText: (text, hit) => {
+      const r = freezeNumRefs(text, targetId, source)
+      for (const token of r.unresolved) unresolved.push({ hit, token })
+      return r.text
+    },
+  }
 }
 
 // ─── 內部小工具 ──────────────────────────────────────────────────────────────

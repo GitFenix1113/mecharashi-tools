@@ -374,6 +374,13 @@
 <span class="cm">// 凍結後（token 就地變成常數，不再依賴已刪的 BUFF）</span>
 <span class="st">"可疊加5層，持續3回合"</span></div>
     這個函式原本是為 <code>DiffHighlight</code> 預處理寫的，但它正好就是「在來源消失前把值固定下來」所需要的原語，幾乎是一行呼叫。<br>
+    <strong>「幾乎是一行呼叫」是錯的（C-3 實作後更正）：</strong><code>resolveNumRefs</code> <strong>無差別替換正文裡的所有 token</strong>，
+    不分它指向哪個實體。真實文案常有多個 token 指向不同 BUFF（上面那個例子只是剛好兩個都指向 <code>buff_凝勢</code>），
+    直接套用會把<strong>無辜的引用一併烘焙成死數字</strong>——日後那些 BUFF 改了數值，正文不會跟著更新，
+    而且事後完全看不出它曾經是引用，連修補單都沒記（因為那些 token 不屬於本次刪除的命中）。
+    C-3 因此在 <code>numRefs.ts</code> 新增 <code>freezeNumRefs(text, targetId, source)</code>，
+    <strong>只烘焙指向被刪實體的 token</strong>，其餘原樣保留；內部仍借用 <code>resolveNumValue</code>
+    共用 registry 與 <code>.lvN</code> 取級邏輯。<br>
     <strong>取捨：</strong>凍結後的文字失去動態連動（日後改 BUFF 數值不會跟著變），但來源都要被刪了，本來也連動不了。<strong>凍結前的原始文字必須存進快照</strong>，否則還原時無法復原成 token 形式。<br>
     <strong>不採用「留著讓它顯示 <code>?</code>」：</strong>系統確實有優雅降級（未解析的 token 顯示為淡色 <code>?</code> 加 tooltip），但那個 <code>?</code> 對管理員與使用者而言看起來就是 bug，不符合「不造成資料混亂」的要求。
   </div>
