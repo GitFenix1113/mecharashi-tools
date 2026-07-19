@@ -302,6 +302,25 @@
     <strong>③ 引用站點清單必須與 <code>buffPool.ts</code> 保持同步：</strong>兩處各走各的會逐漸偏移。實作時應讓級聯清除與 <code>buildBuffPool</code> 共用同一份站點定義。
   </div>
 
+  <div class="info-block">
+    <strong>Phase 0 實測發現：<code>buffIds</code> 在正式資料裡幾乎沒被填</strong><br>
+    匯出模擬器切片時實際統計正式資料，結果與規劃時的假設有明顯落差：
+    <table class="impact-table">
+      <tr><th>來源</th><th>buffIds 陣列</th><th>非空</th></tr>
+      <tr><td><code>pilots</code>（2 名機師，含引用最密的兩位）</td><td>38 個</td><td><span class="badge-high">0</span></td></tr>
+      <tr><td><code>pilotSkills</code></td><td>705 個</td><td><span class="badge-high">1</span>（<code>["buff_虛粒子形態"]</code>）</td></tr>
+      <tr><td>整份切片中的 <code>@N</code> 等級後綴</td><td colspan="2"><span class="badge-high">0 個</span></td></tr>
+    </table>
+    正式資料的引用實際上幾乎全走 <code>descriptionRefs</code> 側錄表與文案內嵌數值 token。<code>buffIds</code> 是典型的
+    「<strong>集合會被填滿、選填欄位不會</strong>」——欄位存在、有型別、有 UI，但實際維護時沒人填。<br>
+    <strong>三個後果：</strong><br>
+    ① <code>@N</code> 後綴仍是<strong>必須寫對的程式邏輯</strong>（資料隨時可能開始被填），但<strong>真實資料一個實例都沒有</strong>
+    → <strong>F-4 整合測試撞不到它</strong>，C-6 單元測試從「建議」變成<strong>唯一</strong>覆蓋手段。<br>
+    ② 級聯清除的實際主戰場是 <code>descriptionRefs</code> + 數值 token 凍結，測試素材（梅利莎 numRef=20、艾達 refId=15）正好覆蓋這兩者。<br>
+    ③ 複用 <code>buildBuffPool()</code> 走訪邏輯的決策<strong>仍然正確</strong>，但要知道它目前走的是一個近乎空的欄位——
+    這也解釋了為何 <code>buffIds</code> 相關的既有功能不易察覺問題。
+  </div>
+
   <div class="decision-block">
     <strong>決策六：數值 token 用「凍結」而非移除，讓文字層也變成可機械處理</strong><br>
     唯一不可機械移除的是內嵌在文案字串裡的數值 token：<code>&lt;buff_凝勢.lv3.maxStack&gt;</code>。要移除它就得改寫文案，風險高。<br>
@@ -485,9 +504,11 @@
   <table class="impact-table">
     <tr><th>風險</th><th>等級</th><th>對策</th></tr>
     <tr>
-      <td><code>buffIds</code> 的 <code>@N</code> 後綴造成漏清，死連結存活</td>
+      <td><code>buffIds</code> 的 <code>@N</code> 後綴造成漏清，死連結存活<br>
+        <span style="font-size:11px;color:var(--text-dim);">（Phase 0 實測：真實資料 0 個實例 → 整合測試撞不到）</span></td>
       <td><span class="badge-high">HIGH</span></td>
-      <td>一律用 <code>parseBuffRef()</code> 解析後比對，禁止字串相等。此項需單元測試覆蓋</td>
+      <td>一律用 <code>parseBuffRef()</code> 解析後比對，禁止字串相等。
+        <strong>C-6 單元測試是唯一防線</strong>——F-4 整合測試無法覆蓋，因為正式資料裡沒有任何 <code>@N</code> 實例</td>
     </tr>
     <tr>
       <td>級聯清除中途失敗留下半殘狀態</td>

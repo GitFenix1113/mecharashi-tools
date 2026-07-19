@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">12</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">32</div>
+      <div class="summary-num" style="color:var(--text-dim)">20</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">0 / 32</span>
+      <span style="color:var(--accent-green);">12 / 32</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 37.5%"></div>
     </div>
   </div>
 
@@ -199,12 +199,77 @@
     後台終於能刪除誤建的 BUFF／技能／詞條，刪除時全站引用一併清乾淨、不留死連結；每一次異動都留下無法竄改的記錄，誤刪可從快照連同引用一起還原；log 兩年後由 Firestore 自動清理，不需維護。
   </div>
 
+  <div class="impact-note">
+    <strong>✅ Phase 0 已完成（2026-07-19）</strong>——本地模擬器環境可用，AGENT 可獨立操作管理介面。實測驗證：
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;">
+      <tr><td style="padding:3px 8px;color:var(--text-dim);">打到模擬器的請求</td><td style="padding:3px 8px;">6 ✓</td>
+          <td style="padding:3px 8px;color:var(--text-dim);">打到正式 Firestore</td><td style="padding:3px 8px;color:var(--accent-green);"><strong>0 ✓</strong></td></tr>
+      <tr><td style="padding:3px 8px;color:var(--text-dim);">打到 App Check / reCAPTCHA</td><td style="padding:3px 8px;color:var(--accent-green);"><strong>0 ✓</strong></td>
+          <td style="padding:3px 8px;color:var(--text-dim);">種子資料</td><td style="padding:3px 8px;">222 buff / 165 詞條 / 705 技能 / 2 機師</td></tr>
+      <tr><td style="padding:3px 8px;color:var(--text-dim);">登入後管理員權限</td><td style="padding:3px 8px;">✓ role: OWNER 生效</td>
+          <td style="padding:3px 8px;color:var(--text-dim);"><strong>寫入（真實安全規則）</strong></td><td style="padding:3px 8px;color:var(--accent-green);"><strong>✓ 無權限錯誤</strong></td></tr>
+    </table>
+    <div style="margin-top:8px;font-size:12px;">
+      寫入那項最關鍵：<code>isAdmin()</code> 規則內部會對 profile 文件做 <code>get()</code>，讀取是公開的所以必然通過，
+      <strong>只有寫入才真正觸發規則</strong>。已實測建立 BUFF 成功並確認 <code>bumpDataVersion</code> 亦正確寫入 <code>meta/gameData</code>。<br>
+      啟動方式：<code>npm run emu</code>（模擬器）→ <code>npm run emu:seed</code>（種子）→ <code>npm run dev:emu</code>（前端）。
+      帳號 <code>dev-admin@local.test</code> / <code>devadmin</code>。
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ A-1 ~ A-3 已完成（2026-07-19）</strong>——型別、API 模組、append-only 安全規則就位。
+    規則已在模擬器實測，<strong>8 項斷言全數通過</strong>（<code>npm run emu:test-rules</code>）：
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;">
+      <tr><td style="padding:3px 8px;color:var(--text-dim);">管理員新增 / 讀取 log</td><td style="padding:3px 8px;">200 ✓</td></tr>
+      <tr><td style="padding:3px 8px;color:var(--text-dim);"><strong>管理員修改 / 刪除自己的 log</strong></td>
+          <td style="padding:3px 8px;color:var(--accent-green);"><strong>403 ✓ ← append-only 核心</strong></td></tr>
+      <tr><td style="padding:3px 8px;color:var(--text-dim);">一般使用者讀 / 寫 log</td><td style="padding:3px 8px;">403 ✓</td></tr>
+      <tr><td style="padding:3px 8px;color:var(--text-dim);">對照組：一般使用者讀 buffs / 寫 buffs</td><td style="padding:3px 8px;">200 / 403 ✓（既有規則未誤傷）</td></tr>
+    </table>
+    <div style="margin-top:8px;font-size:12px;">
+      <strong>測試方法上的關鍵：不能用 Admin SDK 測規則</strong>——它對模擬器送的是 <code>Authorization: Bearer owner</code>，
+      會直接繞過所有規則，測起來永遠是綠的。驗證腳本改用 Auth 模擬器換真實 ID token 再打 Firestore REST API，
+      這條路徑才會實際執行 <code>firestore.rules</code>。<br>
+      <s>A-2 的執行期行為尚未驗證</s>——已於 Phase B 補齊，見下方。
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ Phase B 已完成（2026-07-19）</strong>——三個 update 函式改走 <code>saveWithHistory</code>，
+    <code>GameDataContext</code> 補上 <code>removeCollectionItem</code>。在模擬器實測 create／update 兩條路徑，
+    直接查 <code>changeHistory</code> 集合確認實際寫入內容：
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;">
+      <tr><td style="padding:3px 8px;color:var(--text-dim);">create / update 正確區分</td>
+          <td style="padding:3px 8px;">同一 <code>targetId</code>，第一筆 create、第二筆 update ✓</td></tr>
+      <tr><td style="padding:3px 8px;color:var(--text-dim);"><strong><code>serverTimestamp()</code> 哨兵存活</strong></td>
+          <td style="padding:3px 8px;color:var(--accent-green);"><strong><code>at</code> 解析為真實伺服器時間、非 null ✓</strong></td></tr>
+      <tr><td style="padding:3px 8px;color:var(--text-dim);"><code>expireAt</code> = at + 2 年</td>
+          <td style="padding:3px 8px;">2028-07-19 ✓</td></tr>
+      <tr><td style="padding:3px 8px;color:var(--text-dim);"><code>diffKeys</code> 精確度</td>
+          <td style="padding:3px 8px;"><code>changedFields: ['description']</code>，正是被修改的欄位 ✓</td></tr>
+      <tr><td style="padding:3px 8px;color:var(--text-dim);">操作者身分</td>
+          <td style="padding:3px 8px;">actorName / actorUid 皆正確捕捉 ✓</td></tr>
+      <tr><td style="padding:3px 8px;color:var(--text-dim);">create/update 不存 snapshot</td>
+          <td style="padding:3px 8px;">✓ 符合決策五</td></tr>
+    </table>
+    <div style="margin-top:8px;font-size:12px;">
+      <code>at</code> 沒有變成 null 這點特別關鍵——它證明<strong>刻意讓 log 路徑繞過 <code>stripUndefined</code> 是必要的</strong>：
+      那支會遞迴走物件，把 <code>serverTimestamp()</code> 哨兵拆成普通物件而失效。<br>
+      <strong>附帶觀察：</strong>缺 <code>at</code> 欄位的文件會被 <code>orderBy('at')</code> 完全排除（Firestore 行為）。
+      正常路徑一定有 <code>at</code>，但這代表萬一 <code>serverTimestamp()</code> 失敗，該筆 log 會在歷史頁「無聲消失」而非顯示異常。
+      E-2 實作時值得留意。
+    </div>
+  </div>
+
   <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);">
     <strong style="color:var(--accent-yellow);">執行順序要求：</strong>
-    <strong>Phase 0 先行</strong>——模擬器就緒後，A-3 的全新 append-only 規則就能先在隔離環境驗證再部署到 prod，而不是直接上線試。<br>
+    <s>Phase 0 先行</s>——已完成。A-3 的全新 append-only 規則現在可以先在隔離環境驗證再部署到 prod，而不是直接上線試。<br>
     Phase A（規則 + 索引 + TTL）<strong>必須先於 Phase B 部署完成</strong>，否則寫入的 log 會被規則擋下、查詢直接失敗、且 log 立即開始無限成長。<br>
     Phase D 的刪除 UI <strong>必須等 Phase B + C 都可運作後才開放</strong>——先確保刪得乾淨、也留得下還原用的快照，再開放這個不可逆操作。<br>
-    <strong>可提前開工：</strong>C-6 的純函式測試不依賴模擬器也不依賴資料庫，Phase 0 進行中即可並行撰寫（決策十三）——本計畫最高風險的邏輯正好全在這一塊。<br>
+    <strong>C-6 是 <code>@N</code> 地雷的唯一防線（Phase 0 實測後升級）：</strong>切片顯示正式資料的 <code>buffIds</code> 幾乎全空
+    （705 筆 pilotSkills 僅 1 筆非空、<code>@N</code> 後綴 <strong>0 個</strong>），意味 <strong>F-4 整合測試撞不到這個地雷</strong>。
+    C-6 從「建議」升級為<strong>唯一</strong>能覆蓋它的手段，且不依賴模擬器與資料庫，可立即並行開工。<br>
     <strong>停損點：</strong>做完 Phase E 即為完整可用（還原需人工照快照操作）。Phase F 可隨時後補，且後補不需回頭改動既有程式——前提是 C-2 的反向修補單有確實寫進快照。
   </div>
 </section>
@@ -222,7 +287,7 @@
     <div class="task-group-header">
       <div class="task-group-title">0-1 &nbsp; 模擬器連線分支</div>
       <div class="task-group-meta">src/lib/firebase.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -238,7 +303,7 @@
         <div class="task-file">src/lib/firebase.ts · .env.local</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -246,7 +311,7 @@
     <div class="task-group-header">
       <div class="task-group-title">0-2 &nbsp; 模擬器設定與啟動指令</div>
       <div class="task-group-meta">firebase.json · package.json</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -260,7 +325,7 @@
         <div class="task-file">firebase.json · package.json · .gitignore</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -268,7 +333,7 @@
     <div class="task-group-header">
       <div class="task-group-title">0-3 &nbsp; 種子：模擬器管理員</div>
       <div class="task-group-meta">scripts/seed-emulator.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -283,7 +348,7 @@
         <div class="task-file">scripts/seed-emulator.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -291,7 +356,7 @@
     <div class="task-group-header">
       <div class="task-group-title">0-4 &nbsp; 種子：真實資料切片</div>
       <div class="task-group-meta">scripts/temp_scripts/backup-firestore.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -307,7 +372,7 @@
         <div class="task-file">scripts/temp_scripts/backup-firestore.mjs · emulator-data/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -322,7 +387,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; 型別定義</div>
       <div class="task-group-meta">src/types/changeHistory.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -337,7 +402,7 @@
         <div class="task-file">src/types/changeHistory.ts · src/types/index.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -345,7 +410,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; API 模組</div>
       <div class="task-group-meta">src/lib/api/changeHistory.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -359,7 +424,7 @@
         <div class="task-file">src/lib/api/changeHistory.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -373,7 +438,7 @@
         <div class="task-file">src/lib/api/changeHistory.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -385,7 +450,7 @@
         <div class="task-file">src/lib/firestoreApi.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -393,7 +458,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-3 &nbsp; append-only 安全規則</div>
       <div class="task-group-meta">firestore.rules</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -406,7 +471,7 @@
         <div class="task-file">firestore.rules</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -466,7 +531,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; 通用 saveWithHistory helper</div>
       <div class="task-group-meta">src/lib/api/changeHistory.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -480,7 +545,7 @@
         <div class="task-file">src/lib/api/changeHistory.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -493,7 +558,7 @@
         <div class="task-file">src/lib/api/buffs.ts · skills.ts · glossary.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -501,7 +566,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; 快取層刪除同步</div>
       <div class="task-group-meta">src/contexts/GameDataContext.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -514,7 +579,7 @@
         <div class="task-file">src/contexts/GameDataContext.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

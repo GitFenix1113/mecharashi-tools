@@ -114,6 +114,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    <span class="comment">// ── PLAN-030 資料變更歷史：append-only 稽核 log ──────────</span>
+    <span class="comment">// 全站唯一「不」使用 allow write: if isAdmin() 的集合。</span>
+    <span class="comment">// write 涵蓋 create/update/delete，沿用那套的話管理員能竄改自己的</span>
+    <span class="comment">// 操作記錄，稽核價值歸零。寫下去就定型，連管理員也改不了。</span>
+    match /changeHistory/{docId} {
+      allow read:   if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
     <span class="comment">// ── 用戶資料（本人可讀寫）────────────────────</span>
     match /users/{userId} {
       allow read, write: if isOwner(userId);

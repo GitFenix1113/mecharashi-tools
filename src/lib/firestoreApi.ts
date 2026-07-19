@@ -17,3 +17,5 @@ export * from './api/components'      // getComponents / updateComponent
 export * from './api/buffs'           // getBuffs / updateBuff
 export * from './api/glossary'        // getGlossaryTerms / updateGlossaryTerm
 export * from './api/grayOps'         // getGrayOpsRoster / updateGrayOpsRoster
+// PLAN-030 變更歷史：後台專用稽核 log。不進 CollectionKey / GameDataContext（見計畫書決策一）
+export * from './api/changeHistory'   // logChange / logChangeOrThrow / getChangeHistoryPage

@@ -15,3 +15,4 @@ export * from './research'    // 科研：GlobalResearch / PilotResearch / *Rese
 export * from './user'        // 用戶/配裝：UserProfile / Build / UserBuild / FloatingModSelection
 export * from './grayOps'     // 灰燼行動：GrayOpsRoster / GrayOpsMechEntry
 export * from './boss'        // BOSS/關卡：Boss / BossSkill / Stage / StageDropEntry
+export * from './changeHistory' // PLAN-030 變更歷史：ChangeHistoryEntry / DeleteSnapshot / ReversePatch

@@ -94,6 +94,22 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ── PLAN-030 資料變更歷史：append-only 稽核 log ──────────────────────────
+    // 本專案唯一「不」使用 allow write: if isAdmin() 的集合。
+    // 理由：write 涵蓋 create/update/delete，沿用那套的話管理員就能竄改或抹除
+    // 自己的操作記錄，稽核價值歸零。寫下去就定型，連管理員也改不了。
+    //
+    // 讀取限管理員：這是內部維運記錄，且刪除快照內含完整文件內容，不該公開。
+    //
+    // 保留期限交由 Firestore 原生 TTL 政策（expireAt 欄位，兩年）處理 ——
+    // TTL 是後端程序，不受安全規則約束，因此與下方的 delete: if false 並不衝突。
+    // 這正是理想組合：前端永遠刪不掉，但系統會自己過期清理。
+    match /changeHistory/{docId} {
+      allow read:   if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
     // ── 用戶資料（本人可讀寫）────────────────────────────────────────────────
     match /users/{userId} {
       allow read, write: if isOwner(userId);

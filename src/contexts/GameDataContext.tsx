@@ -86,6 +86,11 @@ export interface GameDataState {
    * 未載入 → 僅清掉該集合 localStorage，下次自然抓最新。version 為 bumpDataVersion 回傳值。
    */
   patchCollectionItem: (key: CollectionKey, item: { id: string }, version: string) => void
+  /**
+   * PLAN-030：與 patchCollectionItem 對稱的移除路徑（後台刪除單筆後同步自己的快取）。
+   * 記憶體 state 與 localStorage 兩層都會移除；未載入該集合時僅清 localStorage。
+   */
+  removeCollectionItem: (key: CollectionKey, id: string, version: string) => void
   /** 同上，但用於 singleton 集合（如 grayOpsRoster）：以整個物件替換。 */
   patchSingleton: (key: CollectionKey, value: unknown, version: string) => void
 }
@@ -233,6 +238,36 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // ── PLAN-030：刪除後就地同步（與 patchCollectionItem 對稱）─────────────────
+  // patchCollectionItem 是 upsert-only，沒有移除路徑。缺這支的症狀是
+  // 「刪掉的項目仍留在列表上，直到手動 reload」——記憶體 state 與 localStorage
+  // 兩層都會殘留，所以兩層都要移除。
+  const removeCollectionItem = useCallback((key: CollectionKey, id: string, version: string) => {
+    if (!version || versionsRef.current === undefined || !fetchedRef.current.has(key)) {
+      removeCache(key)
+      return
+    }
+    versionsRef.current.byKey[key] = version
+    const drop = <T extends { id: string }>(prev: T[]): T[] => {
+      const next = prev.filter(i => i.id !== id)
+      writeCache(key, version, next)
+      return next
+    }
+    switch (key) {
+      case 'pilots':        setPilots(drop);        break
+      case 'mechs':         setMechs(drop);         break
+      case 'modules':       setModules(drop);       break
+      case 'weapons':       setWeapons(drop);       break
+      case 'backpacks':     setBackpacks(drop);     break
+      case 'components':    setComponents(drop);    break
+      case 'buffs':         setBuffs(drop);         break
+      case 'pilotSkills':   setPilotSkills(drop);   break
+      case 'neuralDriveAbilities': setNeuralDriveAbilities(drop); break
+      case 'glossaryTerms': setGlossaryTerms(drop); break
+      default: break // singleton / 無 id 集合不走此路徑
+    }
+  }, [])
+
   const patchSingleton = useCallback((key: CollectionKey, value: unknown, version: string) => {
     if (!version || versionsRef.current === undefined || !fetchedRef.current.has(key)) {
       removeCache(key)
@@ -248,7 +283,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       pilots, mechs, weapons, backpacks, modules, components, buffs, pilotSkills, neuralDriveAbilities, glossaryTerms,
       globalResearch, grayOpsRoster,
       loadedKeys, errorMap, reloadTick,
-      ensureLoaded, reload, patchCollectionItem, patchSingleton,
+      ensureLoaded, reload, patchCollectionItem, removeCollectionItem, patchSingleton,
     }}>
       {children}
     </GameDataContext.Provider>

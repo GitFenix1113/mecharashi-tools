@@ -173,6 +173,13 @@
         <p>users/{uid}/profile（設定 / 科研選擇）· users/{uid}/builds（配裝紀錄）· 僅本人可讀寫</p>
       </div>
     </a>
+    <a href="changeHistory.html" style="text-decoration:none;">
+      <div class="card green">
+        <div class="card-icon">📜</div>
+        <h3>changeHistory — 變更歷史</h3>
+        <p>後台資料異動稽核 log · append-only（連管理員都改不了）· 刪除快照可還原 · 原生 TTL 兩年</p>
+      </div>
+    </a>
     <a href="security-rules.html" style="text-decoration:none;">
       <div class="card orange">
         <div class="card-icon">🛡️</div>
@@ -187,7 +194,7 @@
 <section class="section">
   <div class="section-label blue">03 — Collections Overview</div>
   <div class="section-title">Firestore Collections 清單</div>
-  <div class="section-desc">共 13 個 Collections，分為「遊戲資料」（管理員維護）與「用戶資料」（用戶私有）兩大類。</div>
+  <div class="section-desc">共 14 個 Collections，分為「遊戲資料」（管理員維護）、「用戶資料」（用戶私有）與「稽核 log」（後台專用、append-only）三類。</div>
 
   <div class="collection-grid">
     <div class="collection-card">
@@ -254,6 +261,11 @@
       <div class="col-name"><a href="users.html" style="color:inherit;text-decoration:none;">users/{uid}/builds/{id}</a></div>
       <span class="col-type user">USER DATA</span>
       <p>用戶配裝紀錄（機師+機甲+武器+背包+模組+元件）</p>
+    </div>
+    <div class="collection-card">
+      <div class="col-name"><a href="changeHistory.html" style="color:inherit;text-decoration:none;">changeHistory</a></div>
+      <span class="col-type game">ADMIN LOG</span>
+      <p>後台資料異動稽核 log（PLAN-030）。append-only：可新增可讀取，但連管理員都改不了刪不掉。不進前台快取層</p>
     </div>
   </div>
 </section>

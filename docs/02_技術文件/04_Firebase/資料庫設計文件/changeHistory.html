@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>changeHistory — 資料變更歷史 Schema — Firebase 資料庫設計 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../../index.html">技術文件</a>
+    <span>›</span>
+    <a href="Firebase資料庫設計文件.html">Firebase 資料庫設計</a>
+    <span>›</span>
+    <span class="current">changeHistory — 變更歷史</span>
+  </div>
+</nav>
+
+<header class="hero green">
+  <div class="hero-badge green">◆ COLLECTION SCHEMA</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    changeHistory — 資料變更歷史
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-030</span>
+  </h1>
+  <p class="hero-sub">後台資料異動稽核 log · append-only（連管理員都改不了）· 雙軸分類 · 原生 TTL 兩年</p>
+  <div class="version-badge" style="background:var(--accent-green);color:#000;">PLAN-030 — 2026-07-19</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label green">01 — 用途</div>
+  <div class="section-title">changeHistory Collection</div>
+
+  <div class="info-block">
+    <strong>📌 用途說明</strong><br>
+    後台對 BUFF / 技能 / 詞條的每一次新增、修改、刪除、還原都寫一筆記錄，作為維運追溯的黑盒子。<br>
+    起因：現行寫入是 <code>setDoc</code> <strong>不帶 <code>{ merge: true }</code></strong>，等於整份覆寫，舊值在寫入當下就消失；
+    誰在什麼時候改了什麼，系統裡沒有留下任何痕跡。<br>
+    · <strong>刪除</strong>另存完整快照（文件本體 + 每一處被清除的引用），誤刪可據此還原。<br>
+    · 依「集合類型 × 操作類型」<strong>雙軸分類</strong>，後台歷史頁可各自或組合篩選。<br>
+    · 保留兩年，由 Firestore <strong>原生 TTL 政策</strong>自動清除（不需 Cloud Function）。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 與其他集合的三個關鍵差異</strong><br>
+    ① <strong>不進 <code>CollectionKey</code> / GameDataContext</strong>：前台永遠不讀它。版本 gate 三層快取是為「整包載入、長期不變的靜態遊戲資料」設計，
+    而 log 是持續成長、只查最近幾頁的資料，塞進那套快取只會撐爆 localStorage。它走獨立的伺服器端分頁查詢。<br>
+    ② <strong>安全規則不是 <code>allow write: if isAdmin()</code></strong>：全站唯一的例外，見下方 04。<br>
+    ③ <strong>文件 ID 是自動生成</strong>（<code>addDoc</code>）：log 沒有自然 slug。全專案僅此處與 <code>users/{uid}/builds</code> 使用 addDoc，
+    其餘遊戲資料一律是 <code>setDoc</code> + 明確 slug ID。
+  </div>
+
+  <div class="sub-h">🗃️ changeHistory — 變更記錄（ChangeHistoryEntry）</div>
+  <div class="data-table-wrap">
+    <table class="data-table green-head">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td>Firestore 自動 ID（<code>addDoc</code> 產生）</td></tr>
+      <tr><td>target</td><td>ChangeTargetKind</td><td><strong>分類軸一</strong>：<code>'buff' | 'pilotSkill' | 'glossaryTerm'</code>（可擴充）</td></tr>
+      <tr><td>action</td><td>ChangeAction</td><td><strong>分類軸二</strong>：<code>'create' | 'update' | 'delete' | 'restore'</code></td></tr>
+      <tr><td>targetId</td><td>string</td><td>被異動的文件 ID，如 <code>buff_過熱</code></td></tr>
+      <tr><td>targetName</td><td>string</td><td>當下顯示名稱。<strong>刻意去正規化</strong>：查 log 免 join，且目標被刪後仍看得懂是什麼</td></tr>
+      <tr><td>actorUid</td><td>string</td><td>操作者 uid（由 <code>auth.currentUser</code> 取得，不從 UI 傳入）</td></tr>
+      <tr><td>actorName</td><td>string</td><td>操作者 displayName 快照（改名後仍看得出是誰）</td></tr>
+      <tr><td>at</td><td>Timestamp</td><td><code>serverTimestamp()</code>。排序與範圍查詢鍵</td></tr>
+      <tr><td>expireAt</td><td>Timestamp</td><td><code>at + 2 年</code>。由原生 TTL 政策讀取後自動清除文件</td></tr>
+      <tr><td>changedFields</td><td>string[]?</td><td><strong>僅 update</strong>：淺層比對出的變動欄位名（不存新舊值）</td></tr>
+      <tr><td>snapshot</td><td>DeleteSnapshot?</td><td><strong>僅 delete</strong>：文件本體 + 反向修補單，見下方 02</td></tr>
+      <tr><td>restoredFrom</td><td>string?</td><td><strong>僅 restore</strong>：來源 delete log 的文件 ID，形成可追溯鏈</td></tr>
+    </table>
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>💡 為何 update 不存 before/after 快照</strong><br>
+    BUFF / 技能含 <code>levels[]</code> 等巢狀結構，每筆修改存完整前後快照會讓單筆 log 迅速膨脹到數 KB；
+    而修改的追溯需求通常「知道誰動了哪些欄位」就足以定位。刪除則是<strong>不可逆</strong>操作，必須留完整後路。<br>
+    若日後發現不夠用，加一個選填 <code>before</code> 欄位即可，不影響已寫入的舊 log。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label green">02 — 刪除快照</div>
+  <div class="section-title">DeleteSnapshot 與反向修補單</div>
+
+  <div class="info-block">
+    <strong>📌 為何不只存被刪的文件</strong><br>
+    BUFF / 技能 / 詞條是被大量引用的底層實體，刪除時會<strong>級聯清除</strong>全站 9 個集合中對它的引用。
+    只存被刪文件的話，還原得回文件，卻還原不回引用關係。<br>
+    因此快照是三段式：文件本體 + 每一處引用移除的反向修補單。
+  </div>
+
+  <div class="sub-h">🗃️ DeleteSnapshot</div>
+  <div class="data-table-wrap">
+    <table class="data-table green-head">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>doc</td><td>Record&lt;string, unknown&gt;</td><td>被刪文件的完整內容（不含 id，id 記在 <code>targetId</code>）</td></tr>
+      <tr><td>patches</td><td>ReversePatch[]</td><td>級聯清除過程中每一處移除的反向修補單</td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h">🗃️ ReversePatch</div>
+  <div class="data-table-wrap">
+    <table class="data-table green-head">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>coll</td><td>string</td><td>引用來源集合，如 <code>pilots</code></td></tr>
+      <tr><td>docId</td><td>string</td><td>引用來源文件 ID，如 <code>pilot_038_艾達</code></td></tr>
+      <tr><td>path</td><td>string</td><td>欄位路徑（<code>.</code> 分隔，陣列以索引表示），如 <code>talents.2.descriptionRefs.凝勢</code></td></tr>
+      <tr><td>op</td><td>string</td><td><code>arrayRemove</code> / <code>mapKeyDelete</code> / <code>fieldClear</code> / <code>textFreeze</code></td></tr>
+      <tr><td>value</td><td>unknown</td><td>被移除的原值；<code>textFreeze</code> 時存「凍結前」的完整原始字串</td></tr>
+    </table>
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔑 關鍵設計：前三種 op 天然冪等</strong><br>
+    <code>arrayRemove</code> / <code>mapKeyDelete</code> / <code>fieldClear</code> 的還原都是「把元素加回集合」，重複套用結果相同。
+    因此還原時<strong>不需要比對整份文件是否未被改動</strong>（那等於做時光機），
+    只需檢查「該欄位現在還缺不缺這個值」——缺就補、已有就跳過。<br>
+    <code>textFreeze</code> 是唯一非冪等的（覆寫字串），還原時需比對現值是否仍等於凍結後的文字，不符則跳過並列入報告。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>❄️ textFreeze 是什麼</strong><br>
+    引用有兩種存法：<code>[虛粒子形態]</code> 這類<strong>錨點在文案、綁定在 <code>descriptionRefs</code> 側錄表</strong>（可外科手術式移除），
+    以及 <code>&lt;buff_凝勢.lv3.maxStack&gt;</code> 這類<strong>數值 token 直接內嵌在文案字串</strong>（無法機械移除）。<br>
+    後者的處理是「凍結而非移除」：刪除前用 <code>resolveNumRefs()</code> 把 token 換算成實際數值寫回文字
+    （<code>"可疊加&lt;buff_凝勢.lv3.maxStack&gt;層"</code> → <code>"可疊加5層"</code>），token 就地變成常數、不再依賴已刪的 BUFF。
+    凍結前的原始文字存進 <code>value</code>，還原時才能復原成 token 形式。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label green">03 — 查詢與索引</div>
+  <div class="section-title">雙軸分類查詢</div>
+
+  <div class="info-block">
+    <strong>📌 為何 target 與 action 必須是兩個獨立欄位</strong><br>
+    Firestore 的 <code>where</code> 只能對獨立欄位做等值比對。若圖方便寫成 <code>'buff:create'</code> 這種複合字串，
+    就<strong>永遠無法查詢「所有集合的刪除記錄」</strong>。兩個欄位分開存，可各自篩選、也可組合。
+  </div>
+
+  <div class="sub-h">🔍 需要的複合索引（firestore.indexes.json）</div>
+  <div class="data-table-wrap">
+    <table class="data-table green-head">
+      <tr><th>索引</th><th>對應查詢</th></tr>
+      <tr><td><code>(target ASC, at DESC)</code></td><td>只看某個集合類型的記錄</td></tr>
+      <tr><td><code>(action ASC, at DESC)</code></td><td>只看某種操作（如「所有刪除」）</td></tr>
+      <tr><td><code>(target ASC, action ASC, at DESC)</code></td><td>雙軸同時篩選</td></tr>
+    </table>
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 兩個實作陷阱</strong><br>
+    ① <strong>模擬器不強制複合索引</strong>：查詢在本機照跑，缺索引只有 prod 會炸。索引正確性必須在正式環境驗證。<br>
+    ② <strong>缺 <code>at</code> 欄位的文件會被 <code>orderBy('at')</code> 完全排除</strong>（Firestore 行為）。
+    正常路徑一定有 <code>at</code>，但這代表萬一 <code>serverTimestamp()</code> 寫入失敗，該筆 log 會在歷史頁「無聲消失」而非顯示異常。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🛠️ API</strong><br>
+    <code>src/lib/api/changeHistory.ts</code>：<br>
+    · <code>logChange(input)</code> — fire-and-forget，失敗只警告不拋錯（新增／修改路徑用）<br>
+    · <code>logChangeOrThrow(input)</code> — 失敗拋錯（<strong>刪除路徑專用</strong>：刪除的 log 承載還原快照，漏記等於永久失去救回能力，
+      因此刪除必須「先寫 log 成功、再執行刪除」）<br>
+    · <code>getChangeHistoryPage({ target?, action?, cursor?, pageSize })</code> — 雙軸篩選分頁查詢<br>
+    · <code>saveWithHistory(target, item)</code> — 集合無關的「寫入 + 稽核」helper，三個 <code>update*</code> 都走它
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ log 寫入路徑一律不得經過 <code>stripUndefined</code></strong><br>
+    該函式會遞迴走物件，把 <code>serverTimestamp()</code> 這種哨兵值拆成普通物件而失效（<code>at</code> 會變成 null）。
+    改為在組裝時就不放進 undefined 欄位。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label green">04 — 安全規則與保留期限</div>
+  <div class="section-title">append-only 與 TTL</div>
+
+  <div class="code-block">
+<span class="fn">match</span> /changeHistory/{docId} {
+  <span class="kw">allow</span> read:   <span class="kw">if</span> <span class="fn">isAdmin</span>();
+  <span class="kw">allow</span> create: <span class="kw">if</span> <span class="fn">isAdmin</span>();
+  <span class="kw">allow</span> update, delete: <span class="kw">if</span> <span class="kw">false</span>;
+}</div>
+
+  <div class="warning-block">
+    <strong>🔒 全站唯一不使用 <code>allow write: if isAdmin()</code> 的集合</strong><br>
+    <code>write</code> 涵蓋 create / update / delete。若沿用那套，管理員就能竄改或抹除自己的操作記錄，<strong>稽核價值歸零</strong>。
+    因此拆開寫：可新增、可讀取，但<strong>寫下去就定型</strong>。<br>
+    <strong>讀取也限管理員</strong>（不像遊戲資料公開）：這是內部維運記錄，且刪除快照內含完整文件內容。<br>
+    副作用：日後若要人工清理舊 log，必須從 Firebase Console 或 Admin SDK 執行（繞過 rules），前端做不到。這正是要的性質。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>⏳ TTL 政策（取代 Cloud Function）</strong><br>
+    在 <code>changeHistory</code> 集合群組上設一條 TTL 政策指向 <code>expireAt</code> 欄位，保留兩年。<br>
+    <strong>為何不寫 Cloud Function：</strong>原生 TTL 只計 delete 費用、<strong>不計 read</strong>；
+    而排程 Function 必須先 query 才知道刪誰（每筆計 read），還要加上 Function 調用與 Cloud Scheduler 成本，並且要寫程式碼維護。
+    原生 TTL 在此場景嚴格更優，且是純設定、零程式碼。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ TTL 的四個已知行為</strong><br>
+    ① <strong>TTL 不受安全規則約束</strong>——它是後端程序，與上方的 <code>delete: if false</code> 並不衝突。
+    這正是理想組合：前端永遠刪不掉，但系統會自己過期清理。<br>
+    ② <strong><code>expireAt</code> 需設單欄位索引豁免</strong>——官方明確警告索引 timestamp 欄位會造成寫入 hotspot，
+    而此欄位從不參與查詢（只有 TTL 程序讀它），保留自動索引純屬有害。<br>
+    ③ <strong>刪除延遲約 24 小時</strong>，過期文件在實際清除前仍會出現在查詢結果。<br>
+    ④ <strong>TTL 一併帶走還原能力</strong>——兩年後 log 被清除，刪除快照也隨之消失。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label green">05 — 涵蓋範圍</div>
+  <div class="section-title">目前接線的集合</div>
+
+  <div class="data-table-wrap">
+    <table class="data-table green-head">
+      <tr><th>ChangeTargetKind</th><th>Firestore 集合</th><th>狀態</th></tr>
+      <tr><td><code>buff</code></td><td>buffs</td><td>✅ 已接線（create / update）</td></tr>
+      <tr><td><code>pilotSkill</code></td><td>pilotSkills</td><td>✅ 已接線（create / update）</td></tr>
+      <tr><td><code>glossaryTerm</code></td><td>glossaryTerms</td><td>✅ 已接線（create / update）</td></tr>
+    </table>
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔜 擴充到其餘集合</strong><br>
+    機師／機甲／武器／模組／元件／背包／神驅能力／灰域尚未接線。底層 <code>saveWithHistory</code> 是集合無關設計，
+    屆時每個集合只需：① <code>ChangeTargetKind</code> union 加一個值 + <code>TARGET_COLLECTION</code> 補一行
+    ② <code>update*</code> 改走 <code>saveWithHistory</code> ③ 需要刪除的再加 <code>delete*</code>。
+    <strong>不需重構，也不需再動安全規則、索引與 TTL 政策。</strong>
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>📄 相關文件</strong><br>
+    完整設計論證與取捨見 <code>docs/05_階段性開發計畫/執行中/PLAN-030_資料變更歷史/計畫書.html</code>；
+    安全規則全貌見 <a href="security-rules.html">security-rules</a>。
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · Firebase 資料庫設計 · changeHistory — <a href="Firebase資料庫設計文件.html" style="color:var(--accent-green);text-decoration:none;">← 返回總覽</a>
+</footer>
+
+</body>
+</html>
