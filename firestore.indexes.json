@@ -63,6 +63,31 @@
         { "fieldPath": "slot",   "order": "ASCENDING" },
         { "fieldPath": "rarity", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "changeHistory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "target", "order": "ASCENDING" },
+        { "fieldPath": "at",     "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "changeHistory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "action", "order": "ASCENDING" },
+        { "fieldPath": "at",     "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "changeHistory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "target", "order": "ASCENDING" },
+        { "fieldPath": "action", "order": "ASCENDING" },
+        { "fieldPath": "at",     "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -73,6 +98,12 @@
         { "order": "ASCENDING",  "queryScope": "COLLECTION_GROUP" },
         { "order": "DESCENDING", "queryScope": "COLLECTION_GROUP" }
       ]
+    },
+    {
+      "collectionGroup": "changeHistory",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
     }
   ]
 }

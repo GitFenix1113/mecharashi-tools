@@ -528,7 +528,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-4 &nbsp; 複合索引</div>
       <div class="task-group-meta">firestore.indexes.json</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -538,19 +538,32 @@
           分別對應「只看某集合」「只看某操作」「雙軸同時篩選」。
           單純只排序 <code>at</code> 的查詢用單欄位自動索引即可。
           <strong>索引建立需要時間</strong>，先於 Phase E 部署完成才不會在檢視頁踩到查詢失敗。
+          <br><br>
+          <strong>✅ 已部署（2026-07-19）</strong>，<code>firebase firestore:indexes</code> 驗證 prod 與檔案一致。
+          三組都是必要的，不能只留最長的那組：Firestore 要求查詢的等值欄位必須是索引欄位的<strong>前綴</strong>，
+          <code>where(target) + orderBy(at)</code> 無法使用 <code>(target, action, at)</code>，因為中間卡著 <code>action</code>。
+          <br><br>
+          <strong>部署時的插曲（記錄備查）：</strong>CLI 偵測到 prod 有 4 筆檔案裡沒有的 fieldOverride
+          （<code>mechs.module4Id</code> / <code>module8Id</code> / <code>moduleFixedIds</code> / <code>modules.name</code>）並提議刪除，已同意。
+          事後查證無損失：這 4 筆的設定都是 <code>ASCENDING + DESCENDING + CONTAINS @ COLLECTION</code>，
+          <strong>即 Firestore 預設值</strong>，屬「顯式宣告預設行為」的空殼 override，刪除後回退到繼承預設、結果相同；
+          且這三個機甲欄位全站<strong>沒有任何 <code>where()</code> / <code>orderBy()</code></strong>，一律是已載入資料上的
+          <code>.find()</code> / <code>.includes()</code>。真正有作用的 <code>profile.role</code>（COLLECTION_GROUP scope，
+          集合群組查詢必須顯式開啟）因為在檔案內而被保留。
+          <strong>刪除是非同步的</strong>，指令回傳當下列表仍看得到那 4 筆，稍後重查才消失。
         </div>
         <div class="task-file">firestore.indexes.json</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-5 &nbsp; TTL 政策（取代 Cloud Function）</div>
-      <div class="task-group-meta">Firebase Console / gcloud</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">firestore.indexes.json（<s>Firebase Console / gcloud</s>）</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -561,11 +574,23 @@
           <strong>三個已知行為：</strong>① TTL 不受安全規則約束（是後端程序），與 A-3 的 append-only 完全相容；
           ② 刪除延遲約 24 小時，過期文件在實際清除前仍會出現在查詢結果；
           ③ TTL 刪除只計 delete 費用、<strong>不計 read</strong>——這正是不寫 Cloud Function 的理由。
+          <br><br>
+          <strong>✅ 已部署（2026-07-19）</strong>，<code>firebase firestore:indexes</code> 驗證 <code>ttl: true</code> 已生效。
+          <strong>不需要進 Console</strong>——原計畫寫「Firebase Console / gcloud」，但實測 firebase-tools 15.18.0 的
+          <code>fieldOverrides</code> 支援 <code>ttl</code> 布林欄位（<code>lib/firestore/api.js:288</code> 驗證型別、
+          <code>:339</code> 轉成 <code>ttlConfig</code>、<code>:437</code> 比對現況差異），因此 TTL 政策與索引豁免可用同一筆宣告、
+          隨 <code>firebase deploy --only firestore:indexes</code> 一併生效，且進版控、可 review、可重現。
+          <div style="margin-top:6px;">
+            <code>{ "collectionGroup": "changeHistory", "fieldPath": "expireAt", "ttl": true, "indexes": [] }</code><br>
+            <span style="font-size:12px;"><code>ttl:true</code> → 啟用 TTL；<code>indexes:[]</code> → 豁免全部單欄位索引。
+            <strong>保留期限不在此設定</strong>，而是由 <code>changeHistory.ts</code> 寫入時的 <code>expireAt = now + 2 年</code> 決定——
+            TTL 政策只負責「到點就刪」，兩年這個數字在程式碼那側。</span>
+          </div>
         </div>
-        <div class="task-file">firebase console · firestore TTL policy</div>
+        <div class="task-file">firestore.indexes.json</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
