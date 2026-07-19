@@ -43,6 +43,20 @@ export const ACTION_LABEL: Record<ChangeAction, string> = {
 }
 
 /**
+ * 還原時的重定位錨點。
+ *
+ * 索引式路徑（`talents.2.buffIds`）**不是穩定識別子**：刪除與還原之間，陣列可能被
+ * 重排或在前面插入元素，屆時 `talents[2]` 已經是另一個天賦。還原的正確做法是
+ * 「先按 index 找、對不上則按 anchor 重新定位」——沒有錨點就只能靜默寫到錯的地方。
+ *
+ * 定義在 types 而非 utils，是因為它會被序列化進 changeHistory 快照，屬持久化契約。
+ */
+export interface RefAnchor {
+  by: 'name' | 'level' | 'minSum'
+  value: string | number
+}
+
+/**
  * 反向修補單的一筆：記錄「某處引用被移除」，用於還原時反向套用。
  *
  * 關鍵設計：前三種 op 的還原都是「把元素加回集合」，**天然冪等** ——
@@ -56,10 +70,22 @@ export interface ReversePatch {
   /** 引用來源文件 ID，如 'pilot_038_艾達' */
   docId: string
   /**
-   * 欄位路徑（以 . 分隔，陣列以索引表示）。
-   * 例：'talents.2.buffIds' / 'talents.2.descriptionRefs.凝勢'
+   * 欄位路徑的**顯示形式**（以 . 分隔）。例：'talents.2.buffIds'。
+   *
+   * ⚠ **還原時不可用它定位**：descriptionRefs 的 map key 是使用者輸入的中文、可含 '.'，
+   * 例如 key 為 '凝勢.強化' 時 path 會是 'talents.2.descriptionRefs.凝勢.強化'，
+   * split('.') 切回來是錯的。定位一律用 segments。
    */
   path: string
+  /**
+   * 權威路徑（陣列形式），path 是它 join('.') 的產物。
+   *
+   * 型別上必填（產生端一定有），但讀 Firestore 回來的舊資料無型別保障，
+   * 還原端仍應對 undefined 做防禦性處理。
+   */
+  segments: (string | number)[]
+  /** 重定位錨點；部分站點無錨可用（如 pilotSkills 頂層 buffIds）故為選填 */
+  anchor?: RefAnchor
   /**
    * arrayRemove   — 從陣列移除一個元素（如 buffIds）
    * mapKeyDelete  — 從 map 刪除一個 key（如 descriptionRefs）

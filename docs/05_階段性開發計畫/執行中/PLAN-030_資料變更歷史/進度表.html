@@ -774,8 +774,38 @@
           解法是<strong>先解析完所有 hit 擷取容器參照、再統一套用</strong>兩階段。
           已用突變測試驗證鑑別力：把實作退化成天真的「邊解析邊套用」後，17 項中<strong>僅 O1 轉紅</strong>。
           寫入層走 copy-on-write，只複製被走訪到的路徑——既不動輸入資料，也不會把 Timestamp 之類的類別實例拆壞。
+          （含 C-3 端到端與 U 組持久化契約後，本檔共 24 項。）
         </div>
         <div class="task-file">src/utils/cascadePatch.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補強 ReversePatch 的持久化契約（segments / anchor）</div>
+        <div class="task-desc">
+          <strong>初版修補單只有 <code>path</code> 字串，會讓 Phase F 永久性地做不好。</strong>
+          兩個損失：<br>
+          ① <code>path</code> 是 <code>segments.join('.')</code>，而 <code>descriptionRefs</code> 的 map key 是使用者輸入的中文、<strong>可含 <code>.</code></strong>——
+          key 為 <code>凝勢.強化</code> 時 path 是 <code>talents.0.descriptionRefs.凝勢.強化</code>，<code>split('.')</code> 切回來是錯的。
+          C-1 早就為此讓 <code>RefHit</code> 同時帶 <code>segments</code>（權威）與 <code>path</code>（顯示），卻在轉 <code>ReversePatch</code> 時扁平化掉了。<br>
+          ② <strong><code>anchor</code> 完全遺失</strong>，這個較嚴重。刪除與還原之間陣列可能被重排或插入，
+          <code>talents[2]</code> 屆時已是另一個天賦，F-2 會<strong>把引用加回錯的地方且無聲無息</strong>。
+          被刪文件本身不含這個資訊（它不知道自己曾掛在誰的第幾個天賦上），<code>value</code> 也只有元素值——
+          <strong>沒在刪除當下記，之後永遠補不回來</strong>。
+          <br><br>
+          <strong>為什麼在 C-4 之前做：</strong>快照是不可變的歷史記錄。真正的死線其實是 D-2
+          （刪除按鈕上正式站的那一刻），不是 C-4——分支上的模擬器資料是拋棄式的，格式隨時可改。
+          但此刻 <code>r.segments</code> 與 <code>r.hit.anchor</code> 就在手上、產出修補單那一行正在丟棄它們，
+          晚做要連帶改 C-4（寫 <code>snapshot.patches</code>）與 E-3（快照檢視渲染）。是成本考量，不是急迫性。
+          <br><br>
+          <code>RefAnchor</code> 定義一併從 <code>utils/entityRefs.ts</code> 移入 <code>types/changeHistory.ts</code>——
+          它會被序列化進快照，屬持久化契約而非掃描器內部型別。
+          新增 U1~U3 測試鎖住：map key 含 <code>.</code> 的切分、索引式路徑必帶錨、修補單可 JSON 往返
+          （<code>segments</code> 混有 string 與 number，數字索引不可在往返後變成字串）。
+        </div>
+        <div class="task-file">src/types/changeHistory.ts · src/utils/cascadePatch.ts · src/utils/entityRefs.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status done">已完成</span>

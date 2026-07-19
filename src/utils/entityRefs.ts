@@ -18,7 +18,7 @@ import type {
   Module, Weapon, Backpack, Component,
   DescriptionRefs, RefType, SkillEffect,
 } from '../types'
-import type { ChangeTargetKind, ReversePatch } from '../types/changeHistory'
+import type { ChangeTargetKind, ReversePatch, RefAnchor } from '../types/changeHistory'
 import { parseBuffRef } from './buffRef.ts'
 import { parseNumRefs, NUM_ATTRS } from './numRefs.ts'
 import { isSkillId } from './pilotSkills.ts'
@@ -45,11 +45,11 @@ export type RefTargetKind = ChangeTargetKind | 'neuralDriveAbility'
 
 export type RefKind = 'buffIds' | 'descriptionRefs' | 'scalarRef' | 'numTokenText' | 'nameSoftRef'
 
-/** 還原時的重定位錨點（地雷 c）。 */
-export interface RefAnchor {
-  by: 'name' | 'level' | 'minSum'
-  value: string | number
-}
+/**
+ * 還原時的重定位錨點（地雷 c）。
+ * 定義已移至 types/changeHistory.ts —— 它會被序列化進刪除快照，屬持久化契約。
+ */
+export type { RefAnchor }
 
 const pathOf = (segments: (string | number)[]): string => segments.join('.')
 

@@ -47,9 +47,13 @@ test('M1: buffIds 命中 → 改寫整個頂層 talents，並產出對應修補�
   assert.deepEqual(m.unset, [])
   assert.deepEqual((m.set.talents as { buffIds: string[] }[])[0].buffIds, ['buff_y'])
 
-  assert.deepEqual(plan.patches, [
-    { coll: 'pilots', docId: 'p1', path: 'talents.0.buffIds', op: 'arrayRemove', value: 'buff_x@3' },
-  ])
+  assert.deepEqual(plan.patches, [{
+    coll: 'pilots', docId: 'p1',
+    segments: ['talents', 0, 'buffIds'],          // 權威形式，F-2 定位用
+    path: 'talents.0.buffIds',                    // 顯示用
+    op: 'arrayRemove', value: 'buff_x@3',
+    anchor: { by: 'name', value: '天賦A' },       // 陣列被重排時據此重新定位
+  }])
 })
 
 test('M2: 不改動輸入資料（copy-on-write）', () => {
@@ -185,7 +189,10 @@ test('P2: 頂層純量欄位清除走 unset（C-4 轉 deleteField），不是寫
   const plan = buildCascadePlan(findReferences('glossaryTerm', 'term_x', data).hits, data)
   assert.deepEqual(plan.mutations[0].set, {})
   assert.deepEqual(plan.mutations[0].unset, ['termRef'])
-  assert.deepEqual(plan.patches[0], { coll: 'buffs', docId: 'b1', path: 'termRef', op: 'fieldClear', value: 'term_x' })
+  // 頂層純量站點無錨可用（不在任何陣列裡，路徑天然穩定）→ 不帶 anchor 欄位
+  assert.deepEqual(plan.patches[0], {
+    coll: 'buffs', docId: 'b1', segments: ['termRef'], path: 'termRef', op: 'fieldClear', value: 'term_x',
+  })
 })
 
 test('P3: 巢狀純量欄位清除 → 改寫其頂層欄位，不進 unset', () => {
@@ -345,4 +352,53 @@ test('T4: 同一單元的兩段正文各自成為獨立 patch（description / de
   const t = (plan.mutations[0].set.talents as { description: string; descriptionMax: string }[])[0]
   assert.equal(t.description, '疊5層')
   assert.equal(t.descriptionMax, '滿級疊5層')
+})
+
+// ─── U. 修補單的持久化契約（F-2 的還原前提）──────────────────────────────────
+
+test('U1: map key 含 "." 時 segments 保有正確切分，path 字串則不可信', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{
+      name: 'A',
+      descriptionRefs: { '凝勢.強化': { refType: 'buff', refId: 'buff_x' } },
+    }],
+  })
+  const plan = buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data)
+  const p = plan.patches[0]
+
+  assert.deepEqual(p.segments, ['talents', 0, 'descriptionRefs', '凝勢.強化'])
+  // path 切回來會多切一刀 —— 這正是 segments 必須進快照的原因
+  assert.equal(p.path, 'talents.0.descriptionRefs.凝勢.強化')
+  assert.notDeepEqual(p.path.split('.'), p.segments.map(String))
+})
+
+test('U2: 索引式路徑一律帶 anchor，供還原時重新定位', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [
+      { name: '天賦甲', buffIds: ['buff_keep'] },
+      { name: '天賦乙', buffIds: ['buff_x'] },
+    ],
+    neuralDrive: [{ name: 'ND', levels: [{ level: 4, buffIds: ['buff_x'] }] }],
+  })
+  const plan = buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data)
+
+  // talents[1] 的錨是天賦名；若日後天賦被重排，F-2 靠它找回正確的那一個
+  const t = plan.patches.find((p) => p.segments[0] === 'talents')
+  assert.deepEqual(t?.anchor, { by: 'name', value: '天賦乙' })
+
+  // 神驅等級的錨是 level 值，不是索引
+  const nd = plan.patches.find((p) => p.segments[0] === 'neuralDrive')
+  assert.deepEqual(nd?.anchor, { by: 'level', value: 4 })
+})
+
+test('U3: 修補單可被 JSON 往返（快照要存進 Firestore）', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{ name: 'A', buffIds: ['buff_x@2'], descriptionRefs: { k: { refType: 'buff', refId: 'buff_x', level: 2 } } }],
+  })
+  const plan = buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data)
+  // segments 混有 string 與 number，JSON 往返後型別必須保持（number 索引不可變字串）
+  assert.deepEqual(JSON.parse(JSON.stringify(plan.patches)), plan.patches)
 })

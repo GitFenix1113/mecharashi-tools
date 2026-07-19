@@ -361,7 +361,14 @@ export function buildCascadePlan(
 
     mutations.push({ coll: group.coll, docId: group.docId, docName: group.docName, set, unset, appliedCount: applied.length })
     for (const r of applied) {
-      patches.push({ coll: group.coll, docId: group.docId, path: pathOf(r.segments), op: r.hit.op, value: r.patchValue })
+      patches.push({
+        coll: group.coll, docId: group.docId,
+        // segments 是權威形式、path 只供顯示。兩者都存：F-2 用 segments 定位，
+        // 快照檢視頁（E-3）直接印 path，免得每次都要 join
+        segments: r.segments, path: pathOf(r.segments),
+        op: r.hit.op, value: r.patchValue,
+        ...(r.hit.anchor ? { anchor: r.hit.anchor } : {}),
+      })
     }
   }
 
