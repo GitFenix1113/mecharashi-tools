@@ -1002,7 +1002,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-5 &nbsp; 刪除 API 對外介面</div>
       <div class="task-group-meta">src/lib/api/{buffs,skills,glossary}.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1011,11 +1011,24 @@
           包裝 C-1~C-4 成三個對外函式。若 pre-image 為 <code>null</code>（文件已不存在）則直接 return，不寫 log 也不報錯。
           完成後對<strong>所有被觸及的集合</strong>呼叫 <code>bumpDataVersion</code>，讓其餘 client 快取失效（決策十一）。
           <strong>現有三個集合規則的 <code>allow write: if isAdmin()</code> 已涵蓋 delete，規則不需改動。</strong>
+          <br><br>
+          <strong>✅ 已完成（2026-07-21）</strong>：<code>deleteBuff</code> / <code>deletePilotSkill</code> /
+          <code>deleteGlossaryTerm</code>，各自綁定 kind 後轉呼 C-4 的一次性 <code>cascadeDelete()</code>，
+          並依 CLAUDE.md 6.3 於 <code>firestoreApi.ts</code> barrel 補一行 re-export。
+          版本 bump 已在 C-4 併入 batch，故包裝層不需再呼叫。
+          <br><br>
+          <strong>刻意只包一次性版本、不為每個集合再包 plan/commit</strong>：D-1 的確認對話框是三個後台分頁共用的，
+          本來就得是 kind 泛型的，直接用 <code>planCascadeDelete(kind, id)</code> ＋ <code>commitCascadeDelete()</code> 即可；
+          再包三組只是把同樣的知識抄三遍。這三支便利入口是給腳本與測試用的。
+          <br><br>
+          <strong>回傳值帶著快取同步所需的全部資訊</strong>：<code>versions</code> 與
+          <code>targetCollHasSiblingEdits</code>。後者為 <code>true</code> 時呼叫端<strong>不可</strong>只用
+          <code>removeCollectionItem</code>（見上方 C-4 審查發現②）。
         </div>
-        <div class="task-file">src/lib/api/buffs.ts · skills.ts · glossary.ts</div>
+        <div class="task-file">src/lib/api/buffs.ts · skills.ts · glossary.ts · src/lib/firestoreApi.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
