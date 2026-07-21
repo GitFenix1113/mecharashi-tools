@@ -104,9 +104,14 @@ service cloud.firestore {
     // 保留期限交由 Firestore 原生 TTL 政策（expireAt 欄位，兩年）處理 ——
     // TTL 是後端程序，不受安全規則約束，因此與下方的 delete: if false 並不衝突。
     // 這正是理想組合：前端永遠刪不掉，但系統會自己過期清理。
+    // create 額外綁定 actorUid == 本人 uid：只驗身分不驗內容的話，管理員可用
+    // client SDK 直接寫入 actorUid 冒名的偽造記錄嫁禍他人，且因下方 append-only
+    // 連本人也刪不掉、永久化（PLAN-030 Phase C 破壞性測試發現③）。append-only 防的
+    // 是「竄改既有記錄」，這條防的是「偽造新記錄」，同屬稽核完整性。
+    // 與程式相容：buildEntry 走管理員路徑時 actorUid 恆為 auth.currentUser.uid。
     match /changeHistory/{docId} {
       allow read:   if isAdmin();
-      allow create: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.actorUid == request.auth.uid;
       allow update, delete: if false;
     }
 

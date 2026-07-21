@@ -9,9 +9,8 @@
 //   d. 對照組：管理員正常刪除成功（級聯 + log + 版本 bump 全套）
 //   e. 一般使用者直寫 buffs / meta/gameData / changeHistory → 全部被拒
 //   f. 管理員完整 batch（資料更新 + meta/gameData 寫入）成功
-//   g. 探針（documented-behavior）：create 規則只驗身分不驗內容 → ADMIN 可寫入
-//      actorUid 冒名的偽造 log，且 append-only 讓它永久化。實作與計畫書決策二
-//      逐字一致（`allow create: if isAdmin()`），故按實際行為斷言、缺陷另列報告。
+//   g. create 綁定 actorUid（Phase C 發現③修正後）：冒名他人的 actorUid 被規則
+//      擋下、actorUid==本人放行、append-only 仍擋 delete。防「偽造嫁禍」缺口。
 //
 // 執行順序刻意為 a → b → e → d → c → f → g：讓案例 c 竄改的是案例 d 經 client 路徑
 // 真實寫入的 log（而非人造種子），更貼近「管理員想抹除自己操作記錄」的實際威脅。
@@ -237,27 +236,38 @@ emuSuite('rules: 安全規則互動 —— 級聯刪除每一步都受規則保�
   })
 
   // ── g. 探針：create 只驗身分、不驗內容（documented-behavior）──────────────
-  await t.test('g. 探針：ADMIN 可寫入 actorUid 冒名的偽造 log，且事後連本人也刪不掉', async () => {
-    // 計畫書決策二的規則原文即 `allow create: if isAdmin()`（「只能新增，寫下去就定型」），
-    // 實作與文件一致 —— 但 create 完全不驗 request.resource.data，於是：
-    //   ① actorUid 可冒名他人（嫁禍）；② 形狀不受約束（可寫入缺欄位的殘缺 log）。
-    // 威脅模型上這與「竄改自己的記錄」同屬稽核完整性問題，卻不在決策二的防線內。
-    // 此為記錄實際行為的探針，非期望行為 —— 建議修法見測試報告 defects
-    // （create 加 request.resource.data.actorUid == request.auth.uid 驗證）。
+  await t.test('g. create 綁定 actorUid：冒名他人被拒、actorUid==本人放行（防偽造嫁禍）', async () => {
+    // Phase C 破壞性測試發現③的修正：create 規則加 request.resource.data.actorUid
+    // == request.auth.uid。append-only 防「竄改既有記錄」，這條防「偽造新記錄」——
+    // 否則管理員可 addDoc 冒名 log 嫁禍他人，且因 append-only 連本人也抹不掉、永久化。
+    await signInAs(ADMIN_USER)
+
+    // ① 冒名他人的 actorUid → 規則擋下（規則層，寫入前就拒絕）
+    await expectPermissionDenied(
+      addDoc(collection(db, 'changeHistory'), {
+        target: 'buff', action: 'delete', targetId: 'buff_forged', targetName: '偽造目標',
+        actorUid: 'someone-else-uid', actorName: '被嫁禍的人',
+        at: serverTimestamp(), expireAt: new Date(),
+      }),
+      'ADMIN create 冒名 actorUid 的 log',
+    )
+    // 帶外確認偽造記錄根本沒落地（先前既有的 log 數量不受影響）
+    const forgedGone = (await allLogs()).find((l) => l.targetId === 'buff_forged')
+    assert.equal(forgedGone, undefined, '冒名 log 不應寫入資料庫')
+
+    // ② actorUid == 本人 uid → 放行（buildEntry 走的正是這條，不可被誤擋）
     const ref = await addDoc(collection(db, 'changeHistory'), {
-      target: 'buff', action: 'delete', targetId: 'buff_forged', targetName: '偽造目標',
-      actorUid: 'someone-else-uid', actorName: '被嫁禍的人',
+      target: 'buff', action: 'delete', targetId: 'buff_legit', targetName: '正當記錄',
+      actorUid: adminUid, actorName: '測試管理員',
       at: serverTimestamp(), expireAt: new Date(),
     })
-    const forged = await readDoc('changeHistory', ref.id)
-    assert.equal(
-      forged?.actorUid, 'someone-else-uid',
-      '實際行為：規則放行冒名 actorUid 的 log（規格層縫隙，見 defects）',
-    )
-    // append-only 的反面效果：偽造記錄一旦寫入，連偽造者本人也抹不掉
+    const legit = await readDoc('changeHistory', ref.id)
+    assert.equal(legit?.actorUid, adminUid, 'actorUid==本人 的 log 應正常寫入')
+
+    // append-only 仍在：連本人的正當 log 也改不了、刪不掉
     await expectPermissionDenied(
       deleteDoc(doc(db, 'changeHistory', ref.id)),
-      'ADMIN delete 偽造 log',
+      'ADMIN delete 自己的 log',
     )
   })
 })
