@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">15</div>
+      <div class="summary-num" style="color:var(--accent-green)">19</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">17</div>
+      <div class="summary-num" style="color:var(--text-dim)">13</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">15 / 32</span>
+      <span style="color:var(--accent-green);">19 / 32</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 47%"></div>
+      <div class="progress-bar-fill" style="width: 59%"></div>
     </div>
   </div>
 
@@ -335,6 +335,18 @@
       <code>neuralDriveAbilities</code> 集合引用，<code>buildBuffPool</code> 卻沒有 resolve。
       <strong>C-1 刻意不順手修</strong>：C-1 的驗收標準是「行為不變」，混入行為修正會讓回歸測試失去判別力。
       registry 化之後這個修正只需動一處。
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ Phase D + E 已完成（2026-07-22）</strong>——刪除 UI 上線（見 D-1/D-2 註記），
+    變更歷史檢視頁 <code>/admin/history</code> 落地。<strong>本計畫已達「不含還原」停損點</strong>：
+    有稽核、有級聯刪除、有歷史檢視與快照展開，還原需人工照快照操作，Phase F 可隨時後補。
+    <div style="margin-top:8px;font-size:12px;">
+      Phase E 於開發模擬器以真實 UI 端到端驗證：AdminRoute 攔未登入 ✓、
+      update 記錄列出 changedFields ✓、delete 快照展開（doc + 逐筆 patches）✓、
+      雙軸篩選含三組複合索引組合與空狀態 ✓。驗證產生的測試記錄
+      （修改 BUFF_修理量提升、刪除 buff_虛粒子形態）留在模擬器，<code>npm run emu:seed</code> 可重灌。
     </div>
   </div>
 
@@ -1180,7 +1192,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 頁面骨架與路由</div>
       <div class="task-group-meta">src/pages/admin/AdminHistoryPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1189,11 +1201,14 @@
           置於 <code>src/pages/admin/</code>（與版本管理頁同層，非後台分頁）。
           於 <code>App.tsx</code> 以 <code>&lt;AdminRoute&gt;</code> 包裹 + <code>Suspense</code> lazy 載入，比照 <code>/admin/versions</code>——
           注意 <code>/admin</code> 本身<strong>沒有</strong>被 AdminRoute 包裹（它自行內嵌檢查），此處採較嚴格的 AdminRoute 作法。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>，比照 <code>/admin/versions</code> 以 <code>AdminRoute + Suspense + lazy</code> 掛上。
+          模擬器實測：未登入直接被導回首頁、模擬器管理員登入後正常進入。
         </div>
         <div class="task-file">src/pages/admin/AdminHistoryPage.tsx · src/App.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -1201,7 +1216,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-2 &nbsp; 雙軸篩選與分頁</div>
       <div class="task-group-meta">AdminHistoryPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1211,11 +1226,16 @@
           切換篩選需<strong>重置游標</strong>重新查詢，否則會接續在錯誤的分頁位置。
           「載入更多」沿用 <code>shared.tsx</code> 的 <code>LoadMoreButton</code>。
           <strong>不可</strong>使用 <code>useClientPaged</code> / <code>useServerPaged</code>——兩者都綁定 <code>getCollectionPage</code> 的 name 排序模型，與本頁的 <code>at</code> 時間排序不相容。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>。游標與請求序號放 <code>useRef</code>：切換篩選重置游標重新查詢，
+          並用序號丟棄慢速回應——快速連點篩選時，舊請求的結果不可覆蓋新篩選的列表。
+          模擬器實測：單軸（操作=修改 → 只剩 update 記錄）、雙軸組合（BUFF × 刪除 → 恰為 2 筆 delete，
+          走 <code>(target, action, at)</code> 複合索引）、無資料組合（技能 × 修改）正確顯示空狀態、無查詢錯誤。
         </div>
         <div class="task-file">src/pages/admin/AdminHistoryPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -1223,7 +1243,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-3 &nbsp; 記錄呈現與快照檢視</div>
       <div class="task-group-meta">AdminHistoryPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1234,11 +1254,19 @@
           <strong><code>snapshot.patches</code> 的引用清單</strong>（格式化 JSON 即可，供人工照著重建）。
           需處理 <code>at</code> 為 Firestore <code>Timestamp</code> 而非字串——要 <code>.toDate()</code> 後格式化；
           剛寫入尚未回傳伺服器時間時可能短暫為 <code>null</code>。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>。<code>at === null</code> 顯示「（時間同步中）」而非整列消失。
+          快照展開沒有做成純 JSON 一坨：<code>snapshot.doc</code> 是格式化 JSON 區塊，
+          <code>snapshot.patches</code> 逐筆列示——op 色票 + <code>coll/docId</code> + <code>path</code> + 被移除的原值，
+          人工還原時可逐筆照做。模擬器實測（真實 UI 產生的記錄）：update 列出 <code>changedFields</code>
+          （<code>description</code> / <code>maxStack</code>，正是被修改的兩欄）；刪除 <code>buff_虛粒子形態</code> 的快照
+          完整含 <code>descriptionRefs</code>，patches 兩筆（<code>arrayRemove buffIds</code> ＋
+          <code>mapKeyDelete descriptionRefs.虛粒子形態</code>）皆正確渲染。
         </div>
         <div class="task-file">src/pages/admin/AdminHistoryPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -1246,7 +1274,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-4 &nbsp; 後台入口</div>
       <div class="task-group-meta">src/pages/user/AdminPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1255,11 +1283,14 @@
           比照既有「版本列表」卡片的 <code>&lt;Link to="/admin/versions"&gt;</code> 作法，加一張指向 <code>/admin/history</code> 的卡片。
           採「子頁面」而非「第 13 個 Tab」——本集合不走 GameDataContext 預載入模型，
           硬塞進 <code>TAB_CONFIG</code> 需要一個空 <code>keys</code> 的特例，反而弄髒既有結構。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>，與「版本管理」卡片並排（綠色系、📜 圖示），
+          既有入口區塊由單卡改為 <code>flex gap-3 flex-wrap</code> 容器。
         </div>
         <div class="task-file">src/pages/user/AdminPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
