@@ -124,11 +124,13 @@ export function createNumRefFreezer(
 
 // ─── 內部小工具 ──────────────────────────────────────────────────────────────
 
-type Container = Record<PropertyKey, unknown>
+// Container / isContainer / DocDraft 同時供 restorePatch.ts（F-2）使用——
+// 刪除與還原必須共用同一套走訪與 copy-on-write 語意，否則逆運算會靜默偏移。
+export type Container = Record<PropertyKey, unknown>
 
 const pathOf = (segments: (string | number)[]): string => segments.join('.')
 
-const isContainer = (v: unknown): v is Container =>
+export const isContainer = (v: unknown): v is Container =>
   typeof v === 'object' && v !== null
 
 const shallowCopy = (v: Container): Container =>
@@ -153,7 +155,7 @@ function removeAll(arr: unknown[], value: unknown): number {
  *   · 不會動到呼叫端的輸入資料（findReferences 的 K2 契約延伸到這裡）；
  *   · 不需要 structuredClone 整份文件，也就不會把 Timestamp 之類的類別實例拆壞。
  */
-class DocDraft {
+export class DocDraft {
   readonly root: Container
   /** 已經是本草稿私有副本的節點。避免同一節點被重複複製而丟失前一次的修改 */
   private readonly copied = new Set<object>()

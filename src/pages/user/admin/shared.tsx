@@ -425,7 +425,7 @@ export function ConfirmDeleteDialog({
           )}
 
           <p className="text-xs text-text-dim border-t border-border pt-2">
-            此操作會記錄於變更歷史並保留還原快照，但目前<span className="text-text-secondary">尚無一鍵還原介面</span>，救回需人工照快照操作。
+            此操作會記錄於變更歷史並保留還原快照；誤刪可到<span className="text-text-secondary">變更歷史頁</span>從快照一鍵還原（期間被編輯的位置會跳過並報告）。
           </p>
         </div>
 

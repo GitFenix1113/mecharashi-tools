@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getChangeHistoryPage } from '../../lib/firestoreApi'
+import {
+  getChangeHistoryPage,
+  planRestore,
+  commitRestore,
+  type RestorePlanResult,
+  type RestoreResult,
+} from '../../lib/firestoreApi'
 import type { ChangeHistoryEntry } from '../../types/changeHistory'
 import {
   ACTION_LABEL,
@@ -70,8 +76,8 @@ function FilterGroup<T extends string>({
   )
 }
 
-/** delete 記錄的快照展開區：文件本體 + 反向修補單（格式化 JSON，供人工照著重建） */
-function SnapshotView({ entry }: { entry: ChangeHistoryEntry }) {
+/** delete 記錄的快照展開區：文件本體 + 反向修補單（格式化 JSON）＋ 一鍵還原入口 */
+function SnapshotView({ entry, onRestore }: { entry: ChangeHistoryEntry; onRestore: () => void }) {
   const snap = entry.snapshot
   if (!snap) return <div className="text-xs text-text-dim">此記錄沒有快照。</div>
   return (
@@ -109,8 +115,154 @@ function SnapshotView({ entry }: { entry: ChangeHistoryEntry }) {
           <div className="text-xs text-text-dim">無引用被清除（目標未被任何地方引用）。</div>
         )}
       </div>
-      <div className="text-[11px] text-text-dim">
-        💡 尚無一鍵還原介面（Phase F 未實作）。救回方式：依上方快照人工重建文件，再照修補單把各處引用加回。
+      <div className="flex items-center gap-3">
+        <button
+          onClick={(e) => { e.stopPropagation(); onRestore() }}
+          className="px-4 py-1.5 rounded-lg text-xs font-bold bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/40 hover:bg-accent-cyan/25 transition-colors"
+        >
+          ↺ 還原此刪除
+        </button>
+        <span className="text-[11px] text-text-dim">
+          文件本體 setDoc 重建；引用冪等重加（缺就補、已有就跳過），期間被編輯的位置會跳過並報告。
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// ─── 還原對話框（F-3）────────────────────────────────────────────────────────
+// 沿用 ConfirmDeleteDialog 的遮罩＋卡片外殼；主鍵為青色（restore 色票），
+// blockers 非空（目標已被重建 / batch 超限）時禁用確認並列出原因。
+
+type RestoreFlow =
+  | { phase: 'loading' }
+  | { phase: 'preview'; plan: RestorePlanResult; error: string | null; busy: boolean }
+  | { phase: 'done'; result: RestoreResult }
+
+const SKIP_REASON_LABEL: Record<string, string> = {
+  docMissing:    '來源文件已不存在',
+  pathMissing:   '欄位路徑已不存在',
+  shapeMismatch: '欄位形狀不符',
+  anchorMismatch: '定位不到原本的陣列元素',
+  conflict:      '位置已有不同的值（期間被編輯）',
+  badPatch:      '修補單格式不完整',
+}
+
+function RestoreDialog({
+  flow,
+  onConfirm,
+  onClose,
+}: {
+  flow: RestoreFlow
+  onConfirm: () => void
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-bg-card border border-accent-cyan/40 rounded-xl p-6 w-full max-w-lg max-h-[90vh] flex flex-col">
+        {flow.phase === 'loading' && (
+          <p className="text-sm text-text-secondary py-6 text-center">讀取快照與現況中…</p>
+        )}
+
+        {flow.phase === 'preview' && (() => {
+          const { plan } = flow
+          const blocked = plan.blockers.length > 0
+          return (
+            <>
+              <div className="shrink-0">
+                <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                  <span className="text-accent-cyan">↺</span>
+                  還原「{plan.targetName || plan.targetId}」？
+                </h3>
+                <p className="text-xs text-text-dim mt-1 font-mono break-all">{plan.coll}/{plan.targetId}</p>
+              </div>
+
+              <div className="overflow-y-auto flex-1 mt-4 space-y-3 text-sm">
+                {blocked && (
+                  <div className="rounded-lg border border-accent-red/40 bg-accent-red/10 p-3">
+                    <p className="text-accent-red font-bold text-xs mb-1">⚠ 無法還原：</p>
+                    <ul className="list-disc pl-5 space-y-1 text-[13px] text-text-secondary">
+                      {plan.blockers.map((b, i) => <li key={i}>{b.detail}</li>)}
+                    </ul>
+                  </div>
+                )}
+
+                {!blocked && (
+                  <p className="text-text-secondary">
+                    將重建文件本體，並重加 <span className="text-accent-cyan font-bold">{plan.plan.applied.length}</span> 處引用
+                    {plan.plan.alreadyPresent.length > 0 && <>；<span className="text-text-dim">{plan.plan.alreadyPresent.length} 處已在原位，無需重加</span></>}。
+                  </p>
+                )}
+
+                {plan.plan.skipped.length > 0 && (
+                  <div className="rounded-lg border border-accent-yellow/30 bg-accent-yellow/5 p-3">
+                    <p className="text-accent-yellow font-bold text-xs mb-1.5">
+                      以下 {plan.plan.skipped.length} 處無法自動還原，將跳過（不影響其餘還原）：
+                    </p>
+                    <ul className="space-y-1 text-[12px] text-text-secondary">
+                      {plan.plan.skipped.map((s, i) => (
+                        <li key={i}>
+                          <span className="font-mono text-[11px] text-text-dim">{s.patch.coll}/{s.patch.docId}</span>
+                          {' '}<span className="font-mono text-[11px]">{s.patch.path}</span>
+                          {' — '}{SKIP_REASON_LABEL[s.reason] ?? s.reason}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {flow.error && <p className="text-xs text-accent-red">⚠ {flow.error}</p>}
+              </div>
+
+              <div className="flex gap-3 mt-4 shrink-0">
+                <button
+                  onClick={onConfirm}
+                  disabled={blocked || flow.busy}
+                  className="flex-1 px-4 py-2 bg-accent-cyan text-black font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
+                >
+                  {flow.busy ? '還原中…' : '確認還原'}
+                </button>
+                <button
+                  onClick={onClose}
+                  disabled={flow.busy}
+                  className="px-4 py-2 border border-border text-text-secondary rounded-lg hover:bg-bg-dark transition-colors disabled:opacity-50"
+                >
+                  取消
+                </button>
+              </div>
+            </>
+          )
+        })()}
+
+        {flow.phase === 'done' && (
+          <>
+            <h3 className="text-lg font-bold text-accent-cyan shrink-0">✓ 還原完成</h3>
+            <div className="overflow-y-auto flex-1 mt-3 space-y-2 text-sm text-text-secondary">
+              <p>
+                「{flow.result.targetName}」已重建；重加引用 <span className="text-accent-cyan font-bold">{flow.result.restoredRefs}</span> 處
+                {flow.result.alreadyPresent > 0 && <>、{flow.result.alreadyPresent} 處原本就在</>}
+                {flow.result.skipped.length > 0 && <>、<span className="text-accent-yellow font-bold">{flow.result.skipped.length}</span> 處跳過</>}。
+              </p>
+              {flow.result.skipped.length > 0 && (
+                <ul className="space-y-1 text-[12px] rounded-lg border border-accent-yellow/30 bg-accent-yellow/5 p-3">
+                  {flow.result.skipped.map((s, i) => (
+                    <li key={i}>
+                      <span className="font-mono text-[11px] text-text-dim">{s.patch.coll}/{s.patch.docId}</span>
+                      {' '}<span className="font-mono text-[11px]">{s.patch.path}</span>
+                      {' — '}{SKIP_REASON_LABEL[s.reason] ?? s.reason}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              className="mt-4 px-4 py-2 bg-accent-cyan text-black font-bold rounded-lg hover:opacity-90 transition-opacity shrink-0"
+            >
+              關閉
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
@@ -125,6 +277,7 @@ export default function AdminHistoryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [restoreFlow, setRestoreFlow] = useState<RestoreFlow | null>(null)
 
   // 游標與請求序號放 ref：切換篩選要重置游標重新查詢（進度表 E-2），
   // 序號用來丟棄慢速回應——快速連點篩選時，舊請求的結果不可覆蓋新篩選的列表。
@@ -167,6 +320,42 @@ export default function AdminHistoryPage() {
       else next.add(id)
       return next
     })
+  }
+
+  // ── 還原流程（F-3）：plan → 預覽確認 → commit → 結果報告 → 重新整理列表 ──
+  const startRestore = async (logId: string) => {
+    setRestoreFlow({ phase: 'loading' })
+    try {
+      const plan = await planRestore(logId)
+      setRestoreFlow({ phase: 'preview', plan, error: null, busy: false })
+    } catch (err) {
+      console.error('[AdminHistoryPage] 還原預檢失敗:', err)
+      setError(err instanceof Error ? err.message : '還原預檢失敗')
+      setRestoreFlow(null)
+    }
+  }
+
+  const confirmRestore = async () => {
+    if (restoreFlow?.phase !== 'preview') return
+    setRestoreFlow({ ...restoreFlow, busy: true, error: null })
+    try {
+      const result = await commitRestore(restoreFlow.plan)
+      setRestoreFlow({ phase: 'done', result })
+    } catch (err) {
+      console.error('[AdminHistoryPage] 還原失敗:', err)
+      setRestoreFlow({
+        ...restoreFlow,
+        busy: false,
+        error: err instanceof Error ? err.message : '還原失敗',
+      })
+    }
+  }
+
+  const closeRestore = () => {
+    // 還原成功會新增一筆 restore log —— 關閉時重新整理列表讓它浮上來
+    const shouldRefresh = restoreFlow?.phase === 'done'
+    setRestoreFlow(null)
+    if (shouldRefresh) void fetchPage(true)
   }
 
   return (
@@ -273,7 +462,7 @@ export default function AdminHistoryPage() {
                 {/* delete：快照展開 */}
                 {expandable && isOpen && (
                   <div className="px-4 pb-4 pt-1 border-t border-border">
-                    <SnapshotView entry={e} />
+                    <SnapshotView entry={e} onRestore={() => void startRestore(e.id)} />
                   </div>
                 )}
               </div>
@@ -291,6 +480,10 @@ export default function AdminHistoryPage() {
       )}
 
       <LoadMoreButton hasMore={hasMore} loading={loading} onClick={() => void fetchPage(false)} />
+
+      {restoreFlow && (
+        <RestoreDialog flow={restoreFlow} onConfirm={() => void confirmRestore()} onClose={closeRestore} />
+      )}
     </div>
   )
 }

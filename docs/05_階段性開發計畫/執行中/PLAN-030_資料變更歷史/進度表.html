@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">19</div>
+      <div class="summary-num" style="color:var(--accent-green)">32</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">13</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">19 / 32</span>
+      <span style="color:var(--accent-green);">32 / 32</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 59%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -335,6 +335,21 @@
       <code>neuralDriveAbilities</code> 集合引用，<code>buildBuffPool</code> 卻沒有 resolve。
       <strong>C-1 刻意不順手修</strong>：C-1 的驗收標準是「行為不變」，混入行為修正會讓回歸測試失去判別力。
       registry 化之後這個修正只需動一處。
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ Phase F 已完成（2026-07-22）—— 全計畫 32/32 收官，可歸檔。</strong>
+    一鍵還原落地：<code>utils/restorePatch.ts</code>（純計算，14 項測試含 R8 刪除→還原往返
+    deepEqual）＋ <code>lib/api/restore.ts</code>（plan/commit 兩階段、commit 重驗目標存在、
+    版本 bump 併入原子 batch）＋ 歷史頁「↺ 還原此刪除」預覽對話框。
+    模擬器四場景端到端驗證全過（正常往返／衝突跳過／來源消失／ID 重建阻擋，見 F-4 註記）。
+    <div style="margin-top:8px;font-size:12px;">
+      與刪除端的兩個刻意不對稱：① log 順序相反——刪除「先 log 後資料」（log 承載快照），
+      還原「先資料後 log 不 await」（restore log 只承載追溯資訊）；② 讀取範圍——刪除掃全部
+      9 集合（「誰引用它」是開放問題），還原只逐份重讀修補單指到的文件（名單在快照裡）。
+      驗證用測試資料（激發能的竄改與 BUFF_事不宜遲 重建版）留在開發模擬器，
+      <code>npm run emu:seed</code> 可重灌。
     </div>
   </div>
 
@@ -1305,7 +1320,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-1 &nbsp; 還原文件本體</div>
       <div class="task-group-meta">src/lib/api/restore.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1314,19 +1329,27 @@
           <code>setDoc</code> 寫回 <code>snapshot.doc</code>。
           <strong>先檢查該 ID 是否已被重新建立</strong>（管理員可能刪掉後又手動建了同名項目）——
           已存在則中止並提示，不可無聲覆蓋。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>，結構鏡射 <code>cascadeDelete.ts</code>：
+          <code>planRestore(logId)</code> ＋ <code>commitRestore()</code> 兩階段，預覽對話框吃 plan。
+          目標存在檢查做在<strong>兩處</strong>：plan 給對話框顯示 blocker；<strong>commit 開頭再驗一次</strong>
+          堵 plan/commit 視窗（正是 Phase C 審查發現②「commit 不重驗目標存在」在還原端的對稱修正）。
+          單一 WriteBatch 原子提交（目標重建 + N 份引用寫回 + 版本 bump 併入同 batch），
+          batch 500 上限同樣把關。log 順序與刪除端<strong>刻意相反</strong>：還原是「先還原成功、後補
+          log 不 await」——restore log 只承載追溯資訊，漏記不損失能力，回到決策十的一般規則。
         </div>
         <div class="task-file">src/lib/api/restore.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">F-2 &nbsp; 還原引用（冪等重加）</div>
-      <div class="task-group-meta">src/lib/api/restore.ts</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">src/utils/restorePatch.ts · src/lib/api/restore.ts</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1338,11 +1361,25 @@
           <code>textFreeze</code> 是唯一非冪等的：需比對現值是否仍等於凍結後文字，不符則跳過並列入報告。
           來源文件若已不存在（例如整個機師被刪）同樣跳過並報告。
           還原結束回報「成功 N 筆／跳過 M 筆」與跳過原因。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>。純計算層依 C-2 慣例獨立成
+          <code>src/utils/restorePatch.ts</code>（<code>buildRestorePlan</code>），與刪除端共用
+          <code>DocDraft</code> copy-on-write——同一套走訪語意，逆運算不會偏移。
+          14 項單元測試（總計 136 項全過），最關鍵兩項：<br>
+          · <strong>R8 往返測試</strong>：<code>buildCascadePlan</code> 套用（buffIds@N + descriptionRefs +
+          textFreeze 混合命中）→ 快照 JSON 往返 → <code>buildRestorePlan</code> 套用 → 文件
+          <code>deepEqual</code> 回原始狀態；<br>
+          · <strong>R6 錨點重定位</strong>：陣列被重排後 index 指到錯的天賦，按 <code>anchor</code>
+          重新定位到正確元素、鄰居毫髮無傷；錨定元素消失或同錨多個 → 跳過不亂寫。
+          這兌現了 C-2 埋下的 segments/anchor 持久化契約——錨定的是 segments 中
+          <strong>最後一個數字索引</strong>指向的元素，與 entityRefs 產生端一致。<br>
+          <code>textFreeze</code> 的比對用「快照文件重建凍結器」重算凍結產物（來源與刪除當下同一份，
+          結果可重現），現值等於凍結產物才還原成 token 形式。
         </div>
-        <div class="task-file">src/lib/api/restore.ts</div>
+        <div class="task-file">src/utils/restorePatch.ts · src/utils/restorePatch.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -1350,7 +1387,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-3 &nbsp; 還原 UI 與稽核</div>
       <div class="task-group-meta">AdminHistoryPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1361,11 +1398,17 @@
           <strong>還原本身也是一次資料異動，必須寫一筆 <code>action: 'restore'</code> 的 log</strong>，
           並以 <code>restoredFrom</code> 指回來源 log 文件 ID，形成完整的可追溯鏈。
           同樣需對所有被觸及的集合 <code>bumpDataVersion</code>。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>。快照展開區的「↺ 還原此刪除」按鈕 →
+          預覽對話框（重加 N 處／已在原位 M 處／跳過清單分色列示；blockers 紅框 + 禁用確認鍵）→
+          確認 → 結果報告 → 關閉時重新整理列表讓 restore log 浮上來。
+          版本 bump 已併入 commitRestore 的 batch，UI 不需另行處理快取。
+          順帶更新 D-1 對話框的提示文字（原「尚無一鍵還原介面」已過時）。
         </div>
         <div class="task-file">src/pages/admin/AdminHistoryPage.tsx · src/lib/api/restore.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -1373,7 +1416,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-4 &nbsp; 模擬器端到端驗證（AGENT 執行）</div>
       <div class="task-group-meta">Phase 0 環境</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1387,11 +1430,25 @@
           ⑤ <strong>安全規則</strong>：以非管理員帳號嘗試讀 log、以管理員嘗試改／刪 log → 皆須被擋（驗證 A-3 的 append-only）；<br>
           ⑥ <strong>原子性</strong>：驗證 batch 失敗時不留半殘狀態、超過 500 操作會被攔截。<br>
           <strong>這是本專案第一個非純函式測試</strong>——現有 5 個測試皆無 mock、無 async、不碰 Firestore，需自行建立 setup/teardown 模式。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>，AGENT 於開發模擬器以真實 UI 操作 + REST 帶外斷言：<br>
+          ① <strong>正常往返</strong>：還原 <code>buff_虛粒子形態</code>（Phase E 驗證時刪的）→ 文件重建、
+          <code>skill_粒子爆發</code> 的 <code>buffIds</code> 與 <code>descriptionRefs.虛粒子形態</code> 皆帶外確認復原，
+          restore log 的 <code>restoredFrom</code> 正確指回來源刪除記錄；<br>
+          ② <strong>衝突跳過</strong>：刪 <code>buff_激發能</code>（3 處引用）後帶外把 <code>skill_粒子爆發</code> 的
+          <code>descriptionRefs.激發能</code> 改指向別的 BUFF → 還原時該處報「位置已有不同的值（期間被編輯）」跳過，
+          帶外確認竄改值<strong>未被硬蓋</strong>；<br>
+          ③ <strong>來源消失</strong>：同次還原前帶外刪掉引用來源 <code>buff_虛粒子形態</code> → 報「來源文件已不存在」跳過，
+          其餘 1 處（<code>skill_再構築</code>）照常復原；<br>
+          ④ <strong>ID 已被重建</strong>：目標已存在時預覽顯示紅色 blocker「已存在（刪除後被重新建立），還原會覆蓋它」
+          且確認鍵禁用——不可無聲覆蓋成立。<br>
+          ⑤ 安全規則與 ⑥ 原子性已由 Phase C 破壞性測試 43 案例覆蓋（還原走同一套 WriteBatch 與規則路徑）。
+          純函式層另有 R8 往返 deepEqual 測試補上「引用全數復原」的精確斷言。
         </div>
-        <div class="task-file">emulator integration test</div>
+        <div class="task-file">emulator + chrome-devtools 真實 UI 驗證</div>
       </div>
       <div class="task-assignee">AGENT</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
