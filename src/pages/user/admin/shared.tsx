@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { planCascadeDelete, commitCascadeDelete, type CascadePlanResult } from '../../../lib/firestoreApi'
+import { TARGET_LABEL, type ChangeTargetKind } from '../../../types/changeHistory'
+import { useGameData, type CollectionKey } from '../../../contexts/GameDataContext'
 
 // ── 後台內容區共用寬度（PLAN-033）───────────────────────────────────────────────
 // 編輯彈窗（AdminModal）與列表容器（AdminPage）共用同一個值，避免兩者寬度各自漂移。
@@ -325,6 +328,205 @@ export function AdminModal({
         </div>
       </div>
     </div>
+  )
+}
+
+// ── ConfirmDeleteDialog：級聯刪除確認對話框（PLAN-030 D-1）────────────────────
+// 全站第一個設計系統級確認對話框（取代 window.confirm）——因為刪除是級聯的，
+// 必須先讓維護者看清「會一併清掉哪些引用、凍結幾段文案」再確認。
+//
+// 刻意不沿用 AdminModal 的按鈕列：AdminModal 主鍵寫死橘色，而刪除需要紅色危險鍵，
+// 且 blockers 非空時要禁用確認並列出原因——這些 AdminModal 靠 props 表達不了。
+// 只沿用它的遮罩 + 卡片外殼樣式，保持視覺一致。
+//
+// 直接吃 planCascadeDelete 的回傳（CascadePlanResult），零轉換；統計在元件內即算即顯。
+export function ConfirmDeleteDialog({
+  plan,
+  busy,
+  error,
+  onConfirm,
+  onCancel,
+}: {
+  plan: CascadePlanResult
+  busy: boolean
+  error: string | null
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  const { targetName, targetId, kind, plan: cascade, blockers, softWarnings, unresolvedTokens } = plan
+  const kindLabel = TARGET_LABEL[kind]
+  const frozenTexts = cascade.patches.filter((p) => p.op === 'textFreeze').length
+  const blocked = blockers.length > 0
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-bg-card border border-accent-red/40 rounded-xl p-6 w-full max-w-lg max-h-[90vh] flex flex-col">
+        {/* 標題 */}
+        <div className="shrink-0">
+          <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+            <span className="text-accent-red">🗑</span>
+            刪除{kindLabel}「{targetName || targetId}」？
+          </h3>
+          <p className="text-xs text-text-dim mt-1 font-mono break-all">{targetId}</p>
+        </div>
+
+        {/* 捲動內容 */}
+        <div className="overflow-y-auto flex-1 mt-4 space-y-3 text-sm">
+          {/* blockers：非空 = 不可刪，紅框列原因 */}
+          {blocked && (
+            <div className="rounded-lg border border-accent-red/40 bg-accent-red/10 p-3">
+              <p className="text-accent-red font-bold text-xs mb-1">⚠ 無法刪除，請先排除以下問題：</p>
+              <ul className="list-disc pl-5 space-y-1 text-[13px] text-text-secondary">
+                {blockers.map((b, i) => <li key={i}>{b.detail}</li>)}
+              </ul>
+            </div>
+          )}
+
+          {/* 影響摘要 */}
+          {!blocked && (
+            <p className="text-text-secondary">
+              {cascade.mutations.length === 0
+                ? '沒有任何資料引用此項目，可安全刪除。'
+                : <>將一併改寫 <span className="text-accent-orange font-bold">{cascade.mutations.length}</span> 份文件、清除 <span className="text-accent-orange font-bold">{cascade.patches.length}</span> 處引用{frozenTexts > 0 && <>、凍結 <span className="text-accent-orange font-bold">{frozenTexts}</span> 段文案的數值</>}。</>}
+            </p>
+          )}
+
+          {/* 受影響文件清單 */}
+          {cascade.mutations.length > 0 && (
+            <div className="rounded-lg border border-border bg-bg-dark p-3 max-h-48 overflow-y-auto">
+              <p className="text-xs text-text-dim mb-1.5">受影響的文件：</p>
+              <ul className="space-y-1 text-[13px]">
+                {cascade.mutations.map((m) => (
+                  <li key={`${m.coll}/${m.docId}`} className="flex items-center gap-2">
+                    <span className="text-text-dim font-mono text-[11px] shrink-0">{m.coll}</span>
+                    <span className="text-text-secondary truncate flex-1">{m.docName || m.docId}</span>
+                    <span className="text-text-dim text-[11px] shrink-0">{m.appliedCount} 處</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* 名稱軟引用：不自動清除，需人工處理 */}
+          {softWarnings.length > 0 && (
+            <div className="rounded-lg border border-accent-yellow/40 bg-accent-yellow/10 p-3">
+              <p className="text-accent-yellow font-bold text-xs mb-1">⚠ 以下位置以「名稱」引用，不會自動清除，刪除後需手動處理：</p>
+              <ul className="list-disc pl-5 space-y-0.5 text-[13px] text-text-secondary">
+                {softWarnings.map((w, i) => <li key={i}>{w.docName}<span className="text-text-dim"> · {w.origin}</span></li>)}
+              </ul>
+            </div>
+          )}
+
+          {/* 凍結取不到值的文案 */}
+          {unresolvedTokens.length > 0 && (
+            <p className="text-xs text-text-dim">
+              註：{unresolvedTokens.length} 處數值引用目前取不到值，凍結後將顯示為「?」。
+            </p>
+          )}
+
+          <p className="text-xs text-text-dim border-t border-border pt-2">
+            此操作會記錄於變更歷史並保留還原快照，但目前<span className="text-text-secondary">尚無一鍵還原介面</span>，救回需人工照快照操作。
+          </p>
+        </div>
+
+        {error && <p className="text-xs text-accent-red mt-3 shrink-0">⚠ {error}</p>}
+
+        {/* 按鈕列：紅色危險鍵，blocked 時禁用 */}
+        <div className="flex gap-3 mt-4 shrink-0">
+          <button
+            onClick={onConfirm}
+            disabled={busy || blocked}
+            className="flex-1 px-4 py-2 bg-accent-red text-white font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {busy ? '刪除中...' : '確認刪除'}
+          </button>
+          <button
+            onClick={onCancel}
+            disabled={busy}
+            className="px-4 py-2 border border-border text-text-secondary rounded-lg hover:bg-bg-dark transition-colors disabled:opacity-50"
+          >
+            取消
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── useCascadeDelete：級聯刪除流程 hook（三個後台分頁共用，PLAN-030 D-2）─────
+// 封裝 plan → 確認 → commit → 同步快取 的完整流程，讓三分頁只需一行接上。
+//   const del = useCascadeDelete('buff', 'buffs')
+//   列表列刪除鈕 onClick={(e)=>{e.stopPropagation(); del.ask(item.id)}}
+//   {del.plan && <ConfirmDeleteDialog plan={del.plan} busy={del.busy} error={del.error}
+//                  onConfirm={del.confirm} onCancel={del.cancel} />}
+//   {!del.plan && del.error && <行內紅字顯示 del.error>}   // plan 階段（讀取）失敗
+export function useCascadeDelete(kind: ChangeTargetKind, collKey: CollectionKey) {
+  const gd = useGameData()
+  const [plan, setPlan]     = useState<CascadePlanResult | null>(null)
+  const [asking, setAsking] = useState<string | null>(null)   // 正在 plan 的 id（列表鈕 loading）
+  const [busy, setBusy]     = useState(false)                 // commit 進行中
+  const [error, setError]   = useState<string | null>(null)
+
+  // 開啟確認對話框前先 plan（唯讀，getDocsFromServer 重掃全站算影響範圍）
+  const ask = useCallback(async (id: string) => {
+    setAsking(id)
+    setError(null)
+    try {
+      const planned = await planCascadeDelete(kind, id)
+      if (!planned) {
+        // 目標已不存在（他人先刪）→ 重抓同步掉列表上的陳舊項，視為成功
+        gd.reload()
+        return
+      }
+      setPlan(planned)
+    } catch (e) {
+      // plan 階段失敗（多為網路）：無對話框可承載，交給分頁在列表上方顯示
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setAsking(null)
+    }
+  }, [kind, gd])
+
+  // 使用者確認後真正刪除
+  const confirm = useCallback(async () => {
+    if (!plan) return
+    setBusy(true)
+    setError(null)
+    try {
+      const res = await commitCascadeDelete(plan)
+      // 同集合有兄弟文件被改寫 → 只用 removeCollectionItem 會把未同步的兄弟舊內容
+      // 連同新版本號寫進 localStorage 而永不自癒（見 cascadeDelete 註解），故整包重抓
+      if (res.targetCollHasSiblingEdits) gd.reload()
+      else gd.removeCollectionItem(collKey, res.targetId, res.versions[collKey] ?? '')
+      setPlan(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }, [plan, collKey, gd])
+
+  const cancel = useCallback(() => {
+    if (busy) return                                          // 刪除進行中不可關閉
+    setPlan(null)
+    setError(null)
+  }, [busy])
+
+  return { plan, asking, busy, error, ask, confirm, cancel }
+}
+
+// ── DeleteButton：列表列共用刪除鈕（自帶 stopPropagation）────────────────────
+// 列表列整列 onClick=開編輯，故刪除鈕務必攔下事件冒泡，否則點刪除會同時開編輯面板。
+export function DeleteButton({ onAsk, busy }: { onAsk: () => void; busy: boolean }) {
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onAsk() }}
+      disabled={busy}
+      title="刪除"
+      className="shrink-0 text-[13px] px-2 py-1 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10 transition-colors disabled:opacity-40"
+    >
+      {busy ? '…' : '🗑'}
+    </button>
   )
 }
 

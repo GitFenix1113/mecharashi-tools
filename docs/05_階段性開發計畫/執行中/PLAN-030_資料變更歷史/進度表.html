@@ -1099,7 +1099,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 刪除確認對話框</div>
       <div class="task-group-meta">src/pages/user/admin/shared.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1108,11 +1108,18 @@
           目前<strong>後台沒有任何確認對話框元件</strong>，全站只有兩處原生 <code>window.confirm</code>（ProfilePage、GrayOpsAdmin）——不足以承載引用清單。
           需顯示：目標名稱與 ID、<strong>將被一併清除的引用清單</strong>（來源實體名稱 + 位置）、被凍結的文案數量、危險樣式確認按鈕。
           可沿用 <code>AdminModal</code> 殼層並改 <code>saveLabel</code>，置於 <code>shared.tsx</code> 供三分頁共用。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>。<strong>未沿用 AdminModal 的按鈕列（偏離計畫書）</strong>：
+          AdminModal 主鍵寫死橘色（<code>bg-accent-orange</code>），而刪除需要<strong>紅色危險鍵</strong>，
+          且 <code>blockers</code> 非空時要禁用確認並列出原因——這些 props 表達不了。故只沿用遮罩＋卡片外殼樣式，
+          按鈕列自刻。<strong>直接吃 <code>planCascadeDelete</code> 的回傳（<code>CascadePlanResult</code>）零轉換</strong>，
+          統計（受影響文件數、引用處數、凍結文案數）即算即顯；三段警示分色：blockers 紅框、softWarnings（名稱軟引用，
+          不自動清）黃框、unresolvedTokens（凍結取不到值）淡字。附「尚無一鍵還原介面，救回需人工照快照」提示（呼應停損點）。
         </div>
         <div class="task-file">src/pages/user/admin/shared.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -1120,7 +1127,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; 三個分頁接上刪除</div>
       <div class="task-group-meta">Buff/Skill/Glossary Admin.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1131,11 +1138,34 @@
           <strong>前置調整：</strong><code>AdminPage.tsx</code> 的 <code>TAB_CONFIG</code> 中三個分頁的 <code>keys</code> 需補上引用來源集合，
           掃描才有資料可走訪。走版本 gate 快取，未改版時命中 localStorage ＝ <strong>0 次 Firestore read</strong>。
           錯誤沿用既有 <code>error: string | null</code> 行內紅字慣例（全站無 toast 系統）。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>，並經開發模擬器真實 UI 端到端驗證。實作有兩處偏離計畫書：
+          <br>
+          ① <strong><code>TAB_CONFIG.keys</code> 不需擴充</strong>（計畫書「舊設計」已作廢）：計畫書假設用
+          <code>findReferences(context 資料)</code> 預覽，需把 9 個引用來源集合塞進 keys。但 C-4 實作的
+          <code>planCascadeDelete</code> <strong>不吃 context</strong>——它自己 <code>getDocsFromServer</code> 重讀全站 9 集合
+          （正確性優先，見 C-4 審查發現①）。故走兩段式 plan/commit 路徑<strong>完全不動 TAB_CONFIG</strong>。
+          代價是每次開對話框重掃約 2000 read，但刪除是低頻操作。
+          <br>
+          ② <strong>抽出 <code>useCascadeDelete</code> hook（shared.tsx）</strong>：封裝
+          plan → 確認 → commit → 同步快取，三分頁各只需一行 <code>const del = useCascadeDelete(kind, key)</code>
+          ＋ 一個 <code>&lt;DeleteButton&gt;</code>（自帶 <code>stopPropagation</code>，因整列 onClick 已綁編輯）＋ 一個
+          <code>&lt;ConfirmDeleteDialog&gt;</code>，避免刪除流程三寫。
+          <br>
+          <strong>快取同步依 <code>targetCollHasSiblingEdits</code> 分流</strong>：false → <code>removeCollectionItem</code>
+          就地移除；true → <code>gd.reload()</code> 整包重抓（同集合有兄弟文件被改寫，就地移除會把未同步的舊內容
+          連同新版本號寫進 localStorage 而永不自癒——見 C-4 審查發現②）。
+          <br><br>
+          <strong>端到端驗證（開發模擬器 + 真實 UI 操作）：</strong>登入 ADMIN → BUFF 分頁 → 點刪除鈕 →
+          plan 重掃 → 對話框正確渲染（「事不宜遲」無引用情形）→ 確認刪除 → 對話框關閉、列表即時移除。
+          帶外確認：<code>buffs/buff_事不宜遲</code> 回 404、<code>changeHistory</code> 新增一筆 delete log
+          （含 snapshot、actorUid 為登入者本人）。<strong>順帶驗證發現③的規則修正在真實流程生效</strong>——
+          log 的 actorUid==本人，新規則放行、未誤傷正常寫入路徑。
         </div>
-        <div class="task-file">src/pages/user/admin/BuffAdmin.tsx · SkillAdmin.tsx · GlossaryAdmin.tsx · AdminPage.tsx</div>
+        <div class="task-file">src/pages/user/admin/{BuffAdmin,SkillAdmin,GlossaryAdmin,shared}.tsx（AdminPage.tsx 不需改）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
