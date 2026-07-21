@@ -1057,6 +1057,36 @@
       <span class="status done">已完成</span>
     </div>
   </div>
+
+  <div class="impact-note">
+    <strong>✅ Phase C 模擬器破壞性測試完成（2026-07-21）</strong>——純函式層之外，於隔離模擬器上以真實
+    <code>deleteBuff</code>/<code>deletePilotSkill</code>/<code>deleteGlossaryTerm</code> 走完整
+    「登入 → 安全規則 → WriteBatch」路徑，再帶外斷言資料庫真實狀態。
+    <div style="margin-top:8px;font-size:12px;">
+      <strong>整合測試 harness 落地</strong>（<code>tests/emulator/</code>，另見 commit）：Node module hooks 只替換
+      <code>firebase.ts</code> 連線層，<strong>測的是正式 <code>cascadeDelete.ts</code> 而非副本</strong>；雙通道紀律
+      （admin SDK 種資料/帶外驗證、client SDK 走規則）；跨程序套件鎖序列化平行測試。<br>
+      <strong>6 維度平行代理攻擊 + 對抗式驗證</strong>（斷言強度審計分 strong/weak/vacuous + 雙次復現，全部
+      deterministic 零 flaky）：原子性失敗注入、安全規則互動、快照 Firestore 往返保真、級聯全站 9 集合覆蓋、
+      邊界上限、版本語意。共 <strong>43 案例，42 通過/已聲明</strong>。<br>
+      <strong>核心正確性全數過關</strong>：9 集合每類站點清得乾淨、未涉及資料 byte-for-byte 不動、
+      <code>segments</code> 數字索引經 Firestore 往返保型（Phase F 定位前提）、含 <code>.</code> 的 map key 保真、
+      batch 原子失敗零殘留、規則每步防線成立、batch 500 與快照 900KB 閘門與 Firestore 真實邊界一致
+      （中文用 <code>TextEncoder</code> 非 length）。<strong>並實證人工還原</strong>：只憑快照 + adminDb 反向套用，
+      7 份文件全數還原到 deepEqual——證明計畫書「停損點：Phase F 未做也能照快照人工救回」成立。<br>
+      <strong>揪出 3 個 low 缺陷</strong>（皆稽核可信度/潛伏風險，非資料損毀）：
+      ① commit 未尊重 <code>planned.blockers</code>（違反自身欄位契約，missingColls blocker 漏檢）——
+      <strong>本輪已修</strong>，commit 重檢改為併入 <code>planned.blockers</code>（kind+detail 去重），
+      揭露它的紅測試 atomicity-e 已轉綠；
+      ② commit 不重驗目標存在 → plan/commit 視窗內目標被刪會產生幻影刪除與誤導性 log（建議 commit 開頭
+      <code>getDocFromServer</code> 重驗，待拍板）；
+      ③ <code>changeHistory</code> create 規則不驗 <code>actorUid</code> → ADMIN 可偽造嫁禍 log 且 append-only 永久化
+      （建議規則加 <code>actorUid == request.auth.uid</code>，需重部署規則，待拍板）。<br>
+      <strong>誠實標註未覆蓋</strong>：<code>getDocsFromServer</code> 離線行為（模擬器恆在線，無法觸發）、
+      TTL 實際刪除（後端非同步約 24h）、真實高並發。詳見
+      <code>_local-notes/PLAN-030_PhaseC_破壞性測試報告.html</code>。
+    </div>
+  </div>
 </section>
 
 <!-- Phase D -->

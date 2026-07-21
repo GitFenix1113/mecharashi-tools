@@ -234,8 +234,20 @@ export async function commitCascadeDelete(
 ): Promise<CascadeDeleteResult> {
   const { kind, coll, targetId, targetName, plan, snapshot } = planned
 
-  // 不倚賴呼叫端有沒有看 blockers —— 這裡是最後一道，且在任何寫入之前
-  const blockers = checkCascadeSafety(plan, snapshot)
+  // 不倚賴呼叫端有沒有看 blockers —— 這裡是最後一道，且在任何寫入之前。
+  //
+  // 兩個來源都要：
+  //  · 重跑 checkCascadeSafety —— 抓「呼叫端在 plan 之後竄改了 plan/snapshot」；
+  //  · 併入 planned.blockers —— plan 端對 missingColls 追加的 blocker（見
+  //    planCascadeDelete）不在 plan.problems 裡，checkCascadeSafety 從 plan 重建不出來。
+  //    漏掉就等於「帶著掃描不完整的計畫照樣提交」，違反 CascadePlanResult.blockers 契約。
+  //
+  // 去重用 kind+detail 組合鍵，不可只用 kind：missingColls blocker 的 kind 也是
+  // 'problems'，只比 kind 會被 checkCascadeSafety 的 problems 撞掉而漏失。commit 不
+  // 重新掃描，plan 未變時重算的同類 blocker detail 相同，能正確去重。
+  const rechecked = checkCascadeSafety(plan, snapshot)
+  const seen = new Set(rechecked.map((b) => `${b.kind}|${b.detail}`))
+  const blockers = [...rechecked, ...planned.blockers.filter((b) => !seen.has(`${b.kind}|${b.detail}`))]
   if (blockers.length) throw new CascadeBlockedError(blockers)
 
   // ── ① 先寫 log（決策十）。失敗直接拋，資料完全沒動 ──────────────────────
