@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-07-19
+## [Unreleased] - 2026-07-22
 
 ### ⚠ 重大變更
 
@@ -146,6 +146,7 @@
 
 ### 📚 文件
 
+- PLAN-030 歸檔至歷史記錄（全計畫 32/32 完成） (`108972b`)
 - 補進 PLAN-029～032 計畫文件與執行中列表卡片 (`19b48ed`)
 - PLAN 文件重整（PLAN-025 歸檔、PLAN-026 新建、PLAN-028 更新） (`9088631`)
 - PLAN 計畫維護 — PLAN-024 歸檔、PLAN-023 轉觀察、PLAN-019 descope BOSS/關卡 (`2a55144`)
@@ -190,6 +191,15 @@
 
 ### 🔧 維護
 
+- 快照一鍵還原（PLAN-030 Phase F 完成，全計畫 32/32 收官） (`772a73d`)
+- 變更歷史檢視頁（PLAN-030 Phase E 完成，達「不含還原」停損點） (`63cef3b`)
+- 後台三分頁級聯刪除 UI（PLAN-030 D-1, D-2） (`91a2540`)
+- changeHistory create 綁定 actorUid==本人，堵偽造嫁禍缺口（PLAN-030 發現③） (`35440e2`)
+- Phase C 破壞性測試 6 套件 + 修缺陷①（PLAN-030） (`c5b641a`)
+- 模擬器整合測試 harness（PLAN-030 Phase C 破壞性驗證基礎） (`3e99499`)
+- 刪除 API 對外介面（PLAN-030 C-5，Phase C 完成） (`d846a33`)
+- 級聯刪除的原子交易與防呆（PLAN-030 C-4） (`f9d906c`)
+- 補強 ReversePatch 持久化契約（PLAN-030 C-2 修訂） (`ddd6e1f`)
 - 數值 token 凍結（PLAN-030 C-3） (`41ae0fd`)
 - changeHistory 複合索引與 TTL 政策（PLAN-030 A-4, A-5） (`181852b`)
 - 引用掃描與級聯清除計算層（PLAN-030 C-1, C-2, C-6） (`b71ab44`)
