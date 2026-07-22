@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>武器頁面規劃 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../index.html">頁面規劃</a>
+    <span>›</span>
+    <span class="current">武器</span>
+  </div>
+</nav>
+
+<header class="hero purple">
+  <div class="hero-badge purple">◆ Page Design</div>
+  <h1>武器圖鑑<span>WEAPON PAGE · /weapons</span></h1>
+  <p class="hero-sub">所有武器列表、專武標記、技能生效方式、改裝效果</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label purple">頁面規格</div>
+  <div class="section-title">武器圖鑑 /weapons</div>
+
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/weapons</code></td></tr>
+    <tr><th>開發階段</th><td>Phase 2</td></tr>
+    <tr><th>登入需求</th><td>不需要</td></tr>
+    <tr><th>資料來源</th><td>Firestore: weapons（全部）</td></tr>
+  </table>
+
+  <div class="sub-h" style="margin-top:24px;">篩選功能</div>
+  <div class="tech-row">
+    <span class="tech-tag primary">依武器大類（射擊/格鬥/突擊/戰術）</span>
+    <span class="tech-tag secondary">依武器種類</span>
+    <span class="tech-tag tertiary">是否為專武</span>
+    <span class="tech-tag">依稀有度</span>
+    <span class="tech-tag">關鍵字搜尋</span>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">版面設計</div>
+  <div class="section-title">UI 區塊規劃</div>
+
+  <div class="card-grid">
+    <div class="card purple">
+      <div class="card-icon">📋</div>
+      <h3>武器列表行</h3>
+      <p>武器名稱、大類/種類標籤、攻擊力、命中、暴擊、射程、重量、稀有度、是否專武。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">✨</div>
+      <h3>技能預覽</h3>
+      <p>每個武器展開可見技能列表，標示生效方式（攜帶/裝備中/使用時），增傷數值高亮顯示。</p>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">🔧</div>
+      <h3>改裝欄位</h3>
+      <p>固定改裝效果（確定值）、浮動改裝選項（範圍值），展開顯示。</p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">⚡</div>
+      <h3>元件插槽資訊</h3>
+      <p>觸元件插槽數 / 應元件插槽數 顯示，方便評估元件配置空間。</p>
+    </div>
+  </div>
+
+  <div class="wireframe" style="margin-top:20px;">
+    <div class="wf-icon">🔫</div>
+    <p>武器圖鑑版面草圖待規劃<br>可能採用表格式或卡片式，需決定展開/折疊方式</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">設計備註</div>
+  <div class="section-title">開發注意事項</div>
+  <div class="note-block">
+    <strong>已確認方向（PLAN-006）</strong><br>
+    · 武器詳情確定為獨立頁面 <code>/weapons/:id</code>（尤其專武資訊量大，列表展開不足）<br>
+    · 技能生效方式（carry/equip/use）各以顏色標籤區分：攜帶=紫、裝備中=青、使用時=橘<br>
+    · 浮動改裝範圍值顯示格式：<code>min ~ max</code>（如 "120 ~ 180"）
+  </div>
+</section>
+
+<!-- 武器詳情頁 -->
+<section class="section" id="detail">
+  <div class="section-label purple">DETAIL PAGE</div>
+  <div class="section-title">武器詳情 /weapons/:id</div>
+
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/weapons/:id</code></td></tr>
+    <tr><th>開發階段</th><td>Phase 2（PLAN-006）</td></tr>
+    <tr><th>登入需求</th><td>不需要</td></tr>
+    <tr><th>資料來源</th><td>Firestore: weapons/{id}</td></tr>
+    <tr><th>相關計畫</th><td><a href="../../../05_階段性開發計畫/執行中/PLAN-006_武器詳情頁/計畫書.html" style="color:var(--accent-cyan);">PLAN-006 武器詳情頁</a></td></tr>
+  </table>
+
+  <div class="sub-h" style="margin-top:24px;">頁面區塊</div>
+  <div class="card-grid">
+    <div class="card purple">
+      <div class="card-icon">🔫</div>
+      <h3>武器 Hero 區塊</h3>
+      <p>武器名稱、稀有度標籤（SS / S+ / S / A / B）、大類 / 種類標籤、機甲限制標籤（無限制 / 輕型 / 中型 / 重型）、裝備部位標籤（單手 / 雙手 / 肩膀 / 背後）。</p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">📊</div>
+      <h3>基礎屬性面板</h3>
+      <p>攻擊力（含子彈數，如 766×1）、命中值、暴擊值、重量、射程（manhattan / orthogonal 顯示 "2-4"；ring 顯示 "2+"）、彈藥量、連擊數。</p>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">✨</div>
+      <h3>技能列表（縮圖 / 展開）</h3>
+      <p>每個技能以圖示縮圖 + 名稱呈現，可點擊展開完整描述（PLAN-021 改版）。卡片顯示：生效方式標籤（攜帶=紫 / 裝備中=青 / 使用時=橘）、文字描述、結構化效果數值。<br>若技能有 <code>enhancesTalentName</code>，顯示「強化天賦」區塊（黃色 DiffHighlight）。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">🔧</div>
+      <h3>改裝資訊</h3>
+      <p>固定改裝：方案名稱、可改等級上限、固定效果列表（stat + value）。<br>浮動改裝：方案名稱、可填欄位數、所有可能效果（含觸發條件與 min ~ max 範圍）。</p>
+    </div>
+    <div class="card green">
+      <div class="card-icon">⚡</div>
+      <h3>元件插槽資訊</h3>
+      <p>觸元件插槽數 / 應元件插槽數、元件上限（componentLimit）顯示。以小格子圖示呈現，空格可視為可用槽位。</p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">⭐</div>
+      <h3>專武資訊（isExclusive=true）</h3>
+      <p>顯示對應機師名稱及連結（<code>exclusiveFor</code>）；技能區塊會額外呈現天賦強化 DiffHighlight，讓使用者直觀看到「有此專武時天賦的強化版本」。</p>
+    </div>
+    <div class="card green">
+      <div class="card-icon">🔗</div>
+      <h3>數值引用層（PLAN-019 / 022）</h3>
+      <p>技能描述中的 <code>[xxx]</code> 實體引用（buff / 技能 / 詞條）以可點擊樣式呈現，桌面 hover 浮窗預覽、點擊釘選，手機 BottomSheet（ReferenceContext）；<code>&lt;refId.attr&gt;</code> 數值引用顯示 BUFF 屬性真值。需 WeaponSkill.descriptionRefs 側錄表，未命中原樣顯示。</p>
+    </div>
+  </div>
+
+  <div class="wireframe" style="margin-top:20px;">
+    <div class="wf-icon">🔫</div>
+    <p>武器詳情版面草圖待規劃<br>預計：上方 Hero（名稱+標籤）→ 屬性面板 → 技能列表（含專武天賦強化）→ 改裝 + 元件欄（左右並排）</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">資料需求</div>
+  <div class="section-title">Firestore 讀取</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="../../02_技術文件/02_資料模型/weapons.html">
+      <div class="doc-tag">Collection</div>
+      <h4>🔫 weapons</h4>
+      <p>武器全部欄位（技能/改裝/元件插槽）</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 頁面規劃 · 武器 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 頁面規劃總覽</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

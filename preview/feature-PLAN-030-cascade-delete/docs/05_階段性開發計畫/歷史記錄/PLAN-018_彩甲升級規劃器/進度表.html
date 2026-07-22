@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-018 彩甲升級規劃器 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.progress-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.progress-table th {
+  background: rgba(168,85,247,0.08);
+  color: var(--accent-purple);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 10px 14px;
+  text-align: left;
+  border: 1px solid var(--border);
+}
+.progress-table td {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+.progress-table tr:hover td {
+  background: var(--bg-card-hover);
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-done    { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+.badge-wip     { background: rgba(234,179,8,0.15); color: var(--accent-yellow); }
+.badge-pending { background: rgba(107,114,128,0.15); color: var(--text-dim); }
+.badge-block   { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-018 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-018</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    彩甲升級規劃器<span style="-webkit-text-fill-color:var(--text-secondary);">進度追蹤</span>
+  </h1>
+</header>
+
+<main class="container">
+<section class="section">
+  <div class="section-label purple">Progress</div>
+  <div class="section-title">工作項目狀態</div>
+
+  <table class="progress-table">
+    <tr>
+      <th>項目</th>
+      <th>說明</th>
+      <th>狀態</th>
+      <th>備註</th>
+    </tr>
+    <tr>
+      <td><strong>T-1</strong> 型別與計算邏輯</td>
+      <td>mechUpgrade.ts 型別 + rainbowMechCalc.ts 貪婪演算法</td>
+      <td><span class="badge badge-done">DONE</span></td>
+      <td>2026-05-31 完成</td>
+    </tr>
+    <tr>
+      <td><strong>T-2</strong> 資源輸入元件</td>
+      <td>機甲選擇器 + 4部位卡片 + 改進模組輸入</td>
+      <td><span class="badge badge-done">DONE</span></td>
+      <td>2026-05-31 完成</td>
+    </tr>
+    <tr>
+      <td><strong>T-3</strong> 超級工廠區塊</td>
+      <td>活動資源開關與顯示</td>
+      <td><span class="badge badge-done">DONE</span></td>
+      <td>2026-05-31 完成</td>
+    </tr>
+    <tr>
+      <td><strong>T-4</strong> 計算結果展示</td>
+      <td>步驟清單、模組分配建議、材料缺口</td>
+      <td><span class="badge badge-done">DONE</span></td>
+      <td>2026-05-31 完成</td>
+    </tr>
+    <tr>
+      <td><strong>T-5</strong> 頁面整合與路由</td>
+      <td>路由接入、導覽列入口</td>
+      <td><span class="badge badge-done">DONE</span></td>
+      <td>2026-05-31 完成</td>
+    </tr>
+    <tr>
+      <td><strong>T-6</strong> 測試情境驗證</td>
+      <td>兩套+零散件、超級工廠最大化等場景手動驗證</td>
+      <td><span class="badge badge-done">DONE</span></td>
+      <td>2026-06-01 完成</td>
+    </tr>
+  </table>
+</section>
+
+<section class="section">
+  <div class="section-label green">Confirmed</div>
+  <div class="section-title">已確認事項</div>
+
+  <table class="progress-table">
+    <tr>
+      <th>#</th>
+      <th>問題</th>
+      <th>決議</th>
+      <th>狀態</th>
+    </tr>
+    <tr>
+      <td>Q-1</td>
+      <td>機甲部位術語</td>
+      <td>軀幹 / 左臂 / 右臂 / 腿部（torso / leftArm / rightArm / legs）</td>
+      <td><span class="badge badge-done">已確認</span></td>
+    </tr>
+    <tr>
+      <td>Q-2</td>
+      <td>模組型號限制</td>
+      <td>有限制，須對應機甲重量（輕/中/重型）；UI 選機甲後自動篩選</td>
+      <td><span class="badge badge-done">已確認</span></td>
+    </tr>
+    <tr>
+      <td>Q-3</td>
+      <td>路由位置</td>
+      <td><code>/guides/tools/rainbow-planner</code></td>
+      <td><span class="badge badge-done">已確認</span></td>
+    </tr>
+    <tr>
+      <td>Q-4</td>
+      <td>多台同時規劃</td>
+      <td>不需要，一次一台；提供機甲選擇器為了親切感與自動帶入重量型別</td>
+      <td><span class="badge badge-done">已確認</span></td>
+    </tr>
+    <tr>
+      <td>Q-5</td>
+      <td>超級工廠資源</td>
+      <td>固定值，各×2：S（萬能金一）/ S+（替代兩個金二肥料）/ S++（萬能金三）；三種均無重量限制；年度活動，做成勾選開關，勾選後優先耗用</td>
+      <td><span class="badge badge-done">已確認</span></td>
+    </tr>
+  </table>
+</section>
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-018 進度表 — <a href="計畫書.html" style="color:var(--accent-purple);text-decoration:none;">← 計畫書</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-021 神驅算力天賦改寫 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+.meta-value.pink   { color: var(--accent-pink); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-021 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge pink">◆ PLAN-021</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    神驅算力天賦改寫<span style="-webkit-text-fill-color:var(--text-secondary);"> · 算力門檻改寫天賦 · DiffHighlight</span>
+  </h1>
+  <p class="hero-sub">隨神經驅動算力跨越門檻，天賦正文就地改寫並引用更高階 buff；以既有 DiffHighlight 呈現各算力階差異。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label pink">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value pink">PLAN-021</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-06-10</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">types/pilot.ts · PilotDetailPage · buffs 資料 · 神驅後台</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">全部完成 12/12（2026-06-12）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-019（refs / mutexGroup）· PLAN-005（DiffHighlight）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>範例：</strong>機師 <strong>艾達</strong> 的天賦「凝勢星爆」原引用 <code>[凝勢I]</code>；玩家換上「雙生星芒」神經驅動、算力跨過門檻後，
+    遊戲把天賦正文裡的 <code>[凝勢I]</code> 就地改寫成 <code>[凝勢II/III]</code>（可疊加 5→7 層、新增暴擊敘述）。本計畫讓站上能呈現這種「算力改寫天賦」。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>現有資料模型無法表達「算力門檻 → 天賦改寫」</strong><br>
+    <code>PilotTalent</code> 目前只有 <code>description</code>（基礎）與 <code>descriptionMax</code>（最大強化）兩格正文，
+    沒有地方放「算力 ≥ 10 版正文」「算力 ≥ 13 版正文」。<code>descriptionRefs</code> 也是單一對照，
+    無法表達「同一天賦在不同算力下引用不同階 buff」。
+  </div>
+
+  <div class="problem-block">
+    <strong>實機與站上落差</strong><br>
+    玩家在遊戲內看到的是被算力改寫後的天賦（顯示 <code>[凝勢III]</code>、7 層、含暴擊），
+    站上卻只顯示基礎版（<code>[凝勢I]</code>、5 層），兩者對不上，玩家得自行腦補升階差異。
+  </div>
+
+  <div class="info-block">
+    <strong>機制特性（升階鏈，但各階獨立）：</strong>沿算力門檻單調升階（I→II→III），但群友回報
+    <strong>有些詞條三階效果各不相干</strong>（LV3 可能與前階無關）。因此<strong>不宜</strong>用「同一 buff 的 tier 刻度」建模，
+    應視為三個獨立具名 buff。三階<strong>不共存、計算器只取最高</strong>。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label pink">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：天賦改寫掛在 <code>PilotTalent.ndVariants[]</code>（不掛 NeuralDriveLevel）</strong><br>
+    每個算力門檻對應一段「改寫後天賦正文」+ 自帶 <code>descriptionRefs</code>。<br>
+    <em>理由：</em>天賦改寫是「本機師 × 本天賦」專屬資料；而神經驅動的內容層在
+    <strong>PLAN-004</strong> 會被抽離為共用 collection（職業共用 / 機師專屬 scope），把專屬改寫掛在共用層會汙染其他引用者。
+    掛 <code>PilotTalent</code> 後本功能<strong>與神經驅動資料模型完全解耦</strong>，PLAN-004 抽離大改不會回頭動到這裡。
+  </div>
+
+  <div class="code-block">
+<span class="cm">// src/types/pilot.ts — PilotTalent 新增</span><br>
+<span class="ty">ndVariants</span>?: {<br>
+&nbsp;&nbsp;<span class="nm">minSum</span>: <span class="ty">number</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm">// 算力門檻（對應 NeuralDriveLevel.minSum）</span><br>
+&nbsp;&nbsp;<span class="nm">label</span>?: <span class="ty">string</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm">// 顯示用，預設由 minSum 生成「算力 ≥ 10」</span><br>
+&nbsp;&nbsp;<span class="nm">description</span>: <span class="ty">string</span>&nbsp;&nbsp;&nbsp;<span class="cm">// 改寫後天賦正文（token 用該階 buff 名，如 [凝勢III]）</span><br>
+&nbsp;&nbsp;<span class="nm">descriptionRefs</span>?: <span class="ty">DescriptionRefs</span>&nbsp;&nbsp;<span class="cm">// 此正文的 [xxx]→buff 對照</span><br>
+}[]
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：三個獨立具名 buff + 共用 <code>mutexGroup</code>，不建 tier 鏈</strong><br>
+    建 <code>buff_凝勢I / II / III</code> 三份獨立文件（群友已手 KEY），各填 <code>effects</code> / <code>maxStack</code>。
+    三者填<strong>同一個 <code>mutexGroup</code></strong>（如 <code>&lt;pilotId&gt;_凝勢</code>），表達「I/II/III 不共存」。
+    <code>GameBuff.mutexGroup</code> 為 PLAN-019 Layer 2 既有欄位，<strong>零型別改動</strong>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：呈現複用既有 <code>DiffHighlight</code> 強化層</strong><br>
+    天賦卡在「▶ 最大強化」「▶ 專武強化」區塊之後，map 出 <strong>▶ 神經驅動強化 · 算力≥{minSum}</strong> 區塊，
+    內用 <code>&lt;DiffHighlight base={天賦正文} enhanced={variant.description} refs={…} /&gt;</code>，
+    自動高亮「5層→7層」「新增暴擊」。與 PLAN-005 專武強化視覺一致，玩家零學習成本。
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界：LV3 可能與前階無關</strong><br>
+    若改寫正文與基礎差異極大，<code>DiffHighlight</code> 會高亮一大片——這是<u>優雅退化</u>，正好告訴玩家「這階差很多」，不會壞。
+    因三 buff 名稱不同，token 字串天然不撞，一張 <code>descriptionRefs</code> 即可全收。
+  </div>
+
+  <div class="info-block">
+    <strong>計算器「取最高」如何成立（給未來，不在本計畫實作）：</strong>選定算力 → 取 <code>minSum ≤ 算力</code> 的最高神驅 level
+    → 其 <code>buffIds</code> → <code>mutexGroup</code> 收斂成單一生效階。「最高」由 <code>minSum</code> 推導，<strong>無需在 buff 上加 tier 欄位</strong>。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label pink">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>PilotTalent.ndVariants[]</code> 型別新增</li>
+      <li>三階 buff 補 <code>mutexGroup</code>（資料層，後台填）</li>
+      <li>後台：天賦編輯器加「算力階天賦改寫」輸入 UI（任務 3-1，<strong>2026-06-12 完成</strong>）——NdVariantsEditor（zone 下拉防呆 + 兩版正文 + RefPicker）+ manual 勾選框；編輯器走共用 RefPicker，PLAN-022 Phase C 上線時自動獲得「代入數值」、無返工</li>
+      <li>前台：<code>PilotDetailPage</code> 天賦卡新增神驅強化 DiffHighlight 區塊</li>
+      <li>docs 同步：<code>02_資料模型</code> pilot 頁、<code>04_Firebase</code> pilots 集合文件</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>神經驅動節點庫抽離</strong>（neuralDrives Collection、職業共用 / 機師專屬 scope）→ 已屬 <strong>PLAN-004</strong>，獨立進行，本計畫不依賴它</li>
+      <li>互動式算力切換器（segmented control / token 化正文）→ 維護負擔過高，已否決</li>
+      <li>計算器整合（取最高 / Buff 面板）→ 屬模擬層，留待 PLAN-019 後續</li>
+      <li>爬蟲自動側錄各算力階正文 → 走 manual 手動維護（資料源為官方 WIKI，群友三週一隻補）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label pink">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-021 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-005_專武天賦強化顯示/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-005 專武天賦強化顯示</h4>
+      <p>DiffHighlight 強化層 pattern 來源（本計畫複用）</p>
+    </a>
+    <a class="doc-item" href="../PLAN-004_技能資料抽離/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-004 技能資料抽離</h4>
+      <p>神經驅動節點庫抽離（本計畫的解耦對象）</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-021 — <a href="../index.html" style="color:var(--accent-pink);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

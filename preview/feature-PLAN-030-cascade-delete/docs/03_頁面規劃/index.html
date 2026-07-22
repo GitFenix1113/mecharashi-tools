@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>頁面規劃總覽 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <span class="current">頁面規劃</span>
+  </div>
+</nav>
+
+<header class="hero purple">
+  <div class="hero-badge purple">◆ Page Design</div>
+  <h1>頁面規劃<span>PAGE DESIGN OVERVIEW</span></h1>
+  <p class="hero-sub">網站所有頁面的路由、用途、版面設計摘要</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label purple">Site Map</div>
+  <div class="section-title">完整頁面地圖</div>
+  <div class="section-desc">深色主題搭配橘色/藍色強調色，貼近鋼嵐遊戲介面。每個頁面均有獨立設計文件，點擊可開啟詳情。導覽列以滑鼠懸停下拉收納：各圖鑑頁歸入「資料圖鑑」，攻略／工具／文件歸為一組。</div>
+
+  <div class="page-map">
+    <a class="page-item" href="01_首頁/index.html">
+      <h4>🏠 首頁</h4>
+      <div class="route">/</div>
+      <p>最新改版資訊、快速入口、公告欄</p>
+    </a>
+    <a class="page-item" href="02_機師/index.html">
+      <h4>👤 機師圖鑑</h4>
+      <div class="route">/pilots</div>
+      <p>卡片列表，依職業/稀有度篩選</p>
+    </a>
+    <a class="page-item" href="02_機師/index.html#detail">
+      <h4>👤 機師詳情</h4>
+      <div class="route">/pilots/:id</div>
+      <p>仿遊戲介面：立繪 + 六維 + AP + 技能 + 個別科研配置</p>
+    </a>
+    <a class="page-item" href="03_機甲/index.html">
+      <h4>🤖 機甲圖鑑</h4>
+      <div class="route">/mechs</div>
+      <p>機甲列表，依裝甲類型篩選</p>
+    </a>
+    <a class="page-item" href="03_機甲/index.html#detail">
+      <h4>🤖 機甲詳情</h4>
+      <div class="route">/mechs/:id</div>
+      <p>仿「機甲整備」介面：座艙式排版，中央立繪，四角部件屬性卡</p>
+    </a>
+    <a class="page-item" href="04_武器/index.html">
+      <h4>🔫 武器圖鑑</h4>
+      <div class="route">/weapons</div>
+      <p>所有武器列表，含專武標記與技能預覽</p>
+    </a>
+    <a class="page-item" href="05_背包/index.html">
+      <h4>🎒 背包圖鑑</h4>
+      <div class="route">/backpacks</div>
+      <p>所有背包列表，顯示裝配限制與效果</p>
+    </a>
+    <a class="page-item" href="06_模組/index.html">
+      <h4>🧩 模組圖鑑</h4>
+      <div class="route">/modules</div>
+      <p>所有可獨立取得的模組，依綁定機甲/部位/稀有度篩選</p>
+    </a>
+    <a class="page-item" href="11_元件/index.html">
+      <h4>⚙️ 元件圖鑑</h4>
+      <div class="route">/components</div>
+      <p>觸元件（Condition）/ 應元件（Function）完整列表，依觸發條件與效果類型篩選</p>
+    </a>
+    <a class="page-item" href="07_配裝模擬器/index.html">
+      <h4>⚔️ 配裝模擬器</h4>
+      <div class="route">/simulator</div>
+      <p>核心工具頁：選配裝 → 匯出分享圖（傷害計算為後期功能）</p>
+    </a>
+    <a class="page-item" href="08_科研設定/index.html">
+      <h4>🔬 科研設定</h4>
+      <div class="route">/research</div>
+      <p>玩家輸入自己的全域科研等級（機師/機甲/武器）</p>
+    </a>
+    <a class="page-item" href="#news">
+      <h4>📰 改版資訊</h4>
+      <div class="route">/news</div>
+      <p>時間軸式改版預告與更新記錄</p>
+    </a>
+    <a class="page-item" href="#guides">
+      <h4>📚 攻略</h4>
+      <div class="route">/guides</div>
+      <p>關卡攻略文章列表與詳情（開發中）</p>
+    </a>
+    <a class="page-item" href="#tools">
+      <h4>🛠️ 工具</h4>
+      <div class="route">/tools</div>
+      <p>配裝與計算輔助工具（含彩甲升級規劃器）</p>
+    </a>
+    <a class="page-item" href="#documents">
+      <h4>📄 文件</h4>
+      <div class="route">/documents</div>
+      <p>對外展示本站的規劃與設計文件（白名單）</p>
+    </a>
+    <a class="page-item" href="09_個人中心/index.html">
+      <h4>🔐 個人中心</h4>
+      <div class="route">/profile</div>
+      <p>我的配裝紀錄 / 科研設定 / 匯出管理</p>
+    </a>
+    <a class="page-item" href="10_管理後台/index.html">
+      <h4>🛠️ 管理後台</h4>
+      <div class="route">/admin</div>
+      <p>管理者：遊戲資料編輯、攻略管理、公告管理</p>
+    </a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">規劃文件</div>
+  <div class="section-title">各頁面詳細規劃文件</div>
+  <div class="section-desc">每個子資料夾包含對應頁面的版面設計摘要、元件清單與資料需求。</div>
+
+  <div class="doc-grid">
+    <a class="doc-item" href="01_首頁/index.html">
+      <div class="doc-tag">/ — Home</div>
+      <h4>🏠 首頁</h4>
+      <p>公告欄、最新消息、快速入口 Hero Banner</p>
+    </a>
+    <a class="doc-item" href="02_機師/index.html">
+      <div class="doc-tag">/pilots — Pilots</div>
+      <h4>👤 機師（圖鑑 + 詳情）</h4>
+      <p>機師卡片列表、六維雷達圖、技能天賦展示、個別科研配置</p>
+    </a>
+    <a class="doc-item" href="03_機甲/index.html">
+      <div class="doc-tag">/mechs — Mechs</div>
+      <h4>🤖 機甲（圖鑑 + 詳情）</h4>
+      <p>機甲列表、座艙式詳情頁（3×3 格）、部件屬性卡、副模組展示</p>
+    </a>
+    <a class="doc-item" href="04_武器/index.html">
+      <div class="doc-tag">/weapons — Weapons</div>
+      <h4>🔫 武器圖鑑</h4>
+      <p>武器列表、技能生效方式標記、改裝效果展示</p>
+    </a>
+    <a class="doc-item" href="05_背包/index.html">
+      <div class="doc-tag">/backpacks — Backpacks</div>
+      <h4>🎒 背包圖鑑</h4>
+      <p>背包列表、裝配限制標籤、技能效果展示</p>
+    </a>
+    <a class="doc-item" href="06_模組/index.html">
+      <div class="doc-tag">/modules — Modules</div>
+      <h4>🧩 模組圖鑑</h4>
+      <p>可獨立取得模組列表（排除副模組）、等級效果展示</p>
+    </a>
+    <a class="doc-item" href="11_元件/index.html">
+      <div class="doc-tag">/components — Components</div>
+      <h4>⚙️ 元件圖鑑</h4>
+      <p>觸元件 / 應元件列表、雙層圖示疊合、觸發條件與效果類型篩選</p>
+    </a>
+    <a class="doc-item" href="07_配裝模擬器/index.html">
+      <div class="doc-tag">/simulator — Simulator</div>
+      <h4>⚔️ 配裝模擬器</h4>
+      <p>Step 1-8 分步選配、即時預覽、匯出分享圖</p>
+    </a>
+    <a class="doc-item" href="08_科研設定/index.html">
+      <div class="doc-tag">/research — Research</div>
+      <h4>🔬 科研設定</h4>
+      <p>全域科研等級輸入、登入/localStorage 持久化</p>
+    </a>
+    <a class="doc-item" href="09_個人中心/index.html">
+      <div class="doc-tag">/profile — Profile</div>
+      <h4>🔐 個人中心</h4>
+      <p>配裝收藏、歷史記錄、科研設定管理</p>
+    </a>
+    <a class="doc-item" href="10_管理後台/index.html">
+      <div class="doc-tag">/admin — Admin</div>
+      <h4>🛠️ 管理後台</h4>
+      <p>Firestore 遊戲資料直接編輯、攻略管理、公告管理</p>
+    </a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">程式結構</div>
+  <div class="section-title">src/pages 資料夾結構</div>
+  <div class="section-desc">依功能域分組，每個子目錄對應一個業務領域，list 與 detail 頁面放置於同一資料夾。</div>
+
+  <div class="code-block" style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:1.25rem 1.5rem;font-family:'JetBrains Mono',monospace;font-size:0.85rem;line-height:1.8;color:#e6edf3;overflow-x:auto;">
+<pre style="margin:0;">src/pages/
+├── home/
+│   └── HomePage.tsx
+├── pilots/
+│   ├── PilotsPage.tsx
+│   └── PilotDetailPage.tsx
+├── mechs/
+│   ├── MechsPage.tsx
+│   └── MechDetailPage.tsx
+├── weapons/
+│   ├── WeaponsPage.tsx
+│   └── WeaponDetailPage.tsx       ← lazy-loaded
+├── backpacks/
+│   └── BackpacksPage.tsx
+├── modules/
+│   └── ModulesPage.tsx
+├── components/
+│   └── ComponentsPage.tsx
+├── simulator/
+│   ├── SimulatorPage.tsx
+│   └── ResearchPage.tsx
+├── guides/
+│   ├── GuidesPage.tsx                     ← 攻略（開發中）
+│   └── tools/
+│       └── RainbowMechPlannerPage.tsx     ← lazy，彩甲升級規劃器
+├── tools/
+│   └── ToolsPage.tsx                      ← 工具入口
+├── documents/
+│   └── DocumentsPage.tsx                  ← 文件（docs 白名單展示）
+├── news/
+│   └── NewsPage.tsx
+└── user/
+    ├── ProfilePage.tsx
+    └── AdminPage.tsx</pre>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">設計規範</div>
+  <div class="section-title">全站設計原則</div>
+
+  <div class="card-grid">
+    <div class="card purple">
+      <div class="card-icon">🎨</div>
+      <h3>色彩系統</h3>
+      <p>深色背景 #0a0c10，橘色 #ff6b2b 為主調，藍色/青色為輔調。仿鋼嵐遊戲介面風格。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">📱</div>
+      <h3>響應式設計</h3>
+      <p>行動裝置優先，支援平板與桌面版。底部導航列（行動）/ 側邊欄（桌面）。</p>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">⚡</div>
+      <h3>載入效能</h3>
+      <p>Firestore 資料快取，列表頁虛擬滾動，圖片懶加載。首頁目標 &lt; 2s LCP。</p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">🌐</div>
+      <h3>字型 &amp; 排版</h3>
+      <p>Noto Sans TC 正文、Orbitron 標題/標籤、JetBrains Mono 代碼/數值。</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 頁面規劃 — 回到 <a href="../01_規劃書/鋼嵐工具站_規劃書.html" style="color:var(--accent-cyan);text-decoration:none;">專案規劃書</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-08 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

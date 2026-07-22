@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-033 後台編輯視窗加寬 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+.status.later    { background: rgba(168,85,247,0.15); color: var(--accent-purple); border: 1px solid rgba(168,85,247,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+
+.defer-note {
+  background: rgba(168,85,247,0.06);
+  border: 1px solid rgba(168,85,247,0.2);
+  border-left: 3px solid var(--accent-purple);
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 12px 0 20px;
+}
+.defer-note strong { color: var(--accent-purple); }
+
+.warn-note {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 12px 0 20px;
+}
+.warn-note strong { color: var(--accent-yellow); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-033 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-033</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> 後台編輯視窗加寬</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-07-19</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">9</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">5</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">14</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-cyan);">9 / 14</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 64%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    後台編輯彈窗由固定 672px 加寬至 90vw，且多出的寬度轉為欄位密度——
+    例如 WeaponAdmin 數值頁的 6 個數值欄從「3 排、需捲動」變成「一排看完」。
+    維護者單筆編輯的掃視與捲動成本顯著下降。
+  </div>
+
+  <div class="warn-note">
+    <strong>交付原則：Phase A 與 B 必須一起上線。</strong>
+    只做 A（加寬而不改格線）會讓輸入框被撐胖、排數不變，掃視成本<strong>比現況更高</strong>——
+    是負優化。詳見計畫書「問題背景 3」。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">殼層加寬</div>
+  <div class="section-desc">單一旋鈕，10 個編輯器一起生效。純 className 改動，約 15 分鐘。</div>
+
+  <div class="impact-note" style="margin-top:16px;">
+    <strong>✅ A-1～A-3 已完成（2026-07-19）。</strong>
+    <code>npm run build</code> 通過，且已於產出的 CSS 確認兩個新 utility 真的生成——
+    <code>max-width:min(90vw,1920px)</code> 與 <code>container-type:inline-size</code> 各 1 筆。
+    這步不能只看 build 有沒有過：Tailwind 對無法識別的 arbitrary value 是<strong>靜默略過</strong>，
+    若 <code>max-w-[min(90vw,1920px)]</code> 沒被產出，殼層會退回只剩 <code>w-full</code>、
+    變成幾乎滿版，而 TypeScript 完全不會報錯。
+    <br><br>
+    <span style="color:var(--accent-yellow)">◆ 待人工確認：</span>
+    實際視覺效果需開後台登入檢視（本機 port 5173 + 獨立 profile）。
+    A-4 依計畫待此檢視後再定。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; AdminModal 殼層寬度與容器標記</div>
+      <div class="task-group-meta">src/pages/user/admin/shared.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">maxWidth 預設值改為 max-w-[min(90vw,1920px)]</div>
+        <div class="task-desc">
+          原值 <code>max-w-2xl</code>（672px）。prop 本身已存在（型別宣告於 <code>:262</code>），
+          不需改動元件 API。<strong>不可寫成 <code>w-[90vw]</code></strong>——殼層已有 <code>w-full</code>，
+          兩者都設 <code>width</code>，勝負取決於 Tailwind 產生的 CSS 順序而非 class 順序。
+        </div>
+        <div class="task-file">shared.tsx:254</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">殼層 @container 標記 → 已試裝並移除</div>
+        <div class="task-desc">
+          原為 Phase B 容器查詢鋪路而加。Phase B 開工後改用 <code>auto-fill</code>
+          （見計畫書決策三），此 class 不再需要；且查核發現它會套用
+          <code>contain:layout</code>，使彈窗成為 <code>position:fixed</code> 子孫的
+          containing block——會讓彈窗內 <code>IconField</code> 的
+          <code>fixed inset-0</code> 全螢幕浮層錯位。<strong>已移除</strong>，
+          並在原處留下反向註解防止日後加回。
+        </div>
+        <div class="task-file">shared.tsx:272（已還原）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 窄版編輯器例外處理</div>
+      <div class="task-group-meta">Glossary / NeuralDrive / Skill</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三個欄位少的編輯器顯式傳回 maxWidth="max-w-2xl"</div>
+        <div class="task-desc">
+          這三個編輯器欄位數少，撐到 1728px 只會讓兩三個欄位漂在一片空白裡。
+          維持現有寬度即可。
+        </div>
+        <div class="task-file">GlossaryAdmin.tsx:41 · NeuralDriveAdmin.tsx:63 · SkillAdmin.tsx:64</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 清掉冗餘覆寫</div>
+      <div class="task-group-meta">src/pages/user/admin/MechAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">移除 MechAdmin 與舊預設值重複的顯式 maxWidth</div>
+        <div class="task-desc">
+          目前顯式傳 <code>maxWidth="max-w-2xl"</code>，與改動前的預設值相同、屬冗餘。
+          拿掉後它才會吃到 A-1 的新預設。
+        </div>
+        <div class="task-file">MechAdmin.tsx:344</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 列表容器放寬</div>
+      <div class="task-group-meta">src/pages/user/AdminPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">列表容器與彈窗共用寬度常數</div>
+        <div class="task-desc">
+          使用者決定一併放寬。寬度抽成 <code>shared.tsx</code> 的
+          <code>ADMIN_WIDE_MAX_W</code> 常數供兩處共用，避免各寫一份日後漂移。
+          <code>authLoading</code> 與「無存取權限」兩個狀態只有一段置中短訊息，
+          維持 <code>max-w-6xl</code> 較好看，故不套用。
+        </div>
+        <div class="task-file">AdminPage.tsx:120 · shared.tsx（ADMIN_WIDE_MAX_W）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label cyan">Phase B</div>
+  <div class="section-title">格線響應式化</div>
+  <div class="section-desc">
+    把加寬得到的空間從「胖輸入框」轉回「多欄位」。判準：同質短欄位才改，異質長欄位維持現狀。
+    59 處格線宣告中預估需動約 35 處。約 2～3 小時。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; WeaponAdmin 格線</div>
+      <div class="task-group-meta">13 處 · 示範案例</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">數值頁 3 組 grid-cols-2 併為單一響應式格線</div>
+        <div class="task-desc">
+          <code>attack / accuracy</code>、<code>critValue / weight</code>、
+          <code>ammoCount / hitCount</code> 現為三個獨立 grid，加寬只會變胖、排數不減。
+          併成一組 <code>grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-6</code>，
+          寬螢幕下 6 個數值一排看完。其餘 10 處依判準處理。
+        </div>
+        <div class="task-file">WeaponAdmin.tsx:321 / :325 / :329（+ 87, 98, 106, 275, 287, 357, 387, 417, 466, 502）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; PilotAdmin 格線</div>
+      <div class="task-group-meta">14 處 · 最大受益點</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">六維屬性 6 欄改響應式；長文字欄位維持不動</div>
+        <div class="task-desc">
+          六維（melee / assault / shooting / tactics / defense / engineering）目前擠在
+          <code>grid-cols-2</code>，要捲 3 排——本計畫最大的單點收益。
+          反之 <code>:1210</code> 的「顯示名稱 / 全名」與 <code>lore</code> textarea
+          屬異質長欄位，維持現狀、變寬即是加分。
+        </div>
+        <div class="task-file">PilotAdmin.tsx:1253（六維）· :1214（分類 6 欄合併）· :1209（不動）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; ModuleAdmin 格線</div>
+      <div class="task-group-meta">13 處</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">等級數值表格線改自動格線</div>
+        <div class="task-desc">
+          12 處改造、收斂成 10 個自動格線。<strong>受益最大的是 <code>:280</code> 的「武器專屬增傷」
+          ——21 個數值原本擠在 2 欄，等於要捲 11 排。</strong>
+          武器增傷 tab 的 6 個細分區塊雖相鄰，但各自被 <code>border-t</code> 與標題切開、
+          屬不同語意群，刻意不合併、只換 class。
+        </div>
+        <div class="task-file">ModuleAdmin.tsx:133-170（7 欄合併）· :255 · :280 · :529 · :548~592</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 其餘編輯器格線</div>
+      <div class="task-group-meta">Backpack 5 · Buff 4 · Component 3 · Mech 2</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">小量檔案逐處套用同一判準</div>
+        <div class="task-desc">
+          Backpack 合併 2 組（類型/稀有度/重量/修理量、dmg/crit/critDmg/acc）；
+          Buff 換 2 處純數值；Component 換 1 處；Mech 換 2 處——其中
+          <code>MechAdmin:610</code> 的部件欄位數會隨部位變動（軀幹/腿 6 個、手臂 5 個、其他 4 個），
+          原本固定 2 欄必然出現殘缺尾列，改自動格線後自然消失。
+          <br><br>
+          <code>SkillAdmin</code> 與 <code>GlossaryAdmin</code> 因 A-2 維持窄版，未直接改動；
+          但 <code>SkillEffectItem</code> 是由 <code>PilotAdmin</code> 匯出、被 Buff / Skill /
+          Weapon / NeuralDrive 共用的元件，B-2 對它的改動會連帶生效於 5 個後台頁——
+          這正好體現 <code>auto-fill</code> 的好處：同一份程式碼在 672px 窄版自動 2 欄、
+          在寬版自動排滿，不需為兩種寬度各配一套斷點。
+          <code>GrayOpsAdmin</code> 已是響應式且不走 AdminModal，跳過。
+        </div>
+        <div class="task-file">BackpackAdmin · BuffAdmin · ComponentAdmin · MechAdmin</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-5 &nbsp; 斷點階梯實測回調</div>
+      <div class="task-group-meta">開後台看實物</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">用真實資料調整 auto-fill 的最小欄寬</div>
+        <div class="task-desc">
+          改用 <code>auto-fill</code> 後，校準從「35 處各自配欄數階梯」簡化為
+          <strong>調 <code>GRID_AUTO_FIELDS</code> 裡的一個數字</strong>（目前 220px），全站即時生效。
+          220px 是依標籤長度估的初值——像「彈藥量 ammoCount（0 = 無限彈藥）」這種長標籤
+          在 220px 下會折兩行，若覺得礙眼可上調；若覺得欄位太少可下調。
+        </div>
+        <div class="task-file">本機 port 5173 + 獨立 profile 登入</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-6 &nbsp; 全編輯器巡檢</div>
+      <div class="task-group-meta">10 個彈窗 × 各 Tab</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">逐一開啟各編輯器各分頁確認無版面破損</div>
+        <div class="task-desc">
+          重點檢查 Pilot / Weapon / Module / Mech 四個多 Tab 編輯器的每個分區，
+          以及窄版三兄弟是否確實維持 672px。順帶記錄哪些畫面仍覺得擁擠——
+          這份清單就是日後 Phase C 是否啟動的判斷依據。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label purple">Phase C</div>
+  <div class="section-title">大編輯器版面重構</div>
+  <div class="section-desc">四個有 Tab 的大型編輯器改造版面結構。約 1～2 天。</div>
+
+  <div class="defer-note">
+    <strong>◆ 延後執行（LOW）。</strong>
+    已確認納入範圍，但不急迫。與 Phase A／B 之間<strong>沒有技術依賴</strong>，可獨立啟動。
+    建議待 A＋B 上線並實際使用一段時間後，依 B-6 記錄的「仍覺擁擠」清單
+    與「Tab 切換是否真的造成困擾」再決定啟動時機與採用方案。
+    風險層級也與 A／B 不同——這階段會動到元件結構與狀態，不再是純 className 改動。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 版面方案評估</div>
+      <div class="task-group-meta">左側直排 Tab vs 雙分區同顯</div>
+      <span class="status later">延後</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">比較兩個方向並定案</div>
+        <div class="task-desc">
+          方案一：Tab 列從水平改為左側直排，右側為內容區——結構改動小、可漸進。
+          方案二：寬螢幕下同時顯示兩個分區，徹底消除部分 Tab 切換——收益大但狀態管理較複雜。
+          可先在 <code>_local-notes/</code> 出視覺提案再定案（沿用本計畫來源筆記的做法）。
+        </div>
+        <div class="task-file">_local-notes/（提案階段）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status later">延後</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 四個大編輯器改造</div>
+      <div class="task-group-meta">Pilot · Weapon · Module · Mech</div>
+      <span class="status later">延後</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">依 C-1 定案方案實作</div>
+        <div class="task-desc">
+          這四個是唯一有 <code>editTab</code> 狀態的編輯器，其中 <code>PilotAdmin</code>
+          分區最多、檔案 1300+ 行，建議最後做。
+        </div>
+        <div class="task-file">PilotAdmin · WeaponAdmin · ModuleAdmin · MechAdmin</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status later">延後</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 驗證與回歸</div>
+      <div class="task-group-meta">存檔流程完整驗證</div>
+      <span class="status later">延後</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">確認各編輯器存檔與 patch 行為未受影響</div>
+        <div class="task-desc">
+          C 階段會動到元件結構，需驗證 <code>handleSubmit</code> →
+          <code>patchCollectionItem</code> 的就地同步路徑仍正常，
+          以及各 Tab 的表單狀態在版面改動後不會遺失。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status later">延後</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-033 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
