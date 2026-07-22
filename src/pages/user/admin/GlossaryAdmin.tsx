@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { GlossaryTerm } from '../../../types'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, useCascadeDelete, ConfirmDeleteDialog, DeleteButton } from './shared'
 import { updateGlossaryTerm, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
@@ -95,6 +95,7 @@ function GlossaryEditPanel({
 export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<GlossaryTerm | null>(null)
   const gd = useGameData()
+  const del = useCascadeDelete('glossaryTerm', 'glossaryTerms')
 
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
@@ -181,6 +182,10 @@ export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: 
         derivedId={derivedId}
       />
 
+      {!del.plan && del.error && (
+        <p className="text-accent-red text-xs mb-2">⚠ 無法讀取刪除影響範圍：{del.error}</p>
+      )}
+
       {/* 詞條列表 */}
       <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-1">
         {filtered.map((term) => (
@@ -205,6 +210,7 @@ export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: 
               </div>
               <p className="text-[13px] text-text-secondary truncate mt-0.5">{term.description || '（無解釋）'}</p>
             </div>
+            <DeleteButton onAsk={() => void del.ask(term.id)} busy={del.asking === term.id} />
           </div>
         ))}
         {filtered.length === 0 && !loading && (
@@ -219,6 +225,16 @@ export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: 
           term={editing}
           onSave={handleSave}
           onCancel={() => setEditing(null)}
+        />
+      )}
+
+      {del.plan && (
+        <ConfirmDeleteDialog
+          plan={del.plan}
+          busy={del.busy}
+          error={del.error}
+          onConfirm={() => void del.confirm()}
+          onCancel={del.cancel}
         />
       )}
     </div>

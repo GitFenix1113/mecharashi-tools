@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { GameBuff, SkillEffect, BuffLevel } from '../../../types'
 import { BuffType } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, GRID_AUTO_FIELDS } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, GRID_AUTO_FIELDS, useCascadeDelete, ConfirmDeleteDialog, DeleteButton } from './shared'
 import { updateBuff, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
@@ -485,6 +485,7 @@ function BuffEditPanel({
 export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<GameBuff | null>(null)
   const gd = useGameData()
+  const del = useCascadeDelete('buff', 'buffs')
 
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
@@ -588,6 +589,11 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
         }
       />
 
+      {/* 刪除的 plan 階段（讀取影響範圍）失敗時，於列表上方顯示 */}
+      {!del.plan && del.error && (
+        <p className="text-accent-red text-xs mb-2">⚠ 無法讀取刪除影響範圍：{del.error}</p>
+      )}
+
       {/* BUFF 列表 */}
       <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-1">
         {filtered.map((buff) => (
@@ -613,6 +619,7 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
               </div>
               <p className="text-[13px] text-text-secondary truncate mt-0.5">{buff.description || '（無說明）'}</p>
             </div>
+            <DeleteButton onAsk={() => void del.ask(buff.id)} busy={del.asking === buff.id} />
           </div>
         ))}
         {filtered.length === 0 && !loading && (
@@ -627,6 +634,16 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
           buff={editing}
           onSave={handleSave}
           onCancel={() => setEditing(null)}
+        />
+      )}
+
+      {del.plan && (
+        <ConfirmDeleteDialog
+          plan={del.plan}
+          busy={del.busy}
+          error={del.error}
+          onConfirm={() => void del.confirm()}
+          onCancel={del.cancel}
         />
       )}
     </div>

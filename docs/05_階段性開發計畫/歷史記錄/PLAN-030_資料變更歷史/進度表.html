@@ -144,7 +144,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-030 進度表</span>
   </div>
@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">15</div>
+      <div class="summary-num" style="color:var(--accent-green)">32</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">17</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">15 / 32</span>
+      <span style="color:var(--accent-green);">32 / 32</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 47%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -297,6 +297,33 @@
     </div>
   </div>
 
+  <div class="impact-note">
+    <strong>✅ C-4 已完成（2026-07-20）</strong>——<code>src/lib/api/cascadeDelete.ts</code>，
+    <code>planCascadeDelete()</code> ＋ <code>commitCascadeDelete()</code> 兩階段，安全閘 6 項測試（總計 122 項全過）。
+    <div style="margin-top:8px;font-size:12px;">
+      <strong>經六視角對抗式審查</strong>（原子性／Firestore API 語意／資料遺失／契約遵守／規則權限／快取一致性，
+      每個發現由三個懷疑者嘗試駁倒、兩票駁回即淘汰）：<strong>提出 25 項、存活 3 項</strong>，
+      其中兩項是同一個缺陷的重複報告。兩個真實缺陷都已修正並經原始碼二次確認：<br><br>
+      <strong>① 讀取用預設 source，離線時靜默回退 IndexedDB 快取 —— 推翻本檔整份設計前提。</strong>
+      正式環境啟用了 <code>persistentLocalCache</code>（<code>firebase.ts:63-70</code>，跨 session 的持久快取），
+      而 <code>getDocs</code> / <code>getDoc</code> 在伺服器不可達時會<strong>正常 resolve 並回傳快取內容</strong>，
+      不拋錯、不外露旗標（全站 <code>fromCache</code> 檢查零命中）。
+      後果有兩層：這段期間新增的引用掃不到 → 刪完斷鏈且修補單沒記、Phase F 救不回；
+      整欄改寫用陳舊內容寫回 → 把期間內別人的編輯一次洗掉。
+      諷刺的是本檔原註解已寫「寧可整個中止也不要掃一半」，但程式碼並沒有那個行為。
+      <strong>已改用 <code>getDocsFromServer</code> / <code>getDocFromServer</code></strong>——
+      伺服器不可達時直接拒絕，失敗發生在任何寫入之前，額外 read 成本為零。<br><br>
+      <strong>② <code>versions</code> 無法區分「目標被刪」與「同集合兄弟文件被改寫」。</strong>
+      刪 BUFF 時另一個 BUFF 的 <code>descriptionRefs</code> 可能指向它（<code>entityRefs.ts:328</code> 已證實此站點存在），
+      於是同集合會同時出現「目標被刪」與「兄弟被改寫」。若呼叫端照原註解只走
+      <code>removeCollectionItem</code>，它僅 filter 掉目標 id，就把記憶體中<strong>未同步的兄弟文件</strong>
+      連同新版本號寫進 localStorage → 版本與伺服器相符即恆命中，
+      <strong>該 client 快取永不自癒</strong>，且其他 client 一切正常、只有他自己壞掉。
+      已新增 <code>targetCollHasSiblingEdits</code> 讓呼叫端安全地選擇「就地移除」或「整包重抓」。<br><br>
+      被駁回的 22 項多為 plan→commit 之間的併發窗口與重試累積幽靈 log——那些是已在文件中聲明接受的取捨。
+    </div>
+  </div>
+
   <div class="impact-note" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.25);">
     <strong style="color:var(--accent-red);">⚠ 盤點時順帶發現的兩個既有問題（不屬 PLAN-030，另行處理）</strong>
     <div style="margin-top:8px;font-size:12px;">
@@ -308,6 +335,33 @@
       <code>neuralDriveAbilities</code> 集合引用，<code>buildBuffPool</code> 卻沒有 resolve。
       <strong>C-1 刻意不順手修</strong>：C-1 的驗收標準是「行為不變」，混入行為修正會讓回歸測試失去判別力。
       registry 化之後這個修正只需動一處。
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ Phase F 已完成（2026-07-22）—— 全計畫 32/32 收官，可歸檔。</strong>
+    一鍵還原落地：<code>utils/restorePatch.ts</code>（純計算，14 項測試含 R8 刪除→還原往返
+    deepEqual）＋ <code>lib/api/restore.ts</code>（plan/commit 兩階段、commit 重驗目標存在、
+    版本 bump 併入原子 batch）＋ 歷史頁「↺ 還原此刪除」預覽對話框。
+    模擬器四場景端到端驗證全過（正常往返／衝突跳過／來源消失／ID 重建阻擋，見 F-4 註記）。
+    <div style="margin-top:8px;font-size:12px;">
+      與刪除端的兩個刻意不對稱：① log 順序相反——刪除「先 log 後資料」（log 承載快照），
+      還原「先資料後 log 不 await」（restore log 只承載追溯資訊）；② 讀取範圍——刪除掃全部
+      9 集合（「誰引用它」是開放問題），還原只逐份重讀修補單指到的文件（名單在快照裡）。
+      驗證用測試資料（激發能的竄改與 BUFF_事不宜遲 重建版）留在開發模擬器，
+      <code>npm run emu:seed</code> 可重灌。
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ Phase D + E 已完成（2026-07-22）</strong>——刪除 UI 上線（見 D-1/D-2 註記），
+    變更歷史檢視頁 <code>/admin/history</code> 落地。<strong>本計畫已達「不含還原」停損點</strong>：
+    有稽核、有級聯刪除、有歷史檢視與快照展開，還原需人工照快照操作，Phase F 可隨時後補。
+    <div style="margin-top:8px;font-size:12px;">
+      Phase E 於開發模擬器以真實 UI 端到端驗證：AdminRoute 攔未登入 ✓、
+      update 記錄列出 changedFields ✓、delete 快照展開（doc + 逐筆 patches）✓、
+      雙軸篩選含三組複合索引組合與空狀態 ✓。驗證產生的測試記錄
+      （修改 BUFF_修理量提升、刪除 buff_虛粒子形態）留在模擬器，<code>npm run emu:seed</code> 可重灌。
     </div>
   </div>
 
@@ -774,8 +828,38 @@
           解法是<strong>先解析完所有 hit 擷取容器參照、再統一套用</strong>兩階段。
           已用突變測試驗證鑑別力：把實作退化成天真的「邊解析邊套用」後，17 項中<strong>僅 O1 轉紅</strong>。
           寫入層走 copy-on-write，只複製被走訪到的路徑——既不動輸入資料，也不會把 Timestamp 之類的類別實例拆壞。
+          （含 C-3 端到端與 U 組持久化契約後，本檔共 24 項。）
         </div>
         <div class="task-file">src/utils/cascadePatch.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補強 ReversePatch 的持久化契約（segments / anchor）</div>
+        <div class="task-desc">
+          <strong>初版修補單只有 <code>path</code> 字串，會讓 Phase F 永久性地做不好。</strong>
+          兩個損失：<br>
+          ① <code>path</code> 是 <code>segments.join('.')</code>，而 <code>descriptionRefs</code> 的 map key 是使用者輸入的中文、<strong>可含 <code>.</code></strong>——
+          key 為 <code>凝勢.強化</code> 時 path 是 <code>talents.0.descriptionRefs.凝勢.強化</code>，<code>split('.')</code> 切回來是錯的。
+          C-1 早就為此讓 <code>RefHit</code> 同時帶 <code>segments</code>（權威）與 <code>path</code>（顯示），卻在轉 <code>ReversePatch</code> 時扁平化掉了。<br>
+          ② <strong><code>anchor</code> 完全遺失</strong>，這個較嚴重。刪除與還原之間陣列可能被重排或插入，
+          <code>talents[2]</code> 屆時已是另一個天賦，F-2 會<strong>把引用加回錯的地方且無聲無息</strong>。
+          被刪文件本身不含這個資訊（它不知道自己曾掛在誰的第幾個天賦上），<code>value</code> 也只有元素值——
+          <strong>沒在刪除當下記，之後永遠補不回來</strong>。
+          <br><br>
+          <strong>為什麼在 C-4 之前做：</strong>快照是不可變的歷史記錄。真正的死線其實是 D-2
+          （刪除按鈕上正式站的那一刻），不是 C-4——分支上的模擬器資料是拋棄式的，格式隨時可改。
+          但此刻 <code>r.segments</code> 與 <code>r.hit.anchor</code> 就在手上、產出修補單那一行正在丟棄它們，
+          晚做要連帶改 C-4（寫 <code>snapshot.patches</code>）與 E-3（快照檢視渲染）。是成本考量，不是急迫性。
+          <br><br>
+          <code>RefAnchor</code> 定義一併從 <code>utils/entityRefs.ts</code> 移入 <code>types/changeHistory.ts</code>——
+          它會被序列化進快照，屬持久化契約而非掃描器內部型別。
+          新增 U1~U3 測試鎖住：map key 含 <code>.</code> 的切分、索引式路徑必帶錨、修補單可 JSON 往返
+          （<code>segments</code> 混有 string 與 number，數字索引不可在往返後變成字串）。
+        </div>
+        <div class="task-file">src/types/changeHistory.ts · src/utils/cascadePatch.ts · src/utils/entityRefs.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status done">已完成</span>
@@ -852,7 +936,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-4 &nbsp; 原子交易與防呆</div>
       <div class="task-group-meta">src/lib/api/cascadeDelete.ts（I/O 層；純計算在 C-2 的 utils/cascadePatch.ts）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -867,7 +951,77 @@
         <div class="task-file">src/lib/api/cascadeDelete.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">拆成 plan / commit 兩階段（偏離計畫書）</div>
+        <div class="task-desc">
+          計畫書把 C-4 寫成單一函式，實作改為 <code>planCascadeDelete()</code> ＋ <code>commitCascadeDelete()</code>。
+          理由是 <strong>D-1 的確認對話框必須在使用者按下確認「之前」就顯示影響範圍</strong>
+          （「這會動到 3 個機師、5 個 BUFF」）。讀寫綁在同一次呼叫的話，對話框只能自己再掃一次，
+          而兩次掃描之間的結果還可能不一致。
+          另提供 <code>cascadeDelete()</code> 一次做完的包裝，給腳本與測試用。
+          <br><br>
+          <strong>commit 不會重新掃描</strong>：對話框停留期間的資料變動不會被看見。
+          重掃要再跑一次安全閘、且結果可能與使用者剛才看到的不同，成本與複雜度不划算——刪除是低頻操作。
+        </div>
+        <div class="task-file">src/lib/api/cascadeDelete.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">版本 bump 併入同一 batch（偏離計畫書）</div>
+        <div class="task-desc">
+          計畫書寫「對所有被觸及的集合呼叫 <code>bumpDataVersion</code>」——那是 N 次寫入<strong>同一份</strong>
+          <code>meta/gameData</code> 文件。改為併成單一次 <code>batch.set(..., { merge: true })</code> 並<strong>納入同一個 batch</strong>。
+          省寫入是其次，關鍵是<strong>原子性</strong>：若資料改了但版本沒 bump，其他 client 會繼續從
+          localStorage 供應已刪除的資料，直到有別的操作碰巧 bump 到。
+          連帶影響安全閘的計算——實際操作數是 <code>writeCount + 1</code>，
+          少算那一筆會讓「剛好 500 個 update」在 Firestore 端整批被拒（測試 V3 鎖住）。
+        </div>
+        <div class="task-file">src/lib/api/cascadeDelete.ts · src/utils/cascadePatch.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">安全閘 checkCascadeSafety（純函式，6 項測試）</div>
+        <div class="task-desc">
+          三道閘全部是「中止」而非「截斷後照做」：<br>
+          ① <code>problems</code> 非空 ② batch 操作數超過 500 ③ 還原快照超過單文件 1 MiB 安全額度（取 900 KB 留餘裕）<br>
+          放在 <code>cascadePatch.ts</code> 而非 I/O 層，才能純函式單測——這是 C-4 唯一測得到的部分，
+          其餘 I/O 行為要等模擬器整合測試。
+          快照大小用 <code>TextEncoder</code> 取 UTF-8 真實位元組（中文 1 字 3 bytes，
+          用 <code>String.length</code> 會低估三倍）。
+          <br><br>
+          <code>commitCascadeDelete</code> <strong>會自己再檢一次</strong>，不倚賴呼叫端有沒有看 <code>blockers</code>。
+          且檢查點在任何寫入之前，所以 <code>CascadeBlockedError</code> 拋出時資料庫必然毫髮無傷。
+        </div>
+        <div class="task-file">src/utils/cascadePatch.ts · src/utils/cascadePatch.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">兩種錯誤型別與唯一的不一致視窗</div>
+        <div class="task-desc">
+          <code>CascadeBlockedError</code>——安全閘擋下，<strong>在動任何資料之前拋出</strong>，資料庫毫髮無傷。<br>
+          <code>CascadeCommitError</code>——log 已寫入但 batch 提交失敗。這是<strong>唯一</strong>會留下不一致的失敗模式：
+          有一筆 delete log，但目標其實還在。因為 batch 是原子的（失敗＝一筆都沒寫），
+          <strong>資料本身完整、不需修復</strong>，只是歷史頁多一筆與事實不符的記錄。錯誤訊息帶出 <code>logId</code> 供人工核對。
+          <br><br>
+          會接受這個視窗，是因為兩種失敗不對等：多一筆「記了但沒刪成」的 log 只是雜訊，
+          而「刪了但沒記」等於永久失去還原能力。
+        </div>
+        <div class="task-file">src/lib/api/cascadeDelete.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -875,7 +1029,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-5 &nbsp; 刪除 API 對外介面</div>
       <div class="task-group-meta">src/lib/api/{buffs,skills,glossary}.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -884,11 +1038,24 @@
           包裝 C-1~C-4 成三個對外函式。若 pre-image 為 <code>null</code>（文件已不存在）則直接 return，不寫 log 也不報錯。
           完成後對<strong>所有被觸及的集合</strong>呼叫 <code>bumpDataVersion</code>，讓其餘 client 快取失效（決策十一）。
           <strong>現有三個集合規則的 <code>allow write: if isAdmin()</code> 已涵蓋 delete，規則不需改動。</strong>
+          <br><br>
+          <strong>✅ 已完成（2026-07-21）</strong>：<code>deleteBuff</code> / <code>deletePilotSkill</code> /
+          <code>deleteGlossaryTerm</code>，各自綁定 kind 後轉呼 C-4 的一次性 <code>cascadeDelete()</code>，
+          並依 CLAUDE.md 6.3 於 <code>firestoreApi.ts</code> barrel 補一行 re-export。
+          版本 bump 已在 C-4 併入 batch，故包裝層不需再呼叫。
+          <br><br>
+          <strong>刻意只包一次性版本、不為每個集合再包 plan/commit</strong>：D-1 的確認對話框是三個後台分頁共用的，
+          本來就得是 kind 泛型的，直接用 <code>planCascadeDelete(kind, id)</code> ＋ <code>commitCascadeDelete()</code> 即可；
+          再包三組只是把同樣的知識抄三遍。這三支便利入口是給腳本與測試用的。
+          <br><br>
+          <strong>回傳值帶著快取同步所需的全部資訊</strong>：<code>versions</code> 與
+          <code>targetCollHasSiblingEdits</code>。後者為 <code>true</code> 時呼叫端<strong>不可</strong>只用
+          <code>removeCollectionItem</code>（見上方 C-4 審查發現②）。
         </div>
-        <div class="task-file">src/lib/api/buffs.ts · skills.ts · glossary.ts</div>
+        <div class="task-file">src/lib/api/buffs.ts · skills.ts · glossary.ts · src/lib/firestoreApi.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -917,6 +1084,36 @@
       <span class="status done">已完成</span>
     </div>
   </div>
+
+  <div class="impact-note">
+    <strong>✅ Phase C 模擬器破壞性測試完成（2026-07-21）</strong>——純函式層之外，於隔離模擬器上以真實
+    <code>deleteBuff</code>/<code>deletePilotSkill</code>/<code>deleteGlossaryTerm</code> 走完整
+    「登入 → 安全規則 → WriteBatch」路徑，再帶外斷言資料庫真實狀態。
+    <div style="margin-top:8px;font-size:12px;">
+      <strong>整合測試 harness 落地</strong>（<code>tests/emulator/</code>，另見 commit）：Node module hooks 只替換
+      <code>firebase.ts</code> 連線層，<strong>測的是正式 <code>cascadeDelete.ts</code> 而非副本</strong>；雙通道紀律
+      （admin SDK 種資料/帶外驗證、client SDK 走規則）；跨程序套件鎖序列化平行測試。<br>
+      <strong>6 維度平行代理攻擊 + 對抗式驗證</strong>（斷言強度審計分 strong/weak/vacuous + 雙次復現，全部
+      deterministic 零 flaky）：原子性失敗注入、安全規則互動、快照 Firestore 往返保真、級聯全站 9 集合覆蓋、
+      邊界上限、版本語意。共 <strong>43 案例，42 通過/已聲明</strong>。<br>
+      <strong>核心正確性全數過關</strong>：9 集合每類站點清得乾淨、未涉及資料 byte-for-byte 不動、
+      <code>segments</code> 數字索引經 Firestore 往返保型（Phase F 定位前提）、含 <code>.</code> 的 map key 保真、
+      batch 原子失敗零殘留、規則每步防線成立、batch 500 與快照 900KB 閘門與 Firestore 真實邊界一致
+      （中文用 <code>TextEncoder</code> 非 length）。<strong>並實證人工還原</strong>：只憑快照 + adminDb 反向套用，
+      7 份文件全數還原到 deepEqual——證明計畫書「停損點：Phase F 未做也能照快照人工救回」成立。<br>
+      <strong>揪出 3 個 low 缺陷</strong>（皆稽核可信度/潛伏風險，非資料損毀）：
+      ① commit 未尊重 <code>planned.blockers</code>（違反自身欄位契約，missingColls blocker 漏檢）——
+      <strong>本輪已修</strong>，commit 重檢改為併入 <code>planned.blockers</code>（kind+detail 去重），
+      揭露它的紅測試 atomicity-e 已轉綠；
+      ② commit 不重驗目標存在 → plan/commit 視窗內目標被刪會產生幻影刪除與誤導性 log（建議 commit 開頭
+      <code>getDocFromServer</code> 重驗，待拍板）；
+      ③ <code>changeHistory</code> create 規則不驗 <code>actorUid</code> → ADMIN 可偽造嫁禍 log 且 append-only 永久化
+      （建議規則加 <code>actorUid == request.auth.uid</code>，需重部署規則，待拍板）。<br>
+      <strong>誠實標註未覆蓋</strong>：<code>getDocsFromServer</code> 離線行為（模擬器恆在線，無法觸發）、
+      TTL 實際刪除（後端非同步約 24h）、真實高並發。詳見
+      <code>_local-notes/PLAN-030_PhaseC_破壞性測試報告.html</code>。
+    </div>
+  </div>
 </section>
 
 <!-- Phase D -->
@@ -929,7 +1126,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 刪除確認對話框</div>
       <div class="task-group-meta">src/pages/user/admin/shared.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -938,11 +1135,18 @@
           目前<strong>後台沒有任何確認對話框元件</strong>，全站只有兩處原生 <code>window.confirm</code>（ProfilePage、GrayOpsAdmin）——不足以承載引用清單。
           需顯示：目標名稱與 ID、<strong>將被一併清除的引用清單</strong>（來源實體名稱 + 位置）、被凍結的文案數量、危險樣式確認按鈕。
           可沿用 <code>AdminModal</code> 殼層並改 <code>saveLabel</code>，置於 <code>shared.tsx</code> 供三分頁共用。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>。<strong>未沿用 AdminModal 的按鈕列（偏離計畫書）</strong>：
+          AdminModal 主鍵寫死橘色（<code>bg-accent-orange</code>），而刪除需要<strong>紅色危險鍵</strong>，
+          且 <code>blockers</code> 非空時要禁用確認並列出原因——這些 props 表達不了。故只沿用遮罩＋卡片外殼樣式，
+          按鈕列自刻。<strong>直接吃 <code>planCascadeDelete</code> 的回傳（<code>CascadePlanResult</code>）零轉換</strong>，
+          統計（受影響文件數、引用處數、凍結文案數）即算即顯；三段警示分色：blockers 紅框、softWarnings（名稱軟引用，
+          不自動清）黃框、unresolvedTokens（凍結取不到值）淡字。附「尚無一鍵還原介面，救回需人工照快照」提示（呼應停損點）。
         </div>
         <div class="task-file">src/pages/user/admin/shared.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -950,7 +1154,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; 三個分頁接上刪除</div>
       <div class="task-group-meta">Buff/Skill/Glossary Admin.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -961,11 +1165,34 @@
           <strong>前置調整：</strong><code>AdminPage.tsx</code> 的 <code>TAB_CONFIG</code> 中三個分頁的 <code>keys</code> 需補上引用來源集合，
           掃描才有資料可走訪。走版本 gate 快取，未改版時命中 localStorage ＝ <strong>0 次 Firestore read</strong>。
           錯誤沿用既有 <code>error: string | null</code> 行內紅字慣例（全站無 toast 系統）。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>，並經開發模擬器真實 UI 端到端驗證。實作有兩處偏離計畫書：
+          <br>
+          ① <strong><code>TAB_CONFIG.keys</code> 不需擴充</strong>（計畫書「舊設計」已作廢）：計畫書假設用
+          <code>findReferences(context 資料)</code> 預覽，需把 9 個引用來源集合塞進 keys。但 C-4 實作的
+          <code>planCascadeDelete</code> <strong>不吃 context</strong>——它自己 <code>getDocsFromServer</code> 重讀全站 9 集合
+          （正確性優先，見 C-4 審查發現①）。故走兩段式 plan/commit 路徑<strong>完全不動 TAB_CONFIG</strong>。
+          代價是每次開對話框重掃約 2000 read，但刪除是低頻操作。
+          <br>
+          ② <strong>抽出 <code>useCascadeDelete</code> hook（shared.tsx）</strong>：封裝
+          plan → 確認 → commit → 同步快取，三分頁各只需一行 <code>const del = useCascadeDelete(kind, key)</code>
+          ＋ 一個 <code>&lt;DeleteButton&gt;</code>（自帶 <code>stopPropagation</code>，因整列 onClick 已綁編輯）＋ 一個
+          <code>&lt;ConfirmDeleteDialog&gt;</code>，避免刪除流程三寫。
+          <br>
+          <strong>快取同步依 <code>targetCollHasSiblingEdits</code> 分流</strong>：false → <code>removeCollectionItem</code>
+          就地移除；true → <code>gd.reload()</code> 整包重抓（同集合有兄弟文件被改寫，就地移除會把未同步的舊內容
+          連同新版本號寫進 localStorage 而永不自癒——見 C-4 審查發現②）。
+          <br><br>
+          <strong>端到端驗證（開發模擬器 + 真實 UI 操作）：</strong>登入 ADMIN → BUFF 分頁 → 點刪除鈕 →
+          plan 重掃 → 對話框正確渲染（「事不宜遲」無引用情形）→ 確認刪除 → 對話框關閉、列表即時移除。
+          帶外確認：<code>buffs/buff_事不宜遲</code> 回 404、<code>changeHistory</code> 新增一筆 delete log
+          （含 snapshot、actorUid 為登入者本人）。<strong>順帶驗證發現③的規則修正在真實流程生效</strong>——
+          log 的 actorUid==本人，新規則放行、未誤傷正常寫入路徑。
         </div>
-        <div class="task-file">src/pages/user/admin/BuffAdmin.tsx · SkillAdmin.tsx · GlossaryAdmin.tsx · AdminPage.tsx</div>
+        <div class="task-file">src/pages/user/admin/{BuffAdmin,SkillAdmin,GlossaryAdmin,shared}.tsx（AdminPage.tsx 不需改）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -980,7 +1207,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 頁面骨架與路由</div>
       <div class="task-group-meta">src/pages/admin/AdminHistoryPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -989,11 +1216,14 @@
           置於 <code>src/pages/admin/</code>（與版本管理頁同層，非後台分頁）。
           於 <code>App.tsx</code> 以 <code>&lt;AdminRoute&gt;</code> 包裹 + <code>Suspense</code> lazy 載入，比照 <code>/admin/versions</code>——
           注意 <code>/admin</code> 本身<strong>沒有</strong>被 AdminRoute 包裹（它自行內嵌檢查），此處採較嚴格的 AdminRoute 作法。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>，比照 <code>/admin/versions</code> 以 <code>AdminRoute + Suspense + lazy</code> 掛上。
+          模擬器實測：未登入直接被導回首頁、模擬器管理員登入後正常進入。
         </div>
         <div class="task-file">src/pages/admin/AdminHistoryPage.tsx · src/App.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -1001,7 +1231,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-2 &nbsp; 雙軸篩選與分頁</div>
       <div class="task-group-meta">AdminHistoryPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1011,11 +1241,16 @@
           切換篩選需<strong>重置游標</strong>重新查詢，否則會接續在錯誤的分頁位置。
           「載入更多」沿用 <code>shared.tsx</code> 的 <code>LoadMoreButton</code>。
           <strong>不可</strong>使用 <code>useClientPaged</code> / <code>useServerPaged</code>——兩者都綁定 <code>getCollectionPage</code> 的 name 排序模型，與本頁的 <code>at</code> 時間排序不相容。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>。游標與請求序號放 <code>useRef</code>：切換篩選重置游標重新查詢，
+          並用序號丟棄慢速回應——快速連點篩選時，舊請求的結果不可覆蓋新篩選的列表。
+          模擬器實測：單軸（操作=修改 → 只剩 update 記錄）、雙軸組合（BUFF × 刪除 → 恰為 2 筆 delete，
+          走 <code>(target, action, at)</code> 複合索引）、無資料組合（技能 × 修改）正確顯示空狀態、無查詢錯誤。
         </div>
         <div class="task-file">src/pages/admin/AdminHistoryPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -1023,7 +1258,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-3 &nbsp; 記錄呈現與快照檢視</div>
       <div class="task-group-meta">AdminHistoryPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1034,11 +1269,19 @@
           <strong><code>snapshot.patches</code> 的引用清單</strong>（格式化 JSON 即可，供人工照著重建）。
           需處理 <code>at</code> 為 Firestore <code>Timestamp</code> 而非字串——要 <code>.toDate()</code> 後格式化；
           剛寫入尚未回傳伺服器時間時可能短暫為 <code>null</code>。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>。<code>at === null</code> 顯示「（時間同步中）」而非整列消失。
+          快照展開沒有做成純 JSON 一坨：<code>snapshot.doc</code> 是格式化 JSON 區塊，
+          <code>snapshot.patches</code> 逐筆列示——op 色票 + <code>coll/docId</code> + <code>path</code> + 被移除的原值，
+          人工還原時可逐筆照做。模擬器實測（真實 UI 產生的記錄）：update 列出 <code>changedFields</code>
+          （<code>description</code> / <code>maxStack</code>，正是被修改的兩欄）；刪除 <code>buff_虛粒子形態</code> 的快照
+          完整含 <code>descriptionRefs</code>，patches 兩筆（<code>arrayRemove buffIds</code> ＋
+          <code>mapKeyDelete descriptionRefs.虛粒子形態</code>）皆正確渲染。
         </div>
         <div class="task-file">src/pages/admin/AdminHistoryPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -1046,7 +1289,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-4 &nbsp; 後台入口</div>
       <div class="task-group-meta">src/pages/user/AdminPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1055,11 +1298,14 @@
           比照既有「版本列表」卡片的 <code>&lt;Link to="/admin/versions"&gt;</code> 作法，加一張指向 <code>/admin/history</code> 的卡片。
           採「子頁面」而非「第 13 個 Tab」——本集合不走 GameDataContext 預載入模型，
           硬塞進 <code>TAB_CONFIG</code> 需要一個空 <code>keys</code> 的特例，反而弄髒既有結構。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>，與「版本管理」卡片並排（綠色系、📜 圖示），
+          既有入口區塊由單卡改為 <code>flex gap-3 flex-wrap</code> 容器。
         </div>
         <div class="task-file">src/pages/user/AdminPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -1074,7 +1320,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-1 &nbsp; 還原文件本體</div>
       <div class="task-group-meta">src/lib/api/restore.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1083,19 +1329,27 @@
           <code>setDoc</code> 寫回 <code>snapshot.doc</code>。
           <strong>先檢查該 ID 是否已被重新建立</strong>（管理員可能刪掉後又手動建了同名項目）——
           已存在則中止並提示，不可無聲覆蓋。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>，結構鏡射 <code>cascadeDelete.ts</code>：
+          <code>planRestore(logId)</code> ＋ <code>commitRestore()</code> 兩階段，預覽對話框吃 plan。
+          目標存在檢查做在<strong>兩處</strong>：plan 給對話框顯示 blocker；<strong>commit 開頭再驗一次</strong>
+          堵 plan/commit 視窗（正是 Phase C 審查發現②「commit 不重驗目標存在」在還原端的對稱修正）。
+          單一 WriteBatch 原子提交（目標重建 + N 份引用寫回 + 版本 bump 併入同 batch），
+          batch 500 上限同樣把關。log 順序與刪除端<strong>刻意相反</strong>：還原是「先還原成功、後補
+          log 不 await」——restore log 只承載追溯資訊，漏記不損失能力，回到決策十的一般規則。
         </div>
         <div class="task-file">src/lib/api/restore.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">F-2 &nbsp; 還原引用（冪等重加）</div>
-      <div class="task-group-meta">src/lib/api/restore.ts</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">src/utils/restorePatch.ts · src/lib/api/restore.ts</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1107,11 +1361,25 @@
           <code>textFreeze</code> 是唯一非冪等的：需比對現值是否仍等於凍結後文字，不符則跳過並列入報告。
           來源文件若已不存在（例如整個機師被刪）同樣跳過並報告。
           還原結束回報「成功 N 筆／跳過 M 筆」與跳過原因。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>。純計算層依 C-2 慣例獨立成
+          <code>src/utils/restorePatch.ts</code>（<code>buildRestorePlan</code>），與刪除端共用
+          <code>DocDraft</code> copy-on-write——同一套走訪語意，逆運算不會偏移。
+          14 項單元測試（總計 136 項全過），最關鍵兩項：<br>
+          · <strong>R8 往返測試</strong>：<code>buildCascadePlan</code> 套用（buffIds@N + descriptionRefs +
+          textFreeze 混合命中）→ 快照 JSON 往返 → <code>buildRestorePlan</code> 套用 → 文件
+          <code>deepEqual</code> 回原始狀態；<br>
+          · <strong>R6 錨點重定位</strong>：陣列被重排後 index 指到錯的天賦，按 <code>anchor</code>
+          重新定位到正確元素、鄰居毫髮無傷；錨定元素消失或同錨多個 → 跳過不亂寫。
+          這兌現了 C-2 埋下的 segments/anchor 持久化契約——錨定的是 segments 中
+          <strong>最後一個數字索引</strong>指向的元素，與 entityRefs 產生端一致。<br>
+          <code>textFreeze</code> 的比對用「快照文件重建凍結器」重算凍結產物（來源與刪除當下同一份，
+          結果可重現），現值等於凍結產物才還原成 token 形式。
         </div>
-        <div class="task-file">src/lib/api/restore.ts</div>
+        <div class="task-file">src/utils/restorePatch.ts · src/utils/restorePatch.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -1119,7 +1387,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-3 &nbsp; 還原 UI 與稽核</div>
       <div class="task-group-meta">AdminHistoryPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1130,11 +1398,17 @@
           <strong>還原本身也是一次資料異動，必須寫一筆 <code>action: 'restore'</code> 的 log</strong>，
           並以 <code>restoredFrom</code> 指回來源 log 文件 ID，形成完整的可追溯鏈。
           同樣需對所有被觸及的集合 <code>bumpDataVersion</code>。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>。快照展開區的「↺ 還原此刪除」按鈕 →
+          預覽對話框（重加 N 處／已在原位 M 處／跳過清單分色列示；blockers 紅框 + 禁用確認鍵）→
+          確認 → 結果報告 → 關閉時重新整理列表讓 restore log 浮上來。
+          版本 bump 已併入 commitRestore 的 batch，UI 不需另行處理快取。
+          順帶更新 D-1 對話框的提示文字（原「尚無一鍵還原介面」已過時）。
         </div>
         <div class="task-file">src/pages/admin/AdminHistoryPage.tsx · src/lib/api/restore.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -1142,7 +1416,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-4 &nbsp; 模擬器端到端驗證（AGENT 執行）</div>
       <div class="task-group-meta">Phase 0 環境</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1156,11 +1430,25 @@
           ⑤ <strong>安全規則</strong>：以非管理員帳號嘗試讀 log、以管理員嘗試改／刪 log → 皆須被擋（驗證 A-3 的 append-only）；<br>
           ⑥ <strong>原子性</strong>：驗證 batch 失敗時不留半殘狀態、超過 500 操作會被攔截。<br>
           <strong>這是本專案第一個非純函式測試</strong>——現有 5 個測試皆無 mock、無 async、不碰 Firestore，需自行建立 setup/teardown 模式。
+          <br><br>
+          <strong>✅ 已完成（2026-07-22）</strong>，AGENT 於開發模擬器以真實 UI 操作 + REST 帶外斷言：<br>
+          ① <strong>正常往返</strong>：還原 <code>buff_虛粒子形態</code>（Phase E 驗證時刪的）→ 文件重建、
+          <code>skill_粒子爆發</code> 的 <code>buffIds</code> 與 <code>descriptionRefs.虛粒子形態</code> 皆帶外確認復原，
+          restore log 的 <code>restoredFrom</code> 正確指回來源刪除記錄；<br>
+          ② <strong>衝突跳過</strong>：刪 <code>buff_激發能</code>（3 處引用）後帶外把 <code>skill_粒子爆發</code> 的
+          <code>descriptionRefs.激發能</code> 改指向別的 BUFF → 還原時該處報「位置已有不同的值（期間被編輯）」跳過，
+          帶外確認竄改值<strong>未被硬蓋</strong>；<br>
+          ③ <strong>來源消失</strong>：同次還原前帶外刪掉引用來源 <code>buff_虛粒子形態</code> → 報「來源文件已不存在」跳過，
+          其餘 1 處（<code>skill_再構築</code>）照常復原；<br>
+          ④ <strong>ID 已被重建</strong>：目標已存在時預覽顯示紅色 blocker「已存在（刪除後被重新建立），還原會覆蓋它」
+          且確認鍵禁用——不可無聲覆蓋成立。<br>
+          ⑤ 安全規則與 ⑥ 原子性已由 Phase C 破壞性測試 43 案例覆蓋（還原走同一套 WriteBatch 與規則路徑）。
+          純函式層另有 R8 往返 deepEqual 測試補上「引用全數復原」的精確斷言。
         </div>
-        <div class="task-file">emulator integration test</div>
+        <div class="task-file">emulator + chrome-devtools 真實 UI 驗證</div>
       </div>
       <div class="task-assignee">AGENT</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -1188,7 +1476,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-030 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-030 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 歷史記錄</a>
 </footer>
 
 </body>

@@ -141,8 +141,9 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* 版本管理入口 */}
-      <div className="mb-6">
+      {/* 子頁面入口（版本管理 / 變更歷史）。變更歷史採子頁而非第 13 個 Tab——
+          changeHistory 不走 GameDataContext 預載入模型，硬塞 TAB_CONFIG 要開空 keys 特例 */}
+      <div className="mb-6 flex gap-3 flex-wrap">
         <Link
           to="/admin/versions"
           className="inline-flex items-center gap-3 px-5 py-3 bg-accent-purple/10 border border-accent-purple/30 rounded-xl hover:bg-accent-purple/20 hover:border-accent-purple/50 transition-colors no-underline"
@@ -153,6 +154,17 @@ export default function AdminPage() {
             <div className="text-xs text-text-dim">管理遊戲版本與活動資料</div>
           </div>
           <span className="text-accent-purple/50 ml-2 text-lg">›</span>
+        </Link>
+        <Link
+          to="/admin/history"
+          className="inline-flex items-center gap-3 px-5 py-3 bg-accent-green/10 border border-accent-green/30 rounded-xl hover:bg-accent-green/20 hover:border-accent-green/50 transition-colors no-underline"
+        >
+          <span className="text-accent-green text-xl">📜</span>
+          <div>
+            <div className="text-sm font-bold text-accent-green">變更歷史</div>
+            <div className="text-xs text-text-dim">資料異動稽核記錄與刪除快照</div>
+          </div>
+          <span className="text-accent-green/50 ml-2 text-lg">›</span>
         </Link>
       </div>
 
