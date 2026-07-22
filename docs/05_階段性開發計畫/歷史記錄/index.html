@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-030 · 資料變更歷史</h3>
+      <p>後台 BUFF／技能／詞條補上刪除功能：刪除時級聯清除全站 9 個集合的引用、不留死連結，內嵌文案的數值 token 以「凍結最後已知值」處理。所有異動寫入僅可新增（append-only 規則，連管理員都改不了）的 changeHistory 集合，變更歷史頁支援「集合 × 操作」雙軸篩選、快照展開與一鍵還原——冪等重加、錨點重定位、期間被編輯的位置跳過並報告。log 以 Firestore 原生 TTL 自動保留兩年。全程於本地模擬器破壞性驗證（43 案例 + 四場景還原端到端）。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-07-22 · 32 / 32 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-030_資料變更歷史/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-030_資料變更歷史/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card orange">
       <div class="card-icon">◆</div>
       <h3>PLAN-028 · 機甲新增與完整編輯</h3>
