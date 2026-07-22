@@ -10,7 +10,11 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { buildCascadePlan, createNumRefFreezer } from './cascadePatch.ts'
+import {
+  buildCascadePlan, createNumRefFreezer, checkCascadeSafety,
+  FIRESTORE_BATCH_LIMIT, BATCH_OVERHEAD_OPS, SNAPSHOT_SIZE_BUDGET_BYTES,
+  type CascadePlan,
+} from './cascadePatch.ts'
 import { findReferences, ALL_SCAN_COLLECTIONS, type RefHit, type RefScanData } from './entityRefs.ts'
 import type { Pilot, GameBuff } from '../types'
 
@@ -47,9 +51,13 @@ test('M1: buffIds 命中 → 改寫整個頂層 talents，並產出對應修補�
   assert.deepEqual(m.unset, [])
   assert.deepEqual((m.set.talents as { buffIds: string[] }[])[0].buffIds, ['buff_y'])
 
-  assert.deepEqual(plan.patches, [
-    { coll: 'pilots', docId: 'p1', path: 'talents.0.buffIds', op: 'arrayRemove', value: 'buff_x@3' },
-  ])
+  assert.deepEqual(plan.patches, [{
+    coll: 'pilots', docId: 'p1',
+    segments: ['talents', 0, 'buffIds'],          // 權威形式，F-2 定位用
+    path: 'talents.0.buffIds',                    // 顯示用
+    op: 'arrayRemove', value: 'buff_x@3',
+    anchor: { by: 'name', value: '天賦A' },       // 陣列被重排時據此重新定位
+  }])
 })
 
 test('M2: 不改動輸入資料（copy-on-write）', () => {
@@ -185,7 +193,10 @@ test('P2: 頂層純量欄位清除走 unset（C-4 轉 deleteField），不是寫
   const plan = buildCascadePlan(findReferences('glossaryTerm', 'term_x', data).hits, data)
   assert.deepEqual(plan.mutations[0].set, {})
   assert.deepEqual(plan.mutations[0].unset, ['termRef'])
-  assert.deepEqual(plan.patches[0], { coll: 'buffs', docId: 'b1', path: 'termRef', op: 'fieldClear', value: 'term_x' })
+  // 頂層純量站點無錨可用（不在任何陣列裡，路徑天然穩定）→ 不帶 anchor 欄位
+  assert.deepEqual(plan.patches[0], {
+    coll: 'buffs', docId: 'b1', segments: ['termRef'], path: 'termRef', op: 'fieldClear', value: 'term_x',
+  })
 })
 
 test('P3: 巢狀純量欄位清除 → 改寫其頂層欄位，不進 unset', () => {
@@ -345,4 +356,111 @@ test('T4: 同一單元的兩段正文各自成為獨立 patch（description / de
   const t = (plan.mutations[0].set.talents as { description: string; descriptionMax: string }[])[0]
   assert.equal(t.description, '疊5層')
   assert.equal(t.descriptionMax, '滿級疊5層')
+})
+
+// ─── U. 修補單的持久化契約（F-2 的還原前提）──────────────────────────────────
+
+test('U1: map key 含 "." 時 segments 保有正確切分，path 字串則不可信', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{
+      name: 'A',
+      descriptionRefs: { '凝勢.強化': { refType: 'buff', refId: 'buff_x' } },
+    }],
+  })
+  const plan = buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data)
+  const p = plan.patches[0]
+
+  assert.deepEqual(p.segments, ['talents', 0, 'descriptionRefs', '凝勢.強化'])
+  // path 切回來會多切一刀 —— 這正是 segments 必須進快照的原因
+  assert.equal(p.path, 'talents.0.descriptionRefs.凝勢.強化')
+  assert.notDeepEqual(p.path.split('.'), p.segments.map(String))
+})
+
+test('U2: 索引式路徑一律帶 anchor，供還原時重新定位', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [
+      { name: '天賦甲', buffIds: ['buff_keep'] },
+      { name: '天賦乙', buffIds: ['buff_x'] },
+    ],
+    neuralDrive: [{ name: 'ND', levels: [{ level: 4, buffIds: ['buff_x'] }] }],
+  })
+  const plan = buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data)
+
+  // talents[1] 的錨是天賦名；若日後天賦被重排，F-2 靠它找回正確的那一個
+  const t = plan.patches.find((p) => p.segments[0] === 'talents')
+  assert.deepEqual(t?.anchor, { by: 'name', value: '天賦乙' })
+
+  // 神驅等級的錨是 level 值，不是索引
+  const nd = plan.patches.find((p) => p.segments[0] === 'neuralDrive')
+  assert.deepEqual(nd?.anchor, { by: 'level', value: 4 })
+})
+
+test('U3: 修補單可被 JSON 往返（快照要存進 Firestore）', () => {
+  const data = pilotData({
+    name: '測試',
+    talents: [{ name: 'A', buffIds: ['buff_x@2'], descriptionRefs: { k: { refType: 'buff', refId: 'buff_x', level: 2 } } }],
+  })
+  const plan = buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data)
+  // segments 混有 string 與 number，JSON 往返後型別必須保持（number 索引不可變字串）
+  assert.deepEqual(JSON.parse(JSON.stringify(plan.patches)), plan.patches)
+})
+
+// ─── V. 送出前的安全閘（C-4）─────────────────────────────────────────────────
+
+/** 造一份只有 writeCount / problems 有意義的假 plan，專測閘門 */
+const fakePlan = (over: Partial<CascadePlan> = {}): CascadePlan => ({
+  mutations: [], patches: [], problems: [], deduped: 0, writeCount: 1, ...over,
+})
+
+test('V1: 一切正常時無阻擋', () => {
+  assert.deepEqual(checkCascadeSafety(fakePlan()), [])
+})
+
+test('V2: problems 非空必定阻擋（不可只跳過有問題的那幾筆）', () => {
+  const data = pilotData({ name: '測試', talents: [{ name: 'A', buffIds: ['buff_x'] }] })
+  const { hits } = findReferences('buff', 'buff_x', data)
+  const plan = buildCascadePlan(hits, scanData({}))          // 文件不在 → docMissing
+
+  const blockers = checkCascadeSafety(plan)
+  assert.equal(blockers.length, 1)
+  assert.equal(blockers[0].kind, 'problems')
+  assert.match(blockers[0].detail, /docMissing/)
+})
+
+test('V3: batch 上限用 writeCount + 版本 bump 計算，剛好 500 放行、501 擋下', () => {
+  // writeCount = mutations + 1(deleteDoc)；再 +1 是併進同一 batch 的 meta/gameData 版本寫入。
+  // 少算那一筆會讓「剛好 500 個 update」在 Firestore 端整批被拒
+  const ok = checkCascadeSafety(fakePlan({ writeCount: FIRESTORE_BATCH_LIMIT - BATCH_OVERHEAD_OPS }))
+  assert.deepEqual(ok, [])
+
+  const over = checkCascadeSafety(fakePlan({ writeCount: FIRESTORE_BATCH_LIMIT - BATCH_OVERHEAD_OPS + 1 }))
+  assert.equal(over.length, 1)
+  assert.equal(over[0].kind, 'batchLimit')
+  assert.equal(over[0].kind === 'batchLimit' && over[0].ops, FIRESTORE_BATCH_LIMIT + 1)
+})
+
+test('V4: 快照過大時擋下（單文件 1 MiB 上限）', () => {
+  const small = { doc: { name: 'x' }, patches: [] }
+  assert.deepEqual(checkCascadeSafety(fakePlan(), small), [])
+
+  // 中文 1 字 3 bytes，故 UTF-8 長度必須實測而非用 .length
+  const huge = { doc: { lore: '鋼'.repeat(SNAPSHOT_SIZE_BUDGET_BYTES / 3) }, patches: [] }
+  const blockers = checkCascadeSafety(fakePlan(), huge)
+  assert.equal(blockers.length, 1)
+  assert.equal(blockers[0].kind, 'snapshotSize')
+})
+
+test('V5: 省略 snapshot 時跳過大小檢查（僅預覽影響範圍的情境）', () => {
+  assert.deepEqual(checkCascadeSafety(fakePlan()), [])
+})
+
+test('V6: 多個問題同時存在時全部回報，不是只回第一個', () => {
+  const plan = fakePlan({
+    writeCount: 9999,
+    problems: [{ hit: { coll: 'pilots', docId: 'p1', path: 'x' } as never, reason: 'docMissing', detail: 'd' }],
+  })
+  const kinds = checkCascadeSafety(plan, { doc: {}, patches: [] }).map((b) => b.kind)
+  assert.deepEqual(kinds.sort(), ['batchLimit', 'problems'])
 })

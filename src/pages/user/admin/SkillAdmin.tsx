@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import type { PilotSkillDoc, SkillEffect } from '../../../types'
 import { formatWeaponReq } from '../../../types'
 import { SkillType } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, useCascadeDelete, ConfirmDeleteDialog, DeleteButton } from './shared'
 import { updatePilotSkill, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
@@ -182,6 +182,7 @@ function SkillEditPanel({
 export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<PilotSkillDoc | null>(null)
   const gd = useGameData()
+  const del = useCascadeDelete('pilotSkill', 'pilotSkills')
 
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
@@ -283,6 +284,10 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
         derivedId={derivedId}
       />
 
+      {!del.plan && del.error && (
+        <p className="text-accent-red text-xs mb-2">⚠ 無法讀取刪除影響範圍：{del.error}</p>
+      )}
+
       {/* 技能列表 */}
       <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-1">
         {filtered.map((skill) => {
@@ -312,6 +317,7 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
                 <p className="text-[13px] text-text-secondary truncate mt-0.5">{skill.description || '（無說明）'}</p>
               </div>
               <span className="text-text-dim font-mono text-[11px] shrink-0 max-w-[30%] truncate">{skill.id}</span>
+              <DeleteButton onAsk={() => void del.ask(skill.id)} busy={del.asking === skill.id} />
             </div>
           )
         })}
@@ -327,6 +333,16 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
           skill={editing}
           onSave={handleSave}
           onCancel={() => setEditing(null)}
+        />
+      )}
+
+      {del.plan && (
+        <ConfirmDeleteDialog
+          plan={del.plan}
+          busy={del.busy}
+          error={del.error}
+          onConfirm={() => void del.confirm()}
+          onCancel={del.cancel}
         />
       )}
     </div>

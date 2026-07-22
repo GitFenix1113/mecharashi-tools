@@ -24,7 +24,7 @@
 //     pilots.skills[] 站點指向「陣列元素」（skills.0）。兩者都要正規化成陣列路徑，
 //     否則修補單的 path 不一致，F-2 會找不到要加回哪裡。
 
-import type { ReversePatch } from '../types/changeHistory'
+import type { DeleteSnapshot, ReversePatch } from '../types/changeHistory'
 import { ALL_SCAN_COLLECTIONS, type RefHit, type RefScanData } from './entityRefs.ts'
 import { freezeNumRefs, type NumRefSource } from './numRefs.ts'
 
@@ -124,11 +124,13 @@ export function createNumRefFreezer(
 
 // ─── 內部小工具 ──────────────────────────────────────────────────────────────
 
-type Container = Record<PropertyKey, unknown>
+// Container / isContainer / DocDraft 同時供 restorePatch.ts（F-2）使用——
+// 刪除與還原必須共用同一套走訪與 copy-on-write 語意，否則逆運算會靜默偏移。
+export type Container = Record<PropertyKey, unknown>
 
 const pathOf = (segments: (string | number)[]): string => segments.join('.')
 
-const isContainer = (v: unknown): v is Container =>
+export const isContainer = (v: unknown): v is Container =>
   typeof v === 'object' && v !== null
 
 const shallowCopy = (v: Container): Container =>
@@ -153,7 +155,7 @@ function removeAll(arr: unknown[], value: unknown): number {
  *   · 不會動到呼叫端的輸入資料（findReferences 的 K2 契約延伸到這裡）；
  *   · 不需要 structuredClone 整份文件，也就不會把 Timestamp 之類的類別實例拆壞。
  */
-class DocDraft {
+export class DocDraft {
   readonly root: Container
   /** 已經是本草稿私有副本的節點。避免同一節點被重複複製而丟失前一次的修改 */
   private readonly copied = new Set<object>()
@@ -361,9 +363,88 @@ export function buildCascadePlan(
 
     mutations.push({ coll: group.coll, docId: group.docId, docName: group.docName, set, unset, appliedCount: applied.length })
     for (const r of applied) {
-      patches.push({ coll: group.coll, docId: group.docId, path: pathOf(r.segments), op: r.hit.op, value: r.patchValue })
+      patches.push({
+        coll: group.coll, docId: group.docId,
+        // segments 是權威形式、path 只供顯示。兩者都存：F-2 用 segments 定位，
+        // 快照檢視頁（E-3）直接印 path，免得每次都要 join
+        segments: r.segments, path: pathOf(r.segments),
+        op: r.hit.op, value: r.patchValue,
+        ...(r.hit.anchor ? { anchor: r.hit.anchor } : {}),
+      })
     }
   }
 
   return { mutations, patches, problems, deduped, writeCount: mutations.length + 1 }
+}
+
+// ─── 送出前的安全閘（C-4 的純函式部分）──────────────────────────────────────
+
+/** Firestore WriteBatch 的操作硬上限。 */
+export const FIRESTORE_BATCH_LIMIT = 500
+
+/**
+ * 除了 plan.writeCount（N 份 update + 1 份 deleteDoc）之外，batch 還會多帶的操作數：
+ * meta/gameData 的版本 bump 合併成單一次寫入（見 cascadeDelete 的說明）。
+ */
+export const BATCH_OVERHEAD_OPS = 1
+
+/** Firestore 單一文件大小上限 1 MiB。留 ~15% 餘裕給欄位名與型別編碼開銷。 */
+export const FIRESTORE_DOC_LIMIT_BYTES = 1_048_576
+export const SNAPSHOT_SIZE_BUDGET_BYTES = 900_000
+
+export type CascadeBlocker =
+  | { kind: 'problems'; detail: string; problems: CascadeProblem[] }
+  | { kind: 'batchLimit'; detail: string; ops: number; limit: number }
+  | { kind: 'snapshotSize'; detail: string; bytes: number; limit: number }
+
+/**
+ * 送出前的三道閘。回傳非空 = **必須中止整次刪除**，不可只跳過有問題的部分。
+ *
+ * 為什麼三道都是「中止」而非「截斷後照做」：
+ *  · problems     —— 帶著問題送出會留下「文件刪了但某些引用還在」，而修補單又漏記那幾處，
+ *                    等於還原也救不回來。半殘狀態比不做級聯更糟（決策八）。
+ *  · batchLimit   —— Firestore 超過 500 直接整批拒絕。自行分批會失去原子性，
+ *                    正是決策八要避免的；靜默截斷則會漏清。
+ *  · snapshotSize —— 快照塞不進單一文件時 log 寫入會失敗。因為 log 排在 batch 之前，
+ *                    這裡擋下等於「還沒動任何資料就中止」，是最安全的失敗點。
+ *
+ * @param snapshot 省略則跳過大小檢查（例如只想預覽影響範圍時）
+ */
+export function checkCascadeSafety(plan: CascadePlan, snapshot?: DeleteSnapshot): CascadeBlocker[] {
+  const blockers: CascadeBlocker[] = []
+
+  if (plan.problems.length) {
+    const sample = plan.problems.slice(0, 3).map((p) => `${p.reason}@${p.hit.coll}/${p.hit.docId}:${p.hit.path}`)
+    blockers.push({
+      kind: 'problems',
+      detail: `有 ${plan.problems.length} 處引用無法套用（資料在掃描後被改動？）：${sample.join('、')}`,
+      problems: plan.problems,
+    })
+  }
+
+  const ops = plan.writeCount + BATCH_OVERHEAD_OPS
+  if (ops > FIRESTORE_BATCH_LIMIT) {
+    blockers.push({
+      kind: 'batchLimit',
+      detail: `本次刪除需 ${ops} 個寫入操作，超過 Firestore 單一 batch 上限 ${FIRESTORE_BATCH_LIMIT}`,
+      ops,
+      limit: FIRESTORE_BATCH_LIMIT,
+    })
+  }
+
+  if (snapshot) {
+    // JSON 位元組數是保守估計：JSON 的引號與逗號開銷高於 Firestore 實際編碼，
+    // 故此處偏大、不會低估。用 TextEncoder 取 UTF-8 真實長度（中文 1 字 3 bytes）
+    const bytes = new TextEncoder().encode(JSON.stringify(snapshot)).length
+    if (bytes > SNAPSHOT_SIZE_BUDGET_BYTES) {
+      blockers.push({
+        kind: 'snapshotSize',
+        detail: `還原快照約 ${Math.round(bytes / 1024)} KB，超過單筆 log 的安全上限 ${Math.round(SNAPSHOT_SIZE_BUDGET_BYTES / 1024)} KB`,
+        bytes,
+        limit: SNAPSHOT_SIZE_BUDGET_BYTES,
+      })
+    }
+  }
+
+  return blockers
 }

@@ -25,6 +25,7 @@ import ComponentsPage from './pages/components/ComponentsPage'
 const WeaponDetailPage         = lazy(() => import('./pages/weapons/WeaponDetailPage'))
 const AdminVersionListPage     = lazy(() => import('./pages/admin/AdminVersionListPage'))
 const AdminVersionEditorPage   = lazy(() => import('./pages/admin/AdminVersionEditorPage'))
+const AdminHistoryPage         = lazy(() => import('./pages/admin/AdminHistoryPage'))
 const RainbowMechPlannerPage   = lazy(() => import('./pages/guides/tools/RainbowMechPlannerPage'))
 const ComponentDropsPage       = lazy(() => import('./pages/guides/tools/ComponentDropsPage'))
 const StorageDebugPage         = lazy(() => import('./pages/debug/StorageDebugPage'))
@@ -65,6 +66,10 @@ function App() {
             <Route
               path="admin/versions/:versionId"
               element={<AdminRoute><Suspense fallback={null}><AdminVersionEditorPage /></Suspense></AdminRoute>}
+            />
+            <Route
+              path="admin/history"
+              element={<AdminRoute><Suspense fallback={null}><AdminHistoryPage /></Suspense></AdminRoute>}
             />
           </Route>
         </Routes>
