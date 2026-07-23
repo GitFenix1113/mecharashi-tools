@@ -179,15 +179,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">10</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">2</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">14</div>
+      <div class="summary-num" style="color:var(--text-dim)">2</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -199,25 +199,35 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-yellow);">0 / 14</span>
+      <span style="color:var(--accent-yellow);">10 / 14 · 進階鏈＋背包投影 facet 已上線 live；剩 docs／履歷／commit 與 2 筆實機</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 71%"></div>
     </div>
   </div>
 
   <div class="impact-note">
     <strong>目標效果：</strong>
-    ① 武器詳情頁看得出「前置是誰、可進階成什麼」，<strong>41 條製作關係全部可點擊互連</strong>；
+    ① 武器詳情頁看得出「前置是誰、可進階成什麼」，<strong>42 條製作關係全部可點擊互連</strong>；
     ② 背包圖鑑打開「特種背包製作」篩選，看到與遊戲內製作清單一致的 22 個特種背包 ＋ 複合武器並列；
     ③ 武器圖鑑能一眼分辨「熠光」與「裁決者」。<strong>零文件搬移、零斷鏈、可完整回退。</strong>
   </div>
 
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">A-1 live dry-run 實測（2026-07-24，取代 2026-06-19 備份數字）：</strong>
+    169 把武器 / 83 把有技能 → <strong>唯一邊 42 條</strong>（S+→SS 39 · <strong>SS→SS 3</strong>）、
+    歧義 0 · 守衛全擋 0 · fan-out&gt;1 為 0。硬約束守衛（稀有度單調＋同 kind）未誤擋任何邊。
+    4 個已知正解回歸抽查全過。<br>
+    <strong>複合武器家族由 2 把增為 3 把</strong>：裁決者 ← 熠光、糖衣毀滅者 ← 草莓通心粉、
+    <strong>天燼審判 ← 諸神黃昏</strong>（浮游炮系，計畫書原「待盤點」，現確認已在 live），
+    三者融合技能皆為 <code>首攻強化Ⅲ</code>（buffId 600433），雙判別式零衝突。
+  </div>
+
   <div class="gate-note">
     <strong>執行順序約束：</strong>A-1 推導必須先於 C-1 寫入。<br>
-    <strong>建議的第一個出貨點：</strong>C-1 拆成兩次寫入——<strong>先只寫 <code>upgrade.fromWeaponId</code>（41 條邊）</strong>，
-    此時 B-1 的進階鏈全部可點，<strong>覆蓋率是「2 把複合武器」的 20 倍且人工成本更低</strong>
-    （推導 0 歧義，只有複合武器那 2 筆需實機確認背包）；之後再補寫 <code>station</code> / <code>fusedBackpackId</code> 與 B-2 投影。<br>
+    <strong>建議的第一個出貨點：</strong>C-1 拆成兩次寫入——<strong>先只寫 <code>upgrade.fromWeaponId</code>（42 條邊）</strong>，
+    此時 B-1 的進階鏈全部可點，<strong>覆蓋率是「3 把複合武器」的 14 倍且人工成本更低</strong>
+    （推導 0 歧義，只有複合武器那 3 筆需實機確認背包）；之後再補寫 <code>station</code> / <code>fusedBackpackId</code> 與 B-2 投影。<br>
     <strong>容錯：</strong><code>scrape-weapons.js</code> 用的是 <code>batch.set(…, { merge: true })</code>，
     重跑爬蟲<strong>不會洗掉</strong>手填的 <code>upgrade</code>。<br>
     <span style="color:var(--accent-yellow)">⚠ 不建議與 PLAN-032 同時開工</span>——兩者零欄位重疊，
@@ -229,13 +239,13 @@
 <section class="section">
   <div class="section-label yellow">Phase A</div>
   <div class="section-title">推導與資料層</div>
-  <div class="section-desc">先用腳本把 41 條進階邊推出來，再定義承載它的型別與共用工具。</div>
+  <div class="section-desc">先用腳本把 42 條進階邊推出來，再定義承載它的型別與共用工具。</div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; 進階鏈推導腳本</div>
-      <div class="task-group-meta">scripts/derive-weapon-upgrade.mjs（<strong>進版控</strong>，勿放 temp_scripts）</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">scripts/derive-weapon-upgrade.mjs（<strong>已建、進版控</strong>）</div>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
@@ -246,38 +256,45 @@
           實測 name→icon 為 1:1（124 名／0 個對多 icon），但 icon→name <strong>非</strong> 1:1
           （107 個 icon 中 11 個對到 2–3 個不同技能名，如 <code>5186</code>→凝神待發／靈光一現）。
           用 icon 當鍵會把無關技能合併。<br>
-          <strong>備份上的預期結果</strong>（可當回歸基準）：82 把有技能武器 → 唯一邊 <strong>41</strong>、
-          歧義 <strong>0</strong>、kind 不一致 <strong>0</strong>、fan-out&gt;1 <strong>0</strong>；
-          S+→SS 39 條、SS→SS 2 條。<br>
+          <strong>live 回歸基準（2026-07-24 實測，取代備份）</strong>：83 把有技能武器 → 唯一邊 <strong>42</strong>、
+          歧義 <strong>0</strong>、守衛全擋 <strong>0</strong>、fan-out&gt;1 <strong>0</strong>；
+          S+→SS 39 條、SS→SS <strong>3</strong> 條。<br>
           複合武器判別：<strong>SS→SS 邊</strong>（主）+ <strong>差集技能帶 6 開頭 buffId</strong>（交叉驗證），
           兩者須一致；不一致才人工介入。
           <span style="color:var(--accent-yellow)">⚠ 輔助判別式只可搜 <code>weapon.description</code></span>，
           搜技能描述會誤中「馬哈利姆之力」（它只是引用背包數值）。<br>
           腳本必須輸出 <code>ambiguous</code> / <code>unresolved</code> 報告，
-          <strong>不可假設 0 歧義就無條件寫入</strong>。
+          <strong>不可假設 0 歧義就無條件寫入</strong>。<br>
+          <span style="color:var(--accent-green)">✅ 已完成（2026-07-24）</span>：腳本已建、進版控，
+          硬約束守衛（稀有度單調＋同 kind，違反者丟報告不建邊）與雙判別式（同稀有度＋背包 buffId）皆實作。
+          live dry-run 實測 <strong>唯一邊 42 / 歧義 0 / 守衛全擋 0 / fan-out&gt;1 為 0</strong>。
         </div>
         <div class="task-file">scripts/derive-weapon-upgrade.mjs · dry-run 預設</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">對 live Firestore 重跑 + 人工抽查</div>
         <div class="task-desc">
-          <strong>必須對 live 重跑</strong>，不可採信 2026-06-19 備份的數字（已過一個月）。
-          重點確認「<strong>天燼</strong>」（浮游炮系，站長口述）是否已在 live；若無，跑 <code>data-patch</code> 重抓 weapons。<br>
-          抽查已知正解：<code>夜魘·改 → 終末之嘆</code>、<code>炬塔·改 → 熠光</code>（站長提供，備份上皆驗證通過）。<br>
-          <strong>2 把複合武器的 <code>fusedBackpackId</code> 需實機確認</strong>：
-          裁決者已確認為 <code>60102405 出力強化背包·首攻</code>（S+ / <code>PowerAdd</code>）；
-          <span style="color:var(--accent-red)">⚠ 不是 <code>60600404 強化背包·首攻</code>（S / <code>Enhance</code>）</span>，
-          兩者只差「出力」二字。糖衣毀滅者的材料由技能相同推定，<strong>仍待實機確認</strong>。<br>
-          <span style="color:var(--accent-red)">⚠ 官方 description 是錯的</span>（裁決者寫「干擾背包」），不可據以推導。
+          <span style="color:var(--accent-green)">✅ 已對 live 重跑（2026-07-24）</span>：83 把有技能武器 → 42 邊，
+          4 個已知正解回歸抽查全過（<code>夜魘·改→終末之嘆</code>、<code>炬塔·改→熠光</code>、
+          <code>熠光→裁決者</code>、<code>草莓通心粉→糖衣毀滅者</code>）。
+          「<strong>天燼審判</strong>」（浮游炮系，SS，母＝諸神黃昏）<strong>確認已在 live</strong>，無須重抓。<br>
+          <span style="color:var(--accent-yellow)">⏳ 仍待實機確認（C-1 前置）</span>：
+          <strong>糖衣毀滅者、天燼審判 的 <code>fusedBackpackId</code></strong>。<br>
+          <strong>資料層無法反推</strong>：實測融合技能 buffId <code>600433</code> 由 先驅者背包／續火者背包 帶，
+          而裁決者確認正解 <code>60102405 出力強化背包·首攻</code>（S+ / <code>PowerAdd</code>）<strong>反而不含 600433</strong>
+          → buffId 只能當「是複合武器」判別式，<strong>不能識別來源背包</strong>，故只能實機。<br>
+          <span style="color:var(--accent-red)">⚠ 陷阱</span>：正解在 <code>60X02405</code>（S+）家族；
+          避開 <code>606004xx</code>（<code>強化背包·首攻</code> · Enhance · B/A/S 三版）。
+          官方 description 是錯的（裁決者寫「干擾背包」），不可據以推導。
         </div>
         <div class="task-file">人工 · 對照遊戲內製作介面</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
 
@@ -285,13 +302,13 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; WeaponUpgrade 型別</div>
       <div class="task-group-meta">src/types/weapon.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">新增 WeaponUpgrade + Weapon.upgrade?</div>
         <div class="task-desc">
-          僅三個欄位：<code>fromWeaponId</code>（<strong>必填</strong>，41 條邊皆有母武器）、
+          僅三個欄位：<code>fromWeaponId</code>（<strong>必填</strong>，42 條邊皆有母武器）、
           <code>station?: 'specialBackpack'</code>、<code>fusedBackpackId?</code>。<br>
           <strong>只存事實，不存任何可推導值</strong>——
           <span style="color:var(--accent-red)">不加</span> <code>upgradeTo</code>（反向前端 derive）、
@@ -300,20 +317,24 @@
           <code>upgrade</code> <strong>不改變</strong>本武器的儲存集合、doc id 或 refType（註解須寫明）。<br>
           <strong>另在註解標明材料擴充點</strong>：未來的
           <code>materials?: {itemId, qty}[]</code> 屬於 <code>WeaponUpgrade</code>（邊的屬性），
-          <strong>現在不建欄位</strong>（前置條件：items 集合與武裝討伐掉落資料）。
+          <strong>現在不建欄位</strong>（前置條件：items 集合與武裝討伐掉落資料）。<br>
+          <span style="color:var(--accent-green)">✅ 已完成（2026-07-24）</span>：
+          <code>WeaponUpgrade</code>（<code>fromWeaponId</code> 必填 / <code>station?</code> / <code>fusedBackpackId?</code>）
+          與 <code>Weapon.upgrade?</code> 已加入，含跨界判準、材料擴充點、
+          「fusedBackpackId 不可由 buffId 推定」等註解。<code>tsc -b</code> 通過。
         </div>
         <div class="task-file">src/types/weapon.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">A-3 &nbsp; 共用工具模組</div>
+      <div class="task-group-title">A-3 &nbsp; 共用工具模組（<span style="color:var(--accent-cyan)">已拆分</span>）</div>
       <div class="task-group-meta">src/utils/weaponUpgrade.ts（新檔）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -323,17 +344,27 @@
           <strong>反向</strong>（誰的 <code>fromWeaponId</code> 指向我）兩張表——<strong>反向不存 Firestore</strong>。
           回傳型別要能承受 fan-out（目前實測 0，但未來一把武器可能有多個進階分支）。<br>
           <code>deriveFusedSkills(child, parent)</code>：技能名差集，供詳情頁標示「哪一條是融合帶來的」。<br>
-          <code>isCompositeWeapon(w)</code>：<code>upgrade?.station === 'specialBackpack'</code>。
+          <code>isCompositeWeapon(w)</code>：<code>upgrade?.station === 'specialBackpack'</code>。<br>
+          <span style="color:var(--accent-green)">✅ 已完成（2026-07-24）</span>：三函式已建於
+          <code>src/utils/weaponUpgrade.ts</code>。<code>deriveFusedSkillNames()</code> 刻意接「技能名陣列」而非
+          Weapon，<strong>使 PLAN-032 把 skills 改成引用後本項零改動</strong>（呼叫端先 resolve 成名再傳入）。
         </div>
         <div class="task-file">src/utils/weaponUpgrade.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">背包圖鑑投影用的 union 與轉換</div>
+        <div class="task-name">背包圖鑑投影用的 union 與轉換　<span style="color:var(--accent-cyan)">（已改列 B-2 前置，非 Phase A）</span></div>
         <div class="task-desc">
+          <span style="color:var(--accent-green)">✅ 已完成（2026-07-24，隨 B-2 一起）</span>：
+          <code>BackpackListItem</code> union、<code>isSpecialBackpackCraft</code>（SS derived）、
+          <code>projectedBackpackType</code>（查 fusedBackpackId）、<code>weaponArmorTypes</code> 已建於
+          <code>weaponUpgrade.ts</code>。<strong>實測發現背包圖鑑 armor 篩選用英文 key，EN→EN 直接映射，
+          完全不必碰 <code>SimulatorPage</code> 的 EN→ZH（<code>fitsArmor</code> 是模擬器另案，本計畫不做）</strong>——
+          正好印證當初拆分的判斷。<br>
+          <span style="color:var(--text-dim)">（以下為原規格，部分已按實況簡化）</span><br>
           <code>BackpackListItem</code> discriminated union（<code>{kind:'backpack'|'weapon', data}</code>，
           <strong>不偽造欄位</strong>）、<code>isSpecialBackpackCraft()</code>
           （背包側用 <code>rarity === 'SS'</code> <strong>derived</strong>，不在 Firestore 存推論值）、
@@ -342,11 +373,12 @@
           <strong>務必保留 EN→ZH 裝甲名對照</strong>（<code>AssemblableArmorType</code> 是英文、
           <code>Mech.armorType</code> 是中文，都是裸 <code>string</code>，直接比對恆為 false 且 TS 抓不到）。
           順手把 <code>SimulatorPage.tsx:195</code> 硬編的 <code>armorMap</code> 抽進來共用。
+          <span style="color:var(--text-dim)">（← 此段 fitsArmor／SimulatorPage 抽取實際未做，非本計畫所需，見上方綠字）</span>
         </div>
         <div class="task-file">src/utils/weaponUpgrade.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -356,7 +388,7 @@
   <div class="section-label yellow">Phase B</div>
   <div class="section-title">前台呈現</div>
   <div class="section-desc">
-    先做覆蓋 41 條邊的進階鏈（價值最大），再做只影響 2 把武器的背包投影。
+    先做覆蓋 42 條邊的進階鏈（價值最大），再做只影響 3 把武器的背包投影。
     <strong>建議順序 B-1 → B-2 → B-3</strong>，讓第一個可見成果提早出現。
   </div>
 
@@ -364,41 +396,48 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; 武器詳情頁：進階鏈區塊</div>
       <div class="task-group-meta">src/pages/weapons/WeaponDetailPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">「前置 ← 本武器 → 可進階為」雙向導覽</div>
+        <div class="task-name">「前置 ← 本武器 → 可進階為」雙向導覽　<span style="color:var(--accent-green)">✅</span></div>
         <div class="task-desc">
           用 <code>buildUpgradeIndex()</code> 取得正向與反向關係，渲染成可點擊的站內連結。<br>
-          <strong>覆蓋 41 條邊 = 82 把武器</strong>，是本計畫覆蓋率最高的一項（背包投影只影響 2 把）。<br>
+          <strong>覆蓋 42 條邊 = 83 把武器</strong>，是本計畫覆蓋率最高的一項（背包投影只影響 3 把）。<br>
           範例呈現：<code>炬塔·改 → 【熠光】 → 裁決者</code>；
           複合武器額外顯示「融合自 出力強化背包·首攻」（<strong>純文字不給連結</strong>，
           待 <code>/backpacks/:id</code> 另案上線後再升級）。<br>
           <strong>無 <code>upgrade</code> 值時整區不渲染</strong>——這讓 A/B 階段完成、C-1 尚未寫入資料時
-          站台行為完全不變，可安全上線。
+          站台行為完全不變，可安全上線。<br>
+          <span style="color:var(--accent-green)">✅ 已完成（2026-07-24）</span>：「製作 · 進階關係」區塊已上線，
+          前置母武器 + 可進階子武器（陣列，承受 fan-out）皆為可點 chip。加 <code>useWeapons()</code>（同集合零額外讀取）
+          與新 hook <code>useBackpackNameMap()</code>；「融合自 ○○背包」以<strong>元件邊界條件載入</strong>
+          （<code>FusedBackpackNote</code>，僅複合武器頁才載 backpacks，一般武器頁零讀取量）。
         </div>
-        <div class="task-file">src/pages/weapons/WeaponDetailPage.tsx</div>
+        <div class="task-file">src/pages/weapons/WeaponDetailPage.tsx · src/hooks/useFirestore.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">標示哪一條技能是融合／進階帶來的</div>
+        <div class="task-name">標示哪一條技能是融合／進階帶來的　<span style="color:var(--accent-green)">✅</span></div>
         <div class="task-desc">
-          用 <code>deriveFusedSkills(child, parent)</code> 的差集結果，在技能列表對應項加標記。
+          用 <code>deriveFusedSkillNames(child, parent)</code> 的差集結果，在技能列表對應項加標記。
           <strong>不存 <code>fusedSkillName</code> 欄位</strong>，即時計算。<br>
-          好處：PLAN-032 把技能改成引用後，差集自動換算，本項零改動。
+          好處：PLAN-032 把技能改成引用後，差集自動換算，本項零改動。<br>
+          <span style="color:var(--accent-green)">✅ 已完成</span>：<code>WeaponSkillCard</code> 加 <code>fusedLabel?</code> prop，
+          複合武器標「融合技能」、純進階標「進階新增」，卡片描邊高亮。
+          差集函式刻意接<strong>技能名陣列</strong>而非 Weapon，確保 PLAN-032 flip 後零改動。
         </div>
-        <div class="task-file">src/pages/weapons/WeaponDetailPage.tsx</div>
+        <div class="task-file">src/pages/weapons/WeaponDetailPage.tsx · WeaponSkillCard.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">武器圖鑑與詳情頁加「特種背包製作」badge</div>
+        <div class="task-name">武器圖鑑與詳情頁加「特種背包製作」badge　<span style="color:var(--accent-green)">✅</span></div>
         <div class="task-desc">
           條件：<code>upgrade?.station === 'specialBackpack'</code>。<br>
           <strong>必做，不是可選</strong>：熠光與裁決者數值完全相同、
@@ -408,7 +447,7 @@
         <div class="task-file">src/pages/weapons/WeaponsPage.tsx · WeaponDetailPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -416,7 +455,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; 背包圖鑑：合併列表與正交 facet</div>
       <div class="task-group-meta">src/pages/backpacks/BackpacksPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -428,12 +467,17 @@
           投影條目的 type 由 <code>upgrade.fusedBackpackId</code> 查 backpacks 取得（<strong>不存 type 欄位</strong>），讓它在「出力」分類下也找得到。<br>
           <span style="color:var(--accent-red)">⚠ 不可</span>新增 <code>BackpackType.Composite</code>——
           要並列的 5 個背包分屬 5 種不同 type，做完反而更孤立，且爬蟲會用 API 值覆寫 <code>type</code>。<br>
-          計數（「共 N 件背包」「顯示 X / Y」）改吃合併陣列；搜尋範圍加 <code>skills[].description</code>。
+          計數（「共 N 件背包」「顯示 X / Y」）改吃合併陣列；搜尋範圍加 <code>skills[].description</code>。<br>
+          <span style="color:var(--accent-green)">✅ 已完成（2026-07-24）</span>：facet 打開實測
+          <strong>25 項 = 22 SS 背包 + 3 複合武器</strong>（裁決者／糖衣毀滅者／天燼審判），與遊戲內清單一致；
+          facet 關閉時行為與現況完全相同。type 投影：裁決者顯示「出力」（查 fusedBackpackId 60102405），
+          待實機的 2 把優雅降級為無 type。armor 篩選用 <code>weaponArmorTypes</code>（mechRestriction→英文 armor key，
+          <strong>不涉 SimulatorPage 的 EN→ZH</strong>）。未新增 <code>BackpackType.Composite</code>。
         </div>
         <div class="task-file">src/pages/backpacks/BackpacksPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -447,26 +491,33 @@
           （全庫零 import、規則不一致），別誤當可複用元件。<br>
           卡片點擊 → <code>navigate('/weapons/' + id)</code>；浮窗底部加「查看武器詳情 →」
           與一行「特種背包製作產物 · 衍生自 熠光」+「融合自 出力強化背包·首攻」（<strong>純文字不給連結</strong>，
-          待 <code>/backpacks/:id</code> 另案上線後再升級為連結）。
+          待 <code>/backpacks/:id</code> 另案上線後再升級為連結）。<br>
+          <span style="color:var(--accent-green)">✅ 已完成（2026-07-24）</span>：weapon 分支卡片用 <code>WeaponIcon</code>、
+          技能圖示用 <code>WeaponSkillMiniIcon</code>（直接吃 <code>iconLocal</code> 完整路徑，避開背包側 <code>/images/skills/</code> 陷阱）；
+          卡片黃邊區隔、點擊 <code>navigate('/weapons/'+id)</code>；浮窗顯示「衍生自 母武器」＋「融合自 背包」（有 fusedBackpackId 才顯示，否則「融合背包待確認」）。未碰死碼 <code>BackpackSkillCard</code>。
         </div>
         <div class="task-file">src/pages/backpacks/BackpacksPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">決定 weapons 的載入時機（讀取量取捨）</div>
+        <div class="task-name">決定 weapons 的載入時機（讀取量取捨）　<span style="color:var(--accent-green)">✅ 選 lazy</span></div>
         <div class="task-desc">
           加 <code>useWeapons()</code> 後，冷快取新訪客直接落地 <code>/backpacks</code>
           會多付約 <strong>169 筆 doc read</strong>（之後走 localStorage）。<br>
           若在意免費額度，改成點「特種背包製作」facet 時才 lazy <code>ensureLoaded(['weapons'])</code>。
-          <strong>此為有意識的取捨，須明確擇一並在 PR 說明。</strong>
+          <strong>此為有意識的取捨，須明確擇一並在 PR 說明。</strong><br>
+          <span style="color:var(--accent-green)">✅ 決策：走 lazy</span>——在 <code>BackpacksPage</code> 用
+          <code>useEffect(() =&gt; { if (craftFacet) ensureLoaded(['weapons']) }, [craftFacet])</code>
+          （<code>useCollections</code> 的 effect 依賴不含 keys，無法靠切 keys 觸發，故直接用 <code>useGameData().ensureLoaded</code>）。
+          <strong>一般訪客瀏覽背包零額外讀取，只有打開 facet 才載 weapons。</strong>
         </div>
-        <div class="task-file">src/contexts/GameDataContext.tsx（ensureLoaded）</div>
+        <div class="task-file">src/pages/backpacks/BackpacksPage.tsx（useGameData().ensureLoaded）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -481,12 +532,12 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 一次性 patch 腳本</div>
-      <div class="task-group-meta">scripts/patch-weapon-upgrade.mjs（<strong>進版控</strong>）</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">scripts/patch-weapon-upgrade.mjs（<strong>已建、進版控</strong>）</div>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">寫入 upgrade + bumpDataVersion('weapons')</div>
+        <div class="task-name">寫入 upgrade + bumpDataVersion('weapons')　<span style="color:var(--accent-green)">✅ base 完成</span></div>
         <div class="task-desc">
           用 <code>setDoc(doc(db,'weapons',id), { upgrade }, { merge: true })</code>——
           <strong><code>merge</code> 必須</strong>，否則整份覆寫會清掉其他欄位。
@@ -494,13 +545,25 @@
           <span style="color:var(--accent-red)">⚠ 一律用 doc id 當 key，絕不用 name</span>——
           <code>mechs/mech_037_裁決者</code> 是一台真實機甲，
           <code>patchVersions/base.ts</code> 名單裡的「裁決者」指的也是機甲。<br>
-          目標清單以 A-1 盤點結果為準（至少：<code>weapon_115_裁決者</code>、
-          <code>weapon_146_糖衣毀滅者</code>、天燼）。
+          目標清單以 A-1 盤點結果為準：42 條邊全部寫 <code>fromWeaponId</code>；
+          <code>station</code>/<code>fusedBackpackId</code> 為 3 把複合武器
+          （<code>weapon_115_裁決者</code>、<code>weapon_146_糖衣毀滅者</code>、天燼審判）。<br>
+          <span style="color:var(--accent-green)">✅ base 已寫入（2026-07-24）</span>：
+          腳本兩階段設計（base / <code>--composite</code>，皆 dry-run 預設 + merge 深層合併）。
+          base 42 筆 <code>fromWeaponId</code> 已 <code>--apply</code> 寫入 + <code>bumpDataVersion('weapons')</code>，
+          回讀驗證通過（含三層鏈 焚風·改→諸神黃昏→天燼審判、root 未誤寫）。寫入前有<strong>參照完整性檢查</strong>
+          （42/42 child+parent doc 皆存在）與歧義防呆。<br>
+          <span style="color:var(--accent-green)">✅ composite station 已寫入（2026-07-24）</span>：
+          把 <strong>station（推導事實，不需實機）</strong>與 <strong>fusedBackpackId（需實機）</strong>拆開——
+          <code>station='specialBackpack'</code> 已為 <strong>3 把全部</strong>寫入（複合 badge / B-2 facet 已點亮）；
+          <code>fusedBackpackId</code> 裁決者 <code>60102405</code> 已寫。<br>
+          <span style="color:var(--accent-yellow)">⏳ 僅剩 fusedBackpackId × 2 待實機</span>：糖衣毀滅者、天燼審判
+          確認後填 <code>COMPOSITE_FUSED</code> 再跑 <code>--composite --apply</code>，「融合自 ○○」那行即補上。
         </div>
         <div class="task-file">scripts/patch-weapon-upgrade.mjs（<strong>進版控</strong>）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
 
