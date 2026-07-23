@@ -55,7 +55,7 @@
     <div class="card purple">
       <div class="card-icon">📋</div>
       <h3>武器列表行</h3>
-      <p>武器名稱、大類/種類標籤、攻擊力、命中、暴擊、射程、重量、稀有度、是否專武。</p>
+      <p>武器名稱、大類/種類標籤、攻擊力、命中、暴擊、射程、重量、稀有度、是否專武。<br>複合武器（PLAN-031）加「特種背包製作」badge——因熠光與裁決者數值全同、連 icon 都共用，需視覺區隔。</p>
     </div>
     <div class="card blue">
       <div class="card-icon">✨</div>
@@ -100,8 +100,8 @@
     <tr><th>路由</th><td><code>/weapons/:id</code></td></tr>
     <tr><th>開發階段</th><td>Phase 2（PLAN-006）</td></tr>
     <tr><th>登入需求</th><td>不需要</td></tr>
-    <tr><th>資料來源</th><td>Firestore: weapons/{id}</td></tr>
-    <tr><th>相關計畫</th><td><a href="../../../05_階段性開發計畫/執行中/PLAN-006_武器詳情頁/計畫書.html" style="color:var(--accent-cyan);">PLAN-006 武器詳情頁</a></td></tr>
+    <tr><th>資料來源</th><td>Firestore: weapons/{id}；另讀 weapons（全部）建進階鏈索引；複合武器頁另 lazy 讀 backpacks（顯示融合背包名）</td></tr>
+    <tr><th>相關計畫</th><td><a href="../../../05_階段性開發計畫/執行中/PLAN-006_武器詳情頁/計畫書.html" style="color:var(--accent-cyan);">PLAN-006 武器詳情頁</a> · <a href="../../../05_階段性開發計畫/執行中/PLAN-031_複合武器歸類/計畫書.html" style="color:var(--accent-cyan);">PLAN-031 複合武器歸類（進階鏈）</a></td></tr>
   </table>
 
   <div class="sub-h" style="margin-top:24px;">頁面區塊</div>
@@ -135,6 +135,11 @@
       <div class="card-icon">⭐</div>
       <h3>專武資訊（isExclusive=true）</h3>
       <p>顯示對應機師名稱及連結（<code>exclusiveFor</code>）；技能區塊會額外呈現天賦強化 DiffHighlight，讓使用者直觀看到「有此專武時天賦的強化版本」。</p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">⚗️</div>
+      <h3>製作 · 進階關係（PLAN-031）</h3>
+      <p>「前置 ← 本武器 → 可進階為」進階鏈：由 <code>upgrade.fromWeaponId</code> 前端建正/反向索引（<code>buildUpgradeIndex</code>），覆蓋全站 42 條製作邊、皆可點擊互連。技能列表並標示「進階新增 / 融合技能」（母子武器技能名差集，即時計算）。<br>複合武器（<code>upgrade.station==='specialBackpack'</code>）額外顯示「特種背包製作」badge 與「融合自 ○○背包」（<code>fusedBackpackId</code> 查表；只在複合武器頁才載入 backpacks）。無 <code>upgrade</code> 值時整區不渲染。</p>
     </div>
     <div class="card green">
       <div class="card-icon">🔗</div>

@@ -34,14 +34,22 @@
     <tr><th>路由</th><td><code>/backpacks</code></td></tr>
     <tr><th>開發階段</th><td>Phase 2</td></tr>
     <tr><th>登入需求</th><td>不需要</td></tr>
-    <tr><th>資料來源</th><td>Firestore: backpacks（全部）</td></tr>
+    <tr><th>資料來源</th><td>Firestore: backpacks（全部）；打開「特種背包製作」facet 時才 lazy 讀 weapons（複合武器投影，PLAN-031）</td></tr>
+    <tr><th>相關計畫</th><td><a href="../../../05_階段性開發計畫/執行中/PLAN-031_複合武器歸類/計畫書.html" style="color:var(--accent-cyan);">PLAN-031 複合武器歸類（特種背包製作投影）</a></td></tr>
   </table>
 
   <div class="sub-h" style="margin-top:24px;">篩選功能</div>
   <div class="tech-row">
     <span class="tech-tag primary">依機甲限制（全部/輕甲/中甲/重甲）</span>
     <span class="tech-tag secondary">依效果類型</span>
+    <span class="tech-tag">依稀有度</span>
     <span class="tech-tag">關鍵字搜尋</span>
+    <span class="tech-tag" style="border-color:var(--accent-yellow);color:var(--accent-yellow);">特種背包製作（正交 facet · PLAN-031）</span>
+  </div>
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🧩 特種背包製作正交 facet（PLAN-031）</strong>
+    打開後 = 22 個 SS 特種背包 ＋ 複合武器（裁決者等）投影，與遊戲內【特種背包製作】清單一致；
+    可與稀有度/類型/裝備<strong>交叉</strong>，關閉時行為與現況完全相同。背包側判定全 derived（<code>rarity==='SS'</code>），不存欄位。
   </div>
 </section>
 
@@ -59,6 +67,11 @@
       <div class="card-icon">✨</div>
       <h3>技能效果展示</h3>
       <p>技能名稱、完整描述、可量化加成數值（增傷/爆率/爆傷/命中）、特殊效果說明。</p>
+    </div>
+    <div class="card" style="border-color:var(--accent-yellow);">
+      <div class="card-icon">🗡️</div>
+      <h3>複合武器投影卡片（PLAN-031）</h3>
+      <p>打開「特種背包製作」facet 時，複合武器（資料形狀是武器）以投影條目並列。<strong>務必用 <code>WeaponIcon</code></strong>（背包側圖示元件會 404 → 顯示「背」佔位字）；卡片黃邊區隔、點擊導向 <code>/weapons/:id</code>；type 由 <code>fusedBackpackId</code> 查表投影（如裁決者→出力）。浮窗顯示「衍生自 母武器」「融合自 ○○背包」與「查看武器詳情 →」。</p>
     </div>
   </div>
 
