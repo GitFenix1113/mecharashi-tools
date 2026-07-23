@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>執行中計畫 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <span class="current">執行中</span>
+  </div>
+</nav>
+
+<header class="hero yellow">
+  <div class="hero-badge yellow">◆ Active Plans</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    執行中<span style="-webkit-text-fill-color:var(--text-secondary);">進行中的開發計畫</span>
+  </h1>
+  <p class="hero-sub">目前正在規劃或執行的功能改進與架構調整</p>
+</header>
+
+<main class="container">
+<section class="section">
+  <div class="section-label yellow">Plans</div>
+  <div class="section-title">計畫列表</div>
+  <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-035 · 背包分類階層</h3>
+      <p>依遊戲背包合成階層把 180 件背包分成<b>素材(A/B) / 基礎(S) / 複合(S+) / 特種(SS)</b>四層——預設隱藏沒人用的 A/B 素材、補上「<b>強化 vs 干擾</b>」第二軸與變體篩選。實測 rarity 與階層一對一，且 <code>type</code> 欄位只編碼「基礎功能軸」、「強化/干擾」只存在名字字串（出力強化背包 vs 出力干擾背包 同 <code>type=PowerAdd</code>），故第二軸須靠 name 解析。階層與軸皆從既有資料 derive，<b>零資料改動</b>；先驗證够用再決定是否結構化。延伸的「背包合成關係鏈」是 PLAN-031 武器 upgrade 的背包版，列為可選後續。前置 PLAN-031（同動 BackpacksPage）已 commit。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-035_背包分類階層/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-035_背包分類階層/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-034 · 神驅算力 BUFF 階覆寫層</h3>
+      <p>PLAN-021 讓艾達的<b>天賦</b>正文隨神經驅動算力改寫，但她的<b>技能</b>也引用凝勢，而凝勢的階同樣隨 γ2 提升（≥10 → II、≥13 → III）。<code>PilotSkill</code> 沒有對應機制，於是點動算力時天賦跟著變、技能不動——<b>斷裂引用</b>。根因是「凝勢是第幾階」在系統裡存了三份互不連通（正文字面／<code>descriptionRefs.level</code>／<code>ndVariants.minSum</code>），照 PLAN-021 模式複製到技能層只會變成第四第五份，且 base 在 <code>pilotSkills</code>、副本在 <code>pilots</code>，跨集合跨後台分頁必然漂移。本計畫改以<b>階不是常數而是配裝狀態的函數</b>建模：升階規則存在 <code>NeuralDriveAbility.buffUpgrades</code>（<code>id@N</code>），<b>門檻沿用它掛載的那一級</b>——實測艾達 γ2 Lv4/5/6 minSum=10/13/16 與其變體 100% 吻合，門檻本來就在資料裡，不需新欄位。機師頁算出單一 <code>Map&lt;buffId, {level,name}&gt;</code> 經 context 餵給 <code>RefChip</code>，全頁一張表 → 天賦說 III 而技能說 I 結構上不可能。設計上兩個關鍵防線：換字條件必須是「<b>確實抬升</b>」而非「有值」（否則 <code>BuffLevel.name</code> 一填就靜默改寫全站近 100 個 chip 的字面），降級必須<b>以家族為單位原子化</b>（否則會產生「獲得2層[凝勢Ⅰ]，可疊加7層」這種字面與數字自相矛盾）。另修 10 筆現在就查不到浮窗的斷鏈 <code>refId</code>（含凝勢本身漏了 <code>buff_</code> 前綴）與 12 筆缺 <code>level</code>——此批可獨立出貨。已知無解限制：覆寫粒度是「家族×整頁」，分不清敵我，故硬性限縮只准用於自身增益家族。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-034_神驅算力BUFF階覆寫層/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-034_神驅算力BUFF階覆寫層/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-033 · 後台編輯視窗加寬</h3>
+      <p>後台編輯彈窗固定 672px（<code>AdminModal</code> 的 <code>max-w-2xl</code>），12 個分頁中有 10 個共用這層殼；維護者只在 PC 上作業，等於為不存在的手機情境留白大半螢幕。高度早已是 <code>max-h-[90vh]</code>，問題純在寬度。但掃描後發現<b>單純加寬是負優化</b>——<code>.input-field</code> 為 <code>width:100%</code>，且 59 處格線有 58 處是固定欄數，多出的寬度會全變成胖輸入框，排數一排都沒少。故加寬（A）與格線改造（B）綁定交付。B 原訂用階梯式容器查詢，開工後改為 <b>CSS <code>auto-fill</code></b>：階梯解不掉「欄位數本來就少」的區塊（射程頁只有 2 個欄位，再多斷點也排不滿），而 auto-fill 排不滿就留白、不把空間分給現有欄位；且它量的是元素自身寬度，窄版彈窗與巢狀卡片自動得到正確欄數，校準從「35 處各配階梯」簡化為調一個數字。過程中另拆掉一顆雷：容器查詢的 <code>contain:layout</code> 會使彈窗成為 <code>position:fixed</code> 子孫的 containing block，將打壞六個編輯器共用的 IconPicker 全螢幕浮層。寬度經互動示範實測由 80% 上修為 <b>90vw</b>。四個大編輯器的 Tab 版面重構（C）已納入範圍但延後。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-033_後台編輯視窗加寬/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-033_後台編輯視窗加寬/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card pink">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-032 · 武器技能引用化</h3>
+      <p>82 把武器內散落著 170 份技能拷貝，實際上只有 124 個相異技能（重複率 27.1%），而且已經開始漂移——「起爆」在凱旋·改與獵器上是同一個官方技能，文字卻一份補了 PLAN-019 方括號、一份沒有。本計畫沿用 PLAN-004 已驗證的漸進路徑（雙格式 union + 相容層 + 兩階段 flip），把武器技能收進既有技能庫共用。實測發現該集合早已不是「機師的技能」而是全站技能字典（84% 的 skill 引用目標無任何機師持有，維護者甚至已自行放入兩個武器技能），故<b>不另開集合</b>、改用 domain 欄位分類、後台同頁篩選。使用者可見行為完全不變，換來的是「改一處全站生效」。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-032_武器技能引用化/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-032_武器技能引用化/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-031 · 武器製作關係層</h3>
+      <p>「裁決者」是用背包圖紙在【特種背包製作】做出來的，玩家卻在背包圖鑑找不到它。查核發現官方資料層其實把它放在武器表，「特種背包製作」是製作台位置而非裝備分類——所以這是呈現問題，不是儲存歸類問題。進一步推導發現更大的結構：S+ 武器是 SS 武器的材料，技能會被繼承，全站可推出 <b>41 條製作關係（0 歧義）</b>，而「裁決者←熠光」只是其中的 2 條同稀有度邊。因此本計畫用單一 <code>upgrade</code> 關係同時表達武器進階與複合製作，讓武器頁看得見前置與後續、複合武器在背包圖鑑正交投影並列。零文件搬移、零 refType 變更、單一 bump、可完整回退，並立下「跨界實體依資料形狀決定歸屬」的架構判準。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-031_複合武器歸類/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-031_複合武器歸類/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-029 · Cloudflare 化與 App Check 退場</h3>
+      <p>用 Cloudflare 一層邊緣基建接手「反白嫖 + 反爬 + 加速」，讓 App Check／reCAPTCHA 退場。前端不再直連 Firestore，公開遊戲資料改走 Cloudflare Worker 代理、Firestore 規則收成 read:if false（比 App Check 硬）；用戶資料維持直連 Auth。反爬用 CF 現成能力（封阿里雲／騰訊雲機房 ASN + 限流），順帶盡量改善中國讀取（不碰 ICP）。分階段灰度、每步可回退。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-029_Cloudflare化與AppCheck退場/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-029_Cloudflare化與AppCheck退場/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card pink">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-026 · 召喚單位展示</h3>
+      <p>部分機師的特殊召喚單位（如薩普莉婭的咕咕）有自己的技能、型態與裝備，本質是「迷你機兵」。建立獨立 summons 集合並在機師頁以條件式分頁展示；同時新增 summon refType，讓天賦正文的 [咕咕] 接進 PLAN-019 引用層變成可懸停、可點開的實體。資料無外部來源，走後台手動維護。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-026_召喚單位展示/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-026_召喚單位展示/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-019 · 實體引用與模擬基礎（總綱）</h3>
+      <p>【總綱 Master Plan】把「描述文字中對其他實體的引用」（如天賦內 [虛粒子形態]/[激發能]/[粒子爆發]）一般化為型別化、可解析、可模擬的關聯層。四層抽象：EntityRef 引用層、BUFF/形態模擬可達性圖、BOSS/關卡資料模型、表單式後台 + 查詢量控制。統合 PLAN-001/003/004/005 為子計畫，並拆出 019-A~E。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-019_實體引用與模擬基礎_總綱/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-019_實體引用與模擬基礎_總綱/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-010 · 攻略系統</h3>
+      <p>以 TipTap WYSIWYG 編輯器建立攻略 CMS，支援圖文並茂內容與 Firebase Storage 圖片上傳（Phase A）。Phase B 擴充自訂 EntityReferenceNode，可嵌入遊戲資料庫物件（機師/機甲/武器卡片），前台局部 Drawer 展開詳情，不跳頁。管理員寫、玩家讀。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-010_攻略系統/計畫書.html">→ 計畫書</a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · 執行中
+</footer>
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

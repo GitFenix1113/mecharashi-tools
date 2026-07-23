@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-002 機師詳情頁面 UX 改版 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.layout-box {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 2;
+  color: #e6edf3;
+}
+.layout-box .zone-a { color: #ff7b72; }
+.layout-box .zone-b { color: #79c0ff; }
+.layout-box .zone-c { color: #a5d6ff; }
+.layout-box .zone-d { color: #e3b341; }
+.layout-box .zone-e { color: #7ee787; }
+.layout-box .zone-f { color: #d2a8ff; }
+.layout-box .cm { color: #8b949e; }
+
+.tag {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+}
+.tag.orange { background: rgba(255,107,43,0.15); color: var(--accent-orange); border: 1px solid rgba(255,107,43,0.3); }
+.tag.green  { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.tag.cyan   { background: rgba(6,182,212,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(6,182,212,0.3); }
+.tag.blue   { background: rgba(59,130,246,0.15); color: var(--accent-blue);   border: 1px solid rgba(59,130,246,0.3); }
+.tag.red    { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+.tag.yellow { background: rgba(234,179,8,0.15);  color: var(--accent-yellow); border: 1px solid rgba(234,179,8,0.3); }
+
+.wireframe {
+  background: var(--bg-dark);
+  border: 1px solid var(--border-accent);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 16px 0;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.wf-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.wf-block {
+  background: var(--bg-card);
+  border: 1px dashed var(--border-accent);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.4;
+}
+.wf-block.accent-o { border-color: rgba(255,107,43,0.5); color: var(--accent-orange); }
+.wf-block.accent-c { border-color: rgba(6,182,212,0.5);  color: var(--accent-cyan); }
+.wf-block.accent-g { border-color: rgba(34,197,94,0.5);  color: var(--accent-green); }
+.wf-block.accent-p { border-color: rgba(168,85,247,0.5); color: var(--accent-purple); }
+.wf-block.accent-y { border-color: rgba(234,179,8,0.5);  color: var(--accent-yellow); }
+
+.nd-grid-demo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 8px;
+  width: 360px;
+  height: 220px;
+}
+.nd-cell {
+  background: var(--bg-card);
+  border: 1px dashed var(--border-accent);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-family: 'Orbitron', sans-serif;
+  color: var(--accent-purple);
+  font-weight: 700;
+}
+
+.scope-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+.scope-table th {
+  text-align: left; padding: 9px 14px;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--accent-cyan);
+  border-bottom: 2px solid var(--border-accent);
+}
+.scope-table td { padding: 8px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 13px; }
+.scope-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--accent-orange); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-002 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge cyan">◆ PLAN-002</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    機師詳情頁面 UX 改版<span style="-webkit-text-fill-color:var(--text-secondary);">PilotDetailPage Layout · Radar · NeuralDrive Grid · ExclusiveWeapon</span>
+  </h1>
+  <p class="hero-sub">壓縮六維雷達圖佔用空間，重組 Hero 三欄布局，讓 1920×1080 下主要資訊一屏呈現；神經驅動改為 2×2 四象限；天賦欄位旁新增專武面板</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-002</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-05-17</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value cyan">UI · Hook · Component</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MEDIUM</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">已完成</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">目標解析度</div>
+      <div class="meta-value green">1920 × 1080（首要）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+  <div class="section-desc">現有 PilotDetailPage 在 1920×1080 下的 UX 缺陷，以及資訊呈現不完整的問題。</div>
+
+  <div class="problem-block">
+    <strong>問題一：六維雷達圖佔版面過大</strong><br>
+    六維屬性卡片為全寬獨立區塊（<code>mb-6</code>），高度約 350px，導致 Hero 資訊、雷達圖、技能標籤頁三者無法同時出現在 1080px 視窗中，使用者一進頁面便需要滾動才能看到天賦與技能。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：Hero 欄位使用空間低效</strong><br>
+    Hero 為兩欄（肖像 + 資訊），右側空間浪費。六維圖可移至 Hero 右側，節省整頁的垂直高度，讓技能標籤頁大幅往上提升。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：天賦「最大強化效果」需要點擊展開</strong><br>
+    使用 <code>&lt;details&gt;/&lt;summary&gt;</code> 折疊，玩家必須逐一展開才能看到。天賦最大強化效果是核心資訊，應直接顯示，不需要點擊。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題四：無專武資訊</strong><br>
+    天賦欄位旁無專屬武器面板。當機師擁有專屬武器時，玩家需自行前往武器頁查找。<code>Weapon</code> 型別已有 <code>isExclusive / exclusiveFor</code> 欄位，資料已備齊，僅缺前端呈現。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題五：神經驅動版型與遊戲介面落差大</strong><br>
+    現行為垂直 list，遊戲內為四象限格局（α 左上、β 左下、γ1 右上、γ2 右下）。垂直 list 無法讓玩家快速對應到遊戲中的芯片填入位置，降低查詢效率。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+  <div class="section-desc">針對上述問題的版型與互動設計方向。</div>
+
+  <div class="decision-block">
+    <strong>決策一：Hero 改為三欄佈局</strong><br>
+    <code>grid-cols-[160px_1fr_auto]</code> — 左欄固定肖像（160px 寬），中欄彈性顯示名稱 / 資訊 / AP 徽章，右欄放置縮小版雷達圖（260px 寬）。此布局在 1920×1080 下，整個 Hero 區域可控制在 240px 高度以內。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：移除獨立六維卡片，雷達圖嵌入 Hero 右欄</strong><br>
+    刪除原本的 <code>&lt;div class="bg-bg-card ... mb-6"&gt;</code> 全寬六維區塊。<code>RadarChart</code> 縮小 SVG viewBox 至 <code>260×220</code>，作為 Hero 右欄元件直接渲染。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：天賦「最大強化效果」直接展示</strong><br>
+    移除 <code>&lt;details&gt;</code>，改為在 <code>descriptionMax</code> 存在且不同於 <code>description</code> 時，直接在描述文字下方以帶色標籤 <code>最大強化</code> 分隔後顯示。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：天賦標籤頁分左右兩欄</strong><br>
+    天賦列表（左側 ~60% 寬）＋ 專武面板（右側 ~40% 寬，固定黏在右）。未查詢到專武時顯示「暫無專屬武器」佔位卡片。
+    Hook：新增 <code>usePilotExclusiveWeapon(pilotName)</code> — 呼叫 <code>getWeapons()</code> 後以 <code>w.exclusiveFor === pilotName</code> 過濾，回傳第一筆。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：神經驅動改為 2×2 四象限 Grid</strong><br>
+    <code>grid-cols-2 grid-rows-2</code>，依照遊戲介面對應位置：<br>
+    <code>nd[0]</code>（α）→ <code>row-1 col-1</code>（左上）<br>
+    <code>nd[1]</code>（β）→ <code>row-2 col-1</code>（左下）<br>
+    <code>nd[2]</code>（γ1）→ <code>row-1 col-2</code>（右上）<br>
+    <code>nd[3]</code>（γ2）→ <code>row-2 col-2</code>（右下）<br>
+    每格顯示區域名稱標頭、芯片槽資訊、激活階層列表（Lv / minSum / 效果文字）。
+  </div>
+</section>
+
+<!-- 版型示意圖 -->
+<section class="section">
+  <div class="section-label cyan">Wireframe</div>
+  <div class="section-title">版型示意（1920×1080）</div>
+  <div class="section-desc">以色塊標示各區域相對比例，並非精確像素。</div>
+
+  <div class="wireframe">
+    <!-- Row 0: Back link -->
+    <div class="wf-row">
+      <div class="wf-block" style="width:120px; height:24px; font-size:10px;">← 機師圖鑑</div>
+    </div>
+
+    <!-- Row 1: Hero 3-col -->
+    <div class="wf-row">
+      <div class="wf-block accent-o" style="width:160px; height:200px; flex-shrink:0;">
+        肖像<br>160×200
+      </div>
+      <div class="wf-block accent-c" style="flex:1; height:200px;">
+        名稱 / 全名<br>職業徽章<br>資訊格（勢力 / 駕照 / 駕駛等級 / 性別 / 身高 / 血型 / 附加）<br>AP 初始 ‧ 上限 ‧ 回復
+      </div>
+      <div class="wf-block accent-p" style="width:260px; height:200px; flex-shrink:0;">
+        六維雷達圖<br>260×200<br><small>SVG viewBox 縮小</small>
+      </div>
+    </div>
+
+    <!-- Row 2: Tabs -->
+    <div class="wf-row" style="margin-top:12px;">
+      <div class="wf-block accent-o" style="flex:1; height:36px;">天賦 (N)</div>
+      <div class="wf-block" style="flex:1; height:36px; color:var(--text-dim);">技能 (N)</div>
+      <div class="wf-block" style="flex:1; height:36px; color:var(--text-dim);">神經驅動 (N)</div>
+    </div>
+
+    <!-- Row 3: Tab content - 天賦 example -->
+    <div class="wf-row" style="height:420px;">
+      <div class="wf-block accent-o" style="flex:3; height:100%; align-items:flex-start; padding:12px; flex-direction:column; gap:8px; justify-content:flex-start;">
+        <div style="width:100%; background:rgba(255,107,43,0.08); border:1px solid rgba(255,107,43,0.2); border-radius:6px; padding:10px; text-align:left;">
+          [天賦圖示] 天賦名稱 &nbsp;<span style="font-size:10px; color:var(--text-dim)">被動技能</span><br>
+          <span style="color:var(--text-dim); font-size:10px;">描述文字……</span><br>
+          <span style="color:var(--accent-cyan); font-size:10px;">▶ 最大強化：最大強化描述文字……（直接顯示）</span>
+        </div>
+        <div style="width:100%; background:rgba(255,107,43,0.08); border:1px solid rgba(255,107,43,0.2); border-radius:6px; padding:10px; text-align:left; color:var(--text-dim); font-size:10px;">更多天賦 …</div>
+      </div>
+      <div class="wf-block accent-y" style="flex:2; height:100%; align-items:flex-start; padding:12px; flex-direction:column; gap:8px; justify-content:flex-start;">
+        <div style="color:var(--accent-yellow); font-size:11px; text-align:left; width:100%;">
+          專屬武器<br>
+          <hr style="border-color:rgba(234,179,8,0.2); margin:6px 0;">
+          <span style="font-size:10px; color:var(--text-secondary);">
+            名稱 / 類別 / 稀有度<br>
+            攻擊力 / 精度 / 暴擊值<br>
+            重量 / 觸發槽 / 效果槽<br>
+            <br>武器技能 (WeaponSkill[])：<br>
+            ‣ 技能名稱 — 描述
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wireframe" style="margin-top:16px;">
+    <p style="font-size:11px; color:var(--text-dim); margin-bottom:12px;">神經驅動標籤頁 — 2×2 四象限 Grid</p>
+    <div class="nd-grid-demo">
+      <div class="nd-cell" style="border-color:rgba(168,85,247,0.4);">α<br><small style="font-size:9px; color:var(--text-dim)">左上</small></div>
+      <div class="nd-cell" style="border-color:rgba(168,85,247,0.4);">γ1<br><small style="font-size:9px; color:var(--text-dim)">右上</small></div>
+      <div class="nd-cell" style="border-color:rgba(168,85,247,0.4);">β<br><small style="font-size:9px; color:var(--text-dim)">左下</small></div>
+      <div class="nd-cell" style="border-color:rgba(168,85,247,0.4);">γ2<br><small style="font-size:9px; color:var(--text-dim)">右下</small></div>
+    </div>
+  </div>
+</section>
+
+<!-- 技術規格 -->
+<section class="section">
+  <div class="section-label cyan">Technical</div>
+  <div class="section-title">技術規格</div>
+
+  <div class="section-title" style="font-size:16px;margin-top:24px;margin-bottom:12px;">1. Hero 三欄佈局（PilotDetailPage.tsx）</div>
+  <div class="layout-box">
+<span class="zone-a">{/* Hero Row: 3-col grid */}</span>
+&lt;div className="<span class="zone-b">grid grid-cols-[160px_1fr_auto] gap-6 mb-4 items-start</span>"&gt;
+  <span class="cm">{/* 左欄: 肖像，固定 160px，4:3 aspect */}</span>
+  &lt;div className="<span class="zone-b">w-40 h-52 bg-bg-card border border-border rounded-xl overflow-hidden flex-shrink-0</span>"&gt; … &lt;/div&gt;
+
+  <span class="cm">{/* 中欄: 資訊＋AP */}</span>
+  &lt;div className="<span class="zone-c">flex flex-col gap-2 min-w-0</span>"&gt;
+    <span class="cm">{/* class badge, h1, fullName, grid info rows, AP badges */}</span>
+  &lt;/div&gt;
+
+  <span class="cm">{/* 右欄: 縮小版雷達圖 */}</span>
+  &lt;div className="<span class="zone-d">w-64 flex-shrink-0</span>"&gt;
+    <span class="zone-a">&lt;SectionLabel&gt;</span>六維屬性<span class="zone-a">&lt;/SectionLabel&gt;</span>
+    &lt;RadarChart stats={pilot.stats} /&gt; <span class="cm">{/* SVG viewBox="0 0 260 220" */}</span>
+  &lt;/div&gt;
+&lt;/div&gt;
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:24px;margin-bottom:12px;">2. RadarChart 縮小（SVG viewBox）</div>
+  <div class="layout-box">
+<span class="cm">// 現有常數</span>
+<span class="zone-a">const CX = 150, CY = 140, R = 90</span>  <span class="zone-a">// viewBox "0 0 300 280"</span>
+
+<span class="cm">// 修改後（縮小 ~13%）</span>
+<span class="zone-e">const CX = 130, CY = 110, R = 75</span>  <span class="zone-e">// viewBox "0 0 260 220"</span>
+
+<span class="cm">// svg element</span>
+&lt;svg viewBox="<span class="zone-e">0 0 260 220</span>" className="w-full select-none"&gt;
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:24px;margin-bottom:12px;">3. usePilotExclusiveWeapon Hook（useFirestore.ts）</div>
+  <div class="layout-box">
+<span class="zone-a">export function usePilotExclusiveWeapon(pilotName: string | undefined)</span>: HookResult&lt;Weapon | null&gt; {
+  const [data, setData] = useState&lt;Weapon | null&gt;(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState&lt;Error | null&gt;(null)
+
+  useEffect(() =&gt; {
+    if (!pilotName) { setLoading(false); return }
+    setLoading(true)
+    getWeapons()
+      .then(weapons =&gt; {
+        const found = weapons.find(
+          w =&gt; w.isExclusive &amp;&amp; w.exclusiveFor === pilotName
+        )
+        setData(found ?? null)
+      })
+      .catch((e: unknown) =&gt; setError(e instanceof Error ? e : new Error(String(e))))
+      .finally(() =&gt; setLoading(false))
+  }, [pilotName])
+
+  return { data, loading, error }
+}
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:24px;margin-bottom:12px;">4. 天賦 descriptionMax 直接顯示</div>
+  <div class="layout-box">
+<span class="cm">// 移除 &lt;details&gt;/&lt;summary&gt;，改為直接渲染</span>
+{t.descriptionMax &amp;&amp; t.descriptionMax !== t.description &amp;&amp; (
+  &lt;div className="<span class="zone-e">mt-2 pt-2 border-t border-border/60</span>"&gt;
+    &lt;span className="<span class="zone-c">text-[10px] text-accent-cyan tracking-wider</span>"&gt;▶ 最大強化&lt;/span&gt;
+    &lt;p className="<span class="zone-c">text-xs text-text-dim leading-relaxed mt-1</span>"&gt;
+      {t.descriptionMax}
+    &lt;/p&gt;
+  &lt;/div&gt;
+)}
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:24px;margin-bottom:12px;">5. 天賦標籤頁：左右兩欄（天賦列表 + 專武面板）</div>
+  <div class="layout-box">
+{activeSkillTab === '<span class="zone-a">天賦</span>' &amp;&amp; (
+  &lt;div className="<span class="zone-b">flex gap-4 items-start</span>"&gt;
+    <span class="cm">{/* 天賦列表：flex-1 */}</span>
+    &lt;div className="<span class="zone-b">flex-1 min-w-0 space-y-3</span>"&gt;
+      {pilot.talents.map((t, i) =&gt; ( … ))}
+    &lt;/div&gt;
+
+    <span class="cm">{/* 專武面板：固定 280px 寬 */}</span>
+    &lt;div className="<span class="zone-d">w-72 flex-shrink-0</span>"&gt;
+      &lt;ExclusiveWeaponPanel pilotName={pilot.name} /&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+)}
+  </div>
+
+  <div class="section-title" style="font-size:16px;margin-top:24px;margin-bottom:12px;">6. 神經驅動 2×2 Grid</div>
+  <div class="layout-box">
+<span class="cm">// 名稱→位置映射（固定順序 α / β / γ1 / γ2）</span>
+const ND_ORDER = ['α', 'β', 'γ1', 'γ2']
+const ND_POSITION_CLASS: Record&lt;string, string&gt; = {
+  'α':  '<span class="zone-e">row-start-1 col-start-1</span>', <span class="cm">// 左上</span>
+  'β':  '<span class="zone-e">row-start-2 col-start-1</span>', <span class="cm">// 左下</span>
+  'γ1': '<span class="zone-e">row-start-1 col-start-2</span>', <span class="cm">// 右上</span>
+  'γ2': '<span class="zone-e">row-start-2 col-start-2</span>', <span class="cm">// 右下</span>
+}
+
+&lt;div className="<span class="zone-b">grid grid-cols-2 grid-rows-2 gap-3</span>"&gt;
+  {ND_ORDER.map(zoneName =&gt; {
+    const nd = (pilot.neuralDrive ?? []).find(d =&gt; d.name === zoneName)
+    const posClass = ND_POSITION_CLASS[zoneName]
+    return (
+      &lt;NeuralDriveZoneCard key={zoneName} nd={nd} zoneName={zoneName} className={posClass} /&gt;
+    )
+  })}
+&lt;/div&gt;
+  </div>
+</section>
+
+<!-- 影響文件 -->
+<section class="section">
+  <div class="section-label orange">Impact</div>
+  <div class="section-title">影響範圍</div>
+
+  <div class="doc-grid">
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-orange)">TypeScript · React</div>
+      <h4>src/pages/PilotDetailPage.tsx</h4>
+      <p>主要修改檔案。Hero 三欄重構、移除全寬六維卡片、天賦左右兩欄、descriptionMax 直接顯示、神經驅動 2×2 Grid。</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-orange)">TypeScript · Hook</div>
+      <h4>src/hooks/useFirestore.ts</h4>
+      <p>新增 <code>usePilotExclusiveWeapon(pilotName)</code>：呼叫 getWeapons() 後過濾 isExclusive &amp;&amp; exclusiveFor === pilotName。</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-cyan)">Component（新增）</div>
+      <h4>ExclusiveWeaponPanel（PilotDetailPage.tsx 內）</h4>
+      <p>獨立 function component，接收 pilotName，內部使用 usePilotExclusiveWeapon hook，顯示武器卡片或「暫無專屬武器」。</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-cyan)">Component（重構）</div>
+      <h4>RadarChart（PilotDetailPage.tsx 內）</h4>
+      <p>SVG viewBox 由 300×280 縮至 260×220，CX/CY/R 對應調整，外部寬度由 <code>max-w-xs mx-auto</code> 改為 <code>w-full</code>。</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-green)">Component（新增）</div>
+      <h4>NeuralDriveZoneCard（PilotDetailPage.tsx 內）</h4>
+      <p>接收 nd (NeuralDrive | undefined) 及 zoneName。nd 不存在時顯示空佔位卡片（灰色 dashed border）。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 未列入範圍 -->
+<section class="section">
+  <div class="section-label red">Out of Scope</div>
+  <div class="section-title">未列入本計畫範圍</div>
+  <div class="section-desc">以下項目需另立計畫或在後續 Phase 處理。</div>
+
+  <div class="data-table-wrap">
+    <table class="scope-table">
+      <tr><th>項目</th><th>排除原因</th></tr>
+      <tr>
+        <td>行動版（&lt;768px）布局</td>
+        <td>三欄在小螢幕需 fallback 邏輯，列入後續響應式優化計畫</td>
+      </tr>
+      <tr>
+        <td>技能 / 天賦 effects[] 數值顯示</td>
+        <td>PLAN-001 完成後才有結構化數值可顯示，本計畫僅調整版型</td>
+      </tr>
+      <tr>
+        <td>機師比較頁</td>
+        <td>新功能，需獨立計畫</td>
+      </tr>
+      <tr>
+        <td>武器詳細卡內的「關聯機師」反向連結</td>
+        <td>WeaponDetailPage 範疇，非本頁</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · PLAN-002 · 計畫書 —
+  <a href="進度表.html" style="color:var(--accent-cyan);text-decoration:none;">→ 查看進度表</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

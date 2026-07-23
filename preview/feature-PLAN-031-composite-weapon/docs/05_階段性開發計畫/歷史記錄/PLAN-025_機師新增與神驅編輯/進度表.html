@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-025 機師後台新增與神經驅動編輯 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-025 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-025</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> 機師後台新增與神經驅動編輯</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-07-03</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label green">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">9</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">9</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-green);">9 / 9</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    管理員能在後台自建新機師並完整編輯神經驅動分區，官方資料更新前即可搶先補齊站內資料；
+    手建資料受 <code>manual</code> 旗標保護，不會被日後的爬蟲補丁覆寫。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">機師新增與 manual 保護</div>
+  <div class="section-desc">讓「機師管理」分頁能新增機師，並在型別與爬蟲兩端建立 manual 保護，避免手建資料被覆寫。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 型別：Pilot 新增 manual 旗標</div>
+      <div class="task-group-meta">src/types/pilot.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">加入 <code>Pilot.manual?: boolean</code> 並同步資料模型文件</div>
+        <div class="task-desc">
+          比照 <code>PilotSkill.manual</code> / <code>PilotTalent.manual</code> 撰寫註解（手動新增機師、爬蟲補丁不覆寫 / 刪除）。
+          依 CLAUDE.md 規則 2 同步 <code>docs/02_技術文件/02_資料模型/pilots.html</code>。
+        </div>
+        <div class="task-file">src/types/pilot.ts · docs/02_技術文件/02_資料模型/pilots.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 新機師預設值工廠</div>
+      <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">makeDefaultPilot(id, name)</div>
+        <div class="task-desc">
+          回傳空白機師：六維 <code>stats</code> 全 0、<code>ap</code> 合理預設、<code>statsBase:{}</code>、
+          <code>apBase</code> 複製 <code>ap</code>、<code>profile</code> 空（<code>additionalInfo:{}</code>）、
+          <code>talents:[]</code>、<code>skills:[]</code>、<code>neuralDrive:[]</code>、<code>manual:true</code>。
+        </div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 「＋ 新增機師」對話框</div>
+      <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">接 useNewItemCreation + NewItemDialog（deriveMode）</div>
+        <div class="task-desc">
+          輸入名稱 → <code>makeEntityId('pilot', name)</code> 生成 <code>pilot_&lt;中文名&gt;</code>；
+          建立前 <code>docExists('pilots', id)</code> 撞名檢查（導引去編輯既有項）。
+          建立後直接開啟 <code>PilotEditPanel</code> 進入編輯。複用 SkillAdmin / NeuralDriveAdmin 的相同流程。
+        </div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 爬蟲補丁保護 manual 機師</div>
+      <div class="task-group-meta">scripts/scrape-pilots-v3.js</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補丁迴圈跳過 existing.manual === true</div>
+        <div class="task-desc">
+          在比對迴圈起始處判斷：若 Firestore 既有機師帶 <code>manual:true</code>，整筆跳過不補丁，
+          並於報告輸出計數（比照 idFormatSkillPilots / idFormatNdPilots 的提示寫法）。
+        </div>
+        <div class="task-file">scripts/scrape-pilots-v3.js</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">神經驅動編輯器</div>
+  <div class="section-desc">在機師編輯面板新增「神經驅動」分頁，做分區 / 插槽 / 各級門檻的結構編輯，並以下拉連結能力庫。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; PilotEditPanel 新增「神經驅動」分頁</div>
+      <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">擴充 PilotEditTab 與 tab 列</div>
+        <div class="task-desc">
+          在 <code>PILOT_EDIT_TABS</code> 加入 <code>neuralDrive</code>，掛載 <code>PilotNeuralDriveTab</code>，
+          並在標頭「神經驅動 N」計數改為可編輯提示。ensureLoaded 需含 <code>neuralDriveAbilities</code>。
+        </div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 分區增刪與基本欄位</div>
+      <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">PilotNeuralDriveTab — 分區清單</div>
+        <div class="task-desc">
+          新增 / 刪除 / 排序分區（<code>NeuralDrive</code>），編輯 <code>name</code>（如 γ1/γ2）與 <code>icon</code>。
+          分區名同時作為天賦 <code>ndVariants.zone</code> 的來源（已由 PilotEditPanel 傳入 zones）。
+        </div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 分區插槽 slots 編輯</div>
+      <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">芯片插槽字串陣列編輯</div>
+        <div class="task-desc">
+          <code>slots: string[]</code>（如「插槽一：突擊芯片」）的增刪與文字編輯。
+          前台 <code>SlotChips</code> 已依芯片類型上色，需維持字串格式與其解析一致。
+        </div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 各級 levels 與能力庫引用</div>
+      <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">level / minSum / abilityId 編輯</div>
+        <div class="task-desc">
+          每個分區的 <code>levels[]</code>：增刪級、編 <code>level</code> 與 <code>minSum</code>（算力門檻），
+          並以搜尋下拉從 <code>neuralDriveAbilities</code> 選 <code>abilityId</code>（複用 SkillRefPicker 的挑選模式）。
+          存檔採 PLAN-023 新格式（level 只留 abilityId 引用，不回寫嵌入欄位）。
+        </div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-5 &nbsp; 未連結能力提示與引導</div>
+      <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">能力庫查無 abilityId 時的提示</div>
+        <div class="task-desc">
+          下拉查無或某級未連結時，顯示「請先到『神經驅動』分頁建立能力」提示；
+          並在解析（<code>buildNdAbilityMap</code>）查無 abilityId 時於列上標紅，避免夥伴誤存空引用。
+        </div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-025 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>
