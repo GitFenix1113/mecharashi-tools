@@ -179,15 +179,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">10</div>
+      <div class="summary-num" style="color:var(--accent-green)">14</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">2</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">2</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -199,10 +199,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-yellow);">10 / 14 · 進階鏈＋背包投影 facet 已上線 live；剩 docs／履歷／commit 與 2 筆實機</span>
+      <span style="color:var(--accent-green);">14 / 14 · 全數完成（3 把複合武器 fusedBackpackId 已實機確認寫入）</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 71%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -245,7 +245,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; 進階鏈推導腳本</div>
       <div class="task-group-meta">scripts/derive-weapon-upgrade.mjs（<strong>已建、進版控</strong>）</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -282,8 +282,9 @@
           4 個已知正解回歸抽查全過（<code>夜魘·改→終末之嘆</code>、<code>炬塔·改→熠光</code>、
           <code>熠光→裁決者</code>、<code>草莓通心粉→糖衣毀滅者</code>）。
           「<strong>天燼審判</strong>」（浮游炮系，SS，母＝諸神黃昏）<strong>確認已在 live</strong>，無須重抓。<br>
-          <span style="color:var(--accent-yellow)">⏳ 仍待實機確認（C-1 前置）</span>：
-          <strong>糖衣毀滅者、天燼審判 的 <code>fusedBackpackId</code></strong>。<br>
+          <span style="color:var(--accent-green)">✅ 實機確認完成（2026-07-24）</span>：
+          <strong>糖衣毀滅者、天燼審判 的 <code>fusedBackpackId</code> 皆為 <code>60102405</code>（出力強化背包·首攻）</strong>，
+          與裁決者相同；三把已寫入 live 並驗證（詳情頁「融合自 出力強化背包·首攻」正確顯示）。<br>
           <strong>資料層無法反推</strong>：實測融合技能 buffId <code>600433</code> 由 先驅者背包／續火者背包 帶，
           而裁決者確認正解 <code>60102405 出力強化背包·首攻</code>（S+ / <code>PowerAdd</code>）<strong>反而不含 600433</strong>
           → buffId 只能當「是複合武器」判別式，<strong>不能識別來源背包</strong>，故只能實機。<br>
@@ -294,7 +295,7 @@
         <div class="task-file">人工 · 對照遊戲內製作介面</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -533,7 +534,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 一次性 patch 腳本</div>
       <div class="task-group-meta">scripts/patch-weapon-upgrade.mjs（<strong>已建、進版控</strong>）</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -557,13 +558,14 @@
           把 <strong>station（推導事實，不需實機）</strong>與 <strong>fusedBackpackId（需實機）</strong>拆開——
           <code>station='specialBackpack'</code> 已為 <strong>3 把全部</strong>寫入（複合 badge / B-2 facet 已點亮）；
           <code>fusedBackpackId</code> 裁決者 <code>60102405</code> 已寫。<br>
-          <span style="color:var(--accent-yellow)">⏳ 僅剩 fusedBackpackId × 2 待實機</span>：糖衣毀滅者、天燼審判
-          確認後填 <code>COMPOSITE_FUSED</code> 再跑 <code>--composite --apply</code>，「融合自 ○○」那行即補上。
+          <span style="color:var(--accent-green)">✅ fusedBackpackId 全數寫入（2026-07-24）</span>：站長實機確認
+          糖衣毀滅者、天燼審判 皆為 <code>60102405</code>（出力強化背包·首攻，與裁決者相同）；
+          <code>COMPOSITE_FUSED</code> 已填、<code>--composite --apply</code> 已跑、回讀與詳情頁「融合自」皆驗證通過。
         </div>
         <div class="task-file">scripts/patch-weapon-upgrade.mjs（<strong>進版控</strong>）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
