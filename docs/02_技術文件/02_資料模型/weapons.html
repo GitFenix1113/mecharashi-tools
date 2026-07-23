@@ -262,7 +262,29 @@
       <tr><td>&nbsp;├ buffIds[]</td><td>string[]</td><td>觸發的 Buff ID 列表<br><small style="color:var(--text-dim)">API: PassiveSkill[].BufCarried（斜線分隔字串）→ split('/').filter(Boolean)</small></td></tr>
       <tr><td>&nbsp;├ enhancesTalentName</td><td>string?</td><td>加強的特定機師天賦名稱（專武用）；計算器用於辨識此技能與哪個天賦關聯</td></tr>
       <tr><td>&nbsp;└ enhancedTalentDescription</td><td>string?</td><td>天賦被此專武強化後的完整描述文字（遊戲原文）；用於 PilotDetailPage「專武強化」區塊做 DiffHighlight 差異對比<br><small style="color:var(--text-dim)">填值：直接複製遊戲內天賦的強化後版本文字。以最大強化版本（descriptionMax）為比較基準。</small></td></tr>
+      <tr class="group-header"><td colspan="3">▎製作／進階關係 upgrade（WeaponUpgrade · PLAN-031 · 選填）</td></tr>
+      <tr><td>upgrade</td><td>WeaponUpgrade?</td><td>製作／進階關係。有值 = 此武器由 <code>fromWeaponId</code> 製作而來。<strong>只存事實，不存任何可推導值</strong>；反向索引（誰進階自我）、融合技能差集、複合判別皆前端 derive。<br><small style="color:var(--text-dim)">⚠ upgrade <strong>不改變</strong>本武器的儲存集合、doc id 或 refType（見下方跨界實體判準）。人工維護欄位，由 <code>scripts/derive-weapon-upgrade.mjs</code>（進版控）推導、<code>scripts/patch-weapon-upgrade.mjs</code> 寫入。</small></td></tr>
+      <tr><td>&nbsp;├ fromWeaponId</td><td>string</td><td>母武器 doc id（必填——實測 42 條邊皆有母武器）。以 <code>skill.name</code> 極大真子集推導；硬約束守衛：稀有度單調（rank(母)≤rank(子)）+ 同 kind。</td></tr>
+      <tr><td>&nbsp;├ station</td><td>'specialBackpack'?</td><td>官方製作工作台。未填 = 一般武裝生產；<code>'specialBackpack'</code> = 特種背包製作（複合武器）。<strong>推導事實（不需實機）</strong>：進階圖的同稀有度邊（SS→SS）+ 融合技能帶 6 開頭（背包命名空間）buffId，雙判別式一致者。</td></tr>
+      <tr><td>&nbsp;└ fusedBackpackId</td><td>string?</td><td>融合進來的背包 doc id（複合武器專用），如 <code>'60102405'</code>（出力強化背包·首攻）。<br><small style="color:var(--text-dim)">⚠ <strong>實機確認的事實值，不可由 buffId 推定</strong>——實測融合技能 buffId 600433 由多個背包共用，且正解 60102405 反而不含該 buffId。填值避開陷阱：正解在 <code>60X02405</code>（S+ · 出力強化背包·X），勿填 <code>606004xx</code>（強化背包·X / Enhance）。</small></td></tr>
+      <tr><td colspan="3" style="color:var(--text-dim);font-size:12px;">擴充點（現在不建）：製作材料屬 <code>WeaponUpgrade</code>（邊的屬性），未來加 <code>materials?: { itemId, qty }[]</code>；前置條件：items 集合與武裝討伐掉落資料，兩者皆尚未存在。</td></tr>
     </table>
+  </div>
+</section>
+
+<!-- 跨界實體判準（PLAN-031 長期價值）-->
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow)">Architecture</div>
+  <div class="section-title">跨界實體判準（複合武器歸類）</div>
+  <div class="section-desc">
+    當某實體的<strong>官方製作介面歸類</strong>與<strong>資料形狀／來源表</strong>不一致時（如「裁決者」在遊戲內於【特種背包製作】做出、與 SS 特種背包並列，但官方 <code>weapon_data</code> API 命中、有 <code>attack</code>/<code>ammoCount</code> 等背包表沒有的欄位），依此判準處理，避免每次新複合武器出現時整輪重吵。
+  </div>
+  <div style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.2);border-left:3px solid var(--accent-yellow);border-radius:0 10px 10px 0;padding:16px 20px;margin:12px 0;font-size:14px;line-height:1.9;">
+    <strong>所屬集合與 <code>refType</code> 依「資料形狀／官方 API 來源表」決定</strong>（裁決者＝武器，存 weapons、<code>refType:'weapon'</code>）；<br>
+    官方介面歸類另以 <code>upgrade.station</code> 這類<strong>正交欄位</strong>表達；<br>
+    並在對應圖鑑（背包圖鑑）以<strong>投影</strong>方式呈現（PLAN-031 B-2「特種背包製作」facet），<strong>不改變 <code>refType</code>、不搬集合、不新開集合</strong>。
+    <br><br>
+    <small style="color:var(--text-dim)">否決「搬進 backpacks 集合」的一擊致命理由：<code>SimulatorPage</code> 的 <code>handleSaveBuild</code> 硬性要求 <code>weaponId</code>（silent return），搬完配裝直接存不了且無錯誤訊息；另與上游爬蟲永久對抗（<code>weapon_data</code> 會一直吐回來）。四方案評分：不搬集合 7.67 ＞ 搬進 backpacks 3.67。</small>
   </div>
 </section>
 

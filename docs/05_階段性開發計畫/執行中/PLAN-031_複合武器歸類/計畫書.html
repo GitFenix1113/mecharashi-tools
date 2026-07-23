@@ -178,7 +178,7 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value yellow">規劃中</div>
+      <div class="meta-value cyan">進行中 · Phase A 資料層完成</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">前置依賴</div>
@@ -239,7 +239,7 @@
       <tr><th>複合武器</th><th>母武器</th><th>機師</th><th>融合技能</th></tr>
       <tr><td>裁決者 <code>weapon_115</code> · 電磁炮</td><td>熠光 <code>weapon_102</code></td><td>肖妮</td><td><code>首攻強化Ⅲ</code></td></tr>
       <tr><td>糖衣毀滅者 <code>weapon_146</code> · 電磁炮</td><td>草莓通心粉 <code>weapon_132</code></td><td>菲婭</td><td><code>首攻強化Ⅲ</code></td></tr>
-      <tr><td>天燼 · 浮游炮 <span class="badge-med">待盤點</span></td><td>待確認</td><td>待確認</td><td>待確認</td></tr>
+      <tr><td>天燼審判 · 浮游炮 <span class="badge-good">已確認在 live</span></td><td>諸神黃昏</td><td>—</td><td><code>首攻強化Ⅲ</code></td></tr>
     </table>
     複合武器 = 母武器 + 多掛一條背包系被動，<strong>其餘欄位（含重量 1100、icon）完全相同</strong>。
     家族已跨電磁炮／浮游炮兩系——而這兩系正好就是全部 20 把 <code>equipSlot:'back'</code> 武器的組成。
@@ -247,32 +247,34 @@
   </div>
 
   <div class="problem-block">
-    <strong>第二層問題：全站 41 條武器製作關係完全沒有被表達</strong><br>
+    <strong>第二層問題：全站 42 條武器製作關係完全沒有被表達</strong><br>
     S+ 武器是 SS 武器的製作材料（來自武裝討伐關卡的材料另計），但工具站<strong>完全沒有這層關係</strong>——
     玩家看不出「我這把能升成什麼」「這把的前置是誰」。<br><br>
     <strong>【實測】這層關係可以從既有資料完美推導</strong>（鍵 = <code>skill.name</code>，取極大真子集）：
     <table class="impact-table">
       <tr><th>指標</th><th>結果</th></tr>
-      <tr><td>有技能武器</td><td>82 把（S+ 39 / SS 43）</td></tr>
-      <tr><td><strong>唯一邊</strong></td><td><span class="badge-good">41 條</span></td></tr>
+      <tr><td>有技能武器</td><td>83 把（<span class="badge-good">live 2026-07-24</span>）</td></tr>
+      <tr><td><strong>唯一邊</strong></td><td><span class="badge-good">42 條</span></td></tr>
       <tr><td><strong>歧義</strong></td><td><span class="badge-good">0</span></td></tr>
-      <tr><td>kind 不一致的邊</td><td><span class="badge-good">0</span></td></tr>
+      <tr><td>守衛全擋（稀有度／kind）</td><td><span class="badge-good">0</span></td></tr>
       <tr><td>fan-out &gt; 1 的父節點</td><td><span class="badge-good">0</span></td></tr>
-      <tr><td>稀有度躍遷</td><td>S+→SS <strong>39 條</strong>／SS→SS <strong>2 條</strong></td></tr>
+      <tr><td>稀有度躍遷</td><td>S+→SS <strong>39 條</strong>／SS→SS <strong>3 條</strong></td></tr>
     </table>
-    站長舉的兩個例子皆驗證通過：<code>夜魘·改 → 終末之嘆</code>、<code>炬塔·改 → 熠光</code>。
+    站長舉的兩個例子皆驗證通過：<code>夜魘·改 → 終末之嘆</code>、<code>炬塔·改 → 熠光</code>
+    （live dry-run 4 個回歸抽查全過）。
   </div>
 
   <div class="info-block">
     <strong>而這兩層問題其實是同一件事——這是本次範圍擴大的決定性依據。</strong><br>
-    41 條邊裡，<strong>SS→SS 的邊恰好只有 2 條</strong>，而且差集都是 <code>首攻強化Ⅲ</code>：
+    42 條邊裡，<strong>SS→SS 的邊恰好只有 3 條</strong>，而且差集都是 <code>首攻強化Ⅲ</code>：
     <div class="code-block"><span class="cm">// 純武器進階（39 條，S+→SS，|delta|=2）</span>
 炬塔·改(S+)  → 熠光(SS)        delta = {充沛, 鼎新}
-<span class="cm">// 複合製作（2 條，SS→SS，|delta|=1，且該技能帶 6 開頭背包 buffId）</span>
+<span class="cm">// 複合製作（3 條，SS→SS，|delta|=1，且該技能帶 6 開頭背包 buffId）</span>
 熠光(SS)     → <span class="nm">裁決者(SS)</span>      delta = {<span class="nm">首攻強化Ⅲ</span>}  <span class="cm">buffId 600433</span>
-草莓通心粉(SS) → <span class="nm">糖衣毀滅者(SS)</span>  delta = {<span class="nm">首攻強化Ⅲ</span>}  <span class="cm">buffId 600433</span></div>
+草莓通心粉(SS) → <span class="nm">糖衣毀滅者(SS)</span>  delta = {<span class="nm">首攻強化Ⅲ</span>}  <span class="cm">buffId 600433</span>
+諸神黃昏(SS)  → <span class="nm">天燼審判(SS)</span>    delta = {<span class="nm">首攻強化Ⅲ</span>}  <span class="cm">buffId 600433（浮游炮系）</span></div>
     <strong>同一次計算同時產出：(a) 進階圖　(b) 複合武器判別　(c) 融合技能　(d) 母武器。</strong>
-    原計畫的 <code>craft.baseWeaponId</code> 只是這 41 條邊裡的 2 條，
+    原計畫的 <code>craft.baseWeaponId</code> 只是這 42 條邊裡的 3 條，
     若兩者分開實作，同一個關係會有兩個欄位表達 = 第二份真相。
   </div>
 
@@ -324,7 +326,7 @@
     <div class="code-block"><span class="cm">/** 武器製作／進階關係。有值 = 此武器由 fromWeaponId 製作而來。
  *  只存「事實」，不存 UI 顯示決策，也不存任何可推導值。 */</span>
 <span class="kw">export interface</span> <span class="ty">WeaponUpgrade</span> {
-  <span class="cm">/** 母武器 doc id（必填——實測 41 條邊皆有母武器） */</span>
+  <span class="cm">/** 母武器 doc id（必填——實測 42 條邊皆有母武器） */</span>
   fromWeaponId:     <span class="ty">string</span>
   <span class="cm">/** 官方製作工作台。未填 = 一般武裝生產；'specialBackpack' = 特種背包製作 */</span>
   station?:         <span class="st">'specialBackpack'</span>
@@ -339,7 +341,7 @@
     <strong>三個原欄位被刪除的理由（全部是「可推導的不存」）：</strong>
     <table class="impact-table">
       <tr><th>原欄位</th><th>處置</th><th>理由</th></tr>
-      <tr><td><code>baseWeaponId</code></td><td>→ 改名 <code>fromWeaponId</code></td><td>同一概念，升格為 41 條邊共用</td></tr>
+      <tr><td><code>baseWeaponId</code></td><td>→ 改名 <code>fromWeaponId</code></td><td>同一概念，升格為 42 條邊共用</td></tr>
       <tr><td><code>fusedSkillName</code></td><td><span class="badge-high">刪除</span>，前端 derive</td>
         <td>＝ 子武器 skills − 母武器 skills 的差集。實測 fan-out 0、邊唯一，推導安全。<br>
         <strong>額外好處：PLAN-032 把技能改成引用後，差集自動換算，本計畫零改動。</strong></td></tr>
@@ -386,17 +388,17 @@
     <strong>決策四（v2 改寫）：用進階圖本身當複合武器判別式</strong><br>
     <span class="badge-high">v2 變更</span> 原本的兩個字串啟發式被更精確的<strong>圖結構判別</strong>取代：
     <div class="code-block"><span class="cm">// 主判別式：進階圖上的「同稀有度邊」</span>
-edge.from.rarity === edge.to.rarity   <span class="cm">// SS→SS，實測全站恰好 2 條，零偽陽性</span>
+edge.from.rarity === edge.to.rarity   <span class="cm">// SS→SS，實測全站恰好 3 條，零偽陽性</span>
 
 <span class="cm">// 交叉驗證：差集技能帶背包命名空間 buffId</span>
 delta.some(s =&gt; s.buffIds.some(id =&gt; String(id).startsWith(<span class="st">'6'</span>)))
-<span class="cm">// 武器 buff 為 5303xx，背包 buff 為 6xxxxx → 恰好同樣命中那 2 把</span></div>
+<span class="cm">// 武器 buff 為 5303xx，背包 buff 為 6xxxxx → 恰好同樣命中那 3 把</span></div>
     <strong>推導腳本應同時跑兩者並要求一致</strong>，不一致才需人工介入。
     <table class="impact-table">
       <tr><th>判別式</th><th>命中</th><th>評價</th></tr>
-      <tr><td>SS→SS 邊（|delta|=1）</td><td>裁決者、糖衣毀滅者</td><td><span class="badge-good">主判別式</span>零偽陽性，且順帶產出母武器與融合技能</td></tr>
-      <tr><td><code>skills[].buffIds</code> 有 6 開頭</td><td>裁決者、糖衣毀滅者</td><td><span class="badge-good">交叉驗證</span>零偽陽性</td></tr>
-      <tr><td><code>weapon.description</code> 含「背包」</td><td>裁決者、糖衣毀滅者</td><td><span class="badge-med">輔助</span>零偽陽性，<strong>但必須是 <code>weapon.description</code></strong></td></tr>
+      <tr><td>SS→SS 邊（|delta|=1）</td><td>裁決者、糖衣毀滅者、天燼審判</td><td><span class="badge-good">主判別式</span>零偽陽性，且順帶產出母武器與融合技能</td></tr>
+      <tr><td><code>skills[].buffIds</code> 有 6 開頭</td><td>裁決者、糖衣毀滅者、天燼審判</td><td><span class="badge-good">交叉驗證</span>零偽陽性</td></tr>
+      <tr><td><code>weapon.description</code> 含「背包」</td><td>裁決者、糖衣毀滅者、天燼審判</td><td><span class="badge-med">輔助</span>零偽陽性，<strong>但必須是 <code>weapon.description</code></strong></td></tr>
       <tr><td class="dim">技能描述含「背包」</td><td class="dim">馬哈利姆之力</td>
         <td><span class="badge-high">陷阱</span>這是<strong>偽陽性</strong>——它的技能文字提到「修理背包的 0.35 倍」，
         那是<em>引用背包數值</em>而非由背包合成。<strong>絕不可搜尋技能描述。</strong></td></tr>
@@ -452,10 +454,10 @@ delta.some(s =&gt; s.buffIds.some(id =&gt; String(id).startsWith(<span class="st
   <div class="decision-block">
     <strong>在範圍內：</strong>
     <ul style="margin:8px 0 0 16px;line-height:1.9;">
-      <li>進階鏈推導腳本（41 條邊）+ 盤點 live Firestore（含確認天燼是否已存在）</li>
+      <li>進階鏈推導腳本（42 條邊）+ 盤點 live Firestore（天燼審判已確認在 live）</li>
       <li><code>WeaponUpgrade</code> 型別 + <code>Weapon.upgrade?</code></li>
       <li><code>src/utils/weaponUpgrade.ts</code>：反向索引 derive、融合技能差集、投影列表 union</li>
-      <li><strong>武器詳情頁進階鏈區塊</strong>：「前置：○○」「可進階為：○○」，可點擊互連（覆蓋 41 條邊）</li>
+      <li><strong>武器詳情頁進階鏈區塊</strong>：「前置：○○」「可進階為：○○」，可點擊互連（覆蓋 42 條邊）</li>
       <li>武器圖鑑：「特種背包製作」badge（區隔熠光／裁決者）</li>
       <li>背包圖鑑：合併列表 + 「特種背包製作」正交 facet + weapon 分支卡片／浮窗</li>
       <li>一次性 patch 腳本寫入 <code>upgrade</code> + <code>bumpDataVersion('weapons')</code></li>
@@ -489,15 +491,15 @@ delta.some(s =&gt; s.buffIds.some(id =&gt; String(id).startsWith(<span class="st
     <strong>本計畫的風險性質：</strong>
     0 筆文件搬移 · 0 個 doc ID 變更 · 0 個 refType 變更 · 0 筆 userBuilds 遷移 · 只 bump 1 個版本號。<br>
     <strong>回退 = <code>git revert</code> + bump</strong>；Firestore 上殘留的 <code>upgrade</code> 是惰性資料，沒有任何消費端。
-    工程量估 <strong>約 2.5–3 人日</strong>（v1 為 1.5–2，因併入進階鏈而增加；但覆蓋率從 2 把武器提升到 41 條邊）。
+    工程量估 <strong>約 2.5–3 人日</strong>（v1 為 1.5–2，因併入進階鏈而增加；但覆蓋率從 3 把複合武器提升到 42 條邊）。
   </div>
 
   <div class="decision-block">
     <strong>第一個出貨點的建議（個人專案的可停性）</strong><br>
     本計畫在寫入資料前使用者可見價值為 0。若晚上時間有限，建議把 patch 拆成兩次寫入：
-    <strong>先只寫 <code>upgrade.fromWeaponId</code>（41 條邊全部）</strong>——
-    這時武器頁的進階鏈就全部可點，<strong>覆蓋率是「2 把複合武器」的 20 倍，而人工成本更低</strong>
-    （推導 0 歧義，複合武器那 2 筆才需要實機確認背包）。
+    <strong>先只寫 <code>upgrade.fromWeaponId</code>（42 條邊全部）</strong>——
+    這時武器頁的進階鏈就全部可點，<strong>覆蓋率是「3 把複合武器」的 14 倍，而人工成本更低</strong>
+    （推導 0 歧義，複合武器那 3 筆才需要實機確認背包）。
     之後再補寫 <code>station</code> / <code>fusedBackpackId</code> 與背包圖鑑投影。
   </div>
 </section>

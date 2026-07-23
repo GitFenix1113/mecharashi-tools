@@ -1,5 +1,6 @@
+import { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useWeapon, usePilotNameMap } from '../../hooks/useFirestore'
+import { useWeapon, useWeapons, usePilotNameMap, useBackpackNameMap } from '../../hooks/useFirestore'
 import { WeaponRarityBadge } from '../../components/WeaponRarityBadge'
 import { WeaponIcon } from '../../components/WeaponIcon'
 import {
@@ -8,6 +9,7 @@ import {
   WeaponMechRestrictionBadge,
 } from '../../components/WeaponBadges'
 import { WeaponSkillCard } from '../../components/WeaponSkillCard'
+import { buildUpgradeIndex, deriveFusedSkillNames, isCompositeWeapon } from '../../utils/weaponUpgrade'
 import type { Weapon } from '../../types'
 
 // ── Labels & formatters ───────────────────────────────────────────────────────
@@ -68,6 +70,47 @@ function SlotBoxes({ count, colorClass }: { count: number; colorClass: string })
   )
 }
 
+// ── B-1 進階鏈（PLAN-031）────────────────────────────────────────────────────
+
+/** 「特種背包製作」badge：複合武器（upgrade.station === 'specialBackpack'）專用。 */
+function CompositeBadge() {
+  return (
+    <span className="px-2 py-0.5 rounded text-[13px] border text-accent-yellow bg-accent-yellow/10 border-accent-yellow/30">
+      特種背包製作
+    </span>
+  )
+}
+
+/** 進階鏈上可點擊的武器 chip（連向該武器詳情頁）。 */
+function WeaponChainLink({ weapon }: { weapon: Weapon }) {
+  return (
+    <Link
+      to={`/weapons/${weapon.id}`}
+      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bg-dark border border-border hover:border-accent-cyan transition-colors"
+    >
+      <WeaponIcon icon={weapon.icon} name={weapon.name} size="sm" isExclusive={weapon.isExclusive} />
+      <span className="text-sm text-text-secondary">{weapon.name}</span>
+      <WeaponRarityBadge rarity={weapon.rarity} />
+    </Link>
+  )
+}
+
+/**
+ * 「融合自 ○○背包」純文字說明（複合武器專用）。
+ * ⚠ 此元件內部才呼叫 useBackpackNameMap（觸發 backpacks 載入）——
+ *   只有複合武器頁會掛載它，一般武器頁完全不付背包讀取量。
+ */
+function FusedBackpackNote({ backpackId }: { backpackId: string }) {
+  const { data: nameMap } = useBackpackNameMap()
+  const name = nameMap[backpackId]
+  return (
+    <div className="mt-3 text-[13px] text-text-dim">
+      融合自 <span className="text-text-secondary">{name ?? backpackId}</span>
+      <span className="ml-1">（特種背包製作產物）</span>
+    </div>
+  )
+}
+
 // ── Loading skeleton ──────────────────────────────────────────────────────────
 
 function LoadingSkeleton() {
@@ -86,7 +129,27 @@ function LoadingSkeleton() {
 export default function WeaponDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: weapon, loading, error } = useWeapon(id)
+  const { data: weapons } = useWeapons()
   const { data: pilotNameMap } = usePilotNameMap()
+
+  // ── B-1 進階鏈：母武器（前置）＋子武器（可進階為）＋融合/進階技能差集 ──────────
+  const byId = useMemo(() => new Map(weapons.map((w) => [w.id, w])), [weapons])
+  const index = useMemo(() => buildUpgradeIndex(weapons), [weapons])
+  const parent = weapon?.upgrade?.fromWeaponId ? byId.get(weapon.upgrade.fromWeaponId) ?? null : null
+  const children = useMemo(
+    () => (weapon ? (index.childrenOf.get(weapon.id) ?? []).map((cid) => byId.get(cid)).filter(Boolean) as Weapon[] : []),
+    [weapon, index, byId],
+  )
+  /** 相對於母武器新增的技能名（融合或進階帶來的），供技能列表標示。 */
+  const fusedSkillNames = useMemo(() => {
+    if (!weapon || !parent) return new Set<string>()
+    return new Set(
+      deriveFusedSkillNames(
+        weapon.skills.map((s) => s.name),
+        parent.skills.map((s) => s.name),
+      ),
+    )
+  }, [weapon, parent])
 
   if (loading) return <LoadingSkeleton />
 
@@ -135,6 +198,7 @@ export default function WeaponDetailPage() {
                 </span>
                 <WeaponEquipSlotBadge slot={weapon.equipSlot} />
                 <WeaponMechRestrictionBadge restriction={weapon.mechRestriction} />
+                {isCompositeWeapon(weapon) && <CompositeBadge />}
               </div>
 
               {weapon.isExclusive && pilotName && weapon.exclusiveFor && (
@@ -187,6 +251,38 @@ export default function WeaponDetailPage() {
 
       </div>
 
+      {/* ── B-1 進階鏈（PLAN-031）：前置 ← 本武器 → 可進階為 ──────────────────── */}
+      {(parent || children.length > 0) && (
+        <div className="bg-bg-card border border-border rounded-xl p-5">
+          <SectionHeading>製作 · 進階關係</SectionHeading>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            {parent && (
+              <>
+                <span className="text-xs text-text-dim">前置</span>
+                <WeaponChainLink weapon={parent} />
+                <span className="text-text-dim">→</span>
+              </>
+            )}
+            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bg-dark border border-accent-cyan/50">
+              <WeaponIcon icon={weapon.icon} name={weapon.name} size="sm" isExclusive={weapon.isExclusive} />
+              <span className="text-sm font-bold text-text-primary">{weapon.name}</span>
+            </span>
+            {children.length > 0 && (
+              <>
+                <span className="text-text-dim">→</span>
+                <span className="text-xs text-text-dim">可進階為</span>
+                {children.map((c) => (
+                  <WeaponChainLink key={c.id} weapon={c} />
+                ))}
+              </>
+            )}
+          </div>
+          {isCompositeWeapon(weapon) && weapon.upgrade?.fusedBackpackId && (
+            <FusedBackpackNote backpackId={weapon.upgrade.fusedBackpackId} />
+          )}
+        </div>
+      )}
+
       {/* ── B-2 Stats ────────────────────────────────────────────────────────── */}
       <div className="bg-bg-card border border-border rounded-xl p-5">
         <SectionHeading>基礎屬性</SectionHeading>
@@ -215,7 +311,15 @@ export default function WeaponDetailPage() {
           <SectionHeading>武器技能</SectionHeading>
           <div className="space-y-3">
             {weapon.skills.map((skill, i) => (
-              <WeaponSkillCard key={i} skill={skill} />
+              <WeaponSkillCard
+                key={i}
+                skill={skill}
+                fusedLabel={
+                  fusedSkillNames.has(skill.name)
+                    ? isCompositeWeapon(weapon) ? '融合技能' : '進階新增'
+                    : undefined
+                }
+              />
             ))}
           </div>
         </div>

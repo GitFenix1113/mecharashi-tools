@@ -207,6 +207,23 @@
   </div>
 </section>
 
+<!-- 特種背包製作交叉顯示（PLAN-031）-->
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow)">Cross-Display</div>
+  <div class="section-title">「特種背包製作」交叉顯示（複合武器投影）</div>
+  <div class="section-desc">
+    遊戲內【特種背包製作】清單是<strong>混合清單</strong>：22 個 SS 特種背包（<code>backpack_data</code>）＋ N 把複合武器（<code>weapon_data</code>，如裁決者／糖衣毀滅者／天燼審判）。背包圖鑑（PLAN-031 B-2）以此重現該清單。
+  </div>
+  <div style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.2);border-left:3px solid var(--accent-yellow);border-radius:0 10px 10px 0;padding:16px 20px;margin:12px 0;font-size:14px;line-height:1.9;">
+    <strong>背包側完全不存任何欄位，全部 derived：</strong><br>
+    · 「特種背包製作」正交 facet 的判定 = <code>rarity === 'SS'</code>（<code>isSpecialBackpackCraft</code>，見 <code>src/utils/weaponUpgrade.ts</code>），不在 Firestore 存推論值。<br>
+    · 打開 facet = SS 背包 ∪ 複合武器（<code>upgrade.station === 'specialBackpack'</code>）；facet 為<strong>可交叉</strong>的正交維度，與稀有度／類型／裝備並存。<br>
+    · 複合武器投影條目的「類型」由武器的 <code>upgrade.fusedBackpackId</code> 查 backpacks 取 <code>type</code>（<strong>不存欄位</strong>）；armor 篩選由武器 <code>mechRestriction</code> 換算（英文 key，EN→EN，不涉模擬器 EN→ZH）。<br>
+    · weapon 分支卡片<strong>務必用 <code>WeaponIcon</code></strong>（背包側圖示元件會強制拼 <code>/images/backpacks/</code> 而 404）；技能圖示走武器側 <code>iconLocal</code> 完整路徑。<br><br>
+    <small style="color:var(--text-dim)">複合武器的儲存歸類仍是「武器」（存 weapons、<code>refType:'weapon'</code>），此處僅為呈現層投影。完整判準見 weapons 資料模型的「跨界實體判準」。<strong>刻意不新增 <code>BackpackType.Composite</code></strong>——要並列的 5 個背包分屬 5 種不同 type，做完反而更孤立，且爬蟲會用 API 值覆寫 <code>type</code>。</small>
+  </div>
+</section>
+
 <!-- 稀有度識別規則 -->
 <section class="section">
   <div class="section-label" style="color:var(--accent-pink)">Rarity</div>

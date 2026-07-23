@@ -13,7 +13,17 @@ import {
   ACTIVATION_LABELS,
 } from '../../components/WeaponBadges'
 import { assetUrl } from '../../utils/assets'
+import { isCompositeWeapon } from '../../utils/weaponUpgrade'
 import type { Weapon } from '../../types'
+
+/** 「特種背包製作」badge（PLAN-031 複合武器）——熠光與裁決者數值全同、連 icon 都共用，必須有視覺區隔。 */
+function CompositeBadge() {
+  return (
+    <span className="text-[13px] text-accent-yellow bg-accent-yellow/10 border border-accent-yellow/30 px-1.5 py-0.5 rounded">
+      特種背包製作
+    </span>
+  )
+}
 
 const PAGE_SIZE = 36
 
@@ -95,6 +105,7 @@ function WeaponTooltipContent({ weapon, pilotNameMap }: {
             <WeaponRarityBadge rarity={weapon.rarity} className="px-2" />
           </div>
           <div className="text-[13px] text-text-dim mt-0.5">{weapon.type} · {weapon.kind}</div>
+          {isCompositeWeapon(weapon) && <div className="mt-1"><CompositeBadge /></div>}
           {pilotName && weapon.exclusiveFor && (
             <Link
               to={`/pilots/${weapon.exclusiveFor}`}
@@ -485,6 +496,7 @@ export default function WeaponsPage() {
                       <span className="text-[13px] text-text-dim bg-bg-dark border border-border px-1.5 py-0.5 rounded">
                         {w.type}·{w.kind}
                       </span>
+                      {isCompositeWeapon(w) && <CompositeBadge />}
                       {w.isExclusive && pilotName && w.exclusiveFor && (
                         <Link
                           to={`/pilots/${w.exclusiveFor}`}

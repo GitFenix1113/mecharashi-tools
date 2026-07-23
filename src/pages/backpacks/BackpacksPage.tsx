@@ -1,6 +1,8 @@
-import { useState, useLayoutEffect, useRef, useEffect } from 'react'
+import { useState, useLayoutEffect, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useBackpacks } from '../../hooks/useFirestore'
+import { useGameData } from '../../contexts/GameDataContext'
 import { BottomSheet } from '../../components/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useDragOffset } from '../../hooks/useDragOffset'
@@ -12,10 +14,18 @@ import {
   BackpackIcon,
 } from '../../components/BackpackBadges'
 import { WeaponRarityBadge } from '../../components/WeaponRarityBadge'
+import { WeaponIcon } from '../../components/WeaponIcon'
 import { EQUIP_SLOT_LABELS } from '../../components/WeaponBadges'
 import { assetUrl } from '../../utils/assets'
 import { RefText } from '../../components/RefText'
-import type { Backpack } from '../../types'
+import {
+  isSpecialBackpackCraft,
+  isCompositeWeapon,
+  projectedBackpackType,
+  weaponArmorTypes,
+  type BackpackListItem,
+} from '../../utils/weaponUpgrade'
+import type { Backpack, Weapon } from '../../types'
 
 const PAGE_SIZE = 36
 
@@ -26,6 +36,10 @@ const ALL_BACKPACK_TYPES = [
 ]
 const RARITY_ORDER: Record<string, number> = { SS: 0, 'S+': 1, S: 2, A: 3, B: 4 }
 
+// 合併列表條目的取值輔助（背包 / 投影武器共用篩選邏輯）
+const itemId = (it: BackpackListItem) => it.data.id
+const itemRarity = (it: BackpackListItem) => it.data.rarity
+
 function Num({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <span className={`text-accent-red font-bold font-[JetBrains_Mono,monospace] ${className}`}>
@@ -34,6 +48,7 @@ function Num({ children, className = '' }: { children: React.ReactNode; classNam
   )
 }
 
+/** 背包側技能圖示：拼 /images/skills/{filename}（PLAN-031 陷阱：武器技能圖示走另一路徑，見下） */
 function SkillIcon({ icon, name }: { icon?: string; name: string }) {
   const [err, setErr] = useState(false)
   if (err || !icon) {
@@ -55,6 +70,36 @@ function SkillIcon({ icon, name }: { icon?: string; name: string }) {
   )
 }
 
+/** 武器技能圖示：iconLocal 已是 /images/weapons/skills/... 完整路徑，直接用（不可套背包側 SkillIcon）。 */
+function WeaponSkillMiniIcon({ iconLocal, name }: { iconLocal?: string; name: string }) {
+  const [err, setErr] = useState(false)
+  if (err || !iconLocal) {
+    return (
+      <div className="w-9 h-9 rounded-lg bg-bg-dark border border-border flex items-center justify-center text-text-dim text-xs flex-shrink-0">
+        技
+      </div>
+    )
+  }
+  return (
+    <img
+      src={assetUrl(iconLocal)}
+      alt={name}
+      className="w-9 h-9 rounded-lg object-cover flex-shrink-0"
+      onError={() => setErr(true)}
+    />
+  )
+}
+
+/** 「特種背包製作」小標籤（複合武器投影條目用）。 */
+function CraftBadge() {
+  return (
+    <span className="text-[11px] font-bold text-accent-yellow bg-accent-yellow/10 border border-accent-yellow/30 rounded px-1.5 py-0.5">
+      特種背包製作
+    </span>
+  )
+}
+
+// ── 背包浮窗內容（既有，未動）────────────────────────────────────────────────────
 function BackpackTooltipContent({ bp, pinned = false }: { bp: Backpack; pinned?: boolean }) {
   const armorLabel =
     bp.assemblableArmorType.length === 0
@@ -65,7 +110,6 @@ function BackpackTooltipContent({ bp, pinned = false }: { bp: Backpack; pinned?:
 
   return (
     <>
-      {/* Header（釘選時兼作拖曳把手） */}
       <div
         data-drag-handle
         className={`flex items-start gap-3 mb-3 flex-shrink-0 ${pinned ? 'cursor-move select-none' : ''}`}
@@ -84,7 +128,6 @@ function BackpackTooltipContent({ bp, pinned = false }: { bp: Backpack; pinned?:
       </div>
 
       <div className="space-y-2">
-        {/* Stats */}
         <div className="bg-bg-dark rounded-lg p-2.5 grid grid-cols-2 gap-x-3 gap-y-1">
           <div className="flex items-center gap-1.5">
             <span className="text-[13px] text-text-dim">重量</span>
@@ -106,7 +149,6 @@ function BackpackTooltipContent({ bp, pinned = false }: { bp: Backpack; pinned?:
           </div>
         </div>
 
-        {/* Main Skill */}
         {bp.mainSkill && (
           <div className="bg-bg-dark rounded-lg overflow-hidden">
             <div className="px-2.5 py-1.5 border-b border-border flex items-center gap-2">
@@ -120,34 +162,23 @@ function BackpackTooltipContent({ bp, pinned = false }: { bp: Backpack; pinned?:
               {(bp.mainSkill.dmg || bp.mainSkill.crit || bp.mainSkill.critDmg || bp.mainSkill.acc) && (
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   {bp.mainSkill.dmg != null && (
-                    <span className="text-[14px] text-text-dim">
-                      增傷 <Num className="text-[14px]">+{bp.mainSkill.dmg}%</Num>
-                    </span>
+                    <span className="text-[14px] text-text-dim">增傷 <Num className="text-[14px]">+{bp.mainSkill.dmg}%</Num></span>
                   )}
                   {bp.mainSkill.crit != null && (
-                    <span className="text-[14px] text-text-dim">
-                      爆率 <Num className="text-[14px]">+{bp.mainSkill.crit}</Num>
-                    </span>
+                    <span className="text-[14px] text-text-dim">爆率 <Num className="text-[14px]">+{bp.mainSkill.crit}</Num></span>
                   )}
                   {bp.mainSkill.critDmg != null && (
-                    <span className="text-[14px] text-text-dim">
-                      爆傷 <Num className="text-[14px]">+{bp.mainSkill.critDmg}%</Num>
-                    </span>
+                    <span className="text-[14px] text-text-dim">爆傷 <Num className="text-[14px]">+{bp.mainSkill.critDmg}%</Num></span>
                   )}
                   {bp.mainSkill.acc != null && (
-                    <span className="text-[14px] text-text-dim">
-                      命中 <Num className="text-[14px]">+{bp.mainSkill.acc}</Num>
-                    </span>
+                    <span className="text-[14px] text-text-dim">命中 <Num className="text-[14px]">+{bp.mainSkill.acc}</Num></span>
                   )}
                 </div>
               )}
               {bp.mainSkill.specialEffects && bp.mainSkill.specialEffects.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {bp.mainSkill.specialEffects.map((ef, i) => (
-                    <span
-                      key={i}
-                      className="text-[11px] text-accent-cyan bg-accent-cyan/5 border border-accent-cyan/20 rounded px-1.5 py-0.5"
-                    >
+                    <span key={i} className="text-[11px] text-accent-cyan bg-accent-cyan/5 border border-accent-cyan/20 rounded px-1.5 py-0.5">
                       {ef}
                     </span>
                   ))}
@@ -156,6 +187,78 @@ function BackpackTooltipContent({ bp, pinned = false }: { bp: Backpack; pinned?:
             </div>
           </div>
         )}
+      </div>
+    </>
+  )
+}
+
+// ── 複合武器投影浮窗內容（PLAN-031 B-2）──────────────────────────────────────────
+function WeaponProjectionContent({ w, parentName, fusedBackpackName, onNavigate }: {
+  w: Weapon
+  parentName?: string
+  fusedBackpackName?: string
+  onNavigate?: () => void
+}) {
+  const stats: Array<{ label: string; value: string }> = [
+    { label: '攻擊力', value: w.attack.toLocaleString() },
+    { label: '命中', value: w.accuracy.toLocaleString() },
+    { label: '暴擊', value: w.critValue.toLocaleString() },
+    { label: '重量', value: w.weight.toString() },
+  ]
+  return (
+    <>
+      <div data-drag-handle className="flex items-start gap-3 mb-3 flex-shrink-0">
+        <WeaponIcon icon={w.icon} name={w.name} size="lg" isExclusive={w.isExclusive} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-1">
+            <div className="font-bold text-sm text-text-primary leading-tight">{w.name}</div>
+            <WeaponRarityBadge rarity={w.rarity} className="px-2" />
+          </div>
+          <div className="text-[13px] text-text-dim mt-0.5">{w.type} · {w.kind}</div>
+          <div className="mt-1"><CraftBadge /></div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="bg-bg-dark rounded-lg p-2.5 grid grid-cols-2 gap-x-3 gap-y-1">
+          {stats.map(({ label, value }) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <span className="text-[13px] text-text-dim">{label}</span>
+              <Num className="text-[14px]">{value}</Num>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-bg-dark rounded-lg p-2.5 text-[13px] text-text-secondary space-y-1">
+          {parentName && <div>特種背包製作產物 · 衍生自 <span className="text-text-primary">{parentName}</span></div>}
+          {fusedBackpackName
+            ? <div>融合自 <span className="text-text-primary">{fusedBackpackName}</span></div>
+            : <div className="text-text-dim">融合背包待確認</div>}
+        </div>
+
+        {w.skills.length > 0 && (
+          <div className="bg-bg-dark rounded-lg overflow-hidden">
+            <div className="px-2.5 py-1.5 border-b border-border">
+              <span className="text-[13px] text-text-dim tracking-widest uppercase">武器技能</span>
+            </div>
+            <div className="flex flex-wrap gap-2 p-2.5">
+              {w.skills.map((sk, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <WeaponSkillMiniIcon iconLocal={sk.iconLocal} name={sk.name} />
+                  <span className="text-[11px] text-text-secondary max-w-24 leading-tight">{sk.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <Link
+          to={`/weapons/${w.id}`}
+          className="block text-center text-sm text-accent-orange hover:underline pt-1"
+          onClick={onNavigate}
+        >
+          查看武器詳情 →
+        </Link>
       </div>
     </>
   )
@@ -177,21 +280,28 @@ function BackpackTooltip({ bp, pinned }: { bp: Backpack; pinned: boolean }) {
 }
 
 interface TooltipState {
-  bpId: string
+  itemId: string
   x: number
   anchorTop: number
 }
 
-function TooltipPortal({ bp, pinned, x, anchorTop }: { bp: Backpack; pinned: boolean; x: number; anchorTop: number }) {
+function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackName }: {
+  item: BackpackListItem
+  pinned: boolean
+  x: number
+  anchorTop: number
+  parentName?: string
+  fusedBackpackName?: string
+}) {
   const ref = useRef<HTMLDivElement>(null)
   const [top, setTop] = useState(anchorTop)
-  const { offset, dragging, dragHandlers } = useDragOffset(pinned, bp.id)
+  const { offset, dragging, dragHandlers } = useDragOffset(pinned, itemId(item))
 
   useLayoutEffect(() => {
     if (!ref.current) return
     const h = ref.current.offsetHeight
     setTop(Math.max(8, Math.min(anchorTop, window.innerHeight - h - 8)))
-  }, [anchorTop, bp.id])
+  }, [anchorTop, item])
 
   return createPortal(
     <div
@@ -201,7 +311,15 @@ function TooltipPortal({ bp, pinned, x, anchorTop }: { bp: Backpack; pinned: boo
       onClick={(e) => e.stopPropagation()}
       {...(pinned ? dragHandlers : {})}
     >
-      <BackpackTooltip bp={bp} pinned={pinned} />
+      {item.kind === 'backpack' ? (
+        <BackpackTooltip bp={item.data} pinned={pinned} />
+      ) : (
+        <div className="w-80 max-h-[min(90vh,_600px)] flex flex-col bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
+          <div className="flex-1 min-h-0 overflow-y-auto p-1">
+            <WeaponProjectionContent w={item.data} parentName={parentName} fusedBackpackName={fusedBackpackName} />
+          </div>
+        </div>
+      )}
     </div>,
     document.body,
   )
@@ -209,19 +327,33 @@ function TooltipPortal({ bp, pinned, x, anchorTop }: { bp: Backpack; pinned: boo
 
 export default function BackpacksPage() {
   const { data: backpacks, loading } = useBackpacks()
+  const { weapons, ensureLoaded, loadedKeys } = useGameData()
+  const navigate = useNavigate()
 
   const [search, setSearch]               = useState('')
   const [rarityFilters, setRarityFilters] = useState<Set<string>>(new Set())
   const [typeFilters, setTypeFilters]     = useState<Set<string>>(new Set())
   const [armorFilter, setArmorFilter]     = useState<string | null>(null)
+  const [craftFacet, setCraftFacet]       = useState(false)   // 特種背包製作 正交 facet
   const [displayCount, setDisplayCount]   = useState(PAGE_SIZE)
 
-  useEffect(() => { setDisplayCount(PAGE_SIZE) }, [search, rarityFilters, typeFilters, armorFilter])
+  // 讀取量取捨：只有打開 facet 才 lazy 載入 weapons（一般訪客瀏覽背包不多付 ~169 read）
+  useEffect(() => { if (craftFacet) void ensureLoaded(['weapons']) }, [craftFacet, ensureLoaded])
+  const weaponsLoading = craftFacet && !loadedKeys.has('weapons')
+
+  useEffect(() => { setDisplayCount(PAGE_SIZE) }, [search, rarityFilters, typeFilters, armorFilter, craftFacet])
 
   const isMobile = useIsMobile()
   const [hoverTooltip, setHoverTooltip] = useState<TooltipState | null>(null)
   const [pinnedTooltip, setPinnedTooltip] = useState<TooltipState | null>(null)
-  const [sheetBp, setSheetBp] = useState<Backpack | null>(null)
+  const [sheetItem, setSheetItem] = useState<BackpackListItem | null>(null)
+
+  const backpackById = useMemo(() => new Map(backpacks.map((b) => [b.id, b])), [backpacks])
+  const weaponById = useMemo(() => new Map(weapons.map((w) => [w.id, w])), [weapons])
+
+  // 母武器名 / 融合背包名（供投影浮窗顯示「衍生自 ○○」「融合自 ○○」）
+  const parentNameOf = (w: Weapon) => (w.upgrade?.fromWeaponId ? weaponById.get(w.upgrade.fromWeaponId)?.name : undefined)
+  const fusedBackpackNameOf = (w: Weapon) => (w.upgrade?.fusedBackpackId ? backpackById.get(w.upgrade.fusedBackpackId)?.name : undefined)
 
   const toggleSet = (setter: React.Dispatch<React.SetStateAction<Set<string>>>, value: string) => {
     setter((prev) => {
@@ -231,22 +363,39 @@ export default function BackpacksPage() {
     })
   }
 
-  const filtered = backpacks
-    .filter((bp) => {
-      if (rarityFilters.size > 0 && !rarityFilters.has(bp.rarity)) return false
-      if (typeFilters.size > 0   && !typeFilters.has(bp.type))     return false
-      if (armorFilter === 'none' && bp.assemblableArmorType.length > 0) return false
-      if (armorFilter && armorFilter !== 'none' && !bp.assemblableArmorType.includes(armorFilter)) return false
+  // 合併來源：facet 關 = 全部背包（現況）；facet 開 = SS 背包 + 複合武器（＝遊戲內特種背包製作清單）
+  const items: BackpackListItem[] = useMemo(() => {
+    if (craftFacet) {
+      return [
+        ...backpacks.filter(isSpecialBackpackCraft).map((bp) => ({ kind: 'backpack', data: bp } as const)),
+        ...weapons.filter(isCompositeWeapon).map((w) => ({ kind: 'weapon', data: w } as const)),
+      ]
+    }
+    return backpacks.map((bp) => ({ kind: 'backpack', data: bp } as const))
+  }, [craftFacet, backpacks, weapons])
+
+  const itemType = (it: BackpackListItem) =>
+    it.kind === 'backpack' ? it.data.type : (projectedBackpackType(it.data, backpackById) ?? '')
+  const itemArmor = (it: BackpackListItem) =>
+    it.kind === 'backpack' ? it.data.assemblableArmorType : weaponArmorTypes(it.data)
+
+  const filtered = items
+    .filter((it) => {
+      if (rarityFilters.size > 0 && !rarityFilters.has(itemRarity(it))) return false
+      if (typeFilters.size > 0 && !typeFilters.has(itemType(it))) return false
+      const armor = itemArmor(it)
+      if (armorFilter === 'none' && armor.length > 0) return false
+      if (armorFilter && armorFilter !== 'none' && !armor.includes(armorFilter)) return false
       if (search) {
         const q = search.toLowerCase()
-        return (
-          bp.name.toLowerCase().includes(q) ||
-          (bp.mainSkill?.description.toLowerCase().includes(q) ?? false)
-        )
+        if (it.kind === 'backpack') {
+          return it.data.name.toLowerCase().includes(q) || (it.data.mainSkill?.description.toLowerCase().includes(q) ?? false)
+        }
+        return it.data.name.toLowerCase().includes(q) || it.data.skills.some((s) => s.description.toLowerCase().includes(q))
       }
       return true
     })
-    .sort((a, b) => (RARITY_ORDER[a.rarity] ?? 9) - (RARITY_ORDER[b.rarity] ?? 9))
+    .sort((a, b) => (RARITY_ORDER[itemRarity(a)] ?? 9) - (RARITY_ORDER[itemRarity(b)] ?? 9))
 
   const paginated = filtered.slice(0, displayCount)
 
@@ -263,17 +412,23 @@ export default function BackpacksPage() {
   }
 
   const activeTooltip = pinnedTooltip ?? hoverTooltip
-  const activeBp = activeTooltip
-    ? backpacks.find((b) => b.id === activeTooltip.bpId) ?? null
+  const activeItem = activeTooltip
+    ? items.find((it) => itemId(it) === activeTooltip.itemId) ?? null
     : null
 
-  const handleCardClick = (bp: Backpack, el: HTMLDivElement) => {
-    if (isMobile) { setSheetBp(bp); return }
-    // 桌面：點擊背包固定浮窗（可互動、可點引用）；再點同一張則取消固定
-    if (pinnedTooltip?.bpId === bp.id) {
+  const handleCardClick = (it: BackpackListItem, el: HTMLDivElement) => {
+    // 複合武器：直接導向武器詳情頁（B-1 進階鏈在那裡）；不進釘選流程
+    if (it.kind === 'weapon') {
+      if (isMobile) { setSheetItem(it); return }
+      navigate(`/weapons/${it.data.id}`)
+      return
+    }
+    // 背包：維持既有釘選 / BottomSheet 行為
+    if (isMobile) { setSheetItem(it); return }
+    if (pinnedTooltip?.itemId === it.data.id) {
       setPinnedTooltip(null)
     } else {
-      setPinnedTooltip({ bpId: bp.id, ...computePos(el) })
+      setPinnedTooltip({ itemId: it.data.id, ...computePos(el) })
       setHoverTooltip(null)
     }
   }
@@ -305,18 +460,27 @@ export default function BackpacksPage() {
       onClick={() => setPinnedTooltip(null)}
     >
 
-      {activeBp && activeTooltip && !isMobile && (
+      {activeItem && activeTooltip && !isMobile && (
         <TooltipPortal
-          key={activeTooltip.bpId}
-          bp={activeBp}
+          key={activeTooltip.itemId}
+          item={activeItem}
           pinned={!!pinnedTooltip}
           x={activeTooltip.x}
           anchorTop={activeTooltip.anchorTop}
+          parentName={activeItem.kind === 'weapon' ? parentNameOf(activeItem.data) : undefined}
+          fusedBackpackName={activeItem.kind === 'weapon' ? fusedBackpackNameOf(activeItem.data) : undefined}
         />
       )}
 
-      <BottomSheet open={!!sheetBp} onClose={() => setSheetBp(null)}>
-        {sheetBp && <BackpackTooltipContent bp={sheetBp} />}
+      <BottomSheet open={!!sheetItem} onClose={() => setSheetItem(null)}>
+        {sheetItem && (sheetItem.kind === 'backpack'
+          ? <BackpackTooltipContent bp={sheetItem.data} />
+          : <WeaponProjectionContent
+              w={sheetItem.data}
+              parentName={parentNameOf(sheetItem.data)}
+              fusedBackpackName={fusedBackpackNameOf(sheetItem.data)}
+              onNavigate={() => setSheetItem(null)}
+            />)}
       </BottomSheet>
 
       {/* Header */}
@@ -378,13 +542,32 @@ export default function BackpacksPage() {
             </button>
           ))}
         </div>
+
+        {/* 特種背包製作 – 正交 facet（PLAN-031）*/}
+        <div className="flex flex-wrap gap-1.5 items-center pt-1 border-t border-border">
+          <span className="text-xs text-text-dim mr-1 w-10 flex-shrink-0">製作</span>
+          <button
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+              craftFacet
+                ? 'bg-accent-yellow/15 text-accent-yellow border-accent-yellow/40'
+                : 'bg-bg-card text-text-secondary border-border hover:border-border-accent hover:text-text-primary'
+            }`}
+            onClick={() => setCraftFacet((v) => !v)}
+          >
+            特種背包製作{craftFacet ? ' ✓' : ''}
+          </button>
+          <span className="text-[11px] text-text-dim">
+            {craftFacet ? '顯示 SS 特種背包 ＋ 複合武器（裁決者等），與遊戲內製作清單一致' : '打開後與複合武器並列瀏覽'}
+          </span>
+        </div>
       </div>
 
       {/* Count */}
       {!loading && (
         <p className="text-xs text-text-dim mb-4">
-          顯示 <Num className="text-xs">{Math.min(displayCount, filtered.length)}</Num> / {filtered.length} 件背包
-          {filtered.length !== backpacks.length && <span className="ml-1">（全 {backpacks.length} 件）</span>}
+          顯示 <Num className="text-xs">{Math.min(displayCount, filtered.length)}</Num> / {filtered.length} 項
+          {craftFacet && <span className="ml-1 text-accent-yellow">（特種背包製作清單）</span>}
+          {weaponsLoading && <span className="ml-1">· 載入複合武器中…</span>}
         </p>
       )}
 
@@ -397,63 +580,28 @@ export default function BackpacksPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-bg-card border border-border rounded-xl p-12 text-center text-text-dim">
-          沒有符合條件的背包
+          沒有符合條件的項目
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {paginated.map((bp) => (
-            <div
-              key={bp.id}
-              className={`bg-bg-card border rounded-xl p-3 cursor-pointer transition-all select-none hover:bg-bg-card-hover ${
-                pinnedTooltip?.bpId === bp.id ? 'border-border-accent' : 'border-border hover:border-border-accent'
-              }`}
-              onMouseEnter={(e) => { if (!isMobile && !pinnedTooltip) setHoverTooltip({ bpId: bp.id, ...computePos(e.currentTarget) }) }}
-              onMouseLeave={() => { if (!isMobile && !pinnedTooltip) setHoverTooltip(null) }}
-              onClick={(e) => { e.stopPropagation(); handleCardClick(bp, e.currentTarget) }}
-            >
-              {/* Top row */}
-              <div className="flex items-start gap-2 mb-2">
-                <BackpackIcon icon={bp.icon} name={bp.name} rarity={bp.rarity} size="md" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-1 mb-0.5">
-                    <span className="font-bold text-sm text-text-primary leading-tight line-clamp-2">
-                      {bp.name}
-                    </span>
-                    <WeaponRarityBadge rarity={bp.rarity} />
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                    <BackpackTypeBadge type={bp.type} />
-                    {bp.assemblableArmorType.length > 0 && (
-                      <>
-                        <span className="text-[11px] text-text-dim self-center leading-none select-none">|</span>
-                        <AssemblableArmorTypeBadge armorType={bp.assemblableArmorType} />
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[14px]">
-                <div>
-                  <span className="text-text-dim">重 </span>
-                  <Num>{bp.weight}</Num>
-                </div>
-                {bp.repairAmount > 0 && (
-                  <div>
-                    <span className="text-text-dim">修理 </span>
-                    <Num>{bp.repairAmount}</Num>
-                  </div>
-                )}
-                {bp.mainSkill && (
-                  <div className="col-span-2 mt-0.5">
-                    <span className="text-[11px] text-accent-pink bg-accent-pink/8 border border-accent-pink/20 rounded px-1.5 py-0.5">
-                      ✦ {bp.mainSkill.name}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+          {paginated.map((it) => it.kind === 'backpack' ? (
+            <BackpackCard
+              key={`bp_${it.data.id}`}
+              bp={it.data}
+              pinned={pinnedTooltip?.itemId === it.data.id}
+              onEnter={(el) => { if (!isMobile && !pinnedTooltip) setHoverTooltip({ itemId: it.data.id, ...computePos(el) }) }}
+              onLeave={() => { if (!isMobile && !pinnedTooltip) setHoverTooltip(null) }}
+              onClick={(el) => handleCardClick(it, el)}
+            />
+          ) : (
+            <WeaponProjectionCard
+              key={`wp_${it.data.id}`}
+              w={it.data}
+              typeLabel={projectedBackpackType(it.data, backpackById)}
+              onEnter={(el) => { if (!isMobile && !pinnedTooltip) setHoverTooltip({ itemId: it.data.id, ...computePos(el) }) }}
+              onLeave={() => { if (!isMobile && !pinnedTooltip) setHoverTooltip(null) }}
+              onClick={(el) => handleCardClick(it, el)}
+            />
           ))}
         </div>
       )}
@@ -464,10 +612,108 @@ export default function BackpacksPage() {
             className="px-6 py-2.5 rounded-xl border border-border bg-bg-card text-text-secondary text-sm hover:border-border-accent hover:text-text-primary transition-colors cursor-pointer"
             onClick={() => setDisplayCount((n) => n + PAGE_SIZE)}
           >
-            載入更多（{filtered.length - displayCount} 件）
+            載入更多（{filtered.length - displayCount} 項）
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── 卡片元件 ────────────────────────────────────────────────────────────────────
+
+function BackpackCard({ bp, pinned, onEnter, onLeave, onClick }: {
+  bp: Backpack
+  pinned: boolean
+  onEnter: (el: HTMLDivElement) => void
+  onLeave: () => void
+  onClick: (el: HTMLDivElement) => void
+}) {
+  return (
+    <div
+      className={`bg-bg-card border rounded-xl p-3 cursor-pointer transition-all select-none hover:bg-bg-card-hover ${
+        pinned ? 'border-border-accent' : 'border-border hover:border-border-accent'
+      }`}
+      onMouseEnter={(e) => onEnter(e.currentTarget)}
+      onMouseLeave={onLeave}
+      onClick={(e) => { e.stopPropagation(); onClick(e.currentTarget) }}
+    >
+      <div className="flex items-start gap-2 mb-2">
+        <BackpackIcon icon={bp.icon} name={bp.name} rarity={bp.rarity} size="md" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-1 mb-0.5">
+            <span className="font-bold text-sm text-text-primary leading-tight line-clamp-2">{bp.name}</span>
+            <WeaponRarityBadge rarity={bp.rarity} />
+          </div>
+          <div className="flex flex-wrap items-center gap-1 mt-0.5">
+            <BackpackTypeBadge type={bp.type} />
+            {bp.assemblableArmorType.length > 0 && (
+              <>
+                <span className="text-[11px] text-text-dim self-center leading-none select-none">|</span>
+                <AssemblableArmorTypeBadge armorType={bp.assemblableArmorType} />
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[14px]">
+        <div><span className="text-text-dim">重 </span><Num>{bp.weight}</Num></div>
+        {bp.repairAmount > 0 && (
+          <div><span className="text-text-dim">修理 </span><Num>{bp.repairAmount}</Num></div>
+        )}
+        {bp.mainSkill && (
+          <div className="col-span-2 mt-0.5">
+            <span className="text-[11px] text-accent-pink bg-accent-pink/8 border border-accent-pink/20 rounded px-1.5 py-0.5">
+              ✦ {bp.mainSkill.name}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** 複合武器投影卡片：務必用 WeaponIcon（背包側圖示元件會拼 /images/backpacks/ 而 404 → 顯示「背」佔位字）。 */
+function WeaponProjectionCard({ w, typeLabel, onEnter, onLeave, onClick }: {
+  w: Weapon
+  typeLabel: string | null
+  onEnter: (el: HTMLDivElement) => void
+  onLeave: () => void
+  onClick: (el: HTMLDivElement) => void
+}) {
+  const armor = weaponArmorTypes(w)
+  return (
+    <div
+      className="bg-bg-card border border-accent-yellow/30 rounded-xl p-3 cursor-pointer transition-all select-none hover:bg-bg-card-hover hover:border-accent-yellow/60"
+      onMouseEnter={(e) => onEnter(e.currentTarget)}
+      onMouseLeave={onLeave}
+      onClick={(e) => { e.stopPropagation(); onClick(e.currentTarget) }}
+    >
+      <div className="flex items-start gap-2 mb-2">
+        <WeaponIcon icon={w.icon} name={w.name} size="md" isExclusive={w.isExclusive} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-1 mb-0.5">
+            <span className="font-bold text-sm text-text-primary leading-tight line-clamp-2">{w.name}</span>
+            <WeaponRarityBadge rarity={w.rarity} />
+          </div>
+          <div className="flex flex-wrap items-center gap-1 mt-0.5">
+            {typeLabel && <BackpackTypeBadge type={typeLabel} />}
+            {armor.length > 0 && (
+              <>
+                <span className="text-[11px] text-text-dim self-center leading-none select-none">|</span>
+                <AssemblableArmorTypeBadge armorType={armor} />
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[14px]">
+        <div><span className="text-text-dim">攻 </span><Num>{w.attack}</Num></div>
+        <div><span className="text-text-dim">重 </span><Num>{w.weight}</Num></div>
+        <div className="col-span-2 mt-0.5"><CraftBadge /></div>
+      </div>
     </div>
   )
 }

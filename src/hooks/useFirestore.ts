@@ -172,6 +172,21 @@ export function useBackpacks(): HookResult<Backpack[]> {
   return { data: backpacks, loading, error }
 }
 
+/**
+ * 背包 id→name 對照（PLAN-031 複合武器「融合自 ○○背包」顯示用）。
+ * ⚠ 會觸發 backpacks 集合載入（冷快取 ~180 read）——呼叫端請在「確定是複合武器」
+ *   的元件邊界內才掛載此 hook，避免一般武器頁多付讀取量。
+ */
+export function useBackpackNameMap(): HookResult<Record<string, string>> {
+  const { backpacks } = useGameData()
+  const { loading, error } = useCollections(['backpacks'])
+  const data = useMemo(
+    () => Object.fromEntries(backpacks.map((b) => [b.id, b.name])),
+    [backpacks],
+  )
+  return { data, loading, error }
+}
+
 // ── 元件 ──────────────────────────────────────────────────────────────────────
 
 export function useComponents(): HookResult<Component[]> {

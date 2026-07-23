@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-035 · 背包分類階層</h3>
+      <p>依遊戲背包合成階層把 180 件背包分成<b>素材(A/B) / 基礎(S) / 複合(S+) / 特種(SS)</b>四層——預設隱藏沒人用的 A/B 素材、補上「<b>強化 vs 干擾</b>」第二軸與變體篩選。實測 rarity 與階層一對一，且 <code>type</code> 欄位只編碼「基礎功能軸」、「強化/干擾」只存在名字字串（出力強化背包 vs 出力干擾背包 同 <code>type=PowerAdd</code>），故第二軸須靠 name 解析。階層與軸皆從既有資料 derive，<b>零資料改動</b>；先驗證够用再決定是否結構化。延伸的「背包合成關係鏈」是 PLAN-031 武器 upgrade 的背包版，列為可選後續。前置 PLAN-031（同動 BackpacksPage）已 commit。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-035_背包分類階層/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-035_背包分類階層/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-034 · 神驅算力 BUFF 階覆寫層</h3>
