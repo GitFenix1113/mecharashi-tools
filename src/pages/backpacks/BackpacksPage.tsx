@@ -25,11 +25,19 @@ import {
   weaponArmorTypes,
   type BackpackListItem,
 } from '../../utils/weaponUpgrade'
+import {
+  tierFromRarity,
+  parseBackpackName,
+  TIER_LABELS,
+  TIER_ORDER,
+  DEFAULT_TIERS,
+  type BackpackTier,
+  type BackpackLine,
+} from '../../utils/backpackClassify'
 import type { Backpack, Weapon } from '../../types'
 
 const PAGE_SIZE = 36
 
-const ALL_RARITIES = ['SS', 'S+', 'S', 'A', 'B']
 const ALL_BACKPACK_TYPES = [
   'Heal', 'Ammo', 'Interference', 'Invisible', 'BackupEquipment',
   'MovePointAdd', 'Flow', 'Radar', 'EMP', 'Enhance', 'PowerAdd',
@@ -39,6 +47,8 @@ const RARITY_ORDER: Record<string, number> = { SS: 0, 'S+': 1, S: 2, A: 3, B: 4 
 // 合併列表條目的取值輔助（背包 / 投影武器共用篩選邏輯）
 const itemId = (it: BackpackListItem) => it.data.id
 const itemRarity = (it: BackpackListItem) => it.data.rarity
+// 合成階層 ＝ rarity 的粗化（PLAN-035 決策三：階層 facet 取代稀有度多選）
+const itemTier = (it: BackpackListItem): BackpackTier | null => tierFromRarity(it.data.rarity)
 
 function Num({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -331,9 +341,12 @@ export default function BackpacksPage() {
   const navigate = useNavigate()
 
   const [search, setSearch]               = useState('')
-  const [rarityFilters, setRarityFilters] = useState<Set<string>>(new Set())
+  // 合成階層多選（取代稀有度）；預設隱藏素材(A/B)，落地只顯示 基礎/複合/特種（143 件）
+  const [tierFilters, setTierFilters]     = useState<Set<BackpackTier>>(new Set(DEFAULT_TIERS))
   const [typeFilters, setTypeFilters]     = useState<Set<string>>(new Set())
   const [armorFilter, setArmorFilter]     = useState<string | null>(null)
+  const [lineFilter, setLineFilter]       = useState<BackpackLine | null>(null)  // 強化/干擾 軸
+  const [variantFilter, setVariantFilter] = useState<string | null>(null)        // 變體子篩選（僅選線後可用）
   const [craftFacet, setCraftFacet]       = useState(false)   // 特種背包製作 正交 facet
   const [displayCount, setDisplayCount]   = useState(PAGE_SIZE)
 
@@ -341,7 +354,21 @@ export default function BackpacksPage() {
   useEffect(() => { if (craftFacet) void ensureLoaded(['weapons']) }, [craftFacet, ensureLoaded])
   const weaponsLoading = craftFacet && !loadedKeys.has('weapons')
 
-  useEffect(() => { setDisplayCount(PAGE_SIZE) }, [search, rarityFilters, typeFilters, armorFilter, craftFacet])
+  useEffect(() => { setDisplayCount(PAGE_SIZE) }, [search, tierFilters, typeFilters, armorFilter, lineFilter, variantFilter, craftFacet])
+
+  // 變體清單依資料 derive（不硬編，避免改版漏改）；依所選線收斂
+  const variantsByLine = useMemo(() => {
+    const map: Record<BackpackLine, string[]> = { 強化: [], 干擾: [] }
+    const seen: Record<BackpackLine, Set<string>> = { 強化: new Set(), 干擾: new Set() }
+    for (const bp of backpacks) {
+      const { line, variant } = parseBackpackName(bp.name)
+      if (line && variant && !seen[line].has(variant)) { seen[line].add(variant); map[line].push(variant) }
+    }
+    return map
+  }, [backpacks])
+
+  // 選線 / 清線時一併重置變體（變體只在某條線下有意義）
+  const pickLine = (line: BackpackLine | null) => { setLineFilter(line); setVariantFilter(null) }
 
   const isMobile = useIsMobile()
   const [hoverTooltip, setHoverTooltip] = useState<TooltipState | null>(null)
@@ -355,7 +382,7 @@ export default function BackpacksPage() {
   const parentNameOf = (w: Weapon) => (w.upgrade?.fromWeaponId ? weaponById.get(w.upgrade.fromWeaponId)?.name : undefined)
   const fusedBackpackNameOf = (w: Weapon) => (w.upgrade?.fusedBackpackId ? backpackById.get(w.upgrade.fusedBackpackId)?.name : undefined)
 
-  const toggleSet = (setter: React.Dispatch<React.SetStateAction<Set<string>>>, value: string) => {
+  function toggleSet<T>(setter: React.Dispatch<React.SetStateAction<Set<T>>>, value: T) {
     setter((prev) => {
       const next = new Set(prev)
       if (next.has(value)) { next.delete(value) } else { next.add(value) }
@@ -381,8 +408,19 @@ export default function BackpacksPage() {
 
   const filtered = items
     .filter((it) => {
-      if (rarityFilters.size > 0 && !rarityFilters.has(itemRarity(it))) return false
+      // 階層篩選（取代稀有度）：未知階層或不在選取集內即排除；預設不含素材 → A/B 隱藏
+      const tier = itemTier(it)
+      if (!tier || !tierFilters.has(tier)) return false
       if (typeFilters.size > 0 && !typeFilters.has(itemType(it))) return false
+      // 強化/干擾 軸（決策五）：只作用於「含該軸」的條目——有 line 的才受篩，
+      // 純功能背包與 SS 特種（line=null）不因此被排除。變體同理僅收斂該線。
+      if (lineFilter) {
+        const parts = parseBackpackName(it.data.name)
+        if (parts.line !== null) {
+          if (parts.line !== lineFilter) return false
+          if (variantFilter && parts.variant !== variantFilter) return false
+        }
+      }
       const armor = itemArmor(it)
       if (armorFilter === 'none' && armor.length > 0) return false
       if (armorFilter && armorFilter !== 'none' && !armor.includes(armorFilter)) return false
@@ -507,13 +545,18 @@ export default function BackpacksPage() {
           className="w-full bg-bg-dark border border-border rounded-lg px-4 py-2 text-sm text-text-primary placeholder-text-dim outline-none focus:border-border-accent"
         />
 
-        {/* Rarity – multi-select */}
+        {/* 合成階層 – multi-select（取代稀有度；預設隱藏素材 A/B）*/}
         <div className="flex flex-wrap gap-1.5 items-center">
-          <span className="text-xs text-text-dim mr-1 w-10 flex-shrink-0">稀有度</span>
-          <button className={filterBtn(rarityFilters.size === 0)} onClick={() => setRarityFilters(new Set())}>全部</button>
-          {ALL_RARITIES.map((r) => (
-            <button key={r} className={filterBtn(rarityFilters.has(r))} onClick={() => toggleSet(setRarityFilters, r)}>
-              {r}
+          <span className="text-xs text-text-dim mr-1 w-10 flex-shrink-0">階層</span>
+          <button
+            className={filterBtn(tierFilters.size === TIER_ORDER.length)}
+            onClick={() => setTierFilters(new Set(TIER_ORDER))}
+          >
+            全部
+          </button>
+          {TIER_ORDER.map((t) => (
+            <button key={t} className={filterBtn(tierFilters.has(t))} onClick={() => toggleSet(setTierFilters, t)}>
+              {TIER_LABELS[t]}
             </button>
           ))}
         </div>
@@ -528,6 +571,33 @@ export default function BackpacksPage() {
             </button>
           ))}
         </div>
+
+        {/* 強化 / 干擾 軸 – single-select（決策四/五：line 只從 name 判別；只作用於含該軸的條目）*/}
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span className="text-xs text-text-dim mr-1 flex-shrink-0">強化/干擾</span>
+          <button className={filterBtn(!lineFilter)} onClick={() => pickLine(null)}>全部</button>
+          {(['強化', '干擾'] as const).map((ln) => (
+            <button key={ln} className={filterBtn(lineFilter === ln)} onClick={() => pickLine(lineFilter === ln ? null : ln)}>
+              {ln}
+            </button>
+          ))}
+          {lineFilter && (
+            <span className="text-[11px] text-text-dim">（純功能／特種背包不受此軸影響）</span>
+          )}
+        </div>
+
+        {/* 變體 – single-select，依所選線收斂；未選線時不顯示 */}
+        {lineFilter && variantsByLine[lineFilter].length > 0 && (
+          <div className="flex flex-wrap gap-1.5 items-center">
+            <span className="text-xs text-text-dim mr-1 w-10 flex-shrink-0">變體</span>
+            <button className={filterBtn(!variantFilter)} onClick={() => setVariantFilter(null)}>全部</button>
+            {variantsByLine[lineFilter].map((v) => (
+              <button key={v} className={filterBtn(variantFilter === v)} onClick={() => setVariantFilter(variantFilter === v ? null : v)}>
+                {v}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Armor – single-select */}
         <div className="flex flex-wrap gap-1.5 items-center">

@@ -179,7 +179,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">6</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -187,7 +187,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">6</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -199,11 +199,19 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">0 / 6</span>
+      <span style="color:var(--accent-green);">6 / 6 · 全數完成（live 實測驗證）</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">Live 實測驗證（2026-07-24）：</strong>
+    A-1b audit 對 live 全 180 背包 → 分佈 A/B=37(20+17)·S=23·S+=98·SS=22 <strong>完全吻合</strong>、
+    <strong>unresolved=0</strong>（180 名字乾淨可解析，證實 name-derive 够用、無需結構化欄位）。<br>
+    背包圖鑑 port 5173 實跑：階層取代稀有度、標頭「共 180」＋「顯示 <strong>143</strong>」（A/B 預設隱藏生效）；
+    點「強化」→ 變體列 derive 出 8 變體、干擾 S+ 排除、SS 特種(null-line)不受影響（決策五字面行為）。
   </div>
 
   <div class="impact-note">
@@ -236,7 +244,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; 背包分類 utils</div>
       <div class="task-group-meta">src/utils/backpackClassify.ts（新檔）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -255,7 +263,7 @@
         <div class="task-file">src/utils/backpackClassify.ts · backpackClassify.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -263,7 +271,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1b &nbsp; 分類 audit 腳本（佐證義務）</div>
       <div class="task-group-meta">scripts/audit-backpack-classify.mjs（新，一次性、進版控）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -279,7 +287,7 @@
         <div class="task-file">scripts/audit-backpack-classify.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -287,7 +295,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; 階層 facet 取代稀有度 + 預設隱藏 A/B</div>
       <div class="task-group-meta">src/pages/backpacks/BackpacksPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -305,7 +313,7 @@
         <div class="task-file">src/pages/backpacks/BackpacksPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -320,7 +328,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; 強化/干擾 + 變體子篩選</div>
       <div class="task-group-meta">src/pages/backpacks/BackpacksPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -335,7 +343,7 @@
         <div class="task-file">src/pages/backpacks/BackpacksPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -350,7 +358,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; docs 同步（CLAUDE.md 規則 2）</div>
       <div class="task-group-meta">docs/02_技術文件/02_資料模型/backpacks.html</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -363,7 +371,7 @@
         <div class="task-file">docs/02_技術文件/02_資料模型/backpacks.html</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -371,7 +379,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 網站更新履歷（CLAUDE.md 規則 1）</div>
       <div class="task-group-meta">src/data/siteChangelog/2026-07.ts（或當月）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -383,7 +391,7 @@
         <div class="task-file">src/data/siteChangelog/當月.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
