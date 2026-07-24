@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card yellow">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-031 · 武器製作關係層</h3>
+      <p>「裁決者」是用背包圖紙在【特種背包製作】做出來的，玩家卻在背包圖鑑找不到它。查核發現官方資料層其實把它放在武器表，「特種背包製作」是製作台位置而非裝備分類——所以這是呈現問題，不是儲存歸類問題。進一步推導發現更大的結構：S+ 武器是 SS 武器的材料，技能會被繼承，全站可推出 <b>42 條製作關係（0 歧義）</b>，而「裁決者←熠光」只是其中的 2 條同稀有度邊。本計畫用單一 <code>upgrade</code> 關係同時表達武器進階與複合製作，讓武器頁看得見前置與後續、複合武器（裁決者／糖衣毀滅者／天燼審判）在背包圖鑑正交投影並列。零文件搬移、零 refType 變更、單一 bump、可完整回退，並立下「跨界實體依資料形狀決定歸屬」的架構判準。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-07-24 · 14 / 14 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-031_複合武器歸類/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-031_複合武器歸類/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card green">
       <div class="card-icon">◆</div>
       <h3>PLAN-030 · 資料變更歷史</h3>

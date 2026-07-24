@@ -224,6 +224,47 @@
   </div>
 </section>
 
+<!-- 合成階層與強化/干擾軸（PLAN-035）-->
+<section class="section">
+  <div class="section-label" style="color:var(--accent-green)">Classification</div>
+  <div class="section-title">合成階層與「強化/干擾」軸（全部 derive，零欄位）</div>
+  <div class="section-desc">
+    背包圖鑑（PLAN-035）把 180 件背包依合成階層分成<strong>素材/基礎/複合/特種</strong>四層、預設隱藏 A/B 素材，並提供「強化 vs 干擾」第二軸與變體篩選。<strong>階層與軸皆從既有 <code>rarity</code>＋名字字串 derive，不新增任何 Firestore 欄位、不 bump 版本。</strong>邏輯在 <code>src/utils/backpackClassify.ts</code>。
+  </div>
+  <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-left:3px solid var(--accent-green);border-radius:0 10px 10px 0;padding:16px 20px;margin:12px 0;font-size:14px;line-height:1.9;">
+    <strong>① 合成階層 ＝ <code>rarity</code> 的粗化（<code>tierFromRarity</code>，實測 1:1）：</strong><br>
+    　素材 = A + B（37）· 基礎 = S（23）· 複合 = S+（98）· 特種 = SS（22），合 180。<br>
+    　背包圖鑑的階層 facet <strong>取代</strong>原稀有度多選（tier 只是 A/B 合併的 rarity，兩者是同一分割，並存會有「SS×素材＝恆 0 筆」矛盾）；落地預設勾 基礎＋複合＋特種（<strong>143 件</strong>）、素材預設隱藏。<br><br>
+    <strong>② 「強化/干擾」軸只存在於<u>名字字串</u>，<code>type</code> 欄位<u>不</u>編碼它：</strong><br>
+    　<code>出力強化背包·首攻</code> 與 <code>出力干擾背包·攻擊</code> <strong>同 <code>type=PowerAdd</code></strong>——強化/干擾差異只在名字。故 <code>line</code> 一律由 <code>parseBackpackName</code> 從 name 解析，<span style="color:var(--accent-red)">不可用 type</span>。<br>
+    　名字文法 <code>[基礎功能]?[強化|干擾]背包·[變體]</code>：<code>[基礎功能]</code> <strong>可省略</strong>——base 階（S/A/B）的 <code>強化背包·首攻</code>/<code>干擾背包·攻擊</code> 無功能前綴（對應 <code>type=Enhance</code>/<code>EMP</code>），只有 S+ 複合階才有 出力/移動… 前綴。<br>
+    　<code>line</code> 以整個 <code>強化背包</code>/<code>干擾背包</code> token 判別（非裸『強化』），避開 <code>強襲者背包</code>(SS) 被誤判。純功能背包與 SS 特種背包 <code>line=null</code>，強化/干擾軸<strong>只作用於含該軸的條目</strong>、其餘不因此被排除。<br>
+    　變體清單由現有資料 derive（不硬編，避免改版漏改）、依所選線收斂。<br><br>
+    <small style="color:var(--text-dim)"><strong>刻意不加結構化欄位</strong>（<code>tier</code>/<code>line</code>/<code>variant</code>）——name-derive 經 <code>scripts/audit-backpack-classify.mjs</code> 對 live 全 180 名字驗證 <code>unresolved=0</code>、分佈 37/23/98/22 相符，證實够用。僅在 name-derive 被證實不够用、或要做「背包合成關係鏈」（PLAN-031 <code>upgrade</code> 模型的背包版）時才需結構化。</small>
+  </div>
+</section>
+
+<!-- 前置主背包（PLAN-036）-->
+<section class="section">
+  <div class="section-label" style="color:var(--accent-orange)">Craft Prereq</div>
+  <div class="section-title">背包的前置主背包（<code>craft.prereqBackpackId</code>）</div>
+  <div class="section-desc">
+    背包製作有「低一階前置」關係：<strong>SS 特種背包 ← S+ 前置</strong>、<strong>S+ 複合背包 ← S 前置</strong>。
+    <code>Backpack.craft</code> 只存前置主背包這一個 id（低一階背包），種類/線/變體皆由此 id 查表 derive。
+  </div>
+  <div style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.2);border-left:3px solid var(--accent-orange);border-radius:0 10px 10px 0;padding:16px 20px;margin:12px 0;font-size:14px;line-height:1.9;">
+    <strong>前置主背包一律「低一階」：</strong><br>
+    · <strong>SS ← S+</strong>：<span style="color:var(--accent-red)">無法從名字 derive</span>（征服者背包 ← 某 S+），由後台 <code>BackpackAdmin</code> 手動選擇。<br>
+    · <strong>S+ ← S</strong>：<span style="color:var(--accent-green)">可從名字乾淨反推</span>（<code>出力強化背包·首攻</code> ＝ 出力背包(S) + <strong>強化背包·首攻(S)</strong>，存變體背包「強化背包·首攻」）。實測 98/98 命中，由一次性腳本 <code>scripts/temp_scripts/fill-backpack-craft.mjs</code> 填入。<br>
+    · 存檔走 <code>updateBackpack</code>（自動 <code>bumpDataVersion('backpacks')</code>）；候選為「低一階」背包，S+ 前置的 type 是 Enhance/EMP（變體線）非自身 PowerAdd。<br><br>
+    <strong>其餘 derive / 固定文案：</strong><br>
+    · <strong>種類</strong>＝查 <code>prereqBackpackId</code> 取 <code>type</code>（<code>prereqBackpackType</code>）；背包圖鑑「前置背包種類」facet 目前<strong>只作用於 SS</strong>，查不到關聯的 SS 在此 facet 下不顯示（優雅降級）。<br>
+    · <strong>圖紙</strong>＝derive（<code>name + '設計圖'</code>，<code>blueprintName</code>）；S+ 的另一材料「功能背包」（出力背包）由 base derive、不存；任意 3 個 S ＝固定文案、不存。<br>
+    · 無前置階（S/A/B）一律不寫 <code>craft</code>；未關聯者前台當「未關聯」處理、不報錯。<br><br>
+    <small style="color:var(--text-dim)"><strong>刻意分流的後續</strong>：完整配方呈現；形態二「特種背包武器」（裁決者等，產物是武器，已由 PLAN-031 <code>weapon.upgrade</code> 涵蓋）；圖紙材料來源（武裝討伐資料庫）。</small>
+  </div>
+</section>
+
 <!-- 稀有度識別規則 -->
 <section class="section">
   <div class="section-label" style="color:var(--accent-pink)">Rarity</div>

@@ -2,6 +2,22 @@
 
 import type { DescriptionRefs } from './common'
 
+/**
+ * 背包的製作前置關係（PLAN-036）。前置主背包一律是「低一階」的背包：
+ *   · SS 特種背包 ← S+ 前置主背包（無法從名字 derive，後台手輸；如 征服者背包 ← 某 S+）
+ *   · S+ 複合背包 ← S 變體背包（可從名字 derive，腳本填；
+ *       如 出力強化背包·首攻 ＝ 出力背包(S) + 強化背包·首攻(S)，存變體背包「強化背包·首攻」）
+ * 只存前置主背包這一個 id；種類/線/變體皆由此 id 查 backpacks 表 derive。
+ *
+ * · 圖紙 ＝ derive（name + '設計圖'），材料來源（武裝討伐）為未來擴充點，不存。
+ * · S+ 的另一材料「功能背包」（出力背包）可由 base derive，不存；任意 3 個 S ＝萬用，不存。
+ * · 形態二（特種背包武器，如裁決者）產物是武器，已由 PLAN-031 weapon.upgrade 涵蓋，不在此。
+ */
+export interface BackpackCraft {
+  /** 前置主背包 doc id（低一階背包；SS←S+ 手輸、S+←S 名稱可推）。 */
+  prereqBackpackId: string
+}
+
 export interface Backpack {
   id: string
   name: string
@@ -13,6 +29,8 @@ export interface Backpack {
   slot: string                // WeaponEquipSlot：固定為 'back'（WeaponEquipSlot.BACK）；與武器共用 enum 供裝備計算器統一判斷部位
   assemblableArmorType: string[]  // AssemblableArmorType 陣列（正向邏輯）：[] = 無限制；['Light'] / ['Medium'] / ['Heavy'] / 複數 = 指定機甲類型 · API: AssemblableAirmenType
   repairAmount: number    // 修理量；非修理類背包填 0 · API: AmountOfRepair
+  /** SS 特種背包製作關係（PLAN-036）；僅 SS 且後台已輸入者有值。無值＝未關聯，前台優雅降級。 */
+  craft?: BackpackCraft
   /** 背包附帶技能（API: WithPassiveSkills[0]）；僅 SS 稀有度（API quality: SSSR）有此欄位 */
   mainSkill?: {
     id: string            // API: WithPassiveSkills[0].ID

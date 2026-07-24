@@ -170,7 +170,7 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">影響範圍</div>
-      <div class="meta-value purple">BackpacksPage · utils/backpackClassify(新) · (可選)types/backpack</div>
+      <div class="meta-value purple">BackpacksPage · utils/backpackClassify(新) · scripts/audit-backpack-classify(新) · (可選)types/backpack</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">優先級</div>
@@ -249,9 +249,13 @@
   </div>
 
   <div class="decision-block">
-    <strong>決策三：預設隱藏 A/B 素材（背包頁預設篩選 SS/S+/S）</strong><br>
-    落地 <code>/backpacks</code> 時預設只顯示 SS/S+/S（167 件），A/B 素材需手動打開「素材」層才顯示。
-    減少查詢與資訊干擾；既有稀有度多選篩選仍可自由調整。
+    <strong>決策三：合成階層 facet <u>取代</u>既有稀有度多選；預設隱藏 A/B 素材</strong><br>
+    <span class="badge-high">2026-07-24 拍板</span>因 <code>tier</code> 只是把 A/B 合併的
+    <code>rarity</code>（決策一），「階層」與「稀有度」是<strong>同一個分割</strong>——兩者並存只會冗餘或
+    產生「SS×素材＝恆 0 筆」的矛盾組合。故<strong>移除 SS/S+/S/A/B 五顆稀有度按鈕，改為四顆階層按鈕</strong>
+    （素材／基礎／複合／特種），彼此獨立多選。<br>
+    <strong>落地 <code>/backpacks</code> 預設勾選 基礎＋複合＋特種（143 件）、素材(A/B) 預設關</strong>，
+    需手動打開「素材」才顯示其 37 件。減少查詢與資訊干擾。<span style="color:var(--text-dim)">（若日後想在素材層內再分 A/B，可另做子選；本計畫先合併為單一「素材」。）</span>
   </div>
 
   <div class="warning-block">
@@ -261,9 +265,17 @@
     <div class="code-block">出力強化背包·首攻  → type=<span class="nm">PowerAdd</span>（出力）
 出力干擾背包·攻擊  → type=<span class="nm">PowerAdd</span>（出力）  <span class="cm">← 同 type！強化/干擾差異只在名字</span>
 移動強化背包·追擊  → type=MovePointAdd（移動）</div>
-    S+ 複合背包名字結構高度規律：<code>[基礎功能][強化|干擾]背包·[變體]</code>，
-    可乾淨拆出三軸。<strong>決策：先用 name 解析 derive，不加結構化欄位</strong>——
-    驗證够用後若要做決策六的合成鏈才需要結構化。
+    S+ 複合背包名字結構高度規律：<code>[基礎功能]?[強化|干擾]背包·[變體]</code>，可乾淨拆出三軸。<br>
+    <span class="badge-high">⚠ 文法修正</span><strong><code>[基礎功能]</code> 是<u>可選</u>的</strong>——
+    base 階（S/A/B）的 <code>強化背包·首攻</code>、<code>干擾背包·攻擊</code>
+    <strong>沒有基礎功能前綴</strong>（對應 <code>type=Enhance</code> / <code>type=EMP</code>，見 enums.ts）；
+    只有 S+ 複合階才有 <code>出力</code>/<code>移動</code>… 前綴。parser 的 <code>baseFunction</code> 須允許為
+    <code>null</code>，否則 base 階與素材階的強化/干擾線會解析失敗。<br>
+    <strong>決策：先用 name 解析 derive，不加結構化欄位</strong>——驗證够用後若要做決策六的合成鏈才需要結構化。<br>
+    <span class="badge-good">佐證義務</span>name-derive 是否對<strong>全部 180 個真實名字</strong>都乾淨可解析，
+    須由 A-1 的一次性 audit 腳本產出 <code>unresolved</code> 報告證明（比照 PLAN-031 的 derive 腳本），
+    不可只靠手挑名字的純函式單元測試——以防某個 SS/功能背包名字剛好含「強化」「干擾」字樣造成 substring 誤判，
+    或官方改版新增背包破壞文法。
   </div>
 
   <div class="warning-block">
@@ -292,10 +304,13 @@
     <strong>在範圍內：</strong>
     <ul style="margin:8px 0 0 16px;line-height:1.9;">
       <li><code>src/utils/backpackClassify.ts</code>（新）：<code>tierFromRarity</code>、名字解析出
-        <code>{ baseFunction, line: '強化'|'干擾'|null, variant }</code>、對應中文標籤</li>
-      <li>背包圖鑑「合成階層」facet（素材/基礎/複合/特種）+ 預設隱藏 A/B</li>
-      <li>「強化 vs 干擾」軸篩選 + 變體子篩選（name-derive，優雅降級）</li>
+        <code>{ baseFunction: string|null, line: '強化'|'干擾'|null, variant: string|null }</code>、對應中文標籤</li>
+      <li><code>scripts/audit-backpack-classify.mjs</code>（新，一次性）：對 live 背包核對 rarity 分佈
+        （驗證 37/23/98/22＝180）並列出<strong>無法套入文法的名字</strong>（unresolved 報告），進版控供回歸</li>
+      <li>背包圖鑑「合成階層」facet（素材/基礎/複合/特種）<strong>取代</strong>稀有度多選 + 預設隱藏 A/B（決策三）</li>
+      <li>「強化 vs 干擾」軸篩選 + 變體子篩選（name-derive，優雅降級；變體 UI 依所選線收斂）</li>
       <li>docs 資料模型同步（backpacks.html 補階層與軸的 derive 說明）+ siteChangelog</li>
+      <li><strong>零資料改動 → 無需 <code>bumpDataVersion</code></strong>（全部從既有 rarity＋name derive，不寫 Firestore）</li>
     </ul>
   </div>
 

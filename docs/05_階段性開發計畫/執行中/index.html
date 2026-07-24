@@ -31,6 +31,24 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-037 · 背包圖鑑優化</h3>
+      <p>背包圖鑑最終優化四連：① 預設階層只選<b>特種(SS)</b>、查詢量小故移除分頁；② 把「變體」子篩選升級為<b>「能力」並沿 craft 前置鏈跨階篩選</b>——新增 <code>backpackAbility</code> 循鏈取底層 S 變體背包的 line+variant，讓「強化→首攻」能命中原本名字無變體的 SS（主宰者背包 → 飛行強化背包·首攻 → 強化背包·首攻），line 篩改嚴格（一併定案 PLAN-035 遺留問題）；③ 移除被取代的<b>前置背包 facet</b>；④「特種背包製作」toggle 改為<b>「包含武器」預設開</b>（來源池加複合武器、與背包同條件篩選；冷快取 +169 read、回訪 0）。整合 PLAN-035 階層與 PLAN-036 前置關係，live 驗證通過。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-037_背包圖鑑優化/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-037_背包圖鑑優化/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-036 · 特種背包前置關係</h3>
+      <p>SS 特種背包在遊戲【特種背包製作】台是「圖紙＋<b>前置主背包</b>＋複合背包(S+)＋任意 3 個 S」的固定配方合成的。其中「前置主背包」<b>無法從名字 derive</b>（征服者背包 ← 某前置背包，名字無關聯），故新增 <code>Backpack.craft.prereqBackpackId</code> 只存這一個事實、後台手輸，其餘（種類/圖紙）全 derive。背包圖鑑新增「依前置背包種類篩選」，未輸入關聯的 SS 先不顯示。圖紙統一顯示「{名}設計圖」，材料來源（武裝討伐）與形態二（特種背包武器，屬 PLAN-031）另做。是 PLAN-035 決策六的第一步。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-036_特種背包前置關係/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-036_特種背包前置關係/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card green">
       <div class="card-icon">◆</div>
       <h3>PLAN-035 · 背包分類階層</h3>
@@ -65,15 +83,6 @@
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-032_武器技能引用化/計畫書.html">→ 計畫書</a>
         <a class="card-link" href="PLAN-032_武器技能引用化/進度表.html">→ 進度表</a>
-      </div>
-    </div>
-    <div class="card yellow">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-031 · 武器製作關係層</h3>
-      <p>「裁決者」是用背包圖紙在【特種背包製作】做出來的，玩家卻在背包圖鑑找不到它。查核發現官方資料層其實把它放在武器表，「特種背包製作」是製作台位置而非裝備分類——所以這是呈現問題，不是儲存歸類問題。進一步推導發現更大的結構：S+ 武器是 SS 武器的材料，技能會被繼承，全站可推出 <b>41 條製作關係（0 歧義）</b>，而「裁決者←熠光」只是其中的 2 條同稀有度邊。因此本計畫用單一 <code>upgrade</code> 關係同時表達武器進階與複合製作，讓武器頁看得見前置與後續、複合武器在背包圖鑑正交投影並列。零文件搬移、零 refType 變更、單一 bump、可完整回退，並立下「跨界實體依資料形狀決定歸屬」的架構判準。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-031_複合武器歸類/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-031_複合武器歸類/進度表.html">→ 進度表</a>
       </div>
     </div>
     <div class="card orange">

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-036 特種背包前置關係 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 24px 0; }
+.meta-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+.meta-label { font-size: 10px; font-family: 'Orbitron', sans-serif; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+.meta-value { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+.problem-block { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.25); border-left: 3px solid var(--accent-red); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); }
+.decision-block { background: rgba(34,197,94,0.06); border: 1px solid rgba(34,197,94,0.2); border-left: 3px solid var(--accent-green); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); }
+.warning-block { background: rgba(234,179,8,0.06); border: 1px solid rgba(234,179,8,0.2); border-left: 3px solid var(--accent-yellow); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); }
+.info-block { background: rgba(34,211,238,0.06); border: 1px solid rgba(34,211,238,0.2); border-left: 3px solid var(--accent-cyan); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); }
+.code-block { background: #0d1117; border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.9; overflow-x: auto; color: #e6edf3; }
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+.impact-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+.impact-table th { background: rgba(255,255,255,0.04); border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 11px; font-family: 'Orbitron', sans-serif; letter-spacing: 1px; color: var(--text-dim); }
+.impact-table td { border: 1px solid var(--border); padding: 10px 14px; color: var(--text-secondary); vertical-align: top; }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-036 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-036</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    特種背包前置關係<span style="-webkit-text-fill-color:var(--text-secondary);"> · SS 前置主背包 · 依前置種類篩選 · 後台手輸</span>
+  </h1>
+  <p class="hero-sub">SS 特種背包由「圖紙＋前置主背包＋複合背包/專武＋任意 3 個 S」製作。記錄無法 derive 的「前置主背包」，讓背包圖鑑能依前置背包種類篩選，並在後台手動輸入。啟用 PLAN-035 決策六（背包合成關係鏈）的第一步。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-036</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-07-25</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">types/backpack · BackpackAdmin · BackpacksPage · backpackClassify · docs</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value orange">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-035（同動 BackpacksPage / backpackClassify，疊在其分支上）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>立案背景（2026-07-25，站長於背包製作頁提出）：</strong>SS 特種背包（如征服者背包）在遊戲【特種背包製作】台是由一份<strong>固定配方</strong>合成的，其中有一顆「前置主背包」。站長希望背包圖鑑<strong>能依前置背包的種類篩選</strong>、後台能手動輸入這份關聯，查不到前置就先不顯示。本計畫是 PLAN-035 決策六（背包合成關係鏈）明確分流出來的第一步。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題：SS 的「前置主背包」無法 derive，目前完全沒有資料</strong><br>
+    PLAN-035 的階層/軸都能從 rarity＋名字 derive，但 SS 特種背包的前置主背包是<strong>製作台的配方事實</strong>（征服者背包 ← 某顆前置背包），名字裡沒有這個關聯（「征服者」不含前置背包的任何字樣）。<code>Backpack</code> 型別目前也沒有承載它的欄位，因此無從篩選、無從呈現。
+  </div>
+
+  <div class="info-block">
+    <strong>【站長確認】特種背包製作配方是固定的，只有兩種形態：</strong>
+    <div class="code-block"><span class="cm">// 形態一：特種背包（產物是 SS 背包，存 backpacks）← 本計畫範圍</span>
+圖紙 + <span class="nm">前置主背包</span> + 複合背包(S+) + 任意 3 個 S 級背包
+
+<span class="cm">// 形態二：特種背包武器（產物是武器，如裁決者，存 weapons）← PLAN-031 已涵蓋</span>
+圖紙 + <span class="nm">前置主背包</span> + 專武(SS) + 任意 3 個 S 級背包</div>
+    · <strong>圖紙</strong>來源是武裝討伐；圖紙的製作材料<strong>本計畫先跳過</strong>，統一顯示為「{背包名}設計圖」（如「征服者背包設計圖」），未來另做武裝討伐資料庫時再補。<br>
+    · <strong>任意 3 個 S 級背包</strong>是萬用材料，非特定，<strong>不需存</strong>（顯示為固定文案）。<br>
+    · 形態二的產物是<strong>武器</strong>（裁決者等），已由 PLAN-031 的 <code>weapon.upgrade</code> 涵蓋，<strong>不在本計畫</strong>。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：只存「前置主背包 id」一個變動事實，其餘全 derive/固定文案</strong><br>
+    沿用 PLAN-031「只存事實、不存可推導值」哲學。新增 <code>Backpack.craft?</code>，僅一個必填欄位：
+    <div class="code-block"><span class="cm">// src/types/backpack.ts</span>
+<span class="kw">export interface</span> <span class="ty">BackpackCraft</span> {
+  <span class="cm">/** 前置主背包 doc id（specific，後台手輸）。種類/線/變體皆由此 id 查表 derive，不存冗餘。 */</span>
+  <span class="nm">prereqBackpackId</span>: <span class="ty">string</span>
+}
+<span class="cm">// Backpack 增 craft?: BackpackCraft（僅 SS 特種背包會有值）</span></div>
+    圖紙＝derive（<code>name + '設計圖'</code>）；前置背包的「種類」＝查 <code>prereqBackpackId</code> 取其 <code>type</code>；任意 3 個 S＝固定文案。<strong>複合背包(S+) 核心材料</strong>本階段先不存（見不在範圍）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：背包圖鑑新增「前置背包種類」篩選，未設關聯者在此 facet 下隱藏</strong><br>
+    在 BackpacksPage 加一個 facet：依<strong>前置主背包的 <code>type</code></strong>（出力/移動/誘導…）篩 SS 特種背包。
+    <span class="badge-good">優雅降級</span>此 facet 啟用時，<strong>只顯示有 <code>craft.prereqBackpackId</code> 且能查到前置背包的 SS 條目</strong>；查不到關聯的 SS（尚未輸入）<strong>先不顯示</strong>（站長明確要求）。與 PLAN-035 階層/軸、PLAN-031 特種背包製作 facet 正交共存。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：後台 <code>BackpackEditPanel</code> 對 SS 加「前置主背包」下拉</strong><br>
+    僅 <code>rarity === 'SS'</code> 時顯示此欄；選項＝ <code>useGameData().backpacks</code> 全清單（<code>ensureLoaded(['backpacks'])</code>），排除自己與其他 SS（前置主背包是較低階背包）。存檔走既有 <code>updateBackpack</code>（<strong>自動 <code>bumpDataVersion('backpacks')</code></strong>）＋ <code>patchCollectionItem</code> 就地同步。<strong>手輸即生效，不需 migrate 腳本。</strong>
+  </div>
+
+  <div class="warning-block">
+    <strong>決策四（邊界）：<code>craft</code> 是選填、非破壞；stripUndefined 相容</strong><br>
+    非 SS 背包不寫 <code>craft</code>；未輸入的 SS 也維持無 <code>craft</code>。<code>updateBackpack</code> 走 <code>stripUndefined</code> + 整份 <code>setDoc</code>，<strong>編輯既有 SS 時務必保留其它欄位</strong>（現有 admin 已是整份 form 存回，安全）。前台對無 <code>craft</code> 的 SS 一律當「未關聯」處理，不報錯。
+  </div>
+
+  <div class="info-block">
+    <strong>決策五（延伸，本計畫不做）：完整配方呈現與形態二</strong><br>
+    完整配方顯示（設計圖＋前置主背包＋<strong>複合背包(S+) 核心材料</strong>＋任意 3 個 S）需要背包詳情頁或更豐富的浮窗，且要存 S+ 核心材料 id；形態二（特種背包武器的前置主背包）與 PLAN-031 重疊；圖紙材料來源需武裝討伐資料庫。三者皆列後續，待本計畫的前置主背包上線、確認需求後再評估。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>Backpack.craft?: { prereqBackpackId }</code> 型別（<strong>SS 與 S+ 皆用</strong>，前置一律低一階）</li>
+      <li>後台 <code>BackpackEditPanel</code>：<strong>SS/S+</strong> 皆可編「前置主背包」下拉（候選＝低一階、類型預設 S+ 用 line 推）</li>
+      <li>背包圖鑑「前置背包種類」facet：依前置 <code>type</code> 篩 SS、未關聯者隱藏（優雅降級）</li>
+      <li><code>backpackClassify</code>：加 <code>prereqBackpackType(bp, byId)</code> 純函式（查表 derive）</li>
+      <li>浮窗/卡片顯示「{名}設計圖」與「衍生自 前置主背包」（純文字/連結，視前置有無）</li>
+      <li><strong>S+ 前置由一次性腳本填入</strong>（名稱可推，98/98）；SS 前置後台手輸</li>
+      <li>docs 資料模型同步 + siteChangelog（存檔即 bump）</li>
+    </ul>
+  </div>
+
+  <div class="info-block" style="border-left-color:var(--accent-green);background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);">
+    <strong style="color:var(--accent-green)">2026-07-25 擴充：S+ 也有前置（名稱可推）。</strong>
+    站長指出 S+ 複合背包同樣有前置——<code>出力強化背包·首攻</code> ＝ 出力背包(S) + <strong>強化背包·首攻(S)</strong>，
+    把變體背包視為前置。實測 <code>{line}背包·{variant}</code> 規則對 98 個 S+ <strong>全數命中</strong>，
+    故以一次性腳本填入；後台亦放寬讓 S+ 可編。前置一律「低一階」（SS←S+、S+←S），
+    S+ 前置的 <code>type</code> 是 Enhance/EMP（變體線）非自身 PowerAdd，後台類型預設改由 line 推。
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>完整配方呈現</strong>與存 <strong>複合背包(S+) 核心材料 id</strong>（決策五，另評估）</li>
+      <li><strong>形態二</strong>（特種背包武器的前置主背包）——產物是武器，與 PLAN-031 重疊</li>
+      <li><strong>圖紙材料來源</strong>（武裝討伐資料庫）——站長明確先跳過</li>
+      <li>批次回填腳本——資料由後台逐筆手輸（updateBackpack 自動 bump）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-036 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-035_背包分類階層/計畫書.html">
+      <div class="doc-tag">Parent</div>
+      <h4>◆ PLAN-035 背包分類階層</h4>
+      <p>本計畫是其決策六的第一步；同動 BackpacksPage / backpackClassify</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/02_資料模型/backpacks.html">
+      <div class="doc-tag">Data Model</div>
+      <h4>◆ backpacks 資料模型</h4>
+      <p>craft.prereqBackpackId 欄位說明待補</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-036 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
