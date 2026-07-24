@@ -8,6 +8,7 @@ import {
   parseBackpackName,
   prereqBackpackType,
   blueprintName,
+  backpackAbility,
   TIER_LABELS,
   TIER_ORDER,
   DEFAULT_TIERS,
@@ -102,10 +103,34 @@ test('blueprintName：背包名 + 設計圖', () => {
   assert.equal(blueprintName(bp({ id: 'backpack_征服者', name: '征服者背包' })), '征服者背包設計圖')
 })
 
-test('常數自洽：TIER_ORDER / DEFAULT_TIERS 覆蓋合法階層、DEFAULT 不含素材', () => {
+test('backpackAbility：S 變體背包直接回自身 line+variant', () => {
+  const s = bp({ id: 's', name: '強化背包·首攻', rarity: 'S', type: 'Enhance' })
+  assert.deepEqual(backpackAbility(s, new Map([[s.id, s]])), { line: '強化', variant: '首攻' })
+})
+
+test('backpackAbility：S+ 直接解析自身名字', () => {
+  const sp = bp({ id: 'sp', name: '出力強化背包·首攻', rarity: 'S+' })
+  assert.deepEqual(backpackAbility(sp, new Map([[sp.id, sp]])), { line: '強化', variant: '首攻' })
+})
+
+test('backpackAbility：SS 沿前置鏈取得能力（主宰者 → 飛行強化背包·首攻 → 強化/首攻）', () => {
+  const sPlus = bp({ id: 'sp', name: '飛行強化背包·首攻', rarity: 'S+', craft: { prereqBackpackId: 's' } })
+  const ss = bp({ id: 'ss', name: '主宰者背包', rarity: 'SS', craft: { prereqBackpackId: 'sp' } })
+  const s = bp({ id: 's', name: '強化背包·首攻', rarity: 'S', type: 'Enhance' })
+  const byId = new Map([[s.id, s], [sPlus.id, sPlus], [ss.id, ss]])
+  assert.deepEqual(backpackAbility(ss, byId), { line: '強化', variant: '首攻' })
+})
+
+test('backpackAbility：功能背包 / 鏈底為功能背包 → null（不被能力篩命中）', () => {
+  const func = bp({ id: 'f', name: '出力背包', rarity: 'S', type: 'PowerAdd' })
+  assert.deepEqual(backpackAbility(func, new Map([[func.id, func]])), { line: null, variant: null })
+  const ss = bp({ id: 'ss', name: '某特種背包', rarity: 'SS', craft: { prereqBackpackId: 'f' } })
+  assert.deepEqual(backpackAbility(ss, new Map([[func.id, func], [ss.id, ss]])), { line: null, variant: null })
+})
+
+test('常數自洽：TIER_ORDER 覆蓋合法階層、DEFAULT 只含特種', () => {
   const tiers = Object.keys(TIER_LABELS)
   assert.equal(TIER_ORDER.length, 4)
   for (const t of TIER_ORDER) assert.ok(tiers.includes(t))
-  assert.deepEqual([...DEFAULT_TIERS].sort(), ['base', 'composite', 'special'])
-  assert.ok(!DEFAULT_TIERS.includes('material' as never))
+  assert.deepEqual([...DEFAULT_TIERS], ['special'])   // PLAN-037：預設只特種
 })

@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-037 · 背包圖鑑優化</h3>
+      <p>背包圖鑑最終優化四連：① 預設階層只選<b>特種(SS)</b>、查詢量小故移除分頁；② 把「變體」子篩選升級為<b>「能力」並沿 craft 前置鏈跨階篩選</b>——新增 <code>backpackAbility</code> 循鏈取底層 S 變體背包的 line+variant，讓「強化→首攻」能命中原本名字無變體的 SS（主宰者背包 → 飛行強化背包·首攻 → 強化背包·首攻），line 篩改嚴格（一併定案 PLAN-035 遺留問題）；③ 移除被取代的<b>前置背包 facet</b>；④「特種背包製作」toggle 改為<b>「包含武器」預設開</b>（來源池加複合武器、與背包同條件篩選；冷快取 +169 read、回訪 0）。整合 PLAN-035 階層與 PLAN-036 前置關係，live 驗證通過。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-037_背包圖鑑優化/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-037_背包圖鑑優化/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card orange">
       <div class="card-icon">◆</div>
       <h3>PLAN-036 · 特種背包前置關係</h3>

@@ -19,7 +19,6 @@ import { EQUIP_SLOT_LABELS } from '../../components/WeaponBadges'
 import { assetUrl } from '../../utils/assets'
 import { RefText } from '../../components/RefText'
 import {
-  isSpecialBackpackCraft,
   isCompositeWeapon,
   projectedBackpackType,
   weaponArmorTypes,
@@ -28,7 +27,7 @@ import {
 import {
   tierFromRarity,
   parseBackpackName,
-  prereqBackpackType,
+  backpackAbility,
   blueprintName,
   TIER_LABELS,
   TIER_ORDER,
@@ -37,8 +36,6 @@ import {
   type BackpackLine,
 } from '../../utils/backpackClassify'
 import type { Backpack, Weapon } from '../../types'
-
-const PAGE_SIZE = 36
 
 const ALL_BACKPACK_TYPES = [
   'Heal', 'Ammo', 'Interference', 'Invisible', 'BackupEquipment',
@@ -356,24 +353,20 @@ export default function BackpacksPage() {
   const navigate = useNavigate()
 
   const [search, setSearch]               = useState('')
-  // 合成階層多選（取代稀有度）；預設隱藏素材(A/B)，落地只顯示 基礎/複合/特種（143 件）
+  // 合成階層多選；PLAN-037 預設只顯示特種(SS)，查詢量小 → 不再分頁限制
   const [tierFilters, setTierFilters]     = useState<Set<BackpackTier>>(new Set(DEFAULT_TIERS))
   const [typeFilters, setTypeFilters]     = useState<Set<string>>(new Set())
   const [armorFilter, setArmorFilter]     = useState<string | null>(null)
   const [lineFilter, setLineFilter]       = useState<BackpackLine | null>(null)  // 強化/干擾 軸
-  const [variantFilter, setVariantFilter] = useState<string | null>(null)        // 變體子篩選（僅選線後可用）
-  const [prereqTypeFilter, setPrereqTypeFilter] = useState<string | null>(null)  // PLAN-036 前置背包種類（僅 SS）
-  const [craftFacet, setCraftFacet]       = useState(false)   // 特種背包製作 正交 facet
-  const [displayCount, setDisplayCount]   = useState(PAGE_SIZE)
+  const [abilityFilter, setAbilityFilter] = useState<string | null>(null)        // 能力子篩選（僅選線後可用）
+  const [includeWeapons, setIncludeWeapons] = useState(true)  // PLAN-037「包含武器」預設開（納入特殊強化武器）
 
-  // 讀取量取捨：只有打開 facet 才 lazy 載入 weapons（一般訪客瀏覽背包不多付 ~169 read）
-  useEffect(() => { if (craftFacet) void ensureLoaded(['weapons']) }, [craftFacet, ensureLoaded])
-  const weaponsLoading = craftFacet && !loadedKeys.has('weapons')
+  // 「包含武器」預設開 → 進頁即載入 weapons（複合武器僅 3 把但需整包才能篩；有版本快取，回訪 0 read）
+  useEffect(() => { if (includeWeapons) void ensureLoaded(['weapons']) }, [includeWeapons, ensureLoaded])
+  const weaponsLoading = includeWeapons && !loadedKeys.has('weapons')
 
-  useEffect(() => { setDisplayCount(PAGE_SIZE) }, [search, tierFilters, typeFilters, armorFilter, lineFilter, variantFilter, prereqTypeFilter, craftFacet])
-
-  // 變體清單依資料 derive（不硬編，避免改版漏改）；依所選線收斂
-  const variantsByLine = useMemo(() => {
+  // 能力清單依資料 derive（不硬編，避免改版漏改）；依所選線收斂
+  const abilitiesByLine = useMemo(() => {
     const map: Record<BackpackLine, string[]> = { 強化: [], 干擾: [] }
     const seen: Record<BackpackLine, Set<string>> = { 強化: new Set(), 干擾: new Set() }
     for (const bp of backpacks) {
@@ -383,8 +376,8 @@ export default function BackpacksPage() {
     return map
   }, [backpacks])
 
-  // 選線 / 清線時一併重置變體（變體只在某條線下有意義）
-  const pickLine = (line: BackpackLine | null) => { setLineFilter(line); setVariantFilter(null) }
+  // 選線 / 清線時一併重置能力（能力只在某條線下有意義）
+  const pickLine = (line: BackpackLine | null) => { setLineFilter(line); setAbilityFilter(null) }
 
   const isMobile = useIsMobile()
   const [hoverTooltip, setHoverTooltip] = useState<TooltipState | null>(null)
@@ -401,17 +394,6 @@ export default function BackpacksPage() {
   // PLAN-036：前置主背包名（供 SS 浮窗顯示「衍生自 ○○」）
   const prereqNameOf = (bp: Backpack) => (bp.craft?.prereqBackpackId ? backpackById.get(bp.craft.prereqBackpackId)?.name : undefined)
 
-  // PLAN-036：前置背包種類 facet 的選項＝實際出現在 SS 前置關聯中的 type（derive，未輸入資料時為空）
-  const prereqTypeOptions = useMemo(() => {
-    const set = new Set<string>()
-    for (const bp of backpacks) {
-      if (bp.rarity !== 'SS') continue
-      const t = prereqBackpackType(bp, backpackById)
-      if (t) set.add(t)
-    }
-    return [...set]
-  }, [backpacks, backpackById])
-
   function toggleSet<T>(setter: React.Dispatch<React.SetStateAction<Set<T>>>, value: T) {
     setter((prev) => {
       const next = new Set(prev)
@@ -420,16 +402,11 @@ export default function BackpacksPage() {
     })
   }
 
-  // 合併來源：facet 關 = 全部背包（現況）；facet 開 = SS 背包 + 複合武器（＝遊戲內特種背包製作清單）
-  const items: BackpackListItem[] = useMemo(() => {
-    if (craftFacet) {
-      return [
-        ...backpacks.filter(isSpecialBackpackCraft).map((bp) => ({ kind: 'backpack', data: bp } as const)),
-        ...weapons.filter(isCompositeWeapon).map((w) => ({ kind: 'weapon', data: w } as const)),
-      ]
-    }
-    return backpacks.map((bp) => ({ kind: 'backpack', data: bp } as const))
-  }, [craftFacet, backpacks, weapons])
+  // 來源：全部背包 ＋（「包含武器」開時）複合武器；由階層/類型等篩選統一收斂（PLAN-037）
+  const items: BackpackListItem[] = useMemo(() => [
+    ...backpacks.map((bp) => ({ kind: 'backpack', data: bp } as const)),
+    ...(includeWeapons ? weapons.filter(isCompositeWeapon).map((w) => ({ kind: 'weapon', data: w } as const)) : []),
+  ], [backpacks, weapons, includeWeapons])
 
   const itemType = (it: BackpackListItem) =>
     it.kind === 'backpack' ? it.data.type : (projectedBackpackType(it.data, backpackById) ?? '')
@@ -438,24 +415,16 @@ export default function BackpacksPage() {
 
   const filtered = items
     .filter((it) => {
-      // 階層篩選（取代稀有度）：未知階層或不在選取集內即排除；預設不含素材 → A/B 隱藏
+      // 階層篩選（取代稀有度）：未知階層或不在選取集內即排除
       const tier = itemTier(it)
       if (!tier || !tierFilters.has(tier)) return false
       if (typeFilters.size > 0 && !typeFilters.has(itemType(it))) return false
-      // 強化/干擾 軸（決策五）：只作用於「含該軸」的條目——有 line 的才受篩，
-      // 純功能背包與 SS 特種（line=null）不因此被排除。變體同理僅收斂該線。
+      // 強化/干擾 + 能力（PLAN-037）：沿 craft 前置鏈取「能力」（SS/S+ 循線），
+      // 只顯示能力線相符者；無能力（功能背包 / 武器 / 鏈底功能）在選線時排除。
       if (lineFilter) {
-        const parts = parseBackpackName(it.data.name)
-        if (parts.line !== null) {
-          if (parts.line !== lineFilter) return false
-          if (variantFilter && parts.variant !== variantFilter) return false
-        }
-      }
-      // 前置背包種類（PLAN-036）：只顯示「前置關聯可查到且種類相符」的 SS 特種背包；
-      // 查不到前置的 SS 與非 SS 一律隱藏（站長要求：查不到前置就先不顯示）。
-      if (prereqTypeFilter) {
-        if (it.kind !== 'backpack') return false
-        if (prereqBackpackType(it.data, backpackById) !== prereqTypeFilter) return false
+        const ability = it.kind === 'backpack' ? backpackAbility(it.data, backpackById) : { line: null, variant: null }
+        if (ability.line !== lineFilter) return false
+        if (abilityFilter && ability.variant !== abilityFilter) return false
       }
       const armor = itemArmor(it)
       if (armorFilter === 'none' && armor.length > 0) return false
@@ -470,8 +439,6 @@ export default function BackpacksPage() {
       return true
     })
     .sort((a, b) => (RARITY_ORDER[itemRarity(a)] ?? 9) - (RARITY_ORDER[itemRarity(b)] ?? 9))
-
-  const paginated = filtered.slice(0, displayCount)
 
   const computePos = (el: HTMLDivElement): { x: number; anchorTop: number } => {
     const rect = el.getBoundingClientRect()
@@ -609,7 +576,7 @@ export default function BackpacksPage() {
           ))}
         </div>
 
-        {/* 強化 / 干擾 軸 – single-select（決策四/五：line 只從 name 判別；只作用於含該軸的條目）*/}
+        {/* 強化 / 干擾 軸 – single-select（PLAN-037：沿 craft 前置鏈取能力，SS/S+ 循線）*/}
         <div className="flex flex-wrap gap-1.5 items-center">
           <span className="text-xs text-text-dim mr-1 flex-shrink-0">強化/干擾</span>
           <button className={filterBtn(!lineFilter)} onClick={() => pickLine(null)}>全部</button>
@@ -619,17 +586,17 @@ export default function BackpacksPage() {
             </button>
           ))}
           {lineFilter && (
-            <span className="text-[11px] text-text-dim">（純功能／特種背包不受此軸影響）</span>
+            <span className="text-[11px] text-text-dim">（沿前置鏈比對，含特種/複合）</span>
           )}
         </div>
 
-        {/* 變體 – single-select，依所選線收斂；未選線時不顯示 */}
-        {lineFilter && variantsByLine[lineFilter].length > 0 && (
+        {/* 能力 – single-select，依所選線收斂；未選線時不顯示（PLAN-037：原「變體」）*/}
+        {lineFilter && abilitiesByLine[lineFilter].length > 0 && (
           <div className="flex flex-wrap gap-1.5 items-center">
-            <span className="text-xs text-text-dim mr-1 w-10 flex-shrink-0">變體</span>
-            <button className={filterBtn(!variantFilter)} onClick={() => setVariantFilter(null)}>全部</button>
-            {variantsByLine[lineFilter].map((v) => (
-              <button key={v} className={filterBtn(variantFilter === v)} onClick={() => setVariantFilter(variantFilter === v ? null : v)}>
+            <span className="text-xs text-text-dim mr-1 w-10 flex-shrink-0">能力</span>
+            <button className={filterBtn(!abilityFilter)} onClick={() => setAbilityFilter(null)}>全部</button>
+            {abilitiesByLine[lineFilter].map((v) => (
+              <button key={v} className={filterBtn(abilityFilter === v)} onClick={() => setAbilityFilter(abilityFilter === v ? null : v)}>
                 {v}
               </button>
             ))}
@@ -650,43 +617,21 @@ export default function BackpacksPage() {
           ))}
         </div>
 
-        {/* 前置背包種類 – 正交 facet（PLAN-036）：依 SS 前置主背包的種類篩；未輸入關聯者隱藏 */}
+        {/* 包含武器 – 正交 toggle（PLAN-037，原「特種背包製作」）：預設開，納入特殊強化武器 */}
         <div className="flex flex-wrap gap-1.5 items-center pt-1 border-t border-border">
-          <span className="text-xs text-text-dim mr-1 flex-shrink-0">前置背包</span>
-          {prereqTypeOptions.length === 0 ? (
-            <span className="text-[11px] text-text-dim">尚無前置關聯資料（於後台為 SS 背包輸入「前置主背包」後啟用）</span>
-          ) : (
-            <>
-              <button className={filterBtn(!prereqTypeFilter)} onClick={() => setPrereqTypeFilter(null)}>全部</button>
-              {prereqTypeOptions.map((t) => (
-                <button
-                  key={t}
-                  className={filterBtn(prereqTypeFilter === t)}
-                  onClick={() => setPrereqTypeFilter(prereqTypeFilter === t ? null : t)}
-                >
-                  {BACKPACK_TYPE_CONFIG[t]?.label ?? t}
-                </button>
-              ))}
-              {prereqTypeFilter && <span className="text-[11px] text-text-dim">（只顯示前置為此種類的特種背包）</span>}
-            </>
-          )}
-        </div>
-
-        {/* 特種背包製作 – 正交 facet（PLAN-031）*/}
-        <div className="flex flex-wrap gap-1.5 items-center pt-1 border-t border-border">
-          <span className="text-xs text-text-dim mr-1 w-10 flex-shrink-0">製作</span>
+          <span className="text-xs text-text-dim mr-1 w-10 flex-shrink-0">武器</span>
           <button
             className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
-              craftFacet
+              includeWeapons
                 ? 'bg-accent-yellow/15 text-accent-yellow border-accent-yellow/40'
                 : 'bg-bg-card text-text-secondary border-border hover:border-border-accent hover:text-text-primary'
             }`}
-            onClick={() => setCraftFacet((v) => !v)}
+            onClick={() => setIncludeWeapons((v) => !v)}
           >
-            特種背包製作{craftFacet ? ' ✓' : ''}
+            包含武器{includeWeapons ? ' ✓' : ''}
           </button>
           <span className="text-[11px] text-text-dim">
-            {craftFacet ? '顯示 SS 特種背包 ＋ 複合武器（裁決者等），與遊戲內製作清單一致' : '打開後與複合武器並列瀏覽'}
+            {includeWeapons ? '已納入特殊強化武器（裁決者等），與背包同條件篩選' : '打開後把特殊強化武器也篩選進來'}
           </span>
         </div>
       </div>
@@ -694,9 +639,8 @@ export default function BackpacksPage() {
       {/* Count */}
       {!loading && (
         <p className="text-xs text-text-dim mb-4">
-          顯示 <Num className="text-xs">{Math.min(displayCount, filtered.length)}</Num> / {filtered.length} 項
-          {craftFacet && <span className="ml-1 text-accent-yellow">（特種背包製作清單）</span>}
-          {weaponsLoading && <span className="ml-1">· 載入複合武器中…</span>}
+          顯示 <Num className="text-xs">{filtered.length}</Num> 項
+          {weaponsLoading && <span className="ml-1">· 載入武器中…</span>}
         </p>
       )}
 
@@ -713,7 +657,7 @@ export default function BackpacksPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {paginated.map((it) => it.kind === 'backpack' ? (
+          {filtered.map((it) => it.kind === 'backpack' ? (
             <BackpackCard
               key={`bp_${it.data.id}`}
               bp={it.data}
@@ -732,17 +676,6 @@ export default function BackpacksPage() {
               onClick={(el) => handleCardClick(it, el)}
             />
           ))}
-        </div>
-      )}
-
-      {!loading && displayCount < filtered.length && (
-        <div className="mt-6 text-center">
-          <button
-            className="px-6 py-2.5 rounded-xl border border-border bg-bg-card text-text-secondary text-sm hover:border-border-accent hover:text-text-primary transition-colors cursor-pointer"
-            onClick={() => setDisplayCount((n) => n + PAGE_SIZE)}
-          >
-            載入更多（{filtered.length - displayCount} 項）
-          </button>
         </div>
       )}
     </div>

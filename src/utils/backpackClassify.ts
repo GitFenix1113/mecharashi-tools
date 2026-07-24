@@ -31,8 +31,8 @@ export const TIER_LABELS: Record<BackpackTier, string> = {
 /** 階層顯示順序（高階在前，對齊圖鑑既有 SS→B 排序）。 */
 export const TIER_ORDER: readonly BackpackTier[] = ['special', 'composite', 'base', 'material']
 
-/** 落地預設顯示的階層（素材＝A/B 預設隱藏，見 PLAN-035 決策三）。 */
-export const DEFAULT_TIERS: readonly BackpackTier[] = ['base', 'composite', 'special']
+/** 落地預設顯示的階層（PLAN-037：預設只顯示特種 SS，查詢量小；其餘手動打開）。 */
+export const DEFAULT_TIERS: readonly BackpackTier[] = ['special']
 
 /** rarity → 合成階層（實測 1:1，A/B 皆為素材）。 */
 const RARITY_TO_TIER: Record<string, BackpackTier> = {
@@ -108,4 +108,27 @@ export function prereqBackpackType(bp: Backpack, byId: Map<string, Backpack>): s
 /** 圖紙衍生名＝背包名 + 設計圖（如「征服者背包設計圖」）；材料來源另做，此處僅顯示用。 */
 export function blueprintName(bp: Backpack): string {
   return `${bp.name}設計圖`
+}
+
+/**
+ * 背包的「能力」＝循 craft 前置鏈找到的 S 變體背包（強化背包·X / 干擾背包·X）的 line + variant（PLAN-037）。
+ *
+ * 讓 SS/S+ 也能用「強化/干擾 + 能力」循線篩選：SS/S+ 自身名字可能無變體
+ * （如 主宰者背包），沿 prereqBackpackId 鏈遞迴到第一個有 line+variant 的祖先。
+ *   主宰者背包(SS) → 飛行強化背包·首攻(S+) → {強化, 首攻}
+ * 功能背包（出力背包）、或鏈底為功能背包者 → { line:null, variant:null }（不被能力篩選命中）。
+ */
+export function backpackAbility(
+  bp: Backpack,
+  byId: Map<string, Backpack>,
+  depth = 0,
+): { line: BackpackLine | null; variant: string | null } {
+  const { line, variant } = parseBackpackName(bp.name)
+  if (line && variant) return { line, variant }
+  const prereqId = bp.craft?.prereqBackpackId
+  if (prereqId && depth < 6) {
+    const prereq = byId.get(prereqId)
+    if (prereq) return backpackAbility(prereq, byId, depth + 1)
+  }
+  return { line: null, variant: null }
 }
