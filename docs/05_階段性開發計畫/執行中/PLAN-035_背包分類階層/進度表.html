@@ -187,11 +187,11 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">5</div>
+      <div class="summary-num" style="color:var(--text-dim)">6</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">5</div>
+      <div class="summary-num" style="color:var(--text-primary)">6</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -199,7 +199,7 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">0 / 5</span>
+      <span style="color:var(--accent-green);">0 / 6</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 0%"></div>
@@ -214,10 +214,14 @@
   </div>
 
   <div class="gate-note">
-    <strong>前置：</strong>PLAN-031 同動 <code>BackpacksPage.tsx</code>，<strong>須先 commit</strong>
-    （✅ 2026-07-24 已 commit 於分支 <code>feature/PLAN-031-composite-weapon</code>）。<br>
+    <strong>前置：</strong>PLAN-031 同動 <code>BackpacksPage.tsx</code>
+    （✅ 已 merge 進 main 並歸檔至歷史記錄；本計畫於 <code>feature/PLAN-035-backpack-hierarchy</code> 進行）。<br>
+    <strong>決策三（2026-07-24 拍板）：</strong>階層 facet <u>取代</u>稀有度多選——因 tier 只是 A/B 合併的 rarity，
+    兩者是同一分割，並存會產生「SS×素材＝恆 0 筆」矛盾。改四顆階層鈕，預設勾 基礎＋複合＋特種
+    （<strong>143 件</strong>，非 167）、素材(A/B) 預設關。<br>
     <strong>核心陷阱：</strong><code>type</code> 欄位只編碼「基礎功能軸」，「強化/干擾」<strong>只在名字字串</strong>
-    （出力強化背包 vs 出力干擾背包 同 <code>type=PowerAdd</code>）——B-1 必須靠 name 解析，不可靠 type。<br>
+    （出力強化背包 vs 出力干擾背包 同 <code>type=PowerAdd</code>）——B-1 必須靠 name 解析，不可靠 type；
+    且 base 階 <code>強化背包·X</code>/<code>干擾背包·X</code> <strong>無基礎功能前綴</strong>，parser 的 baseFunction 須容許 null。<br>
     <strong>建議順序：</strong>A → B → C。A 完成即有可見價值（階層分類 + 預設隱藏），B 再補強化/干擾軸。
   </div>
 </section>
@@ -240,8 +244,11 @@
         <div class="task-desc">
           <code>tierFromRarity(rarity)</code> → <code>'material'|'base'|'composite'|'special'</code>
           （A/B→material · S→base · S+→composite · SS→special）。<br>
-          <code>parseBackpackName(name)</code> → <code>{ baseFunction, line: '強化'|'干擾'|null, variant: string|null }</code>：
-          S+ 名字結構 <code>[基礎功能][強化|干擾]背包·[變體]</code> 可乾淨拆；純功能背包與 SS 特種背包 <code>line=null</code>。<br>
+          <code>parseBackpackName(name)</code> → <code>{ baseFunction: string|null, line: '強化'|'干擾'|null, variant: string|null }</code>：
+          名字結構 <code>[基礎功能]?[強化|干擾]背包·[變體]</code> 可乾淨拆；純功能背包與 SS 特種背包 <code>line=null</code>。<br>
+          <span style="color:var(--accent-red)">⚠ baseFunction 須容許 null</span>——base 階
+          <code>強化背包·首攻</code>/<code>干擾背包·攻擊</code> 無基礎功能前綴（type=Enhance/EMP），
+          只有 S+ 複合階才有 出力/移動… 前綴。<br>
           <span style="color:var(--accent-red)">⚠ line 一律從 name 判斷，不可用 type</span>
           （出力強化/出力干擾背包同 <code>type=PowerAdd</code>）。附中文標籤對照與純函式單元測試。
         </div>
@@ -254,18 +261,46 @@
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">A-2 &nbsp; 階層 facet + 預設隱藏 A/B</div>
+      <div class="task-group-title">A-1b &nbsp; 分類 audit 腳本（佐證義務）</div>
+      <div class="task-group-meta">scripts/audit-backpack-classify.mjs（新，一次性、進版控）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">對 live 背包核對 rarity 分佈 + 列出無法解析的名字</div>
+        <div class="task-desc">
+          比照 PLAN-031 的 <code>derive-weapon-upgrade.mjs</code>：讀 live Firestore 全部背包，輸出<br>
+          ① <strong>rarity 直方圖</strong>核對 A/B=37 · S=23 · S+=98 · SS=22（合 180）；<br>
+          ② 對每個名字跑 <code>parseBackpackName</code>，列出<strong>無法套入文法（unresolved）</strong>的名字報告——
+          抓「某 SS/功能背包名字剛好含『強化』『干擾』字樣」的 substring 誤判，及官方改版新增背包破壞文法。<br>
+          <span style="color:var(--accent-yellow)">⚠ 單元測試只測手挑名字，證明不了全 180 個真實名字可解析</span>——
+          此腳本是「name-derive 够用」的可重現佐證，unresolved 非 0 時須先修文法或改走結構化欄位。
+        </div>
+        <div class="task-file">scripts/audit-backpack-classify.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 階層 facet 取代稀有度 + 預設隱藏 A/B</div>
       <div class="task-group-meta">src/pages/backpacks/BackpacksPage.tsx</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">合成階層 facet（素材/基礎/複合/特種）</div>
+        <div class="task-name">合成階層 facet（素材/基礎/複合/特種）取代稀有度多選</div>
         <div class="task-desc">
-          新增一列階層篩選（素材/基礎/複合/特種），由 <code>tierFromRarity</code> derive，可與既有稀有度/類型/裝備交叉。<br>
-          <strong>預設隱藏 A/B 素材</strong>：落地 <code>/backpacks</code> 預設只顯示 SS/S+/S（167 件）；
-          打開「素材」層或直接勾 A/B 稀有度才顯示。<br>
-          與 PLAN-031 的「特種背包製作」facet <strong>共存不衝突</strong>（兩者正交）。計數文案沿用合併陣列。
+          <strong>移除既有 SS/S+/S/A/B 五顆稀有度按鈕</strong>（<code>ALL_RARITIES</code>／<code>rarityFilters</code>），
+          改為四顆階層按鈕（素材/基礎/複合/特種），由 <code>tierFromRarity</code> derive、彼此獨立多選，可與類型/裝備交叉。<br>
+          <span style="color:var(--accent-red)">⚠ 決策三：不保留稀有度 filter</span>——tier 是 A/B 合併的 rarity，
+          兩者並存會有「SS×素材＝恆 0」矛盾。排序仍沿用 <code>RARITY_ORDER</code>。<br>
+          <strong>預設勾選 基礎＋複合＋特種（143 件）、素材(A/B) 預設關</strong>：
+          <code>tierFilters</code> 初值＝<code>{base,composite,special}</code>；打開「素材」才顯示 37 件。<br>
+          與 PLAN-031 的「特種背包製作」facet <strong>共存不衝突</strong>（兩者正交）。<br>
+          <span style="color:var(--accent-yellow)">⚠ 標頭「共 180 件背包」計數</span>與「顯示 X / Y 項」口徑須一致（別一個 180 一個 143）。
         </div>
         <div class="task-file">src/pages/backpacks/BackpacksPage.tsx</div>
       </div>
@@ -360,8 +395,9 @@
 
   <div class="impact-note">
     <ul style="margin:0 0 0 16px;line-height:1.9;">
-      <li>背包圖鑑落地預設只顯示 SS/S+/S（167 件），A/B 素材需手動打開才出現。</li>
-      <li>階層 facet（素材/基礎/複合/特種）可與稀有度/類型/裝備交叉，且與 PLAN-031「特種背包製作」facet 並存不衝突。</li>
+      <li>背包圖鑑落地預設只顯示 基礎/複合/特種（<strong>143 件</strong>），A/B 素材需手動打開才出現；標頭與「顯示 X/Y」計數口徑一致。</li>
+      <li>階層 facet（素材/基礎/複合/特種）<strong>取代</strong>稀有度多選、可與類型/裝備交叉，且與 PLAN-031「特種背包製作」facet 並存不衝突。</li>
+      <li>A-1b audit 腳本對 live 背包輸出 rarity 分佈（37/23/98/22＝180）與 unresolved 名字報告，unresolved＝0。</li>
       <li>「強化／干擾」軸可正確分離 出力強化背包 與 出力干擾背包（雖同 <code>type=PowerAdd</code>）。</li>
       <li>選強化/干擾軸時，純功能背包與 SS 特種背包不被錯誤清空（優雅降級）。</li>
       <li><code>npm run build</code> 通過；<code>node --test</code> 通過（backpackClassify 純函式測試）。</li>
