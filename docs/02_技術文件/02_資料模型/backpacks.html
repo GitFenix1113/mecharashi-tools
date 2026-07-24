@@ -63,8 +63,8 @@
 <header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
   <div class="hero-badge" style="border-color:var(--accent-pink);color:var(--accent-pink);background:rgba(236,72,153,0.06);">◆ Data Model</div>
   <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">backpacks<span style="-webkit-text-fill-color:var(--text-secondary);">背包資料 · BACKPACK DATA</span></h1>
-  <p class="hero-sub">背包種類、稀有度、可裝備機甲類型、修理量、附帶技能（SS 限定）</p>
-  <div class="version-badge" style="background:var(--accent-pink);">UPDATED v1.3 · PLAN-009</div>
+  <p class="hero-sub">背包種類、稀有度、可裝備機甲類型、修理量、附帶技能（SS 限定）、製作前置關係（craft）與合成階層／能力軸（derive）</p>
+  <div class="version-badge" style="background:var(--accent-pink);">UPDATED v1.4 · PLAN-036/037</div>
 </header>
 
 <main class="container">
@@ -191,6 +191,8 @@
       <tr><td>slot</td><td>WeaponEquipSlot (string)</td><td>裝配位置；背包固定為 <code>'back'</code>（WeaponEquipSlot.BACK），與武器共用 enum，供裝備計算器統一判斷部位</td></tr>
       <tr><td>assemblableArmorType</td><td>AssemblableArmorType[] (string[])</td><td>可裝備機甲類型陣列（正向邏輯）：<code>[]</code> = 無限制；<code>["Light"]</code> / <code>["Medium"]</code> / <code>["Heavy"]</code> / 複數值<br><small style="color:var(--text-dim)">API: AssemblableAirmenType · 斜線分隔多值 → split('/') → 過濾已知型別</small></td></tr>
       <tr><td>repairAmount</td><td>number</td><td>修理量；非修理類背包固定填 0<br><small style="color:var(--text-dim)">API: AmountOfRepair · parseInt；不存在時預設 0</small></td></tr>
+      <tr class="group-header"><td colspan="3">▎製作前置 craft?（BackpackCraft，🆕 PLAN-036；僅 SS／S+ 且已建立關聯者有值，無值＝未關聯）</td></tr>
+      <tr><td>&nbsp;└ prereqBackpackId</td><td>string</td><td>前置主背包 doc id（一律「低一階」背包）：<strong>SS ← S+</strong>（無法由名字 derive，後台手輸）、<strong>S+ ← S</strong>（名稱可推、腳本填）。只存這一個 id；種類／線／變體皆由此 id 查 backpacks 表 derive。前台無值時優雅降級為「未關聯」，不報錯。<br><small style="color:var(--text-dim)">詳見下方「背包的前置主背包」章節</small></td></tr>
       <tr class="group-header"><td colspan="3">▎附帶技能 mainSkill（僅 SS 稀有度，API: WithPassiveSkills[0]）</td></tr>
       <tr><td>&nbsp;├ id</td><td>string</td><td>技能 ID<br><small style="color:var(--text-dim)">API: WithPassiveSkills[0].ID</small></td></tr>
       <tr><td>&nbsp;├ name</td><td>string</td><td>技能名稱（如 "拯救者驅動·攻擊"）<br><small style="color:var(--text-dim)">API: WithPassiveSkills[0].name</small></td></tr>
@@ -219,7 +221,8 @@
     · 「特種背包製作」正交 facet 的判定 = <code>rarity === 'SS'</code>（<code>isSpecialBackpackCraft</code>，見 <code>src/utils/weaponUpgrade.ts</code>），不在 Firestore 存推論值。<br>
     · 打開 facet = SS 背包 ∪ 複合武器（<code>upgrade.station === 'specialBackpack'</code>）；facet 為<strong>可交叉</strong>的正交維度，與稀有度／類型／裝備並存。<br>
     · 複合武器投影條目的「類型」由武器的 <code>upgrade.fusedBackpackId</code> 查 backpacks 取 <code>type</code>（<strong>不存欄位</strong>）；armor 篩選由武器 <code>mechRestriction</code> 換算（英文 key，EN→EN，不涉模擬器 EN→ZH）。<br>
-    · weapon 分支卡片<strong>務必用 <code>WeaponIcon</code></strong>（背包側圖示元件會強制拼 <code>/images/backpacks/</code> 而 404）；技能圖示走武器側 <code>iconLocal</code> 完整路徑。<br><br>
+    · weapon 分支卡片<strong>務必用 <code>WeaponIcon</code></strong>（背包側圖示元件會強制拼 <code>/images/backpacks/</code> 而 404）；技能圖示走武器側 <code>iconLocal</code> 完整路徑。<br>
+    · <strong><span style="color:var(--accent-orange)">PLAN-037</span> 呈現調整</strong>：原「特種背包製作」正交 facet 改為圖鑑上的「<strong>包含武器</strong>」toggle 且<strong>預設開</strong>（<code>includeWeapons</code>）；複合武器與背包共用同一組階層／類型／裝備篩選統一收斂，判定仍為 <code>isCompositeWeapon</code>（<code>upgrade.station === 'specialBackpack'</code>）。<br><br>
     <small style="color:var(--text-dim)">複合武器的儲存歸類仍是「武器」（存 weapons、<code>refType:'weapon'</code>），此處僅為呈現層投影。完整判準見 weapons 資料模型的「跨界實體判準」。<strong>刻意不新增 <code>BackpackType.Composite</code></strong>——要並列的 5 個背包分屬 5 種不同 type，做完反而更孤立，且爬蟲會用 API 值覆寫 <code>type</code>。</small>
   </div>
 </section>
@@ -229,12 +232,12 @@
   <div class="section-label" style="color:var(--accent-green)">Classification</div>
   <div class="section-title">合成階層與「強化/干擾」軸（全部 derive，零欄位）</div>
   <div class="section-desc">
-    背包圖鑑（PLAN-035）把 180 件背包依合成階層分成<strong>素材/基礎/複合/特種</strong>四層、預設隱藏 A/B 素材，並提供「強化 vs 干擾」第二軸與變體篩選。<strong>階層與軸皆從既有 <code>rarity</code>＋名字字串 derive，不新增任何 Firestore 欄位、不 bump 版本。</strong>邏輯在 <code>src/utils/backpackClassify.ts</code>。
+    背包圖鑑（PLAN-035）把 180 件背包依合成階層分成<strong>素材/基礎/複合/特種</strong>四層，並提供「強化 vs 干擾」第二軸與變體篩選（落地預設只展開特種層，見 ① · PLAN-037）。<strong>階層與軸皆從既有 <code>rarity</code>＋名字字串 derive，不新增任何 Firestore 欄位、不 bump 版本。</strong>邏輯在 <code>src/utils/backpackClassify.ts</code>。
   </div>
   <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-left:3px solid var(--accent-green);border-radius:0 10px 10px 0;padding:16px 20px;margin:12px 0;font-size:14px;line-height:1.9;">
     <strong>① 合成階層 ＝ <code>rarity</code> 的粗化（<code>tierFromRarity</code>，實測 1:1）：</strong><br>
     　素材 = A + B（37）· 基礎 = S（23）· 複合 = S+（98）· 特種 = SS（22），合 180。<br>
-    　背包圖鑑的階層 facet <strong>取代</strong>原稀有度多選（tier 只是 A/B 合併的 rarity，兩者是同一分割，並存會有「SS×素材＝恆 0 筆」矛盾）；落地預設勾 基礎＋複合＋特種（<strong>143 件</strong>）、素材預設隱藏。<br><br>
+    　背包圖鑑的階層 facet <strong>取代</strong>原稀有度多選（tier 只是 A/B 合併的 rarity，兩者是同一分割，並存會有「SS×素材＝恆 0 筆」矛盾）；<strong>落地預設只展開特種（SS，22 件）</strong>、其餘階層手動打開（<span style="color:var(--accent-orange)">PLAN-037</span> 改版：預設查詢量最小，<code>DEFAULT_TIERS = ['special']</code>；原 PLAN-035 的預設「基礎＋複合＋特種 143 件」已收斂）。<br><br>
     <strong>② 「強化/干擾」軸只存在於<u>名字字串</u>，<code>type</code> 欄位<u>不</u>編碼它：</strong><br>
     　<code>出力強化背包·首攻</code> 與 <code>出力干擾背包·攻擊</code> <strong>同 <code>type=PowerAdd</code></strong>——強化/干擾差異只在名字。故 <code>line</code> 一律由 <code>parseBackpackName</code> 從 name 解析，<span style="color:var(--accent-red)">不可用 type</span>。<br>
     　名字文法 <code>[基礎功能]?[強化|干擾]背包·[變體]</code>：<code>[基礎功能]</code> <strong>可省略</strong>——base 階（S/A/B）的 <code>強化背包·首攻</code>/<code>干擾背包·攻擊</code> 無功能前綴（對應 <code>type=Enhance</code>/<code>EMP</code>），只有 S+ 複合階才有 出力/移動… 前綴。<br>
@@ -261,6 +264,7 @@
     · <strong>種類</strong>＝查 <code>prereqBackpackId</code> 取 <code>type</code>（<code>prereqBackpackType</code>）；背包圖鑑「前置背包種類」facet 目前<strong>只作用於 SS</strong>，查不到關聯的 SS 在此 facet 下不顯示（優雅降級）。<br>
     · <strong>圖紙</strong>＝derive（<code>name + '設計圖'</code>，<code>blueprintName</code>）；S+ 的另一材料「功能背包」（出力背包）由 base derive、不存；任意 3 個 S ＝固定文案、不存。<br>
     · 無前置階（S/A/B）一律不寫 <code>craft</code>；未關聯者前台當「未關聯」處理、不報錯。<br><br>
+    <strong>能力循前置鏈（<span style="color:var(--accent-orange)">PLAN-037</span>，<code>backpackAbility</code>）：</strong>SS／S+ 自身名字常無變體（如 <code>主宰者背包</code>），沿 <code>prereqBackpackId</code> 鏈遞迴到<strong>第一個有 line+variant 的 S 祖先</strong>（<code>主宰者背包 → 飛行強化背包·首攻 → {強化, 首攻}</code>），使 SS／S+ 也能被「強化/干擾＋能力」軸循線篩選；鏈底為功能背包（出力背包）者回 <code>{line:null, variant:null}</code>、不被命中。<br><br>
     <small style="color:var(--text-dim)"><strong>刻意分流的後續</strong>：完整配方呈現；形態二「特種背包武器」（裁決者等，產物是武器，已由 PLAN-031 <code>weapon.upgrade</code> 涵蓋）；圖紙材料來源（武裝討伐資料庫）。</small>
   </div>
 </section>

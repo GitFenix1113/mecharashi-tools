@@ -24,10 +24,10 @@
   <div class="hero-badge blue">◆ COLLECTION SCHEMA</div>
   <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-blue) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
     backpacks — 背包資料
-    <span>MECHARASHI — FIRESTORE SCHEMA v1.2 · PLAN-009</span>
+    <span>MECHARASHI — FIRESTORE SCHEMA v1.3 · PLAN-036</span>
   </h1>
-  <p class="hero-sub">背包種類 · 稀有度 · 機甲限制 · SS 附帶技能（mainSkill）</p>
-  <div class="version-badge" style="background:var(--accent-blue);color:#fff;">V1.2 — PLAN-009</div>
+  <p class="hero-sub">背包種類 · 稀有度 · 機甲限制 · SS 附帶技能（mainSkill）· 製作前置 craft（PLAN-036）</p>
+  <div class="version-badge" style="background:var(--accent-blue);color:#fff;">V1.3 — PLAN-036</div>
 </header>
 
 <main class="container">
@@ -43,6 +43,12 @@
     <code>assemblableArmorType</code> 改為陣列（正向邏輯，空陣列 = 無限制），<code>mechRestriction</code> 已移除。
   </div>
 
+  <div class="changed-block">
+    <strong>🔄 v1.3 更新（PLAN-036）：特種背包前置關係</strong>
+    新增 <code>craft.prereqBackpackId</code>（本次<strong>唯一落庫的新欄位</strong>）——記錄背包製作的「低一階前置主背包」。
+    合成階層分類（PLAN-035）與能力循前置鏈（PLAN-037）皆為前端純函式 derive、<strong>不落庫、不 bump 版本</strong>。
+  </div>
+
   <div class="sub-h">🗃️ backpacks — 背包資料</div>
   <div class="data-table-wrap">
     <table class="data-table blue-head">
@@ -55,6 +61,8 @@
       <tr><td>slot</td><td>WeaponEquipSlot</td><td>裝配位置；背包固定為 <code>'back'</code>（WeaponEquipSlot.BACK），與武器共用 enum</td></tr>
       <tr><td>assemblableArmorType</td><td>AssemblableArmorType[]</td><td>可裝備機甲類型陣列（正向邏輯）：<code>[]</code> = 無限制；<code>["Light"]</code> / <code>["Medium"]</code> / <code>["Heavy"]</code> / 複數值（API: AssemblableAirmenType，斜線分隔 → split）</td></tr>
       <tr><td>repairAmount</td><td>number</td><td>修理量；非修理類背包填 0（API: AmountOfRepair）</td></tr>
+      <tr><td colspan="3" style="color:var(--accent-orange);font-weight:700;">▎craft — 製作前置（BackpackCraft，🆕 PLAN-036；僅 SS／S+ 已建立關聯者有值，無值＝未關聯）</td></tr>
+      <tr><td>&nbsp;└ prereqBackpackId</td><td>string</td><td>前置主背包 doc id（一律「低一階」背包）：<strong>SS ← S+</strong>（無法由名字反推，後台手輸）、<strong>S+ ← S</strong>（名稱可推、腳本填）。只存這一個 id，種類／線／變體皆 derive → 引用 backpacks 自身</td></tr>
       <tr><td colspan="3" style="color:var(--accent-pink);font-weight:700;">▎mainSkill — 附帶技能（僅 SS 稀有度，API: WithPassiveSkills[0]）</td></tr>
       <tr><td>&nbsp;├ id</td><td>string</td><td>技能 ID（API: WithPassiveSkills[0].ID）</td></tr>
       <tr><td>&nbsp;├ name</td><td>string</td><td>技能名稱（API: WithPassiveSkills[0].name）</td></tr>
@@ -84,6 +92,16 @@
     <strong>💡 mainSkill 的數值欄位</strong>
     API 回傳的 <code>SpecificEffects</code> 為 rich text 格式，包含標籤與數值描述。
     <code>dmg / crit / critDmg / acc</code> 等數值需管理員從描述中手動解析後填入，供傷害計算器直接使用。
+  </div>
+  <div class="info-block">
+    <strong>💡 craft.prereqBackpackId — 製作前置（PLAN-036）</strong>
+    背包製作為「低一階前置」關係：<strong>SS ← S+</strong>（無法由名字反推，後台 <code>BackpackAdmin</code> 手動選擇）、<strong>S+ ← S</strong>（可由名字乾淨反推，一次性腳本 <code>fill-backpack-craft.mjs</code> 填入，實測 98/98 命中）。
+    僅存前置這一個 id；種類、圖紙名（<code>name + '設計圖'</code>）、能力軸皆由此 id 查表 derive、不落庫。
+    存檔走 <code>updateBackpack</code>（自動 <code>bumpDataVersion('backpacks')</code>）；無前置階（S/A/B）不寫 <code>craft</code>，前台未關聯時優雅降級。
+  </div>
+  <div class="info-block">
+    <strong>💡 分類與能力軸不落庫（PLAN-035 / PLAN-037）</strong>
+    合成階層（素材/基礎/複合/特種 ＝ <code>rarity</code> 粗化）、強化/干擾軸與變體（從 <code>name</code> 字串解析）、能力循前置鏈（<code>backpackAbility</code> 沿 <code>craft</code> 鏈遞迴取祖先能力）皆為前端純函式 derive（<code>src/utils/backpackClassify.ts</code>），<strong>零 Firestore 欄位</strong>，由 <code>scripts/audit-backpack-classify.mjs</code> 對 live 全 180 名字驗證 <code>unresolved=0</code> 佐證。
   </div>
 </section>
 
