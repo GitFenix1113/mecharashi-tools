@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import type { Backpack } from '../../../types'
 import { WeaponEquipSlot } from '../../../types/enums'
 import { updateBackpack, getBackpacksPage } from '../../../lib/firestoreApi'
@@ -38,12 +38,22 @@ function BackpackEditPanel({
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState<string | null>(null)
   const [hasMainSkill, setHasMainSkill] = useState(!!backpack.mainSkill)
+  const gd = useGameData()
 
   useEffect(() => {
     setForm({ ...backpack })
     setHasMainSkill(!!backpack.mainSkill)
     setError(null)
   }, [backpack])
+
+  // PLAN-036：SS 前置主背包下拉的候選＝全背包（排除自己與其他 SS，前置主背包是較低階背包）
+  useEffect(() => { gd.ensureLoaded(['backpacks']) }, [gd])
+  const prereqCandidates = useMemo(
+    () => gd.backpacks
+      .filter(b => b.rarity !== 'SS' && b.id !== form.id)
+      .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant')),
+    [gd.backpacks, form.id],
+  )
 
   function update<K extends keyof Backpack>(key: K, value: Backpack[K]) {
     setForm(f => ({ ...f, [key]: value }))
@@ -66,7 +76,9 @@ function BackpackEditPanel({
     setSaving(true)
     setError(null)
     try {
-      const data = hasMainSkill ? form : { ...form, mainSkill: undefined }
+      let data = hasMainSkill ? form : { ...form, mainSkill: undefined }
+      // PLAN-036：craft（前置主背包）僅 SS 有意義，非 SS 一律不寫
+      if (data.rarity !== 'SS') data = { ...data, craft: undefined }
       await onSave(data)
     } catch (e) {
       setError(e instanceof Error ? e.message : '儲存失敗，請重試')
@@ -138,6 +150,24 @@ function BackpackEditPanel({
             ))}
           </div>
         </div>
+
+        {/* PLAN-036：SS 特種背包的前置主背包（僅 SS 顯示；種類/圖紙由前台 derive） */}
+        {form.rarity === 'SS' && (
+          <Field label="前置主背包 craft.prereqBackpackId（特種背包製作的前置，選填；空 = 未關聯）">
+            <select
+              value={form.craft?.prereqBackpackId ?? ''}
+              onChange={e => update('craft', e.target.value ? { prereqBackpackId: e.target.value } : undefined)}
+              className="input-field"
+            >
+              <option value="">（未設定 — 前台前置篩選下不顯示此背包）</option>
+              {prereqCandidates.map(b => (
+                <option key={b.id} value={b.id}>
+                  {b.name}（{b.rarity} · {BACKPACK_TYPE_CONFIG[b.type]?.label ?? b.type}）
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
 
         {/* 主技能 */}
         <div className="border border-border/60 rounded-lg p-3 bg-bg-dark/30">

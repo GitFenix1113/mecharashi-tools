@@ -15,6 +15,8 @@
  * 產出的 unresolved 報告佐證（純函式單元測試只覆蓋手挑名字，證明不了全集）。
  */
 
+import type { Backpack } from '../types'
+
 export type BackpackTier = 'material' | 'base' | 'composite' | 'special'
 export type BackpackLine = '強化' | '干擾'
 
@@ -88,4 +90,22 @@ export function parseBackpackName(name: string): BackpackNameParts {
   }
 
   return { baseFunction, line, variant }
+}
+
+// ── PLAN-036 特種背包前置關係 ────────────────────────────────────────────────
+// 只存 craft.prereqBackpackId 一個事實；前置背包的種類與圖紙名皆 derive。
+
+/**
+ * 前置主背包的「種類」＝查 craft.prereqBackpackId 取其 type（出力/移動/誘導…）。
+ * 無 craft、或查不到該 id（尚未輸入 / 資料不一致）→ null（前台優雅降級：此類 SS 在前置 facet 下不顯示）。
+ */
+export function prereqBackpackType(bp: Backpack, byId: Map<string, Backpack>): string | null {
+  const id = bp.craft?.prereqBackpackId
+  if (!id) return null
+  return byId.get(id)?.type ?? null
+}
+
+/** 圖紙衍生名＝背包名 + 設計圖（如「征服者背包設計圖」）；材料來源另做，此處僅顯示用。 */
+export function blueprintName(bp: Backpack): string {
+  return `${bp.name}設計圖`
 }

@@ -6,10 +6,21 @@ import assert from 'node:assert/strict'
 import {
   tierFromRarity,
   parseBackpackName,
+  prereqBackpackType,
+  blueprintName,
   TIER_LABELS,
   TIER_ORDER,
   DEFAULT_TIERS,
 } from './backpackClassify.ts'
+import type { Backpack } from '../types'
+
+// 測試用最小背包建構器（只填必要欄位，其餘用預設）
+function bp(partial: Partial<Backpack> & Pick<Backpack, 'id' | 'name'>): Backpack {
+  return {
+    type: 'PowerAdd', rarity: 'S', weight: 0, slot: 'back',
+    assemblableArmorType: [], repairAmount: 0, ...partial,
+  }
+}
 
 test('tierFromRarity：rarity → 階層（A/B 皆素材）', () => {
   assert.equal(tierFromRarity('SS'), 'special')
@@ -68,6 +79,27 @@ test('parseBackpackName：容錯 katakana 間隔號（・, U+30FB）', () => {
   assert.deepEqual(parseBackpackName('出力強化背包・首攻'), {
     baseFunction: '出力', line: '強化', variant: '首攻',
   })
+})
+
+test('prereqBackpackType：查 craft.prereqBackpackId 取前置背包的 type', () => {
+  const prereq = bp({ id: 'backpack_移動干擾護甲', name: '移動干擾背包·護甲', type: 'MovePointAdd' })
+  const ss = bp({ id: 'backpack_征服者', name: '征服者背包', rarity: 'SS', craft: { prereqBackpackId: prereq.id } })
+  const byId = new Map([[prereq.id, prereq], [ss.id, ss]])
+  assert.equal(prereqBackpackType(ss, byId), 'MovePointAdd')
+})
+
+test('prereqBackpackType：無 craft → null（優雅降級）', () => {
+  const ss = bp({ id: 'backpack_強襲者', name: '強襲者背包', rarity: 'SS' })
+  assert.equal(prereqBackpackType(ss, new Map()), null)
+})
+
+test('prereqBackpackType：craft 指向查不到的 id → null（優雅降級）', () => {
+  const ss = bp({ id: 'backpack_x', name: 'X 背包', rarity: 'SS', craft: { prereqBackpackId: 'backpack_missing' } })
+  assert.equal(prereqBackpackType(ss, new Map([[ss.id, ss]])), null)
+})
+
+test('blueprintName：背包名 + 設計圖', () => {
+  assert.equal(blueprintName(bp({ id: 'backpack_征服者', name: '征服者背包' })), '征服者背包設計圖')
 })
 
 test('常數自洽：TIER_ORDER / DEFAULT_TIERS 覆蓋合法階層、DEFAULT 不含素材', () => {

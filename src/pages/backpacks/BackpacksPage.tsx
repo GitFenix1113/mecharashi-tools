@@ -28,6 +28,8 @@ import {
 import {
   tierFromRarity,
   parseBackpackName,
+  prereqBackpackType,
+  blueprintName,
   TIER_LABELS,
   TIER_ORDER,
   DEFAULT_TIERS,
@@ -110,7 +112,7 @@ function CraftBadge() {
 }
 
 // ── 背包浮窗內容（既有，未動）────────────────────────────────────────────────────
-function BackpackTooltipContent({ bp, pinned = false }: { bp: Backpack; pinned?: boolean }) {
+function BackpackTooltipContent({ bp, prereqName, pinned = false }: { bp: Backpack; prereqName?: string; pinned?: boolean }) {
   const armorLabel =
     bp.assemblableArmorType.length === 0
       ? '無限制'
@@ -158,6 +160,18 @@ function BackpackTooltipContent({ bp, pinned = false }: { bp: Backpack; pinned?:
             <span className="text-[14px] text-text-secondary">{armorLabel}</span>
           </div>
         </div>
+
+        {/* PLAN-036：SS 特種背包製作提示（圖紙＝name+設計圖；衍生自 前置主背包，有 craft 才顯示） */}
+        {bp.rarity === 'SS' && (
+          <div className="bg-bg-dark rounded-lg p-2.5 text-[13px] text-text-secondary space-y-1">
+            <div>製作圖紙 · <span className="text-text-primary">{blueprintName(bp)}</span></div>
+            {bp.craft?.prereqBackpackId
+              ? (prereqName
+                  ? <div>衍生自 <span className="text-text-primary">{prereqName}</span></div>
+                  : <div className="text-text-dim">前置主背包待確認</div>)
+              : <div className="text-text-dim">前置主背包未設定</div>}
+          </div>
+        )}
 
         {bp.mainSkill && (
           <div className="bg-bg-dark rounded-lg overflow-hidden">
@@ -274,11 +288,11 @@ function WeaponProjectionContent({ w, parentName, fusedBackpackName, onNavigate 
   )
 }
 
-function BackpackTooltip({ bp, pinned }: { bp: Backpack; pinned: boolean }) {
+function BackpackTooltip({ bp, prereqName, pinned }: { bp: Backpack; prereqName?: string; pinned: boolean }) {
   return (
     <div className="w-80 max-h-[min(90vh,_600px)] flex flex-col bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
       <div className="flex-1 min-h-0 overflow-y-auto p-1">
-        <BackpackTooltipContent bp={bp} pinned={pinned} />
+        <BackpackTooltipContent bp={bp} prereqName={prereqName} pinned={pinned} />
       </div>
       {bp.mainSkill?.descriptionRefs && Object.keys(bp.mainSkill.descriptionRefs).length > 0 && (
         <p className="text-[13px] text-text-dim mt-2 text-center flex-shrink-0">
@@ -295,13 +309,14 @@ interface TooltipState {
   anchorTop: number
 }
 
-function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackName }: {
+function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackName, prereqName }: {
   item: BackpackListItem
   pinned: boolean
   x: number
   anchorTop: number
   parentName?: string
   fusedBackpackName?: string
+  prereqName?: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [top, setTop] = useState(anchorTop)
@@ -322,7 +337,7 @@ function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackNa
       {...(pinned ? dragHandlers : {})}
     >
       {item.kind === 'backpack' ? (
-        <BackpackTooltip bp={item.data} pinned={pinned} />
+        <BackpackTooltip bp={item.data} prereqName={prereqName} pinned={pinned} />
       ) : (
         <div className="w-80 max-h-[min(90vh,_600px)] flex flex-col bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
           <div className="flex-1 min-h-0 overflow-y-auto p-1">
@@ -347,6 +362,7 @@ export default function BackpacksPage() {
   const [armorFilter, setArmorFilter]     = useState<string | null>(null)
   const [lineFilter, setLineFilter]       = useState<BackpackLine | null>(null)  // 強化/干擾 軸
   const [variantFilter, setVariantFilter] = useState<string | null>(null)        // 變體子篩選（僅選線後可用）
+  const [prereqTypeFilter, setPrereqTypeFilter] = useState<string | null>(null)  // PLAN-036 前置背包種類（僅 SS）
   const [craftFacet, setCraftFacet]       = useState(false)   // 特種背包製作 正交 facet
   const [displayCount, setDisplayCount]   = useState(PAGE_SIZE)
 
@@ -354,7 +370,7 @@ export default function BackpacksPage() {
   useEffect(() => { if (craftFacet) void ensureLoaded(['weapons']) }, [craftFacet, ensureLoaded])
   const weaponsLoading = craftFacet && !loadedKeys.has('weapons')
 
-  useEffect(() => { setDisplayCount(PAGE_SIZE) }, [search, tierFilters, typeFilters, armorFilter, lineFilter, variantFilter, craftFacet])
+  useEffect(() => { setDisplayCount(PAGE_SIZE) }, [search, tierFilters, typeFilters, armorFilter, lineFilter, variantFilter, prereqTypeFilter, craftFacet])
 
   // 變體清單依資料 derive（不硬編，避免改版漏改）；依所選線收斂
   const variantsByLine = useMemo(() => {
@@ -381,6 +397,20 @@ export default function BackpacksPage() {
   // 母武器名 / 融合背包名（供投影浮窗顯示「衍生自 ○○」「融合自 ○○」）
   const parentNameOf = (w: Weapon) => (w.upgrade?.fromWeaponId ? weaponById.get(w.upgrade.fromWeaponId)?.name : undefined)
   const fusedBackpackNameOf = (w: Weapon) => (w.upgrade?.fusedBackpackId ? backpackById.get(w.upgrade.fusedBackpackId)?.name : undefined)
+
+  // PLAN-036：前置主背包名（供 SS 浮窗顯示「衍生自 ○○」）
+  const prereqNameOf = (bp: Backpack) => (bp.craft?.prereqBackpackId ? backpackById.get(bp.craft.prereqBackpackId)?.name : undefined)
+
+  // PLAN-036：前置背包種類 facet 的選項＝實際出現在 SS 前置關聯中的 type（derive，未輸入資料時為空）
+  const prereqTypeOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const bp of backpacks) {
+      if (bp.rarity !== 'SS') continue
+      const t = prereqBackpackType(bp, backpackById)
+      if (t) set.add(t)
+    }
+    return [...set]
+  }, [backpacks, backpackById])
 
   function toggleSet<T>(setter: React.Dispatch<React.SetStateAction<Set<T>>>, value: T) {
     setter((prev) => {
@@ -420,6 +450,12 @@ export default function BackpacksPage() {
           if (parts.line !== lineFilter) return false
           if (variantFilter && parts.variant !== variantFilter) return false
         }
+      }
+      // 前置背包種類（PLAN-036）：只顯示「前置關聯可查到且種類相符」的 SS 特種背包；
+      // 查不到前置的 SS 與非 SS 一律隱藏（站長要求：查不到前置就先不顯示）。
+      if (prereqTypeFilter) {
+        if (it.kind !== 'backpack') return false
+        if (prereqBackpackType(it.data, backpackById) !== prereqTypeFilter) return false
       }
       const armor = itemArmor(it)
       if (armorFilter === 'none' && armor.length > 0) return false
@@ -507,12 +543,13 @@ export default function BackpacksPage() {
           anchorTop={activeTooltip.anchorTop}
           parentName={activeItem.kind === 'weapon' ? parentNameOf(activeItem.data) : undefined}
           fusedBackpackName={activeItem.kind === 'weapon' ? fusedBackpackNameOf(activeItem.data) : undefined}
+          prereqName={activeItem.kind === 'backpack' ? prereqNameOf(activeItem.data) : undefined}
         />
       )}
 
       <BottomSheet open={!!sheetItem} onClose={() => setSheetItem(null)}>
         {sheetItem && (sheetItem.kind === 'backpack'
-          ? <BackpackTooltipContent bp={sheetItem.data} />
+          ? <BackpackTooltipContent bp={sheetItem.data} prereqName={prereqNameOf(sheetItem.data)} />
           : <WeaponProjectionContent
               w={sheetItem.data}
               parentName={parentNameOf(sheetItem.data)}
@@ -611,6 +648,28 @@ export default function BackpacksPage() {
               {ASSEMBLABLE_ARMOR_CONFIG[key].label}
             </button>
           ))}
+        </div>
+
+        {/* 前置背包種類 – 正交 facet（PLAN-036）：依 SS 前置主背包的種類篩；未輸入關聯者隱藏 */}
+        <div className="flex flex-wrap gap-1.5 items-center pt-1 border-t border-border">
+          <span className="text-xs text-text-dim mr-1 flex-shrink-0">前置背包</span>
+          {prereqTypeOptions.length === 0 ? (
+            <span className="text-[11px] text-text-dim">尚無前置關聯資料（於後台為 SS 背包輸入「前置主背包」後啟用）</span>
+          ) : (
+            <>
+              <button className={filterBtn(!prereqTypeFilter)} onClick={() => setPrereqTypeFilter(null)}>全部</button>
+              {prereqTypeOptions.map((t) => (
+                <button
+                  key={t}
+                  className={filterBtn(prereqTypeFilter === t)}
+                  onClick={() => setPrereqTypeFilter(prereqTypeFilter === t ? null : t)}
+                >
+                  {BACKPACK_TYPE_CONFIG[t]?.label ?? t}
+                </button>
+              ))}
+              {prereqTypeFilter && <span className="text-[11px] text-text-dim">（只顯示前置為此種類的特種背包）</span>}
+            </>
+          )}
         </div>
 
         {/* 特種背包製作 – 正交 facet（PLAN-031）*/}

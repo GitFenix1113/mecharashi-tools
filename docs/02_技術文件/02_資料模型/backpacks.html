@@ -244,6 +244,23 @@
   </div>
 </section>
 
+<!-- SS 前置主背包（PLAN-036）-->
+<section class="section">
+  <div class="section-label" style="color:var(--accent-orange)">Craft Prereq</div>
+  <div class="section-title">SS 特種背包的前置主背包（<code>craft.prereqBackpackId</code>）</div>
+  <div class="section-desc">
+    SS 特種背包在遊戲【特種背包製作】台由固定配方合成：<strong>圖紙 + 前置主背包 + 複合背包(S+) + 任意 3 個 S 級背包</strong>。其中只有「前置主背包」是無法從名字 derive 的變動事實，故新增 <code>Backpack.craft</code> 只存這一個 id。
+  </div>
+  <div style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.2);border-left:3px solid var(--accent-orange);border-radius:0 10px 10px 0;padding:16px 20px;margin:12px 0;font-size:14px;line-height:1.9;">
+    <strong>只存一個事實，其餘 derive / 固定文案：</strong><br>
+    · <code>craft?: { prereqBackpackId: string }</code>——僅 SS 且後台已輸入者有值；由後台 <code>BackpackAdmin</code> 手動選擇（<code>updateBackpack</code> 存檔即 <code>bumpDataVersion('backpacks')</code>）。<br>
+    · <strong>前置背包「種類」</strong>＝查 <code>prereqBackpackId</code> 取其 <code>type</code>（<code>prereqBackpackType</code>，見 <code>backpackClassify.ts</code>），背包圖鑑「前置背包種類」facet 依此篩選；<span style="color:var(--accent-red)">查不到關聯的 SS 在此 facet 下不顯示</span>（優雅降級）。<br>
+    · <strong>圖紙</strong>＝derive（<code>name + '設計圖'</code>，<code>blueprintName</code>），材料來源（武裝討伐）未存；<strong>任意 3 個 S 級背包</strong>＝固定文案，不存。<br>
+    · 非 SS 背包一律不寫 <code>craft</code>；未輸入的 SS 維持無 <code>craft</code>，前台當「未關聯」處理、不報錯。<br><br>
+    <small style="color:var(--text-dim)"><strong>刻意分流的後續（PLAN-036 決策五）</strong>：完整配方呈現＋存複合背包(S+) 核心材料 id；形態二「特種背包武器」（裁決者等，產物是武器，已由 PLAN-031 <code>weapon.upgrade</code> 涵蓋）；圖紙材料來源（武裝討伐資料庫）。</small>
+  </div>
+</section>
+
 <!-- 稀有度識別規則 -->
 <section class="section">
   <div class="section-label" style="color:var(--accent-pink)">Rarity</div>
