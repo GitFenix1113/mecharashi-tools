@@ -165,13 +165,22 @@
   <div class="decision-block">
     <strong>在範圍內：</strong>
     <ul style="margin:8px 0 0 16px;line-height:1.9;">
-      <li><code>Backpack.craft?: { prereqBackpackId }</code> 型別（僅 SS 用）</li>
-      <li>後台 <code>BackpackEditPanel</code>：SS 專屬「前置主背包」下拉（挑非 SS 背包）</li>
+      <li><code>Backpack.craft?: { prereqBackpackId }</code> 型別（<strong>SS 與 S+ 皆用</strong>，前置一律低一階）</li>
+      <li>後台 <code>BackpackEditPanel</code>：<strong>SS/S+</strong> 皆可編「前置主背包」下拉（候選＝低一階、類型預設 S+ 用 line 推）</li>
       <li>背包圖鑑「前置背包種類」facet：依前置 <code>type</code> 篩 SS、未關聯者隱藏（優雅降級）</li>
       <li><code>backpackClassify</code>：加 <code>prereqBackpackType(bp, byId)</code> 純函式（查表 derive）</li>
       <li>浮窗/卡片顯示「{名}設計圖」與「衍生自 前置主背包」（純文字/連結，視前置有無）</li>
-      <li>docs 資料模型同步 + siteChangelog（手輸即 bump，無 migrate 腳本）</li>
+      <li><strong>S+ 前置由一次性腳本填入</strong>（名稱可推，98/98）；SS 前置後台手輸</li>
+      <li>docs 資料模型同步 + siteChangelog（存檔即 bump）</li>
     </ul>
+  </div>
+
+  <div class="info-block" style="border-left-color:var(--accent-green);background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);">
+    <strong style="color:var(--accent-green)">2026-07-25 擴充：S+ 也有前置（名稱可推）。</strong>
+    站長指出 S+ 複合背包同樣有前置——<code>出力強化背包·首攻</code> ＝ 出力背包(S) + <strong>強化背包·首攻(S)</strong>，
+    把變體背包視為前置。實測 <code>{line}背包·{variant}</code> 規則對 98 個 S+ <strong>全數命中</strong>，
+    故以一次性腳本填入；後台亦放寬讓 S+ 可編。前置一律「低一階」（SS←S+、S+←S），
+    S+ 前置的 <code>type</code> 是 Enhance/EMP（變體線）非自身 PowerAdd，後台類型預設改由 line 推。
   </div>
 
   <div class="warning-block">

@@ -98,7 +98,10 @@
     <strong style="color:var(--accent-cyan);">驗證（2026-07-25）：</strong>
     <code>tsc -b</code> + <code>npm run build</code> 通過、<code>node --test</code> 12/12（含前置查無/無 craft 兩降級案例）。
     背包圖鑑 port 5173 實跑：「前置背包」facet 於無資料時顯示引導提示、SS 浮窗顯示「製作圖紙 · {名}設計圖」＋「前置主背包未設定」（優雅降級）、PLAN-035 功能無回歸。<br>
-    <strong>後台 A-3 SS 前置主背包下拉</strong>已實作並型別通過，因需管理員登入，<strong>逐筆輸入與回讀待站長登入實測</strong>。
+    <strong>後台 A-3 前置主背包下拉</strong>已實作並型別通過，因需管理員登入，<strong>逐筆輸入與回讀待站長登入實測</strong>。<br>
+    <strong style="color:var(--accent-green)">2026-07-25 擴充：</strong>S+ 也有前置且名稱可推（<code>{line}背包·{variant}</code>），
+    一次性腳本 <code>fill-backpack-craft.mjs</code> 對 live <strong>98/98 寫入 + bump 完成、回讀 98/98 皆有 craft</strong>；
+    後台放寬 SS/S+ 皆可編（候選低一階、S+ 類型預設由 line 推）。
   </div>
 
   <div class="impact-note">

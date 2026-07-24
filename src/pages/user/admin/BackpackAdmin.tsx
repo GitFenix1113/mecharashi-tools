@@ -6,10 +6,28 @@ import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, GRID_AUTO_FIELDS } from './shared'
 import { BACKPACK_TYPE_CONFIG, ASSEMBLABLE_ARMOR_CONFIG } from '../../../components/BackpackBadges'
+import { parseBackpackName } from '../../../utils/backpackClassify'
 
 const PAGE_SIZE = 20
 const ALL_RARITIES = ['SS', 'S+', 'S', 'A', 'B']
 const ALL_BACKPACK_TYPES = Object.keys(BACKPACK_TYPE_CONFIG)
+
+// PLAN-036：前置主背包是「低一階」的背包（SS←S+、S+←S）；其餘階無前置關係
+function prereqRarityOf(rarity: string): string | null {
+  if (rarity === 'SS') return 'S+'
+  if (rarity === 'S+') return 'S'
+  return null
+}
+// 前置類型的預設值：S+ 的前置是變體背包（強化→Enhance / 干擾→EMP，非自身 PowerAdd）；
+// SS 的前置通常同類型，故用自身 type。查無則 'ALL'。
+function defaultPrereqType(bp: Backpack): string {
+  if (bp.rarity === 'S+') {
+    const { line } = parseBackpackName(bp.name)
+    return line === '強化' ? 'Enhance' : line === '干擾' ? 'EMP' : 'ALL'
+  }
+  if (bp.rarity === 'SS') return bp.type
+  return 'ALL'
+}
 
 function makeDefaultBackpack(id: string): Backpack {
   return {
@@ -40,24 +58,27 @@ function BackpackEditPanel({
   const [hasMainSkill, setHasMainSkill] = useState(!!backpack.mainSkill)
   const gd = useGameData()
 
-  // PLAN-036：前置主背包 picker 的分類縮小（類型 / 名稱搜尋；前置暫時只會是 S+，故不篩稀有度）
-  const [prereqType, setPrereqType]     = useState(backpack.type)  // 預設＝背包自身類型（前置通常同類型）
+  // PLAN-036：前置主背包 picker 的分類縮小（類型 / 名稱搜尋）
+  const [prereqType, setPrereqType]     = useState(() => defaultPrereqType(backpack))
   const [prereqSearch, setPrereqSearch] = useState('')
 
   useEffect(() => {
     setForm({ ...backpack })
     setHasMainSkill(!!backpack.mainSkill)
     setError(null)
-    setPrereqType(backpack.type); setPrereqSearch('')   // 類型預設帶入背包已設定的類型
+    setPrereqType(defaultPrereqType(backpack)); setPrereqSearch('')   // 類型預設：S+ 用 line 推、SS 用自身 type
   }, [backpack])
 
-  // PLAN-036：SS 前置主背包下拉的候選＝S+ 複合背包（前置暫時只會是 S+）
+  // PLAN-036：前置候選＝低一階背包（SS←S+、S+←S）
   useEffect(() => { gd.ensureLoaded(['backpacks']) }, [gd])
+  const prereqRarity = prereqRarityOf(form.rarity)
   const prereqCandidates = useMemo(
-    () => gd.backpacks
-      .filter(b => b.rarity === 'S+' && b.id !== form.id)
-      .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant')),
-    [gd.backpacks, form.id],
+    () => prereqRarity
+      ? gd.backpacks
+          .filter(b => b.rarity === prereqRarity && b.id !== form.id)
+          .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'))
+      : [],
+    [gd.backpacks, form.id, prereqRarity],
   )
 
   // 經分類縮小後的候選；已選中的前置一律保留在清單內（即使被篩掉／非 S+），避免 select 顯示空白
@@ -97,8 +118,8 @@ function BackpackEditPanel({
     setError(null)
     try {
       let data = hasMainSkill ? form : { ...form, mainSkill: undefined }
-      // PLAN-036：craft（前置主背包）僅 SS 有意義，非 SS 一律不寫
-      if (data.rarity !== 'SS') data = { ...data, craft: undefined }
+      // PLAN-036：craft（前置主背包）僅 SS/S+ 有意義（低一階前置），其餘階不寫
+      if (!prereqRarityOf(data.rarity)) data = { ...data, craft: undefined }
       await onSave(data)
     } catch (e) {
       setError(e instanceof Error ? e.message : '儲存失敗，請重試')
@@ -171,11 +192,11 @@ function BackpackEditPanel({
           </div>
         </div>
 
-        {/* PLAN-036：SS 特種背包的前置主背包（僅 SS 顯示；種類/圖紙由前台 derive） */}
-        {form.rarity === 'SS' && (
+        {/* PLAN-036：前置主背包（SS←S+、S+←S；種類/圖紙由前台 derive） */}
+        {prereqRarity && (
           <div className="border border-accent-orange/40 rounded-lg p-3 bg-accent-orange/5 space-y-2">
             <span className="text-xs text-accent-orange font-medium uppercase tracking-wider">
-              前置主背包 craft.prereqBackpackId（特種背包製作的前置 · 候選為 S+ 複合背包）
+              前置主背包 craft.prereqBackpackId（製作的前置 · 候選為 {prereqRarity} 背包）
             </span>
             {/* 分類縮小：類型（預設帶入背包自身類型，前置通常同類型）/ 名稱搜尋 */}
             <div className="grid grid-cols-2 gap-2">
