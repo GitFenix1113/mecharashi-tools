@@ -26,7 +26,8 @@ type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpack
 //   searchable — 閘門是否提供搜尋框（僅未預載入、仍走伺服器端分頁的分頁會用到閘門）。
 //   selfLoading— 分頁元件自行管理主資料載入（伺服器端分頁查詢）；armed 後直接掛載。
 //   preload    — true：切到此分頁即整包預載入主資料，支援前端「片段」搜尋（useClientPaged）。
-// 註：backpacks / components 資料量較大，仍維持伺服器端分頁查詢（不整包載入、沿用閘門）。
+// 註：components 資料量較大，仍維持伺服器端分頁查詢（不整包載入、沿用閘門）。
+//     backpacks 於 PLAN-036 改回整包預載入（客戶端品質篩選 + 前置 picker，180 筆不大）。
 const TAB_CONFIG: Record<Tab, { keys: CollectionKey[]; searchable: boolean; selfLoading: boolean; preload: boolean }> = {
   modules:    { keys: ['modules', 'mechs'],  searchable: true,  selfLoading: false, preload: true  },
   mechs:      { keys: ['mechs', 'modules', 'weapons'], searchable: true, selfLoading: false, preload: true },
@@ -34,7 +35,7 @@ const TAB_CONFIG: Record<Tab, { keys: CollectionKey[]; searchable: boolean; self
   weapons:    { keys: ['weapons', 'pilots'], searchable: true,  selfLoading: false, preload: true  },
   components: { keys: [],                     searchable: true,  selfLoading: true,  preload: false },
   grayops:    { keys: ['grayOpsRoster'],     searchable: false, selfLoading: false, preload: false },
-  backpacks:  { keys: [],                     searchable: true,  selfLoading: true,  preload: false },
+  backpacks:  { keys: ['backpacks'],         searchable: true,  selfLoading: false, preload: true  },
   glossary:   { keys: ['glossaryTerms'],     searchable: true,  selfLoading: false, preload: true  },
   skills:     { keys: ['pilotSkills'],       searchable: true,  selfLoading: false, preload: true  },
   neuralDrive:{ keys: ['neuralDriveAbilities', 'pilots'], searchable: true, selfLoading: false, preload: true },
