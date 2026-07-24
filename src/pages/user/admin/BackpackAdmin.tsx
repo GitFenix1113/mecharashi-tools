@@ -40,42 +40,40 @@ function BackpackEditPanel({
   const [hasMainSkill, setHasMainSkill] = useState(!!backpack.mainSkill)
   const gd = useGameData()
 
-  // PLAN-036：前置主背包 picker 的分類縮小（稀有度 / 類型 / 名稱搜尋）
-  const [prereqRarity, setPrereqRarity] = useState('ALL')
-  const [prereqType, setPrereqType]     = useState('ALL')
+  // PLAN-036：前置主背包 picker 的分類縮小（類型 / 名稱搜尋；前置暫時只會是 S+，故不篩稀有度）
+  const [prereqType, setPrereqType]     = useState(backpack.type)  // 預設＝背包自身類型（前置通常同類型）
   const [prereqSearch, setPrereqSearch] = useState('')
 
   useEffect(() => {
     setForm({ ...backpack })
     setHasMainSkill(!!backpack.mainSkill)
     setError(null)
-    setPrereqRarity('ALL'); setPrereqType('ALL'); setPrereqSearch('')
+    setPrereqType(backpack.type); setPrereqSearch('')   // 類型預設帶入背包已設定的類型
   }, [backpack])
 
-  // PLAN-036：SS 前置主背包下拉的候選＝全背包（排除自己與其他 SS，前置主背包是較低階背包）
+  // PLAN-036：SS 前置主背包下拉的候選＝S+ 複合背包（前置暫時只會是 S+）
   useEffect(() => { gd.ensureLoaded(['backpacks']) }, [gd])
   const prereqCandidates = useMemo(
     () => gd.backpacks
-      .filter(b => b.rarity !== 'SS' && b.id !== form.id)
+      .filter(b => b.rarity === 'S+' && b.id !== form.id)
       .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant')),
     [gd.backpacks, form.id],
   )
 
-  // 經分類縮小後的候選；已選中的前置一律保留在清單內（即使被篩掉），避免 select 顯示空白
+  // 經分類縮小後的候選；已選中的前置一律保留在清單內（即使被篩掉／非 S+），避免 select 顯示空白
   const narrowedPrereq = useMemo(() => {
     const q = prereqSearch.trim().toLowerCase()
     const list = prereqCandidates.filter(b =>
-      (prereqRarity === 'ALL' || b.rarity === prereqRarity) &&
       (prereqType === 'ALL' || b.type === prereqType) &&
       (!q || b.name.toLowerCase().includes(q)),
     )
     const selectedId = form.craft?.prereqBackpackId
     if (selectedId && !list.some(b => b.id === selectedId)) {
-      const sel = prereqCandidates.find(b => b.id === selectedId)
+      const sel = gd.backpacks.find(b => b.id === selectedId)
       if (sel) return [sel, ...list]
     }
     return list
-  }, [prereqCandidates, prereqRarity, prereqType, prereqSearch, form.craft?.prereqBackpackId])
+  }, [prereqCandidates, prereqType, prereqSearch, form.craft?.prereqBackpackId, gd.backpacks])
 
   function update<K extends keyof Backpack>(key: K, value: Backpack[K]) {
     setForm(f => ({ ...f, [key]: value }))
@@ -177,27 +175,23 @@ function BackpackEditPanel({
         {form.rarity === 'SS' && (
           <div className="border border-accent-orange/40 rounded-lg p-3 bg-accent-orange/5 space-y-2">
             <span className="text-xs text-accent-orange font-medium uppercase tracking-wider">
-              前置主背包 craft.prereqBackpackId（特種背包製作的前置）
+              前置主背包 craft.prereqBackpackId（特種背包製作的前置 · 候選為 S+ 複合背包）
             </span>
-            {/* 分類縮小：稀有度 / 類型 / 名稱搜尋 */}
+            {/* 分類縮小：類型（預設帶入背包自身類型，前置通常同類型）/ 名稱搜尋 */}
             <div className="grid grid-cols-2 gap-2">
-              <select value={prereqRarity} onChange={e => setPrereqRarity(e.target.value)} className="input-field">
-                <option value="ALL">稀有度：全部</option>
-                {['S+', 'S', 'A', 'B'].map(r => <option key={r} value={r}>稀有度：{r}</option>)}
-              </select>
               <select value={prereqType} onChange={e => setPrereqType(e.target.value)} className="input-field">
                 <option value="ALL">類型：全部</option>
                 {ALL_BACKPACK_TYPES.map(t => (
                   <option key={t} value={t}>類型：{BACKPACK_TYPE_CONFIG[t]?.label ?? t}</option>
                 ))}
               </select>
+              <input
+                value={prereqSearch}
+                onChange={e => setPrereqSearch(e.target.value)}
+                placeholder="搜尋名稱（例：護甲）..."
+                className="input-field"
+              />
             </div>
-            <input
-              value={prereqSearch}
-              onChange={e => setPrereqSearch(e.target.value)}
-              placeholder="搜尋前置背包名稱（例：護甲、干擾）..."
-              className="input-field"
-            />
             <Field label="選擇前置主背包（選填；空 = 未關聯，前台前置篩選下不顯示此背包）">
               <select
                 value={form.craft?.prereqBackpackId ?? ''}
