@@ -31,6 +31,36 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-037 · 背包圖鑑優化</h3>
+      <p>背包圖鑑最終優化四連：預設階層只選<b>特種(SS)</b>、查詢量小故移除分頁；把「變體」子篩選升級為<b>「能力」並沿 craft 前置鏈跨階篩選</b>（新增 <code>backpackAbility</code> 循鏈取底層 S 變體背包的 line+variant，讓「強化→首攻」命中原本名字無變體的 SS——主宰者背包 → 飛行強化背包·首攻 → 強化背包·首攻，line 篩改嚴格、一併定案 PLAN-035 遺留問題）；移除被取代的<b>前置背包 facet</b>；「特種背包製作」toggle 改為<b>「包含武器」預設開</b>。整合 PLAN-035 階層與 PLAN-036 前置關係，live 驗證通過。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-07-25 · 4 / 4 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-037_背包圖鑑優化/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-037_背包圖鑑優化/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-036 · 特種背包前置關係</h3>
+      <p>背包製作有「低一階前置」關係：<b>SS ← S+</b>（無法從名字推、後台手輸）、<b>S+ ← S</b>（名稱可推，一次性腳本填 98/98）。新增 <code>Backpack.craft.prereqBackpackId</code> 只存前置主背包一個事實（<code>出力強化背包·首攻</code> = 出力背包 + <b>強化背包·首攻</b>，存變體背包），種類/圖紙全 derive；後台 SS/S+ 皆可編（候選低一階、S+ 類型由 line 推 Enhance/EMP）。是 PLAN-035 決策六的落地，供 PLAN-037 能力循鏈使用。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-07-25 · 6 / 6 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-036_特種背包前置關係/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-036_特種背包前置關係/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-035 · 背包分類階層</h3>
+      <p>依合成階層把 180 件背包分成<b>素材(A/B) / 基礎(S) / 複合(S+) / 特種(SS)</b>四層，圖鑑「階層」facet <b>取代</b>稀有度多選、預設隱藏 A/B 素材；新增「<b>強化 vs 干擾</b>」軸與能力篩選（<code>type</code> 只編碼基礎功能軸、「強化/干擾」只存在名字字串 → 靠 name 解析）。階層與軸皆從既有資料 derive、<b>零資料改動</b>；一次性 audit 腳本對 live 全 180 名字驗證 <b>unresolved=0、分佈 37/23/98/22 相符</b>。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-07-24 · 6 / 6 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-035_背包分類階層/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-035_背包分類階層/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card yellow">
       <div class="card-icon">◆</div>
       <h3>PLAN-031 · 武器製作關係層</h3>
