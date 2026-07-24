@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      // Restore the path that 404.html encoded into the query string.
+      (function (l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search.slice(1).split('&').map(function (s) {
+            return s.replace(/~and~/g, '&');
+          });
+          window.history.replaceState(
+            null, null,
+            l.pathname.slice(0, -1) + decoded[0] +
+            (decoded[1] ? '?' + decoded[1] : '') +
+            l.hash
+          );
+        }
+      }(window.location));
+    </script>
+    <link rel="icon" type="image/png" href="/mecharashi-tools/preview/feature-PLAN-035-037-backpack-gallery/assets/cat_no_bg-C0AOrDjU.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>米赫瑪超吉情豹站 | Mecharashi-Milhama PawInfo Station</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script type="module" crossorigin src="/mecharashi-tools/preview/feature-PLAN-035-037-backpack-gallery/assets/index-CUCu2x7T.js"></script>
+    <link rel="modulepreload" crossorigin href="/mecharashi-tools/preview/feature-PLAN-035-037-backpack-gallery/assets/jsx-runtime-BHwPObl3.js">
+    <link rel="modulepreload" crossorigin href="/mecharashi-tools/preview/feature-PLAN-035-037-backpack-gallery/assets/firebase-BBCWl36m.js">
+    <link rel="modulepreload" crossorigin href="/mecharashi-tools/preview/feature-PLAN-035-037-backpack-gallery/assets/firestoreApi-Cw0-qTj2.js">
+    <link rel="modulepreload" crossorigin href="/mecharashi-tools/preview/feature-PLAN-035-037-backpack-gallery/assets/GameDataContext-CXyQuq4g.js">
+    <link rel="modulepreload" crossorigin href="/mecharashi-tools/preview/feature-PLAN-035-037-backpack-gallery/assets/useFirestore-SjP8KU88.js">
+    <link rel="modulepreload" crossorigin href="/mecharashi-tools/preview/feature-PLAN-035-037-backpack-gallery/assets/assets-Br2QNMCT.js">
+    <link rel="stylesheet" crossorigin href="/mecharashi-tools/preview/feature-PLAN-035-037-backpack-gallery/assets/index-BzNXwJ4W.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

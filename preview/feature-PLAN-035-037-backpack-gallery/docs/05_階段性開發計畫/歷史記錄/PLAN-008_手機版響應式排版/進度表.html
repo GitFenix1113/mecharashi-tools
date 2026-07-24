@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-008 手機版響應式排版 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(234,179,8,0.15);  color: var(--accent-yellow); border: 1px solid rgba(234,179,8,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-cyan);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-yellow), var(--accent-orange));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-008 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-008</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">手機版響應式排版</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-05-20</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label orange">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">6</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-yellow)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">6</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>開發者任務完成度</span>
+      <span style="color:var(--accent-orange);">6 / 6</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Phase A: PilotDetailPage Hero -->
+<section class="section">
+  <div class="section-label orange">Phase A</div>
+  <div class="section-title">PilotDetailPage — Hero 區塊改版</div>
+  <div class="section-desc">最嚴重的爆版點，固定三欄 grid 在手機上橫向溢出。改為手機直排、lg: 以上三欄並排。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; Hero Grid 改為 flex-col / lg:grid</div>
+      <div class="task-group-meta">src/pages/PilotDetailPage.tsx · line 537</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">將 Hero 外層容器改為手機直排</div>
+        <div class="task-desc">
+          <code>grid grid-cols-[160px_1fr_auto] gap-12</code>
+          → <code>flex flex-col gap-6 lg:grid lg:grid-cols-[160px_1fr_auto] lg:gap-12 lg:items-start</code>
+        </div>
+        <div class="task-file">src/pages/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 肖像容器尺寸響應化</div>
+      <div class="task-group-meta">src/pages/PilotDetailPage.tsx · line 539</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">手機下肖像改為橫向全寬、高度限制</div>
+        <div class="task-desc">
+          <code>w-40 h-52</code>（固定 160×208px）
+          → <code>w-full max-h-48 lg:w-40 lg:h-52 lg:flex-shrink-0</code>。
+          手機下肖像以全寬橫幅方式呈現（banner 效果），桌面維持原始直式尺寸。
+        </div>
+        <div class="task-file">src/pages/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 雷達圖尺寸響應化</div>
+      <div class="task-group-meta">src/pages/PilotDetailPage.tsx · line 597</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">雷達圖改為手機置中縮放、桌面固定寬</div>
+        <div class="task-desc">
+          外層容器 <code>w-64 flex-shrink-0</code>
+          → <code>w-full max-w-xs mx-auto lg:w-64 lg:mx-0 lg:flex-shrink-0</code>。
+          手機下最大 320px 置中，桌面回到 256px。
+        </div>
+        <div class="task-file">src/pages/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B: PilotDetailPage Tabs -->
+<section class="section">
+  <div class="section-label orange">Phase B</div>
+  <div class="section-title">PilotDetailPage — Tab 內容響應化</div>
+  <div class="section-desc">天賦 tab 右側固定寬專武面板、AP 三卡並排在手機上的問題。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 天賦 tab 容器改為手機直排</div>
+      <div class="task-group-meta">src/pages/PilotDetailPage.tsx · line 626</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">天賦列表與專武面板改為手機直排、lg: 並排</div>
+        <div class="task-desc">
+          外層 <code>flex gap-4 items-start</code>
+          → <code>flex flex-col gap-4 lg:flex-row lg:items-start</code>。<br>
+          專武面板 <code>w-72 flex-shrink-0</code>
+          → <code>w-full lg:w-72 lg:flex-shrink-0</code>。
+        </div>
+        <div class="task-file">src/pages/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; AP 三卡允許換行</div>
+      <div class="task-group-meta">src/pages/PilotDetailPage.tsx · line 583</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">AP 卡片容器加入 flex-wrap</div>
+        <div class="task-desc">
+          <code>flex gap-4</code> → <code>flex flex-wrap gap-3</code>。
+          手機窄螢幕下三卡可自然換行為 2+1 排列，不截斷文字。
+        </div>
+        <div class="task-file">src/pages/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C: PilotsPage -->
+<section class="section">
+  <div class="section-label orange">Phase C</div>
+  <div class="section-title">PilotsPage — 卡片資訊區調整</div>
+  <div class="section-desc">2 欄卡片在手機上太窄，專武名稱文字塞不下。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 手機下隱藏卡片底部專武名稱文字</div>
+      <div class="task-group-meta">src/pages/PilotsPage.tsx · line 180</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">專武名稱 &lt;p&gt; 加入 hidden sm:block</div>
+        <div class="task-desc">
+          手機（&lt;640px）：只顯示 WeaponIcon 圖示，名稱文字隱藏，避免 2 欄卡片內文字擠爆。<br>
+          sm:（640px+）含平板以上：顯示圖示 + 名稱文字（現有設計）。<br>
+          WeaponIcon 已有 tooltip 行為，圖示單獨顯示不影響資訊可及性。
+        </div>
+        <div class="task-file">src/pages/PilotsPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- 注意事項 -->
+<section class="section">
+  <div class="section-label cyan">Notes</div>
+  <div class="section-title">實作注意事項</div>
+
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;font-size:13px;color:var(--text-secondary);line-height:1.8;">
+    <p><strong style="color:var(--text-primary);">測試裝置建議</strong></p>
+    <ul style="margin:8px 0 16px;padding-left:20px;">
+      <li>375px × 812px（iPhone SE / 14）— 最窄手機，必測</li>
+      <li>390px × 844px（iPhone 14）</li>
+      <li>768px × 1024px（iPad 直式）— 確認仍為直排布局</li>
+      <li>1024px × 768px（iPad 橫式）— 確認切換為桌面布局</li>
+    </ul>
+    <p><strong style="color:var(--text-primary);">實作順序建議</strong></p>
+    <ul style="margin:8px 0 0;padding-left:20px;">
+      <li>先做 Phase A（Hero 三欄），影響最大且最獨立</li>
+      <li>再做 Phase B（Tab 內容），依賴 A 完成後才好視覺確認</li>
+      <li>最後做 Phase C（PilotsPage 卡片），獨立頁面，不依賴前兩者</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-008 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>
