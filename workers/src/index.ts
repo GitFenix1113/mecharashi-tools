@@ -26,12 +26,48 @@ const ARRAY_COLLECTIONS = new Set<string>([
 
 const DEFAULT_ALLOWED = ['https://mecharashi.wiki', 'https://www.mecharashi.wiki', 'http://localhost:5173']
 
+// ── PLAN-029 Phase 3-4（路線 A）：反爬守門 ────────────────────────────────────
+// 資料現在只能經本 Worker 讀（Firestore 已 read:if isAdmin 鎖死），故反爬目標＝本端點。
+// CORS 只是回應 header、擋不了 server 端請求（裸 curl 照拿），因此在此「硬擋」：
+//   ① 無合法 Origin/Referer 的裸打 → 403（瀏覽器跨源 fetch 一定帶 Origin，裸 curl 沒有）
+//   ② 來自雲端機房 ASN 的請求 → 403（真人不會從機房 IP 來；擋掉 server 爬蟲即使偽造 Origin）
+// 定位：提高爬取成本，非 100% 防死（住宅代理 + 偽造 header 仍可繞）。per-IP 限流與同源
+// 隱藏 origin 留待 Phase 5 路線 B（把 /api 掛到 mecharashi.wiki + zone WAF/Rate Limiting）。
+const DATACENTER_ASNS = new Set<number>([
+  45102, 37963, 45103, 134963, 59055, // 阿里雲 Alibaba/Aliyun
+  45090, 132203, 132591,              // 騰訊雲 Tencent
+  55990, 136907,                      // 華為雲 Huawei
+  16509, 14618, 8987,                 // AWS
+  396982, 19527,                      // GCP（不含 15169 Google 主 ASN/Googlebot，避免誤傷）
+  8075,                               // Azure/Microsoft
+  14061, 16276, 24940, 63949, 20473,  // DigitalOcean / OVH / Hetzner / Linode / Vultr
+])
+
+function getAllowedOrigins(env: Env): string[] {
+  return env.ALLOWED_ORIGINS?.split(',').map(s => s.trim()) ?? DEFAULT_ALLOWED
+}
+
+/** 反爬守門：回傳 403 Response 表示擋下，null 表示放行。 */
+function antiScrapeBlock(request: Request, env: Env, cors: Record<string, string>): Response | null {
+  const allowed = getAllowedOrigins(env)
+  const origin = request.headers.get('origin') ?? ''
+  const referer = request.headers.get('referer') ?? ''
+  const okRef = allowed.some(a => origin === a || referer.startsWith(a))
+  const asn = (request.cf as { asn?: number } | undefined)?.asn
+  const fromDatacenter = asn !== undefined && DATACENTER_ASNS.has(asn)
+  return (!okRef || fromDatacenter) ? json({ error: 'forbidden' }, 403, cors) : null
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url)
     const cors = corsHeaders(request, env)
 
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors })
+
+    // 反爬守門（PLAN-029 Phase 3-4 路線 A）：preflight 之後、實際處理之前硬擋。
+    const blocked = antiScrapeBlock(request, env, cors)
+    if (blocked) return blocked
 
     // 路由：GET /api/versions → 回 { global, byKey }（對應前端 meta/gameData 版本 gate）。
     // 前端據此決定 localStorage 三層快取命中；Phase 3 收緊 meta 後前端改由此代讀版本。
@@ -116,7 +152,7 @@ async function assembleGrayOpsRoster(sa: ServiceAccount, token: string): Promise
 }
 
 function corsHeaders(request: Request, env: Env): Record<string, string> {
-  const allowed = (env.ALLOWED_ORIGINS?.split(',').map(s => s.trim()) ?? DEFAULT_ALLOWED)
+  const allowed = getAllowedOrigins(env)
   const origin = request.headers.get('origin') ?? ''
   const allow = allowed.includes(origin) ? origin : allowed[0]
   return {
