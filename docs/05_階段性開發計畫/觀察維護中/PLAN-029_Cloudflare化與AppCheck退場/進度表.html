@@ -154,7 +154,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">觀察維護中</a>
     <span>›</span>
     <span class="current">PLAN-029 進度表</span>
   </div>
@@ -209,8 +209,16 @@
     擺脫 App Check／reCAPTCHA 的維運痛；公開資料防護從「可被繞的票」升級為 <code>read: if false</code> 真鎖；反爬改用 Cloudflare 現成基建（ASN 封機房 + 限流）；全球加速 + DDoS + 隱藏 origin；中國讀取盡量改善。成本 $0 起（唯一固定成本為一個網域）。
   </div>
 
+  <div class="phase-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.3);color:#bfe9f4;">
+    🔭 <strong style="color:var(--accent-cyan);">2026-07-26：開發收束，本計畫轉入「觀察維護中」。</strong>所有開發者任務（Worker 代理、規則收緊、App Check 退場、反爬兩層、同源化、邊緣 SPA 改寫、限流、圖片快取、字體自託管、診斷頁）皆已落地並驗證上線。剩餘三項<strong>全為觀察型工作</strong>，不阻塞任何開發：<br>
+    ① <strong>收集中國實測回報</strong>——發布 /connectivity 診斷頁的測試公告，收 3～5 份涵蓋不同省份與電信商的報告。判讀指引見 _local-notes/中國用戶測試說明.md，含停損準則（若多數落到 LAX／SJC 或大量逾時，即為免費方案的中國路由極限，應誠實結案而非續投）。<br>
+    ② <strong>關閉 workers.dev</strong>（5-2）——觀察同源 /api 數日無異常後執行，那是目前唯一的回退路徑。<br>
+    ③ <strong>確認 /images Cache Rule 生效</strong>——決定性證據是 <code>Age</code> 超過 14400 秒仍為 HIT（需等 4 小時以上觀察）。<br>
+    另有兩項與計畫目標無關的技術債可隨時處理：前端 429 退避重試、workers/test 的 Hello World 樣板。三項觀察工作結束後即可依操作 B 歸檔至歷史記錄。
+  </div>
+
   <div class="phase-note">
-    ⚑ <strong>灰度原則：</strong>Phase 1→2→3 必須循序，且「收緊 Firestore 規則 / 拔 App Check」（Phase 3）務必等 Phase 2 確認公開資料<strong>全數</strong>走 Worker 後才執行。Phase 4／5 為可選加值，可無限延後。每階段皆可獨立回退。
+    ⚑ <strong>灰度原則（已履行，保留備查）：</strong>Phase 1→2→3 必須循序，且「收緊 Firestore 規則 / 拔 App Check」（Phase 3）務必等 Phase 2 確認公開資料<strong>全數</strong>走 Worker 後才執行。每階段皆可獨立回退。
   </div>
 
   <div class="phase-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);color:#bfe9cf;">
@@ -529,7 +537,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-029 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-029 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 觀察維護中</a>
 </footer>
 
 </body>
