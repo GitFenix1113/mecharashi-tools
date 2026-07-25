@@ -177,7 +177,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">5</div>
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -185,7 +185,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">12</div>
+      <div class="summary-num" style="color:var(--text-dim)">9</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">5 / 18</span>
+      <span style="color:var(--accent-orange);">8 / 18</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 27.8%"></div>
+      <div class="progress-bar-fill" style="width: 44.4%"></div>
     </div>
   </div>
 
@@ -312,34 +312,34 @@
     <div class="task-group-header">
       <div class="task-group-title">P2 &nbsp; 邊緣代理 + 前端接線</div>
       <div class="task-group-meta">CF Worker · GameDataContext · useFirestore</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">2-1 Worker：Firestore REST + service account JWT 讀公開集合</div>
         <div class="task-desc">Worker 用 service account 自簽 JWT 換 access token，走 Firestore REST 讀取公開集合（pilots/mechs/modules/...），回整包 JSON。處理 Workers 無 firebase-admin 的限制。</div>
-        <div class="task-file">workers/api/data.ts（新增）</div>
+        <div class="task-file">已完成：workers/src/gcpAuth.ts（自簽 JWT→access token）+ workers/src/firestoreRest.ts（REST 讀取 + typed-value decoder，回應對齊前端 fetchCollection 的 {...data,id}）+ workers/src/index.ts（路由 GET /api/data/:collection）。grayOpsRoster 於 Worker 端組裝 { companies }、globalResearch 走 getDocument。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">2-2 Worker：邊緣快取（版本號 key）</div>
         <div class="task-desc">以 meta/gameData 版本號為 cache key 做邊緣／KV 快取，對應既有 bumpDataVersion 失效機制。確保多訪客命中快取、Firestore read 量趨近零。</div>
-        <div class="task-file">workers/api/cache.ts（新增）</div>
+        <div class="task-file">已完成：workers/src/versions.ts（讀 meta/gameData 版本 + isolate 級 60s 快取）；index.ts 以 caches.default 做邊緣快取，cacheKey 帶版本號（後台 bump → key 變 → 舊快取自然失效），回應標 x-cache HIT/MISS。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">2-3 前端公開資料改打 /api（與直連並存）</div>
         <div class="task-desc">在資料載入層（GameDataContext / useFirestore 的 ensureLoaded）將公開集合來源切到 Worker endpoint，保留版本 gate 三層快取邏輯（記憶體 / localStorage / 遠端）。以 flag 控制可灰度切換與回退。</div>
-        <div class="task-file">src/contexts/GameDataContext.tsx · src/hooks/useFirestore.ts</div>
+        <div class="task-file">已完成：新增 src/lib/api/workerData.ts（flag：VITE_WORKER_API_BASE 啟用、VITE_USE_WORKER=false kill-switch）；GameDataContext 的資料源 fetchCollectionData 與版本源皆於 WORKER_ENABLED 時切到 Worker，三層快取邏輯原封不動。Worker 補 GET /api/versions（讓 Phase 3 收緊 meta 後前端仍讀得到版本）。預設 flag 關 → 合併零風險、沿用直連。build＋兩端 tsc 皆通過。⚠ 執行時逐頁驗證（2-4）待 Worker 部署＋設 env 後進行。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>

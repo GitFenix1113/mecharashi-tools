@@ -31,6 +31,21 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors })
 
+    // 路由：GET /api/versions → 回 { global, byKey }（對應前端 meta/gameData 版本 gate）。
+    // 前端據此決定 localStorage 三層快取命中；Phase 3 收緊 meta 後前端改由此代讀版本。
+    if (url.pathname === '/api/versions') {
+      if (request.method !== 'GET') return json({ error: 'method not allowed' }, 405, cors)
+      try {
+        const sa = parseServiceAccount(env.FIREBASE_SA_KEY)
+        const token = await getAccessToken(sa)
+        const versions = await getDataVersions(sa, token)
+        // 不邊緣快取：版本本身即快取失效訊號，須夠新（versions.ts 已有 60s isolate 級快取）。
+        return json(versions, 200, { ...cors, 'cache-control': 'no-store' })
+      } catch (e) {
+        return json({ error: e instanceof Error ? e.message : String(e) }, 500, cors)
+      }
+    }
+
     // 路由：GET /api/data/:collection
     const m = url.pathname.match(/^\/api\/data\/([a-zA-Z]+)$/)
     if (!m) return json({ error: 'not found' }, 404, cors)
