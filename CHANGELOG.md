@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-07-24
+## [Unreleased] - 2026-07-25
 
 ### ⚠ 重大變更
 
@@ -201,6 +201,8 @@
 
 ### 🔧 維護
 
+- PLAN-029 Phase 1 前端改根路徑，支援自訂網域 mecharashi.wiki (`d1e84a4`)
+- PLAN-029 Phase 0 前置準備 — Cloudflare Worker 骨架與憑證就位 (`690e919`)
 - PLAN-036 前置關係擴充至 S+（名稱可推，後台放寬可編） (`563b8fe`)
 - PLAN-036 前置 picker 微調 — 候選限 S+、移除稀有度篩、類型預設帶入自身 (`dd15a51`)
 - PLAN-036 後台背包管理 UX — 品質篩選(預設SS) + 前置picker分類縮小 (`7664c72`)
