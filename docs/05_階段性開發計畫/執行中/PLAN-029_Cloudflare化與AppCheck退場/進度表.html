@@ -177,19 +177,19 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">15</div>
+      <div class="summary-num" style="color:var(--accent-green)">17</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">4</div>
-      <div class="summary-lbl">待開始</div>
+      <div class="summary-num" style="color:var(--text-dim)">3</div>
+      <div class="summary-lbl">待開始／擱置</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">19</div>
+      <div class="summary-num" style="color:var(--text-primary)">21</div>
       <div class="summary-lbl">總任務</div>
     </div>
   </div>
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">15 / 19</span>
+      <span style="color:var(--accent-orange);">17 / 21（未完成的 3 項中有 2 項為擱置）</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 78.9%"></div>
+      <div class="progress-bar-fill" style="width: 81%"></div>
     </div>
   </div>
 
@@ -432,26 +432,38 @@
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">P4 &nbsp; 圖庫上 R2 + 選源</div>
-      <div class="task-group-meta">R2 · assets.ts</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-title">P4 &nbsp; 圖片快取（R2 已由 Cache Rule 取代）</div>
+      <div class="task-group-meta">Cache Rules · R2（擱置）</div>
+      <span class="status done">實質結案</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">4-0 Cache Rule：/images/* 邊緣 TTL 覆寫</div>
+        <div class="task-desc">在 zone 加一條 Cache Rule，忽略 origin 的 cache-control、將邊緣 TTL 設為 7 天，取代原本 R2 方案的絕大部分效益。</div>
+        <div class="task-file">✅ 已完成（2026-07-26）：條件 <code>starts_with(http.request.uri.path, "/images/")</code>、快取資格「適用快取」、邊緣 TTL「忽略 cache-control 並使用此 TTL」＝ 604800 秒；瀏覽器 TTL 刻意不動（維持遵循 origin 的 4 小時，留一個自我修復窗口）。<br>
+        <strong>為何需要</strong>：GitHub Pages 只回 <code>max-age=14400</code>，且<strong>每次部署都會重寫整個 gh-pages 分支</strong>——2340 張圖、188MB 的 ETag／Last-Modified 全部改變，即使內容沒動。結果是每次部署都把圖庫的邊緣快取打掉、反覆回源。覆寫後部署不再沖掉快取。<br>
+        <strong>取捨</strong>：同名換圖後邊緣最長會續送舊圖 7 天，需到 Caching → 自訂清除 按 URL 清單張（勿用「清除所有內容」）。TTL 取 7 天而非 1 個月，就是為了讓忘記清除時能在一週內自我修復。<br>
+        驗證：五個圖片目錄抽樣皆 200 + <code>cf-cache-status: HIT</code>，且首頁／API／文件站／favicon 未受波及。</div>
+      </div>
+      <div class="task-assignee">開發者 + 使用者</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">4-1 188MB 圖庫上 R2 + CF CDN</div>
-        <div class="task-desc">將 public/images 圖庫同步到 R2，透過 CF CDN 供應（R2 零流量出口費，對圖片流量特別有利）。</div>
+        <div class="task-desc"><strong>擱置（不做，除非 GH Pages 流量觸頂）。</strong>原以為 R2 能大幅改善圖片供應，但實測顯示圖片<strong>早已走 CF 邊緣快取</strong>，R2 的增量效益只剩「脫離 GH Pages 的 100GB/月 軟性上限」與「隱藏 origin」；目前流量遠未觸頂，且 R2 需綁卡啟用。4-0 的 Cache Rule 已用零成本拿到快取與回源面的效益。</div>
       </div>
-      <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <div class="task-assignee">—</div>
+      <span class="status pending">擱置</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">4-2 assetUrl 指向 CF/R2 + onerror 退回</div>
-        <div class="task-desc">單一 choke point assetUrl() 注入 R2 來源，逐圖 onerror 退回 GH Pages 備援。全站生效、改一處。</div>
+        <div class="task-desc"><strong>擱置</strong>，隨 4-1 一併凍結。若日後真的啟用 R2 再回來做——單一 choke point assetUrl() 注入來源、逐圖 onerror 退回 GH Pages 備援，改一處全站生效的設計仍然成立。</div>
         <div class="task-file">src/utils/assets.ts</div>
       </div>
-      <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <div class="task-assignee">—</div>
+      <span class="status pending">擱置</span>
     </div>
   </div>
 </section>
@@ -492,11 +504,24 @@
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">5-3 中國讀取實測與觀察</div>
-        <div class="task-desc">透過中國節點／社群回報實測讀取體驗，確認相對現狀的改善幅度，決定是否值得再投入。屬觀察型工作，無明確完成點。</div>
+        <div class="task-name">5-3 移除最後一個被牆的依賴：字體自託管</div>
+        <div class="task-desc">稽核公開頁面的所有外部請求，把中國訪客連不到的資源清乾淨。</div>
+        <div class="task-file">✅ 已完成（2026-07-26）：稽核 /pilots 的資源主機後，發現路線 B 之後<strong>唯一還會連外的就是 Google Fonts</strong>（Firestore／Firebase／Google API 皆已不在清單內），而它是 <code>&lt;link rel="stylesheet"&gt;</code>＝<strong>阻塞渲染</strong>——中國訪客得等連線逾時才開始畫面渲染（白畫面數秒），且等完仍拿不到字體，全站 68 處的 Orbitron 對他們從未生效過。<br>
+        作法：Orbitron 與 JetBrains Mono 改自託管（僅取 latin／latin-ext 子集）；Google Fonts 對這兩者實際回傳<strong>可變字體</strong>，各字重是同一個檔案，故去重成單檔 + font-weight 範圍，<strong>3 檔共 56KB</strong>（原 7 檔 121KB）。中文本體字 Noto Sans TC <strong>刻意不自託管</strong>（CJK 完整字重動輒數 MB），改走系統字體堆疊，視覺差異極小卻替所有訪客省下大量下載。<br>
+        成果：公開頁面對 Google 網域<strong>零依賴</strong>；中國訪客不再有白畫面，且首次真正看得到 Orbitron 的視覺設計。驗證：dist 無 googleapis 引用、字體自 /fonts/ 載入、可變字重生效、JetBrains Mono 依 unicode-range 延後下載。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">5-4 連線診斷頁 + 中國實測回報</div>
+        <div class="task-desc">請人「幫忙測測看」收到的通常是「還是有點慢」，無從比較。故做一頁自動量測並輸出可複製的報告，讓回報變成可比對的數據。</div>
+        <div class="task-file">✅ 診斷頁已完成：<code>/connectivity</code>（src/pages/debug/ConnectivityPage.tsx）自動量測 Cloudflare 邊緣節點、/api/versions、36KB 資料傳輸、圖片（含 cf-cache-status）、自託管字體，並以 Google Fonts 作為「該被封鎖」的對照組。<strong>報告刻意移除 IP</strong>（/cdn-cgi/trace 會回傳 ip=），只保留節點代碼與國別，讓回報者敢貼到公開頻道。開發過程中修掉一個真實缺陷：診斷若寫死相對路徑 <code>/api/…</code>，在本機與 preview（皆為跨源設定）會打到站台本身而非 Worker，量到的數字毫無意義 → 改用 workerData 導出的 workerUrl()。<br>
+        ⏳ <strong>待辦</strong>：把 <code>/connectivity</code> 加進 SPA fallback 規則白名單；發布測試公告、收集 3～5 份涵蓋不同省份與電信商的回報。公告草稿與判讀指引見 _local-notes/中國用戶測試說明.md。</div>
+      </div>
+      <div class="task-assignee">開發者 + 使用者</div>
+      <span class="status doing">進行中</span>
     </div>
   </div>
 </section>
