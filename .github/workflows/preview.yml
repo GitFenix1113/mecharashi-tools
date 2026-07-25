@@ -16,12 +16,12 @@ permissions:
   contents: write
   pull-requests: write
 
-concurrency:
-  group: gh-pages-deploy
-  cancel-in-progress: false
-
 jobs:
   deploy-preview:
+    # 與 deploy.yml 共用 gh-pages-deploy group：序列化「主站/預覽發布」對 gh-pages 的寫入，避免並發 push race。
+    concurrency:
+      group: gh-pages-deploy
+      cancel-in-progress: false
     if: github.event_name == 'workflow_dispatch' || github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
@@ -94,6 +94,11 @@ jobs:
             }
 
   cleanup-preview:
+    # 獨立 group（刻意不與 gh-pages-deploy 同）：PR merge/close 觸發的預覽清理，若與主站發布共用 group，
+    # 會在 PR merge 當下把同時觸發的 deploy.yml 主站發布擠掉取消（PLAN-029 Phase 1 踩過此雷，deploy run 2s 被 cancelled）。
+    concurrency:
+      group: gh-pages-cleanup
+      cancel-in-progress: false
     if: github.event.action == 'closed'
     runs-on: ubuntu-latest
     steps:

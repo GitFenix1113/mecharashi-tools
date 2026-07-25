@@ -177,15 +177,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">3</div>
+      <div class="summary-num" style="color:var(--accent-green)">5</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">15</div>
+      <div class="summary-num" style="color:var(--text-dim)">12</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">3 / 18</span>
+      <span style="color:var(--accent-orange);">5 / 18</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 16.7%"></div>
+      <div class="progress-bar-fill" style="width: 27.8%"></div>
     </div>
   </div>
 
@@ -262,36 +262,42 @@
   <div class="section-title">網域 + CDN（把站搬到 Cloudflare 後面）</div>
   <div class="section-desc">資料流不動、App Check 暫留；先拿到加速、DDoS、隱藏 origin，並驗證全站經 CF 正常。可獨立交付、可回退（DNS 改回）。</div>
 
+  <div class="phase-note" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.25);color:#f4c4c4;">
+    ⚠️ <strong style="color:var(--accent-red);">實際執行偏離（2026-07-25）：</strong>切到 mecharashi.wiki 後 App Check 在新網域換票 403（reCAPTCHA 網域白名單加了仍未即時生效 ＋ 24h client 端節流），加白名單未即解，<strong>最終暫時關閉 App Check enforce 讓站恢復</strong>——原設計「App Check 暫留到 Phase 3」提前發生。⇒ <strong>公開遊戲資料目前裸奔</strong>（read:if true ＋ 無 App Check，任何人可直打 Firestore REST，CF 擋不了此路）；users/* 與後台寫入仍有 isOwner/isAdmin 保護。故 <strong>Phase 2（Worker 代理 + read:if false）升為當務之急</strong>，儘快補上真防護。詳見記憶 project_app_check。
+  </div>
+
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">P1 &nbsp; 前端上 Cloudflare proxy</div>
       <div class="task-group-meta">GitHub Pages · Cloudflare DNS/WAF</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">1-1 前端掛自有網域 + 開 proxy（orange cloud）</div>
         <div class="task-desc">自有網域 CNAME 指向 GitHub Pages，Cloudflare proxy 開啟。調整 router basename / GH Pages 自訂網域設定與 CI。</div>
-        <div class="task-file">.github/workflows/deploy.yml · CNAME · vite base</div>
+        <div class="task-file">已完成：vite base /mecharashi-tools/→/ + 404.html SPA pathSegments 1→0 + deploy.yml cname；Cloudflare DNS CNAME(apex+www)→gitfenix1113.github.io 橙雲 + SSL Full + Always Use HTTPS；GitHub 自動設 custom domain + 憑證核發。實測 Server:cloudflare(TPE)、https 200、SPA 深層路由正常。（PR #7 merge 曾被 preview cleanup 的 concurrency 取消，重觸發 deploy 才成功）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">1-2 開啟 CDN 快取 + Bot Fight Mode + 基本 WAF</div>
         <div class="task-desc">設定靜態資源快取規則、開 Bot Fight Mode，加入基礎 WAF 自訂規則骨架（ASN 封鎖規則留待 Phase 3 正式上）。</div>
+        <div class="task-file">進行中：橙雲已帶 CDN 快取（cdn-cgi/rum 確認生效）+ Always Use HTTPS 已設。Bot Fight Mode / WAF ASN 反爬規則待 Phase 3 正式做。另修 .github/workflows/preview.yml：cleanup-preview 拆獨立 concurrency group（gh-pages-cleanup），避免 PR merge 時把 deploy.yml 主站發布擠掉取消。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">1-3 驗證全站經 CF 正常</div>
         <div class="task-desc">逐頁確認（含 Firebase Auth 登入、後台）在新網域 + CF proxy 下運作正常。此時資料仍直連 Firestore + App Check（不動）。</div>
+        <div class="task-file">已完成：首頁/機師頁渲染、SPA 深層路由（直接開 /pilots + 重整不 404）、橙雲、https 皆正常。驗證中發現 App Check 在新網域換票 403 → 已補 reCAPTCHA 網域白名單 + Firebase Auth 授權網域，但未即時生效，最終暫關 App Check enforce 讓資料恢復（/pilots 87 機師正常）。詳見上方「實際執行偏離」說明。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
