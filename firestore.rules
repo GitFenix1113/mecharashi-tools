@@ -20,77 +20,85 @@ service cloud.firestore {
           .data.role == 'OWNER';
     }
 
-    // ── 遊戲資料（所有人可讀，管理員可寫）────────────────────────────────────
+    // ── 遊戲資料（PLAN-029 Phase 3-2：讀取收緊為 isAdmin，寫入維持 isAdmin）──────
+    // 原本 read: if true（任何人可直打 Firestore REST 白嫖／被爬）。改為 isAdmin() 後：
+    //   · 匿名／一般登入使用者：client 直讀一律 permission-denied → 逼走 Cloudflare
+    //     Worker（前台公開資料已全數改走 /api/data，見 Phase 2 + 3-1）；
+    //   · Worker：用 service account（Admin SDK）呼叫 Firestore REST，本就繞過安全規則，
+    //     照常讀得到 → 這正是本架構「真鎖直連、只留 Worker 一扇門」的關鍵；
+    //   · 登入的管理員：後台編輯頁仍以 client SDK 直讀載入（getCollectionPage 等），
+    //     isAdmin() 讓後台零改動即可運作。唯一代價是管理員本人能整包讀（非爬蟲風險）。
+    // 取代了退場的 App Check（可被繞的票）→ 升級為規則層真鎖。回退：改回 if true 即時生效。
     match /pilots/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     match /mechs/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     match /modules/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     match /weapons/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     match /backpacks/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     match /components/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     match /skills/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     // PLAN-004 技能庫抽離：可共用、可被引用的技能定義庫
     match /pilotSkills/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     // PLAN-023 神經驅動能力庫：可共用、可被引用的神驅能力定義庫
     match /neuralDriveAbilities/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     // PLAN-019-C 詞條庫：refType:'term' 機制關鍵字定義庫
     match /glossaryTerms/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     match /buffs/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     match /pilotResearch/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     match /globalResearch/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     match /enemies/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     match /patchVersions/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     match /grayOps/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
-    // 系統 meta（PLAN-017 遊戲資料版本號；所有人可讀，管理員可 bump）
+    // 系統 meta（PLAN-017 遊戲資料版本號；Phase 3-2 收緊為 isAdmin 可讀，Worker 走 /api/versions 代讀，管理員可 bump）
     match /meta/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
 
