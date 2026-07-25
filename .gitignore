@@ -18,7 +18,10 @@ out/
 .env.migration
 
 # Firebase Admin SDK 服務帳號金鑰（絕對不能提交）
+# serviceAccountKey.json 是自訂命名；*firebase-adminsdk*.json 則涵蓋 Firebase Console
+# 下載時的預設檔名（mecharashi-tools-firebase-adminsdk-xxxxx.json），遞迴套用到所有子目錄含 workers/。
 serviceAccountKey.json
+*firebase-adminsdk*.json
 
 # Firebase Emulator 匯出的測試使用者資料（含個人資訊）
 # 根目錄的 "-"：過去某次 emulators:export 把 "-" 當成輸出檔名產生的殘留檔，

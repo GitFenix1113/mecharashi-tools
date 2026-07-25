@@ -177,7 +177,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">3</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -185,7 +185,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">18</div>
+      <div class="summary-num" style="color:var(--text-dim)">15</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">0 / 18</span>
+      <span style="color:var(--accent-orange);">3 / 18</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 16.7%"></div>
     </div>
   </div>
 
@@ -224,32 +224,34 @@
     <div class="task-group-header">
       <div class="task-group-title">P0 &nbsp; 基礎設施與憑證</div>
       <div class="task-group-meta">Cloudflare · Firebase Console</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">0-1 選購自有網域，DNS 託管到 Cloudflare</div>
         <div class="task-desc">挑一個網域（≈ $15／年），把 nameserver 指到 Cloudflare。先不動站台，僅完成網域接管。</div>
+        <div class="task-file">已完成：mecharashi.wiki（Cloudflare Registrar 直接註冊，Free 方案，DNS zone 自動建立）</div>
       </div>
       <div class="task-assignee">使用者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">0-2 建立 Workers 專案與 R2 bucket</div>
         <div class="task-desc">Cloudflare 帳號下建立 Worker（資料代理）與 R2 bucket（圖片鏡像預留），確認免費檔額度。</div>
+        <div class="task-file">Workers 就緒：workers/ 本地骨架（TypeScript，name: mecharashi-worker）+ wrangler login 完成。R2 依 2026-07-25 決策延後至 Phase 4（僅圖片鏡像用到、不在核心路徑，且需綁卡啟用）。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">0-3 產生 Firebase service account 憑證並存為 CF Secret</div>
         <div class="task-desc">Firebase Console → 服務帳戶產生金鑰，存進 Cloudflare Worker 的加密 Secret（絕不進版控）。供 Worker 簽 JWT 換 Firestore access token 用。</div>
-        <div class="task-file">Cloudflare Secret：FIREBASE_SA_KEY</div>
+        <div class="task-file">憑證已就位：service account JSON（project_id: mecharashi-tools）存於專案根目錄，經 git check-ignore 確認被 *firebase-adminsdk*.json 規則保護。生產 Secret FIREBASE_SA_KEY 待 Phase 2 Worker 部署後 wrangler secret put 接線。</div>
       </div>
-      <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <div class="task-assignee">使用者 + 開發者</div>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
