@@ -11,16 +11,26 @@
 
 import type { DataVersions } from './versions'
 
-// 去尾斜線，避免 `${BASE}/api/...` 變成雙斜線。
-const BASE = (import.meta.env.VITE_WORKER_API_BASE as string | undefined)?.replace(/\/+$/, '') ?? ''
+const RAW_BASE = (import.meta.env.VITE_WORKER_API_BASE as string | undefined)?.trim() ?? ''
+
+/**
+ * 請求前綴。兩種模式：
+ *   · 絕對網址（如 https://mecharashi-worker.….workers.dev）→ 跨源請求，靠 CORS 白名單放行
+ *   · 'same-origin'（PLAN-029 Phase 5 路線 B）→ 前綴留空，打相對路徑 /api/…，
+ *     由 mecharashi.wiki 的 Workers Route 接手。免 CORS、隱藏 origin、吃得到 zone 限流。
+ * 去尾斜線避免 `${BASE}/api/...` 產生雙斜線。
+ */
+const BASE = RAW_BASE === 'same-origin' ? '' : RAW_BASE.replace(/\/+$/, '')
 
 /**
  * Worker 代理是否啟用：
- *   · 需設定 VITE_WORKER_API_BASE（Worker 部署後的網址）；
+ *   · 需設定 VITE_WORKER_API_BASE（Worker 網址，或 'same-origin'）；
  *   · VITE_USE_WORKER=false 為 kill-switch，可在不動 BASE 的情況下強制回退直連。
- * 未設 BASE → 一律關閉（預設安全：沿用現行 Firestore 直連，合併本階段零風險）。
+ * 未設 → 一律關閉。注意：Phase 3-2 之後 Firestore 公開集合已是 read:if isAdmin()，
+ * 「回退直連」對匿名訪客等同讀不到資料，kill-switch 現在只剩管理者自救的意義。
+ * （判斷用 RAW_BASE：'same-origin' 模式下 BASE 刻意為空字串。）
  */
-export const WORKER_ENABLED = !!BASE && import.meta.env.VITE_USE_WORKER !== 'false'
+export const WORKER_ENABLED = !!RAW_BASE && import.meta.env.VITE_USE_WORKER !== 'false'
 
 // 刻意只送簡單請求（不帶自訂 header）→ 保證是 CORS「simple request」、免 preflight。
 async function fetchJson<T>(path: string): Promise<T> {

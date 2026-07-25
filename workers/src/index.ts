@@ -59,7 +59,13 @@ function antiScrapeBlock(request: Request, env: Env, cors: Record<string, string
   const allowed = getAllowedOrigins(env)
   const origin = request.headers.get('origin') ?? ''
   const referer = request.headers.get('referer') ?? ''
-  const okRef = allowed.some(a => origin === a || referer.startsWith(a))
+  // ⚠ 同源請求（Phase 5 路線 B：/api 掛在 mecharashi.wiki 之下）**不會帶 Origin header**，
+  // 只靠 origin 比對會把正常訪客全部判成爬蟲 → 全站資料 403。故同時接受：
+  //   · Sec-Fetch-Site: same-origin（瀏覽器自動帶，同源 fetch 的正字標記）
+  //   · Referer 前綴落在白名單（同源預設 referrer policy 會送完整 URL）
+  // 兩者與 Origin 一樣可偽造，安全強度不變；限流交由 zone Rate Limiting 承擔。
+  const sameOrigin = request.headers.get('sec-fetch-site') === 'same-origin'
+  const okRef = sameOrigin || allowed.some(a => origin === a || referer.startsWith(a))
   const asn = (request.cf as { asn?: number } | undefined)?.asn
   const fromDatacenter = asn !== undefined && DATACENTER_ASNS.has(asn)
   return (!okRef || fromDatacenter) ? json({ error: 'forbidden' }, 403, cors) : null

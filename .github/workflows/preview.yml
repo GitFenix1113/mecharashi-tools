@@ -57,7 +57,9 @@ jobs:
           # PLAN-029：Firestore 公開集合已收成 read:if isAdmin()，preview 若不走 Worker
           # 則所有資料頁全空（直連被規則擋）。preview 的 origin（gitfenix1113.github.io）
           # 已加進 Worker 白名單，故與正式站共用同一個 Worker。
-          VITE_WORKER_API_BASE: https://mecharashi-worker.mecharashi.workers.dev
+          # 刻意用 mecharashi.wiki 而非 workers.dev：preview 是跨源（走 CORS 白名單），
+          # 指向正式網域才能在路線 B Step 5 關掉 workers.dev 之後繼續運作。
+          VITE_WORKER_API_BASE: https://mecharashi.wiki
 
       - name: Deploy to preview subdirectory
         uses: peaceiris/actions-gh-pages@v4

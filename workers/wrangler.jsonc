@@ -13,7 +13,22 @@
 	"upload_source_maps": true,
 	"compatibility_flags": [
 		"nodejs_compat"
-	]
+	],
+	/**
+	 * PLAN-029 Phase 5（路線 B）：把 /api 掛進 mecharashi.wiki 這個 zone。
+	 * 目的：① 進 zone 才吃得到 CF 託管的 WAF / Rate Limiting（補上 per-IP 限流）
+	 *      ② 同源免 CORS + 隱藏「這是個 Worker」 ③ 中國少一個 workers.dev 網域被牆
+	 * 綁定方式：wrangler deploy 會依此建立 route（等同 Dashboard 手動加）。
+	 */
+	"routes": [
+		{ "pattern": "mecharashi.wiki/api/*", "zone_name": "mecharashi.wiki" },
+		{ "pattern": "www.mecharashi.wiki/api/*", "zone_name": "mecharashi.wiki" }
+	],
+	/**
+	 * 灰度期間刻意保留 workers.dev 網址當回退路徑（前端隨時可切回去）。
+	 * 待同源 /api 觀察穩定後改成 false，才算真正隱藏 origin。
+	 */
+	"workers_dev": true
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

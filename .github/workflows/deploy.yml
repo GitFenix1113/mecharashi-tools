@@ -43,7 +43,10 @@ jobs:
           # PLAN-029 Phase 2：公開資料改走 Cloudflare Worker 代理（Worker 網址為公開值、非機密）。
           # 設定此值即啟用 Worker 模式（前端 WORKER_ENABLED）；緊急回退移除本行或設 VITE_USE_WORKER=false。
           # 此時 Firestore 仍 read:if true，直連與 Worker 並存；Phase 3 才收緊規則。
-          VITE_WORKER_API_BASE: https://mecharashi-worker.mecharashi.workers.dev
+          # PLAN-029 Phase 5 路線 B：/api 已掛進 mecharashi.wiki zone（Workers Route），
+          # 改打同源相對路徑 → 免 CORS、隱藏 origin、吃得到 zone 的 Rate Limiting。
+          # 回退：改回 https://mecharashi-worker.mecharashi.workers.dev 再 push 即可。
+          VITE_WORKER_API_BASE: same-origin
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
