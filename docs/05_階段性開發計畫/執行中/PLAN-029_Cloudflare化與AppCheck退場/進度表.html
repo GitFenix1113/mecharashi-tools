@@ -177,7 +177,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">12</div>
+      <div class="summary-num" style="color:var(--accent-green)">13</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -185,7 +185,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">5</div>
+      <div class="summary-num" style="color:var(--text-dim)">4</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">12 / 18</span>
+      <span style="color:var(--accent-orange);">13 / 18</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 66.7%"></div>
+      <div class="progress-bar-fill" style="width: 72.2%"></div>
     </div>
   </div>
 
@@ -370,7 +370,7 @@
     <div class="task-group-header">
       <div class="task-group-title">P3 &nbsp; 鎖死直連 + 拔票 + 反爬</div>
       <div class="task-group-meta">firestore.rules · firebase.ts · CF WAF</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -403,10 +403,10 @@
       <div>
         <div class="task-name">3-4 反爬規則上線</div>
         <div class="task-desc">CF WAF 自訂規則封阿里雲／騰訊雲等機房 ASN；設定 1 條 per-IP rate limit；Referer 檢查限自有網域。觀察告警，逐步調整。</div>
-        <div class="task-file">Cloudflare WAF / Rate Limiting</div>
+        <div class="task-file">✅ 路線 A 已完成（2026-07-25）：因 Worker 在 *.workers.dev 不在 zone WAF 內、且 CORS 擋不了 server 端請求，改於 Worker 程式碼內建守門（workers/src/index.ts antiScrapeBlock）——① 無合法 Origin/Referer 的裸打 → 403；② 來源在雲端機房 ASN 清單（阿里雲/騰訊雲/AWS/GCP…，request.cf.asn）→ 403。已部署並驗證：裸 curl 403、真人瀏覽器(帶 Origin)200、OPTIONS preflight 放行、隔離環境正式站正常。<strong>決策：per-IP 限流 + 同源/隱藏 origin（路線 B：把 /api 掛到 mecharashi.wiki + zone WAF/Rate Limiting）併入 Phase 5（兼中國友善）。</strong>清單見 _local-notes/PLAN-029-3-4-cloudflare反爬設定清單.md。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -448,6 +448,10 @@
   <div class="section-label orange">Phase 5</div>
   <div class="section-title">中國 origin 優化（可選 / 盡量改善）</div>
   <div class="section-desc">「盡量改善」等級，非「真的很快」（那需 ICP，已排除）。可無限延後。</div>
+
+  <div class="phase-note">
+    ⚑ <strong>納入 3-4 路線 B（2026-07-25 決策）：</strong>把 Worker 從 *.workers.dev 改掛 <code>mecharashi.wiki/api/*</code>（Workers Route）+ 停用 workers.dev route，前端改打同源 <code>/api</code>。一石三鳥：① 進 zone → 可用 CF 託管 WAF/Rate Limiting（per-IP 限流，補足 3-4 路線 A 未做的部分）；② 同源免 CORS + 隱藏 origin；③ 中國少一個 workers.dev 網域被牆。程式碼（Worker route + 前端 endpoint）可由開發者做，route 綁定於 Dashboard/wrangler。詳見 _local-notes/PLAN-029-3-4-cloudflare反爬設定清單.md 路線 B。
+  </div>
 
   <div class="task-group">
     <div class="task-group-header">
