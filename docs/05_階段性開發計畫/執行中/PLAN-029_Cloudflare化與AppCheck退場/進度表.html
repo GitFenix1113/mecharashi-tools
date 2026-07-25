@@ -177,15 +177,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">10</div>
+      <div class="summary-num" style="color:var(--accent-green)">12</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">2</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">6</div>
+      <div class="summary-num" style="color:var(--text-dim)">5</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">10 / 18</span>
+      <span style="color:var(--accent-orange);">12 / 18</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 55.6%"></div>
+      <div class="progress-bar-fill" style="width: 66.7%"></div>
     </div>
   </div>
 
@@ -385,19 +385,19 @@
       <div>
         <div class="task-name">3-2 Firestore 遊戲資料規則改 read:if isAdmin()</div>
         <div class="task-desc">將 pilots/mechs/.../meta 等 17 個公開集合的 read 收緊。<strong>決策（2026-07-25）：走 read:if isAdmin() 而非 if false</strong>——對匿名一樣擋死（逼走 Worker），但登入 admin 仍可 client 直讀→後台編輯頁零改動；Worker 用 Admin SDK 繞過規則照常。寫入的 isAdmin、users/* 的 isOwner 規則不動。</div>
-        <div class="task-file">firestore.rules 已改好（17 集合 read:if isAdmin()）。⚠️ 尚未 deploy——無 CI 自動部署，須<strong>等 3-1 前端上線後</strong>再手動 firebase deploy --only firestore:rules，否則正式站舊前端(pilotResearch/patchVersions/rainbow mechs)直讀會壞。回退：改回 if true 即時生效。</div>
+        <div class="task-file">✅ 已完成（2026-07-25）：firestore.rules 17 集合改 read:if isAdmin() 並 firebase deploy 上線。驗證：① 爬蟲視角直打 Firestore REST 讀 pilots/mechs/weapons/patchVersions/pilotResearch/meta（無憑證+公開 API key）全回 403 PERMISSION_DENIED（升級前 200）；② Worker 讀 pilots 仍 200（Admin SDK 繞過規則）；③ 正式站匿名 /pilots 仍完整渲染 87 機師（走 Worker 無感）。回退：改回 if true 重 deploy 即時生效。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">3-3 移除前端 App Check + reCAPTCHA</div>
         <div class="task-desc">拿掉 firebase.ts 的 initializeAppCheck／ReCaptchaV3Provider 與相關 env、debug token；Firebase Console 關閉 App Check enforce。清理 reCAPTCHA 金鑰（保留紀錄）。</div>
-        <div class="task-file">src/lib/firebase.ts · .env.local · deploy.yml/preview.yml</div>
+        <div class="task-file">✅ 已完成（2026-07-25）：firebase.ts 移除 initializeAppCheck/ReCaptchaV3Provider import 與初始化區塊；deploy.yml/preview.yml 拿掉 VITE_FIREBASE_APPCHECK_SITE_KEY；.env.local/.env.local.example 清掉 site key + debug token。本機實測前台不再發 firebaseappcheck/reCAPTCHA 請求、console 零錯誤（原本每頁的 403 噪音消失）、資料照走 Worker。App Check enforce 早於 Phase 1 已手動關。<strong>可選後續（Console 手動、不急）</strong>：刪 reCAPTCHA 舊金鑰 6Le… / 移除多餘 Enterprise 註冊。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
