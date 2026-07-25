@@ -202,6 +202,7 @@
 
 ### 🔧 維護
 
+- PLAN-029 Phase 5 路線 B — /api 掛進 mecharashi.wiki zone 並切同源 (`402d290`)
 - 移除 favicon 履歷記錄（實際並未故障） (`bb253b9`)
 - PLAN-029 修復本機與 preview 的公開資料來源 (`78a652b`)
 - PLAN-029 Phase 3-4 路線 A — Worker 內建反爬守門 (`46058f2`)
