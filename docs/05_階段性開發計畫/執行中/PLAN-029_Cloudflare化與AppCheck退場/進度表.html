@@ -177,15 +177,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">9</div>
+      <div class="summary-num" style="color:var(--accent-green)">10</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">2</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">8</div>
+      <div class="summary-num" style="color:var(--text-dim)">6</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">9 / 18</span>
+      <span style="color:var(--accent-orange);">10 / 18</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 50%"></div>
+      <div class="progress-bar-fill" style="width: 55.6%"></div>
     </div>
   </div>
 
@@ -370,24 +370,25 @@
     <div class="task-group-header">
       <div class="task-group-title">P3 &nbsp; 鎖死直連 + 拔票 + 反爬</div>
       <div class="task-group-meta">firestore.rules · firebase.ts · CF WAF</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">3-1 確認前端公開資料無殘留直連</div>
         <div class="task-desc">全站掃查，確保沒有任何元件仍以 Firebase SDK 直讀公開集合（否則收緊後該頁會壞）。這是 Phase 3 的前置閘門。</div>
+        <div class="task-file">已完成：稽核找出 3 處前台直讀並全數改走 Worker——① SimulatorPage getAllPilotResearch、② HomePage usePatchVersions、③ RainbowMechPlanner getMechsByArmorType(改用 useMechs+client 過濾)；Worker 新增代理 pilotResearch/patchVersions（已部署 200）。本機實測三頁皆走 Worker、無公開集合直讀。確認 getPilotResearch(單筆)/skills/enemies 無前台使用者。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">3-2 Firestore 遊戲資料規則改 read:if false</div>
-        <div class="task-desc">將 pilots/mechs/.../meta 等公開集合的 read 改為 false（僅 Worker 的 Admin 憑證可讀）。保留 users/* 的 isOwner、寫入的 isAdmin 規則不動。</div>
-        <div class="task-file">firestore.rules</div>
+        <div class="task-name">3-2 Firestore 遊戲資料規則改 read:if isAdmin()</div>
+        <div class="task-desc">將 pilots/mechs/.../meta 等 17 個公開集合的 read 收緊。<strong>決策（2026-07-25）：走 read:if isAdmin() 而非 if false</strong>——對匿名一樣擋死（逼走 Worker），但登入 admin 仍可 client 直讀→後台編輯頁零改動；Worker 用 Admin SDK 繞過規則照常。寫入的 isAdmin、users/* 的 isOwner 規則不動。</div>
+        <div class="task-file">firestore.rules 已改好（17 集合 read:if isAdmin()）。⚠️ 尚未 deploy——無 CI 自動部署，須<strong>等 3-1 前端上線後</strong>再手動 firebase deploy --only firestore:rules，否則正式站舊前端(pilotResearch/patchVersions/rainbow mechs)直讀會壞。回退：改回 if true 即時生效。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
