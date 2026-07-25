@@ -49,3 +49,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
           keep_files: true
+          # PLAN-029 Phase 1：自訂網域。每次部署把 CNAME 寫進 gh-pages，GitHub 靠它認 mecharashi.wiki。
+          cname: mecharashi.wiki
