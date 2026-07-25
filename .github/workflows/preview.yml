@@ -54,6 +54,10 @@ jobs:
           VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          # PLAN-029：Firestore 公開集合已收成 read:if isAdmin()，preview 若不走 Worker
+          # 則所有資料頁全空（直連被規則擋）。preview 的 origin（gitfenix1113.github.io）
+          # 已加進 Worker 白名單，故與正式站共用同一個 Worker。
+          VITE_WORKER_API_BASE: https://mecharashi-worker.mecharashi.workers.dev
 
       - name: Deploy to preview subdirectory
         uses: peaceiris/actions-gh-pages@v4

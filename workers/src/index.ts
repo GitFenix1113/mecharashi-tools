@@ -24,7 +24,14 @@ const ARRAY_COLLECTIONS = new Set<string>([
   'pilotResearch', 'patchVersions',
 ])
 
-const DEFAULT_ALLOWED = ['https://mecharashi.wiki', 'https://www.mecharashi.wiki', 'http://localhost:5173']
+// 白名單同時服務 CORS 與反爬守門（antiScrapeBlock）。除正式站外要納入：
+//   · PR preview（GH Pages 子目錄，origin 為 github.io 網域）—— 否則 preview 頁資料全空
+//   · 本機 dev / vite preview —— Phase 3-2 收緊後本機直連已讀不到資料，只能走 Worker
+const DEFAULT_ALLOWED = [
+  'https://mecharashi.wiki', 'https://www.mecharashi.wiki',
+  'https://gitfenix1113.github.io',
+  'http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:4173',
+]
 
 // ── PLAN-029 Phase 3-4（路線 A）：反爬守門 ────────────────────────────────────
 // 資料現在只能經本 Worker 讀（Firestore 已 read:if isAdmin 鎖死），故反爬目標＝本端點。
