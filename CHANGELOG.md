@@ -201,6 +201,7 @@
 
 ### 🔧 維護
 
+- PLAN-029 修 CI concurrency 衝突 + Phase 1 進度表反映實況 (`d6bdf53`)
 - PLAN-029 Phase 1 前端改根路徑，支援自訂網域 mecharashi.wiki (`d1e84a4`)
 - PLAN-029 Phase 0 前置準備 — Cloudflare Worker 骨架與憑證就位 (`690e919`)
 - PLAN-036 前置關係擴充至 S+（名稱可推，後台放寬可編） (`563b8fe`)
