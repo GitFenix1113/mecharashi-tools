@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-005 專武天賦強化顯示 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(234,179,8,0.15);  color: var(--accent-yellow); border: 1px solid rgba(234,179,8,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.admin    { background: rgba(168,85,247,0.15); color: var(--accent-purple); border: 1px solid rgba(168,85,247,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-cyan);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-yellow), var(--accent-orange));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-005 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(234,179,8,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge yellow">◆ PLAN-005</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">專武天賦強化顯示</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-05-20</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label yellow">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-yellow)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始（開發）</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">3</div>
+      <div class="summary-lbl">管理員任務（已完成）</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">8</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>開發者任務完成度</span>
+      <span style="color:var(--accent-yellow);">8 / 8</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>管理員資料填入（長期任務）</span>
+      <span style="color:var(--accent-green);">已完成</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%; background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));"></div>
+    </div>
+  </div>
+
+  <div class="changed-block" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);border-left-color:var(--accent-green);">
+    <strong style="color:var(--accent-green);">✅ 2026-07-26 歸檔：各專武的天賦強化效果已長期填值完成並驗證，本計畫結案。</strong><br>
+    資料經實際使用驗證未再發現問題，故由「觀察維護中」轉入歷史記錄。若日後發現缺陷，再視情況另立計畫處理。
+  </div>
+
+  <div class="changed-block" style="background:rgba(168,85,247,0.06);border-color:rgba(168,85,247,0.25);border-left-color:var(--accent-purple);">
+    <strong>後續演進（2026-06-10）</strong><br>
+    開發者任務（型別 / UI / Admin）8/8 已完成且運作中，僅餘管理員長期填值。後續演進：<br>
+    · <strong>DiffHighlight 已接上引用層</strong>：<a href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html" style="color:var(--accent-purple);">PLAN-019-A</a>
+      讓「最大強化 / 專武強化」區塊 <code>descriptionMax</code> 內的 <code>[xxx]</code> 也能點擊開 Drawer（保留差異 / 數字高亮）。<br>
+    · 相關型別（<code>WeaponSkill.enhancedTalentDescription</code>、<code>SkillEffect.valueType</code>、<code>SkillCondition.hasBuff</code>）
+      已隨專案重構移至 per-collection 模組（<code>src/types/weapon.ts</code> / <code>buff.ts</code> / <code>common.ts</code>）。
+  </div>
+</section>
+
+<!-- Phase A: TypeScript 型別定義 -->
+<section class="section">
+  <div class="section-label yellow">Phase A</div>
+  <div class="section-title">TypeScript 型別定義</div>
+  <div class="section-desc">所有新欄位的型別源頭，前端元件與 Admin 依賴此 Phase 完成後才能更新。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; SkillCondition 擴充</div>
+      <div class="task-group-meta">src/types/index.ts</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 hasBuff?: string</div>
+        <div class="task-desc">
+          配合 <code>trigger: 'hasBuff'</code> 使用，填入需持有的 buff / 狀態名稱（如 <code>'強化射擊'</code>、<code>'瞄準'</code>）。
+        </div>
+        <div class="task-file">src/types/index.ts · SkillCondition</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; SkillEffect 擴充</div>
+      <div class="task-group-meta">src/types/index.ts</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 valueType?: 'add' | 'override'</div>
+        <div class="task-desc">
+          預設 <code>'add'</code>（加算，向後相容）。<code>'override'</code> 時計算器以此值取代對應天賦效果的原始值。
+          用於表達「技能倍率 0.15 → 0.2」這類覆蓋型效果。
+        </div>
+        <div class="task-file">src/types/index.ts · SkillEffect</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; WeaponSkill 擴充</div>
+      <div class="task-group-meta">src/types/index.ts</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 enhancedTalentDescription?: string</div>
+        <div class="task-desc">
+          天賦被此專武強化後的完整描述文字（遊戲原文）。填入後，PilotDetailPage 會在對應天賦下方顯示「▶ 專武強化」DiffHighlight 區塊。
+        </div>
+        <div class="task-file">src/types/index.ts · WeaponSkill</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B: UI 更新 -->
+<section class="section">
+  <div class="section-label yellow">Phase B</div>
+  <div class="section-title">PilotDetailPage UI 更新</div>
+  <div class="section-desc">天賦頁「專武強化」可視化呈現。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 提升 usePilotExclusiveWeapon 至頁面層級</div>
+      <div class="task-group-meta">src/pages/PilotDetailPage.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">將 hook 從 ExclusiveWeaponPanel 移至 PilotDetailPage</div>
+        <div class="task-desc">
+          建立 <code>talentEnhancementMap: Map&lt;talentName, enhancedText&gt;</code>，天賦渲染區與武器面板共用同一份 fetch 結果，避免重複請求。
+          <code>ExclusiveWeaponPanel</code> 改為接收 <code>weapon / loading</code> 作為 props。
+        </div>
+        <div class="task-file">src/pages/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 新增「專武強化」DiffHighlight 區塊</div>
+      <div class="task-group-meta">src/pages/PilotDetailPage.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">在天賦卡片渲染最大強化區塊之後插入專武強化區塊</div>
+        <div class="task-desc">
+          以黃色（<code>accent-yellow</code>）為主色，區別於最大強化的青色（<code>accent-cyan</code>）。
+          顯示標籤「▶ 專武強化 · 武器名稱」，以 <code>descriptionMax</code>（或 description）為基準執行 DiffHighlight。
+        </div>
+        <div class="task-file">src/pages/PilotDetailPage.tsx · talent block</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C: Admin 更新 -->
+<section class="section">
+  <div class="section-label yellow">Phase C</div>
+  <div class="section-title">AdminPage 編輯 UI 更新</div>
+  <div class="section-desc">讓管理員能在 Admin 頁面結構化填入新欄位。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; TRIGGER_DISPLAY 新增條目 + SkillConditionEditor 新增 hasBuff 欄位</div>
+      <div class="task-group-meta">src/pages/AdminPage.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 hasBuff、notMoved、onCrit 三個 trigger 值</div>
+        <div class="task-desc">
+          <code>hasBuff</code> 選擇後顯示「狀態名稱」輸入欄；<code>notMoved</code> / <code>onCrit</code> 無額外參數。
+        </div>
+        <div class="task-file">src/pages/AdminPage.tsx · TRIGGER_DISPLAY · SkillConditionEditor</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; SkillEffectItem 新增 valueType 選單</div>
+      <div class="task-group-meta">src/pages/AdminPage.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">在效果編輯區新增「計算方式 valueType」下拉選單</div>
+        <div class="task-desc">
+          選項：<code>加算 (add)</code>（預設）/ <code>覆蓋原始值 (override)</code>。
+        </div>
+        <div class="task-file">src/pages/AdminPage.tsx · SkillEffectItem</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; WeaponSkillItem 新增 enhancedTalentDescription 欄位</div>
+      <div class="task-group-meta">src/pages/AdminPage.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">在技能描述之後新增「強化後天賦描述」textarea</div>
+        <div class="task-desc">
+          僅在 <code>enhancesTalentName</code> 已填入時才顯示（避免非專武技能看到無關欄位）。
+          placeholder 提示「複製遊戲原文」。
+        </div>
+        <div class="task-file">src/pages/AdminPage.tsx · WeaponSkillItem</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D: 文件更新 -->
+<section class="section">
+  <div class="section-label yellow">Phase D</div>
+  <div class="section-title">技術文件更新</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; weapons.html + pilots.html 更新</div>
+      <div class="task-group-meta">docs/02_技術文件/02_資料模型/</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">weapons.html：新增 enhancedTalentDescription 欄位說明 + SkillCondition / SkillEffect 擴充 section</div>
+        <div class="task-desc">
+          WeaponSkill 表格補 <code>enhancedTalentDescription</code> 行；新增「SkillCondition / SkillEffect 擴充（PLAN-005）」section，
+          含 trigger 值清單與 valueType 說明。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/weapons.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">pilots.html：PilotTalent.enhancedEffects 補充說明</div>
+        <div class="task-desc">
+          標註計算器用 <code>enhancedEffects</code> 與顯示層 <code>WeaponSkill.enhancedTalentDescription</code> 的分工。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/pilots.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E: 管理員資料填入 -->
+<section class="section">
+  <div class="section-label purple">Phase E</div>
+  <div class="section-title">管理員資料填入（長期任務）</div>
+  <div class="section-desc">開發已完成，以下為管理員持續填入的資料作業，不阻塞功能開發。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 補填 enhancedTalentDescription</div>
+      <div class="task-group-meta">Firestore · weapons Collection</div>
+      <span class="status admin">管理員</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">為所有有 enhancesTalentName 的 WeaponSkill 填入強化後天賦描述</div>
+        <div class="task-desc">
+          在 Admin 頁面找到各專武，展開技能，填入「強化後天賦描述」欄位（複製遊戲內天賦的強化版本文字）。
+          填完後機師詳情頁即可顯示「▶ 專武強化」差異區塊。
+        </div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 補填專武 carry 技能的 effects[] 結構化數值</div>
+      <div class="task-group-meta">Firestore · weapons Collection</div>
+      <span class="status admin">管理員</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">為 activation='carry' 的技能填入 effects[] 量化效果</div>
+        <div class="task-desc">
+          對應 PLAN-003 填值指引。優先處理目前只有文字描述、缺 effects[] 的條目。
+          覆蓋型效果（如係數 0.15→0.2）記得將 valueType 設為 'override'。
+        </div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; 補填 PilotTalent.enhancedEffects[]（計算器用）</div>
+      <div class="task-group-meta">Firestore · pilots Collection</div>
+      <span class="status admin">管理員</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">為有專武強化的天賦填入 enhancedEffects[] 覆蓋效果</div>
+        <div class="task-desc">
+          這是計算器用的欄位（顯示層已由 enhancedTalentDescription 處理）。
+          長期填入，不阻塞顯示功能。
+        </div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-005 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>
