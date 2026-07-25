@@ -133,6 +133,7 @@
 
 ### ⚡ 效能優化
 
+- 字體改自託管，移除中國被封鎖且阻塞渲染的 Google Fonts (`b1be98c`)
 - PLAN-017 每集合版本號＋編輯者就地同步快取 (`8677fae`)
 - 消除首頁 Quick Table 的 Firestore 全集合讀取 (`067ee4e`)
 - 啟用 Firestore IndexedDB 離線持久化，降低重複讀取 (`e9021a4`)
