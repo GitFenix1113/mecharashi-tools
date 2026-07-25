@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-029 Cloudflare 化與 App Check 退場 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+
+.phase-note {
+  font-size: 12px;
+  color: var(--text-dim);
+  background: rgba(249,115,22,0.06);
+  border: 1px solid rgba(249,115,22,0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 0 0 14px;
+}
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">觀察維護中</a>
+    <span>›</span>
+    <span class="current">PLAN-029 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-029</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> Cloudflare 化與 App Check 退場</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-07-11</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label orange">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">17</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">3</div>
+      <div class="summary-lbl">待開始／擱置</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">21</div>
+      <div class="summary-lbl">總任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-orange);">17 / 21（未完成的 3 項中有 2 項為擱置）</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 81%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    擺脫 App Check／reCAPTCHA 的維運痛；公開資料防護從「可被繞的票」升級為 <code>read: if false</code> 真鎖；反爬改用 Cloudflare 現成基建（ASN 封機房 + 限流）；全球加速 + DDoS + 隱藏 origin；中國讀取盡量改善。成本 $0 起（唯一固定成本為一個網域）。
+  </div>
+
+  <div class="phase-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.3);color:#bfe9f4;">
+    🔭 <strong style="color:var(--accent-cyan);">2026-07-26：開發收束，本計畫轉入「觀察維護中」。</strong>所有開發者任務（Worker 代理、規則收緊、App Check 退場、反爬兩層、同源化、邊緣 SPA 改寫、限流、圖片快取、字體自託管、診斷頁）皆已落地並驗證上線。剩餘三項<strong>全為觀察型工作</strong>，不阻塞任何開發：<br>
+    ① <strong>收集中國實測回報</strong>——發布 /connectivity 診斷頁的測試公告，收 3～5 份涵蓋不同省份與電信商的報告。判讀指引見 _local-notes/中國用戶測試說明.md，含停損準則（若多數落到 LAX／SJC 或大量逾時，即為免費方案的中國路由極限，應誠實結案而非續投）。<br>
+    ② <strong>關閉 workers.dev</strong>（5-2）——觀察同源 /api 數日無異常後執行，那是目前唯一的回退路徑。<br>
+    ③ <strong>確認 /images Cache Rule 生效</strong>——決定性證據是 <code>Age</code> 超過 14400 秒仍為 HIT（需等 4 小時以上觀察）。<br>
+    另有兩項與計畫目標無關的技術債可隨時處理：前端 429 退避重試、workers/test 的 Hello World 樣板。三項觀察工作結束後即可依操作 B 歸檔至歷史記錄。
+  </div>
+
+  <div class="phase-note">
+    ⚑ <strong>灰度原則（已履行，保留備查）：</strong>Phase 1→2→3 必須循序，且「收緊 Firestore 規則 / 拔 App Check」（Phase 3）務必等 Phase 2 確認公開資料<strong>全數</strong>走 Worker 後才執行。每階段皆可獨立回退。
+  </div>
+
+  <div class="phase-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);color:#bfe9cf;">
+    ✅ <strong style="color:var(--accent-green);">2026-07-25／26 進度：核心目標全數達成。</strong>Phase 0–3 完成，Phase 5 的<strong>路線 B 已整套落地</strong>（/api 掛進 mecharashi.wiki zone → per-IP 限流 + 同源免 CORS + 隱藏 origin + 中國少一個被牆網域），僅餘 Phase 4（圖片，已可用更省的做法取代）與中國實測、關閉 workers.dev 兩項觀察型工作。<br>
+    <strong>附帶完成的修復</strong>（因 Phase 3-2 收緊規則而浮現，非原計畫項目）：① 本機 dev 與 PR preview 的公開資料來源補上 Worker（收緊後「直連」路徑全失效，資料頁全空）；② 全站補 catch-all 404 引導頁（先前未匹配網址只渲染空白內容區），並預先加上 robots noindex 以配合後續的邊緣改寫。
+  </div>
+</section>
+
+<!-- Phase 0 -->
+<section class="section">
+  <div class="section-label orange">Phase 0</div>
+  <div class="section-title">前置準備</div>
+  <div class="section-desc">帳號、網域、憑證就位；此階段不動任何現有程式碼與資料流。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P0 &nbsp; 基礎設施與憑證</div>
+      <div class="task-group-meta">Cloudflare · Firebase Console</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">0-1 選購自有網域，DNS 託管到 Cloudflare</div>
+        <div class="task-desc">挑一個網域（≈ $15／年），把 nameserver 指到 Cloudflare。先不動站台，僅完成網域接管。</div>
+        <div class="task-file">已完成：mecharashi.wiki（Cloudflare Registrar 直接註冊，Free 方案，DNS zone 自動建立）</div>
+      </div>
+      <div class="task-assignee">使用者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">0-2 建立 Workers 專案與 R2 bucket</div>
+        <div class="task-desc">Cloudflare 帳號下建立 Worker（資料代理）與 R2 bucket（圖片鏡像預留），確認免費檔額度。</div>
+        <div class="task-file">Workers 就緒：workers/ 本地骨架（TypeScript，name: mecharashi-worker）+ wrangler login 完成。R2 依 2026-07-25 決策延後至 Phase 4（僅圖片鏡像用到、不在核心路徑，且需綁卡啟用）。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">0-3 產生 Firebase service account 憑證並存為 CF Secret</div>
+        <div class="task-desc">Firebase Console → 服務帳戶產生金鑰，存進 Cloudflare Worker 的加密 Secret（絕不進版控）。供 Worker 簽 JWT 換 Firestore access token 用。</div>
+        <div class="task-file">憑證已就位：service account JSON（project_id: mecharashi-tools）存於專案根目錄，經 git check-ignore 確認被 *firebase-adminsdk*.json 規則保護。✅ 2026-07-25 生產 Secret FIREBASE_SA_KEY 已以 wrangler secret put 接上部署後的 Worker（線上 12 集合實測全 200）。</div>
+      </div>
+      <div class="task-assignee">使用者 + 開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase 1 -->
+<section class="section">
+  <div class="section-label orange">Phase 1</div>
+  <div class="section-title">網域 + CDN（把站搬到 Cloudflare 後面）</div>
+  <div class="section-desc">資料流不動、App Check 暫留；先拿到加速、DDoS、隱藏 origin，並驗證全站經 CF 正常。可獨立交付、可回退（DNS 改回）。</div>
+
+  <div class="phase-note" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.25);color:#f4c4c4;">
+    ⚠️ <strong style="color:var(--accent-red);">實際執行偏離（2026-07-25）：</strong>切到 mecharashi.wiki 後 App Check 在新網域換票 403（reCAPTCHA 網域白名單加了仍未即時生效 ＋ 24h client 端節流），加白名單未即解，<strong>最終暫時關閉 App Check enforce 讓站恢復</strong>——原設計「App Check 暫留到 Phase 3」提前發生。⇒ <strong>公開遊戲資料目前裸奔</strong>（read:if true ＋ 無 App Check，任何人可直打 Firestore REST，CF 擋不了此路）；users/* 與後台寫入仍有 isOwner/isAdmin 保護。故 <strong>Phase 2（Worker 代理 + read:if false）升為當務之急</strong>，儘快補上真防護。詳見記憶 project_app_check。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P1 &nbsp; 前端上 Cloudflare proxy</div>
+      <div class="task-group-meta">GitHub Pages · Cloudflare DNS/WAF</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">1-1 前端掛自有網域 + 開 proxy（orange cloud）</div>
+        <div class="task-desc">自有網域 CNAME 指向 GitHub Pages，Cloudflare proxy 開啟。調整 router basename / GH Pages 自訂網域設定與 CI。</div>
+        <div class="task-file">已完成：vite base /mecharashi-tools/→/ + 404.html SPA pathSegments 1→0 + deploy.yml cname；Cloudflare DNS CNAME(apex+www)→gitfenix1113.github.io 橙雲 + SSL Full + Always Use HTTPS；GitHub 自動設 custom domain + 憑證核發。實測 Server:cloudflare(TPE)、https 200、SPA 深層路由正常。（PR #7 merge 曾被 preview cleanup 的 concurrency 取消，重觸發 deploy 才成功）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">1-2 開啟 CDN 快取 + Bot Fight Mode + 基本 WAF</div>
+        <div class="task-desc">設定靜態資源快取規則、開 Bot Fight Mode，加入基礎 WAF 自訂規則骨架（ASN 封鎖規則留待 Phase 3 正式上）。</div>
+        <div class="task-file">✅ 已完成（2026-07-26 結案）：橙雲已帶 CDN 快取（cdn-cgi/rum 確認生效）+ Always Use HTTPS 已設。另修 .github/workflows/preview.yml：cleanup-preview 拆獨立 concurrency group（gh-pages-cleanup），避免 PR merge 時把 deploy.yml 主站發布擠掉取消。<strong>反爬決策：不啟用 Bot Fight Mode</strong>——它是對全站 HTML 流量發 challenge 的粗篩，而資料端點已有更精準的兩層守門（Worker 內建 Origin/ASN + zone Rate Limiting 50 次／10 秒），開了只會增加誤傷正常訪客的風險。若日後觀察到大量爬 HTML 的流量再回頭評估。WAF 自訂規則額度（0/5）保留未用。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">1-3 驗證全站經 CF 正常</div>
+        <div class="task-desc">逐頁確認（含 Firebase Auth 登入、後台）在新網域 + CF proxy 下運作正常。此時資料仍直連 Firestore + App Check（不動）。</div>
+        <div class="task-file">已完成：首頁/機師頁渲染、SPA 深層路由（直接開 /pilots + 重整不 404）、橙雲、https 皆正常。驗證中發現 App Check 在新網域換票 403 → 已補 reCAPTCHA 網域白名單 + Firebase Auth 授權網域，但未即時生效，最終暫關 App Check enforce 讓資料恢復（/pilots 87 機師正常）。詳見上方「實際執行偏離」說明。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase 2 -->
+<section class="section">
+  <div class="section-label orange">Phase 2</div>
+  <div class="section-title">Worker 資料代理（核心）</div>
+  <div class="section-desc">公開資料改由 Worker 代讀，與前端直連<strong>並存</strong>可灰度。此階段 Firestore 規則仍 read:if true，不收緊。</div>
+
+  <div class="phase-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);color:#bfe9cf;">
+    ✅ <strong style="color:var(--accent-green);">Phase 2 全數完成（2026-07-25）：</strong>Worker 代理 + 前端接線 + 全集合對拍 + 正式環境切換皆通過。<br>
+    ① Worker 部署至 <code>https://mecharashi-worker.mecharashi.workers.dev</code>；生產 Secret <code>FIREBASE_SA_KEY</code> 以 <code>wrangler secret put</code> 接上（過程遇 JSON pipe 帶 UTF-8 BOM 致 500，已於 parseServiceAccount 容錯修正並重新部署）；線上實測 12 集合全 200、edge cache HIT、CORS 放行、非法路徑 404。<br>
+    ② deploy.yml 已設 <code>VITE_WORKER_API_BASE</code>（正式站公開資料改走 Worker）。<br>
+    ③ 正式站覆驗通過，Phase 2→3 閘門開啟並已執行 Phase 3。<br>
+    <em>（註：本區塊原記載 ②③ 為待辦，實際已於同日完成，2026-07-26 補正。endpoint 後於 Phase 5 路線 B 改為同源 <code>/api</code>。）</em>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P2 &nbsp; 邊緣代理 + 前端接線</div>
+      <div class="task-group-meta">CF Worker · GameDataContext · useFirestore</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">2-1 Worker：Firestore REST + service account JWT 讀公開集合</div>
+        <div class="task-desc">Worker 用 service account 自簽 JWT 換 access token，走 Firestore REST 讀取公開集合（pilots/mechs/modules/...），回整包 JSON。處理 Workers 無 firebase-admin 的限制。</div>
+        <div class="task-file">已完成：workers/src/gcpAuth.ts（自簽 JWT→access token）+ workers/src/firestoreRest.ts（REST 讀取 + typed-value decoder，回應對齊前端 fetchCollection 的 {...data,id}）+ workers/src/index.ts（路由 GET /api/data/:collection）。grayOpsRoster 於 Worker 端組裝 { companies }、globalResearch 走 getDocument。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">2-2 Worker：邊緣快取（版本號 key）</div>
+        <div class="task-desc">以 meta/gameData 版本號為 cache key 做邊緣／KV 快取，對應既有 bumpDataVersion 失效機制。確保多訪客命中快取、Firestore read 量趨近零。</div>
+        <div class="task-file">已完成：workers/src/versions.ts（讀 meta/gameData 版本 + isolate 級 60s 快取）；index.ts 以 caches.default 做邊緣快取，cacheKey 帶版本號（後台 bump → key 變 → 舊快取自然失效），回應標 x-cache HIT/MISS。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">2-3 前端公開資料改打 /api（與直連並存）</div>
+        <div class="task-desc">在資料載入層（GameDataContext / useFirestore 的 ensureLoaded）將公開集合來源切到 Worker endpoint，保留版本 gate 三層快取邏輯（記憶體 / localStorage / 遠端）。以 flag 控制可灰度切換與回退。</div>
+        <div class="task-file">已完成：新增 src/lib/api/workerData.ts（flag：VITE_WORKER_API_BASE 啟用、VITE_USE_WORKER=false kill-switch）；GameDataContext 的資料源 fetchCollectionData 與版本源皆於 WORKER_ENABLED 時切到 Worker，三層快取邏輯原封不動。Worker 補 GET /api/versions（讓 Phase 3 收緊 meta 後前端仍讀得到版本）。預設 flag 關 → 合併零風險、沿用直連。build＋兩端 tsc 皆通過。⚠ 執行時逐頁驗證（2-4）待 Worker 部署＋設 env 後進行。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">2-4 逐集合驗證所有頁面資料正常</div>
+        <div class="task-desc">機師／機甲／武器／模組／元件／背包等頁面，確認經 Worker 取得的資料與直連一致、無缺漏、快取行為正確。</div>
+        <div class="task-file">已完成（本機 wrangler dev 對真實 Firestore）：① 資料級對拍——12 集合（含 globalResearch）逐文件比對 Worker vs 直連，2400+ 文件 0 mismatch（筆數 pilots87/mechs62/modules239/weapons169/backpacks180/components208/buffs217/pilotSkills710/neuralDrive432/glossary162）。② 瀏覽器端到端——機師列表/機師詳情/模擬器全數改打 /api（無 firestore.googleapis.com 公開集合直讀），渲染正常。③ 三層快取搭配 Worker 版本源正常（詳情頁 pilots/weapons 命中 localStorage 免重抓）、邊緣快取 MISS→HIT、CORS 正確。全站無 onSnapshot 殘留（利 Phase 3-1）。唯一 console error 為既有 App Check 403（與 Worker 無關）。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase 3 -->
+<section class="section">
+  <div class="section-label orange">Phase 3</div>
+  <div class="section-title">收緊 Firestore + App Check 退場 + 反爬上線</div>
+  <div class="section-desc">確認公開資料全走 Worker 後執行。此階段完成後，App Check 正式退役、直連公開資料被鎖死。可回退（規則改回 read:if true 即時生效）。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P3 &nbsp; 鎖死直連 + 拔票 + 反爬</div>
+      <div class="task-group-meta">firestore.rules · firebase.ts · CF WAF</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">3-1 確認前端公開資料無殘留直連</div>
+        <div class="task-desc">全站掃查，確保沒有任何元件仍以 Firebase SDK 直讀公開集合（否則收緊後該頁會壞）。這是 Phase 3 的前置閘門。</div>
+        <div class="task-file">已完成：稽核找出 3 處前台直讀並全數改走 Worker——① SimulatorPage getAllPilotResearch、② HomePage usePatchVersions、③ RainbowMechPlanner getMechsByArmorType(改用 useMechs+client 過濾)；Worker 新增代理 pilotResearch/patchVersions（已部署 200）。本機實測三頁皆走 Worker、無公開集合直讀。確認 getPilotResearch(單筆)/skills/enemies 無前台使用者。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">3-2 Firestore 遊戲資料規則改 read:if isAdmin()</div>
+        <div class="task-desc">將 pilots/mechs/.../meta 等 17 個公開集合的 read 收緊。<strong>決策（2026-07-25）：走 read:if isAdmin() 而非 if false</strong>——對匿名一樣擋死（逼走 Worker），但登入 admin 仍可 client 直讀→後台編輯頁零改動；Worker 用 Admin SDK 繞過規則照常。寫入的 isAdmin、users/* 的 isOwner 規則不動。</div>
+        <div class="task-file">✅ 已完成（2026-07-25）：firestore.rules 17 集合改 read:if isAdmin() 並 firebase deploy 上線。驗證：① 爬蟲視角直打 Firestore REST 讀 pilots/mechs/weapons/patchVersions/pilotResearch/meta（無憑證+公開 API key）全回 403 PERMISSION_DENIED（升級前 200）；② Worker 讀 pilots 仍 200（Admin SDK 繞過規則）；③ 正式站匿名 /pilots 仍完整渲染 87 機師（走 Worker 無感）。回退：改回 if true 重 deploy 即時生效。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">3-3 移除前端 App Check + reCAPTCHA</div>
+        <div class="task-desc">拿掉 firebase.ts 的 initializeAppCheck／ReCaptchaV3Provider 與相關 env、debug token；Firebase Console 關閉 App Check enforce。清理 reCAPTCHA 金鑰（保留紀錄）。</div>
+        <div class="task-file">✅ 已完成（2026-07-25）：firebase.ts 移除 initializeAppCheck/ReCaptchaV3Provider import 與初始化區塊；deploy.yml/preview.yml 拿掉 VITE_FIREBASE_APPCHECK_SITE_KEY；.env.local/.env.local.example 清掉 site key + debug token。本機實測前台不再發 firebaseappcheck/reCAPTCHA 請求、console 零錯誤（原本每頁的 403 噪音消失）、資料照走 Worker。App Check enforce 早於 Phase 1 已手動關。<strong>可選後續（Console 手動、不急）</strong>：刪 reCAPTCHA 舊金鑰 6Le… / 移除多餘 Enterprise 註冊。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">3-4 反爬規則上線</div>
+        <div class="task-desc">CF WAF 自訂規則封阿里雲／騰訊雲等機房 ASN；設定 1 條 per-IP rate limit；Referer 檢查限自有網域。觀察告警，逐步調整。</div>
+        <div class="task-file">✅ 路線 A 已完成（2026-07-25）：因 Worker 在 *.workers.dev 不在 zone WAF 內、且 CORS 擋不了 server 端請求，改於 Worker 程式碼內建守門（workers/src/index.ts antiScrapeBlock）——① 無合法 Origin/Referer 的裸打 → 403；② 來源在雲端機房 ASN 清單（阿里雲/騰訊雲/AWS/GCP…，request.cf.asn）→ 403。已部署並驗證：裸 curl 403、真人瀏覽器(帶 Origin)200、OPTIONS preflight 放行、隔離環境正式站正常。清單見 _local-notes/PLAN-029-3-4-cloudflare反爬設定清單.md。<br>
+        ✅ <strong>路線 B 亦已於 2026-07-26 完成（見 Phase 5-1）</strong>：per-IP 限流（50 次／10 秒）與同源／隱藏 origin 皆補齊，反爬自此為「Worker 內建守門 + zone 託管限流」兩層。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase 4 -->
+<section class="section">
+  <div class="section-label orange">Phase 4</div>
+  <div class="section-title">R2 圖片鏡像（可選 / 後續）</div>
+  <div class="section-desc">接姊妹篇圖片讀取優化。與資料代理解耦，可獨立於 Phase 3 之後任何時間進行。</div>
+
+  <div class="phase-note">
+    ⚑ <strong>2026-07-26 重新評估：R2 的效益已被稀釋，建議先用 Cache Rule 取代。</strong>實測 <code>mecharashi.wiki/images/…</code> 第二次請求即 <code>cf-cache-status: HIT</code>——圖片<strong>早已走 CF 邊緣快取</strong>（因 apex 掛橙雲），唯一缺點是 GitHub Pages 只回 <code>max-age=14400</code>（4 小時）。故：<br>
+    · <strong>低成本做法</strong>：在 zone 加一條 Cache Rule，把 <code>/images/*</code> 的 Edge TTL 覆寫成 1 個月 → 拿到 R2 八成好處，$0、免綁卡、免同步 188MB。<br>
+    · <strong>R2 只在「要徹底脫離 GitHub Pages 流量 + 隱藏 origin」時才必要</strong>（GH Pages 有 100GB/月 軟性上限）。目前流量遠未觸頂，故 4-1／4-2 維持待開始、優先度調低。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P4 &nbsp; 圖片快取（R2 已由 Cache Rule 取代）</div>
+      <div class="task-group-meta">Cache Rules · R2（擱置）</div>
+      <span class="status done">實質結案</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">4-0 Cache Rule：/images/* 邊緣 TTL 覆寫</div>
+        <div class="task-desc">在 zone 加一條 Cache Rule，忽略 origin 的 cache-control、將邊緣 TTL 設為 7 天，取代原本 R2 方案的絕大部分效益。</div>
+        <div class="task-file">✅ 已完成（2026-07-26）：條件 <code>starts_with(http.request.uri.path, "/images/")</code>、快取資格「適用快取」、邊緣 TTL「忽略 cache-control 並使用此 TTL」＝ 604800 秒；瀏覽器 TTL 刻意不動（維持遵循 origin 的 4 小時，留一個自我修復窗口）。<br>
+        <strong>為何需要</strong>：GitHub Pages 只回 <code>max-age=14400</code>，且<strong>每次部署都會重寫整個 gh-pages 分支</strong>——2340 張圖、188MB 的 ETag／Last-Modified 全部改變，即使內容沒動。結果是每次部署都把圖庫的邊緣快取打掉、反覆回源。覆寫後部署不再沖掉快取。<br>
+        <strong>取捨</strong>：同名換圖後邊緣最長會續送舊圖 7 天，需到 Caching → 自訂清除 按 URL 清單張（勿用「清除所有內容」）。TTL 取 7 天而非 1 個月，就是為了讓忘記清除時能在一週內自我修復。<br>
+        驗證：五個圖片目錄抽樣皆 200 + <code>cf-cache-status: HIT</code>，且首頁／API／文件站／favicon 未受波及。</div>
+      </div>
+      <div class="task-assignee">開發者 + 使用者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">4-1 188MB 圖庫上 R2 + CF CDN</div>
+        <div class="task-desc"><strong>擱置（不做，除非 GH Pages 流量觸頂）。</strong>原以為 R2 能大幅改善圖片供應，但實測顯示圖片<strong>早已走 CF 邊緣快取</strong>，R2 的增量效益只剩「脫離 GH Pages 的 100GB/月 軟性上限」與「隱藏 origin」；目前流量遠未觸頂，且 R2 需綁卡啟用。4-0 的 Cache Rule 已用零成本拿到快取與回源面的效益。</div>
+      </div>
+      <div class="task-assignee">—</div>
+      <span class="status pending">擱置</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">4-2 assetUrl 指向 CF/R2 + onerror 退回</div>
+        <div class="task-desc"><strong>擱置</strong>，隨 4-1 一併凍結。若日後真的啟用 R2 再回來做——單一 choke point assetUrl() 注入來源、逐圖 onerror 退回 GH Pages 備援，改一處全站生效的設計仍然成立。</div>
+        <div class="task-file">src/utils/assets.ts</div>
+      </div>
+      <div class="task-assignee">—</div>
+      <span class="status pending">擱置</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase 5 -->
+<section class="section">
+  <div class="section-label orange">Phase 5</div>
+  <div class="section-title">中國 origin 優化（可選 / 盡量改善）</div>
+  <div class="section-desc">「盡量改善」等級，非「真的很快」（那需 ICP，已排除）。可無限延後。</div>
+
+  <div class="phase-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);color:#bfe9cf;">
+    ✅ <strong style="color:var(--accent-green);">路線 B 全套完成（2026-07-26）：</strong>Worker 從 *.workers.dev 改掛 <code>mecharashi.wiki/api/*</code>（Workers Route），前端改打同源 <code>/api</code>。一石四鳥皆已兌現：① 進 zone → 用上 CF 託管 Rate Limiting（補足路線 A 沒做的 per-IP 限流）；② 同源免 CORS；③ 隱藏 origin（待 workers.dev 關閉後完全生效）；④ 中國少一個 workers.dev 網域被牆。操作紀錄見 _local-notes/PLAN-029-路線B-操作清單.md。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P5 &nbsp; 同源化 + 邊緣防護 + 中國驗證</div>
+      <div class="task-group-meta">Workers Route · Transform Rule · Rate Limiting</div>
+      <span class="status doing">部分完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">5-1 路線 B：/api 掛進 zone + 前端同源 + 邊緣 SPA 改寫 + 限流</div>
+        <div class="task-desc">把資料端點納入 mecharashi.wiki zone，換取託管限流與同源；順帶用 Transform Rule 在邊緣做 SPA fallback，讓深層路徑不再回 404。（原「Worker origin 就近 HK」已無意義：Worker 本就在邊緣節點執行，就近議題僅剩 R2 圖片，已併入 Phase 4。）</div>
+        <div class="task-file">✅ 已完成：① wrangler.jsonc 加 routes（apex + www 的 /api/*）並部署；② Worker antiScrapeBlock 新增接受 <code>Sec-Fetch-Site: same-origin</code>——同源 fetch 不送 Origin header，缺此段會讓全站資料 403（本階段最關鍵的一行）；③ workerData.ts 支援 <code>VITE_WORKER_API_BASE=same-origin</code>，deploy.yml 切換，preview／本機改指 https://mecharashi.wiki（為 workers.dev 關閉預留）；④ Transform Rule「SPA fallback to index.html」——因 Free 方案不給用 regex（<code>matches</code> 需 Business），改採<strong>白名單</strong>列舉 SPA 路由，反而更安全：/api、/docs、靜態資源天然不在名單內，不可能被誤改寫，且打錯的網址維持 404 不被搜尋引擎收錄；⑤ Rate Limiting：<code>/api/</code> per-IP，Free 期間僅 10 秒可選，門檻 50 次／10 秒。<br>
+        驗證：SPA 路由 8 條全 200（改寫前 404）、圖片／文件站／API 不受影響、瀏覽器僅 1 筆 document 請求（不再經 /?/ 中繼跳轉）、限流實測第 21 次起 429（門檻 20 時）且自動解除、調高後 35 次全通過。<strong>門檻取 50 的理由</strong>：實測冷啟動模擬器頁一次打 11 次 /api，門檻 20 僅 1.8 倍餘裕；而爬蟲抓完全部資料只需 12 次，任何 ≥12 的門檻都擋不住「單次全量抓取」，此規則真正價值在阻止反覆猛打，故放寬以消除誤傷真人的風險。</div>
+      </div>
+      <div class="task-assignee">開發者 + 使用者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">5-2 關閉 workers.dev（隱藏 origin 最後一哩）</div>
+        <div class="task-desc">wrangler.jsonc 的 <code>workers_dev</code> 改 false 並重新部署，讓 *.workers.dev 網址消失。刻意延後：它是目前唯一的回退路徑，待同源 /api 觀察數日無異常再關。前提是 preview／本機已改指 mecharashi.wiki（已完成）。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">5-3 移除最後一個被牆的依賴：字體自託管</div>
+        <div class="task-desc">稽核公開頁面的所有外部請求，把中國訪客連不到的資源清乾淨。</div>
+        <div class="task-file">✅ 已完成（2026-07-26）：稽核 /pilots 的資源主機後，發現路線 B 之後<strong>唯一還會連外的就是 Google Fonts</strong>（Firestore／Firebase／Google API 皆已不在清單內），而它是 <code>&lt;link rel="stylesheet"&gt;</code>＝<strong>阻塞渲染</strong>——中國訪客得等連線逾時才開始畫面渲染（白畫面數秒），且等完仍拿不到字體，全站 68 處的 Orbitron 對他們從未生效過。<br>
+        作法：Orbitron 與 JetBrains Mono 改自託管（僅取 latin／latin-ext 子集）；Google Fonts 對這兩者實際回傳<strong>可變字體</strong>，各字重是同一個檔案，故去重成單檔 + font-weight 範圍，<strong>3 檔共 56KB</strong>（原 7 檔 121KB）。中文本體字 Noto Sans TC <strong>刻意不自託管</strong>（CJK 完整字重動輒數 MB），改走系統字體堆疊，視覺差異極小卻替所有訪客省下大量下載。<br>
+        成果：公開頁面對 Google 網域<strong>零依賴</strong>；中國訪客不再有白畫面，且首次真正看得到 Orbitron 的視覺設計。驗證：dist 無 googleapis 引用、字體自 /fonts/ 載入、可變字重生效、JetBrains Mono 依 unicode-range 延後下載。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">5-4 連線診斷頁 + 中國實測回報</div>
+        <div class="task-desc">請人「幫忙測測看」收到的通常是「還是有點慢」，無從比較。故做一頁自動量測並輸出可複製的報告，讓回報變成可比對的數據。</div>
+        <div class="task-file">✅ 診斷頁已完成：<code>/connectivity</code>（src/pages/debug/ConnectivityPage.tsx）自動量測 Cloudflare 邊緣節點、/api/versions、36KB 資料傳輸、圖片（含 cf-cache-status）、自託管字體，並以 Google Fonts 作為「該被封鎖」的對照組。<strong>報告刻意移除 IP</strong>（/cdn-cgi/trace 會回傳 ip=），只保留節點代碼與國別，讓回報者敢貼到公開頻道。開發過程中修掉一個真實缺陷：診斷若寫死相對路徑 <code>/api/…</code>，在本機與 preview（皆為跨源設定）會打到站台本身而非 Worker，量到的數字毫無意義 → 改用 workerData 導出的 workerUrl()。<br>
+        ⏳ <strong>待辦</strong>：把 <code>/connectivity</code> 加進 SPA fallback 規則白名單；發布測試公告、收集 3～5 份涵蓋不同省份與電信商的回報。公告草稿與判讀指引見 _local-notes/中國用戶測試說明.md。</div>
+      </div>
+      <div class="task-assignee">開發者 + 使用者</div>
+      <span class="status doing">進行中</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-029 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 觀察維護中</a>
+</footer>
+
+</body>
+</html>

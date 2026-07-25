@@ -32,6 +32,16 @@
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
     <!--PLANS-START-->
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-029 · Cloudflare 化與 App Check 退場</h3>
+      <p>用 Cloudflare 一層邊緣基建接手「反白嫖 + 反爬 + 加速」，讓 App Check／reCAPTCHA 退場。公開遊戲資料改走 Worker 代理、Firestore 規則收成 read:if isAdmin()（比 App Check 硬）；反爬為兩層——Worker 內建守門（Origin/Referer + 機房 ASN）+ zone 託管 per-IP 限流。資料端點已同源掛在 mecharashi.wiki/api/*，深層路徑改由邊緣改寫回 200，並移除中國被封鎖且阻塞渲染的 Google Fonts。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">開發收束：2026-07-26 · 維護內容：收集中國實測回報（/connectivity 診斷頁）、觀察數日後關閉 workers.dev 回退路徑、確認 /images Cache Rule 的邊緣 TTL 覆寫生效</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-029_Cloudflare化與AppCheck退場/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-029_Cloudflare化與AppCheck退場/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card green">
       <div class="card-icon">◆</div>
       <h3>PLAN-023 · 神經驅動能力庫與模擬接入</h3>

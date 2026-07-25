@@ -58,15 +58,6 @@
         <a class="card-link" href="PLAN-032_武器技能引用化/進度表.html">→ 進度表</a>
       </div>
     </div>
-    <div class="card orange">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-029 · Cloudflare 化與 App Check 退場</h3>
-      <p>用 Cloudflare 一層邊緣基建接手「反白嫖 + 反爬 + 加速」，讓 App Check／reCAPTCHA 退場。前端不再直連 Firestore，公開遊戲資料改走 Cloudflare Worker 代理、Firestore 規則收成 read:if isAdmin()（比 App Check 硬，對匿名等同鎖死，但後台編輯頁免改動）；用戶資料維持直連 Auth。反爬為兩層：Worker 內建守門（Origin/Referer + 機房 ASN）+ zone 託管 per-IP 限流；資料端點已同源掛在 mecharashi.wiki/api/*，順帶盡量改善中國讀取（不碰 ICP）。分階段灰度、每步可回退。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-029_Cloudflare化與AppCheck退場/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-029_Cloudflare化與AppCheck退場/進度表.html">→ 進度表</a>
-      </div>
-    </div>
     <div class="card pink">
       <div class="card-icon">◆</div>
       <h3>PLAN-026 · 召喚單位展示</h3>
