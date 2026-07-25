@@ -201,6 +201,8 @@
 
 ### 🔧 維護
 
+- PLAN-029 Phase 3-3 拔除前端 App Check + reCAPTCHA (`90cea0c`)
+- PLAN-029 Phase 3-2 完成 — firestore.rules 上線 + 鎖生效驗證 (`4e0fea6`)
 - PLAN-029 Phase 3-2 規則備妥 read:if isAdmin()（未部署）+ 進度表 (`b0c18aa`)
 - PLAN-029 Phase 3-1 消除前台公開集合直讀（全數改走 Worker） (`84d5efe`)
 - PLAN-029 進度表反映 Worker 部署上線 + 生產 Secret 接線 (`bfe1930`)
