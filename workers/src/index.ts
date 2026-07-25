@@ -20,6 +20,8 @@ export interface Env {
 const ARRAY_COLLECTIONS = new Set<string>([
   'pilots', 'mechs', 'modules', 'weapons', 'backpacks', 'components',
   'buffs', 'pilotSkills', 'neuralDriveAbilities', 'glossaryTerms',
+  // PLAN-029 Phase 3-1：原本前台仍直讀的兩個公開集合，一併代理以便 Phase 3-2 收緊。
+  'pilotResearch', 'patchVersions',
 ])
 
 const DEFAULT_ALLOWED = ['https://mecharashi.wiki', 'https://www.mecharashi.wiki', 'http://localhost:5173']

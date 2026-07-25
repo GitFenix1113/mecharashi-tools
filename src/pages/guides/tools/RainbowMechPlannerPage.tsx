@@ -1,12 +1,12 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { toPng } from 'html-to-image'
 import type { Mech } from '../../../types'
 import type { MechPartPosition } from '../../../types/enums'
 import type { SlotInventory, SuperFactoryResources, SlotApproach } from '../../../types/mechUpgrade'
 import { calculateRainbowPlan } from '../../../lib/rainbowMechCalc'
-import { getMechsByArmorType } from '../../../lib/firestoreApi'
-import { MechSelector }      from '../../../components/planner/MechSelector'
+import { useMechs }           from '../../../hooks/useFirestore'
+import { MechSelector }       from '../../../components/planner/MechSelector'
 import { PartSlotCard }      from '../../../components/planner/PartSlotCard'
 import { SuperFactoryPanel } from '../../../components/planner/SuperFactoryPanel'
 import { PlanResult, type Weight } from '../../../components/planner/PlanResult'
@@ -21,9 +21,6 @@ const ARMOR_TYPES: { value: string; label: string; color: string }[] = [
   { value: '重型', label: '重型', color: 'text-accent-red   border-accent-red/50   bg-accent-red/10'   },
 ]
 
-// 各裝甲類型機甲的 session 快取：同一裝甲類型只讀取一次（避免來回切換重複計費）
-const mechCache = new Map<string, Mech[]>()
-
 const defaultParts = (): SlotInventory[] =>
   ALL_SLOTS.map(slot => ({ slot, gold1: 0, gold2: 0, gold3: 0, done: false }))
 
@@ -37,8 +34,6 @@ const defaultSF = (): SuperFactoryResources => ({
 
 export default function RainbowMechPlannerPage() {
   const [armorType, setArmorType]       = useState<string | null>(null)
-  const [mechs, setMechs]               = useState<Mech[]>([])
-  const [mechsLoading, setMechsLoading] = useState(false)
   const [selectedMech, setSelectedMech] = useState<Mech | null>(null)
   const [parts, setParts]               = useState<SlotInventory[]>(defaultParts)
   const [approaches, setApproaches]     = useState<Record<MechPartPosition, SlotApproach>>(defaultApproaches)
@@ -46,25 +41,18 @@ export default function RainbowMechPlannerPage() {
   const [exporting, setExporting]       = useState(false)
   const exportRef = useRef<HTMLDivElement>(null)
 
-  // 選定裝甲類型後，只讀取該類機甲；同類型已讀過則用快取，不再計費
-  useEffect(() => {
-    if (!armorType) { setMechs([]); return }
-
-    const cached = mechCache.get(armorType)
-    if (cached) { setMechs(cached); setMechsLoading(false); return }
-
-    let cancelled = false
-    setMechsLoading(true)
-    getMechsByArmorType(armorType)
-      .then(list => {
-        const sorted = list.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'))
-        mechCache.set(armorType, sorted)
-        if (!cancelled) setMechs(sorted)
-      })
-      .catch(err => { console.error('[RainbowPlanner] load mechs error:', err); if (!cancelled) setMechs([]) })
-      .finally(() => { if (!cancelled) setMechsLoading(false) })
-    return () => { cancelled = true }
-  }, [armorType])
+  // PLAN-029 Phase 3-1：改用已走 Worker 代理的 useMechs（整包邊緣＋localStorage 快取），
+  // 依 armorType client 端過濾。原本的 getMechsByArmorType(where 查詢) 會繞過 Worker、
+  // 在 Phase 3-2 收緊後壞掉，且分裝甲類型省讀取的益處在邊緣快取下已無意義。
+  const { data: allMechs, loading: mechsLoading } = useMechs()
+  const mechs = useMemo(
+    () => (armorType
+      ? allMechs
+          .filter(m => m.armorType === armorType)
+          .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'))
+      : []),
+    [armorType, allMechs],
+  )
 
   const updatePart = (idx: number, v: SlotInventory) =>
     setParts(prev => prev.map((p, i) => (i === idx ? v : p)))

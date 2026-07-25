@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { WORKER_ENABLED, fetchWorkerCollection } from '../lib/api/workerData'
 import { PATCH_VERSIONS } from '../data/patchVersions'
 import type { PatchVersion } from '../data/patchVersions'
 
@@ -47,18 +48,21 @@ let _promise: Promise<CacheEntry> | null = null
 function _fetchOnce(): Promise<CacheEntry> {
   if (_cache !== null) return Promise.resolve(_cache)
   if (_promise !== null) return _promise
-  _promise = getDocs(collection(db, 'patchVersions'))
-    .then(snap => {
-      const raw = snap.empty
+  // PLAN-029 Phase 3-1：Worker 模式改走代理（Phase 3-2 收緊 patchVersions 後仍運作）；
+  // 兩條路徑都正規化成 PatchVersion[]，再套「空 → 靜態 fallback」與排序邏輯。
+  const load: Promise<PatchVersion[]> = WORKER_ENABLED
+    ? (fetchWorkerCollection('patchVersions') as Promise<PatchVersion[]>)
+    : getDocs(collection(db, 'patchVersions')).then(snap => snap.docs.map(d => d.data() as PatchVersion))
+  _promise = load
+    .then(docs => {
+      const raw = docs.length === 0
         ? PATCH_VERSIONS
-        : snap.docs
-            .map(d => d.data() as PatchVersion)
-            .sort((a, b) => parseFloat(a.version) - parseFloat(b.version))
+        : docs.slice().sort((a, b) => parseFloat(a.version) - parseFloat(b.version))
       _cache = { data: applyTwCurrent(raw), error: null }
       return _cache
     })
     .catch(err => {
-      console.error('[usePatchVersions] Firestore error, using static fallback:', err)
+      console.error('[usePatchVersions] 讀取失敗，改用靜態 fallback：', err)
       _cache = {
         data: applyTwCurrent(PATCH_VERSIONS),
         error: err instanceof Error ? err : new Error(String(err)),
