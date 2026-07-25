@@ -5,12 +5,13 @@
     <script>
       // GitHub Pages SPA redirect: encode the path into a query string and
       // redirect to the root so index.html can restore it via history.replaceState.
-      // pathSegmentsToKeep=1 keeps the repo name segment (/mecharashi-tools).
+      // pathSegmentsToKeep=0：自訂網域 mecharashi.wiki 為根路徑，不保留任何前綴段
+      // （原為 1，用於 GitHub Pages 子路徑時保留 /mecharashi-tools 段）。
       var l = window.location;
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        l.pathname.split('/').slice(0, 2).join('/') + '/?/' +
-        l.pathname.slice(1).split('/').slice(1).join('/').replace(/&/g, '~and~') +
+        l.pathname.split('/').slice(0, 1).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(0).join('/').replace(/&/g, '~and~') +
         (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
         l.hash
       );
