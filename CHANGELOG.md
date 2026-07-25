@@ -201,6 +201,7 @@
 
 ### 🔧 維護
 
+- PLAN-029 Phase 3-4 路線 A — Worker 內建反爬守門 (`a800fce`)
 - PLAN-029 Phase 3-3 拔除前端 App Check + reCAPTCHA (`90cea0c`)
 - PLAN-029 Phase 3-2 完成 — firestore.rules 上線 + 鎖生效驗證 (`4e0fea6`)
 - PLAN-029 Phase 3-2 規則備妥 read:if isAdmin()（未部署）+ 進度表 (`b0c18aa`)
