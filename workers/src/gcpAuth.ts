@@ -13,7 +13,10 @@ export interface ServiceAccount {
 
 /** 解析存在 CF Secret（或本機 .dev.vars）裡的 service account JSON 字串。 */
 export function parseServiceAccount(raw: string): ServiceAccount {
-  const sa = JSON.parse(raw) as Partial<ServiceAccount>
+  // 去掉可能的 UTF-8 BOM（U+FEFF）與前後空白：secret/env 由檔案 pipe 上傳時常帶 BOM，
+  // 會讓 JSON.parse 以「Unexpected token 'U+FEFF'」爆掉。這裡容錯，來源無論帶不帶 BOM 都能解。
+  const cleaned = raw.charCodeAt(0) === 0xFEFF ? raw.slice(1).trim() : raw.trim()
+  const sa = JSON.parse(cleaned) as Partial<ServiceAccount>
   if (!sa.client_email || !sa.private_key || !sa.project_id) {
     throw new Error('service account JSON 缺少必要欄位（client_email / private_key / project_id）')
   }
