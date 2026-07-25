@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-010 攻略系統 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.decision-block {
+  background: rgba(6,182,212,0.06);
+  border: 1px solid rgba(6,182,212,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.fallback-block {
+  background: rgba(168,85,247,0.06);
+  border: 1px solid rgba(168,85,247,0.2);
+  border-left: 3px solid var(--accent-purple);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.phase-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.phase-table th {
+  background: rgba(6,182,212,0.08);
+  color: var(--accent-cyan);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 10px 14px;
+  text-align: left;
+  border: 1px solid var(--border);
+}
+.phase-table td {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.phase-table tr:hover td {
+  background: var(--bg-card-hover);
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-green  { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+.badge-yellow { background: rgba(234,179,8,0.15); color: var(--accent-yellow); }
+.badge-red    { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+.badge-purple { background: rgba(168,85,247,0.15); color: var(--accent-purple); }
+.badge-cyan   { background: rgba(6,182,212,0.15); color: var(--accent-cyan); }
+.badge-orange { background: rgba(255,107,43,0.15); color: var(--accent-orange); }
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+.arch-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+.arch-box h4 {
+  font-size: 13px;
+  color: var(--accent-cyan);
+  margin-bottom: 8px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+}
+.arch-box ul {
+  padding-left: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 2;
+}
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-010 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(6,182,212,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-010</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    攻略系統<span style="-webkit-text-fill-color:var(--text-secondary);">Guide CMS · TipTap · Entity Integration</span>
+  </h1>
+  <p class="hero-sub">以 TipTap WYSIWYG 編輯器為核心，支援圖文並茂的攻略撰寫，並可嵌入遊戲資料庫物件（機師/機甲/武器卡片），前台局部預覽不跳頁</p>
+</header>
+
+<main class="container">
+
+<!-- ── 計畫概要 ── -->
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value cyan">PLAN-010</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-05-23</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">對應階段</div>
+      <div class="meta-value cyan">Phase 6 — 攻略內容系統</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MEDIUM</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">新功能 · Firebase · Admin · Frontend</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value yellow">PENDING（等待 PLAN-001/003/004 穩定）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">估計工期</div>
+      <div class="meta-value orange">Phase A：1–1.5 週 ／ Phase B：+1.5–2 週</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置條件</div>
+      <div class="meta-value">Firebase Auth admin claim（Phase 6）已完成</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 需求定義 ── -->
+<section class="section">
+  <div class="section-label cyan">Requirements</div>
+  <div class="section-title">需求定義</div>
+
+  <div class="decision-block">
+    <strong>核心需求</strong>
+    <ul style="margin-top:8px;padding-left:18px;line-height:2.2;">
+      <li>管理員可透過 WYSIWYG 編輯器撰寫圖文並茂的攻略，圖片上傳至 Firebase Storage</li>
+      <li>攻略內容可嵌入遊戲資料庫物件（機師、機甲、武器、模組等），嵌入後顯示對應卡片</li>
+      <li>前台玩家點擊嵌入卡片可局部展開詳情（Drawer/側滑面板），不跳頁、不離開攻略</li>
+      <li>管理員寫、玩家讀；草稿 / 發布狀態分離</li>
+      <li>安全層：只有 admin custom claim 持有者可寫入</li>
+      <li><strong>承接 BOSS/關卡 機制攻略（2026-06-28 自 PLAN-019-D descope）：</strong>各關 BOSS 招式、階段、應對為各關獨特的敘事內容，重複可結構化的 BUFF 少 → 不建 bosses/stages 結構化集合，改以本攻略 CMS 自由圖文撰寫，偶發 buff 用 Phase B 實體嵌入掛卡片；新增 <code>關卡攻略</code> / <code>BOSS攻略</code> GuideCategory 承接。掉落索引 <code>bossDrops.ts</code> 另由 <code>BossDropTooltip</code> 維持，與此無關。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠️ 複雜度說明</strong><br>
+    本計畫分為兩個 Phase 開發。<strong>Phase A</strong> 為基礎 CMS（TipTap + 圖片 + Firestore），難度中等，可獨立上線。
+    <strong>Phase B</strong> 為遊戲資料物件嵌入，需自訂 TipTap Extension + React NodeView，難度中高；
+    若評估後認為工期不符合效益，可改用備選方案（見本文件末段）。
+  </div>
+</section>
+
+<!-- ── 整體架構 ── -->
+<section class="section">
+  <div class="section-label cyan">Architecture</div>
+  <div class="section-title">整體架構設計</div>
+
+  <div class="two-col">
+    <div class="arch-box">
+      <h4>內容儲存</h4>
+      <ul>
+        <li>Firestore <code>guides/{guideId}</code> — 文章 metadata + 內文 JSON</li>
+        <li>內文格式：<strong>TipTap ProseMirror JSON</strong>（非 HTML），完整保留自訂節點資訊</li>
+        <li>Firebase Storage <code>guides/images/{guideId}/</code> — 所有圖片</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>編輯器（後台）</h4>
+      <ul>
+        <li>TipTap WYSIWYG，方案 B</li>
+        <li>自訂 <code>EntityReferenceExtension</code> 產生物件節點</li>
+        <li>物件節點以 React NodeView 渲染，編輯器內即可預覽卡片</li>
+        <li>圖片工具列按鈕 → Storage 上傳 → 取得 URL → 插入</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>前台展示</h4>
+      <ul>
+        <li>以 TipTap <code>editable: false</code> 模式渲染相同 JSON</li>
+        <li>同一套 Extensions → 自動渲染物件節點為互動卡片</li>
+        <li>點擊卡片 → 右側 Drawer 局部展開詳情（複用現有詳情頁元件）</li>
+        <li>玩家全程停留在攻略頁</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>安全層</h4>
+      <ul>
+        <li>路由守衛：admin custom claim 驗證，未授權重導首頁</li>
+        <li>Firestore Rules：guides 寫入限 admin；已發布文章公開讀取</li>
+        <li>Storage Rules：圖片上傳限 admin；讀取公開</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="decision-block" style="margin-top:16px;">
+    <strong>為何使用 ProseMirror JSON 而非 HTML？</strong><br>
+    TipTap 自訂節點（EntityReferenceNode）含有 <code>entityType</code> 與 <code>entityId</code> 等 attrs，
+    這些資訊在序列化成 HTML 時會遺失（HTML 無法可靠攜帶結構化 attrs）。
+    JSON 格式原生保留完整節點樹，前台用同一組 Extensions 反序列化後自動渲染，不需額外 parser。
+  </div>
+</section>
+
+<!-- ── Phase A：基礎 CMS ── -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">Phase A — 基礎 CMS（建議優先實作）</div>
+
+  <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
+    Phase A 不依賴自訂 Extension，可獨立上線。完成後攻略系統即可開始使用，Phase B 為增量擴充。
+  </p>
+
+  <table class="phase-table">
+    <tr>
+      <th>工作項目</th>
+      <th>說明</th>
+      <th>難度</th>
+      <th>估時</th>
+    </tr>
+    <tr>
+      <td><strong>A-1</strong> Firestore Schema</td>
+      <td>建立 <code>guides</code> Collection，設定 Security Rules（見下方 Schema 章節）</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-2</strong> TipTap 編輯器元件</td>
+      <td>安裝 StarterKit、Image、Link、Table、Placeholder；工具列 UI（粗體/斜體/H1~H3/清單/分隔線/連結/表格）</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1–1.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-3</strong> 圖片上傳</td>
+      <td>工具列「插入圖片」按鈕 → 選擇本地檔案 → 壓縮為 WebP → Storage 上傳 → insertContent image node</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>0.5–1 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-4</strong> 後台管理列表</td>
+      <td><code>/admin/guides</code> — 攻略列表（draft/published 分類 tab）、新建、刪除、一鍵發布/下架</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-5</strong> 後台編輯頁</td>
+      <td><code>/admin/guides/new</code> 與 <code>/admin/guides/:id/edit</code> — 標題、分類、封面圖、TipTap 編輯器、儲存/發布</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-6</strong> 前台目錄頁</td>
+      <td><code>/guides</code> — 依 category 分 tab；每篇顯示封面、標題、摘要、發布日期</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-7</strong> 前台詳情頁</td>
+      <td><code>/guides/:slug</code> — TipTap <code>editable:false</code> 渲染 JSON；封面圖 + 文章 metadata header；手機版圖片 100% 寬</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>A-8</strong> guidesApi + useGuides</td>
+      <td><code>src/lib/guidesApi.ts</code> CRUD；<code>src/hooks/useGuides.ts</code> React hooks（仿現有 firestoreApi 模式）</td>
+      <td><span class="badge badge-green">低</span></td>
+      <td>0.5 天</td>
+    </tr>
+  </table>
+
+  <div class="decision-block">
+    <strong>Phase A 合計估時：約 6–7 天（1–1.5 週）</strong><br>
+    完成後具備完整圖文攻略能力，管理員可開始維護內容。Phase B 可在任意時間點追加。
+  </div>
+</section>
+
+<!-- ── Phase B：物件嵌入 ── -->
+<section class="section">
+  <div class="section-label yellow">Phase B</div>
+  <div class="section-title">Phase B — 遊戲資料物件嵌入（進階，難度中高）</div>
+
+  <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
+    讓攻略內容可嵌入遊戲資料庫物件（機師卡/機甲卡/武器卡等），嵌入節點在編輯器與前台均以 React 元件渲染，前台點擊可局部展開詳情。
+  </p>
+
+  <div class="decision-block">
+    <strong>核心機制：TipTap 自訂 Node + React NodeView</strong><br>
+    TipTap 支援將任意節點的渲染委託給 React 元件（ReactNodeViewRenderer）。
+    自訂的 <code>EntityReferenceNode</code> 僅儲存 <code>entityType</code> + <code>entityId</code> + <code>displayMode</code>，
+    渲染邏輯由 React 元件完全控制，編輯器與前台共用同一套元件，確保所見即所得。
+  </div>
+
+  <div class="code-block">
+<span class="cm">// EntityReferenceNode — TipTap 自訂節點 attrs（ProseMirror JSON 內容）</span>
+{
+  <span class="st">"type"</span>: <span class="st">"entityReference"</span>,
+  <span class="st">"attrs"</span>: {
+    <span class="st">"entityType"</span>: <span class="ty">"pilot"</span> <span class="cm">// "pilot" | "mech" | "weapon" | "module" | "backpack" | "component"</span>,
+    <span class="st">"entityId"</span>:   <span class="st">"pilot_kairi"</span>,
+    <span class="st">"displayMode"</span>: <span class="ty">"card"</span>    <span class="cm">// "card"（完整卡片）| "badge"（行內小標籤）</span>
+  }
+}
+  </div>
+
+  <div class="code-block">
+<span class="cm">// EntityReferenceExtension.ts（概念骨架）</span>
+<span class="kw">import</span> { <span class="ty">Node</span>, <span class="ty">ReactNodeViewRenderer</span> } <span class="kw">from</span> <span class="st">'@tiptap/react'</span>
+<span class="kw">import</span> { <span class="ty">EntityCard</span> } <span class="kw">from</span> <span class="st">'../components/EntityCard'</span>
+
+<span class="kw">export const</span> <span class="nm">EntityReferenceExtension</span> = <span class="ty">Node</span>.<span class="fn">create</span>({
+  name: <span class="st">'entityReference'</span>,
+  group: <span class="st">'block'</span>,
+  atom:  <span class="kw">true</span>,     <span class="cm">// 不可分割的原子節點</span>
+  selectable: <span class="kw">true</span>,
+
+  addAttributes() {
+    <span class="kw">return</span> {
+      entityType:  { <span class="kw">default</span>: <span class="kw">null</span> },
+      entityId:    { <span class="kw">default</span>: <span class="kw">null</span> },
+      displayMode: { <span class="kw">default</span>: <span class="st">'card'</span> },
+    }
+  },
+
+  addNodeView() {
+    <span class="kw">return</span> <span class="fn">ReactNodeViewRenderer</span>(<span class="ty">EntityCard</span>)
+  },
+})
+  </div>
+
+  <table class="phase-table">
+    <tr>
+      <th>工作項目</th>
+      <th>說明</th>
+      <th>難度</th>
+      <th>估時</th>
+    </tr>
+    <tr>
+      <td><strong>B-1</strong> EntityReferenceExtension</td>
+      <td>自訂 TipTap Node；addAttributes、parseHTML/renderHTML（JSON 模式此處可簡化）；ReactNodeViewRenderer 掛載</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1–1.5 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-2</strong> EntityCard 元件</td>
+      <td>依 entityType 分派渲染對應卡片（PilotMiniCard / MechMiniCard / WeaponMiniCard 等）；在編輯器內自 Firestore 讀取資料並顯示；含 loading / error 狀態</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1.5–2 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-3</strong> 後台物件搜尋器</td>
+      <td>工具列「插入物件」按鈕 → Popover 搜尋框（按名稱搜尋）→ 顯示搜尋結果列表 → 點擊插入對應節點</td>
+      <td><span class="badge badge-red">中高</span></td>
+      <td>1.5–2 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-4</strong> 前台批次預載</td>
+      <td>前台渲染攻略前，解析 JSON 取出所有 entityReference 節點，依 entityType 分組批次 Firestore 查詢，存入 Context 供 EntityCard 使用（避免 N+1）</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1 天</td>
+    </tr>
+    <tr>
+      <td><strong>B-5</strong> EntityDetailDrawer</td>
+      <td>右側滑入 Drawer 元件；複用現有 PilotDetailPage / MechDetailPage / WeaponDetailPage 的詳情區塊（非整頁，僅核心資訊）；點擊卡片觸發，按 ESC 或點擊遮罩關閉</td>
+      <td><span class="badge badge-yellow">中</span></td>
+      <td>1–1.5 天</td>
+    </tr>
+  </table>
+
+  <div class="decision-block">
+    <strong>Phase B 合計估時：約 6–8 天（+1.5–2 週）</strong>
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠️ Phase B 主要風險點</strong>
+    <ul style="margin-top:8px;padding-left:18px;line-height:2.2;">
+      <li><strong>B-2 EntityCard 維護成本：</strong>每新增一種資料類型（如 backpack）都需補寫對應的 MiniCard，需要長期維護</li>
+      <li><strong>B-3 物件搜尋器 UX：</strong>多種資料類型同時搜尋的 UI 設計需要細心規劃，否則編輯體驗差</li>
+      <li><strong>B-4 前台批次載入：</strong>若一篇攻略嵌入多種資料，批次邏輯需要妥善處理，避免初始渲染過慢</li>
+      <li><strong>TipTap 版本鎖定：</strong>ReactNodeViewRenderer API 在 TipTap v2 與未來版本間可能有 breaking change</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ── 備選方案 ── -->
+<section class="section">
+  <div class="section-label purple">Fallback</div>
+  <div class="section-title">備選方案 — Mention 輕量版（Phase B 的替代選項）</div>
+
+  <div class="fallback-block">
+    <strong>適用時機：</strong>Phase B 工期估算後認為不划算，或初期攻略數量少、不需要深度整合時<br><br>
+    <strong>做法：</strong>使用 TipTap 官方 <code>@tiptap/extension-mention</code>，
+    在攻略內以 <code>@凱莉</code> 的方式引用遊戲物件。
+    Mention 節點存 <code>id</code> 與 <code>label</code>，前台渲染為帶顏色的連結標籤（badge）。
+    點擊後<strong>直接跳轉到對應詳情頁</strong>（現有路由），不需要 Drawer。<br><br>
+    <strong>工期：</strong>約 2–3 天（Phase A 完成後即可追加）<br>
+    <strong>缺點：</strong>玩家閱讀攻略中途需要跳頁，閱讀體驗中斷；不支援卡片式預覽
+  </div>
+
+  <table class="phase-table">
+    <tr>
+      <th>比較項目</th>
+      <th>Phase B（EntityNode）</th>
+      <th>備選方案（Mention）</th>
+    </tr>
+    <tr>
+      <td>物件顯示形式</td>
+      <td>完整卡片（圖片+屬性）</td>
+      <td>行內 badge（文字標籤）</td>
+    </tr>
+    <tr>
+      <td>詳情查看方式</td>
+      <td>右側 Drawer，不離開攻略</td>
+      <td>跳轉至對應詳情頁</td>
+    </tr>
+    <tr>
+      <td>開發難度</td>
+      <td><span class="badge badge-red">中高</span></td>
+      <td><span class="badge badge-green">低</span></td>
+    </tr>
+    <tr>
+      <td>後續維護量</td>
+      <td>每新增資料類型需補 MiniCard</td>
+      <td>幾乎不需維護</td>
+    </tr>
+    <tr>
+      <td>玩家閱讀體驗</td>
+      <td>沉浸式，無跳頁中斷</td>
+      <td>中斷閱讀流</td>
+    </tr>
+    <tr>
+      <td>估計工期</td>
+      <td>+6–8 天</td>
+      <td>+2–3 天</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ── Firestore Schema ── -->
+<section class="section">
+  <div class="section-label cyan">Data Model</div>
+  <div class="section-title">Firestore Schema</div>
+
+  <div class="code-block">
+<span class="cm">// Collection: guides/{guideId}</span>
+{
+  id:          <span class="ty">string</span>,     <span class="cm">// Firestore auto-id</span>
+  slug:        <span class="ty">string</span>,     <span class="cm">// URL 用識別碼，例如 "beginner-mech-guide"（唯一）</span>
+  title:       <span class="ty">string</span>,
+  category:    <span class="ty">GuideCategory</span>,  <span class="cm">// enum: 新手教學 | 機甲攻略 | 武器攻略 | 關卡攻略 | BOSS攻略 | 活動攻略 | 其他</span>
+  content:     <span class="ty">JSONObject</span>,  <span class="cm">// TipTap ProseMirror JSON（完整文件樹）</span>
+  coverImage:  <span class="ty">string</span> | <span class="kw">null</span>,  <span class="cm">// Firebase Storage URL</span>
+  tags:        <span class="ty">string[]</span>,
+  status:      <span class="st">'draft'</span> | <span class="st">'published'</span>,
+  publishedAt: <span class="ty">Timestamp</span> | <span class="kw">null</span>,
+  createdAt:   <span class="ty">Timestamp</span>,
+  updatedAt:   <span class="ty">Timestamp</span>,
+  authorUid:   <span class="ty">string</span>
+}
+  </div>
+
+  <div class="code-block">
+<span class="cm">// Firestore Security Rules（新增段落）</span>
+<span class="kw">match</span> /guides/{guideId} {
+  <span class="cm">// 玩家：只能讀已發布的文章</span>
+  <span class="kw">allow</span> read: <span class="kw">if</span> <span class="fn">resource</span>.data.status == <span class="st">'published'</span>;
+
+  <span class="cm">// 管理員：完整讀寫（含草稿）</span>
+  <span class="kw">allow</span> read, write: <span class="kw">if</span> <span class="fn">request</span>.auth.token.admin == <span class="kw">true</span>;
+}
+
+<span class="cm">// Firebase Storage Rules</span>
+<span class="kw">match</span> /guides/images/{allPaths=**} {
+  <span class="kw">allow</span> read:  <span class="kw">if</span> <span class="kw">true</span>;
+  <span class="kw">allow</span> write: <span class="kw">if</span> <span class="fn">request</span>.auth.token.admin == <span class="kw">true</span>;
+}
+  </div>
+</section>
+
+<!-- ── 路由規劃 ── -->
+<section class="section">
+  <div class="section-label cyan">Routes</div>
+  <div class="section-title">路由規劃</div>
+
+  <table class="phase-table">
+    <tr>
+      <th>路由</th>
+      <th>對象</th>
+      <th>說明</th>
+    </tr>
+    <tr>
+      <td><code>/guides</code></td>
+      <td><span class="badge badge-cyan">玩家</span></td>
+      <td>攻略目錄，依 category 分 tab，列出所有已發布文章</td>
+    </tr>
+    <tr>
+      <td><code>/guides/:slug</code></td>
+      <td><span class="badge badge-cyan">玩家</span></td>
+      <td>攻略詳情頁，TipTap 唯讀渲染；（Phase B）含 EntityDetailDrawer</td>
+    </tr>
+    <tr>
+      <td><code>/admin/guides</code></td>
+      <td><span class="badge badge-red">管理員</span></td>
+      <td>攻略管理列表，draft/published 分 tab，可新建/刪除/發布/下架</td>
+    </tr>
+    <tr>
+      <td><code>/admin/guides/new</code></td>
+      <td><span class="badge badge-red">管理員</span></td>
+      <td>新建攻略（TipTap 編輯器 + metadata 表單）</td>
+    </tr>
+    <tr>
+      <td><code>/admin/guides/:id/edit</code></td>
+      <td><span class="badge badge-red">管理員</span></td>
+      <td>編輯現有攻略</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ── 新增檔案 ── -->
+<section class="section">
+  <div class="section-label cyan">Files</div>
+  <div class="section-title">新增 / 修改檔案一覽</div>
+
+  <div class="code-block">
+<span class="cm">── Phase A 新增 ─────────────────────────────</span>
+src/lib/<span class="nm">guidesApi.ts</span>          <span class="cm">// CRUD for guides（仿 firestoreApi.ts）</span>
+src/hooks/<span class="nm">useGuides.ts</span>         <span class="cm">// React hooks（getGuides / getGuide / saveGuide）</span>
+src/types/<span class="nm">guide.ts</span>             <span class="cm">// GuideDoc、GuideCategory enum、GuideStatus</span>
+src/components/editor/<span class="nm">GuideEditor.tsx</span>     <span class="cm">// TipTap 編輯器元件（含工具列）</span>
+src/components/editor/<span class="nm">ImageUploadButton.tsx</span>  <span class="cm">// Storage 圖片上傳按鈕</span>
+src/pages/<span class="nm">GuidesPage.tsx</span>       <span class="cm">// 前台攻略目錄 /guides</span>
+src/pages/<span class="nm">GuideDetailPage.tsx</span>  <span class="cm">// 前台攻略詳情 /guides/:slug</span>
+src/pages/admin/<span class="nm">GuidesAdminPage.tsx</span>   <span class="cm">// 後台管理列表</span>
+src/pages/admin/<span class="nm">GuideEditorPage.tsx</span>   <span class="cm">// 後台新建/編輯頁</span>
+
+<span class="cm">── Phase A 修改 ─────────────────────────────</span>
+src/<span class="nm">router.tsx</span>                  <span class="cm">// 新增 /guides、/guides/:slug、/admin/guides 路由</span>
+src/components/<span class="nm">Header.tsx</span>      <span class="cm">// 導覽列加入「攻略」入口</span>
+
+<span class="cm">── Phase B 新增 ─────────────────────────────</span>
+src/extensions/<span class="nm">EntityReferenceExtension.ts</span>
+src/components/editor/<span class="nm">EntitySearchPopover.tsx</span>   <span class="cm">// 後台物件搜尋器</span>
+src/components/entity-cards/<span class="nm">EntityCard.tsx</span>         <span class="cm">// NodeView 分派器</span>
+src/components/entity-cards/<span class="nm">PilotMiniCard.tsx</span>
+src/components/entity-cards/<span class="nm">MechMiniCard.tsx</span>
+src/components/entity-cards/<span class="nm">WeaponMiniCard.tsx</span>
+src/components/<span class="nm">EntityDetailDrawer.tsx</span>          <span class="cm">// 右側詳情滑入面板</span>
+src/contexts/<span class="nm">GuideEntityContext.tsx</span>          <span class="cm">// 批次預載 entity 資料</span>
+  </div>
+</section>
+
+<!-- ── 相關文件 ── -->
+<section class="section">
+  <div class="section-label cyan">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-010 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../../../03_頁面規劃/10_管理後台/index.html">
+      <div class="doc-tag">Page Design</div>
+      <h4>🛠️ 管理後台頁面規劃</h4>
+      <p>攻略管理為管理後台的功能模組之一</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/04_Firebase/資料庫設計文件/security-rules.html">
+      <div class="doc-tag">Firebase</div>
+      <h4>🔒 Security Rules</h4>
+      <p>guides Collection 讀寫規則需更新至此文件</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/01_架構設計/系統架構.html">
+      <div class="doc-tag">Architecture</div>
+      <h4>🏗️ 系統架構</h4>
+      <p>攻略系統在整體架構中的定位</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-010 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

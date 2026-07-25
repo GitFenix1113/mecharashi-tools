@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-019-C 詞條庫與引用挑選器 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+.meta-value.blue   { color: var(--accent-blue); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.decision-block {
+  background: rgba(59,130,246,0.06);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-left: 3px solid var(--accent-blue);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.impact-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--text-primary); white-space: nowrap; }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-019-C 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(59,130,246,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge blue">◆ PLAN-019-C · 019 子計畫</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-blue) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    詞條庫與引用挑選器<span style="-webkit-text-fill-color:var(--text-secondary);">glossaryTerms · RefPicker · 非工程維護</span>
+  </h1>
+  <p class="hero-sub">補完引用層最後一塊：建詞條庫讓 <code>term</code> 引用有資料源，並提供後台 RefPicker 讓任何人把描述裡的 <code>[xxx]</code> 標成可點引用。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label blue">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value blue">PLAN-019-C</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-06-07</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">Types · firestoreApi · GameDataContext · EntityRefView · Admin(RefPicker/GlossaryAdmin) · rules</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value blue">✅ 已完成（2026-06-07）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-019-A（引用層，已上線）· PLAN-004（pilotSkills，已上線）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>一句話：</strong>引用層（019-A）已能渲染與互動，但 <code>term</code> 類引用沒有資料源、且後台沒有任何工具能填 <code>descriptionRefs</code>。
+    本子計畫建 <strong>glossaryTerms 詞條庫</strong>（收無專屬集合的機制關鍵字）並打造 <strong>RefPicker</strong>（描述內 <code>[xxx]</code> → 指派引用的後台 UI），
+    讓引用層真正可由非工程人員維護。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>缺口一 — <code>term</code> 引用無資料源：</strong>
+    <code>EntityRefView</code> 的 <code>resolve()</code> 對 <code>refType:'term'</code> 仍走 <code>default → pending</code>
+    （<code>src/components/EntityRefView.tsx</code> 第 143–145 行）。技能/被動已有 <code>pilotSkills</code>、BUFF 有 <code>buffs</code>、機體/武器/模組各有集合，
+    唯獨 <code>[固定傷害]</code>、<code>[啟動]</code>、<code>[形態增益]</code> 這類「無專屬集合可放」的機制關鍵字無處可查，點開只有佔位訊息。
+    引用層因此尚未真正「全部解析」。
+  </div>
+
+  <div class="problem-block">
+    <strong>缺口二 — <code>descriptionRefs</code> 無後台編輯工具：</strong>
+    全後台沒有任何地方能填 <code>descriptionRefs</code>（<code>src/pages/user/admin/</code> 的描述欄位全是純 <code>textarea</code>）。
+    目前要讓一段描述裡的 <code>[xxx]</code> 變成可點擊，只能手改 <code>scripts/seed-plan019-demo.mjs</code> 之類的腳本 —
+    <strong>只有工程人員能標引用</strong>，與「讓非工程人員協助輸入資料」的目標直接衝突。這也是 019-A 進度表最後一條（RefPicker 後台填值 UI）所指。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label blue">Design</div>
+  <div class="section-title">設計決策（聚焦版）</div>
+
+  <div class="decision-block">
+    <strong>決策一：glossaryTerms 集合（仿 buffs / pilotSkills，整包預載小集合）</strong><br>
+    詞條庫量小、回訪走 PLAN-017 版本快取，直接整包預載即可。<code>RefType</code> 已含 <code>'term'</code>、<code>RefChip</code> 已有 term 顏色 → 型別零返工。
+  </div>
+  <div class="code-block">
+<span class="cm">// src/types/index.ts — 新增</span>
+<span class="kw">export interface</span> <span class="ty">GlossaryTerm</span> {
+  id:               <span class="ty">string</span>             <span class="cm">// term_&lt;名稱&gt;（與 skill_/buff_ 一致）</span>
+  name:             <span class="ty">string</span>             <span class="cm">// = [xxx] 內文字</span>
+  category?:        <span class="ty">string</span>             <span class="cm">// 機制分類（傷害/狀態/資源/通用…）</span>
+  description:      <span class="ty">string</span>
+  descriptionRefs?: <span class="ty">DescriptionRefs</span>    <span class="cm">// 解釋內也能再引用其他實體</span>
+  aliases?:         <span class="ty">string</span>[]           <span class="cm">// 同義詞 → 同一詞條</span>
+  icon?:            <span class="ty">string</span>
+}
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：firestoreApi getter / writer（仿既有 pilotSkills）</strong><br>
+    <code>getGlossaryTerms = fetchCollection&lt;GlossaryTerm&gt;('glossaryTerms')</code>；
+    <code>updateGlossaryTerm</code> 走 <code>setDoc</code> + <code>bumpDataVersion</code>（仿 <code>updatePilotSkill</code>，<code>src/lib/firestoreApi.ts</code> 第 205 行）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：GameDataContext 接線（自動吃版本快取）</strong><br>
+    <code>glossaryTerms</code> 加進 <code>CollectionKey</code> / <code>ALL_COLLECTION_KEYS</code> / <code>GameDataState</code> / <code>useState</code> / <code>applyData</code> / <code>fetchFromFirestore</code> / provider value。
+    新集合自動納入 PLAN-016 預載 + PLAN-017 localStorage 版本快取，回訪 0 讀取。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：EntityRefView 解析 term</strong><br>
+    <code>REF_TO_COLLECTION</code> 加 <code>term:'glossaryTerms'</code>；新增 <code>case 'term'</code> resolver
+    （<code>title=name</code>、<code>subtitle=category</code>、<code>description</code> + <code>descriptionRefs</code>、<code>image=icon</code>）；把 <code>term</code> 移出 <code>default(pending)</code>。
+    此後 <code>[固定傷害]</code> 等詞條 hover/點擊即顯示解釋，並可繼續 drill。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：RefPicker 通用元件（本計畫核心）</strong><br>
+    給定一段 <code>description</code> + 現有 <code>descriptionRefs</code>，自動 tokenize 出所有 <code>[xxx]</code>，逐 token 提供：refType 選擇 + 可搜尋的實體挑選器，
+    選定後寫入 <code>descriptionRefs[token] = { refType, refId, label? }</code>。候選清單直接讀 <code>GameDataContext</code> 的 in-memory 陣列
+    （pilots / mechs / weapons / modules / backpacks / components / buffs / pilotSkills / glossaryTerms）＋ <code>STAT_LABELS</code>（stat key）。
+    旁附 <code>RefText</code> 即時預覽。複用：<code>useGameData</code>、<code>STAT_LABELS</code>（<code>src/utils/moduleStats.ts</code>）、<code>RefText</code>（<code>src/components/RefText.tsx</code>）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：GlossaryAdmin + 後台接線</strong><br>
+    新增「詞條管理」分頁，沿用 <code>src/pages/user/admin/shared.tsx</code> 的 <code>AdminModal</code> / <code>Field</code> / <code>useNewItemCreation</code> 樣式；
+    <code>AdminPage</code> 加 Tab 與 <code>TAB_CONFIG</code> 設定。詞條編輯面板含 id（<code>term_&lt;名稱&gt;</code>）/ name / category / description（textarea）＋ <strong>RefPicker</strong> / aliases / icon。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：RefPicker 接進 PilotSkillsTab</strong><br>
+    技能「效果說明 description」欄位下方掛 RefPicker，編輯技能即可把描述內 <code>[xxx]</code> 標進 <code>skill.descriptionRefs</code>（寫入 pilotSkills 單一資料源，全站生效）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策八：安全規則</strong><br>
+    <code>firestore.rules</code> 與 <code>security-rules.html</code> 加 <code>glossaryTerms</code>（所有人可讀、管理員可寫，仿 pilotSkills）。
+    <strong>規則部署需使用者授權。</strong>
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label blue">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>glossaryTerms 集合（型別 + API + GameDataContext + 安全規則）</li>
+      <li>EntityRefView 解析 term（移除 pending）</li>
+      <li>RefPicker 通用元件</li>
+      <li>GlossaryAdmin（詞條管理分頁）</li>
+      <li>RefPicker 先接進「詞條管理」與「技能效果（pilotSkills）」兩處</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>RefPicker retrofit 進 components / modules / weapons / backpacks / buffs 等其餘描述面板 → 留 <strong>PLAN-019-E</strong></li>
+      <li>PLAN-019-B（buff 反向索引 / 形態模擬面板）</li>
+      <li>PLAN-019-D（BOSS / 關卡集合）</li>
+      <li>neuralDrives 抽離（PLAN-004 下半場）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 影響範圍 -->
+<section class="section">
+  <div class="section-label blue">Impact</div>
+  <div class="section-title">影響檔案</div>
+  <div class="data-table-wrap">
+    <table class="impact-table">
+      <tr><th>檔案</th><th>變更</th><th>風險</th></tr>
+      <tr><td>src/types/index.ts</td><td>新增 <code>GlossaryTerm</code> interface（純加法）</td><td><span class="badge-good">低</span></td></tr>
+      <tr><td>src/lib/firestoreApi.ts</td><td>新增 <code>getGlossaryTerms</code> / <code>updateGlossaryTerm</code></td><td><span class="badge-good">低</span></td></tr>
+      <tr><td>src/contexts/GameDataContext.tsx</td><td><code>glossaryTerms</code> 接進 7 處（key/state/applyData/fetch/provider…）</td><td><span class="badge-med">中</span></td></tr>
+      <tr><td>src/components/EntityRefView.tsx</td><td><code>REF_TO_COLLECTION</code> + <code>case 'term'</code>；term 移出 pending</td><td><span class="badge-good">低</span></td></tr>
+      <tr><td>src/components/admin/RefPicker.tsx</td><td><strong>新檔</strong>：通用引用挑選器</td><td><span class="badge-high">高</span></td></tr>
+      <tr><td>src/pages/user/admin/GlossaryAdmin.tsx</td><td><strong>新檔</strong>：詞條管理分頁</td><td><span class="badge-med">中</span></td></tr>
+      <tr><td>src/pages/user/AdminPage.tsx</td><td>新增「詞條管理」Tab + <code>TAB_CONFIG</code></td><td><span class="badge-good">低</span></td></tr>
+      <tr><td>src/pages/user/admin/PilotAdmin.tsx</td><td>PilotSkillsTab 描述欄位掛 RefPicker</td><td><span class="badge-med">中</span></td></tr>
+      <tr><td>firestore.rules</td><td>新增 <code>glossaryTerms</code> match（部署需授權）</td><td><span class="badge-med">中</span></td></tr>
+      <tr><td>docs / siteChangelog</td><td>glossaryTerms.html schema、019 總綱進度表、feat 履歷</td><td><span class="badge-good">低</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 驗證 -->
+<section class="section">
+  <div class="section-label green">Verification</div>
+  <div class="section-title">驗證方式</div>
+  <div class="info-block">
+    <ol style="margin:0;padding-left:18px;line-height:2.2;">
+      <li><strong>型別</strong>：<code>npm run build</code> 通過；<code>GlossaryTerm</code> 為新增、不破壞既有頁面。</li>
+      <li><strong>term 解析</strong>：建一筆 <code>term_固定傷害</code>，前台某描述的 <code>[固定傷害]</code> hover/點擊顯示解釋（先前 pending）。</li>
+      <li><strong>RefPicker</strong>：在詞條管理 / 技能效果用 RefPicker 把 <code>[xxx]</code> 指派到實體 → 儲存後前台該詞變可點擊；未指派者原樣顯示不報錯。</li>
+      <li><strong>非工程流程</strong>：非 OWNER 的 ADMIN 帳號全程用表單 + RefPicker 新增詞條並在前台引用，不碰程式碼。</li>
+      <li><strong>查詢量</strong>：<code>glossaryTerms</code> 經預載 Map + localStorage 版本快取，回訪 0 讀取。</li>
+    </ol>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label blue">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-019-C 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../../執行中/PLAN-019_實體引用與模擬基礎_總綱/計畫書.html">
+      <div class="doc-tag">Master</div>
+      <h4>◆ PLAN-019 總綱計畫書</h4>
+      <p>四層抽象與子計畫重組（019-A~E）</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-019-C — <a href="../index.html" style="color:var(--accent-blue);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-022 數值引用層 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+.status.defer    { background: rgba(234,179,8,0.12);  color: var(--accent-yellow); border: 1px solid rgba(234,179,8,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-022 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-022</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> 數值引用層</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-06-11</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label green">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-yellow)">0</div>
+      <div class="summary-lbl">延後</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">8</div>
+      <div class="summary-lbl">總任務數</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度（A+B+C+D 全數完成）</span>
+      <span style="color:var(--accent-green);">8 / 8</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    描述內的層數／回合數綁定 buff 屬性後，「正文寫 7、buff 是 5」這類漂移結構性消失；
+    維護者照抄遊戲原文 + 打 $1/%1 一鍵代入，不需懂程式碼；
+    天賦／技能／晶片驅動／武器等所有描述<strong>一次接線、全站生效</strong>（RefText / DiffHighlight / RefPicker 三樞紐），零逐頁實作。
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">對帳（2026-06-11）：</strong>
+    尚未動工（<code>src/utils/numRefs.ts</code> 不存在），0/8 屬實。範圍補充：PLAN-021 收尾期間新增
+    <code>TalentNdVariant.descriptionMax</code>（滿星版改寫正文）與天賦卡「初始 ⇌ 最大強化」切換 ——
+    B-1/B-2 的 token 解析與 D-1 驗收需同時涵蓋 <code>description</code> 與 <code>descriptionMax</code> 兩版正文；
+    另 <code>PilotTalent.manual</code> 已保護人工正文不被爬蟲補丁覆寫，token 化後的正文同受此保護
+    （manual 凍結的過期風險評估為可接受：官方幾乎不改既有文案，只做擴充）。<br>
+    <strong style="color:var(--accent-cyan);">重排（2026-06-12）：</strong>
+    範圍切為兩批 —— 第一批 A+B+D（小 PR 先行，token 由開發者手寫／seed 生成）；
+    Phase C 延後（021 任務 3-1 編輯器已同日先行完成，走共用 RefPicker、C 上線自動受惠），觸發條件＝群友自助 / 第二隻 ndVariants 機師。<br>
+    <strong style="color:var(--accent-green);">Phase A 完成（2026-06-17）：</strong>
+    <code>src/utils/numRefs.ts</code> 落地 —— NUM_ATTRS registry（maxStack $ / duration %）+ <code>resolveNumRefs</code> / <code>parseNumRefs</code> / <code>resolveNumValue</code> + <code>compileSugar</code> / <code>orderRefsByFirstMention</code> / <code>detectLeftoverSugar</code>，純函式無 React 依賴；18 個單元測試全綠、<code>tsc -b</code> 通過。<br>
+    <strong style="color:var(--accent-green);">Phase B 完成（2026-06-17）：</strong>
+    <code>RefText</code> 非 [xxx] 片段解析 <code>&lt;refId.attr&gt;</code> → 顯示 buff 屬性真值（淡底線 + title，查無暗色 ?）；
+    <code>DiffHighlight</code> base/enhanced 先 <code>resolveNumRefs</code> 再 tokenize（5→7 照常標紅）。
+    共用 <code>useNumRefLookup</code> hook 懶載 buffs；PilotDetailPage / EntityRefView / WeaponSkillCard 等所有 RefText 使用處自動生效，無 token 描述零回歸。27 測試 + tsc + eslint 全過。<br>
+    <strong style="color:var(--accent-green);">Phase D 完成（D-2 2026-06-17 · D-1 2026-06-19）：</strong>
+    D-2 文件完成（skills_buffs 補「數值引用」節：token 格式 / registry 屬性表 / 語法糖規則 / 邊界 + siteChangelog 一筆）；
+    D-1 seed 腳本 <code>seed-plan022-ada-numrefs.mjs</code> 已對正式 Firestore 寫入 token + <code>bump-data-version</code> 失效快取，
+    本機實機驗收 OK（5/7/7、DiffHighlight 標 5→7、hover 顯示來源）——
+    <strong>第一批 A+B+D 全數完成（6/6）</strong>。<br>
+    <strong style="color:var(--accent-green);">Phase C 完成（2026-06-19，提前解鎖）：</strong>
+    <code>RefPicker</code> 加 <code>onCompileText</code> 可選回呼 + 「數值語法糖待代入」區塊 —— 編號圖例（$n/%n = 第 n 個已指派 [xxx]）、
+    殘留 <code>$n/%n</code> 警告、<strong>預覽 → 確認代入</strong>（<code>compileSugar</code> 編譯成 <code>&lt;refId.attr&gt;</code> token）。
+    一處改動，Pilot（天賦含 ndVariants 雙欄）/ Skill / Buff / Glossary / Module / Weapon / Component / Backpack <strong>共 9 個 RefPicker 呼叫點全部接上</strong>；
+    未傳 <code>onCompileText</code> 的零回歸。語法糖永不落地、僅編輯期存在，存檔前以預覽把關避免誤代入。tsc + 27 測試 + vite build 全過。
+    <strong>PLAN-022 全計畫（A+B+C+D）100% 完成，可歸檔。</strong>
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">核心模組（registry + 解析器）</div>
+  <div class="section-desc">唯一的真實實作；後續所有層只是呼叫它。純函式、無 React 依賴、可單測。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; numRefs 核心 util</div>
+      <div class="task-group-meta">src/utils/numRefs.ts（新增）</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">NUM_ATTRS registry + resolveNumRefs() + 語法糖編譯 + 殘留偵測</div>
+        <div class="task-desc">
+          registry 起步兩筆：maxStack（sigil $）/ duration（sigil %）。
+          resolveNumRefs(text, lookup)：解析 &lt;refId.attr&gt; → 真值，查無優雅降級。
+          compileSugar(text, orderedRefs)：$n/%n → token（n = [xxx] 首次出現順序）。
+          detectLeftoverSugar(text)：儲存前警告用。token 格式定案（如 &lt;buff_凝勢I.maxStack&gt;）。
+        </div>
+        <div class="task-file">src/utils/numRefs.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 單元測試</div>
+      <div class="task-group-meta">src/utils/numRefs.test.ts（新增，仿 idSlug.test.ts）</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">解析 / 編譯 / 降級 / 誤判邊界測試</div>
+        <div class="task-desc">
+          多次出現同 token、token 失效（refId 不存在）、$n 與真實貨幣字元、%n 與百分比（15% vs %1）、
+          編號順序（首次出現序）、殘留偵測。
+        </div>
+        <div class="task-file">src/utils/numRefs.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">前台顯示接入（兩個樞紐）</div>
+  <div class="section-desc">RefText 與 DiffHighlight 各接一次，全站顯示自動生效。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; RefText 接入</div>
+      <div class="task-group-meta">src/components/RefText.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">解析迴圈加 &lt;refId.attr&gt; 分支，從 GameDataContext 取值</div>
+        <div class="task-desc">
+          顯示數值本身（可選淡底線 + title「= 凝勢I 可疊加上限」）；查無顯示暗色 ?。
+          受惠：PilotDetailPage（天賦/技能/神驅）、EntityRefView 浮卡、WeaponSkillCard 等所有 RefText 使用處。
+        </div>
+        <div class="task-file">src/components/RefText.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; DiffHighlight 前處理</div>
+      <div class="task-group-meta">src/components/DiffHighlight.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">base / enhanced 先過 resolveNumRefs 再 tokenize</div>
+        <div class="task-desc">
+          base 綁凝勢I(5)、變體綁凝勢II(7) → 解析後 5→7 照常被 LCS 標紅。
+          確保「原文還原」與「差異高亮」兩者兼得。
+        </div>
+        <div class="task-file">src/components/DiffHighlight.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label green">Phase C</div>
+  <div class="section-title">後台編輯接入（RefPicker 一處 → 9 個呼叫點）<span style="display:inline-block;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:700;margin-left:8px;vertical-align:middle;background:rgba(34,197,94,0.15);color:var(--accent-green);border:1px solid rgba(34,197,94,0.3);">✓ 完成 2026-06-19</span></div>
+  <div class="section-desc">
+    RefPicker 為所有後台描述編輯的共用元件；改一次，Pilot/Skill/Buff/Glossary/Module/Weapon/Backpack/Component 全部獲得。
+    <strong>2026-06-12 曾因受眾未現而延後</strong>（語法糖受眾＝群友大量抄寫，當時僅艾達一隻），token 暫由開發者手寫／seed 腳本生成。
+    <strong style="color:var(--accent-green);">2026-06-19 提前解鎖落地</strong>：考量「編輯期解析預覽 + 殘留警告」對單一開發者亦有價值（不再盲改 token）、
+    且 Phase A 已備妥 <code>compileSugar</code>／<code>orderRefsByFirstMention</code>／<code>detectLeftoverSugar</code>、RefPicker 為單一接點零返工，故一次補齊 C-1 + C-2。
+    多欄正文（Pilot 天賦 description + descriptionMax、ndVariants 同理）以「傳入 transform 閉包、消費端各自套回欄位」解決回寫問題。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; RefPicker「代入數值」按鈕</div>
+      <div class="task-group-meta">src/components/admin/RefPicker.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">引用列表顯示編號 + 偵測 $n/%n + 替換預覽確認</div>
+        <div class="task-desc">
+          列表顯示「1. 凝勢I　2. 星爆」供 $1/%1 對照；按鈕列出偵測結果與替換前後預覽，確認後才編譯寫回描述。
+          低頻屬性走「選取數字 → 下拉選屬性」UI 路徑（registry 驅動）。
+        </div>
+        <div class="task-file">src/components/admin/RefPicker.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 殘留警告 + 解析預覽</div>
+      <div class="task-group-meta">src/components/admin/RefPicker.tsx</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">儲存前掃描未代入語法糖；描述欄下方即時解析預覽</div>
+        <div class="task-desc">
+          偵測到殘留 $n/%n 警告「尚有 N 個未代入」；預覽行顯示 token 解析後的成品文字
+          （緩解 textarea 內 token 可讀性下降）。
+        </div>
+        <div class="task-file">src/components/admin/RefPicker.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label green">Phase D</div>
+  <div class="section-title">驗收與文件</div>
+  <div class="section-desc">以 PLAN-021 凝勢三階為端到端驗收案例；同步引用層設計文件。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 凝勢三階升級為數值引用（驗收案例）</div>
+      <div class="task-group-meta">Firestore pilots/pilot_038_艾達 · BuffAdmin</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">base 與 ndVariants 的「可疊加N層」改綁 maxStack token</div>
+        <div class="task-desc">
+          base 綁 buff_凝勢I（5）、變體綁 凝勢II/III（7）；驗收：前台顯示 5/7/7、
+          DiffHighlight 標出 5→7、PLAN-021 發現的「正文7 vs buff 5」矛盾就此根除。
+          <strong style="color:var(--accent-cyan);">2026-06-17：</strong>seed 腳本 <code>seed-plan022-ada-numrefs.mjs</code> 完成，
+          <code>--inspect</code> 已驗證 token 化精準（只動「可疊加N層」、攜帶/移除/獲得門檻保持純文字）、buff maxStack 現況 5/7/7 ✓。
+          <strong style="color:var(--accent-green);">2026-06-19 完成：</strong>已對正式 Firestore 寫入 token、跑 <code>bump-data-version</code> 失效快取，
+          本機實機驗收 OK（base「可疊加5層」、算力≥10/13/16「可疊加7層」、DiffHighlight 標出 5→7、數字 hover 顯示來源）；矛盾根除。
+        </div>
+        <div class="task-file">scripts/seed-plan022-ada-numrefs.mjs · Firestore pilots · buffs</div>
+      </div>
+      <div class="task-assignee">開發者 / 管理員</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; docs 同步</div>
+      <div class="task-group-meta">docs/02_技術文件</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">引用層設計文件補「數值引用」一節 + siteChangelog</div>
+        <div class="task-desc">
+          skills_buffs / 引用層相關文件補 token 格式、registry 屬性表、語法糖規則；
+          上線 commit 補 siteChangelog（使用者可見：描述層數/回合自動與 BUFF 同步）。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/skills_buffs.html · src/data/siteChangelog/2026-06.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">✓ 完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-022 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-19 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>
