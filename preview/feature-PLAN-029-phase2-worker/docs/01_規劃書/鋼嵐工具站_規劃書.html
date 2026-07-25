@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鋼嵐工具站 — 專案規劃書 v2.0</title>
+<link rel="stylesheet" href="../_shared/style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-badge">◆ PROJECT BLUEPRINT</div>
+  <h1>
+    鋼嵐工具站
+    <span>METAL STORM COMMUNITY TOOLKIT</span>
+  </h1>
+  <p class="hero-sub">
+    傷害模擬器 · 配裝計算器 · 角色資料庫 · 攻略百科
+  </p>
+  <div class="version-badge">V2.2 — Phase 1/2/4/5 ✅ · Phase 3/7 進行中 · PLAN-012 元件圖鑑新增</div>
+</header>
+
+<main class="container">
+
+<!-- ═══ 文件導覽 ═══ -->
+<section class="section">
+  <div class="section-label">Document Map</div>
+  <div class="section-title">文件索引</div>
+  <div class="section-desc">點擊下方卡片可開啟對應的詳細文件。</div>
+
+  <div class="card-grid">
+    <a class="card blue" href="../02_技術文件/index.html" style="text-decoration:none;color:inherit;">
+      <div class="card-icon">📐</div>
+      <h3>技術文件</h3>
+      <p>系統架構、資料模型（9個Collection）、傷害公式、配裝模擬器流程、Firebase 設計</p>
+      <span class="card-link">02_技術文件/ →</span>
+    </a>
+    <a class="card purple" href="../03_頁面規劃/index.html" style="text-decoration:none;color:inherit;">
+      <div class="card-icon">🖥️</div>
+      <h3>頁面規劃</h3>
+      <p>Site Map、各頁面版面設計摘要、元件清單、UI 草圖（10個頁面子資料夾）</p>
+      <span class="card-link">03_頁面規劃/ →</span>
+    </a>
+    <a class="card orange" href="../04_進度表/開發進度表.html" style="text-decoration:none;color:inherit;">
+      <div class="card-icon">📊</div>
+      <h3>開發進度表</h3>
+      <p>Phase 1–8 各階段任務完成狀態，即時追蹤開發進度</p>
+      <span class="card-link">04_進度表/開發進度表.html →</span>
+    </a>
+    <a class="card cyan" href="../02_技術文件/04_Firebase/Firebase資料庫設計文件.html" style="text-decoration:none;color:inherit;">
+      <div class="card-icon">🔥</div>
+      <h3>Firebase 資料庫設計</h3>
+      <p>完整 Firestore Schema、Security Rules、複合索引、Enum 定義</p>
+      <span class="card-link">02_技術文件/04_Firebase/ →</span>
+    </a>
+    <a class="card pink" href="../05_階段性開發計畫/index.html" style="text-decoration:none;color:inherit;">
+      <div class="card-icon">🗂️</div>
+      <h3>階段性開發計畫</h3>
+      <p>各 PLAN 計畫書與進度表（執行中 / 歷史記錄），追蹤功能開發的設計與進度</p>
+      <span class="card-link">05_階段性開發計畫/ →</span>
+    </a>
+    <a class="card green" href="../06_使用說明/index.html" style="text-decoration:none;color:inherit;">
+      <div class="card-icon">📖</div>
+      <h3>使用說明</h3>
+      <p>給維護者的後台操作圖文手冊（目前：描述引用標記 RefPicker 使用說明）</p>
+      <span class="card-link">06_使用說明/ →</span>
+    </a>
+  </div>
+</section>
+
+<!-- ═══ 系統架構 ═══ -->
+<section class="section">
+  <div class="section-label">01 — Architecture</div>
+  <div class="section-title">系統架構概覽</div>
+  <div class="section-desc">
+    前端部署於 GitHub Pages，Firebase Firestore 統一管理所有遊戲資料與用戶資料。
+    <a href="../02_技術文件/01_架構設計/系統架構.html" style="color:var(--accent-cyan);">→ 完整架構文件</a>
+  </div>
+
+  <div class="changed-block">
+    <strong>🔄 v2.0 架構重大調整：靜態 JSON → Firebase Firestore</strong>
+    舊架構：Google Sheets → GitHub Actions → Static JSON → 前端讀取。<br>
+    新架構：管理後台 → Firestore 遊戲資料 → 前端即時讀取。<br>
+    優點：資料即時更新、複雜關聯可直接透過 Document ID 引用、型別枚舉化消除不一致。
+  </div>
+
+  <div class="arch-diagram">
+    <div class="arch-flow">
+      <div class="arch-node user"><strong>👤 玩家</strong><br>瀏覽 / 模擬 / 儲存</div>
+      <div class="arch-arrow">⟷</div>
+      <div class="arch-node frontend"><strong>🌐 GitHub Pages</strong><br>React + TypeScript</div>
+      <div class="arch-arrow">⟷</div>
+      <div class="arch-node auth"><strong>🔥 Firebase</strong><br>Firestore + Auth</div>
+    </div>
+    <br>
+    <div class="arch-flow">
+      <div class="arch-node data"><strong>🛠️ 管理員</strong><br>管理後台</div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node auth"><strong>🔥 Firestore</strong><br>直接讀寫遊戲資料</div>
+    </div>
+  </div>
+
+  <div class="tech-row" style="margin-top:20px;">
+    <span class="tech-tag primary">React 18</span>
+    <span class="tech-tag primary">TypeScript</span>
+    <span class="tech-tag primary">Vite</span>
+    <span class="tech-tag secondary">Tailwind CSS</span>
+    <span class="tech-tag secondary">React Router</span>
+    <span class="tech-tag tertiary">Firebase Auth</span>
+    <span class="tech-tag tertiary">Cloud Firestore</span>
+    <span class="tech-tag tertiary">Cloudinary</span>
+    <span class="tech-tag">html2canvas</span>
+    <span class="tech-tag">GitHub Pages</span>
+  </div>
+</section>
+
+<!-- ═══ 功能模組 ═══ -->
+<section class="section">
+  <div class="section-label">02 — Feature Modules</div>
+  <div class="section-title">九大核心功能模組</div>
+  <div class="section-desc">
+    完整的配裝系統、科研系統與用戶管理。各模組頁面設計詳見
+    <a href="../03_頁面規劃/index.html" style="color:var(--accent-cyan);">頁面規劃</a>。
+  </div>
+
+  <div class="card-grid">
+    <div class="card blue">
+      <div class="card-icon">🔧</div>
+      <h3>配裝模擬器</h3>
+      <p>選機師 → 機甲 → 武器 → 背包 → 模組 → 元件。支援匯出分享圖。</p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">⚔️</div>
+      <h3>傷害計算系統</h3>
+      <p>基於傷害公式計算期望值，支援 A/B 組合對比，整合所有加成來源。（Phase 8）</p>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">👤</div>
+      <h3>機師資料庫</h3>
+      <p>六維屬性、AP 系統、天賦、技能、神經驅動、個人科研配置、角色故事。</p>
+    </div>
+    <div class="card green">
+      <div class="card-icon">🤖</div>
+      <h3>機甲資料庫</h3>
+      <p>部件耐久/火力/閃避/移動、重量/出力、副模組效果、座艙式詳情頁。</p>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">🔫</div>
+      <h3>武器資料庫</h3>
+      <p>武器種類與專屬武器，含技能效果（三種生效方式）、元件插槽、固定/浮動改裝，以及製作／進階關係鏈（前置↔可進階為，含複合武器）。</p>
+    </div>
+    <div class="card pink">
+      <div class="card-icon">🎒</div>
+      <h3>背包資料庫</h3>
+      <p>所有背包裝備，含技能效果、重量、裝配限制；並可用「特種背包製作」篩選與複合武器（裁決者等）並列瀏覽。</p>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">🧩</div>
+      <h3>模組圖鑑</h3>
+      <p>四模/八模/通用模組完整列表，各等級效果、稀有度篩選。</p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">📰</div>
+      <h3>改版資訊 + 攻略</h3>
+      <p>改版預告、關卡攻略，管理者後台更新。</p>
+    </div>
+    <div class="card red">
+      <div class="card-icon">🔐</div>
+      <h3>用戶系統</h3>
+      <p>Google 登入、個人配裝紀錄、歷史記錄、科研設定、匯出分享圖。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 管理系統 ═══ -->
+<section class="section">
+  <div class="section-label">03 — Admin</div>
+  <div class="section-title">管理者維護方案</div>
+
+  <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">🔥</div>
+      <h3>Firestore 後台</h3>
+      <p>管理者透過網站 AdminPage 直接讀寫 Firestore，即時更新遊戲資料，無需 CI/CD。</p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">✏️</div>
+      <h3>攻略文章</h3>
+      <p>後台 Markdown 編輯器撰寫，Firebase Storage 上傳截圖。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">📢</div>
+      <h3>公告 / 改版資訊</h3>
+      <p>透過後台直接維護 Firestore 中的公告與改版時間軸資料。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 開發時程 ═══ -->
+<section class="section">
+  <div class="section-label">04 — Roadmap</div>
+  <div class="section-title">開發時程（8 Phases）</div>
+  <div class="section-desc">
+    完整的任務清單與完成狀態詳見
+    <a href="../04_進度表/開發進度表.html" style="color:var(--accent-cyan);">開發進度表</a>。
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-phase">Phase 1 ✅</div>
+      <div class="timeline-title">專案初始化 + 靜態資料</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">Vite 專案</span>
+        <span class="timeline-task">路由架構</span>
+        <span class="timeline-task">JSON 資料</span>
+        <span class="timeline-task">深色主題</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Phase 2 ✅</div>
+      <div class="timeline-title">資料庫頁面 + 管理介面</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">機師圖鑑</span>
+        <span class="timeline-task">機甲圖鑑</span>
+        <span class="timeline-task">武器圖鑑</span>
+        <span class="timeline-task">背包圖鑑</span>
+        <span class="timeline-task">六維雷達圖</span>
+        <span class="timeline-task">模組-機甲關聯</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Phase 3 🚧</div>
+      <div class="timeline-title">模組圖鑑 + 配裝模擬器基礎 + 匯出分享圖 + 元件圖鑑</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">模組圖鑑</span>
+        <span class="timeline-task">配裝選擇 UI</span>
+        <span class="timeline-task">自動篩選</span>
+        <span class="timeline-task">匯出分享圖</span>
+        <span class="timeline-task">元件圖鑑（PLAN-012）</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Phase 4 🚧</div>
+      <div class="timeline-title">Firebase 資料庫建置 + 資料遷移</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">Firebase 專案</span>
+        <span class="timeline-task">enums.ts</span>
+        <span class="timeline-task">Security Rules</span>
+        <span class="timeline-task">JSON → Firestore</span>
+        <span class="timeline-task">前端讀取 Hooks</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Phase 5 ✅</div>
+      <div class="timeline-title">用戶系統</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">Firebase Auth</span>
+        <span class="timeline-task">配裝存檔</span>
+        <span class="timeline-task">科研設定頁</span>
+        <span class="timeline-task">個人中心</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Phase 6</div>
+      <div class="timeline-title">內容系統 + 管理後台擴充</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">攻略頁面</span>
+        <span class="timeline-task">Markdown 編輯器</span>
+        <span class="timeline-task">Firestore 資料編輯後台</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Phase 7 🚧</div>
+      <div class="timeline-title">優化 + 部署</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">手機版優化</span>
+        <span class="timeline-task">效能優化</span>
+        <span class="timeline-task">Firestore 快取</span>
+        <span class="timeline-task">GitHub Pages 部署</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Phase 8</div>
+      <div class="timeline-title">傷害計算系統</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">傷害公式引擎</span>
+        <span class="timeline-task">武器技能判斷</span>
+        <span class="timeline-task">改裝效果計算</span>
+        <span class="timeline-task">A/B 對比</span>
+        <span class="timeline-task">分享圖補填數據</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 下一步 ═══ -->
+<section class="section" style="border-bottom:none;">
+  <div class="section-label">05 — Next Steps</div>
+  <div class="section-title">接下來的工作</div>
+
+  <div class="card-grid">
+    <div class="card yellow">
+      <div class="card-icon">1️⃣</div>
+      <h3>完成 PLAN-012 · 元件圖鑑</h3>
+      <p>建立 /components 頁面，展示觸元件 / 應元件清單，Firestore 資料與型別均已就緒，估計 2–3 天完成。
+        <a href="../05_階段性開發計畫/執行中/PLAN-012_元件圖鑑/計畫書.html" style="color:var(--accent-cyan);">→ PLAN-012 計畫書</a>
+      </p>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">2️⃣</div>
+      <h3>完成 PLAN-001 · 技能 / Buff 架構重構</h3>
+      <p>完成 SkillEffect / SkillCondition / GameBuff 型別設計，為 Phase 4 buffs Collection 初始化鋪路。
+        <a href="../05_階段性開發計畫/執行中/PLAN-001_技能Buff架構重構/計畫書.html" style="color:var(--accent-cyan);">→ PLAN-001 計畫書</a>
+      </p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">3️⃣</div>
+      <h3>完成 PLAN-003 / PLAN-004 剩餘任務</h3>
+      <p>武器資料模型優化（3 項待完成）、技能資料抽離至獨立 Collections，提升資料一致性。
+        <a href="../05_階段性開發計畫/執行中/PLAN-003_武器資料模型優化/進度表.html" style="color:var(--accent-cyan);">→ PLAN-003 進度表</a>
+      </p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">4️⃣</div>
+      <h3>Phase 6 — 內容系統 + 管理後台擴充</h3>
+      <p>攻略頁面（Markdown 渲染）、改版資訊時間軸、管理後台 Firestore 遊戲資料直接編輯。
+        <a href="../04_進度表/開發進度表.html" style="color:var(--accent-cyan);">→ 開發進度表 Phase 6</a>
+      </p>
+    </div>
+    <div class="card red">
+      <div class="card-icon">5️⃣</div>
+      <h3>Phase 8 — 傷害計算系統</h3>
+      <p>傷害公式引擎、武器技能生效判斷、改裝效果計算、A/B 組合對比。依賴 PLAN-001 架構完成。
+        <a href="../02_技術文件/03_遊戲機制/傷害公式.html" style="color:var(--accent-cyan);">→ 傷害公式文件</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 專案規劃書 v2.2 — Firebase Firestore 全面接管 / 型別枚舉化 / 8 Phase 開發時程 / PLAN-012 元件圖鑑<br>
+  <a href="../02_技術文件/index.html" style="color:var(--accent-cyan);text-decoration:none;">技術文件</a>
+  ｜ <a href="../03_頁面規劃/index.html" style="color:var(--accent-cyan);text-decoration:none;">頁面規劃</a>
+  ｜ <a href="../04_進度表/開發進度表.html" style="color:var(--accent-cyan);text-decoration:none;">開發進度表</a>
+  ｜ <a href="../05_階段性開發計畫/index.html" style="color:var(--accent-cyan);text-decoration:none;">階段性開發計畫</a>
+  ｜ <a href="../06_使用說明/index.html" style="color:var(--accent-cyan);text-decoration:none;">使用說明</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-005 專武天賦強化顯示 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">觀察維護中</a>
+    <span>›</span>
+    <span class="current">PLAN-005 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(234,179,8,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge yellow">◆ PLAN-005</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    專武天賦強化顯示<span style="-webkit-text-fill-color:var(--text-secondary);">DiffHighlight · SkillCondition · SkillEffect</span>
+  </h1>
+  <p class="hero-sub">讓專屬武器對天賦的強化效果可視化，並為計算器建立結構化條件與覆蓋型效果的支援</p>
+</header>
+
+<main class="container">
+
+<div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3);border-left:3px solid var(--accent-purple);border-radius:0 10px 10px 0;padding:12px 18px;margin:20px 0;font-size:13px;color:var(--text-secondary);">
+  📐 本計畫為 <a href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html" style="color:var(--accent-purple);text-decoration:none;font-weight:600;">PLAN-019 實體引用與模擬基礎（總綱）</a> 之子計畫，負責 <strong>專武天賦強化（enhancedEffects + DiffHighlight）</strong>。
+</div>
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label yellow">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value yellow">PLAN-005</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-05-20</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">Schema · UI · Admin · Docs</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MEDIUM</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value yellow">開發完成，資料填入中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">關聯文件</div>
+      <div class="meta-value">
+        <a href="../../../02_技術文件/02_資料模型/weapons.html" style="color:var(--accent-cyan);text-decoration:none;">weapons.html</a>
+        ·
+        <a href="../../../02_技術文件/02_資料模型/pilots.html" style="color:var(--accent-cyan);text-decoration:none;">pilots.html</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：專武對天賦的強化效果無法可視化</strong><br>
+    機師天賦頁目前僅顯示「最大強化」前後的差異（DiffHighlight），但許多專屬武器會額外強化特定天賦的效果（如調整係數、解鎖新動作）。
+    目前這些強化效果只能在「強化天賦」區塊讀到武器技能的文字描述，使用者無法直觀比較「有無專武時天賦的差異」。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：WeaponSkill 缺少強化後天賦文字欄位</strong><br>
+    現有 <code>WeaponSkill.enhancesTalentName</code> 只記錄被強化的天賦名稱，沒有對應的「強化後天賦文字」欄位，
+    導致 UI 無法執行 DiffHighlight 差異對比，管理員也缺乏明確的填值目標。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：SkillCondition 缺少 buff 狀態和移動狀態的條件型別</strong><br>
+    部分專武效果需要判斷「持有特定 buff 才生效」（如持有「強化射擊」時）或「本回合未移動才生效」。
+    現有 <code>SkillCondition</code> 缺少 <code>hasBuff</code> 欄位和 <code>notMoved</code> trigger 值，
+    計算器無法程式化處理這些條件，管理員也無法在 Admin 中結構化填入。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題四：SkillEffect 無法表達「覆蓋型」效果</strong><br>
+    部分專武強化會覆蓋天賦的原始數值（如技能倍率 0.15 → 0.2），而非加算。
+    現有 <code>SkillEffect</code> 只有 <code>value</code> 欄位，計算器無法區分加算 vs 覆蓋，
+    若以加算方式處理覆蓋型效果，計算結果將錯誤。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：在 WeaponSkill 新增 enhancedTalentDescription 欄位</strong><br>
+    強化後天賦文字由武器端持有，天賦結構不動。<code>PilotDetailPage</code> 在渲染天賦時，
+    查找是否有對應的 <code>enhancedTalentDescription</code>，若有則顯示「▶ 專武強化」DiffHighlight 區塊（黃色，區別於最大強化的青色）。<br><br>
+    以 <code>descriptionMax</code>（最大強化版本）為比較基準，呈現的是「最大強化之後，再有專武能得到什麼額外差異」。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：提升 usePilotExclusiveWeapon 至頁面層級</strong><br>
+    原本 hook 在 <code>ExclusiveWeaponPanel</code> 內部呼叫，天賦渲染區無法取得武器資料。
+    將 hook 提升至 <code>PilotDetailPage</code>，建立 <code>talentEnhancementMap: Map&lt;talentName, enhancedText&gt;</code>，
+    讓天賦渲染區和武器面板共用同一份資料，避免重複 fetch。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：SkillCondition 新增 hasBuff 欄位；trigger 新增 hasBuff / notMoved / onCrit</strong><br>
+    · <code>hasBuff?: string</code>：配合 <code>trigger: 'hasBuff'</code>，填入需持有的狀態名稱<br>
+    · <code>trigger: 'notMoved'</code>：本回合未移動（無額外參數）<br>
+    · <code>trigger: 'onCrit'</code>：造成暴擊後觸發<br>
+    Admin 的 <code>SkillConditionEditor</code> 同步新增對應的輸入欄位。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：SkillEffect 新增 valueType 欄位</strong><br>
+    <code>valueType?: 'add' | 'override'</code>，預設為 <code>'add'</code>（加算，向後相容）。
+    填入 <code>'override'</code> 時，計算器以此值取代對應天賦效果的原始值，而非加算。
+    Admin 的 <code>SkillEffectItem</code> 同步新增下拉選單。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：遊戲原文不動</strong><br>
+    <code>PilotTalent.description</code> 與 <code>descriptionMax</code> 保持遊戲原文，不允許為了差異對比而修改。
+    <code>WeaponSkill.enhancedTalentDescription</code> 亦填遊戲內讀到的強化後天賦描述原文。
+    Admin 填值指引強調「複製遊戲原文，不得改寫措辭」。
+  </div>
+</section>
+
+<!-- 填值示例 -->
+<section class="section">
+  <div class="section-label yellow">Example</div>
+  <div class="section-title">凱莉專武「昏星繼光」填值示例</div>
+
+  <div class="code-block">
+<span class="cm">// WeaponSkill — 白鶴之眺（carry 生效）</span>
+{
+  name:        <span class="st">"白鶴之眺"</span>,
+  type:        <span class="st">"被動技能"</span>,
+  activation:  <span class="st">"carry"</span>,
+  description: <span class="st">"強化[白鶴]的效果：擁有[強化射擊]時..."</span>,  <span class="cm">// 武器技能遊戲原文，不動</span>
+
+  enhancesTalentName:        <span class="st">"白鶴"</span>,
+  enhancedTalentDescription: <span class="st">"擁有[強化射擊]時，攻擊時技能倍率提升從0.15提升至0.2，..."</span>,  <span class="cm">// 天賦強化後原文</span>
+
+  effects: [
+    {
+      stat:      <span class="st">"skillCoefficient"</span>,
+      value:     <span class="nm">0.2</span>,
+      valueType: <span class="st">"override"</span>,   <span class="cm">// 覆蓋原始值 0.15</span>
+      scope:     <span class="st">"self"</span>,
+      condition: { trigger: <span class="st">"hasBuff"</span>, hasBuff: <span class="st">"強化射擊"</span> }
+    },
+    {
+      stat:      <span class="st">"critRate"</span>,
+      value:     <span class="nm">15</span>,
+      scope:     <span class="st">"self"</span>,
+      condition: { trigger: <span class="st">"notMoved"</span>, weaponKind: <span class="st">"SNIPER"</span> }
+    }
+  ],
+  buffIds: []
+}
+  </div>
+</section>
+
+<!-- 相關文件 -->
+<section class="section">
+  <div class="section-label yellow">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-005 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/02_資料模型/weapons.html">
+      <div class="doc-tag">Data Model</div>
+      <h4>🔫 weapons 資料模型</h4>
+      <p>WeaponSkill.enhancedTalentDescription、SkillCondition 擴充說明</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/02_資料模型/pilots.html">
+      <div class="doc-tag">Data Model</div>
+      <h4>👤 pilots 資料模型</h4>
+      <p>PilotTalent.enhancedEffects 與顯示層分工說明</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-005 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 觀察維護中</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

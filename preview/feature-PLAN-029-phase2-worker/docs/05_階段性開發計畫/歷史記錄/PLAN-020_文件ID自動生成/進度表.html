@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-020 文件 ID 自動生成與撞名防呆 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-020 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(59,130,246,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge blue">◆ PLAN-020</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-blue) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">文件 ID 自動生成與撞名防呆</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-06-08 · 完成於 2026-06-09</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label blue">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">8</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度 · 已歸檔</span>
+      <span style="color:var(--accent-green);">8 / 8</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ 已完成（2026-06-09 歸檔）：</strong>
+    新建 BUFF 時 ID 一律由系統生成（<code>buff_&lt;名稱&gt;</code>），維護者只需輸入名稱與分類，並在建立當下擋下同名 / 同 ID 重複——不論誰來維護、程式水平如何，都不會再產生命名歧異。舊資料維持原狀。
+    收尾另追加兩項防呆：撞名比對<strong>不分大小寫</strong>（擋 <code>buff_x</code>／<code>BUFF_x</code> 大小寫孿生），以及維護者誤打 <code>buff_</code> 前綴時<strong>自動消除</strong>（<code>stripIdPrefix</code>）。
+    純函式以 <code>node --test</code> 單元測試守護（8/8）。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label blue">Phase A</div>
+  <div class="section-title">共用層：名稱 → ID 生成與防呆</div>
+  <div class="section-desc">把「依名稱生成 ID」做成可重用、可測試的純函式與共用 hook 模式，不驚動其他既有 admin。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; slug 工具函式</div>
+      <div class="task-group-meta">src/utils/idSlug.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 makeEntityId(prefix, name) + 單元測試</div>
+        <div class="task-desc">
+          純函式，sanitize 規則對齊 scrape-pilots-v3 的 safeName（保留中英數、去除空白／標點／斜線等不合法字元）。測試涵蓋：一般中文名、含標點、空 slug 邊界（名稱清空後無有效字元）。
+        </div>
+        <div class="task-file">src/utils/idSlug.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; useNewItemCreation 加入 deriveId 模式</div>
+      <div class="task-group-meta">src/pages/user/admin/shared.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">支援「輸入名稱 → 衍生 ID」可選模式（向後相容）</div>
+        <div class="task-desc">
+          新增選用參數 deriveId?: (name) =&gt; string。傳入時：以名稱當輸入、confirmCreate 先生成 ID 再做頁內 in-memory 撞名檢查；未傳時維持現行手打 ID 行為。其他 admin 不受影響。
+        </div>
+        <div class="task-file">src/pages/user/admin/shared.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; NewItemDialog 名稱輸入 + ID 預覽</div>
+      <div class="task-group-meta">src/pages/user/admin/shared.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">對話框支援「輸入名稱、唯讀預覽生成的 ID」</div>
+        <div class="task-desc">
+          deriveId 模式下：輸入框收名稱，下方即時顯示將生成的 ID（唯讀灰字）；空 slug 時提示「名稱無法產生有效 ID」。非 deriveId 模式 UI 不變。
+        </div>
+        <div class="task-file">src/pages/user/admin/shared.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label blue">Phase B</div>
+  <div class="section-title">BuffAdmin 接線</div>
+  <div class="section-desc">把 buffs 後台改成「輸入名稱 + 選分類 → 系統生成 buff_&lt;name&gt;」，並接上撞名 / 撞 ID 防呆。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 對話框改名稱輸入 + 分類選擇</div>
+      <div class="task-group-meta">src/pages/user/admin/BuffAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">採用 deriveId 模式，前綴固定 buff_</div>
+        <div class="task-desc">
+          openCreate 對話框改收「名稱」（+ 可選先選 buffType，沿用 BUFF_TYPE_OPTIONS）；deriveId = (name) =&gt; makeEntityId('buff', name)，即時預覽 buff_&lt;name&gt;。
+        </div>
+        <div class="task-file">src/pages/user/admin/BuffAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; makeDefaultBuff 帶入名稱</div>
+      <div class="task-group-meta">src/pages/user/admin/BuffAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">建立後編輯面板 name（與 buffType）已預填</div>
+        <div class="task-desc">
+          makeDefaultBuff 簽名改為帶入 name / buffType，建立完成開啟編輯面板時名稱已填好，維護者直接補說明與效果即可。
+        </div>
+        <div class="task-file">src/pages/user/admin/BuffAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 撞名 / 撞 ID 防呆</div>
+      <div class="task-group-meta">src/pages/user/admin/BuffAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">擋下並提示既有同名項，不自動加序號</div>
+        <div class="task-desc">
+          沿用 docExists('buffs', id) 伺服器檢查 + 頁內 in-memory 檢查；命中時訊息明確指出「已有同名 BUFF，請改名或編輯既有項目」，引導去編輯而非建孿生。
+        </div>
+        <div class="task-file">src/pages/user/admin/BuffAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label blue">Phase C</div>
+  <div class="section-title">驗證與收尾</div>
+  <div class="section-desc">手動驗證關鍵路徑，並把命名規則寫進資料庫設計文件。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 手動驗證建立流程</div>
+      <div class="task-group-meta">本地後台 (port 5173)</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">驗證生成 / 撞名擋下 / 特殊字元清理 / ID 凍結</div>
+        <div class="task-desc">
+          建立新 BUFF 確認 ID = buff_&lt;name&gt;；建立同名確認被擋；輸入含標點名稱確認 slug 清理正確；建立後改 name 確認 ID 不變。
+        </div>
+        <div class="task-file">npm run dev</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 文件：記錄 ID 命名規則</div>
+      <div class="task-group-meta">docs/02_技術文件/04_Firebase/資料庫設計文件/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">在 buffs 集合文件補上 ID 命名規則說明</div>
+        <div class="task-desc">
+          記錄「新建 ID = buff_&lt;slug(name)&gt;、出生即凍結、舊資料維持原狀」的約定，供未來維護者與其他集合 opt-in 時參考。
+        </div>
+        <div class="task-file">docs/.../資料庫設計文件/buffs.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-020 — <a href="../index.html" style="color:var(--accent-blue);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>觀察維護中計畫 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <span class="current">觀察維護中</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge cyan">◆ Maintenance</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    觀察維護中<span style="-webkit-text-fill-color:var(--text-secondary);">開發收束、長期維護的計畫</span>
+  </h1>
+  <p class="hero-sub">程式開發已告一段落，但仍需長期輸入資料或持續觀察的計畫</p>
+</header>
+
+<main class="container">
+<section class="section">
+  <div class="section-label cyan">Plans</div>
+  <div class="section-title">計畫列表</div>
+  <div class="card-grid">
+    <!--PLANS-START-->
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-023 · 神經驅動能力庫與模擬接入</h3>
+      <p>把神經驅動的「能力節點」（運動戰 / AP優化 / 終結者…）抽成以能力名為唯一鍵的 neuralDriveAbilities 集合，分區排列仍嵌在機師、level 改引用 abilityId。N1 能力庫抽離 + N2 引用層/後台共 9/9 開發任務全數落地；N3 算力晶片系統刻意延後（待傷害模擬器）。supersede PLAN-004 下半場。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">開發收束：2026-06-28 · 維護內容：管理員在 NeuralDriveAdmin 逐筆補填共用能力的 effects[]（單一資料源、填一次全機師受益）</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-023_神經驅動能力庫/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-023_神經驅動能力庫/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-005 · 專武天賦強化顯示</h3>
+      <p>讓專屬武器對天賦的強化效果可視化（DiffHighlight 黃色區塊）；擴充 SkillCondition（hasBuff / notMoved / onCrit）、SkillEffect（valueType override）；WeaponSkill 新增 enhancedTalentDescription 欄位。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">開發收束：2026-06-22 · 維護內容：管理員逐筆填入各專武的天賦強化效果</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-005_專武天賦強化顯示/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-005_專武天賦強化顯示/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-003 · 武器資料模型優化</h3>
+      <p>修正射程欄位結構（range → minRange/maxRange/rangeType）、補上機甲限制、統一類型 / 種類術語（WeaponCategory → WeaponType）、新增 WeaponRarity enum，並釐清專武被動效果填值模式。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">開發收束：2026-06-22 · 維護內容：管理員補填 rarity / mechRestriction / 專武 effects[]</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-003_武器資料模型優化/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-003_武器資料模型優化/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-001 · 技能 / Buff 架構重構</h3>
+      <p>重新設計 PilotSkill、PilotTalent、NeuralDriveLevel、WeaponSkill 的資料結構，新增 SkillEffect、SkillCondition、GameBuff，以支援計算器 Buff 面板與隊伍加成計算。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">開發收束：2026-06-22 · 維護內容：管理員逐步填入各機師技能的實際效果數值（D-2 長期填值）</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-001_技能Buff架構重構/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-001_技能Buff架構重構/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <!--PLANS-END-->
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · 觀察維護中
+</footer>
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

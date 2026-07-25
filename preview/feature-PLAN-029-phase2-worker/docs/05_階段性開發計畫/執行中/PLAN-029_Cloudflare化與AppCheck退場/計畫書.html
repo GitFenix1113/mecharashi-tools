@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-029 Cloudflare 化與 App Check 退場 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-029 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-029</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    Cloudflare 化與 App Check 退場<span style="-webkit-text-fill-color:var(--text-secondary);"> — Edge Proxy · 反爬 · 加速</span>
+  </h1>
+  <p class="hero-sub">用 Cloudflare 一層邊緣基建接手「反白嫖 + 反爬 + 加速」，讓 App Check／reCAPTCHA 退場；公開遊戲資料改走 Worker 代理、Firestore 收成 read:if false，並順帶盡量改善中國讀取（不碰 ICP）。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-029</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-07-11</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">firebase.ts · firestore.rules · GameDataContext · useFirestore · assets.ts · 新增 CF Worker</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value orange">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">自有網域 · Cloudflare 帳號 · Firebase service account</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>一句話：</strong>不「拆牆」（關 App Check enforce）而是「換一整道更好的牆」。前端不再直連 <code>firestore.googleapis.com</code>，改打自有網域上的 Cloudflare Worker；公開資料由 Worker 用 service account 代讀，Firestore 遊戲資料規則收成 <code>read: if false</code>。App Check 那張「可被無頭瀏覽器繞過的票」，換成 Cloudflare 這道「自己站崗、附帶加速與反爬」的邊緣層。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>① App Check 維運成本高、且防護有上限</strong><br>
+    導入 App Check 過程踩過多個坑（reCAPTCHA Enterprise vs classic 不匹配、Firebase Browser API 金鑰白名單漏 App Check API 導致 <code>API_KEY_SERVICE_BLOCKED</code>、正式站 metrics 一度 88% 無效）。即便修好，它本質是「一張票」，執著者能用無頭瀏覽器在本站跑、或抽 token 繞過 —— 防護有天花板，維運心智負擔卻不低。
+  </div>
+  <div class="problem-block">
+    <strong>② 公開資料的白嫖／爬蟲，現有手段擋不住</strong><br>
+    <code>firebaseConfig</code> 公開在 bundle，爬蟲可<strong>直打 Firestore REST API</strong>（<code>/v1/projects/&lt;id&gt;/databases/(default)/documents/pilots</code>），不 clone 前端、不跑 JS。前端 rate limit／行為偵測對它無效；Firestore 安全規則<strong>看不到 IP、不能 rate limit、不能黑名單</strong>（現況遊戲資料全 <code>read: if true</code>）。目前唯一在擋直打 REST 的，就只有 App Check —— 這也是為何不能單純「關掉它」。
+  </div>
+  <div class="problem-block">
+    <strong>③ 中國讀取被「兩道牆」擋住</strong><br>
+    Firebase 於中國自 2014 整體被 GFW 封鎖：第一道牆是資料端點 <code>firestore.googleapis.com</code> 本身，第二道才是 App Check 換票端點 <code>firebaseappcheck.googleapis.com</code>。只放鬆 App Check 救不了中國用戶（第一道牆還在）；且 App Check enforce 無地區豁免、Web SDK 不支援自訂 service URL —— 中國要能讀，唯一的路是換一個中國連得到的端點去代讀。
+  </div>
+
+  <div class="info-block">
+    <strong>共同解：</strong>以上三個問題指向<strong>同一個答案</strong> —— 一層「你自己控管、站在 Firestore 前面」的邊緣代理。它同時：換掉 App Check（①）、成為能看 IP／做反爬的唯一著力點（②）、提供一個非 googleapis 的可達端點（③）。Cloudflare 正是這層基建的現成、免費、成熟選擇。完整評估另見本機評估文件（<code>_local-notes/Cloudflare取代AppCheck_概念與費用評估.html</code> 等，未進版控）。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：整站掛 Cloudflare（自有網域 + proxy）</strong><br>
+    買一個自有網域，DNS 託管到 Cloudflare 並開 proxy（orange cloud）。前端（GitHub Pages origin）與資料 API、圖片都收攏到同一個 CF 網域後面，一次拿到 CDN 加速、DDoS 防護、隱藏 origin IP，以及後續反爬規則的施力點。前端<strong>先維持 GitHub Pages</strong>（CNAME），日後有需要再評估搬 Cloudflare Pages。
+  </div>
+  <div class="decision-block">
+    <strong>決策二：公開遊戲資料走 Worker 代理，Firestore 收成 read:if false</strong><br>
+    前端讀公開資料改打 <code>yourdomain/api/...</code>，由 Cloudflare Worker 用 Firebase service account 憑證代讀 Firestore、回 JSON。確認前端不再直連後，遊戲資料規則從 <code>read: if true</code> 收成 <code>read: if false</code>。<strong>這比 App Check 硬</strong>：App Check 是「驗票、票可能被繞」，<code>read: if false</code> + 只有 Worker（Admin 憑證繞過規則）能讀，是把「直連」這條路真的鎖死。
+  </div>
+
+  <div class="code-block"><span class="cm">// 目標架構：兩條路徑，職責分離</span>
+<span class="cm">// ── 公開遊戲資料（pilots / mechs / modules / ...）</span>
+瀏覽器 → <span class="nm">自有網域</span>(CF proxy) → <span class="fn">Worker</span> /api/data/:collection
+        → <span class="ty">Firestore REST</span> + service account → JSON（邊緣快取）
+        <span class="cm">▲ Firestore 規則：read: if false（只有 Worker 能讀）</span>
+
+<span class="cm">// ── 用戶資料 / 後台寫入（users/* · admin write）</span>
+瀏覽器 → <span class="ty">Firebase SDK</span> 直連 Firestore（<span class="kw">維持不變</span>）
+        <span class="cm">▲ 規則：isOwner / isAdmin（Auth 保護，不經 Worker）</span></div>
+
+  <div class="decision-block">
+    <strong>決策三（關鍵切分）：用戶資料與後台寫入維持前端直連 Firestore + Auth</strong><br>
+    只有<strong>公開遊戲資料</strong>走 Worker。<code>users/*</code>（個人檔案、收藏、build）與後台管理員寫入，牽涉 Firebase Auth 登入態與即時寫入，<strong>維持前端直連 Firestore</strong>，靠既有 <code>isOwner</code> / <code>isAdmin</code> 規則保護。這條路本來就要登入、拿不到別人的資料，白嫖的威脅模型（公開資料被整包搬走）不適用它 —— 所以 <strong>App Check 可以整個拿掉</strong>，不必為用戶資料保留。
+  </div>
+  <div class="decision-block">
+    <strong>決策四：反爬用 Cloudflare 現成能力，不自寫</strong><br>
+    在 CF 邊緣做：<strong>WAF 自訂規則封阿里雲／騰訊雲機房 ASN</strong>（免費檔 5 條規則足夠涵蓋主要雲廠商 ASN，精準打「營利爬蟲最省事的機房直爬」、對真人玩家近乎零誤傷）＋ Bot Fight Mode ＋ 1 條 rate limit（per-IP）。對應使用者「信任玩家、不信任營利站」的切分 —— 真人從住宅／行動網路來，爬蟲從機房來。
+  </div>
+  <div class="decision-block">
+    <strong>決策五：邊緣快取（版本號 key），成本壓到近 $0</strong><br>
+    遊戲資料是靜態的（版本 gate、整包載入、改版才變）。Worker 對每個集合的 JSON 做邊緣／KV 快取，<strong>key 帶上 <code>meta/gameData</code> 的版本號</strong>，跟著既有 <code>bumpDataVersion</code> 機制失效。同一集合一天可能只真讀 Firestore 一次，服務再多訪客都命中快取 → Firestore read 量趨近零、不吃 50k/天 免費額度。
+  </div>
+  <div class="decision-block">
+    <strong>決策六：分階段灰度，每階段可獨立回退</strong><br>
+    先把站搬到 CF 後面（不動資料流）→ 再加 Worker 代理與直連<strong>並存</strong>（可灰度）→ 確認公開資料<strong>全部</strong>走 Worker，才收緊 Firestore 規則、拔 App Check。任何一步都能回退（DNS 改回、前端切回直連、規則改回 <code>read: if true</code> 即時生效）。降低「一次性大改」的風險。
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界一：中國是「盡量改善」，不是「真的很快」</strong><br>
+    標準 Cloudflare（免費／Pro）節點在境外，IP 有時仍被 GFW 干擾降速，中國用戶打 CF 一樣可能不穩。本計畫對中國的價值是「有一個非 googleapis 的可達端點 + origin 就近 HK、盡量改善」，<strong>不是</strong>「買 CF 就解決中國」。要「真的很快」＝中國境內節點＝ Cloudflare China Network（Enterprise）＋ ICP 備案（需中國境內公司實體，含設立成本約 US$18k–93k），<strong>與個人非營利站不成比例，明確排除</strong>。
+  </div>
+  <div class="warning-block">
+    <strong>邊界二：Workers 不能跑 firebase-admin</strong><br>
+    Cloudflare Workers 是 V8 isolate 環境，無法直接用 Node 的 <code>firebase-admin</code>（依賴 Node API／gRPC）。Worker 讀 Firestore 要走 <strong>Firestore REST API + 自己用 service account 簽 JWT 換 access token</strong>（有現成輕量庫，或用 <code>jose</code> 簽）。這是實作上要處理的一步，不是障礙，但需納入 Phase 2 工時。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>自有網域 + Cloudflare proxy（前端 GH Pages 掛上）</li>
+      <li>Cloudflare Worker：公開集合的 Firestore REST 代理 + 邊緣快取（版本號 key）</li>
+      <li>前端 <code>GameDataContext</code>／<code>useFirestore</code> 公開資料改打 <code>/api</code>（保留版本 gate 快取邏輯）</li>
+      <li>Firestore 遊戲資料規則收成 <code>read: if false</code>（保留 <code>users/*</code>、寫入規則）</li>
+      <li>移除前端 App Check + reCAPTCHA 初始化（<code>firebase.ts</code>）</li>
+      <li>CF 反爬：ASN 封鎖（阿里雲／騰訊雲）+ Bot Fight Mode + rate limit</li>
+      <li>（可選／後續）R2 圖片鏡像；中國 origin 就近 HK</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>ICP 備案 / Cloudflare China Network</strong> —— 成本與門檻不成比例，明確排除（中國只做「盡量改善」）</li>
+      <li><strong>用戶資料 / 後台寫入改走 Worker</strong> —— 維持前端直連 Firestore + Auth</li>
+      <li><strong>傷害模擬後端邏輯</strong> —— 屬未來計畫；本計畫只順勢建好「Worker + service account + 部署」骨架供其複用</li>
+      <li><strong>前端整體搬 Cloudflare Pages</strong> —— 先維持 GitHub Pages，非必要不動</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-029 進度表</h4>
+      <p>Phase 0–5 各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-029 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

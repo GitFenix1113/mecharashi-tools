@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-026 召喚單位展示 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-026 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge pink">◆ PLAN-026</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> · 召喚單位展示</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-07-04</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label pink">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">13</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">11</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-pink);">0 / 13</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    擁有召喚單位的機師（如薩普莉婭）在詳情頁多出「召喚單位」分頁，完整展示咕咕的技能、型態、裝備與屬性繼承公式；天賦正文的 [咕咕] 變成可懸停、可點開的實體引用。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label pink">Phase A</div>
+  <div class="section-title">資料層與集合接線</div>
+  <div class="section-desc">建立型別與 summons 集合，讓資料能讀寫、能被引用層解析。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; Summon 系列型別</div>
+      <div class="task-group-meta">src/types/summon.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">建立 summon.ts 並掛進 barrel</div>
+        <div class="task-desc">
+          定義 <code>Summon</code> / <code>SummonForm</code> / <code>SummonSkill</code> / <code>SummonStats</code> / <code>SummonInheritance</code>；複用 <code>DescriptionRefs</code> 與 <code>SkillEffect</code>。types barrel 補 <code>export * from './summon'</code>。
+        </div>
+        <div class="task-file">src/types/summon.ts · src/types/index.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 引用層新增 summon refType</div>
+      <div class="task-group-meta">src/types/common.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">RefType 加 'summon'</div>
+        <div class="task-desc">
+          在 <code>RefType</code> union 加入 <code>'summon'</code>，並在引用解析／ReferenceContext 補上 summons 的查表分支，使 [咕咕] 能解析成實體。
+        </div>
+        <div class="task-file">src/types/common.ts · src/contexts/ReferenceContext.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; CollectionKey 與快取層</div>
+      <div class="task-group-meta">src/contexts/GameDataContext.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">CollectionKey 加 'summons' + switch 分支</div>
+        <div class="task-desc">
+          比照 pilotSkills：<code>CollectionKey</code>、state、fetch switch、patch switch、context value 各補一處；版本走 <code>meta/gameData</code> 的 summons 版號。
+        </div>
+        <div class="task-file">src/contexts/GameDataContext.tsx · src/lib/api/versions.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; Firestore API 模組</div>
+      <div class="task-group-meta">src/lib/api/summons.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">summons 讀寫 API + barrel re-export</div>
+        <div class="task-desc">
+          <code>getSummons</code> / <code>updateSummon</code> / <code>deleteSummon</code>（複用 firestoreCore 的 fetchCollection / stripUndefined），firestoreApi barrel 補一行 re-export。
+        </div>
+        <div class="task-file">src/lib/api/summons.ts · src/lib/firestoreApi.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; 同步技術文件</div>
+      <div class="task-group-meta">docs/02_技術文件/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">資料模型頁 + Firebase 集合文件</div>
+        <div class="task-desc">
+          依 CLAUDE.md 規則 2：新增 summons 資料模型 HTML 頁與 Firebase 集合設計文件；enums 若新增召喚型態相關值一併補。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/ · 04_Firebase/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label pink">Phase B</div>
+  <div class="section-title">前台展示</div>
+  <div class="section-desc">機師頁條件式分頁，版面複用現有技能卡／專武切換器／武器浮窗。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 條件式第 4 分頁</div>
+      <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">「召喚單位」tab（有召喚才顯示）</div>
+        <div class="task-desc">
+          <code>ensureLoaded(['summons'])</code>，用 pilotId 撈該機師的召喚；tab 陣列條件式加入「召喚單位」，比照專武面板的存在性判斷。
+        </div>
+        <div class="task-file">src/pages/pilots/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 繼承公式列 + 型態切換</div>
+      <div class="task-group-meta">PilotDetailPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">屬性繼承（只顯示公式）與型態切換器</div>
+        <div class="task-desc">
+          繼承列顯示「來源 [機兵] · 耐久 75% · 其餘 100%」（不求絕對值）；型態切換複用專武「階段 I / II」切換器樣式。
+        </div>
+        <div class="task-file">src/pages/pilots/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 技能組 + 裝備</div>
+      <div class="task-group-meta">PilotDetailPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">複用技能卡與武器浮窗</div>
+        <div class="task-desc">
+          召喚技能沿用「技能」分頁 skillrow 排版；裝備引用 weapons 集合，複用 <code>WeaponDetailContent</code> 懸停 / BottomSheet。
+        </div>
+        <div class="task-file">src/pages/pilots/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; [咕咕] 引用解析接線</div>
+      <div class="task-group-meta">src/components/RefText.tsx · ReferenceContext</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">天賦內 [咕咕] → 召喚懸停浮窗</div>
+        <div class="task-desc">
+          summon refType 接進 RefText / ReferenceContext 的懸停浮窗與手機 BottomSheet，顯示召喚迷你卡（名稱＋技能摘要），可點跳分頁。
+        </div>
+        <div class="task-file">src/components/RefText.tsx · src/contexts/ReferenceContext.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label pink">Phase C</div>
+  <div class="section-title">後台編輯器</div>
+  <div class="section-desc">召喚無外部資料源，需後台手動 CRUD（managedBy:'manual'）。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; SummonAdmin 編輯器</div>
+      <div class="task-group-meta">src/pages/user/admin/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">召喚單位 CRUD 面板</div>
+        <div class="task-desc">
+          新增 / 編輯 / 刪除召喚；表單含基本資訊、繼承比例、型態列表、技能列表、裝備選擇；存檔設 <code>managedBy:'manual'</code> 並 <code>bumpDataVersion('summons')</code>。
+        </div>
+        <div class="task-file">src/pages/user/admin/SummonAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 機師編輯面板連結召喚</div>
+      <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機師 ↔ 召喚 綁定入口</div>
+        <div class="task-desc">
+          在機師編輯面板提供「此機師的召喚單位」入口，可建立 / 連結 summon 並回填 grantedByTalent；純導覽，實際編輯走 SummonAdmin。
+        </div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label pink">Phase D</div>
+  <div class="section-title">資料補建（長期維護尾巴）</div>
+  <div class="section-desc">WIKI 無資料，全人工輸入。目前僅兩個機師有召喚單位。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 咕咕（薩普莉婭）</div>
+      <div class="task-group-meta">Firestore · summons</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補建咕咕完整資料</div>
+        <div class="task-desc">
+          從遊戲內截圖人工輸入：技能組、型態、裝備、繼承比例（耐久 75% / 其餘 100%）、grantedByTalent = 共存理論。
+        </div>
+        <div class="task-file">後台 SummonAdmin</div>
+      </div>
+      <div class="task-assignee">資料維護</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 另一機師召喚單位</div>
+      <div class="task-group-meta">Firestore · summons</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補建第二個召喚單位</div>
+        <div class="task-desc">
+          確認遊戲內第二個擁有召喚單位的機師，人工輸入其召喚的技能 / 型態 / 裝備 / 繼承規則。
+        </div>
+        <div class="task-file">後台 SummonAdmin</div>
+      </div>
+      <div class="task-assignee">資料維護</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-026 — <a href="../index.html" style="color:var(--accent-pink);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
