@@ -102,6 +102,7 @@
 
 ### 🐛 修復
 
+- 未匹配網址改顯示 404 引導頁，並修正 favicon 路徑 (`d5d7569`)
 - 機師天賦「專武強化」區塊修正部分實體引用未渲染浮窗 (`b905ec8`)
 - 修正首頁副標題英文拼字 Milhama → Milkhama (`ee9d633`)
 - 申請持久化儲存，降低使用者莫名被登出的機率 (`a8d37cc`)
@@ -201,6 +202,7 @@
 
 ### 🔧 維護
 
+- PLAN-029 修復本機與 preview 的公開資料來源 (`78a652b`)
 - PLAN-029 Phase 3-4 路線 A — Worker 內建反爬守門 (`46058f2`)
 - PLAN-029 Phase 3-3 拔除前端 App Check + reCAPTCHA (`90cea0c`)
 - PLAN-029 Phase 3-2 完成 — firestore.rules 上線 + 鎖生效驗證 (`4e0fea6`)
