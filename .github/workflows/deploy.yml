@@ -48,11 +48,51 @@ jobs:
           # 回退：改回 https://mecharashi-worker.mecharashi.workers.dev 再 push 即可。
           VITE_WORKER_API_BASE: same-origin
 
+      # ── 清除 gh-pages 上的孤兒 docs ────────────────────────────────────────
+      # 下方 deploy 用 keep_files: true（為了保住 preview/ 的 PR 預覽），代價是「只疊加、
+      # 不刪除」——被刪掉或搬移過的檔案會永遠留在線上。實測曾累積 1649 個孤兒，其中 36 個
+      # 是計畫搬移後殘留的舊 進度表/計畫書：拿著舊連結的人會看到一份「還在執行中」的過時文件。
+      #
+      # docs/ 沒有雜湊檔名，砍掉重建完全安全（不像 assets/*.js 可能被開著的舊頁面請求），
+      # 故只針對它做「先刪除、再由 deploy 重新寫入」。preview/ 與 assets/ 完全不動。
+      # 只刪除「線上有、但本次 build 沒有」的孤兒檔案，不動其他任何東西：
+      # 既有檔案原地不變（沒有先刪後建的空窗），且多數部署不會有孤兒 → 完全不推額外的 commit。
+      - name: Prune stale docs on gh-pages
+        run: |
+          set -euo pipefail
+          if ! git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            echo "gh-pages 尚未存在，略過（首次部署）"; exit 0
+          fi
+          git fetch --depth=1 origin gh-pages
+          git worktree add /tmp/ghp FETCH_HEAD
+          if [ ! -d /tmp/ghp/docs ]; then
+            echo "gh-pages 上沒有 docs/，無需清理"; exit 0
+          fi
+          # LC_ALL=C 讓兩邊排序規則一致（路徑含中文，locale 不同會導致 comm 誤判）
+          ( cd /tmp/ghp && find docs -type f | LC_ALL=C sort ) > /tmp/live.txt
+          ( cd dist      && find docs -type f | LC_ALL=C sort ) > /tmp/built.txt
+          comm -23 /tmp/live.txt /tmp/built.txt > /tmp/orphans.txt
+          count=$(wc -l < /tmp/orphans.txt)
+          if [ "$count" -eq 0 ]; then
+            echo "✅ 無孤兒檔案，略過"; exit 0
+          fi
+          echo "發現 $count 個孤兒（線上有、本次 build 沒有），將移除："
+          head -20 /tmp/orphans.txt
+          cd /tmp/ghp
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          xargs -d '\n' -a /tmp/orphans.txt git rm --quiet --
+          git commit -q -m "chore: 移除 gh-pages 上 $count 個已不存在的 docs 檔案"
+          git push -q origin HEAD:gh-pages
+          echo "✅ 已清除；接著 deploy 步驟照常發布本次 build"
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+          # 刻意保持 true：preview/ 下的 PR 預覽、以及舊的 assets/*.js（開著舊頁面的使用者
+          # 可能還會請求它們）都要留著。docs/ 的孤兒問題已由上一步處理。
           keep_files: true
           # PLAN-029 Phase 1：自訂網域。每次部署把 CNAME 寫進 gh-pages，GitHub 靠它認 mecharashi.wiki。
           cname: mecharashi.wiki
