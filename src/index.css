@@ -1,5 +1,45 @@
 @import "tailwindcss";
 
+/* ── 自託管字體（PLAN-029 中國體驗優化）──────────────────────────────
+   原本用 <link> 載 fonts.googleapis.com，但那是 render-blocking 且在中國被封鎖：
+   中國訪客得等連線逾時才開始渲染（白畫面數秒），而且等完仍拿不到字體。
+   改為自託管，全部由自有網域（Cloudflare 邊緣）供應 → 公開頁對 Google 零依賴。
+
+   · 只取 latin / latin-ext 子集：Orbitron 與 JetBrains Mono 僅用於英數字與代碼。
+   · Google Fonts 對這兩者實際回傳「可變字體」——各字重是同一個檔案，故去重成
+     單檔 + font-weight 範圍，三檔共 56KB（原本 7 檔 121KB）。
+   · unicode-range 讓瀏覽器只在真的用到該範圍字元時才下載。
+   · 中文本體字（Noto Sans TC）刻意不自託管：CJK 完整字重動輒數 MB，改走系統
+     字體堆疊（見 body），視覺差異極小卻替所有訪客省下大量下載。 */
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/orbitron-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+    U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+    U+2C60-2C7F, U+A720-A7FF;
+}
+
 @theme {
   --color-bg-dark: #0a0c10;
   --color-bg-card: rgb(18 21 28 / 0.65);
@@ -29,7 +69,10 @@ body {
   background-repeat: no-repeat;
   background-position: center center;
   color: var(--color-text-primary);
-  font-family: 'Noto Sans TC', sans-serif;
+  /* 中文本體走系統字體堆疊（不再下載 Noto Sans TC webfont，見檔首說明）。
+     'Noto Sans TC' 仍留在最前：Android／已安裝該字體的裝置會用本機版本，零下載。 */
+  font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', 'Hiragino Sans TC',
+    'Source Han Sans TC', system-ui, -apple-system, sans-serif;
   line-height: 1.8;
   min-height: 100vh;
   margin: 0;

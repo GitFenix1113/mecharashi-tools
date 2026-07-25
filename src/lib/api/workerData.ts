@@ -32,9 +32,16 @@ const BASE = RAW_BASE === 'same-origin' ? '' : RAW_BASE.replace(/\/+$/, '')
  */
 export const WORKER_ENABLED = !!RAW_BASE && import.meta.env.VITE_USE_WORKER !== 'false'
 
+/**
+ * 組出 Worker endpoint 的完整網址。同源模式回傳相對路徑、絕對模式回傳完整 URL。
+ * 對外導出供連線診斷頁使用——診斷若自己寫死 `/api/…`，在本機與 preview（皆為跨源設定）
+ * 會打到站台本身而不是 Worker，量到的數字毫無意義。
+ */
+export const workerUrl = (path: string): string => `${BASE}${path}`
+
 // 刻意只送簡單請求（不帶自訂 header）→ 保證是 CORS「simple request」、免 preflight。
 async function fetchJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`)
+  const res = await fetch(workerUrl(path))
   if (!res.ok) throw new Error(`Worker ${path} 失敗 ${res.status}`)
   return res.json() as Promise<T>
 }

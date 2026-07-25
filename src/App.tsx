@@ -30,6 +30,7 @@ const AdminHistoryPage         = lazy(() => import('./pages/admin/AdminHistoryPa
 const RainbowMechPlannerPage   = lazy(() => import('./pages/guides/tools/RainbowMechPlannerPage'))
 const ComponentDropsPage       = lazy(() => import('./pages/guides/tools/ComponentDropsPage'))
 const StorageDebugPage         = lazy(() => import('./pages/debug/StorageDebugPage'))
+const ConnectivityPage         = lazy(() => import('./pages/debug/ConnectivityPage'))
 
 function App() {
   return (
@@ -58,6 +59,8 @@ function App() {
             <Route path="tools/rainbow-planner" element={<Suspense fallback={null}><RainbowMechPlannerPage /></Suspense>} />
             <Route path="guides/component-drops" element={<Suspense fallback={null}><ComponentDropsPage /></Suspense>} />
             <Route path="debug/storage" element={<Suspense fallback={null}><StorageDebugPage /></Suspense>} />
+            {/* 頂層短路徑（非 /debug/ 之下）：要發給中國測試者，網址越好念好打越好 */}
+            <Route path="connectivity" element={<Suspense fallback={null}><ConnectivityPage /></Suspense>} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="admin" element={<AdminPage />} />
             <Route
