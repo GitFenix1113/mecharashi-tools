@@ -201,6 +201,8 @@
 
 ### 🔧 維護
 
+- PLAN-029 Phase 3-2 規則備妥 read:if isAdmin()（未部署）+ 進度表 (`b0c18aa`)
+- PLAN-029 Phase 3-1 消除前台公開集合直讀（全數改走 Worker） (`84d5efe`)
 - PLAN-029 進度表反映 Worker 部署上線 + 生產 Secret 接線 (`bfe1930`)
 - PLAN-029 Worker parseServiceAccount 容錯 UTF-8 BOM (`cb7b81d`)
 - PLAN-029 Phase 2-4 逐集合驗證通過（進度表更新，Phase 2 完成） (`4363a48`)
