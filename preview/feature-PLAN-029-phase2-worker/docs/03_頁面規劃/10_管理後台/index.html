@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理後台頁面規劃 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../index.html">頁面規劃</a>
+    <span>›</span>
+    <span class="current">管理後台</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ Page Design</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">管理後台<span style="-webkit-text-fill-color:var(--text-secondary);">ADMIN PAGE · /admin</span></h1>
+  <p class="hero-sub">Firestore 遊戲資料直接編輯、攻略管理、公告管理（管理員限定）</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label green">頁面規格</div>
+  <div class="section-title">管理後台 /admin</div>
+
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/admin</code></td></tr>
+    <tr><th>開發階段</th><td>持續擴充中（已涵蓋 12 個資料分頁 + 版本管理子頁）</td></tr>
+    <tr><th>登入需求</th><td>需 Firebase Auth 且具 <code>ADMIN</code> / <code>OWNER</code> 角色；版本管理子頁由 <code>AdminRoute</code> gate。寫入受 Firestore Security Rules + App Check 保護</td></tr>
+    <tr><th>資料來源</th><td>Firestore 直接讀寫，經 <code>GameDataContext</code> 版本快取載入；存檔後 <code>bumpDataVersion(key)</code> 使所有 client 該集合快取失效，編輯者自身以 patch 就地同步免重讀</td></tr>
+  </table>
+
+  <div class="note-block" style="margin-top:16px;">
+    <strong>✅ 目前已實作（Firestore 模式）</strong>
+    載入 Firestore modules / mechs 集合 → 在頁面內編輯 → 儲存後直接寫回 Firestore，無需匯出 JSON 或 Git commit。<br><br>
+    <strong>模組等級編輯（levels）：</strong>
+    模組編輯面板內新增「模組等級 levels」區塊，可新增 / 移除各等級，並對每個等級個別設定
+    <code>level</code>、<code>description</code> 及全部數值欄位（基礎屬性 + 武器專屬增傷）。
+    各等級預設收合顯示，點擊展開編輯，第一個等級預設展開。<br><br>
+    <strong>Enum 防呆（v1.8 全欄位）：</strong>
+    <table style="font-size:12px;margin-top:8px;border-collapse:collapse;width:100%;">
+      <tr style="background:rgba(255,255,255,0.05)"><th style="text-align:left;padding:4px 8px;border:1px solid #333">欄位</th><th style="text-align:left;padding:4px 8px;border:1px solid #333">使用列舉</th><th style="text-align:left;padding:4px 8px;border:1px solid #333">有效值</th></tr>
+      <tr><td style="padding:4px 8px;border:1px solid #333">slot</td><td style="padding:4px 8px;border:1px solid #333"><code>ModuleSlot</code></td><td style="padding:4px 8px;border:1px solid #333">機甲特性模組 / 機甲8級模組 / 通用模組 / 機甲副模組 / 機甲專屬模組</td></tr>
+      <tr><td style="padding:4px 8px;border:1px solid #333">rarity</td><td style="padding:4px 8px;border:1px solid #333"><code>ModuleRarity</code></td><td style="padding:4px 8px;border:1px solid #333">S / A</td></tr>
+      <tr><td style="padding:4px 8px;border:1px solid #333">boundPart</td><td style="padding:4px 8px;border:1px solid #333"><code>MechPartPosition[]</code>（v2.2 複選）</td><td style="padding:4px 8px;border:1px solid #333">torso / leftArm / rightArm / legs</td></tr>
+      <tr><td style="padding:4px 8px;border:1px solid #333">source</td><td style="padding:4px 8px;border:1px solid #333"><code>ModuleSource[]</code>（v2.1 複選）</td><td style="padding:4px 8px;border:1px solid #333">商店 / 拆機甲 / 機甲不可拆 / 未知</td></tr>
+      <tr><td style="padding:4px 8px;border:1px solid #333">managedBy</td><td style="padding:4px 8px;border:1px solid #333"><code>ModuleDataSource</code></td><td style="padding:4px 8px;border:1px solid #333">auto / manual</td></tr>
+    </table>
+  </div>
+
+  <div class="note-block" style="margin-top:16px;">
+    <strong>⚠️ Phase 6 安全性目標</strong>
+    管理後台路由需驗證 Firebase Auth 的 admin custom claim，未授權用戶自動重導到首頁。
+    Firestore Security Rules 亦需同步設定寫入權限，禁止非管理員寫入遊戲資料 Collections。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label green">版面設計</div>
+  <div class="section-title">功能模組</div>
+
+  <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">🗄️</div>
+      <h3>遊戲資料管理</h3>
+      <p>各 Collection（pilots/mechs/weapons 等）的列表 + 新增/編輯/刪除。Firestore 直接讀寫，無需 CI/CD。</p>
+      <p><strong>目前：</strong>模組管理（modules.json）已實作，含搜尋/篩選/編輯/匯出 JSON。品質與部位欄位由 Enum 驅動。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">🧩</div>
+      <h3>模組-機甲關聯編輯</h3>
+      <p>（Phase 2 提前）管理副模組與機甲的關聯關係（module4Id / module8Id / moduleFixedIds）。</p>
+      <p><strong>目前：</strong>機甲管理（Firestore mechs）已實作，含模組 ID 下拉選單、未對應模組警示（⚠ 紅框提示）。</p>
+      <p><strong>模組等級（levels）：</strong>模組編輯面板支援各 LV 能力值的新增、移除與編輯，涵蓋基礎屬性及武器專屬增傷。</p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">✏️</div>
+      <h3>攻略文章管理</h3>
+      <p>Markdown 編輯器撰寫攻略，Firebase Storage 上傳截圖，Firestore 儲存文章。</p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">📢</div>
+      <h3>公告 / 改版資訊</h3>
+      <p>透過後台或 Firestore 直接管理公告欄與改版時間軸內容。</p>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">👥</div>
+      <h3>用戶管理</h3>
+      <p>查看用戶列表，授予/撤銷管理員 custom claim。（只讀為主）</p>
+    </div>
+  </div>
+
+  <div class="wireframe" style="margin-top:20px;">
+    <div class="wf-icon">🛠️</div>
+    <p>管理後台版面草圖待規劃<br>左側功能導覽列 + 右側操作區域</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label green">分頁總覽</div>
+  <div class="section-title">管理分頁（TAB_CONFIG · 12 分頁 + 版本管理）</div>
+  <div class="section-desc">AdminPage 以 tab 切換各集合的列表 / 編輯。多數分頁切入即整包預載入主資料、走前端片段搜尋（<code>useClientPaged</code>）；backpacks / components 資料量大，仍走伺服器端分頁查詢（<code>useServerPaged</code>，沿用搜尋閘門）。</div>
+
+  <table class="spec-table">
+    <tr><th>分頁（tab）</th><th>集合 / 路由</th><th>說明</th></tr>
+    <tr><td><code>modules</code> 模組</td><td>modules（+mechs）</td><td>含各等級 levels 編輯、條件效果、enum 防呆</td></tr>
+    <tr><td><code>mechs</code> 機甲</td><td>mechs（+modules）</td><td>部件數值、模組 ID 下拉（未對應警示）</td></tr>
+    <tr><td><code>pilots</code> 機師</td><td>pilots</td><td>🆕 新增機師（PLAN-025，<code>pilot_&lt;名&gt;</code> ID + manual 防覆寫）/ 六維 / AP / 個人資料自訂欄位（additionalInfo）/ 天賦算力改寫（ndVariants）/ 神經驅動分區編輯器（分區選單 α·β·γ1·γ2、插槽晶片、各級門檻連結能力庫）</td></tr>
+    <tr><td><code>weapons</code> 武器</td><td>weapons（+pilots）</td><td>武器屬性、技能（含 descriptionRefs RefPicker）、改裝</td></tr>
+    <tr><td><code>components</code> 元件</td><td>components（伺服器分頁）</td><td>觸 / 應元件編輯</td></tr>
+    <tr><td><code>backpacks</code> 背包</td><td>backpacks（伺服器分頁）</td><td>背包主技能與裝配限制</td></tr>
+    <tr><td><code>glossary</code> 遊戲術語</td><td>glossaryTerms</td><td>🆕 詞條庫（PLAN-019-C）；refType:'term' 引用資料源</td></tr>
+    <tr><td><code>skills</code> 機師技能</td><td>pilotSkills</td><td>🆕 技能庫（PLAN-004）；共用技能改一次全機師生效；<code>unitType</code> 可標「職業單元＝初始被動能力」（PLAN-025）</td></tr>
+    <tr><td><code>neuralDrive</code> 神經驅動</td><td>neuralDriveAbilities（+pilots）</td><td>🆕 神經驅動能力庫（PLAN-023）；顯示「被幾位機師引用」反查</td></tr>
+    <tr><td><code>buffs</code> BUFF</td><td>buffs</td><td>🆕 BUFF 管理（PLAN-019-F）；階梯等級 levels、termRef、RefPicker 標 [xxx]（PLAN-024）</td></tr>
+    <tr><td><code>users</code> 用戶</td><td>users（伺服器分頁）</td><td>用戶列表、角色（ADMIN/OWNER）授予</td></tr>
+    <tr><td><code>grayops</code> 灰燼行動</td><td>grayOpsRoster</td><td>灰燼行動名簿（公司 → 機甲列表）</td></tr>
+    <tr><td>版本管理</td><td>/admin/versions · /admin/versions/:versionId</td><td>🆕 PatchVersion 時間線編輯（AdminRoute gate，lazy 載入）</td></tr>
+  </table>
+
+  <div class="note-block" style="margin-top:16px;">
+    <strong>🔗 數值引用層編輯（PLAN-019 / 022 / 024）</strong>
+    weapons / modules / buffs / glossary / skills / neuralDrive 等分頁的描述欄位下方掛 <code>RefPicker</code>，可標註 <code>[xxx]</code> 實體引用與 <code>&lt;refId.attr&gt;</code> 數值語法糖（編輯期 $n / %n 即時編譯、永不落地）；effects 共用技能效果編輯器。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label green">相關文件</div>
+  <div class="section-title">技術參考</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="../../02_技術文件/04_Firebase/Firebase資料庫設計文件.html">
+      <div class="doc-tag">Firebase</div>
+      <h4>🔥 Firebase 資料庫設計</h4>
+      <p>Security Rules 設計，管理員寫入權限規則</p>
+    </a>
+    <a class="doc-item" href="../../02_技術文件/01_架構設計/系統架構.html">
+      <div class="doc-tag">Architecture</div>
+      <h4>🏗️ 系統架構</h4>
+      <p>管理員資料流：AdminPage → Firestore 直接讀寫</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 頁面規劃 · 管理後台 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 頁面規劃總覽</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

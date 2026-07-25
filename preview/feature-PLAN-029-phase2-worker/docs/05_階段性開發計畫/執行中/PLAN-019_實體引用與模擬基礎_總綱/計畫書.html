@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-019 實體引用與模擬基礎（總綱） — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 24px 0; }
+.meta-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+.meta-label { font-size: 10px; font-family: 'Orbitron', sans-serif; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+.meta-value { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+
+.problem-block { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.25); border-left: 3px solid var(--accent-red); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
+.decision-block { background: rgba(168,85,247,0.06); border: 1px solid rgba(168,85,247,0.2); border-left: 3px solid var(--accent-purple); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
+.info-block { background: rgba(6,182,212,0.06); border: 1px solid rgba(6,182,212,0.2); border-left: 3px solid var(--accent-cyan); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
+.green-block { background: rgba(34,197,94,0.06); border: 1px solid rgba(34,197,94,0.2); border-left: 3px solid var(--accent-green); border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0; font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
+
+.code-block { background: #0d1117; border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.9; overflow-x: auto; color: #e6edf3; }
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+
+.layer-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+.layer-table th { background: rgba(168,85,247,0.08); color: var(--accent-purple); font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 2px; padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
+.layer-table td { padding: 10px 14px; border: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
+.layer-table tr:hover td { background: var(--bg-card-hover); }
+.layer-table td:first-child { font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.badge-green  { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+.badge-yellow { background: rgba(234,179,8,0.15); color: var(--accent-yellow); }
+.badge-red    { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+.badge-purple { background: rgba(168,85,247,0.15); color: var(--accent-purple); }
+.badge-cyan   { background: rgba(6,182,212,0.15); color: var(--accent-cyan); }
+
+.flow { background: #0a0c10; border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.9; color: #8b949e; overflow-x: auto; }
+.flow .hl { color: var(--accent-green); }
+.flow .hl2 { color: var(--accent-purple); }
+.flow .hl3 { color: var(--accent-cyan); }
+
+.arch-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+.arch-box h4 { font-size: 13px; color: var(--accent-purple); margin-bottom: 8px; font-family: 'Orbitron', sans-serif; letter-spacing: 1px; }
+.arch-box ul { padding-left: 16px; font-size: 13px; color: var(--text-secondary); line-height: 2; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-019 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.14) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-019 · 總綱 MASTER</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    實體引用與模擬基礎<span style="-webkit-text-fill-color:var(--text-secondary);">EntityRef · Buff Graph · BOSS / Stage</span>
+  </h1>
+  <p class="hero-sub">把「描述文字中對其他實體的引用」一般化為可解析、可模擬、可後台維護的關聯層；統合 PLAN-001/003/004/005 為子計畫，並擴及 BUFF/形態 與 BOSS/關卡資料模型。</p>
+</header>
+
+<main class="container">
+
+<!-- ── 計畫概要 ── -->
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item"><div class="meta-label">計畫編號</div><div class="meta-value purple">PLAN-019（總綱）</div></div>
+    <div class="meta-item"><div class="meta-label">建立日期</div><div class="meta-value">2026-06-01</div></div>
+    <div class="meta-item"><div class="meta-label">影響範圍</div><div class="meta-value purple">Schema · Buff · BOSS/Stage · Admin · Docs</div></div>
+    <div class="meta-item"><div class="meta-label">優先級</div><div class="meta-value orange">HIGH</div></div>
+    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value yellow">Layer 1 型別已落地 · 子計畫待拆</div></div>
+    <div class="meta-item"><div class="meta-label">定位</div><div class="meta-value cyan">Master Plan（大綱）</div></div>
+  </div>
+
+  <div class="info-block">
+    <strong>一句話：</strong>一個實體的描述文字常引用其他實體（如天賦「悖想先驅」內含
+    <code>[虛粒子形態]</code>、<code>[激發能]</code>、<code>[形態增益]</code>、<code>[粒子爆發]</code>、<code>[海莉絲]</code>），
+    但現行 <code>description</code> 都是純字串，系統看不見這些引用。本總綱把引用變成<strong>型別化、可解析、可模擬</strong>的資料，
+    並以此為大綱拆出子計畫。
+  </div>
+</section>
+
+<!-- ── 問題背景 ── -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景 — PLAN-001/003/004/005 的同一個問題</div>
+
+  <div class="problem-block">
+    <strong>已解決的一半（數值）：</strong>PLAN-001 已用 <code>SkillEffect[]</code>（stat/value/scope/condition）、
+    <code>GameBuff</code>（buffs 集合）、<code>buffIds[]</code> 表達技能的「可計算數值」。PLAN-003/005 補上武器側與專武強化。
+  </div>
+
+  <div class="problem-block">
+    <strong>未解決的一半（引用關聯）：</strong>description 內 <code>[xxx]</code> 這類跨實體連結被困在字串裡。
+    系統無法把它變成可點擊、無法驗證引用是否存在、無法在模擬器中把它當成語義邊處理。
+    PLAN-010 Phase B 其實發明了 <code>EntityReference</code> 解法（entityType+entityId、批次預載、點擊→Drawer），
+    <strong>但只用在攻略文章</strong>。本總綱把它一般化到所有 description。
+  </div>
+
+  <div class="problem-block">
+    <strong>更深一層（使用者澄清）：</strong>引用不只是「顯示連結」。天賦/技能延伸的特殊效果，
+    可能是<u>既有屬性</u>（增傷/加子彈/加暴傷）、可能是<u>特殊 BUFF</u>、也可能是<u>機師專屬的型態切換</u>。
+    未來傷害模擬最合理的做法，是讓使用者設定的<strong>模組/機甲/機師去觸發特定 BUFF</strong>，
+    才不會發散出「不可能存在」的組合。<strong>因此抽象化比單純顯示更重要。</strong>
+  </div>
+</section>
+
+<!-- ── 核心架構 ── -->
+<section class="section">
+  <div class="section-label purple">Architecture</div>
+  <div class="section-title">核心架構：四層抽象</div>
+
+  <!-- Layer 1 -->
+  <div class="section-title" style="font-size:17px;margin-top:24px;">Layer 1 — 統一型別化引用 EntityRef（輕量、表單友善、可升級）</div>
+  <div class="decision-block">
+    不把 description 改成節點樹（採「先表單」路線）。<code>description: string</code> 維持遊戲原文唯一真相
+    （<code>[xxx]</code> 標記原樣保留，符合 PLAN-005「原文不動」），<strong>外掛一份解析側錄</strong> <code>descriptionRefs</code>。
+    顯示層寫一個 <code>&lt;RefText&gt;</code> tokenizes <code>[xxx]</code> → 查表命中渲染可點擊（點擊開 Drawer，複用 PLAN-010）；
+    未命中原樣顯示，優雅降級。日後換 TipTap 時，節點 attrs 即是 <code>EntityRef</code>，資料零浪費。
+  </div>
+  <div class="code-block">
+<span class="cm">// src/types/index.ts —— 已落地</span>
+<span class="kw">export type</span> <span class="ty">RefType</span> =
+  | <span class="st">'buff'</span> | <span class="st">'skill'</span> | <span class="st">'pilot'</span> | <span class="st">'mech'</span> | <span class="st">'weapon'</span>
+  | <span class="st">'module'</span> | <span class="st">'backpack'</span> | <span class="st">'component'</span> | <span class="st">'stat'</span> | <span class="st">'term'</span>
+
+<span class="kw">export interface</span> <span class="ty">EntityRef</span> {
+  refType: <span class="ty">RefType</span>
+  refId:   <span class="ty">string</span>     <span class="cm">// buffs/{id}、pilots/{id}、glossaryTerms/{id}，或 stat key 'dmg'</span>
+  label?:  <span class="ty">string</span>     <span class="cm">// 顯示文字；預設取目標 name</span>
+}
+
+<span class="cm">// description 內 [xxx] → 對應實體。key = 括號內文字，如 "虛粒子形態"</span>
+<span class="kw">export type</span> <span class="ty">DescriptionRefs</span> = <span class="ty">Record</span>&lt;<span class="ty">string</span>, <span class="ty">EntityRef</span>&gt;
+  </div>
+  <div class="info-block">
+    <strong>為何「混合」而非單一詞條庫或純型別化：</strong>
+    增傷/加子彈/加暴傷 = <code>refType:'stat'</code>（既有屬性 key）；特殊增益/狀態 = <code>'buff'</code>；
+    <code>[海莉絲]</code> = <code>'pilot'</code>/<code>'mech'</code>；<code>[固定傷害]</code> 這種無數值歸宿的機制關鍵字 = <code>'term'</code>（glossaryTerms）。
+    一個 resolver 依 <code>refType</code> 分派；glossaryTerms 只收「無專屬集合可放」的關鍵字。
+  </div>
+
+  <!-- Layer 2 -->
+  <div class="section-title" style="font-size:17px;margin-top:32px;">Layer 2 — BUFF / 形態 的模擬可達性圖（抽象優先）</div>
+  <div class="decision-block">
+    <strong>形態（型態切換）= <code>GameBuff</code></strong> with <code>buffType:'state'</code> + <code>mutexGroup:'&lt;pilotId&gt;_forms'</code>；
+    形態各自帶 <code>effects[]</code>（形態增益），同群一次只能存在一個（虛粒子形態 ⟷ 實粒子形態）。<br><br>
+    <strong>觸發來源圖 = 沿用既有 <code>buffIds[]</code> 作為唯一真相的「賦予邊」</strong>：凡會產生 BUFF 的
+    技能/天賦/神經驅動/模組/武器，其 <code>buffIds[]</code> 即宣告「我能賦予這些 buff」。
+    模擬器建立<strong>反向索引</strong>，可用 buff = 當前配裝所有實體 <code>buffIds[]</code> 的聯集，再依互斥機制收斂為可達集。
+  </div>
+  <div class="warning-block">
+    <strong>收斂機制（PLAN-024 後更新）：</strong>原規劃僅靠單一 <code>mutexGroup</code> 收斂；PLAN-024 把「同概念多階梯 buff」由「N 份文件 + 共用 mutexGroup」改為「單一文件 + <code>levels[]</code>」後，收斂變成<strong>兩種分立機制</strong>——
+    ① <code>mutexGroup</code>：純<strong>形態互斥</strong>（虛粒子 ⟷ 實粒子，同群擇一）；
+    ② 同 buff 多 <code>level</code>：<strong>階梯取最高</strong>（天然互斥，取代舊「階梯共用 mutexGroup」用法；<code>buffIds</code> 以 <code>id@N</code> 賦予指定級）。
+    兩者語意不同、互不衝突，模擬器需同時處理。
+  </div>
+  <div class="code-block">
+<span class="cm">// GameBuff 擴充（已落地）</span>
+<span class="kw">export interface</span> <span class="ty">GameBuff</span> {
+  <span class="cm">// ... 既有：id/name/description/icon/buffType/maxStack/duration/effects ...</span>
+  descriptionRefs?: <span class="ty">DescriptionRefs</span>
+  mutexGroup?:      <span class="ty">string</span>   <span class="cm">// 形態互斥群組；同 group 一次一個（虛粒子⟷實粒子）</span>
+  levels?:          <span class="ty">BuffLevel</span>[] <span class="cm">// 🆕 PLAN-024 階梯各級；同 buff 多 level 天然互斥取最高（取代「階梯共用 mutexGroup」）</span>
+}
+<span class="cm">// Module 擴充：補上 buffIds（武器/技能/天賦/神經驅動已有）</span>
+<span class="kw">interface</span> <span class="ty">Module</span> { <span class="cm">/* ... */</span> buffIds?: <span class="ty">string</span>[] }
+  </div>
+  <div class="flow">
+<span class="cm">模擬器可達性流程（杜絕不可能組合）：</span>
+
+  使用者配裝  <span class="hl">機師</span> + <span class="hl">機甲</span> + <span class="hl">模組×N</span> + <span class="hl">武器</span> + <span class="hl">背包</span>
+       │  收集各實體的 buffIds[]
+       ▼
+  <span class="hl2">可用 buff 池 = ⋃ buffIds[]</span>   ← 只有「來源在配裝中」的 buff 才會出現
+       │  收斂（兩種分立互斥機制，PLAN-024 後）：
+       │    ① mutexGroup → 形態同群擇一    ② 同 buff 多 level → 取最高
+       ▼
+  <span class="hl3">形態擇一 ＋ 階梯取最高</span>  →  使用者勾選 active  →  SkillEffect[] 加總  →  面板輸出
+  </div>
+
+  <!-- Layer 3 -->
+  <div class="section-title" style="font-size:17px;margin-top:32px;">Layer 3 — BOSS / 關卡資料模型 <span class="badge badge-purple">2026-06-28 descope → 移轉 PLAN-010</span></div>
+  <div class="warning-block">
+    <strong>已 descope（不在本計畫實作）：</strong>BOSS 機制／關卡打法為各關獨特的敘事內容、可重用的結構化引用（重複 BUFF）相對少，把它建成 <code>bosses</code>/<code>stages</code> 結構化集合的投報率低。
+    決定整層移交 <a href="../PLAN-010_攻略系統/計畫書.html" style="color:var(--accent-cyan);">PLAN-010 攻略系統</a>——以攻略 CMS 自由圖文撰寫各關打法、用 Phase B 實體嵌入承載偶發 buff 卡片。
+    掉落索引 <code>src/data/bossDrops.ts</code> <strong>維持現狀</strong>（續餵 <code>BossDropTooltip</code> 顯示元件掉落來源），不遷移、不建集合。下方原始設計保留作歷史參考。
+  </div>
+  <div class="decision-block">
+    <span style="opacity:0.6;">（原始設計，已 descope）</span>現行 <code>src/data/bossDrops.ts</code> 是靜態的 元件→關卡→掉落索引。一般化為 Firestore 集合
+    <code>bosses</code> / <code>stages</code>，並複用既有結構（ArmorType、MechPart 數值面、SkillEffect、EntityRef）。
+    BOSS 技能描述同樣吃 Layer 1 引用層 → 零額外機制即可點擊查詞條。遷移保留相容檢視函式給現有 <code>BossDropTooltip</code>。
+  </div>
+  <div class="code-block">
+<span class="cm">// bosses/{id}、stages/{id}（已落地型別）</span>
+<span class="kw">interface</span> <span class="ty">Boss</span>  { id; name; armorType?; parts?; skills: <span class="ty">BossSkill</span>[]; descriptionRefs?; weakness?[] }
+<span class="kw">interface</span> <span class="ty">Stage</span> { id; name; category; bossIds: <span class="ty">string</span>[]; mechanics?; mechanicsRefs?;
+              drops?: <span class="ty">StageDropEntry</span>[]; guideIds?: <span class="ty">string</span>[] }   <span class="cm">// guideIds → PLAN-010 攻略</span>
+  </div>
+
+  <!-- Layer 4 -->
+  <div class="section-title" style="font-size:17px;margin-top:32px;">Layer 4 — 維護模式與查詢量控制（沿用既有架構）</div>
+  <div class="two-col">
+    <div class="arch-box">
+      <h4>非技術維護（他人加入）</h4>
+      <ul>
+        <li>沿用 PLAN-014 表單式 Admin + <code>UserProfile.role</code>（已有 USER/ADMIN/OWNER）</li>
+        <li>新集合各給表單頁，description 旁放「插入引用」詞條挑選器（Layer 1）</li>
+        <li>先表單、日後 TipTap（使用者 Q3 決策）</li>
+        <li>稽核：複用 <code>managedBy</code> 慣例 + <code>updatedBy/updatedAt</code>；沿用補填進度儀表</li>
+      </ul>
+    </div>
+    <div class="arch-box">
+      <h4>查詢量控制（明確需求）</h4>
+      <ul>
+        <li>參考實體皆為靜態資料 → PLAN-016 <code>GameDataContext</code> 啟動預載成 Map，頁面 O(1) 查詢</li>
+        <li>PLAN-017 <code>meta/gameData</code> 版本 gate + localStorage：回訪每 session 僅 1 次讀取</li>
+        <li>Admin 一鍵 Bump 版本使全站快取失效</li>
+        <li>規模再大可建置期匯出 CDN 靜態 JSON，讀取成本趨近 0</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── 子計畫重組 ── -->
+<section class="section">
+  <div class="section-label purple">Sub-Plans</div>
+  <div class="section-title">子計畫重組（本總綱為大綱）</div>
+
+  <div class="data-table-wrap">
+    <table class="layer-table">
+      <tr><th>子計畫</th><th>角色（填補哪一塊）</th><th>狀態</th></tr>
+      <tr><td>PLAN-001</td><td>Layer 2 數值面：SkillEffect / GameBuff / buffIds</td><td><span class="badge badge-green">開發完成 · 剩填值</span></td></tr>
+      <tr><td>PLAN-003</td><td>武器側欄位 + 專武 carry 被動 → effects</td><td><span class="badge badge-green">開發完成 · 剩填值</span></td></tr>
+      <tr><td>PLAN-004</td><td>skills/neuralDrives 抽成集合 + 預載 Map（Layer 4 基礎）</td><td><span class="badge badge-yellow">pilotSkills 已落地 · neuralDrives 待做</span></td></tr>
+      <tr><td>PLAN-005</td><td>enhancedEffects + DiffHighlight</td><td><span class="badge badge-green">開發完成 · 剩填值</span></td></tr>
+      <tr><td><strong>PLAN-019-A</strong></td><td><strong>Layer 1</strong>：EntityRef + descriptionRefs + &lt;RefText&gt; + Drawer 複用</td><td><span class="badge badge-purple">新增（型別已落地）</span></td></tr>
+      <tr><td><strong>PLAN-019-B</strong></td><td><strong>Layer 2 新增</strong>：反向 buff 索引 + Module.buffIds；收斂含 mutexGroup（形態）＋ levels 取最高（PLAN-024 階梯）兩機制</td><td><span class="badge badge-green">開發完成 · 剩填值</span></td></tr>
+      <tr><td><strong>PLAN-019-C</strong></td><td>glossaryTerms 集合 + Admin 詞條挑選器</td><td><span class="badge badge-purple">新增</span></td></tr>
+      <tr style="opacity:0.55;"><td><strong>PLAN-019-D</strong></td><td><strong>Layer 3</strong>：bosses/stages 集合 + bossDrops 遷移 <span style="text-decoration:line-through;">（原規劃）</span></td><td><span class="badge badge-purple">→ 移轉 PLAN-010</span></td></tr>
+      <tr><td><strong>PLAN-019-E</strong></td><td><strong>Layer 4</strong>：插入引用 UI（已完成）+ 稽核/版本快取（BOSS/Stage 表單頁隨 D descope）</td><td><span class="badge badge-purple">新增</span></td></tr>
+    </table>
+  </div>
+  <div class="green-block">
+    <strong>依賴順序：</strong>A → (B, C 並行) → E。<strong>A 是其餘一切的基礎。</strong>（D 已 descope 移轉 PLAN-010，2026-06-28）
+  </div>
+</section>
+
+<!-- ── 影響範圍 ── -->
+<section class="section">
+  <div class="section-label purple">Impact</div>
+  <div class="section-title">影響範圍</div>
+  <div class="doc-grid">
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-purple)">TypeScript</div>
+      <h4>src/types/index.ts</h4>
+      <p>新增 RefType / EntityRef / DescriptionRefs；GameBuff 加 mutexGroup/descriptionRefs；Module 加 buffIds；帶描述型別加 descriptionRefs；新增 Boss/BossSkill/Stage/StageDropEntry。（皆選填，向後相容，已落地）</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-purple)">TypeScript</div>
+      <h4>src/types/enums.ts</h4>
+      <p>新增 StageCategory（危境/深淵/活動/討伐/其他）。（已落地）</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-cyan)">Frontend（子計畫）</div>
+      <h4>src/components/RefText.tsx · EntityDetailDrawer.tsx</h4>
+      <p>tokenizer + 點擊→Drawer（複用 PLAN-010）。firestoreApi 新增 getGlossaryTerms + 預載 Map。<span style="opacity:0.6;">（getBosses/getStages 隨 D descope，不再新增）</span></p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-red)">Admin（子計畫）</div>
+      <h4>GlossaryAdmin · RefPicker <span style="opacity:0.6;">· <s>BossAdmin · StageAdmin</s></span></h4>
+      <p>仿 PilotAdmin；共用插入引用 RefPicker 元件。GlossaryAdmin 已於 019-C 落地；<strong>BossAdmin/StageAdmin 隨 D descope 移轉 PLAN-010</strong>。</p>
+    </div>
+    <div class="doc-item" style="opacity:0.55;">
+      <div class="doc-tag" style="color:var(--accent-yellow)">Script <s>（子計畫）</s></div>
+      <h4><s>scripts/migrate-bossdrops.mjs</s></h4>
+      <p><strong>取消（descope）：</strong>bossDrops.ts 維持現狀，不遷移 stages/bosses。</p>
+    </div>
+    <div class="doc-item">
+      <div class="doc-tag" style="color:var(--accent-purple)">Document</div>
+      <h4>資料模型文件</h4>
+      <p>新增 entity-refs / glossaryTerms；更新 skills-buffs（GameBuff 擴充）、pilots/weapons/modules（descriptionRefs）。<span style="opacity:0.6;">（bosses/stages 文件隨 D descope 不新增）</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 驗證 ── -->
+<section class="section">
+  <div class="section-label green">Verification</div>
+  <div class="section-title">驗證方式</div>
+  <div class="green-block">
+    <ol style="margin:0;padding-left:18px;line-height:2.2;">
+      <li><strong>型別</strong>：<code>npm run build</code>（tsc -b &amp;&amp; vite build）通過；新欄位皆選填不破壞既有頁面。</li>
+      <li><strong>引用層</strong>：天賦填 <code>descriptionRefs</code>（<code>"虛粒子形態"→{refType:'buff',refId:'buff_虛粒子形態'}</code>），前台該詞可點擊開 Drawer；未填的詞原樣顯示不報錯。</li>
+      <li><strong>模擬可達性</strong>：<code>粒子爆發</code> 技能 <code>buffIds:['buff_虛粒子形態']</code> + 該 buff <code>mutexGroup</code>；選該機師才出現此形態，同群互斥擇一。</li>
+      <li style="opacity:0.55;"><strong>BOSS/關卡</strong>：<s>跑遷移腳本後 BossDropTooltip 經相容檢視仍正常；新 stages 頁能列關卡→BOSS→掉落。</s>（2026-06-28 descope 移轉 PLAN-010；bossDrops 維持現狀，無此驗收項）</li>
+      <li><strong>查詢量</strong>：參考集合走預載 Map + localStorage 版本快取，重整頁面不重抓未變更資料。</li>
+      <li><strong>維護者流程</strong>：非 OWNER 的 ADMIN 帳號用表單 + 詞條挑選器新增 glossaryTerm 並在前台引用，全程不碰程式碼。</li>
+    </ol>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-019（總綱） —
+  <a href="進度表.html" style="color:var(--accent-purple);text-decoration:none;">→ 查看進度表</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

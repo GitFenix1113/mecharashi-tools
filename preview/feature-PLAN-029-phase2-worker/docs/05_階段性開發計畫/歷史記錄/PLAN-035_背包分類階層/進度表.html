@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-035 背包分類階層 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+
+.gate-note {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 20px;
+}
+.gate-note strong { color: var(--accent-yellow); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-035 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-035</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> · 背包分類階層</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-07-24</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label green">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">6</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">6</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-green);">6 / 6 · 全數完成（live 實測驗證）</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">Live 實測驗證（2026-07-24）：</strong>
+    A-1b audit 對 live 全 180 背包 → 分佈 A/B=37(20+17)·S=23·S+=98·SS=22 <strong>完全吻合</strong>、
+    <strong>unresolved=0</strong>（180 名字乾淨可解析，證實 name-derive 够用、無需結構化欄位）。<br>
+    背包圖鑑 port 5173 實跑：階層取代稀有度、標頭「共 180」＋「顯示 <strong>143</strong>」（A/B 預設隱藏生效）；
+    點「強化」→ 變體列 derive 出 8 變體、干擾 S+ 排除、SS 特種(null-line)不受影響（決策五字面行為）。
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    背包圖鑑依合成階層分成<strong>素材 / 基礎 / 複合 / 特種</strong>四層、預設隱藏沒人用的 A/B 素材；
+    並補上「<strong>強化 vs 干擾</strong>」第二軸與變體子篩選。階層與軸皆從既有 <code>rarity</code>＋名字 derive，
+    <strong>零資料改動</strong>。
+  </div>
+
+  <div class="gate-note">
+    <strong>前置：</strong>PLAN-031 同動 <code>BackpacksPage.tsx</code>
+    （✅ 已 merge 進 main 並歸檔至歷史記錄；本計畫於 <code>feature/PLAN-035-backpack-hierarchy</code> 進行）。<br>
+    <strong>決策三（2026-07-24 拍板）：</strong>階層 facet <u>取代</u>稀有度多選——因 tier 只是 A/B 合併的 rarity，
+    兩者是同一分割，並存會產生「SS×素材＝恆 0 筆」矛盾。改四顆階層鈕，預設勾 基礎＋複合＋特種
+    （<strong>143 件</strong>，非 167）、素材(A/B) 預設關。<br>
+    <strong>核心陷阱：</strong><code>type</code> 欄位只編碼「基礎功能軸」，「強化/干擾」<strong>只在名字字串</strong>
+    （出力強化背包 vs 出力干擾背包 同 <code>type=PowerAdd</code>）——B-1 必須靠 name 解析，不可靠 type；
+    且 base 階 <code>強化背包·X</code>/<code>干擾背包·X</code> <strong>無基礎功能前綴</strong>，parser 的 baseFunction 須容許 null。<br>
+    <strong>建議順序：</strong>A → B → C。A 完成即有可見價值（階層分類 + 預設隱藏），B 再補強化/干擾軸。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">分類 utils 與階層 facet</div>
+  <div class="section-desc">先建純函式分類層，再接上背包圖鑑的階層 facet 與預設隱藏。此階段完成即有可見價值。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 背包分類 utils</div>
+      <div class="task-group-meta">src/utils/backpackClassify.ts（新檔）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">tierFromRarity + 名字解析（強化/干擾/變體）</div>
+        <div class="task-desc">
+          <code>tierFromRarity(rarity)</code> → <code>'material'|'base'|'composite'|'special'</code>
+          （A/B→material · S→base · S+→composite · SS→special）。<br>
+          <code>parseBackpackName(name)</code> → <code>{ baseFunction: string|null, line: '強化'|'干擾'|null, variant: string|null }</code>：
+          名字結構 <code>[基礎功能]?[強化|干擾]背包·[變體]</code> 可乾淨拆；純功能背包與 SS 特種背包 <code>line=null</code>。<br>
+          <span style="color:var(--accent-red)">⚠ baseFunction 須容許 null</span>——base 階
+          <code>強化背包·首攻</code>/<code>干擾背包·攻擊</code> 無基礎功能前綴（type=Enhance/EMP），
+          只有 S+ 複合階才有 出力/移動… 前綴。<br>
+          <span style="color:var(--accent-red)">⚠ line 一律從 name 判斷，不可用 type</span>
+          （出力強化/出力干擾背包同 <code>type=PowerAdd</code>）。附中文標籤對照與純函式單元測試。
+        </div>
+        <div class="task-file">src/utils/backpackClassify.ts · backpackClassify.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1b &nbsp; 分類 audit 腳本（佐證義務）</div>
+      <div class="task-group-meta">scripts/audit-backpack-classify.mjs（新，一次性、進版控）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">對 live 背包核對 rarity 分佈 + 列出無法解析的名字</div>
+        <div class="task-desc">
+          比照 PLAN-031 的 <code>derive-weapon-upgrade.mjs</code>：讀 live Firestore 全部背包，輸出<br>
+          ① <strong>rarity 直方圖</strong>核對 A/B=37 · S=23 · S+=98 · SS=22（合 180）；<br>
+          ② 對每個名字跑 <code>parseBackpackName</code>，列出<strong>無法套入文法（unresolved）</strong>的名字報告——
+          抓「某 SS/功能背包名字剛好含『強化』『干擾』字樣」的 substring 誤判，及官方改版新增背包破壞文法。<br>
+          <span style="color:var(--accent-yellow)">⚠ 單元測試只測手挑名字，證明不了全 180 個真實名字可解析</span>——
+          此腳本是「name-derive 够用」的可重現佐證，unresolved 非 0 時須先修文法或改走結構化欄位。
+        </div>
+        <div class="task-file">scripts/audit-backpack-classify.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 階層 facet 取代稀有度 + 預設隱藏 A/B</div>
+      <div class="task-group-meta">src/pages/backpacks/BackpacksPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">合成階層 facet（素材/基礎/複合/特種）取代稀有度多選</div>
+        <div class="task-desc">
+          <strong>移除既有 SS/S+/S/A/B 五顆稀有度按鈕</strong>（<code>ALL_RARITIES</code>／<code>rarityFilters</code>），
+          改為四顆階層按鈕（素材/基礎/複合/特種），由 <code>tierFromRarity</code> derive、彼此獨立多選，可與類型/裝備交叉。<br>
+          <span style="color:var(--accent-red)">⚠ 決策三：不保留稀有度 filter</span>——tier 是 A/B 合併的 rarity，
+          兩者並存會有「SS×素材＝恆 0」矛盾。排序仍沿用 <code>RARITY_ORDER</code>。<br>
+          <strong>預設勾選 基礎＋複合＋特種（143 件）、素材(A/B) 預設關</strong>：
+          <code>tierFilters</code> 初值＝<code>{base,composite,special}</code>；打開「素材」才顯示 37 件。<br>
+          與 PLAN-031 的「特種背包製作」facet <strong>共存不衝突</strong>（兩者正交）。<br>
+          <span style="color:var(--accent-yellow)">⚠ 標頭「共 180 件背包」計數</span>與「顯示 X / Y 項」口徑須一致（別一個 180 一個 143）。
+        </div>
+        <div class="task-file">src/pages/backpacks/BackpacksPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">強化 / 干擾軸與變體篩選</div>
+  <div class="section-desc">補上「強化 vs 干擾」第二軸與變體子篩選，只作用於含該軸的條目、優雅降級。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 強化/干擾 + 變體子篩選</div>
+      <div class="task-group-meta">src/pages/backpacks/BackpacksPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">強化/干擾軸 + 變體（首攻/攻擊…）篩選</div>
+        <div class="task-desc">
+          用 <code>parseBackpackName().line</code> 加「強化／干擾」單選軸；再依 <code>variant</code> 加變體子篩選
+          （強化線：首攻/追擊/警戒/反擊/彈道/協力/援護/再攻擊；干擾線：攻擊/命中/迴避/暴擊/暴傷/護甲/增傷）。<br>
+          <span style="color:var(--accent-yellow)">⚠ 優雅降級</span>：純功能背包與 SS 特種背包 <code>line=null</code>，
+          選了強化/干擾軸時<strong>不因此被錯誤排除</strong>的處理需明確（比照 PLAN-031 armor 對投影武器）。<br>
+          變體清單建議由現有資料 derive 而非硬編，避免改版漏改。
+        </div>
+        <div class="task-file">src/pages/backpacks/BackpacksPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label green">Phase C</div>
+  <div class="section-title">文件同步與履歷</div>
+  <div class="section-desc">補齊文件義務與使用者履歷。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; docs 同步（CLAUDE.md 規則 2）</div>
+      <div class="task-group-meta">docs/02_技術文件/02_資料模型/backpacks.html</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">資料模型補「合成階層與強化/干擾軸」derive 說明</div>
+        <div class="task-desc">
+          在 <code>backpacks.html</code> 記錄：階層由 <code>rarity</code> derive、
+          「強化/干擾」軸與變體由 <strong>name 解析</strong>（<code>type</code> 只編碼基礎功能軸，不含此軸）；
+          並註明「刻意不加結構化欄位」的取捨與觸發條件。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/backpacks.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 網站更新履歷（CLAUDE.md 規則 1）</div>
+      <div class="task-group-meta">src/data/siteChangelog/2026-07.ts（或當月）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">加入 feat entry</div>
+        <div class="task-desc">
+          以使用者視角描述，例如：「背包圖鑑新增合成階層分類（素材/基礎/複合/特種），預設隱藏 A/B 素材；
+          並新增『強化／干擾』與變體篩選」。<code>entries</code> 陣列<strong>最前面</strong>插入。
+        </div>
+        <div class="task-file">src/data/siteChangelog/當月.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- 驗收 -->
+<section class="section">
+  <div class="section-label green">Acceptance</div>
+  <div class="section-title">驗收條件</div>
+
+  <div class="impact-note">
+    <ul style="margin:0 0 0 16px;line-height:1.9;">
+      <li>背包圖鑑落地預設只顯示 基礎/複合/特種（<strong>143 件</strong>），A/B 素材需手動打開才出現；標頭與「顯示 X/Y」計數口徑一致。</li>
+      <li>階層 facet（素材/基礎/複合/特種）<strong>取代</strong>稀有度多選、可與類型/裝備交叉，且與 PLAN-031「特種背包製作」facet 並存不衝突。</li>
+      <li>A-1b audit 腳本對 live 背包輸出 rarity 分佈（37/23/98/22＝180）與 unresolved 名字報告，unresolved＝0。</li>
+      <li>「強化／干擾」軸可正確分離 出力強化背包 與 出力干擾背包（雖同 <code>type=PowerAdd</code>）。</li>
+      <li>選強化/干擾軸時，純功能背包與 SS 特種背包不被錯誤清空（優雅降級）。</li>
+      <li><code>npm run build</code> 通過；<code>node --test</code> 通過（backpackClassify 純函式測試）。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 後續 -->
+<section class="section">
+  <div class="section-label green">Follow-up</div>
+  <div class="section-title">已分流的後續（不在本計畫）</div>
+
+  <div class="gate-note">
+    <ul style="margin:0 0 0 16px;line-height:1.9;">
+      <li><strong>背包合成關係鏈（決策六）</strong>——出力強化背包·首攻 = 出力背包 + 強化背包·首攻；SS = 特定 S+ 再進階。
+        是 PLAN-031 武器 <code>upgrade</code> 進階鏈的背包版，可複用同模型；需結構化欄位與推導腳本，
+        待本計畫 name-derive 上線、確認需求後再評估另立 PLAN。</li>
+      <li><strong>結構化欄位</strong>（<code>tier</code>/<code>line</code>/<code>variant</code>）——僅在 name-derive 被證實不够用時才做。</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-035 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

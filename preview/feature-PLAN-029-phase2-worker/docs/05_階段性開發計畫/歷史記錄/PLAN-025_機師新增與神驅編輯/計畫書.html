@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-025 機師後台新增與神經驅動編輯 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-025 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-025</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    機師後台新增與神經驅動編輯<span style="-webkit-text-fill-color:var(--text-secondary);"> · Pilot Create · Neural Drive Editor</span>
+  </h1>
+  <p class="hero-sub">讓管理員在後台自建機師、完整編輯神經驅動分區，補足官方資料更新的空窗期</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label green">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value green">PLAN-025</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-07-03</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">types/pilot.ts · PilotAdmin · PilotEditPanel · scrape-pilots-v3.js · docs 資料模型</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">開發中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-020（文件 ID 自動生成）· PLAN-023（神經驅動能力庫）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>官方資料更新太慢，社群等不及</strong><br>
+    新機師上線後，官方資料（本站爬蟲來源）常有明顯落後。夥伴們希望能自己先把新機師的資料建進站內，
+    不必枯等官方更新。目前後台「機師管理」只能<strong>編輯既有機師</strong>，沒有「新增機師」入口。
+  </div>
+
+  <div class="problem-block">
+    <strong>神經驅動完全無法在後台編輯</strong><br>
+    <code>Pilot.neuralDrive[]</code>（分區 / 插槽 / 各級算力門檻 / 對應能力）目前標註「由爬蟲腳本管理」，
+    後台沒有任何編輯 UI。手建機師若不能編神驅，資料就是殘缺的。
+  </div>
+
+  <div class="problem-block">
+    <strong>手建機師有被爬蟲補丁覆寫的風險</strong><br>
+    爬蟲 <code>scrape-pilots-v3.js</code> 以<strong>機師名</strong>比對、只補丁 Firestore 既有機師。
+    手建機師目前天然安全（官方查無同名），但一旦官方日後出了同名機師，補丁就會覆寫人工資料——
+    比照 <code>PilotSkill.manual</code> / <code>PilotTalent.manual</code>，機師層也需要一個保護旗標。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：沿用 upsert，不新增 addPilot</strong><br>
+    <code>updatePilot()</code> 內部是 <code>setDoc(doc(db,'pilots',id), ...)</code>，本身即 upsert——
+    新增與更新走同一條路徑。資料層完全不用動，只需在 <code>PilotAdmin</code> 補「新增」入口，
+    以空白預設值開啟既有的 <code>PilotEditPanel</code>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：文件 ID 走 <code>pilot_&lt;中文名&gt;</code>（PLAN-020 慣例）</strong><br>
+    用 <code>makeEntityId('pilot', name)</code> 由名稱生成 ID，天然與官方長碼 <code>Pilot_1010XXXX</code> 分流、不撞號。
+    建立前以 <code>docExists('pilots', id)</code> 做伺服器端撞名檢查，導引去編輯既有項。
+    複用 <code>useNewItemCreation</code> + <code>NewItemDialog</code>（技能 / 神驅能力庫 / BUFF 都用它）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：新增隱形 <code>Pilot.manual</code> 旗標（純爬蟲保護，不做前台標示）</strong><br>
+    比照技能 / 天賦的 manual 語意：手建機師設 <code>manual: true</code>，爬蟲補丁迴圈遇到即整筆跳過。
+    <strong>前台不因此顯示任何「社群自建」標記</strong>（依需求：手建與官方機師外觀一致），
+    manual 僅作後端防覆寫用途。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：神經驅動編輯器只做「結構 + 引用」，不在此編能力效果</strong><br>
+    PLAN-023 已把神驅拆成兩層：<strong>能力庫</strong>（<code>neuralDriveAbilities</code> 集合，已有完整後台）
+    與<strong>機師引用</strong>（<code>Pilot.neuralDrive[].levels[].abilityId</code>）。
+    本計畫的機師神驅分頁只負責「這位機師有哪些分區、插槽是什麼芯片、各級算力門檻多少、每級連到能力庫哪個能力」，
+    <strong>能力本身（名稱 / 效果 / BUFF）仍在既有「神經驅動」分頁維護</strong>。
+    因此機師端是一個結構性表單 + 下拉引用，複雜度可控。
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界：手建機師缺少爬蟲衍生欄位</strong><br>
+    <code>statsBase</code> / <code>apBase</code> / <code>profile.additionalInfo</code> / <code>portraitUrl</code> 無官方來源。
+    預設值工廠給空物件（<code>statsBase:{}</code>、<code>additionalInfo:{}</code>）與合理回填（<code>apBase</code> 複製 <code>ap</code>）。
+    前台既有渲染皆已對這些欄位做 <code>?? {}</code> / 選填處理，不會因此崩壞（需回歸驗證）。
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界：神驅連結能力庫須先有能力</strong><br>
+    機師神驅每級要連到 <code>abilityId</code>，前提是能力庫已有該能力。編輯器在下拉查無時，
+    需提示「請先到『神經驅動』分頁建立能力」並提供引導，避免夥伴卡住。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label green">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>Pilot.manual?: boolean</code> 型別欄位 + 同步 <code>docs/02_技術文件/02_資料模型/pilots.html</code></li>
+      <li><code>PilotAdmin</code> 新增「＋ 新增機師」對話框（ID 自動生成 + 撞名檢查）</li>
+      <li>新機師預設值工廠（六維 0、ap、空 base、空 talents/skills/neuralDrive、<code>manual:true</code>）</li>
+      <li>爬蟲 <code>scrape-pilots-v3.js</code> 補丁跳過 <code>manual === true</code> 的機師</li>
+      <li><code>PilotEditPanel</code> 新增「神經驅動」分頁 + <code>PilotNeuralDriveTab</code> 元件（分區 / 插槽 / 各級門檻 / abilityId 引用）</li>
+      <li>神驅未連結能力的提示與引導</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>前台區分「玩家自建 / 官方」的視覺標記（本次決定不做）</li>
+      <li>神驅「能力」本身的效果編輯（仍在既有「神經驅動」分頁）</li>
+      <li>新的權限角色（夥伴沿用既有 ADMIN 權限）</li>
+      <li>機師刪除功能（本次僅新增 / 編輯）</li>
+      <li>爬蟲衍生欄位（statsBase/apBase/additionalInfo）的人工編輯 UI（維持唯讀 / 空預設）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label green">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-025 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../../觀察維護中/PLAN-023_神經驅動能力庫/計畫書.html">
+      <div class="doc-tag">Dependency</div>
+      <h4>◆ PLAN-023 神經驅動能力庫</h4>
+      <p>神驅能力抽離為集合 + abilityId 引用（本計畫的前置）</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-020_文件ID自動生成/計畫書.html">
+      <div class="doc-tag">Dependency</div>
+      <h4>◆ PLAN-020 文件 ID 自動生成</h4>
+      <p>makeEntityId / useNewItemCreation 新建對話框機制</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-025 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

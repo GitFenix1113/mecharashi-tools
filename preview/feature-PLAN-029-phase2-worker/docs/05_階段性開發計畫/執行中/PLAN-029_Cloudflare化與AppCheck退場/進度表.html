@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-029 Cloudflare 化與 App Check 退場 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+
+.phase-note {
+  font-size: 12px;
+  color: var(--text-dim);
+  background: rgba(249,115,22,0.06);
+  border: 1px solid rgba(249,115,22,0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 0 0 14px;
+}
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-029 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-029</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> Cloudflare 化與 App Check 退場</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-07-11</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label orange">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">12</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">5</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">18</div>
+      <div class="summary-lbl">總任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-orange);">12 / 18</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 66.7%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    擺脫 App Check／reCAPTCHA 的維運痛；公開資料防護從「可被繞的票」升級為 <code>read: if false</code> 真鎖；反爬改用 Cloudflare 現成基建（ASN 封機房 + 限流）；全球加速 + DDoS + 隱藏 origin；中國讀取盡量改善。成本 $0 起（唯一固定成本為一個網域）。
+  </div>
+
+  <div class="phase-note">
+    ⚑ <strong>灰度原則：</strong>Phase 1→2→3 必須循序，且「收緊 Firestore 規則 / 拔 App Check」（Phase 3）務必等 Phase 2 確認公開資料<strong>全數</strong>走 Worker 後才執行。Phase 4／5 為可選加值，可無限延後。每階段皆可獨立回退。
+  </div>
+</section>
+
+<!-- Phase 0 -->
+<section class="section">
+  <div class="section-label orange">Phase 0</div>
+  <div class="section-title">前置準備</div>
+  <div class="section-desc">帳號、網域、憑證就位；此階段不動任何現有程式碼與資料流。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P0 &nbsp; 基礎設施與憑證</div>
+      <div class="task-group-meta">Cloudflare · Firebase Console</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">0-1 選購自有網域，DNS 託管到 Cloudflare</div>
+        <div class="task-desc">挑一個網域（≈ $15／年），把 nameserver 指到 Cloudflare。先不動站台，僅完成網域接管。</div>
+        <div class="task-file">已完成：mecharashi.wiki（Cloudflare Registrar 直接註冊，Free 方案，DNS zone 自動建立）</div>
+      </div>
+      <div class="task-assignee">使用者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">0-2 建立 Workers 專案與 R2 bucket</div>
+        <div class="task-desc">Cloudflare 帳號下建立 Worker（資料代理）與 R2 bucket（圖片鏡像預留），確認免費檔額度。</div>
+        <div class="task-file">Workers 就緒：workers/ 本地骨架（TypeScript，name: mecharashi-worker）+ wrangler login 完成。R2 依 2026-07-25 決策延後至 Phase 4（僅圖片鏡像用到、不在核心路徑，且需綁卡啟用）。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">0-3 產生 Firebase service account 憑證並存為 CF Secret</div>
+        <div class="task-desc">Firebase Console → 服務帳戶產生金鑰，存進 Cloudflare Worker 的加密 Secret（絕不進版控）。供 Worker 簽 JWT 換 Firestore access token 用。</div>
+        <div class="task-file">憑證已就位：service account JSON（project_id: mecharashi-tools）存於專案根目錄，經 git check-ignore 確認被 *firebase-adminsdk*.json 規則保護。✅ 2026-07-25 生產 Secret FIREBASE_SA_KEY 已以 wrangler secret put 接上部署後的 Worker（線上 12 集合實測全 200）。</div>
+      </div>
+      <div class="task-assignee">使用者 + 開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase 1 -->
+<section class="section">
+  <div class="section-label orange">Phase 1</div>
+  <div class="section-title">網域 + CDN（把站搬到 Cloudflare 後面）</div>
+  <div class="section-desc">資料流不動、App Check 暫留；先拿到加速、DDoS、隱藏 origin，並驗證全站經 CF 正常。可獨立交付、可回退（DNS 改回）。</div>
+
+  <div class="phase-note" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.25);color:#f4c4c4;">
+    ⚠️ <strong style="color:var(--accent-red);">實際執行偏離（2026-07-25）：</strong>切到 mecharashi.wiki 後 App Check 在新網域換票 403（reCAPTCHA 網域白名單加了仍未即時生效 ＋ 24h client 端節流），加白名單未即解，<strong>最終暫時關閉 App Check enforce 讓站恢復</strong>——原設計「App Check 暫留到 Phase 3」提前發生。⇒ <strong>公開遊戲資料目前裸奔</strong>（read:if true ＋ 無 App Check，任何人可直打 Firestore REST，CF 擋不了此路）；users/* 與後台寫入仍有 isOwner/isAdmin 保護。故 <strong>Phase 2（Worker 代理 + read:if false）升為當務之急</strong>，儘快補上真防護。詳見記憶 project_app_check。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P1 &nbsp; 前端上 Cloudflare proxy</div>
+      <div class="task-group-meta">GitHub Pages · Cloudflare DNS/WAF</div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">1-1 前端掛自有網域 + 開 proxy（orange cloud）</div>
+        <div class="task-desc">自有網域 CNAME 指向 GitHub Pages，Cloudflare proxy 開啟。調整 router basename / GH Pages 自訂網域設定與 CI。</div>
+        <div class="task-file">已完成：vite base /mecharashi-tools/→/ + 404.html SPA pathSegments 1→0 + deploy.yml cname；Cloudflare DNS CNAME(apex+www)→gitfenix1113.github.io 橙雲 + SSL Full + Always Use HTTPS；GitHub 自動設 custom domain + 憑證核發。實測 Server:cloudflare(TPE)、https 200、SPA 深層路由正常。（PR #7 merge 曾被 preview cleanup 的 concurrency 取消，重觸發 deploy 才成功）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">1-2 開啟 CDN 快取 + Bot Fight Mode + 基本 WAF</div>
+        <div class="task-desc">設定靜態資源快取規則、開 Bot Fight Mode，加入基礎 WAF 自訂規則骨架（ASN 封鎖規則留待 Phase 3 正式上）。</div>
+        <div class="task-file">進行中：橙雲已帶 CDN 快取（cdn-cgi/rum 確認生效）+ Always Use HTTPS 已設。Bot Fight Mode / WAF ASN 反爬規則待 Phase 3 正式做。另修 .github/workflows/preview.yml：cleanup-preview 拆獨立 concurrency group（gh-pages-cleanup），避免 PR merge 時把 deploy.yml 主站發布擠掉取消。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">1-3 驗證全站經 CF 正常</div>
+        <div class="task-desc">逐頁確認（含 Firebase Auth 登入、後台）在新網域 + CF proxy 下運作正常。此時資料仍直連 Firestore + App Check（不動）。</div>
+        <div class="task-file">已完成：首頁/機師頁渲染、SPA 深層路由（直接開 /pilots + 重整不 404）、橙雲、https 皆正常。驗證中發現 App Check 在新網域換票 403 → 已補 reCAPTCHA 網域白名單 + Firebase Auth 授權網域，但未即時生效，最終暫關 App Check enforce 讓資料恢復（/pilots 87 機師正常）。詳見上方「實際執行偏離」說明。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase 2 -->
+<section class="section">
+  <div class="section-label orange">Phase 2</div>
+  <div class="section-title">Worker 資料代理（核心）</div>
+  <div class="section-desc">公開資料改由 Worker 代讀，與前端直連<strong>並存</strong>可灰度。此階段 Firestore 規則仍 read:if true，不收緊。</div>
+
+  <div class="phase-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);color:#bfe9cf;">
+    ✅ <strong style="color:var(--accent-green);">程式、本機驗證、Worker 部署完成（2026-07-25）：</strong>Worker 代理 + 前端 flag 接線 + 全集合對拍皆通過。<br>
+    ① <strong style="color:var(--accent-green);">已完成</strong>——Worker 部署至 <code>https://mecharashi-worker.mecharashi.workers.dev</code>；生產 Secret <code>FIREBASE_SA_KEY</code> 以 <code>wrangler secret put</code> 接上（過程遇 JSON pipe 帶 UTF-8 BOM 致 500，已於 parseServiceAccount 容錯修正並重新部署）；線上實測 12 集合全 200、edge cache HIT、CORS 放行 mecharashi.wiki（靠內建 DEFAULT_ALLOWED，生產免另設 ALLOWED_ORIGINS）、非法路徑 404。<br>
+    ② <strong>待辦</strong>——在 deploy.yml/CI 設 <code>VITE_WORKER_API_BASE=https://mecharashi-worker.mecharashi.workers.dev</code>（＝正式環境切換，會讓 mecharashi.wiki 公開資料改走 Worker）。<br>
+    ③ <strong>待辦</strong>——切換後於 mecharashi.wiki 覆驗公開頁全走 Worker。②③ 完成＝Phase 2→3 閘門開啟，才可收緊 Firestore 規則。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P2 &nbsp; 邊緣代理 + 前端接線</div>
+      <div class="task-group-meta">CF Worker · GameDataContext · useFirestore</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">2-1 Worker：Firestore REST + service account JWT 讀公開集合</div>
+        <div class="task-desc">Worker 用 service account 自簽 JWT 換 access token，走 Firestore REST 讀取公開集合（pilots/mechs/modules/...），回整包 JSON。處理 Workers 無 firebase-admin 的限制。</div>
+        <div class="task-file">已完成：workers/src/gcpAuth.ts（自簽 JWT→access token）+ workers/src/firestoreRest.ts（REST 讀取 + typed-value decoder，回應對齊前端 fetchCollection 的 {...data,id}）+ workers/src/index.ts（路由 GET /api/data/:collection）。grayOpsRoster 於 Worker 端組裝 { companies }、globalResearch 走 getDocument。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">2-2 Worker：邊緣快取（版本號 key）</div>
+        <div class="task-desc">以 meta/gameData 版本號為 cache key 做邊緣／KV 快取，對應既有 bumpDataVersion 失效機制。確保多訪客命中快取、Firestore read 量趨近零。</div>
+        <div class="task-file">已完成：workers/src/versions.ts（讀 meta/gameData 版本 + isolate 級 60s 快取）；index.ts 以 caches.default 做邊緣快取，cacheKey 帶版本號（後台 bump → key 變 → 舊快取自然失效），回應標 x-cache HIT/MISS。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">2-3 前端公開資料改打 /api（與直連並存）</div>
+        <div class="task-desc">在資料載入層（GameDataContext / useFirestore 的 ensureLoaded）將公開集合來源切到 Worker endpoint，保留版本 gate 三層快取邏輯（記憶體 / localStorage / 遠端）。以 flag 控制可灰度切換與回退。</div>
+        <div class="task-file">已完成：新增 src/lib/api/workerData.ts（flag：VITE_WORKER_API_BASE 啟用、VITE_USE_WORKER=false kill-switch）；GameDataContext 的資料源 fetchCollectionData 與版本源皆於 WORKER_ENABLED 時切到 Worker，三層快取邏輯原封不動。Worker 補 GET /api/versions（讓 Phase 3 收緊 meta 後前端仍讀得到版本）。預設 flag 關 → 合併零風險、沿用直連。build＋兩端 tsc 皆通過。⚠ 執行時逐頁驗證（2-4）待 Worker 部署＋設 env 後進行。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">2-4 逐集合驗證所有頁面資料正常</div>
+        <div class="task-desc">機師／機甲／武器／模組／元件／背包等頁面，確認經 Worker 取得的資料與直連一致、無缺漏、快取行為正確。</div>
+        <div class="task-file">已完成（本機 wrangler dev 對真實 Firestore）：① 資料級對拍——12 集合（含 globalResearch）逐文件比對 Worker vs 直連，2400+ 文件 0 mismatch（筆數 pilots87/mechs62/modules239/weapons169/backpacks180/components208/buffs217/pilotSkills710/neuralDrive432/glossary162）。② 瀏覽器端到端——機師列表/機師詳情/模擬器全數改打 /api（無 firestore.googleapis.com 公開集合直讀），渲染正常。③ 三層快取搭配 Worker 版本源正常（詳情頁 pilots/weapons 命中 localStorage 免重抓）、邊緣快取 MISS→HIT、CORS 正確。全站無 onSnapshot 殘留（利 Phase 3-1）。唯一 console error 為既有 App Check 403（與 Worker 無關）。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase 3 -->
+<section class="section">
+  <div class="section-label orange">Phase 3</div>
+  <div class="section-title">收緊 Firestore + App Check 退場 + 反爬上線</div>
+  <div class="section-desc">確認公開資料全走 Worker 後執行。此階段完成後，App Check 正式退役、直連公開資料被鎖死。可回退（規則改回 read:if true 即時生效）。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P3 &nbsp; 鎖死直連 + 拔票 + 反爬</div>
+      <div class="task-group-meta">firestore.rules · firebase.ts · CF WAF</div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">3-1 確認前端公開資料無殘留直連</div>
+        <div class="task-desc">全站掃查，確保沒有任何元件仍以 Firebase SDK 直讀公開集合（否則收緊後該頁會壞）。這是 Phase 3 的前置閘門。</div>
+        <div class="task-file">已完成：稽核找出 3 處前台直讀並全數改走 Worker——① SimulatorPage getAllPilotResearch、② HomePage usePatchVersions、③ RainbowMechPlanner getMechsByArmorType(改用 useMechs+client 過濾)；Worker 新增代理 pilotResearch/patchVersions（已部署 200）。本機實測三頁皆走 Worker、無公開集合直讀。確認 getPilotResearch(單筆)/skills/enemies 無前台使用者。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">3-2 Firestore 遊戲資料規則改 read:if isAdmin()</div>
+        <div class="task-desc">將 pilots/mechs/.../meta 等 17 個公開集合的 read 收緊。<strong>決策（2026-07-25）：走 read:if isAdmin() 而非 if false</strong>——對匿名一樣擋死（逼走 Worker），但登入 admin 仍可 client 直讀→後台編輯頁零改動；Worker 用 Admin SDK 繞過規則照常。寫入的 isAdmin、users/* 的 isOwner 規則不動。</div>
+        <div class="task-file">✅ 已完成（2026-07-25）：firestore.rules 17 集合改 read:if isAdmin() 並 firebase deploy 上線。驗證：① 爬蟲視角直打 Firestore REST 讀 pilots/mechs/weapons/patchVersions/pilotResearch/meta（無憑證+公開 API key）全回 403 PERMISSION_DENIED（升級前 200）；② Worker 讀 pilots 仍 200（Admin SDK 繞過規則）；③ 正式站匿名 /pilots 仍完整渲染 87 機師（走 Worker 無感）。回退：改回 if true 重 deploy 即時生效。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">3-3 移除前端 App Check + reCAPTCHA</div>
+        <div class="task-desc">拿掉 firebase.ts 的 initializeAppCheck／ReCaptchaV3Provider 與相關 env、debug token；Firebase Console 關閉 App Check enforce。清理 reCAPTCHA 金鑰（保留紀錄）。</div>
+        <div class="task-file">✅ 已完成（2026-07-25）：firebase.ts 移除 initializeAppCheck/ReCaptchaV3Provider import 與初始化區塊；deploy.yml/preview.yml 拿掉 VITE_FIREBASE_APPCHECK_SITE_KEY；.env.local/.env.local.example 清掉 site key + debug token。本機實測前台不再發 firebaseappcheck/reCAPTCHA 請求、console 零錯誤（原本每頁的 403 噪音消失）、資料照走 Worker。App Check enforce 早於 Phase 1 已手動關。<strong>可選後續（Console 手動、不急）</strong>：刪 reCAPTCHA 舊金鑰 6Le… / 移除多餘 Enterprise 註冊。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">3-4 反爬規則上線</div>
+        <div class="task-desc">CF WAF 自訂規則封阿里雲／騰訊雲等機房 ASN；設定 1 條 per-IP rate limit；Referer 檢查限自有網域。觀察告警，逐步調整。</div>
+        <div class="task-file">Cloudflare WAF / Rate Limiting</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase 4 -->
+<section class="section">
+  <div class="section-label orange">Phase 4</div>
+  <div class="section-title">R2 圖片鏡像（可選 / 後續）</div>
+  <div class="section-desc">接姊妹篇圖片讀取優化。與資料代理解耦，可獨立於 Phase 3 之後任何時間進行。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P4 &nbsp; 圖庫上 R2 + 選源</div>
+      <div class="task-group-meta">R2 · assets.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">4-1 188MB 圖庫上 R2 + CF CDN</div>
+        <div class="task-desc">將 public/images 圖庫同步到 R2，透過 CF CDN 供應（R2 零流量出口費，對圖片流量特別有利）。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">4-2 assetUrl 指向 CF/R2 + onerror 退回</div>
+        <div class="task-desc">單一 choke point assetUrl() 注入 R2 來源，逐圖 onerror 退回 GH Pages 備援。全站生效、改一處。</div>
+        <div class="task-file">src/utils/assets.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase 5 -->
+<section class="section">
+  <div class="section-label orange">Phase 5</div>
+  <div class="section-title">中國 origin 優化（可選 / 盡量改善）</div>
+  <div class="section-desc">「盡量改善」等級，非「真的很快」（那需 ICP，已排除）。可無限延後。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P5 &nbsp; origin 就近 + 驗證</div>
+      <div class="task-group-meta">Worker/R2 origin · 中國實測</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">5-1 Worker/R2 origin 就近 HK</div>
+        <div class="task-desc">讓資料與圖片回源節點盡量靠近中國（HK／新加坡），縮短回源段。仍為跨境、不保證穩，屬盡量改善。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">5-2 中國讀取實測與觀察</div>
+        <div class="task-desc">透過中國節點／社群回報實測讀取體驗，確認相對現狀（兩道牆全擋）的改善幅度，決定是否值得再投入。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-029 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

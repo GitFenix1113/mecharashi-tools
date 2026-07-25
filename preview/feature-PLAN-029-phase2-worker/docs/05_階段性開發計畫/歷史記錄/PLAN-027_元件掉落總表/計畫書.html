@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-027 元件掉落總表 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-027 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-027</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    元件掉落總表<span style="-webkit-text-fill-color:var(--text-secondary);">Component Drops · 攻略資料工具 · 可匯出圖片</span>
+  </h1>
+  <p class="hero-sub">攻略區第一個資料工具頁：把各關 BOSS 的元件掉落整理成可切換分頁、帶圖示的矩陣總表，並能一鍵匯出成圖片分享。純前端組裝現有 Firestore 資料，零新型別、零寫入。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-027</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-07-04</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">新頁面 · Frontend · 攻略工具</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MEDIUM</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value orange">已完成</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">無（資料與元件皆已就緒）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>與 PLAN-010 攻略系統的關係：</strong>
+    PLAN-010 是 TipTap 手寫圖文 CMS（管理員撰寫敘事型攻略），目前 PENDING 且尚未開工。
+    本計畫是<strong>資料驅動的工具頁</strong>（從 Firestore 自動生成，非手寫），性質同
+    <code>guides/tools/</code> 下的彩甲規劃器（PLAN-018）。
+    兩者互相獨立 —— 本計畫<strong>不依賴、也不阻塞</strong> PLAN-010，可即刻開發。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>掉落資訊只能逐一查、沒有總覽</strong><br>
+    元件的 BOSS 掉落關卡（<code>dropStages</code>）目前只在各元件詳情的 <code>BossDropTooltip</code> 裡分散顯示。
+    玩家想回答「<strong>某一關能刷到哪些元件</strong>」或「<strong>想要的元件要去打哪關的第幾個 BOSS</strong>」時，
+    必須一個個點開元件比對，缺少一張把「元件 × 關卡 × BOSS」攤平的總覽表。
+  </div>
+
+  <div class="problem-block">
+    <strong>社群靠手工 Excel 表分享，難維護</strong><br>
+    現況玩家間流傳的是人工維護的 Excel 掉落表（如本計畫參考的截圖），資料會隨改版過期、也無法對上站內元件圖示。
+    我們已有結構化的 <code>dropStages</code> 資料，理應能自動產生一張<strong>永遠與資料同步、帶官方圖示、可匯出分享</strong>的表，取代手工表。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：定位為獨立「資料工具頁」，而非 PLAN-010 的 CMS 文章</strong><br>
+    內容 100% 由 <code>useComponents()</code> 的資料自動生成、無敘事文字，與 PLAN-010 的手寫富文本本質不同。
+    因此比照彩甲規劃器，實體檔案放 <code>src/pages/guides/tools/ComponentDropsPage.tsx</code>，
+    路由掛 <code>/guides/component-drops</code>。與 PLAN-010 CMS 解耦，不受其 PENDING 狀態阻塞。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：5 個 Tab 直接映射現有型別維度，零新資料</strong><br>
+    分頁維度完全對應既有欄位，不需要新增任何型別或 Firestore 欄位：
+    <div class="code-block" style="margin-top:10px;">
+<span class="cm">// Tab ← componentType（觸=Condition / 應=Function）× componentsWType（W / Normal）</span>
+總表     = <span class="cm">全部元件</span>
+觸元件   = componentType===<span class="st">'Condition'</span> && componentsWType===<span class="st">'Normal'</span>
+觸元件W  = componentType===<span class="st">'Condition'</span> && componentsWType===<span class="st">'W'</span>
+應元件   = componentType===<span class="st">'Function'</span>  && componentsWType===<span class="st">'Normal'</span>
+應元件W  = componentType===<span class="st">'Function'</span>  && componentsWType===<span class="st">'W'</span>
+    </div>
+    <strong style="display:block;margin-top:10px;">英文命名對照（供 Tab 標籤 / 匯出檔名 / i18n 用）：</strong>
+    <ul style="margin:6px 0 0 16px;line-height:2;">
+      <li><strong>觸元件 = Trigger</strong>（型別值仍為 <code>componentType: 'Condition'</code>，勿混淆）</li>
+      <li><strong>應元件 = Reaction</strong>（型別值仍為 <code>componentType: 'Function'</code>）</li>
+      <li>W 版即在後方加 <code>W</code>：Trigger W / Reaction W（呼應官方 Excel 表頭「TriggersW」）</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：矩陣表結構 —— 列＝元件、欄＝首領關卡、格＝BOSS 編號</strong><br>
+    沿用 <code>src/data/bossDrops.ts</code> 既有純函式組裝，前端不重造輪子：
+    <ul style="margin:8px 0 0 16px;line-height:2;">
+      <li><strong>欄（首領關卡）</strong>：<code>getAllStages(list)</code> 蒐集該 Tab 出現過的 stage，由小到大當表頭；表頭配 <code>getBossImagePath()</code> BOSS 頭像。</li>
+      <li><strong>列（元件）</strong>：每列一顆元件，左側「名稱」欄用 <code>ComponentIcon</code> 顯示圖示＋名稱（呼應「不要純文字」需求），並有「等級」欄顯示 <code>probabilityLevel</code>（Lv.N）。</li>
+      <li><strong>格</strong>：以 <code>getComponentDrops(comp)</code> 找出該元件在該 stage 掉落的 <code>bosses[]</code>，格內標 <code>#BOSS編號</code>（如 <code>#3</code>）；無掉落則留白。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：匯出「當前 Tab」為 PNG，沿用已裝的 html-to-image</strong><br>
+    專案已安裝 <code>html-to-image</code>（SimulatorPage / VersionQuickTable 已在用），不需新依賴。
+    點「匯出圖片」對當前 Tab 的表格容器 <code>toPng()</code> 產生下載。第一版只匯出當前分頁那張表（符合截圖情境），一鍵匯出全部 5 張列為未來增強。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠️ 邊界與注意</strong>
+    <ul style="margin:8px 0 0 16px;line-height:2;">
+      <li><strong>大表寬度</strong>：關卡多時表格很寬，畫面需可橫向捲動；匯出時應擷取完整表格（非可視區），必要時鎖定匯出用的固定寬度樣式。</li>
+      <li><strong>深色背景</strong>：<code>toPng</code> 預設透明背景，需指定 <code>backgroundColor</code> 為站台深色，避免匯出圖透明/白底。</li>
+      <li><strong>圖片載入時機</strong>：BOSS 頭像與元件圖示均為同源本機圖（<code>/images/...</code>），無跨域 CORS 問題；但匯出前需確保圖片已載入完成再截圖。</li>
+      <li><strong>無掉落元件</strong>：部分元件 <code>dropStages</code> 為空（非 BOSS 掉落）。需決定是否列出——第一版於「總表」保留、掉落欄全空即可，或加篩選「只看有掉落」。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>新頁 <code>/guides/component-drops</code>，5 個 Tab 切換（總表／觸元件／觸元件W／應元件／應元件W）</li>
+      <li>元件 × 首領關卡 × BOSS 編號的矩陣表，含「等級」欄（<code>probabilityLevel</code>）</li>
+      <li>元件以圖示（<code>ComponentIcon</code>）呈現，表頭以 BOSS 頭像呈現</li>
+      <li>匯出「當前 Tab」表格為 PNG</li>
+      <li>攻略頁（<code>GuidesPage</code>）新增此工具的入口卡片</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>手寫敘事型攻略 CMS（屬 PLAN-010，另案）</li>
+      <li>掉落機率數值 / 期望次數等統計（目前無此資料來源）</li>
+      <li>後台編輯掉落資料（已由 PLAN-025 的 <code>ComponentAdmin</code> 管理 <code>dropStages</code>）</li>
+      <li>一鍵匯出全部 5 張表（列為未來增強）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 新增 / 修改檔案 -->
+<section class="section">
+  <div class="section-label orange">Files</div>
+  <div class="section-title">新增 / 修改檔案一覽</div>
+
+  <div class="code-block">
+<span class="cm">── 新增 ─────────────────────────────</span>
+src/pages/guides/tools/<span class="nm">ComponentDropsPage.tsx</span>   <span class="cm">// 主頁：Tab + 矩陣表 + 匯出</span>
+
+<span class="cm">── 修改 ─────────────────────────────</span>
+src/<span class="nm">App.tsx</span>                       <span class="cm">// 新增 /guides/component-drops 路由（lazy）</span>
+src/pages/guides/<span class="nm">GuidesPage.tsx</span>     <span class="cm">// 攻略頁加入本工具入口卡片（取代開發中佔位）</span>
+
+<span class="cm">── 沿用（不改）───────────────────────</span>
+src/hooks/useFirestore.ts        <span class="cm">// useComponents()</span>
+src/data/bossDrops.ts            <span class="cm">// getAllStages / getComponentDrops / getBossImagePath</span>
+src/components/ComponentIcon.tsx <span class="cm">// 元件圖示</span>
+html-to-image                    <span class="cm">// 匯出 PNG（已安裝）</span>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-027 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-010_攻略系統/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-010 攻略系統</h4>
+      <p>手寫圖文攻略 CMS（另一條路線，與本案獨立）</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-027 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>
