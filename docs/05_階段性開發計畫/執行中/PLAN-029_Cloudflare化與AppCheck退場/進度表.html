@@ -177,7 +177,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">8</div>
+      <div class="summary-num" style="color:var(--accent-green)">9</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -185,7 +185,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">9</div>
+      <div class="summary-num" style="color:var(--text-dim)">8</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">8 / 18</span>
+      <span style="color:var(--accent-orange);">9 / 18</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 44.4%"></div>
+      <div class="progress-bar-fill" style="width: 50%"></div>
     </div>
   </div>
 
@@ -308,11 +308,15 @@
   <div class="section-title">Worker 資料代理（核心）</div>
   <div class="section-desc">公開資料改由 Worker 代讀，與前端直連<strong>並存</strong>可灰度。此階段 Firestore 規則仍 read:if true，不收緊。</div>
 
+  <div class="phase-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);color:#bfe9cf;">
+    ✅ <strong style="color:var(--accent-green);">程式與本機驗證完成（2026-07-25）：</strong>Worker 代理 + 前端 flag 接線 + 全集合對拍皆通過（見各項）。<strong>進 Phase 3 前的營運前置</strong>：① <code>cd workers &amp;&amp; wrangler deploy</code> 部署 Worker、<code>wrangler secret put FIREBASE_SA_KEY</code> 接上生產 Secret；② 在 deploy.yml/CI 設 <code>VITE_WORKER_API_BASE</code>（＋確認 Worker 的 ALLOWED_ORIGINS 含 mecharashi.wiki）；③ 於 mecharashi.wiki 覆驗公開頁全走 Worker。三者完成＝Phase 2→3 閘門開啟，才可收緊 Firestore 規則。
+  </div>
+
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">P2 &nbsp; 邊緣代理 + 前端接線</div>
       <div class="task-group-meta">CF Worker · GameDataContext · useFirestore</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -345,9 +349,10 @@
       <div>
         <div class="task-name">2-4 逐集合驗證所有頁面資料正常</div>
         <div class="task-desc">機師／機甲／武器／模組／元件／背包等頁面，確認經 Worker 取得的資料與直連一致、無缺漏、快取行為正確。</div>
+        <div class="task-file">已完成（本機 wrangler dev 對真實 Firestore）：① 資料級對拍——12 集合（含 globalResearch）逐文件比對 Worker vs 直連，2400+ 文件 0 mismatch（筆數 pilots87/mechs62/modules239/weapons169/backpacks180/components208/buffs217/pilotSkills710/neuralDrive432/glossary162）。② 瀏覽器端到端——機師列表/機師詳情/模擬器全數改打 /api（無 firestore.googleapis.com 公開集合直讀），渲染正常。③ 三層快取搭配 Worker 版本源正常（詳情頁 pilots/weapons 命中 localStorage 免重抓）、邊緣快取 MISS→HIT、CORS 正確。全站無 onSnapshot 殘留（利 Phase 3-1）。唯一 console error 為既有 App Check 403（與 Worker 無關）。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
