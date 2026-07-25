@@ -7,6 +7,7 @@
 
 import { parseServiceAccount, getAccessToken, type ServiceAccount } from './gcpAuth'
 import { listCollection, getDocument } from './firestoreRest'
+import { getDataVersions, effectiveVersion } from './versions'
 
 export interface Env {
   /** service account JSON 字串（CF Secret；本機走 workers/.dev.vars）。 */
@@ -24,7 +25,7 @@ const ARRAY_COLLECTIONS = new Set<string>([
 const DEFAULT_ALLOWED = ['https://mecharashi.wiki', 'https://www.mecharashi.wiki', 'http://localhost:5173']
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url)
     const cors = corsHeaders(request, env)
 
@@ -36,21 +37,45 @@ export default {
     if (request.method !== 'GET') return json({ error: 'method not allowed' }, 405, cors)
 
     const key = m[1]
+    const isValid = ARRAY_COLLECTIONS.has(key) || key === 'globalResearch' || key === 'grayOpsRoster'
+    if (!isValid) return json({ error: `unknown collection: ${key}` }, 404, cors)
+
     try {
       const sa = parseServiceAccount(env.FIREBASE_SA_KEY)
       const token = await getAccessToken(sa)
 
-      let data: unknown
-      if (ARRAY_COLLECTIONS.has(key)) {
-        data = await listCollection(sa, token, key)
-      } else if (key === 'globalResearch') {
-        data = await getDocument(sa, token, 'globalResearch', 'global')
-      } else if (key === 'grayOpsRoster') {
-        data = await assembleGrayOpsRoster(sa, token)
-      } else {
-        return json({ error: `unknown collection: ${key}` }, 404, cors)
+      // 版本號 → 邊緣快取 key（後台 bumpDataVersion 改版本號 → key 改變 → 舊快取自然失效）
+      const versions = await getDataVersions(sa, token)
+      const version = effectiveVersion(key, versions)
+      const cache = caches.default
+      const cacheKey = new Request(`${url.origin}/__cache/data/${key}?v=${encodeURIComponent(version)}`)
+
+      // 命中邊緣快取 → 0 Firestore read
+      const hit = await cache.match(cacheKey)
+      if (hit) {
+        return new Response(await hit.text(), {
+          status: 200,
+          headers: { ...cors, 'content-type': 'application/json; charset=utf-8', 'x-cache': 'HIT' },
+        })
       }
-      return json(data, 200, cors)
+
+      // miss → 讀 Firestore
+      let data: unknown
+      if (ARRAY_COLLECTIONS.has(key)) data = await listCollection(sa, token, key)
+      else if (key === 'globalResearch') data = await getDocument(sa, token, 'globalResearch', 'global')
+      else data = await assembleGrayOpsRoster(sa, token) // grayOpsRoster
+
+      const body = JSON.stringify(data)
+      // 寫入邊緣快取：純資料、不含隨請求變動的 CORS；版本號已在 key 裡，故可長 max-age
+      const toCache = new Response(body, {
+        headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=86400' },
+      })
+      ctx.waitUntil(cache.put(cacheKey, toCache))
+
+      return new Response(body, {
+        status: 200,
+        headers: { ...cors, 'content-type': 'application/json; charset=utf-8', 'x-cache': 'MISS' },
+      })
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       return json({ error: msg }, 500, cors)
