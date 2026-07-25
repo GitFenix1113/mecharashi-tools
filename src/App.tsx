@@ -22,6 +22,7 @@ import DocumentsPage from './pages/documents/DocumentsPage'
 import ProfilePage from './pages/user/ProfilePage'
 import AdminPage from './pages/user/AdminPage'
 import ComponentsPage from './pages/components/ComponentsPage'
+import NotFoundPage from './pages/NotFoundPage'
 const WeaponDetailPage         = lazy(() => import('./pages/weapons/WeaponDetailPage'))
 const AdminVersionListPage     = lazy(() => import('./pages/admin/AdminVersionListPage'))
 const AdminVersionEditorPage   = lazy(() => import('./pages/admin/AdminVersionEditorPage'))
@@ -71,6 +72,9 @@ function App() {
               path="admin/history"
               element={<AdminRoute><Suspense fallback={null}><AdminHistoryPage /></Suspense></AdminRoute>}
             />
+            {/* catch-all：未匹配路徑顯示 404 引導頁（放最後，只在所有 route 都沒中時生效）。
+                置於 Layout 之下，故仍有導覽列可用；先前缺此條時只會渲染空白內容區。 */}
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
         </ReferenceProvider>
