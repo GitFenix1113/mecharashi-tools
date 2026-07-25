@@ -177,7 +177,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">11</div>
+      <div class="summary-num" style="color:var(--accent-green)">12</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -185,7 +185,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">6</div>
+      <div class="summary-num" style="color:var(--text-dim)">5</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">11 / 18</span>
+      <span style="color:var(--accent-orange);">12 / 18</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 61.1%"></div>
+      <div class="progress-bar-fill" style="width: 66.7%"></div>
     </div>
   </div>
 
@@ -394,10 +394,10 @@
       <div>
         <div class="task-name">3-3 移除前端 App Check + reCAPTCHA</div>
         <div class="task-desc">拿掉 firebase.ts 的 initializeAppCheck／ReCaptchaV3Provider 與相關 env、debug token；Firebase Console 關閉 App Check enforce。清理 reCAPTCHA 金鑰（保留紀錄）。</div>
-        <div class="task-file">src/lib/firebase.ts · .env.local · deploy.yml/preview.yml</div>
+        <div class="task-file">✅ 已完成（2026-07-25）：firebase.ts 移除 initializeAppCheck/ReCaptchaV3Provider import 與初始化區塊；deploy.yml/preview.yml 拿掉 VITE_FIREBASE_APPCHECK_SITE_KEY；.env.local/.env.local.example 清掉 site key + debug token。本機實測前台不再發 firebaseappcheck/reCAPTCHA 請求、console 零錯誤（原本每頁的 403 噪音消失）、資料照走 Worker。App Check enforce 早於 Phase 1 已手動關。<strong>可選後續（Console 手動、不急）</strong>：刪 reCAPTCHA 舊金鑰 6Le… / 移除多餘 Enterprise 註冊。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>

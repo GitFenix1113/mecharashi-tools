@@ -8,7 +8,6 @@ import {
 } from 'firebase/firestore'
 import { getAuth, connectAuthEmulator } from 'firebase/auth'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
-import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
 
 // ── 本地模擬器模式（PLAN-030 Phase 0）───────────────────────────────────────────
 // 只有 `npm run dev:emu`（= vite --mode emulator，載入 .env.emulator）時為 true；
@@ -35,26 +34,10 @@ const firebaseConfig = {
 const isNewApp = getApps().length === 0
 const app = isNewApp ? initializeApp(firebaseConfig) : getApps()[0]
 
-// ── App Check：擋下非授權網域的請求（防止他站盜用我的 Firestore）──
-// 只在首次初始化時設定一次，避免 HMR 重複呼叫
-//
-// 模擬器模式一律跳過：debug token 仍會往「真實」App Check 後端換票，
-// 在離線／隔離環境會卡住，且模擬器本來就不驗 App Check。
-if (isNewApp && !USE_EMULATOR) {
-  // 本機開發：使用固定的 debug token（值存在 .env.local，不進版控）
-  // 釘死成固定值，避免「清除網站資料」後 SDK 重新產生隨機 token、與 Console 註冊的對不上
-  // 未設環境變數時退回 true（SDK 自動產生隨機 token）
-  if (import.meta.env.DEV) {
-    (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean | string }).FIREBASE_APPCHECK_DEBUG_TOKEN =
-      import.meta.env.VITE_APPCHECK_DEBUG_TOKEN || true
-  }
-  initializeAppCheck(app, {
-    // 金鑰雖由 Google Cloud (reCAPTCHA Enterprise) 建立，但搭配其「舊版 secret key」
-    // 走 classic reCAPTCHA v3 流程（api.js），對應 Firebase App Check 的「reCAPTCHA」provider
-    provider: new ReCaptchaV3Provider(import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY),
-    isTokenAutoRefreshEnabled: true,
-  })
-}
+// ── App Check 已於 PLAN-029 Phase 3-3 退場 ────────────────────────────────────
+// 原本用 App Check（reCAPTCHA v3）擋非授權網域直打 Firestore；PLAN-029 改由
+// Cloudflare Worker 代讀公開資料 + Firestore 規則 read:if isAdmin() 真鎖直連取代
+// （比 App Check 硬、且擺脫 reCAPTCHA 維運痛）。故此處不再 initializeAppCheck。
 
 // initializeFirestore 只能呼叫一次；HMR reload 時改用 getFirestore 取已存在的實例
 //
