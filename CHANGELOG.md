@@ -201,6 +201,12 @@
 
 ### 🔧 維護
 
+- PLAN-029 進度表反映 Worker 部署上線 + 生產 Secret 接線 (`bfe1930`)
+- PLAN-029 Worker parseServiceAccount 容錯 UTF-8 BOM (`cb7b81d`)
+- PLAN-029 Phase 2-4 逐集合驗證通過（進度表更新，Phase 2 完成） (`4363a48`)
+- PLAN-029 Phase 2-3 前端公開資料改打 Worker 代理（flag 灰度並存） (`8b35c1c`)
+- PLAN-029 Phase 2-2 Worker 邊緣快取（版本號 key） (`24401f4`)
+- PLAN-029 Phase 2-1 Worker 讀通 Firestore（公開資料代理核心） (`cd5fb85`)
 - PLAN-029 修 CI concurrency 衝突 + Phase 1 進度表反映實況 (`d6bdf53`)
 - PLAN-029 Phase 1 前端改根路徑，支援自訂網域 mecharashi.wiki (`d1e84a4`)
 - PLAN-029 Phase 0 前置準備 — Cloudflare Worker 骨架與憑證就位 (`690e919`)
@@ -253,6 +259,7 @@
 
 ### 🚀 CI/CD
 
+- PLAN-029 Phase 2 前端正式切換 — deploy.yml 注入 VITE_WORKER_API_BASE (`2d367cd`)
 - 新增 workflow_dispatch 觸發方式至 preview workflow (`f354195`)
 - 重新觸發 preview 部署 (`af8e9fc`)
 - 同步 workflow 設定，防止 gh-pages 競爭條件 (`4ede30e`)

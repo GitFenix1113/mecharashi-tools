@@ -4,6 +4,8 @@ import {
   getPilots, getMechs, getModules, getWeapons, getBackpacks, getComponents, getBuffs, getPilotSkills, getGlossaryTerms,
   getNeuralDriveAbilities, getGlobalResearch, getGrayOpsRoster, getDataVersions, type DataVersions,
 } from '../lib/firestoreApi'
+// PLAN-029 Phase 2-3：flag 開時，公開資料與版本改走 Cloudflare Worker 代理（可灰度／回退）
+import { WORKER_ENABLED, getWorkerDataVersions, fetchWorkerCollection } from '../lib/api/workerData'
 
 export const EMPTY_GLOBAL_RESEARCH: GlobalResearch = {
   pilotResearchByClass: {},
@@ -144,7 +146,14 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const fetchFromFirestore = useCallback(async (key: CollectionKey): Promise<unknown> => {
+  // 抓單一集合的原始資料。WORKER_ENABLED 時走 Worker 代理，否則 Firestore 直連。
+  // 兩條路徑回傳形狀一致（Worker 回應刻意對齊 getter），故上游套快取邏輯無須分岔。
+  const fetchCollectionData = useCallback(async (key: CollectionKey): Promise<unknown> => {
+    if (WORKER_ENABLED) {
+      const data = await fetchWorkerCollection(key)
+      // globalResearch 缺文件時對齊直連路徑的 EMPTY fallback（避免 null 汙染下游）
+      return key === 'globalResearch' ? (data ?? EMPTY_GLOBAL_RESEARCH) : data
+    }
     switch (key) {
       case 'pilots':         return getPilots()
       case 'mechs':          return getMechs()
@@ -166,10 +175,12 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
     if (toFetch.length === 0) return
     toFetch.forEach(k => fetchedRef.current.add(k))
 
-    // 讀版本一次/ session（1 次 Firestore read；失敗 → 空版本退化）
+    // 讀版本一次/ session（1 次讀取；失敗 → 空版本退化）。
+    // WORKER_ENABLED 時走 Worker /api/versions（Phase 3 收緊 meta 後仍讀得到）。
     if (versionsRef.current === undefined) {
       if (!versionsPromiseRef.current) {
-        versionsPromiseRef.current = getDataVersions()
+        const loadVersions = WORKER_ENABLED ? getWorkerDataVersions : getDataVersions
+        versionsPromiseRef.current = loadVersions()
           .then(v => { versionsRef.current = v })
           .catch(() => { versionsRef.current = { global: null, byKey: {} } })
       }
@@ -184,7 +195,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
         if (cached !== undefined) {
           applyData(key, cached)
         } else {
-          const data = await fetchFromFirestore(key)
+          const data = await fetchCollectionData(key)
           applyData(key, data)
           if (version) writeCache(key, version, data)
         }
@@ -195,7 +206,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
         setErrorMap(prev => ({ ...prev, [key]: err }))
       }
     }))
-  }, [applyData, fetchFromFirestore, effectiveVersion])
+  }, [applyData, fetchCollectionData, effectiveVersion])
 
   const reload = useCallback(() => {
     fetchedRef.current.clear()
