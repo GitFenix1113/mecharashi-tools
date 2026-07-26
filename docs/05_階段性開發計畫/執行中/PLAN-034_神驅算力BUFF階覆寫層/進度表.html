@@ -179,15 +179,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">19</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
-      <div class="summary-lbl">進行中</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">2</div>
+      <div class="summary-lbl">演練完成待寫入</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">22</div>
+      <div class="summary-num" style="color:var(--text-dim)">1</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -199,10 +199,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">0 / 22</span>
+      <span style="color:var(--accent-purple);">19 / 22</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 86%"></div>
     </div>
   </div>
 
@@ -210,7 +210,7 @@
     <strong>目標效果：</strong>
     使用者在機師詳情頁點動神經驅動算力時，天賦與技能中的 BUFF 引用<b>同步</b>顯示正確階級與數值——
     「天賦說凝勢III、技能說凝勢I」這種斷裂在結構上不再可能發生；
-    同時修掉 10 筆現在就查不到浮窗的斷鏈引用。
+    同時修掉現在就查不到浮窗的斷鏈引用（估 10 筆，實際修了 15 筆，見 Phase A）。
   </div>
 
   <div class="slice-note">
@@ -219,6 +219,11 @@
     <b>Slice 2</b> = Phase F / G（約 14h）——只服務天賦側，是塌縮 <code>ndVariants</code> 的配套。<br>
     <b>Phase A 可獨立出貨</b>，即使全案否決也有殘值。<br>
     合計估 34h；考量單人維護、繁中文件同步與 pre-push build 把關，實際建議抓 <b>38–45h</b>。
+    <br><br>
+    <b style="color:var(--accent-green);">2026-07-26 · Slice 1（Phase 0 / A / B / C / D / E）全數完成</b>，
+    連同 H-1 文件同步已具備出貨條件。機制層完整可用、正式資料尚未啟用
+    （全站無任何 <code>buffUpgrades</code> → 線上行為與今日 byte-identical），
+    <b>啟用資料是 Slice 2 的 Phase G</b>。
   </div>
 </section>
 
@@ -231,8 +236,8 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">0-1 &nbsp; 建模假設實機驗證</div>
-      <div class="task-group-meta">go / no-go</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">go / no-go → <b style="color:var(--accent-green)">GO</b></div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -240,12 +245,16 @@
         <div class="task-desc">
           書面驗證<b>已完成</b>（艾達 γ2 Lv4/Lv5/Lv6 minSum=10/13/16 對上 ndVariants 的 10/13/16；
           梅利莎 γ2 Lv1/Lv4/Lv5/Lv6 = 1/10/13/16 對上四個變體，100% 吻合）。
-          此項僅剩<b>實機確認</b>：在遊戲內把 γ2 調到 1 / 7 / 10 / 13 / 16，逐一截圖技能分頁，
-          確認技能正文的凝勢階與天賦一致。不通過 → 整案終止。
+          <br><b>2026-07-26 實機確認通過（GO）：</b>
+          ① 艾達 [凝勢] 的階在技能分頁與天賦一致；
+          ② 露西亞 [特種彈] 的天賦階確實隨算力變動（實機天賦顯示「獲得3層[特種彈III]，可疊加3層」）。
+          <b>建模假設成立，全案繼續。</b>
+          <br>但同時確認了一個限制條件，見下方「文案風格因角色而異」——
+          「同頁階級一致」<b>不是全站不變式</b>，只在部分機師成立。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -253,7 +262,7 @@
     <div class="task-group-header">
       <div class="task-group-title">0-2 &nbsp; 模擬器盲區修補與候選家族盤點</div>
       <div class="task-group-meta">scripts/export-emulator-slice.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -263,11 +272,14 @@
           不補進去的話，任何人在模擬器裡驗證機師頁 ND 能力都會查無 → 覆寫恆為空 →
           <b>「測起來完全正常（就是今天的行為）」</b>，測不出任何回歸。
           必須<b>提交進版控</b>並重跑匯出，不是一次性調查動作。
+          <br><b>2026-07-26 完成：</b>已改為四個字典集合並附上為何非補不可的註解；
+          重跑匯出（保留原本選定的梅利莎＋艾達）後種子含 <code>neuralDriveAbilities 432 份</code>。
+          <code>seed-emulator.mjs</code> 是掃整個資料夾灌入，不需另外改。
         </div>
         <div class="task-file">scripts/export-emulator-slice.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -278,12 +290,60 @@
           指標從「有幾位機師的 ND 會升 buff 階」改為「有幾位機師的技能引用位於<b>可安全覆寫的</b>家族」。
           同時查明 <code>nd_雙生星芒2/3</code>、<code>nd_金絲雀1-4</code> 現有的 <code>buffIds</code> 是否已被填成
           <code>buff_凝勢@N</code>——若已填，賦予 vs 升階的語意必須先釐清，且 <code>buffPool</code> 會誤判可達。
+          <br><b>2026-07-26 完成：</b>結果見下方盤點結論。
         </div>
-        <div class="task-file">scripts/scan-nd-upgrade-candidates.mjs（新）</div>
+        <div class="task-file">scripts/temp_scripts/scan-nd-upgrade-candidates.mjs（新・不進版控）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
+  </div>
+
+  <div class="impact-note" style="background:rgba(168,85,247,0.06);border-color:rgba(168,85,247,0.2);">
+    <strong style="color:var(--accent-purple);">0-2 盤點結論（2026-07-26 實測正式資料：pilots 87 · neuralDriveAbilities 432 · buffs 217 · pilotSkills 710）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>母體遠大於計畫書假設</b>：ND 正文提及階梯家族的能力 <b>53 支</b>、涉及 <b>18 位</b>機師。
+          計畫書以「只有艾達與梅利莎有 <code>ndVariants</code>」推得的規模是<b>低估</b>——
+          <code>ndVariants</code> 只有兩位，是因為只有這兩位被人工建過變體，不是因為現象只有兩例。</li>
+      <li><b>可安全覆寫家族 13 族</b>：凝勢、常效維護、特種彈、裝甲養護、陣地優勢、幹勁、情報、隱形、
+          攻擊強化、命中強化、興奮、振奮、迴避率提升。<b>因 debuff 型別排除 6 族</b>（短路／失穩／膽怯／威壓光環／攻擊阻礙／被命中概率提升）。</li>
+      <li><b>技能引用位於可安全覆寫家族的機師：13 位</b> ← 本項指標。</li>
+      <li><b>§4 乾淨</b>：<code>nd_雙生星芒1-4</code> 與 <code>nd_金絲雀1-4</code> 的 <code>buffIds</code> 全部為 <code>[]</code>，
+          全站也沒有任何 ND 能力的 <code>buffIds</code> 指向階梯 buff →
+          「賦予 vs 升階」語意目前未撞在一起，<code>buffUpgrades</code> 可作為乾淨的新語意引入，
+          <code>buffPool</code> 亦不會誤判高階可達。</li>
+      <li><b>掃描方法上的更正</b>：「ND 正文含升級句」這個入口<b>不成立</b>——旗艦案例
+          <code>nd_雙生星芒2</code> 正文是「[凝勢]可疊加7層」，沒有任何升級句。
+          腳本改以「正文提及階梯家族」為入口，再印出原句供人判讀是<b>升階</b>還是<b>前置條件</b>
+          （<code>nd_雙生星芒1</code>「攜帶凝勢時，移動力+1」屬後者，不該進覆寫表）。</li>
+      <li><b>待人工判讀者</b>：13 族中多數 ND 改動是「疊加層數 +N」「生效次數 +1」「射程 +1」這類
+          <b>增量語意</b>，計畫書已明列為<b>不在範圍內</b>。可實際落地的仍以
+          凝勢（艾達）／常效維護（梅利莎）為主，其餘須逐族確認「ND 改動後的狀態＝既有某一級」才可納入。</li>
+    </ul>
+  </div>
+
+  <div class="slice-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);border-left-color:var(--accent-yellow);">
+    <strong style="color:var(--accent-yellow);">0-1 附帶確認的限制條件：文案風格因角色設計者而異（2026-07-26）</strong>
+    <p style="margin:8px 0 0;">
+      官方不同角色的文案由不同人撰寫，規則並不統一：<b>有些機師的技能敘述會隨算力改寫，有些不會</b>。
+      因此計畫書決策一「全頁一張表 → 天賦說 III、技能說 I 在結構上不可能發生」
+      應理解為<b>本站呈現的內部一致性保證</b>，而非「官方一定也這樣顯示」。
+      這使 <code>EntityRef.fixedLevel</code> 從「逐筆逃生門」升級為<b>必要機制</b>：
+      凡官方在該處不改寫的引用點，必須逐筆釘死，否則本站會顯示出遊戲裡看不到的階名。
+    </p>
+    <p style="margin:8px 0 0;">
+      <b>連帶的 SOP 要求：</b>每族啟用 <code>buffUpgrades</code> 前，必須實機確認
+      「該族在<b>該機師</b>的技能敘述是否跟著變」，逐筆決定 <code>level</code> 或 <code>fixedLevel</code>。
+      此項須併入 Phase E 的後台警示與 Phase H 的 data-patch SOP。
+    </p>
+    <p style="margin:8px 0 0;">
+      <b>另確認一個既有變通已在使用：</b>官方沒有階名的家族（貝爾莎的 <code>BUFF_幹勁</code>——
+      官方沒有幹勁 I/II，而是直接在神經驅動給最大層數）
+      現況是<b>自訂等級但沿用同一個名字</b>。這正是計畫書決策六的做法
+      （<code>BuffLevel.name</code> 填 <code>buff.name</code> 原字），
+      故該決策不是新增規範，而是<b>把既有實務寫進型別</b>——字面不變、浮窗與數值正確抬升。
+      此時決策三的視覺標記格外重要：字沒變，只有標記能告訴使用者這個值被算力改過。
+    </p>
   </div>
 </section>
 
@@ -296,34 +356,44 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; 斷鏈 refId 與缺 level 回填</div>
-      <div class="task-group-meta">22 筆</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">實際 54 筆（估 22）</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">修 10 筆斷鏈 refId</div>
+        <div class="task-name">修 10 筆斷鏈 refId → 實際 15 筆</div>
         <div class="task-desc">
           <code>skill_破勢</code> / <code>skill_輝斷終焉</code> 的 <code>凝勢</code> → <code>buff_凝勢</code>
           （現況 buffs 集合查無此 id，<code>EntityRefView</code> 查不到直接 return null，浮窗現在就是空的）；
           另 8 筆是 PLAN-024 合併後未回頭修的舊分級 ID：
           <code>BUFF_被命中概率提升II</code>、<code>BUFF_被命中機率提升</code>、<code>BUFF_護甲提升I</code>×2、
           <code>BUFF_命中率降低II</code>×2、<code>BUFF_隱形I</code>×2。
+          <br><b>2026-07-26 完成，實際 15 筆。</b>估值偏低的原因是計畫書只量了 <code>pilotSkills</code>；
+          實作改掃 <code>entityRefs.ts</code> SPECS 的全部九個集合（<code>refsField</code> 從未被覆寫，
+          故用「遞迴找 descriptionRefs」即可完整覆蓋）。舊分級 ID 帶階，修 refId 時一併把階寫進 <code>level</code>。
+          <code>BUFF_被命中機率提升</code>（機／概一字之差）以寫死的別名表處理，不做模糊比對。
         </div>
         <div class="task-file">scripts/temp_scripts/fix-buff-ref-links.mjs（新）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">回填 12 筆缺 level 的階梯 buff 引用</div>
+        <div class="task-name">回填 12 筆缺 level 的階梯 buff 引用 → 實際 39 筆</div>
         <div class="task-desc">
           <code>BUFF_情報</code>×6、<code>BUFF_幹勁</code>×5、<code>buff_隱形</code>×1——
           皆指向有 <code>levels[]</code> 的家族卻沒填 <code>level</code>。
+          <br><b>2026-07-26 完成，實際 39 筆。</b>3 筆由字面尾碼推導（<code>[凝勢Ⅰ]</code>→1）；
+          其餘 36 筆字面無尾碼（<code>[情報]</code>、<code>[幹勁]</code>、<code>[特種彈]</code>…）
+          <b>一律填 base=1</b>——這是編輯決策：<code>level</code> 缺值時覆寫層的基準階是 0，
+          而階梯 buff 的頂層欄位在 PLAN-024 後多半已空，填 1 比不填更接近真相。
+          需注意少數 ND 卡正文描述的是「升級後」狀態（如 <code>nd_算無遺策4</code>「[情報]的上限提升至35層」），
+          其 base=1 語意上偏保守，待 Phase G 逐族確認時可再調整。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -331,30 +401,55 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; 字形統一與損毀 name 清理</div>
       <div class="task-group-meta">--dry-run + diff 人工過目</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">統一羅馬數字字形</div>
+        <div class="task-name">統一羅馬數字字形 → 實際 30 筆 + 5 筆孤兒 key</div>
         <div class="task-desc">
           <code>SKILL_蕩陣</code> 同時有 <code>短路I</code>（半形）與 <code>短路Ⅰ</code>（全形）；
           <code>SKILL_蝕罪極影</code> 同時有 <code>護甲降低1</code>（阿拉伯數字）與 <code>護甲降低Ⅰ</code>。
+          <br><b>2026-07-26 完成。</b>字形基準取<b>全形</b>（實測全形 82 : 半形 29，且半形那側含
+          <code>虛粒子矩陣EX</code> 這類把羅馬字母誤計為階的雜訊）。
+          正規化<b>只在「字面去尾碼後恰好等於該 buff 名稱」時才動</b>，<code>[虛粒子矩陣EX]</code> 因此不會被毀掉。
+          <br>「同時有兩個字形」的案例查清後發現是<b>孤兒 key</b>：正文只有一個字面，另一個 key 永遠不會被渲染
+          （<code>buff_戰場要塞</code> 的 <code>護甲提升|</code> 是豎線錯字、<code>TERM_追獵增益</code> 的
+          <code>精准</code> 是简繁殘留）。共清掉 5 筆，守則是「同表內必須還有活著且指向同一 buff 的 key 才准刪」。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">洗掉 3 筆損毀的 buff.name</div>
+        <div class="task-name">洗掉 3 筆損毀的 buff.name → 實際 1 筆在 name、2 筆在引用字面</div>
         <div class="task-desc">
           <code>縱敵ⅠⅠ</code>、<code>失穩ⅠⅠⅠ</code>、<code>護甲降低ⅠⅠ</code>——皆為重複 U+2160 而非正確的 Ⅱ / Ⅲ。
           不修的話，決策三的抬升機制一旦生效，這些字會被升格成顯示值。
+          <br><b>2026-07-26 完成。</b>實測只有 <code>縱敵ⅠⅠ</code> 出現在 <code>buff.name</code>；
+          <code>失穩ⅠⅠⅠ</code>／<code>護甲降低ⅠⅠ</code> 是 <code>descriptionRefs</code> 的 key 與正文字面，
+          由字形統一那步一併處理（羅馬求值天然把 ⅠⅠⅠ 算成 3 → 正規化為 Ⅲ）。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
+  </div>
+
+  <div class="slice-note" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2);border-left-color:var(--accent-red);">
+    <strong style="color:var(--accent-red);">實作過程踩到的坑（記錄下來，Phase G 同類寫入務必避開）</strong>
+    <p style="margin:8px 0 0;">
+      第一次寫入時，腳本的 <code>markDirty</code> 只登記了 <code>descriptionRefs</code> 這個 top-level 欄位，
+      於是字形正規化<b>改了 key 卻沒把正文一起寫回</b>，18 份根層文件的 key 與正文脫鉤
+      （key 已是 <code>失穩Ⅲ</code>，正文還是 <code>[失穩ⅠⅠⅠ]</code> → chip 直接渲染不出來）。
+      巢狀站點（如 <code>pilots.talents</code>）因為整個陣列被覆寫而倖免，所以症狀只出現在根層文件。
+    </p>
+    <p style="margin:8px 0 0;">
+      <b>教訓：</b>改動 <code>descriptionRefs</code> 的 key 時，正文欄位與側錄表是<b>同一筆交易</b>，
+      登記 dirty 欄位必須涵蓋兩者。已加入 <code>textsync</code> 修復類別（把脫鉤的正文對齊回 key）並修好，
+      重跑 dry-run 為 <b>0 筆修正、0 筆需人工</b>（冪等）。寫入前有全量備份
+      <code>_local-notes/db-backup-2026-07-25_2011</code>（18 collections / 2543 docs）。
+    </p>
   </div>
 </section>
 
@@ -362,13 +457,17 @@
 <section class="section">
   <div class="section-label purple">Phase B</div>
   <div class="section-title">型別與純函式</div>
-  <div class="section-desc">全部純函式、可 <code>npm test</code>。此階段不改任何畫面行為。</div>
+  <div class="section-desc">全部純函式、可 <code>npm test</code>。此階段不改任何畫面行為。
+    <b>已實測驗證（2026-07-26）：</b>全站 47 個帶 <code>.lvN</code> 的數值 token，
+    索引式與值比對式取級的解析結果<b>逐一相同、零差異</b>——B-3 的 <code>pickLevel</code> 收斂是
+    <b>預防性</b>修正（防的是未來新增非連號等級時靜默解析失敗），不是修現有症狀。
+    185 項測試全綠、build 通過、lint 與變更前基線一致。</div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; 三個選填欄位</div>
       <div class="task-group-meta">src/types/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -377,19 +476,22 @@
           三者皆選填、皆不改變既有行為。<code>fixedLevel</code> 的命名刻意避開與
           <code>ReferenceContext.pinRef</code> 撞名；型別註解直接寫反例（對敵施加的同名 debuff、描述規則本身的文字）。
           <code>BuffLevel.name</code> 的註解須說明「沒有階名的家族填 <code>buff.name</code> 原字」是編輯決策而非留空。
+          <br><b>2026-07-26 完成。</b><code>fixedLevel</code> 的註解另補上第三種反例——
+          <b>官方在該處不改寫的引用點</b>（來自 0-1 實機確認的「文案風格因角色而異」），
+          這是本欄位從「逃生門」升級為必要機制的理由。
         </div>
         <div class="task-file">src/types/pilot.ts · src/types/buff.ts · src/types/common.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">B-2 &nbsp; ndOverrides.ts 覆寫表與五道驗證閘門</div>
-      <div class="task-group-meta">src/utils/ndOverrides.ts（新）</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-title">B-2 &nbsp; ndOverrides.ts 覆寫表與驗證閘門</div>
+      <div class="task-group-meta">src/utils/ndOverrides.ts（新）· 23 項測試全綠</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -400,10 +502,16 @@
           ④ 掛載級 <code>minSum &gt; 0</code>（PilotAdmin 新增級預設 0，視為「未設定」而非「零門檻恆真」）
           ⑤ 通過 <code>assertSelfBuff</code> 自身增益白名單。不成立時 dev 環境 <code>console.warn</code> 印出 buffId 與失敗原因。
           判定：<code>zonePower(zone, 選定Lv) &gt;= level.minSum</code>；同 buffId 取最高。
+          <br><b>2026-07-26 完成，實作為七道閘門</b>（另加「元素沒帶 <code>@N</code>」與「目標不是階梯 buff」兩道）。
+          <br>兩處實作決策：
+          <b>①驗證對象含尚未達門檻的宣告</b>——一個 Lv5 才生效的壞宣告，在 Lv4 就要讓整族退場，
+          否則使用者拉高算力時會遇到「字突然不動了」。
+          <b>②不在函式內 <code>console.warn</code></b>，改回傳 <code>onReject</code> 回呼，
+          保持純函式可測；由呼叫端決定 dev 才印。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -412,11 +520,14 @@
           回 <code>{ level, lifted }</code>。<code>refType !== 'buff'</code>、<code>fixedLevel === true</code>、
           或 <code>ov == null || ov &lt;= base</code> 一律回 <code>ref.level</code>（今日行為 byte-identical，
           靜態 level:3 不會被 lv2 覆寫降級）。<b>這是全案最容易寫錯、也最致命的一行</b>，測試須涵蓋 term / skill 撞名情境。
+          <br><b>2026-07-26 完成。</b>回傳值多帶一個 <code>name</code>（僅 lifted 時有值）——
+          否則 RefChip 得自己再查一次 <code>entryOf</code>，兩邊查出不同答案就是下一個漂移源。
+          測試涵蓋：抬升／不降級／<code>fixedLevel</code> 釘死／term 與 skill 撞名／空表恆等今日行為。
         </div>
         <div class="task-file">src/utils/ndOverrides.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -424,7 +535,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-3 &nbsp; 共用工具收斂與既有腳本補洞</div>
       <div class="task-group-meta">pickLevel · zonePower · defaultNdLevels · KNOWN_KEYS</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -434,10 +545,20 @@
           <code>EntityRefView.tsx</code> 用 <code>find(l =&gt; l.level === N)</code>。
           實測正式資料已有非連號／亂序（<code>buff_迴避率提升</code> levels=[3,4]、
           <code>buff_迴避率降低</code> levels=[2,3,5,4]），索引式取級已經是錯的。
+          <br><b>2026-07-26 完成。兩處都改走 <code>pickLevel</code>。</b>
+          <b>實測目前零畫面變化</b>：全站 47 個 <code>.lvN</code> token 逐一比對，
+          索引式與值比對式的解析結果完全相同——因為目前非連號的兩族
+          （<code>buff_迴避率提升</code>／<code>buff_迴避率降低</code>）恰好都沒有數值 token 指向它們。
+          所以這是<b>預防性</b>修正：擋的是「日後某族刪掉中間一級或新增亂序等級，
+          既有 token 就靜默變成暗色 <code>?</code>」這種無聲失效。
+          <br>連帶：<code>NumRefSource.levels</code> 的元素型別改為必須自帶 <code>level</code>
+          （新增 <code>NumRefLevel</code>），<code>numRefs.test.ts</code> 與
+          <code>cascadePatch.test.ts</code> 的 fixture 已補上 <code>level</code> 欄位。
         </div>
+        <div class="task-file">src/utils/numRefs.ts · src/components/EntityRefView.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -446,10 +567,14 @@
           <code>isGammaZone</code> / <code>zonePower</code> 自 <code>PilotDetailPage</code> 上移，使天賦與覆寫層共用同一門檻來源。
           <code>defaultNdLevels</code> 改為「凡該區任一級的能力帶 <code>buffUpgrades</code> → 預設 Lv1」——
           原邏輯對 <code>ND_RULES.defaultLevels</code> 未列出的分區給<b>滿級</b>，會讓覆寫在首屏即全開而使用者不知道那是算力衍生值。
+          <br><b>2026-07-26 完成。</b><code>ND_RULES</code> 一併上移（<code>defaultNdLevels</code> 需要它，
+          留在原地就是第二份門檻來源）。<code>defaultNdLevels</code> 的 <code>abilityOf</code> 參數選填，
+          省略時退化為原行為；且因目前全站尚無任何 <code>buffUpgrades</code>，此規則今日不改變任何預設值。
         </div>
+        <div class="task-file">src/utils/ndOverrides.ts · src/pages/pilots/PilotDetailPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -458,11 +583,16 @@
           缺 <code>neuralDriveAbilities</code> 會讓 Phase G 的收尾指令在 <code>initFirebase</code> 之前就
           <code>exit(1)</code>、<b>一個集合都沒 bump</b>，而編輯者自己因就地同步看起來一切正常。
           建議直接改成從 <code>ALL_COLLECTION_KEYS</code> 同步。
+          <br><b>2026-07-26 已補（Phase A 提前踩到）：</b>Phase A 的修補動到 <code>neuralDriveAbilities</code>，
+          不先補這個 key 整條 bump 指令就會 exit(1)。已補上並加註「必須與 ALL_COLLECTION_KEYS 一致」。
+          <br><b>⚠ 注意此檔在 .gitignore 的「防線 C — 資料管線私有化」名單內</b>
+          （<code>.gitignore:84</code>），所以這個修正<b>只存在本機、不進版控</b>——
+          換機器或重新 clone 時會再次出現地雷四，需重補。
         </div>
-        <div class="task-file">scripts/bump-data-version.mjs</div>
+        <div class="task-file">scripts/bump-data-version.mjs（本機・不進版控）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -476,8 +606,8 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; NdOverrideContext</div>
-      <div class="task-group-meta">src/contexts/NdOverrideContext.tsx（新）</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">src/contexts/NdOverrideContext.ts（新）</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -487,10 +617,15 @@
           <code>const EMPTY = { entryOf: () =&gt; undefined }</code>，
           <b>無 provider = 恆等今日行為</b>。另導出 <code>NdOverrideEmpty</code> 供 ND 能力卡包覆
           （規則宣告文「凝勢可疊加7層」不可被自己宣告的規則改寫）。
+          <br><b>2026-07-26 完成。</b>拆成<b>兩個檔</b>：context + hook 在
+          <code>contexts/NdOverrideContext.ts</code>、包覆器元件在 <code>components/NdOverrideEmpty.tsx</code>。
+          同檔匯出 context 與元件會觸發 <code>react-refresh/only-export-components</code>（+2 lint 錯誤）；
+          拆開後 lint 維持基線。
         </div>
+        <div class="task-file">src/contexts/NdOverrideContext.ts · src/components/NdOverrideEmpty.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -498,7 +633,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; PilotDetailPage 接線與分區推導</div>
       <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -508,10 +643,16 @@
           value identity 不穩會讓 provider 底下所有 chip 失去 memo（地雷八）。
           覆寫表非空時才 <code>ensureLoaded(['buffs'])</code>；buffs 未就緒期間 <code>entryOf</code> 回 undefined
           → chip 維持原字面，無中間態閃爍。
+          <br><b>2026-07-26 完成。</b>載入判定改用 <code>ndNeedsBuffs</code>（該機師是否有帶
+          <code>buffUpgrades</code> 的能力）而非「覆寫表非空」——後者是雞生蛋：沒有 buffs 就建不出表，
+          建不出表就不載 buffs。<br>
+          另：dev 的 <code>onReject</code> 警告加了 <code>loadedKeys.has('buffs')</code> 判斷。
+          實測不加的話，buffs 載入完成前每次進頁固定噴兩則 <code>buff-missing</code>——
+          那是閘門①的設計中間態，不是資料有問題，照噴會訓練人忽略警告。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -521,10 +662,16 @@
           「∪ 帶 <code>buffUpgrades</code> 的能力所在分區」，使 ★ 標記正確；
           <code>NdPowerBar</code> 的 title 改為「此區算力會改寫天賦／技能敘述」。
           ND 分區卡與能力卡再包一層 <code>NdOverrideEmpty</code>。
+          <br><b>2026-07-26 完成，但隔離這項<span style="color:var(--accent-yellow)">尚未被真正驗證</span>。</b>
+          實機測試看到 ND 能力卡的 <code>[凝勢]</code> 沒被抬升，但查資料後發現
+          <code>nd_雙生星芒2</code> 的側錄表是 <code>{"凝勢": {refType:"term", refId:"term_凝勢"}}</code>——
+          <b>本來就不會被抬升</b>，所以「沒變」不能證明 <code>NdOverrideEmpty</code> 有效。
+          包覆器在位且結構正確，但現行資料慣例（ND 正文引用<b>概念詞條</b>而非特定階 buff）讓它用不到。
+          要真正驗證得等哪天有 ND 能力用 buff 引用寫規則宣告句。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -532,7 +679,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; RefChip 抬升渲染與浮窗覆寫快照</div>
       <div class="task-group-meta">src/components/RefChip.tsx · ReferenceContext.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -542,10 +689,12 @@
           並加雙底線標記 + title「已由 γ2 算力自 Lv1 提升至 Lv3」。
           <b>視覺標記是必做交付項不是選配</b>——技能區是使用者對照官方 wiki 最頻繁的地方。
           <code>lifted === false</code> 時整段與今日 byte-identical。
+          <br><b>2026-07-26 完成並實機驗證。</b>為了讓 title 說得出是<b>哪一區</b>的算力，
+          <code>NdOverrideEntry</code> 加了 <code>zone</code> 欄位——只講「已由算力提升」使用者不知道該去動哪一條。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -556,11 +705,40 @@
           故 <code>pinRef</code> / <code>hoverRef</code> 須把覆寫快照一併存進 <code>ReferenceContext</code>，供浮窗 body 內層 RefText 使用。
           <b>換機師時必須清快照</b>，否則釘選浮窗殘留上一位機師的算力狀態。
           浮窗內再往下 drill 兩層以上一律不沿用快照（明訂為已知限制）。
+          <br><b>2026-07-26 完成並實機驗證</b>（釘選浮窗正確顯示「Lv3 · 最大疊加 7」而非 Lv1/5）。
+          換機師的清除做法是在 <code>id</code> 變動的 effect 裡呼叫 <code>close()</code>；
+          drill 限制以 <code>stack.length === 1</code> 判定。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">Phase C 實機驗證紀錄（2026-07-26 · 本地模擬器 · 艾達 γ2 Lv5）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>天賦 chip：<code>[凝勢Ⅰ]</code> → <code>[凝勢Ⅲ]</code>，雙底線標記 + title「已由 γ2 算力自 Lv1 提升至 Lv3」</li>
+      <li><b>技能 chip 同步抬升</b>（本案原始問題）：「破勢」「輝斷終焉」與天賦一致</li>
+      <li>term / buff 撞名：天賦同時有 <code>[凝勢]</code>→<code>term_凝勢</code> 與
+          <code>[凝勢Ⅰ]</code>→<code>buff_凝勢@1</code>，<b>只有後者被抬升</b></li>
+      <li>釘選浮窗顯示 Lv3 資料（地雷一的快照機制生效）</li>
+      <li>γ2 預設 Lv1 時全數維持 <code>[凝勢Ⅰ]</code>；dev console 無錯誤無警告</li>
+    </ul>
+    <p style="margin:8px 0 0;">
+      <b>驗證環境本身有一個必須修的洞：</b>PLAN-029 的 Worker 代理把模擬器測試環境打斷了。
+      <code>.env.emulator</code> 只設 <code>VITE_USE_EMULATOR=true</code>，但 <code>WORKER_ENABLED</code>
+      看的是 <code>VITE_WORKER_API_BASE</code>——那個變數住在 <code>.env.local</code>、<b>所有模式都會載入</b>。
+      結果 Firebase SDK 指向模擬器、公開集合卻仍打正式站的 <code>/api/data/*</code>，
+      本機因 CORS 全數失敗、畫面空白、console 洗版 4562 則。
+      已在 <code>.env.emulator</code> 補 <code>VITE_USE_WORKER=false</code>（該檔已進版控）。
+      這是 Phase 0 地雷三沒料到的第二層盲區——補了種子集合，資料卻根本到不了模擬器。
+    </p>
+    <p style="margin:8px 0 0;">
+      示範資料由 <code>scripts/temp_scripts/seed-plan034-demo.mjs</code> 產生（只寫本機、有 127.0.0.1 硬防呆）。
+      重現：<code>npm run emu:seed</code> → 跑該腳本 → <code>npm run dev:emu</code>。
+      <b>正式資料庫沒有任何 <code>buffUpgrades</code>，線上行為完全不變。</b>
+    </p>
   </div>
 </section>
 
@@ -568,13 +746,15 @@
 <section class="section">
   <div class="section-label purple">Phase D</div>
   <div class="section-title">稽核註冊與模擬層真保護</div>
-  <div class="section-desc"><b>硬性排序：blocked by PLAN-030 Phase C。</b> <code>entityRefs.ts</code> / <code>cascadePatch.ts</code> 目前仍是未追蹤檔案、<code>buffPool.ts</code> 有未提交修改，全是 PLAN-030 在途工作。</div>
+  <div class="section-desc"><s>硬性排序：blocked by PLAN-030 Phase C。</s>
+    <b>2026-07-26 解除</b>：PLAN-030 已歸檔，<code>entityRefs.ts</code> / <code>cascadePatch.ts</code> / <code>buffPool.ts</code>
+    皆已進版控，級聯清除與還原機制可直接繼承。</div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; buffUpgrades 註冊為引用站點</div>
-      <div class="task-group-meta">src/utils/entityRefs.ts</div>
-      <span class="status blocked">BLOCKED</span>
+      <div class="task-group-meta">src/utils/entityRefs.ts · ndUpgradeAudit.ts（新）</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -584,10 +764,19 @@
           級聯清除與還原<b>免費繼承</b> PLAN-030 已建立的機制。
           同批加入掃描規則：被 <code>buffUpgrades</code> 指到的家族，其所有引用站點必須
           <code>level</code> 與 <code>fixedLevel</code> 二選一、不得皆空。
+          <br><b>2026-07-26 完成。</b>站點 <code>neuralDriveAbilities.buffUpgrades</code> 已註冊，
+          三則測試（N1–N3）斷言級聯真的接得上：<code>op=arrayRemove</code>、
+          <code>value='buff_凝勢@2'</code>（原始字串，Firestore 要求完全相等）、與 <code>buffIds</code> 各記一筆。
+          <br>掃描規則做成獨立檔 <code>src/utils/ndUpgradeAudit.ts</code> + 7 則測試。
+          <b>刻意不放進 <code>ndOverrides.ts</code></b>：它需要 <code>entityRefs</code> 的全站掃描能力，
+          而 <code>ndOverrides</code> 被 RefChip（全站扇出最高的葉節點）匯入，不該把掃描器拖進那條 import 路徑。
+          <br><code>formatNdUpgradeViolations</code> 把「未完整掃描 / 尚無宣告 / 全數合規」分成三種訊息——
+          集合沒載入時回空陣列被讀成「通過」是這類稽核最典型的假安全。
         </div>
+        <div class="task-file">src/utils/entityRefs.ts · src/utils/ndUpgradeAudit.ts · ndUpgradeAudit.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">BLOCKED</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -595,7 +784,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; excludeFromPool 強制與 red-case-first 測試</div>
       <div class="task-group-meta">src/utils/buffPool.ts</div>
-      <span class="status blocked">BLOCKED</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -606,10 +795,14 @@
           而 <code>skipSiteId</code> 是單一 optional 參數、只有 pilots 傳入——靠呼叫端記得傳＝零保護。
           等 PLAN-023 收尾有人補上對 neuralDriveAbilities 的 <code>runSpec</code>（該檔 TODO 已預告），
           <code>buffUpgrades</code> 會立刻被當「賦予」掃進池子。
+          <br><b>2026-07-26 完成。</b>計畫書說 <code>skipSiteId</code>「只有 pilots 傳入」，
+          實際查證是<b>從宣告以來沒有任何呼叫端傳過</b>（pilots 那段是手寫迴圈、用
+          <code>SKIP_WHEN_SKILLS_RESOLVED</code> 判斷，根本沒走 <code>runSpec</code>）。
+          既然它是死參數又長得像防護，一併<b>移除</b>，避免下一個人以為那裡有保護。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">BLOCKED</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -618,11 +811,16 @@
           直接斷言 <code>runSpec(out, SPECS.neuralDriveAbilities, 雙生星芒2)</code> 輸出為空，
           並<b>先移除 <code>excludeFromPool</code> 確認它會紅</b>，才算通過。
           繞 <code>buildBuffPool</code> 寫的斷言會因路徑沒被走到而恆綠、零資訊量。
+          <br><b>2026-07-26 完成，紅案通過。</b>拆掉守衛後同一份輸入確實漏出
+          <code>{ buffId:'buff_凝勢', level:2, origin:'神驅升階:雙生星芒2' }</code>——
+          證明這條路徑真的會被走到、守衛真的在擋東西。
+          第三則測試釘住「略過是逐站點、不是整份 spec」：同一個能力的 <code>buffIds</code> 照常收。
+          <code>runSpec</code> 為此改為 export（僅供測試，註解已說明理由）。
         </div>
         <div class="task-file">src/utils/buffPool.test.ts · src/utils/entityRefs.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">BLOCKED</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -637,7 +835,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; NeuralDriveAdmin buffUpgrades 編輯器</div>
       <div class="task-group-meta">必須是下拉，不是 textarea</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -646,11 +844,19 @@
           目標 buff 下拉只列「有 <code>levels[]</code> <b>且為自身增益</b>」者；階下拉由該 buff 的 levels 動態生成；
           選完即時顯示「Lv2（最大疊加 7）· 影響全站 N 處引用」。
           <b>必須與 <code>buffIds</code> 分開</b>——賦予 vs 升階語意不同，共用會貼錯欄位。
+          <br><b>2026-07-26 完成。</b><code>BuffUpgradesField</code> 為獨立元件，候選清單走
+          <code>isSelfBuff</code>（與建表閘門⑤同一個判定，不另寫一套白名單）。
+          即時回饋分五種狀態逐一講明後果：未選目標／查無 buff／未選階／該階不存在／
+          <b>該階未填 <code>name</code>（會讓建表閘門③整族退場，導引去 BUFF 管理補）</b>——
+          因為覆寫層的降級一律是靜默的，錯了只表現為「點算力沒反應」。
+          <br>另兩處實作決策：<code>buffIds</code> 欄位下補一行「賦予 vs 升階」對照說明（同頁兩個欄位長得像，不講必貼錯）；
+          面板寬度自 <code>max-w-2xl</code> 放寬到 <code>4xl</code>——選項字面長（<code>遭受傷害降低（buff_遭受傷害降低）</code>），
+          原寬度會把 buff 下拉擠成只剩一個箭頭。
         </div>
-        <div class="task-file">src/pages/user/admin/NeuralDriveAdmin.tsx</div>
+        <div class="task-file">src/pages/user/admin/NeuralDriveAdmin.tsx · src/hooks/useRefScanData.ts（新）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -660,18 +866,23 @@
           <code>nd_AP優化3/4</code>、<code>nd_協同作戰2</code>）。一旦有人在通用能力上填 <code>buffUpgrades</code>，
           所有掛載它的機師頁全被改寫。既有 usageCount 徽章須擺在 <code>buffUpgrades</code> 編輯區旁，
           可展開列出「機師名 · 分區 · Lv · minSum」——同一份 ability 在不同機師門檻不同，在全域集合頁完全看不到。
+          <br><b>2026-07-26 完成。</b>掛載明細列出「機師名 · 分區 Lv · minSum」，
+          <code>minSum &lt;= 0</code> 者以紅字標注「未設定門檻，此處的升階不會生效」——
+          這是 E-3 那道擋存檔守門的<b>事前版本</b>：在 ND 這一側就先讓人看見，而不是等到 PilotAdmin 存不下去才知道。
+          警告樣式只在 <b>2 位以上機師 <u>且</u> 已填升階</b>時亮起，避免「共用能力」這個常態把警告訓練成雜訊。
+          另補列表頁的「升階 N」徽章，掃一眼就知道哪些能力帶了升階宣告。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">E-2 &nbsp; BuffAdmin 階名欄位與 level 粒度級聯</div>
-      <div class="task-group-meta">src/pages/user/admin/BuffAdmin.tsx</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">src/pages/user/admin/BuffAdmin.tsx · buffLevelRefs.ts（新）</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -679,10 +890,18 @@
         <div class="task-desc">
           軟驗證：須以 <code>buff.name</code> 為前綴、尾綴只允許 ASCII I/V/X，
           不符則顯示警告並<b>印出 code point</b>（這是唯一能讓人看見 <code>ⅠⅠ</code> vs <code>Ⅱ</code> 差異的方式）。
+          <br><b>2026-07-26 完成，但基準字形改為<u>全形</u></b>——計畫書寫「尾綴只允許 ASCII I/V/X」，
+          與 Phase A 實測後選定的全形基準（全形 82 : 半形 29）相衝突；照計畫書寫會讓 A-2 剛統一好的資料
+          在後台被判為違規。<code>checkBuffLevelName</code> 期望 <code>ROMAN_FULLWIDTH[level]</code>。
+          <br>四種結果各自對應一種真實錯誤：<b>未填</b>（講明後果是「整族失效」而非「少了個名字」）、
+          <b>前綴不符</b>、<b>尾綴不對且附 code point</b>、
+          <b>與 buff 名相同 → 判定為 ok</b>（官方無階名家族的合法編輯決策，見決策六）。
+          附「套用建議值」一鍵鈕，因為錯字案例（<code>ⅠⅠ</code>）根本無法用眼睛校對著手打。
+          <b>只警示不擋存檔</b>：階名是編輯判斷，擋下來會逼人填假資料。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -693,10 +912,19 @@
           覆寫層把後果從「一筆引用壞掉」放大成「<b>整族在該機師頁全部不生效</b>」。
           須支援 level 粒度反查、擋下「刪掉仍被引用的級」、存檔時依 level 昇冪正規化
           （實測 <code>buff_迴避率降低</code> 的 levels 陣列順序就是亂的）。
+          <br><b>2026-07-26 完成。</b>反查做成純函式檔 <code>buffLevelRefs.ts</code>（<code>findBuffLevelRefs</code> /
+          <code>findRemovedLevelsInUse</code> / <code>sortLevelsAscending</code>）+ 9 則測試。
+          三類站點取級方式不同，逐類判定：<code>buffIds</code>／<code>buffUpgrades</code> 與 <code>descriptionRefs</code> 比對
+          <code>RefHit.level</code>、<code>numTokenText</code> 改比對 token 內的 <code>.lvN.</code> 段。
+          <b>沒指定級的引用不算命中</b>——它們指的是家族本身，刪掉某一級不會讓它們指空。
+          <br><b>最重要的一段是「掃不全就不准刪」</b>：<code>useRefScanData</code> 對未載入的集合給
+          <code>undefined</code> 而非 <code>[]</code>，BuffAdmin 見到 <code>missingColls</code> 非空即拒絕刪級。
+          少了這段，「沒有阻擋」與「真的沒人引用」在畫面上完全一樣——正是這類守門最典型的假安全。
         </div>
+        <div class="task-file">src/utils/buffLevelRefs.ts · buffLevelRefs.test.ts · src/hooks/useRefScanData.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -704,7 +932,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-3 &nbsp; PilotAdmin minSum 防呆</div>
       <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -713,11 +941,38 @@
           PilotAdmin 新增等級的預設值是 <code>minSum: 0</code>。若某 level 的 <code>abilityId</code>
           指向帶 <code>buffUpgrades</code> 的能力而 <code>minSum</code> 仍為 0，存檔須擋下——
           否則該覆寫變成「零門檻恆真」，首屏即生效。
+          <br><b>2026-07-26 完成。</b>錯誤訊息逐筆列出「分區 Lv幾 的『能力名』帶有升階宣告（<code>buff_x@N</code>），但 minSum 為 0」。
+          <br>與建表閘門④的分工要講清楚：<b>閘門④也會擋，但那是靜默降級</b>——整族退場，
+          管理員只會看到「點算力沒反應」，不會知道是自己漏填門檻。這道守門的價值不在於多擋一次，
+          而在於<b>把靜默失敗換成一句說得出原因的話</b>。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">Phase E 的共同主題：把「靜默降級」翻譯成人話</strong>
+    <p style="margin:8px 0 0;">
+      B-2 的七道建表閘門讓壞宣告<b>整族退場</b>，這對前台是正確的（寧可維持今日行為，不要顯示錯的階名），
+      但對後台是災難：管理員填完存檔、畫面毫無變化，與「還沒填」完全不可區分。
+      Phase E 三項因此都不是新功能，而是<b>把每一道閘門的失敗原因搬到編輯當下講出來</b>——
+      未填階名（閘門③）在 E-1 的即時回饋與 E-2 的軟驗證各講一次、
+      minSum 未設（閘門④）在 E-1 的掛載明細與 E-3 的存檔守門各講一次。
+      刻意重複，因為兩個入口的人不會是同一次操作進來的。
+    </p>
+    <p style="margin:8px 0 0;">
+      <b>新增共用件 <code>useRefScanData</code></b>：把 GameDataContext 既有快取包成 <code>RefScanData</code>，
+      未載入的集合一律給 <code>undefined</code> 而非空陣列。刻意用前台快取而非
+      <code>getDocsFromServer</code>——這是編輯時的即時提示，每動一次下拉就打一輪全集合伺服器讀取不切實際；
+      真正要求「掃得全」的刪除級聯（<code>cascadeDelete.loadScanData</code>）本來就走 FromServer，兩者定位不同。
+    </p>
+    <p style="margin:8px 0 0;">
+      <b>驗收：</b><code>npm test</code> 215 項全綠（Phase D 後 +9 為 <code>buffLevelRefs.test.ts</code>）、
+      <code>npm run build</code> 通過、lint 與變更前基線一致。正式資料庫仍無任何 <code>buffUpgrades</code>，
+      <b>線上行為不變</b>。
+    </p>
   </div>
 </section>
 
@@ -727,11 +982,25 @@
   <div class="section-title">numRefs 情境化（Slice 2）</div>
   <div class="section-desc"><b>降級為 Slice 2 的理由：</b>實測 705 支 pilotSkills 中 <code>&lt;refId.lvN.attr&gt;</code> token 出現 <b>0 次</b>，全部數值 token 只存在於天賦正文。此階段對使用者抱怨的技能斷裂點<b>零收益</b>，其價值是「塌縮 ndVariants 後天賦數值仍正確」，故與 Phase G 綁定。</div>
 
+  <div class="slice-note" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2);border-left-color:var(--accent-red);">
+    <strong style="color:var(--accent-red);">2026-07-26 更正：Phase F 是 G-3 的<u>硬前置</u>，不是可延後項</strong>
+    <p style="margin:8px 0 0;">
+      「與 Phase G 綁定」原本被讀成「一起做比較好」，實測資料顯示是<b>不做就不能塌縮</b>。
+      兩位機師的 <b>base 正文</b>都寫死了 <code>lv1</code>：
+      梅利莎「可生效<code>&lt;buff_常效維護.lv1.maxTriggers&gt;</code>次」、
+      艾達「可疊加<code>&lt;buff_凝勢.lv1.maxStack&gt;</code> 層」。
+      塌縮後改寫改為就地發生，Phase C 只抬升 chip 字面、不管數值 token——
+      畫面會變成 <b>「獲得1層[凝勢Ⅲ]，可疊加5層」</b>（凝勢Ⅲ 實際是 7 層），
+      正是決策四「絕不允許不換字但數值照抬」要防的自相矛盾，只是方向相反。
+      故執行順序改為 <b>F → G-1 → G-2 → G-3</b>。
+    </p>
+  </div>
+
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">F-1 &nbsp; resolveNumValue / resolveNumRefs 加 levelOf</div>
-      <div class="task-group-meta">src/utils/numRefs.ts</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">src/utils/numRefs.ts · ndOverrides.ts</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -740,10 +1009,21 @@
           取級改用 <code>pickLevel</code>。<b>抬升後查無該級或該級缺該欄位時，退回 base 級的值，絕不劣化成 <code>'?'</code></b>——
           實測 <code>buff_隱形</code> lv1 有 <code>duration:2</code> 而 lv2/lv3 完全沒有；
           <code>BUFF_情報</code> lv1/lv2 的 <code>maxStack</code> 都是 25。
+          <br><b>2026-07-26 完成。</b>裁決器 <code>buildNumLevelOf(refs, ov)</code> 放在
+          <code>ndOverrides.ts</code>，內部<b>合成一個等價的 EntityRef 餵給 <code>effectiveLevel</code></b>——
+          抬升規則只能有一份，chip 與 token 才不可能對同一個 buff 給出不同的階。
+          <br><b>實作中發現計畫書沒寫到的一條</b>：<code>fixedLevel</code> 掛在 <code>EntityRef</code> 上，
+          而數值 token 是裸字串、沒有自己的引用記錄。若不看 refs，同一句會出現
+          「[凝勢Ⅰ]（chip 被釘死）…可疊加7層（token 照抬）」——決策四的反例，只是方向相反。
+          故 <code>buildNumLevelOf</code> 吃該段 refs，<b>任何</b>指向此 buff 的引用被釘死 → 整個 refId 的 token 一併釘死。
+          <br>另：<code>freezeNumRefs</code>（PLAN-030 刪除凍結）<b>刻意不吃 levelOf</b>並加測試釘住——
+          抬升是「某位機師的某個算力配置」下的情境值，凍結寫回的卻是全站共用正文，
+          烘焙進去等於把一個人的配裝變成所有人看到的死數字。
         </div>
+        <div class="task-file">src/utils/numRefs.ts · src/utils/ndOverrides.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -752,11 +1032,16 @@
           檔頭「token 自描述、不靠出現位置」須改為「token 自描述其<b>基準階</b>，實際顯示階可被情境層抬升」。
           title 改為「= 凝勢・可疊加層數（Lv3，已由 γ2 算力自 Lv1 提升）」。
           注意 <code>numRefs.test.ts</code> 既有 fixture 沒有 <code>level</code> 欄位、必須重寫。
+          <br><b>2026-07-26 完成。</b>檔頭補上「<b>『不靠出現位置』本身仍然成立</b>：抬升由 levelOf 這個
+          <u>顯式參數</u>決定，不是由 token 在文中的次序決定；不傳 levelOf 的呼叫端行為 byte-identical」——
+          不寫這句的話，下一個人會以為整條不變式被廢掉了。
+          <br>抬升的 token 另加<b>雙底線</b>（與 chip 的抬升標記同一套視覺），與未抬升的點線區隔。
+          fixture 在 B-3 就已補上 <code>level</code>，本階段不需重寫。
         </div>
-        <div class="task-file">src/utils/numRefs.test.ts</div>
+        <div class="task-file">src/utils/numRefs.test.ts · src/components/RefText.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -764,7 +1049,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-2 &nbsp; RefText 與 DiffHighlight 同源接線</div>
       <div class="task-group-meta">兩套 tokenizer 必須同源</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -774,11 +1059,14 @@
           它的四個呼叫點全部在天賦卡內、全部落在覆寫子樹裡，且它自己直接渲染 RefChip。
           若只接 RefText，會出現「chip 正確顯示凝勢III，同一行的數值 token 卻是暗色 <code>?</code>」——
           即「開高亮正常、關掉就壞」。
+          <br><b>2026-07-26 完成並實機驗證。</b>兩者都 <code>useNdOverrides()</code> + <code>buildNumLevelOf(refs, ov)</code>，
+          <code>useMemo</code> 依賴同為 <code>[refs, ov]</code>。查證計畫書所述屬實：
+          <code>DiffHighlight</code> 全站只有 4 個呼叫點，全在 <code>PilotDetailPage</code> 的天賦卡內。
         </div>
         <div class="task-file">src/components/RefText.tsx · src/components/DiffHighlight.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -787,13 +1075,14 @@
 <section class="section">
   <div class="section-label purple">Phase G</div>
   <div class="section-title">資料啟用與 ndVariants 塌縮（Slice 2）</div>
-  <div class="section-desc"><b>blocked by PLAN-030 Phase C</b>——此階段含不可逆刪除，必須有變更歷史可還原。<b>必須同批且有備份</b>：<code>backup-firestore.mjs</code> → <code>--dry-run</code> 印完整 before/after diff 人工過目 → 實寫；腳本須支援 <code>--rollback</code>（PLAN-024 系列 migrate 腳本已建立 DRY-RUN 慣例可照抄）。</div>
+  <div class="section-desc"><s>blocked by PLAN-030 Phase C</s>——<b>2026-07-26 解除</b>（PLAN-030 已歸檔，變更歷史可還原）。
+    此階段含不可逆刪除，<b>必須同批且有備份</b>：<code>backup-firestore.mjs</code> → <code>--dry-run</code> 印完整 before/after diff 人工過目 → 實寫；腳本須支援 <code>--rollback</code>（PLAN-024 系列 migrate 腳本已建立 DRY-RUN 慣例可照抄）。</div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">G-1 &nbsp; TalentNdPanel 徽章判定改造（塌縮前置）</div>
       <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx</div>
-      <span class="status blocked">BLOCKED</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -803,18 +1092,52 @@
           梅利莎 4 個變體與 base 的差異 100% 只有階級與 <code>.lvN</code>，依規則會被全數刪除
           → 面板 return null → 「算力階／生效中」徽章與差異高亮<b>全部消失</b>，而正文卻仍在隨算力變動。
           <b>此項是塌縮的前置條件，順序不可調。</b>
+          <br><b>2026-07-26 完成並實機驗證。</b>面板在塌縮後的<b>角色也跟著變</b>：
+          從「顯示改寫後的另一段敘述」變成「<b>說明上方那段字為什麼跟官方原文不一樣</b>」——
+          改寫是就地發生的，沒有第二份文字可以 diff，硬做一個 base vs base 的比對只會全綠、零資訊量。
+          <br>面板只列「本天賦<b>實際被抬升</b>的家族」，不直接倒出整張覆寫表：
+          表是整頁共用的，天賦沒引用到的家族列出來只會讓人以為這段字被改過。
+          判定走 <code>effectiveLevel</code> / <code>buildNumLevelOf</code>，與 chip、token 同源。
+          <br>兩種來源可並存：艾達保留 minSum=16 變體 → 變體徽章與抬升徽章<b>同時顯示</b>；
+          梅利莎變體歸零 → 只有抬升徽章。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">BLOCKED</span>
+      <span class="status done">已完成</span>
     </div>
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">Phase F + G-1 實機驗證（2026-07-26 · 本機模擬器 · 已套用完整 G-2/G-3 變更演練）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>梅利莎</b>（變體全刪）γ2 Lv1 → <code>[常效維護Ⅱ]</code>；拉到 <b>Lv4 → <code>[常效維護Ⅲ]</code> 且
+          「可生效」數字自 <b>2 跟著抬到 3</b></b>（lv3 的 maxTriggers）——這正是 Phase F 的存在理由，
+          沒有它會顯示「常效維護Ⅲ…可生效2次」。</li>
+      <li><b>艾達</b>（保留 minSum=16）γ2 Lv6 → 主敘述 <code>[凝勢Ⅲ]</code>／可疊加 <b>7</b> 層／<b>3</b>AP；
+          變體區只剩<b>真正的非等級差異</b>（<code>[星爆]</code>／<b>5</b>AP）。塌縮把「階級」從 diff 裡拿掉了。</li>
+      <li><b>本案原始問題已解</b>：技能分頁的「破勢」「輝斷終焉」同步顯示 <code>[凝勢Ⅲ]</code>，與天賦一致。</li>
+      <li>面板在梅利莎（<code>ndVariants: []</code>）仍正常渲染 → <b>地雷五確認被 G-1 擋掉</b>。</li>
+      <li>dev console <b>零錯誤零警告</b>。</li>
+    </ul>
+    <p style="margin:8px 0 0;">
+      <b>演練環境又補到一個洞（PLAN-029 的第三層）：</b>Phase C 已補 <code>VITE_USE_WORKER=false</code>，
+      但 <code>firestore.rules</code> 的 <code>read: if isAdmin()</code> 仍在——模擬器直連 Firestore 時，
+      未登入的 client <b>讀不到任何資料且不報錯</b>（畫面是「共 0 位機師」，console 全空）。
+      必須先用種子建的 <code>dev-admin@local.test</code> 登入。這個症狀與「資料沒種進去」完全一樣，
+      值得寫進 H-2 的 SOP。
+    </p>
+    <p style="margin:8px 0 0;">
+      演練用 <code>enable-nd-buff-upgrades.mjs --emulator</code>（新增旗標）。
+      實作時踩到：<code>projectId</code> 若不從 <code>.firebaserc</code> 取而寫死常數，
+      會連到模擬器裡<b>另一個空 project</b>——症狀同樣是「所有文件查無」。
+    </p>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">G-2 &nbsp; 填 buffUpgrades 與 BuffLevel.name</div>
       <div class="task-group-meta">艾達 + 梅利莎</div>
-      <span class="status blocked">BLOCKED</span>
+      <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
@@ -827,7 +1150,7 @@
         </div>
       </div>
       <div class="task-assignee">管理員</div>
-      <span class="status blocked">BLOCKED</span>
+      <span class="status pending">待開始</span>
     </div>
   </div>
 
@@ -835,7 +1158,7 @@
     <div class="task-group-header">
       <div class="task-group-title">G-3 &nbsp; ndVariants 塌縮與 bump</div>
       <div class="task-group-meta">不可逆 · 需備份</div>
-      <span class="status blocked">BLOCKED</span>
+      <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
@@ -846,7 +1169,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">BLOCKED</span>
+      <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
@@ -857,7 +1180,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">BLOCKED</span>
+      <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
@@ -871,7 +1194,7 @@
         <div class="task-file">scripts/temp_scripts/enable-nd-buff-upgrades.mjs（新）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">BLOCKED</span>
+      <span class="status pending">待開始</span>
     </div>
   </div>
 </section>
@@ -885,8 +1208,8 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">H-1 &nbsp; docs 同步</div>
-      <div class="task-group-meta">docs/02_ · docs/03_</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">5 份文件 · 依 CLAUDE.md 規則 2</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -895,20 +1218,38 @@
           三個新欄位（<code>buffUpgrades</code> / <code>BuffLevel.name</code> / <code>fixedLevel</code>）
           與 <code>Site.excludeFromPool</code>，同步 <code>docs/02_技術文件/02_資料模型</code> 的 buff / pilot 頁
           與 <code>04_Firebase/資料庫設計文件</code>。
+          <br><b>2026-07-26 完成，四份：</b>
+          <br>· <code>02_資料模型/skills_buffs.html</code>：<code>BuffLevel.name</code> 與 <code>EntityRef.fixedLevel</code> 兩列欄位定義，
+          並補兩則 note——「三個新欄位如何協作」（含七道閘門與 <code>excludeFromPool</code>）與「level 粒度反查與刪級守門」。
+          <code>EntityRef.level</code> 原本的說明也改了：語意自 PLAN-034 起精確化為<b>基準階</b>，實際顯示階可被抬升為
+          <code>max(level, 覆寫階)</code>，是<b>下限</b>不是等號。
+          <br>· <code>02_資料模型/neuralDriveAbilities.html</code>：<code>buffUpgrades</code> 欄位列 + 新開一節
+          「升階 vs 賦予」（三條硬規則、後台雙下拉與掛載明細、引用稽核與級聯）。
+          <code>buffIds</code> 那列也補上「<b>賦予</b>」「會進 buffPool」以資對照——兩個欄位長得像，不並排講必貼錯。
+          <br>· <code>02_資料模型/pilots.html</code>：<code>minSum</code> 補「兼作 buff 階覆寫門檻」與 E-3 的存檔守門。
+          <br>· <code>04_Firebase/資料庫設計文件/skills-buffs.html</code>：該檔已宣告「完整欄位以資料模型為準」，
+          故只補一則 changed-block 講<b>寫入端</b>該知道的兩件事（levels 昇冪正規化、刪級會讓引用靜默指空），
+          並點明<b>腳本直接寫 Firestore 時沒有後台那道保護</b>。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">頁面規劃：技能分頁自此也具互動改寫</div>
         <div class="task-desc">
           <code>docs/03_頁面規劃/02_機師/index.html</code> 的「技能分頁：各技能效果展示」需改寫。
+          <br><b>2026-07-26 完成。</b>tab 卡那張卡片改為「三個分頁皆具互動改寫」，並區分兩種機制：
+          天賦／神驅是<b>整段正文換寫</b>（<code>ndVariants</code>），技能是<b>引用層階級抬升</b>（chip 字面與浮窗資料）。
+          <br>另在「神經驅動算力 &amp; 天賦改寫」一節補兩張卡：
+          <b>「BUFF 階覆寫（跨分頁生效）」</b>（含雙底線標記與 ND 卡片隔離）與
+          <b>「抬升不是全站不變式」</b>——後者記的是 0-1 實機確認的限制條件，
+          官方文案風格因角色而異，所以這是<b>本站的內部一致性保證</b>，不是「官方一定也這樣顯示」。
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 

@@ -91,7 +91,7 @@
     <div class="card orange">
       <div class="card-icon">🌟</div>
       <h3>技能 / 天賦 / 神經驅動（tab 卡）</h3>
-      <p>三分頁卡片：各技能效果展示；技能類型以顏色區分（主動=紅、被動=藍、指令=紫），並顯示 AP 消耗、CD 冷卻、武器限制標籤。天賦／神經驅動具互動改寫，詳見下方「神經驅動算力 &amp; 天賦改寫」與「數值引用層」區塊。</p>
+      <p>三分頁卡片：各技能效果展示；技能類型以顏色區分（主動=紅、被動=藍、指令=紫），並顯示 AP 消耗、CD 冷卻、武器限制標籤。<b>三個分頁皆具互動改寫</b>：天賦／神經驅動為整段正文換寫（PLAN-021），<b>技能分頁自 PLAN-034 起，其 <code>[buff]</code> 引用的階級也會隨算力同步抬升</b>（改的是 chip 字面與浮窗資料，不是整段正文）。詳見下方「神經驅動算力 &amp; 天賦改寫」與「數值引用層」區塊。</p>
     </div>
     <div class="card purple">
       <div class="card-icon">🔬</div>
@@ -132,6 +132,16 @@
       <div class="card-icon">▶</div>
       <h3>神經驅動強化 / 專武強化敘述</h3>
       <p>天賦卡下方「神經驅動強化」「專武強化」區塊：依配置列狀態（<code>ndVariants</code>）／是否配備專武（<code>enhancedTalentDescription</code>）顯示改寫後敘述，並以 DiffHighlight 標出與目前主敘述的差異；對照基準跟隨初始／最大切換。</p>
+    </div>
+    <div class="card pink">
+      <div class="card-icon">⬆</div>
+      <h3>BUFF 階覆寫（PLAN-034，跨分頁生效）</h3>
+      <p>算力達門檻時，該機師頁<strong>所有</strong>指向該 buff 家族的 <code>[xxx]</code> 引用同步抬升階級——<strong>技能分頁也算在內</strong>。原本「天賦說凝勢Ⅲ、技能說凝勢Ⅰ」的斷裂由此消失（技能正文沒有 <code>ndVariants</code> 這種整段換寫機制，只能靠引用層解）。<br>抬升的 chip 加<strong>雙底線標記</strong>與 title「已由 γ2 算力自 Lv1 提升至 Lv3」——技能區是使用者對照官方 wiki 最頻繁的地方，字換了卻沒有標記等於製造假訊息。<br>ND 能力卡本身<strong>不受影響</strong>（<code>NdOverrideEmpty</code> 隔離）：「凝勢可疊加7層」是規則宣告句，不該被自己宣告的規則改寫。</p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">⚠</div>
+      <h3>抬升不是全站不變式</h3>
+      <p>實機確認：官方不同角色的文案由不同人撰寫，<strong>有些機師的技能敘述會隨算力改寫、有些不會</strong>。故「同頁階級一致」是<strong>本站呈現的內部一致性保證</strong>，而非「官方一定也這樣顯示」。官方在該處不改寫的引用點須逐筆以 <code>EntityRef.fixedLevel</code> 釘死，否則本站會顯示出遊戲裡看不到的階名。</p>
     </div>
   </div>
 </section>
