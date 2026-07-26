@@ -15,7 +15,7 @@ import {
   detectLeftoverSugar,
   freezeNumRefs,
 } from './numRefs.ts'
-import type { NumRefSource } from './numRefs.ts'
+import type { NumRefSource, NumLevelOf } from './numRefs.ts'
 
 // 模擬 GameDataContext 的 buff 查詢
 const BUFFS: Record<string, NumRefSource> = {
@@ -24,7 +24,14 @@ const BUFFS: Record<string, NumRefSource> = {
   buff_凝勢III: { maxStack: 7 }, // 無 duration
   buff_星爆: { maxStack: 3 },
   // PLAN-024 階梯 buff：各級收進 levels[]（凝勢 5/7/7、lv3 無 duration）
-  buff_凝勢: { levels: [{ maxStack: 5, duration: 2 }, { maxStack: 7, duration: 3 }, { maxStack: 7 }] },
+  // PLAN-034 B-3：levels 元素自帶 level 值，取級改以值比對而非索引
+  buff_凝勢: { levels: [
+    { level: 1, maxStack: 5, duration: 2 },
+    { level: 2, maxStack: 7, duration: 3 },
+    { level: 3, maxStack: 7 },
+  ] },
+  // 非連號 levels（實測 buff_迴避率提升 就是 [3,4]）：索引式取級在此必錯
+  buff_迴避率提升: { levels: [{ level: 3, maxStack: 3 }, { level: 4, maxStack: 4 }] },
 }
 const lookup = (refId: string) => BUFFS[refId]
 
@@ -193,13 +200,21 @@ test('hasNumRef：含 .lvN 段也偵測得到', () => {
   assert.equal(hasNumRef('可疊加<buff_凝勢.lv2.maxStack>層'), true)
 })
 
-test('resolveNumValue：.lvN 取 levels[N-1]；超範圍 / 無值 / leveled buff 無頂層值皆降級', () => {
+test('resolveNumValue：.lvN 以 level 值取級；查無 / 無值 / leveled buff 無頂層值皆降級', () => {
   assert.equal(resolveNumValue('buff_凝勢', 'maxStack', lookup, 1), 5)
   assert.equal(resolveNumValue('buff_凝勢', 'maxStack', lookup, 2), 7)
   assert.equal(resolveNumValue('buff_凝勢', 'duration', lookup, 2), 3)
   assert.equal(resolveNumValue('buff_凝勢', 'duration', lookup, 3), undefined) // lv3 無 duration
-  assert.equal(resolveNumValue('buff_凝勢', 'maxStack', lookup, 9), undefined) // 超出 levels 範圍
+  assert.equal(resolveNumValue('buff_凝勢', 'maxStack', lookup, 9), undefined) // 沒有第 9 級
   assert.equal(resolveNumValue('buff_凝勢', 'maxStack', lookup), undefined)    // leveled buff 無頂層 maxStack
+})
+
+test('resolveNumValue：非連號 levels 取得到（PLAN-034 B-3 修正的既有 bug）', () => {
+  // levels=[3,4]。舊的索引式取級：lv3 → levels[2] → undefined（畫面顯示暗色 ?）、
+  // lv4 → levels[3] → undefined；改以 level 值比對後兩者都正確。
+  assert.equal(resolveNumValue('buff_迴避率提升', 'maxStack', lookup, 3), 3)
+  assert.equal(resolveNumValue('buff_迴避率提升', 'maxStack', lookup, 4), 4)
+  assert.equal(resolveNumValue('buff_迴避率提升', 'maxStack', lookup, 1), undefined) // 真的沒有第 1 級
 })
 
 test('resolveNumRefs：一份正文、級別由 .lvN token 決定真值（取代三份獨立 token）', () => {
@@ -214,6 +229,67 @@ test('resolveNumRefs：一份正文、級別由 .lvN token 決定真值（取代
 test('resolveNumRefs：.lvN 失效 token 優雅降級為 fallback', () => {
   assert.equal(resolveNumRefs('上限<buff_凝勢.lv9.maxStack>層', lookup), '上限?層') // 超範圍
   assert.equal(resolveNumRefs('<buff_不存在.lv1.maxStack>', lookup), '?')           // refId 查無
+})
+
+// ─── PLAN-034 F-1：情境層取級（levelOf）─────────────────────────────────────────
+
+// 模擬「γ2 算力把凝勢抬到 lv3」的覆寫。凝勢 lv3 有 maxStack:7 但**沒有 duration**——
+// 這正是需要「退回 base」的實測形狀（buff_隱形 lv1 有 duration:2 而 lv2/lv3 完全沒有）。
+const liftTo3: NumLevelOf = (refId, base) =>
+  refId === 'buff_凝勢' && (base ?? 0) < 3 ? { level: 3, lifted: true, zone: 'γ2' } : { level: base, lifted: false }
+
+test('resolveNumValue：levelOf 抬升後取新階的值（token 寫 lv1，畫面顯示 lv3 的 7）', () => {
+  assert.equal(resolveNumValue('buff_凝勢', 'maxStack', lookup, 1), 5)             // 不傳 levelOf = 今日行為
+  assert.equal(resolveNumValue('buff_凝勢', 'maxStack', lookup, 1, liftTo3), 7)     // 抬升後
+})
+
+test('resolveNumValue：抬升後該級缺該欄位 → 退回基準階，絕不劣化成 ?', () => {
+  // lv1 有 duration:2、lv3 沒有。少了退回機制，調高算力會讓一個本來顯示得出數字的
+  // token 變成暗色 ?——使用者的感受是「調高算力反而讓資料消失」，比不抬升更糟。
+  assert.equal(resolveNumValue('buff_凝勢', 'duration', lookup, 1), 2)
+  assert.equal(resolveNumValue('buff_凝勢', 'duration', lookup, 1, liftTo3), 2)
+})
+
+test('resolveNumValue：抬升到不存在的級也退回基準階', () => {
+  const liftTo9: NumLevelOf = () => ({ level: 9, lifted: true, zone: 'γ2' })
+  assert.equal(resolveNumValue('buff_凝勢', 'maxStack', lookup, 1, liftTo9), 5)
+})
+
+test('resolveNumValue：基準階本來就取不到值時，不因 levelOf 而變得取得到假值', () => {
+  // 基準階不存在且抬升目標也不存在 → 仍是 undefined（降級為 ?），不會憑空生出數字
+  const liftTo9: NumLevelOf = () => ({ level: 9, lifted: true, zone: 'γ2' })
+  assert.equal(resolveNumValue('buff_凝勢', 'maxStack', lookup, 8, liftTo9), undefined)
+})
+
+test('resolveNumValue：levelOf 回不抬升時 byte-identical 等於不傳', () => {
+  const noop: NumLevelOf = (_id, base) => ({ level: base, lifted: false })
+  for (const n of [undefined, 1, 2, 3, 9]) {
+    assert.equal(
+      resolveNumValue('buff_凝勢', 'maxStack', lookup, n, noop),
+      resolveNumValue('buff_凝勢', 'maxStack', lookup, n),
+    )
+  }
+})
+
+test('resolveNumRefs：整段正文一起抬升（DiffHighlight 走這條，必須與 RefText 同結果）', () => {
+  const text = '可疊加<buff_凝勢.lv1.maxStack>層，持續<buff_凝勢.lv1.duration>回合'
+  assert.equal(resolveNumRefs(text, lookup), '可疊加5層，持續2回合')
+  // maxStack 抬到 lv3 的 7；duration 因 lv3 無值而退回 lv1 的 2（不是 ?）
+  assert.equal(resolveNumRefs(text, lookup, '?', liftTo3), '可疊加7層，持續2回合')
+})
+
+test('resolveNumRefs：抬升只作用於被覆寫的家族，同段其他 token 原樣', () => {
+  assert.equal(
+    resolveNumRefs('<buff_凝勢.lv1.maxStack> / <buff_星爆.maxStack>', lookup, '?', liftTo3),
+    '7 / 3',
+  )
+})
+
+test('freezeNumRefs：刻意不吃 levelOf —— 凍結寫回全站正文，不可烘焙單一機師的情境值', () => {
+  // 凍結的輸出會取代所有人看到的字串。若它跟著抬升，等於把某位機師的算力配置
+  // 變成全站的死數字。這裡斷言凍結恆取基準階。
+  const { text } = freezeNumRefs('可疊加<buff_凝勢.lv1.maxStack>層', 'buff_凝勢', BUFFS.buff_凝勢)
+  assert.equal(text, '可疊加5層')
 })
 
 test('orderRefsByFirstMention + compileSugar：EntityRef.level → 產生 .lvN token（PLAN-024 B-2）', () => {

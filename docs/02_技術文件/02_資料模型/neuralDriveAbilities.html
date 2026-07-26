@@ -51,8 +51,54 @@
       <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>描述內 [xxx] 引用側錄（PLAN-019 Layer 1）。神驅描述常互引其他能力（[協同作戰1] 等），以 refType <code>'neuralDrive'</code> 指向本集合</td></tr>
       <tr><td>icon / iconLocal</td><td>string?</td><td>圖示（= 原 skillIcon / iconLocal）</td></tr>
       <tr><td>effects</td><td>SkillEffect[]</td><td>可量化效果（模擬器用）。建庫時多為空，由後台 NeuralDriveAdmin 長期補填（共用能力填一次全機師受益）</td></tr>
-      <tr><td>buffIds</td><td>string[]</td><td>賦予的 buff（id 或 id@N，比照技能／天賦）</td></tr>
+      <tr><td>buffIds</td><td>string[]</td><td><strong>賦予</strong>的 buff（id 或 id@N，比照技能／天賦）。<strong>會進 buffPool</strong></td></tr>
+      <tr><td><b>buffUpgrades</b></td><td>string[]?</td><td>🆕 <b>PLAN-034</b>：<strong>升階</strong>規則。元素格式同 <code>buffIds</code> 的 <code>id@N</code>，但語意是「本能力生效時，該 buff 家族在<strong>本機師頁</strong>的生效階<strong>至少</strong>為 N」，不是「賦予一個新 buff」。<br><small style="color:var(--text-dim)">例：<code>nd_雙生星芒2</code>（艾達 γ2 Lv4, minSum=10）→ <code>['buff_凝勢@2']</code>；<code>nd_金絲雀1</code>（梅利莎 γ2 Lv1, minSum=1）→ <code>['buff_常效維護@2']</code>。<br><strong>刻意不存 zone / minSum</strong>：門檻就是「本能力被掛在哪一個 <code>NeuralDriveLevel</code>」的 <code>minSum</code>，那個數字本來就在 <code>Pilot.neuralDrive</code> 裡了。同一條規則只存一份，漂移面積是 1 而不是 N。<br><strong>不進 buffPool</strong>（升階 ≠ 賦予），由 <code>Site.excludeFromPool</code> 強制。</small></td></tr>
     </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">PLAN-034</div>
+  <div class="section-title">buffUpgrades — 升階 vs 賦予</div>
+
+  <div class="changed-block">
+    <strong>🆕 PLAN-034：把「算力會提升 buff 階」變成結構化規則</strong>
+    原本這件事只能靠 <code>Pilot.talents[].ndVariants</code>（整段天賦正文換寫）表達，導致
+    <strong>同一顆 buff 在天賦說「凝勢III」、在技能說「凝勢I」</strong>——因為技能正文沒有任何換寫機制。
+    改以本欄位宣告後，覆寫層對全頁一視同仁，該斷裂在結構上不再可能發生。
+  </div>
+
+  <div class="note-block">
+    <strong>⚠ 三條硬規則（填值前必讀）</strong>
+    <ul style="margin:8px 0 0 18px;line-height:1.9;">
+      <li><strong>等級變更一律走這裡</strong>：<code>ndVariants</code> 只准表達<strong>非等級性</strong>變更
+        （如艾達 γ2≥16 的 [星爆] 與 3AP→5AP）。兩邊都能改階＝兩份真相。</li>
+      <li><strong>只能選既有等級</strong>：不得為了讓本欄位能用，而在共享的 <code>buffs</code> 集合裡憑空造級。</li>
+      <li><strong>通用能力不得填</strong>：<code>NeuralDriveAbility</code> 是<strong>跨機師共享文件</strong>
+        （實測艾達與梅利莎共用 <code>nd_AP優化3/4</code>、<code>nd_協同作戰2</code>），
+        在通用能力上填一次，所有掛載機師的頁面全被改寫。後台在 2 位以上機師掛載且已填升階時亮黃字警告。</li>
+    </ul>
+  </div>
+
+  <div class="note-block">
+    <strong>後台編輯（NeuralDriveAdmin）</strong>
+    <strong>必須是雙下拉、不是 textarea</strong>：目標 buff 下拉只列「有 <code>levels[]</code> <strong>且為自身增益</strong>」者
+    （debuff / control 一律不列——覆寫粒度是「家族 × 整頁」，分不清敵我），階下拉由該 buff 的 <code>levels</code> 動態生成，
+    選完即時顯示「Lv2（最大疊加 7）· 影響 N 處指向該級的引用」。<br>
+    編輯區旁附<strong>掛載明細</strong>（可展開，列出「機師名 · 分區 Lv · minSum」）：
+    同一份 ability 掛在不同機師身上門檻可能完全不同，而 <code>minSum</code> 住在 <code>pilots</code> 文件，
+    在這個全域集合頁上原本完全看不到；<code>minSum &lt;= 0</code> 者標紅提示「此處的升階不會生效」。<br>
+    列表頁另有「升階 N」徽章，可一眼掃出哪些能力帶了升階宣告。
+  </div>
+
+  <div class="note-block">
+    <strong>引用稽核與級聯</strong>
+    <code>buffUpgrades</code> 已註冊為 <code>entityRefs.ts</code> 的引用站點
+    <code>neuralDriveAbilities.buffUpgrades</code>——刪除 <code>buff_凝勢</code> 時這些
+    <code>buff_凝勢@2</code> 會被級聯清除（<code>arrayRemove</code>）並可還原，機制免費繼承 PLAN-030。
+    該站點標記 <code>excludeFromPool: true</code>，<code>buildBuffPool</code> 於 <code>runSpec</code> 迴圈第一行強制略過。<br>
+    另有掃描規則 <code>src/utils/ndUpgradeAudit.ts</code>：被 <code>buffUpgrades</code> 指到的家族，
+    其所有引用站點必須 <code>level</code> 與 <code>fixedLevel</code> 二選一、不得皆空。
   </div>
 </section>
 

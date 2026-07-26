@@ -178,18 +178,23 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value purple">規劃中</div>
+      <div class="meta-value green">開發中（Phase 0 閘門 GO · 2026-07-26）</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">前置依賴</div>
-      <div class="meta-value cyan">PLAN-030 Phase C（僅 Phase D / G 硬性依賴）</div>
+      <div class="meta-value green">無（PLAN-030 已歸檔，D / G 的硬性依賴已解除）</div>
     </div>
   </div>
 
   <div class="info-block">
     <strong>本計畫的所有數字皆為實測值。</strong>
     盤點對象為 2026-07-19 匯出的 <code>emulator-seed/</code>（pilotSkills 705 份、buffs 222 份），
-    非估計或推論。凡標示「實測」者皆可用 <code>emulator-seed/</code> 重跑驗證。
+    非估計或推論。凡標示「實測」者皆可用 <code>emulator-seed/</code> 重跑驗證。<br>
+    <b>2026-07-26 Phase 0-2 對正式資料重測：</b>pilots 87 · neuralDriveAbilities 432 · buffs 217 · pilotSkills 710
+    ——資料自 07-19 起已有異動，下方個位數統計（斷鏈筆數等）以 Phase A 實作前重跑
+    <code>scripts/scan-nd-upgrade-candidates.mjs</code> 的結果為準。
+    另 <b>母體規模低估</b>：ND 正文提及階梯家族的能力達 53 支 / 18 位機師，
+    「只有艾達與梅利莎」成立的是 <code>ndVariants</code> 的既有筆數，不是現象本身的範圍（詳見進度表 0-2 結論）。
   </div>
 </section>
 
@@ -317,6 +322,10 @@
     遊戲裡沒有階名的家族（<code>BUFF_幹勁</code>、<code>BUFF_情報</code>、<code>buff_隱形</code>）
     填 <code>name</code> = <code>buff.name</code> 原字——這是「明示此級顯示為原名」的<b>編輯決策</b>，
     字面不變但浮窗與數值正確抬升，且是 opt-in 而非靜默漏填。<br>
+    <b>2026-07-26 確認：此非新增規範，而是把既有實務寫進型別。</b>
+    貝爾莎的 <code>BUFF_幹勁</code>（官方沒有幹勁 I/II，而是直接在神經驅動給最大層數）
+    現況就是「<b>自訂等級但沿用同一個名字</b>」，以此避開「官方無階名卻要分級」的矛盾。
+    此時決策三的<b>視覺標記格外重要</b>：字面沒變，只有標記能告訴使用者這個值被算力改過。<br>
     <b>刻意不做羅馬數字自動推導</b>：現況資料已知損壞（失穩ⅠⅠⅠ／護甲降低ⅠⅠ），
     且 <code>虛粒子矩陣EX</code> 的 X 是羅馬字母、<code>skill_緊急避險</code> 的 [隱形] 字面根本沒有羅馬數字
     卻指向 <code>BUFF_隱形I</code>——推導在實測髒資料上必然失敗。
@@ -515,6 +524,20 @@
   </div>
 
   <div class="warning-block">
+    <strong>地雷九：文案風格因角色設計者而異，「同頁一致」不是全站不變式（2026-07-26 實機確認）</strong><br>
+    官方不同角色的文案由不同人撰寫，規則並不統一：<b>有些機師的技能敘述會隨算力改寫，有些不會</b>。
+    艾達 [凝勢]（技能分頁與天賦一致）與露西亞 [特種彈]（天賦階隨算力變動）已實機確認為「會變」的那一類，
+    但不可外推到全部。<br>
+    因此決策一的「全頁一張表 → 天賦說 III、技能說 I 在結構上不可能發生」，
+    保證的是<b>本站呈現的內部一致性</b>，不是「官方也一定這樣顯示」。
+    這使 <code>EntityRef.fixedLevel</code> 從「逐筆逃生門」升級為<b>必要機制</b>：
+    凡官方在該處不改寫的引用點必須逐筆釘死，否則本站會顯示出遊戲裡看不到的階名——
+    而技能區正是使用者對照官方 wiki 最頻繁的地方（同決策三）。<br>
+    <b>連帶 SOP：</b>每族啟用 <code>buffUpgrades</code> 前須實機確認「該族在<b>該機師</b>的技能敘述是否跟著變」，
+    逐筆決定 <code>level</code> 或 <code>fixedLevel</code>；此項併入 Phase E 後台警示與 Phase H 的 data-patch SOP。
+  </div>
+
+  <div class="warning-block">
     <strong>地雷八：效能——context value 必須 memo 化</strong><br>
     <code>RefChip</code> 是全站扇出最高的葉節點。<code>NdOverrideContext</code> 的 value
     若每次 render 新建物件，provider 底下所有 chip 都會失去 memo（即使覆寫表為空的機師頁也一樣）。
@@ -534,9 +557,10 @@
     <tbody>
       <tr>
         <td><b>PLAN-030</b> 資料變更歷史</td>
-        <td><span class="badge-high">硬性依賴</span></td>
-        <td>Phase D <b>與</b> Phase G 皆 blocked。G 是不可逆刪除，必須有 <code>ReversePatch</code> 可還原；
-            且 <code>entityRefs.ts</code> / <code>cascadePatch.ts</code> 目前仍是未追蹤檔案、<code>buffPool.ts</code> 有未提交修改。</td>
+        <td><span class="badge-good">依賴已滿足</span></td>
+        <td><s>Phase D 與 Phase G 皆 blocked。</s><b>2026-07-26 解除</b>：PLAN-030 已歸檔，
+            <code>entityRefs.ts</code> / <code>cascadePatch.ts</code> / <code>buffPool.ts</code> 皆已進版控，
+            Phase G 不可逆刪除所需的 <code>ReversePatch</code> 還原能力已就緒。</td>
       </tr>
       <tr>
         <td><b>PLAN-032</b> 武器技能引用化</td>

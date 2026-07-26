@@ -321,7 +321,10 @@ test('T2: 階梯 buff 的 .lvN token 取該級真值', () => {
     name: '測試',
     talents: [{ name: 'A', description: '可疊加<buff_x.lv3.maxStack>層' }],
   })
-  const freezer = createNumRefFreezer('buff_x', { levels: [{ maxStack: 5 }, { maxStack: 6 }, { maxStack: 7 }] })
+  // levels 元素須自帶 level 值：取級以值比對而非索引（PLAN-034 B-3）
+  const freezer = createNumRefFreezer('buff_x', {
+    levels: [{ level: 1, maxStack: 5 }, { level: 2, maxStack: 6 }, { level: 3, maxStack: 7 }],
+  })
   const plan = buildCascadePlan(findReferences('buff', 'buff_x', data).hits, data, { freezeText: freezer.freezeText })
   assert.equal((plan.mutations[0].set.talents as { description: string }[])[0].description, '可疊加7層')
 })

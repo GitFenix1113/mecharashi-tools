@@ -149,6 +149,7 @@
     <table class="data-table">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>level</td><td>number</td><td>等級序號 1, 2, 3…（對應原羅馬尾碼 I / II / III）</td></tr>
+      <tr><td><b>name</b></td><td>string?</td><td>🆕 <b>PLAN-034</b>：該級顯示名（如 <code>凝勢Ⅲ</code>）。實測 39 族階梯 buff，「第 N 級叫什麼」在系統中原本<strong>完全沒有落點</strong>——光把引用指到 lv3 也渲染不出「凝勢Ⅲ」。<br><small style="color:var(--text-dim)">遊戲裡沒有階名的家族（如貝爾莎的 <code>BUFF_幹勁</code>：官方沒有幹勁 I/II，而是直接在神經驅動給最大層數）<strong>填與 <code>buff.name</code> 相同的原字</strong>——這是「明示此級顯示為原名」的<strong>編輯決策</strong>，不是留空：字面不變，但浮窗與數值仍正確抬升，且是 opt-in 而非靜默漏填。<br>⚠ 刻意不做羅馬數字自動推導：現況資料已知損壞（<code>失穩ⅠⅠⅠ</code> / <code>護甲降低ⅠⅠ</code> 是重複 U+2160），且 <code>buff_虛粒子矩陣EX</code> 的 X 是羅馬字母，推導在實測髒資料上必然失敗。<br>後台 BuffAdmin 提供軟驗證（前綴須為 <code>buff.name</code>、尾綴須為<strong>全形</strong>羅馬字，不符時附 code point 與一鍵套用建議值）；<strong>只警示不擋存檔</strong>。</small></td></tr>
       <tr><td>description</td><td>string?</td><td>該級描述（選填；可被滿星 / 算力變體引用）</td></tr>
       <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>該級描述的 [xxx] 引用側錄（PLAN-019）</td></tr>
       <tr><td>maxStack</td><td>number?</td><td>該級最大疊加層數（結構型各級不同，如凝勢 5 / 7 / 7；數值型通常不填）</td></tr>
@@ -203,9 +204,39 @@
       <tr><td>EntityRef.refType</td><td>RefType</td><td>buff / skill / pilot / mech / weapon / module / backpack / component / stat / term / <strong>neuralDrive</strong>（🆕 PLAN-023，指向 neuralDriveAbilities）</td></tr>
       <tr><td>EntityRef.refId</td><td>string</td><td>目標 ID（buffs/{id}、pilots/{id}、glossaryTerms/{id}、neuralDriveAbilities/{id}），或 stat key 如 'dmg'</td></tr>
       <tr><td>EntityRef.label</td><td>string?</td><td>顯示文字；預設取目標 name，可覆寫（原文用別名時）</td></tr>
-      <tr><td>EntityRef.level</td><td>number?</td><td>🆕 PLAN-024：引用階梯 buff 的特定等級。數值代入時自動帶出 <code>&lt;refId.lvN.attr&gt;</code> 形式；未指定 = 不限級（沿用頂層 / base）</td></tr>
+      <tr><td>EntityRef.level</td><td>number?</td><td>🆕 PLAN-024：引用階梯 buff 的特定等級。數值代入時自動帶出 <code>&lt;refId.lvN.attr&gt;</code> 形式；未指定 = 不限級（沿用頂層 / base）。<br><small style="color:var(--text-dim)">🆕 PLAN-034 起語意精確化為<strong>基準階</strong>：實際顯示階可被神驅算力覆寫層抬升為 <code>max(level, 覆寫階)</code>——是<strong>下限</strong>不是等號，靜態 <code>level:3</code> 不會被 lv2 覆寫降級。</small></td></tr>
+      <tr><td><b>EntityRef.fixedLevel</b></td><td>boolean?</td><td>🆕 <b>PLAN-034</b>：<code>true</code> = 此引用<strong>釘死在 <code>level</code></strong>，不受神驅算力覆寫層抬升。<br><small style="color:var(--text-dim)">該填 <code>true</code> 的三種情形：① <strong>對敵施加的同名 debuff</strong>——覆寫粒度是「buff 家族 × 整頁」，分不清敵我；② <strong>描述規則本身的文字</strong>——「凝勢可疊加7層」這種宣告句不該被自己宣告的規則改寫；③ <strong>官方在該處不改寫的引用點</strong>——實機確認過，不同角色的文案由不同人撰寫，有些機師的技能敘述會隨算力改寫、有些不會，沒釘死的話本站會顯示出遊戲裡看不到的階名。<br>命名刻意避開 <code>ReferenceContext.pinRef</code>（那是浮窗釘選，與本欄位無關）。</small></td></tr>
       <tr><td>DescriptionRefs</td><td>Record&lt;string, EntityRef&gt;</td><td>key = 括號內文字（如 "虛粒子形態"）→ 對應實體</td></tr>
     </table>
+  </div>
+
+  <div class="note-block">
+    <strong>🆕 PLAN-034：神驅算力 BUFF 階覆寫層 — 三個新欄位如何協作</strong>
+    機師詳情頁點動神經驅動算力時，天賦與技能中的 buff 引用<strong>同步</strong>顯示正確階級：
+    <code>NeuralDriveAbility.buffUpgrades</code>（<code>buff_凝勢@2</code>）宣告升階規則 →
+    門檻取「該能力被掛在哪一級 <code>NeuralDriveLevel</code>」的 <code>minSum</code>（規則只存一份，不重複存 zone / minSum）→
+    <code>buildNdBuffOverrides</code> 建出「(buffId → 生效階)」表 →
+    每個引用的實際階 = <code>max(EntityRef.level, 覆寫階)</code>，除非 <code>fixedLevel: true</code> →
+    抬升後的字面取自 <code>BuffLevel.name</code>，chip 加雙底線標記與「已由 γ2 算力自 Lv1 提升至 Lv3」的 title。<br>
+    <strong>建表即驗證、原子降級</strong>：一筆 (buffId, N) 須通過七道閘門（buffs 已載入 / 目標是階梯 buff / 元素帶 @N /
+    該級存在 / 該級 <code>name</code> 有值 / 掛載級 <code>minSum &gt; 0</code> / 通過自身增益白名單）才進表，
+    任一不成立<strong>整族略過</strong>——寧可維持今日行為，也不顯示錯的階名。
+    降級是靜默的（表現為「點算力沒反應」），故後台 BuffAdmin / NeuralDriveAdmin / PilotAdmin 於編輯當下逐項說明失敗原因。<br>
+    <strong>不進 buffPool</strong>：「升階」不是「賦予」，由 <code>Site.excludeFromPool</code> 在 <code>runSpec</code> 內強制略過，
+    否則模擬層會誤判「這個高階 buff 可達」。詳見
+    <a href="../../05_階段性開發計畫/執行中/PLAN-034_神驅算力BUFF階覆寫層/計畫書.html" style="color:var(--accent-purple);text-decoration:none;">PLAN-034 計畫書</a>。
+  </div>
+
+  <div class="note-block">
+    <strong>🆕 PLAN-034：level 粒度的引用反查與刪級守門</strong>
+    <code>findReferences</code> 原本只回答「誰引用了這個 <strong>buff</strong>」，粒度到文件為止；
+    但階梯 buff 的引用其實是指向<strong>某一級</strong>的（<code>EntityRef.level</code> / <code>id@N</code> / <code>&lt;id.lvN.attr&gt;</code>）。
+    缺了 level 粒度反查，後台刪掉或重排 <code>levels[]</code> 時這些引用會<strong>靜默指空</strong>——
+    而覆寫層把後果從「一筆引用壞掉」放大成「整族在該機師頁全部不生效」。<br>
+    <code>src/utils/buffLevelRefs.ts</code> 提供 <code>findBuffLevelRefs</code> / <code>findRemovedLevelsInUse</code> /
+    <code>sortLevelsAscending</code>（存檔時依 level 昇冪正規化；實測 <code>buff_迴避率降低</code> 的 levels 順序是 [2,3,5,4]）。
+    BuffAdmin 存檔時擋下「刪掉仍被引用的級」，並在<strong>掃描集合未完整載入時一律拒絕刪級</strong>——
+    「沒有阻擋」與「真的沒人引用」在畫面上完全一樣，是這類守門最典型的假安全。
   </div>
 
   <div class="note-block">

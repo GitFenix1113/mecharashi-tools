@@ -67,6 +67,19 @@ export interface SkillEffect {
 export interface BuffLevel {
   /** 等級序號 1,2,3…（對應原羅馬尾碼） */
   level:        number
+  /**
+   * 該級顯示名（'凝勢Ⅲ'）。PLAN-034 新增——實測 39 族階梯 buff，
+   * 「第 N 級叫什麼」在系統中**完全沒有落點**，故光把引用指到 lv3 也渲染不出「凝勢Ⅲ」。
+   *
+   * 遊戲裡沒有階名的家族（貝爾莎的 BUFF_幹勁：官方沒有幹勁 I/II，而是直接在神經驅動
+   * 給最大層數）**填與 buff.name 相同的原字**。這是「明示此級顯示為原名」的**編輯決策**，
+   * 不是留空——字面不變，但浮窗與數值仍正確抬升，且是 opt-in 而非靜默漏填。
+   *
+   * ⚠ 刻意不做羅馬數字自動推導：現況資料已知損壞（失穩ⅠⅠⅠ／護甲降低ⅠⅠ 是重複 U+2160），
+   * 且 buff_虛粒子矩陣EX 的 X 是羅馬字母、skill_緊急避險 的 [隱形] 字面根本沒有羅馬數字，
+   * 推導在實測髒資料上必然失敗。
+   */
+  name?:        string
   /** 該級描述（選填；可被滿星 / 算力變體引用） */
   description?: string
   descriptionRefs?: DescriptionRefs

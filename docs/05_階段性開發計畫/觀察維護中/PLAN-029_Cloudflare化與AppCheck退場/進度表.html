@@ -307,7 +307,8 @@
       <div>
         <div class="task-name">1-3 驗證全站經 CF 正常</div>
         <div class="task-desc">逐頁確認（含 Firebase Auth 登入、後台）在新網域 + CF proxy 下運作正常。此時資料仍直連 Firestore + App Check（不動）。</div>
-        <div class="task-file">已完成：首頁/機師頁渲染、SPA 深層路由（直接開 /pilots + 重整不 404）、橙雲、https 皆正常。驗證中發現 App Check 在新網域換票 403 → 已補 reCAPTCHA 網域白名單 + Firebase Auth 授權網域，但未即時生效，最終暫關 App Check enforce 讓資料恢復（/pilots 87 機師正常）。詳見上方「實際執行偏離」說明。</div>
+        <div class="task-file">已完成：首頁/機師頁渲染、SPA 深層路由（直接開 /pilots + 重整不 404）、橙雲、https 皆正常。驗證中發現 App Check 在新網域換票 403 → 已補 reCAPTCHA 網域白名單 + Firebase Auth 授權網域，但未即時生效，最終暫關 App Check enforce 讓資料恢復（/pilots 87 機師正常）。詳見上方「實際執行偏離」說明。<br>
+        ⚠️ <strong>2026-07-26 補記（換網域必辦清單第 3 項，當時漏做）：</strong>正式站 Google 第三方登入失敗，報 <code>auth/requests-from-referer-https://mecharashi.wiki-are-blocked</code>。根因＝<strong>Firebase Browser API key（GCP 憑證）的「HTTP 參照網址」白名單只有 github.io + localhost</strong>，新網域被擋（與 Firebase Auth 授權網域是兩份不同清單：後者沒加會報 <code>auth/unauthorized-domain</code>，症狀不同）。修法：GCP Console → API 和服務 → 憑證 → <code>Firebase Browser Key (mecharashi)</code> → 應用程式限制 → 新增 <code>https://mecharashi.wiki/*</code> 與 <code>https://www.mecharashi.wiki/*</code>。已修，登入恢復正常。<strong>結論：日後換網域，reCAPTCHA 白名單／Auth 授權網域／API key referrer 白名單三者皆為必辦，非「視需要」。</strong></div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status done">已完成</span>

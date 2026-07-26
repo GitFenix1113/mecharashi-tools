@@ -162,8 +162,25 @@ export interface NeuralDriveAbility {
   iconLocal?: string
   /** 可計算效果（模擬器用；多數待後台 NeuralDriveAdmin 補填） */
   effects: SkillEffect[]
-  /** 賦予的 buff（id 或 id@N，比照技能／天賦） */
+  /** 賦予的 buff（id 或 id@N，比照技能／天賦）。會進 buffPool。 */
   buffIds: string[]
+  /**
+   * 升階規則（PLAN-034）。語意是「**升階**」不是「**賦予**」：
+   * 本能力生效時，該 buff 家族在「本機師頁」的生效階**至少**為 N。元素格式同 buffIds 的 `id@N`。
+   *   nd_雙生星芒2（艾達 γ2 Lv4, minSum=10） → ['buff_凝勢@2']
+   *   nd_金絲雀1  （梅利莎 γ2 Lv1, minSum=1）→ ['buff_常效維護@2']
+   *
+   * **刻意不存 zone / minSum**：門檻就是「本能力被掛在哪一個 NeuralDriveLevel」的 minSum，
+   * 那個數字本來就在 Pilot.neuralDrive 裡了。同一條規則只存一份，漂移面積是 1 而不是 N。
+   *
+   * ⚠ 三條硬規則（決策五）：
+   *   · 等級變更一律走這裡，ndVariants 只准表達非等級性變更（如艾達 γ2≥16 的 [星爆] 與 3AP→5AP）
+   *   · 只能選**既有**等級，不得為了讓本欄位能用而在共享 buffs 集合裡憑空造級
+   *   · 通用能力（nd_AP優化3 這類跨機師共享者）不得填——一填就改寫所有掛載機師的頁面
+   *
+   * **不進 buffPool**：模擬層維持滿級假設，由 Site.excludeFromPool 在 runSpec 內強制（決策七）。
+   */
+  buffUpgrades?: string[]
 }
 
 export interface NeuralDriveLevel {

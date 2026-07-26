@@ -53,10 +53,17 @@ function pushBuffIds(out: BuffSource[], buffIds: string[] | undefined, origin: s
 /**
  * 跑一份 spec 的所有 buffIdSites，把 buffIds 推進 out。
  * 站點宣告順序即輸出順序——buffPool.test.ts 用 deepEqual 斷言整個陣列，順序是行為的一部分。
+ *
+ * 導出僅為測試：excludeFromPool 的保護必須直接對這支斷言。繞 buildBuffPool 寫的測試
+ * 會因為「那條路徑本來就沒被走到」而恆綠、零資訊量（PLAN-034 決策七）。
  */
-function runSpec<T>(out: BuffSource[], spec: CollectionSpec<T>, doc: T, skipSiteId?: string): void {
+export function runSpec<T>(out: BuffSource[], spec: CollectionSpec<T>, doc: T): void {
   for (const site of spec.buffIdSites) {
-    if (site.id === skipSiteId) continue
+    // 迴圈第一行就擋掉：站點自己宣告「我不是賦予」，不依賴任何呼叫端記得傳參數。
+    // 原本這裡是 `if (site.id === skipSiteId) continue`，而 skipSiteId 實測從未被傳過——
+    // 等於零保護。改成讀站點宣告後，將來有人補上對 neuralDriveAbilities 的 runSpec
+    // （該檔 TODO 已預告），buffUpgrades 也不會被當成「賦予」掃進池子。
+    if (site.excludeFromPool) continue
     for (const occ of site.enumerate(doc)) pushBuffIds(out, occ.buffIds, occ.origin)
   }
 }

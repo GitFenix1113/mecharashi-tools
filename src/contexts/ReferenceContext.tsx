@@ -7,6 +7,8 @@ import type { EntityRef } from '../types'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { BottomSheet } from '../components/BottomSheet'
 import { EntityRefView } from '../components/EntityRefView'
+import { NdOverrideContext } from './NdOverrideContext'
+import { EMPTY_ND_OVERRIDES, type NdBuffOverrides } from '../utils/ndOverrides'
 
 /**
  * PLAN-019 Layer 1 — 引用互動 Context。
@@ -23,9 +25,14 @@ function rectOf(el: HTMLElement): Rect {
 }
 
 interface ReferenceContextValue {
-  hoverRef: (ref: EntityRef, el: HTMLElement) => void
+  /**
+   * ndOverrides：發起端（機師頁的 RefChip）的算力覆寫快照（PLAN-034 地雷一）。
+   * EntityRefView 是本 provider 的子節點、與 <Routes> 平行，機師頁內部包的
+   * NdOverrideContext 永遠不可能成為它的祖先——只能由發起端把表**送過來**。
+   */
+  hoverRef: (ref: EntityRef, el: HTMLElement, ndOverrides?: NdBuffOverrides) => void
   leaveRef: () => void
-  pinRef: (ref: EntityRef, el: HTMLElement) => void
+  pinRef: (ref: EntityRef, el: HTMLElement, ndOverrides?: NdBuffOverrides) => void
   drillRef: (ref: EntityRef) => void
   back: () => void
   close: () => void
@@ -79,19 +86,19 @@ function FloatingCard({ rect, width, interactive, containerRef, children }: {
 export function ReferenceProvider({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile()
 
-  const [preview, setPreview] = useState<{ ref: EntityRef; rect: Rect } | null>(null)
+  const [preview, setPreview] = useState<{ ref: EntityRef; rect: Rect; nd?: NdBuffOverrides } | null>(null)
   // 釘選浮窗：以 stack 表達向下鑽的歷史，當前 ref = stack 最後一項（純更新，StrictMode 安全）
-  const [pinned, setPinned] = useState<{ rect: Rect; stack: EntityRef[] } | null>(null)
+  const [pinned, setPinned] = useState<{ rect: Rect; stack: EntityRef[]; nd?: NdBuffOverrides } | null>(null)
 
   const pinnedRef = useRef(pinned)
   pinnedRef.current = pinned
   const hideTimer = useRef<number | undefined>(undefined)
   const pinnedCardEl = useRef<HTMLDivElement | null>(null)
 
-  const hoverRef = useCallback((ref: EntityRef, el: HTMLElement) => {
+  const hoverRef = useCallback((ref: EntityRef, el: HTMLElement, nd?: NdBuffOverrides) => {
     if (isMobile || pinnedRef.current) return
     window.clearTimeout(hideTimer.current)
-    setPreview({ ref, rect: rectOf(el) })
+    setPreview({ ref, rect: rectOf(el), nd })
   }, [isMobile])
 
   const leaveRef = useCallback(() => {
@@ -99,10 +106,10 @@ export function ReferenceProvider({ children }: { children: ReactNode }) {
     hideTimer.current = window.setTimeout(() => setPreview(null), 140)
   }, [])
 
-  const pinRef = useCallback((ref: EntityRef, el: HTMLElement) => {
+  const pinRef = useCallback((ref: EntityRef, el: HTMLElement, nd?: NdBuffOverrides) => {
     window.clearTimeout(hideTimer.current)
     setPreview(null)
-    setPinned({ rect: rectOf(el), stack: [ref] })
+    setPinned({ rect: rectOf(el), stack: [ref], nd })
   }, [])
 
   const drillRef = useCallback((ref: EntityRef) => {
@@ -137,6 +144,12 @@ export function ReferenceProvider({ children }: { children: ReactNode }) {
   }, [pinned, isMobile, close])
 
   const pinnedRefCurrent = pinned ? pinned.stack[pinned.stack.length - 1] : null
+  /**
+   * 覆寫快照只套用在**發起的那一層**。往下 drill 之後（stack.length > 1）就離開了原本的
+   * 引用情境——那時看的是「另一個 buff 的詳情」，再沿用機師頁的算力表只會讓人搞不清楚
+   * 眼前的階是誰決定的。此為明訂的已知限制（計畫書「不在範圍內」）。
+   */
+  const pinnedNd = pinned && pinned.stack.length === 1 ? pinned.nd ?? EMPTY_ND_OVERRIDES : EMPTY_ND_OVERRIDES
   const value: ReferenceContextValue = {
     hoverRef, leaveRef, pinRef, drillRef, back, close,
     canBack: pinned ? pinned.stack.length > 1 : false,
@@ -149,7 +162,9 @@ export function ReferenceProvider({ children }: { children: ReactNode }) {
       {/* 桌面：hover 預覽（不可互動） */}
       {!isMobile && preview && !pinned && (
         <FloatingCard rect={preview.rect} width={PREVIEW_W} interactive={false}>
-          <EntityRefView entityRef={preview.ref} interactive={false} />
+          <NdOverrideContext.Provider value={preview.nd ?? EMPTY_ND_OVERRIDES}>
+            <EntityRefView entityRef={preview.ref} interactive={false} />
+          </NdOverrideContext.Provider>
         </FloatingCard>
       )}
 
@@ -161,14 +176,20 @@ export function ReferenceProvider({ children }: { children: ReactNode }) {
           interactive
           containerRef={(el) => { pinnedCardEl.current = el }}
         >
-          <EntityRefView entityRef={pinnedRefCurrent} interactive showClose />
+          <NdOverrideContext.Provider value={pinnedNd}>
+            <EntityRefView entityRef={pinnedRefCurrent} interactive showClose />
+          </NdOverrideContext.Provider>
         </FloatingCard>
       )}
 
       {/* 手機：BottomSheet */}
       {isMobile && (
         <BottomSheet open={!!pinned} onClose={close}>
-          {pinnedRefCurrent && <EntityRefView entityRef={pinnedRefCurrent} interactive />}
+          {pinnedRefCurrent && (
+            <NdOverrideContext.Provider value={pinnedNd}>
+              <EntityRefView entityRef={pinnedRefCurrent} interactive />
+            </NdOverrideContext.Provider>
+          )}
         </BottomSheet>
       )}
     </ReferenceContext.Provider>

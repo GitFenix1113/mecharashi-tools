@@ -5,6 +5,7 @@ import { useGameData, type CollectionKey } from '../contexts/GameDataContext'
 import { useReference } from '../contexts/ReferenceContext'
 import { STAT_LABELS } from '../utils/moduleStats'
 import { assetUrl, resolveIconSrc } from '../utils/assets'
+import { pickLevel } from '../utils/ndOverrides'
 import { RefText } from './RefText'
 import { RefScopeContext } from './RefChip'
 
@@ -113,7 +114,8 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       if (!b) return null
       const buffTypeLabel = BUFF_TYPE_LABEL[b.buffType] ?? b.buffType
       // PLAN-024：引用指定 level → 優先顯示該級資料（[凝勢I] 看 lv1、[凝勢III] 看 lv3）
-      const lv = ref.level != null ? b.levels?.find(l => l.level === ref.level) : undefined
+      // 取級統一走 pickLevel（PLAN-034 B-3），與 numRefs 同源
+      const lv = pickLevel(b.levels, ref.level)
       // termRef：掛了詞條則以官方關鍵字說明為通用/補充顯示來源
       const term = b.termRef ? gd.glossaryTerms.find(t => t.id === b.termRef) : undefined
       // 描述優先序：該級描述 > 詞條說明 > buff 自身描述

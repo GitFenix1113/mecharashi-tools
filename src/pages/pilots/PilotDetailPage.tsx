@@ -11,36 +11,24 @@ import { usePilot, usePilotExclusiveWeapons } from '../../hooks/useFirestore'
 import { useGameData } from '../../contexts/GameDataContext'
 import { resolvePilotSkills, buildSkillMap } from '../../utils/pilotSkills'
 import { resolveNeuralDriveLevel, buildNdAbilityMap } from '../../utils/neuralDriveAbilities'
+import {
+  ND_RULES, isGammaZone, zonePower, defaultNdLevels, buildNdBuffOverrides,
+  effectiveLevel, buildNumLevelOf, type NdOverrideEntry,
+} from '../../utils/ndOverrides'
+import { parseNumRefs } from '../../utils/numRefs'
+import { NdOverrideContext, useNdOverrides } from '../../contexts/NdOverrideContext'
+import { NdOverrideEmpty } from '../../components/NdOverrideEmpty'
+import { useReference } from '../../contexts/ReferenceContext'
 import { WeaponIcon } from '../../components/WeaponIcon'
 import { DiffHighlight } from '../../components/DiffHighlight'
 import { RefText } from '../../components/RefText'
 
 // ─── 神經驅動「全區算力選擇器」（PLAN-021 · 1-6）─────────────────────────────
 // 玩家在 tab 卡頂部點選各區 Lv（仿遊戲內 Lv 條），天賦敘述隨配置即時改寫。
-// 規則引擎集中於 ND_RULES，未來官方開放上限（超頻）只改數字。
-
-const ND_RULES = {
-  /** γ 區（名稱以 γ 開頭）合計算力上限：上下16（16+7 / 7+16） */
-  gammaPairCap: 23,
-  /** 各區預設 Lv；未列出的區預設滿級（α/β 可並存、通常不影響天賦） */
-  defaultLevels: { 'γ1': 3, 'γ2': 1 } as Record<string, number>,
-}
-
-const isGammaZone = (name: string) => name.startsWith('γ')
-
-/** 該區選到 Lv 時的算力值（讀該機師資料的 minSum，不寫死 1/4/7/10/13/16） */
-function zonePower(drive: NeuralDrive, lv: number): number {
-  return lv > 0 ? drive.levels[lv - 1]?.minSum ?? 0 : 0
-}
-
-function defaultNdLevels(drives: NeuralDrive[] | undefined): Record<string, number> {
-  const out: Record<string, number> = {}
-  for (const d of drives ?? []) {
-    const max = d.levels?.length ?? 0
-    out[d.name] = Math.min(ND_RULES.defaultLevels[d.name] ?? max, max)
-  }
-  return out
-}
+//
+// 規則引擎（ND_RULES / isGammaZone / zonePower / defaultNdLevels）已於 PLAN-034 B-3
+// 上移至 src/utils/ndOverrides.ts —— 天賦改寫與 BUFF 階覆寫層必須共用同一個門檻來源，
+// 各留一份必然漂移。未來官方開放上限（超頻）只改那邊的數字。
 
 function ndVariantLabel(v: TalentNdVariant): string {
   return v.label ?? `${v.zone ? `${v.zone} ` : ''}算力 ≥ ${v.minSum}`
@@ -94,7 +82,7 @@ function NdPowerBar({
             <span className="relative text-[13px] font-bold text-text-primary">
               {d.name}
               {affectZones.has(d.name) && (
-                <span className="absolute -top-1.5 -right-2 text-[9px] text-accent-pink" title="此區算力會改寫天賦">★</span>
+                <span className="absolute -top-1.5 -right-2 text-[9px] text-accent-pink" title="此區算力會改寫天賦／技能敘述">★</span>
               )}
             </span>
             <span className="flex gap-[3px] ml-1.5">
@@ -139,7 +127,18 @@ function NdPowerBar({
   )
 }
 
-/** 天賦卡的神經驅動強化面板：讀配置列狀態，顯示生效中的改寫敘述（Q-B：差異高亮預設開） */
+/**
+ * 天賦卡的神經驅動強化面板：讀配置列狀態，顯示生效中的改寫敘述（Q-B：差異高亮預設開）。
+ *
+ * **PLAN-034 G-1：渲染條件從「有 ndVariants」放寬為「ndVariants 或 ND 覆寫任一有值」。**
+ * 塌縮 ndVariants 之後（梅利莎四階全刪、艾達只留 minSum=16），改寫改為**就地**發生在
+ * 上方那段主敘述裡——chip 換字、數值 token 換級，沒有第二份文字可以拿來 diff。
+ * 若沿用舊條件，面板會直接 return null：「算力階／生效中」徽章連同差異高亮全部消失，
+ * 而正文卻仍在隨算力變動，使用者看到字在動卻沒有任何東西告訴他為什麼（地雷五）。
+ *
+ * 所以面板在塌縮後的角色也跟著變：從「顯示改寫後的另一段敘述」變成
+ * **「說明上方那段字為什麼跟官方原文不一樣」**。
+ */
 function TalentNdPanel({
   talent, drives, levels, baseText, viewMax,
 }: {
@@ -152,8 +151,29 @@ function TalentNdPanel({
   viewMax: boolean
 }) {
   const [diffOn, setDiffOn] = useState(true)
+  const ov = useNdOverrides()
   const variants = talent.ndVariants ?? []
-  if (variants.length === 0) return null
+
+  // 本天賦「實際被抬升」的 buff 家族。刻意不直接列覆寫表全部內容——
+  // 表是整頁共用的，天賦沒引用到的家族列出來只會讓人以為這段字被改過。
+  // 判定一律走 effectiveLevel / buildNumLevelOf，與 chip、token 的裁決同源。
+  const lifts = useMemo<NdOverrideEntry[]>(() => {
+    const hit = new Map<string, NdOverrideEntry>()
+    const mark = (refId: string) => { const e = ov.entryOf(refId); if (e) hit.set(refId, e) }
+    for (const ref of Object.values(talent.descriptionRefs ?? {})) {
+      if (ref?.refType !== 'buff' || !ref.refId) continue
+      if (effectiveLevel(ref, ov).lifted) mark(ref.refId)
+    }
+    const levelOf = buildNumLevelOf(talent.descriptionRefs, ov)
+    for (const text of [talent.description, talent.descriptionMax]) {
+      for (const seg of parseNumRefs(text ?? '')) {
+        if (seg.type === 'numRef' && levelOf(seg.refId, seg.level).lifted) mark(seg.refId)
+      }
+    }
+    return [...hit.values()]
+  }, [talent, ov])
+
+  if (variants.length === 0 && lifts.length === 0) return null
 
   const powerByZone = new Map(drives.map(d => [d.name, zonePower(d, levels[d.name] ?? 0)]))
   // 資料缺 zone 時優雅退化：取所有 γ 區的最大算力判定
@@ -170,13 +190,26 @@ function TalentNdPanel({
         <span className="text-[13px] font-bold text-accent-pink tracking-widest uppercase">
           ▶ 神經驅動強化
         </span>
-        <span className={`text-[11px] px-2 py-0.5 rounded-md border ${
-          active
-            ? 'text-accent-pink border-accent-pink/45 bg-accent-pink/10 font-bold'
-            : 'text-text-dim border-border bg-bg-dark'
-        }`}>
-          {active ? `${ndVariantLabel(active)} 生效中` : '基礎（未達改寫門檻）'}
-        </span>
+        {/* 變體徽章：塌縮後這一顆會消失（沒有變體了），改由右邊的抬升徽章接手 */}
+        {variants.length > 0 && (
+          <span className={`text-[11px] px-2 py-0.5 rounded-md border ${
+            active
+              ? 'text-accent-pink border-accent-pink/45 bg-accent-pink/10 font-bold'
+              : 'text-text-dim border-border bg-bg-dark'
+          }`}>
+            {active ? `${ndVariantLabel(active)} 生效中` : '基礎（未達改寫門檻）'}
+          </span>
+        )}
+        {/* 就地抬升徽章：正文沒有換成另一段，但裡面的階與數值已被改寫 */}
+        {lifts.map(e => (
+          <span
+            key={e.name}
+            title={`${e.zone} 算力已把這個家族抬升到 Lv${e.level}；上方正文的階名與層數／回合數都是抬升後的值`}
+            className="text-[11px] px-2 py-0.5 rounded-md border text-accent-pink border-accent-pink/45 bg-accent-pink/10 font-bold"
+          >
+            {e.name}（Lv{e.level}）· {e.zone} 算力
+          </span>
+        ))}
         {active && (
           <button
             type="button"
@@ -208,6 +241,14 @@ function TalentNdPanel({
             {viewMax && !active.descriptionMax && '（此階尚未補錄滿星版改寫，目前顯示初始版）'}
           </p>
         </>
+      ) : lifts.length > 0 ? (
+        // 塌縮後的常態：改寫就地發生在上方主敘述，這裡只負責交代「動了什麼、為什麼」。
+        // 沒有第二段文字可 diff，硬做一個 base vs base 的比對只會全綠、零資訊量。
+        <p className="text-[11px] text-text-dim mt-1.5">
+          ※ 上方敘述已依算力就地改寫：
+          {lifts.map(e => `[${e.name}] 取 Lv${e.level}`).join('、')}
+          （雙底線處即抬升後的階名與數值）。調整上方「神經驅動算力」可看到它們跟著變動。
+        </p>
       ) : (
         <p className="text-[11px] text-text-dim mt-1.5">
           調整上方「神經驅動算力」配置，即可預覽天賦被改寫後的敘述（門檻：
@@ -984,16 +1025,62 @@ export default function PilotDetailPage() {
   }, [exclusiveWeapon])
 
   // PLAN-021 · 1-6：神經驅動算力配置（tab 卡頂部常駐；換機師時重置回預設）
-  const ndDefaults = useMemo(() => defaultNdLevels(pilot?.neuralDrive), [pilot])
-  const [ndLevelsOverride, setNdLevelsOverride] = useState<Record<string, number> | null>(null)
-  useEffect(() => { setNdLevelsOverride(null) }, [id])
-  const ndLevels = ndLevelsOverride ?? ndDefaults
-  const ndAffectZones = useMemo(
-    () => new Set(
-      (pilot?.talents ?? []).flatMap(t => (t.ndVariants ?? []).map(v => v.zone)).filter((z): z is string => !!z)
-    ),
-    [pilot]
+  const ndDefaults = useMemo(
+    () => defaultNdLevels(pilot?.neuralDrive, (aid) => ndAbilityMap.get(aid)),
+    [pilot, ndAbilityMap],
   )
+  const [ndLevelsOverride, setNdLevelsOverride] = useState<Record<string, number> | null>(null)
+  const { close: closeRefPopover } = useReference()
+  // 換機師：重置算力，並關掉釘選浮窗——浮窗持有的是**上一位機師**的覆寫快照，
+  // 它掛在 App.tsx 的 ReferenceProvider 下不會隨本頁重新掛載而消失（地雷一）。
+  useEffect(() => { setNdLevelsOverride(null); closeRefPopover() }, [id, closeRefPopover])
+  const ndLevels = ndLevelsOverride ?? ndDefaults
+
+  // ── PLAN-034 Phase C：算力 → BUFF 階覆寫表 ────────────────────────────────
+  // ⚠ 這幾個 useMemo 必須留在 early return **之前**，否則 loading / 找不到機師時
+  //   hooks 數量不一致會白屏。
+  const ndNeedsBuffs = useMemo(
+    () => (pilot?.neuralDrive ?? []).some(z =>
+      (z.levels ?? []).some(lv => lv.abilityId && ndAbilityMap.get(lv.abilityId)?.buffUpgrades?.length)),
+    [pilot?.neuralDrive, ndAbilityMap],
+  )
+  // 只有真的有升階宣告的機師才付 buffs 的載入成本
+  useEffect(() => { if (ndNeedsBuffs) gd.ensureLoaded(['buffs']) }, [ndNeedsBuffs, gd])
+
+  const ndOverrideMap = useMemo(() => buildNdBuffOverrides({
+    drives: pilot?.neuralDrive,
+    levels: ndLevels,
+    abilityOf: (aid) => ndAbilityMap.get(aid),
+    buffOf: (bid) => gd.buffs.find(b => b.id === bid),
+    onReject: import.meta.env.DEV
+      ? (r) => {
+          // buffs 還沒載完時每個家族都會回 buff-missing，那是設計上的中間態（閘門①），
+          // 不是資料有問題。照噴的話 dev console 每次進頁都固定出現假警報，
+          // 久了就沒人會認真看這些警告了。
+          if (r.reason === 'buff-missing' && !gd.loadedKeys.has('buffs')) return
+          console.warn(`[PLAN-034] ${r.buffId} 未進覆寫表（${r.reason}）：${r.detail}`)
+        }
+      : undefined,
+  }), [pilot?.neuralDrive, ndLevels, ndAbilityMap, gd.buffs, gd.loadedKeys])
+
+  // value 必須 memo 化：RefChip 是全站扇出最高的葉節點，每次 render 新建物件會讓
+  // provider 底下所有 chip 失去 memo（即使覆寫表為空的機師頁也一樣）。
+  const ndOverrides = useMemo(
+    () => ({ entryOf: (buffId: string) => ndOverrideMap.get(buffId) }),
+    [ndOverrideMap],
+  )
+
+  // ★ 標記：ndVariants 宣告的分區 ∪ 帶 buffUpgrades 的能力所在分區
+  const ndAffectZones = useMemo(() => {
+    const zones = new Set(
+      (pilot?.talents ?? []).flatMap(t => (t.ndVariants ?? []).map(v => v.zone)).filter((z): z is string => !!z)
+    )
+    for (const z of pilot?.neuralDrive ?? []) {
+      const has = (z.levels ?? []).some(lv => lv.abilityId && ndAbilityMap.get(lv.abilityId)?.buffUpgrades?.length)
+      if (has) zones.add(z.name)
+    }
+    return zones
+  }, [pilot, ndAbilityMap])
 
   if (loading) {
     return (
@@ -1145,6 +1232,9 @@ export default function PilotDetailPage() {
           />
         )}
 
+        {/* PLAN-034：算力覆寫表罩住三個分頁的引用渲染。ND 分區卡／能力卡另包
+            NdOverrideEmpty 隔離——那裡是規則的宣告處，不該被自己宣告的規則改寫。 */}
+        <NdOverrideContext.Provider value={ndOverrides}>
         <div className="p-4">
           {activeSkillTab === '天賦' && (
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
@@ -1213,16 +1303,18 @@ export default function PilotDetailPage() {
 
           {activeSkillTab === '神經驅動' && (
             <div className="space-y-4">
-              {ndHoverState && !ndExpanded && !isMobile && (
-                <NdLevelTooltipPortal
-                  level={ndHoverState.level}
-                  x={ndHoverState.x}
-                  anchorTop={ndHoverState.anchorTop}
-                />
-              )}
-              <BottomSheet open={!!ndSheetLevel && !ndExpanded} onClose={() => setNdSheetLevel(null)}>
-                {ndSheetLevel && <NdLevelContent level={ndSheetLevel} />}
-              </BottomSheet>
+              <NdOverrideEmpty>
+                {ndHoverState && !ndExpanded && !isMobile && (
+                  <NdLevelTooltipPortal
+                    level={ndHoverState.level}
+                    x={ndHoverState.x}
+                    anchorTop={ndHoverState.anchorTop}
+                  />
+                )}
+                <BottomSheet open={!!ndSheetLevel && !ndExpanded} onClose={() => setNdSheetLevel(null)}>
+                  {ndSheetLevel && <NdLevelContent level={ndSheetLevel} />}
+                </BottomSheet>
+              </NdOverrideEmpty>
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-x-3 gap-y-1 flex-wrap text-[11px] text-text-dim">
                   <span className="uppercase tracking-wider">插槽晶片</span>
@@ -1266,26 +1358,29 @@ export default function PilotDetailPage() {
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-rows-2 gap-3">
-                {ND_ORDER.map((zoneName) => {
-                  const nd = (resolvedNeuralDrive ?? []).find((d) => d.name === zoneName)
-                  return (
-                    <NeuralDriveZoneCard
-                      key={zoneName}
-                      nd={nd}
-                      zoneName={zoneName}
-                      className={ND_POSITION_CLASS[zoneName]}
-                      expanded={ndExpanded}
-                      onLevelHover={handleNdLevelHover}
-                      onLevelLeave={handleNdLevelLeave}
-                      onLevelClick={handleNdLevelClick}
-                    />
-                  )
-                })}
-              </div>
+              <NdOverrideEmpty>
+                <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-rows-2 gap-3">
+                  {ND_ORDER.map((zoneName) => {
+                    const nd = (resolvedNeuralDrive ?? []).find((d) => d.name === zoneName)
+                    return (
+                      <NeuralDriveZoneCard
+                        key={zoneName}
+                        nd={nd}
+                        zoneName={zoneName}
+                        className={ND_POSITION_CLASS[zoneName]}
+                        expanded={ndExpanded}
+                        onLevelHover={handleNdLevelHover}
+                        onLevelLeave={handleNdLevelLeave}
+                        onLevelClick={handleNdLevelClick}
+                      />
+                    )
+                  })}
+                </div>
+              </NdOverrideEmpty>
             </div>
           )}
         </div>
+        </NdOverrideContext.Provider>
       </div>
 
       {/* Pilot Lore */}

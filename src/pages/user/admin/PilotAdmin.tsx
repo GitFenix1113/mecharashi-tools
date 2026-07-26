@@ -1139,8 +1139,39 @@ function PilotEditPanel({
   function updateAp(key: 'init' | 'max' | 'recovery', value: number) { setForm((f) => ({ ...f, ap: { ...f.ap, [key]: value } })) }
   function updateProfile(key: 'gender' | 'bloodType' | 'height', value: string) { setForm((f) => ({ ...f, profile: { ...f.profile, [key]: value } })) }
 
+  /**
+   * PLAN-034 E-3：擋下「掛了帶 buffUpgrades 的能力，但該級 minSum 仍是 0」。
+   *
+   * PilotAdmin 新增等級的預設值就是 minSum: 0，而覆寫層的門檻判定是
+   * `zonePower >= minSum` —— 0 會讓該升階變成**零門檻恆真**，首屏就生效，
+   * 使用者完全不知道畫面上的階名是算力衍生值。
+   * 建表閘門④雖然也會擋（視為「未設定」而整族退場），但那是靜默降級：
+   * 表現為「點算力沒反應」，管理員不會知道是自己漏填了門檻。這裡要明講。
+   */
+  const ndMinSumBlockers = useMemo(() => {
+    const out: string[] = []
+    for (const z of form.neuralDrive ?? []) {
+      for (const lv of z.levels ?? []) {
+        if (!lv.abilityId) continue
+        const a = gd.neuralDriveAbilities.find((x) => x.id === lv.abilityId)
+        if (!(a?.buffUpgrades?.length)) continue
+        if ((lv.minSum ?? 0) > 0) continue
+        out.push(`${z.name || '(未命名分區)'} Lv${lv.level} 的「${a.name}」帶有升階宣告（${a.buffUpgrades.join('、')}），但 minSum 為 0`)
+      }
+    }
+    return out
+  }, [form.neuralDrive, gd.neuralDriveAbilities])
+
   async function handleSubmit() {
     setSaving(true); setError(null)
+    if (ndMinSumBlockers.length) {
+      setError(
+        `無法儲存——下列神經驅動等級的算力門檻未設定：\n${ndMinSumBlockers.join('\n')}\n`
+        + 'minSum 為 0 會讓該升階變成零門檻恆真（首屏即生效）。請填入正確門檻，或改掛不帶升階宣告的能力。',
+      )
+      setSaving(false)
+      return
+    }
     try {
       // 新格式：機師文件只存技能 ID 順序；舊版內嵌格式則原樣保留（待腳本遷移）
       const skills: Pilot['skills'] = legacyEmbedded ? (form.skills ?? []) : assignedIds

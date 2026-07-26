@@ -4,7 +4,7 @@
  *
  * 從「正式」Firestore 撈出一小份、但引用關係完整的資料，供本地模擬器種子使用：
  *   · 指定的 1 名機師（預設引用關係最豐富的一位）
- *   · buffs / glossaryTerms / pilotSkills 三個「字典型」集合整包
+ *   · buffs / glossaryTerms / pilotSkills / neuralDriveAbilities 四個「字典型」集合整包
  *     （它們本來就是全站共用字典，量不大；整包帶走可免去在此重建引用圖）
  *
  * ⚠ 唯讀：只呼叫 .get()，**絕不寫入 Firestore**。這是整個 Phase 0 對正式資料庫的唯一一次接觸。
@@ -25,7 +25,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
 
 // 整包帶走的字典型集合（全站共用、量小、引用關係的另一端）
-const DICT_COLLECTIONS = ['buffs', 'glossaryTerms', 'pilotSkills']
+//
+// ⚠ neuralDriveAbilities 是 PLAN-034 Phase 0 補上的（該計畫「地雷三」）：
+//   PLAN-023 flip 後，機師 neuralDrive[].levels[] 只留 abilityId，能力內容全在此集合。
+//   少了它，模擬器裡的機師頁 resolveNeuralDriveLevel() 會退回（已全空的）嵌入欄位，
+//   任何與神經驅動能力相關的驗證都會「看起來完全正常」而測不出回歸 —— 恆綠、零資訊量。
+const DICT_COLLECTIONS = ['buffs', 'glossaryTerms', 'pilotSkills', 'neuralDriveAbilities']
 
 const args = process.argv.slice(2)
 const getArg = (flag) => {

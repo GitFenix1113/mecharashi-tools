@@ -20,6 +20,18 @@ export interface EntityRef {
    * 使 compileSugar 產生 <refId.lvN.attr>。未指定 = 不限級（沿用頂層 / base）。
    */
   level?: number
+  /**
+   * true = 此引用**釘死在 level**，不受神經驅動算力的情境覆寫抬升（PLAN-034）。
+   *
+   * 反例（該填 true 的情形）：
+   *   · 對敵施加的同名 debuff —— 覆寫粒度是「buff 家族 × 整頁」，分不清敵我
+   *   · 描述規則本身的文字 —— 「凝勢可疊加7層」這種宣告句不該被自己宣告的規則改寫
+   *   · **官方在該處不改寫的引用點** —— 實機確認過：不同角色的文案由不同人撰寫，
+   *     有些機師的技能敘述會隨算力改寫、有些不會。沒有釘死的話，本站會顯示出遊戲裡看不到的階名。
+   *
+   * 命名刻意避開 ReferenceContext.pinRef（那是浮窗釘選，與本欄位無關）。
+   */
+  fixedLevel?: boolean
 }
 
 /**

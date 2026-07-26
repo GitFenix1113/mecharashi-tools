@@ -104,6 +104,23 @@
     <a href="../../02_資料模型/skills_buffs.html" style="color:var(--accent-cyan);">資料模型 · GameBuff</a> 為準。
   </div>
 
+  <div class="changed-block">
+    <strong>🆕 PLAN-024 / PLAN-034：階梯 buff 與 level 粒度的引用</strong>
+    PLAN-024 起 buff 可為<strong>階梯型</strong>（<code>levels: BuffLevel[]</code>），能力資料一律由各級提供、頂層
+    <code>maxStack</code> / <code>duration</code> / <code>maxTriggers</code> / <code>effects</code> 停用且應為空（flat XOR leveled）。
+    PLAN-034 為 <code>BuffLevel</code> 補上 <code>name</code>（該級顯示名，如 <code>凝勢Ⅲ</code>），
+    使「引用指到 lv3」得以真的渲染出階名。<br>
+    <strong>寫入端須注意的兩件事：</strong>
+    ① <code>levels[]</code> 存檔時依 <code>level</code> 昇冪正規化（實測 <code>buff_迴避率降低</code> 的順序是 [2,3,5,4]）；
+    ② <strong>刪除或重排等級會讓既有引用靜默指空</strong>——階梯 buff 的引用是指向<em>某一級</em>的
+    （<code>EntityRef.level</code> / <code>buffIds</code> 的 <code>id@N</code> / 正文的 <code>&lt;id.lvN.attr&gt;</code>），
+    而 <code>findReferences</code> 的粒度只到文件為止。BuffAdmin 已加 level 粒度反查守門
+    （<code>src/utils/buffLevelRefs.ts</code>），並在掃描集合未完整載入時<strong>一律拒絕刪級</strong>。
+    腳本端直接寫 Firestore 時沒有這道保護，改 <code>levels</code> 前務必自行反查。<br>
+    詳見 <a href="../../02_資料模型/skills_buffs.html" style="color:var(--accent-cyan);">資料模型 · BuffLevel</a> 與
+    <a href="../../../05_階段性開發計畫/執行中/PLAN-034_神驅算力BUFF階覆寫層/計畫書.html" style="color:var(--accent-cyan);">PLAN-034</a>。
+  </div>
+
   <div class="info-block">
     <strong>📐 PLAN-020：文件 ID 命名規則（新建適用）</strong>
     <ul style="margin:8px 0 0 18px;line-height:1.9;">

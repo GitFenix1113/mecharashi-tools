@@ -114,6 +114,17 @@ export interface Site<T, O> {
   targets: readonly RefTargetKind[]
   /** 型別在、但資料無或集合未接線。掃描照走，僅供報表分流。 */
   dormant?: boolean
+  /**
+   * true = 此站點的 buffIds **不代表「賦予」**，buildBuffPool 必須略過（PLAN-034 決策七）。
+   *
+   * 目前唯一的案例是 neuralDriveAbilities.buffUpgrades：它的語意是「把已存在的 buff 升階」，
+   * 收進池子會讓模擬器誤判「這個高階 buff 可達」。
+   *
+   * **宣告式而非呼叫端傳參**是刻意的：runSpec 原本有個 skipSiteId 參數，但實測
+   * buildBuffPool 從頭到尾沒有任何呼叫端傳過它——靠呼叫端記得傳＝零保護。
+   * 寫在站點宣告上，新增呼叫路徑時不可能漏掉。
+   */
+  excludeFromPool?: boolean
   enumerate: (doc: T) => O[]
 }
 
@@ -371,6 +382,16 @@ const NEURAL_DRIVE_ABILITIES: CollectionSpec<NeuralDriveAbility> = {
       id: 'neuralDriveAbilities.buffIds',
       targets: ['buff'],
       enumerate: (a) => [{ segments: ['buffIds'], origin: `神驅能力:${a.name}`, buffIds: a.buffIds ?? [] }],
+    },
+    {
+      // PLAN-034：升階規則也是對 buff 的引用，必須進掃描——否則刪掉 buff_凝勢 時
+      // 這些 `buff_凝勢@2` 會變成指空的孤兒，而覆寫層失效的症狀是「點算力沒反應」，
+      // 沒有任何錯誤訊息。元素格式同 buffIds（`id@N`），故級聯清除（arrayRemove）
+      // 與還原全部免費繼承 PLAN-030 既有機制。
+      id: 'neuralDriveAbilities.buffUpgrades',
+      targets: ['buff'],
+      excludeFromPool: true,   // 「升階」不是「賦予」，不可進 buffPool
+      enumerate: (a) => [{ segments: ['buffUpgrades'], origin: `神驅升階:${a.name}`, buffIds: a.buffUpgrades ?? [] }],
     },
   ],
   textUnits: (a) => [

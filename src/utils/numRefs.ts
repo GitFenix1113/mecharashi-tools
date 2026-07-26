@@ -12,9 +12,24 @@
 //    同一個 token 可重複出現不限次數。
 //  · 顯示讀真值：前台從 GameDataContext (PLAN-016 已全量預載) 查 refId 取屬性，數字只有 buff 一份。
 //
+// ⚠ **不變式自 PLAN-034 起修訂**（地雷六）。上面第二點原本寫的是
+//   「token 自描述、不靠出現位置」，自本計畫起精確化為：
+//
+//       token 自描述其**基準階**；實際顯示階可被情境層（神經驅動算力覆寫）抬升。
+//
+//   也就是資料庫寫 <buff_凝勢.lv1.maxStack>、buff lv1.maxStack=5，畫面卻可能顯示 7。
+//   等級來源因此從兩個（token 的 .lvN、EntityRef.level）變成三個（多了 ND 覆寫）。
+//   「不靠出現位置」本身仍然成立：抬升由 levelOf 這個**顯式參數**決定，不是由 token
+//   在文中的次序決定；不傳 levelOf 的呼叫端（後台、其餘 19 個 RefText 站點）
+//   行為與 PLAN-022 byte-identical。被抬升的 token 必須在 UI 標明來源，
+//   否則使用者無從得知畫面數字與資料庫值不同（NumRefValue 的 title 負責這件事）。
+//
 // 純函式、無 React / Firestore 依賴，可單測 (npm test)。token 失效一律優雅降級，比照 [xxx] 慣例。
 
 import type { DescriptionRefs } from '../types'
+import { pickLevel, type NumLevelOf } from './ndOverrides.ts'
+
+export type { NumLevelOf }
 
 // ─── 屬性註冊表 (registry)：單一資料源，所有層都從它驅動 ──────────────────────────
 // 新增一種可綁屬性 = 加一筆；解析、編譯、降級、(未來) 挑選器按鈕全部自動跟上。
@@ -29,8 +44,17 @@ export interface NumRefSource {
   duration?: number
   /** 生效次數 */
   maxTriggers?: number
-  /** 階梯 buff 各級（PLAN-024）；<id.lvN.attr> 從 levels[N-1] 取屬性 */
-  levels?: NumRefSource[]
+  /** 階梯 buff 各級（PLAN-024）；<id.lvN.attr> 以 level 值比對取屬性，見 pickLevel */
+  levels?: NumRefLevel[]
+}
+
+/**
+ * levels[] 的元素必須自帶 level 值（PLAN-034 B-3）。
+ * 原本取級寫的是 levels[N-1]，但實測正式資料已有非連號／亂序的 levels
+ * （buff_迴避率提升 levels=[3,4]、buff_迴避率降低 levels=[2,3,5,4]）——索引式取級是錯的。
+ */
+export interface NumRefLevel extends NumRefSource {
+  level: number
 }
 
 /** 由 refId 取得可供取值的實體；查無 (被刪 / 改 ID) 回傳 undefined → 優雅降級。 */
@@ -103,29 +127,58 @@ export function parseNumRefs(text: string): NumRefSegment[] {
 
 /**
  * 解析單一 token 的真值。attr 不在 registry、refId 查無、或屬性無值 → undefined (呼叫端決定降級樣式)。
+ *
+ * @param level  token 自帶的 .lvN，即**基準階**；省略 = 無 lv 段，取頂層（普通 buff）。
+ * @param levelOf 情境層取級（PLAN-034 F-1）。省略 = 恆用基準階，行為與 PLAN-022 完全相同。
  */
-export function resolveNumValue(refId: string, attr: string, lookup: NumRefLookup, level?: number): number | undefined {
+export function resolveNumValue(
+  refId: string,
+  attr: string,
+  lookup: NumRefLookup,
+  level?: number,
+  levelOf?: NumLevelOf,
+): number | undefined {
   const def = NUM_ATTRS[attr]
   if (!def) return undefined
   const entity = lookup(refId)
   if (!entity) return undefined
-  // 有 lvN 段 → 取該級 (levels[N-1])；超範圍 / 無 levels → 降級 undefined。無 lv 段取頂層。
-  const source = level != null ? entity.levels?.[level - 1] : entity
-  if (!source) return undefined
-  const v = def.get(source)
-  return typeof v === 'number' ? v : undefined
+
+  // 有 lvN 段 → 取該級（以 level 值比對，非索引）；查無 / 無 levels → undefined。無 lv 段取頂層。
+  const read = (n: number | undefined): number | undefined => {
+    const source = n != null ? pickLevel(entity.levels, n) : entity
+    if (!source) return undefined
+    const v = def.get(source)
+    return typeof v === 'number' ? v : undefined
+  }
+
+  const eff = levelOf?.(refId, level)?.level ?? level
+  const v = read(eff)
+  // **抬升後查無該級、或該級缺該欄位 → 退回基準階的值，絕不劣化成 '?'。**
+  // 階梯 buff 的各級不保證欄位齊全：實測 buff_隱形 lv1 有 duration:2 而 lv2/lv3 完全沒有。
+  // 少了這行，抬升會把一個本來顯示得出數字的 token 變成暗色 ?——使用者的感受是
+  // 「調高算力反而讓資料消失」，比不抬升更糟。
+  if (v === undefined && eff !== level) return read(level)
+  return v
 }
 
 /**
  * 將正文中所有 <refId.attr> 代換為解析後的真值字串，回傳純文字。
  * 供 DiffHighlight 前處理 (base / enhanced 先解析再 tokenize，5→7 照常被 LCS 標紅)。
  * 解析失敗的 token 代換為 fallback (預設 '?')；RefText 需要分辨降級樣式時改用 parseNumRefs。
+ *
+ * levelOf 必須與 RefText 傳的是同一份（PLAN-034 F-2），否則會出現
+ * 「開高亮時顯示 7、關掉變 5」這種只在某個 UI 開關下才對的畫面。
  */
-export function resolveNumRefs(text: string, lookup: NumRefLookup, fallback = '?'): string {
+export function resolveNumRefs(
+  text: string,
+  lookup: NumRefLookup,
+  fallback = '?',
+  levelOf?: NumLevelOf,
+): string {
   return parseNumRefs(text)
     .map((seg) => {
       if (seg.type === 'text') return seg.value
-      const v = resolveNumValue(seg.refId, seg.attr, lookup, seg.level)
+      const v = resolveNumValue(seg.refId, seg.attr, lookup, seg.level, levelOf)
       return v === undefined ? fallback : String(v)
     })
     .join('')
@@ -160,7 +213,10 @@ export function freezeNumRefs(
     .map((seg) => {
       if (seg.type === 'text') return seg.value
       if (seg.refId !== targetId) return seg.raw       // 指向別人的 token：原樣保留
-      // 借用 resolveNumValue 以共用 registry / .lvN 取級邏輯，lookup 恆回同一實體
+      // 借用 resolveNumValue 以共用 registry / .lvN 取級邏輯，lookup 恆回同一實體。
+      // **刻意不傳 levelOf（PLAN-034）**：抬升是「某位機師的某個算力配置」下才成立的情境值，
+      // 而凍結寫回的是全站共用的正文。把抬升值烘焙進去，等於把一位機師的配裝狀態
+      // 變成所有人看到的死數字。凍結一律取基準階。
       const v = source === undefined
         ? undefined
         : resolveNumValue(targetId, seg.attr, () => source, seg.level)

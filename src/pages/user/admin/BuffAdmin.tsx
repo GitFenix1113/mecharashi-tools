@@ -9,6 +9,9 @@ import { IconField } from '../../../components/admin/IconPicker'
 import { resolveIconSrc } from '../../../utils/assets'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { SkillEffectItem } from './PilotAdmin'
+import { checkBuffLevelName } from '../../../utils/ndOverrides'
+import { findRemovedLevelsInUse, sortLevelsAscending } from '../../../utils/buffLevelRefs'
+import { useRefScanData } from '../../../hooks/useRefScanData'
 
 // ─── BuffType 顯示對照 ──────────────────────────────────────────────────────────
 const BUFF_TYPE_OPTIONS: { value: string; label: string }[] = [
@@ -177,10 +180,13 @@ function TermRefField({
 // ─── 階梯等級項（PLAN-024）：折疊式單級編輯，比照 ModuleLevelItem ──────────────────
 function BuffLevelItem({
   levelData,
+  buffName,
   onChange,
   onRemove,
 }: {
   levelData: BuffLevel
+  /** 母 buff 名稱，供階名軟驗證比對前綴 */
+  buffName: string
   onChange: (updated: BuffLevel) => void
   onRemove: () => void
 }) {
@@ -189,12 +195,15 @@ function BuffLevelItem({
     onChange({ ...levelData, [key]: value })
   }
   const effects = levelData.effects ?? []
+  const nameCheck = checkBuffLevelName(buffName, levelData.level, levelData.name)
   return (
     <div className="border border-border/60 rounded-lg bg-bg-dark/50">
       <div className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none" onClick={() => setCollapsed(!collapsed)}>
         <span className="text-[13px] text-text-dim w-3">{collapsed ? '▶' : '▼'}</span>
         <span className="text-[14px] text-text-dim font-medium flex-1 truncate">
           Lv.{levelData.level}
+          {levelData.name && <span className="ml-2 text-accent-pink font-normal">{levelData.name}</span>}
+          {!nameCheck.ok && <span className="ml-2 text-accent-yellow font-normal">⚠</span>}
           {levelData.description && (
             <span className="ml-2 text-text-secondary font-normal">{levelData.description.slice(0, 40)}</span>
           )}
@@ -213,10 +222,32 @@ function BuffLevelItem({
             <Field label="等級 level">
               <input type="number" value={levelData.level} onChange={(e) => upd('level', Number(e.target.value))} className="input-field" />
             </Field>
-            <Field label="該級描述 description（選填）">
-              <input type="text" value={levelData.description ?? ''} onChange={(e) => upd('description', e.target.value || undefined)} className="input-field" />
+            <Field label="該級顯示名 name（PLAN-034）">
+              <input
+                type="text"
+                value={levelData.name ?? ''}
+                onChange={(e) => upd('name', e.target.value || undefined)}
+                className="input-field"
+                placeholder={`如：${buffName}Ⅱ`}
+              />
             </Field>
           </div>
+          {/* 軟驗證：只警示不擋存檔——「填與 buff.name 相同的原字」是合法的編輯決策 */}
+          <div className={`text-[11px] leading-relaxed ${nameCheck.ok ? 'text-text-dim' : 'text-accent-yellow'}`}>
+            {nameCheck.ok ? (nameCheck.message || '✓ 階名格式正確') : `⚠ ${nameCheck.message}`}
+            {!nameCheck.ok && nameCheck.suggestion && (
+              <button
+                type="button"
+                onClick={() => upd('name', nameCheck.suggestion)}
+                className="ml-2 px-1.5 py-0.5 border border-accent-cyan/40 text-accent-cyan rounded hover:bg-accent-cyan/10"
+              >
+                套用「{nameCheck.suggestion}」
+              </button>
+            )}
+          </div>
+          <Field label="該級描述 description（選填）">
+            <input type="text" value={levelData.description ?? ''} onChange={(e) => upd('description', e.target.value || undefined)} className="input-field" />
+          </Field>
           <div className={`${GRID_AUTO_FIELDS} gap-2`}>
             <Field label="最大疊加 maxStack（選填）">
               <input
@@ -288,6 +319,7 @@ function BuffEditPanel({
   const [form, setForm]     = useState<GameBuff>({ ...buff })
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
+  const { data: scanData, missingColls } = useRefScanData()
 
   useEffect(() => { setForm({ ...buff }) }, [buff])
 
@@ -310,8 +342,44 @@ function BuffEditPanel({
 
   async function handleSubmit() {
     setSaving(true); setError(null)
+
+    // ── PLAN-034 E-2：level 粒度守門（既有缺口）────────────────────────────
+    // findReferences 原本只處理「整份 buff 被刪」，沒有 level 粒度反查。刪掉或重排
+    // levels 時，既有的 ref.level 與 <id.lvN.attr> token 會**靜默指空**——
+    // 而覆寫層把後果從「一筆引用壞掉」放大成「整族在該機師頁全部不生效」。
+    const removedLevels = (buff.levels ?? [])
+      .map((l) => l.level)
+      .filter((n) => !(form.levels ?? []).some((l) => l.level === n))
+
+    // 掃不全就不准刪級。少了這一段，未載入的集合會讓 findRemovedLevelsInUse 回空陣列，
+    // 而「沒有阻擋」與「真的沒人引用」在畫面上完全一樣——正是這類守門最典型的假安全。
+    if (removedLevels.length && missingColls.length) {
+      setError(
+        `無法確認能否移除 Lv${removedLevels.join('、Lv')}：尚有集合未載入（${missingColls.join('、')}），`
+        + '掃不到那些集合裡的引用。請稍候資料載入完成後再儲存。',
+      )
+      setSaving(false)
+      return
+    }
+
+    const blockers = findRemovedLevelsInUse(form.id, buff.levels, form.levels, scanData)
+    if (blockers.length) {
+      const lines = blockers.map((b) => {
+        const where = b.hits.slice(0, 4).map((h) => `${h.coll}/${h.docId} ${h.origin}`).join('、')
+        return `Lv${b.level}：仍有 ${b.hits.length} 處引用（${where}${b.hits.length > 4 ? ' …' : ''}）`
+      })
+      setError(
+        `無法儲存——下列等級仍被引用，移除後那些引用會靜默指空：\n${lines.join('\n')}\n`
+        + '請先改掉這些引用（改指其他級或改用 fixedLevel），或保留該等級。',
+      )
+      setSaving(false)
+      return
+    }
+
     // 階梯 buff 存檔時清空頂層能力欄位，確保 DB 不殘留非權威資料
-    const payload: GameBuff = isLeveled ? { ...form, maxStack: undefined, duration: undefined, maxTriggers: undefined, effects: [] } : form
+    const payload: GameBuff = isLeveled
+      ? { ...form, levels: sortLevelsAscending(form.levels), maxStack: undefined, duration: undefined, maxTriggers: undefined, effects: [] }
+      : form
     try { await onSave(payload) }
     catch (e) { setError(e instanceof Error ? e.message : '儲存失敗，請重試'); setSaving(false) }
   }
@@ -468,6 +536,7 @@ function BuffEditPanel({
                   <BuffLevelItem
                     key={idx}
                     levelData={lv}
+                    buffName={form.name}
                     onChange={(updated) => { const arr = [...(form.levels ?? [])]; arr[idx] = updated; update('levels', arr) }}
                     onRemove={() => update('levels', (form.levels ?? []).filter((_, i) => i !== idx))}
                   />

@@ -123,7 +123,7 @@ export default function ConnectivityPage() {
   }, [run])
 
   const report = [
-    `【鋼嵐工具站 連線診斷】${startedAt}`,
+    `【米赫瑪超吉情豹站 連線診斷】${startedAt}`,
     ...results.map(r => {
       const state = r.status === 'ok' ? '✅' : r.status === 'fail' ? '❌' : '…'
       const ms = r.ms !== undefined ? `${r.ms}ms` : '-'

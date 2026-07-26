@@ -403,3 +403,40 @@ test('K3: writeCount = hits + 1（目標本身的 deleteDoc），供 C-4 擋 bat
   assert.equal(r.hits.length, 2)
   assert.equal(r.writeCount, 3)
 })
+
+// ─── PLAN-034 D-1：buffUpgrades 註冊為引用站點 ─────────────────────────────────
+
+test('N1: 刪 buff 時會命中 neuralDriveAbilities.buffUpgrades，級聯清除免費繼承', () => {
+  const ability = {
+    id: 'nd_雙生星芒2', name: '雙生星芒2', description: '', effects: [],
+    buffIds: [], buffUpgrades: ['buff_凝勢@2'],
+  } as never
+  const r = findReferences('buff', 'buff_凝勢', scanData({ neuralDriveAbilities: [ability] }))
+  assert.equal(r.hits.length, 1)
+  const h = r.hits[0]
+  assert.equal(h.siteId, 'neuralDriveAbilities.buffUpgrades')
+  // 與 buffIds 同樣是 arrayRemove + 原始字串：不註冊的話，刪掉 buff_凝勢 之後
+  // 這裡會留下指空的 'buff_凝勢@2'，而覆寫失效的症狀是「點算力沒反應」，不會報錯。
+  assert.equal(h.op, 'arrayRemove')
+  assert.equal(h.value, 'buff_凝勢@2')
+  assert.equal(h.level, 2)
+  assert.equal(h.path, 'buffUpgrades')
+  assert.equal(h.origin, '神驅升階:雙生星芒2')
+})
+
+test('N2: buffUpgrades 與 buffIds 是兩個獨立站點，同時有值時各記一筆', () => {
+  const ability = {
+    id: 'nd_x', name: 'X', description: '', effects: [],
+    buffIds: ['buff_凝勢'], buffUpgrades: ['buff_凝勢@2'],
+  } as never
+  const r = findReferences('buff', 'buff_凝勢', scanData({ neuralDriveAbilities: [ability] }))
+  assert.deepEqual(r.hits.map(h => h.siteId).sort(), [
+    'neuralDriveAbilities.buffIds', 'neuralDriveAbilities.buffUpgrades',
+  ])
+})
+
+test('N3: 未填 buffUpgrades 的能力不產生站點雜訊', () => {
+  const ability = { id: 'nd_y', name: 'Y', description: '', effects: [], buffIds: [] } as never
+  const r = findReferences('buff', 'buff_凝勢', scanData({ neuralDriveAbilities: [ability] }))
+  assert.deepEqual(r.hits, [])
+})
