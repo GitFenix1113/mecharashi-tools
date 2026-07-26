@@ -156,7 +156,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-034 進度表</span>
   </div>
@@ -179,7 +179,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">21</div>
+      <div class="summary-num" style="color:var(--accent-green)">22</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -187,7 +187,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">1</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -199,10 +199,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">21 / 22</span>
+      <span style="color:var(--accent-green);">22 / 22 · 全案完成</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 95%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -220,11 +220,14 @@
     <b>Phase A 可獨立出貨</b>，即使全案否決也有殘值。<br>
     合計估 34h；考量單人維護、繁中文件同步與 pre-push build 把關，實際建議抓 <b>38–45h</b>。
     <br><br>
-    <b style="color:var(--accent-green);">2026-07-26 · Slice 1 與 Slice 2 皆已上線</b>（Phase 0/A/B/C/D/E/F/G/H-1）。
+    <b style="color:var(--accent-green);">2026-07-26 · 全案完成（Phase 0 / A–H 共 22 項）</b>。
     程式碼已 push 部署、資料已寫入正式庫並 bump，
     <b>艾達與梅利莎兩位機師的階覆寫已對所有使用者生效</b>並經線上實測。
     <br>執行順序與計畫書有一處<b>更正</b>：Phase F 是 G-3 的<u>硬前置</u>而非可延後項（理由見 Phase F 區塊），
-    實際順序為 F → G-1 → G-2 → G-3。僅剩 <b>H-2（data-patch SOP 補洞 + 漂移檢查腳本）</b>。
+    實際順序為 F → G-1 → G-2 → G-3。
+    <br>時程：估 34h（建議 38–45h），實際自 2026-07-19 立案至 07-26 完成。
+    範圍比原估大——Phase A 從估 22 筆變成實際 54 筆、Phase 0 盤點發現母體是 53 支能力 / 18 位機師
+    而非計畫書假設的兩位。
   </div>
 </section>
 
@@ -1318,7 +1321,7 @@
     <div class="task-group-header">
       <div class="task-group-title">H-2 &nbsp; data-patch SOP 補洞與漂移檢查</div>
       <div class="task-group-meta">.claude/skills/data-patch/SKILL.md</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1329,10 +1332,19 @@
           四個字典集合<b>完全沒有流程、沒有 dry-run 腳本、沒有備份步驟</b>——
           而本案的等級規則權威就住在其中一個。收尾清單須加「ND 等級數／門檻有無落差已確認」與
           「<code>buffUpgrades</code> 指向的 level 仍存在」兩項。
+          <br><b>2026-07-26 完成。</b>新增一整節，重點放在<b>這四個集合的失敗模式與其他六個實體不同</b>：
+          不是「資料錯了」而是<b>引用靜默指空</b>（暗色 <code>?</code>／「點算力沒反應」，全程無錯誤訊息）。
+          <br>流程定為 <b>備份 →「優先走後台，不要寫腳本」</b>——後台已內建刪級守門、掃不全拒絕刪級、
+          階名 code point 驗證，腳本一律沒有。非得寫腳本時照抄 Phase G 的結構
+          （前置閘門 → 等價性驗證 → diff → 寫入 → bump）。
+          bump 段落另加警語：版本 gate 是 <code>versions.&lt;集合&gt;</code> 的 ISO 時間戳，
+          <b>不要自己寫 bump 邏輯</b>（本案實際踩過的假成功）。
+          <br>收尾清單兩項已加，並點明其共同性質：<b>壞掉時畫面不會報錯</b>，不主動跑檢查就不會知道。
         </div>
+        <div class="task-file">.claude/skills/data-patch/SKILL.md（本機・不進版控）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1342,19 +1354,47 @@
           <code>minSum</code> 永遠不會被 API 刷新（見計畫書「決策二」下方的更正）。
           新腳本在 <code>--patch</code> 時即使跳過寫入，也把 API 的 <code>MinimumSum</code>／等級數
           與 Firestore 現值 diff 出來報給人看。另補 <code>siteChangelog</code> 一筆 <code>feat</code>。
+          <br><b>2026-07-26 完成。</b>唯讀，查三件事：①分區結構（數／名／各區等級數）
+          ②<code>minSum</code> 逐級比對 ③<code>buffUpgrades</code> 指向的 level 是否仍存在<b>且有階名</b>
+          （階名被清空同樣會讓整族退場）。有落差 <code>exit 1</code>，可直接串進收尾檢查。
+          <code>--upgrades-only</code> 不打官方 API。
+          <br><b>基準線：82 位官方機師全數一致、7 筆升階宣告全部有效、零漂移。</b>
+          <code>siteChangelog</code> 的 <code>feat</code> 已於 Phase G 上線時補上。
         </div>
-        <div class="task-file">scripts/check-nd-minsum-drift.mjs（新） · src/data/siteChangelog/</div>
+        <div class="task-file">scripts/check-nd-minsum-drift.mjs（新・不進版控）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
+  </div>
+
+  <div class="slice-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);border-left-color:var(--accent-yellow);">
+    <strong style="color:var(--accent-yellow);">寫檢查腳本時抓到的兩個「安靜的盲區」</strong>
+    <p style="margin:8px 0 0;">
+      第一版用「繁中名對照官方名」找機師，結果 <b>2 位對不上而被整位略過</b>，
+      而輸出寫的是「官方清單查無同名機師」——看起來像結論，其實是<b>比對失敗</b>。
+      這種訊息比報錯更危險：它讓人以為檢查涵蓋了全部。
+    </p>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>里貝卡</b>：OpenCC 把「里贝卡」轉成「<b>裡</b>貝卡」。
+          <code>scrape-pilots-v3.js</code> 早有 <code>TW_FIXES</code> 修這條，本腳本沒帶上。</li>
+      <li><b>卡蜜拉</b>：文件 ID 是 <code>pilot_017_卡<b>米</b>拉</code>，但 <code>name</code> 已被人工改成「卡<b>蜜</b>拉」，
+          官方叫「卡米拉」。ID <b>出生即凍結</b>（PLAN-020）保留的正是建檔當下的官方名，
+          反而是比 <code>name</code> 更可靠的後備鍵。</li>
+    </ul>
+    <p style="margin:8px 0 0;">
+      修法：名稱比對改為<b>四段後備</b>（現名 → 現名簡中 → ID 尾段 → ID 尾段簡中），
+      並把「非預期的略過」單獨標成 <code>✗</code> 且計入 <code>exit 1</code>——
+      <b>沒有 <code>manual:true</code> 又對不上官方＝雙重盲區</b>：既不受爬蟲的 manual 保護，
+      也不在本檢查涵蓋內。修正後 82 位全數涵蓋、5 位 <code>manual</code> 為預期略過。
+    </p>
   </div>
 </section>
 
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-034 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-034 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 歷史記錄</a>
 </footer>
 
 </body>

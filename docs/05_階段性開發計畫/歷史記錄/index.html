@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-034 · 神驅算力 BUFF 階覆寫層</h3>
+      <p>PLAN-021 讓艾達的<b>天賦</b>正文隨神經驅動算力改寫，但她的<b>技能</b>也引用凝勢，而凝勢的階同樣隨 γ2 提升——<code>PilotSkill</code> 沒有對應機制，於是點動算力時天賦跟著變、技能不動。根因是「凝勢是第幾階」在系統裡存了三份互不連通。本計畫改以<b>階不是常數而是配裝狀態的函數</b>建模：升階規則存進 <code>NeuralDriveAbility.buffUpgrades</code>（<code>id@N</code>），<b>門檻沿用它掛載的那一級 <code>minSum</code></b>（實測與既有變體 100% 吻合，不需新欄位）；機師頁算出單一 <code>Map&lt;buffId,{level,name,zone}&gt;</code>，chip 字面、浮窗、數值 token 都問同一張表。三道關鍵防線：換字條件必須是「<b>確實抬升</b>」而非「有值」；降級<b>以家族為單位原子化</b>（絕不允許「不換字但數值照抬」）；<code>fixedLevel</code> 逐筆釘死官方不改寫處——實機確認過官方文案風格因角色而異，「同頁一致」是本站的內部保證而非官方行為。收尾把 <code>ndVariants</code> 塌縮掉（艾達 3→1、梅利莎 4→0），變體自此只表達非等級性差異。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-07-26 · 22 / 22 任務 · 順帶修好 54 筆引用資料債（15 筆斷鏈、39 筆缺 level）與全站羅馬數字字形</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-034_神驅算力BUFF階覆寫層/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-034_神驅算力BUFF階覆寫層/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card green">
       <div class="card-icon">◆</div>
       <h3>PLAN-023 · 神經驅動能力庫與模擬接入</h3>

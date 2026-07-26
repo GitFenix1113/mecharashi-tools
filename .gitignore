@@ -82,4 +82,7 @@ scripts/init-patch-versions.mjs
 !scripts/seed-emulator.mjs
 scripts/patch-component-outerframe.mjs
 scripts/bump-data-version.mjs
+# PLAN-034 H-2：唯讀漂移檢查，但內含官方 API endpoint 與 appkey，與 scraper 同級敏感。
+# 換機器／重新 clone 時需重建（同 bump-data-version.mjs 的既有取捨）。
+scripts/check-nd-minsum-drift.mjs
 .claude/skills/data-patch/
