@@ -40,15 +40,6 @@
         <a class="card-link" href="PLAN-038_社群連結預覽/進度表.html">→ 進度表</a>
       </div>
     </div>
-    <div class="card cyan">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-033 · 後台編輯視窗加寬</h3>
-      <p>後台編輯彈窗固定 672px（<code>AdminModal</code> 的 <code>max-w-2xl</code>），12 個分頁中有 10 個共用這層殼；維護者只在 PC 上作業，等於為不存在的手機情境留白大半螢幕。高度早已是 <code>max-h-[90vh]</code>，問題純在寬度。但掃描後發現<b>單純加寬是負優化</b>——<code>.input-field</code> 為 <code>width:100%</code>，且 59 處格線有 58 處是固定欄數，多出的寬度會全變成胖輸入框，排數一排都沒少。故加寬（A）與格線改造（B）綁定交付。B 原訂用階梯式容器查詢，開工後改為 <b>CSS <code>auto-fill</code></b>：階梯解不掉「欄位數本來就少」的區塊（射程頁只有 2 個欄位，再多斷點也排不滿），而 auto-fill 排不滿就留白、不把空間分給現有欄位；且它量的是元素自身寬度，窄版彈窗與巢狀卡片自動得到正確欄數，校準從「35 處各配階梯」簡化為調一個數字。過程中另拆掉一顆雷：容器查詢的 <code>contain:layout</code> 會使彈窗成為 <code>position:fixed</code> 子孫的 containing block，將打壞六個編輯器共用的 IconPicker 全螢幕浮層。寬度經互動示範實測由 80% 上修為 <b>90vw</b>。四個大編輯器的 Tab 版面重構（C）已納入範圍但延後。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-033_後台編輯視窗加寬/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-033_後台編輯視窗加寬/進度表.html">→ 進度表</a>
-      </div>
-    </div>
     <div class="card pink">
       <div class="card-icon">◆</div>
       <h3>PLAN-032 · 武器技能引用化</h3>

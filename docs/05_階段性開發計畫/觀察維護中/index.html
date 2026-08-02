@@ -32,6 +32,16 @@
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
     <!--PLANS-START-->
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-033 · 後台編輯視窗加寬</h3>
+      <p>後台編輯彈窗由固定 672px 放寬到 min(90vw,1920px)，並把多出的寬度轉為欄位密度而非胖輸入框：格線改 auto-fill 自動排欄（Phase B），再精簡分頁數並把「長到必須捲兩屏」的天賦編輯／模組基本資訊／武器改裝方案改為左文本右結構化的雙欄版面（Phase C）。全程只改版面，不動 state 與 Firestore 寫入路徑。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">開發收束：2026-08-02 · 維護內容：實際使用中觀察 GRID_AUTO_FIELDS 的 220px 最小欄寬是否需微調；並判定天賦編輯在雙欄化後是否仍需捲動超過兩屏（若是則另開 detail page 的 PLAN）</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-033_後台編輯視窗加寬/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-033_後台編輯視窗加寬/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card orange">
       <div class="card-icon">◆</div>
       <h3>PLAN-029 · Cloudflare 化與 App Check 退場</h3>

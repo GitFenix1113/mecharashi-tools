@@ -132,6 +132,88 @@
 </section>
 
 <section class="section">
+  <div class="section-label green">版面規範</div>
+  <div class="section-title">編輯彈窗版面（PLAN-033）</div>
+  <div class="section-desc">
+    後台維護者只用 PC、不考慮手機——這是本節所有決定的前提。
+    10 個編輯器共用 <code>AdminModal</code> 殼層，版面規則集中在 <code>src/pages/user/admin/shared.tsx</code>，
+    新增／修改編輯器時沿用即可，不要各自另寫一套。
+  </div>
+
+  <table class="spec-table">
+    <tr><th>常數 / 元件</th><th>值</th><th>用途與注意</th></tr>
+    <tr>
+      <td><code>ADMIN_WIDE_MAX_W</code></td>
+      <td><code>max-w-[min(90vw,1920px)]</code></td>
+      <td>編輯彈窗與 <code>AdminPage</code> 列表容器共用，避免兩者寬度各自漂移。
+          1920px 上限僅防超寬螢幕（3440px+），2133px 以下視窗不會觸發。
+          ⚠ 不可改用 <code>w-[90vw]</code>——殼層已有 <code>w-full</code>，兩者都在設 width，
+          勝負取決於 Tailwind 產生的 CSS 順序而非 class 順序。</td>
+    </tr>
+    <tr>
+      <td><code>GRID_AUTO_FIELDS</code></td>
+      <td><code>grid-cols-[repeat(auto-fill,minmax(220px,1fr))]</code></td>
+      <td>同質短欄位群（數值、短下拉）專用。⚠ 是 <code>auto-fill</code> 不是 <code>auto-fit</code>：
+          後者會收合空軌道、讓現有欄位吃掉整列，正是要消滅的「胖輸入框」。
+          量的是元素自身寬度，窄版彈窗與巢狀卡片自動得到正確欄數。
+          調密度只改 220px 這一個數字，全站生效。
+          ⚠ 異質長欄位（名稱、圖片路徑、textarea）不要套用。</td>
+    </tr>
+    <tr>
+      <td><code>GRID_TWO_PANE</code></td>
+      <td><code>grid-cols-1 2xl:grid-cols-2</code></td>
+      <td>長分頁內部的雙欄：左＝吃寬度的文本區，右＝天生窄的結構化資料。
+          ⚠ 不可改用 <code>GRID_AUTO_FIELDS</code>——左右欄語意不對等、順序不可互換。
+          用 viewport 斷點在此是準確的：彈窗寬度 <code>min(90vw,1920px)</code> 本來就直接綁 viewport。</td>
+    </tr>
+    <tr>
+      <td><code>AdminEditTabs</code></td>
+      <td>pill 樣式 ＋ 數字 badge</td>
+      <td>編輯彈窗內的分頁列，四個大編輯器共用（原本各寫一份、樣式還不一致）。
+          badge 傳數字，&gt;0 才顯示。</td>
+    </tr>
+  </table>
+
+  <div class="note-block" style="margin-top:16px;">
+    <strong>⚠ 全域紅線：編輯彈窗內不可使用 Tailwind 容器查詢工具類</strong><br>
+    容器查詢會套用 <code>container-type:inline-size</code>，而該值隱含 <code>contain:layout</code>——
+    layout containment 會讓該元素成為 <code>position:fixed</code> 子孫的 containing block。
+    多個編輯器在彈窗內使用 <code>IconField</code>（<code>components/admin/IconPicker</code>），
+    它是 <code>fixed inset-0</code> 的全螢幕浮層，一旦祖先套上就會改對齊彈窗的框而非視窗、直接錯位。
+    <code>RefPicker</code> 同理。內部格線用上表的 <code>GRID_AUTO_FIELDS</code> /
+    <code>GRID_TWO_PANE</code> 達成同樣目的即可。
+    <br><br>
+    <span style="color:var(--text-dim)">註：產出的 CSS 裡可能仍看得到該 utility 的定義，那是 Tailwind
+    掃描器不解析語法、只抓字串所致（連 docs/ 討論它時的字面量都會被掃到，因為 copy-docs 會把 docs 複製進
+    public/）。判斷有沒有踩雷要看「元素上有沒有這個 class」，不是看 CSS 裡有沒有這條規則。</span>
+  </div>
+
+  <table class="spec-table" style="margin-top:16px;">
+    <tr><th>編輯器</th><th>彈窗分頁</th><th>備註</th></tr>
+    <tr><td><code>PilotAdmin</code></td><td>6：基本資訊 / 屬性數值・AP / 個人資料 / 天賦 / 技能 / 神經驅動</td>
+        <td>個人資料未併入數值頁——含 <code>AdditionalInfoEditor</code>，高度隨自訂欄位數不定</td></tr>
+    <tr><td><code>WeaponAdmin</code></td><td>4：基本資訊 / 戰鬥屬性・射程・插槽 / 改裝方案 / 武器技能</td>
+        <td>改裝方案頁的固定／浮動改裝為雙欄</td></tr>
+    <tr><td><code>MechAdmin</code></td><td>4：基本數值 / 部件 / 模組（能力）/ 武器槽・外觀</td><td>—</td></tr>
+    <tr><td><code>ModuleAdmin</code></td><td>5：基本資訊 / 基本屬性 / 武器增傷 / 等級資料 / 條件效果</td>
+        <td>四個是大分頁、無可併對象；基本資訊頁為雙欄</td></tr>
+    <tr><td><code>GlossaryAdmin</code> · <code>NeuralDriveAdmin</code> · <code>SkillAdmin</code></td>
+        <td>無分頁</td>
+        <td>顯式傳 <code>maxWidth="max-w-2xl"</code> 維持 672px 窄版——欄位數少，撐寬只會讓兩三個欄位漂在空白裡</td></tr>
+    <tr><td><code>UserAdmin</code> · <code>GrayOpsAdmin</code></td><td>—</td>
+        <td>inline 版面，不走 <code>AdminModal</code></td></tr>
+  </table>
+
+  <div class="note-block" style="margin-top:16px;">
+    <strong>合併分頁的判準</strong><br>
+    彈窗內容區在 1080p 下約 760px ≈ 10～11 排欄位。只合併「各只剩 1～3 排」的小分頁，
+    以 section 標題 ＋ <code>border-t</code> 分隔。
+    <strong>重元件必須維持獨立分頁</strong>（<code>PilotSkillRefsTab</code>、
+    <code>PilotNeuralDriveTab</code>、Module 等級表）——合併會讓它們變成常駐掛載，失去 lazy mount。
+  </div>
+</section>
+
+<section class="section">
   <div class="section-label green">相關文件</div>
   <div class="section-title">技術參考</div>
   <div class="doc-grid">
