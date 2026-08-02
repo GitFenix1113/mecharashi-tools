@@ -54,6 +54,66 @@ export function TabButton({
   )
 }
 
+// ── GRID_TWO_PANE：長分頁內部的雙欄版面（PLAN-033 Phase C）─────────────────────
+// 用途：把「左＝吃寬度的文本區／右＝天生窄的結構化資料」並排，砍掉垂直長度。
+//   ⚠ 刻意用 viewport 斷點（2xl:）而非 GRID_AUTO_FIELDS 的 auto-fill：
+//     auto-fill 會讓左右欄依剩餘空間自由重排，但這兩欄語意不對等、順序不可互換。
+//   ⚠ 更不可改用 Tailwind 容器查詢工具類達成——理由見 AdminModal 上方的長註解
+//     （container-type 隱含 contain:layout，會害子孫的 fixed 浮層錯位）。
+//     這裡的雙欄目標正好都含 IconField / RefPicker 等 fixed 浮層，踩下去必炸。
+//   斷點選 2xl（1536px）：彈窗寬度是 min(90vw,1920px)、直接綁 viewport，
+//     故 viewport 斷點在此是準確的——1536px 視窗下彈窗約 1382px，雙欄各約 670px，
+//     仍寬於原本 max-w-2xl 的 672px 單欄，不會比改動前窄。
+export const GRID_TWO_PANE = 'grid grid-cols-1 2xl:grid-cols-2 gap-x-4 gap-y-3 items-start'
+
+// ── AdminEditTabs：編輯彈窗內的分頁列（PLAN-033 C-0）──────────────────────────
+// 原本 Pilot / Weapon / Module / Mech 各自寫一份幾乎相同的 JSX，其中 Mech 樣式還
+// 不一致（rounded-t-lg + 底線）。此處統一為 pill 樣式，四處共用。
+// badge 傳數字，>0 才顯示；不需要 badge 的分頁不填即可。
+export type AdminEditTabDef<K extends string = string> = {
+  id: K
+  label: string
+  badge?: number
+}
+
+export function AdminEditTabs<K extends string>({
+  tabs,
+  active,
+  onChange,
+}: {
+  tabs: readonly AdminEditTabDef<K>[]
+  active: K
+  onChange: (id: K) => void
+}) {
+  return (
+    <div className="flex gap-1 mb-4 shrink-0 flex-wrap">
+      {tabs.map((t) => {
+        const isActive = active === t.id
+        const hasBadge = (t.badge ?? 0) > 0
+        return (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => onChange(t.id)}
+            className={`relative px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              isActive
+                ? 'bg-accent-orange text-black'
+                : 'bg-bg-dark border border-border text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            {t.label}
+            {hasBadge && (
+              <span className={`ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-[12px] font-bold ${isActive ? 'bg-black/20 text-black' : 'bg-accent-cyan/20 text-accent-cyan'}`}>
+                {t.badge}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── AdminLoadGate：分頁資料延遲載入閘門（降低查詢量）────────────────────────────
 // 各分頁預設不自動載入。管理者需「使用篩選」或「點擊載入」才向 Firestore 查詢。
 // searchable=true 時提供搜尋框，輸入的關鍵字會帶入該分頁的篩選條件。

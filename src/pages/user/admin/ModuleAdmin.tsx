@@ -3,7 +3,10 @@ import type { Module, Mech, ConditionalEffect, ModuleLevel } from '../../../type
 import {
   ModuleRarity, ModuleSlot, ModuleSource, ModuleDataSource, ConditionalTrigger,
 } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, GRID_AUTO_FIELDS } from './shared'
+import {
+  Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton,
+  GRID_AUTO_FIELDS, GRID_TWO_PANE, AdminEditTabs, type AdminEditTabDef,
+} from './shared'
 import { updateModule, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
@@ -311,7 +314,7 @@ function ModuleLevelItem({
 // ─── 模組編輯面板 ──────────────────────────────────────────────────────────────
 type EditTab = 'basic' | 'stats' | 'weapon' | 'levels' | 'conditional'
 
-const EDIT_TABS: { id: EditTab; label: string }[] = [
+const EDIT_TABS: AdminEditTabDef<EditTab>[] = [
   { id: 'basic',       label: '基本資訊' },
   { id: 'stats',       label: '基本屬性' },
   { id: 'weapon',      label: '武器增傷' },
@@ -354,174 +357,167 @@ function ModuleEditPanel({
         <span className="text-text-dim text-sm font-normal ml-1">{form.id}</span>
       </h3>
 
-      {/* Tab 列 */}
-      <div className="flex gap-1 mb-4 shrink-0 flex-wrap">
-        {EDIT_TABS.map((t) => {
-          const hasBadge =
-            (t.id === 'levels' && (form.levels ?? []).length > 0) ||
-            (t.id === 'conditional' && (form.conditionalEffects ?? []).length > 0)
-          return (
-            <button
-              key={t.id}
-              onClick={() => setEditTab(t.id)}
-              className={`relative px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                editTab === t.id
-                  ? 'bg-accent-orange text-black'
-                  : 'bg-bg-dark border border-border text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              {t.label}
-              {hasBadge && (
-                <span className={`ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-[12px] font-bold ${editTab === t.id ? 'bg-black/20 text-black' : 'bg-accent-cyan/20 text-accent-cyan'}`}>
-                  {t.id === 'levels' ? (form.levels ?? []).length : (form.conditionalEffects ?? []).length}
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
+      <AdminEditTabs
+        tabs={EDIT_TABS.map((t) => ({
+          ...t,
+          badge:
+            t.id === 'levels'      ? (form.levels ?? []).length :
+            t.id === 'conditional' ? (form.conditionalEffects ?? []).length : undefined,
+        }))}
+        active={editTab}
+        onChange={setEditTab}
+      />
 
       <div className="overflow-y-auto flex-1 pr-1">
         {editTab === 'basic' && (
-          <div className="space-y-3">
-            <Field label="名稱">
-              <input value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" />
-            </Field>
-            <IconField label="圖示 icon" value={form.icon} onChange={(v) => update('icon', v || undefined)} defaultFolder="modules" />
-            <Field label="效果描述（滿等效果）">
-              <p className="text-[12px] text-text-dim mb-1.5 leading-relaxed">
-                此處填<span className="text-accent-yellow">滿等（最高等級）</span>的效果描述，會直接顯示在前台模組卡片上；各等級的差異值另在「等級資料」分頁維護。
-              </p>
-              <textarea value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field min-h-[180px] resize-y" />
-            </Field>
-            <RefPicker
-              text={form.description}
-              value={form.descriptionRefs}
-              onChange={(refs) => update('descriptionRefs', refs)}
-              onCompileText={(tf) => update('description', tf(form.description))}
-            />
-            <Field label="模組增加等級 moduleAddLevel（配裝模擬器用，預設 1）">
-              <input type="number" min={0} value={form.moduleAddLevel ?? 1} onChange={(e) => update('moduleAddLevel', Number(e.target.value))} className="input-field" />
-            </Field>
-            <Field label="槽位">
-              <select value={form.slot} onChange={(e) => update('slot', e.target.value)} className="input-field">
-                {SLOT_OPTIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </Field>
-            <Field label="品質">
-              <select value={form.rarity} onChange={(e) => update('rarity', e.target.value)} className="input-field">
-                {Object.values(ModuleRarity).map((r) => <option key={r} value={r}>{r} 級</option>)}
-              </select>
-            </Field>
-            <Field label="綁定機甲">
-              <select value={form.boundMechId ?? ''} onChange={(e) => update('boundMechId', e.target.value || null)} className="input-field">
-                <option value="">不綁定（通用模組）</option>
-                {mechs.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-              <p className="text-[14px] text-text-dim mt-1 leading-relaxed">
-                這是<span className="text-accent-orange">使用限制</span>，不是取得途徑：綁定後，傷害模擬時此模組
-                <span className="text-accent-orange">只能裝在該機甲上</span>，其他機甲一律無法使用。
-                <br />
-                若只是「拆這台機甲可以取得此模組」，請改在下方的
-                <span className="text-accent-cyan">拆解來源機甲</span>勾選，
-                <span className="text-accent-red">不要</span>在此綁定 —— 誤綁會讓模組在模擬器裡消失於其他機甲的可選清單。
-                <br />
-                通用模組請保持「不綁定」（機甲的8級模組只要機甲有設定就會自動對應到模組圖鑑）。
-              </p>
-            </Field>
-            <Field label="綁定部位（複選，空白=不限）">
-              <div className="flex flex-wrap gap-4 mt-1">
-                {PART_OPTIONS.map(({ value, label }) => {
-                  const parts = Array.isArray(form.boundPart) ? form.boundPart : (form.boundPart ? [form.boundPart as string] : [])
-                  const checked = parts.includes(value)
-                  return (
-                    <label key={value} className="flex items-center gap-1.5 text-sm cursor-pointer hover:text-text-primary">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => {
-                          const next = checked ? parts.filter((p) => p !== value) : [...parts, value]
-                          update('boundPart', next.length > 0 ? next : null)
-                        }}
-                        className="accent-accent-orange w-3.5 h-3.5"
-                      />
-                      {label}
-                    </label>
-                  )
-                })}
-              </div>
-              {(!form.boundPart || (Array.isArray(form.boundPart) && form.boundPart.length === 0)) && (
-                <p className="text-[14px] text-text-dim mt-1">不限部位</p>
-              )}
-            </Field>
-            <Field label="遊戲取得途徑（複選）">
-              <div className="flex flex-wrap gap-4 mt-1">
-                {Object.values(ModuleSource).map((v) => {
-                  const sources = Array.isArray(form.source) ? form.source : (form.source ? [form.source as string] : [])
-                  const checked = sources.includes(v)
-                  return (
-                    <label key={v} className="flex items-center gap-1.5 text-sm cursor-pointer hover:text-text-primary">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => {
-                          let next = checked ? sources.filter((s) => s !== v) : [...sources, v]
-                          if (next.some((s) => s !== ModuleSource.UNKNOWN)) {
-                            next = next.filter((s) => s !== ModuleSource.UNKNOWN)
-                          }
-                          update('source', next)
-                        }}
-                        className="accent-accent-orange w-3.5 h-3.5"
-                      />
-                      {v}
-                    </label>
-                  )
-                })}
-              </div>
-            </Field>
-            <Field label="拆解來源機甲（可拆哪些機甲取得此模組）">
-              <p className="text-[14px] text-text-dim mt-1 mb-1.5 leading-relaxed">
-                只影響<span className="text-accent-cyan">取得途徑</span>的顯示，
-                <span className="text-accent-red">不會</span>限制模組能裝在哪台機甲。
-                使用限制請設上方的<span className="text-accent-orange">綁定機甲</span>。
-              </p>
-              <div className="mt-1 border border-border rounded-lg max-h-44 overflow-y-auto divide-y divide-border/40">
-                {mechs.length === 0 ? (
-                  <p className="text-xs text-text-dim p-2">載入機甲中...</p>
-                ) : (
-                  mechs.map((m) => {
-                    const ids    = form.dismantleMechIds ?? []
-                    const checked = ids.includes(m.id)
+          /* PLAN-033 C-2：本頁原為一條垂直堆疊——名稱／圖示／180px 描述 textarea／
+             RefPicker，後面再接 7 個分類與關聯設定，長到必須捲兩屏。
+             拆成左「文本」右「分類與關聯設定」雙欄；RefPicker 留左欄，它解析的
+             就是上方 description 的 [xxx]，分開就看不到對照。 */
+          <div className={GRID_TWO_PANE}>
+            <div className="space-y-3 min-w-0">
+              <Field label="名稱">
+                <input value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" />
+              </Field>
+              <IconField label="圖示 icon" value={form.icon} onChange={(v) => update('icon', v || undefined)} defaultFolder="modules" />
+              <Field label="效果描述（滿等效果）">
+                <p className="text-[12px] text-text-dim mb-1.5 leading-relaxed">
+                  此處填<span className="text-accent-yellow">滿等（最高等級）</span>的效果描述，會直接顯示在前台模組卡片上；各等級的差異值另在「等級資料」分頁維護。
+                </p>
+                <textarea value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field min-h-[180px] resize-y" />
+              </Field>
+              <RefPicker
+                text={form.description}
+                value={form.descriptionRefs}
+                onChange={(refs) => update('descriptionRefs', refs)}
+                onCompileText={(tf) => update('description', tf(form.description))}
+              />
+            </div>
+
+            <div className="space-y-3 min-w-0">
+              <Field label="模組增加等級 moduleAddLevel（配裝模擬器用，預設 1）">
+                <input type="number" min={0} value={form.moduleAddLevel ?? 1} onChange={(e) => update('moduleAddLevel', Number(e.target.value))} className="input-field" />
+              </Field>
+              <Field label="槽位">
+                <select value={form.slot} onChange={(e) => update('slot', e.target.value)} className="input-field">
+                  {SLOT_OPTIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </Field>
+              <Field label="品質">
+                <select value={form.rarity} onChange={(e) => update('rarity', e.target.value)} className="input-field">
+                  {Object.values(ModuleRarity).map((r) => <option key={r} value={r}>{r} 級</option>)}
+                </select>
+              </Field>
+              <Field label="綁定機甲">
+                <select value={form.boundMechId ?? ''} onChange={(e) => update('boundMechId', e.target.value || null)} className="input-field">
+                  <option value="">不綁定（通用模組）</option>
+                  {mechs.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+                <p className="text-[14px] text-text-dim mt-1 leading-relaxed">
+                  這是<span className="text-accent-orange">使用限制</span>，不是取得途徑：綁定後，傷害模擬時此模組
+                  <span className="text-accent-orange">只能裝在該機甲上</span>，其他機甲一律無法使用。
+                  <br />
+                  若只是「拆這台機甲可以取得此模組」，請改在下方的
+                  <span className="text-accent-cyan">拆解來源機甲</span>勾選，
+                  <span className="text-accent-red">不要</span>在此綁定 —— 誤綁會讓模組在模擬器裡消失於其他機甲的可選清單。
+                  <br />
+                  通用模組請保持「不綁定」（機甲的8級模組只要機甲有設定就會自動對應到模組圖鑑）。
+                </p>
+              </Field>
+              <Field label="綁定部位（複選，空白=不限）">
+                <div className="flex flex-wrap gap-4 mt-1">
+                  {PART_OPTIONS.map(({ value, label }) => {
+                    const parts = Array.isArray(form.boundPart) ? form.boundPart : (form.boundPart ? [form.boundPart as string] : [])
+                    const checked = parts.includes(value)
                     return (
-                      <label key={m.id} className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-bg-dark/60">
+                      <label key={value} className="flex items-center gap-1.5 text-sm cursor-pointer hover:text-text-primary">
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={() => {
-                            const next = checked ? ids.filter((id) => id !== m.id) : [...ids, m.id]
-                            update('dismantleMechIds', next)
+                            const next = checked ? parts.filter((p) => p !== value) : [...parts, value]
+                            update('boundPart', next.length > 0 ? next : null)
                           }}
-                          className="accent-accent-orange w-3.5 h-3.5 shrink-0"
+                          className="accent-accent-orange w-3.5 h-3.5"
                         />
-                        <span className="text-sm text-text-secondary flex-1">{m.name}</span>
-                        <span className="text-[13px] text-text-dim shrink-0">{m.id}</span>
+                        {label}
                       </label>
                     )
-                  })
+                  })}
+                </div>
+                {(!form.boundPart || (Array.isArray(form.boundPart) && form.boundPart.length === 0)) && (
+                  <p className="text-[14px] text-text-dim mt-1">不限部位</p>
                 )}
-              </div>
-              {(form.dismantleMechIds ?? []).length > 0 && (
-                <p className="text-[14px] text-accent-cyan mt-1">
-                  已選：{(form.dismantleMechIds ?? []).map((id) => mechs.find((m) => m.id === id)?.name ?? id).join('、')}
+              </Field>
+              <Field label="遊戲取得途徑（複選）">
+                <div className="flex flex-wrap gap-4 mt-1">
+                  {Object.values(ModuleSource).map((v) => {
+                    const sources = Array.isArray(form.source) ? form.source : (form.source ? [form.source as string] : [])
+                    const checked = sources.includes(v)
+                    return (
+                      <label key={v} className="flex items-center gap-1.5 text-sm cursor-pointer hover:text-text-primary">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            let next = checked ? sources.filter((s) => s !== v) : [...sources, v]
+                            if (next.some((s) => s !== ModuleSource.UNKNOWN)) {
+                              next = next.filter((s) => s !== ModuleSource.UNKNOWN)
+                            }
+                            update('source', next)
+                          }}
+                          className="accent-accent-orange w-3.5 h-3.5"
+                        />
+                        {v}
+                      </label>
+                    )
+                  })}
+                </div>
+              </Field>
+              <Field label="拆解來源機甲（可拆哪些機甲取得此模組）">
+                <p className="text-[14px] text-text-dim mt-1 mb-1.5 leading-relaxed">
+                  只影響<span className="text-accent-cyan">取得途徑</span>的顯示，
+                  <span className="text-accent-red">不會</span>限制模組能裝在哪台機甲。
+                  使用限制請設上方的<span className="text-accent-orange">綁定機甲</span>。
                 </p>
-              )}
-            </Field>
-            <Field label="資料維護標記">
-              <select value={form.managedBy ?? ModuleDataSource.MANUAL} onChange={(e) => update('managedBy', e.target.value)} className="input-field">
-                <option value={ModuleDataSource.MANUAL}>手動新增 (manual)</option>
-                <option value={ModuleDataSource.AUTO}>腳本自動擷取 (auto)</option>
-              </select>
-            </Field>
+                <div className="mt-1 border border-border rounded-lg max-h-44 overflow-y-auto divide-y divide-border/40">
+                  {mechs.length === 0 ? (
+                    <p className="text-xs text-text-dim p-2">載入機甲中...</p>
+                  ) : (
+                    mechs.map((m) => {
+                      const ids    = form.dismantleMechIds ?? []
+                      const checked = ids.includes(m.id)
+                      return (
+                        <label key={m.id} className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-bg-dark/60">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              const next = checked ? ids.filter((id) => id !== m.id) : [...ids, m.id]
+                              update('dismantleMechIds', next)
+                            }}
+                            className="accent-accent-orange w-3.5 h-3.5 shrink-0"
+                          />
+                          <span className="text-sm text-text-secondary flex-1">{m.name}</span>
+                          <span className="text-[13px] text-text-dim shrink-0">{m.id}</span>
+                        </label>
+                      )
+                    })
+                  )}
+                </div>
+                {(form.dismantleMechIds ?? []).length > 0 && (
+                  <p className="text-[14px] text-accent-cyan mt-1">
+                    已選：{(form.dismantleMechIds ?? []).map((id) => mechs.find((m) => m.id === id)?.name ?? id).join('、')}
+                  </p>
+                )}
+              </Field>
+              <Field label="資料維護標記">
+                <select value={form.managedBy ?? ModuleDataSource.MANUAL} onChange={(e) => update('managedBy', e.target.value)} className="input-field">
+                  <option value={ModuleDataSource.MANUAL}>手動新增 (manual)</option>
+                  <option value={ModuleDataSource.AUTO}>腳本自動擷取 (auto)</option>
+                </select>
+              </Field>
+            </div>
           </div>
         )}
 

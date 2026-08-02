@@ -1,7 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { Mech, Module, MechPart, Weapon } from '../../../types'
 import { ModuleSlot, ArmorType } from '../../../types/enums'
-import { Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog, GRID_AUTO_FIELDS } from './shared'
+import {
+  Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog,
+  GRID_AUTO_FIELDS, AdminEditTabs, type AdminEditTabDef,
+} from './shared'
 import { IconField, loadManifest } from '../../../components/admin/IconPicker'
 import { updateMech, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
@@ -216,14 +219,16 @@ export default function MechAdmin({
 }
 
 // ─── 機甲編輯面板（分頁式完整編輯器，PLAN-028 Phase B）──────────────────────────
-const MECH_EDIT_TABS = [
-  { key: 'basic',      label: '基本數值' },
-  { key: 'parts',      label: '部件' },
-  { key: 'modules',    label: '模組（能力）' },
-  { key: 'weapons',    label: '武器槽' },
-  { key: 'appearance', label: '外觀' },
-] as const
-type MechEditTab = typeof MECH_EDIT_TABS[number]['key']
+// PLAN-033 C-1：原 weapons（3 個槽）與 appearance（2 個 IconField）各只有 3 排上下，
+// 併為單一 'gear' 分頁；同時 key → id 以對齊共用的 AdminEditTabs（C-0）。
+type MechEditTab = 'basic' | 'parts' | 'modules' | 'gear'
+
+const MECH_EDIT_TABS: AdminEditTabDef<MechEditTab>[] = [
+  { id: 'basic',   label: '基本數值' },
+  { id: 'parts',   label: '部件' },
+  { id: 'modules', label: '模組（能力）' },
+  { id: 'gear',    label: '武器槽・外觀' },
+]
 
 // 通用數字欄位：空字串視為 0，避免 NaN 寫入。
 function NumberField({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
@@ -350,22 +355,7 @@ function MechEditPanel({
         )}
       </h3>
 
-      {/* 分頁列 */}
-      <div className="flex gap-1 mb-3 border-b border-border shrink-0 overflow-x-auto">
-        {MECH_EDIT_TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-3 py-1.5 text-sm rounded-t-lg whitespace-nowrap transition-colors ${
-              tab === t.key
-                ? 'bg-bg-dark text-accent-orange border-b-2 border-accent-orange font-bold'
-                : 'text-text-secondary hover:text-text-primary'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <AdminEditTabs tabs={MECH_EDIT_TABS} active={tab} onChange={setTab} />
 
       <div className="overflow-y-auto flex-1 pr-1 space-y-4">
         {/* ── 基本數值 ── */}
@@ -552,39 +542,38 @@ function MechEditPanel({
           </>
         )}
 
-        {/* ── 武器槽 ── */}
-        {tab === 'weapons' && (
+        {/* ── 武器槽・外觀（原為兩個分頁，PLAN-033 C-1 併為一頁）── */}
+        {tab === 'gear' && (
           <div className="space-y-3">
+            <p className="text-xs text-text-dim font-medium tracking-wider uppercase">武器槽 slots</p>
             <p className="text-xs text-text-dim">
               勾選代表此機甲有該武器槽。空槽＝可自由裝備武器；選定武器＝部件綁死的固定武器。未勾選＝無此槽。
             </p>
             <SlotEditor label="左肩武器槽 leftShoulderSlot"  value={form.leftShoulderSlot}  weapons={weapons} onChange={(v) => set('leftShoulderSlot', v)} />
             <SlotEditor label="右肩武器槽 rightShoulderSlot" value={form.rightShoulderSlot} weapons={weapons} onChange={(v) => set('rightShoulderSlot', v)} />
             <SlotEditor label="背後武器槽 backSlot"          value={form.backSlot}          weapons={weapons} onChange={(v) => set('backSlot', v)} />
-          </div>
-        )}
 
-        {/* ── 外觀 ── */}
-        {tab === 'appearance' && (
-          <div className="space-y-4">
-            <IconField
-              label="立繪 portrait"
-              value={form.portrait}
-              defaultFolder={mechFolder}
-              placeholder="/images/mechs/{機甲名}/portrait.png"
-              onChange={(v) => set('portrait', v || undefined)}
-            />
-            <IconField
-              label="半身像 halfPortrait"
-              value={form.halfPortrait}
-              defaultFolder={mechFolder}
-              placeholder="/images/mechs/{機甲名}/half.png"
-              onChange={(v) => set('halfPortrait', v || undefined)}
-            />
-            <p className="text-xs text-text-dim">
-              「選取圖片」預設開啟本機甲資料夾 <code>{mechFolder}</code>；也可到「部件」分頁按「自動帶入圖片」一次補齊。
-              圖片無官方來源者，須自行放入 <code>public/images/mechs/</code> 後重跑圖檔清單。
-            </p>
+            <div className="pt-4 border-t border-border/60 space-y-3">
+              <p className="text-xs text-text-dim font-medium tracking-wider uppercase">外觀 appearance</p>
+              <IconField
+                label="立繪 portrait"
+                value={form.portrait}
+                defaultFolder={mechFolder}
+                placeholder="/images/mechs/{機甲名}/portrait.png"
+                onChange={(v) => set('portrait', v || undefined)}
+              />
+              <IconField
+                label="半身像 halfPortrait"
+                value={form.halfPortrait}
+                defaultFolder={mechFolder}
+                placeholder="/images/mechs/{機甲名}/half.png"
+                onChange={(v) => set('halfPortrait', v || undefined)}
+              />
+              <p className="text-xs text-text-dim">
+                「選取圖片」預設開啟本機甲資料夾 <code>{mechFolder}</code>；也可到「部件」分頁按「自動帶入圖片」一次補齊。
+                圖片無官方來源者，須自行放入 <code>public/images/mechs/</code> 後重跑圖檔清單。
+              </p>
+            </div>
           </div>
         )}
       </div>

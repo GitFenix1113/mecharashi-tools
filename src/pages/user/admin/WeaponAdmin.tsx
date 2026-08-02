@@ -4,7 +4,10 @@ import {
   WeaponType, WeaponKind, WeaponRarity, MechRestriction, WeaponEquipSlot,
   RangeType, SkillType, SkillActivation,
 } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, GRID_AUTO_FIELDS } from './shared'
+import {
+  Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton,
+  GRID_AUTO_FIELDS, GRID_TWO_PANE, AdminEditTabs, type AdminEditTabDef,
+} from './shared'
 import { updateWeapon, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
@@ -201,13 +204,14 @@ function WeaponSkillItem({
 }
 
 // ─── 武器編輯面板 ──────────────────────────────────────────────────────────────
-type WeaponEditTab = 'basic' | 'stats' | 'range' | 'slots' | 'mods' | 'skills'
+// PLAN-033 C-1：原 stats / range / slots 三個分頁在 Phase B 格線響應式化後各只剩
+// 1～3 排，三頁加起來仍不到彈窗內容區（1080p 下約 760px、可容 10～11 排）的一半。
+// 併為單一 'combat' 分頁、以 section 標題 + border-t 分隔，省下兩次分頁切換。
+type WeaponEditTab = 'basic' | 'combat' | 'mods' | 'skills'
 
-const WEAPON_EDIT_TABS: { id: WeaponEditTab; label: string }[] = [
+const WEAPON_EDIT_TABS: AdminEditTabDef<WeaponEditTab>[] = [
   { id: 'basic',  label: '基本資訊' },
-  { id: 'stats',  label: '戰鬥屬性' },
-  { id: 'range',  label: '射程' },
-  { id: 'slots',  label: '元件・專武' },
+  { id: 'combat', label: '戰鬥屬性・射程・插槽' },
   { id: 'mods',   label: '改裝方案' },
   { id: 'skills', label: '武器技能' },
 ]
@@ -260,22 +264,7 @@ function WeaponEditPanel({
         </div>
       </div>
 
-      {/* Tab 列 */}
-      <div className="flex gap-1 mb-4 shrink-0 flex-wrap">
-        {WEAPON_EDIT_TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setEditTab(t.id)}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              editTab === t.id
-                ? 'bg-accent-orange text-black'
-                : 'bg-bg-dark border border-border text-text-secondary hover:text-text-primary'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <AdminEditTabs tabs={WEAPON_EDIT_TABS} active={editTab} onChange={setEditTab} />
 
       <div className="overflow-y-auto flex-1 pr-1">
         {editTab === 'basic' && (
@@ -326,8 +315,10 @@ function WeaponEditPanel({
           </div>
         )}
 
-        {editTab === 'stats' && (
+        {/* 戰鬥屬性・射程・插槽：原為三個獨立分頁，PLAN-033 C-1 併為一頁（以 border-t 分區） */}
+        {editTab === 'combat' && (
           <div className="space-y-3">
+            <p className="text-xs text-text-dim font-medium tracking-wider uppercase">戰鬥屬性 stats</p>
             {/* 6 個數值原本拆成 3 組 grid-cols-2、要捲 3 排；併為單一自動格線後寬螢幕一排看完（PLAN-033 B-1） */}
             <div className={`${GRID_AUTO_FIELDS} gap-3`}>
               <Field label="攻擊力 attack"><input type="number" value={form.attack} onChange={(e) => update('attack', Number(e.target.value))} className="input-field" /></Field>
@@ -341,84 +332,84 @@ function WeaponEditPanel({
               <p className="text-[13px] text-text-dim font-medium uppercase mb-1">連擊數參考</p>
               <p className="text-[14px] text-text-secondary">霰彈槍=12 · 機槍/重機槍/電鋸=10 · 噴火器=8 · 浮游炮=6 · 其他=1</p>
             </div>
-          </div>
-        )}
 
-        {editTab === 'range' && (
-          <div className="space-y-4">
-            <Field label="射程型態 rangeType">
-              <select
-                value={form.rangeType}
-                onChange={(e) => {
-                  const rt = e.target.value
-                  update('rangeType', rt)
-                  if (rt === RangeType.RING) update('minRange', 0)
-                }}
-                className="input-field"
-              >
-                <option value={RangeType.MANHATTAN}>manhattan — 菱形射程（Manhattan 距離，可打斜格）</option>
-                <option value={RangeType.ORTHOGONAL}>orthogonal — 十字直線（上下左右，不可打斜格）</option>
-                <option value={RangeType.RING}>ring — 環形N圈（含自身格，Chebyshev 距離）</option>
-              </select>
-            </Field>
-            <div className={`${GRID_AUTO_FIELDS} gap-3`}>
-              <Field label={form.rangeType === RangeType.RING ? 'minRange（ring 型固定為 0）' : '最小射程 minRange'}>
-                <input type="number" value={form.minRange} onChange={(e) => update('minRange', Number(e.target.value))} className="input-field" disabled={form.rangeType === RangeType.RING} />
+            <div className="pt-4 border-t border-border/60 space-y-3">
+              <p className="text-xs text-text-dim font-medium tracking-wider uppercase">射程 range</p>
+              <Field label="射程型態 rangeType">
+                <select
+                  value={form.rangeType}
+                  onChange={(e) => {
+                    const rt = e.target.value
+                    update('rangeType', rt)
+                    if (rt === RangeType.RING) update('minRange', 0)
+                  }}
+                  className="input-field"
+                >
+                  <option value={RangeType.MANHATTAN}>manhattan — 菱形射程（Manhattan 距離，可打斜格）</option>
+                  <option value={RangeType.ORTHOGONAL}>orthogonal — 十字直線（上下左右，不可打斜格）</option>
+                  <option value={RangeType.RING}>ring — 環形N圈（含自身格，Chebyshev 距離）</option>
+                </select>
               </Field>
-              <Field label={form.rangeType === RangeType.RING ? '圈數 maxRange（N圈）' : '最大射程 maxRange'}>
-                <input type="number" value={form.maxRange} onChange={(e) => update('maxRange', Number(e.target.value))} className="input-field" />
-              </Field>
-            </div>
-            <div className="p-3 bg-bg-dark rounded-lg border border-border/60 space-y-1.5">
-              <p className="text-[13px] text-text-dim font-medium uppercase">射程顯示預覽</p>
-              <p className="font-mono text-sm text-accent-cyan">
-                {form.rangeType === RangeType.RING
-                  ? `${form.maxRange}+（${(2 * form.maxRange + 1) ** 2} 格覆蓋）`
-                  : `${form.minRange}-${form.maxRange}`}
-              </p>
-              <p className="text-[14px] text-text-dim">
-                {form.rangeType === RangeType.RING
-                  ? `ring：以持有者為中心，Chebyshev 距離 ≤ ${form.maxRange} 的 ${2 * form.maxRange + 1}×${2 * form.maxRange + 1} 方格`
-                  : form.rangeType === RangeType.ORTHOGONAL
-                  ? `orthogonal：十字直線，Manhattan 距離 [${form.minRange}, ${form.maxRange}]，不可打斜格`
-                  : `manhattan：菱形範圍，Manhattan 距離 [${form.minRange}, ${form.maxRange}]，可打斜格`}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {editTab === 'slots' && (
-          <div className="space-y-4">
-            <div className="p-3 bg-bg-dark rounded-lg border border-border/60 space-y-3">
-              <p className="text-xs text-text-dim font-medium uppercase tracking-wider">元件插槽</p>
               <div className={`${GRID_AUTO_FIELDS} gap-3`}>
-                <Field label="觸元件槽 triggerSlots"><input type="number" value={form.triggerSlots} onChange={(e) => update('triggerSlots', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="應元件槽 effectSlots"><input type="number" value={form.effectSlots} onChange={(e) => update('effectSlots', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="元件上限 componentLimit"><input type="number" value={form.componentLimit} onChange={(e) => update('componentLimit', Number(e.target.value))} className="input-field" /></Field>
-              </div>
-              <p className="text-[14px] text-text-dim">SS / S+ = 4；S = 3；其他 = 0</p>
-            </div>
-            <div className="p-3 bg-bg-dark rounded-lg border border-border/60 space-y-3">
-              <p className="text-xs text-text-dim font-medium uppercase tracking-wider">專屬武器設定</p>
-              <label className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
-                <input type="checkbox" checked={form.isExclusive} onChange={(e) => update('isExclusive', e.target.checked)} className="accent-accent-orange w-4 h-4" />
-                <span>isExclusive — 此武器為專屬武器（SS 稀有度）</span>
-              </label>
-              {form.isExclusive && (
-                <Field label="綁定機師 exclusiveFor（機師 ID）">
-                  <select value={form.exclusiveFor ?? ''} onChange={(e) => update('exclusiveFor', e.target.value || undefined)} className="input-field">
-                    <option value="">（未指定）</option>
-                    {pilots.map((p) => <option key={p.id} value={p.id}>{p.name}（{p.id}）</option>)}
-                  </select>
+                <Field label={form.rangeType === RangeType.RING ? 'minRange（ring 型固定為 0）' : '最小射程 minRange'}>
+                  <input type="number" value={form.minRange} onChange={(e) => update('minRange', Number(e.target.value))} className="input-field" disabled={form.rangeType === RangeType.RING} />
                 </Field>
-              )}
+                <Field label={form.rangeType === RangeType.RING ? '圈數 maxRange（N圈）' : '最大射程 maxRange'}>
+                  <input type="number" value={form.maxRange} onChange={(e) => update('maxRange', Number(e.target.value))} className="input-field" />
+                </Field>
+              </div>
+              <div className="p-3 bg-bg-dark rounded-lg border border-border/60 space-y-1.5">
+                <p className="text-[13px] text-text-dim font-medium uppercase">射程顯示預覽</p>
+                <p className="font-mono text-sm text-accent-cyan">
+                  {form.rangeType === RangeType.RING
+                    ? `${form.maxRange}+（${(2 * form.maxRange + 1) ** 2} 格覆蓋）`
+                    : `${form.minRange}-${form.maxRange}`}
+                </p>
+                <p className="text-[14px] text-text-dim">
+                  {form.rangeType === RangeType.RING
+                    ? `ring：以持有者為中心，Chebyshev 距離 ≤ ${form.maxRange} 的 ${2 * form.maxRange + 1}×${2 * form.maxRange + 1} 方格`
+                    : form.rangeType === RangeType.ORTHOGONAL
+                    ? `orthogonal：十字直線，Manhattan 距離 [${form.minRange}, ${form.maxRange}]，不可打斜格`
+                    : `manhattan：菱形範圍，Manhattan 距離 [${form.minRange}, ${form.maxRange}]，可打斜格`}
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-border/60 space-y-3">
+              <p className="text-xs text-text-dim font-medium tracking-wider uppercase">元件・專武 slots</p>
+              <div className="p-3 bg-bg-dark rounded-lg border border-border/60 space-y-3">
+                <p className="text-xs text-text-dim font-medium uppercase tracking-wider">元件插槽</p>
+                <div className={`${GRID_AUTO_FIELDS} gap-3`}>
+                  <Field label="觸元件槽 triggerSlots"><input type="number" value={form.triggerSlots} onChange={(e) => update('triggerSlots', Number(e.target.value))} className="input-field" /></Field>
+                  <Field label="應元件槽 effectSlots"><input type="number" value={form.effectSlots} onChange={(e) => update('effectSlots', Number(e.target.value))} className="input-field" /></Field>
+                  <Field label="元件上限 componentLimit"><input type="number" value={form.componentLimit} onChange={(e) => update('componentLimit', Number(e.target.value))} className="input-field" /></Field>
+                </div>
+                <p className="text-[14px] text-text-dim">SS / S+ = 4；S = 3；其他 = 0</p>
+              </div>
+              <div className="p-3 bg-bg-dark rounded-lg border border-border/60 space-y-3">
+                <p className="text-xs text-text-dim font-medium uppercase tracking-wider">專屬武器設定</p>
+                <label className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                  <input type="checkbox" checked={form.isExclusive} onChange={(e) => update('isExclusive', e.target.checked)} className="accent-accent-orange w-4 h-4" />
+                  <span>isExclusive — 此武器為專屬武器（SS 稀有度）</span>
+                </label>
+                {form.isExclusive && (
+                  <Field label="綁定機師 exclusiveFor（機師 ID）">
+                    <select value={form.exclusiveFor ?? ''} onChange={(e) => update('exclusiveFor', e.target.value || undefined)} className="input-field">
+                      <option value="">（未指定）</option>
+                      {pilots.map((p) => <option key={p.id} value={p.id}>{p.name}（{p.id}）</option>)}
+                    </select>
+                  </Field>
+                )}
+              </div>
             </div>
           </div>
         )}
 
         {editTab === 'mods' && (
-          <div className="space-y-5">
-            <div>
+          /* PLAN-033 C-2：固定改裝與浮動改裝是語意對等的姊妹區塊，原本上下疊、
+             各自帶一串效果清單，合計動輒兩屏。並排後垂直長度取兩者最大值而非總和。 */
+          <div className={GRID_TWO_PANE}>
+            <div className="min-w-0">
               <p className="text-xs text-text-dim font-medium uppercase tracking-wider mb-2">固定改裝 fixedMod（效果固定，依等級解鎖）</p>
               <div className="space-y-3 p-3 bg-bg-dark rounded-lg border border-border/60">
                 <div className={`${GRID_AUTO_FIELDS} gap-3`}>
@@ -467,7 +458,7 @@ function WeaponEditPanel({
               </div>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-text-dim font-medium uppercase tracking-wider mb-2">浮動改裝 floatingMod（效果隨機，有範圍）</p>
               <div className="space-y-3 p-3 bg-bg-dark rounded-lg border border-border/60">
                 <div className={`${GRID_AUTO_FIELDS} gap-3`}>

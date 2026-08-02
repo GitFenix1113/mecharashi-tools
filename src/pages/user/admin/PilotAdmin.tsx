@@ -3,7 +3,10 @@ import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, TalentNdVariant, Sk
 import { formatWeaponReq } from '../../../types'
 import { ItemRarity, PilotClass, MechLicense, WeaponType } from '../../../types/enums'
 import { useGameVersions } from '../../../hooks/useGameVersions'
-import { Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog, GRID_AUTO_FIELDS } from './shared'
+import {
+  Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog,
+  GRID_AUTO_FIELDS, GRID_TWO_PANE, AdminEditTabs, type AdminEditTabDef,
+} from './shared'
 import { updatePilot, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
@@ -590,69 +593,80 @@ function TalentItem({
 
       {expanded && (
         <div className="px-3 pb-3 border-t border-border/40 pt-2.5 space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="天賦名稱 name">
-              <input value={talent.name} onChange={(e) => upd('name', e.target.value)} className="input-field" placeholder="如：核心天賦" />
-            </Field>
-            <Field label="類型 type">
-              <input value={talent.type} onChange={(e) => upd('type', e.target.value)} className="input-field" placeholder="如：核心 / 職業" />
-            </Field>
+          {/* PLAN-033 C-2：展開體原為一條純垂直堆疊（兩個 min-h-[150px] textarea 上下疊 +
+              RefPicker + 兩組 EffectListEditor），完全沒吃到 Phase A 加寬的空間，長到必須捲。
+              拆成左「文本」右「結構化資料」雙欄後垂直長度砍近半，且用掉的正是新增的寬度。
+              RefPicker 必須留在左欄——它解析的就是上方兩個 textarea 的 [xxx]，分開看不到對照。 */}
+          <div className={GRID_TWO_PANE}>
+            <div className="space-y-3 min-w-0">
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="天賦名稱 name">
+                  <input value={talent.name} onChange={(e) => upd('name', e.target.value)} className="input-field" placeholder="如：核心天賦" />
+                </Field>
+                <Field label="類型 type">
+                  <input value={talent.type} onChange={(e) => upd('type', e.target.value)} className="input-field" placeholder="如：核心 / 職業" />
+                </Field>
+              </div>
+              <IconField label="圖示 iconLocal（本地圖檔）" value={talent.iconLocal} onChange={(v) => upd('iconLocal', v)} defaultFolder="skills" />
+              <Field label="效果說明 description">
+                <textarea
+                  value={talent.description}
+                  onChange={(e) => upd('description', e.target.value)}
+                  className="input-field min-h-[150px] resize-y text-xs leading-relaxed"
+                  placeholder="天賦效果文字描述（可含 [xxx] 引用其他實體）"
+                />
+              </Field>
+              <Field label="滿級效果 descriptionMax（選填）">
+                <textarea
+                  value={talent.descriptionMax}
+                  onChange={(e) => upd('descriptionMax', e.target.value)}
+                  className="input-field min-h-[150px] resize-y text-xs leading-relaxed"
+                  placeholder="滿級 / 強化後的效果說明"
+                />
+              </Field>
+              <label className="flex items-start gap-2 text-xs text-text-secondary cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={!!talent.manual}
+                  onChange={(e) => upd('manual', e.target.checked || undefined)}
+                  className="mt-0.5"
+                />
+                <span>
+                  手動正文保護 <code className="text-accent-orange">manual</code> —
+                  勾選後爬蟲補丁不覆寫 description / descriptionMax（官方 API 正文為滿晶片狀態，人工去污染後務必勾選）
+                </span>
+              </label>
+              {/* description 與 descriptionMax 共用一份 descriptionRefs（兩者的 [xxx] 都在此指派）*/}
+              <RefPicker
+                text={refTexts}
+                value={talent.descriptionRefs}
+                onChange={(refs) => upd('descriptionRefs', refs)}
+                onCompileText={(tf) => onChange({
+                  ...talent,
+                  description: tf(talent.description),
+                  descriptionMax: talent.descriptionMax ? tf(talent.descriptionMax) : talent.descriptionMax,
+                })}
+              />
+            </div>
+
+            <div className="space-y-3 min-w-0">
+              <NdVariantsEditor variants={talent.ndVariants ?? []} zones={zones} onChange={(n) => upd('ndVariants', n)} />
+              <EffectListEditor label="可計算效果 effects" effects={effects} onChange={(n) => upd('effects', n)} />
+              <EffectListEditor
+                label="強化效果 enhancedEffects（選填）"
+                effects={enhanced}
+                onChange={(n) => upd('enhancedEffects', n.length ? n : undefined)}
+              />
+              <Field label="觸發 Buff ID buffIds（逗號分隔）">
+                <textarea
+                  value={buffIds.join(', ')}
+                  onChange={(e) => updBuffIds(e.target.value)}
+                  className="input-field min-h-[44px] resize-none text-xs"
+                  placeholder="buff_001, buff_002"
+                />
+              </Field>
+            </div>
           </div>
-          <IconField label="圖示 iconLocal（本地圖檔）" value={talent.iconLocal} onChange={(v) => upd('iconLocal', v)} defaultFolder="skills" />
-          <Field label="效果說明 description">
-            <textarea
-              value={talent.description}
-              onChange={(e) => upd('description', e.target.value)}
-              className="input-field min-h-[150px] resize-y text-xs leading-relaxed"
-              placeholder="天賦效果文字描述（可含 [xxx] 引用其他實體）"
-            />
-          </Field>
-          <Field label="滿級效果 descriptionMax（選填）">
-            <textarea
-              value={talent.descriptionMax}
-              onChange={(e) => upd('descriptionMax', e.target.value)}
-              className="input-field min-h-[150px] resize-y text-xs leading-relaxed"
-              placeholder="滿級 / 強化後的效果說明"
-            />
-          </Field>
-          <label className="flex items-start gap-2 text-xs text-text-secondary cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={!!talent.manual}
-              onChange={(e) => upd('manual', e.target.checked || undefined)}
-              className="mt-0.5"
-            />
-            <span>
-              手動正文保護 <code className="text-accent-orange">manual</code> —
-              勾選後爬蟲補丁不覆寫 description / descriptionMax（官方 API 正文為滿晶片狀態，人工去污染後務必勾選）
-            </span>
-          </label>
-          {/* description 與 descriptionMax 共用一份 descriptionRefs（兩者的 [xxx] 都在此指派）*/}
-          <RefPicker
-            text={refTexts}
-            value={talent.descriptionRefs}
-            onChange={(refs) => upd('descriptionRefs', refs)}
-            onCompileText={(tf) => onChange({
-              ...talent,
-              description: tf(talent.description),
-              descriptionMax: talent.descriptionMax ? tf(talent.descriptionMax) : talent.descriptionMax,
-            })}
-          />
-          <NdVariantsEditor variants={talent.ndVariants ?? []} zones={zones} onChange={(n) => upd('ndVariants', n)} />
-          <EffectListEditor label="可計算效果 effects" effects={effects} onChange={(n) => upd('effects', n)} />
-          <EffectListEditor
-            label="強化效果 enhancedEffects（選填）"
-            effects={enhanced}
-            onChange={(n) => upd('enhancedEffects', n.length ? n : undefined)}
-          />
-          <Field label="觸發 Buff ID buffIds（逗號分隔）">
-            <textarea
-              value={buffIds.join(', ')}
-              onChange={(e) => updBuffIds(e.target.value)}
-              className="input-field min-h-[44px] resize-none text-xs"
-              placeholder="buff_001, buff_002"
-            />
-          </Field>
           <div className="pt-1 flex justify-end">
             <button
               onClick={onRemove}
@@ -912,7 +926,8 @@ function NdZoneCard({
           {slots.length === 0 ? (
             <p className="text-xs text-text-dim py-1">尚未填入插槽</p>
           ) : (
-            <div className="space-y-1.5">
+            /* PLAN-033 C-2：3 個插槽原本上下疊 3 排，改自動格線後寬版一排看完 */
+            <div className={`${GRID_AUTO_FIELDS} gap-2`}>
               {slots.map((_, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <span className="text-xs text-text-dim shrink-0 w-12">插槽{slotLabel(i)}</span>
@@ -940,7 +955,11 @@ function NdZoneCard({
           {levels.length === 0 ? (
             <p className="text-xs text-text-dim py-1">尚未填入等級</p>
           ) : (
-            <div className="space-y-2">
+            /* PLAN-033 C-2：各級卡片是同質獨立單元，原本一級一排（含能力挑選器約 140px），
+               5 級就要捲 700px。改自動格線後寬版排成 2～3 欄，垂直長度砍掉一半以上。
+               minmax 用 320px 而非 GRID_AUTO_FIELDS 的 220px——卡片內含「Lv + 算力門檻」
+               兩欄與能力挑選器，220px 會把它們擠成單欄、反而變高。 */
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2 items-start">
               {levels.map((lv, i) => (
                 <div key={i} className="p-2 bg-bg-card/40 rounded border border-border/40 space-y-2">
                   <div className="flex items-center gap-2">
@@ -1091,12 +1110,14 @@ function AdditionalInfoEditor({
 }
 
 // ─── 機師編輯面板 ──────────────────────────────────────────────────────────────
-type PilotEditTab = 'basic' | 'stats' | 'ap' | 'profile' | 'talents' | 'skills' | 'neuralDrive'
+// PLAN-033 C-1：原 stats（六維 + 素質）與 ap（3 欄 + 唯讀參考）在 Phase B 後合計
+// 僅約 4 排，併為單一 'stats' 分頁。profile 因含 AdditionalInfoEditor（高度隨自訂
+// 欄位數不定）維持獨立，避免把不可預測的長度塞進數值頁。
+type PilotEditTab = 'basic' | 'stats' | 'profile' | 'talents' | 'skills' | 'neuralDrive'
 
-const PILOT_EDIT_TABS: { id: PilotEditTab; label: string }[] = [
+const PILOT_EDIT_TABS: AdminEditTabDef<PilotEditTab>[] = [
   { id: 'basic',       label: '基本資訊' },
-  { id: 'stats',       label: '屬性數值' },
-  { id: 'ap',          label: 'AP 系統' },
+  { id: 'stats',       label: '屬性數值・AP' },
   { id: 'profile',     label: '個人資料' },
   { id: 'talents',     label: '天賦' },
   { id: 'skills',      label: '技能' },
@@ -1207,34 +1228,17 @@ function PilotEditPanel({
         </div>
       </div>
 
-      {/* Tab 列 */}
-      <div className="flex gap-1 mb-4 shrink-0 flex-wrap">
-        {PILOT_EDIT_TABS.map((t) => {
-          const badge =
+      <AdminEditTabs
+        tabs={PILOT_EDIT_TABS.map((t) => ({
+          ...t,
+          badge:
             t.id === 'skills'      ? skillCount :
             t.id === 'talents'     ? (form.talents?.length ?? 0) :
-            t.id === 'neuralDrive' ? (form.neuralDrive?.length ?? 0) : 0
-          const hasBadge = badge > 0
-          return (
-            <button
-              key={t.id}
-              onClick={() => setEditTab(t.id)}
-              className={`relative px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                editTab === t.id
-                  ? 'bg-accent-orange text-black'
-                  : 'bg-bg-dark border border-border text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              {t.label}
-              {hasBadge && (
-                <span className={`ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-[12px] font-bold ${editTab === t.id ? 'bg-black/20 text-black' : 'bg-accent-cyan/20 text-accent-cyan'}`}>
-                  {badge}
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
+            t.id === 'neuralDrive' ? (form.neuralDrive?.length ?? 0) : undefined,
+        }))}
+        active={editTab}
+        onChange={setEditTab}
+      />
 
       <div className="overflow-y-auto flex-1 pr-1">
         {editTab === 'basic' && (
@@ -1298,26 +1302,25 @@ function PilotEditPanel({
                 <Field label="防禦素質 defense (pilot)"><input type="number" value={form.defense ?? 0} onChange={(e) => update('defense', Number(e.target.value))} className="input-field" /></Field>
               </div>
             </div>
-          </div>
-        )}
-
-        {editTab === 'ap' && (
-          <div className="space-y-4">
-            <div className={`${GRID_AUTO_FIELDS} gap-3`}>
-              <Field label="初始 AP init"><input type="number" value={form.ap.init} onChange={(e) => updateAp('init', Number(e.target.value))} className="input-field" /></Field>
-              <Field label="AP 上限 max"><input type="number" value={form.ap.max} onChange={(e) => updateAp('max', Number(e.target.value))} className="input-field" /></Field>
-              <Field label="AP 回復 recovery"><input type="number" value={form.ap.recovery} onChange={(e) => updateAp('recovery', Number(e.target.value))} className="input-field" /></Field>
-            </div>
-            {form.apBase && (
-              <div className="p-3 bg-bg-dark rounded-lg border border-border/60">
-                <p className="text-[13px] text-text-dim font-medium tracking-wider uppercase mb-2">基礎值 apBase（參考，由爬蟲腳本管理）</p>
-                <div className="grid grid-cols-3 gap-2 text-xs text-text-dim">
-                  <div>初始：{form.apBase.init}</div>
-                  <div>上限：{form.apBase.max}</div>
-                  <div>回復：{form.apBase.recovery}</div>
-                </div>
+            {/* AP 系統：原為獨立分頁，PLAN-033 C-1 併入本頁 */}
+            <div className="pt-3 mt-4 border-t border-border/60 space-y-3">
+              <p className="text-xs text-text-dim font-medium tracking-wider uppercase">AP 系統 ap</p>
+              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
+                <Field label="初始 AP init"><input type="number" value={form.ap.init} onChange={(e) => updateAp('init', Number(e.target.value))} className="input-field" /></Field>
+                <Field label="AP 上限 max"><input type="number" value={form.ap.max} onChange={(e) => updateAp('max', Number(e.target.value))} className="input-field" /></Field>
+                <Field label="AP 回復 recovery"><input type="number" value={form.ap.recovery} onChange={(e) => updateAp('recovery', Number(e.target.value))} className="input-field" /></Field>
               </div>
-            )}
+              {form.apBase && (
+                <div className="p-3 bg-bg-dark rounded-lg border border-border/60">
+                  <p className="text-[13px] text-text-dim font-medium tracking-wider uppercase mb-2">基礎值 apBase（參考，由爬蟲腳本管理）</p>
+                  <div className="grid grid-cols-3 gap-2 text-xs text-text-dim">
+                    <div>初始：{form.apBase.init}</div>
+                    <div>上限：{form.apBase.max}</div>
+                    <div>回復：{form.apBase.recovery}</div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

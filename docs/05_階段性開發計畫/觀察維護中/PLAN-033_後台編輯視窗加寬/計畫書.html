@@ -140,7 +140,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">觀察維護中</a>
     <span>›</span>
     <span class="current">PLAN-033 計畫書</span>
   </div>
@@ -176,11 +176,11 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">優先級</div>
-      <div class="meta-value yellow">MID（Phase C 為 LOW）</div>
+      <div class="meta-value yellow">MID</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value cyan">規劃中</div>
+      <div class="meta-value green">開發收束 · 觀察維護中</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">前置依賴</div>
@@ -352,6 +352,62 @@
     兩者之間沒有技術依賴，因此 C 標記為 <span class="badge-low">LOW · 延後</span>，
     待 A＋B 上線實際用一段時間後，再依「Tab 切換是否真的造成困擾」決定是否啟動與採用哪個方案。
   </div>
+
+  <div class="decision-block">
+    <strong>決策七：Phase C 方向修正（2026-08-02，B 完成後重估）</strong><br>
+    原 Phase C 是在 <strong>Phase B 動工之前</strong>寫的，假設「分頁很擠，需要更好的版面容器」。
+    B 把格線改成 <code>GRID_AUTO_FIELDS</code> 之後重新實測，兩個前提都變了：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>分頁不是等量的，是「三小三大」。</strong>多數分頁已縮到 1～3 排，
+          而彈窗內容區在 1080p 下約 760px ≈ 10～11 排——小分頁三頁疊起來還不到一屏的一半。
+          真正惱人的是天賦這類展開後長達兩屏的分頁。</li>
+      <li><strong>病因不是「容器不夠好」，是「沒吃到寬度」。</strong>那些長分頁根本沒有
+          <code>grid-cols-*</code>，是純 <code>space-y-*</code> 垂直堆疊
+          （兩個 <code>min-h-[150px]</code> textarea 上下疊 ＋ RefPicker ＋ 兩組效果清單），
+          在 1700px 下只會變成超寬矮帶——寬度浪費、長度沒少。<strong>B 修的是格線，修不到它們。</strong></li>
+    </ul>
+    <br>
+    因此兩個原方案的處置：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>方案一（左側直排 Tab）＝ 刪除。</strong>切換次數一次都沒減少，
+          還要吃掉 140～180px 橫向空間——而橫向空間正是 A＋B 剛拿到的東西。淨收益為負。</li>
+      <li><strong>方案二（雙分區同顯）＝ 保留，但用在對的位置。</strong>
+          不是跨 Tab 並排（哪兩個配對沒有普適規則、兩欄高度不等時捲動難看），
+          而是在<strong>單一長分頁內部</strong>並排：左＝文本、右＝結構化資料。</li>
+      <li><strong>新增方案三（合併小分頁）＝ 採用為 C-1。</strong>
+          把 Tab 邊界降級成 section 標題 ＋ <code>border-t</code> 分隔，就在同一個捲動區裡。
+          這正是 B 已在單一分頁內做過的手法，只是把邊界從 Tab 提升到 section。</li>
+      <li><strong>新增 C-0（抽共用 <code>AdminEditTabs</code>）。</strong>原計畫未涵蓋：
+          四個檔案各寫一份幾乎相同的 Tab 列，其中 MechAdmin 樣式還不一致。純提取、零風險。</li>
+    </ul>
+    <br>
+    <strong>風險與工時同步下修：</strong>查核後確認 <code>form</code> 是 EditPanel 頂層的
+    <code>useState</code>、Tab 只是條件渲染，改版面不碰 state 也不碰
+    <code>handleSubmit</code> → <code>patchCollectionItem</code>——原估「會動到元件結構與狀態」
+    並不成立，工時由 1～2 天下修為<strong>約半天</strong>。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策八：天賦／神經驅動「獨立 detail page」不納入本 PLAN</strong><br>
+    使用者提出的方向，直覺正確（這些東西確實不該擠在彈窗裡）但診斷後確認不是本階段該做的：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>治不到病因。</strong>detail page 只是把同一條垂直堆疊搬到更高的容器裡，
+          捲動距離一樣長，淨收益僅「多約 200px 高度」。垂直堆疊本身已由 C-2 治掉。</li>
+      <li><strong>會動到資料寫入路徑。</strong><code>talents</code> / <code>neuralDrive</code> 是
+          <strong>內嵌在 pilot 文件的欄位</strong>（非獨立集合），而
+          <code>updatePilot</code>（<code>src/lib/api/pilots.ts</code>）是
+          <code>setDoc</code> <strong>無 merge、整份覆寫</strong>。
+          開 detail page 會出現兩個都會整份覆寫同一份文件的編輯面，且從彈窗跳過去會丟掉未存檔草稿。
+          要做對得處理草稿交接 / merge 寫入 / 路由——與本 PLAN「只改版面」的定位和風險層級不同。</li>
+      <li><strong>順序反了成本差很多。</strong>C-2 半天可驗證，做完很可能發現已經夠了；
+          先做 detail page 則是先花一天賭它不夠。</li>
+    </ul>
+    <strong>啟動條件：</strong>C-2 上線後，天賦編輯仍需捲動超過兩屏 → 屆時另開 PLAN。
+    <br>
+    <strong>先例參考：</strong>技能的效果本體早就外移到獨立的頂層分頁 <code>SkillAdmin</code>
+    （彈窗副標題即寫「效果於『技能管理』分頁編輯」）——本專案已走過一次「內容太大就外移」，
+    當時的結論是<strong>升級成頂層 admin 分頁，不是開 route</strong>。
+  </div>
 </section>
 
 <!-- 實作範圍 -->
@@ -369,9 +425,11 @@
       <li><strong>Phase B · 格線響應式化</strong>（2～3 小時）—— 依決策四的判準逐檔處理
           Weapon(13) / Pilot(14) / Module(13) / 其餘(16) 的 <code>grid-cols</code>，
           並在真實後台實測回調斷點階梯。</li>
-      <li><strong>Phase C · 大編輯器版面重構</strong>（1～2 天，<span class="badge-low">延後</span>）——
-          Pilot / Weapon / Module / Mech 四個有 Tab 的編輯器，評估並實作左側直排 Tab ＋ 右側內容，
-          或雙分區同時顯示。</li>
+      <li><strong>Phase C · 分頁精簡與長分頁雙欄化</strong>（約半天；<span style="color:var(--accent-yellow)">2026-08-02 依決策七改寫，
+          原為「大編輯器版面重構 1～2 天」</span>）—— C-0 抽共用 <code>AdminEditTabs</code>；
+          C-1 合併小分頁（Weapon 6→4、Pilot 7→6、Mech 5→4，Module 不動）；
+          C-2 把長到必須捲的分頁內部改雙欄（TalentItem 展開體、ModuleAdmin basic、
+          WeaponAdmin mods、NdZoneCard）；C-3 驗證。</li>
     </ul>
   </div>
 
@@ -421,7 +479,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-033 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-033 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 觀察維護中</a>
 </footer>
 
 </body>

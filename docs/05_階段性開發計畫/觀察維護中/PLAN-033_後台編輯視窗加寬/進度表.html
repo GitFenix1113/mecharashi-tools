@@ -169,7 +169,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">觀察維護中</a>
     <span>›</span>
     <span class="current">PLAN-033 進度表</span>
   </div>
@@ -192,7 +192,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">9</div>
+      <div class="summary-num" style="color:var(--accent-green)">17</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -200,11 +200,11 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">5</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">14</div>
+      <div class="summary-num" style="color:var(--text-primary)">17</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -212,11 +212,23 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">9 / 14</span>
+      <span style="color:var(--accent-green);">17 / 17 · 開發收束</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 64%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ 開發已收束，轉入觀察維護中（2026-08-02）。</strong>
+    Phase A／B／C 全數完成，開發者任務 17/17。
+    剩下的是<strong>長期觀察</strong>，不阻塞其他開發：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>GRID_AUTO_FIELDS</code> 的 220px 最小欄寬——實際使用中若覺得欄位太擠或
+          長標籤折行礙眼，改這一個數字即全站生效。</li>
+      <li>天賦編輯在 C-2 雙欄化後是否<strong>仍需捲動超過兩屏</strong>——這是
+          「獨立 detail page」議題的啟動條件（見本頁最下方與計畫書決策八）。</li>
+    </ul>
   </div>
 
   <div class="impact-note">
@@ -224,6 +236,10 @@
     後台編輯彈窗由固定 672px 加寬至 90vw，且多出的寬度轉為欄位密度——
     例如 WeaponAdmin 數值頁的 6 個數值欄從「3 排、需捲動」變成「一排看完」。
     維護者單筆編輯的掃視與捲動成本顯著下降。
+    <br><br>
+    <strong>Phase C 追加：</strong>分頁數 Weapon 6→4 / Pilot 7→6 / Mech 5→4，
+    並把「長到必須捲兩屏」的天賦編輯、模組基本資訊、武器改裝方案改為雙欄——
+    這三處是 Phase B 修不到的死角（它們沒有 <code>grid-cols-*</code>，是純垂直堆疊）。
   </div>
 
   <div class="warn-note">
@@ -460,7 +476,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-5 &nbsp; 斷點階梯實測回調</div>
       <div class="task-group-meta">開後台看實物</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -470,11 +486,15 @@
           <strong>調 <code>GRID_AUTO_FIELDS</code> 裡的一個數字</strong>（目前 220px），全站即時生效。
           220px 是依標籤長度估的初值——像「彈藥量 ammoCount（0 = 無限彈藥）」這種長標籤
           在 220px 下會折兩行，若覺得礙眼可上調；若覺得欄位太少可下調。
+          <br><br>
+          <strong>實測結果（2026-08-02）：220px 維持不動</strong>，未觸發回調。
+          此值列為本計畫轉入觀察維護後的長期觀察項——實際使用中若覺得欄位太擠或標籤折行礙眼，
+          改這一個數字即全站生效。
         </div>
-        <div class="task-file">本機 port 5173 + 獨立 profile 登入</div>
+        <div class="task-file">shared.tsx（GRID_AUTO_FIELDS，維持 220px）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -482,7 +502,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-6 &nbsp; 全編輯器巡檢</div>
       <div class="task-group-meta">10 個彈窗 × 各 Tab</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -491,96 +511,222 @@
           重點檢查 Pilot / Weapon / Module / Mech 四個多 Tab 編輯器的每個分區，
           以及窄版三兄弟是否確實維持 672px。順帶記錄哪些畫面仍覺得擁擠——
           這份清單就是日後 Phase C 是否啟動的判斷依據。
+          <br><br>
+          <strong>巡檢結論（2026-08-02）：無版面破損。</strong>
+          回報的擁擠來源不是「欄位密度不足」，而是<strong>天賦／技能這類展開後極長的分頁</strong>——
+          這正是 Phase C 方向修正的依據（見決策七）：病因是純垂直堆疊沒吃到寬度，
+          <strong>Phase B 修的是格線，修不到它們</strong>。
         </div>
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
 
 <!-- Phase C -->
 <section class="section">
-  <div class="section-label purple">Phase C</div>
-  <div class="section-title">大編輯器版面重構</div>
-  <div class="section-desc">四個有 Tab 的大型編輯器改造版面結構。約 1～2 天。</div>
+  <div class="section-label cyan">Phase C</div>
+  <div class="section-title">分頁精簡與長分頁雙欄化</div>
+  <div class="section-desc">
+    減少分頁數 ＋ 把「長到必須捲」的分頁內部改雙欄。約半天。
+  </div>
 
-  <div class="defer-note">
-    <strong>◆ 延後執行（LOW）。</strong>
-    已確認納入範圍，但不急迫。與 Phase A／B 之間<strong>沒有技術依賴</strong>，可獨立啟動。
-    建議待 A＋B 上線並實際使用一段時間後，依 B-6 記錄的「仍覺擁擠」清單
-    與「Tab 切換是否真的造成困擾」再決定啟動時機與採用方案。
-    風險層級也與 A／B 不同——這階段會動到元件結構與狀態，不再是純 className 改動。
+  <div class="warn-note">
+    <strong>◆ 方向已修正（2026-08-02）。</strong>
+    原 Phase C 規劃於 Phase B 動工<strong>之前</strong>寫成，當時的假設是「分頁很擠，需要更好的版面容器」。
+    B 把格線改成 <code>GRID_AUTO_FIELDS</code> 之後重新實測，發現實際狀況是<strong>「三小三大」</strong>——
+    多數分頁已縮到 1～3 排，真正惱人的是天賦這類展開後長達兩屏的分頁。病因也不同：
+    <strong>那些長分頁根本沒有 <code>grid-cols-*</code>，是純 <code>space-y-*</code> 垂直堆疊，
+    完全沒吃到 Phase A 加寬的空間。</strong>B 修的是格線，修不到它們。
+    <br><br>
+    <span style="color:var(--accent-red)">✕ 原方案一（左側直排 Tab）已刪除：</span>
+    Tab 切換次數一次都沒減少，還要吃掉 140～180px 橫向空間——而橫向空間正是 A＋B 剛拿到的東西，淨收益為負。
+    <br>
+    <span style="color:var(--accent-green)">✓ 原方案二（雙分區同顯）保留但改用在對的位置：</span>
+    不是跨 Tab 並排，而是在<strong>單一長分頁內部</strong>並排（見 C-2）。
+  </div>
+
+  <div class="impact-note">
+    <strong>風險比原估低很多。</strong>
+    原計畫寫「會動到元件結構與狀態」，但查核後確認：<code>form</code> 是 EditPanel 頂層的
+    <code>useState</code>，Tab 只是 <code>{'{'}editTab === 'x' &amp;&amp; ...{'}'}</code> 條件渲染，
+    改版面完全不碰 state，也不碰 <code>handleSubmit</code> → <code>patchCollectionItem</code> 路徑。
+    原 C-3 擔心的「表單狀態遺失」不會發生。
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">C-1 &nbsp; 版面方案評估</div>
-      <div class="task-group-meta">左側直排 Tab vs 雙分區同顯</div>
-      <span class="status later">延後</span>
+      <div class="task-group-title">C-0 &nbsp; 抽出共用 AdminEditTabs</div>
+      <div class="task-group-meta">src/pages/user/admin/shared.tsx</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">比較兩個方向並定案</div>
+        <div class="task-name">四份重複的 Tab 列 JSX 收斂為一個元件</div>
         <div class="task-desc">
-          方案一：Tab 列從水平改為左側直排，右側為內容區——結構改動小、可漸進。
-          方案二：寬螢幕下同時顯示兩個分區，徹底消除部分 Tab 切換——收益大但狀態管理較複雜。
-          可先在 <code>_local-notes/</code> 出視覺提案再定案（沿用本計畫來源筆記的做法）。
+          原計畫未涵蓋。Pilot / Weapon / Module / Mech 各自寫了一份幾乎相同的 Tab 列，
+          其中 <strong>MechAdmin 樣式還不一致</strong>（<code>rounded-t-lg</code> ＋ 底線，
+          其餘三個是 <code>rounded-md</code> 橘底 pill），Pilot 與 Module 又各寫一份幾乎一樣的
+          badge 邏輯。統一為 pill 樣式、badge 改傳數字（&gt;0 才顯示）。
+          純提取、零行為變更，且做完後 C-1 只要改 <code>TABS</code> 常數陣列即可。
         </div>
-        <div class="task-file">_local-notes/（提案階段）</div>
+        <div class="task-file">shared.tsx（AdminEditTabs / AdminEditTabDef）· 四個編輯器改用</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status later">延後</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">C-2 &nbsp; 四個大編輯器改造</div>
-      <div class="task-group-meta">Pilot · Weapon · Module · Mech</div>
-      <span class="status later">延後</span>
+      <div class="task-group-title">C-1 &nbsp; 合併小分頁</div>
+      <div class="task-group-meta">Weapon 6→4 · Pilot 7→6 · Mech 5→4</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">依 C-1 定案方案實作</div>
+        <div class="task-name">把 Tab 邊界降級成 section 標題 ＋ border-t 分隔</div>
         <div class="task-desc">
-          這四個是唯一有 <code>editTab</code> 狀態的編輯器，其中 <code>PilotAdmin</code>
-          分區最多、檔案 1300+ 行，建議最後做。
+          判準是可用高度：1080p 下 <code>max-h-[90vh]</code> = 972px，扣掉 <code>p-6</code>(48)
+          ＋標題區(~64)＋Tab 列(~56)＋按鈕列(~56) → 內容區約 <strong>760px ≈ 10～11 排</strong>。
+          B 之後這些小分頁各只剩 1～3 排，三頁疊起來仍不到一屏的一半。
+          <br><br>
+          <strong>Weapon</strong>：<code>stats</code>＋<code>range</code>＋<code>slots</code> → 「戰鬥屬性・射程・插槽」（估 6 排）。<br>
+          <strong>Pilot</strong>：<code>stats</code>＋<code>ap</code> → 「屬性數值・AP」（估 4 排）。
+          <code>profile</code> 刻意<strong>不併</strong>——它含 <code>AdditionalInfoEditor</code>、
+          高度隨自訂欄位數不定，不該把不可預測的長度塞進數值頁。<br>
+          <strong>Mech</strong>：<code>weapons</code>＋<code>appearance</code> → 「武器槽・外觀」。<br>
+          <strong>Module</strong>：<strong>不動</strong>——五個分頁裡四個是大分頁，沒有可併的對象。
+          <br><br>
+          <span style="color:var(--accent-yellow)">◆ 只併小分頁的理由：</span>
+          合併後子樹變成常駐掛載，<code>PilotSkillRefsTab</code> / <code>PilotNeuralDriveTab</code> /
+          Module 等級表這類重元件必須維持獨立 Tab、保住 lazy mount。
         </div>
-        <div class="task-file">PilotAdmin · WeaponAdmin · ModuleAdmin · MechAdmin</div>
+        <div class="task-file">WeaponAdmin · PilotAdmin · MechAdmin（含 key→id 對齊）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status later">延後</span>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 長分頁內部雙欄化</div>
+      <div class="task-group-meta">4 處 · 本階段主要收益</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把垂直堆疊拆成「左＝文本／右＝結構化資料」</div>
+        <div class="task-desc">
+          <strong>TalentItem 展開體</strong>（最惱人的那個）：原本是兩個 <code>min-h-[150px]</code>
+          textarea 上下疊 ＋ RefPicker ＋ NdVariantsEditor ＋ 兩組 EffectListEditor ＋ buffIds，
+          一條到底、在 1700px 下那兩個 textarea 變成「一行塞 200 字」的超寬矮帶——寬度浪費、長度沒少。
+          左欄放文本（名稱/類型・圖示・兩段 description・manual・RefPicker），
+          右欄放結構化（ndVariants・effects・enhancedEffects・buffIds）。
+          <strong>RefPicker 必須留左欄</strong>——它解析的就是上方兩段文字的 <code>[xxx]</code>。
+          <br><br>
+          <strong>ModuleAdmin basic</strong>：同病（名稱/圖示/180px textarea/RefPicker ＋ 7 個分類設定）。
+          左文本、右分類與關聯設定。<br>
+          <strong>WeaponAdmin mods</strong>：固定改裝與浮動改裝是語意對等的姊妹區塊，並排後
+          垂直長度取兩者最大值而非總和。<br>
+          <strong>NdZoneCard</strong>：改用自動格線而非雙欄——插槽 3 個併成一排；各級卡片是同質獨立單元，
+          用 <code>minmax(320px,1fr)</code> 排成 2～3 欄（不用 220px：卡內含兩欄數值＋能力挑選器，
+          220px 會擠成單欄反而更高）。5 級原本要捲約 700px。
+        </div>
+        <div class="task-file">PilotAdmin（TalentItem · NdZoneCard）· ModuleAdmin · WeaponAdmin</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">兩條實作紅線（寫入 shared.tsx 的 GRID_TWO_PANE 註解）</div>
+        <div class="task-desc">
+          <strong>① 不可用容器查詢</strong>——A-1 踩過的坑在這裡更危險：<code>TalentItem</code>
+          內就有 <code>IconField</code>，是 <code>fixed inset-0</code> 全螢幕浮層，
+          祖先一旦套上 <code>container-type</code>（隱含 <code>contain:layout</code>）就會錯位。
+          <br>
+          <strong>② 不可用 <code>GRID_AUTO_FIELDS</code></strong>——<code>auto-fill</code>
+          會讓左右欄依剩餘空間自由重排，但這兩欄語意不對等、順序不可互換。
+          改用 viewport 斷點 <code>2xl:</code>；而且在此處 viewport 斷點是<strong>準確</strong>的，
+          因為彈窗寬度 <code>min(90vw,1920px)</code> 本來就直接綁 viewport
+          （1536px 視窗下彈窗約 1382px，雙欄各約 670px，仍寬於改動前的 672px 單欄）。
+        </div>
+        <div class="task-file">shared.tsx（GRID_TWO_PANE）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; 驗證與回歸</div>
-      <div class="task-group-meta">存檔流程完整驗證</div>
-      <span class="status later">延後</span>
+      <div class="task-group-meta">build · CSS 產出 · lint 基線 · 測試</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">確認各編輯器存檔與 patch 行為未受影響</div>
+        <div class="task-name">四項自動化驗證通過</div>
         <div class="task-desc">
-          C 階段會動到元件結構，需驗證 <code>handleSubmit</code> →
-          <code>patchCollectionItem</code> 的就地同步路徑仍正常，
-          以及各 Tab 的表單狀態在版面改動後不會遺失。
+          ① <code>npm run build</code> 通過。<br>
+          ② <strong>CSS 產出確認</strong>（沿用 A-1 的教訓，Tailwind 對無法識別的 arbitrary value
+          是靜默略過、TypeScript 不會報錯）：<code>minmax(320px,1fr)</code> 1 筆、
+          <code>@media (width&gt;=96rem){'{'}.\32 xl\:grid-cols-2{'}'}</code> 存在。<br>
+          ③ <strong>lint 基線比對</strong>：改動的 5 個檔案在改動前後同為 15 筆、規則組成完全一致
+          （皆為 <code>react-refresh/only-export-components</code> 等既有問題），未新增任何錯誤。<br>
+          ④ <code>npm test</code> 255 passed / 0 failed。
         </div>
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status later">延後</span>
+      <span class="status done">已完成</span>
     </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">人工巡檢（開後台看實物）</div>
+        <div class="task-desc">
+          重點：① 三個合併分頁的分區標題與 <code>border-t</code> 分隔是否清楚；
+          ② 天賦展開後雙欄是否真的縮短捲動；
+          ③ <code>IconField</code> / <code>RefPicker</code> 的浮層在雙欄內是否仍正確定位（紅線①的實證）；
+          ④ 窄版三兄弟（Glossary / NeuralDrive / Skill）維持 672px 未受影響。
+          <br><br>
+          <strong>結果（2026-08-02）：四項皆無問題</strong>，計畫據此轉入觀察維護中。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="defer-note">
+    <strong>◆ 後續候選（不在本 PLAN 範圍）：天賦／神經驅動獨立 detail page。</strong>
+    使用者提出的方向，直覺正確但診斷後確認<strong>不是本階段該做的</strong>——
+    detail page 只是把同一條垂直堆疊搬到更高的容器裡，捲動距離一樣長，
+    淨收益僅「多約 200px 高度」；真正的病因是垂直堆疊本身，已由 C-2 治掉。
+    <br><br>
+    且它有一個具體阻礙：<code>talents</code> / <code>neuralDrive</code> 是<strong>內嵌在 pilot
+    文件的欄位</strong>（非獨立集合），而 <code>updatePilot</code> 是
+    <code>setDoc</code> <strong>無 merge、整份覆寫</strong>。開 detail page 會變成兩個都會整份覆寫
+    同一份文件的編輯面，且從彈窗跳過去會丟掉未存檔草稿。要做對得處理草稿交接 / merge 寫入 / 路由，
+    <strong>是動資料寫入路徑，與本 PLAN「只改版面」的定位和風險層級不同</strong>。
+    <br><br>
+    <strong>啟動條件：</strong>C-2 上線後，天賦編輯仍需捲動超過兩屏 → 屆時另開 PLAN。
+    <br>
+    <span style="color:var(--text-dim)">參考先例：技能的效果本體早就外移到獨立的頂層分頁
+    <code>SkillAdmin</code>（彈窗副標題即寫「效果於『技能管理』分頁編輯」）——
+    本專案已走過一次「內容太大就外移」，而當時的結論是<strong>升級成頂層 admin 分頁，不是開 route</strong>。</span>
   </div>
 </section>
 
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-033 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-033 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 觀察維護中</a>
 </footer>
 
 </body>
