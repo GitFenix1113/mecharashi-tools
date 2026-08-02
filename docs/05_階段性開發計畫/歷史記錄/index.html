@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-039 · 引用標記同名消歧</h3>
+      <p>新角色天賦正文「可使用指令<code>[駐陣]</code>…若處於<code>[駐陣]</code>狀態」——前者是技能、後者是 BUFF，但 <code>DescriptionRefs</code> 的 key 就是「括號內文字」，同名必然同指，後台也只看得到一列可指派。要區分只有兩條路：不動正文（只能靠「第幾次出現」的序數）或動正文（把消歧資訊寫進括號）。序數被明確否決——<code>numRefs.ts</code> 早已把「編號對齊」的脆弱性刻意限制在編輯期、<code>entityRefs.ts</code> 地雷 c 也拒絕索引式識別子，寫進持久層等於讓正文插一句話就靜默錯位。故採 <code>[駐陣|skill]</code> 語意化後綴，由既有的 <code>RefChip</code> <code>label ?? inner</code> 機制把前台文字還原成 <code>[駐陣]</code>。<b>舊資料零遷移</b>——不加後綴本來就是「沿用同一筆引用」。分隔符<b>必須</b>是 <code>|</code>：<code>#</code> 是 <code>maxTriggers</code> 的 sigil，<code>[駐陣#2]</code> 會被 <code>compileSugar</code> 當語法糖改壞正文（已有三筆守門測試存證）。執行中修掉兩個規劃時漏看的問題：其一，「填了後綴卻忘記指派」時 <code>RefText</code> 與 <code>DiffHighlight</code> 的優雅降級會把內部語法直接印給使用者；其二，<code>RefPicker</code> 收的是 <code>description</code> 與 <code>descriptionMax</code> <b>join 後的字串</b>，同名計數會把本案例報成「出現 4 次」而誤觸發按鈕上限——改為分段陣列逐段取最大值。B-3 的原始設計「改寫第 2 次以後」也在實作中作廢：實際要加後綴的是<b>第一處</b>，改為逐處各一顆按鈕由維護者明確指定，序數不再是推測。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-02 · 12 / 12 任務 · 單日完成 · 順帶補上 WeaponAdmin 漏接 enhancedTalentDescription 的 PLAN-022 遺留缺口</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-039_引用標記同名消歧/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-039_引用標記同名消歧/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-034 · 神驅算力 BUFF 階覆寫層</h3>

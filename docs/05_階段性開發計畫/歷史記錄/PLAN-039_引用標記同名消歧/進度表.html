@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-039 引用標記同名消歧 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-039 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-039</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">引用標記同名消歧</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-02</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label orange">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">12</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">11</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-green);">12 / 12 ✅</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    同一段正文中的兩個 <code>[駐陣]</code> 可各自指向 BUFF 與技能，前台顯示文字完全不變；
+    識別子為語意化字串而非序數，正文改寫不會使引用失效。舊資料零遷移。
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ 全計畫完成（2026-08-02，單日）：</strong>
+    <code>refKey.ts</code>（5 個純函式 + 24 筆單測）、顯示層三處、後台 <code>RefPicker</code>
+    的同名偵測與一鍵拆分全數落地，<code>[駐陣]</code> 實例已由管理員填值並確認前台正常。
+    <strong>全站 255 筆測試通過、<code>tsc -b</code> 與 <code>npm run build</code> 綠燈。</strong><br>
+    <span style="color:var(--accent-yellow);">計畫外發現（兩則，均已處理）：</span>
+    <ul style="margin:6px 0 0 16px;line-height:1.8;">
+      <li><strong>A-3</strong> 原預期「純驗證、零改動」，實測抓到兩處降級路徑缺口——
+          <code>[駐陣|skill]</code> 若<u>填了後綴卻忘記指派</u>，<code>RefText</code> 與
+          <code>DiffHighlight</code> 的「未命中原樣顯示」會把內部語法漏到前台。</li>
+      <li><strong>B-2</strong> 發現 <code>RefPicker</code> 的 <code>text</code> prop 是
+          <u>join 後的單一字串</u>，同名計數會把本計畫的實際案例報成「出現 4 次」
+          （初始版 2 次 ＋ 滿星版 2 次）。已改為支援分段陣列、逐段取最大值（計畫書決策六）。</li>
+    </ul>
+  </div>
+
+  <div class="impact-note" style="background:rgba(168,85,247,0.06);border-color:rgba(168,85,247,0.2);">
+    <strong style="color:var(--accent-purple);">實際案例已確定（影響 C-1）：</strong>
+    官方原文為「同時裝備大盾和噴火器時,可使用指令<code>[駐陣]</code>;行動開始時,若處於<code>[駐陣]</code>狀態,…獲得1層<code>[戎火]</code>。」——
+    <strong>第一個</strong> <code>[駐陣]</code>（可使用<u>指令</u>）是技能、<strong>第二個</strong>（處於…<u>狀態</u>）是 BUFF。
+    故要加後綴的是<strong>第一處</strong>，改寫為 <code>[駐陣|skill]</code>，裸 key 留給 BUFF。
+    位置在<strong>天賦正文</strong>（天賦賦予的角色獨有技能，非可學習技能）→ <u>務必勾 <code>manual</code></u>。
+  </div>
+
+  <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);">
+    <strong style="color:var(--accent-yellow);">執行前提醒：</strong>
+    分隔符<strong>必須</strong>是 <code>|</code>。<code>#</code> 是 <code>NUM_ATTRS.maxTriggers</code> 的語法糖 sigil，
+    <code>[駐陣#2]</code> 會被 <code>detectLeftoverSugar</code> 誤判、被 <code>compileSugar</code> 改壞正文。
+    詳見計畫書決策二。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label orange">Phase A</div>
+  <div class="section-title">核心 util 與顯示層</div>
+  <div class="section-desc">建立消歧鍵的單一解析點，並確認整條引用鏈在帶後綴的 key 下行為正確。這一階段完成後，手動在 Firestore 填一筆帶後綴的 ref 即已可用。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 消歧鍵解析 util</div>
+      <div class="task-group-meta">src/utils/refKey.ts（新）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">splitRefKey / displayKeyword / formatRefKey + 14 筆單測</div>
+        <div class="task-desc">
+          <code>splitRefKey('駐陣|skill')</code> → <code>{ display: '駐陣', disambig: 'skill' }</code>；
+          無後綴時 <code>disambig</code> 為 <code>undefined</code>。<strong>只切第一個 <code>|</code></strong>。
+          另附 <code>formatRefKey</code>（與 split 互逆，比照 <code>buffRef.ts</code>；B-1 顯示徽章與 B-3 組鍵都會用）。<br>
+          <strong>兩種退化輸入刻意歸一化，使 display 恆非空</strong>（空 chip 比露出內部語法更糟）：
+          <code>'駐陣|'</code> → <code>'駐陣'</code>（吃掉孤懸分隔符）、<code>'|skill'</code> → 整串當 display 不剝。
+          前者在初版實作寫錯（回傳整串 <code>'駐陣|'</code>），由測試當場攔下。<br>
+          測試中三筆是<strong>決策二的守門</strong>：斷言 <code>detectLeftoverSugar</code> 對
+          <code>[駐陣|2]</code> 零誤報、<code>compileSugar</code> 不改壞含後綴的正文，
+          並存證 <code>[駐陣#2]</code> 確實會被改成 <code>[駐陣&lt;buff_駐陣.maxTriggers&gt;]</code>——
+          日後有人想把分隔符換成 <code>#</code>，這三筆會立刻紅。
+        </div>
+        <div class="task-file">src/utils/refKey.ts · src/utils/refKey.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; RefChip 顯示 fallback</div>
+      <div class="task-group-meta">src/components/RefChip.tsx:41</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">entity.label ?? displayKeyword(inner)</div>
+        <div class="task-desc">
+          原為 <code>entity.label ?? inner</code>，已改為剝除後綴，使「忘記填 <code>label</code>」不會把
+          <code>[駐陣|skill]</code> 漏到前台。<strong>刻意不自動預填 label</strong>——fallback 已是安全網，
+          自動塞 label 只會存冗餘欄位並模糊該欄位「原文用別名時覆寫顯示」的本意（計畫書決策三）。
+          PLAN-034 的抬升分支（<code>eff.lifted &amp;&amp; eff.name</code>）優先序未動，只改 fallback 那一側；
+          <code>title</code> 屬性共用同一個 <code>label</code> 變數，故一併正確。
+        </div>
+        <div class="task-file">src/components/RefChip.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 引用鏈全路徑驗證</div>
+      <div class="task-group-meta">原訂純驗證 · 實際修補 2 處降級缺口</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">前台渲染：RefText / DiffHighlight <span style="color:var(--accent-yellow)">（發現缺口，已修）</span></div>
+        <div class="task-desc">
+          <strong>命中路徑確如預期零改動</strong>：<code>RefText</code> 的
+          <code>split(/(\[[^\]]+\])/g)</code> 對 <code>[駐陣|skill]</code> 正常切出、正常命中；
+          <code>DiffHighlight</code> 的 tokenize 把 <code>|</code> 切進 <code>[^\w\d一-鿿\s]</code> 分支，
+          <code>inner</code> 拼回仍是 <code>駐陣|skill</code>。<br>
+          <strong>但未命中路徑是缺口。</strong>兩者的「未指派 → 原樣顯示 <code>[xxx]</code>」優雅降級
+          會把 <code>[駐陣|skill]</code> 整串印到畫面上——管理者填了後綴卻還沒指派時，
+          使用者會看到內部語法。兩處均補上剝後綴的降級：
+          <ul style="margin:6px 0 0 16px;line-height:1.8;">
+            <li><code>RefText</code>：未命中時輸出 <code>[displayKeyword(inner)]</code>；
+                無後綴時 <code>disp === inner</code>，回傳原 <code>part</code> 字串
+                → 單一 text child，<strong>舊資料 byte-identical</strong>。</li>
+            <li><code>DiffHighlight</code>：只在 <code>disp !== inner</code>（真的有後綴）時，
+                才把整個 <code>[ ... ]</code> 群組併成一段純文字輸出；無後綴時不觸發，
+                既有的逐 token diff 標色完全不受影響。<strong>兩處降級必須一致</strong>，
+                否則同一段天賦正文會隨「差異高亮：開／關」顯示出不同的字——
+                PLAN-034 F-2 踩過同一類坑。</li>
+          </ul>
+          既有副作用確認：base 與 enhanced 只有一邊帶後綴時 LCS 會把該 token 標黃；
+          天賦的 <code>onCompileText</code> 本就對 <code>description</code> / <code>descriptionMax</code>
+          同步套用，兩段一起改寫即無此問題。
+        </div>
+        <div class="task-file">src/components/RefText.tsx · src/components/DiffHighlight.tsx · src/components/RefChip.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">級聯刪除與還原：findReferences / restorePatch（零改動，已鎖）</div>
+        <div class="task-desc">
+          如預期<strong>免費繼承</strong>，一行未改。已補兩筆守門測試把這件事鎖住：
+          <ul style="margin:6px 0 0 16px;line-height:1.8;">
+            <li><code>entityRefs.test.ts</code> <strong>D7</strong>：同一天賦同時掛
+                <code>駐陣</code>（buff）與 <code>駐陣|skill</code>（skill），
+                刪 BUFF 只中裸 key、刪技能只中帶後綴 key，且 <code>segments</code>
+                末段必須是<u>完整</u> key（含 <code>|</code>）——若哪天有人在掃描器裡順手剝了後綴，
+                會刪錯 map 欄位，這筆會攔下。</li>
+            <li><code>restorePatch.test.ts</code> <strong>R3b</strong>：帶後綴 key 原樣還原，
+                並斷言同名裸 key 未被覆蓋。</li>
+          </ul>
+          全站 <code>npm test</code> 245 筆通過（含 emulator 以外的全部純函式測試）。
+        </div>
+        <div class="task-file">src/utils/entityRefs.test.ts · src/utils/restorePatch.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">數值語法糖：orderRefsByFirstMention / compileSugar（零改動，已鎖）</div>
+        <div class="task-desc">
+          驗證通過：<code>[駐陣]</code> 與 <code>[駐陣|skill]</code> 是兩個相異 keyword，
+          <code>orderRefsByFirstMention</code> 給出兩個獨立編號，
+          <code>$1</code> 正確編譯成 <code>&lt;buff_駐陣.maxStack&gt;</code> 而不波及第二個引用。
+          決策二的守門測試（<code>|</code> 不觸發 <code>detectLeftoverSugar</code>）一併落在
+          <code>refKey.test.ts</code>——放在該檔而非 <code>numRefs.test.ts</code>，
+          是因為它守的是「分隔符選型」這個決策，改 <code>DISAMBIG_SEP</code> 的人第一眼就會看到。
+        </div>
+        <div class="task-file">src/utils/refKey.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label orange">Phase B</div>
+  <div class="section-title">後台 RefPicker 支援</div>
+  <div class="section-desc">讓管理者看得懂、也做得到。RefPicker 已在 11 個後台面板接線（BuffAdmin / SkillAdmin / PilotAdmin ×2 / ModuleAdmin ×2 / WeaponAdmin / BackpackAdmin / ComponentAdmin / GlossaryAdmin / NeuralDriveAdmin），改一處全部受益。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; token 列顯示原文 + 標註消歧鍵</div>
+      <div class="task-group-meta">src/components/admin/RefPicker.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">TokenRow 標題改用 splitRefKey，後綴另掛橘色徽章</div>
+        <div class="task-desc">
+          列標題顯示 <code>[駐陣]</code>（而非 <code>[駐陣|skill]</code>），後綴以
+          <code>|skill</code> 小徽章呈現並附 tooltip 說明「資料中的 key 為…，前台顯示時會剝除」，
+          兩列同名並排時一眼看出是同一個詞的兩種語意。
+          「未指派」提示也改顯示剝後綴的文字——前台的未命中降級同樣會剝（A-3），兩邊要說一致的話。<br>
+          <strong>附帶收斂</strong>：<code>extractTokens</code> 原本自己寫了一份
+          <code>[xxx]</code> tokenizer，改為 <code>[...countKeywordOccurrences(t).keys()]</code>
+          （<code>Map</code> 保留插入序，行為完全相同）——全站的方括號 tokenizer 少一份。
+        </div>
+        <div class="task-file">src/components/admin/RefPicker.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 同名重複偵測提示</div>
+      <div class="task-group-meta">RefPicker.tsx · refKey.ts · PilotAdmin.tsx ×2</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">同名偵測區塊（橘色，提示語氣）</div>
+        <div class="task-desc">
+          偵測到同一完整 key 出現 ≥2 次時，在 token 列表<strong>上方</strong>顯示提示——
+          放上方是因為它會改變列表內容（拆分後多一列）。文案直接引用實際案例
+          （「可使用指令<code>[駐陣]</code>」＝技能 vs「處於<code>[駐陣]</code>狀態」＝BUFF），
+          並寫明分隔符固定為 <code>|</code>、<code>#</code> 不可用。
+          <strong>是提示不是錯誤</strong>：同名同義是絕大多數情況的正確狀態，不擋存檔、不用紅色。
+          已消歧的 <code>[駐陣]</code> / <code>[駐陣|skill]</code> 各算 1，不會再被報成重複。
+        </div>
+        <div class="task-file">src/components/admin/RefPicker.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><span style="color:var(--accent-yellow)">計畫外：</span>text prop 改支援分段陣列</div>
+        <div class="task-desc">
+          寫計數邏輯時才發現 <code>text</code> 收的是 <code>[description, descriptionMax].join('\n')</code>——
+          <strong>本計畫的實際案例會被報成「出現 4 次」</strong>（兩段各 2 次），
+          而 4 次會誤觸發按鈕上限，讓一鍵拆分在最需要它的地方不可用。
+          根因是 join 後無法分辨「同一個 <code>[xxx]</code> 在兩個版本各一次」與「在同一版本兩次」，
+          而這兩者對消歧的判定完全相反。<br>
+          <code>text</code> 改為 <code>string | (string | undefined)[]</code>：陣列逐段計數
+          <strong>取最大值</strong>（兩段是平行版本、不是連續文字），字串維持單段
+          → <strong>既有 8 個消費端零改動</strong>。只有 <code>PilotAdmin</code> 的天賦與
+          ndVariant 改傳陣列。刻意不加第二個 prop，避免 <code>text</code> / <code>segments</code>
+          兩個 source of truth 不同步（計畫書決策六）。
+        </div>
+        <div class="task-file">src/components/admin/RefPicker.tsx · src/utils/refKey.ts · src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 一鍵拆分輔助</div>
+      <div class="task-group-meta">RefPicker.tsx · refKey.ts · 復用 onCompileText 管道</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">逐處各一顆按鈕：「標記第 N 處」</div>
+        <div class="task-desc">
+          每個重複 token 一行：消歧鍵輸入框（預設 <code>skill</code>，即時濾掉
+          <code>[</code> <code>]</code> <code>|</code> 三個會破壞 key 結構的字元）＋ 每一處出現各一顆按鈕。
+          點下去呼叫 <code>onCompileText((s) =&gt; rewriteOccurrence(s, token, n, dis))</code>，
+          復用既有管道（11 個面板皆已接線）。<br>
+          <strong>原訂的「≥3 次停用」已作廢</strong>——那個限制的前提是「機械規則決定改哪一處」，
+          而這裡是<u>維護者明確指定</u>，序數不再是推測。改為 <strong>&gt;4 次</strong>才提示手動編輯，
+          理由純粹是按鈕排不下。實際案例正好印證：要加後綴的是<strong>第一處</strong>（指令＝技能），
+          原設計「改寫第 2 次以後」在這案例上根本用不了。<br>
+          <strong>保留的防護</strong>：<code>detectLeftoverSugar</code> 非空時停用並提示
+          「請先代入數值語法糖」——拆分會改變 <code>$n</code> 的編號基準。
+          多段面板另顯示「會同時套用到各段的第 N 處；兩段句子結構不同時請手動編輯」。
+        </div>
+        <div class="task-file">src/components/admin/RefPicker.tsx · src/utils/refKey.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">rewriteOccurrence 純函式 + 10 筆單測</div>
+        <div class="task-desc">
+          <code>rewriteOccurrence(text, keyword, occurrence, disambig)</code>：
+          只改指定次序那一處，其餘出現與其他 keyword 一律不動；找不到則原樣回傳。<br>
+          <strong>刻意用 <code>indexOf</code> 而非動態正則</strong>：keyword 是維護者輸入的自由文字，
+          既有資料就有 <code>凝勢.強化</code> 這種含正則特殊字元的 key。組正則就得處理跳脫，
+          漏一個字元的後果是改錯位置或整段替換失敗——兩者都是靜默的。已有測試鎖住
+          （<code>[凝勢.強化]</code> 不得誤中 <code>[凝勢X強化]</code>）。<br>
+          另有 <code>countKeywordOccurrences</code>（每次新建 <code>/g</code> 正則，
+          避免模組層級共用 <code>lastIndex</code> 的污染）與其連續呼叫的等冪測試。
+        </div>
+        <div class="task-file">src/utils/refKey.ts · src/utils/refKey.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><span style="color:var(--accent-yellow)">順手修：</span>WeaponAdmin 漏接 enhancedTalentDescription</div>
+        <div class="task-desc">
+          計畫書原列為「選配、非本計畫必要」。因 <code>text</code> prop 正好改成支援多段，
+          一併補上：該面板的 <code>RefPicker</code> 原本只接 <code>skill.description</code>，
+          <code>enhancedTalentDescription</code> 裡的 <code>[xxx]</code> 無法指派、語法糖也不會代入，
+          但 <code>entityRefs.ts</code> 的 <code>WEAPONS.textUnits</code> 確實會掃它。
+          <strong>這是修正而非回歸</strong>：武器技能面板的 token 列表會多出該欄位的標記，
+          那些標記本來就該在這裡指派。
+        </div>
+        <div class="task-file">src/pages/user/admin/WeaponAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 後台清單計數校正</div>
+      <div class="task-group-meta">確認結果：無誤，不改動</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">unlinkedCount 沿用完整 key 比對 → 帶後綴時仍正確</div>
+        <div class="task-desc">
+          <code>NeuralDriveAdmin.unlinkedCount</code> 自行 tokenize 正文並比對 <code>refs[t]</code>，
+          用的是完整括號內文字，帶後綴時判定正確 → <strong>不改動</strong>。<br>
+          順帶檢查了它的 <code>lastIndex</code> 風險：<code>tokenRe</code> 是模組層級的 <code>/g</code> 正則，
+          但 <code>while</code> 迴圈必定跑到 <code>null</code>（無 <code>break</code> / 提早 <code>return</code>），
+          <code>lastIndex</code> 會自動歸零 → 連續呼叫安全。<br>
+          全 repo 掃過一遍自行 tokenize <code>[xxx]</code> 的地方，共四處：
+          <code>RefText</code>（已處理）、<code>numRefs.KEYWORD_RE</code>（用於編號，正確）、
+          <code>RefPicker.extractTokens</code>（已收斂到 <code>refKey</code>）、
+          本函式（無需改）。無遺漏。
+        </div>
+        <div class="task-file">src/pages/user/admin/NeuralDriveAdmin.tsx（未改動）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label orange">Phase C</div>
+  <div class="section-title">驗收與文件同步</div>
+  <div class="section-desc">用真實案例走完一遍，並把新語法寫進資料模型文件（CLAUDE.md 規則 2）。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; [駐陣] 實例填值驗收</div>
+      <div class="task-group-meta">後台 → 機師編輯 → 天賦 · 管理員任務</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把第一個 [駐陣]（指令＝技能）標成 [駐陣|skill]</div>
+        <div class="task-desc">
+          <strong>操作步驟</strong>：
+          <ol style="margin:6px 0 0 16px;line-height:1.9;">
+            <li>在 <code>pilotSkills</code> 建一筆「駐陣」技能文件（天賦賦予的角色獨有技能，
+                不需掛給任何機師——該集合早已是全站技能字典）。</li>
+            <li>天賦編輯的 <code>RefPicker</code> 會顯示「<code>[駐陣]</code> 出現 2 次」，
+                點<strong>「標記第 1 處」</strong>（消歧鍵維持預設 <code>skill</code>）。
+                注意是第 1 處——「可使用<u>指令</u>」的那個才是技能。</li>
+            <li>token 列表隨即多出一列 <code>[駐陣] |skill</code>，指派到剛建的技能；
+                裸 <code>[駐陣]</code> 那列指派到 BUFF。</li>
+            <li><strong>勾選 <code>manual</code></strong>——這是天賦正文，不勾的話下次爬蟲補丁會洗掉後綴
+                （技能正文因「與官網不同即保留」而自動受保護，天賦不是）。</li>
+          </ol>
+          <strong>驗收點</strong>：前台兩個 chip 皆顯示 <code>[駐陣]</code>（看不出後綴）、
+          顏色不同（BUFF 紫 / 技能青）、hover 浮窗各自帶出正確實體、手機 BottomSheet 同樣正確；
+          <code>[戎火]</code> 不受影響。<br>
+          <strong style="color:var(--accent-green);">✅ 2026-08-02 管理員實機標記完成並確認顯示正常。</strong>
+        </div>
+        <div class="task-file">後台 → 機師編輯 → 天賦 · 技能管理</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; docs 同步</div>
+      <div class="task-group-meta">docs/02_技術文件/ · 三處</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補寫 descriptionRefs 消歧鍵語法說明</div>
+        <div class="task-desc">
+          三處均已補上，各自寫明<strong>分隔符為 <code>|</code>、以及 <code>#</code> 為何不可用</strong>：
+          <ul style="margin:6px 0 0 16px;line-height:1.8;">
+            <li><code>02_資料模型/skills_buffs.html</code>：新增 note-block，說明
+                <code>DescriptionRefs</code> 的 key 就是括號內文字、消歧語法、
+                「不加後綴＝沿用同一筆引用」與舊資料零遷移。</li>
+            <li><code>04_Firebase/機師資料參考連結與查詢量.html</code>：該頁的 refType 對照區明寫
+                <code>descriptionRefs["xxx"]</code> 的解析規則，補上 info-block 與正文／key 對照範例。</li>
+            <li><code>04_Firebase/資料庫設計文件/glossaryTerms.html</code>：RefPicker 段落補一句
+                同名偵測與一鍵拆分。</li>
+          </ul>
+          <code>04_Firebase/資料庫設計文件/skills-buffs.html</code> 原列於清單，實查該頁無
+          <code>descriptionRefs</code> / <code>refType</code> 敘述（只談 BUFF 欄位本身）→ 無需更動。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/skills_buffs.html · 04_Firebase/機師資料參考連結與查詢量.html · 04_Firebase/資料庫設計文件/glossaryTerms.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 邊界回歸</div>
+      <div class="task-group-meta">255 passed · build 綠燈</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">舊資料零回歸驗證</div>
+        <div class="task-desc">
+          核心不變式已由測試鎖住：<strong>不含 <code>|</code> 的 key 一律走與本計畫前 byte-identical 的路徑</strong>。
+          <code>refKey.test.ts</code> 首筆即斷言 <code>displayKeyword</code> 對無後綴輸入原樣回傳
+          （涵蓋含 <code>.</code>、空白、全形括號、純英數等既有 key 形態）；
+          三處顯示層的新分支全部以「真的有後綴」為條件，無後綴時不觸發。<br>
+          <code>npm test</code> <strong>255 筆全過</strong>（本計畫新增 24 + D7 + R3b）、
+          <code>tsc -b</code> 與 <code>npm run build</code> 綠燈。
+          <code>npx eslint</code> 對本計畫改動的檔案零錯誤——唯一報出的
+          <code>RefChip.tsx</code> <code>only-export-components</code> 經 <code>git show HEAD</code>
+          確認為既有（該檔原就同時 export <code>RefScopeContext</code> 與 <code>RefChip</code>，
+          repo 內共 29 個同類）。<br>
+          前台實機由管理員於 C-1 一併確認（<code>[戎火]</code> 等未消歧的既有引用顯示不變）。
+        </div>
+        <div class="task-file">npm test · npm run build · npx eslint</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-039 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>
