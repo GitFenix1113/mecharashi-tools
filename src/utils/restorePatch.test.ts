@@ -78,6 +78,26 @@ test('R3: mapKeyDelete 重加 —— segments 定位，map key 含 "." 不被切
   assert.ok(refs['其他'])                             // 既有 key 不受影響
 })
 
+test('R3b: mapKeyDelete 重加 —— 帶消歧後綴的 key 原樣還原，同名裸 key 不受影響（PLAN-039）', () => {
+  const ref = { refType: 'skill', refId: 'skill_駐陣' }
+  const plan = buildRestorePlan(
+    [patch({
+      segments: ['talents', 0, 'descriptionRefs', '駐陣|skill'],
+      path: 'talents.0.descriptionRefs.駐陣|skill',
+      op: 'mapKeyDelete', value: ref,
+    })],
+    pilotDocs({
+      name: '測試',
+      talents: [{ name: 'A', descriptionRefs: { 駐陣: { refType: 'buff', refId: 'buff_駐陣' } } }],
+    }),
+  )
+  assert.equal(plan.skipped.length, 0)
+  const refs = (plan.mutations[0].set.talents as { descriptionRefs: Record<string, unknown> }[])[0].descriptionRefs
+  assert.deepEqual(refs['駐陣|skill'], ref)
+  // 同名裸 key 必須完好——若還原時剝了後綴，這裡會被 skill ref 覆蓋掉
+  assert.deepEqual(refs['駐陣'], { refType: 'buff', refId: 'buff_駐陣' })
+})
+
 // ─── R4. fieldClear：缺就補、有不同值就衝突跳過 ───────────────────────────────
 
 test('R4: fieldClear —— 欄位缺席補回；已有不同值則 conflict 跳過不覆蓋', () => {

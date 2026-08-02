@@ -161,6 +161,22 @@
   </div>
 
   <div class="note-block">
+    <strong>🆕 PLAN-039：DescriptionRefs 的 key 與同名消歧</strong>
+    <code>DescriptionRefs = Record&lt;括號內文字, EntityRef&gt;</code>，key <strong>就是</strong>正文 <code>[xxx]</code> 內的字。
+    因此同一段正文裡兩個同名標記必然指向同一筆引用。需要各指各的時，在其中一處括號內加
+    <strong>消歧後綴</strong> <code>[顯示文字|消歧鍵]</code>：正文寫
+    <code>可使用指令[駐陣|skill]…若處於[駐陣]狀態</code>，即得到
+    <code>descriptionRefs["駐陣|skill"]</code>（技能）與 <code>descriptionRefs["駐陣"]</code>（BUFF）兩筆。<br>
+    <strong>前台顯示不受影響</strong>：<code>RefChip</code> 一律剝除後綴，兩處都顯示 <code>[駐陣]</code>
+    （唯一解析點 <code>src/utils/refKey.ts</code> 的 <code>displayKeyword</code>）。
+    <strong>不加後綴＝沿用同一筆引用</strong>，是絕大多數情況的正確狀態，舊資料無需遷移。
+    後台 <code>RefPicker</code> 偵測到同名重複時會提示，並提供「標記第 N 處」一鍵改寫。<br>
+    <strong style="color:var(--accent-red);">分隔符固定為 <code>|</code>，不可用 <code>#</code></strong> ——
+    <code>#</code> 是 <code>maxTriggers</code> 的數值語法糖 sigil，<code>[駐陣#2]</code> 會被
+    <code>compileSugar</code> 替換成 <code>&lt;refId.maxTriggers&gt;</code>，正文當場改壞。
+  </div>
+
+  <div class="note-block">
     <strong>🆕 PLAN-024：flat XOR leveled — 能力資料單一權威來源</strong>
     一顆 buff 只能二擇一：<code>flat</code>（無 <code>levels</code>，能力資料來自頂層 <code>maxStack</code>/<code>duration</code>/<code>effects</code>）
     或 <code>leveled</code>（有 <code>levels</code>，能力資料一律由各 <code>BuffLevel</code> 提供，頂層三欄停用且應為空）。

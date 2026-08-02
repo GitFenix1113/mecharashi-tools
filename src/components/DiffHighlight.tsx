@@ -6,6 +6,7 @@ import { useNumRefLookup } from '../hooks/useNumRefLookup'
 import { resolveNumRefs, hasNumRef } from '../utils/numRefs'
 import { useNdOverrides } from '../contexts/NdOverrideContext'
 import { buildNumLevelOf } from '../utils/ndOverrides'
+import { displayKeyword } from '../utils/refKey'
 
 function lcsMatched(a: string[], b: string[]): boolean[] {
   const m = a.length, n = b.length
@@ -50,10 +51,22 @@ export function DiffHighlight({ base, enhanced, refs }: { base: string; enhanced
       let j = i + 1
       let inner = ''
       while (j < enhTokens.length && enhTokens[j] !== ']') { inner += enhTokens[j]; j++ }
-      if (j < enhTokens.length && refs[inner]) {
-        out.push(<RefChip key={i} inner={inner} entity={refs[inner]} />)
-        i = j + 1
-        continue
+      if (j < enhTokens.length) {
+        if (refs[inner]) {
+          out.push(<RefChip key={i} inner={inner} entity={refs[inner]} />)
+          i = j + 1
+          continue
+        }
+        // PLAN-039：未指派但帶消歧後綴 → 整段輸出剝後綴文字，不讓 '|skill' 逐 token 漏出。
+        // 這裡必須與 RefText 的降級一致，否則同一段天賦正文會隨「差異高亮：開/關」
+        // 顯示出不同的字（PLAN-034 F-2 踩過同一類坑）。
+        // 無後綴時 disp === inner，此分支不觸發，既有的逐 token diff 標色完全不受影響。
+        const disp = displayKeyword(inner)
+        if (disp !== inner) {
+          out.push(<span key={i}>{`[${disp}]`}</span>)
+          i = j + 1
+          continue
+        }
       }
     }
 

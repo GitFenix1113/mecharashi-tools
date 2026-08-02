@@ -72,7 +72,10 @@
   <div class="info-block" style="margin-top:12px;">
     <strong>🔗 RefPicker（引用挑選器）</strong><br>
     通用元件 <code>src/components/admin/RefPicker.tsx</code>：自動 tokenize 描述中的 <code>[xxx]</code>，逐 token 指派 <code>refType</code> + 候選實體（讀 GameDataContext in-memory 陣列 + 屬性 stat），寫入 <code>descriptionRefs</code>，並即時 <code>RefText</code> 預覽。<br>
-    本輪已接進「詞條管理」與機師後台「技能效果（pilotSkills）」；其餘描述面板的 RefPicker retrofit 列於 PLAN-019-E。
+    本輪已接進「詞條管理」與機師後台「技能效果（pilotSkills）」；其餘描述面板的 RefPicker retrofit 列於 PLAN-019-E。<br>
+    <strong>PLAN-039</strong>：同一段正文出現多個同名 <code>[xxx]</code> 時會顯示消歧提示，並可一鍵把指定一處改寫為
+    <code>[駐陣|skill]</code>（key 帶消歧後綴、前台顯示仍為 <code>[駐陣]</code>）。分隔符固定 <code>|</code>；
+    <code>#</code> 會與數值語法糖 sigil 衝突，不可使用。
   </div>
   <div class="info-block" style="margin-top:12px;">
     <strong>🔒 安全規則</strong><br>

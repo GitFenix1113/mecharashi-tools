@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-038 · 社群連結預覽（Open Graph）系統</h3>
+      <p>站長回報網站在 LINE 有連結預覽、Discord 完全沒有。診斷確認根因單一：<code>index.html</code> 沒有放任何 <code>og:*</code> 標籤——Discord 的爬蟲不執行 JS 也沒有 <code>&lt;title&gt;</code> fallback，找不到 <code>og:title</code>／<code>og:image</code> 就完全不顯示卡片；LINE 則退而求其次抓標題撐出陽春卡。分兩層修：Tier 1 補齊全站靜態標籤（可獨立上線）；Tier 2 延伸既有 Cloudflare Worker，用 HTMLRewriter 讓機師／機甲／武器詳情頁分享時顯示對應肖像與名稱。og:image 素材策略刻意重用既有實體圖片欄位，不另開一套美術維護線。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-038_社群連結預覽/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-038_社群連結預覽/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card cyan">
       <div class="card-icon">◆</div>
       <h3>PLAN-033 · 後台編輯視窗加寬</h3>

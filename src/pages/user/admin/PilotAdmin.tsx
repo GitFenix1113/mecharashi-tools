@@ -525,7 +525,7 @@ function NdVariantsEditor({
               </Field>
               {/* 變體 refs 與天賦 descriptionRefs 合併解析：已在天賦層指派過的 token（如 [星爆]）此處可留空 */}
               <RefPicker
-                text={[v.description, v.descriptionMax].filter(Boolean).join('\n')}
+                text={[v.description, v.descriptionMax]}
                 value={v.descriptionRefs}
                 onChange={(refs) => upd(idx, { descriptionRefs: refs })}
                 onCompileText={(tf) => upd(idx, {
@@ -570,7 +570,9 @@ function TalentItem({
   const buffIds  = talent.buffIds ?? []
   function upd<K extends keyof PilotTalent>(key: K, value: PilotTalent[K]) { onChange({ ...talent, [key]: value }) }
   function updBuffIds(val: string) { upd('buffIds', val.split(/[,\n]/).map((s) => s.trim()).filter(Boolean)) }
-  const refText = [talent.description, talent.descriptionMax].filter(Boolean).join('\n')
+  // PLAN-039：傳陣列而非 join —— join 後無法分辨「同一個 [xxx] 在初始/滿星各出現一次」
+  // 與「在同一段出現兩次」，而這兩者對同名消歧的判定完全相反
+  const refTexts = [talent.description, talent.descriptionMax]
 
   return (
     <div className="border border-border/60 rounded-lg bg-bg-dark/50">
@@ -627,7 +629,7 @@ function TalentItem({
           </label>
           {/* description 與 descriptionMax 共用一份 descriptionRefs（兩者的 [xxx] 都在此指派）*/}
           <RefPicker
-            text={refText}
+            text={refTexts}
             value={talent.descriptionRefs}
             onChange={(refs) => upd('descriptionRefs', refs)}
             onCompileText={(tf) => onChange({

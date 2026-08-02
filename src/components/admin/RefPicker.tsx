@@ -4,6 +4,7 @@ import { useGameData, type CollectionKey } from '../../contexts/GameDataContext'
 import { STAT_LABELS } from '../../utils/moduleStats'
 import { RefText } from '../RefText'
 import { compileSugar, orderRefsByFirstMention, detectLeftoverSugar, NUM_ATTRS } from '../../utils/numRefs'
+import { splitRefKey, countKeywordOccurrences, rewriteOccurrence } from '../../utils/refKey'
 
 // PLAN-022 Phase C：語法糖速查（registry 驅動）。$n=可疊加層數、%n=持續回合，n=已指派 [xxx] 的首次出現序。
 const SIGIL_HINTS = Object.values(NUM_ATTRS)
@@ -46,16 +47,27 @@ const REF_TO_COLLECTION: Partial<Record<RefType, CollectionKey>> = {
 
 interface Candidate { id: string; name: string }
 
-/** 取出描述中所有不重複的 [xxx] token（保留出現順序）。 */
-function extractTokens(text: string): string[] {
-  const out: string[] = []
-  const seen = new Set<string>()
-  const re = /\[([^\]]+)\]/g
-  let m: RegExpExecArray | null
-  while ((m = re.exec(text)) !== null) {
-    if (!seen.has(m[1])) { seen.add(m[1]); out.push(m[1]) }
+/**
+ * 取出描述中所有不重複的 [xxx] token（保留出現順序）。
+ * Map 保留插入序，故與原先自行 tokenize 的行為完全相同——tokenizer 收斂到 refKey 一處（PLAN-039）。
+ */
+const extractTokens = (text: string): string[] => [...countKeywordOccurrences(text).keys()]
+
+/**
+ * 同名重複的 token（PLAN-039 B-2）：同一個**完整 key** 在正文出現 ≥2 次。
+ *
+ * **逐段取最大值而非合計**：天賦的 description 與 descriptionMax 是同一段能力的兩個版本，
+ * 合併後計數會把「出現 2 次」報成 4 次——而 4 次會誤觸發 B-3 的「≥3 次停用」規則，
+ * 讓一鍵拆分在最需要它的案例上不可用。
+ *
+ * 已消歧完畢的 [駐陣] / [駐陣|skill] 各算 1，不會被報成重複。
+ */
+function findDuplicateTokens(parts: string[]): { token: string; count: number }[] {
+  const max = new Map<string, number>()
+  for (const p of parts) {
+    for (const [k, n] of countKeywordOccurrences(p)) max.set(k, Math.max(max.get(k) ?? 0, n))
   }
-  return out
+  return [...max].filter(([, n]) => n >= 2).map(([token, count]) => ({ token, count }))
 }
 
 /** 依 refType 從 GameData 取候選實體（並懶載對應集合）。 */
@@ -98,6 +110,10 @@ function TokenRow({
   const [pickerType, setPickerType] = useState<RefType | ''>(assigned?.refType ?? 'term')
   const [search, setSearch]       = useState('')
 
+  // PLAN-039：token 可能是帶消歧後綴的 key（'駐陣|skill'）。列標題顯示前台實際看到的字，
+  // 後綴另掛徽章——兩列同名並排時，一眼看得出「這是同一個詞的第二種語意」。
+  const { display, disambig } = splitRefKey(token)
+
   const gd = useGameData()
   const candidates = useCandidates(open ? pickerType : '')
   // 已指派實體所屬集合一律載入，使收合狀態的 chip 也能顯示名稱
@@ -127,14 +143,21 @@ function TokenRow({
   return (
     <div className="bg-bg-dark border border-border/60 rounded-lg px-3 py-2.5">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-semibold text-accent-purple text-sm">[{token}]</span>
+        <span className="font-semibold text-accent-purple text-sm">[{display}]</span>
+        {disambig && (
+          <span
+            className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-accent-orange/30 bg-accent-orange/10 text-accent-orange"
+            title={`同名消歧鍵：此標記在資料中的 key 為「${token}」，前台顯示時會剝除後綴`}
+          >|{disambig}</span>
+        )}
         <span className="text-text-dim text-xs">→</span>
         {assigned ? (
           <span className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded border border-accent-cyan/30 bg-accent-cyan/10 text-accent-cyan">
             {REF_TYPE_LABEL[assigned.refType]} · {assignedName}
           </span>
         ) : (
-          <span className="text-xs text-text-dim">未指派（前台原樣顯示 [{token}]）</span>
+          // 前台的未命中降級也會剝後綴（PLAN-039 A-3），故此處顯示 display 而非完整 key
+          <span className="text-xs text-text-dim">未指派（前台原樣顯示 [{display}]）</span>
         )}
         {assigned && buffLevels.length > 0 && (
           <select
@@ -214,18 +237,35 @@ export function RefPicker({
   onChange,
   onCompileText,
 }: {
-  text: string
+  /**
+   * 正文。多欄位面板（天賦的 description + descriptionMax）**應傳陣列**：
+   * join 後的單一字串無法分辨「同一個 [xxx] 在兩個版本各出現一次」與「在同一版本出現兩次」，
+   * 而這兩者對同名消歧的判定完全相反（PLAN-039 B-2）。傳字串 = 單段，既有行為不變。
+   * 陣列元素可為 undefined（選填欄位如 descriptionMax 直接傳即可），空值會被略過。
+   */
+  text: string | (string | undefined)[]
   value?: DescriptionRefs
   onChange: (refs: DescriptionRefs) => void
   /**
-   * PLAN-022 Phase C：把編輯期語法糖 $n/%n 編譯成正式 token 寫回正文。
-   * RefPicker 依（可能由多欄 join 的）text 算出引用順序，傳一個 transform 給消費端，
-   * 由消費端對自己擁有的各欄位（如 description / descriptionMax）分別套用 —— 邏輯集中、消費端只接一行。
-   * 未傳則不顯示「代入數值」按鈕（既有面板零回歸）。
+   * **正文改寫管道**：RefPicker 算出一個 transform，交給消費端對自己擁有的各正文欄位
+   * （如 description / descriptionMax）分別套用 —— 邏輯集中、消費端只接一行。
+   * 未傳則相關按鈕不顯示（既有面板零回歸）。
+   *
+   * 目前有兩個用途，共用同一條管道：
+   *   ① PLAN-022 Phase C：把編輯期語法糖 $n/%n 編譯成正式 token
+   *   ② PLAN-039 B-3：把同名 [xxx] 的指定一處改寫為帶消歧後綴的形式
+   * 名稱沿用 compile 是歷史因素；它描述的是機制（交出 transform）而非特定用途。
    */
   onCompileText?: (transform: (s: string) => string) => void
 }) {
-  const tokens = useMemo(() => extractTokens(text || ''), [text])
+  // 陣列 → 各段獨立（供同名計數）；字串 → 單段。joined 供 tokenize / 語法糖 / 預覽沿用既有邏輯。
+  const parts  = useMemo(
+    () => (Array.isArray(text) ? text.filter((s): s is string => !!s) : [text || '']),
+    [text],
+  )
+  const joined = useMemo(() => parts.join('\n'), [parts])
+
+  const tokens = useMemo(() => extractTokens(joined), [joined])
   const refs = value ?? {}
 
   function assign(token: string, ref: EntityRef) {
@@ -241,13 +281,21 @@ export function RefPicker({
 
   // ── PLAN-022 Phase C：數值語法糖代入 ───────────────────────────────────────────
   // orderedRefs：已指派 [xxx] 依首次出現序的 refId 清單，作為 $n/%n 的 n 對照（對齊 numbered 顯示）。
-  const orderedRefs   = useMemo(() => orderRefsByFirstMention(text || '', value ?? {}), [text, value])
-  const leftoverSugar = useMemo(() => detectLeftoverSugar(text || ''), [text])
+  const orderedRefs   = useMemo(() => orderRefsByFirstMention(joined, value ?? {}), [joined, value])
+  const leftoverSugar = useMemo(() => detectLeftoverSugar(joined), [joined])
   const numberedRefs  = useMemo(
     () => tokens.filter(t => (value ?? {})[t]).map((t, i) => ({ n: i + 1, token: t })),
     [tokens, value],
   )
   const [previewing, setPreviewing] = useState(false)
+
+  // ── PLAN-039 B-2/B-3：同名引用消歧 ────────────────────────────────────────────
+  const duplicates = useMemo(() => findDuplicateTokens(parts), [parts])
+  // 各 token 的消歧鍵輸入。預設 skill —— 同名的兩種語意最常是「指令/技能」對「狀態/BUFF」，
+  // 而慣例是讓裸 key 留給 BUFF、帶後綴的那個標成 skill。
+  const [disambigInput, setDisambigInput] = useState<Record<string, string>>({})
+  // 拆分會改變 orderRefsByFirstMention 的編號基準 → 未代入的 $n 會指到錯誤的引用（決策五）
+  const splitBlocked = leftoverSugar.length > 0
 
   return (
     <div className="space-y-2.5">
@@ -261,6 +309,69 @@ export function RefPicker({
           </span>
         )}
       </div>
+
+      {/* PLAN-039 B-2：同名重複偵測。是提示不是錯誤——同名同義是絕大多數情況的正確狀態 */}
+      {duplicates.length > 0 && (
+        <div className="rounded-lg border border-accent-orange/30 bg-accent-orange/5 px-3 py-2.5 space-y-2">
+          <div className="text-[12px] font-semibold text-accent-orange">🔀 同名引用標記</div>
+          <div className="text-[11px] text-text-dim leading-relaxed">
+            下列標記在同一段正文出現多次，目前<strong className="text-text-secondary">全部指向同一個實體</strong>。
+            各處語意相同時（多數情況）無需處理；語意不同時——例如一處是「可使用指令<code>[駐陣]</code>」＝技能、
+            另一處是「處於<code>[駐陣]</code>狀態」＝BUFF——替其中一處加上消歧鍵即可各自指派，
+            <strong className="text-text-secondary">前台顯示的文字不受影響</strong>。
+            <div className="mt-1">
+              分隔符固定為 <code className="text-accent-orange">|</code>；
+              <code>#</code> 會被當成數值語法糖而改壞正文，不可使用。
+            </div>
+          </div>
+          {duplicates.map(({ token, count }) => {
+            const dis = disambigInput[token] ?? 'skill'
+            const tooMany = count > 4                 // 按鈕會排不下；此時請直接編輯正文
+            return (
+              <div key={token} className="flex items-center gap-2 flex-wrap text-[11px] pt-1.5 border-t border-accent-orange/15">
+                <span className="font-semibold text-accent-purple">[{token}]</span>
+                <span className="text-text-dim">出現 {count} 次</span>
+                {onCompileText && !tooMany && (
+                  <>
+                    <input
+                      value={dis}
+                      onChange={(e) => setDisambigInput((prev) => ({
+                        // 方括號會破壞 token 邊界、'|' 會讓 key 出現第二個分隔符 → 直接濾掉
+                        ...prev, [token]: e.target.value.replace(/[[\]|]/g, ''),
+                      }))}
+                      placeholder="skill"
+                      className="input-field text-[11px] w-20 py-0.5"
+                      title="消歧鍵：會成為 key 的後綴（駐陣|skill），前台顯示時剝除"
+                    />
+                    {Array.from({ length: count }, (_, k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        disabled={splitBlocked || !dis}
+                        onClick={() => onCompileText((s) => rewriteOccurrence(s, token, k + 1, dis))}
+                        className="px-2 py-0.5 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange hover:bg-accent-orange/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                        title={`把第 ${k + 1} 處 [${token}] 改寫為 [${token}|${dis || 'skill'}]`}
+                      >標記第 {k + 1} 處</button>
+                    ))}
+                  </>
+                )}
+                {onCompileText && tooMany && (
+                  <span className="text-text-dim">出現次數過多，請直接在上方正文手動加上 <code>|{dis}</code> 後綴</span>
+                )}
+                {onCompileText && splitBlocked && !tooMany && (
+                  <span className="text-accent-yellow">← 請先代入下方的數值語法糖（拆分會改變 $n 的編號基準）</span>
+                )}
+                {onCompileText && parts.length > 1 && !tooMany && (
+                  <span className="text-text-dim w-full">
+                    此面板有 {parts.length} 段正文（如初始 / 滿星），改寫會同時套用到<strong className="text-text-secondary">各段的第 N 處</strong>；
+                    若兩段句子結構不同，請改為手動編輯。
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {tokens.length === 0 ? (
         <p className="text-xs text-text-dim py-2 text-center">
@@ -312,7 +423,7 @@ export function RefPicker({
               ) : (
                 <div className="space-y-1.5">
                   <div className="text-[11px] text-text-dim">代入後（<code>&lt;refId.attr&gt;</code> token，存檔後前台顯示屬性真值）：</div>
-                  <pre className="text-[11px] whitespace-pre-wrap break-all rounded bg-bg-dark border border-border/40 px-2.5 py-2 text-text-secondary">{compileSugar(text || '', orderedRefs)}</pre>
+                  <pre className="text-[11px] whitespace-pre-wrap break-all rounded bg-bg-dark border border-border/40 px-2.5 py-2 text-text-secondary">{compileSugar(joined, orderedRefs)}</pre>
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -334,7 +445,7 @@ export function RefPicker({
           <div className="mt-2 rounded-lg bg-bg-dark/60 border border-border/40 px-3 py-2">
             <div className="text-[11px] text-text-dim mb-1 uppercase tracking-wider">前台預覽（已解析數值引用）</div>
             <p className="text-xs text-text-secondary leading-relaxed whitespace-pre-wrap">
-              <RefText text={text} refs={refs} />
+              <RefText text={joined} refs={refs} />
             </p>
           </div>
         </>

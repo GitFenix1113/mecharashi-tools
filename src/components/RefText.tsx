@@ -7,6 +7,7 @@ import { useNumRefLookup } from '../hooks/useNumRefLookup'
 import { parseNumRefs, resolveNumValue, NUM_ATTRS, hasNumRef } from '../utils/numRefs'
 import { useNdOverrides } from '../contexts/NdOverrideContext'
 import { buildNumLevelOf, type NumLevelOf } from '../utils/ndOverrides'
+import { displayKeyword } from '../utils/refKey'
 
 type NumRefLookup = (refId: string) => GameBuff | undefined
 
@@ -83,7 +84,11 @@ export function RefText({ text, refs }: { text?: string; refs?: DescriptionRefs 
         if (m) {
           const entity = refs?.[m[1]]
           if (entity) return <RefChip key={i} inner={m[1]} entity={entity} />
-          return <span key={i}>{part}</span>
+          // 未指派 → 原樣顯示（優雅降級）。PLAN-039：但帶消歧後綴時必須剝掉，
+          // 否則「填了後綴卻忘了指派」會把 [駐陣|skill] 這種內部語法漏到前台。
+          // 無後綴時 disp === m[1]，輸出與本行存在前完全相同。
+          const disp = displayKeyword(m[1])
+          return <span key={i}>{disp === m[1] ? part : `[${disp}]`}</span>
         }
         return <React.Fragment key={i}>{renderNumRefSegments(part, lookup, levelOf, i)}</React.Fragment>
       })}

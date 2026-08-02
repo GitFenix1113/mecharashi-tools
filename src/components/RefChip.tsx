@@ -3,6 +3,7 @@ import type { EntityRef, RefType } from '../types'
 import { useReference } from '../contexts/ReferenceContext'
 import { useNdOverrides } from '../contexts/NdOverrideContext'
 import { effectiveLevel } from '../utils/ndOverrides'
+import { displayKeyword } from '../utils/refKey'
 
 /**
  * PLAN-019 Layer 1 — 引用 token（可 hover 預覽、click 釘選）。
@@ -36,7 +37,10 @@ export function RefChip({ inner, entity }: { inner: string; entity: EntityRef })
   // PLAN-034：神經驅動算力可把 buff 引用「抬升」到更高階。只有**確實抬升**才換字，
   // 未抬升時下面整段與今日 byte-identical（見 effectiveLevel 的註解）。
   const eff = effectiveLevel(entity, nd)
-  const label = eff.lifted && eff.name ? eff.name : (entity.label ?? inner)
+  // PLAN-039：inner 可能帶同名消歧後綴（'駐陣|skill'），顯示前一律剝掉。
+  // 走 fallback 而非要求維護者填 label，是因為「忘了填」的後果是把內部語法漏到前台，
+  // 而 label 的本意是「原文用別名時覆寫顯示文字」——不該被消歧這件事佔用。
+  const label = eff.lifted && eff.name ? eff.name : (entity.label ?? displayKeyword(inner))
   // 送進浮窗的 ref 必須把抬升後的階**烘進去**：EntityRefView 掛在 App.tsx 的 ReferenceProvider
   // 底下、是 <Routes> 的兄弟，機師頁內部包的 provider 永遠不可能成為它的祖先（地雷一）。
   const outRef = eff.lifted ? { ...entity, level: eff.level } : entity

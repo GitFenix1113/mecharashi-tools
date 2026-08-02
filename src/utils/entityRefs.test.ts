@@ -190,6 +190,34 @@ test('D6: 雙層巢狀 ndVariants 的 descriptionRefs 有被掃到', () => {
   assert.equal(r.hits[0].inheritedFrom, 'talents.0')
 })
 
+test('D7: 同名消歧 key —— 兩個 [駐陣] 各自獨立命中，刪一個不波及另一個（PLAN-039）', () => {
+  // 正文：「獲得[駐陣]（BUFF），施放[駐陣|skill]（技能）」
+  const pilot = asPilot({
+    name: '測試',
+    talents: [{
+      name: 'A',
+      description: '獲得[駐陣]，施放[駐陣|skill]',
+      descriptionRefs: {
+        駐陣: { refType: 'buff', refId: 'buff_駐陣' },
+        '駐陣|skill': { refType: 'skill', refId: 'skill_駐陣' },
+      },
+    }],
+  })
+  const data = scanData({ pilots: [{ ...pilot, id: 'p1' } as never] })
+
+  // 刪 BUFF → 只中裸 key，帶後綴那筆完好
+  const byBuff = findReferences('buff', 'buff_駐陣', data)
+  assert.equal(byBuff.hits.length, 1)
+  assert.deepEqual(byBuff.hits[0].segments, ['talents', 0, 'descriptionRefs', '駐陣'])
+  assert.equal(byBuff.hits[0].op, 'mapKeyDelete')
+
+  // 刪技能 → 只中帶後綴的 key；segments 末段必須是完整 key（含 '|'），否則會刪錯 map 欄位
+  const bySkill = findReferences('pilotSkill', 'skill_駐陣', data)
+  assert.equal(bySkill.hits.length, 1)
+  assert.deepEqual(bySkill.hits[0].segments, ['talents', 0, 'descriptionRefs', '駐陣|skill'])
+  assert.equal(bySkill.hits[0].matched, '駐陣|skill')
+})
+
 // ─── E. numTokenText（文案內嵌 <id.lvN.attr>）──────────────────────────────
 
 test('E1: 單欄位多 token → 1 筆 hit（非 2），value 為整段原文', () => {

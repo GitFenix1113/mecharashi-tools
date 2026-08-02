@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-039 引用標記同名消歧 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-039 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-039</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    引用標記同名消歧<span style="-webkit-text-fill-color:var(--text-secondary);">Disambiguation · descriptionRefs · 正文內穩定識別子</span>
+  </h1>
+  <p class="hero-sub">同一段正文出現兩個 [駐陣]，一個是 BUFF、一個是技能。以正文內的消歧後綴取代序數識別，前台顯示完全不變、零資料遷移。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-039</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-02</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">utils/refKey（新）· RefChip · RefText · DiffHighlight · RefPicker</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value orange">開發中（Phase A 完成）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-019（引用層）· PLAN-022（數值引用層）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>一句話：</strong>
+    <code>descriptionRefs</code> 的 key 是「括號內文字」，因此同一段正文裡兩個 <code>[駐陣]</code> 必然指向同一個實體。
+    本計畫讓 key 可以帶一段<strong>語意化消歧後綴</strong>（<code>[駐陣|skill]</code>），
+    並由既有的 <code>EntityRef.label</code> 顯示機制把前台文字還原成 <code>[駐陣]</code>。
+    <strong>不改資料模型、不動舊資料、不引入位置型識別子。</strong>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>同名 [xxx] 無法指向不同實體</strong><br>
+    新角色的天賦正文（官方原文）：
+    <div class="code-block" style="margin:10px 0;">同時裝備大盾和噴火器時,可使用指令<span class="nm">[駐陣]</span>;行動開始時,若處於<span class="nm">[駐陣]</span>狀態,
+使用噴火器對攻擊範圍內所有目標,造成0.5倍傷害;使用噴火器攻擊時,每命中1個目標,獲得1層<span class="nm">[戎火]</span>。</div>
+    <strong>第一個</strong> <code>[駐陣]</code>（「可使用<u>指令</u>」）是<strong>技能</strong>；
+    <strong>第二個</strong>（「若處於…<u>狀態</u>」）是 <strong>BUFF</strong>。
+    這是天賦賦予的角色獨有技能，並非可學習技能——但 <code>pilotSkills</code> 早已是全站技能字典
+    （84% 的引用目標無任何機師持有），故技能側直接建一筆文件即可，不需掛給機師。<br><br>
+    問題在於 <code>DescriptionRefs = Record&lt;括號內文字, EntityRef&gt;</code>（<code>src/types/common.ts</code>），
+    <code>RefText</code> 以 <code>refs[m[1]]</code> 查表 —— 兩個 <code>[駐陣]</code> 讀到的必定是同一筆 <code>EntityRef</code>。
+    管理者在後台 <code>RefPicker</code> 也只會看到<strong>一列</strong>可指派（<code>extractTokens</code> 以 <code>Set</code> 去重）。
+  </div>
+
+  <div class="info-block">
+    <strong>規模界定：這是第一個案例。</strong>
+    既有全站資料中尚未出現「同名不同義」的 <code>[xxx]</code>；舊資料的所有同名重複都是<strong>同名同義</strong>，
+    一對一命中即為正確行為。這個事實直接決定了方案選型 ——
+    值得為單一新案例付出的成本，遠低於為它改造全站持久層。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="info-block">
+    <strong>決策零：這是一個邏輯上的二選一，沒有第三條路。</strong><br>
+    要區分同一段正文裡的兩個 <code>[駐陣]</code>，可用的資訊只有兩種：<br>
+    ① <strong>不動正文</strong> → 唯一的區分依據是「第幾次出現」（序數）；<br>
+    ② <strong>動正文</strong> → 把消歧資訊寫進括號內。<br>
+    任何「正文保持純淨又能穩定區分」的設計都不存在。故決策的實質是：
+    <strong>要犧牲識別子穩定性，還是要犧牲正文與官方原文的字面一致？</strong>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策一：採方案 ②（正文內消歧後綴），格式 <code>[顯示文字|消歧鍵]</code></strong><br>
+    以實際案例為例，正文改寫為「可使用指令<code>[駐陣|skill]</code>…若處於<code>[駐陣]</code>狀態」——
+    <strong>裸 key 留給 BUFF、帶後綴的標成技能</strong>（消歧鍵定為 <code>skill</code>），
+    <code>descriptionRefs</code> 因此自然有兩個相異 key。<br><br>
+    <strong>為什麼不選序數（方案 ①）</strong> —— 本專案已對序數識別子明確表過態，且不只一次：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>numRefs.ts</code> 開頭：「語法糖 <code>$n</code> <strong>永不落地</strong>，
+          n = 描述中第 n 個有引用的 <code>[xxx]</code>，僅在編輯當下成立…
+          <strong>『編號對齊』的脆弱性被限制在編輯期</strong>」；</li>
+      <li><code>entityRefs.ts</code> 地雷 c：「索引式路徑（<code>talents.2.buffIds</code>）
+          <strong>不是穩定識別子</strong>——還原時陣列可能已被重排」，故每個站點盡量帶 <code>anchor</code>。</li>
+    </ul>
+    採序數等於把一個被反覆拒絕的東西寫進<strong>持久層</strong>：正文中間插一句話、調換語序，
+    所有引用即靜默錯位——沒有錯誤訊息，只有指錯的浮窗。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策二：分隔符必須是 <code>|</code>，<u>絕不能用 <code>#</code></u>（地雷）</strong><br>
+    <code>#</code> 是 <code>NUM_ATTRS.maxTriggers</code> 的語法糖 sigil。若寫成 <code>[駐陣#2]</code>：
+    <div class="code-block">
+<span class="cm">// detectLeftoverSugar 的正則會把 #2 認成「未代入的語法糖」</span>
+<span class="kw">const</span> re = <span class="kw">new</span> <span class="ty">RegExp</span>(<span class="st">'[' + '$%#' + ']\\d+'</span>, <span class="st">'g'</span>)  <span class="cm">// ← 命中 "#2"</span>
+
+<span class="cm">// 接著 compileSugar 會把它替換掉，正文當場被改壞：</span>
+<span class="st">"獲得[駐陣#2]"</span>  →  <span class="st">"獲得[駐陣&lt;buff_XXX.maxTriggers&gt;]"</span>
+    </div>
+    <code>|</code> 與現有三套語法（<code>[xxx]</code> 引用、<code>&lt;refId.attr&gt;</code> 數值 token、
+    <code>$n/%n/#n</code> 語法糖）皆無交集，且在中文遊戲文案中不會自然出現。<br>
+    附帶好處：<code>|</code> 後接的是<strong>語意</strong>（<code>skill</code> / <code>buff</code>）而非序號，
+    正文改寫、語序調換都不會使它失效。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：前台顯示靠既有 <code>label</code> 機制 —— 這條路幾乎不用寫程式</strong><br>
+    <code>RefChip.tsx:39</code> 早就是 <code>entity.label ?? inner</code>。
+    整條引用鏈逐層檢查後，加了後綴的 key 天然成立：
+    <table class="impact-table">
+      <thead>
+        <tr><th style="width:34%">環節</th><th style="width:44%">加了 <code>|skill</code> 後綴的行為</th><th>需改動</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>RefText</code> 的 split 正則 <code>\[[^\]]+\]</code></td>
+          <td><strong>命中</strong>路徑：<code>[駐陣|skill]</code> 正常切出、<code>refs</code> 正常命中 → 零改動。<br>
+              <strong>未命中</strong>路徑：原「原樣顯示 <code>[xxx]</code>」的優雅降級會把整串內部語法印出來
+              <span class="badge-med">A-3 實測發現</span></td>
+          <td><span class="badge-low">3 行</span></td>
+        </tr>
+        <tr>
+          <td><code>RefChip</code> 顯示</td>
+          <td><code>label ?? inner</code>；補一層剝後綴 fallback 後恆顯示 <code>[駐陣]</code></td>
+          <td><span class="badge-low">1 行</span></td>
+        </tr>
+        <tr>
+          <td><code>RefPicker.extractTokens</code></td>
+          <td>靠字串去重 → 自動變成兩列獨立指派</td>
+          <td><span class="badge-good">零</span></td>
+        </tr>
+        <tr>
+          <td><code>orderRefsByFirstMention</code> / <code>compileSugar</code></td>
+          <td>兩個獨立編號，<code>$1</code> / <code>$2</code> 各自對到正確實體</td>
+          <td><span class="badge-good">零</span></td>
+        </tr>
+        <tr>
+          <td><code>findReferences</code> 的 <code>descriptionRefs</code> 站點</td>
+          <td>key 仍是唯一字串，<code>mapKeyDelete</code> 照常；地雷 b 早已聲明
+              「key 是使用者輸入的中文，理論上可含 <code>.</code>，故 <code>segments</code> 陣列才是權威路徑」，
+              測試中已有 <code>refs['凝勢.強化']</code> 這個含特殊字元的既有案例</td>
+          <td><span class="badge-good">零</span></td>
+        </tr>
+        <tr>
+          <td>級聯刪除 / 還原 / 變更歷史快照</td>
+          <td>全部沿用 PLAN-030 既有機制，<strong>免費繼承</strong></td>
+          <td><span class="badge-good">零</span></td>
+        </tr>
+        <tr>
+          <td><code>DiffHighlight</code> 的 <code>[ ... ]</code> 群組偵測</td>
+          <td><strong>命中</strong>路徑：<code>|</code> 走 <code>[^\w\d一-鿿\s]</code> 分支，
+              <code>inner</code> 拼回仍是 <code>駐陣|skill</code> → 零改動。<br>
+              <strong>未命中</strong>路徑：逐 token 輸出會讓 <code>|</code> 與 <code>skill</code> 各自漏出
+              <span class="badge-med">A-3 實測發現</span></td>
+          <td><span class="badge-low">6 行</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:14px;padding:12px 16px;background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.2);border-radius:8px;">
+      <strong style="color:var(--accent-yellow);">A-3 實測修訂（2026-08-02）：</strong>
+      上表原本把 <code>RefText</code> 與 <code>DiffHighlight</code> 都列為零改動，
+      實作時發現漏看了<strong>未命中的降級路徑</strong>——「填了後綴卻還沒指派」時，
+      兩者原本的「原樣顯示 <code>[xxx]</code>」會把 <code>[駐陣|skill]</code> 這種內部語法印給使用者看。
+      兩處均已補上剝後綴的降級，且都以 <code>disp !== inner</code> 為條件
+      （無後綴時分支不觸發），<strong>舊資料的渲染輸出 byte-identical</strong>。
+      兩處必須改成一致，否則同一段天賦正文會隨「差異高亮：開／關」顯示出不同的字。
+    </div>
+    <strong>刻意不自動預填 <code>label</code>：</strong>剝後綴的 fallback 已是安全網，
+    再自動塞一份 <code>label: '駐陣'</code> 只會在 Firestore 存冗餘欄位，
+    並模糊 <code>label</code> 的原本語意（「原文用別名時覆寫顯示文字」）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：零資料遷移 —— 舊資料的「同上」是預設行為</strong><br>
+    初步構想曾提到「所有引用都獨立、相同者勾『同上』，現有資料全部處理成同上」。
+    在本方案下這件事<strong>不需要做</strong>：不加後綴 = 沿用同一筆 <code>EntityRef</code> = 就是「同上」。
+    只有真正需要區分時才付出「正文多幾個字」的代價，<strong>成本只落在有歧義的那一處</strong>。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策五：與「一鍵拆分」相關的邊界（B-3）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>語法糖必須先代入。</strong>拆分會改變 <code>orderRefsByFirstMention</code> 的編號，
+          正文中尚未代入的 <code>$n</code> / <code>%n</code> 會指到錯誤的引用。
+          故偵測到 <code>detectLeftoverSugar</code> 非空時，拆分按鈕停用並提示「請先代入數值」。
+          <span class="badge-good">已實作</span></li>
+      <li style="opacity:0.55;text-decoration:line-through;"><strong>序數改寫在 3 次以上出現時做不到。</strong>
+          任何「改寫第 N 次以後」的機械規則在第 1、3 次同義而第 2 次不同義時都會出錯，
+          故只服務「出現 2 次」的情境。</li>
+    </ul>
+    <div style="margin-top:10px;padding:12px 16px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:8px;">
+      <strong style="color:var(--accent-green);">B-3 實作修訂（2026-08-02）：第二點作廢。</strong>
+      該限制的前提是「機械規則決定改寫哪一處」。實作採的 UI 是<strong>逐處各給一顆按鈕</strong>
+      （「標記第 1 處」「標記第 2 處」…），由維護者<u>明確指定</u>——序數不再是推測，而是選擇。
+      3 次以上照樣可用，只在 <strong>&gt;4 次</strong>時改提示手動編輯，理由純粹是按鈕排不下。<br>
+      實際案例正好印證這個修訂的必要：要帶後綴的是<strong>第一個</strong> <code>[駐陣]</code>（指令＝技能），
+      不是第二個。原設計「改寫第 2 次以後」在這個案例上根本用不了。
+    </div>
+  </div>
+
+  <div class="warning-block">
+    <strong>決策六（B-3 實作時發現）：多欄位面板必須傳「分段正文」，不能傳 join 後的字串</strong><br>
+    <code>RefPicker</code> 的 <code>text</code> prop 原本是單一字串，天賦面板傳的是
+    <code>[description, descriptionMax].join('\n')</code>。同名計數若直接數這個合併字串，
+    <strong>本計畫的實際案例會被報成「出現 4 次」</strong>（初始版 2 次 ＋ 滿星版 2 次）——
+    而 4 次會誤觸發按鈕上限，讓一鍵拆分在最需要它的地方不可用。<br><br>
+    根因是 join 後<strong>無法分辨「同一個 <code>[xxx]</code> 在兩個版本各出現一次」與
+    「在同一版本出現兩次」</strong>，而這兩者對同名消歧的判定完全相反。
+    故 <code>text</code> 改為 <code>string | (string | undefined)[]</code>：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>陣列 → 逐段計數<strong>取最大值</strong>（非合計）。兩段是同一段能力的平行版本，不是連續文字。</li>
+      <li>字串 → 視為單段，<strong>既有 8 個消費端行為完全不變</strong>。</li>
+    </ul>
+    只有天賦與 ndVariant（<code>PilotAdmin</code> ×2）需要改傳陣列。刻意<strong>不加第二個 prop</strong>——
+    <code>text</code> 與 <code>segments</code> 並存會製造兩個 source of truth，遲早不同步。
+  </div>
+
+  <div class="info-block">
+    <strong>爬蟲覆寫風險：已被既有機制涵蓋。</strong>
+    正文加後綴後最大的疑慮是「下次重抓被官網原文洗掉」。掃過 <code>scrape-pilots-v3.js</code> 後確認兩層保護都在：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>技能</strong>（第 587 行）：Firestore 的 <code>description</code> 與官網不同即視為
+          「管理者手動覆寫過」，直接保留；</li>
+      <li><strong>天賦</strong>（第 625 行）：<code>manual: true</code> 時保留
+          <code>description</code> / <code>descriptionMax</code>——這正是既有的正文去污染流程
+          （官方 API 天賦文本為滿晶片狀態），後台勾選框旁已有明確提示；</li>
+      <li><code>descriptionRefs</code>（第 622 行）：<strong>無條件保護</strong>，補丁永不覆寫。</li>
+    </ul>
+    <strong>唯一新增的操作紀律</strong>：在天賦正文加消歧後綴時，務必一併勾選 <code>manual</code>。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>新增 <code>src/utils/refKey.ts</code>：<code>splitRefKey</code> / <code>displayKeyword</code> /
+          <code>formatRefKey</code> + 單元測試</li>
+      <li><code>RefChip</code> 顯示層剝除消歧後綴（忘填 <code>label</code> 也不會漏到前台）</li>
+      <li><code>RefText</code> 與 <code>DiffHighlight</code> 的<strong>未命中降級</strong>一併剝後綴
+          （A-3 實測補入，見決策三修訂）</li>
+      <li><code>RefPicker</code>：token 列顯示原文 + 標註消歧鍵；偵測同名重複並提示</li>
+      <li>一鍵拆分輔助（選配，含決策五的兩道防護）</li>
+      <li>引用鏈全路徑回歸驗證（前台渲染 / 差異高亮 / 級聯刪除 / 還原 / 數值語法糖）</li>
+      <li>實際案例（<code>[駐陣]</code>）填值驗收 + <code>docs/02_技術文件/</code> 資料模型說明同步</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>改動 <code>DescriptionRefs</code> 型別</strong>（維持 <code>Record&lt;string, EntityRef&gt;</code>）</li>
+      <li><strong>任何既有資料的遷移</strong>——舊資料一律維持現狀（見決策四）</li>
+      <li><strong>序數 / 陣列型引用</strong>（見決策一，明確否決）</li>
+      <li>把消歧後綴自動同步進 <code>EntityRef.label</code>（見決策三）</li>
+      <li>爬蟲端對消歧後綴的特殊處理——既有 <code>manual</code> 與差異保留機制已足夠</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>順手修掉的既有缺口 <span class="badge-good">B-3 已完成</span></strong><br>
+    <code>WeaponAdmin</code> 的 <code>RefPicker</code> 原本只接 <code>skill.description</code>，
+    漏了同屬該技能的 <code>enhancedTalentDescription</code>（PLAN-022 遺留）——
+    後者的 <code>[xxx]</code> 無法在後台指派、語法糖也不會被代入，
+    但 <code>entityRefs.ts</code> 的 <code>WEAPONS.textUnits</code> 確實會掃它。<br>
+    原列為選配，實作時因 <code>text</code> prop 正好改成支援多段而一併補上（兩段同步套用 transform，
+    與 <code>PilotAdmin</code> 的天賦一致）。<strong>這是修正而非回歸</strong>：
+    武器技能面板的 token 列表會因此多出 <code>enhancedTalentDescription</code> 內的標記——
+    那些標記本來就該在這裡指派。
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-039 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html">
+      <div class="doc-tag">前置</div>
+      <h4>◆ PLAN-019 實體引用與模擬基礎</h4>
+      <p><code>EntityRef</code> / <code>descriptionRefs</code> 引用層總綱</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-022_數值引用層/計畫書.html">
+      <div class="doc-tag">前置</div>
+      <h4>◆ PLAN-022 數值引用層</h4>
+      <p><code>$n</code> 語法糖與 <code>&lt;refId.attr&gt;</code> token（<code>#</code> sigil 衝突的來源）</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-030_資料變更歷史/計畫書.html">
+      <div class="doc-tag">相依</div>
+      <h4>◆ PLAN-030 資料變更歷史</h4>
+      <p><code>mapKeyDelete</code> 級聯清除與還原機制（本計畫免費繼承）</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-039 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

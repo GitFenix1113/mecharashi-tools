@@ -127,11 +127,22 @@ function WeaponSkillItem({
           <Field label="技能描述 description">
             <textarea value={skill.description} onChange={(e) => onChange({ ...skill, description: e.target.value })} className="input-field min-h-[150px] resize-y" />
           </Field>
+          {/*
+            PLAN-039：enhancedTalentDescription 原本沒接進來（PLAN-022 遺留缺口）——
+            它的 [xxx] 無法在此指派、語法糖也不會被代入，但 entityRefs 的 WEAPONS textUnits
+            確實會掃它。兩段一併傳入並同步套用 transform，與 PilotAdmin 的天賦一致。
+          */}
           <RefPicker
-            text={skill.description}
+            text={[skill.description, skill.enhancedTalentDescription]}
             value={skill.descriptionRefs}
             onChange={(refs) => onChange({ ...skill, descriptionRefs: refs })}
-            onCompileText={(tf) => onChange({ ...skill, description: tf(skill.description) })}
+            onCompileText={(tf) => onChange({
+              ...skill,
+              description: tf(skill.description),
+              enhancedTalentDescription: skill.enhancedTalentDescription
+                ? tf(skill.enhancedTalentDescription)
+                : skill.enhancedTalentDescription,
+            })}
           />
           {skill.enhancesTalentName && (
             <Field label="強化後天賦描述 enhancedTalentDescription（遊戲原文，用於差異對比）">
