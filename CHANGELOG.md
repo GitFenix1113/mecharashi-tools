@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-07-26
+## [Unreleased] - 2026-08-02
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 引用標記同名消歧（PLAN-039 完成並歸檔，12/12） (`9095a26`)
 - 神驅算力 BUFF 階覆寫層（PLAN-034 Slice 1 + Slice 2 程式碼） (`7a9fde2`)
 - PLAN-037 背包圖鑑優化（預設特種 · 能力循前置鏈 · 包含武器） (`e80072a`)
 - PLAN-036 特種背包前置主背包關係（存 + 後台 + 篩選） (`35ed0af`)
