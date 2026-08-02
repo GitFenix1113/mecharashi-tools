@@ -210,6 +210,7 @@
 
 ### 🔧 維護
 
+- 後台編輯彈窗分頁精簡與長分頁雙欄化（PLAN-033 Phase C 完成，轉入觀察維護中） (`d84fb71`)
 - PLAN-029 Phase 5 路線 B — /api 掛進 mecharashi.wiki zone 並切同源 (`402d290`)
 - 移除 favicon 履歷記錄（實際並未故障） (`bb253b9`)
 - PLAN-029 修復本機與 preview 的公開資料來源 (`78a652b`)
