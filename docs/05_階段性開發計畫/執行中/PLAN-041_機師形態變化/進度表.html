@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-041 機師形態變化 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+.blocker-note {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 28px;
+}
+.blocker-note strong { color: var(--accent-red); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-041 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(234,179,8,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge yellow">◆ PLAN-041</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> · 機師形態變化</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-03</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label yellow">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">22</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">22</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度（N1 17 項 + N2 5 項）</span>
+      <span style="color:var(--accent-yellow);">0 / 22</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    海莉絲的四個形態第一次真正顯示在網站上——分頁 + 常駐特殊能力列 + 三層來源標示的形態卡。
+    順帶讓 4 筆已存在卻從未被渲染過的孤兒文件回到有人看得見的地方。
+  </div>
+
+  <div class="blocker-note">
+    <strong>⚠ 前置阻塞：</strong>
+    Phase C 的虛粒子形態要引用耀星／隕星／千星，這 3 把武器由 <strong>PLAN-040</strong> 建立。
+    PLAN-040 的 Phase C 未完成前，本計畫的 C-1 只能建三個戰鬥形態，虛粒子形態的 <code>weaponIds</code> 會是空的。
+    <strong>Phase A / B / D 的 RWD 與分頁修正不受阻塞，可先做。</strong>
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label yellow">Phase A</div>
+  <div class="section-title">型別與集合接線</div>
+  <div class="section-desc">建立 forms 集合的骨架。跟隨既有慣例，不發明新模式。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; MechForm 型別</div>
+      <div class="task-group-meta">src/types/form.ts（新檔）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">建立 form.ts + 加入 barrel</div>
+        <div class="task-desc">
+          <code>MechForm</code> + <code>FormRestrict</code> discriminated union（見計畫書決策二）。
+          <strong>「刻意不開的欄位」理由要寫死在型別註解裡</strong>（effects / skillsByWeaponKind / hasFixedArmament / loadout），
+          避免三個月後有人再問一次。<br>
+          <code>FormRestrict</code> 註解需載明「特殊／固定武裝不參與 <code>allow</code> 的計算」（承接 PLAN-040 決策九）。
+        </div>
+        <div class="task-file">src/types/form.ts · src/types/index.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 集合接線</div>
+      <div class="task-group-meta">GameDataContext · api/forms.ts · firestore.rules</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">CollectionKey + api 模組 + rules + Admin 註冊</div>
+        <div class="task-desc">
+          <code>api/forms.ts</code> 比照 <code>api/glossary.ts</code>（34 行）；<code>firestoreApi.ts</code> barrel 補一行 re-export；
+          <code>GameDataContext</code> 的 <code>CollectionKey</code> 與 switch 各補一處；
+          <code>firestore.rules</code> 加 <code>match /forms/{docId}</code>（比照 <code>glossaryTerms</code> 那 4 行）；
+          <code>useFirestore.ts</code> 加 <code>useForms()</code> hook。
+        </div>
+        <div class="task-file">src/lib/api/forms.ts · src/contexts/GameDataContext.tsx · firestore.rules</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; RefType 加 'form'</div>
+      <div class="task-group-meta">src/types/common.ts + 4 個窮舉消費端</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">引用層接上 forms</div>
+        <div class="task-desc">
+          <code>common.ts:4</code> 的 <code>RefType</code> union 加 <code>'form'</code>，並補齊四個窮舉消費端：
+          <code>RefPicker.tsx:37</code>、<code>EntityRefView.tsx:18/23/29</code>、<code>RefChip.tsx:17</code>。<br>
+          <span style="color:var(--text-dim);">這步<strong>忘不掉</strong>——那三個是 <code>Record&lt;RefType, string&gt;</code> 窮舉型別，不補會直接 <code>tsc -b</code> 失敗，而 pre-push hook 會跑 build。</span>
+        </div>
+        <div class="task-file">src/types/common.ts · src/components/admin/RefPicker.tsx · src/components/EntityRefView.tsx · src/components/RefChip.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label yellow">Phase B</div>
+  <div class="section-title">FormAdmin</div>
+  <div class="section-desc">形態是 100% 手動維護（官方 API 與 WIKI 都沒有），降低填寫摩擦是第一目標。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; FormAdmin 表單</div>
+      <div class="task-group-meta">src/pages/user/admin/FormAdmin.tsx（新）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">CRUD + 列表 + AdminPage 註冊</div>
+        <div class="task-desc">
+          比照既有 Admin 的結構（列表 + 編輯彈窗）。<code>pilotId</code> 走既有機師選擇器，
+          存檔後呼叫 <code>bumpDataVersion('forms')</code> + <code>patchCollectionItem</code> 就地同步。
+        </div>
+        <div class="task-file">src/pages/user/admin/FormAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">restrict union 的 kind 切換 UI</div>
+        <div class="task-desc">
+          選 <code>weaponType</code> → 顯示 <code>WeaponType</code> 多選；選 <code>fixedArmament</code> → 顯示 weaponIds / lockedSkillIds 的
+          <strong>RefPicker</strong>（不要讓人手打 id）。切換 kind 時清掉另一支的欄位，避免存進殘留資料。
+        </div>
+        <div class="task-file">src/pages/user/admin/FormAdmin.tsx · src/components/admin/RefPicker.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label yellow">Phase C</div>
+  <div class="section-title">資料遷移：pilotSkills → forms</div>
+  <div class="section-desc">四筆形態文件已存在且正文完整，本階段是搬家不是新建。搬完必須刪除舊文件，不留雙重真相源。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 建立 4 筆 forms</div>
+      <div class="task-group-meta">forms 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">從既有 pilotSkills 文件搬正文與 refs</div>
+        <div class="task-desc">
+          來源：<code>skill_先鋒型態</code> / <code>skill_突擊型態</code> / <code>skill_戰術型態</code> / <code>skill_虛粒子形態</code>
+          （<code>description</code> 與 <code>descriptionRefs</code> 皆已完整，直接搬）。<br>
+          新 id 用 <code>form_海莉絲_先鋒</code> 形式，<strong>name 統一用「形」態</strong>（舊 id 是「型」態，見計畫書決策六）。<br>
+          補上舊文件沒有的欄位：<code>order</code>（1-4）、<code>restrict</code>、<code>grantedBuffIds: ['BUFF_型態增益']</code>、
+          <code>isSignature</code>（僅虛粒子）、<code>entryNote</code>、<code>manual: true</code>。<br>
+          <strong>驗收是 4/4 全部填滿，不接受先開殼。</strong>
+        </div>
+        <div class="task-file">forms 集合 · FormAdmin</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status blocked">部分阻塞</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">虛粒子形態的 weaponIds（依賴 PLAN-040）</div>
+        <div class="task-desc">
+          <code>restrict: { kind: 'fixedArmament', weaponIds: [耀星, 隕星, 千星], lockedSkillIds: [skill_虛粒子刃, skill_虛粒子炮, skill_虛粒子矩陣] }</code>。<br>
+          <strong>三把武器由 PLAN-040 Phase C 建立</strong>，未完成前此欄留空。
+          <code>lockedSkillIds</code> 指<strong>基礎版</strong>（已存在於 pilotSkills），EX 版由 <code>skill_虛粒子程式</code> 正文表達，不重複編碼。
+        </div>
+        <div class="task-file">forms 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status blocked">阻塞中</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 遷移 12 條 inbound 引用</div>
+      <div class="task-group-meta">modules · pilotSkills · pilots</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">refType: 'skill' → 'form'，逐條改</div>
+        <div class="task-desc">
+          實測共 12 條指向那四筆形態文件：<br>
+          <code>mod_彌造者_fixed_1</code>（帕姆斯陣列）<strong>7 條</strong>（先鋒×2、突擊×2、戰術×2、虛粒子×2 — 各級描述重複引用）；
+          <code>skill_粒子爆發</code> 1 條、<code>skill_虛粒子程式</code> 1 條、<code>skill_嵐循環</code> 1 條、
+          <code>pilot_049_海莉絲</code> 天賦 1 條，皆指向虛粒子形態。<br>
+          <strong>驗收：改完後全庫 dangling 不高於動工前。</strong>
+        </div>
+        <div class="task-file">modules · pilotSkills · pilots 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 刪除舊形態文件</div>
+      <div class="task-group-meta">pilotSkills 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C-2 完成後才刪，且只刪這 4 筆</div>
+        <div class="task-desc">
+          刪 <code>skill_先鋒型態</code> / <code>skill_突擊型態</code> / <code>skill_戰術型態</code> / <code>skill_虛粒子形態</code>。
+          <strong>順序不可顛倒</strong>——先刪會製造 12 條 dangling。<br>
+          <span style="color:var(--text-dim);">不動 <code>skill_巡航型態</code> / <code>skill_機兵型態</code>（非調構師形態），只在本計畫備註記錄它們同樣有型/形不一致。</span>
+        </div>
+        <div class="task-file">pilotSkills 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label yellow">Phase D</div>
+  <div class="section-title">前台渲染面</div>
+  <div class="section-desc">先蓋渲染面，資料才會被持續填。D-1 / D-2 是純修繕，不依賴任何形態資料，可最先做。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 分頁列改具名陣列 + derived active</div>
+      <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">拆掉硬編碼分頁，修空白卡地雷</div>
+        <div class="task-desc">
+          現況：<code>:1208</code> 硬編碼 <code>(['天賦','技能','神經驅動'] as const)</code>、
+          <code>:1219-1221</code> 是三條 <code>tab === 'X' &&</code> 的計數鏈、
+          <code>:990</code> 的 <code>activeSkillTab</code> <strong>沒有 <code>[id]</code> reset</strong> 且頁面不 remount。<br>
+          改成具名陣列 <code>{ key, count }</code>（跟隨 <code>MechAdmin.tsx</code> 的 <code>MECH_EDIT_TABS</code> 慣例）＋
+          <strong>derived active</strong>：<code>tabs.find(t =&gt; t.key === tabKey) ?? tabs[0]</code>——永不落空，且免掉一個 <code>useEffect([id])</code>。<br>
+          <strong>render 分派維持 <code>key === 'X' && (...)</code></strong>，不要引入 render callback。
+        </div>
+        <div class="task-file">src/pages/pilots/PilotDetailPage.tsx:990,1207-1224</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 360px 分頁列 RWD</div>
+      <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx:1207</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">加 shrink-0 + whitespace-nowrap + overflow-x-auto</div>
+        <div class="task-desc">
+          <code>:1207</code> 的 <code>flex border-b border-border</code> 加 <code>overflow-x-auto</code>；
+          <code>:1212</code> 的 button 加 <code>shrink-0 whitespace-nowrap</code> 並把 <code>px-5</code> 改 <code>px-3 sm:px-5</code>。<br>
+          <strong>順序很重要</strong>：只加 <code>overflow-x-auto</code> 是 no-op，必須先有 <code>shrink-0 whitespace-nowrap</code> 才會製造出溢出。<br>
+          驗收用 360px 實拍，確認四個分頁不折行、底線不歪。
+        </div>
+        <div class="task-file">src/pages/pilots/PilotDetailPage.tsx:1207,1212</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 形態分頁內容</div>
+      <div class="task-group-meta">FormCard（新元件）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">形態卡：三層來源分段顯示</div>
+        <div class="task-desc">
+          <code>grid-cols-1 md:grid-cols-2</code>，<strong>一律 <code>forms.map()</code>，不寫死欄數</strong>（新調構師只有 2 個形態時自動變 2 張卡）。<br>
+          三段：<strong>形態固有</strong>（<code>Form.description</code>，逐字、走引用層）／<strong>形態增益</strong>（<code>grantedBuffIds</code>，標「ⓘ天賦滿星」）／
+          <strong>模組加成</strong>（帕姆斯陣列，標來源與等級）。<strong>不聚合成單一數值。</strong><br>
+          <code>restrict.kind === 'weaponType'</code> → 顯示「只能裝備 [格鬥][射擊]」+ 符合的武器數（可點去武器圖鑑）；
+          <code>'fixedArmament'</code> → 顯示固定武裝 chip。<br>
+          <code>isSignature</code> 加金/紫框 + ★ 與三個戰鬥形態視覺分層。
+        </div>
+        <div class="task-file">src/pages/pilots/ · src/components/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">兩個特例標註</div>
+        <div class="task-desc">
+          ① 突擊形態的「子彈數+1」（固有）與帕姆斯陣列的「[突擊形態]時突擊武器子彈數+1」<strong>兩條都列，並明標「可疊加」</strong>（已實測確認）。<br>
+          ② 虛粒子形態卡標註<strong>「同時獲得三份形態增益」</strong>——此規則只藏在 <code>skill_粒子爆發</code> 正文（「獲得所有形態增益效果」），
+          而 <code>BUFF_型態增益</code> 只寫了三個戰鬥形態，不標的話玩家在虛粒子卡上找不到增益。
+        </div>
+        <div class="task-file">src/components/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 常駐「特殊能力」badge 列</div>
+      <div class="task-group-meta">PilotDetailPage:1226 同層</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">跨分頁常駐，點擊跳形態分頁</div>
+        <div class="task-desc">
+          位置跟隨 <code>NdPowerBar</code> 的慣例——渲染在分頁 switch <strong>之外</strong>（<code>:1226</code> 同層），三個分頁都看得到。
+          官方美術風格：藍色機械感長條。<br>
+          <strong>gate 用 <code>forms.length &gt; 0</code>，禁止用 <code>pilot.class === '調構師'</code></strong>（見計畫書決策八，實測 2/82 反例）。
+          手機同樣可橫捲。
+        </div>
+        <div class="task-file">src/pages/pilots/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-5 &nbsp; 天賦正文縫回因果</div>
+      <div class="task-group-meta">pilots 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">「多種形態」補 descriptionRefs</div>
+        <div class="task-desc">
+          海莉絲天賦「悖想先驅」正文開頭「駕駛的機甲擁有<strong>多種形態</strong>，擁有獨特的形態效果並可以獨立裝備武器背包」——
+          這四個字目前<strong>沒有 ref</strong>（該天賦其餘 5 個 token 都接好了：激發能／虛粒子形態／形態增益／啟動／粒子爆發）。<br>
+          補上指向形態的引用，讓玩家從天賦一眼走到形態分頁。
+        </div>
+        <div class="task-file">pilots 集合 · pilot_049_海莉絲</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label yellow">Phase E</div>
+  <div class="section-title">刪除清單：全站只留一套形態模型</div>
+  <div class="section-desc">驗收條件之一是「執行後全站只剩一套形態模型」。實測 0 筆資料使用，這是純程式碼刪除、零資料遷移。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 刪 mutexGroup / FormGroup 引擎</div>
+      <div class="task-group-meta">buff.ts · reachableBuffs · SimulatorPage · BuffAdmin</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">六處一起拆，不留半套</div>
+        <div class="task-desc">
+          實測<strong>全庫 0 筆 buff 有 <code>mutexGroup</code></strong>（PLAN-024 等級化後已無資料）→ 那段模擬器 UI 永遠算出 0 組、從未渲染過。<br>
+          刪除範圍：<code>buff.ts:114</code> 的 <code>mutexGroup</code> 欄位；<code>reachableBuffs.ts</code> 的 <code>FormGroup</code> 與相關解析；
+          <code>SimulatorPage.tsx</code> 的 <code>:55</code> state、<code>:274-278</code> setter、<code>:834</code> prop、<code>:868</code>、<code>:880-893</code> UI；
+          <code>BuffAdmin.tsx</code> 的 <code>:40-110</code> MutexGroupField、<code>:470</code> 欄位、<code>:685</code> 列表標記，
+          並修 <code>:527</code> 那句仍在講「取代 mutexGroup」的說明文字；<code>reachableBuffs.test.ts</code> 的相關單測。<br>
+          <strong>順帶拆掉 BuffAdmin 的誘餌</strong>：<code>:17</code> 的「狀態 / 形態 state」label 與兩處 placeholder「如：虛粒子形態」→
+          改成不再暗示「形態建在這裡」。
+        </div>
+        <div class="task-file">src/types/buff.ts · src/utils/reachableBuffs.ts · src/pages/simulator/SimulatorPage.tsx · src/pages/user/admin/BuffAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 刪 SkillArea</div>
+      <div class="task-group-meta">src/types/pilot.ts:53-59</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">0/710、無 UI、無消費端</div>
+        <div class="task-desc">
+          <code>SkillArea</code>（形狀描述，「PLAN-019 模擬層預留，暫不填」）實測 <strong>0/710</strong>，
+          無編輯 UI、無渲染端。留著就是第二套詞彙的種子。<br>
+          <span style="color:var(--text-dim);"><strong>對照：<code>SkillVariant</code> 不刪</strong>——它同樣 0/710，但 Phase G 就要開始填它，且它的註解逐字為本次問題而生。</span>
+        </div>
+        <div class="task-file">src/types/pilot.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label yellow">Phase F</div>
+  <div class="section-title">N1 收尾</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 文件同步</div>
+      <div class="task-group-meta">docs/02_技術文件/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 forms 資料模型頁 + 更新既有頁</div>
+        <div class="task-desc">
+          新增 <code>forms</code> 集合的資料庫設計文件；更新 <code>buffs.html</code>（移除 mutexGroup）、
+          <code>pilotSkills</code> 相關頁（移除 SkillArea）、引用層文件（RefType 加 'form'）。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/ · 04_Firebase/資料庫設計文件/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; bump 版本 + 網站履歷</div>
+      <div class="task-group-meta">meta/gameData · siteChangelog</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">四個集合 bump + 使用者視角摘要</div>
+        <div class="task-desc">
+          bump：forms（新）/ pilotSkills / modules / pilots。<br>
+          履歷例：「機師詳情頁新增形態分頁（調構師）」。
+        </div>
+        <div class="task-file">bumpDataVersion · src/data/siteChangelog/2026-08.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase G -->
+<section class="section">
+  <div class="section-label yellow">Phase G（N2）</div>
+  <div class="section-title">形態 × 武器 子技能矩陣</div>
+  <div class="section-desc">
+    可延後、不阻塞 N1 出貨。這是調構師機制上最有趣的部分：42 支具名子技能構成稀疏的「形態 × 武器種類 → 技能」矩陣，
+    今天完全只存在於兩段散文（<code>SKILL_聚類映射</code> 14 支、<code>skill_萬序擬合</code> 28 支）。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-1 &nbsp; 前置：去重 5 組同名文件</div>
+      <div class="task-group-meta">pilotSkills 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">只去重大小寫前綴那 5 組</div>
+        <div class="task-desc">
+          <strong>要去重（<code>SKILL_</code> vs <code>skill_</code> 前綴殘留，數值已開始漂移）</strong>：
+          星墜閃、精確打擊、跳幫散射、重擊、雙刃鋸。<br>
+          <strong style="color:var(--accent-red);">不可去重</strong>：暗箭（<code>skill_暗箭</code> / <code>skill_暗箭_pilot_064_貝拉</code>）、
+          火力支點（/<code>_pilot_047_鄭樂萱</code>）、誅盡（/<code>_pilot_048_奧德莉</code>）——
+          這三組是 <strong>PLAN-039 引用標記同名消歧刻意產生的文件</strong>，是不同機師的同名技能，合併會毀掉消歧。<br>
+          <span style="color:var(--text-dim);">不先去重就填矩陣的話，矩陣會蓋在兩份互相矛盾的數值上（如星墜閃 1.3 倍 vs 1.2 倍）。</span>
+        </div>
+        <div class="task-file">pilotSkills 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-2 &nbsp; 結構化 SkillVariant</div>
+      <div class="task-group-meta">src/types/pilot.ts:43-51</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">condition: string → formId + weaponReq</div>
+        <div class="task-desc">
+          該型別的註解逐字為本次問題而生（「萬序擬合等：依形態/武器決定發動哪個」，<code>condition</code> 範例就是「先鋒形態」），卻 0/710 死著。<br>
+          <code>- condition: string</code> → <code>+ formId?: string</code> ＋ <code>+ weaponReq?: WeaponRequirement</code>。
+          <strong>複用 <code>buff.ts</code> 既有的 <code>WeaponRequirement</code></strong>——它的 <code>logic: 'or'|'and'|'dual'</code>
+          是唯一接得住「使用打樁機<strong>或</strong>拳套」「使用<strong>兩把</strong>格鬥武器」的形狀，不要另造。
+        </div>
+        <div class="task-file">src/types/pilot.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-3 &nbsp; SkillAdmin 補 variants 編輯 UI</div>
+      <div class="task-group-meta">src/pages/user/admin/SkillAdmin.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">今天完全沒有 → 這正是它 0/710 的原因</div>
+        <div class="task-desc">
+          沒有編輯 UI 就沒有人填得了，這是 0/5 定律在型別層的翻版。<code>formId</code> 走 RefPicker（refType='form'）。
+        </div>
+        <div class="task-file">src/pages/user/admin/SkillAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-4 &nbsp; 填 42 筆矩陣</div>
+      <div class="task-group-meta">pilotSkills 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">兩條軸都半機讀，可半自動</div>
+        <div class="task-desc">
+          <code>SKILL_聚類映射</code> 14 支 + <code>skill_萬序擬合</code> 28 支。
+          兩份 description 的格式是「先鋒形態：[技能A][技能B]… ⏎ 突擊形態：…」——<strong>形態軸在標頭、技能名在方括號</strong>，可寫腳本半自動抽出。<br>
+          <strong>備註必須寫進 PLAN</strong>：矩陣是<strong>稀疏</strong>的——先鋒形態橫跨 9 個武器種類卻只有 6 支子技能，大盾／手盾共 24 把武器完全無變體。
+          <strong>這是官方事實，不是漏填。</strong>
+        </div>
+        <div class="task-file">pilotSkills 集合 · scripts/temp_scripts/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-5 &nbsp; 形態卡渲染技能變體</div>
+      <div class="task-group-meta">FormCard</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">「本形態的技能變體」區塊</div>
+        <div class="task-desc">
+          在形態卡下方渲染該形態對應的子技能（依 <code>SkillVariant.formId</code> 反查）。
+          <strong>這是調構師機制上最有趣的部分</strong>，也是把 42 筆資料從散文變成可查詢結構的唯一理由。
+        </div>
+        <div class="task-file">src/components/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-041 — <a href="../index.html" style="color:var(--accent-yellow);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

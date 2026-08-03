@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-040 固定武裝 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-040 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-040</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    固定武裝<span style="-webkit-text-fill-color:var(--text-secondary);"> · Fixed Armament · 資料衛生 · 死槽位清除</span>
+  </h1>
+  <p class="hero-sub">把「無法更換的武器」建成真正的武器文件，修好帕斯卡今天就壞著的引用，並清掉三個從未被填過的機甲武器槽。同時作為 PLAN-041 機師形態的前置。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-040</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-03</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">types/weapon · types/enums · types/mech · weapons 集合 · modules 資料 · WeaponsPage · MechDetailPage · MechAdmin</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value orange">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">無（本計畫是 PLAN-041 機師形態的前置）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>本計畫的定位</strong><br>
+    這是「機師形態變化」拆出來的第一塊。形態設計（<code>forms</code> 集合、條件式分頁）留給 <strong>PLAN-041</strong>；
+    本計畫只處理<strong>武器層</strong>——因為固定武裝這個概念在沒有形態的情況下也必須成立（帕斯卡沒有形態、沒有調構師、也沒有綁定機師，但它有固定武裝）。<br>
+    <strong>刻意先做的理由</strong>：PLAN-041 的 <code>Form.restrict.fixedArmament.weaponIds</code> 要指的耀星／隕星／千星，今天在 weapons 集合是 <strong>0/169</strong>，形態計畫第一天就會卡在「無物可引」。
+    而本計畫無爭議、無阻塞，且順手修好帕斯卡今天就壞著的懸空引用。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：帕斯卡的 [衝擊炮] 引用今天就是壞的</strong><br>
+    <code>mod_帕斯卡_fixed_2</code>（彙編矩陣）與 <code>mod_帕斯卡_fixed_3</code>（深採模型）的描述逐字為
+    「固定裝備<strong>[衝擊炮]</strong>，可使用[退敵激波]；同時攜帶兩門[衝擊炮]時，可使用[浪潮來襲]」，
+    但 <code>weapons</code> 集合 <strong>169 筆裡沒有衝擊炮</strong>。<br>
+    而懸空引用<strong>不會靜默降級成純文字</strong>：引用層只檢查 token 在不在 refs、不檢查 refId 解不解析得到 →
+    chip 照樣渲染成可點擊的彩色底線，點下去顯示「找不到對應資料」。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：彌造者的三把固定武裝完全不存在，擋住 PLAN-041</strong><br>
+    耀星／隕星／千星在 <code>weapons</code> 集合 <strong>0/169</strong>。
+    這三把是海莉絲［虛粒子形態］唯一能使用的武裝（官方形態卡逐字：「無法變更武裝和技能」），
+    <strong>PLAN-041 的 <code>fixedArmament</code> 分支沒有它們就建不出來</strong>。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：<code>Mech</code> 的三個武器槽是形狀錯誤的死欄位</strong><br>
+    <code>leftShoulderSlot</code> / <code>rightShoulderSlot</code> / <code>backSlot</code>（<code>src/types/mech.ts:56-62</code>）
+    實測 <strong>0/62 台機甲有填</strong>，唯一消費端是 <code>MechAdmin.tsx:552-554</code> 的 SlotEditor（前台從不讀）。<br>
+    而且它的形狀本身就錯：<strong>只有肩、背，沒有手持</strong> → 帕斯卡的衝擊炮（肩部）勉強塞得下，
+    但彌造者的耀星／隕星（<strong>手持</strong>）一個都表達不了。留著它等於留一個會誘導人填錯的空殼。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題四：<code>moduleFixedIds</code> 有 6 筆斷鏈，其中一筆讓模擬器讀不到帕姆斯陣列</strong><br>
+    <code>mech_052_彌造者</code> 的 <code>moduleFixedIds</code> 只有 <code>["sub_mod_火力模組"]</code>，
+    <strong>漏收了 <code>mod_彌造者_fixed_1</code>（帕姆斯陣列）</strong>——那是海莉絲唯一的形態強化模組，圖鑑看得到、<strong>模擬器看不到</strong>。
+    另有復仇女神 fixed_1..4、星夜女神 fixed_1 同樣漏收，以及 3 筆 <code>boundPart</code> 存成純字串 <code>"torso"</code> 而非 <code>["torso"]</code>。
+  </div>
+
+  <div class="warning-block">
+    <strong>校驗腳本必須 slot-scoped（實測數字）</strong><br>
+    naive 全掃「每個有 <code>boundMechId</code> 的模組是否都在該機甲的 <code>moduleFixedIds</code> 裡」會跑出 <strong>115 筆</strong>，
+    其中 109 筆是誤報——主模組（<code>mod_2xxx</code>）與通用模組（<code>mod_3xxx</code>）本來就不屬於固定模組槽。
+    真正的斷鏈只有 <code>*_fixed_*</code> 那 6 筆。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：<code>Weapon</code> 只加兩個選填欄位，不動既有語意</strong>
+    <div class="code-block">
+<span class="cm">// src/types/weapon.ts</span>
+<span class="kw">export interface</span> <span class="ty">Weapon</span> {
+  <span class="cm">// …既有欄位</span>
+
+  <span class="cm">/**
+   * [固定武裝]：無法更換的武器（帕斯卡的衝擊炮、彌造者的耀星/隕星/千星）。
+   * 純粹供 badge 渲染 + 篩選，不編碼「來源」。
+   *
+   * ⚠ 命名刻意避開既有的 fixedMod（:96「固定改裝」）——
+   *    同一個 interface 上同時有 fixed(固定武裝) 與 fixedMod(固定改裝) 是維護地雷。
+   * ⚠ 【不要】複用 isExclusive(:90) / exclusiveFor(:91)：那是「機師專武、可選裝、SS、強化天賦」，
+   *    與固定武裝「強制、鎖死、無法更換」語意相反；且 exclusiveFor 被 useFirestore.ts 與
+   *    PilotsPage.tsx 當「機師→專武」索引消費，塞進去會被渲染成金框專武，
+   *    並破壞 isExclusive ⇔ rarity === 'SS' 的既有不變式。
+   */</span>
+  isFixedArmament?: <span class="ty">boolean</span>
+
+  <span class="cm">/**
+   * 手建文件保護旗標。官方 API/WIKI 無這四筆資料、100% 手動維護。
+   * weapon.ts 是唯一缺此旗標的主要型別（對照 mech.ts:75 / pilot.ts:40）。
+   */</span>
+  manual?: <span class="ty">boolean</span>
+}</div>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：enum 要補三個值（依遊戲內截圖）</strong><br>
+    現行 <code>WeaponType</code> 只有 4 值、<code>WeaponKind</code> 17 值，四把固定武裝有兩把落在外面：
+    <table class="impact-table">
+      <thead><tr><th>武器</th><th>官方 type / kind</th><th>裝配位置</th><th>現況</th></tr></thead>
+      <tbody>
+        <tr><td>耀星</td><td>格鬥 / 刀劍</td><td>手持 → <code>singleHand</code></td><td><span class="badge-good">enum 已有</span></td></tr>
+        <tr><td>隕星</td><td>突擊 / 機槍</td><td>手持 → <code>singleHand</code></td><td><span class="badge-good">enum 已有</span></td></tr>
+        <tr><td>千星</td><td>戰術 / <strong>粒子莢艙</strong></td><td>背部 → <code>back</code></td><td><span class="badge-med">kind 要新增</span></td></tr>
+        <tr><td>衝擊炮</td><td><strong>特殊</strong> / <strong>固定武裝</strong></td><td>肩部 → <code>shoulder</code></td><td><span class="badge-high">type + kind 都要新增</span></td></tr>
+      </tbody>
+    </table>
+    <code>WeaponEquipSlot</code> 現有四值（singleHand / dualHand / shoulder / back）<strong>完全夠用，不動</strong>。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策二的連帶效應（必須寫進 PLAN-041，否則三個月後會被推翻）</strong><br>
+    PLAN-041 的核心論證之一是「三個戰鬥形態的『只能裝備 X 武器』把 <code>WeaponType</code> 做成無重疊無遺漏的 partition
+    （先鋒=格鬥+射擊 / 突擊=突擊 / 戰術=戰術）」。<br>
+    <strong>一旦 <code>WeaponType</code> 多了「特殊」，這個 partition 就不再完整</strong>。
+    正確的表述是：<strong>「特殊／固定武裝不參與形態的武器過濾——因為固定武裝本來就無法更換，過濾器對它沒有意義」</strong>。
+    這句話必須逐字寫進 PLAN-041 的設計決策，不能只留在這裡。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：武器不認識任何人——箭頭永遠是 <code>來源 → weapon</code></strong><br>
+    固定武裝在遊戲裡有<strong>兩種完全不同的來源</strong>，本計畫刻意都不編碼在武器身上：
+    <table class="impact-table">
+      <thead><tr><th>案例</th><th>來源</th><th>DB 表達</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>帕斯卡 · 衝擊炮</td>
+          <td><strong>部件（手臂）</strong>：裝上帕斯卡的手臂，肩上就一定有衝擊炮</td>
+          <td>已可表達：<code>mod_帕斯卡_fixed_2/_3</code> 的 <code>boundPart: ["rightArm"]/["leftArm"]</code> + 描述引用 → <strong>本計畫只補 <code>descriptionRefs</code></strong></td>
+        </tr>
+        <tr>
+          <td>彌造者 · 耀星/隕星/千星</td>
+          <td><strong>機師形態</strong>：來自海莉絲的［虛粒子形態］，不是機甲底盤屬性</td>
+          <td>今天無法表達 → 留給 PLAN-041 的 <code>Form.restrict.fixedArmament.weaponIds</code></td>
+        </tr>
+      </tbody>
+    </table>
+    <strong>因此「由模組 derive 掉 fixedArmament」的構想證偽</strong>：彌造者除了帕姆斯陣列（<code>boundPart: torso</code>）之外沒有任何固定模組，
+    那三把武器沒有模組來源。兩案確實是不同機制，形態端仍必須自己存 <code>weaponIds</code>。<br>
+    <span style="color:var(--text-dim);">副作用（刻意）：武器完全不認識形態 → PLAN-040 可以在 PLAN-041 還在設計時就先上線。這條箭頭是兩案解耦的唯一機制。</span>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：明確<u>不做</u>的三件事，各附理由</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>不加 <code>Weapon.fixedFor</code></strong>：「哪台機甲 × 哪個部位」已由 <code>Module.boundMechId</code> + <code>boundPart</code> 正確編碼，再存一次就是第三套真相源。且 scalar 表達不了帕斯卡「同一把 × 左右兩臂」。</li>
+      <li><strong>不加 <code>Mech.fixedWeapons[]</code></strong>：(a) 幫不到彌造者——虛粒子形態是<strong>機師</strong>天賦狀態，不是底盤屬性；(b) 第三次重複編碼 boundMechId/boundPart；(c) 彌造者 lore 逐字寫「通用武裝接口使得該機不僅可以兼容多型常規武裝」，底盤明講可換常規武裝。</li>
+      <li><strong>不做武器技能連結</strong>：見決策五。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：固定武裝自帶的技能留給 PLAN-032，本計畫不碰</strong><br>
+    截圖顯示固定武裝有自己的技能卡：千星 →［虛粒子矩陣］（指令 · 4AP · 冷卻 0）、衝擊炮 →［退敵激波］（指令 · 1AP · 冷卻 0）。
+    這正是<strong>執行中的 PLAN-032「武器技能引用化」</strong>的用例，而 PLAN-032 目前 0/8 全待開始。<br>
+    <strong>本計畫不在 <code>Weapon</code> 上開任何技能欄位</strong>——避免造出第二套詞彙、之後被 PLAN-032 收編時重做。
+    <span style="color:var(--text-dim);">代價（誠實）：固定武裝的卡片初期沒有技能區塊。這是可接受的，因為技能本身（<code>skill_虛粒子矩陣</code> 等）已存在於 pilotSkills，只是還沒掛到武器上。</span>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：三個死武器槽<u>刪除</u>而不是保留</strong><br>
+    <code>Mech.leftShoulderSlot / rightShoulderSlot / backSlot</code> 實測 0/62、前台零消費端、且形狀表達不了手持武器。
+    保留它會讓「機甲有固定武器」出現<strong>第二套表達方式</strong>，與 <code>Module.boundPart</code> 直接衝突。<br>
+    一併刪除 <code>MechAdmin.tsx</code> 的武器槽分頁與 <code>SlotEditor</code> 元件。
+  </div>
+
+  <div class="warning-block">
+    <strong>建檔的資料誠實性：截圖數值不能照抄</strong><br>
+    遊戲內武器卡的「命中 / 暴擊」是<strong>套用機師屬性後的結果</strong>（三把彌造者武器的暴擊都是 4603，明顯來自機師），
+    「攻擊」也是滿級強化後的觀測值。<br>
+    → 建檔時<strong>只填能確定為武器固有的欄位</strong>：<code>type</code> / <code>kind</code> / <code>equipSlot</code> / <code>hitCount</code>（×6、×10、×1）/ 射程 / 彈量 / 重量 / 描述 / 圖示。
+    攻擊力等成長數值標註為「滿級觀測值，待官方資料校正」，<strong>不要假裝它是基礎值</strong>。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>Phase A 資料衛生</strong>：修 6 筆 <code>moduleFixedIds</code> 斷鏈、3 筆 <code>boundPart</code> 型別違規、寫 slot-scoped 校驗腳本、修全庫僅存的 3 條懸空引用</li>
+      <li><strong>Phase B 型別</strong>：<code>Weapon</code> +2 欄、<code>WeaponType</code> +「特殊」、<code>WeaponKind</code> +「粒子莢艙」「固定武裝」、同步硬編碼清單</li>
+      <li><strong>Phase C 建檔</strong>：4 筆固定武裝武器文件（全部 <code>manual: true</code>）+ 補帕斯卡兩個模組的 <code>descriptionRefs</code></li>
+      <li><strong>Phase D 前台</strong>：<code>[固定武裝]</code> badge、武器圖鑑篩選、機甲詳情頁固定武裝區塊</li>
+      <li><strong>Phase E 清理</strong>：刪三個死武器槽 + MechAdmin 分頁 + SlotEditor，bump 版本</li>
+      <li><strong>Phase F</strong>：docs 同步 + 網站更新履歷</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong><code>forms</code> 集合、機師形態分頁、形態武器過濾</strong> → PLAN-041</li>
+      <li><strong>武器 → 技能的引用連結</strong>（千星的［虛粒子矩陣］、衝擊炮的［退敵激波］）→ PLAN-032</li>
+      <li><strong>模擬器的固定武裝 gate</strong>：模擬器是無回合模型的配裝器，且 <code>Build.weaponId</code> 是單值 string；形態獨立配裝（海莉絲三套裝備）是 breaking change，延後</li>
+      <li><strong>42 筆「形態 × 武器種類 → 子技能」矩陣</strong> → PLAN-041 第二階段</li>
+      <li><strong>建立非 EX 基礎版技能</strong>：<code>skill_虛粒子刃 / 炮 / 矩陣</code> <strong>已存在於 pilotSkills（710 筆）</strong>，無須新建</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 驗收條件 -->
+<section class="section">
+  <div class="section-label orange">Acceptance</div>
+  <div class="section-title">驗收條件</div>
+
+  <div class="info-block">
+    <ul style="margin:0 0 0 16px;line-height:2;">
+      <li>帕斯卡機甲頁的 <code>[衝擊炮]</code> hover 可解析、點擊跳得到武器卡（不再顯示「找不到對應資料」）</li>
+      <li>耀星 / 隕星 / 千星 / 衝擊炮 四筆在武器圖鑑可搜尋、可篩選，且帶 <code>[固定武裝]</code> badge</li>
+      <li>slot-scoped 校驗腳本輸出 <strong>0 筆</strong> 斷鏈（naive 全掃的 115 筆誤報不計）</li>
+      <li>全庫懸空引用從 3 條降到 <strong>0 條</strong>（且動工後不得增加）</li>
+      <li>模擬器讀得到彌造者的帕姆斯陣列</li>
+      <li><code>leftShoulderSlot</code> / <code>rightShoulderSlot</code> / <code>backSlot</code> 三個識別字已從 codebase 完全消失</li>
+      <li><code>npm run build</code> 通過；四個異動集合（weapons / modules / mechs / glossaryTerms）版本已 bump</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-040 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-032_武器技能引用化/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-032 武器技能引用化</h4>
+      <p>固定武裝自帶技能的歸屬地</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-040 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

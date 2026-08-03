@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-041 機師形態變化 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.wire {
+  background: #0d1117;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre;
+  overflow-x: auto;
+}
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-041 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(234,179,8,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge yellow">◆ PLAN-041</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    機師形態變化<span style="-webkit-text-fill-color:var(--text-secondary);"> · forms 集合 · 條件式分頁 · 常駐特殊能力列</span>
+  </h1>
+  <p class="hero-sub">調構師的「形態」目前是 4 筆躺在 pilotSkills 裡、沒有任何頁面會渲染的孤兒文件。本計畫把它們遷成獨立實體，並蓋出真正看得到的渲染面。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label yellow">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value yellow">PLAN-041</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-03</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">types/form（新）· forms 集合（新）· GameDataContext · RefType · PilotDetailPage · FormAdmin（新）· pilotSkills 遷移 · mutexGroup 引擎刪除</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value yellow">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-040 固定武裝（虛粒子形態要引用的 3 把武器由它建立）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>設計來源與重驗聲明</strong><br>
+    本計畫的設計出自 <code>_local-notes/機師形態變化_資料模型與呈現方案.html</code>（v2，2026-07-17，兩輪多代理辯論）。
+    但該報告的 DB 數字取自 2026-06-19 備份，<strong>本計畫書已用 2026-07-26 備份逐項重驗，並訂正了 5 處</strong>——
+    其中 2 處<strong>改變了計畫的形狀</strong>（見下方「與原報告的差異」）。<br>
+    <strong>凡與原報告衝突之處，以本計畫書為準。</strong>
+  </div>
+
+  <div class="warning-block">
+    <strong>◈ 與原報告的差異（重驗後訂正，共 5 處）</strong>
+    <table class="impact-table">
+      <thead><tr><th style="width:26%">原報告說</th><th>2026-07-26 實測</th><th style="width:16%">影響</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>「三個戰鬥形態在 buffs 根本沒有文件（四缺三），無論走哪案都得從零建」</td>
+          <td><strong>四筆形態現在都有 pilotSkills 文件</strong>：<code>skill_先鋒型態</code> / <code>skill_突擊型態</code> / <code>skill_戰術型態</code> / <code>skill_虛粒子形態</code>，正文逐字齊全、<code>descriptionRefs</code> 也接好了。</td>
+          <td><span class="badge-high">改變形狀</span> 本計畫是<strong>遷移</strong>，不是從零建</td>
+        </tr>
+        <tr>
+          <td>「<code>buff_虛粒子形態</code> 有 5 條 inbound ref 要遷移」</td>
+          <td>該 buff 已不存在。真正要遷的是指向 4 筆<strong>形態技能</strong>的 <strong>12 條</strong> <code>refType:'skill'</code> 引用（帕姆斯陣列 7 條、粒子爆發／虛粒子程式／嵐循環各 1、海莉絲天賦 1）。</td>
+          <td><span class="badge-med">數量翻倍</span></td>
+        </tr>
+        <tr>
+          <td>「pilotSkills 有 8 組同名重複文件，填矩陣前必須先去重」</td>
+          <td><strong>只有 5 組要去重</strong>（<code>SKILL_</code>/<code>skill_</code> 大小寫前綴殘留）。另 3 組（暗箭／火力支點／誅盡）是 <strong>PLAN-039 引用標記同名消歧</strong>刻意產生的 <code>skill_X_pilot_YYY</code> 文件，<span class="badge-high">不可去重</span>。</td>
+          <td><span class="badge-med">縮小範圍</span> 且避免誤刪</td>
+        </tr>
+        <tr>
+          <td>「全庫 7 條 dangling，其中 4 條落在形態叢集」</td>
+          <td>全庫剩 <strong>3 條</strong>，形態叢集只佔 1 條（<code>skill_粒子爆發 → term_固定傷害</code> 大小寫錯）。已列入 PLAN-040 的 A-4。</td>
+          <td><span class="badge-low">已他處處理</span></td>
+        </tr>
+        <tr>
+          <td>「<code>[激發能]</code> 詞條不存在，須新建」</td>
+          <td>存在，但<strong>是 buff 不是 term</strong>（<code>buff_激發能</code>，<code>buffType: resource</code>、<code>maxStack: 5</code>），海莉絲天賦已正確指向它。</td>
+          <td><span class="badge-low">無須動作</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：形態資料已經存在，但沒有任何頁面會渲染它</strong><br>
+    四筆形態文件（<code>skill_先鋒型態</code> / <code>skill_突擊型態</code> / <code>skill_戰術型態</code> / <code>skill_虛粒子形態</code>）
+    躺在 <code>pilotSkills</code> 的 710 筆裡，正文逐字完整——但實測
+    <strong>0 位機師的 <code>skills</code> 陣列引用它們</strong>（海莉絲的 9 個技能不含任何一筆）。<br>
+    前台 <code>resolvePilotSkills</code> 只渲染機師 <code>skills</code> 陣列裡的東西 → <strong>這四筆從建立到今天，一次都沒有被顯示過</strong>。
+    玩家在機師頁看得到天賦寫著「駕駛的機甲擁有多種形態」，然後就沒有然後了。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：<code>PilotSkill</code> 型別裝不下形態需要的東西</strong><br>
+    形態要表達的四件事，<code>PilotSkill</code> 一件都接不住：
+    <ul style="margin:8px 0 0 16px;line-height:1.8;">
+      <li><strong>武器限制</strong>（「只能裝備格鬥和射擊武器」）→ 無欄位</li>
+      <li><strong>固定武裝鎖定</strong>（虛粒子形態「無法變更武裝和技能」）→ 無欄位</li>
+      <li><strong>顯示順序</strong>（先鋒→突擊→戰術→虛粒子）→ 無欄位</li>
+      <li><strong>形態增益的連結</strong>（指向 <code>BUFF_型態增益</code>）→ 無欄位</li>
+    </ul>
+    而 <code>skill.weapon.categories</code> 已經被拿來硬撐了——<code>skill_虛粒子程式</code> 把「固定武裝」當成 pseudo-category 塞進去。<strong>現況已在借殼。</strong>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：命名已經在腐爛，而且沒有人會發現</strong><br>
+    這四筆文件的 <code>id</code> 用「<strong>型</strong>態」、<code>name</code> 用「<strong>形</strong>態」（<code>skill_先鋒型態</code> ↔ 「先鋒形態」）。
+    全庫另有 <code>skill_巡航型態</code> / <code>skill_機兵型態</code> 同款。
+    <code>BUFF_型態增益</code> 的 name 也是「形態增益」。<br>
+    因為它們都是孤兒、沒有渲染面，<strong>不一致不會被任何人看到，也就不會被修</strong>。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題四：<code>mutexGroup</code> / <code>FormGroup</code> 引擎是純死碼，但還在誘導維護者</strong><br>
+    <code>PLAN-019-B</code> 為形態互斥蓋的引擎——<code>GameBuff.mutexGroup</code>（<code>buff.ts:114</code>）、
+    <code>reachableBuffs.ts</code> 的 <code>FormGroup</code>、<code>SimulatorPage.tsx</code> 的形態切換 UI（:55/:274/:834/:868/:880-893）——
+    實測 <strong>全庫 0 筆 buff 有 <code>mutexGroup</code></strong> → 那段 UI 永遠算出 0 組、從未渲染過。<br>
+    但 <code>BuffAdmin.tsx</code> 的互斥群組欄位（:95/:470/:685）還在，且 <code>:527</code> 的說明文字仍在講「取代 mutexGroup」。
+    新調構師上線時，後台<strong>唯一長得像「建形態」的地方仍然是 BuffAdmin</strong>，而走錯不會有任何錯誤提示。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label yellow">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：開獨立的 <code>forms</code> 集合，不續留 pilotSkills、也不塞回 buffs</strong><br>
+    三條可驗證的理由（<span class="badge-high">刻意不寫「怕與機師資料混雜」</span>——<code>pilot.skills</code> 早在 PLAN-004 已是純 ID 陣列，那個理由會被 reviewer 正確推翻並連累整個 PLAN）：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>形態不是技能也不是 buff</strong>：它要承載 restrict union / order / grantedBuffIds / isSignature，兩個既有型別都裝不下（見問題二）。</li>
+      <li><strong>續留 pilotSkills 會讓孤兒狀態永久化</strong>：形態不能加進 <code>pilot.skills</code>——那會讓它們混進「技能 (9)」分頁，與一般技能同列顯示，而形態不是技能。</li>
+      <li><strong>0/5 定律</strong>：本專案每一個新開的<strong>集合</strong>都被填滿了（pilotSkills 710 / buffs 217 / glossaryTerms 162 / neuralDriveAbilities 全 flip），每一個投機性的<strong>選填欄位</strong>都是空的（<code>SkillVariant</code> 0/710、<code>SkillArea</code> 0/710、<code>effects</code> 全庫非空 0 個）。<strong>唯一的共同點不是「集合 vs 欄位」，是「有沒有頁面在渲染它」。</strong></li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：<code>MechForm</code> 型別——能 derive 的不落盤、今天填不進去的一個都不開</strong>
+    <div class="code-block">
+<span class="cm">// src/types/form.ts —— 新檔，需加入 src/types/index.ts barrel
+// 設計前提：官方 API/WIKI 無此資料 → 100% 手動維護 → 【降低填寫摩擦是第一目標】</span>
+
+<span class="cm">/**
+ * 形態的裝備限制。刻意用 discriminated union：
+ * 1. 三個戰鬥形態＝WeaponType 過濾（先鋒=['格鬥','射擊'] / 突擊=['突擊'] / 戰術=['戰術']）
+ *    → 就是 WeaponType[]，不需要新 enum。
+ * 2. 虛粒子形態不是 WeaponType 限制，而是鎖死武裝與技能 → 同一 union 的另一支。
+ * 副作用（刻意）：「有無固定武裝」由 kind === 'fixedArmament' derive，不存平行布林；
+ * union 也讓 TypeScript 逼你選邊、逼你填 weaponIds。
+ */</span>
+<span class="kw">export type</span> <span class="ty">FormRestrict</span> =
+  | { kind: <span class="st">'weaponType'</span>; allow: <span class="ty">WeaponType</span>[] }
+  | { kind: <span class="st">'fixedArmament'</span>; weaponIds: <span class="ty">string</span>[]; lockedSkillIds?: <span class="ty">string</span>[] }
+
+<span class="kw">export interface</span> <span class="ty">MechForm</span> {
+  id: <span class="ty">string</span>              <span class="cm">// form_海莉絲_先鋒</span>
+  pilotId: <span class="ty">string</span>
+  name: <span class="ty">string</span>            <span class="cm">// 「先鋒形態」——用「形」不用「型」，見決策六</span>
+  order: <span class="ty">number</span>           <span class="cm">// 形態數不固定（海莉絲 4、新調構師 2）→ UI 一律 map，不寫死欄數</span>
+  icon?: <span class="ty">string</span>
+  description: <span class="ty">string</span>     <span class="cm">// 官方形態卡固有正文，逐字。這是形態效果的唯一真相源</span>
+  descriptionRefs?: <span class="ty">DescriptionRefs</span>
+  restrict: <span class="ty">FormRestrict</span>
+  grantedBuffIds?: <span class="ty">string</span>[]  <span class="cm">// 指向 BUFF_型態增益，與 description 逐句零重疊（見決策三）</span>
+  entryNote?: <span class="ty">string</span>        <span class="cm">// 入場/退場條件，官方正文逐字。刻意不結構化（無回合模型可消費）</span>
+  isSignature?: <span class="ty">boolean</span>    <span class="cm">// 天賦專屬（虛粒子）。今天就有消費端：決定 UI 是否與三戰鬥形態同排</span>
+  manual?: <span class="ty">boolean</span>
+
+  <span class="cm">// ─── 以下【刻意不開】，理由寫死在型別註解裡，避免三個月後有人再問一次 ───
+  //
+  // ⚠ 不設 effects：形態固有九條正文，現行 SkillEffect + STAT_OPTIONS（封閉 34 key select）
+  //    只表達得出約 2 條。填不進去的：移動力+1（無 move 維度）、不消耗彈藥（無資源維度）、
+  //    可行動2次（無回合維度）、每1AP+5%上限25%（minApCost 只有門檻無 scale/max）、
+  //    每回合最多2次（maxTriggers 無 per-turn reset）、免疫[反擊先手]（無 immunity tag）、
+  //    子彈數+1（BULLET_ADD 是 Component 專用 enum）。
+  //    缺的是四個結構性軸，屬 Phase 7 傷害公式範疇，不是補幾個 stat key。
+  //    佐證：全庫 effects 非空 0 個。→ description 是唯一真相源。
+  //
+  // ⚠ 不設 skillsByWeaponKind：42 筆矩陣的擁有者是【技能】不是形態
+  //    （「聚類映射依當前形態變化」是聚類映射的性質）。掛在 Form 上的話，
+  //    新增一支子技能要改 4 個形態文件。→ 歸 SkillVariant，箭頭 skill → form。
+  //
+  // ⚠ 不設 hasFixedArmament → 由 restrict.kind derive。
+  //
+  // ⚠ 不設 per-form 武器背包 loadout：天賦原文「可以獨立裝備武器背包」屬模擬器範疇
+  //    （Build.weaponId 是單值 string，改成 weaponIdByForm 是 userBuilds 的 breaking change）。</span>
+}</div>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：形態固有與形態增益是<u>兩層</u>，並列顯示、各自標來源、不合併</strong><br>
+    兩者逐句零重疊，實測可驗證：
+    <table class="impact-table">
+      <thead><tr><th style="width:14%">形態</th><th>固有（住 <code>Form.description</code>）</th><th>增益（住 <code>BUFF_型態增益</code>）</th></tr></thead>
+      <tbody>
+        <tr><td>先鋒</td><td>移動力+1、傷害和<strong>暴擊率</strong>+15%</td><td><strong>命中率</strong>+15%、發動［連續攻擊］0.3 倍，觸發後移除</td></tr>
+        <tr><td>突擊</td><td>可發動［協力攻擊］0.2 倍、每回合最多 2 次、子彈數+1</td><td><strong>暴擊率</strong>+15%、戰後對所有部位造成 0.4 倍［固定傷害］，觸發後移除</td></tr>
+        <tr><td>戰術</td><td>不消耗彈藥、攻擊後可續走、每 1AP 傷害+5% 上限 25%</td><td>傷害+15%、施加［遭受傷害提升Ⅱ］2 回合，觸發後移除</td></tr>
+      </tbody>
+    </table>
+    <strong>暴擊率 vs 命中率是不同屬性軸</strong>，唯一「看起來重複」的只有 15% 這個數字。
+    分工：<strong>固有＝形態的身分，永遠生效 → 住 Form；增益＝天賦另給的一次性 buff（正文均有「觸發效果後移除」）→ 續留 buffs。</strong>
+    這就是 <code>grantedBuffIds</code> 指向 buffs、而不是把增益吞進 Form 的依據。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：三層來源全部標示，且明標「可疊加」</strong><br>
+    形態卡分三段：<strong>形態固有</strong>（Form）／<strong>形態增益</strong>（天賦滿星，指向 buff）／<strong>模組加成</strong>（帕姆斯陣列）。
+    每段標來源，<strong>不聚合成單一數值</strong>——丟失來源標註的聚合表會產生誤判。<br>
+    <span class="badge-good">已實測確認</span>：突擊形態固有的「子彈數+1」與帕姆斯陣列 LV.MAX 的「［突擊形態］時突擊武器子彈數+1」<strong>可疊加</strong>。
+    UI 兩條都列並<strong>明標「可疊加」</strong>（不是「待實測」）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：虛粒子形態的三個特例</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>同時吃滿三份增益</strong>：<code>skill_粒子爆發</code> 正文逐字「消耗所有［激發能］切換為［虛粒子形態］，<strong>獲得所有形態增益效果</strong>」。而 <code>BUFF_型態增益</code> 只寫了三個戰鬥形態、沒有虛粒子 → <strong>UI 需特例標註「同時獲得三份形態增益」</strong>，否則玩家在虛粒子卡上找不到增益。</li>
+      <li><strong>固有技能被強化為 EX</strong>：<code>skill_虛粒子程式</code>「［虛粒子形態］時的固有技能<strong>強化為</strong>［虛粒子刃EX］［虛粒子炮EX］［虛粒子矩陣EX］，並可以使用［逐世者強襲］」。基礎版與 EX 版<strong>都已存在於 pilotSkills</strong> → <code>lockedSkillIds</code> 指<strong>基礎版</strong>，EX 由虛粒子程式的正文引用表達，不重複編碼。</li>
+      <li><strong>裝備獨立</strong>：每個形態各一套武器背包（海莉絲要準備三套）。<span class="badge-med">本計畫不落盤</span>，只寫進「已知未做」——見不在範圍內。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：遷移時統一用「<u>形</u>態」，並修掉命名不一致</strong><br>
+    新 id 一律 <code>form_海莉絲_先鋒</code> 這種形式，<code>name</code> 用官方的「先鋒形態」。
+    舊的 <code>skill_先鋒型態</code>（型/形不一致）在遷移後刪除。<br>
+    <span style="color:var(--text-dim);">範圍限縮：<code>skill_巡航型態</code> / <code>skill_機兵型態</code> 不是調構師形態（是別的機制），本計畫<strong>不動</strong>，只在 PLAN 備註記錄它們同樣有型/形不一致。</span>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：箭頭方向——<code>form → weapon</code>、<code>skill → form</code>，反向一律禁止</strong>
+    <div class="wire">帕斯卡的固定武裝：  mech ←(boundMechId+boundPart)─ module ─(descriptionRefs)→ weapon
+海莉絲的固定武裝：  form ─(restrict.fixedArmament.weaponIds)────────────────→ weapon
+42 筆子技能矩陣：    skill ─(SkillVariant.formId)──────────────────────────→ form
+
+                    ↑ 武器不認識形態、形態不認識子技能</div>
+    武器完全不認識形態 → PLAN-040 與本計畫徹底解耦。
+    形態不認識子技能 → 新增一支子技能只要改該技能一份文件，不用改 4 個形態文件。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策八：渲染條件用 <code>forms.length &gt; 0</code>，<u>禁止</u>用 <code>pilot.class === '調構師'</code></strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>官方職業 icon 跳過 007/008/009，押注它們都沒有形態沒有根據；</li>
+      <li>實測已有 <strong>2/82 反例</strong>（瑪汀妮 class=機械師卻掛格鬥家職業單元、唐小葵掛突擊手）→ class 字串與職業機制已經對不上；</li>
+      <li>新調構師上線但 forms 未填時，class gate 會渲染出<strong>空的「形態 (0)」分頁</strong>。</li>
+    </ul>
+    這也跟隨既有慣例：<code>PilotDetailPage.tsx:1226</code> 的 NdPowerBar 就是用 <code>(pilot.neuralDrive?.length ?? 0) &gt; 0</code> gate。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策九（承接 PLAN-040）：「特殊／固定武裝」不參與形態武器過濾</strong><br>
+    三個戰鬥形態的「只能裝備 X 武器」原本把 <code>WeaponType</code> 切成無重疊無遺漏的分割（先鋒=格鬥+射擊 / 突擊=突擊 / 戰術=戰術）。
+    <strong>PLAN-040 為衝擊炮新增「特殊」型別後，這個分割不再完整。</strong><br>
+    正確的表述、且必須寫進 <code>FormRestrict</code> 的型別註解：
+    <strong>「固定武裝本來就無法更換，武器過濾器對它沒有意義，故不納入 <code>allow</code> 的計算」</strong>。
+  </div>
+</section>
+
+<!-- 前台呈現 -->
+<section class="section">
+  <div class="section-label yellow">UI</div>
+  <div class="section-title">前台呈現</div>
+
+  <div class="decision-block">
+    <strong>條件式第 4 分頁 ＋ 跨分頁常駐的「特殊能力」badge 列</strong><br>
+    「分頁 vs 內嵌」不是二選一：官方本來就把形態做成<strong>常駐橫幅</strong>而非分頁內容，
+    而本專案已有現成的位置慣例——<code>NdPowerBar</code> 渲染在分頁 switch <strong>之外</strong>（<code>:1226</code>），三個分頁都常駐可見。
+    把 badge 列放同一層，就同時拿到「內嵌的曝光度」與「分頁的容納空間」。
+  </div>
+
+  <div class="wire">┌───────────────────────────────────────────────────────────────────────┐
+│  [立繪]   海莉絲   ⟨調構師⟩ ⟨SSR⟩                        Hero Row     │
+├───────────────────────────────────────────────────────────────────────┤
+│  天賦 (1) │ 技能 (9) │ 神經驅動 (18) │ 形態 (4)                       │ ← tab strip
+│  ─────────                                        ▔▔▔▔▔▔▔▔           │   最多 4 個
+├───────────────────────────────────────────────────────────────────────┤
+│  γ1 ▰▰▰▱▱   γ2 ▰▰▰▰▱   γ3 ▰▰▱▱▱          [NdPowerBar，跨分頁常駐]   │
+│  ◤▰▰ 特殊能力 ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰◥          │ ← 新增，常駐
+│  ▏ ⟨先鋒形態⟩  ⟨突擊形態⟩  ⟨戰術形態⟩  │ ⟨★虛粒子形態⟩            ▕ │   點擊→跳形態分頁
+├───────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────┐ ┌─────────────────────────────┐      │
+│  │◤▰ 先鋒形態      [被動技能]  │ │◤▰ ★虛粒子形態  ⟨天賦專屬⟩   │      │ ← type 忠於官方
+│  │ ─────────────────────────── │ │ ─────────────────────────── │      │
+│  │  只能裝備  [格鬥] [射擊]    │ │  無法變更武裝和技能         │      │ ← restrict
+│  │            81 支武器 →      │ │  固定武裝 [耀星][隕星][千星]│      │   可點去武器圖鑑
+│  │ ─────────────────────────── │ │ ─────────────────────────── │      │
+│  │  ▎形態固有                  │ │  ▎形態固有                  │      │ ← Form.description
+│  │  機甲移動力+1，使用格鬥和   │ │  可行動2次，不會成為[反擊先 │      │   逐字、hover 可引用
+│  │  射擊武器主動攻擊時傷害和   │ │  手]、[警戒射擊]、[反應攻擊]│      │
+│  │  暴擊率提升15%              │ │  和[看破]的目標             │      │
+│  │ ─────────────────────────── │ │ ─────────────────────────── │      │
+│  │  ▎形態增益  ⓘ天賦滿星       │ │  ▎形態增益                  │      │ ← 第二層，標來源
+│  │  命中率提升15%，發動[連續   │ │  ⓘ同時獲得三份形態增益      │      │   零重疊，不合併
+│  │  攻擊]0.3倍，觸發後移除     │ │    （粒子爆發正文）         │      │ ← 虛粒子特例
+│  │ ─────────────────────────── │ │ ─────────────────────────── │      │
+│  │  ▎模組加成  ⓘ帕姆斯陣列 MAX │ │  ▎模組加成  ⓘ帕姆斯陣列 MAX │      │ ← 第三層來源
+│  │  暴擊率和暴擊傷害提升10%    │ │  AP消耗-1、最終傷害+15%、   │      │   突擊形態那條
+│  └─────────────────────────────┘ │  移動力+1                   │      │   標【可疊加】
+│                                   └─────────────────────────────┘      │
+└───────────────────────────────────────────────────────────────────────┘</div>
+
+  <div class="warning-block">
+    <strong>分頁列的兩個必修（本計畫第一個工項，必須先做）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>(1) 360px 爆版</strong>：<code>:1207</code> 是 <code>flex border-b border-border</code>——<strong>無 wrap、無 overflow-x-auto</strong>；
+        <code>:1212</code> 的 button 是 <code>px-5 py-3</code>、<strong>無 <code>shrink-0</code></strong>。
+        三分頁今天剛好不爆，第 4 個會溢出 → 壓縮到 min-content → 「神經驅動」折行、底線全歪。桌機看不到。<br>
+        修法：加 <code>overflow-x-auto</code> ＋ button 加 <code>shrink-0 whitespace-nowrap px-3 sm:px-5</code>。
+        <span style="color:var(--text-dim);">注意：光加 <code>overflow-x-auto</code> 是 no-op，必須先加 <code>shrink-0 whitespace-nowrap</code> 製造溢出。</span></li>
+      <li><strong>(2) 切換機師的空白卡地雷</strong>：<code>activeSkillTab</code>（<code>:990</code>）<strong>沒有 <code>[id]</code> reset</strong>，而 PilotDetailPage 不 remount。
+        今天安全只因三個分頁恆存在；<strong>條件式分頁一落地不變式就破</strong> → 停在「形態」分頁再切到非調構師 →
+        三個 <code>&&</code> 全 false → <code>&lt;div className="p-4"&gt;</code> 完全空白。<br>
+        修法：tab 清單提成具名陣列（跟隨 <code>MechAdmin.tsx</code> 的 <code>MECH_EDIT_TABS</code> 慣例）＋ <strong>derived active</strong>
+        （<code>tabs.find(t =&gt; t.key === tabKey) ?? tabs[0]</code>），永不落空且免掉一個 <code>useEffect([id])</code>。
+        <span style="color:var(--text-dim);">render 分派維持 <code>key === 'X' && (...)</code>，不要引入 render callback——那不是本專案慣例。</span></li>
+    </ul>
+    <span style="color:var(--text-dim);">分頁上限就是 4：形態（僅調構師）與 PLAN-026 召喚單位（計畫書明載僅兩名機師，海莉絲不在內）互斥。</span>
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label yellow">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>N1（本計畫主體，一次出貨、不留殼）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>Phase A</strong>：<code>src/types/form.ts</code> + 集合接線（CollectionKey / <code>api/forms.ts</code> / barrel / rules）+ <code>RefType</code> 加 <code>'form'</code></li>
+      <li><strong>Phase B</strong>：FormAdmin（union kind 切換、weaponIds 走 RefPicker）</li>
+      <li><strong>Phase C</strong>：4 筆形態遷移 + 12 條 inbound ref 改 refType + 刪舊文件</li>
+      <li><strong>Phase D</strong>：條件式第 4 分頁 + 常駐 badge 列 + RWD 修正 + derived active tab + 天賦「多種形態」補 ref</li>
+      <li><strong>Phase E</strong>：刪除清單——<code>mutexGroup</code> / <code>FormGroup</code> 引擎、<code>SkillArea</code></li>
+      <li><strong>Phase F</strong>：docs + bump + 履歷</li>
+    </ul>
+  </div>
+
+  <div class="info-block">
+    <strong>N2（本計畫第二階段，可延後但不另開 PLAN）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>Phase G</strong>：42 筆「形態 × 武器種類 → 子技能」矩陣。前置＝先去重 5 組大小寫前綴文件（<strong>不可碰 PLAN-039 的 3 組同名消歧文件</strong>），
+      然後結構化 <code>SkillVariant</code>、補 SkillAdmin 的 variants 編輯 UI（<strong>今天完全沒有 → 這正是它 0/710 的原因</strong>）、填值、渲染。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內（已知未做，各附理由）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>模擬器的形態 gate 與獨立配裝</strong>：天賦原文「可以獨立裝備武器背包」＝海莉絲是 <strong>N 套裝備不是 1 套+切換</strong>，
+        在 <code>Build.weaponId: string</code> 上 gate 是<strong>在錯模型上蓋對規則，必然重做</strong>；且形態是戰鬥期狀態、模擬器是無回合模型的配裝器；
+        且 gate 沒有下游消費者（effects 全庫 0 筆、傷害公式仍是 placeholder）。
+        <strong>本計畫明文不接模擬器。</strong></li>
+      <li><strong><code>Form.effects</code></strong>：見決策二的型別註解，缺四個結構性軸。</li>
+      <li><strong>建立 4 把固定武裝</strong>：PLAN-040。</li>
+      <li><strong>武器自帶技能的引用</strong>：PLAN-032。</li>
+      <li><strong><code>skill_巡航型態</code> / <code>skill_機兵型態</code> 的型/形訂正</strong>：非調構師形態，只記錄不動。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 驗收條件 -->
+<section class="section">
+  <div class="section-label yellow">Acceptance</div>
+  <div class="section-title">驗收條件</div>
+
+  <div class="info-block">
+    <ul style="margin:0 0 0 16px;line-height:2;">
+      <li>海莉絲頁出現「形態 (4)」分頁 + 跨分頁常駐的「特殊能力」badge 列，<strong>4 張卡內容完整</strong></li>
+      <li><strong><code>forms</code> 4/4 填滿</strong>（不接受「先開殼之後補」）</li>
+      <li><strong>360px 實拍分頁列不折行</strong>、底線不歪</li>
+      <li><strong>停在形態分頁切到其他機師不出現空白卡</strong></li>
+      <li>虛粒子形態卡的 <code>[耀星][隕星][千星]</code> hover 可解析、點得到武器卡（依賴 PLAN-040）</li>
+      <li>突擊形態卡上「子彈數+1」兩條並列且明標<strong>可疊加</strong>；虛粒子卡標註<strong>同時獲得三份形態增益</strong></li>
+      <li><strong>全站只剩一套形態模型</strong>：<code>mutexGroup</code> / <code>FormGroup</code> / <code>SkillArea</code> 三個識別字從 codebase 消失；舊 4 筆 pilotSkills 形態文件已刪除</li>
+      <li>全庫懸空引用不高於動工前（PLAN-040 完成後應為 0）；<code>npm run build</code> 通過；forms / pilotSkills / modules / pilots 版本已 bump</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label yellow">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-041 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-040_固定武裝/計畫書.html">
+      <div class="doc-tag">Blocker</div>
+      <h4>◆ PLAN-040 固定武裝</h4>
+      <p>前置：虛粒子形態要引用的 3 把武器</p>
+    </a>
+    <a class="doc-item" href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-019 實體引用與模擬基礎</h4>
+      <p>引用層；本計畫刪除其 019-B 的 mutexGroup 引擎</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-041 — <a href="../index.html" style="color:var(--accent-yellow);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

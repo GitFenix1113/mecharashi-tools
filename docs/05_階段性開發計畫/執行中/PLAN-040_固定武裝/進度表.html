@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-040 固定武裝 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-040 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-040</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> · 固定武裝</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-03</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label orange">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">16</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">16</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-orange);">0 / 16</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    帕斯卡的［衝擊炮］引用修好、彌造者的三把固定武裝進圖鑑、模擬器讀得到帕姆斯陣列，
+    並替 PLAN-041 機師形態備妥可引用的武器實體。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label orange">Phase A</div>
+  <div class="section-title">資料衛生（與形態設計無關，可獨立出貨）</div>
+  <div class="section-desc">四項既有資料缺陷，都不依賴任何未定案的設計。做完就能修好模擬器讀不到帕姆斯陣列的問題。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 修 moduleFixedIds 斷鏈</div>
+      <div class="task-group-meta">mechs 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補回 6 筆漏收的固定模組</div>
+        <div class="task-desc">
+          <code>mech_052_彌造者</code> 補 <code>mod_彌造者_fixed_1</code>（帕姆斯陣列，海莉絲唯一的形態強化模組，模擬器現在讀不到）；
+          <code>mech_034_復仇女神</code> 補 <code>mod_復仇女神_fixed_1..4</code>；
+          <code>mech_星夜女神</code> 補 <code>mod_星夜女神_fixed_1</code>。
+        </div>
+        <div class="task-file">scripts/temp_scripts/ · mechs 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 修 boundPart 型別違規</div>
+      <div class="task-group-meta">modules 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">3 筆純字串改成陣列</div>
+        <div class="task-desc">
+          <code>mod_帕斯卡_fixed_4</code> / <code>mod_影虎_fixed_1</code> / <code>mod_輝龍_fixed_2</code> 的
+          <code>boundPart</code> 存成 <code>"torso"</code>，型別宣告是 <code>string[]</code> → 改為 <code>["torso"]</code>。
+        </div>
+        <div class="task-file">modules 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; slot-scoped 校驗腳本</div>
+      <div class="task-group-meta">scripts/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">寫 boundMechId ↔ moduleFixedIds 一致性檢查</div>
+        <div class="task-desc">
+          <strong>必須 slot-scoped</strong>：只檢查固定模組槽（<code>*_fixed_*</code> 與具名固定模組），
+          排除主模組 <code>mod_2xxx</code> 與通用模組 <code>mod_3xxx</code>。
+          naive 全掃實測會產生 <strong>115 筆</strong>，其中 109 筆是誤報。
+          同時檢查 <code>boundPart</code> 是否為陣列。
+        </div>
+        <div class="task-file">scripts/validate-module-binding.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 修全庫懸空引用</div>
+      <div class="task-group-meta">pilotSkills / buffs 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">修 3 條 dangling ref（全庫就這 3 條）</div>
+        <div class="task-desc">
+          ① <code>skill_粒子爆發</code> → <code>term:term_固定傷害</code>，正確 id 是 <code>TERM_固定傷害</code>（大小寫前綴錯）。<br>
+          ② <code>buff_激發能</code> → <code>term:term_啟動</code>，正確 id 是 <code>TERM_啟動</code>（同上）。<br>
+          ③ <code>buff_供彈阻滯</code> → <code>component:comp_0093_應元件_消彈</code>，該元件 id 不存在 → 查證後改正或移除。<br>
+          <strong>訂正</strong>：<code>[激發能]</code> <u>不需要新建</u>——它已存在為 <code>buff_激發能</code>（<code>buffType: resource</code>、<code>maxStack: 5</code>），
+          海莉絲天賦也已正確指向它。原先「新增 TERM_激發能」的判斷是查錯集合。<br>
+          順帶記錄（本計畫不動）：<code>term_看破</code> / <code>term_形態切換</code> 是僅有的兩個小寫前綴詞條。
+        </div>
+        <div class="task-file">pilotSkills · buffs 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label orange">Phase B</div>
+  <div class="section-title">型別與 enum 擴充</div>
+  <div class="section-desc">依遊戲內截圖補上缺的武器類型／種類，並替固定武裝加上兩個選填欄位。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; Weapon 型別 +2 欄</div>
+      <div class="task-group-meta">src/types/weapon.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 isFixedArmament? 與 manual?</div>
+        <div class="task-desc">
+          命名避開既有的 <code>fixedMod</code>（固定改裝）。<strong>不得複用</strong> <code>isExclusive</code> / <code>exclusiveFor</code>——
+          那是專武索引，被 <code>useFirestore.ts</code> 與 <code>PilotsPage.tsx</code> 消費，塞進去會渲染成金框專武。
+          註解要寫死這兩條理由。
+        </div>
+        <div class="task-file">src/types/weapon.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; enum 補三個值</div>
+      <div class="task-group-meta">src/types/enums.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">WeaponType +「特殊」、WeaponKind +「粒子莢艙」「固定武裝」</div>
+        <div class="task-desc">
+          衝擊炮 = 特殊 / 固定武裝；千星 = 戰術 / 粒子莢艙。<br>
+          <strong>註解必須載明</strong>：「特殊」不參與 PLAN-041 的形態武器過濾——固定武裝本來就無法更換，過濾器對它沒有意義。
+          否則 PLAN-041 的 168/168 partition 論證會對不上。
+        </div>
+        <div class="task-file">src/types/enums.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 同步硬編碼的類型清單</div>
+      <div class="task-group-meta">WeaponsPage / ComponentsPage</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">改用 enum 或補值，逐處判斷</div>
+        <div class="task-desc">
+          <code>WeaponsPage.tsx:33</code> 的 <code>ALL_TYPES</code> <strong>要加「特殊」</strong>（圖鑑必須篩得到）。<br>
+          <code>ComponentsPage.tsx:33</code> 的 <code>ALL_WEAPON_TYPES</code> <strong>評估後多半不加</strong>——
+          元件強化的是可更換武器，固定武裝不在其列；決定後在該行留一句註解說明為何刻意不同步。
+        </div>
+        <div class="task-file">src/pages/weapons/WeaponsPage.tsx · src/pages/components/ComponentsPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label orange">Phase C</div>
+  <div class="section-title">建檔：4 筆固定武裝</div>
+  <div class="section-desc">官方 API 與 WIKI 都沒有這四筆，100% 手建，全部標 manual: true 防補丁覆寫。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 建立四筆武器文件</div>
+      <div class="task-group-meta">weapons 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">衝擊炮 / 耀星 / 隕星 / 千星</div>
+        <div class="task-desc">
+          衝擊炮＝特殊·固定武裝·<code>shoulder</code>·射程 3·彈量 1（帕斯卡）；
+          耀星＝格鬥·刀劍·<code>singleHand</code>·射程 1+·×1；
+          隕星＝突擊·機槍·<code>singleHand</code>·射程 1-4·×10；
+          千星＝戰術·粒子莢艙·<code>back</code>·扇形 4 格·彈量 3·×6（以上三把屬彌造者）。
+          全部 <code>isFixedArmament: true</code> + <code>manual: true</code>。
+        </div>
+        <div class="task-file">weapons 集合 · WeaponAdmin</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">數值誠實性：只填武器固有欄位</div>
+        <div class="task-desc">
+          截圖的「命中 / 暴擊」是<strong>套用機師屬性後的結果</strong>（三把彌造者武器暴擊皆 4603，明顯來自機師），
+          「攻擊」是滿級觀測值。→ 只填 type / kind / equipSlot / hitCount / 射程 / 彈量 / 重量 / 描述 / 圖示；
+          攻擊力標註「滿級觀測值待校正」，<strong>不要當成基礎值寫進去</strong>。
+        </div>
+        <div class="task-file">weapons 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 修好帕斯卡的懸空引用</div>
+      <div class="task-group-meta">modules 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補 descriptionRefs.衝擊炮</div>
+        <div class="task-desc">
+          <code>mod_帕斯卡_fixed_2</code>（彙編矩陣）與 <code>mod_帕斯卡_fixed_3</code>（深採模型）的 <code>descriptionRefs</code>
+          目前解不到［衝擊炮］，chip 點下去顯示「找不到對應資料」。C-1 建好武器後補上 <code>{ refType: 'weapon', refId: ... }</code>。
+        </div>
+        <div class="task-file">modules 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label orange">Phase D</div>
+  <div class="section-title">前台呈現</div>
+  <div class="section-desc">讓固定武裝在圖鑑與機甲頁看得見。渲染面先蓋好，資料才會被持續維護。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; [固定武裝] badge</div>
+      <div class="task-group-meta">武器卡片 / 詳情</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">武器卡與詳情頁加標記</div>
+        <div class="task-desc">
+          比照官方美術：橘/金色標籤，與專武金框視覺區隔（兩者語意相反，不可看起來一樣）。
+        </div>
+        <div class="task-file">src/pages/weapons/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 武器圖鑑篩選</div>
+      <div class="task-group-meta">src/pages/weapons/WeaponsPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">加固定武裝開關 + 類型「特殊」</div>
+        <div class="task-desc">
+          沿用既有 <code>typeFilters</code> / <code>kindFilters</code> 的 Set 模式（:270-296），不另造篩選機制。
+        </div>
+        <div class="task-file">src/pages/weapons/WeaponsPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 機甲詳情頁固定武裝區塊</div>
+      <div class="task-group-meta">src/pages/mechs/MechDetailPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增區塊（該頁今天完全不渲染任何武器）</div>
+        <div class="task-desc">
+          資料來源＝該機甲的固定模組（<code>boundPart</code> + 描述引用），<strong>不新增 Mech 欄位</strong>。
+          帕斯卡會顯示左右臂各一門衝擊炮。彌造者的三把不在此顯示（來源是機師形態，屬 PLAN-041）。
+        </div>
+        <div class="task-file">src/pages/mechs/MechDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label orange">Phase E</div>
+  <div class="section-title">清理死槽位</div>
+  <div class="section-desc">刪掉會誘導人填錯的第二套表達方式。0/62 使用率，前台零消費端。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 刪除三個機甲武器槽</div>
+      <div class="task-group-meta">src/types/mech.ts · MechAdmin.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">移除欄位、Admin 分頁與 SlotEditor</div>
+        <div class="task-desc">
+          <code>mech.ts:56-62</code> 的 <code>leftShoulderSlot</code> / <code>rightShoulderSlot</code> / <code>backSlot</code>（實測 0/62 有填），
+          與 <code>MechAdmin.tsx:552-554</code> 的三個 SlotEditor 及 <code>SlotEditor</code> 元件本體（:631）。
+          刪除理由：形狀錯誤（無手持槽），且與 <code>Module.boundPart</code> 構成兩套真相源。
+        </div>
+        <div class="task-file">src/types/mech.ts · src/pages/user/admin/MechAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; bump 資料版本</div>
+      <div class="task-group-meta">meta/gameData</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">四個異動集合各 bump 一次</div>
+        <div class="task-desc">
+          weapons / modules / mechs / glossaryTerms。不 bump 的話所有 client 會繼續讀 localStorage 舊快取。
+        </div>
+        <div class="task-file">bumpDataVersion(key)</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label orange">Phase F</div>
+  <div class="section-title">收尾</div>
+  <div class="section-desc">文件同步與使用者可見的更新履歷。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; docs 同步</div>
+      <div class="task-group-meta">docs/02_技術文件/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">更新資料模型與資料庫設計文件</div>
+        <div class="task-desc">
+          <code>enums.html</code>（WeaponType / WeaponKind 新值）、weapons 與 mechs 的資料模型頁（+2 欄 / −3 欄）。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/ · 04_Firebase/資料庫設計文件/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; 網站更新履歷</div>
+      <div class="task-group-meta">src/data/siteChangelog/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">以使用者視角寫摘要</div>
+        <div class="task-desc">
+          例：「武器圖鑑新增固定武裝（衝擊炮／耀星／隕星／千星）」「機甲詳情頁新增固定武裝區塊」。
+        </div>
+        <div class="task-file">src/data/siteChangelog/2026-08.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-040 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
