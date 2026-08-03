@@ -31,6 +31,33 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card red">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-042 · 機甲故事館</h3>
+      <p>機甲的逸聞目前只是詳情頁最底下一個 <code>&lt;p&gt;</code>，整段長文擠在數值表格之後；而官方遊戲內的逸聞是分 <b>PART 1 / PART 2</b> 章節、穿插娜塔莉亞等 NPC 頭像旁白的敘事體驗。本計畫另開 <code>/lore</code> 獨立路由做成左文右繪的沉浸式故事館，並復刻官網那招<b>「線稿顯影 → 彩圖疊上」</b>的立繪切換動畫——已實測拆解官網為四層背景圖 + 錯位淡入（線稿領先彩圖 250ms）；本站沒有線稿素材，改以 <b>color-dodge 素描濾鏡即時生成</b>，實測幾乎重現官方質感（邊緣偵測法已驗證不堪用）。順帶補上全站不存在的 <code>manufacturer</code> 欄位，以及撐得起全高面板的全身立繪素材層（現有 portrait 僅 560×340 半身裁切）。<br>因故事資料需<b>他人協助輸入</b>，另含兩塊：<b>新增 EDITOR 角色</b>（現行規則下所有集合皆 <code>read/write: if isAdmin()</code>，給人 ADMIN 等於交出全站讀寫權；改以 <code>affectedKeys().hasOnly()</code> 把可寫範圍鎖死在故事三欄位，且刻意不給 read、編輯台讀取改走 Worker <code>/api</code>），以及<b>靜態化出口</b>（資料定稿後逐台切成 <code>src/data/lore/</code> 零查詢，非全站一次切）。機師故事館與陣營勢力不在本期範圍。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-042_機甲故事館/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-042_機甲故事館/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-041 · 機師形態變化</h3>
+      <p>調構師的四個形態（先鋒／突擊／戰術／虛粒子）其實<b>已經有資料</b>——四筆文件躺在 pilotSkills 的 710 筆裡、正文逐字完整，但實測 <b>0 位機師的 skills 陣列引用它們</b>，前台從建立到今天一次都沒顯示過。而 <code>PilotSkill</code> 型別裝不下形態真正需要的東西（武器限制、固定武裝鎖定、顯示順序、增益連結），現況已經在拿 <code>skill.weapon.categories</code> 硬撐。本計畫把四筆遷成獨立的 <code>forms</code> 集合、改掉 12 條 inbound 引用、蓋出條件式第 4 分頁與跨分頁常駐的「特殊能力」列，並順手拆掉 PLAN-019-B 那套 0 筆資料、從未渲染過、卻仍在後台誘導維護者建錯地方的 mutexGroup 引擎。42 筆「形態 × 武器 → 子技能」矩陣列為 N2，可延後。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-041_機師形態變化/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-041_機師形態變化/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-040 · 固定武裝</h3>
+      <p>「無法更換的武器」目前在資料層根本不存在：帕斯卡兩個手臂模組的描述引用了［衝擊炮］，但 weapons 集合 169 筆裡沒有這把武器，引用層不檢查 refId 解不解析得到，於是 chip 照樣可點、點下去顯示「找不到對應資料」——今天就是壞的。彌造者的耀星／隕星／千星同樣 0/169，讓 PLAN-041 機師形態第一天就會卡在「無物可引」。本計畫只做武器層：補 <code>WeaponType</code>「特殊」與 <code>WeaponKind</code>「粒子莢艙／固定武裝」、建那 4 筆手工武器、加 badge 與篩選、並刪掉 0/62 從未被填且形狀錯誤（有肩背無手持）的三個機甲武器槽。武器技能連結刻意留給 PLAN-032，避免造出第二套詞彙。Phase A 另含四項與設計無關的資料衛生，其中一項修好模擬器讀不到彌造者帕姆斯陣列的斷鏈。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-040_固定武裝/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-040_固定武裝/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card green">
       <div class="card-icon">◆</div>
       <h3>PLAN-038 · 社群連結預覽（Open Graph）系統</h3>
