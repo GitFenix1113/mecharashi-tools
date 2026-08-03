@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-02
+## [Unreleased] - 2026-08-03
 
 ### ⚠ 重大變更
 
@@ -210,6 +210,7 @@
 
 ### 🔧 維護
 
+- 新增奈芙蒂斯機甲圖片（縮圖＋3 零件）並更新圖片 manifest (`2962701`)
 - 後台編輯彈窗分頁精簡與長分頁雙欄化（PLAN-033 Phase C 完成，轉入觀察維護中） (`d84fb71`)
 - PLAN-029 Phase 5 路線 B — /api 掛進 mecharashi.wiki zone 並切同源 (`402d290`)
 - 移除 favicon 履歷記錄（實際並未故障） (`bb253b9`)
