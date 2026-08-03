@@ -24,7 +24,10 @@ let manifestPromise: Promise<Manifest> | null = null
 export function loadManifest(): Promise<Manifest> {
   if (manifestCache) return Promise.resolve(manifestCache)
   if (!manifestPromise) {
-    const url = `${import.meta.env.BASE_URL}images/manifest.json`
+    // ?v=__BUILD_ID__：manifest.json 位於 public/，網址永遠不變、內容卻每次加圖都會變，
+    // 而 CDN 會邊緣快取它（Cloudflare 預設 4 小時），導致新加的圖在後台挑不到且無法靠
+    // 重新整理解決。每次部署換一個 query 即換一個快取鍵，必定取到當次建置的清單。
+    const url = `${import.meta.env.BASE_URL}images/manifest.json?v=${__BUILD_ID__}`
     manifestPromise = fetch(url)
       .then((r) => { if (!r.ok) throw new Error(`圖檔清單載入失敗（${r.status}）`); return r.json() })
       .then((m: Manifest) => { manifestCache = m; return m })
