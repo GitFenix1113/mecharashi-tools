@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-03
+## [Unreleased] - 2026-08-04
 
 ### ⚠ 重大變更
 
@@ -292,6 +292,7 @@
 
 ### 其他
 
+- @ perf: 圖片全面轉 WebP，並改為逐層退回的圖片載入 (`3b9a3af`)
 - @ chore: 新增機師/技能/模組圖片素材 (`4c18fd6`)
 - @ style: 更新莫比烏斯X的機甲部件圖示 (`846da9d`)
 - 更新元件定義 (`4155274`)
