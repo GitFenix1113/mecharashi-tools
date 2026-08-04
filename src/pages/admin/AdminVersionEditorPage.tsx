@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import { uploadImage } from '../../lib/imageUpload'
+import { bumpDataVersion } from '../../lib/firestoreApi'
 import type { PatchVersion, PatchHalf, VersionIconUrls } from '../../data/patchVersions/types'
 import type { Pilot, Mech, Weapon, Backpack } from '../../types'
 import { resolveIconSrc } from '../../utils/assets'
@@ -260,6 +261,10 @@ export default function AdminVersionEditorPage() {
     try {
       const clean = stripUndefined(formData)
       await setDoc(doc(db, 'patchVersions', `v${formData.version}`), clean)
+      // Worker 的邊緣快取以「集合版本號」當 cache key（workers/src/index.ts），不 bump 就換不掉
+      // key，前台會一路吃到 max-age=86400 的舊 JSON——banner/iconUrls 改了最長 24 小時才可見，
+      // 且硬重整無效（快取在邊緣不在瀏覽器）。失敗不擋存檔，沿用各 api 模組的 .catch(() => '')。
+      await bumpDataVersion('patchVersions').catch(() => '')
       invalidatePatchVersionsCache()
       setSaveStatus('success')
       setSaveMsg('儲存成功！Firestore 已更新。')
