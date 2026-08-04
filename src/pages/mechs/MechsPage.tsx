@@ -2,10 +2,18 @@
 import { Link } from 'react-router-dom'
 import { useMechs } from '../../hooks/useFirestore'
 import { useViewMode } from '../../hooks/useViewMode'
-import { assetUrl } from '../../utils/assets'
+import { imageCandidates } from '../../utils/assets'
+import { FallbackImage } from '../../components/FallbackImage'
 import { ViewModeToggle } from '../../components/ViewModeToggle'
 
 const ARMOR_TYPES = ['輕型', '中甲', '重型']
+
+/**
+ * 機甲縮圖候選：Firestore 的 portrait → 依名稱慣例的 images/mechs/{名稱}.webp。
+ * 每項還會自動再展開 .webp 變體，所以資料若殘留舊的 .png 路徑也退得回來。
+ */
+const mechImageCandidates = (mech: { name: string; portrait?: string }) =>
+  imageCandidates(mech.portrait, `images/mechs/${mech.name}.webp`)
 
 const ARMOR_STYLES: Record<string, { text: string; border: string; bg: string }> = {
   輕型: { text: 'text-accent-cyan', border: 'border-accent-cyan/40', bg: 'bg-accent-cyan/10' },
@@ -199,20 +207,11 @@ export default function MechsPage() {
                 className="group block bg-bg-card border border-border rounded-lg overflow-hidden no-underline transition-all hover:bg-bg-card-hover hover:border-border-accent hover:-translate-y-0.5"
               >
                 <div className="relative aspect-square bg-bg-dark overflow-hidden">
-                  <img
-                    src={mech.portrait ? assetUrl(mech.portrait) : assetUrl(`images/mechs/${mech.name}.png`)}
+                  <FallbackImage
+                    candidates={mechImageCandidates(mech)}
                     alt=""
                     loading="lazy"
                     className="w-full h-full object-contain object-center transition-transform group-hover:scale-105"
-                    onError={(e) => {
-                      const el = e.target as HTMLImageElement
-                      if (!el.dataset.fb) {
-                        el.dataset.fb = '1'
-                        el.src = assetUrl(`images/mechs/${mech.name}.png`)
-                      } else {
-                        el.style.display = 'none'
-                      }
-                    }}
                   />
                   {s && (
                     <span
@@ -241,19 +240,10 @@ export default function MechsPage() {
               >
                 {/* Portrait */}
                 <div className="relative h-36 bg-bg-dark overflow-hidden">
-                  <img
-                    src={mech.portrait ? assetUrl(mech.portrait) : assetUrl(`images/mechs/${mech.name}.png`)}
+                  <FallbackImage
+                    candidates={mechImageCandidates(mech)}
                     alt=""
                     className="w-full h-full object-contain object-center transition-transform duration-300 group-hover:scale-105"
-                    onError={(e) => {
-                      const el = e.target as HTMLImageElement
-                      if (!el.dataset.fb) {
-                        el.dataset.fb = '1'
-                        el.src = assetUrl(`images/mechs/${mech.name}.png`)
-                      } else {
-                        el.style.display = 'none'
-                      }
-                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-bg-card via-transparent to-transparent" />
                   {s && (

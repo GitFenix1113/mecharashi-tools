@@ -4,8 +4,9 @@ import type { EntityRef, RefType, DescriptionRefs } from '../types'
 import { useGameData, type CollectionKey } from '../contexts/GameDataContext'
 import { useReference } from '../contexts/ReferenceContext'
 import { STAT_LABELS } from '../utils/moduleStats'
-import { assetUrl, resolveIconSrc } from '../utils/assets'
+import { imageCandidates } from '../utils/assets'
 import { pickLevel } from '../utils/ndOverrides'
+import { FallbackImage } from './FallbackImage'
 import { RefText } from './RefText'
 import { RefScopeContext } from './RefChip'
 
@@ -37,7 +38,8 @@ const BUFF_TYPE_LABEL: Record<string, string> = {
 interface Resolved {
   title: string
   subtitle?: string
-  image?: string
+  /** 有序候選圖片路徑，載入失敗逐層退回（見 utils/assets 的 imageCandidates） */
+  images?: string[]
   description?: string
   descriptionRefs?: DescriptionRefs
   route?: string
@@ -52,7 +54,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: p.name,
         subtitle: [p.rarity, p.class, p.faction].filter(Boolean).join(' · '),
-        image: p.portraitUrl || (p.portrait ? assetUrl(p.portrait) : undefined),
+        images: imageCandidates(p.portraitUrl, p.portrait),
         description: p.lore,
         route: `/pilots/${p.id}`,
       }
@@ -63,7 +65,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: m.name,
         subtitle: [m.armorType, m.quality].filter(Boolean).join(' · '),
-        image: m.halfPortrait ? assetUrl(m.halfPortrait) : (m.portrait ? assetUrl(m.portrait) : undefined),
+        images: imageCandidates(m.halfPortrait, m.portrait),
         description: m.lore,
         route: `/mechs/${m.id}`,
       }
@@ -74,7 +76,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: w.name,
         subtitle: [w.type, w.kind, w.rarity].filter(Boolean).join(' · '),
-        image: w.icon ? assetUrl(w.icon) : undefined,
+        images: imageCandidates(w.icon),
         description: w.description,
         route: `/weapons/${w.id}`,
       }
@@ -85,7 +87,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: mod.name,
         subtitle: [mod.slot, mod.rarity].filter(Boolean).join(' · '),
-        image: mod.icon ? assetUrl(mod.icon) : undefined,
+        images: imageCandidates(mod.icon),
         description: mod.description,
         descriptionRefs: mod.descriptionRefs,
       }
@@ -96,7 +98,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: b.name,
         subtitle: [b.type, b.rarity].filter(Boolean).join(' · '),
-        image: b.icon ? assetUrl(b.icon) : undefined,
+        images: imageCandidates(b.icon),
       }
     }
     case 'component': {
@@ -105,7 +107,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: c.name,
         subtitle: c.rarity,
-        image: c.iconLocal ? assetUrl(c.iconLocal) : undefined,
+        images: imageCandidates(c.iconLocal),
         description: c.description,
       }
     }
@@ -135,7 +137,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: b.name,
         subtitle,
-        image: icon ? assetUrl(icon) : (term?.icon ? resolveIconSrc(term.icon) : undefined),
+        images: imageCandidates(icon, term?.icon),
         description,
         descriptionRefs,
       }
@@ -147,7 +149,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
         title: s.name,
         subtitle: [s.type, s.ap ? `AP ${s.ap}` : '', s.cd ? `CD ${s.cd}` : '', s.pp ? `消耗 ${s.pp}PP` : '']
           .filter(Boolean).join(' · '),
-        image: (s.iconLocal || s.icon) ? resolveIconSrc(s.iconLocal || s.icon) : undefined,
+        images: imageCandidates(s.iconLocal, s.icon),
         description: s.description,
         descriptionRefs: s.descriptionRefs,
       }
@@ -166,7 +168,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: t.name,
         subtitle: t.category,
-        image: t.icon ? resolveIconSrc(t.icon) : undefined,
+        images: imageCandidates(t.icon),
         description: t.description,
         descriptionRefs: t.descriptionRefs,
       }
@@ -178,7 +180,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: a.name,
         subtitle: '神經驅動能力',
-        image: ndIcon ? resolveIconSrc(ndIcon) : undefined,
+        images: imageCandidates(ndIcon),
         description: a.description,
         descriptionRefs: a.descriptionRefs,
       }
@@ -244,12 +246,11 @@ export function EntityRefView({ entityRef, interactive, showClose = false }: { e
         {resolved && (
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              {resolved.image && (
-                <img
-                  src={resolved.image}
+              {!!resolved.images?.length && (
+                <FallbackImage
+                  candidates={resolved.images}
                   alt={resolved.title}
                   className="w-14 h-14 rounded-lg object-cover bg-bg-dark border border-border flex-shrink-0"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
                 />
               )}
               <div className="min-w-0">

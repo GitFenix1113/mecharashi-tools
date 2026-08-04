@@ -37,7 +37,9 @@
     <strong>🔄 v1.4 修正：部件詳細資料獨立 + 模組映射</strong>
     parts 欄位從耐久數值升級為完整部件物件（含火力、護甲、命中/閃避、移動力、接口、重量、圖示等）。<br>
     機甲詳情頁採座艙式排版（3×3 格），中央顯示立繪，四角顯示各部件屬性卡片。<br>
-    部件圖片路徑：<code>public/images/mechs/{機甲名}/{position}.png</code>（portrait / half / torso / leftArm / rightArm / legs）。<br>
+    部件圖片路徑：<code>public/images/mechs/{機甲名}/{position}.webp</code>（portrait / half / torso / leftArm / rightArm / legs）。<br>
+    2026-08 起本層圖檔全面轉為 WebP、原 PNG 已移除；<code>mech_models</code> / <code>mech_badges</code> 因程式中硬編副檔名，仍維持 PNG。<br>
+    顯示端一律走 <code>utils/assets</code> 的 <code>imageCandidates()</code> + <code>&lt;FallbackImage&gt;</code> 逐層退回，資料殘留舊 <code>.png</code> 路徑仍能自動退到 <code>.webp</code>。<br>
     僅儲存 manji（滿級）數據，不再保留初始 base 數據。
   </div>
 </section>
@@ -69,7 +71,7 @@
       <tr><td>&nbsp;├ move</td><td>number?</td><td>移動力（僅腿部有）</td></tr>
       <tr><td>&nbsp;├ output</td><td>number?</td><td>出力（僅軀幹有）</td></tr>
       <tr><td>&nbsp;├ antiRiot</td><td>number?</td><td>抗暴（僅軀幹有）</td></tr>
-      <tr><td>&nbsp;├ icon</td><td>string?</td><td>部件圖示路徑 /images/mechs/{機甲名}/{position}.png</td></tr>
+      <tr><td>&nbsp;├ icon</td><td>string?</td><td>部件圖示路徑 /images/mechs/{機甲名}/{position}.webp</td></tr>
       <tr><td>&nbsp;└ mechaIcon</td><td>string?</td><td>遊戲內部資產名（用於官方 CDN waparts/ 路徑）</td></tr>
       <tr class="group-header"><td colspan="3">▎副模組引用（指向 modules Collection）</td></tr>
       <tr><td>module4Id</td><td>string?</td><td>特性模組 ID（4模組槽位）→ modules Collection；無特性模組的機甲可省略</td></tr>
@@ -80,8 +82,8 @@
       <tr><td>rightShoulderSlot</td><td>string | null | undefined</td><td>右肩武器槽。同上邏輯。少部分機甲僅單肩，兩欄位可獨立存在。</td></tr>
       <tr><td>backSlot</td><td>string | null | undefined</td><td>背後武器槽。<code>undefined</code> = 無背後槽；<code>null</code> = 空槽；<code>string</code> = 固定武器 ID</td></tr>
       <tr class="group-header"><td colspan="3">▎圖片路徑</td></tr>
-      <tr><td>portrait</td><td>string?</td><td>完整立繪 /images/mechs/{name}/portrait.png</td></tr>
-      <tr><td>halfPortrait</td><td>string?</td><td>半身圖 /images/mechs/{name}/half.png<br><small style="color:var(--text-dim)">注意：欄位名為 <code>halfPortrait</code>（非 <code>half</code>）</small></td></tr>
+      <tr><td>portrait</td><td>string?</td><td>完整立繪 /images/mechs/{name}/portrait.webp</td></tr>
+      <tr><td>halfPortrait</td><td>string?</td><td>半身圖 /images/mechs/{name}/half.webp<br><small style="color:var(--text-dim)">注意：欄位名為 <code>halfPortrait</code>（非 <code>half</code>）。<br>現況：57 筆機甲的此欄指向從未進版控的 <code>half.png</code>，靠 <code>&lt;FallbackImage&gt;</code> 退回 <code>portrait</code> 顯示。</small></td></tr>
       <tr class="group-header"><td colspan="3">▎其他</td></tr>
       <tr><td>quality</td><td>string?</td><td>機甲品質等級（如 S / A，對應遊戲品質標示）</td></tr>
       <tr><td>debutVersion</td><td>string?</td><td>登場版本：機甲首次實裝的遊戲版本號（對應 patchVersions，如 <code>3.3</code>）；未設定＝尚未回填。後台從版本清單下拉選取，圖鑑可依此篩選</td></tr>

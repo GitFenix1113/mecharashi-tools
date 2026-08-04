@@ -2,7 +2,7 @@ import type { PatchVersion } from './types'
 
 const v3_0: PatchVersion = {
   version: '3.0',
-  bannerImage: '/images/banners/v3.0.jpg',
+  bannerImage: '/images/banners/v3.0.webp',
   upper: {
     cnDate: '2026/01/01',
     twDate: '2026/06/04',

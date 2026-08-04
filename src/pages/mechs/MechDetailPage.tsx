@@ -6,7 +6,8 @@ import { useIsMobile } from '../../hooks/useIsMobile'
 import { useDragOffset } from '../../hooks/useDragOffset'
 import type { MechPart, Module } from '../../types'
 import { MechPartPosition } from '../../types/enums'
-import { assetUrl } from '../../utils/assets'
+import { assetUrl, imageCandidates } from '../../utils/assets'
+import { FallbackImage } from '../../components/FallbackImage'
 import { useMechWithModules } from '../../hooks/useFirestore'
 import { STAT_LABELS } from '../../utils/moduleStats'
 import { RefText } from '../../components/RefText'
@@ -453,14 +454,11 @@ export default function MechDetailPage() {
             {/* 手機：機體圖 + 2×2 部件卡 */}
             <div className="lg:hidden space-y-3">
               <div className="bg-bg-card border border-border rounded-xl flex items-center justify-center h-40">
-                {mech.portrait && (
-                  <img
-                    src={assetUrl(mech.portrait)}
-                    alt={mech.name}
-                    className="max-h-36 w-full object-contain"
-                    onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-                  />
-                )}
+                <FallbackImage
+                  candidates={imageCandidates(mech.portrait, `images/mechs/${mech.name}.webp`)}
+                  alt={mech.name}
+                  className="max-h-36 w-full object-contain"
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {torso    && <PartCard part={torso}    name="軀幹" />}
@@ -476,14 +474,11 @@ export default function MechDetailPage() {
               <div />
               {rightArm ? <PartCard part={rightArm} name="右臂" /> : <div />}
               <div className="bg-bg-card border border-border rounded-xl flex items-center justify-center min-h-[200px]">
-                {mech.portrait && (
-                  <img
-                    src={assetUrl(mech.portrait)}
-                    alt={mech.name}
-                    className="max-h-52 w-full object-contain"
-                    onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-                  />
-                )}
+                <FallbackImage
+                  candidates={imageCandidates(mech.portrait, `images/mechs/${mech.name}.webp`)}
+                  alt={mech.name}
+                  className="max-h-52 w-full object-contain"
+                />
               </div>
               {leftArm ? <PartCard part={leftArm} name="左臂" /> : <div />}
               <div />

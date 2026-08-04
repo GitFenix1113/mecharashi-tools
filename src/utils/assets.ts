@@ -46,6 +46,31 @@ export function resolveIconSrc(url: string): string {
 }
 
 /**
+ * 依序展開圖片候選路徑，交給 <FallbackImage> 逐層退回。
+ *
+ * 每個來源展開成「資料存的原樣 → 換 .webp」兩個候選，再接下一個來源。順序是刻意的：
+ * 先試資料自己寫的路徑，正常情況第一發就中、零多餘請求；只有真的 404 才往下試 webp 版本，
+ * 最後才退到次要來源（例如機甲的 halfPortrait → portrait）。
+ *
+ * 起因是 mechs 有 57 筆 halfPortrait 指向 /images/mechs/{名稱}/half.png，而該檔從未進過版控，
+ * hover 卡因此長期載破圖；同樣的漂移在 PNG→WebP 轉檔後也可能再發生。與其要求資料永遠正確，
+ * 不如讓顯示層自己退得下去。
+ *
+ * 遠端 URL（官方 CDN）不展開 webp 變體 —— 對方沒有那個檔，試了只是白費一次請求。
+ */
+export function imageCandidates(...sources: (string | null | undefined)[]): string[] {
+  const out: string[] = []
+  const push = (u: string) => { if (u && !out.includes(u)) out.push(u) }
+  for (const src of sources) {
+    if (!src) continue
+    const resolved = resolveIconSrc(src)
+    push(resolved)
+    if (!/^https?:\/\//i.test(src)) push(resolved.replace(/\.(png|jpe?g)$/i, '.webp'))
+  }
+  return out
+}
+
+/**
  * 解析版本前瞻圖 URL 給 <img src> 使用。
  * - 遠端 URL（http/https，如 Cloudinary 上傳）原樣返回
  * - 本地路徑（/images/banners/...）套上 BASE_URL

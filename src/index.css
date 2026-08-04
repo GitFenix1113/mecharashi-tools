@@ -63,7 +63,7 @@
 
 body {
   background-color: var(--color-bg-dark);
-  background-image: url('/images/General/homepage_background.jpg');
+  background-image: url('/images/General/homepage_background.webp');
   background-size: cover;
   background-attachment: fixed;
   background-repeat: no-repeat;
