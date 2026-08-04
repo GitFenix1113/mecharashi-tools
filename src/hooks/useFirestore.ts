@@ -33,11 +33,21 @@ export function usePilots(): HookResult<Pilot[]> {
   return { data: pilots, loading, error }
 }
 
-export function usePilotNameMap(): HookResult<Record<string, string>> {
+/** 顯示層用的機師輕量資料（名稱＋頭像來源），避免把整包 Pilot 拖進純顯示元件。 */
+export interface PilotBrief {
+  id: string
+  name: string
+  portrait: string
+  portraitUrl?: string
+}
+
+export function usePilotBriefMap(): HookResult<Record<string, PilotBrief>> {
   const { pilots } = useGameData()
   const { loading, error } = useCollections(['pilots'])
   const data = useMemo(
-    () => Object.fromEntries(pilots.map((p) => [p.id, p.name])),
+    () => Object.fromEntries(
+      pilots.map((p) => [p.id, { id: p.id, name: p.name, portrait: p.portrait, portraitUrl: p.portraitUrl }]),
+    ),
     [pilots],
   )
   return { data, loading, error }

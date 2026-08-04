@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { BottomSheet } from '../../components/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { useWeapons, usePilotNameMap } from '../../hooks/useFirestore'
+import { useWeapons, usePilotBriefMap, type PilotBrief } from '../../hooks/useFirestore'
 import { WeaponIcon } from '../../components/WeaponIcon'
+import { ExclusivePilotLink } from '../../components/PilotIcon'
 import { WeaponRarityBadge } from '../../components/WeaponRarityBadge'
 import {
   EQUIP_SLOT_LABELS,
@@ -73,11 +74,11 @@ function formatRangeType(rangeType: string): string {
   return '菱形'
 }
 
-function WeaponTooltipContent({ weapon, pilotNameMap }: {
+function WeaponTooltipContent({ weapon, pilotMap }: {
   weapon: Weapon
-  pilotNameMap: Record<string, string>
+  pilotMap: Record<string, PilotBrief>
 }) {
-  const pilotName = weapon.exclusiveFor ? pilotNameMap[weapon.exclusiveFor] : null
+  const pilot = weapon.exclusiveFor ? pilotMap[weapon.exclusiveFor] : undefined
   const stats: Array<{ label: string; value: string; noRed?: boolean }> = [
     { label: '攻擊力',  value: weapon.attack.toLocaleString() },
     { label: '命中',    value: weapon.accuracy.toLocaleString() },
@@ -106,13 +107,13 @@ function WeaponTooltipContent({ weapon, pilotNameMap }: {
           </div>
           <div className="text-[13px] text-text-dim mt-0.5">{weapon.type} · {weapon.kind}</div>
           {isCompositeWeapon(weapon) && <div className="mt-1"><CompositeBadge /></div>}
-          {pilotName && weapon.exclusiveFor && (
-            <Link
-              to={`/pilots/${weapon.exclusiveFor}`}
-              className="text-[13px] text-accent-pink hover:underline mt-0.5 block"
-            >
-              専武：{pilotName}
-            </Link>
+          {pilot && weapon.exclusiveFor && (
+            <ExclusivePilotLink
+              pilotId={weapon.exclusiveFor}
+              pilot={pilot}
+              prefix="専武："
+              className="mt-0.5"
+            />
           )}
         </div>
       </div>
@@ -218,11 +219,11 @@ function WeaponTooltipContent({ weapon, pilotNameMap }: {
   )
 }
 
-function WeaponTooltip({ weapon, pilotNameMap }: { weapon: Weapon; pilotNameMap: Record<string, string> }) {
+function WeaponTooltip({ weapon, pilotMap }: { weapon: Weapon; pilotMap: Record<string, PilotBrief> }) {
   return (
     <div className="w-80 max-h-[min(90vh,_640px)] flex flex-col bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
       <div className="flex-1 min-h-0 overflow-y-auto p-1">
-        <WeaponTooltipContent weapon={weapon} pilotNameMap={pilotNameMap} />
+        <WeaponTooltipContent weapon={weapon} pilotMap={pilotMap} />
       </div>
     </div>
   )
@@ -234,9 +235,9 @@ interface TooltipState {
   anchorTop: number
 }
 
-function TooltipPortal({ weapon, pilotNameMap, x, anchorTop }: {
+function TooltipPortal({ weapon, pilotMap, x, anchorTop }: {
   weapon: Weapon
-  pilotNameMap: Record<string, string>
+  pilotMap: Record<string, PilotBrief>
   x: number
   anchorTop: number
 }) {
@@ -255,7 +256,7 @@ function TooltipPortal({ weapon, pilotNameMap, x, anchorTop }: {
       className="fixed z-50 pointer-events-none"
       style={{ left: x, top }}
     >
-      <WeaponTooltip weapon={weapon} pilotNameMap={pilotNameMap} />
+      <WeaponTooltip weapon={weapon} pilotMap={pilotMap} />
     </div>,
     document.body
   )
@@ -263,7 +264,7 @@ function TooltipPortal({ weapon, pilotNameMap, x, anchorTop }: {
 
 export default function WeaponsPage() {
   const { data: weapons, loading } = useWeapons()
-  const { data: pilotNameMap } = usePilotNameMap()
+  const { data: pilotMap } = usePilotBriefMap()
 
   const [search, setSearch] = useState('')
   const [rarityFilters, setRarityFilters]     = useState<Set<string>>(new Set())
@@ -346,7 +347,7 @@ export default function WeaponsPage() {
         <TooltipPortal
           key={activeTooltip.weaponId}
           weapon={activeWeapon}
-          pilotNameMap={pilotNameMap}
+          pilotMap={pilotMap}
           x={activeTooltip.x}
           anchorTop={activeTooltip.anchorTop}
         />
@@ -355,7 +356,7 @@ export default function WeaponsPage() {
       <BottomSheet open={!!sheetWeapon} onClose={() => setSheetWeapon(null)}>
         {sheetWeapon && (
           <>
-            <WeaponTooltipContent weapon={sheetWeapon} pilotNameMap={pilotNameMap} />
+            <WeaponTooltipContent weapon={sheetWeapon} pilotMap={pilotMap} />
             <Link
               to={`/weapons/${sheetWeapon.id}`}
               className="mt-4 block text-center text-sm text-accent-orange hover:underline"
@@ -467,7 +468,7 @@ export default function WeaponsPage() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {paginated.map((w) => {
-            const pilotName = w.exclusiveFor ? pilotNameMap[w.exclusiveFor] : null
+            const pilot = w.exclusiveFor ? pilotMap[w.exclusiveFor] : undefined
 
             return (
               <div
@@ -497,14 +498,13 @@ export default function WeaponsPage() {
                         {w.type}·{w.kind}
                       </span>
                       {isCompositeWeapon(w) && <CompositeBadge />}
-                      {w.isExclusive && pilotName && w.exclusiveFor && (
-                        <Link
-                          to={`/pilots/${w.exclusiveFor}`}
-                          className="text-[13px] text-accent-pink hover:underline"
+                      {w.isExclusive && pilot && w.exclusiveFor && (
+                        <ExclusivePilotLink
+                          pilotId={w.exclusiveFor}
+                          pilot={pilot}
+                          size="xs"
                           onClick={(e) => e.stopPropagation()}
-                        >
-                          {pilotName}
-                        </Link>
+                        />
                       )}
                     </div>
                   </div>

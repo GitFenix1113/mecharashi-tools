@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useWeapon, useWeapons, usePilotNameMap, useBackpackNameMap } from '../../hooks/useFirestore'
+import { useWeapon, useWeapons, usePilotBriefMap, useBackpackNameMap } from '../../hooks/useFirestore'
 import { WeaponRarityBadge } from '../../components/WeaponRarityBadge'
 import { WeaponIcon } from '../../components/WeaponIcon'
+import { ExclusivePilotLink } from '../../components/PilotIcon'
 import {
   WeaponTypeBadge,
   WeaponEquipSlotBadge,
@@ -130,7 +131,7 @@ export default function WeaponDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: weapon, loading, error } = useWeapon(id)
   const { data: weapons } = useWeapons()
-  const { data: pilotNameMap } = usePilotNameMap()
+  const { data: pilotMap } = usePilotBriefMap()
 
   // ── B-1 進階鏈：母武器（前置）＋子武器（可進階為）＋融合/進階技能差集 ──────────
   const byId = useMemo(() => new Map(weapons.map((w) => [w.id, w])), [weapons])
@@ -164,7 +165,7 @@ export default function WeaponDetailPage() {
     )
   }
 
-  const pilotName   = weapon.exclusiveFor ? pilotNameMap[weapon.exclusiveFor] : null
+  const pilot       = weapon.exclusiveFor ? pilotMap[weapon.exclusiveFor] : undefined
   const hasFixedMod = !!(weapon.fixedMod?.planName)
   const hasFloatMod = !!(weapon.floatingMod?.planName)
   const hasSlots    = weapon.triggerSlots > 0 || weapon.effectSlots > 0 || weapon.componentLimit > 0
@@ -201,15 +202,14 @@ export default function WeaponDetailPage() {
                 {isCompositeWeapon(weapon) && <CompositeBadge />}
               </div>
 
-              {weapon.isExclusive && pilotName && weapon.exclusiveFor && (
+              {weapon.isExclusive && pilot && weapon.exclusiveFor && (
                 <div className="mt-3 flex items-center gap-2">
                   <span className="text-[13px] text-accent-yellow font-bold">⭐ 專屬武器</span>
-                  <Link
-                    to={`/pilots/${weapon.exclusiveFor}`}
-                    className="text-[13px] text-accent-pink hover:underline"
-                  >
-                    {pilotName}
-                  </Link>
+                  <ExclusivePilotLink
+                    pilotId={weapon.exclusiveFor}
+                    pilot={pilot}
+                    size="md"
+                  />
                 </div>
               )}
             </div>
