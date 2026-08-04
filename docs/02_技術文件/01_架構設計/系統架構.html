@@ -125,7 +125,9 @@
   <table class="spec-table">
     <tr><th>目錄 / 檔案</th><th>說明</th></tr>
     <tr><td><code>src/pages/</code></td><td>各路由頁面元件（MechsPage、ModulesPage 等）</td></tr>
-    <tr><td><code>src/hooks/</code></td><td>Firestore 資料讀取的 React Hooks（useFirestore.ts）</td></tr>
+    <tr><td><code>src/components/</code></td><td>跨頁面共用的 UI 元件。扁平層放單一元件（<code>XxxBadges.tsx</code>、<code>FallbackImage</code>、<code>RefText</code> 等），同一領域的元件家族開子資料夾（<code>module/</code>、<code>planner/</code>、<code>admin/</code>、<code>home/</code>、<code>timeline/</code>）</td></tr>
+    <tr><td><code>src/hooks/</code></td><td>Firestore 資料讀取與跨頁共用的 React Hooks（<code>useFirestore.ts</code>、<code>useModuleAdopters.ts</code>、<code>useIsMobile.ts</code> 等）</td></tr>
+    <tr><td><code>src/contexts/</code></td><td>三層 Provider：<code>AuthContext</code>（登入與角色）、<code>GameDataContext</code>（遊戲資料快取層）、<code>ReferenceContext</code>（實體引用互動）</td></tr>
     <tr><td><code>src/lib/</code></td><td>Firebase 初始化與底層 API 呼叫（firestoreApi.ts）</td></tr>
     <tr><td><code>src/types/</code></td><td>TypeScript 型別定義（index.ts）與 Enum 常數（enums.ts）</td></tr>
     <tr><td><code>src/utils/</code></td><td>跨頁面共用的純函式與常數（見下方說明）</td></tr>
@@ -133,25 +135,101 @@
 
   <div class="sub-h" style="margin-top:20px;">src/utils/ 共用工具</div>
   <div class="info-block">
-    <strong>抽象化原則：</strong>只有「跨兩個以上頁面重複、且不含 UI 邏輯」的函式或常數才移入 utils/。
-    UI 元件（如 Tooltip 元件本身）目前仍保留在各頁面中，等需求穩定後再視情況抽出。
+    <strong>抽象化原則：</strong>只有「跨兩個以上頁面重複」的東西才抽出，並依性質分家：<br>
+    ・<strong>純資料 / 純函式</strong>（標籤表、排序規則、格式化）→ <code>utils/</code><br>
+    ・<strong>帶 JSX 的呈現邏輯</strong> → <code>components/</code><br>
+    這條界線同時避開 <code>react-refresh/only-export-components</code>——元件檔一旦匯出非元件就會觸發該 lint 規則。<br>
+    <span style="opacity:.8;">※ 早期曾把 UI 元件留在各頁面「等需求穩定再抽」，實測代價是同一份實作在兩頁各長一份並各自漂移（PLAN-044 收斂了模組卡的兩份拷貝）。現行做法是<strong>第二個使用者出現時就抽</strong>。</span>
   </div>
 
   <table class="spec-table">
-    <tr><th>檔案</th><th>匯出內容</th><th>使用頁面</th></tr>
+    <tr><th>檔案</th><th>匯出內容</th><th>使用方</th></tr>
     <tr>
       <td><code>utils/assets.ts</code></td>
-      <td><code>assetUrl(path)</code> — 將本地圖片路徑轉換為 CDN 或本地 URL</td>
+      <td>
+        <code>assetUrl(path)</code> — 將本地圖片路徑轉換為 CDN 或本地 URL<br>
+        <code>imageCandidates(...sources)</code> — 產生逐層退回的圖片候選清單（自動展開 WebP 變體），搭配 <code>&lt;FallbackImage&gt;</code> 使用
+      </td>
       <td>MechsPage、ModulesPage、MechDetailPage 等</td>
     </tr>
     <tr>
-      <td><code>utils/moduleStats.ts</code></td>
+      <td><code>utils/moduleStats.tsx</code></td>
       <td>
-        <code>STAT_LABELS</code> — 模組數值欄位對應的中文標籤與顯示顏色（25 項）<br>
+        <code>STAT_LABELS</code> — 模組數值欄位對應的中文標籤與顯示顏色（<strong>32 項，涵蓋 ModuleLevel 全部數值欄位</strong>）<br>
         <code>highlightNumbers(text)</code> — 將描述文字中的數字標成紅色<br>
-        <code>StatKey</code> — TypeScript 型別：ModuleLevel 的數值欄位 key
+        <code>StatKey</code> — TypeScript 型別：由 <code>NumericKeys&lt;Omit&lt;ModuleLevel,'level'&gt;&gt;</code> 自型別推導出的數值欄位 key
       </td>
-      <td>ModulesPage、MechDetailPage（未來：武器頁、元件頁）</td>
+      <td>ModuleStatTags（間接供模組圖鑑與機甲詳情頁使用）</td>
+    </tr>
+    <tr>
+      <td><code>utils/moduleSlots.ts</code></td>
+      <td>
+        <code>SLOT_LABELS</code> — 槽位中文標籤<br>
+        <code>CATALOG_SLOTS</code> — 圖鑑收錄的槽位，<strong>陣列順序即顯示與排序順序</strong>（特性 → 8級 → 通用）<br>
+        <code>compareModuleBySlot(a, b)</code> — 依上述順序排序，不在清單內者排最後
+      </td>
+      <td>ModulesPage（篩選按鈕與清單排序共用同一份順序）、ModuleBadges</td>
+    </tr>
+  </table>
+
+  <div class="info-block" style="margin-top:16px;">
+    <strong>◆ <code>STAT_LABELS</code> 的型別窮盡設計（PLAN-044）</strong><br>
+    它不是手寫陣列，而是由 <code>Record&lt;StatKey, StatMeta&gt;</code> 派生。<code>ModuleLevel</code> 日後新增數值欄位（例如新版本出現新的武器種類增傷）卻忘了補標籤時，<code>npm run build</code> 會<strong>直接編譯失敗並指名缺哪個 key</strong>。<br>
+    先前沒有這道保險，<code>dmg_heavy_machinegun</code> 等 7 個欄位在資料庫有值卻從未在前台顯示過。<br>
+    武器相關標籤直接引用 <code>WeaponType</code> / <code>WeaponKind</code> enum（<code>label: `${WeaponKind.Rod}傷害`</code>），與武器圖鑑用語保證一致、不會再漂移。
+  </div>
+
+  <div class="sub-h" style="margin-top:24px;">src/components/module/ 模組元件家族</div>
+  <div class="info-block">
+    模組卡在<strong>模組圖鑑</strong>與<strong>機甲詳情頁</strong>兩處呈現。PLAN-044 前兩頁各有一份實作（含逐字重複的等級浮窗機制與手寫數值展開），現已收斂為單一實作，以 <code>variant</code> 區分外觀。
+  </div>
+
+  <table class="spec-table">
+    <tr><th>元件 / Hook</th><th>職責</th></tr>
+    <tr>
+      <td><code>module/ModuleCard</code></td>
+      <td>模組卡骨架。<code>variant="catalog"</code>（圖鑑：大圖示、含槽位標籤與來源）／<code>"detail"</code>（機甲詳情頁：小圖示、緊湊）。<strong>等級狀態放在卡片內部</strong>，各卡獨立、預設滿級</td>
+    </tr>
+    <tr>
+      <td><code>module/ModuleLevelSelector</code></td>
+      <td>等級切換。桌機為 <code>&lt;input type="range"&gt;</code> 並顯示 <code>Lv.N/M</code>；行動裝置改等級按鈕列（<code>useIsMobile</code> 分流）。只有一級或無等級資料時整個不渲染</td>
+    </tr>
+    <tr>
+      <td><code>module/ModuleStatTags</code></td>
+      <td>數值標籤列，走 <code>STAT_LABELS</code> 產出。吃「一個帶數值欄位的物件」（<code>ModuleLevel</code> 或 <code>Module</code>），值為 0／未設定者不渲染，整組皆空時回傳 <code>null</code>。<code>variant: 'plain' | 'chip'</code></td>
+    </tr>
+    <tr>
+      <td><code>module/ModuleAdopters</code></td>
+      <td>採用機甲縮圖列（<code>FallbackImage</code> + <code>Link</code> 進機甲頁；圖片全數失敗時退回機甲名文字 chip，仍可點）</td>
+    </tr>
+    <tr>
+      <td><code>module/ModuleBoundPart</code></td>
+      <td>綁定部位顯示，內含唯一一份 <code>PART_LABELS</code>。<code>variant: 'inline' | 'row'</code>。保留 <code>Array.isArray</code> 防禦以相容殘留的純字串舊資料</td>
+    </tr>
+    <tr>
+      <td><code>ModuleBadges</code>（扁平層）</td>
+      <td><code>ModuleSlotBadge</code> / <code>ModuleRarityBadge</code>。<strong>只匯出元件</strong>，槽位資料在 <code>utils/moduleSlots.ts</code></td>
+    </tr>
+    <tr>
+      <td><code>hooks/useModuleAdopters</code></td>
+      <td>模組 ID → 採用此模組的機甲清單。正向資料只存在 mechs 端（<code>module4Id</code> / <code>module8Id</code> / <code>moduleFixedIds</code>），必須反查；同一個 8 級模組可被多台機甲共用。<strong>零額外 Firestore read</strong>（mechs 已由 GameDataContext 快取，純記憶體 <code>useMemo</code>）</td>
+    </tr>
+  </table>
+
+  <div class="sub-h" style="margin-top:24px;">機師頭像元件</div>
+  <table class="spec-table">
+    <tr><th>元件 / Hook</th><th>職責</th></tr>
+    <tr>
+      <td><code>PilotIcon</code></td>
+      <td>機師頭像（圓形裁切）。立繪是直式全身圖，以 <code>object-cover</code> + <code>object-top</code> 取上緣等同「只露頭」。來源依 <code>portraitUrl</code>（官方 CDN）→ <code>portrait</code>（本地）逐層退回，全數失敗才顯示 <code>fallback</code>。尺寸 <code>xs</code> / <code>sm</code> / <code>md</code></td>
+    </tr>
+    <tr>
+      <td><code>ExclusivePilotLink</code></td>
+      <td>專屬武器 → 對應機師的連結，以頭像取代原本的機師名稱。<strong>沒有立繪或圖片全數失敗時退回顯示名稱文字</strong>，避免連結變成看不見的空洞。用於武器圖鑑與武器詳情頁</td>
+    </tr>
+    <tr>
+      <td><code>hooks/usePilotBriefMap</code></td>
+      <td>機師 ID → <code>PilotBrief</code>（<code>id</code> / <code>name</code> / <code>portrait</code> / <code>portraitUrl</code>）的輕量對照表，避免把整包 <code>Pilot</code> 拖進純顯示元件。<span style="opacity:.8;">※ 取代原本只回傳名稱的 <code>usePilotNameMap</code>。</span></td>
     </tr>
   </table>
 </section>

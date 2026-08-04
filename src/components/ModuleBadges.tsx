@@ -1,10 +1,5 @@
 import { ModuleSlot, ModuleRarity } from '../types/enums'
-
-export const SLOT_LABELS: Record<string, string> = {
-  [ModuleSlot.SLOT_4]:    '特性模組',
-  [ModuleSlot.SLOT_8]:    '8級模組',
-  [ModuleSlot.UNIVERSAL]: '通用模組',
-}
+import { SLOT_LABELS } from '../utils/moduleSlots'
 
 const SLOT_CONFIG: Record<string, string> = {
   [ModuleSlot.SLOT_4]:    'text-accent-orange bg-accent-orange/10 border-accent-orange/30',

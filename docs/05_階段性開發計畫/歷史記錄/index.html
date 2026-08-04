@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-044 · 模組圖鑑內嵌改版</h3>
+      <p>模組的 <code>levels[]</code> 早就存了每一級的完整正文與數值，但前台<b>只在 hover 出來的浮窗裡看得到</b>——卡片顯示的永遠是滿級快照，Lv.1～7 搜尋抓不到、截圖帶不走、手機得再點一次 BottomSheet。改成 EN WIKI 那種<b>卡片內嵌一條等級滑桿</b>的讀法（一次仍只顯示一級，卡片只長高約 40px，換來浮窗給不了的「兩張卡並排比較」）。動刀時發現真正的病灶更大：<code>LevelTooltip</code>／<code>TooltipPortal</code>／<code>PART_LABELS</code>／<code>RARITY_STYLES</code> 在 ModulesPage 與 MechDetailPage <b>逐字重複兩份</b>，那段 11 欄位數值標籤更是手寫抄了兩次——而 <code>ModuleLevel</code> 實有 32 個數值欄位，<b>重機槍／浮游炮／打樁機等 7 種增傷在資料庫有值卻從未顯示過</b>；同時 <code>ModuleBadges.tsx</code> 是零消費者的死碼，同一組樣式表在別處活著三份拷貝。故一併抽出 <code>components/module/</code> 元件家族（<b>兩頁共用同一份模組卡</b>），並把 <code>STAT_LABELS</code> 改為 <code>Record&lt;StatKey,…&gt;</code> 型別窮盡——日後 <code>ModuleLevel</code> 加欄位會直接編譯失敗而非靜默漏顯示；武器相關標籤改為直接引用 <code>WeaponType</code>／<code>WeaponKind</code> enum，順手修正 8 個與武器圖鑑不一致的舊譯名（軌道→電磁炮、槍→長柄…）。另依站長要求加入<b>稀有度預設篩選 S</b> 與<b>特性→8級→通用排序</b>（排序名次直接查 <code>CATALOG_SLOTS</code>，與篩選按鈕同一份，不可能排歧異）；採用機甲改為可點的機甲縮圖列。純顯示層，零 schema 異動、零額外 Firestore read。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-05 · 16 / 16 任務 · 單日完成 · 兩頁淨減 627 行、換得 440 行共用實作；lint 89→87 errors</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-044_模組圖鑑內嵌改版/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-044_模組圖鑑內嵌改版/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card orange">
       <div class="card-icon">◆</div>
       <h3>PLAN-039 · 引用標記同名消歧</h3>
