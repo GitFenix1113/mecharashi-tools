@@ -523,29 +523,11 @@ const WEAPONS: CollectionSpec<Weapon> = {
 const BACKPACKS: CollectionSpec<Backpack> = {
   coll: 'backpacks',
   nameOf: (b) => b.name,
-  buffIdSites: [
-    {
-      id: 'backpacks.mainSkill.buffIds',
-      targets: ['buff'],
-      // PLAN-043 Phase E 移除（連同 Backpack.mainSkill 型別）。在 flip 腳本清掉欄位之前
-      // 仍必須掃描——留著的舊資料若漏掃，刪 buff 時會在此處留下孤兒引用。
-      //
-      // 既有怪癖：origin 用 backpack.name 而非 mainSkill.name，與其他分支不一致。
-      // 這是既有行為（reachableBuffs 去重的 key），必須複製，不可順手修正。
-      enumerate: (b) => b.mainSkill
-        ? [{ segments: ['mainSkill', 'buffIds'], origin: `背包:${b.name}`, buffIds: b.mainSkill.buffIds ?? [] }]
-        : [],
-    },
-  ],
-  textUnits: (b) => b.mainSkill
-    ? [{
-        // 同上：PLAN-043 Phase E 隨 mainSkill 一併移除
-        segments: ['mainSkill'],
-        origin: `背包:${b.name}`,
-        texts: { description: b.mainSkill.description },
-        refs: b.mainSkill.descriptionRefs,
-      }]
-    : [],
+  // PLAN-043 Phase E：內嵌 mainSkill 已從 Firestore 與型別移除，其 buffIds／textUnits
+  // 兩個站點隨之刪除。背包本身不再直接賦予 buff——buff 一律經 skillIds 指向的
+  // backpackSkills doc（見 BACKPACK_SKILLS spec）。
+  buffIdSites: [],
+  textUnits: () => [],
   scalarSites: [
     {
       // PLAN-043：掛載的背包技能。元素可含 @N（`bpskill_移動強化@1`），故比對前要拆後綴——

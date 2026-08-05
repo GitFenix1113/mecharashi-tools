@@ -36,7 +36,10 @@ export interface BuffPoolInput {
   weapon?: Weapon | null
   backpack?: Backpack | null
   /**
-   * 背包技能庫（PLAN-043）。給了才會解析 backpack.skillIds；未給則只取舊的內嵌 mainSkill。
+   * 背包技能庫（PLAN-043）。**背包的 buff 全部經由此處解析** ——
+   * Phase E 移除內嵌 mainSkill 後，沒傳這個就等於背包完全不賦予 buff。
+   * 這是刻意的失敗模式：症狀是「背包的增益全沒了」，比靜默拿到部分結果容易發現。
+   * SIMULATOR_KEYS 已含 backpackSkills，正式路徑不會漏。
    *
    * 傳整包字典而非已解析結果，是因為等級解析必須在這裡做：
    * 背包掛的是 `id@N`，**只有該級的 buffIds 算數**。若改用 runSpec 跑整份技能 doc，
@@ -103,7 +106,9 @@ export function buildBuffPool(input: BuffPoolInput): BuffSource[] {
 
   for (const m of modules ?? []) runSpec(out, SPECS.modules, m)
   if (weapon) runSpec(out, SPECS.weapons, weapon)
-  // 背包的內嵌 mainSkill（PLAN-043 Phase E 移除；在那之前舊資料仍在，不掃就會漏算）
+  // PLAN-043 Phase E 後 SPECS.backpacks.buffIdSites 已是空陣列（背包不再直接賦予 buff）。
+  // 呼叫仍保留：日後若真的給背包加了頂層 buffIds 站點，這裡會自動跟上；
+  // 刪掉的話那個新站點會靜默不進池子，而症狀是「數值算不對」，極難追。
   if (backpack) runSpec(out, SPECS.backpacks, backpack)
 
   // PLAN-043：掛載技能。刻意**不**走 runSpec(SPECS.backpackSkills, doc) ——

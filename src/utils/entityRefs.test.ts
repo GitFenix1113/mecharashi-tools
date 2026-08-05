@@ -13,7 +13,7 @@ import {
 } from './entityRefs.ts'
 import { buildBuffPool } from './buffPool.ts'
 import { resolvePilotSkills } from './pilotSkills.ts'
-import type { Pilot, PilotSkillDoc, GameBuff, Module, Weapon, Backpack } from '../types'
+import type { Pilot, PilotSkillDoc, GameBuff, Module, Weapon, Backpack, BackpackSkillDoc } from '../types'
 
 const asPilot = (o: unknown) => o as unknown as Pilot
 const asBuff = (o: unknown) => o as unknown as GameBuff
@@ -391,10 +391,17 @@ test('J3: 無 pilot 時 skills 不產出（保留既有語意）', () => {
   assert.deepEqual(buildBuffPool({ skills }), [])
 })
 
-test('J4: 背包怪癖——origin 用 backpack.name 而非 mainSkill.name', () => {
-  const backpack = { name: '能源背包', mainSkill: { name: '主技能', buffIds: ['buff_充能'] } } as unknown as Backpack
-  const pool = buildBuffPool({ backpack })
-  assert.equal(pool[0].origin, '背包:能源背包')
+test('J4: 背包的 buff 來源標註指向技能本體（PLAN-043 取代舊的「背包:名稱」怪癖）', () => {
+  // 舊行為：origin 用 backpack.name 而非 mainSkill.name（內嵌時代的既有怪癖）。
+  // PLAN-043 移除內嵌 mainSkill 後，同一個技能可被多個背包共用，
+  // 標背包名會讓面板顯示不出真正的來源，故改標技能名。
+  const backpack = { id: 'bp1', name: '能源背包', skillIds: ['bpskill_主技能'] } as unknown as Backpack
+  const backpackSkills = [{
+    id: 'bpskill_主技能', name: '主技能', skillType: '被動技能', description: '', effects: [],
+    buffIds: ['buff_充能'],
+  }] as unknown as BackpackSkillDoc[]
+  const pool = buildBuffPool({ backpack, backpackSkills })
+  assert.equal(pool[0].origin, '背包技能:主技能')
 })
 
 test('J5: 混合輸入的整體順序：天賦→技能→神驅→模組→武器技能→背包', () => {
@@ -406,8 +413,12 @@ test('J5: 混合輸入的整體順序：天賦→技能→神驅→模組→武�
   })
   const modules = [{ name: 'M', buffIds: ['b_m'] }] as unknown as Module[]
   const weapon = { name: 'W', skills: [{ name: 'WS', buffIds: ['b_w'] }] } as unknown as Weapon
-  const backpack = { name: 'B', mainSkill: { buffIds: ['b_b'] } } as unknown as Backpack
-  const pool = buildBuffPool({ pilot, modules, weapon, backpack })
+  const backpack = { id: 'bp1', name: 'B', skillIds: ['bpskill_b'] } as unknown as Backpack
+  const backpackSkills = [{
+    id: 'bpskill_b', name: 'BS', skillType: '被動技能', description: '', effects: [], buffIds: ['b_b'],
+  }] as unknown as BackpackSkillDoc[]
+  const pool = buildBuffPool({ pilot, modules, weapon, backpack, backpackSkills })
+  // 背包技能仍排在最後——PLAN-043 只換了來源，沒動順序（順序是 deepEqual 斷言的一部分）
   assert.deepEqual(pool.map(p => p.buffId), ['b_t', 'b_s', 'b_n', 'b_m', 'b_w', 'b_b'])
 })
 

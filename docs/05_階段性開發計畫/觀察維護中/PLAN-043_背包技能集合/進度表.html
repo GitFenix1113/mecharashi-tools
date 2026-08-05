@@ -156,7 +156,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">觀察維護中</a>
     <span>›</span>
     <span class="current">PLAN-043 進度表</span>
   </div>
@@ -179,7 +179,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">17</div>
+      <div class="summary-num" style="color:var(--accent-green)">21</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -187,7 +187,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">4</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -199,10 +199,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">17 / 21</span>
+      <span style="color:var(--accent-cyan);">21 / 21</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 81%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -319,6 +319,37 @@
         模擬器 Step 4 說明文字與結果頁摘要（顯示「移動強化Ⅰ」）亦已改讀集合。</li>
       <li><b>驗證結果</b>：<code>npm test</code> <b>284 pass</b>（新增 13 個）、<code>npm run build</code> 通過、
         ESLint 91（與 Phase C 相同，本次改動零新增問題）。</li>
+    </ul>
+  </div>
+
+  <div class="impact-note">
+    <strong>Phase E 實作紀錄（2026-08-06）· 開發全數收束：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>上線後才發現的漏網：Cloudflare Worker 的集合白名單。</b>
+        正式站回報 <code>/api/data/backpackSkills 404</code>、後台分頁載入失敗、前台技能全空。
+        根因是 <code>workers/src/index.ts</code> 的 <code>ARRAY_COLLECTIONS</code> 沒加新集合，
+        而<strong>這個洞在本機完全看不出來</strong>——dev 不走 Worker 代理、是 Firestore 直連，
+        所以 tsc／npm test／build／模擬器 54 個測試全綠。<br>
+        已補上，並抽出零依賴的 <code>src/lib/collectionKeys.ts</code> 與
+        <code>collectionKeys.test.ts</code>，以讀原始碼文字的方式比對<b>四份</b>各自複製的清單
+        （Worker、bump 腳本、firestore.rules、前端）。實測拿掉 Worker 那行測試會轉紅。</li>
+      <li><b>E-1 圖庫：19 張圖（22 筆技能共用）複製進 <code>skills/背包技能/</code></b>，
+        22 筆技能的 icon 全數改指新資料夾。
+        <span style="color:var(--accent-yellow);">⚠ 順序教訓：我先改了 Firestore 的路徑才推圖，
+        中間有短暫視窗會抓不到圖（退成佔位字）。正確順序是圖先上線、再改指。</span></li>
+      <li><b>E-2 flip 腳本內建閘門④自動檢查</b>：逐筆比對 name／description／buffIds，
+        有任何落差即 <code>exit(1)</code> 中止，且刪除前先把 22 筆 mainSkill 寫成本機 JSON 快照
+        （Firestore 端刪掉就沒了）。實測 22 筆全數對得上後才執行。</li>
+      <li><b>E-3 型別移除後 tsc 精確逼出 3 處殘留</b>（後台唯讀區塊、entityRefs 的兩個站點），
+        另有 4 個單元測試在斷言舊的 <code>mainSkill</code> 行為、7 個 e2e 案例的 fixture 種了 mainSkill。
+        e2e 的 <code>FIXTURE</code> key 本身就是「預期受影響集合」的斷言來源，
+        把 <code>backpacks</code> 換成 <code>backpackSkills</code> 即自動一致——設計得很好。</li>
+      <li><b>行為變更（已記錄於測試）</b>：buff 來源標註從
+        <code>背包:能源背包</code> 改為 <code>背包技能:充能</code>。
+        同一個技能可被多個背包共用，標背包名會讓模擬器面板顯示不出真正的來源。</li>
+      <li><b>最終驗證</b>：<code>npm test</code> <b>289 pass</b>、<code>npm run build</code> 通過、
+        模擬器 8 套件 <b>54 個測試全過</b>、ESLint 90（較 Phase D 少 1）。
+        全 repo <code>mainSkill</code> 僅剩註解中的歷史說明，無任何實際程式碼。</li>
     </ul>
   </div>
 
@@ -815,7 +846,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 背包技能圖示資料夾</div>
       <div class="task-group-meta">public/images/skills/背包技能/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -827,7 +858,7 @@
         <div class="task-file">public/images/skills/背包技能/ · npm run manifest:images</div>
       </div>
       <div class="task-assignee">維護者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -835,7 +866,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-2 &nbsp; 遷移 Stage 2 — flip</div>
       <div class="task-group-meta">scripts/migrate-plan043-flip.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -847,7 +878,7 @@
         <div class="task-file">scripts/migrate-plan043-flip.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -855,7 +886,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-3 &nbsp; 型別移除與掃清</div>
       <div class="task-group-meta">src/types/backpack.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -867,7 +898,7 @@
         <div class="task-file">src/types/backpack.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -875,7 +906,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-4 &nbsp; 文件與履歷同步</div>
       <div class="task-group-meta">docs/02_技術文件/ · src/data/siteChangelog/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -888,7 +919,7 @@
         <div class="task-file">docs/02_技術文件/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -901,7 +932,7 @@
         <div class="task-file">src/data/siteChangelog/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -955,7 +986,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-043 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-043 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 觀察維護中</a>
 </footer>
 
 </body>

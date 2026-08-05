@@ -37,18 +37,22 @@ test('buildBuffPool：模組/武器/武器技能/背包來源標註正確', () =
     name: '湮滅者',
     skills: [{ name: '貫穿', buffIds: ['buff_破甲'] }],
   } as unknown as Weapon
-  const backpack = {
-    name: '能源背包',
-    mainSkill: { buffIds: ['buff_充能'] },
-  } as unknown as Backpack
+  // PLAN-043：背包不再直接賦予 buff，一律經 skillIds → backpackSkills
+  const backpack = { id: 'bp1', name: '能源背包', skillIds: ['bpskill_充能'] } as unknown as Backpack
+  const backpackSkills = [{
+    id: 'bpskill_充能', name: '充能', skillType: '被動技能', description: '', effects: [],
+    buffIds: ['buff_充能'],
+  }] as unknown as BackpackSkillDoc[]
 
-  const pool = buildBuffPool({ modules, weapon, backpack })
+  const pool = buildBuffPool({ modules, weapon, backpack, backpackSkills })
   assert.deepEqual(
     pool.map(p => [p.buffId, p.origin]),
     [
       ['buff_強襲', '模組:強襲核心'],
       ['buff_破甲', '武器技能:貫穿'],
-      ['buff_充能', '背包:能源背包'],
+      // origin 從「背包:能源背包」改為「背包技能:充能」——來源標註現在指向技能本體，
+      // 因為同一個技能可被多個背包共用，標背包名會讓面板顯示不出真正的來源
+      ['buff_充能', '背包技能:充能'],
     ],
   )
 })
@@ -157,12 +161,12 @@ test('背包掛載技能：未指定級 → 用技能頂層 buffIds', () => {
   assert.deepEqual(pool, [{ buffId: 'buff_頂層', level: 3, origin: '背包技能:X' }])
 })
 
-test('背包掛載技能：未提供字典時只取舊的內嵌 mainSkill（過渡期行為不變）', () => {
-  const backpack = {
-    id: 'bp1', name: '能源背包', skillIds: ['bpskill_x'], mainSkill: { buffIds: ['buff_充能'] },
-  } as unknown as Backpack
-  const pool = buildBuffPool({ backpack })
-  assert.deepEqual(pool.map(p => p.buffId), ['buff_充能'])
+test('背包掛載技能：未提供字典時不產生任何來源（無從解析 skillIds）', () => {
+  // PLAN-043 Phase E 後，背包已無內嵌 mainSkill —— 沒有字典就真的什麼都拿不到。
+  // 這是刻意的失敗模式：呼叫端忘了傳 backpackSkills 時，症狀是「背包的 buff 全沒了」，
+  // 比起靜默拿到部分結果更容易被發現。SIMULATOR_KEYS 已含 backpackSkills 防止此情況。
+  const backpack = { id: 'bp1', name: '能源背包', skillIds: ['bpskill_x'] } as unknown as Backpack
+  assert.deepEqual(buildBuffPool({ backpack }), [])
 })
 
 test('背包掛載技能：斷鏈的 id 靜默略過，不產生空來源', () => {

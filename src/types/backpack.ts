@@ -1,7 +1,5 @@
 // ─── 背包 ──────────────────────────────────────────────────────────────────
 
-import type { DescriptionRefs } from './common'
-
 /**
  * 背包的製作前置關係（PLAN-036）。前置主背包一律是「低一階」的背包：
  *   · SS 特種背包 ← S+ 前置主背包（無法從名字 derive，後台手輸；如 征服者背包 ← 某 S+）
@@ -46,29 +44,4 @@ export interface Backpack {
    * 而若日後出現雙技能背包，單一欄位就得再走一次型別遷移 + 腳本 flip。
    */
   skillIds: string[]
-  /**
-   * @deprecated PLAN-043 Phase E 移除。改用 {@link skillIds} 引用 backpackSkills 集合。
-   *
-   * 這個內嵌欄位是爬蟲時代官方 WIKI 欄位形狀的殘留：實務上**只有 SS 稀有度填了值**，
-   * 因為官方 WIKI 只在 SS 條目上有技能欄位。但遊戲內連 B 級的「移動背包」都掛著
-   * 被動技能「移動強化Ⅰ」——內嵌格式既裝不下非 SS 的技能，也無法讓同族技能共用。
-   *
-   * Phase B 的遷移腳本會抽成獨立 doc 並寫回 skillIds，此欄位屆時仍保留（前台尚未改讀）；
-   * Phase E 確認線上正常後才由 flip 腳本 deleteField 並移除本定義。
-   */
-  mainSkill?: {
-    id: string            // API: WithPassiveSkills[0].ID
-    name: string          // API: WithPassiveSkills[0].name
-    icon?: string         // API: WithPassiveSkills[0].SkillIcon / .icon（鍵名格式）
-    description: string   // API: WithPassiveSkills[0].SpecificEffects（清洗 rich text 標籤後）
-    /** 描述內 [xxx] 引用側錄（PLAN-019 Layer 1） */
-    descriptionRefs?: DescriptionRefs
-    buffIds: string[]     // API: WithPassiveSkills[0].BufCarried（'/' 分隔 → split）
-    // 以下為管理員手動填入的結構化效果數值
-    dmg?: number
-    crit?: number
-    critDmg?: number
-    acc?: number
-    specialEffects?: string[]
-  }
 }

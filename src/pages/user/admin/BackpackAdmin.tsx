@@ -366,24 +366,6 @@ function BackpackEditPanel({
           skills={gd.backpackSkills}
           onChange={ids => update('skillIds', ids)}
         />
-
-        {/* PLAN-043：已停用的內嵌 mainSkill。唯讀顯示而非直接藏起來——
-            資料還在 Firestore（Phase E 的 flip 才刪），藏掉會讓維護者以為資料不見了 */}
-        {form.mainSkill && (
-          <div className="border border-border/60 rounded-lg p-3 bg-bg-dark/30 space-y-1">
-            <span className="text-xs text-text-dim font-medium uppercase tracking-wider">
-              舊版內嵌技能 mainSkill（唯讀 · 已停用）
-            </span>
-            <p className="text-[13px] text-text-secondary">
-              <span className="text-accent-yellow">{form.mainSkill.name}</span>
-              <span className="text-text-dim font-mono ml-2">{form.mainSkill.id}</span>
-            </p>
-            <p className="text-[11px] text-text-dim leading-relaxed">
-              此欄位已由上方「掛載技能」取代，內容不再被前台讀取，也不會隨此表單存檔而更新。
-              資料仍留在 Firestore 供對照，將於 PLAN-043 Phase E 的 flip 腳本一併移除。
-            </p>
-          </div>
-        )}
       </div>
     </AdminModal>
   )

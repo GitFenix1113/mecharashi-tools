@@ -37,7 +37,8 @@ type Doc = Record<string, unknown>
 //   neuralDriveAbilities buffIds / descriptionRefs
 //   modules       buffIds / levels[].descriptionRefs（map key 刻意含 '.'，測往返保真）
 //   weapons       skills[].buffIds / skills[].descriptionRefs
-//   backpacks     mainSkill.buffIds / mainSkill.descriptionRefs
+//   backpackSkills buffIds / descriptionRefs（PLAN-043：取代原本的 backpacks.mainSkill.*，
+//                 背包本身已不再直接引用 buff，只以 skillIds 指向技能）
 //   components    descriptionRefs
 // 另有 nameSoftRef（talents[].effects[].condition.hasBuff = '目標'）——設計為只警示不清除。
 
@@ -180,14 +181,14 @@ const FIXTURE: Record<string, Array<Doc & { id: string }>> = {
       ],
     },
   ],
-  backpacks: [
+  // PLAN-043 Phase E：背包已無內嵌 mainSkill，不再是 buff 的引用來源。
+  // 對 buff 的引用改由 backpackSkills 承接（背包只以 skillIds 指向技能）。
+  backpackSkills: [
     {
-      id: 'bp_甲', name: '背包甲',
-      mainSkill: {
-        name: '背包主技', description: '賦予[目標]',
-        descriptionRefs: { 目標: { refType: 'buff', refId: 'buff_目標' } },
-        buffIds: ['buff_目標'],
-      },
+      id: 'bps_甲', name: '背包技甲', skillType: '被動技能', effects: [],
+      description: '賦予[目標]',
+      descriptionRefs: { 目標: { refType: 'buff', refId: 'buff_目標' } },
+      buffIds: ['buff_目標'],
     },
   ],
   components: [
@@ -260,10 +261,9 @@ function expectedPostBuffDelete(): Record<string, Record<string, Doc>> {
   const ws0 = at(state.weapons['w_甲'], 'skills', 0)
   ws0.buffIds = []
   ws0.descriptionRefs = {}
-  // backpacks/bp_甲
-  const ms = at(state.backpacks['bp_甲'], 'mainSkill')
-  ms.buffIds = []
-  ms.descriptionRefs = {}
+  // backpackSkills/bps_甲
+  state.backpackSkills['bps_甲'].buffIds = []
+  state.backpackSkills['bps_甲'].descriptionRefs = {}
   // components/c_甲
   state.components['c_甲'].descriptionRefs = {}
   return state
@@ -348,9 +348,9 @@ emuSuite('cascade-e2e: 級聯正確性全站覆蓋', async (t) => {
     assert.deepEqual(at(w, 'skills', 0).buffIds, [], 'weapons.skills[].buffIds（@1）清空')
     assert.deepEqual(at(w, 'skills', 0).descriptionRefs, {}, 'weapons.skills[].descriptionRefs 清空')
 
-    const bp = (await readDoc('backpacks', 'bp_甲'))!
-    assert.deepEqual(at(bp, 'mainSkill').buffIds, [], 'backpacks.mainSkill.buffIds 清空')
-    assert.deepEqual(at(bp, 'mainSkill').descriptionRefs, {}, 'backpacks.mainSkill.descriptionRefs 清空')
+    const bps = (await readDoc('backpackSkills', 'bps_甲'))!
+    assert.deepEqual(bps.buffIds, [], 'backpackSkills.buffIds 清空')
+    assert.deepEqual(bps.descriptionRefs, {}, 'backpackSkills.descriptionRefs 清空')
 
     const c = (await readDoc('components', 'c_甲'))!
     assert.deepEqual(c.descriptionRefs, {}, 'components.descriptionRefs 清空')

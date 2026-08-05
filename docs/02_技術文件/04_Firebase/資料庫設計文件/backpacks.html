@@ -74,23 +74,16 @@
       <tr><td>&nbsp;└ prereqBackpackId</td><td>string</td><td>前置主背包 doc id（一律「低一階」背包）：<strong>SS ← S+</strong>（無法由名字反推，後台手輸）、<strong>S+ ← S</strong>（名稱可推、腳本填）。只存這一個 id，種類／線／變體皆 derive → 引用 backpacks 自身</td></tr>
       <tr><td>skillIds</td><td>string[]</td><td>🆕 PLAN-043：掛載的背包技能 doc id → 引用 <code>backpackSkills</code> collection。元素可含 <code>@N</code> 指定等級（<code>bpskill_移動強化@1</code>）</td></tr>
       <tr><td>flavor</td><td>string?</td><td>🆕 PLAN-043：遊戲內背包卡下方的灰字風味文案。屬於背包而非技能，官方 WIKI 未錄入、純人工維護</td></tr>
-      <tr><td colspan="3" style="color:var(--text-dim);font-weight:700;">▎mainSkill — 附帶技能 ⚠ <strong>已停用</strong>（PLAN-043 Phase E 移除，改用 <code>skillIds</code>）</td></tr>
-      <tr><td colspan="3" style="color:var(--text-dim);font-size:13px;line-height:1.7">
-        Phase B 已把 22 筆（＝全部 SS）抽成 <code>backpackSkills</code> 獨立 doc 並寫回 <code>skillIds</code>。
-        本欄位仍留在 Firestore 供對照，前台已不讀取，Phase E 的 flip 腳本會 <code>deleteField</code> 移除。
-        <code>dmg</code>/<code>crit</code>/<code>critDmg</code>/<code>acc</code>/<code>specialEffects</code> 實測全庫 0/22 有值。
-      </td></tr>
-      <tr><td>&nbsp;├ id</td><td>string</td><td>技能 ID（API: WithPassiveSkills[0].ID）</td></tr>
-      <tr><td>&nbsp;├ name</td><td>string</td><td>技能名稱（API: WithPassiveSkills[0].name）</td></tr>
-      <tr><td>&nbsp;├ icon</td><td>string?</td><td>技能圖示鍵名（API: WithPassiveSkills[0].SkillIcon / .icon）</td></tr>
-      <tr><td>&nbsp;├ description</td><td>string</td><td>技能效果描述（清洗 rich text 標籤後；API: WithPassiveSkills[0].SpecificEffects）</td></tr>
-      <tr><td>&nbsp;├ buffIds</td><td>string[]</td><td>觸發的 Buff ID 列表 → 引用 buffs collection（API: BufCarried，斜線分隔）</td></tr>
-      <tr><td>&nbsp;├ dmg</td><td>number?</td><td>增傷加成 %（管理員手動填入）</td></tr>
-      <tr><td>&nbsp;├ crit</td><td>number?</td><td>暴擊率加成（管理員手動填入）</td></tr>
-      <tr><td>&nbsp;├ critDmg</td><td>number?</td><td>暴擊傷害加成 %（管理員手動填入）</td></tr>
-      <tr><td>&nbsp;├ acc</td><td>number?</td><td>命中率加成（管理員手動填入）</td></tr>
-      <tr><td>&nbsp;└ specialEffects</td><td>string[]?</td><td>非數值效果描述列表（管理員手動填入）</td></tr>
     </table>
+  </div>
+
+  <div class="info-block" style="background:rgba(107,114,128,0.06);border-color:rgba(107,114,128,0.25);">
+    <strong>🗑️ 已移除：內嵌 <code>mainSkill</code>（PLAN-043 Phase E，2026-08-06）</strong><br>
+    22 筆（＝全部 SS）已抽成 <a href="backpackSkills.html"><code>backpackSkills</code></a> 獨立文件，
+    背包改以 <code>skillIds</code> 引用。<code>dmg</code>/<code>crit</code>/<code>critDmg</code>/<code>acc</code>/<code>specialEffects</code>
+    實測全庫 0/22 有值，遷移未遺失資料；官方數字 ID 保留為 <code>backpackSkills.officialId</code>。<br>
+    連帶：<code>entityRefs</code> 的 <code>backpacks.mainSkill.buffIds</code> 與 <code>textUnits</code> 兩個掃描站點已移除——
+    <strong>背包本身不再直接賦予 buff</strong>，一律經 <code>skillIds</code> 指向的技能文件。
   </div>
 </section>
 
