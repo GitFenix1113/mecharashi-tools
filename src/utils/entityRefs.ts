@@ -15,7 +15,7 @@
 
 import type {
   Pilot, PilotSkillDoc, GameBuff, GlossaryTerm, NeuralDriveAbility,
-  Module, Weapon, Backpack, Component,
+  Module, Weapon, Backpack, BackpackSkillDoc, Component,
   DescriptionRefs, RefType, SkillEffect,
 } from '../types'
 import type { ChangeTargetKind, ReversePatch, RefAnchor } from '../types/changeHistory'
@@ -28,11 +28,20 @@ import { isSkillId } from './pilotSkills.ts'
 /**
  * ChangeTargetKind（changeHistory 的分類軸）→ RefType（EntityRef.refType 的值域）。
  * 兩套字串刻意不同名，直接比對 = 靜默零命中。新增 ChangeTargetKind 時務必補這裡。
+ *
+ * `null` = 該類型**不是**任何 descriptionRefs / 數值 token 的合法引用目標，
+ * 故正文層永遠掃不到它（只走 scalarRef 路徑）。這與「忘了填」不同：值域是總的，
+ * 漏填會編譯失敗，寫 null 是明示的編輯決策。
  */
-export const REF_TYPE_OF: Record<ChangeTargetKind, RefType> = {
+export const REF_TYPE_OF: Record<ChangeTargetKind, RefType | null> = {
   buff:         'buff',
   pilotSkill:   'skill',
   glossaryTerm: 'term',
+  backpack:     'backpack',
+  // PLAN-043 決策七：本期只做「背包技能描述可引用 BUFF／詞條」的**出向**引用。
+  // 讓別人寫 [移動強化] 反過來指向背包技能需新增 RefType + EntityRefView/RefChip/RefPicker
+  // 四處分支，而全站目前沒有任何一段正文需要它——先加等於做出零消費端的休眠站點。
+  backpackSkill: null,
 }
 
 /**
@@ -95,7 +104,22 @@ export interface TextUnit {
 export interface ScalarOccurrence {
   segments: (string | number)[]
   origin: string
+  /**
+   * ReversePatch.value。陣列元素**必須是原始字串**（含 `@N` 等級後綴）——
+   * Firestore arrayRemove 要求元素完全相等，存拆解後的裸 id 會移除失敗且靜默無錯。
+   */
   value: string | null | undefined
+  /**
+   * 比對用的裸 id。省略則直接以 value 比對（絕大多數站點如此）。
+   *
+   * 只有「元素可帶 `@N` 等級後綴」的站點需要提供（backpacks.skillIds[]）——
+   * 這是地雷①在 scalarRef 路徑上的翻版：字串相等會漏掉所有帶等級的引用。
+   * 刻意做成顯式欄位而非在此路徑統一套 parseBuffRef：其餘站點（termRef / abilityId /
+   * pilots.skills[]）的值域裡 '@' 不具語意，統一解析等於替它們憑空加上不存在的規則。
+   */
+  matchValue?: string
+  /** 命中的等級（`@N` 的 N）。供對話框顯示，無等級語意的站點不填。 */
+  level?: number
   /** 單一欄位 → fieldClear；陣列元素 → arrayRemove。決定 C-2 的移除方式。 */
   op: 'fieldClear' | 'arrayRemove'
   anchor?: RefAnchor
@@ -125,6 +149,21 @@ export interface Site<T, O> {
    * 寫在站點宣告上，新增呼叫路徑時不可能漏掉。
    */
   excludeFromPool?: boolean
+  /**
+   * true = 此站點的引用**不可機械清除**，命中即擋下整次刪除（PLAN-043）。
+   *
+   * 適用於「清成 null 會無聲破壞語意」的裸 id 硬外鍵，而非一般的引用側錄：
+   *   · `backpacks.craft.prereqBackpackId` —— 清掉＝前置鏈斷裂，前台只會靜默降級成
+   *     「前置主背包待確認」，沒有任何錯誤訊息，維護者要很久以後才會發現。
+   *   · `weapons.upgrade.fusedBackpackId` —— 清掉＝複合武器失去融合來源（PLAN-031）。
+   *
+   * 與 softSites 的差別：軟引用是「以名稱關聯、ID 型級聯本來就修不了」，只警示；
+   * 硬外鍵是「修得了但不該修」——正確做法是要求維護者先手動斷鏈再刪。
+   *
+   * 命中結果不進 hits（故 buildCascadePlan 不會為它產生 patch），改進 hardRefs，
+   * 由 planCascadeDelete 轉成 blocker。
+   */
+  hardRef?: boolean
   enumerate: (doc: T) => O[]
 }
 
@@ -456,7 +495,24 @@ const WEAPONS: CollectionSpec<Weapon> = {
       anchor: { by: 'name' as const, value: ws.name },
     })),
   ],
-  scalarSites: [],
+  scalarSites: [
+    {
+      // PLAN-043 硬外鍵：複合武器融合來源的背包（PLAN-031）。清成 null ＝ 武器失去
+      // 融合來源、詳情頁的「融合自 ○○背包」變空白，且無任何錯誤訊息。
+      // 命中時擋下背包刪除，要求維護者先處理該武器。
+      id: 'weapons.upgrade.fusedBackpackId',
+      targets: ['backpack'],
+      hardRef: true,
+      enumerate: (w) => w.upgrade?.fusedBackpackId
+        ? [{
+            segments: ['upgrade', 'fusedBackpackId'],
+            origin: `武器:${w.name} 的融合來源`,
+            value: w.upgrade.fusedBackpackId,
+            op: 'fieldClear' as const,
+          }]
+        : [],
+    },
+  ],
   softSites: [
     softSite('weapons.skills[].effects[].condition.hasBuff', (w) =>
       (w.skills ?? []).flatMap((ws, i) =>
@@ -471,6 +527,9 @@ const BACKPACKS: CollectionSpec<Backpack> = {
     {
       id: 'backpacks.mainSkill.buffIds',
       targets: ['buff'],
+      // PLAN-043 Phase E 移除（連同 Backpack.mainSkill 型別）。在 flip 腳本清掉欄位之前
+      // 仍必須掃描——留著的舊資料若漏掃，刪 buff 時會在此處留下孤兒引用。
+      //
       // 既有怪癖：origin 用 backpack.name 而非 mainSkill.name，與其他分支不一致。
       // 這是既有行為（reachableBuffs 去重的 key），必須複製，不可順手修正。
       enumerate: (b) => b.mainSkill
@@ -480,14 +539,90 @@ const BACKPACKS: CollectionSpec<Backpack> = {
   ],
   textUnits: (b) => b.mainSkill
     ? [{
+        // 同上：PLAN-043 Phase E 隨 mainSkill 一併移除
         segments: ['mainSkill'],
         origin: `背包:${b.name}`,
         texts: { description: b.mainSkill.description },
         refs: b.mainSkill.descriptionRefs,
       }]
     : [],
-  scalarSites: [],
+  scalarSites: [
+    {
+      // PLAN-043：掛載的背包技能。元素可含 @N（`bpskill_移動強化@1`），故比對前要拆後綴——
+      // 這正是地雷①在 buffIds 上的翻版，只是這裡走 scalarRef 路徑。
+      id: 'backpacks.skillIds[]',
+      targets: ['backpackSkill'],
+      enumerate: (b) => (b.skillIds ?? []).flatMap((raw, i) => {
+        if (!raw) return []
+        const { buffId, level } = parseBuffRef(raw)   // 泛用的 `id@N` 拆解，非 buff 專用
+        return [{
+          segments: ['skillIds', i],
+          origin: `背包:${b.name}`,
+          value: raw,                                  // 原始元素（含 @N），arrayRemove 用
+          matchValue: buffId,                          // 裸 id，比對用
+          level,
+          op: 'arrayRemove' as const,
+        }]
+      }),
+    },
+    {
+      // PLAN-043 硬外鍵：清成 null ＝ PLAN-036 的前置鏈斷裂，且前台只會靜默降級
+      // 成「前置主背包待確認」。命中時擋下刪除，要求維護者先斷鏈。
+      id: 'backpacks.craft.prereqBackpackId',
+      targets: ['backpack'],
+      hardRef: true,
+      enumerate: (b) => b.craft?.prereqBackpackId
+        ? [{
+            segments: ['craft', 'prereqBackpackId'],
+            origin: `背包:${b.name} 的前置`,
+            value: b.craft.prereqBackpackId,
+            op: 'fieldClear' as const,
+          }]
+        : [],
+    },
+  ],
   softSites: [],
+}
+
+const BACKPACK_SKILLS: CollectionSpec<BackpackSkillDoc> = {
+  coll: 'backpackSkills',
+  nameOf: (s) => s.name,
+  buffIdSites: [
+    {
+      id: 'backpackSkills.buffIds',
+      targets: ['buff'],
+      enumerate: (s) => [{ segments: ['buffIds'], origin: `背包技能:${s.name}`, buffIds: s.buffIds ?? [] }],
+    },
+    {
+      id: 'backpackSkills.levels[].buffIds',
+      targets: ['buff'],
+      enumerate: (s) => (s.levels ?? []).map((lv, i) => ({
+        segments: ['levels', i, 'buffIds'],
+        origin: `背包技能:${s.name} Lv${lv.level}`,
+        buffIds: lv.buffIds ?? [],
+        anchor: { by: 'level' as const, value: lv.level },
+      })),
+    },
+  ],
+  textUnits: (s) => [
+    { segments: [], origin: `背包技能:${s.name}`, texts: { description: s.description }, refs: s.descriptionRefs },
+    ...(s.levels ?? []).map((lv, i) => ({
+      segments: ['levels', i],
+      origin: `背包技能:${s.name} Lv${lv.level}`,
+      texts: { description: lv.description },
+      refs: lv.descriptionRefs,
+      refsFallback: [] as (string | number)[],        // 未填時前台回退父層（同 BUFF / 模組）
+      anchor: { by: 'level' as const, value: lv.level },
+    })),
+  ],
+  scalarSites: [],
+  softSites: [
+    softSite('backpackSkills.effects[].condition.hasBuff', (s) =>
+      condHits(['effects'], `背包技能:${s.name}`, s.effects)),
+    softSite('backpackSkills.levels[].effects[].condition.hasBuff', (s) =>
+      (s.levels ?? []).flatMap((lv, i) =>
+        condHits(['levels', i, 'effects'], `背包技能:${s.name} Lv${lv.level}`, lv.effects))),
+  ],
 }
 
 const COMPONENTS: CollectionSpec<Component> = {
@@ -511,6 +646,7 @@ export const SPECS = {
   modules: MODULES,
   weapons: WEAPONS,
   backpacks: BACKPACKS,
+  backpackSkills: BACKPACK_SKILLS,
   components: COMPONENTS,
 } as const
 
@@ -537,6 +673,7 @@ export interface RefScanData {
   modules?: Module[]
   weapons?: Weapon[]
   backpacks?: Backpack[]
+  backpackSkills?: BackpackSkillDoc[]
   components?: Component[]
 }
 
@@ -576,6 +713,14 @@ export interface RefHit {
 export interface FindReferencesResult {
   /** 可機械清除的引用。C-2 逐筆轉 ReversePatch。 */
   hits: RefHit[]
+  /**
+   * 硬外鍵命中（PLAN-043）：**不清除、直接擋下刪除**。
+   *
+   * 與 softWarnings 的差別在「能不能修」而非「該不該提醒」：軟引用以名稱關聯、
+   * ID 型級聯本來就修不了；硬外鍵修得了但不該修——自動清成 null 會無聲破壞
+   * 前置鏈／融合關係，正確做法是要求維護者先斷鏈。planCascadeDelete 轉成 blocker。
+   */
+  hardRefs: RefHit[]
   /** 名稱軟引用的疑似命中：**不自動清除**，只列給管理員自行處理。 */
   softWarnings: RefHit[]
   /** 對話框摘要：{ pilots: 3, buffs: 5 } */
@@ -606,6 +751,7 @@ export function findReferences(
   const want = (k: RefKind) => !opts?.kinds || opts.kinds.includes(k)
 
   const hits: RefHit[] = []
+  const hardRefs: RefHit[] = []
   const softWarnings: RefHit[] = []
   const scannedColls: string[] = []
   const missingColls: string[] = []
@@ -650,7 +796,7 @@ export function findReferences(
       for (const unit of spec.textUnits(doc)) {
         const refsField = unit.refsField ?? 'descriptionRefs'
 
-        if (want('descriptionRefs')) {
+        if (want('descriptionRefs') && wantType) {
           for (const [key, ref] of Object.entries(unit.refs ?? {})) {
             if (ref.refType !== wantType || ref.refId !== id) continue
             const segments = [...unit.segments, refsField, key]
@@ -665,7 +811,8 @@ export function findReferences(
           }
         }
 
-        if (want('numTokenText')) {
+        // wantType === null（backpackSkill）→ 不是任何正文引用的合法目標，整段跳過
+        if (want('numTokenText') && wantType) {
           for (const [field, text] of Object.entries(unit.texts)) {
             if (!text) continue
             const tokens = parseNumRefs(text)
@@ -684,17 +831,22 @@ export function findReferences(
         }
       }
 
-      // ④ scalarRef（termRef / abilityId / skills[] 字串元素）
+      // ④ scalarRef（termRef / abilityId / skills[] 字串元素 / 硬外鍵）
       if (want('scalarRef')) {
         for (const site of spec.scalarSites) {
           if (!site.targets.includes(kind as RefTargetKind)) continue
           for (const occ of site.enumerate(doc)) {
-            if (occ.value !== id) continue
-            hits.push({
+            // matchValue 優先：帶 @N 後綴的站點以裸 id 比對，value 仍留原始字串
+            if ((occ.matchValue ?? occ.value) !== id) continue
+            const hit: RefHit = {
               ...base, siteId: site.id, kind: 'scalarRef',
               segments: occ.segments, path: pathOf(occ.segments), origin: occ.origin,
-              op: occ.op, value: occ.value, matched: occ.value, anchor: occ.anchor,
-            })
+              op: occ.op, value: occ.value, matched: occ.value ?? undefined,
+              level: occ.level, anchor: occ.anchor,
+            }
+            // hardRef 不進 hits：進了就會被 buildCascadePlan 產出 patch 自動清掉，
+            // 而這類外鍵清成 null 會無聲破壞語意（見 Site.hardRef）。改交給 planCascadeDelete 轉 blocker。
+            ;(site.hardRef ? hardRefs : hits).push(hit)
           }
         }
       }
@@ -718,7 +870,7 @@ export function findReferences(
   const byColl: Record<string, number> = {}
   for (const h of hits) byColl[h.coll] = (byColl[h.coll] ?? 0) + 1
 
-  return { hits, softWarnings, byColl, scannedColls, missingColls, writeCount: hits.length + 1 }
+  return { hits, hardRefs, softWarnings, byColl, scannedColls, missingColls, writeCount: hits.length + 1 }
 }
 
 /** ChangeTargetKind → 其自身所在集合（自我排除用）。 */
@@ -726,6 +878,8 @@ const SPEC_COLL_OF: Record<ChangeTargetKind, ScanCollection> = {
   buff: 'buffs',
   pilotSkill: 'pilotSkills',
   glossaryTerm: 'glossaryTerms',
+  backpack: 'backpacks',
+  backpackSkill: 'backpackSkills',
 }
 
 /** 從 data 反查目標自身的 name（nameSoftRef 比對用）。查不到回 undefined，不猜。 */

@@ -16,8 +16,14 @@ import {
 import { WeaponRarityBadge } from '../../components/WeaponRarityBadge'
 import { WeaponIcon } from '../../components/WeaponIcon'
 import { EQUIP_SLOT_LABELS } from '../../components/WeaponBadges'
-import { assetUrl } from '../../utils/assets'
+import { assetUrl, resolveIconSrc } from '../../utils/assets'
+import { STAT_LABELS } from '../../utils/moduleStats'
 import { RefText } from '../../components/RefText'
+import {
+  resolveBackpackSkills,
+  buildBackpackSkillMap,
+  type ResolvedBackpackSkill,
+} from '../../utils/backpackSkills'
 import {
   isCompositeWeapon,
   projectedBackpackType,
@@ -57,7 +63,14 @@ function Num({ children, className = '' }: { children: React.ReactNode; classNam
   )
 }
 
-/** 背包側技能圖示：拼 /images/skills/{filename}（PLAN-031 陷阱：武器技能圖示走另一路徑，見下） */
+/**
+ * 背包側技能圖示（PLAN-031 陷阱：武器技能圖示走另一路徑，見下）。
+ *
+ * ⚠ PLAN-043 修正：原本是「取檔名 → 拼回 /images/skills/{filename}」。那個寫法會把
+ * `/images/skills/背包技能/x.png` 的資料夾剝掉，接著 normalizeSkillPath 依 `passive`
+ * 前綴把它推去「被動技能/」——結果不是 404 就是指到同名但不同來源的圖。
+ * 改走 resolveIconSrc：它保留明確寫出的已知子資料夾，扁平舊路徑仍會依前綴推導。
+ */
 function SkillIcon({ icon, name }: { icon?: string; name: string }) {
   const [err, setErr] = useState(false)
   if (err || !icon) {
@@ -67,11 +80,9 @@ function SkillIcon({ icon, name }: { icon?: string; name: string }) {
       </div>
     )
   }
-  const filename = icon.split('/').pop() ?? ''
-  const src = assetUrl(`/images/skills/${filename}`)
   return (
     <img
-      src={src}
+      src={resolveIconSrc(icon)}
       alt={name}
       className="w-9 h-9 rounded-lg object-cover flex-shrink-0"
       onError={() => setErr(true)}
@@ -109,7 +120,13 @@ function CraftBadge() {
 }
 
 // ── 背包浮窗內容（既有，未動）────────────────────────────────────────────────────
-function BackpackTooltipContent({ bp, prereqName, pinned = false }: { bp: Backpack; prereqName?: string; pinned?: boolean }) {
+function BackpackTooltipContent({ bp, skills, prereqName, pinned = false }: {
+  bp: Backpack
+  /** PLAN-043：已解析（含 @N 等級覆寫）的掛載技能 */
+  skills: ResolvedBackpackSkill[]
+  prereqName?: string
+  pinned?: boolean
+}) {
   const armorLabel =
     bp.assemblableArmorType.length === 0
       ? '無限制'
@@ -170,43 +187,37 @@ function BackpackTooltipContent({ bp, prereqName, pinned = false }: { bp: Backpa
           </div>
         )}
 
-        {bp.mainSkill && (
-          <div className="bg-bg-dark rounded-lg overflow-hidden">
+        {/* PLAN-043：掛載技能（可多個；階梯技能顯示該級的階名與正文） */}
+        {skills.map((sk) => (
+          <div key={sk.raw} className="bg-bg-dark rounded-lg overflow-hidden">
             <div className="px-2.5 py-1.5 border-b border-border flex items-center gap-2">
-              <SkillIcon icon={bp.mainSkill.icon} name={bp.mainSkill.name} />
-              <span className="text-[13px] font-bold text-text-primary">{bp.mainSkill.name}</span>
+              <SkillIcon icon={sk.icon} name={sk.name} />
+              <span className="text-[13px] font-bold text-text-primary">{sk.name}</span>
+              <span className="text-[11px] text-text-dim ml-auto shrink-0">{sk.doc.skillType}</span>
             </div>
             <div className="p-2.5 space-y-2">
-              <p className="text-[13px] text-text-secondary leading-relaxed">
-                <RefText text={bp.mainSkill.description} refs={bp.mainSkill.descriptionRefs} />
+              <p className="text-[13px] text-text-secondary leading-relaxed whitespace-pre-line">
+                <RefText text={sk.description} refs={sk.descriptionRefs} />
               </p>
-              {(bp.mainSkill.dmg || bp.mainSkill.crit || bp.mainSkill.critDmg || bp.mainSkill.acc) && (
+              {/* 結構化數值（管理員手填的 effects）。舊格式那四個平坦欄位在正式庫實測 0/22
+                  有值，已於 PLAN-043 遷移時確認無資料遺失，故此處只渲染新格式。 */}
+              {sk.effects.length > 0 && (
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                  {bp.mainSkill.dmg != null && (
-                    <span className="text-[14px] text-text-dim">增傷 <Num className="text-[14px]">+{bp.mainSkill.dmg}%</Num></span>
-                  )}
-                  {bp.mainSkill.crit != null && (
-                    <span className="text-[14px] text-text-dim">爆率 <Num className="text-[14px]">+{bp.mainSkill.crit}</Num></span>
-                  )}
-                  {bp.mainSkill.critDmg != null && (
-                    <span className="text-[14px] text-text-dim">爆傷 <Num className="text-[14px]">+{bp.mainSkill.critDmg}%</Num></span>
-                  )}
-                  {bp.mainSkill.acc != null && (
-                    <span className="text-[14px] text-text-dim">命中 <Num className="text-[14px]">+{bp.mainSkill.acc}</Num></span>
-                  )}
-                </div>
-              )}
-              {bp.mainSkill.specialEffects && bp.mainSkill.specialEffects.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {bp.mainSkill.specialEffects.map((ef, i) => (
-                    <span key={i} className="text-[11px] text-accent-cyan bg-accent-cyan/5 border border-accent-cyan/20 rounded px-1.5 py-0.5">
-                      {ef}
+                  {sk.effects.map((ef, i) => (
+                    <span key={i} className="text-[14px] text-text-dim">
+                      {STAT_LABELS.find((s) => s.key === ef.stat)?.label ?? ef.stat}{' '}
+                      <Num className="text-[14px]">{ef.value > 0 ? '+' : ''}{ef.value}</Num>
                     </span>
                   ))}
                 </div>
               )}
             </div>
           </div>
+        ))}
+
+        {/* PLAN-043：背包風味文案（遊戲內卡片下方的灰字敘述） */}
+        {bp.flavor && (
+          <p className="text-[12px] text-text-dim leading-relaxed px-0.5">{bp.flavor}</p>
         )}
       </div>
     </>
@@ -285,13 +296,20 @@ function WeaponProjectionContent({ w, parentName, fusedBackpackName, onNavigate 
   )
 }
 
-function BackpackTooltip({ bp, prereqName, pinned }: { bp: Backpack; prereqName?: string; pinned: boolean }) {
+function BackpackTooltip({ bp, skills, prereqName, pinned }: {
+  bp: Backpack
+  skills: ResolvedBackpackSkill[]
+  prereqName?: string
+  pinned: boolean
+}) {
+  // 任一技能（含其指定級）有引用就顯示提示——只看第一個會讓多技能背包漏提示
+  const hasRefs = skills.some((sk) => Object.keys(sk.descriptionRefs ?? {}).length > 0)
   return (
     <div className="w-80 max-h-[min(90vh,_600px)] flex flex-col bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
       <div className="flex-1 min-h-0 overflow-y-auto p-1">
-        <BackpackTooltipContent bp={bp} prereqName={prereqName} pinned={pinned} />
+        <BackpackTooltipContent bp={bp} skills={skills} prereqName={prereqName} pinned={pinned} />
       </div>
-      {bp.mainSkill?.descriptionRefs && Object.keys(bp.mainSkill.descriptionRefs).length > 0 && (
+      {hasRefs && (
         <p className="text-[13px] text-text-dim mt-2 text-center flex-shrink-0">
           {pinned ? '📌 點擊引用查看詳情' : '點擊背包固定此視窗以查看引用'}
         </p>
@@ -306,7 +324,7 @@ interface TooltipState {
   anchorTop: number
 }
 
-function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackName, prereqName }: {
+function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackName, prereqName, skills }: {
   item: BackpackListItem
   pinned: boolean
   x: number
@@ -314,6 +332,8 @@ function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackNa
   parentName?: string
   fusedBackpackName?: string
   prereqName?: string
+  /** PLAN-043：已解析的掛載技能（僅 kind==='backpack' 時有意義） */
+  skills: ResolvedBackpackSkill[]
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [top, setTop] = useState(anchorTop)
@@ -334,7 +354,7 @@ function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackNa
       {...(pinned ? dragHandlers : {})}
     >
       {item.kind === 'backpack' ? (
-        <BackpackTooltip bp={item.data} prereqName={prereqName} pinned={pinned} />
+        <BackpackTooltip bp={item.data} skills={skills} prereqName={prereqName} pinned={pinned} />
       ) : (
         <div className="w-80 max-h-[min(90vh,_600px)] flex flex-col bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
           <div className="flex-1 min-h-0 overflow-y-auto p-1">
@@ -349,8 +369,18 @@ function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackNa
 
 export default function BackpacksPage() {
   const { data: backpacks, loading } = useBackpacks()
-  const { weapons, ensureLoaded, loadedKeys } = useGameData()
+  const { weapons, backpackSkills, ensureLoaded, loadedKeys } = useGameData()
   const navigate = useNavigate()
+
+  // PLAN-043：技能本體改由 backpackSkills 集合提供（22 筆，有版本快取，回訪 0 read）
+  useEffect(() => { void ensureLoaded(['backpackSkills']) }, [ensureLoaded])
+  // 一次算完全部（180 筆 × 各 0–1 個技能，成本可忽略）。
+  // 刻意不做「render 期間才算、算完存進閉包 Map」的惰性快取——那會在 render 中變異狀態。
+  const skillsById = useMemo(() => {
+    const map = buildBackpackSkillMap(backpackSkills)
+    return new Map(backpacks.map((bp) => [bp.id, resolveBackpackSkills(bp, map)]))
+  }, [backpacks, backpackSkills])
+  const skillsOf = (bp: Backpack): ResolvedBackpackSkill[] => skillsById.get(bp.id) ?? []
 
   const [search, setSearch]               = useState('')
   // 合成階層多選；PLAN-037 預設只顯示特種(SS)，查詢量小 → 不再分頁限制
@@ -432,7 +462,11 @@ export default function BackpacksPage() {
       if (search) {
         const q = search.toLowerCase()
         if (it.kind === 'backpack') {
-          return it.data.name.toLowerCase().includes(q) || (it.data.mainSkill?.description.toLowerCase().includes(q) ?? false)
+          // PLAN-043：技能正文改由集合提供，且要吃得到階名與該級正文
+          // （搜「移動強化Ⅱ」時應命中掛 @2 的背包）
+          return it.data.name.toLowerCase().includes(q)
+            || skillsOf(it.data).some((sk) =>
+              sk.name.toLowerCase().includes(q) || sk.description.toLowerCase().includes(q))
         }
         return it.data.name.toLowerCase().includes(q) || it.data.skills.some((s) => s.description.toLowerCase().includes(q))
       }
@@ -511,12 +545,13 @@ export default function BackpacksPage() {
           parentName={activeItem.kind === 'weapon' ? parentNameOf(activeItem.data) : undefined}
           fusedBackpackName={activeItem.kind === 'weapon' ? fusedBackpackNameOf(activeItem.data) : undefined}
           prereqName={activeItem.kind === 'backpack' ? prereqNameOf(activeItem.data) : undefined}
+          skills={activeItem.kind === 'backpack' ? skillsOf(activeItem.data) : []}
         />
       )}
 
       <BottomSheet open={!!sheetItem} onClose={() => setSheetItem(null)}>
         {sheetItem && (sheetItem.kind === 'backpack'
-          ? <BackpackTooltipContent bp={sheetItem.data} prereqName={prereqNameOf(sheetItem.data)} />
+          ? <BackpackTooltipContent bp={sheetItem.data} skills={skillsOf(sheetItem.data)} prereqName={prereqNameOf(sheetItem.data)} />
           : <WeaponProjectionContent
               w={sheetItem.data}
               parentName={parentNameOf(sheetItem.data)}
@@ -661,6 +696,7 @@ export default function BackpacksPage() {
             <BackpackCard
               key={`bp_${it.data.id}`}
               bp={it.data}
+              skills={skillsOf(it.data)}
               pinned={pinnedTooltip?.itemId === it.data.id}
               onEnter={(el) => { if (!isMobile && !pinnedTooltip) setHoverTooltip({ itemId: it.data.id, ...computePos(el) }) }}
               onLeave={() => { if (!isMobile && !pinnedTooltip) setHoverTooltip(null) }}
@@ -684,8 +720,10 @@ export default function BackpacksPage() {
 
 // ── 卡片元件 ────────────────────────────────────────────────────────────────────
 
-function BackpackCard({ bp, pinned, onEnter, onLeave, onClick }: {
+function BackpackCard({ bp, skills, pinned, onEnter, onLeave, onClick }: {
   bp: Backpack
+  /** PLAN-043：已解析的掛載技能（badge 用） */
+  skills: ResolvedBackpackSkill[]
   pinned: boolean
   onEnter: (el: HTMLDivElement) => void
   onLeave: () => void
@@ -724,11 +762,13 @@ function BackpackCard({ bp, pinned, onEnter, onLeave, onClick }: {
         {bp.repairAmount > 0 && (
           <div><span className="text-text-dim">修理 </span><Num>{bp.repairAmount}</Num></div>
         )}
-        {bp.mainSkill && (
-          <div className="col-span-2 mt-0.5">
-            <span className="text-[11px] text-accent-pink bg-accent-pink/8 border border-accent-pink/20 rounded px-1.5 py-0.5">
-              ✦ {bp.mainSkill.name}
-            </span>
+        {skills.length > 0 && (
+          <div className="col-span-2 mt-0.5 flex flex-wrap gap-1">
+            {skills.map((sk) => (
+              <span key={sk.raw} className="text-[11px] text-accent-pink bg-accent-pink/8 border border-accent-pink/20 rounded px-1.5 py-0.5">
+                ✦ {sk.name}
+              </span>
+            ))}
           </div>
         )}
       </div>

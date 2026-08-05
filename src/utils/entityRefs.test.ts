@@ -39,7 +39,7 @@ test('A1: 所有 site.id 全域唯一（跨 spec 不重複）', () => {
 
 test('A2: 集合清單與預期一致（新增集合未註冊時此測試會紅）', () => {
   assert.deepEqual([...ALL_SCAN_COLLECTIONS].sort(), [
-    'backpacks', 'buffs', 'components', 'glossaryTerms', 'modules',
+    'backpackSkills', 'backpacks', 'buffs', 'components', 'glossaryTerms', 'modules',
     'neuralDriveAbilities', 'pilotSkills', 'pilots', 'weapons',
   ])
 })
@@ -118,8 +118,13 @@ test('C2: 純字串 skills 不會被當物件讀取（不產生 undefined 站點
 
 // ─── D. descriptionRefs 與型別映射（地雷 a：kind ≠ refType）──────────────────
 
-test('D0: REF_TYPE_OF 映射正確（pilotSkill→skill、glossaryTerm→term）', () => {
-  assert.deepEqual(REF_TYPE_OF, { buff: 'buff', pilotSkill: 'skill', glossaryTerm: 'term' })
+test('D0: REF_TYPE_OF 映射正確（pilotSkill→skill、glossaryTerm→term、backpackSkill→null）', () => {
+  assert.deepEqual(REF_TYPE_OF, {
+    buff: 'buff', pilotSkill: 'skill', glossaryTerm: 'term',
+    backpack: 'backpack',
+    // null = 不是任何正文引用的合法目標（PLAN-043 決策七），與「漏填」不同
+    backpackSkill: null,
+  })
 })
 
 test('D1: 找技能引用要比對 refType==="skill" 而非 "pilotSkill"', () => {
@@ -467,4 +472,87 @@ test('N3: 未填 buffUpgrades 的能力不產生站點雜訊', () => {
   const ability = { id: 'nd_y', name: 'Y', description: '', effects: [], buffIds: [] } as never
   const r = findReferences('buff', 'buff_凝勢', scanData({ neuralDriveAbilities: [ability] }))
   assert.deepEqual(r.hits, [])
+})
+
+// ─── P. PLAN-043 背包技能庫與硬外鍵 ──────────────────────────────────────────
+
+test('P1: backpacks.skillIds[] 帶 @N 後綴仍被命中，value 保留原始字串', () => {
+  const bp = { id: 'bp1', name: '移動背包', skillIds: ['bpskill_移動強化@1'] } as never
+  const r = findReferences('backpackSkill', 'bpskill_移動強化', scanData({ backpacks: [bp] }))
+  assert.equal(r.hits.length, 1)
+  const h = r.hits[0]
+  assert.equal(h.siteId, 'backpacks.skillIds[]')
+  assert.equal(h.op, 'arrayRemove')
+  // 地雷①在 scalarRef 路徑上的翻版：存拆解後的裸 id 會讓 arrayRemove 靜默移除失敗
+  assert.equal(h.value, 'bpskill_移動強化@1')
+  assert.equal(h.level, 1)
+  assert.equal(h.path, 'skillIds.0')
+})
+
+test('P2: 無 @N 的 skillIds 元素照樣命中，且不誤傷前綴相同的 id', () => {
+  const bp = { id: 'bp1', name: 'B', skillIds: ['bpskill_移動強化', 'bpskill_移動強化EX'] } as never
+  const r = findReferences('backpackSkill', 'bpskill_移動強化', scanData({ backpacks: [bp] }))
+  assert.equal(r.hits.length, 1)
+  assert.equal(r.hits[0].value, 'bpskill_移動強化')
+})
+
+test('P3: 背包技能的 buffIds 與 levels[].buffIds 各自成站點', () => {
+  const skill = {
+    id: 'bpskill_移動強化', name: '移動強化', skillType: '被動技能', description: '', effects: [],
+    buffIds: ['buff_加速'],
+    levels: [{ level: 1, name: '移動強化Ⅰ', buffIds: ['buff_加速@1'] }],
+  } as never
+  const r = findReferences('buff', 'buff_加速', scanData({ backpackSkills: [skill] }))
+  assert.deepEqual(r.hits.map(h => h.siteId).sort(), [
+    'backpackSkills.buffIds', 'backpackSkills.levels[].buffIds',
+  ])
+  const lv = r.hits.find(h => h.siteId === 'backpackSkills.levels[].buffIds')!
+  assert.equal(lv.level, 1)
+  assert.deepEqual(lv.anchor, { by: 'level', value: 1 })
+})
+
+test('P4: 硬外鍵不進 hits —— 進了就會被自動清成 null，那正是要防的事', () => {
+  const child = { id: 'bp_ss', name: '征服者背包', skillIds: [], craft: { prereqBackpackId: 'bp_sp' } } as never
+  const r = findReferences('backpack', 'bp_sp', scanData({ backpacks: [child] }))
+  assert.deepEqual(r.hits, [])
+  assert.equal(r.hardRefs.length, 1)
+  assert.equal(r.hardRefs[0].siteId, 'backpacks.craft.prereqBackpackId')
+  assert.equal(r.hardRefs[0].op, 'fieldClear')
+})
+
+test('P5: 複合武器的 fusedBackpackId 也是硬外鍵', () => {
+  const w = { id: 'w1', name: '裁決者', upgrade: { fromWeaponId: 'w0', fusedBackpackId: 'bp_sp' } } as never
+  const r = findReferences('backpack', 'bp_sp', scanData({ weapons: [w] }))
+  assert.deepEqual(r.hits, [])
+  assert.equal(r.hardRefs.length, 1)
+  assert.equal(r.hardRefs[0].siteId, 'weapons.upgrade.fusedBackpackId')
+  assert.equal(r.hardRefs[0].origin, '武器:裁決者 的融合來源')
+})
+
+test('P6: writeCount 不含硬外鍵（它們不會產生寫入）', () => {
+  const child = { id: 'bp_ss', name: 'A', skillIds: [], craft: { prereqBackpackId: 'bp_sp' } } as never
+  const r = findReferences('backpack', 'bp_sp', scanData({ backpacks: [child] }))
+  assert.equal(r.writeCount, 1)   // 只有目標自己的 deleteDoc
+})
+
+test('P7: 刪背包技能時，正文引用路徑靜默零命中（REF_TYPE_OF 為 null 的契約）', () => {
+  assert.equal(REF_TYPE_OF.backpackSkill, null)
+  // 有人在 BUFF 正文裡寫了 refType:'skill' 且 refId 剛好同名——不可誤判成背包技能引用
+  const buff = asBuff({
+    id: 'b1', name: 'B', description: '[移動強化]', effects: [],
+    descriptionRefs: { 移動強化: { refType: 'skill', refId: 'bpskill_移動強化' } },
+  })
+  const r = findReferences('backpackSkill', 'bpskill_移動強化', scanData({ buffs: [buff] }))
+  assert.deepEqual(r.hits, [])
+})
+
+test('P8: 刪背包時，descriptionRefs 的 refType:backpack 引用照常被清除', () => {
+  const buff = asBuff({
+    id: 'b1', name: 'B', description: '搭配[征服者背包]', effects: [],
+    descriptionRefs: { 征服者背包: { refType: 'backpack', refId: 'bp_ss' } },
+  })
+  const r = findReferences('backpack', 'bp_ss', scanData({ buffs: [buff] }))
+  assert.equal(r.hits.length, 1)
+  assert.equal(r.hits[0].kind, 'descriptionRefs')
+  assert.equal(r.hits[0].op, 'mapKeyDelete')
 })

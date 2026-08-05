@@ -12,7 +12,8 @@ export * from './api/research'        // getGlobalResearch / getPilotResearch / 
 export * from './api/mechs'           // getMechs / getMech / getMechsByArmorType / updateMech
 export * from './api/modules'         // getModules / getAvailableModules / getModulesByMech / updateModule
 export * from './api/weapons'         // getWeapons / getWeapon / updateWeapon
-export * from './api/backpacks'       // getBackpacks / updateBackpack / getBackpacksPage
+export * from './api/backpacks'       // getBackpacks / updateBackpack / deleteBackpack
+export * from './api/backpackSkills'  // getBackpackSkills / updateBackpackSkill / deleteBackpackSkill（PLAN-043）
 export * from './api/components'      // getComponents / updateComponent
 export * from './api/buffs'           // getBuffs / updateBuff / deleteBuff
 export * from './api/glossary'        // getGlossaryTerms / updateGlossaryTerm / deleteGlossaryTerm

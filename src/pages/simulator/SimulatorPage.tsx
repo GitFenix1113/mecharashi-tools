@@ -6,6 +6,7 @@ import type {
   Mech,
   Weapon,
   Backpack,
+  BackpackSkillDoc,
   Module,
   Component,
   PilotResearch,
@@ -19,6 +20,7 @@ import type {
 import { useAllGameData, type AllGameData } from '../../hooks/useFirestore'
 import { getAllPilotResearch } from '../../lib/firestoreApi'
 import { buildBuffPool } from '../../utils/buffPool'
+import { resolveBackpackSkills, buildBackpackSkillMap } from '../../utils/backpackSkills'
 import { resolveReachable, type ResolvedBuff } from '../../utils/reachableBuffs'
 import { resolvePilotSkills, buildSkillMap } from '../../utils/pilotSkills'
 
@@ -143,6 +145,9 @@ export default function SimulatorPage() {
   const { data, loading } = useAllGameData()
   const { user } = useAuth()
   const location = useLocation()
+
+  // PLAN-043：背包技能字典（Step 4 的選擇卡要用它反查說明文字）
+  const backpackSkillMap = useMemo(() => buildBackpackSkillMap(data?.backpackSkills), [data?.backpackSkills])
 
   const [pilotResearchList, setPilotResearchList] = useState<PilotResearch[]>([])
   useEffect(() => {
@@ -367,7 +372,7 @@ export default function SimulatorPage() {
         {step === 'pilot' && <PilotStep data={data} state={state} onSelect={selectPilot} onNext={() => setStep('mech')} />}
         {step === 'mech' && <MechStep mechs={getFilteredMechs()} state={state} onSelect={selectMech} onNext={() => setStep('weapon')} />}
         {step === 'weapon' && <WeaponStep weapons={getFilteredWeapons()} state={state} onSelect={selectWeapon} onNext={() => setStep('backpack')} />}
-        {step === 'backpack' && <BackpackStep backpacks={getFilteredBackpacks()} state={state} onSelect={selectBackpack} onNext={() => setStep('research')} />}
+        {step === 'backpack' && <BackpackStep backpacks={getFilteredBackpacks()} skillMap={backpackSkillMap} state={state} onSelect={selectBackpack} onNext={() => setStep('research')} />}
         {step === 'research' && <ResearchStep pilotResearch={getPilotResearch()} state={state} onSelect={setResearch} onNext={() => setStep('weaponMod')} />}
         {step === 'weaponMod' && <WeaponModStep weapon={selectedWeapon} state={state} onSetMod={setFloatingMod} onNext={() => setStep('components')} />}
         {step === 'components' && (
@@ -508,7 +513,14 @@ function WeaponStep({ weapons, state, onSelect, onNext }: { weapons: Weapon[]; s
   )
 }
 
-function BackpackStep({ backpacks, state, onSelect, onNext }: { backpacks: Backpack[]; state: SimState; onSelect: (id: string) => void; onNext: () => void }) {
+function BackpackStep({ backpacks, skillMap, state, onSelect, onNext }: {
+  backpacks: Backpack[]
+  /** PLAN-043：技能本體已抽離為集合，選擇卡的說明文字要反查 */
+  skillMap: Map<string, BackpackSkillDoc>
+  state: SimState
+  onSelect: (id: string) => void
+  onNext: () => void
+}) {
   return (
     <div>
       <h2 className="text-lg font-bold mb-1">Step 4 — 選擇背包</h2>
@@ -520,7 +532,9 @@ function BackpackStep({ backpacks, state, onSelect, onNext }: { backpacks: Backp
             <div className="text-[14px] text-text-dim">
               {b.type} · 重量{b.weight} {b.assemblableArmorType.length > 0 && <span className="text-accent-cyan">({b.assemblableArmorType.map(t => ({Light:'輕型',Medium:'中甲',Heavy:'重型'})[t]??t).join('/')}限定)</span>}
             </div>
-            <div className="text-[14px] text-text-secondary mt-1">{b.mainSkill?.description}</div>
+            <div className="text-[14px] text-text-secondary mt-1">
+              {resolveBackpackSkills(b, skillMap).map((sk) => sk.description).join('／')}
+            </div>
           </SelectionCard>
         ))}
         {backpacks.length === 0 && (
@@ -851,6 +865,9 @@ function ResultStep({
       setSaving(false)
     }
   }
+  // PLAN-043：背包技能字典（顯示層用；buff 池的等級解析在 buildBuffPool 內部做）
+  const backpackSkillMap = useMemo(() => buildBackpackSkillMap(data.backpackSkills), [data.backpackSkills])
+
   const triggerComps = data.components.filter((c): c is TriggerComponent => state.triggerComponentIds.includes(c.id) && c.componentType === 'Condition')
   const effectComps = data.components.filter((c): c is EffectComponent => state.effectComponentIds.includes(c.id) && c.componentType === 'Function')
 
@@ -858,10 +875,10 @@ function ResultStep({
   const reachable = useMemo(() => {
     const skillMap = buildSkillMap(data.pilotSkills)
     const skills = resolvePilotSkills(pilot?.skills, skillMap)
-    const pool = buildBuffPool({ pilot, skills, modules, weapon, backpack })
+    const pool = buildBuffPool({ pilot, skills, modules, weapon, backpack, backpackSkills: data.backpackSkills })
     const buffMap = new Map(data.buffs.map((b) => [b.id, b]))
     return resolveReachable(pool, buffMap)
-  }, [data.pilotSkills, data.buffs, pilot, modules, weapon, backpack])
+  }, [data.pilotSkills, data.buffs, data.backpackSkills, pilot, modules, weapon, backpack])
 
   // 形態互斥組：未選時預設取第一個 option；產出「目前 active 的形態 buff」清單
   const activeFormBuffs = reachable.formGroups.map((g) => {
@@ -947,7 +964,11 @@ function ResultStep({
           <div className="bg-bg-card rounded-lg p-3 border border-border">
             <div className="text-[13px] text-accent-green uppercase tracking-wider mb-1">背包</div>
             <div className="text-sm font-bold">{backpack?.name ?? '未裝備'}</div>
-            {backpack && <div className="text-[14px] text-text-dim">{backpack.mainSkill?.name}</div>}
+            {backpack && (
+              <div className="text-[14px] text-text-dim">
+                {resolveBackpackSkills(backpack, backpackSkillMap).map((sk) => sk.name).join('、')}
+              </div>
+            )}
           </div>
         </div>
 

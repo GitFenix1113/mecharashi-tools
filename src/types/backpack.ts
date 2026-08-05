@@ -31,7 +31,31 @@ export interface Backpack {
   repairAmount: number    // 修理量；非修理類背包填 0 · API: AmountOfRepair
   /** SS 特種背包製作關係（PLAN-036）；僅 SS 且後台已輸入者有值。無值＝未關聯，前台優雅降級。 */
   craft?: BackpackCraft
-  /** 背包附帶技能（API: WithPassiveSkills[0]）；僅 SS 稀有度（API quality: SSSR）有此欄位 */
+  /**
+   * 遊戲內背包卡下方的灰字風味文案（PLAN-043）。
+   * 例：移動背包 →「直接將額外動能輸送到腿部傳動裝置，無論是使用滑輪還是步行，機甲的移動力都能得到提升。」
+   *
+   * 屬於**背包**而非技能：換背包掛同一個技能時這段不會跟著走。官方 WIKI 未錄入，純人工維護。
+   */
+  flavor?: string
+  /**
+   * 掛載的背包技能 doc id（PLAN-043）。元素格式同 buffIds，可含 `id@N` 指定等級
+   * （如 `bpskill_移動強化@1` ＝ 移動強化Ⅰ）。
+   *
+   * 用陣列而非單一 skillId：目前實務長度恆為 0 或 1，但改陣列的成本只是渲染側多一層 map，
+   * 而若日後出現雙技能背包，單一欄位就得再走一次型別遷移 + 腳本 flip。
+   */
+  skillIds: string[]
+  /**
+   * @deprecated PLAN-043 Phase E 移除。改用 {@link skillIds} 引用 backpackSkills 集合。
+   *
+   * 這個內嵌欄位是爬蟲時代官方 WIKI 欄位形狀的殘留：實務上**只有 SS 稀有度填了值**，
+   * 因為官方 WIKI 只在 SS 條目上有技能欄位。但遊戲內連 B 級的「移動背包」都掛著
+   * 被動技能「移動強化Ⅰ」——內嵌格式既裝不下非 SS 的技能，也無法讓同族技能共用。
+   *
+   * Phase B 的遷移腳本會抽成獨立 doc 並寫回 skillIds，此欄位屆時仍保留（前台尚未改讀）；
+   * Phase E 確認線上正常後才由 flip 腳本 deleteField 並移除本定義。
+   */
   mainSkill?: {
     id: string            // API: WithPassiveSkills[0].ID
     name: string          // API: WithPassiveSkills[0].name

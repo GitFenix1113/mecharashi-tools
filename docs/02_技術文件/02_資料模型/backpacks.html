@@ -193,7 +193,17 @@
       <tr><td>repairAmount</td><td>number</td><td>修理量；非修理類背包固定填 0<br><small style="color:var(--text-dim)">API: AmountOfRepair · parseInt；不存在時預設 0</small></td></tr>
       <tr class="group-header"><td colspan="3">▎製作前置 craft?（BackpackCraft，🆕 PLAN-036；僅 SS／S+ 且已建立關聯者有值，無值＝未關聯）</td></tr>
       <tr><td>&nbsp;└ prereqBackpackId</td><td>string</td><td>前置主背包 doc id（一律「低一階」背包）：<strong>SS ← S+</strong>（無法由名字 derive，後台手輸）、<strong>S+ ← S</strong>（名稱可推、腳本填）。只存這一個 id；種類／線／變體皆由此 id 查 backpacks 表 derive。前台無值時優雅降級為「未關聯」，不報錯。<br><small style="color:var(--text-dim)">詳見下方「背包的前置主背包」章節</small></td></tr>
-      <tr class="group-header"><td colspan="3">▎附帶技能 mainSkill（僅 SS 稀有度，API: WithPassiveSkills[0]）</td></tr>
+      <tr><td>skillIds</td><td>string[]</td><td>🆕 PLAN-043：掛載的背包技能 doc id（引用 <code>backpackSkills</code> 集合）。元素格式同 <code>buffIds</code>，可含 <code>@N</code> 指定等級（如 <code>bpskill_移動強化@1</code> ＝ 移動強化Ⅰ）。<br><small style="color:var(--text-dim)">用陣列而非單一 id：目前實務長度恆為 0 或 1，但改陣列的成本只是渲染側多一層 map，日後出現雙技能背包不必再遷移一次</small></td></tr>
+      <tr><td>flavor</td><td>string?</td><td>🆕 PLAN-043：遊戲內背包卡下方的灰字風味文案（如移動背包的「直接將額外動能輸送到腿部傳動裝置…」）。屬於<strong>背包</strong>而非技能——換背包掛同一個技能時這段不會跟著走。官方 WIKI 未錄入，純人工維護</td></tr>
+      <tr class="group-header" style="opacity:.65"><td colspan="3">▎附帶技能 mainSkill ⚠ <strong>已停用</strong>（PLAN-043 Phase E 移除，改用上方 <code>skillIds</code>）</td></tr>
+      <tr><td colspan="3" style="color:var(--text-dim);font-size:13px;line-height:1.8">
+        這個內嵌欄位是爬蟲時代官方 WIKI 欄位形狀的殘留：實務上<strong>只有 SS 稀有度填了值</strong>（實測 22/22 精確對應 22 個 SS），
+        因為官方 WIKI 只在 SS 條目上有技能欄位。但遊戲內連 B 級的「移動背包」都掛著被動技能「移動強化Ⅰ」——
+        內嵌格式既裝不下非 SS 的技能，也無法讓同族技能共用。<br>
+        PLAN-043 Phase B 已把 22 筆抽成獨立 doc 並寫回 <code>skillIds</code>；本欄位<strong>仍留在 Firestore 供對照</strong>，
+        前台已不再讀取，將於 Phase E 的 flip 腳本 <code>deleteField</code> 一併移除。下方欄位定義屆時一併刪除。<br>
+        <small>註：<code>dmg</code> / <code>crit</code> / <code>critDmg</code> / <code>acc</code> / <code>specialEffects</code> 五個欄位實測<strong>全庫 0/22 有值</strong>，遷移未遺失任何資料。</small>
+      </td></tr>
       <tr><td>&nbsp;├ id</td><td>string</td><td>技能 ID<br><small style="color:var(--text-dim)">API: WithPassiveSkills[0].ID</small></td></tr>
       <tr><td>&nbsp;├ name</td><td>string</td><td>技能名稱（如 "拯救者驅動·攻擊"）<br><small style="color:var(--text-dim)">API: WithPassiveSkills[0].name</small></td></tr>
       <tr><td>&nbsp;├ icon</td><td>string?</td><td>技能圖示鍵名（如 "Icon_skill_passive_3130"）<br><small style="color:var(--text-dim)">API: WithPassiveSkills[0].SkillIcon / .icon</small></td></tr>

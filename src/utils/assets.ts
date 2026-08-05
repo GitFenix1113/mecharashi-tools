@@ -1,4 +1,9 @@
-const BASE = import.meta.env.BASE_URL
+/**
+ * 刻意做成函式而非模組層級常數：`import.meta.env` 在 node --test 下不存在，
+ * 模組層級取值會讓整個檔案一 import 就拋 TypeError，連純函式都測不了。
+ * Vite 對 `import.meta.env.X` 是靜態文字替換，寫在函式內同樣會被替換掉，無額外成本。
+ */
+const base = (): string => import.meta.env.BASE_URL
 
 /**
  * 技能圖示分類規則：依檔名前綴對應 public/images/skills/ 下的子資料夾。
@@ -13,23 +18,44 @@ const SKILL_PREFIX_FOLDERS: [string, string][] = [
 ]
 
 /**
+ * skills/ 下實際存在的子資料夾。**含前綴推導不出來的資料夾**，這正是它與
+ * SKILL_PREFIX_FOLDERS 分開列的原因（PLAN-043）。
+ *
+ * 背包技能圖示沿用官方的 `Icon_skill_passive_*` 檔名卻放在「背包技能/」，
+ * 純靠前綴推導會把它洗成「被動技能/」→ 圖片 404 或指到同名但不同來源的檔案。
+ */
+const SKILL_SUBFOLDERS = new Set([
+  ...SKILL_PREFIX_FOLDERS.map(([, folder]) => folder),
+  '背包技能',   // PLAN-043：與被動技能圖大量重複，刻意獨立以維持圖庫來源可辨識
+])
+
+/**
  * 將任何指向技能圖示的路徑正規化到實體所在子資料夾。
  *
- * skills/ 下的技能圖示已依檔名前綴分到子資料夾（主動/指令/被動/pp/天賦技能），但既有
+ * skills/ 下的技能圖示已依檔名前綴分到子資料夾（主動/指令/被動/pp/天賦/背包技能），但既有
  * 資料（DB 內的舊扁平路徑、後台輸入框的 bare key、scraper 寫入的 /images/skills/<檔名>）
- * 仍可能是扁平寫法。此函式只看檔名前綴推回正確子資料夾，讓新舊兩種寫法都能解析；
- * 已分類的新路徑會對應到相同結果（冪等），非技能路徑原樣返回。
+ * 仍可能是扁平寫法。處理順序刻意是「先信任明確寫出的已知子資料夾，其次才用檔名前綴推導」：
+ *
+ *  · 已在已知子資料夾內 → 原樣返回。檔名前綴與資料夾不一致是**合法**的（背包技能用
+ *    passive 前綴），推導反而會改錯。
+ *  · 扁平或未知子資料夾 → 依檔名前綴推回，讓舊資料仍解析得到。
+ *  · 非技能路徑 → 原樣返回。
+ *
+ * 兩條路徑對已分類的新路徑都對應到相同結果（冪等）。
  */
-function normalizeSkillPath(path: string): string {
+export function normalizeSkillPath(path: string): string {
   const m = path.match(/(^|\/)images\/skills\/(.+)$/)
   if (!m) return path
-  const file = m[2].split('/').pop() ?? '' // 取檔名，忽略中間任何（可能過時的）子資料夾
+  const parts = m[2].split('/')
+  const file = parts.pop() ?? ''
+  // 明確寫出的已知子資料夾優先於前綴推導（見上方 SKILL_SUBFOLDERS）
+  if (parts.length && SKILL_SUBFOLDERS.has(parts[parts.length - 1])) return path
   const sub = SKILL_PREFIX_FOLDERS.find(([p]) => file.startsWith(p))?.[1]
   return sub ? `${m[1]}images/skills/${sub}/${file}` : path
 }
 
 export function assetUrl(path: string): string {
-  return `${BASE}${normalizeSkillPath(path).replace(/^\//, '')}`
+  return `${base()}${normalizeSkillPath(path).replace(/^\//, '')}`
 }
 
 /**
@@ -81,7 +107,7 @@ export function resolveBannerSrc(url: string): string {
 }
 
 export async function fetchData<T>(file: string): Promise<T> {
-  const res = await fetch(`${BASE}data/${file}`)
+  const res = await fetch(`${base()}data/${file}`)
   if (!res.ok) throw new Error(`Failed to load ${file}`)
   return res.json()
 }

@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { buildBuffPool, runSpec, type BuffPoolInput, type BuffSource } from './buffPool.ts'
 import { SPECS } from './entityRefs.ts'
-import type { Pilot, Module, Weapon, Backpack, PilotSkillDoc, NeuralDriveAbility } from '../types'
+import type { Pilot, Module, Weapon, Backpack, BackpackSkillDoc, PilotSkillDoc, NeuralDriveAbility } from '../types'
 
 // 最小 fixture：只填 buildBuffPool 會讀到的欄位，其餘以 cast 略過
 const pilot = {
@@ -127,4 +127,46 @@ test('runSpec：同一份 spec 的一般 buffIds 站點照常收（略過是逐�
   const out: BuffSource[] = []
   runSpec(out, SPECS.neuralDriveAbilities, ability)
   assert.deepEqual(out, [{ buffId: 'buff_賦予的東西', level: undefined, origin: '神驅能力:X' }])
+})
+
+// ─── PLAN-043：背包掛載技能（等級解析）────────────────────────────────────────
+
+test('背包掛載技能：只算掛的那一級，不可把所有等級倒進池子', () => {
+  const backpack = { id: 'bp1', name: '移動背包', skillIds: ['bpskill_移動強化@1'] } as unknown as Backpack
+  const skills = [{
+    id: 'bpskill_移動強化', name: '移動強化', skillType: '被動技能', description: '', effects: [],
+    buffIds: ['buff_父層'],
+    levels: [
+      { level: 1, name: '移動強化Ⅰ', buffIds: ['buff_一'] },
+      { level: 2, name: '移動強化Ⅱ', buffIds: ['buff_二'] },
+    ],
+  }] as unknown as BackpackSkillDoc[]
+
+  const pool = buildBuffPool({ backpack, backpackSkills: skills })
+  // 若改用 runSpec(SPECS.backpackSkills, doc)，這裡會多出 buff_父層 與 buff_二 ——
+  // 掛 Lv1 的背包拿到 Lv2 的 buff，而且不報錯，只是模擬結果偏高。
+  assert.deepEqual(pool, [{ buffId: 'buff_一', level: undefined, origin: '背包技能:移動強化 Lv1' }])
+})
+
+test('背包掛載技能：未指定級 → 用技能頂層 buffIds', () => {
+  const backpack = { id: 'bp1', name: 'B', skillIds: ['bpskill_x'] } as unknown as Backpack
+  const skills = [{
+    id: 'bpskill_x', name: 'X', skillType: '被動技能', description: '', effects: [], buffIds: ['buff_頂層@3'],
+  }] as unknown as BackpackSkillDoc[]
+  const pool = buildBuffPool({ backpack, backpackSkills: skills })
+  assert.deepEqual(pool, [{ buffId: 'buff_頂層', level: 3, origin: '背包技能:X' }])
+})
+
+test('背包掛載技能：未提供字典時只取舊的內嵌 mainSkill（過渡期行為不變）', () => {
+  const backpack = {
+    id: 'bp1', name: '能源背包', skillIds: ['bpskill_x'], mainSkill: { buffIds: ['buff_充能'] },
+  } as unknown as Backpack
+  const pool = buildBuffPool({ backpack })
+  assert.deepEqual(pool.map(p => p.buffId), ['buff_充能'])
+})
+
+test('背包掛載技能：斷鏈的 id 靜默略過，不產生空來源', () => {
+  const backpack = { id: 'bp1', name: 'B', skillIds: ['bpskill_不存在'] } as unknown as Backpack
+  const skills = [{ id: 'bpskill_x', name: 'X', skillType: '被動技能', description: '', effects: [], buffIds: ['buff_a'] }] as unknown as BackpackSkillDoc[]
+  assert.deepEqual(buildBuffPool({ backpack, backpackSkills: skills }), [])
 })

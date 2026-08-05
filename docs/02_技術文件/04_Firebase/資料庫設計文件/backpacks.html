@@ -44,6 +44,15 @@
   </div>
 
   <div class="changed-block">
+    <strong>🔄 v1.4 更新（PLAN-043）：背包技能集合化</strong>
+    新增 <code>skillIds</code>（引用新的 <code>backpackSkills</code> 集合，可帶 <code>@N</code> 等級）與 <code>flavor</code>（背包風味文案）。
+    內嵌的 <code>mainSkill</code> 停用、待 Phase E 移除。
+    背包同時成為<strong>第四個可刪除的集合</strong>（走 PLAN-030 級聯刪除），但
+    <code>craft.prereqBackpackId</code> 與 <code>weapons.upgrade.fusedBackpackId</code> 被標記為
+    <strong>硬外鍵（hardRef）</strong>——命中時擋下刪除、要求先斷鏈，而非自動清成 null。
+  </div>
+
+  <div class="changed-block">
     <strong>🔄 v1.3 更新（PLAN-036）：特種背包前置關係</strong>
     新增 <code>craft.prereqBackpackId</code>（本次<strong>唯一落庫的新欄位</strong>）——記錄背包製作的「低一階前置主背包」。
     合成階層分類（PLAN-035）與能力循前置鏈（PLAN-037）皆為前端純函式 derive、<strong>不落庫、不 bump 版本</strong>。
@@ -63,7 +72,14 @@
       <tr><td>repairAmount</td><td>number</td><td>修理量；非修理類背包填 0（API: AmountOfRepair）</td></tr>
       <tr><td colspan="3" style="color:var(--accent-orange);font-weight:700;">▎craft — 製作前置（BackpackCraft，🆕 PLAN-036；僅 SS／S+ 已建立關聯者有值，無值＝未關聯）</td></tr>
       <tr><td>&nbsp;└ prereqBackpackId</td><td>string</td><td>前置主背包 doc id（一律「低一階」背包）：<strong>SS ← S+</strong>（無法由名字反推，後台手輸）、<strong>S+ ← S</strong>（名稱可推、腳本填）。只存這一個 id，種類／線／變體皆 derive → 引用 backpacks 自身</td></tr>
-      <tr><td colspan="3" style="color:var(--accent-pink);font-weight:700;">▎mainSkill — 附帶技能（僅 SS 稀有度，API: WithPassiveSkills[0]）</td></tr>
+      <tr><td>skillIds</td><td>string[]</td><td>🆕 PLAN-043：掛載的背包技能 doc id → 引用 <code>backpackSkills</code> collection。元素可含 <code>@N</code> 指定等級（<code>bpskill_移動強化@1</code>）</td></tr>
+      <tr><td>flavor</td><td>string?</td><td>🆕 PLAN-043：遊戲內背包卡下方的灰字風味文案。屬於背包而非技能，官方 WIKI 未錄入、純人工維護</td></tr>
+      <tr><td colspan="3" style="color:var(--text-dim);font-weight:700;">▎mainSkill — 附帶技能 ⚠ <strong>已停用</strong>（PLAN-043 Phase E 移除，改用 <code>skillIds</code>）</td></tr>
+      <tr><td colspan="3" style="color:var(--text-dim);font-size:13px;line-height:1.7">
+        Phase B 已把 22 筆（＝全部 SS）抽成 <code>backpackSkills</code> 獨立 doc 並寫回 <code>skillIds</code>。
+        本欄位仍留在 Firestore 供對照，前台已不讀取，Phase E 的 flip 腳本會 <code>deleteField</code> 移除。
+        <code>dmg</code>/<code>crit</code>/<code>critDmg</code>/<code>acc</code>/<code>specialEffects</code> 實測全庫 0/22 有值。
+      </td></tr>
       <tr><td>&nbsp;├ id</td><td>string</td><td>技能 ID（API: WithPassiveSkills[0].ID）</td></tr>
       <tr><td>&nbsp;├ name</td><td>string</td><td>技能名稱（API: WithPassiveSkills[0].name）</td></tr>
       <tr><td>&nbsp;├ icon</td><td>string?</td><td>技能圖示鍵名（API: WithPassiveSkills[0].SkillIcon / .icon）</td></tr>

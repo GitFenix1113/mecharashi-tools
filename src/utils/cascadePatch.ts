@@ -396,6 +396,13 @@ export type CascadeBlocker =
   | { kind: 'problems'; detail: string; problems: CascadeProblem[] }
   | { kind: 'batchLimit'; detail: string; ops: number; limit: number }
   | { kind: 'snapshotSize'; detail: string; bytes: number; limit: number }
+  /**
+   * PLAN-043：目標被「不可機械清除」的硬外鍵引用著（前置背包鏈 / 複合武器融合來源）。
+   *
+   * 不由 checkCascadeSafety 產生 —— 它只看 plan，而硬外鍵刻意不進 plan（進了就會被
+   * 自動清成 null）。改由 planCascadeDelete 從 findReferences 的 hardRefs 直接建立。
+   */
+  | { kind: 'hardRef'; detail: string; refs: { coll: string; docId: string; docName: string; origin: string }[] }
 
 /**
  * 送出前的三道閘。回傳非空 = **必須中止整次刪除**，不可只跳過有問題的部分。

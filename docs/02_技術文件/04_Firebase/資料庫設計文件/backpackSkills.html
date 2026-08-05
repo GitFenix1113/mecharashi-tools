@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>backpackSkills — 背包技能庫 Schema — Firebase 資料庫設計 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../../index.html">技術文件</a>
+    <span>›</span>
+    <a href="Firebase資料庫設計文件.html">Firebase 資料庫設計</a>
+    <span>›</span>
+    <span class="current">backpackSkills — 背包技能庫</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge cyan">◆ COLLECTION SCHEMA</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    backpackSkills — 背包技能庫
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-043</span>
+  </h1>
+  <p class="hero-sub">背包技能單一資料源 · 可等級化（levels[]）· 由 backpacks.skillIds 引用</p>
+  <div class="version-badge" style="background:var(--accent-cyan);color:#000;">PLAN-043 — 2026-08-05</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label cyan">01 — 用途</div>
+  <div class="section-title">backpackSkills Collection</div>
+
+  <div class="info-block">
+    <strong>📌 用途說明</strong><br>
+    背包技能的單一資料源。背包以 <code>backpacks.skillIds[]</code> 引用本集合，元素可帶 <code>@N</code> 指定等級
+    （如 <code>bpskill_移動強化@1</code> ＝ 遊戲內的「移動強化Ⅰ」）。編輯技能會同步影響所有掛載它的背包。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>❓ 為什麼不併進 pilotSkills</strong><br>
+    這與 PLAN-032（武器技能併入 <code>pilotSkills</code>）的裁決<strong>相反，且是刻意的</strong>：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>維護者裁定</strong>——背包技能要獨立管理，不與其他實體混在同一份清單。</li>
+      <li><strong>欄位形狀確實不同</strong>：<code>PilotSkillDoc</code> 帶 <code>type</code>／<code>unitType</code>／<code>ap</code>／<code>cd</code>／<code>pp</code>／<code>weapon</code>／<code>variants</code>，
+        背包技能一個都用不到（遊戲內顯示為「消耗 —／武器 —」）；反過來背包技能需要 <code>levels[]</code>，那是 <code>PilotSkillDoc</code> 沒有的。</li>
+      <li><strong>ID 命名空間獨立</strong>：<code>pilotSkills</code> 現存 <code>SKILL_</code> 大寫 134 筆／<code>skill_</code> 小寫 512 筆，
+        後台撞號防呆只查小寫形式。獨立集合的 <code>bpskill_</code> 前綴直接繞開這個仍未修的洞。</li>
+    </ul>
+    代價（<code>GameDataContext</code> 10 處掛接、<code>RefType</code>／<code>ChangeTargetKind</code> 各一組、複製一份 Admin 分頁）
+    已於計畫書列成明細並接受。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label blue">02 — Schema</div>
+  <div class="section-title">backpackSkills Collection 欄位定義</div>
+  <div class="section-desc">文件 ID 格式：<code>bpskill_&lt;技能名&gt;</code>；同名不同效時加背包 id 後綴。</div>
+
+  <div class="data-table-wrap">
+    <table class="data-table blue-head">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td>文件 ID（<code>bpskill_移動強化</code>）</td></tr>
+      <tr><td>name</td><td>string</td><td>技能名稱（<strong>族名</strong>，不含羅馬階數；階名放在 <code>levels[].name</code>）</td></tr>
+      <tr><td>skillType</td><td>string</td><td>技能類型（<code>enums.ts</code> 的 SkillType 字串）。實務上幾乎全為 <code>'被動技能'</code>，但保留欄位——遊戲內技能卡本身標有類型，不該由前端硬編</td></tr>
+      <tr><td>description</td><td>string</td><td>效果說明。階梯技能時作為各級未填時的<strong>回退父層</strong></td></tr>
+      <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>描述內 [xxx] 引用側錄（PLAN-019）。可引用 BUFF／詞條／機師技能</td></tr>
+      <tr><td>icon</td><td>string?</td><td>圖示路徑。慣例存 <code>/images/skills/背包技能/&lt;檔名&gt;</code>（PLAN-043 獨立圖庫資料夾）</td></tr>
+      <tr><td>effects</td><td>SkillEffect[]</td><td>結構化效果數值（管理員手填），供模擬器計算</td></tr>
+      <tr><td>buffIds</td><td>string[]</td><td>賦予的 BUFF → 引用 <code>buffs</code> collection。元素可含 <code>@N</code></td></tr>
+      <tr><td>officialId</td><td>string?</td><td>官方 API 的數字技能 ID（如 <code>62304</code>），由 PLAN-043 遷移自 <code>Backpack.mainSkill.id</code>。<strong>純備查、無任何程式讀取</strong>——保留的理由是它是回連官方資料的唯一線索，而 Phase E 的 flip 會把 <code>mainSkill</code> 永久刪掉。新建技能不必填</td></tr>
+      <tr><td colspan="3" style="color:var(--accent-cyan);font-weight:700;">▎levels — 階梯等級（選填；比照 PLAN-024 的 BuffLevel）</td></tr>
+      <tr><td>&nbsp;├ level</td><td>number</td><td>等級序號 1,2,3…（對應原羅馬尾碼）</td></tr>
+      <tr><td>&nbsp;├ name</td><td>string?</td><td>該級顯示名（<code>移動強化Ⅱ</code>）。<strong>必須手填，刻意不做羅馬數字自動推導</strong>——PLAN-024 實測既有資料已知損壞（<code>失穩ⅠⅠⅠ</code> 是三個重複的 U+2160），推導在髒資料上必然失敗。遊戲內無階名的技能族填與 <code>name</code> 相同的原字（明示的編輯決策，而非留空漏填）</td></tr>
+      <tr><td>&nbsp;├ description</td><td>string?</td><td>該級描述；未填時前台回退父層</td></tr>
+      <tr><td>&nbsp;├ descriptionRefs</td><td>DescriptionRefs?</td><td>該級專屬引用側錄；未填時回退父層</td></tr>
+      <tr><td>&nbsp;├ effects</td><td>SkillEffect[]?</td><td>該級數值；未填時回退父層</td></tr>
+      <tr><td>&nbsp;├ buffIds</td><td>string[]?</td><td>該級賦予的 BUFF；未填時回退父層</td></tr>
+      <tr><td>&nbsp;└ icon</td><td>string?</td><td>該級專屬圖示；未填時沿用 <code>skill.icon</code></td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label blue">03 — Notes</div>
+  <div class="section-title">設計說明</div>
+
+  <div class="info-block">
+    <strong>💡 等級覆寫語意：逐欄位 <code>該級 ?? 父層</code></strong><br>
+    解析層在 <code>src/utils/backpackSkills.ts</code> 的 <code>resolveBackpackSkills()</code>，前台／模擬器／後台三處共用。
+    <strong>不是「有 level 就整包換掉」</strong>——那會讓只填了階名的等級顯示成空白。
+    此約定必須與 <code>entityRefs</code> 的 <code>refsFallback</code> 一致，否則會出現
+    「掃描器認為某處有引用、前台卻顯示父層文字」的錯位。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>⚠️ 模擬器只算掛載的那一級</strong><br>
+    <code>buildBuffPool</code> <strong>刻意不走</strong> <code>runSpec(SPECS.backpackSkills, doc)</code>：
+    那會把頂層與所有等級的 <code>buffIds</code> 全部倒進池子，讓掛 Lv1 的背包拿到 Lv2 的 buff，
+    <strong>而且不報錯，只是模擬結果偏高</strong>。改用解析層先做等級收斂再推。<br>
+    反方向的 <code>findReferences</code> 則<strong>必須</strong>掃全部站點——刪 BUFF 時每一級的引用都得清掉。
+    兩者方向不同，這個不對稱是刻意的。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🗑️ 級聯刪除</strong><br>
+    <code>ChangeTargetKind: 'backpackSkill'</code>，走 PLAN-030 的兩段式級聯刪除。
+    唯一的引用來源是 <code>backpacks.skillIds[]</code>；清除時以 <strong>arrayRemove 原始元素字串</strong>（含 <code>@N</code>）——
+    存拆解後的裸 id 會讓移除失敗且<strong>靜默無錯</strong>。
+    模擬器整合測試在 <code>tests/emulator/suites/backpack-cascade.test.ts</code>。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🛠️ 後台編輯</strong><br>
+    後台「背包技能」分頁（<code>BackpackSkillAdmin.tsx</code>）維護技能本體，含折疊式等級編輯區與階名軟驗證
+    （會逐字印出 code point，讓「ⅠⅠ」與「Ⅱ」的差別看得見）。
+    背包側的「背包管理」分頁只做<strong>掛載</strong>：挑選技能、選擇要掛哪一級。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔁 遷移腳本</strong><br>
+    · <code>scripts/migrate-plan043-extract.mjs</code>（Stage 1）：把 <code>Backpack.mainSkill</code> 抽成獨立 doc 並寫回 <code>skillIds</code>，<strong>不動 mainSkill</strong>。
+    實測 180 個背包中 22 個有 mainSkill（＝全部 SS），去重後 22 筆唯一技能、0 碰撞、0 共用。<br>
+    · 去重鍵一律用 <code>name</code>，<strong>絕不可用 <code>icon</code></strong>——實測 <code>Icon_skill_passive_5232.png</code> 一個圖對到三個不同技能。<br>
+    · 安全規則：<code>backpackSkills</code> read/write 皆 <code>isAdmin()</code>（比照 <code>pilotSkills</code>，見 security-rules）。
+  </div>
+</section>
+
+</main>
+
+</body>
+</html>

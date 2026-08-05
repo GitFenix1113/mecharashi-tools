@@ -154,6 +154,19 @@ export async function planCascadeDelete(
   const snapshot: DeleteSnapshot = { doc: preImage, patches: plan.patches }
 
   const blockers = checkCascadeSafety(plan, snapshot)
+
+  // PLAN-043：硬外鍵擋門。這類引用（前置背包鏈 / 複合武器融合來源）刻意不進 plan，
+  // 所以 checkCascadeSafety 看不到它們——必須在這裡自己建 blocker，否則等於放行。
+  if (refs.hardRefs.length) {
+    const sample = refs.hardRefs.slice(0, 5).map((h) => `${h.docName || h.docId}（${h.origin}）`)
+    const more = refs.hardRefs.length > 5 ? ` 等 ${refs.hardRefs.length} 處` : ''
+    blockers.push({
+      kind: 'hardRef',
+      detail: `仍被以下項目引用，請先解除關聯再刪除：${sample.join('、')}${more}`,
+      refs: refs.hardRefs.map((h) => ({ coll: h.coll, docId: h.docId, docName: h.docName, origin: h.origin })),
+    })
+  }
+
   // 掃描不完整時不可放行：可能有沒掃到的引用，刪了就是斷鏈且修補單也沒記
   if (refs.missingColls.length) {
     blockers.push({

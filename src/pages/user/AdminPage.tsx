@@ -13,12 +13,13 @@ import ComponentAdmin from './admin/ComponentAdmin'
 import UserAdmin from './admin/UserAdmin'
 import GrayOpsAdmin from './admin/GrayOpsAdmin'
 import BackpackAdmin from './admin/BackpackAdmin'
+import BackpackSkillAdmin from './admin/BackpackSkillAdmin'
 import GlossaryAdmin from './admin/GlossaryAdmin'
 import BuffAdmin from './admin/BuffAdmin'
 import SkillAdmin from './admin/SkillAdmin'
 import NeuralDriveAdmin from './admin/NeuralDriveAdmin'
 
-type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpacks' | 'glossary' | 'skills' | 'neuralDrive' | 'buffs' | 'users' | 'grayops'
+type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpacks' | 'backpackSkills' | 'glossary' | 'skills' | 'neuralDrive' | 'buffs' | 'users' | 'grayops'
 
 // 各分頁的載入設定：
 //   keys       — 此分頁需要整包載入的集合（主資料 + 編輯面板下拉用的關聯集合）。
@@ -35,7 +36,9 @@ const TAB_CONFIG: Record<Tab, { keys: CollectionKey[]; searchable: boolean; self
   weapons:    { keys: ['weapons', 'pilots'], searchable: true,  selfLoading: false, preload: true  },
   components: { keys: [],                     searchable: true,  selfLoading: true,  preload: false },
   grayops:    { keys: ['grayOpsRoster'],     searchable: false, selfLoading: false, preload: false },
-  backpacks:  { keys: ['backpacks'],         searchable: true,  selfLoading: false, preload: true  },
+  backpacks:  { keys: ['backpacks', 'backpackSkills'], searchable: true, selfLoading: false, preload: true },
+  // PLAN-043：技能庫需 backpacks 才算得出「掛載幾個背包 / 孤兒技能」
+  backpackSkills: { keys: ['backpackSkills', 'backpacks'], searchable: true, selfLoading: false, preload: true },
   glossary:   { keys: ['glossaryTerms'],     searchable: true,  selfLoading: false, preload: true  },
   skills:     { keys: ['pilotSkills'],       searchable: true,  selfLoading: false, preload: true  },
   neuralDrive:{ keys: ['neuralDriveAbilities', 'pilots'], searchable: true, selfLoading: false, preload: true },
@@ -177,6 +180,7 @@ export default function AdminPage() {
         <TabButton active={tab === 'weapons'}    onClick={() => setTab('weapons')}>武器管理</TabButton>
         <TabButton active={tab === 'components'} onClick={() => setTab('components')}>元件管理</TabButton>
         <TabButton active={tab === 'backpacks'}  onClick={() => setTab('backpacks')}>背包管理</TabButton>
+        <TabButton active={tab === 'backpackSkills'} onClick={() => setTab('backpackSkills')}>背包技能</TabButton>
         <TabButton active={tab === 'glossary'}   onClick={() => setTab('glossary')}>詞條管理</TabButton>
         <TabButton active={tab === 'skills'}      onClick={() => setTab('skills')}>技能管理</TabButton>
         <TabButton active={tab === 'neuralDrive'} onClick={() => setTab('neuralDrive')}>神經驅動</TabButton>
@@ -219,6 +223,7 @@ export default function AdminPage() {
           <ComponentAdmin initialSearch={searchSeed} />
         )}
         {showContent && tab === 'backpacks' && <BackpackAdmin initialSearch={searchSeed} />}
+        {showContent && tab === 'backpackSkills' && <BackpackSkillAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'glossary' && <GlossaryAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'skills' && <SkillAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'neuralDrive' && <NeuralDriveAdmin initialSearch={searchSeed} />}

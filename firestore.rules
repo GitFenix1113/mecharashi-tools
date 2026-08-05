@@ -49,6 +49,11 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if isAdmin();
     }
+    // PLAN-043 背包技能庫：可共用、可等級化的背包技能定義庫
+    match /backpackSkills/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
     match /components/{docId} {
       allow read: if isAdmin();
       allow write: if isAdmin();

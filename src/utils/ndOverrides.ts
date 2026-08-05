@@ -249,17 +249,37 @@ export interface BuffLevelNameCheck {
  *   「虛粒子矩陣EX」這類把羅馬字母誤計為階的雜訊）。若這裡改用 ASCII 當基準，
  *   後台會鼓勵管理員填出與正文字面不一致的階名，等於把剛統一好的字形再拆回去。
  */
-export function checkBuffLevelName(buffName: string, level: number, name: string | undefined): BuffLevelNameCheck {
+export function checkBuffLevelName(
+  buffName: string,
+  level: number,
+  name: string | undefined,
+  /**
+   * 領域專屬的文案覆寫（PLAN-043）。背包技能的 levels[] 與 BuffLevel 同構，
+   * 值得共用這裡的全形羅馬字檢查——那才是本函式的價值所在（'失穩ⅠⅠⅠ' 這類
+   * 重複 U+2160 靠肉眼看不出來）。但「未填」的後果兩邊不同：buff 是覆寫表失效，
+   * 背包技能只是前台顯示不出階名。故把兩句領域文案參數化，其餘邏輯完全共用——
+   * 複製一份 checkXxxLevelName 的代價是兩份實作各自漂移。
+   */
+  opts?: { missingMessage?: string; sameAsBaseMessage?: string; baseLabel?: string },
+): BuffLevelNameCheck {
   const base = String(buffName ?? '')
+  const baseLabel = opts?.baseLabel ?? 'buff 名稱'
   if (!name) {
-    return { ok: false, message: '未填 → 此級不會進覆寫表（建表閘門③），算力抬升對整族失效', suggestion: `${base}${ROMAN_FULLWIDTH[level] ?? ''}` }
+    return {
+      ok: false,
+      message: opts?.missingMessage ?? '未填 → 此級不會進覆寫表（建表閘門③），算力抬升對整族失效',
+      suggestion: `${base}${ROMAN_FULLWIDTH[level] ?? ''}`,
+    }
   }
   if (!name.startsWith(base)) {
-    return { ok: false, message: `應以 buff 名稱「${base}」為前綴`, suggestion: `${base}${ROMAN_FULLWIDTH[level] ?? ''}` }
+    return { ok: false, message: `應以${baseLabel}「${base}」為前綴`, suggestion: `${base}${ROMAN_FULLWIDTH[level] ?? ''}` }
   }
   const suffix = name.slice(base.length).trim()
   if (!suffix) {
-    return { ok: true, message: '與 buff 名稱相同 → 明示此級顯示為原名（官方無階名的家族適用，如幹勁）' }
+    return {
+      ok: true,
+      message: opts?.sameAsBaseMessage ?? '與 buff 名稱相同 → 明示此級顯示為原名（官方無階名的家族適用，如幹勁）',
+    }
   }
   const expected = ROMAN_FULLWIDTH[level]
   if (expected && suffix === expected) return { ok: true, message: '' }

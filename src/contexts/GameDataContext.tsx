@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react'
-import type { Pilot, Mech, Module, Weapon, Backpack, Component, GlobalResearch, GrayOpsRoster, GameBuff, PilotSkillDoc, GlossaryTerm, NeuralDriveAbility } from '../types'
+import type { Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component, GlobalResearch, GrayOpsRoster, GameBuff, PilotSkillDoc, GlossaryTerm, NeuralDriveAbility } from '../types'
 import {
-  getPilots, getMechs, getModules, getWeapons, getBackpacks, getComponents, getBuffs, getPilotSkills, getGlossaryTerms,
+  getPilots, getMechs, getModules, getWeapons, getBackpacks, getBackpackSkills, getComponents, getBuffs, getPilotSkills, getGlossaryTerms,
   getNeuralDriveAbilities, getGlobalResearch, getGrayOpsRoster, getDataVersions, type DataVersions,
 } from '../lib/firestoreApi'
 // PLAN-029 Phase 2-3：flag 開時，公開資料與版本改走 Cloudflare Worker 代理（可灰度／回退）
@@ -15,11 +15,11 @@ export const EMPTY_GLOBAL_RESEARCH: GlobalResearch = {
 
 export type CollectionKey =
   | 'pilots' | 'mechs' | 'modules' | 'weapons'
-  | 'backpacks' | 'components' | 'buffs' | 'pilotSkills' | 'neuralDriveAbilities' | 'glossaryTerms' | 'globalResearch' | 'grayOpsRoster'
+  | 'backpacks' | 'backpackSkills' | 'components' | 'buffs' | 'pilotSkills' | 'neuralDriveAbilities' | 'glossaryTerms' | 'globalResearch' | 'grayOpsRoster'
 
 export const ALL_COLLECTION_KEYS: CollectionKey[] = [
   'pilots', 'mechs', 'modules', 'weapons',
-  'backpacks', 'components', 'buffs', 'pilotSkills', 'neuralDriveAbilities', 'glossaryTerms', 'globalResearch', 'grayOpsRoster',
+  'backpacks', 'backpackSkills', 'components', 'buffs', 'pilotSkills', 'neuralDriveAbilities', 'glossaryTerms', 'globalResearch', 'grayOpsRoster',
 ]
 
 // ── PLAN-017：版本 gate 的 per-collection localStorage 快取 ─────────────────────
@@ -69,6 +69,7 @@ export interface GameDataState {
   mechs:          Mech[]
   weapons:        Weapon[]
   backpacks:      Backpack[]
+  backpackSkills: BackpackSkillDoc[]
   modules:        Module[]
   components:     Component[]
   buffs:          GameBuff[]
@@ -104,6 +105,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
   const [mechs,          setMechs]          = useState<Mech[]>([])
   const [weapons,        setWeapons]        = useState<Weapon[]>([])
   const [backpacks,      setBackpacks]      = useState<Backpack[]>([])
+  const [backpackSkills, setBackpackSkills] = useState<BackpackSkillDoc[]>([])
   const [modules,        setModules]        = useState<Module[]>([])
   const [components,     setComponents]     = useState<Component[]>([])
   const [buffs,          setBuffs]          = useState<GameBuff[]>([])
@@ -136,6 +138,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'modules':        setModules(data as Module[]); break
       case 'weapons':        setWeapons(data as Weapon[]); break
       case 'backpacks':      setBackpacks(data as Backpack[]); break
+      case 'backpackSkills': setBackpackSkills(data as BackpackSkillDoc[]); break
       case 'components':     setComponents(data as Component[]); break
       case 'buffs':          setBuffs(data as GameBuff[]); break
       case 'pilotSkills':    setPilotSkills(data as PilotSkillDoc[]); break
@@ -160,6 +163,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'modules':        return getModules()
       case 'weapons':        return getWeapons()
       case 'backpacks':      return getBackpacks()
+      case 'backpackSkills': return getBackpackSkills()
       case 'components':     return getComponents()
       case 'buffs':          return getBuffs()
       case 'pilotSkills':    return getPilotSkills()
@@ -240,6 +244,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'modules':       setModules(upsert);       break
       case 'weapons':       setWeapons(upsert);       break
       case 'backpacks':     setBackpacks(upsert);     break
+      case 'backpackSkills': setBackpackSkills(upsert); break
       case 'components':    setComponents(upsert);    break
       case 'buffs':         setBuffs(upsert);         break
       case 'pilotSkills':   setPilotSkills(upsert);   break
@@ -270,6 +275,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'modules':       setModules(drop);       break
       case 'weapons':       setWeapons(drop);       break
       case 'backpacks':     setBackpacks(drop);     break
+      case 'backpackSkills': setBackpackSkills(drop); break
       case 'components':    setComponents(drop);    break
       case 'buffs':         setBuffs(drop);         break
       case 'pilotSkills':   setPilotSkills(drop);   break
@@ -291,7 +297,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
 
   return (
     <GameDataContext.Provider value={{
-      pilots, mechs, weapons, backpacks, modules, components, buffs, pilotSkills, neuralDriveAbilities, glossaryTerms,
+      pilots, mechs, weapons, backpacks, backpackSkills, modules, components, buffs, pilotSkills, neuralDriveAbilities, glossaryTerms,
       globalResearch, grayOpsRoster,
       loadedKeys, errorMap, reloadTick,
       ensureLoaded, reload, patchCollectionItem, removeCollectionItem, patchSingleton,

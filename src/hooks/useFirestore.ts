@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import type {
-  Pilot, Mech, Module, Weapon, Backpack, Component,
+  Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component,
   GlobalResearch, GameBuff, PilotSkillDoc,
 } from '../types'
 import { ModuleSlot } from '../types/enums'
@@ -182,6 +182,13 @@ export function useBackpacks(): HookResult<Backpack[]> {
   return { data: backpacks, loading, error }
 }
 
+/** 背包技能庫（PLAN-043）。前台以 Backpack.skillIds[] 反查。 */
+export function useBackpackSkills(): HookResult<BackpackSkillDoc[]> {
+  const { backpackSkills } = useGameData()
+  const { loading, error } = useCollections(['backpackSkills'])
+  return { data: backpackSkills, loading, error }
+}
+
 /**
  * 背包 id→name 對照（PLAN-031 複合武器「融合自 ○○背包」顯示用）。
  * ⚠ 會觸發 backpacks 集合載入（冷快取 ~180 read）——呼叫端請在「確定是複合武器」
@@ -226,18 +233,23 @@ export interface AllGameData {
   /** PLAN-019-B：可達 buff 收斂用（buffs 集合 + 解析字串 ID 技能的 pilotSkills） */
   buffs: GameBuff[]
   pilotSkills: PilotSkillDoc[]
+  /**
+   * PLAN-043：背包技能庫。背包的 buff 自 Phase E 起只經 skillIds 反查此集合，
+   * 未載入的症狀是「配了背包但 buff 池少了那幾條」——**不會報錯**，故必須進 SIMULATOR_KEYS。
+   */
+  backpackSkills: BackpackSkillDoc[]
 }
 
-const SIMULATOR_KEYS: CollectionKey[] = ['pilots', 'mechs', 'modules', 'weapons', 'backpacks', 'components', 'globalResearch', 'buffs', 'pilotSkills']
+const SIMULATOR_KEYS: CollectionKey[] = ['pilots', 'mechs', 'modules', 'weapons', 'backpacks', 'backpackSkills', 'components', 'globalResearch', 'buffs', 'pilotSkills']
 
 export function useAllGameData(): HookResult<AllGameData | null> {
-  const { pilots, mechs, weapons, backpacks, modules, components, globalResearch, buffs, pilotSkills } = useGameData()
+  const { pilots, mechs, weapons, backpacks, backpackSkills, modules, components, globalResearch, buffs, pilotSkills } = useGameData()
   const { loading, error } = useCollections(SIMULATOR_KEYS)
 
   const data = useMemo<AllGameData | null>(() => {
     if (loading) return null
-    return { pilots, mechs, weapons, backpacks, modules, components, globalResearch, buffs, pilotSkills }
-  }, [loading, pilots, mechs, weapons, backpacks, modules, components, globalResearch, buffs, pilotSkills])
+    return { pilots, mechs, weapons, backpacks, backpackSkills, modules, components, globalResearch, buffs, pilotSkills }
+  }, [loading, pilots, mechs, weapons, backpacks, backpackSkills, modules, components, globalResearch, buffs, pilotSkills])
 
   return { data, loading, error }
 }

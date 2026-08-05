@@ -3,7 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { auditNdUpgradeRefs, formatNdUpgradeViolations } from './ndUpgradeAudit.ts'
-import type { RefScanData } from './entityRefs.ts'
+import { ALL_SCAN_COLLECTIONS, type RefScanData } from './entityRefs.ts'
 import type { NeuralDriveAbility, PilotSkillDoc } from '../types'
 
 const ABILITIES = [
@@ -15,12 +15,18 @@ const skill = (id: string, refs: Record<string, unknown>) => ({
   effects: [], buffIds: [], descriptionRefs: refs,
 }) as unknown as PilotSkillDoc
 
-/** 補齊所有集合，避免 missingColls 讓結果變成「未完整掃描」 */
-const scanData = (over: Partial<RefScanData>): RefScanData => ({
-  pilots: [], pilotSkills: [], buffs: [], glossaryTerms: [], neuralDriveAbilities: [],
-  modules: [], weapons: [], backpacks: [], components: [],
-  ...over,
-})
+/**
+ * 補齊所有集合，避免 missingColls 讓結果變成「未完整掃描」。
+ *
+ * 清單自 ALL_SCAN_COLLECTIONS 導出而非手寫：手寫版在 PLAN-043 新增 backpackSkills 時
+ * 悄悄腐化——本檔每個斷言都改測到「未完整掃描」那條分支，卻仍是綠的（只有一個
+ * 恰好比對訊息字串的測試紅了）。導出版新增集合時自動跟上。
+ */
+const scanData = (over: Partial<RefScanData>): RefScanData => {
+  const full: Record<string, unknown[]> = {}
+  for (const c of ALL_SCAN_COLLECTIONS) full[c] = []
+  return { ...full, ...over } as RefScanData
+}
 
 test('稽核：指向升階家族卻 level / fixedLevel 皆空 → 違規', () => {
   const r = auditNdUpgradeRefs(scanData({

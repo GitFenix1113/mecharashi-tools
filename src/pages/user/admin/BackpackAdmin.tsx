@@ -1,12 +1,16 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { Backpack } from '../../../types'
+import type { Backpack, BackpackSkillDoc } from '../../../types'
 import { WeaponEquipSlot } from '../../../types/enums'
 import { updateBackpack } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
-import { RefPicker } from '../../../components/admin/RefPicker'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, GRID_AUTO_FIELDS } from './shared'
+import {
+  Field, AdminModal, useNewItemCreation, NewItemDialog, GRID_AUTO_FIELDS,
+  useCascadeDelete, ConfirmDeleteDialog, DeleteButton,
+} from './shared'
+import { IconField } from '../../../components/admin/IconPicker'
 import { BACKPACK_TYPE_CONFIG, ASSEMBLABLE_ARMOR_CONFIG } from '../../../components/BackpackBadges'
 import { parseBackpackName } from '../../../utils/backpackClassify'
+import { parseBuffRef, formatBuffRef } from '../../../utils/buffRef'
 
 const PAGE_SIZE = 20
 const ALL_RARITIES = ['SS', 'S+', 'S', 'A', 'B']
@@ -39,7 +43,124 @@ function makeDefaultBackpack(id: string): Backpack {
     slot: WeaponEquipSlot.BACK,
     assemblableArmorType: [],
     repairAmount: 0,
+    skillIds: [],   // PLAN-043：技能改由 backpackSkills 集合引用，掛載器在 Phase C 接上
   }
+}
+
+// ─── 技能掛載器（PLAN-043 C-3）────────────────────────────────────────────────
+// 取代原本的內嵌 mainSkill 表單：技能本體改由「背包技能」分頁維護，這裡只掛 id。
+// 元素格式同 buffIds，階梯技能以 `id@N` 指定級。
+function BackpackSkillPicker({
+  value,
+  skills,
+  onChange,
+}: {
+  value: string[]
+  skills: BackpackSkillDoc[]
+  onChange: (next: string[]) => void
+}) {
+  const [search, setSearch] = useState('')
+  const byId = useMemo(() => new Map(skills.map(s => [s.id, s])), [skills])
+
+  // 候選：排除已掛的，再套名稱搜尋
+  const candidates = useMemo(() => {
+    const attached = new Set(value.map(v => parseBuffRef(v).buffId))
+    const q = search.trim().toLowerCase()
+    return skills
+      .filter(s => !attached.has(s.id))
+      .filter(s => !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q))
+      .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'))
+  }, [skills, value, search])
+
+  function add(id: string) {
+    if (!id) return
+    // 階梯技能預設掛第一級——不指定級的話前台不知道要顯示哪一階
+    const doc = byId.get(id)
+    const first = doc?.levels?.length ? doc.levels[0].level : undefined
+    onChange([...value, formatBuffRef(id, first)])
+  }
+  function setLevel(idx: number, level: number | undefined) {
+    const { buffId } = parseBuffRef(value[idx])
+    const next = [...value]
+    next[idx] = formatBuffRef(buffId, level)
+    onChange(next)
+  }
+
+  return (
+    <div className="border border-accent-cyan/40 rounded-lg p-3 bg-accent-cyan/5 space-y-2.5">
+      <span className="text-xs text-accent-cyan font-medium uppercase tracking-wider">
+        掛載技能 skillIds（技能本體請至「背包技能」分頁維護）
+      </span>
+
+      {value.length === 0 ? (
+        <p className="text-xs text-text-dim py-1">尚未掛載技能。</p>
+      ) : (
+        <div className="space-y-1.5">
+          {value.map((raw, idx) => {
+            const { buffId, level } = parseBuffRef(raw)
+            const doc = byId.get(buffId)
+            const levels = doc?.levels ?? []
+            return (
+              <div key={`${raw}-${idx}`} className="flex items-center gap-2 bg-bg-dark border border-border rounded-lg px-2.5 py-2">
+                {doc?.icon && (
+                  <img src={doc.icon} alt="" className="w-7 h-7 rounded shrink-0" onError={e => ((e.target as HTMLImageElement).style.display = 'none')} />
+                )}
+                <div className="flex-1 min-w-0 truncate">
+                  {/* 解析不到 = 斷鏈（技能被刪或 id 打錯）。必須顯眼，否則前台只會靜默不顯示 */}
+                  {doc ? (
+                    <span className="text-sm text-text-primary font-medium">{doc.name}</span>
+                  ) : (
+                    <span className="text-sm text-accent-red">⚠ 找不到此技能</span>
+                  )}
+                  <span className="text-[11px] text-text-dim font-mono ml-2">{raw}</span>
+                </div>
+                {levels.length > 0 && (
+                  // 固定寬容器：`.input-field` 是 index.css 的無 layer 規則（width:100%），
+                  // 會壓過 Tailwind 的 w-auto／w-36（utilities 在 layer 內優先度較低）。
+                  // 直接給 select 加寬度 class 無效——它會撐滿整列把名稱擠成 0 寬。
+                  <div className="w-36 shrink-0">
+                    <select
+                      value={level ?? ''}
+                      onChange={e => setLevel(idx, e.target.value ? Number(e.target.value) : undefined)}
+                      className="input-field py-1 text-xs"
+                    >
+                      <option value="">（不指定級）</option>
+                      {levels.map(lv => (
+                        <option key={lv.level} value={lv.level}>{lv.name || `Lv.${lv.level}`}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <button
+                  onClick={() => onChange(value.filter((_, i) => i !== idx))}
+                  className="text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10 shrink-0"
+                >
+                  ✕
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <div className="grid grid-cols-[1fr_2fr] gap-2">
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="搜尋技能名稱..."
+          className="input-field"
+        />
+        <select value="" onChange={e => add(e.target.value)} className="input-field">
+          <option value="">＋ 加入技能（{candidates.length} 個可選）</option>
+          {candidates.map(s => (
+            <option key={s.id} value={s.id}>
+              {s.name}{s.levels?.length ? `（${s.levels.length} 級）` : ''}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  )
 }
 
 // ─── 編輯面板 ──────────────────────────────────────────────────────────────────
@@ -55,7 +176,6 @@ function BackpackEditPanel({
   const [form, setForm]           = useState<Backpack>({ ...backpack })
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState<string | null>(null)
-  const [hasMainSkill, setHasMainSkill] = useState(!!backpack.mainSkill)
   const gd = useGameData()
 
   // PLAN-036：前置主背包 picker 的分類縮小（類型 / 名稱搜尋）
@@ -64,13 +184,12 @@ function BackpackEditPanel({
 
   useEffect(() => {
     setForm({ ...backpack })
-    setHasMainSkill(!!backpack.mainSkill)
     setError(null)
     setPrereqType(defaultPrereqType(backpack)); setPrereqSearch('')   // 類型預設：S+ 用 line 推、SS 用自身 type
   }, [backpack])
 
-  // PLAN-036：前置候選＝低一階背包（SS←S+、S+←S）
-  useEffect(() => { gd.ensureLoaded(['backpacks']) }, [gd])
+  // PLAN-036：前置候選＝低一階背包（SS←S+、S+←S）；PLAN-043：技能挑選器需 backpackSkills
+  useEffect(() => { gd.ensureLoaded(['backpacks', 'backpackSkills']) }, [gd])
   const prereqRarity = prereqRarityOf(form.rarity)
   const prereqCandidates = useMemo(
     () => prereqRarity
@@ -108,16 +227,11 @@ function BackpackEditPanel({
     })
   }
 
-  type SkillKey = keyof NonNullable<Backpack['mainSkill']>
-  function updateSkill<K extends SkillKey>(key: K, value: NonNullable<Backpack['mainSkill']>[K]) {
-    setForm(f => ({ ...f, mainSkill: { ...f.mainSkill!, [key]: value } }))
-  }
-
   async function handleSubmit() {
     setSaving(true)
     setError(null)
     try {
-      let data = hasMainSkill ? form : { ...form, mainSkill: undefined }
+      let data = form
       // PLAN-036：craft（前置主背包）僅 SS/S+ 有意義（低一階前置），其餘階不寫
       if (!prereqRarityOf(data.rarity)) data = { ...data, craft: undefined }
       await onSave(data)
@@ -126,8 +240,6 @@ function BackpackEditPanel({
       setSaving(false)
     }
   }
-
-  const skill = form.mainSkill
 
   return (
     <AdminModal saving={saving} error={error} onSave={handleSubmit} onCancel={onCancel}>
@@ -164,14 +276,12 @@ function BackpackEditPanel({
           </Field>
         </div>
 
-        <Field label="圖示 icon（選填，填圖示檔名如 Icon_backpack_12345）">
-          <input
-            value={form.icon ?? ''}
-            onChange={e => update('icon', e.target.value || undefined)}
-            className="input-field"
-            placeholder="Icon_backpack_12345"
-          />
-        </Field>
+        <IconField
+          label="圖示 icon"
+          value={form.icon ?? ''}
+          onChange={v => update('icon', v || undefined)}
+          defaultFolder="backpacks"
+        />
 
         <div>
           <label className="text-xs text-text-dim mb-2 block">
@@ -240,117 +350,40 @@ function BackpackEditPanel({
           </div>
         )}
 
-        {/* 主技能 */}
-        <div className="border border-border/60 rounded-lg p-3 bg-bg-dark/30">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs text-text-dim font-medium uppercase tracking-wider">主技能 mainSkill</span>
-            <label className="flex items-center gap-1.5 cursor-pointer text-sm text-text-secondary">
-              <input
-                type="checkbox"
-                checked={hasMainSkill}
-                onChange={e => {
-                  setHasMainSkill(e.target.checked)
-                  if (e.target.checked && !form.mainSkill) {
-                    setForm(f => ({ ...f, mainSkill: { id: '', name: '', description: '', buffIds: [] } }))
-                  }
-                }}
-                className="accent-accent-pink w-4 h-4"
-              />
-              有主技能（SS 稀有度）
-            </label>
-          </div>
+        {/* 風味文案（PLAN-043）：遊戲內背包卡下方的灰字敘述 */}
+        <Field label="風味文案 flavor（選填；遊戲內背包卡下方的灰字敘述）">
+          <textarea
+            value={form.flavor ?? ''}
+            onChange={e => update('flavor', e.target.value || undefined)}
+            className="input-field min-h-[70px] resize-y text-sm leading-relaxed"
+            placeholder="直接將額外動能輸送到腿部傳動裝置，無論是使用滑輪還是步行，機甲的移動力都能得到提升。"
+          />
+        </Field>
 
-          {hasMainSkill && skill && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="技能 ID id">
-                  <input value={skill.id} onChange={e => updateSkill('id', e.target.value)} className="input-field" />
-                </Field>
-                <Field label="技能名稱 name">
-                  <input value={skill.name} onChange={e => updateSkill('name', e.target.value)} className="input-field" />
-                </Field>
-              </div>
-              <Field label="技能描述 description">
-                <textarea value={skill.description} onChange={e => updateSkill('description', e.target.value)} className="input-field min-h-[150px] resize-y" />
-              </Field>
-              <RefPicker
-                text={skill.description}
-                value={skill.descriptionRefs}
-                onChange={refs => updateSkill('descriptionRefs', refs)}
-                onCompileText={tf => updateSkill('description', tf(skill.description))}
-              />
-              <Field label="圖示 icon（選填，填圖示檔名如 Icon_skill_passive_1234）">
-                <input
-                  value={skill.icon ?? ''}
-                  onChange={e => updateSkill('icon', e.target.value || undefined)}
-                  className="input-field"
-                  placeholder="Icon_skill_passive_1234"
-                />
-              </Field>
-              {/* PLAN-033 B-4：增傷／爆率／爆傷／命中四個數值欄位原為兩組固定二欄，合併為單一自動格線 */}
-              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
-                <Field label="增傷 dmg（%，選填）">
-                  <input
-                    type="number"
-                    value={skill.dmg ?? ''}
-                    onChange={e => updateSkill('dmg', e.target.value !== '' ? Number(e.target.value) : undefined)}
-                    className="input-field"
-                    placeholder="留空 = 不填"
-                  />
-                </Field>
-                <Field label="爆率 crit（選填）">
-                  <input
-                    type="number"
-                    value={skill.crit ?? ''}
-                    onChange={e => updateSkill('crit', e.target.value !== '' ? Number(e.target.value) : undefined)}
-                    className="input-field"
-                    placeholder="留空 = 不填"
-                  />
-                </Field>
-                <Field label="爆傷 critDmg（%，選填）">
-                  <input
-                    type="number"
-                    value={skill.critDmg ?? ''}
-                    onChange={e => updateSkill('critDmg', e.target.value !== '' ? Number(e.target.value) : undefined)}
-                    className="input-field"
-                    placeholder="留空 = 不填"
-                  />
-                </Field>
-                <Field label="命中 acc（選填）">
-                  <input
-                    type="number"
-                    value={skill.acc ?? ''}
-                    onChange={e => updateSkill('acc', e.target.value !== '' ? Number(e.target.value) : undefined)}
-                    className="input-field"
-                    placeholder="留空 = 不填"
-                  />
-                </Field>
-              </div>
-              <Field label="特殊效果標籤 specialEffects（逗號分隔，選填）">
-                <input
-                  value={(skill.specialEffects ?? []).join(', ')}
-                  onChange={e => {
-                    const arr = e.target.value.split(',').map(s => s.trim()).filter(Boolean)
-                    updateSkill('specialEffects', arr.length > 0 ? arr : undefined)
-                  }}
-                  className="input-field"
-                  placeholder="高傷害, 特殊效果"
-                />
-              </Field>
-              <Field label="觸發 Buff ID buffIds（逗號分隔）">
-                <textarea
-                  value={(skill.buffIds ?? []).join(', ')}
-                  onChange={e => {
-                    const ids = e.target.value.split(/[,\n]/).map(s => s.trim()).filter(Boolean)
-                    updateSkill('buffIds', ids)
-                  }}
-                  className="input-field min-h-[48px] resize-y font-mono text-xs"
-                  placeholder="buff_001, buff_002"
-                />
-              </Field>
-            </div>
-          )}
-        </div>
+        {/* PLAN-043 C-3：技能改由 backpackSkills 集合引用，此處只掛 id */}
+        <BackpackSkillPicker
+          value={form.skillIds ?? []}
+          skills={gd.backpackSkills}
+          onChange={ids => update('skillIds', ids)}
+        />
+
+        {/* PLAN-043：已停用的內嵌 mainSkill。唯讀顯示而非直接藏起來——
+            資料還在 Firestore（Phase E 的 flip 才刪），藏掉會讓維護者以為資料不見了 */}
+        {form.mainSkill && (
+          <div className="border border-border/60 rounded-lg p-3 bg-bg-dark/30 space-y-1">
+            <span className="text-xs text-text-dim font-medium uppercase tracking-wider">
+              舊版內嵌技能 mainSkill（唯讀 · 已停用）
+            </span>
+            <p className="text-[13px] text-text-secondary">
+              <span className="text-accent-yellow">{form.mainSkill.name}</span>
+              <span className="text-text-dim font-mono ml-2">{form.mainSkill.id}</span>
+            </p>
+            <p className="text-[11px] text-text-dim leading-relaxed">
+              此欄位已由上方「掛載技能」取代，內容不再被前台讀取，也不會隨此表單存檔而更新。
+              資料仍留在 Firestore 供對照，將於 PLAN-043 Phase E 的 flip 腳本一併移除。
+            </p>
+          </div>
+        )}
       </div>
     </AdminModal>
   )
@@ -363,10 +396,19 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
   const [search, setSearch]             = useState(initialSearch)
   const [displayCount, setDisplayCount] = useState(PAGE_SIZE)
   const [editing, setEditing]           = useState<Backpack | null>(null)
+  // PLAN-043 C-4：背包成為第四個可刪的集合。硬外鍵（前置鏈 / 複合武器融合）由
+  // entityRefs 標記為 hardRef，命中時 ConfirmDeleteDialog 會顯示 blocker 並禁用確認鈕。
+  const del = useCascadeDelete('backpack', 'backpacks')
 
   // 客戶端載入全背包（前台/前置 picker 本就已載入 → 零額外讀取），改成品質篩選 + 即時搜尋
-  useEffect(() => { gd.ensureLoaded(['backpacks']) }, [gd])
+  useEffect(() => { gd.ensureLoaded(['backpacks', 'backpackSkills']) }, [gd])
   const loading = !gd.loadedKeys.has('backpacks')
+
+  // 掛載技能的顯示名（列表 badge 用）
+  const skillNameOf = useMemo(
+    () => new Map(gd.backpackSkills.map(s => [s.id, s.name])),
+    [gd.backpackSkills],
+  )
 
   const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate } =
     useNewItemCreation(gd.backpacks, b => b.id, makeDefaultBackpack)
@@ -467,14 +509,26 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
                     前置：{gd.backpacks.find(x => x.id === bp.craft?.prereqBackpackId)?.name ?? '?'}
                   </span>
                 )}
-                {bp.mainSkill && (
-                  <span className="text-[13px] px-1.5 py-0.5 rounded bg-accent-pink/10 text-accent-pink border border-accent-pink/30 shrink-0">
-                    ✦ {bp.mainSkill.name}
-                  </span>
-                )}
+                {(bp.skillIds ?? []).map(raw => {
+                  const { buffId, level } = parseBuffRef(raw)
+                  const name = skillNameOf.get(buffId)
+                  return (
+                    <span
+                      key={raw}
+                      className={`text-[13px] px-1.5 py-0.5 rounded shrink-0 border ${
+                        name
+                          ? 'bg-accent-cyan/10 text-accent-cyan border-accent-cyan/30'
+                          : 'bg-accent-red/10 text-accent-red border-accent-red/30'
+                      }`}
+                    >
+                      ✦ {name ?? `找不到 ${buffId}`}{level ? ` Lv.${level}` : ''}
+                    </span>
+                  )
+                })}
               </div>
               <p className="text-[14px] text-text-dim mt-0.5">{bp.id} · 重量 {bp.weight}</p>
             </div>
+            <DeleteButton onAsk={() => void del.ask(bp.id)} busy={del.asking === bp.id} />
           </div>
         ))}
 
@@ -496,6 +550,16 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
 
       {editing && (
         <BackpackEditPanel backpack={editing} onSave={handleSave} onCancel={() => setEditing(null)} />
+      )}
+
+      {del.plan && (
+        <ConfirmDeleteDialog
+          plan={del.plan}
+          busy={del.busy}
+          error={del.error}
+          onConfirm={() => void del.confirm()}
+          onCancel={del.cancel}
+        />
       )}
     </div>
   )

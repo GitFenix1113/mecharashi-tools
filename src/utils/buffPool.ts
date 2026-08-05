@@ -6,9 +6,10 @@
 //
 // 純函式、無副作用，可單測（npm test）。等級假設見下方 v1 註記。
 
-import type { Pilot, PilotSkillDoc, Module, Weapon, Backpack } from '../types'
+import type { Pilot, PilotSkillDoc, Module, Weapon, Backpack, BackpackSkillDoc } from '../types'
 import { parseBuffRef } from './buffRef.ts'
 import { SPECS, SKIP_WHEN_SKILLS_RESOLVED, type CollectionSpec } from './entityRefs.ts'
+import { resolveBackpackSkills, buildBackpackSkillMap } from './backpackSkills.ts'
 
 /** 反向索引出的單一 buff 來源條目 */
 export interface BuffSource {
@@ -34,6 +35,15 @@ export interface BuffPoolInput {
   modules?: Module[]
   weapon?: Weapon | null
   backpack?: Backpack | null
+  /**
+   * 背包技能庫（PLAN-043）。給了才會解析 backpack.skillIds；未給則只取舊的內嵌 mainSkill。
+   *
+   * 傳整包字典而非已解析結果，是因為等級解析必須在這裡做：
+   * 背包掛的是 `id@N`，**只有該級的 buffIds 算數**。若改用 runSpec 跑整份技能 doc，
+   * 會把所有等級的 buffIds 全部倒進池子——掛 Lv1 的背包會拿到 Lv3 的 buff，
+   * 而且不會報錯，只是模擬結果偏高。
+   */
+  backpackSkills?: BackpackSkillDoc[]
 }
 
 /** 把一組原始 buffIds（含 id@N）展開為帶來源的 BuffSource，推進 out */
@@ -70,7 +80,7 @@ export function runSpec<T>(out: BuffSource[], spec: CollectionSpec<T>, doc: T): 
 
 export function buildBuffPool(input: BuffPoolInput): BuffSource[] {
   const out: BuffSource[] = []
-  const { pilot, skills, modules, weapon, backpack } = input
+  const { pilot, skills, modules, weapon, backpack, backpackSkills } = input
 
   // ── 以下三處順序/條件都是既有行為，改寫時逐條複製，勿「順手整理」──
   //
@@ -93,7 +103,19 @@ export function buildBuffPool(input: BuffPoolInput): BuffSource[] {
 
   for (const m of modules ?? []) runSpec(out, SPECS.modules, m)
   if (weapon) runSpec(out, SPECS.weapons, weapon)
+  // 背包的內嵌 mainSkill（PLAN-043 Phase E 移除；在那之前舊資料仍在，不掃就會漏算）
   if (backpack) runSpec(out, SPECS.backpacks, backpack)
+
+  // PLAN-043：掛載技能。刻意**不**走 runSpec(SPECS.backpackSkills, doc) ——
+  // 那會把 backpackSkills.buffIds 與 levels[].buffIds 兩個站點全部倒進池子，
+  // 而背包實際只掛某一級。改用 resolveBackpackSkills 做等級解析後再推。
+  // （findReferences 仍必須掃全部站點：刪 buff 時每一級的引用都得清掉，方向不同。）
+  if (backpack && backpackSkills?.length) {
+    const map = buildBackpackSkillMap(backpackSkills)
+    for (const sk of resolveBackpackSkills(backpack, map)) {
+      pushBuffIds(out, sk.buffIds, sk.origin)
+    }
+  }
 
   return out
 }
