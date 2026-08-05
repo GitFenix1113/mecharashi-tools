@@ -217,6 +217,7 @@
 
 ### 🔧 維護
 
+- 新增 skills/背包技能/ 圖庫資料夾（PLAN-043 E-1） (`74af682`)
 - 補上 Worker 的 backpackSkills 白名單，並加測試守住集合清單同步 (`0d0f67d`)
 - 新增機師「曜」立繪（full／half）並更新圖片 manifest (`38446d5`)
 - 修正棱鏡機甲圖片資料夾與檔名錯字（稜鏡 → 棱鏡）並重產圖片 manifest (`a8b8b25`)
