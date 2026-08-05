@@ -179,7 +179,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">17</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -187,7 +187,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">21</div>
+      <div class="summary-num" style="color:var(--text-dim)">4</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -199,17 +199,127 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">0 / 21</span>
+      <span style="color:var(--accent-cyan);">17 / 21</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 81%"></div>
     </div>
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">Phase A 實作紀錄（2026-08-05）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>A-8 是真的壞的，不只是「要驗一下」。</b><code>normalizeSkillPath</code> 原本明寫「取檔名、忽略中間任何子資料夾」，
+        所以 <code>skills/背包技能/Icon_skill_passive_*.png</code> 會被靜默改寫成 <code>skills/被動技能/</code>。
+        已改為「明確寫出的已知子資料夾優先於前綴推導」，並補 8 個單元測試鎖住（含舊資料自癒能力不可失去）。</li>
+      <li><b>新增 <code>hardRef</code> 跨層機制</b>（計畫書只寫了「改為 blocker」，未定義怎麼做）：
+        <code>Site.hardRef</code> 旗標 → <code>FindReferencesResult.hardRefs</code>（不進 hits，故 <code>buildCascadePlan</code> 不會產生 patch）
+        → <code>planCascadeDelete</code> 轉成新的 <code>CascadeBlocker</code> kind。
+        <code>ConfirmDeleteDialog</code> 以 <code>b.detail</code> 泛用渲染，UI 零改動。</li>
+      <li><b><code>REF_TYPE_OF</code> 值域放寬為 <code>RefType | null</code></b>：<code>backpackSkill</code> 對映 <code>null</code>，
+        明示「不是任何正文引用的合法目標」（決策七）。與漏填的差別是值域仍為總的，漏填會編譯失敗。</li>
+      <li><b><code>ScalarOccurrence</code> 新增 <code>matchValue</code> / <code>level</code></b>：
+        <code>skillIds[]</code> 元素可帶 <code>@N</code>，純字串比對會漏掉所有帶等級的引用（地雷①在 scalarRef 路徑的翻版）。
+        刻意不在此路徑統一套 <code>parseBuffRef</code>——其餘站點的值域裡 '@' 不具語意。</li>
+      <li><b>順手修掉一個已腐化的測試 helper</b>：<code>ndUpgradeAudit.test.ts</code> 的 <code>scanData</code> 硬編集合清單，
+        新增集合後該檔每個斷言都改測到「未完整掃描」分支卻仍是綠的。改為自 <code>ALL_SCAN_COLLECTIONS</code> 導出。</li>
+      <li><b><code>assets.ts</code> 的 <code>BASE</code> 改為函式</b>：模組層級取 <code>import.meta.env</code> 會讓 <code>node --test</code>
+        一 import 就拋 TypeError，連純函式都測不了。Vite 對 <code>import.meta.env.X</code> 是靜態文字替換，寫在函式內同樣被替換。</li>
+      <li><b>驗證結果</b>：<code>npm test</code> 271 pass / 0 fail（含新增 17 個）、<code>npm run build</code> 通過、
+        模擬器 7 個套件 49 個測試全過（守著本次改動的 <code>findReferences</code> / <code>cascadeDelete</code> / <code>cascadePatch</code>）。
+        本次改動檔案的 ESLint 僅 3 個既有的 <code>react-refresh</code> 告警，無新增。</li>
+    </ul>
   </div>
 
   <div class="impact-note">
     <strong>目標效果：</strong>
     背包技能可以像 BUFF 一樣「改一處、全站生效」，並支援 Ⅰ/Ⅱ/Ⅲ 等級；
     維護者能在後台用圖示挑選器選圖、能刪掉打錯的背包、能替<b>任何稀有度</b>的背包掛技能——不再受限於官方 WIKI 當初填了什麼。
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">Phase B 遷移紀錄（2026-08-05）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>資料現況比預期乾淨。</b>180 個背包中 22 個有 <code>mainSkill</code>，<b>精確等於 22 個 SS</b>——
+        無非 SS 有技能、無 SS 缺技能。去重後 22 筆唯一技能，<b>0 個同名不同效碰撞、0 個跨背包共用</b>，
+        每個 SS 背包一個專屬技能，完全不需人工判斷合併。</li>
+      <li><b>現場印證了「絕不可用 icon 去重」。</b><code>Icon_skill_passive_5232.png</code> 一個圖對到三個不同技能
+        （抗擊者驅動·攻擊 / 斷火者驅動·暴傷 / 捍衛者領域·反擊）。以 name 去重才正確分開。</li>
+      <li><b>舊格式的平坦數值欄位全庫從未出現過。</b>稽核確認 <code>dmg</code> / <code>crit</code> / <code>critDmg</code> /
+        <code>acc</code> / <code>specialEffects</code> 皆 0/22 有值，<code>mainSkill</code> 實際只有
+        <code>buffIds / description / descriptionRefs / icon / id / name</code> 六個欄位——轉換沒丟任何東西。</li>
+      <li><b>新增 <code>officialId</code> 欄位保留官方數字 id</b>（如 <code>62304</code>）。純備查、無程式讀取；
+        保留的理由是它是回連官方資料的唯一線索，而 Phase E 的 flip 會把 <code>mainSkill</code> 永久刪掉。</li>
+      <li><b>icon 只補路徑、不搬資料夾。</b>DB 存的是 bare key（<code>Icon_skill_passive_5234</code>），
+        補成 <code>/images/skills/&lt;檔名&gt;.png</code> 但<u>不</u>主動改指「背包技能/」——那些圖實際躺在哪由檔案系統決定，腳本猜不得。
+        前端 <code>normalizeSkillPath</code> 會解析到「被動技能/」，顯示結果與遷移前完全相同。待 E-1 圖庫建好後由後台逐筆改指。</li>
+      <li><b>順手補上 <code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code></b>。該清單必須與
+        <code>ALL_COLLECTION_KEYS</code> 一致，漏一個 key 的後果不是「少 bump 一個集合」而是整條指令
+        exit(1)、一個都沒 bump（PLAN-034 地雷四同款）。</li>
+      <li><b>寫入後回讀 Firestore 驗證（不信任回傳值）</b>：<code>backpackSkills</code> 22 筆、
+        <code>backpacks</code> 180/180 有 <code>skillIds</code>（22 筆非空）、
+        <b>0 斷鏈、0 孤兒技能、0 個 mainSkill/skillIds 不一致、0 內容漂移</b>（逐筆比對 name/description/buffIds）。
+        版本已 bump 至 <code>2026-08-05T15:41:07.530Z</code>。</li>
+    </ul>
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">Phase C 實作紀錄（2026-08-06）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>hardRef 擋門改用模擬器 e2e 自動驗證，取代計畫書原訂的手動點擊。</b>
+        新增 <code>tests/emulator/suites/backpack-cascade.test.ts</code>（5 個測試）：前置鏈擋門、複合武器融合擋門、
+        對照組正常刪除、<code>skillIds</code> 的 <code>@N</code> 精確移除、刪 BUFF 時 <code>levels[].buffIds</code> 一併清除。
+        理由：單元測試守得住 <code>findReferences</code> 的分流，但守不住「blocker 有沒有真的傳到 <code>planCascadeDelete</code>、
+        有沒有真的擋下寫入」——而那正是最容易靜默失敗的一段。</li>
+      <li><b>共用 <code>checkBuffLevelName</code> 而非複製一份。</b>全形羅馬字檢查（'失穩ⅠⅠⅠ' 是三個重複 U+2160，肉眼看不出來）
+        才是該函式的價值，兩邊都需要；但「未填」的後果不同（BUFF 是覆寫表失效、背包技能只是顯示不出階名），
+        故把兩句領域文案參數化。複製一份的代價是兩份實作各自漂移。</li>
+      <li><b>各級 description 給了獨立的 RefPicker。</b><code>BuffLevelItem</code> 的該級描述只是單行 input 無 picker，
+        但背包技能各級正文長且會引用 [隱形]／[武器切換]，沒有 picker 的話
+        <code>levels[].descriptionRefs</code> 這個掃描站點永遠不可能被正確填出來。</li>
+      <li><b>實測抓到一個版面 bug 並修掉。</b>掛載技能列的等級下拉吃掉整列（1593/1619 px），
+        把技能名擠成一字一行。根因是 <code>.input-field</code> 在 <code>index.css</code> 是<b>無 layer 的 <code>width:100%</code></b>，
+        會壓過 Tailwind 的 <code>w-auto</code>（utilities 在 layer 內優先度較低）——直接給 select 加寬度 class 無效，
+        必須用固定寬容器包起來。<span style="color:var(--accent-yellow);">這個坑對任何「想把 input-field 放進 flex 列」的地方都成立。</span></li>
+      <li><b>舊 <code>mainSkill</code> 改為唯讀顯示而非直接藏起來。</b>資料還在 Firestore（Phase E 的 flip 才刪），
+        藏掉會讓維護者以為資料不見了。</li>
+      <li><b>A-4 順延的重整驗證已補做並通過</b>（模擬器 + 真實瀏覽器）：新增技能存檔 → 重整 → 資料仍在，
+        <code>localStorage.mecharashi_gd_backpackSkills</code> 帶版本號正確回填。C-4 的 blocker 也在 UI 實測確認
+        「確認刪除」鈕 <code>disabled=true</code> 且列出引用來源。</li>
+      <li><b>驗證結果</b>：<code>npm test</code> 271 pass、<code>npm run build</code> 通過、
+        模擬器 8 個套件 <b>54 個測試</b>全過（49 既有 + 5 新增）。ESLint 91 vs 基線 90 = +1，
+        是 <code>BackpackSkillAdmin</code> 那個 <code>set-state-in-effect</code>，與 <code>SkillAdmin:45</code> 逐字相同的既有模式。</li>
+    </ul>
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.2);">
+    <strong style="color:var(--accent-cyan);">Phase D 實作紀錄（2026-08-06）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>抽出 <code>src/utils/backpackSkills.ts</code> 解析層（計畫書未列）。</b>
+        <code>skillIds</code> 的 <code>@N</code> 等級覆寫語意在前台、模擬器、後台三處都要用，
+        散在各處必然漂移。逐欄位 <code>該級 ?? 父層</code>，與 <code>entityRefs</code> 的
+        <code>refsFallback</code> 約定一致（不一致會出現「掃描器認為有引用、前台卻顯示父層文字」的錯位）。
+        9 個單元測試鎖住，最關鍵的是「Lv1 只填階名 → 其餘欄位不可整包換掉」。</li>
+      <li><b><code>buildBuffPool</code> 刻意不走 <code>runSpec(SPECS.backpackSkills)</code>。</b>
+        那會把頂層與所有等級的 buffIds 全部倒進池子——掛 Lv1 的背包拿到 Lv2 的 buff，
+        <b>不報錯，只是模擬結果偏高</b>。改用解析層做等級收斂後再推。
+        （<code>findReferences</code> 仍必須掃全部站點：刪 buff 時每一級的引用都得清，方向不同。）4 個測試鎖住。</li>
+      <li><b>D-3 巡檢抓到三處漏網</b>——這一項的價值就在這裡：
+        <code>SimulatorPage</code> 的 Step 4 選擇卡與結果頁摘要仍讀 <code>mainSkill</code>（已改）；
+        <code>components/BackpackSkillCard.tsx</code> <b>零消費端</b>且綁在已棄用型別上（已刪，Phase E 會讓它編譯失敗）。</li>
+      <li><b><code>SkillIcon</code> 犯了與 A-8 同一個路徑 bug。</b>它「取檔名 → 拼回 <code>/images/skills/</code>」，
+        會把 <code>背包技能/</code> 剝掉再被前綴推去 <code>被動技能/</code>。改走 <code>resolveIconSrc</code>。
+        已刪的 <code>BackpackSkillCard</code> 也有同一份錯誤拷貝。</li>
+      <li><b>ESLint 抓到一個真問題。</b>原本用「render 期間才算、算完存進閉包 Map」的惰性快取，
+        觸發 <code>Cannot modify local variables after render completes</code>。改成 <code>useMemo</code> 一次算完
+        180 筆（各 0–1 個技能，成本可忽略）。</li>
+      <li><b>瀏覽器實測（模擬器環境）</b>：同一筆 doc 掛 <code>@1</code> 與 <code>@2</code> 的兩個背包，
+        卡片 badge、浮窗階名、該級正文、<code>effects</code> 全部正確分流；風味文案與 <code>whitespace-pre-line</code> 換行
+        與遊戲截圖一致。搜尋「移動強化Ⅱ」「移動力增加2格」「護甲降低」皆精確命中。
+        模擬器 Step 4 說明文字與結果頁摘要（顯示「移動強化Ⅰ」）亦已改讀集合。</li>
+      <li><b>驗證結果</b>：<code>npm test</code> <b>284 pass</b>（新增 13 個）、<code>npm run build</code> 通過、
+        ESLint 91（與 Phase C 相同，本次改動零新增問題）。</li>
+    </ul>
   </div>
 
   <div class="gate-note">
@@ -229,7 +339,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; 背包技能型別</div>
       <div class="task-group-meta">src/types/backpackSkill.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -243,7 +353,7 @@
         <div class="task-file">src/types/backpackSkill.ts · src/types/index.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -251,7 +361,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; Backpack 掛載欄位</div>
       <div class="task-group-meta">src/types/backpack.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -263,7 +373,7 @@
         <div class="task-file">src/types/backpack.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -271,7 +381,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-3 &nbsp; Firestore API 層</div>
       <div class="task-group-meta">src/lib/api/backpackSkills.ts · backpacks.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -283,7 +393,7 @@
         <div class="task-file">src/lib/api/backpackSkills.ts · src/lib/firestoreApi.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -295,7 +405,7 @@
         <div class="task-file">src/lib/api/backpacks.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -303,31 +413,36 @@
     <div class="task-group-header">
       <div class="task-group-title">A-4 &nbsp; GameDataContext 註冊 ⚠ 高風險</div>
       <div class="task-group-meta">src/contexts/GameDataContext.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">補齊 9 處掛接點</div>
+        <div class="task-name">補齊 10 處掛接點</div>
         <div class="task-desc">
           import type、import api、<code>CollectionKey</code> union、<code>ALL_COLLECTION_KEYS</code>、context 型別、<code>useState</code>、<code>applyData</code> switch、<code>fetchByKey</code> switch、<code>patchCollectionItem</code> switch、<code>removeCollectionItem</code> switch、Provider value。
-          照 <code>pilotSkills</code> 的既有寫法逐一複製。
+          照 <code>pilotSkills</code> 的既有寫法逐一複製。<br>
+          <b>實際為 10 處</b>（計畫書寫 9 處時漏算了 Provider value）。已逐點確認到位。
         </div>
         <div class="task-file">src/contexts/GameDataContext.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">實際重整頁面驗證快取回填（不可只看 tsc）</div>
         <div class="task-desc">
           <b><code>applyData</code> 漏 case 完全不報錯</b>（PLAN-032 特別點名過）——TypeScript 過、開發時也正常，但一重整就從 localStorage 讀不回來，表現為「資料憑空消失」。
-          驗證方式：後台存一筆 → 重整 → 確認仍在；再開 DevTools 確認 <code>mecharashi_gd_backpackSkills</code> 有值且版本相符。
+          驗證方式：後台存一筆 → 重整 → 確認仍在；再開 DevTools 確認 <code>mecharashi_gd_backpackSkills</code> 有值且版本相符。<br>
+          <b style="color:var(--accent-yellow);">⚠ 順延至 C-1 完成後執行。</b>
+          原因：集合現在是空的，而空集合根本驗不出這個 bug —— 漏 case 時 state 停在 <code>[]</code>，
+          與「集合真的沒資料」在畫面上完全無法區分。要等後台能存進第一筆 doc 才有鑑別力。
+          目前已做的替代確認：10 個 switch case 逐點核對、<code>tsc -b</code>、<code>npm run build</code>。
         </div>
         <div class="task-file">驗證任務（無檔案產出）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -335,7 +450,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-5 &nbsp; 變更歷史目標類型</div>
       <div class="task-group-meta">src/types/changeHistory.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -347,7 +462,7 @@
         <div class="task-file">src/types/changeHistory.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -355,7 +470,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-6 &nbsp; 引用掃描站點 ⚠ 高風險</div>
       <div class="task-group-meta">src/utils/entityRefs.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -367,7 +482,7 @@
         <div class="task-file">src/utils/entityRefs.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -381,7 +496,7 @@
         <div class="task-file">src/utils/entityRefs.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -392,7 +507,7 @@
         <div class="task-file">src/utils/entityRefs.ts · src/lib/api/cascadeDelete.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -400,7 +515,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-7 &nbsp; 安全規則與 hook</div>
       <div class="task-group-meta">firestore.rules · src/hooks/useFirestore.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -411,7 +526,7 @@
         <div class="task-file">firestore.rules</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -422,7 +537,7 @@
         <div class="task-file">src/hooks/useFirestore.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -430,7 +545,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-8 &nbsp; 圖示路徑正規化冪等性驗證</div>
       <div class="task-group-meta">src/utils/assets.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -442,7 +557,7 @@
         <div class="task-file">src/utils/assets.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -457,7 +572,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; 遷移腳本（dry-run）</div>
       <div class="task-group-meta">scripts/migrate-plan043-extract.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -471,7 +586,7 @@
         <div class="task-file">scripts/migrate-plan043-extract.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -479,7 +594,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; 執行遷移</div>
       <div class="task-group-meta">Firestore 寫入</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -491,7 +606,7 @@
         <div class="task-file">scripts/migrate-plan043-extract.mjs --apply</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -506,7 +621,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 背包技能管理分頁</div>
       <div class="task-group-meta">src/pages/user/admin/BackpackSkillAdmin.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -518,7 +633,7 @@
         <div class="task-file">src/pages/user/admin/BackpackSkillAdmin.tsx · src/pages/user/AdminPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -526,7 +641,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 等級編輯區</div>
       <div class="task-group-meta">src/pages/user/admin/BackpackSkillAdmin.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -539,7 +654,7 @@
         <div class="task-file">src/pages/user/admin/BackpackSkillAdmin.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -547,7 +662,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; 背包編輯：圖示挑選與技能掛載</div>
       <div class="task-group-meta">src/pages/user/admin/BackpackAdmin.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -560,7 +675,7 @@
         <div class="task-file">src/pages/user/admin/BackpackAdmin.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -573,7 +688,7 @@
         <div class="task-file">src/pages/user/admin/BackpackAdmin.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -581,7 +696,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-4 &nbsp; 刪除背包</div>
       <div class="task-group-meta">src/pages/user/admin/BackpackAdmin.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -593,7 +708,7 @@
         <div class="task-file">src/pages/user/admin/BackpackAdmin.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -605,7 +720,7 @@
         <div class="task-file">驗證任務（無檔案產出）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -620,7 +735,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 背包圖鑑改讀集合</div>
       <div class="task-group-meta">src/pages/backpacks/BackpacksPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -633,7 +748,7 @@
         <div class="task-file">src/pages/backpacks/BackpacksPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -645,7 +760,7 @@
         <div class="task-file">src/pages/backpacks/BackpacksPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -653,7 +768,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; 模擬器接線驗證</div>
       <div class="task-group-meta">src/utils/buffPool.ts · src/pages/simulator/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -665,7 +780,7 @@
         <div class="task-file">src/utils/buffPool.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -673,7 +788,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; 其他背包消費端巡檢</div>
       <div class="task-group-meta">WeaponDetailPage · EntityRefView · RefChip</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -685,7 +800,7 @@
         <div class="task-file">全 repo grep 驗證</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
