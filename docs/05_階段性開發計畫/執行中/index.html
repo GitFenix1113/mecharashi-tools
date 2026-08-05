@@ -31,15 +31,6 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
-    <div class="card cyan">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-043 · 背包技能集合與編輯強化</h3>
-      <p>背包的技能欄位是爬蟲時代的殘留：<code>mainSkill</code> 是單一內嵌物件，且實務上<b>只有 SS 稀有度填了值</b>——因為當初官方 WIKI 只在 SS 條目上有技能欄位。但遊戲內連 B 級的「移動背包」都掛著被動技能<b>「移動強化 Ⅰ」</b>，資料層無處可放；羅馬數字更直接宣告了同族 Ⅱ/Ⅲ 的存在，內嵌格式會讓同一族技能在每個背包內複製一份正文與 buffIds，正是 PLAN-032 在武器技能上診斷出的病。維護團隊已決定放棄官方 WIKI 抓取、改人工維護，資料模型必須先跟上。本計畫開<b>獨立的 <code>backpackSkills</code> 集合</b>（刻意與 PLAN-032「併入 pilotSkills」的裁決相反，理由與代價明細均列於計畫書）、掛載側改 <code>skillIds[]</code>、等級沿用 PLAN-024 的 <code>levels[]</code> 同構模式，並以兩段式硬切遷移避免活站空白。同時補上背包後台缺席已久的兩件事：<b>刪除</b>（全站唯三可刪集合之外的第四個，且須先把 <code>fusedBackpackId</code>／<code>prereqBackpackId</code> 兩個 entityRefs 掃不到的硬外鍵補為 blocker，否則會靜默刪出斷鏈）與 <b>IconPicker</b>（背包是全站唯二還在手打 <code>Icon_skill_passive_1234</code> 的後台）。圖示另闢 <code>skills/背包技能/</code> 資料夾，刻意接受與被動技能圖的重複以換取圖庫來源可辨識。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-043_背包技能集合/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-043_背包技能集合/進度表.html">→ 進度表</a>
-      </div>
-    </div>
     <div class="card red">
       <div class="card-icon">◆</div>
       <h3>PLAN-042 · 機甲故事館</h3>
