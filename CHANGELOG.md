@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-04
+## [Unreleased] - 2026-08-05
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 背包技能改為獨立集合並支援等級化（PLAN-043 Phase A–D） (`6e63d81`)
 - 模組圖鑑改為內嵌等級選擇器，並抽出共用模組元件層 (`9900f98`)
 - 引用標記同名消歧（PLAN-039 完成並歸檔，12/12） (`9095a26`)
 - 神驅算力 BUFF 階覆寫層（PLAN-034 Slice 1 + Slice 2 程式碼） (`7a9fde2`)
