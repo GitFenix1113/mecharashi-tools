@@ -16,10 +16,19 @@ export interface Env {
   ALLOWED_ORIGINS?: string
 }
 
-// 標準陣列集合：listCollection → `{ ...data, id }[]`（對應前端 fetchCollection）
+/**
+ * 標準陣列集合：listCollection → `{ ...data, id }[]`（對應前端 fetchCollection）
+ *
+ * ⚠ **必須與 `src/contexts/GameDataContext.tsx` 的 `ALL_COLLECTION_KEYS` 同步。**
+ * 漏一個 key 的症狀是該集合在**正式站**回 404、整個分頁「載入失敗」，
+ * 而本機開發完全正常——因為 dev 沒開 Worker 代理，走的是 Firestore 直連。
+ * PLAN-043 就是這樣漏掉 backpackSkills 的（本機、模擬器、build、測試全綠，上線才炸）。
+ */
 const ARRAY_COLLECTIONS = new Set<string>([
   'pilots', 'mechs', 'modules', 'weapons', 'backpacks', 'components',
   'buffs', 'pilotSkills', 'neuralDriveAbilities', 'glossaryTerms',
+  // PLAN-043：背包技能庫
+  'backpackSkills',
   // PLAN-029 Phase 3-1：原本前台仍直讀的兩個公開集合，一併代理以便 Phase 3-2 收緊。
   'pilotResearch', 'patchVersions',
 ])

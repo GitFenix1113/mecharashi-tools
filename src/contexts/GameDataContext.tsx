@@ -6,6 +6,7 @@ import {
 } from '../lib/firestoreApi'
 // PLAN-029 Phase 2-3：flag 開時，公開資料與版本改走 Cloudflare Worker 代理（可灰度／回退）
 import { WORKER_ENABLED, getWorkerDataVersions, fetchWorkerCollection } from '../lib/api/workerData'
+import { ALL_COLLECTION_KEYS, type CollectionKey } from '../lib/collectionKeys'
 
 export const EMPTY_GLOBAL_RESEARCH: GlobalResearch = {
   pilotResearchByClass: {},
@@ -13,14 +14,10 @@ export const EMPTY_GLOBAL_RESEARCH: GlobalResearch = {
   weaponResearchByType: {},
 }
 
-export type CollectionKey =
-  | 'pilots' | 'mechs' | 'modules' | 'weapons'
-  | 'backpacks' | 'backpackSkills' | 'components' | 'buffs' | 'pilotSkills' | 'neuralDriveAbilities' | 'glossaryTerms' | 'globalResearch' | 'grayOpsRoster'
-
-export const ALL_COLLECTION_KEYS: CollectionKey[] = [
-  'pilots', 'mechs', 'modules', 'weapons',
-  'backpacks', 'backpackSkills', 'components', 'buffs', 'pilotSkills', 'neuralDriveAbilities', 'glossaryTerms', 'globalResearch', 'grayOpsRoster',
-]
+// PLAN-043 事後補強：清單移至零依賴的 lib/collectionKeys.ts，讓 node --test 讀得到
+// （見該檔檔頭：這份清單被四個地方各自複製過，每一份都曾經或正在漂移）。
+export type { CollectionKey }
+export { ALL_COLLECTION_KEYS }
 
 // ── PLAN-017：版本 gate 的 per-collection localStorage 快取 ─────────────────────
 // 任何 CollectionKey（含未來新集合）自動納入，無需維護清單。
