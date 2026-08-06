@@ -8,6 +8,7 @@ import { ModuleSlotBadge, ModuleRarityBadge } from '../ModuleBadges'
 import { ModuleStatTags } from './ModuleStatTags'
 import { ModuleBoundPart } from './ModuleBoundPart'
 import { ModuleLevelSelector } from './ModuleLevelSelector'
+import { ModuleAllLevelsButton } from './ModuleAllLevels'
 
 type Variant = 'catalog' | 'detail'
 
@@ -79,12 +80,18 @@ export function ModuleCard({
           來源：<span className="text-text-secondary">{mod.source.join('、')}</span>
         </div>
       )}
-      <ModuleLevelSelector
-        level={level}
-        maxLevel={maxLevel}
-        onChange={setSelected}
-        className="my-2"
-      />
+      {/* 滑桿＝查閱單一等級；右側「全部」＝一覽比較（各等級跳幅），兩個入口互補 */}
+      {maxLevel > 1 && (
+        <div className="flex items-center gap-2 my-2">
+          <ModuleLevelSelector
+            level={level}
+            maxLevel={maxLevel}
+            onChange={setSelected}
+            className="flex-1 min-w-0"
+          />
+          <ModuleAllLevelsButton mod={mod} currentLevel={level} />
+        </div>
+      )}
       <p className="text-xs text-text-secondary leading-relaxed whitespace-pre-line">
         <RefText
           text={current?.description ?? mod.description}

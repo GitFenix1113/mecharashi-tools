@@ -69,6 +69,9 @@ function FloatingCard({ rect, width, interactive, containerRef, children }: {
   return createPortal(
     <div
       ref={(el) => { innerRef.current = el; containerRef?.(el) }}
+      // data-floating＝「浮動層」共同記號：其他浮窗（如模組各等級一覽）的「點外部關閉」
+      // 會略過帶此記號的元素，否則點這張卡會把底下的視窗一起關掉。
+      data-floating
       className={`fixed z-[60] ${interactive ? '' : 'pointer-events-none'}`}
       style={{ left: pos.left, top: pos.top, width }}
     >
