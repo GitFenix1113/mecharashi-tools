@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-05
+## [Unreleased] - 2026-08-06
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 模組卡新增「各等級效果」浮窗按鈕 (`402e7af`)
 - 完成 PLAN-043 Phase E — 移除內嵌 mainSkill，計畫轉入觀察維護中 (`e2a9dae`)
 - 背包技能改為獨立集合並支援等級化（PLAN-043 Phase A–D） (`6e63d81`)
 - 模組圖鑑改為內嵌等級選擇器，並抽出共用模組元件層 (`9900f98`)
