@@ -69,6 +69,13 @@
       <p><strong>PLAN-044 改版：等級效果直接顯示在卡片上，不再是懸浮視窗。</strong>卡片內附等級選擇器（桌機為滑桿並顯示 <code>Lv.N/M</code>，行動裝置為等級按鈕列），切換後<strong>描述文字與數值標籤同步跟著該等級變動</strong>。<br>
       預設落在<strong>滿級</strong>；等級狀態<strong>各卡獨立</strong>，不做全頁連動（模組等級上限不一致）。只有一級或無等級資料時選擇器整個不渲染。</p>
     </div>
+    <div class="card blue">
+      <div class="card-icon">🗂️</div>
+      <h3>各等級一覽（「全部」按鈕）</h3>
+      <p>選擇器右側的 <strong>「全部」小按鈕</strong>可開出「各等級效果」浮窗，一次列出每一級的描述與數值——滑桿負責<strong>查閱單一等級</strong>，此處負責<strong>跨等級比較</strong>（哪一級跳幅最大）。<br>
+      桌機為可拖曳浮窗（標題列拖動、ESC／✕／點外部關閉，<strong>多張卡可同時開著並排比較</strong>）；行動裝置改開 BottomSheet。<br>
+      高度上限給到<strong>整個視窗高度</strong>而非固定比例：螢幕夠高時 8 級一次看完不捲動，放不下才退回捲動並貼齊視窗把高度用滿；視窗寬 ≥ 1024px 時浮窗加寬至 360px（換行變少、整體更矮）。當前選取的等級在一覽中<strong>高亮</strong>。與舊版的差異：<strong>只由按鈕開啟，不再 hover 觸發，也不與卡片點擊耦合</strong>。實作於 <code>components/module/ModuleAllLevels</code>。</p>
+    </div>
     <div class="card green">
       <div class="card-icon">📍</div>
       <h3>數值標籤 &amp; 來源</h3>
