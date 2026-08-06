@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
-import type { Weapon, Pilot, WeaponSkill } from '../../../types'
+import { useState, useEffect, useMemo } from 'react'
+import type { Weapon, Pilot, WeaponSkill, WeaponSkillRef, PilotSkillDoc } from '../../../types'
+import { isWeaponSkillRef } from '../../../utils/weaponSkills'
 import {
   WeaponType, WeaponKind, WeaponRarity, MechRestriction, WeaponEquipSlot,
   RangeType, SkillType, SkillActivation,
@@ -44,6 +45,109 @@ function makeDefaultWeapon(id: string): Weapon {
     floatingMod: { planName: '', slots: 0, possibleEffects: [] },
     skills: [],
   }
+}
+
+// ─── 已掛載的技能庫引用（PLAN-032 M4）─────────────────────────────────────────
+//
+// 與 BackpackSkillPicker（PLAN-043）同形制，但多一個 activation 選擇器：
+// 它是**掛載側**的欄位，同一個技能在不同武器上可以不同（實測 38 個技能有此變異），
+// 所以不能像背包那樣只掛一個 id 字串。
+function WeaponSkillRefRow({
+  entry,
+  doc,
+  onChange,
+  onRemove,
+}: {
+  entry: WeaponSkillRef
+  doc: PilotSkillDoc | undefined
+  onChange: (updated: WeaponSkillRef) => void
+  onRemove: () => void
+}) {
+  return (
+    <div className="flex items-center gap-2 bg-bg-dark border border-accent-cyan/30 rounded-lg px-2.5 py-2">
+      <span className="text-[11px] px-1.5 py-0.5 rounded border border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan shrink-0">引用</span>
+      {doc?.iconLocal && (
+        <img src={doc.iconLocal} alt="" className="w-7 h-7 rounded shrink-0" onError={e => ((e.target as HTMLImageElement).style.display = 'none')} />
+      )}
+      <div className="flex-1 min-w-0 truncate">
+        {/* 解析不到 = 斷鏈（技能被刪或 id 打錯）。必須顯眼，否則前台只會靜默少一塊技能 */}
+        {doc
+          ? <span className="text-sm text-text-primary font-medium">{doc.name}</span>
+          : <span className="text-sm text-accent-red">⚠ 找不到此技能</span>}
+        <span className="text-[11px] text-text-dim font-mono ml-2">{entry.skillId}</span>
+      </div>
+      {/* 固定寬容器：`.input-field` 是 index.css 的無 layer 規則（width:100%），
+          會壓過 Tailwind 的 w-auto（見 BackpackSkillPicker 的同款註解）。 */}
+      <div className="w-44 shrink-0">
+        <select
+          value={entry.activation}
+          onChange={e => onChange({ ...entry, activation: e.target.value as WeaponSkillRef['activation'] })}
+          className="input-field py-1 text-xs"
+        >
+          <option value={SkillActivation.CARRY}>carry — 攜帶即生效</option>
+          <option value={SkillActivation.EQUIP}>equip — 裝備中生效</option>
+          <option value={SkillActivation.USE}>use — 僅使用時生效</option>
+        </select>
+      </div>
+      <button
+        onClick={onRemove}
+        className="text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10 shrink-0"
+      >✕</button>
+    </div>
+  )
+}
+
+/** 從技能庫挑一筆掛上來。預設只列 domain:'weapon'，可切「全部」（跨域共用技能用）。 */
+function WeaponSkillRefAdder({
+  skills,
+  attachedIds,
+  onAdd,
+}: {
+  skills: PilotSkillDoc[]
+  attachedIds: Set<string>
+  onAdd: (skillId: string) => void
+}) {
+  const [search, setSearch] = useState('')
+  const [scope, setScope]   = useState<'weapon' | 'all'>('weapon')
+
+  const candidates = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return skills
+      .filter(s => !attachedIds.has(s.id))
+      .filter(s => scope === 'all' || s.domain === 'weapon')
+      .filter(s => !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q))
+      .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'))
+      .slice(0, 60)   // 技能庫 850+ 筆，不設上限會讓 select 卡住
+  }, [skills, attachedIds, search, scope])
+
+  return (
+    <div className="grid grid-cols-[auto_1fr_2fr] gap-2">
+      <select
+        value={scope}
+        onChange={e => setScope(e.target.value as 'weapon' | 'all')}
+        className="input-field py-1 text-xs w-28"
+      >
+        <option value="weapon">武器技能</option>
+        <option value="all">全部技能</option>
+      </select>
+      <input
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="搜尋技能名稱..."
+        className="input-field py-1 text-xs"
+      />
+      <select
+        value=""
+        onChange={e => { onAdd(e.target.value); setSearch('') }}
+        className="input-field py-1 text-xs"
+      >
+        <option value="">＋ 掛載技能庫技能（{candidates.length} 個候選）</option>
+        {candidates.map(s => (
+          <option key={s.id} value={s.id}>{s.name} — {s.id}</option>
+        ))}
+      </select>
+    </div>
+  )
 }
 
 // ─── 武器技能項目 ──────────────────────────────────────────────────────────────
@@ -232,6 +336,11 @@ function WeaponEditPanel({
   const [error, setError]         = useState<string | null>(null)
   const [editTab, setEditTab]     = useState<WeaponEditTab>('basic')
   const [expandedSkillIdx, setExpandedSkillIdx] = useState<number | null>(null)
+
+  // PLAN-032 M4：技能庫（pilotSkills 集合＝全站技能字典，武器技能也住這裡）。
+  // AdminPage 的 TAB_CONFIG 已預載 pilotSkills，這裡直接讀不必再 ensureLoaded。
+  const gdPanel  = useGameData()
+  const skillMap = useMemo(() => new Map(gdPanel.pilotSkills.map(s => [s.id, s])), [gdPanel.pilotSkills])
 
   useEffect(() => { setForm({ ...weapon }); setEditTab('basic'); setExpandedSkillIdx(null) }, [weapon])
 
@@ -541,16 +650,54 @@ function WeaponEditPanel({
                   update('skills', next)
                   setExpandedSkillIdx(next.length - 1)
                 }}
-                className="text-xs text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+                className="text-xs text-text-dim hover:text-text-secondary transition-colors"
               >
-                + 新增技能
+                + 新增內嵌技能（舊格式）
               </button>
+            </div>
+
+            {/* PLAN-032 M4：從技能庫挑一筆掛上來。
+                技能**本體**（名稱／正文／effects／buffIds）請至「技能」分頁維護——
+                那才是單一資料源，改一處全站生效。這裡只設定「這把武器怎麼用它」。 */}
+            <div className="border border-accent-cyan/40 rounded-lg p-3 bg-accent-cyan/5 space-y-2.5 mb-3">
+              <span className="text-xs text-accent-cyan font-medium uppercase tracking-wider">
+                掛載技能庫技能（技能本體請至「技能」分頁維護）
+              </span>
+              <WeaponSkillRefAdder
+                skills={gdPanel.pilotSkills}
+                attachedIds={new Set((form.skills ?? []).filter(isWeaponSkillRef).map(e => e.skillId))}
+                onAdd={(skillId) => {
+                  if (!skillId) return
+                  // 預設 carry：實測 S+ 一般武器 39/39 皆為 carry，是最常見的起點；
+                  // SS 專武常為 use，掛上後在右側下拉改。
+                  update('skills', [...(form.skills ?? []), { skillId, activation: SkillActivation.CARRY as WeaponSkillRef['activation'] }])
+                }}
+              />
+              <p className="text-[11px] text-text-dim">
+                找不到要掛的技能？先到「技能」分頁新增（domain 選「武器技能」），再回來掛。
+              </p>
             </div>
             {(form.skills ?? []).length === 0 ? (
               <p className="text-xs text-text-dim py-4 text-center">無武器技能</p>
             ) : (
               <div className="space-y-2">
-                {(form.skills ?? []).map((skill, idx) => (
+                {(form.skills ?? []).map((skill, idx) => isWeaponSkillRef(skill) ? (
+                  // 引用格式：只編輯掛載側的 activation。技能本體在技能庫，
+                  // 刻意不在這裡給任何內容欄位——那會讓人以為改了只影響這把武器。
+                  <WeaponSkillRefRow
+                    key={`ref-${skill.skillId}-${idx}`}
+                    entry={skill}
+                    doc={skillMap.get(skill.skillId)}
+                    onChange={(updated) => {
+                      const next = [...(form.skills ?? [])]; next[idx] = updated
+                      update('skills', next)
+                    }}
+                    onRemove={() => {
+                      update('skills', (form.skills ?? []).filter((_, i) => i !== idx))
+                      if (expandedSkillIdx === idx) setExpandedSkillIdx(null)
+                    }}
+                  />
+                ) : (
                   <WeaponSkillItem
                     key={idx}
                     skill={skill}

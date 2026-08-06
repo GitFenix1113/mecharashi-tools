@@ -8,8 +8,12 @@
 
 import type { Pilot, PilotSkillDoc, Module, Weapon, Backpack, BackpackSkillDoc } from '../types'
 import { parseBuffRef } from './buffRef.ts'
-import { SPECS, SKIP_WHEN_SKILLS_RESOLVED, type CollectionSpec } from './entityRefs.ts'
+import {
+  SPECS, SKIP_WHEN_SKILLS_RESOLVED, SKIP_WHEN_WEAPON_SKILLS_RESOLVED, type CollectionSpec,
+} from './entityRefs.ts'
 import { resolveBackpackSkills, buildBackpackSkillMap } from './backpackSkills.ts'
+import { resolveWeaponSkills } from './weaponSkills.ts'
+import { buildSkillMap } from './pilotSkills.ts'
 
 /** 反向索引出的單一 buff 來源條目 */
 export interface BuffSource {
@@ -47,6 +51,18 @@ export interface BuffPoolInput {
    * 而且不會報錯，只是模擬結果偏高。
    */
   backpackSkills?: BackpackSkillDoc[]
+  /**
+   * 技能庫（PLAN-032）。**已引用化的武器技能，其 buff 全部經由此處解析**——
+   * 沒傳就等於那些武器不賦予任何 buff（內嵌格式的武器不受影響）。
+   *
+   * 與 backpackSkills 同樣是刻意的失敗模式，但這裡多一層陷阱：M6 flip 前後症狀不同。
+   * flip 前全站內嵌，漏傳完全看不出來；flip 後才會突然「武器的增益全沒了」。
+   * SIMULATOR_KEYS 已含 pilotSkills，正式路徑不會漏。
+   *
+   * 傳整包字典而非已解析結果，是因為解析需要掛載側的 activation 配對（見 resolveWeaponSkills），
+   * 而那份資訊只在 weapon.skills[] 上。
+   */
+  weaponSkills?: PilotSkillDoc[]
 }
 
 /** 把一組原始 buffIds（含 id@N）展開為帶來源的 BuffSource，推進 out */
@@ -83,7 +99,7 @@ export function runSpec<T>(out: BuffSource[], spec: CollectionSpec<T>, doc: T): 
 
 export function buildBuffPool(input: BuffPoolInput): BuffSource[] {
   const out: BuffSource[] = []
-  const { pilot, skills, modules, weapon, backpack, backpackSkills } = input
+  const { pilot, skills, modules, weapon, backpack, backpackSkills, weaponSkills } = input
 
   // ── 以下三處順序/條件都是既有行為，改寫時逐條複製，勿「順手整理」──
   //
@@ -105,7 +121,22 @@ export function buildBuffPool(input: BuffPoolInput): BuffSource[] {
   }
 
   for (const m of modules ?? []) runSpec(out, SPECS.modules, m)
-  if (weapon) runSpec(out, SPECS.weapons, weapon)
+
+  // PLAN-032 武器技能雙格式。有傳技能庫 → 整個 skills[] 交給 resolveWeaponSkills
+  // （內嵌與引用一次處理完，且**保持宣告順序**——若改成「站點跑內嵌、迴圈補引用」，
+  // 混格式的武器會變成內嵌全排前面，順序是 buffPool 的行為契約之一）。
+  // 沒傳 → 退回站點列舉，等同 M6 flip 前的既有行為。
+  if (weapon) {
+    const wsMap = weaponSkills ? buildSkillMap(weaponSkills) : null
+    for (const site of SPECS.weapons.buffIdSites) {
+      if (site.excludeFromPool) continue
+      if (wsMap && site.id === SKIP_WHEN_WEAPON_SKILLS_RESOLVED) {
+        for (const sk of resolveWeaponSkills(weapon.skills, wsMap)) pushBuffIds(out, sk.buffIds, sk.origin)
+        continue
+      }
+      for (const occ of site.enumerate(weapon)) pushBuffIds(out, occ.buffIds, occ.origin)
+    }
+  }
   // PLAN-043 Phase E 後 SPECS.backpacks.buffIdSites 已是空陣列（背包不再直接賦予 buff）。
   // 呼叫仍保留：日後若真的給背包加了頂層 buffIds 站點，這裡會自動跟上；
   // 刪掉的話那個新站點會靜默不進池子，而症狀是「數值算不對」，極難追。

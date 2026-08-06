@@ -164,6 +164,23 @@ export function usePilotExclusiveWeapon(pilotId: string | undefined): HookResult
   return { data, loading, error }
 }
 
+/**
+ * 技能庫 id→doc 對照（PLAN-032 武器技能引用化）。
+ *
+ * 集合物理名是 `pilotSkills`，但它的真實契約是**全站技能字典**（實測 84% 的
+ * refType:'skill' 引用目標沒有任何機師持有）——武器技能就住在同一個集合裡，
+ * 刻意不另開 weaponSkills 集合。詳見 PilotSkillDoc 註解與 PLAN-032 決策一。
+ *
+ * 搭配 resolveWeaponSkills(weapon.skills, map) 使用。**載入中時 map 是空的**，
+ * 引用格式會解析成 0 筆——故顯示 gate 一律接在解析後的陣列上，不可用 weapon.skills.length。
+ */
+export function useWeaponSkillMap(): HookResult<Map<string, PilotSkillDoc>> {
+  const { pilotSkills } = useGameData()
+  const { loading, error } = useCollections(['pilotSkills'])
+  const data = useMemo(() => new Map(pilotSkills.map((s) => [s.id, s])), [pilotSkills])
+  return { data, loading, error }
+}
+
 export function usePilotExclusiveWeapons(pilotId: string | undefined): HookResult<Weapon[]> {
   const { weapons } = useGameData()
   const { loading, error } = useCollections(['weapons'])

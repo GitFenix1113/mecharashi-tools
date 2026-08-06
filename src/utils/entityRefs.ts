@@ -22,6 +22,7 @@ import type { ChangeTargetKind, ReversePatch, RefAnchor } from '../types/changeH
 import { parseBuffRef } from './buffRef.ts'
 import { parseNumRefs, NUM_ATTRS } from './numRefs.ts'
 import { isSkillId } from './pilotSkills.ts'
+import { isWeaponSkillRef } from './weaponSkills.ts'
 
 // ─── 目標型別映射（地雷 a）────────────────────────────────────────────────────
 
@@ -105,15 +106,23 @@ export interface ScalarOccurrence {
   segments: (string | number)[]
   origin: string
   /**
-   * ReversePatch.value。陣列元素**必須是原始字串**（含 `@N` 等級後綴）——
+   * ReversePatch.value。陣列元素**必須是原始元素本身**（含 `@N` 等級後綴）——
    * Firestore arrayRemove 要求元素完全相等，存拆解後的裸 id 會移除失敗且靜默無錯。
+   *
+   * 絕大多數站點的元素是字串。物件型元素（PLAN-032 的 `weapons.skills[]`，元素是
+   * `{ skillId, activation }`）也合法：arrayRemove 對物件做深層相等比對，
+   * 而 activation 是掛載側的一部分，**必須**一起帶著才移得掉。
+   * 這類站點一定要同時給 matchValue（物件比不到目標 id）。
    */
-  value: string | null | undefined
+  value: unknown
   /**
    * 比對用的裸 id。省略則直接以 value 比對（絕大多數站點如此）。
    *
-   * 只有「元素可帶 `@N` 等級後綴」的站點需要提供（backpacks.skillIds[]）——
-   * 這是地雷①在 scalarRef 路徑上的翻版：字串相等會漏掉所有帶等級的引用。
+   * 兩種站點必須提供：
+   *   · 元素可帶 `@N` 等級後綴者（backpacks.skillIds[]）——這是地雷①在 scalarRef 路徑上的
+   *     翻版：字串相等會漏掉所有帶等級的引用。
+   *   · 元素是物件者（weapons.skills[]）——value 是整個掛載物件，拿它比對 id 恆不命中。
+   *
    * 刻意做成顯式欄位而非在此路徑統一套 parseBuffRef：其餘站點（termRef / abilityId /
    * pilots.skills[]）的值域裡 '@' 不具語意，統一解析等於替它們憑空加上不存在的規則。
    */
@@ -473,29 +482,59 @@ const WEAPONS: CollectionSpec<Weapon> = {
   nameOf: (w) => w.name,
   buffIdSites: [
     {
-      // Weapon 無頂層 buffIds，只經 skills[]
+      // Weapon 無頂層 buffIds，只經 skills[]。
+      //
+      // PLAN-032 地雷②的武器版：skills[] 是 union，**只取內嵌分支**。
+      // 引用分支（WeaponSkillRef）的 buffIds 住在技能庫那份 doc，已由 PILOT_SKILLS spec
+      // 掃到——這裡若不排除，型別會直接爆（WeaponSkillRef 沒有 buffIds），
+      // 但真正的風險是反過來：若哪天有人為了消 tsc error 而改成 `('buffIds' in ws)` 之類的
+      // 寬鬆判斷再補一份枚舉，同一筆 buff 就會被雙計進 buffPool。
       id: 'weapons.skills[].buffIds',
       targets: ['buff'],
-      enumerate: (w) => (w.skills ?? []).map((ws, i) => ({
-        segments: ['skills', i, 'buffIds'],
-        origin: `武器技能:${ws.name}`,
-        buffIds: ws.buffIds ?? [],
-        anchor: { by: 'name' as const, value: ws.name },
-      })),
+      enumerate: (w) => (w.skills ?? []).flatMap((ws, i) =>
+        isWeaponSkillRef(ws) ? [] : [{
+          segments: ['skills', i, 'buffIds'],
+          origin: `武器技能:${ws.name}`,
+          buffIds: ws.buffIds ?? [],
+          anchor: { by: 'name' as const, value: ws.name },
+        }]),
     },
   ],
   textUnits: (w) => [
     { segments: [], origin: `武器:${w.name}`, texts: { description: w.description } },
-    ...(w.skills ?? []).map((ws, i) => ({
+    // 引用分支沒有正文——正文在技能庫那份 doc，由 PILOT_SKILLS spec 的 textUnits 掃描。
+    ...(w.skills ?? []).flatMap((ws, i) => isWeaponSkillRef(ws) ? [] : [{
       segments: ['skills', i],
       origin: `武器技能:${ws.name}`,
       // enhancedTalentDescription 無自己的 refs 表，但會經 DiffHighlight → resolveNumRefs
       texts: { description: ws.description, enhancedTalentDescription: ws.enhancedTalentDescription },
       refs: ws.descriptionRefs,
       anchor: { by: 'name' as const, value: ws.name },
-    })),
+    }]),
   ],
   scalarSites: [
+    {
+      // PLAN-032：引用分支就是 pilotSkill 引用（對照 pilots.skills[] 的地雷②另一半）。
+      // 沒有這個站點，從技能庫刪掉一個武器技能時掃描器會回報「零引用」，
+      // 然後所有掛它的武器靜默少一塊技能——症狀是「武器詳情頁的技能不見了」，無任何錯誤。
+      //
+      // 不設 hardRef：op 是 arrayRemove（整筆掛載一起移除），語意乾淨、可還原，
+      // 與 pilots.skills[] 一致；hardRef 是留給「清成 null 會留下半殘欄位」的 fusedBackpackId 那種。
+      id: 'weapons.skills[].skillId',
+      targets: ['pilotSkill'],
+      enumerate: (w) => (w.skills ?? []).flatMap((ws, i) =>
+        isWeaponSkillRef(ws)
+          ? [{
+              segments: ['skills', i],
+              origin: `武器:${w.name} 的技能引用`,
+              // arrayRemove 要求元素完全相等 → 存整個掛載物件（含 activation），不是裸 skillId。
+              // 但比對要用裸 id（value 是物件、比不到），故走 matchValue。
+              value: ws,
+              matchValue: ws.skillId,
+              op: 'arrayRemove' as const,
+            }]
+          : []),
+    },
     {
       // PLAN-043 硬外鍵：複合武器融合來源的背包（PLAN-031）。清成 null ＝ 武器失去
       // 融合來源、詳情頁的「融合自 ○○背包」變空白，且無任何錯誤訊息。
@@ -516,7 +555,9 @@ const WEAPONS: CollectionSpec<Weapon> = {
   softSites: [
     softSite('weapons.skills[].effects[].condition.hasBuff', (w) =>
       (w.skills ?? []).flatMap((ws, i) =>
-        condHits(['skills', i, 'effects'], `武器技能:${ws.name}`, ws.effects))),
+        isWeaponSkillRef(ws)
+          ? []                                  // effects 在技能庫 doc，由 PILOT_SKILLS spec 掃
+          : condHits(['skills', i, 'effects'], `武器技能:${ws.name}`, ws.effects))),
   ],
 }
 
@@ -638,6 +679,15 @@ export const ALL_SCAN_COLLECTIONS = Object.keys(SPECS) as ScanCollection[]
 
 /** buildBuffPool 專用：呼叫端已提供 resolved skills 時要排除的站點（否則嵌入技能雙計）。 */
 export const SKIP_WHEN_SKILLS_RESOLVED = 'pilots.skills[].buffIds'
+
+/**
+ * buildBuffPool 專用（PLAN-032）：呼叫端有傳技能庫時，武器技能改走 resolveWeaponSkills
+ * 一次處理雙格式，本站點要跳過——否則內嵌那批會被站點與解析器各推一次。
+ *
+ * 為什麼不像背包那樣「站點留空、另開一條解析路徑」：背包 flip 已完成、內嵌欄位整個移除了；
+ * 武器的內嵌格式是**刻意永久保留**的（爬蟲產出），站點必須繼續掃得到它。
+ */
+export const SKIP_WHEN_WEAPON_SKILLS_RESOLVED = 'weapons.skills[].buffIds'
 
 // ─── findReferences ──────────────────────────────────────────────────────────
 
@@ -823,7 +873,10 @@ export function findReferences(
             const hit: RefHit = {
               ...base, siteId: site.id, kind: 'scalarRef',
               segments: occ.segments, path: pathOf(occ.segments), origin: occ.origin,
-              op: occ.op, value: occ.value, matched: occ.value ?? undefined,
+              // matched 是「顯示用的命中字串」：value 可能是物件（weapons.skills[]），
+              // 那種站點的可讀值就是 matchValue（裸 id）。
+              op: occ.op, value: occ.value,
+              matched: occ.matchValue ?? (typeof occ.value === 'string' ? occ.value : undefined),
               level: occ.level, anchor: occ.anchor,
             }
             // hardRef 不進 hits：進了就會被 buildCascadePlan 產出 patch 自動清掉，

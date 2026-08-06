@@ -4,7 +4,7 @@
 // 本檔已從 tsconfig.app build 排除，不影響 vite/tsc 打包。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { makeEntityId, slugify, stripIdPrefix } from './idSlug.ts'
+import { makeEntityId, slugify, stripIdPrefix, idPrefixCasings } from './idSlug.ts'
 
 test('一般中文名 → prefix_<name>', () => {
   assert.equal(makeEntityId('buff', '虛粒子形態'), 'buff_虛粒子形態')
@@ -51,4 +51,21 @@ test('makeEntityId：自動消除使用者誤打的前綴（不產生 buff_buff_
   assert.equal(makeEntityId('buff', 'BUFF_事不宜遲'), 'buff_事不宜遲')   // 統一小寫前綴
   assert.equal(makeEntityId('buff', 'buff_buff_星爆'), 'buff_星爆')
   assert.equal(makeEntityId('buff', 'buff_'), '')                       // 只有前綴 → 無效
+})
+
+// ── PLAN-032 M0：技能庫大小寫撞號防呆 ────────────────────────────────────────
+test('idPrefixCasings：產出大小寫前綴變體，原值排首位', () => {
+  // 這是本計畫實際踩到的地雷：makeEntityId 只產小寫，但技能庫有 SKILL_ 大寫 134 筆
+  assert.deepEqual(idPrefixCasings('skill_故障植入'), ['skill_故障植入', 'SKILL_故障植入'])
+  assert.deepEqual(idPrefixCasings('SKILL_態勢優化'), ['SKILL_態勢優化', 'skill_態勢優化'])
+})
+
+test('idPrefixCasings：無底線前綴 / 空字串邊界', () => {
+  assert.deepEqual(idPrefixCasings('60102405'), ['60102405'])   // 數字 ID（背包/武器）原樣
+  assert.deepEqual(idPrefixCasings('_開頭底線'), ['_開頭底線'])  // at === 0，無前綴可換
+  assert.deepEqual(idPrefixCasings(''), [])                     // 空 ID 不要產出 ['']
+})
+
+test('idPrefixCasings：前綴無字母時不產生重複候選', () => {
+  assert.deepEqual(idPrefixCasings('123_x'), ['123_x'])         // 大小寫相同 → 去重後單筆
 })

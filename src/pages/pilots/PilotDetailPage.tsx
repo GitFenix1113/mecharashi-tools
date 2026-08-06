@@ -10,6 +10,7 @@ import { assetUrl } from '../../utils/assets'
 import { usePilot, usePilotExclusiveWeapons } from '../../hooks/useFirestore'
 import { useGameData } from '../../contexts/GameDataContext'
 import { resolvePilotSkills, buildSkillMap } from '../../utils/pilotSkills'
+import { resolveWeaponSkills, type ResolvedWeaponSkill } from '../../utils/weaponSkills'
 import { resolveNeuralDriveLevel, buildNdAbilityMap } from '../../utils/neuralDriveAbilities'
 import {
   ND_RULES, isGammaZone, zonePower, defaultNdLevels, buildNdBuffOverrides,
@@ -523,7 +524,9 @@ const WEAPON_RARITY_CLS: Record<string, string> = {
   A:   'text-text-secondary bg-bg-card border-border',
 }
 
-function WeaponDetailContent({ weapon }: { weapon: Weapon }) {
+// PLAN-032：技能收「已解析」的陣列而非從 weapon.skills 現算——本元件在 tooltip / BottomSheet
+// 兩處掛載，讓呼叫端解析一次再傳，避免同一份資料在兩條路徑上各解析各的。
+function WeaponDetailContent({ weapon, skills }: { weapon: Weapon; skills: ResolvedWeaponSkill[] }) {
   const rangeStr = weapon.rangeType === 'ring'
     ? `${weapon.maxRange}+`
     : `${weapon.minRange}-${weapon.maxRange}`
@@ -557,10 +560,10 @@ function WeaponDetailContent({ weapon }: { weapon: Weapon }) {
           </div>
         ))}
       </div>
-      {weapon.skills.length > 0 && (
+      {skills.length > 0 && (
         <div className="px-4 py-3 space-y-2.5">
           <div className="text-[13px] text-text-dim tracking-widest uppercase">武器技能</div>
-          {weapon.skills.map((sk, i) => (
+          {skills.map((sk, i) => (
             <div key={i}>
               <div className="flex items-center gap-1.5 mb-0.5">
                 <span className="font-bold text-text-primary">{sk.name}</span>
@@ -577,7 +580,9 @@ function WeaponDetailContent({ weapon }: { weapon: Weapon }) {
   )
 }
 
-function WeaponDetailTooltip({ weapon, x, anchorTop }: { weapon: Weapon; x: number; anchorTop: number }) {
+function WeaponDetailTooltip({ weapon, skills, x, anchorTop }: {
+  weapon: Weapon; skills: ResolvedWeaponSkill[]; x: number; anchorTop: number
+}) {
   const ref = useRef<HTMLDivElement>(null)
   const [top, setTop] = useState(anchorTop)
 
@@ -589,13 +594,15 @@ function WeaponDetailTooltip({ weapon, x, anchorTop }: { weapon: Weapon; x: numb
 
   return createPortal(
     <div ref={ref} className="fixed z-50 pointer-events-none w-80" style={{ left: x, top }}>
-      <WeaponDetailContent weapon={weapon} />
+      <WeaponDetailContent weapon={weapon} skills={skills} />
     </div>,
     document.body
   )
 }
 
-type WeaponSkillItem = Weapon['skills'][number]
+// PLAN-032：不再是 union 的原始元素——一律是解析後的樣子，
+// 浮窗 / BottomSheet 不需要知道那筆技能是內嵌拷貝還是技能庫引用。
+type WeaponSkillItem = ResolvedWeaponSkill
 
 /** 單一武器技能的內容（懸停浮窗 / 手機 BottomSheet 共用） */
 function WeaponSkillContent({ sk, isEnhance }: { sk: WeaponSkillItem; isEnhance: boolean }) {
@@ -638,8 +645,8 @@ function WeaponSkillTooltipPortal({ sk, isEnhance, x, anchorTop }: {
   )
 }
 
-function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, stageIdx = 0, onStageChange }: {
-  weapon: Weapon | null; loading: boolean; talentNames: string[]
+function ExclusiveWeaponPanel({ weapon, skills, loading, talentNames, stageCount = 1, stageIdx = 0, onStageChange }: {
+  weapon: Weapon | null; skills: ResolvedWeaponSkill[]; loading: boolean; talentNames: string[]
   stageCount?: number; stageIdx?: number; onStageChange?: (i: number) => void
 }) {
   const cardRef = useRef<HTMLDivElement>(null)
@@ -688,7 +695,7 @@ function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, st
   return (
     <>
       {tooltipPos && !isMobile && (
-        <WeaponDetailTooltip weapon={weapon} x={tooltipPos.x} anchorTop={tooltipPos.anchorTop} />
+        <WeaponDetailTooltip weapon={weapon} skills={skills} x={tooltipPos.x} anchorTop={tooltipPos.anchorTop} />
       )}
       {skillHover && !isMobile && !expanded && (
         <WeaponSkillTooltipPortal
@@ -699,7 +706,7 @@ function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, st
         />
       )}
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)}>
-        <WeaponDetailContent weapon={weapon} />
+        <WeaponDetailContent weapon={weapon} skills={skills} />
       </BottomSheet>
       <BottomSheet open={!!skillSheet} onClose={() => setSkillSheet(null)}>
         {skillSheet && <WeaponSkillContent sk={skillSheet} isEnhance={isEnhanceSkill(skillSheet)} />}
@@ -747,7 +754,8 @@ function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, st
         </div>
 
         {/* 武器技能：縮圖（預設，逐一懸停看該技能） ⇄ 全部排列展開（展開詳情） */}
-        {weapon.skills.length > 0 && (
+        {/* gate 一律接解析後的陣列：weapon.skills.length 對 union 恆真，技能庫未載入時會渲染出空技能區 */}
+        {skills.length > 0 && (
           <div className="px-3 py-3 space-y-2.5">
             <div className="flex items-center gap-2">
               <div className="text-[13px] text-accent-yellow tracking-widest uppercase">武器技能</div>
@@ -767,7 +775,7 @@ function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, st
               </button>
             </div>
             {expanded ? (
-              weapon.skills.map((sk, i) => (
+              skills.map((sk, i) => (
                 <div key={i}>
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <span className={`font-bold text-xs ${isEnhanceSkill(sk) ? 'text-accent-yellow' : 'text-text-primary'}`}>{sk.name}</span>
@@ -783,7 +791,7 @@ function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, st
               ))
             ) : (
               <div className="flex flex-wrap gap-2">
-                {weapon.skills.map((sk, i) => (
+                {skills.map((sk, i) => (
                   <div
                     key={i}
                     className="flex flex-col items-center gap-1 w-16 rounded-lg p-1.5 hover:bg-bg-card cursor-default transition-colors"
@@ -808,7 +816,7 @@ function ExclusiveWeaponPanel({ weapon, loading, talentNames, stageCount = 1, st
         )}
 
         {!expanded && (
-          <div className={`px-3 py-2 ${weapon.skills.length > 0 ? 'border-t border-border' : ''}`}>
+          <div className={`px-3 py-2 ${skills.length > 0 ? 'border-t border-border' : ''}`}>
             <p className="text-[13px] text-text-dim text-center">
               {isMobile ? '◈ 點武器看數值 · 點技能看說明' : '◈ 懸停武器看數值 · 懸停技能看說明'}
             </p>
@@ -994,6 +1002,13 @@ export default function PilotDetailPage() {
   useEffect(() => { gd.ensureLoaded(['pilotSkills', 'neuralDriveAbilities']) }, [gd])
   const skillMap = useMemo(() => buildSkillMap(gd.pilotSkills), [gd.pilotSkills])
 
+  // PLAN-032：專武技能雙格式解析。共用上面那張 skillMap——武器技能與機師技能同住
+  // pilotSkills 集合（它是全站技能字典，不是「機師的技能」），故不需要第二次載入。
+  const exclusiveWeaponSkills = useMemo(
+    () => resolveWeaponSkills(exclusiveWeapon?.skills, skillMap),
+    [exclusiveWeapon, skillMap],
+  )
+
   // PLAN-023 N1-5：神驅 level 改走 resolve（相容 abilityId 引用／嵌入舊格式）。
   // 目前 level 尚無 abilityId → 回退嵌入、輸出不變；N1-6 flip 後改吃能力庫（單一資料源）。
   const ndAbilityMap = useMemo(() => buildNdAbilityMap(gd.neuralDriveAbilities), [gd.neuralDriveAbilities])
@@ -1017,12 +1032,12 @@ export default function PilotDetailPage() {
   // descriptionRefs 沒有，若只用天賦 refs 這些引用會降級成純文字（PLAN-019 引用渲染缺漏修正）。
   const talentEnhancementMap = useMemo(() => {
     const map = new Map<string, { text: string; refs?: DescriptionRefs }>()
-    exclusiveWeapon?.skills.forEach(sk => {
+    exclusiveWeaponSkills.forEach(sk => {
       if (sk.enhancesTalentName && sk.enhancedTalentDescription)
         map.set(sk.enhancesTalentName, { text: sk.enhancedTalentDescription, refs: sk.descriptionRefs })
     })
     return map
-  }, [exclusiveWeapon])
+  }, [exclusiveWeaponSkills])
 
   // PLAN-021 · 1-6：神經驅動算力配置（tab 卡頂部常駐；換機師時重置回預設）
   const ndDefaults = useMemo(
@@ -1254,7 +1269,11 @@ export default function PilotDetailPage() {
             <div className="w-full lg:w-72 lg:flex-shrink-0">
               <ExclusiveWeaponPanel
                 weapon={exclusiveWeapon}
-                loading={exclusiveWeaponLoading}
+                skills={exclusiveWeaponSkills}
+                // PLAN-032：技能庫未到時專武技能區與天賦頁的「▶ 專武強化」都會整塊消失
+                // （talentEnhancementMap 從 exclusiveWeaponSkills derive）。併進 loading，
+                // 讓那段時間顯示骨架而不是「這把專武沒有技能」。
+                loading={exclusiveWeaponLoading || !gd.loadedKeys.has('pilotSkills')}
                 talentNames={pilot.talents.map(t => t.name)}
                 stageCount={exclusiveWeapons.length}
                 stageIdx={exclusiveWeaponIdx}

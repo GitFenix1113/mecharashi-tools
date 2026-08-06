@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { WeaponActivationBadge } from './WeaponBadges'
 import { RefText } from './RefText'
 import { assetUrl } from '../utils/assets'
-import type { WeaponSkill } from '../types'
+import type { ResolvedWeaponSkill } from '../utils/weaponSkills'
 
 function SkillIcon({ iconLocal, name }: { iconLocal?: string; name: string }) {
   const [err, setErr] = useState(false)
@@ -23,7 +23,9 @@ function SkillIcon({ iconLocal, name }: { iconLocal?: string; name: string }) {
   )
 }
 
-export function WeaponSkillCard({ skill, fusedLabel }: { skill: WeaponSkill; fusedLabel?: string }) {
+// PLAN-032：收 ResolvedWeaponSkill 而非原始 WeaponSkill——呼叫端一律先跑
+// resolveWeaponSkills()，本元件不需要知道那筆技能是內嵌還是引用。
+export function WeaponSkillCard({ skill, fusedLabel }: { skill: ResolvedWeaponSkill; fusedLabel?: string }) {
   return (
     <div className={`bg-bg-card border rounded-xl p-4 ${fusedLabel ? 'border-accent-yellow/40' : 'border-border'}`}>
       <div className="flex items-start gap-3">

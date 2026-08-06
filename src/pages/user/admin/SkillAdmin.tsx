@@ -4,13 +4,13 @@ import { formatWeaponReq } from '../../../types'
 import { SkillType } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, useCascadeDelete, ConfirmDeleteDialog, DeleteButton } from './shared'
 import { updatePilotSkill, docExists } from '../../../lib/firestoreApi'
-import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
+import { makeEntityId, stripIdPrefix, idPrefixCasings } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
 import { SkillEffectItem } from './PilotAdmin'
 
-type SkillFilters = { type: string; manual: 'all' | 'manual' | 'auto' }
+type SkillFilters = { type: string; manual: 'all' | 'manual' | 'auto'; domain: 'all' | 'pilot' | 'weapon' }
 
 // ─── 預設值工廠 ────────────────────────────────────────────────────────────────
 function makeDefaultSkill(id: string, name = ''): PilotSkillDoc {
@@ -98,6 +98,18 @@ function SkillEditPanel({
           </div>
         </div>
 
+        <Field label="所屬領域 domain（PLAN-032；未填＝機師技能）">
+          <select
+            value={form.domain ?? ''}
+            onChange={(e) => update('domain', (e.target.value || undefined) as PilotSkillDoc['domain'])}
+            className="input-field"
+          >
+            <option value="">機師技能（未填）</option>
+            <option value="pilot">機師技能</option>
+            <option value="weapon">武器技能</option>
+          </select>
+        </Field>
+
         <Field label="單元類型 unitType（機師一開始自帶的「初始被動能力」請選「職業單元」）">
           <select
             value={form.unitType ?? ''}
@@ -119,6 +131,23 @@ function SkillEditPanel({
 
         {form.weapon && (
           <p className="text-[12px] text-text-dim">限定武器 weapon：<span className="text-accent-purple">{formatWeaponReq(form.weapon)}</span>（由爬蟲腳本管理）</p>
+        )}
+
+        {/* PLAN-032 決策七：專武強化兩欄住在定義側（與 descriptionRefs 一起被消費，拆開會失同步）。
+            此處只顯示不編輯——強化後正文是遊戲原文，改它等於偽造官方文本；
+            要改請走武器爬蟲或直接改 Firestore。 */}
+        {form.enhancesTalentName && (
+          <div className="rounded-lg border border-accent-yellow/30 bg-accent-yellow/5 px-3 py-2 space-y-1">
+            <p className="text-[12px] text-accent-yellow">
+              ▶ 專武技能 · 強化天賦：<span className="font-bold">{form.enhancesTalentName}</span>
+            </p>
+            {form.enhancedTalentDescription && (
+              <p className="text-[12px] text-text-secondary leading-relaxed">
+                強化後天賦原文：{form.enhancedTalentDescription}
+              </p>
+            )}
+            <p className="text-[11px] text-text-dim">（遊戲原文，唯讀；與上方 descriptionRefs 共用同一份引用表）</p>
+          </div>
         )}
 
         <Field label="效果說明 description">
@@ -190,10 +219,12 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
   } = useClientPaged<PilotSkillDoc, SkillFilters>({
     source: gd.pilotSkills,
     initialSearch,
-    initialFilters: { type: 'all', manual: 'all' },
+    initialFilters: { type: 'all', manual: 'all', domain: 'all' },
     matchFilters: (s, f) =>
       (f.type === 'all' || s.type === f.type) &&
-      (f.manual === 'all' || (f.manual === 'manual' ? s.manual === true : s.manual !== true)),
+      (f.manual === 'all' || (f.manual === 'manual' ? s.manual === true : s.manual !== true)) &&
+      // PLAN-032：未填 domain 一律視為 'pilot'（既有 719 筆天然合法，不需要回填）
+      (f.domain === 'all' || (s.domain ?? 'pilot') === f.domain),
   })
 
   const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate, derivedId } =
@@ -207,9 +238,18 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
   async function confirmCreateChecked() {
     const id = makeEntityId('skill', newId)
     if (!id) { setNewIdError('名稱無法產生有效 ID，請改用其他名稱'); return }
-    // 伺服器端撞 ID 檢查：涵蓋不在記憶體中的技能（撞名 = 撞 ID，導引去編輯既有項）
-    if (await docExists('pilotSkills', id)) {
-      setNewIdError(`已有同名技能（ID：${id}），請改名或編輯既有項目`)
+    // 伺服器端撞 ID 檢查：涵蓋不在記憶體中的技能（撞名 = 撞 ID，導引去編輯既有項）。
+    //
+    // PLAN-032 M0：**大小寫兩種前綴都要查**。技能庫現況是 `SKILL_` 大寫 134 筆 /
+    // `skill_` 小寫 512 筆的混血（歷史遺留），而 makeEntityId 只產得出小寫形式——
+    // 只查小寫等於對那 134 筆完全無防呆，`SKILL_故障植入` 存在時仍會放行建出
+    // `skill_故障植入`，變成同名兩份。Firestore 文件 ID 區分大小寫，這兩筆是真的兩份文件。
+    // （in-memory 那道 useNewItemCreation 的檢查本來就不分大小寫，這裡是補齊伺服器端。）
+    const clashId = (await Promise.all(
+      idPrefixCasings(id).map(async (cand) => (await docExists('pilotSkills', cand)) ? cand : null),
+    )).find(Boolean)
+    if (clashId) {
+      setNewIdError(`已有同名技能（ID：${clashId}），請改名或編輯既有項目`)
       return
     }
     const item = confirmCreate()
@@ -253,6 +293,12 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
           <option value="all">全部來源</option>
           <option value="manual">手動新增</option>
           <option value="auto">腳本擷取</option>
+        </select>
+        {/* PLAN-032：本集合是「技能庫」不是「機師的技能」——武器技能也住這裡，用 domain 分類 */}
+        <select value={filters.domain} onChange={(e) => setFilter('domain', e.target.value as SkillFilters['domain'])} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
+          <option value="all">全部領域</option>
+          <option value="pilot">機師技能</option>
+          <option value="weapon">武器技能</option>
         </select>
       </div>
 
@@ -309,6 +355,7 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
                   <span className="text-[13px] px-1.5 py-0.5 rounded bg-bg-card border border-border text-text-dim shrink-0">{skill.type}</span>
                   {skill.unitType === '6' && <span className="text-[12px] px-1.5 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green shrink-0">初始被動</span>}
                   {skill.manual && <span className="text-[12px] px-1.5 py-0.5 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange shrink-0">手動</span>}
+                  {skill.domain === 'weapon' && <span className="text-[12px] px-1.5 py-0.5 rounded border border-accent-purple/40 bg-accent-purple/10 text-accent-purple shrink-0">武器</span>}
                   {skill.ap && <span className="text-[13px] text-accent-green shrink-0">AP {skill.ap}</span>}
                   {skill.cd && <span className="text-[13px] text-accent-orange shrink-0">CD {skill.cd}</span>}
                   {skill.pp && <span className="text-[13px] text-accent-yellow shrink-0">PP {skill.pp}</span>}

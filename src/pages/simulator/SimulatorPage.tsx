@@ -875,7 +875,12 @@ function ResultStep({
   const reachable = useMemo(() => {
     const skillMap = buildSkillMap(data.pilotSkills)
     const skills = resolvePilotSkills(pilot?.skills, skillMap)
-    const pool = buildBuffPool({ pilot, skills, modules, weapon, backpack, backpackSkills: data.backpackSkills })
+    // PLAN-032：weaponSkills 傳的是同一份技能庫（pilotSkills 集合＝全站技能字典，非只有機師的）。
+    // 漏傳的症狀是「引用化的武器完全不賦予 buff」，不會報錯——見 BuffPoolInput.weaponSkills。
+    const pool = buildBuffPool({
+      pilot, skills, modules, weapon, backpack,
+      backpackSkills: data.backpackSkills, weaponSkills: data.pilotSkills,
+    })
     const buffMap = new Map(data.buffs.map((b) => [b.id, b]))
     return resolveReachable(pool, buffMap)
   }, [data.pilotSkills, data.buffs, data.backpackSkills, pilot, modules, weapon, backpack])

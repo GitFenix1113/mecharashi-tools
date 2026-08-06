@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { BottomSheet } from '../../components/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { useWeapons, usePilotBriefMap, type PilotBrief } from '../../hooks/useFirestore'
+import { useWeapons, usePilotBriefMap, useWeaponSkillMap, type PilotBrief } from '../../hooks/useFirestore'
+import { resolveWeaponSkills } from '../../utils/weaponSkills'
 import { WeaponIcon } from '../../components/WeaponIcon'
 import { ExclusivePilotLink } from '../../components/PilotIcon'
 import { WeaponRarityBadge } from '../../components/WeaponRarityBadge'
@@ -74,11 +75,23 @@ function formatRangeType(rangeType: string): string {
   return '菱形'
 }
 
+/**
+ * ⚠ 本元件內部呼叫 useWeaponSkillMap（PLAN-032），會觸發 pilotSkills 載入（冷快取 ~646 read）。
+ *   刻意掛在這個邊界而非頁面層——tooltip 只在滑鼠移上武器卡時才掛載，
+ *   單純瀏覽圖鑑的使用者完全不付這筆讀取量。形制沿用 useBackpackNameMap 的同款告誡。
+ */
 function WeaponTooltipContent({ weapon, pilotMap }: {
   weapon: Weapon
   pilotMap: Record<string, PilotBrief>
 }) {
   const pilot = weapon.exclusiveFor ? pilotMap[weapon.exclusiveFor] : undefined
+  const { data: skillMap, loading: skillsLoading } = useWeaponSkillMap()
+  const skills = resolveWeaponSkills(weapon.skills, skillMap)
+  // 技能庫是在本元件掛載時才開始載入的（ensureLoaded 跑在 useEffect），
+  // 所以**第一次 hover 必然**還沒有資料。單純 gate 掉技能區的話，
+  // 使用者看到的是「這把武器沒有技能」——與事實相反且沒有任何提示。
+  // 有掛載條目但解析不到 → 顯示載入中，而不是消失。
+  const skillsPending = skillsLoading && (weapon.skills?.length ?? 0) > 0 && skills.length === 0
   const stats: Array<{ label: string; value: string; noRed?: boolean }> = [
     { label: '攻擊力',  value: weapon.attack.toLocaleString() },
     { label: '命中',    value: weapon.accuracy.toLocaleString() },
@@ -146,14 +159,26 @@ function WeaponTooltipContent({ weapon, pilotMap }: {
           )}
         </div>
 
-        {/* Skills */}
-        {weapon.skills.length > 0 && (
+        {/* Skills —— gate 接在解析後的陣列（weapon.skills.length 對 union 恆真，技能庫未載入時會渲染空框） */}
+        {skillsPending && (
           <div className="bg-bg-dark rounded-lg overflow-hidden">
             <div className="px-2.5 py-1.5 border-b border-border">
               <span className="text-[13px] text-text-dim tracking-widest uppercase">武器技能</span>
             </div>
             <div className="flex flex-wrap gap-2 p-2.5">
-              {weapon.skills.map((sk, i) => {
+              {Array.from({ length: weapon.skills.length }).map((_, i) => (
+                <div key={i} className="w-16 h-[52px] rounded-lg bg-bg-card animate-pulse" />
+              ))}
+            </div>
+          </div>
+        )}
+        {skills.length > 0 && (
+          <div className="bg-bg-dark rounded-lg overflow-hidden">
+            <div className="px-2.5 py-1.5 border-b border-border">
+              <span className="text-[13px] text-text-dim tracking-widest uppercase">武器技能</span>
+            </div>
+            <div className="flex flex-wrap gap-2 p-2.5">
+              {skills.map((sk, i) => {
                 const actCls = ACTIVATION_CONFIG[sk.activation]?.className ?? 'text-text-dim bg-bg-dark border-border'
                 return (
                   <div key={i} className="flex flex-col items-center gap-1 w-16 rounded-lg p-1.5 cursor-default">

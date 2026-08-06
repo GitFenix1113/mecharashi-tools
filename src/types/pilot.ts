@@ -62,6 +62,11 @@ export interface SkillArea {
  * pilotSkills 集合的技能文件（PLAN-004 技能庫抽離）。
  * 欄位與嵌入用 PilotSkill 相同，另有頂層 id；可被描述中的 [xxx] 引用（refType:'skill'）。
  * id 格式：skill_<技能名>，同名不同效時加 _<pilotId> 後綴。
+ *
+ * ⚠ 集合物理名 `pilotSkills` 是**歷史遺留的誤稱**（PLAN-032）。它的真實契約是
+ * 「**全站技能字典**——收錄所有可被引用的技能定義，成員不限於機師持有」：
+ * 實測全庫 89 個 refType:'skill' 引用目標中，75 個（84%）沒有任何機師持有。
+ * 改集合實體名要做 rename migration 且同步所有 refId，純美觀不值得，故只在文件上正名為「技能庫」。
  */
 export interface PilotSkillDoc {
   id: string
@@ -86,6 +91,29 @@ export interface PilotSkillDoc {
   buffIds: string[]
   /** 管理者手動新增的技能；爬蟲補丁模式不會覆寫或刪除。詳見 PilotSkill.manual */
   manual?: boolean
+  /**
+   * 技能所屬領域（PLAN-032）。**未填 = 'pilot'**——既有 646 筆天然合法，零改動。
+   * 純分類欄位：只影響後台技能庫頁的篩選，不影響解析、引用或任何前台行為。
+   *
+   * 刻意不用 `type` 表達：實測 170/170 武器技能的 type 全是「被動技能」，零鑑別力；
+   * 而 type 是官方 SkillType enum，硬塞一個「武器技能」值會污染既有語意。
+   */
+  domain?: 'pilot' | 'weapon'
+  /**
+   * 此技能會強化的天賦名（PLAN-032，原 WeaponSkill.enhancesTalentName）。專武技能才有。
+   * 前台以「此名稱是否在當前機師的天賦清單內」判定要不要顯示強化標記。
+   */
+  enhancesTalentName?: string
+  /**
+   * 天賦被此技能強化後的完整描述（遊戲原文），供與天賦原文做 DiffHighlight 差異對比。
+   *
+   * ⚠ 這兩欄**刻意放定義側而非 WeaponSkillRef 掛載側**（PLAN-032 補充決策）：
+   * enhancedTalentDescription 與上方 descriptionRefs 是**一起被消費的**
+   * （PilotDetailPage 用同一份 refs 解析這段文字的 [xxx] token）。拆到兩個文件會失同步，
+   * 症狀是「強化後天賦文字裡的引用突然不會亮」。且專武與機師 1:1，此欄天然無跨武器變異——
+   * 與 activation 的情況正好相反。
+   */
+  enhancedTalentDescription?: string
   /** 模擬層預留：條件變體（萬序擬合）；暫不填 */
   variants?: SkillVariant[]
   /** 模擬層預留：作用範圍（龍雷拳）；暫不填 */

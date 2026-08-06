@@ -467,3 +467,89 @@ test('V6: 多個問題同時存在時全部回報，不是只回第一個', () =
   const kinds = checkCascadeSafety(plan, { doc: {}, patches: [] }).map((b) => b.kind)
   assert.deepEqual(kinds.sort(), ['batchLimit', 'problems'])
 })
+
+// ─── S. PLAN-032：物件型陣列元素的 arrayRemove ────────────────────────────────
+//
+// 為什麼這組測試是必要的：`weapons.skills[].skillId` 是全站**第一個**元素為物件的
+// arrayRemove 站點（元素 = { skillId, activation }）。在它之前所有站點的元素都是字串，
+// 於是 removeAll 用 `===` 的參照相等一直沒被觸發。
+// 對抗審查以兩份獨立重現腳本證實：DocDraft 的 copy-on-write 會在 resolveHit 走訪
+// `['skills', i]` 時把該元素換成私有副本，`arr[i] === hit.value` 恆為 false
+// → 每次刪除武器技能都全數 valueMissing，級聯刪除完全不能用。
+
+const weaponData = (w: object, id = 'w1') =>
+  scanData({ weapons: [{ ...(w as object), id } as never] })
+
+test('S1: flip 後刪技能庫的武器技能 —— 掛載物件被正確移除（深層相等，非參照相等）', () => {
+  const data = weaponData({
+    name: '魔笛',
+    skills: [
+      { skillId: 'skill_凝神待發', activation: 'use' },
+      { skillId: 'skill_起爆', activation: 'carry' },
+    ],
+  })
+  const { hits } = findReferences('pilotSkill', 'skill_凝神待發', data)
+  assert.equal(hits.length, 1)
+  assert.equal(hits[0].siteId, 'weapons.skills[].skillId')
+
+  const plan = buildCascadePlan(hits, data)
+  assert.deepEqual(plan.problems, [])          // ← 修正前這裡是 1 筆 valueMissing
+  assert.equal(plan.mutations.length, 1)
+  assert.deepEqual(plan.mutations[0].set.skills, [
+    { skillId: 'skill_起爆', activation: 'carry' },
+  ])
+  // 修補單存整個掛載物件（含 activation）——只存裸 skillId 的話還原會少掉生效方式
+  assert.deepEqual(plan.patches[0].value, { skillId: 'skill_凝神待發', activation: 'use' })
+  assert.equal(plan.patches[0].path, 'skills')
+})
+
+test('S2: 同一技能以不同 activation 掛在兩把武器 —— 各自移除，不互相誤傷', () => {
+  const data = scanData({
+    weapons: [
+      { id: 'w1', name: '赤狐·改', skills: [{ skillId: 'skill_凝神待發', activation: 'carry' }] } as never,
+      { id: 'w2', name: '魔笛', skills: [{ skillId: 'skill_凝神待發', activation: 'use' }] } as never,
+    ],
+  })
+  const { hits } = findReferences('pilotSkill', 'skill_凝神待發', data)
+  assert.equal(hits.length, 2)
+  const plan = buildCascadePlan(hits, data)
+  assert.deepEqual(plan.problems, [])
+  assert.equal(plan.mutations.length, 2)
+  // 深層相等必須夠精確：activation 不同的兩筆是不同的值，不可被同一次 removeAll 一起清掉
+  assert.deepEqual(plan.mutations[0].set.skills, [])
+  assert.deepEqual(plan.mutations[1].set.skills, [])
+})
+
+test('S3: 深層相等不可過寬 —— 同 skillId 但 activation 不同者不被誤刪', () => {
+  // 資料上不會出現（同一把武器不會掛同技能兩次），但這是 removeAll 的行為契約：
+  // 若改成「只比 skillId」，這裡會連帶刪掉第二筆，而修補單只記了一筆 → 還原不回去。
+  const data = weaponData({
+    name: '測試',
+    skills: [
+      { skillId: 'skill_x', activation: 'carry' },
+      { skillId: 'skill_x', activation: 'use' },
+    ],
+  })
+  const { hits } = findReferences('pilotSkill', 'skill_x', data)
+  assert.equal(hits.length, 2)                 // 兩筆掛載各自成為一個 hit
+  const plan = buildCascadePlan(hits, data)
+  assert.deepEqual(plan.problems, [])
+  assert.deepEqual(plan.mutations[0].set.skills, [])   // 兩筆各自被自己那個 hit 移除
+})
+
+test('S4: 內嵌格式不被此站點命中（它是拷貝不是引用）', () => {
+  const data = weaponData({
+    name: '凱旋·改',
+    skills: [{ name: '凝神待發', type: '被動技能', activation: 'carry', description: 'x', effects: [], buffIds: [] }],
+  })
+  const { hits } = findReferences('pilotSkill', 'skill_凝神待發', data)
+  assert.deepEqual(hits, [])
+})
+
+test('S5: 字串元素的既有站點行為不變（深層相等對純量退化成 ===）', () => {
+  const data = pilotData({ name: '測試', skills: ['skill_dead', 'skill_keep'] })
+  const { hits } = findReferences('pilotSkill', 'skill_dead', data)
+  const plan = buildCascadePlan(hits, data)
+  assert.deepEqual(plan.problems, [])
+  assert.deepEqual(plan.mutations[0].set.skills, ['skill_keep'])
+})

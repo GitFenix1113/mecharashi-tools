@@ -33,7 +33,9 @@ const TAB_CONFIG: Record<Tab, { keys: CollectionKey[]; searchable: boolean; self
   modules:    { keys: ['modules', 'mechs'],  searchable: true,  selfLoading: false, preload: true  },
   mechs:      { keys: ['mechs', 'modules', 'weapons'], searchable: true, selfLoading: false, preload: true },
   pilots:     { keys: ['pilots'],            searchable: true,  selfLoading: false, preload: true  },
-  weapons:    { keys: ['weapons', 'pilots'], searchable: true,  selfLoading: false, preload: true  },
+  // PLAN-032：武器技能引用化後，技能編輯分頁要從技能庫挑 doc → 必須一併載入 pilotSkills。
+  // 漏了不會報錯，症狀是「掛載挑選器候選 0 個」與「已掛的引用全顯示⚠找不到此技能」。
+  weapons:    { keys: ['weapons', 'pilots', 'pilotSkills'], searchable: true, selfLoading: false, preload: true },
   components: { keys: [],                     searchable: true,  selfLoading: true,  preload: false },
   grayops:    { keys: ['grayOpsRoster'],     searchable: false, selfLoading: false, preload: false },
   backpacks:  { keys: ['backpacks', 'backpackSkills'], searchable: true, selfLoading: false, preload: true },

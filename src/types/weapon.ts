@@ -3,6 +3,15 @@
 import type { DescriptionRefs } from './common'
 import type { SkillEffect } from './buff'
 
+/**
+ * 內嵌武器技能（舊格式）。
+ *
+ * ⚠ **刻意永久保留，不是待清死碼**（PLAN-032 決策四）。這點與 PLAN-004 機師版不同：
+ * 那邊的 union 是「該收斂卻沒收斂」，這邊是**設計上不收斂**——
+ * 官方 API 的 PassiveSkill 就是這個形狀，爬蟲抓到全新武器時仍會產出內嵌格式，
+ * 由 scrape-weapons.js 的 normalize 步驟才轉成 WeaponSkillRef。
+ * 看到「全站已無內嵌資料」就把它刪掉，下次改版爬蟲會直接爆掉。
+ */
 export interface WeaponSkill {
   name: string
   /** 技能圖示遠端 URL（API 原始路徑） */
@@ -20,6 +29,27 @@ export interface WeaponSkill {
   enhancesTalentName?:         string
   /** 天賦被此專武強化後的完整描述文字（遊戲原文）；用於與天賦原文做 DiffHighlight 差異對比 */
   enhancedTalentDescription?:  string
+}
+
+/**
+ * 武器對技能庫的掛載關係（PLAN-032 新格式）。
+ *
+ * 只承載「**這把武器怎麼用這個技能**」，技能本身的名稱/描述/效果/buffIds 一律住在
+ * pilotSkills 集合（技能庫）的 skillId 那份 doc，改一處全站生效。
+ *
+ * ⚠ **activation 為什麼必須留在掛載側**（決策三）：它是遊戲規則造成的真實每武器變異，
+ * 不是資料漂移。實測 44 個重複技能名群組中 **38 個在此欄衝突**——
+ *   [赤狐·改 S+] 凝神待發 = 'carry'（攜帶即生效）
+ *   [魔笛   SS ] 凝神待發 = 'use'  （僅使用該武器時生效）
+ * S+ 一般武器 39/39 全為 carry，SS 專武才可能是 use。把它併進技能 doc 會強迫兩者二選一。
+ *
+ * 鑑別鍵是 `'skillId' in entry`——內嵌 WeaponSkill 沒有這個欄位（見 isWeaponSkillRef）。
+ */
+export interface WeaponSkillRef {
+  /** 技能庫（pilotSkills 集合）的文件 id */
+  skillId: string
+  /** 生效方式："carry" 攜帶即生效 / "equip" 裝備中生效 / "use" 僅使用時生效 */
+  activation: 'carry' | 'equip' | 'use'
 }
 
 /**
@@ -103,7 +133,16 @@ export interface Weapon {
     slots: number
     possibleEffects: WeaponFloatingModEffect[]
   }
-  skills: WeaponSkill[]    // API: PassiveSkill[]
+  /**
+   * PLAN-032 過渡雙格式：`WeaponSkillRef` = 已引用化（技能本體在技能庫）；
+   * `WeaponSkill` = 尚未遷移的內嵌拷貝（爬蟲產出的原始形狀，見 WeaponSkill 註解）。
+   * 一律以 `resolveWeaponSkills(weapon.skills, skillMap)` 解析，前端不需在意目前是哪種。
+   *
+   * ⚠ **不要對這個陣列直接取 .length 當顯示 gate**——union 兩個成員都有 length，
+   * tsc 抓不到，而引用可能解析不到（技能庫未載入 / doc 被刪），會渲染出一塊空的技能區。
+   * 用 hasWeaponSkills() 或 gate 在解析後的陣列上。
+   */
+  skills: (WeaponSkillRef | WeaponSkill)[]    // API: PassiveSkill[]
   /** 製作／進階關係（PLAN-031）。有值 = 由 upgrade.fromWeaponId 製作而來；不影響本武器的儲存集合／refType。 */
   upgrade?: WeaponUpgrade
 }

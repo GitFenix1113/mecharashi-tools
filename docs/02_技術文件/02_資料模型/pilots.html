@@ -65,7 +65,7 @@
       <tr><td>attack</td><td>number</td><td>攻擊素質</td></tr>
       <tr><td>defense</td><td>number</td><td>防禦素質</td></tr>
       <tr class="group-header"><td colspan="3">▎技能列表 skills[]：string[]（PLAN-004）— pilotSkills 集合文件 ID 陣列</td></tr>
-      <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);padding:4px 14px;">PLAN-004 技能庫抽離後，<strong>skills 改為 pilotSkills 文件 ID 陣列（單一資料源）</strong>，技能本體存於 <a href="../04_Firebase/資料庫設計文件/pilotSkills.html" style="color:var(--accent-cyan)">pilotSkills 集合</a>。共用技能（如職業被動）多位機師指向同一文件，編輯一次全站生效。以下欄位為被引用的 <strong>PilotSkillDoc</strong>（與舊嵌入 PilotSkill 同構，另有頂層 id）。涵蓋仿生電腦各核心單元解鎖的所有技能。</td></tr>
+      <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);padding:4px 14px;">PLAN-004 技能庫抽離後，<strong>skills 改為 pilotSkills 文件 ID 陣列（單一資料源）</strong>，技能本體存於 <a href="../04_Firebase/資料庫設計文件/pilotSkills.html" style="color:var(--accent-cyan)">pilotSkills 集合（＝<strong>技能庫</strong>）</a>。共用技能（如職業被動）多位機師指向同一文件，編輯一次全站生效。以下欄位為被引用的 <strong>PilotSkillDoc</strong>（與舊嵌入 PilotSkill 同構，另有頂層 id）。涵蓋仿生電腦各核心單元解鎖的所有技能。<br><br><strong style="color:var(--accent-pink)">⚠ PLAN-032：該集合不只收機師技能。</strong>它的真實契約是「全站技能字典——收錄所有可被引用的技能定義，成員不限於機師持有」（實測 84% 的 <code>refType:'skill'</code> 引用目標無任何機師持有）。武器技能亦住在同一集合，以 <code>domain: 'weapon'</code> 分類。本頁只描述<strong>機師持有</strong>的那部分；集合全貌見上方連結。</td></tr>
       <tr><td>&nbsp;├ name</td><td>string</td><td>技能名稱</td></tr>
       <tr><td>&nbsp;├ type</td><td>SkillType (Enum)</td><td>技能類型：<strong>被動技能</strong> / <strong>主動技能</strong> / <strong>指令技能</strong>（Order，有 CD） / <strong>PP技能</strong>（消耗 PP） / <strong>額外打擊</strong>（限定武器發動的追加打擊）</td></tr>
       <tr><td>&nbsp;├ ap</td><td>string?</td><td>AP 消耗；主動 / 指令 / 必殺 / 武器技能適用</td></tr>

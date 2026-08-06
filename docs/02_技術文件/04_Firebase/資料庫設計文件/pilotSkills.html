@@ -45,7 +45,18 @@
     · 前台讀取走 GameDataContext 一次預載 + PLAN-017 版本快取（回訪 0 讀取）。
   </div>
 
-  <div class="sub-h">🗃️ pilotSkills — 技能文件（PilotSkillDoc）</div>
+  <div class="info-block" style="border-left:3px solid var(--accent-pink);">
+    <strong>⚠ 集合名是誤稱：這是「技能庫」，不是「機師的技能」（PLAN-032 正名）</strong><br>
+    本集合的真實契約是 <strong>「全站技能字典」——收錄所有可被引用的技能定義，成員不限於機師持有</strong>。
+    實測：全庫 89 個 <code>refType:'skill'</code> 引用目標中，<strong>75 個（84%）沒有任何機師持有</strong>；
+    集合內另有 83 筆無機師持有的孤兒 doc，其中 <code>SKILL_故障植入</code>、<code>SKILL_態勢優化</code>
+    根本就是<strong>武器技能</strong>（維護者早已自行放入）。<br>
+    PLAN-032 據此裁決<strong>不另開 <code>weaponSkills</code> 集合</strong>，武器技能直接併入本集合，
+    以 <code>domain</code> 欄位分類。集合實體改名（<code>pilotSkills</code> → <code>skills</code>）
+    要做 rename migration 並同步所有 <code>refId</code>，純美觀不值得——故只在文件上正名。
+  </div>
+
+  <div class="sub-h">🗃️ pilotSkills — 技能庫文件（PilotSkillDoc）</div>
   <div class="data-table-wrap">
     <table class="data-table cyan-head">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
@@ -63,6 +74,9 @@
       <tr><td>effects</td><td>SkillEffect[]</td><td>可量化效果列表（空陣列 = 待填入）；計算器加總用</td></tr>
       <tr><td>buffIds</td><td>string[]</td><td>此技能賦予的 BUFF ID 列表 → 引用 buffs 集合（PLAN-019 Layer 2 賦予邊）</td></tr>
       <tr><td>manual</td><td>boolean?</td><td>後台手動新增（機師天生自帶、官網查無 / form-gated 條件技能）。爬蟲補丁模式不覆寫亦不刪除</td></tr>
+      <tr><td>domain</td><td>'pilot' | 'weapon' ?</td><td><strong>PLAN-032</strong>：技能所屬領域。<strong>未填 = <code>'pilot'</code></strong>（既有 646 筆天然合法，零改動）。<br><small style="color:var(--text-dim)">純分類欄位，只影響後台技能庫頁的篩選，不影響解析／引用／任何前台行為。刻意不用 <code>type</code> 表達：實測 170/170 武器技能的 type 全是「被動技能」，零鑑別力。</small></td></tr>
+      <tr><td>enhancesTalentName</td><td>string?</td><td><strong>PLAN-032</strong>（原 <code>WeaponSkill</code> 欄位）：此技能強化的天賦名。專武技能才有。前台以「此名稱是否在當前機師的天賦清單內」判定要不要顯示強化標記</td></tr>
+      <tr><td>enhancedTalentDescription</td><td>string?</td><td><strong>PLAN-032</strong>：天賦被此技能強化後的完整原文，供與天賦原文做 DiffHighlight 差異對比。<br><small style="color:var(--text-dim)">⚠ 這兩欄刻意放<strong>定義側</strong>而非武器的掛載側：本欄與上方 <code>descriptionRefs</code> 是<strong>一起被消費的</strong>（PilotDetailPage 用同一份 refs 解析這段文字的 <code>[xxx]</code>），拆兩份文件會失同步，症狀是「強化後天賦文字裡的引用突然不會亮」。且專武與機師 1:1，天然無跨武器變異——與 <code>activation</code> 的情況正好相反（後者留在掛載側）。</small></td></tr>
       <tr><td>variants</td><td>SkillVariant[]?</td><td>模擬層預留：條件變體（如萬序擬合依形態/武器發動不同子技能）。暫不填</td></tr>
       <tr><td>area</td><td>SkillArea?</td><td>模擬層預留：作用範圍/形狀（如龍雷拳 面前3×4格）。暫不填</td></tr>
     </table>
@@ -82,6 +96,8 @@
     · <code>scripts/migrate-plan004-skills.mjs</code>（Stage 1）：攤平 pilots.skills、name+description 去重 → 寫入 pilotSkills。<br>
     · <code>scripts/migrate-plan004-pilots.mjs</code>（Stage 2）：把 pilots.skills flip 成 ID 陣列。<br>
     · <code>scripts/seed-manual-skills.mjs</code>：補爬蟲無法擷取的 form-gated 條件技能（如粒子爆發）。<br>
+    · <code>scripts/migrate-weapon-skills.mjs</code>（PLAN-032 Stage 1，<strong>已進版控</strong>）：把 86 把武器內的 183 份內嵌技能以<strong>技能名</strong>去重，建成 133 筆 <code>domain:'weapon'</code> 的共用文件。<strong>去重鍵絕不可用 icon</strong>——實測 107 個 icon 中 11 個對到 2–3 個不同技能名（<code>Icon_skill_passive_5136</code> → 擴容火力／追蹤調律／扞拒），icon 是共用美術素材不是技能 ID。<br>
+    · <code>scripts/scrape-weapons.js</code> 的 <code>normalizeWeaponSkills()</code>：改版抓到新武器時，以技能名查本集合——有則掛引用、無則建 doc 再掛。<strong>⚠ 只保證「新技能會被建 doc」，不保證「既有技能的效果變更會被補丁」</strong>（引用化的固有代價，同機師端）；官方文本與本集合不一致時腳本會列清單要求人工核對，不自動覆寫。<br>
     · 安全規則：<code>pilotSkills</code> 所有人可讀、管理員可寫（見 security-rules）。
   </div>
 </section>

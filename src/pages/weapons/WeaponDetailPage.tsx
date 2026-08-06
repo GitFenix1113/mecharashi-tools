@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useWeapon, useWeapons, usePilotBriefMap, useBackpackNameMap } from '../../hooks/useFirestore'
+import { useWeapon, useWeapons, usePilotBriefMap, useBackpackNameMap, useWeaponSkillMap } from '../../hooks/useFirestore'
 import { WeaponRarityBadge } from '../../components/WeaponRarityBadge'
 import { WeaponIcon } from '../../components/WeaponIcon'
 import { ExclusivePilotLink } from '../../components/PilotIcon'
@@ -11,6 +11,7 @@ import {
 } from '../../components/WeaponBadges'
 import { WeaponSkillCard } from '../../components/WeaponSkillCard'
 import { buildUpgradeIndex, deriveFusedSkillNames, isCompositeWeapon } from '../../utils/weaponUpgrade'
+import { resolveWeaponSkills } from '../../utils/weaponSkills'
 import type { Weapon } from '../../types'
 
 // ── Labels & formatters ───────────────────────────────────────────────────────
@@ -141,18 +142,27 @@ export default function WeaponDetailPage() {
     () => (weapon ? (index.childrenOf.get(weapon.id) ?? []).map((cid) => byId.get(cid)).filter(Boolean) as Weapon[] : []),
     [weapon, index, byId],
   )
+  // PLAN-032：技能雙格式，一律先解析再用。技能庫載入中時 map 為空，引用格式會解析成 0 筆——
+  // 故下方技能區的顯示 gate 接在 skills（解析後）而非 weapon.skills 上。
+  // loading 一定要接進頁面 gate：只解構 data 的話，技能庫還沒到（或抓取失敗）時
+  // 整頁照常渲染、但「武器技能」區塊整塊不存在，使用者看不出那是載入中還是真的沒技能。
+  const { data: skillMap, loading: skillsLoading } = useWeaponSkillMap()
+  const skills = useMemo(() => resolveWeaponSkills(weapon?.skills, skillMap), [weapon, skillMap])
+
   /** 相對於母武器新增的技能名（融合或進階帶來的），供技能列表標示。 */
   const fusedSkillNames = useMemo(() => {
     if (!weapon || !parent) return new Set<string>()
     return new Set(
       deriveFusedSkillNames(
-        weapon.skills.map((s) => s.name),
-        parent.skills.map((s) => s.name),
+        skills.map((s) => s.name),
+        // 母武器也要解析——它可能與子武器不同格式（flip 是逐把武器進行的）。
+        // 比對用的是技能「名稱」，故兩邊解析後才具可比性。
+        resolveWeaponSkills(parent.skills, skillMap).map((s) => s.name),
       ),
     )
-  }, [weapon, parent])
+  }, [weapon, parent, skills, skillMap])
 
-  if (loading) return <LoadingSkeleton />
+  if (loading || skillsLoading) return <LoadingSkeleton />
 
   if (error || !weapon) {
     return (
@@ -306,11 +316,11 @@ export default function WeaponDetailPage() {
       </div>
 
       {/* ── B-3 Skills ───────────────────────────────────────────────────────── */}
-      {weapon.skills.length > 0 && (
+      {skills.length > 0 && (
         <div>
           <SectionHeading>武器技能</SectionHeading>
           <div className="space-y-3">
-            {weapon.skills.map((skill, i) => (
+            {skills.map((skill, i) => (
               <WeaponSkillCard
                 key={i}
                 skill={skill}

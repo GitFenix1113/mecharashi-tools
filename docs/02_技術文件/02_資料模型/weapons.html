@@ -250,7 +250,29 @@
       <tr><td>&nbsp;&nbsp;├ condition</td><td>string?</td><td>觸發條件：null（無條件）/ 條件描述字串</td></tr>
       <tr><td>&nbsp;&nbsp;├ min</td><td>number</td><td>數值下限</td></tr>
       <tr><td>&nbsp;&nbsp;└ max</td><td>number</td><td>數值上限</td></tr>
-      <tr class="group-header"><td colspan="3">▎武器技能 skills[]（WeaponSkill · API: PassiveSkill[]）</td></tr>
+      <tr class="group-header"><td colspan="3">▎武器技能 skills[]（PLAN-032 雙格式：<code>WeaponSkillRef</code> | <code>WeaponSkill</code>）</td></tr>
+      <tr><td colspan="3" style="background:rgba(236,72,153,0.06);">
+        <strong>「定義 vs 掛載」判準（PLAN-032）</strong>：本陣列的元素有兩種形狀，以 <code>'skillId' in entry</code> 鑑別。<br>
+        · <code><strong>WeaponSkillRef</strong> = { skillId, activation }</code> —— <strong>已引用化</strong>。
+          技能本體（名稱／正文／effects／buffIds）住在<strong>技能庫</strong>（<code>pilotSkills</code> 集合），改一處全站生效。<br>
+        · <code><strong>WeaponSkill</strong></code> —— 尚未遷移的內嵌拷貝（下表）。
+          <strong>此型別刻意永久保留</strong>：官方 API 的 PassiveSkill 就是這個形狀，爬蟲抓到新武器仍會產出它，
+          由 <code>scrape-weapons.js</code> 的 normalize 步驟才轉成引用。<u>不是待清死碼</u>。<br><br>
+        <strong>為什麼 <code>activation</code> 留在掛載側而非技能 doc</strong>：它是遊戲規則造成的真實每武器變異。
+        實測 44 個重複技能名群組中 <strong>38 個在此欄衝突</strong>——
+        <code>凝神待發</code> 在 [赤狐·改 S+] 是 <code>carry</code>、在 [魔笛 SS] 是 <code>use</code>。
+        併進技能 doc 會強迫兩者二選一。<br>
+        反之 <code>enhancesTalentName</code> / <code>enhancedTalentDescription</code> <strong>已移入技能 doc</strong>（定義側）——
+        它們與 <code>descriptionRefs</code> 是一起被消費的（同一份 refs 解析強化後天賦正文的 <code>[xxx]</code>），
+        拆兩份文件會失同步；且專武與機師 1:1，天然無跨武器變異。<br><br>
+        <strong>⚠ 前端一律以 <code>resolveWeaponSkills(weapon.skills, skillMap)</code> 解析，
+        且顯示 gate 必須接在解析後的陣列上</strong>——對 union 取 <code>.length</code> 兩個成員都合法（tsc 抓不到），
+        技能庫未載入時會渲染出一塊空的技能區。用 <code>hasWeaponSkills()</code>。
+      </td></tr>
+      <tr class="group-header"><td colspan="3">▎（一）引用格式 WeaponSkillRef —— PLAN-032 新格式</td></tr>
+      <tr><td>&nbsp;├ skillId</td><td>string</td><td>技能庫（<code>pilotSkills</code> 集合）的文件 id<br><small style="color:var(--text-dim)">級聯刪除站點 <code>weapons.skills[].skillId</code>：從技能庫刪掉此技能時，本筆掛載會被 arrayRemove（連同 activation 整個物件）</small></td></tr>
+      <tr><td>&nbsp;└ activation</td><td>SkillActivation (Enum)</td><td>carry / equip / use —— <strong>掛載側獨有</strong>，技能 doc 沒有這個欄位</td></tr>
+      <tr class="group-header"><td colspan="3">▎（二）內嵌格式 WeaponSkill —— 爬蟲原始形狀（API: PassiveSkill[]），刻意永久保留</td></tr>
       <tr><td>&nbsp;├ name</td><td>string</td><td>技能名稱（如 "阔步"）<br><small style="color:var(--text-dim)">API: PassiveSkill[].name</small></td></tr>
       <tr><td>&nbsp;├ type</td><td>string</td><td>技能類型（被動技能/主動技能）</td></tr>
       <tr><td>&nbsp;├ icon</td><td>string?</td><td>技能圖示鍵名（如 <code>Icon_skill_passive_5161</code>）<br><small style="color:var(--text-dim)">API: PassiveSkill[].SkillIcon（或 .icon）；前端用此值組合圖示 URL</small></td></tr>
@@ -260,8 +282,8 @@
       <tr><td>&nbsp;├ descriptionRefs</td><td>DescriptionRefs?</td><td>描述內 [xxx] → 實體引用側錄（PLAN-019 Layer 1）；後台 RefPicker 標註，前台 RefText 渲染為可點擊引用</td></tr>
       <tr><td>&nbsp;├ effects[]</td><td>SkillEffect[]</td><td>結構化效果數值（計算器用）</td></tr>
       <tr><td>&nbsp;├ buffIds[]</td><td>string[]</td><td>觸發的 Buff ID 列表<br><small style="color:var(--text-dim)">API: PassiveSkill[].BufCarried（斜線分隔字串）→ split('/').filter(Boolean)</small></td></tr>
-      <tr><td>&nbsp;├ enhancesTalentName</td><td>string?</td><td>加強的特定機師天賦名稱（專武用）；計算器用於辨識此技能與哪個天賦關聯</td></tr>
-      <tr><td>&nbsp;└ enhancedTalentDescription</td><td>string?</td><td>天賦被此專武強化後的完整描述文字（遊戲原文）；用於 PilotDetailPage「專武強化」區塊做 DiffHighlight 差異對比<br><small style="color:var(--text-dim)">填值：直接複製遊戲內天賦的強化後版本文字。以最大強化版本（descriptionMax）為比較基準。</small></td></tr>
+      <tr><td>&nbsp;├ enhancesTalentName</td><td>string?</td><td>加強的特定機師天賦名稱（專武用）；計算器用於辨識此技能與哪個天賦關聯<br><small style="color:var(--text-dim)">PLAN-032：引用化後改由技能庫 doc 的同名欄位提供（見 pilotSkills 資料模型）</small></td></tr>
+      <tr><td>&nbsp;└ enhancedTalentDescription</td><td>string?</td><td>天賦被此專武強化後的完整描述文字（遊戲原文）；用於 PilotDetailPage「專武強化」區塊做 DiffHighlight 差異對比<br><small style="color:var(--text-dim)">填值：直接複製遊戲內天賦的強化後版本文字。以最大強化版本（descriptionMax）為比較基準。PLAN-032：引用化後改由技能庫 doc 提供——它必須與 descriptionRefs 同住一份文件。</small></td></tr>
       <tr class="group-header"><td colspan="3">▎製作／進階關係 upgrade（WeaponUpgrade · PLAN-031 · 選填）</td></tr>
       <tr><td>upgrade</td><td>WeaponUpgrade?</td><td>製作／進階關係。有值 = 此武器由 <code>fromWeaponId</code> 製作而來。<strong>只存事實，不存任何可推導值</strong>；反向索引（誰進階自我）、融合技能差集、複合判別皆前端 derive。<br><small style="color:var(--text-dim)">⚠ upgrade <strong>不改變</strong>本武器的儲存集合、doc id 或 refType（見下方跨界實體判準）。人工維護欄位，由 <code>scripts/derive-weapon-upgrade.mjs</code>（進版控）推導、<code>scripts/patch-weapon-upgrade.mjs</code> 寫入。</small></td></tr>
       <tr><td>&nbsp;├ fromWeaponId</td><td>string</td><td>母武器 doc id（必填——實測 42 條邊皆有母武器）。以 <code>skill.name</code> 極大真子集推導；硬約束守衛：稀有度單調（rank(母)≤rank(子)）+ 同 kind。</td></tr>

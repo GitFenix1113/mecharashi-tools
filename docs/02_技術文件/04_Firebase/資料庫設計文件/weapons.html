@@ -64,7 +64,13 @@
       <tr><td>&nbsp;├ planName</td><td>string</td><td>方案名稱</td></tr>
       <tr><td>&nbsp;├ slots</td><td>number</td><td>可選槽位數量</td></tr>
       <tr><td>&nbsp;└ possibleEffects[]</td><td>array</td><td>可選效果列表 { stat, condition, value }</td></tr>
-      <tr><td colspan="3" style="color:var(--accent-blue);font-weight:700;">▎skills[] — 武器技能（嵌入式）</td></tr>
+      <tr><td colspan="3" style="color:var(--accent-blue);font-weight:700;">▎skills[] — 武器技能（PLAN-032 雙格式）</td></tr>
+      <tr><td colspan="3">元素有兩種形狀，以 <code>'skillId' in entry</code> 鑑別：<br>
+        · <strong>引用格式</strong> <code>{ skillId, activation }</code> —— 技能本體在 <code>pilotSkills</code> 集合（技能庫）<br>
+        · <strong>內嵌格式</strong>（下表）—— 爬蟲產出的原始形狀，<strong>刻意永久保留</strong>，由 normalize 轉成引用<br>
+        <code>activation</code> 一律留在掛載側（同一技能在不同武器上可能不同生效方式，實測 38/44 群組衝突）。
+      </td></tr>
+      <tr><td>&nbsp;├ skillId</td><td>string</td><td><strong>（引用格式）</strong>技能庫文件 id</td></tr>
       <tr><td>&nbsp;├ name</td><td>string</td><td>技能名稱</td></tr>
       <tr><td>&nbsp;├ activation</td><td>SkillActivation</td><td>生效時機 Enum：carry / equip / use</td></tr>
       <tr><td>&nbsp;├ type</td><td>SkillType</td><td>技能類型 Enum：被動技能 / 主動技能</td></tr>

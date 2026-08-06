@@ -567,3 +567,78 @@ test('P8: 刪背包時，descriptionRefs 的 refType:backpack 引用照常被清
   assert.equal(r.hits[0].kind, 'descriptionRefs')
   assert.equal(r.hits[0].op, 'mapKeyDelete')
 })
+
+// ─── Q. PLAN-032 武器技能引用化：雙格式站點 ──────────────────────────────────
+// 為什麼這組測試是唯一防線：M6 flip 之前正式資料 100% 是內嵌格式，
+// 引用分支在整合測試裡永遠踩不到；而 flip 之後才發現漏站點就是「刪一個技能，
+// 所有掛它的武器靜默少一塊」——無錯誤訊息、無 hits 回報。
+
+test('Q1: 刪技能庫的武器技能 → weapons.skills[] 的引用被命中', () => {
+  const w = { id: 'w1', name: '魔笛', skills: [{ skillId: 'skill_凝神待發', activation: 'use' }] } as never
+  const r = findReferences('pilotSkill', 'skill_凝神待發', scanData({ weapons: [w] }))
+  assert.equal(r.hits.length, 1)
+  const h = r.hits[0]
+  assert.equal(h.siteId, 'weapons.skills[].skillId')
+  assert.equal(h.op, 'arrayRemove')
+  assert.equal(h.origin, '武器:魔笛 的技能引用')
+  // arrayRemove 要移除的是**整個掛載物件**（含 activation）——只存裸 skillId 會靜默移除失敗
+  assert.deepEqual(h.value, { skillId: 'skill_凝神待發', activation: 'use' })
+  assert.equal(h.matched, 'skill_凝神待發')   // 顯示用可讀值走 matchValue
+})
+
+test('Q2: 內嵌格式不會被誤判成技能引用（沒有 skillId 欄位）', () => {
+  const w = {
+    id: 'w1', name: '凱旋·改',
+    skills: [{ name: '凝神待發', type: '被動技能', activation: 'carry', description: 'x', effects: [], buffIds: [] }],
+  } as never
+  const r = findReferences('pilotSkill', 'skill_凝神待發', scanData({ weapons: [w] }))
+  assert.deepEqual(r.hits, [])   // 內嵌是拷貝、不是引用，刪技能庫的 doc 不該動它
+})
+
+test('Q3: 沒傳技能庫時，引用分支的 buff 靜默消失（刻意的失敗模式）', () => {
+  const w = { id: 'w1', name: '魔笛', skills: [{ skillId: 'skill_凝神待發', activation: 'use' }] } as unknown as Weapon
+  // 掛載側沒有 buffIds 可讀，站點必然產出 0 筆。症狀是「武器的增益全沒了」——
+  // 比靜默拿到部分結果容易發現，且 SIMULATOR_KEYS 已含 pilotSkills，正式路徑不會漏。
+  assert.deepEqual(buildBuffPool({ weapon: w }), [])
+})
+
+test('Q3b: 傳了技能庫 → 引用分支的 buff 經 resolveWeaponSkills 進池', () => {
+  const w = { id: 'w1', name: '魔笛', skills: [{ skillId: 'skill_凝神待發', activation: 'use' }] } as unknown as Weapon
+  const lib = [{ id: 'skill_凝神待發', name: '凝神待發', type: '被動技能', domain: 'weapon',
+    description: 'x', icon: '', iconLocal: '', effects: [], buffIds: ['buff_瞄準'] }] as PilotSkillDoc[]
+  assert.deepEqual(buildBuffPool({ weapon: w, weaponSkills: lib }), [
+    { buffId: 'buff_瞄準', level: undefined, origin: '武器技能:凝神待發' },
+  ])
+})
+
+test('Q3c: 混格式武器的池內順序 = skills[] 宣告順序，且內嵌不雙計', () => {
+  // 這是「站點跑內嵌 + 迴圈補引用」那種寫法會壞掉的地方：內嵌會被排到最前面，
+  // 而 buffPool 的陣列順序是被 deepEqual 斷言的行為契約。
+  const w = { id: 'w1', name: '混格式', skills: [
+    { skillId: 'skill_凝神待發', activation: 'use' },
+    { name: '起爆', type: '被動技能', activation: 'carry', description: 'x', effects: [], buffIds: ['buff_起爆'] },
+  ] } as unknown as Weapon
+  const lib = [{ id: 'skill_凝神待發', name: '凝神待發', type: '被動技能',
+    description: 'x', icon: '', iconLocal: '', effects: [], buffIds: ['buff_瞄準'] }] as PilotSkillDoc[]
+  assert.deepEqual(buildBuffPool({ weapon: w, weaponSkills: lib }), [
+    { buffId: 'buff_瞄準', level: undefined, origin: '武器技能:凝神待發' },
+    { buffId: 'buff_起爆', level: undefined, origin: '武器技能:起爆' },
+  ])
+})
+
+test('Q4: 內嵌分支的 buffIds 照舊進 buffPool（M6 flip 前的既有行為不變）', () => {
+  const w = {
+    id: 'w1', name: '凱旋·改',
+    skills: [{ name: '起爆', type: '被動技能', activation: 'carry', description: 'x', effects: [], buffIds: ['buff_起爆'] }],
+  } as unknown as Weapon
+  assert.deepEqual(buildBuffPool({ weapon: w }), [
+    { buffId: 'buff_起爆', level: undefined, origin: '武器技能:起爆' },
+  ])
+})
+
+test('Q5: 刪 buff 時，引用分支的武器不再被掃出正文/軟引用站點', () => {
+  const w = { id: 'w1', name: '魔笛', skills: [{ skillId: 'skill_凝神待發', activation: 'use' }] } as never
+  const r = findReferences('buff', 'buff_瞄準', scanData({ weapons: [w] }))
+  assert.deepEqual(r.hits, [])        // 正文與 buffIds 都在技能庫 doc 上，由 pilotSkills spec 負責
+  assert.deepEqual(r.softWarnings, [])
+})

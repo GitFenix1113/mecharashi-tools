@@ -54,3 +54,26 @@ export function makeEntityId(prefix: string, name: string): string {
   const slug = slugify(stripIdPrefix(prefix, name))
   return slug ? `${prefix}_${slug}` : ''
 }
+
+/**
+ * 同一個名稱在「前綴大小寫」上的所有可能 ID（含原值，已去重、原值排首位）。
+ *
+ * 為什麼需要這支（PLAN-032 M0）：Firestore 文件 ID **區分大小寫**，
+ * `SKILL_故障植入` 與 `skill_故障植入` 是兩份不同的文件；而技能庫是歷史遺留的混血
+ * （`SKILL_` 大寫 134 筆 / `skill_` 小寫 512 筆），makeEntityId 卻只產得出小寫形式。
+ * 後台建立前只用 makeEntityId 的結果去 docExists，等於對大寫那批完全沒有防呆，
+ * 會放行建出同名第二份——正是引用化要消滅的東西。
+ *
+ * 這是**防呆用**的候選清單，不是 ID 正規化。把大寫那批真的改名（含同步所有引用它的
+ * refId）成本高得多，另立 follow-up。
+ *
+ * 例：idPrefixCasings('skill_故障植入') -> ['skill_故障植入', 'SKILL_故障植入']
+ *     idPrefixCasings('60102405')       -> ['60102405']（無底線前綴，原樣單筆）
+ */
+export function idPrefixCasings(id: string): string[] {
+  const at = id.indexOf('_')
+  if (at <= 0) return id ? [id] : []
+  const prefix = id.slice(0, at)
+  const rest   = id.slice(at)
+  return [...new Set([prefix, prefix.toLowerCase(), prefix.toUpperCase()])].map((p) => p + rest)
+}

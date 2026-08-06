@@ -136,11 +136,43 @@ export const isContainer = (v: unknown): v is Container =>
 const shallowCopy = (v: Container): Container =>
   (Array.isArray(v) ? [...v] : { ...v }) as Container
 
-/** 移除陣列中所有嚴格相等於 value 的元素，回傳移除筆數（比照 Firestore arrayRemove 語意）。 */
+/**
+ * 值相等（比照 Firestore arrayRemove 的真實語意）。
+ *
+ * ⚠ 這裡**不能**用 `===`（PLAN-032 實測踩過）。原本的參照相等有兩層問題：
+ *   (a) Firestore 的 arrayRemove 對 map 型元素本來就是**深層相等**，`===` 是偏離語意；
+ *   (b) 更致命的是 DocDraft 的 copy-on-write：`resolveHit` 為了取容器會先
+ *       `draft.node(segments)` 走訪到元素本身，沿途把該元素換成私有副本，
+ *       於是 `arr[i]` 早已不是 hit.value 的同一個參照 —— 恆 0 命中、恆報 valueMissing。
+ *
+ * 只有字串元素的站點（buffIds / termRef / pilots.skills[]）感覺不到差別，
+ * 所以這個洞在 PLAN-032 加入第一個**物件型**元素站點（weapons.skills[].skillId，
+ * 元素是 `{ skillId, activation }`）之前一直沒被觸發：症狀是「刪技能時掃描器找得到引用、
+ * 卻在套用階段全部失敗」，而不是靜默錯誤——但一樣讓級聯刪除完全不能用。
+ *
+ * map 比對 key 集合 + 逐值遞迴（順序無關）；陣列逐元素遞迴（順序有關）。與 Firestore 一致。
+ */
+function valueEquals(a: unknown, b: unknown): boolean {
+  if (a === b) return true
+  if (a === null || b === null) return false
+  if (typeof a !== 'object' || typeof b !== 'object') return false
+  if (Array.isArray(a) !== Array.isArray(b)) return false
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((x, i) => valueEquals(x, b[i]))
+  }
+  const ka = Object.keys(a as object)
+  const kb = Object.keys(b as object)
+  if (ka.length !== kb.length) return false
+  return ka.every(k =>
+    Object.prototype.hasOwnProperty.call(b, k) &&
+    valueEquals((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]))
+}
+
+/** 移除陣列中所有等於 value 的元素，回傳移除筆數（比照 Firestore arrayRemove 語意）。 */
 function removeAll(arr: unknown[], value: unknown): number {
   let n = 0
   for (let i = arr.length - 1; i >= 0; i--) {
-    if (arr[i] === value) {
+    if (valueEquals(arr[i], value)) {
       arr.splice(i, 1)
       n++
     }
@@ -340,7 +372,9 @@ export function buildCascadePlan(
       const e = r.effect
       if (e.kind === 'removeFromArray') {
         if (removeAll(e.arr, e.value) === 0) {
-          problems.push({ hit: r.hit, reason: 'valueMissing', detail: `${pathOf(r.segments)} 中找不到 ${String(e.value)}` })
+          // 物件型元素用 String() 會印成 [object Object]，對排錯毫無幫助
+          const shown = typeof e.value === 'object' && e.value !== null ? JSON.stringify(e.value) : String(e.value)
+          problems.push({ hit: r.hit, reason: 'valueMissing', detail: `${pathOf(r.segments)} 中找不到 ${shown}` })
           continue
         }
       } else if (e.kind === 'deleteKey') {

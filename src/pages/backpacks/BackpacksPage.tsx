@@ -16,6 +16,7 @@ import {
 import { WeaponRarityBadge } from '../../components/WeaponRarityBadge'
 import { WeaponIcon } from '../../components/WeaponIcon'
 import { EQUIP_SLOT_LABELS } from '../../components/WeaponBadges'
+import { resolveWeaponSkills, type ResolvedWeaponSkill } from '../../utils/weaponSkills'
 import { assetUrl, resolveIconSrc } from '../../utils/assets'
 import { STAT_LABELS } from '../../utils/moduleStats'
 import { RefText } from '../../components/RefText'
@@ -225,8 +226,10 @@ function BackpackTooltipContent({ bp, skills, prereqName, pinned = false }: {
 }
 
 // ── 複合武器投影浮窗內容（PLAN-031 B-2）──────────────────────────────────────────
-function WeaponProjectionContent({ w, parentName, fusedBackpackName, onNavigate }: {
+function WeaponProjectionContent({ w, skills, parentName, fusedBackpackName, onNavigate }: {
   w: Weapon
+  /** PLAN-032：已解析的武器技能（雙格式攤平後） */
+  skills: ResolvedWeaponSkill[]
   parentName?: string
   fusedBackpackName?: string
   onNavigate?: () => void
@@ -268,13 +271,14 @@ function WeaponProjectionContent({ w, parentName, fusedBackpackName, onNavigate 
             : <div className="text-text-dim">融合背包待確認</div>}
         </div>
 
-        {w.skills.length > 0 && (
+        {/* gate 接解析後的陣列：w.skills.length 對 union 恆真，技能庫未載入時會渲染空框 */}
+        {skills.length > 0 && (
           <div className="bg-bg-dark rounded-lg overflow-hidden">
             <div className="px-2.5 py-1.5 border-b border-border">
               <span className="text-[13px] text-text-dim tracking-widest uppercase">武器技能</span>
             </div>
             <div className="flex flex-wrap gap-2 p-2.5">
-              {w.skills.map((sk, i) => (
+              {skills.map((sk, i) => (
                 <div key={i} className="flex items-center gap-1.5">
                   <WeaponSkillMiniIcon iconLocal={sk.iconLocal} name={sk.name} />
                   <span className="text-[11px] text-text-secondary max-w-24 leading-tight">{sk.name}</span>
@@ -324,7 +328,7 @@ interface TooltipState {
   anchorTop: number
 }
 
-function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackName, prereqName, skills }: {
+function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackName, prereqName, skills, weaponSkills }: {
   item: BackpackListItem
   pinned: boolean
   x: number
@@ -334,6 +338,8 @@ function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackNa
   prereqName?: string
   /** PLAN-043：已解析的掛載技能（僅 kind==='backpack' 時有意義） */
   skills: ResolvedBackpackSkill[]
+  /** PLAN-032：已解析的武器技能（僅 kind==='weapon' 時有意義） */
+  weaponSkills: ResolvedWeaponSkill[]
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [top, setTop] = useState(anchorTop)
@@ -358,7 +364,7 @@ function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackNa
       ) : (
         <div className="w-80 max-h-[min(90vh,_600px)] flex flex-col bg-bg-tooltip border border-border-accent rounded-xl p-4 shadow-2xl">
           <div className="flex-1 min-h-0 overflow-y-auto p-1">
-            <WeaponProjectionContent w={item.data} parentName={parentName} fusedBackpackName={fusedBackpackName} />
+            <WeaponProjectionContent w={item.data} skills={weaponSkills} parentName={parentName} fusedBackpackName={fusedBackpackName} />
           </div>
         </div>
       )}
@@ -369,7 +375,7 @@ function TooltipPortal({ item, pinned, x, anchorTop, parentName, fusedBackpackNa
 
 export default function BackpacksPage() {
   const { data: backpacks, loading } = useBackpacks()
-  const { weapons, backpackSkills, ensureLoaded, loadedKeys } = useGameData()
+  const { weapons, backpackSkills, pilotSkills, ensureLoaded, loadedKeys } = useGameData()
   const navigate = useNavigate()
 
   // PLAN-043：技能本體改由 backpackSkills 集合提供（22 筆，有版本快取，回訪 0 read）
@@ -382,6 +388,13 @@ export default function BackpacksPage() {
   }, [backpacks, backpackSkills])
   const skillsOf = (bp: Backpack): ResolvedBackpackSkill[] => skillsById.get(bp.id) ?? []
 
+  // PLAN-032：武器技能同樣一次算完（本頁武器數量是個位數）。形制沿用上方 skillsById。
+  const weaponSkillsById = useMemo(() => {
+    const map = new Map(pilotSkills.map((sk) => [sk.id, sk]))
+    return new Map(weapons.map((w) => [w.id, resolveWeaponSkills(w.skills, map)]))
+  }, [weapons, pilotSkills])
+  const weaponSkillsOf = (w: Weapon): ResolvedWeaponSkill[] => weaponSkillsById.get(w.id) ?? []
+
   const [search, setSearch]               = useState('')
   // 合成階層多選；PLAN-037 預設只顯示特種(SS)，查詢量小 → 不再分頁限制
   const [tierFilters, setTierFilters]     = useState<Set<BackpackTier>>(new Set(DEFAULT_TIERS))
@@ -392,8 +405,17 @@ export default function BackpacksPage() {
   const [includeWeapons, setIncludeWeapons] = useState(true)  // PLAN-037「包含武器」預設開（納入特殊強化武器）
 
   // 「包含武器」預設開 → 進頁即載入 weapons（複合武器僅 3 把但需整包才能篩；有版本快取，回訪 0 read）
-  useEffect(() => { if (includeWeapons) void ensureLoaded(['weapons']) }, [includeWeapons, ensureLoaded])
-  const weaponsLoading = includeWeapons && !loadedKeys.has('weapons')
+  //
+  // PLAN-032：一併載入 pilotSkills（＝技能庫，武器技能引用化後的技能本體所在）。
+  // ⚠ 這是本頁新增的讀取量（冷快取 ~646 read），刻意綁在 includeWeapons 這個既有開關上——
+  //   關掉「包含武器」的使用者一筆都不付。不能只在 tooltip 內載入：
+  //   下方搜尋是**跨全部武器比對技能正文**的，那條路徑在頁面層，缺了技能庫會靜默搜不到。
+  useEffect(() => { if (includeWeapons) void ensureLoaded(['weapons', 'pilotSkills']) }, [includeWeapons, ensureLoaded])
+  // PLAN-032：技能庫也算進去。下方搜尋會比對「解析後」的武器技能正文，
+  // pilotSkills 還沒到時每把武器都解析成空陣列 → 技能正文搜尋恆不命中。
+  // 只看 weapons 的話，「載入武器中…」提示會在技能庫到齊前就消失，
+  // 使用者會以為搜尋結果已完整。
+  const weaponsLoading = includeWeapons && (!loadedKeys.has('weapons') || !loadedKeys.has('pilotSkills'))
 
   // 能力清單依資料 derive（不硬編，避免改版漏改）；依所選線收斂
   const abilitiesByLine = useMemo(() => {
@@ -468,7 +490,10 @@ export default function BackpacksPage() {
             || skillsOf(it.data).some((sk) =>
               sk.name.toLowerCase().includes(q) || sk.description.toLowerCase().includes(q))
         }
-        return it.data.name.toLowerCase().includes(q) || it.data.skills.some((s) => s.description.toLowerCase().includes(q))
+        // PLAN-032：改比對解析後的技能——直接讀 it.data.skills 的話，引用化的武器
+        // 只會拿到 { skillId, activation }，正文搜尋會靜默永遠不命中。
+        return it.data.name.toLowerCase().includes(q)
+          || weaponSkillsOf(it.data).some((s) => s.description.toLowerCase().includes(q))
       }
       return true
     })
@@ -546,6 +571,7 @@ export default function BackpacksPage() {
           fusedBackpackName={activeItem.kind === 'weapon' ? fusedBackpackNameOf(activeItem.data) : undefined}
           prereqName={activeItem.kind === 'backpack' ? prereqNameOf(activeItem.data) : undefined}
           skills={activeItem.kind === 'backpack' ? skillsOf(activeItem.data) : []}
+          weaponSkills={activeItem.kind === 'weapon' ? weaponSkillsOf(activeItem.data) : []}
         />
       )}
 
@@ -554,6 +580,7 @@ export default function BackpacksPage() {
           ? <BackpackTooltipContent bp={sheetItem.data} skills={skillsOf(sheetItem.data)} prereqName={prereqNameOf(sheetItem.data)} />
           : <WeaponProjectionContent
               w={sheetItem.data}
+              skills={weaponSkillsOf(sheetItem.data)}
               parentName={parentNameOf(sheetItem.data)}
               fusedBackpackName={fusedBackpackNameOf(sheetItem.data)}
               onNavigate={() => setSheetItem(null)}
