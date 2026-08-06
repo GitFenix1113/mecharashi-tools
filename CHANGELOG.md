@@ -219,6 +219,7 @@
 
 ### 🔧 維護
 
+- PLAN-032 M0–M7 武器技能引用化（技能庫已建，flip 尚未執行） (`cfeca1f`)
 - 新增 skills/背包技能/ 圖庫資料夾（PLAN-043 E-1） (`74af682`)
 - 補上 Worker 的 backpackSkills 白名單，並加測試守住集合清單同步 (`0d0f67d`)
 - 新增機師「曜」立繪（full／half）並更新圖片 manifest (`38446d5`)
