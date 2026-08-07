@@ -113,6 +113,7 @@ export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: 
       (t) => t.id,
       (id, name) => makeDefaultTerm(id, stripIdPrefix('term', name)), // name 也剝除誤打前綴
       (name) => makeEntityId('term', name),                   // deriveId：term_<slug(name)>
+      (t) => t.name,                                          // 名稱撞名：ID 可能因改名而與 name 脫鉤
     )
 
   async function confirmCreateChecked() {

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { planCascadeDelete, commitCascadeDelete, type CascadePlanResult } from '../../../lib/firestoreApi'
 import { TARGET_LABEL, type ChangeTargetKind } from '../../../types/changeHistory'
 import { useGameData, type CollectionKey } from '../../../contexts/GameDataContext'
+import { findEntityClash } from '../../../utils/idSlug'
 
 // ── 後台內容區共用寬度（PLAN-033）───────────────────────────────────────────────
 // 編輯彈窗（AdminModal）與列表容器（AdminPage）共用同一個值，避免兩者寬度各自漂移。
@@ -598,11 +599,23 @@ export function DeleteButton({ onAsk, busy }: { onAsk: () => void; busy: boolean
 //    撞名比對「不分大小寫」——Firestore 文件 ID 區分大小寫，buff_x 與 BUFF_x
 //    是兩筆不同文件，會造成大小寫孿生；deriveId 模式一律視為重複並擋下。
 // makeDefault 第二參數 name 在預設模式下等於 ID（呼叫端可忽略），故向後相容。
+//
+// ── getName：**名稱**撞名（PLAN-032 follow-up 1b）─────────────────────────────
+// 只比對 ID 有個洞：ID 是「建立當下」由名稱推導的，之後改名只會改 name 欄位、
+// **ID 留著舊寫法**。實測技能庫有 20 筆這種 id/name 漂移
+// （`skill_先鋒型態` 的 name 是「先鋒形態」、`skill_嵐循環` 的 name 是「嵐迴圈」…），
+// 另有 slugify 產不出的（`skill_ALL IN` 有空格、`skill_∑-04Ω` 的符號會被剝光）。
+// 這些 doc 的 ID 一律推不回來 → 撞名檢查看不到 → **靜默建出同名第二份**。
+//
+// 修法刻意選「多查一個維度」而不是「把 20 個 ID 正規化」：後者要同步改所有引用該 ID 的
+// refId（實測 178 處），而且只要日後再有人改名，同樣的洞就會重新長出來。
+// 比對 name 則對 ID 長什麼樣完全免疫。
 export function useNewItemCreation<T>(
   existingItems: T[],
   getId: (item: T) => string,
   makeDefault: (id: string, name: string) => T,
   deriveId?: (name: string) => string,
+  getName?: (item: T) => string,
 ) {
   const [creating, setCreating] = useState(false)
   const [newId, setNewId]       = useState('')
@@ -622,17 +635,19 @@ export function useNewItemCreation<T>(
       setNewIdError(deriveMode ? '名稱無法產生有效 ID，請改用其他名稱' : '請輸入 ID')
       return null
     }
-    // deriveId 模式：ID 不分大小寫都視為重複（擋掉 buff_x 與 BUFF_x 的大小寫孿生）
-    const lower = id.toLowerCase()
-    const clash = deriveMode
-      ? existingItems.find((item) => getId(item).toLowerCase() === lower)
-      : existingItems.find((item) => getId(item) === id)
-    if (clash) {
-      const clashId = getId(clash)
-      setNewIdError(deriveMode
-        ? `已有同名項目（ID：${clashId}），請改名或編輯既有項目`
-        : `ID「${id}」已存在`)
-      return null
+    // 撞名判定抽成 findEntityClash（純函式、可單測，見 utils/idSlug.ts）。
+    // 預設模式（維護者手打 ID）維持精準比對；deriveId 模式查 ID + 名稱兩個維度。
+    if (deriveMode) {
+      const clash = findEntityClash(existingItems, { getId, getName }, id, name)
+      if (clash) {
+        setNewIdError(clash.by === 'id'
+          ? `已有同名項目（ID：${getId(clash.item)}），請改名或編輯既有項目`
+          : `已有同名項目「${getName?.(clash.item)}」（ID：${getId(clash.item)}），請改名或編輯既有項目`)
+        return null
+      }
+    } else {
+      const clash = existingItems.find((item) => getId(item) === id)
+      if (clash) { setNewIdError(`ID「${id}」已存在`); return null }
     }
     setCreating(false); setNewId(''); setNewIdError('')
     return makeDefault(id, name)

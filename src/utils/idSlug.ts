@@ -77,3 +77,49 @@ export function idPrefixCasings(id: string): string[] {
   const rest   = id.slice(at)
   return [...new Set([prefix, prefix.toLowerCase(), prefix.toUpperCase()])].map((p) => p + rest)
 }
+
+// ─── 撞名判定（PLAN-032 follow-up 1b）────────────────────────────────────────
+
+/** 撞名結果：命中的既有項目 + 是循哪個維度撞到的。 */
+export interface EntityClash<T> {
+  item: T
+  by: 'id' | 'name'
+}
+
+/**
+ * 後台建立新實體時的撞名判定。**同時查 ID 與名稱兩個維度。**
+ *
+ * 為什麼不能只查 ID：ID 是「建立當下」由名稱推導的快照，之後改名只會改 name 欄位、
+ * **ID 留著舊寫法**。實測技能庫 852 筆裡有 20 筆這種 id/name 漂移：
+ *   skill_先鋒型態 → name 已改成「先鋒形態」
+ *   skill_嵐循環   → name 已改成「嵐迴圈」
+ *   skill_ALL IN  → 名稱含空格，slugify 產出 skill_ALLIN，推不回來
+ *   skill_∑-04Ω   → 符號全被 slugify 剝掉，產出無意義的 skill_04
+ * 這些 doc 的 ID 都推不回來 → 只查 ID 就看不到 → 靜默建出同名第二份。
+ *
+ * 為什麼不改去正規化那 20 個 ID：要同步改所有引用它的 refId（實測 178 處），
+ * 而且只要日後再有人改名，同樣的洞就會重新長出來。查 name 對 ID 長相完全免疫。
+ *
+ * ID 比對**不分大小寫**：Firestore 文件 ID 區分大小寫，`buff_x` 與 `BUFF_x` 是兩份文件，
+ * 放行就會製造大小寫孿生（實測技能庫已有 5 組，正是這個洞的產物）。
+ *
+ * ID 優先於 name：ID 撞到時錯誤訊息能精確指出是哪一份文件。
+ */
+export function findEntityClash<T>(
+  items: readonly T[],
+  accessors: { getId: (item: T) => string; getName?: (item: T) => string },
+  id: string,
+  name: string,
+): EntityClash<T> | null {
+  const { getId, getName } = accessors
+  const lowerId = id.trim().toLowerCase()
+  if (lowerId) {
+    const byId = items.find((it) => (getId(it) ?? '').trim().toLowerCase() === lowerId)
+    if (byId) return { item: byId, by: 'id' }
+  }
+  if (!getName) return null
+  const lowerName = name.trim().toLowerCase()
+  if (!lowerName) return null
+  const byName = items.find((it) => (getName(it) ?? '').trim().toLowerCase() === lowerName)
+  return byName ? { item: byName, by: 'name' } : null
+}

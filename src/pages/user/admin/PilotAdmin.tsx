@@ -1399,6 +1399,7 @@ export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: str
       (p) => p.id,
       (id, name) => makeDefaultPilot(id, stripIdPrefix('pilot', name)),
       (name) => makeEntityId('pilot', name),                 // deriveId：pilot_<slug(name)>
+      (p) => p.name,                                         // 名稱撞名：ID 可能因改名而與 name 脫鉤
     )
 
   async function confirmCreateChecked() {

@@ -389,6 +389,7 @@ export default function NeuralDriveAdmin({ initialSearch = '' }: { initialSearch
       (a) => a.id,
       (id, name) => makeDefaultNdAbility(id, stripIdPrefix('nd', name)),
       (name) => makeEntityId('nd', name),
+      (a) => a.name,                                          // 名稱撞名：ID 可能因改名而與 name 脫鉤
     )
 
   async function confirmCreateChecked() {

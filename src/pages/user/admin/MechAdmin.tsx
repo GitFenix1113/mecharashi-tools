@@ -75,6 +75,7 @@ export default function MechAdmin({
       (m) => m.id,
       (id, name) => makeDefaultMech(id, stripIdPrefix('mech', name)),
       (name) => makeEntityId('mech', name),                 // deriveId：mech_<slug(name)>
+      (m) => m.name,                                        // 名稱撞名：ID 可能因改名而與 name 脫鉤
     )
 
   async function confirmCreateChecked() {

@@ -233,6 +233,7 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
       (s) => s.id,
       (id, name) => makeDefaultSkill(id, stripIdPrefix('skill', name)), // name 也剝除誤打前綴
       (name) => makeEntityId('skill', name),                  // deriveId：skill_<slug(name)>
+      (s) => s.name,                                          // 名稱撞名：ID 可能因改名而與 name 脫鉤
     )
 
   async function confirmCreateChecked() {

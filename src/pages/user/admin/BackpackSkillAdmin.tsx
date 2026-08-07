@@ -385,6 +385,7 @@ export default function BackpackSkillAdmin({ initialSearch = '' }: { initialSear
       (s) => s.id,
       (id, name) => makeDefaultBackpackSkill(id, stripIdPrefix('bpskill', name)),
       (name) => makeEntityId('bpskill', name),                  // deriveId：bpskill_<slug(name)>
+      (s) => s.name,                                            // 名稱撞名：ID 可能因改名而與 name 脫鉤
     )
 
   async function confirmCreateChecked() {

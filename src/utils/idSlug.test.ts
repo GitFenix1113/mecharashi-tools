@@ -4,7 +4,7 @@
 // 本檔已從 tsconfig.app build 排除，不影響 vite/tsc 打包。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { makeEntityId, slugify, stripIdPrefix, idPrefixCasings } from './idSlug.ts'
+import { makeEntityId, slugify, stripIdPrefix, idPrefixCasings, findEntityClash } from './idSlug.ts'
 
 test('一般中文名 → prefix_<name>', () => {
   assert.equal(makeEntityId('buff', '虛粒子形態'), 'buff_虛粒子形態')
@@ -68,4 +68,64 @@ test('idPrefixCasings：無底線前綴 / 空字串邊界', () => {
 
 test('idPrefixCasings：前綴無字母時不產生重複候選', () => {
   assert.deepEqual(idPrefixCasings('123_x'), ['123_x'])         // 大小寫相同 → 去重後單筆
+})
+
+// ── PLAN-032 follow-up 1b：撞名判定同時查 ID 與名稱 ──────────────────────────
+//
+// 這組測試守的是「後台會不會靜默建出同名第二份」。實測技能庫已經因為只查 ID
+// 而長出 5 組大小寫孿生；另有 20 筆 id/name 漂移的 doc，ID 一律推不回來。
+
+type Doc = { id: string; name: string }
+const acc = { getId: (d: Doc) => d.id, getName: (d: Doc) => d.name }
+const LIB: Doc[] = [
+  { id: 'skill_先鋒型態', name: '先鋒形態' },      // 改名後 ID 留舊寫法（實測案例）
+  { id: 'skill_ALL IN', name: 'ALL IN' },        // 名稱含空格，slugify 產不出此 ID
+  { id: 'SKILL_重擊', name: '重擊' },             // 大寫前綴的歷史遺留
+  { id: 'skill_正常', name: '正常' },
+]
+
+test('findEntityClash：ID 相符即命中，且不分大小寫', () => {
+  assert.equal(findEntityClash(LIB, acc, 'skill_正常', '正常')?.by, 'id')
+  // 大小寫孿生：makeEntityId 只產小寫，但庫裡是 SKILL_ 大寫 —— 必須擋下
+  const c = findEntityClash(LIB, acc, 'skill_重擊', '重擊')
+  assert.equal(c?.by, 'id')
+  assert.equal(c?.item.id, 'SKILL_重擊')
+})
+
+test('findEntityClash：ID 推不回來時，靠名稱命中（本修正的核心）', () => {
+  // 使用者輸入「先鋒形態」→ makeEntityId 產出 skill_先鋒形態，庫裡卻是 skill_先鋒型態
+  const c = findEntityClash(LIB, acc, 'skill_先鋒形態', '先鋒形態')
+  assert.equal(c?.by, 'name', '只查 ID 的話這裡會放行，建出同名第二份')
+  assert.equal(c?.item.id, 'skill_先鋒型態')
+})
+
+test('findEntityClash：slugify 剝掉空格/符號的名稱同樣靠名稱擋下', () => {
+  // 'ALL IN' → slugify 去空格 → skill_ALLIN，與庫裡的 'skill_ALL IN' 不符
+  const c = findEntityClash(LIB, acc, 'skill_ALLIN', 'ALL IN')
+  assert.equal(c?.by, 'name')
+  assert.equal(c?.item.id, 'skill_ALL IN')
+})
+
+test('findEntityClash：名稱比對忽略大小寫與前後空白', () => {
+  assert.equal(findEntityClash(LIB, acc, 'skill_x', '  all in  ')?.by, 'name')
+})
+
+test('findEntityClash：ID 優先於名稱（訊息才能精確指出是哪份文件）', () => {
+  const items: Doc[] = [{ id: 'skill_a', name: 'B' }, { id: 'skill_b', name: 'A' }]
+  const c = findEntityClash(items, { getId: (d) => d.id, getName: (d) => d.name }, 'skill_a', 'A')
+  assert.equal(c?.by, 'id')
+  assert.equal(c?.item.name, 'B')
+})
+
+test('findEntityClash：沒撞到回 null；未提供 getName 時退化成只查 ID', () => {
+  assert.equal(findEntityClash(LIB, acc, 'skill_全新', '全新'), null)
+  // 沒有 getName → 名稱相同也不擋（維持既有行為，供不需要此檢查的呼叫端）
+  assert.equal(findEntityClash(LIB, { getId: acc.getId }, 'skill_先鋒形態', '先鋒形態'), null)
+})
+
+test('findEntityClash：空 id / 空 name 不誤判', () => {
+  const items: Doc[] = [{ id: '', name: '' }, { id: 'skill_x', name: 'X' }]
+  const a = { getId: (d: Doc) => d.id, getName: (d: Doc) => d.name }
+  assert.equal(findEntityClash(items, a, '', ''), null)     // 兩者皆空 → 不該撞到那筆空 doc
+  assert.equal(findEntityClash(items, a, 'skill_x', 'X')?.by, 'id')
 })

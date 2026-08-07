@@ -575,6 +575,7 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
       (b) => b.id,
       (id, name) => makeDefaultBuff(id, stripIdPrefix('buff', name), newBuffType), // name 也剝除誤打前綴
       (name) => makeEntityId('buff', name),             // deriveId：buff_<slug(name)>
+      (b) => b.name,                                    // 名稱撞名：ID 可能因改名而與 name 脫鉤
     )
 
   function startCreate() { setNewBuffType(BuffType.STATE); openCreate() }
