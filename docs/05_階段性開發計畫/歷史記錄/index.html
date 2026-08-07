@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card pink">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-032 · 武器技能引用化</h3>
+      <p>同一個技能（如「起爆」被凱旋·改與獵器共有）過去在每把武器上各存一份，改動要逐把修且<b>沒有任何機制提醒你漏了哪把</b>——漂移已經發生：兩份拷貝只有一份補過 PLAN-019 方括號。把 86 把武器的 183 份內嵌拷貝收斂成技能庫的 133 筆共用定義。<b>不另開 <code>weaponSkills</code> 集合</b>（反駁站長原提議）：實測全庫 89 個 <code>refType:'skill'</code> 引用目標中 84% 無任何機師持有，<code>pilotSkills</code> 早就不是「機師的技能」而是全站技能字典，維護者自己都已經把兩個武器技能放進去了；另開集合等於複製一份 330 行 Admin，正是本計畫要消滅的病。<code>activation</code> 刻意留在<b>掛載側</b>——實測 38 個技能在不同武器上生效方式不同（赤狐·改 carry vs 魔笛 use），那是遊戲規則不是漂移。<br><b>dry-run 擋下一個靠肉眼抓不到的錯誤</b>：對照檔的 skillId 在每把武器內部互相輪轉（Stage 1 在「技能名字母序」的迴圈裡 push，與武器實際索引錯位），flip 完每把武器看起來都還有技能、只是全部指錯人。修法不是補索引而是換鍵——改用 <code>skillIdByName</code> 作權威解析，位置對齊整個拿掉。<br><b>flip 前跑了一輪 18 agent 的對抗審查</b>，確認並修復 5 類缺陷，其中兩項是當下就存在的危險：跑一次武器爬蟲等於執行無防護的 flip（真實程式碼重現 183/183 全轉、零閘門）；以及本計畫新增的級聯站點是壞的——<code>removeAll</code> 用參照相等碰上 <code>DocDraft</code> 的 copy-on-write 恆 0 命中，flip 後武器技能永遠刪不掉（兩份獨立重現證實，已改為深層相等，那才是 Firestore arrayRemove 的真實語意）。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-07 · 8 / 8 任務 · 183 筆掛載全部引用化、0 殘留 0 斷鏈 · 收斂 7 處方括號漂移與 1 個官方錯字 · 另完成 follow-up 1a/1b（技能庫 852→847，大小寫孿生 5 組→0）</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-032_武器技能引用化/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-032_武器技能引用化/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card green">
       <div class="card-icon">◆</div>
       <h3>PLAN-044 · 模組圖鑑內嵌改版</h3>
