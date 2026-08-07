@@ -203,12 +203,12 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">7</div>
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
-      <div class="summary-lbl">待授權</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
       <div class="summary-num" style="color:var(--text-dim)">0</div>
@@ -223,10 +223,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-pink);">7 / 8</span>
+      <span style="color:var(--accent-green);">8 / 8 · 完成</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 87.5%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -645,7 +645,7 @@
     <div class="task-group-header">
       <div class="task-group-title">M6 &nbsp; Stage 2 flip</div>
       <div class="task-group-meta">scripts/migrate-weapon-skills-flip.mjs（<strong>已進版控</strong>）</div>
-      <span class="status doing">腳本就緒 · 待人工授權</span>
+      <span class="status done">已執行</span>
     </div>
     <div class="task-row">
       <div>
@@ -656,7 +656,18 @@
           <strong>完成後同時 <code>bumpDataVersion('weapons')</code> 與 <code>('pilotSkills')</code>。</strong><br>
           <span style="color:var(--accent-red)">⚠ M3 必須已上線</span>，否則活站整區空白。
           <div class="done-note">
-            <strong>✔ 腳本完成，dry-run 全綠（86 把武器／183 筆掛載／0 中止項）。尚未執行寫入。</strong><br><br>
+            <strong>✔ 2026-08-07 已執行。86 把武器、183 筆掛載全部引用化。</strong><br>
+            <div style="background:rgba(34,197,94,0.08);border-radius:6px;padding:8px 12px;margin:8px 0;">
+              <strong>執行後驗收（對正式資料實測）：</strong><br>
+              · 引用格式 183 筆／<strong>內嵌殘留 0</strong>／<strong>斷鏈 0</strong><br>
+              · activation 分佈 <code>{carry:87, equip:50, use:46}</code> —— 與 flip 前<strong>逐項吻合</strong><br>
+              · 7 筆收斂成果<strong>全數命中</strong>（凱旋·改的[固定傷害]、赤狐·改的[瞄準]…）<br>
+              · <code>skill_續航協議</code> 錯字已收斂為「回復」，焚風·改／諸神黃昏／天燼審判三把共用同一份定義<br>
+              · weapons 與 pilotSkills <strong>同一個時間戳</strong>（快取一起失效）<br>
+              · 還原快照 86 把／183 筆完整<br>
+              · <strong>級聯刪除以真實 flip 後資料驗證</strong>：<code>skill_彈藥回收</code>（3 把武器持有）→
+                hits 3、problems <strong>0</strong>、逐把確認「目標移除、其餘保留」——R2 的修正確實生效
+            </div><br>
 
             <span class="found">dry-run 擋下一個嚴重錯誤</span>
             <strong>對照檔的 skillId 在每把武器內部互相輪轉。</strong>
@@ -697,7 +708,7 @@
         <div class="task-file">scripts/migrate-weapon-skills-flip.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">待授權</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
