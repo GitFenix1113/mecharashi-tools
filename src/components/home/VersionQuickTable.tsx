@@ -1,6 +1,8 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
 import { toPng } from 'html-to-image'
 import type { PatchVersion } from '../../data/patchVersions'
+import type { EntityRef, RefType } from '../../types'
+import { useReference } from '../../contexts/ReferenceContext'
 import { resolveIconSrc } from '../../utils/assets'
 
 // ── Data helpers ──────────────────────────────────────────────────────────────
@@ -51,46 +53,99 @@ function getBattlePassMechs(v: PatchVersion) {
 
 // ── Thumbnail types ───────────────────────────────────────────────────────────
 
-type LookupMap = Map<string, string | undefined>
-type LookupKey = 'pilots' | 'mechs' | 'weapons' | 'backpacks'
+const LOOKUP_KEYS = ['pilots', 'mechs', 'weapons', 'backpacks'] as const
+type LookupKey = typeof LOOKUP_KEYS[number]
 
-// ── ThumbnailItem ─────────────────────────────────────────────────────────────
+const REF_TYPE_OF: Record<LookupKey, RefType> = {
+  pilots: 'pilot', mechs: 'mech', weapons: 'weapon', backpacks: 'backpack',
+}
 
-function ThumbnailItem({ name, imageUrl, isPredicted }: {
-  name: string; imageUrl?: string; isPredicted: boolean
+/**
+ * 一個類別的查表資料。圖與 ID **刻意分成兩張表**：資料常是先建檔、圖片素材晚幾天才處理好，
+ * 兩者必須能各自缺席（見 patchVersions/types.ts 的 VersionEntityIds）。
+ */
+interface EntityLookup {
+  refType: RefType
+  icons: Map<string, string>
+  ids: Map<string, string>
+}
+
+// ── RefThumbnail ──────────────────────────────────────────────────────────────
+
+/**
+ * 版本表格內的單一實體。**可不可點與顯不顯示圖是兩條獨立的軸**：
+ *
+ *   有 ID + 有圖 → 圖，可點            有 ID + 無圖 → 文字，仍可點（素材還沒處理好）
+ *   無 ID + 有圖 → 圖，不可點（名稱與資料庫漂移）   無 ID + 無圖 → 純文字（尚未建檔，前瞻版本常態）
+ *
+ * 若把互動綁在 <img> 上，「武器先建檔、素材後到」就會整段點不了——那是最需要導流的時候。
+ * 圖片 404（路徑寫了但檔案沒進版控）走同一條退路，退成可點的文字而不是失去互動。
+ *
+ * 詳情本身不自己畫：交給 PLAN-019 的引用浮窗（EntityRefView），它已能解析
+ * pilot / mech / weapon / backpack，有詳情頁的給「查看完整詳情」按鈕、沒有的就展開卡片，
+ * 且資料是點開才 ensureLoaded——首頁掛載時不會多讀任何集合。
+ */
+function RefThumbnail({ name, lookup, isPredicted }: {
+  name: string; lookup?: EntityLookup; isPredicted: boolean
 }) {
   const [broken, setBroken] = useState(false)
-  const textEl = (
+  const { hoverRef, leaveRef, pinRef } = useReference()
+
+  const imageUrl = lookup?.icons.get(name)
+  const refId    = lookup?.ids.get(name)
+  const showImage = !!imageUrl && !broken
+
+  const inner = showImage ? (
+    <img
+      src={resolveIconSrc(imageUrl)}
+      alt={name}
+      className="w-9 h-9 object-cover object-top rounded border border-border/50 group-hover:border-accent-orange transition-colors"
+      onError={() => setBroken(true)}
+    />
+  ) : (
     <span className={`text-[13px] leading-tight whitespace-nowrap ${isPredicted ? 'text-accent-cyan' : 'text-text-secondary'}`}>
       {name}
     </span>
   )
-  if (!imageUrl || broken) return textEl
+
+  if (!refId || !lookup) {
+    return showImage
+      ? <span className="inline-flex shrink-0" title={name}>{inner}</span>
+      : inner
+  }
+
+  const entity: EntityRef = { refType: lookup.refType, refId }
   return (
-    <div className="relative group inline-flex shrink-0">
-      <img
-        src={resolveIconSrc(imageUrl)}
-        alt={name}
-        className="w-9 h-9 object-cover object-top rounded border border-border/50 group-hover:border-accent-orange transition-colors cursor-default"
-        onError={() => setBroken(true)}
-      />
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 bg-bg-dark border border-border rounded text-[11px] text-text-primary whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-md">
-        {name}
-      </div>
-    </div>
+    <button
+      type="button"
+      title={`查看「${name}」`}
+      onMouseEnter={e => hoverRef(entity, e.currentTarget)}
+      onMouseLeave={leaveRef}
+      onClick={e => { e.stopPropagation(); pinRef(entity, e.currentTarget) }}
+      // bg/border/p 明寫歸零：輸出 PNG 走 html-to-image，它讀的是 computed style，
+      // 預設按鈕外觀若殘留會直接烙進圖裡。
+      className={
+        'bg-transparent border-0 p-0 cursor-pointer '
+        + (showImage
+          ? 'group inline-flex shrink-0 align-middle'
+          : 'inline underline underline-offset-2 decoration-dotted hover:brightness-125 transition-[filter]')
+      }
+    >
+      {inner}
+    </button>
   )
 }
 
 // ── Item lists ────────────────────────────────────────────────────────────────
 
 function ThumbnailList({ items, isPredicted, lookup }: {
-  items: string[]; isPredicted: boolean; lookup?: LookupMap
+  items: string[]; isPredicted: boolean; lookup?: EntityLookup
 }) {
   if (!items.length) return <span className="text-text-dim/30 text-xs">—</span>
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex flex-wrap items-center gap-1">
       {items.map((name, i) => (
-        <ThumbnailItem key={i} name={name} imageUrl={lookup?.get(name)} isPredicted={isPredicted} />
+        <RefThumbnail key={i} name={name} lookup={lookup} isPredicted={isPredicted} />
       ))}
     </div>
   )
@@ -113,7 +168,7 @@ function TextList({ items, isPredicted }: { items: string[]; isPredicted: boolea
 
 function SplitCell({ left, right, isPredicted, isCurrent, lookupLeft, lookupRight }: {
   left: string[]; right: string[]; isPredicted: boolean; isCurrent: boolean;
-  lookupLeft?: LookupMap; lookupRight?: LookupMap;
+  lookupLeft?: EntityLookup; lookupRight?: EntityLookup;
 }) {
   const bg = isCurrent ? 'bg-accent-green/5' : ''
   return (
@@ -131,7 +186,7 @@ function SplitCell({ left, right, isPredicted, isCurrent, lookupLeft, lookupRigh
 // ── Normal cell (colSpan=2) ───────────────────────────────────────────────────
 
 function Cell({ items, isPredicted, isCurrent, lookup }: {
-  items: string[]; isPredicted: boolean; isCurrent: boolean; lookup?: LookupMap
+  items: string[]; isPredicted: boolean; isCurrent: boolean; lookup?: EntityLookup
 }) {
   const base = `px-3 py-2 border-r border-b border-border align-middle ${isCurrent ? 'bg-accent-green/5' : ''}`
   if (!items.length) return <td colSpan={2} className={`${base} text-center text-text-dim/30 text-xs`}>—</td>
@@ -151,8 +206,8 @@ function WeaponPilotCell({ pairs, isPredicted, isCurrent, weaponLookup, pilotLoo
   pairs: WeaponPilotPair[]
   isPredicted: boolean
   isCurrent: boolean
-  weaponLookup?: LookupMap
-  pilotLookup?: LookupMap
+  weaponLookup?: EntityLookup
+  pilotLookup?: EntityLookup
 }) {
   const bg = isCurrent ? 'bg-accent-green/5' : ''
   if (!pairs.length) {
@@ -164,13 +219,13 @@ function WeaponPilotCell({ pairs, isPredicted, isCurrent, weaponLookup, pilotLoo
         {pairs.map((pair, i) => (
           <div key={i} className="border border-border/30 rounded-lg shrink-0">
             <div className="px-1.5 py-1 flex items-center justify-center">
-              <ThumbnailItem name={pair.weapon} imageUrl={weaponLookup?.get(pair.weapon)} isPredicted={isPredicted} />
+              <RefThumbnail name={pair.weapon} lookup={weaponLookup} isPredicted={isPredicted} />
             </div>
             {pair.pilot && (
               <>
                 <div className="border-t border-border/25" />
                 <div className="px-1.5 py-1 flex items-center justify-center">
-                  <ThumbnailItem name={pair.pilot} imageUrl={pilotLookup?.get(pair.pilot)} isPredicted={isPredicted} />
+                  <RefThumbnail name={pair.pilot} lookup={pilotLookup} isPredicted={isPredicted} />
                 </div>
               </>
             )}
@@ -267,24 +322,24 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
     }
   }
 
-  const lookups = useMemo<Record<LookupKey, LookupMap>>(() => {
-    const merged: Record<LookupKey, Record<string, string>> = {
-      pilots: {}, mechs: {}, weapons: {}, backpacks: {},
-    }
+  const lookups = useMemo<Record<LookupKey, EntityLookup>>(() => {
+    const icons: Record<LookupKey, Record<string, string>> = { pilots: {}, mechs: {}, weapons: {}, backpacks: {} }
+    const ids:   Record<LookupKey, Record<string, string>> = { pilots: {}, mechs: {}, weapons: {}, backpacks: {} }
     for (const v of displayVersions) {
-      const u = v.iconUrls
-      if (!u) continue
-      if (u.pilots)    Object.assign(merged.pilots,    u.pilots)
-      if (u.mechs)     Object.assign(merged.mechs,     u.mechs)
-      if (u.weapons)   Object.assign(merged.weapons,   u.weapons)
-      if (u.backpacks) Object.assign(merged.backpacks, u.backpacks)
+      for (const key of LOOKUP_KEYS) {
+        const u = v.iconUrls?.[key]
+        if (u) Object.assign(icons[key], u)
+        const e = v.entityIds?.[key]
+        if (e) Object.assign(ids[key], e)
+      }
     }
-    return {
-      pilots:    new Map(Object.entries(merged.pilots)),
-      mechs:     new Map(Object.entries(merged.mechs)),
-      weapons:   new Map(Object.entries(merged.weapons)),
-      backpacks: new Map(Object.entries(merged.backpacks)),
-    }
+    return Object.fromEntries(
+      LOOKUP_KEYS.map(key => [key, {
+        refType: REF_TYPE_OF[key],
+        icons: new Map(Object.entries(icons[key])),
+        ids:   new Map(Object.entries(ids[key])),
+      }]),
+    ) as Record<LookupKey, EntityLookup>
   }, [displayVersions])
 
   return (

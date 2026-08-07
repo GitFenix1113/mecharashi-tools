@@ -4,7 +4,7 @@ import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import { uploadImage } from '../../lib/imageUpload'
 import { bumpDataVersion } from '../../lib/firestoreApi'
-import type { PatchVersion, PatchHalf, VersionIconUrls } from '../../data/patchVersions/types'
+import type { PatchVersion, PatchHalf, VersionIconUrls, VersionEntityIds } from '../../data/patchVersions/types'
 import type { Pilot, Mech, Weapon, Backpack } from '../../types'
 import { resolveIconSrc } from '../../utils/assets'
 import { invalidatePatchVersionsCache } from '../../hooks/usePatchVersions'
@@ -18,6 +18,46 @@ type Tab = 'core' | 'upper' | 'lower' | 'icons'
 type SaveStatus = null | 'saving' | 'success' | 'error'
 
 type IconCategory = keyof VersionIconUrls
+type IconMap = Record<string, string>
+
+const ICON_CATEGORIES: { key: IconCategory; label: string }[] = [
+  { key: 'pilots',    label: '機師' },
+  { key: 'mechs',     label: '機甲' },
+  { key: 'weapons',   label: '武器' },
+  { key: 'backpacks', label: '背包' },
+]
+
+/**
+ * 把同步取得的值（icon 路徑或文件 ID）併回既有設定。
+ *
+ * 刻意「只填空缺、不刪既有」：原本是整包取代，凡是 Firestore 這輪查不到的名稱都會在
+ * 同步後靜默消失——暫譯名與 DB 名稱對不上、實體尚未建檔（前瞻版本的常態）、手動貼的
+ * 官方 CDN 路徑，全都算在內。維護者按下同步只是想補齊空缺，不該賠掉手動修過的值。
+ *
+ * force = true 才允許以 Firestore 值覆寫既有值。即使如此也只覆寫「這輪有查到」的名稱，
+ * 查不到的一律原封不動。icon 的 force 綁在「強制覆寫」勾選框（官方換圖時整批刷新用）；
+ * entityIds 則永遠 force——ID 是機器推導、不開放手動編輯，沒有「使用者的值」需要保護，
+ * 資料庫重建導致流水號變動時反而必須跟上，否則連結會靜靜指向舊文件。
+ */
+function mergeNameMap(prev: IconMap | undefined, fetched: IconMap, force: boolean) {
+  const map: IconMap = { ...prev }
+  let added = 0
+  let updated = 0
+  let kept = 0
+  for (const [name, url] of Object.entries(fetched)) {
+    const existing = map[name]
+    if (!existing) {
+      map[name] = url
+      added++
+    } else if (force && existing !== url) {
+      map[name] = url
+      updated++
+    } else {
+      kept++
+    }
+  }
+  return { map, added, updated, kept }
+}
 
 /** Collect all names per icon category that appear in this version's data. */
 function collectVersionNames(fd: PatchVersion): Record<IconCategory, string[]> {
@@ -136,6 +176,7 @@ export default function AdminVersionEditorPage() {
   const [uploading, setUploading] = useState(false)
   const [syncing, setSyncing]     = useState(false)
   const [syncMsg, setSyncMsg]     = useState('')
+  const [forceOverwrite, setForceOverwrite] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // ── 載入現有版本 ────────────────────────────────────────────────────────────
@@ -179,19 +220,26 @@ export default function AdminVersionEditorPage() {
         getDocs(collection(db, 'backpacks')),
       ])
 
-      // 一律優先採用本地圖檔路徑（/images/...），無本地圖時才退回遠端 CDN
-      const pilots: Record<string, string> = {}
+      // ID 一律取 d.id（Firestore 文件 ID）而非文件內的 id 欄位：fetchCollection 是
+      // `{ ...d.data(), id: d.id }`，路由與 EntityRefView 認的都是文件 ID，兩者若漂移
+      // 以文件 ID 為準。名稱查得到就記 ID，圖檔路徑另外算——素材沒好也要能連結。
+      const pilots: IconMap = {}
+      const pilotIds: IconMap = {}
       for (const d of pilotSnap.docs) {
         const p = d.data() as Pilot
         if (!pSet.has(p.name)) continue
+        pilotIds[p.name] = d.id
+        // 一律優先採用本地圖檔路徑（/images/...），無本地圖時才退回遠端 CDN
         const url = p.portrait || p.portraitUrl
         if (url) pilots[p.name] = url
       }
 
-      const mechs: Record<string, string> = {}
+      const mechs: IconMap = {}
+      const mechIds: IconMap = {}
       for (const d of mechSnap.docs) {
         const m = d.data() as Mech
         if (!mSet.has(m.name)) continue
+        mechIds[m.name] = d.id
         const url = m.portrait
           ? m.portrait
           : m.parts.torso.mechaIcon
@@ -200,30 +248,70 @@ export default function AdminVersionEditorPage() {
         if (url) mechs[m.name] = url
       }
 
-      const weapons: Record<string, string> = {}
+      const weapons: IconMap = {}
+      const weaponIds: IconMap = {}
       for (const d of weaponSnap.docs) {
         const w = d.data() as Weapon
         if (!wSet.has(w.name)) continue
+        weaponIds[w.name] = d.id
         const filename = w.icon?.split('/').pop()
         if (filename) weapons[w.name] = `/images/weapons/${filename}`
       }
 
-      const backpacks: Record<string, string> = {}
+      const backpacks: IconMap = {}
+      const backpackIds: IconMap = {}
       for (const d of backpackSnap.docs) {
         const b = d.data() as Backpack
         if (!bSet.has(b.name)) continue
+        backpackIds[b.name] = d.id
         const filename = b.icon?.split('/').pop()
         if (filename) backpacks[b.name] = `/images/backpacks/${filename}`
       }
 
-      const iconUrls: VersionIconUrls = {}
-      if (Object.keys(pilots).length)    iconUrls.pilots    = pilots
-      if (Object.keys(mechs).length)     iconUrls.mechs     = mechs
-      if (Object.keys(weapons).length)   iconUrls.weapons   = weapons
-      if (Object.keys(backpacks).length) iconUrls.backpacks = backpacks
+      const fetchedIcons: Record<IconCategory, IconMap> = { pilots, mechs, weapons, backpacks }
+      const fetchedIds:   Record<IconCategory, IconMap> =
+        { pilots: pilotIds, mechs: mechIds, weapons: weaponIds, backpacks: backpackIds }
 
-      setFormData(prev => ({ ...prev, iconUrls: Object.keys(iconUrls).length ? iconUrls : undefined }))
-      setSyncMsg(`同步完成：機師 ${Object.keys(pilots).length}，機甲 ${Object.keys(mechs).length}，武器 ${Object.keys(weapons).length}，背包 ${Object.keys(backpacks).length}`)
+      // 統計數字（僅供訊息顯示）依「發起同步當下」的快照計算；實際合併走 functional
+      // updater，這樣抓取那 4 個集合的期間若維護者手動改了欄位也不會被整包蓋掉。
+      const stats = { added: 0, updated: 0, kept: 0, stale: 0, idAdded: 0, idTotal: 0 }
+      for (const { key } of ICON_CATEGORIES) {
+        const r = mergeNameMap(formData.iconUrls?.[key], fetchedIcons[key], forceOverwrite)
+        stats.added   += r.added
+        stats.updated += r.updated
+        stats.kept    += r.kept
+        const ids = mergeNameMap(formData.entityIds?.[key], fetchedIds[key], true)
+        stats.idAdded += ids.added
+        stats.idTotal += Object.keys(ids.map).length
+        // 殘留 = 此版本資料已不含該名稱（改名／移除後留下的舊 key）。不刪，但要讓維護者
+        // 看得到——UI 只列得出當前版本的名稱，這些 key 否則永遠沉在文件裡沒人知道。
+        const known = new Set(names[key])
+        stats.stale += Object.keys(formData.iconUrls?.[key] ?? {}).filter(n => !known.has(n)).length
+      }
+
+      setFormData(prev => {
+        const mergedIcons: VersionIconUrls = { ...prev.iconUrls }
+        const mergedIds:   VersionEntityIds = { ...prev.entityIds }
+        for (const { key } of ICON_CATEGORIES) {
+          const icons = mergeNameMap(prev.iconUrls?.[key], fetchedIcons[key], forceOverwrite)
+          if (Object.keys(icons.map).length) mergedIcons[key] = icons.map
+          const ids = mergeNameMap(prev.entityIds?.[key], fetchedIds[key], true)
+          if (Object.keys(ids.map).length) mergedIds[key] = ids.map
+        }
+        return {
+          ...prev,
+          iconUrls:  Object.keys(mergedIcons).length ? mergedIcons : undefined,
+          entityIds: Object.keys(mergedIds).length   ? mergedIds   : undefined,
+        }
+      })
+
+      setSyncMsg(
+        `同步完成：Icon 新增 ${stats.added}`
+        + (forceOverwrite ? `，覆寫 ${stats.updated}` : '')
+        + `，保留既有 ${stats.kept}`
+        + `；連結 ID 共 ${stats.idTotal} 筆（新增 ${stats.idAdded}）`
+        + (stats.stale ? `；另有 ${stats.stale} 筆非本版本殘留（未更動）` : ''),
+      )
     } catch (err) {
       console.error('[AdminVersionEditorPage] sync icons error:', err)
       setSyncMsg('同步失敗，請確認 Firebase 連線。')
@@ -531,12 +619,6 @@ export default function AdminVersionEditorPage() {
       {/* ── Tab 4：Icon URLs ── */}
       {activeTab === 'icons' && (() => {
         const names = collectVersionNames(formData)
-        const CATEGORIES: { key: IconCategory; label: string }[] = [
-          { key: 'pilots',    label: '機師' },
-          { key: 'mechs',     label: '機甲' },
-          { key: 'weapons',   label: '武器' },
-          { key: 'backpacks', label: '背包' },
-        ]
         return (
           <div>
             {/* Sync button */}
@@ -549,17 +631,36 @@ export default function AdminVersionEditorPage() {
               >
                 {syncing ? '同步中…' : '從 Firestore 自動同步 Icon'}
               </button>
+              <label className="flex items-center gap-2 cursor-pointer shrink-0" title="勾選後，Firestore 查得到的名稱會以資料庫路徑覆寫既有 URL（官方換圖時整批刷新用）">
+                <input
+                  type="checkbox"
+                  checked={forceOverwrite}
+                  onChange={e => setForceOverwrite(e.target.checked)}
+                  className="accent-accent-yellow w-4 h-4"
+                />
+                <span className="text-xs text-text-dim">強制覆寫既有 URL</span>
+              </label>
               {syncMsg && (
                 <span className="text-xs text-text-dim">{syncMsg}</span>
               )}
             </div>
 
             <p className="text-xs text-text-dim mb-5 leading-relaxed">
-              點擊上方按鈕可自動從 Firestore 資料庫查詢此版本所有角色／機甲／武器／背包的 Icon URL，並填入下方欄位。<br />
+              點擊上方按鈕可自動從 Firestore 資料庫查詢此版本所有角色／機甲／武器／背包的 Icon URL 與文件 ID，並填入下方欄位。<br />
+              同步<span className="text-text-secondary">只補空缺</span>，已填的 URL 一律保留；要以資料庫路徑刷新既有值請勾選「強制覆寫」。<br />
               亦可手動貼上或修改任意 URL，留空代表顯示文字。
             </p>
 
-            {CATEGORIES.map(({ key, label }) => {
+            {/* 兩軸狀態說明：能不能點（有無 ID）與顯不顯示圖（有無素材）是獨立的 */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-5 text-[11px] text-text-dim">
+              <span>狀態圖例：</span>
+              <span><span className="text-accent-green">● 已連結</span> 首頁圖示可點開詳情</span>
+              <span><span className="text-accent-yellow">● 待素材</span> 已連結、圖還沒好，前台顯示可點的文字</span>
+              <span><span className="text-accent-orange">● 未連結</span> 名稱對不上資料庫，請確認用字</span>
+              <span><span className="text-text-dim/60">● 未建檔</span> 實體尚未進資料庫（前瞻版本的常態）</span>
+            </div>
+
+            {ICON_CATEGORIES.map(({ key, label }) => {
               const nameList = names[key]
               return (
                 <div key={key} className="mb-6">
@@ -572,6 +673,12 @@ export default function AdminVersionEditorPage() {
                     <div className="space-y-2">
                       {nameList.map(name => {
                         const url = formData.iconUrls?.[key]?.[name] ?? ''
+                        const entityId = formData.entityIds?.[key]?.[name] ?? ''
+                        const status = entityId
+                          ? (url ? { cls: 'text-accent-green',  text: '已連結' }
+                                 : { cls: 'text-accent-yellow', text: '待素材' })
+                          : (url ? { cls: 'text-accent-orange', text: '未連結' }
+                                 : { cls: 'text-text-dim/60',   text: '未建檔' })
                         return (
                           <div key={name} className="flex items-center gap-3">
                             {url ? (
@@ -585,6 +692,12 @@ export default function AdminVersionEditorPage() {
                               <div className="w-8 h-8 rounded border border-border/40 bg-bg-card shrink-0" />
                             )}
                             <span className="text-sm text-text-secondary w-28 shrink-0 truncate">{name}</span>
+                            <span
+                              className={`text-[11px] w-14 shrink-0 ${status.cls}`}
+                              title={entityId ? `文件 ID：${entityId}` : '此名稱在資料庫查無對應文件，按下同步後仍為此狀態代表用字與資料庫不一致'}
+                            >
+                              ● {status.text}
+                            </span>
                             <input
                               type="text"
                               value={url}

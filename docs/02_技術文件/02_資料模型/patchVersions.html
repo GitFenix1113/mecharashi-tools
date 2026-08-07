@@ -172,6 +172,7 @@
   notes?: <span class="ty">string</span>              <span class="cm">// 版本備註</span>
   isTwCurrent?: <span class="ty">boolean</span>       <span class="cm">// 此版本是否為台服當前版本（首頁標記用）</span>
   iconUrls?: <span class="ty">VersionIconUrls</span>   <span class="cm">// 版本內容名稱 → 圖示 URL 對照（pilots/mechs/weapons/backpacks）</span>
+  entityIds?: <span class="ty">VersionEntityIds</span> <span class="cm">// 版本內容名稱 → Firestore 文件 ID 對照（首頁圖示接引用浮窗用）</span>
 }
   </div>
 
@@ -221,6 +222,12 @@
       <td><span class="badge badge-opt">選填</span></td>
       <td>版本內容圖示對照表（pilots / mechs / weapons / backpacks 各為「名稱 → 圖示 URL」），供時間線與展開面板渲染媒體；參見 <code>VersionIconUrls</code> 型別。</td>
     </tr>
+    <tr>
+      <td class="field-name">entityIds</td>
+      <td class="field-type">VersionEntityIds?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>版本內容文件 ID 對照表（名稱 → Firestore 文件 ID），首頁版本濃縮表用它把圖示接上引用浮窗；參見 <code>VersionEntityIds</code> 型別。</td>
+    </tr>
   </table>
 </section>
 
@@ -266,7 +273,7 @@
 <!-- ── 支援型別 ── -->
 <section class="section">
   <div class="section-label purple">Supporting Types</div>
-  <div class="section-title">支援型別 — ArmamentRaid / BattlePass / GrayOpsUpdate / VersionIconUrls</div>
+  <div class="section-title">支援型別 — ArmamentRaid / BattlePass / GrayOpsUpdate / VersionIconUrls / VersionEntityIds</div>
 
   <div class="type-card">
     <h4>ArmamentRaid — 武裝討伐副本（PatchHalf.armamentRaids[]）</h4>
@@ -306,6 +313,30 @@
       <tr><td class="field-name">weapons</td><td class="field-type">Record&lt;string, string&gt;?</td><td>武器名稱 → 圖示 URL 對照</td></tr>
       <tr><td class="field-name">backpacks</td><td class="field-type">Record&lt;string, string&gt;?</td><td>背包名稱 → 圖示 URL 對照</td></tr>
     </table>
+  </div>
+
+  <div class="type-card">
+    <h4>VersionEntityIds — 版本文件 ID 對照（PatchVersion.entityIds）</h4>
+    <table class="field-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td class="field-name">pilots</td><td class="field-type">Record&lt;string, string&gt;?</td><td>機師名稱 → 文件 ID（如 <code>pilot_001_亞瑟</code>）</td></tr>
+      <tr><td class="field-name">mechs</td><td class="field-type">Record&lt;string, string&gt;?</td><td>機甲名稱 → 文件 ID（如 <code>mech_001_伊格尼特</code>）</td></tr>
+      <tr><td class="field-name">weapons</td><td class="field-type">Record&lt;string, string&gt;?</td><td>武器名稱 → 文件 ID</td></tr>
+      <tr><td class="field-name">backpacks</td><td class="field-type">Record&lt;string, string&gt;?</td><td>背包名稱 → 文件 ID</td></tr>
+    </table>
+    <div class="decision-block">
+      <strong>為什麼要存而不是前台推導</strong>：三個集合的文件 ID 都帶建檔當下的流水號
+      （<code>pilot_001_亞瑟</code> / <code>mech_001_伊格尼特</code> / <code>weapon_003_xxx</code>），
+      從名稱推不回來。由後台「自動同步」在既有那趟 <code>getDocs</code> 裡順手記下，前台零額外讀取。
+      <br><br>
+      <strong>為什麼與 <code>iconUrls</code> 分成兩張表</strong>：兩者填入時機不同。武器常是資料先建檔、
+      圖片素材晚幾天才處理好；分開存，同步時才能各自「只補空缺」，前台也才做得到
+      「有 ID 就可點，有沒有圖是另一回事」——素材沒到位時退成<strong>可點的文字</strong>而非失去互動。
+      <br><br>
+      <strong>ID 的同步策略與 icon 不同</strong>：icon 受「強制覆寫」勾選框控制（保護人工修過的路徑），
+      ID 則永遠以資料庫為準覆寫——它是機器推導、不開放手動編輯，沒有使用者的值需要保護，
+      而資料庫重建導致流水號變動時必須跟上，否則連結會靜靜指向舊文件。
+    </div>
   </div>
 </section>
 
