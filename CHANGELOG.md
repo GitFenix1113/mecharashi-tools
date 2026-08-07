@@ -221,6 +221,7 @@
 
 ### 🔧 維護
 
+- 更新圖檔清單 manifest.json（納入新背包技能圖示） (`a76abde`)
 - 補上背包技能圖示 Icon_skill_passive_威能者驅動.png (`362709b`)
 - PLAN-032 follow-up 1a/1b — 清掉技能庫的重複 doc 並堵住產生源 (`4afb65f`)
 - PLAN-032 M0–M7 武器技能引用化（技能庫已建，flip 尚未執行） (`cfeca1f`)
