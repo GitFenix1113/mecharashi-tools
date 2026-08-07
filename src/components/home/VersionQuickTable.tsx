@@ -1,6 +1,7 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
 import { toPng } from 'html-to-image'
 import type { PatchVersion } from '../../data/patchVersions'
+import { parseEntityIdValue } from '../../data/patchVersions/entityRef'
 import type { EntityRef, RefType } from '../../types'
 import { useReference } from '../../contexts/ReferenceContext'
 import { resolveIconSrc } from '../../utils/assets'
@@ -92,7 +93,7 @@ function RefThumbnail({ name, lookup, isPredicted }: {
   const { hoverRef, leaveRef, pinRef } = useReference()
 
   const imageUrl = lookup?.icons.get(name)
-  const refId    = lookup?.ids.get(name)
+  const rawId    = lookup?.ids.get(name)
   const showImage = !!imageUrl && !broken
 
   const inner = showImage ? (
@@ -108,13 +109,14 @@ function RefThumbnail({ name, lookup, isPredicted }: {
     </span>
   )
 
-  if (!refId || !lookup) {
+  if (!rawId || !lookup) {
     return showImage
       ? <span className="inline-flex shrink-0" title={name}>{inner}</span>
       : inner
   }
 
-  const entity: EntityRef = { refType: lookup.refType, refId }
+  // 值可能帶 refType 前綴：背包列的複合武器實體在 weapons 集合（見 entityRef.ts）
+  const entity: EntityRef = parseEntityIdValue(rawId, lookup.refType)
   return (
     <button
       type="button"

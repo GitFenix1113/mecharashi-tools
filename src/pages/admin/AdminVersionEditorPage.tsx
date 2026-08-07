@@ -5,7 +5,8 @@ import { db } from '../../lib/firebase'
 import { uploadImage } from '../../lib/imageUpload'
 import { bumpDataVersion } from '../../lib/firestoreApi'
 import type { PatchVersion, PatchHalf, VersionIconUrls, VersionEntityIds } from '../../data/patchVersions/types'
-import type { Pilot, Mech, Weapon, Backpack } from '../../types'
+import { formatEntityIdValue, parseEntityIdValue } from '../../data/patchVersions/entityRef'
+import type { Pilot, Mech, Weapon, Backpack, RefType } from '../../types'
 import { resolveIconSrc } from '../../utils/assets'
 import { invalidatePatchVersionsCache } from '../../hooks/usePatchVersions'
 import AdminHalfEditorPanel from '../../components/admin/AdminHalfEditorPanel'
@@ -20,12 +21,18 @@ type SaveStatus = null | 'saving' | 'success' | 'error'
 type IconCategory = keyof VersionIconUrls
 type IconMap = Record<string, string>
 
-const ICON_CATEGORIES: { key: IconCategory; label: string }[] = [
-  { key: 'pilots',    label: '機師' },
-  { key: 'mechs',     label: '機甲' },
-  { key: 'weapons',   label: '武器' },
-  { key: 'backpacks', label: '背包' },
+const ICON_CATEGORIES: { key: IconCategory; label: string; refType: RefType }[] = [
+  { key: 'pilots',    label: '機師', refType: 'pilot' },
+  { key: 'mechs',     label: '機甲', refType: 'mech' },
+  { key: 'weapons',   label: '武器', refType: 'weapon' },
+  { key: 'backpacks', label: '背包', refType: 'backpack' },
 ]
+
+const REF_TYPE_LABEL: Record<RefType, string> = {
+  pilot: '機師', mech: '機甲', weapon: '武器', backpack: '背包',
+  module: '模組', component: '元件', buff: 'BUFF', skill: '技能',
+  stat: '屬性', term: '詞條', neuralDrive: '神經驅動',
+}
 
 /**
  * 把同步取得的值（icon 路徑或文件 ID）併回既有設定。
@@ -248,24 +255,48 @@ export default function AdminVersionEditorPage() {
         if (url) mechs[m.name] = url
       }
 
-      const weapons: IconMap = {}
-      const weaponIds: IconMap = {}
+      // 武器先建 name → doc 索引：weapons 類別與「背包列的複合武器」共用同一份，不重掃。
+      const weaponByName = new Map<string, { id: string; icon?: string }>()
       for (const d of weaponSnap.docs) {
         const w = d.data() as Weapon
-        if (!wSet.has(w.name)) continue
-        weaponIds[w.name] = d.id
+        weaponByName.set(w.name, { id: d.id, icon: w.icon })
+      }
+
+      const weapons: IconMap = {}
+      const weaponIds: IconMap = {}
+      for (const name of wSet) {
+        const w = weaponByName.get(name)
+        if (!w) continue
+        weaponIds[name] = w.id
         const filename = w.icon?.split('/').pop()
-        if (filename) weapons[w.name] = `/images/weapons/${filename}`
+        if (filename) weapons[name] = `/images/weapons/${filename}`
+      }
+
+      const backpackByName = new Map<string, { id: string; icon?: string }>()
+      for (const d of backpackSnap.docs) {
+        const b = d.data() as Backpack
+        backpackByName.set(b.name, { id: d.id, icon: b.icon })
       }
 
       const backpacks: IconMap = {}
       const backpackIds: IconMap = {}
-      for (const d of backpackSnap.docs) {
-        const b = d.data() as Backpack
-        if (!bSet.has(b.name)) continue
-        backpackIds[b.name] = d.id
-        const filename = b.icon?.split('/').pop()
-        if (filename) backpacks[b.name] = `/images/backpacks/${filename}`
+      for (const name of bSet) {
+        const b = backpackByName.get(name)
+        if (b) {
+          backpackIds[name] = b.id
+          const filename = b.icon?.split('/').pop()
+          if (filename) backpacks[name] = `/images/backpacks/${filename}`
+          continue
+        }
+        // PLAN-031 複合武器：「特種背包製作」的產物（天燼審判／裁決者／糖衣毀滅者）在官方
+        // 資料層是武器、住在 weapons 集合，玩家視角卻是背包。版本表把它們列在背包列是對的，
+        // 這裡回退去 weapons 撈，連結才指得到——與背包圖鑑的投影條目同一個結論。
+        // PLAN-031 說這是「一條長期產線」，所以做成規則而非對某幾把特判。
+        const w = weaponByName.get(name)
+        if (!w) continue
+        backpackIds[name] = formatEntityIdValue(w.id, 'weapon', 'backpack')
+        const filename = w.icon?.split('/').pop()
+        if (filename) backpacks[name] = `/images/weapons/${filename}`
       }
 
       const fetchedIcons: Record<IconCategory, IconMap> = { pilots, mechs, weapons, backpacks }
@@ -660,7 +691,7 @@ export default function AdminVersionEditorPage() {
               <span><span className="text-text-dim/60">● 未建檔</span> 實體尚未進資料庫（前瞻版本的常態）</span>
             </div>
 
-            {ICON_CATEGORIES.map(({ key, label }) => {
+            {ICON_CATEGORIES.map(({ key, label, refType: categoryRefType }) => {
               const nameList = names[key]
               return (
                 <div key={key} className="mb-6">
@@ -673,12 +704,16 @@ export default function AdminVersionEditorPage() {
                     <div className="space-y-2">
                       {nameList.map(name => {
                         const url = formData.iconUrls?.[key]?.[name] ?? ''
-                        const entityId = formData.entityIds?.[key]?.[name] ?? ''
-                        const status = entityId
+                        const rawId = formData.entityIds?.[key]?.[name] ?? ''
+                        const parsed = rawId ? parseEntityIdValue(rawId, categoryRefType) : null
+                        const status = parsed
                           ? (url ? { cls: 'text-accent-green',  text: '已連結' }
                                  : { cls: 'text-accent-yellow', text: '待素材' })
                           : (url ? { cls: 'text-accent-orange', text: '未連結' }
                                  : { cls: 'text-text-dim/60',   text: '未建檔' })
+                        // 跨集合條目（背包列的複合武器）要標出來，否則會被誤認為填錯類別
+                        const crossNote = parsed && parsed.refType !== categoryRefType
+                          ? `（實體為${REF_TYPE_LABEL[parsed.refType]}）` : ''
                         return (
                           <div key={name} className="flex items-center gap-3">
                             {url ? (
@@ -693,10 +728,12 @@ export default function AdminVersionEditorPage() {
                             )}
                             <span className="text-sm text-text-secondary w-28 shrink-0 truncate">{name}</span>
                             <span
-                              className={`text-[11px] w-14 shrink-0 ${status.cls}`}
-                              title={entityId ? `文件 ID：${entityId}` : '此名稱在資料庫查無對應文件，按下同步後仍為此狀態代表用字與資料庫不一致'}
+                              className={`text-[11px] w-24 shrink-0 ${status.cls}`}
+                              title={parsed
+                                ? `文件 ID：${parsed.refId}${crossNote ? `\n${REF_TYPE_LABEL[parsed.refType]}集合（特種背包製作的複合武器，連結指向武器頁）` : ''}`
+                                : '此名稱在資料庫查無對應文件，按下同步後仍為此狀態代表用字與資料庫不一致'}
                             >
-                              ● {status.text}
+                              ● {status.text}{crossNote}
                             </span>
                             <input
                               type="text"

@@ -78,6 +78,9 @@ export interface VersionIconUrls {
  * 為什麼與 iconUrls 分成兩張表而不是合併成 { id, icon }：兩者**填入時機不同**。
  * 武器常常是資料先建檔、圖片素材晚幾天才處理好；分開存，同步時才能各自「只補空缺」，
  * 前台也才能做到「有 ID 就可點，有沒有圖是另一回事」。
+ *
+ * 值的格式：一般是純文件 ID；跨集合的條目（backpacks 列的複合武器）記成
+ * `weapon:<docId>`。解析與寫入一律走 entityRef.ts 的 parse/formatEntityIdValue。
  */
 export interface VersionEntityIds {
   pilots?: Record<string, string>

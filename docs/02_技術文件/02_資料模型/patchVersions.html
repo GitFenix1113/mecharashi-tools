@@ -336,6 +336,15 @@
       <strong>ID 的同步策略與 icon 不同</strong>：icon 受「強制覆寫」勾選框控制（保護人工修過的路徑），
       ID 則永遠以資料庫為準覆寫——它是機器推導、不開放手動編輯，沒有使用者的值需要保護，
       而資料庫重建導致流水號變動時必須跟上，否則連結會靜靜指向舊文件。
+      <br><br>
+      <strong>值的格式：<code>&lt;docId&gt;</code>，跨集合時為 <code>&lt;refType&gt;:&lt;docId&gt;</code></strong>。
+      「顯示在哪一列」不等於「實體在哪個集合」：<code>backpacks</code> 列會出現複合武器
+      （天燼審判、裁決者、糖衣毀滅者 — PLAN-031），它們在官方資料層是武器、住在 <code>weapons</code> 集合，
+      玩家視角卻是特種背包製作的產物，因此記成 <code>weapon:天燼審判</code>。
+      同步時 <code>backpacks</code> 查無此名會自動回退去 <code>weapons</code> 找（PLAN-031 判定這是
+      「一條長期產線」，故做成規則而非特判），icon 也一併取武器的。
+      解析與寫入一律走 <code>src/data/patchVersions/entityRef.ts</code> 的
+      <code>parseEntityIdValue</code> / <code>formatEntityIdValue</code>。
     </div>
   </div>
 </section>
