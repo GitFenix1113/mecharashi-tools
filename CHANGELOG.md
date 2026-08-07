@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-06
+## [Unreleased] - 2026-08-07
 
 ### ⚠ 重大變更
 
@@ -148,6 +148,7 @@
 
 ### ♻️ 重構
 
+- PLAN-032 M6 flip 完成 — 武器技能全面引用化 (`8e10799`)
 - 技能圖示依類型重整至子資料夾 + 路徑正規化相容舊資料 (`bd5145c`)
 - 後台改為伺服器端分頁查詢與延遲載入閘門 (`351b9f4`)
 - 圖片上傳抽出共用模組 imageUpload + 版本前瞻圖改用 Cloudinary (`d41fe4e`)
@@ -160,6 +161,7 @@
 
 ### 📚 文件
 
+- PLAN-032 武器技能引用化歸檔至歷史記錄（8/8 完成） (`d8753a1`)
 - 新增 PLAN-043 背包技能集合與編輯強化計畫 (`58e2d8d`)
 - 新增 PLAN-038／040／041／042 計畫書與進度表，更新執行中索引 (`79f06ab`)
 - PLAN-034 完成 H-2 並歸檔至歷史記錄（22/22） (`9eb3a20`)
@@ -219,6 +221,7 @@
 
 ### 🔧 維護
 
+- PLAN-032 follow-up 1a/1b — 清掉技能庫的重複 doc 並堵住產生源 (`4afb65f`)
 - PLAN-032 M0–M7 武器技能引用化（技能庫已建，flip 尚未執行） (`cfeca1f`)
 - 新增 skills/背包技能/ 圖庫資料夾（PLAN-043 E-1） (`74af682`)
 - 補上 Worker 的 backpackSkills 白名單，並加測試守住集合清單同步 (`0d0f67d`)
