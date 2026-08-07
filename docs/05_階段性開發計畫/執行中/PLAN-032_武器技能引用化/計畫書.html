@@ -178,7 +178,7 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value pink">規劃中</div>
+      <div class="meta-value green">執行中 · Phase A 完成</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">前置依賴</div>
@@ -315,6 +315,26 @@
     <strong>icon 是共用美術素材，不是技能 ID。</strong>
   </div>
 
+  <div class="warning-block">
+    <strong>決策七（實作階段補充）：專武強化兩欄放<u>定義側</u>，不放 <code>WeaponSkillRef</code></strong><br>
+    決策三只盤點了 <code>activation</code>，漏了 <code>enhancesTalentName</code> 與
+    <code>enhancedTalentDescription</code>（原 <code>WeaponSkill</code> 的專武欄位，
+    而 <code>PilotSkillDoc</code> 沒有它們）。實作 M1 時才發現必須先裁決。<br><br>
+    <strong>裁決：兩欄移入 <code>PilotSkillDoc</code>。</strong>判準不是「哪邊比較整齊」，而是<strong>誰跟誰一起被消費</strong>：
+    <div class="code-block"><span class="cm">// PilotDetailPage.tsx:1022 —— 同一份 refs 解析兩段正文</span>
+map.set(sk.enhancesTalentName, {
+  text: sk.<span class="nm">enhancedTalentDescription</span>,
+  refs: sk.<span class="nm">descriptionRefs</span>,        <span class="cm">// ← 綁在一起</span>
+})</div>
+    <code>descriptionRefs</code> 一定住在技能庫 doc（它是技能正文的側錄表）。把
+    <code>enhancedTalentDescription</code> 留在掛載側，等於讓「正文」與「它的引用表」分居兩個文件——
+    症狀是<strong>強化後天賦文字裡的 <code>[虛情實意]</code> 突然不會亮</strong>，且不會報錯。<br>
+    而且它與 <code>activation</code> 的情況<strong>正好相反</strong>：專武與機師 1:1，
+    「此技能強化哪個天賦」天然無跨武器變異，沒有 38/44 那種衝突。<br>
+    <strong>→ M2 影響</strong>：合併規則要把這兩欄一併納入衝突檢查。預期 0 衝突，
+    但腳本應該<strong>斷言而非假設</strong>——本計畫的其他「0 衝突」都是實測出來的，這兩欄沒測過。
+  </div>
+
   <div class="decision-block">
     <strong>決策六：文字漂移的收斂規則——有 <code>descriptionRefs</code> 的那份勝</strong><br>
     合併同名技能時，<code>description</code> 取<strong>已補過 PLAN-019 方括號</strong>的那一份
@@ -360,7 +380,8 @@
     <strong>與 PLAN-031 的關係：</strong>
     <strong>零欄位重疊</strong>（本計畫碰 <code>Weapon.skills</code>、PLAN-031 碰 <code>Weapon.upgrade</code>），
     但在 <code>src/types/weapon.ts</code>、<code>WeaponAdmin.tsx</code>、<code>WeaponDetailPage.tsx</code>
-    有<strong>檔案級交集</strong>。<strong>建議 PLAN-031 先行、不要同時開工。</strong><br>
+    有<strong>檔案級交集</strong>。<strong>建議 PLAN-031 先行、不要同時開工。</strong>
+    <span class="badge-good">✔ PLAN-031 已於本計畫開工前歸檔，此約束已解除</span><br>
     順帶一提：PLAN-031 把「融合技能」設計成<strong>前端 derive 差集</strong>而非存欄位，
     正是為了讓本計畫 flip 之後<strong>零改動自動換算</strong>。
   </div>
@@ -375,10 +396,24 @@
     <ul style="margin:0 0 0 16px;line-height:1.9;">
       <li><strong>M3 必須早於 M6。</strong>雙格式前端要先上線，否則活站讀到新格式會整區空白。
         （<code>migrate-plan004-pilots.mjs</code> 已把這句寫進互動提示，照抄該形制。）</li>
-      <li><strong>有 5 處 <code>tsc</code> 抓不到、會靜默壞掉</strong>：對 union 取 <code>.length</code> 兩個成員都合法。
-        <code>WeaponsPage</code>／<code>WeaponDetailPage</code>／<code>PilotDetailPage</code>（3 處）的
+      <li><strong>有 <s>5</s> <u>6</u> 處 <code>tsc</code> 抓不到、會靜默壞掉</strong>：對 union 取 <code>.length</code> 兩個成員都合法。
+        <code>WeaponsPage</code>／<code>WeaponDetailPage</code>／<code>PilotDetailPage</code>（3 處）／
+        <span class="badge-med">實作時補上</span><code>BackpacksPage</code>（PLAN-037「包含武器」之後才長出來的消費端）的
         <code>weapon.skills.length &gt; 0</code> 必須改成 gate 在<strong>解析後</strong>的陣列，
-        否則技能庫尚未載入時會渲染出一個空的「武器技能」區塊。</li>
+        否則技能庫尚未載入時會渲染出一個空的「武器技能」區塊。<br>
+        <span class="badge-high">實作時新發現</span>還有<strong>第 7 個靜默壞點不在 <code>.length</code> 之列</strong>：
+        <code>BackpacksPage</code> 的搜尋 <code>it.data.skills.some(s =&gt; s.description...)</code>——
+        引用化後那裡只拿得到 <code>{ skillId, activation }</code>，
+        <strong>「用技能正文搜武器」會永遠 0 筆命中</strong>，無任何錯誤。
+        找這類壞點不能只 grep <code>.length</code>，要 grep 整個 <code>.skills</code>。</li>
+
+      <li><span class="badge-high">計畫書漏列</span><strong>引用掃描層必須加
+        <code>weapons.skills[].skillId</code> 站點</strong>（<code>entityRefs.ts</code>）。
+        沒有它，M6 flip 之後從技能庫刪一個武器技能，級聯掃描器會回報
+        <strong>「零引用、可安全刪除」</strong>，然後所有掛它的武器靜默少一塊技能。
+        這正是 PLAN-043 為 <code>backpacks.skillIds[]</code> 做過的同一件事，武器側漏了。
+        且三個既有站點（<code>buffIds</code>／<code>textUnits</code>／<code>softSites</code>）
+        都要排除引用分支，否則與技能庫那份<strong>雙計</strong>。</li>
       <li><strong>ID 撞號地雷（M0 必須第一個做）</strong>：技能庫現有 <code>SKILL_</code> 大寫 134 筆 /
         <code>skill_</code> 小寫 512 筆，而後台撞號防呆只查小寫形式。
         本次以 name 去重會直接踩爆——<code>故障植入</code>／<code>態勢優化</code> 已有大寫 doc，
