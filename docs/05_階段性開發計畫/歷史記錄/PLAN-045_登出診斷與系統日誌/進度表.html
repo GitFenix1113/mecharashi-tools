@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-045 登出診斷與系統日誌 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+
+.deviation-note {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.25);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+  line-height: 1.8;
+}
+.deviation-note strong { color: var(--accent-yellow); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-045 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-045</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> · 登出診斷與系統日誌</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-08</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">27</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">27</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-green);">27 / 27</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    下次維護者回報「編輯到一半被登出」時，OWNER 能在系統日誌頁直接看出成因（儲存被清 / 憑證被撤銷 / 主動登出），
+    且該維護者未存檔的編輯內容已暫存在本機、重新登入後可還原。
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ 全部完成（2026-08-08）</strong>——瀏覽器實測逐項通過：
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;">
+      <tr><td style="padding:3px 8px;color:var(--text-dim);">① explicit 主動登出</td><td style="padding:3px 8px;color:var(--accent-green);">✓ 不留記錄、不跳橫幅</td>
+          <td style="padding:3px 8px;color:var(--text-dim);">② 刪除憑證記錄</td><td style="padding:3px 8px;color:var(--accent-green);">✓ tokenRevoked，僅一筆</td></tr>
+      <tr><td style="padding:3px 8px;color:var(--text-dim);">③ storageCleared</td><td style="padding:3px 8px;color:var(--accent-green);">✓ 判定正確</td>
+          <td style="padding:3px 8px;color:var(--text-dim);">④ tokenRevoked</td><td style="padding:3px 8px;color:var(--accent-green);">✓ 判定正確</td></tr>
+      <tr><td style="padding:3px 8px;color:var(--text-dim);">⑤ 匿名訪客</td><td style="padding:3px 8px;color:var(--accent-green);"><strong>✓ 不跳橫幅、不留記錄</strong></td>
+          <td style="padding:3px 8px;color:var(--text-dim);">草稿還原</td><td style="padding:3px 8px;color:var(--accent-green);">✓ 關閉分頁後內容完整還原</td></tr>
+    </table>
+    <div style="margin-top:8px;font-size:12px;">
+      ⑤ 與去重是本輪最關鍵的兩項 —— 前者確保日誌不被訪客雜訊淹沒（初版必現誤報），
+      後者確保未登入狀態下重整多次仍只留一筆。兩者都是<strong>第一輪實測抓到 bug、修正後第二輪才通過</strong>。<br>
+      自動化測試：單元 344 項全綠（含 diag 22 項）、模擬器 12 套件 55 項全綠。
+    </div>
+  </div>
+
+  <div class="deviation-note">
+    <strong>⚠ 已知限制（本計畫範圍外，未修）</strong><br>
+    <strong>多分頁主動登出會產生假的 <code>tokenRevoked</code> 記錄。</strong>
+    <code>explicitSignOut</code> 旗標是 module-scope，每個分頁各有一份。在分頁 A 按登出時，
+    分頁 B 收到 <code>onAuthStateChanged(null)</code> 但自己的旗標是 false，而判定只看哨兵
+    （B 的哨兵一定在）→ 必定記一筆 tokenRevoked。sessionStorage 去重擋不住（B 是另一個分頁）。<br>
+    維護者常同時開後台與前台，故這會固定發生。修法不難（signOut 時往 localStorage 寫一個短時效標記，
+    判定時併入 explicit 判斷），但屬於獨立議題，留待日後處理。<br>
+    <strong>判讀影響：</strong>看到 <code>tokenRevoked</code> 時，若該使用者當時開著多個分頁，
+    要先排除這個可能再當成真實故障。
+  </div>
+
+  <div class="deviation-note" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.3);border-left-color:var(--accent-red);">
+    <strong style="color:var(--accent-red);">🐛 瀏覽器實測抓到的缺陷（已修正）—— IndexedDB 探針測不到東西</strong><br>
+    初版讓「Firebase 的 <code>firebaseLocalStorageDb</code> 還在不在」參與判定。實測發現那顆探針
+    <strong>恆為 present</strong>：該 database 會在 SDK 初始化時<strong>自動重建</strong>，
+    等 <code>onAuthStateChanged(null)</code> 觸發、探針執行時，就算前一秒手動刪光整個 database，它也回來了。<br><br>
+    兩層後果：① <code>idbEvicted</code> 永遠產生不出來，該情境全數落到 <code>tokenRevoked</code>；
+    ② 更嚴重——「cookie 沒了但 IDB 還在 → 證明登入過 → storageCleared」這條，讓
+    <strong>每個第一次進站的匿名訪客都會看到登出橫幅</strong>。<br><br>
+    修正：判定只用不受 Firebase 干擾的兩顆哨兵；探針改為檢查 <code>firebase:authUser:*</code>
+    記錄是否存在（名實相符），保留為佐證欄位但不參與判定；<code>idbEvicted</code> 退場。<br><br>
+    <strong>順帶修掉重複記錄</strong>：<code>onAuthStateChanged(null)</code> 不是「登出那一瞬間」才觸發，
+    只要處於未登入狀態，每次重新載入頁面都會再觸發一次 —— 實測時刪 IndexedDB 就抓到兩筆
+    （刪除當下一筆、F5 重整一筆）。改用 sessionStorage 旗標去重：重整保留、關閉分頁清除、登入時解除。
+    橫幅不受影響（重整後仍顯示——提醒使用者與記不記錄是兩件事）。<br><br>
+    <strong>單元測試為什麼沒抓到</strong>：它測「給定探針值 → 判定是否正確」，
+    而錯的是<strong>探針值本身測不到真實狀態</strong>。那一層只有真實瀏覽器測得出來——
+    這正是把手動驗證列為獨立任務的價值。現已補一條測試釘住
+    「<code>authRecord</code> 的任何值都不得改變判定結果」。
+  </div>
+
+  <div class="deviation-note" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.3);border-left-color:var(--accent-red);">
+    <strong style="color:var(--accent-red);">🐛 使用者實測抓到的缺陷（已修正）—— 草稿存錯了層</strong><br>
+    初版把 autosave 接在<strong>列表元件</strong>、監聽 <code>editing</code>。但 12 個編輯頁的共同結構是
+    編輯器內部自己持有表單狀態（<code>const [form, setForm] = useState({ ...item })</code>）——
+    <strong>使用者打字改的是 <code>form</code>，外層的 <code>editing</code> 從打開編輯器到按下存檔之間完全不變</strong>。
+    於是草稿存下來的是「打開編輯器那一刻的原始快照」。<br>
+    症狀極具欺騙性：偵測提示<strong>會</strong>正確跳出（確實有未存編輯），但按下還原拿回來的是原始版本。
+    <strong>這比沒有草稿功能更糟</strong>，因為它讓使用者以為內容救回來了。<br><br>
+    修正：拆成兩個 hook —— <code>useDraftWrite</code> 接在<strong>編輯器內部</strong>監聽 <code>form</code>、
+    <code>useDraftRestore</code> 留在列表層負責讀取與還原。還原之所以生效，正是因為編輯器用
+    <code>useState({ ...item })</code> 從 prop 初始化：<code>setEditing(草稿)</code> → 編輯器 mount → form 即為草稿內容。<br><br>
+    連帶修掉三個同層級的問題：<br>
+    · <strong>打開就留草稿</strong>：加 dirty 比對（與掛載當下快照比較），「點開看一眼就切走」不再留下無意義的草稿；<br>
+    · <strong>還原後草稿被自己吃掉</strong>：還原後 dirty 基準變成草稿本身，使用者若「還原後先去查點東西」而切換分頁，
+      dirty 判斷會認定沒改而清掉剛救回的內容。加了<strong>還原保護</strong>（只有存檔成功或明確捨棄才能清）；<br>
+    · <strong>按取消不清草稿</strong>：取消等於明確放棄，11 處 <code>onCancel</code> 補上 <code>draft.discard()</code>。<br><br>
+    決策已抽成 <code>shouldClearOnRevert()</code> 純函式並以測試釘住 —— 這一層唯一的失效模式是
+    <strong>靜默的資料遺失</strong>，沒有錯誤訊息，只能靠測試守。
+  </div>
+
+  <div class="deviation-note">
+    <strong>⚠ 實作過程中與原規劃不符的四點（已修正本表）</strong><br>
+    ① <strong>誤報漏洞：一顆哨兵不夠。</strong>原設計只在 localStorage 種哨兵，但<strong>從未登入過的訪客</strong>
+    同樣沒有哨兵、同樣觸發 <code>onAuthStateChanged(null)</code>，會被誤判成 storageCleared —— 而前台每次載入都會觸發。
+    改為 localStorage ＋ cookie 兩顆（不同存活條件），先回答「這台裝置登入過沒有」，並新增 <code>neverSignedIn</code> 態代表「不產生事件」。<br>
+    ② <strong>TTL 不需要到 Console 手動設定。</strong>原本以為要人工操作，實際上 <code>firestore.indexes.json</code> 的
+    <code>fieldOverrides</code> 支援 <code>"ttl": true</code> 宣告（changeHistory 早已如此），隨 deploy 一併生效。<br>
+    ③ <strong><code>firestoreCore</code> 原本沒有寫入函式。</strong>原計畫寫「在 firestoreCore 的寫入路徑攔截」，
+    但實際寫入分散在 12 個模組的 <code>update*</code>（8 個自己 setDoc、4 個走 saveWithHistory）。
+    改為新增 <code>writeDoc</code> / <code>writeDocRaw</code> 統一入口並改接全部呼叫端 —— 順帶讓 <code>stripUndefined</code> 不再有人漏掉。<br>
+    ④ <strong>GrayOpsAdmin 的編輯模型不同。</strong>它沒有 <code>editing: T | null</code> 的開關生命週期，
+    <code>form</code> 從掛載到卸載都存在，照接會變成「永遠有草稿」而每次進頁都跳假提示。
+    改以「與已存檔內容不同」（dirty）為存草稿條件，並用 <code>useMemo</code> 穩定 reference
+    （否則 debounce 每次 render 重新計時 → 靜默永不寫入）。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">診斷採集層</div>
+  <div class="section-desc">純前端、無 Firestore 依賴的證據採集與判定。這層可完全用單元測試驗證，不需要真的把人登出。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 哨兵與三態判定</div>
+      <div class="task-group-meta">src/lib/diag/sentinel.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">雙哨兵讀寫（localStorage ＋ cookie）</div>
+        <div class="task-desc">
+          <code>mecharashi_diag_sentinel</code>（<code>{ uid, plantedAt, lastSeenAt, sessionId }</code>）
+          與 <code>mr_diag</code> cookie（僅存 uid 前 8 碼）。登入成功時種下、<strong>刻意不在登出時清除</strong>——
+          它們的價值正是「儲存被清時會跟著消失」。<br>
+          兩顆的存活條件不同：cookie 不屬於 quota-managed storage，Chrome eviction 清不到它，
+          故可用來證明「這台裝置確實登入過」，杜絕匿名訪客被誤報。
+        </div>
+        <div class="task-file">src/lib/diag/sentinel.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">IndexedDB 探針</div>
+        <div class="task-desc">
+          用 <code>indexedDB.databases()</code> 檢查 <code>firebaseLocalStorageDb</code> 是否還在。
+          不支援該 API 的瀏覽器（Firefox 長年未實作）回 <code>unknown</code> 而非 <code>absent</code>——
+          否則每個 Firefox 使用者的正常登出都會被誤報成 IDB 被清。
+        </div>
+        <div class="task-file">src/lib/diag/sentinel.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三態判定純函式 ＋ 單元測試</div>
+        <div class="task-desc">
+          <code>classifyLogout()</code> 無副作用純函式，輸出 <code>explicit</code> / <code>storageCleared</code> /
+          <code>idbEvicted</code> / <code>tokenRevoked</code> / <code>neverSignedIn</code> / <code>unknown</code>。<br>
+          測試窮舉全部 <strong>54 種輸入組合</strong>（3 探針 × 3 態 × 2 旗標），並針對兩個「錯了會靜默汙染整份日誌」的點各立一條：
+          匿名訪客不可誤報成 storageCleared、探針 unknown 不可當成 absent。<strong>10 個測試全綠。</strong>
+        </div>
+        <div class="task-file">src/lib/diag/sentinel.ts · sentinel.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 環境證據採集</div>
+      <div class="task-group-meta">src/lib/diag/collect.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">儲存與環境快照</div>
+        <div class="task-desc">
+          <code>navigator.storage.persisted()</code>、<code>estimate()</code> 的 usage / quota、
+          UA、平台、standalone、螢幕尺寸、語言。<strong>persisted() ＋ UA 是關鍵組合</strong>——
+          用來區分「Chrome 空間壓力 eviction」（可用 persist() 豁免）與「Safari ITP 定時清除」
+          （persist() 一律不核准，現有防護完全無效）這兩個需要不同對策的成因。<br>
+          全程 try/catch 且逐欄位選填：採集失敗應退化成「證據少一點」，而不是整筆事件寫不進去。
+        </div>
+        <div class="task-file">src/lib/diag/collect.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">session 上下文</div>
+        <div class="task-desc">
+          session 時長、距上次 idToken refresh、離線累計時長、路由、是否有未存草稿。<br>
+          離線時長的用途是<strong>證偽</strong>「大概是網路不好斷線了吧」這個最容易被隨口接受的猜測——
+          Firebase Auth 在離線期間並不會登出，它會保留憑證。
+        </div>
+        <div class="task-file">src/lib/diag/collect.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 事件佇列與上報</div>
+      <div class="task-group-meta">src/lib/diag/queue.ts · report.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">localStorage 事件佇列</div>
+        <div class="task-desc">
+          上限 20 筆、超過丟棄<strong>最舊</strong>的（最近一次登出才是使用者正在回報的那次）。
+          寫入 try/catch —— 配額已滿時不可拋錯干擾主流程，否則診斷工具自己會變成故障來源。
+        </div>
+        <div class="task-file">src/lib/diag/queue.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">captureLogout / flushQueue / onSignedIn</div>
+        <div class="task-desc">
+          <code>captureLogout()</code> 判成因、採證據、入佇列，並<strong>回傳成因</strong>供橫幅使用；
+          <code>flushQueue()</code> 登入後補送，事件裡記著當事人 uid，換人登入時不相符的留在佇列等原本的人回來，
+          避免把甲的登出記在乙頭上。<br>
+          <code>onSignedIn()</code> 先種哨兵再 flush —— flush 可能失敗，但哨兵沒種下的話下一次登出就完全無從判定。
+        </div>
+        <div class="task-file">src/lib/diag/report.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label cyan">Phase B</div>
+  <div class="section-title">systemLog 集合與規則</div>
+  <div class="section-desc">沿用 PLAN-030 changeHistory 的 append-only 集合形狀，讀取權限收緊到 OWNER。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 型別與 API 層</div>
+      <div class="task-group-meta">src/types/systemLog.ts · src/lib/api/systemLog.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">SystemLogEntry 型別</div>
+        <div class="task-desc">
+          雙分類軸 <code>kind</code> / <code>reason</code>，含 uid / actorName 快照、env / session 證據、
+          probes 原始三態值（保留原始值而非只存結論，判定邏輯日後改版可重新推算舊資料）、
+          <code>at</code>（伺服器）與 <code>occurredAt</code>（本機）雙時間戳、<code>expireAt</code>（90 天 TTL）。
+          比照 changeHistory.ts 獨立一檔、不進 types barrel。
+        </div>
+        <div class="task-file">src/types/systemLog.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">append-only 寫入 ＋ 伺服器分頁 ＋ 成因摘要</div>
+        <div class="task-desc">
+          <code>writeSystemLogOrThrow</code> / <code>logSystemEvent</code>（fire-and-forget）/
+          <code>getSystemLogPage</code>（依 at 時間排序）/ <code>getSystemLogSummary</code>。
+          摘要刻意獨立一次查詢——列表會被使用者的篩選影響，摘要必須永遠是「未篩選的最近 N 筆」才有代表性。
+          barrel <code>firestoreApi.ts</code> 已補 re-export。
+        </div>
+        <div class="task-file">src/lib/api/systemLog.ts · src/lib/firestoreApi.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 安全規則與索引</div>
+      <div class="task-group-meta">firestore.rules · firestore.indexes.json</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">systemLog 規則（讀寫不對稱）</div>
+        <div class="task-desc">
+          <code>read: isOwnerRole()</code> / <code>create: isAdmin() && uid == request.auth.uid</code> /
+          <code>update, delete: false</code>。<br>
+          <strong>全站唯一 read 比 write 嚴格的集合</strong>：每個維護者都得寫得進去（否則證據送不出來），
+          但記錄含裝置指紋、不該讓 ADMIN 互看。
+        </div>
+        <div class="task-file">firestore.rules</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">複合索引 ＋ TTL 宣告</div>
+        <div class="task-desc">
+          <code>(kind, at↓)</code> / <code>(reason, at↓)</code> / <code>(kind, reason, at↓)</code>。<br>
+          TTL 於 <code>fieldOverrides</code> 以 <code>"ttl": true</code> 宣告指向 <code>expireAt</code>，
+          隨 <code>firebase deploy --only firestore:indexes</code> 一併生效——
+          <strong>不需要到 Console 手動設定</strong>（原規劃誤判，見上方偏差說明②）。
+        </div>
+        <div class="task-file">firestore.indexes.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label cyan">Phase C</div>
+  <div class="section-title">Auth 接線與寫入被拒攔截</div>
+  <div class="section-desc">把採集層接進實際的登出與寫入路徑。這是唯一會動到既有關鍵路徑的階段，改動保守。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; AuthContext 接線</div>
+      <div class="task-group-meta">src/contexts/AuthContext.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">主動登出旗標</div>
+        <div class="task-desc">
+          module-scope 的 <code>explicitSignOut</code> ＋ <code>markExplicitSignOut()</code>。
+          <strong>三處 <code>fbSignOut</code> 全部標記</strong>：一般登出、註冊寄驗證信後登出、Email 未驗證的擋登入。
+          後兩處漏標會被誤報成 tokenRevoked，且每個新使用者至少各觸發一次，足以汙染整份日誌。
+        </div>
+        <div class="task-file">src/contexts/AuthContext.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">登出採集 ＋ 登入時種哨兵與 flush</div>
+        <div class="task-desc">
+          null 分支跑判定並入佇列、非 explicit 時設 <code>logoutNotice</code> 供橫幅使用；
+          有值分支種哨兵並 flush。<strong>模擬器模式全程跳過</strong>（自動登入會產生假事件）。
+        </div>
+        <div class="task-file">src/contexts/AuthContext.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">onIdTokenChanged ＋ 離線追蹤</div>
+        <div class="task-desc">
+          記錄最後一次 token refresh 時間戳；掛載 online / offline 事件累計離線時長。
+        </div>
+        <div class="task-file">src/contexts/AuthContext.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 統一寫入入口與 permission-denied 攔截</div>
+      <div class="task-group-meta">src/lib/api/firestoreCore.ts · src/lib/diag/writeGuard.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">writeDoc / writeDocRaw ＋ 12 處呼叫端改接</div>
+        <div class="task-desc">
+          原計畫寫「在 firestoreCore 的寫入路徑攔」，但該檔<strong>原本沒有寫入函式</strong>——
+          寫入分散在 12 個模組（8 個自己 setDoc、4 個走 saveWithHistory）。新增統一入口並全數改接。<br>
+          <code>writeDocRaw</code> 是不做 stripUndefined 的變體，給 payload 含 <code>serverTimestamp()</code>
+          哨兵值的 grayOps 使用（整包 strip 會把哨兵遞迴拆壞）。<br>
+          錯誤<strong>原樣重新拋出</strong>；<code>reportWriteDenied</code> 開頭即擋掉非瀏覽器環境——
+          模擬器破壞性測試與 migrate 腳本都會走到這裡，且前者是<strong>刻意</strong>製造 permission-denied。<br>
+          去重：同目標 60 秒內只記一次（存檔失敗時使用者會連點）。寫入被拒本身可能意味憑證已失效，
+          故直接寫失敗時退回佇列，證據不丟失。
+        </div>
+        <div class="task-file">firestoreCore.ts · writeGuard.ts · api/{pilots,mechs,weapons,modules,components,backpacks,neuralDriveAbilities,grayOps,changeHistory}.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label cyan">Phase D</div>
+  <div class="section-title">草稿暫存與還原</div>
+  <div class="section-desc">止血。查明原因是手段，不讓維護者的編輯蒸發才是目的。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 儲存層與 hook</div>
+      <div class="task-group-meta">src/lib/diag/draft.ts · src/hooks/useDraftAutosave.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">draft.ts 儲存層 ＋ 讀寫兩個 hook</div>
+        <div class="task-desc">
+          <code>useDraftWrite</code>（編輯器內部，監聽 form）／<code>useDraftRestore</code>（列表層，讀取與還原）。
+          職責必須拆開的原因見上方紅色缺陷說明。<br>
+          debounce 800ms（PilotAdmin 有 1500 行，每次按鍵都寫會明顯卡頓）；
+          dirty 比對只在計時器觸發時做一次 <code>JSON.stringify</code>，不是每次 render。<br>
+          <code>nameOf</code> 放 ref：呼叫端多寫成 inline 箭頭函式，放進依賴陣列會讓 debounce
+          永遠重新計時而<strong>靜默</strong>寫不進去。<br>
+          配額滿時<strong>清掉自己的草稿再放棄</strong>：草稿是為了防止資料遺失而存在，
+          若它自己把 localStorage 撐爆，反而會誘發我們正在追查的儲存清除問題。
+        </div>
+        <div class="task-file">src/lib/diag/draft.ts · src/hooks/useDraftAutosave.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">draft.test.ts 行為鎖定</div>
+        <div class="task-desc">
+          12 個測試涵蓋 <code>shouldClearOnRevert</code> 的三態決策、儲存層往返、
+          壞資料防禦（欄位不齊／JSON 壞掉一律當沒有）、分頁間互不干擾、還原保護的生命週期，
+          以及 <code>hasAnyDraft</code> 不被其他 localStorage 鍵誤導
+          （誤判會讓登出橫幅叫使用者去找不存在的還原入口）。
+        </div>
+        <div class="task-file">src/lib/diag/draft.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">DraftRestoreBar 還原提示</div>
+        <div class="task-desc">
+          顯示暫存時間與項目名稱，提供「還原」與「捨棄」。<strong>不自動套用</strong>——
+          直接覆蓋使用者當前選取的項目，比丟失草稿更難解釋（他明明點開的是 A，畫面卻變成昨天沒存完的 B）。<br>
+          吃整個 draft 物件、無草稿時自行回傳 null，讓各頁接線維持在一行。
+        </div>
+        <div class="task-file">src/pages/user/admin/shared.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 12 個編輯頁接線</div>
+      <div class="task-group-meta">src/pages/user/admin/*.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">11 個標準編輯頁（每頁四處，表單結構不動）</div>
+        <div class="task-desc">
+          Pilot / Mech / Weapon / Module / Component / Backpack / BackpackSkill / Buff /
+          Skill / NeuralDrive / Glossary。兩層的慣例都高度一致，故接線是機械的：<br>
+          · 編輯器內 <code>useState({ ...item })</code> 下一行加 <code>useDraftWrite</code><br>
+          · 列表層 <code>useDraftRestore</code> 取代原本的 editing 監聽<br>
+          · <code>handleSave</code> 內加 <code>draft.commit()</code><br>
+          · <code>onCancel</code> 加 <code>draft.discard()</code>（取消＝明確放棄）<br>
+          UserAdmin 不需要（無編輯草稿模型）。
+        </div>
+        <div class="task-file">src/pages/user/admin/*.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">GrayOpsAdmin（模型不同，特殊處理）</div>
+        <div class="task-desc">
+          唯一沒有 EditPanel 子元件的頁，<code>form</code> 就在主元件裡，故讀寫兩個 hook 都掛在同一層。
+          dirty 判斷由 <code>useDraftWrite</code> 內部以掛載當下的快照完成，此處只需把 form 包成帶 id 的形狀。<br>
+          <strong>必須 <code>useMemo</code></strong>：debounce effect 以 item 的 reference 為依賴，
+          inline 建構物件會讓計時器每次 render 重置 → 永遠寫不進去，<strong>而且完全沒有錯誤訊息</strong>。
+        </div>
+        <div class="task-file">src/pages/user/admin/GrayOpsAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label cyan">Phase E</div>
+  <div class="section-title">使用者可見層</div>
+  <div class="section-desc">維護者不看主控台也不看系統日誌。若只做後台記錄，對他們而言體驗毫無改善。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 登出橫幅</div>
+      <div class="task-group-meta">src/components/SignedOutBanner.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">白話原因橫幅</div>
+        <div class="task-desc">
+          各成因對應一組白話說明與建議，<strong>不出現任何技術術語</strong>——使用者不需要知道什麼是 IndexedDB，
+          他需要知道的是「這不是我的錯」「我的東西還在不在」「現在該做什麼」。<br>
+          主動登出與匿名訪客不顯示。草稿提示<strong>只在真的有草稿時</strong>才出現，
+          否則只會讓人去找一個不存在的還原入口。<br>
+          掛在 header 與 main 之間，不進 main 的 <code>overflow-hidden</code> 容器（首頁 snap 捲動會把它藏起來）。
+        </div>
+        <div class="task-file">src/components/SignedOutBanner.tsx · src/components/Layout.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; OWNER 系統日誌頁</div>
+      <div class="task-group-meta">src/pages/admin/AdminSystemLogPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">日誌列表與雙軸篩選</div>
+        <div class="task-desc">
+          比照 AdminHistoryPage 的版面與請求序號機制（快速連點篩選時舊請求不可覆蓋新列表）。
+          展開看完整環境證據：瀏覽器／平台（由 UA 推斷，順序上先排除 Edge / Chrome 才判 Safari）、
+          persisted、儲存用量、session 時長、哨兵存活時長、探針原始三態。<br>
+          <code>at</code> 與 <code>occurredAt</code> 差距超過 5 分鐘時標示<strong>（延遲上報）</strong>，
+          否則看列表的人會以為事件發生在重新登入那一刻。
+        </div>
+        <div class="task-file">src/pages/admin/AdminSystemLogPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">成因分布摘要</div>
+        <div class="task-desc">
+          頁首以橫條圖顯示最近 100 筆的成因佔比，依嚴重度上色（storageCleared / idbEvicted 紅）。
+          <strong>這是本計畫的產出重點</strong>——後續對策要靠這個分布決定，而不是再一次憑印象猜。
+        </div>
+        <div class="task-file">src/pages/admin/AdminSystemLogPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">路由與入口（OWNER 限定）</div>
+        <div class="task-desc">
+          <code>/admin/system-log</code> ＋ AdminPage 子頁入口卡片（只對 OWNER 顯示）。
+          <code>AdminRoute</code> 新增 <code>ownerOnly</code> prop（原本只擋到 ADMIN）。
+          UI 隱藏只是避免 ADMIN 點進來吃權限錯誤，<strong>真正的防線是 firestore.rules</strong>。
+        </div>
+        <div class="task-file">src/App.tsx · src/components/AdminRoute.tsx · src/pages/user/AdminPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label cyan">Phase F</div>
+  <div class="section-title">驗證與文件</div>
+  <div class="section-desc">診斷工具本身若不可靠，比沒有更糟——它會把排查引向錯誤方向。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 驗證</div>
+      <div class="task-group-meta">模擬器 · 單元測試 · 手動情境</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">安全規則測試（模擬器）</div>
+        <div class="task-desc">
+          <code>rules.test.ts</code> 新增案例 h，釘住 systemLog 的讀寫不對稱：
+          ADMIN 冒用他人 uid 被拒、uid==本人放行、<strong>ADMIN 讀不到</strong>、append-only 刪不掉、
+          USER 讀寫皆拒。<br>
+          特別值得釘住的理由：這個不對稱在本專案裡獨一無二，很容易在日後重構規則時被「順手改成一致」而破功。<br>
+          <strong>全部 12 個模擬器套件 55 個測試全綠</strong>（含既有的級聯／原子性／版本 bump，確認寫入路徑重構未破壞既有行為）。
+        </div>
+        <div class="task-file">tests/emulator/suites/rules.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">各成因的瀏覽器手動驗證（兩輪，第一輪抓到兩個 bug）</div>
+        <div class="task-desc">
+          <strong>第一輪</strong>：<code>explicit</code> ✓、<code>storageCleared</code> ✓、
+          <code>tokenRevoked</code> ✓；但 <code>idbEvicted</code> 產生兩筆 tokenRevoked、
+          <code>neverSignedIn</code> 誤判成 storageCleared 並跳橫幅 → 抓出探針恆 present
+          與重整重複記錄兩個 bug（見上方紅框）。<br>
+          <strong>第二輪（修正後）</strong>：全數通過。刪除憑證記錄 → 一筆 tokenRevoked、
+          探針正確顯示「Auth 憑證 不見」；全清後載入 → 不跳橫幅、佇列為空。<br>
+          這一項是整個計畫中<strong>唯一抓到真實缺陷的驗證手段</strong> ——
+          單元測試測的是「給定探針值 → 判定對不對」，測不到「探針值本身是否反映真實狀態」。
+        </div>
+        <div class="task-file">手動測試（需真實瀏覽器 · Chrome/Edge）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">草稿還原手動驗證</div>
+        <div class="task-desc">
+          實測：模組編輯器打字未存 → 直接關閉分頁 → 重新進入 → 提示出現 → 還原後<strong>內容完整</strong>。<br>
+          第一輪此處即抓到「草稿存錯層」的缺陷（還原拿回的是原始資料），修正後第二輪通過。
+        </div>
+        <div class="task-file">手動測試（需真實瀏覽器）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; 文件同步</div>
+      <div class="task-group-meta">docs/02_技術文件/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">資料庫設計文件補 systemLog</div>
+        <div class="task-desc">
+          新增 <code>systemLog.html</code>（用途、雙時間戳、三態哨兵判定表、索引、規則與 TTL），
+          並在 Firebase 資料庫設計索引頁補卡片與集合清單列。<br>
+          順手修正 <code>changeHistory.html</code> 的落差：規則區塊仍寫舊版 <code>create: if isAdmin()</code>，
+          實際早已加上 <code>actorUid</code> 綁定（PLAN-030 Phase C 發現③的修正）。<br>
+          注意：<code>02_技術文件/04_Firebase</code> <strong>刻意不在 copy-docs 白名單</strong>，
+          故此文件不會發布到 /documents——安全規則細節靠「不複製」而非「隱藏連結」來保證。
+        </div>
+        <div class="task-file">docs/02_技術文件/04_Firebase/資料庫設計文件/systemLog.html · changeHistory.html · Firebase資料庫設計文件.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-045 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-045 登出診斷與系統日誌 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-045 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-045</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    登出診斷與系統日誌<span style="-webkit-text-fill-color:var(--text-secondary);"> · Diagnostics · SystemLog · Draft Autosave</span>
+  </h1>
+  <p class="hero-sub">維護者「編輯到一半被登出」查無實據。用三態哨兵在登出當下留下證據、暫存草稿避免損失，並開一頁只有 OWNER 看得到的系統日誌。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value cyan">PLAN-045</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-08</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">AuthContext · firestoreCore · 後台 12 編輯頁 · firestore.rules</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">✅ 已完成（2026-08-08）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">無（沿用 PLAN-030 稽核 log 模式）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>維護者持續回報「編輯資料到一半被登出」，但完全查不到原因</strong><br>
+    回報者不會看瀏覽器主控台，也講不出當下的環境細節。目前站上沒有任何持久化的診斷記錄，
+    每次回報都只能靠猜。過去已針對「Chrome storage eviction 清掉 IndexedDB」的假說，
+    在 <code>src/lib/firebase.ts</code> 加了 <code>navigator.storage.persist()</code> 申請持久化儲存，
+    但<strong>那個假說從未被證實</strong>——問題仍在發生，我們不知道是修錯了方向，還是修對了但涵蓋不全。
+  </div>
+
+  <div class="problem-block">
+    <strong>「被登出」很可能是三種不同故障的統稱</strong><br>
+    使用者只會說「我被登出了」，但底下其實混雜著性質完全不同的三件事：
+    <table class="impact-table">
+      <thead>
+        <tr><th>症狀</th><th>實際發生的事</th><th>使用者看到</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>A. Auth 失效</strong></td>
+          <td>本機儲存被清除，或 refresh token 被撤銷</td>
+          <td>真的變回未登入狀態</td>
+        </tr>
+        <tr>
+          <td><strong>B. 寫入被拒</strong></td>
+          <td>仍登入著，但 setDoc 收到 permission-denied</td>
+          <td>「存檔沒反應」，<strong>誤以為</strong>被登出</td>
+        </tr>
+        <tr>
+          <td><strong>C. 資料快取失效</strong></td>
+          <td>gameData 版本 bump，重新抓資料</td>
+          <td>畫面閃一下，其實不影響編輯</td>
+        </tr>
+      </tbody>
+    </table>
+    只記 A 會抓不到真兇。B 尤其容易被誤報成登出，且它會直接造成編輯內容丟失。
+  </div>
+
+  <div class="problem-block">
+    <strong>不論成因為何，編輯內容都是直接蒸發的</strong><br>
+    12 個後台編輯頁的草稿全部只存在 React state（<code>const [editing, setEditing] = useState&lt;T|null&gt;(null)</code>），
+    沒有任何本機暫存。無論是被登出、寫入被拒、或單純誤觸重整，未存檔的編輯一律歸零。
+    對填了半小時數值的維護者而言，這才是真正的損失——查明原因是手段，止血才是目的。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label cyan">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="warning-block">
+    <strong>決策一：不能在登出當下寫 Firestore——這是整個設計的形狀來源</strong><br>
+    被動登出時，<code>onAuthStateChanged</code> 拿到 <code>null</code> 的那一刻 <code>auth.currentUser</code> 已經是 null，
+    而 <code>firestore.rules</code> 全站要求 <code>isAdmin()</code>，所以此時寫任何 log <strong>必定 permission-denied</strong>。
+    因此不能照 PLAN-030 <code>changeHistory</code> 那套直接 <code>addDoc</code>。
+    <br><br>
+    改為<strong>兩段式上報</strong>：登出瞬間寫進 localStorage 佇列 → 下次登入成功後 flush 到 Firestore。
+    維護者被登出後幾乎都會馬上重登，實務延遲通常只有幾秒。
+    <br><br>
+    <em>已評估但不採用的替代方案：</em>加開 Cloudflare Worker <code>/api/log</code> 端點即時上報。
+    優點是不依賴重新登入，缺點是要動 Worker 程式碼、新增未授權寫入面、需額外限流防灌爆。
+    唯一多涵蓋的情境是「使用者被登出後再也沒回來」——而那種人本來就不會回報問題。
+    保留為日後需要時的擴充點（見「不在範圍內」）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：雙哨兵判定——用兩顆哨兵 + 一個旗標把成因收斂到唯一解</strong><br>
+    <em>（本決策被實作與實測各修正過一次，經過見下方兩個警告框。定稿如下。）</em><br><br>
+    <table class="impact-table">
+      <thead>
+        <tr><th>我方呼叫過<br>signOut()</th><th>localStorage<br>哨兵</th><th>cookie 哨兵</th><th>判定 reason</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge-good">✓ 是</span></td>
+          <td>—</td>
+          <td>—</td>
+          <td><code>explicit</code><br>主動登出（正常，不記錄、不告警）</td>
+        </tr>
+        <tr>
+          <td><span class="badge-high">✗ 否</span></td>
+          <td><span class="badge-good">✓ 在</span></td>
+          <td>—</td>
+          <td><code>tokenRevoked</code><br>quota storage 完好卻登出 → 改密碼 / 停用 / 撤銷</td>
+        </tr>
+        <tr>
+          <td><span class="badge-high">✗ 否</span></td>
+          <td><span class="badge-high">✗ 不見</span></td>
+          <td><span class="badge-good">✓ 在</span></td>
+          <td><code>storageCleared</code><br>裝置確實登入過 → quota storage 被清</td>
+        </tr>
+        <tr>
+          <td><span class="badge-high">✗ 否</span></td>
+          <td><span class="badge-high">✗ 不見</span></td>
+          <td><span class="badge-high">✗ 不見</span></td>
+          <td><code>neverSignedIn</code><br>查無登入痕跡 → <strong>不產生事件</strong></td>
+        </tr>
+      </tbody>
+    </table>
+    <strong>判定順序不可調換</strong>：<code>explicit</code> 必須最先判，它是我方自己設的旗標，
+    可信度高於任何環境推測。<br>
+    判定邏輯寫成純函式（<code>src/lib/diag/sentinel.ts</code>），用 <code>node --test</code> 窮舉全部
+    54 種輸入組合。
+    <div class="code-block">
+<span class="cm">// 兩顆哨兵都在登入成功時種下，且刻意「不」在登出時清除——</span>
+<span class="cm">// 它們的價值正是在於「儲存被清時會跟著消失」。</span>
+<span class="kw">const</span> <span class="nm">SENTINEL_KEY</span>    = <span class="st">'mecharashi_diag_sentinel'</span>  <span class="cm">// { uid, plantedAt, lastSeenAt, sessionId }</span>
+<span class="kw">const</span> <span class="nm">SENTINEL_COOKIE</span> = <span class="st">'mr_diag'</span>                    <span class="cm">// 僅存 uid 前 8 碼，回答是非題就夠</span></div>
+  </div>
+
+  <div class="problem-block">
+    <strong>🐛 實測推翻：IndexedDB 探針測不到任何東西（成因 <code>idbEvicted</code> 因此退場）</strong><br>
+    初版讓「Firebase 的 <code>firebaseLocalStorageDb</code> 還在不在」參與判定。瀏覽器實測發現
+    那顆探針<strong>恆為 present</strong>：該 database 會在 SDK 初始化時<strong>自動重建</strong>，
+    所以等 <code>onAuthStateChanged(null)</code> 觸發、探針執行時，就算前一秒手動刪光整個
+    database，它也早就回來了。<br><br>
+    兩層後果，都在實測中重現：<br>
+    ① <code>idbEvicted</code> 永遠產生不出來（條件是「IDB 不見」，而它不會不見）；<br>
+    ② 更嚴重——原本「cookie 沒了但 IDB 還在 → 證明登入過 → storageCleared」這條，會讓
+    <strong>每個第一次進站的匿名訪客</strong>（哨兵、cookie 都沒有，IDB 由 SDK 剛建好）
+    被判成 storageCleared 並跳出登出橫幅。正是決策二之補要防的誤報，卻被從側面繞過。<br><br>
+    <strong>修正</strong>：判定只採用不受 Firebase 干擾的兩顆哨兵；探針改為檢查
+    <code>firebase:authUser:*</code> 記錄是否存在（名實相符），保留為佐證但不參與判定。<br><br>
+    <strong>單元測試為什麼沒抓到</strong>：它測的是「給定探針值 → 判定是否正確」，
+    而錯的是<strong>探針值本身測不到真實狀態</strong>。那一層只有真實瀏覽器測得出來。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策二之補：為什麼一顆哨兵不夠——匿名訪客誤報</strong><br>
+    只用 localStorage 一顆哨兵時，「哨兵不見了」有兩種截然不同的解釋：<strong>儲存被清</strong>，
+    或<strong>這台裝置根本沒登入過</strong>。而前台匿名訪客每次載入都會觸發一次
+    <code>onAuthStateChanged(null)</code>，全部會被判成 storageCleared —— 日誌會被訪客雜訊淹沒到失去用途。<br><br>
+    關鍵在於必須先回答「這台裝置到底登入過沒有」，而<strong>這個問題不能問正在被懷疑的那個儲存機制</strong>。
+    故第二顆哨兵種在 cookie：它<strong>不屬於 quota-managed storage，Chrome 的 eviction 清不到它</strong>，
+    所以「localStorage 沒了但 cookie 還在」就是儲存被清的鐵證。<br><br>
+    <strong>已知取捨：</strong>Safari ITP 會連 cookie 一起清，故 Safari 的儲存清除會落到
+    <code>neverSignedIn</code> 而非 <code>storageCleared</code>。這是刻意的——
+    <strong>寧可漏報也不要誤報</strong>，且 Safari 情境可由日誌裡的 UA 分布另行辨識。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策三：Safari 根本不給 persist()——現有防護對 Safari 使用者完全無效</strong><br>
+    現有的 <code>navigator.storage.persist()</code> 只在 Chrome 系有意義。Safari 一律不核准
+    （除非站台被加入主畫面），而 Safari ITP 的政策是<strong>7 天無互動就清除 script-writable storage</strong>，
+    包含 localStorage 與 IndexedDB。若有維護者用 iPhone 或 Mac Safari，
+    他們被登出是<strong>必然而非偶然</strong>，且現有修法完全擋不住。
+    <br><br>
+    這正是本計畫要證實的關鍵假說之一——所以日誌<strong>必須記錄 UA / 平台 / <code>persisted()</code> 結果</strong>，
+    否則無法區分「Chrome 空間壓力」與「Safari ITP 定時清除」這兩個需要完全不同對策的成因。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：<code>systemLog</code> 沿用 changeHistory 的集合形狀，但讀取權限收到 OWNER</strong><br>
+    與 <code>changeHistory</code> 同構：獨立頂層集合、append-only、伺服器分頁、<strong>刻意不註冊進</strong>
+    <code>CollectionKey</code> / <code>GameDataContext</code>（沿用 PLAN-030 決策一：持續成長、只查最近幾頁的資料，
+    塞進「整包載入 + localStorage」的版本快取只會撐爆快取）。
+    <br><br>
+    差異在權限：<code>changeHistory</code> 是 <code>read: isAdmin()</code>，
+    <code>systemLog</code> 收緊為 <code>read: isOwnerRole()</code>——日誌含 UA、儲存用量等環境指紋，
+    屬於維護者的裝置資訊，不該讓其他 ADMIN 互看。
+    <div class="code-block">
+<span class="fn">match</span> /systemLog/{docId} {
+  <span class="kw">allow</span> read:   <span class="kw">if</span> <span class="fn">isOwnerRole</span>();
+  <span class="kw">allow</span> create: <span class="kw">if</span> <span class="fn">isAdmin</span>() && request.resource.data.uid == request.auth.uid;
+  <span class="kw">allow</span> update, delete: <span class="kw">if</span> <span class="kw">false</span>;
+}</div>
+    <code>create</code> 維持 <code>isAdmin()</code>：本計畫只追蹤維護者，一般 USER 被登出不影響資料，
+    放寬到 <code>isAuthenticated()</code> 只會擴大寫入面並帶來限流需求。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：日誌不只記登出，也記寫入被拒（症狀 B）</strong><br>
+    攔 <code>permission-denied</code>，記成 <code>kind: 'writeDenied'</code> 的事件。這類事件
+    <strong>當下通常仍登入著，可以直接寫 Firestore</strong>，不必走佇列——但仍共用同一個事件型別與同一頁檢視，
+    因為對 OWNER 而言「維護者存不進去」與「維護者被登出」是同一個問題的兩種面貌。<br><br>
+    <em>（實作修正：原本以為 <code>firestoreCore.ts</code> 已有寫入路徑可以直接攔，
+    實際上該檔<strong>只有讀取函式</strong>，寫入分散在 12 個模組的 <code>update*</code>
+    —— 8 個各自 <code>setDoc</code>、4 個走 <code>saveWithHistory</code>。故先新增
+    <code>writeDoc</code> / <code>writeDocRaw</code> 統一入口再全數改接，順帶讓
+    <code>stripUndefined</code> 不會再有人漏掉。）</em>
+  </div>
+
+  <div class="warning-block">
+    <strong>決策五之補：診斷在非瀏覽器環境一律停用</strong><br>
+    <code>reportWriteDenied()</code> 開頭即檢查 <code>typeof window === 'undefined'</code> 並返回。
+    模擬器整合測試與 <code>scripts/</code> 的 migrate 腳本都會走到 <code>writeDoc</code>，
+    而破壞性測試更是<strong>刻意</strong>製造 permission-denied —— 讓診斷在那裡開火只會產生
+    無人閱讀的雜訊記錄，還可能干擾計算寫入次數的測試。<br>
+    另外，寫入被拒本身就可能意味著憑證已失效（那樣連診斷記錄也會被拒），
+    故直接寫入失敗時退回 localStorage 佇列，證據不會因此丟失。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：草稿暫存做成統一 hook，而非逐頁改寫</strong><br>
+    盤點 12 個後台編輯頁後發現慣例高度一致：一律是
+    <code>const [editing, setEditing] = useState&lt;T|null&gt;(null)</code> 搭配 <code>handleSave(updated)</code>。
+    因此可在 <code>shared.tsx</code> 加一個 <code>useDraftAutosave(kind, editing, setEditing)</code>，
+    每頁只需接一行，不需要動各頁的表單結構。
+    <br><br>
+    草稿存 localStorage（debounce 寫入，避免每次按鍵都寫），存檔成功後清除。
+    重新進入該頁時若偵測到未清除的草稿，顯示「偵測到未儲存的編輯，要還原嗎？」讓使用者選擇。
+    <strong>不自動套用</strong>——自動覆蓋使用者當前選取的項目比丟失草稿更難解釋。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：被登出當下就要跳橫幅，不能只寫進 OWNER 才看得到的日誌</strong><br>
+    維護者不看主控台，也看不到系統日誌頁。若只做後台記錄，對他們而言體驗毫無改善，
+    仍然是「莫名其妙被登出」。因此登出當下要直接顯示橫幅，用白話說明<strong>推定原因</strong>與
+    <strong>草稿是否已保住</strong>，例如：
+    <div class="code-block"><span class="cm">⚠ 你被登出了</span>
+推定原因：瀏覽器清除了本站的儲存資料（裝置空間不足或隱私設定）
+你未儲存的編輯已暫存在這台裝置，重新登入後可還原。
+                                              [ 重新登入 ]</div>
+  </div>
+
+  <div class="warning-block">
+    <strong>決策八：佇列要有上限，日誌要有 TTL</strong><br>
+    localStorage 佇列上限 20 筆、超過丟棄最舊的——若使用者長期沒登入回來，
+    佇列不該無限增長把 localStorage 配額吃光（那反而會誘發我們正在追查的儲存問題）。
+    <br><br>
+    Firestore 端沿用 PLAN-030 的 <code>expireAt</code> + Firestore 原生 TTL 政策，
+    但保留期縮短為 <strong>90 天</strong>（changeHistory 是 2 年）——診斷日誌的價值隨時間急遽衰減，
+    半年前的登出記錄對排查今天的問題沒有意義。<br>
+    TTL 在 <code>firestore.indexes.json</code> 的 <code>fieldOverrides</code> 以
+    <code>"ttl": true</code> 宣告，隨 <code>firebase deploy --only firestore:indexes</code> 一併生效，
+    <strong>不需要到 Firebase Console 手動設定</strong>。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策九：草稿暫存自己不能變成故障來源</strong><br>
+    這一條在實作時才浮現，但它是本計畫最容易自相矛盾的地方：我們正在追查「localStorage 被清空」，
+    而解法之一是<strong>往 localStorage 寫更多東西</strong>。<br>
+    因此草稿寫入在配額滿時，會<strong>清掉自己的草稿再放棄</strong>，而非重試或保留：
+    寧可失去暫存能力，也不能讓暫存機制把配額撐爆、反過來誘發我們正在追查的儲存清除。
+    診斷佇列的 20 筆上限也是同一個理由。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label cyan">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>診斷採集層</strong> <code>src/lib/diag/</code>：哨兵讀寫與三態判定、環境證據採集、localStorage 事件佇列、登入後 flush</li>
+      <li><strong>systemLog 集合</strong>：型別、API 層（append-only + 伺服器分頁）、firestore.rules、TTL 政策、複合索引</li>
+      <li><strong>OWNER 系統日誌頁</strong> <code>/admin/system-log</code>：依 kind / reason 雙軸篩選、展開看完整環境證據</li>
+      <li><strong>登出橫幅</strong>：被動登出當下以白話說明推定原因與草稿狀態</li>
+      <li><strong>草稿本機暫存與還原</strong>：<code>useDraftAutosave</code> hook + 12 個後台編輯頁接線</li>
+      <li><strong>寫入被拒記錄</strong>：<code>firestoreCore</code> 寫入路徑攔 permission-denied</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>Worker <code>/api/log</code> 即時上報端點</strong>——見決策一，保留為日後擴充點</li>
+      <li><strong>一般 USER 與匿名訪客的登出記錄</strong>——本期只追蹤 ADMIN / OWNER</li>
+      <li><strong>實際修復登出問題</strong>——本計畫是「取得證據」，對策要等日誌累積出真實成因分布後再開新計畫。
+          先修再驗證，等於重蹈 <code>navigator.storage.persist()</code> 那次的覆轍</li>
+      <li><strong>前台使用者的錯誤回報 / Sentry 類全站錯誤追蹤</strong>——範圍完全不同</li>
+    </ul>
+  </div>
+
+  <div class="info-block">
+    <strong>驗收標準：</strong>本計畫的成敗不看「登出問題有沒有解決」（那是下一個計畫），
+    而看<strong>下次維護者回報被登出時，OWNER 能不能在系統日誌頁上直接看出原因</strong>，
+    以及<strong>該維護者的編輯內容有沒有保住</strong>。
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label cyan">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-045 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-030_資料變更歷史/計畫書.html">
+      <div class="doc-tag">Reference</div>
+      <h4>◆ PLAN-030 資料變更歷史</h4>
+      <p>append-only 稽核 log 的既有模式，systemLog 沿用其集合形狀與分頁做法</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-045 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>
