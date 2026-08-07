@@ -180,7 +180,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-032 進度表</span>
   </div>
@@ -988,21 +988,64 @@
   <div class="section-label pink">Follow-up</div>
   <div class="section-title">已分流的後續工作</div>
 
+  <div class="impact-note">
+    <strong>✔ 2026-08-07 已完成：1a 大小寫孿生合併 + 1b 撞名防呆補名稱維度</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>1b — 撞名防呆多查「名稱」維度</strong>（<code>utils/idSlug.ts</code> 的
+        <code>findEntityClash()</code>，7 個後台全接：技能／BUFF／詞條／機甲／神驅／機師／背包技能）。<br>
+        <span style="color:var(--accent-red)">只查 ID 有個洞</span>：ID 是「建立當下」由名稱推導的快照，
+        之後改名只會改 <code>name</code> 欄位、<strong>ID 留著舊寫法</strong>。實測技能庫有
+        <strong>20 筆</strong> 這種漂移（<code>skill_先鋒型態</code> 的 name 已是「先鋒<u>形</u>態」、
+        <code>skill_嵐循環</code> 的 name 已是「嵐<u>迴圈</u>」），另有 slugify 產不出的
+        （<code>skill_ALL IN</code> 含空格、<code>skill_∑-04Ω</code> 的符號會被剝光成 <code>skill_04</code>）。
+        這些 doc 的 ID 一律推不回來 → 撞名檢查看不到 → <strong>靜默建出同名第二份</strong>。<br>
+        <strong>選「多查一個維度」而非「正規化那 20 個 ID」</strong>：後者要同步改
+        <strong>178 處引用</strong>，而且日後再有人改名，同樣的洞會重新長出來。查 name 對 ID 長相完全免疫。
+        抽成純函式 + 7 項單測。</li>
+      <li><strong>1a — 合併 5 組大小寫孿生</strong>（<code>scripts/migrate-skill-casing-twins.mjs</code>，已進版控）。
+        技能庫 <strong>852 → 847 筆，孿生 5 組 → 0 組</strong>，重跑冪等。<br>
+        <strong>正本挑選規則是「資料完整度優先」而非「引用數優先」</strong>——dry-run 才看出實測 5 組呈現
+        一致模式：<code>SKILL_</code> 大寫＝<code>manual:true</code> 手動建立、只填 1–2/7 欄位；
+        <code>skill_</code> 小寫＝爬蟲管理、填 4–5/7。用引用數當首要判準，精確打擊與重擊會挑到<strong>貧乏的那份</strong>當正本。<br>
+        腳本對實質衝突<strong>不猜、直接中止</strong>，裁決寫進 <code>ACCEPT_CONFLICT</code>（進版控可 review）：
+        <br>· <code>skill_星墜閃</code> 傷害 1.2 vs 1.3 → 站長遊戲內確認 <strong>1.2</strong>（取正本）
+        <br>· <code>skill_精確打擊</code> 主動技能 vs 指令技能 → 遊戲內浮窗顯示「類型：指令」→ <strong>取輸家的值</strong>
+        （為此讓裁決表支援 <code>keep:'winner'|'loser'</code>）
+        <br>另修掉一個假衝突：<code>iconLocal</code> 的扁平路徑與明確子資料夾路徑經
+        <code>normalizeSkillPath</code> 後<strong>是同一個檔案</strong>，字面比對會把它報成衝突、
+        淹掉真正該看的那兩筆（與先前 65 筆 <code>JSON.stringify</code> 假警報同類）。</li>
+    </ul>
+  </div>
+
   <div class="gate-note">
-    <ul style="margin:0 0 0 16px;line-height:1.9;">
-      <li><strong>武器主動指令技能（<code>InitiativeSkill</code>）</strong>——爬蟲只讀 <code>PassiveSkill</code>，
-        全站 170 筆武器技能 100% 是被動，遊戲內的「電磁激盪」等主動指令完全沒進資料庫。
-        <span style="color:var(--accent-green)">本計畫完成後，補進來的主動技能天生就是引用格式。</span></li>
-      <li><strong>技能庫 ID 正規化</strong>（134 筆 <code>SKILL_</code> 大寫改小寫 + 同步所有 <code>refId</code>）。<br>
-        <span style="color:var(--accent-red)">▸ 2026-08-07 M2 驗證時實測：這個洞<strong>已經造成 5 組大小寫孿生</strong></span>——
-        <code>SKILL_星墜閃</code>／<code>skill_星墜閃</code>、精確打擊、跳幫散射、重擊、雙刃鋸。
-        五組皆為<strong>同一技能的兩份拷貝</strong>（差異只有半形 vs 全形標點，與本計畫吸收的那兩筆同一病因），
-        且都是<strong>機師側</strong>技能（<code>domain</code> 未填、非武器技能名），
-        <u>與本次遷移無關、遷移也未觸及</u>——M2 實跑「待人工裁決 0 筆、未誤建任何小寫孿生」。<br>
-        M0 已堵住<strong>未來</strong>再長出新的，但這 5 組既有的仍待清理：
-        每組要挑一份為正本、把另一份的 <code>refId</code> 引用改指過去、再刪除。
-        <strong>級聯掃描器（PLAN-030）可以直接算出影響範圍</strong>，成本比計畫書預估的低。</li>
-      <li><strong>集合實體改名</strong> <code>pilotSkills</code> → <code>skills</code>（純美觀，可能永遠不做）。</li>
+    <strong>站長 2026-08-07 決定放棄的項目</strong>——已量測成本後拍板，不再列為待辦：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><s><strong>技能庫 ID 正規化</strong>（129 筆 <code>SKILL_</code> 大寫改小寫）</s>——
+        要同步改 <strong>170 處引用</strong>，而 M0 的 <code>idPrefixCasings</code> 與 1b 的名稱撞名
+        已把實際危害解除，剩下的只是「看起來不整齊」。<strong>不值得為它動 170 處引用。</strong></li>
+      <li><s><strong>集合實體改名</strong> <code>pilotSkills</code> → <code>skills</code></s>——
+        實測要改 <strong>1129 處引用</strong>（pilots 797／weapons 183／pilotSkills 95／
+        neuralDriveAbilities 19／modules 14／glossaryTerms 9／buffs 7／backpackSkills 5），
+        外加 <code>firestore.rules</code>、Worker 白名單、<code>CollectionKey</code>、api 層、barrel、
+        所有 hook、<code>entityRefs</code> SPECS key、<code>cascadeDelete</code>、docs。
+        純美觀。<strong>永不執行</strong>——已在文件上正名為「技能庫」，那就夠了。</li>
+    </ul>
+  </div>
+
+  <div class="gate-note">
+    <strong>唯一保留的後續工作</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>武器主動指令技能（<code>InitiativeSkill</code>）</strong>——實測確認爬蟲讀的是
+        <code>detail.PassiveSkill ?? detail.Skills ?? detail.skills</code>，<strong>從未讀取
+        <code>InitiativeSkill</code></strong>；技能庫 <code>domain:'weapon'</code> 的 133 筆
+        <code>type</code> 分佈為 <code>{"被動技能":133}</code>，遊戲內的「電磁激盪」等主動指令
+        <strong>完全沒進資料庫</strong>。<br>
+        這是三項 follow-up 中<strong>唯一對玩家有實質價值</strong>的（資料缺口，不是結構問題）。
+        <span style="color:var(--accent-green)">本計畫已鋪好路：補進來的主動技能天生就是引用格式，
+        掛載走 <code>WeaponSkillRef</code>，後台挑選器現成。</span><br>
+        <span style="color:var(--accent-yellow)">⚠ 前置未知</span>：官方 API 到底有沒有
+        <code>InitiativeSkill</code> 欄位？沒有的話就得手工輸入。<strong>要先探一次 API 才估得出工作量</strong>，
+        屆時另立 PLAN。</li>
     </ul>
   </div>
 </section>
@@ -1010,7 +1053,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-032 — <a href="../index.html" style="color:var(--accent-pink);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-032 — <a href="../index.html" style="color:var(--accent-pink);text-decoration:none;">← 歷史記錄</a>
 </footer>
 
 </body>
