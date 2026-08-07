@@ -5,7 +5,8 @@ import {
 } from '../../../types/enums'
 import { assetUrl } from '../../../utils/assets'
 import { getBossImagePath } from '../../../data/bossDrops'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton, GRID_AUTO_FIELDS } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton, GRID_AUTO_FIELDS, DraftRestoreBar } from './shared'
+import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { getCollectionPage, updateComponent, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
@@ -227,6 +228,7 @@ function ComponentEditPanel({
   onCancel: () => void
 }) {
   const [form, setForm]     = useState<Component>({ ...comp })
+  useDraftWrite('components', form, (c) => c.name)   // 草稿暫存（PLAN-045）：監聽的必須是 form，不是外層的 editing
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
 
@@ -419,6 +421,7 @@ function ComponentEditPanel({
 // ─── 元件管理列表 ──────────────────────────────────────────────────────────────
 export default function ComponentAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<Component | null>(null)
+  const draft = useDraftRestore<Component>('components')
   const gd = useGameData()
 
   const {
@@ -455,6 +458,7 @@ export default function ComponentAdmin({ initialSearch = '' }: { initialSearch?:
     const version = await updateComponent(updated)
     upsert(updated)
     gd.patchCollectionItem('components', updated, version)
+    draft.commit()   // 存檔成功 → 清除本機草稿，避免下次進頁跳過期提示
     setEditing(null)
   }
 
@@ -463,6 +467,7 @@ export default function ComponentAdmin({ initialSearch = '' }: { initialSearch?:
 
   return (
     <div>
+      <DraftRestoreBar draft={draft} onRestore={setEditing} />
       {/* 篩選列 */}
       <div className="flex flex-wrap gap-2 mb-3">
         <input
@@ -603,7 +608,7 @@ export default function ComponentAdmin({ initialSearch = '' }: { initialSearch?:
         <ComponentEditPanel
           component={editing}
           onSave={handleSave}
-          onCancel={() => setEditing(null)}
+          onCancel={() => { draft.discard(); setEditing(null) }}
         />
       )}
     </div>

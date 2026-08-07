@@ -1,9 +1,7 @@
 // ── 武器 weapons ──────────────────────────────────────────────────────────────
 
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '../firebase'
 import type { Weapon } from '../../types'
-import { fetchCollection, fetchDocument, stripUndefined } from './firestoreCore'
+import { fetchCollection, fetchDocument, writeDoc } from './firestoreCore'
 import { bumpDataVersion } from './versions'
 
 export const getWeapons = () =>
@@ -14,6 +12,6 @@ export const getWeapon = (id: string) =>
 
 export const updateWeapon = async (weapon: Weapon): Promise<string> => {
   const { id, ...data } = weapon
-  await setDoc(doc(db, 'weapons', id), stripUndefined(data))
+  await writeDoc('weapons', id, data)
   return bumpDataVersion('weapons').catch(() => '')
 }

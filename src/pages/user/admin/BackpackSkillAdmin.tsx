@@ -10,7 +10,9 @@ import {
   Field, AdminModal, GRID_AUTO_FIELDS,
   useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton,
   useCascadeDelete, ConfirmDeleteDialog, DeleteButton,
+  DraftRestoreBar,
 } from './shared'
+import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updateBackpackSkill, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { checkBuffLevelName } from '../../../utils/ndOverrides'
@@ -195,6 +197,7 @@ function BackpackSkillEditPanel({
   onCancel: () => void
 }) {
   const [form, setForm]     = useState<BackpackSkillDoc>({ ...skill })
+  useDraftWrite('backpackSkills', form, (s) => s.name)   // 草稿暫存（PLAN-045）：監聽的必須是 form，不是外層的 editing
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
 
@@ -355,6 +358,7 @@ function BackpackSkillEditPanel({
 // ─── 背包技能管理列表 ──────────────────────────────────────────────────────────
 export default function BackpackSkillAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<BackpackSkillDoc | null>(null)
+  const draft = useDraftRestore<BackpackSkillDoc>('backpackSkills')
   const gd = useGameData()
   const del = useCascadeDelete('backpackSkill', 'backpackSkills')
 
@@ -404,11 +408,13 @@ export default function BackpackSkillAdmin({ initialSearch = '' }: { initialSear
     const version = await updateBackpackSkill(updated)
     upsert(updated)
     gd.patchCollectionItem('backpackSkills', updated, version)
+    draft.commit()   // 存檔成功 → 清除本機草稿，避免下次進頁跳過期提示
     setEditing(null)
   }
 
   return (
     <div>
+      <DraftRestoreBar draft={draft} onRestore={setEditing} />
       {/* 搜尋列 */}
       <div className="flex flex-wrap gap-2 mb-3">
         <input
@@ -521,7 +527,7 @@ export default function BackpackSkillAdmin({ initialSearch = '' }: { initialSear
         <BackpackSkillEditPanel
           skill={editing}
           onSave={handleSave}
-          onCancel={() => setEditing(null)}
+          onCancel={() => { draft.discard(); setEditing(null) }}
         />
       )}
 

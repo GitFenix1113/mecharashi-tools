@@ -27,6 +27,7 @@ const WeaponDetailPage         = lazy(() => import('./pages/weapons/WeaponDetail
 const AdminVersionListPage     = lazy(() => import('./pages/admin/AdminVersionListPage'))
 const AdminVersionEditorPage   = lazy(() => import('./pages/admin/AdminVersionEditorPage'))
 const AdminHistoryPage         = lazy(() => import('./pages/admin/AdminHistoryPage'))
+const AdminSystemLogPage       = lazy(() => import('./pages/admin/AdminSystemLogPage'))
 const RainbowMechPlannerPage   = lazy(() => import('./pages/guides/tools/RainbowMechPlannerPage'))
 const ComponentDropsPage       = lazy(() => import('./pages/guides/tools/ComponentDropsPage'))
 const StorageDebugPage         = lazy(() => import('./pages/debug/StorageDebugPage'))
@@ -74,6 +75,11 @@ function App() {
             <Route
               path="admin/history"
               element={<AdminRoute><Suspense fallback={null}><AdminHistoryPage /></Suspense></AdminRoute>}
+            />
+            {/* 系統日誌僅 OWNER 可看：內含維護者的 UA、儲存用量等裝置指紋（PLAN-045） */}
+            <Route
+              path="admin/system-log"
+              element={<AdminRoute ownerOnly><Suspense fallback={null}><AdminSystemLogPage /></Suspense></AdminRoute>}
             />
             {/* catch-all：未匹配路徑顯示 404 引導頁（放最後，只在所有 route 都沒中時生效）。
                 置於 Layout 之下，故仍有導覽列可用；先前缺此條時只會渲染空白內容區。 */}

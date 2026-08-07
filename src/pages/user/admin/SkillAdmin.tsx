@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import type { PilotSkillDoc, SkillEffect } from '../../../types'
 import { formatWeaponReq } from '../../../types'
 import { SkillType } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, useCascadeDelete, ConfirmDeleteDialog, DeleteButton } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, useCascadeDelete, ConfirmDeleteDialog, DeleteButton, DraftRestoreBar } from './shared'
+import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updatePilotSkill, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix, idPrefixCasings } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
@@ -39,6 +40,7 @@ function SkillEditPanel({
   onCancel: () => void
 }) {
   const [form, setForm]     = useState<PilotSkillDoc>({ ...skill })
+  useDraftWrite('pilotSkills', form, (s) => s.name)   // 草稿暫存（PLAN-045）：監聽的必須是 form，不是外層的 editing
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
 
@@ -210,6 +212,7 @@ function SkillEditPanel({
 // ─── 技能管理列表 ──────────────────────────────────────────────────────────────
 export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<PilotSkillDoc | null>(null)
+  const draft = useDraftRestore<PilotSkillDoc>('pilotSkills')
   const gd = useGameData()
   const del = useCascadeDelete('pilotSkill', 'pilotSkills')
 
@@ -261,11 +264,13 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
     const version = await updatePilotSkill(updated)
     upsert(updated)
     gd.patchCollectionItem('pilotSkills', updated, version)
+    draft.commit()   // 存檔成功 → 清除本機草稿，避免下次進頁跳過期提示
     setEditing(null)
   }
 
   return (
     <div>
+      <DraftRestoreBar draft={draft} onRestore={setEditing} />
       {/* 搜尋列 */}
       <div className="flex flex-wrap gap-2 mb-3">
         <input
@@ -380,7 +385,7 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
         <SkillEditPanel
           skill={editing}
           onSave={handleSave}
-          onCancel={() => setEditing(null)}
+          onCancel={() => { draft.discard(); setEditing(null) }}
         />
       )}
 

@@ -7,7 +7,6 @@ import {
   orderBy,
   query,
   serverTimestamp,
-  setDoc,
   startAfter,
   where,
   type QueryConstraint,
@@ -20,7 +19,7 @@ import type {
   ChangeTargetKind,
 } from '../../types/changeHistory'
 import { CHANGE_HISTORY_TTL_YEARS, TARGET_COLLECTION } from '../../types/changeHistory'
-import { fetchDocument, stripUndefined, type PageCursor } from './firestoreCore'
+import { fetchDocument, writeDoc, type PageCursor } from './firestoreCore'
 import { bumpDataVersion } from './versions'
 
 const COLL = 'changeHistory'
@@ -184,7 +183,10 @@ export async function saveWithHistory<T extends { id: string; name?: string }>(
   // pre-image：null → create；有值 → update（並據此算 changedFields）
   const prev = await fetchDocument<Record<string, unknown>>(coll, id)
 
-  await setDoc(doc(db, coll, id), stripUndefined(data))
+  // writeDoc 而非裸 setDoc：寫入被拒（permission-denied）需要有唯一攔截點才記得到
+  // （PLAN-045 決策五）。行為完全等價——writeDoc 內部就是 stripUndefined + setDoc，
+  // 錯誤原樣重拋，故本函式「log 失敗不擋主流程」的既有語意不受影響。
+  await writeDoc(coll, id, data)
   const version = await bumpDataVersion(coll).catch(() => '')
 
   logChange({

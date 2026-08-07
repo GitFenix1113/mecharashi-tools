@@ -5,6 +5,7 @@ import {
   signInWithPopup,
   signOut as fbSignOut,
   onAuthStateChanged,
+  onIdTokenChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendEmailVerification,
@@ -15,6 +16,10 @@ import { auth, USE_EMULATOR } from '../lib/firebase'
 import { getUserProfile, initUserProfile, patchUserProfile } from '../lib/userApi'
 import type { UserProfile } from '../types'
 import AuthModal from '../components/AuthModal'
+import { captureLogout, onSignedIn } from '../lib/diag/report'
+import { markTokenRefresh, startOfflineTracking } from '../lib/diag/collect'
+import { hasAnyDraft } from '../lib/diag/draft'
+import type { LogoutReason } from '../lib/diag/sentinel'
 
 interface AuthContextValue {
   user: User | null
@@ -27,6 +32,12 @@ interface AuthContextValue {
   sendPasswordReset: (email: string) => Promise<void>
   openAuthModal: () => void
   refreshProfile: () => Promise<void>
+  /**
+   * 最近一次「非預期登出」的判定成因，供橫幅顯示（PLAN-045 Phase E-1）。
+   * 主動登出與匿名訪客一律為 null —— 那些不是故障，不該打擾使用者。
+   */
+  logoutNotice: { reason: LogoutReason; hadDraft: boolean } | null
+  dismissLogoutNotice: () => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -51,11 +62,33 @@ const EMU_ADMIN_PASSWORD: string = import.meta.env.VITE_EMU_ADMIN_PASSWORD ?? 'd
 // 不該立刻被登回去。重整頁面才會再次自動登入。
 let emuAutoSignInTried = false
 
+// ── 登出診斷：主動登出旗標（PLAN-045 Phase C-1）───────────────────────────────
+// onAuthStateChanged 拿到 null 時分不出「我方呼叫了 signOut」與「憑證被動失效」，
+// 而這正是判定成因的第一順位訊號（見 sentinel.ts 的 classifyLogout）。
+//
+// ⚠ 所有會呼叫 fbSignOut 的路徑都必須經過 markExplicitSignOut()，包含註冊流程與
+//   Email 未驗證的擋登入 —— 那兩處也是我方主動登出，漏標會被誤報成 tokenRevoked，
+//   而且它們發生的頻率不低（每個新使用者至少各一次），足以汙染整份日誌。
+//
+// module-scope 而非 state：旗標要被 onAuthStateChanged 這個 React 樹外的回呼讀到，
+// 且它的生命週期屬於「這個分頁」而不是「這次 render」。
+let explicitSignOut = false
+const markExplicitSignOut = () => { explicitSignOut = true }
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
+  const [logoutNotice, setLogoutNotice] =
+    useState<{ reason: LogoutReason; hadDraft: boolean } | null>(null)
+
+  // 離線時長追蹤：用來證偽「大概是網路不好斷線了吧」這個最容易被隨口接受的猜測
+  // （Firebase Auth 在離線期間並不會登出，它會保留憑證）。
+  useEffect(() => startOfflineTracking(), [])
+
+  // token refresh 時間戳。長時間未 refresh 是 token 側失效的輔助訊號。
+  useEffect(() => onIdTokenChanged(auth, (u) => { if (u) markTokenRefresh() }), [])
 
   useEffect(() => {
     let cancelled = false
@@ -63,6 +96,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (cancelled) return
       setUser(u)
       if (u) {
+        // 種哨兵 + 補送先前積在本機的診斷事件。模擬器模式跳過（自動登入會產生假事件）。
+        if (!USE_EMULATOR) {
+          void onSignedIn(u.uid)
+        }
+        setLogoutNotice(null)
         const profile = await initUserProfile(u.uid, {
           displayName: u.displayName ?? u.email ?? 'User',
           email: u.email ?? '',
@@ -73,6 +111,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false)
         }
       } else {
+        // ── 登出診斷採集 ────────────────────────────────────────────────────
+        // 這裡是唯一能觀察到「失去登入狀態」的時點，且此刻 auth.currentUser 已為
+        // null、寫不了 Firestore，故 captureLogout 只把證據放進 localStorage 佇列。
+        // 旗標讀完立刻重置：它只描述「剛剛那一次」轉換。
+        const wasExplicit = explicitSignOut
+        explicitSignOut = false
+        if (!USE_EMULATOR) {
+          const hadDraft = hasAnyDraft()
+          void captureLogout(wasExplicit, hadDraft).then((reason) => {
+            // 只有非預期登出才打擾使用者。主動登出（explicit）與匿名訪客
+            // （neverSignedIn，captureLogout 回 null）一律不顯示橫幅。
+            if (!cancelled && reason && reason !== 'explicit') {
+              setLogoutNotice({ reason, hadDraft })
+            }
+          })
+        }
         // 模擬器模式：沒有登入狀態時自動登入 seed 帳號（見檔案上方說明）。
         if (USE_EMULATOR && !emuAutoSignInTried) {
           emuAutoSignInTried = true
@@ -116,6 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signOut = async () => {
+    markExplicitSignOut()
     await fbSignOut(auth)
   }
 
@@ -133,6 +188,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await patchUserProfile(credential.user.uid, { displayName })
     await sendEmailVerification(credential.user)
     // 寄出驗證信後登出，使用者必須點擊連結驗證後才能正式登入
+    // （這也是我方主動登出，必須標記——否則每個新使用者都會產生一筆假的 tokenRevoked）
+    markExplicitSignOut()
     await fbSignOut(auth)
   }
 
@@ -140,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const credential = await signInWithEmailAndPassword(auth, email, password)
     if (!credential.user.emailVerified) {
       await sendEmailVerification(credential.user)
+      markExplicitSignOut()
       await fbSignOut(auth)
       throw Object.assign(new Error('auth/email-not-verified'), { code: 'auth/email-not-verified' })
     }
@@ -159,7 +217,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, userProfile, loading, signIn, signOut, signUpWithEmail, signInWithEmail, sendPasswordReset, openAuthModal, refreshProfile }}
+      value={{
+        user, userProfile, loading, signIn, signOut, signUpWithEmail, signInWithEmail,
+        sendPasswordReset, openAuthModal, refreshProfile,
+        logoutNotice, dismissLogoutNotice: () => setLogoutNotice(null),
+      }}
     >
       {children}
       <AuthModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />

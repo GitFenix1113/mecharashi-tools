@@ -1,9 +1,8 @@
 // ── 機師 pilots ────────────────────────────────────────────────────────────────
 
-import { doc, setDoc, where, orderBy } from 'firebase/firestore'
-import { db } from '../firebase'
+import { where, orderBy } from 'firebase/firestore'
 import type { Pilot } from '../../types'
-import { fetchCollection, fetchDocument, stripUndefined } from './firestoreCore'
+import { fetchCollection, fetchDocument, writeDoc } from './firestoreCore'
 import { bumpDataVersion } from './versions'
 
 export const getPilots = () =>
@@ -17,6 +16,6 @@ export const getPilotsByClass = (pilotClass: string) =>
 
 export const updatePilot = async (pilot: Pilot): Promise<string> => {
   const { id, ...data } = pilot
-  await setDoc(doc(db, 'pilots', id), stripUndefined(data))
+  await writeDoc('pilots', id, data)
   return bumpDataVersion('pilots').catch(() => '')
 }

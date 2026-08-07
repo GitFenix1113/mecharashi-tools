@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-045 · 登出診斷與系統日誌</h3>
+      <p>維護者持續回報「編輯資料到一半被登出」，但站上<b>沒有任何持久化診斷記錄</b>，每次回報都只能靠猜——先前為此加的 <code>navigator.storage.persist()</code> 至今<b>從未被證實</b>是對的方向。而「被登出」其實混雜三種故障：Auth 真的失效、<b>仍登入著但寫入被 permission-denied</b>（使用者誤以為登出）、資料快取失效（無害）。<br>關鍵約束是<b>登出當下沒有權限寫 Firestore</b>（規則全站 <code>isAdmin()</code>，此時 currentUser 已為 null），故改為 localStorage 佇列 ＋ 下次登入後 flush。成因判定靠<b>雙哨兵</b>（localStorage ＋ cookie，兩者存活條件不同）：先回答「這台裝置究竟登入過沒有」，才分得出「儲存被清」與「從未登入」。另含只有 OWNER 看得到的系統日誌頁（<code>read: isOwnerRole()</code>，<b>全站唯一 read 比 write 嚴格的集合</b>，因為日誌含裝置指紋不該讓 ADMIN 互看）、登出當下的白話橫幅、12 個後台編輯頁的<b>草稿本機暫存與還原</b>，以及把 12 個模組各自的 <code>setDoc</code> 收攏成 <code>writeDoc</code> 統一入口以攔截寫入被拒。<br><b>三個缺陷是實測抓到、單元測試全綠卻漏掉的</b>：① 草稿接在列表層監聽 <code>editing</code>，但使用者打字改的是編輯器內部的 <code>form</code>——提示會正確跳出、還原拿回的卻是原始資料，<b>比沒有草稿更糟</b>；② Firebase 會<b>自動重建</b> <code>firebaseLocalStorageDb</code>，使該探針恆為 present，導致 <code>idbEvicted</code> 永遠產生不出來，更讓<b>每個第一次進站的匿名訪客</b>被判成 storageCleared 而跳出登出橫幅；③ <code>onAuthStateChanged(null)</code> 每次重新載入都會再觸發，未登入狀態下重整幾次就多幾筆重複記錄。修正後判定只採用不受 Firebase 干擾的兩顆哨兵，探針改為檢查 <code>firebase:authUser:*</code> 記錄（名實相符）並降為佐證欄位。<b>本期刻意不修登出問題本身</b>，先取得證據分布再開對策計畫，以免重蹈上次先修再猜的覆轍。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-08 · 27 / 27 任務 · 單元測試 344 項全綠（含 diag 22 項）、模擬器 12 套件 55 項全綠 · 五種成因逐項瀏覽器實測通過 · 已知限制：多分頁主動登出會產生假 tokenRevoked（留待日後）</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-045_登出診斷與系統日誌/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-045_登出診斷與系統日誌/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card pink">
       <div class="card-icon">◆</div>
       <h3>PLAN-032 · 武器技能引用化</h3>

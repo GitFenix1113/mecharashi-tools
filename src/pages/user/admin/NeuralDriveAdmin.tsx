@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { NeuralDriveAbility, SkillEffect, Pilot } from '../../../types'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, DraftRestoreBar } from './shared'
+import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updateNeuralDriveAbility, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
@@ -201,6 +202,7 @@ function NdAbilityEditPanel({
   onCancel: () => void
 }) {
   const [form, setForm]     = useState<NeuralDriveAbility>({ ...ability })
+  useDraftWrite('neuralDriveAbilities', form, (a) => a.name)   // 草稿暫存（PLAN-045）：監聽的必須是 form，不是外層的 editing
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
   const [mountsOpen, setMountsOpen] = useState(false)
@@ -354,6 +356,7 @@ function NdAbilityEditPanel({
 // ─── 神驅能力庫管理列表 ──────────────────────────────────────────────────────────
 export default function NeuralDriveAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<NeuralDriveAbility | null>(null)
+  const draft = useDraftRestore<NeuralDriveAbility>('neuralDriveAbilities')
   const gd = useGameData()
   // buffUpgrades 編輯器要列「有等級的自身增益」並反查引用數，兩者都需要 buffs；
   // pilots 供掛載明細（門檻 minSum 住在那裡）。
@@ -407,11 +410,13 @@ export default function NeuralDriveAdmin({ initialSearch = '' }: { initialSearch
     const version = await updateNeuralDriveAbility(updated)
     upsert(updated)
     gd.patchCollectionItem('neuralDriveAbilities', updated, version)
+    draft.commit()   // 存檔成功 → 清除本機草稿，避免下次進頁跳過期提示
     setEditing(null)
   }
 
   return (
     <div>
+      <DraftRestoreBar draft={draft} onRestore={setEditing} />
       {/* 搜尋列 */}
       <div className="flex flex-wrap gap-2 mb-3">
         <input
@@ -509,7 +514,7 @@ export default function NeuralDriveAdmin({ initialSearch = '' }: { initialSearch
         <NdAbilityEditPanel
           ability={editing}
           onSave={handleSave}
-          onCancel={() => setEditing(null)}
+          onCancel={() => { draft.discard(); setEditing(null) }}
         />
       )}
     </div>

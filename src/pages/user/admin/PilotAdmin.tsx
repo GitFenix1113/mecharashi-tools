@@ -6,7 +6,9 @@ import { useGameVersions } from '../../../hooks/useGameVersions'
 import {
   Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog,
   GRID_AUTO_FIELDS, GRID_TWO_PANE, AdminEditTabs, type AdminEditTabDef,
+  DraftRestoreBar,
 } from './shared'
+import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updatePilot, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
@@ -1134,6 +1136,7 @@ function PilotEditPanel({
   onCancel: () => void
 }) {
   const [form, setForm]       = useState<Pilot>({ ...pilot })
+  useDraftWrite('pilots', form, (p) => p.name)   // 草稿暫存（PLAN-045）：監聽的必須是 form，不是外層的 editing
   const [saving, setSaving]   = useState(false)
   const [error, setError]     = useState<string | null>(null)
   const [editTab, setEditTab] = useState<PilotEditTab>('basic')
@@ -1379,6 +1382,7 @@ function PilotEditPanel({
 // ─── 機師管理列表 ──────────────────────────────────────────────────────────────
 export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<Pilot | null>(null)
+  const draft = useDraftRestore<Pilot>('pilots')
   const gd = useGameData()
 
   const {
@@ -1418,11 +1422,13 @@ export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: str
     const version = await updatePilot(updated)
     upsert(updated)
     gd.patchCollectionItem('pilots', updated, version)
+    draft.commit()   // 存檔成功 → 清除本機草稿，避免下次進頁跳過期提示
     setEditing(null)
   }
 
   return (
     <div>
+      <DraftRestoreBar draft={draft} onRestore={setEditing} />
       <div className="flex flex-wrap gap-2 mb-3">
         <input
           type="text"
@@ -1520,7 +1526,7 @@ export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: str
         <PilotEditPanel
           pilot={editing}
           onSave={handleSave}
-          onCancel={() => setEditing(null)}
+          onCancel={() => { draft.discard(); setEditing(null) }}
         />
       )}
     </div>

@@ -1,9 +1,8 @@
 // ── 機甲 mechs ────────────────────────────────────────────────────────────────
 
-import { doc, setDoc, where } from 'firebase/firestore'
-import { db } from '../firebase'
+import { where } from 'firebase/firestore'
 import type { Mech } from '../../types'
-import { fetchCollection, fetchDocument, stripUndefined } from './firestoreCore'
+import { fetchCollection, fetchDocument, writeDoc } from './firestoreCore'
 import { bumpDataVersion } from './versions'
 
 export const getMechs = () =>
@@ -18,6 +17,6 @@ export const getMechsByArmorType = (armorType: string) =>
 
 export const updateMech = async (mech: Mech): Promise<string> => {
   const { id, ...data } = mech
-  await setDoc(doc(db, 'mechs', id), stripUndefined(data))
+  await writeDoc('mechs', id, data)
   return bumpDataVersion('mechs').catch(() => '')
 }

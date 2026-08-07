@@ -3,6 +3,8 @@ import type { GrayOpsRoster, GrayOpsMechEntry, Mech } from '../../../types'
 import { GRAY_OPS_BASE } from '../../../data/patchVersions'
 import { resolveIconSrc, mechIconUrl } from '../../../utils/assets'
 import { GRAY_OPS_COMPANIES, GRAY_OPS_COMPANY_COLOR } from './constants'
+import { DraftRestoreBar } from './shared'
+import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 
 /** 名稱 → 機甲文件 ID 與縮圖。同步、手動新增、靜態初始化三處共用。 */
 type MechIndex = Map<string, { id: string; icon?: string }>
@@ -74,6 +76,23 @@ export default function GrayOpsAdmin({
   const [newName, setNewName]       = useState<Record<string, string>>({})
   const [newVersion, setNewVersion] = useState<Record<string, string>>({})
   const [forceOverwrite, setForceOverwrite] = useState(false)
+
+  // ── 草稿暫存（PLAN-045 Phase D-2）──────────────────────────────────────────
+  // 本頁與其他 11 個編輯頁的模型不同：沒有 EditPanel 子元件，`form` 就在主元件裡，
+  // 所以讀寫兩個 hook 都掛在這裡（其餘頁面是 write 在 EditPanel、restore 在列表層）。
+  //
+  // dirty 判斷由 useDraftWrite 內部以「掛載當下的快照」為基準完成，
+  // 故這裡只需把 form 包成帶 id 的形狀即可。
+  //
+  // ⚠ 必須 useMemo：useDraftWrite 的 debounce effect 以 item 的 reference 為依賴，
+  //   若在此處 inline 建構物件，每次 render 都是新 reference → 計時器不斷重置 →
+  //   永遠寫不進去，而且完全沒有錯誤訊息（靜默失效）。
+  const draftItem = useMemo(
+    () => ({ id: 'roster', companies: form.companies }),
+    [form],
+  )
+  useDraftWrite('grayOps', draftItem, () => '灰燼行動名單')
+  const draft = useDraftRestore<{ id: string; companies: GrayOpsRoster['companies'] }>('grayOps')
   const [syncMsg, setSyncMsg] = useState<string | null>(null)
   // 展開手動編輯圖片路徑的那一列（一次只開一列，避免 4 欄卡片被輸入框撐爛）
   const [editingIcon, setEditingIcon] = useState<{ company: string; idx: number } | null>(null)
@@ -176,6 +195,7 @@ export default function GrayOpsAdmin({
     setSaving(true); setError(null); setSuccess(false)
     try {
       await onSave(form)
+      draft.commit()   // 存檔成功 → 清除本機草稿
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (e) {
@@ -191,6 +211,10 @@ export default function GrayOpsAdmin({
 
   return (
     <div>
+      <DraftRestoreBar
+        draft={draft}
+        onRestore={(d) => setForm({ companies: d.companies })}
+      />
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <p className="text-text-dim text-xs">
           共 {totalCount} 筆機甲 · 已連結 <span className="text-accent-green">{linkedCount}</span>

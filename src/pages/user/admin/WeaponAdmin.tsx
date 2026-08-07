@@ -8,7 +8,9 @@ import {
 import {
   Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton,
   GRID_AUTO_FIELDS, GRID_TWO_PANE, AdminEditTabs, type AdminEditTabDef,
+  DraftRestoreBar,
 } from './shared'
+import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updateWeapon, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
@@ -332,6 +334,7 @@ function WeaponEditPanel({
   onCancel: () => void
 }) {
   const [form, setForm]           = useState<Weapon>({ ...weapon })
+  useDraftWrite('weapons', form, (w) => w.name)   // 草稿暫存（PLAN-045）：監聽的必須是 form，不是外層的 editing
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState<string | null>(null)
   const [editTab, setEditTab]     = useState<WeaponEditTab>('basic')
@@ -732,6 +735,7 @@ export default function WeaponAdmin({
   initialSearch?: string
 }) {
   const [editing, setEditing] = useState<Weapon | null>(null)
+  const draft = useDraftRestore<Weapon>('weapons')
   const gd = useGameData()
 
   const {
@@ -761,11 +765,13 @@ export default function WeaponAdmin({
     const version = await updateWeapon(updated)
     upsert(updated)
     gd.patchCollectionItem('weapons', updated, version)
+    draft.commit()   // 存檔成功 → 清除本機草稿，避免下次進頁跳過期提示
     setEditing(null)
   }
 
   return (
     <div>
+      <DraftRestoreBar draft={draft} onRestore={setEditing} />
       <div className="flex flex-wrap gap-2 mb-3">
         <input
           type="text"
@@ -862,7 +868,7 @@ export default function WeaponAdmin({
       <LoadMoreButton hasMore={hasMore} loading={loading} onClick={loadMore} />
 
       {editing && (
-        <WeaponEditPanel weapon={editing} pilots={pilots} onSave={handleSave} onCancel={() => setEditing(null)} />
+        <WeaponEditPanel weapon={editing} pilots={pilots} onSave={handleSave} onCancel={() => { draft.discard(); setEditing(null) }} />
       )}
     </div>
   )

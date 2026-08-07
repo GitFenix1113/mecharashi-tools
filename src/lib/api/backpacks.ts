@@ -1,9 +1,7 @@
 // ── 背包 backpacks ────────────────────────────────────────────────────────────
 
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '../firebase'
 import type { Backpack } from '../../types'
-import { fetchCollection, stripUndefined } from './firestoreCore'
+import { fetchCollection, writeDoc } from './firestoreCore'
 import { bumpDataVersion } from './versions'
 import { cascadeDelete, type CascadeDeleteResult } from './cascadeDelete'
 
@@ -12,7 +10,7 @@ export const getBackpacks = () =>
 
 export const updateBackpack = async (backpack: Backpack): Promise<string> => {
   const { id, ...data } = backpack
-  await setDoc(doc(db, 'backpacks', id), stripUndefined(data))
+  await writeDoc('backpacks', id, data)
   return bumpDataVersion('backpacks').catch(() => '')
 }
 

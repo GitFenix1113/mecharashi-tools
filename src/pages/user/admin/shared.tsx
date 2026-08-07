@@ -3,6 +3,7 @@ import { planCascadeDelete, commitCascadeDelete, type CascadePlanResult } from '
 import { TARGET_LABEL, type ChangeTargetKind } from '../../../types/changeHistory'
 import { useGameData, type CollectionKey } from '../../../contexts/GameDataContext'
 import { findEntityClash } from '../../../utils/idSlug'
+import type { DraftRestore } from '../../../hooks/useDraftAutosave'
 
 // ── 後台內容區共用寬度（PLAN-033）───────────────────────────────────────────────
 // 編輯彈窗（AdminModal）與列表容器（AdminPage）共用同一個值，避免兩者寬度各自漂移。
@@ -310,6 +311,54 @@ export function useClientPaged<T extends { id: string }, F>({
     search, setSearch, filters, setFilter, submitSearch, loadMore, upsert,
     activeSearch: search,
   }
+}
+
+// ── DraftRestoreBar：未儲存草稿的還原提示（PLAN-045 Phase D-1）─────────────────
+// 進入編輯頁時若偵測到殘留草稿就顯示。**刻意不自動套用**——直接覆蓋使用者當前選取的
+// 項目，比丟失草稿更難解釋（他明明點開的是 A，畫面卻變成昨天沒存完的 B）。
+//
+// 吃整個 draft 物件而非拆開的欄位，是為了讓 11 個編輯頁的接線維持在「一行」：
+//   <DraftRestoreBar draft={draft} onRestore={setEditing} />
+// 沒有草稿時自行回傳 null，呼叫端不必再包一層條件判斷。
+export function DraftRestoreBar<T>({
+  draft,
+  onRestore,
+}: {
+  draft: DraftRestore<T>
+  onRestore: (item: T) => void
+}) {
+  if (!draft.pending) return null
+  const { name, savedAt } = draft.pending
+  const when = savedAt
+    ? new Date(savedAt).toLocaleString('zh-TW', { hour12: false })
+    : '（時間不明）'
+  return (
+    <div className="mb-4 px-4 py-3 rounded-xl border border-accent-yellow/40 bg-accent-yellow/10 flex items-center gap-3 flex-wrap">
+      <span className="text-accent-yellow text-lg shrink-0">⚠</span>
+      <div className="flex-1 min-w-[240px]">
+        <div className="text-sm text-text-primary font-medium">
+          偵測到未儲存的編輯：{name}
+        </div>
+        <div className="text-xs text-text-dim mt-0.5">
+          暫存於 {when}。上次可能因為被登出或關閉分頁而沒存到。
+        </div>
+      </div>
+      <div className="flex gap-2 shrink-0">
+        <button
+          onClick={() => onRestore(draft.restore())}
+          className="px-4 py-1.5 rounded-lg text-xs font-bold bg-accent-yellow/20 text-accent-yellow border border-accent-yellow/40 hover:bg-accent-yellow/30 transition-colors"
+        >
+          ↺ 還原這份編輯
+        </button>
+        <button
+          onClick={draft.discard}
+          className="px-3 py-1.5 rounded-lg text-xs border border-border text-text-secondary hover:bg-bg-dark transition-colors"
+        >
+          捨棄
+        </button>
+      </div>
+    </div>
+  )
 }
 
 // ── LoadMoreButton：分頁「載入更多」按鈕 ───────────────────────────────────────

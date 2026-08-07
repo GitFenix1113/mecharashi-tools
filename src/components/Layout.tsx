@@ -1,6 +1,7 @@
 import { Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import SignedOutBanner from './SignedOutBanner'
 import AvatarDisplay from './profile/AvatarDisplay'
 import ContentNavDropdown, { type ContentNavItem } from './ContentNavDropdown'
 import NavIcon from './icons/NavIcon'
@@ -231,6 +232,10 @@ export default function Layout() {
           </div>
         </div>
       </header>
+
+      {/* 非預期登出橫幅（PLAN-045）。放在 header 與 main 之間、不進 main 的
+          overflow-hidden 容器——首頁的 snap 捲動會把它藏起來。 */}
+      <SignedOutBanner />
 
       {/* Main Content */}
       <main className="flex-1 overflow-hidden">

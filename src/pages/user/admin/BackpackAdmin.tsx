@@ -6,7 +6,9 @@ import { useGameData } from '../../../contexts/GameDataContext'
 import {
   Field, AdminModal, useNewItemCreation, NewItemDialog, GRID_AUTO_FIELDS,
   useCascadeDelete, ConfirmDeleteDialog, DeleteButton,
+  DraftRestoreBar,
 } from './shared'
+import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { IconField } from '../../../components/admin/IconPicker'
 import { BACKPACK_TYPE_CONFIG, ASSEMBLABLE_ARMOR_CONFIG } from '../../../components/BackpackBadges'
 import { parseBackpackName } from '../../../utils/backpackClassify'
@@ -174,6 +176,7 @@ function BackpackEditPanel({
   onCancel: () => void
 }) {
   const [form, setForm]           = useState<Backpack>({ ...backpack })
+  useDraftWrite('backpacks', form, (b) => b.name)   // 草稿暫存（PLAN-045）：監聽的必須是 form，不是外層的 editing
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState<string | null>(null)
   const gd = useGameData()
@@ -378,6 +381,7 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
   const [search, setSearch]             = useState(initialSearch)
   const [displayCount, setDisplayCount] = useState(PAGE_SIZE)
   const [editing, setEditing]           = useState<Backpack | null>(null)
+  const draft = useDraftRestore<Backpack>('backpacks')
   // PLAN-043 C-4：背包成為第四個可刪的集合。硬外鍵（前置鏈 / 複合武器融合）由
   // entityRefs 標記為 hardRef，命中時 ConfirmDeleteDialog 會顯示 blocker 並禁用確認鈕。
   const del = useCascadeDelete('backpack', 'backpacks')
@@ -410,6 +414,7 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
   async function handleSave(updated: Backpack) {
     const version = await updateBackpack(updated)
     gd.patchCollectionItem('backpacks', updated, version)   // 列表由 gd.backpacks derive → 存檔即時反映
+    draft.commit()   // 存檔成功 → 清除本機草稿，避免下次進頁跳過期提示
     setEditing(null)
   }
 
@@ -422,6 +427,7 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
 
   return (
     <div>
+      <DraftRestoreBar draft={draft} onRestore={setEditing} />
       {/* 品質篩選（預設 SS）*/}
       <div className="flex flex-wrap gap-1.5 items-center mb-3">
         <span className="text-xs text-text-dim mr-1 shrink-0">品質</span>
@@ -531,7 +537,7 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
       )}
 
       {editing && (
-        <BackpackEditPanel backpack={editing} onSave={handleSave} onCancel={() => setEditing(null)} />
+        <BackpackEditPanel backpack={editing} onSave={handleSave} onCancel={() => { draft.discard(); setEditing(null) }} />
       )}
 
       {del.plan && (

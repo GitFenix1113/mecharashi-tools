@@ -187,6 +187,13 @@
         <p>後台資料異動稽核 log · append-only（連管理員都改不了）· 刪除快照可還原 · 原生 TTL 兩年</p>
       </div>
     </a>
+    <a href="systemLog.html" style="text-decoration:none;">
+      <div class="card cyan">
+        <div class="card-icon">🩺</div>
+        <h3>systemLog — 系統日誌</h3>
+        <p>維護者非預期登出的診斷證據 · 三態哨兵判成因 · 讀取限 OWNER（全站唯一 read 比 write 嚴格）· 原生 TTL 90 天</p>
+      </div>
+    </a>
     <a href="security-rules.html" style="text-decoration:none;">
       <div class="card orange">
         <div class="card-icon">🛡️</div>
@@ -278,6 +285,11 @@
       <div class="col-name"><a href="changeHistory.html" style="color:inherit;text-decoration:none;">changeHistory</a></div>
       <span class="col-type game">ADMIN LOG</span>
       <p>後台資料異動稽核 log（PLAN-030）。append-only：可新增可讀取，但連管理員都改不了刪不掉。不進前台快取層</p>
+    </div>
+    <div class="collection-card">
+      <div class="col-name"><a href="systemLog.html" style="color:inherit;text-decoration:none;">systemLog</a></div>
+      <span class="col-type game">OWNER LOG</span>
+      <p>維護者非預期登出／寫入被拒的診斷記錄（PLAN-045）。append-only，且<strong>讀取限 OWNER</strong>（含裝置指紋，ADMIN 不可互看）。不進前台快取層</p>
     </div>
   </div>
 </section>

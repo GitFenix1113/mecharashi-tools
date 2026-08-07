@@ -270,4 +270,57 @@ emuSuite('rules: 安全規則互動 —— 級聯刪除每一步都受規則保�
       'ADMIN delete 自己的 log',
     )
   })
+
+  // ── h. systemLog：ADMIN 寫得進、讀不到（PLAN-045）─────────────────────────
+  await t.test('h. systemLog 的讀寫不對稱：ADMIN 可寫、僅 OWNER 可讀', async () => {
+    // 這條規則的形狀在本專案裡是獨一無二的：write 比 read 寬鬆。
+    // 理由是診斷記錄含 UA、儲存用量等裝置指紋，屬維護者個人的環境資訊——
+    // 每個維護者都得寫得進去（否則登出證據送不出來），但不該讓 ADMIN 互看。
+    // 正因為不對稱，特別容易在日後重構規則時被「順手改成一致」而破功，故釘住。
+    await signInAs(ADMIN_USER)
+
+    // ① 冒用他人 uid → 擋下（同 changeHistory 的防偽造嫁禍）
+    await expectPermissionDenied(
+      addDoc(collection(db, 'systemLog'), {
+        kind: 'logout', reason: 'storageCleared',
+        uid: 'someone-else-uid', actorName: '被嫁禍的人',
+        at: serverTimestamp(), occurredAt: Date.now(), expireAt: new Date(),
+      }),
+      'ADMIN create 冒名 uid 的 systemLog',
+    )
+
+    // ② uid == 本人 → 放行。這是 flushQueue 走的路，被誤擋等於整套診斷失效
+    const logRef = await addDoc(collection(db, 'systemLog'), {
+      kind: 'logout', reason: 'storageCleared',
+      uid: adminUid, actorName: '測試管理員',
+      at: serverTimestamp(), occurredAt: Date.now(), expireAt: new Date(),
+    })
+
+    // ③ ADMIN 讀不到（read 限 isOwnerRole）——本條是本測試的核心
+    await expectPermissionDenied(
+      getDocsFromServer(collection(db, 'systemLog')),
+      'ADMIN read systemLog',
+    )
+
+    // ④ append-only：連本人剛寫的記錄也刪不掉
+    await expectPermissionDenied(
+      deleteDoc(doc(db, 'systemLog', logRef.id)),
+      'ADMIN delete 自己的 systemLog',
+    )
+
+    // ⑤ 一般 USER 連寫都不行（create 是 isAdmin，不是 isAuthenticated）
+    await signInAs(PLAIN_USER)
+    await expectPermissionDenied(
+      addDoc(collection(db, 'systemLog'), {
+        kind: 'logout', reason: 'storageCleared',
+        uid: 'whoever', actorName: '一般使用者',
+        at: serverTimestamp(), occurredAt: Date.now(), expireAt: new Date(),
+      }),
+      'USER create systemLog',
+    )
+    await expectPermissionDenied(
+      getDocsFromServer(collection(db, 'systemLog')),
+      'USER read systemLog',
+    )
+  })
 })

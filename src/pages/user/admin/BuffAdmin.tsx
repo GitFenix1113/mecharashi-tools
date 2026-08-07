@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { GameBuff, SkillEffect, BuffLevel } from '../../../types'
 import { BuffType } from '../../../types/enums'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, GRID_AUTO_FIELDS, useCascadeDelete, ConfirmDeleteDialog, DeleteButton } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, GRID_AUTO_FIELDS, useCascadeDelete, ConfirmDeleteDialog, DeleteButton, DraftRestoreBar } from './shared'
+import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updateBuff, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
@@ -317,6 +318,7 @@ function BuffEditPanel({
   onCancel: () => void
 }) {
   const [form, setForm]     = useState<GameBuff>({ ...buff })
+  useDraftWrite('buffs', form, (b) => b.name)   // 草稿暫存（PLAN-045）：監聽的必須是 form，不是外層的 editing
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
   const { data: scanData, missingColls } = useRefScanData()
@@ -553,6 +555,7 @@ function BuffEditPanel({
 // ─── BUFF 管理列表 ──────────────────────────────────────────────────────────────
 export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<GameBuff | null>(null)
+  const draft = useDraftRestore<GameBuff>('buffs')
   const gd = useGameData()
   const del = useCascadeDelete('buff', 'buffs')
 
@@ -596,11 +599,13 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
     const version = await updateBuff(updated)
     upsert(updated)
     gd.patchCollectionItem('buffs', updated, version)
+    draft.commit()   // 存檔成功 → 清除本機草稿，避免下次進頁跳過期提示
     setEditing(null)
   }
 
   return (
     <div>
+      <DraftRestoreBar draft={draft} onRestore={setEditing} />
       {/* 搜尋列 */}
       <div className="flex flex-wrap gap-2 mb-3">
         <input
@@ -703,7 +708,7 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
         <BuffEditPanel
           buff={editing}
           onSave={handleSave}
-          onCancel={() => setEditing(null)}
+          onCancel={() => { draft.discard(); setEditing(null) }}
         />
       )}
 

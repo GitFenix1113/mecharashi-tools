@@ -1,9 +1,8 @@
 // ── 模組 modules ──────────────────────────────────────────────────────────────
 
-import { doc, setDoc, where, orderBy } from 'firebase/firestore'
-import { db } from '../firebase'
+import { where, orderBy } from 'firebase/firestore'
 import type { Module } from '../../types'
-import { fetchCollection, stripUndefined } from './firestoreCore'
+import { fetchCollection, writeDoc } from './firestoreCore'
 import { bumpDataVersion } from './versions'
 
 export const getModules = () =>
@@ -17,6 +16,6 @@ export const getModulesByMech = (mechId: string) =>
 
 export const updateModule = async (module: Module): Promise<string> => {
   const { id, ...data } = module
-  await setDoc(doc(db, 'modules', id), stripUndefined(data))
+  await writeDoc('modules', id, data)
   return bumpDataVersion('modules').catch(() => '')
 }

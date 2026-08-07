@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { GlossaryTerm } from '../../../types'
-import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, useCascadeDelete, ConfirmDeleteDialog, DeleteButton } from './shared'
+import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, useCascadeDelete, ConfirmDeleteDialog, DeleteButton, DraftRestoreBar } from './shared'
+import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updateGlossaryTerm, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
@@ -22,6 +23,7 @@ function GlossaryEditPanel({
   onCancel: () => void
 }) {
   const [form, setForm]     = useState<GlossaryTerm>({ ...term })
+  useDraftWrite('glossaryTerms', form, (t) => t.name)   // 草稿暫存（PLAN-045）：監聽的必須是 form，不是外層的 editing
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
 
@@ -94,6 +96,7 @@ function GlossaryEditPanel({
 // ─── 詞條管理列表 ──────────────────────────────────────────────────────────────
 export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: string }) {
   const [editing, setEditing] = useState<GlossaryTerm | null>(null)
+  const draft = useDraftRestore<GlossaryTerm>('glossaryTerms')
   const gd = useGameData()
   const del = useCascadeDelete('glossaryTerm', 'glossaryTerms')
 
@@ -132,11 +135,13 @@ export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: 
     const version = await updateGlossaryTerm(updated)
     upsert(updated)
     gd.patchCollectionItem('glossaryTerms', updated, version)
+    draft.commit()   // 存檔成功 → 清除本機草稿，避免下次進頁跳過期提示
     setEditing(null)
   }
 
   return (
     <div>
+      <DraftRestoreBar draft={draft} onRestore={setEditing} />
       {/* 搜尋列 */}
       <div className="flex flex-wrap gap-2 mb-3">
         <input
@@ -225,7 +230,7 @@ export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: 
         <GlossaryEditPanel
           term={editing}
           onSave={handleSave}
-          onCancel={() => setEditing(null)}
+          onCancel={() => { draft.discard(); setEditing(null) }}
         />
       )}
 

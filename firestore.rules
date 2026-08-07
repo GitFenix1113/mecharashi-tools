@@ -128,6 +128,23 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── 系統診斷日誌（PLAN-045）──────────────────────────────────────────────
+    // 維護者非預期登出與寫入被拒的證據記錄。結構比照上方 changeHistory（append-only
+    // ＋ create 綁定本人 uid 防偽造嫁禍），差別在**讀取收緊為 isOwnerRole()**：
+    // 記錄內含 UA、儲存用量、螢幕尺寸等裝置指紋，屬維護者個人的環境資訊，
+    // 不該讓其他 ADMIN 互看。
+    //
+    // create 維持 isAdmin() 而非 isAuthenticated()：本計畫只追蹤維護者，
+    // 放寬到一般登入使用者只會擴大寫入面並帶來限流需求（PLAN-045 決策四）。
+    //
+    // ⚠ 登出當下寫不進來是**預期行為**，不是規則沒設好——此時 request.auth 已為 null。
+    //   那條路徑刻意改走 localStorage 佇列、等下次登入再補送（決策一）。
+    match /systemLog/{docId} {
+      allow read:   if isOwnerRole();
+      allow create: if isAdmin() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     // ── 用戶資料（本人可讀寫）────────────────────────────────────────────────
     match /users/{userId} {
       allow read, write: if isOwner(userId);

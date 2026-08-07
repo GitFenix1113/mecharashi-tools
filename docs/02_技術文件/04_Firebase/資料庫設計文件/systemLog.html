@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>systemLog — 系統診斷日誌 Schema — Firebase 資料庫設計 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../../index.html">技術文件</a>
+    <span>›</span>
+    <a href="Firebase資料庫設計文件.html">Firebase 資料庫設計</a>
+    <span>›</span>
+    <span class="current">systemLog — 系統日誌</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge cyan">◆ COLLECTION SCHEMA</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    systemLog — 系統診斷日誌
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-045</span>
+  </h1>
+  <p class="hero-sub">維護者非預期登出的證據 · append-only · 讀取限 OWNER（全站唯一 read 比 write 嚴格）· 原生 TTL 90 天</p>
+  <div class="version-badge" style="background:var(--accent-cyan);color:#000;">PLAN-045 — 2026-08-08</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label cyan">01 — 用途</div>
+  <div class="section-title">systemLog Collection</div>
+
+  <div class="info-block">
+    <strong>📌 用途說明</strong><br>
+    維護者持續回報「編輯資料到一半被登出」，但站上沒有任何持久化的診斷記錄，每次回報都只能靠猜。
+    本集合記錄兩類事件的完整環境證據，讓 OWNER 能直接看出成因而非再次臆測。<br>
+    · <strong><code>logout</code></strong> — 非預期登出。含三態哨兵判定的成因與當下的儲存／瀏覽器環境快照。<br>
+    · <strong><code>writeDenied</code></strong> — 仍登入著，但存檔收到 <code>permission-denied</code>。
+      對使用者而言這和被登出無法區分（按下儲存、沒反應），只記登出會漏掉這一整類。<br>
+    · 保留 90 天，由 Firestore <strong>原生 TTL 政策</strong>自動清除。診斷資料的價值隨時間急遽衰減，
+      半年前的登出記錄對排查今天的問題沒有意義（故比 changeHistory 的兩年短得多）。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 為什麼登出當下寫不進這個集合</strong><br>
+    這是整套設計的形狀來源。被動登出時，<code>onAuthStateChanged</code> 拿到 <code>null</code> 的那一刻
+    <code>auth.currentUser</code> 已經是 null，而寫入規則要求 <code>isAdmin()</code>
+    —— 此時寫入<strong>必定 permission-denied</strong>。<br>
+    因此登出證據改為<strong>兩段式上報</strong>：登出瞬間寫進 localStorage 佇列
+    （<code>mecharashi_diag_queue</code>，上限 20 筆），下次登入成功後 flush 到 Firestore。
+    這也是 <code>at</code> 與 <code>occurredAt</code> 必須是兩個欄位的原因（見下方 02）。<br>
+    <code>writeDenied</code> 事件則當下仍登入著，可直接寫入、不必走佇列。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 與 changeHistory 的異同</strong><br>
+    <strong>相同</strong>：append-only、<code>addDoc</code> 自動 ID、不進 <code>CollectionKey</code> / GameDataContext
+    （持續成長、只查最近幾頁，塞進版本快取只會撐爆 localStorage）、伺服器端分頁查詢、原生 TTL。<br>
+    <strong>不同</strong>：<code>changeHistory</code> 是 <code>read: isAdmin()</code>，本集合收緊為
+    <code>read: isOwnerRole()</code>。記錄內含 UA、儲存用量、螢幕尺寸等<strong>裝置指紋</strong>，
+    屬於維護者個人的環境資訊，不該讓其他 ADMIN 互看。
+  </div>
+
+  <div class="sub-h">🗃️ systemLog — 診斷記錄（SystemLogEntry）</div>
+  <div class="data-table-wrap">
+    <table class="data-table cyan-head">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td>Firestore 自動 ID（<code>addDoc</code> 產生）</td></tr>
+      <tr><td>kind</td><td>SystemLogKind</td><td><strong>分類軸一</strong>：<code>'logout' | 'writeDenied'</code></td></tr>
+      <tr><td>reason</td><td>string</td><td><strong>分類軸二</strong>：logout 為三態判定結果；writeDenied 為 Firestore error code</td></tr>
+      <tr><td>uid</td><td>string</td><td>當事人 uid。<strong>寫入規則要求等於 <code>request.auth.uid</code></strong>（防偽造嫁禍）</td></tr>
+      <tr><td>actorName</td><td>string</td><td>displayName 快照（改名後仍看得出是誰）</td></tr>
+      <tr><td>at</td><td>Timestamp</td><td><code>serverTimestamp()</code>。<strong>伺服器寫入時間，不等於事件發生時間</strong></td></tr>
+      <tr><td>occurredAt</td><td>number</td><td>事件在本機實際發生的時間（ms epoch）。佇列延遲上報時可能早於 <code>at</code> 數小時</td></tr>
+      <tr><td>expireAt</td><td>Timestamp</td><td><code>寫入時 + 90 天</code>。由原生 TTL 政策讀取後自動清除文件</td></tr>
+      <tr><td>env</td><td>DiagEnvironment?</td><td>環境快照：persisted / 儲存用量 / UA / 平台 / standalone / 螢幕 / 語言</td></tr>
+      <tr><td>session</td><td>DiagSession?</td><td>session 上下文：時長 / 距上次 token 更新 / 離線累計 / 路由 / 有無草稿</td></tr>
+      <tr><td>probes</td><td>SystemLogProbes?</td><td><strong>僅 logout</strong>：三顆探針的原始三態值，見下方 03</td></tr>
+      <tr><td>sentinelAgeSec</td><td>number?</td><td><strong>僅 logout</strong>：哨兵從種下到被清活了多久（秒）</td></tr>
+      <tr><td>coll / docId</td><td>string?</td><td><strong>僅 writeDenied</strong>：被拒的寫入目標</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">02 — 時間欄位</div>
+  <div class="section-title">at 與 occurredAt 為何必須分開</div>
+
+  <div class="info-block">
+    <strong>📌 兩個時間戳的分工</strong><br>
+    logout 事件走 localStorage 佇列延遲上報，<code>at</code>（<code>serverTimestamp()</code>）記的是
+    「重新登入並 flush」的時刻，而不是被登出的時刻。若只有一個時間欄位，日誌上看到的會是
+    使用者重新登入的時間，完全誤導判讀。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 排序用 <code>at</code> 而非 <code>occurredAt</code></strong><br>
+    <code>occurredAt</code> 來自使用者本機時鐘 —— 可能錯得離譜，甚至是刻意調過的，
+    拿它當排序鍵會讓分頁游標行為不可預測。<code>at</code> 是伺服器權威時間且已建索引。<br>
+    代價是延遲上報的事件會排在「上報時刻」而非「發生時刻」。
+    後台頁在兩者差距超過 5 分鐘時會標示<strong>（延遲上報）</strong>，避免看列表的人誤判。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">03 — 成因判定</div>
+  <div class="section-title">三態哨兵</div>
+
+  <div class="info-block">
+    <strong>📌 為什麼需要「兩顆哨兵」而不是一顆</strong><br>
+    直覺做法是只在 localStorage 種一顆哨兵，「哨兵不見了」就判定儲存被清。但那有個會汙染整份日誌的誤報：
+    <strong>從未登入過的訪客</strong>，<code>onAuthStateChanged</code> 同樣給 null、同樣沒有哨兵，
+    會被判成儲存被清 —— 而前台每次載入都會觸發一次。<br>
+    關鍵在於必須先回答「這台裝置到底登入過沒有」，而<strong>這個問題不能問正在被懷疑的那個儲存機制</strong>。
+    故種兩顆在不同存活條件的位置：<br>
+    · <code>localStorage</code> 哨兵（<code>mecharashi_diag_sentinel</code>）—— quota-managed storage，Chrome 空間壓力下第一個被 evict<br>
+    · <code>cookie</code> 哨兵（<code>mr_diag</code>，僅存 uid 前 8 碼）—— 不屬於 quota-managed storage，Chrome eviction 清不到它
+  </div>
+
+  <div class="sub-h">🔍 判定表（classifyLogout，純函式）</div>
+  <div class="data-table-wrap">
+    <table class="data-table cyan-head">
+      <tr><th>條件</th><th>reason</th><th>意義</th></tr>
+      <tr><td>我方呼叫過 signOut()</td><td><code>explicit</code></td><td>主動登出。<strong>優先於一切環境探針</strong>，且不寫入日誌</td></tr>
+      <tr><td>ls 哨兵在</td><td><code>tokenRevoked</code></td><td>quota storage 完好卻登出 → 改密碼 / 帳號停用 / 後端撤銷</td></tr>
+      <tr><td>ls 哨兵不見 · cookie 在</td><td><code>storageCleared</code></td><td>裝置確實登入過 → quota storage 被整包清除</td></tr>
+      <tr><td>兩顆哨兵皆不見</td><td><code>neverSignedIn</code></td><td>查無登入痕跡 → <strong>不產生事件</strong>（多半是匿名訪客）</td></tr>
+      <tr><td>localStorage 本身不可用</td><td><code>unknown</code></td><td>隱私模式等；「沒有哨兵」與「讀不到哨兵」無法區分，不硬猜</td></tr>
+    </table>
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>🐛 為什麼判定不碰 IndexedDB —— 瀏覽器實測推翻的初版設計</strong><br>
+    初版讓「Firebase 的 <code>firebaseLocalStorageDb</code> 還在不在」參與判定，並有一個
+    <code>idbEvicted</code> 成因。實測發現那顆探針<strong>恆為 present</strong>：
+    該 database 會在 SDK 初始化時<strong>自動重建</strong>，所以等
+    <code>onAuthStateChanged(null)</code> 觸發、探針執行時，就算使用者前一秒手動刪光整個
+    database，它也早就回來了。<br><br>
+    後果有兩層：<br>
+    ① <code>idbEvicted</code> 永遠產生不出來（條件是「IDB 不見」，而它不會不見），該情境全數落到
+    <code>tokenRevoked</code>；<br>
+    ② 更嚴重——原本「cookie 沒了但 IDB 還在 → 證明登入過 → storageCleared」這條，會讓
+    <strong>每個第一次進站的匿名訪客</strong>（哨兵、cookie 都沒有，IDB 由 SDK 剛建好）
+    被判成 storageCleared 並跳出登出橫幅。<br><br>
+    修正後判定只採用<strong>不受 Firebase 干擾</strong>的兩顆哨兵。
+    <code>idbEvicted</code> 停用（型別保留，僅為讓既有記錄顯示得出標籤）。<br><br>
+    <strong>單元測試為什麼沒抓到：</strong>它測的是「給定探針值 → 判定是否正確」，
+    而錯的是<strong>探針值本身測不到真實狀態</strong>。那一層只有真實瀏覽器測得出來——
+    這正是進度表把「四種成因的瀏覽器手動驗證」列為獨立任務的價值所在。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔬 authRecord：改對語意後保留為佐證</strong><br>
+    探針改為檢查 object store 裡有沒有 <code>firebase:authUser:*</code> 記錄，
+    而非 database 是否存在。<strong>不參與判定</strong>，只在人工判讀時提供線索
+    （例如「憑證明明還在卻登出了」是值得警覺的異常）。<br>
+    實作注意：必須先用 <code>indexedDB.databases()</code> 確認 database 存在再 <code>open()</code>——
+    <code>open()</code> 對不存在的 database 會「建立」它，診斷探針絕不該產生副作用。
+    另設 1 秒 timeout，避免被其他分頁的交易 block 住而拖住登出流程。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 探針 <code>unknown</code> 不可當成 <code>absent</code></strong><br>
+    <code>indexedDB.databases()</code> 並非所有瀏覽器都有（Firefox 長年未實作）。
+    測不到時必須誠實回報 <code>unknown</code>。<br>
+    判定已抽成無副作用純函式，<code>src/lib/diag/sentinel.test.ts</code> 窮舉全部 54 種輸入組合，
+    並額外釘住「<code>authRecord</code> 的任何值都不得改變判定結果」。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔁 同一次登出只記一筆</strong><br>
+    <code>onAuthStateChanged(null)</code> 不是「登出的那一瞬間」才觸發——只要處於未登入狀態，
+    <strong>每次重新載入頁面都會再觸發一次</strong>。實測時刪掉 IndexedDB 就抓到兩筆：
+    一筆是刪除當下 Firebase 立即登出，一筆是接著按 F5 重整。<br>
+    去重用 <code>sessionStorage</code> 旗標（<code>mecharashi_diag_reported</code>）：
+    它的生命週期正好是「這個分頁」——重整會保留（擋掉重複），關閉分頁後清除（新的瀏覽視為新的觀察）。
+    登入成功時主動清除，確保「登入→被登出→再登入→再被登出」每次都記得到。<br>
+    <strong>橫幅不受去重影響</strong>：重整後仍會顯示，因為「要不要提醒使用者」與「要不要再記一筆」是兩件事。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>🍎 Safari 的特殊性 —— 這是本集合要證實的關鍵假說</strong><br>
+    <code>storageCleared</code> 有兩個對策完全不同的來源：<br>
+    · <strong>Chrome 系</strong>：空間吃緊時 evict。可用 <code>navigator.storage.persist()</code> 申請豁免，
+      且 Chrome 對有互動的站台通常會核准 —— <code>src/lib/firebase.ts</code> 已在做這件事。<br>
+    · <strong>Safari</strong>：<strong>一律不核准 persist()</strong>（除非站台被加入主畫面），
+      且 ITP 政策是 7 天無互動就清除 script-writable storage。<strong>現有防護對 Safari 使用者完全無效</strong>，
+      他們被登出是必然而非偶然。<br>
+    兩者在使用者眼中是同一個症狀。沒有 <code>env.persisted</code> + <code>env.ua</code> 就分不出來，只能繼續猜。<br>
+    另注意：Safari ITP 會連 cookie 一起清，故 Safari 的儲存清除會落到 <code>neverSignedIn</code> 而非
+    <code>storageCleared</code>。這是刻意的取捨 —— <strong>寧可漏報也不要誤報</strong>，
+    Safari 情境可由日誌的 UA 分布另行辨識。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">04 — 查詢與索引</div>
+  <div class="section-title">雙軸分類查詢</div>
+
+  <div class="sub-h">🔍 需要的複合索引（firestore.indexes.json）</div>
+  <div class="data-table-wrap">
+    <table class="data-table cyan-head">
+      <tr><th>索引</th><th>對應查詢</th></tr>
+      <tr><td><code>(kind ASC, at DESC)</code></td><td>只看某類事件（登出 / 寫入被拒）</td></tr>
+      <tr><td><code>(reason ASC, at DESC)</code></td><td>只看某種成因（如「所有儲存被清」）</td></tr>
+      <tr><td><code>(kind ASC, reason ASC, at DESC)</code></td><td>雙軸同時篩選</td></tr>
+    </table>
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🛠️ API</strong><br>
+    <code>src/lib/api/systemLog.ts</code>：<br>
+    · <code>logSystemEvent(event)</code> — fire-and-forget，失敗只警告不拋錯<br>
+    · <code>writeSystemLogOrThrow(event)</code> — 失敗拋錯（flush 需要知道哪幾筆沒送成功，留在佇列下次再試）<br>
+    · <code>getSystemLogPage({ kind?, reason?, cursor?, pageSize })</code> — 雙軸篩選分頁查詢<br>
+    · <code>getSystemLogSummary(sampleSize)</code> — 最近 N 筆的成因分布。<strong>刻意獨立一次查詢</strong>：
+      列表會被使用者的篩選條件影響，摘要必須永遠是「未篩選的最近 N 筆」才有代表性<br><br>
+    <code>src/lib/diag/</code>（採集層，無 Firestore 依賴）：<br>
+    · <code>sentinel.ts</code> — 哨兵讀寫與三態判定（純函式部分可單測）<br>
+    · <code>collect.ts</code> — 環境與 session 證據採集<br>
+    · <code>queue.ts</code> — localStorage 事件佇列（上限 20 筆）<br>
+    · <code>report.ts</code> — <code>captureLogout()</code> / <code>flushQueue()</code> / <code>onSignedIn()</code><br>
+    · <code>writeGuard.ts</code> — <code>permission-denied</code> 攔截（唯一攔截點在 <code>firestoreCore.writeDoc</code>）<br>
+    · <code>draft.ts</code> — 後台編輯草稿本機暫存
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 與 changeHistory 相同的兩個陷阱</strong><br>
+    ① log 寫入路徑<strong>一律不得經過 <code>stripUndefined</code></strong>：它會遞迴走物件，
+    把 <code>serverTimestamp()</code> 哨兵值拆成普通物件而失效。改為組裝時就不放進 undefined 欄位。<br>
+    ② 缺 <code>at</code> 欄位的文件會被 <code>orderBy('at')</code> 完全排除，在日誌頁「無聲消失」而非顯示異常。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🚫 非瀏覽器環境一律停用診斷</strong><br>
+    <code>reportWriteDenied()</code> 開頭即檢查 <code>typeof window === 'undefined'</code> 並直接返回。
+    模擬器整合測試與 <code>scripts/</code> 的 migrate 腳本都會走到 <code>writeDoc</code>，
+    其中破壞性測試更是<strong>刻意</strong>製造 <code>permission-denied</code> ——
+    讓診斷在那裡開火只會產生無人閱讀的雜訊記錄，還可能干擾計算寫入次數的測試。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">05 — 安全規則與保留期限</div>
+  <div class="section-title">append-only、讀寫不對稱與 TTL</div>
+
+  <div class="code-block">
+<span class="fn">match</span> /systemLog/{docId} {
+  <span class="kw">allow</span> read:   <span class="kw">if</span> <span class="fn">isOwnerRole</span>();
+  <span class="kw">allow</span> create: <span class="kw">if</span> <span class="fn">isAdmin</span>() && request.resource.data.uid == request.auth.uid;
+  <span class="kw">allow</span> update, delete: <span class="kw">if</span> <span class="kw">false</span>;
+}</div>
+
+  <div class="warning-block">
+    <strong>🔒 全站唯一 <code>read</code> 比 <code>write</code> 嚴格的集合</strong><br>
+    每個維護者都得<strong>寫得進去</strong>（否則登出證據送不出來），但診斷記錄含 UA、儲存用量等裝置指紋，
+    <strong>不該讓 ADMIN 互看</strong>，故讀取限 OWNER。<br>
+    正因為這個不對稱在本專案裡是獨一無二的，特別容易在日後重構規則時被「順手改成一致」而破功。
+    <code>tests/emulator/suites/rules.test.ts</code> 案例 h 已把它釘住
+    （ADMIN 寫得進、讀不到、刪不掉；USER 讀寫皆拒）。<br>
+    <code>create</code> 維持 <code>isAdmin()</code> 而非 <code>isAuthenticated()</code>：
+    本設計只追蹤維護者，放寬到一般登入使用者只會擴大寫入面並帶來限流需求。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 登出當下寫不進來是預期行為，不是規則沒設好</strong><br>
+    此時 <code>request.auth</code> 已為 null，<code>isAdmin()</code> 恆為 false。
+    那條路徑刻意改走 localStorage 佇列、等下次登入再補送。
+    排查時若看到「登出事件延遲數小時才出現」，那是設計如此，不是故障。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>⏳ TTL 政策</strong><br>
+    在 <code>firestore.indexes.json</code> 的 <code>fieldOverrides</code> 宣告
+    （<code>{ "collectionGroup": "systemLog", "fieldPath": "expireAt", "ttl": true, "indexes": [] }</code>），
+    隨 <code>firebase deploy --only firestore:indexes</code> 一併生效，<strong>不需要到 Console 手動設定</strong>。
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 技術文件 · Firebase 資料庫設計 — <a href="Firebase資料庫設計文件.html" style="color:var(--accent-cyan);text-decoration:none;">← Firebase 資料庫設計</a>
+</footer>
+
+</body>
+</html>

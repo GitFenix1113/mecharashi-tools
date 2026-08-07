@@ -6,7 +6,9 @@ import {
 import {
   Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton,
   GRID_AUTO_FIELDS, GRID_TWO_PANE, AdminEditTabs, type AdminEditTabDef,
+  DraftRestoreBar,
 } from './shared'
+import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updateModule, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
@@ -334,6 +336,7 @@ function ModuleEditPanel({
   onCancel: () => void
 }) {
   const [form, setForm]     = useState<Module>({ ...mod })
+  useDraftWrite('modules', form, (m) => m.name)   // 草稿暫存（PLAN-045）：監聽的必須是 form，不是外層的 editing
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
   const [editTab, setEditTab] = useState<EditTab>('basic')
@@ -690,6 +693,7 @@ export default function ModuleAdmin({
   initialSearch?: string
 }) {
   const [editing, setEditing] = useState<Module | null>(null)
+  const draft = useDraftRestore<Module>('modules')
   const gd = useGameData()
 
   const {
@@ -761,11 +765,13 @@ export default function ModuleAdmin({
     const version = await updateModule(updated)
     upsert(updated)
     gd.patchCollectionItem('modules', updated, version)
+    draft.commit()   // 存檔成功 → 清除本機草稿，避免下次進頁跳過期提示
     setEditing(null)
   }
 
   return (
     <div>
+      <DraftRestoreBar draft={draft} onRestore={setEditing} />
       <div className="flex flex-wrap gap-2 mb-3">
         <input
           type="text"
@@ -920,7 +926,7 @@ export default function ModuleAdmin({
           module={editing}
           mechs={mechs}
           onSave={handleSave}
-          onCancel={() => setEditing(null)}
+          onCancel={() => { draft.discard(); setEditing(null) }}
         />
       )}
     </div>

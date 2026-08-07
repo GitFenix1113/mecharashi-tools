@@ -4,7 +4,9 @@ import { ModuleSlot, ArmorType } from '../../../types/enums'
 import {
   Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog,
   GRID_AUTO_FIELDS, AdminEditTabs, type AdminEditTabDef,
+  DraftRestoreBar,
 } from './shared'
+import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { IconField, loadManifest } from '../../../components/admin/IconPicker'
 import { updateMech, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
@@ -57,6 +59,7 @@ export default function MechAdmin({
   initialSearch?: string
 }) {
   const [editing, setEditing] = useState<Mech | null>(null)
+  const draft = useDraftRestore<Mech>('mechs')
   const gd = useGameData()
 
   const {
@@ -94,11 +97,13 @@ export default function MechAdmin({
     const version = await updateMech(updated)
     upsert(updated)
     gd.patchCollectionItem('mechs', updated, version)
+    draft.commit()   // 存檔成功 → 清除本機草稿，避免下次進頁跳過期提示
     setEditing(null)
   }
 
   return (
     <div>
+      <DraftRestoreBar draft={draft} onRestore={setEditing} />
       <div className="flex flex-wrap gap-3 mb-4">
         <input
           type="text"
@@ -212,7 +217,7 @@ export default function MechAdmin({
           modules={modules}
           weapons={weapons}
           onSave={handleSave}
-          onCancel={() => setEditing(null)}
+          onCancel={() => { draft.discard(); setEditing(null) }}
         />
       )}
     </div>
@@ -259,6 +264,7 @@ function MechEditPanel({
   onCancel: () => void
 }) {
   const [form, setForm]   = useState<Mech>({ ...mech })
+  useDraftWrite('mechs', form, (m) => m.name)   // 草稿暫存（PLAN-045）：監聽的必須是 form，不是外層的 editing
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
   const [tab, setTab]       = useState<MechEditTab>('basic')

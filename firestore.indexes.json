@@ -88,6 +88,31 @@
         { "fieldPath": "action", "order": "ASCENDING" },
         { "fieldPath": "at",     "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "systemLog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kind", "order": "ASCENDING" },
+        { "fieldPath": "at",   "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "systemLog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "reason", "order": "ASCENDING" },
+        { "fieldPath": "at",     "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "systemLog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kind",   "order": "ASCENDING" },
+        { "fieldPath": "reason", "order": "ASCENDING" },
+        { "fieldPath": "at",     "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -101,6 +126,12 @@
     },
     {
       "collectionGroup": "changeHistory",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "systemLog",
       "fieldPath": "expireAt",
       "ttl": true,
       "indexes": []

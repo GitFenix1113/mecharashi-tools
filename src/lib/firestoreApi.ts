@@ -20,5 +20,6 @@ export * from './api/glossary'        // getGlossaryTerms / updateGlossaryTerm /
 export * from './api/grayOps'         // getGrayOpsRoster / updateGrayOpsRoster
 // PLAN-030 變更歷史：後台專用稽核 log。不進 CollectionKey / GameDataContext（見計畫書決策一）
 export * from './api/changeHistory'   // logChange / logChangeOrThrow / getChangeHistoryPage
+export * from './api/systemLog'       // logSystemEvent / getSystemLogPage / getSystemLogSummary
 export * from './api/cascadeDelete'    // planCascadeDelete / commitCascadeDelete / cascadeDelete（+ 兩個錯誤型別）
 export * from './api/restore'          // planRestore / commitRestore（快照還原，PLAN-030 Phase F）
