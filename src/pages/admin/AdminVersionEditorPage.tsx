@@ -7,11 +7,9 @@ import { bumpDataVersion } from '../../lib/firestoreApi'
 import type { PatchVersion, PatchHalf, VersionIconUrls, VersionEntityIds } from '../../data/patchVersions/types'
 import { formatEntityIdValue, parseEntityIdValue } from '../../data/patchVersions/entityRef'
 import type { Pilot, Mech, Weapon, Backpack, RefType } from '../../types'
-import { resolveIconSrc } from '../../utils/assets'
+import { resolveIconSrc, mechIconUrl } from '../../utils/assets'
 import { invalidatePatchVersionsCache } from '../../hooks/usePatchVersions'
 import AdminHalfEditorPanel from '../../components/admin/AdminHalfEditorPanel'
-
-const CDN_BASE = 'https://media.zlongame.com/media/pictures/cn/community/img/gl/gameInfo'
 
 // ── 常數 / 工具 ────────────────────────────────────────────────────────────────
 
@@ -247,11 +245,8 @@ export default function AdminVersionEditorPage() {
         const m = d.data() as Mech
         if (!mSet.has(m.name)) continue
         mechIds[m.name] = d.id
-        const url = m.portrait
-          ? m.portrait
-          : m.parts.torso.mechaIcon
-            ? `${CDN_BASE}/waparts/${m.parts.torso.mechaIcon}.png`
-            : undefined
+        // 縮圖規則抽到 utils/assets 共用（灰燼行動名單同步用同一份），避免兩邊各長一套
+        const url = mechIconUrl(m)
         if (url) mechs[m.name] = url
       }
 

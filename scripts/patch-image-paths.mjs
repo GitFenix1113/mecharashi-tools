@@ -33,9 +33,23 @@ const PUBLIC_DIR = resolve(ROOT, 'public')
 // ⚠ 與 scripts/bump-data-version.mjs 的 KNOWN_KEYS 一致（也就是 GameDataContext 的 ALL_COLLECTION_KEYS）。
 // 只有這些集合走版本 gate 快取，因此也只有這些需要 bump。
 const BUMPABLE_KEYS = [
-  'pilots', 'mechs', 'modules', 'weapons', 'backpacks', 'components',
+  'pilots', 'mechs', 'modules', 'weapons', 'backpacks', 'backpackSkills', 'components',
   'buffs', 'pilotSkills', 'neuralDriveAbilities', 'glossaryTerms', 'globalResearch', 'grayOpsRoster',
 ]
+
+/**
+ * 版本 key ≠ Firestore 集合名的例外。
+ *
+ * 這份清單裡的字串一直是**版本 key**（meta/gameData.versions 的欄位名），只是絕大多數剛好
+ * 與集合名同字，於是 `db.collection(key)` 一路都對——唯獨 grayOpsRoster 的真實集合叫
+ * `grayOps`（見 src/lib/api/grayOps.ts）。Firestore 查一個不存在的集合不會報錯，只回空
+ * snapshot，所以症狀是靜默的一行「grayOpsRoster：0 筆（略過）」：--apply 不會把它的圖片
+ * 路徑改寫成 .webp、--missing 也照樣回報「沒有破圖路徑」。
+ *
+ * 灰燼行動名單開始存 icon 路徑後這才有實害，否則該集合根本沒有 /images/ 值可掃。
+ */
+const COLLECTION_OF = { grayOpsRoster: 'grayOps' }
+const collectionOf = (key) => COLLECTION_OF[key] ?? key
 
 // patchVersions 不在 GameDataContext 的快取層（AdminVersionEditorPage 直接 getDoc），
 // 但它的 bannerImage 與 iconUrls.{pilots,mechs,weapons,backpacks} 存了大量 /images/ 路徑。
@@ -163,7 +177,7 @@ async function main() {
   let missingCount = 0
 
   for (const key of COLLECTIONS) {
-    const snap = await db.collection(key).get()
+    const snap = await db.collection(collectionOf(key)).get()
     if (snap.empty) { console.log(`${key}：0 筆（略過）`); continue }
 
     let docHits = 0
@@ -219,7 +233,7 @@ async function main() {
   let batch = db.batch()
   let n = 0
   for (const p of plan) {
-    batch.set(db.collection(p.key).doc(p.id), p.payload, { merge: true })
+    batch.set(db.collection(collectionOf(p.key)).doc(p.id), p.payload, { merge: true })
     if (++n % 400 === 0) { await batch.commit(); batch = db.batch() }
   }
   await batch.commit()

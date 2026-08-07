@@ -96,6 +96,23 @@ export function imageCandidates(...sources: (string | null | undefined)[]): stri
   return out
 }
 
+/** 官方素材 CDN（機甲部件圖 waparts/ 掛在這底下）。 */
+const MECH_CDN_BASE = 'https://media.zlongame.com/media/pictures/cn/community/img/gl/gameInfo'
+
+/**
+ * 機甲縮圖來源：優先本地立繪，沒有才退回官方 CDN 的軀幹部件圖。
+ *
+ * 抽成共用函式是因為「哪張圖代表這台機甲」有兩個後台要用同一個答案——版本濃縮表的 Icon
+ * 同步與灰燼行動名單的同步。規則若各寫一份，同一台機甲在兩張表可能長得不一樣。
+ *
+ * 回傳 undefined = 兩個來源都沒有，呼叫端該讓該筆維持無圖（而不是硬湊一個會 404 的路徑）。
+ */
+export function mechIconUrl(mech: { portrait?: string; parts?: { torso?: { mechaIcon?: string } } }): string | undefined {
+  if (mech.portrait) return mech.portrait
+  const mechaIcon = mech.parts?.torso?.mechaIcon
+  return mechaIcon ? `${MECH_CDN_BASE}/waparts/${mechaIcon}.png` : undefined
+}
+
 /**
  * 解析版本前瞻圖 URL 給 <img src> 使用。
  * - 遠端 URL（http/https，如 Cloudinary 上傳）原樣返回

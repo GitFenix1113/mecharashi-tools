@@ -37,7 +37,8 @@ const TAB_CONFIG: Record<Tab, { keys: CollectionKey[]; searchable: boolean; self
   // 漏了不會報錯，症狀是「掛載挑選器候選 0 個」與「已掛的引用全顯示⚠找不到此技能」。
   weapons:    { keys: ['weapons', 'pilots', 'pilotSkills'], searchable: true, selfLoading: false, preload: true },
   components: { keys: [],                     searchable: true,  selfLoading: true,  preload: false },
-  grayops:    { keys: ['grayOpsRoster'],     searchable: false, selfLoading: false, preload: false },
+  // mechs 是給「同步 Icon / 連結」查名稱用的（GrayOpsAdmin），漏了按鈕會停用
+  grayops:    { keys: ['grayOpsRoster', 'mechs'], searchable: false, selfLoading: false, preload: false },
   backpacks:  { keys: ['backpacks', 'backpackSkills'], searchable: true, selfLoading: false, preload: true },
   // PLAN-043：技能庫需 backpacks 才算得出「掛載幾個背包 / 孤兒技能」
   backpackSkills: { keys: ['backpackSkills', 'backpacks'], searchable: true, selfLoading: false, preload: true },
@@ -232,7 +233,7 @@ export default function AdminPage() {
         {showContent && tab === 'buffs' && <BuffAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'users' && <UserAdmin currentUid={user.uid} />}
         {showContent && tab === 'grayops' && (
-          <GrayOpsAdmin roster={ctxGrayOpsRoster} onSave={handleGrayOpsSave} />
+          <GrayOpsAdmin roster={ctxGrayOpsRoster} mechs={ctxMechs} onSave={handleGrayOpsSave} />
         )}
       </div>
     </div>

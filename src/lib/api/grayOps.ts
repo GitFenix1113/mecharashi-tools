@@ -3,7 +3,7 @@
 import { collection, doc, getDocs, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import type { GrayOpsRoster, GrayOpsMechEntry } from '../../types'
-import { fetchDocument } from './firestoreCore'
+import { fetchDocument, stripUndefined } from './firestoreCore'
 import { bumpDataVersion } from './versions'
 
 export const getGrayOpsRoster = async (): Promise<GrayOpsRoster | null> => {
@@ -26,7 +26,10 @@ export const updateGrayOpsRoster = async (roster: GrayOpsRoster): Promise<string
   await Promise.all(
     Object.entries(roster.companies).map(([company, mechs]) =>
       setDoc(doc(db, 'grayOps', company), {
-        mechs: mechs.map((m) => (m.version ? m : { name: m.name })),
+        // 原本是 `m.version ? m : { name: m.name }`——那是為了避開 Firestore 拒收 undefined，
+        // 但它同時把「白名單以外的欄位」整個丟掉：icon / mechId 加進來後會在存檔時靜默蒸發。
+        // 改用共用的 stripUndefined，只清 undefined、不挑欄位，日後再加欄位也不必回來改這裡。
+        mechs: stripUndefined(mechs),
         updatedAt: serverTimestamp(),
       })
     )

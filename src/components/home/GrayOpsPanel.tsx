@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useGameData } from '../../contexts/GameDataContext'
 import type { GrayOpsCompany } from '../../data/patchVersions'
+import GrayOpsMechRow from './GrayOpsMechRow'
 
 const COMPANIES: GrayOpsCompany[] = ['武裝工坊', '創新動力', 'GeekX', '火花塞']
 
@@ -44,16 +45,7 @@ export default function GrayOpsPanel() {
                 </div>
                 <div className="flex flex-col gap-1">
                   {mechs.map((entry, i) => (
-                    <div key={i} className="flex items-center gap-1.5">
-                      <span className="text-[13px] text-text-secondary leading-tight">
-                        {entry.name}
-                      </span>
-                      {entry.version && (
-                        <span className="text-[11px] text-accent-cyan border border-accent-cyan/30 px-1 rounded leading-tight shrink-0">
-                          {entry.version}
-                        </span>
-                      )}
-                    </div>
+                    <GrayOpsMechRow key={i} entry={entry} />
                   ))}
                   {mechs.length === 0 && (
                     <span className="text-[12px] text-text-dim">（尚無資料）</span>
