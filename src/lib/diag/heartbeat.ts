@@ -169,7 +169,19 @@ export async function takeSnapshot(trigger: SnapshotTrigger): Promise<void> {
     touchSentinel()
 
     // ── 非同步部分：跑得完就補上，跑不完就維持 unknown ──
-    const [authRecord, token] = await Promise.all([probeAuthRecord(), probeToken()])
+    //
+    // ⚠ IndexedDB 探針**刻意不在每次 tick 跑**。它是四顆探針裡唯一會去開
+    //   `firebaseLocalStorageDb` 連線的，而那正是我們懷疑會出事的子系統——
+    //   每 60 秒戳一次被觀察對象，等於讓診斷工具自己變成可能的故障來源
+    //   （Firebase 自己的跨分頁同步是 800ms 一次 getAll()，多一個連線進去攪和沒有好處）。
+    //
+    //   犧牲很小：失效區間的解析度來自 `at` 這個時間戳，不是來自這一欄。而真正需要
+    //   知道「當時 IDB 憑證在不在」的是邊界那幾張快照（登入時、分頁離開前、分頁回來時），
+    //   那些仍然照跑。tick 的快照留 'unknown'——誠實標示測不到，勝過為了填滿欄位而增加風險。
+    const [authRecord, token] = await Promise.all([
+      trigger === 'tick' ? Promise.resolve<Tri>('unknown') : probeAuthRecord(),
+      probeToken(),
+    ])
     if (token.error) pushAuthError(token.error)
 
     const full: DiagLastSeen = { ...base, authRecord }

@@ -100,6 +100,18 @@ const NAV_TYPE_LABEL: Record<string, string> = {
   prerender:    '預先轉譯',
 }
 
+/**
+ * `authRecord` 為何「不見」。三種狀態對應三個完全不同的成因——
+ * 這是目前最能一刀切開各假說的一欄，故用白話寫清楚它各自代表什麼。
+ */
+const AUTH_DETAIL_LABEL: Record<string, string> = {
+  present: '憑證記錄在',
+  noDb:    'database 整個不存在（被外力刪除）',
+  noStore: 'database 在但 object store 不見（Firebase 會據此刪庫重建）',
+  noKey:   'database 與 store 都在，但沒有憑證 key（SDK 主動移除）',
+  unknown: '測不到',
+}
+
 const TRIGGER_LABEL: Record<string, string> = {
   signin:  '登入當下',
   tick:    '使用中心跳',
@@ -157,6 +169,32 @@ function hintsOf(entry: SystemLogEntry): { tone: 'alert' | 'notice'; text: strin
     out.push({
       tone: 'notice',
       text: '兩層憑證都不見、哨兵完好 → 不是儲存被清。可能是憑證被撤銷，也可能是 SDK 降級時把 IndexedDB 那筆一併刪了',
+    })
+  }
+
+  // ⑤ IndexedDB「不見」的細分——目前最能一刀切開各假說的一欄
+  if (p?.authDetail === 'noStore') {
+    out.push({
+      tone: 'alert',
+      text: 'database 在但 object store 不見 → 抓到現行犯：Firebase 的 _openDatabase() 遇到這個狀態會 deleteDatabase() 再重建成空的，接著 _poll() 讀到空陣列就把所有 key 判成已刪除 → 登出',
+    })
+  }
+  if (p?.authDetail === 'noDb') {
+    out.push({
+      tone: 'alert',
+      text: 'database 整個不存在 → 被外力刪除（瀏覽器清理，或 Firebase 自己的 _deleteDatabase()）。注意 SDK 初始化會自動重建，能測到這一態代表刪除發生得很近',
+    })
+  }
+  if (p?.authDetail === 'noKey' && p?.authKeyCount === 0) {
+    out.push({
+      tone: 'notice',
+      text: 'store 存在但一個 key 都沒有 → 像是剛被重建的空庫，而非單獨移除憑證那一筆',
+    })
+  }
+  if (p?.authDbVersion !== undefined && p.authDbVersion !== 1) {
+    out.push({
+      tone: 'notice',
+      text: `firebaseLocalStorageDb 版本為 ${p.authDbVersion}（Firebase 固定用 1）→ 有別的東西動過這個資料庫`,
     })
   }
 
@@ -251,6 +289,8 @@ function EvidenceView({ entry }: { entry: SystemLogEntry }) {
     // 失效區間寬度排在最前面的時間欄位：它比 session 時長更能說明「什麼時候掉的」
     ['距上次確認登入', fmtDuration(entry.sinceSentinelSeenSec)],
     ['本次載入的儲存層', entry.persistence ? (PERSISTENCE_LABEL[entry.persistence] ?? entry.persistence) : '—'],
+    ['IndexedDB 狀態', p?.authDetail ? (AUTH_DETAIL_LABEL[p.authDetail] ?? p.authDetail) : '—'],
+    ['auth store key 數', p?.authKeyCount === undefined ? '—' : `${p.authKeyCount}${p.authDbVersion !== undefined ? ` · DB v${p.authDbVersion}` : ''}`],
     ['session 時長', fmtDuration(s?.sessionAgeSec)],
     ['本次載入方式', s?.navType ? (NAV_TYPE_LABEL[s.navType] ?? s.navType) : '—'],
     ['距上次 token 更新', fmtDuration(s?.sinceTokenRefreshSec)],

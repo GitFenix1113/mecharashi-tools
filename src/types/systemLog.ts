@@ -1,5 +1,5 @@
 import type { Timestamp } from 'firebase/firestore'
-import type { LogoutReason, Tri } from '../lib/diag/sentinel'
+import type { AuthRecordDetail, LogoutReason, Tri } from '../lib/diag/sentinel'
 import type { DiagEnvironment, DiagSession } from '../lib/diag/collect'
 import type { DiagAuthError, DiagLastSeen } from '../lib/diag/heartbeat'
 
@@ -81,6 +81,19 @@ export interface SystemLogProbes {
    * （SDK 這次沒讀到 IndexedDB，改用了 localStorage，兩層互不相通 → 表現為登出）。
    */
   authLocal?: Tri
+
+  /**
+   * `authRecord` 為何「不見」的細分：`noDb` / `noStore` / `noKey`。
+   *
+   * 三者對應三個完全不同的成因，壓成同一個 `absent` 就等於把最關鍵的區別丟掉了。
+   * 其中 `noStore` 是 Firebase `_openDatabase()` 觸發「刪庫重建」的條件——抓到它
+   * 等於在資料庫被砍掉前留下證據。詳見 sentinel.ts 的 AuthRecordDetail。
+   */
+  authDetail?: AuthRecordDetail
+  /** auth object store 內的 key 總數（不含內容）。store 在卻是 0 → 剛被重建的空庫 */
+  authKeyCount?: number
+  /** `firebaseLocalStorageDb` 的版本號。Firebase 固定用 1；非 1 表示有別的東西動過它 */
+  authDbVersion?: number
 }
 
 /** systemLog 集合的單筆記錄。 */

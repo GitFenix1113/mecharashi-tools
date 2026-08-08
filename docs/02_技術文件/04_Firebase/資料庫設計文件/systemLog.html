@@ -81,7 +81,7 @@
       <tr><td>expireAt</td><td>Timestamp</td><td><code>寫入時 + 90 天</code>。由原生 TTL 政策讀取後自動清除文件</td></tr>
       <tr><td>env</td><td>DiagEnvironment?</td><td>環境快照：persisted / 儲存用量 / UA / 平台 / standalone / 螢幕 / 語言</td></tr>
       <tr><td>session</td><td>DiagSession?</td><td>session 上下文：時長 / 距上次 token 更新 / 離線累計 / 路由 / 有無草稿 / <code>navType</code>（本次載入方式）</td></tr>
-      <tr><td>probes</td><td>SystemLogProbes?</td><td><strong>僅 logout</strong>：四顆探針的原始三態值，見下方 03</td></tr>
+      <tr><td>probes</td><td>SystemLogProbes?</td><td><strong>僅 logout</strong>：四顆探針的原始三態值 + IndexedDB 的細分（<code>authDetail</code> / <code>authKeyCount</code> / <code>authDbVersion</code>），見下方 03、04</td></tr>
       <tr><td>sentinelAgeSec</td><td>number?</td><td><strong>僅 logout</strong>：哨兵從種下到被清活了多久（秒）</td></tr>
       <tr><td>sinceSentinelSeenSec</td><td>number?</td><td><strong>僅 logout</strong>：距上次心跳確認「還登入著」多久（秒）＝<strong>失效區間的寬度</strong>，見下方 04</td></tr>
       <tr><td>persistence</td><td>string?</td><td><strong>僅 logout</strong>：發現登出那一次載入，SDK 實際挑中的儲存層。非 <code>indexedDB</code> 即為降級</td></tr>
@@ -280,6 +280,41 @@
       <code>mecharashi_diag_autherr</code> 合計 &lt; 1 KB，覆寫而非累積<br>
     · <strong>IndexedDB</strong>：可見時每 60 秒一次唯讀開關；Firebase Auth 自己的跨分頁同步是
       800 ms 輪詢一次，我們比它低兩個數量級
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>🔬 首批新樣本（2026-08-09 01:07）反而否掉了降級假說</strong><br>
+    <code>本次載入的儲存層 = IndexedDB（正常）</code>、<code>Auth@IDB 不見</code>、
+    <code>Auth@localStorage 不見</code>。降級假說預測的是「儲存層＝localStorage、憑證躺在 localStorage」，
+    兩欄都對不上。<br>
+    改為指向 <code>@firebase/auth</code> 的 <code>_openDatabase()</code> 裡一段 Firefox 多分頁競態的修補：
+    <strong>object store 不見時，直接 <code>deleteDatabase()</code> 再重建成空的</strong>。
+    重建後 <code>_poll()</code> 的 <code>getAll()</code> 讀回空陣列，而
+    <code>if (!result) return []</code> 只擋 null/undefined、<strong>擋不到空陣列</strong>，
+    於是 <code>localCache</code> 裡的每個 key 都被判成「已刪除」→ 登出。<br>
+    這條路徑的預測與樣本全數吻合：儲存層仍是 <code>indexedDB</code>（重建成功，可用性測試會過）、
+    兩層憑證皆不見（從沒用過 localStorage 那層）、<code>sessionAgeSec</code> 為 0（發生在開庫時）。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>📌 因此把「不見」拆成三態（<code>probes.authDetail</code>）</strong><br>
+    舊探針把三種狀態壓成同一個 <code>absent</code>，等於丟掉最關鍵的區別：<br>
+    · <code>noDb</code> —— database 整個不存在 → 外力刪除。注意 SDK 初始化會自動重建，
+      能測到這一態代表刪除發生得很近<br>
+    · <code>noStore</code> —— database 在、object store 不見 → <strong>抓到現行犯</strong>，
+      這正是上述「刪庫重建」的觸發條件<br>
+    · <code>noKey</code> —— database 與 store 都在，就是沒有 <code>firebase:authUser:*</code>
+      → SDK 主動移除（憑證撤銷，或 persistence 切換的 <code>_remove(key)</code>）<br>
+    另記 <code>authKeyCount</code>（store 在卻是 0 → 剛重建的空庫）與
+    <code>authDbVersion</code>（Firebase 固定用 1，非 1 表示有別的東西動過）。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ IndexedDB 探針刻意不在每次心跳 tick 跑</strong><br>
+    它是四顆探針裡唯一會去開 <code>firebaseLocalStorageDb</code> 連線的，而那正是被懷疑會出事的子系統。
+    每 60 秒戳一次觀察對象，等於讓診斷工具自己變成可能的故障來源。<br>
+    只在<strong>邊界</strong>（登入時 / 分頁離開前 / 分頁回來時 / 登出當下）跑，tick 的快照留
+    <code>unknown</code>。犧牲很小——失效區間的解析度來自時間戳，不是來自這一欄。
   </div>
 
   <div class="warning-block" style="margin-top:12px;">

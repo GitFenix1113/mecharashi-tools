@@ -300,83 +300,132 @@ export function probeAuthLocal(): Tri {
 const IDB_TIMEOUT_MS = 1000
 
 /**
- * 探測 Firebase Auth 的**憑證記錄**是否還在。
+ * `authRecord` 為何「不見」的細分。
+ *
+ * ── 為什麼非拆不可 ──
+ * 三種狀態在舊探針裡全被壓成同一個 `absent`，但它們對應**三個完全不同的成因**，
+ * 對策也完全不同：
+ *
+ *   · `noDb`    ── database 整個不存在。外力刪除（瀏覽器清理、手動清除、
+ *                  或 Firebase 自己的 `_deleteDatabase()`）
+ *   · `noStore` ── database 在、object store 不見。**這是最有診斷價值的一態**：
+ *                  Firebase 的 `_openDatabase()` 遇到這個狀態會直接
+ *                  `deleteDatabase()` 再重建成空的，接著 `_poll()` 讀到空陣列
+ *                  就把所有 key 判成「已刪除」→ 登出。抓到這一態等於抓到現行犯
+ *   · `noKey`   ── database 與 store 都在，就是沒有 `firebase:authUser:*`。
+ *                  指向「SDK 主動移除了那筆記錄」（憑證撤銷，或 persistence
+ *                  切換時的 `_remove(key)`）
+ */
+export type AuthRecordDetail = 'present' | 'noDb' | 'noStore' | 'noKey' | 'unknown'
+
+/** 細分結果 + 供人工判讀的額外脈絡。 */
+export interface AuthRecordProbe {
+  /** 壓縮成三態，供既有的 ProbeResult / 判定使用 */
+  tri: Tri
+  detail: AuthRecordDetail
+  /** store 內的 key 總數（不含內容）。0 但 store 存在 → 剛被重建的空庫 */
+  keyCount?: number
+  /** database 版本號。Firebase 固定用 1；非 1 代表有別的東西動過它 */
+  dbVersion?: number
+}
+
+/**
+ * 探測 Firebase Auth 的**憑證記錄**是否還在，並細分「不見」的三種成因。
  *
  * ⚠ 檢查的是 object store 裡有沒有 `firebase:authUser:*` 這筆記錄，
  *   **不是** database 存不存在 —— 後者測不出東西：`firebaseLocalStorageDb` 會在
  *   SDK 初始化時自動重建，所以就算使用者前一秒刪光整個 database，探針也一定看到它「在」
- *   （實測確認，初版就是栽在這裡）。
+ *   （實測確認，初版就是栽在這裡）。細分出的 `noDb` 因此極少出現，
+ *   真正有價值的是 `noStore` 與 `noKey` 的區別。
  *
  * 本探針**不參與判定**（見 classifyLogout），只作為記錄上的佐證。
  * 測不到時回 'unknown' 而非 'absent'：Firefox 長年未實作 `indexedDB.databases()`。
  */
-export async function probeAuthRecord(): Promise<Tri> {
-  if (!isBrowser() || !window.indexedDB) return 'unknown'
+export async function probeAuthRecordDetail(): Promise<AuthRecordProbe> {
+  const unknown: AuthRecordProbe = { tri: 'unknown', detail: 'unknown' }
+  if (!isBrowser() || !window.indexedDB) return unknown
   const idb = window.indexedDB as IDBFactory & { databases?: () => Promise<{ name?: string }[]> }
-  if (typeof idb.databases !== 'function') return 'unknown'
+  if (typeof idb.databases !== 'function') return unknown
   try {
     const dbs = await idb.databases()
     // 先確認 database 存在再開啟 —— indexedDB.open() 對不存在的 database 會「建立」它，
     // 診斷探針絕不該產生副作用。
-    if (!dbs.some((d) => d.name === FIREBASE_AUTH_DB)) return 'absent'
+    if (!dbs.some((d) => d.name === FIREBASE_AUTH_DB)) return { tri: 'absent', detail: 'noDb' }
   } catch {
-    return 'unknown'
+    return unknown
   }
   return readAuthRecord()
 }
 
+/** 舊介面：只要三態。內部走同一顆探針，避免兩份會漂移的實作。 */
+export async function probeAuthRecord(): Promise<Tri> {
+  return (await probeAuthRecordDetail()).tri
+}
+
 /** 開啟 Firebase 的 auth store，看裡面還有沒有憑證記錄。 */
-function readAuthRecord(): Promise<Tri> {
-  return new Promise<Tri>((resolve) => {
+function readAuthRecord(): Promise<AuthRecordProbe> {
+  return new Promise<AuthRecordProbe>((resolve) => {
     let settled = false
-    const done = (r: Tri) => { if (!settled) { settled = true; resolve(r) } }
+    const done = (r: AuthRecordProbe) => { if (!settled) { settled = true; resolve(r) } }
     // 被其他分頁 block 住時不能無限等——診斷是旁觀者，不該拖住登出流程
-    setTimeout(() => done('unknown'), IDB_TIMEOUT_MS)
+    setTimeout(() => done({ tri: 'unknown', detail: 'unknown' }), IDB_TIMEOUT_MS)
 
     try {
       const req = window.indexedDB.open(FIREBASE_AUTH_DB)
       // 前面已確認 database 存在；若仍觸發 upgrade，表示它是被這次 open 建出來的
-      // → 中止交易避免留下副作用，並回報「沒有記錄」
+      // → 中止交易讓建立整個回滾（絕不留下副作用），並回報 database 其實不在
       req.onupgradeneeded = () => {
         try { req.transaction?.abort() } catch { /* 已無交易可中止 */ }
-        done('absent')
+        done({ tri: 'absent', detail: 'noDb' })
       }
-      req.onerror = () => done('unknown')
+      req.onerror = () => done({ tri: 'unknown', detail: 'unknown' })
       req.onsuccess = () => {
         const db = req.result
+        const dbVersion = db.version
         try {
+          // ⚠ 這一態就是 Firebase `_openDatabase()` 會觸發「刪庫重建」的條件。
+          //   抓到它，等於在資料庫被砍掉之前留下了證據。
           if (!db.objectStoreNames.contains(FIREBASE_AUTH_STORE)) {
-            db.close(); done('absent'); return
+            db.close(); done({ tri: 'absent', detail: 'noStore', dbVersion }); return
           }
           const keysReq = db
             .transaction(FIREBASE_AUTH_STORE, 'readonly')
             .objectStore(FIREBASE_AUTH_STORE)
             .getAllKeys()
           keysReq.onsuccess = () => {
-            const has = keysReq.result.some((k) => String(k).startsWith(AUTH_KEY_PREFIX))
+            const keys = keysReq.result
+            const has = keys.some((k) => String(k).startsWith(AUTH_KEY_PREFIX))
             db.close()
-            done(has ? 'present' : 'absent')
+            done({
+              tri: has ? 'present' : 'absent',
+              detail: has ? 'present' : 'noKey',
+              keyCount: keys.length,
+              dbVersion,
+            })
           }
-          keysReq.onerror = () => { db.close(); done('unknown') }
+          keysReq.onerror = () => { db.close(); done({ tri: 'unknown', detail: 'unknown' }) }
         } catch {
           try { db.close() } catch { /* 已關閉 */ }
-          done('unknown')
+          done({ tri: 'unknown', detail: 'unknown' })
         }
       }
     } catch {
-      done('unknown')
+      done({ tri: 'unknown', detail: 'unknown' })
     }
   })
 }
 
 /**
- * 跑完四顆探針，組出 classifyLogout 的輸入。
+ * 跑完四顆探針，組出 classifyLogout 的輸入 + IndexedDB 的細分結果。
  *
  * 同步的三顆先跑、非同步的 IDB 最後跑：探針之間隔的時間愈短，快照愈接近同一瞬間的狀態。
  */
-export async function probeAll(explicit: boolean): Promise<ProbeResult> {
+export async function probeAll(
+  explicit: boolean,
+): Promise<ProbeResult & { authDetail: AuthRecordProbe }> {
   const sentinel = probeSentinel()
   const cookie = probeCookie()
   const authLocal = probeAuthLocal()
-  return { sentinel, cookie, authLocal, authRecord: await probeAuthRecord(), explicit }
+  const authDetail = await probeAuthRecordDetail()
+  return { sentinel, cookie, authLocal, authRecord: authDetail.tri, authDetail, explicit }
 }

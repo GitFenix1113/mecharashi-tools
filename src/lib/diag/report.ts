@@ -64,6 +64,12 @@ export async function captureLogout(
         cookie: probes.cookie,
         authRecord: probes.authRecord,
         authLocal: probes.authLocal,
+        // 「不見」的細分。三種成因對策完全不同，壓成一個 absent 等於丟掉最關鍵的區別。
+        authDetail: probes.authDetail.detail,
+        ...(probes.authDetail.keyCount !== undefined
+          ? { authKeyCount: probes.authDetail.keyCount } : {}),
+        ...(probes.authDetail.dbVersion !== undefined
+          ? { authDbVersion: probes.authDetail.dbVersion } : {}),
       },
     }
     // 哨兵活了多久才被清掉。吻合 7 天左右就高度指向 Safari ITP 的定時清除，
