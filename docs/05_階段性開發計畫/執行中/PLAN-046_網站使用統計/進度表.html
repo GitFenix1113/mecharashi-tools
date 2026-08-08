@@ -178,7 +178,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">18</div>
+      <div class="summary-num" style="color:var(--accent-green)">24</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -186,7 +186,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">8</div>
+      <div class="summary-num" style="color:var(--text-dim)">2</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -198,10 +198,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">18 / 26</span>
+      <span style="color:var(--accent-cyan);">24 / 26</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 69%"></div>
+      <div class="progress-bar-fill" style="width: 92%"></div>
     </div>
   </div>
 
@@ -212,12 +212,16 @@
     使用者端零感知——不儲存任何可識別個人的行為資料。
   </div>
 
-  <div class="warn-note">
-    <strong>⚠ 排程說明（Q7 裁決）：</strong>
-    Phase A 與 Phase B <strong>刻意分開、中間隔約兩週</strong>。
-    理由是<strong>統計資料不會回溯</strong>——埋點越早上線，歷史起算日越早；
-    而儀表板在沒有資料時做完只能盯著空圖表，等兩週後有料再做，完成當天就能拿來下判斷。<br>
-    <span style="color:var(--text-dim);">代價要老實承認：A 先上線代表「Worker 有寫入路徑」的風險提早承擔，而收益兩週後才兌現。</span>
+  <div class="impact-note">
+    <strong>✅ 排程變更：Phase B 未等兩週，於 2026-08-08 當日一併完成（站長提議、重新評估後採納）</strong><br>
+    原規劃是 A、B 中間隔兩週（理由：儀表板在沒有資料時做完只能盯著空圖表）。
+    <strong>但那是動機問題不是技術問題，權重放太高了。</strong>重新評估後，現在做反而更好，理由與「埋點要先上」是同一條：<br>
+    · <strong>儀表板是這份資料的消費端，也是唯一能驗證 schema 有沒有缺的東西。</strong>
+      若兩週後才做、然後發現少了某個維度，<strong>那兩週的資料補不回來</strong>——統計不會回溯。
+      現在做，發現缺什麼的修正成本是零。<br>
+    · 資料稀疏時做，<strong>空狀態與少量資料的呈現一定會被處理對</strong>，而那正是之後永遠不會再測到的情況。<br>
+    <span style="color:var(--text-dim);">原本「A 先上線代表 Worker 寫入路徑的風險提早承擔、收益兩週後才兌現」這個代價，
+    也因為 B 一併完成而縮短為零。</span>
   </div>
 </section>
 
@@ -226,13 +230,13 @@
   <div class="section-label cyan">Phase A</div>
   <div class="section-title">埋點與寫入管線</div>
   <div class="section-desc">讓資料開始累積。此階段結束後沒有任何可見的 UI 變化，資料先躺在 Firestore 裡。</div>
-  <div class="impact-note"><strong>✅ 程式碼於 2026-08-08 完成</strong>：前端 4 檔（session／track／routeKeys／usePageTracking）＋ Worker 3 檔（collect／collectBudget／firestoreRest 寫入）＋ firestore.rules 兩個集合。<br><code>npm test</code> <strong>359 pass / 0 fail</strong>（新增 15 個：三層去重 8＋路由覆蓋 7）、<code>npm run build</code> 通過、ESLint 零新增錯誤。<br><strong>Worker 與 Firestore 規則已於 2026-08-08 部署，並以 curl 完成端到端實測</strong>：路由（無效 payload→204／GET→405／裸打無 Origin→403）、日文件與月文件皆正確產生、<code>byCountry</code> 取得 <code>TW</code>。<br><strong>最關鍵的一項獲得驗證：entity 的中文欄位路徑（<code>pilots.&#96;艾達&#96;</code>，反引號包裹）在真實 Firestore 上可行</strong>——這是本機無法驗證、且失敗會拖垮整包 commit 的唯一未知數。測試資料已刪除。<br><strong>但前端尚未部署</strong>：<code>.github/workflows/deploy.yml</code> 於 push 到 main 時才建置，因此線上站台仍是舊 bundle、不會送出任何 beacon。<strong>要等 commit + push 之後資料才會開始累積。</strong></div>
+  <div class="impact-note"><strong>✅ 程式碼於 2026-08-08 完成</strong>：前端 4 檔（session／track／routeKeys／usePageTracking）＋ Worker 3 檔（collect／collectBudget／firestoreRest 寫入）＋ firestore.rules 兩個集合。<br><code>npm test</code> <strong>359 pass / 0 fail</strong>（新增 15 個：三層去重 8＋路由覆蓋 7）、<code>npm run build</code> 通過、ESLint 零新增錯誤。<br><strong>Worker 與 Firestore 規則已於 2026-08-08 部署，並以 curl 完成端到端實測</strong>：路由（無效 payload→204／GET→405／裸打無 Origin→403）、日文件與月文件皆正確產生、<code>byCountry</code> 取得 <code>TW</code>。<br><strong>最關鍵的一項獲得驗證：entity 的中文欄位路徑（<code>pilots.&#96;艾達&#96;</code>，反引號包裹）在真實 Firestore 上可行</strong>——這是本機無法驗證、且失敗會拖垮整包 commit 的唯一未知數。測試資料已刪除。<br><strong>前端已於 2026-08-08 部署完成</strong>（commit <code>cf39a05</code>），並確認線上 bundle 確實含埋點程式碼。<strong>Phase A 全數完成，資料開始累積。</strong><br><span style="color:var(--text-dim);">⚠ 自測方式：站長身為 OWNER 會被排除規則擋掉，<b>用自己的帳號逛站驗證不到</b>。請開無痕視窗（未登入＝訪客＝計入），且 flush 是在<b>離站時</b>才送出——要切分頁或關掉才會觸發，停在頁面上等不會有東西。<br>⚠ push 注意事項：pre-push hook 自動 commit 的 <code>CHANGELOG.md</code> 產生於 push 的 ref 算完之後，因此<b>第一次 push 不會帶到它</b>，需再 push 一次（hook 的固有行為，非本計畫問題）。</span></div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-0 &nbsp; 前置確認：邊緣限流規則</div>
       <div class="task-group-meta">Cloudflare Dashboard · Security · WAF</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -262,19 +266,24 @@
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">⚠ 驗證限流規則<u>真的會擋</u>（事件計數為 0 ＝ 從未觸發過，也就從未被驗證過）</div>
+        <div class="task-name">✅ 已由站長實測驗證限流規則會擋（2026-08-08）→ 轉為長期觀察</div>
         <div class="task-desc">
-          <strong>一個從沒測過的安全網不是安全網。</strong>目前無法區分「沒人攻擊」與「規則設錯所以永遠不匹配」——
-          兩者在 Dashboard 上長得一模一樣（事件都是 0）。<br>
-          <strong>驗證方式（約 1 分鐘）：</strong>從自己機器對 <code>https://mecharashi.wiki/api/versions</code>
-          連續打 70 次以上（超過 60 req／分門檻），預期後段開始回 <strong>429 或 403</strong>；
-          接著到 <strong>Security → Events</strong> 確認有對應記錄。<br>
-          <span style="color:var(--text-dim);">測完自己的 IP 會被短暫封鎖（duration 選單最短值），等一下就恢復。
-          比照 PLAN-045 的經驗——該計畫唯一抓到真實缺陷的手段就是破壞性測試。</span>
+          原問題是「事件計數為 0」無法區分<strong>「沒人攻擊」</strong>與<strong>「規則設錯所以永遠不匹配」</strong>
+          ——兩者在 Dashboard 上長得一模一樣。實測後確認規則確實生效，此歧義解除。<br>
+          <strong>轉為觀察，不再列為待辦。</strong>站長註記：「未來也不知道會不會有漏洞」——這個保留是對的，
+          限流<b>本來就只是提高成本、不是防死</b>（住宅代理 + 分散 IP 仍可繞過，這是所有 per-IP 限流的共同上限）。<br>
+          <strong>日後要觀察什麼：</strong><br>
+          · <b>Security → Events</b>：是否出現非自己造成的封鎖記錄（＝有人在打）。<br>
+          · <b>Workers 請求數</b>（Cloudflare Dashboard）：這是額度耗盡的<u>領先指標</u>，比 Firestore 帳單早看到問題。
+            日常應遠低於 100,000／日；若某天量級跳一個數量級，先看是不是被灌而非流量成長。<br>
+          · <b>單一 IP 上限仍約 86,400 請求／日</b>（60 req／分）：真的遇到持續攻擊時，把門檻調到 30 req／分即可留出一半餘裕。
+            現在不預先調，以免誤傷首訪使用者（首訪約需 13 次 <code>/api</code> 請求）。<br>
+          <span style="color:var(--text-dim);">真出事時的止血順序：① <code>COLLECT_ENABLED=false</code> 關掉統計路徑
+          → ② 調低限流門檻 → ③ 必要時升 Workers Paid（$5／月，日額度限制消失）。</span>
         </div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -552,13 +561,13 @@
 <section class="section">
   <div class="section-label cyan">Phase B</div>
   <div class="section-title">後台儀表板（Phase A 上線約兩週後動工）</div>
-  <div class="section-desc">此時已累積兩週資料，做完當天就能拿來下判斷。</div>
+  <div class="section-desc">（排程已變更，見上方說明——與 Phase A 同日完成。）</div><div class="impact-note"><strong>✅ 於 2026-08-08 完成</strong>：<code>src/lib/api/analytics.ts</code>（+ barrel）、<code>src/types/analytics.ts</code>、<code>src/pages/admin/AdminAnalyticsPage.tsx</code>、<code>src/components/admin/analytics/</code> 三個圖表元件、App.tsx 路由與 AdminPage 入口。<br><strong>已用合成資料在 Firestore 模擬器實測渲染</strong>（29 天資料，刻意含 1 天缺漏文件與 1 天被熔斷截斷）：熔斷警示橫幅、趨勢圖紅圈標記、缺漏日補零的凹陷、中文 entity 排行、以及<strong>空狀態</strong>皆正確。<br><code>npm test</code> 359 pass / 0 fail、<code>npm run build</code> 通過、ESLint <strong>零新增錯誤</strong>（實作中修掉自己引入的兩筆：effect 內同步 setState、標題誤用全形空白 U+3000）。<br>儀表板為 lazy chunk（13.95 kB / gzip 5.71 kB），<strong>不影響一般訪客的載入</strong>。</div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; 統計讀取 API</div>
       <div class="task-group-meta">src/lib/api/analytics.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -572,7 +581,7 @@
         <div class="task-file">src/lib/api/analytics.ts · src/lib/firestoreApi.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -580,7 +589,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; /admin/analytics 頁面</div>
       <div class="task-group-meta">src/pages/admin/AdminAnalyticsPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -592,7 +601,7 @@
         <div class="task-file">src/pages/admin/AdminAnalyticsPage.tsx · src/App.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -608,7 +617,7 @@
         <div class="task-file">src/pages/admin/AdminAnalyticsPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -616,7 +625,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-3 &nbsp; 圖表元件與資料誠實度標示</div>
       <div class="task-group-meta">src/components/admin/analytics/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -628,7 +637,7 @@
         <div class="task-file">src/components/admin/analytics/BarList.tsx · TrendLine.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -641,7 +650,7 @@
         <div class="task-file">src/components/admin/analytics/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

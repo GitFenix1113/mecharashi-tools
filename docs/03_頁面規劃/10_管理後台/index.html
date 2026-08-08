@@ -123,7 +123,22 @@
     <tr><td><code>users</code> 用戶</td><td>users（伺服器分頁）</td><td>用戶列表、角色（ADMIN/OWNER）授予</td></tr>
     <tr><td><code>grayops</code> 灰燼行動</td><td>grayOpsRoster（+mechs）</td><td>灰燼行動名簿（公司 → 機甲列表）；🆕 每筆可存 <code>icon</code> / <code>mechId</code> 快照，「同步 Icon / 連結」由 mechs 依名稱補齊，首頁名單即以縮圖顯示並可點開引用浮窗</td></tr>
     <tr><td>版本管理</td><td>/admin/versions · /admin/versions/:versionId</td><td>🆕 PatchVersion 時間線編輯（AdminRoute gate，lazy 載入）</td></tr>
+    <tr><td>變更歷史</td><td>/admin/history</td><td>資料異動稽核 log（PLAN-030）；append-only、含刪除快照可還原</td></tr>
+    <tr><td>系統日誌</td><td>/admin/system-log</td><td>登出／寫入被拒的診斷記錄（PLAN-045）；<strong>僅 OWNER</strong>（含裝置指紋）</td></tr>
+    <tr><td>使用統計</td><td>/admin/analytics</td><td>🆕 匿名彙總統計儀表板（PLAN-046）：頁面熱度、語言／國家分布、熱門機師機甲 TOP 20。<strong>ADMIN 即可看</strong>——不含個人行為資料，敏感度低於系統日誌</td></tr>
   </table>
+
+  <div class="note-block" style="margin-top:16px;">
+    <strong>📊 使用統計儀表板的三個非顯而易見之處（PLAN-046）</strong><br>
+    · <strong>資料來源不是 client 寫的</strong>：<code>analyticsDaily</code> / <code>analyticsEntity</code> 是全站唯一
+      <code>write: if false</code> 的集合，唯一寫入者是 Cloudflare Worker（訪客也要統計 ⇒ 不能要求登入 ⇒
+      client 直寫就得開匿名寫入，等於把共用寫入額度交給任何人）。<br>
+    · <strong>維護者自己看不到自己的足跡</strong>：具後台權限的角色一律不計入統計。
+      以本站流量規模，維護者巡站就足以構成一成以上的方向性噪音。要自測請用無痕視窗。<br>
+    · <strong><code>truncatedAt</code> 必須檢查</strong>：有值代表當日因寫入預算熔斷而中止記錄。
+      本頁會把該日排除在所有數字與排行之外、趨勢圖標紅圈——熔斷後的曲線看起來完全正常，
+      不標就是拿少了半天的數字在做決策。
+  </div>
 
   <div class="note-block" style="margin-top:16px;">
     <strong>🔗 數值引用層編輯（PLAN-019 / 022 / 024）</strong>
