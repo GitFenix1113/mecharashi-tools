@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Browser API 金鑰白名單 — Firebase — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../index.html">技術文件</a>
+    <span>›</span>
+    <span class="current">Browser API 金鑰白名單</span>
+  </div>
+</nav>
+
+<header class="hero purple">
+  <div class="hero-badge purple">◆ INFRA · SINGLE POINT OF FAILURE</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    Browser API 金鑰白名單
+    <span>MECHARASHI — GCP API KEY RESTRICTIONS</span>
+  </h1>
+  <p class="hero-sub">兩份互不相干的白名單 · 全站的隱形單點 · 錯誤碼對照與免登入驗證法</p>
+  <div class="version-badge" style="background:var(--accent-purple);color:#fff;">2026-08-09 — 由真實事故建立</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label purple">01 — 為什麼需要這份文件</div>
+  <div class="section-title">一把金鑰擋住全站，而且症狀不像設定問題</div>
+
+  <div class="note-block">
+    <strong>⚠ 本文件刻意不公開</strong><br>
+    <code>02_技術文件/04_Firebase</code> 不在 <code>scripts/copy-docs.mjs</code> 的
+    <code>INCLUDE</code> 白名單內，故本頁不會被複製進 <code>dist/</code>、也不會出現在
+    <code>/documents</code>。內容含專案 ID 與金鑰設定，<strong>不要把此目錄加進白名單</strong>。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>📌 這把金鑰是什麼</strong><br>
+    GCP 憑證名稱 <strong><code>Firebase Browser Key (mecharashi)</code></strong>（值 <code>AIza…Qj8V0</code>），
+    也就是 <code>.env.local</code> / CI 的 <code>VITE_FIREBASE_API_KEY</code>。<br>
+    它會隨 JS bundle 出貨給所有訪客，<strong>本來就是公開值</strong>——真正的防護是它身上那兩份限制清單，
+    不是保密。前台每一次 Firestore 讀寫、每一次登入、每一次登入狀態續期都要經過它。
+  </div>
+
+  <div class="note-block" style="margin-top:12px;">
+    <strong>🩸 為什麼特別容易出事：症狀不像設定問題</strong><br>
+    白名單缺項的表現是<strong>「某個功能在某個時機壞掉」</strong>，而不是「整站掛掉」。
+    2026-08-09 那次是「登入永遠成功，但一小時後掉登入」——完全看不出跟 API 金鑰有關，
+    整整兩個多月被誤判成瀏覽器儲存問題（見下方 04）。<br>
+    <strong>凡是看到 <code>*-are-blocked</code> 結尾的錯誤碼，第一個就查這裡。</strong>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">02 — 兩份清單，別搞混</div>
+  <div class="section-title">應用程式限制 vs API 限制</div>
+
+  <div class="info-block">
+    <strong>📌 金鑰編輯頁上下兩塊，管的是完全不同的事</strong><br>
+    · <strong>應用程式限制</strong>（上）＝<strong>誰</strong>可以用這把金鑰 → HTTP 參照網址（referrer）白名單<br>
+    · <strong>API 限制</strong>（下）＝這把金鑰可以打<strong>哪些 API</strong> → 服務白名單<br>
+    兩者各自獨立把關，缺哪一份就報哪一種錯，<strong>症狀不同、要各加各的</strong>。
+    第三份常被一起搞混的是 Firebase Console 的「Auth 授權網域」，那又是另一個地方。
+  </div>
+
+  <div class="sub-h">🔍 錯誤碼對照表（判讀的關鍵）</div>
+  <div class="data-table-wrap">
+    <table class="data-table cyan-head">
+      <tr><th>錯誤 reason</th><th>Firebase SDK 端的錯誤碼長相</th><th>缺哪一份</th><th>去哪裡加</th></tr>
+      <tr>
+        <td><code>API_KEY_SERVICE_BLOCKED</code></td>
+        <td><code>auth/requests-to-<strong>this-api</strong>-…-are-blocked</code></td>
+        <td><strong>API 限制</strong>（服務白名單）</td>
+        <td>GCP 憑證 → 該金鑰 → API 限制</td>
+      </tr>
+      <tr>
+        <td><code>API_KEY_HTTP_REFERRER_BLOCKED</code></td>
+        <td><code>auth/requests-from-<strong>referer</strong>-…-are-blocked</code></td>
+        <td><strong>應用程式限制</strong>（referrer 白名單）</td>
+        <td>GCP 憑證 → 該金鑰 → 應用程式限制</td>
+      </tr>
+      <tr>
+        <td>—</td>
+        <td><code>auth/unauthorized-domain</code></td>
+        <td>Firebase <strong>Auth 授權網域</strong></td>
+        <td>Firebase Console → Authentication → Settings</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="note-block" style="margin-top:12px;">
+    <strong>⚠ 兩種 403 長得很像，差在 <code>this-api</code> 與 <code>referer</code> 一字</strong><br>
+    用 curl 驗證時尤其要注意：<strong>沒帶 <code>Referer</code> 標頭的請求會先被 referrer 那層擋掉</strong>，
+    永遠測不到 API 限制那層，很容易誤判成「referrer 白名單壞了」。驗證方式見下方 05。
+  </div>
+
+  <div class="sub-h">🌐 換網域時的三件必辦事項</div>
+  <div class="info-block">
+    2026-07-25 切換到 <code>mecharashi.wiki</code> 時，這三項各漏一項就壞一次，最後是逐一補齊的：<br>
+    ① GCP 憑證 → 該金鑰 → <strong>應用程式限制</strong> 加 <code>https://mecharashi.wiki/*</code> 與
+      <code>https://www.mecharashi.wiki/*</code>
+      （<strong>GCP 萬用字元不涵蓋子網域</strong>，子網域要另加 <code>https://*.mecharashi.wiki/*</code>）<br>
+    ② Firebase Console → Authentication → <strong>授權網域</strong><br>
+    ③ 若當時仍有 reCAPTCHA／App Check，還要加它的網域白名單
+      （本專案已於 PLAN-029 Phase 3-3 退場，故現在只剩 ①②）
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">03 — 現行 API 白名單</div>
+  <div class="section-title">6 個 API，各自對應什麼</div>
+
+  <div class="data-table-wrap">
+    <table class="data-table cyan-head">
+      <tr><th>API</th><th>服務位址</th><th>少了會怎樣</th></tr>
+      <tr><td>Identity Toolkit API</td><td><code>identitytoolkit.googleapis.com</code></td>
+          <td><strong>完全無法登入</strong>（立刻發現）</td></tr>
+      <tr><td><strong>Token Service API</strong></td><td><code>securetoken.googleapis.com</code></td>
+          <td><strong>能登入，但約一小時後掉登入</strong>——2026-08-09 事故本體，見 04</td></tr>
+      <tr><td>Cloud Firestore API</td><td><code>firestore.googleapis.com</code></td>
+          <td>後台編輯全壞（前台公開資料走 Worker 不受影響）</td></tr>
+      <tr><td>Firebase Installations API</td><td><code>firebaseinstallations.googleapis.com</code></td>
+          <td>SDK 內部識別，缺了多個 Firebase 產品會連鎖失效</td></tr>
+      <tr><td>Cloud Storage</td><td><code>storage.googleapis.com</code></td>
+          <td>目前無實質影響：<code>getStorage()</code> 只在 <code>firebase.ts</code> 初始化，
+              全站無上傳／下載（圖檔走 Cloudinary）。留著備用</td></tr>
+      <tr><td>Firebase App Check API</td><td><code>firebaseappcheck.googleapis.com</code></td>
+          <td>無影響：App Check 已於 PLAN-029 Phase 3-3 退場。留著無害，也懶得動它</td></tr>
+    </table>
+  </div>
+
+  <div class="note-block" style="margin-top:12px;">
+    <strong>⚠ 下拉選單只列出「專案中已啟用」的 API</strong><br>
+    若在 API 限制的搜尋框找不到某個 API，代表它在專案裡沒被啟用（不是清單壞了）。
+    先到 API 程式庫啟用，再回憑證頁勾選：<br>
+    <code>https://console.cloud.google.com/apis/library/<span style="color:var(--accent-green)">&lt;服務位址&gt;</span>?project=mecharashi-tools</code>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">04 — 2026-08-09 事故</div>
+  <div class="section-title">「用著用著就登出」追了兩個月，真因是這裡缺一個勾</div>
+
+  <div class="sub-h">⛓️ 完整因果鏈</div>
+  <div class="code-block">Browser API key 的「API 限制」白名單缺 Token Service API
+        ↓
+登入走 identitytoolkit（在白名單內）→ <span style="color:var(--accent-green)">永遠成功</span>
+        ↓
+idToken 壽命 1 小時，SDK 在到期前 ~5 分鐘自動續期
+  → 呼叫 securetoken.googleapis.com 的 SecureToken.GrantToken
+        ↓
+<span style="color:var(--accent-red)">403 API_KEY_SERVICE_BLOCKED</span>
+        ↓
+SDK 判定憑證無效 → 主動 signOut，並從 IndexedDB <strong>移除</strong>憑證記錄
+        ↓
+使用者下次 F5／開新分頁 → 才「發現」已經被登出</div>
+
+  <div class="note-block" style="margin-top:12px;">
+    <strong>🕵️ 為什麼誤判了兩個月</strong><br>
+    症狀全部指向「瀏覽器把資料清掉了」，而且每一項都很有說服力：<br>
+    · 被登出的那一刻 IndexedDB 的 <code>firebase:authUser:*</code> 確實不見了<br>
+    · <code>sessionAgeSec</code> 恆為 0～1 秒 → 看起來像「載入時儲存已經是空的」<br>
+    · 間隔不規則（24 分鐘～1.1 小時）→ 看起來不像固定週期的 token 到期<br>
+    實際上：憑證是 <strong>SDK 自己刪的</strong>；0 秒是因為續期在背景失敗、F5 時才被發現；
+    間隔不規則是因為續期時機取決於「當下 token 已經多老」，而重新整理會沿用既有 token
+    而非換新的。<br>
+    <strong>教訓：從儲存層反推永遠猜不到答案。真正破案的是把 <code>getIdToken()</code>
+    的 error code 直接記下來</strong>（PLAN-045 的 <code>probeToken()</code> →
+    <code>systemLog.authErrors</code>）。
+  </div>
+
+  <div class="note-block" style="margin-top:12px;">
+    <strong>💀 更值得記取的：這件事我們預言過</strong><br>
+    2026-07-26 換網域補 referrer 白名單時，就已經寫下
+    「這把金鑰的 API 限制清單若缺 <code>Token Service API</code>，症狀會是能登入但一小時後掉登入」。
+    但那句話只存在於一則除錯筆記的附註裡，沒有人回頭去補，於是它一路發作到 8/9。<br>
+    <strong>這份文件的存在本身就是那個教訓的產物</strong>——會反覆踩的坑要進版控，不能只活在筆記裡。
+  </div>
+
+  <div class="changed-block" style="margin-top:12px;">
+    <strong>✅ 修復（2026-08-09）</strong><br>
+    GCP Console → API 和服務 → 憑證 → <code>Firebase Browser Key (mecharashi)</code> →
+    API 限制 → 勾選 <code>Token Service API</code> → 儲存。<br>
+    <strong>不需改任何程式碼、不需重新部署</strong>，設定在 Google 端，數分鐘內生效。
+    唯一的後續動作是各維護者重新登入一次（舊憑證已被 SDK 刪除，救不回來）。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">05 — 驗證手法</div>
+  <div class="section-title">不需登入、不需部署，30 秒內確認</div>
+
+  <div class="info-block">
+    <strong>📌 原理</strong><br>
+    直接對目標 API 送一個<strong>故意無效</strong>的請求，看它是被「金鑰限制」擋掉（403），
+    還是順利抵達 API 後才因為參數無效被拒（400）。<br>
+    <strong>400 才是我們要的結果</strong>——它證明金鑰打得到這個 API。
+  </div>
+
+  <div class="code-block" style="border-left-color:var(--accent-purple);">KEY=$(grep '^VITE_FIREBASE_API_KEY=' .env.local | cut -d= -f2 | tr -d '\r"')
+
+curl -s -w "\nHTTP %{http_code}\n" -X POST \
+  "https://securetoken.googleapis.com/v1/token?key=$KEY" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  <span style="color:var(--accent-yellow)">-H "Referer: https://mecharashi.wiki/"</span>   <span style="color:var(--text-dim)"># ← 必帶，否則測不到 API 限制那層</span> \
+  -d "grant_type=refresh_token&amp;refresh_token=deliberately-invalid"</div>
+
+  <div class="data-table-wrap">
+    <table class="data-table cyan-head">
+      <tr><th>結果</th><th>reason</th><th>意義</th></tr>
+      <tr><td><code>HTTP 400</code></td><td><code>INVALID_REFRESH_TOKEN</code></td>
+          <td><strong>✅ 正常</strong>——API 通了，只是拒絕我們故意送的假 token</td></tr>
+      <tr><td><code>HTTP 403</code></td><td><code>API_KEY_SERVICE_BLOCKED</code></td>
+          <td>❌ API 限制缺這個服務 → 去補白名單</td></tr>
+      <tr><td><code>HTTP 403</code></td><td><code>API_KEY_HTTP_REFERRER_BLOCKED</code></td>
+          <td>⚠ 你忘了帶 <code>Referer</code>，或該網域不在 referrer 白名單</td></tr>
+    </table>
+  </div>
+
+  <div class="note-block" style="margin-top:12px;">
+    <strong>⚠ 為什麼不用「登入後等一小時」來驗證</strong><br>
+    那要等一小時，而且失敗時分不出是設定沒生效還是還沒到續期時機。上面這發 curl 是
+    <strong>確定性的</strong>：改設定前打一次、改完打一次，兩次結果不同就是生效了。<br>
+    同樣手法可套用到任何一個 API——把 URL 換成該服務的端點即可。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">06 — 維護規則</div>
+  <div class="section-title">什麼時候要回來動這裡</div>
+
+  <div class="step-list">
+    <div class="step-item">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>新增任何 Firebase 產品時</strong><br>
+        <span style="color:var(--text-dim);font-size:12px;">
+          Realtime Database、Cloud Functions（client 呼叫）、Remote Config、Cloud Messaging…
+          每一個都有自己的 <code>*.googleapis.com</code>，一律要回來把對應 API 加進白名單。
+          <strong>開發時通常不會發現</strong>——localhost 也在 referrer 白名單內，但 API 限制是全域的，
+          所以本機一樣會壞；真正危險的是「本機沒用到那個產品、上線才用到」的情況。
+        </span>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>換網域 / 加子網域時</strong><br>
+        <span style="color:var(--text-dim);font-size:12px;">
+          動的是<strong>應用程式限制</strong>那一份，不是 API 限制。三件必辦見上方 02 節末。
+        </span>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>看到 <code>*-are-blocked</code> 錯誤時</strong><br>
+        <span style="color:var(--text-dim);font-size:12px;">
+          先用 02 節的對照表判斷是哪一份清單，再用 05 節的 curl 確認。
+          <strong>不要先去查程式碼</strong>——這類錯誤跟前端實作無關。
+        </span>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <strong>看到「能用但過一陣子就壞」的怪症狀時</strong><br>
+        <span style="color:var(--text-dim);font-size:12px;">
+          這是白名單缺項最典型、也最難聯想的表現形式：初次操作的 API 有授權、
+          背景續期／輪詢的那支沒有。把它列進懷疑清單的前三名。
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="note-block" style="margin-top:12px;">
+    <strong>⚠ 永遠不要為了排錯而切成「不限制金鑰」</strong><br>
+    那會讓這把公開金鑰能打專案內任何 API，等於把 GCP 專案敞開。
+    要排錯就用 05 節的 curl 精準定位，只補真正缺的那一個。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔗 相關</strong><br>
+    · 診斷設施（哨兵／心跳／探針）：<a href="資料庫設計文件/systemLog.html">systemLog — 系統診斷日誌</a><br>
+    · 環境變數與部署：<a href="Firebase設定與資料更新指南.html">Firebase 設定與資料更新指南</a><br>
+    · 現行防護架構（Worker 代理 + <code>read: if isAdmin()</code>）：PLAN-029
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="container">
+    鋼嵐工具站 — Browser API 金鑰白名單 · 建立於 2026-08-09（由真實事故產出）· 本文件不對外發布
+  </div>
+</footer>
+
+</body>
+</html>
