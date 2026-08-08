@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-046 · 網站使用統計</h3>
+      <p>目前唯一的觀測手段是 Firebase 主控台的讀寫次數，它能回答「花了多少額度」，卻答不出<b>「哪些頁面真的有人用」</b>——而後者才是決定改版順序與資料補齊順序的依據。更關鍵的是 <b>PLAN-029 的中國訪客策略至今無從驗證</b>：Worker 同源代理、字體自託管、邊緣改寫都做了，卻只能說「應該有用吧」。本計畫用長期閒置的 Firestore 寫入額度，建一套<b>同源第一方埋點</b>（走既有 <code>/api</code>，攔截器擋不掉、中國訪客也統計得到，這正是不用 GA4 的理由）。去重採<b>三層識別碼</b>：visitorId／sessionId（<b>10 分鐘</b>閒置，且閒置由活動訊號判定，否則慢讀者的 session 會被誤切）／已報頁面 Set，同頁同次造訪只計一次 UPV，但 PV 雙軌保留——兩者比值即「折返率」，是資訊沒給足的訊號。資料走<b>預聚合日文件</b>（看 30 天＝30 reads），一個 session 離站時 <code>sendBeacon</code> 批次寫一次，寫入量與逛幾頁完全脫鉤。<br>安全面：<b>不開匿名 Firestore 寫入</b>，改由 Worker 代寫，但這讓 Worker 從純唯讀變成有匿名可觸發的寫入路徑，因此立兩條鐵律（文件路徑由伺服器時間算出、欄位路徑一律由程式碼組出，payload 只准給數字）。另含<b>寫入預算熔斷器</b>（超出免費額度自動停止計數並標記 <code>truncatedAt</code>，避免報表默默說謊）與 <code>COLLECT_ENABLED</code> kill switch。Worker 端<b>刻意不放頁面白名單</b>，改用格式正則防護——放名單就是重演 PLAN-043 的雙名單不同步事故。不記錄個別使用者行為。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-046_網站使用統計/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-046_網站使用統計/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card red">
       <div class="card-icon">◆</div>
       <h3>PLAN-042 · 機甲故事館</h3>
