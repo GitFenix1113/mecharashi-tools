@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>analyticsDaily / analyticsEntity — 使用統計 Schema — Firebase 資料庫設計 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../../index.html">技術文件</a>
+    <span>›</span>
+    <a href="Firebase資料庫設計文件.html">Firebase 資料庫設計</a>
+    <span>›</span>
+    <span class="current">analytics — 使用統計</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge cyan">◆ COLLECTION SCHEMA</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    analyticsDaily / analyticsEntity — 使用統計
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-046</span>
+  </h1>
+  <p class="hero-sub">匿名彙總計數 · 預聚合（看 30 天＝30 reads）· 全站唯一 write: if false 的集合 · 不含任何可識別個人的資料</p>
+  <div class="version-badge" style="background:var(--accent-cyan);color:#000;">PLAN-046 — 2026-08-08</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label cyan">01 — 用途</div>
+  <div class="section-title">為什麼需要這兩個集合</div>
+
+  <div class="info-block">
+    <strong>📌 用途說明</strong><br>
+    原本唯一的觀測手段是 Firebase 主控台的讀寫次數，它能回答「花了多少額度」，卻答不出
+    <strong>「哪些頁面真的有人用」</strong>——而後者才是決定改版順序與資料補齊順序的依據。<br>
+    · <strong><code>analyticsDaily/{YYYY-MM-DD}</code></strong> — 一天一份，全站彙總與低基數維度。<br>
+    · <strong><code>analyticsEntity/{YYYY-MM}</code></strong> — 一月一份，個別機師／機甲／武器的熱度（高基數）。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 為什麼不能靠 Cloudflare 請求日誌反推</strong><br>
+    本站的兩項架構優化剛好讓被動日誌<strong>結構性地測不準</strong>：<br>
+    ① <strong>SPA 路由不產生伺服器請求</strong>——從 <code>/pilots</code> 點進 <code>/pilots/艾達</code>，瀏覽器一個請求都沒發；<br>
+    ② <strong>三層快取讓資料請求與瀏覽次數脫鉤</strong>——回訪使用者整場 session 可能發出 0 次 <code>/api/data</code>，Worker 邊緣快取再吃一層。<br>
+    <strong>快取做得越好，被動日誌越測不準。因此必須主動埋點，沒有捷徑。</strong>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">02 — Schema</div>
+  <div class="section-title">欄位結構</div>
+
+  <h3>analyticsDaily/{YYYY-MM-DD}</h3>
+  <div class="code-block">{
+  date:      '2026-08-08',      <span style="color:#8b949e;">// 文件 ID 同值；日界線為 <strong>UTC+8</strong></span>
+
+  <span style="color:#8b949e;">// ── 總量 ──</span>
+  pv:        1240,              <span style="color:#8b949e;">// 原始瀏覽次數（含來回點擊）</span>
+  upv:        820,              <span style="color:#8b949e;">// 去重後：同 session 同頁只計一次 ← 主指標</span>
+  sessions:   210,              <span style="color:#8b949e;">// 造訪次數（10 分鐘閒置切分）</span>
+  visitors:   168,              <span style="color:#8b949e;">// 當日不重複裝置數</span>
+
+  <span style="color:#8b949e;">// ── 維度（皆為低基數 map，以「造訪」為計數單位）──</span>
+  byRoute:   { pilots: { pv: 190, upv: 96 }, pilots_detail: { … } },
+  byLang:    { zh_tw: 90, zh_cn: 55, en: 48, ja: 9, other: 8 },
+  byCountry: { TW: 120, CN: 48, HK: 22, XX: 20 },
+  byAuth:    { guest: 145, user: 65 },
+  byDevice:  { mobile: 130, desktop: 75, tablet: 5 },
+  byRef:     { direct: 150, google_com: 30, … },
+
+  <span style="color:#8b949e;">// ── 維運 ──</span>
+  writes:      210,             <span style="color:#8b949e;">// 當日寫入文件數＝熔斷器的燃料表</span>
+  truncatedAt: null,            <span style="color:#8b949e;">// 有值代表當日資料<strong>不完整</strong>（見 04）</span>
+  truncatedReason: 'writeBudget',
+  updatedAt:   Timestamp
+}</div>
+
+  <h3>analyticsEntity/{YYYY-MM}</h3>
+  <div class="code-block">{
+  month:   '2026-08',
+  pilots:  { '艾達': 320, '露娜': 210, … },   <span style="color:#8b949e;">// key 是 Firestore 文件 ID</span>
+  mechs:   { … },
+  weapons: { … }
+}</div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ entity 的欄位路徑必須反引號包裹</strong><br>
+    本專案的文件 ID <strong>含中文</strong>（<code>src/utils/idSlug.ts</code> 的 <code>slugify</code> 刻意保留 CJK），
+    而 Firestore 未引用的欄位路徑片段只允許 <code>[a-zA-Z_][a-zA-Z0-9_]*</code>。
+    因此 Worker 組出的是 <code>pilots.`艾達`</code>。<br>
+    既然要包裹，就必須確保 id <strong>逃不出引號</strong>——故採<strong>白名單字元類別</strong>
+    （只放行 CJK／英數／<code>_</code>／<code>-</code>），反引號、反斜線、點全落在範圍外，逃逸在字面上不可能發生。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>為什麼路由用「樣板」而非實際網址</strong><br>
+    <code>/pilots/艾達</code> 與 <code>/pilots/露娜</code> 都記成 <code>pilots_detail</code>。
+    若用實際網址當 key，<code>byRoute</code> 這個 map 會長出上百個鍵並撐爆日文件（單文件上限 1 MiB）。
+    個別實體的熱度改存 <code>analyticsEntity</code> 的月文件（1,500 個 id 約 60 KB，餘裕充足）。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label orange">03 — 安全規則</div>
+  <div class="section-title">全站唯一 write: if false 的集合</div>
+
+  <div class="code-block">match /analyticsDaily/{docId} {
+  allow read:  if isAdmin();
+  allow write: <span style="color:#ff7b72;">if false;</span>
+}
+match /analyticsEntity/{docId} {
+  allow read:  if isAdmin();
+  allow write: <span style="color:#ff7b72;">if false;</span>
+}</div>
+
+  <div class="warning-block">
+    <strong>⚠ 為什麼對所有 client 禁寫（連管理員都不行）</strong><br>
+    訪客也要統計 ⇒ 不能要求登入 ⇒ 若改成 client 直寫就得開 <code>create: if true</code>，
+    那等於讓任何人用迴圈寫爆<strong>全專案共用</strong>的每日寫入額度，並任意灌水數字。<br>
+    唯一的寫入者是 Cloudflare Worker，它以 service account 繞過安全規則（同 PLAN-029 的代讀架構），
+    另有格式防護、數量上限、寫入預算熔斷器三層把關。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>讀取為何是 isAdmin() 而非 isOwnerRole()</strong><br>
+    內容是站務彙總數字，<strong>不含任何可識別個人的行為資料</strong>（PLAN-046 Q4 裁決不記錄個別使用者），
+    敏感度低於 <a href="systemLog.html">systemLog</a> 那種帶裝置指紋的記錄，沒必要收到只有 OWNER 看得到。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>保留期限：刻意不設 TTL</strong><br>
+    日文件約 3 KB、月文件約 60 KB，一年合計不到 2 MB —— 與 <a href="changeHistory.html">changeHistory</a>／
+    <a href="systemLog.html">systemLog</a>（存整份文件快照，故需過期政策）不同，本集合小到可永久保留。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label yellow">04 — 讀取時必讀</div>
+  <div class="section-title">truncatedAt：資料完整性標記</div>
+
+  <div class="warning-block">
+    <strong>⚠ 消費這份資料的任何介面都必須檢查 <code>truncatedAt</code></strong><br>
+    有值代表當日統計在該時刻因寫入預算熔斷而中止，<strong>之後的資料全部沒有記到</strong>。<br>
+    最危險的不是熔斷，是<strong>熔斷了但報表看不出來</strong>——若某天下午三點熔斷、儀表板卻照樣畫出一條
+    完整曲線，就會拿一個「看起來正常但少了半天」的數字去做決策，那比沒有統計更糟。<br>
+    <strong>後台約定：</strong>該日資料點改<strong>紅色虛線</strong>並標註中止時間；
+    趨勢圖與 TOP N 排行<strong>自動排除</strong>被截斷的日子，避免污染比較基準。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>其他已知誤差（後台應一併標示）</strong><br>
+    · <strong>UV 是裝置估算值</strong>：清快取／無痕／換裝置都會多算一人。<br>
+    · <strong><code>byCountry</code> 是網路位置，不是受眾語言</strong>：EN 服玩家散布各國、CN 玩家常走 VPN
+      顯示為 US／JP／HK。要看受眾組成請用 <code>byLang</code>，兩者<strong>並存互補</strong>。<br>
+    · 關頁太快時 beacon 可能未送出（少數）；爬蟲只擋得掉機房 IP。<br>
+    · <strong>UPV 的去重窗口是 10 分鐘</strong>，與多數統計工具的 30 分鐘不同，不可直接與別站數字比較。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label green">05 — 寫入路徑</div>
+  <div class="section-title">相關程式碼</div>
+
+  <table class="impact-table">
+    <thead><tr><th>檔案</th><th>職責</th></tr></thead>
+    <tbody>
+      <tr><td><code>src/lib/analytics/session.ts</code></td><td>三層去重（visitorId／sessionId／已報頁面 Set），10 分鐘閒置、UTC+8 跨日</td></tr>
+      <tr><td><code>src/lib/analytics/track.ts</code></td><td>緩衝、排除規則、sendBeacon 批次送出、失敗佇列</td></tr>
+      <tr><td><code>src/lib/analytics/routeKeys.ts</code></td><td>路由樣板 → 統計 key（自動推導）、中文標籤、entity id 安全判定</td></tr>
+      <tr><td><code>src/hooks/usePageTracking.ts</code></td><td>接 React Router，掛在 <code>Layout</code> 一處涵蓋全站</td></tr>
+      <tr><td><code>workers/src/collect.ts</code></td><td>payload 驗證（格式防護）、寫入組裝（兩條安全鐵律）</td></tr>
+      <tr><td><code>workers/src/collectBudget.ts</code></td><td>每日寫入預算熔斷器（預設 50,000）</td></tr>
+      <tr><td><code>workers/src/firestoreRest.ts</code></td><td><code>commitIncrements</code> / <code>readCounterField</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ Worker 端<span style="color:var(--accent-red);">刻意不放</span>頁面白名單</strong><br>
+    若 <code>/api/collect</code> 持有一份「合法頁面 key 清單」，就是原封不動重演 PLAN-043 的雙名單不同步事故
+    （漏一個 key → 正式站壞、本機全綠），而且更難發現——它不報 404，只是數字少了。<br>
+    改用<strong>格式正則 + 數量上限</strong>：名單式防護問「這個 key 合法嗎」（需要知識 → 需要同步 → 會腐化）；
+    格式式防護問「這個 key 會不會造成傷害」（不需要知識 → 永遠不用改）。<br>
+    代價僅是報表可能多一列雜訊，由顯示層過濾即可——<strong>把不同步的後果從「資料遺失」降級成「顯示雜訊」</strong>。
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 技術文件 · Firebase 資料庫設計 — <a href="Firebase資料庫設計文件.html" style="color:var(--accent-cyan);text-decoration:none;">← Firebase 資料庫設計</a>
+</footer>
+
+</body>
+</html>

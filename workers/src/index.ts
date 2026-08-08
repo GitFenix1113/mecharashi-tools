@@ -6,14 +6,31 @@
 // 回應格式刻意對齊前端 fetchCollection 的 `{ ...doc.data(), id }`，前端接線零轉換。
 
 import { parseServiceAccount, getAccessToken, type ServiceAccount } from './gcpAuth'
-import { listCollection, getDocument } from './firestoreRest'
+import { listCollection, getDocument, commitIncrements } from './firestoreRest'
 import { getDataVersions, effectiveVersion } from './versions'
+import {
+  buildTruncatedMark,
+  buildWrites,
+  countryBucket,
+  deviceBucket,
+  monthKey,
+  parseCollectBody,
+  todayKey,
+} from './collect'
+import { budgetLimit, needsTruncatedMark, noteWrites, shouldWrite } from './collectBudget'
 
 export interface Env {
   /** service account JSON 字串（CF Secret；本機走 workers/.dev.vars）。 */
   FIREBASE_SA_KEY: string
   /** 允許的前端來源（逗號分隔）；未設時退回預設清單。 */
   ALLOWED_ORIGINS?: string
+  /**
+   * 使用統計 kill switch（PLAN-046）。設為 'false' 即整條 /api/collect 停止寫入。
+   * 用環境變數而非程式碼旗標：出事時改一個 secret 就好，**不需要 deploy、不需要 rollback**。
+   */
+  COLLECT_ENABLED?: string
+  /** 統計的每日寫入預算（預設 50000，見 collectBudget.ts 的取向說明）。 */
+  COLLECT_DAILY_BUDGET?: string
 }
 
 /**
@@ -91,6 +108,24 @@ export default {
     const blocked = antiScrapeBlock(request, env, cors)
     if (blocked) return blocked
 
+    // 路由：POST /api/collect → 使用統計上報（PLAN-046）
+    //
+    // 三個刻意的設計：
+    //   · **一律回 204，不回任何資料**：探測者得不到任何訊息（連「有沒有寫成功」都沒有），
+    //     而 sendBeacon 本來就讀不到回應，對正常客戶端零損失。
+    //   · **寫入放進 waitUntil**：立刻回應、背景完成，避免瀏覽器在關頁時中斷請求。
+    //   · **所有例外靜默吞掉**：統計是輔助設施，絕不可因為自己失敗而讓使用者感受到異常
+    //     （沿用 PLAN-045 logSystemEvent 的既有慣例）。
+    if (url.pathname === '/api/collect') {
+      if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, cors)
+      if (env.COLLECT_ENABLED === 'false') return noContent(cors) // kill switch
+      const raw = await request.text() // 必須在回應前讀完 body
+      const country = countryBucket((request.cf as { country?: string } | undefined)?.country)
+      const device = deviceBucket(request.headers.get('user-agent') ?? '')
+      ctx.waitUntil(handleCollect(raw, env, country, device))
+      return noContent(cors)
+    }
+
     // 路由：GET /api/versions → 回 { global, byKey }（對應前端 meta/gameData 版本 gate）。
     // 前端據此決定 localStorage 三層快取命中；Phase 3 收緊 meta 後前端改由此代讀版本。
     if (url.pathname === '/api/versions') {
@@ -158,6 +193,58 @@ export default {
   },
 } satisfies ExportedHandler<Env>
 
+/**
+ * 使用統計寫入（背景執行，PLAN-046）。
+ *
+ * 流程：清洗 payload → 熔斷器把關 → 組寫入 → commit。
+ * 每一步失敗都只是「這一包統計沒記到」，不會有任何對外可見的後果。
+ */
+async function handleCollect(
+  raw: string,
+  env: Env,
+  country: string,
+  device: string,
+): Promise<void> {
+  try {
+    const input = parseCollectBody(raw)
+    if (!input) return // 畸形、過大、或空包
+
+    const sa = parseServiceAccount(env.FIREBASE_SA_KEY)
+    const token = await getAccessToken(sa)
+    const day = todayKey() // 鐵律①：文件日期由伺服器算，payload 無從影響
+
+    // 熔斷：超出當日寫入預算就停止計數，並標記 truncatedAt 讓後台知道資料不完整。
+    if (!(await shouldWrite(sa, token, day, budgetLimit(env.COLLECT_DAILY_BUDGET)))) {
+      if (needsTruncatedMark(day)) {
+        await commitIncrements(sa, token, buildTruncatedMark(day))
+        noteWrites(1)
+      }
+      return
+    }
+
+    const buildCtx = { dayKey: day, monthKey: monthKey(), device, country }
+    const writes = buildWrites(input, buildCtx)
+    if (writes.length === 0) return
+
+    try {
+      await commitIncrements(sa, token, writes)
+      noteWrites(writes.length)
+    } catch (e) {
+      // entity 文件是唯一有可能讓 commit 失敗的部分（欄位路徑含中文、需反引號包裹）。
+      // commit 是原子的，所以它一旦有問題會把路由級資料一起拖走 —— 那才是主要產出。
+      // 因此退一步只寫日文件，用一次額外的寫入換取「主資料不受次要資料影響」。
+      console.warn('[collect] commit 失敗，改為只寫日文件:', e)
+      const dailyOnly = buildWrites({ ...input, entities: [] }, buildCtx)
+      if (dailyOnly.length > 0) {
+        await commitIncrements(sa, token, dailyOnly)
+        noteWrites(dailyOnly.length)
+      }
+    }
+  } catch (e) {
+    console.warn('[collect] 上報處理失敗（不影響任何前台功能）:', e)
+  }
+}
+
 // grayOpsRoster：讀 grayOps collection 組裝成 { companies }（對齊前端 getGrayOpsRoster）
 async function assembleGrayOpsRoster(sa: ServiceAccount, token: string): Promise<unknown> {
   const docs = await listCollection(sa, token, 'grayOps')
@@ -179,10 +266,18 @@ function corsHeaders(request: Request, env: Env): Record<string, string> {
   const allow = allowed.includes(origin) ? origin : allowed[0]
   return {
     'access-control-allow-origin': allow,
-    'access-control-allow-methods': 'GET, OPTIONS',
+    // POST 是給 /api/collect（PLAN-046）。正式站 /api 同源、且 sendBeacon 送的是
+    // text/plain 簡單請求，本來就不觸發 preflight；列出 POST 只為了讓跨源的回退路徑
+    // （workers.dev）與本機測試也能運作。資料端點仍各自檢查 method，不受影響。
+    'access-control-allow-methods': 'GET, POST, OPTIONS',
     'access-control-allow-headers': 'content-type',
     'vary': 'origin',
   }
+}
+
+/** 204：給 /api/collect 用。刻意不帶任何內容 —— 探測者拿不到任何訊息。 */
+function noContent(headers: Record<string, string>): Response {
+  return new Response(null, { status: 204, headers })
 }
 
 function json(data: unknown, status: number, headers: Record<string, string>): Response {

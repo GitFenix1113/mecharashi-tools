@@ -86,6 +86,93 @@ export async function listCollection(
   return out
 }
 
+// ── 寫入（PLAN-046 A-4）──────────────────────────────────────────────────────
+// 本檔原本純唯讀。使用統計需要把計數累加進 Firestore，故新增 commit 能力。
+//
+// ⚠ 這讓 Worker 從「100% 唯讀」變成「有一條匿名可觸發的寫入路徑」。service account
+//   本來就有完整寫入權限（PLAN-029 的設計前提），新增的不是**權限**而是**觸發它的
+//   路徑** —— 在此之前 Worker 有漏洞最壞是資料外洩，之後最壞是資料被寫壞。
+//   因此呼叫端（collect.ts）必須遵守兩條鐵律：文件路徑由伺服器時間算出、
+//   欄位路徑一律由程式碼組出，payload 只准提供數字。本檔不做那層把關，只負責送出。
+
+/** 單一欄位轉換。只開放本專案用得到的兩種，不做通用封裝以縮小誤用面。 */
+export type FieldTransform =
+  | { fieldPath: string; increment: { integerValue: string } }
+  | { fieldPath: string; setToServerValue: 'REQUEST_TIME' }
+
+export interface IncrementWrite {
+  /** 集合名（不含 project 前綴） */
+  collection: string
+  /** 文件 ID */
+  docId: string
+  /** 文件不存在時要一併寫入的識別欄位（如 date / month），值為字串 */
+  seed: Record<string, string>
+  transforms: FieldTransform[]
+}
+
+/**
+ * 送出一批 increment 寫入。
+ *
+ * 關鍵在 `update` + `updateMask` + `updateTransforms` 的組合：
+ * 單獨的 transform 在文件不存在時會失敗，但帶 updateMask 的 update 會「不存在就建立」，
+ * transform 隨之生效。updateMask 只列 seed 欄位 → 既有計數欄位不會被覆蓋。
+ *
+ * 多份文件放同一個 commit：Firestore 單次 commit 上限 500 個 write，遠遠夠用，
+ * 而這樣一整場 session 只算**一次**寫入操作。
+ */
+export async function commitIncrements(
+  sa: ServiceAccount,
+  token: string,
+  writes: IncrementWrite[],
+): Promise<void> {
+  if (writes.length === 0) return
+  const body = {
+    writes: writes.map((w) => ({
+      update: {
+        name: `projects/${sa.project_id}/databases/(default)/documents/${w.collection}/${w.docId}`,
+        fields: Object.fromEntries(
+          Object.entries(w.seed).map(([k, v]) => [k, { stringValue: v }]),
+        ),
+      },
+      updateMask: { fieldPaths: Object.keys(w.seed) },
+      updateTransforms: w.transforms,
+    })),
+  }
+  const res = await fetch(`${FS_BASE}/projects/${sa.project_id}/databases/(default)/documents:commit`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Firestore commit 失敗 ${res.status}: ${text.slice(0, 200)}`)
+  }
+}
+
+/**
+ * 只讀一份文件的單一數值欄位（給寫入預算熔斷器用）。
+ *
+ * 用 `mask.fieldPaths` 讓 Firestore 只回那一個欄位：仍算 1 次 read，但傳輸量極小，
+ * 而熔斷器是每個 isolate 定期輪詢的，省下的頻寬會累積。
+ * 文件不存在或欄位缺漏一律回 0 —— 對熔斷器而言「還沒開始寫」就是 0。
+ */
+export async function readCounterField(
+  sa: ServiceAccount,
+  token: string,
+  collection: string,
+  docId: string,
+  field: string,
+): Promise<number> {
+  const url = new URL(docsUrl(sa, `${collection}/${docId}`))
+  url.searchParams.set('mask.fieldPaths', field)
+  const res = await fetch(url.toString(), { headers: { authorization: `Bearer ${token}` } })
+  if (res.status === 404) return 0
+  if (!res.ok) throw new Error(`Firestore get counter 失敗 ${res.status}`)
+  const d = (await res.json()) as FsDocument
+  const v = d.fields?.[field]
+  return v?.integerValue !== undefined ? Number(v.integerValue) : 0
+}
+
 /**
  * 讀取單一文件（singleton 集合用，如 globalResearch/grayOpsRoster），
  * 回 `{ ...decodedFields, id }` 或 null（不存在）。

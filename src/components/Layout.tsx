@@ -1,6 +1,7 @@
 import { Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { usePageTracking } from '../hooks/usePageTracking'
 import SignedOutBanner from './SignedOutBanner'
 import AvatarDisplay from './profile/AvatarDisplay'
 import ContentNavDropdown, { type ContentNavItem } from './ContentNavDropdown'
@@ -63,6 +64,10 @@ export default function Layout() {
   const { user, userProfile, loading, signOut, openAuthModal } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+
+  // 使用統計埋點（PLAN-046）。掛在 Layout：它是所有前台頁面的共同外殼，
+  // 一處呼叫即涵蓋全站，新增頁面不需要任何額外接線。
+  usePageTracking()
 
   const isHome = location.pathname === '/'
   const isAdmin = userProfile?.role === 'ADMIN' || userProfile?.role === 'OWNER'

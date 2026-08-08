@@ -194,6 +194,13 @@
         <p>維護者非預期登出的診斷證據 · 三態哨兵判成因 · 讀取限 OWNER（全站唯一 read 比 write 嚴格）· 原生 TTL 90 天</p>
       </div>
     </a>
+    <a href="analytics.html" style="text-decoration:none;">
+      <div class="card purple">
+        <div class="card-icon">📊</div>
+        <h3>analyticsDaily / analyticsEntity — 使用統計</h3>
+        <p>匿名彙總計數 · 預聚合（看 30 天＝30 reads）· 全站唯一 write: if false（只有 Worker 寫得進）· 不含可識別個人的資料</p>
+      </div>
+    </a>
     <a href="security-rules.html" style="text-decoration:none;">
       <div class="card orange">
         <div class="card-icon">🛡️</div>
@@ -290,6 +297,11 @@
       <div class="col-name"><a href="systemLog.html" style="color:inherit;text-decoration:none;">systemLog</a></div>
       <span class="col-type game">OWNER LOG</span>
       <p>維護者非預期登出／寫入被拒的診斷記錄（PLAN-045）。append-only，且<strong>讀取限 OWNER</strong>（含裝置指紋，ADMIN 不可互看）。不進前台快取層</p>
+    </div>
+    <div class="collection-card">
+      <div class="col-name"><a href="analytics.html" style="color:inherit;text-decoration:none;">analyticsDaily / analyticsEntity</a></div>
+      <span class="col-type game">ANALYTICS</span>
+      <p>匿名使用統計的預聚合計數（PLAN-046）。<strong>全站唯一 <code>write: if false</code></strong>——唯一寫入者是 Cloudflare Worker（service account 繞過規則）。不進前台快取層</p>
     </div>
   </div>
 </section>

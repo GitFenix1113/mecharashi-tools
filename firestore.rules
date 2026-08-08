@@ -145,6 +145,30 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── 使用統計（PLAN-046）──────────────────────────────────────────────────
+    // 匿名彙總計數，只增不減。與本專案其他集合最大的不同是 **write: if false**：
+    // 唯一的寫入者是 Cloudflare Worker，它以 service account 繞過安全規則
+    // （同 PLAN-029 的代讀架構）。因此這裡對**所有** client 一律禁寫，包含管理員——
+    //
+    //   · 訪客也要統計 ⇒ 不能要求登入 ⇒ 若改成 client 直寫就得開 create: if true，
+    //     那等於讓任何人用迴圈寫爆共用的每日寫入額度、並任意灌水數字；
+    //   · 走 Worker 則另有格式防護、數量上限、寫入預算熔斷器三層把關（見 workers/src/collect.ts）。
+    //
+    // 讀取用 isAdmin() 而非 isOwnerRole()：內容是站務彙總數字，**不含任何可識別個人
+    // 的行為資料**（PLAN-046 Q4 裁決不記錄個別使用者），敏感度低於 systemLog 那種
+    // 帶裝置指紋的記錄，沒必要收到只有 OWNER 看得到。
+    //
+    // 保留期限：日文件約 3 KB、月文件約 60 KB，一年合計不到 2 MB，
+    // 故**刻意不設 TTL** —— 與 changeHistory / systemLog（存整份文件快照）不同。
+    match /analyticsDaily/{docId} {
+      allow read:  if isAdmin();
+      allow write: if false;
+    }
+    match /analyticsEntity/{docId} {
+      allow read:  if isAdmin();
+      allow write: if false;
+    }
+
     // ── 用戶資料（本人可讀寫）────────────────────────────────────────────────
     match /users/{userId} {
       allow read, write: if isOwner(userId);
