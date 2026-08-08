@@ -80,9 +80,13 @@
       <tr><td>occurredAt</td><td>number</td><td>事件在本機實際發生的時間（ms epoch）。佇列延遲上報時可能早於 <code>at</code> 數小時</td></tr>
       <tr><td>expireAt</td><td>Timestamp</td><td><code>寫入時 + 90 天</code>。由原生 TTL 政策讀取後自動清除文件</td></tr>
       <tr><td>env</td><td>DiagEnvironment?</td><td>環境快照：persisted / 儲存用量 / UA / 平台 / standalone / 螢幕 / 語言</td></tr>
-      <tr><td>session</td><td>DiagSession?</td><td>session 上下文：時長 / 距上次 token 更新 / 離線累計 / 路由 / 有無草稿</td></tr>
-      <tr><td>probes</td><td>SystemLogProbes?</td><td><strong>僅 logout</strong>：三顆探針的原始三態值，見下方 03</td></tr>
+      <tr><td>session</td><td>DiagSession?</td><td>session 上下文：時長 / 距上次 token 更新 / 離線累計 / 路由 / 有無草稿 / <code>navType</code>（本次載入方式）</td></tr>
+      <tr><td>probes</td><td>SystemLogProbes?</td><td><strong>僅 logout</strong>：四顆探針的原始三態值，見下方 03</td></tr>
       <tr><td>sentinelAgeSec</td><td>number?</td><td><strong>僅 logout</strong>：哨兵從種下到被清活了多久（秒）</td></tr>
+      <tr><td>sinceSentinelSeenSec</td><td>number?</td><td><strong>僅 logout</strong>：距上次心跳確認「還登入著」多久（秒）＝<strong>失效區間的寬度</strong>，見下方 04</td></tr>
+      <tr><td>persistence</td><td>string?</td><td><strong>僅 logout</strong>：發現登出那一次載入，SDK 實際挑中的儲存層。非 <code>indexedDB</code> 即為降級</td></tr>
+      <tr><td>lastSeen</td><td>DiagLastSeen?</td><td><strong>僅 logout</strong>：登出前最後一張心跳快照（區間下界，含當時四顆探針值與 token 狀態）</td></tr>
+      <tr><td>authErrors</td><td>DiagAuthError[]?</td><td>最近 5 次 idToken 取得失敗（<code>{ at, code }</code>）。跨 session 累積</td></tr>
       <tr><td>coll / docId</td><td>string?</td><td><strong>僅 writeDenied</strong>：被拒的寫入目標</td></tr>
     </table>
   </div>
@@ -169,8 +173,9 @@
     <strong>⚠ 探針 <code>unknown</code> 不可當成 <code>absent</code></strong><br>
     <code>indexedDB.databases()</code> 並非所有瀏覽器都有（Firefox 長年未實作）。
     測不到時必須誠實回報 <code>unknown</code>。<br>
-    判定已抽成無副作用純函式，<code>src/lib/diag/sentinel.test.ts</code> 窮舉全部 54 種輸入組合，
-    並額外釘住「<code>authRecord</code> 的任何值都不得改變判定結果」。
+    判定已抽成無副作用純函式，<code>src/lib/diag/sentinel.test.ts</code> 窮舉全部 162 種輸入組合
+    （3<sup>4</sup> 探針 × 2 explicit），並額外釘住「<code>authRecord</code> / <code>authLocal</code>
+    的任何值都不得改變判定結果」。
   </div>
 
   <div class="info-block" style="margin-top:12px;">
@@ -200,7 +205,97 @@
 </section>
 
 <section class="section">
-  <div class="section-label cyan">04 — 查詢與索引</div>
+  <div class="section-label cyan">04 — persistence 降級假說與心跳</div>
+  <div class="section-title">把「發現時刻」壓縮成「失效區間」</div>
+
+  <div class="warning-block">
+    <strong>🔎 首批真實樣本推翻了原本的假說</strong><br>
+    2026-08-08 收到四筆 <code>tokenRevoked</code>，指紋高度一致：<br>
+    · <code>persisted ✓ 已獲准</code>、儲存用量 <code>1.2 MB / 10 GB</code>（離配額壓力十萬八千里）<br>
+    · 哨兵<strong>在</strong>、cookie <strong>在</strong> —— quota-managed storage 完好<br>
+    · 只有 IndexedDB 的 <code>firebase:authUser:*</code> 不見<br>
+    · <code>sessionAgeSec</code> 為 <strong>0～1 秒</strong> —— 登出在頁面載入之前就已是既成事實<br>
+    這同時排除了空間壓力 eviction、使用者手動清除、Safari ITP（樣本是 Chrome/Windows）。
+    不是整包被清，是<strong>單點遺失</strong>。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>📌 persistence 是階梯，不是單一選擇</strong><br>
+    <code>getAuth()</code> 的預設 persistence 依序嘗試：<br>
+    <code>indexedDBLocalPersistence → browserLocalPersistence（localStorage） → browserSessionPersistence → inMemoryPersistence</code><br>
+    若 IndexedDB 在初始化那一瞬間不可用（磁碟 I/O 抖動、被其他分頁的 versionchange 卡住、
+    測試寫入逾時），SDK 會降級到 localStorage。此時<strong>兩層互不讀取</strong>，使用者被登出，
+    而只查 IndexedDB 的探針會回報 <code>absent</code> —— 與「憑證真的被撤銷」完全無法區分。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 更糟的是：降級會把 IndexedDB 的憑證「刪掉」，不可逆</strong><br>
+    讀 <code>@firebase/auth</code> 的 <code>PersistenceUserManager.create</code> 可以看到兩個危險性質：<br>
+    ① 逐層讀取既有憑證時用 <code>catch {}</code> <strong>靜默吞掉錯誤</strong>——IndexedDB 讀取拋錯
+       會被當成「查無使用者」，與真的沒登入無法區分；<br>
+    ② 選定一層之後，會對<strong>其他所有層</strong>呼叫 <code>_remove(key)</code>
+       （原始碼註解寫的目的是「避免登出後重整還黏著舊帳號」）。<br>
+    兩者相加：IndexedDB 只要瞬間不可用一次，使用者不只被登出，<strong>IndexedDB 裡的憑證會被順手刪掉</strong>，
+    下次 IndexedDB 恢復也救不回來。這條路徑留下的痕跡是
+    <code>authRecord=absent</code> + <code>authLocal=absent</code> + 哨兵完好。
+  </div>
+
+  <div class="sub-h">🔍 為此新增的四顆探針</div>
+  <div class="data-table-wrap">
+    <table class="data-table cyan-head">
+      <tr><th>探針</th><th>落點欄位</th><th>回答什麼問題</th></tr>
+      <tr><td><code>probeAuthLocal()</code></td><td><code>probes.authLocal</code></td>
+          <td>憑證是不是其實躺在 localStorage 那層？<code>authRecord=absent</code> +
+              <code>authLocal=present</code> 就是降級指紋</td></tr>
+      <tr><td><code>probeActivePersistence()</code></td><td><code>persistence</code> / <code>lastSeen.persistence</code></td>
+          <td><strong>最直接的一顆</strong>：SDK 這次載入實際挑了哪一層。非 <code>indexedDB</code>
+              即為當場抓到降級</td></tr>
+      <tr><td>心跳 <code>touchSentinel()</code></td><td><code>sinceSentinelSeenSec</code> / <code>lastSeen</code></td>
+          <td>最後一次確認「還登入著」是什麼時候 → 失效區間的寬度</td></tr>
+      <tr><td><code>probeToken()</code></td><td><code>authErrors</code> / <code>lastSeen.token*</code></td>
+          <td>idToken 何時到期、refresh 有沒有失敗過（error code）</td></tr>
+    </table>
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>📌 心跳為什麼是必要的，而不是錦上添花</strong><br>
+    <code>occurredAt</code> 記的是<strong>發現</strong>登出的時刻，而樣本顯示那幾乎都是
+    「開新分頁／重整後的第 0～1 秒」。真正的失效時刻完全落在觀測範圍外，
+    可能是 1 分鐘前也可能是昨晚 —— 這種情況下任何成因假說都能自圓其說，等於沒有證據。<br>
+    心跳（<code>src/lib/diag/heartbeat.ts</code>）在登入期間持續留下「這一刻還好好的」時間戳，
+    於是登出事件從一個孤立時間點變成<strong>有上下界的區間</strong>：<br>
+    · 區間 ≤ 60 秒且分頁可見 → 「用著用著就掉了」<br>
+    · 區間很寬且最後一眼是 <code>hidden</code> → 「關著的期間掉的」<br>
+    在加上心跳之前，這兩者在日誌上長得一模一樣。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>📌 負擔評估（刻意壓到可忽略）</strong><br>
+    · <strong>Firestore：零</strong> —— 心跳只寫 localStorage，不產生任何文件；證據是搭既有的登出事件
+      一起送上去的（多幾個欄位，不是多幾筆文件）<br>
+    · <strong>網路：零</strong> —— <code>probeToken()</code> 用非強制的 <code>getIdToken()</code>，
+      有效期內純讀記憶體快取。刻意<strong>不</strong>用 <code>getIdToken(true)</code>，那會每次心跳都打一次 Google 端點<br>
+    · <strong>頻率</strong>：60 秒一次，且<strong>只在分頁可見時</strong>跑（背景分頁完全不動）<br>
+    · <strong>localStorage</strong>：<code>mecharashi_diag_lastseen</code> +
+      <code>mecharashi_diag_autherr</code> 合計 &lt; 1 KB，覆寫而非累積<br>
+    · <strong>IndexedDB</strong>：可見時每 60 秒一次唯讀開關；Firebase Auth 自己的跨分頁同步是
+      800 ms 輪詢一次，我們比它低兩個數量級
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 新探針一律不參與判定</strong><br>
+    <code>authLocal</code> 最想抓的組合（IDB 沒有、localStorage 有）雖然高度可疑，但 Firebase
+    切換 persistence 時的遷移路徑不保證清乾淨舊鍵，殘留的舊鍵會讓這條判定變成<strong>永久誤報</strong>
+    —— 與初版被 <code>authIdb</code> 恆 present 坑到是同一類錯誤。<br>
+    故新證據只以<strong>判讀提示</strong>的形式呈現在後台頁（<code>hintsOf()</code>），
+    <code>reason</code> 仍由 <code>classifyLogout</code> 的兩顆哨兵決定。
+    提示寫錯頂多誤導人一次，判定寫錯會污染整份日誌。
+    <code>sentinel.test.ts</code> 有一條測試專門防止日後有人「順手」把它接進判定。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">05 — 查詢與索引</div>
   <div class="section-title">雙軸分類查詢</div>
 
   <div class="sub-h">🔍 需要的複合索引（firestore.indexes.json）</div>
@@ -247,7 +342,7 @@
 </section>
 
 <section class="section">
-  <div class="section-label cyan">05 — 安全規則與保留期限</div>
+  <div class="section-label cyan">06 — 安全規則與保留期限</div>
   <div class="section-title">append-only、讀寫不對稱與 TTL</div>
 
   <div class="code-block">

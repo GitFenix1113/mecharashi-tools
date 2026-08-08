@@ -17,6 +17,7 @@ import { getUserProfile, initUserProfile, patchUserProfile } from '../lib/userAp
 import type { UserProfile } from '../types'
 import AuthModal from '../components/AuthModal'
 import { captureLogout, onSignedIn } from '../lib/diag/report'
+import { startHeartbeat } from '../lib/diag/heartbeat'
 import { markTokenRefresh, startOfflineTracking } from '../lib/diag/collect'
 import { hasAnyDraft } from '../lib/diag/draft'
 import type { LogoutReason } from '../lib/diag/sentinel'
@@ -89,6 +90,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // token refresh 時間戳。長時間未 refresh 是 token 側失效的輔助訊號。
   useEffect(() => onIdTokenChanged(auth, (u) => { if (u) markTokenRefresh() }), [])
+
+  // 登入狀態心跳：持續留下「這一刻還登入著」的時間戳，把登出事件從一個孤立的
+  // 「發現時刻」變成有上下界的「失效區間」（見 heartbeat.ts 的說明）。
+  // 內部自己判斷有沒有登入、分頁可不可見，故無條件掛載即可；模擬器模式跳過
+  // （自動登入會產生假快照，且本機資料本來就是拋棄式的）。
+  useEffect(() => {
+    if (USE_EMULATOR) return
+    return startHeartbeat()
+  }, [])
 
   useEffect(() => {
     let cancelled = false

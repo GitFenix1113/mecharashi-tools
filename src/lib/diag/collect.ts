@@ -52,6 +52,15 @@ export interface DiagSession {
   route?: string
   /** 事件發生時是否有未存檔的草稿（決定橫幅要不要提「你的編輯已保住」） */
   hadDraft?: boolean
+  /**
+   * 本次頁面是怎麼載入的：`navigate`（開新分頁／點連結進來）/ `reload`（F5）/
+   * `back_forward`（上一頁，可能來自 bfcache）/ `prerender`。
+   *
+   * 為什麼要記：實測樣本的 `sessionAgeSec` 幾乎都是 0~1 秒，代表登出是在載入的瞬間
+   * 就被發現的。但「開新分頁發現的」與「按 F5 發現的」指向不同的使用行為，
+   * 只看秒數分不出來。
+   */
+  navType?: string
 }
 
 // ── session 追蹤狀態 ──────────────────────────────────────────────────────────
@@ -169,7 +178,22 @@ export function collectSession(opts: { route?: string; hadDraft?: boolean } = {}
   }
   if (opts.route !== undefined) s.route = opts.route
   if (opts.hadDraft !== undefined) s.hadDraft = opts.hadDraft
+  const nav = navigationType()
+  if (nav) s.navType = nav
   return s
+}
+
+/** 本次頁面載入方式。Navigation Timing Level 2；取不到就回空字串。 */
+function navigationType(): string {
+  if (typeof performance === 'undefined' || typeof performance.getEntriesByType !== 'function') {
+    return ''
+  }
+  try {
+    const [nav] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
+    return nav?.type ?? ''
+  } catch {
+    return ''
+  }
 }
 
 /** 目前路由（含 hash router 的情況）。事件發生點通常在 React 樹外，拿不到 useLocation。 */

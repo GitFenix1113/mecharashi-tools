@@ -10,6 +10,7 @@
 import { DIAG_QUEUE_MAX } from '../../types/systemLog'
 import type { SystemLogKind, SystemLogProbes, SystemLogReason } from '../../types/systemLog'
 import type { DiagEnvironment, DiagSession } from './collect'
+import type { DiagAuthError, DiagLastSeen } from './heartbeat'
 
 const QUEUE_KEY = 'mecharashi_diag_queue'
 
@@ -30,6 +31,14 @@ export interface QueuedEvent {
   session?: DiagSession
   probes?: SystemLogProbes
   sentinelAgeSec?: number
+  /** 距上次心跳確認「還登入著」過了多久（秒）。這是失效區間的寬度 */
+  sinceSentinelSeenSec?: number
+  /** 發現登出的那一刻，SDK 在**本次載入**實際挑中的儲存層 */
+  persistence?: string
+  /** 登出前最後一張心跳快照 */
+  lastSeen?: DiagLastSeen
+  /** 最近幾次 idToken 取得失敗 */
+  authErrors?: DiagAuthError[]
   coll?: string
   docId?: string
 }

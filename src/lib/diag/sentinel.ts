@@ -74,18 +74,25 @@ export type LogoutReason =
   | 'neverSignedIn'  // 查無登入痕跡，多半是匿名訪客 → 不產生事件
   | 'unknown'        // 探針殘缺、無法定案
 
-/** classifyLogout 的輸入。兩顆判定用哨兵 + 一顆佐證探針 + 一個我方旗標。 */
+/** classifyLogout 的輸入。兩顆判定用哨兵 + 兩顆佐證探針 + 一個我方旗標。 */
 export interface ProbeResult {
   /** localStorage 哨兵是否還在 */
   sentinel: Tri
   /** cookie 哨兵是否還在（不屬於 quota-managed storage，eviction 清不到） */
   cookie: Tri
   /**
-   * Firebase Auth 的**憑證記錄**是否還在。
+   * Firebase Auth 在 **IndexedDB** 的憑證記錄是否還在。
    *
    * ⚠ **刻意不參與判定**，只作為記錄上的佐證。見 classifyLogout 的說明。
    */
   authRecord: Tri
+  /**
+   * Firebase Auth 在 **localStorage** 的憑證記錄是否還在。
+   *
+   * ⚠ 同樣**刻意不參與判定**。它存在的理由見 probeAuthLocal 的說明——
+   *   要抓的是「憑證其實在，只是 SDK 這次沒去那一層讀」這種降級情境。
+   */
+  authLocal: Tri
   /** 我方是否呼叫過 signOut()。由 AuthContext 設定 */
   explicit: boolean
 }
@@ -107,8 +114,13 @@ export interface ProbeResult {
  *      會讓**每個第一次進站的匿名訪客**（哨兵、cookie 都沒有，IDB 由 SDK 剛建好）
  *      被判成 storageCleared 並跳出登出橫幅。
  *
- * 所以判定只採用**不受 Firebase 干擾**的兩顆哨兵。`authRecord` 仍然採集並記錄，
- * 但只作為人工判讀時的佐證（例如「憑證明明還在卻登出了」是值得警覺的異常）。
+ * 所以判定只採用**不受 Firebase 干擾**的兩顆哨兵。`authRecord` / `authLocal` 仍然
+ * 採集並記錄，但只作為人工判讀時的佐證（例如「憑證明明還在卻登出了」是值得警覺的異常）。
+ *
+ * ⚠ `authLocal` 為什麼也不參與判定：它最想抓的組合（IDB 沒有、localStorage 有）
+ *   雖然高度可疑，但 Firebase 在切換 persistence 時的遷移路徑不保證會清乾淨舊鍵，
+ *   殘留的舊鍵會讓這條判定變成永久誤報——與初版被 `authIdb` 恆 present 坑到是同一類錯誤。
+ *   先只記錄、由人判讀；等日誌累積到看得出穩定樣態，再決定要不要升格成判定依據。
  *
  * 判定順序不可調換：`explicit` 最優先，它是我方自己設的旗標，
  * 可信度高於任何環境推測。
@@ -154,6 +166,29 @@ export function readSentinel(): Sentinel | null {
   } catch {
     // localStorage 在隱私模式可能直接拋 SecurityError
     return null
+  }
+}
+
+/**
+ * 只更新 `lastSeenAt`，不動 `plantedAt` / `uid` / `sessionId`。由心跳（heartbeat.ts）呼叫。
+ *
+ * 為什麼需要它：`plantedAt` 回答的是「哨兵活了多久」，但診斷真正缺的是
+ * 「**最後一次確認還登入著**是什麼時候」。沒有這個時間點，`occurredAt` 只是「發現」
+ * 的時刻，與實際失效之間可能隔了一整晚，任何成因都能自圓其說。
+ *
+ * 哨兵不存在時**不建立**——建立需要 uid，那是 plantSentinel 的職責；
+ * 這裡若無中生有會捏造出「登入過」的假證據。
+ */
+export function touchSentinel(): void {
+  const prev = readSentinel()
+  if (!prev) return
+  try {
+    window.localStorage.setItem(
+      SENTINEL_KEY,
+      JSON.stringify({ ...prev, lastSeenAt: Date.now() } satisfies Sentinel),
+    )
+  } catch {
+    /* 配額滿或隱私模式：心跳寫不進去就算了，絕不可影響正常使用 */
   }
 }
 
@@ -223,6 +258,43 @@ export function probeSentinel(): Tri {
 const FIREBASE_AUTH_DB = 'firebaseLocalStorageDb'
 const FIREBASE_AUTH_STORE = 'firebaseLocalStorage'
 const AUTH_KEY_PREFIX = 'firebase:authUser:'
+
+/**
+ * 探測 Firebase Auth 在 **localStorage** 的憑證記錄。
+ *
+ * ── 為什麼需要這顆 ──
+ * `getAuth()` 的預設 persistence 不是單一選擇，而是一個**階梯**：
+ *
+ *     indexedDBLocalPersistence          ← probeAuthRecord 查的是這層
+ *          ↓ _isAvailable() 失敗就降級
+ *     browserLocalPersistence            ← 憑證改存在 localStorage 的 firebase:authUser:*
+ *          ↓
+ *     browserSessionPersistence  →  inMemoryPersistence
+ *
+ * 若某次載入時 IndexedDB 暫時不可用（磁碟 I/O 異常、被其他分頁的 versionchange 卡住、
+ * 可用性測試逾時），SDK 會降級到 localStorage。此時**兩層互不讀取**，使用者被登出，
+ * 而只查 IndexedDB 的探針會回報 absent——與「憑證真的被撤銷」完全無法區分。
+ *
+ * 這顆探針正是用來拆開那個歧義：`authRecord=absent` 且 `authLocal=present`，
+ * 就是 persistence 降級的指紋。成本只是一次 localStorage key 掃描。
+ *
+ * 只回 present/absent/unknown，**不讀取內容**——那是完整的登入憑證，
+ * 診斷不需要也不該碰它。
+ */
+export function probeAuthLocal(): Tri {
+  if (!isBrowser()) return 'unknown'
+  try {
+    const ls = window.localStorage
+    for (let i = 0; i < ls.length; i++) {
+      const key = ls.key(i)
+      if (key && key.startsWith(AUTH_KEY_PREFIX)) return 'present'
+    }
+    return 'absent'
+  } catch {
+    // 隱私模式下 localStorage 可能直接拋 SecurityError
+    return 'unknown'
+  }
+}
 
 /** IndexedDB 可能被其他分頁的交易 block 住；探針不值得為此卡住登出流程。 */
 const IDB_TIMEOUT_MS = 1000
@@ -297,12 +369,14 @@ function readAuthRecord(): Promise<Tri> {
   })
 }
 
-/** 跑完三顆探針，組出 classifyLogout 的輸入。 */
+/**
+ * 跑完四顆探針，組出 classifyLogout 的輸入。
+ *
+ * 同步的三顆先跑、非同步的 IDB 最後跑：探針之間隔的時間愈短，快照愈接近同一瞬間的狀態。
+ */
 export async function probeAll(explicit: boolean): Promise<ProbeResult> {
-  return {
-    sentinel: probeSentinel(),
-    cookie: probeCookie(),
-    authRecord: await probeAuthRecord(),
-    explicit,
-  }
+  const sentinel = probeSentinel()
+  const cookie = probeCookie()
+  const authLocal = probeAuthLocal()
+  return { sentinel, cookie, authLocal, authRecord: await probeAuthRecord(), explicit }
 }

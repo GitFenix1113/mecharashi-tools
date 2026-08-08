@@ -15,6 +15,8 @@ import {
   enqueue, readQueue, writeQueue, alreadyReported, markReported, clearReported,
   type QueuedEvent,
 } from './queue'
+import { readAuthErrors, readLastSeen, resetTrail, takeSnapshot } from './heartbeat'
+import { probeActivePersistence } from './authInternals'
 import { writeSystemLogOrThrow } from '../api/systemLog'
 
 /**
@@ -61,13 +63,33 @@ export async function captureLogout(
         sentinel: probes.sentinel,
         cookie: probes.cookie,
         authRecord: probes.authRecord,
+        authLocal: probes.authLocal,
       },
     }
     // 哨兵活了多久才被清掉。吻合 7 天左右就高度指向 Safari ITP 的定時清除，
     // 而非 Chrome 的空間壓力 eviction（後者發生時機是隨機的）。
     if (sentinel) {
       event.sentinelAgeSec = Math.round((Date.now() - sentinel.plantedAt) / 1000)
+      // 失效區間的寬度：實際失效落在 (occurredAt - 這個秒數, occurredAt] 之間。
+      // 心跳每 60 秒推一次 lastSeenAt，所以「使用中掉的」會是 ≤ 60 秒，
+      // 「關著的期間掉的」則是分頁離開到再打開的整段時間。
+      event.sinceSentinelSeenSec = Math.round((Date.now() - sentinel.lastSeenAt) / 1000)
     }
+
+    // 本次載入 SDK 實際挑中的儲存層。不是 indexedDB 就等於當場抓到降級——
+    // 而 SDK 選定一層後會主動清掉其他層的憑證，那正是不可逆的那一刀。
+    const persistence = probeActivePersistence()
+    if (persistence !== 'unknown') event.persistence = persistence
+
+    // 登出前的最後一眼：區間的下界，且帶著當時各探針值。
+    // 與登出當下的探針逐項對照，就知道這段期間內「是哪一項變了」。
+    const lastSeen = readLastSeen()
+    if (lastSeen) event.lastSeen = lastSeen
+
+    // 跨 session 累積的 idToken 取得失敗。若登出前正好有一筆 auth/user-token-expired
+    // 之類的錯誤，成因就從「推測」變成「有錯誤碼可查」。
+    const authErrors = readAuthErrors()
+    if (authErrors.length) event.authErrors = authErrors
 
     enqueue(event)
     markReported()
@@ -109,13 +131,20 @@ export async function flushQueue(uid: string): Promise<void> {
 }
 
 /**
- * 登入成功後的例行工作：種哨兵 + flush 佇列。
+ * 登入成功後的例行工作：種哨兵 + 重設心跳軌跡 + flush 佇列。
  *
- * 種哨兵要排在 flush 之前 —— flush 可能失敗（網路、規則未部署），
- * 但哨兵若沒種下，下一次登出就完全無從判定。先確保診斷能力，再談上報。
+ * 順序有意義：
+ *   ① 種哨兵 —— flush 可能失敗（網路、規則未部署），但哨兵若沒種下，
+ *      下一次登出就完全無從判定。先確保診斷能力，再談上報。
+ *   ② 重設軌跡並**立刻**拍一張基準快照 —— 上一輪的「最後一眼」屬於上一次登入，
+ *      留著會讓下一次登出算出一個橫跨兩次登入的假區間。而 resetTrail 之後必須馬上
+ *      takeSnapshot，否則到第一次心跳為止的這 60 秒沒有任何基準點。
+ *      （上一次登出的證據不受影響——它在 captureLogout 當下就已凍結進佇列。）
  */
 export async function onSignedIn(uid: string): Promise<void> {
   plantSentinel(uid, getSessionId())
+  resetTrail()
+  await takeSnapshot('signin')
   // 解除去重標記：登入成功後，下一次被登出必須重新記得到
   clearReported()
   await flushQueue(uid)

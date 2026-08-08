@@ -52,6 +52,10 @@ function buildEntry(event: QueuedEvent) {
   if (event.session)                    data.session        = event.session
   if (event.probes)                     data.probes         = event.probes
   if (event.sentinelAgeSec !== undefined) data.sentinelAgeSec = event.sentinelAgeSec
+  if (event.sinceSentinelSeenSec !== undefined) data.sinceSentinelSeenSec = event.sinceSentinelSeenSec
+  if (event.persistence)                data.persistence    = event.persistence
+  if (event.lastSeen)                   data.lastSeen       = event.lastSeen
+  if (event.authErrors?.length)         data.authErrors     = event.authErrors
   if (event.coll)                       data.coll           = event.coll
   if (event.docId)                      data.docId          = event.docId
   return data

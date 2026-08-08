@@ -20,6 +20,7 @@ const probe = (over: Partial<ProbeResult> = {}): ProbeResult => ({
   sentinel: 'present',
   cookie: 'present',
   authRecord: 'absent',
+  authLocal: 'absent',
   explicit: false,
   ...over,
 })
@@ -74,9 +75,10 @@ test('localStorage 本身不可用 → unknown', () => {
   }
 })
 
-test('authRecord 不影響判定 —— 它只是佐證欄位', () => {
+test('authRecord / authLocal 都不影響判定 —— 它們只是佐證欄位', () => {
   // 這是實測踩坑後最該釘住的一條：任何與 Firebase 內部儲存有關的探針都可能
-  // 因為 SDK 自動重建而失去意義，故判定只採用不受 Firebase 干擾的兩顆哨兵。
+  // 因為 SDK 自動重建（authRecord）或舊鍵殘留（authLocal）而失去意義，
+  // 故判定只採用不受 Firebase 干擾的兩顆哨兵。
   const tris: Tri[] = ['present', 'absent', 'unknown']
   const cases: Partial<ProbeResult>[] = [
     { sentinel: 'present', cookie: 'present' },
@@ -86,17 +88,39 @@ test('authRecord 不影響判定 —— 它只是佐證欄位', () => {
     { sentinel: 'unknown', cookie: 'present' },
   ]
   for (const base of cases) {
-    const results = tris.map((authRecord) => classifyLogout(probe({ ...base, authRecord })))
+    const results: string[] = []
+    for (const authRecord of tris) {
+      for (const authLocal of tris) {
+        results.push(classifyLogout(probe({ ...base, authRecord, authLocal })))
+      }
+    }
     assert.equal(
       new Set(results).size, 1,
-      `sentinel=${base.sentinel} cookie=${base.cookie} 的判定不該隨 authRecord 改變，實得 ${results.join('/')}`,
+      `sentinel=${base.sentinel} cookie=${base.cookie} 的判定不該隨佐證探針改變，實得 ${[...new Set(results)].join('/')}`,
     )
   }
 })
 
+test('persistence 降級指紋不會被誤升格成判定依據', () => {
+  // 「IDB 沒有、localStorage 有」是我們最想抓的組合，但它**刻意不參與判定**：
+  // Firebase 切換 persistence 時不保證清乾淨舊鍵，殘留的舊鍵會讓這條變成永久誤報。
+  // 這條測試就是防止日後有人「順手」把它接進 classifyLogout。
+  assert.equal(
+    classifyLogout(probe({ sentinel: 'present', authRecord: 'absent', authLocal: 'present' })),
+    'tokenRevoked',
+  )
+  // 尤其不可以讓匿名訪客命中任何「登入過」的分支——這正是初版的致命傷。
+  assert.equal(
+    classifyLogout(probe({
+      sentinel: 'absent', cookie: 'absent', authRecord: 'absent', authLocal: 'present',
+    })),
+    'neverSignedIn',
+  )
+})
+
 test('全組合窮舉：每種輸入都有定義良好的輸出', () => {
-  // 3 × 3 × 3 × 2 = 54 種組合。確保沒有任何一種掉進 undefined，
-  // 且 explicit=true 的 27 種一律是 explicit。
+  // 3 × 3 × 3 × 3 × 2 = 162 種組合。確保沒有任何一種掉進 undefined，
+  // 且 explicit=true 的 81 種一律是 explicit。
   const tris: Tri[] = ['present', 'absent', 'unknown']
   const valid = new Set([
     'explicit', 'storageCleared', 'tokenRevoked', 'neverSignedIn', 'unknown',
@@ -105,16 +129,18 @@ test('全組合窮舉：每種輸入都有定義良好的輸出', () => {
   for (const sentinel of tris) {
     for (const cookie of tris) {
       for (const authRecord of tris) {
-        for (const explicit of [true, false]) {
-          const r = classifyLogout({ sentinel, cookie, authRecord, explicit })
-          assert.ok(valid.has(r), `未定義的判定結果: ${r}`)
-          if (explicit) assert.equal(r, 'explicit')
-          count++
+        for (const authLocal of tris) {
+          for (const explicit of [true, false]) {
+            const r = classifyLogout({ sentinel, cookie, authRecord, authLocal, explicit })
+            assert.ok(valid.has(r), `未定義的判定結果: ${r}`)
+            if (explicit) assert.equal(r, 'explicit')
+            count++
+          }
         }
       }
     }
   }
-  assert.equal(count, 54)
+  assert.equal(count, 162)
 })
 
 test('idbEvicted 已停用：判定不再產生它', () => {
@@ -123,10 +149,12 @@ test('idbEvicted 已停用：判定不再產生它', () => {
   for (const sentinel of tris) {
     for (const cookie of tris) {
       for (const authRecord of tris) {
-        assert.notEqual(
-          classifyLogout({ sentinel, cookie, authRecord, explicit: false }),
-          'idbEvicted',
-        )
+        for (const authLocal of tris) {
+          assert.notEqual(
+            classifyLogout({ sentinel, cookie, authRecord, authLocal, explicit: false }),
+            'idbEvicted',
+          )
+        }
       }
     }
   }

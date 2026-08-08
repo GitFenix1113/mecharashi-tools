@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { getSystemLogPage, getSystemLogSummary } from '../../lib/firestoreApi'
 import type { SystemLogEntry, SystemLogKind } from '../../types/systemLog'
 import { KIND_LABEL, REASON_LABEL, REASON_SEVERITY } from '../../types/systemLog'
-import type { LogoutReason } from '../../lib/diag/sentinel'
+import type { LogoutReason, Tri } from '../../lib/diag/sentinel'
 import type { PageCursor } from '../../lib/api/firestoreCore'
 import { LoadMoreButton } from '../user/admin/shared'
 
@@ -78,6 +78,120 @@ function browserOf(ua?: string): string {
   return '其他'
 }
 
+/** 三態探針的中文化。與探針色票用同一組字，看列表與看快照才不用轉譯兩次。 */
+function triText(t?: Tri): string {
+  return t === 'present' ? '在' : t === 'absent' ? '不見' : '測不到'
+}
+
+/** SDK 實際生效的儲存層。正常恆為 indexedDB；其餘一律是降級，也就是我們在追的東西。 */
+const PERSISTENCE_LABEL: Record<string, string> = {
+  indexedDB:      'IndexedDB（正常）',
+  localStorage:   'localStorage（已降級）',
+  sessionStorage: 'sessionStorage（已降級）',
+  inMemory:       '僅記憶體（未落地）',
+  unknown:        '測不到',
+}
+
+/** 頁面載入方式。用來分辨「開新分頁才發現」與「按 F5 才發現」。 */
+const NAV_TYPE_LABEL: Record<string, string> = {
+  navigate:     '開新分頁／連結進入',
+  reload:       '重新整理（F5）',
+  back_forward: '上一頁／下一頁',
+  prerender:    '預先轉譯',
+}
+
+const TRIGGER_LABEL: Record<string, string> = {
+  signin:  '登入當下',
+  tick:    '使用中心跳',
+  hidden:  '分頁離開前',
+  visible: '分頁回來時',
+}
+
+/**
+ * 從證據自動導出判讀提示。
+ *
+ * 為什麼要做這層：新增的欄位（persistence / lastSeen / authErrors）單看每一項都
+ * 只是數字，真正有意義的是**組合**——而人工每次都重新比對一遍既慢又容易漏。
+ * 這裡把已知有診斷價值的組合寫死成規則，讓可疑樣本自己浮上來。
+ *
+ * ⚠ 這只是**提示**，不是判定。`reason` 欄位仍由 classifyLogout 決定（見 sentinel.ts
+ *   為什麼刻意不讓這些訊號參與判定）。提示寫錯頂多誤導人一次，判定寫錯會污染整份日誌。
+ */
+function hintsOf(entry: SystemLogEntry): { tone: 'alert' | 'notice'; text: string }[] {
+  const out: { tone: 'alert' | 'notice'; text: string }[] = []
+  const p = entry.probes
+  const ls = entry.lastSeen
+  const gap = entry.sinceSentinelSeenSec
+
+  // ① persistence 降級的指紋：憑證其實還在 localStorage，只是 SDK 這次沒讀那一層
+  if (p?.authRecord === 'absent' && p?.authLocal === 'present') {
+    out.push({
+      tone: 'alert',
+      text: 'IndexedDB 憑證不見、localStorage 憑證還在 → 高度指向 persistence 降級（兩層互不讀取）',
+    })
+  }
+
+  // ② 最直接的證據：**發現登出的那一次載入**，SDK 挑的根本不是 IndexedDB。
+  //    這代表 IndexedDBLocalPersistence._isAvailable() 當場失敗了。
+  if (entry.persistence && entry.persistence !== 'indexedDB' && entry.persistence !== 'unknown') {
+    out.push({
+      tone: 'alert',
+      text: `本次載入 SDK 挑中的是 ${PERSISTENCE_LABEL[entry.persistence] ?? entry.persistence}，代表 IndexedDB 當場不可用 → 幾乎可確定是 persistence 降級`,
+    })
+  }
+
+  // ③ 登出前就已經在降級狀態下運作
+  if (ls?.persistence && ls.persistence !== 'indexedDB' && ls.persistence !== 'unknown') {
+    out.push({
+      tone: 'alert',
+      text: `登出前 SDK 使用的已經是 ${PERSISTENCE_LABEL[ls.persistence] ?? ls.persistence}，並非 IndexedDB`,
+    })
+  }
+
+  // ④ 兩層憑證都不見、哨兵卻完好。
+  //    對照 @firebase/auth 的 PersistenceUserManager.create：它讀取既有憑證時用
+  //    `catch {}` 吞掉錯誤（IndexedDB 讀取失敗＝查無使用者），選定新的一層之後又會
+  //    `_remove(key)` 清掉其他層 —— 於是一次瞬間的 IndexedDB 不可用，會把憑證**刪掉**
+  //    而不只是讀不到。那條路徑留下的痕跡正好就是這個組合。
+  if (p?.authRecord === 'absent' && p?.authLocal === 'absent' && p?.sentinel === 'present') {
+    out.push({
+      tone: 'notice',
+      text: '兩層憑證都不見、哨兵完好 → 不是儲存被清。可能是憑證被撤銷，也可能是 SDK 降級時把 IndexedDB 那筆一併刪了',
+    })
+  }
+
+  // ④ 失效區間的形狀。心跳 60 秒一次，所以 ≤3 分鐘等於「就在使用中掉的」
+  if (typeof gap === 'number' && ls) {
+    if (gap <= 180 && ls.visible) {
+      out.push({ tone: 'alert', text: `失效發生在使用中（分頁可見，區間僅 ${fmtDuration(gap)}）` })
+    } else if (!ls.visible && gap > 600) {
+      out.push({ tone: 'notice', text: `失效發生在分頁離開後的 ${fmtDuration(gap)} 內，並非使用中` })
+    }
+  }
+
+  // ⑤ token 側的直接證據：登出前 10 分鐘內有 idToken 取得失敗
+  const recentErr = entry.authErrors?.filter((e) => {
+    const d = entry.occurredAt - e.at
+    return d >= 0 && d <= 10 * 60_000
+  })
+  if (recentErr?.length) {
+    out.push({
+      tone: 'alert',
+      text: `登出前 10 分鐘內有 idToken 取得失敗：${recentErr.map((e) => e.code).join('、')}`,
+    })
+  }
+
+  // ⑥ token 快到期時掉的 → refresh 沒接上
+  if (ls?.tokenExpiresInSec !== undefined && ls.tokenExpiresInSec < 300) {
+    out.push({
+      tone: 'notice',
+      text: `最後一眼時 idToken 只剩 ${fmtDuration(Math.max(0, ls.tokenExpiresInSec))} 到期 → 疑似自動 refresh 沒接上`,
+    })
+  }
+
+  return out
+}
+
 function platformOf(ua?: string): string {
   if (!ua) return '—'
   if (/iPhone|iPad|iPod/.test(ua)) return 'iOS'
@@ -127,11 +241,18 @@ function EvidenceView({ entry }: { entry: SystemLogEntry }) {
   const s = entry.session
   const p = entry.probes
 
+  const ls = entry.lastSeen
+  const hints = hintsOf(entry)
+
   const rows: [string, string][] = [
     ['瀏覽器', `${browserOf(env?.ua)} · ${platformOf(env?.ua)}${env?.standalone ? ' · 已加入主畫面' : ''}`],
     ['持久化儲存', env?.persisted === undefined ? '—' : env.persisted ? '✓ 已獲准' : '✗ 未獲准'],
     ['儲存用量', `${fmtBytes(env?.storageUsage)} / ${fmtBytes(env?.storageQuota)}`],
+    // 失效區間寬度排在最前面的時間欄位：它比 session 時長更能說明「什麼時候掉的」
+    ['距上次確認登入', fmtDuration(entry.sinceSentinelSeenSec)],
+    ['本次載入的儲存層', entry.persistence ? (PERSISTENCE_LABEL[entry.persistence] ?? entry.persistence) : '—'],
     ['session 時長', fmtDuration(s?.sessionAgeSec)],
+    ['本次載入方式', s?.navType ? (NAV_TYPE_LABEL[s.navType] ?? s.navType) : '—'],
     ['距上次 token 更新', fmtDuration(s?.sinceTokenRefreshSec)],
     ['本 session 離線累計', fmtDuration(s?.offlineSec)],
     ['哨兵存活時長', fmtDuration(entry.sentinelAgeSec)],
@@ -141,6 +262,24 @@ function EvidenceView({ entry }: { entry: SystemLogEntry }) {
 
   return (
     <div className="space-y-3">
+      {/* 判讀提示：把「要人工比對好幾個欄位才看得出來」的組合直接講出來。
+          刻意放在最上面——展開記錄的人第一眼要看到的是結論方向，不是原始數字。 */}
+      {hints.length > 0 && (
+        <div className="space-y-1">
+          {hints.map((h, i) => (
+            <div
+              key={i}
+              className={`text-xs px-3 py-1.5 rounded-lg border ${
+                h.tone === 'alert'
+                  ? 'bg-accent-red/10 text-accent-red border-accent-red/30'
+                  : 'bg-accent-yellow/10 text-accent-yellow border-accent-yellow/30'
+              }`}
+            >
+              {h.text}
+            </div>
+          ))}
+        </div>
+      )}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-x-4 gap-y-1.5">
         {rows.map(([k, v]) => (
           <div key={k} className="flex items-baseline gap-2 text-xs">
@@ -159,7 +298,8 @@ function EvidenceView({ entry }: { entry: SystemLogEntry }) {
           {([
             ['哨兵', p.sentinel],
             ['cookie', p.cookie],
-            ['Auth 憑證(佐證)', p.authRecord],
+            ['Auth@IDB(佐證)', p.authRecord],
+            ['Auth@localStorage(佐證)', p.authLocal],
           ] as const).map(
             ([name, val]) => (
               <span
@@ -176,6 +316,46 @@ function EvidenceView({ entry }: { entry: SystemLogEntry }) {
               </span>
             ),
           )}
+        </div>
+      )}
+
+      {/* 登出前的最後一眼：失效區間的下界。與上方「登出當下」的探針逐項對照，
+          就知道這段期間內究竟是哪一項變了 —— 這是心跳存在的全部理由。 */}
+      {ls && (
+        <div className="rounded-lg border border-border bg-bg-dark px-3 py-2 space-y-1.5">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span className="text-[11px] text-accent-cyan font-medium">登出前最後一眼</span>
+            <span className="text-[11px] text-text-dim font-mono">{fmtTime(ls.at)}</span>
+            <span className="text-[11px] text-text-dim">
+              {TRIGGER_LABEL[ls.trigger] ?? ls.trigger} · 分頁{ls.visible ? '可見' : '不可見'}
+            </span>
+          </div>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-x-4 gap-y-1">
+            {([
+              ['Auth 儲存層', PERSISTENCE_LABEL[ls.persistence] ?? ls.persistence],
+              ['當時探針', `哨兵 ${triText(ls.sentinel)} · cookie ${triText(ls.cookie)} · IDB ${triText(ls.authRecord)} · LS ${triText(ls.authLocal)}`],
+              ['idToken 剩餘', ls.tokenExpiresInSec === undefined ? '—' : fmtDuration(ls.tokenExpiresInSec)],
+              ['idToken 簽發於', ls.tokenIssuedAt ? fmtTime(ls.tokenIssuedAt) : '—'],
+              ['當時所在頁面', ls.route || '—'],
+            ] as [string, string][]).map(([k, v]) => (
+              <div key={k} className="flex items-baseline gap-2 text-xs">
+                <span className="text-text-dim shrink-0">{k}</span>
+                <span className="text-text-secondary font-mono break-all">{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* idToken 取得失敗記錄。跨 session 累積（最多 5 筆），用來看是不是 refresh 側的問題。 */}
+      {entry.authErrors && entry.authErrors.length > 0 && (
+        <div className="rounded-lg border border-accent-orange/30 bg-accent-orange/5 px-3 py-2">
+          <div className="text-[11px] text-accent-orange font-medium mb-1">近期 idToken 取得失敗</div>
+          {entry.authErrors.map((e, i) => (
+            <div key={i} className="text-xs font-mono text-text-secondary">
+              {fmtTime(e.at)} · {e.code}
+            </div>
+          ))}
         </div>
       )}
 

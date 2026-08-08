@@ -1,6 +1,7 @@
 import type { Timestamp } from 'firebase/firestore'
 import type { LogoutReason, Tri } from '../lib/diag/sentinel'
 import type { DiagEnvironment, DiagSession } from '../lib/diag/collect'
+import type { DiagAuthError, DiagLastSeen } from '../lib/diag/heartbeat'
 
 // ── 系統診斷日誌（PLAN-045）──────────────────────────────────────────────────
 // 維護者「編輯到一半被登出」的證據記錄。獨立頂層集合 `systemLog`，僅可新增
@@ -71,8 +72,15 @@ export const REASON_SEVERITY: Record<LogoutReason, 'normal' | 'notice' | 'alert'
 export interface SystemLogProbes {
   sentinel: Tri
   cookie: Tri
-  /** Firebase 憑證記錄是否還在。舊記錄無此欄位 → UI 顯示「測不到」 */
+  /** Firebase 在 **IndexedDB** 的憑證記錄是否還在。舊記錄無此欄位 → UI 顯示「測不到」 */
   authRecord?: Tri
+  /**
+   * Firebase 在 **localStorage** 的憑證記錄是否還在。
+   *
+   * `authRecord=absent` + `authLocal=present` 是 persistence 降級的指紋
+   * （SDK 這次沒讀到 IndexedDB，改用了 localStorage，兩層互不相通 → 表現為登出）。
+   */
+  authLocal?: Tri
 }
 
 /** systemLog 集合的單筆記錄。 */
@@ -102,10 +110,43 @@ export interface SystemLogEntry {
   env?: DiagEnvironment
   session?: DiagSession
 
-  /** 僅 logout：三顆探針的原始結果 */
+  /** 僅 logout：四顆探針的原始結果 */
   probes?: SystemLogProbes
   /** 僅 logout：哨兵從種下到被清活了多久（秒）。判斷是否吻合 Safari ITP 的 7 天週期 */
   sentinelAgeSec?: number
+
+  /**
+   * 僅 logout：距上次心跳確認「還登入著」過了多久（秒）。
+   *
+   * **這是本記錄裡最重要的一個數字**：`occurredAt` 只是「發現」的時刻，
+   * 真正的失效發生在 `occurredAt - sinceSentinelSeenSec` 到 `occurredAt` 之間。
+   * 沒有它的話，區間寬度是「不知道」，任何成因假說都能自圓其說。
+   */
+  sinceSentinelSeenSec?: number
+
+  /**
+   * 僅 logout：發現登出那一刻，Firebase SDK 在**本次載入**實際挑中的 persistence 層。
+   *
+   * ── 為什麼這一欄可能直接指出真因 ──
+   * `getAuth()` 的 persistence 是一個階梯（IndexedDB → localStorage → sessionStorage
+   * → inMemory），開站時由 `PersistenceUserManager.create` 逐層測可用性後挑一個。
+   * 而 SDK 那段邏輯有兩個危險性質（見 @firebase/auth 的 create 實作）：
+   *
+   *   ① 讀取既有憑證時 `catch {}` 靜默吞掉錯誤 —— IndexedDB 讀取拋錯會被當成
+   *      「查無使用者」，與真的沒登入無法區分；
+   *   ② 選定一層之後，會主動 `_remove(key)` 清掉**其他所有層**的憑證。
+   *
+   * 兩者相加：IndexedDB 只要在初始化那一瞬間不可用（磁碟 I/O 抖動、被其他分頁的
+   * versionchange 卡住、測試寫入逾時），使用者就會被登出，**而且 IndexedDB 裡的憑證
+   * 會被順手刪掉**，不可逆。
+   *
+   * 所以本欄若不是 `indexedDB`，就等於直接抓到那一刻降級發生了。
+   */
+  persistence?: string
+  /** 僅 logout：登出前最後一張心跳快照（區間的下界，含當時各探針值） */
+  lastSeen?: DiagLastSeen
+  /** 最近幾次 idToken 取得失敗。跨 session 累積，用來看是不是 refresh 側的問題 */
+  authErrors?: DiagAuthError[]
 
   /** 僅 writeDenied：目標集合 */
   coll?: string
