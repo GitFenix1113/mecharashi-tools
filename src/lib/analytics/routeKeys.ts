@@ -49,6 +49,7 @@ export const ROUTE_PATTERNS: readonly string[] = [
   '/admin/versions/:versionId',
   '/admin/history',
   '/admin/system-log',
+  '/admin/analytics',
   '*',
 ]
 

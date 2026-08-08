@@ -173,6 +173,19 @@ export default function AdminPage() {
           </div>
           <span className="text-accent-green/50 ml-2 text-lg">›</span>
         </Link>
+        {/* 使用統計（PLAN-046）：ADMIN 即可見——彙總數字、不含個人行為資料，
+            敏感度低於下方的系統日誌（那個含裝置指紋，故限 OWNER）。 */}
+        <Link
+          to="/admin/analytics"
+          className="inline-flex items-center gap-3 px-5 py-3 bg-accent-purple/10 border border-accent-purple/30 rounded-xl hover:bg-accent-purple/20 hover:border-accent-purple/50 transition-colors no-underline"
+        >
+          <span className="text-accent-purple text-xl">📊</span>
+          <div>
+            <div className="text-sm font-bold text-accent-purple">使用統計</div>
+            <div className="text-xs text-text-dim">頁面熱度、訪客組成與熱門機師機甲</div>
+          </div>
+          <span className="text-accent-purple/50 ml-2 text-lg">›</span>
+        </Link>
         {/* 系統日誌僅 OWNER 可見：內含維護者的 UA、儲存用量等裝置指紋（PLAN-045）。
             隱藏入口只是避免其他 ADMIN 點進去吃權限錯誤，真正的防線是 firestore.rules。 */}
         {userProfile?.role === 'OWNER' && (

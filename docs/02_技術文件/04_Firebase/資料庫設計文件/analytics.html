@@ -178,8 +178,20 @@ match /analyticsEntity/{docId} {
       <tr><td><code>workers/src/collect.ts</code></td><td>payload 驗證（格式防護）、寫入組裝（兩條安全鐵律）</td></tr>
       <tr><td><code>workers/src/collectBudget.ts</code></td><td>每日寫入預算熔斷器（預設 50,000）</td></tr>
       <tr><td><code>workers/src/firestoreRest.ts</code></td><td><code>commitIncrements</code> / <code>readCounterField</code></td></tr>
+      <tr><td colspan="2" style="background:rgba(255,255,255,.03);"><strong>讀取路徑（Phase B）</strong></td></tr>
+      <tr><td><code>src/lib/api/analytics.ts</code></td><td><code>getDailyRange</code>（缺漏日補零）／<code>getEntityMonth</code>／彙總小工具；5 分鐘記憶體快取</td></tr>
+      <tr><td><code>src/pages/admin/AdminAnalyticsPage.tsx</code></td><td>後台 <code>/admin/analytics</code> 儀表板</td></tr>
+      <tr><td><code>src/components/admin/analytics/</code></td><td>StatCard／BarList／TrendChart（手刻 CSS + SVG，未引進圖表函式庫）</td></tr>
     </tbody>
   </table>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>讀取端的兩個約定</strong><br>
+    · <strong>缺漏的日子由 API 端補零</strong>，保證回傳長度等於天數。若讓每個消費端自己處理
+      「陣列長度不等於天數」，很容易寫成把 7 天畫成 5 天——看起來正常，實際上把沒有流量的日子悄悄壓縮掉了。<br>
+    · <strong>用 <code>getDocs</code> 不用 <code>onSnapshot</code></strong>：統計不需要即時，卻會為此持續佔用連線與讀取配額。
+      查詢用 <code>where('date','&gt;=')</code> + <code>orderBy('date')</code>，同欄位故不需要複合索引。
+  </div>
 
   <div class="warning-block" style="margin-top:12px;">
     <strong>⚠ Worker 端<span style="color:var(--accent-red);">刻意不放</span>頁面白名單</strong><br>
