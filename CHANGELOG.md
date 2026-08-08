@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-07
+## [Unreleased] - 2026-08-08
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 網站使用統計埋點與寫入管線（PLAN-046 Phase A） (`cf39a05`)
 - 登出診斷與 OWNER 系統日誌（PLAN-045） (`2f12ceb`)
 - 灰燼行動名單支援機甲縮圖與詳情連結 (`9fd3412`)
 - 首頁版本濃縮表的圖示可點開詳情卡片 (`0c4fb9f`)
