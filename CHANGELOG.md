@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 登出診斷追加 persistence 降級探針與登入心跳（PLAN-045） (`79eb6d1`)
 - 使用統計後台儀表板（PLAN-046 Phase B） (`eab2c8f`)
 - 網站使用統計埋點與寫入管線（PLAN-046 Phase A） (`cf39a05`)
 - 登出診斷與 OWNER 系統日誌（PLAN-045） (`2f12ceb`)
