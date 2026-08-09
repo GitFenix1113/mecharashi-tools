@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-08
+## [Unreleased] - 2026-08-09
 
 ### ⚠ 重大變更
 
@@ -115,6 +115,7 @@
 
 ### 🐛 修復
 
+- 後台新增實體補上文件 ID 防呆，並統一武器命名為 weapon_NNN_名稱 (`111ec3c`)
 - 版本表背包列的複合武器改回退至 weapons 集合 (`e414f97`)
 - 修正後台更新版本資訊後，首頁圖片最長 24 小時才生效 (`3243f2d`)
 - 後台圖檔清單加上建置識別碼，避免讀到 CDN 邊緣快取的舊 manifest (`815b37b`)
