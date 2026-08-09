@@ -55,6 +55,52 @@ export function makeEntityId(prefix: string, name: string): string {
   return slug ? `${prefix}_${slug}` : ''
 }
 
+// ─── 帶流水號的 ID（weapons 慣例）──────────────────────────────────────────────
+//
+// 多數集合是 `<prefix>_<slug>`，但 weapons 的既有 168 筆是 `weapon_<3位流水號>_<slug>`
+// （`weapon_163_貝奧武夫_改_`），來自爬蟲當初以「API 清單位置 + 1」編號。
+// 後台建立時沒有 API 清單可依循，改以「既有 ID 的最大流水號 + 1」續號，讓新舊長相一致。
+//
+// ⚠ 副作用：同一個名稱在不同流水號下會生出不同 ID（`weapon_169_X` vs `weapon_170_X`），
+//   所以**撞 ID 檢查對重複建立完全無效**——擋重複的是 findEntityClash 的 **name** 維度。
+//   呼叫端務必傳 getName，且 existingItems 要是全集合（非當前分頁）。
+
+/**
+ * 剝除 `<prefix>_` 前綴與其後的流水號段。
+ * 例：stripNumberedIdPrefix('weapon', 'weapon_163_貝奧武夫') -> '貝奧武夫'
+ *     stripNumberedIdPrefix('weapon', 'weapon_天燼審判')      -> '天燼審判'
+ *     stripNumberedIdPrefix('weapon', '163_貝奧武夫')          -> '貝奧武夫'（前綴漏打也吃）
+ */
+export function stripNumberedIdPrefix(prefix: string, name: string): string {
+  return stripIdPrefix(prefix, name).replace(/^\d+_+/, '').trim()
+}
+
+/**
+ * 掃既有 ID，取出 `<prefix>_<數字>_` 的最大流水號；一筆都沒有時回傳 0。
+ * 不合形狀的 ID（無前綴的 `天燼審判`、無流水號的 `weapon_X`）一律忽略，不影響續號。
+ */
+export function maxEntitySeq(prefix: string, ids: readonly string[]): number {
+  const re = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_(\\d+)_`, 'i')
+  let max = 0
+  for (const id of ids) {
+    const m = re.exec(id ?? '')
+    if (m) { const n = parseInt(m[1], 10); if (n > max) max = n }
+  }
+  return max
+}
+
+/**
+ * 依命名規則生成帶流水號的實體 ID：`${prefix}_${seq}_${slugify(name)}`。
+ * seq 由呼叫端算好傳入（通常是 `maxEntitySeq(...) + 1`），避免每次輸入都重掃全集合。
+ * 名稱清理後為空時回傳空字串，讓呼叫端擋下。
+ *
+ * 例：makeNumberedEntityId('weapon', '天燼審判', 169) -> 'weapon_169_天燼審判'
+ */
+export function makeNumberedEntityId(prefix: string, name: string, seq: number, pad = 3): string {
+  const slug = slugify(stripNumberedIdPrefix(prefix, name))
+  return slug ? `${prefix}_${String(seq).padStart(pad, '0')}_${slug}` : ''
+}
+
 /**
  * 同一個名稱在「前綴大小寫」上的所有可能 ID（含原值，已去重、原值排首位）。
  *

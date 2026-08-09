@@ -41,7 +41,7 @@
   <div class="data-table-wrap">
     <table class="data-table blue-head">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
-      <tr><td>id</td><td>string</td><td>武器識別碼</td></tr>
+      <tr><td>id</td><td>string</td><td>文件 ID。格式 <code>weapon_&lt;3 位流水號&gt;_&lt;名稱 slug&gt;</code>（如 <code>weapon_169_天燼審判</code>）。爬蟲以「API 清單位置 +1」編號；後台新增時由 <code>makeNumberedEntityId</code> 續既有最大號 +1，slug 規則同 <code>idSlug.ts</code></td></tr>
       <tr><td>name</td><td>string</td><td>武器名稱</td></tr>
       <tr><td>category</td><td>WeaponCategory</td><td>武器大類 Enum：射擊 / 格鬥 / 突擊 / 戰術</td></tr>
       <tr><td>type</td><td>string</td><td>武器種類（機槍 / 狙擊步槍 / 重機槍 / 拳套 ...）</td></tr>

@@ -8,6 +8,7 @@ import { getBossImagePath } from '../../../data/bossDrops'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton, GRID_AUTO_FIELDS, DraftRestoreBar } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { getCollectionPage, updateComponent, docExists } from '../../../lib/firestoreApi'
+import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import {
@@ -18,10 +19,10 @@ import {
 type ComponentFilters = { type: string; rarity: string; wType: string; subtype: number | 'all' }
 
 // ─── 預設值工廠 ────────────────────────────────────────────────────────────────
-function makeDefaultComponent(id: string): Component {
+function makeDefaultComponent(id: string, name = ''): Component {
   return {
     id,
-    name: '',
+    name,
     componentType: ComponentType.CONDITION,
     moduleSubtype: ModuleSubtype.ATTACK_METHOD,
     probabilityLevel: 1,
@@ -444,12 +445,27 @@ export default function ComponentAdmin({ initialSearch = '' }: { initialSearch?:
       (f.subtype === 'all' || c.moduleSubtype === f.subtype),
   })
 
-  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate } =
-    useNewItemCreation(filtered, (c) => c.id, makeDefaultComponent)
+  // 輸入框收「名稱」，ID 由系統生成 comp_<slug(name)>（PLAN-020 同制，補上武器/元件當初漏掉的部分）。
+  // 手打 ID 沒有格式防呆，會建出無前綴文件（weapons 集合已被這樣汙染 4 筆）。
+  // 注意：components 走 useServerPaged，**沒有**全集合 in-memory 副本，
+  // 所以 in-memory 撞名只能查已載入的 `filtered`（會漏），真正的把關是下面伺服器端的 docExists。
+  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate, derivedId } =
+    useNewItemCreation(
+      filtered,
+      (c) => c.id,
+      (id, name) => makeDefaultComponent(id, stripIdPrefix('comp', name)),
+      (name) => makeEntityId('comp', name),                 // deriveId：comp_<slug(name)>
+      (c) => c.name,                                        // 名稱撞名：ID 可能因改名而與 name 脫鉤
+    )
 
   async function confirmCreateChecked() {
-    const id = newId.trim()
-    if (id && await docExists('components', id)) { setNewIdError(`ID「${id}」已存在`); return }
+    const id = makeEntityId('comp', newId)
+    if (!id) { setNewIdError('名稱無法產生有效 ID，請改用其他名稱'); return }
+    // 伺服器端撞 ID 檢查：涵蓋不在記憶體中的元件（撞名 = 撞 ID，導引去編輯既有項）
+    if (await docExists('components', id)) {
+      setNewIdError(`已有同名元件（ID：${id}），請改名或編輯既有項目`)
+      return
+    }
     const item = confirmCreate()
     if (item) setEditing(item)
   }
@@ -532,11 +548,13 @@ export default function ComponentAdmin({ initialSearch = '' }: { initialSearch?:
         creating={creating}
         newId={newId}
         newIdError={newIdError}
-        placeholder="comp_"
-        hint={<>輸入新元件 ID（格式如 <span className="text-accent-cyan">comp_12345</span>，儲存後不可更改）</>}
+        placeholder="元件名稱"
+        hint={<>輸入新元件<span className="text-accent-cyan">名稱</span>，文件 ID 由系統生成（儲存後不可更改）</>}
         onChangeId={(v) => { setNewId(v); setNewIdError('') }}
         onConfirm={() => { void confirmCreateChecked() }}
         onCancel={cancelCreate}
+        deriveMode
+        derivedId={derivedId}
       />
 
       {/* 元件列表 */}

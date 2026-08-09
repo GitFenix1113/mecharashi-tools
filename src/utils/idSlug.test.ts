@@ -4,7 +4,10 @@
 // 本檔已從 tsconfig.app build 排除，不影響 vite/tsc 打包。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { makeEntityId, slugify, stripIdPrefix, idPrefixCasings, findEntityClash } from './idSlug.ts'
+import {
+  makeEntityId, slugify, stripIdPrefix, idPrefixCasings, findEntityClash,
+  stripNumberedIdPrefix, maxEntitySeq, makeNumberedEntityId,
+} from './idSlug.ts'
 
 test('一般中文名 → prefix_<name>', () => {
   assert.equal(makeEntityId('buff', '虛粒子形態'), 'buff_虛粒子形態')
@@ -51,6 +54,42 @@ test('makeEntityId：自動消除使用者誤打的前綴（不產生 buff_buff_
   assert.equal(makeEntityId('buff', 'BUFF_事不宜遲'), 'buff_事不宜遲')   // 統一小寫前綴
   assert.equal(makeEntityId('buff', 'buff_buff_星爆'), 'buff_星爆')
   assert.equal(makeEntityId('buff', 'buff_'), '')                       // 只有前綴 → 無效
+})
+
+// ── 帶流水號的 ID（weapons 慣例：weapon_<3位>_<slug>）────────────────────────
+test('stripNumberedIdPrefix：剝除前綴與流水號段', () => {
+  assert.equal(stripNumberedIdPrefix('weapon', 'weapon_163_貝奧武夫'), '貝奧武夫')
+  assert.equal(stripNumberedIdPrefix('weapon', 'WEAPON_007_千軍'), '千軍')     // 前綴不分大小寫
+  assert.equal(stripNumberedIdPrefix('weapon', 'weapon_天燼審判'), '天燼審判')  // 無流水號
+  assert.equal(stripNumberedIdPrefix('weapon', '163_貝奧武夫'), '貝奧武夫')     // 前綴漏打
+  assert.equal(stripNumberedIdPrefix('weapon', '碎狼牙'), '碎狼牙')             // 乾淨名稱不動
+  assert.equal(stripNumberedIdPrefix('weapon', 'HMG-29C'), 'HMG-29C')          // 數字在後不誤剝
+})
+
+test('maxEntitySeq：取最大流水號，忽略不合形狀者', () => {
+  const ids = ['weapon_001_甲', 'weapon_163_乙', 'weapon_012_丙', '天燼審判', 'weapon_無號', '']
+  assert.equal(maxEntitySeq('weapon', ids), 163)
+  assert.equal(maxEntitySeq('weapon', []), 0)                    // 空集合 → 0（下一號為 1）
+  assert.equal(maxEntitySeq('weapon', ['天燼審判']), 0)          // 全不合形狀 → 0
+  assert.equal(maxEntitySeq('weapon', ['WEAPON_170_丁']), 170)   // 大小寫不影響
+  assert.equal(maxEntitySeq('comp', ['weapon_999_甲']), 0)       // 別的前綴不算進來
+})
+
+test('makeNumberedEntityId：補零到指定位數', () => {
+  assert.equal(makeNumberedEntityId('weapon', '天燼審判', 169), 'weapon_169_天燼審判')
+  assert.equal(makeNumberedEntityId('weapon', '甲', 7), 'weapon_007_甲')
+  assert.equal(makeNumberedEntityId('weapon', '甲', 1234), 'weapon_1234_甲')   // 超過位數不截斷
+  assert.equal(makeNumberedEntityId('comp', '乙', 9, 4), 'comp_0009_乙')
+})
+
+test('makeNumberedEntityId：誤打完整舊 ID 不會疊加', () => {
+  assert.equal(makeNumberedEntityId('weapon', 'weapon_163_貝奧武夫', 169), 'weapon_169_貝奧武夫')
+  assert.equal(makeNumberedEntityId('weapon', '  星 爆  ', 5), 'weapon_005_星爆')   // 空白照樣清掉
+})
+
+test('makeNumberedEntityId：空 slug 邊界 → 空字串（呼叫端據此擋下）', () => {
+  assert.equal(makeNumberedEntityId('weapon', '!!!', 1), '')
+  assert.equal(makeNumberedEntityId('weapon', 'weapon_163_', 1), '')
 })
 
 // ── PLAN-032 M0：技能庫大小寫撞號防呆 ────────────────────────────────────────

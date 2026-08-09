@@ -12,6 +12,7 @@ import {
 } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updateWeapon, docExists } from '../../../lib/firestoreApi'
+import { makeNumberedEntityId, maxEntitySeq, stripNumberedIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { WEAPON_RARITY_CLASS, WEAPON_KIND_BY_TYPE, ALL_WEAPON_KINDS } from './constants'
@@ -20,10 +21,10 @@ import { SkillEffectItem } from './PilotAdmin'
 type WeaponFilters = { rarity: string; type: string; exclusive: 'all' | 'yes' | 'no' }
 
 // ─── 預設值工廠 ────────────────────────────────────────────────────────────────
-function makeDefaultWeapon(id: string): Weapon {
+function makeDefaultWeapon(id: string, name = ''): Weapon {
   return {
     id,
-    name: '',
+    name,
     type: WeaponType.Sniper,
     kind: WeaponKind.HeavySniper,
     kindCoefficient: 0,
@@ -751,12 +752,34 @@ export default function WeaponAdmin({
       (f.exclusive === 'all' || (f.exclusive === 'yes' ? !!w.isExclusive : !w.isExclusive)),
   })
 
-  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate } =
-    useNewItemCreation(filtered, (w) => w.id, makeDefaultWeapon)
+  // 輸入框收「名稱」，ID 由系統生成 `weapon_<3位流水號>_<slug(name)>`，續既有最大號 +1。
+  // 原本是維護者手打 ID 且只比對 `filtered`（當前搜尋／篩選結果），有兩個洞：
+  //   1. 沒有格式防呆 → 直接把名稱當 ID 打進去，建出 `天燼審判` 這種無前綴文件；
+  //   2. 撞名只查當前分頁 → 被篩掉的武器看不到，會靜默建出第二份。
+  //
+  // ⚠ 流水號讓「同一名稱兩次建立」產出兩個**不同**的 ID，撞 ID 檢查因此救不了重複；
+  //   真正擋重複的是 findEntityClash 的 **name** 維度，所以 existingItems 必須是
+  //   `gd.weapons` 全集合（useClientPaged 的 source，本頁一定已整包載入）而非 `filtered`。
+  const nextSeq = useMemo(() => maxEntitySeq('weapon', gd.weapons.map((w) => w.id)) + 1, [gd.weapons])
+
+  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate, derivedId } =
+    useNewItemCreation(
+      gd.weapons,                                            // 全集合 in-memory 撞名（名稱維度是主防線）
+      (w) => w.id,
+      (id, name) => makeDefaultWeapon(id, stripNumberedIdPrefix('weapon', name)),
+      (name) => makeNumberedEntityId('weapon', name, nextSeq),
+      (w) => w.name,                                         // 名稱撞名：ID 可能因改名而與 name 脫鉤
+    )
 
   async function confirmCreateChecked() {
-    const id = newId.trim()
-    if (id && await docExists('weapons', id)) { setNewIdError(`ID「${id}」已存在`); return }
+    const id = makeNumberedEntityId('weapon', newId, nextSeq)
+    if (!id) { setNewIdError('名稱無法產生有效 ID，請改用其他名稱'); return }
+    // 伺服器端撞 ID 檢查：續號理論上不會撞，但 gd.weapons 若因故不完整（快取失效中、
+    // 另一個分頁同時建立）算出的號就會偏小，這道擋的是那個窗口。
+    if (await docExists('weapons', id)) {
+      setNewIdError(`ID「${id}」已存在，請重新整理頁面後再試（流水號可能已被其他人用掉）`)
+      return
+    }
     const item = confirmCreate()
     if (item) setEditing(item)
   }
@@ -820,11 +843,13 @@ export default function WeaponAdmin({
         creating={creating}
         newId={newId}
         newIdError={newIdError}
-        placeholder="weapon_"
-        hint={<>輸入新武器 ID（格式如 <span className="text-accent-cyan">weapon_10001</span>，儲存後不可更改）</>}
+        placeholder="武器名稱，如 天燼審判"
+        hint={<>輸入新武器<span className="text-accent-cyan">名稱</span>，文件 ID 由系統續號生成（下一號 <span className="text-accent-cyan">weapon_{String(nextSeq).padStart(3, '0')}_</span>，儲存後不可更改）</>}
         onChangeId={(v) => { setNewId(v); setNewIdError('') }}
         onConfirm={() => { void confirmCreateChecked() }}
         onCancel={cancelCreate}
+        deriveMode
+        derivedId={derivedId}
       />
 
       <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-1">

@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { Backpack, BackpackSkillDoc } from '../../../types'
 import { WeaponEquipSlot } from '../../../types/enums'
-import { updateBackpack } from '../../../lib/firestoreApi'
+import { updateBackpack, docExists } from '../../../lib/firestoreApi'
+import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import {
   Field, AdminModal, useNewItemCreation, NewItemDialog, GRID_AUTO_FIELDS,
@@ -35,10 +36,10 @@ function defaultPrereqType(bp: Backpack): string {
   return 'ALL'
 }
 
-function makeDefaultBackpack(id: string): Backpack {
+function makeDefaultBackpack(id: string, name = ''): Backpack {
   return {
     id,
-    name: '',
+    name,
     type: 'Ammo',
     rarity: 'S',
     weight: 0,
@@ -396,8 +397,29 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
     [gd.backpackSkills],
   )
 
-  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate } =
-    useNewItemCreation(gd.backpacks, b => b.id, makeDefaultBackpack)
+  // 輸入框收「名稱」，ID 由系統生成 `backpack_<slug(name)>`。
+  // 既有 180 筆是爬蟲留下的官方數字 ID（`60102405`），不追求與之一致——那組號碼後台生不出來，
+  // 且站方已決定新資料一律走站內命名規則。武器有 `weapon_NNN_` 的流水號可續，背包沒有，
+  // 所以就用不帶號的 `backpack_<slug>`（與 pilot / mech / skill 同形制）。
+  const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate, derivedId } =
+    useNewItemCreation(
+      gd.backpacks,                                          // 全集合 in-memory 撞名（本頁整包載入）
+      b => b.id,
+      (id, name) => makeDefaultBackpack(id, stripIdPrefix('backpack', name)),
+      name => makeEntityId('backpack', name),                // deriveId：backpack_<slug(name)>
+      b => b.name,                                           // 名稱撞名：ID 可能因改名而與 name 脫鉤
+    )
+
+  async function confirmCreateChecked() {
+    const id = makeEntityId('backpack', newId)
+    if (!id) { setNewIdError('名稱無法產生有效 ID，請改用其他名稱'); return }
+    if (await docExists('backpacks', id)) {
+      setNewIdError(`已有同名背包（ID：${id}），請改名或編輯既有項目`)
+      return
+    }
+    const item = confirmCreate()
+    if (item) setEditing(item)
+  }
 
   useEffect(() => { setDisplayCount(PAGE_SIZE) }, [rarityFilter, search])
 
@@ -464,14 +486,13 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
         creating={creating}
         newId={newId}
         newIdError={newIdError}
-        placeholder="backpack_12345"
-        hint={<>輸入新背包 ID（格式如 <span className="text-accent-cyan">backpack_12345</span>，儲存後不可更改）</>}
+        placeholder="背包名稱"
+        hint={<>輸入新背包<span className="text-accent-cyan">名稱</span>，文件 ID 由系統生成（<span className="text-accent-cyan">backpack_名稱</span>，儲存後不可更改）</>}
         onChangeId={v => { setNewId(v); setNewIdError('') }}
-        onConfirm={() => {
-          const item = confirmCreate()
-          if (item) setEditing(item)
-        }}
+        onConfirm={() => { void confirmCreateChecked() }}
         onCancel={cancelCreate}
+        deriveMode
+        derivedId={derivedId}
       />
 
       <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-1">
