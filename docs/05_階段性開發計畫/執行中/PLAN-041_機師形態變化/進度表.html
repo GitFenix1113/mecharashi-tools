@@ -189,15 +189,19 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">22</div>
+      <div class="summary-num" style="color:var(--accent-red)">2</div>
+      <div class="summary-lbl">阻塞中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">24</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度（N1 17 項 + N2 5 項）</span>
-      <span style="color:var(--accent-yellow);">0 / 22</span>
+      <span>整體完成度（N1 19 項 + N2 5 項）</span>
+      <span style="color:var(--accent-yellow);">0 / 24</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 0%"></div>
@@ -214,7 +218,17 @@
     <strong>⚠ 前置阻塞：</strong>
     Phase C 的虛粒子形態要引用耀星／隕星／千星，這 3 把武器由 <strong>PLAN-040</strong> 建立。
     PLAN-040 的 Phase C 未完成前，本計畫的 C-1 只能建三個戰鬥形態，虛粒子形態的 <code>weaponIds</code> 會是空的。
-    <strong>Phase A / B / D 的 RWD 與分頁修正不受阻塞，可先做。</strong>
+    <strong>Phase A / B / D 的 RWD 與分頁修正不受阻塞，可先做。</strong><br><br>
+    <strong>◈ 2026-08-09 訂正複核（不新增工項；總數維持 24 項——原本標示的 22 是舊的計數口徑，本次一併校正為實際工作列數）：</strong><br>
+    ① <strong>阻塞不變也不加深</strong>——PLAN-040 已把槽位模型拆出成 PLAN-047、自身縮回原定位，但縮回後的 Phase C 仍會建 6 筆武器文件，<strong>照樣包含耀星／隕星／千星</strong>。<br>
+    ② <strong>形態不改機甲數值、不改槽位配置</strong>——實測「突擊／先鋒形態的備用武器槽」與「+300 出力（3375→3675）」都來自<strong>強襲者背包</strong>（<code>backpacks/60101706</code>、<code>bpskill_強襲者驅動·增傷</code>），不是形態能力。
+    因此 A-1 的 <code>FormRestrict</code> <strong>維持 discriminated union</strong>、<code>MechForm</code> <strong>維持不開 <code>effects</code></strong>，本表所有工項的範圍與作法皆不變（詳見計畫書「2026-08-09 訂正」）。<br>
+    ③ <strong><code>fixedArmament</code> 鎖的是「全部槽位」</strong>——實機實測「虛粒子形態沒辦法調整任何裝備」，A-1 的型別註解須寫明
+    <code>kind === 'fixedArmament'</code> 語意為<strong>雙手＋雙肩＋背部全鎖</strong>，不只被 <code>weaponIds</code> 那三把佔住的三格
+    （對應 PLAN-047 的「全鎖型」derive，與機甲部件層的「佔據型」正交）。<br>
+    ④ <strong>「<code>Backpack</code> 缺『背包內武器』欄位」條目已刪</strong>——備用武器是玩家自選的配裝、不是背包固有資料，
+    <code>type: 'BackupEquipment'</code> 已是正確標記；真正的缺口是 <code>Build.weaponId</code> 單值表達不了「主手一套＋備用一套」，<strong>已由 PLAN-047 承接</strong>。<br>
+    <strong>③④ 皆為註解與登記層面的訂正，不新增、不刪減工項，總數仍為 24 項。</strong>
   </div>
 </section>
 
@@ -237,7 +251,14 @@
           <code>MechForm</code> + <code>FormRestrict</code> discriminated union（見計畫書決策二）。
           <strong>「刻意不開的欄位」理由要寫死在型別註解裡</strong>（effects / skillsByWeaponKind / hasFixedArmament / loadout），
           避免三個月後有人再問一次。<br>
-          <code>FormRestrict</code> 註解需載明「特殊／固定武裝不參與 <code>allow</code> 的計算」（承接 PLAN-040 決策九）。
+          <code>FormRestrict</code> 註解需載明「特殊／固定武裝不參與 <code>allow</code> 的計算」（承接 PLAN-040 決策九）。<br>
+          <span style="color:var(--text-dim);"><strong>2026-08-09 訂正後的兩點補充（作法不變，只是把理由寫進註解）：</strong>
+          ① union（sum type）選型<strong>維持不變</strong>，註解要寫明「備用武器槽來自強襲者背包、不是形態能力，故 <code>restrict</code> 不需要變成 product」——
+          否則下一個人看到官方截圖的備用槽又會提一次同樣的改法。
+          ② <code>fixedArmament.weaponIds: string[]</code> 目前<strong>刻意只存 id、不存槽位</strong>；未來要標明「耀星右手／隕星左手／千星背部」時，
+          應升級成 PLAN-047 的 <code>ArmamentMount[]</code>（<code>{ weaponId; slot: WeaponEquipSlot; side? }</code>），<strong>不可另造第四套部位詞彙</strong>。
+          ③ <code>kind === 'fixedArmament'</code> 的語意要寫成<strong>「鎖定全部槽位（雙手＋雙肩＋背部）」</strong>，
+          <strong>不是</strong>「被 <code>weaponIds</code> 佔住的槽不可換」——實機實測「虛粒子形態沒辦法調整任何裝備」，截圖中雙肩是空的 <code>[+]</code> 但不可用。</span>
         </div>
         <div class="task-file">src/types/form.ts · src/types/index.ts</div>
       </div>

@@ -1,0 +1,28 @@
+{
+  "_comment": "validate-module-binding.mjs 的負向測試用例：刻意造壞的八類問題各一筆，八類全部應觸發、離開碼 1。實際筆數為 9——mod_屬於別台 同時構成「斷鏈」（其 boundMechId 指向的 mech_ok 沒收它）與「反向不符」（mech_反向不符 收了它但它不屬於該台），一筆資料觸發兩項檢查是正確行為。此檔為固定測試資料，與正式庫無關，請勿據此推論實際資料狀態。",
+  "mechs": [
+    { "id": "mech_ok", "moduleFixedIds": ["mod_ok", "sub_mod_火力模組"] },
+    { "id": "mech_斷鏈", "moduleFixedIds": ["sub_mod_火力模組"] },
+    { "id": "mech_懸空", "moduleFixedIds": ["mod_不存在"] },
+    { "id": "mech_反向不符", "moduleFixedIds": ["mod_屬於別台"] }
+  ],
+  "modules": [
+    { "id": "sub_mod_火力模組", "name": "火力模組", "slot": "機甲副模組", "boundPart": null },
+
+    { "id": "mod_ok", "name": "正常專屬模組", "slot": "機甲專屬模組", "boundMechId": "mech_ok", "boundPart": ["torso"] },
+
+    { "id": "mod_斷鏈", "name": "①斷鏈", "slot": "機甲專屬模組", "boundMechId": "mech_斷鏈", "boundPart": ["leftArm"] },
+
+    { "id": "mod_孤兒綁定", "name": "③孤兒綁定", "slot": "機甲專屬模組", "boundMechId": "mech_根本不存在", "boundPart": ["legs"] },
+
+    { "id": "mod_無綁定", "name": "④專屬模組無 boundMechId", "slot": "機甲專屬模組", "boundPart": ["torso"] },
+
+    { "id": "mod_屬於別台", "name": "⑤反向不符", "slot": "機甲專屬模組", "boundMechId": "mech_ok", "boundPart": ["rightArm"] },
+
+    { "id": "mod_型別錯", "name": "⑥boundPart 是字串", "slot": "通用模組", "boundPart": "torso" },
+
+    { "id": "mod_值域錯", "name": "⑦boundPart 值域外", "slot": "通用模組", "boundPart": ["head"] },
+
+    { "id": "mod_空陣列", "name": "⑧boundPart 空陣列", "slot": "通用模組", "boundPart": [] }
+  ]
+}

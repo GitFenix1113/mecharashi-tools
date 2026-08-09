@@ -8,6 +8,7 @@ import {
 } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { IconField, loadManifest } from '../../../components/admin/IconPicker'
+import { ModuleBoundPart } from '../../../components/module/ModuleBoundPart'
 import { updateMech, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameVersions } from '../../../hooks/useGameVersions'
@@ -537,9 +538,11 @@ function MechEditPanel({
                   {exclusiveBound.map((m) => (
                     <div key={m.id} className="flex items-center gap-2 bg-bg-dark/50 border border-border rounded-lg px-3 py-2 text-sm">
                       <span className="text-accent-cyan font-medium">{m.name}</span>
-                      {m.boundPart && m.boundPart.length > 0 && (
-                        <span className="text-xs text-text-dim">綁定部位：{m.boundPart.join(' / ')}</span>
-                      )}
+                      {/* 用共用元件而非自己 join：① 它有 Array.isArray 防禦（Firestore 無型別，
+                          舊資料曾出現純字串 boundPart，而 `字串.length > 0` 會通過守衛、`.join` 才拋錯，
+                          且本專案無 ErrorBoundary → 整頁掛掉）；② 它會把 torso 映射成「軀幹」，
+                          與前台一致——這裡原本直接 join 原始碼值。 */}
+                      <ModuleBoundPart boundPart={m.boundPart} variant="inline" />
                       <span className="text-[11px] text-text-dim ml-auto font-mono truncate max-w-[40%]">{m.id}</span>
                     </div>
                   ))}

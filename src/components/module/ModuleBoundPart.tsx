@@ -10,8 +10,14 @@ const PART_LABELS: Record<string, string> = {
 /**
  * 綁定部位 → 顯示字串；不限部位時回傳 null。
  *
- * boundPart 型別是 string[] | null，但 Firestore 仍有少數殘留的**純字串**舊資料
- * （PLAN-041 清點時記錄到 3 筆），故 Array.isArray 的防禦不可省略。
+ * boundPart 型別是 string[] | null，但 Firestore 是無型別的，曾殘留 3 筆**純字串**舊資料。
+ * 那 3 筆已於 2026-08-10（PLAN-040 A-2）改成陣列，**全庫現為 0 筆**——
+ * 但 Array.isArray 的防禦**仍不可省略**，理由是：
+ *   ① tsc 擋不住未來的壞寫入（型別宣告只是宣告，Firestore 不強制）；
+ *   ② 失敗模式極差——`'torso'.length > 0` 會通過守衛，`.join()` 才拋 TypeError，
+ *      而本專案沒有任何 ErrorBoundary，render 拋錯會讓整頁掛掉。
+ * 長期守門員是 `scripts/validate-module-binding.mjs`（PLAN-040 A-3）：它從源頭抓型別違規，
+ * 本分支只是安全網。所有顯示 boundPart 的地方都應該用本元件，不要自己 join。
  */
 function formatBoundParts(boundPart?: string[] | string | null): string | null {
   if (!boundPart) return null

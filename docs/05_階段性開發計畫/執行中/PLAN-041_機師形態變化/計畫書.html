@@ -195,7 +195,7 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">前置依賴</div>
-      <div class="meta-value cyan">PLAN-040 固定武裝（虛粒子形態要引用的 3 把武器由它建立）</div>
+      <div class="meta-value cyan">PLAN-040 固定武裝（虛粒子形態要引用的 3 把武器由它建立）· PLAN-047 槽位與裝備限制模型（<code>ArmamentMount</code> 型別共用，<strong>非阻塞</strong>）</div>
     </div>
   </div>
 
@@ -229,7 +229,7 @@
         </tr>
         <tr>
           <td>「全庫 7 條 dangling，其中 4 條落在形態叢集」</td>
-          <td>全庫剩 <strong>3 條</strong>，形態叢集只佔 1 條（<code>skill_粒子爆發 → term_固定傷害</code> 大小寫錯）。已列入 PLAN-040 的 A-4。</td>
+          <td>全庫剩 <strong>2 條</strong>（本欄原寫 3 條，2026-08-09 複查後再減一：第三條 <code>buff_供彈阻滯 → comp_0093_應元件_消彈</code> 的元件今天<strong>確實存在</strong>，該條為誤報、已從待辦刪除）。形態叢集只佔 1 條（<code>skill_粒子爆發 → term_固定傷害</code> 大小寫錯）。已列入 PLAN-040 的 A-4。</td>
           <td><span class="badge-low">已他處處理</span></td>
         </tr>
         <tr>
@@ -239,6 +239,80 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="warning-block">
+    <strong>◈ 2026-08-09 訂正（實機截圖 + Firestore 查證）</strong><br>
+    本計畫先前把「突擊／先鋒形態多出<u>右手備用／左手備用</u>槽」與「各形態出力上限不同」當成<strong>形態的能力</strong>——兩者都錯，
+    它們是<strong>背包</strong>的效果。以下為逐項實測佐證。
+    <table class="impact-table">
+      <thead><tr><th style="width:22%">先前的陳述</th><th>2026-08-09 實測</th><th style="width:16%">影響</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>「突擊／先鋒形態多出<strong>右手備用／左手備用</strong>武器槽」＝形態能力</td>
+          <td>備用槽來自<strong>「強襲者背包」</strong>，與形態無關。實測 <code>backpacks/60101706</code>：
+            <code>type: 'BackupEquipment'</code>（<strong>backpacks 181 筆中僅此 1 筆</strong>）、<code>slot: 'back'</code>、<code>weight: 150</code>、
+            <code>assemblableArmorType: ["Light","Medium","Heavy"]</code>（<strong>無機甲限制</strong>）、
+            <code>skillIds: ["bpskill_強襲者驅動·增傷"]</code>。
+            技能正文逐字含「<strong>可以使用［武器切換］指令</strong>，每回合最多使用1次；行動結束時，若雙手完好，可以額外使用［武器切換］指令，每2回合最多使用1次」。<br>
+            <strong>追加實測（同日）</strong>：備用槽裡的武器是<strong>玩家自選</strong>的（只要負重夠；雙手武器佔滿 2 格；交換是<u>兩手一起換</u>的原子操作），
+            <strong>不是背包內含的固定武器</strong> → <code>Backpack</code> <strong>沒有</strong>「背包內武器」欄位缺口，
+            <code>type: 'BackupEquipment'</code> 已是正確標記；真正的缺口在 <code>Build.weaponId</code>，見「不在範圍內」。</td>
+          <td><span class="badge-good">決策不變</span> 形態不需要表達槽位</td>
+        </tr>
+        <tr>
+          <td>「各形態出力上限不同（3375 vs 3675）」＝形態改機甲數值</td>
+          <td><strong>+300 出力來自同一個背包技能</strong>：<code>bpskill_強襲者驅動·增傷</code> 正文逐字「機兵獲得<strong>額外300出力</strong>，軀幹耐久值提升10%，造成傷害提升5%」。
+            <code>mech_052_彌造者</code> 的 <code>output</code> 實測 <strong>3375</strong>，3375+300=<strong>3675</strong> ✅</td>
+          <td><span class="badge-good">決策不變</span> 形態不需要 <code>effects</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <strong>⇒ 結論：形態不改機甲數值、不改槽位配置。</strong>兩個原決策因此<strong>維持不變</strong>：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong><code>MechForm</code> 刻意不開 <code>effects</code></strong>（決策二）——3375→3675 的差是背包給的，形態身上沒有任何數值可寫進 <code>effects</code>。原本唯一看起來需要 <code>effects</code> 的證據就是這個出力差，它已被歸還給背包。</li>
+      <li><strong><code>FormRestrict</code> 用 discriminated union（sum type）</strong>（決策二）——「突擊形態需要<u>同時</u>表達武器白名單與備用槽，所以 <code>restrict</code> 應該是 product」這個指控<strong>因本訂正而失效</strong>：備用槽根本不是形態的屬性，突擊形態要表達的仍然只有 <code>allow: ['突擊']</code> 一件事。</li>
+    </ul>
+
+    <div style="margin-top:14px;"><strong>四形態的統一解釋（四個數字全部對上）</strong></div>
+    <table class="impact-table">
+      <thead><tr><th style="width:14%">形態</th><th>背部槽內容</th><th style="width:12%">備用槽</th><th style="width:24%">出力上限</th></tr></thead>
+      <tbody>
+        <tr><td>虛粒子</td><td>千星（固定武裝，<code>equipSlot: 'back'</code>）</td><td>無</td><td>3375</td></tr>
+        <tr><td>戰術</td><td>熠光（戰術武器，戰術類限中甲、裝背後）</td><td>無</td><td>3375</td></tr>
+        <tr><td>突擊</td><td>強襲者背包·增傷</td><td><strong>有</strong></td><td><strong>3675</strong> = 3375 + 300</td></tr>
+        <tr><td>先鋒</td><td>強襲者背包·增傷</td><td><strong>有</strong></td><td><strong>3675</strong> = 3375 + 300</td></tr>
+      </tbody>
+    </table>
+    <strong>背部槽只有一個，裝什麼決定了有沒有 +300 與備用槽</strong>——四個形態的差異全部由「背部槽裝了什麼」解釋完畢，沒有殘留需要形態層負責的部分。
+
+    <div style="margin-top:14px;"><strong>官方形態卡左側那組數字不可落盤</strong></div>
+    <strong>1125 / 3125 / 1895 / 1825</strong> 是<strong>當前裝備重量總和</strong>，會隨玩家配裝即時改變，是 derived 值。
+    <strong>絕對不可寫進 <code>MechForm</code></strong>：落盤等於製造第二個真相源，且任何一次配裝變更就失準——與決策二「能 derive 的不落盤」同一條原則。
+
+    <div style="margin-top:14px;"><strong>紅字「僅裝配格鬥與射擊武器」是<u>形態</u>的限制，不是背包的</strong></div>
+    三條佐證：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>(a)</strong> 強襲者背包 <code>assemblableArmorType</code> 為 <code>["Light","Medium","Heavy"]</code>（無限制），<code>bpskill_強襲者驅動·增傷</code> 正文<strong>完全沒有武器類型字樣</strong>；</li>
+      <li><strong>(b)</strong> 若這是背包的限制，<strong>同樣裝強襲者背包的突擊形態就不能裝突擊武器</strong>——與實機截圖直接矛盾；</li>
+      <li><strong>(c)</strong> 「格鬥＋射擊」<strong>精確等於</strong>本計畫決策二記載的先鋒形態 <code>allow: ['格鬥','射擊']</code>。</li>
+    </ul>
+    → 這條限制的歸屬就是 <code>FormRestrict</code> 的 <code>{ kind: 'weaponType', allow: [...] }</code> 那一支，<strong>不需要任何新欄位</strong>。
+  </div>
+
+  <div class="info-block">
+    <strong>◈ 前置依賴複核（2026-08-09）：阻塞不變、不加深</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>PLAN-040 已把<strong>槽位模型拆出成 PLAN-047</strong>、自身縮回「固定武裝武器文件」的原定位。
+        縮回後 PLAN-040 的 Phase C 仍會建 6 筆武器文件，其中<strong>照樣包含耀星／隕星／千星</strong>
+        —— 本計畫 C-1 的 <code>restrict.fixedArmament.weaponIds</code> 依賴的正是這三筆。
+        <strong>阻塞範圍不變也不加深</strong>，Phase A / B / D 一如既往不受阻塞、可先做。</li>
+      <li>槽位模型（機甲有幾個肩槽／背槽、固定武裝如何佔槽、模擬器 gate）歸 <strong>PLAN-047</strong>，本計畫<strong>不表態、不依賴</strong>。
+        但兩者應<strong>共用同一個槽位型別 <code>ArmamentMount</code></strong>（<code>{ weaponId; slot: WeaponEquipSlot; side?: 'left' | 'right' }</code>，放共用位置）——
+        本計畫的 <code>FormRestrict.fixedArmament.weaponIds</code> 未來若需要標明「耀星在右手、隕星在左手、千星在背部」，
+        應直接升級成 <code>ArmamentMount[]</code>，而<strong>不是另造第四套部位詞彙</strong>（全站已有 <code>WeaponEquipSlot</code> / <code>boundPart</code> / <code>Backpack.slot</code> 三套）。</li>
+    </ul>
   </div>
 </section>
 
@@ -312,6 +386,9 @@
  * 1. 三個戰鬥形態＝WeaponType 過濾（先鋒=['格鬥','射擊'] / 突擊=['突擊'] / 戰術=['戰術']）
  *    → 就是 WeaponType[]，不需要新 enum。
  * 2. 虛粒子形態不是 WeaponType 限制，而是鎖死武裝與技能 → 同一 union 的另一支。
+ *    ⚠ kind === 'fixedArmament' 的語意是【鎖定全部槽位】——雙手＋雙肩＋背部全部不可調整，
+ *      不只是被 weaponIds 那三把佔住的三格。2026-08-09 實機實測逐字：
+ *      「不只是不能帶背包，虛粒子形態沒辦法調整任何裝備」（見決策五）。
  * 副作用（刻意）：「有無固定武裝」由 kind === 'fixedArmament' derive，不存平行布林；
  * union 也讓 TypeScript 逼你選邊、逼你填 weaponIds。
  */</span>
@@ -385,6 +462,22 @@
       <li><strong>固有技能被強化為 EX</strong>：<code>skill_虛粒子程式</code>「［虛粒子形態］時的固有技能<strong>強化為</strong>［虛粒子刃EX］［虛粒子炮EX］［虛粒子矩陣EX］，並可以使用［逐世者強襲］」。基礎版與 EX 版<strong>都已存在於 pilotSkills</strong> → <code>lockedSkillIds</code> 指<strong>基礎版</strong>，EX 由虛粒子程式的正文引用表達，不重複編碼。</li>
       <li><strong>裝備獨立</strong>：每個形態各一套武器背包（海莉絲要準備三套）。<span class="badge-med">本計畫不落盤</span>，只寫進「已知未做」——見不在範圍內。</li>
     </ul>
+
+    <div style="margin-top:14px;"><strong>◈ 2026-08-09 實機補充：<code>fixedArmament</code> 鎖的是「<u>全部槽位</u>」，比官方原文更強</strong></div>
+    問題二引的官方原文只寫「無法變更武裝和技能」，實機比這更嚴格。使用者 2026-08-09 實測逐字：
+    「<strong>不只是不能帶背包，虛粒子形態沒辦法調整任何裝備</strong>」。
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>語意寫進型別註解</strong>：<code>restrict.kind === 'fixedArmament'</code> 的鎖定範圍是該形態的
+        <strong>全部槽位（雙手＋雙肩＋背部）</strong>，<strong>不是</strong>只有被 <code>weaponIds</code> 那三把（耀星／隕星／千星）佔住的三格。
+        實機截圖中虛粒子形態的<strong>雙肩顯示為空的 <code>[+]</code> 但不可用</strong>，正是此意——<strong>空槽 ≠ 可填</strong>。</li>
+      <li><strong>「不能帶背包」的理由改寫</strong>：先前是由「千星 <code>equipSlot: 'back'</code> 佔住背部槽」<strong>推導</strong>出來的；
+        今天有了直接依據——不是因為那一格被佔住，而是因為<strong>整個形態不開放調整</strong>。結論相同、理由不同，註解要寫後者（推導會在未來槽位模型改動時失效）。</li>
+      <li><strong>PLAN-047 已據此把槽位封鎖拆成兩個正交的 derive</strong>：
+        <strong>佔據型</strong>（機甲部件層——某槽被固定武裝實際佔住，<u>其他槽照常可用</u>）與
+        <strong>全鎖型</strong>（機師形態層——該形態下所有槽位皆不可調整，<u>與佔據與否無關</u>），
+        對應 <code>occupiedSlots()</code> 與 <code>lockedSlots()</code> 兩個獨立函式。
+        <strong>本計畫的 <code>fixedArmament</code> 分支對應後者</strong>；帕斯卡／破曉者-01／霸王的肩槽封鎖屬前者，不歸本計畫。</li>
+    </ul>
   </div>
 
   <div class="decision-block">
@@ -396,13 +489,20 @@
 
   <div class="decision-block">
     <strong>決策七：箭頭方向——<code>form → weapon</code>、<code>skill → form</code>，反向一律禁止</strong>
-    <div class="wire">帕斯卡的固定武裝：  mech ←(boundMechId+boundPart)─ module ─(descriptionRefs)→ weapon
-海莉絲的固定武裝：  form ─(restrict.fixedArmament.weaponIds)────────────────→ weapon
-42 筆子技能矩陣：    skill ─(SkillVariant.formId)──────────────────────────→ form
+    <div class="wire">帕斯卡的固定武裝：      mech ←(boundMechId+boundPart)─ module ─(descriptionRefs)→ weapon
+破曉者-01／霸王：      mech ─(固定武裝；形狀由 PLAN-047 定)─────────────────────→ weapon
+海莉絲的固定武裝：      form ─(restrict.fixedArmament.weaponIds)─────────────────→ weapon
+42 筆子技能矩陣：       skill ─(SkillVariant.formId)───────────────────────────→ form
 
-                    ↑ 武器不認識形態、形態不認識子技能</div>
+                       ↑ 武器不認識形態、不認識機甲；形態不認識子技能</div>
     武器完全不認識形態 → PLAN-040 與本計畫徹底解耦。
-    形態不認識子技能 → 新增一支子技能只要改該技能一份文件，不用改 4 個形態文件。
+    形態不認識子技能 → 新增一支子技能只要改該技能一份文件，不用改 4 個形態文件。<br>
+    <span style="color:var(--text-dim);"><strong>2026-08-09 補（第二條箭頭的由來）：</strong>固定武裝實際有 <strong>6 種</strong>，不是本計畫原先記的 4 種。
+    除了帕斯卡的衝擊炮×2 與海莉絲虛粒子形態的耀星／隕星／千星，另有
+    <strong>破曉者-01（<code>mech_027_破曉者-01</code>）的嵐質儲能艙×2</strong> 與 <strong>霸王（<code>mech_050_霸王</code>）的多功能彈倉×2</strong>，兩者皆為純封鎖型（無數值、無技能）。
+    這兩台在 <code>modules</code> 241 筆與官方 API 83 台全掃中<strong>零命中武裝來源模組</strong>（<code>mod_破曉者-01_fixed_1/_2</code> 講手臂修復與傷害加成、<code>mod_2064</code> 只是命中率+10%），
+    走不了帕斯卡那條 <code>module ─(descriptionRefs)→ weapon</code> 的路 → 只能由機甲直接指向武器，即圖中第二條。
+    <strong>該箭頭的實際形狀（掛 chassis 還是 <code>MechPart</code>）由 PLAN-047 定案，本計畫不依賴</strong>——海莉絲那三把仍走 <code>form → weapon</code>，與機甲層無關。</span>
   </div>
 
   <div class="warning-block">
@@ -519,9 +619,22 @@
         且 gate 沒有下游消費者（effects 全庫 0 筆、傷害公式仍是 placeholder）。
         <strong>本計畫明文不接模擬器。</strong></li>
       <li><strong><code>Form.effects</code></strong>：見決策二的型別註解，缺四個結構性軸。</li>
-      <li><strong>建立 4 把固定武裝</strong>：PLAN-040。</li>
-      <li><strong>武器自帶技能的引用</strong>：PLAN-032。</li>
+      <li><strong>建立固定武裝武器文件</strong>：PLAN-040（清單已從 4 種訂正為 <strong>6 種</strong>，本計畫只依賴其中的耀星／隕星／千星）。</li>
+      <li><strong>槽位模型與模擬器裝備 gate</strong>：PLAN-047。本計畫不表態「機甲有幾個肩槽／背槽」「固定武裝如何佔槽」，只共用 <code>ArmamentMount</code> 型別。</li>
+      <li><strong>武器自帶技能的引用</strong>：<strong>PLAN-032 已歸檔（8/8）</strong>，<code>WeaponSkillRef</code>（<code>skillId</code> + <code>activation</code>）已是正式格式；固定武裝的技能掛載由 <strong>PLAN-040 的 C-3</strong> 交付（衝擊炮→［退敵激波］、千星→［虛粒子矩陣］），本計畫不重複編碼。</li>
       <li><strong><code>skill_巡航型態</code> / <code>skill_機兵型態</code> 的型/形訂正</strong>：非調構師形態，只記錄不動。</li>
+      <li><strong><code>Build.weaponId</code> 表達不了「主手一套 ＋ 備用一套」</strong>（<span class="badge-low">本輪只記錄</span>）：
+        <code>Build</code>（<code>src/types/user.ts:40-58</code>）的 <code>weaponId</code> 是<strong>單值 <code>string</code></strong>，
+        而裝上強襲者背包會開出<strong>第二套完整的手部配裝</strong>——備用槽 <strong>2 格</strong>（與主手同構）、<strong>雙手武器佔滿 2 格</strong>、
+        <strong>交換是兩手一起換的原子操作</strong>（不能單換一把）、備用武器同樣受<strong>負重</strong>限制。單值 <code>string</code> 一件都接不住。<br>
+        <span style="color:var(--text-dim);"><strong>2026-08-09 訂正：</strong>本條原記為「<code>Backpack</code> 型別沒有『背包內武器』欄位」，該判斷<strong>已被推翻</strong>。
+        使用者實測逐字：「那個備用武器是<strong>隨你裝備的</strong>，只要負重夠就可以，你裝備雙手武器就會直接占用兩格」——
+        備用武器是<strong>玩家自選的配裝</strong>，不是背包的固有資料（官方卡面上的「Z15型動能斧」是<u>該玩家選的</u>，不是強襲者背包內含）。
+        因此 <code>Backpack</code> <strong>沒有</strong> schema 缺口：<code>type: 'BackupEquipment'</code>（全庫僅 <code>backpacks/60101706</code> 1 筆）
+        <strong>已經是這個機制的正確標記，不需要新欄位</strong>。</span><br>
+        不在本計畫做的理由：備用槽<strong>屬於背包不屬於形態</strong>（見上方訂正），且改 <code>Build</code> 是 <code>userBuilds</code> 的 breaking change。
+        <strong>已由 PLAN-047 承接</strong>（其 <code>SlotCapacity</code> 的 <code>backupHand</code> 維度<strong>由背包決定</strong>——
+        裝了 <code>BackupEquipment</code> 類背包則為 2、否則為 0，不由機甲或形態決定），此處僅交叉登記。</li>
     </ul>
   </div>
 </section>
@@ -559,6 +672,11 @@
       <div class="doc-tag">Blocker</div>
       <h4>◆ PLAN-040 固定武裝</h4>
       <p>前置：虛粒子形態要引用的 3 把武器</p>
+    </a>
+    <a class="doc-item" href="../PLAN-047_槽位與裝備限制模型/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-047 槽位與裝備限制模型</h4>
+      <p>槽位詞彙 <code>ArmamentMount</code> 與本計畫 <code>FormRestrict</code> 共用；非阻塞</p>
     </a>
     <a class="doc-item" href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html">
       <div class="doc-tag">Related</div>
