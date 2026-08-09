@@ -179,7 +179,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">3</div>
+      <div class="summary-num" style="color:var(--accent-green)">4</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -187,7 +187,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">14</div>
+      <div class="summary-num" style="color:var(--text-dim)">13</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -199,10 +199,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">3 / 17</span>
+      <span style="color:var(--accent-orange);">4 / 17 · <strong style="color:var(--accent-green);">Phase A 已收完</strong></span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 17.6%"></div>
+      <div class="progress-bar-fill" style="width: 23.5%"></div>
     </div>
   </div>
 
@@ -233,7 +233,9 @@
 <section class="section">
   <div class="section-label orange">Phase A</div>
   <div class="section-title">資料衛生（與槽位設計無關，可獨立出貨）</div>
-  <div class="section-desc">四項既有資料缺陷，都不依賴任何未定案的設計，也不受 Open Questions 影響。做完就能修好模擬器讀不到帕姆斯陣列的問題。</div>
+  <div class="section-desc">四項既有資料缺陷，都不依賴任何未定案的設計，也不受 Open Questions 影響。做完就能修好模擬器讀不到帕姆斯陣列的問題。<br>
+    <strong style="color:var(--accent-green);">✅ 2026-08-10 全數完成（4/4）</strong>——模擬器已讀得到帕姆斯陣列、<code>boundPart</code> 型別違規 0 筆、
+    全庫懸空引用 0 條，並留下長期守門員 <code>scripts/validate-module-binding.mjs</code>（八類檢查、離開碼 0/1）。</div>
 
   <div class="task-group">
     <div class="task-group-header">
@@ -364,11 +366,11 @@
     <div class="task-group-header">
       <div class="task-group-title">A-4 &nbsp; 修全庫懸空引用</div>
       <div class="task-group-meta">pilotSkills / buffs 集合</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">修 2 條 dangling ref（全庫就這 2 條）</div>
+        <div class="task-name">修 2 條 dangling ref（全庫就這 2 條）— <strong>2026-08-10 已完成</strong></div>
         <div class="task-desc">
           ① <code>pilotSkills/skill_粒子爆發</code> 的 <code>descriptionRefs.固定傷害</code> = <code>term:term_固定傷害</code>，正解 <code>TERM_固定傷害</code>。<br>
           ② <code>buffs/buff_激發能</code> 的 <code>descriptionRefs.啟動</code> = <code>term:term_啟動</code>，正解 <code>TERM_啟動</code>。<br>
@@ -378,12 +380,42 @@
           <strong>該元件今天存在，此條已從待辦刪除</strong>。<br>
           <strong>不要順手改小寫前綴</strong>：<code>glossaryTerms</code> 的 <code>TERM_</code> 有 129 筆、<code>term_</code> 有 32 筆，
           <strong>小寫前綴本身不是錯的</strong>，錯的只是上面這兩個 id 沒有對應文件。<br>
-          沿用既有訂正：<code>[激發能]</code> <u>不需要新建</u>——它已存在為 <code>buff_激發能</code>（<code>buffType: resource</code>、<code>maxStack: 5</code>），海莉絲天賦也已正確指向它。
+          沿用既有訂正：<code>[激發能]</code> <u>不需要新建</u>——它已存在為 <code>buff_激發能</code>（<code>buffType: resource</code>、<code>maxStack: 5</code>），海莉絲天賦也已正確指向它。<br><br>
+          <strong>◈ 執行結果</strong><br>
+          <strong>只改這兩個四元組</strong>（集合 + 文件 + token + 舊 <code>refId</code>），<strong>不做任何前綴正規化</strong>——
+          腳本先做五道前置驗證，任一不符即整案中止、零寫入：文件存在／現值與預期逐欄相符／
+          <strong>舊 id 必須真的不存在</strong>（確認是懸空而非誤判）／正解存在／
+          <strong>正解詞條的 <code>name</code> 必須等於 token</strong>（防止改到同名不同義的詞條）。
+          寫入時只換 <code>refId</code>，<code>refType</code> / <code>label</code> 與同文件其他 token 一律不動。
+          已 bump <strong>pilotSkills</strong> 與 <strong>buffs</strong> 版本。<br><br>
+          <strong>◈ 動工時的實測數字（佐證「小寫前綴不是錯的」）</strong><br>
+          <code>glossaryTerms</code> 162 筆：<code>TERM_</code> <strong>129</strong>／<code>term_</code> <strong>32</strong>／其他 <strong>1</strong>（<code>SKILL_運動戰</code>，既有文件、無人懸空引用，不在本工項範圍）。
+          <strong>大小寫雙胞胎（<code>TERM_X</code> 與 <code>term_X</code> 並存）0 筆</strong> → 這兩個 id 不存在歧義，正解唯一。<br>
+          語意也對得上：<code>skill_粒子爆發</code> 正文「造成…15%的<code>[固定傷害]</code>」對上
+          <code>TERM_固定傷害</code>「無視護甲與傷害減免」；<code>buff_激發能</code> 正文「每次行動開始與<code>[啟動]</code>時獲得1點」對上
+          <code>TERM_啟動</code>「重新獲得行動機會」。<br><br>
+          <strong>◈ 獨立複驗（不採用補丁腳本自檢，三種互不相依的方法）</strong><br>
+          <strong>①</strong> <u>模擬前台真正的解析路徑</u>：<code>EntityRefView.tsx:40-190</code> 的 <code>resolve()</code> 每個 refType 都是
+          <code>gd.&lt;coll&gt;.find(x =&gt; x.id === ref.refId)</code>，而 <code>gd</code> 的 <code>id</code> 來自
+          <code>firestoreCore.ts:25</code> 的 <code>{...d.data(), id: d.id}</code>——<strong><code>id</code> 一律被覆寫成 doc id</strong>。
+          故複驗<strong>只認 doc id</strong>，刻意<u>不</u>做補丁腳本那層「data 欄位 <code>id</code>」的寬鬆 fallback。
+          全庫 <strong>1905</strong> 個 EntityRef（<code>term</code> 848／<code>buff</code> 723／<code>skill</code> 173／<code>pilot</code> 122／
+          <code>neuralDrive</code> 29／<code>mech</code> 5／<code>module</code> 4／<code>component</code> 1）→
+          會渲染「找不到對應資料」的 <strong>0 個</strong>。<br>
+          <strong>②</strong> <u>原始 JSON 字串全掃</u>：不依賴 <code>descriptionRefs</code>／<code>mechanicsRefs</code> 這組 key 名，
+          直接找兩個壞 id 的字面值（可抓到結構化走訪覆蓋不到的欄位）→ <strong>各 0 處</strong>。<br>
+          <strong>③</strong> <u>逐欄快照比對</u>：兩份文件的 <code>description</code> 一字未動、<code>label</code> 保留、
+          其餘 token（<code>激發能</code>／<code>虛粒子形態</code>／<code>海莉絲</code>／<code>粒子爆發</code>）refId 全數不變；
+          並加驗正文 <code>[token]</code> 與 <code>descriptionRefs</code> 的 key <strong>100% 對得上</strong>。<br>
+          <span style="color:var(--text-dim);">附帶回歸：<code>node scripts/validate-module-binding.mjs</code> 八類檢查仍全數 0 筆、離開碼 0（A-1～A-3 未受影響）。</span><br><br>
+          <span style="color:var(--accent-yellow);"><strong>⚠ 給 E-2 的備忘：</strong></span>
+          E-2 列的五個集合中，<strong>mechs（A-1）／modules（A-2）／pilotSkills・buffs（A-4）四個已在各工項當下 bump 完畢</strong>，
+          <strong>E-2 收尾時只剩 <code>weapons</code> 要 bump</strong>（C-1 建六筆 + C-3 掛技能之後），<u>不要</u>重複 bump 已完成的四個。
         </div>
-        <div class="task-file">pilotSkills · buffs 集合</div>
+        <div class="task-file">scripts/temp_scripts/patch-plan040-a4-dangling-refs.mjs · scripts/temp_scripts/verify-plan040-a4.mjs · pilotSkills · buffs 集合</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
