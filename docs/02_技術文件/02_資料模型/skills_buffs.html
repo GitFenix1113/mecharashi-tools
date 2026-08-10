@@ -47,7 +47,7 @@
     <table class="data-table">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>trigger</td><td>PilotSkillTrigger (Enum)</td><td>觸發類型（顯示說明用，計算器不自動判斷）：<br><code>always</code> 永久被動 / <code>onAttack</code> 攻擊時 / <code>onCounter</code> 反擊時 / <code>onApSkill</code> 使用 AP 技能時<br><code>weaponType</code> 使用特定武器類型 / <code>dualWield</code> 雙持 / <code>hpBelow</code> HP 低於門檻<br><code>firstAttack</code> 戰鬥首次攻擊 / <code>enemyPhase</code> 敵方回合 / <code>allyHasBuff</code> 隊友持有增益</td></tr>
-      <tr><td>weaponType</td><td>string?</td><td>限定武器類型（WeaponType enum，大分類：射擊 / 格鬥 / 突擊 / 戰術）；trigger = weaponType 時填入<br><small style="color:var(--text-dim)">舊欄位名 weaponCategory，已更名為 weaponType</small></td></tr>
+      <tr><td>weaponType</td><td>string?</td><td>限定武器類型（WeaponType enum，大分類：射擊 / 格鬥 / 突擊 / 戰術 / <strong>特殊</strong>）；trigger = weaponType 時填入<br><small style="color:var(--text-dim)">舊欄位名 weaponCategory，已更名為 weaponType<br>「特殊」（PLAN-040 固定武裝）<strong>可</strong>作為技能觸發條件——決策二排除的是「<u>形態</u>的武器過濾」，不及於此；且衝擊炮確實可用（［退敵激波］），條件「使用特殊武器時」並非無意義。後台 PilotAdmin 的下拉因此保留該選項。</small></td></tr>
       <tr><td>weaponKind</td><td>string?</td><td>限定武器種類（WeaponKind enum，細分類：機槍 / 狙擊步槍 / 刀劍…）；比 weaponType 更精確的種類層級篩選</td></tr>
       <tr><td>hpThreshold</td><td>number?</td><td>HP% 門檻（如 50 代表 "HP &lt; 50%"）；trigger = hpBelow 時填入</td></tr>
       <tr><td>minApCost</td><td>number?</td><td>最低 AP 消耗條件</td></tr>

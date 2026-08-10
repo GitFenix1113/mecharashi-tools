@@ -78,9 +78,9 @@
       <tr><td>module8Id</td><td>string?</td><td>8級模組 ID（8模組槽位）→ modules Collection；無8級模組的機甲可省略</td></tr>
       <tr><td>moduleFixedIds</td><td>string[]</td><td>固定副模組 ID 列表（可多個）→ modules Collection</td></tr>
       <tr class="group-header"><td colspan="3">▎武器裝備欄位（計算機用）</td></tr>
-      <tr><td>leftShoulderSlot</td><td>string | null | undefined</td><td>左肩武器槽。<code>undefined</code>（欄位不存在）= 無左肩槽；<code>null</code> = 空槽可自由裝備；<code>string</code> = 固定武器 ID（部件綁死）</td></tr>
-      <tr><td>rightShoulderSlot</td><td>string | null | undefined</td><td>右肩武器槽。同上邏輯。少部分機甲僅單肩，兩欄位可獨立存在。</td></tr>
-      <tr><td>backSlot</td><td>string | null | undefined</td><td>背後武器槽。<code>undefined</code> = 無背後槽；<code>null</code> = 空槽；<code>string</code> = 固定武器 ID</td></tr>
+      <tr><td>leftShoulderSlot</td><td>string | null | undefined</td><td><strong style="color:var(--accent-yellow);">⚠ 已凍結 · PLAN-047 將取代，請勿填寫</strong><br>原設計：左肩武器槽。<code>undefined</code>（欄位不存在）= 無左肩槽；<code>null</code> = 空槽可自由裝備；<code>string</code> = 固定武器 ID（部件綁死）<br><small style="color:var(--text-dim)">凍結理由（PLAN-040 決策六）：① 實測 <strong>0/63 台機甲有填</strong>、前台零消費端；② 三態語意撞上 <code>firestoreCore.ts</code> 的 <code>stripUndefined</code>——後台取消勾選寫的就是 <code>undefined</code>，會被整個濾掉，<strong>一旦填了就再也取消不掉</strong>；③ scalar 表達不了帕斯卡「同一把衝擊炮 × 左右兩肩」。<br>取代品形狀已定：<code>MechPart.fixedArmament?: ArmamentMount[]</code>，<code>leftArm → 左肩槽</code> / <code>rightArm → 右肩槽</code> 為可程式化映射（肩槽附屬於手臂，兩者是<strong>巢狀</strong>不是正交）。故凍結而非刪除。</small></td></tr>
+      <tr><td>rightShoulderSlot</td><td>string | null | undefined</td><td><strong style="color:var(--accent-yellow);">⚠ 已凍結 · PLAN-047 將取代，請勿填寫</strong><br>原設計：右肩武器槽，邏輯同 <code>leftShoulderSlot</code>。</td></tr>
+      <tr><td>backSlot</td><td>string | null | undefined</td><td><strong style="color:var(--accent-yellow);">⚠ 已凍結 · PLAN-047 將取代，請勿填寫</strong><br>原設計：背後武器槽。<code>undefined</code> = 無背後槽；<code>null</code> = 空槽；<code>string</code> = 固定武器 ID</td></tr>
       <tr class="group-header"><td colspan="3">▎圖片路徑</td></tr>
       <tr><td>portrait</td><td>string?</td><td>完整立繪 /images/mechs/{name}/portrait.webp</td></tr>
       <tr><td>halfPortrait</td><td>string?</td><td>半身圖 /images/mechs/{name}/half.webp<br><small style="color:var(--text-dim)">注意：欄位名為 <code>halfPortrait</code>（非 <code>half</code>）。<br>現況：57 筆機甲的此欄指向從未進版控的 <code>half.png</code>，靠 <code>&lt;FallbackImage&gt;</code> 退回 <code>portrait</code> 顯示。</small></td></tr>

@@ -47,7 +47,7 @@
       <tr><td>moduleSubtype</td><td>ModuleSubtype</td><td>子類型 Enum（數字 1–11）；對應 WIKI ModuleSubtype</td></tr>
       <tr><td>probabilityLevel</td><td>number</td><td>元件等級；對應 WIKI ProbabilityLevel 欄位</td></tr>
       <tr><td>description</td><td>string</td><td>完整效果描述</td></tr>
-      <tr><td>allowedWeaponTypes</td><td>WeaponType[]</td><td>允許裝備的武器種類；預設全給，管理者手動維護</td></tr>
+      <tr><td>allowedWeaponTypes</td><td>WeaponType[]</td><td>允許裝備的武器種類；預設全給，管理者手動維護<br><small style="color:var(--text-dim)">⚠ <strong>不含「特殊」</strong>：固定武裝不能裝元件（PLAN-040 決策九）。程式端一律用 <code>COMPONENT_WEAPON_TYPES</code>（<code>types/enums.ts</code>＝ WeaponType 去掉「特殊」），<strong>不可</strong>用 <code>Object.values(WeaponType)</code>——ComponentsPage 以 <code>allowedWeaponTypes.length &lt; 清單.length</code> 判斷「是否有限定」，清單一旦變 5 值，<strong>204 個元件會立刻全部長出假的「限定」標籤</strong>（實測長度分布 <code>{1: 4, 4: 204}</code>）。</small></td></tr>
       <tr><td>rarity</td><td>ItemRarity</td><td>稀有度 Enum；API quality 映射：SSR → EX（橙）/ SR → S（金）/ R → A（紫）/ N → B（藍）；標籤配色：EX=橙、S=金、A=紫、B=藍</td></tr>
       <tr><td>icon</td><td>string</td><td>技能圖示 key（API IconPath 欄位，如 <code>Icon_skill_passive_5223</code>）；顯示時疊於框架圖（<code>statetype_{componentType}.png</code>）上</td></tr>
       <tr><td>iconLocal</td><td>string</td><td>本機技能圖示路徑（<code>/images/components/{icon}.png</code>）；由擷取腳本自動填入</td></tr>

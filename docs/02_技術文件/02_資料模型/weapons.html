@@ -123,6 +123,15 @@
     · <strong>技能自動填入</strong>：<code>skills[]</code>（PassiveSkill[]）原本因欄位名查找錯誤而永遠為空，已修正；子欄位 <code>buffIds</code>（BufCarried）、<code>icon</code>（SkillIcon）、<code>description</code>（SpecificEffects）同步修正<br>
     · <strong>裝備部位 / 機甲限制</strong>：<code>equipSlot</code>（RestrictionsPositionOfWeapon）、<code>mechRestriction</code>（LimitedModelOfWeapon）改由 API 直接取值，不再全部仰賴種類預設值
   </div>
+
+  <div class="changed-block" style="border-left-color:var(--accent-orange);background:rgba(249,115,22,0.04);">
+    <strong>PLAN-040 固定武裝</strong>（2026-08-10 實施）<br><br>
+    · <strong>新增三個選填欄位</strong>：<code>isFixedArmament?</code>（無法更換的武器）、<code>manual?</code>（手建保護旗標）、<code>naStats?</code>（不適用的數值欄位清單）<br>
+    · <strong>enum 擴充</strong>：<code>WeaponType</code> +「特殊」；<code>WeaponKind</code> +「粒子莢艙」（戰術）「固定武裝」（特殊），17 → 19 種<br>
+    · <strong>新增 6 筆手建武器</strong>（<code>weapon_173</code> ~ <code>weapon_178</code>）：衝擊炮 / 嵐質儲能艙 / 多功能彈倉 / 耀星 / 隕星 / 千星，全部 <code>manual: true</code>，官方 API 與 WIKI 皆無此六筆<br>
+    · <strong><code>RangeType</code> 未動</strong>：千星的「扇形」是尚未定義的攻擊方式，<strong>移交傷害模擬範疇</strong>；其 <code>rangeType</code> 暫沿用 <code>manhattan</code>，<strong>此值已知不精確</strong><br>
+    · <strong>元件側不同步</strong>：「特殊」<strong>不進</strong> <code>allowedWeaponTypes</code>，程式端用 <code>COMPONENT_WEAPON_TYPES</code>（見 <code>components.html</code>）
+  </div>
 </section>
 
 <!-- 術語說明 -->
@@ -207,8 +216,8 @@
       <tr><th>Enum 值</th><th>中文</th><th>說明</th></tr>
       <tr><td>singleHand</td><td>單手</td><td>佔用左臂或右臂其中一個；雙手可各裝一把</td></tr>
       <tr><td>dualHand</td><td>雙手</td><td>同時佔據左臂與右臂（雙手武器）</td></tr>
-      <tr><td>shoulder</td><td>肩膀</td><td>佔用左臂或右臂的肩膀槽位；需機甲有肩膀欄位才可裝備</td></tr>
-      <tr><td>back</td><td>背後</td><td>佔用機甲背後槽位；需機甲有背後欄位才可裝備</td></tr>
+      <tr><td>shoulder</td><td>肩膀</td><td>佔用左臂或右臂的肩膀槽位<br><small style="color:var(--text-dim)">⚠ 原文「需機甲有<u>肩膀欄位</u>才可裝備」指的是 <code>Mech.leftShoulderSlot</code> / <code>rightShoulderSlot</code>，該三欄<strong>已由 PLAN-040 凍結</strong>（0/63 台有填、前台不讀）。<strong>槽位模型見 PLAN-047</strong>——固定武裝改掛 <code>MechPart.fixedArmament</code>，肩槽附屬於手臂（<code>leftArm → 左肩槽</code>）。</small></td></tr>
+      <tr><td>back</td><td>背後</td><td>佔用機甲背後槽位<br><small style="color:var(--text-dim)">⚠ 同上：原「需機甲有背後欄位」指 <code>Mech.backSlot</code>，已凍結，<strong>槽位模型見 PLAN-047</strong>。</small></td></tr>
     </table>
   </div>
 </section>
@@ -229,12 +238,12 @@
       <tr><td>kind</td><td>WeaponKind (Enum)</td><td>武器種類（細分類）：機槍 / 狙擊步槍 / 刀劍…（共 19 種，見下方種類表）<br><small style="color:var(--text-dim)">原欄位名 type；PLAN-040 新增「粒子莢艙」（戰術）與「固定武裝」（特殊）</small></td></tr>
       <tr><td>kindCoefficient</td><td>number</td><td>武器種類係數（狙擊步槍 = 5.92）<br><small style="color:var(--text-dim)">原欄位名 typeCoefficient</small></td></tr>
       <tr class="group-header"><td colspan="3">▎基礎屬性</td></tr>
-      <tr><td>attack</td><td>number</td><td>攻擊力數值（整數）<br><small style="color:var(--text-dim)">API: WeaponBasicAttackingPower（清單 / detail 端點皆有）→ parseInt；原為 string 型，PLAN-007 修正後改為 number</small></td></tr>
+      <tr><td>attack</td><td>number</td><td>攻擊力數值（整數）<br><small style="color:var(--text-dim)">API: WeaponBasicAttackingPower（清單 / detail 端點皆有）→ parseInt；原為 string 型，PLAN-007 修正後改為 number</small><br><small style="color:var(--accent-yellow)">⚠ <strong>戰術武器沒有「普通攻擊」</strong>（使用者實測，PLAN-040 Q1）：<code>type === '戰術'</code> 共 <strong>43 筆</strong>，它們的 <code>attack</code> / <code>hitCount</code> 服務的是<strong>武器天生配備的主動技能</strong>，不是普攻數值。未來寫傷害計算器時<strong>不可</strong>把這 43 筆的 <code>attack</code> 當普攻算。<br>兩個對照組把界線畫得很乾淨：千星的［虛粒子矩陣］造成 1.1 倍範圍傷害 → 千星有 <code>attack: 194</code> / <code>hitCount: 6</code>；衝擊炮的［退敵激波］<strong>純位移、不造成傷害</strong> → <code>attack</code> 列入 <code>naStats</code>、卡面顯示「—」。<br>承接待辦：這 43 把的天生主動技能<strong>全站完全未記錄</strong>（既不在 <code>skills</code> 也不在任何模組），PLAN-040 只掛了衝擊炮與千星兩筆。</small></td></tr>
       <tr><td>accuracy</td><td>number</td><td>命中值<br><small style="color:var(--text-dim)">API: WeaponHitPoint</small></td></tr>
       <tr><td>critValue</td><td>number</td><td>暴擊值<br><small style="color:var(--text-dim)">API: WeaponUnderstanding</small></td></tr>
       <tr><td>weight</td><td>number</td><td>重量（影響機甲出力限制）<br><small style="color:var(--text-dim)">API: WeaponWeight（game stat）；API 同時有 weight 欄位為排序用途，不可混用</small></td></tr>
       <tr><td>ammoCount</td><td>number</td><td>彈藥量（0 = 無限彈藥）<br><small style="color:var(--text-dim)">導彈=2 / 火箭=1 / 電磁炮=3 / 浮游炮=3 / 其他=0</small></td></tr>
-      <tr><td>hitCount</td><td>number</td><td>連擊數（單次攻擊命中次數）<br><small style="color:var(--text-dim)">霰彈槍=12 / 機槍·重機槍·電鋸=10 / 噴火器=8 / 浮游炮=6 / 其他=1</small></td></tr>
+      <tr><td>hitCount</td><td>number</td><td>連擊數（單次攻擊命中次數）<br><small style="color:var(--text-dim)">霰彈槍=12 / 機槍·重機槍·電鋸=10 / 噴火器=8 / 浮游炮=6 / 粒子莢艙=6 / 其他=1<br>⚠ 戰術武器的語意見上方 <code>attack</code> 的警告：服務的是天生主動技能，不是普攻。</small></td></tr>
       <tr><td>rarity</td><td>WeaponRarity (Enum)</td><td>武器稀有度：SS / S+ / S（見稀有度識別規則）</td></tr>
       <tr><td>mechRestriction</td><td>MechRestriction (Enum)</td><td>機甲限制：none（無限制）/ light / medium / heavy<br><small style="color:var(--text-dim)">API: LimitedModelOfWeapon · "Light/Medium/Heavy"（三含）→ none；單一值 → 對應 enum</small></td></tr>
       <tr><td>equipSlot</td><td>WeaponEquipSlot (Enum)</td><td>裝備部位：singleHand（單手）/ dualHand（雙手）/ shoulder（肩膀）/ back（背後）<br><small style="color:var(--text-dim)">API: RestrictionsPositionOfWeapon · "Hand"→singleHand / "DualHand"→dualHand / "Shoulder"→shoulder / "Back"→back</small></td></tr>

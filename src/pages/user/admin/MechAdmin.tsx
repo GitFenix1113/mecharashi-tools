@@ -556,8 +556,19 @@ function MechEditPanel({
         {tab === 'gear' && (
           <div className="space-y-3">
             <p className="text-xs text-text-dim font-medium tracking-wider uppercase">武器槽 slots</p>
+            {/* PLAN-040 E-1：凍結標記。不刪欄位、不改形狀，只讓維護者在 UI 上就看得到「別填」。 */}
+            <div className="text-xs rounded-lg border border-accent-yellow/30 bg-accent-yellow/5 px-3 py-2 space-y-1">
+              <p className="text-accent-yellow font-bold">⚠ 已凍結 · PLAN-047 將取代，請勿填寫</p>
+              <p className="text-text-dim leading-relaxed">
+                目前 <strong className="text-text-secondary">0/63 台機甲有填</strong>，前台不讀這三個欄位。
+                而且三態語意撞上寫入層的 <code>stripUndefined</code>——取消勾選寫的是 <code>undefined</code>，
+                會被整個濾掉，<strong className="text-text-secondary">一旦填了就再也取消不掉</strong>。
+                固定武裝的槽位表達由 PLAN-047 統一改掛在<strong className="text-text-secondary">部件</strong>上
+                （左臂→左肩槽、右臂→右肩槽），在那之前這裡保持空白。
+              </p>
+            </div>
             <p className="text-xs text-text-dim">
-              勾選代表此機甲有該武器槽。空槽＝可自由裝備武器；選定武器＝部件綁死的固定武器。未勾選＝無此槽。
+              （原說明）勾選代表此機甲有該武器槽。空槽＝可自由裝備武器；選定武器＝部件綁死的固定武器。未勾選＝無此槽。
             </p>
             <SlotEditor label="左肩武器槽 leftShoulderSlot"  value={form.leftShoulderSlot}  weapons={weapons} onChange={(v) => set('leftShoulderSlot', v)} />
             <SlotEditor label="右肩武器槽 rightShoulderSlot" value={form.rightShoulderSlot} weapons={weapons} onChange={(v) => set('rightShoulderSlot', v)} />

@@ -39,11 +39,22 @@
 
   <div class="sub-h" style="margin-top:24px;">篩選功能</div>
   <div class="tech-row">
-    <span class="tech-tag primary">依武器大類（射擊/格鬥/突擊/戰術）</span>
+    <span class="tech-tag primary">依武器大類（射擊/格鬥/突擊/戰術/特殊）</span>
     <span class="tech-tag secondary">依武器種類</span>
     <span class="tech-tag tertiary">是否為專武</span>
     <span class="tech-tag">依稀有度</span>
     <span class="tech-tag">關鍵字搜尋</span>
+    <span class="tech-tag">🔒 顯示固定武裝（預設關閉）</span>
+  </div>
+  <div class="note-block" style="margin-top:16px;">
+    <strong>「固定武裝」為什麼預設不顯示</strong><br>
+    固定武裝是<strong>焊死在機體上、無法更換也不能裝元件</strong>的武器（衝擊炮／嵐質儲能艙／多功能彈倉／耀星／隕星／千星，共 6 件）。
+    圖鑑的定位是「查得到」，但這六件不該混進一般武器的統計與排序——
+    它們的稀有度都是 <code>S</code>，不排除的話會<strong>安靜地混在 S 級武器中間</strong>；
+    搜尋也吃武器種類，搜「彈倉」會跳出根本不是玩家武器的東西。<br>
+    因此採<strong>預設隱藏 + 單獨開關</strong>：關閉時總數、搜尋結果、部位計數、稀有度排序<strong>完全等同於沒有這六件</strong>
+    （連「全 N 把」的基數也跟著開關走，不會洩漏隱藏筆數）；打開後它們才進入所有計算，並各自帶上
+    <span class="tech-tag" style="font-size:inherit;">🔒 固定武裝</span> 標記。
   </div>
 </section>
 
@@ -109,7 +120,9 @@
     <div class="card purple">
       <div class="card-icon">🔫</div>
       <h3>武器 Hero 區塊</h3>
-      <p>武器名稱、稀有度標籤（SS / S+ / S / A / B）、大類 / 種類標籤、機甲限制標籤（無限制 / 輕型 / 中型 / 重型）、裝備部位標籤（單手 / 雙手 / 肩膀 / 背後）。</p>
+      <p>武器名稱、稀有度標籤（SS / S+ / S / A / B）、大類 / 種類標籤、機甲限制標籤（無限制 / 輕型 / 中型 / 重型）、裝備部位標籤（單手 / 雙手 / 肩膀 / 背後）。<br>
+      固定武裝另掛 <strong>🔒 固定武裝</strong> 標記（橘色）。<strong>刻意不與專武的金框 + ⭐ 相像</strong>——兩者語意相反：專武是「可選裝的獎勵」，固定武裝是「鎖死的限制」，看起來一樣會讓人把限制誤讀成獎勵。<br>
+      數值面板對<strong>遊戲中本來就沒有數值</strong>的欄位顯示「<strong>—</strong>」而非 0（如嵐質儲能艙全欄、衝擊炮的攻擊/命中/暴擊/重量/種類係數）。這是必要的：本站以「彈藥量 0」表示<strong>無限彈藥 ∞</strong>，照填 0 會把「沒有彈藥」渲染成「無限彈藥」，與遊戲相反。</p>
     </div>
     <div class="card orange">
       <div class="card-icon">📊</div>

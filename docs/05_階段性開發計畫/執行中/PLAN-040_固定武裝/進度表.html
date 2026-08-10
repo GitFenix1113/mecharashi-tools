@@ -208,7 +208,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">14</div>
+      <div class="summary-num" style="color:var(--accent-green)">17</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -216,7 +216,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">3</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -228,10 +228,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">14 / 17 · <strong style="color:var(--accent-green);">Phase A / B / C / D 已收完</strong></span>
+      <span style="color:var(--accent-orange);">17 / 17 · <strong style="color:var(--accent-green);">全部完成</strong></span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 82.4%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -884,7 +884,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 三個機甲武器槽加註凍結標記</div>
       <div class="task-group-meta">src/types/mech.ts · MechAdmin.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -905,12 +905,23 @@
           （<code>leftArm → 左肩槽</code> / <code>rightArm → 右肩槽</code> 是可程式化的映射）。
           註解可以直接寫「取代品是 <code>MechPart</code> 上的陣列」，比籠統的「PLAN-047 將取代」更有用。<br>
           依據：<code>src/types/enums.ts:130</code> 註解逐字「<strong>肩膀：左臂或右臂其中一個肩膀</strong>」＋ 使用者實測「左手綁左肩、右手綁右肩」
-          → 肩槽與槽位封鎖是<strong>巢狀</strong>（肩槽附屬於手臂部件），不是正交。
+          → 肩槽與槽位封鎖是<strong>巢狀</strong>（肩槽附屬於手臂部件），不是正交。<br><br>
+          <strong>◈ 執行結果 — 2026-08-10 已完成</strong><br>
+          三處加註（比計畫書多一處）：<code>src/types/mech.ts</code> 的型別註解、
+          <code>MechAdmin</code> 武器槽分頁的<strong>黃色警示區塊</strong>（UI 上直接看得到，不只在程式碼裡）、
+          以及 <code>docs/02_資料模型/mechs.html</code> 的三列欄位說明。<br>
+          註解寫的是<strong>凍結的真正理由</strong>而非「PLAN-047 將取代」這種空話：
+          0/63 有填、三態語意撞上 <code>stripUndefined</code>（取消勾選寫 <code>undefined</code> 會被濾掉 →
+          <strong>填了就取消不掉</strong>）、scalar 表達不了「同一把 × 左右兩肩」；
+          並直接寫明<strong>取代品的形狀已知</strong>（<code>MechPart.fixedArmament?: ArmamentMount[]</code>，
+          <code>leftArm → 左肩槽</code> 可程式化映射），這比籠統的「將被取代」對下一個看到它的人有用得多。<br>
+          <strong>複驗</strong>：全 63 台重掃，三個欄位<strong>連「有宣告」（含值為 <code>null</code>）的都是 0 台</strong>
+          → 凍結標記與事實一致，且沒有任何既有資料會因凍結而變成孤兒。<strong>未刪除任何欄位或 UI</strong>。
         </div>
         <div class="task-file">src/types/mech.ts:56-62 · src/pages/user/admin/MechAdmin.tsx:552-561</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -957,7 +968,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-1 &nbsp; docs 同步</div>
       <div class="task-group-meta">docs/02_技術文件/ · docs/03_頁面規劃/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1006,12 +1017,31 @@
           <strong>⑧ <code>03_頁面規劃/04_武器/index.html:112</code></strong><span style="color:var(--accent-green);">（同上）</span>：卡片標籤說明加固定武裝的呈現方式<br><br>
           <strong>⑨ <code>04_Firebase/資料庫設計文件/weapons.html</code></strong>：整頁停留在 PLAN-003 之前的 schema（<code>category</code> / <code>type</code> / <code>typeCoefficient</code> / <code>range</code> 等欄位名全已改）
           → <strong>本輪不整修</strong>，只在頁首加一行「本頁已知落後，見 <code>02_資料模型/weapons.html</code>」<br><br>
-          <span style="color:var(--accent-yellow);"><strong>⚠ <code>&lt;!--LAST-UPDATED--&gt;</code> 區塊由 <code>scripts/stamp-docs.mjs</code> 自動產生，不要手改。</strong></span>
+          <span style="color:var(--accent-yellow);"><strong>⚠ <code>&lt;!--LAST-UPDATED--&gt;</code> 區塊由 <code>scripts/stamp-docs.mjs</code> 自動產生，不要手改。</strong></span><br><br>
+          <strong>◈ 執行結果 — ①～⑨ 全數完成（2026-08-10）</strong><br>
+          ①② 隨 Phase B 先行（規則 2 要求結構性變更與文件同 commit）；②的三項尾巴與 ③～⑨ 於本輪補齊：<br>
+          ・<strong>②尾</strong> <code>weapons.html</code>：新增第三個 changed-block（PLAN-040）；
+            <code>equipSlot</code> 表的「需機甲有肩膀／背後欄位」兩列改寫為指向 PLAN-047
+            （<strong>刻意等 E-1 凍結完才改</strong>，以免文件先描述一個尚未存在的狀態）；
+            <code>attack</code> / <code>hitCount</code> 補上「<strong>戰術武器沒有普通攻擊</strong>」的語意警告
+            —— 43 筆的 <code>attack</code> 服務的是天生主動技能，不寫的話未來的傷害計算器會把它當普攻算。<br>
+          ・<strong>③</strong> <code>mechs.html</code> 三列加凍結標記（見 E-1）<br>
+          ・<strong>④</strong> <code>Firestore集合總覽</code>：<strong>順便修掉一個過期的 enum 名</strong>——
+            該頁仍寫 <code>WeaponCategory</code>，實際早已更名 <code>WeaponType</code>；值加「特殊」<br>
+          ・<strong>⑤</strong> <code>skills_buffs.html</code>：<code>weaponType</code> 條件加「特殊」，
+            並寫明<strong>為何不排除</strong>（決策二的排除範圍是「<u>形態</u>的武器過濾」，不及於技能觸發條件）<br>
+          ・<strong>⑥</strong> 兩份 <code>components.html</code> 共 <strong>3 處</strong>（<code>02_資料模型</code> ×2、<code>04_Firebase</code> ×1）
+            註明「特殊」不進 <code>allowedWeaponTypes</code>，並附上實測數字與後果（補成 5 值 → 204 個元件長出假標籤）<br>
+          ・<strong>⑦⑧</strong> <code>03_頁面規劃/04_武器</code><span style="color:var(--accent-green);">（白名單內，會公開）</span>：
+            篩選器加「特殊」與固定武裝開關並解釋<strong>為何預設隱藏</strong>；卡片標籤說明加 badge 與「—」的呈現規則<br>
+          ・<strong>⑨</strong> <code>04_Firebase/weapons.html</code>：頁首加紅色「本頁已知落後」告示，
+            列出已改名的欄位並指向 <code>02_資料模型/weapons.html</code>，明言<strong>不要據此寫程式或建資料</strong><br>
+          九個檔案的標籤配對全數 OK；<code>npm run build</code> 與 <code>npm test</code>（377 例）通過。
         </div>
         <div class="task-file">docs/02_技術文件/ · docs/03_頁面規劃/04_武器/index.html</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -1019,7 +1049,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-2 &nbsp; 網站更新履歷</div>
       <div class="task-group-meta">src/data/siteChangelog/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1027,12 +1057,19 @@
         <div class="task-desc">
           例：「武器圖鑑新增六筆固定武裝（衝擊炮／嵐質儲能艙／多功能彈倉／耀星／隕星／千星），預設隱藏、可用篩選開關顯示」、
           「配裝模擬器不再讓固定武裝被選為可裝備武器」。<br>
-          <span style="color:var(--text-dim);">「機甲詳情頁新增固定武裝區塊」<strong>不要寫</strong>——該項已移交 PLAN-047。</span>
+          <span style="color:var(--text-dim);">「機甲詳情頁新增固定武裝區塊」<strong>不要寫</strong>——該項已移交 PLAN-047。</span><br><br>
+          <strong>◈ 執行結果 — 2026-08-10 已完成（3 筆）</strong><br>
+          寫在 Phase C 落地的那個 commit，<strong>不在 B/D 時就寫</strong>——B 與 D 上線時六筆還不存在，
+          當時寫等於宣傳一個空功能（那兩個 commit 因此用 <code>chore:</code>，也剛好豁免 commit-msg hook 的履歷檢查）。<br>
+          三筆分別對應使用者真正會遇到的三件事：六件固定武裝進圖鑑（含<strong>為何預設隱藏</strong>與開關位置）、
+          帕斯卡模組的［衝擊炮］從「找不到資料」變成可點進武器頁、模擬器不再讓固定武裝被選成主武器
+          （並說明原因是<strong>它只用重量判斷、而固定武裝重量是 0</strong>）。<br>
+          <span style="color:var(--text-dim);">A-4 的履歷已於當時單獨寫入，故本輪只補這三筆。</span>
         </div>
         <div class="task-file">src/data/siteChangelog/2026-08.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
