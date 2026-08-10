@@ -233,6 +233,7 @@
 
 ### 🔧 維護
 
+- 固定武裝的前台呈現與模擬器排除（PLAN-040 Phase D） (`499b465`)
 - 武器型別與 enum 擴充，補上固定武裝的表達能力（PLAN-040 Phase B） (`20809e2`)
 - 更新圖檔清單 manifest.json（納入新背包技能圖示） (`a76abde`)
 - 補上背包技能圖示 Icon_skill_passive_威能者驅動.png (`362709b`)
