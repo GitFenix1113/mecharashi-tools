@@ -208,7 +208,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">7</div>
+      <div class="summary-num" style="color:var(--accent-green)">14</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -216,7 +216,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">10</div>
+      <div class="summary-num" style="color:var(--text-dim)">3</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -228,10 +228,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">7 / 17 · <strong style="color:var(--accent-green);">Phase A / B 已收完</strong></span>
+      <span style="color:var(--accent-orange);">14 / 17 · <strong style="color:var(--accent-green);">Phase A / B / C / D 已收完</strong></span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 41.2%"></div>
+      <div class="progress-bar-fill" style="width: 82.4%"></div>
     </div>
   </div>
 
@@ -635,7 +635,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 建立六筆武器文件</div>
       <div class="task-group-meta">weapons 集合</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -665,12 +665,36 @@
           <strong>誠實性（不要重蹈舊計畫書）</strong>：舊版寫「攻擊力標註『滿級觀測值待校正』」——<strong>型別沒有欄位承載這個標註</strong>，
           <code>WeaponDetailPage.tsx:300</code> 的 <code>&lt;StatCell label="攻擊力" value={weapon.attack} /&gt;</code> 照樣渲染成與其他 172 筆同格式的數值。
           → 耀星／隕星／千星的攻擊力就是<strong>以滿級觀測值填入、與基準值同格式呈現</strong>，這是<strong>已知缺陷</strong>，記入 PLAN-047，本計畫不假裝解決。
-          （旁證：諸神黃昏 DB <code>attack = 876</code> 是基準總攻擊、卡面顯示 173 是每發含加成 → 現有欄位早已在混用兩種語意。）
+          （旁證：諸神黃昏 DB <code>attack = 876</code> 是基準總攻擊、卡面顯示 173 是每發含加成 → 現有欄位早已在混用兩種語意。）<br><br>
+          <strong>◈ 執行結果 — 2026-08-10 已完成（<code>weapon_173</code> ~ <code>weapon_178</code>）</strong><br>
+          <span style="color:var(--accent-yellow);"><strong>⚠ 刻意在 Phase D 之後才寫入</strong></span>：
+          六筆一旦寫進 Firestore 就<strong>對所有人生效</strong>——新訪客冷快取直接抓 Firestore，<u>不受 bump 影響</u>——
+          若前台還沒有 D-1 的 <code>naStats</code> 渲染與 D-2 的預設排除，
+          嵐質儲能艙／多功能彈倉會顯示「<strong>彈藥量 ∞</strong>」＋ 攻擊 0、射程 0-0，正是決策七指名要避免的東西。
+          故實際順序改為 <strong>D → C</strong>：先推 Phase D（當時無任何武器帶 <code>isFixedArmament</code>，零行為改變）、
+          等 GitHub Pages 部署成功，才寫資料。<br>
+          <strong>計畫書未定、動工時補齊的欄位（依既有 172 筆的慣例推定，非臆測）</strong>：<br>
+          ・<code>kindCoefficient</code>：全庫 17 種 kind <strong>一律為 1</strong>（實質是常數）→ 三把完整武器填 1<br>
+          ・耀星「射程 1+」＝ <code>formatRange</code> 的 <code>ring</code> 分支；刀劍 <strong>7/7</strong> 皆 <code>ring</code>/0/1/<code>ammo 0</code>/<code>hit 1</code>，完全吻合<br>
+          ・隕星 <code>ammoCount 0</code>（機槍 13/13 皆 0＝∞）；千星 <code>ammoCount 3</code>（背部武器 21/21 皆 3，與卡面一致）<br>
+          ・千星 <code>minRange 1</code>（背部武器 21/21 慣例）<br>
+          ・<code>mechRestriction: 'medium'</code>：帕斯卡／破曉者-01／霸王／彌造者<strong>實測皆為「中甲」</strong>，且肩背武器 43/43 全為 medium<br>
+          ・元件插槽一律 <strong>0/0/0</strong>（固定武裝不能裝元件；<code>componentLimit === 0</code> 全庫已有 39 筆，非新值）<br>
+          ・<code>fixedMod</code>/<code>floatingMod</code> 沿用既有空殼——三個渲染點皆以 <code>?.planName &amp;&amp;</code> 為 gate，
+            全庫 172 筆 <code>planName</code> 皆為 <code>''</code>、改裝區塊從不渲染<br>
+          ・<code>icon</code> <strong>不寫</strong>：六筆圖示尚未取得（官方 API 零命中）。
+            <code>WeaponIcon.tsx:40</code> 對 <code>!icon</code> 回退為「武」佔位框，不會破圖。<br>
+          <strong>使用者 2026-08-10 另定兩項</strong>：衝擊炮射程 <strong>1-3</strong>
+          （［退敵激波］逐字「可擊退縱向 3 格<strong>範圍內</strong>所有目標 2 格」）；
+          <code>description</code> <strong>六筆全留空</strong>，之後補官方文案（<code>weapon_167</code>~<code>172</code> 同為空，有前例）。
+          <span style="color:var(--text-dim);">代價（誠實記著）：千星的「扇形 4 格」因此<strong>沒有進 DB</strong>，
+          該事實目前只存在於本計畫文件；補官方文案時要一併寫回 <code>description</code>。</span><br>
+          已 bump <strong>weapons</strong>。
         </div>
         <div class="task-file">weapons 集合 · WeaponAdmin</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -678,7 +702,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 修好帕斯卡的懸空引用</div>
       <div class="task-group-meta">modules 集合</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -688,12 +712,21 @@
           目前解不到［衝擊炮］，chip 點下去顯示「找不到對應資料」。C-1 建好武器後補上 <code>{ refType: 'weapon', refId: ... }</code>。<br>
           <span style="color:var(--text-dim);">這兩個模組的 <code>boundPart</code> 分別是 <code>["rightArm"]</code> / <code>["leftArm"]</code>，是 Q5 的證據來源之一。
           <strong>Q5 已於 2026-08-09 答覆</strong>：「會，跟手臂綁在一起，左手綁左肩、右手綁右肩」→ PLAN-047 已定案掛 <code>MechPart.fixedArmament</code>。
-          本工項<strong>不受影響</strong>：C-2 只補 <code>descriptionRefs</code>，不寫任何機甲側槽位欄位。</span>
+          本工項<strong>不受影響</strong>：C-2 只補 <code>descriptionRefs</code>，不寫任何機甲側槽位欄位。</span><br><br>
+          <strong>◈ 執行結果 — 2026-08-10 已完成</strong><br>
+          兩個模組各補 <code>衝擊炮: { refType: 'weapon', refId: 'weapon_173_衝擊炮' }</code>，
+          與 C-1 建檔<strong>同一次 batch 寫入</strong>（分兩次只會多出一段「武器已存在但引用還沒補」的不一致視窗）。
+          既有的 <code>退敵激波</code> / <code>浪潮來襲</code> 兩個引用不動。<br>
+          <strong>複驗</strong>：兩個模組的正文 token（<code>衝擊炮</code>、<code>退敵激波</code>、<code>浪潮來襲</code>）
+          與 <code>descriptionRefs</code> 的 key <strong>100% 對得上、未覆蓋 0 個</strong>，
+          且 <code>weapon_173_衝擊炮</code> 由前台判定式解析得到「衝擊炮」。
+          全庫 EntityRef 由 1905 → <strong>1907</strong>（本輪 +2），懸空<strong>仍為 0 條</strong>。
+          已 bump <strong>modules</strong>。
         </div>
         <div class="task-file">modules 集合</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -701,7 +734,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; 掛武器技能引用</div>
       <div class="task-group-meta">weapons 集合 · WeaponSkillRef</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -716,12 +749,19 @@
           <span style="color:var(--accent-yellow);"><strong>⚠ 本工項的邊界（Q1 連帶發現）：</strong></span>
           使用者確認「<strong>每一個戰術武器都有自身天生配備的主動技能</strong>」→ 這是全類通則，
           既有 <strong>43 把戰術武器</strong>（<code>shoulder</code> 22 + <code>back</code> 21）的天生主動技能<strong>全站完全未記錄</strong>。
-          <strong>本工項只掛上面兩筆，不要順手擴大範圍</strong>——那 43 筆列入承接待辦（計畫書「不在範圍內」，歸 PLAN-047 或另立）。
+          <strong>本工項只掛上面兩筆，不要順手擴大範圍</strong>——那 43 筆列入承接待辦（計畫書「不在範圍內」，歸 PLAN-047 或另立）。<br><br>
+          <strong>◈ 執行結果 — 2026-08-10 已完成</strong><br>
+          兩筆技能<strong>已在技能庫存在</strong>，無須新建：<code>skill_退敵激波</code>（指令技能 · AP1 · CD0）、
+          <code>skill_虛粒子矩陣</code>（指令技能 · AP4 · CD0），皆以 <code>WeaponSkillRef</code> 格式掛上、<code>activation: 'use'</code>。<br>
+          與 C-1 <strong>同一次寫入</strong>——<code>skills</code> 是武器文件自己的欄位，分兩次寫沒有任何好處。<br>
+          <strong>複驗</strong>：六筆逐一比對，衝擊炮與千星各恰 1 筆且 <code>skillId</code>／<code>activation</code> 相符，
+          <strong>耀星／隕星／嵐質儲能艙／多功能彈倉皆為 0 筆</strong>（未擴大範圍）。
+          線上實測衝擊炮詳情頁的「武器技能」區塊正確渲染「使用時生效 · 退敵激波 · 可擊退縱向3格範圍內所有目標2格」。
         </div>
         <div class="task-file">weapons 集合 · src/types/weapon.ts:34-56</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -736,7 +776,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; [固定武裝] badge</div>
       <div class="task-group-meta">武器卡片 / 詳情</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -744,12 +784,26 @@
         <div class="task-desc">
           比照官方美術：橘／金色標籤，與專武金框視覺區隔（兩者語意相反——專武是「可選裝的獎勵」，固定武裝是「鎖死的限制」，不可看起來一樣）。<br>
           同時處理 <code>naStats</code> 的渲染：<strong>3 處</strong>——<code>WeaponDetailPage</code> 的 StatCell 群、<code>WeaponsPage</code> 的 hover tooltip、卡片。
-          列入 <code>naStats</code> 的欄位一律顯示「<strong>—</strong>」，<strong>不得顯示數字</strong>（DB 仍存 0）。
+          列入 <code>naStats</code> 的欄位一律顯示「<strong>—</strong>」，<strong>不得顯示數字</strong>（DB 仍存 0）。<br><br>
+          <strong>◈ 執行結果 — 2026-08-10 已完成</strong><br>
+          新增 <code>src/utils/weaponStats.ts</code> 的 <code>naOr</code> / <code>isNaStat</code>，三個渲染點共用，
+          不讓它們各自實作一份判定。<strong>射程刻意整組判斷</strong>（<code>['minRange','maxRange']</code> 任一列入即不適用）——
+          否則會渲染出 <code>—-0</code> 這種半真半假的字串；射程不適用時<strong>連射程型態一併收掉</strong>，
+          不對一個不存在的射程做出「菱形」這種肯定陳述。<br>
+          badge 用<strong>鎖頭 + 橘色</strong>而非星星 + 金色：專武是「可選裝的獎勵」、固定武裝是「鎖死的限制」，
+          語意相反就不能看起來一樣。<br>
+          另加 <code>src/utils/weaponStats.test.ts</code>（5 例）把核心不變式鎖住：
+          <strong><code>naStats</code> 內的 <code>ammoCount: 0</code> 必須是「—」、既有武器的 0 仍必須是「∞」</strong>；
+          並驗證空陣列不得誤判為「全部不適用」、不做前綴／子字串比對。<code>npm test</code> 377 例全過。<br>
+          <strong>線上實測</strong>（非只跑腳本）：<code>weapon_174_嵐質儲能艙</code> 詳情頁<strong>八格全部顯示「—」，彈藥量不是 ∞</strong>；
+          <code>weapon_173_衝擊炮</code> <strong>恰五格「—」</strong>，射程 <code>1-3 菱形</code> 與彈藥量 <code>1</code> 照常顯示數值。
+          <span style="color:var(--text-dim);">已知的小瑕疵：三把「特殊／固定武裝」的 badge 列會同時出現 kind 徽章「固定武裝」與旗標徽章「🔒 固定武裝」，
+          字面重複（另三把 kind 為刀劍／機槍／粒子莢艙則不會）。純視覺、不影響正確性，待決定是否改旗標文案。</span>
         </div>
         <div class="task-file">src/pages/weapons/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -757,7 +811,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; 武器圖鑑預設排除 + 篩選開關</div>
       <div class="task-group-meta">src/pages/weapons/WeaponsPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -771,12 +825,22 @@
           <strong>不會落 fallback 9，而是安靜地混進 S 級排序區</strong>（比落 fallback 更難察覺）<br>
           開關與類型「特殊」沿用既有 <code>typeFilters</code> / <code>kindFilters</code> 的 Set 模式，<strong>不另造篩選機制</strong>。<br>
           <strong>依據（使用者原話，Q6）</strong>：「最好<strong>單獨篩選分類，平常沒事別給人直接看到</strong>，喜歡看故事的人以後再查吧」——
-          這不是我方的美觀判斷，是使用者明確要的呈現方式。
+          這不是我方的美觀判斷，是使用者明確要的呈現方式。<br><br>
+          <strong>◈ 執行結果 — 2026-08-10 已完成</strong><br>
+          <code>filtered</code> 起手排除 + 「🔒 顯示固定武裝」開關（預設關閉），沿用既有 chip 的樣式與模式，未另造篩選機制。<br>
+          <strong>順手修掉一個計畫書沒點名的洩漏</strong>：計數行的「全 N 把」原本拿 <code>weapons.length</code>，
+          開關關閉時會顯示 <strong>178</strong>——一個使用者永遠數不到的總數，等於把隱藏的六筆<strong>洩漏在括號裡</strong>。
+          改為跟著開關走的 <code>visibleTotal</code>。<br>
+          <strong>複驗（用寫入後的真實資料重跑前台判定式）</strong>：開關關閉時
+          統計 <strong>172</strong>（未變）｜搜尋「彈倉」<strong>0 筆</strong>（開啟時 1 筆 → 正是不排除就會污染搜尋的證據）｜
+          部位「肩膀」<strong>22</strong>、「背後」<strong>21</strong>（皆未變）｜
+          <strong>S 級排序區 47 筆</strong>（開啟時 53，六筆確實會安靜混進來）。<br>
+          <strong>線上實測</strong>：預設顯示「36 / <strong>172</strong> 把武器」，點開開關後變 <strong>178</strong>。
         </div>
         <div class="task-file">src/pages/weapons/WeaponsPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -784,7 +848,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; 模擬器排除固定武裝（一行）</div>
       <div class="task-group-meta">src/pages/simulator/SimulatorPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -795,12 +859,17 @@
           不做的話，PLAN-040 上線當天就製造一個新 bug。<br>
           <strong>這一行不需要任何槽位模型</strong>，所以留在 PLAN-040。<br>
           <span style="color:var(--text-dim);">⚠ 這<strong>不是</strong>舊進度表的 D-3「機甲詳情頁固定武裝區塊」——那項已移交 PLAN-047（需要槽位資料才能決定「同一把 ×2」要合併還是分槽顯示）。
-          真正的槽位 gate（<code>mechRestriction</code>、槽存在性、<code>back</code> 槽互斥、<code>:181</code> 拿 <code>'中甲'</code> 比 <code>pilot.license</code> 的 <code>'中型'</code>）同樣屬 PLAN-047。</span>
+          真正的槽位 gate（<code>mechRestriction</code>、槽存在性、<code>back</code> 槽互斥、<code>:181</code> 拿 <code>'中甲'</code> 比 <code>pilot.license</code> 的 <code>'中型'</code>）同樣屬 PLAN-047。</span><br><br>
+          <strong>◈ 執行結果 — 2026-08-10 已完成</strong><br>
+          <strong>複驗（全 63 台機甲逐台重跑判定式）</strong>：改動後可選到的固定武裝 <strong>0 筆</strong>；
+          而改動前每台<strong>最多會多出 6 筆</strong>可選——六筆的 <code>weight</code> 皆為 0 或 100，
+          純封鎖型的 0 讓 <code>w.weight &lt;= remainingOutput</code> <strong>恆為真</strong>，
+          連最輕的機甲都能選到「嵐質儲能艙」。這正是這一行擋掉的東西。
         </div>
         <div class="task-file">src/pages/simulator/SimulatorPage.tsx:187-191</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -849,7 +918,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-2 &nbsp; bump 資料版本</div>
       <div class="task-group-meta">meta/gameData</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -858,12 +927,22 @@
           <strong>weapons</strong>（C-1 新增六筆、C-3 掛技能）／<strong>modules</strong>（A-2 修 boundPart、C-2 補 descriptionRefs）／
           <strong>mechs</strong>（A-1 補 moduleFixedIds）／<strong>pilotSkills</strong>（A-4 修 <code>skill_粒子爆發</code>）／<strong>buffs</strong>（A-4 修 <code>buff_激發能</code>）。<br>
           不 bump 的話所有 client 會繼續讀 localStorage 舊快取。<br>
-          <span style="color:var(--text-dim);">舊進度表列的 glossaryTerms 本輪<strong>沒有</strong>異動——A-4 是修引用端的 refId，不是改詞條本身。</span>
+          <span style="color:var(--text-dim);">舊進度表列的 glossaryTerms 本輪<strong>沒有</strong>異動——A-4 是修引用端的 refId，不是改詞條本身。</span><br><br>
+          <strong>◈ 執行結果 — 2026-08-10 已完成（五個集合全數 bump）</strong><br>
+          實際上<strong>沒有「收尾時一次 bump」這件事</strong>——每個工項寫完就當場 bump 了它自己動到的集合，
+          因為資料一寫進去就對所有人生效，留到收尾等於讓使用者讀舊快取讀一整段時間：<br>
+          ・<strong>mechs</strong> ← A-1（補 <code>moduleFixedIds</code>）<br>
+          ・<strong>modules</strong> ← A-2（修 <code>boundPart</code>）＋ C-2（補 <code>descriptionRefs</code>）<br>
+          ・<strong>pilotSkills</strong> / <strong>buffs</strong> ← A-4（修懸空引用）<br>
+          ・<strong>weapons</strong> ← C-1／C-3（建六筆 + 掛技能）<br>
+          <span style="color:var(--accent-yellow);">⚠ 順帶記著：<strong>bump 不影響新訪客</strong>——冷快取本來就直接抓 Firestore。
+          bump 只讓<u>已有 localStorage 快取</u>的回訪者失效。所以「資料寫入」與「前台能正確渲染它」的順序，
+          不能靠延後 bump 來調節，只能靠<strong>先部署前台</strong>（本輪 D → C 的由來）。</span>
         </div>
         <div class="task-file">bumpDataVersion(key)</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
