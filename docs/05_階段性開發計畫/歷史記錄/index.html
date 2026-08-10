@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-040 · 固定武裝</h3>
+      <p>「無法更換的武器」在資料層根本不存在：帕斯卡兩個手臂模組的描述引用了［衝擊炮］，但 weapons 集合 172 筆裡沒有這把武器，而引用層<b>只檢查 token 在不在 refs、不檢查 refId 解不解析得到</b>，於是 chip 照樣可點、點下去顯示「找不到對應資料」。彌造者的耀星／隕星／千星同樣 0/172，讓 PLAN-041 機師形態第一天就會卡在「無物可引」。<br>實機查證後固定武裝從 4 種訂正為 <b>6 種</b>，多出破曉者-01 的嵐質儲能艙與霸王的多功能彈倉這兩種<b>純封鎖型</b>——無數值、無技能、遊戲連數值區塊都不渲染，唯一作用是把雙肩焊死。它們逼出本計畫最關鍵的決策 <code>naStats</code>：<code>ammoCount: 0</code> 在本站<b>已被佔用為「無限彈藥 ∞」</b>（172 筆中 129 筆靠這條規則），照舊填 0 會把「沒有彈藥」渲染成「無限彈藥」——一個<b>與遊戲相反的肯定陳述</b>；改為 DB 仍存 0、渲染層對列入 <code>naStats</code> 的欄位一律顯示「—」。<br><b>三個在動工時才浮現、計畫書沒寫的東西</b>：① <code>WeaponAdmin</code> 的種類下拉是 <code>WEAPON_KIND_BY_TYPE[type] ?? ALL_WEAPON_KINDS</code>，「特殊」無對應項會 fallback 到全部 17 種而其中<b>沒有「固定武裝」</b>——六筆在後台根本建不出來，且完全靜默；② B-3 自己列的同步清單漏了三處消費端、又點名了一處<b>不存在</b>的 icon map；③ 六筆一旦寫進 Firestore 就<b>對所有人生效</b>（新訪客冷快取直接抓 Firestore，不受 bump 影響），因此實際交付順序改為 <b>Phase D 先上線、部署完成後才寫資料</b>，否則會有一段時間顯示「彈藥量 ∞」。<br>另含四項資料衛生（修 6 筆 <code>moduleFixedIds</code> 斷鏈讓模擬器讀得到帕姆斯陣列、3 筆 <code>boundPart</code> 型別違規<b>順帶修好一個現存的後台整頁崩潰</b>、全庫僅存 2 條懸空引用、新增八類檢查的 <code>validate-module-binding.mjs</code> 長期守門）。三個死武器槽改為<b>凍結加註</b>而非刪除——取代品的形狀已知（PLAN-047 掛 <code>MechPart.fixedArmament</code>），刪了再加回來是白工。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-10 · 17 / 17 任務 · 六筆武器已上線（預設隱藏＋單獨開關）· 全庫懸空引用 2 → 0 條 · 單元測試 377 項全綠 · 每個 Phase 均以「照抄前台判定式」的獨立腳本複驗，並於線上站實測渲染 · 已知缺口：六筆圖示尚未取得（官方 API 零命中）、千星的「扇形 4 格」因 description 留空而未進 DB</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-040_固定武裝/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-040_固定武裝/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card cyan">
       <div class="card-icon">◆</div>
       <h3>PLAN-045 · 登出診斷與系統日誌</h3>
