@@ -16,6 +16,7 @@ import {
 } from '../../components/WeaponBadges'
 import { assetUrl } from '../../utils/assets'
 import { isCompositeWeapon } from '../../utils/weaponUpgrade'
+import { WeaponType, WeaponKind } from '../../types/enums'
 import type { Weapon } from '../../types'
 
 /** 「特種背包製作」badge（PLAN-031 複合武器）——熠光與裁決者數值全同、連 icon 都共用，必須有視覺區隔。 */
@@ -32,8 +33,17 @@ const PAGE_SIZE = 36
 const RARITY_ORDER: Record<string, number> = { SS: 0, 'S+': 1, S: 2, A: 3, B: 4 }
 
 const ALL_RARITIES   = ['SS', 'S+', 'S', 'A', 'B']
-const ALL_TYPES      = ['射擊', '格鬥', '突擊', '戰術']
-const ALL_KINDS      = ['大盾','手盾','刀劍','拳套','打樁機','電鋸','長柄','電磁炮','浮游炮','導彈','火箭','霰彈槍','機槍','重機槍','噴火器','輕型狙擊步槍','狙擊步槍']
+/**
+ * 圖鑑篩選器**刻意直接跟隨 enum**（PLAN-040 B-3）：圖鑑是「查得到」的那一層，
+ * 必須篩得到每一個存在的類型／種類，新增 enum 值就該自動出現在篩選列。
+ * 原本是手抄的字串陣列，加「特殊」時才發現它與 enum 早已是兩份要人工對齊的清單。
+ *
+ * ⚠ 對照組：ComponentsPage 的元件武器類型限定**不可**這樣跟隨，見 enums.ts 的
+ *   COMPONENT_WEAPON_TYPES——那裡跟隨 enum 會讓 204 個元件長出假的「限定」標籤。
+ *   「跟不跟隨 enum」要逐處判斷，不是全站一致的規則。
+ */
+const ALL_TYPES      = Object.values(WeaponType)
+const ALL_KINDS      = Object.values(WeaponKind)
 const ALL_EQUIP_SLOTS = ['singleHand', 'dualHand', 'shoulder', 'back']
 
 

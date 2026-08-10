@@ -122,10 +122,14 @@ export const WEAPON_KIND_BY_TYPE: Record<string, { value: string; label: string 
     { value: WeaponKind.Rod,            label: `長柄（${WeaponKind.Rod}）` },
   ],
   [WeaponType.Heavy]: [
-    { value: WeaponKind.RailGun,  label: `電磁炮（${WeaponKind.RailGun}）` },
-    { value: WeaponKind.Funnel,   label: `浮游炮（${WeaponKind.Funnel}）` },
-    { value: WeaponKind.Missile,  label: `導彈（${WeaponKind.Missile}）` },
-    { value: WeaponKind.Rocket,   label: `火箭（${WeaponKind.Rocket}）` },
+    { value: WeaponKind.RailGun,     label: `電磁炮（${WeaponKind.RailGun}）` },
+    { value: WeaponKind.Funnel,      label: `浮游炮（${WeaponKind.Funnel}）` },
+    { value: WeaponKind.Missile,     label: `導彈（${WeaponKind.Missile}）` },
+    { value: WeaponKind.Rocket,      label: `火箭（${WeaponKind.Rocket}）` },
+    { value: WeaponKind.ParticlePod, label: `粒子莢艙（${WeaponKind.ParticlePod}）` },
+  ],
+  [WeaponType.Special]: [
+    { value: WeaponKind.FixedArmament, label: `固定武裝（${WeaponKind.FixedArmament}）` },
   ],
   [WeaponType.Assault]: [
     { value: WeaponKind.ShotGun,         label: `霰彈槍（${WeaponKind.ShotGun}）` },
@@ -139,12 +143,15 @@ export const WEAPON_KIND_BY_TYPE: Record<string, { value: string; label: string 
   ],
 }
 
-export const ALL_WEAPON_KINDS: { value: string; label: string }[] = [
-  ...(WEAPON_KIND_BY_TYPE[WeaponType.Melee] ?? []),
-  ...(WEAPON_KIND_BY_TYPE[WeaponType.Heavy] ?? []),
-  ...(WEAPON_KIND_BY_TYPE[WeaponType.Assault] ?? []),
-  ...(WEAPON_KIND_BY_TYPE[WeaponType.Sniper] ?? []),
-]
+/**
+ * WeaponAdmin 的種類下拉在 `WEAPON_KIND_BY_TYPE[form.type] ?? ALL_WEAPON_KINDS` 用它當 fallback。
+ *
+ * ⚠ 由 WEAPON_KIND_BY_TYPE 直接攤平，**不要改回逐一列出四個類型**——
+ *   原本是手寫四行 spread，PLAN-040 新增「特殊」時它不會自己跟上，
+ *   結果是「固定武裝」在後台選不到、六筆固定武裝建不出來（靜默，tsc 抓不到）。
+ */
+export const ALL_WEAPON_KINDS: { value: string; label: string }[] =
+  Object.values(WEAPON_KIND_BY_TYPE).flat()
 
 // ── 元件常數 ──────────────────────────────────────────────────────────────────
 

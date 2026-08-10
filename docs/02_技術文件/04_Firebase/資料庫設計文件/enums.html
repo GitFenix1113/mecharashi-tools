@@ -154,6 +154,13 @@
       <div class="enum-item"><span class="enum-key">Melee</span><span class="enum-val">格鬥</span></div>
       <div class="enum-item"><span class="enum-key">Assault</span><span class="enum-val">突擊</span></div>
       <div class="enum-item"><span class="enum-key">Heavy</span><span class="enum-val">戰術</span></div>
+      <div class="enum-item"><span class="enum-key">Special</span><span class="enum-val">特殊（PLAN-040 · 固定武裝專用）</span></div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.7;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+        ⚠ <strong>「特殊」不參與 PLAN-041 形態的武器過濾</strong>——固定武裝本來就無法更換，過濾器對它沒有意義。<br>
+        ⚠ <strong>元件的 <code>allowedWeaponTypes</code> 不含「特殊」</strong>：固定武裝不能裝元件。
+        程式端請用 <code>COMPONENT_WEAPON_TYPES</code>（<code>enums.ts</code>，＝本 enum 去掉「特殊」），
+        <strong>不可</strong>直接 <code>Object.values(WeaponType)</code>。
+      </div>
     </div>
     <div class="enum-card">
       <div class="enum-name">WeaponKind — 武器種類</div>
@@ -168,12 +175,14 @@
       <div class="enum-item"><span class="enum-key">Funnel</span><span class="enum-val">浮游炮（戰術）</span></div>
       <div class="enum-item"><span class="enum-key">Missile</span><span class="enum-val">導彈（戰術）</span></div>
       <div class="enum-item"><span class="enum-key">Rocket</span><span class="enum-val">火箭（戰術）</span></div>
+      <div class="enum-item"><span class="enum-key">ParticlePod</span><span class="enum-val">粒子莢艙（戰術）· PLAN-040</span></div>
       <div class="enum-item"><span class="enum-key">ShotGun</span><span class="enum-val">霰彈槍（突擊）</span></div>
       <div class="enum-item"><span class="enum-key">MachineGun</span><span class="enum-val">機槍（突擊）</span></div>
       <div class="enum-item"><span class="enum-key">HeavyMachineGun</span><span class="enum-val">重機槍（突擊）</span></div>
       <div class="enum-item"><span class="enum-key">Flamethrower</span><span class="enum-val">噴火器（突擊）</span></div>
       <div class="enum-item"><span class="enum-key">LightSniper</span><span class="enum-val">輕型狙擊步槍（射擊）</span></div>
       <div class="enum-item"><span class="enum-key">HeavySniper</span><span class="enum-val">狙擊步槍（射擊）</span></div>
+      <div class="enum-item"><span class="enum-key">FixedArmament</span><span class="enum-val">固定武裝（特殊）· PLAN-040</span></div>
     </div>
     <div class="enum-card">
       <div class="enum-name">WeaponRarity — 武器 / 背包稀有度</div>
@@ -195,6 +204,14 @@
       <div class="enum-item"><span class="enum-key">MANHATTAN</span><span class="enum-val">manhattan（菱形射程，可打斜格）</span></div>
       <div class="enum-item"><span class="enum-key">ORTHOGONAL</span><span class="enum-val">orthogonal（十字直線，不可打斜）</span></div>
       <div class="enum-item"><span class="enum-key">RING</span><span class="enum-val">ring（環形 N 圈，Chebyshev）</span></div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.7;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+        ⚠ <strong>刻意不新增「扇形」</strong>（PLAN-040 決策十），儘管千星的射程是「扇形 4 格」：
+        三個 formatter 會靜默吃掉它（其中 <code>formatRangeType</code> 的 fallback 是回傳「菱形」，<strong>顯示錯值比空白更糟</strong>）；
+        扇形需要的朝向／張角／是否隨面向旋轉<strong>一個參數都沒有</strong>，而本站規格要求每個 <code>rangeType</code> 附計算判斷式。<br>
+        歸屬：<strong>移交傷害模擬範疇</strong>，與 <code>orthogonal</code> 的正確性一併釐清
+        （<code>orthogonal</code> 宣告了但 0/172 使用，註解寫「十字直線（電磁炮）」，實測 12 把電磁炮全是 <code>manhattan</code>）。
+        在那之前千星的 <code>rangeType</code> 沿用 <code>manhattan</code>、扇形寫在 <code>description</code>，<strong>此值已知不精確</strong>。
+      </div>
     </div>
     <div class="enum-card">
       <div class="enum-name">MechRestriction — 武器機甲限制（負向邏輯）</div>

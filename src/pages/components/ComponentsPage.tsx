@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useComponents } from '../../hooks/useFirestore'
-import { ComponentType, ComponentsWType, ItemRarity } from '../../types/enums'
+import { ComponentType, ComponentsWType, ItemRarity, COMPONENT_WEAPON_TYPES } from '../../types/enums'
 import type { Component, ConditionComponent, FunctionComponent } from '../../types'
 import { highlightNumbers } from '../../utils/moduleStats'
 import { RefText } from '../../components/RefText'
@@ -30,8 +30,6 @@ const MODULE_SUBTYPE_LABELS: Record<number, string> = {
   9: '距離相關', 10: '特殊效果', 11: '移動相關',
 }
 
-const ALL_WEAPON_TYPES = ['射擊', '格鬥', '突擊', '戰術']
-
 const RARITIES = [ItemRarity.EX, ItemRarity.S, ItemRarity.A, ItemRarity.B] as const
 
 const RARITY_ORDER: Record<string, number> = {
@@ -51,7 +49,7 @@ function isFunction(c: Component): c is FunctionComponent {
 
 function ComponentDetail({ comp }: { comp: Component }) {
   const restrictedWeapons =
-    comp.allowedWeaponTypes.length > 0 && comp.allowedWeaponTypes.length < ALL_WEAPON_TYPES.length
+    comp.allowedWeaponTypes.length > 0 && comp.allowedWeaponTypes.length < COMPONENT_WEAPON_TYPES.length
       ? comp.allowedWeaponTypes
       : null
 
@@ -339,7 +337,7 @@ export default function ComponentsPage() {
             {paginated.map((comp) => {
               const hasRestriction =
                 comp.allowedWeaponTypes.length > 0 &&
-                comp.allowedWeaponTypes.length < ALL_WEAPON_TYPES.length
+                comp.allowedWeaponTypes.length < COMPONENT_WEAPON_TYPES.length
 
               return (
                 <BossDropTooltip key={comp.id} comp={comp}>

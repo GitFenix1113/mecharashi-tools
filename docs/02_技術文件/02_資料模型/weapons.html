@@ -98,7 +98,7 @@
   <div class="hero-badge purple">◆ Data Model</div>
   <h1>weapons<span>武器資料 · WEAPON DATA</span></h1>
   <p class="hero-sub">武器屬性、射程型態、機甲限制、元件插槽、固定/浮動改裝、三種技能生效方式</p>
-  <div class="version-badge" style="background:var(--accent-purple);">UPDATED v2.1 · PLAN-007</div>
+  <div class="version-badge" style="background:var(--accent-purple);">UPDATED v2.2 · PLAN-040</div>
 </header>
 
 <main class="container">
@@ -135,12 +135,12 @@
     <div class="term-item">
       <div class="term-field">type（類型）</div>
       <div class="term-label">大分類 — WeaponType enum</div>
-      <div class="term-values">射擊 / 格鬥 / 突擊 / 戰術</div>
+      <div class="term-values">射擊 / 格鬥 / 突擊 / 戰術 / 特殊</div>
     </div>
     <div class="term-item">
       <div class="term-field">kind（種類）</div>
       <div class="term-label">細分類 — WeaponKind enum</div>
-      <div class="term-values">格鬥類 7 種 / 戰術類 4 種 / 突擊類 4 種 / 射擊類 2 種</div>
+      <div class="term-values">格鬥類 7 種 / 戰術類 5 種 / 突擊類 4 種 / 射擊類 2 種 / 特殊類 1 種</div>
     </div>
   </div>
 
@@ -156,7 +156,7 @@
 <section class="section">
   <div class="section-label purple">WeaponKind</div>
   <div class="section-title">武器種類列表（WeaponKind Enum）</div>
-  <div class="section-desc">共 17 種（格鬥類 7 種、戰術類 4 種、突擊類 4 種、射擊類 2 種），為模組條件篩選的關鍵維度。</div>
+  <div class="section-desc">共 19 種（格鬥類 7 種、戰術類 5 種、突擊類 4 種、射擊類 2 種、特殊類 1 種），為模組條件篩選的關鍵維度。</div>
 
   <div class="data-table-wrap">
     <table class="data-table">
@@ -172,16 +172,27 @@
       <tr><td>FUNNEL</td><td>浮游炮</td><td>戰術</td><td>肩膀</td></tr>
       <tr><td>MISSILE</td><td>導彈</td><td>戰術</td><td>肩膀</td></tr>
       <tr><td>ROCKET</td><td>火箭</td><td>戰術</td><td>單手</td></tr>
+      <tr><td>ParticlePod</td><td>粒子莢艙</td><td>戰術</td><td>背後</td></tr>
       <tr><td>SHOTGUN</td><td>霰彈槍</td><td>突擊</td><td>單手</td></tr>
       <tr><td>MACHINEGUN</td><td>機槍</td><td>突擊</td><td>單手</td></tr>
       <tr><td>HEAVY_MACHINEGUN</td><td>重機槍</td><td>突擊</td><td>雙手</td></tr>
       <tr><td>FLAMETHROWER</td><td>噴火器</td><td>突擊</td><td>單手</td></tr>
       <tr><td>SNIPER_LIGHT</td><td>輕型狙擊步槍</td><td>射擊</td><td>單手</td></tr>
       <tr><td>SNIPER</td><td>狙擊步槍</td><td>射擊</td><td>單手</td></tr>
+      <tr><td>FixedArmament</td><td>固定武裝</td><td>特殊</td><td>肩膀</td></tr>
     </table>
   </div>
   <div class="note-block">
     <strong>裝備部位（equipSlot）與武器種類通常有固定對應關係</strong>，但以武器本身的 equipSlot 欄位為準，種類表僅供參考。
+  </div>
+  <div class="note-block" style="border-left-color:var(--accent-orange);background:rgba(249,115,22,0.05);">
+    <strong>「粒子莢艙」與「固定武裝」是 PLAN-040 新增的兩種 kind，性質與其他 17 種不同</strong><br>
+    兩者都只服務<strong>固定武裝</strong>（無法更換的武器，全庫已窮舉 6 種）：
+    「固定武裝」對應衝擊炮／嵐質儲能艙／多功能彈倉（type 為<strong>特殊</strong>，雙肩），
+    「粒子莢艙」對應千星（type 仍為<strong>戰術</strong>，背部）。<br>
+    這些武器帶 <code>isFixedArmament: true</code>，<strong>不可被玩家配裝、不能裝元件</strong>，
+    圖鑑<strong>預設不顯示</strong>（須開啟篩選開關）。
+    <strong>元件的 <code>allowedWeaponTypes</code> 不含「特殊」</strong>，程式端請用 <code>COMPONENT_WEAPON_TYPES</code>。
   </div>
 </section>
 
@@ -214,8 +225,8 @@
       <tr><td>name</td><td>string</td><td>武器名稱（如 "昏星繼光"）</td></tr>
       <tr><td>description</td><td>string</td><td>武器背景故事文字（遊戲內裝備說明）<br><small style="color:var(--text-dim)">API: describe；腳本自動轉繁體後寫入；可為空字串</small></td></tr>
       <tr class="group-header"><td colspan="3">▎分類</td></tr>
-      <tr><td>type</td><td>WeaponType (Enum)</td><td>武器類型（大分類）：射擊 / 格鬥 / 突擊 / 戰術<br><small style="color:var(--text-dim)">原欄位名 category</small></td></tr>
-      <tr><td>kind</td><td>WeaponKind (Enum)</td><td>武器種類（細分類）：機槍 / 狙擊步槍 / 刀劍…（共 17 種，見下方種類表）<br><small style="color:var(--text-dim)">原欄位名 type</small></td></tr>
+      <tr><td>type</td><td>WeaponType (Enum)</td><td>武器類型（大分類）：射擊 / 格鬥 / 突擊 / 戰術 / <strong>特殊</strong><br><small style="color:var(--text-dim)">原欄位名 category；「特殊」為 PLAN-040 新增，僅固定武裝使用，<strong>不進元件的 allowedWeaponTypes</strong></small></td></tr>
+      <tr><td>kind</td><td>WeaponKind (Enum)</td><td>武器種類（細分類）：機槍 / 狙擊步槍 / 刀劍…（共 19 種，見下方種類表）<br><small style="color:var(--text-dim)">原欄位名 type；PLAN-040 新增「粒子莢艙」（戰術）與「固定武裝」（特殊）</small></td></tr>
       <tr><td>kindCoefficient</td><td>number</td><td>武器種類係數（狙擊步槍 = 5.92）<br><small style="color:var(--text-dim)">原欄位名 typeCoefficient</small></td></tr>
       <tr class="group-header"><td colspan="3">▎基礎屬性</td></tr>
       <tr><td>attack</td><td>number</td><td>攻擊力數值（整數）<br><small style="color:var(--text-dim)">API: WeaponBasicAttackingPower（清單 / detail 端點皆有）→ parseInt；原為 string 型，PLAN-007 修正後改為 number</small></td></tr>
@@ -234,6 +245,10 @@
       <tr class="group-header"><td colspan="3">▎專屬武器</td></tr>
       <tr><td>isExclusive</td><td>boolean</td><td>是否為專屬武器（SS 稀有度）</td></tr>
       <tr><td>exclusiveFor</td><td>string?</td><td>主要對應機師 ID（專武天賦加強對象）</td></tr>
+      <tr class="group-header"><td colspan="3">▎固定武裝（PLAN-040）</td></tr>
+      <tr><td>isFixedArmament</td><td>boolean?</td><td><strong>無法更換的武器</strong>。已窮舉 6 種：衝擊炮（帕斯卡）／嵐質儲能艙（破曉者-01）／多功能彈倉（霸王）／耀星・隕星・千星（彌造者 · 海莉絲虛粒子形態）。<br><small style="color:var(--text-dim)">供 badge 渲染與圖鑑／模擬器過濾；<strong>不編碼「來源」也不編碼「佔哪個槽」</strong>，箭頭永遠是「來源 → 武器」。槽位歸屬見 PLAN-047。<br>⚠ 命名刻意避開 <code>fixedMod</code>（固定改裝）；<strong>不可</strong>複用 <code>isExclusive</code> / <code>exclusiveFor</code>——那是「可選裝的機師專武」，語意相反，且會被渲染成金框專武並破壞 <code>isExclusive ⇔ rarity === 'SS'</code> 的不變式。</small></td></tr>
+      <tr><td>manual</td><td>boolean?</td><td>手建文件保護旗標。官方 API / WIKI 無這六筆、100% 手動維護，補丁腳本應略過。<br><small style="color:var(--text-dim)">對照 mechs.html / pilots 的同名欄位</small></td></tr>
+      <tr><td>naStats</td><td>string[]?</td><td><strong>不適用</strong>的數值欄位 key 清單；渲染層對列入者一律顯示「—」，不顯示數字（DB 仍存 0）。<br><small style="color:var(--text-dim)"><strong>為什麼不直接填 0</strong>：<code>ammoCount === 0</code> 已被佔用為「無限彈藥 ∞」（172 筆中 129 筆靠此規則），填 0 會把「沒有彈藥」渲染成「無限彈藥」。旁證安全：全庫 <code>attack === 0</code> 與 <code>weight === 0</code> 皆 0 筆。<br>⚠ 只標「<strong>不適用</strong>」，不標「<strong>未知</strong>」——衝擊炮的 <code>ammoCount: 1</code> 與射程 3 是真值，<strong>不得</strong>列入。<br>定案值：衝擊炮 = <code>['attack','accuracy','critValue','weight','kindCoefficient']</code>；嵐質儲能艙／多功能彈倉 = 全部數值欄位；耀星／隕星／千星 = 不需要。</small></td></tr>
       <tr class="group-header"><td colspan="3">▎元件插槽</td></tr>
       <tr><td>triggerSlots</td><td>number</td><td>觸元件插槽數量</td></tr>
       <tr><td>effectSlots</td><td>number</td><td>應元件插槽數量</td></tr>

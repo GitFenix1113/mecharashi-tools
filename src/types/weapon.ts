@@ -145,4 +145,51 @@ export interface Weapon {
   skills: (WeaponSkillRef | WeaponSkill)[]    // API: PassiveSkill[]
   /** 製作／進階關係（PLAN-031）。有值 = 由 upgrade.fromWeaponId 製作而來；不影響本武器的儲存集合／refType。 */
   upgrade?: WeaponUpgrade
+
+  /**
+   * [固定武裝]：無法更換的武器（PLAN-040）。
+   *
+   * 已窮舉 6 種（2026-08-09 使用者確認，就目前遊戲版本而言即為全部）：
+   *   衝擊炮（帕斯卡）、嵐質儲能艙（破曉者-01）、多功能彈倉（霸王）、
+   *   耀星／隕星／千星（彌造者 · 海莉絲虛粒子形態）。
+   *
+   * 純粹供 badge 渲染 + 圖鑑／模擬器過濾，**不編碼「來源」也不編碼「佔哪個槽」**。
+   * 三種來源（部件／機師形態／機甲底盤）一律由來源端指向武器，箭頭永不反向。
+   *
+   * ⚠ 命名刻意避開既有的 fixedMod（:126「固定改裝」）——
+   *    同一個 interface 上同時有 fixed(固定武裝) 與 fixedMod(固定改裝) 是維護地雷。
+   * ⚠ 【不要】複用 isExclusive(:120) / exclusiveFor(:121)：那是「機師專武、可選裝、SS、強化天賦」，
+   *    與固定武裝「強制、鎖死、無法更換」語意相反；且 exclusiveFor 被 useFirestore.ts 與
+   *    PilotsPage.tsx 當「機師→專武」索引消費，塞進去會被渲染成金框專武，
+   *    並破壞 isExclusive ⇔ rarity === 'SS' 的既有不變式。
+   * ⚠ 槽位歸屬（誰佔了哪個肩／背槽）**不在這裡**，見 PLAN-047（掛 MechPart.fixedArmament）。
+   */
+  isFixedArmament?: boolean
+
+  /**
+   * 手建文件保護旗標。官方 API / WIKI 無這六筆資料、100% 手動維護，補丁腳本應略過。
+   * weapon.ts 原本是唯一缺此旗標的主要型別（對照 mech.ts / pilot.ts 皆已有）。
+   */
+  manual?: boolean
+
+  /**
+   * 不適用的數值欄位 key 清單；渲染層對列入者一律顯示「—」，不顯示數字（DB 仍存 0）。
+   *
+   * **為什麼不直接填 0**：ammoCount === 0 在本專案已被佔用為「無限彈藥 ∞」
+   * （WeaponsPage.tsx / WeaponDetailPage.tsx 皆為 `ammoCount === 0 ? '∞'`，172 筆中 129 筆靠這條規則），
+   * 填 0 會讓「沒有彈藥」被渲染成「無限彈藥」——與遊戲相反的**肯定陳述**。
+   * 旁證此值安全：全庫 attack === 0 與 weight === 0 皆 0 筆，0 對這兩欄是從未出現過的值。
+   *
+   * **為什麼不把必填改選填**：至少 9 處渲染點要補 `??`，且讓 172 筆正常武器永遠帶一個
+   * undefined 分支，只為服務 2 筆。
+   *
+   * ⚠ 本欄只標「**不適用**」，不標「**未知**」。反例：衝擊炮的 ammoCount: 1 是真彈藥
+   *   （可由戰術家［裝填］補充），**不得**因為「看起來像技能次數」而列進來；射程 3 同理。
+   *
+   * 定案值（PLAN-040 C-1）：
+   *   衝擊炮 → ['attack','accuracy','critValue','weight','kindCoefficient']
+   *   嵐質儲能艙 / 多功能彈倉 → 全部數值欄位（遊戲連數值區塊都不渲染）
+   *   耀星 / 隕星 / 千星 → 不需要
+   */
+  naStats?: string[]
 }

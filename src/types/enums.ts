@@ -95,8 +95,41 @@ export const WeaponType = {
   Melee:    '格鬥',
   Assault:  '突擊',
   Heavy: '戰術',
+  /**
+   * 固定武裝專用（PLAN-040）。衝擊炮／嵐質儲能艙／多功能彈倉的官方 type 即為「特殊」。
+   *
+   * ⚠ 「特殊」**不參與 PLAN-041 形態的武器過濾**——固定武裝本來就無法更換，過濾器對它沒有意義。
+   *    PLAN-041 的核心論證之一是「三個戰鬥形態的『只能裝備 X 武器』把 WeaponType 做成
+   *    無重疊無遺漏的 partition（先鋒=格鬥+射擊 / 突擊=突擊 / 戰術=戰術）」，
+   *    加入本值後那個 partition 不再完整，正確表述是「特殊不參與過濾」而非「partition 壞了」。
+   */
+  Special: '特殊',
 } as const;
 export type WeaponType = typeof WeaponType[keyof typeof WeaponType];
+
+/**
+ * 元件可限定的武器類型 = WeaponType **去掉「特殊」**（PLAN-040 決策九）。
+ *
+ * ⚠ **刻意不與 WeaponType 同步，這不是漏更新。** 固定武裝不能裝元件，
+ *    把「特殊」放進來會同時造成兩個問題：
+ *
+ *  (a) **前台全站規模的顯示回歸**：ComponentsPage 用
+ *      `comp.allowedWeaponTypes.length < <本清單>.length` 當「是否有限定」的判準。
+ *      實測 208 筆元件的長度分布為 {1: 4, 4: 204}，長度 4 者正是這四個值 →
+ *      本清單一旦變成 5 值，`4 < 5` 為真，**204 個元件立刻全部長出「限定：射擊・格鬥・突擊・戰術」標籤**。
+ *      純顯示但全站規模，且 tsc 與 eslint 都抓不到。
+ *  (b) **後台寫入污染**：ComponentAdmin 的新建預設值、勾選清單與「全選」按鈕若用
+ *      Object.values(WeaponType)，新建或重存的元件會拿到含「特殊」的 5 值，
+ *      與「固定武裝不能裝元件」的遊戲事實直接矛盾。
+ *
+ * 新增 WeaponType 值時請一併判斷該值是否屬於「可裝元件的武器類型」，而不是機械式同步。
+ */
+export const COMPONENT_WEAPON_TYPES: readonly string[] = [
+  WeaponType.Sniper,
+  WeaponType.Melee,
+  WeaponType.Assault,
+  WeaponType.Heavy,
+];
 
 // 種類
 export const WeaponKind = {
@@ -113,6 +146,7 @@ export const WeaponKind = {
   Funnel:           '浮游炮',
   Missile:          '導彈',
   Rocket:           '火箭',
+  ParticlePod:      '粒子莢艙',   // 千星（彌造者·海莉絲虛粒子形態）· PLAN-040
   // 突擊類
   ShotGun:          '霰彈槍',
   MachineGun:       '機槍',
@@ -121,6 +155,8 @@ export const WeaponKind = {
   // 射擊類
   LightSniper:     '輕型狙擊步槍',
   HeavySniper:           '狙擊步槍',
+  // 特殊類（PLAN-040）
+  FixedArmament:    '固定武裝',   // 衝擊炮 / 嵐質儲能艙 / 多功能彈倉，官方 kind 即此值
 } as const;
 export type WeaponKind = typeof WeaponKind[keyof typeof WeaponKind];
 
@@ -132,6 +168,21 @@ export const WeaponEquipSlot = {
 } as const;
 export type WeaponEquipSlot = typeof WeaponEquipSlot[keyof typeof WeaponEquipSlot];
 
+/**
+ * ⚠ **刻意不新增「扇形」**（PLAN-040 決策十），儘管千星的射程是「扇形 4 格」。三個理由：
+ *  1. 三個 formatter 會靜默吃掉它，其中一個還顯示錯值：WeaponsPage 的 formatRangeType
+ *     fallback 是 `return '菱形'`（**顯示錯值比空白更糟**）、卡片的 map 對未知 key 回 undefined、
+ *     WeaponDetailPage 的 RANGE_TYPE_LABELS 同樣查不到。
+ *  2. 扇形需要的參數（朝向／張角／是否隨機甲面向旋轉）**一個都沒有**，現有型別只有
+ *     minRange / maxRange 兩個 scalar；而資料模型文件明文要求每個 rangeType 附計算判斷式，
+ *     加一個算不出來的值等於違反自家規格。
+ *  3. 既有 orthogonal 本身就存疑（宣告了但 0/172 使用，註解寫「十字直線（電磁炮）」，
+ *     實測 12 把電磁炮全是 manhattan）——在已知有殭屍值的維度上疊加第四值不妥。
+ *
+ * 歸屬（Q3 已答）：扇形是「之前沒有定義的一種攻擊方式」，**與傷害模擬有關** →
+ * 移交傷害模擬範疇（非 PLAN-040 也非 PLAN-047 主線），與 orthogonal 的正確性一併釐清。
+ * 在那之前，千星的 rangeType 沿用 manhattan、扇形特性寫在 description，**此值已知不精確**。
+ */
 export const RangeType = {
   MANHATTAN:  'manhattan',  // 菱形射程：Manhattan 距離，可打斜格。攻擊格：|dx|+|dy| ∈ [minRange, maxRange]
   ORTHOGONAL: 'orthogonal', // 十字直線：只能上下左右，不可打斜格（電磁炮）。攻擊格：(dx=0 XOR dy=0) AND |dx|+|dy| ∈ [minRange, maxRange]

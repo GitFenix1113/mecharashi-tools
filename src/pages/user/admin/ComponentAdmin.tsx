@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import type { Component, ComponentBase, ConditionComponent, FunctionComponent, StageDrop } from '../../../types'
 import {
-  ComponentType, ConditionType, EffectType, ModuleSubtype, ItemRarity, WeaponType, ComponentsWType,
+  ComponentType, ConditionType, EffectType, ModuleSubtype, ItemRarity, ComponentsWType,
+  COMPONENT_WEAPON_TYPES,
 } from '../../../types/enums'
 import { assetUrl } from '../../../utils/assets'
 import { getBossImagePath } from '../../../data/bossDrops'
@@ -27,7 +28,9 @@ function makeDefaultComponent(id: string, name = ''): Component {
     moduleSubtype: ModuleSubtype.ATTACK_METHOD,
     probabilityLevel: 1,
     description: '',
-    allowedWeaponTypes: Object.values(WeaponType),
+    // ⚠ 用 COMPONENT_WEAPON_TYPES 而非 Object.values(WeaponType)：後者含「特殊」，
+    //   會讓新建的元件宣稱可裝在固定武裝上（見 enums.ts 的 COMPONENT_WEAPON_TYPES）
+    allowedWeaponTypes: [...COMPONENT_WEAPON_TYPES],
     rarity: ItemRarity.A,
     icon: undefined,
     iconLocal: undefined,
@@ -365,7 +368,7 @@ function ComponentEditPanel({
 
         <Field label="允許裝備的武器種類 allowedWeaponTypes（空 = 不限）">
           <div className="flex flex-wrap gap-4 mt-1">
-            {Object.values(WeaponType).map((wt) => {
+            {COMPONENT_WEAPON_TYPES.map((wt) => {
               const checked = (form.allowedWeaponTypes ?? []).includes(wt)
               return (
                 <label key={wt} className="flex items-center gap-1.5 text-sm cursor-pointer hover:text-text-primary">
@@ -377,7 +380,7 @@ function ComponentEditPanel({
           </div>
           <button
             className="text-[13px] text-accent-cyan mt-1.5"
-            onClick={() => updateBase('allowedWeaponTypes', Object.values(WeaponType))}
+            onClick={() => updateBase('allowedWeaponTypes', [...COMPONENT_WEAPON_TYPES])}
           >全選</button>
         </Field>
 

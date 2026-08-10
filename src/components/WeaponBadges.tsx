@@ -5,6 +5,10 @@ const WEAPON_TYPE_CONFIG: Record<string, string> = {
   格鬥: 'text-accent-red    bg-accent-red/10    border-accent-red/30',
   突擊: 'text-accent-orange bg-accent-orange/10 border-accent-orange/30',
   戰術: 'text-accent-purple bg-accent-purple/10 border-accent-purple/30',
+  // 固定武裝專用（PLAN-040）。刻意明列而非吃下方 fallback：
+  // fallback 是給「未知／壞資料」的樣式，讓已知的「特殊」與未知同色，
+  // 等於把一個正常值渲染成看起來像壞掉的值。
+  特殊: 'text-accent-yellow bg-accent-yellow/10 border-accent-yellow/30',
 }
 
 export function WeaponTypeBadge({ type, className = '' }: { type: string; className?: string }) {
