@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-09
+## [Unreleased] - 2026-08-10
 
 ### ⚠ 重大變更
 
@@ -233,6 +233,7 @@
 
 ### 🔧 維護
 
+- 武器型別與 enum 擴充，補上固定武裝的表達能力（PLAN-040 Phase B） (`20809e2`)
 - 更新圖檔清單 manifest.json（納入新背包技能圖示） (`a76abde`)
 - 補上背包技能圖示 Icon_skill_passive_威能者驅動.png (`362709b`)
 - PLAN-032 follow-up 1a/1b — 清掉技能庫的重複 doc 並堵住產生源 (`4afb65f`)
