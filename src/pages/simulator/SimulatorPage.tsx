@@ -187,7 +187,15 @@ export default function SimulatorPage() {
   const getFilteredWeapons = useCallback(() => {
     if (!data || !selectedMech) return data?.weapons ?? []
     const remainingOutput = selectedMech.output - selectedMech.weight
-    return data.weapons.filter((w) => w.weight <= remainingOutput)
+    return data.weapons.filter((w) => {
+      // 固定武裝無法更換，本來就不是玩家配裝的選項（PLAN-040 決策八）。
+      // ⚠ 這一行不能省：純封鎖型的 weight 為 0，下面那條唯一的規則
+      //    `w.weight <= remainingOutput` 對它**恆為真** →
+      //    玩家能幫任何輕型機甲選「嵐質儲能艙」當主武器。
+      //    真正的槽位 gate（mechRestriction、equipSlot 槽存在性、back 槽互斥）屬 PLAN-047。
+      if (w.isFixedArmament) return false
+      return w.weight <= remainingOutput
+    })
   }, [data, selectedMech])
 
   const getFilteredBackpacks = useCallback(() => {

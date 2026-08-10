@@ -8,10 +8,12 @@ import {
   WeaponTypeBadge,
   WeaponEquipSlotBadge,
   WeaponMechRestrictionBadge,
+  FixedArmamentBadge,
 } from '../../components/WeaponBadges'
 import { WeaponSkillCard } from '../../components/WeaponSkillCard'
 import { buildUpgradeIndex, deriveFusedSkillNames, isCompositeWeapon } from '../../utils/weaponUpgrade'
 import { resolveWeaponSkills } from '../../utils/weaponSkills'
+import { naOr, isNaStat } from '../../utils/weaponStats'
 import type { Weapon } from '../../types'
 
 // ── Labels & formatters ───────────────────────────────────────────────────────
@@ -210,6 +212,7 @@ export default function WeaponDetailPage() {
                 <WeaponEquipSlotBadge slot={weapon.equipSlot} />
                 <WeaponMechRestrictionBadge restriction={weapon.mechRestriction} />
                 {isCompositeWeapon(weapon) && <CompositeBadge />}
+                {weapon.isFixedArmament && <FixedArmamentBadge />}
               </div>
 
               {weapon.isExclusive && pilot && weapon.exclusiveFor && (
@@ -297,21 +300,22 @@ export default function WeaponDetailPage() {
       <div className="bg-bg-card border border-border rounded-xl p-5">
         <SectionHeading>基礎屬性</SectionHeading>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <StatCell label="攻擊力"   value={weapon.attack} />
-          <StatCell label="命中"     value={weapon.accuracy.toLocaleString()} />
-          <StatCell label="暴擊"     value={weapon.critValue.toLocaleString()} />
-          <StatCell label="重量"     value={weapon.weight} />
+          <StatCell label="攻擊力"   value={naOr(weapon, 'attack', weapon.attack)} />
+          <StatCell label="命中"     value={naOr(weapon, 'accuracy', weapon.accuracy.toLocaleString())} />
+          <StatCell label="暴擊"     value={naOr(weapon, 'critValue', weapon.critValue.toLocaleString())} />
+          <StatCell label="重量"     value={naOr(weapon, 'weight', weapon.weight)} />
           <StatCell
             label="射程"
-            value={formatRange(weapon)}
-            sub={RANGE_TYPE_LABELS[weapon.rangeType]}
+            value={naOr(weapon, ['minRange', 'maxRange'], formatRange(weapon))}
+            /* 射程不適用時連射程型態一起收掉——否則會出現「射程 — / 菱形」這種半真半假的組合 */
+            sub={isNaStat(weapon, ['minRange', 'maxRange']) ? undefined : RANGE_TYPE_LABELS[weapon.rangeType]}
           />
           <StatCell
             label="彈藥量"
-            value={weapon.ammoCount === 0 ? '∞' : weapon.ammoCount}
+            value={naOr(weapon, 'ammoCount', weapon.ammoCount === 0 ? '∞' : weapon.ammoCount)}
           />
-          <StatCell label="連擊數"   value={weapon.hitCount} />
-          <StatCell label="種類係數" value={weapon.kindCoefficient.toFixed(2)} />
+          <StatCell label="連擊數"   value={naOr(weapon, 'hitCount', weapon.hitCount)} />
+          <StatCell label="種類係數" value={naOr(weapon, 'kindCoefficient', weapon.kindCoefficient.toFixed(2))} />
         </div>
       </div>
 

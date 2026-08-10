@@ -20,6 +20,26 @@ export function WeaponTypeBadge({ type, className = '' }: { type: string; classN
   )
 }
 
+// ── Fixed Armament（PLAN-040）─────────────────────────────────────────────────
+
+/**
+ * [固定武裝] 標記：無法更換的武器。
+ *
+ * ⚠ 必須與專武（isExclusive）的金框 + ⭐ **視覺可辨**——兩者語意相反：
+ *   專武是「可選裝的獎勵」，固定武裝是「鎖死的限制」。看起來一樣會讓使用者
+ *   把限制誤讀成獎勵，所以這裡用鎖頭而非星星、橘色而非金色。
+ */
+export function FixedArmamentBadge({ className = '' }: { className?: string }) {
+  return (
+    <span
+      className={`px-2 py-0.5 rounded text-[13px] font-bold border text-accent-orange bg-accent-orange/10 border-accent-orange/30 ${className}`}
+      title="固定武裝：無法更換、不可裝元件"
+    >
+      🔒 固定武裝
+    </span>
+  )
+}
+
 // ── Equip Slot ────────────────────────────────────────────────────────────────
 
 const EQUIP_SLOT_CONFIG: Record<string, { label: string; className: string }> = {

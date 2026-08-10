@@ -13,9 +13,11 @@ import {
   MECH_RESTRICTION_LABELS,
   ACTIVATION_CONFIG,
   ACTIVATION_LABELS,
+  FixedArmamentBadge,
 } from '../../components/WeaponBadges'
 import { assetUrl } from '../../utils/assets'
 import { isCompositeWeapon } from '../../utils/weaponUpgrade'
+import { naOr, isNaStat } from '../../utils/weaponStats'
 import { WeaponType, WeaponKind } from '../../types/enums'
 import type { Weapon } from '../../types'
 
@@ -102,16 +104,18 @@ function WeaponTooltipContent({ weapon, pilotMap }: {
   // 使用者看到的是「這把武器沒有技能」——與事實相反且沒有任何提示。
   // 有掛載條目但解析不到 → 顯示載入中，而不是消失。
   const skillsPending = skillsLoading && (weapon.skills?.length ?? 0) > 0 && skills.length === 0
+  const rangeNa = isNaStat(weapon, ['minRange', 'maxRange'])
   const stats: Array<{ label: string; value: string; noRed?: boolean }> = [
-    { label: '攻擊力',  value: weapon.attack.toLocaleString() },
-    { label: '命中',    value: weapon.accuracy.toLocaleString() },
-    { label: '暴擊',    value: weapon.critValue.toLocaleString() },
-    { label: '重量',    value: weapon.weight.toString() },
-    { label: '射程',    value: formatRange(weapon) },
-    { label: '射程型態',value: formatRangeType(weapon.rangeType), noRed: true },
-    { label: '連擊數',  value: weapon.hitCount.toString() },
-    { label: '彈藥量',  value: weapon.ammoCount === 0 ? '∞' : weapon.ammoCount.toString() },
-    { label: '種類係數',value: weapon.kindCoefficient.toFixed(2) },
+    { label: '攻擊力',  value: naOr(weapon, 'attack', weapon.attack.toLocaleString()) },
+    { label: '命中',    value: naOr(weapon, 'accuracy', weapon.accuracy.toLocaleString()) },
+    { label: '暴擊',    value: naOr(weapon, 'critValue', weapon.critValue.toLocaleString()) },
+    { label: '重量',    value: naOr(weapon, 'weight', weapon.weight.toString()) },
+    { label: '射程',    value: naOr(weapon, ['minRange', 'maxRange'], formatRange(weapon)) },
+    // 射程不適用時整列收掉，而不是顯示「射程型態 菱形」——那會是對一個不存在的射程做出的肯定陳述
+    ...(rangeNa ? [] : [{ label: '射程型態', value: formatRangeType(weapon.rangeType), noRed: true }]),
+    { label: '連擊數',  value: naOr(weapon, 'hitCount', weapon.hitCount.toString()) },
+    { label: '彈藥量',  value: naOr(weapon, 'ammoCount', weapon.ammoCount === 0 ? '∞' : weapon.ammoCount.toString()) },
+    { label: '種類係數',value: naOr(weapon, 'kindCoefficient', weapon.kindCoefficient.toFixed(2)) },
     { label: '裝備部位',value: EQUIP_SLOT_LABELS[weapon.equipSlot] ?? weapon.equipSlot, noRed: true },
     ...(weapon.mechRestriction !== 'none'
       ? [{ label: '機甲限制', value: MECH_RESTRICTION_LABELS[weapon.mechRestriction] ?? weapon.mechRestriction, noRed: true }]
@@ -130,6 +134,7 @@ function WeaponTooltipContent({ weapon, pilotMap }: {
           </div>
           <div className="text-[13px] text-text-dim mt-0.5">{weapon.type} · {weapon.kind}</div>
           {isCompositeWeapon(weapon) && <div className="mt-1"><CompositeBadge /></div>}
+          {weapon.isFixedArmament && <div className="mt-1"><FixedArmamentBadge /></div>}
           {pilot && weapon.exclusiveFor && (
             <ExclusivePilotLink
               pilotId={weapon.exclusiveFor}
@@ -306,9 +311,18 @@ export default function WeaponsPage() {
   const [typeFilters, setTypeFilters]         = useState<Set<string>>(new Set())
   const [kindFilters, setKindFilters]         = useState<Set<string>>(new Set())
   const [equipSlotFilter, setEquipSlotFilter] = useState<string | null>(null)
+  /**
+   * 固定武裝**預設不顯示**（PLAN-040 決策八，使用者原話：「最好單獨篩選分類，
+   * 平常沒事別給人直接看到，喜歡看故事的人以後再查吧」）。
+   * 這不是美觀問題——不排除的話，六筆會污染下面每一條計算：總數統計、
+   * 搜尋（吃 name + kind，搜「彈倉」會跳出不是武器的東西）、部位篩選計數、
+   * 以及稀有度排序（六筆 rarity 皆為 'S'，RARITY_ORDER 有 S: 2 → 不會落 fallback，
+   * 而是**安靜地混進 S 級排序區**，比落 fallback 更難察覺）。
+   */
+  const [showFixedArmament, setShowFixedArmament] = useState(false)
   const [displayCount, setDisplayCount]       = useState(PAGE_SIZE)
 
-  useEffect(() => { setDisplayCount(PAGE_SIZE) }, [search, rarityFilters, typeFilters, kindFilters, equipSlotFilter])
+  useEffect(() => { setDisplayCount(PAGE_SIZE) }, [search, rarityFilters, typeFilters, kindFilters, equipSlotFilter, showFixedArmament])
 
   const isMobile = useIsMobile()
   const [hoverTooltip, setHoverTooltip] = useState<TooltipState | null>(null)
@@ -327,6 +341,8 @@ export default function WeaponsPage() {
 
   const filtered = weapons
     .filter((w) => {
+      // 起手就排除，不可只靠 badge 補救——badge 是視覺提示，管不到統計／搜尋／計數／排序
+      if (!showFixedArmament && w.isFixedArmament)                  return false
       if (rarityFilters.size > 0 && !rarityFilters.has(w.rarity))   return false
       if (typeFilters.size > 0   && !typeFilters.has(w.type))       return false
       if (kindFilters.size > 0   && !kindFilters.has(w.kind))       return false
@@ -338,6 +354,9 @@ export default function WeaponsPage() {
       return true
     })
     .sort((a, b) => (RARITY_ORDER[a.rarity] ?? 9) - (RARITY_ORDER[b.rarity] ?? 9))
+
+  /** 「全 N 把」的基數：只套用固定武裝開關，不套用其他篩選條件 */
+  const visibleTotal = showFixedArmament ? weapons.length : weapons.filter((w) => !w.isFixedArmament).length
 
   const paginated = filtered.slice(0, displayCount)
 
@@ -479,13 +498,25 @@ export default function WeaponsPage() {
             >{EQUIP_SLOT_LABELS[s]}</button>
           ))}
         </div>
+
+        {/* 固定武裝 – 單獨開關，預設關閉（決策八） */}
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span className="text-xs text-text-dim mr-1 w-10 flex-shrink-0">特殊</span>
+          <button
+            className={filterBtn(showFixedArmament)}
+            onClick={() => setShowFixedArmament((v) => !v)}
+            title="固定武裝＝無法更換的武器（如帕斯卡的衝擊炮）。預設不列入圖鑑統計與排序。"
+          >🔒 顯示固定武裝</button>
+        </div>
       </div>
 
       {/* Count */}
       {!loading && (
         <p className="text-xs text-text-dim mb-4">
           顯示 <Num className="text-xs">{Math.min(displayCount, filtered.length)}</Num> / {filtered.length} 把武器
-          {filtered.length !== weapons.length && <span className="ml-1">（全 {weapons.length} 把）</span>}
+          {/* 基數必須跟著開關走：拿含固定武裝的 weapons.length 當「全 N 把」，
+              開關關閉時會顯示一個使用者永遠數不到的總數，等於把隱藏的六筆洩漏在括號裡 */}
+          {filtered.length !== visibleTotal && <span className="ml-1">（全 {visibleTotal} 把）</span>}
         </p>
       )}
 
@@ -533,6 +564,7 @@ export default function WeaponsPage() {
                         {w.type}·{w.kind}
                       </span>
                       {isCompositeWeapon(w) && <CompositeBadge />}
+                      {w.isFixedArmament && <FixedArmamentBadge />}
                       {w.isExclusive && pilot && w.exclusiveFor && (
                         <ExclusivePilotLink
                           pilotId={w.exclusiveFor}
@@ -549,20 +581,22 @@ export default function WeaponsPage() {
                 <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[14px]">
                   <div>
                     <span className="text-text-dim">射 </span>
-                    <Num>{formatRange(w)}</Num>
-                    <span className="text-text-dim text-[12px] ml-0.5">{{ manhattan: '(菱)', orthogonal: '(直)', ring: '(圈)' }[w.rangeType]}</span>
+                    <Num>{naOr(w, ['minRange', 'maxRange'], formatRange(w))}</Num>
+                    {!isNaStat(w, ['minRange', 'maxRange']) && (
+                      <span className="text-text-dim text-[12px] ml-0.5">{{ manhattan: '(菱)', orthogonal: '(直)', ring: '(圈)' }[w.rangeType]}</span>
+                    )}
                   </div>
                   <div>
                     <span className="text-text-dim">重 </span>
-                    <Num>{w.weight}</Num>
+                    <Num>{naOr(w, 'weight', w.weight)}</Num>
                   </div>
                   <div>
                     <span className="text-text-dim">命中 </span>
-                    <Num>{w.accuracy.toLocaleString()}</Num>
+                    <Num>{naOr(w, 'accuracy', w.accuracy.toLocaleString())}</Num>
                   </div>
                   <div>
                     <span className="text-text-dim">暴擊 </span>
-                    <Num>{w.critValue.toLocaleString()}</Num>
+                    <Num>{naOr(w, 'critValue', w.critValue.toLocaleString())}</Num>
                   </div>
                   {w.hitCount > 1 && (
                     <div className="col-span-2">
