@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 六筆固定武裝進圖鑑，預設隱藏＋單獨開關（PLAN-040 Phase C） (`6e8cd46`)
 - 登出診斷把 IndexedDB 的「不見」拆成三態（PLAN-045） (`ee68c5c`)
 - 登出診斷追加 persistence 降級探針與登入心跳（PLAN-045） (`79eb6d1`)
 - 使用統計後台儀表板（PLAN-046 Phase B） (`eab2c8f`)
