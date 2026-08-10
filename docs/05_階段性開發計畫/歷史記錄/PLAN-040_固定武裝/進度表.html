@@ -185,7 +185,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-040 進度表</span>
   </div>
@@ -236,9 +236,17 @@
   </div>
 
   <div class="impact-note">
-    <strong>目標效果：</strong>
-    帕斯卡的［衝擊炮］引用修好、<strong>六筆</strong>固定武裝進圖鑑（預設不混入 172 筆統計）、模擬器讀得到帕姆斯陣列且不再讓玩家選到固定武裝，
-    並替 PLAN-041 機師形態備妥可引用的耀星／隕星／千星三筆武器實體。
+    <strong>✅ 已於 2026-08-10 全數完成並歸檔（17/17）。</strong><br>
+    帕斯卡的［衝擊炮］引用已修好（可點進武器頁）、<strong>六筆</strong>固定武裝已上線（預設隱藏 + 單獨開關，關閉時統計／搜尋／部位計數／稀有度排序<strong>完全等同於改動前</strong>）、
+    模擬器讀得到帕姆斯陣列且<strong>全 63 台機甲都選不到固定武裝</strong>，
+    PLAN-041 需要的耀星／隕星／千星三筆武器實體已就位、PLAN-047 的武器層前置亦已備齊。<br>
+    全庫懸空引用 <strong>2 → 0 條</strong>；<code>weapons</code> 172 → 178 筆；五個異動集合版本全數 bump；單元測試 377 項全綠。<br>
+    <strong>驗證方式</strong>：每個 Phase 都另寫一支<strong>照抄前台判定式</strong>的獨立腳本複驗（不採用補丁腳本自檢），
+    並在線上站實測實際渲染——確認嵐質儲能艙八格全「—」且<strong>彈藥量不是 ∞</strong>、衝擊炮恰五格「—」而射程與彈藥量照常顯示數值。<br>
+    <span style="color:var(--text-dim);"><strong>已知缺口（不是遺漏，是刻意留下的）</strong>：
+    ① 六筆圖示尚未取得（官方 API 零命中，待遊戲截圖裁切；<code>icon</code> 為選填，前台以「武」佔位框容錯）；
+    ② 千星的「扇形 4 格」因 <code>description</code> 六筆一律留空而<strong>未進 DB</strong>，該事實目前只存在於本計畫文件，補官方文案時要一併寫回；
+    ③ 三把 kind 為「固定武裝」的武器，badge 列會同時出現 kind 徽章與 🔒 旗標徽章、字面重複（純視覺）。</span>
   </div>
 
   <div class="warning-block">
@@ -1077,7 +1085,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-040 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-040 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 歷史記錄</a>
 </footer>
 
 </body>

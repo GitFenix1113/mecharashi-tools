@@ -67,15 +67,6 @@
         <a class="card-link" href="PLAN-041_機師形態變化/進度表.html">→ 進度表</a>
       </div>
     </div>
-    <div class="card orange">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-040 · 固定武裝</h3>
-      <p>「無法更換的武器」目前在資料層根本不存在：帕斯卡兩個手臂模組的描述引用了［衝擊炮］，但 weapons 集合 172 筆裡沒有這把武器，引用層不檢查 refId 解不解析得到，於是 chip 照樣可點、點下去顯示「找不到對應資料」——今天就是壞的。彌造者的耀星／隕星／千星同樣 0/172，讓 PLAN-041 機師形態第一天就會卡在「無物可引」。<b>2026-08-09 範圍修訂</b>：實機查證後固定武裝從 4 種訂正為 <b>6 種</b>，多出破曉者-01（REV-01）的嵐質儲能艙與霸王的多功能彈倉這兩種<b>純封鎖型</b>——無數值、無技能、遊戲連數值區塊都不渲染，唯一作用是把雙肩焊死；破曉者-01 的 lore 逐字寫著「捨棄了肩部戰術武器的部署接口與空間」。同時<b>槽位模型整包拆出為 PLAN-047</b>，本計畫縮回武器層：補 <code>WeaponType</code>「特殊」與 <code>WeaponKind</code>「粒子莢艙／固定武裝」、建 6 筆手工武器、加 badge 與圖鑑篩選（<b>預設排除</b>，避免混進 172 筆的統計與排序）。三個死槽位改為<b>凍結加註</b>而非刪除，處置權移交 PLAN-047——原本「形狀錯誤（有肩背無手持）」的刪除理由已被新事實推翻，實際被封鎖的槽位精確就是肩與背。另立新決策 <code>naStats</code> 標記不適用欄位：<code>ammoCount: 0</code> 在本站已被佔用為「無限彈藥 ∞」（172 筆中 129 筆），純封鎖型若照舊填 0 會顯示成「彈藥量 ∞」，與遊戲相反。武器技能不再等待——<b>PLAN-032 已歸檔（8/8）</b>，本計畫直接沿用 <code>WeaponSkillRef</code> 掛上［退敵激波］與［虛粒子矩陣］。Phase A 另含四項與設計無關的資料衛生，其中一項修好模擬器讀不到彌造者帕姆斯陣列的斷鏈。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-040_固定武裝/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-040_固定武裝/進度表.html">→ 進度表</a>
-      </div>
-    </div>
     <div class="card green">
       <div class="card-icon">◆</div>
       <h3>PLAN-038 · 社群連結預覽（Open Graph）系統</h3>
