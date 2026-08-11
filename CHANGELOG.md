@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-10
+## [Unreleased] - 2026-08-11
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,8 @@
 
 ### ✨ 新功能
 
+- PLAN-041 機師形態上線（Phase B～F，N1 完成 20/20） (`97963bc`)
+- PLAN-041 Phase A 集合接線 + D-1/D-2 分頁修繕 (`93045fd`)
 - 六筆固定武裝進圖鑑，預設隱藏＋單獨開關（PLAN-040 Phase C） (`6e8cd46`)
 - 登出診斷把 IndexedDB 的「不見」拆成三態（PLAN-045） (`ee68c5c`)
 - 登出診斷追加 persistence 降級探針與登入心跳（PLAN-045） (`79eb6d1`)
