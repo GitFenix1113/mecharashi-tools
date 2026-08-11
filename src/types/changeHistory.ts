@@ -19,10 +19,13 @@ export type ChangeAction = 'create' | 'update' | 'delete' | 'restore'
  * PLAN-030 本期只接 BUFF / 技能 / 詞條三個；日後擴充其餘集合時在此 union 加值即可，
  * 底層 helper 是集合無關設計，不需重構。
  * PLAN-043 追加 backpack / backpackSkill（背包後台的刪除與新的背包技能庫）。
+ * PLAN-041 追加 form（機師形態）：它有 12 處 inbound 引用（帕姆斯陣列 7 條、粒子爆發／
+ * 虛粒子程式／嵐循環各 1、海莉絲天賦 1），不進這條 union ＝ 刪一筆形態靜默留下 12 條懸空引用。
  */
 export type ChangeTargetKind =
   | 'buff' | 'pilotSkill' | 'glossaryTerm'
   | 'backpack' | 'backpackSkill'
+  | 'form'
 
 /** ChangeTargetKind → Firestore 集合名。級聯清除與還原都需要由 kind 反查集合。 */
 export const TARGET_COLLECTION: Record<ChangeTargetKind, string> = {
@@ -31,6 +34,7 @@ export const TARGET_COLLECTION: Record<ChangeTargetKind, string> = {
   glossaryTerm:  'glossaryTerms',
   backpack:      'backpacks',
   backpackSkill: 'backpackSkills',
+  form:          'forms',
 }
 
 /** 顯示用中文標籤（歷史檢視頁的篩選器與記錄列共用）。 */
@@ -40,6 +44,7 @@ export const TARGET_LABEL: Record<ChangeTargetKind, string> = {
   glossaryTerm:  '詞條',
   backpack:      '背包',
   backpackSkill: '背包技能',
+  form:          '形態',
 }
 
 export const ACTION_LABEL: Record<ChangeAction, string> = {

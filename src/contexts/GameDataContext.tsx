@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react'
-import type { Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component, GlobalResearch, GrayOpsRoster, GameBuff, PilotSkillDoc, GlossaryTerm, NeuralDriveAbility } from '../types'
+import type { Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component, GlobalResearch, GrayOpsRoster, GameBuff, PilotSkillDoc, GlossaryTerm, NeuralDriveAbility, MechForm } from '../types'
 import {
   getPilots, getMechs, getModules, getWeapons, getBackpacks, getBackpackSkills, getComponents, getBuffs, getPilotSkills, getGlossaryTerms,
-  getNeuralDriveAbilities, getGlobalResearch, getGrayOpsRoster, getDataVersions, type DataVersions,
+  getNeuralDriveAbilities, getForms, getGlobalResearch, getGrayOpsRoster, getDataVersions, type DataVersions,
 } from '../lib/firestoreApi'
 // PLAN-029 Phase 2-3：flag 開時，公開資料與版本改走 Cloudflare Worker 代理（可灰度／回退）
 import { WORKER_ENABLED, getWorkerDataVersions, fetchWorkerCollection } from '../lib/api/workerData'
@@ -73,6 +73,8 @@ export interface GameDataState {
   pilotSkills:    PilotSkillDoc[]
   neuralDriveAbilities: NeuralDriveAbility[]
   glossaryTerms:  GlossaryTerm[]
+  /** PLAN-041 機師形態（調構師專屬；非調構師機師此陣列與他們無關） */
+  forms:          MechForm[]
   globalResearch: GlobalResearch
   grayOpsRoster:  GrayOpsRoster | null
   loadedKeys:     ReadonlySet<CollectionKey>
@@ -109,6 +111,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
   const [pilotSkills,    setPilotSkills]    = useState<PilotSkillDoc[]>([])
   const [neuralDriveAbilities, setNeuralDriveAbilities] = useState<NeuralDriveAbility[]>([])
   const [glossaryTerms,  setGlossaryTerms]  = useState<GlossaryTerm[]>([])
+  const [forms,          setForms]          = useState<MechForm[]>([])
   const [globalResearch, setGlobalResearch] = useState<GlobalResearch>(EMPTY_GLOBAL_RESEARCH)
   const [grayOpsRoster,  setGrayOpsRoster]  = useState<GrayOpsRoster | null>(null)
   const [loadedKeys,     setLoadedKeys]     = useState<Set<CollectionKey>>(new Set())
@@ -141,6 +144,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'pilotSkills':    setPilotSkills(data as PilotSkillDoc[]); break
       case 'neuralDriveAbilities': setNeuralDriveAbilities(data as NeuralDriveAbility[]); break
       case 'glossaryTerms':  setGlossaryTerms(data as GlossaryTerm[]); break
+      case 'forms':          setForms(data as MechForm[]); break
       case 'globalResearch': setGlobalResearch(data as GlobalResearch); break
       case 'grayOpsRoster':  setGrayOpsRoster(data as GrayOpsRoster | null); break
     }
@@ -166,6 +170,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'pilotSkills':    return getPilotSkills()
       case 'neuralDriveAbilities': return getNeuralDriveAbilities()
       case 'glossaryTerms':  return getGlossaryTerms()
+      case 'forms':          return getForms()
       case 'globalResearch': return (await getGlobalResearch()) ?? EMPTY_GLOBAL_RESEARCH
       case 'grayOpsRoster':  return getGrayOpsRoster()
     }
@@ -247,6 +252,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'pilotSkills':   setPilotSkills(upsert);   break
       case 'neuralDriveAbilities': setNeuralDriveAbilities(upsert); break
       case 'glossaryTerms': setGlossaryTerms(upsert); break
+      case 'forms':         setForms(upsert);         break
       default: break // singleton / 無 id 集合不走此路徑
     }
   }, [])
@@ -278,6 +284,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'pilotSkills':   setPilotSkills(drop);   break
       case 'neuralDriveAbilities': setNeuralDriveAbilities(drop); break
       case 'glossaryTerms': setGlossaryTerms(drop); break
+      case 'forms':         setForms(drop);         break
       default: break // singleton / 無 id 集合不走此路徑
     }
   }, [])
@@ -294,7 +301,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
 
   return (
     <GameDataContext.Provider value={{
-      pilots, mechs, weapons, backpacks, backpackSkills, modules, components, buffs, pilotSkills, neuralDriveAbilities, glossaryTerms,
+      pilots, mechs, weapons, backpacks, backpackSkills, modules, components, buffs, pilotSkills, neuralDriveAbilities, glossaryTerms, forms,
       globalResearch, grayOpsRoster,
       loadedKeys, errorMap, reloadTick,
       ensureLoaded, reload, patchCollectionItem, removeCollectionItem, patchSingleton,

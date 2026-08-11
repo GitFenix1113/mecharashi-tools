@@ -15,7 +15,7 @@
 
 import type {
   Pilot, PilotSkillDoc, GameBuff, GlossaryTerm, NeuralDriveAbility,
-  Module, Weapon, Backpack, BackpackSkillDoc, Component,
+  Module, Weapon, Backpack, BackpackSkillDoc, Component, MechForm,
   DescriptionRefs, RefType, SkillEffect,
 } from '../types'
 import type { ChangeTargetKind, ReversePatch, RefAnchor } from '../types/changeHistory'
@@ -43,6 +43,8 @@ export const REF_TYPE_OF: Record<ChangeTargetKind, RefType | null> = {
   // 讓別人寫 [移動強化] 反過來指向背包技能需新增 RefType + EntityRefView/RefChip/RefPicker
   // 四處分支，而全站目前沒有任何一段正文需要它——先加等於做出零消費端的休眠站點。
   backpackSkill: null,
+  // PLAN-041：形態**是**正文引用目標（帕姆斯陣列等 12 處寫 [突擊形態]），與 backpackSkill 相反。
+  form:          'form',
 }
 
 /**
@@ -422,6 +424,51 @@ const GLOSSARY_TERMS: CollectionSpec<GlossaryTerm> = {
   softSites: [],
 }
 
+const FORMS: CollectionSpec<MechForm> = {
+  coll: 'forms',
+  nameOf: (f) => f.name,
+  buffIdSites: [
+    {
+      // 形態增益（指向 BUFF_型態增益）。
+      // excludeFromPool：形態不是模擬器可選的裝備或天賦——它是戰鬥期狀態，而模擬器是
+      // 無回合模型的配裝器（PLAN-041 明文不接模擬器）。收進池子會讓模擬器誤判
+      // 「這三份增益無條件可達」。理由與 neuralDriveAbilities.buffUpgrades 同構。
+      id: 'forms.grantedBuffIds',
+      targets: ['buff'],
+      excludeFromPool: true,
+      enumerate: (f) => [{
+        segments: ['grantedBuffIds'],
+        origin: `形態:${f.name}`,
+        buffIds: f.grantedBuffIds ?? [],
+      }],
+    },
+  ],
+  textUnits: (f) => [
+    { segments: [], origin: `形態:${f.name}`, texts: { description: f.description }, refs: f.descriptionRefs },
+    // entryNote 刻意無 refs 欄位（官方正文逐字、不結構化），但仍納入 numTokenText 掃描
+    { segments: [], origin: `形態:${f.name} 入退場條件`, texts: { entryNote: f.entryNote } },
+  ],
+  scalarSites: [
+    {
+      // 虛粒子形態鎖定的固有技能。
+      // ⚠ `restrict.fixedArmament.weaponIds` **不在此**：weapon 不是 ChangeTargetKind
+      //   （PLAN-030 只刪 buff / 技能 / 詞條 / 背包類），掃描器沒有可比對的 kind。
+      //   箭頭 form → weapon 仍存在，只是不由級聯層負責——與 mech/module 互指同樣待遇。
+      id: 'forms.restrict.lockedSkillIds',
+      targets: ['pilotSkill'],
+      enumerate: (f) => f.restrict?.kind === 'fixedArmament'
+        ? (f.restrict.lockedSkillIds ?? []).map((sid, i) => ({
+            segments: ['restrict', 'lockedSkillIds', i],
+            origin: `形態:${f.name} 的鎖定技能`,
+            value: sid,
+            op: 'arrayRemove' as const,
+          }))
+        : [],
+    },
+  ],
+  softSites: [],
+}
+
 const NEURAL_DRIVE_ABILITIES: CollectionSpec<NeuralDriveAbility> = {
   coll: 'neuralDriveAbilities',
   nameOf: (a) => a.name,
@@ -665,6 +712,7 @@ export const SPECS = {
   pilotSkills: PILOT_SKILLS,
   buffs: BUFFS,
   glossaryTerms: GLOSSARY_TERMS,
+  forms: FORMS,
   neuralDriveAbilities: NEURAL_DRIVE_ABILITIES,
   modules: MODULES,
   weapons: WEAPONS,
@@ -701,6 +749,7 @@ export interface RefScanData {
   pilotSkills?: PilotSkillDoc[]
   buffs?: GameBuff[]
   glossaryTerms?: GlossaryTerm[]
+  forms?: MechForm[]
   neuralDriveAbilities?: NeuralDriveAbility[]
   modules?: Module[]
   weapons?: Weapon[]
@@ -915,6 +964,7 @@ const SPEC_COLL_OF: Record<ChangeTargetKind, ScanCollection> = {
   glossaryTerm: 'glossaryTerms',
   backpack: 'backpacks',
   backpackSkill: 'backpackSkills',
+  form: 'forms',
 }
 
 /** 從 data 反查目標自身的 name（nameSoftRef 比對用）。查不到回 undefined，不猜。 */

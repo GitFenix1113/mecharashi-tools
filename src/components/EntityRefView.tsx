@@ -19,16 +19,26 @@ import { RefScopeContext } from './RefChip'
 const REF_TYPE_LABEL: Record<RefType, string> = {
   buff: 'BUFF / 狀態', skill: '技能', pilot: '機師', mech: '機甲', weapon: '武器',
   module: '模組', backpack: '背包', component: '元件', stat: '屬性', term: '詞條', neuralDrive: '神經驅動',
+  form: '形態',
 }
 
 const REF_TO_COLLECTION: Partial<Record<RefType, CollectionKey>> = {
   pilot: 'pilots', mech: 'mechs', weapon: 'weapons',
   module: 'modules', backpack: 'backpacks', component: 'components', buff: 'buffs',
   skill: 'pilotSkills', term: 'glossaryTerms', neuralDrive: 'neuralDriveAbilities',
+  form: 'forms',
 }
 
+/**
+ * 有獨立詳情頁的型別 → 浮窗底部顯示「查看完整詳情 →」。
+ *
+ * PLAN-041 決策十一：**形態沒有自己的路由**，它是機師詳情頁的一個分頁。故本表填 'pilots'
+ * 僅作為「這型別可跳轉」的旗標（:280 的 gate 需要它為真），實際目的地由 resolve() 回的
+ * 完整 route 決定——那裡帶了 `?tab=` 讓落點直接是形態分頁，`${routeBase}/${refId}` 的
+ * 拼接慣例對形態不適用（refId 不是 pilotId）。
+ */
 const REF_TO_ROUTE: Partial<Record<RefType, string>> = {
-  pilot: 'pilots', mech: 'mechs', weapon: 'weapons',
+  pilot: 'pilots', mech: 'mechs', weapon: 'weapons', form: 'pilots',
 }
 
 const BUFF_TYPE_LABEL: Record<string, string> = {
@@ -173,6 +183,25 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
         descriptionRefs: t.descriptionRefs,
       }
     }
+    case 'form': {
+      const f = gd.forms.find(x => x.id === ref.refId)
+      if (!f) return null
+      const owner = gd.pilots.find(p => p.id === f.pilotId)
+      const restrictLabel = f.restrict?.kind === 'fixedArmament'
+        ? '固定武裝'
+        : f.restrict?.allow?.length ? `限 ${f.restrict.allow.join('・')}` : ''
+      return {
+        title: f.name,
+        subtitle: [owner?.name, f.isSignature ? '天賦專屬形態' : '形態', restrictLabel]
+          .filter(Boolean).join(' · '),
+        images: imageCandidates(f.icon),
+        description: f.description,
+        descriptionRefs: f.descriptionRefs,
+        // 形態沒有獨立詳情頁 → 帶 ?tab= 直接落在機師頁的形態分頁（見 REF_TO_ROUTE 註解）。
+        // D-1 的 derived active tab 尚未落地前，該參數會被忽略，行為降級為「跳到機師頁」。
+        route: `/pilots/${f.pilotId}?tab=形態`,
+      }
+    }
     case 'neuralDrive': {
       const a = gd.neuralDriveAbilities.find(x => x.id === ref.refId)
       if (!a) return null
@@ -199,12 +228,16 @@ export function EntityRefView({ entityRef, interactive, showClose = false }: { e
   // PLAN-024：buff 掛 termRef 時詞條說明來自 glossaryTerms，須一併載入（僅在該 buff 確有 termRef 時才抓，省 read）
   const buffNeedsTerm = entityRef.refType === 'buff'
     && !!gd.buffs.find(x => x.id === entityRef.refId)?.termRef
+  // PLAN-041：形態卡的副標要顯示所屬機師名（形態 doc 只存 pilotId）。機甲頁等引用來源
+  // 不保證載過 pilots，漏了副標會少一截；pilots 有版本快取，一個 session 只付一次。
+  const formNeedsPilot = entityRef.refType === 'form'
   useEffect(() => {
     const keys: CollectionKey[] = []
     if (collectionKey) keys.push(collectionKey)
     if (buffNeedsTerm) keys.push('glossaryTerms')
+    if (formNeedsPilot) keys.push('pilots')
     if (keys.length) gd.ensureLoaded(keys)
-  }, [collectionKey, buffNeedsTerm, gd])
+  }, [collectionKey, buffNeedsTerm, formNeedsPilot, gd])
 
   const loading = collectionKey ? !gd.loadedKeys.has(collectionKey) : false
   const resolved = resolve(entityRef, gd)

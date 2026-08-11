@@ -14,6 +14,8 @@ export const ARRAY_COLLECTION_KEYS = [
   'pilots', 'mechs', 'modules', 'weapons',
   'backpacks', 'backpackSkills', 'components',
   'buffs', 'pilotSkills', 'neuralDriveAbilities', 'glossaryTerms',
+  // PLAN-041：機師形態
+  'forms',
 ] as const
 
 /** 單一文件（singleton）集合；Worker 代理與快取層都走另一條分支。 */

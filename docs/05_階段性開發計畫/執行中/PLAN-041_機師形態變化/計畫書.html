@@ -191,11 +191,11 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value yellow">規劃中</div>
+      <div class="meta-value cyan">開發中 · Phase A 與 D-1 / D-2 已完成</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">前置依賴</div>
-      <div class="meta-value cyan">PLAN-040 固定武裝（虛粒子形態要引用的 3 把武器由它建立）· PLAN-047 槽位與裝備限制模型（<code>ArmamentMount</code> 型別共用，<strong>非阻塞</strong>）</div>
+      <div class="meta-value cyan"><span class="green">PLAN-040 固定武裝 ✅ 已歸檔</span>（耀星／隕星／千星已建，阻塞解除）· PLAN-047 槽位與裝備限制模型（<code>ArmamentMount</code> 型別共用，<strong>非阻塞</strong>）</div>
     </div>
   </div>
 
@@ -299,6 +299,48 @@
       <li><strong>(c)</strong> 「格鬥＋射擊」<strong>精確等於</strong>本計畫決策二記載的先鋒形態 <code>allow: ['格鬥','射擊']</code>。</li>
     </ul>
     → 這條限制的歸屬就是 <code>FormRestrict</code> 的 <code>{ kind: 'weaponType', allow: [...] }</code> 那一支，<strong>不需要任何新欄位</strong>。
+  </div>
+
+  <div class="warning-block">
+    <strong>◈ 2026-08-12 訂正（Phase A 動工前對照 codebase 複核）：接線範圍比原計畫大，且原清單有兩處過時</strong>
+    <table class="impact-table">
+      <thead><tr><th style="width:24%">原計畫寫的</th><th>2026-08-12 實測</th><th style="width:16%">影響</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>A-2「<code>GameDataContext</code> 的 <code>CollectionKey</code> 與 switch 各補一處」</td>
+          <td><code>CollectionKey</code> 已於 PLAN-043 事後補強<strong>搬到零依賴的 <code>src/lib/collectionKeys.ts</code></strong>。
+            新增鍵值後 <code>src/lib/collectionKeys.test.ts</code> 會<strong>立即</strong>要求三處同步，漏了 <code>npm test</code> 直接紅：
+            ① Worker 的 <code>ARRAY_COLLECTIONS</code>（漏＝<strong>只在正式站 404</strong>，本機／build／測試全綠——PLAN-043 原案）；
+            ② <code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>（漏＝整條指令 exit(1)，一個都沒 bump）；
+            ③ <code>firestore.rules</code> 的 <code>match /forms/</code>。</td>
+          <td><span class="badge-high">清單過時</span></td>
+        </tr>
+        <tr>
+          <td>（無）級聯刪除與變更歷史鏈</td>
+          <td>原計畫<strong>完全沒有涵蓋</strong>。<code>MechForm</code> 有 <code>description</code>／<code>descriptionRefs</code>／<code>grantedBuffIds</code>／<code>lockedSkillIds</code>，
+            而 C-2 之後又有 12 條 inbound 指向它 → 不接的話「刪 buff 漏清形態正文的引用」「刪一筆形態靜默留下 12 條懸空引用」，
+            且 <code>updateForm</code> 記不到變更歷史。已補 <code>ChangeTargetKind: 'form'</code> ＋ <code>entityRefs</code> 的 <code>FORMS</code> spec。</td>
+          <td><span class="badge-high">範圍擴大</span></td>
+        </tr>
+        <tr>
+          <td>A-3「四個窮舉消費端」</td>
+          <td><strong>實為 6 處</strong>。多出 <code>AdminVersionEditorPage.tsx</code> 的 <code>REF_TYPE_LABEL</code>（tsc 會擋）與
+            <strong><code>RefPicker.tsx</code> 的 <code>REF_TYPE_OPTIONS</code>（手寫陣列，<u>tsc 抓不到</u>）</strong>——
+            漏了的症狀是「後台下拉選單選不到形態」，12 條引用只能靠腳本改。
+            另 <code>EntityRefView.resolve()</code> 的 switch 有 <code>default</code>，漏了會靜默降級成「尚無對應詳情資料」的半殘卡。</td>
+          <td><span class="badge-med">數量訂正</span></td>
+        </tr>
+        <tr>
+          <td>（無）Worker／rules 的部署</td>
+          <td><code>workers/src/index.ts</code> 要 <code>wrangler deploy</code>、<code>firestore.rules</code> 要
+            <code>firebase deploy --only firestore:rules</code>，<strong>兩者都不在 <code>npm run build</code> / <code>git push</code> 流程內</strong>。
+            已列為 Phase F 的部署檢查點。</td>
+          <td><span class="badge-med">新增工項</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <span style="color:var(--text-dim);">附帶更正：<code>PilotDetailPage</code> 的行號已位移——<code>activeSkillTab</code> <code>:990→:998</code>、
+    分頁列 <code>:1207→:1223</code>、NdPowerBar <code>:1226→:1242</code>。</span>
   </div>
 
   <div class="info-block">
@@ -515,6 +557,39 @@
     這也跟隨既有慣例：<code>PilotDetailPage.tsx:1226</code> 的 NdPowerBar 就是用 <code>(pilot.neuralDrive?.length ?? 0) &gt; 0</code> gate。
   </div>
 
+  <div class="decision-block">
+    <strong>決策十（2026-08-12 拍板）：<code>lockedSkillIds</code> 是<u>純語意標記</u>，前台形態卡不渲染它</strong><br>
+    衝突點：PLAN-040 的 C-3 已把 <code>skill_虛粒子矩陣</code> 掛成 <code>weapon_178_千星</code> 的
+    <code>WeaponSkillRef</code>（<code>activation: 'use'</code>），武器詳情頁本來就會渲染它；
+    而 C-1 的 <code>lockedSkillIds</code> 又要列同一筆 → <strong>同一個技能在形態卡與武器卡各出現一次，且格式不同</strong>。
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>(a) 會與武器卡重複</strong>——見上。</li>
+      <li><strong>(b) 會誤導</strong>——虛粒子形態下這三支其實被 <code>skill_虛粒子程式</code> 強化為 EX 版（決策五），
+        形態卡列基礎版名稱＝顯示玩家在該形態下<u>看不到</u>的東西。</li>
+      <li><strong>(c) 今天沒有消費端</strong>——模擬器的形態 gate 明文不在本計畫範圍內（見不在範圍內）。
+        為它蓋一個顯示面等於製造第二個真相源，正是 0/5 定律要避開的事。</li>
+    </ul>
+    形態卡上呈現的是官方正文「無法變更武裝和技能」＋ <code>weaponIds</code> 的固定武裝 chip。
+    <strong>本決策已寫進 <code>FormRestrict.lockedSkillIds</code> 的型別註解</strong>——否則下一個人看到這欄位沒被渲染，
+    第一反應會是「是不是忘了做」。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十一（2026-08-12 拍板）：<code>refType: 'form'</code> 的點擊落點＝機師頁的形態分頁</strong><br>
+    C-2 把 12 條 inbound 改成 <code>refType: 'form'</code> 後，帕姆斯陣列／粒子爆發正文上的
+    <code>[突擊形態]</code> 一定會被點。但<strong>形態沒有獨立詳情頁</strong>，而
+    <code>EntityRefView</code> 的 <code>REF_TO_ROUTE</code> 慣例是 <code>${routeBase}/${refId}</code>——對形態不適用（<code>refId</code> 不是 <code>pilotId</code>）。
+    <div class="code-block"><span class="cm">// EntityRefView.tsx —— 浮窗底部「查看完整詳情 →」的 gate 是兩個條件都要真：
+//   resolved.route && REF_TO_ROUTE[refType]
+// 故 REF_TO_ROUTE 填 'pilots' 僅作為「此型別可跳轉」的旗標，
+// 實際目的地由 resolve() 回的完整 route 決定（帶 query，不走拼接慣例）。</span>
+<span class="kw">case</span> <span class="st">'form'</span>: <span class="kw">return</span> { …, route: <span class="st">`/pilots/${f.pilotId}?tab=形態`</span> }</div>
+    <strong>⇒ 這條決策把成本壓在 D-1</strong>：分頁列改寫時 tab 初值必須讀 <code>useSearchParams()</code> 的 <code>?tab=</code>
+    （derived active 的 <code>?? tabs[0]</code> 同時吃掉「參數是未知值」）。
+    <span style="color:var(--text-dim);">不現在定的話，D-1 的 tab state 之後要為了跳轉再改一次——而 D-1 是本計畫第一個動的檔案。
+    另：形態卡副標要顯示所屬機師名（form doc 只存 pilotId），故 refType 為 form 時 <code>EntityRefView</code> 一併 <code>ensureLoaded(['pilots'])</code>，比照既有的 <code>buffNeedsTerm</code>。</span>
+  </div>
+
   <div class="warning-block">
     <strong>決策九（承接 PLAN-040）：「特殊／固定武裝」不參與形態武器過濾</strong><br>
     三個戰鬥形態的「只能裝備 X 武器」原本把 <code>WeaponType</code> 切成無重疊無遺漏的分割（先鋒=格鬥+射擊 / 突擊=突擊 / 戰術=戰術）。
@@ -594,12 +669,16 @@
   <div class="decision-block">
     <strong>N1（本計畫主體，一次出貨、不留殼）：</strong>
     <ul style="margin:8px 0 0 16px;line-height:1.9;">
-      <li><strong>Phase A</strong>：<code>src/types/form.ts</code> + 集合接線（CollectionKey / <code>api/forms.ts</code> / barrel / rules）+ <code>RefType</code> 加 <code>'form'</code></li>
+      <li><strong>Phase A</strong>（<span style="color:var(--accent-green);">✅ 2026-08-12 完成</span>）：<code>src/types/form.ts</code> + 集合接線
+        （<code>collectionKeys.ts</code> / <code>api/forms.ts</code> / barrel / GameDataContext / hooks / rules / <strong>Worker</strong> / <strong>bump 腳本</strong>）
+        + <strong>級聯刪除與變更歷史鏈</strong>（<code>ChangeTargetKind</code> / <code>entityRefs</code> 的 FORMS spec）+ <code>RefType</code> 加 <code>'form'</code>（6 個消費端）</li>
       <li><strong>Phase B</strong>：FormAdmin（union kind 切換、weaponIds 走 RefPicker）</li>
       <li><strong>Phase C</strong>：4 筆形態遷移 + 12 條 inbound ref 改 refType + 刪舊文件</li>
-      <li><strong>Phase D</strong>：條件式第 4 分頁 + 常駐 badge 列 + RWD 修正 + derived active tab + 天賦「多種形態」補 ref</li>
+      <li><strong>Phase D</strong>：條件式第 4 分頁 + 常駐 badge 列 + <span style="color:var(--accent-green);">RWD 修正 ✅</span> +
+        <span style="color:var(--accent-green);">derived active tab ✅（2026-08-12，改由 URL <code>?tab=</code> 驅動）</span> + 天賦「多種形態」補 ref</li>
       <li><strong>Phase E</strong>：刪除清單——<code>mutexGroup</code> / <code>FormGroup</code> 引擎、<code>SkillArea</code></li>
-      <li><strong>Phase F</strong>：docs + bump + 履歷</li>
+      <li><strong>Phase F</strong>：docs + bump + 履歷 + <strong>部署檢查點</strong>（<code>wrangler deploy</code> 帶 Worker 的 <code>ARRAY_COLLECTIONS</code>、
+        <code>firebase deploy --only firestore:rules</code> 帶 <code>match /forms/</code>——兩者都不在 build／push 流程內）</li>
     </ul>
   </div>
 

@@ -29,7 +29,7 @@ const ICON_CATEGORIES: { key: IconCategory; label: string; refType: RefType }[] 
 const REF_TYPE_LABEL: Record<RefType, string> = {
   pilot: '機師', mech: '機甲', weapon: '武器', backpack: '背包',
   module: '模組', component: '元件', buff: 'BUFF', skill: '技能',
-  stat: '屬性', term: '詞條', neuralDrive: '神經驅動',
+  stat: '屬性', term: '詞條', neuralDrive: '神經驅動', form: '形態',
 }
 
 /**

@@ -55,7 +55,10 @@ service cloud.firestore {
           .data.role == <span class="string">'ADMIN'</span>;
     }
 
-    <span class="comment">// ── 遊戲資料 Collections（所有人可讀，管理員可寫）──</span>
+    <span class="comment">// ── 遊戲資料 Collections（所有人可讀，管理員可寫）──
+    // ⚠ 本區塊的 `allow read: if true` 為 PLAN-029 Phase 3 收緊前的舊值，**與現行 firestore.rules 不符**：
+    //   前台已全面改走 Cloudflare Worker 代理（/api/data/:collection，service account 代讀），
+    //   實際規則多為 `allow read: if isAdmin()`。以 repo 根目錄的 firestore.rules 為準。</span>
     match /pilots/{docId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -90,6 +93,11 @@ service cloud.firestore {
     }
     match /glossaryTerms/{docId} {
       allow read: if true;
+      allow write: if isAdmin();
+    }
+    <span class="comment">// PLAN-041 機師形態（refType:'form' 的資料源）</span>
+    match /forms/{docId} {
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     match /buffs/{docId} {

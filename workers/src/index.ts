@@ -46,6 +46,8 @@ const ARRAY_COLLECTIONS = new Set<string>([
   'buffs', 'pilotSkills', 'neuralDriveAbilities', 'glossaryTerms',
   // PLAN-043：背包技能庫
   'backpackSkills',
+  // PLAN-041：機師形態
+  'forms',
   // PLAN-029 Phase 3-1：原本前台仍直讀的兩個公開集合，一併代理以便 Phase 3-2 收緊。
   'pilotResearch', 'patchVersions',
 ])

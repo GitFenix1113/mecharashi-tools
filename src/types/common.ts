@@ -1,9 +1,18 @@
 // ─── 實體引用層（PLAN-019 Layer 1）──────────────────────────────────────────
 
-/** 可被引用的實體類型。'stat' 指向屬性 key（如 'dmg'）；'term' 指向 glossaryTerms 詞條；'neuralDrive' 指向 neuralDriveAbilities */
+/**
+ * 可被引用的實體類型。'stat' 指向屬性 key（如 'dmg'）；'term' 指向 glossaryTerms 詞條；
+ * 'neuralDrive' 指向 neuralDriveAbilities；'form' 指向 forms 機師形態（PLAN-041）。
+ *
+ * ⚠ 新增值時要補的窮舉消費端有 **5 處**（前四個是 `Record<RefType, …>`，漏了 tsc 會擋；
+ *    第五個是手寫陣列，**漏了不會有任何錯誤**，症狀是後台下拉選單裡選不到該型別）：
+ *    RefChip.tsx `REF_COLOR` · EntityRefView.tsx `REF_TYPE_LABEL` ＋ 其 `resolve()` switch ·
+ *    RefPicker.tsx `REF_TYPE_LABEL` · AdminVersionEditorPage.tsx `REF_TYPE_LABEL` ·
+ *    RefPicker.tsx `REF_TYPE_OPTIONS`（← 手寫陣列）。
+ */
 export type RefType =
   | 'buff' | 'skill' | 'pilot' | 'mech' | 'weapon'
-  | 'module' | 'backpack' | 'component' | 'stat' | 'term' | 'neuralDrive'
+  | 'module' | 'backpack' | 'component' | 'stat' | 'term' | 'neuralDrive' | 'form'
 
 /**
  * 對另一個實體的型別化、可解析引用。

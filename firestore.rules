@@ -77,6 +77,11 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if isAdmin();
     }
+    // PLAN-041 機師形態：調構師的形態實體，refType:'form' 的資料源
+    match /forms/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
     match /buffs/{docId} {
       allow read: if isAdmin();
       allow write: if isAdmin();

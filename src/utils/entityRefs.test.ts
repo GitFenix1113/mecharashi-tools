@@ -39,7 +39,7 @@ test('A1: 所有 site.id 全域唯一（跨 spec 不重複）', () => {
 
 test('A2: 集合清單與預期一致（新增集合未註冊時此測試會紅）', () => {
   assert.deepEqual([...ALL_SCAN_COLLECTIONS].sort(), [
-    'backpackSkills', 'backpacks', 'buffs', 'components', 'glossaryTerms', 'modules',
+    'backpackSkills', 'backpacks', 'buffs', 'components', 'forms', 'glossaryTerms', 'modules',
     'neuralDriveAbilities', 'pilotSkills', 'pilots', 'weapons',
   ])
 })
@@ -124,6 +124,8 @@ test('D0: REF_TYPE_OF 映射正確（pilotSkill→skill、glossaryTerm→term、
     backpack: 'backpack',
     // null = 不是任何正文引用的合法目標（PLAN-043 決策七），與「漏填」不同
     backpackSkill: null,
+    // PLAN-041：形態**是**正文引用目標（帕姆斯陣列等 12 處寫 [突擊形態]）
+    form: 'form',
   })
 })
 

@@ -60,7 +60,7 @@
     <table class="data-table green-head">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>id</td><td>string</td><td>Firestore 自動 ID（<code>addDoc</code> 產生）</td></tr>
-      <tr><td>target</td><td>ChangeTargetKind</td><td><strong>分類軸一</strong>：<code>'buff' | 'pilotSkill' | 'glossaryTerm'</code>（可擴充）</td></tr>
+      <tr><td>target</td><td>ChangeTargetKind</td><td><strong>分類軸一</strong>：<code>'buff' | 'pilotSkill' | 'glossaryTerm' | 'backpack' | 'backpackSkill' | 'form'</code>（可擴充）</td></tr>
       <tr><td>action</td><td>ChangeAction</td><td><strong>分類軸二</strong>：<code>'create' | 'update' | 'delete' | 'restore'</code></td></tr>
       <tr><td>targetId</td><td>string</td><td>被異動的文件 ID，如 <code>buff_過熱</code></td></tr>
       <tr><td>targetName</td><td>string</td><td>當下顯示名稱。<strong>刻意去正規化</strong>：查 log 免 join，且目標被刪後仍看得懂是什麼</td></tr>
@@ -232,12 +232,15 @@
       <tr><td><code>buff</code></td><td>buffs</td><td>✅ 已接線（create / update）</td></tr>
       <tr><td><code>pilotSkill</code></td><td>pilotSkills</td><td>✅ 已接線（create / update）</td></tr>
       <tr><td><code>glossaryTerm</code></td><td>glossaryTerms</td><td>✅ 已接線（create / update）</td></tr>
+      <tr><td><code>backpack</code></td><td>backpacks</td><td>✅ 已接線（PLAN-043，含級聯刪除）</td></tr>
+      <tr><td><code>backpackSkill</code></td><td>backpackSkills</td><td>✅ 已接線（PLAN-043，含級聯刪除）</td></tr>
+      <tr><td><code>form</code></td><td>forms</td><td>✅ 已接線（PLAN-041，含級聯刪除）</td></tr>
     </table>
   </div>
 
   <div class="info-block" style="margin-top:12px;">
     <strong>🔜 擴充到其餘集合</strong><br>
-    機師／機甲／武器／模組／元件／背包／神驅能力／灰域尚未接線。底層 <code>saveWithHistory</code> 是集合無關設計，
+    機師／機甲／武器／模組／元件／神驅能力／灰域尚未接線。底層 <code>saveWithHistory</code> 是集合無關設計，
     屆時每個集合只需：① <code>ChangeTargetKind</code> union 加一個值 + <code>TARGET_COLLECTION</code> 補一行
     ② <code>update*</code> 改走 <code>saveWithHistory</code> ③ 需要刪除的再加 <code>delete*</code>。
     <strong>不需重構，也不需再動安全規則、索引與 TTL 政策。</strong>

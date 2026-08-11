@@ -32,17 +32,22 @@ const REF_TYPE_OPTIONS: { value: RefType; label: string }[] = [
   { value: 'module',     label: '模組 module' },
   { value: 'backpack',   label: '背包 backpack' },
   { value: 'component',  label: '元件 component' },
+  // PLAN-041：這個陣列是**手寫**的，不是從 REF_TYPE_LABEL derive——漏一筆不會有任何
+  // 編譯錯誤，症狀是「後台的引用型別下拉選單裡根本選不到它」，只能靠腳本改資料。
+  { value: 'form',       label: '形態 form' },
 ]
 
 const REF_TYPE_LABEL: Record<RefType, string> = {
   buff: 'BUFF', skill: '技能', pilot: '機師', mech: '機甲', weapon: '武器',
   module: '模組', backpack: '背包', component: '元件', stat: '屬性', term: '詞條', neuralDrive: '神經驅動',
+  form: '形態',
 }
 
 const REF_TO_COLLECTION: Partial<Record<RefType, CollectionKey>> = {
   pilot: 'pilots', mech: 'mechs', weapon: 'weapons', module: 'modules',
   backpack: 'backpacks', component: 'components', buff: 'buffs',
   skill: 'pilotSkills', term: 'glossaryTerms', neuralDrive: 'neuralDriveAbilities',
+  form: 'forms',
 }
 
 interface Candidate { id: string; name: string }
@@ -88,10 +93,11 @@ function useCandidates(refType: RefType | ''): Candidate[] {
       case 'skill':     return gd.pilotSkills.map(s => ({ id: s.id, name: s.name }))
       case 'term':      return gd.glossaryTerms.map(t => ({ id: t.id, name: t.name }))
       case 'neuralDrive': return gd.neuralDriveAbilities.map(a => ({ id: a.id, name: a.name }))
+      case 'form':      return gd.forms.map(f => ({ id: f.id, name: f.name }))
       case 'stat':      return STAT_LABELS.map(s => ({ id: s.key, name: s.label }))
       default:          return []
     }
-  }, [refType, gd.pilots, gd.mechs, gd.weapons, gd.modules, gd.backpacks, gd.components, gd.buffs, gd.pilotSkills, gd.glossaryTerms, gd.neuralDriveAbilities])
+  }, [refType, gd.pilots, gd.mechs, gd.weapons, gd.modules, gd.backpacks, gd.components, gd.buffs, gd.pilotSkills, gd.glossaryTerms, gd.neuralDriveAbilities, gd.forms])
 }
 
 // ── 單一 token 的指派列 ────────────────────────────────────────────────────────

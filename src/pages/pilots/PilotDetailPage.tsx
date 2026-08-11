@@ -1,6 +1,6 @@
 ﻿import { useState, useRef, useLayoutEffect, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { BottomSheet } from '../../components/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import type { PilotStats, NeuralDrive, Weapon, PilotTalent, TalentNdVariant, DescriptionRefs } from '../../types'
@@ -995,7 +995,23 @@ export default function PilotDetailPage() {
   const [exclusiveWeaponIdx, setExclusiveWeaponIdx] = useState(0)
   const exclusiveWeapon = exclusiveWeapons[exclusiveWeaponIdx] ?? null
   const isMobile = useIsMobile()
-  const [activeSkillTab, setActiveSkillTab] = useState<'技能' | '天賦' | '神經驅動'>('天賦')
+
+  // ── 分頁狀態（PLAN-041 D-1）────────────────────────────────────────────────
+  // 唯一來源是 URL 的 ?tab=，**不是 useState**。三個理由：
+  //  ① 舊寫法的 activeSkillTab 沒有 [id] reset，而本頁切換機師時不 remount ——
+  //     今天安全只因三個分頁恆存在；條件式分頁（形態）一落地不變式就破：停在「形態」
+  //     再切到非調構師 → 所有 && 皆 false → 一塊完全空白的 <div className="p-4">。
+  //     改讀 URL 後，換機師的連結不帶 query → 自然回到第一個分頁，免掉一個 useEffect([id])。
+  //  ② PLAN-041 決策十一：引用浮窗對形態產出 /pilots/:id?tab=形態，落點要直接是形態分頁。
+  //  ③ replace: true —— 切分頁不該在瀏覽器上留下一堆返回步驟。
+  const [searchParams, setSearchParams] = useSearchParams()
+  const setActiveSkillTab = (key: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)   // 保留其他 query（未來的分享參數等）
+      next.set('tab', key)
+      return next
+    }, { replace: true })
+  }
 
   // PLAN-004：技能改由 pilotSkills 集合解析（過渡期亦相容嵌入舊格式）
   const gd = useGameData()
@@ -1129,6 +1145,18 @@ export default function PilotDetailPage() {
   const classSkills  = resolvedSkills.filter(sk => getUnitType(sk) === '6')
   const regularSkills = resolvedSkills.filter(sk => getUnitType(sk) !== '6')
 
+  // 分頁清單（跟隨 MechAdmin.tsx 的 MECH_EDIT_TABS 慣例：具名陣列而非硬編碼 map）。
+  // 條件式分頁只要在此 push 一筆即可，計數與樣式全部自動跟上；
+  // PLAN-041 D-3 的「形態」分頁就掛在這裡（`...(forms.length ? [{ key: '形態', count: forms.length }] : [])`）。
+  const skillTabs = [
+    { key: '天賦',     count: pilot.talents.length },
+    { key: '技能',     count: regularSkills.length },
+    { key: '神經驅動', count: pilot.neuralDrive?.length ?? 0 },
+  ]
+  // derived active：找不到就落回第一個分頁。這一行同時吃掉三種情況——
+  // 沒有 ?tab=、?tab= 是未知值（手改網址／舊書籤）、以及該分頁在這名機師身上不存在。
+  const activeSkillTab = (skillTabs.find(t => t.key === searchParams.get('tab')) ?? skillTabs[0]).key
+
   const handleNdLevelHover = (level: NdLevel, el: HTMLElement) => {
     if (isMobile) return
     const rect = el.getBoundingClientRect()
@@ -1219,21 +1247,21 @@ export default function PilotDetailPage() {
 
       {/* Skills / Talents / Neural Drive Tabs */}
       <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
-        <div className="flex border-b border-border">
-          {(['天賦', '技能', '神經驅動'] as const).map((tab) => (
+        {/* PLAN-041 D-2：360px 的 RWD。overflow-x-auto 單獨加是 no-op——
+            必須先有 shrink-0 + whitespace-nowrap 讓按鈕拒絕被壓縮，才會真的產生溢出可捲動；
+            否則第 4 個分頁上線後會把「神經驅動」壓到折行，底線跟著全歪（桌機看不到）。 */}
+        <div className="flex border-b border-border overflow-x-auto">
+          {skillTabs.map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveSkillTab(tab)}
-              className={`px-5 py-3 text-sm font-medium transition-colors cursor-pointer ${
-                activeSkillTab === tab
+              key={tab.key}
+              onClick={() => setActiveSkillTab(tab.key)}
+              className={`shrink-0 whitespace-nowrap px-3 sm:px-5 py-3 text-sm font-medium transition-colors cursor-pointer ${
+                activeSkillTab === tab.key
                   ? 'text-accent-orange border-b-2 border-accent-orange bg-accent-orange/5'
                   : 'text-text-secondary hover:text-text-primary'
               }`}
             >
-              {tab}
-              {tab === '天賦' && ` (${pilot.talents.length})`}
-              {tab === '技能' && ` (${regularSkills.length})`}
-              {tab === '神經驅動' && ` (${pilot.neuralDrive?.length ?? 0})`}
+              {tab.key} ({tab.count})
             </button>
           ))}
         </div>

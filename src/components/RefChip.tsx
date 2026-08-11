@@ -26,6 +26,7 @@ const REF_COLOR: Record<RefType, string> = {
   stat:      'text-accent-red',
   term:      'text-accent-purple',
   neuralDrive: 'text-accent-purple',
+  form:      'text-accent-pink',
 }
 
 export function RefChip({ inner, entity }: { inner: string; entity: EntityRef }) {

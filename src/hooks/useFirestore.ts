@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import type {
   Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component,
-  GlobalResearch, GameBuff, PilotSkillDoc,
+  GlobalResearch, GameBuff, PilotSkillDoc, MechForm,
 } from '../types'
 import { ModuleSlot } from '../types/enums'
 import { useGameData, EMPTY_GLOBAL_RESEARCH, type CollectionKey } from '../contexts/GameDataContext'
@@ -217,6 +217,33 @@ export function useBackpackNameMap(): HookResult<Record<string, string>> {
   const data = useMemo(
     () => Object.fromEntries(backpacks.map((b) => [b.id, b.name])),
     [backpacks],
+  )
+  return { data, loading, error }
+}
+
+// ── 機師形態（PLAN-041）───────────────────────────────────────────────────────
+
+export function useForms(): HookResult<MechForm[]> {
+  const { forms } = useGameData()
+  const { loading, error } = useCollections(['forms'])
+  return { data: forms, loading, error }
+}
+
+/**
+ * 某機師的形態，已依 order 排序。
+ *
+ * ⚠ 渲染條件請一律用 `data.length > 0`，**禁止**用 `pilot.class === '調構師'`：
+ *   官方職業 icon 跳過 007/008/009，且實測已有 2/82 反例（瑪汀妮 class=機械師卻掛
+ *   格鬥家職業單元、唐小葵掛突擊手）——class 字串與職業機制早已對不上。
+ *   用 class gate 的話，新調構師上線但 forms 未填時會渲染出空的「形態 (0)」分頁。
+ *   （跟隨既有慣例：NdPowerBar 也是用 `(pilot.neuralDrive?.length ?? 0) > 0` gate。）
+ */
+export function useFormsByPilot(pilotId: string | undefined): HookResult<MechForm[]> {
+  const { forms } = useGameData()
+  const { loading, error } = useCollections(['forms'])
+  const data = useMemo(
+    () => (pilotId ? forms.filter((f) => f.pilotId === pilotId).sort((a, b) => a.order - b.order) : []),
+    [pilotId, forms],
   )
   return { data, loading, error }
 }
