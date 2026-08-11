@@ -107,15 +107,13 @@ export interface GameBuff {
   duration?:   number
   /** 生效次數：效果可觸發 N 次後耗盡（與 maxStack 疊加層數、duration 回合數為獨立維度） */
   maxTriggers?: number
-  /**
-   * 互斥群組（PLAN-019 Layer 2）：同 group 的形態/狀態一次只能存在一個。
-   * 例：虛粒子形態 ⟷ 實粒子形態，填同一個 group key（如 '<pilotId>_forms'）。
-   */
-  mutexGroup?: string
+  // ⚠ 刻意**沒有** mutexGroup（PLAN-041 移除）：PLAN-019-B 為「虛粒子 ⟷ 實粒子」形態互斥
+  //   預留的欄位，實測從上線到刪除為止**全庫 0 筆**填過，其引擎算出來的永遠是 0 組。
+  //   形態已改為 forms 集合的獨立實體（見 types/form.ts）。要表達「多階取最高」請用 levels。
   effects:     SkillEffect[]
   /**
    * 階梯 buff 各等級能力（PLAN-024）。無 = 普通 buff，沿用上方頂層欄位、行為不變。
-   * 有 levels：各級 maxStack/effects 由此提供；同 buff 不同 level 天然互斥（取最高），取代 mutexGroup。
+   * 有 levels：各級 maxStack/effects 由此提供；同 buff 不同 level 天然互斥（取最高）。
    * 數值引用以 <id.lvN.attr> 指定級；buffIds 以 id@N 賦予指定級。
    */
   levels?:     BuffLevel[]

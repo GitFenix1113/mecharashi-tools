@@ -54,8 +54,8 @@ interface SimState {
   weaponFloatingMods: FloatingModSelection[]
   triggerComponentIds: string[]
   effectComponentIds: string[]
-  /** PLAN-019-B：形態互斥組的擇一選擇（mutexGroup → 選中的 buffId） */
-  activeForms: Record<string, string>
+  // PLAN-041：activeForms（形態互斥擇一）已移除——全庫 0 筆 buff 填過 mutexGroup，
+  // 這個欄位從上線到刪除為止恆為空物件。形態已改為 forms 集合的獨立實體。
 }
 
 const INITIAL_STATE: SimState = {
@@ -67,7 +67,6 @@ const INITIAL_STATE: SimState = {
   weaponFloatingMods: [],
   triggerComponentIds: [],
   effectComponentIds: [],
-  activeForms: {},
 }
 
 // ─── Helper components ───────────────────────────────────────────────────────
@@ -137,7 +136,6 @@ function buildToSimState(build: UserBuild): SimState {
     weaponFloatingMods: build.weaponFloatingMod ?? [],
     triggerComponentIds: build.triggerComponents ?? [],
     effectComponentIds: build.effectComponents ?? [],
-    activeForms: {},
   }
 }
 
@@ -284,13 +282,6 @@ export default function SimulatorPage() {
     })
   }
 
-  const setActiveForm = (mutexGroup: string, buffId: string) => {
-    setState((prev) => ({
-      ...prev,
-      activeForms: { ...prev.activeForms, [mutexGroup]: buffId },
-    }))
-  }
-
   // ─── Export ──────────────────────────────────────────────────────────────
 
   const handleExport = async () => {
@@ -407,7 +398,6 @@ export default function SimulatorPage() {
             onExport={handleExport}
             user={user}
             onSave={handleSaveBuild}
-            onSetForm={setActiveForm}
           />
         )}
       </div>
@@ -839,7 +829,6 @@ function ResultStep({
   onExport,
   user,
   onSave,
-  onSetForm,
 }: {
   data: AllData
   state: SimState
@@ -853,7 +842,6 @@ function ResultStep({
   onExport: () => void
   user: import('firebase/auth').User | null
   onSave: (buildName: string) => Promise<void>
-  onSetForm: (mutexGroup: string, buffId: string) => void
 }) {
   const [buildName, setBuildName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -893,54 +881,15 @@ function ResultStep({
     return resolveReachable(pool, buffMap)
   }, [data.pilotSkills, data.buffs, data.backpackSkills, pilot, modules, weapon, backpack])
 
-  // 形態互斥組：未選時預設取第一個 option；產出「目前 active 的形態 buff」清單
-  const activeFormBuffs = reachable.formGroups.map((g) => {
-    const chosenId = state.activeForms[g.mutexGroup] ?? g.options[0]?.buff.id
-    return g.options.find((o) => o.buff.id === chosenId) ?? g.options[0]
-  })
-  // active buff 集 = 固定 buff + 各形態組擇一
-  const activeBuffs: ResolvedBuff[] = [...reachable.fixed, ...activeFormBuffs.filter(Boolean)]
+  // PLAN-041：形態互斥組已移除（全庫 0 筆 buff 有 mutexGroup，這段永遠算出 0 組）。
+  // 可達 buff 現在就是收斂後的 fixed 本身。
+  const activeBuffs: ResolvedBuff[] = reachable.fixed
   const aggregatedEffects = aggregateEffects(activeBuffs)
-  const hasReachable = reachable.formGroups.length > 0 || reachable.fixed.length > 0
+  const hasReachable = reachable.fixed.length > 0
 
   return (
     <div>
       <h2 className="text-lg font-bold mb-4">配裝結果</h2>
-
-      {/* 形態切換（PLAN-019-B：mutexGroup 擇一）*/}
-      {reachable.formGroups.length > 0 && (
-        <div className="bg-bg-card border border-border rounded-xl p-4 mb-6">
-          <div className="text-sm font-bold text-accent-purple mb-3">形態切換</div>
-          <div className="space-y-3">
-            {reachable.formGroups.map((g) => {
-              const chosenId = state.activeForms[g.mutexGroup] ?? g.options[0]?.buff.id
-              return (
-                <div key={g.mutexGroup}>
-                  <div className="flex flex-wrap gap-2">
-                    {g.options.map((o) => (
-                      <button
-                        key={o.buff.id}
-                        onClick={() => onSetForm(g.mutexGroup, o.buff.id)}
-                        title={o.origins.join('、')}
-                        className={`px-3 py-1.5 rounded-lg text-xs border transition-colors cursor-pointer ${
-                          chosenId === o.buff.id
-                            ? 'bg-accent-purple/15 text-accent-purple border-accent-purple/40'
-                            : 'bg-bg-dark text-text-secondary border-border hover:border-border-accent'
-                        }`}
-                      >
-                        {o.buff.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <div className="text-[13px] text-text-dim mt-3">
-            同一形態組一次只能存在一個（互斥）；切換會即時反映在下方「可達增益」。
-          </div>
-        </div>
-      )}
 
       {/* Export card */}
       <div ref={exportRef} className="bg-bg-dark border border-border rounded-xl p-6 mb-6" style={{ minWidth: 600 }}>

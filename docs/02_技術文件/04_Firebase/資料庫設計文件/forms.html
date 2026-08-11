@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>forms — 機師形態 Schema — Firebase 資料庫設計 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../../index.html">技術文件</a>
+    <span>›</span>
+    <a href="Firebase資料庫設計文件.html">Firebase 資料庫設計</a>
+    <span>›</span>
+    <span class="current">forms — 機師形態</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge" style="background:rgba(236,72,153,0.15);color:var(--accent-pink);border-color:var(--accent-pink);">◆ COLLECTION SCHEMA</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    forms — 機師形態
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-041</span>
+  </h1>
+  <p class="hero-sub">調構師的形態實體 · 被 [xxx] 引用（refType:'form'）· 100% 手動維護</p>
+  <div class="version-badge" style="background:var(--accent-pink);color:#000;">PLAN-041 — 2026-08-12</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-pink);">01 — 用途</div>
+  <div class="section-title">forms Collection</div>
+
+  <div class="info-block">
+    <strong>📌 用途說明</strong><br>
+    調構師（目前僅海莉絲）駕駛的機甲會在戰鬥中切換<strong>形態</strong>，每個形態有各自的固有效果與裝備限制。<br>
+    形態<strong>既不是技能也不是 BUFF</strong>：它要承載裝備限制（union）、顯示順序、形態增益連結與「是否天賦專屬」，
+    <code>PilotSkill</code> 與 <code>GameBuff</code> 兩個既有型別都裝不下，故獨立成集合。<br>
+    · 前台於機師詳情頁的「形態」分頁與跨分頁常駐的特殊能力列渲染；渲染條件一律是
+      <strong><code>forms.length &gt; 0</code></strong>，<strong>禁止</strong>用 <code>pilot.class === '調構師'</code>
+      （官方職業 icon 跳號，且實測 2/82 機師的 class 字串與職業機制對不上）。<br>
+    · 任意 description 中的 <code>[xxx]</code> 可指向此集合（<code>refType:'form'</code>）→ 懸停顯示形態卡，
+      「查看完整詳情」導向 <code>/pilots/&lt;pilotId&gt;?tab=形態</code>（形態沒有獨立路由）。<br>
+    · 官方 API 與 WIKI <strong>都沒有這份資料</strong> → 全數人工於後台「機師形態」分頁維護。<br>
+    · 前台讀取走 GameDataContext 一次預載 + PLAN-017 版本快取（回訪 0 讀取）。
+  </div>
+
+  <div class="sub-h">🗃️ forms — 形態文件（MechForm）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td>文件 ID。格式 <code>form_&lt;機師名&gt;_&lt;形態名去「形態」尾綴&gt;</code>，如 <code>form_海莉絲_先鋒</code>。<strong>與其他集合的 <code>&lt;prefix&gt;_&lt;slug(name)&gt;</code> 不同</strong>——形態名（先鋒／突擊…）在不同調構師之間必然重複，只用名稱會直接撞 ID</td></tr>
+      <tr><td>pilotId</td><td>string</td><td>所屬機師文件 ID（<code>pilots</code>）</td></tr>
+      <tr><td>name</td><td>string</td><td>形態名稱。統一用「<strong>形</strong>態」不用「型」態（舊 pilotSkills 遺留文件的 id 是「型」態）</td></tr>
+      <tr><td>order</td><td>number</td><td>顯示順序。形態數不固定 → UI 一律 <code>map</code>，不寫死欄數</td></tr>
+      <tr><td>icon</td><td>string?</td><td>選填圖示（後台以 IconField 從 <code>public/images</code> 挑選）</td></tr>
+      <tr><td>description</td><td>string</td><td><strong>形態固有效果</strong>，官方形態卡正文逐字。<strong>這是形態效果的唯一真相源</strong>（見下方「刻意不開的欄位」）</td></tr>
+      <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>正文內 <code>[xxx]</code> → 實體引用側錄（PLAN-019 Layer 1）</td></tr>
+      <tr><td>restrict</td><td>FormRestrict</td><td>裝備限制，<strong>discriminated union</strong>，見下表</td></tr>
+      <tr><td>grantedBuffIds</td><td>string[]?</td><td>形態增益：天賦滿星另給的一次性 BUFF（正文多含「觸發效果後移除」）。與 <code>description</code> <strong>逐句零重疊</strong>，前台分兩段各自標來源、不合併</td></tr>
+      <tr><td>entryNote</td><td>string?</td><td>入／退場條件，官方正文逐字。<strong>刻意不結構化</strong>——全站沒有回合模型可以消費它</td></tr>
+      <tr><td>isSignature</td><td>boolean?</td><td>天賦專屬形態（海莉絲僅「虛粒子形態」為 true）。決定前台是否加 ★ 與金框、與一般戰鬥形態視覺分層</td></tr>
+      <tr><td>manual</td><td>boolean?</td><td>手建文件保護旗標；官方無此資料，補丁腳本應略過</td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h">🔀 FormRestrict — 裝備限制（sum type）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>kind</th><th>欄位</th><th>語意</th></tr>
+      <tr>
+        <td><code>'weaponType'</code></td>
+        <td><code>allow: WeaponType[]</code></td>
+        <td>可自由換裝，但只能裝白名單內的武器類型（先鋒＝格鬥+射擊 / 突擊＝突擊 / 戰術＝戰術）。<br>
+          <strong>白名單不含「特殊」</strong>：那是焊死的固定武裝，本來就換不掉，拿類型過濾它沒有意義。</td>
+      </tr>
+      <tr>
+        <td><code>'fixedArmament'</code></td>
+        <td><code>weaponIds: string[]</code></td>
+        <td><strong>該形態下所有槽位皆不可調整</strong>（雙手＋雙肩＋背部），<u>不只是</u>被 <code>weaponIds</code> 佔住的那幾格——
+          實機實測「虛粒子形態沒辦法調整任何裝備」，遊戲內雙肩顯示為空的 <code>[+]</code> 但點不下去（<strong>空槽 ≠ 可填</strong>）。<br>
+          對應 PLAN-047 的「全鎖型」derive；帕斯卡／破曉者-01／霸王的肩槽封鎖是正交的「佔據型」，不歸本集合。</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="warning-block" style="margin-top:14px;">
+    <strong>⚠ 刻意不開的欄位（理由同步寫在 <code>src/types/form.ts</code> 的型別註解裡）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong><code>effects</code></strong>：形態固有的九條正文，現行 <code>SkillEffect</code> + 封閉 34 key 的 <code>STAT_OPTIONS</code> 只表達得出約 2 條
+        （填不進去的：移動力+1、不消耗彈藥、可行動 2 次、每 1AP+5% 上限 25%、每回合最多 2 次、免疫［反擊先手］、子彈數+1）。
+        缺的是四個結構性軸，屬傷害公式範疇。<strong>佐證：全庫 <code>effects</code> 非空 0 筆。</strong>
+        另注：3375→3675 的出力差來自<strong>強襲者背包</strong>而非形態，形態身上沒有任何數值可落盤。</li>
+      <li><strong><code>lockedSkillIds</code></strong>（2026-08-12 移除）：「被鎖住的技能」已由 <code>description</code> 內的
+        <code>[虛粒子刃][虛粒子炮][虛粒子矩陣]</code> 引用完整表達（可解析、可 hover、刪技能時會被級聯掃到）。
+        另存 id 清單＝第二個真相源，且兩份對不上時沒有任何機制會發現；填基礎版還會誤導
+        （該形態下三支已被 <code>skill_虛粒子程式</code> 強化為 EX 版）。</li>
+      <li><strong><code>skillsByWeaponKind</code></strong>：「形態 × 武器種類 → 子技能」矩陣的擁有者是<u>技能</u>不是形態，
+        歸 <code>SkillVariant</code>，箭頭 <code>skill → form</code>。</li>
+      <li><strong><code>hasFixedArmament</code></strong>：由 <code>restrict.kind</code> derive，不存平行布林。</li>
+      <li><strong>配裝總重</strong>：官方形態卡左側的 1125 / 3125 / 1895 / 1825 是隨玩家配裝即時改變的 derived 值，落盤即失準。</li>
+      <li><strong>per-form 武器背包 loadout</strong>：屬模擬器範疇（<code>Build.weaponId</code> 是單值 string），已由 PLAN-047 承接。</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-pink);">02 — 引用關係</div>
+  <div class="section-title">箭頭方向</div>
+
+  <div class="info-block">
+    <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.9;overflow-x:auto;">海莉絲的固定武裝：  form ─(restrict.fixedArmament.weaponIds)──→ weapon
+形態增益：          form ─(grantedBuffIds)────────────────────→ buff
+正文引用：          form ─(descriptionRefs)──────────────────→ buff / term / skill …
+子技能矩陣（未做）： skill ─(SkillVariant.formId)──────────────→ form
+
+                    ↑ 武器不認識形態；形態不認識子技能</pre>
+    <strong>反向一律禁止。</strong>武器完全不認識形態 → 固定武裝的建檔（PLAN-040）與本集合徹底解耦；
+    形態不認識子技能 → 新增一支子技能只要改該技能一份文件，不用改 4 個形態文件。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔁 inbound 引用（<code>refType:'form'</code>）</strong><br>
+    指向形態的引用共 <strong>12 條</strong>：<code>mod_彌造者_fixed_1</code>（帕姆斯陣列）7 條、
+    <code>skill_粒子爆發</code>／<code>skill_虛粒子程式</code>／<code>skill_嵐循環</code> 各 1 條、
+    <code>pilot_049_海莉絲</code> 天賦 1 條。<br>
+    <code>RefType</code> 新增值時要補的窮舉消費端共 <strong>6 處</strong>，其中
+    <code>RefPicker.REF_TYPE_OPTIONS</code>（手寫陣列）與 <code>EntityRefView.resolve()</code> 的 switch（有 default）
+    <strong>tsc 抓不到</strong>——清單列於 <code>src/types/common.ts</code> 的 <code>RefType</code> 註解。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-pink);">03 — 維護</div>
+  <div class="section-title">資料維護</div>
+
+  <div class="info-block">
+    <strong>🛠️ 後台編輯</strong><br>
+    管理後台「機師形態」分頁新增 / 編輯。機師下拉<strong>預設只列調構師</strong>（另有「顯示全部機師」開關，
+    且已有形態的機師一律列出，避免 class 字串變動後資料被過濾器藏成孤兒）。<br>
+    存檔走 <code>updateForm()</code> → <code>saveWithHistory('form', …)</code>：自動寫入 <code>changeHistory</code> 並
+    <code>bumpDataVersion('forms')</code>；刪除走 <code>planCascadeDelete('form', id)</code> 兩段式，
+    確認對話框先顯示影響範圍再原子提交。
+  </div>
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔒 安全規則</strong><br>
+    <code>match /forms/{docId}</code>：<code>read</code> / <code>write</code> 皆 <code>isAdmin()</code>。
+    前台不直讀，改走 Cloudflare Worker 代理（<code>/api/data/forms</code>，service account 代讀）。
+  </div>
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 新增集合時的部署順序（PLAN-041 實地踩到）</strong><br>
+    <code>workers/src/index.ts</code> 的 <code>ARRAY_COLLECTIONS</code> 必須<strong>在後台第一次要讀該集合之前</strong>就
+    <code>wrangler deploy</code>——本機 dev 的 <code>VITE_WORKER_API_BASE</code> 指向<u>正式</u> Worker，
+    「本機先開發、最後才部署」在這個架構下不成立，症狀是後台整頁
+    <code>載入失敗：Worker /api/data/forms 失敗 404</code>。<br>
+    <code>firestore.rules</code> 同理（存檔／撞名檢查／級聯掃描都是瀏覽器直連 Firestore）。
+    兩者都不在 <code>npm run build</code> / <code>git push</code> 的流程內。<br>
+    另有三處硬性守衛由 <code>src/lib/collectionKeys.test.ts</code> 斷言：Worker 的 <code>ARRAY_COLLECTIONS</code>、
+    <code>scripts/bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>、<code>firestore.rules</code> 的 match 區塊。
+  </div>
+</section>
+
+</main>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-08-12 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

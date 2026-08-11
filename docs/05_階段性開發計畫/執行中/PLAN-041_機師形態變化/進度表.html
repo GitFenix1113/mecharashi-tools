@@ -177,7 +177,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">6</div>
+      <div class="summary-num" style="color:var(--accent-green)">20</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -185,7 +185,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">20</div>
+      <div class="summary-num" style="color:var(--text-dim)">5</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -193,18 +193,18 @@
       <div class="summary-lbl">阻塞中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">26</div>
+      <div class="summary-num" style="color:var(--text-primary)">25</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度（N1 21 項 + N2 5 項）</span>
-      <span style="color:var(--accent-yellow);">6 / 26</span>
+      <span>整體完成度（N1 20 項 + N2 5 項；D-5 已取消）</span>
+      <span style="color:var(--accent-yellow);">20 / 25 — <strong>N1 全數完成</strong></span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 23%"></div>
+      <div class="progress-bar-fill" style="width: 80%"></div>
     </div>
   </div>
 
@@ -271,7 +271,7 @@
           ③ <code>kind === 'fixedArmament'</code> 的語意要寫成<strong>「鎖定全部槽位（雙手＋雙肩＋背部）」</strong>，
           <strong>不是</strong>「被 <code>weaponIds</code> 佔住的槽不可換」——實機實測「虛粒子形態沒辦法調整任何裝備」，截圖中雙肩是空的 <code>[+]</code> 但不可用。</span><br>
           <span style="color:var(--accent-green);"><strong>實作結果：</strong>上述三點註解皆已寫入 <code>src/types/form.ts</code>；另新增
-          <strong>決策十</strong>（<code>lockedSkillIds</code> 為純語意標記、前台不渲染，理由寫在該欄位註解裡）。
+          <strong>決策十</strong>（<code>lockedSkillIds</code> 於同日 Phase B 檢討後<strong>整個欄位移除</strong>；「為什麼沒有這個欄位」的理由寫在 <code>FormRestrict</code> 註解裡）。
           「刻意不開」的四項理由亦已寫死於型別註解，並補上第五項「當前裝備重量是 derived 值、不落盤」。</span>
         </div>
         <div class="task-file">src/types/form.ts · src/types/index.ts</div>
@@ -308,7 +308,7 @@
           缺這條的後果是「刪一筆形態＝靜默留下 12 條懸空引用」，而 <code>updateForm</code> 也記不到變更歷史。<br>
           <span style="color:var(--text-dim);">FORMS spec 內含兩個站點：<code>forms.grantedBuffIds</code>（<code>targets:['buff']</code>，
           標 <code>excludeFromPool</code>——形態是戰鬥期狀態、不是模擬器可選裝備，收進 buff 池會誤判「三份增益無條件可達」，理由同神驅 <code>buffUpgrades</code>）與
-          <code>forms.restrict.lockedSkillIds</code>（<code>targets:['pilotSkill']</code>、<code>arrayRemove</code>）。
+          而 <code>scalarSites</code> 為<strong>空</strong>——這是明示的編輯決策不是漏填（理由寫在 spec 上）。
           <code>weaponIds</code> <strong>不設站點</strong>：weapon 不是 <code>ChangeTargetKind</code>，掃描器沒有可比對的 kind（同 mech/module 互指的既有待遇）。</span>
         </div>
         <div class="task-file">src/lib/collectionKeys.ts · src/lib/api/forms.ts · src/contexts/GameDataContext.tsx · src/hooks/useFirestore.ts · src/types/changeHistory.ts · src/utils/entityRefs.ts · firestore.rules · workers/src/index.ts · scripts/bump-data-version.mjs</div>
@@ -322,12 +322,23 @@
         <div class="task-desc">
           <code>workers/src/index.ts</code> 要 <code>wrangler deploy</code>、<code>firestore.rules</code> 要
           <code>firebase deploy --only firestore:rules</code>。<strong>兩者都不在 <code>npm run build</code> / <code>git push</code> 的流程裡。</strong>
-          漏了的症狀分別是「正式站 forms 404」與「後台讀不到 forms」。<strong>本項留待 Phase F 的部署檢查點一併執行</strong>（Phase C 有資料之前部署也沒有意義）。
+          漏了的症狀分別是「正式站 forms 404」與「後台讀不到 forms」。<br>
+          <span style="color:var(--accent-red);"><strong>◈ 2026-08-12 實地驗證：這不能留到 Phase F。</strong></span>
+          Phase B 一完成、後台開「機師形態」分頁就直接爆
+          <code>載入失敗：Worker /api/data/forms 失敗 404</code>——因為 <code>.env.local</code> 的
+          <code>VITE_WORKER_API_BASE=https://mecharashi.wiki</code>，<strong>本機 dev 讀的是已部署的正式 Worker</strong>，
+          原始碼裡的 <code>'forms'</code> 還在本機。<br>
+          <span style="color:var(--accent-green);"><strong>已於 2026-08-12 部署完成：</strong>
+          <code>wrangler deploy</code>（版本 <code>a1e1f0e8</code>，routes: mecharashi.wiki/api/*）＋
+          <code>firebase deploy --only firestore:rules</code>（released to cloud.firestore）。<br>
+          <strong>教訓（下次新增集合請直接照做）</strong>：Worker 的 <code>ARRAY_COLLECTIONS</code> 必須在
+          <u>後台第一次要讀該集合之前</u>就部署，不能排到計畫末段——本機 dev 指向正式 Worker，
+          「本機先開發、最後才部署」在這個架構下不成立。rules 亦同（存檔／撞名檢查／級聯掃描都是瀏覽器直連 Firestore）。</span>
         </div>
         <div class="task-file">workers/ · firestore.rules</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待 Phase F</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -392,11 +403,11 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; FormAdmin 表單</div>
       <div class="task-group-meta">src/pages/user/admin/FormAdmin.tsx（新）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">CRUD + 列表 + AdminPage 註冊</div>
+        <div class="task-name">CRUD + 列表 + AdminPage 註冊 — <strong>2026-08-12 已完成</strong></div>
         <div class="task-desc">
           比照既有 Admin 的結構（列表 + 編輯彈窗）。<code>pilotId</code> 走既有機師選擇器。
           存檔直接用 <code>updateForm()</code>（<code>src/lib/api/forms.ts</code>，內部走 <code>saveWithHistory</code> → 自動記錄變更歷史並 bump 版本，
@@ -404,24 +415,51 @@
           （比照 <code>useCascadeDelete</code> 慣例，讓對話框先顯示影響範圍）。<br>
           <span style="color:var(--accent-yellow);"><strong>◈ 2026-08-12 追加：別忘了 <code>AdminPage.tsx</code> 的 <code>TAB_CONFIG</code> 註冊</strong>——
           新增一列 <code>forms: { keys: ['forms','pilots','weapons','pilotSkills','buffs'], searchable: true, selfLoading: false, preload: true }</code>。
-          <code>keys</code> 要含後四者：選機師、RefPicker 挑固定武裝與 lockedSkillIds、挑 grantedBuffIds。漏了分頁根本不會出現。</span>
+          <code>keys</code> 要含後三者：選機師、挑固定武裝、挑形態增益。漏了分頁根本不會出現。</span><br>
+          <span style="color:var(--accent-green);"><strong>實作結果：</strong>比照 <code>GlossaryAdmin</code> 形制（列表＋<code>AdminModal</code> 編輯彈窗＋
+          <code>useClientPaged</code>＋<code>useNewItemCreation</code>＋草稿暫存 <code>useDraftWrite/Restore('forms')</code>）。
+          存檔走 <code>updateForm()</code>（內部 <code>saveWithHistory</code>，回傳版本號給 <code>patchCollectionItem</code>），
+          刪除走 <code>useCascadeDelete('form', 'forms')</code> 兩段式對話框。
+          <code>AdminPage</code> 已補 <code>Tab</code> union、<code>TAB_CONFIG</code>、TabButton「機師形態」與 render 分派四處。<br>
+          <strong>ID 慣例（與其他集合不同，已寫進註解）</strong>：<code>form_&lt;機師名&gt;_&lt;形態名去掉「形態」尾綴&gt;</code>，
+          如 <code>form_海莉絲_先鋒</code>——形態名（先鋒／突擊…）在不同調構師之間必然重複，
+          沿用其他集合的 <code>&lt;prefix&gt;_&lt;slug(name)&gt;</code> 會直接撞 ID。故新建對話框用 <code>extra</code> 槽多放一個機師選擇器，
+          機師未選時擋下建立。<br>
+          <strong>2026-08-12 使用者實測後的三項調整：</strong>
+          ① 機師選單<strong>預設只列調構師</strong>（只有調構師的機甲會變形態）——但保留兩層保險：
+          「已有形態的機師一律列出」（避免 class 被改後資料被過濾器藏成孤兒）＋「顯示全部機師」勾選框
+          （全庫已知 2/82 的 class 與職業機制對不上）；
+          ② 圖示欄改用全站共用的 <code>IconField</code>（縮圖預覽＋資料夾／搜尋挑選器），不再手打路徑；
+          ③ <strong>所有欄位說明改寫為使用者視角</strong>——不出現 PLAN 編號、不出現程式欄位名，
+          例如「武器類型白名單／固定武裝」改為「可自由換裝，但限定武器類型／完全不能換裝（武器焊死）」。<br>
+          <span style="color:var(--text-dim);">另：編輯面板改用 <code>key={id}</code> 重新掛載來重設 state，
+          不沿用其他 Admin 的 <code>useEffect(() =&gt; setForm(initial), [initial])</code>——後者會觸發
+          <code>react-hooks/set-state-in-effect</code>（既有分頁尚未一併改）。</span>
+        </div>
+        <div class="task-file">src/pages/user/admin/FormAdmin.tsx · src/pages/user/AdminPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">restrict union 的 kind 切換 UI — <strong>2026-08-12 已完成</strong></div>
+        <div class="task-desc">
+          選 <code>weaponType</code> → 顯示 <code>WeaponType</code> 多選；選 <code>fixedArmament</code> → 顯示 weaponIds 的
+          挑選器（不要讓人手打 id）。切換 kind 時清掉另一支的欄位，避免存進殘留資料。<br>
+          <span style="color:var(--accent-green);"><strong>實作結果：</strong>切換 kind 一律<strong>整支 restrict 換掉</strong>，不合併舊欄位——
+          殘留的 <code>allow</code> 會跟著 <code>fixedArmament</code> 一起寫進 Firestore，成為 discriminant 之外的幽靈資料。<br>
+          武器類型多選已<strong>排除「特殊」</strong>（決策九），且刻意就地 filter <strong>不複用 <code>COMPONENT_WEAPON_TYPES</code></strong>——
+          那個常數的語意是「可裝元件的武器類型」，只是今天恰好同值，共用會讓日後任一邊變動時無聲拖動另一邊。<br>
+          <code>weaponIds</code> 的候選把 <code>isFixedArmament</code> 那 6 把<strong>排最前面並加 🔒 標記</strong>（180+ 把裡挑 6 把，不標等於要維護者自己記）。
+          兩個 id 陣列（weaponIds / grantedBuffIds）共用檔內的 <code>IdListPicker</code>，
+          形制同 <code>BackpackAdmin</code> 的 <code>BackpackSkillPicker</code>，但不需要 <code>id@N</code> 等級語法故不引 <code>parseBuffRef</code>。
+          <strong>不是走 RefPicker</strong>——那支是給 description 內 <code>[xxx]</code> token 指派用的，與純 id 陣列是兩件事。</span>
         </div>
         <div class="task-file">src/pages/user/admin/FormAdmin.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
-    </div>
-    <div class="task-row">
-      <div>
-        <div class="task-name">restrict union 的 kind 切換 UI</div>
-        <div class="task-desc">
-          選 <code>weaponType</code> → 顯示 <code>WeaponType</code> 多選；選 <code>fixedArmament</code> → 顯示 weaponIds / lockedSkillIds 的
-          <strong>RefPicker</strong>（不要讓人手打 id）。切換 kind 時清掉另一支的欄位，避免存進殘留資料。
-        </div>
-        <div class="task-file">src/pages/user/admin/FormAdmin.tsx · src/components/admin/RefPicker.tsx</div>
-      </div>
-      <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -436,18 +474,28 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 建立 4 筆 forms</div>
       <div class="task-group-meta">forms 集合</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">從既有 pilotSkills 文件搬正文與 refs</div>
+        <div class="task-name">從既有 pilotSkills 文件搬正文與 refs — <strong>2026-08-12 已完成（使用者於後台填寫）</strong></div>
         <div class="task-desc">
           來源：<code>skill_先鋒型態</code> / <code>skill_突擊型態</code> / <code>skill_戰術型態</code> / <code>skill_虛粒子形態</code>
           （<code>description</code> 與 <code>descriptionRefs</code> 皆已完整，直接搬）。<br>
           新 id 用 <code>form_海莉絲_先鋒</code> 形式，<strong>name 統一用「形」態</strong>（舊 id 是「型」態，見計畫書決策六）。<br>
-          補上舊文件沒有的欄位：<code>order</code>（1-4）、<code>restrict</code>、<code>grantedBuffIds: ['BUFF_型態增益']</code>、
+          補上舊文件沒有的欄位：<code>order</code>（1-4）、<code>restrict</code>、<code>grantedBuffIds</code>（實際填的是 <code>buff_形態增益先鋒</code> 等三筆之一；虛粒子留空）、
           <code>isSignature</code>（僅虛粒子）、<code>entryNote</code>、<code>manual: true</code>。<br>
-          <strong>驗收是 4/4 全部填滿，不接受先開殼。</strong>
+          <strong>驗收是 4/4 全部填滿，不接受先開殼。</strong><br>
+          <span style="color:var(--accent-green);"><strong>2026-08-12 實際完成 4/4</strong>（使用者於後台 FormAdmin 逐筆填寫），
+          並以腳本套了四項訂正：<br>
+          ① <strong>文件 ID 補回底線</strong>：<code>form_海莉絲先鋒</code> → <code>form_海莉絲_先鋒</code>
+          （原生成邏輯把 <code>_</code> 交給 <code>slugify</code>，而它的保留字元不含底線 → 分隔符被吃掉；程式已修，此處另以新建＋刪舊補正資料）；<br>
+          ② <strong><code>isSignature</code> 只留虛粒子</strong>（原本 4 筆全為 true，★ 金框的視覺分層等於失效）；<br>
+          ③ 先鋒正文的全形「％」改半形「%」，與突擊／戰術一致；<br>
+          ④ 清掉虛粒子殘留的空 <code>lockedSkillIds</code>（該欄位已於同日移除）。<br>
+          <strong>形態增益的實際形狀與原計畫不同</strong>：不是單一 <code>BUFF_型態增益</code>，而是三筆獨立 buff
+          （<code>buff_形態增益先鋒</code>／<code>突擊</code>／<code>戰術</code>），虛粒子刻意留空（靠［粒子爆發］拿滿三份，由 UI 特例標註）。<br>
+          <span style="color:var(--text-dim);"><code>entryNote</code> 四筆維持空白——入場條件寫在［粒子爆發］技能上，不屬形態自身。</span></span>
         </div>
         <div class="task-file">forms 集合 · FormAdmin</div>
       </div>
@@ -456,7 +504,7 @@
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">虛粒子形態的 weaponIds — <span style="color:var(--accent-green);">阻塞已解除</span></div>
+        <div class="task-name">虛粒子形態的 weaponIds — <strong>2026-08-12 已完成</strong></div>
         <div class="task-desc">
           <code>restrict: { kind: 'fixedArmament', weaponIds: ['weapon_176_耀星', 'weapon_177_隕星', 'weapon_178_千星'], lockedSkillIds: [skill_虛粒子刃, skill_虛粒子炮, skill_虛粒子矩陣] }</code>。<br>
           <span style="color:var(--accent-green);"><strong>2026-08-12：三把武器已由 PLAN-040 Phase C 建立完畢</strong>（PLAN-040 已歸檔 17/17），id 如上。</span><br>
@@ -477,17 +525,26 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 遷移 12 條 inbound 引用</div>
       <div class="task-group-meta">modules · pilotSkills · pilots</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">refType: 'skill' → 'form'，逐條改</div>
+        <div class="task-name">refType: 'skill' → 'form'，逐條改 — <strong>2026-08-12 已完成</strong></div>
         <div class="task-desc">
           實測共 12 條指向那四筆形態文件：<br>
           <code>mod_彌造者_fixed_1</code>（帕姆斯陣列）<strong>7 條</strong>（先鋒×2、突擊×2、戰術×2、虛粒子×2 — 各級描述重複引用）；
           <code>skill_粒子爆發</code> 1 條、<code>skill_虛粒子程式</code> 1 條、<code>skill_嵐循環</code> 1 條、
           <code>pilot_049_海莉絲</code> 天賦 1 條，皆指向虛粒子形態。<br>
-          <strong>驗收：改完後全庫 dangling 不高於動工前。</strong>
+          <strong>驗收：改完後全庫 dangling 不高於動工前。</strong><br>
+          <span style="color:var(--accent-green);"><strong>實測後的訂正：12 條裡只有 8 條是真引用，另 4 條是孤兒 key。</strong>
+          帕姆斯陣列（<code>mod_彌造者_fixed_1</code>）的 <code>descriptionRefs</code> 有 <strong>8 個</strong>形態 key（不是計畫書寫的 7），
+          因為「先鋒<u>形</u>態」與「先鋒<u>型</u>態」兩種拼法各有一組。但實際比對正文後發現
+          <strong>正文 4 處全部寫的是「形態」</strong>——那 4 個「型態」key <strong>對不到任何 token、永遠不會被渲染</strong>，
+          屬早期改字後沒清掉的殘留 → <strong>直接刪除</strong>，不遷移。<br>
+          最終：<strong>8 條遷移</strong>（海莉絲天賦 1／嵐迴圈 1／粒子爆發 1／虛粒子程式 1／帕姆斯陣列 4）
+          ＋ <strong>4 個孤兒 key 刪除</strong>。腳本 <code>scripts/temp_scripts/migrate-plan041-phaseC.mjs</code>，
+          apply 後複驗<strong>全庫 0 條指向舊形態文件的引用</strong>。<br>
+          <span style="color:var(--text-dim);">附帶：原計畫以為帕姆斯陣列正文有「型態」錯字要一併修——實測沒有，正文本來就正確。</span></span>
         </div>
         <div class="task-file">modules · pilotSkills · pilots 集合</div>
       </div>
@@ -500,11 +557,11 @@
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; 刪除舊形態文件</div>
       <div class="task-group-meta">pilotSkills 集合</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">C-2 完成後才刪，且只刪這 4 筆</div>
+        <div class="task-name">C-2 完成後才刪，且只刪這 4 筆 — <strong>2026-08-12 已完成</strong></div>
         <div class="task-desc">
           刪 <code>skill_先鋒型態</code> / <code>skill_突擊型態</code> / <code>skill_戰術型態</code> / <code>skill_虛粒子形態</code>。
           <strong>順序不可顛倒</strong>——先刪會製造 12 條 dangling。<br>
@@ -592,12 +649,12 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; 形態分頁內容</div>
-      <div class="task-group-meta">FormCard（新元件）</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">src/components/FormCard.tsx（新）</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">形態卡：三層來源分段顯示</div>
+        <div class="task-name">形態卡：三層來源分段顯示 — <strong>2026-08-12 已完成（實作為四層）</strong></div>
         <div class="task-desc">
           <code>grid-cols-1 md:grid-cols-2</code>，<strong>一律 <code>forms.map()</code>，不寫死欄數</strong>（新調構師只有 2 個形態時自動變 2 張卡）。<br>
           三段：<strong>形態固有</strong>（<code>Form.description</code>，逐字、走引用層）／<strong>形態增益</strong>（<code>grantedBuffIds</code>，標「ⓘ天賦滿星」）／
@@ -611,7 +668,21 @@
           <strong><code>'buffs'</code>（目前是條件式，見 <code>:1063</code> 的 <code>ndNeedsBuffs</code>）</strong>——第二層「形態增益」要 inline 顯示 <code>grantedBuffIds</code> 的正文，
           海莉絲頁若沒觸發 ndNeedsBuffs 就整層是空的；固定武裝 chip 若<strong>直接讀 <code>gd.weapons</code></strong> 畫則再補 <code>'weapons'</code>，
           若做成 <code>EntityRef</code> 交給浮窗渲染則不用（<code>EntityRefView</code> 會自己 ensureLoaded，且順帶獲得 hover 預覽）——<strong>建議走引用層</strong>。
-          可直接用 <code>useFormsByPilot(id)</code>（已含排序與載入）。</span>
+          可直接用 <code>useFormsByPilot(id)</code>（已含排序與載入）。</span><br>
+          <span style="color:var(--accent-green);"><strong>實作結果：卡片是四層不是三層</strong>——第二～四層全部由<strong>反查</strong>得來，不在 <code>MechForm</code> 上落盤：<br>
+          ① <strong>形態固有</strong>（<code>description</code>，走引用層渲染）<br>
+          ② <strong>形態增益</strong>（<code>grantedBuffIds</code> → buffs，標「ⓘ 天賦滿星」）<br>
+          ③ <strong>模組加成</strong>（反查「哪個 module 的 descriptionRefs 指向本形態」，再從正文挑出提到它的那幾行；標「ⓘ 帕姆斯陣列・與上方形態固有效果可疊加」）<br>
+          ④ <strong>相關技能</strong>（新增，反查「哪個 pilotSkill 的正文提到本形態」）——虛粒子卡的增益資訊就是靠這層被看見，見下一列。<br>
+          反查的好處：新增一個提到本形態的模組／技能時<strong>不必回頭改形態文件</strong>，箭頭方向也維持
+          <code>module/skill → form</code> 永不反向（決策七）。<br>
+          裝備限制區：<code>weaponType</code> 顯示可裝類型 chip ＋ 符合的可換裝武器數（<strong>已排除 <code>isFixedArmament</code></strong>，否則數字與圖鑑對不上）；
+          <code>fixedArmament</code> 顯示「武裝焊死：所有槽位皆不可調整」＋三把武器 chip（走 <code>RefChip</code>，hover 可預覽、點擊可進武器頁）。
+          <code>isSignature</code> 加金框＋★＋「天賦專屬」標籤。<br>
+          <span style="color:var(--text-dim);">武器數目前是純文字而非連往圖鑑的連結——圖鑑頁沒有可靠的 type 查詢參數，寧可不做連結也不要做一個壞的。</span><br>
+          <strong>實測</strong>：桌機 1280px 兩欄、360px 單欄且 body 無橫向溢出；四個分頁標籤同一行、常駐列可橫捲
+          （<code>scrollWidth 403 &gt; clientWidth 282</code>）。另修掉 360px 下「模組加成」標籤自己折成兩行的問題
+          （標題 <code>shrink-0 whitespace-nowrap</code>，要折的是來源字串不是標題）。</span>
         </div>
         <div class="task-file">src/pages/pilots/ · src/components/</div>
       </div>
@@ -620,11 +691,22 @@
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">兩個特例標註</div>
+        <div class="task-name">兩個特例標註 — <strong>2026-08-12 完成（第二項作法與原案不同）</strong></div>
         <div class="task-desc">
           ① 突擊形態的「子彈數+1」（固有）與帕姆斯陣列的「[突擊形態]時突擊武器子彈數+1」<strong>兩條都列，並明標「可疊加」</strong>（已實測確認）。<br>
           ② 虛粒子形態卡標註<strong>「同時獲得三份形態增益」</strong>——此規則只藏在 <code>skill_粒子爆發</code> 正文（「獲得所有形態增益效果」），
-          而 <code>BUFF_型態增益</code> 只寫了三個戰鬥形態，不標的話玩家在虛粒子卡上找不到增益。
+          而形態增益 buff 只有三個戰鬥形態各一筆，虛粒子的 grantedBuffIds 是空的，不標的話玩家在虛粒子卡上找不到增益。<br>
+          <span style="color:var(--accent-green);"><strong>① 已完成（作法比原案通用）：</strong>「可疊加」不做成突擊形態的特例，而是標在<strong>模組加成整層的來源列</strong>上
+          （「帕姆斯陣列・與上方形態固有效果可疊加」）。這句話對四個形態都成立，且不必寫死「突擊」這個字；
+          突擊卡上因此同時看得到固有的「子彈數+1」與模組的「[突擊形態]時突擊武器子彈數+1」兩條，並明示可疊加。</span><br>
+          <span style="color:var(--accent-yellow);"><strong>② 作法與原案不同（需追認）：</strong>原案要在虛粒子卡寫死一句「同時獲得三份形態增益」。
+          實作改為<strong>資料驅動的「相關技能」層</strong>：反查出正文提到本形態的技能，虛粒子卡因此直接顯示
+          ［粒子爆發］的官方原文「消耗所有[激發能]切換為[虛粒子形態]，<strong>獲得所有形態增益效果</strong>…」，
+          「形態增益」層則顯示「本形態沒有專屬的形態增益，取得方式寫在下方的相關技能正文裡」。<br>
+          <strong>選這個作法的理由</strong>：寫死的那句話是<u>我們對官方文字的轉述</u>，官方哪天改寫粒子爆發就會變成錯的假訊息，
+          而且只服務這一張卡；反查層是通用機制，日後任何技能提到任何形態都自動出現。
+          <strong>代價</strong>：玩家要自己從粒子爆發那句話讀出「三份」，沒有一句話直接告訴他。
+          若你認為該句仍值得寫死，我再補一個特例標註。</span>
         </div>
         <div class="task-file">src/components/</div>
       </div>
@@ -636,17 +718,21 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-4 &nbsp; 常駐「特殊能力」badge 列</div>
-      <div class="task-group-meta">PilotDetailPage:1226 同層</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">PilotDetailPage · NdPowerBar 同層</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">跨分頁常駐，點擊跳形態分頁</div>
+        <div class="task-name">跨分頁常駐，點擊跳形態分頁 — <strong>2026-08-12 已完成</strong></div>
         <div class="task-desc">
           位置跟隨 <code>NdPowerBar</code> 的慣例——渲染在分頁 switch <strong>之外</strong>（<code>:1226</code> 同層），三個分頁都看得到。
           官方美術風格：藍色機械感長條。<br>
           <strong>gate 用 <code>forms.length &gt; 0</code>，禁止用 <code>pilot.class === '調構師'</code></strong>（見計畫書決策八，實測 2/82 反例）。
-          手機同樣可橫捲。
+          手機同樣可橫捲。<br>
+          <span style="color:var(--accent-green);"><strong>實作結果：</strong>渲染在 <code>NdPowerBar</code> 同層（分頁 switch 之外），
+          四個分頁都看得到。每個形態一顆 chip，<code>isSignature</code> 者金色帶 ★、其餘青色；點擊即切到形態分頁
+          （走 D-1 的 <code>?tab=</code>，所以這個動作也會進網址、可分享）。外層 <code>overflow-x-auto</code>，
+          360px 實測 <code>scrollWidth 403 &gt; clientWidth 282</code> 可橫捲且 body 無溢出。</span>
         </div>
         <div class="task-file">src/pages/pilots/PilotDetailPage.tsx</div>
       </div>
@@ -659,16 +745,20 @@
     <div class="task-group-header">
       <div class="task-group-title">D-5 &nbsp; 天賦正文縫回因果</div>
       <div class="task-group-meta">pilots 集合</div>
-      <span class="status pending">待開始</span>
+      <span class="status blocked">已取消</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">「多種形態」補 descriptionRefs</div>
+        <div class="task-name">「多種形態」補 descriptionRefs — <strong>2026-08-12 取消（使用者決定）</strong></div>
         <div class="task-desc">
           海莉絲天賦「悖想先驅」正文開頭「駕駛的機甲擁有<strong>多種形態</strong>，擁有獨特的形態效果並可以獨立裝備武器背包」——
           這四個字目前<strong>沒有 ref</strong>（該天賦其餘 5 個 token 都接好了：激發能／虛粒子形態／形態增益／啟動／粒子爆發）。<br>
-          補上指向形態的引用，讓玩家從天賦一眼走到形態分頁。
-        </div>
+          補上指向形態的引用，讓玩家從天賦一眼走到形態分頁。<br>
+          <span style="color:var(--accent-red);"><strong>取消理由：</strong>
+          ① <code>EntityRef</code> 只能指向<strong>一個</strong>實體，而「多種形態」是複數——指向其中任一筆會讓 hover 只跳出那一張卡，是<strong>誤導</strong>；
+          ② D-4 的常駐「特殊能力」列已經在<u>包含天賦在內的每個分頁</u>提供四個形態的一鍵入口，
+          <strong>D-5 想解決的發現性問題已被解掉</strong>；
+          ③ 為此改寫官方天賦正文（加上方括號）會讓站上文字與遊戲內不一致。</span>
         <div class="task-file">pilots 集合 · pilot_049_海莉絲</div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -687,11 +777,11 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 刪 mutexGroup / FormGroup 引擎</div>
       <div class="task-group-meta">buff.ts · reachableBuffs · SimulatorPage · BuffAdmin</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">六處一起拆，不留半套</div>
+        <div class="task-name">六處一起拆，不留半套 — <strong>2026-08-12 已完成</strong></div>
         <div class="task-desc">
           實測<strong>全庫 0 筆 buff 有 <code>mutexGroup</code></strong>（PLAN-024 等級化後已無資料）→ 那段模擬器 UI 永遠算出 0 組、從未渲染過。<br>
           刪除範圍：<code>buff.ts:114</code> 的 <code>mutexGroup</code> 欄位；<code>reachableBuffs.ts</code> 的 <code>FormGroup</code> 與相關解析；
@@ -699,7 +789,19 @@
           <code>BuffAdmin.tsx</code> 的 <code>:40-110</code> MutexGroupField、<code>:470</code> 欄位、<code>:685</code> 列表標記，
           並修 <code>:527</code> 那句仍在講「取代 mutexGroup」的說明文字；<code>reachableBuffs.test.ts</code> 的相關單測。<br>
           <strong>順帶拆掉 BuffAdmin 的誘餌</strong>：<code>:17</code> 的「狀態 / 形態 state」label 與兩處 placeholder「如：虛粒子形態」→
-          改成不再暗示「形態建在這裡」。
+          改成不再暗示「形態建在這裡」。<br>
+          <span style="color:var(--accent-green);"><strong>動工前資料複核（唯讀腳本）：</strong>
+          buffs <strong>225 筆中 0 筆</strong>帶 <code>mutexGroup</code>（連空字串都沒有）；
+          全庫 11 個集合的巢狀 JSON 字串掃描亦 <strong>0 命中</strong> → 確認是純程式碼刪除、零資料遷移。<br>
+          <strong>實際刪除：</strong><code>buff.ts</code> 的 <code>mutexGroup</code> 欄位（改寫成「刻意沒有這個欄位」的註解）·
+          <code>reachableBuffs.ts</code> 的 <code>FormGroup</code> 介面／<code>formGroups</code> 回傳值／分組邏輯（收斂只剩「同 id 取最高」一種）·
+          <code>reachableBuffs.test.ts</code> 兩支形態測試與 fixture ·
+          <code>SimulatorPage</code> 的 <code>activeForms</code> state／初值×2／<code>setActiveForm</code>／<code>onSetForm</code> prop／形態切換 UI 整塊 ·
+          <code>BuffAdmin</code> 的 <code>MutexGroupField</code> 整塊（含 <code>MUTEX_*</code> 常數與正規化函式）／欄位使用處／列表的「互斥 xxx」標記 ·
+          <code>pilot.ts</code> 與 <code>EntityRefView</code> 的殘留註解。<br>
+          <strong>誘餌也拆了：</strong>BuffType 選項 label「狀態 / 形態 state」→「狀態 state」；兩處 placeholder「如：虛粒子形態」→「如：過熱、凝勢」／「如：凝勢」。<br>
+          <strong>驗證：</strong><code>tsc -b</code> 通過、<code>npm test</code> 376/376（刪掉 1 支形態測試）、模擬器頁實機載入無 console error 且不再出現「形態切換」區塊；
+          touched 檔案無新增 lint 錯誤（BuffAdmin 那 1 個 <code>set-state-in-effect</code> 經 stash 對照為既有）。</span>
         </div>
         <div class="task-file">src/types/buff.ts · src/utils/reachableBuffs.ts · src/pages/simulator/SimulatorPage.tsx · src/pages/user/admin/BuffAdmin.tsx</div>
       </div>
@@ -711,17 +813,19 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">E-2 &nbsp; 刪 SkillArea</div>
-      <div class="task-group-meta">src/types/pilot.ts:53-59</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">src/types/pilot.ts</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">0/710、無 UI、無消費端</div>
+        <div class="task-name">0/710、無 UI、無消費端 — <strong>2026-08-12 已完成</strong></div>
         <div class="task-desc">
           <code>SkillArea</code>（形狀描述，「PLAN-019 模擬層預留，暫不填」）實測 <strong>0/710</strong>，
           無編輯 UI、無渲染端。留著就是第二套詞彙的種子。<br>
-          <span style="color:var(--text-dim);"><strong>對照：<code>SkillVariant</code> 不刪</strong>——它同樣 0/710，但 Phase G 就要開始填它，且它的註解逐字為本次問題而生。</span>
-        </div>
+          <span style="color:var(--text-dim);"><strong>對照：<code>SkillVariant</code> 不刪</strong>——它同樣 0/710，但 Phase G 就要開始填它，且它的註解逐字為本次問題而生。</span><br>
+          <span style="color:var(--accent-green);"><strong>資料複核：</strong>pilotSkills <strong>843 筆中 0 筆</strong>帶 <code>area</code>（<code>variants</code> 同樣 0 筆，但依上述理由保留）。
+          <code>SkillArea</code> 介面與 <code>area?</code> 欄位已刪除，並在 <code>variants</code> 的註解裡寫明「為什麼它留下、SkillArea 沒留」，
+          避免下一個人看到兩個同樣空的預留欄位卻只刪一個而困惑。</span>
         <div class="task-file">src/types/pilot.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -738,15 +842,25 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">F-1 &nbsp; 文件同步</div>
-      <div class="task-group-meta">docs/02_技術文件/</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">docs/02_技術文件/ · 03_頁面規劃/</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">新增 forms 資料模型頁 + 更新既有頁</div>
+        <div class="task-name">新增 forms 資料模型頁 + 更新既有頁 — <strong>2026-08-12 已完成</strong></div>
         <div class="task-desc">
           新增 <code>forms</code> 集合的資料庫設計文件；更新 <code>buffs.html</code>（移除 mutexGroup）、
-          <code>pilotSkills</code> 相關頁（移除 SkillArea）、引用層文件（RefType 加 'form'）。
+          <code>pilotSkills</code> 相關頁（移除 SkillArea）、引用層文件（RefType 加 'form'）。<br>
+          <span style="color:var(--accent-green);"><strong>實際完成（隨各階段滾動同步，非最後補做）：</strong><br>
+          · <strong>新建</strong> <code>04_Firebase/資料庫設計文件/forms.html</code>——欄位表、<code>FormRestrict</code> union 兩支語意、
+            <strong>刻意不開的 6 個欄位與理由</strong>、箭頭方向圖、inbound 引用、以及「新增集合時的部署順序」教訓；
+            並在 <code>Firebase資料庫設計文件.html</code> 的卡片區與集合總表兩處註冊。<br>
+          · <code>02_資料模型/skills_buffs.html</code>：<code>mutexGroup</code> 標記為已移除（<strong>不直接抹掉</strong>——查舊文件的人需要知道它去哪了）、
+            <code>RefType</code> 補 <code>'form'</code> 並註明「6 處消費端中有 2 處 tsc 抓不到」。<br>
+          · <code>04_Firebase/資料庫設計文件/pilotSkills.html</code>：<code>area / SkillArea</code> 標記為已移除，並說明為何 <code>variants</code> 留下。<br>
+          · <code>skills-buffs.html</code>、<code>changeHistory.html</code>（新增 <code>form</code> kind）、<code>security-rules.html</code>（新增 <code>match /forms/</code>）。<br>
+          · <code>03_頁面規劃/02_機師/index.html</code>：分頁改 URL 驅動的說明 ＋ 新增「形態（條件式第 4 分頁）」卡。<br>
+          <span style="color:var(--text-dim);">註：<code>forms.html</code> 位於 <code>02_技術文件/04_Firebase</code>，不在 <code>copy-docs</code> 白名單內 → 不會流到公開的 /documents，與其餘 Firebase 文件一致。</span></span>
         </div>
         <div class="task-file">docs/02_技術文件/02_資料模型/ · 04_Firebase/資料庫設計文件/</div>
       </div>
@@ -759,14 +873,22 @@
     <div class="task-group-header">
       <div class="task-group-title">F-2 &nbsp; bump 版本 + 網站履歷</div>
       <div class="task-group-meta">meta/gameData · siteChangelog</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">四個集合 bump + 使用者視角摘要</div>
+        <div class="task-name">四個集合 bump + 使用者視角摘要 — <strong>2026-08-12 已完成</strong></div>
         <div class="task-desc">
           bump：forms（新）/ pilotSkills / modules / pilots。<br>
-          履歷例：「機師詳情頁新增形態分頁（調構師）」。
+          履歷例：「機師詳情頁新增形態分頁（調構師）」。<br>
+          <span style="color:var(--accent-green);"><strong>實際完成：</strong>四個集合已於 Phase C 遷移後 bump
+          （<code>meta/gameData</code> 複驗四者版本一致為 <code>2026-08-11T19:20:45.764Z</code>）。
+          <strong>Phase D / E 未動任何資料，故不需再 bump</strong>——形態卡的三層來源全是前端反查，
+          刪 <code>mutexGroup</code> / <code>SkillArea</code> 也只動型別與程式碼。<br>
+          網站履歷寫了 <strong>2 筆</strong>：① 形態分頁與常駐特殊能力列（含「為什麼分層標來源而不合併成一個數字」的說明）；
+          ② 帕姆斯陣列敘述裡四個形態連結改指向形態頁、並清掉四個失效連結設定——那是使用者<u>點得到</u>的行為改變，
+          不寫的話玩家只會發現連結目的地突然變了。<br>
+          <span style="color:var(--text-dim);">D-1 的「分頁狀態進網址」已於前一批 commit 各自寫過履歷，不重複。</span></span>
         </div>
         <div class="task-file">bumpDataVersion · src/data/siteChangelog/2026-08.ts</div>
       </div>

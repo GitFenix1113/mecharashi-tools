@@ -18,7 +18,9 @@ import { useRefScanData } from '../../../hooks/useRefScanData'
 const BUFF_TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: BuffType.STAT_BOOST, label: '數值增益 statBoost' },
   { value: BuffType.RESOURCE,   label: '資源 resource' },
-  { value: BuffType.STATE,      label: '狀態 / 形態 state' },
+  // PLAN-041：label 拿掉「形態」二字——機師形態已是 forms 集合的獨立實體，
+  // 這裡再叫「形態」會讓新調構師上線時有人把形態建成 buff（走錯不會有任何錯誤提示）。
+  { value: BuffType.STATE,      label: '狀態 state' },
   { value: BuffType.DEBUFF,     label: '減益 debuff' },
   { value: BuffType.CONTROL,    label: '控制 control' },
 ]
@@ -32,117 +34,10 @@ function makeDefaultBuff(id: string, name = '', buffType: string = BuffType.STAT
   return { id, name, description: '', descriptionRefs: {}, buffType, effects: [], icon: undefined }
 }
 
-// ─── 互斥群組選擇器（防呆）──────────────────────────────────────────────────────
-// 自由文字易因「跨筆字串必須完全一致」而出錯：改為「從現有群組挑選」為主、「建立新群組」為輔。
-// 加入既有群組 = 從清單選同一字串（不可能打錯）；建新才打字並即時擋大小寫變體重複 + NFC/trim 正規化。
-// 群組命名中立：不限定 pilot 前綴，全域互斥（如「傷害提升」）也只是清單裡的一筆。
-const MUTEX_NONE = '__mutex_none__'
-const MUTEX_NEW = '__mutex_new__'
-const MUTEX_CURRENT = '__mutex_current__'
-const normalizeMutex = (s: string) => s.normalize('NFC').trim()
-
-function MutexGroupField({
-  value,
-  currentBuffId,
-  onChange,
-}: {
-  value: string | undefined
-  currentBuffId: string
-  onChange: (v: string | undefined) => void
-}) {
-  const gd = useGameData()
-  const [creating, setCreating] = useState(false)
-  const [draft, setDraft] = useState('')
-  const [note, setNote] = useState<string | null>(null)
-
-  // group → 其他成員名稱[]（排除目前編輯中的 buff，避免自身重複計數）
-  const groupMembers = useMemo(() => {
-    const m = new Map<string, string[]>()
-    for (const b of gd.buffs) {
-      if (!b.mutexGroup || b.id === currentBuffId) continue
-      const arr = m.get(b.mutexGroup) ?? []
-      arr.push(b.name || b.id)
-      m.set(b.mutexGroup, arr)
-    }
-    return m
-  }, [gd.buffs, currentBuffId])
-
-  const groups = useMemo(() => [...groupMembers.keys()].sort(), [groupMembers])
-  const valueIsKnown = value != null && groups.includes(value)
-  const others = value != null ? groupMembers.get(value) ?? [] : []
-
-  function handleSelect(v: string) {
-    setNote(null)
-    if (v === MUTEX_NONE) { onChange(undefined); return }
-    if (v === MUTEX_NEW) { setDraft(''); setCreating(true); return }
-    onChange(v)
-  }
-
-  function confirmNew() {
-    const norm = normalizeMutex(draft)
-    if (!norm) { setNote('請輸入群組名稱'); return }
-    // 不分大小寫命中既有群組 → 改用既有正規寫法，避免大小寫變體造成「看起來同組、實則不同」
-    const hit = groups.find((g) => g.toLowerCase() === norm.toLowerCase())
-    onChange(hit ?? norm)
-    setCreating(false)
-    setDraft('')
-    setNote(hit ? `已對應現有群組「${hit}」` : null)
-  }
-
-  const draftNorm = normalizeMutex(draft)
-  const draftHit = groups.find((g) => g.toLowerCase() === draftNorm.toLowerCase())
-
-  return (
-    <Field label="互斥群組 mutexGroup（選填；同群一次只能存在一個，計算器取最高）">
-      {!creating ? (
-        <>
-          <select
-            value={valueIsKnown ? value! : value != null ? MUTEX_CURRENT : MUTEX_NONE}
-            onChange={(e) => handleSelect(e.target.value)}
-            className="input-field"
-          >
-            <option value={MUTEX_NONE}>（無互斥）</option>
-            {value != null && !valueIsKnown && <option value={MUTEX_CURRENT}>{value}（新群組）</option>}
-            {groups.map((g) => (
-              <option key={g} value={g}>{g} · {groupMembers.get(g)!.length} 個成員</option>
-            ))}
-            <option value={MUTEX_NEW}>＋ 建立新群組…</option>
-          </select>
-          {value != null && (
-            <p className="text-[12px] text-text-dim mt-1">
-              {others.length > 0
-                ? <>同群：{others.join('、')}（連同此 BUFF 共 {others.length + 1} 個）</>
-                : '新群組，目前僅此 BUFF'}
-            </p>
-          )}
-          {note && <p className="text-[12px] text-accent-cyan mt-1">{note}</p>}
-        </>
-      ) : (
-        <div className="space-y-1.5">
-          <div className="flex gap-2">
-            <input
-              autoFocus
-              value={draft}
-              onChange={(e) => { setDraft(e.target.value); setNote(null) }}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmNew() } }}
-              className="input-field flex-1"
-              placeholder="如：pilot_0XX_艾達_凝勢 或 傷害提升·全域"
-            />
-            <button type="button" onClick={confirmNew} className="px-3 py-1.5 bg-accent-orange text-black font-bold rounded-lg text-sm shrink-0">確認</button>
-            <button type="button" onClick={() => { setCreating(false); setDraft('') }} className="px-3 py-1.5 bg-bg-dark border border-border text-text-secondary rounded-lg text-sm shrink-0">取消</button>
-          </div>
-          {draftNorm && (
-            <p className="text-[12px] text-text-dim">
-              將{draftHit ? '改用既有群組' : '建立'}：<span className="text-accent-cyan">{draftHit ?? draftNorm}</span>
-              {draftHit && '（已存在相近群組，避免重複）'}
-            </p>
-          )}
-          {note && <p className="text-[12px] text-accent-red">{note}</p>}
-        </div>
-      )}
-    </Field>
-  )
-}
+// PLAN-041：互斥群組（mutexGroup）選擇器已整塊移除。
+// 它是 PLAN-019-B 為形態互斥預留的，但實測全庫 0 筆 buff 曾填過——而後台這裡是
+// 「唯一長得像『建形態』的地方」，新調構師上線時走錯不會有任何錯誤提示。
+// 形態現在是 forms 集合的獨立實體，請至後台「機師形態」分頁維護。
 
 // ─── 詞條來源（PLAN-024）：掛 glossaryTerm，用其官方說明取代 buff 詳情卡顯示 ──────────
 // 純顯示來源綁定，無計算意義；為未來技能資料庫鋪路（關鍵字說明單一真相源）。
@@ -402,7 +297,7 @@ function BuffEditPanel({
         )}
         <div className="grid grid-cols-2 gap-3">
           <Field label="名稱 name（= [xxx] 內文字）">
-            <input value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" placeholder="如：虛粒子形態" />
+            <input value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" placeholder="如：過熱、凝勢" />
           </Field>
           <Field label="類型 buffType">
             <select value={form.buffType} onChange={(e) => update('buffType', e.target.value)} className="input-field">
@@ -468,12 +363,6 @@ function BuffEditPanel({
           defaultFolder="skills"
         />
 
-        <MutexGroupField
-          value={form.mutexGroup}
-          currentBuffId={form.id}
-          onChange={(v) => update('mutexGroup', v)}
-        />
-
         <TermRefField
           value={form.termRef}
           onChange={(v) => update('termRef', v)}
@@ -526,7 +415,7 @@ function BuffEditPanel({
           </div>
           {(form.levels ?? []).length === 0 ? (
             <p className="text-xs text-text-dim py-2 text-center">
-              無等級資料。填了即為「階梯 buff」：各級獨立 maxStack / effects，同 buff 不同 level 天然互斥（取代 mutexGroup）。
+              無等級資料。填了即為「階梯 buff」：各級獨立 maxStack / effects，同 buff 不同 level 天然互斥（計算器取最高）。
             </p>
           ) : (
             <>
@@ -643,7 +532,7 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
         creating={creating}
         newId={newId}
         newIdError={newIdError}
-        placeholder="輸入 BUFF 名稱，如：虛粒子形態"
+        placeholder="輸入 BUFF 名稱，如：凝勢"
         hint={<>輸入 BUFF 名稱，系統自動生成文件 ID（前綴固定 <span className="text-accent-cyan">buff_</span>）</>}
         onChangeId={(v) => { setNewId(v); setNewIdError('') }}
         onConfirm={() => { void confirmCreateChecked() }}
@@ -688,9 +577,6 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
                 <span className="text-[13px] px-1.5 py-0.5 rounded border border-accent-orange/30 bg-accent-orange/10 text-accent-orange shrink-0">
                   {BUFF_TYPE_LABEL[buff.buffType] ?? buff.buffType}
                 </span>
-                {buff.mutexGroup && (
-                  <span className="text-[12px] text-text-dim shrink-0">互斥 {buff.mutexGroup}</span>
-                )}
               </div>
               <p className="text-[13px] text-text-secondary truncate mt-0.5">{buff.description || '（無說明）'}</p>
             </div>

@@ -1,12 +1,13 @@
 // 可用 buff 池 → 可達 buff 集：收斂（PLAN-019-B Layer 2）
 //
-// buildBuffPool 給出的是「來源在配裝中」的原始聯集，可能含重複與互斥。本層做兩種【分立】收斂
-// （PLAN-024 後語意，務必區分）：
-//   ① mutexGroup（形態互斥）：同 GameBuff.mutexGroup 一次只能存在一個（虛粒子 ⟷ 實粒子）。
-//      → 不自動決定，而是輸出「擇一選項組」交給 UI 讓玩家切。
-//   ② 同 buffId 多 level（階梯取最高）：同一個 buff 出現 @2 / @3 → 取 level 最大者（天然互斥，
-//      取代舊「階梯共用 mutexGroup」用法）。
-// 兩者語意不同、互不衝突：先做 ②（同 id 收斂取最高），再做 ①（跨 id 依形態分組）。
+// buildBuffPool 給出的是「來源在配裝中」的原始聯集，可能含重複。本層做一種收斂：
+//   同 buffId 多 level（階梯取最高）：同一個 buff 出現 @2 / @3 → 取 level 最大者。
+//
+// ⚠ **形態互斥（mutexGroup / FormGroup）已於 PLAN-041 移除。** 那套引擎是 PLAN-019-B 為
+//   「虛粒子 ⟷ 實粒子」預留的，但實測全庫 **0 筆 buff 曾經填過 mutexGroup**——它從上線到
+//   刪除為止算出來的永遠是 0 組、UI 從未渲染過一次。形態現在是 forms 集合的獨立實體
+//   （機師詳情頁的形態分頁），不再由 buff 互斥模擬。模擬器的形態 gate 明文不在 PLAN-041 範圍內，
+//   日後真要做時應以 forms 為準，**不要**把 mutexGroup 找回來。
 //
 // 純函式、無副作用，可單測（npm test）。
 
@@ -22,16 +23,8 @@ export interface ResolvedBuff {
   origins: string[]
 }
 
-/** 形態互斥組：同 mutexGroup 的多個 buff，需使用者擇一 active */
-export interface FormGroup {
-  mutexGroup: string
-  options: ResolvedBuff[]
-}
-
 export interface ResolvedBuffs {
-  /** 形態互斥組（mutexGroup 命中且同組 >0）；UI 渲染成擇一切換 */
-  formGroups: FormGroup[]
-  /** 非形態、已定案的 buff（已做 level 取最高） */
+  /** 已定案的 buff（已做 level 取最高） */
   fixed: ResolvedBuff[]
   /** pool 中查無對應 GameBuff 文件的孤兒（優雅降級：面板可略過或灰顯） */
   unresolved: BuffSource[]
@@ -53,7 +46,7 @@ export function resolveReachable(
 ): ResolvedBuffs {
   const unresolved: BuffSource[] = []
 
-  // ── ② 同 buffId 收斂：取最高級、合併來源 ──
+  // ── 同 buffId 收斂：取最高級、合併來源 ──
   // key = buffId；value = 目前最高級的條目 + 累積來源
   const collapsed = new Map<string, { level?: number; origins: string[] }>()
   for (const src of pool) {
@@ -70,24 +63,11 @@ export function resolveReachable(
     }
   }
 
-  // ── ① 跨 buffId 依 mutexGroup 分組 ──
-  const fixed: ResolvedBuff[] = []
-  const groupMap = new Map<string, ResolvedBuff[]>()
-  for (const [buffId, { level, origins }] of collapsed) {
-    const buff = buffMap.get(buffId)!
-    const resolved: ResolvedBuff = { buff, level, origins }
-    if (buff.mutexGroup) {
-      const arr = groupMap.get(buff.mutexGroup)
-      if (arr) arr.push(resolved)
-      else groupMap.set(buff.mutexGroup, [resolved])
-    } else {
-      fixed.push(resolved)
-    }
-  }
+  const fixed: ResolvedBuff[] = [...collapsed].map(([buffId, { level, origins }]) => ({
+    buff: buffMap.get(buffId)!,
+    level,
+    origins,
+  }))
 
-  const formGroups: FormGroup[] = [...groupMap.entries()].map(
-    ([mutexGroup, options]) => ({ mutexGroup, options }),
-  )
-
-  return { formGroups, fixed, unresolved }
+  return { fixed, unresolved }
 }

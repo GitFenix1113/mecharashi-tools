@@ -448,24 +448,13 @@ const FORMS: CollectionSpec<MechForm> = {
     // entryNote 刻意無 refs 欄位（官方正文逐字、不結構化），但仍納入 numTokenText 掃描
     { segments: [], origin: `形態:${f.name} 入退場條件`, texts: { entryNote: f.entryNote } },
   ],
-  scalarSites: [
-    {
-      // 虛粒子形態鎖定的固有技能。
-      // ⚠ `restrict.fixedArmament.weaponIds` **不在此**：weapon 不是 ChangeTargetKind
-      //   （PLAN-030 只刪 buff / 技能 / 詞條 / 背包類），掃描器沒有可比對的 kind。
-      //   箭頭 form → weapon 仍存在，只是不由級聯層負責——與 mech/module 互指同樣待遇。
-      id: 'forms.restrict.lockedSkillIds',
-      targets: ['pilotSkill'],
-      enumerate: (f) => f.restrict?.kind === 'fixedArmament'
-        ? (f.restrict.lockedSkillIds ?? []).map((sid, i) => ({
-            segments: ['restrict', 'lockedSkillIds', i],
-            origin: `形態:${f.name} 的鎖定技能`,
-            value: sid,
-            op: 'arrayRemove' as const,
-          }))
-        : [],
-    },
-  ],
+  // scalarSites 為空是**明示的編輯決策**，不是漏填：
+  //  · `restrict.fixedArmament.weaponIds` —— weapon 不是 ChangeTargetKind（PLAN-030 只刪
+  //    buff / 技能 / 詞條 / 背包類），掃描器沒有可比對的 kind。箭頭 form → weapon 仍存在，
+  //    只是不由級聯層負責，與 mech/module 互指同樣待遇。
+  //  · 「被鎖住的技能」—— 該欄位已於 2026-08-12 移除（見 types/form.ts）：那件事由
+  //    description 內的 [虛粒子刃] 引用表達，走 textUnits 這條、本來就掃得到。
+  scalarSites: [],
   softSites: [],
 }
 

@@ -135,10 +135,10 @@
       <tr><td>maxStack</td><td>number?</td><td>✅ PLAN-001</td><td>最大疊加層數；resource 類型用，省略表示不可疊加</td></tr>
       <tr><td>duration</td><td>number?</td><td>✅ PLAN-001</td><td>持續回合數；null = 持續到消耗 / 手動關閉</td></tr>
       <tr><td>maxTriggers</td><td>number?</td><td>🆕</td><td>生效次數：效果可觸發 N 次後耗盡（與 maxStack 疊加層數、duration 回合數為獨立維度）</td></tr>
-      <tr><td>mutexGroup</td><td>string?</td><td>🆕 PLAN-019</td><td>形態互斥群組；同 group 的形態/狀態一次只能存在一個（虛粒子形態 ⟷ 實粒子形態）</td></tr>
+      <tr><td colspan="4" style="color:var(--text-dim);"><del>mutexGroup</del> — <strong>已於 PLAN-041 移除</strong>。原為形態互斥群組，實測全庫 0 筆填過、其引擎算出來的永遠是 0 組。形態改為 <code>forms</code> 集合的獨立實體</td></tr>
       <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-019</td><td>描述內 [xxx] 引用側錄；buff 也可引用其他 buff</td></tr>
       <tr><td>effects</td><td>SkillEffect[]</td><td>✅ PLAN-001</td><td>Buff active 時提供的效果列表</td></tr>
-      <tr><td>levels</td><td>BuffLevel[]?</td><td>🆕 PLAN-024</td><td>階梯 buff 各等級能力；無 = 普通 buff。各級 maxStack/effects 由此提供，同 buff 不同 level 天然互斥（取代 mutexGroup）；引用以 &lt;id.lvN.attr&gt; 指定級、buffIds 以 id@N 賦予級</td></tr>
+      <tr><td>levels</td><td>BuffLevel[]?</td><td>🆕 PLAN-024</td><td>階梯 buff 各等級能力；無 = 普通 buff。各級 maxStack/effects 由此提供，同 buff 不同 level 天然互斥（計算器取最高）；引用以 &lt;id.lvN.attr&gt; 指定級、buffIds 以 id@N 賦予級</td></tr>
       <tr><td>termRef</td><td>string?</td><td>🆕 PLAN-024</td><td>掛載 glossaryTerm ID；填了則詳情卡改以該詞條的官方說明為顯示來源（取代本 buff description，單一真相源，為技能庫鋪路）</td></tr>
     </table>
   </div>
@@ -180,7 +180,7 @@
     <strong>🆕 PLAN-024：flat XOR leveled — 能力資料單一權威來源</strong>
     一顆 buff 只能二擇一：<code>flat</code>（無 <code>levels</code>，能力資料來自頂層 <code>maxStack</code>/<code>duration</code>/<code>effects</code>）
     或 <code>leveled</code>（有 <code>levels</code>，能力資料一律由各 <code>BuffLevel</code> 提供，頂層三欄停用且應為空）。
-    <strong>buff-wide 欄位</strong>（兩態共用）：<code>name</code>/<code>buffType</code>/<code>description</code>/<code>descriptionRefs</code>/<code>icon</code>/<code>mutexGroup</code>/<code>termRef</code>；
+    <strong>buff-wide 欄位</strong>（兩態共用）：<code>name</code>/<code>buffType</code>/<code>description</code>/<code>descriptionRefs</code>/<code>icon</code>/<code>termRef</code>；
     <strong>level-exclusive 欄位</strong>（有 levels 只能填在各級）：<code>maxStack</code>/<code>duration</code>/<code>maxTriggers</code>/<code>effects</code>。
     後台 BuffAdmin 於有 levels 時停用頂層三欄並在儲存時清空，杜絕「頂層 vs 各級」雙來源衝突。
     引用 leveled buff 須帶 level（<code>id@N</code> / <code>&lt;id.lvN.attr&gt;</code> / EntityRef.level）才取得能力數值；不帶 level 僅顯示 buff-wide 資訊。
@@ -190,7 +190,7 @@
     <strong>BuffType 枚舉值說明</strong>
     <code>statBoost</code> — 純數值增益（最常見）<br>
     <code>resource</code> — 可堆疊資源（如彈潮蓄能、連擊層數），搭配 maxStack 使用<br>
-    <code>state</code> — 特殊狀態（如過熱、強化模式）；<strong>形態切換</strong>用 <code>state</code> + <code>mutexGroup</code> 表達<br>
+    <code>state</code> — 特殊狀態（如過熱、強化模式）。<strong>形態切換不再由 buff 表達</strong>（PLAN-041）：機師形態是 <code>forms</code> 集合的獨立實體<br>
     <code>debuff</code> — 對敵減益<br>
     <code>control</code> — 控制效果
   </div>
@@ -217,7 +217,8 @@
   <div class="data-table-wrap">
     <table class="data-table">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
-      <tr><td>EntityRef.refType</td><td>RefType</td><td>buff / skill / pilot / mech / weapon / module / backpack / component / stat / term / <strong>neuralDrive</strong>（🆕 PLAN-023，指向 neuralDriveAbilities）</td></tr>
+      <tr><td>EntityRef.refType</td><td>RefType</td><td>buff / skill / pilot / mech / weapon / module / backpack / component / stat / term / <strong>neuralDrive</strong>（🆕 PLAN-023，指向 neuralDriveAbilities）/ <strong>form</strong>（🆕 PLAN-041，指向 <a href="../04_Firebase/資料庫設計文件/forms.html">forms</a> 機師形態；點擊導向 <code>/pilots/&lt;pilotId&gt;?tab=形態</code>，因形態沒有獨立路由）<br>
+        <span style="color:var(--text-dim);">⚠ 新增值時要補的窮舉消費端共 <strong>5 個檔案 6 處</strong>，其中 <code>RefPicker.REF_TYPE_OPTIONS</code>（手寫陣列）與 <code>EntityRefView.resolve()</code> 的 switch（有 default）<strong>tsc 抓不到</strong>；完整清單寫在 <code>src/types/common.ts</code> 的 <code>RefType</code> 註解上。</span></td></tr>
       <tr><td>EntityRef.refId</td><td>string</td><td>目標 ID（buffs/{id}、pilots/{id}、glossaryTerms/{id}、neuralDriveAbilities/{id}），或 stat key 如 'dmg'</td></tr>
       <tr><td>EntityRef.label</td><td>string?</td><td>顯示文字；預設取目標 name，可覆寫（原文用別名時）</td></tr>
       <tr><td>EntityRef.level</td><td>number?</td><td>🆕 PLAN-024：引用階梯 buff 的特定等級。數值代入時自動帶出 <code>&lt;refId.lvN.attr&gt;</code> 形式；未指定 = 不限級（沿用頂層 / base）。<br><small style="color:var(--text-dim)">🆕 PLAN-034 起語意精確化為<strong>基準階</strong>：實際顯示階可被神驅算力覆寫層抬升為 <code>max(level, 覆寫階)</code>——是<strong>下限</strong>不是等號，靜態 <code>level:3</code> 不會被 lv2 覆寫降級。</small></td></tr>

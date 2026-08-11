@@ -7,7 +7,8 @@ import type { PilotStats, NeuralDrive, Weapon, PilotTalent, TalentNdVariant, Des
 import { formatWeaponReq } from '../../types'
 type NdLevel = NeuralDrive['levels'][number]
 import { assetUrl } from '../../utils/assets'
-import { usePilot, usePilotExclusiveWeapons } from '../../hooks/useFirestore'
+import { usePilot, usePilotExclusiveWeapons, useFormsByPilot } from '../../hooks/useFirestore'
+import { FormCard } from '../../components/FormCard'
 import { useGameData } from '../../contexts/GameDataContext'
 import { resolvePilotSkills, buildSkillMap } from '../../utils/pilotSkills'
 import { resolveWeaponSkills, type ResolvedWeaponSkill } from '../../utils/weaponSkills'
@@ -1016,6 +1017,14 @@ export default function PilotDetailPage() {
   // PLAN-004：技能改由 pilotSkills 集合解析（過渡期亦相容嵌入舊格式）
   const gd = useGameData()
   useEffect(() => { gd.ensureLoaded(['pilotSkills', 'neuralDriveAbilities']) }, [gd])
+
+  // PLAN-041：形態（僅調構師有；非調構師此陣列恆為空 → 不多付任何讀取以外的成本）
+  const { data: forms } = useFormsByPilot(id)
+  // 形態卡的三層來源分別住在 buffs（形態增益）／modules（模組加成）／weapons（固定武裝 chip），
+  // 全部是**反查**而來。只在真的有形態時才載——非調構師的頁面不該為此多抓三個集合。
+  // ⚠ buffs 原本是條件式載入（見下方 ndNeedsBuffs），漏了這行的症狀是「形態增益」整層空白且無錯誤。
+  const hasForms = forms.length > 0
+  useEffect(() => { if (hasForms) gd.ensureLoaded(['buffs', 'modules', 'weapons']) }, [hasForms, gd])
   const skillMap = useMemo(() => buildSkillMap(gd.pilotSkills), [gd.pilotSkills])
 
   // PLAN-032：專武技能雙格式解析。共用上面那張 skillMap——武器技能與機師技能同住
@@ -1152,6 +1161,10 @@ export default function PilotDetailPage() {
     { key: '天賦',     count: pilot.talents.length },
     { key: '技能',     count: regularSkills.length },
     { key: '神經驅動', count: pilot.neuralDrive?.length ?? 0 },
+    // PLAN-041：條件式第 4 分頁。gate 是 forms.length，**不是** pilot.class === '調構師'
+    // ——官方職業 icon 跳號，且實測 2/82 機師的 class 與職業機制對不上；用 class gate 會在
+    // 新調構師上線但 forms 未填時渲染出空的「形態 (0)」。
+    ...(forms.length ? [{ key: '形態', count: forms.length }] : []),
   ]
   // derived active：找不到就落回第一個分頁。這一行同時吃掉三種情況——
   // 沒有 ?tab=、?tab= 是未知值（手改網址／舊書籤）、以及該分頁在這名機師身上不存在。
@@ -1273,6 +1286,35 @@ export default function PilotDetailPage() {
             affectZones={ndAffectZones}
             onChange={setNdLevelsOverride}
           />
+        )}
+
+        {/* PLAN-041 D-4：跨分頁常駐的「特殊能力」列。位置跟隨 NdPowerBar 的慣例——
+            渲染在分頁 switch **之外**，四個分頁都看得到；官方本來也是把形態做成常駐橫幅。
+            gate 用 forms.length，理由同 skillTabs 的註解。 */}
+        {hasForms && (
+          <div className="px-4 py-2.5 border-b border-border bg-accent-cyan/5">
+            <div className="flex items-center gap-2.5 overflow-x-auto">
+              <span className="shrink-0 text-[11px] font-[Orbitron,sans-serif] tracking-widest uppercase text-accent-cyan">
+                特殊能力
+              </span>
+              <div className="flex items-center gap-1.5">
+                {forms.map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setActiveSkillTab('形態')}
+                    title={`${f.name} — 點擊查看形態詳情`}
+                    className={`shrink-0 whitespace-nowrap px-2.5 py-1 rounded-lg border text-[12px] transition-colors cursor-pointer ${
+                      f.isSignature
+                        ? 'border-accent-yellow/50 bg-accent-yellow/10 text-accent-yellow hover:bg-accent-yellow/20'
+                        : 'border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan hover:bg-accent-cyan/20'
+                    }`}
+                  >
+                    {f.isSignature && '★ '}{f.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* PLAN-034：算力覆寫表罩住三個分頁的引用渲染。ND 分區卡／能力卡另包
@@ -1424,6 +1466,14 @@ export default function PilotDetailPage() {
                   })}
                 </div>
               </NdOverrideEmpty>
+            </div>
+          )}
+
+          {/* PLAN-041 D-3：形態分頁。一律 forms.map，不寫死欄數——
+              新調構師只有 2 個形態時自動變 2 張卡。 */}
+          {activeSkillTab === '形態' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {forms.map((f) => <FormCard key={f.id} form={f} />)}
             </div>
           )}
         </div>

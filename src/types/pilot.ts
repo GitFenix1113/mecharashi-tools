@@ -50,14 +50,6 @@ export interface SkillVariant {
   effects?: SkillEffect[]
 }
 
-/** 技能作用範圍/形狀（龍雷拳：面前 3×4 格）；PLAN-019 模擬層預留，暫不填 */
-export interface SkillArea {
-  /** 形狀描述，如 "面前3×4格" */
-  shape?: string
-  rows?: number
-  cols?: number
-}
-
 /**
  * pilotSkills 集合的技能文件（PLAN-004 技能庫抽離）。
  * 欄位與嵌入用 PilotSkill 相同，另有頂層 id；可被描述中的 [xxx] 引用（refType:'skill'）。
@@ -114,17 +106,21 @@ export interface PilotSkillDoc {
    * 與 activation 的情況正好相反。
    */
   enhancedTalentDescription?: string
-  /** 模擬層預留：條件變體（萬序擬合）；暫不填 */
+  /**
+   * 模擬層預留：條件變體（萬序擬合）；暫不填。
+   *
+   * ⚠ 與同期被刪掉的 SkillArea 看似同類，**保留是刻意的**：PLAN-041 Phase G 就要開始填它
+   * （形態 × 武器種類 → 子技能的 42 筆矩陣），且屆時 formId 分支的箭頭方向 skill → form
+   * 正是為本次形態模型而定。SkillArea 則是 0/710、無 UI、無消費端、也無人要填。
+   */
   variants?: SkillVariant[]
-  /** 模擬層預留：作用範圍（龍雷拳）；暫不填 */
-  area?: SkillArea
 }
 
 /**
  * 神經驅動算力改寫變體（PLAN-021）。
  * 當神經驅動算力跨過 minSum 門檻，遊戲把天賦正文就地改寫（引用更高階 buff、層數/數值變動）。
  * 以 minSum 鬆耦合到 NeuralDriveLevel.minSum；本變體 descriptionRefs 與天賦 descriptionRefs 合併解析。
- * 多階互斥、計算器取最高（對應的 buff 共用 GameBuff.mutexGroup）。
+ * 多階互斥、計算器取最高（對應的 buff 以 GameBuff.levels 表達）。
  */
 export interface TalentNdVariant {
   /** 算力門檻（對應 NeuralDriveLevel.minSum） */

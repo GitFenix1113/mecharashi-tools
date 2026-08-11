@@ -78,7 +78,7 @@
       <tr><td>enhancesTalentName</td><td>string?</td><td><strong>PLAN-032</strong>（原 <code>WeaponSkill</code> 欄位）：此技能強化的天賦名。專武技能才有。前台以「此名稱是否在當前機師的天賦清單內」判定要不要顯示強化標記</td></tr>
       <tr><td>enhancedTalentDescription</td><td>string?</td><td><strong>PLAN-032</strong>：天賦被此技能強化後的完整原文，供與天賦原文做 DiffHighlight 差異對比。<br><small style="color:var(--text-dim)">⚠ 這兩欄刻意放<strong>定義側</strong>而非武器的掛載側：本欄與上方 <code>descriptionRefs</code> 是<strong>一起被消費的</strong>（PilotDetailPage 用同一份 refs 解析這段文字的 <code>[xxx]</code>），拆兩份文件會失同步，症狀是「強化後天賦文字裡的引用突然不會亮」。且專武與機師 1:1，天然無跨武器變異——與 <code>activation</code> 的情況正好相反（後者留在掛載側）。</small></td></tr>
       <tr><td>variants</td><td>SkillVariant[]?</td><td>模擬層預留：條件變體（如萬序擬合依形態/武器發動不同子技能）。暫不填</td></tr>
-      <tr><td>area</td><td>SkillArea?</td><td>模擬層預留：作用範圍/形狀（如龍雷拳 面前3×4格）。暫不填</td></tr>
+      <tr><td colspan="3" style="color:var(--text-dim);"><del>area / SkillArea</del> — <strong>已於 PLAN-041 移除</strong>：0/710、無編輯 UI、無渲染端、也無人要填。<code>variants</code> 同為 0/710 但保留——PLAN-041 Phase G 就要開始填它</td></tr>
     </table>
   </div>
 </section>

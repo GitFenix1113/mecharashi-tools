@@ -15,11 +15,12 @@ import GrayOpsAdmin from './admin/GrayOpsAdmin'
 import BackpackAdmin from './admin/BackpackAdmin'
 import BackpackSkillAdmin from './admin/BackpackSkillAdmin'
 import GlossaryAdmin from './admin/GlossaryAdmin'
+import FormAdmin from './admin/FormAdmin'
 import BuffAdmin from './admin/BuffAdmin'
 import SkillAdmin from './admin/SkillAdmin'
 import NeuralDriveAdmin from './admin/NeuralDriveAdmin'
 
-type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpacks' | 'backpackSkills' | 'glossary' | 'skills' | 'neuralDrive' | 'buffs' | 'users' | 'grayops'
+type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpacks' | 'backpackSkills' | 'glossary' | 'skills' | 'neuralDrive' | 'buffs' | 'forms' | 'users' | 'grayops'
 
 // 各分頁的載入設定：
 //   keys       — 此分頁需要整包載入的集合（主資料 + 編輯面板下拉用的關聯集合）。
@@ -46,6 +47,10 @@ const TAB_CONFIG: Record<Tab, { keys: CollectionKey[]; searchable: boolean; self
   skills:     { keys: ['pilotSkills'],       searchable: true,  selfLoading: false, preload: true  },
   neuralDrive:{ keys: ['neuralDriveAbilities', 'pilots'], searchable: true, selfLoading: false, preload: true },
   buffs:      { keys: ['buffs'],             searchable: true,  selfLoading: false, preload: true  },
+  // PLAN-041：形態編輯要挑機師（pilotId）、固定武裝（weaponIds）、鎖定技能（lockedSkillIds）
+  // 與形態增益（grantedBuffIds）→ 四個關聯集合都要一併載入。
+  // 漏了不會報錯，症狀是「挑選器候選 0 個、已存的引用全顯示⚠找不到」（同 weapons 分頁的前例）。
+  forms:      { keys: ['forms', 'pilots', 'weapons', 'pilotSkills', 'buffs'], searchable: true, selfLoading: false, preload: true },
   users:      { keys: [],                     searchable: false, selfLoading: true,  preload: false },
 }
 
@@ -216,6 +221,7 @@ export default function AdminPage() {
         <TabButton active={tab === 'skills'}      onClick={() => setTab('skills')}>技能管理</TabButton>
         <TabButton active={tab === 'neuralDrive'} onClick={() => setTab('neuralDrive')}>神經驅動</TabButton>
         <TabButton active={tab === 'buffs'}      onClick={() => setTab('buffs')}>BUFF 管理</TabButton>
+        <TabButton active={tab === 'forms'}      onClick={() => setTab('forms')}>機師形態</TabButton>
         <TabButton active={tab === 'users'}      onClick={() => setTab('users')}>用戶管理</TabButton>
         <TabButton active={tab === 'grayops'}    onClick={() => setTab('grayops')}>灰燼行動</TabButton>
       </div>
@@ -259,6 +265,7 @@ export default function AdminPage() {
         {showContent && tab === 'skills' && <SkillAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'neuralDrive' && <NeuralDriveAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'buffs' && <BuffAdmin initialSearch={searchSeed} />}
+        {showContent && tab === 'forms' && <FormAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'users' && <UserAdmin currentUid={user.uid} />}
         {showContent && tab === 'grayops' && (
           <GrayOpsAdmin roster={ctxGrayOpsRoster} mechs={ctxMechs} onSave={handleGrayOpsSave} />

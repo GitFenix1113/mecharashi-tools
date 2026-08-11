@@ -135,7 +135,6 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       const descriptionRefs = lv?.description ? lv.descriptionRefs : (term ? term.descriptionRefs : b.descriptionRefs)
       const maxStack = lv?.maxStack ?? b.maxStack
       const maxTriggers = lv?.maxTriggers ?? b.maxTriggers
-      // mutexGroup 為內部互斥 key（屬維護用資訊，不顯示給玩家）
       const subtitle = [
         buffTypeLabel,
         lv ? `Lv${lv.level}` : '',
