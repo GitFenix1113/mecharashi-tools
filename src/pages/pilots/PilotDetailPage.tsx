@@ -1,14 +1,14 @@
 ﻿import { useState, useRef, useLayoutEffect, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
-import { BottomSheet } from '../../components/BottomSheet'
+import { BottomSheet } from '../../components/common/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import type { PilotStats, NeuralDrive, Weapon, PilotTalent, TalentNdVariant, DescriptionRefs } from '../../types'
 import { formatWeaponReq } from '../../types'
 type NdLevel = NeuralDrive['levels'][number]
 import { assetUrl } from '../../utils/assets'
 import { usePilot, usePilotExclusiveWeapons, useFormsByPilot } from '../../hooks/useFirestore'
-import { FormCard } from '../../components/FormCard'
+import { FormCard } from '../../components/cards/FormCard'
 import { useGameData } from '../../contexts/GameDataContext'
 import { resolvePilotSkills, buildSkillMap } from '../../utils/pilotSkills'
 import { resolveWeaponSkills, type ResolvedWeaponSkill } from '../../utils/weaponSkills'
@@ -19,11 +19,11 @@ import {
 } from '../../utils/ndOverrides'
 import { parseNumRefs } from '../../utils/numRefs'
 import { NdOverrideContext, useNdOverrides } from '../../contexts/NdOverrideContext'
-import { NdOverrideEmpty } from '../../components/NdOverrideEmpty'
+import { NdOverrideEmpty } from '../../components/refs/NdOverrideEmpty'
 import { useReference } from '../../contexts/ReferenceContext'
-import { WeaponIcon } from '../../components/WeaponIcon'
-import { DiffHighlight } from '../../components/DiffHighlight'
-import { RefText } from '../../components/RefText'
+import { WeaponIcon } from '../../components/icons/WeaponIcon'
+import { DiffHighlight } from '../../components/refs/DiffHighlight'
+import { RefText } from '../../components/refs/RefText'
 
 // ─── 神經驅動「全區算力選擇器」（PLAN-021 · 1-6）─────────────────────────────
 // 玩家在 tab 卡頂部點選各區 Lv（仿遊戲內 Lv 條），天賦敘述隨配置即時改寫。

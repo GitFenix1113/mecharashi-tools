@@ -4,11 +4,11 @@ import { useComponents } from '../../hooks/useFirestore'
 import { ComponentType, ComponentsWType, ItemRarity, COMPONENT_WEAPON_TYPES } from '../../types/enums'
 import type { Component, ConditionComponent, FunctionComponent } from '../../types'
 import { highlightNumbers } from '../../utils/moduleStats'
-import { RefText } from '../../components/RefText'
-import { BottomSheet } from '../../components/BottomSheet'
+import { RefText } from '../../components/refs/RefText'
+import { BottomSheet } from '../../components/common/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { ComponentIcon } from '../../components/ComponentIcon'
-import { BossDropTooltip, BossDropSection } from '../../components/BossDropTooltip'
+import { ComponentIcon } from '../../components/icons/ComponentIcon'
+import { BossDropTooltip, BossDropSection } from '../../components/cards/BossDropTooltip'
 import { getAllStages, componentDropsFromStage } from '../../data/bossDrops'
 import {
   RarityBadge,
@@ -17,7 +17,7 @@ import {
   ConditionTypeBadge,
   EffectTypeBadge,
   EFFECT_TYPE_LABELS,
-} from '../../components/ComponentBadges'
+} from '../../components/badges/ComponentBadges'
 
 const PAGE_SIZE = 24
 

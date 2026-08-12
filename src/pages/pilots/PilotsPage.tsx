@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom'
 import { assetUrl } from '../../utils/assets'
 import { usePilots, useWeapons } from '../../hooks/useFirestore'
 import { useViewMode } from '../../hooks/useViewMode'
-import { WeaponIcon } from '../../components/WeaponIcon'
-import { PilotRarityBadge } from '../../components/PilotBadges'
-import { ViewModeToggle } from '../../components/ViewModeToggle'
+import { WeaponIcon } from '../../components/icons/WeaponIcon'
+import { PilotRarityBadge } from '../../components/badges/PilotBadges'
+import { ViewModeToggle } from '../../components/common/ViewModeToggle'
 
 const CLASS_STYLES: Record<string, { text: string; border: string; bg: string }> = {
   守護者: { text: 'text-accent-green', border: 'border-accent-green/40', bg: 'bg-accent-green/10' },

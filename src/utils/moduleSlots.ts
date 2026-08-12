@@ -2,7 +2,7 @@ import { ModuleSlot } from '../types/enums'
 
 /**
  * 模組槽位詞彙（純資料，不含呈現）。
- * Tailwind class 對照留在 components/ModuleBadges.tsx——那是呈現層的事。
+ * Tailwind class 對照留在 components/badges/ModuleBadges.tsx——那是呈現層的事。
  */
 
 export const SLOT_LABELS: Record<string, string> = {

@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
-import type { MechForm } from '../types'
-import { useGameData } from '../contexts/GameDataContext'
-import { resolveIconSrc } from '../utils/assets'
-import { RefText } from './RefText'
-import { RefChip } from './RefChip'
+import type { MechForm } from '../../types'
+import { useGameData } from '../../contexts/GameDataContext'
+import { resolveIconSrc } from '../../utils/assets'
+import { RefText } from '../refs/RefText'
+import { RefChip } from '../refs/RefChip'
 
 /**
  * 機師形態卡（PLAN-041 D-3）。
@@ -81,11 +81,6 @@ export function FormCard({ form }: { form: MechForm }) {
   )
 
   const restrict = form.restrict
-  // 符合白名單的可換裝武器數。固定武裝不計——它們無法更換，算進去只會讓數字對不上圖鑑
-  const matchingWeapons = useMemo(() => {
-    if (restrict?.kind !== 'weaponType') return 0
-    return gd.weapons.filter((w) => !w.isFixedArmament && restrict.allow.includes(w.type as never)).length
-  }, [gd.weapons, restrict])
 
   const sig = !!form.isSignature
 
@@ -145,7 +140,7 @@ export function FormCard({ form }: { form: MechForm }) {
                 {t}
               </span>
             ))}
-            <span className="text-text-dim">武器（{matchingWeapons} 把）</span>
+            <span className="text-text-dim">武器</span>
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { MouseEvent } from 'react'
-import { FallbackImage } from '../FallbackImage'
+import { FallbackImage } from '../common/FallbackImage'
 import { ModuleBoundPart } from './ModuleBoundPart'
 import { imageCandidates } from '../../utils/assets'
 import type { ModuleAdopter } from '../../hooks/useModuleAdopters'

@@ -174,7 +174,12 @@ mecharashi-tools/
     │   ├── siteChangelog/      # 網站更新履歷（commit 前需更新）
     │   └── bossDrops.ts
     │
-    ├── components/             # 共用 UI（badges / icons / planner / timeline / admin…）
+    ├── components/             # 共用 UI，全部歸類到子資料夾（扁平層不放檔案）
+    │   ├── layout/ auth/       # 全站外框、登入與權限
+    │   ├── refs/               # 實體引用層（RefText / RefChip / EntityRefView…）
+    │   ├── badges/ icons/      # 徽章、實體圖示
+    │   ├── cards/ common/      # 領域卡片、泛用基礎件（FallbackImage / BottomSheet…）
+    │   └── module/ planner/ timeline/ home/ profile/ admin/   # 各功能領域元件家族
     └── pages/
         ├── home/ pilots/ mechs/ weapons/ backpacks/ modules/ components/
         ├── simulator/          # 配裝模擬器 + 科研設定

@@ -12,7 +12,7 @@ import {
 } from '@floating-ui/react'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import NavIcon, { type NavIconName } from './icons/NavIcon'
+import NavIcon, { type NavIconName } from '../icons/NavIcon'
 
 export interface ContentNavItem {
   to: string

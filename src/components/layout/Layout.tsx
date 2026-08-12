@@ -1,11 +1,11 @@
 import { Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { usePageTracking } from '../hooks/usePageTracking'
+import { useAuth } from '../../contexts/AuthContext'
+import { usePageTracking } from '../../hooks/usePageTracking'
 import SignedOutBanner from './SignedOutBanner'
-import AvatarDisplay from './profile/AvatarDisplay'
+import AvatarDisplay from '../profile/AvatarDisplay'
 import ContentNavDropdown, { type ContentNavItem } from './ContentNavDropdown'
-import NavIcon from './icons/NavIcon'
+import NavIcon from '../icons/NavIcon'
 import EmulatorBadge from './EmulatorBadge'
 
 // 友站：英文版 Mecharashi Wiki（對稱其站內指回本站的連結）

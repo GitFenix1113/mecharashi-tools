@@ -12,7 +12,7 @@ import { EMPTY_ND_OVERRIDES, type NdBuffOverrides } from '../utils/ndOverrides'
  * EMPTY_ND_OVERRIDES 物件，`entryOf` 恆回 undefined → effectiveLevel 恆回 ref.level →
  * **行為與今日 byte-identical**，且 identity 穩定不會害 chip 失去 memo。
  *
- * 元件形式的局部關閉器在 components/NdOverrideEmpty.tsx——本檔刻意不放元件，
+ * 元件形式的局部關閉器在 components/refs/NdOverrideEmpty.tsx——本檔刻意不放元件，
  * 否則 react-refresh/only-export-components 會擋（context 與元件不可同檔匯出）。
  */
 export const NdOverrideContext = createContext<NdBuffOverrides>(EMPTY_ND_OVERRIDES)

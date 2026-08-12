@@ -1,16 +1,16 @@
 import { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useWeapon, useWeapons, usePilotBriefMap, useBackpackNameMap, useWeaponSkillMap } from '../../hooks/useFirestore'
-import { WeaponRarityBadge } from '../../components/WeaponRarityBadge'
-import { WeaponIcon } from '../../components/WeaponIcon'
-import { ExclusivePilotLink } from '../../components/PilotIcon'
+import { WeaponRarityBadge } from '../../components/badges/WeaponRarityBadge'
+import { WeaponIcon } from '../../components/icons/WeaponIcon'
+import { ExclusivePilotLink } from '../../components/icons/PilotIcon'
 import {
   WeaponTypeBadge,
   WeaponEquipSlotBadge,
   WeaponMechRestrictionBadge,
   FixedArmamentBadge,
-} from '../../components/WeaponBadges'
-import { WeaponSkillCard } from '../../components/WeaponSkillCard'
+} from '../../components/badges/WeaponBadges'
+import { WeaponSkillCard } from '../../components/cards/WeaponSkillCard'
 import { buildUpgradeIndex, deriveFusedSkillNames, isCompositeWeapon } from '../../utils/weaponUpgrade'
 import { resolveWeaponSkills } from '../../utils/weaponSkills'
 import { naOr, isNaStat, isVariableStat, variableStatNote } from '../../utils/weaponStats'

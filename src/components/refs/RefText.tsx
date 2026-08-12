@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react'
 import type { ReactNode } from 'react'
-import type { DescriptionRefs, GameBuff } from '../types'
+import type { DescriptionRefs, GameBuff } from '../../types'
 import { RefChip } from './RefChip'
-import { highlightNumbers } from '../utils/moduleStats'
-import { useNumRefLookup } from '../hooks/useNumRefLookup'
-import { parseNumRefs, resolveNumValue, NUM_ATTRS, hasNumRef } from '../utils/numRefs'
-import { useNdOverrides } from '../contexts/NdOverrideContext'
-import { buildNumLevelOf, type NumLevelOf } from '../utils/ndOverrides'
-import { displayKeyword } from '../utils/refKey'
+import { highlightNumbers } from '../../utils/moduleStats'
+import { useNumRefLookup } from '../../hooks/useNumRefLookup'
+import { parseNumRefs, resolveNumValue, NUM_ATTRS, hasNumRef } from '../../utils/numRefs'
+import { useNdOverrides } from '../../contexts/NdOverrideContext'
+import { buildNumLevelOf, type NumLevelOf } from '../../utils/ndOverrides'
+import { displayKeyword } from '../../utils/refKey'
 
 type NumRefLookup = (refId: string) => GameBuff | undefined
 

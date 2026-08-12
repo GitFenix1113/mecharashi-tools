@@ -1,5 +1,5 @@
 import { useReference } from '../../contexts/ReferenceContext'
-import { FallbackImage } from '../FallbackImage'
+import { FallbackImage } from '../common/FallbackImage'
 import { imageCandidates } from '../../utils/assets'
 import type { GrayOpsMechEntry } from '../../types'
 

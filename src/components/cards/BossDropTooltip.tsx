@@ -11,10 +11,10 @@ import {
   safePolygon,
 } from '@floating-ui/react'
 import { useState } from 'react'
-import { getBossImagePath, getComponentDrops, type StageDrop } from '../data/bossDrops'
-import { useIsMobile } from '../hooks/useIsMobile'
-import { assetUrl } from '../utils/assets'
-import type { Component } from '../types'
+import { getBossImagePath, getComponentDrops, type StageDrop } from '../../data/bossDrops'
+import { useIsMobile } from '../../hooks/useIsMobile'
+import { assetUrl } from '../../utils/assets'
+import type { Component } from '../../types'
 
 // ─── Shared drop content (tooltip 與 BottomSheet 共用) ────────────────────────
 

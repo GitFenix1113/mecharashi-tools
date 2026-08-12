@@ -1,5 +1,5 @@
-import { useAuth } from '../contexts/AuthContext'
-import type { LogoutReason } from '../lib/diag/sentinel'
+import { useAuth } from '../../contexts/AuthContext'
+import type { LogoutReason } from '../../lib/diag/sentinel'
 
 // ── 非預期登出橫幅（PLAN-045 Phase E-1）───────────────────────────────────────
 //

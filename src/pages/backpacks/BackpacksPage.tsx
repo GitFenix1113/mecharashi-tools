@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { useBackpacks } from '../../hooks/useFirestore'
 import { useGameData } from '../../contexts/GameDataContext'
-import { BottomSheet } from '../../components/BottomSheet'
+import { BottomSheet } from '../../components/common/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useDragOffset } from '../../hooks/useDragOffset'
 import {
@@ -12,14 +12,14 @@ import {
   BackpackTypeBadge,
   AssemblableArmorTypeBadge,
   BackpackIcon,
-} from '../../components/BackpackBadges'
-import { WeaponRarityBadge } from '../../components/WeaponRarityBadge'
-import { WeaponIcon } from '../../components/WeaponIcon'
-import { EQUIP_SLOT_LABELS } from '../../components/WeaponBadges'
+} from '../../components/badges/BackpackBadges'
+import { WeaponRarityBadge } from '../../components/badges/WeaponRarityBadge'
+import { WeaponIcon } from '../../components/icons/WeaponIcon'
+import { EQUIP_SLOT_LABELS } from '../../components/badges/WeaponBadges'
 import { resolveWeaponSkills, type ResolvedWeaponSkill } from '../../utils/weaponSkills'
 import { assetUrl, resolveIconSrc } from '../../utils/assets'
 import { STAT_LABELS } from '../../utils/moduleStats'
-import { RefText } from '../../components/RefText'
+import { RefText } from '../../components/refs/RefText'
 import {
   resolveBackpackSkills,
   buildBackpackSkillMap,

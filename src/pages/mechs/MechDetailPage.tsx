@@ -1,7 +1,7 @@
 ﻿import { useParams, Link } from 'react-router-dom'
 import type { MechPart } from '../../types'
 import { assetUrl, imageCandidates } from '../../utils/assets'
-import { FallbackImage } from '../../components/FallbackImage'
+import { FallbackImage } from '../../components/common/FallbackImage'
 import { useMechWithModules } from '../../hooks/useFirestore'
 import { ModuleCard } from '../../components/module/ModuleCard'
 

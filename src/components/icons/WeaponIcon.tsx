@@ -1,5 +1,5 @@
 ﻿import { useState } from 'react'
-import { assetUrl } from '../utils/assets'
+import { assetUrl } from '../../utils/assets'
 
 interface WeaponIconProps {
   icon?: string

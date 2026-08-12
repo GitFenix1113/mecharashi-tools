@@ -167,6 +167,7 @@ barrel 按領域拆檔（`pilot` / `mech` / `weapon` / `module` / `backpack` / `
 ### 6.6 慣例
 
 - 註解、文件、PLAN 一律繁體中文；程式識別字保留英文。
+- `src/components/` **扁平層不放檔案**，新元件一律歸到子資料夾：跨領域重複的視覺元件依 UI 種類（`badges/` `icons/` `cards/` `common/`），只服務單一機制或頁面的依功能領域（`layout/` `auth/` `refs/` `module/` `planner/` `timeline/` `home/` `profile/` `admin/`）。分類表在 `docs/02_技術文件/01_架構設計/系統架構.html`。
 - Tailwind v4：用 CSS-first（`@theme` / `index.css`），**不要**寫 v3 的 `tailwind.config.js`。
 - Firestore 過濾優先 server-side `where`；靜態資料 `getDocs` 一次抓、需即時才 `onSnapshot`（注意免費額度 read 次數）。
 - 階段性開發走 PLAN 制（`docs/05_階段性開發計畫/`，由 `plan-manager` skill 管理）；遊戲改版更新資料走 `data-patch` skill。

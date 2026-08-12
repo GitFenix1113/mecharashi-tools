@@ -1,5 +1,5 @@
-import { ModuleSlot, ModuleRarity } from '../types/enums'
-import { SLOT_LABELS } from '../utils/moduleSlots'
+import { ModuleSlot, ModuleRarity } from '../../types/enums'
+import { SLOT_LABELS } from '../../utils/moduleSlots'
 
 const SLOT_CONFIG: Record<string, string> = {
   [ModuleSlot.SLOT_4]:    'text-accent-orange bg-accent-orange/10 border-accent-orange/30',

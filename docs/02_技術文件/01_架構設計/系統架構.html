@@ -125,7 +125,7 @@
   <table class="spec-table">
     <tr><th>目錄 / 檔案</th><th>說明</th></tr>
     <tr><td><code>src/pages/</code></td><td>各路由頁面元件（MechsPage、ModulesPage 等）</td></tr>
-    <tr><td><code>src/components/</code></td><td>跨頁面共用的 UI 元件。扁平層放單一元件（<code>XxxBadges.tsx</code>、<code>FallbackImage</code>、<code>RefText</code> 等），同一領域的元件家族開子資料夾（<code>module/</code>、<code>planner/</code>、<code>admin/</code>、<code>home/</code>、<code>timeline/</code>）</td></tr>
+    <tr><td><code>src/components/</code></td><td>跨頁面共用的 UI 元件，<strong>一律歸類到子資料夾、扁平層不放檔案</strong>（見下方分類表）</td></tr>
     <tr><td><code>src/hooks/</code></td><td>Firestore 資料讀取與跨頁共用的 React Hooks（<code>useFirestore.ts</code>、<code>useModuleAdopters.ts</code>、<code>useIsMobile.ts</code> 等）</td></tr>
     <tr><td><code>src/contexts/</code></td><td>三層 Provider：<code>AuthContext</code>（登入與角色）、<code>GameDataContext</code>（遊戲資料快取層）、<code>ReferenceContext</code>（實體引用互動）</td></tr>
     <tr><td><code>src/lib/</code></td><td>Firebase 初始化與底層 API 呼叫（firestoreApi.ts）</td></tr>
@@ -179,6 +179,31 @@
     武器相關標籤直接引用 <code>WeaponType</code> / <code>WeaponKind</code> enum（<code>label: `${WeaponKind.Rod}傷害`</code>），與武器圖鑑用語保證一致、不會再漂移。
   </div>
 
+  <div class="sub-h" style="margin-top:24px;">src/components/ 分類</div>
+  <div class="info-block">
+    元件依<strong>職能</strong>分資料夾，扁平層不再放檔案。分兩種歸類軸，混用是刻意的：<br>
+    ・<strong>UI 種類</strong>（<code>badges/</code>、<code>icons/</code>、<code>cards/</code>、<code>common/</code>）——同一種視覺元件跨多個領域重複出現，放一起才找得到、樣式才不會各自漂移。<br>
+    ・<strong>功能領域</strong>（<code>module/</code>、<code>planner/</code>、<code>timeline/</code>、<code>refs/</code>…）——彼此緊密耦合、只服務單一頁面或機制的元件家族。<br>
+    <span style="opacity:.8;">※ 判斷法：問「這個元件會不會被第二個領域拿去用」。會 → 依 UI 種類；不會 → 依功能領域。</span>
+  </div>
+
+  <table class="spec-table">
+    <tr><th>資料夾</th><th>職責</th><th>內容</th></tr>
+    <tr><td><code>layout/</code></td><td>全站外框</td><td><code>Layout</code>（導覽列 / 頁尾 / 版位）、<code>ContentNavDropdown</code>、<code>NavIcon</code>、<code>SignedOutBanner</code>、<code>EmulatorBadge</code>（模擬器環境標示）</td></tr>
+    <tr><td><code>auth/</code></td><td>登入與權限</td><td><code>AuthModal</code>（登入 / 註冊）、<code>AdminRoute</code>（<code>/admin/*</code> 的角色 gate）</td></tr>
+    <tr><td><code>refs/</code></td><td>實體引用層（PLAN-019 / 034）</td><td><code>RefText</code>（正文 <code>[xxx]</code> → chip）、<code>RefChip</code>、<code>EntityRefView</code>（浮窗內容）、<code>DiffHighlight</code>（專武強化差異）、<code>NdOverrideEmpty</code>（局部關閉算力覆寫）</td></tr>
+    <tr><td><code>badges/</code></td><td>徽章 / 標籤</td><td><code>PilotBadges</code>、<code>MechBadges</code>、<code>WeaponBadges</code>、<code>WeaponRarityBadge</code>、<code>ModuleBadges</code>、<code>ComponentBadges</code>、<code>BackpackBadges</code></td></tr>
+    <tr><td><code>icons/</code></td><td>實體圖示</td><td><code>PilotIcon</code>、<code>WeaponIcon</code>、<code>ComponentIcon</code>、<code>NavIcon</code></td></tr>
+    <tr><td><code>cards/</code></td><td>領域卡片 / 浮卡</td><td><code>FormCard</code>（機師形態，PLAN-041）、<code>WeaponSkillCard</code>、<code>BossDropTooltip</code></td></tr>
+    <tr><td><code>common/</code></td><td>泛用 UI 基礎件</td><td><code>FallbackImage</code>（逐層退回的圖片）、<code>BottomSheet</code>（行動裝置浮層）、<code>ViewModeToggle</code>（卡片 / 列表切換）</td></tr>
+    <tr><td><code>module/</code></td><td>模組元件家族</td><td>見下一節</td></tr>
+    <tr><td><code>planner/</code></td><td>科研規劃器</td><td><code>MechSelector</code>、<code>PartSlotCard</code>、<code>PlanResult</code>、<code>SuperFactoryPanel</code>、<code>Stepper</code>、<code>ModuleInput</code></td></tr>
+    <tr><td><code>timeline/</code></td><td>版本時間軸</td><td><code>VersionTimeline</code> 系列、<code>ActivityTimeline</code>、<code>CoreInfoPanel</code>、<code>PatchInfoRow</code></td></tr>
+    <tr><td><code>home/</code></td><td>首頁區塊</td><td><code>HomeTabPanel</code>、<code>GrayOpsPanel</code>／<code>GrayOpsMechRow</code>、<code>SiteChangelog</code>、<code>SiteTeamSection</code>、<code>VersionQuickTable</code></td></tr>
+    <tr><td><code>profile/</code></td><td>個人頁</td><td><code>AvatarDisplay</code>、<code>AvatarPicker</code>、<code>PilotAvatarGallery</code>、<code>ProfileEditForm</code></td></tr>
+    <tr><td><code>admin/</code></td><td>後台專用</td><td><code>RefPicker</code>（引用挑選器）、<code>IconPicker</code>、<code>AdminHalfEditorPanel</code>、<code>AdminTimedActivityEditor</code>、<code>analytics/</code>（<code>StatCard</code>／<code>BarList</code>／<code>TrendChart</code>）</td></tr>
+  </table>
+
   <div class="sub-h" style="margin-top:24px;">src/components/module/ 模組元件家族</div>
   <div class="info-block">
     模組卡在<strong>模組圖鑑</strong>與<strong>機甲詳情頁</strong>兩處呈現。PLAN-044 前兩頁各有一份實作（含逐字重複的等級浮窗機制與手寫數值展開），現已收斂為單一實作，以 <code>variant</code> 區分外觀。
@@ -207,7 +232,7 @@
       <td>綁定部位顯示，內含唯一一份 <code>PART_LABELS</code>。<code>variant: 'inline' | 'row'</code>。保留 <code>Array.isArray</code> 防禦以相容殘留的純字串舊資料</td>
     </tr>
     <tr>
-      <td><code>ModuleBadges</code>（扁平層）</td>
+      <td><code>badges/ModuleBadges</code></td>
       <td><code>ModuleSlotBadge</code> / <code>ModuleRarityBadge</code>。<strong>只匯出元件</strong>，槽位資料在 <code>utils/moduleSlots.ts</code></td>
     </tr>
     <tr>

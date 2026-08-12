@@ -15,7 +15,7 @@ import {
 import { auth, USE_EMULATOR } from '../lib/firebase'
 import { getUserProfile, initUserProfile, patchUserProfile } from '../lib/userApi'
 import type { UserProfile } from '../types'
-import AuthModal from '../components/AuthModal'
+import AuthModal from '../components/auth/AuthModal'
 import { captureLogout, onSignedIn } from '../lib/diag/report'
 import { startHeartbeat } from '../lib/diag/heartbeat'
 import { markTokenRefresh, startOfflineTracking } from '../lib/diag/collect'

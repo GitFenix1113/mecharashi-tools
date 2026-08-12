@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { WeaponActivationBadge } from './WeaponBadges'
-import { RefText } from './RefText'
-import { assetUrl } from '../utils/assets'
-import type { ResolvedWeaponSkill } from '../utils/weaponSkills'
+import { WeaponActivationBadge } from '../badges/WeaponBadges'
+import { RefText } from '../refs/RefText'
+import { assetUrl } from '../../utils/assets'
+import type { ResolvedWeaponSkill } from '../../utils/weaponSkills'
 
 function SkillIcon({ iconLocal, name }: { iconLocal?: string; name: string }) {
   const [err, setErr] = useState(false)

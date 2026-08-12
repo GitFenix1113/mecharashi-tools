@@ -1,4 +1,4 @@
-import { USE_EMULATOR } from '../lib/firebase'
+import { USE_EMULATOR } from '../../lib/firebase'
 
 /**
  * 本地模擬器環境標示（PLAN-030 Phase 0）

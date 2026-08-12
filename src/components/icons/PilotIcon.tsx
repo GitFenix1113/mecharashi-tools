@@ -1,8 +1,8 @@
 import type { MouseEventHandler, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { FallbackImage } from './FallbackImage'
-import { imageCandidates } from '../utils/assets'
-import type { PilotBrief } from '../hooks/useFirestore'
+import { FallbackImage } from '../common/FallbackImage'
+import { imageCandidates } from '../../utils/assets'
+import type { PilotBrief } from '../../hooks/useFirestore'
 
 type PilotIconSize = 'xs' | 'sm' | 'md'
 

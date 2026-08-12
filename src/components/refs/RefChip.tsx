@@ -1,9 +1,9 @@
 import { createContext, useContext } from 'react'
-import type { EntityRef, RefType } from '../types'
-import { useReference } from '../contexts/ReferenceContext'
-import { useNdOverrides } from '../contexts/NdOverrideContext'
-import { effectiveLevel } from '../utils/ndOverrides'
-import { displayKeyword } from '../utils/refKey'
+import type { EntityRef, RefType } from '../../types'
+import { useReference } from '../../contexts/ReferenceContext'
+import { useNdOverrides } from '../../contexts/NdOverrideContext'
+import { effectiveLevel } from '../../utils/ndOverrides'
+import { displayKeyword } from '../../utils/refKey'
 
 /**
  * PLAN-019 Layer 1 — 引用 token（可 hover 預覽、click 釘選）。

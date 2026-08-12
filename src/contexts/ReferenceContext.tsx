@@ -5,8 +5,8 @@ import {
 import { createPortal } from 'react-dom'
 import type { EntityRef } from '../types'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { BottomSheet } from '../components/BottomSheet'
-import { EntityRefView } from '../components/EntityRefView'
+import { BottomSheet } from '../components/common/BottomSheet'
+import { EntityRefView } from '../components/refs/EntityRefView'
 import { NdOverrideContext } from './NdOverrideContext'
 import { EMPTY_ND_OVERRIDES, type NdBuffOverrides } from '../utils/ndOverrides'
 

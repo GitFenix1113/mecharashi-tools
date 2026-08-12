@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 import type { ReactNode } from 'react'
-import type { DescriptionRefs } from '../types'
+import type { DescriptionRefs } from '../../types'
 import { RefChip } from './RefChip'
-import { useNumRefLookup } from '../hooks/useNumRefLookup'
-import { resolveNumRefs, hasNumRef } from '../utils/numRefs'
-import { useNdOverrides } from '../contexts/NdOverrideContext'
-import { buildNumLevelOf } from '../utils/ndOverrides'
-import { displayKeyword } from '../utils/refKey'
+import { useNumRefLookup } from '../../hooks/useNumRefLookup'
+import { resolveNumRefs, hasNumRef } from '../../utils/numRefs'
+import { useNdOverrides } from '../../contexts/NdOverrideContext'
+import { buildNumLevelOf } from '../../utils/ndOverrides'
+import { displayKeyword } from '../../utils/refKey'
 
 function lcsMatched(a: string[], b: string[]): boolean[] {
   const m = a.length, n = b.length

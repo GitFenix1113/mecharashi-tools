@@ -11,7 +11,7 @@ import {
 } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { IconField } from '../../../components/admin/IconPicker'
-import { BACKPACK_TYPE_CONFIG, ASSEMBLABLE_ARMOR_CONFIG } from '../../../components/BackpackBadges'
+import { BACKPACK_TYPE_CONFIG, ASSEMBLABLE_ARMOR_CONFIG } from '../../../components/badges/BackpackBadges'
 import { parseBackpackName } from '../../../utils/backpackClassify'
 import { parseBuffRef, formatBuffRef } from '../../../utils/buffRef'
 

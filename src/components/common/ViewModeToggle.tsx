@@ -1,4 +1,4 @@
-import type { ViewMode } from '../types'
+import type { ViewMode } from '../../types'
 
 // 圖鑑列表的「緊湊 / 詳細」切換（segmented control）
 export function ViewModeToggle({

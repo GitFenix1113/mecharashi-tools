@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import { useMechs } from '../../hooks/useFirestore'
 import { useViewMode } from '../../hooks/useViewMode'
 import { imageCandidates } from '../../utils/assets'
-import { FallbackImage } from '../../components/FallbackImage'
-import { ViewModeToggle } from '../../components/ViewModeToggle'
+import { FallbackImage } from '../../components/common/FallbackImage'
+import { ViewModeToggle } from '../../components/common/ViewModeToggle'
 
 const ARMOR_TYPES = ['輕型', '中甲', '重型']
 

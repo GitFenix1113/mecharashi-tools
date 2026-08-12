@@ -5,7 +5,7 @@ import { useComponents } from '../../../hooks/useFirestore'
 import { ComponentType, ComponentsWType } from '../../../types/enums'
 import type { Component } from '../../../types'
 import { getAllStages, getComponentDrops, getBossImagePath } from '../../../data/bossDrops'
-import { ComponentIcon } from '../../../components/ComponentIcon'
+import { ComponentIcon } from '../../../components/icons/ComponentIcon'
 import { assetUrl } from '../../../utils/assets'
 
 // ─── Tab 定義 ───────────────────────────────────────────────────────────────

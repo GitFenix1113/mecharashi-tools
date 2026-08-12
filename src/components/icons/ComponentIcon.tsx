@@ -1,6 +1,6 @@
-import { assetUrl } from '../utils/assets'
-import type { Component } from '../types'
-import { ComponentsWType } from '../types/enums'
+import { assetUrl } from '../../utils/assets'
+import type { Component } from '../../types'
+import { ComponentsWType } from '../../types/enums'
 
 interface Props {
   comp: Component

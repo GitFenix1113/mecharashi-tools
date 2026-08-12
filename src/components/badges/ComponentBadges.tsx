@@ -1,4 +1,4 @@
-import { ItemRarity, ConditionType, EffectType } from '../types/enums'
+import { ItemRarity, ConditionType, EffectType } from '../../types/enums'
 
 const BADGE_BASE = 'text-[13px] px-1.5 py-0.5 rounded border font-medium'
 

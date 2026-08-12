@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 
 /**
  * @param ownerOnly 只放行 OWNER（PLAN-045：系統日誌含維護者的裝置指紋，

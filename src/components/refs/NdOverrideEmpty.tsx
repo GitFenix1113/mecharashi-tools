@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { NdOverrideContext } from '../contexts/NdOverrideContext'
-import { EMPTY_ND_OVERRIDES } from '../utils/ndOverrides'
+import { NdOverrideContext } from '../../contexts/NdOverrideContext'
+import { EMPTY_ND_OVERRIDES } from '../../utils/ndOverrides'
 
 /**
  * 局部關閉神經驅動算力覆寫的包覆器（PLAN-034 Phase C）。

@@ -1,20 +1,20 @@
 ﻿import { useState, useLayoutEffect, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
-import { BottomSheet } from '../../components/BottomSheet'
+import { BottomSheet } from '../../components/common/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useWeapons, usePilotBriefMap, useWeaponSkillMap, type PilotBrief } from '../../hooks/useFirestore'
 import { resolveWeaponSkills } from '../../utils/weaponSkills'
-import { WeaponIcon } from '../../components/WeaponIcon'
-import { ExclusivePilotLink } from '../../components/PilotIcon'
-import { WeaponRarityBadge } from '../../components/WeaponRarityBadge'
+import { WeaponIcon } from '../../components/icons/WeaponIcon'
+import { ExclusivePilotLink } from '../../components/icons/PilotIcon'
+import { WeaponRarityBadge } from '../../components/badges/WeaponRarityBadge'
 import {
   EQUIP_SLOT_LABELS,
   MECH_RESTRICTION_LABELS,
   ACTIVATION_CONFIG,
   ACTIVATION_LABELS,
   FixedArmamentBadge,
-} from '../../components/WeaponBadges'
+} from '../../components/badges/WeaponBadges'
 import { assetUrl } from '../../utils/assets'
 import { isCompositeWeapon } from '../../utils/weaponUpgrade'
 import { naOr, isNaStat, isVariableStat, variableStatNote, VARIABLE_STAT_SHORT_NOTE } from '../../utils/weaponStats'

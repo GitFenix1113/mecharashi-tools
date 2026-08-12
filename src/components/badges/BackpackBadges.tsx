@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react'
-import { assetUrl } from '../utils/assets'
+import { assetUrl } from '../../utils/assets'
 
 export const BACKPACK_TYPE_CONFIG: Record<string, { label: string; className: string }> = {
   Heal:            { label: '修理',    className: 'text-accent-green bg-accent-green/10 border-accent-green/30' },
