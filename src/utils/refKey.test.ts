@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   splitRefKey, displayKeyword, formatRefKey, DISAMBIG_SEP,
-  countKeywordOccurrences, rewriteOccurrence,
+  countKeywordOccurrences, rewriteOccurrence, markKeywords, extractKeywords,
 } from './refKey.ts'
 import { detectLeftoverSugar, compileSugar, orderRefsByFirstMention } from './numRefs.ts'
 
@@ -178,4 +178,67 @@ test('$n 語法糖在消歧後仍對到正確實體', () => {
   const text = '獲得[駐陣]可疊加$1層，施放[駐陣|skill]'
   const ordered = orderRefsByFirstMention(text, refs)
   assert.equal(compileSugar(text, ordered), '獲得[駐陣]可疊加<buff_駐陣.maxStack>層，施放[駐陣|skill]')
+})
+
+// ─── markKeywords：等級描述補標記（模組頂層 ↔ levels[] 脫鉤的修補）────────────
+
+test('markKeywords：裸字補上括號，既有標記不動', () => {
+  const r = markKeywords('固定裝備[衝擊炮]，可使用退敵激波', ['衝擊炮', '退敵激波'])
+  assert.equal(r.text, '固定裝備[衝擊炮]，可使用[退敵激波]')
+  assert.deepEqual([...r.marked], [['退敵激波', 1]])
+  // 衝擊炮沒被補是因為正文本來就標好了 —— 與「找不到裸字」是兩件事，UI 說法不同
+  assert.deepEqual(r.skipped, [{ key: '衝擊炮', reason: 'already-marked' }])
+})
+
+test('markKeywords：找不到裸字 vs 本來就標好了，回報原因不同', () => {
+  const r = markKeywords('已標的[追擊]，本文沒有那個階數的詞', ['追擊', '傷害提升Ⅲ'])
+  assert.deepEqual(r.skipped.find((s) => s.key === '追擊')?.reason, 'already-marked')
+  assert.deepEqual(r.skipped.find((s) => s.key === '傷害提升Ⅲ')?.reason, 'not-found')
+})
+
+test('markKeywords：同一 key 的多處裸字全部補上', () => {
+  const r = markKeywords('發動再攻擊時，每回合第一次再攻擊的AP消耗-1', ['再攻擊'])
+  assert.equal(r.text, '發動[再攻擊]時，每回合第一次[再攻擊]的AP消耗-1')
+  assert.equal(r.marked.get('再攻擊'), 2)
+})
+
+test('markKeywords：長 key 優先，短 key 不切壞長 key', () => {
+  // '傷害' 先跑的話會把「固定傷害」切成「固定[傷害]」，長 key 就再也對不上
+  const r = markKeywords('造成的固定傷害提升25%，傷害提升18%', ['傷害', '固定傷害'])
+  assert.equal(r.text, '造成的[固定傷害]提升25%，[傷害]提升18%')
+})
+
+test('markKeywords：不動既有括號內的文字', () => {
+  // '傷害提升' 出現在 [傷害提升Ⅲ] 內部；括號段凍結，不該被切開
+  const r = markKeywords('施加[傷害提升Ⅲ]，其餘傷害提升無效', ['傷害提升'])
+  assert.equal(r.text, '施加[傷害提升Ⅲ]，其餘[傷害提升]無效')
+})
+
+test('markKeywords：同一顯示文字有多個消歧 key → 整組跳過', () => {
+  const r = markKeywords('獲得駐陣後施放駐陣', ['駐陣', '駐陣|skill'])
+  assert.equal(r.text, '獲得駐陣後施放駐陣')            // 原樣，一個字都沒動
+  assert.deepEqual(r.skipped.map((s) => s.reason), ['ambiguous', 'ambiguous'])
+})
+
+test('markKeywords：帶消歧後綴的單一 key 用完整 key 寫入正文', () => {
+  const r = markKeywords('施放駐陣', ['駐陣|skill'])
+  assert.equal(r.text, '施放[駐陣|skill]')
+  assert.equal(displayKeyword(extractKeywords(r.text)[0]), '駐陣')  // 前台仍顯示 [駐陣]
+})
+
+test('markKeywords：key 含正則特殊字元（字串 split 而非動態正則）', () => {
+  assert.equal(markKeywords('玄門磁極引擎·景最大層數+3', ['玄門磁極引擎·景']).text,
+    '[玄門磁極引擎·景]最大層數+3')
+  assert.equal(markKeywords('獲得護盾（大）時', ['護盾（大）']).text, '獲得[護盾（大）]時')
+  assert.equal(markKeywords('凝勢X強化不該中', ['凝勢.強化']).text, '凝勢X強化不該中')
+})
+
+test('markKeywords：沒補到任何東西時回傳同一個字串實例（呼叫端可用 === 判斷無變動）', () => {
+  const src = '這段沒有任何關鍵字'
+  assert.equal(markKeywords(src, ['追擊']).text, src)
+})
+
+test('markKeywords 產物可被 RefText 的 tokenizer 正確拆回', () => {
+  const r = markKeywords('觸發追擊並施加移動阻礙Ⅰ', ['追擊', '移動阻礙Ⅰ'])
+  assert.deepEqual(extractKeywords(r.text), ['追擊', '移動阻礙Ⅰ'])
 })

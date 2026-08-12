@@ -9,6 +9,7 @@ import { ModuleStatTags } from './ModuleStatTags'
 import { ModuleBoundPart } from './ModuleBoundPart'
 import { ModuleLevelSelector } from './ModuleLevelSelector'
 import { ModuleAllLevelsButton } from './ModuleAllLevels'
+import { levelRefs } from './moduleRefs'
 
 type Variant = 'catalog' | 'detail'
 
@@ -95,7 +96,9 @@ export function ModuleCard({
       <p className="text-xs text-text-secondary leading-relaxed whitespace-pre-line">
         <RefText
           text={current?.description ?? mod.description}
-          refs={current?.descriptionRefs ?? mod.descriptionRefs}
+          // 空物件也要回退到頂層：`??` 只擋 undefined，後台存過一次空 refs 就會讓整卡的 chip
+          // 全部消失，而症狀與「還沒指派」完全一樣（沒有錯誤、只是不亮）。
+          refs={levelRefs(current) ?? mod.descriptionRefs}
         />
       </p>
       {/* 數值跟著選取的等級走；沒有等級資料時退回模組頂層（滿級快照） */}

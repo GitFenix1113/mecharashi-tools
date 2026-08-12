@@ -4,6 +4,7 @@ import type { Module, ModuleLevel } from '../../types'
 import { RefText } from '../RefText'
 import { BottomSheet } from '../BottomSheet'
 import { ModuleStatTags } from './ModuleStatTags'
+import { levelRefs } from './moduleRefs'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useDragOffset } from '../../hooks/useDragOffset'
 
@@ -39,7 +40,7 @@ function LevelRow({ mod, lv, active }: { mod: Module; lv: ModuleLevel; active: b
         </span>
         {lv.description && (
           <span className="text-[14px] text-text-secondary leading-tight">
-            <RefText text={lv.description} refs={lv.descriptionRefs ?? mod.descriptionRefs} />
+            <RefText text={lv.description} refs={levelRefs(lv) ?? mod.descriptionRefs} />
           </span>
         )}
       </div>

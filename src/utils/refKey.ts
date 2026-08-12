@@ -80,6 +80,86 @@ export function countKeywordOccurrences(text: string): Map<string, number> {
   return out
 }
 
+/** 正文中出現過的完整 key（依首次出現排序、去重）。 */
+export function extractKeywords(text: string): string[] {
+  return [...countKeywordOccurrences(text).keys()]
+}
+
+export interface MarkKeywordsResult {
+  /** 補上括號後的正文；沒有任何補動時與輸入完全相同（===）。 */
+  text: string
+  /** key → 本次補了幾處。未補到的 key 不在其中。 */
+  marked: Map<string, number>
+  /**
+   * 未補的 key 及原因，供 UI 說明「為什麼這幾個沒幫你補」。
+   * 'already-marked'＝正文本來就標好了（不是問題）；另兩者見函式說明的保守規則。
+   */
+  skipped: { key: string; reason: 'already-marked' | 'not-found' | 'ambiguous' }[]
+}
+
+/**
+ * 把 keys 的顯示文字在正文中**尚未加括號的裸字處**補上 `[key]`（PLAN-044 後續）。
+ *
+ * 起因：模組的頂層 description 與 `levels[n].description` 是兩份各自獨立的正文，
+ * 而前台 ModuleCard 顯示的是後者。頂層標好了引用、等級文本仍是爬蟲原文時，
+ * 前台就會把該亮的引用顯示成純文字（RefText 只認 `[xxx]`）。此函式是後台
+ * 「從基本資訊套用標記」按鈕與一次性 migrate 腳本共用的那一份邏輯。
+ *
+ * 保守規則（寧可漏補，不可標錯）：
+ *  · **絕不動既有 `[..]` 內的文字**。正文先按括號切段，只在括號外替換；補出來的
+ *    新括號立即凍結，較短的 key 不會再切進去（處理順序為 display 長度降序，
+ *    否則 `[傷害]` 會先把「固定傷害」切壞）。
+ *  · **同一顯示文字對應多個 key 時整組跳過**（`駐陣` + `駐陣|skill`）——哪一處算哪個
+ *    無從判斷，猜錯是靜默的。
+ *  · 裸字找不到就不補（回報 'not-found'）。典型是階數隨等級不同：頂層寫
+ *    `[傷害提升Ⅲ]`、Lv1 文本只寫「傷害提升Ⅰ」，機械套用會讓每一級都指向同一階。
+ */
+export function markKeywords(text: string, keys: string[]): MarkKeywordsResult {
+  const marked = new Map<string, number>()
+  const skipped: MarkKeywordsResult['skipped'] = []
+
+  // 同名（display 相同）的 key 整組不處理
+  const byDisplay = new Map<string, string[]>()
+  for (const k of new Set(keys)) {
+    const d = displayKeyword(k)
+    byDisplay.set(d, [...(byDisplay.get(d) ?? []), k])
+  }
+  const usable: string[] = []
+  for (const [, ks] of byDisplay) {
+    if (ks.length > 1) skipped.push(...ks.map((key) => ({ key, reason: 'ambiguous' as const })))
+    else usable.push(ks[0])
+  }
+
+  // 正文既有的標記：用來把「本來就標好了」與「真的找不到裸字」分開回報 —— 兩者對
+  // 呼叫端的意義完全不同（前者無事發生，後者才是需要人工判斷的訊號）
+  const existing = countKeywordOccurrences(text)
+
+  // frozen＝不可再被切割的片段（既有括號段，以及本次補出來的括號段）
+  let segs = text.split(/(\[[^\]]+\])/g)
+    .filter((s) => s !== '')
+    .map((s) => ({ frozen: /^\[[^\]]+\]$/.test(s), text: s }))
+
+  for (const key of [...usable].sort((a, b) => displayKeyword(b).length - displayKeyword(a).length)) {
+    const disp = displayKeyword(key)
+    if (!disp) { skipped.push({ key, reason: 'not-found' }); continue }
+    const next: typeof segs = []
+    let n = 0
+    for (const seg of segs) {
+      if (seg.frozen || !seg.text.includes(disp)) { next.push(seg); continue }
+      // split 用字串而非正則：key 是維護者自由輸入，可能含 '.' '(' 等正則特殊字元
+      seg.text.split(disp).forEach((piece, i) => {
+        if (i > 0) { next.push({ frozen: true, text: `[${key}]` }); n++ }
+        if (piece) next.push({ frozen: false, text: piece })
+      })
+    }
+    if (n > 0) marked.set(key, n)
+    else skipped.push({ key, reason: existing.has(key) ? 'already-marked' : 'not-found' })
+    segs = next
+  }
+
+  return { text: marked.size ? segs.map((s) => s.text).join('') : text, marked, skipped }
+}
+
 /**
  * 把正文中 `[keyword]` 的**第 occurrence 次出現**（1-based）改寫為帶消歧後綴的形式，
  * 其餘出現與其他 keyword 一律不動。找不到該次出現時原樣回傳。

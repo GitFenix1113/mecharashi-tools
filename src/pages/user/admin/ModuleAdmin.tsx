@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import type { Module, Mech, ConditionalEffect, ModuleLevel } from '../../../types'
+import { useState, useEffect, useMemo } from 'react'
+import type { Module, Mech, ConditionalEffect, ModuleLevel, DescriptionRefs } from '../../../types'
 import {
   ModuleRarity, ModuleSlot, ModuleSource, ModuleDataSource, ConditionalTrigger,
 } from '../../../types/enums'
@@ -11,6 +11,7 @@ import {
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updateModule, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
+import { markKeywords, extractKeywords } from '../../../utils/refKey'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
@@ -199,11 +200,16 @@ function ModuleLevelItem({
   index,
   onChange,
   onRemove,
+  topDescription,
+  topRefs,
 }: {
   levelData: ModuleLevel
   index: number
   onChange: (updated: ModuleLevel) => void
   onRemove: () => void
+  /** 基本資訊分頁的頂層正文與引用（本級標記落後於頂層時據以提示補齊） */
+  topDescription?: string
+  topRefs?: DescriptionRefs
 }) {
   const [collapsed, setCollapsed] = useState(index > 0)
   // 子區塊預設收合：打開某個 LV 時，兩大串數值欄位先摺起，只先看描述 / 引用（需要時再展開）
@@ -212,6 +218,28 @@ function ModuleLevelItem({
 
   function upd<K extends keyof ModuleLevel>(key: K, value: ModuleLevel[K]) {
     onChange({ ...levelData, [key]: value })
+  }
+
+  /**
+   * 前台 ModuleCard 顯示的是**這一級**的 description（頂層只是 refs 的退路），而 RefText
+   * 只認 `[xxx]`。頂層標好了、本級還是爬蟲原文時，前台就會把引用顯示成純文字——
+   * 沒有任何錯誤訊息，只有「本來該亮的字沒亮」。這塊提示就是為了讓它不再靜默。
+   */
+  const pending = useMemo(() => {
+    const assigned = extractKeywords(topDescription ?? '').filter((k) => topRefs?.[k])
+    if (!assigned.length) return null
+    const r = markKeywords(levelData.description ?? '', assigned)
+    const ambiguous = r.skipped.filter((s) => s.reason === 'ambiguous').map((s) => s.key)
+    if (!r.marked.size && !ambiguous.length) return null
+    return { ...r, ambiguous }
+  }, [topDescription, topRefs, levelData.description])
+
+  function applyTopMarks() {
+    if (!pending?.marked.size) return
+    const refs = { ...(levelData.descriptionRefs ?? {}) }
+    // 只帶入本級正文真的用到的 key；既有指派一律保留（該級可能刻意指向不同階的 buff）
+    for (const k of extractKeywords(pending.text)) if (!refs[k] && topRefs?.[k]) refs[k] = topRefs[k]
+    onChange({ ...levelData, description: pending.text, descriptionRefs: refs })
   }
 
   return (
@@ -240,6 +268,41 @@ function ModuleLevelItem({
           <Field label="效果描述 description">
             <textarea value={levelData.description} onChange={(e) => upd('description', e.target.value)} className="input-field min-h-[110px] resize-y" />
           </Field>
+
+          {pending && (
+            <div className="rounded-lg border border-accent-yellow/30 bg-accent-yellow/5 px-3 py-2.5 space-y-1.5">
+              <div className="text-[12px] font-semibold text-accent-yellow">⚠ 本級標記落後於「基本資訊」</div>
+              {pending.marked.size > 0 && (
+                <>
+                  <div className="text-[11px] text-text-dim leading-relaxed">
+                    頂層已標成引用、本級正文仍是裸字：
+                    <span className="text-text-secondary">
+                      {[...pending.marked].map(([k, n]) => `[${k}]${n > 1 ? `×${n}` : ''}`).join('、')}
+                    </span>
+                    。前台模組卡顯示的是<strong className="text-text-secondary">本級</strong>的描述，
+                    維持現狀的話這些字不會變成可點引用。
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                    <button
+                      type="button"
+                      onClick={applyTopMarks}
+                      className="text-[12px] px-2.5 py-1 rounded border border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow hover:bg-accent-yellow/20"
+                    >從基本資訊套用標記（{[...pending.marked.values()].reduce((a, b) => a + b, 0)} 處）</button>
+                    <span className="text-[11px] text-text-dim">
+                      只加括號並帶入對應引用，既有指派不會被覆蓋
+                    </span>
+                  </div>
+                </>
+              )}
+              {pending.ambiguous.length > 0 && (
+                <div className="text-[11px] text-text-dim">
+                  <span className="text-accent-orange">{pending.ambiguous.join('、')}</span>
+                  {' '}有同名消歧鍵，無法自動判斷各處歸屬 → 請手動在正文加括號。
+                </div>
+              )}
+            </div>
+          )}
+
           <RefPicker
             text={levelData.description}
             value={levelData.descriptionRefs}
@@ -633,6 +696,8 @@ function ModuleEditPanel({
                       update('levels', arr)
                     }}
                     onRemove={() => update('levels', (form.levels ?? []).filter((_, i) => i !== idx))}
+                    topDescription={form.description}
+                    topRefs={form.descriptionRefs}
                   />
                 ))}
               </div>
