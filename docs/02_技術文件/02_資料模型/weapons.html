@@ -98,7 +98,7 @@
   <div class="hero-badge purple">◆ Data Model</div>
   <h1>weapons<span>武器資料 · WEAPON DATA</span></h1>
   <p class="hero-sub">武器屬性、射程型態、機甲限制、元件插槽、固定/浮動改裝、三種技能生效方式</p>
-  <div class="version-badge" style="background:var(--accent-purple);">UPDATED v2.2 · PLAN-040</div>
+  <div class="version-badge" style="background:var(--accent-purple);">UPDATED v2.3 · variableStats</div>
 </header>
 
 <main class="container">
@@ -131,6 +131,15 @@
     · <strong>新增 6 筆手建武器</strong>（<code>weapon_173</code> ~ <code>weapon_178</code>）：衝擊炮 / 嵐質儲能艙 / 多功能彈倉 / 耀星 / 隕星 / 千星，全部 <code>manual: true</code>，官方 API 與 WIKI 皆無此六筆<br>
     · <strong><code>RangeType</code> 未動</strong>：千星的「扇形」是尚未定義的攻擊方式，<strong>移交傷害模擬範疇</strong>；其 <code>rangeType</code> 暫沿用 <code>manhattan</code>，<strong>此值已知不精確</strong><br>
     · <strong>元件側不同步</strong>：「特殊」<strong>不進</strong> <code>allowedWeaponTypes</code>，程式端用 <code>COMPONENT_WEAPON_TYPES</code>（見 <code>components.html</code>）
+  </div>
+
+  <div class="changed-block" style="border-left-color:var(--accent-purple);background:rgba(168,85,247,0.04);">
+    <strong>v2.3 variableStats — 無固定值的數值欄位</strong>（2026-08-13 實施）<br><br>
+    · <strong>新增選填欄位</strong>：<code>variableStats?</code>（無固定值的數值欄位 key 清單，渲染層<strong>整格不顯示</strong>並附一行說明）<br>
+    · <strong>起因</strong>：維護者回報<strong>耀星／隕星／千星</strong>（彌造者 · 海莉絲虛粒子形態）的數值<strong>隨機甲當下裝備的武器變動</strong>——PLAN-040 建檔時填的 <code>attack: 757</code> 等只是某次觀測的搭配結果，不是武裝自身屬性<br>
+    · <strong>定案值</strong>：三把皆為 <code>['kindCoefficient','attack','accuracy','critValue','weight','ammoCount','hitCount']</code>（＝除 <code>minRange</code>／<code>maxRange</code> 外的全部數值欄位；只有射程與射程型態是武裝本身固定的）<br>
+    · <strong><code>naStats</code> 未動、也不可合併</strong>：<code>naStats</code> =「沒有這個數值」顯示「—」；<code>variableStats</code> =「有值但不固定」整格收掉。對後者顯示「—」等於做出「這把武器沒有攻擊力」這個與遊戲相反的肯定陳述<br>
+    · <strong>DB 觀測值保留不洗</strong>：只在渲染層攔下，原數字留作日後傷害模擬的樣本（補丁腳本 <code>scripts/temp_scripts/patch-halisi-variable-stats.mjs</code> 只加旗標、不改值）
   </div>
 </section>
 
@@ -257,7 +266,8 @@
       <tr class="group-header"><td colspan="3">▎固定武裝（PLAN-040）</td></tr>
       <tr><td>isFixedArmament</td><td>boolean?</td><td><strong>無法更換的武器</strong>。已窮舉 6 種：衝擊炮（帕斯卡）／嵐質儲能艙（破曉者-01）／多功能彈倉（霸王）／耀星・隕星・千星（彌造者 · 海莉絲虛粒子形態）。<br><small style="color:var(--text-dim)">供 badge 渲染與圖鑑／模擬器過濾；<strong>不編碼「來源」也不編碼「佔哪個槽」</strong>，箭頭永遠是「來源 → 武器」。槽位歸屬見 PLAN-047。<br>⚠ 命名刻意避開 <code>fixedMod</code>（固定改裝）；<strong>不可</strong>複用 <code>isExclusive</code> / <code>exclusiveFor</code>——那是「可選裝的機師專武」，語意相反，且會被渲染成金框專武並破壞 <code>isExclusive ⇔ rarity === 'SS'</code> 的不變式。</small></td></tr>
       <tr><td>manual</td><td>boolean?</td><td>手建文件保護旗標。官方 API / WIKI 無這六筆、100% 手動維護，補丁腳本應略過。<br><small style="color:var(--text-dim)">對照 mechs.html / pilots 的同名欄位</small></td></tr>
-      <tr><td>naStats</td><td>string[]?</td><td><strong>不適用</strong>的數值欄位 key 清單；渲染層對列入者一律顯示「—」，不顯示數字（DB 仍存 0）。<br><small style="color:var(--text-dim)"><strong>為什麼不直接填 0</strong>：<code>ammoCount === 0</code> 已被佔用為「無限彈藥 ∞」（172 筆中 129 筆靠此規則），填 0 會把「沒有彈藥」渲染成「無限彈藥」。旁證安全：全庫 <code>attack === 0</code> 與 <code>weight === 0</code> 皆 0 筆。<br>⚠ 只標「<strong>不適用</strong>」，不標「<strong>未知</strong>」——衝擊炮的 <code>ammoCount: 1</code> 與射程 3 是真值，<strong>不得</strong>列入。<br>定案值：衝擊炮 = <code>['attack','accuracy','critValue','weight','kindCoefficient']</code>；嵐質儲能艙／多功能彈倉 = 全部數值欄位；耀星／隕星／千星 = 不需要。</small></td></tr>
+      <tr><td>naStats</td><td>string[]?</td><td><strong>不適用</strong>的數值欄位 key 清單；渲染層對列入者一律顯示「—」，不顯示數字（DB 仍存 0）。<br><small style="color:var(--text-dim)"><strong>為什麼不直接填 0</strong>：<code>ammoCount === 0</code> 已被佔用為「無限彈藥 ∞」（172 筆中 129 筆靠此規則），填 0 會把「沒有彈藥」渲染成「無限彈藥」。旁證安全：全庫 <code>attack === 0</code> 與 <code>weight === 0</code> 皆 0 筆。<br>⚠ 只標「<strong>不適用</strong>」，不標「<strong>未知</strong>」——衝擊炮的 <code>ammoCount: 1</code> 與射程 3 是真值，<strong>不得</strong>列入。<br>定案值：衝擊炮 = <code>['attack','accuracy','critValue','weight','kindCoefficient']</code>；嵐質儲能艙／多功能彈倉 = 全部數值欄位；耀星／隕星／千星 = 不需要（改用下方的 <code>variableStats</code>）。</small></td></tr>
+      <tr><td>variableStats</td><td>string[]?</td><td><strong>無固定值</strong>的數值欄位 key 清單：有數值，但由當下掛載情境決定，不是這把武器自己的屬性。渲染層對列入者<strong>整格不顯示</strong>，並在區塊末尾附一行說明。<br><small style="color:var(--text-dim)">⚠ <strong>與 <code>naStats</code> 是兩件事，不可合併</strong>：<code>naStats</code>「沒有這個數值」→ 顯示「—」；<code>variableStats</code>「有值但不固定」→ 收掉整格。併成一欄會讓「嵐質儲能艙沒有攻擊力」與「耀星的攻擊力不固定」變成同一句話。<br>⚠ <strong>DB 仍保留原觀測值</strong>（耀星 <code>attack: 757</code> 等），只在渲染層攔下——那是日後傷害模擬的樣本，洗成 0 就回不來了。<br>定案值：耀星／隕星／千星 = 除 <code>minRange</code>／<code>maxRange</code> 外的全部數值欄位（2026-08-13 維護者實測：三把是海莉絲虛粒子形態的形態武裝，數值繼承自機甲當下裝備的武器，連重量都不是自己的）。</small></td></tr>
       <tr class="group-header"><td colspan="3">▎元件插槽</td></tr>
       <tr><td>triggerSlots</td><td>number</td><td>觸元件插槽數量</td></tr>
       <tr><td>effectSlots</td><td>number</td><td>應元件插槽數量</td></tr>

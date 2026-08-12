@@ -17,7 +17,7 @@ import {
 } from '../../components/WeaponBadges'
 import { assetUrl } from '../../utils/assets'
 import { isCompositeWeapon } from '../../utils/weaponUpgrade'
-import { naOr, isNaStat } from '../../utils/weaponStats'
+import { naOr, isNaStat, isVariableStat, variableStatNote, VARIABLE_STAT_SHORT_NOTE } from '../../utils/weaponStats'
 import { WeaponType, WeaponKind } from '../../types/enums'
 import type { Weapon } from '../../types'
 
@@ -105,22 +105,28 @@ function WeaponTooltipContent({ weapon, pilotMap }: {
   // 有掛載條目但解析不到 → 顯示載入中，而不是消失。
   const skillsPending = skillsLoading && (weapon.skills?.length ?? 0) > 0 && skills.length === 0
   const rangeNa = isNaStat(weapon, ['minRange', 'maxRange'])
-  const stats: Array<{ label: string; value: string; noRed?: boolean }> = [
-    { label: '攻擊力',  value: naOr(weapon, 'attack', weapon.attack.toLocaleString()) },
-    { label: '命中',    value: naOr(weapon, 'accuracy', weapon.accuracy.toLocaleString()) },
-    { label: '暴擊',    value: naOr(weapon, 'critValue', weapon.critValue.toLocaleString()) },
-    { label: '重量',    value: naOr(weapon, 'weight', weapon.weight.toString()) },
-    { label: '射程',    value: naOr(weapon, ['minRange', 'maxRange'], formatRange(weapon)) },
+  // keys 有值的列＝數值欄位，可能被 variableStats 整列收掉；無 keys 的列（裝備部位／機甲限制）永遠顯示
+  const allStats: Array<{ label: string; value: string; noRed?: boolean; keys?: string[] }> = [
+    { label: '攻擊力',  value: naOr(weapon, 'attack', weapon.attack.toLocaleString()), keys: ['attack'] },
+    { label: '命中',    value: naOr(weapon, 'accuracy', weapon.accuracy.toLocaleString()), keys: ['accuracy'] },
+    { label: '暴擊',    value: naOr(weapon, 'critValue', weapon.critValue.toLocaleString()), keys: ['critValue'] },
+    { label: '重量',    value: naOr(weapon, 'weight', weapon.weight.toString()), keys: ['weight'] },
+    { label: '射程',    value: naOr(weapon, ['minRange', 'maxRange'], formatRange(weapon)), keys: ['minRange', 'maxRange'] },
     // 射程不適用時整列收掉，而不是顯示「射程型態 菱形」——那會是對一個不存在的射程做出的肯定陳述
-    ...(rangeNa ? [] : [{ label: '射程型態', value: formatRangeType(weapon.rangeType), noRed: true }]),
-    { label: '連擊數',  value: naOr(weapon, 'hitCount', weapon.hitCount.toString()) },
-    { label: '彈藥量',  value: naOr(weapon, 'ammoCount', weapon.ammoCount === 0 ? '∞' : weapon.ammoCount.toString()) },
-    { label: '種類係數',value: naOr(weapon, 'kindCoefficient', weapon.kindCoefficient.toFixed(2)) },
+    ...(rangeNa ? [] : [{ label: '射程型態', value: formatRangeType(weapon.rangeType), noRed: true, keys: ['minRange', 'maxRange'] }]),
+    { label: '連擊數',  value: naOr(weapon, 'hitCount', weapon.hitCount.toString()), keys: ['hitCount'] },
+    { label: '彈藥量',  value: naOr(weapon, 'ammoCount', weapon.ammoCount === 0 ? '∞' : weapon.ammoCount.toString()), keys: ['ammoCount'] },
+    { label: '種類係數',value: naOr(weapon, 'kindCoefficient', weapon.kindCoefficient.toFixed(2)), keys: ['kindCoefficient'] },
     { label: '裝備部位',value: EQUIP_SLOT_LABELS[weapon.equipSlot] ?? weapon.equipSlot, noRed: true },
     ...(weapon.mechRestriction !== 'none'
       ? [{ label: '機甲限制', value: MECH_RESTRICTION_LABELS[weapon.mechRestriction] ?? weapon.mechRestriction, noRed: true }]
       : []),
   ]
+  const stats = allStats.filter((s) => !s.keys || !isVariableStat(weapon, s.keys))
+  // 說明句只列數值欄位本身，不列「射程型態」這種附屬列（它沒有被獨立收掉的語意）
+  const variableStatMsg = variableStatNote(
+    allStats.filter((s) => s.keys && s.label !== '射程型態' && isVariableStat(weapon, s.keys)).map((s) => s.label),
+  )
 
   return (
     <>
@@ -158,6 +164,10 @@ function WeaponTooltipContent({ weapon, pilotMap }: {
               }
             </div>
           ))}
+          {/* 收掉的列必須有交代，否則看起來像資料沒建完 */}
+          {variableStatMsg && (
+            <div className="col-span-2 text-[12px] text-text-dim leading-relaxed">{variableStatMsg}</div>
+          )}
         </div>
 
         {/* Slots */}
@@ -577,33 +587,44 @@ export default function WeaponsPage() {
                   </div>
                 </div>
 
-                {/* Key stats */}
+                {/* Key stats —— 卡片空間有限，被 variableStats 收掉的欄位改用一行極短說明代替 */}
                 <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[14px]">
-                  <div>
-                    <span className="text-text-dim">射 </span>
-                    <Num>{naOr(w, ['minRange', 'maxRange'], formatRange(w))}</Num>
-                    {!isNaStat(w, ['minRange', 'maxRange']) && (
-                      <span className="text-text-dim text-[12px] ml-0.5">{{ manhattan: '(菱)', orthogonal: '(直)', ring: '(圈)' }[w.rangeType]}</span>
-                    )}
-                  </div>
-                  <div>
-                    <span className="text-text-dim">重 </span>
-                    <Num>{naOr(w, 'weight', w.weight)}</Num>
-                  </div>
-                  <div>
-                    <span className="text-text-dim">命中 </span>
-                    <Num>{naOr(w, 'accuracy', w.accuracy.toLocaleString())}</Num>
-                  </div>
-                  <div>
-                    <span className="text-text-dim">暴擊 </span>
-                    <Num>{naOr(w, 'critValue', w.critValue.toLocaleString())}</Num>
-                  </div>
-                  {w.hitCount > 1 && (
+                  {!isVariableStat(w, ['minRange', 'maxRange']) && (
+                    <div>
+                      <span className="text-text-dim">射 </span>
+                      <Num>{naOr(w, ['minRange', 'maxRange'], formatRange(w))}</Num>
+                      {!isNaStat(w, ['minRange', 'maxRange']) && (
+                        <span className="text-text-dim text-[12px] ml-0.5">{{ manhattan: '(菱)', orthogonal: '(直)', ring: '(圈)' }[w.rangeType]}</span>
+                      )}
+                    </div>
+                  )}
+                  {!isVariableStat(w, 'weight') && (
+                    <div>
+                      <span className="text-text-dim">重 </span>
+                      <Num>{naOr(w, 'weight', w.weight)}</Num>
+                    </div>
+                  )}
+                  {!isVariableStat(w, 'accuracy') && (
+                    <div>
+                      <span className="text-text-dim">命中 </span>
+                      <Num>{naOr(w, 'accuracy', w.accuracy.toLocaleString())}</Num>
+                    </div>
+                  )}
+                  {!isVariableStat(w, 'critValue') && (
+                    <div>
+                      <span className="text-text-dim">暴擊 </span>
+                      <Num>{naOr(w, 'critValue', w.critValue.toLocaleString())}</Num>
+                    </div>
+                  )}
+                  {w.hitCount > 1 && !isVariableStat(w, 'hitCount') && (
                     <div className="col-span-2">
                       <span className="text-text-dim">連擊 </span>
                       <Num>{w.hitCount}</Num>
                       <span className="text-text-dim text-[12px] ml-0.5">次</span>
                     </div>
+                  )}
+                  {(w.variableStats?.length ?? 0) > 0 && (
+                    <div className="col-span-2 text-text-dim text-[12px]">{VARIABLE_STAT_SHORT_NOTE}</div>
                   )}
                 </div>
               </div>

@@ -13,7 +13,7 @@ import {
 import { WeaponSkillCard } from '../../components/WeaponSkillCard'
 import { buildUpgradeIndex, deriveFusedSkillNames, isCompositeWeapon } from '../../utils/weaponUpgrade'
 import { resolveWeaponSkills } from '../../utils/weaponSkills'
-import { naOr, isNaStat } from '../../utils/weaponStats'
+import { naOr, isNaStat, isVariableStat, variableStatNote } from '../../utils/weaponStats'
 import type { Weapon } from '../../types'
 
 // ── Labels & formatters ───────────────────────────────────────────────────────
@@ -182,6 +182,30 @@ export default function WeaponDetailPage() {
   const hasFloatMod = !!(weapon.floatingMod?.planName)
   const hasSlots    = weapon.triggerSlots > 0 || weapon.effectSlots > 0 || weapon.componentLimit > 0
 
+  /**
+   * B-2 基礎屬性：先列成資料再過濾，不寫成八個 JSX 條件式——
+   * 收掉的欄位還要拿來組說明句（variableStatNote），兩邊必須來自同一份清單才不會說謊。
+   * keys 對齊 Weapon 的欄位名；射程是 minRange + maxRange 合成的單一格，故整組判斷。
+   */
+  const statCells: { keys: string[]; label: string; value: React.ReactNode; sub?: string }[] = [
+    { keys: ['attack'],    label: '攻擊力', value: naOr(weapon, 'attack', weapon.attack) },
+    { keys: ['accuracy'],  label: '命中',   value: naOr(weapon, 'accuracy', weapon.accuracy.toLocaleString()) },
+    { keys: ['critValue'], label: '暴擊',   value: naOr(weapon, 'critValue', weapon.critValue.toLocaleString()) },
+    { keys: ['weight'],    label: '重量',   value: naOr(weapon, 'weight', weapon.weight) },
+    {
+      keys: ['minRange', 'maxRange'],
+      label: '射程',
+      value: naOr(weapon, ['minRange', 'maxRange'], formatRange(weapon)),
+      /* 射程不適用時連射程型態一起收掉——否則會出現「射程 — / 菱形」這種半真半假的組合 */
+      sub: isNaStat(weapon, ['minRange', 'maxRange']) ? undefined : RANGE_TYPE_LABELS[weapon.rangeType],
+    },
+    { keys: ['ammoCount'],       label: '彈藥量',   value: naOr(weapon, 'ammoCount', weapon.ammoCount === 0 ? '∞' : weapon.ammoCount) },
+    { keys: ['hitCount'],        label: '連擊數',   value: naOr(weapon, 'hitCount', weapon.hitCount) },
+    { keys: ['kindCoefficient'], label: '種類係數', value: naOr(weapon, 'kindCoefficient', weapon.kindCoefficient.toFixed(2)) },
+  ]
+  const visibleStats    = statCells.filter((c) => !isVariableStat(weapon, c.keys))
+  const variableStatMsg = variableStatNote(statCells.filter((c) => isVariableStat(weapon, c.keys)).map((c) => c.label))
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 bg-bg-dark/10 backdrop-blur-sm rounded-2xl space-y-6">
 
@@ -299,24 +323,19 @@ export default function WeaponDetailPage() {
       {/* ── B-2 Stats ────────────────────────────────────────────────────────── */}
       <div className="bg-bg-card border border-border rounded-xl p-5">
         <SectionHeading>基礎屬性</SectionHeading>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <StatCell label="攻擊力"   value={naOr(weapon, 'attack', weapon.attack)} />
-          <StatCell label="命中"     value={naOr(weapon, 'accuracy', weapon.accuracy.toLocaleString())} />
-          <StatCell label="暴擊"     value={naOr(weapon, 'critValue', weapon.critValue.toLocaleString())} />
-          <StatCell label="重量"     value={naOr(weapon, 'weight', weapon.weight)} />
-          <StatCell
-            label="射程"
-            value={naOr(weapon, ['minRange', 'maxRange'], formatRange(weapon))}
-            /* 射程不適用時連射程型態一起收掉——否則會出現「射程 — / 菱形」這種半真半假的組合 */
-            sub={isNaStat(weapon, ['minRange', 'maxRange']) ? undefined : RANGE_TYPE_LABELS[weapon.rangeType]}
-          />
-          <StatCell
-            label="彈藥量"
-            value={naOr(weapon, 'ammoCount', weapon.ammoCount === 0 ? '∞' : weapon.ammoCount)}
-          />
-          <StatCell label="連擊數"   value={naOr(weapon, 'hitCount', weapon.hitCount)} />
-          <StatCell label="種類係數" value={naOr(weapon, 'kindCoefficient', weapon.kindCoefficient.toFixed(2))} />
-        </div>
+        {visibleStats.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {visibleStats.map((c) => (
+              <StatCell key={c.label} label={c.label} value={c.value} sub={c.sub} />
+            ))}
+          </div>
+        )}
+        {/* 收掉的格子必須有交代，否則看起來像資料沒建完 */}
+        {variableStatMsg && (
+          <p className={`text-[13px] text-text-dim leading-relaxed ${visibleStats.length ? 'mt-3' : ''}`}>
+            {variableStatMsg}
+          </p>
+        )}
       </div>
 
       {/* ── B-3 Skills ───────────────────────────────────────────────────────── */}

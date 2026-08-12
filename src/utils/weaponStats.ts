@@ -34,3 +34,31 @@ export function isNaStat(weapon: Pick<Weapon, 'naStats'>, keys: string | string[
   const ks = typeof keys === 'string' ? [keys] : keys
   return weapon.naStats.some((k) => ks.includes(k))
 }
+
+/**
+ * 該欄位是否「無固定值」（隨當下裝備的武器變動）→ 渲染層**整格不顯示**。
+ *
+ * 與 isNaStat 的分工（見 Weapon.variableStats 註解）：
+ *   naStats       = 有欄位、沒有值 → 顯示「—」
+ *   variableStats = 有值、但不固定 → 收掉整格，另以 variableStatNote 交代
+ * 兩者若同時列到同一個 key，本函式優先（該格根本不渲染，naOr 不會被呼叫）。
+ */
+export function isVariableStat(weapon: Pick<Weapon, 'variableStats'>, keys: string | string[]): boolean {
+  if (!weapon.variableStats?.length) return false
+  const ks = typeof keys === 'string' ? [keys] : keys
+  return weapon.variableStats.some((k) => ks.includes(k))
+}
+
+/**
+ * 被收掉的數值格的統一說明句。
+ *
+ * 為什麼收成一支函式：同一句話要出現在武器詳情頁、圖鑑 hover 浮窗、手機 BottomSheet 三處，
+ * 各寫一份必然慢慢漂移成三種說法。空陣列回空字串，呼叫端可直接用它當顯示 gate。
+ */
+export function variableStatNote(hiddenLabels: string[]): string {
+  if (!hiddenLabels.length) return ''
+  return `※ ${hiddenLabels.join('・')} 隨機甲當下裝備的武器變動，無固定值，故不顯示。`
+}
+
+/** 空間不足處（圖鑑卡片）用的極短版說明，與 variableStatNote 同一件事。 */
+export const VARIABLE_STAT_SHORT_NOTE = '※ 數值隨裝備的武器變動'
