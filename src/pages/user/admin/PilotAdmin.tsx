@@ -641,6 +641,9 @@ function TalentItem({
               {/* description 與 descriptionMax 共用一份 descriptionRefs（兩者的 [xxx] 都在此指派）*/}
               <RefPicker
                 text={refTexts}
+                // 算力變體正文以 {...talent.refs, ...variant.refs} 合併顯示（PilotDetailPage），
+                // 變體獨有的 [xxx] 可能只登記在天賦這份，故納入判斷
+                siblingTexts={(talent.ndVariants ?? []).flatMap((v) => [v.description, v.descriptionMax])}
                 value={talent.descriptionRefs}
                 onChange={(refs) => upd('descriptionRefs', refs)}
                 onCompileText={(tf) => onChange({

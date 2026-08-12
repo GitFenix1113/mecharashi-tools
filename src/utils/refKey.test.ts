@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   splitRefKey, displayKeyword, formatRefKey, DISAMBIG_SEP,
-  countKeywordOccurrences, rewriteOccurrence, markKeywords, extractKeywords,
+  countKeywordOccurrences, rewriteOccurrence, markKeywords, extractKeywords, findOrphanRefKeys,
 } from './refKey.ts'
 import { detectLeftoverSugar, compileSugar, orderRefsByFirstMention } from './numRefs.ts'
 
@@ -241,4 +241,36 @@ test('markKeywords：沒補到任何東西時回傳同一個字串實例（呼�
 test('markKeywords 產物可被 RefText 的 tokenizer 正確拆回', () => {
   const r = markKeywords('觸發追擊並施加移動阻礙Ⅰ', ['追擊', '移動阻礙Ⅰ'])
   assert.deepEqual(extractKeywords(r.text), ['追擊', '移動阻礙Ⅰ'])
+})
+
+// ─── 孤兒引用偵測 ────────────────────────────────────────────────────────────
+// 真實案例（2026-08-13）：曜的技能正文從「機兵型態」改寫成「機兵形態」後，
+// 舊 key `機兵型態 → skill_機兵型態` 留在 map 裡，後台看不見、刪除掃描卻照樣命中。
+
+test('findOrphanRefKeys：正文找不到的 key 才算孤兒', () => {
+  const refs = {
+    機兵形態: { refType: 'form', refId: 'form_曜_機兵' },
+    機兵型態: { refType: 'skill', refId: 'skill_機兵型態' },   // ← 改字後的殘留
+    冥夜:     { refType: 'skill', refId: 'skill_冥夜' },
+  }
+  assert.deepEqual(findOrphanRefKeys(['[機兵形態]時可以使用[冥夜]'], refs), ['機兵型態'])
+})
+
+test('findOrphanRefKeys：多段正文取聯集（共用一份 refs 的欄位不可漏傳）', () => {
+  const refs = { 追擊: {}, 爆發: {} }
+  // 只傳初始文本 → 滿星文本才有的 [爆發] 會被誤報；兩段都傳才判得對
+  assert.deepEqual(findOrphanRefKeys(['觸發[追擊]'], refs), ['爆發'])
+  assert.deepEqual(findOrphanRefKeys(['觸發[追擊]', '觸發[追擊]並[爆發]'], refs), [])
+})
+
+test('findOrphanRefKeys：消歧 key 以完整字串比對，不與裸 key 互相抵銷', () => {
+  const refs = { 駐陣: {}, '駐陣|skill': {} }
+  assert.deepEqual(findOrphanRefKeys(['進入[駐陣]'], refs), ['駐陣|skill'])
+  assert.deepEqual(findOrphanRefKeys(['進入[駐陣]後施放[駐陣|skill]'], refs), [])
+})
+
+test('findOrphanRefKeys：空值輸入不炸、也不誤報', () => {
+  assert.deepEqual(findOrphanRefKeys(['[追擊]'], undefined), [])
+  assert.deepEqual(findOrphanRefKeys([undefined, ''], {}), [])
+  assert.deepEqual(findOrphanRefKeys([undefined, ''], { 追擊: {} }), ['追擊'])
 })

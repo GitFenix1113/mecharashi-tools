@@ -2,9 +2,9 @@ import { useMemo, useState, useEffect } from 'react'
 import type { EntityRef, RefType, DescriptionRefs } from '../../types'
 import { useGameData, type CollectionKey } from '../../contexts/GameDataContext'
 import { STAT_LABELS } from '../../utils/moduleStats'
-import { RefText } from '../RefText'
+import { RefText } from '../refs/RefText'
 import { compileSugar, orderRefsByFirstMention, detectLeftoverSugar, NUM_ATTRS } from '../../utils/numRefs'
-import { splitRefKey, countKeywordOccurrences, rewriteOccurrence } from '../../utils/refKey'
+import { splitRefKey, countKeywordOccurrences, rewriteOccurrence, findOrphanRefKeys } from '../../utils/refKey'
 
 // PLAN-022 Phase C：語法糖速查（registry 驅動）。$n=可疊加層數、%n=持續回合，n=已指派 [xxx] 的首次出現序。
 const SIGIL_HINTS = Object.values(NUM_ATTRS)
@@ -236,9 +236,41 @@ function TokenRow({
   )
 }
 
+// ── 孤兒引用列（PLAN-039 follow-up）────────────────────────────────────────────
+// 正文已不存在的殘留 key。與 TokenRow 刻意不共用：孤兒沒有「指派 / 變更」語意
+// （正文裡根本沒有這個標記可指），能做的只有清除；沿用 TokenRow 會讓維護者
+// 以為可以把它改指到別的實體，而那只會再留一筆看不見的殘留。
+function OrphanRow({ token, entry, onClear }: {
+  token: string
+  entry: EntityRef
+  onClear: () => void
+}) {
+  const candidates = useCandidates(entry.refType)
+  const name = candidates.find((c) => c.id === entry.refId)?.name ?? entry.refId
+  const { display, disambig } = splitRefKey(token)
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap text-[11px] pt-1.5 border-t border-accent-red/15">
+      <span className="font-semibold text-text-dim line-through">[{display}]</span>
+      {disambig && <span className="font-mono text-accent-orange">|{disambig}</span>}
+      <span className="text-text-dim">→</span>
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-border/60 bg-bg-card text-text-dim">
+        {REF_TYPE_LABEL[entry.refType]} · {name}
+      </span>
+      <button
+        type="button"
+        onClick={onClear}
+        className="ml-auto px-2 py-0.5 rounded border border-accent-red/40 bg-accent-red/10 text-accent-red hover:bg-accent-red/20"
+        title={`從 descriptionRefs 移除 key「${token}」（存檔後生效）`}
+      >清除殘留</button>
+    </div>
+  )
+}
+
 // ── RefPicker 主體 ─────────────────────────────────────────────────────────────
 export function RefPicker({
   text,
+  siblingTexts,
   value,
   onChange,
   onCompileText,
@@ -250,6 +282,15 @@ export function RefPicker({
    * 陣列元素可為 undefined（選填欄位如 descriptionMax 直接傳即可），空值會被略過。
    */
   text: string | (string | undefined)[]
+  /**
+   * 共用同一份 `value`、但**不在本面板編輯**的正文。只用於孤兒偵測，不影響其他功能。
+   *
+   * 全站有兩種共用型態，漏傳就會把活引用誤報成殘留（而使用者一按清除就真的刪掉）：
+   *   · 子項未填 refs 時回退父層 —— 模組 / BUFF / 背包技能的 `levels[].description`
+   *   · 唯讀的姊妹欄位 —— 技能的 `enhancedTalentDescription`（PLAN-032 決策七）
+   * 判不準時寧可多傳：多傳只會少報幾筆孤兒，少傳會讓維護者刪錯東西。
+   */
+  siblingTexts?: (string | undefined)[]
   value?: DescriptionRefs
   onChange: (refs: DescriptionRefs) => void
   /**
@@ -302,6 +343,17 @@ export function RefPicker({
   const [disambigInput, setDisambigInput] = useState<Record<string, string>>({})
   // 拆分會改變 orderRefsByFirstMention 的編號基準 → 未代入的 $n 會指到錯誤的引用（決策五）
   const splitBlocked = leftoverSugar.length > 0
+
+  // ── 孤兒引用：refs 有、正文沒有 ───────────────────────────────────────────────
+  // siblingTexts 一併納入判斷（見 prop 說明）。join 成字串當 deps：呼叫端多半直接寫
+  // 陣列字面量，用陣列本身當 deps 等於每次 render 都重算。
+  const siblingKey = (siblingTexts ?? []).filter(Boolean).join('\n')
+  const orphanKeys = useMemo(
+    () => findOrphanRefKeys([...parts, siblingKey], refs),
+    // refs 是 `value ?? {}`，未指派時每次 render 都是新物件 → 用 value 當 deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [parts, siblingKey, value],
+  )
 
   return (
     <div className="space-y-2.5">
@@ -376,6 +428,28 @@ export function RefPicker({
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* 殘留引用：正文改字後留下的死 key。放在 tokens 判斷之外——正文的標記全被刪光時
+          殘留反而最多，而那正是最需要看見它的時候。 */}
+      {orphanKeys.length > 0 && (
+        <div className="rounded-lg border border-accent-red/30 bg-accent-red/5 px-3 py-2.5 space-y-1">
+          <div className="text-[12px] font-semibold text-accent-red">
+            🧹 殘留引用 {orphanKeys.length} 筆（正文中已無此標記）
+          </div>
+          <div className="text-[11px] text-text-dim leading-relaxed">
+            引用表的 key 就是括號內的字，所以<strong className="text-text-secondary">改動標記用字等於換一個 key</strong>
+            （如 <code>[機兵型態]</code> → <code>[機兵形態]</code>），舊那筆會留下來且不會出現在上面的清單裡。
+            殘留本身不影響前台顯示，但<strong className="text-text-secondary">刪除該實體時仍會被算成一處引用</strong>。
+            <div className="mt-1">
+              清除後需<strong className="text-text-secondary">按下儲存</strong>才會寫回資料庫。
+              若此標記其實用在別處共用同一份引用表的正文（如專武強化敘述、其他等級的文本），請勿清除。
+            </div>
+          </div>
+          {orphanKeys.map((key) => (
+            <OrphanRow key={key} token={key} entry={refs[key]} onClear={() => clear(key)} />
+          ))}
         </div>
       )}
 

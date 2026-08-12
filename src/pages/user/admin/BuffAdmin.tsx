@@ -318,6 +318,8 @@ function BuffEditPanel({
         {/* 說明內也能引用其他實體（含 buff 互引） */}
         <RefPicker
           text={form.description}
+          // 階梯 buff 的各級未自填 refs 時回退到這份，故各級文本獨有的 [xxx] 不算殘留
+          siblingTexts={(form.levels ?? []).map((lv) => lv.description)}
           value={form.descriptionRefs}
           onChange={(refs) => update('descriptionRefs', refs)}
           onCompileText={(tf) => update('description', tf(form.description))}

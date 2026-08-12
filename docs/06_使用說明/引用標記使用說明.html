@@ -249,6 +249,17 @@ ul.tight li { margin-bottom: 4px; }
     這種要逐級指向對應階的 BUFF，只能手動標。
   </div>
 
+  <div class="callout warn">
+    <strong>Q：我明明已經把引用改掉了，刪除舊實體時卻還說「仍被 N 份文件引用」？</strong><br>
+    引用對照表是以<strong>方括號內的字</strong>當索引，所以<strong>改動標記用字等於換了一個索引</strong>——
+    把 <span class="tok">[機兵型態]</span> 改寫成 <span class="tok">[機兵形態]</span> 之後，舊那筆
+    「機兵型態 → 技能」仍留在資料裡，只是正文已經沒有這個標記，指派清單當然也就不會列出它。
+    前台顯示完全不受影響，但刪除掃描看的是整張對照表，於是照樣算成一處引用。<br>
+    後台已內建提示：引用標記區塊若出現紅色的
+    <code class="kbd">🧹 殘留引用</code> 區，逐筆按<code class="kbd">清除殘留</code>再<strong>儲存</strong>即可。
+    另外，直接按下刪除確認也是安全的——級聯刪除本來就會順手清掉這些殘留，並保留還原快照。
+  </div>
+
   <ul class="tight">
     <li><strong>方括號內文字要完全一致</strong>：含空白與大小寫。<span class="tok">[ 固定傷害 ]</span> 和 <span class="tok">[固定傷害]</span> 會被視為兩個不同的詞。</li>
     <li><strong>同名的詞共用一次指派</strong>：描述裡出現多次 <span class="tok">[固定傷害]</span>，只要指派一次，全部位置都會生效。</li>
@@ -268,6 +279,7 @@ ul.tight li { margin-bottom: 4px; }
     <tr><td>詞條 term</td><td>機制關鍵詞的解釋（固定傷害、啟動…）</td><td>詞條管理（需先建立）</td></tr>
     <tr><td>BUFF / 狀態 buff</td><td>增益／減益／形態狀態</td><td>BUFF 資料</td></tr>
     <tr><td>技能 skill</td><td>機師技能</td><td>機師技能庫</td></tr>
+    <tr><td>形態 form</td><td>機甲形態（機兵／巡航／突擊…）</td><td>形態管理</td></tr>
     <tr><td>屬性 stat</td><td>數值屬性（暴擊、命中…）</td><td>內建屬性表（一律可用）</td></tr>
     <tr><td>機師 / 機甲 / 武器 / 模組 / 背包 / 元件</td><td>對應的實體頁</td><td>各自的資料集合</td></tr>
   </table>

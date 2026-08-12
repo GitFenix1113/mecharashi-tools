@@ -163,6 +163,12 @@ function SkillEditPanel({
 
         <RefPicker
           text={form.description}
+          // 專武強化正文與各 variant 正文共用這份引用表（PLAN-032 決策七），
+          // 不傳的話它們獨有的 [xxx] 會被誤報成殘留
+          siblingTexts={[
+            form.enhancedTalentDescription,
+            ...(form.variants ?? []).map((v) => v.description),
+          ]}
           value={form.descriptionRefs}
           onChange={(refs) => update('descriptionRefs', refs)}
           onCompileText={(tf) => update('description', tf(form.description))}

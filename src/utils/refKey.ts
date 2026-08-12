@@ -161,6 +161,39 @@ export function markKeywords(text: string, keys: string[]): MarkKeywordsResult {
 }
 
 /**
+ * 找出 refs 裡「正文已不存在」的殘留 key（孤兒引用）。
+ *
+ * ── 為什麼會有孤兒 ─────────────────────────────────────────────────────────
+ * descriptionRefs 的 key 就是括號內文字，所以**改動正文的用字等於換了一個 key**：
+ * 把 `[機兵型態]` 改寫成 `[機兵形態]` 後，舊那筆 `機兵型態 → skill_機兵型態` 仍留在 map 裡。
+ * 而 RefPicker 只列出正文 tokenize 得到的 key，殘留那筆在後台**完全看不見**；
+ * onChange 又是 `{...refs, [token]: ref}` 整份帶著存回去，於是它永遠不會自己消失。
+ *
+ * 後果不只是資料髒：`findReferences` 掃的是 `Object.entries(refs)` 全部、不管正文有沒有
+ * 出現，所以刪除對話框會報「仍被 N 份文件引用」而維護者在編輯畫面上找不到任何一處
+ * ——2026-08-13 刪 `skill_機兵型態` 時就是這個症狀。
+ *
+ * ── texts 必須包含「共用這份 refs 的所有正文」───────────────────────────────
+ * 全站有數處是「子項未填 refs 時回退父層」（模組/BUFF/背包技能的 levels[]、天賦的
+ * ndVariants）或「兩段正文共用一份 refs」（天賦 description + descriptionMax、
+ * 技能 description + enhancedTalentDescription）。少傳一段，那段獨有的 key 就會被
+ * 誤報成孤兒——而使用者一按清除就是把**還在用的**引用刪掉，比留著殘留嚴重得多。
+ * 故本函式寧可漏報：呼叫端傳進來的 texts 是唯一判準，判不準時請多傳。
+ */
+export function findOrphanRefKeys(
+  texts: (string | undefined)[],
+  refs: Record<string, unknown> | undefined,
+): string[] {
+  if (!refs) return []
+  const live = new Set<string>()
+  for (const t of texts) {
+    if (!t) continue
+    for (const k of countKeywordOccurrences(t).keys()) live.add(k)
+  }
+  return Object.keys(refs).filter((k) => !live.has(k))
+}
+
+/**
  * 把正文中 `[keyword]` 的**第 occurrence 次出現**（1-based）改寫為帶消歧後綴的形式，
  * 其餘出現與其他 keyword 一律不動。找不到該次出現時原樣回傳。
  *

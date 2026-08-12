@@ -454,6 +454,9 @@ function ModuleEditPanel({
               </Field>
               <RefPicker
                 text={form.description}
+                // 各等級未自填 refs 時前台回退到這份（moduleRefs.levelRefs），
+                // 故等級文本獨有的 [xxx] 不算殘留
+                siblingTexts={(form.levels ?? []).map((lv) => lv.description)}
                 value={form.descriptionRefs}
                 onChange={(refs) => update('descriptionRefs', refs)}
                 onCompileText={(tf) => update('description', tf(form.description))}
