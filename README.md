@@ -1,6 +1,6 @@
-# 鋼嵐工具站 | Mecharashi Tools
+# 米赫瑪超吉情豹站 — Milkhama PawInfo Station
 
-> 鋼嵐（Mecharashi）遊戲玩家工具網站 — 資料庫查詢 · 配裝模擬器 · 攻略工具 · 版本時間軸
+> 鋼嵐（Mecharashi）非官方WIKI — 資料庫查詢 · 配裝模擬器 · 攻略工具 · 版本時間軸
 >
 > 正式站：<https://mecharashi.wiki>
 

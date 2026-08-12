@@ -895,7 +895,7 @@ function ResultStep({
       <div ref={exportRef} className="bg-bg-dark border border-border rounded-xl p-6 mb-6" style={{ minWidth: 600 }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
-          <div className="text-lg font-bold text-accent-orange font-[Orbitron,sans-serif]">鋼嵐工具站</div>
+          <div className="text-lg font-bold text-accent-orange font-[Orbitron,sans-serif]">米赫瑪超吉情豹站</div>
           <div className="text-xs text-text-dim">配裝分享</div>
         </div>
 
