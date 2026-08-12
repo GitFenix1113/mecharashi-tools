@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-11
+## [Unreleased] - 2026-08-12
 
 ### ⚠ 重大變更
 
@@ -118,6 +118,7 @@
 
 ### 🐛 修復
 
+- 海莉絲三把形態武裝隱藏隨裝備變動的數值 (`05724dc`)
 - 修好全庫僅存的 2 條懸空引用（PLAN-040 A-4） (`a5c521e`)
 - 模組綁定資料衛生與校驗腳本（PLAN-040 A-1~A-3） (`8116f79`)
 - 後台新增實體補上文件 ID 防呆，並統一武器命名為 weapon_NNN_名稱 (`111ec3c`)
