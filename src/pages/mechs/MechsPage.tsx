@@ -5,8 +5,18 @@ import { useViewMode } from '../../hooks/useViewMode'
 import { imageCandidates } from '../../utils/assets'
 import { FallbackImage } from '../../components/common/FallbackImage'
 import { ViewModeToggle } from '../../components/common/ViewModeToggle'
+import { MechQualityBadge } from '../../components/badges/MechBadges'
 
 const ARMOR_TYPES = ['輕型', '中甲', '重型']
+
+/**
+ * 品質篩選預設值。**預設只顯示 S 級**（63/89 台）。
+ *
+ * A/B 級是 2026-08-15 才收錄的低階機甲，多數人查的是 S 級；預設全開的話首屏會多載
+ * 26 張立繪。想看全部按「全部」即可，計數也一直顯示「N / 89」提示還有更多。
+ * 注意這只省圖片頻寬 —— 機甲資料是 GameDataContext 整包載入的，篩選不影響 Firestore 讀取次數。
+ */
+const DEFAULT_QUALITY = 'S'
 
 /**
  * 機甲縮圖候選：Firestore 的 portrait → 依名稱慣例的 images/mechs/{名稱}.webp。
@@ -21,8 +31,9 @@ const ARMOR_STYLES: Record<string, { text: string; border: string; bg: string }>
   重型: { text: 'text-accent-red', border: 'border-accent-red/40', bg: 'bg-accent-red/10' },
 }
 
-// 機甲品質次要排序權重（沿用機師品質階序）。目前機甲 quality 多半未填，
-// 未填者一律 fallback 99 → 退化成依編號排序；日後補品質資料即自動生效。
+// 機甲品質階序（沿用機師品質階序），同時用於次要排序與篩選按鈕的排列順序。
+// 89 台目前全數有 quality（S 63 / A 16 / B 10）；fallback 99 保留給日後可能出現的新值，
+// 讓未知品質排在最後而不是插進中間。
 const QUALITY_ORDER: Record<string, number> = { EX: 0, S: 1, A: 2, B: 3 }
 
 function StatBar({ label, value, max }: { label: string; value: number; max: number }) {
@@ -64,6 +75,7 @@ function MobilityGrid({ value }: { value: number }) {
 export default function MechsPage() {
   const { data: mechs, loading } = useMechs()
   const [armorFilter, setArmorFilter] = useState('')
+  const [qualityFilter, setQualityFilter] = useState(DEFAULT_QUALITY)
   const [versionFilter, setVersionFilter] = useState('')
   const [sortMode, setSortMode] = useState<'versionDesc' | 'versionAsc'>('versionDesc')
   const [viewMode, setViewMode] = useViewMode('mechs')
@@ -77,11 +89,22 @@ export default function MechsPage() {
     [mechs],
   )
 
+  // 品質篩選選項：同樣只列資料中實際出現過的值，依 QUALITY_ORDER 排（S→A→B）。
+  // 寫死 ['S','A','B'] 的話，日後真的出現 EX 級機甲就會篩不到它。
+  const qualities = useMemo(
+    () =>
+      Array.from(new Set(mechs.map((m) => m.quality).filter(Boolean) as string[])).sort(
+        (a, b) => (QUALITY_ORDER[a] ?? 99) - (QUALITY_ORDER[b] ?? 99),
+      ),
+    [mechs],
+  )
+
   const idNum = (id: string) => parseInt(id.match(/mech_(\d+)/)?.[1] ?? '0', 10)
 
   const base = mechs.filter(
     (m) =>
       (!armorFilter || m.armorType === armorFilter) &&
+      (!qualityFilter || m.quality === qualityFilter) &&
       (!versionFilter || m.debutVersion === versionFilter),
   )
   const filtered = [...base].sort((a, b) => {
@@ -93,7 +116,8 @@ export default function MechsPage() {
     if (va !== null && vb !== null && va !== vb) {
       return sortMode === 'versionAsc' ? va - vb : vb - va
     }
-    // 次要排序：品質（同版本、或皆無版本時皆套用；未填品質者退化成編號）
+    // 次要排序：品質 S→A→B（同版本、或皆無版本時皆套用）。
+    // 這層在「品質：全部」時最有感——1.0 版一口氣有 42 台，不分品質就是一團亂。
     const qd = (QUALITY_ORDER[a.quality ?? ''] ?? 99) - (QUALITY_ORDER[b.quality ?? ''] ?? 99)
     if (qd !== 0) return qd
     // 第三序：編號遞減
@@ -147,6 +171,23 @@ export default function MechsPage() {
             )
           })}
         </div>
+
+        {/* Quality Filter（僅在有資料時顯示）。預設選 S，見 DEFAULT_QUALITY */}
+        {qualities.length > 0 && (
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-xs text-text-dim mr-1">品質</span>
+            <button className={filterBtn(!qualityFilter)} onClick={() => setQualityFilter('')}>全部</button>
+            {qualities.map((q) => (
+              <button
+                key={q}
+                onClick={() => setQualityFilter(qualityFilter === q ? '' : q)}
+                className={filterBtn(qualityFilter === q)}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Debut Version Filter（僅在有資料時顯示） */}
         {versions.length > 0 && (
@@ -220,6 +261,13 @@ export default function MechsPage() {
                       {mech.armorType}
                     </span>
                   )}
+                  {/* 品質標示：切到「品質：全部」時，沒有它就分不出哪台是 A/B 級 */}
+                  {mech.quality && (
+                    <MechQualityBadge
+                      quality={mech.quality}
+                      className="absolute top-1 right-1 !px-1.5 !text-[10px]"
+                    />
+                  )}
                 </div>
                 <p className="px-1.5 py-1.5 text-xs font-bold text-text-primary text-center truncate">
                   {mech.name}
@@ -243,6 +291,7 @@ export default function MechsPage() {
                   <FallbackImage
                     candidates={mechImageCandidates(mech)}
                     alt=""
+                    loading="lazy"
                     className="w-full h-full object-contain object-center transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-bg-card via-transparent to-transparent" />
@@ -252,6 +301,9 @@ export default function MechsPage() {
                     >
                       {mech.armorType}
                     </span>
+                  )}
+                  {mech.quality && (
+                    <MechQualityBadge quality={mech.quality} className="absolute top-2 right-2" />
                   )}
                 </div>
 
