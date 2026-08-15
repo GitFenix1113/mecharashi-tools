@@ -13,6 +13,7 @@ import { updateMech, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameVersions } from '../../../hooks/useGameVersions'
 import { useGameData } from '../../../contexts/GameDataContext'
+import { useAuth } from '../../../contexts/AuthContext'
 
 type MechFilters = { armorType: string }
 
@@ -230,11 +231,15 @@ export default function MechAdmin({
 // 併為單一 'gear' 分頁；同時 key → id 以對齊共用的 AdminEditTabs（C-0）。
 type MechEditTab = 'basic' | 'parts' | 'modules' | 'gear'
 
-const MECH_EDIT_TABS: AdminEditTabDef<MechEditTab>[] = [
+/**
+ * 分頁定義。第四個分頁的名稱依角色而異：武器槽那一區只有 OWNER 看得到（見下方
+ * gear 分頁的說明），對 ADMIN 來說這頁就只剩外觀，掛著「武器槽」三個字會找不到東西。
+ */
+const mechEditTabs = (isOwner: boolean): AdminEditTabDef<MechEditTab>[] => [
   { id: 'basic',   label: '基本數值' },
   { id: 'parts',   label: '部件' },
   { id: 'modules', label: '模組（能力）' },
-  { id: 'gear',    label: '武器槽・外觀' },
+  { id: 'gear',    label: isOwner ? '武器槽・外觀' : '外觀' },
 ]
 
 // 通用數字欄位：空字串視為 0，避免 NaN 寫入。
@@ -271,6 +276,9 @@ function MechEditPanel({
   const [tab, setTab]       = useState<MechEditTab>('basic')
   const [autoFillMsg, setAutoFillMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const gameVersions = useGameVersions()
+  const { userProfile } = useAuth()
+  const isOwner = userProfile?.role === 'OWNER'
+  const tabs = useMemo(() => mechEditTabs(isOwner), [isOwner])
   // 本機甲的圖片資料夾（public/images/mechs/{機甲名}）；供 IconPicker 預設開啟與自動帶入使用。
   const mechFolder = `mechs/${form.name}`
 
@@ -363,7 +371,7 @@ function MechEditPanel({
         )}
       </h3>
 
-      <AdminEditTabs tabs={MECH_EDIT_TABS} active={tab} onChange={setTab} />
+      <AdminEditTabs tabs={tabs} active={tab} onChange={setTab} />
 
       <div className="overflow-y-auto flex-1 pr-1 space-y-4">
         {/* ── 基本數值 ── */}
@@ -555,26 +563,41 @@ function MechEditPanel({
         {/* ── 武器槽・外觀（原為兩個分頁，PLAN-033 C-1 併為一頁）── */}
         {tab === 'gear' && (
           <div className="space-y-3">
-            <p className="text-xs text-text-dim font-medium tracking-wider uppercase">武器槽 slots</p>
-            {/* PLAN-040 E-1：凍結標記。不刪欄位、不改形狀，只讓維護者在 UI 上就看得到「別填」。 */}
-            <div className="text-xs rounded-lg border border-accent-yellow/30 bg-accent-yellow/5 px-3 py-2 space-y-1">
-              <p className="text-accent-yellow font-bold">⚠ 已凍結 · PLAN-047 將取代，請勿填寫</p>
-              <p className="text-text-dim leading-relaxed">
-                目前 <strong className="text-text-secondary">0/63 台機甲有填</strong>，前台不讀這三個欄位。
-                而且三態語意撞上寫入層的 <code>stripUndefined</code>——取消勾選寫的是 <code>undefined</code>，
-                會被整個濾掉，<strong className="text-text-secondary">一旦填了就再也取消不掉</strong>。
-                固定武裝的槽位表達由 PLAN-047 統一改掛在<strong className="text-text-secondary">部件</strong>上
-                （左臂→左肩槽、右臂→右肩槽），在那之前這裡保持空白。
-              </p>
-            </div>
-            <p className="text-xs text-text-dim">
-              （原說明）勾選代表此機甲有該武器槽。空槽＝可自由裝備武器；選定武器＝部件綁死的固定武器。未勾選＝無此槽。
-            </p>
-            <SlotEditor label="左肩武器槽 leftShoulderSlot"  value={form.leftShoulderSlot}  weapons={weapons} onChange={(v) => set('leftShoulderSlot', v)} />
-            <SlotEditor label="右肩武器槽 rightShoulderSlot" value={form.rightShoulderSlot} weapons={weapons} onChange={(v) => set('rightShoulderSlot', v)} />
-            <SlotEditor label="背後武器槽 backSlot"          value={form.backSlot}          weapons={weapons} onChange={(v) => set('backSlot', v)} />
+            {/*
+              武器槽三欄位限 OWNER 可見（ADMIN 完全看不到這一區）。
+              理由是這三個欄位處於凍結狀態、等 PLAN-047 取代，而它們的三態語意有個不可逆的陷阱：
+              取消勾選寫入的是 undefined，會被寫入層的 stripUndefined 整個濾掉 ——
+              **一旦誰填了值，後台就再也取消不掉**。與其靠一段警告文字約束所有維護者，
+              不如直接讓只有清楚來龍去脈的人（OWNER）看得到它。
 
-            <div className="pt-4 border-t border-border/60 space-y-3">
+              這是 UI 層的隱藏，不是安全邊界 —— 真正的寫入權限仍由 firestore.rules 把關，
+              ADMIN 依然寫得動 mechs 集合，只是後台不再提供填這三個欄位的入口。
+            */}
+            {isOwner && (
+              <>
+                <p className="text-xs text-text-dim font-medium tracking-wider uppercase">武器槽 slots</p>
+                {/* PLAN-040 E-1：凍結標記。不刪欄位、不改形狀，只讓維護者在 UI 上就看得到「別填」。 */}
+                <div className="text-xs rounded-lg border border-accent-yellow/30 bg-accent-yellow/5 px-3 py-2 space-y-1">
+                  <p className="text-accent-yellow font-bold">⚠ 已凍結 · PLAN-047 將取代，請勿填寫（僅站長可見）</p>
+                  <p className="text-text-dim leading-relaxed">
+                    目前 <strong className="text-text-secondary">0/89 台機甲有填</strong>，前台不讀這三個欄位。
+                    而且三態語意撞上寫入層的 <code>stripUndefined</code>——取消勾選寫的是 <code>undefined</code>，
+                    會被整個濾掉，<strong className="text-text-secondary">一旦填了就再也取消不掉</strong>。
+                    固定武裝的槽位表達由 PLAN-047 統一改掛在<strong className="text-text-secondary">部件</strong>上
+                    （左臂→左肩槽、右臂→右肩槽），在那之前這裡保持空白。
+                  </p>
+                </div>
+                <p className="text-xs text-text-dim">
+                  （原說明）勾選代表此機甲有該武器槽。空槽＝可自由裝備武器；選定武器＝部件綁死的固定武器。未勾選＝無此槽。
+                </p>
+                <SlotEditor label="左肩武器槽 leftShoulderSlot"  value={form.leftShoulderSlot}  weapons={weapons} onChange={(v) => set('leftShoulderSlot', v)} />
+                <SlotEditor label="右肩武器槽 rightShoulderSlot" value={form.rightShoulderSlot} weapons={weapons} onChange={(v) => set('rightShoulderSlot', v)} />
+                <SlotEditor label="背後武器槽 backSlot"          value={form.backSlot}          weapons={weapons} onChange={(v) => set('backSlot', v)} />
+              </>
+            )}
+
+            {/* 武器槽隱藏時不畫上分隔線，否則 ADMIN 看到的是一條沒有上文的孤立橫線 */}
+            <div className={`${isOwner ? 'pt-4 border-t border-border/60 ' : ''}space-y-3`}>
               <p className="text-xs text-text-dim font-medium tracking-wider uppercase">外觀 appearance</p>
               <IconField
                 label="立繪 portrait"
