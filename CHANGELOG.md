@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-12
+## [Unreleased] - 2026-08-15
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- 機甲圖鑑新增 A/B 級 26 台，回避模組正名並合併重複 (`86b8d3b`)
 - 後台引用標記新增殘留引用偵測與清除 (`690e670`)
 - PLAN-041 機師形態上線（Phase B～F，N1 完成 20/20） (`97963bc`)
 - PLAN-041 Phase A 集合接線 + D-1/D-2 分頁修繕 (`93045fd`)
