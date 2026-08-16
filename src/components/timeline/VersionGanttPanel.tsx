@@ -80,6 +80,18 @@ function saveCollapsed(v: boolean) {
 
 const LABEL_COL_PX = 110
 
+/**
+ * 內容容器的底色 —— 想調整就改這一行。
+ *
+ * 這是「橫幅要多明顯」的第二個調整鈕（第一個在 VersionExpandedPanel 的
+ * BANNER_OPACITY / BANNER_SCRIM）。原本是 bg-bg-dark/40，太透，
+ * 11–13px 的活動條文字下方直接是機甲立繪，讀不到。
+ *
+ *   想讓橫幅透出來更多 → 調低（如 bg-bg-dark/50）
+ *   想讓文字更清楚     → 調高（如 bg-bg-dark/85，接近不透明）
+ */
+const SURFACE = 'bg-bg-dark/75'
+
 // 列密度：Phase 1 從 py-1.5 / 15px（實測每列 42px）壓到 py-1 / 14px（約 32px）。
 // 原本的預算估固定資訊表 234px，實測是 383px —— 佔掉可用高度的 62%，
 // 導致下方的甘特與卡片流只剩 121px。不壓這裡，Phase 1 的卡片流等於看不到。
@@ -280,7 +292,7 @@ function VersionExtras({ version }: { version: PatchVersion }) {
   return (
     <div className="mt-1.5 shrink-0 space-y-1">
       {chips.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border bg-bg-dark/40 px-3 py-1">
+        <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border ${SURFACE} px-3 py-1`}>
           {chips.map(c => (
             <span key={c.label} className="inline-flex items-center gap-1.5 text-[12px] whitespace-nowrap">
               <span className="opacity-80">{c.icon}</span>
@@ -291,7 +303,7 @@ function VersionExtras({ version }: { version: PatchVersion }) {
         </div>
       )}
       {version.notes && (
-        <div className="rounded-lg border border-border bg-bg-dark/40 px-3 py-1">
+        <div className={`rounded-lg border border-border ${SURFACE} px-3 py-1`}>
           <PatchInfoRow icon="📝" label="備註" items={[version.notes]} color="blue" size="sm" />
         </div>
       )}
@@ -420,7 +432,7 @@ export default function VersionGanttPanel({
           style={{ minWidth: `${LABEL_COL_PX + Math.max(totalWeeks, 6) * 80}px` }}
         >
           {/* ── 容器 1：固定版本內容（機師 / 機甲 / 武裝關卡 / 討伐專武 / 討伐背包 / 角色戰令 / 機甲戰令）── */}
-          <div className="shrink-0 rounded-lg border border-border bg-bg-dark/40 overflow-hidden">
+          <div className={`shrink-0 rounded-lg border border-border ${SURFACE} overflow-hidden`}>
             <table className="border-collapse text-[13px] w-full" style={{ tableLayout: 'fixed' }}>
               <Colgroup />
               <thead>
@@ -527,7 +539,7 @@ export default function VersionGanttPanel({
           {!infoCollapsed && <VersionExtras version={version} />}
 
           {/* ── 容器 2：甘特索引層 + 卡片內容層（同一個捲動容器，往下捲即銜接）── */}
-          <div className="mt-2 flex-1 min-h-0 rounded-lg border border-border bg-bg-dark/40 overflow-y-auto overflow-x-hidden overscroll-contain">
+          <div className={`mt-2 flex-1 min-h-0 rounded-lg border border-border ${SURFACE} overflow-y-auto overflow-x-hidden overscroll-contain`}>
             <div className="relative">
               {/* 共用軸線層：週格線 / 上下半分界 / 今日線 */}
               <GanttAxisOverlay
