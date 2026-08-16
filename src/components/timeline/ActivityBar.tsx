@@ -143,6 +143,7 @@ export default function ActivityBar({
   geom,
   selected,
   dimmed,
+  rerun,
   onSelect,
   onHover,
 }: {
@@ -150,6 +151,8 @@ export default function ActivityBar({
   actKey: string
   geom: BarGeom
   selected: boolean
+  /** 復刻卡池（顯示層推導）—— 只換型別標籤，不影響資料 */
+  rerun?: boolean
   /** 有其他活動被選取時，本條淡出以突顯選取項 */
   dimmed: boolean
   onSelect: (key: string | null) => void
@@ -158,7 +161,7 @@ export default function ActivityBar({
   const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const { base, rewards } = splitActivityName(act)
-  const tone = activityTone(act.type, act.typeLabel)
+  const tone = activityTone(act.type, act.typeLabel, { rerun })
 
   // 用專案既有的 @floating-ui/react（BossDropTooltip 已是同一套 pattern）。
   //

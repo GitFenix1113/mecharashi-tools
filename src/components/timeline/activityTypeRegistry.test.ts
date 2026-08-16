@@ -4,8 +4,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   activityTone, isKnownActivityType, shapeClass,
-  ACTIVITY_TYPE_OPTIONS,
-} from './activityTypeRegistry.ts'
+  ACTIVITY_TYPE_OPTIONS, bannerIsRerun } from './activityTypeRegistry.ts'
 import { KNOWN_ACTIVITY_TYPES } from '../../data/patchVersions/types.ts'
 
 test('每個已知型別都有登錄，且下拉選單與型別清單一一對應', () => {
@@ -77,4 +76,48 @@ test('shapeClass 對每種形狀都給得出 class', () => {
   for (const s of ['circle', 'square', 'diamond', 'triangle', 'bar'] as const) {
     assert.ok(shapeClass(s).length > 0, `${s} 無 class`)
   }
+})
+
+// ── 版本池／復刻池（顯示層推導）────────────────────────────────────────────────
+
+test('復刻判定：實體不在該半版本的新增名單裡 ＝ 復刻', () => {
+  const half = { pilots: ['哈達威'], mechs: ['螢石'] }
+  // 版本池：本半新增的機師／機甲
+  assert.equal(bannerIsRerun({ type: 'specificPilotBanner', pilots: ['哈達威'] }, half), false)
+  assert.equal(bannerIsRerun({ type: 'specificMechBanner', mechs: ['螢石'] }, half), false)
+  // 復刻池：舊角色回歸（v3.1 下半實例）
+  assert.equal(bannerIsRerun({ type: 'specificPilotBanner', pilots: ['佐伊'] }, half), true)
+  assert.equal(bannerIsRerun({ type: 'specificMechBanner', mechs: ['赫克托爾'] }, half), true)
+})
+
+test('回歸：不能用「起始日晚於半版本開始」判斷復刻', () => {
+  // v3.0 lower 的白夜凜鋒（維羅妮卡）起始日 == 半版本開始日 06/18，卻是復刻。
+  // 這個反例是整條判準只能看名單、不能看日期的原因。
+  const half = { pilots: ['瑪阿特'] }
+  assert.equal(bannerIsRerun({ type: 'specificPilotBanner', pilots: ['維羅妮卡'] }, half), true)
+})
+
+test('回歸：機甲池不能拿去比機師名單（欄位配對錯了會整個反過來）', () => {
+  // 該半版本新增機師「哈達威」、沒有新機甲。機甲池「巨像」應判為復刻；
+  // 若呼叫端寫成 act.pilots ?? act.mechs 配 half.pilots ?? half.mechs，
+  // 就會拿 ['巨像'] 去比 ['哈達威'] 之外的錯誤名單而得到相反結果。
+  const half = { pilots: ['哈達威'] }               // mechs 缺席
+  assert.equal(bannerIsRerun({ type: 'specificMechBanner', mechs: ['巨像'] }, half), false,
+    '沒有新機甲名單就無從判定 —— 判不出來時當一般卡池，不要猜')
+  assert.equal(bannerIsRerun({ type: 'specificMechBanner', mechs: ['巨像'] }, { mechs: ['螢石'] }), true)
+})
+
+test('復刻只影響標籤，不影響型別的顏色與形狀', () => {
+  const base = activityTone('specificPilotBanner')
+  const rerun = activityTone('specificPilotBanner', undefined, { rerun: true })
+  assert.equal(rerun.label, '角色復刻')
+  assert.equal(base.label, '角色池')
+  assert.equal(rerun.dot, base.dot, '同族群同色')
+  assert.equal(rerun.shape, base.shape, '同型別同形狀')
+})
+
+test('非卡池型別不受 rerun 影響（誤傳也不會改標籤）', () => {
+  assert.equal(bannerIsRerun({ type: 'battlePass', pilots: ['佐伊'] }, { pilots: ['哈達威'] }), false)
+  assert.equal(activityTone('battlePass', undefined, { rerun: true }).label, '戰令')
+  assert.equal(activityTone('crossShipping', undefined, { rerun: true }).label, '海運')
 })

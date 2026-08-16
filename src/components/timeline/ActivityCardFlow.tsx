@@ -14,6 +14,11 @@ export interface KeyedActivity {
    * 預告），但下一版期間仍在進行中。不標出來源，讀者會以為它是本版新增的。
    */
   carriedFrom?: string
+  /**
+   * 這筆卡池是復刻（實體不在該半版本的新增名單裡）。
+   * 顯示層推導、不進資料 —— 見 activityTypeRegistry.bannerIsRerun。
+   */
+  rerun?: boolean
 }
 
 type Phase = 'ongoing' | 'upcoming' | 'ended'
@@ -81,12 +86,13 @@ export default function ActivityCardFlow({
         </div>
         {!collapsed && (
           <div className="grid grid-cols-1 @2xl:grid-cols-2 gap-2">
-            {list.map(({ key, act, carriedFrom }) => (
+            {list.map(({ key, act, carriedFrom, rerun }) => (
               <ActivityCard
                 key={key}
                 act={act}
                 actKey={key}
                 carriedFrom={carriedFrom}
+                rerun={rerun}
                 selected={selectedKey === key}
                 onSelect={onSelect}
                 onHover={onHover}

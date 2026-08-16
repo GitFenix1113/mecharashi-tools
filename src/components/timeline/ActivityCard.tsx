@@ -14,6 +14,7 @@ export default function ActivityCard({
   act,
   actKey,
   carriedFrom,
+  rerun,
   selected,
   onSelect,
   onHover,
@@ -23,6 +24,8 @@ export default function ActivityCard({
   actKey: string
   /** 非空 ＝ 這筆是從該版本延續進來的（如戰令跨版），標出來源免得誤認為本版新增 */
   carriedFrom?: string
+  /** 復刻卡池（顯示層推導）—— 只換型別標籤，不影響資料 */
+  rerun?: boolean
   selected: boolean
   onSelect: (key: string | null) => void
   onHover: (key: string | null) => void
@@ -30,7 +33,7 @@ export default function ActivityCard({
 }) {
   const { base, rewards } = splitActivityName(act)
   const st = activityStatus(act)
-  const tone = activityTone(act.type, act.typeLabel)
+  const tone = activityTone(act.type, act.typeLabel, { rerun })
   // 機師與機甲都要列出（同 ActivityBar）—— 舊寫法用 ??，pilots 有值就永遠
   // 輪不到 mechs，戰令那種兩邊都有的活動會少掉機甲。這裡是單行摘要，
   // 故不換列而以全形空白分隔。

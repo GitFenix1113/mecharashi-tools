@@ -101,15 +101,60 @@ const REGISTRY: Record<string, ActivityTone> = {
   battlePass:          { ...PASS,   shape: 'bar',      label: '戰令' },
 }
 
+/** 復刻卡池的顯示名。型別不變，只換標籤 —— 見 activityTone 的說明。 */
+const RERUN_LABEL: Record<string, string> = {
+  specificPilotBanner: '角色復刻',
+  specificMechBanner: '機甲復刻',
+}
+
 /**
  * 取得型別的呈現設定。未登錄型別回中性色，`typeLabel` 可覆寫顯示名。
  * 已登錄型別一律以 registry 的 label 為準，所以日後補登錄某個型別時，
  * 先前為它填的 typeLabel 會自動被蓋過，無需回頭清資料。
+ *
+ * `opts.rerun` 把卡池標成復刻版。**這不是一個新型別，只是換個標籤**：
+ * 官方公告對版本池與復刻池的寫法一模一樣（都是 `【特選】主題名 – S級X「名」`），
+ * 解析器沒有任何訊息可以分辨，是顯示層比對「實體在不在本半版本的新增名單」
+ * 推導出來的（見 bannerIsRerun）。存成獨立型別等於把推導結果凍結進資料，
+ * 日後名單修正了分類卻不會跟著改。
  */
-export function activityTone(type: ActivityTypeId, typeLabel?: string): ActivityTone {
+export function activityTone(
+  type: ActivityTypeId,
+  typeLabel?: string,
+  opts?: { rerun?: boolean },
+): ActivityTone {
   const known = REGISTRY[type]
-  if (known) return known
+  if (known) {
+    const rerunLabel = opts?.rerun ? RERUN_LABEL[type] : undefined
+    return rerunLabel ? { ...known, label: rerunLabel } : known
+  }
   return { ...UNKNOWN, label: typeLabel?.trim() || UNKNOWN.label }
+}
+
+/**
+ * 這個卡池是不是復刻？判準：**它的實體不在該半版本的新增名單裡**。
+ *
+ * 為什麼不是「起始日晚於半版本開始」——實測有反例：
+ * `v3.0 lower 白夜凜鋒（維羅妮卡）` 起始日正好等於半版本開始日，卻是復刻池。
+ *
+ * 回傳 false 的情況包含「無法判定」（沒有實體名、沒有名單）：
+ * 復刻是附加資訊，判不出來就當一般卡池顯示，不要猜。
+ *
+ * ⚠ 機師／機甲欄位由**本函式依型別自己挑**，不讓呼叫端傳進來 ——
+ * 呼叫端寫成 `act.pilots ?? act.mechs` 配 `half.pilots ?? half.mechs` 時，
+ * 機甲池會拿到 half.pilots（該半版本幾乎一定有新機師）而比錯欄位，
+ * 分類整個反過來卻不會報錯。
+ */
+export function bannerIsRerun(
+  act: { type: string; pilots?: string[]; mechs?: string[] },
+  half: { pilots?: string[]; mechs?: string[] } | undefined,
+): boolean {
+  const isPilot = act.type === 'specificPilotBanner'
+  if (!isPilot && act.type !== 'specificMechBanner') return false
+  const entities = isPilot ? act.pilots : act.mechs
+  const newEntities = isPilot ? half?.pilots : half?.mechs
+  if (!entities?.length || !newEntities?.length) return false
+  return !entities.some(e => newEntities.includes(e))
 }
 
 export function isKnownActivityType(type: string): boolean {

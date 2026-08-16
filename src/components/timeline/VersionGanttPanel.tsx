@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import type { PatchVersion, PatchHalf } from '../../data/patchVersions/types'
+import type { PatchVersion, PatchHalf, VisibleActivity } from '../../data/patchVersions/types'
 import { activitiesOfHalf } from '../../data/patchVersions/legacyActivities'
 import PatchInfoRow from './PatchInfoRow'
 import ActivityBar from './ActivityBar'
 import ActivityCardFlow, { type KeyedActivity } from './ActivityCardFlow'
 import GanttAxisOverlay from './GanttAxisOverlay'
-import { activityTone } from './activityTypeRegistry'
+import { activityTone, bannerIsRerun } from './activityTypeRegistry'
 // 日期工具與長條幾何集中在 ganttGeometry，避免與長條計算各有一份 parseDate 而漂移
 import { parseDate, addDays, activityGeometry, generateWeeks } from './ganttGeometry'
 
@@ -219,9 +219,9 @@ function ActivityGanttRow({
   onSelect: (key: string | null) => void
   onHover: (key: string | null) => void
 }) {
-  const { key, act, carriedFrom } = item
+  const { key, act, carriedFrom, rerun } = item
   const geom = activityGeometry(act, allWeeks)
-  const tone = activityTone(act.type, act.typeLabel)
+  const tone = activityTone(act.type, act.typeLabel, { rerun })
   const selected = selectedKey === key
 
   return (
@@ -245,6 +245,7 @@ function ActivityGanttRow({
               geom={geom}
               selected={selected}
               dimmed={selectedKey !== null && !selected}
+              rerun={rerun}
               onSelect={onSelect}
               onHover={onHover}
             />
@@ -342,11 +343,24 @@ export default function VersionGanttPanel({
         : []
       const allWeeks = [...upperWeeks, ...lowerWeeks]
 
+      // 復刻判定要拿**該活動所屬那一半**的新增名單去比 —— 用錯半期就會把
+      // 上半的新機師當成下半的，分類整個反過來。
+      const rerunOf = (act: VisibleActivity, half: PatchHalf) =>
+        bannerIsRerun(act, half) || undefined
+
       // 穩定 key：優先用 act.id（Phase 1 新欄位），未填時退回「半段+序號+名稱」。
       // 純 index 會在陣列重排時讓選取狀態跳到別的活動身上。
       const items: KeyedActivity[] = [
-        ...upperActs.map((act, i) => ({ key: act.id ?? `u${i}:${act.name}:${act.startDate}`, act })),
-        ...lowerActs.map((act, i) => ({ key: act.id ?? `l${i}:${act.name}:${act.startDate}`, act })),
+        ...upperActs.map((act, i) => ({
+          key: act.id ?? `u${i}:${act.name}:${act.startDate}`,
+          act,
+          rerun: rerunOf(act, version.upper),
+        })),
+        ...lowerActs.map((act, i) => ({
+          key: act.id ?? `l${i}:${act.name}:${act.startDate}`,
+          act,
+          rerun: rerunOf(act, version.lower),
+        })),
       ]
 
       // ── 上一版跨進來的活動 ────────────────────────────────────────────────
@@ -363,13 +377,17 @@ export default function VersionGanttPanel({
         const prevLabel = `v${prevVersion.version}`
         const prevUpperStart = side === 'tw' ? (prevVersion.upper.twDate ?? '') : prevVersion.upper.cnDate
         const prevLowerStart = side === 'tw' ? (prevVersion.lower.twDate ?? '') : prevVersion.lower.cnDate
-        const prevActs = [
-          ...activitiesOfHalf(prevVersion.upper, side, halfSpan(prevUpperStart, prevLowerStart)),
-          ...activitiesOfHalf(prevVersion.lower, side, halfSpan(prevLowerStart, upperStartStr || null)),
+        // 保留「來自哪一半」—— 復刻判定要用該活動**原本那一版那一半**的新增名單，
+        // 拿當前版本的名單去比會全部誤判成復刻（本版的新機師當然不在上一版名單裡）
+        const prevActs: { act: VisibleActivity; half: PatchHalf }[] = [
+          ...activitiesOfHalf(prevVersion.upper, side, halfSpan(prevUpperStart, prevLowerStart))
+            .map(act => ({ act, half: prevVersion.upper })),
+          ...activitiesOfHalf(prevVersion.lower, side, halfSpan(prevLowerStart, upperStartStr || null))
+            .map(act => ({ act, half: prevVersion.lower })),
         ]
         // 本版已經有的同名同起始日不再重複帶入（維護者可能兩版都登錄了一次）
         const own = new Set(items.map(it => `${it.act.name}@${it.act.startDate}`))
-        for (const [i, act] of prevActs.entries()) {
+        for (const [i, { act, half }] of prevActs.entries()) {
           const end = addDays(parseDate(act.startDate), Math.max(act.weeks, 1) * 7)
           if (end <= axisStart) continue                       // 上一版就結束了
           if (own.has(`${act.name}@${act.startDate}`)) continue
@@ -377,6 +395,7 @@ export default function VersionGanttPanel({
             key: act.id ? `carry:${act.id}` : `carry${i}:${act.name}:${act.startDate}`,
             act,
             carriedFrom: prevLabel,
+            rerun: rerunOf(act, half),
           })
         }
       }
