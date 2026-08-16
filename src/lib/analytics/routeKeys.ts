@@ -50,6 +50,7 @@ export const ROUTE_PATTERNS: readonly string[] = [
   '/admin/history',
   '/admin/system-log',
   '/admin/analytics',
+  '/admin/announcements',
   '*',
 ]
 

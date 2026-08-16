@@ -22,6 +22,8 @@ export * from './api/grayOps'         // getGrayOpsRoster / updateGrayOpsRoster
 // PLAN-030 變更歷史：後台專用稽核 log。不進 CollectionKey / GameDataContext（見計畫書決策一）
 export * from './api/changeHistory'   // logChange / logChangeOrThrow / getChangeHistoryPage
 export * from './api/systemLog'       // logSystemEvent / getSystemLogPage / getSystemLogSummary
+// PLAN-048 Phase 2 台版公告 staging：後台專用審核暫存。同樣不進 CollectionKey / GameDataContext
+export * from './api/announcementStaging' // fetchPendingActivities / saveReviewed / rejectPending / mergeIntoVersion
 // PLAN-046 使用統計：唯讀（唯一寫入者是 Cloudflare Worker）。同樣不進 CollectionKey / GameDataContext
 export * from './api/analytics'       // getDailyRange / getEntityMonth / sumMap / sumRoutes / toRanking
 export * from './api/cascadeDelete'    // planCascadeDelete / commitCascadeDelete / cascadeDelete（+ 兩個錯誤型別）

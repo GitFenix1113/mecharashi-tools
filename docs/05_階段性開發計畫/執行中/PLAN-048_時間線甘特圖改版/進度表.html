@@ -202,7 +202,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">26</div>
+      <div class="summary-num" style="color:var(--accent-green)">31</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -210,7 +210,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">5</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -221,11 +221,11 @@
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度 · Phase 0 + Phase 1 已完工，Phase 2 管線層完工（2026-08-16）</span>
-      <span style="color:var(--accent-orange);">26 / 31</span>
+      <span>整體完成度 · Phase 0 / 1 / 2 全數完工（2026-08-16）</span>
+      <span style="color:var(--accent-green);">31 / 31</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 84%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -835,7 +835,7 @@
     <div class="task-group-header">
       <div class="task-group-title">2-3 &nbsp; /admin/announcements 審核工作檯</div>
       <div class="task-group-meta">維護者實際要打的字：三顆按鈕</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -843,11 +843,16 @@
         <div class="task-desc">
           預設只顯示 <code>needsReview</code>；<code>unknownActivityType</code> / <code>unmatchedText</code> 置頂。
           實測 buffer 流量是<strong>每月 2～4 筆</strong>新名稱（2024:17 / 2025:44 / 2026:29 個新名稱）。
+          <br><strong>實作補充：</strong>五個狀態分頁（待確認／可直接放行／全部未處理／已合併／已忽略），
+          清單以 <code>priority()</code> 置頂 <code>unknownActivityType</code> → <code>unmatchedText</code> →
+          缺名稱或日期 → 其他有 flag 者。路由 <code>/admin/announcements</code>（AdminRoute 保護），
+          後台首頁加入口，並登記進 <code>routeKeys.ts</code>
+          （漏登記會被 <code>routeKeys.test.ts</code> 擋下 —— 本次實際踩到）。
         </div>
         <div class="task-file">src/pages/admin/AdminAnnouncementsPage.tsx（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~3h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -856,11 +861,15 @@
           左欄只載 <code>excerpt</code> 對應的原文片段（不是整篇），<code>unmatched[]</code> 標紅讓「這段我沒看懂」自動浮出來。
           右欄是 <code>extracted</code> 預填的 <code>TimedActivity</code> 表單，人工編修寫進 <code>reviewed</code>（<code>extracted</code> 保持原樣供 diff）。
           動作只有三顆按鈕：<strong>→ 上半 / → 下半 / 忽略</strong>。
+          <br><strong>實作補充：</strong>開放式檔期（193 筆、31%）的週數在<strong>表單</strong>預填 2 週，
+          同時以醒目提示標明「這是建議值不是官方資料」——
+          預填的是輸入框、不是資料，兩者的界線就是整個 staging 設計的基礎。
+          <code>reviewed</code> 與 <code>extracted</code> 並存，人工編修不覆蓋解析器原始產出。
         </div>
         <div class="task-file">src/components/admin/AnnouncementReviewPanel.tsx（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~4h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -868,7 +877,7 @@
     <div class="task-group-header">
       <div class="task-group-title">2-4 &nbsp; 合併寫入（兩條紅字都在這）</div>
       <div class="task-group-meta">runTransaction · bumpDataVersion</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -878,11 +887,20 @@
           若照現況追加，腳本寫入的內容會在管理員存檔時無聲消失（同型事故前例：<code>scrape-pilots-v3.js:117</code>）。
           <code>mergedInto</code> 收據用 <code>{ name, startDate }</code> anchor 定位而非 index（陣列會重排）。
           這也是為什麼 buffer <strong>絕不能</strong>做成 <code>PatchVersion.inbox</code> 欄位。
+          <br><strong>實作補充：</strong>合併只以 <code>tx.update</code> 寫該半期的
+          <code>twActivities</code> 這一條欄位路徑，不整份覆寫版本文件 ——
+          否則會把管理員在其他欄位的並行編輯一起回捲。同 anchor 者回報 <code>conflict</code>
+          並零寫入，由使用者決定是否覆寫（覆寫時沿用既有那筆的 <code>id</code>，
+          甘特↔卡片的選取狀態才不會跳掉）。
+          <br><strong>已用模擬器整合測試驗證（11 例全過）</strong>：
+          <code>tests/emulator/suites/announcement-merge.test.ts</code>，全部以 adminDb 帶外驗證資料庫真實狀態。
+          其中案例 j 讓兩筆合併同時發出 —— <strong>兩筆都活下來</strong>（read→modify→write 在此必然掉一筆）；
+          案例 i 驗證非管理員被規則擋下且資料庫毫髮無傷。
         </div>
-        <div class="task-file">src/lib/api/patchVersions.ts · AdminVersionEditorPage.tsx</div>
+        <div class="task-file">src/lib/api/announcementStaging.ts · tests/emulator/suites/announcement-merge.test.ts</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~2.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -891,11 +909,17 @@
           <strong>不 bump 就是「資料寫進去了、前台看不到、硬重整也沒用」，最長 24 小時。</strong>
           <code>patchVersions</code> 走 Worker 邊緣快取（<code>workers/src/index.ts</code> 以集合版本號當 cache key、<code>max-age=86400</code>）。
           這條要一併寫進 <code>data-patch</code> skill 與 docs。
+          <br><strong>實作補充：</strong>bump 在 <code>mergeIntoVersion</code> 內、
+          <code>invalidatePatchVersionsCache()</code> 由呼叫端接（同
+          <code>AdminVersionEditorPage.handleSave</code> 的分工）——
+          api 層若相依 <code>usePatchVersions</code>，會連帶拉進讀 <code>import.meta.env</code> 的
+          <code>workerData</code>，該模組就再也無法在 Vite 以外的環境載入（模擬器整合測試當場失敗）。
+          <code>data-patch</code> skill 已補上第 5 條，含「沒改到就不要 bump」的反向規則。
         </div>
-        <div class="task-file">src/lib/api/versions.ts · .claude/skills/data-patch/</div>
+        <div class="task-file">src/lib/api/announcementStaging.ts · .claude/skills/data-patch/SKILL.md</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -903,7 +927,7 @@
     <div class="task-group-header">
       <div class="task-group-title">2-5 &nbsp; confidence 前台顯示</div>
       <div class="task-group-meta">回應痛點 4 唯一能在顯示層兌現的東西</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -911,11 +935,15 @@
         <div class="task-desc">
           台版由腳本一律填 <code>confirmed</code>，陸版人工填。
           <strong>缺的公告仍然缺，但至少讀者分得出「查證過」與「照慣例推的」。</strong>
+          <br><strong>顯示層在 Phase 1 已完成</strong>（<code>ActivityBar</code> 虛線邊框、
+          <code>ActivityCard</code> 標「推估」）；本任務只剩填值：解析器對台版公告一律填
+          <code>confidence: confirmed</code>（官方一手來源），
+          <code>legacyActivities.ts</code> 的舊欄位 shim 則一律填 <code>predicted</code>。
         </div>
-        <div class="task-file">src/components/timeline/ActivityBar.tsx · ActivityCard.tsx</div>
+        <div class="task-file">scripts/lib/parseAnnouncement.mjs · src/components/timeline/ActivityBar.tsx</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
