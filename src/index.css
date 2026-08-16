@@ -61,6 +61,16 @@
   --color-border-accent: #2a3040;
 }
 
+/*
+ * 全站宣告深色配色 —— 這是「原生控件」唯一聽得懂的開關。
+ * 沒有它，瀏覽器一律用淺色去畫下拉清單 popup、日期選擇器、捲軸、autofill
+ * 背景等**由系統而非 CSS 繪製**的部分：在這個深色站上就是白底配淺字。
+ * 使用者的 Windows 主題設什麼不影響（Chrome 只認頁面自己的宣告）。
+ */
+:root {
+  color-scheme: dark;
+}
+
 body {
   background-color: var(--color-bg-dark);
   background-image: url('/images/General/homepage_background.webp');
@@ -93,6 +103,11 @@ body {
  *
  * 背景刻意用**不透明**色值而不是 var(--color-bg-card)：後者帶 0.65 alpha，
  * 半透明的下拉疊在版本橫幅的機甲立繪上一樣糊。#12151c 就是 bg-card 的不透明版。
+ *
+ * ⚠ 這條規則**單獨不夠**：Windows/Chrome 的下拉 popup 由系統繪製，會吃掉這裡的
+ *   background-color 只留 color，反而變成「系統白底 + 淺灰字」比不設更難讀。
+ *   真正的開關是上面的 color-scheme: dark；這條留著是給有吃 CSS 的平台
+ *   （macOS / Linux / Android）對齊站內色票用的。兩者要一起看。
  */
 select option {
   background-color: #12151c;
