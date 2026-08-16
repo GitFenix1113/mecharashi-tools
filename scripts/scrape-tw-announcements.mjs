@@ -428,6 +428,7 @@ async function main() {
   let written = 0
   let preserved = 0
   const restaled = []   // 已處理、但重跑後解析結果變了 —— 正式資料可能要人工回頭改
+  const orphaned = []   // 規則改過後不再產生的既有待審 —— 標 superseded，退出待審清單
   for (const r of results) {
     const batch = db.batch()
     if (regressed) r.draft.warnings = [...new Set([...r.draft.warnings, 'yieldRegression'])]
@@ -493,6 +494,19 @@ async function main() {
         expireAt,
       }))
     }
+    // 規則改過之後「不再產生」的既有待審 —— 例如多爾沙龍改判為儲值促銷（不收錄），
+    // 它原本那筆 pendingActivity 不會被上面的迴圈碰到，就這樣孤零零留在待審清單裡，
+    // 每次審核都得手動忽略一次。標成 superseded：它不在後台任何分頁的篩選條件內，
+    // 會安靜消失但痕跡還在（不刪，才查得出「當初為什麼有這筆」）。
+    const producedIds = new Set(r.activities.map(a => `${r.id}_${a.seq}`))
+    for (const [id, prevA] of prevActivities) {
+      if (producedIds.has(id)) continue
+      // 收據與已標記的不動 —— 同前面「已合併的保留收據」的原則
+      if (['merged', 'rejected', 'superseded'].includes(prevA.status)) continue
+      batch.update(db.collection(PENDING).doc(id), { status: 'superseded' })
+      orphaned.push({ id, name: prevA.extracted?.name ?? '（無名）', type: prevA.extracted?.type ?? '—' })
+    }
+
     if (!DRY_RUN) await batch.commit()
     written++
   }
@@ -503,6 +517,13 @@ async function main() {
   )
   if (preserved) {
     console.log(`   （保留 ${preserved} 筆已合併／已忽略的收據，未覆寫）`)
+  }
+  if (orphaned.length) {
+    const byName = {}
+    for (const o of orphaned) byName[o.name] = (byName[o.name] ?? 0) + 1
+    const top = Object.entries(byName).sort((a, b) => b[1] - a[1]).slice(0, 8)
+    console.log(`   （${orphaned.length} 筆待審因規則改變而不再產生，已標 superseded 退出清單）`)
+    for (const [name, n] of top) console.log(`       ${n}× ${name}`)
   }
   if (restaled.length) {
     // 這是重跑後唯一需要人工介入的東西，所以印得刺眼一點：收據不會自己更新，

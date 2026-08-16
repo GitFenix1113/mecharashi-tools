@@ -32,7 +32,7 @@
  * AnnouncementDraft.parserVersion 靠它挑出「該重跑的舊公告」，
  * 沒有它就只能全量重跑或憑印象。
  */
-export const PARSER_VERSION = 3
+export const PARSER_VERSION = 4
 
 const DAY_MS = 86_400_000
 
@@ -100,7 +100,12 @@ const NAME_KEYWORDS = [
   [/特遣/, 'pilotMission'],
   [/跨域海運/, 'crossShipping'],
   [/登錄|登入|簽到/, 'loginEvent'],
-  [/儲值/, 'topUpEvent'],
+  // 「多爾沙龍」是台版對儲值滿額活動的固定專名 —— 正文寫「活動期間累計儲值達到
+  // 指定額度，即可領取對應獎勵」，標題卻不出現「儲值」二字，於是漏進 limitedEvent。
+  // 28 篇語料全是同一句，是穩定專名不是個案（同構於「環島密令」＝戰令）。
+  // ⚠ 同一個活動頁上的「預熱衝刺」（戰術模擬演算次數 +2）與「火線重燃」
+  //   （首領剿滅素材加成）是玩法活動，不是儲值，不能一起收進來。
+  [/儲值|多爾沙龍/, 'topUpEvent'],
   // 台版把戰令叫「環島密令」，公告全程不出現「戰令」二字 —— 只認關鍵字會漏掉整個系統
   [/戰令|通行證|環島密令/, 'battlePass'],
 ]
