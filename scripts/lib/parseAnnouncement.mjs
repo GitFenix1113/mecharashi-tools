@@ -32,7 +32,7 @@
  * AnnouncementDraft.parserVersion 靠它挑出「該重跑的舊公告」，
  * 沒有它就只能全量重跑或憑印象。
  */
-export const PARSER_VERSION = 4
+export const PARSER_VERSION = 5
 
 const DAY_MS = 86_400_000
 
@@ -363,6 +363,8 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
   // ③ 每個時間行往回找名稱，組成活動
   const activities = []
   let pilotNamed = 0, mechNamed = 0, excluded = 0
+  // 分母：真的產出了幾筆卡池。告警要拿它比，不能拿「段落存不存在」比 —— 見下方說明。
+  let pilotBanners = 0, mechBanners = 0
   for (const [seq, hit] of timeHits.entries()) {
     const prevTimeLine = seq > 0 ? timeHits[seq - 1].line : -1
     const sec = sectionAt[hit.line]
@@ -403,6 +405,33 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
       for (let i = Math.max(headIdx, prevTimeLine) + 1; i < hit.line; i++) {
         const m = /(?:活動內容|概率提升|招募|購置)[^\n]*?[「『]([^」』]{1,20})[」』]/.exec(lines[i])
         if (m) { heading.entities = [m[1].trim()]; break }
+      }
+    }
+
+    // 第三道：實體名在時間行**之後**的一句敘述裡（2026/07 起的新句型）。
+    //
+    //   【特選】轟鳴邏輯                                       ← 標題行沒有實體名
+    //   ➤活動時間：2026/07/30 10:00 起
+    //   本期機師征招「轟鳴邏輯」開放【特選】S級戰術家「哈達威」！  ← 在這裡
+    //
+    // 上面兩道都只往「時間行之前」找，接不住這種。實測 1780 因此產出兩筆
+    // 沒有實體名的卡池，並觸發 pilotSectionNoName / mechSectionNoName 告警。
+    //
+    // ⚠ 這正是解析器檔頭說的「官方句型逐年漂移」的第四次 —— 而且是計畫書當初
+    //   評估「2024/2025 出現 0 次」而未處理的那個句型，現在它出現了。
+    //
+    // 樣式刻意收得很緊：要同時有「本期」與「開放」，且只取**最後**一個 「」
+    // （前一個是主題名，已經在標題抓過）。搜尋範圍限時間行後 2 行 ——
+    // 再往下就是機體／機師的故事文，那裡的 「」 是設定名詞不是實體名。
+    if (heading.entities.length === 0) {
+      const limit = Math.min(hit.line + 3, lines.length)
+      for (let i = hit.line + 1; i < limit; i++) {
+        const m = /本期[^\n]*?開放[^\n]*?[「『]([^」』]{1,20})[」』][^「『]*$/.exec(lines[i])
+        if (m) {
+          heading.entities = [m[1].trim()]
+          claimed[i] = true
+          break
+        }
       }
     }
 
@@ -477,13 +506,26 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
 
     // 實體名：卡池段落才填，一般活動的 「」 多半是獎勵不是機師
     let pilots, mechs
-    if (type === 'specificPilotBanner' && heading.entities.length) {
-      pilots = heading.entities
-      pilotNamed++
+    if (type === 'specificPilotBanner') {
+      pilotBanners++
+      if (heading.entities.length) {
+        pilots = heading.entities
+        pilotNamed++
+      }
     }
-    if ((type === 'specificMechBanner' || type === 'crossShipping') && heading.entities.length) {
+    // 只有 specificMechBanner 列入告警分母。crossShipping（跨域海運）的機甲清單
+    // 寫在「活動內容」的括號裡而不是標題（`本次指定兌換機甲為:銜尾蛇、遊騎兵…`），
+    // 標題本來就抓不到 —— 把它算進「卡池句型是否漂移」的分母是類別錯誤，
+    // 實測會製造 6 次常態誤報。那份長名單是另一個議題（自選池），尚未處理。
+    if (type === 'specificMechBanner') {
+      mechBanners++
+      if (heading.entities.length) {
+        mechs = heading.entities
+        mechNamed++
+      }
+    } else if (type === 'crossShipping' && heading.entities.length) {
+      // 標題偶爾仍帶實體名，帶了就收（不影響告警分母）
       mechs = heading.entities
-      mechNamed++
     }
 
     const excerptStart = offsets[headIdx >= 0 ? headIdx : hit.line]
@@ -538,8 +580,16 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
   // 用「解析出來的總數」而非「收錄的數量」：不收錄是我們自己的決定，
   // 拿它去判斷解析器有沒有瞎掉，等於用自己的過濾規則污染自己的體檢報告。
   if (isWeekly && activities.length + excluded < 2) warnings.push('lowYield')
-  if (sawPilotSection && pilotNamed === 0) warnings.push('pilotSectionNoName')
-  if (sawMechSection && mechNamed === 0) warnings.push('mechSectionNoName')
+  // 分母是「產出了幾筆卡池」，不是「段落存不存在」。
+  //
+  // 舊版用 sawPilotSection：只要有「機師征招招募活動」段落而沒抓到任何機師名就告警。
+  // 但那個段落底下**常常只有自選池**（【角雕特遣】，型別 pilotMission，本來就不填
+  // pilots），於是這條在實測 266 篇裡誤報 14 次 —— 而常態誤報等於沒有告警：
+  // 1780 那次「新句型導致卡池抓不到實體名」是**真的**漏抓，告警確實響了，
+  // 卻淹沒在那 14 次雜訊裡沒人注意。改成只在「真的有特選卡池、卻一個名字都沒抓到」
+  // 時才響 —— 那才是句型漂移的訊號。
+  if (pilotBanners > 0 && pilotNamed === 0) warnings.push('pilotSectionNoName')
+  if (mechBanners > 0 && mechNamed === 0) warnings.push('mechSectionNoName')
 
   // 有 flag 的活動要人工看一眼；沒有的可直接放行
   for (const a of activities) a.status = a.flags.length ? 'needsReview' : 'parsed'

@@ -270,6 +270,47 @@ test('回歸：台版戰令叫「環島密令」，括號是系統名、「」�
   assert.equal(r.activities[0].extracted.type, 'battlePass')
 })
 
+test('回歸：實體名在時間行之後的新句型（2026/07 起的第四次句型漂移）', () => {
+  // 錯的時候（實測 20260729/1780）：標題行只有【特選】主題名、沒有「S級X「名」」，
+  // 而前兩道退路都只往時間行「之前」找 —— 於是產出兩筆沒有機師／機甲名的卡池，
+  // 並觸發 pilotSectionNoName / mechSectionNoName 告警。
+  const r = parseAnnouncement({
+    title: '【版本前瞻】x',
+    text: `本週推出內容
+機師征招招募活動
+【特選】轟鳴邏輯
+➤活動時間：2026/07/30 10:00 起
+本期機師征招「轟鳴邏輯」開放【特選】S級戰術家「哈達威」！
+機甲獲取海運活動
+【特選】輝螢之蝕
+➤活動時間：2026/07/30 10:00 起
+本期機甲獲取海運「輝螢之蝕」開放【特選】S級中型機甲「螢石」！`,
+  })
+  assert.equal(r.activities.length, 2)
+  assert.deepEqual(r.activities[0].extracted.pilots, ['哈達威'], '取最後一個「」，不是主題名')
+  assert.equal(r.activities[0].extracted.type, 'specificPilotBanner')
+  assert.deepEqual(r.activities[1].extracted.mechs, ['螢石'])
+  assert.equal(r.activities[1].extracted.type, 'specificMechBanner')
+  assert.ok(!r.warnings.includes('pilotSectionNoName'))
+  assert.ok(!r.warnings.includes('mechSectionNoName'))
+})
+
+test('回歸：故事文裡的「」不能被當成實體名', () => {
+  // 時間行後面第二、三行是機體故事，裡面的 「」 是設定名詞（部件、系統名）。
+  // 樣式要求同時有「本期」與「開放」，故事文不會誤中；沒有新句型時維持無實體名。
+  const r = parseAnnouncement({
+    title: '【版本前瞻】x',
+    text: `本週推出內容
+機師征招招募活動
+【特選】某主題
+➤活動時間：2026/07/30 10:00 起
+「SAT-283」螢石由希德製造研發的中型機甲
+※部件可用於車間生產「日蝕火控核心」，裝配 LV MAX 效果為…`,
+  })
+  assert.equal(r.activities.length, 1)
+  assert.equal(r.activities[0].extracted.pilots, undefined, '寧可沒有實體名，也不要抓錯一個')
+})
+
 test('回歸：多爾沙龍是儲值促銷（專名不含「儲值」二字），不收錄', () => {
   // 錯的時候：標題只有【多爾沙龍】，段落是限時活動 → 歸成 limitedEvent 進了待審佇列，
   // 而它每期都有、對「這版有什麼玩法」零資訊量，維護者每次都得手動忽略一筆。
