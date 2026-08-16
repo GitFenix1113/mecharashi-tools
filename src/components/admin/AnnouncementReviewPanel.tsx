@@ -100,9 +100,13 @@ export default function AnnouncementReviewPanel({
   const [form, setForm] = useState<Partial<TimedActivity>>(
     () => ({ ...item.extracted, ...(item.reviewed ?? {}) }),
   )
-  // null ＝ 使用者還沒手動選過，跟著推測值走
-  const [versionOverride, setVersionOverride] = useState<string | null>(null)
-  const versionId = versionOverride ?? defaultTarget?.versionId ?? ''
+  // null ＝ 使用者沒手動改過，跟著推算值走。
+  // 覆寫的是「版本 + 半期」整組，不是只有版本 —— 半期同樣是推算出來的，
+  // 要改就兩個一起改，否則會出現「版本改了、半期還停在舊版本推算值」的錯配。
+  const [override, setOverride] = useState<MergeTarget | null>(null)
+  const [showOverride, setShowOverride] = useState(false)
+  const target = override ?? defaultTarget
+  const versionId = target?.versionId ?? ''
 
   const patch = (p: Partial<TimedActivity>) => setForm(prev => ({ ...prev, ...p }))
 
@@ -117,12 +121,12 @@ export default function AnnouncementReviewPanel({
   // 週數不再是合併的必要條件 —— 缺它就隱藏著進去，等之後補。
   // 起始日仍然必要：實測 625 筆公告從沒缺過，且缺了連「什麼時候」都答不出來。
   const canMerge = Boolean(
-    form.name?.trim() && form.startDate && form.type && versionId
+    form.name?.trim() && form.startDate && form.type && target?.versionId
     && (!needsNote || (form.note ?? DEFAULT_NOTE).trim()),
   )
 
-  function submit(half: 'upper' | 'lower') {
-    if (!canMerge) return
+  function submit() {
+    if (!canMerge || !target?.versionId) return
     const activity: TimedActivity = {
       ...form,
       name: form.name!.trim(),
@@ -143,7 +147,7 @@ export default function AnnouncementReviewPanel({
     if (!activity.pilots?.length) delete activity.pilots
     if (!activity.mechs?.length) delete activity.mechs
     if (!activity.rewards?.length) delete activity.rewards
-    onMerge(activity, { versionId, half })
+    onMerge(activity, target)
   }
 
   return (
@@ -309,41 +313,75 @@ export default function AnnouncementReviewPanel({
           </div>
 
           <div className="col-span-2">
-            <Field label="目標版本">
-              <select className={INPUT} value={versionId} onChange={e => setVersionOverride(e.target.value)}>
-                <option value="">（請選擇）</option>
-                {versions.map(v => (
-                  <option key={v.id ?? v.version} value={v.id ?? `v${v.version}`}>
-                    v{v.version}{v.name ? ` ${v.name}` : ''}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            {!defaultTarget && (
-              <div className="mt-1 text-[10px] text-accent-yellow">
-                推不出目標版本（起始日落在所有已知台服版本之外），請手動選擇。
+            <span className="block text-[10px] font-bold text-text-secondary tracking-[1px] uppercase mb-1">
+              寫入目標
+            </span>
+            {target ? (
+              <div className="flex items-center gap-2 flex-wrap text-[12.5px]">
+                <span className="px-2 py-1 rounded border bg-accent-cyan/10 text-accent-cyan border-accent-cyan/30">
+                  {target.versionId} {target.half === 'lower' ? '下半' : '上半'}
+                  <span className="text-text-dim ml-1.5">
+                    （台版 {halfTwDate(versions, target) ?? '日期未填'} 起）
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowOverride(v => !v)}
+                  className="text-[11px] text-text-dim hover:text-text-primary underline"
+                >
+                  {showOverride ? '收起' : '改'}
+                </button>
+              </div>
+            ) : (
+              <div className="text-[11px] text-accent-yellow">
+                推不出目標版本（起始日落在所有已知台服版本之外），請於下方手動指定。
+              </div>
+            )}
+
+            {(showOverride || !target) && (
+              <div className="flex gap-2 mt-1.5">
+                <select
+                  className={INPUT}
+                  value={versionId}
+                  onChange={e => setOverride({ versionId: e.target.value, half: target?.half ?? 'upper' })}
+                >
+                  <option value="">（選版本）</option>
+                  {versions.map(v => (
+                    <option key={v.id ?? v.version} value={v.id ?? `v${v.version}`}>
+                      v{v.version}{v.name ? ` ${v.name}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className={INPUT}
+                  value={target?.half ?? 'upper'}
+                  onChange={e => setOverride({
+                    // 版本還沒選就維持空字串：擅自套 versions[0] 會靜默寫到錯的版本去，
+                    // 而 canMerge 檢查 versionId，空的話「放行」仍是停用狀態
+                    versionId,
+                    half: e.target.value as 'upper' | 'lower',
+                  })}
+                >
+                  <option value="upper">上半</option>
+                  <option value="lower">下半</option>
+                </select>
               </div>
             )}
           </div>
         </div>
 
-        {/* ── 三顆按鈕 ───────────────────────────────────────────── */}
+        {/* ── 兩個決定：放行 / 忽略 ──────────────────────────────
+            上半／下半原本要人選，但它跟版本一樣是**從 startDate 推算得出**的
+            （實測 67 筆有 64 筆連半期都算得出來，抽樣核對全對）。
+            讓維護者重複做一次系統已經知道的判斷，只會製造出錯的機會。 */}
         <div className="flex gap-2 mt-3 flex-wrap">
           <button
             type="button"
             disabled={!canMerge || busy}
-            onClick={() => submit('upper')}
-            className="px-3 py-1.5 text-[12px] rounded border bg-accent-green/15 text-accent-green border-accent-green/40 hover:bg-accent-green/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            onClick={submit}
+            className="px-4 py-1.5 text-[12px] font-bold rounded border bg-accent-green/15 text-accent-green border-accent-green/40 hover:bg-accent-green/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            → 上半{willHide ? '（隱藏）' : ''}
-          </button>
-          <button
-            type="button"
-            disabled={!canMerge || busy}
-            onClick={() => submit('lower')}
-            className="px-3 py-1.5 text-[12px] rounded border bg-accent-cyan/15 text-accent-cyan border-accent-cyan/40 hover:bg-accent-cyan/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            → 下半{willHide ? '（隱藏）' : ''}
+            放行{willHide ? '（隱藏）' : ''}
           </button>
           <button
             type="button"
@@ -355,13 +393,19 @@ export default function AnnouncementReviewPanel({
           </button>
           {!canMerge && (
             <span className="self-center text-[11px] text-text-dim">
-              名稱／起始日／型別／目標版本都要填（週數可留空，該筆會隱藏）
+              名稱／起始日／型別／寫入目標都要有（週數可留空，該筆會隱藏）
             </span>
           )}
         </div>
       </div>
     </div>
   )
+}
+
+/** 顯示用：查出該版本半期的台版開服日，讓維護者一眼核對推算對不對 */
+function halfTwDate(versions: (PatchVersion & { id?: string })[], t: MergeTarget): string | undefined {
+  const v = versions.find(x => (x.id ?? `v${x.version}`) === t.versionId)
+  return v?.[t.half]?.twDate
 }
 
 function splitList(v: string): string[] {

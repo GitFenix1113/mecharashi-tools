@@ -860,7 +860,15 @@
         <div class="task-desc">
           左欄只載 <code>excerpt</code> 對應的原文片段（不是整篇），<code>unmatched[]</code> 標紅讓「這段我沒看懂」自動浮出來。
           右欄是 <code>extracted</code> 預填的 <code>TimedActivity</code> 表單，人工編修寫進 <code>reviewed</code>（<code>extracted</code> 保持原樣供 diff）。
-          動作只有三顆按鈕：<strong>→ 上半 / → 下半 / 忽略</strong>。
+          動作只有兩顆按鈕：<strong>放行 / 忽略</strong>。
+          <br><strong>⚠ 原本是「→ 上半 / → 下半 / 忽略」三顆，實際使用後改掉：</strong>
+          上半／下半跟版本一樣是<strong>從 startDate 推算得出</strong>的，不是要人決定的事
+          （實測 67 筆有 64 筆連半期都算得出來，抽樣核對全對：05/14 → v2.8 下半、
+          05/21 仍屬 v2.8 下半因為 v3.0 上半要到 05/28）。
+          讓維護者重複做一次系統已經知道的判斷，只會製造出錯的機會。
+          改為顯示推算結果（<code>v2.8 下半（台版 2026/05/14 起）</code>）供核對，
+          旁邊留一個「改」可展開覆寫版本＋半期 —— 覆寫是整組改，
+          否則會出現「版本改了、半期還停在舊版本推算值」的錯配。
           <br><strong>實作補充：</strong>開放式檔期（193 筆、31%）的週數在<strong>表單</strong>預填 2 週，
           同時以醒目提示標明「這是建議值不是官方資料」——
           預填的是輸入框、不是資料，兩者的界線就是整個 staging 設計的基礎。
