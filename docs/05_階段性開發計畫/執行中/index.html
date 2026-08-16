@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-048 · 時間線甘特圖改版</h3>
+      <p>甘特圖有三個結構性問題，而且<b>都不是調 CSS 能解的</b>。tooltip 被裁切是因為容器 <code>overflow-y-auto</code> 而浮窗 <code>absolute bottom-full</code> 永遠往上長——<b><code>z-index</code> 對 overflow 裁切無效</b>，實測共 11 層 clipping ancestor，只有 portal 有效。一週活動只剩一個 12px 圓點，因為 <code>activityToColumns()</code> 把起點量化到下一個週界，<b>實測 27/75 筆（36%）是這種</b>。而「維護者打了很多資料卻看不到」根本不是顯示問題——<code>TimedActivity</code> <b>沒有描述欄位</b>，獎勵只能硬塞進 <code>name</code>（<code>瑞歲百角戲(輕型通用改裝模組*1 仿生超導體*2)</code>）。<br>方案定調 <b>「甘特＝索引，卡片＝內容」</b>：甘特留在原地繼續與週次表共用同一條軸、降級成日精度概觀，內容改由正下方<b>同一個捲動容器</b>內的卡片流承載，並做甘特↔卡片↔週欄三向連動——這是四份提案中唯一<b>正面加強</b>「對照版本週次」原始動機的機制。評審抓到四案共同盲點：<b>把「資訊看不到」誤診成「資料不夠」</b>，玩家三個問題裡有兩個半能從既有 <code>startDate + weeks</code> 直接算出（第 N/M 週、剩幾天、末週），<b>零欄位、零維護成本、100% 覆蓋</b>。Phase 0 僅 5h、零資料模型變更即可全解前兩個痛點。<br>另含台版公告管線：實測台版是<b>靜態 JSON（副檔名 .html 但內容是 JSON），不需 Playwright</b>、無反爬，PoC 從 117 篇週報抽出 522 筆活動、名稱失敗率 0%；陸版公告頻道則已廢棄（2 篇、停在 2023-10），明確接受「台版自動化／陸版人工」的不對稱。<b>⚠ 258 篇公告只存在於前代理商網域 <code>ma.tentree-games.com</code>（代理權 2026-01-05 已移轉），全量歸檔優先度高於任何功能</b>，故排在 Phase 0。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-048_時間線甘特圖改版/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-048_時間線甘特圖改版/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-047 · 槽位與裝備限制模型</h3>
