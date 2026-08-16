@@ -5,7 +5,8 @@ export const DAY_MS = 86_400_000
 
 export function parseDate(str: string): Date {
   const cleaned = str.replace(/^[^0-9]+/, '')
-  const [y, m, d] = cleaned.split(/[/\-]/).map(Number)
+  // 字元類別內 `-` 放最前面即為字面值，不必跳脫（跳脫會被 no-useless-escape 擋）
+  const [y, m, d] = cleaned.split(/[-/]/).map(Number)
   return new Date(y, (m ?? 1) - 1, d ?? 1)
 }
 

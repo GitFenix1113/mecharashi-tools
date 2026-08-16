@@ -202,7 +202,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">9</div>
+      <div class="summary-num" style="color:var(--accent-green)">21</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -210,7 +210,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">22</div>
+      <div class="summary-num" style="color:var(--text-dim)">10</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -221,11 +221,11 @@
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度 · Phase 0 已完工（2026-08-16）</span>
-      <span style="color:var(--accent-orange);">9 / 31</span>
+      <span>整體完成度 · Phase 0 + Phase 1 已完工（2026-08-16）</span>
+      <span style="color:var(--accent-orange);">21 / 31</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 29%"></div>
+      <div class="progress-bar-fill" style="width: 68%"></div>
     </div>
   </div>
 
@@ -253,6 +253,40 @@
     <code>side</code> 也已預設 <code>'tw'</code>，計畫階段誤判為待辦。
   </div>
 
+  <div class="impact-note">
+    <strong>✔ 2026-08-16　Phase 1 全數完工。</strong>
+    <code>npm test</code> 434 例全過、<code>npm run build</code> 通過。實機驗證三向連動：
+    點卡片「瑞歲百角戲」（1/29 起 3 週）→ 週次表精確打亮 <code>1/29 / 2/5 / 2/12</code> 三欄
+    （exclusive，所以 2/19 不亮），同時卡片與甘特條各自上高亮環。
+  </div>
+
+  <div class="alert-note">
+    <strong>⚠ 計畫階段的垂直預算估錯了，且必須加碼才救得回卡片流。</strong><br>
+    計畫書估「固定資訊表 234px」，實測是 <strong>383px</strong>（每列 42px × 7 列 + 表頭），
+    佔掉可用高度的 62%，導致原訂只壓 ShopRow 之後甘特＋卡片區仍只有 <strong>121px</strong> —— 卡片流等於看不到，
+    Phase 1 的核心目的落空。<br>
+    因此<strong>超出原訂範圍</strong>，一併把固定資訊表的列密度從 <code>py-1.5 / 15px</code> 壓到
+    <code>py-1 / 14px</code>（每列 42px → 32px）。實測結果：資訊表 383 → 337px、
+    版本層級資訊 97 → 80px、<strong>甘特＋卡片區 121 → 186px</strong>。<br>
+    即便如此，<strong>計畫書「未解問題」第 1 項（垂直空間吃緊）依然成立</strong>，且比原先預期更緊。
+  </div>
+
+  <div class="alert-note">
+    <strong>⚠ 另一項超出原訂範圍：刪除四個死碼元件。</strong><br>
+    <code>ActivityTimeline</code> / <code>CoreInfoPanel</code> / <code>VersionSidePanel</code> / <code>VersionDot</code>
+    在 PLAN-014 子計畫已宣告「被 <code>VersionGanttPanel</code> 取代」但從未刪除，實測<strong>沒有任何檔案 import 它們</strong>。
+    <code>ActivityType</code> 改為開放字串後，<code>ActivityTimeline</code> 的 9 色 <code>Record</code> 會編譯失敗 ——
+    與其替不會被渲染的程式碼補 registry 接線（且它會維持舊的 9 色、與 Phase 1 的收斂互相矛盾），直接刪除。
+    <code>docs/02_技術文件/01_架構設計/系統架構.html</code> 的元件清單已同步。
+  </div>
+
+  <div class="impact-note">
+    <strong>Phase 1 額外修掉一個設計缺陷：</strong>
+    「已結束」分組原訂一律預設收合，但瀏覽<strong>歷史版本</strong>時所有活動本來就都結束了，
+    收合等於整個內容層空白 —— 那正是本階段要解決的問題本身。
+    改為<strong>僅在還有進行中／即將開始的項目時才預設收合</strong>（v3.1 陸版九個活動全數已結束，現在會自動展開）。
+  </div>
+
   <table style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0 0;">
     <thead>
       <tr>
@@ -272,8 +306,8 @@
         <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-green);">✔ 已上線於分支</td>
       </tr>
       <tr>
-        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--text-secondary);">Phase 1 · 版面</td>
-        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--text-secondary);">12</td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-green);">Phase 1 · 版面　<span class="status done">已完成</span></td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--text-secondary);">12 / 12</td>
         <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-cyan);">~16h</td>
         <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-yellow);">TimedActivity 擴充</td>
         <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-green);">✔ 是</td>
@@ -485,7 +519,7 @@
     <div class="task-group-header">
       <div class="task-group-title">1-1 &nbsp; 垂直預算回收</div>
       <div class="task-group-meta">1366×768 可見列 2 → 6</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -494,7 +528,7 @@
         <div class="task-file">src/components/timeline/VersionGanttPanel.tsx</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -506,7 +540,7 @@
         <div class="task-file">src/components/timeline/VersionGanttPanel.tsx（ShopRow / VersionLevelInfo）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -514,7 +548,7 @@
     <div class="task-group-header">
       <div class="task-group-title">1-2 &nbsp; 衍生狀態層與活動卡片流</div>
       <div class="task-group-meta">src/components/timeline/activityStatus.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -527,7 +561,7 @@
         <div class="task-file">src/components/timeline/activityStatus.ts（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -541,7 +575,7 @@
         <div class="task-file">src/components/timeline/ActivityCardFlow.tsx（新）· ActivityCard.tsx（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~4h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -549,7 +583,7 @@
     <div class="task-group-header">
       <div class="task-group-title">1-3 &nbsp; 甘特 ↔ 卡片 ↔ 週欄三向連動</div>
       <div class="task-group-meta">本計畫唯一正面加強「對照版本週次」的機制</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -561,7 +595,7 @@
         <div class="task-file">src/components/timeline/VersionGanttPanel.tsx</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~2h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -573,7 +607,7 @@
         <div class="task-file">src/components/timeline/VersionGanttPanel.tsx（Colgroup）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -581,7 +615,7 @@
     <div class="task-group-header">
       <div class="task-group-title">1-4 &nbsp; 共用軸線層</div>
       <div class="task-group-meta">週格線 / 上下半分界 / 今日線</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -593,7 +627,7 @@
         <div class="task-file">src/components/timeline/GanttAxisOverlay.tsx（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -601,7 +635,7 @@
     <div class="task-group-header">
       <div class="task-group-title">1-5 &nbsp; 色彩系統收斂</div>
       <div class="task-group-meta">9 色 → 5 族群色 + 第二編碼通道</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -615,7 +649,7 @@
         <div class="task-file">src/components/timeline/activityTypeRegistry.ts（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -623,7 +657,7 @@
     <div class="task-group-header">
       <div class="task-group-title">1-6 &nbsp; 資料模型擴充</div>
       <div class="task-group-meta">src/data/patchVersions/types.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -637,7 +671,7 @@
         <div class="task-file">src/data/patchVersions/types.ts</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -649,7 +683,7 @@
         <div class="task-file">src/components/admin/AdminTimedActivityEditor.tsx</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~2h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -661,7 +695,7 @@
         <div class="task-file">docs/02_技術文件/02_資料模型/patchVersions.html · src/data/siteChangelog/</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -669,7 +703,7 @@
     <div class="task-group-header">
       <div class="task-group-title">1-7 &nbsp; deprecated 欄位 legacy shim</div>
       <div class="task-group-meta">Worker 掛掉走靜態 fallback 時不再是空甘特</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -681,7 +715,7 @@
         <div class="task-file">src/data/patchVersions/legacyActivities.ts（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
