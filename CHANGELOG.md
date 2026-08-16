@@ -12,6 +12,9 @@
 
 ### ✨ 新功能
 
+- 資料未齊的活動先隱藏 + 後台備註 + 規則待擴充彙總（PLAN-048 2-7／2-8） (`6472d0e`)
+- 台版公告審核工作檯與合併寫入（PLAN-048 Phase 2 完工） (`52227f6`)
+- 台版公告抓取／解析管線與 staging 集合（PLAN-048 Phase 2） (`d0647aa`)
 - 時間線版本內容可收合，把空間讓給活動（PLAN-048 Phase 1 追加） (`178317d`)
 - 甘特圖新增活動卡片流與三向連動（PLAN-048 Phase 1） (`3a93ddf`)
 - 機甲圖鑑新增品質篩選，預設只顯示 S 級 (`d8a2a23`)
@@ -334,6 +337,7 @@
 
 ### 🚀 CI/CD
 
+- 台版公告每週自動抓取排程（PLAN-048 2-9） (`02d49cb`)
 - 修好 PR 預覽部署的 base path（網域搬遷後未更新） (`860f35a`)
 - PLAN-029 Phase 2 前端正式切換 — deploy.yml 注入 VITE_WORKER_API_BASE (`2d367cd`)
 - 新增 workflow_dispatch 觸發方式至 preview workflow (`f354195`)
