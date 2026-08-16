@@ -268,7 +268,17 @@
     因此<strong>超出原訂範圍</strong>，一併把固定資訊表的列密度從 <code>py-1.5 / 15px</code> 壓到
     <code>py-1 / 14px</code>（每列 42px → 32px）。實測結果：資訊表 383 → 337px、
     版本層級資訊 97 → 80px、<strong>甘特＋卡片區 121 → 186px</strong>。<br>
-    即便如此，<strong>計畫書「未解問題」第 1 項（垂直空間吃緊）依然成立</strong>，且比原先預期更緊。
+    即便如此，壓縮列密度只是把 121px 推到 186px，<strong>計畫書「未解問題」第 1 項仍然成立</strong>。
+  </div>
+
+  <div class="impact-note">
+    <strong>✔ 2026-08-16　追加：版本內容可收合 —— 「未解問題」第 1 項實質解除。</strong>
+    使用者看過 Phase 1 成果後提出。點左上角「台版／陸版」即可收合七列版本內容與版本層級補充資訊，
+    偏好存 localStorage（純本機 UI 偏好，不同步帳戶 —— 那要動 <code>ViewPrefsKey</code> 與 userApi，代價不成比例）。<br>
+    <strong>刻意保留週軸表頭與一列濃縮「機師 · 機甲」</strong>（沿用 upper/lower 的 colSpan 切分）：
+    那條軸是甘特長條的定位基準，也是使用者當初把甘特放在這裡的理由；收掉它，剩下的甘特就失去意義。<br>
+    實測：固定資訊表 337 → <strong>123px</strong>、甘特＋卡片區 186 → <strong>488px（2.6 倍）</strong>，
+    v3.1 陸版九檔活動可一次全覽。原先「再多兩檔活動就又不夠」的結構性壓力，在收合狀態下已不成立。
   </div>
 
   <div class="alert-note">

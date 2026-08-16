@@ -872,9 +872,15 @@
         <td><span class="badge-high">高</span></td>
       </tr>
       <tr>
-        <td>1366×768 垂直空間仍吃緊</td>
-        <td>壓列高、併 ShopRow 之後甘特＋卡片區約 149px，卡片流一定要捲。三招用完後，再多兩檔活動就又不夠。真正的解法是搬出 48vw 的卡片，而那正是本計畫定義上不做的事。</td>
-        <td><span class="badge-med">中</span></td>
+        <td>1366×768 垂直空間仍吃緊<br><span class="badge-good">已於 Phase 1 解除</span></td>
+        <td>
+          <strong>原始評估：</strong>壓列高、併 ShopRow 之後甘特＋卡片區約 149px，卡片流一定要捲；三招用完後，再多兩檔活動就又不夠。<br>
+          <strong>實作後修正（2026-08-16）：</strong>實測固定資訊表是 383px 而非估計的 234px，只壓 ShopRow 之後甘特區僅 121px；
+          追加壓縮列密度後 186px，仍然吃緊。<strong>最終由「版本內容可收合」解除</strong>（使用者提案）——
+          收合後資訊表 123px、甘特＋卡片區 <strong>488px</strong>，且保留週軸與濃縮的機師 · 機甲列，
+          「對照版本週次」不受損。原先「搬出 48vw 才有解」的判斷因此不成立。
+        </td>
+        <td><span class="badge-good">已解</span></td>
       </tr>
       <tr>
         <td>長條左緣不再貼齊週界</td>

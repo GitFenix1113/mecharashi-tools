@@ -52,6 +52,30 @@ function halfSpan(startStr: string, endStr: string | null): { startDate: string;
   return { startDate: startStr, weeks }
 }
 
+// ── 版本資訊摺疊偏好 ───────────────────────────────────────────────────────────
+//
+// 純本機 UI 偏好，不同步到帳戶（那要動 ViewPrefsKey 與 userApi，代價不成比例）。
+// 比照 useViewMode 的 loadLocal 寫法：lazy initializer + try/catch，避免
+// 隱私模式或 storage 被鎖時整個面板炸掉。
+
+const LS_INFO_COLLAPSED = 'mecharashi_timeline_infoCollapsed'
+
+function loadCollapsed(): boolean {
+  try {
+    return localStorage.getItem(LS_INFO_COLLAPSED) === '1'
+  } catch {
+    return false
+  }
+}
+
+function saveCollapsed(v: boolean) {
+  try {
+    localStorage.setItem(LS_INFO_COLLAPSED, v ? '1' : '0')
+  } catch {
+    // ignore
+  }
+}
+
 // ── CSS 常數 ──────────────────────────────────────────────────────────────────
 
 const LABEL_COL_PX = 110
@@ -145,6 +169,46 @@ function VersionInfoRows({
         </tr>
       )}
     </>
+  )
+}
+
+/**
+ * 摺疊時的濃縮列：只留機師與機甲（實測最常被查的兩項），仍沿用 upper/lower 的
+ * colSpan 切分，所以「哪一半有誰」的對照關係不會因為摺疊而消失。
+ *
+ * 為什麼不連週軸表頭一起收：那條軸是甘特長條的定位基準，也是使用者當初把甘特
+ * 放在這裡的理由（對照版本週次）。收掉它，剩下的甘特就失去意義。
+ */
+function CollapsedSummaryRow({
+  upper,
+  lower,
+  upperCount,
+  lowerCount,
+}: {
+  upper: PatchHalf
+  lower: PatchHalf
+  upperCount: number
+  lowerCount: number
+}) {
+  const summarize = (h: PatchHalf) =>
+    [(h.pilots ?? []).join('、'), (h.mechs ?? []).join('、')].filter(Boolean).join('　·　')
+
+  const u = summarize(upper)
+  const l = summarize(lower)
+  if (!u && !l) return null
+
+  const dash = <span className="opacity-30">—</span>
+
+  return (
+    <tr>
+      <td className={`${LABEL} text-[12px]`}>機師 · 機甲</td>
+      <td colSpan={upperCount} className={`${TD} text-[13px] bg-[rgba(255,107,43,0.05)]`}>
+        {u || dash}
+      </td>
+      <td colSpan={lowerCount} className={`${TD} text-[13px] bg-[rgba(6,182,212,0.05)]`}>
+        {l || dash}
+      </td>
+    </tr>
   )
 }
 
@@ -246,7 +310,15 @@ export default function VersionGanttPanel({
 }) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [hoveredKey, setHoveredKey] = useState<string | null>(null)
+  const [infoCollapsed, setInfoCollapsed] = useState(loadCollapsed)
   const cardRefs = useRef(new Map<string, HTMLDivElement>())
+
+  const toggleInfo = useCallback(() => {
+    setInfoCollapsed(v => {
+      saveCollapsed(!v)
+      return !v
+    })
+  }, [])
 
   const registerRef = useCallback((key: string, el: HTMLDivElement | null) => {
     if (el) cardRefs.current.set(key, el)
@@ -353,11 +425,21 @@ export default function VersionGanttPanel({
               <Colgroup />
               <thead>
                 <tr>
-                  <th
-                    rowSpan={2}
-                    className={`${LABEL} text-[13px] text-center tracking-[2px] uppercase text-text-dim`}
-                  >
-                    {side === 'tw' ? '台版' : '陸版'}
+                  <th rowSpan={2} className={`${LABEL} p-0`}>
+                    <button
+                      type="button"
+                      onClick={toggleInfo}
+                      aria-expanded={!infoCollapsed}
+                      title={infoCollapsed ? '展開版本內容' : '收合版本內容，把空間讓給活動'}
+                      className="w-full h-full px-3 py-1 flex items-center justify-center gap-1.5
+                                 text-[13px] tracking-[2px] uppercase text-text-dim
+                                 hover:text-accent-orange transition-colors cursor-pointer"
+                    >
+                      {side === 'tw' ? '台版' : '陸版'}
+                      <span className={`text-[10px] transition-transform ${infoCollapsed ? '-rotate-90' : ''}`}>
+                        ▾
+                      </span>
+                    </button>
                   </th>
                   {upperCount > 0 && (
                     <th
@@ -406,20 +488,29 @@ export default function VersionGanttPanel({
               </thead>
               <tbody>
                 {totalWeeks > 0 && (
-                  <VersionInfoRows
-                    upper={version.upper}
-                    lower={version.lower}
-                    upperCount={upperCount}
-                    lowerCount={lowerCount}
-                    totalWeeks={totalWeeks}
-                  />
+                  infoCollapsed ? (
+                    <CollapsedSummaryRow
+                      upper={version.upper}
+                      lower={version.lower}
+                      upperCount={upperCount}
+                      lowerCount={lowerCount}
+                    />
+                  ) : (
+                    <VersionInfoRows
+                      upper={version.upper}
+                      lower={version.lower}
+                      upperCount={upperCount}
+                      lowerCount={lowerCount}
+                      totalWeeks={totalWeeks}
+                    />
+                  )
                 )}
               </tbody>
             </table>
           </div>
 
           {/* ── 版本層級補充資訊（商店 / 危境重構 / 記憶風暴 / 備註）── */}
-          <VersionExtras version={version} />
+          {!infoCollapsed && <VersionExtras version={version} />}
 
           {/* ── 容器 2：甘特索引層 + 卡片內容層（同一個捲動容器，往下捲即銜接）── */}
           <div className="mt-2 flex-1 min-h-0 rounded-lg border border-border bg-bg-dark/40 overflow-y-auto overflow-x-hidden overscroll-contain">
