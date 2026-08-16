@@ -149,15 +149,17 @@ const WEEKLY = `【版本前瞻】2026年08月06日搶先報
 《鋼嵐後勤小組》
 回新聞列表`
 
-test('端對端：一篇週報抽出四筆活動，維護時間不算活動', () => {
+test('端對端：一篇週報抽出三筆活動；維護時間不算活動、儲值不收錄', () => {
   const r = parseAnnouncement({
     title: '【版本前瞻】2026年08月06日搶先報',
     text: WEEKLY,
     sourceUrl: 'https://example.invalid/1789.html',
   })
 
-  assert.equal(r.activities.length, 4, '維護計畫的時間不該被當成活動')
-  const [pilot, mech, roulette, topup] = r.activities
+  // 四個時間錨點：卡池 ×2、轉盤、儲值。儲值解析得出來但刻意不收錄（EXCLUDED_TYPES）
+  assert.equal(r.activities.length, 3, '維護計畫的時間不該被當成活動；儲值不收錄')
+  assert.equal(r.excluded, 1, '不收錄的仍要計數 —— 否則產出量監控會被自己的過濾規則污染')
+  const [pilot, mech, roulette] = r.activities
 
   assert.equal(pilot.extracted.name, '疾影成鋒')
   assert.equal(pilot.extracted.type, 'specificPilotBanner')
@@ -179,8 +181,7 @@ test('端對端：一篇週報抽出四筆活動，維護時間不算活動', ()
   assert.equal(roulette.status, 'parsed', '零 flag 才可直接放行')
   assert.deepEqual(roulette.extracted.rewards, ['王牌機師信物自選箱'])
 
-  assert.equal(topup.extracted.type, 'topUpEvent')
-  assert.equal(topup.extracted.weeks, 1, '00:00–23:59 是 6.9993 天，要吸附成 1 週')
+  assert.ok(!r.activities.some(a => a.extracted.type === 'topUpEvent'), '儲值促銷不進待審清單')
 
   // 台版公告是官方一手來源
   for (const a of r.activities) {
@@ -190,15 +191,17 @@ test('端對端：一篇週報抽出四筆活動，維護時間不算活動', ()
   assert.deepEqual(r.warnings, [])
 })
 
-test('端對端：seq 決定性遞增（PendingActivity 的文件 ID 靠它冪等）', () => {
+test('端對端：seq 取自原始順序，不因為過濾而重編（文件 ID 靠它冪等）', () => {
   const r = parseAnnouncement({ title: '【版本前瞻】x', text: WEEKLY })
-  assert.deepEqual(r.activities.map(a => a.seq), [0, 1, 2, 3])
+  // seq 來自「所有時間錨點」的索引，不是收錄後的索引 —— 所以被濾掉的第 3 筆
+  // 留下缺口是**正確的**：日後若把儲值改回收錄，其餘項目的文件 ID 不會整批位移。
+  assert.deepEqual(r.activities.map(a => a.seq), [0, 1, 2])
   // 重跑同一份輸入必須得到同樣的 seq，否則每次重新解析都會多出一批孤兒文件
   const again = parseAnnouncement({ title: '【版本前瞻】x', text: WEEKLY })
   assert.deepEqual(again.activities.map(a => a.extracted.name), r.activities.map(a => a.extracted.name))
 })
 
-test('端對端：單篇活動公告用公告標題當活動名', () => {
+test('端對端：單篇儲值公告解析得出來，但整篇都不收錄', () => {
   const r = parseAnnouncement({
     title: '【活動】官網指定方式儲值活動_07/30',
     text: `【活動】官網指定方式儲值活動_07/30
@@ -210,11 +213,29 @@ test('端對端：單篇活動公告用公告標題當活動名', () => {
 2026-07-30 00:00:00~2026-08-05 23:59:59
 ※獎勵將於活動期間滿足條件後即時發送。`,
   })
+  // 實測 15 篇【活動】獨立公告 100% 都是儲值促銷 —— 整篇歸零是預期結果
+  assert.equal(r.activities.length, 0)
+  assert.equal(r.excluded, 1)
+  // 但原文仍被認領（不會冒充成「解析器沒看懂」灌進 unmatched）
+  assert.equal(r.unmatched.length, 0, `unmatched=${JSON.stringify(r.unmatched)}`)
+})
+
+test('不收錄的型別仍計入產出量，否則體檢報告會被自己的過濾規則污染', () => {
+  // 一篇只有儲值的週報：收錄 0 筆，但「解析器看懂了 1 筆」是事實，
+  // 不該因此誤報 lowYield 說解析器瞎了
+  const r = parseAnnouncement({
+    title: '【版本前瞻】x',
+    text: `本週推出內容
+特殊活動
+【指定方式儲值】
+➤活動時間：2026/08/06 00:00 - 2026/08/12 23:59
+活動中心
+【角雕轉盤】
+➤活動時間：2026/08/06 05:00 - 2026/08/13 05:00`,
+  })
   assert.equal(r.activities.length, 1)
-  assert.equal(r.activities[0].extracted.name, '物資空投活動')
-  // 活動名是「物資空投活動」認不出型別，但公告標題寫著「儲值」
-  assert.equal(r.activities[0].extracted.type, 'topUpEvent')
-  assert.equal(r.activities[0].extracted.weeks, 1)
+  assert.equal(r.excluded, 1)
+  assert.ok(!r.warnings.includes('lowYield'), '1 收錄 + 1 排除 = 解析出 2 筆，不算產出過低')
 })
 
 test('端對端：名稱關鍵字優先於段落標題', () => {
@@ -302,5 +323,5 @@ test('unmatched 只收有訊號的行，不收樣板', () => {
 })
 
 test('PARSER_VERSION 是整數（AnnouncementDraft.parserVersion 靠它挑重跑對象）', () => {
-  assert.ok(Number.isInteger(PARSER_VERSION) && PARSER_VERSION >= 1)
+  assert.ok(Number.isInteger(PARSER_VERSION) && PARSER_VERSION >= 2, '加了不收錄規則就要進版')
 })

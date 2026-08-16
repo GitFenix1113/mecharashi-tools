@@ -390,6 +390,8 @@ async function main() {
         lastModified,
       },
       activities: parsed.activities,
+      // 不收錄的數量要一路傳到 report —— 回歸偵測的分母靠它與我們的取捨脫鉤
+      excluded: parsed.excluded ?? 0,
       supersede: Boolean(prev && prev.contentHash !== contentHash),
     })
   }
@@ -458,7 +460,9 @@ async function main() {
     parserVersion: PARSER_VERSION,
     announcements: report.announcements,
     activities: report.activities,
+    excluded: report.excluded,
     perAnnouncement: report.perAnnouncement,
+    parsedPerAnnouncement: report.parsedPerAnnouncement,
   }, { merge: true })
 }
 
@@ -478,9 +482,10 @@ function stripUndefined(obj) {
 
 function buildReport(results) {
   const flags = {}, warnings = {}
-  let activities = 0, clean = 0, noTarget = 0
+  let activities = 0, clean = 0, noTarget = 0, excluded = 0
   for (const r of results) {
     activities += r.activities.length
+    excluded += r.excluded ?? 0
     for (const a of r.activities) {
       if (a.flags.length === 0) clean++
       if (!a.target?.targetVersion) noTarget++
@@ -491,9 +496,22 @@ function buildReport(results) {
   return {
     announcements: results.length,
     activities,
+    excluded,
     clean,
     noTarget,
+    /** 收錄量（顯示用） */
     perAnnouncement: results.length ? Number((activities / results.length).toFixed(2)) : 0,
+    /**
+     * 解析量＝收錄 + 不收錄（**回歸偵測用**）。
+     *
+     * 為什麼不能拿收錄量去比：那會把「我們改了不收錄規則」誤判成「解析器瞎了」。
+     * 實測踩過 —— topUpEvent 改為不收錄的那一次，收錄量從 2.23 掉到 1.56（-30%），
+     * 直接觸發 yieldRegression 假警報，而解析器其實一個字都沒少讀。
+     * 體檢報告的分母必須與我們自己的取捨脫鉤。
+     */
+    parsedPerAnnouncement: results.length
+      ? Number(((activities + excluded) / results.length).toFixed(2))
+      : 0,
     flags,
     warnings,
     lowYield: results.filter(r => r.draft.warnings.includes('lowYield')).map(r => r.draft.title),
@@ -525,14 +543,20 @@ function structuralFailures(report, regressed, io) {
  * 網站好好的、請求都成功，產出卻悄悄掉到剩一半。
  */
 export function checkRegression(report, prevRun) {
-  if (!prevRun?.perAnnouncement || report.announcements === 0) return false
-  return report.perAnnouncement < prevRun.perAnnouncement * 0.8
+  // 舊執行記錄可能只有 perAnnouncement（v1 格式）；沒有 parsedPerAnnouncement 就退回它，
+  // 但那一次比較可能因為改過收錄規則而失真，屬可接受的一次性誤差。
+  const prev = prevRun?.parsedPerAnnouncement ?? prevRun?.perAnnouncement
+  if (!prev || report.announcements === 0) return false
+  return report.parsedPerAnnouncement < prev * 0.8
 }
 
 function printReport(report, regressed, io) {
   console.log('\n── 產出量報告 ──')
   console.log(`  抓取 ${io.fetched}／跳過 ${io.skipped}／失敗 ${io.failed}`)
   console.log(`  公告 ${report.announcements} 篇 → 活動 ${report.activities} 筆（${report.perAnnouncement}/篇）`)
+  if (report.excluded) {
+    console.log(`  另有 ${report.excluded} 筆解析得出但不收錄（儲值促銷）—— 已計入回歸偵測的分母`)
+  }
   if (report.activities) {
     console.log(`  零 flag 可直接放行 ${report.clean}（${(100 * report.clean / report.activities).toFixed(0)}%）`)
     console.log(`  推不出目標版本 ${report.noTarget}（一律進 needsReview）`)

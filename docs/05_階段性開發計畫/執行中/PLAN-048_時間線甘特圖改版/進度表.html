@@ -202,7 +202,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">34</div>
+      <div class="summary-num" style="color:var(--accent-green)">36</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -214,15 +214,15 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">34</div>
+      <div class="summary-num" style="color:var(--text-primary)">36</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度 · Phase 0 / 1 / 2 全數完工，另追加 3 項（2026-08-16）</span>
-      <span style="color:var(--accent-green);">34 / 34</span>
+      <span>整體完成度 · Phase 0 / 1 / 2 全數完工，另追加 5 項（2026-08-16）</span>
+      <span style="color:var(--accent-green);">36 / 36</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 100%"></div>
@@ -1069,6 +1069,52 @@
       <span class="status done">已完成</span>
     </div>
   </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-10 &nbsp; 儲值促銷不收錄（解析器 v2）</div>
+      <div class="task-group-meta">實際使用後的調整</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">EXCLUDED_TYPES：topUpEvent 擋在解析層</div>
+        <div class="task-desc">
+          維護者實際看過待審清單後的決定：「物資空投」「指定方式儲值」一律不顯示。
+          它們是純儲值促銷，對「這版有什麼玩法、檔期多長」沒有資訊量，放進甘特只會佔掉一整列。
+          <br><strong>實測它佔了 30%</strong>（96 筆裡 29 筆）—— 不擋掉的話每三筆待審就有一筆是要按忽略的，
+          工作檯的訊噪比會被拖垮。全語料則是 625 → 402 筆。
+          <br><strong>擋在解析層而不是顯示層</strong>：產出來再讓人逐筆忽略是白工。
+          原文仍照常認領，所以不會冒充成「解析器沒看懂」灌進 unmatched。
+          <br>來源分佈也解釋了為何值得擋：15 篇【活動】獨立公告 <strong>100% 都是儲值</strong>
+          （擋掉後整批歸零），而版本前瞻的 79 筆裡有 65 筆是真正的活動資料 ——
+          <strong>版本前瞻就是版本維護公告，是本管線的主要來源，不可排除。</strong>
+        </div>
+        <div class="task-file">scripts/lib/parseAnnouncement.mjs（PARSER_VERSION 2）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">⚠ 連帶修掉一個監控自我污染的 bug</div>
+        <div class="task-desc">
+          加上不收錄規則之後，收錄量從 2.23/篇掉到 1.56/篇（−30%），
+          <strong>直接觸發了 <code>yieldRegression</code>「解析率較前次下滑逾 20%」的假警報</strong>
+          —— 而解析器其實一個字都沒少讀。若沒發現，週四排程的 <code>--fail-on-warn</code> 會寄一封狼來了。
+          <br>真因：<code>lowYield</code> 當初已經用「解析出來的總數」判斷（不受過濾影響），
+          但 <code>yieldRegression</code> 漏了同樣的處理，仍在比收錄量。<strong>防了一半等於沒防。</strong>
+          <br>修法：report 分成 <code>perAnnouncement</code>（收錄量，顯示用）與
+          <code>parsedPerAnnouncement</code>（解析量＝收錄＋不收錄，回歸偵測用），
+          <code>meta/announcementScrape</code> 兩個都存。修正後分母回到 2.23，與加過濾規則之前相同。
+          <br><strong>體檢報告的分母必須與我們自己的取捨脫鉤</strong>，否則每次調整收錄規則都會自己嚇自己。
+        </div>
+        <div class="task-file">scripts/scrape-tw-announcements.mjs</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
 </section>
 
 <!-- ══════════════════ 上線步驟 ══════════════════ -->
@@ -1195,7 +1241,7 @@ Remove-Item "$env:TEMP\scraper-sa.json"     # 上傳完立刻刪，本機不留<
     <div class="task-group-header">
       <div class="task-group-title">C &nbsp; 首次灌資料</div>
       <div class="task-group-meta">一次性建庫批次，不是每週流量</div>
-      <span class="status pending">待執行</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1215,9 +1261,17 @@ Remove-Item "$env:TEMP\scraper-sa.json"     # 上傳完立刻刪，本機不留<
             正面看：台版時間線目前幾乎是空的（靜態資料只有 deprecated 舊欄位），
             這批等於一次補齊近五個月的台版活動史。
           </div>
+          <div class="info-block" style="margin-top:10px;">
+            <strong>✔ 2026-08-16 已執行</strong>（run 31954144821）：寫入 43 篇草稿、96 筆待審活動。
+            隨後依維護者決定排除儲值促銷（見 2-10），實際留下 <strong>67 筆</strong>
+            （可直接放行 34、需人工看 33）。
+            <br>帶外驗證確認 <code>meta/gameData.versions.patchVersions</code> <strong>未被 bump</strong>
+            —— 證實爬蟲確實只碰 staging、完全沒動到前台資料路徑。
+          </div>
+        </div>
       </div>
       <div class="task-assignee">維護者<div class="task-hours">~5min</div></div>
-      <span class="status pending">待執行</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 

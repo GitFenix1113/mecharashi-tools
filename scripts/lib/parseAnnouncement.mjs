@@ -19,7 +19,10 @@
  *    在 2024–2026 全程穩定（實測 78/79/102/107 次），比句型可靠得多 ——
  *    計畫書點名的漂移句型「本期機師征招『X』」2024/2025 出現 0 次。
  *
- * 3. **抽不到就留 undefined，絕不填預設值**。填了預設值就再也分不出
+ * 3. **解析得出來 ≠ 要收錄**。儲值促銷（EXCLUDED_TYPES）擋在解析層，
+ *    但仍計入產出量統計——不然「少收 30%」會被誤讀成「解析率掉了 30%」。
+ *
+ * 4. **抽不到就留 undefined，絕不填預設值**。填了預設值就再也分不出
  *    「官方真的是這樣」與「我沒抽到」。開放式檔期（「10:00 起」，實測 191 筆）
  *    的 weeks 因此是缺的，由後台表單預填建議值 —— 建議值不進資料。
  */
@@ -29,7 +32,7 @@
  * AnnouncementDraft.parserVersion 靠它挑出「該重跑的舊公告」，
  * 沒有它就只能全量重跑或憑印象。
  */
-export const PARSER_VERSION = 1
+export const PARSER_VERSION = 2
 
 const DAY_MS = 86_400_000
 
@@ -100,6 +103,20 @@ const NAME_KEYWORDS = [
   [/儲值/, 'topUpEvent'],
   [/戰令|通行證/, 'battlePass'],
 ]
+
+/**
+ * **解析得出來、但刻意不收錄**的活動型別。
+ *
+ * `topUpEvent`（「指定方式儲值」／「物資空投活動」）是純儲值促銷，
+ * 對「這版有什麼玩法、檔期多長」沒有任何資訊量，放進甘特只會佔掉一整列。
+ * 實測它是產出量第 2 高的型別（96 筆裡 29 筆，30%）—— 不擋掉的話，
+ * 每三筆待審就有一筆是要按忽略的，審核工作檯的訊噪比會被它拖垮。
+ *
+ * ⚠ 擋在**解析層**而不是顯示層：產出來再讓人逐筆忽略是白工。
+ * 但它們仍會被算進產出量統計（見 excluded），否則「解析器是不是瞎了」
+ * 的判斷會被自己的過濾規則污染 —— 少收 30% 不等於解析率掉了 30%。
+ */
+const EXCLUDED_TYPES = new Set(['topUpEvent'])
 
 /**
  * 樣板 【】 名稱黑名單：這些是抽獎規則說明的小標，不是活動名。
@@ -315,7 +332,7 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
 
   // ③ 每個時間行往回找名稱，組成活動
   const activities = []
-  let pilotNamed = 0, mechNamed = 0
+  let pilotNamed = 0, mechNamed = 0, excluded = 0
   for (const [seq, hit] of timeHits.entries()) {
     const prevTimeLine = seq > 0 ? timeHits[seq - 1].line : -1
     const sec = sectionAt[hit.line]
@@ -458,6 +475,13 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
     }
     for (const k of Object.keys(extracted)) if (extracted[k] === undefined) delete extracted[k]
 
+    // 刻意不收錄的型別：到這裡為止該認領的行都已認領完（所以不會漏進 unmatched），
+    // 只是不產出待審項目。seq 仍取自 timeHits 的索引，故其餘項目的文件 ID 不受影響。
+    if (type && EXCLUDED_TYPES.has(type)) {
+      excluded++
+      continue
+    }
+
     activities.push({ seq, extracted, flags, excerpt, excerptStart, rawTypeLabel })
   }
 
@@ -478,12 +502,14 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
 
   // ⑤ 整篇層級告警（任務 2-6）
   const warnings = []
-  if (isWeekly && activities.length < 2) warnings.push('lowYield')
+  // 用「解析出來的總數」而非「收錄的數量」：不收錄是我們自己的決定，
+  // 拿它去判斷解析器有沒有瞎掉，等於用自己的過濾規則污染自己的體檢報告。
+  if (isWeekly && activities.length + excluded < 2) warnings.push('lowYield')
   if (sawPilotSection && pilotNamed === 0) warnings.push('pilotSectionNoName')
   if (sawMechSection && mechNamed === 0) warnings.push('mechSectionNoName')
 
   // 有 flag 的活動要人工看一眼；沒有的可直接放行
   for (const a of activities) a.status = a.flags.length ? 'needsReview' : 'parsed'
 
-  return { activities, unmatched, warnings }
+  return { activities, unmatched, warnings, excluded }
 }
