@@ -1,27 +1,14 @@
 import { useMemo } from 'react'
 import type { PatchVersion, PatchHalf, TimedActivity, ActivityType } from '../../data/patchVersions/types'
 import PatchInfoRow from './PatchInfoRow'
+import ActivityBar from './ActivityBar'
+// 日期工具與長條幾何集中在 ganttGeometry，避免與長條計算各有一份 parseDate 而漂移
+import { parseDate, addDays, activityGeometry } from './ganttGeometry'
 
 // ── Date utils ─────────────────────────────────────────────────────────────────
 
-function parseDate(str: string): Date {
-  const cleaned = str.replace(/^[^0-9]+/, '')
-  const [y, m, d] = cleaned.split(/[\/\-]/).map(Number)
-  return new Date(y, m - 1, d)
-}
-
-function addDays(date: Date, n: number): Date {
-  return new Date(date.getTime() + n * 86400000)
-}
-
 function fmtShort(date: Date): string {
   return `${date.getMonth() + 1}/${date.getDate()}`
-}
-
-function fmtFull(date: Date): string {
-  const m = date.getMonth() + 1
-  const d = date.getDate()
-  return `${date.getFullYear()}/${m < 10 ? '0' + m : m}/${d < 10 ? '0' + d : d}`
 }
 
 // ── C-1: 週軸計算 ──────────────────────────────────────────────────────────────
@@ -52,38 +39,21 @@ function generateWeeks(
   return weeks
 }
 
-function activityToColumns(
-  act: TimedActivity,
-  allWeeks: Date[],
-): { colStart: number; colSpan: number } | null {
-  if (allWeeks.length === 0) return null
-  const startDt = parseDate(act.startDate)
-  const endDt = addDays(startDt, act.weeks * 7)
-
-  const colStart = allWeeks.findIndex(w => w >= startDt)
-  if (colStart === -1) return null
-
-  let colEnd = -1
-  for (let i = allWeeks.length - 1; i >= 0; i--) {
-    if (allWeeks[i] <= endDt) { colEnd = i; break }
-  }
-  if (colEnd < colStart) return null
-
-  return { colStart, colSpan: colEnd - colStart + 1 }
-}
-
 // ── 活動顏色 ────────────────────────────────────────────────────────────────────
+//
+// chip 是長條的底色（Phase 0 新增）。改成有底色的膠囊而非「兩點一線 + 邊框文字」，
+// 順帶解掉「13px 彩色文字直接壓在 banner 畫作上」的對比問題。
 
-const COLORS: Record<ActivityType, { dot: string; line: string; text: string; label: string }> = {
-  skinGacha:           { dot: 'bg-accent-orange',  line: 'bg-accent-orange/60',              text: 'text-accent-orange',  label: '刮刮樂' },
-  roulette:            { dot: 'bg-accent-yellow',  line: 'bg-accent-yellow/60',              text: 'text-accent-yellow',  label: '輪盤' },
-  pilotMission:        { dot: 'bg-accent-purple',  line: 'bg-accent-purple/60',              text: 'text-accent-purple',  label: '特遣' },
-  crossShipping:       { dot: 'bg-[#c9a0dc]',      line: 'bg-[rgba(201,160,220,0.6)]',       text: 'text-[#c9a0dc]',      label: '海運' },
-  specificPilotBanner: { dot: 'bg-[#79c0ff]',      line: 'bg-[rgba(121,192,255,0.6)]',       text: 'text-[#79c0ff]',      label: '角色池' },
-  specificMechBanner:  { dot: 'bg-[#58a6d4]',      line: 'bg-[rgba(88,166,212,0.6)]',        text: 'text-[#58a6d4]',      label: '機甲池' },
-  limitedEvent:        { dot: 'bg-accent-cyan',    line: 'bg-accent-cyan/60',                text: 'text-accent-cyan',    label: '限時活動' },
-  loginEvent:          { dot: 'bg-accent-green',   line: 'bg-accent-green/60',               text: 'text-accent-green',   label: '簽到' },
-  battlePass:          { dot: 'bg-gray-500',        line: 'bg-gray-500/60',                   text: 'text-gray-400',       label: '戰令' },
+const COLORS: Record<ActivityType, { dot: string; chip: string; text: string; label: string }> = {
+  skinGacha:           { dot: 'bg-accent-orange', chip: 'bg-[rgba(255,107,43,0.18)] border-accent-orange/50 text-accent-orange',        text: 'text-accent-orange',  label: '刮刮樂' },
+  roulette:            { dot: 'bg-accent-yellow', chip: 'bg-[rgba(234,179,8,0.18)] border-accent-yellow/50 text-accent-yellow',         text: 'text-accent-yellow',  label: '輪盤' },
+  pilotMission:        { dot: 'bg-accent-purple', chip: 'bg-[rgba(168,85,247,0.18)] border-accent-purple/50 text-accent-purple',        text: 'text-accent-purple',  label: '特遣' },
+  crossShipping:       { dot: 'bg-[#c9a0dc]',     chip: 'bg-[rgba(201,160,220,0.18)] border-[rgba(201,160,220,0.5)] text-[#c9a0dc]',    text: 'text-[#c9a0dc]',      label: '海運' },
+  specificPilotBanner: { dot: 'bg-[#79c0ff]',     chip: 'bg-[rgba(121,192,255,0.18)] border-[rgba(121,192,255,0.5)] text-[#79c0ff]',    text: 'text-[#79c0ff]',      label: '角色池' },
+  specificMechBanner:  { dot: 'bg-[#58a6d4]',     chip: 'bg-[rgba(88,166,212,0.18)] border-[rgba(88,166,212,0.5)] text-[#58a6d4]',      text: 'text-[#58a6d4]',      label: '機甲池' },
+  limitedEvent:        { dot: 'bg-accent-cyan',   chip: 'bg-[rgba(6,182,212,0.18)] border-accent-cyan/50 text-accent-cyan',             text: 'text-accent-cyan',    label: '限時活動' },
+  loginEvent:          { dot: 'bg-accent-green',  chip: 'bg-[rgba(34,197,94,0.18)] border-accent-green/50 text-accent-green',           text: 'text-accent-green',   label: '簽到' },
+  battlePass:          { dot: 'bg-gray-500',      chip: 'bg-[rgba(107,114,128,0.18)] border-gray-500/50 text-gray-300',                 text: 'text-gray-400',       label: '戰令' },
 }
 
 // ── CSS 常數 ──────────────────────────────────────────────────────────────────
@@ -179,6 +149,11 @@ function VersionInfoRows({
 
 // ── C-5: ActivityGanttRow ─────────────────────────────────────────────────────
 
+//
+// 為什麼不改成 CSS grid：長條層改住在**單一** colSpan={totalWeeks} 的 td 裡，
+// 該 td 的寬度天生就等於整條週軸（tableLayout:fixed + 同一份 Colgroup），
+// 所以百分比定位與上方固定資訊表的欄界自動對齊，Colgroup 一行都不用動。
+
 function ActivityGanttRow({
   act,
   allWeeks,
@@ -188,60 +163,25 @@ function ActivityGanttRow({
   allWeeks: Date[]
   totalWeeks: number
 }) {
-  const cols = activityToColumns(act, allWeeks)
+  const geom = activityGeometry(act, allWeeks)
   const c = COLORS[act.type]
-  const endDt = addDays(parseDate(act.startDate), act.weeks * 7)
-  const sub = act.pilots?.join('、') ?? act.mechs?.join('、') ?? ''
-
-  const cells: React.ReactNode[] = []
-
-  if (!cols || totalWeeks === 0) {
-    cells.push(<td key="all" colSpan={Math.max(totalWeeks, 1)} />)
-  } else {
-    const { colStart, colSpan } = cols
-    if (colStart > 0) {
-      cells.push(<td key="pre" colSpan={colStart} />)
-    }
-    cells.push(
-      <td key="bar" colSpan={colSpan} className="group relative py-3.5 px-2 cursor-default">
-        {/* Hover tooltip */}
-        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2
-                        hidden group-hover:block z-20
-                        bg-bg-dark/95 border border-border rounded-lg px-3 py-2 shadow-lg">
-          <div className={`text-[13px] font-medium ${c.text}`}>{act.name}</div>
-          {sub && <div className="text-[12px] text-text-dim mt-0.5">{sub}</div>}
-          <div className="text-[12px] text-text-dim mt-0.5">{act.startDate} → {fmtFull(endDt)}</div>
-        </div>
-
-        {colSpan === 1 ? (
-          <div className="flex items-center justify-center">
-            <div className={`w-3 h-3 rounded-full ${c.dot}`} />
-          </div>
-        ) : (
-          <div className="flex items-center">
-            <div className={`w-3 h-3 rounded-full shrink-0 ${c.dot}`} />
-            <div className={`flex-1 h-px ${c.line}`} />
-            <span className={`text-[13px] font-medium px-1.5 py-0.5 border rounded shrink-0 whitespace-nowrap ${c.text} border-current/50`}>
-              {act.name}
-            </span>
-            <div className={`flex-1 h-px ${c.line}`} />
-            <div className={`w-3 h-3 rounded-full shrink-0 ${c.dot}`} />
-          </div>
-        )}
-      </td>,
-    )
-    const remaining = totalWeeks - colStart - colSpan
-    if (remaining > 0) {
-      cells.push(<td key="post" colSpan={remaining} />)
-    }
-  }
 
   return (
     <tr>
       <td className="border-r border-[#2a3040] px-3 py-1.5 text-left text-[14px] text-text-dim bg-[#0e1119] whitespace-nowrap">
         <span className={c.text}>{c.label}</span>
       </td>
-      {cells}
+      <td colSpan={Math.max(totalWeeks, 1)} className="p-0 align-middle">
+        <div className="relative h-11">
+          {geom && (
+            <ActivityBar
+              act={act}
+              geom={geom}
+              tone={{ dot: c.dot, chip: c.chip, text: c.text, label: c.label }}
+            />
+          )}
+        </div>
+      </td>
     </tr>
   )
 }
@@ -428,7 +368,8 @@ export default function VersionGanttPanel({
           <ShopRow version={version} />
 
           {/* ── 容器 2：活動甘特（數量不定，內部垂直捲動）── */}
-          <div className="mt-2 flex-1 min-h-0 rounded-lg border border-border bg-bg-dark/40 overflow-y-auto overflow-x-hidden">
+          {/* overscroll-contain：甘特捲到底時不再把整頁的 y-mandatory snap 帶走 */}
+          <div className="mt-2 flex-1 min-h-0 rounded-lg border border-border bg-bg-dark/40 overflow-y-auto overflow-x-hidden overscroll-contain">
             <table className="border-collapse text-[13px] w-full" style={{ tableLayout: 'fixed' }}>
               <Colgroup />
               <tbody>
@@ -444,7 +385,7 @@ export default function VersionGanttPanel({
                       colSpan={Math.max(totalWeeks, 6)}
                       className={`${TD} text-text-dim text-[10px] py-2`}
                     >
-                      （暫無活動甘特資料）
+                      （本半版本尚無登錄活動{side === 'cn' && ' — 陸版官網公告常有漏收'}）
                     </td>
                   </tr>
                 )}
