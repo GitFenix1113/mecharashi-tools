@@ -202,7 +202,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">21</div>
+      <div class="summary-num" style="color:var(--accent-green)">26</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -210,7 +210,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">10</div>
+      <div class="summary-num" style="color:var(--text-dim)">5</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -221,11 +221,11 @@
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度 · Phase 0 + Phase 1 已完工（2026-08-16）</span>
-      <span style="color:var(--accent-orange);">21 / 31</span>
+      <span>整體完成度 · Phase 0 + Phase 1 已完工，Phase 2 管線層完工（2026-08-16）</span>
+      <span style="color:var(--accent-orange);">26 / 31</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 68%"></div>
+      <div class="progress-bar-fill" style="width: 84%"></div>
     </div>
   </div>
 
@@ -743,7 +743,7 @@
     <div class="task-group-header">
       <div class="task-group-title">2-1 &nbsp; 公告抓取與解析腳本</div>
       <div class="task-group-meta">scripts/scrape-tw-announcements.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -752,11 +752,17 @@
           沿用 0-0 的端點。<code>contentHash = sha256(rawText)</code> 作為冪等判斷的唯一依據；文件 ID 由公告 URL 推導
           （<code>${source}_${officialId}</code>），<strong>重爬必然命中同一份＝冪等免費</strong>。
           自訂 User-Agent 標明同人工具站與聯絡方式、請求加間隔。
+          <br><strong>實作補充：</strong>另加 <code>--from-archive</code>（讀本地 266 篇歸檔、完全不連外網）與
+          <code>--reparse</code>（不重抓、只用既有 <code>rawText</code> 重跑解析器）兩個模式 ——
+          前者讓整條寫入路徑離線就能驗證，後者是解析器改版後的正規重跑入口（配合 <code>parserVersion</code>）。
+          增量模式只掃每型別前 3 頁；<code>--backfill=YYYY-MM</code> 才全量翻頁。
+          <br><strong>刻意不 bump：</strong>本腳本只寫兩個 staging 集合、沒動 <code>patchVersions</code>，
+          平白 bump 等於讓所有使用者重抓一次。bump 屬於合併那一步（2-4）。
         </div>
         <div class="task-file">scripts/scrape-tw-announcements.mjs（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~3h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -765,11 +771,18 @@
           抽不到的欄位<strong>留 <code>undefined</code>，絕不填預設值</strong>；沒被任何規則認領的原文片段存進 <code>unmatched[]</code>。
           型別靠 <code>matchKeywords</code> 命中約 72%，未命中則保留 <code>rawTypeLabel</code> 進 buffer。
           <code>parserVersion</code> 讓改規則後能挑出該重跑的舊公告。
+          <br><strong>實測成績（266 篇歸檔語料，625 筆活動）：</strong>缺日期 <strong>0%</strong>、缺名稱 <strong>0.5%</strong>、
+          缺型別 <strong>1.3%</strong>，<strong>零 flag 可直接放行 66%</strong>；unmatched 平均 1.0 行/篇。
+          單元測試 17 例（併入 <code>npm test</code>，全站 451 例）。
+          <br><strong>⚠ 更正計畫書「型別靠 matchKeywords 命中約 72%」：</strong>實測改用
+          <strong>段落標題（機師征招／機甲海運／活動中心／特殊活動）為主、活動名關鍵字優先覆寫</strong>後，
+          型別命中率是 <strong>98.7%</strong>。關鍵字單獨用會把同段落裡的【角雕特遣】【跨域海運】誤歸成卡池，
+          反過來只看段落又分不出這兩者 —— 兩層都要，且名稱那層必須贏。
         </div>
-        <div class="task-file">scripts/lib/parseAnnouncement.mjs（新）+ 單元測試</div>
+        <div class="task-file">scripts/lib/parseAnnouncement.mjs（新）+ parseAnnouncement.test.mjs</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -777,7 +790,7 @@
     <div class="task-group-header">
       <div class="task-group-title">2-2 &nbsp; staging 型別與集合</div>
       <div class="task-group-meta">announcementDrafts · pendingActivities</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -787,11 +800,15 @@
           <code>PendingActivity</code>（parsed → needsReview → approved → merged / rejected / superseded / conflict）。
           <strong>審核的最小單位是「一個活動」不是「一則公告」</strong>——一則公告十個活動，看得懂九個就先放行九個。
           <code>rawText</code> 超過 200KB 改存 Storage（Firestore 單文件 1MB 是硬限）。
+          <br><strong>⚠ 更正：Storage 分流沒有做，判定為 YAGNI。</strong>實測 266 篇公告
+          最大一篇僅 <strong>15.9 KB</strong>（p50 3.0 KB／p95 12.3 KB），離 1 MB 硬限有 60 倍餘裕。
+          只保留 <code>MAX_RAW_TEXT_BYTES</code> 截斷保險與 <code>rawTextTruncated</code> 旗標，
+          給「官網某天塞進整頁 base64 圖片」用，不是常態路徑。
         </div>
         <div class="task-file">src/types/announcementStaging.ts（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -800,11 +817,17 @@
           兩個集合<strong>前台完全不讀</strong>，rules 一律 <code>isAdmin()</code>。
           <code>expireAt</code> +6 個月交給 Firestore 原生 TTL（比照 <code>changeHistory.expireAt</code>），避免 staging 無限膨脹。
           <strong>不需要</strong>加進 <code>CollectionKey</code> / Worker <code>ARRAY_COLLECTIONS</code>——它們不走前台快取層。
+          <br><strong>實作補充：</strong>腳本的執行統計寫在 <code>meta/announcementScrape</code>，
+          沿用既有的 <code>match /meta/{docId}</code> 規則，不需新增規則。
+          新增集合文件 <code>announcementStaging.html</code> 並掛進 Firebase 設計總覽（卡片 + 集合清單兩處）；
+          該目錄不在 <code>copy-docs.mjs</code> 白名單內，故不會外流到 <code>/documents</code>。
+          <br><strong>待人工執行：</strong>兩條 TTL 政策要在 Firebase Console 手動建立
+          （欄位 <code>expireAt</code>，同 changeHistory 的做法，程式碼無法代勞）。
         </div>
-        <div class="task-file">firestore.rules · docs/02_技術文件/04_Firebase/資料庫設計文件/</div>
+        <div class="task-file">firestore.rules · docs/02_技術文件/04_Firebase/資料庫設計文件/announcementStaging.html</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -900,7 +923,7 @@
     <div class="task-group-header">
       <div class="task-group-title">2-6 &nbsp; 產出量監控</div>
       <div class="task-group-meta">爬蟲會靜默降低品質而非報錯</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -908,11 +931,17 @@
         <div class="task-desc">
           句型逐年漂移：<code>本期機師征招「X」</code> 2024/2025 出現 0 次、2026 才 1 次；<code>維護計畫</code> 段落 2026 才有。
           規則：「一篇週報抽出活動數 &lt; 2」「有機師征招段落卻抽不到機師名」「本次執行的解析成功率低於前次 20%」就進 buffer 並標記告警。
+          <br><strong>與 2-1 併在同一支腳本完成</strong>（告警要跨篇統計，拆開反而要多存一份中繼狀態）。
+          五種 <code>ParseWarning</code>：<code>lowYield</code> / <code>pilotSectionNoName</code> /
+          <code>mechSectionNoName</code> / <code>yieldRegression</code> / <code>contentSelectorMiss</code>。
+          前次統計存 <code>meta/announcementScrape</code> 供 <code>yieldRegression</code> 比較。
+          <br>回歸驗證：對 266 篇歷史語料跑一次，<code>lowYield</code> 命中 7 篇、
+          <code>pilotSectionNoName</code>／<code>mechSectionNoName</code> 各 8 篇 —— 都是真的只有預告沒有檔期的公告，非誤報。
         </div>
         <div class="task-file">scripts/scrape-tw-announcements.mjs</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

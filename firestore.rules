@@ -133,6 +133,32 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── 台版公告 staging（PLAN-048 Phase 2）──────────────────────────────────
+    // 兩個集合**前台完全不讀**，一律 isAdmin()：
+    //   announcementDrafts  官方公告原文草稿（爬蟲寫、後台審核時讀）
+    //   pendingActivities   解析出的待審活動，審核最小單位是「一個活動」
+    //
+    // 與上方遊戲資料集合的差別在**不走 Worker 代理、也不進 CollectionKey**：
+    // 它們是持續成長、只查最近幾頁的 staging 資料，塞進「整包載入 + localStorage」
+    // 的版本快取只會撐爆快取（同 changeHistory 的理由）。
+    //
+    // 寫入者有二：爬蟲以 service account（Admin SDK）繞過規則；管理員在
+    // /admin/announcements 審核時以 client SDK 更新 status / reviewed / mergedInto。
+    // 因此**不能**照 analytics 那樣 write: if false。
+    //
+    // 保留期限：expireAt = 抓取時間 +6 個月，交由 Firestore 原生 TTL 政策清除
+    // （比照 changeHistory.expireAt）。rawText 實測最大一篇 15.9 KB，
+    // 一年約 1500 篇 ≈ 5 MB —— 不設 TTL 不會爆，但 staging 留著沒有意義，
+    // 已合併的活動其事實已進 patchVersions，原文在本地歸檔另有一份。
+    match /announcementDrafts/{docId} {
+      allow read:  if isAdmin();
+      allow write: if isAdmin();
+    }
+    match /pendingActivities/{docId} {
+      allow read:  if isAdmin();
+      allow write: if isAdmin();
+    }
+
     // ── 系統診斷日誌（PLAN-045）──────────────────────────────────────────────
     // 維護者非預期登出與寫入被拒的證據記錄。結構比照上方 changeHistory（append-only
     // ＋ create 綁定本人 uid 防偽造嫁禍），差別在**讀取收緊為 isOwnerRole()**：
