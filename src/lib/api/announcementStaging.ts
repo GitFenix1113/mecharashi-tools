@@ -192,6 +192,10 @@ export async function mergeIntoVersion(
     tx.update(pendingRef, {
       status: 'merged' satisfies PendingStatus,
       mergedInto: receipt,
+      // 人工編修的版本要回存 —— 否則收據只剩 extracted（解析器原始產出），
+      // 重開「已合併」那筆會看到一片空白，跟當初放行的內容對不起來，
+      // 也做不出 reviewed vs extracted 的 diff（announcementStaging.html 04 的前提）。
+      reviewed: withId,
       reviewerUid: uid,
       reviewerName: name,
       reviewedAt: serverTimestamp(),

@@ -33,7 +33,14 @@ function fmt(d: Date): string {
 function ActivityDetail({ act, tone }: { act: VisibleActivity; tone: ActivityTone }) {
   const { base, rewards } = splitActivityName(act)
   const st = activityStatus(act)
-  const sub = act.pilots?.join('、') ?? act.mechs?.join('、') ?? ''
+  // 機師與機甲要各自成列，不能二選一 —— 舊寫法是
+  // `act.pilots?.join('、') ?? act.mechs?.join('、')`，?? 只在 pilots 缺席時
+  // 才輪到 mechs，於是戰令這種兩邊都有的活動（機師 2 名＋機甲 2 台）
+  // 永遠只看得到機師那半，機甲明明寫進去了卻不顯示。
+  const entityRows = [
+    { label: '機師', items: act.pilots },
+    { label: '機甲', items: act.mechs },
+  ].filter(r => r.items?.length)
 
   return (
     <div className="space-y-2">
@@ -91,10 +98,15 @@ function ActivityDetail({ act, tone }: { act: VisibleActivity; tone: ActivityTon
         </div>
       )}
 
-      {sub && (
-        <div className="text-[12px] text-text-dim pt-1 border-t border-border/60">
-          {act.pilots?.length ? '機師' : '機甲'}
-          <span className="text-text-secondary">{sub}</span>
+      {entityRows.length > 0 && (
+        <div className="text-[12px] pt-1 border-t border-border/60 space-y-0.5">
+          {entityRows.map(r => (
+            <div key={r.label}>
+              {/* 標籤與內容之間要有分隔 —— 沒有的話會黏成「機師維羅妮卡、維娜」 */}
+              <span className="text-text-dim">{r.label}：</span>
+              <span className="text-text-secondary">{r.items!.join('、')}</span>
+            </div>
+          ))}
         </div>
       )}
 

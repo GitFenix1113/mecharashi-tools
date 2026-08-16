@@ -28,7 +28,13 @@ export default function ActivityCard({
   const { base, rewards } = splitActivityName(act)
   const st = activityStatus(act)
   const tone = activityTone(act.type, act.typeLabel)
-  const sub = act.pilots?.join('、') ?? act.mechs?.join('、') ?? ''
+  // 機師與機甲都要列出（同 ActivityBar）—— 舊寫法用 ??，pilots 有值就永遠
+  // 輪不到 mechs，戰令那種兩邊都有的活動會少掉機甲。這裡是單行摘要，
+  // 故不換列而以全形空白分隔。
+  const entityParts = [
+    { label: '機師', items: act.pilots },
+    { label: '機甲', items: act.mechs },
+  ].filter(r => r.items?.length)
   const isPredicted = act.confidence === 'predicted'
 
   return (
@@ -110,12 +116,17 @@ export default function ActivityCard({
         </div>
       )}
 
-      {(sub || act.sourceUrl) && (
+      {(entityParts.length > 0 || act.sourceUrl) && (
         <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t border-border/60">
-          {sub ? (
+          {entityParts.length > 0 ? (
             <span className="text-[11px] text-text-dim truncate">
-              {act.pilots?.length ? '機師' : '機甲'}
-              <span className="text-text-secondary">{sub}</span>
+              {entityParts.map((p, i) => (
+                <span key={p.label}>
+                  {i > 0 && '　'}
+                  {/* 冒號不能省 —— 沒有的話會黏成「機師維羅妮卡、維娜」 */}
+                  {p.label}：<span className="text-text-secondary">{p.items!.join('、')}</span>
+                </span>
+              ))}
             </span>
           ) : <span />}
           {act.sourceUrl && (
