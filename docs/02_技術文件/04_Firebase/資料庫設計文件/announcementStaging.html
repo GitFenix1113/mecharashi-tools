@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>announcementDrafts / pendingActivities — 台版公告 staging Schema — Firebase 資料庫設計 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../../index.html">技術文件</a>
+    <span>›</span>
+    <a href="Firebase資料庫設計文件.html">Firebase 資料庫設計</a>
+    <span>›</span>
+    <span class="current">announcementStaging — 公告 staging</span>
+  </div>
+</nav>
+
+<header class="hero orange">
+  <div class="hero-badge orange">◆ COLLECTION SCHEMA</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    announcementDrafts / pendingActivities
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-048 Phase 2</span>
+  </h1>
+  <p class="hero-sub">台版官方公告的抓取與審核暫存 · 審核最小單位是「一個活動」· 後台專用（前台完全不讀）· 原生 TTL 六個月</p>
+  <div class="version-badge" style="background:var(--accent-orange);color:#000;">PLAN-048 Phase 2 — 2026-08-16</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label orange">01 — 用途</div>
+  <div class="section-title">兩個 staging 集合</div>
+
+  <div class="info-block">
+    <strong>📌 用途說明</strong><br>
+    <code>scripts/scrape-tw-announcements.mjs</code> 抓台版官方公告（<code>ma.tentree-games.com</code>）、
+    以 <code>scripts/lib/parseAnnouncement.mjs</code> 解析出活動檔期，先落在這兩個集合，
+    經 <code>/admin/announcements</code> 人工審核後才合併進 <code>patchVersions</code> 的
+    <code>upper/lower.twActivities</code>。<br>
+    · <strong>announcementDrafts</strong>：一則公告的原文草稿（含 <code>rawText</code> 與解析統計）。<br>
+    · <strong>pendingActivities</strong>：解析出的待審活動，<strong>一則公告 n 筆</strong>。<br>
+    型別定義在 <code>src/types/announcementStaging.ts</code>（比照 <code>changeHistory.ts</code>，
+    <strong>刻意不進 <code>src/types/index.ts</code> barrel</strong>）。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 三個關鍵設計決定</strong><br>
+    ① <strong>審核最小單位是「一個活動」不是「一則公告」</strong>：一則公告十個活動，看得懂九個就先放行九個，
+    剩一個留在 buffer。新玩法不該卡住整批 —— 這正是待處理 buffer 要解決的事。<br>
+    ② <strong>必須是獨立頂層集合，絕不能做成 <code>PatchVersion.inbox</code> 欄位</strong>：
+    <code>AdminVersionEditorPage.tsx</code> 存檔是整份 <code>setDoc</code>、<strong>沒有 <code>merge: true</code></strong>。
+    若 buffer 是 PatchVersion 的欄位，腳本追加 → 管理員存檔 → 追加內容<strong>無聲消失</strong>。
+    同型事故已有前例（<code>scrape-pilots-v3.js:117</code>）。<br>
+    ③ <strong>不進 <code>CollectionKey</code> / GameDataContext / Worker <code>ARRAY_COLLECTIONS</code></strong>：
+    前台永遠不讀它們。版本 gate 三層快取是為「整包載入、長期不變的靜態遊戲資料」設計，
+    staging 是持續成長、只查最近幾頁的資料（同 <a href="changeHistory.html">changeHistory</a> 的理由）。
+  </div>
+
+  <div class="sub-h">🗃️ announcementDrafts — 公告原文草稿（AnnouncementDraft）</div>
+  <div class="data-table-wrap">
+    <table class="data-table orange-head">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td>文件 ID＝<code>${source}_${officialId}</code>，如 <code>tw_1799</code>。由公告 URL 推導 → <strong>重爬必然命中同一份＝冪等免費</strong></td></tr>
+      <tr><td>source</td><td>'tw'</td><td>資料來源。陸版公告頻道已廢棄故不解析，此 union 目前只有一個值</td></tr>
+      <tr><td>channel</td><td>AnnouncementChannel</td><td><code>'maAffiche' | 'maNews' | 'maGuide' | 'maOther'</code></td></tr>
+      <tr><td>officialId</td><td>string</td><td>官方公告編號（清單 JSON 的 <code>id</code>）</td></tr>
+      <tr><td>title</td><td>string</td><td>公告標題</td></tr>
+      <tr><td>publishedAt</td><td>string</td><td>官方發佈日 <code>YYYY/MM/DD</code>（清單的 <code>time</code> 是 <code>'YYYY-MM.DD'</code>，已正規化）</td></tr>
+      <tr><td>sourceUrl</td><td>string</td><td>官方公告網址，原樣抄進 <code>TimedActivity.sourceUrl</code></td></tr>
+      <tr><td>rawText</td><td>string</td><td>正規化後的公告純文字。實測 266 篇最大 <strong>15.9 KB</strong>（p50 3.0 KB），離 1 MB 硬限很遠 → <strong>不做 Storage 分流</strong></td></tr>
+      <tr><td>rawTextTruncated</td><td>boolean?</td><td>超過 <code>MAX_RAW_TEXT_BYTES</code>（200 KB）被截斷。是保險不是常態路徑</td></tr>
+      <tr><td>contentHash</td><td>string</td><td><code>sha256(rawText)</code>。<strong>冪等判斷的唯一依據</strong>——不比對 fetchedAt、不比對 ETag（官網 ETag 實測不穩），只認內容</td></tr>
+      <tr><td>status</td><td>DraftStatus</td><td><code>'raw' | 'parsed' | 'parseFailed' | 'triaged' | 'superseded'</code></td></tr>
+      <tr><td>parserVersion</td><td>number</td><td>產生此結果的解析器版本。改規則後靠它挑出「該重跑的舊公告」</td></tr>
+      <tr><td>activityCount</td><td>number</td><td>本篇解析出的待審活動數（0 也合法，如純維護公告）</td></tr>
+      <tr><td>unmatched</td><td>string[]</td><td>沒被任何規則認領的原文片段。後台標紅 → 「這段我沒看懂」自動浮現</td></tr>
+      <tr><td>warnings</td><td>ParseWarning[]</td><td>整篇層級告警，見下方 03</td></tr>
+      <tr><td>fetchedAt / parsedAt</td><td>Timestamp</td><td>抓取／最後解析時間</td></tr>
+      <tr><td>expireAt</td><td>Timestamp</td><td><code>fetchedAt + 6 個月</code>。由原生 TTL 政策清除</td></tr>
+      <tr><td>etag / lastModified</td><td>string?</td><td>條件式請求用。不存在也不影響冪等（<code>contentHash</code> 才是權威）</td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h" style="margin-top:18px;">🗃️ pendingActivities — 待審活動（PendingActivity）</div>
+  <div class="data-table-wrap">
+    <table class="data-table orange-head">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td>文件 ID＝<code>${draftId}_${seq}</code>，如 <code>tw_1799_0</code>。<strong>決定性 ID</strong> → 重新解析同一篇直接覆寫同一批，不會每跑一次多一份垃圾</td></tr>
+      <tr><td>draftId</td><td>string</td><td>來源 announcementDrafts 文件 ID</td></tr>
+      <tr><td>seq</td><td>number</td><td>該篇公告內的出現序（0-based），也是後台預設排序</td></tr>
+      <tr><td>status</td><td>PendingStatus</td><td><code>'parsed' | 'needsReview' | 'approved' | 'merged' | 'rejected' | 'superseded' | 'conflict'</code></td></tr>
+      <tr><td>flags</td><td>PendingFlag[]</td><td>有任何一個 flag → status 落在 <code>needsReview</code>。見下方 02</td></tr>
+      <tr><td>extracted</td><td>Partial&lt;TimedActivity&gt;</td><td>解析器原始產出，<strong>人工永不修改</strong>（保持原樣供 diff）。抽不到的欄位留 <code>undefined</code>，<strong>絕不填預設值</strong></td></tr>
+      <tr><td>reviewed</td><td>Partial&lt;TimedActivity&gt;?</td><td>人工編修後版本。存在時以它為準寫入；兩份並存才做得出 diff</td></tr>
+      <tr><td>excerpt</td><td>string</td><td>原文片段（不是整篇）。後台左欄只載這段，免得每開一筆就傳 16 KB 全文</td></tr>
+      <tr><td>excerptStart</td><td>number?</td><td>片段在 <code>rawText</code> 內的起始位移，供「看完整原文」捲到正確位置</td></tr>
+      <tr><td>rawTypeLabel</td><td>string?</td><td>型別未命中 registry 時，從公告抄下的原始段落標題</td></tr>
+      <tr><td>targetVersion / targetHalf</td><td>string? / 'upper'|'lower'?</td><td>依 <code>startDate</code> 推測的目標版本半期。<strong>只是預填</strong>；推不出來時該筆一律 <code>needsReview</code>（猜錯版本比沒猜更難發現）</td></tr>
+      <tr><td>mergedInto</td><td>MergeReceipt?</td><td>寫入收據，見下方 04</td></tr>
+      <tr><td>rejectReason</td><td>string?</td><td>判定不進時間線的理由（選填）</td></tr>
+      <tr><td>reviewerUid / reviewerName / reviewedAt</td><td>string? / string? / Timestamp?</td><td>審核者。status 進入 merged / rejected 時寫入</td></tr>
+      <tr><td>createdAt / expireAt</td><td>Timestamp</td><td>與來源 draft 同步，TTL 到期一起清掉</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label orange">02 — flag</div>
+  <div class="section-title">解析器對單筆活動的標記</div>
+
+  <div class="info-block">
+    <strong>📌 flag 的作用</strong>：把「我沒把握」明確化。有任何一個 flag，該筆就進 <code>needsReview</code>，
+    後台預設只顯示這些。實測 266 篇歸檔語料 625 筆活動中，<strong>零 flag 可直接放行者佔 66%</strong>。
+  </div>
+
+  <div class="data-table-wrap">
+    <table class="data-table orange-head">
+      <tr><th>flag</th><th>中文標籤</th><th>觸發條件與實測數量（625 筆中）</th></tr>
+      <tr><td><code>openEnded</code></td><td>無結束時刻</td><td>「YYYY/MM/DD HH:mm <strong>起</strong>」沒有結束時刻 → <code>weeks</code> 留空。<strong>193 筆（31%）</strong>，主要是卡池</td></tr>
+      <tr><td><code>nonThursdayStart</code></td><td>非週四開始</td><td>起始日不是週四，與既有資料慣例不符。16 筆（2.6%）</td></tr>
+      <tr><td><code>nonWholeWeek</code></td><td>非整週</td><td>持續時間非整週，<code>weeks</code> 會是小數。14 筆（2.2%）</td></tr>
+      <tr><td><code>unknownActivityType</code></td><td>未知型別</td><td>type 不在 <code>activityTypeRegistry</code> 裡 —— 新玩法。8 筆（1.3%）</td></tr>
+      <tr><td><code>missingName</code></td><td>缺名稱</td><td>抽不到活動名。3 筆（0.5%）</td></tr>
+      <tr><td><code>missingDate</code></td><td>缺日期</td><td>抽不到起始日。1 筆（0.2%）</td></tr>
+      <tr><td><code>unmatchedText</code></td><td>有未認領原文</td><td>該活動所屬段落有未被規則認領的原文</td></tr>
+      <tr><td><code>duplicate</code></td><td>疑似重複</td><td>同版本半期內已有相同 anchor 的活動</td></tr>
+    </table>
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>💡 為什麼 <code>openEnded</code> 不自動補一個「慣例 2 週」</strong><br>
+    填了預設值就再也分不出「官方真的是這樣」與「我沒抽到」。<br>
+    早期版本曾在後台表單<strong>預填</strong>建議值（2 週），已經拿掉 ——
+    預填值會在維護者沒細看時直接變成資料，而那正是這條界線要防的事。<br>
+    <strong>現在的做法</strong>：週數留空也能合併，但該筆會帶著 <code>hidden</code> 與 <code>note</code> 進入
+    <code>patchVersions</code>。<strong>事實先留住（不會卡在待審清單被遺忘），但上不了首頁。</strong>
+    之後在版本編輯頁補上長度、取消隱藏即上線，不需要重跑爬蟲或審核流程。
+    細節見 <a href="../../02_資料模型/patchVersions.html">patchVersions 資料模型</a> 的
+    <code>hidden</code> / <code>note</code> 兩欄與「前台顯示閘門」。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label orange">03 — 監控</div>
+  <div class="section-title">產出量告警（ParseWarning）</div>
+
+  <div class="warning-block">
+    <strong>⚠ 爬蟲失效時不會報錯，只會靜默降低品質</strong><br>
+    官網句型逐年漂移已實測：<code>本期機師征招「X」</code> 2024／2025 出現 <strong>0 次</strong>、2026 才 1 次；
+    <code>維護計畫</code> 段落 2026 才有；2024 有整批公告沒有 <code>活動時間</code> 錨點只有裸日期。
+    <strong>只看 HTTP 200 完全看不出解析器已經瞎了。</strong>
+  </div>
+
+  <div class="data-table-wrap">
+    <table class="data-table orange-head">
+      <tr><th>warning</th><th>觸發條件</th></tr>
+      <tr><td><code>lowYield</code></td><td>一篇【版本前瞻】抽出的活動數 &lt; 2 —— 週報不可能只有一個活動</td></tr>
+      <tr><td><code>pilotSectionNoName</code></td><td>有「機師征招招募活動」段落卻抽不到機師名</td></tr>
+      <tr><td><code>mechSectionNoName</code></td><td>有「機甲獲取海運活動」段落卻抽不到機甲名</td></tr>
+      <tr><td><code>yieldRegression</code></td><td>本次執行的每篇產出量低於前次 20% 以上（前次統計存在 <code>meta/announcementScrape</code>）</td></tr>
+      <tr><td><code>contentSelectorMiss</code></td><td>正文抓不到 <code>&lt;div class="content"&gt;</code>，退回整頁去標籤 —— 官網改版的徵兆</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label orange">04 — 合併</div>
+  <div class="section-title">寫入 patchVersions 的兩條紅線</div>
+
+  <div class="warning-block">
+    <strong>⚠ 紅線一：合併寫入必須 <code>runTransaction</code></strong><br>
+    <code>patchVersions</code> 既有的存檔路徑是整份 <code>setDoc</code>。合併時若「讀出來 → 改陣列 → 寫回去」不在交易內，
+    管理員同時在版本編輯頁按存檔就會覆蓋掉剛合併的內容。<br>
+    <code>MergeReceipt.anchor</code> 用 <code>{ name, startDate }</code> 定位而<strong>不是陣列 index</strong>：
+    <code>twActivities</code> 是陣列，管理員增刪排序後 index 就指向別的活動了
+    （同 <code>changeHistory.RefAnchor</code> 的教訓：索引式路徑不是穩定識別子）。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 紅線二：合併後必須 <code>bumpDataVersion('patchVersions')</code></strong><br>
+    <code>patchVersions</code> 走 Cloudflare Worker 邊緣快取（<code>workers/src/index.ts</code> 以集合版本號當
+    cache key、<code>max-age=86400</code>）。<strong>不 bump 就是「資料寫進去了、前台看不到、硬重整也沒用」，最長 24 小時</strong>
+    —— 快取在邊緣不在瀏覽器。<br>
+    反過來說，<strong>抓取腳本刻意不 bump</strong>：它只寫這兩個 staging 集合，沒動 patchVersions，
+    平白 bump 等於讓所有使用者重抓一次。
+  </div>
+
+  <div class="sub-h" style="margin-top:18px;">MergeReceipt</div>
+  <div class="data-table-wrap">
+    <table class="data-table orange-head">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>versionId</td><td>string</td><td>patchVersions 文件 ID，如 <code>v3.3</code></td></tr>
+      <tr><td>half</td><td>'upper' | 'lower'</td><td>寫進上半或下半</td></tr>
+      <tr><td>field</td><td>'twActivities'</td><td>目前一律台服欄位（台版公告只餵台服）</td></tr>
+      <tr><td>anchor</td><td>{ name, startDate }</td><td><strong>重定位錨點，不用 index</strong></td></tr>
+      <tr><td>at / actorUid / actorName</td><td>Timestamp / string / string</td><td>何時、由誰合併</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label orange">05 — 規則</div>
+  <div class="section-title">安全規則與保留期限</div>
+
+  <div class="code-block"><pre>match /announcementDrafts/{docId} {
+  allow read:  if isAdmin();
+  allow write: if isAdmin();
+}
+match /pendingActivities/{docId} {
+  allow read:  if isAdmin();
+  allow write: if isAdmin();
+}</pre></div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>📌 為什麼不是 <code>write: if false</code></strong><br>
+    寫入者有二：爬蟲以 service account（Admin SDK）<strong>繞過規則</strong>；管理員在
+    <code>/admin/announcements</code> 審核時以 client SDK 更新 <code>status</code> / <code>reviewed</code> / <code>mergedInto</code>。
+    因此不能照 <a href="analytics.html">analytics</a> 那樣一律禁寫 client。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>⏳ TTL 政策（需在 Firebase Console 手動建立，同 changeHistory）</strong><br>
+    兩個集合各建一條，欄位皆為 <code>expireAt</code>，保留期限 <strong>6 個月</strong>。<br>
+    理由：已合併的活動其事實已進 <code>patchVersions</code>，公告原文在本地歸檔另有完整一份
+    （<code>_local-notes/2026-08/tw-announcements-archive/</code>），staging 留著沒有意義。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔧 「規則待擴充」彙總（<code>/admin/announcements</code> 分頁）</strong><br>
+    解析器不可能一次寫對所有句型，官方寫法逐年漂移是實測過的事實。與其每次逐篇翻公告找漏，
+    後台把三張表依<strong>出現次數</strong>排好，讓「碰到很多次的寫法」自己浮上來：<br>
+    ① <strong>待補資料</strong> —— 所有 <code>hidden</code> 的活動連同 <code>note</code>，標明缺哪些欄位。<br>
+    ② <strong>待擴充規則</strong> —— 未認領原文依句型彙總。實測 492 行未認領原文收斂成 <strong>57 組句型</strong>，
+    最高的一組出現 52 次（<code>【⟨名稱⟩】補充說明</code>）—— 那就是下一版解析器最該處理的。
+    只出現一次的預設不列（滿頁雜訊等於沒有清單）。<br>
+    ③ <strong>未登錄型別</strong> —— 對照計畫書的升級觸發點（穩定超過 20 種才把 activityTypes 開成獨立集合）。<br>
+    句型彙總<strong>不是</strong>抽四字片語：試過，同一句樣板會被拆成十幾個重疊窗格
+    （則下一次／下一次獲／一次獲得…），整張榜單被一句話洗版。改為整行正規化
+    （抹掉日期、數量、括號內容與已知的卡池標題文法）後才收斂得起來。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>📄 相關文件</strong><br>
+    完整設計論證見 <code>docs/05_階段性開發計畫/執行中/PLAN-048_時間線甘特圖改版/計畫書.html</code>；
+    安全規則全貌見 <a href="security-rules.html">security-rules</a>；
+    活動型別登錄表見 <code>src/components/timeline/activityTypeRegistry.ts</code>。
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · Firebase 資料庫設計 · announcementStaging — <a href="Firebase資料庫設計文件.html" style="color:var(--accent-orange);text-decoration:none;">← 返回總覽</a>
+</footer>
+
+</body>
+</html>

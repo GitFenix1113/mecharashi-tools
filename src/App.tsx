@@ -29,6 +29,7 @@ const AdminVersionEditorPage   = lazy(() => import('./pages/admin/AdminVersionEd
 const AdminHistoryPage         = lazy(() => import('./pages/admin/AdminHistoryPage'))
 const AdminSystemLogPage       = lazy(() => import('./pages/admin/AdminSystemLogPage'))
 const AdminAnalyticsPage       = lazy(() => import('./pages/admin/AdminAnalyticsPage'))
+const AdminAnnouncementsPage   = lazy(() => import('./pages/admin/AdminAnnouncementsPage'))
 const RainbowMechPlannerPage   = lazy(() => import('./pages/guides/tools/RainbowMechPlannerPage'))
 const ComponentDropsPage       = lazy(() => import('./pages/guides/tools/ComponentDropsPage'))
 const StorageDebugPage         = lazy(() => import('./pages/debug/StorageDebugPage'))
@@ -81,6 +82,11 @@ function App() {
             <Route
               path="admin/system-log"
               element={<AdminRoute ownerOnly><Suspense fallback={null}><AdminSystemLogPage /></Suspense></AdminRoute>}
+            />
+            {/* 台版公告審核工作檯（PLAN-048 Phase 2）。ADMIN 即可用——它只操作 staging 與版本活動 */}
+            <Route
+              path="admin/announcements"
+              element={<AdminRoute><Suspense fallback={null}><AdminAnnouncementsPage /></Suspense></AdminRoute>}
             />
             {/* 使用統計（PLAN-046）。ADMIN 即可看——內容是站務彙總數字，不含個人行為資料 */}
             <Route

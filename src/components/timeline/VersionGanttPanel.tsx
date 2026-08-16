@@ -1,27 +1,18 @@
-import { useMemo } from 'react'
-import type { PatchVersion, PatchHalf, TimedActivity, ActivityType } from '../../data/patchVersions/types'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import type { PatchVersion, PatchHalf, VisibleActivity } from '../../data/patchVersions/types'
+import { activitiesOfHalf } from '../../data/patchVersions/legacyActivities'
 import PatchInfoRow from './PatchInfoRow'
+import ActivityBar from './ActivityBar'
+import ActivityCardFlow, { type KeyedActivity } from './ActivityCardFlow'
+import GanttAxisOverlay from './GanttAxisOverlay'
+import { activityTone } from './activityTypeRegistry'
+// 日期工具與長條幾何集中在 ganttGeometry，避免與長條計算各有一份 parseDate 而漂移
+import { parseDate, addDays, activityGeometry } from './ganttGeometry'
 
 // ── Date utils ─────────────────────────────────────────────────────────────────
 
-function parseDate(str: string): Date {
-  const cleaned = str.replace(/^[^0-9]+/, '')
-  const [y, m, d] = cleaned.split(/[\/\-]/).map(Number)
-  return new Date(y, m - 1, d)
-}
-
-function addDays(date: Date, n: number): Date {
-  return new Date(date.getTime() + n * 86400000)
-}
-
 function fmtShort(date: Date): string {
   return `${date.getMonth() + 1}/${date.getDate()}`
-}
-
-function fmtFull(date: Date): string {
-  const m = date.getMonth() + 1
-  const d = date.getDate()
-  return `${date.getFullYear()}/${m < 10 ? '0' + m : m}/${d < 10 ? '0' + d : d}`
 }
 
 // ── C-1: 週軸計算 ──────────────────────────────────────────────────────────────
@@ -29,7 +20,7 @@ function fmtFull(date: Date): string {
 function generateWeeks(
   startStr: string,
   endStr: string | null,
-  acts: TimedActivity[],
+  acts: VisibleActivity[],
   minWeeks = 3,
 ): Date[] {
   if (!startStr) return []
@@ -52,45 +43,61 @@ function generateWeeks(
   return weeks
 }
 
-function activityToColumns(
-  act: TimedActivity,
-  allWeeks: Date[],
-): { colStart: number; colSpan: number } | null {
-  if (allWeeks.length === 0) return null
-  const startDt = parseDate(act.startDate)
-  const endDt = addDays(startDt, act.weeks * 7)
-
-  const colStart = allWeeks.findIndex(w => w >= startDt)
-  if (colStart === -1) return null
-
-  let colEnd = -1
-  for (let i = allWeeks.length - 1; i >= 0; i--) {
-    if (allWeeks[i] <= endDt) { colEnd = i; break }
-  }
-  if (colEnd < colStart) return null
-
-  return { colStart, colSpan: colEnd - colStart + 1 }
+/** 一段半版本的近似跨度，供 legacy shim 把舊欄位翻譯成 TimedActivity */
+function halfSpan(startStr: string, endStr: string | null): { startDate: string; weeks: number } | null {
+  if (!startStr) return null
+  const start = parseDate(startStr)
+  const end = endStr ? parseDate(endStr) : addDays(start, 21)
+  const weeks = Math.max(1, Math.round((end.getTime() - start.getTime()) / (7 * 86400000)))
+  return { startDate: startStr, weeks }
 }
 
-// ── 活動顏色 ────────────────────────────────────────────────────────────────────
+// ── 版本資訊摺疊偏好 ───────────────────────────────────────────────────────────
+//
+// 純本機 UI 偏好，不同步到帳戶（那要動 ViewPrefsKey 與 userApi，代價不成比例）。
+// 比照 useViewMode 的 loadLocal 寫法：lazy initializer + try/catch，避免
+// 隱私模式或 storage 被鎖時整個面板炸掉。
 
-const COLORS: Record<ActivityType, { dot: string; line: string; text: string; label: string }> = {
-  skinGacha:           { dot: 'bg-accent-orange',  line: 'bg-accent-orange/60',              text: 'text-accent-orange',  label: '刮刮樂' },
-  roulette:            { dot: 'bg-accent-yellow',  line: 'bg-accent-yellow/60',              text: 'text-accent-yellow',  label: '輪盤' },
-  pilotMission:        { dot: 'bg-accent-purple',  line: 'bg-accent-purple/60',              text: 'text-accent-purple',  label: '特遣' },
-  crossShipping:       { dot: 'bg-[#c9a0dc]',      line: 'bg-[rgba(201,160,220,0.6)]',       text: 'text-[#c9a0dc]',      label: '海運' },
-  specificPilotBanner: { dot: 'bg-[#79c0ff]',      line: 'bg-[rgba(121,192,255,0.6)]',       text: 'text-[#79c0ff]',      label: '角色池' },
-  specificMechBanner:  { dot: 'bg-[#58a6d4]',      line: 'bg-[rgba(88,166,212,0.6)]',        text: 'text-[#58a6d4]',      label: '機甲池' },
-  limitedEvent:        { dot: 'bg-accent-cyan',    line: 'bg-accent-cyan/60',                text: 'text-accent-cyan',    label: '限時活動' },
-  loginEvent:          { dot: 'bg-accent-green',   line: 'bg-accent-green/60',               text: 'text-accent-green',   label: '簽到' },
-  battlePass:          { dot: 'bg-gray-500',        line: 'bg-gray-500/60',                   text: 'text-gray-400',       label: '戰令' },
+const LS_INFO_COLLAPSED = 'mecharashi_timeline_infoCollapsed'
+
+function loadCollapsed(): boolean {
+  try {
+    return localStorage.getItem(LS_INFO_COLLAPSED) === '1'
+  } catch {
+    return false
+  }
+}
+
+function saveCollapsed(v: boolean) {
+  try {
+    localStorage.setItem(LS_INFO_COLLAPSED, v ? '1' : '0')
+  } catch {
+    // ignore
+  }
 }
 
 // ── CSS 常數 ──────────────────────────────────────────────────────────────────
 
-const TD = 'border border-[#2a3040] px-2 py-1.5 text-[15px] text-center align-middle text-text-secondary'
-const TH = 'border border-[#2a3040] px-2 py-1.5 text-center align-middle'
-const LABEL = 'border border-[#2a3040] px-3 py-1.5 text-left text-[14px] text-text-dim bg-[#0e1119] whitespace-nowrap'
+const LABEL_COL_PX = 110
+
+/**
+ * 內容容器的底色 —— 想調整就改這一行。
+ *
+ * 這是「橫幅要多明顯」的第二個調整鈕（第一個在 VersionExpandedPanel 的
+ * BANNER_OPACITY / BANNER_SCRIM）。原本是 bg-bg-dark/40，太透，
+ * 11–13px 的活動條文字下方直接是機甲立繪，讀不到。
+ *
+ *   想讓橫幅透出來更多 → 調低（如 bg-bg-dark/50）
+ *   想讓文字更清楚     → 調高（如 bg-bg-dark/85，接近不透明）
+ */
+const SURFACE = 'bg-bg-dark/75'
+
+// 列密度：Phase 1 從 py-1.5 / 15px（實測每列 42px）壓到 py-1 / 14px（約 32px）。
+// 原本的預算估固定資訊表 234px，實測是 383px —— 佔掉可用高度的 62%，
+// 導致下方的甘特與卡片流只剩 121px。不壓這裡，Phase 1 的卡片流等於看不到。
+const TD = 'border border-[#2a3040] px-2 py-1 text-[14px] text-center align-middle text-text-secondary'
+const TH = 'border border-[#2a3040] px-2 py-1 text-center align-middle'
+const LABEL = 'border border-[#2a3040] px-3 py-1 text-left text-[13px] text-text-dim bg-[#0e1119] whitespace-nowrap'
 
 // ── C-4: VersionInfoRows ───────────────────────────────────────────────────────
 
@@ -177,114 +184,127 @@ function VersionInfoRows({
   )
 }
 
-// ── C-5: ActivityGanttRow ─────────────────────────────────────────────────────
-
-function ActivityGanttRow({
-  act,
-  allWeeks,
-  totalWeeks,
+/**
+ * 摺疊時的濃縮列：只留機師與機甲（實測最常被查的兩項），仍沿用 upper/lower 的
+ * colSpan 切分，所以「哪一半有誰」的對照關係不會因為摺疊而消失。
+ *
+ * 為什麼不連週軸表頭一起收：那條軸是甘特長條的定位基準，也是使用者當初把甘特
+ * 放在這裡的理由（對照版本週次）。收掉它，剩下的甘特就失去意義。
+ */
+function CollapsedSummaryRow({
+  upper,
+  lower,
+  upperCount,
+  lowerCount,
 }: {
-  act: TimedActivity
-  allWeeks: Date[]
-  totalWeeks: number
+  upper: PatchHalf
+  lower: PatchHalf
+  upperCount: number
+  lowerCount: number
 }) {
-  const cols = activityToColumns(act, allWeeks)
-  const c = COLORS[act.type]
-  const endDt = addDays(parseDate(act.startDate), act.weeks * 7)
-  const sub = act.pilots?.join('、') ?? act.mechs?.join('、') ?? ''
+  const summarize = (h: PatchHalf) =>
+    [(h.pilots ?? []).join('、'), (h.mechs ?? []).join('、')].filter(Boolean).join('　·　')
 
-  const cells: React.ReactNode[] = []
+  const u = summarize(upper)
+  const l = summarize(lower)
+  if (!u && !l) return null
 
-  if (!cols || totalWeeks === 0) {
-    cells.push(<td key="all" colSpan={Math.max(totalWeeks, 1)} />)
-  } else {
-    const { colStart, colSpan } = cols
-    if (colStart > 0) {
-      cells.push(<td key="pre" colSpan={colStart} />)
-    }
-    cells.push(
-      <td key="bar" colSpan={colSpan} className="group relative py-3.5 px-2 cursor-default">
-        {/* Hover tooltip */}
-        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2
-                        hidden group-hover:block z-20
-                        bg-bg-dark/95 border border-border rounded-lg px-3 py-2 shadow-lg">
-          <div className={`text-[13px] font-medium ${c.text}`}>{act.name}</div>
-          {sub && <div className="text-[12px] text-text-dim mt-0.5">{sub}</div>}
-          <div className="text-[12px] text-text-dim mt-0.5">{act.startDate} → {fmtFull(endDt)}</div>
-        </div>
-
-        {colSpan === 1 ? (
-          <div className="flex items-center justify-center">
-            <div className={`w-3 h-3 rounded-full ${c.dot}`} />
-          </div>
-        ) : (
-          <div className="flex items-center">
-            <div className={`w-3 h-3 rounded-full shrink-0 ${c.dot}`} />
-            <div className={`flex-1 h-px ${c.line}`} />
-            <span className={`text-[13px] font-medium px-1.5 py-0.5 border rounded shrink-0 whitespace-nowrap ${c.text} border-current/50`}>
-              {act.name}
-            </span>
-            <div className={`flex-1 h-px ${c.line}`} />
-            <div className={`w-3 h-3 rounded-full shrink-0 ${c.dot}`} />
-          </div>
-        )}
-      </td>,
-    )
-    const remaining = totalWeeks - colStart - colSpan
-    if (remaining > 0) {
-      cells.push(<td key="post" colSpan={remaining} />)
-    }
-  }
+  const dash = <span className="opacity-30">—</span>
 
   return (
     <tr>
-      <td className="border-r border-[#2a3040] px-3 py-1.5 text-left text-[14px] text-text-dim bg-[#0e1119] whitespace-nowrap">
-        <span className={c.text}>{c.label}</span>
+      <td className={`${LABEL} text-[12px]`}>機師 · 機甲</td>
+      <td colSpan={upperCount} className={`${TD} text-[13px] bg-[rgba(255,107,43,0.05)]`}>
+        {u || dash}
       </td>
-      {cells}
+      <td colSpan={lowerCount} className={`${TD} text-[13px] bg-[rgba(6,182,212,0.05)]`}>
+        {l || dash}
+      </td>
     </tr>
   )
 }
 
-// ── 版本層級資訊（危境重構 / 邊境商店等）────────────────────────────────────────
+// ── C-5: ActivityGanttRow ─────────────────────────────────────────────────────
+//
+// 為什麼不改成 CSS grid：長條層住在**單一** colSpan={totalWeeks} 的 td 裡，
+// 該 td 的寬度天生就等於整條週軸（tableLayout:fixed + 同一份 Colgroup），
+// 所以百分比定位與上方固定資訊表的欄界自動對齊，Colgroup 一行都不用動。
 
-function VersionLevelInfo({ version }: { version: PatchVersion }) {
-  const hasExtra = !!(
-    version.crisisShop?.length ||
-    version.memoryStorm ||
-    version.notes
-  )
-  if (!hasExtra) return null
+function ActivityGanttRow({
+  item,
+  allWeeks,
+  totalWeeks,
+  selectedKey,
+  onSelect,
+  onHover,
+}: {
+  item: KeyedActivity
+  allWeeks: Date[]
+  totalWeeks: number
+  selectedKey: string | null
+  onSelect: (key: string | null) => void
+  onHover: (key: string | null) => void
+}) {
+  const { key, act } = item
+  const geom = activityGeometry(act, allWeeks)
+  const tone = activityTone(act.type, act.typeLabel)
+  const selected = selectedKey === key
 
   return (
-    <div className="mt-3 pt-3 border-t border-border/40 space-y-0.5">
-      {version.crisisShop?.length ? (
-        <PatchInfoRow icon="🏪" label="危境重構" items={version.crisisShop} color="purple" size="md" />
-      ) : null}
-      {version.memoryStorm ? (
-        <PatchInfoRow icon="🌀" label="記憶風暴" items={[version.memoryStorm]} color="cyan" size="md" />
-      ) : null}
-      {version.notes ? (
-        <PatchInfoRow icon="📝" label="備註" items={[version.notes]} color="blue" size="md" />
-      ) : null}
-    </div>
+    <tr>
+      <td className="border-r border-[#2a3040] px-3 py-0 text-left text-[13px] text-text-dim bg-[#0e1119] whitespace-nowrap">
+        <span className={tone.text}>{tone.label}</span>
+      </td>
+      <td colSpan={Math.max(totalWeeks, 1)} className="p-0 align-middle">
+        {/* h-8：Phase 1 從 py-3.5（50px）壓到 32px，1366×768 可見列 1 → 4 */}
+        <div className="relative h-8">
+          {geom && (
+            <ActivityBar
+              act={act}
+              actKey={key}
+              geom={geom}
+              selected={selected}
+              dimmed={selectedKey !== null && !selected}
+              onSelect={onSelect}
+              onHover={onHover}
+            />
+          )}
+        </div>
+      </td>
+    </tr>
   )
 }
 
-// ── 商店資訊（邊境商店 / 鬥技場）— 左右並列於主要資訊與甘特圖之間 ──────────────────
-function ShopRow({ version }: { version: PatchVersion }) {
-  if (!version.borderShop && !version.arenaShop) return null
+// ── 版本層級補充資訊：商店 / 危境重構 / 記憶風暴 / 備註 ─────────────────────────
+//
+// Phase 1 把原本分成兩塊（ShopRow 52px + VersionLevelInfo 40px）的資訊併成單列
+// chips，回收約 64px 的垂直空間給甘特與卡片流。備註通常很長，仍獨立成一行。
+
+function VersionExtras({ version }: { version: PatchVersion }) {
+  const chips: { icon: string; label: string; items: string[]; cls: string }[] = []
+  if (version.borderShop) chips.push({ icon: '🛒', label: '邊境商店', items: [version.borderShop], cls: 'text-accent-yellow' })
+  if (version.arenaShop) chips.push({ icon: '🏆', label: '鬥技場', items: [version.arenaShop], cls: 'text-accent-orange' })
+  if (version.crisisShop?.length) chips.push({ icon: '🏪', label: '危境重構', items: version.crisisShop, cls: 'text-accent-purple' })
+  if (version.memoryStorm) chips.push({ icon: '🌀', label: '記憶風暴', items: [version.memoryStorm], cls: 'text-accent-cyan' })
+
+  if (chips.length === 0 && !version.notes) return null
 
   return (
-    <div className="mt-2 shrink-0 flex flex-col sm:flex-row gap-2">
-      {version.borderShop && (
-        <div className="flex-1 rounded-lg border border-border bg-bg-dark/40 px-3 py-2">
-          <PatchInfoRow icon="🛒" label="邊境商店" items={[version.borderShop]} color="yellow" size="md" />
+    <div className="mt-1.5 shrink-0 space-y-1">
+      {chips.length > 0 && (
+        <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border ${SURFACE} px-3 py-1`}>
+          {chips.map(c => (
+            <span key={c.label} className="inline-flex items-center gap-1.5 text-[12px] whitespace-nowrap">
+              <span className="opacity-80">{c.icon}</span>
+              <span className="text-text-dim">{c.label}</span>
+              <span className={c.cls}>{c.items.join('、')}</span>
+            </span>
+          ))}
         </div>
       )}
-      {version.arenaShop && (
-        <div className="flex-1 rounded-lg border border-border bg-bg-dark/40 px-3 py-2">
-          <PatchInfoRow icon="🏆" label="鬥技場" items={[version.arenaShop]} color="orange" size="md" />
+      {version.notes && (
+        <div className={`rounded-lg border border-border ${SURFACE} px-3 py-1`}>
+          <PatchInfoRow icon="📝" label="備註" items={[version.notes]} color="blue" size="sm" />
         </div>
       )}
     </div>
@@ -300,18 +320,36 @@ export default function VersionGanttPanel({
   version: PatchVersion
   side?: 'tw' | 'cn'
 }) {
-  const { upperWeeks, lowerWeeks, allWeeks, upperActs, lowerActs, upperStartStr, lowerStartStr } =
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null)
+  const [infoCollapsed, setInfoCollapsed] = useState(loadCollapsed)
+  const cardRefs = useRef(new Map<string, HTMLDivElement>())
+
+  const toggleInfo = useCallback(() => {
+    setInfoCollapsed(v => {
+      saveCollapsed(!v)
+      return !v
+    })
+  }, [])
+
+  const registerRef = useCallback((key: string, el: HTMLDivElement | null) => {
+    if (el) cardRefs.current.set(key, el)
+    else cardRefs.current.delete(key)
+  }, [])
+
+  const { allWeeks, upperCount, lowerCount, items, upperStartStr, lowerStartStr } =
     useMemo(() => {
       const upperStartStr =
         side === 'tw' ? (version.upper.twDate ?? '') : version.upper.cnDate
       const lowerStartStr =
         side === 'tw' ? (version.lower.twDate ?? '') : version.lower.cnDate
-      const upperActs =
-        (side === 'tw' ? version.upper.twActivities : version.upper.cnActivities) ?? []
-      const lowerActs =
-        (side === 'tw' ? version.lower.twActivities : version.lower.cnActivities) ?? []
 
-      // Upper half ends at lowerStart (natural boundary — activities may span across via colSpan)
+      // legacy shim：新欄位缺席時，把 deprecated 欄位翻譯成 TimedActivity，
+      // 否則靜態 fallback 資料（v2.8–v3.3）在 Worker 掛掉時會顯示成空甘特
+      const upperActs = activitiesOfHalf(version.upper, side, halfSpan(upperStartStr, lowerStartStr))
+      const lowerActs = activitiesOfHalf(version.lower, side, halfSpan(lowerStartStr, null))
+
+      // Upper half ends at lowerStart (natural boundary — activities may span across)
       const upperWeeks =
         upperStartStr && lowerStartStr
           ? generateWeeks(upperStartStr, lowerStartStr, [])
@@ -321,13 +359,51 @@ export default function VersionGanttPanel({
         : []
       const allWeeks = [...upperWeeks, ...lowerWeeks]
 
-      return { upperWeeks, lowerWeeks, allWeeks, upperActs, lowerActs, upperStartStr, lowerStartStr }
+      // 穩定 key：優先用 act.id（Phase 1 新欄位），未填時退回「半段+序號+名稱」。
+      // 純 index 會在陣列重排時讓選取狀態跳到別的活動身上。
+      const items: KeyedActivity[] = [
+        ...upperActs.map((act, i) => ({ key: act.id ?? `u${i}:${act.name}:${act.startDate}`, act })),
+        ...lowerActs.map((act, i) => ({ key: act.id ?? `l${i}:${act.name}:${act.startDate}`, act })),
+      ]
+
+      return {
+        allWeeks,
+        upperCount: upperWeeks.length,
+        lowerCount: lowerWeeks.length,
+        items,
+        upperStartStr,
+        lowerStartStr,
+      }
     }, [side, version])
 
   const totalWeeks = allWeeks.length
-  const upperCount = upperWeeks.length
-  const lowerCount = lowerWeeks.length
-  const allActs = [...upperActs, ...lowerActs]
+
+  // 三向連動的核心：被強調的活動（點選優先於 hover）決定要打亮哪幾個週欄。
+  const activeKey = selectedKey ?? hoveredKey
+  const activeCols = useMemo(() => {
+    if (!activeKey || totalWeeks === 0) return null
+    const found = items.find(i => i.key === activeKey)
+    if (!found) return null
+    const geom = activityGeometry(found.act, allWeeks)
+    if (!geom) return null
+    // 百分比 → 週欄索引；末欄用 ceil 前減一個 epsilon，避免剛好貼齊欄界時多亮一欄
+    const start = Math.floor((geom.leftPct / 100) * totalWeeks + 1e-6)
+    const end = Math.ceil(((geom.leftPct + geom.widthPct) / 100) * totalWeeks - 1e-6) - 1
+    return { start: Math.max(0, start), end: Math.min(totalWeeks - 1, Math.max(start, end)) }
+  }, [activeKey, items, allWeeks, totalWeeks])
+
+  const isColActive = (i: number) =>
+    activeCols !== null && i >= activeCols.start && i <= activeCols.end
+
+  // 點長條 → 對應卡片捲入視野
+  const handleSelect = useCallback((key: string | null) => {
+    setSelectedKey(key)
+    if (key) {
+      requestAnimationFrame(() => {
+        cardRefs.current.get(key)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+      })
+    }
+  }, [])
 
   const upperLabel = upperStartStr ? fmtShort(parseDate(upperStartStr)) : '—'
   const lowerLabel = lowerStartStr ? fmtShort(parseDate(lowerStartStr)) : '—'
@@ -335,7 +411,7 @@ export default function VersionGanttPanel({
   // 兩個表格共用相同欄寬定義，確保固定內容與活動甘特的欄位對齊
   const Colgroup = () => (
     <colgroup>
-      <col style={{ width: '110px', minWidth: '110px' }} />
+      <col style={{ width: `${LABEL_COL_PX}px`, minWidth: `${LABEL_COL_PX}px` }} />
       {allWeeks.map((_, i) => (
         <col key={i} style={{ minWidth: '80px' }} />
       ))}
@@ -353,19 +429,43 @@ export default function VersionGanttPanel({
       <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
         <div
           className="flex-1 min-h-0 flex flex-col"
-          style={{ minWidth: `${110 + Math.max(totalWeeks, 6) * 80}px` }}
+          style={{ minWidth: `${LABEL_COL_PX + Math.max(totalWeeks, 6) * 80}px` }}
         >
           {/* ── 容器 1：固定版本內容（機師 / 機甲 / 武裝關卡 / 討伐專武 / 討伐背包 / 角色戰令 / 機甲戰令）── */}
-          <div className="shrink-0 rounded-lg border border-border bg-bg-dark/40 overflow-hidden">
+          <div className={`shrink-0 rounded-lg border border-border ${SURFACE} overflow-hidden`}>
             <table className="border-collapse text-[13px] w-full" style={{ tableLayout: 'fixed' }}>
               <Colgroup />
               <thead>
                 <tr>
-                  <th
-                    rowSpan={2}
-                    className={`${LABEL} text-[13px] text-center tracking-[2px] uppercase text-text-dim`}
-                  >
-                    {side === 'tw' ? '台版' : '陸版'}
+                  <th rowSpan={2} className={`${LABEL} p-0`}>
+                    {/* 摺疊觸發點做成明確的按鈕：先前只有一個 10px 的 chevron 跟在
+                        文字後面，使用者反映看不出可以點。現在給它獨立的膠囊、邊框、
+                        動詞文字與 hover 底色 —— 可點性靠形狀與動詞，不能只靠一個符號。 */}
+                    <button
+                      type="button"
+                      onClick={toggleInfo}
+                      aria-expanded={!infoCollapsed}
+                      title={infoCollapsed ? '展開版本內容（機師 / 機甲 / 武裝關卡…）' : '收合版本內容，把空間讓給活動甘特與卡片'}
+                      className="group w-full h-full px-2 py-1.5 flex flex-col items-center justify-center gap-1
+                                 cursor-pointer transition-colors hover:bg-accent-orange/8"
+                    >
+                      <span className="text-[13px] tracking-[2px] uppercase text-text-dim
+                                       group-hover:text-text-secondary transition-colors">
+                        {side === 'tw' ? '台版' : '陸版'}
+                      </span>
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5
+                                   text-[11px] leading-none whitespace-nowrap transition-colors
+                                   border-accent-orange/40 bg-accent-orange/10 text-accent-orange/90
+                                   group-hover:border-accent-orange/80 group-hover:bg-accent-orange/20
+                                   group-hover:text-accent-orange"
+                      >
+                        <span className={`text-[9px] transition-transform duration-200 ${infoCollapsed ? '-rotate-90' : ''}`}>
+                          ▼
+                        </span>
+                        {infoCollapsed ? '展開' : '收合'}
+                      </span>
+                    </button>
                   </th>
                   {upperCount > 0 && (
                     <th
@@ -395,8 +495,10 @@ export default function VersionGanttPanel({
                   {allWeeks.map((week, i) => (
                     <th
                       key={i}
-                      className={`${TH} text-[13px] py-1.5 ${
-                        i < upperCount ? 'bg-[#151a24]' : 'bg-[#0e1820]'
+                      className={`${TH} text-[13px] py-1.5 transition-colors ${
+                        isColActive(i)
+                          ? 'bg-accent-cyan/20 shadow-[inset_0_0_0_1px_rgba(6,182,212,0.45)]'
+                          : i < upperCount ? 'bg-[#151a24]' : 'bg-[#0e1820]'
                       }`}
                     >
                       <div className={i < upperCount ? 'text-accent-orange/70' : 'text-accent-cyan/70'}>
@@ -412,49 +514,81 @@ export default function VersionGanttPanel({
               </thead>
               <tbody>
                 {totalWeeks > 0 && (
-                  <VersionInfoRows
-                    upper={version.upper}
-                    lower={version.lower}
-                    upperCount={upperCount}
-                    lowerCount={lowerCount}
-                    totalWeeks={totalWeeks}
-                  />
+                  infoCollapsed ? (
+                    <CollapsedSummaryRow
+                      upper={version.upper}
+                      lower={version.lower}
+                      upperCount={upperCount}
+                      lowerCount={lowerCount}
+                    />
+                  ) : (
+                    <VersionInfoRows
+                      upper={version.upper}
+                      lower={version.lower}
+                      upperCount={upperCount}
+                      lowerCount={lowerCount}
+                      totalWeeks={totalWeeks}
+                    />
+                  )
                 )}
               </tbody>
             </table>
           </div>
 
-          {/* ── 商店資訊：邊境商店 / 鬥技場（左右並列）── */}
-          <ShopRow version={version} />
+          {/* ── 版本層級補充資訊（商店 / 危境重構 / 記憶風暴 / 備註）── */}
+          {!infoCollapsed && <VersionExtras version={version} />}
 
-          {/* ── 容器 2：活動甘特（數量不定，內部垂直捲動）── */}
-          <div className="mt-2 flex-1 min-h-0 rounded-lg border border-border bg-bg-dark/40 overflow-y-auto overflow-x-hidden">
-            <table className="border-collapse text-[13px] w-full" style={{ tableLayout: 'fixed' }}>
-              <Colgroup />
-              <tbody>
-                {allActs.map((act, i) => (
-                  <ActivityGanttRow key={i} act={act} allWeeks={allWeeks} totalWeeks={totalWeeks} />
-                ))}
+          {/* ── 容器 2：甘特索引層 + 卡片內容層（同一個捲動容器，往下捲即銜接）── */}
+          <div className={`mt-2 flex-1 min-h-0 rounded-lg border border-border ${SURFACE} overflow-y-auto overflow-x-hidden overscroll-contain`}>
+            <div className="relative">
+              {/* 共用軸線層：週格線 / 上下半分界 / 今日線 */}
+              <GanttAxisOverlay
+                allWeeks={allWeeks}
+                upperCount={upperCount}
+                labelColPx={LABEL_COL_PX}
+              />
 
-                {/* 無資料時的提示列 */}
-                {allActs.length === 0 && (
-                  <tr>
-                    <td className={LABEL} />
-                    <td
-                      colSpan={Math.max(totalWeeks, 6)}
-                      className={`${TD} text-text-dim text-[10px] py-2`}
-                    >
-                      （暫無活動甘特資料）
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+              <table className="relative z-10 border-collapse text-[13px] w-full" style={{ tableLayout: 'fixed' }}>
+                <Colgroup />
+                <tbody>
+                  {items.map(item => (
+                    <ActivityGanttRow
+                      key={item.key}
+                      item={item}
+                      allWeeks={allWeeks}
+                      totalWeeks={totalWeeks}
+                      selectedKey={activeKey}
+                      onSelect={handleSelect}
+                      onHover={setHoveredKey}
+                    />
+                  ))}
+
+                  {/* 無資料時的提示列 */}
+                  {items.length === 0 && (
+                    <tr>
+                      <td className={LABEL} />
+                      <td
+                        colSpan={Math.max(totalWeeks, 6)}
+                        className={`${TD} text-text-dim text-[10px] py-2`}
+                      >
+                        （本半版本尚無登錄活動{side === 'cn' && ' — 陸版官網公告常有漏收'}）
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <ActivityCardFlow
+              items={items}
+              selectedKey={activeKey}
+              onSelect={handleSelect}
+              onHover={setHoveredKey}
+              registerRef={registerRef}
+            />
           </div>
         </div>
       </div>
-
-      <VersionLevelInfo version={version} />
     </div>
   )
 }

@@ -47,7 +47,12 @@ jobs:
       - name: Build (preview)
         run: npm run build
         env:
-          VITE_BASE_PATH: /mecharashi-tools/preview/${{ steps.branch.outputs.name }}/
+          # gh-pages 根目錄有 CNAME（mecharashi.wiki），GitHub Pages 因此改以**自訂網域的根**
+          # 提供服務，並把 gitfenix1113.github.io/mecharashi-tools/* 301 轉到自訂網域。
+          # 舊值 /mecharashi-tools/preview/<branch>/ 是網域搬遷前的專案頁前綴，搬遷後
+          # 該前綴在自訂網域下不存在 → index.html 拿得到（200）但它引用的 JS/CSS 全部 404，
+          # 預覽頁呈現白畫面。base 必須與主站一致，從根算起。
+          VITE_BASE_PATH: /preview/${{ steps.branch.outputs.name }}/
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
@@ -73,7 +78,9 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const url = 'https://gitfenix1113.github.io/mecharashi-tools/preview/${{ steps.branch.outputs.name }}/';
+            // 直接給自訂網域：github.io 那條會 301 轉過來，多一跳而已，且容易讓人誤以為
+            // 預覽站與正式站不同源（實際上同源，Worker 的 same-origin 檢查因此會通過）。
+            const url = 'https://mecharashi.wiki/preview/${{ steps.branch.outputs.name }}/';
             const body = `## Preview Deployment\n\n預覽連結：[${url}](${url})\n\n> 部署完成後約 1~2 分鐘生效`;
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,

@@ -178,6 +178,18 @@ export default function AdminPage() {
           </div>
           <span className="text-accent-green/50 ml-2 text-lg">›</span>
         </Link>
+        {/* 台版公告審核（PLAN-048 Phase 2）：爬蟲解析出的活動檔期在這裡確認後合併進版本 */}
+        <Link
+          to="/admin/announcements"
+          className="inline-flex items-center gap-3 px-5 py-3 bg-accent-orange/10 border border-accent-orange/30 rounded-xl hover:bg-accent-orange/20 hover:border-accent-orange/50 transition-colors no-underline"
+        >
+          <span className="text-accent-orange text-xl">📰</span>
+          <div>
+            <div className="text-sm font-bold text-accent-orange">台版公告審核</div>
+            <div className="text-xs text-text-dim">官方公告解析出的活動檔期待確認</div>
+          </div>
+          <span className="text-accent-orange/50 ml-2 text-lg">›</span>
+        </Link>
         {/* 使用統計（PLAN-046）：ADMIN 即可見——彙總數字、不含個人行為資料，
             敏感度低於下方的系統日誌（那個含裝置指紋，故限 OWNER）。 */}
         <Link

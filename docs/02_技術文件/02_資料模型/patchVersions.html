@@ -91,6 +91,16 @@
   font-size: 14px;
   color: var(--text-secondary);
 }
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
 .type-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -356,20 +366,46 @@
 
   <div class="decision-block">
     <strong>設計背景</strong>：鋼嵐所有活動均以<strong>星期四</strong>為起訖單位。
-    活動可用「起始日（週四）+ 持續週數」完整描述，結束日公式為
-    <code>endDate = startDate + weeks × 7 − 1 天</code>（即下週三）。
-    UI 元件自動計算結束日，不需手動填入。
+    活動可用「起始日（週四）+ 持續週數」完整描述。
+    <strong>結束時刻一律為 exclusive</strong>：<code>endExclusive = startDate + weeks × 7</code>，
+    即「最後一天的隔天 00:00」（weeks=1 → 當週四到下週三，下週四 00:00 結束）。
+    UI 元件自動計算，不需手動填入。
+  </div>
+
+  <div class="warning-block">
+    <strong>PLAN-048 Phase 1 擴充</strong>：新增 <code>id</code> / <code>rewards</code> /
+    <code>description</code> / <code>sourceUrl</code> / <code>confidence</code> / <code>typeLabel</code> 六個選填欄位，
+    並把 <code>type</code> 由硬 union 改為<strong>開放字串 + 靜態登錄表</strong>。<br>
+    另外，「進行中／第 N/M 週／剩幾天／末週」等狀態<strong>一律由 <code>startDate + weeks</code> 衍生</strong>
+    （<code>src/components/timeline/activityStatus.ts</code>），<strong>不存欄位</strong> ——
+    凡是能算的就不要問維護者，那是唯一零維護成本、100% 覆蓋率的資訊來源。
   </div>
 
   <div class="code-block">
 <span class="kw">export interface</span> <span class="ty">TimedActivity</span> {
-  name: <span class="ty">string</span>          <span class="cm">// 活動名稱，如「角雕刮刮樂」、「環島物流節」</span>
-  startDate: <span class="ty">string</span>     <span class="cm">// 起始日 YYYY/MM/DD，必須為星期四</span>
-  weeks: <span class="ty">number</span>         <span class="cm">// 持續週數（1 = 當週四到下週三）</span>
-  type: <span class="ty">ActivityType</span>    <span class="cm">// 決定甘特條顏色</span>
-  pilots?: <span class="ty">string</span>[]     <span class="cm">// pilotMission 型別時的機師列表</span>
-  mechs?: <span class="ty">string</span>[]       <span class="cm">// crossShipping 型別時的機甲列表</span>
+  <span class="cm">// ── 既有欄位 ──</span>
+  name: <span class="ty">string</span>              <span class="cm">// 活動名稱，如「角雕刮刮樂」、「環島物流節」</span>
+  startDate: <span class="ty">string</span>         <span class="cm">// 起始日 YYYY/MM/DD，慣例為星期四</span>
+  weeks?: <span class="ty">number</span>            <span class="cm">// 持續週數（1 = 當週四到下週三）；缺＝公告只寫「起」，該筆必然 hidden</span>
+  type: <span class="ty">ActivityTypeId</span>      <span class="cm">// 開放字串；未登錄型別走中性色 + typeLabel</span>
+  pilots?: <span class="ty">string</span>[]         <span class="cm">// pilotMission 型別時的機師列表</span>
+  mechs?: <span class="ty">string</span>[]          <span class="cm">// crossShipping 型別時的機甲列表</span>
+
+  <span class="cm">// ── PLAN-048 Phase 1 新增 ──</span>
+  id?: <span class="ty">string</span>              <span class="cm">// 穩定識別子 act_&lt;base36 時戳&gt;&lt;亂數&gt;；甘特↔卡片連動的錨點</span>
+  rewards?: <span class="ty">string</span>[]        <span class="cm">// 關鍵獎勵，逐項純字串；未填則前台解析 name 括號</span>
+  description?: <span class="ty">string</span>     <span class="cm">// 活動說明／規則，純文字，換行即分段</span>
+  sourceUrl?: <span class="ty">string</span>       <span class="cm">// 官方公告連結</span>
+  confidence?: <span class="st">'confirmed'</span> | <span class="st">'predicted'</span>  <span class="cm">// 未填視同 confirmed</span>
+  typeLabel?: <span class="ty">string</span>       <span class="cm">// 未登錄型別的顯示名（已登錄型別以登錄表為準）</span>
+
+  <span class="cm">// ── PLAN-048 Phase 2 新增 ──</span>
+  hidden?: <span class="ty">boolean</span>         <span class="cm">// 前台一律不顯示（資料未齊，補完取消勾選即上線）</span>
+  note?: <span class="ty">string</span>            <span class="cm">// 後台備註：缺什麼、去哪裡查。前台永不顯示</span>
 }
+
+<span class="cm">// 通過前台顯示閘門的活動：保證有 weeks 且未被隱藏</span>
+<span class="kw">export type</span> <span class="ty">VisibleActivity</span> = <span class="ty">TimedActivity</span> &amp; { weeks: <span class="ty">number</span> }
   </div>
 
   <table class="field-table">
@@ -390,9 +426,16 @@
     </tr>
     <tr>
       <td class="field-name">weeks</td>
-      <td class="field-type">number</td>
-      <td><span class="badge badge-req">必填</span></td>
-      <td>持續週數，最小值 1。UI 自動計算 <code>endDate = startDate + weeks × 7 − 1</code>。</td>
+      <td class="field-type">number?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>
+        持續週數，最小值 1。UI 自動計算 <code>endDate = startDate + weeks × 7 − 1</code>。<br>
+        <strong>PLAN-048 Phase 2 起改為選填</strong>：台版官方公告有 <strong>31%</strong> 只寫「10:00 起」、
+        不寫結束時刻（實測 625 筆中 193 筆，幾乎都是卡池）。填一個「慣例上大概兩週」進來，
+        就再也分不出哪些是官方寫的、哪些是系統猜的 —— 所以缺就留空。<br>
+        ⚠ <strong>不變式：缺 <code>weeks</code> 的活動必然 <code>hidden</code></strong>。
+        甘特沒有長度就畫不出長條，而畫一條長度是猜的長條比不畫更糟。
+      </td>
     </tr>
     <tr>
       <td class="field-name">type</td>
@@ -412,86 +455,213 @@
       <td><span class="badge badge-opt">選填</span></td>
       <td>僅 <code>crossShipping</code> 類型時填入，顯示於 tooltip。</td>
     </tr>
+    <tr>
+      <td class="field-name">id</td>
+      <td class="field-type">string?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>
+        穩定識別子，後台新增活動時自動產生（<code>act_&lt;base36 時戳&gt;&lt;亂數&gt;</code>）。
+        <strong>不是防禦性設計</strong>：甘特列與後台編輯器原本都以陣列 index 當 key，陣列一重排，
+        React key 與「目前選取哪個活動」的狀態就一起錯位。舊資料未填時，前台退回
+        <code>半段+序號+名稱+起始日</code> 組成的複合 key。
+      </td>
+    </tr>
+    <tr>
+      <td class="field-name">rewards</td>
+      <td class="field-type">string[]?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>
+        關鍵獎勵，逐項純字串（<code>['輕型通用改裝模組×1', '仿生超導體×2']</code>）。
+        <strong>刻意不做成 <code>{ name, qty, refKey }</code></strong>：實測 34 筆括號內容有四種形狀
+        —— 獎勵 15、外觀名 10、機制說明 6、空括號 1，結構化接不住後三種。<br>
+        未填時前台以 <code>splitActivityName()</code> 解析 <code>name</code> 的括號
+        （<code>src/data/patchVersions/activityText.ts</code>）。那是 <strong>runtime fallback 而非一次性遷移</strong>，
+        所以舊寫法與「未來又用老方法打字」都照樣顯示得出來。
+      </td>
+    </tr>
+    <tr>
+      <td class="field-name">description</td>
+      <td class="field-type">string?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>
+        活動說明／規則。純文字，換行即分段。
+        <strong>刻意不支援 ［］引用標記</strong>：會把 patchVersions 反向耦合到
+        <code>RefText</code>／<code>ReferenceContext</code> 全站體系，且 chip 開浮窗會與活動浮窗互相蓋。
+      </td>
+    </tr>
+    <tr>
+      <td class="field-name">sourceUrl</td>
+      <td class="field-type">string?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>官方公告連結，顯示於卡片右下角「官方公告 ↗」與詳情浮窗。台版公告管線（Phase 2）可 100% 自動填。</td>
+    </tr>
+    <tr>
+      <td class="field-name">confidence</td>
+      <td class="field-type">'confirmed' | 'predicted'?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>
+        資料成熟度，未填視同 <code>confirmed</code>。<code>predicted</code> → 長條虛線邊框 + 卡片標「推估」。<br>
+        這是回應「陸版官網常漏維護公告」<strong>唯一能在顯示層兌現</strong>的東西：缺的公告仍然缺，
+        但至少讀者分得出「查證過的」與「照慣例推的」。legacy shim 翻譯出來的活動一律標為 <code>predicted</code>。
+      </td>
+    </tr>
+    <tr>
+      <td class="field-name">typeLabel</td>
+      <td class="field-type">string?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>
+        <code>type</code> 不在登錄表時的顯示名（新玩法零部署上線用）。
+        已登錄型別的顯示名一律以登錄表為準 → 日後補登錄某型別時，先前填的 <code>typeLabel</code> 會自動被蓋過，<strong>無需回頭清資料</strong>。
+      </td>
+    </tr>
+    <tr>
+      <td class="field-name">hidden</td>
+      <td class="field-type">boolean?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>
+        前台一律不顯示這筆（甘特、卡片、首頁濃縮表全部略過）。<strong>PLAN-048 Phase 2 新增。</strong><br>
+        用途是「資料不完整但捨不得丟」：公告只寫了開始日、沒寫辦多久，那筆事實仍然有價值 ——
+        藏起來等補齊，好過整筆卡在待審清單裡被遺忘。補完資料後取消勾選即上線，<strong>不需要重跑爬蟲或審核流程</strong>。<br>
+        這是<strong>顯示閘門，不是軟刪除</strong>：不想要的活動請直接刪掉。
+      </td>
+    </tr>
+    <tr>
+      <td class="field-name">note</td>
+      <td class="field-type">string?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>
+        後台備註：<strong>缺什麼、為什麼藏起來、要去哪裡查</strong>。前台永不顯示。<br>
+        與 <code>description</code> 的分工很明確：<code>description</code> 是給讀者看的活動說明，
+        <code>note</code> 是給維護者看的待辦事項。混在一起的話，補完資料時得先分辨哪一段是要刪掉的施工註記。<br>
+        後台 <code>/admin/announcements</code> 的「規則待擴充」分頁會把所有 <code>hidden</code> 活動連同 <code>note</code> 彙總成待補清單。
+      </td>
+    </tr>
   </table>
+
+  <div class="warning-block">
+    <strong>⚠ 前台顯示閘門：<code>activitiesOfHalf()</code>（legacyActivities.ts）</strong><br>
+    這是前台讀取活動的<strong>唯一入口</strong>，也是「半成品不上首頁」的唯一保證點。它排除兩種活動，
+    兩個條件是同一件事的兩半、缺一不可：<br>
+    ① <code>hidden === true</code> —— 維護者明確標記「還沒好，先別上」。<br>
+    ② 缺 <code>weeks</code> —— 沒有長度就畫不出長條。<strong>這條不倚賴 <code>hidden</code> 有沒有被正確設定</strong>：
+    寫入端漏標的後果不該是前台畫出一條長度是猜的長條。<br>
+    通過閘門後型別收窄為 <code>VisibleActivity</code>（保證有 <code>weeks</code>），
+    下游 <code>ganttGeometry</code> / <code>activityStatus</code> 因此不必各自再防一次 undefined ——
+    「忘了過閘門」變成編譯錯誤，而不是執行期的 NaN。<br>
+    另一半防線在寫入端：<code>mergeIntoVersion</code> 與後台活動編輯器都會在 <code>weeks</code> 為空時自動補上 <code>hidden</code>。
+  </div>
+
+  <div class="info-block">
+    <strong>衍生狀態（不存欄位）</strong>：<code>activityStatus(act)</code> 從
+    <code>startDate + weeks</code> 導出 <code>phase</code>（upcoming／ongoing／ended）、
+    <code>weekIndex</code>（第 N 週，1-based）、<code>daysLeft</code>（含今天）、
+    <code>isFinalWeek</code>、<code>progress</code>（0–1）。
+    邊界以單元測試守住：最後一天仍是 <code>ongoing</code>，<strong>隔天</strong>才 <code>ended</code>。
+  </div>
 </section>
 
 <!-- ── ActivityType ── -->
 <section class="section">
-  <div class="section-label purple">ActivityType</div>
-  <div class="section-title">ActivityType — 活動類型與甘特條顏色</div>
+  <div class="section-label purple">ActivityTypeId</div>
+  <div class="section-title">ActivityTypeId — 活動類型（開放字串 + 靜態登錄表）</div>
+
+  <div class="decision-block">
+    <strong>PLAN-048 Phase 1 起改為開放字串。</strong>
+    硬 union 的問題是：新玩法出現時，待處理 buffer 會塞住 —— 要等工程師改 code + build + deploy
+    才能把該筆合併進版本。開放字串讓維護者<strong>當天就能上線</strong>（甘特以中性紫色虛線顯示、名稱走
+    <code>typeLabel</code>），之後在登錄表補一列給它配色即可，<strong>零資料遷移</strong>。<br>
+    <code>string &amp; {}</code> 讓 TS 不把 union 塌成 <code>string</code>，IDE 仍會自動完成已知值。
+  </div>
 
   <div class="code-block">
-<span class="kw">export type</span> <span class="ty">ActivityType</span> =
-  | <span class="st">'skinGacha'</span>           <span class="cm">// 角雕刮刮樂</span>
-  | <span class="st">'roulette'</span>            <span class="cm">// 角雕輪盤</span>
-  | <span class="st">'pilotMission'</span>        <span class="cm">// 角雕特遣（含機師列表）</span>
-  | <span class="st">'crossShipping'</span>       <span class="cm">// 跨域海運（含機甲列表）</span>
-  | <span class="st">'specificPilotBanner'</span> <span class="cm">// 特定角色限定卡池</span>
-  | <span class="st">'specificMechBanner'</span>  <span class="cm">// 特定機甲限定卡池</span>
-  | <span class="st">'limitedEvent'</span>        <span class="cm">// 限時活動（環島物流節等）</span>
-  | <span class="st">'loginEvent'</span>          <span class="cm">// 限時簽到活動（碼區補給等）</span>
-  | <span class="st">'battlePass'</span>          <span class="cm">// 版本戰令</span>
+<span class="cm">// src/data/patchVersions/types.ts</span>
+<span class="kw">export const</span> <span class="nm">KNOWN_ACTIVITY_TYPES</span> = [
+  <span class="st">'skinGacha'</span>, <span class="st">'roulette'</span>, <span class="st">'pilotMission'</span>, <span class="st">'crossShipping'</span>,
+  <span class="st">'specificPilotBanner'</span>, <span class="st">'specificMechBanner'</span>,
+  <span class="st">'limitedEvent'</span>, <span class="st">'loginEvent'</span>, <span class="st">'battlePass'</span>,
+  <span class="st">'topUpEvent'</span>,   <span class="cm">// Phase 1 新增：指定方式儲值（公告實測第 2 高頻，109 次）</span>
+] <span class="kw">as const</span>
+
+<span class="kw">export type</span> <span class="ty">KnownActivityType</span> = <span class="kw">typeof</span> KNOWN_ACTIVITY_TYPES[<span class="ty">number</span>]
+<span class="kw">export type</span> <span class="ty">ActivityTypeId</span> = <span class="ty">KnownActivityType</span> | (<span class="ty">string</span> &amp; {})
+
+<span class="cm">/** @deprecated 舊名保留讓既有 import 不炸；新程式碼請用 ActivityTypeId */</span>
+<span class="kw">export type</span> <span class="ty">ActivityType</span> = <span class="ty">KnownActivityType</span>
+  </div>
+
+  <div class="warning-block">
+    <strong>顏色由 9 色收斂為 5 個族群色</strong>（<code>src/components/timeline/activityTypeRegistry.ts</code>）。
+    原本角色池 <code>#79c0ff</code>、機甲池 <code>#58a6d4</code>、限時活動 <code>#06b6d4</code> 是<strong>三個相鄰冷藍</strong>，
+    而撞色的正好是語意上最需要分辨的角色池 vs 機甲池；九個色相在深色底 + banner 背景圖上根本分不開。<br>
+    收斂後靠<strong>第二編碼通道</strong>補回可辨識度 —— 色彩不該是唯一的資訊通道（對色覺障礙者而言那等於沒有編碼）：
+    ① 長條左端點<strong>形狀</strong>（圓／方／菱／三角／長條）② 永遠可見的<strong>型別文字標籤</strong>（印在甘特列左欄）。
+    單元測試守住「同族群內形狀不重複」。
   </div>
 
   <table class="field-table">
     <tr>
-      <th>ActivityType</th><th>顏色</th><th>甘特條簡稱</th><th>說明</th>
+      <th>ActivityTypeId</th><th>族群色</th><th>端點形狀</th><th>列標籤</th><th>說明</th>
     </tr>
     <tr>
       <td class="field-name">skinGacha</td>
-      <td><span class="color-dot" style="background:#ff6b2b;"></span>accent-orange</td>
-      <td>刮</td>
-      <td>角雕刮刮樂，通常持續 2 週</td>
+      <td rowspan="4"><span class="color-dot" style="background:#ff6b2b;"></span>抽卡族 accent-orange</td>
+      <td>菱形</td><td>刮刮樂</td><td>角雕刮刮樂，通常持續 2 週</td>
     </tr>
     <tr>
       <td class="field-name">roulette</td>
-      <td><span class="color-dot" style="background:#eab308;"></span>accent-yellow</td>
-      <td>輪</td>
-      <td>角雕輪盤，通常在版本末週</td>
+      <td>圓形</td><td>輪盤</td><td>角雕輪盤，通常在版本末週</td>
     </tr>
     <tr>
       <td class="field-name">pilotMission</td>
-      <td><span class="color-dot" style="background:#a855f7;"></span>accent-purple</td>
-      <td>特</td>
-      <td>角雕特遣，需填 <code>pilots</code> 列表</td>
+      <td>三角</td><td>特遣</td><td>角雕特遣，需填 <code>pilots</code> 列表</td>
     </tr>
     <tr>
-      <td class="field-name">crossShipping</td>
-      <td><span class="color-dot" style="background:#c9a0dc;"></span>#c9a0dc</td>
-      <td>海</td>
-      <td>跨域海運，需填 <code>mechs</code> 列表</td>
+      <td class="field-name">topUpEvent</td>
+      <td>方形</td><td>儲值</td><td>指定方式儲值（Phase 1 新增）</td>
     </tr>
     <tr>
       <td class="field-name">specificPilotBanner</td>
-      <td><span class="color-dot" style="background:#79c0ff;"></span>#79c0ff</td>
-      <td>角池</td>
-      <td>特定角色限定卡池</td>
+      <td rowspan="3"><span class="color-dot" style="background:#79c0ff;"></span>卡池族 #79c0ff</td>
+      <td>圓形</td><td>角色池</td><td>特定角色限定卡池</td>
     </tr>
     <tr>
       <td class="field-name">specificMechBanner</td>
-      <td><span class="color-dot" style="background:#58a6d4;"></span>#58a6d4</td>
-      <td>甲池</td>
-      <td>特定機甲限定卡池</td>
+      <td>方形</td><td>機甲池</td><td>特定機甲限定卡池</td>
+    </tr>
+    <tr>
+      <td class="field-name">crossShipping</td>
+      <td>三角</td><td>海運</td><td>跨域海運，需填 <code>mechs</code> 列表</td>
     </tr>
     <tr>
       <td class="field-name">limitedEvent</td>
-      <td><span class="color-dot" style="background:#06b6d4;"></span>accent-cyan</td>
-      <td>限</td>
-      <td>限時活動（環島物流節、回盤戰線等邏輯類活動）</td>
+      <td><span class="color-dot" style="background:#06b6d4;"></span>活動族 accent-cyan</td>
+      <td>圓形</td><td>限時活動</td><td>限時活動（環島物流節、回盤戰線等）</td>
     </tr>
     <tr>
       <td class="field-name">loginEvent</td>
-      <td><span class="color-dot" style="background:#22c55e;"></span>accent-green</td>
-      <td>簽</td>
-      <td>限時簽到活動（碼區補給等）</td>
+      <td><span class="color-dot" style="background:#22c55e;"></span>簽到族 accent-green</td>
+      <td>圓形</td><td>簽到</td><td>限時簽到活動（碼區補給等）</td>
     </tr>
     <tr>
       <td class="field-name">battlePass</td>
-      <td><span class="color-dot" style="background:#6b7280;"></span>gray-500</td>
-      <td>令</td>
-      <td>版本戰令（通常貫穿整個半版本）</td>
+      <td><span class="color-dot" style="background:#6b7280;"></span>戰令 gray-500</td>
+      <td>長條</td><td>戰令</td><td>版本戰令（通常貫穿整個半版本，端點形狀暗示延續性）</td>
+    </tr>
+    <tr>
+      <td class="field-name"><em>（未登錄）</em></td>
+      <td><span class="color-dot" style="background:#a855f7;"></span>中性 accent-purple（虛點框）</td>
+      <td>方形</td><td><code>typeLabel</code> 或「其他」</td>
+      <td>新玩法零部署上線；補登錄後自動改用登錄表的配色與名稱</td>
     </tr>
   </table>
+
+  <div class="info-block">
+    <strong>升級觸發點</strong>：目前刻意<strong>不</strong>把 <code>activityTypes</code> 開成新的 Firestore 集合 ——
+    <code>collectionKeys.ts</code> 已註明新增集合要同步四處（Worker <code>ARRAY_COLLECTIONS</code>、
+    <code>bump-data-version.mjs</code>、<code>entityRefs.ts</code> 的 <code>SPECS</code>、測試 helper），
+    PLAN-043 就是漏掉 <code>backpackSkills</code> 炸在正式站。
+    <strong>待未登錄型別穩定超過 20 種時再開集合</strong>，屆時資料形狀（id + label + tone）已對齊，遷移是複製貼上。
+  </div>
 </section>
 
 <!-- ── 資料範例 ── -->
