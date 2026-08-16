@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-033 後台編輯視窗加寬 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+.code-block .del { color: #f87171; }
+.code-block .add { color: #4ade80; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">觀察維護中</a>
+    <span>›</span>
+    <span class="current">PLAN-033 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-033</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    後台編輯視窗加寬<span style="-webkit-text-fill-color:var(--text-secondary);"> · AdminModal · 容器查詢 · 資訊密度</span>
+  </h1>
+  <p class="hero-sub">後台編輯彈窗固定 672px 過窄，維護者卻只在 PC 上作業。加寬到 90vw，並把多出來的寬度轉成欄位密度而非胖輸入框。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value cyan">PLAN-033</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-07-19</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">src/pages/user/admin/（12 分頁 + shared.tsx）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">開發收束 · 觀察維護中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">無</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>來源分析：</strong>
+    本計畫由本機評估 <code>_local-notes/後台編輯視窗加寬_工程量評估.html</code> 升級而來。
+    該筆記含一份可拉的寬度互動示範（滑桿 ＋「只做 A」/「A＋B」切換），
+    用 <code>WeaponAdmin</code> 數值頁的真實欄位重現「加寬但不改格線」的負優化效果。
+    寬度參數即由該示範實測定案：<strong>由初版提案的 80% 上修為 90%</strong>。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>1. 編輯彈窗固定 672px，為不存在的使用情境付代價</strong><br>
+    <code>AdminModal</code>（<code>shared.tsx:253</code>）的 <code>maxWidth</code> 預設為 <code>max-w-2xl</code>＝672px，
+    而 12 個後台分頁中有 <strong>10 個</strong>共用這層殼（Pilot / Weapon / Module / Mech / Buff / Backpack /
+    Component / Glossary / Skill / NeuralDrive）。672px 是通用彈窗尺寸——對一個「維護者只在 PC 上、
+    一次要對照數十個欄位」的後台而言，等於把大半個螢幕留白。
+  </div>
+
+  <div class="problem-block">
+    <strong>2. 高度早就夠了，感覺到的「小」純粹是寬度</strong><br>
+    殼層已是 <code>max-h-[90vh]</code>。因此本計畫<strong>完全不動高度</strong>，
+    所有工作集中在水平方向。這一點先釐清，可以省掉一整條沒必要的改動路徑。
+  </div>
+
+  <div class="problem-block">
+    <strong>3. 關鍵發現：單純加寬是負優化</strong><br>
+    <code>.input-field</code> 是 <code>width: 100%</code> 且無上限（<code>index.css:70</code>），
+    而 admin 目錄下 <strong>59 處 <code>grid-cols-*</code> 宣告有 58 處是固定欄數</strong>（僅
+    <code>GrayOpsAdmin:95</code> 有 rwd 前綴）。兩者相加的後果是：
+    <strong>多出來的寬度會 100% 變成「輸入框變胖」，而不是「一次看到更多欄位」。</strong><br><br>
+    最典型的是 <code>WeaponAdmin</code> 數值頁——6 個數字欄位被拆成
+    <strong>3 組獨立的 <code>grid-cols-2</code></strong>（<code>:321 / :325 / :329</code>）。
+    加寬到 1728px 後，「連擊數 hitCount」這種一位數的輸入框會被撐到約 <strong>820px 寬</strong>，
+    標籤與輸入內容之間出現大片空白，眼睛橫掃距離暴增；而 6 個欄位<strong>仍然佔 3 排，一排都沒省</strong>。
+    掃視成本反而比 672px 時更高。
+  </div>
+
+  <div class="warning-block">
+    <strong>因此 A 與 B 必須綁定交付。</strong>
+    「只改一行預設值」看似是廉價的快速勝利，實際上會讓後台比現在更難用。
+    這是本計畫最重要的判斷，也是為什麼它值得立成 PLAN 而不是隨手改掉。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label cyan">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：改單一旋鈕，不逐檔改寬度</strong><br>
+    10 個編輯器的寬度來自同一個 <code>AdminModal</code> 預設值，所以 Phase A 只動
+    <code>shared.tsx</code> 一處即可全數生效。<code>maxWidth</code> 這個 prop
+    <strong>本來就存在</strong>（型別宣告於 <code>shared.tsx:262</code>），不需要改動元件 API，
+    也不需要動任何呼叫端——除了刻意要維持窄版的那幾個（見決策五）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：寬度定為 <code>max-w-[min(90vw,1920px)]</code>（實測定案）</strong><br>
+    初版提案為 80vw，經來源筆記的互動示範實拉之後<strong>上修為 90vw</strong>。
+    外層再套一個 1920px 硬上限，純粹是防止超寬螢幕（3440px 以上）把彈窗撐到荒謬寬度；
+    在 2133px 以下的視窗中該上限完全不會觸發，行為就是單純的 90vw。
+    <span class="badge-low">可調</span> 若日後覺得上限礙事，拿掉 <code>min()</code> 只留 <code>90vw</code> 即可，無副作用。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 陷阱：絕對不要寫成 <code>w-[90vw]</code></strong><br>
+    殼層目前是 <code>w-full ${maxWidth}</code>（<code>shared.tsx:272</code>）。
+    <code>w-full</code> 與 <code>w-[90vw]</code> <strong>都在設 <code>width</code></strong>，
+    勝負取決於 Tailwind 產生的 CSS 規則順序，而不是你寫的 class 順序——這會是個難查的雷，
+    且可能在改動其他 class 時毫無徵兆地翻轉。
+    走 <code>max-w-*</code> 則與 <code>w-full</code> 是不同屬性，行為完全確定。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：格線用 CSS <code>auto-fill</code> 自動決定欄數</strong>
+    <span class="badge-good">執行中修訂</span><br>
+    <em style="color:var(--text-dim)">本決策在 Phase B 開工時由「階梯式容器查詢」修訂而來，原因見下方兩個發現。</em><br><br>
+    抽成單一共用常數（<code>shared.tsx</code>），全站套用：
+    <div class="code-block"><span class="kw">export const</span> <span class="nm">GRID_AUTO_FIELDS</span> =
+  <span class="st">'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))]'</span>
+
+<span class="cm">// 用法：保留各處原本的 gap</span>
+&lt;<span class="kw">div</span> className={`${<span class="nm">GRID_AUTO_FIELDS</span>} gap-3`}&gt;</div>
+    欄位多就排滿一列、欄位少就靠左留白不撐胖。因為量的是<strong>元素自身寬度</strong>而非視窗，
+    窄版彈窗與巢狀卡片內都會自動得到正確欄數，完全不需要斷點。
+    <br><br>
+    <span class="badge-med">關鍵</span>
+    是 <code>auto-fill</code> 不是 <code>auto-fit</code>——<code>auto-fit</code> 會收合空軌道、
+    讓現有欄位吃掉整列寬度，正好是本階段要消滅的胖輸入框。兩者只差一個字、行為相反。
+  </div>
+
+  <div class="warning-block">
+    <strong>發現一：階梯式斷點解不掉「欄位數本來就少」的區塊</strong><br>
+    原訂做法是 <code>grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-6</code>。
+    但 <code>WeaponAdmin</code> 的「射程」分頁只有 <code>minRange</code> / <code>maxRange</code>
+    <strong>兩個</strong>數字欄位——再多的斷點也排不滿，兩個框仍會各撐到約 830px。
+    這種「欄位數少於欄數」的區塊在後台不少（射程、元件插槽、改裝方案…），
+    而它們正是 Phase B 要解決的胖欄位問題本身。
+    <code>auto-fill</code> 一併解決：排不滿就留白，不把空間分給現有欄位。
+  </div>
+
+  <div class="warning-block">
+    <strong>發現二：<code>@container</code> 會打壞彈窗內的 IconPicker 浮層</strong>
+    <span class="badge-high">已修正</span><br>
+    A-1 一度在殼層加了 <code>@container</code>。它會套用 <code>container-type:inline-size</code>，
+    而該值隱含 <code>contain:layout</code>——<strong>layout containment 會讓該元素成為
+    <code>position:fixed</code> 子孫的 containing block</strong>。
+    <code>MechAdmin</code>、<code>BuffAdmin</code>、<code>ModuleAdmin</code>、<code>SkillAdmin</code>、
+    <code>NeuralDriveAdmin</code>、<code>PilotAdmin</code> 都在彈窗內使用
+    <code>IconField</code>（<code>components/admin/IconPicker</code>），該元件是
+    <code>fixed inset-0</code> 的全螢幕浮層——加了 <code>@container</code> 之後
+    <code>inset-0</code> 會改對齊彈窗的框而非視窗，浮層直接錯位。
+    <br><br>
+    改用 <code>auto-fill</code> 後不再需要容器查詢，該 class 已移除，
+    並在 <code>shared.tsx</code> 留下反向註解防止日後有人加回來。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：判準是「同質短欄位 vs 異質長欄位」，不是全部改成多欄</strong><br>
+    59 處格線並非全部都要動，估計實際需要改的約 35 處。
+    <table class="impact-table">
+      <thead><tr><th style="width:110px">情況</th><th>例子</th><th style="width:190px">處置</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="badge-good">要改</span><br><span style="font-size:11px;color:var(--text-dim)">同質短欄位</span></td>
+          <td>PilotAdmin 六維屬性 6 個數字擠在 <code>grid-cols-2</code>（<code>:1256</code>，要捲 3 排）<br>
+              WeaponAdmin 數值 6 欄拆成 3 組（<code>:321/325/329</code>）</td>
+          <td><code>grid-cols-2<br>@3xl:grid-cols-3<br>@5xl:grid-cols-6</code></td>
+        </tr>
+        <tr>
+          <td><span class="badge-med">看情況</span><br><span style="font-size:11px;color:var(--text-dim)">中等長度</span></td>
+          <td>PilotAdmin 稀有度 / 職業 / 駕駛許可 三個下拉（<code>:1214</code>）</td>
+          <td>維持 3 欄變寬即可，<br>或升到 <code>@4xl:grid-cols-6</code></td>
+        </tr>
+        <tr>
+          <td><span class="badge-low">不改</span><br><span style="font-size:11px;color:var(--text-dim)">異質長欄位</span></td>
+          <td>PilotAdmin 顯示名稱 / 全名（<code>:1210</code>）——本來就需要長輸入框<br>
+              <code>lore</code> Markdown textarea、圖片路徑欄位</td>
+          <td>維持現狀，變寬純加分</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：不是所有編輯器都該變寬</strong><br>
+    <code>GlossaryAdmin</code>（<code>:41</code>）、<code>NeuralDriveAdmin</code>（<code>:63</code>）、
+    <code>SkillAdmin</code>（<code>:64</code>）欄位數少，撐到 1728px 只會讓兩三個欄位漂在一片空白裡。
+    這三個顯式傳回 <code>maxWidth="max-w-2xl"</code> 維持現狀。
+    順帶把 <code>MechAdmin:344</code> 那個與舊預設值重複的顯式覆寫拿掉，讓它吃新預設。
+  </div>
+
+  <div class="info-block">
+    <strong>決策六：Phase C 延後，A＋B 先獨立交付</strong><br>
+    使用者已確認三階段全做，但 <strong>C 不急迫</strong>。A＋B 合計約半天、純 className 改動、
+    可獨立驗收；C（四個大編輯器的 Tab 版面重構）需 1～2 天且會動到元件結構與狀態，風險層級不同。
+    兩者之間沒有技術依賴，因此 C 標記為 <span class="badge-low">LOW · 延後</span>，
+    待 A＋B 上線實際用一段時間後，再依「Tab 切換是否真的造成困擾」決定是否啟動與採用哪個方案。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：Phase C 方向修正（2026-08-02，B 完成後重估）</strong><br>
+    原 Phase C 是在 <strong>Phase B 動工之前</strong>寫的，假設「分頁很擠，需要更好的版面容器」。
+    B 把格線改成 <code>GRID_AUTO_FIELDS</code> 之後重新實測，兩個前提都變了：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>分頁不是等量的，是「三小三大」。</strong>多數分頁已縮到 1～3 排，
+          而彈窗內容區在 1080p 下約 760px ≈ 10～11 排——小分頁三頁疊起來還不到一屏的一半。
+          真正惱人的是天賦這類展開後長達兩屏的分頁。</li>
+      <li><strong>病因不是「容器不夠好」，是「沒吃到寬度」。</strong>那些長分頁根本沒有
+          <code>grid-cols-*</code>，是純 <code>space-y-*</code> 垂直堆疊
+          （兩個 <code>min-h-[150px]</code> textarea 上下疊 ＋ RefPicker ＋ 兩組效果清單），
+          在 1700px 下只會變成超寬矮帶——寬度浪費、長度沒少。<strong>B 修的是格線，修不到它們。</strong></li>
+    </ul>
+    <br>
+    因此兩個原方案的處置：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>方案一（左側直排 Tab）＝ 刪除。</strong>切換次數一次都沒減少，
+          還要吃掉 140～180px 橫向空間——而橫向空間正是 A＋B 剛拿到的東西。淨收益為負。</li>
+      <li><strong>方案二（雙分區同顯）＝ 保留，但用在對的位置。</strong>
+          不是跨 Tab 並排（哪兩個配對沒有普適規則、兩欄高度不等時捲動難看），
+          而是在<strong>單一長分頁內部</strong>並排：左＝文本、右＝結構化資料。</li>
+      <li><strong>新增方案三（合併小分頁）＝ 採用為 C-1。</strong>
+          把 Tab 邊界降級成 section 標題 ＋ <code>border-t</code> 分隔，就在同一個捲動區裡。
+          這正是 B 已在單一分頁內做過的手法，只是把邊界從 Tab 提升到 section。</li>
+      <li><strong>新增 C-0（抽共用 <code>AdminEditTabs</code>）。</strong>原計畫未涵蓋：
+          四個檔案各寫一份幾乎相同的 Tab 列，其中 MechAdmin 樣式還不一致。純提取、零風險。</li>
+    </ul>
+    <br>
+    <strong>風險與工時同步下修：</strong>查核後確認 <code>form</code> 是 EditPanel 頂層的
+    <code>useState</code>、Tab 只是條件渲染，改版面不碰 state 也不碰
+    <code>handleSubmit</code> → <code>patchCollectionItem</code>——原估「會動到元件結構與狀態」
+    並不成立，工時由 1～2 天下修為<strong>約半天</strong>。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策八：天賦／神經驅動「獨立 detail page」不納入本 PLAN</strong><br>
+    使用者提出的方向，直覺正確（這些東西確實不該擠在彈窗裡）但診斷後確認不是本階段該做的：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>治不到病因。</strong>detail page 只是把同一條垂直堆疊搬到更高的容器裡，
+          捲動距離一樣長，淨收益僅「多約 200px 高度」。垂直堆疊本身已由 C-2 治掉。</li>
+      <li><strong>會動到資料寫入路徑。</strong><code>talents</code> / <code>neuralDrive</code> 是
+          <strong>內嵌在 pilot 文件的欄位</strong>（非獨立集合），而
+          <code>updatePilot</code>（<code>src/lib/api/pilots.ts</code>）是
+          <code>setDoc</code> <strong>無 merge、整份覆寫</strong>。
+          開 detail page 會出現兩個都會整份覆寫同一份文件的編輯面，且從彈窗跳過去會丟掉未存檔草稿。
+          要做對得處理草稿交接 / merge 寫入 / 路由——與本 PLAN「只改版面」的定位和風險層級不同。</li>
+      <li><strong>順序反了成本差很多。</strong>C-2 半天可驗證，做完很可能發現已經夠了；
+          先做 detail page 則是先花一天賭它不夠。</li>
+    </ul>
+    <strong>啟動條件：</strong>C-2 上線後，天賦編輯仍需捲動超過兩屏 → 屆時另開 PLAN。
+    <br>
+    <strong>先例參考：</strong>技能的效果本體早就外移到獨立的頂層分頁 <code>SkillAdmin</code>
+    （彈窗副標題即寫「效果於『技能管理』分頁編輯」）——本專案已走過一次「內容太大就外移」，
+    當時的結論是<strong>升級成頂層 admin 分頁，不是開 route</strong>。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label cyan">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>Phase A · 殼層加寬</strong>（~15 分鐘）—— <code>AdminModal</code> 預設寬度改
+          <code>max-w-[min(90vw,1920px)]</code>、殼層加 <code>@container</code>、
+          三個窄版編輯器例外處理、清掉 <code>MechAdmin</code> 冗餘覆寫、
+          <code>AdminPage</code> 外層列表容器 <code>max-w-6xl</code> 一併放寬（選配）。</li>
+      <li><strong>Phase B · 格線響應式化</strong>（2～3 小時）—— 依決策四的判準逐檔處理
+          Weapon(13) / Pilot(14) / Module(13) / 其餘(16) 的 <code>grid-cols</code>，
+          並在真實後台實測回調斷點階梯。</li>
+      <li><strong>Phase C · 分頁精簡與長分頁雙欄化</strong>（約半天；<span style="color:var(--accent-yellow)">2026-08-02 依決策七改寫，
+          原為「大編輯器版面重構 1～2 天」</span>）—— C-0 抽共用 <code>AdminEditTabs</code>；
+          C-1 合併小分頁（Weapon 6→4、Pilot 7→6、Mech 5→4，Module 不動）；
+          C-2 把長到必須捲的分頁內部改雙欄（TalentItem 展開體、ModuleAdmin basic、
+          WeaponAdmin mods、NdZoneCard）；C-3 驗證。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>手機 / 平板適配</strong>——後台維護者只用 PC，已明確排除。
+          這也是本計畫敢於大幅加寬的前提。</li>
+      <li><strong>前台彈窗</strong>——<code>AuthModal</code>、<code>RefPicker</code>、
+          <code>IconPicker</code> 各有自己的殼，不受 <code>AdminModal</code> 影響，不動。</li>
+      <li><strong><code>UserAdmin</code> 與 <code>GrayOpsAdmin</code></strong>——這兩個是 inline 版面、
+          不走 <code>AdminModal</code>。其中 <code>GrayOpsAdmin:95</code> 已經是響應式格線，無需處理。</li>
+      <li><strong>任何型別 / Firestore / 資料邏輯變更</strong>——全程只改 className，
+          不動 <code>src/types/</code>、<code>enums.ts</code>、<code>firestoreApi.ts</code>，
+          也不涉及任何 Firestore 讀寫。</li>
+    </ul>
+  </div>
+
+  <div class="info-block">
+    <strong>周邊成本：幾乎為零</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>不觸發 CLAUDE.md 規則 2 的文件同步</strong>——無型別 / enum / API 結構變更，
+          <code>docs/02_技術文件/</code> 完全不用碰；也沒有資料版本問題，不需 <code>bumpDataVersion</code>。</li>
+      <li><strong>commit 類型</strong>——<code>commit-msg</code> hook 會擋下未一併修改
+          <code>src/data/siteChangelog/</code> 的 <code>feat|fix|perf|style|refactor</code>。
+          但這是後台改動、一般使用者無感，依規則 1「摘要以使用者視角描述」的精神，
+          用 <code>chore</code> 類型 commit 即可豁免，不必硬塞一筆履歷。</li>
+      <li><strong>驗證方式</strong>——本機後台截圖須走 <code>port 5173</code>（Firebase referer 白名單）
+          ＋ 獨立 profile 手動登入。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label cyan">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-033 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-033 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 觀察維護中</a>
+</footer>
+
+</body>
+</html>

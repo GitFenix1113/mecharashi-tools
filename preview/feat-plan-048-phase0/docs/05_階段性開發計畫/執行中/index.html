@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>執行中計畫 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <span class="current">執行中</span>
+  </div>
+</nav>
+
+<header class="hero yellow">
+  <div class="hero-badge yellow">◆ Active Plans</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    執行中<span style="-webkit-text-fill-color:var(--text-secondary);">進行中的開發計畫</span>
+  </h1>
+  <p class="hero-sub">目前正在規劃或執行的功能改進與架構調整</p>
+</header>
+
+<main class="container">
+<section class="section">
+  <div class="section-label yellow">Plans</div>
+  <div class="section-title">計畫列表</div>
+  <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-048 · 時間線甘特圖改版</h3>
+      <p>甘特圖有三個結構性問題，而且<b>都不是調 CSS 能解的</b>。tooltip 被裁切是因為容器 <code>overflow-y-auto</code> 而浮窗 <code>absolute bottom-full</code> 永遠往上長——<b><code>z-index</code> 對 overflow 裁切無效</b>，實測共 11 層 clipping ancestor，只有 portal 有效。一週活動只剩一個 12px 圓點，因為 <code>activityToColumns()</code> 把起點量化到下一個週界，<b>實測 27/75 筆（36%）是這種</b>。而「維護者打了很多資料卻看不到」根本不是顯示問題——<code>TimedActivity</code> <b>沒有描述欄位</b>，獎勵只能硬塞進 <code>name</code>（<code>瑞歲百角戲(輕型通用改裝模組*1 仿生超導體*2)</code>）。<br>方案定調 <b>「甘特＝索引，卡片＝內容」</b>：甘特留在原地繼續與週次表共用同一條軸、降級成日精度概觀，內容改由正下方<b>同一個捲動容器</b>內的卡片流承載，並做甘特↔卡片↔週欄三向連動——這是四份提案中唯一<b>正面加強</b>「對照版本週次」原始動機的機制。評審抓到四案共同盲點：<b>把「資訊看不到」誤診成「資料不夠」</b>，玩家三個問題裡有兩個半能從既有 <code>startDate + weeks</code> 直接算出（第 N/M 週、剩幾天、末週），<b>零欄位、零維護成本、100% 覆蓋</b>。Phase 0 僅 5h、零資料模型變更即可全解前兩個痛點。<br>另含台版公告管線：實測台版是<b>靜態 JSON（副檔名 .html 但內容是 JSON），不需 Playwright</b>、無反爬，PoC 從 117 篇週報抽出 522 筆活動、名稱失敗率 0%；陸版公告頻道則已廢棄（2 篇、停在 2023-10），明確接受「台版自動化／陸版人工」的不對稱。<b>⚠ 258 篇公告只存在於前代理商網域 <code>ma.tentree-games.com</code>（代理權 2026-01-05 已移轉），全量歸檔優先度高於任何功能</b>，故排在 Phase 0。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-048_時間線甘特圖改版/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-048_時間線甘特圖改版/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-047 · 槽位與裝備限制模型</h3>
+      <p>機甲側<b>沒有任何欄位</b>說得出「我有幾個肩槽、幾個背槽」。武器側說得出自己的限制（<code>mechRestriction</code> / <code>equipSlot</code>），但反方向完全空白——REV-01 的［嵐質儲能艙］×2 要吃掉兩個肩槽這件事，<b>無法從武器側推導</b>。而模擬器的 <code>getFilteredWeapons</code> 全文<b>只有一條規則</b>（重量夠不夠），既不看機甲類型也不看槽位，於是輕型機甲照樣選得到 43 把中甲限定武器。本計畫補上共用槽位詞彙 <code>ArmamentMount</code>（<b>slot 直接沿用 <code>WeaponEquipSlot</code></b>——全站已有三套部位詞彙，第四套會與 <code>weapon.equipSlot</code> 不可互推，校驗腳本就寫不出來），並<b>刻意不開 <code>shoulderSlots</code> 欄位</b>：derive 規則已覆蓋 63/63，而同型別裡的 <code>leftShoulderSlot</code> 三欄設計良好卻<b>實測 0/62 填寫</b>，「保留未來可能性」改兌現成單一 derive 入口 <code>mechSlotCapacity()</code>。另有一條獨立的退場理由：<code>stripUndefined</code> 會濾掉 <code>undefined</code>，導致<b>槽位欄位一旦寫進去就再也取消不掉</b>。<br>「戰術武器限中甲」實測<b>不需要新規則</b>——<code>type==='戰術'</code>(43) 與 <code>mechRestriction==='medium'</code>(43) 雙向零反例，且 22 把肩武器 100% medium，武器側已 100% 表達。Phase D 順手修兩個既有 bug：背部武器與背包<b>可同時裝上</b>、以及 <code>:181</code> 把 <code>'中甲'</code>(ArmorType) 拿去比 <code>'中型'</code>(MechLicense) 造成的<b>靜默全放行</b>。掛 chassis 還是 MechPart 列為 Open Question（「同時攜帶兩門」的條件句與全機種通用的 <code>Ⅱ型接口</code> 都指向部件，但破曉者-01／霸王根本沒有武裝來源模組），連同舊存檔相容性一起阻塞資料落盤與 gate。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-047_槽位與裝備限制模型/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-047_槽位與裝備限制模型/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-046 · 網站使用統計</h3>
+      <p>目前唯一的觀測手段是 Firebase 主控台的讀寫次數，它能回答「花了多少額度」，卻答不出<b>「哪些頁面真的有人用」</b>——而後者才是決定改版順序與資料補齊順序的依據。更關鍵的是 <b>PLAN-029 的中國訪客策略至今無從驗證</b>：Worker 同源代理、字體自託管、邊緣改寫都做了，卻只能說「應該有用吧」。本計畫用長期閒置的 Firestore 寫入額度，建一套<b>同源第一方埋點</b>（走既有 <code>/api</code>，攔截器擋不掉、中國訪客也統計得到，這正是不用 GA4 的理由）。去重採<b>三層識別碼</b>：visitorId／sessionId（<b>10 分鐘</b>閒置，且閒置由活動訊號判定，否則慢讀者的 session 會被誤切）／已報頁面 Set，同頁同次造訪只計一次 UPV，但 PV 雙軌保留——兩者比值即「折返率」，是資訊沒給足的訊號。資料走<b>預聚合日文件</b>（看 30 天＝30 reads），一個 session 離站時 <code>sendBeacon</code> 批次寫一次，寫入量與逛幾頁完全脫鉤。<br>安全面：<b>不開匿名 Firestore 寫入</b>，改由 Worker 代寫，但這讓 Worker 從純唯讀變成有匿名可觸發的寫入路徑，因此立兩條鐵律（文件路徑由伺服器時間算出、欄位路徑一律由程式碼組出，payload 只准給數字）。另含<b>寫入預算熔斷器</b>（超出免費額度自動停止計數並標記 <code>truncatedAt</code>，避免報表默默說謊）與 <code>COLLECT_ENABLED</code> kill switch。Worker 端<b>刻意不放頁面白名單</b>，改用格式正則防護——放名單就是重演 PLAN-043 的雙名單不同步事故。不記錄個別使用者行為。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-046_網站使用統計/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-046_網站使用統計/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card red">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-042 · 機甲故事館</h3>
+      <p>機甲的逸聞目前只是詳情頁最底下一個 <code>&lt;p&gt;</code>，整段長文擠在數值表格之後；而官方遊戲內的逸聞是分 <b>PART 1 / PART 2</b> 章節、穿插娜塔莉亞等 NPC 頭像旁白的敘事體驗。本計畫另開 <code>/lore</code> 獨立路由做成左文右繪的沉浸式故事館，並復刻官網那招<b>「線稿顯影 → 彩圖疊上」</b>的立繪切換動畫——已實測拆解官網為四層背景圖 + 錯位淡入（線稿領先彩圖 250ms）；本站沒有線稿素材，改以 <b>color-dodge 素描濾鏡即時生成</b>，實測幾乎重現官方質感（邊緣偵測法已驗證不堪用）。順帶補上全站不存在的 <code>manufacturer</code> 欄位，以及撐得起全高面板的全身立繪素材層（現有 portrait 僅 560×340 半身裁切）。<br>因故事資料需<b>他人協助輸入</b>，另含兩塊：<b>新增 EDITOR 角色</b>（現行規則下所有集合皆 <code>read/write: if isAdmin()</code>，給人 ADMIN 等於交出全站讀寫權；改以 <code>affectedKeys().hasOnly()</code> 把可寫範圍鎖死在故事三欄位，且刻意不給 read、編輯台讀取改走 Worker <code>/api</code>），以及<b>靜態化出口</b>（資料定稿後逐台切成 <code>src/data/lore/</code> 零查詢，非全站一次切）。機師故事館與陣營勢力不在本期範圍。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-042_機甲故事館/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-042_機甲故事館/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-041 · 機師形態變化</h3>
+      <p>調構師的四個形態（先鋒／突擊／戰術／虛粒子）其實<b>已經有資料</b>——四筆文件躺在 pilotSkills 的 710 筆裡、正文逐字完整，但實測 <b>0 位機師的 skills 陣列引用它們</b>，前台從建立到今天一次都沒顯示過。而 <code>PilotSkill</code> 型別裝不下形態真正需要的東西（武器限制、固定武裝鎖定、顯示順序、增益連結），現況已經在拿 <code>skill.weapon.categories</code> 硬撐。本計畫把四筆遷成獨立的 <code>forms</code> 集合、改掉 12 條 inbound 引用、蓋出條件式第 4 分頁與跨分頁常駐的「特殊能力」列，並順手拆掉 PLAN-019-B 那套 0 筆資料、從未渲染過、卻仍在後台誘導維護者建錯地方的 mutexGroup 引擎。42 筆「形態 × 武器 → 子技能」矩陣列為 N2，可延後。<b>2026-08-09 訂正</b>：海莉絲突擊／先鋒形態多出的「備用武器槽」與 +300 出力上限，實測是<b>強襲者背包</b>（<code>backpacks/60101706</code>，全庫唯一的 <code>BackupEquipment</code>）給的，<b>不是形態能力</b>——形態既不改機甲數值也不改槽位配置，因此 <code>FormRestrict</code> 維持 discriminated union、<code>MechForm</code> 維持不開 <code>effects</code>，兩個核心決策都不必動。固定武裝清單同步從 4 種訂正為 6 種；槽位模型歸 PLAN-047，本計畫只與它共用 <code>ArmamentMount</code> 型別，阻塞不變也不加深。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-041_機師形態變化/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-041_機師形態變化/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-038 · 社群連結預覽（Open Graph）系統</h3>
+      <p>站長回報網站在 LINE 有連結預覽、Discord 完全沒有。診斷確認根因單一：<code>index.html</code> 沒有放任何 <code>og:*</code> 標籤——Discord 的爬蟲不執行 JS 也沒有 <code>&lt;title&gt;</code> fallback，找不到 <code>og:title</code>／<code>og:image</code> 就完全不顯示卡片；LINE 則退而求其次抓標題撐出陽春卡。分兩層修：Tier 1 補齊全站靜態標籤（可獨立上線）；Tier 2 延伸既有 Cloudflare Worker，用 HTMLRewriter 讓機師／機甲／武器詳情頁分享時顯示對應肖像與名稱。og:image 素材策略刻意重用既有實體圖片欄位，不另開一套美術維護線。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-038_社群連結預覽/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-038_社群連結預覽/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card pink">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-026 · 召喚單位展示</h3>
+      <p>部分機師的特殊召喚單位（如薩普莉婭的咕咕）有自己的技能、型態與裝備，本質是「迷你機兵」。建立獨立 summons 集合並在機師頁以條件式分頁展示；同時新增 summon refType，讓天賦正文的 [咕咕] 接進 PLAN-019 引用層變成可懸停、可點開的實體。資料無外部來源，走後台手動維護。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-026_召喚單位展示/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-026_召喚單位展示/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-019 · 實體引用與模擬基礎（總綱）</h3>
+      <p>【總綱 Master Plan】把「描述文字中對其他實體的引用」（如天賦內 [虛粒子形態]/[激發能]/[粒子爆發]）一般化為型別化、可解析、可模擬的關聯層。四層抽象：EntityRef 引用層、BUFF/形態模擬可達性圖、BOSS/關卡資料模型、表單式後台 + 查詢量控制。統合 PLAN-001/003/004/005 為子計畫，並拆出 019-A~E。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-019_實體引用與模擬基礎_總綱/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-019_實體引用與模擬基礎_總綱/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-010 · 攻略系統</h3>
+      <p>以 TipTap WYSIWYG 編輯器建立攻略 CMS，支援圖文並茂內容與 Firebase Storage 圖片上傳（Phase A）。Phase B 擴充自訂 EntityReferenceNode，可嵌入遊戲資料庫物件（機師/機甲/武器卡片），前台局部 Drawer 展開詳情，不跳頁。管理員寫、玩家讀。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-010_攻略系統/計畫書.html">→ 計畫書</a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · 執行中
+</footer>
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

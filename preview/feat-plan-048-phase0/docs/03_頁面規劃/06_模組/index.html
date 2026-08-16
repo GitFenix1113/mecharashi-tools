@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模組頁面規劃 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../index.html">頁面規劃</a>
+    <span>›</span>
+    <span class="current">模組</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge cyan">◆ Page Design</div>
+  <h1>模組圖鑑<span>MODULE PAGE · /modules</span></h1>
+  <p class="hero-sub">可獨立取得的模組（4模/8模/通用），各等級效果、篩選功能</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label cyan">頁面規格</div>
+  <div class="section-title">模組圖鑑 /modules</div>
+
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/modules</code></td></tr>
+    <tr><th>開發階段</th><td>Phase 3</td></tr>
+    <tr><th>登入需求</th><td>不需要</td></tr>
+    <tr><th>資料來源</th><td>Firestore: modules（available=true 的條目，排除副模組）+ mechs（建立「採用機甲」反查索引）</td></tr>
+  </table>
+
+  <div class="info-block" style="margin-top:16px;">
+    <strong>📌 顯示範圍</strong>
+    模組圖鑑只顯示 <code>available = true</code> 的模組，即 slot 為 "4模組"、"8模組"、"通用模組" 的條目。<br>
+    <strong>副模組（slot = "副模組"）不顯示於此頁</strong>，僅在機甲詳情頁與配裝模擬器中呈現。
+  </div>
+
+  <div class="sub-h" style="margin-top:24px;">篩選功能</div>
+  <div class="tech-row">
+    <span class="tech-tag primary">關鍵字搜尋（名稱 / 能力描述，可個別勾選）</span>
+    <span class="tech-tag secondary">依模組類型（特性模組 / 8級模組 / 通用模組）</span>
+    <span class="tech-tag tertiary">顯示副模組（checkbox，預設關閉）</span>
+    <span class="tech-tag">依稀有度（S / A，<strong>預設 S</strong>）</span>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">版面設計</div>
+  <div class="section-title">UI 區塊規劃</div>
+
+  <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">🧩</div>
+      <h3>模組卡片</h3>
+      <p>模組圖示、名稱、稀有度標籤（S/A）、槽位標籤（特性/8級/通用/副模組）。描述文字中的<strong>數字與 % 符號以紅色粗體標示</strong>（<code>highlightNumbers()</code>）。<br>
+      卡片本體由共用元件 <code>components/module/ModuleCard</code> 產出，<strong>與機甲詳情頁的模組區同一份實作</strong>（<code>variant</code> 區分圖鑑版／詳情頁版）。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">📊</div>
+      <h3>各等級效果（內嵌選擇器）</h3>
+      <p><strong>PLAN-044 改版：等級效果直接顯示在卡片上，不再是懸浮視窗。</strong>卡片內附等級選擇器（桌機為滑桿並顯示 <code>Lv.N/M</code>，行動裝置為等級按鈕列），切換後<strong>描述文字與數值標籤同步跟著該等級變動</strong>。<br>
+      預設落在<strong>滿級</strong>；等級狀態<strong>各卡獨立</strong>，不做全頁連動（模組等級上限不一致）。只有一級或無等級資料時選擇器整個不渲染。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">🗂️</div>
+      <h3>各等級一覽（「全部」按鈕）</h3>
+      <p>選擇器右側的 <strong>「全部」小按鈕</strong>可開出「各等級效果」浮窗，一次列出每一級的描述與數值——滑桿負責<strong>查閱單一等級</strong>，此處負責<strong>跨等級比較</strong>（哪一級跳幅最大）。<br>
+      桌機為可拖曳浮窗（標題列拖動、ESC／✕／點外部關閉，<strong>多張卡可同時開著並排比較</strong>）；行動裝置改開 BottomSheet。<br>
+      高度上限給到<strong>整個視窗高度</strong>而非固定比例：螢幕夠高時 8 級一次看完不捲動，放不下才退回捲動並貼齊視窗把高度用滿；視窗寬 ≥ 1024px 時浮窗加寬至 360px（換行變少、整體更矮）。當前選取的等級在一覽中<strong>高亮</strong>。與舊版的差異：<strong>只由按鈕開啟，不再 hover 觸發，也不與卡片點擊耦合</strong>。實作於 <code>components/module/ModuleAllLevels</code>。</p>
+    </div>
+    <div class="card green">
+      <div class="card-icon">📍</div>
+      <h3>數值標籤 &amp; 來源</h3>
+      <p>卡片底部顯示<strong>當前選取等級</strong>的非零數值標籤；值為 0 或未設定的欄位不渲染，整組皆空時連容器都不出現。<br>
+      標籤對照表 <code>STAT_LABELS</code> 以 <code>Record&lt;StatKey, …&gt;</code> 型別窮盡（<code>ModuleLevel</code> 新增數值欄位而未補標籤會編譯失敗），涵蓋基礎屬性、武器類別增傷與武器種類增傷共 32 個欄位；武器相關標籤直接引用 <code>WeaponType</code> / <code>WeaponKind</code> enum，與武器圖鑑用語保證一致。<br>
+      來源欄位顯示 <code>source</code> 陣列。<strong>拆解來源機甲（<code>dismantleMechIds</code>）刻意不顯示</strong>——「特性模組在誰身上，拆他就有」屬玩家常識，不在介面上解釋；該欄位僅後台可編。</p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">🤖</div>
+      <h3>採用機甲</h3>
+      <p>顯示採用此模組的機甲<strong>縮圖列</strong>（可點擊前往該機甲詳情頁；縮圖載不到時退回機甲名文字 chip，不留白）。<br>
+      由機甲端 <code>module4Id</code> / <code>module8Id</code> / <code>moduleFixedIds</code> 正向引用反查建立索引（<code>hooks/useModuleAdopters</code>）；含 8 級模組多機甲共用情形。反查落空時退回模組自身的 <code>boundMechId</code>。<br>
+      <span style="color:var(--text-dim);">※ 舊版依機甲數量在「對應機甲／採用機甲」兩種文案間切換，兩者實為同一份資料，已統一為「採用」。</span></p>
+    </div>
+  </div>
+
+  <div class="info-block" style="margin-top:16px;">
+    <strong>📐 版面與排序</strong>
+    格線卡片（1 欄 / 平板 2 欄 / 寬螢幕 3 欄）。篩選列固定於內容區頂部，不含側欄。<br>
+    <strong>排序：特性模組 → 8級模組 → 通用模組</strong>（副模組勾選顯示時排最後）；順序由 <code>utils/moduleSlots.ts</code> 的 <code>CATALOG_SLOTS</code> 陣列定義，<strong>與篩選按鈕共用同一份</strong>。同槽位內維持 Firestore 原始順序。<br>
+    <strong>稀有度預設篩選 S</strong>（可按「全部」放開）。<br>
+    機甲專屬模組（slot = "機甲專屬模組"）永遠排除，不顯示於圖鑑。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">資料需求</div>
+  <div class="section-title">Firestore 讀取</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="../../02_技術文件/02_資料模型/modules.html">
+      <div class="doc-tag">Collection</div>
+      <h4>🧩 modules</h4>
+      <p>各等級效果、綁定資訊、取得途徑（查詢條件：available = true）</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 頁面規劃 · 模組 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 頁面規劃總覽</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

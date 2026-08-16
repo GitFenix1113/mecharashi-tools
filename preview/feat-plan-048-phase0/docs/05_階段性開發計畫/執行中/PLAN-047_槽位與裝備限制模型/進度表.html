@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-047 槽位與裝備限制模型 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-047 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-047</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> · 槽位與裝備限制模型</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-09</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label purple">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">22</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">阻塞中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">22</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-purple);">0 / 22</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    機甲側第一次說得出「我有幾個槽、哪個槽被佔住」；破曉者-01 在模擬器裡選不到肩部武器、輕型機甲選不到 43 把中甲限定武器、
+    背部武器與背包不能同時裝，並順手修好中型執照篩選靜默全放行的 bug。<br>
+    <strong>2026-08-09 更新：Open Questions Q-A / Q-B / Q-C 三題全數答覆</strong>——固定武裝確定掛
+    <code>MechPart.fixedArmament</code>（左手綁左肩、右手綁右肩），<strong>B-1 因此解除 blocked</strong>；
+    Q-C 的答案（虛粒子形態<u>沒辦法調整任何裝備</u>）催生「兩種封鎖來源正交」，新增工項 <strong>A-4</strong>。<br>
+    <span style="color:var(--accent-green);">✅ 本計畫 <strong>0</strong> 個 blocked 工項</span>：Q-A／Q-B／Q-C 已答覆並吸收進決策；D-1 的舊存檔相容性經實測結案為「問題不存在」（<code>users</code> 0 筆、build 類文件 0 筆）。
+    該項未解前，Phase D 的 gate 工項不應動工。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label purple">Phase A</div>
+  <div class="section-title">型別與 derive（不依賴任何待答問題，可先做）</div>
+  <div class="section-desc">建立全站唯一的槽位詞彙與唯一的容量真相入口。這四項不碰資料、不碰 UI，做完就能開始寫校驗。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; ArmamentMount / SlotCapacity 共用型別</div>
+      <div class="task-group-meta">src/types/common.ts（或新 slots.ts）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增兩個共用 interface，slot 直接用 WeaponEquipSlot</div>
+        <div class="task-desc">
+          <code>ArmamentMount { weaponId; slot: WeaponEquipSlot; side?: 'left'|'right' }</code> ＋
+          <code>SlotCapacity { singleHand; shoulder; back; <strong>backupHand</strong> }</code>（<code>dualHand</code> 佔 2 個 <code>singleHand</code>，不是獨立槽，故不列）。<br>
+          <strong>註解必須寫死兩件事</strong>：① <u>不得</u>另造機甲側部位詞彙——全站已有三套
+          （<code>WeaponEquipSlot</code> <code>enums.ts:127-133</code>／<code>MechPartPosition</code> <code>enums.ts:40-46</code>／
+          <code>Backpack.slot</code> <code>backpack.ts:27</code>，後者註解逐字寫「與武器共用 enum」），第四套會與 <code>weapon.equipSlot</code> 不可互推；
+          ② <code>backupHand</code> 的值<strong>由背包決定</strong>，不由機甲或形態決定——
+          <code>backpack.type === 'BackupEquipment'</code>（<code>backpacks/60101706</code> 強襲者背包，全庫 181 筆僅此 1 筆）→ <strong>2</strong>，否則 <strong>0</strong>。<br>
+          <strong>⚠ 這一維本輪就要開（計畫書決策十一）</strong>：它與其他三維<strong>來自不同輸入</strong>
+          （<code>singleHand</code>／<code>shoulder</code>／<code>back</code> 只看 <code>mech</code>，<code>backupHand</code> 只看背包）。
+          先做成三維常數、之後才補，需要的會是「基礎容量 ＋ 裝備增量」兩層結構，等於把 <code>SlotCapacity</code> 重寫一次。<br>
+          <span style="color:var(--text-dim);">備用槽的規格（使用者 2026-08-09 逐字）：2 格與主手同構、雙手武器直接佔 2 格、
+          交換是<strong>原子操作</strong>（「不能換單一把，替換就是直接兩手都換」）、內容<strong>玩家自選</strong>（只要負重夠）。
+          <u>實際配裝</u>本輪不做——卡在 <code>Build.weaponId</code> 是單值 <code>string</code>。</span>
+        </div>
+        <div class="task-file">src/types/common.ts · src/types/index.ts（barrel）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">刻意不開 Mech.shoulderSlots?: number</div>
+        <div class="task-desc">
+          今天需要覆寫的機甲 <strong>0 台</strong>，derive 覆蓋 <strong>63/63</strong>（mechs 63 筆：輕型 19 / 中甲 25 / 重型 19）。<br>
+          前車之鑑要寫進註解：<code>leftShoulderSlot</code> 三欄設計良好（三態語意）、後台有編輯器、docs 有記載——<strong>實測 0/63 填寫</strong>。
+          未來真出現例外，正確形狀是 <code>slotOverride?: Partial&lt;SlotCapacity&gt;</code>（與 PLAN-041 形態層共用），<strong>不是</strong>孤立的 scalar。
+        </div>
+        <div class="task-file">src/types/mech.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; mechSlotCapacity() 單一 derive 入口</div>
+      <div class="task-group-meta">src/utils/mechSlots.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">全站唯一知道「一台機甲有幾個槽」的地方</div>
+        <div class="task-desc">
+          <code>singleHand: 2</code>（全機種）／<code>shoulder: isMedium ? 2 : 0</code>／<code>back: 1</code>（<strong>全機種</strong>）／
+          <code>backupHand: 0</code>（<strong>全 63 台皆 0</strong>——機甲不決定這一維，由背包給，見 A-1 ②）。<br>
+          <strong><code>back: 1</code> 不可寫成中甲限定</strong>：實測 <code>backpacks</code> 的 <code>assemblableArmorType</code> 分布為
+          無限制 106 / 限輕 35 / 限中 21 / 限重 19 → 那 35 個「限輕」背包若輕型機甲沒有背槽就永遠無處可裝。
+          真正限中甲的是背部<u>武器</u>，那件事由 <code>weapon.mechRestriction</code> 表達。
+        </div>
+        <div class="task-file">src/utils/mechSlots.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">條件一律用 ArmorType.MEDIUM，禁止中文字面量</div>
+        <div class="task-desc">
+          <code>mech.armorType === ArmorType.MEDIUM</code>，<strong>不可寫 <code>'中甲'</code></strong>。
+          這條是 <code>SimulatorPage.tsx:181</code> 的直接教訓：那行把 <code>'中甲'</code>（<code>ArmorType.MEDIUM</code>，<code>enums.ts:35</code>）
+          拿去比 <code>pilot.license</code>（<code>MechLicense.MEDIUM</code> = <code>'中型'</code>，<code>enums.ts:14-19</code>），
+          兩者只差一個字 → 條件永遠為假 → <strong>靜默全放行</strong>。打錯常數名 tsc 會報，打錯中文字面量不會。
+        </div>
+        <div class="task-file">src/utils/mechSlots.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 槽位一致性校驗腳本</div>
+      <div class="task-group-meta">scripts/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">mount.slot === weapon.equipSlot，允許 0 例外</div>
+        <div class="task-desc">
+          掃全部機甲的 <code>ArmamentMount[]</code>，逐筆比對該 <code>weaponId</code> 在 <code>weapons</code> 集合裡的 <code>equipSlot</code>。
+          <strong>這條規則只有在兩邊共用同一個 enum 時才寫得出來</strong>，是 A-1 採用共用型別最直接的回報。<br>
+          同時檢查：<code>side</code> 只在 <code>singleHand</code> / <code>shoulder</code> 出現；同一 <code>(slot, side)</code> 不得重複；
+          佔用數不得超過 <code>mechSlotCapacity()</code> 的容量。
+        </div>
+        <div class="task-file">scripts/validate-mech-slots.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; occupiedSlots() / lockedSlots() 兩個獨立 derive</div>
+      <div class="task-group-meta">src/utils/mechSlots.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">兩種槽位封鎖來源正交，禁止合併成一個函式</div>
+        <div class="task-desc">
+          <strong>① 佔據型（機甲部件層）</strong>：<code>occupiedSlots(mech)</code> 讀 <code>mech.parts.leftArm/rightArm.fixedArmament</code>，
+          回傳被固定武裝<u>實際佔住</u>的 <code>ArmamentMount[]</code>——<strong>只擋該槽，其他槽照常</strong>
+          （破曉者-01 兩個肩槽滿了，雙手與背部仍可配裝）。<br>
+          <strong>② 全鎖型（機師形態層）</strong>：<code>lockedSlots()</code> 回傳該情境下<u>完全不可調整</u>的槽——<strong>與有沒有被佔住無關</strong>。
+          依據是 Q-C 答覆逐字：「不只是不能帶背包，虛粒子形態<strong>沒辦法調整任何裝備</strong>」，比 PLAN-041 引用的官方原文「無法變更武裝和技能」更強。
+          截圖中虛粒子形態<strong>雙肩顯示為空的 <code>[+]</code> 卻點不下去</strong>——該形態三把固定武裝佔的是右手／左手／背部，<strong>雙肩根本沒被佔住</strong>。<br>
+          <strong>合併的代價（三條）</strong>：(a) UI 講不出「被［嵐質儲能艙］佔住」與「這個形態不能換裝備」的差別；
+          (b) gate 行為不同——佔據型只擋該槽、全鎖型擋全部，合併後全鎖型得為每個槽塞一筆<u>沒有 <code>weaponId</code></u> 的假佔據紀錄；
+          (c) 落盤層級不同——佔據型是機甲資料（本計畫），全鎖型是形態資料（PLAN-041），合併會讓兩個計畫共寫同一欄位。<br>
+          <span style="color:var(--text-dim);">本計畫只交付 ①，並保證 ② 是獨立函式；② 的<u>參數形狀與資料來源</u>待 PLAN-041 的 <code>forms</code> 集合落地。</span>
+        </div>
+        <div class="task-file">src/utils/mechSlots.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label purple">Phase B</div>
+  <div class="section-title">資料落盤（前置：PLAN-040 的 6 筆武器文件）</div>
+  <div class="section-desc">把三台機甲的固定武裝寫進 Firestore。形狀已由 Open Questions Q-A 定案（掛 <code>MechPart</code>），<strong>不再阻塞</strong>。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; MechPart.fixedArmament?: ArmamentMount[]（Q-A 已定案）</div>
+      <div class="task-group-meta">src/types/mech.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">固定武裝掛部件，leftArm → 左肩槽、rightArm → 右肩槽</div>
+        <div class="task-desc">
+          <strong>2026-08-09 解除 blocked</strong>。使用者對 Q-A / Q-B 的答覆逐字：「<strong>會，跟手臂綁在一起，左手綁左肩、右手綁右肩。</strong>」
+          → 三個候選方案中 <strong>(1) 掛部件勝出</strong>，(2) <code>source</code> 判別、(3) 混合 derive <strong>作廢</strong>。<br>
+          <strong>四條佐證鏈</strong>：① <code>enums.ts:130</code> 逐字 <code>SHOULDER: 'shoulder', // 肩膀：<u>左臂或右臂其中一個肩膀</u></code>——專案自己的 enum 早就這樣定義；
+          ② <code>mod_帕斯卡_fixed_2</code> <code>boundPart:["rightArm"]</code> / <code>_fixed_3</code> <code>["leftArm"]</code>，描述逐字「<strong>同時攜帶兩門</strong>[衝擊炮]時」
+          （只有在「可能只有一門」時才需要這句，而只有換掉單邊手臂才做得到）；
+          ③ 霸王·多功能彈倉逐字「MCT-AP07霸王于肩部外側掛載的增設彈倉，通過硬式彈鏈導軌<strong>向同側手臂</strong>所持雙聯裝速射機炮供彈」；
+          ④ 破曉者-01·嵐質儲能艙逐字「REV-01捨棄了<strong>肩部</strong>戰術武器的部署接口與空間…能在<strong>手臂部位</strong>被破壞時…即刻修復手臂」。<br>
+          <strong>模型因此比立案時預想的更簡單</strong>：三台<u>走同一條路徑</u> → <strong>不需要 <code>source: 'part'|'chassis'</code> 判別欄位</strong>、
+          <strong>不開 <code>Mech.fixedArmament</code>（chassis 層）</strong>——後者順帶消除與 PLAN-041 <code>FormRestrict.fixedArmament</code> 的同名異義。<br>
+          <strong>換部件語意天然正確</strong>：換掉帕斯卡右臂 → 右肩衝擊炮消失、右肩槽解除封鎖，不需要任何額外規則。
+          底盤視角（這台機甲共有哪些固定武裝）＝ flatten 四個部件，<strong>純 derive、不落盤第二份</strong>。<br>
+          <strong>⚠ 邊界聲明仍要明講</strong>：站上呈現的是<strong>原廠配置</strong>，部件混裝不在表達範圍
+          （<code>MechPart.interface</code> <code>mech.ts:19</code> 全庫 252 個部件僅一種值：<code>Ⅱ型接口</code> 248 ＋ 髒資料 <code>ⅠⅠ型接口</code> 4 → 全機種互通，混裝是做得到的）。
+        </div>
+        <div class="task-file">src/types/mech.ts（MechPart，mech.ts:3-24）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 三台機甲的固定武裝落盤</div>
+      <div class="task-group-meta">mechs 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">帕斯卡 / 破曉者-01 / 霸王，各兩門肩部固定武裝</div>
+        <div class="task-desc">
+          <code>mech_022_帕斯卡</code>（中甲）→ 衝擊炮 ×2（左右肩）；
+          <code>mech_027_破曉者-01</code>（中甲）→ 嵐質儲能艙 ×2；
+          <code>mech_050_霸王</code>（中甲）→ 多功能彈倉 ×2。
+          三台皆為<strong>中甲</strong>，肩槽容量 2，落盤後<strong>兩個肩槽全滿</strong>。<br>
+          <strong>落盤位置（B-1 定案）</strong>：<u>不是</u>寫在機甲頂層，而是各寫一筆進
+          <code>parts.leftArm.fixedArmament</code> 與 <code>parts.rightArm.fixedArmament</code>——
+          每台機甲的<strong>兩隻手臂各一筆</strong>，不是一台一個陣列兩筆。<br>
+          破曉者-01 的 lore 逐字佐證此設定在機體層成立：「REV-01<strong>捨棄了肩部戰術武器的部署接口與空間</strong>，替換為嵐物質粒子儲存裝置…」。<br>
+          <strong>彌造者的耀星／隕星／千星不在此落盤</strong>——來源是海莉絲［虛粒子形態］，屬 PLAN-041 的 Form 層。
+        </div>
+        <div class="task-file">mechs 集合 · scripts/temp_scripts/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">用陣列存，不用選填 scalar</div>
+        <div class="task-desc">
+          <code>firestoreCore.ts:43-53</code> 的 <code>stripUndefined</code> 會遞迴濾掉 <code>undefined</code>（保留 <code>null</code>），各集合 <code>update*</code> 共用。
+          → <strong>一旦某台機甲寫進了 scalar 槽位欄位，後台再也無法把它取消</strong>（取消勾選寫的正是 <code>undefined</code>，會被整個濾掉，
+          <code>updateDoc</code> 於是「沒提到它」而非「刪除它」，舊值原封不動）。<br>
+          陣列形狀天然避開：清空＝寫 <code>[]</code>，是一個真實的值。
+        </div>
+        <div class="task-file">src/lib/api/firestoreCore.ts（僅參照，不改）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 純封鎖型武裝的封鎖效果驗證</div>
+      <div class="task-group-meta">scripts/ · mechs 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">跑 A-3 校驗，確認三台的肩槽剩餘容量為 0</div>
+        <div class="task-desc">
+          用 <code>mechSlotCapacity()</code> 減去 <code>ArmamentMount[]</code> 的佔用數，
+          帕斯卡／破曉者-01／霸王三台的 <code>shoulder</code> 剩餘應為 <strong>0</strong>，其餘 <strong>22</strong> 台中甲應為 <strong>2</strong>、<strong>38</strong> 台非中甲應為 <strong>0</strong>（本來就沒有）；三者合計 63 台，腳本輸出須完全對帳。<br>
+          <strong>⚠ 2026-08-09 更新：本項的「找漏網之魚」用途已消滅</strong>。PLAN-040 規格 Q2 已答，使用者逐字：
+          「沒有，目前有固定武裝的我都<strong>列上來了</strong>，君權、青鳥、奈芙蒂斯、復仇女神都<strong>沒有</strong>固定武裝。」→ 固定武裝<strong>已窮舉 6 種</strong>。<br>
+          <strong>連帶：「可用載重 1150」這個訊號已作廢，不要再據此推導</strong>——霸王 1150 <u>有</u>固定武裝，君權／青鳥／奈芙蒂斯同樣 1150 卻<u>沒有</u>，該訊號<strong>不具判別力</strong>。
+          本項因此收斂為<strong>純對帳</strong>（63 台加總相符），不再產出高嫌疑清單。
+        </div>
+        <div class="task-file">scripts/validate-mech-slots.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label purple">Phase C</div>
+  <div class="section-title">前台與後台：讓槽位看得見、編得動</div>
+  <div class="section-desc">三個死槽位在這階段正式退場，並由固定武裝編輯器<strong>接手</strong>——不是刪完不補。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 機甲詳情頁「固定武裝」區塊</div>
+      <div class="task-group-meta">src/pages/mechs/MechDetailPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">從 PLAN-040 D-3 移交，UI 規格三條寫死</div>
+        <div class="task-desc">
+          ① <strong>同一把佔兩肩 → 合併顯示「×2」</strong>，不分槽列兩張卡。
+          <span style="color:var(--text-dim);">（理由已隨 Q-A 答覆更新）</span>「同時攜帶兩門」現在<strong>確定不是文案慣用語</strong>——左右臂可分別更換，「只有一門」真的做得到；
+          但站上呈現的是<strong>原廠配置</strong>，原廠就是兩門，合併顯示仍然成立，<u>差別只在理由從「資訊量最保守」變成「與原廠配置這條邊界一致」</u>。
+          分兩張卡反而誘導使用者以為站上支援單邊配置。<br>
+          ② <strong>React key 用 <code>`${slot}:${side}`</code>，<u>不可</u>用 <code>w.id</code></strong>——既有慣例是
+          <code>WeaponsPage.tsx:500</code> 的 <code>key={w.id}</code>，照抄會<strong>直接撞 key</strong>（左右肩是同一個 <code>weaponId</code>）。<br>
+          ③ <strong>沒有固定武裝 ⇒ 整區不渲染</strong>，絕不渲染「無固定武裝」字樣。
+          <span style="color:var(--text-dim);">（理由已隨 Q2 答覆更新）</span>清單現在是「<strong>已窮舉 6 種</strong>」，但這條規則<strong>維持不變</strong>：
+          未來改版仍可能出現新的固定武裝機甲，「整區不渲染」讓「未知」與「沒有」共用同一種呈現，不把一句<strong>肯定的否定陳述</strong>寫死在頁面上。
+        </div>
+        <div class="task-file">src/pages/mechs/MechDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; MechAdmin 武器槽分頁 → 固定武裝編輯器</div>
+      <div class="task-group-meta">src/pages/user/admin/MechAdmin.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">替換，不是移除</div>
+        <div class="task-desc">
+          新編輯器產出 <code>ArmamentMount[]</code>：選武器 → 選 <code>slot</code> → 選 <code>side</code>（僅 <code>singleHand</code> / <code>shoulder</code> 顯示）。
+          選武器時<strong>依 <code>mechSlotCapacity()</code> 過濾</strong>，容量 0 的槽不可選。<br>
+          <strong>寫入位置由 B-1 定案</strong>：產出<u>不是</u>存進機甲頂層，而是寫進
+          <code>mech.parts.leftArm.fixedArmament</code> / <code>parts.rightArm.fixedArmament</code>。
+          因此編輯器的 <code>side</code> 不是自由欄位，而是<strong>決定寫進哪一隻手臂</strong>：左肩 ⇒ <code>leftArm</code>、右肩 ⇒ <code>rightArm</code>。<br>
+          <strong>不能只刪不補</strong>：三台機甲的固定武裝需要後台入口才落得了盤，否則只剩 migrate 腳本能寫，違反「資料由後台維護」的既有慣例。
+        </div>
+        <div class="task-file">src/pages/user/admin/MechAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 刪除三個死槽位與 SlotEditor</div>
+      <div class="task-group-meta">src/types/mech.ts · MechAdmin.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">解除 PLAN-040 的凍結，正式退場</div>
+        <div class="task-desc">
+          刪 <code>mech.ts:56</code> <code>leftShoulderSlot</code> / <code>:57</code> <code>rightShoulderSlot</code> / <code>:62</code> <code>backSlot</code> 與其型別註解；
+          刪 <code>MechAdmin.tsx:559-561</code> 三個 <code>SlotEditor</code> 呼叫點與 <code>:638</code> 的元件本體。<br>
+          <strong>必須排在 C-2 之後</strong>——先有替代入口才拆舊的。
+          退場理由有兩條且各自獨立：實測 0/63 使用率（前台零消費端）＋ <code>stripUndefined</code> 讓三態設計只剩兩態可用（見 B-2）。
+        </div>
+        <div class="task-file">src/types/mech.ts · src/pages/user/admin/MechAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label purple">Phase D</div>
+  <div class="section-title">模擬器 gate 與兩個既有 bug</div>
+  <div class="section-desc">今天的 <code>getFilteredWeapons</code>（<code>SimulatorPage.tsx:187-191</code>）<strong>全文只有一條規則</strong>：<code>w.weight &lt;= mech.output - mech.weight</code>。這階段把它補成三條，並修掉同一段程式碼裡的兩個 bug。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 確認：無舊存檔需要相容（已結案）</div>
+      <div class="task-group-meta">src/types/user.ts · ProfilePage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">實測複核「0 筆存檔」，並在程式碼留下重新引爆的條件</div>
+        <div class="task-desc">
+          <strong>本項原為三選一的拍板題（照顯示／標紅提示／靜默失效），2026-08-09 結案為「問題不存在」</strong>：
+          使用者聲明配裝模擬<strong>從未對外開放</strong>；Firestore 唯讀實測 <code>users</code> 集合 <strong>0 筆</strong>文件、
+          全庫 build 類文件合計 <strong>0 筆</strong>、頂層 22 個集合中亦無獨立 builds 集合。
+          → <strong>gate 可直接上線，不需要合法性檢查器、不需要提示 UI、不需要 <code>Build</code> 版本欄位。</strong><br>
+          本項剩下的實際工作只有兩件：① 動工當日再跑一次唯讀確認仍為 0 筆；
+          ② 在 <code>src/types/user.ts</code> 的 <code>Build</code> 上加一行註解——
+          <strong>「開放配裝儲存／分享之前必須先補版本欄位」</strong>，因為現況
+          <code>Build</code>（<code>:40-58</code>）只有 <code>createdAt</code> / <code>UserBuild.updatedAt</code>、無版本號故無法 lazy migration，
+          且 <code>ProfilePage.tsx:238-240</code> 直接印 <code>build.weaponId</code> 原始字串、連武器還在不在都沒檢查。<br>
+          <span style="color:var(--text-dim);">⚠ 別跟另一個 <code>Build</code> 缺口混為一談：<code>weaponId</code>（<code>user.ts:44</code>）是單值 <code>string</code>，
+          表達不了強襲者背包的「主手一套 ＋ 備用一套」——那條記在計畫書 Inherited，屬模擬器改版，與本項無關。</span>
+        </div>
+        <div class="task-file">src/types/user.ts · src/pages/user/ProfilePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; mechRestriction 檢查（可獨立上線）</div>
+      <div class="task-group-meta">src/pages/simulator/SimulatorPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">以 mechRestriction 為單一事實來源，不看 type</div>
+        <div class="task-desc">
+          <code>getFilteredWeapons</code>（<code>:187-191</code>）加入 <code>weapon.mechRestriction</code>（<code>weapon.ts:118</code>）比對。
+          擋掉：輕型／重型機甲選 <code>medium</code> 限定武器（43 筆）、非重型機甲選 <code>heavy</code> 限定武器（12 筆）。
+          全域分布 none 117 / medium 43 / heavy 12，<strong><code>light</code> 0 筆</strong>（宣告了但從未使用）。<br>
+          <strong>不得改用 <code>type === '戰術'</code> 判斷</strong>：實測兩者在 172 筆上是雙向零反例的等價關係（各 43 筆），
+          但 <code>type</code> 只是恰好同義的冗餘——官方哪天出一把非戰術的中甲限定武器，寫在 <code>type</code> 上的規則就會漏。<br>
+          <strong>此項不依賴槽位模型</strong>，A-1/A-2 之外可最先出貨。
+        </div>
+        <div class="task-file">src/pages/simulator/SimulatorPage.tsx:187-191</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 槽存在性 ＋ 固定武裝佔位</div>
+      <div class="task-group-meta">SimulatorPage.tsx · utils/mechSlots.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">容量為 0 或已被佔滿的槽，武器不出現在清單</div>
+        <div class="task-desc">
+          用 <code>mechSlotCapacity(mech)</code> 減去 <code>occupiedSlots(mech)</code>（A-4 ①，讀 <code>mech.parts.leftArm/rightArm.fixedArmament</code>）的佔用，得到剩餘容量；
+          <code>weapon.equipSlot</code>（<code>weapon.ts:119</code>）對應槽剩餘為 0 者一律過濾掉。<br>
+          <strong>本輪 gate 只吃「佔據型」</strong>：A-4 ② 的<u>全鎖型</u>（<code>lockedSlots()</code>，機師形態層）資料來源在 PLAN-041 的 <code>forms</code> 集合，本計畫不接線。<br>
+          <strong>驗收指標</strong>：選破曉者-01 時<strong>一把肩部武器都選不到</strong>（22 把 <code>shoulder</code> 武器全數消失，因為兩個肩槽被嵐質儲能艙佔滿）。
+          <strong>這是本計畫存在的原因。</strong><br>
+          與 D-2 高度重疊但語意不同：D-2 是「武器挑機甲」，本項是「機甲沒位置」。
+          <code>equipSlot × mechRestriction</code> 交叉表無交錯：<code>singleHand</code>(none 78 / heavy 12)、<code>dualHand</code>(none 39)、
+          <code>shoulder</code>(medium 22)、<code>back</code>(medium 21)。
+        </div>
+        <div class="task-file">src/pages/simulator/SimulatorPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 修 bug：back 槽不互斥</div>
+      <div class="task-group-meta">SimulatorPage.tsx:193-205</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">背部武器與背包擇一，扣同一個 back 槽</div>
+        <div class="task-desc">
+          <code>getFilteredBackpacks</code>（<code>:193-205</code>）目前只檢查重量與 <code>assemblableArmorType</code>，
+          <strong>不檢查背部槽是否已被背部武器佔用</strong>。而 <code>backpacks</code> 181 筆的 <code>slot</code> <strong>181/181 全是 <code>'back'</code></strong>
+          （<code>backpack.ts:27</code> 註解逐字：「與武器共用 enum 供裝備計算器統一判斷部位」）。<br>
+          → 今天 21 把背部武器中的任一把，可與 181 個背包中的任一個<strong>同時裝上</strong>。
+          修法：<code>back</code> 剩餘容量為 0（已選背部武器或被固定武裝佔用）時，背包清單清空；反之亦然。<br>
+          <span style="color:var(--text-dim);">Q-C 已於 2026-08-09 答覆，答案<strong>比推論更強</strong>：不只「千星佔背槽 ⇒ 不能帶背包」（佔據型），
+          而是虛粒子形態<strong>沒辦法調整任何裝備</strong>（全鎖型）。本項只實作<u>佔據型</u>的 <code>back</code> 互斥；全鎖型見 A-4 ②，資料在 PLAN-041。</span>
+        </div>
+        <div class="task-file">src/pages/simulator/SimulatorPage.tsx:193-205</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-5 &nbsp; 修 bug：執照 enum 用錯，靜默全放行</div>
+      <div class="task-group-meta">SimulatorPage.tsx:181</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">'中甲' → MechLicense.MEDIUM</div>
+        <div class="task-desc">
+          <code>SimulatorPage.tsx:181</code> 逐字為 <code>if (license === '中甲') return m.armorType !== '重型'</code>。
+          <code>license</code> 的值域是 <code>MechLicense</code>（<code>enums.ts:14-19</code>，中型值是 <strong><code>'中型'</code></strong>），
+          <code>'中甲'</code> 則是 <code>ArmorType.MEDIUM</code>（<code>enums.ts:35</code>）。
+          兩個 enum 的中文值只差一個字（中<u>甲</u>／中<u>型</u>）→ <strong>條件永遠為假</strong> →
+          中型執照機師的機甲篩選整條失效，重型機甲照樣選得到。<br>
+          <code>Mech.armorType</code> / <code>Pilot.license</code> 都宣告成 <code>string</code>，<strong>tsc 抓不到</strong>。
+          → 一併把 <code>'輕型'</code> / <code>'中甲'</code> / <code>'重型'</code> 等字面量比較全換成 enum 常數。
+        </div>
+        <div class="task-file">src/pages/simulator/SimulatorPage.tsx:174-185</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label purple">Phase E</div>
+  <div class="section-title">清理與收尾</div>
+  <div class="section-desc">把「字面量比較」這類會再犯的錯用型別擋死，然後同步文件與履歷。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; ArmorType / MechLicense 型別收緊</div>
+      <div class="task-group-meta">src/types/mech.ts · src/types/pilot.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把 string 換成 enum 型別，讓 D-5 那類 bug 編譯期就爆</div>
+        <div class="task-desc">
+          <code>Mech.armorType</code> 與 <code>Pilot.license</code> 目前都宣告成 <code>string</code>，
+          所以 <code>license === '中甲'</code> 這種<strong>永遠為假</strong>的比較 tsc 完全不吭聲。
+          收緊成 <code>ArmorType</code> / <code>MechLicense</code> 後，同樣的錯會變成編譯錯誤。<br>
+          <strong>要先跑一次全庫值域確認</strong>（Firestore 實際值是否 100% 落在 enum 內），有髒值先修資料再收型別，
+          否則會在讀取端炸出一批型別錯誤。
+        </div>
+        <div class="task-file">src/types/mech.ts · src/types/pilot.ts · src/types/enums.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; bump 資料版本</div>
+      <div class="task-group-meta">meta/gameData</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">mechs 集合 bump</div>
+        <div class="task-desc">
+          本計畫唯一異動的集合是 <code>mechs</code>（新增 <code>ArmamentMount[]</code>、刪三個死槽位）。
+          不 bump 的話所有 client 會繼續讀 <code>mecharashi_gd_*</code> 的 localStorage 舊快取，
+          固定武裝區塊在使用者端不會出現。
+        </div>
+        <div class="task-file">bumpDataVersion('mechs')</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; docs 同步</div>
+      <div class="task-group-meta">docs/02_技術文件/ · docs/03_頁面規劃/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">資料模型頁與頁面規劃頁</div>
+        <div class="task-desc">
+          <code>02_資料模型/mechs.html:81-83</code>：PLAN-040 只在該三列加註「PLAN-047 將取代，勿填」，本計畫要<strong>正式刪除該三列</strong>；
+          替代欄位要寫在<strong><code>MechPart</code> 段而非 <code>Mech</code> 頂層</strong>（<code>fixedArmament?: ArmamentMount[]</code>，B-1 定案），並註明 <code>leftArm → 左肩槽</code>／<code>rightArm → 右肩槽</code> 的映射；
+          <code>02_資料模型/weapons.html:197-200</code>：<code>:199</code>「需機甲有肩膀欄位」、<code>:200</code>「需機甲有背後欄位」指的正是被刪的三欄，改寫成指向本計畫的槽位模型。<br>
+          <strong>白名單提醒</strong>：<code>scripts/copy-docs.mjs:26-33</code> 的 <code>INCLUDE</code> <u>不含</u> <code>02_資料模型/</code> 與 <code>04_Firebase/</code>，
+          改了不會進 <code>dist</code>——這是刻意的安全邊界，<strong>不要為此動白名單</strong>。真正會公開的是 <code>03_頁面規劃/</code> 與 PLAN 文件本身。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/mechs.html · weapons.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-4 &nbsp; 網站更新履歷</div>
+      <div class="task-group-meta">src/data/siteChangelog/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">以使用者視角寫摘要</div>
+        <div class="task-desc">
+          例：「機甲詳情頁新增固定武裝區塊」「配裝模擬器新增裝備限制檢查（機甲類型／槽位）」
+          「修正配裝模擬器可同時裝上背部武器與背包的問題」「修正中型執照機師仍可選到重型機甲的問題」。<br>
+          後兩筆是 <code>fix</code> 類，前兩筆是 <code>feat</code>。
+        </div>
+        <div class="task-file">src/data/siteChangelog/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-047 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-048 時間線甘特圖改版 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+.status.urgent   { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.45); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group.hot { border-color: rgba(239,68,68,0.35); }
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-desc code { color: var(--accent-yellow); }
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+.task-hours {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-cyan);
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+
+.alert-note {
+  background: rgba(239,68,68,0.07);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+  line-height: 1.8;
+}
+.alert-note strong { color: var(--accent-red); }
+.alert-note code { color: var(--accent-yellow); }
+
+.phase-badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 2px 9px;
+  border-radius: 5px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.phase-badge.h0 { background: rgba(239,68,68,0.14);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.phase-badge.h1 { background: rgba(234,179,8,0.14);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3); }
+.phase-badge.h2 { background: rgba(107,114,128,0.14);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-048 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,107,43,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-048</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">時間線甘特圖改版</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-16</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label orange">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">21</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">10</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">31</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度 · Phase 0 + Phase 1 已完工（2026-08-16）</span>
+      <span style="color:var(--accent-orange);">21 / 31</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 68%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    活動的詳細資訊不必 hover 就看得到、一週活動不再只是一個點、浮窗不再被裁切；
+    並讓台版官方公告能半自動灌進資料庫，維護者每月只需按三顆按鈕分類 2～4 筆新內容。
+  </div>
+
+  <div class="impact-note">
+    <strong>✔ 2026-08-16　任務 0-0 已完成：台版公告全量歸檔。</strong>
+    實抓 <strong>266 篇、0 失敗</strong>（maAffiche 258／maNews 3／maGuide 1／maOther 4），
+    含原始 HTML、正規化純文字與清單 JSON，落在 <code>_local-notes/2026-08/tw-announcements-archive/</code>。
+    此前這 258 篇<strong>只</strong>存在於前代理商網域 <code>ma.tentree-games.com</code>（代理權 2026-01-05 已移轉給亦樹遊戲，
+    新網域沒有平行公告站），站一旦收掉即不可逆。<strong>這個風險現已解除。</strong>
+  </div>
+
+  <div class="impact-note">
+    <strong>✔ 2026-08-16　Phase 0 全數完工。</strong>
+    分支 <code>feat/plan-048-phase0</code>，兩個 commit；<code>npm test</code> 425 例全過、<code>npm run build</code> 通過。
+    已在 dev server 實機驗證四項：浮窗改為往下展開且 portal 直掛 <code>body</code>（父鏈只剩 <code>DIV → BODY</code>，
+    確認脫離全部 11 層裁切祖先）、一週活動「新風起蜇」長出完整名稱、獎勵自動拆成 chip、
+    手機 tap 開 BottomSheet 拿得到完整資訊。<br>
+    <strong>任務 0-5 標記為無需改動</strong>——<code>VersionTimeline.tsx:27-32</code> 已有 <code>isTwCurrent</code> focus 邏輯，
+    <code>side</code> 也已預設 <code>'tw'</code>，計畫階段誤判為待辦。
+  </div>
+
+  <div class="impact-note">
+    <strong>✔ 2026-08-16　Phase 1 全數完工。</strong>
+    <code>npm test</code> 434 例全過、<code>npm run build</code> 通過。實機驗證三向連動：
+    點卡片「瑞歲百角戲」（1/29 起 3 週）→ 週次表精確打亮 <code>1/29 / 2/5 / 2/12</code> 三欄
+    （exclusive，所以 2/19 不亮），同時卡片與甘特條各自上高亮環。
+  </div>
+
+  <div class="alert-note">
+    <strong>⚠ 計畫階段的垂直預算估錯了，且必須加碼才救得回卡片流。</strong><br>
+    計畫書估「固定資訊表 234px」，實測是 <strong>383px</strong>（每列 42px × 7 列 + 表頭），
+    佔掉可用高度的 62%，導致原訂只壓 ShopRow 之後甘特＋卡片區仍只有 <strong>121px</strong> —— 卡片流等於看不到，
+    Phase 1 的核心目的落空。<br>
+    因此<strong>超出原訂範圍</strong>，一併把固定資訊表的列密度從 <code>py-1.5 / 15px</code> 壓到
+    <code>py-1 / 14px</code>（每列 42px → 32px）。實測結果：資訊表 383 → 337px、
+    版本層級資訊 97 → 80px、<strong>甘特＋卡片區 121 → 186px</strong>。<br>
+    即便如此，壓縮列密度只是把 121px 推到 186px，<strong>計畫書「未解問題」第 1 項仍然成立</strong>。
+  </div>
+
+  <div class="impact-note">
+    <strong>✔ 2026-08-16　追加：版本內容可收合 —— 「未解問題」第 1 項實質解除。</strong>
+    使用者看過 Phase 1 成果後提出。點左上角「台版／陸版」即可收合七列版本內容與版本層級補充資訊，
+    偏好存 localStorage（純本機 UI 偏好，不同步帳戶 —— 那要動 <code>ViewPrefsKey</code> 與 userApi，代價不成比例）。<br>
+    <strong>刻意保留週軸表頭與一列濃縮「機師 · 機甲」</strong>（沿用 upper/lower 的 colSpan 切分）：
+    那條軸是甘特長條的定位基準，也是使用者當初把甘特放在這裡的理由；收掉它，剩下的甘特就失去意義。<br>
+    實測：固定資訊表 337 → <strong>123px</strong>、甘特＋卡片區 186 → <strong>488px（2.6 倍）</strong>，
+    v3.1 陸版九檔活動可一次全覽。原先「再多兩檔活動就又不夠」的結構性壓力，在收合狀態下已不成立。
+  </div>
+
+  <div class="alert-note">
+    <strong>⚠ 另一項超出原訂範圍：刪除四個死碼元件。</strong><br>
+    <code>ActivityTimeline</code> / <code>CoreInfoPanel</code> / <code>VersionSidePanel</code> / <code>VersionDot</code>
+    在 PLAN-014 子計畫已宣告「被 <code>VersionGanttPanel</code> 取代」但從未刪除，實測<strong>沒有任何檔案 import 它們</strong>。
+    <code>ActivityType</code> 改為開放字串後，<code>ActivityTimeline</code> 的 9 色 <code>Record</code> 會編譯失敗 ——
+    與其替不會被渲染的程式碼補 registry 接線（且它會維持舊的 9 色、與 Phase 1 的收斂互相矛盾），直接刪除。
+    <code>docs/02_技術文件/01_架構設計/系統架構.html</code> 的元件清單已同步。
+  </div>
+
+  <div class="impact-note">
+    <strong>Phase 1 額外修掉一個設計缺陷：</strong>
+    「已結束」分組原訂一律預設收合，但瀏覽<strong>歷史版本</strong>時所有活動本來就都結束了，
+    收合等於整個內容層空白 —— 那正是本階段要解決的問題本身。
+    改為<strong>僅在還有進行中／即將開始的項目時才預設收合</strong>（v3.1 陸版九個活動全數已結束，現在會自動展開）。
+  </div>
+
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0 0;">
+    <thead>
+      <tr>
+        <th style="background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:9px 14px;text-align:left;font-size:11px;font-family:'Orbitron',sans-serif;letter-spacing:1px;color:var(--text-dim);">階段</th>
+        <th style="background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:9px 14px;text-align:left;font-size:11px;font-family:'Orbitron',sans-serif;letter-spacing:1px;color:var(--text-dim);">任務數</th>
+        <th style="background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:9px 14px;text-align:left;font-size:11px;font-family:'Orbitron',sans-serif;letter-spacing:1px;color:var(--text-dim);">估時</th>
+        <th style="background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:9px 14px;text-align:left;font-size:11px;font-family:'Orbitron',sans-serif;letter-spacing:1px;color:var(--text-dim);">資料模型變更</th>
+        <th style="background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:9px 14px;text-align:left;font-size:11px;font-family:'Orbitron',sans-serif;letter-spacing:1px;color:var(--text-dim);">可獨立上線</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-green);">Phase 0 · 止血　<span class="status done">已完成</span></td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--text-secondary);">9 / 9</td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-cyan);">~5h（＋歸檔 2h）</td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-green);">無</td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-green);">✔ 已上線於分支</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-green);">Phase 1 · 版面　<span class="status done">已完成</span></td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--text-secondary);">12 / 12</td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-cyan);">~16h</td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-yellow);">TimedActivity 擴充</td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-green);">✔ 是</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--text-secondary);">Phase 2 · 公告管線</td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--text-secondary);">10</td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-cyan);">~26h</td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-yellow);">新增 2 個後台專用集合</td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-green);">✔ 是</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══════════════════ Phase 0 ══════════════════ -->
+<section class="section">
+  <div class="section-label orange">Phase 0</div>
+  <div class="section-title">止血<span class="phase-badge h0">約 5h · 零資料模型變更</span></div>
+  <div class="section-desc">
+    不動版面、不動資料模型、不動後台、不需 bump 版本。做完就能全解痛點 1、2，並解掉痛點 3 的一半。
+  </div>
+
+  <div class="task-group hot">
+    <div class="task-group-header">
+      <div class="task-group-title">0-0 &nbsp; 台版公告全量歸檔（緊急前置）</div>
+      <div class="task-group-meta">scripts/temp_scripts/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">下載 258 篇台版公告原文並落地保存</div>
+        <div class="task-desc">
+          清單走 <code>https://ma.tentree-games.com/jx/{maAffiche|maNews|maGuide|maOther}/index.html</code>（第 N 頁 <code>index_N.html</code>），
+          <strong>副檔名是 .html、Content-Type 也是 text/html，但內容是純 JSON</strong>；詳情頁正文在 <code>&lt;div class="content"&gt;</code> 的 <code>&lt;p&gt;</code>。
+          <code>maAffiche</code> 實測 26 頁。備援鏡像 <code>news.tentree-games.com</code>。
+          先存本地（HTML 原檔 + 正規化純文字 + 清單 JSON），再視 Phase 2 進度決定是否上 Firestore/Storage。
+          <strong>與其他任務無依賴，可單獨執行。</strong>
+        </div>
+        <div class="task-file">scripts/temp_scripts/archive-tw-announcements.mjs</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~2h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">0-1 &nbsp; 浮窗改走 FloatingPortal</div>
+      <div class="task-group-meta">src/components/timeline/ActivityBar.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新建 ActivityBar.tsx，用 @floating-ui/react 承載長條與浮窗</div>
+        <div class="task-desc">
+          <code>useFloating</code> + <code>FloatingPortal</code> + <code>flip</code>/<code>shift</code>/<code>offset(8)</code>/<code>autoUpdate</code>，
+          <code>useHover</code> 配 <code>safePolygon()</code>。<strong><code>placement: 'bottom'</code></strong>——現況 <code>absolute bottom-full</code> 永遠往上長，才是「第一列必被切、又蓋住週次表」的成因。
+          手機（<code>useIsMobile</code>）改 <code>useClick</code> + 既有 <code>BottomSheet</code>。詳情內容抽成 <code>&lt;ActivityDetail&gt;</code> 讓兩條路徑共用。
+          <strong>依賴皆已安裝</strong>：<code>@floating-ui/react ^0.27.19</code>、<code>hooks/useIsMobile.ts</code>、<code>components/common/BottomSheet.tsx</code>。
+        </div>
+        <div class="task-file">src/components/timeline/ActivityBar.tsx（新）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">刪除舊 tooltip 與 colSpan===1 圓點分支</div>
+        <div class="task-desc">
+          移除 <code>VersionGanttPanel.tsx:208-214</code> 的 <code>absolute bottom-full</code> tooltip 與 <code>:216</code> 的單點分支；
+          <code>COLORS</code> 每筆補 <code>chip</code> 欄位（長條底色），順帶解掉「13px 彩色文字直接壓在 banner 畫作上」的對比問題。
+        </div>
+        <div class="task-file">src/components/timeline/VersionGanttPanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">0-2 &nbsp; 日精度長條幾何</div>
+      <div class="task-group-meta">src/components/timeline/ganttGeometry.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新建 ganttGeometry.ts，取代 activityToColumns</div>
+        <div class="task-desc">
+          <code>activityGeometry(act, allWeeks)</code> 回傳 <code>{ leftPct, widthPct, clipStart, clipEnd }</code>。
+          舊版把起點量化到下一個週界，1 週活動於是塌成單格（<strong>實測 27/75 筆是這種，36%</strong>）。
+          用 % 而非 px：td 寬度會隨容器變動，百分比不必量測 DOM、不必 <code>ResizeObserver</code>、不會有一幀錯位。
+          附帶提供 <code>todayPct()</code> 供 Phase 1 的今日線使用。最小寬度夾在 2 天，避免退化成 0。
+        </div>
+        <div class="task-file">src/components/timeline/ganttGeometry.ts（新）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">ActivityGanttRow 改成單一 colSpan td + 絕對定位長條</div>
+        <div class="task-desc">
+          長條層改住在<strong>單一</strong> <code>colSpan={totalWeeks}</code> 的 td 裡。該 td 寬度天生等於整條週軸
+          （<code>tableLayout:fixed</code> + 同一份 <code>Colgroup</code>），所以百分比定位與上方固定資訊表的欄界<strong>自動對齊，<code>Colgroup</code> 一行都不用動</strong>。
+        </div>
+        <div class="task-file">src/components/timeline/VersionGanttPanel.tsx:182-247</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">0-3 &nbsp; 獎勵字串前台拆解（runtime fallback）</div>
+      <div class="task-group-meta">src/data/patchVersions/activityText.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">splitActivityName()：既有 75 筆零回填冒出獎勵 chip</div>
+        <div class="task-desc">
+          <code>瑞歲百角戲(輕型通用改裝模組*1 仿生超導體*2)</code> → <code>{ base, rewards[] }</code>。
+          規則<strong>刻意保守：括號內沒有「符號 + 數字」就整串當名稱</strong>——34 筆有括號的資料裡只有 15 筆是獎勵形狀，
+          其餘是外觀名（10）、機制說明（6）、空括號（1）。寧可少抽，也不要把機制說明寫成獎勵。
+          <strong>做成 runtime fallback 而非一次性遷移</strong>：後者只救按下按鈕的那一次，前者同時救了歷史資料與「未來又用老方法打字」。
+        </div>
+        <div class="task-file">src/data/patchVersions/activityText.ts（新）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">0-4 &nbsp; 捲動邊界與誠實空狀態</div>
+      <div class="task-group-meta">src/components/timeline/VersionGanttPanel.tsx:431</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">overscroll-contain + 空狀態文案</div>
+        <div class="task-desc">
+          甘特容器補 <code>overscroll-contain</code>，捲到底不再把整頁 snap 走。
+          空狀態改成「本半版本尚無登錄活動<span style="color:var(--text-dim);"> — 陸版官網公告常有漏收</span>」（僅 <code>side === 'cn'</code> 時附後半句），
+          取代看起來像 bug 的乾淨空白。
+        </div>
+        <div class="task-file">src/components/timeline/VersionGanttPanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~0.3h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">0-5 &nbsp; 開啟即落在當前版本</div>
+      <div class="task-group-meta">src/components/timeline/VersionTimeline.tsx</div>
+      <span class="status done">無需改動</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">預設 activeIndex 指向 isTwCurrent 的版本 + 正確伺服器</div>
+        <div class="task-desc">
+          <strong>開工後查證：本項已實作，計畫階段誤判為待辦。</strong>
+          <code>VersionTimeline.tsx:27-32</code> 已有「初次載入時把焦點對到台服當前版本」的 effect，
+          <code>VersionDetailView</code> 的 <code>side</code> 也已預設 <code>'tw'</code>。未做任何改動。
+        </div>
+        <div class="task-file">src/components/timeline/VersionTimeline.tsx · VersionDetailView.tsx</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">0-6 &nbsp; 守衛測試</div>
+      <div class="task-group-meta">node --test</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">ganttGeometry / activityText / activityStatus 三支單元測試</div>
+        <div class="task-desc">
+          重點守 <strong>exclusive 結束日</strong>（一日之差是本計畫最可能的 bug 型態）、1 週活動的 <code>widthPct</code> 不為 0、
+          軸外活動回 <code>null</code>、括號解析的四種形狀（獎勵／外觀名／機制說明／空括號）。
+        </div>
+        <div class="task-file">src/components/timeline/*.test.ts · src/data/patchVersions/activityText.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ Phase 1 ══════════════════ -->
+<section class="section">
+  <div class="section-label orange">Phase 1</div>
+  <div class="section-title">版面：卡片流與連動<span class="phase-badge h1">約 16h · TimedActivity 擴充</span></div>
+  <div class="section-desc">
+    痛點 3 在這一階段才真正兌現。開始動資料模型，因此連帶要改後台編輯器與 docs（CLAUDE.md 規則 2）。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">1-1 &nbsp; 垂直預算回收</div>
+      <div class="task-group-meta">1366×768 可見列 2 → 6</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">甘特列高 50px → 32px</div>
+        <div class="task-desc"><code>py-3.5</code> 改為較緊的 padding，長條高度 h-6。</div>
+        <div class="task-file">src/components/timeline/VersionGanttPanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">ShopRow + VersionLevelInfo 在容器矮時併成單列 chips</div>
+        <div class="task-desc">
+          邊境商店 / 鬥技場 / 危境重構 / 記憶風暴 / 備註目前佔 92px，併成單列 28px，<strong>回收 64px</strong>。
+          用容器查詢（Tailwind v4 內建 <code>@container</code>）而非視窗斷點——決定因素是卡片寬度不是螢幕寬度。
+        </div>
+        <div class="task-file">src/components/timeline/VersionGanttPanel.tsx（ShopRow / VersionLevelInfo）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">1-2 &nbsp; 衍生狀態層與活動卡片流</div>
+      <div class="task-group-meta">src/components/timeline/activityStatus.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">activityStatus()：零欄位導出「第 N/M 週 · 剩幾天 · 末週 · 進度」</div>
+        <div class="task-desc">
+          全部從既有 <code>startDate + weeks</code> 算出，<strong>不新增任何欄位</strong>。
+          設計原則寫進 docs：<strong>凡是能算的，就不要問維護者</strong>——這是唯一零維護成本、上線當天 100% 覆蓋率的資訊來源。
+          （此檔在 Phase 0 的 0-6 已有測試，實作可提前到 Phase 0 亦可。）
+        </div>
+        <div class="task-file">src/components/timeline/activityStatus.ts（新）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">ActivityCardFlow：甘特捲動容器內、長條之後的卡片流</div>
+        <div class="task-desc">
+          依衍生狀態分組「● 進行中(n) / ▶ 即將開始(n) / ○ 已結束（預設收合）」。
+          卡片內容：型別、第 N/M 週、名稱、起訖（含星期）、剩幾天、獎勵 chip、說明、機師/機甲、官方公告連結。
+          <strong>與甘特共用同一個 <code>overflow-y-auto</code></strong>，往下捲就從索引層接到內容層，不是兩個獨立捲軸。
+          655px 寬時退化為單欄仍完整可讀。
+        </div>
+        <div class="task-file">src/components/timeline/ActivityCardFlow.tsx（新）· ActivityCard.tsx（新）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~4h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">1-3 &nbsp; 甘特 ↔ 卡片 ↔ 週欄三向連動</div>
+      <div class="task-group-meta">本計畫唯一正面加強「對照版本週次」的機制</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">選取狀態管理 + 點長條捲到卡片 / 點卡片打亮長條</div>
+        <div class="task-desc">
+          需要 <code>TimedActivity.id</code>（見 1-6）。點長條 → 對應卡片 <code>scrollIntoView</code> + ring 高亮；
+          hover 卡片 → 長條發光。鍵盤可達（<code>focus-visible:ring</code>）。
+        </div>
+        <div class="task-file">src/components/timeline/VersionGanttPanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~2h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">週次表覆蓋週欄整欄打亮</div>
+        <div class="task-desc">
+          選取活動時，其涵蓋的週欄在<strong>上方固定資訊表</strong>整欄打亮（<code>&lt;col&gt;</code> 背景層，不動 DOM 結構）。
+          這把「對照版本週次」從人眼比對升級成視覺連線。
+        </div>
+        <div class="task-file">src/components/timeline/VersionGanttPanel.tsx（Colgroup）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">1-4 &nbsp; 共用軸線層</div>
+      <div class="task-group-meta">週格線 / 上下半分界 / 今日線</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">一組 absolute 元素貫穿週次表與甘特兩張表</div>
+        <div class="task-desc">
+          日精度之後，長條左緣不再貼齊週界，需要共用格線讓欄界仍看得出來（這是決策二的必要配套，見計畫書「未解問題」第 2 項）。
+          今日線用 <code>todayPct()</code>，是站上<strong>首次</strong>有「今天在哪」的錨點。
+        </div>
+        <div class="task-file">src/components/timeline/GanttAxisOverlay.tsx（新）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">1-5 &nbsp; 色彩系統收斂</div>
+      <div class="task-group-meta">9 色 → 5 族群色 + 第二編碼通道</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">建立 ACTIVITY_TYPE_REGISTRY（tone + label + 端點形狀）</div>
+        <div class="task-desc">
+          角色池 <code>#79c0ff</code> / 機甲池 <code>#58a6d4</code> / 限時 <code>#06b6d4</code> 實測是三個相鄰冷藍，
+          <strong>撞色的正好是語意上最需要分辨的兩者</strong>。收斂為族群色，靠端點形狀／虛線／永遠可見的型別文字標籤補足第二編碼通道。
+          同時把長條與卡片改用不透明表面 token、banner scrim 加深（<code>VersionExpandedPanel</code> 頂部目前只有 <code>bg-bg-dark/20</code>）。
+          REGISTRY 也是決策六「開放字串 + 靜態登錄表」的落點。
+        </div>
+        <div class="task-file">src/components/timeline/activityTypeRegistry.ts（新）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">1-6 &nbsp; 資料模型擴充</div>
+      <div class="task-group-meta">src/data/patchVersions/types.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">TimedActivity 新增 id / rewards / description / sourceUrl / confidence / typeLabel</div>
+        <div class="task-desc">
+          <code>ActivityType</code> 改為 <code>KnownActivityType | (string &amp; {})</code> 並補 <code>topUpEvent</code>。
+          <code>id</code> 不是防禦性設計——<code>VersionGanttPanel:436</code> 目前是 <code>key={i}</code>、後台增刪全靠 idx，陣列重排後 React key 與選取狀態都會錯位。
+          <strong>PatchHalf 與 PatchVersion 一個欄位都不動。</strong>
+          <strong>刻意不加</strong>：<code>shortName</code> / <code>lane</code> / <code>highlight</code> / <code>dataStatus</code> / <code>descriptionRefs</code>（理由見計畫書）。
+        </div>
+        <div class="task-file">src/data/patchVersions/types.ts</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">後台編輯器補上新欄位輸入</div>
+        <div class="task-desc">
+          <code>AdminTimedActivityEditor</code> 補 rewards（動態字串列表）、description（textarea）、sourceUrl、confidence（僅陸版顯示）、typeLabel（type 未登錄時才出現）。
+          新增活動時自動產生 <code>id</code>。
+        </div>
+        <div class="task-file">src/components/admin/AdminTimedActivityEditor.tsx</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~2h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">同步 docs 資料模型頁 + siteChangelog</div>
+        <div class="task-desc">
+          依 CLAUDE.md 規則 2 更新 <code>docs/02_技術文件/02_資料模型/patchVersions.html</code>；
+          依規則 1 在 <code>src/data/siteChangelog/</code> 加入使用者視角的履歷記錄。
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/patchVersions.html · src/data/siteChangelog/</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">1-7 &nbsp; deprecated 欄位 legacy shim</div>
+      <div class="task-group-meta">Worker 掛掉走靜態 fallback 時不再是空甘特</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">skinGacha / specialEvents / rouletteEvent / revivedBanners → TimedActivity</div>
+        <div class="task-desc">
+          <code>src/data/patchVersions/*.ts</code> 的靜態 fallback 資料仍用舊欄位，甘特只讀 <code>cnActivities</code>/<code>twActivities</code>，
+          所以 Worker 掛掉時 v3.0–v3.3 會顯示成空甘特。加一層讀取端 shim 把舊欄位轉成 <code>TimedActivity</code>（<code>weeks</code> 取版本半段長度）。
+        </div>
+        <div class="task-file">src/data/patchVersions/legacyActivities.ts（新）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ Phase 2 ══════════════════ -->
+<section class="section">
+  <div class="section-label orange">Phase 2</div>
+  <div class="section-title">台版公告管線與待處理 buffer<span class="phase-badge h2">約 26h · 新增 2 個後台專用集合</span></div>
+  <div class="section-desc">
+    可行性已用實際 HTTP 回應驗證：純 <code>fetch</code>、<strong>不需 Playwright</strong>、無登入、無 Cloudflare、無 robots.txt。
+    PoC 以 40 行 regex 從 117 篇週報抽出 522 筆活動的名稱＋起訖，<strong>名稱附著失敗率 0%</strong>、日期命中 98.3%。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-1 &nbsp; 公告抓取與解析腳本</div>
+      <div class="task-group-meta">scripts/scrape-tw-announcements.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">清單分頁 + 詳情抓取 + ETag 增量</div>
+        <div class="task-desc">
+          沿用 0-0 的端點。<code>contentHash = sha256(rawText)</code> 作為冪等判斷的唯一依據；文件 ID 由公告 URL 推導
+          （<code>${source}_${officialId}</code>），<strong>重爬必然命中同一份＝冪等免費</strong>。
+          自訂 User-Agent 標明同人工具站與聯絡方式、請求加間隔。
+        </div>
+        <div class="task-file">scripts/scrape-tw-announcements.mjs（新）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~3h</div></div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">解析器：抽日期／活動名／機師機甲，並標記 unmatched 片段</div>
+        <div class="task-desc">
+          抽不到的欄位<strong>留 <code>undefined</code>，絕不填預設值</strong>；沒被任何規則認領的原文片段存進 <code>unmatched[]</code>。
+          型別靠 <code>matchKeywords</code> 命中約 72%，未命中則保留 <code>rawTypeLabel</code> 進 buffer。
+          <code>parserVersion</code> 讓改規則後能挑出該重跑的舊公告。
+        </div>
+        <div class="task-file">scripts/lib/parseAnnouncement.mjs（新）+ 單元測試</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~5h</div></div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-2 &nbsp; staging 型別與集合</div>
+      <div class="task-group-meta">announcementDrafts · pendingActivities</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">announcementStaging.ts（不進 types barrel，比照 changeHistory.ts）</div>
+        <div class="task-desc">
+          <code>AnnouncementDraft</code>（raw → parsed → parseFailed → triaged → superseded）與
+          <code>PendingActivity</code>（parsed → needsReview → approved → merged / rejected / superseded / conflict）。
+          <strong>審核的最小單位是「一個活動」不是「一則公告」</strong>——一則公告十個活動，看得懂九個就先放行九個。
+          <code>rawText</code> 超過 200KB 改存 Storage（Firestore 單文件 1MB 是硬限）。
+        </div>
+        <div class="task-file">src/types/announcementStaging.ts（新）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">firestore.rules（後台專用讀寫）+ TTL 政策</div>
+        <div class="task-desc">
+          兩個集合<strong>前台完全不讀</strong>，rules 一律 <code>isAdmin()</code>。
+          <code>expireAt</code> +6 個月交給 Firestore 原生 TTL（比照 <code>changeHistory.expireAt</code>），避免 staging 無限膨脹。
+          <strong>不需要</strong>加進 <code>CollectionKey</code> / Worker <code>ARRAY_COLLECTIONS</code>——它們不走前台快取層。
+        </div>
+        <div class="task-file">firestore.rules · docs/02_技術文件/04_Firebase/資料庫設計文件/</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-3 &nbsp; /admin/announcements 審核工作檯</div>
+      <div class="task-group-meta">維護者實際要打的字：三顆按鈕</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">待審清單頁（依 flags 分組、依版本猜測排序）</div>
+        <div class="task-desc">
+          預設只顯示 <code>needsReview</code>；<code>unknownActivityType</code> / <code>unmatchedText</code> 置頂。
+          實測 buffer 流量是<strong>每月 2～4 筆</strong>新名稱（2024:17 / 2025:44 / 2026:29 個新名稱）。
+        </div>
+        <div class="task-file">src/pages/admin/AdminAnnouncementsPage.tsx（新）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~3h</div></div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">左原文右表單：excerpt 高亮 + unmatched 標紅 + diff</div>
+        <div class="task-desc">
+          左欄只載 <code>excerpt</code> 對應的原文片段（不是整篇），<code>unmatched[]</code> 標紅讓「這段我沒看懂」自動浮出來。
+          右欄是 <code>extracted</code> 預填的 <code>TimedActivity</code> 表單，人工編修寫進 <code>reviewed</code>（<code>extracted</code> 保持原樣供 diff）。
+          動作只有三顆按鈕：<strong>→ 上半 / → 下半 / 忽略</strong>。
+        </div>
+        <div class="task-file">src/components/admin/AnnouncementReviewPanel.tsx（新）</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~4h</div></div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group hot">
+    <div class="task-group-header">
+      <div class="task-group-title">2-4 &nbsp; 合併寫入（兩條紅字都在這）</div>
+      <div class="task-group-meta">runTransaction · bumpDataVersion</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">runTransaction 合併進 patchVersions，anchor 定位不用 index</div>
+        <div class="task-desc">
+          <strong><code>AdminVersionEditorPage.tsx:377</code> 目前是整份 <code>setDoc</code>、沒有 <code>merge:true</code></strong>——
+          若照現況追加，腳本寫入的內容會在管理員存檔時無聲消失（同型事故前例：<code>scrape-pilots-v3.js:117</code>）。
+          <code>mergedInto</code> 收據用 <code>{ name, startDate }</code> anchor 定位而非 index（陣列會重排）。
+          這也是為什麼 buffer <strong>絕不能</strong>做成 <code>PatchVersion.inbox</code> 欄位。
+        </div>
+        <div class="task-file">src/lib/api/patchVersions.ts · AdminVersionEditorPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~2.5h</div></div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">bumpDataVersion('patchVersions') + invalidatePatchVersionsCache()</div>
+        <div class="task-desc">
+          <strong>不 bump 就是「資料寫進去了、前台看不到、硬重整也沒用」，最長 24 小時。</strong>
+          <code>patchVersions</code> 走 Worker 邊緣快取（<code>workers/src/index.ts</code> 以集合版本號當 cache key、<code>max-age=86400</code>）。
+          這條要一併寫進 <code>data-patch</code> skill 與 docs。
+        </div>
+        <div class="task-file">src/lib/api/versions.ts · .claude/skills/data-patch/</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-5 &nbsp; confidence 前台顯示</div>
+      <div class="task-group-meta">回應痛點 4 唯一能在顯示層兌現的東西</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">predicted → 長條虛線邊框 + 卡片標「推估」</div>
+        <div class="task-desc">
+          台版由腳本一律填 <code>confirmed</code>，陸版人工填。
+          <strong>缺的公告仍然缺，但至少讀者分得出「查證過」與「照慣例推的」。</strong>
+        </div>
+        <div class="task-file">src/components/timeline/ActivityBar.tsx · ActivityCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-6 &nbsp; 產出量監控</div>
+      <div class="task-group-meta">爬蟲會靜默降低品質而非報錯</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">解析產出量告警（不能只看 HTTP 200）</div>
+        <div class="task-desc">
+          句型逐年漂移：<code>本期機師征招「X」</code> 2024/2025 出現 0 次、2026 才 1 次；<code>維護計畫</code> 段落 2026 才有。
+          規則：「一篇週報抽出活動數 &lt; 2」「有機師征招段落卻抽不到機師名」「本次執行的解析成功率低於前次 20%」就進 buffer 並標記告警。
+        </div>
+        <div class="task-file">scripts/scrape-tw-announcements.mjs</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-048 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>觀察維護中計畫 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <span class="current">觀察維護中</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge cyan">◆ Maintenance</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    觀察維護中<span style="-webkit-text-fill-color:var(--text-secondary);">開發收束、長期維護的計畫</span>
+  </h1>
+  <p class="hero-sub">程式開發已告一段落，但仍需長期輸入資料或持續觀察的計畫</p>
+</header>
+
+<main class="container">
+<section class="section">
+  <div class="section-label cyan">Plans</div>
+  <div class="section-title">計畫列表</div>
+  <div class="card-grid">
+    <!--PLANS-START-->
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-043 · 背包技能集合與編輯強化</h3>
+      <p>背包技能過去只以「SS 專屬的內嵌 mainSkill」存在——那是爬蟲時代官方 WIKI 欄位形狀的殘留，實測 22/22 精確對應 22 個 SS，因為官方只在 SS 條目填了技能欄位。但遊戲內連 B 級的「移動背包」都掛著被動技能<b>「移動強化Ⅰ」</b>。本計畫開獨立的 <code>backpackSkills</code> 集合（刻意與 PLAN-032「武器技能併入 pilotSkills」的裁決相反）、掛載側改 <code>skillIds[]</code> 並支援 <code>@N</code> 等級、技能等級化沿用 PLAN-024 的 <code>levels[]</code> 同構模式，兩段式硬切遷移已完成 flip。同時補上背包後台的<b>刪除</b>（第四個可刪集合，並新增 <code>hardRef</code> 機制擋下前置鏈／複合武器融合的硬外鍵）與 <b>IconPicker</b>，圖示另闢 <code>skills/背包技能/</code> 資料夾。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">開發收束：2026-08-06 · 21 / 21 任務 · 維護內容：管理員逐筆補齊非 SS 背包的技能資料（官方 WIKI 未錄入，須對照遊戲內輸入）</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-043_背包技能集合/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-043_背包技能集合/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-033 · 後台編輯視窗加寬</h3>
+      <p>後台編輯彈窗由固定 672px 放寬到 min(90vw,1920px)，並把多出的寬度轉為欄位密度而非胖輸入框：格線改 auto-fill 自動排欄（Phase B），再精簡分頁數並把「長到必須捲兩屏」的天賦編輯／模組基本資訊／武器改裝方案改為左文本右結構化的雙欄版面（Phase C）。全程只改版面，不動 state 與 Firestore 寫入路徑。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">開發收束：2026-08-02 · 維護內容：實際使用中觀察 GRID_AUTO_FIELDS 的 220px 最小欄寬是否需微調；並判定天賦編輯在雙欄化後是否仍需捲動超過兩屏（若是則另開 detail page 的 PLAN）</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-033_後台編輯視窗加寬/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-033_後台編輯視窗加寬/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-029 · Cloudflare 化與 App Check 退場</h3>
+      <p>用 Cloudflare 一層邊緣基建接手「反白嫖 + 反爬 + 加速」，讓 App Check／reCAPTCHA 退場。公開遊戲資料改走 Worker 代理、Firestore 規則收成 read:if isAdmin()（比 App Check 硬）；反爬為兩層——Worker 內建守門（Origin/Referer + 機房 ASN）+ zone 託管 per-IP 限流。資料端點已同源掛在 mecharashi.wiki/api/*，深層路徑改由邊緣改寫回 200，並移除中國被封鎖且阻塞渲染的 Google Fonts。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">開發收束：2026-07-26 · 維護內容：收集中國實測回報（/connectivity 診斷頁）、觀察數日後關閉 workers.dev 回退路徑、確認 /images Cache Rule 的邊緣 TTL 覆寫生效</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-029_Cloudflare化與AppCheck退場/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-029_Cloudflare化與AppCheck退場/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+<!--PLANS-END-->
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · 觀察維護中
+</footer>
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-06-22 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

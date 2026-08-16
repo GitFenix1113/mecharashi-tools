@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-034 神驅算力 BUFF 階覆寫層 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-034 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-034</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    神驅算力 BUFF 階覆寫層<span style="-webkit-text-fill-color:var(--text-secondary);">ND Override · 引用階情境化 · 資料債修復</span>
+  </h1>
+  <p class="hero-sub">「凝勢是第幾階」不是引用點上的常數，而是配裝狀態的函數——用單一覆寫表取代逐處抄寫</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value purple">PLAN-034</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-07-19</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">引用層渲染 / 神驅能力資料模型 / BUFF 等級 / 後台編輯 / 稽核層</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">開發中（Phase 0 閘門 GO · 2026-07-26）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value green">無（PLAN-030 已歸檔，D / G 的硬性依賴已解除）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>本計畫的所有數字皆為實測值。</strong>
+    盤點對象為 2026-07-19 匯出的 <code>emulator-seed/</code>（pilotSkills 705 份、buffs 222 份），
+    非估計或推論。凡標示「實測」者皆可用 <code>emulator-seed/</code> 重跑驗證。<br>
+    <b>2026-07-26 Phase 0-2 對正式資料重測：</b>pilots 87 · neuralDriveAbilities 432 · buffs 217 · pilotSkills 710
+    ——資料自 07-19 起已有異動，下方個位數統計（斷鏈筆數等）以 Phase A 實作前重跑
+    <code>scripts/scan-nd-upgrade-candidates.mjs</code> 的結果為準。
+    另 <b>母體規模低估</b>：ND 正文提及階梯家族的能力達 53 支 / 18 位機師，
+    「只有艾達與梅利莎」成立的是 <code>ndVariants</code> 的既有筆數，不是現象本身的範圍（詳見進度表 0-2 結論）。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：同一頁上，天賦說「凝勢III」而技能說「凝勢I」</strong><br>
+    PLAN-021 為艾達建立了 <code>PilotTalent.ndVariants</code>，讓天賦正文隨神經驅動算力就地改寫。
+    但艾達的<b>技能</b>（<code>skill_輝斷終焉</code>「並獲得2層[凝勢I]」、<code>skill_破勢</code>）同樣引用凝勢，
+    而凝勢的階也是隨 γ2 算力提升的（γ2 ≥ 10 → 凝勢II、≥ 13 → 凝勢III）。
+    <code>PilotSkill</code> / <code>PilotSkillDoc</code> 沒有任何 nd 相關欄位，
+    於是使用者在同一頁點動算力時，天賦跟著變、技能不動——這就是<b>斷裂引用</b>。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：「凝勢是第幾階」這個事實在系統裡存了三份且互不連通</strong><br>
+    ① 技能正文字串裡寫死的中文「凝勢Ⅰ」；
+    ② <code>descriptionRefs['凝勢Ⅰ'].level</code>；
+    ③ 天賦 <code>ndVariants[].minSum</code> 抄了一份 ND 門檻、再整段換文。<br>
+    這正是 <code>src/utils/numRefs.ts</code> 檔頭所警告的「同一個數字存兩份必然漂移」，
+    只是這次漂移的不是數值而是<b>階級</b>。若照 PLAN-021 的模式把 ndVariants 複製到技能層，
+    這條規則會變成第四份、第五份——而且技能的 base 在 <code>pilotSkills</code> 集合、
+    副本會落在 <code>pilots</code> 集合，分屬 SkillAdmin 與 PilotAdmin 兩個後台分頁，
+    兩邊無任何連動提示，漂移必然發生且無人會發現。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三（既有 bug，與本計畫獨立）：畫面上那個 chip 的浮窗現在就是空的</strong><br>
+    實測 <code>skill_破勢</code> 與 <code>skill_輝斷終焉</code> 的 <code>refId</code> 寫成裸字
+    <code>凝勢</code>、漏了 <code>buff_</code> 前綴，<code>buffs</code> 集合查無此 id，
+    <code>EntityRefView</code> 查不到直接 <code>return null</code>。
+    同類斷鏈共 <b>10 筆</b>（多為 PLAN-024 等級化合併後未回頭修的舊分級 ID，
+    如 <code>BUFF_命中率降低II</code>、<code>BUFF_護甲提升I</code>、<code>BUFF_隱形I</code>），
+    另有 <b>12 筆</b>引用指向有 <code>levels[]</code> 的階梯 buff 卻沒填 <code>level</code>。
+  </div>
+
+  <div class="info-block">
+    <strong>盤點數據（實測 emulator-seed，2026-07-19）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>10 筆</b>斷鏈 <code>refId</code>（buffs 集合查無）、<b>12 筆</b>指向階梯 buff 卻缺 <code>level</code></li>
+      <li><b>98 筆</b>技能引用指向 <b>39 族</b>階梯 buff——覆寫層的實際作用面遠大於「艾達的凝勢」</li>
+      <li>pilotSkills 705 份正文中 <code>&lt;refId.lvN.attr&gt;</code> 數值 token 出現 <b>0 次</b>
+          （全部數值 token 只存在於天賦正文）→ 數值症狀在技能側沒有掛載點</li>
+      <li>有 <code>ndVariants</code> 的是<b>兩位</b>機師：艾達（凝勢 lv1→2/3）與<b>梅利莎</b>（常效維護 lv1→2/3/4/5）</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>核心建模假設已驗證成立</strong><br>
+    「升階門檻 = 掛載該能力的 <code>NeuralDriveLevel.minSum</code>」——
+    艾達 γ2 Lv4/Lv5/Lv6 的 <code>minSum</code> = 10/13/16，與其 <code>ndVariants</code> 的 10/13/16 完全吻合；
+    梅利莎 γ2 Lv1/Lv4/Lv5/Lv6 = 1/10/13/16，與其四個變體逐一對齊。
+    <b>門檻本來就已經在資料裡了</b>，不需要新的門檻欄位——這是本方案「零重複」賣點的事實基礎。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label purple">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：階不是引用點上的常數，而是配裝狀態的函數</strong><br>
+    不幫技能抄一份 ndVariants，改在<b>解析引用時</b>插一層情境覆寫：
+    機師頁依當前 ND 算力算出一張 <code>Map&lt;buffId, {level, name}&gt;</code>，
+    chip 顯示名、浮窗內容、（Slice 2 起）數值 token 都問這張表。
+    全頁只有一張表 → 「天賦說 III、技能說 I」在結構上不可能發生。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：升階規則存在「神經驅動能力」上，門檻沿用掛載級</strong><br>
+    在 <code>NeuralDriveAbility</code> 新增 <code>buffUpgrades?: string[]</code>（元素格式同 <code>buffIds</code> 的 <code>id@N</code>）。
+    語意是「<b>升階</b>」而非「<b>賦予</b>」——本能力生效時，該 buff 家族在本機師頁的生效階至少為 N。
+    刻意<b>不存 zone / minSum</b>：門檻就是它被掛在哪一個 <code>NeuralDriveLevel</code>（見上方已驗證的建模假設），
+    使同一條規則在系統中只存一份、漂移面積為 1 而非 N。
+  </div>
+
+  <div class="warning-block">
+    <strong>更正：門檻「由爬蟲維護會自癒」不成立</strong><br>
+    <code>scripts/scrape-pilots-v3.js</code> 的 <code>ndAreIds</code> guard：只要該機師每個 ND level 都有
+    <code>abilityId</code>（PLAN-023 flip 後全站如此），<code>neuralDrive</code> 整段跳過補丁，
+    <code>minSum</code> 永遠不會被 API 值刷新。本方案的優勢須誠實表述為
+    「<b>同一條門檻只存一份，漂移面積 1 而非 N</b>」，而非「會自動更新」。
+    緩解手段見 Phase H 的 <code>check-nd-minsum-drift.mjs</code>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：換字條件是「確實抬升」，不是「有值」</strong><br>
+    <code>lifted = ov != null &amp;&amp; ov.level &gt; (ref.level ?? 0)</code>。<br>
+    這是本設計最容易寫錯、也最致命的一行。若寫成「覆寫表有值就換字」，
+    由於 <code>eff = max(ref.level, override)</code> 在無覆寫時也等於 <code>ref.level</code>，
+    只要 <code>BuffLevel.name</code> 一填，<b>全站 20 個 RefText 站點</b>近 100 個 chip 的字面
+    都會被靜默替換成 <code>BuffLevel.name</code>——而實測這些字面全形（凝勢Ⅰ）半形（短路I）混用，
+    還有 <code>縱敵ⅠⅠ</code>、<code>失穩ⅠⅠⅠ</code>（重複 U+2160）這種損毀 name 會被升格成顯示值。
+    抬升時<b>必須加視覺標記</b>（雙底線 + title「已由 γ2 算力自 Lv1 提升至 Lv3」）——
+    技能區是使用者對照官方 wiki 最頻繁的地方。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：降級以 buff 家族為單位「原子化」</strong><br>
+    覆寫表<b>建表時即驗證</b>，五道閘門任一不過則該家族整族不進表（字面／浮窗／數值一起維持原狀）：
+    ① buffs 已載入 ② 該級存在 ③ <code>BuffLevel.name</code> 有值 ④ 掛載級 <code>minSum &gt; 0</code> ⑤ 屬自身增益。
+    <b>絕不允許「不換字但數值照抬」</b>——那會產生「獲得2層[凝勢Ⅰ]，可疊加7層」這種字面與數字自相矛盾的句子，
+    比修改前更難察覺。使用者看到的是「點了沒反應」（可回報、dev 有 warn），而不是錯誤資訊。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：四條寫死的資料規則</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>等級變更一律走 <code>buffUpgrades</code></b>；<code>ndVariants</code> 只准表達非等級性變更
+          （如艾達 γ2 ≥ 16 的 [星爆] 與 3AP→5AP）</li>
+      <li><b>只能選既有等級，不能計算等級</b>——不得為了讓 <code>buffUpgrades</code> 能用而在共享 buffs 集合裡憑空造級</li>
+      <li><b>通用能力不得填 <code>buffUpgrades</code></b>（<code>nd_AP優化3</code> 這類跨機師共享能力）</li>
+      <li><b>debuff 家族一律禁用</b>，由 <code>assertSelfBuff</code> 在建表時攔截，不是只寫進文件</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：顯示名的權威落在 <code>BuffLevel.name</code></strong><br>
+    實測 222 筆 buffs、39 族階梯 buff，目前「第 N 級叫什麼」在系統中<b>完全沒有落點</b>，
+    所以光把 ref 指到 lv3 也渲染不出「凝勢III」。<br>
+    遊戲裡沒有階名的家族（<code>BUFF_幹勁</code>、<code>BUFF_情報</code>、<code>buff_隱形</code>）
+    填 <code>name</code> = <code>buff.name</code> 原字——這是「明示此級顯示為原名」的<b>編輯決策</b>，
+    字面不變但浮窗與數值正確抬升，且是 opt-in 而非靜默漏填。<br>
+    <b>2026-07-26 確認：此非新增規範，而是把既有實務寫進型別。</b>
+    貝爾莎的 <code>BUFF_幹勁</code>（官方沒有幹勁 I/II，而是直接在神經驅動給最大層數）
+    現況就是「<b>自訂等級但沿用同一個名字</b>」，以此避開「官方無階名卻要分級」的矛盾。
+    此時決策三的<b>視覺標記格外重要</b>：字面沒變，只有標記能告訴使用者這個值被算力改過。<br>
+    <b>刻意不做羅馬數字自動推導</b>：現況資料已知損壞（失穩ⅠⅠⅠ／護甲降低ⅠⅠ），
+    且 <code>虛粒子矩陣EX</code> 的 X 是羅馬字母、<code>skill_緊急避險</code> 的 [隱形] 字面根本沒有羅馬數字
+    卻指向 <code>BUFF_隱形I</code>——推導在實測髒資料上必然失敗。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：模擬層不吃 <code>buffUpgrades</code>，且由 <code>runSpec</code> 強制</strong><br>
+    保護手段是 <code>Site.excludeFromPool</code> 宣告式排除，<b>不用</b>既有的 <code>skipSiteId</code>。
+    實測 <code>buildBuffPool</code> 只跑 SPECS 的 pilots / pilotSkills / modules / weapons / backpacks，
+    <b>從不 traverse <code>SPECS.neuralDriveAbilities</code></b>，而 <code>skipSiteId</code> 是 <code>runSpec</code>
+    的單一 optional 參數、只有 pilots 傳入。靠呼叫端記得傳＝零保護，
+    而且測試會因「測到一條本來就沒被走過的路徑」而恆綠、零資訊量。
+  </div>
+
+  <div class="section-title" style="margin-top:32px;">資料模型</div>
+
+  <div class="code-block">
+<span class="cm">// src/types/pilot.ts — 升階規則的唯一落點</span>
+<span class="kw">export interface</span> <span class="ty">NeuralDriveAbility</span> {
+  <span class="cm">// …既有欄位…</span>
+  <span class="cm">/** 既有：「賦予」——本能力讓你獲得這些 buff（id 或 id@N）。會進 buffPool。 */</span>
+  <span class="nm">buffIds</span>: <span class="ty">string</span>[]
+  <span class="cm">/**</span>
+<span class="cm">   * 新增：「升階」而非「賦予」。元素格式同 buffIds 的 `id@N`。</span>
+<span class="cm">   * 語意：本能力生效時，該 buff 家族在「本機師頁」的生效階至少為 N。</span>
+<span class="cm">   *   nd_雙生星芒2（艾達 γ2 Lv4, minSum=10） → ['buff_凝勢@2']</span>
+<span class="cm">   *   nd_金絲雀1  （梅利莎 γ2 Lv1, minSum=1）→ ['buff_常效維護@2']</span>
+<span class="cm">   * 不存 zone / minSum：門檻 = 本能力被掛在哪一個 NeuralDriveLevel 的 minSum。</span>
+<span class="cm">   * 不進 buffPool——由 Site.excludeFromPool 在 runSpec 內強制。</span>
+<span class="cm">   */</span>
+  <span class="nm">buffUpgrades</span>?: <span class="ty">string</span>[]
+}
+
+<span class="cm">// src/types/buff.ts — 顯示名的唯一權威</span>
+<span class="kw">export interface</span> <span class="ty">BuffLevel</span> {
+  <span class="nm">level</span>: <span class="ty">number</span>
+  <span class="cm">/** 新增：該級顯示名（'凝勢III'）。沒有階名的家族填與 buff.name 相同的字。 */</span>
+  <span class="nm">name</span>?: <span class="ty">string</span>
+  <span class="cm">// …既有的 description / maxStack / duration / maxTriggers / effects…</span>
+}
+
+<span class="cm">// src/types/common.ts — 逐筆逃生門</span>
+<span class="kw">export interface</span> <span class="ty">EntityRef</span> {
+  <span class="cm">// …既有欄位…</span>
+  <span class="cm">/** 新增：true = 此引用釘死在 level，不受 ND 情境覆寫抬升。 */</span>
+  <span class="cm">/** 反例：對敵施加的同名 debuff、描述規則本身的文字。 */</span>
+  <span class="nm">fixedLevel</span>?: <span class="ty">boolean</span>
+}
+
+<span class="cm">// src/utils/ndOverrides.ts（新檔・純函式・可 npm test）</span>
+<span class="kw">export interface</span> <span class="ty">NdOverrideEntry</span> { <span class="nm">level</span>: <span class="ty">number</span>; <span class="nm">name</span>: <span class="ty">string</span> }
+
+<span class="cm">/** 建表即驗證：五道閘門任一不過 → 該 buff 家族整族不進表 + dev warn。 */</span>
+<span class="kw">export function</span> <span class="fn">buildNdBuffOverrides</span>(args: {
+  <span class="nm">drives</span>: <span class="ty">NeuralDrive</span>[] | <span class="ty">undefined</span>
+  <span class="nm">levels</span>: <span class="ty">Record</span>&lt;<span class="ty">string</span>, <span class="ty">number</span>&gt;
+  <span class="nm">abilityOf</span>: (id: <span class="ty">string</span>) =&gt; <span class="ty">NeuralDriveAbility</span> | <span class="ty">undefined</span>
+  <span class="nm">buffOf</span>: (id: <span class="ty">string</span>) =&gt; <span class="ty">GameBuff</span> | <span class="ty">undefined</span>
+}): <span class="ty">Map</span>&lt;<span class="ty">string</span>, <span class="ty">NdOverrideEntry</span>&gt;
+
+<span class="cm">/** 只有「確實被抬升」才回新值，其餘一律回 ref.level（今日行為 byte-identical）。 */</span>
+<span class="kw">export function</span> <span class="fn">effectiveLevel</span>(
+  ref: <span class="ty">EntityRef</span>, ov: <span class="ty">NdBuffOverrides</span>,
+): { <span class="nm">level</span>: <span class="ty">number</span> | <span class="ty">undefined</span>; <span class="nm">lifted</span>: <span class="ty">boolean</span> }
+
+<span class="cm">/** 統一取級：以 level 值比對，不用陣列索引。 */</span>
+<span class="cm">/** 既有不同調：numRefs 用 levels[N-1]、EntityRefView 用 find(l =&gt; l.level === N)， */</span>
+<span class="cm">/** 而實測正式資料已有非連號／亂序（buff_迴避率提升 levels=[3,4]、迴避率降低=[2,3,5,4]）。 */</span>
+<span class="kw">export function</span> <span class="fn">pickLevel</span>&lt;T <span class="kw">extends</span> { level: <span class="ty">number</span> }&gt;(
+  levels: T[] | <span class="ty">undefined</span>, n: <span class="ty">number</span> | <span class="ty">undefined</span>,
+): T | <span class="ty">undefined</span>
+  </div>
+
+  <div class="section-title" style="margin-top:32px;">預期行為</div>
+
+  <table class="impact-table">
+    <thead>
+      <tr><th>機師 · γ2 等級</th><th>算力</th><th>覆寫表</th><th>chip 字面</th><th>浮窗</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>艾達 · Lv1（預設）</td><td>1</td><td>空</td><td>凝勢Ⅰ <span class="badge-good">與今日一致</span></td><td>Lv1 · 疊加 5</td></tr>
+      <tr><td>艾達 · Lv4</td><td>10</td><td>凝勢 → 2</td><td>凝勢II ▲</td><td>Lv2 · 疊加 7</td></tr>
+      <tr><td>艾達 · Lv5 / Lv6</td><td>13 / 16</td><td>凝勢 → 3</td><td>凝勢III ▲</td><td>Lv3 · 疊加 7</td></tr>
+      <tr><td>梅利莎 · Lv1（預設）</td><td>1</td><td>常效維護 → 2</td><td>常效維護II ▲</td><td>Lv2 <span class="badge-med">預設視圖即抬升</span></td></tr>
+      <tr><td>梅利莎 · Lv4 / Lv5 / Lv6</td><td>10 / 13 / 16</td><td>→ 3 / 4 / 5</td><td>常效維護III / IV / V ▲</td><td>對應級</td></tr>
+      <tr><td colspan="5"><b>降級不良</b>（缺 name／級不存在／屬 debuff）→ 該族整族不進表，字面、浮窗、數值三者一起維持今日行為</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label purple">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="info-block">
+    <strong>分兩批交付。</strong>
+    <b>Slice 1</b>（Phase 0 / A / B / C / D / E）解掉使用者實際看到的技能斷裂；
+    <b>Slice 2</b>（Phase F / G）只服務天賦側，是「塌縮 ndVariants 後仍維持正確」的配套。
+    理由：實測 705 支 pilotSkills 中 <code>&lt;refId.lvN.attr&gt;</code> token 出現 <b>0 次</b>，
+    數值症狀在技能這個實際斷裂點上沒有掛載點。<br>
+    此外 <b>Phase A（資料債修復）可獨立出貨</b>——即使全案被否決也有殘值，它修的是現在畫面上就是錯的東西。
+  </div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>三個選填欄位：<code>NeuralDriveAbility.buffUpgrades</code>、<code>BuffLevel.name</code>、<code>EntityRef.fixedLevel</code></li>
+      <li><code>src/utils/ndOverrides.ts</code> 純函式層（建表即驗證、<code>effectiveLevel</code>、<code>pickLevel</code>、<code>defaultNdLevels</code>）</li>
+      <li><code>NdOverrideContext</code> 與 <code>RefChip</code> 的抬升渲染 + 視覺標記 + 浮窗覆寫快照</li>
+      <li>資料債修復：10 筆斷鏈 <code>refId</code>、12 筆缺 <code>level</code>、羅馬數字字形統一、3 筆損毀 <code>buff.name</code></li>
+      <li><code>Site.excludeFromPool</code> 與 red-case-first 的模擬層保護測試</li>
+      <li>後台：NeuralDriveAdmin 的 <code>buffUpgrades</code> 下拉編輯器、BuffAdmin 階名欄位與 level 粒度級聯</li>
+      <li>Slice 2：<code>numRefs</code> 情境化、<code>ndVariants</code> 塌縮（艾達 + 梅利莎）</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>模擬器同步</b>——詳情頁點算力不影響模擬器，維持 <code>buffPool</code> 的滿級假設</li>
+      <li><b><code>EntityRef</code> 的 scope（self/enemy）維度</b>——根治敵我混用需要這個，是另一個量級的工程；
+          本計畫用「限縮 + 逐筆 <code>fixedLevel</code> 逃生門」緩解</li>
+      <li><b>增量語意的升級</b>（「最大疊加層數增加3層」）與<b>絕對值缺級</b>（「情報上限提升至35層」但資料裡沒有 35 層那一級）</li>
+      <li><b>武器頁 / 模組頁等非機師情境</b>的同段文字——它們沒有機師情境，維持原字面（列為已知限制）</li>
+      <li><b>浮窗內再往下 drill 兩層以上</b>——明訂不沿用覆寫快照</li>
+      <li><b><code>refType='term'</code> 的引用</b>——覆寫以 buffId 為 key，純概念指涉的 term chip 不加階名</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 地雷 -->
+<section class="section">
+  <div class="section-label red">Pitfalls</div>
+  <div class="section-title">已驗證的地雷</div>
+
+  <div class="warning-block">
+    <strong>地雷一：浮窗拿不到 provider——架構上不可能，不是實作疏忽</strong><br>
+    <code>ReferenceProvider</code> 在 <code>src/App.tsx</code> 位於 <code>&lt;Routes&gt;</code> <b>之上</b>，
+    <code>EntityRefView</code> 是 <code>{children}</code> 的<b>兄弟</b>——
+    PilotDetailPage 內部包的任何 provider 永遠不可能成為它的祖先。
+    因此浮窗<b>唯一</b>可行路徑是：<code>RefChip</code> 在送出 <code>hoverRef</code> / <code>pinRef</code> 前
+    把 level 烘進 <code>EntityRef</code>，並把覆寫快照一併存進 <code>ReferenceContext</code>。
+    <b>換機師時必須清快照</b>，否則釘選浮窗會殘留上一位機師的算力狀態。
+  </div>
+
+  <div class="warning-block">
+    <strong>地雷二：敵我混用（無解問題，只能緩解）</strong><br>
+    覆寫粒度是「buff 家族 × 整頁」，分不清敵我與來源。實測 98 筆階梯 buff 引用中，
+    <code>buff_失穩</code>／<code>護甲降低</code>／<code>命中率降低</code>／<code>迴避率降低</code>
+    都是<b>對敵 debuff 且被十數支技能共用</b>。緩解＝硬性限縮（<code>assertSelfBuff</code> 建表時攔截）
+    ＋ 逐筆 <code>fixedLevel</code> ＋ 掃描規則納入 <code>npm test</code>。
+    <b>仍無法根治</b>「同一族同時有敵我兩種用法」；Phase 0 若掃出這種家族且它正好是候選，該家族一律排除。
+  </div>
+
+  <div class="warning-block">
+    <strong>地雷三：本地模擬器對本案永久是盲的</strong><br>
+    <code>scripts/export-emulator-slice.mjs</code> 的 <code>DICT_COLLECTIONS</code> <b>缺 <code>neuralDriveAbilities</code></b>
+    （實測 <code>emulator-seed/</code> 只有四個檔）。不補進去的話，任何人在模擬器裡驗證機師頁，
+    ND 能力都會查無 → 覆寫恆為空 → <b>「測起來完全正常（就是今天的行為）」</b>，測不出任何回歸。
+    Phase 0 必須把它<b>永久加進並提交</b>，不是一次性調查動作。
+  </div>
+
+  <div class="warning-block">
+    <strong>地雷四：bump 腳本會直接拒絕本案的收尾指令</strong><br>
+    <code>scripts/bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code> 缺 <code>neuralDriveAbilities</code>（它是合法的 <code>CollectionKey</code>）。
+    收尾指令會在 <code>initFirebase</code> 之前就 <code>exit(1)</code>、<b>一個集合都沒 bump</b>。
+    操作者若沒細看輸出，資料已寫進 Firestore 但全站快取不失效 → 使用者點算力毫無反應，
+    而編輯者自己因 <code>patchCollectionItem</code> 就地同步、看起來一切正常。
+  </div>
+
+  <div class="warning-block">
+    <strong>地雷五：塌縮 <code>ndVariants</code> 會讓天賦面板整組消失</strong><br>
+    <code>TalentNdPanel</code> 第一行是 <code>if (variants.length === 0) return null</code>。
+    梅利莎 4 個變體與 base 的差異 100% 只有階級與 <code>.lvN</code>，依規則會被<b>全數刪除</b>
+    → 面板 return null → 「算力階／生效中」徽章與差異高亮全部消失，而正文卻仍在隨算力變動。
+    <b>塌縮的前置條件</b>是先把面板改成「依 ndOverrides 或 ndVariants 任一有值即渲染」。
+  </div>
+
+  <div class="warning-block">
+    <strong>地雷六：等級來源從兩個變三個，破壞既有不變式</strong><br>
+    正文的 <code>.lvN</code> token、<code>EntityRef.level</code>、ND 覆寫——三個來源。
+    這破壞了 <code>numRefs.ts</code> 檔頭明文宣告的「token 自描述、不靠出現位置」不變式
+    （資料庫寫 <code>lv1.maxStack</code>、buff lv1.maxStack=5，畫面卻顯示 7）。
+    <b>改寫該檔頭註解是 Phase B 的交付項</b>，不可默默帶過；
+    <code>NumRefValue</code> 的 title 也須明寫抬升來源。
+  </div>
+
+  <div class="warning-block">
+    <strong>地雷七：爬蟲會洗掉掛載路徑</strong><br>
+    <code>buffUpgrades</code> 存在 <code>neuralDriveAbilities</code> 集合，天然避開 pilots 文件的
+    <code>--force</code> 洗值風險。但 <code>abilityId</code> 是存在
+    <code>pilots.neuralDrive[].levels[].abilityId</code> 上的——爬蟲補丁若重寫 <code>neuralDrive</code> 陣列會洗掉它，
+    <code>resolveNeuralDriveLevel</code> 退回嵌入欄位（實測 <code>buffIds</code> 已全空）→ 覆寫恆為空。
+    這是 PLAN-023 既有暴露面，但本案讓它從「顯示能力描述缺失」升級為「<b>全頁 buff 等級靜默失效</b>」。
+  </div>
+
+  <div class="warning-block">
+    <strong>地雷九：文案風格因角色設計者而異，「同頁一致」不是全站不變式（2026-07-26 實機確認）</strong><br>
+    官方不同角色的文案由不同人撰寫，規則並不統一：<b>有些機師的技能敘述會隨算力改寫，有些不會</b>。
+    艾達 [凝勢]（技能分頁與天賦一致）與露西亞 [特種彈]（天賦階隨算力變動）已實機確認為「會變」的那一類，
+    但不可外推到全部。<br>
+    因此決策一的「全頁一張表 → 天賦說 III、技能說 I 在結構上不可能發生」，
+    保證的是<b>本站呈現的內部一致性</b>，不是「官方也一定這樣顯示」。
+    這使 <code>EntityRef.fixedLevel</code> 從「逐筆逃生門」升級為<b>必要機制</b>：
+    凡官方在該處不改寫的引用點必須逐筆釘死，否則本站會顯示出遊戲裡看不到的階名——
+    而技能區正是使用者對照官方 wiki 最頻繁的地方（同決策三）。<br>
+    <b>連帶 SOP：</b>每族啟用 <code>buffUpgrades</code> 前須實機確認「該族在<b>該機師</b>的技能敘述是否跟著變」，
+    逐筆決定 <code>level</code> 或 <code>fixedLevel</code>；此項併入 Phase E 後台警示與 Phase H 的 data-patch SOP。
+  </div>
+
+  <div class="warning-block">
+    <strong>地雷八：效能——context value 必須 memo 化</strong><br>
+    <code>RefChip</code> 是全站扇出最高的葉節點。<code>NdOverrideContext</code> 的 value
+    若每次 render 新建物件，provider 底下所有 chip 都會失去 memo（即使覆寫表為空的機師頁也一樣）。
+    無 provider 的頁面走模組級 <code>EMPTY</code> 常數則無此問題。
+  </div>
+</section>
+
+<!-- 與其他計畫的關係 -->
+<section class="section">
+  <div class="section-label purple">Relations</div>
+  <div class="section-title">與其他計畫的關係</div>
+
+  <table class="impact-table">
+    <thead>
+      <tr><th>計畫</th><th>狀態</th><th>關係</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>PLAN-030</b> 資料變更歷史</td>
+        <td><span class="badge-good">依賴已滿足</span></td>
+        <td><s>Phase D 與 Phase G 皆 blocked。</s><b>2026-07-26 解除</b>：PLAN-030 已歸檔，
+            <code>entityRefs.ts</code> / <code>cascadePatch.ts</code> / <code>buffPool.ts</code> 皆已進版控，
+            Phase G 不可逆刪除所需的 <code>ReversePatch</code> 還原能力已就緒。</td>
+      </tr>
+      <tr>
+        <td><b>PLAN-032</b> 武器技能引用化</td>
+        <td><span class="badge-good">無衝突</span></td>
+        <td>可平行。本案完全不動 <code>PilotSkillDoc</code>。</td>
+      </tr>
+      <tr>
+        <td><b>PLAN-023</b> 神經驅動能力庫</td>
+        <td><span class="badge-med">自然延伸</span></td>
+        <td>在其 <code>NeuralDriveAbility</code> 上加欄位。同時須記錄其兩個既有暴露面：
+            ND <code>buffIds</code> 實測已全空、<code>abilityId</code> 掛在 pilots 文件上會被爬蟲洗掉（地雷七）。</td>
+      </tr>
+      <tr>
+        <td><b>PLAN-021</b> 神驅算力天賦改寫</td>
+        <td><span class="badge-med">部分取代</span></td>
+        <td>不重開該計畫。PLAN-021 的決策是「整段換文」，本案 Phase G 要<b>刪掉</b>它產出的資料
+            （艾達 2 階、梅利莎 4 階），並把等級變更的權威改到 <code>buffUpgrades</code>。
+            其計畫書從未討論技能正文也會被算力改寫，四項「不在範圍內」也沒列到它——此為其設計盲點，據實記載於此。</td>
+      </tr>
+      <tr>
+        <td><b>PLAN-024</b> BUFF 等級化重構</td>
+        <td><span class="badge-low">語意延伸</span></td>
+        <td><code>BuffLevel.name</code> 補上該計畫未涵蓋的「第 N 級叫什麼」。
+            Phase A 修的 8 筆舊分級 ID 斷鏈也是該計畫合併後的遺留。</td>
+      </tr>
+      <tr>
+        <td><b>PLAN-019</b> 實體引用與模擬基礎</td>
+        <td><span class="badge-low">Layer 1 擴充</span></td>
+        <td>本案動到 <code>RefChip</code> / <code>RefText</code> / <code>DiffHighlight</code>，屬 Layer 1 範圍，
+            但因橫跨資料模型與稽核層而另立計畫，避免總綱的 Layer 邊界失焦。</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label purple">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-034 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-034 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>
