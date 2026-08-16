@@ -1083,7 +1083,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A &nbsp; 部署（不做的話後台頁面與新規則都不存在）</div>
       <div class="task-group-meta">最容易漏的一步</div>
-      <span class="status pending">待執行</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1094,10 +1094,11 @@
           新增的 <code>announcementDrafts</code> / <code>pendingActivities</code> 兩段規則沒上線的話，
           爬蟲仍寫得進去（admin SDK 繞過規則），但<strong>後台讀不到</strong>——
           Firestore 對沒被任何 <code>match</code> 命中的集合一律拒絕。
+          <br><strong>✔ 2026-08-16 已部署完成。</strong>
         </div>
       </div>
       <div class="task-assignee">維護者<div class="task-hours">~1min</div></div>
-      <span class="status pending">待執行</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1105,10 +1106,11 @@
         <div class="task-desc">
           把 <code>feat/plan-048-phase0</code> 合併進 <code>main</code>，<code>deploy.yml</code> 自動發佈。
           <code>/admin/announcements</code> 在那之前只存在於本機。
+          <br><strong>✔ 2026-08-16 已合併（PR #11）並部署。</strong>
         </div>
       </div>
       <div class="task-assignee">維護者<div class="task-hours">~5min</div></div>
-      <span class="status pending">待執行</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -1125,15 +1127,24 @@
           與本機那把分開，外洩時可單獨撤銷、不會連帶弄死所有 migrate/scrape 腳本。
           <br><strong>⚠ 誠實說明限制：</strong>Firestore 的 IAM 粒度是<strong>資料庫層級</strong>（<code>datastore.user</code>），
           做不到「只能寫這兩個集合」。所以這把金鑰仍有完整讀寫權，分開建的價值在<strong>可獨立撤銷</strong>，不是最小權限。
-          <div class="code-block" style="margin-top:8px;"><pre>gcloud iam service-accounts create scraper-announcements \
+          <div class="code-block" style="margin-top:8px;"><pre># ① 建身分（此時它什麼都不能做）
+gcloud iam service-accounts create scraper-announcements `
   --display-name="PLAN-048 公告排程" --project=mecharashi-tools
 
-gcloud projects add-iam-policy-binding mecharashi-tools \
-  --member="serviceAccount:scraper-announcements@mecharashi-tools.iam.gserviceaccount.com" \
+# ② 給 Firestore 讀寫權
+gcloud projects add-iam-policy-binding mecharashi-tools `
+  --member="serviceAccount:scraper-announcements@mecharashi-tools.iam.gserviceaccount.com" `
   --role="roles/datastore.user"
 
-gcloud iam service-accounts keys create scraper-sa.json \
+# ③ 產生金鑰 —— ⚠ 刻意產在 repo 之外
+gcloud iam service-accounts keys create "$env:TEMP\scraper-sa.json" `
   --iam-account=scraper-announcements@mecharashi-tools.iam.gserviceaccount.com</pre></div>
+          <strong>⚠ 金鑰檔絕對不要產在 repo 目錄裡。</strong>
+          <code>.gitignore</code> 原本只涵蓋 <code>serviceAccountKey.json</code> 與
+          <code>*firebase-adminsdk*.json</code>，而 <code>keys create</code> 的輸出檔名由指令決定、
+          <strong>不受那兩條保護</strong>。已補上 <code>*-sa.json</code> 當安全網，但正確做法是讓檔案
+          根本不進工作目錄——repo 是公開的，一次誤提交就等於外洩。
+          <br>（續行符號是 PowerShell 的反引號 <code>`</code>，不是 bash 的反斜線。）
         </div>
       </div>
       <div class="task-assignee">維護者<div class="task-hours">~10min</div></div>
@@ -1143,11 +1154,26 @@ gcloud iam service-accounts keys create scraper-sa.json \
       <div>
         <div class="task-name">B2. 把金鑰放進 GitHub Secrets，然後刪掉本機那份</div>
         <div class="task-desc">
-          <code>gh secret set SCRAPER_SA_KEY &lt; scraper-sa.json</code> → 接著 <code>rm scraper-sa.json</code>。<br>
+          <div class="code-block"><pre>gh secret set SCRAPER_SA_KEY &lt; "$env:TEMP\scraper-sa.json"
+Remove-Item "$env:TEMP\scraper-sa.json"     # 上傳完立刻刪，本機不留</pre></div>
           名稱刻意與 Cloudflare Worker 的 <code>FIREBASE_SA_KEY</code> 分開，避免日後輪替時搞混哪把是哪把。
           Secrets 為加密儲存、log 自動遮罩、<strong>不會提供給 fork 發來的 PR workflow</strong>，
           故 public repo 不代表金鑰公開。
           <br>日後想升級成 Workload Identity Federation（完全不存長期金鑰）隨時可換，<strong>只改 workflow 認證那幾行、不動程式碼</strong>。
+        </div>
+      </div>
+      <div class="task-assignee">維護者<div class="task-hours">~2min</div></div>
+      <span class="status pending">待執行</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">B3. 立刻驗證，不要等到週四才發現沒設好</div>
+        <div class="task-desc">
+          到 GitHub 的 <strong>Actions → 台版公告自動抓取 → Run workflow</strong>，
+          把 <code>dry_run</code> 勾起來執行。全程零寫入，但會完整跑過
+          「認證 → 抓公告 → 解析 → 印產出量報告」，等於一次把 B 驗完。
+          <br>金鑰沒設或設錯的話，workflow 會在「寫入服務帳號金鑰」那步就明確報錯，
+          不會拖到真正寫入才失敗。
         </div>
       </div>
       <div class="task-assignee">維護者<div class="task-hours">~2min</div></div>
