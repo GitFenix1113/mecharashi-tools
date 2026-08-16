@@ -153,6 +153,18 @@ export interface PatchHalf {
   cnDate: string
   twDate?: string
   twIsPredicted?: boolean
+  /**
+   * 這半個版本有幾週。**未填視同 3**（官方慣例，實測全程如此）。
+   *
+   * 存在的理由是「以後可能有例外」——真出現 4 週或 2 週的半版本時，改這一格即可，
+   * 不必動程式。上半另有更可靠的來源：下半的開始日就是它的自然邊界，
+   * 那是實際日期而非慣例，所以**上半優先用推算、這個欄位只在推不出時才用**。
+   *
+   * ⚠ 這個長度**不會**被活動撐長。跨版本的活動（如 6 週戰令跨進下個版本）
+   * 會在軸尾切平（ganttGeometry 的 clipEnd），而不是把週軸拉長 ——
+   * 拉長會讓甘特顯示出根本不屬於這個版本的週次。
+   */
+  weeks?: number
   pilots?: string[]
   mechs?: string[]
   pilotSelection?: string[]

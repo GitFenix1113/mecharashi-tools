@@ -14,6 +14,52 @@ export function addDays(date: Date, n: number): Date {
   return new Date(date.getTime() + n * DAY_MS)
 }
 
+/** 半版本的預設長度。官方慣例，實測全程如此；例外由 PatchHalf.weeks 覆寫。 */
+export const DEFAULT_HALF_WEEKS = 3
+
+/**
+ * 一段半版本的週軸。
+ *
+ * 長度來源的優先序（**活動不在其中**，見下）：
+ *   ① endStr —— 下一段的開始日，是實際日期而非慣例，最可靠（上半用下半的開始日）
+ *   ② explicitWeeks（PatchHalf.weeks）—— 維護者手動指定的例外
+ *   ③ DEFAULT_HALF_WEEKS
+ *
+ * ⚠ **週軸絕不被活動撐長。** 舊版會拿最長的活動去延伸軸尾，於是 v3.1 下半
+ * （7/30 起、3 週）因為一條 6 週的戰令而長出 8/20～9/3 三欄 —— 那三週實際上
+ * 屬於 v3.2，甘特卻把它們畫成 v3.1 的一部分。跨版本的活動改由 activityGeometry
+ * 在軸尾切平（clipEnd，長條右緣不收圓角），這才是「延續到下個版本」的正確表達；
+ * 把軸拉長是拿顯示錯誤去遷就一條長條。
+ */
+export function generateWeeks(
+  startStr: string,
+  endStr: string | null,
+  explicitWeeks?: number,
+): Date[] {
+  if (!startStr) return []
+  const start = parseDate(startStr)
+
+  let end: Date
+  if (endStr) {
+    end = parseDate(endStr)
+    // 下一段的開始日若早於起點（資料填錯），退回慣例長度而不是產出空軸
+    if (end <= start) end = addDays(start, DEFAULT_HALF_WEEKS * 7)
+  } else {
+    const w = Number.isFinite(explicitWeeks) && (explicitWeeks ?? 0) > 0
+      ? Math.round(explicitWeeks!)
+      : DEFAULT_HALF_WEEKS
+    end = addDays(start, w * 7)
+  }
+
+  const weeks: Date[] = []
+  let cur = start
+  while (cur < end) {
+    weeks.push(cur)
+    cur = addDays(cur, 7)
+  }
+  return weeks
+}
+
 export interface BarGeom {
   /** 相對整條週軸的左緣百分比 */
   leftPct: number

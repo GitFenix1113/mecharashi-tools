@@ -3,7 +3,7 @@
 // 本檔已從 tsconfig.app build 排除，不影響 vite/tsc 打包。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { activityGeometry, todayPct, parseDate, addDays, DAY_MS } from './ganttGeometry.ts'
+import { activityGeometry, todayPct, parseDate, addDays, generateWeeks, DEFAULT_HALF_WEEKS, DAY_MS } from './ganttGeometry.ts'
 import type { TimedActivity } from '../../data/patchVersions/types.ts'
 
 /** 2026/08/06 起連續 7 週（皆為週四），對應 v3.5 的軸 */
@@ -95,4 +95,35 @@ test('todayPct 忽略時分秒（同一天不同時刻結果相同）', () => {
   const a = todayPct(WEEKS, new Date(2026, 7, 13, 0, 0, 0))
   const b = todayPct(WEEKS, new Date(2026, 7, 13, 23, 59, 59))
   assert.equal(a, b)
+})
+
+// ── generateWeeks（週軸長度）─────────────────────────────────────────────────
+
+test('回歸：週軸不被活動撐長 —— 6 週戰令不能把 3 週的下半版本拉成 6 欄', () => {
+  // 錯的時候（v3.1 實際發生）：下半 7/30 起、實際 3 週，卻因為一條 6 週戰令
+  // 而長出 8/20、8/27、9/3 三欄 —— 那三週屬於 v3.2，甘特把它們畫成 v3.1 的。
+  const weeks = generateWeeks('2026/07/30', null)
+  assert.equal(weeks.length, DEFAULT_HALF_WEEKS)
+  assert.equal(weeks.at(-1)!.getMonth() + 1, 8)
+  assert.equal(weeks.at(-1)!.getDate(), 13, '最後一欄是 8/13，8/20 起就是下個版本了')
+})
+
+test('週軸長度優先用下一段的開始日（實際日期勝過慣例）', () => {
+  // 上半 7/9 → 下半 7/30：實際是 3 週。即使慣例也是 3，來源不同 ——
+  // 真出現 4 週的上半時，這裡要跟著實際日期走而不是回退到 3。
+  assert.equal(generateWeeks('2026/07/09', '2026/07/30').length, 3)
+  assert.equal(generateWeeks('2026/07/09', '2026/08/06').length, 4, '4 週的上半要如實畫 4 欄')
+})
+
+test('PatchHalf.weeks 覆寫慣例；沒有下一段時才輪到它', () => {
+  assert.equal(generateWeeks('2026/07/30', null, 5).length, 5)
+  assert.equal(generateWeeks('2026/07/30', null, undefined).length, DEFAULT_HALF_WEEKS)
+  // 明確的下一段日期優先於手填值 —— 手填的是慣例例外，日期是事實
+  assert.equal(generateWeeks('2026/07/09', '2026/07/30', 9).length, 3)
+})
+
+test('下一段日期早於起點（資料填錯）退回慣例，不產出空軸', () => {
+  // 空軸會讓整個甘特消失，比顯示一個慣例長度更糟
+  assert.equal(generateWeeks('2026/07/30', '2026/07/09').length, DEFAULT_HALF_WEEKS)
+  assert.equal(generateWeeks('', null).length, 0, '沒有起始日才回空陣列')
 })

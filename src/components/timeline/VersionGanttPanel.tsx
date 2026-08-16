@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import type { PatchVersion, PatchHalf, VisibleActivity } from '../../data/patchVersions/types'
+import type { PatchVersion, PatchHalf } from '../../data/patchVersions/types'
 import { activitiesOfHalf } from '../../data/patchVersions/legacyActivities'
 import PatchInfoRow from './PatchInfoRow'
 import ActivityBar from './ActivityBar'
@@ -7,7 +7,7 @@ import ActivityCardFlow, { type KeyedActivity } from './ActivityCardFlow'
 import GanttAxisOverlay from './GanttAxisOverlay'
 import { activityTone } from './activityTypeRegistry'
 // 日期工具與長條幾何集中在 ganttGeometry，避免與長條計算各有一份 parseDate 而漂移
-import { parseDate, addDays, activityGeometry } from './ganttGeometry'
+import { parseDate, addDays, activityGeometry, generateWeeks } from './ganttGeometry'
 
 // ── Date utils ─────────────────────────────────────────────────────────────────
 
@@ -16,32 +16,6 @@ function fmtShort(date: Date): string {
 }
 
 // ── C-1: 週軸計算 ──────────────────────────────────────────────────────────────
-
-function generateWeeks(
-  startStr: string,
-  endStr: string | null,
-  acts: VisibleActivity[],
-  minWeeks = 3,
-): Date[] {
-  if (!startStr) return []
-  const start = parseDate(startStr)
-  const minEnd = addDays(start, minWeeks * 7)
-  let end = endStr ? parseDate(endStr) : minEnd
-  if (end < minEnd) end = minEnd
-
-  for (const act of acts) {
-    const actEnd = addDays(parseDate(act.startDate), act.weeks * 7)
-    if (actEnd > end) end = actEnd
-  }
-
-  const weeks: Date[] = []
-  let cur = start
-  while (cur < end) {
-    weeks.push(cur)
-    cur = addDays(cur, 7)
-  }
-  return weeks
-}
 
 /** 一段半版本的近似跨度，供 legacy shim 把舊欄位翻譯成 TimedActivity */
 function halfSpan(startStr: string, endStr: string | null): { startDate: string; weeks: number } | null {
@@ -349,13 +323,14 @@ export default function VersionGanttPanel({
       const upperActs = activitiesOfHalf(version.upper, side, halfSpan(upperStartStr, lowerStartStr))
       const lowerActs = activitiesOfHalf(version.lower, side, halfSpan(lowerStartStr, null))
 
-      // Upper half ends at lowerStart (natural boundary — activities may span across)
-      const upperWeeks =
-        upperStartStr && lowerStartStr
-          ? generateWeeks(upperStartStr, lowerStartStr, [])
-          : []
+      // 上半的邊界是下半的開始日（實際日期，最可靠）；缺下半日期時退回 weeks／慣例。
+      // 下半沒有「下一段」可用（下個版本不在這個元件的視野內），故走 weeks／慣例。
+      // 兩者都不再被活動撐長 —— 跨版本的長條在軸尾切平，見 generateWeeks 的說明。
+      const upperWeeks = upperStartStr
+        ? generateWeeks(upperStartStr, lowerStartStr || null, version.upper.weeks)
+        : []
       const lowerWeeks = lowerStartStr
-        ? generateWeeks(lowerStartStr, null, lowerActs)
+        ? generateWeeks(lowerStartStr, null, version.lower.weeks)
         : []
       const allWeeks = [...upperWeeks, ...lowerWeeks]
 

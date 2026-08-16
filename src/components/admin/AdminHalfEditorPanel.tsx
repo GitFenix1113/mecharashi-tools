@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { PatchHalf, ArmamentRaid } from '../../data/patchVersions/types'
 import AdminTimedActivityEditor, { weekdayInfo, toInputDate, fromInputDate } from './AdminTimedActivityEditor'
+import { DEFAULT_HALF_WEEKS } from '../timeline/ganttGeometry'
 
 // ── 共用小元件 ─────────────────────────────────────────────────────────────────
 
@@ -318,6 +319,32 @@ export default function AdminHalfEditorPanel({ value, onChange }: Props) {
           </label>
         </div>
       </div>
+
+      {/* 半版本長度：留空即慣例的 3 週，只有例外才要填 */}
+      <div className="mt-4 flex items-center gap-2 flex-wrap">
+        <span className="text-xs text-text-secondary">本半版本長度</span>
+        <input
+          type="number"
+          min={1}
+          max={12}
+          value={value.weeks ?? ''}
+          placeholder={String(DEFAULT_HALF_WEEKS)}
+          onChange={e => {
+            const v = e.target.value.trim()
+            update({ weeks: v === '' ? undefined : Math.max(1, parseInt(v) || DEFAULT_HALF_WEEKS) })
+          }}
+          className="w-16 bg-bg-card border border-border rounded px-2 py-1 text-xs text-text-primary placeholder-text-dim outline-none focus:border-accent-purple/50"
+        />
+        <span className="text-xs text-text-dim">
+          週 —— 留空即預設 {DEFAULT_HALF_WEEKS} 週。
+          <strong className="text-text-secondary">上半通常不必填</strong>：它的長度直接由下半起始日算出來，
+          比慣例可靠；這一格只在算不出來時才生效。
+        </span>
+      </div>
+      <p className="mt-1 text-[10px] text-text-dim">
+        跨版本的活動（例如 6 週戰令跨進下個版本）不會把週軸拉長，長條會在版本結束處切平 ——
+        拉長會讓甘特顯示出不屬於這個版本的週次。
+      </p>
 
       {/* 機師 / 機甲 */}
       <SectionLabel>新卡池</SectionLabel>
