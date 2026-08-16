@@ -98,6 +98,17 @@ function ActivityDetail({ act, tone }: { act: VisibleActivity; tone: ActivityTon
         </div>
       )}
 
+      {/* 站方備註：與上面抄自公告的「說明」刻意分成兩塊並換色，
+          讀者才分得出哪句是官方寫的、哪句是我們補的 */}
+      {act.editorNote && (
+        <div className="border-l-2 border-accent-cyan/50 pl-2">
+          <div className="text-[11px] text-accent-cyan mb-0.5">備註</div>
+          <div className="text-[12px] text-text-secondary leading-relaxed whitespace-pre-line">
+            {act.editorNote}
+          </div>
+        </div>
+      )}
+
       {entityRows.length > 0 && (
         <div className="text-[12px] pt-1 border-t border-border/60 space-y-0.5">
           {entityRows.map(r => (

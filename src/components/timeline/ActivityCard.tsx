@@ -116,6 +116,14 @@ export default function ActivityCard({
         </div>
       )}
 
+      {/* 站方備註：不 line-clamp —— 它通常只有一句，且正是讀者最該先看到的那句 */}
+      {act.editorNote && (
+        <div className="text-[11px] mt-1.5 leading-relaxed border-l-2 border-accent-cyan/50 pl-2">
+          <span className="text-accent-cyan mr-1.5">備註</span>
+          <span className="text-text-secondary whitespace-pre-line">{act.editorNote}</span>
+        </div>
+      )}
+
       {(entityParts.length > 0 || act.sourceUrl) && (
         <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t border-border/60">
           {entityParts.length > 0 ? (

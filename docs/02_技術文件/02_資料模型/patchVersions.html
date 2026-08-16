@@ -402,6 +402,7 @@
   <span class="cm">// ── PLAN-048 Phase 2 新增 ──</span>
   hidden?: <span class="ty">boolean</span>         <span class="cm">// 前台一律不顯示（資料未齊，補完取消勾選即上線）</span>
   note?: <span class="ty">string</span>            <span class="cm">// 後台備註：缺什麼、去哪裡查。前台永不顯示</span>
+  editorNote?: <span class="ty">string</span>      <span class="cm">// 站方備註：官方沒寫但玩家該知道的慣例。前台以「備註」顯示</span>
 }
 
 <span class="cm">// 通過前台顯示閘門的活動：保證有 weeks 且未被隱藏</span>
@@ -534,6 +535,19 @@
         與 <code>description</code> 的分工很明確：<code>description</code> 是給讀者看的活動說明，
         <code>note</code> 是給維護者看的待辦事項。混在一起的話，補完資料時得先分辨哪一段是要刪掉的施工註記。<br>
         後台 <code>/admin/announcements</code> 的「規則待擴充」分頁會把所有 <code>hidden</code> 活動連同 <code>note</code> 彙總成待補清單。
+      </td>
+    </tr>
+    <tr>
+      <td class="field-name">editorNote</td>
+      <td class="field-type">string?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>
+        站方備註：<strong>官方沒寫、但玩家需要知道</strong>的補充。<strong>前台會顯示</strong>（甘特浮窗與活動卡片，
+        以青色「備註」標示，與抄自公告的說明分成兩塊）。<br>
+        例：「角雕刮刮樂固定是出外觀的活動」—— 這種慣例官方公告從不寫，卻是讀者最想先知道的一句話。<br>
+        三個文字欄位的分工：<code>description</code> 是<strong>官方寫的</strong>規則（多由解析器抄入）、
+        <code>editorNote</code> 是<strong>我們寫的</strong>補充（解析器永不填寫）、
+        <code>note</code> 是<strong>給維護者的待辦</strong>（前台永不顯示）。分開存才始終分得出來源。
       </td>
     </tr>
   </table>

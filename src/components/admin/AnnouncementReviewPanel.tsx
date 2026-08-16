@@ -153,7 +153,7 @@ export default function AnnouncementReviewPanel({
       delete activity.hidden
     }
     // 空字串欄位不要寫進去，免得前台把 '' 當成「有值但空」
-    for (const k of ['description', 'sourceUrl', 'typeLabel', 'note'] as const) {
+    for (const k of ['description', 'sourceUrl', 'typeLabel', 'note', 'editorNote'] as const) {
       if (!activity[k]?.trim()) delete activity[k]
     }
     if (!activity.pilots?.length) delete activity.pilots
@@ -302,6 +302,19 @@ export default function AnnouncementReviewPanel({
                 className={INPUT}
                 value={form.description ?? ''}
                 onChange={e => patch({ description: e.target.value })}
+              />
+            </Field>
+          </div>
+
+          {/* 站方備註與上面的「活動說明」分開：說明抄自公告，這裡是我們補的，
+              前台會分成兩塊呈現。解析器永遠不會填這一格。 */}
+          <div className="col-span-2">
+            <Field label="站方備註（前台會顯示）">
+              <input
+                className={INPUT}
+                value={form.editorNote ?? ''}
+                onChange={e => patch({ editorNote: e.target.value })}
+                placeholder="官方沒寫但玩家需要知道的事，如：固定是出外觀的活動"
               />
             </Field>
           </div>

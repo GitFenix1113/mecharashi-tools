@@ -258,6 +258,21 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
                   placeholder="活動說明／規則（換行即分段）"
                   className="w-full bg-bg-card border border-border rounded px-2 py-1 text-[11px] text-text-primary placeholder-text-dim outline-none focus:border-accent-purple/50 resize-y"
                 />
+
+                {/* 站方備註：官方沒寫、但讀者想先知道的慣例。與上面的 description
+                    分開存，是為了始終分得出「官方寫的」與「我們補的」 */}
+                <div>
+                  <input
+                    type="text"
+                    value={act.editorNote ?? ''}
+                    onChange={e => update(idx, { editorNote: e.target.value || undefined })}
+                    placeholder="站方備註（前台會顯示，如：固定是出外觀的活動）"
+                    className="w-full bg-bg-card border border-accent-cyan/40 rounded px-2 py-1 text-[11px] text-text-primary placeholder-text-dim outline-none focus:border-accent-cyan"
+                  />
+                  <p className="mt-0.5 text-[10px] text-text-dim">
+                    寫官方公告不會寫、但玩家需要知道的事。前台以「備註」標示，與上面抄自公告的說明分開呈現。
+                  </p>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   <input
                     type="url"
