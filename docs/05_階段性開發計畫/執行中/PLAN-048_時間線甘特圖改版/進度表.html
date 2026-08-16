@@ -1118,7 +1118,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B &nbsp; 排程金鑰（讓每週自動抓取生效）</div>
       <div class="task-group-meta">專用 SA + GitHub Secrets</div>
-      <span class="status pending">待執行</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1145,17 +1145,23 @@ gcloud iam service-accounts keys create "$env:TEMP\scraper-sa.json" `
           <strong>不受那兩條保護</strong>。已補上 <code>*-sa.json</code> 當安全網，但正確做法是讓檔案
           根本不進工作目錄——repo 是公開的，一次誤提交就等於外洩。
           <br>（續行符號是 PowerShell 的反引號 <code>`</code>，不是 bash 的反斜線。）
+          <br><strong>✔ 2026-08-16 已建立 <code>scraper-announcements</code> 服務帳號。</strong>
         </div>
       </div>
       <div class="task-assignee">維護者<div class="task-hours">~10min</div></div>
-      <span class="status pending">待執行</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">B2. 把金鑰放進 GitHub Secrets，然後刪掉本機那份</div>
         <div class="task-desc">
-          <div class="code-block"><pre>gh secret set SCRAPER_SA_KEY &lt; "$env:TEMP\scraper-sa.json"
+          <strong>⚠ PowerShell 不支援 <code>&lt;</code> 輸入重導向</strong>（保留字，會直接 ParserError），
+          必須改用管線。<code>gh</code> 在未給 <code>--body</code> 時會讀 stdin：
+          <div class="code-block"><pre>Get-Content "$env:TEMP\scraper-sa.json" -Raw | gh secret set SCRAPER_SA_KEY
 Remove-Item "$env:TEMP\scraper-sa.json"     # 上傳完立刻刪，本機不留</pre></div>
+          管線在這裡安全，是因為服務帳號 JSON <strong>全部是 ASCII</strong>
+          （<code>private_key</code> 裡的換行是字面的 <code>\n</code> 兩個字元，不是真換行）——
+          PowerShell 5.1 送資料給原生執行檔時會依主控台編碼重編，含中文的內容才會被弄壞。<br>
           名稱刻意與 Cloudflare Worker 的 <code>FIREBASE_SA_KEY</code> 分開，避免日後輪替時搞混哪把是哪把。
           Secrets 為加密儲存、log 自動遮罩、<strong>不會提供給 fork 發來的 PR workflow</strong>，
           故 public repo 不代表金鑰公開。
@@ -1163,7 +1169,7 @@ Remove-Item "$env:TEMP\scraper-sa.json"     # 上傳完立刻刪，本機不留<
         </div>
       </div>
       <div class="task-assignee">維護者<div class="task-hours">~2min</div></div>
-      <span class="status pending">待執行</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1174,17 +1180,21 @@ Remove-Item "$env:TEMP\scraper-sa.json"     # 上傳完立刻刪，本機不留<
           「認證 → 抓公告 → 解析 → 印產出量報告」，等於一次把 B 驗完。
           <br>金鑰沒設或設錯的話，workflow 會在「寫入服務帳號金鑰」那步就明確報錯，
           不會拖到真正寫入才失敗。
+          <br><strong>✔ 2026-08-16 已驗證通過</strong>（run 31952624628，49 秒）：
+          43 篇公告 → 96 筆活動、2.23 筆/篇、零 flag 66%。
+          <strong>與本地 266 篇語料的離線回歸幾乎一致</strong>（2.35 筆/篇、零 flag 66%）——
+          代表 CI 上的行為與本機驗證的完全相同，這正是選 GitHub Actions（單一份解析器）換到的性質。
         </div>
       </div>
       <div class="task-assignee">維護者<div class="task-hours">~2min</div></div>
-      <span class="status pending">待執行</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C &nbsp; 首次灌資料</div>
-      <div class="task-group-meta">也可以直接等排程，週四自己會跑</div>
+      <div class="task-group-meta">一次性建庫批次，不是每週流量</div>
       <span class="status pending">待執行</span>
     </div>
     <div class="task-row">
@@ -1195,7 +1205,16 @@ Remove-Item "$env:TEMP\scraper-sa.json"     # 上傳完立刻刪，本機不留<
           <code>node scripts/scrape-tw-announcements.mjs</code>（正式寫入；預設增量，只抓歸檔沒有的新公告）<br>
           然後到 <code>/admin/announcements</code> 審核。
           <br>也可以在 GitHub 的 Actions 分頁手動觸發該 workflow（支援 dry-run 選項），效果相同。
-        </div>
+          <div class="warning-block" style="margin-top:10px;">
+            <strong>⚠ 第一次會是 96 筆，不是「每月 2～4 筆」</strong><br>
+            增量的定義是「Firestore 裡還沒有的」，而初始狀態是空的 → 前 3 頁 43 篇公告全部算新的，
+            解析出 <strong>96 筆待審活動，涵蓋 2026-03-18 ～ 2026-08-12 約五個月</strong>
+            （零 flag 63 筆、需人工看 33 筆）。<br>
+            這是<strong>一次性的建庫批次</strong>；之後每週只有 2～3 篇公告 ≈ 5～7 筆活動。
+            而且<strong>躲不掉</strong>——週四排程做的是同一件事，差別只在什麼時候面對。<br>
+            正面看：台版時間線目前幾乎是空的（靜態資料只有 deprecated 舊欄位），
+            這批等於一次補齊近五個月的台版活動史。
+          </div>
       </div>
       <div class="task-assignee">維護者<div class="task-hours">~5min</div></div>
       <span class="status pending">待執行</span>
