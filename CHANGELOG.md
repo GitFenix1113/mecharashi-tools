@@ -241,6 +241,7 @@
 
 ### 🎨 樣式
 
+- 全站宣告 color-scheme: dark，修好原生控件在 Windows 的白底 (`183a4fc`)
 - 版本橫幅背景調淡，並把濃淡抽成具名常數（PLAN-048） (`2020588`)
 - 收合鈕改成明確的按鈕，先前看不出可以點（PLAN-048） (`ffe14fd`)
 - 全站正名為米赫瑪超吉情豹站 — Milkhama PawInfo Station (`4da3bf1`)
