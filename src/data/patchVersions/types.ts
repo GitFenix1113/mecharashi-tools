@@ -47,7 +47,18 @@ export interface TimedActivity {
   // ── 既有欄位，語意不變 ────────────────────────────────────────────────────
   name: string          // 活動名稱，如「角雕刮刮樂」
   startDate: string     // 起始日 YYYY/MM/DD，慣例為星期四
-  weeks: number         // 持續週數（1 = 當週四到下週三；結束時刻為 exclusive）
+  /**
+   * 持續週數（1 = 當週四到下週三；結束時刻為 exclusive）。
+   *
+   * **選填的理由（PLAN-048 Phase 2）**：台版官方公告有 31% 只寫「10:00 起」、
+   * 不寫結束時刻（實測 625 筆中 193 筆，幾乎都是卡池）。填一個「慣例上大概兩週」
+   * 進來就再也分不出哪些是官方寫的、哪些是系統猜的 —— 所以缺就留空。
+   *
+   * ⚠ 不變式：`weeks` 為空的活動**必然** `hidden`。甘特沒有長度就畫不出長條，
+   * 而畫一條長度是猜的長條，比不畫更糟。這條不變式由 `activitiesOfHalf` 這個
+   * 唯一的前台讀取口強制執行（見 legacyActivities.ts），不倚賴寫入端自律。
+   */
+  weeks?: number
   type: ActivityTypeId
   pilots?: string[]     // pilotMission 時的機師列表
   mechs?: string[]      // crossShipping 時的機甲列表
@@ -94,7 +105,36 @@ export interface TimedActivity {
    * 已登錄型別會被 registry 的 label 蓋過 → 日後補登錄時無需回頭清理。
    */
   typeLabel?: string
+
+  /**
+   * 前台一律不顯示這筆（甘特、卡片、首頁濃縮表全部略過）。
+   *
+   * 用途是「資料不完整但捨不得丟」：公告只寫了開始日、沒寫辦多久，
+   * 那筆事實仍然有價值 —— 藏起來等補齊，好過整筆卡在待審清單裡被遺忘。
+   * 補完資料後取消勾選即上線，不需要再跑一次爬蟲或審核流程。
+   *
+   * 這是**顯示閘門**，不是軟刪除：不想要的活動請直接刪掉。
+   */
+  hidden?: boolean
+
+  /**
+   * 後台備註：**缺什麼、為什麼藏起來、要去哪裡查**。前台永不顯示。
+   *
+   * 與 description 的分工很明確：description 是給讀者看的活動說明，
+   * note 是給維護者看的待辦事項。混在一起的話，補完資料時就得先分辨
+   * 哪一段是要刪掉的施工註記。
+   */
+  note?: string
 }
+
+/**
+ * 通過前台顯示閘門的活動：保證有 `weeks`、且未被標記隱藏。
+ *
+ * 把「已檢查過」這件事編碼進型別，甘特與狀態計算就不必各自再防一次 undefined ——
+ * 也讓「忘了過閘門」變成編譯錯誤而不是執行期的 NaN。
+ * 閘門本身是 legacyActivities.ts 的 isVisibleActivity / activitiesOfHalf。
+ */
+export type VisibleActivity = TimedActivity & { weeks: number }
 
 export interface PatchHalf {
   cnDate: string

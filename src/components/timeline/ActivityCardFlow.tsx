@@ -2,11 +2,11 @@
 import { useMemo, useState } from 'react'
 import ActivityCard from './ActivityCard'
 import { activityStatus } from './activityStatus'
-import type { TimedActivity } from '../../data/patchVersions/types'
+import type { VisibleActivity } from '../../data/patchVersions/types'
 
 export interface KeyedActivity {
   key: string
-  act: TimedActivity
+  act: VisibleActivity
 }
 
 type Phase = 'ongoing' | 'upcoming' | 'ended'

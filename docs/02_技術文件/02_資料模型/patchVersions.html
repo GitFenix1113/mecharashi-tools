@@ -386,7 +386,7 @@
   <span class="cm">// ── 既有欄位 ──</span>
   name: <span class="ty">string</span>              <span class="cm">// 活動名稱，如「角雕刮刮樂」、「環島物流節」</span>
   startDate: <span class="ty">string</span>         <span class="cm">// 起始日 YYYY/MM/DD，慣例為星期四</span>
-  weeks: <span class="ty">number</span>             <span class="cm">// 持續週數（1 = 當週四到下週三）</span>
+  weeks?: <span class="ty">number</span>            <span class="cm">// 持續週數（1 = 當週四到下週三）；缺＝公告只寫「起」，該筆必然 hidden</span>
   type: <span class="ty">ActivityTypeId</span>      <span class="cm">// 開放字串；未登錄型別走中性色 + typeLabel</span>
   pilots?: <span class="ty">string</span>[]         <span class="cm">// pilotMission 型別時的機師列表</span>
   mechs?: <span class="ty">string</span>[]          <span class="cm">// crossShipping 型別時的機甲列表</span>
@@ -398,7 +398,14 @@
   sourceUrl?: <span class="ty">string</span>       <span class="cm">// 官方公告連結</span>
   confidence?: <span class="st">'confirmed'</span> | <span class="st">'predicted'</span>  <span class="cm">// 未填視同 confirmed</span>
   typeLabel?: <span class="ty">string</span>       <span class="cm">// 未登錄型別的顯示名（已登錄型別以登錄表為準）</span>
+
+  <span class="cm">// ── PLAN-048 Phase 2 新增 ──</span>
+  hidden?: <span class="ty">boolean</span>         <span class="cm">// 前台一律不顯示（資料未齊，補完取消勾選即上線）</span>
+  note?: <span class="ty">string</span>            <span class="cm">// 後台備註：缺什麼、去哪裡查。前台永不顯示</span>
 }
+
+<span class="cm">// 通過前台顯示閘門的活動：保證有 weeks 且未被隱藏</span>
+<span class="kw">export type</span> <span class="ty">VisibleActivity</span> = <span class="ty">TimedActivity</span> &amp; { weeks: <span class="ty">number</span> }
   </div>
 
   <table class="field-table">
@@ -419,9 +426,16 @@
     </tr>
     <tr>
       <td class="field-name">weeks</td>
-      <td class="field-type">number</td>
-      <td><span class="badge badge-req">必填</span></td>
-      <td>持續週數，最小值 1。UI 自動計算 <code>endDate = startDate + weeks × 7 − 1</code>。</td>
+      <td class="field-type">number?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>
+        持續週數，最小值 1。UI 自動計算 <code>endDate = startDate + weeks × 7 − 1</code>。<br>
+        <strong>PLAN-048 Phase 2 起改為選填</strong>：台版官方公告有 <strong>31%</strong> 只寫「10:00 起」、
+        不寫結束時刻（實測 625 筆中 193 筆，幾乎都是卡池）。填一個「慣例上大概兩週」進來，
+        就再也分不出哪些是官方寫的、哪些是系統猜的 —— 所以缺就留空。<br>
+        ⚠ <strong>不變式：缺 <code>weeks</code> 的活動必然 <code>hidden</code></strong>。
+        甘特沒有長度就畫不出長條，而畫一條長度是猜的長條比不畫更糟。
+      </td>
     </tr>
     <tr>
       <td class="field-name">type</td>
@@ -500,7 +514,42 @@
         已登錄型別的顯示名一律以登錄表為準 → 日後補登錄某型別時，先前填的 <code>typeLabel</code> 會自動被蓋過，<strong>無需回頭清資料</strong>。
       </td>
     </tr>
+    <tr>
+      <td class="field-name">hidden</td>
+      <td class="field-type">boolean?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>
+        前台一律不顯示這筆（甘特、卡片、首頁濃縮表全部略過）。<strong>PLAN-048 Phase 2 新增。</strong><br>
+        用途是「資料不完整但捨不得丟」：公告只寫了開始日、沒寫辦多久，那筆事實仍然有價值 ——
+        藏起來等補齊，好過整筆卡在待審清單裡被遺忘。補完資料後取消勾選即上線，<strong>不需要重跑爬蟲或審核流程</strong>。<br>
+        這是<strong>顯示閘門，不是軟刪除</strong>：不想要的活動請直接刪掉。
+      </td>
+    </tr>
+    <tr>
+      <td class="field-name">note</td>
+      <td class="field-type">string?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>
+        後台備註：<strong>缺什麼、為什麼藏起來、要去哪裡查</strong>。前台永不顯示。<br>
+        與 <code>description</code> 的分工很明確：<code>description</code> 是給讀者看的活動說明，
+        <code>note</code> 是給維護者看的待辦事項。混在一起的話，補完資料時得先分辨哪一段是要刪掉的施工註記。<br>
+        後台 <code>/admin/announcements</code> 的「規則待擴充」分頁會把所有 <code>hidden</code> 活動連同 <code>note</code> 彙總成待補清單。
+      </td>
+    </tr>
   </table>
+
+  <div class="warning-block">
+    <strong>⚠ 前台顯示閘門：<code>activitiesOfHalf()</code>（legacyActivities.ts）</strong><br>
+    這是前台讀取活動的<strong>唯一入口</strong>，也是「半成品不上首頁」的唯一保證點。它排除兩種活動，
+    兩個條件是同一件事的兩半、缺一不可：<br>
+    ① <code>hidden === true</code> —— 維護者明確標記「還沒好，先別上」。<br>
+    ② 缺 <code>weeks</code> —— 沒有長度就畫不出長條。<strong>這條不倚賴 <code>hidden</code> 有沒有被正確設定</strong>：
+    寫入端漏標的後果不該是前台畫出一條長度是猜的長條。<br>
+    通過閘門後型別收窄為 <code>VisibleActivity</code>（保證有 <code>weeks</code>），
+    下游 <code>ganttGeometry</code> / <code>activityStatus</code> 因此不必各自再防一次 undefined ——
+    「忘了過閘門」變成編譯錯誤，而不是執行期的 NaN。<br>
+    另一半防線在寫入端：<code>mergeIntoVersion</code> 與後台活動編輯器都會在 <code>weeks</code> 為空時自動補上 <code>hidden</code>。
+  </div>
 
   <div class="info-block">
     <strong>衍生狀態（不存欄位）</strong>：<code>activityStatus(act)</code> 從

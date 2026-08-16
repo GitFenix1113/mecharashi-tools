@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import type { PatchVersion, PatchHalf, TimedActivity } from '../../data/patchVersions/types'
+import type { PatchVersion, PatchHalf, VisibleActivity } from '../../data/patchVersions/types'
 import { activitiesOfHalf } from '../../data/patchVersions/legacyActivities'
 import PatchInfoRow from './PatchInfoRow'
 import ActivityBar from './ActivityBar'
@@ -20,7 +20,7 @@ function fmtShort(date: Date): string {
 function generateWeeks(
   startStr: string,
   endStr: string | null,
-  acts: TimedActivity[],
+  acts: VisibleActivity[],
   minWeeks = 3,
 ): Date[] {
   if (!startStr) return []

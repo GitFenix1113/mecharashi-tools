@@ -16,8 +16,8 @@ export function weekdayInfo(dateStr: string): { label: string; isThur: boolean }
   return { label: `週${WEEKDAY_ZH[d.getDay()]}`, isThur: d.getDay() === 4 }
 }
 
-export function computeEndDate(startDate: string, weeks: number): string {
-  if (!startDate || startDate.length < 10 || weeks < 1) return ''
+export function computeEndDate(startDate: string, weeks: number | undefined): string {
+  if (!startDate || startDate.length < 10 || !weeks || weeks < 1) return ''
   const d = new Date(toInputDate(startDate))
   if (isNaN(d.getTime())) return ''
   d.setDate(d.getDate() + weeks * 7)
@@ -47,7 +47,14 @@ interface Props {
 
 export default function AdminTimedActivityEditor({ label, activities, onChange }: Props) {
   function update(idx: number, patch: Partial<TimedActivity>) {
-    onChange(activities.map((a, i) => (i === idx ? { ...a, ...patch } : a)))
+    onChange(activities.map((a, i) => {
+      if (i !== idx) return a
+      const next = { ...a, ...patch }
+      // 不變式：沒有長度就畫不出甘特長條 → 一律隱藏。
+      // 由寫入端補上而不是要求維護者記得勾 —— 忘了勾的後果是前台出現半成品。
+      if (next.weeks === undefined) next.hidden = true
+      return next
+    }))
   }
 
   function remove(idx: number) {
@@ -150,13 +157,20 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
                     type="number"
                     min={1}
                     max={20}
-                    value={act.weeks}
-                    onChange={e => update(idx, { weeks: Math.max(1, parseInt(e.target.value) || 1) })}
+                    value={act.weeks ?? ''}
+                    placeholder="—"
+                    onChange={e => {
+                      const v = e.target.value.trim()
+                      update(idx, { weeks: v === '' ? undefined : Math.max(1, parseInt(v) || 1) })
+                    }}
                     className="bg-bg-card border border-border rounded px-2 py-1 text-[11px] text-text-primary w-12 outline-none focus:border-accent-purple/50"
                   />
                   <span className="text-[11px] text-text-dim">週</span>
                   {end && (
                     <span className="text-[11px] text-text-dim">→ 結束：{end}</span>
+                  )}
+                  {act.weeks === undefined && (
+                    <span className="text-[11px] text-accent-yellow">未填長度 → 前台不顯示</span>
                   )}
                 </div>
               </div>
@@ -261,7 +275,35 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
                     />
                     推估（未經公告查證）
                   </label>
+                  <label className="flex items-center gap-1.5 text-[11px] text-text-dim whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={act.hidden === true}
+                      disabled={act.weeks === undefined}
+                      onChange={e => update(idx, { hidden: e.target.checked ? true : undefined })}
+                      className="accent-accent-yellow"
+                    />
+                    <span className={act.hidden ? 'text-accent-yellow' : undefined}>
+                      隱藏（資料未齊，前台不顯示）
+                    </span>
+                  </label>
                 </div>
+
+                {/* 後台備註：缺什麼、要去哪查。前台永不顯示，與 description 分工明確 */}
+                {(act.hidden || act.weeks === undefined || act.note) && (
+                  <div>
+                    <input
+                      type="text"
+                      value={act.note ?? ''}
+                      onChange={e => update(idx, { note: e.target.value || undefined })}
+                      placeholder="後台備註：缺什麼、要去哪裡查（前台不顯示）"
+                      className="w-full bg-bg-card border border-accent-yellow/40 rounded px-2 py-1 text-[11px] text-text-primary placeholder-text-dim outline-none focus:border-accent-yellow"
+                    />
+                    <p className="mt-0.5 text-[10px] text-text-dim">
+                      補齊資料後把「隱藏」取消勾選即上線，不需要重跑爬蟲或審核流程。
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )

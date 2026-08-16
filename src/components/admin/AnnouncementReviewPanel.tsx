@@ -20,13 +20,14 @@ import type { MergeTarget } from '../../lib/api/announcementStaging'
 const CUSTOM = '__custom__'
 
 /**
- * 開放式檔期的建議週數。
+ * 週數留空時的預設備註。
  *
- * ⚠ 這是**表單的預填值，不是資料的預設值**。解析器對「10:00 起」這種沒有結束
- * 時刻的公告一律留 weeks 空白（填了就再也分不出「官方真的是這樣」與「我沒抽到」），
- * 由這裡預填並**同時把不確定性顯示在維護者眼前**，讓它在按下合併之前被看見。
+ * 先前這裡預填「建議 2 週」，已經拿掉 —— 預填值會在維護者沒細看時直接變成資料，
+ * 而那正是「填了就再也分不出官方寫的與系統猜的」要防的事。
+ * 現在的做法是：留空即可合併，但該筆自動隱藏、並要求寫下一句備註說明缺什麼。
+ * 半成品因此進得了正式資料（不會卡在待審清單被遺忘），卻上不了首頁。
  */
-const OPEN_ENDED_SUGGESTION = 2
+const DEFAULT_NOTE = '官方公告只寫「起」、未寫結束時刻，待確認檔期長度'
 
 function FlagChip({ flag }: { flag: PendingFlag | string }) {
   const label = PENDING_FLAG_LABEL[flag as PendingFlag] ?? flag
@@ -105,14 +106,20 @@ export default function AnnouncementReviewPanel({
 
   const patch = (p: Partial<TimedActivity>) => setForm(prev => ({ ...prev, ...p }))
 
-  const isOpenEnded = item.flags?.includes('openEnded') && item.extracted.weeks === undefined
-  const weeks = form.weeks ?? (isOpenEnded ? OPEN_ENDED_SUGGESTION : undefined)
-  const weeksIsSuggested = isOpenEnded && form.weeks === undefined
+  const weeks = form.weeks
+  // 缺長度 → 這筆只能以隱藏狀態進去（甘特沒有長度就畫不出長條）
+  const willHide = weeks === undefined || form.hidden === true
+  const needsNote = weeks === undefined
 
   const typeValue = form.type && isKnownActivityType(form.type) ? form.type : (form.type ? CUSTOM : '')
   const wd = form.startDate ? weekdayInfo(form.startDate) : null
 
-  const canMerge = Boolean(form.name?.trim() && form.startDate && weeks && form.type && versionId)
+  // 週數不再是合併的必要條件 —— 缺它就隱藏著進去，等之後補。
+  // 起始日仍然必要：實測 625 筆公告從沒缺過，且缺了連「什麼時候」都答不出來。
+  const canMerge = Boolean(
+    form.name?.trim() && form.startDate && form.type && versionId
+    && (!needsNote || (form.note ?? DEFAULT_NOTE).trim()),
+  )
 
   function submit(half: 'upper' | 'lower') {
     if (!canMerge) return
@@ -120,11 +127,17 @@ export default function AnnouncementReviewPanel({
       ...form,
       name: form.name!.trim(),
       startDate: form.startDate!,
-      weeks: weeks!,
       type: form.type!,
     }
+    if (weeks === undefined) delete activity.weeks
+    if (willHide) {
+      activity.hidden = true
+      activity.note = (form.note ?? '').trim() || DEFAULT_NOTE
+    } else {
+      delete activity.hidden
+    }
     // 空字串欄位不要寫進去，免得前台把 '' 當成「有值但空」
-    for (const k of ['description', 'sourceUrl', 'typeLabel'] as const) {
+    for (const k of ['description', 'sourceUrl', 'typeLabel', 'note'] as const) {
       if (!activity[k]?.trim()) delete activity[k]
     }
     if (!activity.pilots?.length) delete activity.pilots
@@ -183,7 +196,8 @@ export default function AnnouncementReviewPanel({
               type="number"
               step="0.01"
               min="0.1"
-              className={`${INPUT} ${weeksIsSuggested ? 'border-accent-yellow/60' : ''}`}
+              placeholder="（公告未寫）"
+              className={`${INPUT} ${needsNote ? 'border-accent-yellow/60' : ''}`}
               value={weeks ?? ''}
               onChange={e => patch({ weeks: e.target.value === '' ? undefined : Number(e.target.value) })}
             />
@@ -192,12 +206,38 @@ export default function AnnouncementReviewPanel({
               : null}
           </Field>
 
-          {weeksIsSuggested && (
-            <div className="col-span-2 text-[11px] text-accent-yellow bg-accent-yellow/10 border border-accent-yellow/30 rounded px-2 py-1.5">
-              ⚠ 這篇公告只寫「起」、沒有結束時刻。<strong>{OPEN_ENDED_SUGGESTION} 週是建議值，不是官方資料</strong>——
-              請對照實際檔期確認後再合併。
-            </div>
-          )}
+          {/* 隱藏 + 備註：資料不齊也進得去，只是先不上首頁 */}
+          <div className="col-span-2 space-y-1.5">
+            <label className="flex items-center gap-1.5 text-[11px] text-text-secondary">
+              <input
+                type="checkbox"
+                checked={willHide}
+                disabled={needsNote}
+                onChange={e => patch({ hidden: e.target.checked ? true : undefined })}
+                className="accent-accent-yellow"
+              />
+              <span className={willHide ? 'text-accent-yellow' : undefined}>
+                先隱藏，不出現在首頁（之後在版本編輯頁補齊再上線）
+              </span>
+            </label>
+
+            {needsNote && (
+              <div className="text-[11px] text-accent-yellow bg-accent-yellow/10 border border-accent-yellow/30 rounded px-2 py-1.5">
+                ⚠ 這篇公告只寫「起」、沒有結束時刻，所以<strong>週數留空</strong>。
+                這筆會以隱藏狀態併入版本 —— 事實先留住，等查到實際檔期再補上長度並取消隱藏。
+                <strong>不會替你猜一個週數</strong>，猜了就再也分不出哪些是官方寫的。
+              </div>
+            )}
+
+            {willHide && (
+              <input
+                className={`${INPUT} border-accent-yellow/40`}
+                value={form.note ?? ''}
+                placeholder={DEFAULT_NOTE}
+                onChange={e => patch({ note: e.target.value })}
+              />
+            )}
+          </div>
 
           <Field label="型別">
             <select
@@ -295,7 +335,7 @@ export default function AnnouncementReviewPanel({
             onClick={() => submit('upper')}
             className="px-3 py-1.5 text-[12px] rounded border bg-accent-green/15 text-accent-green border-accent-green/40 hover:bg-accent-green/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            → 上半
+            → 上半{willHide ? '（隱藏）' : ''}
           </button>
           <button
             type="button"
@@ -303,7 +343,7 @@ export default function AnnouncementReviewPanel({
             onClick={() => submit('lower')}
             className="px-3 py-1.5 text-[12px] rounded border bg-accent-cyan/15 text-accent-cyan border-accent-cyan/40 hover:bg-accent-cyan/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            → 下半
+            → 下半{willHide ? '（隱藏）' : ''}
           </button>
           <button
             type="button"
@@ -315,7 +355,7 @@ export default function AnnouncementReviewPanel({
           </button>
           {!canMerge && (
             <span className="self-center text-[11px] text-text-dim">
-              名稱／起始日／週數／型別／目標版本都填了才能合併
+              名稱／起始日／型別／目標版本都要填（週數可留空，該筆會隱藏）
             </span>
           )}
         </div>

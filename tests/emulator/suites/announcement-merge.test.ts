@@ -227,6 +227,42 @@ emuSuite('announcement-merge: 合併寫入的原子性、anchor 定位與版本 
     assert.ok(list.some(a => a.name === '並行乙'))
   })
 
+  await t.test('k. 缺 weeks 的半成品進得去，但寫入端強制標記隱藏', async () => {
+    await seedDocs({ pendingActivities: [pending('tw_open_0', { seq: 30 })] })
+    // 刻意不帶 hidden：不變式要由寫入端補上，不是信任呼叫端有記得帶
+    const res = await api.mergeIntoVersion(
+      'tw_open_0',
+      { name: '疾影成鋒', startDate: '2026/09/03', type: 'specificPilotBanner', note: '公告只寫「10:00 起」' },
+      { versionId: 'v3.4', half: 'lower' },
+    )
+    assert.equal(res.ok, true)
+
+    const list = await twActivities('v3.4', 'lower')
+    const act = list.find(a => a.name === '疾影成鋒')
+    assert.ok(act, '半成品要進得了正式集合 —— 卡在待審清單才會被遺忘')
+    assert.equal(act.hidden, true, '缺長度必然隱藏，否則首頁會多一條長度是猜的長條')
+    assert.equal(act.weeks, undefined, '絕不替它補一個看起來合理的週數')
+    assert.equal(act.note, '公告只寫「10:00 起」')
+    assert.ok(String(act.id).startsWith('act_'))
+  })
+
+  await t.test('l. 補齊週數並取消隱藏後即上線（anchor 定位到同一筆）', async () => {
+    await seedDocs({ pendingActivities: [pending('tw_open_1', { seq: 31 })] })
+    const res = await api.mergeIntoVersion(
+      'tw_open_1',
+      { name: '疾影成鋒', startDate: '2026/09/03', weeks: 2, type: 'specificPilotBanner' },
+      { versionId: 'v3.4', half: 'lower' },
+      { overwrite: true },
+    )
+    assert.equal(res.ok, true)
+
+    const list = await twActivities('v3.4', 'lower')
+    const matched = list.filter(a => a.name === '疾影成鋒')
+    assert.equal(matched.length, 1, 'anchor 相同 → 就地更新，不該變成兩筆')
+    assert.equal(matched[0].weeks, 2)
+    assert.equal(matched[0].hidden, undefined, '補齊之後不再隱藏')
+  })
+
   // 收尾：帶外確認整份版本文件仍是完整結構，沒有被任何一步整份覆寫
   const final = await adminDb.doc('patchVersions/v3.4').get()
   const data = final.data()!

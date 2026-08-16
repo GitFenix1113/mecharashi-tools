@@ -20,7 +20,7 @@ import { splitActivityName } from '../../data/patchVersions/activityText'
 import { activityStatus } from './activityStatus'
 import { activityTone, shapeClass, type ActivityTone } from './activityTypeRegistry'
 import type { BarGeom } from './ganttGeometry'
-import type { TimedActivity } from '../../data/patchVersions/types'
+import type { VisibleActivity } from '../../data/patchVersions/types'
 
 const WEEKDAY_ZH = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -30,7 +30,7 @@ function fmt(d: Date): string {
 
 // ── 詳情內容：桌機浮窗與手機 BottomSheet 共用 ─────────────────────────────────
 
-function ActivityDetail({ act, tone }: { act: TimedActivity; tone: ActivityTone }) {
+function ActivityDetail({ act, tone }: { act: VisibleActivity; tone: ActivityTone }) {
   const { base, rewards } = splitActivityName(act)
   const st = activityStatus(act)
   const sub = act.pilots?.join('、') ?? act.mechs?.join('、') ?? ''
@@ -123,7 +123,7 @@ export default function ActivityBar({
   onSelect,
   onHover,
 }: {
-  act: TimedActivity
+  act: VisibleActivity
   actKey: string
   geom: BarGeom
   selected: boolean

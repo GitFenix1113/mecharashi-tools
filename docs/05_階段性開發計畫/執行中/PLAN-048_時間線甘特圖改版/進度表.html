@@ -202,7 +202,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">31</div>
+      <div class="summary-num" style="color:var(--accent-green)">33</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -214,15 +214,15 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">31</div>
+      <div class="summary-num" style="color:var(--text-primary)">33</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度 · Phase 0 / 1 / 2 全數完工（2026-08-16）</span>
-      <span style="color:var(--accent-green);">31 / 31</span>
+      <span>整體完成度 · Phase 0 / 1 / 2 全數完工，另追加 2 項（2026-08-16）</span>
+      <span style="color:var(--accent-green);">33 / 33</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 100%"></div>
@@ -969,6 +969,69 @@
         <div class="task-file">scripts/scrape-tw-announcements.mjs</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group hot">
+    <div class="task-group-header">
+      <div class="task-group-title">2-7 &nbsp; 半成品照樣進得去，只是先不上首頁</div>
+      <div class="task-group-meta">TimedActivity.hidden · note（追加需求）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">weeks 改為選填 + hidden / note 兩個欄位 + 前台顯示閘門</div>
+        <div class="task-desc">
+          <strong>追加原因：</strong>原本的 <code>canMerge</code> 要求名稱／起始日／週數／型別／版本全齊，
+          <strong>不齊就完全動不了</strong> —— 那 31%（193 筆）只寫「10:00 起」的卡池會永遠卡在待審清單。
+          「事實先留住、但別上首頁」比「整筆卡住等到被遺忘」好。
+          <br><strong>三個欄位變動：</strong><code>weeks</code> 由必填改選填；新增 <code>hidden</code>（前台一律不顯示）
+          與 <code>note</code>（後台備註，與給讀者看的 <code>description</code> 分工）。
+          <br><strong>不變式「缺 weeks ⇒ hidden」由兩道獨立防線把關：</strong>
+          寫入端（<code>mergeIntoVersion</code> 與後台活動編輯器）自動補上 <code>hidden</code>；
+          讀取端 <code>activitiesOfHalf()</code> 另外獨立檢查 <code>weeks</code> 是否存在 ——
+          <strong>不倚賴寫入端自律</strong>，漏標的後果不該是首頁多一條長度是猜的長條。
+          通過閘門後型別收窄成 <code>VisibleActivity</code>（保證有 <code>weeks</code>），
+          「忘了過閘門」因此變成編譯錯誤而不是執行期 NaN。
+          <br><strong>⚠ 一併移除了先前的「預填 2 週建議值」</strong>：預填值會在維護者沒細看時直接變成資料，
+          正是「填了就再也分不出官方寫的與系統猜的」要防的事。改為留空即可合併、該筆自動隱藏並要求寫一句備註。
+          <br>新增 6 例單元測試（含「全部被藏起來時不可退回 deprecated 舊欄位」這格 —— 用「過濾後為空」
+          判斷 fallback 會讓首頁顯示早就被取代的舊資料，而且看起來像正常內容），
+          模擬器整合測試補 k / l 兩例（半成品進得去且強制隱藏、補齊後 anchor 定位到同一筆）。
+        </div>
+        <div class="task-file">src/data/patchVersions/types.ts · legacyActivities.ts（+ 測試）· AdminTimedActivityEditor.tsx</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~3h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-8 &nbsp; 「規則待擴充」彙總檢視</div>
+      <div class="task-group-meta">給「之後再根據備註擴充腳本」用的入口</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">待補資料 / 未認領句型 / 未登錄型別，三張表依出現次數排序</div>
+        <div class="task-desc">
+          解析器不可能一次寫對所有句型（官方寫法逐年漂移已實測）。與其每次逐篇翻公告找漏，
+          不如把「沒看懂的東西」依<strong>出現次數</strong>排好：碰到很多次的才值得加規則，
+          只出現一次的手動處理更划算（故預設 <code>minCount = 2</code>）。
+          <br>① <strong>待補資料</strong>：所有 <code>hidden</code> 活動連同 <code>note</code>，標明缺哪些欄位，可直接跳到版本編輯頁。
+          ② <strong>待擴充規則</strong>：未認領原文依句型彙總 —— 實測 492 行收斂成 <strong>57 組</strong>，
+          最高一組 52 次（<code>【⟨名稱⟩】補充說明</code>）。
+          ③ <strong>未登錄型別</strong>：對照計畫書「穩定超過 20 種才開新集合」的升級觸發點。
+          <br><strong>⚠ 句型彙總換過一次做法並如實記錄：</strong>先試「抽四字片語」，
+          實測同一句樣板被拆成十幾個重疊窗格（則下一次／下一次獲／一次獲得…），整張榜單被一句話洗版。
+          改回整行正規化（抹掉日期、數量、括號內容，以及已知的卡池標題文法 <code>主題名 – S級職業</code>）後才收斂得起來 ——
+          關鍵在於未認領原文<strong>本來就大量逐字重複</strong>，整行比對反而精準。
+        </div>
+        <div class="task-file">src/components/admin/announcementInsights.ts（+ 測試）· AnnouncementInsightsPanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~2.5h</div></div>
       <span class="status done">已完成</span>
     </div>
   </div>

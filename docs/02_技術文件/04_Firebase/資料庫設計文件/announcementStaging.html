@@ -134,8 +134,14 @@
 
   <div class="info-block" style="margin-top:12px;">
     <strong>💡 為什麼 <code>openEnded</code> 不自動補一個「慣例 2 週」</strong><br>
-    填了預設值就再也分不出「官方真的是這樣」與「我沒抽到」。後台表單會在<strong>輸入框</strong>預填建議值，
-    但建議值不進資料 —— 這條界線是整個 staging 設計的基礎。
+    填了預設值就再也分不出「官方真的是這樣」與「我沒抽到」。<br>
+    早期版本曾在後台表單<strong>預填</strong>建議值（2 週），已經拿掉 ——
+    預填值會在維護者沒細看時直接變成資料，而那正是這條界線要防的事。<br>
+    <strong>現在的做法</strong>：週數留空也能合併，但該筆會帶著 <code>hidden</code> 與 <code>note</code> 進入
+    <code>patchVersions</code>。<strong>事實先留住（不會卡在待審清單被遺忘），但上不了首頁。</strong>
+    之後在版本編輯頁補上長度、取消隱藏即上線，不需要重跑爬蟲或審核流程。
+    細節見 <a href="../../02_資料模型/patchVersions.html">patchVersions 資料模型</a> 的
+    <code>hidden</code> / <code>note</code> 兩欄與「前台顯示閘門」。
   </div>
 </section>
 
@@ -222,6 +228,20 @@ match /pendingActivities/{docId} {
     兩個集合各建一條，欄位皆為 <code>expireAt</code>，保留期限 <strong>6 個月</strong>。<br>
     理由：已合併的活動其事實已進 <code>patchVersions</code>，公告原文在本地歸檔另有完整一份
     （<code>_local-notes/2026-08/tw-announcements-archive/</code>），staging 留著沒有意義。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔧 「規則待擴充」彙總（<code>/admin/announcements</code> 分頁）</strong><br>
+    解析器不可能一次寫對所有句型，官方寫法逐年漂移是實測過的事實。與其每次逐篇翻公告找漏，
+    後台把三張表依<strong>出現次數</strong>排好，讓「碰到很多次的寫法」自己浮上來：<br>
+    ① <strong>待補資料</strong> —— 所有 <code>hidden</code> 的活動連同 <code>note</code>，標明缺哪些欄位。<br>
+    ② <strong>待擴充規則</strong> —— 未認領原文依句型彙總。實測 492 行未認領原文收斂成 <strong>57 組句型</strong>，
+    最高的一組出現 52 次（<code>【⟨名稱⟩】補充說明</code>）—— 那就是下一版解析器最該處理的。
+    只出現一次的預設不列（滿頁雜訊等於沒有清單）。<br>
+    ③ <strong>未登錄型別</strong> —— 對照計畫書的升級觸發點（穩定超過 20 種才把 activityTypes 開成獨立集合）。<br>
+    句型彙總<strong>不是</strong>抽四字片語：試過，同一句樣板會被拆成十幾個重疊窗格
+    （則下一次／下一次獲／一次獲得…），整張榜單被一句話洗版。改為整行正規化
+    （抹掉日期、數量、括號內容與已知的卡池標題文法）後才收斂得起來。
   </div>
 
   <div class="info-block" style="margin-top:12px;">

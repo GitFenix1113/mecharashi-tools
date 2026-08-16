@@ -1,5 +1,5 @@
 // PLAN-048 Phase 0（任務 0-2）：甘特長條的日精度幾何計算
-import type { TimedActivity } from '../../data/patchVersions/types'
+import type { VisibleActivity } from '../../data/patchVersions/types'
 
 export const DAY_MS = 86_400_000
 
@@ -37,7 +37,7 @@ export interface BarGeom {
  * 該 td 寬度＝週欄總寬，會隨容器變動（Tab 展開／視窗縮放／橫捲）。
  * 用 % 就不必量測 DOM、不必 ResizeObserver，也不會有一幀錯位。
  */
-export function activityGeometry(act: TimedActivity, allWeeks: Date[]): BarGeom | null {
+export function activityGeometry(act: VisibleActivity, allWeeks: Date[]): BarGeom | null {
   if (allWeeks.length === 0) return null
   const axisStart = allWeeks[0].getTime()
   const totalDays = allWeeks.length * 7

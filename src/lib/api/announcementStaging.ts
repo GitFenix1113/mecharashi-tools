@@ -44,6 +44,18 @@ export async function fetchPendingActivities(
   })
 }
 
+/**
+ * 撈全部公告草稿，供「規則待擴充」彙總。
+ *
+ * 沒有分頁：staging 的 TTL 是 6 個月，量級是每週 1～3 則 ≈ 上限 80 份、
+ * 單份 rawText 實測 p50 3 KB。一次撈完換到「句型統計不會因為分頁而失真」——
+ * 只看最近一頁的話，出現次數的排序就沒有意義了。
+ */
+export async function fetchAllDrafts(): Promise<AnnouncementDraft[]> {
+  const snap = await getDocs(collection(db, DRAFTS_COLLECTION))
+  return snap.docs.map(d => ({ ...(d.data() as AnnouncementDraft), id: d.id }))
+}
+
 export async function fetchDraft(draftId: string): Promise<AnnouncementDraft | null> {
   const snap = await getDoc(doc(db, DRAFTS_COLLECTION, draftId))
   return snap.exists() ? ({ ...(snap.data() as AnnouncementDraft), id: snap.id }) : null
@@ -152,7 +164,15 @@ export async function mergeIntoVersion(
       return { ok: false as const, reason: 'conflict' as const, existing: list[dupIdx] }
     }
 
-    const withId: TimedActivity = { ...activity, id: activity.id ?? makeActivityId() }
+    // 不變式：沒有長度就畫不出甘特長條 → 一律隱藏。
+    // 在寫入端強制，而不是信任呼叫端有記得帶 hidden —— 漏帶的後果是首頁多一條
+    // 長度是猜的長條，看起來完全正常卻是假資料。前台讀取口（activitiesOfHalf）
+    // 另有一道獨立防線，兩道都在。
+    const withId: TimedActivity = {
+      ...activity,
+      id: activity.id ?? makeActivityId(),
+      ...(activity.weeks === undefined ? { hidden: true } : {}),
+    }
     if (dupIdx >= 0) list[dupIdx] = { ...withId, id: list[dupIdx].id ?? withId.id }
     else list.push(withId)
 

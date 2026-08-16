@@ -1,5 +1,5 @@
 // PLAN-048 Phase 0：活動的衍生狀態（零新增欄位）
-import type { TimedActivity } from '../../data/patchVersions/types'
+import type { VisibleActivity } from '../../data/patchVersions/types'
 // 帶 .ts 副檔名：本檔受 node --test 覆蓋，Node 原生 ESM 解析需要明確副檔名
 // （同 src/utils/ 下受測模組的既有慣例）
 import { DAY_MS, parseDate } from './ganttGeometry.ts'
@@ -30,7 +30,7 @@ export interface ActivityStatus {
  *
  * `now` 可注入，讓測試不依賴系統時間。
  */
-export function activityStatus(act: TimedActivity, now: Date = new Date()): ActivityStatus {
+export function activityStatus(act: VisibleActivity, now: Date = new Date()): ActivityStatus {
   const weeks = Math.max(act.weeks, 1)
   const start = parseDate(act.startDate)
   const endExclusive = new Date(start.getTime() + weeks * 7 * DAY_MS)

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   fetchPendingActivities,
+  fetchAllDrafts,
   fetchDraft,
   mergeIntoVersion,
   rejectPending,
@@ -12,6 +13,7 @@ import { PENDING_FLAG_LABEL, PARSE_WARNING_LABEL } from '../../types/announcemen
 import type { TimedActivity } from '../../data/patchVersions/types'
 import { usePatchVersions, invalidatePatchVersionsCache } from '../../hooks/usePatchVersions'
 import AnnouncementReviewPanel from '../../components/admin/AnnouncementReviewPanel'
+import AnnouncementInsightsPanel from '../../components/admin/AnnouncementInsightsPanel'
 
 // ─── 台版公告審核工作檯（PLAN-048 任務 2-3）──────────────────────────────────
 //
@@ -28,6 +30,9 @@ const FILTERS: { key: PendingStatus[]; label: string }[] = [
   { key: ['merged'], label: '已合併' },
   { key: ['rejected'], label: '已忽略' },
 ]
+
+/** 彙總檢視不是狀態篩選，獨立成一個分頁 */
+const INSIGHTS_TAB = FILTERS.length
 
 /** 置頂權重：新玩法與看不懂的原文最需要人腦，排最前面 */
 function priority(item: PendingActivity): number {
@@ -48,6 +53,9 @@ export default function AdminAnnouncementsPage() {
   const [drafts, setDrafts] = useState<Record<string, AnnouncementDraft>>({})
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
+  const [allDrafts, setAllDrafts] = useState<AnnouncementDraft[]>([])
+  const [allPending, setAllPending] = useState<PendingActivity[]>([])
+  const showInsights = filterIdx === INSIGHTS_TAB
 
   const { data: versions } = usePatchVersions()
 
@@ -55,6 +63,17 @@ export default function AdminAnnouncementsPage() {
     setLoading(true)
     setError(null)
     try {
+      if (filterIdx === INSIGHTS_TAB) {
+        // 彙總要看全部，不是只看目前篩選；句型統計只取一頁的話排序就沒有意義
+        const [drafts, pendingAll] = await Promise.all([
+          fetchAllDrafts(),
+          fetchPendingActivities(['needsReview', 'parsed', 'merged', 'rejected', 'superseded', 'conflict']),
+        ])
+        setAllDrafts(drafts)
+        setAllPending(pendingAll)
+        setItems([])
+        return
+      }
       const rows = await fetchPendingActivities(FILTERS[filterIdx].key)
       rows.sort((a, b) => priority(a) - priority(b))
       setItems(rows)
@@ -150,7 +169,7 @@ export default function AdminAnnouncementsPage() {
       </div>
 
       <div className="flex gap-1.5 flex-wrap mb-4">
-        {FILTERS.map((f, i) => (
+        {[...FILTERS, { label: '規則待擴充' }].map((f, i) => (
           <button
             key={f.label}
             type="button"
@@ -179,6 +198,8 @@ export default function AdminAnnouncementsPage() {
 
       {loading ? (
         <div className="text-[13px] text-text-dim py-10 text-center">載入中…</div>
+      ) : showInsights ? (
+        <AnnouncementInsightsPanel versions={versions} drafts={allDrafts} pending={allPending} />
       ) : items.length === 0 ? (
         <div className="text-[13px] text-text-dim py-10 text-center border border-border rounded bg-bg-card">
           這個分類目前沒有項目。

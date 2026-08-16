@@ -2,7 +2,7 @@
 import { splitActivityName } from '../../data/patchVersions/activityText'
 import { activityStatus } from './activityStatus'
 import { activityTone, shapeClass } from './activityTypeRegistry'
-import type { TimedActivity } from '../../data/patchVersions/types'
+import type { VisibleActivity } from '../../data/patchVersions/types'
 
 const WEEKDAY_ZH = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -18,7 +18,7 @@ export default function ActivityCard({
   onHover,
   registerRef,
 }: {
-  act: TimedActivity
+  act: VisibleActivity
   actKey: string
   selected: boolean
   onSelect: (key: string | null) => void
