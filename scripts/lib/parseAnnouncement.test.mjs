@@ -255,6 +255,32 @@ test('端對端：名稱關鍵字優先於段落標題', () => {
   assert.equal(r.activities[1].extracted.type, 'crossShipping')
 })
 
+test('回歸：台版戰令叫「環島密令」，括號是系統名、「」裡才是賽季名', () => {
+  // 錯的時候（實測 20260729/1780）：括號與實體名都被剝掉，只剩泛稱的「賽季」
+  // 當名字，型別則因為公告全程不出現「戰令」二字而退到段落標題「限時活動」——
+  // 產出一筆名為「賽季」的限時活動，整個戰令系統在時間線上是缺的。
+  const r = parseAnnouncement({
+    title: '【環島密令】「謀海魅影」賽季',
+    text: `限時活動
+【環島密令】「謀海魅影」賽季
+➤活動時間：2026/07/30 10:00 - 2026/09/10 10:00`,
+  })
+  assert.equal(r.activities.length, 1)
+  assert.equal(r.activities[0].extracted.name, '謀海魅影')
+  assert.equal(r.activities[0].extracted.type, 'battlePass')
+})
+
+test('回歸：系統名的完全比對不能誤傷含同字的正常活動名', () => {
+  // 「角雕轉盤」含型別關鍵字（轉盤）但它是完整活動名，不是系統標記 ——
+  // 若 SYSTEM_BRACKETS 寫成 includes，名字會被剝成獎勵名「艾達」
+  const r = parseAnnouncement({
+    title: '【活動】x',
+    text: `【角雕轉盤】「艾達」\n➤活動時間：2026/08/06 05:00 - 2026/08/13 05:00`,
+  })
+  assert.equal(r.activities[0].extracted.name, '角雕轉盤')
+  assert.equal(r.activities[0].extracted.type, 'roulette')
+})
+
 test('端對端：抽不到型別時標 unknownActivityType 而不是猜一個', () => {
   const r = parseAnnouncement({
     title: '【公告】星海拓荒祭開跑',

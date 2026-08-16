@@ -32,7 +32,7 @@
  * AnnouncementDraft.parserVersion 靠它挑出「該重跑的舊公告」，
  * 沒有它就只能全量重跑或憑印象。
  */
-export const PARSER_VERSION = 2
+export const PARSER_VERSION = 3
 
 const DAY_MS = 86_400_000
 
@@ -101,8 +101,25 @@ const NAME_KEYWORDS = [
   [/跨域海運/, 'crossShipping'],
   [/登錄|登入|簽到/, 'loginEvent'],
   [/儲值/, 'topUpEvent'],
-  [/戰令|通行證/, 'battlePass'],
+  // 台版把戰令叫「環島密令」，公告全程不出現「戰令」二字 —— 只認關鍵字會漏掉整個系統
+  [/戰令|通行證|環島密令/, 'battlePass'],
 ]
+
+/**
+ * 【】 內是**系統名**而非活動名的清單。
+ *
+ * `【環島密令】「謀海魅影」賽季` 的文法與卡池相反：括號裡是系統名（＝型別），
+ * 真正的活動名在 「」 裡，尾巴的「賽季」只是泛稱。不特別處理的話，
+ * parseHeadingLine 會把殘留的「賽季」當名字 —— 實測產出的就是名為「賽季」、
+ * 型別「限時活動」的一筆。
+ *
+ * 用**完全比對**而不是 includes：「角雕轉盤」也含型別關鍵字（轉盤），
+ * 但它是完整的活動名，不能被當成系統標記剝掉。
+ */
+const SYSTEM_BRACKETS = /^(?:環島密令|戰令|通行證)$/
+
+/** 剝掉 【】「」 後只剩這種泛稱詞 → 它不是名字（`…「謀海魅影」賽季` 的「賽季」） */
+const GENERIC_HEAD = /^(?:賽季|活動|公告|開跑|開啟|上線|登場|來襲)$/
 
 /**
  * **解析得出來、但刻意不收錄**的活動型別。
@@ -222,7 +239,15 @@ export function parseHeadingLine(line) {
   let name
   const dash = rest.search(/[–—－~]|(?<=\S)\s-\s/)
   const head = (dash >= 0 ? rest.slice(0, dash) : rest).replace(/\s+/g, ' ').trim()
-  if (head && !ONLY_ROLE_WORDS.test(head)) {
+
+  // 系統名開頭（【環島密令】…）：括號是型別標記不是名字，「」 裡的才是這一季的名字。
+  // 限定「head 不成立」才走這條 —— 免得哪天出現 `【戰令】某某活動「獎勵」` 反而取錯。
+  const systemBracket = brackets.some(b => SYSTEM_BRACKETS.test(b))
+  const headUsable = head && !ONLY_ROLE_WORDS.test(head) && !GENERIC_HEAD.test(head)
+
+  if (systemBracket && !headUsable && entities.length) {
+    name = entities[0]
+  } else if (headUsable) {
     name = head
   } else if (brackets.length) {
     // 只有 【】 沒有主題名 → 取第一個非樣板的括號內容
@@ -379,7 +404,10 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
     // 型別判定：活動名關鍵字 → 段落標題 → 公告標題關鍵字
     let type, typeLabel, rawTypeLabel
     const kind = sec?.kind
-    const byName = heading.name ? NAME_KEYWORDS.find(([re]) => re.test(heading.name)) : undefined
+    // 比對範圍含 【】：型別關鍵字常只出現在括號裡而不在名字上
+    // （`【環島密令】「謀海魅影」賽季` 的 name 是「謀海魅影」，看名字永遠認不出戰令）
+    const typeText = [heading.name, ...(heading.brackets ?? [])].filter(Boolean).join(' ')
+    const byName = typeText ? NAME_KEYWORDS.find(([re]) => re.test(typeText)) : undefined
     if (byName) {
       type = byName[1]
     } else if (kind === 'specificPilotBanner') {
