@@ -18,6 +18,7 @@
     "images:paths": "node scripts/patch-image-paths.mjs",
     "docs:copy": "node scripts/copy-docs.mjs",
     "docs:stamp": "node scripts/stamp-docs.mjs",
+    "push": "node scripts/push-with-changelog.mjs",
     "lint": "eslint .",
     "test": "node --test \"src/**/*.test.ts\" \"scripts/**/*.test.mjs\"",
     "preview": "vite preview",

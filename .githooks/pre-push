@@ -1,15 +1,6 @@
 #!/bin/sh
 # .githooks/pre-push
-# 在每次 push 前：(1) build 把關 → (2) 更新 CHANGELOG.md，並補推該筆 commit。
-
-REMOTE="$1"
-
-# pre-push 的 stdin 每行是「<local ref> <local sha> <remote ref> <remote sha>」，
-# 且**只讀得到一次**，所以在最前面整包吃下來，留給 (2) 判斷要補推到哪條 remote ref。
-PUSH_PLAN=$(cat)
-
-# 記下「還沒產生 CHANGELOG commit 前」的 HEAD —— 用來確認本次推的就是當前分支。
-HEAD_BEFORE=$(git rev-parse HEAD)
+# 在每次 push 前：(1) build 把關 → (2) 更新 CHANGELOG.md（該筆 commit 由下次 push 帶走）。
 
 # ── (1) Build 把關（CLAUDE.md 規則 3：push 前 build 必須成功）──────────────
 echo "🔨  執行 pre-push：npm run build（tsc -b + vite build）..."
@@ -49,26 +40,19 @@ $COMMIT_LIST"
     git commit -m "chore: 自動更新 CHANGELOG.md"
   fi
 
-  # 這筆 commit 是在 git 算完「本次要推哪些 sha」之後才產生的，因此**不在**本次
-  # push 的範圍內 —— 舊版註解寫「將一併推送」其實做不到，它只會留在本機等下一次
-  # push 順便帶走（實際症狀：push 完 git status 顯示 ahead 1）。所以這裡主動補推。
+  # ⚠ 這筆 commit **推不進本次 push**，別再嘗試在這裡補推（試過了，見下）。
   #
-  # --no-verify 是必要的：否則補推會再次觸發本 hook，白跑一次完整 build。
-  PUSH_REF=$(echo "$PUSH_PLAN" | awk -v head="$HEAD_BEFORE" '$2 == head { print $3; exit }')
-
-  if [ -n "$REMOTE" ] && [ -n "$PUSH_REF" ]; then
-    echo "📤  補推 CHANGELOG.md commit → $PUSH_REF"
-    if git push --no-verify "$REMOTE" "HEAD:$PUSH_REF"; then
-      echo "✅  已補推（接著 git 本體會顯示 Everything up-to-date，屬正常）"
-    else
-      # 補推失敗不該連累本次 push：commit 已在本機，下次 push 仍會帶走。
-      echo "⚠   補推失敗 —— 本次 push 不受影響，CHANGELOG commit 留在本機等下次帶走。"
-    fi
-  else
-    # 推的不是當前分支（例如 git push origin other:main），HEAD 上的 commit 與本次
-    # 推送對不上，不猜目標、交回下次處理。
-    echo "📝  CHANGELOG.md 已自動 commit（本次未補推，下次 push 會帶走）。"
-  fi
+  # git 在呼叫本 hook 之前就已鎖定 refspec 的 compare-and-swap 期望值
+  # （「main 從 <舊 sha> 更新到 <新 sha>」）。hook 內若自己 git push 一次，
+  # remote 就前進到期望值以外，外層 push 隨即被 remote 拒絕：
+  #     ! [remote rejected] main -> main (cannot lock ref 'refs/heads/main':
+  #       is at 94e3dc0 but expected 15f06ce)
+  #     error: failed to push some refs
+  # 東西其實有上去，但 git push 以 exit 1 收場 —— 拿「延一次」換「每次報錯」，
+  # 是明顯的退步。hook 這層做不到，正解是讓 commit 在 push 開始**之前**就存在。
+  #
+  # 想一次推完：用 npm run push（它先產生 CHANGELOG commit 再 git push）。
+  echo "📝  CHANGELOG.md 已自動 commit（本次推不到，下次 push 會帶走；想一次推完用 npm run push）"
 fi
 
 exit 0
