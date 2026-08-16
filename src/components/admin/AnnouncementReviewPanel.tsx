@@ -282,28 +282,16 @@ export default function AnnouncementReviewPanel({
           )}
 
           <Field label="機師（逗號分隔）">
-            <input
-              className={INPUT}
-              value={(form.pilots ?? []).join(', ')}
-              onChange={e => patch({ pilots: splitList(e.target.value) })}
-            />
+            <ListInput value={form.pilots ?? []} onChange={pilots => patch({ pilots })} />
           </Field>
 
           <Field label="機甲（逗號分隔）">
-            <input
-              className={INPUT}
-              value={(form.mechs ?? []).join(', ')}
-              onChange={e => patch({ mechs: splitList(e.target.value) })}
-            />
+            <ListInput value={form.mechs ?? []} onChange={mechs => patch({ mechs })} />
           </Field>
 
           <div className="col-span-2">
             <Field label="獎勵（逗號分隔）">
-              <input
-                className={INPUT}
-                value={(form.rewards ?? []).join(', ')}
-                onChange={e => patch({ rewards: splitList(e.target.value) })}
-              />
+              <ListInput value={form.rewards ?? []} onChange={rewards => patch({ rewards })} />
             </Field>
           </div>
 
@@ -415,6 +403,33 @@ export default function AnnouncementReviewPanel({
 function halfTwDate(versions: (PatchVersion & { id?: string })[], t: MergeTarget): string | undefined {
   const v = versions.find(x => (x.id ?? `v${x.version}`) === t.versionId)
   return v?.[t.half]?.twDate
+}
+
+/**
+ * 逗號分隔的列表輸入。
+ *
+ * 為什麼需要自己留一份字串，而不是直接 `value={arr.join(', ')}`：
+ * 那樣**打不出逗號**。輸入「維羅妮卡,」→ splitList 的 filter(Boolean) 把尾巴的
+ * 空項丟掉 → 陣列還是 ['維羅妮卡'] → re-render 又把畫面寫回「維羅妮卡」，
+ * 逗號當場消失，第二個名字永遠輸入不了（實際回報的症狀）。
+ *
+ * 陣列仍然**即時**同步出去，不等 onBlur —— 使用者打完直接按「放行」時，
+ * blur 與 click 的先後順序不是每種輸入裝置都一樣，賭那個順序會掉資料。
+ *
+ * 換一筆待審時的重置跟著整個面板 key={selected.id} 重新掛載，不需要 effect。
+ */
+function ListInput({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
+  const [text, setText] = useState(() => value.join(', '))
+  return (
+    <input
+      className={INPUT}
+      value={text}
+      onChange={e => {
+        setText(e.target.value)
+        onChange(splitList(e.target.value))
+      }}
+    />
+  )
 }
 
 function splitList(v: string): string[] {
