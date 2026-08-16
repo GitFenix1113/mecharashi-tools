@@ -93,7 +93,7 @@
       <tr><td>id</td><td>string</td><td>文件 ID＝<code>${draftId}_${seq}</code>，如 <code>tw_1799_0</code>。<strong>決定性 ID</strong> → 重新解析同一篇直接覆寫同一批，不會每跑一次多一份垃圾</td></tr>
       <tr><td>draftId</td><td>string</td><td>來源 announcementDrafts 文件 ID</td></tr>
       <tr><td>seq</td><td>number</td><td>該篇公告內的出現序（0-based），也是後台預設排序</td></tr>
-      <tr><td>status</td><td>PendingStatus</td><td><code>'parsed' | 'needsReview' | 'approved' | 'merged' | 'rejected' | 'superseded' | 'conflict'</code></td></tr>
+      <tr><td>status</td><td>PendingStatus</td><td><code>'parsed' | 'needsReview' | 'approved' | 'merged' | 'rejected' | 'superseded' | 'conflict'</code>。<strong><code>merged</code> / <code>rejected</code> 是收據</strong>——記的是「當時人工放行了什麼」，解析器重跑（<code>--reparse</code>）一律不覆寫這兩種，否則會被打回待審而重複合併。重跑後若解析結果與收據不同，腳本會列出清單提示正式資料可能要人工回頭改</td></tr>
       <tr><td>flags</td><td>PendingFlag[]</td><td>有任何一個 flag → status 落在 <code>needsReview</code>。見下方 02</td></tr>
       <tr><td>extracted</td><td>Partial&lt;TimedActivity&gt;</td><td>解析器原始產出，<strong>人工永不修改</strong>（保持原樣供 diff）。抽不到的欄位留 <code>undefined</code>，<strong>絕不填預設值</strong></td></tr>
       <tr><td>reviewed</td><td>Partial&lt;TimedActivity&gt;?</td><td>人工編修後版本。存在時以它為準寫入；兩份並存才做得出 diff</td></tr>

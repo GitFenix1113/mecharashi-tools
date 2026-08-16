@@ -255,7 +255,10 @@ async function loadExistingDrafts(db) {
 }
 
 async function main() {
-  const db = DRY_RUN && (FROM_ARCHIVE || REPARSE) ? null : initFirebase()
+  // --dry-run 只保證「不寫」，不代表「不連線」：--reparse 的 rawText 就存在
+  // Firestore 的草稿裡，沒有 db 就一篇都撈不到，整個預演空轉成 0 篇。
+  // 真正能離線跑的只有 --from-archive（語料在本機）。
+  const db = DRY_RUN && FROM_ARCHIVE ? null : initFirebase()
 
   // ① 取得公告清單
   let list
@@ -408,34 +411,73 @@ async function main() {
     process.exitCode = 1
   }
 
-  if (DRY_RUN) {
-    console.log('\n（--dry-run：未寫入 Firestore）')
-    return
-  }
   if (results.length === 0) {
     console.log('\n沒有需要寫入的變更。')
     return
   }
+  // --from-archive --dry-run 是**離線**模式，根本沒有 db 可查，到此為止
+  if (!db) {
+    console.log('\n（離線預演：未連線 Firestore，僅驗證解析結果）')
+    return
+  }
+  // 其餘的 --dry-run 不在這裡 return —— 下面的既有活動查詢是唯讀的，跑完才能回答
+  // 預演真正該回答的問題：「這次會覆寫掉什麼、有哪些已合併的東西解析結果變了」。
+  // 只有 batch.commit() 與 RUN_META 被跳過（見迴圈末）。
 
   // ⑤ 寫入
   let written = 0
+  let preserved = 0
+  const restaled = []   // 已處理、但重跑後解析結果變了 —— 正式資料可能要人工回頭改
   for (const r of results) {
     const batch = db.batch()
     if (regressed) r.draft.warnings = [...new Set([...r.draft.warnings, 'yieldRegression'])]
     batch.set(db.collection(DRAFTS).doc(r.id), stripUndefined(r.draft))
 
+    // 既有待審活動：supersede 與「保護已處理狀態」都要用，一次查完免得查兩輪
+    const prevActivities = new Map()
+    if (r.supersede || REPARSE) {
+      const old = await db.collection(PENDING).where('draftId', '==', r.id).get()
+      old.forEach(d => prevActivities.set(d.id, d.data()))
+    }
+
     // 官方改稿：舊的待審活動若還沒被合併就標 superseded（已合併的保留收據，不動）
     if (r.supersede) {
-      const old = await db.collection(PENDING).where('draftId', '==', r.id).get()
-      old.forEach(d => {
-        const st = d.data().status
-        if (st !== 'merged' && st !== 'rejected') batch.update(d.ref, { status: 'superseded' })
-      })
+      for (const [id, prevA] of prevActivities) {
+        if (prevA.status !== 'merged' && prevA.status !== 'rejected') {
+          batch.update(db.collection(PENDING).doc(id), { status: 'superseded' })
+        }
+      }
     }
 
     for (const a of r.activities) {
-      batch.set(db.collection(PENDING).doc(`${r.id}_${a.seq}`), stripUndefined({
-        id: `${r.id}_${a.seq}`,
+      const pendingId = `${r.id}_${a.seq}`
+      const prevA = prevActivities.get(pendingId)
+
+      // 已合併／已忽略的是**收據**，記的是「當時人工放行了什麼」——
+      // 重跑不能把它覆寫回待審，否則使用者會重複合併，而且分不出哪些已經進正式資料。
+      // 這與上面 supersede 的原則一致；先前只有 supersede 那半邊有保護，
+      // 於是 --reparse（唯一會走到這裡的路徑）會把「已合併」整批打回「可直接放行」。
+      if (prevA && (prevA.status === 'merged' || prevA.status === 'rejected')) {
+        preserved++
+        // 收據不動，但解析結果若真的變了要講出來 —— 正式資料現在可能是錯的，
+        // 而使用者沒有別的管道會發現（收據長得跟合併當下一模一樣）。
+        const before = prevA.extracted ?? {}
+        const after = a.extracted
+        const changed = ['name', 'type', 'startDate', 'weeks']
+          .filter(k => (before[k] ?? null) !== (after[k] ?? null))
+        if (changed.length) {
+          restaled.push({
+            id: pendingId,
+            status: prevA.status,
+            title: r.draft.title,
+            changed: changed.map(k => `${k}: ${before[k] ?? '∅'} → ${after[k] ?? '∅'}`),
+          })
+        }
+        continue
+      }
+
+      batch.set(db.collection(PENDING).doc(pendingId), stripUndefined({
+        id: pendingId,
         draftId: r.id,
         source: 'tw',
         seq: a.seq,
@@ -446,15 +488,35 @@ async function main() {
         excerptStart: a.excerptStart,
         rawTypeLabel: a.rawTypeLabel,
         ...a.target,
-        createdAt: now,
+        // 重跑不該偽造「首次出現時間」——同 draft.fetchedAt 的處理
+        createdAt: prevA?.createdAt ?? now,
         expireAt,
       }))
     }
-    await batch.commit()
+    if (!DRY_RUN) await batch.commit()
     written++
   }
-  console.log(`\n✔ 已寫入 ${written} 篇草稿、${report.activities} 筆待審活動`)
+  console.log(
+    DRY_RUN
+      ? `\n（--dry-run：未寫入）將寫入 ${written} 篇草稿、${report.activities} 筆待審活動`
+      : `\n✔ 已寫入 ${written} 篇草稿、${report.activities} 筆待審活動`
+  )
+  if (preserved) {
+    console.log(`   （保留 ${preserved} 筆已合併／已忽略的收據，未覆寫）`)
+  }
+  if (restaled.length) {
+    // 這是重跑後唯一需要人工介入的東西，所以印得刺眼一點：收據不會自己更新，
+    // 正式資料裡那幾筆現在是舊解析器的產物。
+    console.log(`\n⚠  ${restaled.length} 筆已處理的活動，解析結果已與收據不同 —— 正式資料可能要回頭改：`)
+    for (const s of restaled) {
+      console.log(`   · ${s.id}（${s.status}）${s.title}`)
+      for (const c of s.changed) console.log(`       ${c}`)
+    }
+  }
 
+  // ⚠ dry-run 絕不能寫這裡：RUN_META 是產出量監控的比較基準，
+  // 一次預演就會把基準墊高，下次真跑的回歸偵測跟著失準（自己污染自己）。
+  if (DRY_RUN) return
   await db.doc(RUN_META).set({
     at: admin.firestore.FieldValue.serverTimestamp(),
     parserVersion: PARSER_VERSION,
