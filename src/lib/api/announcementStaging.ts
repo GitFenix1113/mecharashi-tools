@@ -108,6 +108,42 @@ export interface MergeTarget {
   half: 'upper' | 'lower'
 }
 
+/** 缺長度時填進 note 的預設待辦。單筆審核與批次放行共用同一句。 */
+export const DEFAULT_MISSING_WEEKS_NOTE = '官方公告只寫「起」、未寫結束時刻，待確認檔期長度'
+
+/**
+ * 解析結果／表單 → 可寫入的 `TimedActivity`。回傳 `null` ＝ 必要欄位不齊，不該寫入。
+ *
+ * 抽出來是為了讓**逐筆放行與批次放行走同一份規則**。這個專案已經被
+ * 「兩份同樣的規則遲早會漂開」咬過（見 defaultTarget 的註解），而這裡漂開的症狀
+ * 特別難查：同一筆資料，用逐筆放行與用批次放行寫進去的內容不一樣。
+ */
+export function toMergeableActivity(src: Partial<TimedActivity>): TimedActivity | null {
+  const name = src.name?.trim()
+  if (!name || !src.startDate || !src.type) return null
+
+  const a: TimedActivity = { ...src, name, startDate: src.startDate, type: src.type }
+
+  // 不變式：沒有長度就畫不出甘特長條 → 一律隱藏，並且要留下「為什麼藏起來」
+  const willHide = a.weeks === undefined || src.hidden === true
+  if (a.weeks === undefined) delete a.weeks
+  if (willHide) {
+    a.hidden = true
+    a.note = (src.note ?? '').trim() || DEFAULT_MISSING_WEEKS_NOTE
+  } else {
+    delete a.hidden
+  }
+
+  // 空字串不要寫進去，免得前台把 '' 當成「有值但空」
+  for (const k of ['description', 'sourceUrl', 'typeLabel', 'note', 'editorNote'] as const) {
+    if (!a[k]?.trim()) delete a[k]
+  }
+  if (!a.pilots?.length) delete a.pilots
+  if (!a.mechs?.length) delete a.mechs
+  if (!a.rewards?.length) delete a.rewards
+  return a
+}
+
 export type MergeResult =
   | { ok: true; receipt: MergeReceipt }
   | { ok: false; reason: 'conflict'; existing: TimedActivity }
@@ -141,7 +177,7 @@ export async function mergeIntoVersion(
   pendingId: string,
   activity: TimedActivity,
   target: MergeTarget,
-  opts: { overwrite?: boolean } = {},
+  opts: { overwrite?: boolean; skipBump?: boolean } = {},
 ): Promise<MergeResult> {
   const { uid, name } = actor()
   const anchor = { name: activity.name, startDate: activity.startDate }
@@ -203,9 +239,61 @@ export async function mergeIntoVersion(
     return { ok: true as const, receipt }
   })
 
-  if (outcome.ok) {
+  if (outcome.ok && !opts.skipBump) {
     // 失敗不擋合併結果（資料已經寫進去了），沿用各 api 模組的 .catch(() => '')
     await bumpDataVersion('patchVersions').catch(() => '')
   }
   return outcome
+}
+
+export interface BulkMergeEntry {
+  pendingId: string
+  activity: TimedActivity
+  target: MergeTarget
+  /** 顯示用；失敗清單要能指出是哪一筆 */
+  label: string
+}
+
+export interface BulkMergeResult {
+  merged: number
+  /** 目標半期已有同名同起始日的活動 —— 批次一律跳過，不猜維護者想不想覆蓋 */
+  conflicts: string[]
+  failed: { label: string; message: string }[]
+}
+
+/**
+ * 批次放行：把多筆待審一次寫進各自的目標版本。
+ *
+ * **序列執行，不並行。** 這批活動多半落在同一個版本半期，而 mergeIntoVersion 是
+ * 「讀 twActivities → 改陣列 → 寫回」的交易；並行送出會互相撞版本、觸發大量重試，
+ * 甚至可能有人拿到過期的陣列。序列慢一點，但每一筆都疊在前一筆的結果上。
+ *
+ * **衝突一律跳過而不覆蓋。** 逐筆放行時會問「要覆蓋嗎」，批次沒有那個對話框；
+ * 靜默覆蓋別人已經寫好的資料是這裡最不該做的事，留給維護者逐筆處理。
+ *
+ * **bump 只做一次。** 每筆都 bump 等於讓所有使用者的邊緣快取連續失效 N 次，
+ * 白白浪費頻寬 —— 版本號的用途是「有變動」而不是「變動了幾次」。
+ */
+export async function mergeManyIntoVersion(
+  entries: BulkMergeEntry[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<BulkMergeResult> {
+  const result: BulkMergeResult = { merged: 0, conflicts: [], failed: [] }
+
+  for (const [i, e] of entries.entries()) {
+    try {
+      const res = await mergeIntoVersion(e.pendingId, e.activity, e.target, { skipBump: true })
+      if (res.ok) result.merged++
+      else result.conflicts.push(e.label)
+    } catch (err) {
+      // 單筆失敗不中止整批 —— 停在中間會讓維護者搞不清楚哪些進去了
+      result.failed.push({ label: e.label, message: err instanceof Error ? err.message : String(err) })
+    }
+    onProgress?.(i + 1, entries.length)
+  }
+
+  if (result.merged > 0) {
+    await bumpDataVersion('patchVersions').catch(() => '')
+  }
+  return result
 }

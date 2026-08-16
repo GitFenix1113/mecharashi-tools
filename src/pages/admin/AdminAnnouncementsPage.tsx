@@ -5,7 +5,9 @@ import {
   fetchAllDrafts,
   fetchDraft,
   mergeIntoVersion,
+  mergeManyIntoVersion,
   rejectPending,
+  toMergeableActivity,
   type MergeTarget,
 } from '../../lib/api/announcementStaging'
 import type { AnnouncementDraft, PendingActivity, PendingStatus } from '../../types/announcementStaging'
@@ -139,6 +141,64 @@ export default function AdminAnnouncementsPage() {
     }
   }
 
+  /**
+   * 批次放行：把目前清單中「零 flag、推得出目標版本、必要欄位齊全」的整批寫進去。
+   *
+   * 為什麼只在「可直接放行」分頁出現：那一頁的定義就是解析器零 flag ——
+   * 系統對這些筆有把握，人要做的只是點頭。實測一次 30+ 筆，逐筆點三十幾次
+   * 才是這個工作檯真正的負擔，而不是哪一種活動要不要收。
+   *
+   * 仍然保留這一次點頭（不做全自動）：整條管線目前的安全上限是
+   * 「自動化最多讓後台多幾筆垃圾，錯的東西上不了首頁」，那道閘就是這顆按鈕。
+   */
+  const bulkTargets = useMemo(
+    () =>
+      items
+        .filter(it => it.status === 'parsed' && it.targetVersion)
+        .map(it => {
+          const activity = toMergeableActivity({ ...it.extracted, ...(it.reviewed ?? {}) })
+          if (!activity) return null
+          return {
+            pendingId: it.id,
+            activity,
+            target: { versionId: it.targetVersion!, half: it.targetHalf ?? 'upper' } as MergeTarget,
+            label: `${activity.name}（${activity.startDate}）`,
+          }
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null),
+    [items],
+  )
+
+  async function handleBulkMerge() {
+    if (bulkTargets.length === 0) return
+    const hidden = bulkTargets.filter(e => e.activity.hidden).length
+    const ok = window.confirm(
+      `將把 ${bulkTargets.length} 筆一次合併進各自推算出的版本半期。\n`
+      + (hidden > 0 ? `其中 ${hidden} 筆缺檔期長度，會以隱藏狀態寫入（前台不顯示）。\n` : '')
+      + '\n目標半期若已有同名同起始日的活動，該筆會被跳過而不是覆蓋。\n要繼續嗎？',
+    )
+    if (!ok) return
+
+    setBusy(true)
+    setMsg(null)
+    try {
+      const res = await mergeManyIntoVersion(bulkTargets, (done, total) =>
+        setMsg(`批次放行中… ${done}/${total}`),
+      )
+      invalidatePatchVersionsCache()
+      const parts = [`已合併 ${res.merged} 筆`]
+      if (res.conflicts.length) parts.push(`跳過 ${res.conflicts.length} 筆（目標已有同名同日：${res.conflicts.join('、')}）`)
+      if (res.failed.length) parts.push(`失敗 ${res.failed.length} 筆（${res.failed.map(f => f.label).join('、')}）`)
+      setMsg(parts.join('；') + '。')
+      await load()
+    } catch (err) {
+      console.error('[AdminAnnouncementsPage] bulk merge error:', err)
+      setMsg(err instanceof Error ? `批次放行失敗：${err.message}` : '批次放行失敗，請重試。')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function handleReject() {
     if (!selected) return
     const reason = window.prompt('忽略原因（可留空）：') ?? ''
@@ -211,8 +271,21 @@ export default function AdminAnnouncementsPage() {
         <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-4">
           {/* ── 待審清單 ─────────────────────────────────────────── */}
           <div className="border border-border rounded bg-bg-card overflow-hidden">
-            <div className="px-2.5 py-1.5 text-[11px] font-bold text-text-secondary tracking-[1px] uppercase border-b border-border">
-              {items.length} 筆
+            <div className="px-2.5 py-1.5 border-b border-border flex items-center justify-between gap-2">
+              <span className="text-[11px] font-bold text-text-secondary tracking-[1px] uppercase">
+                {items.length} 筆
+              </span>
+              {/* 只在「可直接放行」分頁出現 —— 其他分頁的筆是「需要人看」或已處理完 */}
+              {FILTERS[filterIdx]?.label === '可直接放行' && bulkTargets.length > 0 && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={handleBulkMerge}
+                  className="px-2 py-0.5 text-[11px] font-bold rounded border bg-accent-green/15 text-accent-green border-accent-green/40 hover:bg-accent-green/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  全部放行（{bulkTargets.length}）
+                </button>
+              )}
             </div>
             <div className="max-h-[600px] overflow-auto overscroll-contain">
               {items.map(it => (

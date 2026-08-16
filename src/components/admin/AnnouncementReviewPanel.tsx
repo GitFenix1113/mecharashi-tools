@@ -9,7 +9,11 @@ import {
   toInputDate,
   weekdayInfo,
 } from './AdminTimedActivityEditor'
-import type { MergeTarget } from '../../lib/api/announcementStaging'
+import {
+  DEFAULT_MISSING_WEEKS_NOTE as DEFAULT_NOTE,
+  toMergeableActivity,
+  type MergeTarget,
+} from '../../lib/api/announcementStaging'
 
 // PLAN-048 任務 2-3：左原文右表單的審核工作檯
 //
@@ -27,7 +31,7 @@ const CUSTOM = '__custom__'
  * 現在的做法是：留空即可合併，但該筆自動隱藏、並要求寫下一句備註說明缺什麼。
  * 半成品因此進得了正式資料（不會卡在待審清單被遺忘），卻上不了首頁。
  */
-const DEFAULT_NOTE = '官方公告只寫「起」、未寫結束時刻，待確認檔期長度'
+// DEFAULT_NOTE 由 api 層提供（DEFAULT_MISSING_WEEKS_NOTE）—— 批次放行寫的是同一句
 
 function FlagChip({ flag }: { flag: PendingFlag | string }) {
   const label = PENDING_FLAG_LABEL[flag as PendingFlag] ?? flag
@@ -139,26 +143,10 @@ export default function AnnouncementReviewPanel({
 
   function submit() {
     if (!canMerge || !target?.versionId) return
-    const activity: TimedActivity = {
-      ...form,
-      name: form.name!.trim(),
-      startDate: form.startDate!,
-      type: form.type!,
-    }
-    if (weeks === undefined) delete activity.weeks
-    if (willHide) {
-      activity.hidden = true
-      activity.note = (form.note ?? '').trim() || DEFAULT_NOTE
-    } else {
-      delete activity.hidden
-    }
-    // 空字串欄位不要寫進去，免得前台把 '' 當成「有值但空」
-    for (const k of ['description', 'sourceUrl', 'typeLabel', 'note', 'editorNote'] as const) {
-      if (!activity[k]?.trim()) delete activity[k]
-    }
-    if (!activity.pilots?.length) delete activity.pilots
-    if (!activity.mechs?.length) delete activity.mechs
-    if (!activity.rewards?.length) delete activity.rewards
+    // 正規化規則與「全部放行」共用同一份（toMergeableActivity）——
+    // 兩份會漂開，而漂開的症狀是「同一筆資料，逐筆放行與批次放行寫進去的內容不一樣」
+    const activity = toMergeableActivity({ ...form, hidden: willHide ? true : undefined })
+    if (!activity) return
     onMerge(activity, target)
   }
 
