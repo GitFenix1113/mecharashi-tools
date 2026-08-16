@@ -202,7 +202,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">21</div>
+      <div class="summary-num" style="color:var(--accent-green)">34</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -210,22 +210,22 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">10</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">31</div>
+      <div class="summary-num" style="color:var(--text-primary)">34</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度 · Phase 0 + Phase 1 已完工（2026-08-16）</span>
-      <span style="color:var(--accent-orange);">21 / 31</span>
+      <span>整體完成度 · Phase 0 / 1 / 2 全數完工，另追加 3 項（2026-08-16）</span>
+      <span style="color:var(--accent-green);">34 / 34</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 68%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -743,7 +743,7 @@
     <div class="task-group-header">
       <div class="task-group-title">2-1 &nbsp; 公告抓取與解析腳本</div>
       <div class="task-group-meta">scripts/scrape-tw-announcements.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -752,11 +752,17 @@
           沿用 0-0 的端點。<code>contentHash = sha256(rawText)</code> 作為冪等判斷的唯一依據；文件 ID 由公告 URL 推導
           （<code>${source}_${officialId}</code>），<strong>重爬必然命中同一份＝冪等免費</strong>。
           自訂 User-Agent 標明同人工具站與聯絡方式、請求加間隔。
+          <br><strong>實作補充：</strong>另加 <code>--from-archive</code>（讀本地 266 篇歸檔、完全不連外網）與
+          <code>--reparse</code>（不重抓、只用既有 <code>rawText</code> 重跑解析器）兩個模式 ——
+          前者讓整條寫入路徑離線就能驗證，後者是解析器改版後的正規重跑入口（配合 <code>parserVersion</code>）。
+          增量模式只掃每型別前 3 頁；<code>--backfill=YYYY-MM</code> 才全量翻頁。
+          <br><strong>刻意不 bump：</strong>本腳本只寫兩個 staging 集合、沒動 <code>patchVersions</code>，
+          平白 bump 等於讓所有使用者重抓一次。bump 屬於合併那一步（2-4）。
         </div>
         <div class="task-file">scripts/scrape-tw-announcements.mjs（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~3h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -765,11 +771,18 @@
           抽不到的欄位<strong>留 <code>undefined</code>，絕不填預設值</strong>；沒被任何規則認領的原文片段存進 <code>unmatched[]</code>。
           型別靠 <code>matchKeywords</code> 命中約 72%，未命中則保留 <code>rawTypeLabel</code> 進 buffer。
           <code>parserVersion</code> 讓改規則後能挑出該重跑的舊公告。
+          <br><strong>實測成績（266 篇歸檔語料，625 筆活動）：</strong>缺日期 <strong>0%</strong>、缺名稱 <strong>0.5%</strong>、
+          缺型別 <strong>1.3%</strong>，<strong>零 flag 可直接放行 66%</strong>；unmatched 平均 1.0 行/篇。
+          單元測試 17 例（併入 <code>npm test</code>，全站 451 例）。
+          <br><strong>⚠ 更正計畫書「型別靠 matchKeywords 命中約 72%」：</strong>實測改用
+          <strong>段落標題（機師征招／機甲海運／活動中心／特殊活動）為主、活動名關鍵字優先覆寫</strong>後，
+          型別命中率是 <strong>98.7%</strong>。關鍵字單獨用會把同段落裡的【角雕特遣】【跨域海運】誤歸成卡池，
+          反過來只看段落又分不出這兩者 —— 兩層都要，且名稱那層必須贏。
         </div>
-        <div class="task-file">scripts/lib/parseAnnouncement.mjs（新）+ 單元測試</div>
+        <div class="task-file">scripts/lib/parseAnnouncement.mjs（新）+ parseAnnouncement.test.mjs</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -777,7 +790,7 @@
     <div class="task-group-header">
       <div class="task-group-title">2-2 &nbsp; staging 型別與集合</div>
       <div class="task-group-meta">announcementDrafts · pendingActivities</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -787,11 +800,15 @@
           <code>PendingActivity</code>（parsed → needsReview → approved → merged / rejected / superseded / conflict）。
           <strong>審核的最小單位是「一個活動」不是「一則公告」</strong>——一則公告十個活動，看得懂九個就先放行九個。
           <code>rawText</code> 超過 200KB 改存 Storage（Firestore 單文件 1MB 是硬限）。
+          <br><strong>⚠ 更正：Storage 分流沒有做，判定為 YAGNI。</strong>實測 266 篇公告
+          最大一篇僅 <strong>15.9 KB</strong>（p50 3.0 KB／p95 12.3 KB），離 1 MB 硬限有 60 倍餘裕。
+          只保留 <code>MAX_RAW_TEXT_BYTES</code> 截斷保險與 <code>rawTextTruncated</code> 旗標，
+          給「官網某天塞進整頁 base64 圖片」用，不是常態路徑。
         </div>
         <div class="task-file">src/types/announcementStaging.ts（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -800,11 +817,17 @@
           兩個集合<strong>前台完全不讀</strong>，rules 一律 <code>isAdmin()</code>。
           <code>expireAt</code> +6 個月交給 Firestore 原生 TTL（比照 <code>changeHistory.expireAt</code>），避免 staging 無限膨脹。
           <strong>不需要</strong>加進 <code>CollectionKey</code> / Worker <code>ARRAY_COLLECTIONS</code>——它們不走前台快取層。
+          <br><strong>實作補充：</strong>腳本的執行統計寫在 <code>meta/announcementScrape</code>，
+          沿用既有的 <code>match /meta/{docId}</code> 規則，不需新增規則。
+          新增集合文件 <code>announcementStaging.html</code> 並掛進 Firebase 設計總覽（卡片 + 集合清單兩處）；
+          該目錄不在 <code>copy-docs.mjs</code> 白名單內，故不會外流到 <code>/documents</code>。
+          <br><strong>待人工執行：</strong>兩條 TTL 政策要在 Firebase Console 手動建立
+          （欄位 <code>expireAt</code>，同 changeHistory 的做法，程式碼無法代勞）。
         </div>
-        <div class="task-file">firestore.rules · docs/02_技術文件/04_Firebase/資料庫設計文件/</div>
+        <div class="task-file">firestore.rules · docs/02_技術文件/04_Firebase/資料庫設計文件/announcementStaging.html</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -812,7 +835,7 @@
     <div class="task-group-header">
       <div class="task-group-title">2-3 &nbsp; /admin/announcements 審核工作檯</div>
       <div class="task-group-meta">維護者實際要打的字：三顆按鈕</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -820,11 +843,16 @@
         <div class="task-desc">
           預設只顯示 <code>needsReview</code>；<code>unknownActivityType</code> / <code>unmatchedText</code> 置頂。
           實測 buffer 流量是<strong>每月 2～4 筆</strong>新名稱（2024:17 / 2025:44 / 2026:29 個新名稱）。
+          <br><strong>實作補充：</strong>五個狀態分頁（待確認／可直接放行／全部未處理／已合併／已忽略），
+          清單以 <code>priority()</code> 置頂 <code>unknownActivityType</code> → <code>unmatchedText</code> →
+          缺名稱或日期 → 其他有 flag 者。路由 <code>/admin/announcements</code>（AdminRoute 保護），
+          後台首頁加入口，並登記進 <code>routeKeys.ts</code>
+          （漏登記會被 <code>routeKeys.test.ts</code> 擋下 —— 本次實際踩到）。
         </div>
         <div class="task-file">src/pages/admin/AdminAnnouncementsPage.tsx（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~3h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -833,11 +861,15 @@
           左欄只載 <code>excerpt</code> 對應的原文片段（不是整篇），<code>unmatched[]</code> 標紅讓「這段我沒看懂」自動浮出來。
           右欄是 <code>extracted</code> 預填的 <code>TimedActivity</code> 表單，人工編修寫進 <code>reviewed</code>（<code>extracted</code> 保持原樣供 diff）。
           動作只有三顆按鈕：<strong>→ 上半 / → 下半 / 忽略</strong>。
+          <br><strong>實作補充：</strong>開放式檔期（193 筆、31%）的週數在<strong>表單</strong>預填 2 週，
+          同時以醒目提示標明「這是建議值不是官方資料」——
+          預填的是輸入框、不是資料，兩者的界線就是整個 staging 設計的基礎。
+          <code>reviewed</code> 與 <code>extracted</code> 並存，人工編修不覆蓋解析器原始產出。
         </div>
         <div class="task-file">src/components/admin/AnnouncementReviewPanel.tsx（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~4h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -845,7 +877,7 @@
     <div class="task-group-header">
       <div class="task-group-title">2-4 &nbsp; 合併寫入（兩條紅字都在這）</div>
       <div class="task-group-meta">runTransaction · bumpDataVersion</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -855,11 +887,20 @@
           若照現況追加，腳本寫入的內容會在管理員存檔時無聲消失（同型事故前例：<code>scrape-pilots-v3.js:117</code>）。
           <code>mergedInto</code> 收據用 <code>{ name, startDate }</code> anchor 定位而非 index（陣列會重排）。
           這也是為什麼 buffer <strong>絕不能</strong>做成 <code>PatchVersion.inbox</code> 欄位。
+          <br><strong>實作補充：</strong>合併只以 <code>tx.update</code> 寫該半期的
+          <code>twActivities</code> 這一條欄位路徑，不整份覆寫版本文件 ——
+          否則會把管理員在其他欄位的並行編輯一起回捲。同 anchor 者回報 <code>conflict</code>
+          並零寫入，由使用者決定是否覆寫（覆寫時沿用既有那筆的 <code>id</code>，
+          甘特↔卡片的選取狀態才不會跳掉）。
+          <br><strong>已用模擬器整合測試驗證（11 例全過）</strong>：
+          <code>tests/emulator/suites/announcement-merge.test.ts</code>，全部以 adminDb 帶外驗證資料庫真實狀態。
+          其中案例 j 讓兩筆合併同時發出 —— <strong>兩筆都活下來</strong>（read→modify→write 在此必然掉一筆）；
+          案例 i 驗證非管理員被規則擋下且資料庫毫髮無傷。
         </div>
-        <div class="task-file">src/lib/api/patchVersions.ts · AdminVersionEditorPage.tsx</div>
+        <div class="task-file">src/lib/api/announcementStaging.ts · tests/emulator/suites/announcement-merge.test.ts</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~2.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -868,11 +909,17 @@
           <strong>不 bump 就是「資料寫進去了、前台看不到、硬重整也沒用」，最長 24 小時。</strong>
           <code>patchVersions</code> 走 Worker 邊緣快取（<code>workers/src/index.ts</code> 以集合版本號當 cache key、<code>max-age=86400</code>）。
           這條要一併寫進 <code>data-patch</code> skill 與 docs。
+          <br><strong>實作補充：</strong>bump 在 <code>mergeIntoVersion</code> 內、
+          <code>invalidatePatchVersionsCache()</code> 由呼叫端接（同
+          <code>AdminVersionEditorPage.handleSave</code> 的分工）——
+          api 層若相依 <code>usePatchVersions</code>，會連帶拉進讀 <code>import.meta.env</code> 的
+          <code>workerData</code>，該模組就再也無法在 Vite 以外的環境載入（模擬器整合測試當場失敗）。
+          <code>data-patch</code> skill 已補上第 5 條，含「沒改到就不要 bump」的反向規則。
         </div>
-        <div class="task-file">src/lib/api/versions.ts · .claude/skills/data-patch/</div>
+        <div class="task-file">src/lib/api/announcementStaging.ts · .claude/skills/data-patch/SKILL.md</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -880,7 +927,7 @@
     <div class="task-group-header">
       <div class="task-group-title">2-5 &nbsp; confidence 前台顯示</div>
       <div class="task-group-meta">回應痛點 4 唯一能在顯示層兌現的東西</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -888,11 +935,15 @@
         <div class="task-desc">
           台版由腳本一律填 <code>confirmed</code>，陸版人工填。
           <strong>缺的公告仍然缺，但至少讀者分得出「查證過」與「照慣例推的」。</strong>
+          <br><strong>顯示層在 Phase 1 已完成</strong>（<code>ActivityBar</code> 虛線邊框、
+          <code>ActivityCard</code> 標「推估」）；本任務只剩填值：解析器對台版公告一律填
+          <code>confidence: confirmed</code>（官方一手來源），
+          <code>legacyActivities.ts</code> 的舊欄位 shim 則一律填 <code>predicted</code>。
         </div>
-        <div class="task-file">src/components/timeline/ActivityBar.tsx · ActivityCard.tsx</div>
+        <div class="task-file">scripts/lib/parseAnnouncement.mjs · src/components/timeline/ActivityBar.tsx</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -900,7 +951,7 @@
     <div class="task-group-header">
       <div class="task-group-title">2-6 &nbsp; 產出量監控</div>
       <div class="task-group-meta">爬蟲會靜默降低品質而非報錯</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -908,11 +959,244 @@
         <div class="task-desc">
           句型逐年漂移：<code>本期機師征招「X」</code> 2024/2025 出現 0 次、2026 才 1 次；<code>維護計畫</code> 段落 2026 才有。
           規則：「一篇週報抽出活動數 &lt; 2」「有機師征招段落卻抽不到機師名」「本次執行的解析成功率低於前次 20%」就進 buffer 並標記告警。
+          <br><strong>與 2-1 併在同一支腳本完成</strong>（告警要跨篇統計，拆開反而要多存一份中繼狀態）。
+          五種 <code>ParseWarning</code>：<code>lowYield</code> / <code>pilotSectionNoName</code> /
+          <code>mechSectionNoName</code> / <code>yieldRegression</code> / <code>contentSelectorMiss</code>。
+          前次統計存 <code>meta/announcementScrape</code> 供 <code>yieldRegression</code> 比較。
+          <br>回歸驗證：對 266 篇歷史語料跑一次，<code>lowYield</code> 命中 7 篇、
+          <code>pilotSectionNoName</code>／<code>mechSectionNoName</code> 各 8 篇 —— 都是真的只有預告沒有檔期的公告，非誤報。
         </div>
         <div class="task-file">scripts/scrape-tw-announcements.mjs</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group hot">
+    <div class="task-group-header">
+      <div class="task-group-title">2-7 &nbsp; 半成品照樣進得去，只是先不上首頁</div>
+      <div class="task-group-meta">TimedActivity.hidden · note（追加需求）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">weeks 改為選填 + hidden / note 兩個欄位 + 前台顯示閘門</div>
+        <div class="task-desc">
+          <strong>追加原因：</strong>原本的 <code>canMerge</code> 要求名稱／起始日／週數／型別／版本全齊，
+          <strong>不齊就完全動不了</strong> —— 那 31%（193 筆）只寫「10:00 起」的卡池會永遠卡在待審清單。
+          「事實先留住、但別上首頁」比「整筆卡住等到被遺忘」好。
+          <br><strong>三個欄位變動：</strong><code>weeks</code> 由必填改選填；新增 <code>hidden</code>（前台一律不顯示）
+          與 <code>note</code>（後台備註，與給讀者看的 <code>description</code> 分工）。
+          <br><strong>不變式「缺 weeks ⇒ hidden」由兩道獨立防線把關：</strong>
+          寫入端（<code>mergeIntoVersion</code> 與後台活動編輯器）自動補上 <code>hidden</code>；
+          讀取端 <code>activitiesOfHalf()</code> 另外獨立檢查 <code>weeks</code> 是否存在 ——
+          <strong>不倚賴寫入端自律</strong>，漏標的後果不該是首頁多一條長度是猜的長條。
+          通過閘門後型別收窄成 <code>VisibleActivity</code>（保證有 <code>weeks</code>），
+          「忘了過閘門」因此變成編譯錯誤而不是執行期 NaN。
+          <br><strong>⚠ 一併移除了先前的「預填 2 週建議值」</strong>：預填值會在維護者沒細看時直接變成資料，
+          正是「填了就再也分不出官方寫的與系統猜的」要防的事。改為留空即可合併、該筆自動隱藏並要求寫一句備註。
+          <br>新增 6 例單元測試（含「全部被藏起來時不可退回 deprecated 舊欄位」這格 —— 用「過濾後為空」
+          判斷 fallback 會讓首頁顯示早就被取代的舊資料，而且看起來像正常內容），
+          模擬器整合測試補 k / l 兩例（半成品進得去且強制隱藏、補齊後 anchor 定位到同一筆）。
+        </div>
+        <div class="task-file">src/data/patchVersions/types.ts · legacyActivities.ts（+ 測試）· AdminTimedActivityEditor.tsx</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~3h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-8 &nbsp; 「規則待擴充」彙總檢視</div>
+      <div class="task-group-meta">給「之後再根據備註擴充腳本」用的入口</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">待補資料 / 未認領句型 / 未登錄型別，三張表依出現次數排序</div>
+        <div class="task-desc">
+          解析器不可能一次寫對所有句型（官方寫法逐年漂移已實測）。與其每次逐篇翻公告找漏，
+          不如把「沒看懂的東西」依<strong>出現次數</strong>排好：碰到很多次的才值得加規則，
+          只出現一次的手動處理更划算（故預設 <code>minCount = 2</code>）。
+          <br>① <strong>待補資料</strong>：所有 <code>hidden</code> 活動連同 <code>note</code>，標明缺哪些欄位，可直接跳到版本編輯頁。
+          ② <strong>待擴充規則</strong>：未認領原文依句型彙總 —— 實測 492 行收斂成 <strong>57 組</strong>，
+          最高一組 52 次（<code>【⟨名稱⟩】補充說明</code>）。
+          ③ <strong>未登錄型別</strong>：對照計畫書「穩定超過 20 種才開新集合」的升級觸發點。
+          <br><strong>⚠ 句型彙總換過一次做法並如實記錄：</strong>先試「抽四字片語」，
+          實測同一句樣板被拆成十幾個重疊窗格（則下一次／下一次獲／一次獲得…），整張榜單被一句話洗版。
+          改回整行正規化（抹掉日期、數量、括號內容，以及已知的卡池標題文法 <code>主題名 – S級職業</code>）後才收斂得起來 ——
+          關鍵在於未認領原文<strong>本來就大量逐字重複</strong>，整行比對反而精準。
+        </div>
+        <div class="task-file">src/components/admin/announcementInsights.ts（+ 測試）· AnnouncementInsightsPanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~2.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-9 &nbsp; 每週自動抓取（GitHub Actions 排程）</div>
+      <div class="task-group-meta">.github/workflows/scrape-announcements.yml</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">週四 01:00／13:00（台北）自動抓取，結構性異常時寄信</div>
+        <div class="task-desc">
+          官方固定週四 05:00 更新、公告提前一兩天上線，故排 <code>0 17 * * 3</code>（台北週四 01:00），
+          再以 <code>0 5 * * 4</code>（台北週四 13:00）補抓一次接住延後發佈。
+          兩次都冪等 —— <code>contentHash</code> 沒變就整篇跳過，第二次零寫入。
+          <br><strong>為什麼選 GitHub Actions 而不是 Worker / Cloud Functions：</strong>
+          判準是「改一次解析規則要動幾個地方」—— 官方句型漂移是這個系統<strong>唯一保證會反覆發生</strong>的維護事件（已實測三次）。
+          跑在 Actions 上，改規則＝改 <code>parseAnnouncement.mjs</code> → 跑離線回歸 → push，排程用的是同一支檔案；
+          另外兩個方案都會產生<strong>第二份解析器</strong>，而兩份漂開的症狀正是本計畫最防的那種：
+          本機 <code>--dry-run</code> 完美、排程跑出來卻不同。
+          Worker 另有一個耦合問題：它是正式站 <code>/api</code> 的單點，把每週批次塞進同一個 runtime，
+          爬蟲失控會波及前台讀資料。
+          <br><strong><code>--fail-on-warn</code> 只收結構性異常</strong>（抓取失敗／解析率較前次下滑逾 20%／正文選擇器失效），
+          <strong>刻意不收</strong>逐篇的 <code>lowYield</code> / <code>pilotSectionNoName</code> ——
+          那三種在歷史語料上各有 6～7% 的自然發生率，拿來當紅燈等於每七週寄一封狼來了，
+          而<strong>學會忽略的告警比沒有告警更糟</strong>。「解析器整個瞎掉」由 <code>yieldRegression</code> 接住，不需要重複把關。
+          <br>workflow 內含解析器單元測試閘門（改壞規則就不該讓它去寫 Firestore），
+          並支援 <code>workflow_dispatch</code> 手動觸發（可選 dry-run / backfill）。
+        </div>
+        <div class="task-file">.github/workflows/scrape-announcements.yml · scripts/scrape-tw-announcements.mjs</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ 上線步驟 ══════════════════ -->
+<section class="section">
+  <div class="section-label orange">Runbook</div>
+  <div class="section-title">上線步驟（需人工執行）<span class="phase-badge h0">程式碼代勞不了的部分</span></div>
+  <div class="section-desc">
+    Phase 2 的程式碼已全部完成，但以下四段要人工做。<strong>順序有意義</strong>：A 沒做，後台一開就是 permission-denied。
+  </div>
+
+  <div class="task-group hot">
+    <div class="task-group-header">
+      <div class="task-group-title">A &nbsp; 部署（不做的話後台頁面與新規則都不存在）</div>
+      <div class="task-group-meta">最容易漏的一步</div>
+      <span class="status pending">待執行</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A1. 部署 Firestore 規則</div>
+        <div class="task-desc">
+          <code>firebase deploy --only firestore:rules</code><br>
+          <strong>⚠ 既有 CI（deploy.yml）只發佈前端到 GH Pages，不碰 Firestore 規則。</strong>
+          新增的 <code>announcementDrafts</code> / <code>pendingActivities</code> 兩段規則沒上線的話，
+          爬蟲仍寫得進去（admin SDK 繞過規則），但<strong>後台讀不到</strong>——
+          Firestore 對沒被任何 <code>match</code> 命中的集合一律拒絕。
+        </div>
+      </div>
+      <div class="task-assignee">維護者<div class="task-hours">~1min</div></div>
+      <span class="status pending">待執行</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A2. 前端上線</div>
+        <div class="task-desc">
+          把 <code>feat/plan-048-phase0</code> 合併進 <code>main</code>，<code>deploy.yml</code> 自動發佈。
+          <code>/admin/announcements</code> 在那之前只存在於本機。
+        </div>
+      </div>
+      <div class="task-assignee">維護者<div class="task-hours">~5min</div></div>
+      <span class="status pending">待執行</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B &nbsp; 排程金鑰（讓每週自動抓取生效）</div>
+      <div class="task-group-meta">專用 SA + GitHub Secrets</div>
+      <span class="status pending">待執行</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">B1. 建一把排程專用的 service account</div>
+        <div class="task-desc">
+          與本機那把分開，外洩時可單獨撤銷、不會連帶弄死所有 migrate/scrape 腳本。
+          <br><strong>⚠ 誠實說明限制：</strong>Firestore 的 IAM 粒度是<strong>資料庫層級</strong>（<code>datastore.user</code>），
+          做不到「只能寫這兩個集合」。所以這把金鑰仍有完整讀寫權，分開建的價值在<strong>可獨立撤銷</strong>，不是最小權限。
+          <div class="code-block" style="margin-top:8px;"><pre>gcloud iam service-accounts create scraper-announcements \
+  --display-name="PLAN-048 公告排程" --project=mecharashi-tools
+
+gcloud projects add-iam-policy-binding mecharashi-tools \
+  --member="serviceAccount:scraper-announcements@mecharashi-tools.iam.gserviceaccount.com" \
+  --role="roles/datastore.user"
+
+gcloud iam service-accounts keys create scraper-sa.json \
+  --iam-account=scraper-announcements@mecharashi-tools.iam.gserviceaccount.com</pre></div>
+        </div>
+      </div>
+      <div class="task-assignee">維護者<div class="task-hours">~10min</div></div>
+      <span class="status pending">待執行</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">B2. 把金鑰放進 GitHub Secrets，然後刪掉本機那份</div>
+        <div class="task-desc">
+          <code>gh secret set SCRAPER_SA_KEY &lt; scraper-sa.json</code> → 接著 <code>rm scraper-sa.json</code>。<br>
+          名稱刻意與 Cloudflare Worker 的 <code>FIREBASE_SA_KEY</code> 分開，避免日後輪替時搞混哪把是哪把。
+          Secrets 為加密儲存、log 自動遮罩、<strong>不會提供給 fork 發來的 PR workflow</strong>，
+          故 public repo 不代表金鑰公開。
+          <br>日後想升級成 Workload Identity Federation（完全不存長期金鑰）隨時可換，<strong>只改 workflow 認證那幾行、不動程式碼</strong>。
+        </div>
+      </div>
+      <div class="task-assignee">維護者<div class="task-hours">~2min</div></div>
+      <span class="status pending">待執行</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C &nbsp; 首次灌資料</div>
+      <div class="task-group-meta">也可以直接等排程，週四自己會跑</div>
+      <span class="status pending">待執行</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C1. 先 dry-run 看報告，再正式寫入</div>
+        <div class="task-desc">
+          <code>node scripts/scrape-tw-announcements.mjs --dry-run</code>（讀公告站 + 讀 Firestore，零寫入）<br>
+          <code>node scripts/scrape-tw-announcements.mjs</code>（正式寫入；預設增量，只抓歸檔沒有的新公告）<br>
+          然後到 <code>/admin/announcements</code> 審核。
+          <br>也可以在 GitHub 的 Actions 分頁手動觸發該 workflow（支援 dry-run 選項），效果相同。
+        </div>
+      </div>
+      <div class="task-assignee">維護者<div class="task-hours">~5min</div></div>
+      <span class="status pending">待執行</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D &nbsp; TTL 政策（可以晚點再做，不擋任何事）</div>
+      <div class="task-group-meta">不設也不會壞，只是 staging 會無限累積</div>
+      <span class="status pending">待執行</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">D1. 兩個集合各建一條 TTL，欄位皆為 expireAt</div>
+        <div class="task-desc">
+          <div class="code-block"><pre>gcloud firestore fields ttls update expireAt \
+  --collection-group=announcementDrafts --enable-ttl --project=mecharashi-tools
+
+gcloud firestore fields ttls update expireAt \
+  --collection-group=pendingActivities --enable-ttl --project=mecharashi-tools</pre></div>
+          或走 Console：Firestore Database → TTL 分頁 → 建立政策。
+          <br>量級很小（一年約 80 份 × 3KB），所以這條純粹是衛生問題，不影響功能。
+        </div>
+      </div>
+      <div class="task-assignee">維護者<div class="task-hours">~5min</div></div>
+      <span class="status pending">待執行</span>
     </div>
   </div>
 </section>
