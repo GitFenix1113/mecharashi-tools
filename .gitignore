@@ -22,6 +22,11 @@ out/
 # 下載時的預設檔名（mecharashi-tools-firebase-adminsdk-xxxxx.json），遞迴套用到所有子目錄含 workers/。
 serviceAccountKey.json
 *firebase-adminsdk*.json
+# gcloud iam service-accounts keys create 的輸出用什麼檔名由指令決定，不受上面兩條保護。
+# 這條是安全網——正確做法仍是**在 repo 之外**產生金鑰（見 PLAN-048 進度表的上線步驟 B），
+# 檔案根本不該進到工作目錄裡。repo 是公開的，一次誤提交就等於外洩。
+*-sa.json
+*-sa-key.json
 
 # Firebase Emulator 匯出的測試使用者資料（含個人資訊）
 # 根目錄的 "-"：過去某次 emulators:export 把 "-" 當成輸出檔名產生的殘留檔，
