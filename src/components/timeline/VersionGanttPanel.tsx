@@ -426,18 +426,32 @@ export default function VersionGanttPanel({
               <thead>
                 <tr>
                   <th rowSpan={2} className={`${LABEL} p-0`}>
+                    {/* 摺疊觸發點做成明確的按鈕：先前只有一個 10px 的 chevron 跟在
+                        文字後面，使用者反映看不出可以點。現在給它獨立的膠囊、邊框、
+                        動詞文字與 hover 底色 —— 可點性靠形狀與動詞，不能只靠一個符號。 */}
                     <button
                       type="button"
                       onClick={toggleInfo}
                       aria-expanded={!infoCollapsed}
-                      title={infoCollapsed ? '展開版本內容' : '收合版本內容，把空間讓給活動'}
-                      className="w-full h-full px-3 py-1 flex items-center justify-center gap-1.5
-                                 text-[13px] tracking-[2px] uppercase text-text-dim
-                                 hover:text-accent-orange transition-colors cursor-pointer"
+                      title={infoCollapsed ? '展開版本內容（機師 / 機甲 / 武裝關卡…）' : '收合版本內容，把空間讓給活動甘特與卡片'}
+                      className="group w-full h-full px-2 py-1.5 flex flex-col items-center justify-center gap-1
+                                 cursor-pointer transition-colors hover:bg-accent-orange/8"
                     >
-                      {side === 'tw' ? '台版' : '陸版'}
-                      <span className={`text-[10px] transition-transform ${infoCollapsed ? '-rotate-90' : ''}`}>
-                        ▾
+                      <span className="text-[13px] tracking-[2px] uppercase text-text-dim
+                                       group-hover:text-text-secondary transition-colors">
+                        {side === 'tw' ? '台版' : '陸版'}
+                      </span>
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5
+                                   text-[11px] leading-none whitespace-nowrap transition-colors
+                                   border-accent-orange/40 bg-accent-orange/10 text-accent-orange/90
+                                   group-hover:border-accent-orange/80 group-hover:bg-accent-orange/20
+                                   group-hover:text-accent-orange"
+                      >
+                        <span className={`text-[9px] transition-transform duration-200 ${infoCollapsed ? '-rotate-90' : ''}`}>
+                          ▼
+                        </span>
+                        {infoCollapsed ? '展開' : '收合'}
                       </span>
                     </button>
                   </th>
