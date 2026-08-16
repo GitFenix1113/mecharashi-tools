@@ -202,7 +202,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">33</div>
+      <div class="summary-num" style="color:var(--accent-green)">34</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -214,15 +214,15 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">33</div>
+      <div class="summary-num" style="color:var(--text-primary)">34</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度 · Phase 0 / 1 / 2 全數完工，另追加 2 項（2026-08-16）</span>
-      <span style="color:var(--accent-green);">33 / 33</span>
+      <span>整體完成度 · Phase 0 / 1 / 2 全數完工，另追加 3 項（2026-08-16）</span>
+      <span style="color:var(--accent-green);">34 / 34</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 100%"></div>
@@ -1033,6 +1033,170 @@
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~2.5h</div></div>
       <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">2-9 &nbsp; 每週自動抓取（GitHub Actions 排程）</div>
+      <div class="task-group-meta">.github/workflows/scrape-announcements.yml</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">週四 01:00／13:00（台北）自動抓取，結構性異常時寄信</div>
+        <div class="task-desc">
+          官方固定週四 05:00 更新、公告提前一兩天上線，故排 <code>0 17 * * 3</code>（台北週四 01:00），
+          再以 <code>0 5 * * 4</code>（台北週四 13:00）補抓一次接住延後發佈。
+          兩次都冪等 —— <code>contentHash</code> 沒變就整篇跳過，第二次零寫入。
+          <br><strong>為什麼選 GitHub Actions 而不是 Worker / Cloud Functions：</strong>
+          判準是「改一次解析規則要動幾個地方」—— 官方句型漂移是這個系統<strong>唯一保證會反覆發生</strong>的維護事件（已實測三次）。
+          跑在 Actions 上，改規則＝改 <code>parseAnnouncement.mjs</code> → 跑離線回歸 → push，排程用的是同一支檔案；
+          另外兩個方案都會產生<strong>第二份解析器</strong>，而兩份漂開的症狀正是本計畫最防的那種：
+          本機 <code>--dry-run</code> 完美、排程跑出來卻不同。
+          Worker 另有一個耦合問題：它是正式站 <code>/api</code> 的單點，把每週批次塞進同一個 runtime，
+          爬蟲失控會波及前台讀資料。
+          <br><strong><code>--fail-on-warn</code> 只收結構性異常</strong>（抓取失敗／解析率較前次下滑逾 20%／正文選擇器失效），
+          <strong>刻意不收</strong>逐篇的 <code>lowYield</code> / <code>pilotSectionNoName</code> ——
+          那三種在歷史語料上各有 6～7% 的自然發生率，拿來當紅燈等於每七週寄一封狼來了，
+          而<strong>學會忽略的告警比沒有告警更糟</strong>。「解析器整個瞎掉」由 <code>yieldRegression</code> 接住，不需要重複把關。
+          <br>workflow 內含解析器單元測試閘門（改壞規則就不該讓它去寫 Firestore），
+          並支援 <code>workflow_dispatch</code> 手動觸發（可選 dry-run / backfill）。
+        </div>
+        <div class="task-file">.github/workflows/scrape-announcements.yml · scripts/scrape-tw-announcements.mjs</div>
+      </div>
+      <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ 上線步驟 ══════════════════ -->
+<section class="section">
+  <div class="section-label orange">Runbook</div>
+  <div class="section-title">上線步驟（需人工執行）<span class="phase-badge h0">程式碼代勞不了的部分</span></div>
+  <div class="section-desc">
+    Phase 2 的程式碼已全部完成，但以下四段要人工做。<strong>順序有意義</strong>：A 沒做，後台一開就是 permission-denied。
+  </div>
+
+  <div class="task-group hot">
+    <div class="task-group-header">
+      <div class="task-group-title">A &nbsp; 部署（不做的話後台頁面與新規則都不存在）</div>
+      <div class="task-group-meta">最容易漏的一步</div>
+      <span class="status pending">待執行</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A1. 部署 Firestore 規則</div>
+        <div class="task-desc">
+          <code>firebase deploy --only firestore:rules</code><br>
+          <strong>⚠ 既有 CI（deploy.yml）只發佈前端到 GH Pages，不碰 Firestore 規則。</strong>
+          新增的 <code>announcementDrafts</code> / <code>pendingActivities</code> 兩段規則沒上線的話，
+          爬蟲仍寫得進去（admin SDK 繞過規則），但<strong>後台讀不到</strong>——
+          Firestore 對沒被任何 <code>match</code> 命中的集合一律拒絕。
+        </div>
+      </div>
+      <div class="task-assignee">維護者<div class="task-hours">~1min</div></div>
+      <span class="status pending">待執行</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A2. 前端上線</div>
+        <div class="task-desc">
+          把 <code>feat/plan-048-phase0</code> 合併進 <code>main</code>，<code>deploy.yml</code> 自動發佈。
+          <code>/admin/announcements</code> 在那之前只存在於本機。
+        </div>
+      </div>
+      <div class="task-assignee">維護者<div class="task-hours">~5min</div></div>
+      <span class="status pending">待執行</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B &nbsp; 排程金鑰（讓每週自動抓取生效）</div>
+      <div class="task-group-meta">專用 SA + GitHub Secrets</div>
+      <span class="status pending">待執行</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">B1. 建一把排程專用的 service account</div>
+        <div class="task-desc">
+          與本機那把分開，外洩時可單獨撤銷、不會連帶弄死所有 migrate/scrape 腳本。
+          <br><strong>⚠ 誠實說明限制：</strong>Firestore 的 IAM 粒度是<strong>資料庫層級</strong>（<code>datastore.user</code>），
+          做不到「只能寫這兩個集合」。所以這把金鑰仍有完整讀寫權，分開建的價值在<strong>可獨立撤銷</strong>，不是最小權限。
+          <div class="code-block" style="margin-top:8px;"><pre>gcloud iam service-accounts create scraper-announcements \
+  --display-name="PLAN-048 公告排程" --project=mecharashi-tools
+
+gcloud projects add-iam-policy-binding mecharashi-tools \
+  --member="serviceAccount:scraper-announcements@mecharashi-tools.iam.gserviceaccount.com" \
+  --role="roles/datastore.user"
+
+gcloud iam service-accounts keys create scraper-sa.json \
+  --iam-account=scraper-announcements@mecharashi-tools.iam.gserviceaccount.com</pre></div>
+        </div>
+      </div>
+      <div class="task-assignee">維護者<div class="task-hours">~10min</div></div>
+      <span class="status pending">待執行</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">B2. 把金鑰放進 GitHub Secrets，然後刪掉本機那份</div>
+        <div class="task-desc">
+          <code>gh secret set SCRAPER_SA_KEY &lt; scraper-sa.json</code> → 接著 <code>rm scraper-sa.json</code>。<br>
+          名稱刻意與 Cloudflare Worker 的 <code>FIREBASE_SA_KEY</code> 分開，避免日後輪替時搞混哪把是哪把。
+          Secrets 為加密儲存、log 自動遮罩、<strong>不會提供給 fork 發來的 PR workflow</strong>，
+          故 public repo 不代表金鑰公開。
+          <br>日後想升級成 Workload Identity Federation（完全不存長期金鑰）隨時可換，<strong>只改 workflow 認證那幾行、不動程式碼</strong>。
+        </div>
+      </div>
+      <div class="task-assignee">維護者<div class="task-hours">~2min</div></div>
+      <span class="status pending">待執行</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C &nbsp; 首次灌資料</div>
+      <div class="task-group-meta">也可以直接等排程，週四自己會跑</div>
+      <span class="status pending">待執行</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C1. 先 dry-run 看報告，再正式寫入</div>
+        <div class="task-desc">
+          <code>node scripts/scrape-tw-announcements.mjs --dry-run</code>（讀公告站 + 讀 Firestore，零寫入）<br>
+          <code>node scripts/scrape-tw-announcements.mjs</code>（正式寫入；預設增量，只抓歸檔沒有的新公告）<br>
+          然後到 <code>/admin/announcements</code> 審核。
+          <br>也可以在 GitHub 的 Actions 分頁手動觸發該 workflow（支援 dry-run 選項），效果相同。
+        </div>
+      </div>
+      <div class="task-assignee">維護者<div class="task-hours">~5min</div></div>
+      <span class="status pending">待執行</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D &nbsp; TTL 政策（可以晚點再做，不擋任何事）</div>
+      <div class="task-group-meta">不設也不會壞，只是 staging 會無限累積</div>
+      <span class="status pending">待執行</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">D1. 兩個集合各建一條 TTL，欄位皆為 expireAt</div>
+        <div class="task-desc">
+          <div class="code-block"><pre>gcloud firestore fields ttls update expireAt \
+  --collection-group=announcementDrafts --enable-ttl --project=mecharashi-tools
+
+gcloud firestore fields ttls update expireAt \
+  --collection-group=pendingActivities --enable-ttl --project=mecharashi-tools</pre></div>
+          或走 Console：Firestore Database → TTL 分頁 → 建立政策。
+          <br>量級很小（一年約 80 份 × 3KB），所以這條純粹是衛生問題，不影響功能。
+        </div>
+      </div>
+      <div class="task-assignee">維護者<div class="task-hours">~5min</div></div>
+      <span class="status pending">待執行</span>
     </div>
   </div>
 </section>

@@ -27,6 +27,7 @@
  *   node scripts/scrape-tw-announcements.mjs --reparse        不連外網，用既有 rawText 重新解析
  *   node scripts/scrape-tw-announcements.mjs --from-archive   讀本地歸檔而非連線（離線驗證用）
  *   node scripts/scrape-tw-announcements.mjs --limit=5        只處理前 N 篇
+ *   node scripts/scrape-tw-announcements.mjs --fail-on-warn   結構性異常時 exit 1（排程用）
  */
 
 import fs from 'node:fs'
@@ -70,6 +71,7 @@ const REPARSE = args.includes('--reparse')
 const FROM_ARCHIVE = args.includes('--from-archive')
 const BACKFILL = (args.find(a => a.startsWith('--backfill=')) || '').split('=')[1] || null
 const LIMIT = Number((args.find(a => a.startsWith('--limit=')) || '').split('=')[1]) || Infinity
+const FAIL_ON_WARN = args.includes('--fail-on-warn')
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
@@ -398,6 +400,12 @@ async function main() {
   const regressed = checkRegression(report, prevRun)
   printReport(report, regressed, { fetched, skipped, failed })
 
+  const failures = structuralFailures(report, regressed, { fetched, skipped, failed })
+  if (FAIL_ON_WARN && failures.length > 0) {
+    console.error(`\n✗ 結構性異常：${failures.join('、')}`)
+    process.exitCode = 1
+  }
+
   if (DRY_RUN) {
     console.log('\n（--dry-run：未寫入 Firestore）')
     return
@@ -490,6 +498,25 @@ function buildReport(results) {
     warnings,
     lowYield: results.filter(r => r.draft.warnings.includes('lowYield')).map(r => r.draft.title),
   }
+}
+
+/**
+ * 哪些狀況該讓排程「紅燈」。
+ *
+ * 刻意**只收結構性異常**，不收逐篇的 lowYield / pilotSectionNoName ——
+ * 那三種在歷史語料上各有 6～7% 的自然發生率（真的就是只有預告沒有檔期的公告），
+ * 拿來當 CI 紅燈等於每七週寄一封狼來了。**學會忽略的告警比沒有告警更糟。**
+ * 它們仍然存在，只是出現在後台工作檯的 ⚠ 標籤上 —— 那裡才是能對它做事的地方。
+ *
+ * 而「解析器整個瞎掉」這個真正要防的情境，會被 yieldRegression 接住
+ * （產出量掉到前次的八成以下），不需要 lowYield 重複把關。
+ */
+function structuralFailures(report, regressed, io) {
+  const reasons = []
+  if (io.failed > 0) reasons.push(`${io.failed} 篇抓取失敗`)
+  if (regressed) reasons.push('解析率較前次下滑逾 20%')
+  if (report.warnings.contentSelectorMiss) reasons.push('正文選擇器失效（官網可能改版）')
+  return reasons
 }
 
 /**
