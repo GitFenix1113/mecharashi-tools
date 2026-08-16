@@ -7,6 +7,13 @@ import type { VisibleActivity } from '../../data/patchVersions/types'
 export interface KeyedActivity {
   key: string
   act: VisibleActivity
+  /**
+   * 這筆是從上一個版本延續進來的，值為來源版本的顯示名（如 `v3.1`）。
+   *
+   * 戰令這類活動常常跨版：它標在開跑的那一版（當期主打，也是給玩家準備時間的
+   * 預告），但下一版期間仍在進行中。不標出來源，讀者會以為它是本版新增的。
+   */
+  carriedFrom?: string
 }
 
 type Phase = 'ongoing' | 'upcoming' | 'ended'
@@ -74,11 +81,12 @@ export default function ActivityCardFlow({
         </div>
         {!collapsed && (
           <div className="grid grid-cols-1 @2xl:grid-cols-2 gap-2">
-            {list.map(({ key, act }) => (
+            {list.map(({ key, act, carriedFrom }) => (
               <ActivityCard
                 key={key}
                 act={act}
                 actKey={key}
+                carriedFrom={carriedFrom}
                 selected={selectedKey === key}
                 onSelect={onSelect}
                 onHover={onHover}

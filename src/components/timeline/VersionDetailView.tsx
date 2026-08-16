@@ -102,6 +102,9 @@ export default function VersionDetailView({ versions, activeIndex, onNavigate, o
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden px-4 pb-4 pt-1">
         <VersionExpandedPanel
           version={version}
+          // 上一個版本 —— 甘特要據此撈出「跨進本版的活動」（戰令常跨版，
+          // 標在它開跑的那一版，但下一版仍在進行中，讀者需要看得到）
+          prevVersion={activeIndex > 0 ? versions[activeIndex - 1] : undefined}
           isExpanded={true}
           side={side}
         />

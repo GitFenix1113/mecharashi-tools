@@ -27,12 +27,14 @@ const BANNER_BASE = 'from-bg-card/30 to-bg-card-hover/60'
 
 interface Props {
   version: PatchVersion
+  /** 上一個版本；甘特用它撈跨版活動。最舊的版本沒有前一版，故為選填。 */
+  prevVersion?: PatchVersion
   isExpanded: boolean
   /** Server side currently displayed in the Gantt panel. */
   side?: 'tw' | 'cn'
 }
 
-export default function VersionExpandedPanel({ version, isExpanded, side = 'tw' }: Props) {
+export default function VersionExpandedPanel({ version, prevVersion, isExpanded, side = 'tw' }: Props) {
   const bannerSrc = version.bannerImage
     ? resolveBannerSrc(version.bannerImage)
     : null
@@ -60,7 +62,7 @@ export default function VersionExpandedPanel({ version, isExpanded, side = 'tw' 
         </div>
 
         <div className="relative z-10 pt-3 pb-3 px-3 flex-1 min-h-0 flex flex-col">
-          <VersionGanttPanel version={version} side={side} />
+          <VersionGanttPanel version={version} prevVersion={prevVersion} side={side} />
         </div>
 
       </div>

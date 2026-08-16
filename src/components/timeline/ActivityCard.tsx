@@ -13,6 +13,7 @@ function fmt(d: Date): string {
 export default function ActivityCard({
   act,
   actKey,
+  carriedFrom,
   selected,
   onSelect,
   onHover,
@@ -20,6 +21,8 @@ export default function ActivityCard({
 }: {
   act: VisibleActivity
   actKey: string
+  /** 非空 ＝ 這筆是從該版本延續進來的（如戰令跨版），標出來源免得誤認為本版新增 */
+  carriedFrom?: string
   selected: boolean
   onSelect: (key: string | null) => void
   onHover: (key: string | null) => void
@@ -74,6 +77,14 @@ export default function ActivityCard({
         {isPredicted && (
           <span className="text-[10px] border border-dashed border-accent-purple/50 text-accent-purple px-1 rounded">
             推估
+          </span>
+        )}
+        {carriedFrom && (
+          <span
+            className="text-[10px] border border-accent-cyan/40 text-accent-cyan px-1 rounded"
+            title={`這個活動登錄在 ${carriedFrom}，檔期延續到本版`}
+          >
+            ↩ {carriedFrom} 延續
           </span>
         )}
       </div>

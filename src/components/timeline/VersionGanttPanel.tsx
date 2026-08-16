@@ -219,7 +219,7 @@ function ActivityGanttRow({
   onSelect: (key: string | null) => void
   onHover: (key: string | null) => void
 }) {
-  const { key, act } = item
+  const { key, act, carriedFrom } = item
   const geom = activityGeometry(act, allWeeks)
   const tone = activityTone(act.type, act.typeLabel)
   const selected = selectedKey === key
@@ -228,6 +228,12 @@ function ActivityGanttRow({
     <tr>
       <td className="border-r border-[#2a3040] px-3 py-0 text-left text-[13px] text-text-dim bg-[#0e1119] whitespace-nowrap">
         <span className={tone.text}>{tone.label}</span>
+        {/* 跨版來源：不標的話讀者會以為這是本版新增的活動 */}
+        {carriedFrom && (
+          <span className="ml-1 text-[10px] text-text-dim" title={`延續自 ${carriedFrom}`}>
+            ↩{carriedFrom}
+          </span>
+        )}
       </td>
       <td colSpan={Math.max(totalWeeks, 1)} className="p-0 align-middle">
         {/* h-8：Phase 1 從 py-3.5（50px）壓到 32px，1366×768 可見列 1 → 4 */}
@@ -289,9 +295,11 @@ function VersionExtras({ version }: { version: PatchVersion }) {
 
 export default function VersionGanttPanel({
   version,
+  prevVersion,
   side = 'tw',
 }: {
   version: PatchVersion
+  prevVersion?: PatchVersion
   side?: 'tw' | 'cn'
 }) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
@@ -341,6 +349,39 @@ export default function VersionGanttPanel({
         ...lowerActs.map((act, i) => ({ key: act.id ?? `l${i}:${act.name}:${act.startDate}`, act })),
       ]
 
+      // ── 上一版跨進來的活動 ────────────────────────────────────────────────
+      //
+      // 戰令這類活動常常跨版：它只被登錄在開跑的那一版（當期主打，同時也是給
+      // 玩家準備時間的預告），但下一版期間仍在進行中。不撈進來的話，v3.2 的甘特
+      // 會是一片空白，而實際上那段時間有一個六週戰令正在跑。
+      //
+      // 判準是「結束時間晚於本版軸起點」——用實際日期算，不靠人工標記跨版。
+      // 幾何層會把它們的左緣切平（clipStart），所以視覺上就是「從更早以前延續過來」。
+      const axisStart = allWeeks[0]
+      const carried: KeyedActivity[] = []
+      if (prevVersion && axisStart) {
+        const prevLabel = `v${prevVersion.version}`
+        const prevUpperStart = side === 'tw' ? (prevVersion.upper.twDate ?? '') : prevVersion.upper.cnDate
+        const prevLowerStart = side === 'tw' ? (prevVersion.lower.twDate ?? '') : prevVersion.lower.cnDate
+        const prevActs = [
+          ...activitiesOfHalf(prevVersion.upper, side, halfSpan(prevUpperStart, prevLowerStart)),
+          ...activitiesOfHalf(prevVersion.lower, side, halfSpan(prevLowerStart, upperStartStr || null)),
+        ]
+        // 本版已經有的同名同起始日不再重複帶入（維護者可能兩版都登錄了一次）
+        const own = new Set(items.map(it => `${it.act.name}@${it.act.startDate}`))
+        for (const [i, act] of prevActs.entries()) {
+          const end = addDays(parseDate(act.startDate), Math.max(act.weeks, 1) * 7)
+          if (end <= axisStart) continue                       // 上一版就結束了
+          if (own.has(`${act.name}@${act.startDate}`)) continue
+          carried.push({
+            key: act.id ? `carry:${act.id}` : `carry${i}:${act.name}:${act.startDate}`,
+            act,
+            carriedFrom: prevLabel,
+          })
+        }
+      }
+      items.unshift(...carried)   // 排在最前面 —— 它們是「已經在跑」的，優先級高於本版即將開始的
+
       return {
         allWeeks,
         upperCount: upperWeeks.length,
@@ -349,7 +390,7 @@ export default function VersionGanttPanel({
         upperStartStr,
         lowerStartStr,
       }
-    }, [side, version])
+    }, [side, version, prevVersion])
 
   const totalWeeks = allWeeks.length
 
