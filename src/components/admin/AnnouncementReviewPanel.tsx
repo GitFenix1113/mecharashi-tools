@@ -47,7 +47,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-const INPUT = 'w-full px-2 py-1 text-[12px] bg-bg-input border border-border rounded text-text-primary focus:border-accent-cyan outline-none'
+const INPUT = 'w-full px-2 py-1 text-[12px] bg-bg-card border border-border rounded text-text-primary focus:border-accent-cyan outline-none'
 
 /**
  * 原文片段：把公告裡沒被任何規則認領的行標紅。
@@ -349,7 +349,7 @@ export default function AnnouncementReviewPanel({
             type="button"
             disabled={busy}
             onClick={onReject}
-            className="px-3 py-1.5 text-[12px] rounded border bg-bg-input text-text-secondary border-border hover:text-text-primary disabled:opacity-40 transition-colors"
+            className="px-3 py-1.5 text-[12px] rounded border bg-bg-card text-text-secondary border-border hover:text-text-primary disabled:opacity-40 transition-colors"
           >
             忽略
           </button>

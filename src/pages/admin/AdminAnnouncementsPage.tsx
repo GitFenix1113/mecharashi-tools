@@ -177,7 +177,7 @@ export default function AdminAnnouncementsPage() {
             className={`px-2.5 py-1 text-[12px] rounded border transition-colors ${
               i === filterIdx
                 ? 'bg-accent-cyan/20 text-accent-cyan border-accent-cyan/50'
-                : 'bg-bg-input text-text-secondary border-border hover:text-text-primary'
+                : 'bg-bg-card text-text-secondary border-border hover:text-text-primary'
             }`}
           >
             {f.label}
@@ -221,7 +221,7 @@ export default function AdminAnnouncementsPage() {
                   type="button"
                   onClick={() => setSelectedId(it.id)}
                   className={`w-full text-left px-2.5 py-2 border-b border-border/60 transition-colors ${
-                    it.id === selectedId ? 'bg-accent-cyan/10' : 'hover:bg-bg-input'
+                    it.id === selectedId ? 'bg-accent-cyan/10' : 'hover:bg-bg-card'
                   }`}
                 >
                   <div className="text-[12.5px] text-text-primary truncate">

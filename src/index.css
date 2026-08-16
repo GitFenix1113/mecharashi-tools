@@ -85,6 +85,20 @@ body {
 }
 
 /* Admin panel input fields */
+/*
+ * 原生 <select> 的下拉清單不吃 <select> 身上的 Tailwind 類別 ——
+ * Windows/Chrome 會用系統色去畫 <option>，在深色底的站上就是
+ * 「看得到選項框、看不到字」。全站 200 個 <option> 沒有一個設過 class，
+ * 所以修在這裡一次解決，不必逐個加。
+ *
+ * 背景刻意用**不透明**色值而不是 var(--color-bg-card)：後者帶 0.65 alpha，
+ * 半透明的下拉疊在版本橫幅的機甲立繪上一樣糊。#12151c 就是 bg-card 的不透明版。
+ */
+select option {
+  background-color: #12151c;
+  color: var(--color-text-primary);
+}
+
 /* ── PLAN-015: Page Snap (homepage only) ─────────────────────────── */
 .homepage-snap {
   height: calc(100vh - 4rem);
