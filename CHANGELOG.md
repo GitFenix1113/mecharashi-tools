@@ -334,6 +334,7 @@
 
 ### 🚀 CI/CD
 
+- 修好 PR 預覽部署的 base path（網域搬遷後未更新） (`860f35a`)
 - PLAN-029 Phase 2 前端正式切換 — deploy.yml 注入 VITE_WORKER_API_BASE (`2d367cd`)
 - 新增 workflow_dispatch 觸發方式至 preview workflow (`f354195`)
 - 重新觸發 preview 部署 (`af8e9fc`)
