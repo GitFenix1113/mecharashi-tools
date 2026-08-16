@@ -821,8 +821,9 @@
           沿用既有的 <code>match /meta/{docId}</code> 規則，不需新增規則。
           新增集合文件 <code>announcementStaging.html</code> 並掛進 Firebase 設計總覽（卡片 + 集合清單兩處）；
           該目錄不在 <code>copy-docs.mjs</code> 白名單內，故不會外流到 <code>/documents</code>。
-          <br><strong>待人工執行：</strong>兩條 TTL 政策要在 Firebase Console 手動建立
-          （欄位 <code>expireAt</code>，同 changeHistory 的做法，程式碼無法代勞）。
+          <br><strong>⚠ 更正：TTL 決定不啟用。</strong>兩條政策已建立並驗證 ACTIVE，隨後刻意關閉 ——
+          容量壓力不存在（一年 &lt; 0.5 MB vs 1 GiB 免費額度），而 <code>rawText</code> 是公告原文的
+          唯一備份、官方站又寄生在前代理商網域上。詳見本頁 <strong>D1</strong>。
         </div>
         <div class="task-file">firestore.rules · docs/02_技術文件/04_Firebase/資料庫設計文件/announcementStaging.html</div>
       </div>
@@ -1289,25 +1290,37 @@ Remove-Item "$env:TEMP\scraper-sa.json"     # 上傳完立刻刪，本機不留<
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">D &nbsp; TTL 政策（可以晚點再做，不擋任何事）</div>
-      <div class="task-group-meta">不設也不會壞，只是 staging 會無限累積</div>
-      <span class="status pending">待執行</span>
+      <div class="task-group-title">D &nbsp; TTL 政策（已評估 → 決定不啟用）</div>
+      <div class="task-group-meta">2026-08-17 建立後隨即關閉，理由見下</div>
+      <span class="status done">已決策</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">D1. 兩個集合各建一條 TTL，欄位皆為 expireAt</div>
+        <div class="task-name">D1. 兩條政策已建立、驗證、然後刻意關閉</div>
         <div class="task-desc">
           <div class="code-block"><pre>gcloud firestore fields ttls update expireAt \
   --collection-group=announcementDrafts --enable-ttl --project=mecharashi-tools
 
 gcloud firestore fields ttls update expireAt \
   --collection-group=pendingActivities --enable-ttl --project=mecharashi-tools</pre></div>
-          或走 Console：Firestore Database → TTL 分頁 → 建立政策。
-          <br>量級很小（一年約 80 份 × 3KB），所以這條純粹是衛生問題，不影響功能。
+          兩條都實際跑過並確認 <code>ttlConfig.state: ACTIVE</code>，隨後以
+          <code>--disable-ttl</code> 關閉。<strong>沒有任何文件被刪除</strong>：啟用前先查過
+          43 篇草稿 + 67 筆待審的 <code>expireAt</code> 全是 2027-02-16，零筆已過期。
+
+          <br><br><strong>為什麼決定不啟用</strong>——維護者的立場是「wiki 要像博物館，
+          除非面臨很高壓的容量壓力，活動資訊盡量不刪」。兩項事實支持這個選擇：
+          <br>① <strong>容量壓力不存在</strong>：一年約 80 篇公告，草稿加待審合計不到 0.5 MB，
+          而 Firestore 免費額度是 1 GiB —— 這個速度要兩千年才填滿，設定條件不可能觸發。
+          <br>② <strong>被刪的東西不可再生</strong>：<code>announcementDrafts.rawText</code> 是公告原文的
+          唯一備份，而官方公告站寄生在<strong>前代理商網域</strong>上，收掉時 <code>sourceUrl</code> 會全變死連結。
+          活動辦完、公告下架就再也抓不回來。
+
+          <br><br><code>expireAt</code> 欄位照樣寫入（無害，只是沒人讀），將來真要開就是上面那兩行指令。
+          離線的原文備份另存於 <code>scripts/fixtures/tw-announcements-2026-08/</code>（266 篇純文字）。
         </div>
       </div>
-      <div class="task-assignee">維護者<div class="task-hours">~5min</div></div>
-      <span class="status pending">待執行</span>
+      <div class="task-assignee">維護者<div class="task-hours">已執行</div></div>
+      <span class="status done">已決策</span>
     </div>
   </div>
 </section>
