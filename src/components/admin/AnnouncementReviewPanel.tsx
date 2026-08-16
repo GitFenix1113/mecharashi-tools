@@ -104,9 +104,21 @@ export default function AnnouncementReviewPanel({
   // 覆寫的是「版本 + 半期」整組，不是只有版本 —— 半期同樣是推算出來的，
   // 要改就兩個一起改，否則會出現「版本改了、半期還停在舊版本推算值」的錯配。
   const [override, setOverride] = useState<MergeTarget | null>(null)
-  const [showOverride, setShowOverride] = useState(false)
   const target = override ?? defaultTarget
   const versionId = target?.versionId ?? ''
+
+  /**
+   * 什麼時候才需要人動手指定寫入目標。
+   *
+   * 推得出來就只顯示、不給選 —— 那是系統算得出來的事，讓人再決定一次只會製造錯誤。
+   * 但有兩種情況推算不能算數：
+   *   · 本來就推不出（起始日早於所有已知台版半期）
+   *   · **起始日被改過**：targetVersion 是爬取當下依原始 startDate 算好存起來的，
+   *     改了日期它就可能過期。若此時仍是唯讀，就會靜默寫到錯的半期去 ——
+   *     而且是「畫面顯示 A、實際寫入 A，但 A 已經不對」這種最難發現的錯。
+   */
+  const dateEdited = Boolean(form.startDate) && form.startDate !== item.extracted?.startDate
+  const needsTargetInput = !defaultTarget || dateEdited
 
   const patch = (p: Partial<TimedActivity>) => setForm(prev => ({ ...prev, ...p }))
 
@@ -316,29 +328,26 @@ export default function AnnouncementReviewPanel({
             <span className="block text-[10px] font-bold text-text-secondary tracking-[1px] uppercase mb-1">
               寫入目標
             </span>
-            {target ? (
-              <div className="flex items-center gap-2 flex-wrap text-[12.5px]">
+            {!needsTargetInput && target && (
+              <div className="text-[12.5px]">
                 <span className="px-2 py-1 rounded border bg-accent-cyan/10 text-accent-cyan border-accent-cyan/30">
-                  {target.versionId} {target.half === 'lower' ? '下半' : '上半'}
-                  <span className="text-text-dim ml-1.5">
-                    （台版 {halfTwDate(versions, target) ?? '日期未填'} 起）
-                  </span>
+                  {target.half === 'lower' ? '下半' : '上半'}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setShowOverride(v => !v)}
-                  className="text-[11px] text-text-dim hover:text-text-primary underline"
-                >
-                  {showOverride ? '收起' : '改'}
-                </button>
-              </div>
-            ) : (
-              <div className="text-[11px] text-accent-yellow">
-                推不出目標版本（起始日落在所有已知台服版本之外），請於下方手動指定。
+                <span className="text-text-dim ml-2 text-[11px]">
+                  {target.versionId}（台版 {halfTwDate(versions, target) ?? '日期未填'} 起）· 由起始日推算
+                </span>
               </div>
             )}
 
-            {(showOverride || !target) && (
+            {needsTargetInput && (
+              <div className="text-[11px] text-accent-yellow mb-1">
+                {dateEdited
+                  ? '起始日已修改，原本推算的寫入目標可能不再適用，請確認。'
+                  : '推不出目標版本（起始日落在所有已知台服版本之外），請手動指定。'}
+              </div>
+            )}
+
+            {needsTargetInput && (
               <div className="flex gap-2 mt-1.5">
                 <select
                   className={INPUT}
