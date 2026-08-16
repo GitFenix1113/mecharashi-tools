@@ -1056,9 +1056,9 @@
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">週四 01:00／13:00（台北）自動抓取，結構性異常時寄信</div>
+        <div class="task-name">週三 20:00／週四 13:00（台北）自動抓取，結構性異常時寄信</div>
         <div class="task-desc">
-          官方固定週四 05:00 更新、公告提前一兩天上線，故排 <code>0 17 * * 3</code>（台北週四 01:00），
+          官方固定週四 05:00 更新、公告提前一兩天上線，故排 <code>0 12 * * 3</code>（台北週三 20:00），
           再以 <code>0 5 * * 4</code>（台北週四 13:00）補抓一次接住延後發佈。
           兩次都冪等 —— <code>contentHash</code> 沒變就整篇跳過，第二次零寫入。
           <br><strong>為什麼選 GitHub Actions 而不是 Worker / Cloud Functions：</strong>
