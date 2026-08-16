@@ -202,7 +202,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">9</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -210,7 +210,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">31</div>
+      <div class="summary-num" style="color:var(--text-dim)">22</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -221,11 +221,11 @@
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">0 / 31</span>
+      <span>整體完成度 · Phase 0 已完工（2026-08-16）</span>
+      <span style="color:var(--accent-orange);">9 / 31</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 29%"></div>
     </div>
   </div>
 
@@ -235,10 +235,22 @@
     並讓台版官方公告能半自動灌進資料庫，維護者每月只需按三顆按鈕分類 2～4 筆新內容。
   </div>
 
-  <div class="alert-note">
-    <strong>⚠ 任務 0-0 的優先度高於本計畫的任何功能，且與其他任務無依賴——可以最先做、單獨做。</strong><br>
-    258 篇台版公告至今<strong>只</strong>存在於前代理商網域 <code>ma.tentree-games.com</code>。代理權已於 2026-01-05 移轉給亦樹遊戲，新網域沒有平行公告站。
-    站一旦收掉，2024-03 至今的所有版本史料一起消失，且不可逆。
+  <div class="impact-note">
+    <strong>✔ 2026-08-16　任務 0-0 已完成：台版公告全量歸檔。</strong>
+    實抓 <strong>266 篇、0 失敗</strong>（maAffiche 258／maNews 3／maGuide 1／maOther 4），
+    含原始 HTML、正規化純文字與清單 JSON，落在 <code>_local-notes/2026-08/tw-announcements-archive/</code>。
+    此前這 258 篇<strong>只</strong>存在於前代理商網域 <code>ma.tentree-games.com</code>（代理權 2026-01-05 已移轉給亦樹遊戲，
+    新網域沒有平行公告站），站一旦收掉即不可逆。<strong>這個風險現已解除。</strong>
+  </div>
+
+  <div class="impact-note">
+    <strong>✔ 2026-08-16　Phase 0 全數完工。</strong>
+    分支 <code>feat/plan-048-phase0</code>，兩個 commit；<code>npm test</code> 425 例全過、<code>npm run build</code> 通過。
+    已在 dev server 實機驗證四項：浮窗改為往下展開且 portal 直掛 <code>body</code>（父鏈只剩 <code>DIV → BODY</code>，
+    確認脫離全部 11 層裁切祖先）、一週活動「新風起蜇」長出完整名稱、獎勵自動拆成 chip、
+    手機 tap 開 BottomSheet 拿得到完整資訊。<br>
+    <strong>任務 0-5 標記為無需改動</strong>——<code>VersionTimeline.tsx:27-32</code> 已有 <code>isTwCurrent</code> focus 邏輯，
+    <code>side</code> 也已預設 <code>'tw'</code>，計畫階段誤判為待辦。
   </div>
 
   <table style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0 0;">
@@ -253,11 +265,11 @@
     </thead>
     <tbody>
       <tr>
-        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--text-secondary);">Phase 0 · 止血</td>
-        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--text-secondary);">9</td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-green);">Phase 0 · 止血　<span class="status done">已完成</span></td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--text-secondary);">9 / 9</td>
         <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-cyan);">~5h（＋歸檔 2h）</td>
         <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-green);">無</td>
-        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-green);">✔ 是</td>
+        <td style="border:1px solid var(--border);padding:9px 14px;color:var(--accent-green);">✔ 已上線於分支</td>
       </tr>
       <tr>
         <td style="border:1px solid var(--border);padding:9px 14px;color:var(--text-secondary);">Phase 1 · 版面</td>
@@ -289,7 +301,7 @@
     <div class="task-group-header">
       <div class="task-group-title">0-0 &nbsp; 台版公告全量歸檔（緊急前置）</div>
       <div class="task-group-meta">scripts/temp_scripts/</div>
-      <span class="status urgent">最優先</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -304,7 +316,7 @@
         <div class="task-file">scripts/temp_scripts/archive-tw-announcements.mjs</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~2h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -312,7 +324,7 @@
     <div class="task-group-header">
       <div class="task-group-title">0-1 &nbsp; 浮窗改走 FloatingPortal</div>
       <div class="task-group-meta">src/components/timeline/ActivityBar.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -326,7 +338,7 @@
         <div class="task-file">src/components/timeline/ActivityBar.tsx（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -338,7 +350,7 @@
         <div class="task-file">src/components/timeline/VersionGanttPanel.tsx</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -346,7 +358,7 @@
     <div class="task-group-header">
       <div class="task-group-title">0-2 &nbsp; 日精度長條幾何</div>
       <div class="task-group-meta">src/components/timeline/ganttGeometry.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -360,7 +372,7 @@
         <div class="task-file">src/components/timeline/ganttGeometry.ts（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -372,7 +384,7 @@
         <div class="task-file">src/components/timeline/VersionGanttPanel.tsx:182-247</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -380,7 +392,7 @@
     <div class="task-group-header">
       <div class="task-group-title">0-3 &nbsp; 獎勵字串前台拆解（runtime fallback）</div>
       <div class="task-group-meta">src/data/patchVersions/activityText.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -394,7 +406,7 @@
         <div class="task-file">src/data/patchVersions/activityText.ts（新）</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -402,7 +414,7 @@
     <div class="task-group-header">
       <div class="task-group-title">0-4 &nbsp; 捲動邊界與誠實空狀態</div>
       <div class="task-group-meta">src/components/timeline/VersionGanttPanel.tsx:431</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -415,7 +427,7 @@
         <div class="task-file">src/components/timeline/VersionGanttPanel.tsx</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~0.3h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -423,19 +435,20 @@
     <div class="task-group-header">
       <div class="task-group-title">0-5 &nbsp; 開啟即落在當前版本</div>
       <div class="task-group-meta">src/components/timeline/VersionTimeline.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">無需改動</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">預設 activeIndex 指向 isTwCurrent 的版本 + 正確伺服器</div>
         <div class="task-desc">
-          「這週有什麼」的最短路徑：載入完成的那一刻答案已經在畫面上，而不是要使用者自己按上版/下版找到當前版本。
-          <code>side</code> 亦依 <code>isTwCurrent</code> 預設。
+          <strong>開工後查證：本項已實作，計畫階段誤判為待辦。</strong>
+          <code>VersionTimeline.tsx:27-32</code> 已有「初次載入時把焦點對到台服當前版本」的 effect，
+          <code>VersionDetailView</code> 的 <code>side</code> 也已預設 <code>'tw'</code>。未做任何改動。
         </div>
         <div class="task-file">src/components/timeline/VersionTimeline.tsx · VersionDetailView.tsx</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~0.5h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -443,7 +456,7 @@
     <div class="task-group-header">
       <div class="task-group-title">0-6 &nbsp; 守衛測試</div>
       <div class="task-group-meta">node --test</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -455,7 +468,7 @@
         <div class="task-file">src/components/timeline/*.test.ts · src/data/patchVersions/activityText.test.ts</div>
       </div>
       <div class="task-assignee">開發者<div class="task-hours">~1h</div></div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
