@@ -38,18 +38,8 @@ export function generateWeeks(
 ): Date[] {
   if (!startStr) return []
   const start = parseDate(startStr)
-
-  let end: Date
-  if (endStr) {
-    end = parseDate(endStr)
-    // 下一段的開始日若早於起點（資料填錯），退回慣例長度而不是產出空軸
-    if (end <= start) end = addDays(start, DEFAULT_HALF_WEEKS * 7)
-  } else {
-    const w = Number.isFinite(explicitWeeks) && (explicitWeeks ?? 0) > 0
-      ? Math.round(explicitWeeks!)
-      : DEFAULT_HALF_WEEKS
-    end = addDays(start, w * 7)
-  }
+  const end = halfEndDate(startStr, endStr, explicitWeeks)
+  if (!end) return []
 
   const weeks: Date[] = []
   let cur = start
@@ -58,6 +48,49 @@ export function generateWeeks(
     cur = addDays(cur, 7)
   }
   return weeks
+}
+
+/**
+ * 半版本的結束日（exclusive，即下一段的第一天）。長度來源同 `generateWeeks`。
+ *
+ * 抽出來是因為它有第二個用途：後台要用「半版本結束日 − 活動起始日」替
+ * 只寫「⟨日期⟩ 起」的卡池算出**建議**週數。兩處必須是同一條規則 ——
+ * 否則會出現「後台建議 3 週、甘特卻畫成 2 週」這種自相矛盾。
+ */
+export function halfEndDate(
+  startStr: string,
+  endStr: string | null,
+  explicitWeeks?: number,
+): Date | null {
+  if (!startStr) return null
+  const start = parseDate(startStr)
+
+  if (endStr) {
+    const end = parseDate(endStr)
+    // 下一段的開始日若早於起點（資料填錯），退回慣例長度而不是產出空軸
+    if (end > start) return end
+  }
+  const w = Number.isFinite(explicitWeeks) && (explicitWeeks ?? 0) > 0
+    ? Math.round(explicitWeeks!)
+    : DEFAULT_HALF_WEEKS
+  return addDays(start, w * 7)
+}
+
+/**
+ * 依「檔期到半版本結束為止」推算建議週數。回傳 null ＝ 推不出來，別顯示建議。
+ *
+ * ⚠ 這是**建議值，不是資料**。卡池公告常常只寫「起」，因為它跟著半版本結束
+ * （遊戲內畫面可佐證：v3.1 下半的佐伊池顯示「卡池結束於 2026/8/20 10:00」，
+ * 而 8/20 正是 v3.2 上半的開始日）。但官方偶爾會變動，所以維護者明確要求
+ * **不自動填**——這個值只能顯示給人看、由人按下才寫入。
+ */
+export function suggestWeeksUntilHalfEnd(activityStart: string, halfEnd: Date | null): number | null {
+  if (!activityStart || !halfEnd) return null
+  const s = parseDate(activityStart)
+  if (Number.isNaN(s.getTime())) return null
+  const days = (halfEnd.getTime() - s.getTime()) / DAY_MS
+  if (days <= 0) return null           // 活動起始日晚於半版本結束 → 資料有問題，不猜
+  return Math.max(1, Math.round(days / 7))
 }
 
 export interface BarGeom {

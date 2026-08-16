@@ -3,6 +3,8 @@ import type { PendingActivity, PendingFlag } from '../../types/announcementStagi
 import { PENDING_FLAG_LABEL } from '../../types/announcementStaging'
 import type { PatchVersion, TimedActivity } from '../../data/patchVersions/types'
 import { ACTIVITY_TYPE_OPTIONS, isKnownActivityType } from '../timeline/activityTypeRegistry'
+// 與甘特週軸共用同一條「半版本多長」的規則，免得後台建議與前台畫面互相矛盾
+import { halfEndDate, suggestWeeksUntilHalfEnd, DEFAULT_HALF_WEEKS } from '../timeline/ganttGeometry'
 import {
   computeEndDate,
   fromInputDate,
@@ -134,6 +136,36 @@ export default function AnnouncementReviewPanel({
   const typeValue = form.type && isKnownActivityType(form.type) ? form.type : (form.type ? CUSTOM : '')
   const wd = form.startDate ? weekdayInfo(form.startDate) : null
 
+  /**
+   * 週數建議值：卡池公告只寫「⟨日期⟩ 起」，因為它跟著半版本結束。
+   *
+   * 只在**週數留空**時計算，而且只是顯示 —— 要按下才寫入。
+   * 維護者的要求原話是「沒寫時間的活動就給維護者去手填，以防官方有變動」，
+   * 所以這裡的分界是：系統可以算給你看，但不會替你決定。
+   *
+   * 半版本結束日＝下一段的開始日（上半→下半、下半→下個版本的上半），
+   * 推不出來時退回 `PatchHalf.weeks` → 慣例 3 週，與甘特週軸同一條規則
+   * （共用 `halfEndDate`），免得出現「後台建議 3 週、甘特畫成 2 週」。
+   */
+  const suggestion = useMemo(() => {
+    if (weeks !== undefined || !form.startDate || !target?.versionId) return null
+    const idx = versions.findIndex(v => (v.id ?? `v${v.version}`) === target.versionId)
+    if (idx < 0) return null
+    const cur = versions[idx]
+    const half = cur[target.half]
+    const halfStart = half?.twDate ?? half?.cnDate ?? ''
+    // 下一段：上半接下半，下半接「下一個版本的上半」（versions 依版本號遞增排序）
+    const next = target.half === 'upper'
+      ? cur.lower
+      : versions[idx + 1]?.upper
+    const nextStart = next?.twDate ?? next?.cnDate ?? null
+    const end = halfEndDate(halfStart, nextStart, half?.weeks)
+    const w = suggestWeeksUntilHalfEnd(form.startDate, end)
+    if (!w) return null
+    // 用既有的 computeEndDate 產生標籤（含週幾），與欄位下方那行「至 …」同格式
+    return { weeks: w, endLabel: computeEndDate(form.startDate, w), fromNext: Boolean(nextStart) }
+  }, [weeks, form.startDate, target, versions])
+
   // 週數不再是合併的必要條件 —— 缺它就隱藏著進去，等之後補。
   // 起始日仍然必要：實測 625 筆公告從沒缺過，且缺了連「什麼時候」都答不出來。
   const canMerge = Boolean(
@@ -208,6 +240,27 @@ export default function AnnouncementReviewPanel({
             {form.startDate && weeks
               ? <span className="text-[10px] text-text-dim">至 {computeEndDate(form.startDate, weeks)}</span>
               : null}
+
+            {/* 建議值。刻意做成「要按才套用」而不是預填進輸入框 ——
+                預填會讓人分不出「官方寫的」與「系統算的」，那正是這條管線一路
+                在防的事。按下之後它就是一般的手填值，可以再改。 */}
+            {suggestion && (
+              <div className="mt-1 flex items-start gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => patch({ weeks: suggestion.weeks })}
+                  className="px-1.5 py-0.5 text-[10px] rounded border bg-accent-cyan/10 text-accent-cyan border-accent-cyan/40 hover:bg-accent-cyan/20 transition-colors"
+                >
+                  套用建議 {suggestion.weeks} 週
+                </button>
+                <span className="text-[10px] text-text-dim leading-[1.6]">
+                  至 {suggestion.endLabel}
+                  {suggestion.fromNext
+                    ? '（＝下一段版本的開跑日，卡池通常跟著半版本結束）'
+                    : `（下一段日期未填，依慣例 ${DEFAULT_HALF_WEEKS} 週推算）`}
+                </span>
+              </div>
+            )}
           </Field>
 
           {/* 隱藏 + 備註：資料不齊也進得去，只是先不上首頁 */}

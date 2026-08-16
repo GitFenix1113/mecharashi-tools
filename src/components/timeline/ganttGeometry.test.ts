@@ -3,7 +3,7 @@
 // 本檔已從 tsconfig.app build 排除，不影響 vite/tsc 打包。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { activityGeometry, todayPct, parseDate, addDays, generateWeeks, DEFAULT_HALF_WEEKS, DAY_MS } from './ganttGeometry.ts'
+import { activityGeometry, todayPct, parseDate, addDays, generateWeeks, halfEndDate, suggestWeeksUntilHalfEnd, DEFAULT_HALF_WEEKS, DAY_MS } from './ganttGeometry.ts'
 import type { TimedActivity } from '../../data/patchVersions/types.ts'
 
 /** 2026/08/06 起連續 7 週（皆為週四），對應 v3.5 的軸 */
@@ -126,4 +126,42 @@ test('下一段日期早於起點（資料填錯）退回慣例，不產出空�
   // 空軸會讓整個甘特消失，比顯示一個慣例長度更糟
   assert.equal(generateWeeks('2026/07/30', '2026/07/09').length, DEFAULT_HALF_WEEKS)
   assert.equal(generateWeeks('', null).length, 0, '沒有起始日才回空陣列')
+})
+
+// ── halfEndDate / suggestWeeksUntilHalfEnd（後台的週數建議值）─────────────────
+
+test('halfEndDate 與 generateWeeks 是同一條規則（後台建議不能和甘特打架）', () => {
+  const cases: [string, string | null, number | undefined][] = [
+    ['2026/07/09', '2026/07/30', undefined],
+    ['2026/07/30', null, undefined],
+    ['2026/07/30', null, 5],
+    ['2026/07/30', '2026/07/09', undefined],   // 下一段早於起點 → 兩者都要退回慣例
+  ]
+  for (const [start, next, w] of cases) {
+    const weeks = generateWeeks(start, next, w)
+    const end = halfEndDate(start, next, w)
+    assert.equal(
+      weeks.length, Math.round((end!.getTime() - parseDate(start).getTime()) / (7 * DAY_MS)),
+      `${start} → ${next}：週數與結束日必須一致`,
+    )
+  }
+})
+
+test('建議週數：卡池跟著半版本結束（佐伊 8/06 起 → 2 週）', () => {
+  // 實例來自遊戲內畫面：v3.1 下半 7/30 起、v3.2 上半 8/20 起，
+  // 佐伊池 8/06 開，遊戲顯示「卡池結束於 2026/8/20」→ 正好 2 週
+  const end = halfEndDate('2026/07/30', '2026/08/20', undefined)
+  assert.equal(suggestWeeksUntilHalfEnd('2026/08/06', end), 2)
+  // 從半版本第一天就開的卡池 → 整個半版本 3 週
+  assert.equal(suggestWeeksUntilHalfEnd('2026/07/30', end), 3)
+})
+
+test('建議週數：推不出來就回 null，絕不猜', () => {
+  assert.equal(suggestWeeksUntilHalfEnd('2026/08/06', null), null, '沒有結束日')
+  assert.equal(suggestWeeksUntilHalfEnd('', halfEndDate('2026/07/30', null)), null, '沒有起始日')
+  // 活動起始日晚於半版本結束 → 資料本身有問題，不要生一個負數或 1
+  assert.equal(
+    suggestWeeksUntilHalfEnd('2026/09/01', halfEndDate('2026/07/30', '2026/08/20')), null,
+    '起始日晚於半版本結束時不給建議',
+  )
 })
