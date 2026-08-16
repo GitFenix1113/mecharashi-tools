@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { PatchHalf, ArmamentRaid } from '../../data/patchVersions/types'
 import AdminTimedActivityEditor, { weekdayInfo, toInputDate, fromInputDate } from './AdminTimedActivityEditor'
 
@@ -266,7 +267,16 @@ interface Props {
   onChange: (value: PatchHalf) => void
 }
 
+type ActivityTab = 'cn' | 'tw'
+const ACTIVITY_TABS: { key: ActivityTab; label: string }[] = [
+  { key: 'cn', label: '陸服活動' },
+  { key: 'tw', label: '台服活動' },
+]
+
 export default function AdminHalfEditorPanel({ value, onChange }: Props) {
+  // 純檢視狀態（看哪一服），不進 formData —— 切個頁籤不該讓版本文件變成「有未存變更」
+  const [activityTab, setActivityTab] = useState<ActivityTab>('cn')
+
   function update(patch: Partial<PatchHalf>) {
     onChange({ ...value, ...patch })
   }
@@ -385,20 +395,44 @@ export default function AdminHalfEditorPanel({ value, onChange }: Props) {
         </div>
       </div>
 
-      {/* 甘特圖活動 */}
+      {/* 甘特圖活動 —— 陸服／台服分頁。
+          兩邊各有近十筆卡片，上下疊起來要捲很久才碰得到第二組；而編輯時
+          幾乎不會同時動兩服（一次補一邊的檔期）。分頁把捲動距離砍半。
+          筆數印在頁籤上，否則被收起來的那一邊有沒有東西完全看不出來。 */}
       <SectionLabel>甘特圖活動</SectionLabel>
-      <div className="space-y-5">
+      <div className="flex border-b border-border mb-4">
+        {ACTIVITY_TABS.map(({ key, label }) => {
+          const count = (key === 'cn' ? cnActivities : twActivities).length
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActivityTab(key)}
+              className={`px-4 py-2 text-[13px] font-medium transition-colors border-b-2 -mb-px ${
+                activityTab === key
+                  ? 'text-accent-purple border-accent-purple'
+                  : 'text-text-dim border-transparent hover:text-text-secondary'
+              }`}
+            >
+              {label}
+              <span className="ml-1.5 text-[11px] opacity-70">{count}</span>
+            </button>
+          )
+        })}
+      </div>
+      {activityTab === 'cn' ? (
         <AdminTimedActivityEditor
           label="陸服活動（cnActivities）"
           activities={cnActivities}
           onChange={v => update({ cnActivities: v.length ? v : undefined })}
         />
+      ) : (
         <AdminTimedActivityEditor
           label="台服活動（twActivities）"
           activities={twActivities}
           onChange={v => update({ twActivities: v.length ? v : undefined })}
         />
-      </div>
+      )}
     </div>
   )
 }
