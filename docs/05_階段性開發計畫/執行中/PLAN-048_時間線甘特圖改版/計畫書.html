@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-048 時間線甘特圖改版 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   版面預覽 Mockup（僅此頁使用，前綴 mk-）
+   ══════════════════════════════════════════════════════════════════════ */
+.mk-wrap { margin: 18px 0 8px; }
+.mk-caption {
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.mk-frame {
+  background: #0b0e14;
+  border: 1px solid var(--border-accent);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.mk-tabbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.mk-tabbar .on { color: var(--text-primary); border-bottom: 2px solid var(--accent-orange); padding-bottom: 4px; margin-bottom: -6px; }
+.mk-tabbar .sp { flex: 1; }
+.mk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.015);
+  font-size: 11px;
+}
+.mk-toolbar .ver { color: var(--accent-orange); font-family: 'Orbitron', sans-serif; font-weight: 700; }
+.mk-toolbar .pill {
+  border: 1px solid rgba(168,85,247,0.5);
+  background: rgba(168,85,247,0.1);
+  color: var(--accent-purple);
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-size: 10px;
+}
+.mk-toolbar .sp { flex: 1; }
+.mk-body { padding: 10px 12px; }
+
+/* 週軸 / 固定資訊表 */
+.mk-grid { display: grid; grid-template-columns: 68px repeat(7, 1fr); }
+.mk-grid > div { border: 1px solid #222836; border-width: 0 1px 1px 0; padding: 4px 6px; text-align: center; }
+.mk-grid > div:first-child { border-left-width: 1px; }
+.mk-rowhead { background: #0e1119; color: var(--text-dim); text-align: left !important; font-size: 10px; white-space: nowrap; }
+.mk-half-u { background: rgba(255,107,43,0.08); color: var(--accent-orange); font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 1px; }
+.mk-half-l { background: rgba(6,182,212,0.08); color: var(--accent-cyan);  font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 1px; }
+.mk-wk-u { background: #151a24; color: rgba(255,107,43,0.7); font-size: 10px; }
+.mk-wk-l { background: #0e1820; color: rgba(6,182,212,0.7);  font-size: 10px; }
+.mk-info-u { background: rgba(255,107,43,0.05); }
+.mk-info-l { background: rgba(6,182,212,0.05); }
+.mk-lit { background: rgba(6,182,212,0.20) !important; box-shadow: inset 0 0 0 1px rgba(6,182,212,0.45); }
+
+/* 商店併列 */
+.mk-shops {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  padding: 5px 8px; margin-top: 6px;
+  border: 1px solid var(--border); border-radius: 7px;
+  background: rgba(255,255,255,0.02);
+  font-size: 10px; color: var(--text-dim);
+}
+
+/* 甘特列 */
+.mk-gantt { margin-top: 6px; border: 1px solid var(--border); border-radius: 7px; background: rgba(255,255,255,0.015); overflow: hidden; }
+.mk-grow { display: grid; grid-template-columns: 68px 1fr; align-items: center; border-bottom: 1px solid #191e29; }
+.mk-grow:last-child { border-bottom: none; }
+.mk-glabel { padding: 0 6px; font-size: 10px; color: var(--text-dim); background: #0e1119; align-self: stretch; display: flex; align-items: center; white-space: nowrap; }
+.mk-track {
+  position: relative; height: 26px;
+  background-image: repeating-linear-gradient(to right, #1d2230 0 1px, transparent 1px calc(100%/7));
+}
+.mk-bar {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  height: 16px; border-radius: 999px; border: 1px solid;
+  display: flex; align-items: center; gap: 4px;
+  padding: 0 6px; font-size: 10px; white-space: nowrap; overflow: hidden;
+}
+.mk-bar i { width: 5px; height: 5px; border-radius: 999px; flex: none; }
+.mk-bar em { font-style: normal; opacity: 0.65; font-size: 9px; }
+.mk-c-pilot { background: rgba(121,192,255,0.18); border-color: rgba(121,192,255,0.5); color: #79c0ff; }
+.mk-c-pilot i { background: #79c0ff; }
+.mk-c-mech  { background: rgba(88,166,212,0.18); border-color: rgba(88,166,212,0.5); color: #58a6d4; }
+.mk-c-mech i { background: #58a6d4; }
+.mk-c-skin  { background: rgba(255,107,43,0.18); border-color: rgba(255,107,43,0.5); color: var(--accent-orange); }
+.mk-c-skin i { background: var(--accent-orange); }
+.mk-c-event { background: rgba(6,182,212,0.18); border-color: rgba(6,182,212,0.5); color: var(--accent-cyan); }
+.mk-c-event i { background: var(--accent-cyan); }
+.mk-c-login { background: rgba(34,197,94,0.18); border-color: rgba(34,197,94,0.5); color: var(--accent-green); }
+.mk-c-login i { background: var(--accent-green); }
+.mk-c-bp    { background: rgba(107,114,128,0.18); border-color: rgba(107,114,128,0.5); color: #9ca3af; }
+.mk-c-bp i { background: #6b7280; }
+.mk-sel { box-shadow: 0 0 0 2px rgba(6,182,212,0.55); }
+.mk-today { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--accent-orange); opacity: 0.75; }
+.mk-today.lbl::after {
+  content: '今日'; position: absolute; top: -1px; left: 3px;
+  font-size: 8px; color: var(--accent-orange); white-space: nowrap;
+}
+
+/* 卡片流 */
+.mk-cards { margin-top: 8px; border-top: 1px dashed #262c3a; padding-top: 8px; }
+.mk-cgrp { font-size: 10px; color: var(--text-dim); margin: 6px 0 5px; letter-spacing: 1px; }
+.mk-crow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mk-card {
+  border: 1px solid var(--border); border-left: 3px solid var(--accent-cyan);
+  border-radius: 7px; background: #10141c; padding: 7px 9px;
+}
+.mk-card.sel { border-color: rgba(6,182,212,0.55); box-shadow: 0 0 0 1px rgba(6,182,212,0.35); }
+.mk-card.pilot { border-left-color: #79c0ff; }
+.mk-card.dim   { border-left-color: #6b7280; opacity: 0.55; }
+.mk-ctop { display: flex; align-items: baseline; gap: 6px; font-size: 9px; margin-bottom: 3px; }
+.mk-ctop .ty { color: var(--accent-cyan); }
+.mk-ctop .ty.p { color: #79c0ff; }
+.mk-ctop .wk { color: var(--text-secondary); }
+.mk-ctop .warn { color: var(--accent-orange); }
+.mk-cname { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+.mk-cdate { font-size: 10px; color: var(--text-secondary); margin-bottom: 5px; }
+.mk-cdate b { color: var(--accent-orange); font-weight: 600; }
+.mk-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.mk-chip {
+  font-size: 9px; padding: 1px 5px; border-radius: 4px;
+  border: 1px solid rgba(234,179,8,0.3); background: rgba(234,179,8,0.1); color: var(--accent-yellow);
+}
+.mk-cfoot { font-size: 9px; color: var(--text-dim); margin-top: 5px; }
+.mk-cfoot a { color: var(--accent-cyan); text-decoration: none; }
+
+/* Before / After 對照 */
+.mk-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+@media (max-width: 820px) { .mk-compare { grid-template-columns: 1fr; } }
+.mk-mini { background: #0b0e14; border: 1px solid var(--border-accent); border-radius: 10px; padding: 10px; }
+.mk-mini .tag { font-size: 10px; font-family: 'Orbitron', sans-serif; letter-spacing: 2px; margin-bottom: 8px; }
+.mk-mini .tag.bad  { color: var(--accent-red); }
+.mk-mini .tag.good { color: var(--accent-green); }
+.mk-clipbox { position: relative; height: 122px; overflow: hidden; border: 1px dashed rgba(239,68,68,0.45); border-radius: 6px; background: rgba(239,68,68,0.03); }
+.mk-clipnote { position: absolute; right: 6px; bottom: 4px; font-size: 9px; color: var(--accent-red); }
+.mk-tip {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  width: 160px; background: rgba(15,18,25,0.97); border: 1px solid var(--border-accent);
+  border-radius: 8px; padding: 6px 8px; font-size: 9px; line-height: 1.6;
+}
+.mk-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 10px; color: var(--text-dim); margin-top: 10px; }
+.mk-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.mk-legend b { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
+.mk-note { font-size: 12px; color: var(--text-dim); margin-top: 10px; line-height: 1.8; }
+.mk-note code { color: var(--accent-green); }
+
+/* 手機預覽 */
+.mk-phone {
+  width: 232px; margin: 0 auto;
+  border: 1px solid var(--border-accent); border-radius: 16px;
+  background: #0b0e14; overflow: hidden;
+}
+.mk-phone .scrollhint {
+  font-size: 9px; color: var(--text-dim); text-align: center;
+  padding: 3px 0; border-bottom: 1px dashed #262c3a;
+}
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-048 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,107,43,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-048</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    時間線甘特圖改版<span style="-webkit-text-fill-color:var(--text-secondary);">甘特＝索引 · 卡片＝內容 · 台版公告管線</span>
+  </h1>
+  <p class="hero-sub">甘特留在原地繼續與週次表共用同一條軸，但降級成「日精度的一眼概觀」；活動的實際內容改由正下方的卡片流承載，兩者雙向連動</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-048</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-16</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">timeline 元件群 · patchVersions 型別 · 後台版本編輯 · 公告爬蟲</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID（Phase 0 為 HIGH）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value orange">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">無（Phase 0 可即刻開工）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>設計評估來源：</strong>
+    本計畫的設計結論來自 <code>_local-notes/2026-08/2026-08-16_時間線甘特圖改版評估.md</code>（四份獨立設計方案並行 → 三位不同視角評審 → 綜合）。
+    該筆記含四份原始提案的完整線框、評審逐項評分、以及本計畫未採納方案的理由。台版公告可行性以實際 HTTP 回應驗證，非推測。
+  </div>
+</section>
+
+<!-- ══════════════════ 版面預覽 ══════════════════ -->
+<section class="section">
+  <div class="section-label orange">Preview</div>
+  <div class="section-title">版面預覽（粗略）</div>
+  <div class="section-desc">
+    以下為改版後的預期版面。比例接近實際但非像素稿；顏色、圓角、間距沿用站上既有 token，元件位置與層級關係為設計定案的部分。
+  </div>
+
+  <!-- ── 改版後：桌機 ── -->
+  <div class="mk-wrap">
+    <div class="mk-caption">After · 桌機 1440（Tab 展開狀態）</div>
+    <div class="mk-frame">
+
+      <div class="mk-tabbar">
+        <span>Quick Table</span>
+        <span>Gray Ops</span>
+        <span class="on">Timeline</span>
+        <span class="sp"></span>
+        <span>◀◀</span>
+      </div>
+
+      <div class="mk-toolbar">
+        <span>‹ 時間線</span>
+        <span class="sp"></span>
+        <span class="ver">v3.5 燼滅之潮</span>
+        <span style="color:var(--accent-green);font-size:10px;">★ 台服當前</span>
+        <span class="pill">台版 ⇄ 切換陸版</span>
+        <span class="sp"></span>
+        <span style="color:var(--text-dim);">‹ 上版　20/24　下版 ›</span>
+      </div>
+
+      <div class="mk-body">
+
+        <!-- 固定資訊表：週軸 + 版本內容 -->
+        <div class="mk-grid">
+          <div class="mk-rowhead" style="text-align:center !important;letter-spacing:2px;">台版</div>
+          <div class="mk-half-u" style="grid-column: span 4;">上半版本　8/07～</div>
+          <div class="mk-half-l" style="grid-column: span 3;">下半版本　9/04～</div>
+
+          <div class="mk-rowhead"></div>
+          <div class="mk-wk-u">8/07</div>
+          <div class="mk-wk-u">8/14</div>
+          <div class="mk-wk-u mk-lit">8/21</div>
+          <div class="mk-wk-u mk-lit">8/28</div>
+          <div class="mk-wk-l mk-lit">9/04</div>
+          <div class="mk-wk-l">9/11</div>
+          <div class="mk-wk-l">9/18</div>
+
+          <div class="mk-rowhead">機師</div>
+          <div class="mk-info-u" style="grid-column: span 4;">珂朵拉</div>
+          <div class="mk-info-l" style="grid-column: span 3;">葉夫根尼</div>
+
+          <div class="mk-rowhead">機甲</div>
+          <div class="mk-info-u" style="grid-column: span 4;">燼羽</div>
+          <div class="mk-info-l" style="grid-column: span 3;">磐石</div>
+
+          <div class="mk-rowhead">武裝關卡</div>
+          <div class="mk-info-u" style="grid-column: span 4;">熾鋒作戰</div>
+          <div class="mk-info-l" style="grid-column: span 3;">深潛回收</div>
+
+          <div class="mk-rowhead">討伐專武</div>
+          <div class="mk-info-u" style="grid-column: span 4;">熾鋒-Ⅱ</div>
+          <div class="mk-info-l" style="grid-column: span 3;">潛鯨</div>
+        </div>
+
+        <div style="font-size:10px;color:var(--accent-cyan);margin-top:5px;">
+          ↑ 選取活動時，其涵蓋的週欄整欄打亮（上圖 8/21–9/04 三欄即為「瑞歲百角戲」被選取的狀態）
+        </div>
+
+        <!-- 商店併列 -->
+        <div class="mk-shops">
+          <span>🛒 邊境商店　科林</span>
+          <span>🏆 鬥技場　白夜凍鋒</span>
+          <span>🏪 危境重構　羅娜 · 迪拉卡</span>
+          <span>🌀 記憶風暴　—</span>
+        </div>
+
+        <!-- 甘特：索引層 -->
+        <div class="mk-gantt">
+          <div class="mk-grow">
+            <div class="mk-glabel" style="color:#79c0ff;">角色池</div>
+            <div class="mk-track">
+              <div class="mk-bar mk-c-pilot" style="left:2%;width:26%;"><i></i>珂朵拉 <em>限定</em></div>
+              <div class="mk-bar mk-c-pilot" style="left:57%;width:24%;"><i></i>葉夫根尼</div>
+              <div class="mk-today lbl" style="left:64%;"></div>
+            </div>
+          </div>
+          <div class="mk-grow">
+            <div class="mk-glabel" style="color:#58a6d4;">機甲池</div>
+            <div class="mk-track">
+              <div class="mk-bar mk-c-mech" style="left:2%;width:20%;"><i></i>燼羽</div>
+              <div class="mk-bar mk-c-mech" style="left:60%;width:22%;"><i></i>磐石</div>
+              <div class="mk-today" style="left:64%;"></div>
+            </div>
+          </div>
+          <div class="mk-grow">
+            <div class="mk-glabel" style="color:var(--accent-orange);">刮刮樂</div>
+            <div class="mk-track">
+              <div class="mk-bar mk-c-skin" style="left:16%;width:28%;"><i></i>白夜凍鋒 <em>外觀</em></div>
+              <div class="mk-today" style="left:64%;"></div>
+            </div>
+          </div>
+          <div class="mk-grow">
+            <div class="mk-glabel" style="color:var(--accent-cyan);">限時活動</div>
+            <div class="mk-track">
+              <div class="mk-bar mk-c-event mk-sel" style="left:28.6%;width:42.9%;"><i></i>瑞歲百角戲 <em>改裝模組×1 +1</em></div>
+              <div class="mk-today" style="left:64%;"></div>
+            </div>
+          </div>
+          <div class="mk-grow">
+            <div class="mk-glabel" style="color:var(--accent-green);">簽到</div>
+            <div class="mk-track">
+              <div class="mk-bar mk-c-login" style="left:2%;width:13%;"><i></i>七日簽到</div>
+              <div class="mk-today" style="left:64%;"></div>
+            </div>
+          </div>
+          <div class="mk-grow">
+            <div class="mk-glabel" style="color:#9ca3af;">戰令</div>
+            <div class="mk-track">
+              <div class="mk-bar mk-c-bp" style="left:2%;width:96%;"><i></i>v3.5 戰令　維羅妮卡 · 盜賊</div>
+              <div class="mk-today" style="left:64%;"></div>
+            </div>
+          </div>
+
+          <!-- 卡片流：內容層 -->
+          <div class="mk-cards" style="padding: 0 9px 9px;">
+            <div class="mk-cgrp" style="color:var(--accent-cyan);">● 進行中 (2)</div>
+            <div class="mk-crow">
+              <div class="mk-card sel">
+                <div class="mk-ctop">
+                  <span class="ty">● 限時活動</span>
+                  <span class="wk">第 2/3 週</span>
+                  <span class="warn">⚠ 末週</span>
+                </div>
+                <div class="mk-cname">瑞歲百角戲</div>
+                <div class="mk-cdate">8/21(四) → 9/11(四) · <b>剩 3 天</b></div>
+                <div class="mk-chips">
+                  <span class="mk-chip">輕型通用改裝模組×1</span>
+                  <span class="mk-chip">仿生超導體×2</span>
+                </div>
+                <div class="mk-cfoot">▸ 說明　每日累積 3 場對戰可領取…　　<a>🔗 官方公告 ↗</a></div>
+              </div>
+              <div class="mk-card pilot">
+                <div class="mk-ctop">
+                  <span class="ty p">● 角色池</span>
+                  <span class="wk">第 1/2 週</span>
+                </div>
+                <div class="mk-cname">珂朵拉</div>
+                <div class="mk-cdate">9/04(四) → 9/18(四) · <b>剩 10 天</b></div>
+                <div class="mk-chips"><span class="mk-chip">限定機師</span></div>
+                <div class="mk-cfoot">機師　珂朵拉　　<a>🔗 官方公告 ↗</a></div>
+              </div>
+            </div>
+
+            <div class="mk-cgrp">▶ 即將開始 (2)</div>
+            <div class="mk-crow">
+              <div class="mk-card dim">
+                <div class="mk-ctop"><span class="ty" style="color:#c9a0dc;">● 跨域海運</span><span class="wk">9/18 起</span></div>
+                <div class="mk-cname">跨域海運</div>
+                <div class="mk-cdate">9/18(四) → 10/09(四)</div>
+              </div>
+              <div class="mk-card dim">
+                <div class="mk-ctop"><span class="ty" style="color:var(--accent-yellow);">● 輪盤</span><span class="wk">9/18 起</span></div>
+                <div class="mk-cname">角雕輪盤</div>
+                <div class="mk-cdate">9/18(四) → 9/25(四)</div>
+              </div>
+            </div>
+
+            <div class="mk-cgrp">○ 已結束 (4)　▸ 展開</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="mk-legend">
+      <span><b style="background:#79c0ff;"></b>角色池</span>
+      <span><b style="background:#58a6d4;"></b>機甲池</span>
+      <span><b style="background:var(--accent-orange);"></b>刮刮樂</span>
+      <span><b style="background:var(--accent-cyan);"></b>限時活動</span>
+      <span><b style="background:var(--accent-green);"></b>簽到</span>
+      <span><b style="background:#6b7280;"></b>戰令</span>
+      <span style="color:var(--accent-orange);">┋ 今日線（貫穿兩張表）</span>
+    </div>
+
+    <div class="mk-note">
+      預覽刻意保留三個現況元素以示「不動」：<strong>週次表結構</strong>（機師/機甲/武裝關卡…列）、<strong>上下半版本分欄</strong>、<strong>橫向捲動 wrapper</strong>。
+      甘特與卡片流共用<strong>同一個</strong> <code>overflow-y-auto</code> 容器，所以往下捲就從索引層接到內容層，不是兩個獨立捲軸。
+    </div>
+  </div>
+
+  <!-- ── Before / After 對照 ── -->
+  <div class="mk-compare">
+    <div class="mk-mini">
+      <div class="tag bad">◆ BEFORE · 現況</div>
+      <div class="mk-clipbox">
+        <div style="display:grid;grid-template-columns:56px 1fr;align-items:center;height:44px;">
+          <div style="font-size:10px;color:var(--text-dim);padding-left:6px;">限時活動</div>
+          <div style="position:relative;height:100%;">
+            <div class="mk-tip" style="top:-30px;">
+              <div style="color:var(--accent-cyan);">瑞歲百角戲(輕型通用改裝模組*1…</div>
+              <div style="color:var(--text-dim);">2026/01/29 → 2026/02/19</div>
+            </div>
+            <div style="position:absolute;top:50%;left:12%;transform:translateY(-50%);display:flex;align-items:center;width:60%;">
+              <span style="width:9px;height:9px;border-radius:99px;background:var(--accent-cyan);"></span>
+              <span style="flex:1;height:1px;background:rgba(6,182,212,0.6);"></span>
+              <span style="font-size:10px;color:var(--accent-cyan);border:1px solid rgba(6,182,212,0.5);border-radius:3px;padding:0 4px;">瑞歲百角戲(輕型通用…</span>
+              <span style="flex:1;height:1px;background:rgba(6,182,212,0.6);"></span>
+              <span style="width:9px;height:9px;border-radius:99px;background:var(--accent-cyan);"></span>
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:56px 1fr;align-items:center;height:44px;border-top:1px solid #191e29;">
+          <div style="font-size:10px;color:var(--text-dim);padding-left:6px;">簽到</div>
+          <div style="position:relative;height:100%;">
+            <div style="position:absolute;top:50%;left:8%;transform:translate(-50%,-50%);width:11px;height:11px;border-radius:99px;background:var(--accent-green);"></div>
+          </div>
+        </div>
+        <div class="mk-clipnote">↑ tooltip 被容器切掉</div>
+      </div>
+      <ul style="font-size:11px;color:var(--text-secondary);line-height:1.9;margin:10px 0 0 16px;">
+        <li>詳情只在 hover 後出現，且被 11 層 <code>overflow</code> 祖先裁切</li>
+        <li>一週活動＝<strong>一個 12px 圓點</strong>，連名稱都沒有（實測 27/75 筆是這種）</li>
+        <li>獎勵硬塞在 <code>name</code> 裡，被長條寬度截斷</li>
+        <li>沒有「今天在哪」「剩幾天」的任何線索</li>
+      </ul>
+    </div>
+
+    <div class="mk-mini">
+      <div class="tag good">◆ AFTER · 改版後</div>
+      <div style="height:122px;border:1px dashed rgba(34,197,94,0.4);border-radius:6px;background:rgba(34,197,94,0.03);overflow:hidden;">
+        <div class="mk-grow" style="border-bottom:1px solid #191e29;">
+          <div class="mk-glabel" style="color:var(--accent-cyan);">限時活動</div>
+          <div class="mk-track">
+            <div class="mk-bar mk-c-event" style="left:14%;width:52%;"><i></i>瑞歲百角戲 <em>改裝模組×1 +1</em></div>
+          </div>
+        </div>
+        <div class="mk-grow" style="border-bottom:1px solid #191e29;">
+          <div class="mk-glabel" style="color:var(--accent-green);">簽到</div>
+          <div class="mk-track">
+            <div class="mk-bar mk-c-login" style="left:6%;width:13%;"><i></i>七日簽到</div>
+          </div>
+        </div>
+        <div style="padding:5px 8px;">
+          <div class="mk-card" style="border-left-color:var(--accent-cyan);">
+            <div class="mk-ctop"><span class="ty">● 限時活動</span><span class="wk">第 2/3 週</span><span class="warn">⚠ 末週</span></div>
+            <div class="mk-cname" style="font-size:11px;">瑞歲百角戲　<span style="font-size:9px;color:var(--accent-orange);font-weight:400;">剩 3 天</span></div>
+          </div>
+        </div>
+      </div>
+      <ul style="font-size:11px;color:var(--text-secondary);line-height:1.9;margin:10px 0 0 16px;">
+        <li>詳情<strong>不必 hover 就在畫面上</strong>（卡片流）；hover 浮窗改走 <code>FloatingPortal</code>，脫離全部裁切祖先</li>
+        <li>長條改<strong>日精度百分比</strong>，一週活動也有完整名稱與獎勵</li>
+        <li>獎勵拆成 chip；<code>splitActivityName()</code> 是 runtime fallback，<strong>既有 75 筆零回填</strong></li>
+        <li>「第 N/M 週 · 剩 3 天 · ⚠末週」全部從既有 <code>startDate + weeks</code> 算出，<strong>不新增欄位</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── 手機 ── -->
+  <div class="mk-wrap">
+    <div class="mk-caption">After · 手機 390</div>
+    <div class="mk-phone">
+      <div class="mk-tabbar" style="padding:5px 8px;gap:10px;">
+        <span>表</span><span>灰</span><span class="on">軸</span>
+        <span class="sp"></span>
+        <span style="font-size:9px;">台⇄陸</span>
+      </div>
+      <div class="scrollhint">← 橫捲：週次表與長條同步 →</div>
+      <div style="padding:7px 8px;">
+        <div class="mk-grid" style="grid-template-columns:40px repeat(4,1fr);font-size:9px;">
+          <div class="mk-rowhead" style="font-size:9px;">台版</div>
+          <div class="mk-wk-u" style="font-size:9px;">8/07</div>
+          <div class="mk-wk-u" style="font-size:9px;">8/14</div>
+          <div class="mk-wk-u" style="font-size:9px;">8/21</div>
+          <div class="mk-wk-l" style="font-size:9px;">9/04</div>
+          <div class="mk-rowhead" style="font-size:9px;">機師</div>
+          <div class="mk-info-u" style="grid-column:span 3;font-size:9px;">珂朵拉</div>
+          <div class="mk-info-l" style="font-size:9px;">葉…</div>
+        </div>
+        <div class="mk-gantt" style="margin-top:5px;">
+          <div class="mk-grow" style="grid-template-columns:40px 1fr;">
+            <div class="mk-glabel" style="font-size:9px;color:#79c0ff;">角色</div>
+            <div class="mk-track" style="height:22px;background-image:repeating-linear-gradient(to right,#1d2230 0 1px,transparent 1px calc(100%/4));">
+              <div class="mk-bar mk-c-pilot" style="left:4%;width:44%;height:14px;font-size:9px;"><i></i>珂朵拉</div>
+            </div>
+          </div>
+          <div class="mk-grow" style="grid-template-columns:40px 1fr;">
+            <div class="mk-glabel" style="font-size:9px;color:var(--accent-cyan);">限時</div>
+            <div class="mk-track" style="height:22px;background-image:repeating-linear-gradient(to right,#1d2230 0 1px,transparent 1px calc(100%/4));">
+              <div class="mk-bar mk-c-event mk-sel" style="left:30%;width:60%;height:14px;font-size:9px;"><i></i>瑞歲百角戲</div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:9px;color:var(--text-dim);margin:7px 0 5px;border-top:1px dashed #262c3a;padding-top:6px;">
+          ═══ 以下不橫捲，全寬單欄 ═══
+        </div>
+        <div class="mk-cgrp" style="color:var(--accent-cyan);">● 進行中 (2)</div>
+        <div class="mk-card sel">
+          <div class="mk-ctop"><span class="ty">● 限時活動</span><span class="wk">第 2/3 週</span><span class="warn">⚠</span></div>
+          <div class="mk-cname" style="font-size:11px;">瑞歲百角戲</div>
+          <div class="mk-cdate" style="font-size:9px;">8/21 → 9/11 · <b>剩 3 天</b></div>
+          <div class="mk-chips">
+            <span class="mk-chip">改裝模組×1</span>
+            <span class="mk-chip">仿生超導體×2</span>
+          </div>
+          <div class="mk-cfoot"><a>🔗 官方公告 ↗</a></div>
+        </div>
+        <div class="mk-card pilot" style="margin-top:6px;">
+          <div class="mk-ctop"><span class="ty p">● 角色池</span><span class="wk">第 1/2 週</span></div>
+          <div class="mk-cname" style="font-size:11px;">珂朵拉</div>
+          <div class="mk-cdate" style="font-size:9px;">9/04 → 9/18 · <b>剩 10 天</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="mk-note" style="text-align:center;">
+      卡片流全寬、不橫捲 —— 手機不必左右刮 1.7 屏就能拿到全部資訊。Phase 0 期間先以既有 <code>BottomSheet</code> 過渡。
+    </div>
+  </div>
+
+  <!-- 垂直預算 -->
+  <table class="impact-table">
+    <thead>
+      <tr><th>1366×768 垂直預算</th><th>現況</th><th>改版後</th><th>備註</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>可用高度（扣 snap / tab / 版權 / toolbar / padding）</td><td>411px</td><td>411px</td><td>不變</td></tr>
+      <tr><td>固定資訊表</td><td>−234</td><td>−234</td><td>結構不動</td></tr>
+      <tr><td>ShopRow + VersionLevelInfo</td><td>−92</td><td>−28</td><td>容器矮時併成單列 chips，<span class="badge-good">回收 64px</span></td></tr>
+      <tr><td><strong>甘特＋卡片區</strong></td><td><strong>85px</strong></td><td><strong>149px</strong></td><td>—</td></tr>
+      <tr><td>甘特列高</td><td>50px</td><td>32px</td><td><code>py-3.5</code> → 較緊的 padding</td></tr>
+      <tr><td>不捲動可見列數</td><td><span class="badge-high">1 列</span></td><td><span class="badge-good">4 列</span></td><td>往下捲即接卡片流</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：tooltip 被裁切，且會蓋住上方週次表</strong><br>
+    甘特容器（<code>VersionGanttPanel.tsx:431</code>）是 <code>overflow-y-auto overflow-x-hidden</code>，而 tooltip（<code>:208</code>）是 <code>absolute bottom-full</code>——永遠往上長。
+    <strong><code>z-index</code> 對 overflow 裁切完全無效</strong>，這是 CSS 的硬規則：只要祖先有非 <code>visible</code> 的 <code>overflow</code>，子元素就被切。實測從 tooltip 往上數共 <strong>11 層 clipping ancestor</strong>。
+    第一列活動的 tooltip 必被切，第二列以後則會往上蓋住週次表。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：一週活動在甘特圖上只剩一個點</strong><br>
+    兩層原因：(a) <code>:216</code> 的 <code>colSpan === 1</code> 分支只畫一顆 12px 圓點，連名稱都不畫；
+    (b) 更根本的是 <code>activityToColumns()</code>（<code>:55-73</code>）用 <code>allWeeks.findIndex(w =&gt; w &gt;= startDt)</code> <strong>把起點量化到下一個週界</strong>，活動實際在週內哪天開始／結束的資訊在渲染時就被丟掉。
+    <strong>實測 75 筆活動裡有 27 筆（36%）正好是 1 週</strong>——超過三分之一的資料在甘特上是啞的。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：維護者打了很多資料，但詳細資訊看不到</strong><br>
+    這<strong>不是顯示問題，是資料模型缺欄位</strong>。<code>TimedActivity</code> 只有 <code>{ name, startDate, weeks, type, pilots?, mechs? }</code>，
+    <strong>根本沒有描述欄位</strong>。維護者只能把獎勵硬塞進 <code>name</code>，於是資料長成
+    <code>瑞歲百角戲(輕型通用改裝模組*1 仿生超導體*2)</code>。不補欄位，改任何版面都只是把同一串字串換個地方顯示。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題四：陸版官網常漏維護公告，台版不會</strong><br>
+    已量化證實。陸版與台版是<strong>同一套 CMS</strong>，但陸版「公告」頻道等同廢棄：總共 2 篇、最新一篇停在 <strong>2023-10-20</strong>。
+    所有內容擠進「新聞」，而版本更新公告在 <strong>2025-01-15 到 2025-12-17 之間整整空了一年</strong>，且 <code>time</code> 欄位連年份都沒有（<code>"10-20"</code>），要靠 URL 路徑回推。
+    台版同期則是 258 篇、117 篇週報、2024-03-25～2026-08-12 <strong>週更未斷</strong>。
+  </div>
+
+  <div class="warning-block">
+    <strong>四份設計方案共同的盲點（由評審指出）：把「資訊看不到」誤診成「資料不夠」。</strong><br>
+    四案合計提議新增 5–11 個選填欄位，卻沒人去算<strong>已經算得出來的東西</strong>。玩家最常問的三個問題
+    （「這週有什麼」「這個活動什麼時候結束」「這版有誰」）裡有兩個半<strong>完全不需要新資料</strong>——
+    從既有的 <code>startDate + weeks</code> 就能導出「進行中/即將開始/已結束、第 N/M 週、剩幾天、末週警示、進度條」。
+    對照 <strong>0/5 定律</strong>（集合會被填滿、選填欄位不會），衍生值是唯一「零維護成本、上線當天 100% 覆蓋率」的資訊來源。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：甘特＝索引，卡片＝內容（並存，不是取代）</strong><br>
+    四份提案在最小螢幕上<strong>全都偷偷退化成卡片清單</strong>——三位評審獨立指出這是收斂證據：卡片才該是內容主體，長條只是輔助。
+    但把甘特整個刪掉會弄丟「機師/機甲/專武 ↔ 週次」這條原始設計動機，所以是並存。
+    甘特降級成「日精度的一眼概觀」，內容由正下方、<strong>同一個捲動容器內</strong>的卡片流承載。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：長條改「單一 <code>colSpan={totalWeeks}</code> 的 td + 百分比定位」，不改 CSS Grid</strong><br>
+    該 td 的寬度天生就等於整條週軸（<code>tableLayout:fixed</code> + 同一份 <code>Colgroup</code>），所以百分比定位與上方固定資訊表的欄界<strong>自動對齊，<code>Colgroup</code> 一行都不用動</strong>。
+    用 % 而非 px：不必量測 DOM、不必 <code>ResizeObserver</code>，Tab 展開／視窗縮放／橫捲時也不會有一幀錯位。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：用專案<u>已安裝</u>的 <code>@floating-ui/react</code>，不自己刻定位</strong><br>
+    <code>package.json</code> 已有 <code>@floating-ui/react ^0.27.19</code>（<code>BossDropTooltip.tsx</code> 已是同一套 pattern）。
+    <code>FloatingPortal</code> 一次跳出全部 11 層裁切祖先；<code>flip</code>/<code>shift</code> 取代手刻的「放不下才翻上方 + 左右夾在視窗內」；<code>autoUpdate</code> 取代 scroll/resize 監聽。
+    <strong>placement 改成 <code>'bottom'</code></strong>——現況永遠往上長才是「第一列必被切、又蓋住週次表」的直接成因。
+    手機走既有的 <code>BottomSheet</code> + <code>useIsMobile</code>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：<code>splitActivityName()</code> 做成前台 runtime fallback，不做後台一次性遷移</strong><br>
+    一次性遷移只救得了按下按鈕的那一次；runtime fallback <strong>同時救了歷史資料與「未來維護者又用老方法打字」的情況</strong>，而後者一定會發生。
+    規則刻意保守：<strong>括號內沒有「符號 + 數字」就整串當名稱</strong>——實測 34 筆有括號的資料裡，
+    真正 <code>A*1 B*2</code> 形狀的只有 15 筆，其餘是外觀名（10）、機制說明（6，如「體力轉票券商店」）、空括號（1）。寧可少抽，也不要把機制說明寫成獎勵。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：<code>rewards</code> 用 <code>string[]</code>，<u>不</u>做 <code>{ name, qty, refKey }</code> 結構化</strong><br>
+    上述三種形狀塞不進 <code>{name, qty}</code>；<code>refKey</code> 更是純人工欄位，會複製 <code>iconUrls</code> 那種 0% 填充的命運。<code>string[]</code> 無損接住全部。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：<code>ActivityType</code> 由硬 union 改成「開放字串 + 靜態登錄表」</strong><br>
+    新玩法出現時，硬 union 會讓 buffer 塞住、要等改 code + build + deploy 才能合併。
+    開放字串（<code>KnownActivityType | (string &amp; {})</code>）讓維護者<strong>當天就能上線</strong>，甘特用中性色顯示；之後補一列 REGISTRY 給它顏色，<strong>零資料遷移</strong>。
+    <code>string &amp; {}</code> 讓 TS 不把 union 塌成 <code>string</code>，IDE 仍自動完成已知值。順便補上實測第 2 高頻的 <code>topUpEvent</code>（「指定方式儲值」出現 109 次）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：buffer 的審核最小單位是「一個活動」，不是「一則公告」</strong><br>
+    一則公告十個活動，看得懂九個就先放行九個，剩一個留在 <code>pendingActivities</code>。
+    <strong>新玩法不該卡住整批</strong>——這正是「待處理 buffer」要解決的事。解析器抽不到的欄位<strong>留 <code>undefined</code>，絕不填預設值</strong>；
+    沒被任何規則認領的原文片段存進 <code>unmatched[]</code>，讓「這段我沒看懂」在後台自動浮出來。實測 buffer 流量是<strong>每月 2～4 筆</strong>新名稱，維護者實際要打的字是三顆按鈕。
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界一：<code>endsAtExclusive</code> 的命名是刻意的，且延到 Phase 2</strong><br>
+    既有慣例一律是 <strong>exclusive</strong>（<code>types.ts:27</code> 註解「1 = 當週四到下週三」、<code>VersionGanttPanel:61</code> 的 <code>addDays(start, weeks*7)</code>、<code>AdminTimedActivityEditor:31</code> 的 <code>computeEndDate</code> 同）。
+    而三份提案各自把 <code>endDate</code> 定義成「含當日」「最後一天」「真實結束日」——典型的一日之差 bug。<strong>用命名把語意編碼進欄位名，再配單元測試同時擋掉。</strong>
+    且既有 75 筆全部週四起始、<code>weeks</code> 全整數 → 現在加對既有資料<strong>零收益</strong>，等台版公告給絕對起訖（「8/21 10:00 ～ 9/03 23:59」）時才有意義。
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界二：爬蟲寫完 Firestore <u>必須</u> <code>bumpDataVersion('patchVersions')</code></strong><br>
+    <code>patchVersions</code> 走 Worker 邊緣快取（<code>workers/src/index.ts</code> 以集合版本號當 cache key、<code>max-age=86400</code>）。
+    不 bump 就是「資料寫進去了、前台看不到、硬重整也沒用、查半天」，<strong>最長 24 小時</strong>。這條要寫進 <code>data-patch</code> skill 與 docs。
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界三：合併寫入<u>必須</u> <code>runTransaction</code>；buffer <u>絕不能</u>做成 <code>PatchVersion.inbox</code> 欄位</strong><br>
+    <code>AdminVersionEditorPage.tsx:377</code> 目前是整份 <code>setDoc</code>、<strong>沒有 <code>merge:true</code></strong>。
+    若把 buffer 塞成 <code>PatchVersion</code> 的欄位，腳本追加、管理員存檔 → <strong>追加內容無聲消失</strong>。同型事故已有前例（<code>scrape-pilots-v3.js:117</code>）。必須是獨立 top-level 集合。
+  </div>
+
+  <div class="info-block">
+    <strong>補充：9 色收斂成 5 族群色 + 第二編碼通道</strong><br>
+    實測角色池 <code>#79c0ff</code>／機甲池 <code>#58a6d4</code>／限時活動 <code>#06b6d4</code> 是<strong>三個相鄰冷藍</strong>，
+    而撞色的正好是語意上最需要分辨的角色池 vs 機甲池。收斂後靠端點形狀／虛線／<strong>永遠可見的型別文字標籤</strong>補足第二編碼通道
+    （色彩不該是唯一的資訊通道）。副作用：使用者會感覺「顏色變少了」。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>Phase 0（約 5h · 零資料模型變更）</strong>：floating-ui 浮窗置換、日精度百分比長條、<code>splitActivityName</code> runtime fallback、誠實空狀態 + <code>overscroll-contain</code>、預設落在 <code>isTwCurrent</code> 版本、三支 <code>node --test</code>。另含<strong>台版公告全量歸檔</strong>（見下方紅字）。</li>
+      <li><strong>Phase 1（約 16h）</strong>：垂直預算回收（列高 32px + ShopRow 併列）、活動卡片流、甘特↔卡片↔週欄三向連動、共用軸線層（週格線／上下半分界／今日線）、色彩系統收斂、<code>TimedActivity</code> 擴充 + 後台編輯器 + docs 同步、deprecated 欄位 legacy shim。</li>
+      <li><strong>Phase 2（約 26h）</strong>：<code>scripts/scrape-tw-announcements.mjs</code>（純 <code>fetch</code>、無 Playwright）、<code>announcementDrafts</code> / <code>pendingActivities</code> 兩個後台專用集合、<code>/admin/announcements</code> 審核工作檯、<code>runTransaction</code> 合併 + bump、<code>confidence</code> 前台顯示、產出量監控。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內（明確不做，附理由）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>348px 常駐側欄</strong>——首頁卡片預設是收合的（<code>lg:max-w-[48vw]</code>，1366 上只有 655px），塞不下。「要靠使用者先按 ▶▶ 才成立」的資訊設計不能當主形態。它便宜的優點（週欄整欄打亮）照收，貴的缺點不要。</li>
+      <li><strong>獨立 <code>/timeline</code> 路由</strong>——60–70h 賭一個未驗證的導覽模型；且 <code>HISTORICAL_BLANKS</code> 產生的 v1.0–v2.7 共 17 個<strong>無日期</strong>版本在絕對時間軸上沒地方放。刪掉 <code>VersionTimeline</code> 也等於淨損失 clip-path 圓形展開與滾輪切版本。</li>
+      <li><strong>軌道併合 <code>packLanes</code></strong>——與「一活動一列、可選取」的心智模型衝突；列數隨資料浮動（v3.0 六軌、v3.3 四軌），方向鍵連切版本時甘特高度會跳。</li>
+      <li><strong><code>description</code> 支援 <code>[xxx]</code> 引用標記</strong>——會把 <code>patchVersions</code> 反向耦合到 <code>RefText</code>／<code>ReferenceContext</code> 全站體系，且 chip 開 <code>FloatingCard</code> 會與活動浮窗互相蓋。純文字就夠。</li>
+      <li><strong><code>shortName</code> / <code>lane</code> / <code>highlight</code> / <code>dataStatus</code></strong>——全是「開了就必須人工持續維護」的欄位，依 0/5 定律必然 0% 填充；<code>lane</code> 更糟，填了之後新增活動就失效需要重排。</li>
+      <li><strong><code>activityTypes</code> 開成新 CollectionKey</strong>——<code>collectionKeys.ts</code> 已註明要同步四處（Worker <code>ARRAY_COLLECTIONS</code>、<code>bump-data-version.mjs</code>、<code>entityRefs.ts</code> <code>SPECS</code>、測試 helper），PLAN-043 就是漏掉 <code>backpackSkills</code> 炸在正式站。<strong>升級觸發點</strong>：未登錄型別穩定超過 20 種時再開，屆時資料形狀已對齊，遷移是複製貼上。</li>
+      <li><strong>解析陸版公告</strong>——陸版公告頻道已廢棄（見問題四）。明確接受「<strong>台版自動化／陸版人工</strong>」的不對稱，用 <code>confidence</code> 讓兩者新鮮度可辨識。</li>
+      <li><strong>台版 infodata API 換官方繁中譯名</strong>——調查時挖到 <code>ma-activity.tentree-games.com/common/infodata/mQuery.do?appkey=1705460260139</code>，與 <code>scrape-pilots-v3.js:42</code> 是同一支 API 的台服實例，回傳 77 名機師的官方繁中譯名（可取代現行 OpenCC 簡轉繁猜譯名）。<strong>價值高但與本計畫無關，另立議題。</strong></li>
+    </ul>
+  </div>
+
+  <div class="problem-block">
+    <strong>⚠ 比功能開發更急的一件事：台版公告檔案庫的存續風險</strong><br>
+    258 篇公告至今<strong>只</strong>存在於前代理商網域 <code>ma.tentree-games.com</code>。代理權已於 <strong>2026-01-05 移轉給亦樹遊戲</strong>，新網域<strong>沒有平行的公告站</strong>。
+    這是不可逆風險：站一旦收掉，2024-03 至今的所有版本史料一起消失。
+    <strong>全量歸檔的優先度高於本計畫的任何功能</strong>，因此排在 Phase 0（任務 0-0），不等排到 Phase 2。
+  </div>
+</section>
+
+<!-- 已知限制 -->
+<section class="section">
+  <div class="section-label red">Limits</div>
+  <div class="section-title">本方案沒有解決的問題（誠實清單）</div>
+
+  <table class="impact-table">
+    <thead>
+      <tr><th style="width:26%;">未解問題</th><th>說明</th><th style="width:12%;">嚴重度</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>陸版仍會繼續漏公告</td>
+        <td><code>confidence: 'predicted'</code> 只是誠實標記，不是補資料。<strong>痛點 4 在本方案內無解</strong>——陸版官網自己不發，任何前端設計都變不出資料。</td>
+        <td><span class="badge-high">高</span></td>
+      </tr>
+      <tr>
+        <td>1366×768 垂直空間仍吃緊</td>
+        <td>壓列高、併 ShopRow 之後甘特＋卡片區約 149px，卡片流一定要捲。三招用完後，再多兩檔活動就又不夠。真正的解法是搬出 48vw 的卡片，而那正是本計畫定義上不做的事。</td>
+        <td><span class="badge-med">中</span></td>
+      </tr>
+      <tr>
+        <td>長條左緣不再貼齊週界</td>
+        <td>日精度的代價：8/09 起的活動會從第一欄的三分之一處開始，第一次看的人會覺得跑版。共用格線＋卡片上的「第 N/M 週」只能緩解約七成——<strong>「精確」與「量化易讀」在這裡真的互斥</strong>。</td>
+        <td><span class="badge-med">中</span></td>
+      </tr>
+      <tr>
+        <td><code>description</code> 在爬蟲上線前是空的</td>
+        <td>Phase 1 的卡片有說明區塊但沒內容；<code>splitActivityName</code> 實測只覆蓋 20%（15/75）。中間約有一個月的「<strong>容器比內容多</strong>」過渡期。</td>
+        <td><span class="badge-med">中</span></td>
+      </tr>
+      <tr>
+        <td>手機仍需橫捲才能看週次表對照</td>
+        <td>卡片流全寬不橫捲，但上方週次表＋長條仍是 <code>minWidth 110+N×80</code>，390px 螢幕約 1.7 屏。</td>
+        <td><span class="badge-low">低</span></td>
+      </tr>
+      <tr>
+        <td>爬蟲會靜默降低品質而非報錯</td>
+        <td>句型逐年漂移（<code>本期機師征招「X」</code> 2024/2025 出現 0 次、2026 才 1 次；<code>維護計畫</code> 段落 2026 才有）。必須內建<strong>產出量監控</strong>（「抽出活動數 &lt; 2」「有機師征招段落卻抽不到機師名」就進 buffer 告警），不能只看 HTTP 200。</td>
+        <td><span class="badge-med">中</span></td>
+      </tr>
+      <tr>
+        <td>法遵是灰的</td>
+        <td>台版無 robots.txt、無服務條款、無反爬——但那是「<strong>未明示禁止</strong>」不是「明示授權」。對策：自訂 User-Agent 標明同人工具站與聯絡方式、請求加間隔、<strong>只落庫結構化事實</strong>（活動名／起訖／機師機甲），不逐字轉載營運文案；<code>rawText</code> 僅存後台 staging，6 個月 TTL 自動清除，不對外呈現。</td>
+        <td><span class="badge-med">中</span></td>
+      </tr>
+      <tr>
+        <td>9 色收斂會改變既有觀感</td>
+        <td>必要的（三個相鄰冷藍撞在語意上最需分辨處），但使用者會感覺「顏色變少了」。</td>
+        <td><span class="badge-low">低</span></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-048 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-014_版本甘特圖與後台管理/計畫書.html">
+      <div class="doc-tag">前身</div>
+      <h4>◆ PLAN-014 版本甘特圖與後台管理</h4>
+      <p>甘特圖的初版設計與後台編輯器</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-013_首頁版本時間線/計畫書.html">
+      <div class="doc-tag">前身</div>
+      <h4>◆ PLAN-013 首頁版本時間線</h4>
+      <p>VersionTimeline 與版本切換互動</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/02_資料模型/patchVersions.html">
+      <div class="doc-tag">資料模型</div>
+      <h4>◆ patchVersions 資料模型</h4>
+      <p>Phase 1 擴充欄位後須同步更新</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-048 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
