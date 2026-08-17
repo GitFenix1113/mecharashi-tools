@@ -32,7 +32,7 @@
  * AnnouncementDraft.parserVersion 靠它挑出「該重跑的舊公告」，
  * 沒有它就只能全量重跑或憑印象。
  */
-export const PARSER_VERSION = 6
+export const PARSER_VERSION = 7
 
 const DAY_MS = 86_400_000
 
@@ -282,9 +282,45 @@ export function isHeadingCandidate(line) {
   if (RE_FIELD_LINE.test(line)) return false     // 欄位行，不是標題
   if (line.length > 40) return false             // 內文；實測最長的真標題 31 字
   if (/[，。；]/.test(line)) return false        // 有句讀＝內文
+  if (RE_MECH_MODEL_LINE.test(line)) return false // 機體故事的型號標題，不是活動
   if (Object.prototype.hasOwnProperty.call(SECTIONS, line)) return false
   return true
 }
+
+/**
+ * 機體故事的標題行：型號（＋機甲名）。**不是活動標題**。
+ *
+ * 官方為每台新機甲附一段背景設定文，標題長這樣（實測兩種形狀）：
+ *   「LTX-AB01君權」 「KX-101HA 巨像」 「XR-03-E 復仇女神」   ← 型號與名字同在引號內
+ *   「YOS-95A」殉道士 「SAT-47SC」盗火者 「KX-099HM」赫克托爾  ← 引號只框型號
+ *
+ * 它們三條標題判準全中（含 「」、短、無句讀），於是被當成**下一個活動的標題**：
+ * 內文區塊在此截斷，它自己則因為沒有時間行跟隨而落單成 unmatched。
+ * 每出一台新機甲就多一行，會一直累積 —— 這是「不處理」清不掉的那一類。
+ *
+ * 樣式收得緊：**行首**就是引號＋`大寫字母-英數` 的型號。型號後面接什麼都行 ——
+ * 實測「LTX-AB01君權」型號與名字之間沒有空格，要求分隔符會漏掉一半案例。
+ * 真正的卡池標題以 `【` 起頭（`【特選】鐵幕法典 – S級中型機甲「君權」`），不會誤中；
+ * 帶句讀的故事正文另有 isHeadingCandidate 的句讀判準擋著。
+ */
+const RE_MECH_MODEL_LINE = /^「[A-Z]{2,4}-[A-Z0-9]/
+
+/**
+ * 抽獎規則區塊的起頭：`【特選招募】補充說明`、`【跨域海運】補充說明`、
+ * `【突擊機師兌換池】補充說明`。整行就這樣，不帶其他內容。
+ *
+ * 認出它的用途不是判型別，而是**知道從這裡開始到下一個活動之間都是條文**：
+ * 那段既不該進 description（是抽獎機率不是活動說明），也不該留在未認領清單。
+ */
+const RE_SUPPLEMENT_LINE = /^【[^【】]{1,20}】\s*補充說明\s*$/
+
+/**
+ * 「特別提醒」的裝飾寫法（`※※※特別提醒※※※`）。
+ *
+ * `SECTIONS` 是完全比對，接不住加了星號的版本；補這一條讓它一樣被當成段落標題，
+ * 底下的商店上下架公告才會跟著整段認領。
+ */
+const RE_DECORATED_NOTICE = /^[※＊*\s]*特別提醒[※＊*\s]*$/
 
 /**
  * 公告標題 → 活動名。用於沒有 【】 小標的單篇活動公告。
@@ -343,6 +379,10 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
       claimed[i] = true
       if (key === '機師征招招募活動') sawPilotSection = true
       if (key === '機甲獲取海運活動') sawMechSection = true
+    } else if (RE_DECORATED_NOTICE.test(key)) {
+      // SECTIONS 是完全比對，接不住 `※※※特別提醒※※※` 這種裝飾寫法
+      current = { header: '特別提醒', kind: null, line: i }
+      claimed[i] = true
     }
     sectionAt[i] = current
   }
@@ -487,8 +527,47 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
     //   · 停在活動標題 → 不會把**下一個活動的名字**吞進本活動的 description
     //     （下一個標題就在下一個時間行之前，只用時間行當界線必然越界）
     let blockEnd = seq + 1 < timeHits.length ? timeHits[seq + 1].line : lines.length
+    const nextTimeLine = blockEnd
     for (let i = hit.line + 1; i < blockEnd; i++) {
+      // 「【X】補充說明」起頭的抽獎規則區塊（機率、保障次數、共用招募次數那些條文）。
+      //
+      // 它同時是邊界與噪音源：`blockEnd` 停在這一行，於是**它以下整段都沒有任何活動
+      // 認領** —— 實測 1751 有 12 行落在區塊外，其中含【】又不以數字起頭的 4 行浮上
+      // 未認領清單（未認領整理的第 4／5／6／8 組全部出自這裡，是第 3 組的下游後果）。
+      //
+      // ⚠ 不能改成「讓補充說明行不算標題候選」了事：那樣區塊不再截斷，整段抽獎規則
+      //   會流進 description，而下面 blockLines 的 `概率|保障|請見遊戲` 過濾接不住
+      //   「【跨域海運】中獲得S級時有60%**機率**為嵐質框體」——官方在同一篇裡
+      //   「概率」「機率」混用。所以是「照樣截斷，但把整段認領掉」。
+      //
+      // 認領範圍到下一個時間行為止（遇段落標題提前停）。這不會妨礙下一個活動的
+      // 標題辨識 —— 反向搜尋不看 claimed，只看行的形狀。
+      if (RE_SUPPLEMENT_LINE.test(lines[i])) {
+        for (let j = i; j < nextTimeLine; j++) {
+          if (Object.prototype.hasOwnProperty.call(SECTIONS, lines[j])) break
+          claimed[j] = true
+        }
+        blockEnd = i
+        break
+      }
       if (Object.prototype.hasOwnProperty.call(SECTIONS, lines[i]) || isHeadingCandidate(lines[i])) {
+        blockEnd = i
+        break
+      }
+      // 機體故事的型號行（「LTX-AB01君權」）：**是區塊邊界，但不是活動標題**。
+      // 這兩件事必須分開 —— 把它排除在 isHeadingCandidate 之外（免得沒有標題行的
+      // 下一個活動誤把它當名字）的同時，這裡仍要在它處截斷，否則整段機體故事文
+      // 會被收進上一個卡池的 description（實測 50 篇因此多出 100～350 字的設定文）。
+      // 順手認領它，這樣它也不會落進 unmatched —— 那正是這條規則要解的問題。
+      if (RE_MECH_MODEL_LINE.test(lines[i])) {
+        // 連故事正文一起認領，到下一個標題／段落為止。只認領型號行是不夠的：
+        // 正文裡帶「」的句子（「撕裂框架」這類設定名詞）會改而浮上未認領清單，
+        // 等於把噪音換個位置。實測 628／1129 的型號與正文同在一行，正是這種情況。
+        for (let j = i; j < nextTimeLine; j++) {
+          if (Object.prototype.hasOwnProperty.call(SECTIONS, lines[j])) break
+          if (j > i && isHeadingCandidate(lines[j])) break
+          claimed[j] = true
+        }
         blockEnd = i
         break
       }
@@ -584,6 +663,25 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
     }
 
     activities.push({ seq, extracted, flags, excerpt, excerptStart, rawTypeLabel })
+  }
+
+  // ③-b「認得但不產活動」的段落，整段內容一併認領
+  //
+  //     特別提醒                       ← 段落標題，① 已認領
+  //     部分商店內部份商品將到期…        ← 以下都沒人認領
+  //     【鬥技後勤中心】
+  //     機甲「金剛」相關部件與架上販售中的模組販售期間即將到期
+  //     新商品機甲「銀閃」相關部件與新一批販售模組將隨之上架。
+  //
+  // `SECTIONS` 裡 kind 為 null 的那些（特別提醒／注意事項／新增商品／領獎範例…）
+  // 已經明確標示「這個段落不產活動」，但先前只認領了標題行本身，
+  // **內容全數落進未認領清單** —— 實測 1713 的 6 行商店上下架公告就是這樣來的。
+  //
+  // 認領它不會影響任何活動：`claimed` 只餵給 ④ 的未認領統計，
+  // 時間行掃描（②）與標題反向搜尋（③）都不看它。
+  for (let i = 0; i < lines.length; i++) {
+    const sec = sectionAt[i]
+    if (sec && sec.kind === null) claimed[i] = true
   }
 
   // ④ 未認領的「有意義」原文
