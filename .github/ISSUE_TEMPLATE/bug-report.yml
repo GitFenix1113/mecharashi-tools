@@ -1,0 +1,74 @@
+name: 網站功能異常
+description: 頁面壞掉、按鈕沒反應、模擬器算錯等功能問題
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝回報！若問題是「數值跟遊戲內不一樣」，請改用 **資料錯誤回報** 模板。
+        這個模板用於網站本身的功能異常。
+
+  - type: input
+    id: page
+    attributes:
+      label: 發生在哪個頁面
+      description: 網址或頁面名稱
+      placeholder: https://mecharashi.wiki/simulator
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 重現步驟
+      description: 我需要照著做才能看到同樣的問題
+      placeholder: |
+        1. 進入配裝模擬器
+        2. 選擇機甲「...」
+        3. 點擊「...」
+        4. 畫面變成空白
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 預期結果 vs 實際結果
+      placeholder: |
+        預期：顯示計算後的攻擊力
+        實際：顯示 NaN
+    validations:
+      required: true
+
+  - type: dropdown
+    id: device
+    attributes:
+      label: 裝置
+      options:
+        - 電腦 Desktop
+        - 手機 Mobile
+        - 平板 Tablet
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: 瀏覽器與版本
+      placeholder: 例：Chrome 141 / Safari on iOS 18
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console 錯誤訊息
+      description: |
+        電腦版可按 F12 開啟開發者工具 → Console 分頁，把紅色錯誤訊息複製過來。
+        **這是最有價值的資訊**，有的話通常能快很多。
+      render: text
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 截圖
+      description: 可直接把圖片拖曳到這個欄位（選填）

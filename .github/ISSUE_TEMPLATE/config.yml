@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 功能建議與一般討論
+    url: https://github.com/GitFenix1113/mecharashi-tools/blob/main/.github/CONTRIBUTING.md#功能建議與一般討論
+    about: 許願、使用問題、閒聊請走 Discord（fenix_nkodpm），我在那邊回得最快
+  - name: 回報安全性問題
+    url: https://github.com/GitFenix1113/mecharashi-tools/security/advisories/new
+    about: 安全性漏洞請走私密回報，不要開公開 issue

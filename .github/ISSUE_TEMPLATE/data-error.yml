@@ -1,0 +1,84 @@
+name: 資料錯誤回報
+description: 站上的遊戲資料（數值、文字、圖片）與遊戲內不符
+title: "[資料] "
+labels: ["資料錯誤"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝回報！資料由爬蟲從官方來源蒐集後整理，改版後難免有落差。
+        **請先確認下方兩項檢查**，可以省下雙方時間。
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: 回報前確認
+      options:
+        - label: 我已重新整理頁面（Ctrl + F5），確認不是本機快取造成的
+          required: true
+        - label: 我已確認不是等級／突破／晶片狀態不同造成的數值差異
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 資料類型
+      options:
+        - 機師 Pilot
+        - 機甲 Mech
+        - 武器 Weapon
+        - 背包 Backpack
+        - 模組 Module
+        - 元件 Component
+        - 科研 / 神經驅動
+        - BUFF / 技能文字
+        - 版本時間軸 / 改版資訊
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: entity
+    attributes:
+      label: 對象名稱
+      description: 出錯的機師／機甲／武器等名稱，越具體越好
+      placeholder: 例：艾達
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: 頁面網址
+      description: 出錯的頁面連結（直接從網址列複製）
+      placeholder: https://mecharashi.wiki/pilots/...
+
+  - type: textarea
+    id: wrong
+    attributes:
+      label: 站上顯示的內容（錯誤的）
+      description: 貼上或描述目前站上顯示什麼
+    validations:
+      required: true
+
+  - type: textarea
+    id: correct
+    attributes:
+      label: 正確的內容是什麼？
+      description: |
+        遊戲內實際顯示的值。**若能附上遊戲內截圖會非常有幫助**（可直接拖曳圖片到這個欄位）。
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 遊戲版本
+      description: 你確認時的遊戲版本（台版／陸版皆可註明）
+      placeholder: 例：台版 v2.9
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 補充說明
+      description: 其他有助於判斷的資訊（選填）
