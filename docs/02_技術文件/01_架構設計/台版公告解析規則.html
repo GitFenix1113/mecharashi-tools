@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台版公告解析規則 — 活動如何被篩出來 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+.rule-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 14px 0;
+}
+.rule-table th {
+  background: rgba(255,107,43,0.08);
+  color: var(--accent-orange);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 9px 14px;
+  text-align: left;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.rule-table td {
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  vertical-align: top;
+  line-height: 1.7;
+}
+.rule-table tr:hover td { background: var(--bg-card-hover); }
+.rule-name {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent-orange);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.decision-block {
+  background: rgba(168,85,247,0.06);
+  border-left: 3px solid var(--accent-purple);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--text-secondary);
+}
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--text-secondary);
+}
+.pipeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 18px 0;
+}
+.pipe-step {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+}
+.pipe-step + .pipe-step { margin-top: 22px; position: relative; }
+.pipe-step + .pipe-step::before {
+  content: '▼';
+  position: absolute;
+  top: -19px;
+  left: 26px;
+  color: var(--accent-orange);
+  font-size: 11px;
+}
+.pipe-num {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--accent-orange);
+}
+.pipe-title {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 14px;
+  margin: 3px 0 6px;
+}
+.pipe-desc { font-size: 12.5px; line-height: 1.8; color: var(--text-secondary); }
+.pipe-drop {
+  display: inline-block;
+  font-size: 11px;
+  color: var(--accent-red);
+  border: 1px solid rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.07);
+  border-radius: 4px;
+  padding: 1px 7px;
+  margin-top: 7px;
+}
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../index.html">技術文件</a>
+    <span>›</span>
+    <a href="#">架構設計</a>
+    <span>›</span>
+    <span class="current">台版公告解析規則</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,107,43,0.10) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge">◆ PARSER RULES</div>
+  <h1>台版公告解析規則<span style="-webkit-text-fill-color:var(--text-secondary);">活動如何被篩出來</span></h1>
+  <p class="hero-sub">
+    官方公告是人手打的，格式會漂移。這份文件說明解析器如何從一則公告裡篩出活動、
+    哪些東西被刻意丟掉、以及每一次規則修補背後踩到的坑 —— 給未來擴充規則的人看。
+  </p>
+</header>
+
+<main class="container">
+
+<!-- ═══════════════ 概述 ═══════════════ -->
+<section class="section">
+  <div class="section-label">Overview</div>
+  <div class="section-title">這份文件在講什麼</div>
+
+  <div class="decision-block">
+    <strong>程式位置</strong>：<code>scripts/lib/parseAnnouncement.mjs</code>（純 JS，無型別）<br>
+    <strong>型別契約</strong>：<code>src/types/announcementStaging.ts</code>（本檔是契約的文件面）<br>
+    <strong>單元測試</strong>：<code>scripts/lib/parseAnnouncement.test.mjs</code> —— 每一組回歸測試都對應一個真實踩過的錯<br>
+    <strong>回歸語料</strong>：<code>scripts/fixtures/tw-announcements-2026-08/</code>（266 篇公告純文字快照）<br>
+    <strong>目前版本</strong>：<code>PARSER_VERSION 7</code>
+  </div>
+
+  <p class="section-desc">
+    台版公告站（<code>ma.tentree-games.com</code>）的內容是<strong>營運人員手動編寫</strong>的，
+    沒有結構化 API。同一件事在不同月份可能有不同寫法，欄位偶爾漏字、日期分隔符偶爾換成點或反斜線。
+    因此這個解析器的核心問題不是「怎麼抽資料」，而是<strong>「怎麼在格式漂移時仍然知道自己漏抓了」</strong>。
+  </p>
+
+  <div class="warning-block">
+    <strong>⚠ 這條管線的失效模式一律是「安靜地少抓東西」，不是拋錯。</strong><br>
+    HTTP 200、程式不崩、待審清單少了兩筆 —— 沒有人會發現。
+    所以規則設計的每一處都在回答同一個問題：<strong>出錯時要怎麼被看見</strong>。
+    這也是為什麼有 <code>unmatched</code>（沒看懂的原文）與 <code>warnings</code>（產出量監控）兩層自我體檢。
+  </div>
+</section>
+
+<!-- ═══════════════ 設計原則 ═══════════════ -->
+<section class="section">
+  <div class="section-label purple">Principles</div>
+  <div class="section-title">五條設計原則</div>
+  <p class="section-desc">前四條寫在解析器檔頭、都有 266 篇語料的實測支撐；第五條是實作過程中兩次踩坑才學到的。</p>
+
+  <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">①</div>
+      <h3>由時間錨點反向找名稱</h3>
+      <p>
+        不是由 <code>【】</code> 正向切塊。全語料有 <strong>3052 個【】區塊，79.7% 是樣板噪音</strong>
+        （<code>【招募一次】</code><code>【購置十次】</code>…），正向切塊會產出四倍垃圾。
+        而 620 個時間錨點幾乎 1:1 對應真實活動 —— 樣板【】一律出現在時間行「之後」，
+        從時間往回找，噪音天然被跳過。
+      </p>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">②</div>
+      <h3>段落標題決定型別</h3>
+      <p>
+        「機師征招招募活動」「機甲獲取海運活動」「活動中心」「特殊活動」四個段落標題
+        在 2024–2026 全程穩定（實測 78/79/102/107 次），比句型可靠得多。
+        名稱關鍵字只在段落內做二選一 —— 計畫書當初點名的漂移句型
+        「本期機師征招『X』」在 2024/2025 出現 <strong>0 次</strong>。
+      </p>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">③</div>
+      <h3>解析得出來 ≠ 要收錄</h3>
+      <p>
+        儲值促銷擋在<strong>解析層</strong>而非顯示層（產出來再讓人逐筆忽略是白工），
+        但仍計入產出量統計 —— 不然「少收 30%」會被誤讀成「解析率掉了 30%」，
+        自己的過濾規則會污染自己的體檢報告。
+      </p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">④</div>
+      <h3>抽不到就留空，絕不填預設值</h3>
+      <p>
+        填了預設值就再也分不出「官方真的是這樣」與「我沒抽到」。
+        開放式檔期（「10:00 起」，實測 191 筆）的 <code>weeks</code> 因此是缺的，
+        由後台表單顯示<strong>建議值供人按一下套用</strong> —— 建議值不會自己進資料。
+      </p>
+    </div>
+    <div class="card red">
+      <div class="card-icon">⑤</div>
+      <h3>「不是標題」與「不是邊界」是兩回事</h3>
+      <p>
+        <code>isHeadingCandidate()</code> 同時被「找活動名」與「切內文區塊」兩處使用。
+        把某種行排除在標題之外時，如果順手拆掉它的邊界身分，內文就會灌進
+        <code>description</code>。<strong>兩次修補都踩到這個坑</strong>，
+        修法一律是「照樣截斷，但把整段認領掉」。
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 管線 ═══════════════ -->
+<section class="section">
+  <div class="section-label cyan">Pipeline</div>
+  <div class="section-title">一則公告如何變成活動</div>
+  <p class="section-desc">
+    輸入是一則公告的純文字，輸出是 <code>0..n</code> 筆待審活動 ＋ 整篇的
+    <code>unmatched</code> / <code>warnings</code>。以下每一步都可能<span style="color:var(--accent-red)">丟掉</span>東西 ——
+    丟掉是設計的一部分，重點是丟得有理由、而且丟掉的東西看得見。
+  </p>
+
+  <div class="pipeline">
+
+    <div class="pipe-step">
+      <div class="pipe-num">STEP 0</div>
+      <div class="pipe-title">正規化</div>
+      <div class="pipe-desc">
+        解 HTML 具名實體（<code>decodeEntities</code>）。歸檔階段只解了最基本六個，
+        這裡補完剩下的 —— 尤其 <code>&amp;ndash;</code> 是卡池標題的破折號分隔符，
+        不解掉就抽不出「主題名 vs 實體名」。
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-num">STEP ①</div>
+      <div class="pipe-title">標記段落標題（SECTIONS）</div>
+      <div class="pipe-desc">
+        建立「行號 → 所屬段落」對照。登錄表分兩種：
+        <br>· <strong>會產活動</strong>：機師征招招募活動 / 機甲獲取海運活動 / 活動中心 / 特殊活動 / 限時活動
+        <br>· <strong>認得但不產活動</strong>（<code>kind: null</code>）：維護時間、維護計畫、修正與優化、新增內容、新增商品、注意事項、<strong>特別提醒</strong>、已知問題、領獎範例、回報流程、參考格式、本週推出內容…
+        <div class="pipe-drop">丟掉：<code>kind: null</code> 段落的<strong>整段內容</strong>（v7 起）</div>
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-num">STEP ②</div>
+      <div class="pipe-title">找出所有時間行（錨點）</div>
+      <div class="pipe-desc">
+        樣式支援三種：絕對區間、<code>⟨日期⟩ 起</code>（開放式）、裸日期（2024 年有 5 筆）。
+        日期與時刻之間可夾星期註記（<code>2026/08/13(四) 04:50:00起</code>）。
+        <br><strong>有幾個時間行，就有幾個活動候選。</strong>
+        <div class="pipe-drop">丟掉：「維護計畫／維護時間」段落裡的時間行 —— 那是停機時間不是活動</div>
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-num">STEP ③</div>
+      <div class="pipe-title">從時間行往回找活動名</div>
+      <div class="pipe-desc">
+        往回掃，<strong>不跨過上一個時間行、也不跨過段落標題</strong>。途中的欄位行
+        （<code>➤活動內容：…</code>）一律吃掉繼續往上。找到第一個「標題候選」即停。
+        <br><br>實體名（UP 的機師／機甲）有<strong>三道退路</strong>，是三次句型漂移各補一道：
+        <br>1. 標題行本身的 <code>「」</code>
+        <br>2. 時間行<strong>之前</strong>的 <code>➤活動內容：S級機師「科林」招募概率提升</code>
+        <br>3. 時間行<strong>之後</strong>的 <code>本期機師征招「X」開放【特選】S級戰術家「哈達威」！</code>（2026/07 起的新句型）
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-num">STEP ④</div>
+      <div class="pipe-title">判定型別（三層優先序）</div>
+      <div class="pipe-desc">
+        <strong>活動名關鍵字 › 段落標題 › 公告標題關鍵字 › 認輸標未知</strong>
+        <br>名稱關鍵字優先於段落，因為同一個「機師征招」段落裡既有卡池也有【角雕特遣】，
+        只看段落會把兩者一律歸成卡池。比對範圍含 <code>【】</code> 內容 ——
+        型別關鍵字常只出現在括號裡（<code>【環島密令】「謀海魅影」賽季</code> 的名字是「謀海魅影」，看名字永遠認不出戰令）。
+        <div class="pipe-drop">認不出型別時不猜：標 <code>unknownActivityType</code> flag，型別留原始段落標題</div>
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-num">STEP ⑤</div>
+      <div class="pipe-title">檔期與 flags</div>
+      <div class="pipe-desc">
+        絕對區間 → <code>startDate</code> + <code>weeks</code>（整週吸附：實測 424 筆區間 93.2% 恰為整週）。
+        開放式（只寫「起」）→ <strong>weeks 留空</strong>，標 <code>openEnded</code>。
+        起始日非週四 → 標 <code>nonThursdayStart</code>。
+        <br><strong>任何一個 flag ⇒ 該筆落在 needsReview，不會自動放行。</strong>
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-num">STEP ⑥</div>
+      <div class="pipe-title">切內文區塊 → description / rewards</div>
+      <div class="pipe-desc">
+        區塊從時間行的下一行開始，終點取「下一個時間行」與以下四種邊界的<strong>最早者</strong>：
+        <br>· 段落標題
+        <br>· 下一個標題候選
+        <br>· <code>【X】補充說明</code>（v7）—— 抽獎條文的起頭
+        <br>· 機體故事的型號行 <code>「LTX-AB01君權」</code>（v7）
+        <div class="pipe-drop">丟掉：編號條列、<code>※</code>／<code>➤</code> 起頭行、含「概率／保障／請見遊戲」的行</div>
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-num">STEP ⑦</div>
+      <div class="pipe-title">排除層（解析得出來但不收錄）</div>
+      <div class="pipe-desc">
+        目前只有 <code>topUpEvent</code>（儲值促銷）。它是產出量第 2 高的型別
+        （96 筆裡 29 筆，30%）—— 不擋掉的話每三筆待審就有一筆要按忽略，
+        審核工作檯的訊噪比會被拖垮。<strong>但仍計入產出量統計。</strong>
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-num">STEP ⑧</div>
+      <div class="pipe-title">未認領原文（自我體檢之一）</div>
+      <div class="pipe-desc">
+        掃過全篇，把「沒有被任何活動認領、而且看起來有訊號」的行收進 <code>unmatched</code>，
+        後台「規則待擴充」分頁會標紅。<strong>只收帶 <code>【】「」</code> 或日期的行</strong> ——
+        全收會被抽獎規則說明淹沒，滿頁都紅等於沒有紅。單篇上限 30 行。
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-num">STEP ⑨</div>
+      <div class="pipe-title">整篇告警（自我體檢之二）</div>
+      <div class="pipe-desc">
+        <code>lowYield</code>（週報抽出 &lt; 2 個活動）、
+        <code>pilotSectionNoName</code> / <code>mechSectionNoName</code>（有卡池段落卻抽不到實體名）、
+        <code>yieldRegression</code>（整體解析率比前次低 20% 以上）、
+        <code>contentSelectorMiss</code>（抓不到正文容器 ＝ 官網改版）。
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════ 篩選規則表 ═══════════════ -->
+<section class="section">
+  <div class="section-label yellow">Filters</div>
+  <div class="section-title">篩選規則一覽：什麼會被丟掉</div>
+  <p class="section-desc">依「丟在哪一層」排列。要新增排除規則時，先確認該丟在哪一層 —— 丟太早會連帶影響邊界，丟太晚等於讓人工去按忽略。</p>
+
+  <table class="rule-table">
+    <thead>
+      <tr><th>規則</th><th>丟掉什麼</th><th>為什麼</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="rule-name">SECTIONS<br>（kind: null）</td>
+        <td>維護時間／注意事項／新增商品／<strong>特別提醒</strong>／領獎範例／回報流程等段落的<strong>整段內容</strong></td>
+        <td>段落標題已經宣告「這裡不產活動」，內容當然也不必再看。v7 之前只認領標題行本身，內容全數落進未認領清單（1713 那 6 行商店上下架公告就是這樣來的）</td>
+      </tr>
+      <tr>
+        <td class="rule-name">EXCLUDED_TYPES</td>
+        <td><code>topUpEvent</code>：指定方式儲值、物資空投、<strong>多爾沙龍</strong></td>
+        <td>純儲值促銷，對「這版有什麼玩法、檔期多長」零資訊量。多爾沙龍是台版對儲值滿額活動的固定專名，標題不出現「儲值」二字，v4 才補上</td>
+      </tr>
+      <tr>
+        <td class="rule-name">BOILERPLATE_NAMES</td>
+        <td><code>【特選招募】【購置十次】【版本前瞻】</code> 等樣板小標</td>
+        <td>抽獎規則說明的小標，不是活動名。這是段落標題缺席時的第二道防線</td>
+      </tr>
+      <tr>
+        <td class="rule-name">RE_FIELD_LINE</td>
+        <td><code>➤活動內容：…</code>／<code>活動時間：…</code> 這類欄位行</td>
+        <td>⚠ <code>➤</code> 前綴<strong>不能</strong>當唯一判準：2026/04 有整批公告漏掉 <code>➤</code>，結果「活動內容：…」被誤當標題、產出「活動內容 招募概率提升」這種名字，而且<strong>不觸發任何 flag</strong></td>
+      </tr>
+      <tr>
+        <td class="rule-name">isHeadingCandidate</td>
+        <td>超過 40 字、含 <code>，。；</code>、不含 <code>【】「」</code> 的行</td>
+        <td>標題是短句、不帶句讀。沒有這道閘時，內文因為含「」而被當成活動名，真正的 <code>【物資空投活動】</code> 反而落進未認領</td>
+      </tr>
+      <tr>
+        <td class="rule-name">RE_MECH_MODEL_LINE</td>
+        <td>機體故事的型號行 <code>「LTX-AB01君權」</code>（v7）</td>
+        <td>三條標題判準全中，於是被誤當「下一個活動的標題」。<strong>仍然是區塊邊界</strong>，只是不再是標題，且連故事正文一起認領</td>
+      </tr>
+      <tr>
+        <td class="rule-name">RE_SUPPLEMENT_LINE</td>
+        <td><code>【X】補充說明</code> 以下整段抽獎條文（v7）</td>
+        <td><code>blockEnd</code> 停在這一行之後，其下十餘行沒有任何活動認領。修法必須是「照樣截斷，但整段認領」，不能只是讓它不算標題</td>
+      </tr>
+      <tr>
+        <td class="rule-name">NOISE_LINE</td>
+        <td>「回新聞列表」「《鋼嵐後勤小組》」「詳情可見官網活動公告」等整行樣板</td>
+        <td>頁尾與制式句，不進未認領清單</td>
+      </tr>
+      <tr>
+        <td class="rule-name">unmatched 篩選</td>
+        <td>不含 <code>【】「」</code> 或日期的行、以數字或 <code>※➤</code> 起頭的行</td>
+        <td>未認領清單要保持訊噪比。全收會被抽獎規則淹沒 —— 滿頁都紅等於沒有紅</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════ 修補史 ═══════════════ -->
+<section class="section">
+  <div class="section-label green">History</div>
+  <div class="section-title">修補史：每一版改了什麼、為什麼</div>
+  <p class="section-desc">
+    <code>PARSER_VERSION</code> 是<strong>「該重跑哪些舊公告」的唯一依據</strong>
+    （<code>AnnouncementDraft.parserVersion</code>），改動任何規則都必須 +1。
+  </p>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-phase">v1 · 2026-08-16</div>
+      <div class="timeline-title">初版管線</div>
+      <div class="timeline-desc">
+        PLAN-048 Phase 2：抓取 → 解析 → 寫入 staging 兩個後台專用集合。
+        確立「時間錨點反向找名稱」與「段落標題決定型別」兩條主軸。
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">v2 · 2026-08-16</div>
+      <div class="timeline-title">儲值促銷不收錄</div>
+      <div class="timeline-desc">
+        新增 <code>EXCLUDED_TYPES</code>。同時修掉<strong>監控自我污染</strong>的 bug ——
+        排除掉的筆數仍要計入產出量分母，否則「刻意少收」會被誤判成「解析器瞎了」。
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">v3 · 2026-08-16</div>
+      <div class="timeline-title">台版戰令叫「環島密令」</div>
+      <div class="timeline-desc">
+        公告全程不出現「戰令」二字。而且它的文法與卡池相反：<strong>括號裡是系統名、
+        「」裡才是賽季名</strong>，不特別處理會產出一筆名為「賽季」的限時活動 ——
+        整個戰令系統在時間線上是缺的。影響 17 篇歷史公告。
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">v4 · 2026-08-17</div>
+      <div class="timeline-title">多爾沙龍改判儲值促銷</div>
+      <div class="timeline-desc">
+        台版對儲值滿額活動的固定專名，標題不含「儲值」二字，先前漏進 limitedEvent。
+        28 篇語料全是同一句，是穩定專名不是個案。
+        <br>⚠ 同一頁上的「預熱衝刺」「火線重燃」是玩法活動，<strong>不能一起收進來</strong>。
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">v5 · 2026-08-17</div>
+      <div class="timeline-title">第四次句型漂移：實體名跑到時間行之後</div>
+      <div class="timeline-desc">
+        <code>本期機師征招「轟鳴邏輯」開放【特選】S級戰術家「哈達威」！</code>
+        —— 前兩道退路都只往時間行「之前」找，接不住。
+        <br>同時修正 <code>pilotSectionNoName</code> 告警的分母：舊版只要有卡池段落卻沒抓到名字就響，
+        但那個段落<strong>常常只有自選池</strong>，於是 266 篇裡誤報 14 次 ——
+        <strong>常態誤報等於沒有告警</strong>，真正的漏抓淹沒在雜訊裡沒人注意。
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">v6 · 2026-08-18</div>
+      <div class="timeline-title">自動抓自選池名單</div>
+      <div class="timeline-desc">
+        角雕特遣／跨域海運的「這期可選誰」寫在活動內容行的括號裡
+        （<code>本次指定兌換機師為:阿黛勒、瑪蒂爾達…</code>），先前完全沒抓、只能人工從遊戲內謄。
+        <br>用 <strong>type 決定要找機師還是機甲那一句</strong>：同一篇兩句都在，只認關鍵字會讓特遣吞掉海運的名單。
+        官方名單本身有重複項與空項（實測「夜天光、夜天光」「疾嘯、、影武者」），去重保序；
+        <strong>錯字保留原樣</strong>並在後台提示人工核對 —— 擅自更正官方文字會讓資料再也分不出來源。
+        <br>A/B：266 篇中 257 篇完全相同、9 篇僅多出 selection，零副作用。
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">v7 · 2026-08-18</div>
+      <div class="timeline-title">未認領原文三條規則</div>
+      <div class="timeline-desc">
+        機體故事型號行、<code>【X】補充說明</code> 整段、<code>kind: null</code> 段落整段。
+        <br><strong>兩次踩到同一個坑</strong>：先只拆掉標題身分，A/B 立刻顯示 50 篇的
+        <code>description</code> 被機體故事文灌爆 —— 因為 <code>blockEnd</code> 用同一個判準函式。
+        <br>A/B 累計：未認領行減少 153 行，活動數 / warnings / description 變動皆為 0。
+        <br>實際庫存：89 行 → 44 行、24 篇 → 16 篇。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 擴充規則 SOP ═══════════════ -->
+<section class="section">
+  <div class="section-label purple">How-to</div>
+  <div class="section-title">要擴充規則時的標準流程</div>
+
+  <div class="warning-block">
+    <strong>三條鐵律，違反不會報錯但會靜默出錯：</strong><br>
+    ① 改完必跑 <strong>266 篇 A/B</strong>　② 必 bump <code>PARSER_VERSION</code>　③ 寫一條回歸測試
+  </div>
+
+  <ol class="step-list">
+    <li class="step-item">
+      <div class="step-title">先確認根因，不要照句型加規則</div>
+      <div class="step-desc">
+        未認領清單裡看起來獨立的好幾組，常常是<strong>同一個根因的下游</strong>。
+        v7 的第 4/5/6/8 組（跨域海運抽獎條文）全部出自第 3 組
+        （<code>【X】補充說明</code> 截斷區塊後那些行落在區塊外）—— 它們根本不是「被誤當標題」，
+        逐條加樣式會加出四條沒必要的規則。
+        <br>判斷方法：把那幾行丟進 <code>isHeadingCandidate()</code> 看是不是標題候選。
+      </div>
+    </li>
+    <li class="step-item">
+      <div class="step-title">改規則前先存一份 A/B 基準</div>
+      <div class="step-desc">
+        逐篇餵 <code>scripts/fixtures/tw-announcements-2026-08/</code> 進
+        <code>parseAnnouncement()</code>，把每篇的 activities / warnings / unmatched 數輸出成 JSON。
+        改完再跑一次，比對兩份。
+        <br><strong>要看的四個數字</strong>：完全相同的篇數、未認領行增減、
+        <strong>活動數變動（必須是 0，除非你就是要改它）</strong>、description 變動。
+      </div>
+    </li>
+    <li class="step-item">
+      <div class="step-title">判讀差異：是進步還是回歸</div>
+      <div class="step-desc">
+        語料快照當時是 <code>PARSER_VERSION 3</code>，所以「跟當年不同」很可能是進步。
+        判準是<strong>方向</strong>：未認領減少、活動數不變 ＝ 好；
+        出現 <code>0 → N</code> 的反向惡化、或 description 憑空多出上百字 ＝ 踩到邊界了。
+      </div>
+    </li>
+    <li class="step-item">
+      <div class="step-title">bump PARSER_VERSION，寫回歸測試</div>
+      <div class="step-desc">
+        測試要寫成「錯的時候會怎樣」而不只是「對的時候是什麼」——
+        既有測試每一組都對應一個實際踩過的錯，註解裡寫著當初的症狀。
+      </div>
+    </li>
+    <li class="step-item">
+      <div class="step-title">跑 --reparse 讓既有草稿套用新規則</div>
+      <div class="step-desc">
+        <code>node scripts/scrape-tw-announcements.mjs --reparse</code>（先加 <code>--dry-run</code> 預演）。
+        <br>它<strong>不會覆寫 merged / rejected 的收據</strong>（刻意的），
+        但會把「規則改變後不再產生」的待審標成 <code>superseded</code> 退出清單。
+      </div>
+    </li>
+  </ol>
+
+  <div class="decision-block">
+    <strong>常用指令</strong><br>
+    <code>node scripts/scrape-tw-announcements.mjs</code> — 增量抓取（只掃前 3 頁）<br>
+    <code>… --backfill=2026-01</code> — 回填該月之後的公告<br>
+    <code>… --reparse</code> — 不連外網，用既有 rawText 重新解析<br>
+    <code>… --dry-run</code> — 只解析並印報告，不寫 Firestore<br>
+    <code>… --from-archive</code> — 讀本地歸檔而非連線（離線驗證）<br>
+    <code>… --fail-on-warn</code> — 結構性異常時 exit 1（排程用）
+  </div>
+</section>
+
+<!-- ═══════════════ 未解 ═══════════════ -->
+<section class="section">
+  <div class="section-label blue">Open</div>
+  <div class="section-title">已知未解與未來方向</div>
+
+  <div class="card-grid">
+    <div class="card blue">
+      <div class="card-icon">◆</div>
+      <h3>官方用 &lt;h3&gt; 標好了活動標題</h3>
+      <p>
+        實測 266 篇歸檔 HTML（241 篇有 <code>&lt;h3&gt;</code>）：
+        週報裡<strong>解析器抓到的活動名有 99%（363/368）落在 h3 內</strong>，
+        而未認領行中有 16%（55 行）其實是 h3。
+        <br><br>也就是說我們一直在用文法猜官方已經標好的東西。
+        但要用它得改抽取層（<code>rawText</code> 丟了標籤）、既有草稿要 <code>--backfill</code> 重抓、
+        語料要從 <code>raw/*.html</code> 重產。另外 2024 年的公告把「補充說明」也放進 h3，
+        所以 h3 仍需搭配「後面有沒有時間行」判斷。
+      </p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">◆</div>
+      <h3>日期分隔符用點或反斜線</h3>
+      <p>
+        <code>2026.07.30</code>（實測 3 行）與 <code>2026\07\09</code> 都出現過。
+        目前樣式只認 <code>/</code> 與 <code>-</code>。
+        <br><br>實際影響只有一筆真活動（2024 的【火線整備】），
+        但這是<strong>靜默失效</strong>：官方哪天全面改用點分隔，整批活動會安靜地不產生，
+        而 <code>lowYield</code> 要整篇都抓不到才會響。一個字元的修改，值得排進去。
+      </p>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>獎勵行落在區塊外</h3>
+      <p>
+        <code>獎勵包含維娜造型外觀【夜話邀約】、仿生超導體…</code> 這個句型
+        2025–2026 出現 5 次、格式完全固定，而且它是 <code>parseRewards()</code> 認得的句型 ——
+        只是落在區塊外，既沒被解析成 <code>rewards</code>、也沒被認領。
+        <br><br><strong>這是目前唯一「處理了會增加資訊」的待辦</strong>，其他都只是讓清單變乾淨。
+      </p>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>2024 年的殘留噪音（114 行）</h3>
+      <p>
+        全語料剩 167 行未認領，2024 年就佔 114 行。但那些<strong>不值得處理</strong>：
+        最大宗是開服期的一次性內容（單篇 26 行的開服公告）、
+        以及已經改名的舊玩法（<code>【自選招募】</code> 現在叫「特選」）。
+        <br><br>為它們加規則對未來公告是 0 命中率，只會增加維護負債。
+      </p>
+    </div>
+  </div>
+
+  <div class="warning-block">
+    <strong>判斷「值不值得加規則」的原則</strong><br>
+    ① <strong>會反覆出現的才值得</strong> —— 每週都來一次的句型加一條規則划算，一次性公告手動忽略即可<br>
+    ② <strong>用位置而不是內容判斷</strong> —— 官方廣告詞想怎麼寫都行，但它放在「特別提醒」段落底下是穩定的<br>
+    ③ <strong>能增加資訊的優先於只讓清單變乾淨的</strong>
+  </div>
+</section>
+
+<!-- ═══════════════ 相關文件 ═══════════════ -->
+<section class="section">
+  <div class="section-label">See also</div>
+  <div class="section-title">相關文件</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="../02_資料模型/patchVersions.html">
+      <strong>patchVersions 資料模型</strong>
+      <span class="doc-updated">TimedActivity / PatchHalf 欄位規格，合併的目的地</span>
+    </a>
+    <a class="doc-item" href="../../05_階段性開發計畫/執行中/PLAN-048_時間線甘特圖改版/計畫書.html">
+      <strong>PLAN-048 時間線甘特圖改版</strong>
+      <span class="doc-updated">這條管線的來源計畫，含當初的決策與邊界</span>
+    </a>
+    <a class="doc-item" href="系統架構.html">
+      <strong>系統架構</strong>
+      <span class="doc-updated">全站資料流與元件分類</span>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="container">
+    鋼嵐工具站 · 技術文件 · 台版公告解析規則 —
+    <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">返回技術文件</a>
+  </div>
+</footer>
+
+</body>
+</html>
