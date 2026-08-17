@@ -19,6 +19,11 @@ export interface KeyedActivity {
    * 顯示層推導、不進資料 —— 見 activityTypeRegistry.bannerIsRerun。
    */
   rerun?: boolean
+  /**
+   * 自選池的可選名單。優先取活動自己的 `selection`，
+   * 沒有才 fallback 到該半期的 `pilotSelection` / `mechSelection`。
+   */
+  selection?: string[]
 }
 
 type Phase = 'ongoing' | 'upcoming' | 'ended'
@@ -86,13 +91,14 @@ export default function ActivityCardFlow({
         </div>
         {!collapsed && (
           <div className="grid grid-cols-1 @2xl:grid-cols-2 gap-2">
-            {list.map(({ key, act, carriedFrom, rerun }) => (
+            {list.map(({ key, act, carriedFrom, rerun, selection }) => (
               <ActivityCard
                 key={key}
                 act={act}
                 actKey={key}
                 carriedFrom={carriedFrom}
                 rerun={rerun}
+                selection={selection}
                 selected={selectedKey === key}
                 onSelect={onSelect}
                 onHover={onHover}

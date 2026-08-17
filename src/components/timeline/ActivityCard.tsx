@@ -15,6 +15,7 @@ export default function ActivityCard({
   actKey,
   carriedFrom,
   rerun,
+  selection,
   selected,
   onSelect,
   onHover,
@@ -26,6 +27,8 @@ export default function ActivityCard({
   carriedFrom?: string
   /** 復刻卡池（顯示層推導）—— 只換型別標籤，不影響資料 */
   rerun?: boolean
+  /** 自選池可選名單 */
+  selection?: string[]
   selected: boolean
   onSelect: (key: string | null) => void
   onHover: (key: string | null) => void
@@ -135,6 +138,18 @@ export default function ActivityCard({
         <div className="text-[11px] mt-1.5 leading-relaxed border-l-2 border-accent-cyan/50 pl-2">
           <span className="text-accent-cyan mr-1.5">備註</span>
           <span className="text-text-secondary whitespace-pre-line">{act.editorNote}</span>
+        </div>
+      )}
+
+      {/* 自選池名單：卡片是掃視用的，只給數量與前幾名 —— 完整名單在 hover 浮窗裡。
+          數量先行是刻意的：「可自選 12 名」本身就是有用的資訊，名字反而是細節。 */}
+      {selection && selection.length > 0 && (
+        <div className="text-[11px] mt-1.5 leading-relaxed">
+          <span className="text-text-dim">可自選 </span>
+          <span className="text-text-secondary">{selection.length}</span>
+          <span className="text-text-dim"> 名：</span>
+          <span className="text-text-secondary">{selection.slice(0, 4).join('、')}</span>
+          {selection.length > 4 && <span className="text-text-dim"> …等 {selection.length} 名</span>}
         </div>
       )}
 

@@ -209,6 +209,29 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
                 </div>
               )}
 
+              {/* 行3（條件）：自選池的可選名單（角雕特遣／跨域海運） */}
+              {(act.type === 'pilotMission' || act.type === 'crossShipping') && (
+                <div className="mt-2 ml-6">
+                  <input
+                    type="text"
+                    value={(act.selection ?? []).join('、')}
+                    onChange={e => {
+                      const arr = e.target.value.split(/[、,，]+/).map(s => s.trim()).filter(Boolean)
+                      update(idx, { selection: arr.length ? arr : undefined })
+                    }}
+                    placeholder={act.type === 'pilotMission'
+                      ? '這期可選的機師，以「、」分隔（如：佐伊、科林、維娜）'
+                      : '這期可選的機甲，以「、」分隔（如：影武者、螣蛇、影子兔）'}
+                    className="w-full bg-bg-card border border-border rounded px-2 py-1 text-[11px] text-text-primary placeholder-text-dim outline-none focus:border-accent-purple/50"
+                  />
+                  <p className="mt-0.5 text-[10px] text-text-dim">
+                    名單寫在官方公告「活動內容」的括號裡。填在這裡而不是半版本層級的
+                    「選配池」——同一半版本可能同時開兩個自選池（如復刻＋一般），
+                    半版本層級只有一份會被迫共用。留空時前台仍會退回讀「選配池」的舊資料。
+                  </p>
+                </div>
+              )}
+
               {/* 行3（條件）：未登錄型別的識別字與顯示名 */}
               {!isKnownActivityType(act.type) && (
                 <div className="mt-2 ml-6 flex flex-wrap gap-2">

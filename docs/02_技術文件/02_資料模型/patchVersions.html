@@ -278,6 +278,10 @@
     名單寫在官方公告「活動內容」的括號裡（一次列 30～40 個名字），解析器目前**沒有抓**，由維護者手填。
     前台顯示在版本資訊表的「角色自選 / 機甲自選」兩列（走 <code>halfRows</code>，上下半各自獨立
     —— 名單每半期都不同，不像戰令橫跨整版）。<br><br>
+    ⚠ <strong>2026-08-18 起新資料請填在活動的 <code>TimedActivity.selection</code></strong>：
+    同一半版本可能同時開兩個自選池（如復刻場與一般場並行），半期層級只有一份會被迫共用而顯示錯誤。
+    這兩個欄位降為 <strong>fallback</strong>——活動沒填 <code>selection</code> 時才讀，
+    既有資料因此不會失效；甘特上已有對應自選池活動時，資訊表那兩列會自動讓位不重複顯示。<br><br>
     ⚠ 2026-08-17 之前這兩個欄位<strong>前台完全沒有讀取</strong>：舊註解寫「改用 cnActivities」，
     但 <code>legacyActivities</code> 的相容層只翻譯 <code>skinGacha</code>/<code>rouletteEvent</code>/
     <code>specialEvents</code>/<code>revivedBanners</code> 四個，這兩個不在其中 ——
@@ -417,6 +421,7 @@
   id?: <span class="ty">string</span>              <span class="cm">// 穩定識別子 act_&lt;base36 時戳&gt;&lt;亂數&gt;；甘特↔卡片連動的錨點</span>
   rewards?: <span class="ty">string</span>[]        <span class="cm">// 關鍵獎勵，逐項純字串；未填則前台解析 name 括號</span>
   description?: <span class="ty">string</span>     <span class="cm">// 活動說明／規則，純文字，換行即分段</span>
+  selection?: <span class="ty">string</span>[]       <span class="cm">// 自選池「這期可選誰」；未填則 fallback 讀半期的 pilotSelection/mechSelection</span>
   sourceUrl?: <span class="ty">string</span>       <span class="cm">// 官方公告連結</span>
   confidence?: <span class="st">'confirmed'</span> | <span class="st">'predicted'</span>  <span class="cm">// 未填視同 confirmed</span>
   typeLabel?: <span class="ty">string</span>       <span class="cm">// 未登錄型別的顯示名（已登錄型別以登錄表為準）</span>

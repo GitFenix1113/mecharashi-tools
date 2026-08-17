@@ -30,7 +30,12 @@ function fmt(d: Date): string {
 
 // ── 詳情內容：桌機浮窗與手機 BottomSheet 共用 ─────────────────────────────────
 
-function ActivityDetail({ act, tone }: { act: VisibleActivity; tone: ActivityTone }) {
+function ActivityDetail({ act, tone, selection }: {
+  act: VisibleActivity
+  tone: ActivityTone
+  /** 自選池可選名單（活動自己的，或該半期的 fallback） */
+  selection?: string[]
+}) {
   const { base, rewards } = splitActivityName(act)
   const st = activityStatus(act)
   // 機師與機甲要各自成列，不能二選一 —— 舊寫法是
@@ -109,6 +114,19 @@ function ActivityDetail({ act, tone }: { act: VisibleActivity; tone: ActivityTon
         </div>
       )}
 
+      {/* 自選池名單：完整列出。使用者是主動 hover 才看到這個浮窗的，
+          給半份名單反而要他再去別處查 —— 長就讓它換行，浮窗會自己長高。 */}
+      {selection && selection.length > 0 && (
+        <div>
+          <div className="text-[11px] text-text-dim mb-1">
+            可自選 <span className="text-text-secondary">{selection.length}</span> 名
+          </div>
+          <div className="text-[11.5px] text-text-secondary leading-[1.7]">
+            {selection.join('、')}
+          </div>
+        </div>
+      )}
+
       {entityRows.length > 0 && (
         <div className="text-[12px] pt-1 border-t border-border/60 space-y-0.5">
           {entityRows.map(r => (
@@ -144,6 +162,7 @@ export default function ActivityBar({
   selected,
   dimmed,
   rerun,
+  selection,
   onSelect,
   onHover,
 }: {
@@ -153,6 +172,8 @@ export default function ActivityBar({
   selected: boolean
   /** 復刻卡池（顯示層推導）—— 只換型別標籤，不影響資料 */
   rerun?: boolean
+  /** 自選池可選名單 */
+  selection?: string[]
   /** 有其他活動被選取時，本條淡出以突顯選取項 */
   dimmed: boolean
   onSelect: (key: string | null) => void
@@ -233,13 +254,13 @@ export default function ActivityBar({
             className="z-50 bg-bg-tooltip border border-border-accent rounded-xl p-3 shadow-2xl
                        max-h-[60vh] overflow-y-auto overscroll-contain"
           >
-            <ActivityDetail act={act} tone={tone} />
+            <ActivityDetail act={act} tone={tone} selection={selection} />
           </div>
         </FloatingPortal>
       )}
 
       <BottomSheet open={open && isMobile} onClose={() => setOpen(false)}>
-        <ActivityDetail act={act} tone={tone} />
+        <ActivityDetail act={act} tone={tone} selection={selection} />
       </BottomSheet>
     </>
   )

@@ -101,6 +101,18 @@ export interface TimedActivity {
    */
   editorNote?: string
 
+  /**
+   * 自選池「這一期可以選誰」的名單（角雕特遣的機師／跨域海運的機甲）。
+   *
+   * 為什麼掛在活動而不是 `PatchHalf`：同一個半版本**可能同時開兩個自選池**
+   * （例如復刻特遣與一般特遣並行），半期層級的欄位只有一份，兩個活動會被迫
+   * 共用同一份名單而顯示錯誤。掛在活動上，每個池有自己的名單，也才對得上檔期。
+   *
+   * 未填時前台 fallback 讀該半期的 `pilotSelection` / `mechSelection`
+   * —— 那是這個欄位存在之前維護者手填的地方，既有資料不會因此消失。
+   */
+  selection?: string[]
+
   /** 官方公告連結。卡片右下角「官方公告 ↗」。 */
   sourceUrl?: string
 

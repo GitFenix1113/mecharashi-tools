@@ -81,12 +81,19 @@ function VersionInfoRows({
   upperCount,
   lowerCount,
   totalWeeks,
+  coveredByActivity,
 }: {
   upper: PatchHalf
   lower: PatchHalf
   upperCount: number
   lowerCount: number
   totalWeeks: number
+  /**
+   * 甘特上已經有自選池活動在顯示同一份名單的欄位 —— 這裡就不再重複列出。
+   * 名單掛在活動上才對得起檔期；資訊表這兩列是**沒有活動時的退路**
+   * （實測 8 個半版本填了名單，其中 7 個的自選池活動還沒合併）。
+   */
+  coveredByActivity: { pilotU: boolean; pilotL: boolean; mechU: boolean; mechL: boolean }
 }) {
   const pilotsU = (upper.pilots ?? []).join('、')
   const pilotsL = (lower.pilots ?? []).join('、')
@@ -118,10 +125,10 @@ function VersionInfoRows({
   // 自選池的可選名單。與上面的「機師／機甲」（本期新登場）是兩回事：
   // 這裡是角雕特遣／跨域海運「這一期可以換誰」，多半是舊角色。
   // 走 halfRows 而不是像戰令那樣橫跨整版 —— 名單是每半期各自不同的。
-  const pilotSelU = (upper.pilotSelection ?? []).join('、')
-  const pilotSelL = (lower.pilotSelection ?? []).join('、')
-  const mechSelU  = (upper.mechSelection  ?? []).join('、')
-  const mechSelL  = (lower.mechSelection  ?? []).join('、')
+  const pilotSelU = coveredByActivity.pilotU ? '' : (upper.pilotSelection ?? []).join('、')
+  const pilotSelL = coveredByActivity.pilotL ? '' : (lower.pilotSelection ?? []).join('、')
+  const mechSelU  = coveredByActivity.mechU  ? '' : (upper.mechSelection  ?? []).join('、')
+  const mechSelL  = coveredByActivity.mechL  ? '' : (lower.mechSelection  ?? []).join('、')
 
   const halfRows = [
     { label: '機師',    u: pilotsU,    l: pilotsL    },
@@ -230,7 +237,7 @@ function ActivityGanttRow({
   onSelect: (key: string | null) => void
   onHover: (key: string | null) => void
 }) {
-  const { key, act, carriedFrom, rerun } = item
+  const { key, act, carriedFrom, rerun, selection } = item
   const geom = activityGeometry(act, allWeeks)
   const tone = activityTone(act.type, act.typeLabel, { rerun })
   const selected = selectedKey === key
@@ -257,6 +264,7 @@ function ActivityGanttRow({
               selected={selected}
               dimmed={selectedKey !== null && !selected}
               rerun={rerun}
+              selection={selection}
               onSelect={onSelect}
               onHover={onHover}
             />
@@ -331,7 +339,7 @@ export default function VersionGanttPanel({
     else cardRefs.current.delete(key)
   }, [])
 
-  const { allWeeks, upperCount, lowerCount, items, upperStartStr, lowerStartStr } =
+  const { allWeeks, upperCount, lowerCount, items, upperStartStr, lowerStartStr, coveredByActivity } =
     useMemo(() => {
       const upperStartStr =
         side === 'tw' ? (version.upper.twDate ?? '') : version.upper.cnDate
@@ -359,6 +367,16 @@ export default function VersionGanttPanel({
       const rerunOf = (act: VisibleActivity, half: PatchHalf) =>
         bannerIsRerun(act, half) || undefined
 
+      // 自選池名單：活動自己的優先，其次退回半期層級的舊欄位。
+      // 半期層級只有一份，同半版本開兩個自選池時會共用而顯示錯誤 ——
+      // 所以它只是 fallback（給這個欄位存在之前手填的資料），新資料請填在活動上。
+      const selectionOf = (act: VisibleActivity, half: PatchHalf) => {
+        if (act.selection?.length) return act.selection
+        if (act.type === 'pilotMission') return half.pilotSelection?.length ? half.pilotSelection : undefined
+        if (act.type === 'crossShipping') return half.mechSelection?.length ? half.mechSelection : undefined
+        return undefined
+      }
+
       // 穩定 key：優先用 act.id（Phase 1 新欄位），未填時退回「半段+序號+名稱」。
       // 純 index 會在陣列重排時讓選取狀態跳到別的活動身上。
       const items: KeyedActivity[] = [
@@ -366,11 +384,13 @@ export default function VersionGanttPanel({
           key: act.id ?? `u${i}:${act.name}:${act.startDate}`,
           act,
           rerun: rerunOf(act, version.upper),
+          selection: selectionOf(act, version.upper),
         })),
         ...lowerActs.map((act, i) => ({
           key: act.id ?? `l${i}:${act.name}:${act.startDate}`,
           act,
           rerun: rerunOf(act, version.lower),
+          selection: selectionOf(act, version.lower),
         })),
       ]
 
@@ -407,10 +427,24 @@ export default function VersionGanttPanel({
             act,
             carriedFrom: prevLabel,
             rerun: rerunOf(act, half),
+            selection: selectionOf(act, half),
           })
         }
       }
       items.unshift(...carried)   // 排在最前面 —— 它們是「已經在跑」的，優先級高於本版即將開始的
+
+      // 哪些自選池已經由甘特上的活動顯示了 —— 資訊表那兩列就不重複列出。
+      // 只看本半期自己的活動（carried 的屬於上一版，不算）。
+      // 有該型別的活動就算涵蓋 —— 活動即使沒填自己的 selection，也會 fallback
+      // 讀半期層級那份，所以資訊表再列一次必然重複。
+      const covers = (acts: VisibleActivity[], type: string) =>
+        acts.some(a => a.type === type)
+      const coveredByActivity = {
+        pilotU: covers(upperActs, 'pilotMission'),
+        pilotL: covers(lowerActs, 'pilotMission'),
+        mechU: covers(upperActs, 'crossShipping'),
+        mechL: covers(lowerActs, 'crossShipping'),
+      }
 
       return {
         allWeeks,
@@ -419,6 +453,7 @@ export default function VersionGanttPanel({
         items,
         upperStartStr,
         lowerStartStr,
+        coveredByActivity,
       }
     }, [side, version, prevVersion])
 
@@ -574,6 +609,7 @@ export default function VersionGanttPanel({
                       upperCount={upperCount}
                       lowerCount={lowerCount}
                       totalWeeks={totalWeeks}
+                      coveredByActivity={coveredByActivity}
                     />
                   )
                 )}
