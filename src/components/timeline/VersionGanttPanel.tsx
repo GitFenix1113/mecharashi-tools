@@ -115,9 +115,19 @@ function VersionInfoRows({
   const bpPilots = (upper.battlePass?.pilots ?? lower.battlePass?.pilots ?? []).join('、')
   const bpMechs  = (upper.battlePass?.mechs  ?? lower.battlePass?.mechs  ?? []).join('、')
 
+  // 自選池的可選名單。與上面的「機師／機甲」（本期新登場）是兩回事：
+  // 這裡是角雕特遣／跨域海運「這一期可以換誰」，多半是舊角色。
+  // 走 halfRows 而不是像戰令那樣橫跨整版 —— 名單是每半期各自不同的。
+  const pilotSelU = (upper.pilotSelection ?? []).join('、')
+  const pilotSelL = (lower.pilotSelection ?? []).join('、')
+  const mechSelU  = (upper.mechSelection  ?? []).join('、')
+  const mechSelL  = (lower.mechSelection  ?? []).join('、')
+
   const halfRows = [
     { label: '機師',    u: pilotsU,    l: pilotsL    },
     { label: '機甲',    u: mechsU,     l: mechsL     },
+    { label: '角色自選', u: pilotSelU,  l: pilotSelL,  small: true },
+    { label: '機甲自選', u: mechSelU,   l: mechSelL,   small: true },
     { label: '武裝關卡', u: raidNamesU, l: raidNamesL },
     { label: '討伐專武', u: weaponsU,   l: weaponsL   },
     { label: '討伐背包', u: backpacksU, l: backpacksL },
@@ -130,10 +140,11 @@ function VersionInfoRows({
       {halfRows.map(row => (
         <tr key={row.label}>
           <td className={LABEL}>{row.label}</td>
-          <td colSpan={upperCount} className={`${TD} bg-[rgba(255,107,43,0.05)]`}>
+          {/* small：自選名單動輒十幾個名字，用小一級字避免把整張表撐高 */}
+          <td colSpan={upperCount} className={`${TD} ${row.small ? 'text-[12px] leading-[1.6]' : ''} bg-[rgba(255,107,43,0.05)]`}>
             {row.u || dash}
           </td>
-          <td colSpan={lowerCount} className={`${TD} bg-[rgba(6,182,212,0.05)]`}>
+          <td colSpan={lowerCount} className={`${TD} ${row.small ? 'text-[12px] leading-[1.6]' : ''} bg-[rgba(6,182,212,0.05)]`}>
             {row.l || dash}
           </td>
         </tr>

@@ -167,6 +167,14 @@ export interface PatchHalf {
   weeks?: number
   pilots?: string[]
   mechs?: string[]
+  /**
+   * 自選池的可選名單：角雕特遣（機師）／跨域海運（機甲）。
+   *
+   * **不是 deprecated**，儘管它與 `cnActivities`/`twActivities` 的自選池活動並存 ——
+   * 兩者記的是不同的事：活動記「這個自選池什麼時候開、辦多久」，這裡記
+   * 「這一期可以選誰」。名單寫在官方公告「活動內容」的括號裡，解析器目前沒有抓，
+   * 由維護者手填（實測 8 個半版本已經填了）。
+   */
   pilotSelection?: string[]
   mechSelection?: string[]
   armamentRaids?: ArmamentRaid[]
