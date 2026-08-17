@@ -276,7 +276,10 @@ const ACTIVITY_TABS: { key: ActivityTab; label: string }[] = [
 
 export default function AdminHalfEditorPanel({ value, onChange }: Props) {
   // 純檢視狀態（看哪一服），不進 formData —— 切個頁籤不該讓版本文件變成「有未存變更」
-  const [activityTab, setActivityTab] = useState<ActivityTab>('cn')
+  //
+  // 預設台服：陸服活動是照著已知歷史一次補完的，日常維護幾乎不動；
+  // 真正要天天進來編的是台版公告放行進來的台服活動。
+  const [activityTab, setActivityTab] = useState<ActivityTab>('tw')
 
   function update(patch: Partial<PatchHalf>) {
     onChange({ ...value, ...patch })
@@ -369,28 +372,46 @@ export default function AdminHalfEditorPanel({ value, onChange }: Props) {
         </div>
       </div>
 
-      {/* 角雕特遣 / 跨域海運（選配池） */}
-      <SectionLabel>選配池</SectionLabel>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div>
-          <div className="text-xs text-text-secondary mb-2">角雕特遣（pilotSelection）</div>
-          <StringListEditor
-            values={pilotSel}
-            onChange={v => update({ pilotSelection: v.length ? v : undefined })}
-            placeholder="機師名稱"
-            addLabel="+ 新增機師"
-          />
-        </div>
-        <div>
-          <div className="text-xs text-text-secondary mb-2">跨域海運（mechSelection）</div>
-          <StringListEditor
-            values={mechSel}
-            onChange={v => update({ mechSelection: v.length ? v : undefined })}
-            placeholder="機甲名稱"
-            addLabel="+ 新增機甲"
-          />
-        </div>
-      </div>
+      {/*
+        角雕特遣 / 跨域海運（選配池）—— 舊欄位，名單已改掛在活動的 `selection` 上。
+        **有值才渲染**：空的不出現，新半版本因此不會再有人往舊欄位填（遷移才追得上新增）；
+        既有 8 個半版本的資料則仍看得到、改得動、清得掉 —— 遷移正需要能清掉它們，
+        完全隱藏會讓那批名單變成無法編輯也無法清除的孤兒。
+      */}
+      {(pilotSel.length > 0 || mechSel.length > 0) && (
+        <>
+          <SectionLabel>選配池（舊欄位）</SectionLabel>
+          <p className="-mt-1 mb-3 text-[10px] text-text-dim">
+            這是舊欄位。<strong className="text-text-secondary">新資料請填在下方活動的
+            「這期可選的機師／機甲」</strong>——同一半版本可能同時開兩個自選池，
+            這裡只有一份會被迫共用。名單搬走後把這裡清空，這一區就會自動消失。
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {pilotSel.length > 0 && (
+              <div>
+                <div className="text-xs text-text-secondary mb-2">角雕特遣（pilotSelection）</div>
+                <StringListEditor
+                  values={pilotSel}
+                  onChange={v => update({ pilotSelection: v.length ? v : undefined })}
+                  placeholder="機師名稱"
+                  addLabel="+ 新增機師"
+                />
+              </div>
+            )}
+            {mechSel.length > 0 && (
+              <div>
+                <div className="text-xs text-text-secondary mb-2">跨域海運（mechSelection）</div>
+                <StringListEditor
+                  values={mechSel}
+                  onChange={v => update({ mechSelection: v.length ? v : undefined })}
+                  placeholder="機甲名稱"
+                  addLabel="+ 新增機甲"
+                />
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* 武裝討伐 */}
       <SectionLabel>武裝討伐</SectionLabel>

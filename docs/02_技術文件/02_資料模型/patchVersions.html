@@ -254,8 +254,8 @@
   weeks?: <span class="ty">number</span>            <span class="cm">// 本半版本幾週；未填視同 3。上半優先用「下半起始日」推算</span>
   pilots?: <span class="ty">string</span>[]          <span class="cm">// 本半版本新機師</span>
   mechs?: <span class="ty">string</span>[]            <span class="cm">// 本半版本新機甲</span>
-  pilotSelection?: <span class="ty">string</span>[]  <span class="cm">// 角雕特遣「這期可選誰」；與自選池活動並存，不是舊欄位</span>
-  mechSelection?: <span class="ty">string</span>[]   <span class="cm">// 跨域海運「這期可選誰」；同上</span>
+  pilotSelection?: <span class="ty">string</span>[]  <span class="cm">// @deprecated 改用 TimedActivity.selection；前台仍 fallback 讀</span>
+  mechSelection?: <span class="ty">string</span>[]   <span class="cm">// @deprecated 同上</span>
   armamentRaids?: <span class="ty">ArmamentRaid</span>[]  <span class="cm">// 武裝討伐副本</span>
   battlePass?: <span class="ty">BattlePass</span>      <span class="cm">// 版本戰令</span>
 
@@ -272,12 +272,18 @@
   </div>
 
   <div class="warning-block">
-    <strong><code>pilotSelection</code> / <code>mechSelection</code> 不是 deprecated</strong><br><br>
-    它們與 <code>cnActivities</code>/<code>twActivities</code> 裡的自選池活動<strong>並存，記的是不同的事</strong>：
-    活動記「這個自選池什麼時候開、辦多久」，這兩個欄位記「<strong>這一期可以選誰</strong>」。<br><br>
-    名單寫在官方公告「活動內容」的括號裡（一次列 30～40 個名字），解析器目前**沒有抓**，由維護者手填。
-    前台顯示在版本資訊表的「角色自選 / 機甲自選」兩列（走 <code>halfRows</code>，上下半各自獨立
-    —— 名單每半期都不同，不像戰令橫跨整版）。<br><br>
+    <strong><code>pilotSelection</code> / <code>mechSelection</code> 已 deprecated（2026-08-18）</strong><br><br>
+    它們曾經是「<strong>這一期可以選誰</strong>」唯一的去處（活動只記「什麼時候開、辦多久」）。
+    名單寫在官方公告「活動內容」的括號裡（一次列 30～40 個名字），當時解析器沒有抓，由維護者手填。<br><br>
+    現已改掛在活動上（<code>TimedActivity.selection</code>），且<strong>解析器
+    自 <code>PARSER_VERSION 6</code> 起會自動抓</strong>（規則見
+    <code>scripts/lib/parseAnnouncement.mjs</code>，比對 266 篇語料 9 篇命中、零副作用）。
+    前台仍顯示在版本資訊表的「角色自選 / 機甲自選」兩列（走 <code>halfRows</code>，上下半各自獨立
+    —— 名單每半期都不同，不像戰令橫跨整版），但那是 fallback 而非主要來源。<br><br>
+    後台的「選配池」兩格自 2026-08-18 起<strong>只在有值時顯示</strong>：既有 8 個半版本的資料
+    改得動也清得掉，新半版本則天然不會出現這兩格 —— 否則遷移永遠追不上新增。
+    ⚠ <strong>清空與搬移是兩個動作，順序必須是「先搬、再清」</strong>：清空後區塊即消失，
+    而 <code>changeHistory</code> 對 update 只記 <code>changedFields</code> 不存舊值，救不回內容。<br><br>
     ⚠ <strong>2026-08-18 起新資料請填在活動的 <code>TimedActivity.selection</code></strong>：
     同一半版本可能同時開兩個自選池（如復刻場與一般場並行），半期層級只有一份會被迫共用而顯示錯誤。
     這兩個欄位降為 <strong>fallback</strong>——活動沒填 <code>selection</code> 時才讀，
@@ -414,14 +420,14 @@
   startDate: <span class="ty">string</span>         <span class="cm">// 起始日 YYYY/MM/DD，慣例為星期四</span>
   weeks?: <span class="ty">number</span>            <span class="cm">// 持續週數（1 = 當週四到下週三）；缺＝公告只寫「起」，該筆必然 hidden</span>
   type: <span class="ty">ActivityTypeId</span>      <span class="cm">// 開放字串；未登錄型別走中性色 + typeLabel</span>
-  pilots?: <span class="ty">string</span>[]         <span class="cm">// pilotMission 型別時的機師列表</span>
-  mechs?: <span class="ty">string</span>[]          <span class="cm">// crossShipping 型別時的機甲列表</span>
+  pilots?: <span class="ty">string</span>[]         <span class="cm">// 關聯實體：卡池 UP 機師、戰令獎勵機師（bannerIsRerun 靠它判復刻）</span>
+  mechs?: <span class="ty">string</span>[]          <span class="cm">// 同上，機甲側。⚠ 特遣／海運的可選名單是 selection 不是這裡</span>
 
   <span class="cm">// ── PLAN-048 Phase 1 新增 ──</span>
   id?: <span class="ty">string</span>              <span class="cm">// 穩定識別子 act_&lt;base36 時戳&gt;&lt;亂數&gt;；甘特↔卡片連動的錨點</span>
   rewards?: <span class="ty">string</span>[]        <span class="cm">// 關鍵獎勵，逐項純字串；未填則前台解析 name 括號</span>
   description?: <span class="ty">string</span>     <span class="cm">// 活動說明／規則，純文字，換行即分段</span>
-  selection?: <span class="ty">string</span>[]       <span class="cm">// 自選池「這期可選誰」；未填則 fallback 讀半期的 pilotSelection/mechSelection</span>
+  selection?: <span class="ty">string</span>[]       <span class="cm">// 自選池「這期可選誰」；解析器 v6 起自動抓，未填才 fallback 讀半期的 pilotSelection/mechSelection</span>
   sourceUrl?: <span class="ty">string</span>       <span class="cm">// 官方公告連結</span>
   confidence?: <span class="st">'confirmed'</span> | <span class="st">'predicted'</span>  <span class="cm">// 未填視同 confirmed</span>
   typeLabel?: <span class="ty">string</span>       <span class="cm">// 未登錄型別的顯示名（已登錄型別以登錄表為準）</span>

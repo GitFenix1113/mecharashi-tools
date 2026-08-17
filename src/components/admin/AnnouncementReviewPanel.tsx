@@ -136,6 +136,9 @@ export default function AnnouncementReviewPanel({
   const typeValue = form.type && isKnownActivityType(form.type) ? form.type : (form.type ? CUSTOM : '')
   const wd = form.startDate ? weekdayInfo(form.startDate) : null
 
+  /** 自選池（角雕特遣／跨域海運）：名單走 selection，沒有「UP 實體」這回事 */
+  const isSelectionPool = form.type === 'pilotMission' || form.type === 'crossShipping'
+
   /**
    * 週數建議值：卡池公告只寫「⟨日期⟩ 起」，因為它跟著半版本結束。
    *
@@ -322,13 +325,42 @@ export default function AnnouncementReviewPanel({
             </Field>
           )}
 
-          <Field label="機師（逗號分隔）">
-            <ListInput value={form.pilots ?? []} onChange={pilots => patch({ pilots })} />
-          </Field>
+          {/*
+            pilots / mechs 是**這個活動關聯的實體**：卡池的 UP 機師機甲、戰令的獎勵機體。
+            特遣／海運沒有 UP 這回事，它們的名單是下面的 selection ——
+            兩格都攤在那裡會讓人以為該把可選名單填進來，而前台會把 pilots 與 selection
+            各印一行，於是同一批名字顯示兩次。
 
-          <Field label="機甲（逗號分隔）">
-            <ListInput value={form.mechs ?? []} onChange={mechs => patch({ mechs })} />
-          </Field>
+            但不是整個藏掉：crossShipping 偶爾標題真的帶機甲名（解析器有這條規則），
+            所以照「有值才顯示」處理 —— 舊資料改得動，新資料不會誤入。
+          */}
+          {(!isSelectionPool || (form.pilots?.length ?? 0) > 0) && (
+            <Field label="機師（逗號分隔）">
+              <ListInput value={form.pilots ?? []} onChange={pilots => patch({ pilots })} />
+            </Field>
+          )}
+
+          {(!isSelectionPool || (form.mechs?.length ?? 0) > 0) && (
+            <Field label="機甲（逗號分隔）">
+              <ListInput value={form.mechs ?? []} onChange={mechs => patch({ mechs })} />
+            </Field>
+          )}
+
+          {/* 自選池名單。只對特遣／海運顯示 —— 其他型別沒有「這期可選誰」這回事，
+              永遠攤在那裡只會讓人以為自己漏填了。 */}
+          {isSelectionPool && (
+            <div className="col-span-2">
+              <Field label={form.type === 'pilotMission' ? '這期可選的機師（逗號分隔）' : '這期可選的機甲（逗號分隔）'}>
+                <ListInput value={form.selection ?? []} onChange={selection => patch({ selection })} />
+              </Field>
+              <p className="mt-0.5 text-[10px] text-text-dim">
+                解析器從「活動內容」的括號抓（`本次指定兌換機師為:…`）。
+                <strong className="text-text-secondary">官方名單本身會有錯字與譯名不一致</strong>
+                （實測有「恐領／恐頜」「吉雨萊斯／吉爾萊斯」「凱瑟琳／凱薩琳」），
+                放行前請對一下站上的實體名 —— 這裡改的是要顯示給讀者看的字。
+              </p>
+            </div>
+          )}
 
           <div className="col-span-2">
             <Field label="獎勵（逗號分隔）">

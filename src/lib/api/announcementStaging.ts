@@ -140,6 +140,7 @@ export function toMergeableActivity(src: Partial<TimedActivity>): TimedActivity 
   }
   if (!a.pilots?.length) delete a.pilots
   if (!a.mechs?.length) delete a.mechs
+  if (!a.selection?.length) delete a.selection
   if (!a.rewards?.length) delete a.rewards
   return a
 }

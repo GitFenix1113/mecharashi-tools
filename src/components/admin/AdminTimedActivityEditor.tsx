@@ -1,5 +1,11 @@
+import { useState } from 'react'
 import type { TimedActivity, ActivityTypeId } from '../../data/patchVersions/types'
-import { ACTIVITY_TYPE_OPTIONS, isKnownActivityType } from '../timeline/activityTypeRegistry'
+import {
+  ACTIVITY_TYPE_OPTIONS,
+  isKnownActivityType,
+  activityTone,
+  shapeClass,
+} from '../timeline/activityTypeRegistry'
 
 /** 未登錄型別的哨兵值；選了它就用 typeLabel 自訂顯示名（新玩法零部署上線） */
 const CUSTOM = '__custom__'
@@ -46,6 +52,42 @@ interface Props {
 }
 
 export default function AdminTimedActivityEditor({ label, activities, onChange }: Props) {
+  /**
+   * 展開中的活動。**預設全部摺起** —— 一個半版本動輒 8 筆活動、每筆展開有五行輸入，
+   * 攤開來光是捲到目標就要滾很久，而多數時候只是來改其中一筆。
+   *
+   * 存「展開的」而不是「摺起的」：這樣新載入或新解析進來的活動天然是摺起狀態，
+   * 不必在 activities 變動時同步維護這個集合。
+   */
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  /**
+   * 摺疊狀態的錨點。優先用 `act.id`（PLAN-048 Phase 1 加的穩定識別子）——
+   * 純 index 在陣列增刪後會讓「展開的是哪一筆」跳到別的活動身上，
+   * 與 makeActivityId 註解裡記的是同一個坑。舊資料沒有 id，只好退回 index。
+   */
+  const keyOf = (act: TimedActivity, idx: number) => act.id ?? `idx_${idx}`
+
+  function toggle(key: string) {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const allKeys = activities.map(keyOf)
+  const allOpen = activities.length > 0 && allKeys.every(k => expanded.has(k))
+
+  function add() {
+    const act = emptyActivity()
+    // 剛新增的一定要填，直接展開；不然使用者得先找到它再點一次
+    const key = act.id ?? `idx_${activities.length}`
+    setExpanded(prev => new Set(prev).add(key))
+    onChange([...activities, act])
+  }
+
   function update(idx: number, patch: Partial<TimedActivity>) {
     onChange(activities.map((a, i) => {
       if (i !== idx) return a
@@ -63,17 +105,28 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 gap-2">
         <span className="text-[11px] font-bold text-text-secondary tracking-[2px] uppercase">
           {label}
         </span>
-        <button
-          type="button"
-          onClick={() => onChange([...activities, emptyActivity()])}
-          className="px-2 py-0.5 text-[11px] bg-accent-purple/15 text-accent-purple border border-accent-purple/30 rounded hover:bg-accent-purple/25 transition-colors"
-        >
-          + 新增
-        </button>
+        <div className="flex items-center gap-2">
+          {activities.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setExpanded(allOpen ? new Set() : new Set(allKeys))}
+              className="px-2 py-0.5 text-[11px] text-text-dim border border-border rounded hover:text-text-secondary hover:border-border-accent transition-colors"
+            >
+              {allOpen ? '全部收合' : '全部展開'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={add}
+            className="px-2 py-0.5 text-[11px] bg-accent-purple/15 text-accent-purple border border-accent-purple/30 rounded hover:bg-accent-purple/25 transition-colors"
+          >
+            + 新增
+          </button>
+        </div>
       </div>
 
       {activities.length === 0 && (
@@ -86,19 +139,46 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
         {activities.map((act, idx) => {
           const wd = weekdayInfo(act.startDate)
           const end = computeEndDate(act.startDate, act.weeks)
+          const key = keyOf(act, idx)
+          const isOpen = expanded.has(key)
+          const tone = activityTone(act.type, act.typeLabel)
 
           return (
-            <div key={idx} className="bg-bg-dark border border-border rounded-lg p-3">
-              {/* 行1：序號 + 名稱 + 刪除 */}
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-[10px] text-text-dim w-4 text-center flex-shrink-0">{idx + 1}</span>
-                <input
-                  type="text"
-                  value={act.name}
-                  onChange={e => update(idx, { name: e.target.value })}
-                  placeholder="活動名稱（如：白夜凍鋒（復刻））"
-                  className="flex-1 bg-bg-card border border-border rounded px-2 py-1 text-xs text-text-primary placeholder-text-dim outline-none focus:border-accent-purple/50 min-w-0"
-                />
+            <div
+              key={key}
+              className={`bg-bg-dark border border-border rounded-lg ${isOpen ? 'p-3' : 'px-3 py-2'}`}
+            >
+              {/* 標題列：永遠可見，點一下摺疊。摺起時把「不展開就會漏掉」的資訊全帶在這一行 ——
+                  檔期，以及三個會左右前台顯示的旗標（未填長度／隱藏／推估）。
+                  摺疊若讓問題資料看起來跟正常的一樣，那就是把坑藏起來而不是收納。 */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggle(key)}
+                  title={isOpen ? '收合' : '展開編輯'}
+                  className="flex-1 flex items-center gap-2 min-w-0 text-left"
+                >
+                  <span className="w-3 text-center shrink-0 text-[10px] text-text-dim">
+                    {isOpen ? '▾' : '▸'}
+                  </span>
+                  <span className="w-4 text-center shrink-0 text-[10px] text-text-dim">{idx + 1}</span>
+                  {/* 與前台甘特同一套「顏色＋端點形狀」編碼，後台掃清單時對得上畫面 */}
+                  <span className={`shrink-0 ${tone.dot} ${shapeClass(tone.shape)}`} />
+                  <span className="shrink-0 text-[10px] text-text-dim">{tone.label}</span>
+                  <span className={`truncate text-xs ${act.name ? 'text-text-primary' : 'text-text-dim italic'}`}>
+                    {act.name || '（未命名）'}
+                  </span>
+                  {!isOpen && (
+                    <span className="ml-auto shrink-0 flex items-center gap-1.5 text-[10px] text-text-dim">
+                      {act.startDate && <span>{act.startDate}</span>}
+                      {act.weeks !== undefined
+                        ? <span>{act.weeks} 週</span>
+                        : <span className="text-accent-yellow">未填長度</span>}
+                      {act.hidden && <span className="text-accent-yellow">隱藏</span>}
+                      {act.confidence === 'predicted' && <span className="text-accent-purple">推估</span>}
+                    </span>
+                  )}
+                </button>
                 <button
                   type="button"
                   onClick={() => remove(idx)}
@@ -107,6 +187,19 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
                 >
                   ✕
                 </button>
+              </div>
+
+              {isOpen && (
+              <>
+              {/* 行1：名稱 */}
+              <div className="mt-2 mb-2 ml-6">
+                <input
+                  type="text"
+                  value={act.name}
+                  onChange={e => update(idx, { name: e.target.value })}
+                  placeholder="活動名稱（如：白夜凍鋒（復刻））"
+                  className="w-full bg-bg-card border border-border rounded px-2 py-1 text-xs text-text-primary placeholder-text-dim outline-none focus:border-accent-purple/50 min-w-0"
+                />
               </div>
 
               {/* 行2：類型 + 起始日 + 週數 */}
@@ -175,8 +268,23 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
                 </div>
               </div>
 
-              {/* 行3（條件）：機師列表（pilotMission） */}
-              {act.type === 'pilotMission' && (
+              {/*
+                行3（條件）：這個活動關聯的實體 —— 卡池的 UP 機師／機甲、戰令的獎勵機體。
+                `bannerIsRerun` 拿 pilots/mechs 比對半版本新增名單來判定復刻，所以卡池非填不可。
+
+                **特遣／海運（自選池）不在此列**：它們的名單是下面的「這期可選的…」。
+                這兩格原本反而只對 pilotMission / crossShipping 顯示 —— 那是 selection
+                還不存在時的舊語意，placeholder 甚至拿卡池名當機師名的範例。
+                照著填下去的後果是前台把 pilots 與 selection 各印一行，同一批名字顯示兩次。
+
+                改判準為「有值才顯示」，一石二鳥：特遣／海運空著就不出現，
+                而 specificPilotBanner 的 UP 機師（解析器本來就會填）原本在這個編輯器裡
+                **看不到也改不了** —— 因為舊條件只認 pilotMission。現在有值就看得到。
+
+                代價是「卡池漏填 pilots」時沒有空格可以補。那要靠審核面板填（它一律有格），
+                或日後在這裡按型別開格；先不做，因為空格會邀請人往錯的欄位填。
+              */}
+              {(act.pilots?.length ?? 0) > 0 && (
                 <div className="mt-2 ml-6">
                   <input
                     type="text"
@@ -186,14 +294,13 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
                         pilots: e.target.value.split(/[、,，]+/).map(s => s.trim()).filter(Boolean),
                       })
                     }
-                    placeholder="機師名稱，以「、」分隔（如：白夜凍鋒、十字線上的明光）"
+                    placeholder="UP／關聯機師，以「、」分隔（如：哈達威、科林）"
                     className="w-full bg-bg-card border border-border rounded px-2 py-1 text-[11px] text-text-primary placeholder-text-dim outline-none focus:border-accent-purple/50"
                   />
                 </div>
               )}
 
-              {/* 行3（條件）：機甲列表（crossShipping） */}
-              {act.type === 'crossShipping' && (
+              {(act.mechs?.length ?? 0) > 0 && (
                 <div className="mt-2 ml-6">
                   <input
                     type="text"
@@ -203,7 +310,7 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
                         mechs: e.target.value.split(/[、,，]+/).map(s => s.trim()).filter(Boolean),
                       })
                     }
-                    placeholder="機甲名稱，以「、」分隔"
+                    placeholder="UP／關聯機甲，以「、」分隔（如：螢石、赫克托爾）"
                     className="w-full bg-bg-card border border-border rounded px-2 py-1 text-[11px] text-text-primary placeholder-text-dim outline-none focus:border-accent-purple/50"
                   />
                 </div>
@@ -343,6 +450,8 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
                   </div>
                 )}
               </div>
+              </>
+              )}
             </div>
           )
         })}

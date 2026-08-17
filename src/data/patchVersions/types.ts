@@ -60,8 +60,20 @@ export interface TimedActivity {
    */
   weeks?: number
   type: ActivityTypeId
-  pilots?: string[]     // pilotMission 時的機師列表
-  mechs?: string[]      // crossShipping 時的機甲列表
+  /**
+   * 這個活動**關聯的實體**：卡池 UP 的機師／機甲、戰令的獎勵機體。
+   *
+   * `bannerIsRerun` 拿它比對半版本的新增名單來判定「這池是不是復刻」，
+   * 所以卡池類填不填會直接改變前台的分類標籤。
+   *
+   * ⚠ 這**不是**角雕特遣／跨域海運的「這期可選誰」—— 那是 `selection`。
+   * 舊註解曾寫成「pilotMission 時的機師列表」，那是 selection 存在之前的語意；
+   * 兩邊都填的話前台會各印一行，同一批名字顯示兩次（ActivityCard／ActivityBar
+   * 是分開兩列印的，不是二選一）。
+   */
+  pilots?: string[]
+  /** 同 `pilots`，機甲側。特遣／海運的可選名單請用 `selection`。 */
+  mechs?: string[]
 
   // ── PLAN-048 Phase 1 新增 ────────────────────────────────────────────────
   /**
@@ -182,12 +194,18 @@ export interface PatchHalf {
   /**
    * 自選池的可選名單：角雕特遣（機師）／跨域海運（機甲）。
    *
-   * **不是 deprecated**，儘管它與 `cnActivities`/`twActivities` 的自選池活動並存 ——
-   * 兩者記的是不同的事：活動記「這個自選池什麼時候開、辦多久」，這裡記
-   * 「這一期可以選誰」。名單寫在官方公告「活動內容」的括號裡，解析器目前沒有抓，
-   * 由維護者手填（實測 8 個半版本已經填了）。
+   * @deprecated 請改填活動的 `TimedActivity.selection`。
+   *
+   * 這裡曾經是唯一的去處（活動記「什麼時候開、辦多久」、這裡記「這一期可以選誰」），
+   * 但半版本層級只放得下一份名單，而同一半版本可能同時開兩個自選池（如復刻＋一般），
+   * 於是名單改掛到活動上。前台仍會 fallback 讀這裡（VersionGanttPanel 的 selectionOf），
+   * 後台則只在有值時才顯示這兩格 —— 舊資料改得動也清得掉，新資料不會再進來。
+   *
+   * 待既有 8 個半版本遷移完並觀察一個版本週期後刪除；在那之前**不要移除**，
+   * 這批名單（尤其 v3.2～v3.4）是維護者手動蒐集的，沒有其他備份。
    */
   pilotSelection?: string[]
+  /** @deprecated 同 `pilotSelection`，請改填活動的 `TimedActivity.selection`。 */
   mechSelection?: string[]
   armamentRaids?: ArmamentRaid[]
   battlePass?: BattlePass

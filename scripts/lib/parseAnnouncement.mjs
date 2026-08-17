@@ -32,7 +32,7 @@
  * AnnouncementDraft.parserVersion 靠它挑出「該重跑的舊公告」，
  * 沒有它就只能全量重跑或憑印象。
  */
-export const PARSER_VERSION = 5
+export const PARSER_VERSION = 6
 
 const DAY_MS = 86_400_000
 
@@ -516,7 +516,7 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
     // 只有 specificMechBanner 列入告警分母。crossShipping（跨域海運）的機甲清單
     // 寫在「活動內容」的括號裡而不是標題（`本次指定兌換機甲為:銜尾蛇、遊騎兵…`），
     // 標題本來就抓不到 —— 把它算進「卡池句型是否漂移」的分母是類別錯誤，
-    // 實測會製造 6 次常態誤報。那份長名單是另一個議題（自選池），尚未處理。
+    // 實測會製造 6 次常態誤報。那份長名單由下面的 selection 規則接手。
     if (type === 'specificMechBanner') {
       mechBanners++
       if (heading.entities.length) {
@@ -526,6 +526,31 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
     } else if (type === 'crossShipping' && heading.entities.length) {
       // 標題偶爾仍帶實體名，帶了就收（不影響告警分母）
       mechs = heading.entities
+    }
+
+    // 自選池「這一期可以選誰」的名單。寫在活動內容行的括號裡：
+    //
+    //   【角雕特遣】
+    //   ➤活動內容：獲取特遣密令，指定S級機師即刻入列！(本次指定兌換機師為:阿黛勒、瑪蒂爾達…)
+    //   ➤活動時間：2026/07/09 10:00:00 起
+    //
+    // 標題行永遠只有「角雕特遣」四個字，所以不抓這句就只能靠人工從遊戲內謄。
+    // 實測 266 篇裡 9 篇有這個句型、共 18 處（機師／機甲各一），2024–2026 無變體。
+    //
+    // 用 type 決定要找機師還是機甲那一句：同一篇公告兩句都在，
+    // 只認關鍵字會讓角雕特遣把跨域海運的機甲名單也吞進來。
+    let selection
+    if (type === 'pilotMission' || type === 'crossShipping') {
+      const want = type === 'pilotMission' ? '機師' : '機甲'
+      const re = new RegExp(`本次指定兌換${want}為[:：]\\s*([^)）]+)`)
+      for (let i = headIdx >= 0 ? headIdx : hit.line; i < blockEnd; i++) {
+        const m = re.exec(lines[i] ?? '')
+        if (!m) continue
+        // 官方名單實測有重複項與空項（1589：「夜天光、夜天光」「疾嘯、、影武者」）。
+        // 去重保序 —— 這是抄錄官方筆誤，不是解析錯誤，但照抄進資料只會讓前台顯示兩次。
+        selection = [...new Set(m[1].split(/[、,，]+/).map(s => s.trim()).filter(Boolean))]
+        break
+      }
     }
 
     const excerptStart = offsets[headIdx >= 0 ? headIdx : hit.line]
@@ -541,6 +566,7 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
       type,
       pilots,
       mechs,
+      selection,
       rewards,
       description,
       sourceUrl: sourceUrl || undefined,

@@ -295,6 +295,54 @@ test('回歸：實體名在時間行之後的新句型（2026/07 起的第四次
   assert.ok(!r.warnings.includes('mechSectionNoName'))
 })
 
+test('自選池名單：從活動內容的括號抓，機師與機甲各認各的句子', () => {
+  // 沒抓之前（v5 以前）：這份名單只能靠人工從遊戲內謄進半版本層級的
+  // pilotSelection / mechSelection —— 標題行永遠只有「角雕特遣」四個字。
+  // 一篇公告裡兩句都在，只認關鍵字會讓特遣把海運的機甲名單也吞進來。
+  const r = parseAnnouncement({
+    title: '【版本前瞻】x',
+    text: `本週推出內容
+【角雕特遣】
+➤活動內容：獲取特遣密令，指定S級機師即刻入列！(本次指定兌換機師為:阿黛勒、瑪蒂爾達、威廉)
+➤活動時間：2026/07/09 10:00:00 起
+【跨域海運】
+➤活動內容：獲取海運密令，指定S級機甲即刻入列！(本次指定兌換機甲為:影武者、螣蛇、金剛)
+➤活動時間：2026/07/09 10:00:00 起`,
+  })
+  assert.equal(r.activities.length, 2)
+  assert.equal(r.activities[0].extracted.type, 'pilotMission')
+  assert.deepEqual(r.activities[0].extracted.selection, ['阿黛勒', '瑪蒂爾達', '威廉'])
+  assert.equal(r.activities[1].extracted.type, 'crossShipping')
+  assert.deepEqual(r.activities[1].extracted.selection, ['影武者', '螣蛇', '金剛'])
+})
+
+test('自選池名單：官方名單的重複項與空項要去掉（照抄只會讓前台顯示兩次）', () => {
+  // 實測 maAffiche/1589 的機甲名單：「夜天光、夜天光」重複、「疾嘯、、影武者」有空項。
+  // 那是官方筆誤，不是解析錯誤 —— 但原樣收進資料等於把筆誤變成我們的資料。
+  const r = parseAnnouncement({
+    title: '【版本前瞻】x',
+    text: `本週推出內容
+【跨域海運】
+➤活動內容：指定S級機甲即刻入列！(本次指定兌換機甲為:夜天光、夜天光、疾嘯、、影武者)
+➤活動時間：2026/03/12 10:00:00 起`,
+  })
+  assert.deepEqual(r.activities[0].extracted.selection, ['夜天光', '疾嘯', '影武者'])
+})
+
+test('自選池名單：非自選池的活動不去抓這個句型', () => {
+  // selection 只對 pilotMission / crossShipping 有意義。一般卡池若也去抓，
+  // 同一篇公告的長名單會被隔壁的限時活動撿走。
+  const r = parseAnnouncement({
+    title: '【版本前瞻】x',
+    text: `限時活動
+【超頻補給】
+➤活動內容：本次指定兌換機師為:阿黛勒、瑪蒂爾達
+➤活動時間：2026/07/09 10:00 - 2026/07/30 10:00`,
+  })
+  assert.equal(r.activities[0].extracted.type, 'limitedEvent')
+  assert.equal(r.activities[0].extracted.selection, undefined)
+})
+
 test('回歸：故事文裡的「」不能被當成實體名', () => {
   // 時間行後面第二、三行是機體故事，裡面的 「」 是設定名詞（部件、系統名）。
   // 樣式要求同時有「本期」與「開放」，故事文不會誤中；沒有新句型時維持無實體名。
