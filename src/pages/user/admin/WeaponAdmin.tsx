@@ -772,6 +772,11 @@ export default function WeaponAdmin({
     )
 
   async function confirmCreateChecked() {
+    // 集合還沒載完就建立 → maxEntitySeq 掃到的是空/半套清單，會從 001 起跳並與既有武器撞號，
+    // 而且 in-memory 撞名同時失效（看不到既有項目 = 靜默建出第二份）。擋在生成 ID 之前。
+    // 判斷要用 gd.loadedKeys 而非 useClientPaged 的 loading —— 後者是寫死的 false（見 shared.tsx:310），
+    // 拿它當守衛等於沒守。AdminPage 進本分頁才 ensureLoaded(['weapons'])，所以這個窗口是真的存在。
+    if (!gd.loadedKeys.has('weapons')) { setNewIdError('武器資料尚未載入完成，請稍候再試'); return }
     const id = makeNumberedEntityId('weapon', newId, nextSeq)
     if (!id) { setNewIdError('名稱無法產生有效 ID，請改用其他名稱'); return }
     // 伺服器端撞 ID 檢查：續號理論上不會撞，但 gd.weapons 若因故不完整（快取失效中、

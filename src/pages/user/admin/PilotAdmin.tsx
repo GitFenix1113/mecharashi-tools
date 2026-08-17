@@ -10,7 +10,7 @@ import {
 } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updatePilot, docExists } from '../../../lib/firestoreApi'
-import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
+import { makeNumberedEntityId, maxEntitySeq, stripNumberedIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { buildSkillMap } from '../../../utils/pilotSkills'
 import { buildNdAbilityMap } from '../../../utils/neuralDriveAbilities'
@@ -1400,21 +1400,35 @@ export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: str
       (f.class === 'all' || p.class === f.class),
   })
 
+  // 輸入框收「名稱」，ID 由系統生成 `pilot_<3位流水號>_<slug(name)>`，續既有最大號 +1（比照 weapons）。
+  // 原本生的是不帶號的 `pilot_<slug>`，與爬蟲留下的 82 筆 `pilot_NNN_名稱` 長相不一致，
+  // 且會踩到列表排序：PilotsPage 第三排序鍵 idNum() 對無號 ID 一律回傳 0，同版本同品質時排序失序。
+  //
+  // ⚠ 流水號讓「同一名稱兩次建立」產出兩個**不同**的 ID，撞 ID 檢查因此救不了重複；
+  //   真正擋重複的是 findEntityClash 的 **name** 維度，所以 existingItems 必須是
+  //   `gd.pilots` 全集合（useClientPaged 的 source，本頁整包載入）而非 `filtered`。
+  const nextSeq = useMemo(() => maxEntitySeq('pilot', gd.pilots.map((p) => p.id)) + 1, [gd.pilots])
+
   const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate, derivedId } =
     useNewItemCreation(
-      gd.pilots,                                              // 全集合 in-memory 撞名
+      gd.pilots,                                              // 全集合 in-memory 撞名（名稱維度是主防線）
       (p) => p.id,
-      (id, name) => makeDefaultPilot(id, stripIdPrefix('pilot', name)),
-      (name) => makeEntityId('pilot', name),                 // deriveId：pilot_<slug(name)>
+      (id, name) => makeDefaultPilot(id, stripNumberedIdPrefix('pilot', name)),
+      (name) => makeNumberedEntityId('pilot', name, nextSeq), // deriveId：pilot_<NNN>_<slug(name)>
       (p) => p.name,                                         // 名稱撞名：ID 可能因改名而與 name 脫鉤
     )
 
   async function confirmCreateChecked() {
-    const id = makeEntityId('pilot', newId)
+    // 集合還沒載完就建立 → maxEntitySeq 掃到的是空/半套清單，會從 001 起跳並與既有機師撞號，
+    // 而且 in-memory 撞名同時失效（看不到既有項目 = 靜默建出第二份）。擋在生成 ID 之前。
+    // 判斷要用 gd.loadedKeys 而非 useClientPaged 的 loading —— 後者是寫死的 false（見 shared.tsx:310），
+    // 拿它當守衛等於沒守。AdminPage 進本分頁才 ensureLoaded(['pilots'])，所以這個窗口是真的存在。
+    if (!gd.loadedKeys.has('pilots')) { setNewIdError('機師資料尚未載入完成，請稍候再試'); return }
+    const id = makeNumberedEntityId('pilot', newId, nextSeq)
     if (!id) { setNewIdError('名稱無法產生有效 ID，請改用其他名稱'); return }
-    // 伺服器端撞 ID 檢查：涵蓋不在記憶體中的機師（撞名 = 撞 ID，導引去編輯既有項）
+    // 伺服器端撞 ID 檢查：續號理論上不會撞，但另一個分頁同時建立時算出的號會偏小，擋的是那個窗口。
     if (await docExists('pilots', id)) {
-      setNewIdError(`已有同名機師（ID：${id}），請改名或編輯既有項目`)
+      setNewIdError(`ID「${id}」已存在，請重新整理頁面後再試（流水號可能已被其他人用掉）`)
       return
     }
     const item = confirmCreate()
@@ -1477,7 +1491,7 @@ export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: str
         newId={newId}
         newIdError={newIdError}
         placeholder="輸入機師名稱，如：淬鋒凱登"
-        hint={<>輸入機師名稱，系統自動生成文件 ID（前綴固定 <span className="text-accent-cyan">pilot_</span>）</>}
+        hint={<>輸入新機師<span className="text-accent-cyan">名稱</span>，文件 ID 由系統續號生成（下一號 <span className="text-accent-cyan">pilot_{String(nextSeq).padStart(3, '0')}_</span>，儲存後不可更改）</>}
         onChangeId={(v) => { setNewId(v); setNewIdError('') }}
         onConfirm={() => { void confirmCreateChecked() }}
         onCancel={cancelCreate}

@@ -41,7 +41,7 @@
   <div class="data-table-wrap">
     <table class="data-table blue-head">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
-      <tr><td>id</td><td>string</td><td>唯一識別碼（如 "mech_都卜勒"）</td></tr>
+      <tr><td>id</td><td>string</td><td>文件 ID。格式 <code>mech_&lt;3 位流水號&gt;_&lt;名稱 slug&gt;</code>（如 <code>mech_054_奔霄</code>）。爬蟲與後台新增皆以「既有最大號 +1」續號（後台走 <code>makeNumberedEntityId</code>），slug 規則同 <code>idSlug.ts</code>。<strong>全 89 筆皆帶號（001–089）、無缺號無重號</strong>——後台早期手建的 6 筆不帶號 ID（<code>mech_雪崩</code>／<code>mech_莫比烏斯X</code>…）已於 2026-08-18 遷移補號，舊文件留存於 <code>archiveIdMigration</code> 集合</td></tr>
       <tr><td>name</td><td>string</td><td>機甲名稱</td></tr>
       <tr><td>rarity</td><td>ItemRarity</td><td>稀有度 Enum</td></tr>
       <tr><td>armorType</td><td>ArmorType</td><td>裝甲類型 Enum：輕型 / 中甲 / 重型</td></tr>

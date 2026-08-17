@@ -92,6 +92,27 @@ test('makeNumberedEntityId：空 slug 邊界 → 空字串（呼叫端據此擋�
   assert.equal(makeNumberedEntityId('weapon', 'weapon_163_', 1), '')
 })
 
+// ── pilots / mechs 續號：與無號歷史文件共存 ──────────────────────────────────
+// 後台改用續號 ID 前，機師/機甲各建了 6 筆不帶號的 `pilot_安` / `mech_雪崩`。
+// 那 12 筆已於 2026-08-18 遷移補號（Firestore 現在 001–088 / 001–089 全帶號），
+// 但這道防線要留著：續號的正確性不能倚賴「集合裡剛好沒有無號文件」這個當下事實。
+// 若 maxEntitySeq 誤把無號文件算進來、或被無號文件帶成 0，
+// 新機師就會從 001 起跳並直接撞掉 pilot_001_艾達。
+test('maxEntitySeq：無號的中文歷史 ID 不影響續號', () => {
+  const pilots = ['pilot_001_艾達', 'pilot_082_曜光', 'pilot_安', 'pilot_淬鋒凱登', 'pilot_黑障']
+  assert.equal(maxEntitySeq('pilot', pilots), 82)          // 無號者被忽略，不是回傳 0
+  const mechs = ['mech_083_獵門士', 'mech_莫比烏斯X', 'mech_雪崩']
+  assert.equal(maxEntitySeq('mech', mechs), 83)
+})
+
+test('stripNumberedIdPrefix：貼上無號舊 ID 也能還原成名稱', () => {
+  // 維護者從網址列複製 `pilot_安` 貼進「名稱」欄 → 必須剝成「安」，否則會生出
+  // pilot_083_pilot安 這種疊字 ID（slugify 會吃掉底線，肉眼還不容易看出來）。
+  assert.equal(stripNumberedIdPrefix('pilot', 'pilot_安'), '安')
+  assert.equal(stripNumberedIdPrefix('mech', 'mech_莫比烏斯X'), '莫比烏斯X')
+  assert.equal(makeNumberedEntityId('pilot', 'pilot_安', 83), 'pilot_083_安')
+})
+
 // ── PLAN-032 M0：技能庫大小寫撞號防呆 ────────────────────────────────────────
 test('idPrefixCasings：產出大小寫前綴變體，原值排首位', () => {
   // 這是本計畫實際踩到的地雷：makeEntityId 只產小寫，但技能庫有 SKILL_ 大寫 134 筆
