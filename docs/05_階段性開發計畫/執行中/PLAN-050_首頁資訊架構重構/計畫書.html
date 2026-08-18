@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-050 首頁資訊架構重構 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.num { font-family: 'JetBrains Mono', monospace; color: var(--accent-yellow); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-050 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-050</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    首頁資訊架構重構<span style="-webkit-text-fill-color:var(--text-secondary);"> · Hero 降級 · 版本情報三分頁 · Timeline 主從分割</span>
+  </h1>
+  <p class="hero-sub">把「檢視選擇」從捲動位置解綁，並讓甘特與活動卡片各自擁有一條捲動軸</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value cyan">PLAN-050</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-19</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">首頁 · 路由 · 導覽列 · 時間線</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value cyan">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-048（已完工）· PLAN-046 埋點</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>本計畫的來源與定位</strong><br>
+    源自 2026-08-19 使用者反饋的兩個問題（首頁捲動誤觸、Timeline 擁擠），
+    完整的 UI/UX 分析在本機筆記
+    <code>_local-notes/2026-08/2026-08-19_首頁與時間線_版面重構UI-UX評估.html</code>。
+    該筆記不進版控，<strong>本計畫書是版控內的唯一權威記載</strong> —— 若兩者衝突，以本文為準。
+    閱讀該筆記前請先看下方「如何閱讀來源分析報告」一節，其中有兩處數字已被實測推翻。
+  </div>
+
+  <div class="warning-block">
+    <strong>與既有計畫的關係（避免範圍誤解）</strong>
+    <table class="impact-table" style="margin-top:10px;">
+      <tr><th>計畫</th><th>關係</th></tr>
+      <tr>
+        <td><strong>PLAN-015 首頁全屏Tab改版</strong><br><span style="color:var(--text-dim)">已歸檔</span></td>
+        <td>本計畫是它的<strong>後繼與部分退場</strong>。PLAN-015 建立的 <code>scroll-snap</code> 全屏兩頁架構，
+            正是本次「捲動誤觸」的結構成因。Phase B 會把該段 CSS 整段移除。</td>
+      </tr>
+      <tr>
+        <td><strong>PLAN-048 時間線甘特圖改版</strong><br><span style="color:var(--text-dim)">執行中 · 36/36 已完工</span></td>
+        <td>本計畫<strong>不重開 PLAN-048</strong>，而是承接它自陳的「未解問題第 1 項」。
+            PLAN-048 的職責是甘特本身（長條、浮窗、卡片流、公告管線），已全數達成；
+            本計畫的職責是<strong>甘特周圍的頁面架構</strong>（路由、Hero、左右分割）。</td>
+      </tr>
+      <tr>
+        <td><strong>PLAN-046 網站使用統計</strong><br><span style="color:var(--text-dim)">執行中</span></td>
+        <td>Phase A 完成後，三個檢視才第一次能分流計數（現況全部記成 <code>/</code>）。
+            <strong>Phase C/D 的優先順序取決於 Phase A 收到的裝置佔比</strong>，見決策四。</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：離散的檢視選擇被綁在連續的環境輸入上</strong><br>
+    首頁是一個兩頁的 <code>scroll-snap</code> 容器（<code>src/index.css</code> 的 <code>.homepage-snap</code>）。
+    「看 Hero 還是看資料」這個<strong>離散意圖</strong>，被綁在滾輪／中鍵／觸控板這種
+    <strong>連續、含噪、裝置相依的環境輸入</strong>上。必然的後果是兩種錯誤：
+    「我沒想切、它切了」與「我想切、它不切」，而錯誤率取決於使用者的滑鼠與瀏覽器，
+    開發者在自己機器上測不到。
+    <br><br>
+    更根本的是：<strong>Hero 是一道每次進站都要付費的門</strong>。
+    它裝的是站務履歷與團隊介紹 —— 一次性內容；而門後是每週回訪的版本資料。
+    <strong>頻率決定版面，現況剛好相反。</strong>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：兩種長寬比需求正交的內容，共用同一條捲動軸</strong><br>
+    甘特是<strong>寬而扁</strong>（寬度＝週數，離散且上限 6–8；高度＝活動數 × 38px），
+    卡片流是<strong>窄而長</strong>（<code>@2xl</code> 以上才雙欄，內容無高度上限）。
+    兩者都吃垂直捲動，卻被放進 <code>VersionGanttPanel</code> 的同一個捲動容器。
+    這在版面上無解：甘特的列數把卡片流推到摺線以下，而壓短甘特只能靠砍活動。
+  </div>
+
+  <div class="info-block">
+    <strong>2026-08-19 實測資料（1920×945 Chrome，v3.1，資訊表為預設的展開態）</strong>
+    <table class="impact-table" style="margin-top:10px;">
+      <tr><th>量測項</th><th>數值</th><th>意義</th></tr>
+      <tr><td>甘特＋卡片容器可用高</td><td class="num">247px</td><td rowspan="2">甘特區塊是容器的 <strong>2.15 倍</strong></td></tr>
+      <tr><td>甘特區塊高（14 列 × 38px）</td><td class="num">532px</td></tr>
+      <tr><td>容器 <code>scrollHeight</code></td><td class="num">1217px</td><td>只有 <strong>20%</strong> 的內容在畫面內</td></tr>
+      <tr style="background:rgba(239,68,68,0.08)"><td><strong>卡片流可見高度</strong></td><td class="num">0px</td><td><strong>實測直接量到 0</strong> —— 不是估算</td></tr>
+      <tr><td>展開到 96vw 後的可見卡片</td><td class="num">0 張</td><td>寬度加倍（922→1843），垂直預算<strong>一格沒變</strong></td></tr>
+    </table>
+    <strong>關鍵推論：</strong>「展開版面」這顆按鈕把預算花在只有 6 個刻度的軸上 ——
+    每週欄從 123px 變成 277px（最低需求 80px），而甘特長條的資訊上限是<strong>一行截斷文字</strong>。
+    <strong>寬度不是瓶頸，列數才是。</strong>
+  </div>
+
+  <div class="warning-block">
+    <strong>關於 PLAN-048 的 488px 與本計畫的 247px 為何不同 —— 兩者都對</strong><br>
+    PLAN-048 進度表記載「甘特＋卡片區 186 → 488px（2.6 倍）」，那是<strong>資訊表收合後</strong>的數字，
+    該階段的成果完全成立。但 <code>loadCollapsed()</code> 預設回傳 <code>false</code>，
+    <strong>沒有點過收合鈕的使用者拿到的是展開態，也就是 247px</strong>。
+    PLAN-048 把最佳情況從 121px 拉到 488px；本計畫要處理的是<strong>預設情況</strong>仍然是 247px，
+    以及「索引與內容在同一條軸上、看了這個就看不到那個」的結構問題。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label cyan">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一（Q1）：Hero 降級為可收合頂欄，內容優先 —— 且方案 C 是可接受的升級路徑</strong><br>
+    刪除 <code>scroll-snap</code> 容器，資料面板成為 <code>/</code> 的預設與唯一版面；
+    Hero 三塊（站名／SiteChangelog／SiteTeamSection）收成一條可展開的頂帶。
+    首訪自動展開、回訪收起（<code>localStorage</code> 旗標，比照
+    <code>VersionGanttPanel</code> 的 <code>loadCollapsed()</code> 寫法）。
+    <br><br>
+    <strong>不做「隱晦的左右切換按鈕」。</strong>隱晦＋必經＝發現性失敗；
+    而改變軸線（上下→左右）只是換一組會誤觸的手勢（<kbd>Shift</kbd>+滾輪、觸控板橫掃、
+    iOS 邊緣返回），沒有解決根因。要換的是<strong>輸入型態</strong>，不是軸線。
+    <br><br>
+    <strong>站長補充（2026-08-19）：</strong>「動畫不是必要的，當初覺得很炫，但實際上我並沒有這種設計能力」、
+    「首頁的公告和 Hero 藏進 about 不見得是不能接受的，功能優先」。
+    <strong>因此原分析報告判為「不建議」的方案 C（Hero 移到 <code>/about</code>）改列為
+    Phase B 的可選升級路徑，而非否決項</strong> —— 若 Phase B 完成後頂帶仍在跟內容搶空間，直接走 C。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二（Q2）：導覽列新增「版本情報 ▾」下拉，三個檢視做成 routed tabs</strong><br>
+    <code>/versions/quick</code>｜<code>/versions/grayops</code>｜<code>/versions/timeline</code>，
+    共用一個 layout route 與同一條 tab bar（外觀不必改）。
+    沿用既有的 <code>ContentNavDropdown</code> 元件，導覽列只增加一項。
+    <br><br>
+    <strong>為什麼是獨立下拉而不是塞進「攻略/工具/文件 ▾」：</strong>版本情報是本站主打內容之一，
+    藏在攻略底下與其實際份量不對稱。
+    <br><br>
+    <strong>為什麼是 routed tabs 而不是三個頂層頁：</strong>routed tabs 同時拿到深連結、上一頁、
+    統計分流，又保留「這三者是一組」的心智模型，導覽列只 +1 項而不是 +3 項。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三（Q4）：banner 桌機用信箱式頂帶、行動版用角落暈影，兩者並存</strong><br>
+    現況為了搶回對比度，已長出<strong>三個互相耦合的調整鈕</strong>，而且三次都往同一個方向調（把圖蓋掉）：
+    <table class="impact-table" style="margin-top:10px;">
+      <tr><th>常數</th><th>位置</th><th>現值</th><th>原始碼註解自陳的理由</th></tr>
+      <tr><td><code>BANNER_OPACITY</code></td><td>VersionExpandedPanel.tsx:22</td><td class="num">opacity-40</td><td>「原 opacity-80，過亮」</td></tr>
+      <tr><td><code>BANNER_SCRIM</code></td><td>VersionExpandedPanel.tsx:25</td><td class="num">/60 /70 /85</td><td>「原 /20 /35 /65，頂部幾乎沒遮」</td></tr>
+      <tr><td><code>SURFACE</code></td><td>VersionGanttPanel.tsx:76</td><td class="num">bg-bg-dark/75</td><td>「原 /40，太透，11–13px 文字下方直接是機甲立繪，讀不到」</td></tr>
+    </table>
+    這是<strong>裝飾與可讀性的零和</strong>：細字疊在亮度變動的照片上，無法保證任何一版 banner 都達到
+    WCAG AA（4.5:1）；唯一能保證的做法是把 scrim 加到圖看不見，那就等於沒放圖。
+    <br>
+    改法是<strong>換位置而不是丟掉</strong>：桌機把 banner 移到頂部 96–120px 的信箱式色帶
+    （<code>object-cover object-top</code>、右端漸暗），版本名與服別切換壓在暗端；
+    行動版垂直預算最緊，改用不吃高度的角落暈影。
+    資料區因此可以變成<strong>不透明實色</strong>，三個常數全數退場、<code>backdrop-blur</code> 一併移除。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四（Q3）：Phase A 先單獨上主站跑 1–2 週收數據，再決定 Phase C/D 的順序</strong><br>
+    Phase A 完成前，三個檢視全部記成 <code>/</code>，
+    <strong>「Gray Ops 到底有沒有人看」「行動端佔比多少」目前無從得知</strong>。
+    這兩個數字直接決定後續投入：若行動端過半，Phase C（桌機左右分割）的收益只作用在少數人身上，
+    <strong>Phase D（行動版）必須提到 Phase C 之前</strong>。
+    <br><br>
+    先量再改，是這個計畫唯一能把優先順序從猜測變成事實的方法。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：Timeline 改主從分割（master–detail），比例 55/45</strong><br>
+    甘特與卡片流各自擁有獨立的 <code>overflow-y-auto overscroll-contain</code> 捲動軸。
+    1920 下左側 55%＝1000px → 每週欄 148px（遠高於 80px 下限）；
+    右側 820px 剛好跨過 <code>@2xl</code>（672px）雙欄門檻。
+    比例可拖曳並存 <code>localStorage</code>。
+    <br><br>
+    同時<strong>取消 <code>clip-path</code> 圓形展開的 modal</strong>：它讓「比較兩個版本」不可能，
+    而那正是版本頁最常見的問題。改成信箱帶上的 ◀▶ ＋ route 參數，
+    抵達甘特的互動步數從 <strong>4 步降到 1 步</strong>，且每個版本可深連結。
+    <br><br>
+    <strong>順帶移除 <code>VersionTimeline</code> 的滾輪劫持</strong>
+    （<code>VersionTimeline.tsx:60-74</code> 的 <code>wheel</code> + <code>preventDefault</code>）——
+    它存在的唯一理由是原始碼註解寫的「避免觸發頁面 snap 捲動」。
+    <strong>一個反模式為了掩蓋另一個反模式而存在</strong>；snap 一走它就沒有存在理由，
+    而它本身也違反決策一的原則。
+  </div>
+
+  <div class="warning-block">
+    <strong>已知技術陷阱（實作時必須處理）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong><code>overflow: hidden</code> 的容器仍可被程式化捲動。</strong>
+          若 Phase B 採用「兩頁並存 + transform 位移」的做法，<kbd>Ctrl</kbd>+<kbd>F</kbd>
+          命中畫面外那一頁時瀏覽器會強捲容器、把位移弄亂。
+          必須配 <code>inert</code> + <code>content-visibility: hidden</code>，或乾脆只掛載當前那一頁。</li>
+      <li><strong>本站 root font-size 是 19px 不是 16px</strong>
+          （<code>Layout.tsx</code> 的 <code>FONT_SIZE_MAP</code>，預設 md）。
+          所有 <code>rem</code> 與 Tailwind spacing 都是瀏覽器預設的 <strong>1.19 倍</strong>：
+          <code>h-8</code>＝38px、<code>p-4</code>＝19px/邊、<code>h-12</code>＝57px。
+          <strong>任何按 16px 心算的版面預算都會低估約兩成。</strong></li>
+      <li><strong><code>main</code> 是 <code>flex-1</code> 但沒有 <code>min-h-0</code></strong>
+          （<code>Layout.tsx:246</code>）。它的 min-content 高度由子容器決定，
+          子容器只要比可用高度高 1px，root 就會超出 <code>min-h-screen</code> 而多出一條文件捲軸。</li>
+      <li><strong>Tailwind 的 <code>lg:</code> 在本站是 1024px</strong>，而
+          <code>md:70vw → lg:48vw</code> 這類「兩個不同 vw 比例」的斷點<strong>在數學上不可能連續</strong>
+          （0.70·B 恆大於 0.48·B）。要消斷崖只能引入 px 下限。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 如何閱讀來源分析報告 -->
+<section class="section">
+  <div class="section-label yellow">Errata</div>
+  <div class="section-title">如何閱讀來源分析報告（重要）</div>
+
+  <div class="warning-block">
+    <strong>來源筆記 <code>_local-notes/2026-08/2026-08-19_首頁與時間線_版面重構UI-UX評估.html</code>
+    有兩處在實作當天被實測推翻，該檔已就地更正，但若日後看到舊副本請以此表為準。</strong>
+    <table class="impact-table" style="margin-top:10px;">
+      <tr><th>報告初稿主張</th><th>實測結果</th><th>正確結論</th></tr>
+      <tr>
+        <td>把 <code>lg:max-w-[48vw]</code> 改成 <code>xl:</code> 就能消掉 1024px 的寬度斷崖</td>
+        <td><span class="badge-high">錯誤</span> 移到 xl 只是把斷崖搬家而且挖更深：
+            70vw@1279＝895px → 48vw@1280＝614px，落差從 224px 變成 <strong>281px</strong></td>
+        <td>改用 px 下限壓平曲線。<strong>已於 2026-08-19 實作為
+            <code>max-w-[min(96vw,max(48vw,780px))]</code></strong></td>
+      </tr>
+      <tr>
+        <td><code>scroll-snap-type</code> 改 <code>proximity</code> 可讓誤觸的滾輪「等於無效操作」</td>
+        <td><span class="badge-high">過度樂觀</span> 只對小位移成立（中鍵拖曳已驗證）；
+            一般滾輪多格累加會越過吸附閾值而<strong>停在半截</strong>，上下兩頁各露一半</td>
+        <td>真正的元兇是 <code>scroll-snap-stop: always</code>（分頁器語意）。
+            <strong>定案為 <code>mandatory</code> + 移除 <code>scroll-snap-stop</code></strong></td>
+      </tr>
+      <tr>
+        <td>垂直預算：甘特列高 32px、可用高 296px</td>
+        <td><span class="badge-med">低估</span> 實測 38px／247px（19px root 造成 1.19 倍）</td>
+        <td>結論方向不變，<strong>但擁擠程度比報告寫的更嚴重</strong>。
+            報告 §3.1 已補上實測校正表</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="info-block">
+    <strong>報告中哪些數字可信</strong><br>
+    §3.1 的「實測校正」表、§3.2 的寬度對照表、§3.3 的展開前後對照表
+    <strong>均為 2026-08-19 在 <code>localhost:5173</code> 實地量測</strong>，可直接引用。
+    其餘逐層估算表僅用於說明「預算怎麼被吃掉」，<strong>絕對值請以實測為準</strong>。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label cyan">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>路由改造：<code>/versions/:view</code> 三個 routed tab ＋ <code>/versions/timeline/:version</code> 深連結</li>
+      <li>導覽列新增「版本情報 ▾」下拉（桌機 <code>ContentNavDropdown</code> ／ 行動版 More 面板）</li>
+      <li>Hero 降級為可收合頂欄；<code>.homepage-snap</code> / <code>.snap-page</code> CSS 整段移除</li>
+      <li>移除 <code>VersionTimeline</code> 的滾輪劫持與 <code>clip-path</code> modal</li>
+      <li>Timeline 左右主從分割（可拖曳比例、各自獨立捲動軸）</li>
+      <li>banner 改信箱式頂帶（桌機）／角落暈影（行動版）；三個透明度常數退場</li>
+      <li>行動版分段切換器（甘特／活動）與迷你時間軸</li>
+      <li><code>/</code> 的「本週摘要」條（純衍生資料，不新增欄位）</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>P0 止血已於 2026-08-19 完成並推送（commit <code>1b8f53f</code>）</strong>，
+          不重複列為本計畫任務：移除 <code>scroll-snap-stop: always</code>、
+          <code>HomeTabPanel</code> 補 <code>overscroll-contain</code>、
+          面板寬度改 <code>max-w-[min(96vw,max(48vw,780px))]</code>、
+          <code>.homepage-snap</code> 高度改 <code>calc(100vh - 3rem - 1px)</code>。</li>
+      <li>資料模型變更。本計畫<strong>不新增也不修改任何 type / enum / Firestore 集合</strong>，
+          因此不需 bump 版本，也不觸發 CLAUDE.md 規則 2 的資料模型文件同步。</li>
+      <li>甘特長條、活動卡片、公告解析管線本身 —— 那是 PLAN-048 的範圍且已完工。</li>
+      <li>全站 i18n、字體、主題色等與本次動線無關的視覺工程。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label cyan">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-050 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-048_時間線甘特圖改版/計畫書.html">
+      <div class="doc-tag">前置</div>
+      <h4>◆ PLAN-048 時間線甘特圖改版</h4>
+      <p>甘特本體與公告管線（已完工），本計畫承接其未解問題第 1 項</p>
+    </a>
+    <a class="doc-item" href="../PLAN-046_網站使用統計/計畫書.html">
+      <div class="doc-tag">相依</div>
+      <h4>◆ PLAN-046 網站使用統計</h4>
+      <p>Phase A 完成後才能分流計數，據以決定 Phase C/D 順序</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-015_首頁全屏Tab改版/計畫書.html">
+      <div class="doc-tag">前身</div>
+      <h4>◆ PLAN-015 首頁全屏Tab改版</h4>
+      <p>建立現行 scroll-snap 兩頁架構，本計畫 Phase B 將其退場</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-050 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
