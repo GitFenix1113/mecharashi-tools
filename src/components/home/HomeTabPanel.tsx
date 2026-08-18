@@ -55,7 +55,13 @@ export default function HomeTabPanel({ versions, loading, error, expanded, onTog
       </div>
 
       {/* Tab content — scrolls independently, does not trigger page snap */}
-      <div className="flex-1 overflow-y-auto">
+      {/*
+        overscroll-contain 是「不觸發 page snap」真正生效的那一半：少了它，本容器捲到
+        邊界後會把剩下的 delta 往上交給祖先 .homepage-snap（scroll chaining），
+        使用者在內容區往上捲到頂再多滾一下就被彈回 Hero。
+        內層的 VersionGanttPanel 捲動容器早就加了同一個屬性 —— 這裡是漏掉的外層。
+      */}
+      <div className="flex-1 overflow-y-auto overscroll-contain">
         {activeTab === 'quick' && (
           <VersionQuickTable versions={versions} loading={loading} error={error} />
         )}

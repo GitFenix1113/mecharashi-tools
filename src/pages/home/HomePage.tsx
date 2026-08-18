@@ -54,8 +54,33 @@ export default function HomePage() {
         }`} />
 
         {/* Panel + copyright — expands width on toggle */}
+        {/*
+          收合寬度為什麼是 `min(96vw, max(48vw, 760px))` 而不是原本的
+          `md:max-w-[70vw] lg:max-w-[48vw]`：
+
+          原寫法的面板寬度**不是視窗寬度的單調函數**。1023px 時套 md（70vw＝716px），
+          1024px 時 lg 生效（48vw＝492px）—— 把視窗拉寬 1px，面板反而縮水 224px。
+          1024–1300px 這段（外接螢幕視窗化、iPad 橫向、小筆電）拿到的寬度比手機直立還窄，
+          而甘特 6 週的最低需求是 110 + 6×80 ＝ 590px，於是**每一版都保證出現橫向捲軸**。
+
+          斷崖無法靠移動斷點解決：兩個不同的 vw 比例在任何斷點都不可能連續
+          （0.70·B 恆大於 0.48·B），移到 xl 只會讓落差從 224px 變成 281px。
+          唯一的解法是引入 px 下限把曲線壓平。780px 這個值是實測湊出來的，四項相加：
+
+            VersionQuickTable 的 minWidth   720px
+            捲動容器的 border 左右各 1px       2px
+            外層 p-4 內距（root 19px）        38px   ← 不是 32px
+            tab 內容區的垂直捲軸              15px   ← 最容易漏算的一項
+            ────────────────────────────────────
+                                           775px → 取 780px 留餘裕
+
+          取捨：1024–1620px 之間背景立繪會被蓋掉更多（1024px 最明顯，可見寬
+          532→244px）。這是不可迴避的 —— 48vw ≥ 780px 需要視窗 ≥ 1625px，
+          在那之下「露出立繪」與「內容不橫捲」數學上無法同時成立。
+          1625px 以上與改動前完全相同。
+        */}
         <div className={`relative z-10 flex flex-col flex-1 min-h-0 w-full transition-all duration-500 ease-in-out ${
-          tabExpanded ? 'max-w-[96vw]' : 'md:max-w-[70vw] lg:max-w-[48vw]'
+          tabExpanded ? 'max-w-[96vw]' : 'max-w-[min(96vw,max(48vw,780px))]'
         }`}>
           <HomeTabPanel
             versions={versions}
