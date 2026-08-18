@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-050 首頁資訊架構重構 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+
+.note-warn {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.note-warn strong { color: var(--accent-yellow); }
+
+.note-info {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.note-info strong { color: var(--accent-cyan); }
+
+.phase-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0 30px;
+}
+.phase-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.phase-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.num { font-family: 'JetBrains Mono', monospace; color: var(--accent-yellow); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-050 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-050</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">首頁資訊架構重構</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-19</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">18</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">18</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-cyan);">0 / 18</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    首頁不再有一道每次進站都要穿過的門；三個版本檢視各自可分享、可回上一頁、可分流計數；
+    Timeline 的甘特與活動卡片並列而非互斥 —— 實測目前卡片流可見高度是 <strong>0px</strong>，
+    目標是<strong>不捲動即可看到 4 張以上</strong>。
+  </div>
+
+  <div class="note-info">
+    <strong>P0 止血已完成（不列入本計畫任務）。</strong>
+    2026-08-19 commit <code>1b8f53f</code> 已修掉使用者回報的捲動誤觸：
+    移除 <code>scroll-snap-stop: always</code>、<code>HomeTabPanel</code> 補 <code>overscroll-contain</code>、
+    面板寬度改 <code>max-w-[min(96vw,max(48vw,780px))]</code>（消掉 1024px 縮水斷崖）、
+    <code>.homepage-snap</code> 高度改 <code>calc(100vh - 3rem - 1px)</code>。
+    <strong>本計畫處理的是這些止血無法觸及的結構問題。</strong>
+  </div>
+
+  <table class="phase-table">
+    <tr>
+      <th>階段</th><th>任務數</th><th>估時</th><th>資料模型變更</th><th>可獨立上線</th>
+    </tr>
+    <tr>
+      <td><strong>Phase A</strong> · 路由化<br><span class="status pending">待開始</span></td>
+      <td class="num">6</td><td class="num">~4h</td><td>無</td>
+      <td>✔ <strong>是，且刻意單獨上線觀察 1–2 週</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Phase B</strong> · Hero 降級<br><span class="status pending">待開始</span></td>
+      <td class="num">4</td><td class="num">~5h</td><td>無</td><td>✔ 是</td>
+    </tr>
+    <tr>
+      <td><strong>Phase C</strong> · Timeline 分割<br><span class="status pending">待開始</span></td>
+      <td class="num">4</td><td class="num">~10h</td><td>無</td><td>✔ 是</td>
+    </tr>
+    <tr>
+      <td><strong>Phase D</strong> · 行動版<br><span class="status pending">待開始</span></td>
+      <td class="num">3</td><td class="num">~5h</td><td>無</td>
+      <td>✔ 是 · <strong>順序待 Phase A 數據決定</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Phase E</strong> · 本週摘要<br><span class="status pending">待開始</span></td>
+      <td class="num">1</td><td class="num">~2h</td><td>無</td><td>✔ 是</td>
+    </tr>
+  </table>
+
+  <div class="note-warn">
+    <strong>整個計畫零資料模型變更。</strong>
+    不新增也不修改任何 type / enum / Firestore 集合，因此<strong>不需 bump 版本</strong>，
+    也不觸發 CLAUDE.md 規則 2 的資料模型文件同步。需要同步的只有
+    <code>docs/03_頁面規劃/</code>（路由與頁面結構改變）與
+    <code>docs/02_技術文件/01_架構設計/系統架構.html</code>（元件分類表）。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">路由化：三個版本檢視變成真正的頁面</div>
+  <div class="section-desc">
+    最小風險、最高情報價值的一步。純路由改造，不動任何版面邏輯，
+    但一次拿到深連結、上一頁、<kbd>Ctrl</kbd>+<kbd>F</kbd> 與<strong>分流統計</strong>。
+    完成後刻意單獨上主站跑 1–2 週，用真實數據決定後續階段的順序。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 路由骨架與相容轉址</div>
+      <div class="task-group-meta">src/App.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 /versions 巢狀 route 與 VersionsLayout</div>
+        <div class="task-desc">
+          <code>/versions/quick</code>｜<code>/versions/grayops</code>｜<code>/versions/timeline</code>
+          共用一個 layout route（tab bar 放在 layout 裡）；
+          <code>index</code> 以 <code>&lt;Navigate to="quick" replace /&gt;</code> 導向。
+          另加 <code>/versions/timeline/:version</code> 供單一版本深連結。
+          舊的 <code>/</code> 維持可用，不做破壞性轉址。
+        </div>
+        <div class="task-file">src/App.tsx · src/pages/versions/VersionsLayout.tsx（新增）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; HomeTabPanel 由 state 改為 route 驅動</div>
+      <div class="task-group-meta">src/components/home/HomeTabPanel.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">useState&lt;TabId&gt; → useParams，button → NavLink</div>
+        <div class="task-desc">
+          tab bar 外觀維持不變（使用者感受不到差別），但每個 tab 變成真正的連結。
+          <strong>注意保留 P0 已加上的 <code>overscroll-contain</code></strong>，
+          該屬性修的是 scroll chaining，與本次改動無關但不可誤刪。
+        </div>
+        <div class="task-file">src/components/home/HomeTabPanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 導覽列新增「版本情報 ▾」下拉</div>
+      <div class="task-group-meta">src/components/layout/Layout.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">桌機下拉 ＋ 行動版 More 面板攤平</div>
+        <div class="task-desc">
+          沿用既有的 <code>ContentNavDropdown</code>，新增一個 <code>versionNavItems</code> 陣列
+          （版本速覽／灰燼行動／時間線）。行動版比照 <code>moreNavItems</code> 的既有做法攤平進 More 面板。
+          <strong>決策二：獨立下拉而非塞進「攻略/工具/文件 ▾」</strong> —— 版本情報是本站主打內容。
+        </div>
+        <div class="task-file">src/components/layout/Layout.tsx · ContentNavDropdown.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 三個檢視的頁面寬度各自定義</div>
+      <div class="task-group-meta">src/pages/versions/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Quick / GrayOps 置中，Timeline 滿寬</div>
+        <div class="task-desc">
+          Quick Table 置中 <code>max-w-[1200px]</code>（它的 <code>minWidth</code> 是 720px，
+          終於有空間）；GrayOps 置中（已是 <code>lg:grid-cols-4</code>，寬一點更好看）；
+          Timeline 滿寬，為 Phase C 的左右分割預留。
+          <strong>route 切換時 chrome 變化是合理的</strong>，不像 tab 切換那樣突兀。
+        </div>
+        <div class="task-file">src/pages/versions/*.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; Timeline 改為 lazy 載入</div>
+      <div class="task-group-meta">src/App.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">最重的 view 從首頁初載中拆出</div>
+        <div class="task-desc">
+          <code>src/components/timeline/</code> 共 9 檔 1853 行，目前無條件進首頁 bundle。
+          路由化之後可以 <code>lazy()</code>，首頁初載變輕。
+          比照專案既有寫法（<code>WeaponDetailPage</code> 等）用 <code>Suspense fallback={null}</code>。
+        </div>
+        <div class="task-file">src/App.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-6 &nbsp; 上主站觀察 1–2 週，收集決策數據</div>
+      <div class="task-group-meta">PLAN-046 後台 Analytics</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">量三個檢視的流量比例與行動裝置佔比</div>
+        <div class="task-desc">
+          <strong>這是本階段刻意單獨上線的理由（決策四 / Q3）。</strong>
+          現況三個 tab 全部記成 <code>/</code>，「Gray Ops 有沒有人看」「行動端佔比多少」無從得知。
+          <strong>若行動端過半，Phase D 必須提到 Phase C 之前</strong> ——
+          否則桌機左右分割的所有收益只作用在少數人身上。
+        </div>
+        <div class="task-file">後台 /admin/analytics</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label cyan">Phase B</div>
+  <div class="section-title">Hero 降級：把門拆掉</div>
+  <div class="section-desc">
+    刪除 scroll-snap 兩頁架構（PLAN-015 的產物），資料面板成為 <code>/</code> 的預設與唯一版面。
+    這一步讓「捲動誤觸」整類問題在結構上不再可能發生，而不只是被抑制。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; Hero 收合頂欄元件</div>
+      <div class="task-group-meta">src/components/home/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三塊內容收成一條可展開的頂帶</div>
+        <div class="task-desc">
+          收起態：站名 ＋ 最新一則履歷 ＋「▼ 站務」鈕（單行）。
+          展開態：完整 SiteChangelog ＋ SiteTeamSection ＋「▲ 收起」鈕。
+          <strong>首訪自動展開、回訪收起</strong>（<code>localStorage</code> 旗標）——
+          第一印象不打折，回訪成本降到零。
+          比照 <code>VersionGanttPanel.tsx:41</code> 的 <code>loadCollapsed()</code>：
+          lazy initializer ＋ try/catch，隱私模式下不炸。
+        </div>
+        <div class="task-file">src/components/home/HomeHeroBar.tsx（新增）· HomePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 移除 scroll-snap 架構</div>
+      <div class="task-group-meta">src/index.css · src/pages/home/HomePage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">刪除 .homepage-snap / .snap-page 整段 CSS 與兩個 section 結構</div>
+        <div class="task-desc">
+          含 <code>@media (max-width:1023px)</code> 的高度覆寫。
+          刪除後 <code>main</code> 內只剩單一捲動容器，巢狀捲動衝突不再存在。
+          <strong>陷阱：</strong><code>main</code> 是 <code>flex-1</code> 但沒有 <code>min-h-0</code>
+          （<code>Layout.tsx:246</code>），新容器高度只要超出可用空間 1px 就會多出文件捲軸 ——
+          P0 期間已實測踩過一次。
+        </div>
+        <div class="task-file">src/index.css:118-139 · src/pages/home/HomePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 移除 VersionTimeline 的滾輪劫持</div>
+      <div class="task-group-meta">src/components/timeline/VersionTimeline.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">刪掉 wheel + preventDefault 的版本切換</div>
+        <div class="task-desc">
+          <code>VersionTimeline.tsx:60-74</code>。它存在的唯一理由是原始碼註解寫的
+          「避免觸發頁面 snap 捲動」—— <strong>一個反模式為了掩蓋另一個反模式而存在</strong>。
+          B-2 之後它沒有存在理由，而它本身也違反「離散狀態不綁連續輸入」的原則。
+          版本切換保留方向鍵與按鈕。
+        </div>
+        <div class="task-file">src/components/timeline/VersionTimeline.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; <span style="color:var(--accent-yellow)">（可選升級）</span> Hero 移至 /about</div>
+      <div class="task-group-meta">src/pages/about/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">若頂帶仍在跟內容搶空間，直接把站務內容獨立成頁</div>
+        <div class="task-desc">
+          <strong>此項原為分析報告的「方案 C」且被判為不建議</strong>（理由：站務履歷曝光度歸零）。
+          站長 2026-08-19 明確表示<strong>「首頁的公告和 Hero 藏進 about 不見得是不能接受的，功能優先」</strong>，
+          因此改列為可選升級路徑。
+          <br>
+          <strong>觸發條件：</strong>B-1 完成後，若收起態的頂帶仍佔用可觀垂直空間、
+          或維護頂帶的兩態邏輯成本高於其價值，就執行本項。
+          執行後 <code>/</code> 只剩資料，導覽列或頁尾放一個 <code>/about</code> 入口。
+        </div>
+        <div class="task-file">src/pages/about/AboutPage.tsx（新增）· App.tsx · Layout.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label cyan">Phase C</div>
+  <div class="section-title">Timeline 主從分割：讓索引與內容並列</div>
+  <div class="section-desc">
+    本計畫的核心價值。實測目前卡片流可見高度是 <strong>0px</strong>，
+    而「展開版面」按鈕把寬度加倍也<strong>多露出 0 張卡片</strong> ——
+    因為甘特與卡片流共用同一條垂直軸。拆成左右兩條獨立軸是唯一解。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 左右分割骨架</div>
+      <div class="task-group-meta">src/components/timeline/VersionGanttPanel.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">甘特 55% / 活動詳情 45%，各自獨立捲動</div>
+        <div class="task-desc">
+          兩個 pane 各自 <code>overflow-y-auto overscroll-contain</code>
+          （<code>overscroll-contain</code> 是避免重演 P0 的 scroll chaining）。
+          分隔線可拖曳，比例存 <code>localStorage</code>。
+          <br>
+          <strong>比例依據：</strong>甘特在 ~800px 就飽和（每週欄超過約 150px 後，
+          長條那一行截斷文字再寬也買不到資訊）；1920 下左側 55%＝1000px→每週欄 148px，
+          右側 820px 剛好跨過 <code>@2xl</code>（672px）雙欄門檻。
+        </div>
+        <div class="task-file">src/components/timeline/VersionGanttPanel.tsx:634 附近</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 拆除 clip-path modal，改為同頁版本切換</div>
+      <div class="task-group-meta">src/components/timeline/VersionDetailView.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">互動步數從 4 步降到 1 步，並可深連結</div>
+        <div class="task-desc">
+          現況要抵達甘特需要：捲過 Hero → 點 tab → 滾輪切版本 → 點中央項目（modal 展開）。
+          且 modal 讓<strong>「比較兩個版本」不可能</strong>，而那正是版本頁最常見的問題。
+          改成信箱帶上的 ◀▶ ＋ <code>/versions/timeline/:version</code> route 參數，
+          使用者可以開兩個分頁並排比較。
+          <br>
+          焦點輪播（<code>VersionTimeline</code>）改為持續可見的版本選擇列，而非前置關卡。
+        </div>
+        <div class="task-file">VersionDetailView.tsx · VersionTimeline.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; banner 改信箱式頂帶，三個透明度常數退場</div>
+      <div class="task-group-meta">VersionExpandedPanel.tsx · VersionGanttPanel.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把圖從文字底下移到頂部色帶</div>
+        <div class="task-desc">
+          Banner 佔滿寬、96–120px 高、<code>object-cover object-top</code>、右端漸暗成純色，
+          版本名／日期／服別切換壓在暗端。
+          <br>
+          <strong>連帶刪除 <code>BANNER_OPACITY</code>、<code>BANNER_SCRIM</code>、<code>SURFACE</code>
+          三個常數的透明度調校</strong>：資料區改為不透明實色，<code>backdrop-blur</code> 一併移除
+          （14 列 × 6 格的表格上那是白付的繪製成本）。對比度因此可驗證，不再是「調到看起來還行」。
+        </div>
+        <div class="task-file">VersionExpandedPanel.tsx:22-27 · VersionGanttPanel.tsx:76</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 三向連動沿用並驗證</div>
+      <div class="task-group-meta">src/components/timeline/VersionGanttPanel.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">確認 activeCols / scrollIntoView 在分割版面下正確運作</div>
+        <div class="task-desc">
+          既有邏輯（<code>VersionGanttPanel.tsx:470-487</code>）直接沿用，不重寫。
+          <strong>左右並排之後這個連動第一次真的看得到</strong> ——
+          現在點長條時對應卡片在摺線以下，<code>scrollIntoView</code> 的效果使用者根本看不見。
+          驗收：點甘特長條 → 右側卡片捲入視野並高亮；hover 卡片 → 左側長條與週欄打亮。
+        </div>
+        <div class="task-file">src/components/timeline/VersionGanttPanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label cyan">Phase D</div>
+  <div class="section-title">行動版：一次只給一條軸</div>
+  <div class="section-desc">
+    <strong>順序未定 —— 取決於 Phase A 的數據。</strong>若行動裝置佔比過半，本階段提到 Phase C 之前。
+    行動版不能靠 flex-wrap 讓左右分割自然堆疊，那等於原病復發（甘特列數又把卡片推到摺線以下）。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 分段切換器（甘特 ／ 活動）</div>
+      <div class="task-group-meta">src/components/timeline/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">&lt;1024px 時一次只顯示一種，預設落在「活動」</div>
+        <div class="task-desc">
+          預設是活動卡片而非甘特 —— 卡片才是內容主體，甘特是索引。
+          切換器本身是明確的點擊目標，不綁任何手勢（與決策一同原則）。
+        </div>
+        <div class="task-file">src/components/timeline/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 迷你時間軸</div>
+      <div class="task-group-meta">src/components/timeline/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">保留「現在在哪」的錨點，不吃垂直預算</div>
+        <div class="task-desc">
+          只畫今日線與週刻度的極簡橫條，置於卡片列表上方。
+          沿用 <code>GanttAxisOverlay</code> 的 <code>todayPct</code> 計算，不重寫幾何。
+        </div>
+        <div class="task-file">src/components/timeline/GanttAxisOverlay.tsx · ganttGeometry.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 行動版 banner 改角落暈影</div>
+      <div class="task-group-meta">src/components/timeline/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">radial mask 淡出，垂直成本近乎 0</div>
+        <div class="task-desc">
+          決策三：桌機信箱帶（96–120px）在行動版太貴，改用不吃高度的角落暈影。
+          兩者並存、依斷點切換。缺點是識別感較弱、立繪常被裁到臉，
+          但行動版的垂直預算最緊，這個取捨是對的。
+        </div>
+        <div class="task-file">src/components/timeline/VersionExpandedPanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label cyan">Phase E</div>
+  <div class="section-title">首頁「本週摘要」條</div>
+  <div class="section-desc">
+    三分頁之後「現在有什麼」的一站式感會變弱，用一條摘要補回來。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 純衍生資料的摘要條</div>
+      <div class="task-group-meta">src/components/home/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">「● 進行中 4 ｜ ⚠ 3 天內結束 2 ｜ ▶ 即將 1」並連進 timeline</div>
+        <div class="task-desc">
+          <strong>完全不需要新資料。</strong><code>activityStatus.ts</code> 已能從
+          <code>startDate + weeks</code> 導出進行中／即將開始／剩幾天。
+          <br>
+          設計原則（承自 PLAN-048）：<strong>凡是能算的，就不要問維護者</strong> ——
+          零維護成本、上線當天 100% 覆蓋率。
+        </div>
+        <div class="task-file">src/components/home/WeekSummaryBar.tsx（新增）· timeline/activityStatus.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- 驗收標準 -->
+<section class="section">
+  <div class="section-label cyan">Acceptance</div>
+  <div class="section-title">驗收標準（可量測，避免「感覺變好了」）</div>
+
+  <table class="phase-table">
+    <tr><th>指標</th><th>改版前（2026-08-19 實測）</th><th>目標</th><th>對應階段</th></tr>
+    <tr><td>抵達 Timeline 的互動步數</td><td class="num">4 步</td><td class="num">1 步</td><td>A + C</td></tr>
+    <tr><td>1920 下卡片流可見張數</td><td class="num">0 張</td><td class="num">≥ 4 張</td><td>C</td></tr>
+    <tr><td>甘特＋卡片可用高（預設態）</td><td class="num">247px</td><td class="num">≥ 600px</td><td>B + C</td></tr>
+    <tr><td>三個檢視的 pageview 比例</td><td>未知（全記成 <code>/</code>）</td><td>可分辨</td><td>A</td></tr>
+    <tr><td>行動裝置佔比</td><td>未知</td><td>可分辨並據以排序</td><td>A</td></tr>
+    <tr><td>版本可否分享連結</td><td>否</td><td>是（<code>/versions/timeline/:version</code>）</td><td>A + C</td></tr>
+    <tr><td>透明度魔數數量</td><td class="num">3 個</td><td class="num">0 個</td><td>C</td></tr>
+  </table>
+
+  <div class="note-warn">
+    <strong>每個 Phase 完工時請實測而非目視。</strong>
+    P0 期間的經驗是紙上估算連續錯了三次（root font-size、header border、捲軸寬度）。
+    建議沿用當時的做法：<code>npm run dev</code> 後用瀏覽器
+    <code>getBoundingClientRect()</code> / <code>clientHeight</code> / <code>scrollHeight</code>
+    直接量，並在 1024 / 1366 / 1920 三個寬度各驗一次。
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-050 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

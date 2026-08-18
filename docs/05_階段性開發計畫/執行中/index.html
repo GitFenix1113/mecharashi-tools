@@ -31,6 +31,24 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-050 · 首頁資訊架構重構</h3>
+      <p>源自使用者反饋的兩個問題，追下去發現是<b>同一個根因的兩種症狀</b>：首頁把「離散的檢視選擇」綁在「連續的環境輸入」上，又把三種長寬比需求完全不同的內容塞進同一個 48vw 的框裡。<br><b>問題一不是「動畫該用什麼手勢」，是不該有這道門。</b>Hero 裝的是站務履歷與團隊介紹（一次性內容），門後是每週回訪的版本資料——頻率決定版面，現況剛好相反。因此不做「隱晦的左右切換鈕」（隱晦＋必經＝發現性失敗），而是<b>刪掉 scroll-snap 兩頁架構</b>（PLAN-015 的產物，也正是誤觸的結構成因），Hero 降級為首訪展開／回訪收起的頂帶。站長明確表示「動畫不是必要的」「藏進 about 也可接受，功能優先」，故原判為不建議的「Hero 移至 /about」改列<b>可選升級路徑</b>而非否決。<br><b>問題二不是空間不夠，是空間花錯地方。</b>實測：甘特＋卡片容器可用高僅 <b>247px</b> 而甘特區塊 532px，<code>scrollHeight</code> 1217px——只有兩成內容在畫面內，<b>卡片流可見高度實測為 0px</b>。更關鍵的是按下「展開版面」把寬度加倍（922→1843px、每週欄 123→277px），垂直預算<b>一格沒變、多露出 0 張卡片</b>：預算被砸在只有 6 個刻度的軸上，而長條的資訊上限是一行截斷文字。<b>寬度不是瓶頸，列數才是。</b>根因是甘特（寬而扁）與卡片流（窄而長）長寬比正交卻共用同一條捲動軸，解法是主從分割成兩條獨立軸。<br>三個檢視改 <b>routed tabs</b>（<code>/versions/:view</code>）＋導覽列新增「版本情報 ▾」：一次拿到深連結、上一頁與<b>分流統計</b>——現況三個 tab 全記成 <code>/</code>，「Gray Ops 有沒有人看」「行動端佔比多少」目前<b>無從得知</b>，而後者直接決定 Phase C/D 誰先做。故 Phase A 刻意單獨上主站跑 1–2 週收數據再定序。<br>P0 止血（移除 <code>scroll-snap-stop</code>、補 <code>overscroll-contain</code>、寬度下限 780px）已於 2026-08-19 完成推送，不在本計畫範圍。<b>整個計畫零資料模型變更、不需 bump 版本。</b></p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-050_首頁資訊架構重構/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-050_首頁資訊架構重構/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-049 · 問題回報與功能建議</h3>
+      <p>站上資料由爬蟲蒐集後人工修正，錯誤無法避免，但目前<b>沒有任何回饋迴路</b>——玩家看到錯的數值，除了私訊維護者以外無處可去。2026-08-18 補上的 GitHub issue 模板服務的是「會用 GitHub 的人」，一般玩家不會為了回報一個數值去註冊帳號，預期回報率趨近於零。本計畫做站內表單，涵蓋<b>資料錯誤 / 功能異常 / 功能建議</b>三類，共用一個 <code>feedback</code> 集合與一套狀態機。<br>拍板<b>一律需登入</b>（訪客看得到入口但不能提交），這個決定的連鎖效應比表面上大——<b>它讓本計畫不需要動用 Cloudflare Worker</b>。與 PLAN-046 使用統計正好是對照組：統計要涵蓋訪客 ⇒ 不能要求登入 ⇒ client 直寫等於 <code>create: if true</code>（任何人可迴圈寫爆額度）⇒ <b>必須</b> Worker 代寫；回報要求登入 ⇒ <code>create: if isAuthenticated() &amp;&amp; uid 綁定</code> 有身分可追溯 ⇒ <b>client 直寫 + 規則守門即可，省下整個端點</b>。寫入範式直接沿用 <code>systemLog</code>（PLAN-045）已驗證的 append-only + uid 綁定。<br>回報對象<b>不另發明欄位</b>，直接用既有的 <code>EntityRef</code>——其 <code>RefType</code> 已涵蓋 pilot / mech / weapon / module / backpack / component 等所有可能被回報的實體，於是詳情頁按下回報可<b>自動預填對象</b>（使用者只需填「哪裡錯、正確值是什麼」），後台則用現成 <code>RefChip</code> 渲染成可點連結。<code>feedback</code> <b>刻意不進 GameDataContext</b>：三層快取是為版本化的靜態遊戲資料設計的，套在隨時被管理員更新的動態資料上只會讓使用者看到過期狀態。<br>限流正面回應 PLAN-045 決策四的顧慮：第一版只做登入門檻 + 規則層欄位長度驗證 + UI 節流 + 事後封鎖，<b>不做</b>規則層時間窗 rate limit（第二階段設計已備妥，屆時走獨立 <code>feedbackThrottle</code> 集合並強制 <code>lastAt == request.time</code> 使其無法偽造）。<b>⚠ 封鎖標記不能放 <code>users/{uid}/profile</code></b>——現行規則只擋 <code>role</code>，其餘欄位本人可自由修改，被封鎖者能自己解封，須一併加入禁改清單，這是本計畫唯一動到既有規則之處。最大風險不是技術而是維運：<b>回報堆積無人處理</b>，故「讓回報有下文」的 <code>adminReply</code> 是必做而非加分項。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-049_問題回報與功能建議/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-049_問題回報與功能建議/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card orange">
       <div class="card-icon">◆</div>
       <h3>PLAN-048 · 時間線甘特圖改版</h3>

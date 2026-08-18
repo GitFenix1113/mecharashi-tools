@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-049 問題回報與功能建議 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-049 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-049</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> · 問題回報與功能建議</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-18</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label green">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">17</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">17</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-green);">0 / 17</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    玩家在任何一頁發現資料錯誤或想許願，都能就地按下回報並自動帶上定位資訊；維護者在後台一處看完所有待辦、流轉狀態並回覆——
+    讓「站上的錯誤」第一次有一條會回到維護者手上的路。
+  </div>
+
+  <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);">
+    <strong style="color:var(--accent-yellow);">建議實作順序：</strong>
+    A → C → B → D。<strong>先做後台再做前台</strong>——後台一旦能用，就可以自己手動塞幾筆假回報驗證整條流程，
+    避免前台做完了卻發現後台的資料形狀不對而回頭改型別。Phase E 為選配，視實際回報量再決定。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">資料模型與安全規則</div>
+  <div class="section-desc">先把型別與規則釘死，後續前後台都建立在這層上。這個 Phase 的產出無使用者可見變化。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 型別定義</div>
+      <div class="task-group-meta">src/types/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 FeedbackItem 型別</div>
+        <div class="task-desc">
+          依計畫書「資料模型草案」建立。<code>target</code> 用既有的 <code>EntityRef</code>（決策四），不另發明欄位。
+          建檔後<strong>記得併入 <code>types/index.ts</code> barrel</strong>。
+        </div>
+        <div class="task-file">src/types/feedback.ts · src/types/index.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 FeedbackType / FeedbackStatus enum</div>
+        <div class="task-desc">
+          <code>DATA_ERROR | BUG | FEATURE</code> 與 <code>NEW | IN_PROGRESS | RESOLVED | REJECTED | DUPLICATE</code>。
+          ⚠ <code>enums.ts</code> <strong>不在 barrel 內</strong>，沿用獨立 import 路徑。
+        </div>
+        <div class="task-file">src/types/enums.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; Firestore 安全規則</div>
+      <div class="task-group-meta">firestore.rules</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 feedback 集合規則</div>
+        <div class="task-desc">
+          依計畫書草案：read 為 <code>isAdmin() || 本人</code>；create 為登入 + uid 綁定 + status 必為 NEW + 長度上限；
+          update/delete 僅 <code>isAdmin()</code>。比照既有集合的註解密度，把「為何是 client 直寫而非 Worker 代寫」寫在規則旁（決策二）。
+        </div>
+        <div class="task-file">firestore.rules</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">profile 禁改清單加入 feedbackBlocked</div>
+        <div class="task-desc">
+          ⚠ <strong>本計畫唯一動到既有規則的地方</strong>。現行 <code>allow update</code> 只擋 <code>role</code>，
+          使用者可自由改自己 profile 的其他欄位——封鎖標記若不一併擋，被封鎖者可自己解封。
+          改為 <code>hasAny(['role', 'feedbackBlocked'])</code>（決策六附記）。
+        </div>
+        <div class="task-file">firestore.rules</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 規則測試</div>
+      <div class="task-group-meta">tests/emulator/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補 feedback 規則的 emulator 測試</div>
+        <div class="task-desc">
+          至少涵蓋：訪客不能建立、登入者不能偽造他人 uid、登入者不能自訂 status 繞過 NEW、
+          超長 body 被拒、一般使用者讀不到他人回報、非管理員不能改狀態、<strong>被封鎖者不能自行解除封鎖</strong>。
+          用 <code>npm run emu:test-rules</code> 驗證。
+        </div>
+        <div class="task-file">tests/emulator/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; API 層</div>
+      <div class="task-group-meta">src/lib/api/feedback.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">建立 feedback API 模組並掛上 barrel</div>
+        <div class="task-desc">
+          <code>createFeedback</code> / <code>getFeedbackPage</code>（後台，server-side <code>where</code> 篩狀態）/
+          <code>getMyFeedback</code> / <code>updateFeedbackStatus</code>。共用 <code>firestoreCore</code> 的 <code>stripUndefined</code>。<br>
+          ⚠ <strong>不要</strong>加入 <code>GameDataContext</code> 的 <code>CollectionKey</code>——回報是動態資料，不套版本 gate 快取（決策五）。
+        </div>
+        <div class="task-file">src/lib/api/feedback.ts · src/lib/firestoreApi.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label green">Phase C</div>
+  <div class="section-title">後台管理頁（建議先於 Phase B 實作）</div>
+  <div class="section-desc">先有後台才能手動塞測試資料驗證流程，避免前台做完才發現資料形狀要改。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 回報列表頁</div>
+      <div class="task-group-meta">src/pages/admin/AdminFeedbackPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">列表 + 篩選 + 分頁</div>
+        <div class="task-desc">
+          依 <code>status</code> / <code>type</code> 篩選，預設只看 <code>NEW</code>。
+          <code>target</code> 欄位直接用現成的 <code>RefChip</code> 渲染成可點擊的實體連結（決策四的回收）。
+          分頁策略比照現行後台慣例（量小可先整包載入 + 前端片段搜尋）。
+        </div>
+        <div class="task-file">src/pages/admin/AdminFeedbackPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">狀態流轉與回覆編輯</div>
+        <div class="task-desc">
+          切換 <code>status</code>、填寫 <code>adminReply</code>（對回報者可見）與 <code>adminNote</code>（內部）。
+          <code>DUPLICATE</code> 時可指定 <code>duplicateOf</code>。每次更新寫入 <code>updatedAt</code>。
+        </div>
+        <div class="task-file">src/pages/admin/AdminFeedbackPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 路由與入口</div>
+      <div class="task-group-meta">src/App.tsx · src/pages/user/AdminPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">掛上 /profile/admin/feedback 路由</div>
+        <div class="task-desc">
+          比照既有後台頁：<code>lazy()</code> import + <code>&lt;AdminRoute&gt;</code> 包裹 + <code>&lt;Suspense fallback={null}&gt;</code>。
+        </div>
+        <div class="task-file">src/App.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">後台入口未處理數紅點</div>
+        <div class="task-desc">
+          管理後台首頁的卡片顯示 <code>status == 'NEW'</code> 的筆數。用 <code>getCountFromServer</code> 之類的聚合查詢，
+          避免整包拉回來只為了數數（決策八）。
+        </div>
+        <div class="task-file">src/pages/user/AdminPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">前台回報入口與表單</div>
+  <div class="section-desc">使用者實際會碰到的部分。入口的顯眼程度直接決定這個計畫的成敗（見計畫書風險表第一列）。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 回報表單</div>
+      <div class="task-group-meta">src/components/feedback/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">FeedbackModal 元件</div>
+        <div class="task-desc">
+          三種 <code>type</code> 共用一個 Modal，依選擇的類型顯示不同欄位：<br>
+          · <strong>資料錯誤</strong>：目前顯示的值 / 正確的值 / 遊戲版本<br>
+          · <strong>功能異常</strong>：重現步驟（自動帶 <code>userAgent</code>、<code>pageUrl</code>）<br>
+          · <strong>功能建議</strong>：只有標題 + 內容<br>
+          送出後鎖定按鈕防手滑連送（決策六第 3 道防線）。底部加一行「你是開發者？也可以到 GitHub 開 issue」。<br>
+          ⚠ 元件放子資料夾，<code>src/components/</code> 扁平層不放檔案。
+        </div>
+        <div class="task-file">src/components/feedback/FeedbackModal.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">未登入時的引導</div>
+        <div class="task-desc">
+          訪客看得到入口，按下後顯示「登入後即可回報」與登入按鈕，<strong>而不是把入口藏起來</strong>——
+          藏起來的話訪客不會知道有這個管道，也就不會為此登入（決策一）。
+        </div>
+        <div class="task-file">src/components/feedback/FeedbackModal.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 兩個入口</div>
+      <div class="task-group-meta">詳情頁 · 全站</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">實體詳情頁的「回報這筆資料」</div>
+        <div class="task-desc">
+          機師 / 機甲 / 武器 / 背包 / 模組 / 元件詳情頁加入口，<strong>自動預填 <code>target</code>（EntityRef）與 <code>pageUrl</code></strong>，
+          並預設 <code>type = DATA_ERROR</code>。這是回報品質的關鍵：使用者只需填「哪裡錯、正確值是什麼」。
+        </div>
+        <div class="task-file">src/pages/*/  各詳情頁</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">全站固定入口</div>
+        <div class="task-desc">
+          不在實體頁時也能回報（功能建議、非資料類問題）。位置待定：頁尾連結或右下角浮動按鈕。
+          浮動按鈕較顯眼但會遮擋內容，<strong>手機版尤其要注意不要蓋到既有的 BottomSheet</strong>。
+        </div>
+        <div class="task-file">src/components/layout/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label green">Phase D</div>
+  <div class="section-title">使用者端「我的回報」</div>
+  <div class="section-desc">讓回報有下文。這是讓人願意回報第二次的關鍵（決策七）。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 個人頁回報列表</div>
+      <div class="task-group-meta">src/pages/user/ProfilePage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">列出自己送出的回報與狀態</div>
+        <div class="task-desc">
+          <code>where uid == 本人</code>，顯示標題、類型、狀態徽章、送出時間。
+          規則層已保證讀不到他人的回報，前端不需額外過濾。
+        </div>
+        <div class="task-file">src/pages/user/ProfilePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">顯示管理員回覆</div>
+        <div class="task-desc">
+          展開後顯示 <code>adminReply</code>。<strong><code>adminNote</code> 絕對不能出現在這裡</strong>——
+          那是內部備註。實作時注意查詢回傳的物件別整包丟給前端渲染。
+        </div>
+        <div class="task-file">src/pages/user/ProfilePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label green">Phase E</div>
+  <div class="section-title">Discord 通知（選配）</div>
+  <div class="section-desc">視實際回報量再決定要不要做。紅點若已足夠，這個 Phase 可以永遠不做。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; webhook 中轉</div>
+      <div class="task-group-meta">workers/src/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Worker 端點轉發新回報到 Discord</div>
+        <div class="task-desc">
+          webhook URL 放 Worker secret（不能進前端 bundle）。
+          ⚠ 這會把決策二省下的 Worker 端點加回來，且該端點需自行防濫用——<strong>做之前先確認紅點真的不夠用</strong>。
+        </div>
+        <div class="task-file">workers/src/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label green">Phase F</div>
+  <div class="section-title">文件同步</div>
+  <div class="section-desc">依 CLAUDE.md 規則 2：型別與 Firestore 結構變動須同步 docs。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; docs 更新</div>
+      <div class="task-group-meta">docs/02_技術文件/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">資料模型頁新增 FeedbackItem</div>
+        <div class="task-desc">保持現有 HTML 結構，只補資料內容。</div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">資料庫設計文件新增 feedback 集合頁</div>
+        <div class="task-desc">
+          比照 <code>systemLog</code> / <code>analyticsDaily</code> 的既有頁面格式，
+          記錄欄位、規則設計理由與保留期限決定。<code>enums.html</code> 一併補兩個新 enum。
+        </div>
+        <div class="task-file">docs/02_技術文件/04_Firebase/資料庫設計文件/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-049 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

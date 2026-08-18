@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-049 問題回報與功能建議 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-049 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-049</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    問題回報與功能建議<span style="-webkit-text-fill-color:var(--text-secondary);"> · Feedback · 站內表單 · 登入制 · 後台分流</span>
+  </h1>
+  <p class="hero-sub">讓登入使用者直接在站內回報資料錯誤、功能異常與功能建議；回報自動帶上實體引用定位，後台統一分流處理並回覆狀態。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label green">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value green">PLAN-049</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-18</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">types · firestore.rules · feedback 集合 · 前台回報元件 · 後台管理頁</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-019（EntityRef）· PLAN-029（規則收緊）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>一句話：</strong>本站的資料由爬蟲蒐集後人工整理，錯誤無法避免，但目前<strong>沒有任何回饋迴路</strong>——玩家看到錯的數值，除了私訊維護者以外無處可去。本計畫補上這條迴路，並把「功能建議」一併納入同一套流程。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>一、資料錯誤只能靠維護者自己發現</strong><br>
+    遊戲資料來自爬蟲 + 人工修正（如 <code>PilotTalent.manual</code> 對抗官方 API 的滿晶片污染值），改版後必然出現落差。
+    但目前發現落差的唯一途徑是維護者自己比對，<strong>看站的玩家比維護者多得多，卻沒有管道把發現的錯誤送回來</strong>。
+  </div>
+
+  <div class="problem-block">
+    <strong>二、GitHub issue 對玩家門檻過高</strong><br>
+    2026-08-18 已補上 <code>.github/ISSUE_TEMPLATE/</code> 的資料錯誤 / bug 回報模板，但那服務的是「會用 GitHub 的人」。
+    一般玩家沒有 GitHub 帳號，也不會為了回報一個數值去註冊，實際回報率預期趨近於零。
+  </div>
+
+  <div class="problem-block">
+    <strong>三、功能建議散落在聊天訊息裡</strong><br>
+    目前許願都走 Discord 私訊或頻道閒聊，<strong>沒有狀態、沒有去重、會被洗掉</strong>。
+    幾週後回頭想找「當初有人提過的那個功能」往往已經翻不到。
+  </div>
+
+  <div class="problem-block">
+    <strong>四、回報缺少定位資訊，處理成本高</strong><br>
+    即使收到回報，「艾達的攻擊力好像怪怪的」這種描述仍需來回確認是哪一頁、哪個欄位、什麼條件下的值。
+    回報當下的頁面脈絡若沒被一起帶走，處理成本就轉嫁給維護者。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：一律需登入才能提交，訪客不能留下資訊</strong><br>
+    使用者拍板。訪客看得到回報入口，但按下後顯示「登入後即可回報」的引導（本站已有 Google 一鍵登入）。<br><br>
+    這個決定的連鎖效應比表面上大——<strong>它讓本計畫不需要動用 Cloudflare Worker</strong>，見決策二。
+    其他附帶好處：回報者可追蹤自己回報的處理狀態、濫用者可被封鎖、不需處理匿名資料的去識別化問題。<br>
+    代價是門檻提高、回報量會低於匿名制；但以本站規模而言，<strong>回報品質比回報數量重要</strong>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：client 直寫 Firestore + 規則守門，<u>不</u>建 Worker 端點</strong><br>
+    這裡要和 PLAN-046（使用統計）明確區分，兩者看似都是「使用者產生的寫入」，架構卻相反：
+
+    <table class="impact-table">
+      <tr><th>計畫</th><th>是否要涵蓋訪客</th><th>若 client 直寫，規則會變成</th><th>結論</th></tr>
+      <tr>
+        <td>PLAN-046 使用統計</td>
+        <td><strong>要</strong>（訪客也要統計）</td>
+        <td><code>create: if true</code> — 任何人可迴圈寫爆額度</td>
+        <td>必須走 Worker 代寫，<code>write: if false</code></td>
+      </tr>
+      <tr>
+        <td><strong>PLAN-049 回報</strong></td>
+        <td><strong>不要</strong>（決策一）</td>
+        <td><code>create: if isAuthenticated() &amp;&amp; uid 綁定</code> — 有身分可追溯</td>
+        <td><strong>client 直寫即可，省下整個 Worker 端點</strong></td>
+      </tr>
+    </table>
+
+    寫入模式直接沿用 <code>systemLog</code>（PLAN-045）已驗證的 append-only + uid 綁定寫法，這是站內現成的範式。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：三種回報類型共用一個 <code>feedback</code> 集合</strong><br>
+    <code>type: 'DATA_ERROR' | 'BUG' | 'FEATURE'</code>，不拆三個集合。<br>
+    理由：後台一個列表就能看完全部待處理事項、狀態機三者共用、量級是每日個位數。
+    各類型的專屬資訊用<strong>選填欄位</strong>承載（如資料錯誤才有 <code>currentValue</code> / <code>expectedValue</code>），
+    而非拆成 union 型別——後台表單與列表元件因此可以共用一套。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：用既有的 <code>EntityRef</code> 定位回報對象，不另發明欄位</strong><br>
+    回報對象直接存 <code>types/common.ts</code> 的 <code>EntityRef</code>（<code>refType</code> + <code>refId</code>），
+    其 <code>RefType</code> 已涵蓋 pilot / mech / weapon / module / backpack / component / buff / skill / term / neuralDrive / form / stat，正好是所有可能被回報的對象。<br><br>
+    三個直接好處：<br>
+    · 前台從詳情頁按下回報時<strong>自動預填</strong>對象，使用者只需填「哪裡錯、正確值是什麼」；<br>
+    · 後台列表可直接用現成的 <code>RefChip</code> / <code>EntityRefView</code> 渲染，點擊即跳到該實體；<br>
+    · 未來要做「這筆機師資料有 2 則未處理回報」的關聯查詢，用 <code>refId</code> 就能 <code>where</code> 出來。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：<code>feedback</code> 刻意<u>不</u>進 GameDataContext 快取層</strong><br>
+    三層快取（記憶體 → localStorage → 遠端）是為<strong>版本化的靜態遊戲資料</strong>設計的，靠 <code>meta/gameData</code> 的版本號失效。
+    回報是高頻變動的動態資料，狀態隨時被管理員更新，套用版本 gate 只會讓使用者看到過期狀態。<br>
+    因此 <code>feedback</code> 不加入 <code>CollectionKey</code>，走獨立的 <code>src/lib/api/feedback.ts</code> 直接查詢。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策六：限流——第一版只做規則層欄位驗證，不做 rate limit</strong><br>
+    PLAN-045 決策四曾明確指出「放寬寫入到一般登入使用者會擴大寫入面並帶來限流需求」，這個顧慮在本計畫必須正面回應。<br><br>
+    第一版的防線（由強到弱）：<br>
+    1. <strong>登入門檻</strong>——擋掉所有無帳號的腳本洪水，這是最有效的一道；<br>
+    2. <strong>規則層欄位驗證</strong>——欄位白名單 + 字串長度上限（防塞入大量文字灌爆容量）+ <code>uid</code> 必須等於 <code>request.auth.uid</code>；<br>
+    3. <strong>前端 UI 節流</strong>——送出後鎖定按鈕，防手滑連送；<br>
+    4. <strong>事後封鎖</strong>——管理員可標記濫用帳號停止其寫入。<br><br>
+    <strong>刻意不做</strong>規則層的時間窗 rate limit（需額外 <code>feedbackThrottle/{uid}</code> 集合 + 每次寫入多一次 <code>get()</code> 讀取）。
+    理由：登入制下濫用成本已足夠高、Firestore 免費寫入 20k/日 遠高於預期量級、且真被濫用時可隨時改規則即時生效。
+    <strong>但第二階段的設計要先備妥</strong>（見下方「不在範圍內」），避免臨時應急。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策六附記：封鎖標記不能放在 <code>users/{uid}/profile/main</code></strong><br>
+    現行規則是 <code>allow update: if isOwner(userId) &amp;&amp; !affectedKeys().hasAny(['role'])</code>——
+    <strong>使用者可以自由修改自己 profile 的任何非 <code>role</code> 欄位</strong>。
+    若把 <code>feedbackBlocked</code> 放進 profile，被封鎖者可以自己把它改掉。<br>
+    處理方式：把該欄位一併加入禁改清單 → <code>hasAny(['role', 'feedbackBlocked'])</code>。
+    這是本計畫唯一會動到既有規則的地方，實作時務必連同 emulator 測試一起補。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：狀態機與回覆</strong><br>
+    <code>NEW → IN_PROGRESS → RESOLVED / REJECTED / DUPLICATE</code>。<br>
+    只有管理員能改狀態（<code>allow update: if isAdmin()</code>），回報者不能改自己送出後的內容（append-only 精神，避免「送出後改內容」讓管理員的判斷與紀錄對不上）。<br>
+    管理員可填一段 <code>adminReply</code> 回覆回報者，顯示在回報者的「我的回報」頁——<strong>這是讓人願意持續回報的關鍵</strong>：回報有下文，才會有下一次。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策八：通知先做後台紅點，Discord webhook 列為選配</strong><br>
+    第一版在後台入口顯示未處理回報數（<code>where status == 'NEW'</code> 的 count，量小成本可忽略）。<br>
+    Discord webhook 通知雖然更即時，但 webhook URL 不能進前端 bundle，<strong>需要 Worker 中轉</strong>——那會把決策二省下的 Worker 端點又加回來。
+    因此列為 Phase E 選配，等實際回報量證明「紅點不夠用」再做。
+  </div>
+
+  <div class="info-block">
+    <strong>與 GitHub issue 模板的關係：單向連結，不做系統整合</strong><br>
+    兩條管道並存，服務不同對象：站內表單給玩家（資料錯誤為主）、GitHub issue 給技術使用者（程式 bug、fork 者、安全性回報）。<br>
+    <strong>不把站內回報自動轉成 GitHub issue</strong>，因為兩者的修復路徑不同——資料錯誤修在 Firestore 後台，從頭到尾不碰 repo，
+    放進 GitHub 只會讓資訊與工作流分離，還得兩邊對帳。實作上僅在回報表單底部加一行「你是開發者？也可以到 GitHub 開 issue」。
+  </div>
+</section>
+
+<!-- 資料模型 -->
+<section class="section">
+  <div class="section-label green">Model</div>
+  <div class="section-title">資料模型草案</div>
+
+  <div class="code-block">
+<span class="cm">// src/types/feedback.ts（新檔，需併入 types/index.ts barrel）</span>
+<span class="cm">// enum 依慣例放 src/types/enums.ts（不在 barrel 內，獨立 import 路徑）</span>
+
+<span class="kw">export interface</span> <span class="ty">FeedbackItem</span> {
+  <span class="nm">id</span>: <span class="ty">string</span>
+  <span class="nm">type</span>: <span class="ty">FeedbackType</span>              <span class="cm">// DATA_ERROR | BUG | FEATURE</span>
+  <span class="nm">status</span>: <span class="ty">FeedbackStatus</span>          <span class="cm">// NEW | IN_PROGRESS | RESOLVED | REJECTED | DUPLICATE</span>
+
+  <span class="cm">// ── 回報者（create 時規則強制 uid === request.auth.uid）──</span>
+  <span class="nm">uid</span>: <span class="ty">string</span>
+  <span class="nm">displayName</span>: <span class="ty">string</span>            <span class="cm">// 快照，避免後台為了顯示名字去 join users</span>
+
+  <span class="cm">// ── 內容 ──</span>
+  <span class="nm">title</span>: <span class="ty">string</span>                  <span class="cm">// 上限 80 字（規則層驗證）</span>
+  <span class="nm">body</span>: <span class="ty">string</span>                   <span class="cm">// 上限 2000 字</span>
+
+  <span class="cm">// ── 定位（決策四）──</span>
+  <span class="nm">target</span>?: <span class="ty">EntityRef</span>             <span class="cm">// 從詳情頁回報時自動預填</span>
+  <span class="nm">pageUrl</span>?: <span class="ty">string</span>               <span class="cm">// 回報當下的 route，自動帶入</span>
+
+  <span class="cm">// ── DATA_ERROR 專屬（選填，見決策三）──</span>
+  <span class="nm">currentValue</span>?: <span class="ty">string</span>          <span class="cm">// 站上顯示的（錯的）</span>
+  <span class="nm">expectedValue</span>?: <span class="ty">string</span>         <span class="cm">// 遊戲內實際的（對的）</span>
+  <span class="nm">gameVersion</span>?: <span class="ty">string</span>           <span class="cm">// 回報者確認時的遊戲版本</span>
+
+  <span class="cm">// ── BUG 專屬（選填）──</span>
+  <span class="nm">userAgent</span>?: <span class="ty">string</span>             <span class="cm">// 自動帶入，省去問「你用什麼瀏覽器」</span>
+
+  <span class="cm">// ── 管理端（僅 isAdmin() 可寫）──</span>
+  <span class="nm">adminReply</span>?: <span class="ty">string</span>            <span class="cm">// 回覆給回報者，顯示在「我的回報」</span>
+  <span class="nm">adminNote</span>?: <span class="ty">string</span>             <span class="cm">// 內部備註，不對回報者顯示</span>
+  <span class="nm">duplicateOf</span>?: <span class="ty">string</span>           <span class="cm">// status=DUPLICATE 時指向的 feedbackId</span>
+
+  <span class="nm">createdAt</span>: <span class="ty">Timestamp</span>
+  <span class="nm">updatedAt</span>?: <span class="ty">Timestamp</span>
+  <span class="nm">expireAt</span>?: <span class="ty">Timestamp</span>            <span class="cm">// 見下方保留期限討論</span>
+}
+  </div>
+
+  <div class="warning-block">
+    <strong>保留期限待定：</strong>依「博物館原則」，判準是<strong>刪掉的東西還能不能再生</strong>。
+    已處理的回報屬於<strong>不可再生</strong>的使用者輸入（無法重爬、無法重建），傾向<strong>不設 TTL</strong>；
+    量級估算：單筆約 1–3 KB，一年一千筆也不到 3 MB，容量完全不是瓶頸。
+    <code>expireAt</code> 欄位仍先留著（比照 <code>announcementDrafts</code> 的做法：欄位有值但不掛政策），保留日後改變主意的餘地。
+    <strong>實作時請確認此判斷</strong>。
+  </div>
+
+  <div class="code-block">
+<span class="cm">// firestore.rules 草案</span>
+<span class="fn">match</span> /feedback/{feedbackId} {
+  <span class="cm">// 讀：管理員看全部；一般使用者只看得到自己送的</span>
+  <span class="kw">allow</span> read:   <span class="kw">if</span> <span class="fn">isAdmin</span>() || (<span class="fn">isAuthenticated</span>() &amp;&amp; resource.data.uid == request.auth.uid);
+
+  <span class="cm">// 建：登入即可，但 uid 必須是自己（防偽造嫁禍，同 systemLog）</span>
+  <span class="cm">//     並驗證欄位白名單、長度上限、狀態必須為 NEW</span>
+  <span class="kw">allow</span> create: <span class="kw">if</span> <span class="fn">isAuthenticated</span>()
+                 &amp;&amp; request.resource.data.uid == request.auth.uid
+                 &amp;&amp; request.resource.data.status == <span class="st">'NEW'</span>
+                 &amp;&amp; request.resource.data.title.size() &lt;= 80
+                 &amp;&amp; request.resource.data.body.size() &lt;= 2000
+                 &amp;&amp; !<span class="fn">isFeedbackBlocked</span>();
+
+  <span class="cm">// 改 / 刪：僅管理員（回報者送出後不可修改，append-only 精神）</span>
+  <span class="kw">allow</span> update, delete: <span class="kw">if</span> <span class="fn">isAdmin</span>();
+}
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label green">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>FeedbackItem</code> 型別、<code>FeedbackType</code> / <code>FeedbackStatus</code> enum</li>
+      <li><code>feedback</code> 集合的 Firestore 安全規則 + emulator 規則測試</li>
+      <li><code>users/{uid}/profile</code> 規則調整：<code>feedbackBlocked</code> 加入禁改清單</li>
+      <li>前台回報 Modal（三種類型共用，依 type 顯示不同欄位）</li>
+      <li>兩個入口：實體詳情頁的「回報這筆資料」（自動預填 <code>target</code>）＋ 全站固定入口</li>
+      <li>後台管理頁 <code>/profile/admin/feedback</code>：列表、篩選、狀態流轉、回覆</li>
+      <li>後台入口未處理數紅點</li>
+      <li>使用者端「我的回報」：查看自己送出的回報與管理員回覆</li>
+      <li>docs 同步：資料模型頁 + Firebase 資料庫設計文件新增 <code>feedback</code> 集合頁</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內（本期刻意不做）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>訪客／匿名回報</strong>——決策一已拍板需登入</li>
+      <li><strong>圖片上傳</strong>——Storage 成本尚可，但開放一般使用者上傳等於承接內容審查責任與濫用面。第一版改以文字描述 + 外部圖床連結。<span class="badge-med">日後可再議</span></li>
+      <li><strong>自動同步到 GitHub issue</strong>——理由見決策八上方的 info-block</li>
+      <li><strong>公開的回報看板 / 投票 / 留言串</strong>——那是論壇，會帶來審查與社群經營成本，且未處理的資料錯誤公開展示反而造成混淆</li>
+      <li><strong>規則層時間窗 rate limit</strong>——決策六，第二階段才做。屆時的設計：獨立 <code>feedbackThrottle/{uid}</code> 集合，規則強制 <code>lastAt == request.time</code> 使其無法偽造成過去時間，<code>feedback</code> 的 create 以 <code>get()</code> 檢查間隔（batch 內 <code>get()</code> 讀的是交易前狀態，可行）</li>
+      <li><strong>Discord webhook 通知</strong>——Phase E 選配，需 Worker 中轉</li>
+      <li><strong>Email 通知回報者</strong>——需寄信服務，成本與維護不成比例</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 風險 -->
+<section class="section">
+  <div class="section-label red">Risk</div>
+  <div class="section-title">風險與對策</div>
+
+  <table class="impact-table">
+    <tr><th>風險</th><th>程度</th><th>對策</th></tr>
+    <tr>
+      <td>登入門檻使回報量過低，功能形同虛設</td>
+      <td><span class="badge-med">中</span></td>
+      <td>入口要顯眼且脈絡化（詳情頁就地回報，而非藏在頁尾）；上線後觀察一個月，若量趨近零再檢討是否放寬</td>
+    </tr>
+    <tr>
+      <td>登入使用者惡意灌爆寫入額度</td>
+      <td><span class="badge-low">低</span></td>
+      <td>決策六四道防線；真發生時改規則即時生效，並封鎖該 uid</td>
+    </tr>
+    <tr>
+      <td>回報堆積無人處理，使用者失望後不再回報</td>
+      <td><span class="badge-high">高</span></td>
+      <td>這是<strong>本計畫最大的實際風險，且是維運問題不是技術問題</strong>。對策：後台紅點提醒 + <code>adminReply</code> 讓回報有下文；寧可快速標 <code>REJECTED</code> 並附理由，也不要放著不回</td>
+    </tr>
+    <tr>
+      <td>使用者用回報表單洗版辱罵或張貼不當內容</td>
+      <td><span class="badge-low">低</span></td>
+      <td>登入制可追溯；管理員可刪除並封鎖。內容僅管理員與本人可見，不公開展示，波及面小</td>
+    </tr>
+  </table>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label green">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-049 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-046_網站使用統計/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-046 網站使用統計</h4>
+      <p>Worker 代寫架構的對照組（決策二）</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-045_登出診斷與系統日誌/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-045 登出診斷與系統日誌</h4>
+      <p>append-only + uid 綁定的寫入範式來源</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-049 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
