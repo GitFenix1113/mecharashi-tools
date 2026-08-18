@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-17
+## [Unreleased] - 2026-08-18
 
 ### ⚠ 重大變更
 
@@ -132,6 +132,7 @@
 
 ### 🐛 修復
 
+- **layout**: 首頁捲動誤觸彈回、面板寬度斷點 (`1b8f53f`)
 - 自選池名單接上前台（角色自選／機甲自選兩列） (`e0f512d`)
 - 甘特週軸不再被活動撐長；半版本長度可設定 (`ecac3b0`)
 - 活動的機師與機甲同時顯示；合併收據回存人工編修版本 (`e7bd08d`)
