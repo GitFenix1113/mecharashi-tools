@@ -269,7 +269,14 @@ export interface PatchVersion {
   borderShop?: string
   arenaShop?: string
   grayOpsUpdates?: GrayOpsUpdate[]
-  notes?: string
+  /**
+   * 版本備註。可以是多條（每條在前台各自成一個 badge）。
+   *
+   * 型別留著 `string` 是為了相容 Firestore 既有文件——早期一律存單一字串，
+   * 多條靠字串內的換行硬擠。讀取端一律走 `normalizeNotes()` 攤平成 string[]，
+   * 後台存檔則一律寫 string[]，舊資料在下次編輯儲存時自然完成遷移。
+   */
+  notes?: string | string[]
   isTwCurrent?: boolean
   iconUrls?: VersionIconUrls
   entityIds?: VersionEntityIds

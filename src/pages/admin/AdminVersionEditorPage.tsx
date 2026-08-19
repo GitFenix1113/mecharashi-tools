@@ -6,6 +6,7 @@ import { uploadImage } from '../../lib/imageUpload'
 import { bumpDataVersion } from '../../lib/firestoreApi'
 import type { PatchVersion, PatchHalf, VersionIconUrls, VersionEntityIds } from '../../data/patchVersions/types'
 import { formatEntityIdValue, parseEntityIdValue } from '../../data/patchVersions/entityRef'
+import { normalizeNotes } from '../../data/patchVersions/notes'
 import type { Pilot, Mech, Weapon, Backpack, RefType } from '../../types'
 import { resolveIconSrc, mechIconUrl } from '../../utils/assets'
 import { invalidatePatchVersionsCache } from '../../hooks/usePatchVersions'
@@ -105,28 +106,45 @@ function stripUndefined<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj))
 }
 
-// ── 動態字串列表（用於 crisisShop） ───────────────────────────────────────────
+// ── 動態字串列表（用於 crisisShop / notes） ───────────────────────────────────
+//
+// multiline：備註一條動輒是「【巔峰擂台第15賽季開啟 賽季：… 排位：…】」這種長句，
+// 單行 input 只看得到開頭一小段；改用 textarea 讓長條目整條可讀。
 
 function StringListEditor({
   values,
   onChange,
   placeholder,
+  multiline = false,
 }: {
   values: string[]
   onChange: (v: string[]) => void
   placeholder?: string
+  multiline?: boolean
 }) {
+  const itemCls =
+    'flex-1 bg-bg-card border border-border rounded px-3 py-1.5 text-sm text-text-primary placeholder-text-dim outline-none focus:border-accent-purple/50 min-w-0'
   return (
     <div className="space-y-1.5">
       {values.map((v, idx) => (
         <div key={idx} className="flex gap-2">
-          <input
-            type="text"
-            value={v}
-            onChange={e => onChange(values.map((x, i) => (i === idx ? e.target.value : x)))}
-            placeholder={placeholder}
-            className="flex-1 bg-bg-card border border-border rounded px-3 py-1.5 text-sm text-text-primary placeholder-text-dim outline-none focus:border-accent-purple/50 min-w-0"
-          />
+          {multiline ? (
+            <textarea
+              value={v}
+              onChange={e => onChange(values.map((x, i) => (i === idx ? e.target.value : x)))}
+              placeholder={placeholder}
+              rows={2}
+              className={`${itemCls} resize-y`}
+            />
+          ) : (
+            <input
+              type="text"
+              value={v}
+              onChange={e => onChange(values.map((x, i) => (i === idx ? e.target.value : x)))}
+              placeholder={placeholder}
+              className={itemCls}
+            />
+          )}
           <button
             type="button"
             onClick={() => onChange(values.filter((_, i) => i !== idx))}
@@ -192,7 +210,11 @@ export default function AdminVersionEditorPage() {
     getDoc(doc(db, 'patchVersions', `v${versionId}`))
       .then(snap => {
         if (snap.exists()) {
-          setFormData(snap.data() as PatchVersion)
+          // 舊文件的 notes 是單一字串（多條靠換行擠在一起），載入時攤成陣列，
+          // 後續編輯與存檔就一律走多條格式
+          const data = snap.data() as PatchVersion
+          const notes = normalizeNotes(data.notes)
+          setFormData({ ...data, notes: notes.length ? notes : undefined })
         } else {
           setNotFound(true)
         }
@@ -373,7 +395,9 @@ export default function AdminVersionEditorPage() {
     setSaveStatus('saving')
     setSaveMsg('儲存中...')
     try {
-      const clean = stripUndefined(formData)
+      // 「+ 新增」會先塞一列空字串，沒填完就存檔不該把空條目寫進 Firestore
+      const notes = normalizeNotes(formData.notes)
+      const clean = stripUndefined({ ...formData, notes: notes.length ? notes : undefined })
       await setDoc(doc(db, 'patchVersions', `v${formData.version}`), clean)
       // Worker 的邊緣快取以「集合版本號」當 cache key（workers/src/index.ts），不 bump 就換不掉
       // key，前台會一路吃到 max-age=86400 的舊 JSON——banner/iconUrls 改了最長 24 小時才可見，
@@ -443,6 +467,9 @@ export default function AdminVersionEditorPage() {
   }
 
   const crisisShop = formData.crisisShop ?? []
+  // 編輯中的空白列要保留（剛按「+ 新增」還沒填），所以已是陣列就照用，
+  // 只有尚未攤平的舊字串才走 normalize
+  const notes = Array.isArray(formData.notes) ? formData.notes : normalizeNotes(formData.notes)
 
   const TABS: { key: Tab; label: string }[] = [
     { key: 'core',  label: '核心資訊' },
@@ -613,13 +640,12 @@ export default function AdminVersionEditorPage() {
               />
             </div>
             <div>
-              <FieldLabel>備註（notes）</FieldLabel>
-              <textarea
-                value={formData.notes ?? ''}
-                onChange={e => updateCore({ notes: e.target.value || undefined })}
-                placeholder="（選填）"
-                rows={3}
-                className={`${INPUT_CLS} resize-none`}
+              <FieldLabel>備註（notes）— 一列一條，前台各自成一個標籤</FieldLabel>
+              <StringListEditor
+                values={notes}
+                onChange={v => updateCore({ notes: v.length ? v : undefined })}
+                placeholder="一條備註（如：【倉庫物品儲存上限提升】）"
+                multiline
               />
             </div>
           </div>

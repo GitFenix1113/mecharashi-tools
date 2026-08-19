@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import type { PatchVersion, PatchHalf, VisibleActivity } from '../../data/patchVersions/types'
 import { activitiesOfHalf } from '../../data/patchVersions/legacyActivities'
+import { normalizeNotes } from '../../data/patchVersions/notes'
 import PatchInfoRow from './PatchInfoRow'
 import ActivityBar from './ActivityBar'
 import ActivityCardFlow, { type KeyedActivity } from './ActivityCardFlow'
@@ -325,7 +326,9 @@ function VersionExtras({ version }: { version: PatchVersion }) {
   if (version.crisisShop?.length) chips.push({ icon: '🏪', label: '危境重構', items: version.crisisShop, cls: 'text-accent-purple' })
   if (version.memoryStorm) chips.push({ icon: '🌀', label: '記憶風暴', items: [version.memoryStorm], cls: 'text-accent-cyan' })
 
-  if (chips.length === 0 && !version.notes) return null
+  const notes = normalizeNotes(version.notes)
+
+  if (chips.length === 0 && notes.length === 0) return null
 
   return (
     <div className="mt-1.5 shrink-0 space-y-1">
@@ -340,9 +343,9 @@ function VersionExtras({ version }: { version: PatchVersion }) {
           ))}
         </div>
       )}
-      {version.notes && (
+      {notes.length > 0 && (
         <div className={`rounded-lg border border-border ${SURFACE} px-3 py-1`}>
-          <PatchInfoRow icon="📝" label="備註" items={[version.notes]} color="blue" size="sm" />
+          <PatchInfoRow icon="📝" label="備註" items={notes} color="blue" size="sm" />
         </div>
       )}
     </div>

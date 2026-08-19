@@ -1,5 +1,6 @@
 export type { ArmamentRaid, BattlePass, PatchHalf, GrayOpsUpdate, GrayOpsCompany, PatchVersion, VersionIconUrls, VersionEntityIds, TimedActivity, ActivityType } from './types'
 export { parseEntityIdValue, formatEntityIdValue } from './entityRef'
+export { normalizeNotes } from './notes'
 export { GRAY_OPS_BASE } from './base'
 
 import type { PatchVersion } from './types'

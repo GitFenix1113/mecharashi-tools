@@ -179,7 +179,7 @@
   borderShop?: <span class="ty">string</span>         <span class="cm">// 邊境商店更新（如 "雷克斯(6/15)"）</span>
   arenaShop?: <span class="ty">string</span>          <span class="cm">// 鬥技場更新（如 "銀閃(6/18)"）</span>
   grayOpsUpdates?: <span class="ty">GrayOpsUpdate</span>[]  <span class="cm">// 灰燼行動機甲列表更新</span>
-  notes?: <span class="ty">string</span>              <span class="cm">// 版本備註</span>
+  notes?: <span class="ty">string</span> | <span class="ty">string</span>[]   <span class="cm">// 版本備註（多條；舊資料為單一字串，讀取端一律經 normalizeNotes() 攤平）</span>
   isTwCurrent?: <span class="ty">boolean</span>       <span class="cm">// 此版本是否為台服當前版本（首頁標記用）</span>
   iconUrls?: <span class="ty">VersionIconUrls</span>   <span class="cm">// 版本內容名稱 → 圖示 URL 對照（pilots/mechs/weapons/backpacks）</span>
   entityIds?: <span class="ty">VersionEntityIds</span> <span class="cm">// 版本內容名稱 → Firestore 文件 ID 對照（首頁圖示接引用浮窗用）</span>
