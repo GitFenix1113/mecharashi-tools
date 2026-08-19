@@ -278,6 +278,7 @@
 
 ### 🔧 維護
 
+- **assets**: 移除與 portrait 重複的機甲扁平立繪 (`5510af9`)
 - **assets**: 重新調整星夜女神機甲立繪尺寸 (`75868cb`)
 - **assets**: 新增星夜女神機甲部件圖與斷湮武器圖示，並重新產生圖片 manifest (`5e69baa`)
 - **data**: 重新產生圖片 manifest（補上 Icon_weapon_影虎嘯） (`f9d17da`)
