@@ -49,7 +49,7 @@ export function ModuleAdopters({
           >
             {a.mech ? (
               <FallbackImage
-                candidates={imageCandidates(a.mech.portrait, `images/mechs/${a.mech.name}.webp`)}
+                candidates={imageCandidates(a.mech.portrait)}
                 alt={a.name}
                 className="w-9 h-9 rounded-lg object-cover bg-bg-dark border border-border hover:border-accent-cyan transition-colors"
                 fallback={chip}

@@ -214,7 +214,7 @@ export default function MechDetailPage() {
 
   const portrait = (
     <FallbackImage
-      candidates={imageCandidates(mech.portrait, `images/mechs/${mech.name}.webp`)}
+      candidates={imageCandidates(mech.portrait)}
       alt={mech.name}
       className="max-h-full w-full object-contain"
       fallback={<span className="text-xs text-text-dim">尚無立繪</span>}
