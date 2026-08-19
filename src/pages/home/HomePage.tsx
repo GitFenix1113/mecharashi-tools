@@ -1,100 +1,83 @@
-import { useState } from 'react'
-import { usePatchVersions } from '../../hooks/usePatchVersions'
-import HomeTabPanel from '../../components/home/HomeTabPanel'
-import SiteTeamSection from '../../components/home/SiteTeamSection'
+import { Link } from 'react-router-dom'
 import SiteChangelog from '../../components/home/SiteChangelog'
+import SiteTeamSection from '../../components/home/SiteTeamSection'
+import NavIcon from '../../components/icons/NavIcon'
+import { VERSION_VIEWS } from '../../components/versions/VersionViewTabs'
 
+/**
+ * 首頁（PLAN-050 Phase B ＋ 2026-08-19 站長調整）。
+ *
+ * 演變順序：
+ * ① PLAN-015：scroll-snap 兩頁 —— 第一頁 Hero、第二頁資料面板，靠捲動換頁。
+ * ② PLAN-050 Phase A/B：三個版本檢視獨立成 `/versions/*`，snap 架構刪除，
+ *    首頁留下「站務頂帶 ＋ 版本速覽面板」。
+ * ③ 站長定案（現況）：**首頁不再放資料**。版本情報已經是完整的一區，速覽表在首頁
+ *    永遠只能拿到 48vw、擠成一團；把它留在這裡等於兩邊都做不好。
+ *    首頁回歸單一職責 —— 站務履歷與維護團隊，資料由導覽列的「版本情報」進入。
+ *
+ * 因此這裡不再需要視窗高度外殼、也不需要可收合頂帶（收合是為了跟資料面板搶空間，
+ * 現在沒有東西要搶），改回一般文件流版面，footer 由 Layout 統一渲染。
+ */
 export default function HomePage() {
-  const { data: versions, loading, error } = usePatchVersions()
-  const [tabExpanded, setTabExpanded] = useState(false)
-
   return (
-    <div className="homepage-snap">
+    <div className="relative">
+      {/* 左濃右淡的遮罩：左側保證文字可讀，右側把背景立繪讓出來 */}
+      <div className="absolute inset-0 bg-gradient-to-r from-bg-dark/85 via-bg-dark/50 lg:via-bg-dark/30 to-transparent pointer-events-none" />
 
-      {/* ── Page 1: Hero ── */}
-      <section className="snap-page relative flex items-center overflow-hidden">
-        {/* Left-to-right overlay: opaque on left for readability, fades to transparent on right */}
-        <div className="absolute inset-0 bg-gradient-to-r from-bg-dark/85 via-bg-dark/50 lg:via-bg-dark/30 to-transparent pointer-events-none" />
-
-        <div className="relative z-10 w-full max-w-[90vw] lg:max-w-[45vw] px-8 lg:px-16 flex flex-col gap-5">
-          {/* Site name */}
-          <div>
-            <h1 className="font-[Orbitron,sans-serif] text-3xl sm:text-4xl lg:text-5xl font-black tracking-wider leading-tight bg-gradient-to-br from-white to-accent-orange bg-clip-text text-transparent">
-              MECHARASHI<br />
-              <span className="text-xl sm:text-2xl lg:text-3xl">
-                Milkhama PawInfo Station
-              </span>
-            </h1>
-            <p className="mt-3 text-text-secondary text-base font-semibold tracking-[0.2em]">
-              獾迎你的到來！
-            </p>
-          </div>
-
-          {/* Site changelog */}
-          <SiteChangelog />
-
-          {/* Site team */}
-          <SiteTeamSection />
-
-          {/* Scroll hint */}
-          <div className="flex items-center gap-2 text-text-dim text-xs animate-bounce w-fit">
-            <span>▼</span>
-            <span className="tracking-widest">向下捲動看版本摘要</span>
-          </div>
+      <div className="relative z-10 w-full max-w-[min(92vw,780px)] px-6 lg:px-12 py-10 flex flex-col gap-5">
+        {/* 站名 */}
+        <div>
+          <h1 className="font-[Orbitron,sans-serif] text-3xl sm:text-4xl lg:text-5xl font-black tracking-wider leading-tight bg-gradient-to-br from-white to-accent-orange bg-clip-text text-transparent">
+            MECHARASHI<br />
+            <span className="text-xl sm:text-2xl lg:text-3xl">
+              Milkhama PawInfo Station
+            </span>
+          </h1>
+          <p className="mt-3 text-text-secondary text-base font-semibold tracking-[0.2em]">
+            獾迎你的到來！
+          </p>
         </div>
-      </section>
 
-      {/* ── Page 2: Data Tab ── */}
-      <section className="snap-page relative flex flex-col overflow-hidden">
-        {/* Gradient overlay — darkens when expanded to keep readability over background image */}
-        <div className={`absolute inset-0 pointer-events-none transition-all duration-500 ${
-          tabExpanded
-            ? 'bg-bg-dark/88'
-            : 'bg-gradient-to-r from-bg-dark/90 via-bg-dark/60 lg:via-bg-dark/35 to-transparent'
-        }`} />
-
-        {/* Panel + copyright — expands width on toggle */}
         {/*
-          收合寬度為什麼是 `min(96vw, max(48vw, 760px))` 而不是原本的
-          `md:max-w-[70vw] lg:max-w-[48vw]`：
+          版本情報的入口。導覽列已經有「版本情報 ▾」，這裡再放一次是因為首頁不再
+          自帶任何資料 —— 沒有入口的話，第一次來的人會停在一個看不到內容的頁面。
 
-          原寫法的面板寬度**不是視窗寬度的單調函數**。1023px 時套 md（70vw＝716px），
-          1024px 時 lg 生效（48vw＝492px）—— 把視窗拉寬 1px，面板反而縮水 224px。
-          1024–1300px 這段（外接螢幕視窗化、iPad 橫向、小筆電）拿到的寬度比手機直立還窄，
-          而甘特 6 週的最低需求是 110 + 6×80 ＝ 590px，於是**每一版都保證出現橫向捲軸**。
+          第一版做成一行以「·」分隔的橘色文字連結，使用者回報「看不出來是能按的」——
+          可點性只靠顏色，而這站到處都是橘字。改成**膠囊按鈕**：可點性靠邊框與底色
+          （形狀），顏色只是強調；icon 與導覽列下拉共用同一組，讓「這三個是同一組東西」
+          在兩處視覺一致。同樣的判斷在 VersionGanttPanel 的收合鈕上寫過一次：
+          可點性靠形狀與動詞，不能只靠一個符號。
 
-          斷崖無法靠移動斷點解決：兩個不同的 vw 比例在任何斷點都不可能連續
-          （0.70·B 恆大於 0.48·B），移到 xl 只會讓落差從 224px 變成 281px。
-          唯一的解法是引入 px 下限把曲線壓平。780px 這個值是實測湊出來的，四項相加：
-
-            VersionQuickTable 的 minWidth   720px
-            捲動容器的 border 左右各 1px       2px
-            外層 p-4 內距（root 19px）        38px   ← 不是 32px
-            tab 內容區的垂直捲軸              15px   ← 最容易漏算的一項
-            ────────────────────────────────────
-                                           775px → 取 780px 留餘裕
-
-          取捨：1024–1620px 之間背景立繪會被蓋掉更多（1024px 最明顯，可見寬
-          532→244px）。這是不可迴避的 —— 48vw ≥ 780px 需要視窗 ≥ 1625px，
-          在那之下「露出立繪」與「內容不橫捲」數學上無法同時成立。
-          1625px 以上與改動前完全相同。
+          仍然不做圖示卡片格：那是這個首頁早年拆掉的東西，而且會把首頁重新變成導航頁。
+          這裡的高度是一行（約 40px），首頁依舊是站務頁。
         */}
-        <div className={`relative z-10 flex flex-col flex-1 min-h-0 w-full transition-all duration-500 ease-in-out ${
-          tabExpanded ? 'max-w-[96vw]' : 'max-w-[min(96vw,max(48vw,780px))]'
-        }`}>
-          <HomeTabPanel
-            versions={versions}
-            loading={loading}
-            error={error}
-            expanded={tabExpanded}
-            onToggleExpand={() => setTabExpanded(v => !v)}
-          />
-          <div className="shrink-0 px-5 py-2 text-[11px] text-text-dim border-t border-border/50">
-            米赫瑪超吉情豹站 — 非官方社群工具，與官方無關，無營利。99%圖片資源都來源於官方網站或WIKI
+        <div className="flex flex-col gap-2">
+          <span className="text-[15px] font-bold tracking-[2px] text-accent-orange font-[Orbitron,sans-serif]">
+            版本情報
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {VERSION_VIEWS.map(view => (
+              <Link
+                key={view.id}
+                to={view.to}
+                className="group inline-flex items-center gap-2 rounded-xl border border-accent-orange/40 bg-accent-orange/10
+                           px-3.5 py-2 text-sm font-medium text-text-primary no-underline transition-colors
+                           hover:border-accent-orange hover:bg-accent-orange/20"
+              >
+                <NavIcon name={view.icon} className="w-4 h-4 shrink-0 text-accent-orange" />
+                {view.zhLabel}
+                <span className="text-accent-orange/70 transition-transform group-hover:translate-x-0.5">→</span>
+              </Link>
+            ))}
           </div>
         </div>
-      </section>
 
+        {/* 網站更新履歷 */}
+        <SiteChangelog />
+
+        {/* 維護團隊與社群 */}
+        <SiteTeamSection />
+      </div>
     </div>
   )
 }

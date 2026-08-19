@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import type { PatchVersion, PatchHalf, VisibleActivity } from '../../data/patchVersions/types'
 import { activitiesOfHalf } from '../../data/patchVersions/legacyActivities'
 import PatchInfoRow from './PatchInfoRow'
@@ -50,21 +51,58 @@ function saveCollapsed(v: boolean) {
   }
 }
 
+// ── 主從分割比例（PLAN-050 C-1）───────────────────────────────────────────────
+//
+// 甘特與活動卡片的長寬比需求正交：甘特是**寬而扁**（寬度＝週數，離散且上限 6–8；
+// 高度＝活動數 × 38px），卡片流是**窄而長**（內容無高度上限）。
+// 兩者共用同一條垂直軸時，甘特的列數必然把卡片推到摺線以下 ——
+// 2026-08-19 實測首頁的卡片流可見高度是 **0px**，而「展開版面」把寬度加倍也多露出 0 張，
+// 因為那顆按鈕把預算花在只有 6 個刻度的軸上。拆成左右兩條獨立捲動軸才是解。
+//
+// 55% 的依據：甘特在 ~800px 就飽和（每週欄超過約 150px 之後，長條那一行截斷文字
+// 再寬也買不到資訊）；1920 下左側 55% ＝ 1000px → 每週欄 148px（下限 80px），
+// 右側 820px 剛好跨過 ActivityCardFlow 的 @2xl（672px）雙欄門檻。
+
+const LS_SPLIT_PCT = 'mecharashi_timeline_splitPct'
+const SPLIT_DEFAULT = 55
+const SPLIT_MIN = 35
+const SPLIT_MAX = 75
+
+function loadSplitPct(): number {
+  try {
+    const v = Number(localStorage.getItem(LS_SPLIT_PCT))
+    return Number.isFinite(v) && v >= SPLIT_MIN && v <= SPLIT_MAX ? v : SPLIT_DEFAULT
+  } catch {
+    return SPLIT_DEFAULT
+  }
+}
+
+function saveSplitPct(v: number) {
+  try {
+    localStorage.setItem(LS_SPLIT_PCT, String(Math.round(v)))
+  } catch {
+    // ignore
+  }
+}
+
 // ── CSS 常數 ──────────────────────────────────────────────────────────────────
 
 const LABEL_COL_PX = 110
 
 /**
- * 內容容器的底色 —— 想調整就改這一行。
+ * 內容容器的底色。
  *
- * 這是「橫幅要多明顯」的第二個調整鈕（第一個在 VersionExpandedPanel 的
- * BANNER_OPACITY / BANNER_SCRIM）。原本是 bg-bg-dark/40，太透，
- * 11–13px 的活動條文字下方直接是機甲立繪，讀不到。
+ * PLAN-050 C-3 之前這裡是 `bg-bg-dark/75`，而且是「橫幅要多明顯」這組耦合旋鈕的
+ * 第三顆（另外兩顆是 VersionExpandedPanel 的 BANNER_OPACITY / BANNER_SCRIM）。
+ * 三顆旋鈕的歷史調整方向一致：都在把圖蓋掉 —— 因為橫幅鋪在資料底下時，
+ * 11–13px 的細字與一張張亮度不同的畫作之間是零和，沒有任何一組固定數值能
+ * 讓所有版本都達到 WCAG AA。
  *
- *   想讓橫幅透出來更多 → 調低（如 bg-bg-dark/50）
- *   想讓文字更清楚     → 調高（如 bg-bg-dark/85，接近不透明）
+ * 現在橫幅搬到頂部的信箱式色帶（見 VersionDetailView），資料區底下不再有圖，
+ * 這裡就可以是**不透明實色** —— 對比度變成可驗證的常數，三顆旋鈕一起退場。
+ * 連帶把 backdrop-blur 拿掉：14 列 × 6 格的表格上那是白付的繪製成本。
  */
-const SURFACE = 'bg-bg-dark/75'
+const SURFACE = 'bg-bg-dark'
 
 // 列密度：Phase 1 從 py-1.5 / 15px（實測每列 42px）壓到 py-1 / 14px（約 32px）。
 // 原本的預算估固定資訊表 234px，實測是 383px —— 佔掉可用高度的 62%，
@@ -325,7 +363,29 @@ export default function VersionGanttPanel({
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [hoveredKey, setHoveredKey] = useState<string | null>(null)
   const [infoCollapsed, setInfoCollapsed] = useState(loadCollapsed)
+  const [splitPct, setSplitPct] = useState(loadSplitPct)
+  const [dragging, setDragging] = useState(false)
   const cardRefs = useRef(new Map<string, HTMLDivElement>())
+  const splitRef = useRef<HTMLDivElement>(null)
+  // 拖曳中與最新比例都另存一份 ref。原因是事件處理器讀的是**該次 render 的閉包**：
+  // pointerdown 觸發 setState 之後，緊接著抵達的 pointermove 仍然是舊的處理器，
+  // 讀到 dragging === false 而整段失效（實測第一次拖曳沒反應）。
+  // 狀態值留著只為了樣式（拖曳中變色 / select-none）。
+  const draggingRef = useRef(false)
+  const splitPctRef = useRef(splitPct)
+
+  // 用 pointer capture 而不是掛 window 監聽：指標跑出分隔線（拖太快、或滑到 iframe 上）
+  // 事件仍然回到這顆元素，不會留下「放開了還在拖」的狀態。
+  const applyDrag = useCallback((clientX: number) => {
+    const el = splitRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    if (rect.width === 0) return
+    const pct = ((clientX - rect.left) / rect.width) * 100
+    const next = Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, pct))
+    splitPctRef.current = next
+    setSplitPct(next)
+  }, [])
 
   const toggleInfo = useCallback(() => {
     setInfoCollapsed(v => {
@@ -505,8 +565,27 @@ export default function VersionGanttPanel({
   )
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col">
-      {/* 共用橫向捲動容器：讓兩個表格欄位寬度對齊、同步橫向捲動 */}
+    /*
+      主從分割（PLAN-050 C-1）。左：索引（版本資訊表 ＋ 甘特長條），右：內容（活動卡片）。
+      兩欄各有自己的 overflow-y-auto ＋ overscroll-contain。
+
+      **行動版刻意不套用分割**（<lg）：這裡退回單欄，由本容器自己捲。
+      左右分割在窄螢幕等於原病復發 —— 甘特 6 週的最低寬度是 110 + 6×80 ＝ 590px，
+      在 390px 的螢幕上左欄只會變成一個橫捲的小窗，而卡片又被擠到 45% 的高度。
+      行動版的正解是「一次只給一條軸」的分段切換器，那是 Phase D 的範圍。
+    */
+    <div
+      ref={splitRef}
+      className={`flex-1 min-h-0 flex flex-col gap-2 overflow-y-auto overscroll-contain
+                  lg:flex-row lg:overflow-hidden ${dragging ? 'select-none' : ''}`}
+      style={{ '--split': `${splitPct}%` } as CSSProperties}
+    >
+      {/* ── 左欄：索引 ── 共用橫向捲動容器，讓資訊表與甘特的週欄對齊、同步橫捲
+          `lg:min-w-[600px]` 是甘特的實際下限（標籤欄 110 ＋ 6 週 × 80 ＝ 590px）：
+          1024 寬時 55% 只有 536px，週欄會被壓到 80px 以下而長出橫向捲軸（實測差 54px）。
+          比例是給大螢幕分配空間用的，不該把索引欄壓到它連自己都裝不下。
+          1280 以上 55% 本來就超過 600px，這條下限是 inert 的。 */}
+      <div className="shrink-0 min-w-0 flex flex-col lg:min-h-0 lg:overflow-hidden lg:[flex-basis:var(--split)] lg:min-w-[600px]">
       <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
         <div
           className="flex-1 min-h-0 flex flex-col"
@@ -620,8 +699,12 @@ export default function VersionGanttPanel({
           {/* ── 版本層級補充資訊（商店 / 危境重構 / 記憶風暴 / 備註）── */}
           {!infoCollapsed && <VersionExtras version={version} />}
 
-          {/* ── 容器 2：甘特索引層 + 卡片內容層（同一個捲動容器，往下捲即銜接）── */}
-          <div className={`mt-2 flex-1 min-h-0 rounded-lg border border-border ${SURFACE} overflow-y-auto overflow-x-hidden overscroll-contain`}>
+          {/* ── 容器 2：甘特索引層 ──
+              桌機：自己的垂直捲動軸（左欄的那一條）。
+              行動版：不自成捲動軸 —— 單欄版面只該有一條軸，巢狀捲動在窄螢幕上
+              就是「捲了半天發現捲錯層」的來源。 */}
+          <div className={`mt-2 rounded-lg border border-border ${SURFACE} overflow-x-hidden
+                           lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain`}>
             <div className="relative">
               {/* 共用軸線層：週格線 / 上下半分界 / 今日線 */}
               <GanttAxisOverlay
@@ -661,15 +744,70 @@ export default function VersionGanttPanel({
               </table>
             </div>
 
-            <ActivityCardFlow
-              items={items}
-              selectedKey={activeKey}
-              onSelect={handleSelect}
-              onHover={setHoveredKey}
-              registerRef={registerRef}
-            />
           </div>
         </div>
+      </div>
+      </div>
+
+      {/* ── 分隔線（可拖曳）── 只在桌機存在；行動版是單欄 */}
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="調整甘特與活動卡片的寬度比例"
+        aria-valuenow={Math.round(splitPct)}
+        aria-valuemin={SPLIT_MIN}
+        aria-valuemax={SPLIT_MAX}
+        tabIndex={0}
+        title="拖曳調整寬度比例（雙擊還原）"
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId)
+          draggingRef.current = true
+          setDragging(true)
+        }}
+        onPointerMove={(e) => { if (draggingRef.current) applyDrag(e.clientX) }}
+        onPointerUp={(e) => {
+          e.currentTarget.releasePointerCapture(e.pointerId)
+          draggingRef.current = false
+          setDragging(false)
+          saveSplitPct(splitPctRef.current)
+        }}
+        onDoubleClick={() => {
+          splitPctRef.current = SPLIT_DEFAULT
+          setSplitPct(SPLIT_DEFAULT)
+          saveSplitPct(SPLIT_DEFAULT)
+        }}
+        onKeyDown={(e) => {
+          const step = e.key === 'ArrowLeft' ? -2 : e.key === 'ArrowRight' ? 2 : 0
+          if (step === 0) return
+          e.preventDefault()
+          const next = Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, splitPctRef.current + step))
+          splitPctRef.current = next
+          setSplitPct(next)
+          saveSplitPct(next)
+        }}
+        className={`hidden lg:block shrink-0 w-1.5 self-stretch rounded-full cursor-col-resize
+                    transition-colors outline-none
+                    focus-visible:ring-1 focus-visible:ring-accent-orange/60
+                    ${dragging ? 'bg-accent-orange/70' : 'bg-border hover:bg-accent-orange/50'}`}
+      />
+
+      {/* ── 右欄：內容 ── 活動卡片，自己的垂直捲動軸 */}
+      <div className={`min-w-0 rounded-lg border border-border ${SURFACE}
+                       lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain`}>
+        <ActivityCardFlow
+          items={items}
+          selectedKey={activeKey}
+          onSelect={handleSelect}
+          onHover={setHoveredKey}
+          registerRef={registerRef}
+        />
+        {/* 空欄位要說得出「為什麼空」：只留一個有邊框的空白框，讀者無從分辨
+            是沒有資料、還是載入壞了。 */}
+        {items.length === 0 && (
+          <p className="text-text-dim text-[12px] text-center py-6">
+            本版本沒有登錄任何活動
+          </p>
+        )}
       </div>
     </div>
   )

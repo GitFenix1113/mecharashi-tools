@@ -155,8 +155,8 @@
     <strong>位置</strong>：<code>src/data/patchVersions/</code><br><br>
     <strong>組成</strong>：每個版本各一份 <code>v{N}.ts</code>；型別定義集中於 <code>types.ts</code>；
     <code>index.ts</code> 匯總 <code>PATCH_VERSIONS</code> 陣列供前台元件使用。<br><br>
-    <strong>用途</strong>：首頁版本時間線（<code>VersionTimeline</code>）、版本濃縮資訊表（<code>VersionQuickTable</code>）、
-    展開面板（<code>VersionExpandedPanel</code>）、甘特圖活動時間線（<code>ActivityTimeline</code>）。<br><br>
+    <strong>用途</strong>：版本時間線（<code>VersionTimeline</code> → <code>VersionDetailView</code> → <code>VersionGanttPanel</code>，
+    route <code>/versions/timeline/:version</code>）、版本速覽表（<code>VersionQuickTable</code>，route <code>/versions/quick</code>；舊稱「版本濃縮資訊」）。<br><br>
     <strong>PLAN-014 Phase B</strong> 計畫將此靜態資料遷移至 Firebase Firestore，並以
     <code>usePatchVersions()</code> hook 取代靜態 import，屆時本文件中的欄位定義亦適用於 Firestore Document 結構。
   </div>
@@ -782,18 +782,24 @@ upper: {
     </tr>
     <tr>
       <td class="field-name">ActivityTimeline</td>
-      <td style="font-family:monospace;font-size:11px;">src/components/timeline/ActivityTimeline.tsx</td>
+      <td style="font-family:monospace;font-size:11px;">src/components/timeline/ActivityTimeline.tsx（已於 PLAN-048 刪除）</td>
       <td>甘特圖週列色塊渲染（上/下半 + 分界線），依 <code>cnActivities</code> / <code>twActivities</code>；無資料時 fallback 舊欄位文字</td>
     </tr>
     <tr>
       <td class="field-name">CoreInfoPanel</td>
-      <td style="font-family:monospace;font-size:11px;">src/components/timeline/CoreInfoPanel.tsx</td>
+      <td style="font-family:monospace;font-size:11px;">src/components/timeline/CoreInfoPanel.tsx（已於 PLAN-048 刪除）</td>
       <td>版本核心資訊（機師/機甲/武裝/戰令/日期），獨立於活動時間資訊</td>
     </tr>
     <tr>
-      <td class="field-name">VersionExpandedPanel</td>
-      <td style="font-family:monospace;font-size:11px;">src/components/timeline/VersionExpandedPanel.tsx</td>
-      <td>三欄式佈局容器（陸版 ActivityTimeline + CoreInfoPanel + 台版 ActivityTimeline）；手機版 Tab 切換</td>
+      <td class="field-name">VersionDetailView</td>
+      <td style="font-family:monospace;font-size:11px;">src/components/timeline/VersionDetailView.tsx</td>
+      <td>單一版本的內容視圖：頂部信箱式橫幅帶（版本名／服別切換／◀▶／<code>VersionRail</code>）＋ <code>VersionGanttPanel</code>。
+          PLAN-050 C-2 之前是 clip-path modal，C-3 之前橫幅鋪在資料底下（<code>VersionExpandedPanel</code>，已刪除）</td>
+    </tr>
+    <tr>
+      <td class="field-name">VersionGanttPanel</td>
+      <td style="font-family:monospace;font-size:11px;">src/components/timeline/VersionGanttPanel.tsx</td>
+      <td>左右主從分割：左為版本資訊表 ＋ 甘特長條，右為活動卡片流，兩欄各自捲動、比例可拖曳（PLAN-050 C-1）</td>
     </tr>
   </table>
 </section>

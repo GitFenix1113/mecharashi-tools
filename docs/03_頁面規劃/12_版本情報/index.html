@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>版本情報規劃 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../index.html">頁面規劃</a>
+    <span>›</span>
+    <span class="current">版本情報</span>
+  </div>
+</nav>
+
+<header class="hero cyan">
+  <div class="hero-badge">◆ Page Design</div>
+  <h1>版本情報<span>VERSIONS · /versions/*</span></h1>
+  <p class="hero-sub">版本速覽 · 灰燼行動 · 版本時間線 —— 三個檢視、三個網址，入口在導覽列的「版本情報 ▾」</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label">基本資訊</div>
+  <div class="section-title">頁面規格</div>
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/versions/quick</code>｜<code>/versions/grayops</code>｜<code>/versions/timeline</code>｜<code>/versions/timeline/:version</code></td></tr>
+    <tr><th>導向</th><td><code>/versions</code> 以 <code>&lt;Navigate to="quick" replace /&gt;</code> 導向速覽</td></tr>
+    <tr><th>開發階段</th><td>PLAN-050 Phase A（2026-08-19）</td></tr>
+    <tr><th>登入需求</th><td>不需要（公開頁面）</td></tr>
+    <tr><th>資料來源</th><td><code>patchVersions</code>（<code>usePatchVersions</code>，session 內單例快取）、<code>grayOpsRoster</code>（<code>GameDataContext</code>）</td></tr>
+    <tr><th>導覽入口</th><td>桌機「版本情報 ▾」下拉；行動版 More 面板前三項</td></tr>
+  </table>
+</section>
+
+<section class="section">
+  <div class="section-label">版面設計</div>
+  <div class="section-title">三個檢視</div>
+
+  <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">📋</div>
+      <h3>版本速覽 <code>/versions/quick</code></h3>
+      <p>五個版本 × 各更新類別的濃縮對照表，可輸出 PNG 分享。置中 <code>max-w-[1500px]</code>：表格本身
+      <code>minWidth: 880px</code>（縮圖放大後調高，原 720px），過去塞在首頁面板裡幾乎永遠貼著下限
+      （十一個欄位每格只剩 60px）。
+      2026-08-19 起首頁不再放資料，這裡是它<strong>唯一</strong>的呈現位置，寬度給到底。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">🎯</div>
+      <h3>灰燼行動 <code>/versions/grayops</code></h3>
+      <p>四間公司的未來機甲一覽（<code>lg:grid-cols-4</code>），標註各機甲的預期登場版本。置中 <code>max-w-[1400px]</code>。</p>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">📊</div>
+      <h3>版本時間線 <code>/versions/timeline</code></h3>
+      <p>頂部信箱式橫幅帶（版本名／服別切換／◀▶／常駐版本選擇列），下方左右主從分割：
+      左為版本資訊表 ＋ 活動甘特（55%），右為活動卡片流（45%），兩欄各有獨立捲動軸、比例可拖曳。</p>
+    </div>
+  </div>
+
+  <div class="info-block" style="margin-top:1rem;">
+    <strong>ℹ️ 時間線為什麼沒有「先選版本再展開」這一步</strong>：原本是焦點輪播 ＋ clip-path modal，
+    抵達甘特要四步（捲過 Hero → 點 tab → 滾輪切版本 → 點中央項目），而且 modal 讓
+    <strong>「比較兩個版本」變成不可能</strong> —— 那正是版本頁最常見的問題。
+    現在版本選擇列常駐、每個版本都有自己的網址，要比較就開兩個分頁並排（PLAN-050 C-2）。
+  </div>
+
+  <div class="info-block" style="margin-top:1rem;">
+    <strong>ℹ️ 為什麼是三個獨立網址而不是一個頁面內切分頁</strong>：獨立網址同時拿到深連結、上一頁、Ctrl+F
+    與使用統計分流，又保留「這三者是一組」的心智模型 —— 導覽列只 +1 項（一個下拉）而不是 +3 項。
+    <br><br>
+    <strong>頁內的分頁列已於 2026-08-19 隱藏</strong>：導覽列的「版本情報 ▾」下拉已經是三個檢視的入口，
+    頁內再放一條同樣的分頁列是<strong>同一組導覽出現兩次</strong>，而它吃掉的是 Timeline 最缺的垂直空間。
+    三個檢視各自有自己的標題（「版本速覽」「灰燼行動」、Timeline 的版本橫幅帶），
+    不會變成認不出來的孤兒頁。元件保留在
+    <code>components/versions/VersionViewTabs.tsx</code>，要恢復只需在
+    <code>VersionsLayout</code> 加回一行。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label">UI 草圖</div>
+  <div class="section-title">版面結構</div>
+  <div class="wireframe">
+    <div class="wf-icon">🗂️</div>
+    <p>Header（全域，含「版本情報 ▾」下拉）<br>↓<br>檢視內容（自帶捲動容器，overscroll-contain）</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label">設計備註</div>
+  <div class="section-title">開發注意事項</div>
+  <div class="info-block">
+    <strong>✅ 已實作（PLAN-050 Phase A）</strong><br>
+    · 外殼高度：<code>.viewport-shell</code>＝<code>calc(100vh - 3rem - 1px)</code>（與首頁共用），行動版再扣底部 Tab Bar；Layout 對 <code>/versions</code> 不渲染 footer 與底部佔位（比照首頁）<br>
+    · 分頁列元件：<code>src/components/versions/VersionViewTabs.tsx</code>（<strong>目前不渲染</strong>，見上）。
+      其 <code>VERSION_VIEWS</code> 仍在使用 —— 首頁的入口連結由它產生，首頁自己不放任何版本資料，
+      但要有地方讓人點進來<br>
+    · Timeline 以 <code>lazy()</code> 載入，首頁初載 bundle 減少約 43 KB<br>
+    · <code>/versions/timeline/:version</code>：<strong>網址就是狀態</strong>。第一次選版本為 push、之後的切換為 replace ——
+      否則在版本選擇列上點五下，上一頁就要按五次<br>
+    · 主從分割比例存 <code>mecharashi_timeline_splitPct</code>（35–75% 夾住，雙擊分隔線還原 55%）；
+      <strong>&lt;lg 不套用分割</strong>，退回單欄單軸（左右分割在 390px 上等於原病復發，行動版正解是 Phase D 的分段切換器）<br>
+    · <strong>正式名稱：「版本速覽」</strong>（2026-08-19 定名，舊稱「版本濃縮資訊」）——
+      與導覽列、首頁入口按鈕一致，站內只有一個叫法。
+      區塊標題字級同步由 11px 的眉標樣式改為 18px 的頁面標題（灰燼行動同步），
+      <code>uppercase</code> 一併拿掉：中文沒有大小寫，那個 class 從來沒有作用<br>
+    · <strong>字級與縮圖尺寸重新校準（2026-08-19）</strong>：這兩張表的字體與圖片是當年為了塞進
+      首頁面板（48vw）而壓小的，獨立成頁後顯得空曠且比例失衡。
+      速覽表縮圖 43 → 57px、內文 13 → 14px、版本號 13 → 15px；
+      灰燼行動縮圖 28 → 38px、機甲名 14px 並吃滿剩餘寬度（版本徽章因此對齊到列的右緣）。
+      <strong>並重新擠出垂直預算，讓 1080p 不必捲動</strong>：版本號與日期改成同一行（省 22px）、
+      縮圖列的上下內距 py-2.5 → py-1.5（縮圖自帶邊框，7px 留白已足夠）、
+      專武配對卡與外層內距一併收緊。實測 1920×914（1080p 視窗扣掉分頁列與書籤列）
+      內容高 817px / 可用 856px，三頁皆不捲動；字級切到「大」(21px) 時會捲，那是選了大字級的必然<br>
+    · 橫幅改為頂部信箱式色帶：資料區因此是不透明實色，
+      <code>BANNER_OPACITY</code> / <code>BANNER_SCRIM</code> / <code>SURFACE</code> 三顆透明度旋鈕全數退場<br>
+    · 使用統計：五個樣板已登記於 <code>src/lib/analytics/routeKeys.ts</code>，<code>routeKeys.test.ts</code> 會擋下漏登記
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
+    <strong>🚧 後續階段（PLAN-050）</strong><br>
+    · Phase B：首頁 Hero 降級為可收合頂欄、移除 scroll-snap 兩頁架構<br>
+
+    · Phase D：行動版分段切換器（甘特／活動）與迷你時間軸 —— 順序取決於 Phase A 收到的裝置佔比
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 頁面規劃 · 版本情報 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 頁面規劃總覽</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-08-19 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

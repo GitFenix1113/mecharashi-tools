@@ -1,4 +1,6 @@
-﻿import { useParams, Link } from 'react-router-dom'
+import { useState } from 'react'
+import type { ReactNode } from 'react'
+import { useParams, Link } from 'react-router-dom'
 import type { MechPart } from '../../types'
 import { assetUrl, imageCandidates } from '../../utils/assets'
 import { FallbackImage } from '../../components/common/FallbackImage'
@@ -24,10 +26,52 @@ const PART_STAT_KEYS: { key: NumericPartStatKey; label: string }[] = [
   { key: 'move',      label: '移動力' },
 ]
 
+/**
+ * 精簡模式下每個部位保留的重點數值。
+ *
+ * 選法是「該部位**獨有**的那一項 + 通用的耐久／火力」——重量與抗暴在精簡模式收起，
+ * 因為重量的總和已經在頁首那條出力（`剩餘 = 出力 − 總重量`）講完了，逐部件的分子
+ * 沒有第一眼就得看到的理由。
+ */
+const PART_KEY_STATS: Record<MechPart['position'], NumericPartStatKey[]> = {
+  torso:    ['durable', 'firepower', 'output'],
+  leftArm:  ['durable', 'firepower', 'hit'],
+  rightArm: ['durable', 'firepower', 'hit'],
+  legs:     ['durable', 'dodge', 'move'],
+}
+
+const PART_KEY_STATS_FALLBACK: NumericPartStatKey[] = ['durable', 'firepower']
+
+// ── 部件詳細屬性的展開偏好 ─────────────────────────────────────────────────────
+//
+// 純本機 UI 偏好，不同步到帳戶（比照 VersionGanttPanel 的版本資訊摺疊：要跨裝置就得動
+// ViewPrefsKey 與 userApi，代價與這顆開關不成比例）。lazy initializer + try/catch，
+// 隱私模式或 storage 被鎖時退回預設，而不是讓整頁炸掉。
+//
+// 預設**展開**：精簡會少掉重量／抗暴等欄位，圖鑑頁預設不該藏資料。版面壓力先由
+// 「左右分欄 + 更緊的字級」吸收，摺疊是給看熟的人再省一次捲動。
+
+const LS_PARTS_EXPANDED = 'mecharashi_mechdetail_partsExpanded'
+
+function loadPartsExpanded(): boolean {
+  try {
+    return localStorage.getItem(LS_PARTS_EXPANDED) !== '0'
+  } catch {
+    return true
+  }
+}
+
+function savePartsExpanded(v: boolean) {
+  try {
+    localStorage.setItem(LS_PARTS_EXPANDED, v ? '1' : '0')
+  } catch {
+    // ignore
+  }
+}
 
 function EmptyModuleSlot() {
   return (
-    <div className="bg-bg-dark/50 border border-dashed border-border rounded-xl p-4 flex items-center justify-center min-h-[72px]">
+    <div className="bg-bg-dark/50 border border-dashed border-border rounded-xl p-4 flex items-center justify-center min-h-[64px]">
       <span className="text-xs text-text-dim">未設定</span>
     </div>
   )
@@ -37,32 +81,37 @@ function ModuleGroupLabel({ label, accent }: { label: string; accent: string }) 
   return (
     <div className="flex items-center gap-2 mb-2">
       <div className={`w-0.5 h-3.5 rounded-full ${accent}`} />
-      <span className="text-[14px] text-text-dim tracking-wider">{label}</span>
+      <span className="text-[13px] text-text-dim tracking-wider">{label}</span>
     </div>
   )
 }
 
-function PartCard({ part, name }: { part: MechPart; name: string }) {
+function PartCard({ part, name, expanded }: { part: MechPart; name: string; expanded: boolean }) {
+  const keyStats = PART_KEY_STATS[part.position] ?? PART_KEY_STATS_FALLBACK
+  const rows = PART_STAT_KEYS.filter(
+    ({ key }) => part[key] != null && (expanded || keyStats.includes(key))
+  )
+
   return (
-    <div className="bg-bg-dark border border-border rounded-xl p-3 flex flex-row gap-3 h-full">
+    <div className="bg-bg-dark border border-border rounded-xl p-2.5 flex flex-row gap-2.5 h-full">
       {part.icon && (
         <img
           src={assetUrl(part.icon)}
           alt={name}
-          className="w-10 h-10 rounded-lg bg-bg-card border border-border object-contain flex-shrink-0 self-start mt-0.5"
+          className="w-9 h-9 rounded-lg bg-bg-card border border-border object-contain flex-shrink-0 self-start"
           onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
         />
       )}
       <div className="flex-1 min-w-0 flex flex-col">
-        <div className="mb-1.5">
-          <p className="font-bold text-sm text-text-primary leading-tight">{name}</p>
-          <p className="text-[13px] text-text-dim leading-tight">{part.interface}</p>
+        <div className="mb-1">
+          <p className="font-bold text-[13px] text-text-primary leading-tight truncate">{name}</p>
+          <p className="text-[11px] text-text-dim leading-tight truncate">{part.interface}</p>
         </div>
-        <div className="flex-1 divide-y divide-border">
-          {PART_STAT_KEYS.filter(({ key }) => part[key] != null).map(({ key, label }) => (
-            <div key={key} className="flex justify-between items-center py-1">
-              <span className="text-[14px] text-text-dim">{label}</span>
-              <span className="text-[14px] text-text-primary font-medium font-[JetBrains_Mono,monospace]">
+        <div className="flex-1 divide-y divide-border/70">
+          {rows.map(({ key, label }) => (
+            <div key={key} className="flex justify-between items-center gap-1 py-[3px]">
+              <span className="text-[12px] text-text-dim">{label}</span>
+              <span className="text-[12px] text-text-primary font-medium font-[JetBrains_Mono,monospace]">
                 {(part[key] as number).toLocaleString()}
               </span>
             </div>
@@ -73,19 +122,50 @@ function PartCard({ part, name }: { part: MechPart; name: string }) {
   )
 }
 
-function AttrRow({ label, value }: { label: string; value: string | number }) {
+/** 頁首重點屬性：標籤在上、數值在下的小方塊，一列掃完，不吃垂直空間。 */
+function KeyStat({ label, value, sub }: { label: string; value: string | number; sub?: ReactNode }) {
   return (
-    <div className="flex justify-between items-center py-2 border-b border-border last:border-0">
-      <span className="text-text-dim text-sm">{label}</span>
-      <span className="text-text-primary font-medium font-[JetBrains_Mono,monospace]">{value}</span>
+    <div className="min-w-[64px]">
+      <div className="text-[11px] text-text-dim leading-none mb-1.5">{label}</div>
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-[17px] leading-none text-text-primary font-medium font-[JetBrains_Mono,monospace]">
+          {value}
+        </span>
+        {sub}
+      </div>
     </div>
   )
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
-    <div className="text-xs text-accent-orange tracking-[3px] uppercase font-[Orbitron,sans-serif] mb-3">
-      {children}
+    <div className="flex items-center gap-3 mb-3">
+      <div className="text-xs text-accent-orange tracking-[3px] uppercase font-[Orbitron,sans-serif]">
+        {children}
+      </div>
+      {action}
+    </div>
+  )
+}
+
+/** 精簡 / 詳細切換：沿用 Layout 字級切換的分段按鈕樣式。 */
+function DensityToggle({ expanded, onChange }: { expanded: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center bg-bg-card border border-border rounded-lg overflow-hidden shrink-0">
+      {([false, true] as const).map((v) => (
+        <button
+          key={String(v)}
+          onClick={() => onChange(v)}
+          aria-pressed={expanded === v}
+          className={`px-2.5 py-1 text-[11px] transition-colors cursor-pointer ${
+            expanded === v
+              ? 'bg-accent-orange/20 text-accent-orange'
+              : 'text-text-dim hover:text-text-secondary'
+          }`}
+        >
+          {v ? '詳細' : '精簡'}
+        </button>
+      ))}
     </div>
   )
 }
@@ -93,10 +173,16 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export default function MechDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data, loading } = useMechWithModules(id)
+  const [partsExpanded, setPartsExpanded] = useState(loadPartsExpanded)
+
+  const togglePartsExpanded = (v: boolean) => {
+    setPartsExpanded(v)
+    savePartsExpanded(v)
+  }
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-12">
+      <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="h-96 bg-bg-card border border-border rounded-xl animate-pulse" />
       </div>
     )
@@ -104,7 +190,7 @@ export default function MechDetailPage() {
 
   if (!data) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-12 text-center text-text-dim">
+      <div className="max-w-6xl mx-auto px-4 py-12 text-center text-text-dim">
         <p>找不到機甲資料</p>
         <Link to="/mechs" className="text-accent-orange no-underline text-sm mt-4 inline-block">
           ← 返回機甲圖鑑
@@ -126,147 +212,164 @@ export default function MechDetailPage() {
   const totalWeight = [torso, leftArm, rightArm, legs].reduce((sum, p) => sum + (p?.weight ?? 0), 0)
   const remainingOutput = mech.output - totalWeight
 
+  const portrait = (
+    <FallbackImage
+      candidates={imageCandidates(mech.portrait, `images/mechs/${mech.name}.webp`)}
+      alt={mech.name}
+      className="max-h-full w-full object-contain"
+      fallback={<span className="text-xs text-text-dim">尚無立繪</span>}
+    />
+  )
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10 bg-bg-dark/10 backdrop-blur-sm rounded-2xl">
+    <div className="max-w-6xl xl:max-w-[1520px] mx-auto px-4 py-8 bg-bg-dark/10 backdrop-blur-sm rounded-2xl">
 
       <Link
         to="/mechs"
-        className="inline-flex items-center gap-1 text-sm text-text-dim hover:text-text-primary no-underline mb-6 transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-text-dim hover:text-text-primary no-underline mb-4 transition-colors"
       >
         ← 機甲圖鑑
       </Link>
 
-      {/* Header */}
-      <div className="mb-8">
-        <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold border mb-2 ${armorCls}`}>
-          {mech.armorType}
-        </span>
-        <h1 className="text-3xl font-black">{mech.name}</h1>
-      </div>
-
-      {/* 機甲屬性 */}
-      <div className="bg-bg-card border border-border rounded-xl p-5 mb-6">
-        <SectionLabel>機甲屬性</SectionLabel>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8">
-          <AttrRow label="火力" value={totalFirepower.toLocaleString()} />
-          <AttrRow label="閃避" value={mech.evasion.toLocaleString()} />
-          <AttrRow label="移動力" value={mech.mobility} />
-          <AttrRow label="重量" value={mech.weight.toLocaleString()} />
-          {mech.debutVersion && <AttrRow label="登場版本" value={`v${mech.debutVersion}`} />}
-          <div className="flex justify-between items-center py-2 border-b border-border col-span-2 sm:col-span-2">
-            <span className="text-text-dim text-sm">出力</span>
-            <div className="flex items-center gap-3">
-              <span className={`text-xs font-[JetBrains_Mono,monospace] ${remainingOutput >= 0 ? 'text-accent-cyan' : 'text-accent-red'}`}>
+      {/* 頁首：名稱與重點屬性合成一條橫帶，把垂直預算讓給下面的部件與模組 */}
+      <div className="bg-bg-card border border-border rounded-xl px-4 py-3.5 mb-5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3.5">
+          <h1 className="text-2xl xl:text-3xl font-black leading-none">{mech.name}</h1>
+          <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold border ${armorCls}`}>
+            {mech.armorType}
+          </span>
+          {mech.debutVersion && (
+            <span className="text-[11px] text-text-dim border border-border rounded px-2 py-0.5">
+              登場 v{mech.debutVersion}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-wrap items-start gap-x-7 gap-y-3">
+          <KeyStat label="火力" value={totalFirepower.toLocaleString()} />
+          <KeyStat label="閃避" value={mech.evasion.toLocaleString()} />
+          <KeyStat label="移動力" value={mech.mobility} />
+          <KeyStat label="重量" value={mech.weight.toLocaleString()} />
+          <KeyStat
+            label="出力"
+            value={mech.output.toLocaleString()}
+            sub={
+              <span
+                className={`text-[11px] font-[JetBrains_Mono,monospace] ${
+                  remainingOutput >= 0 ? 'text-accent-cyan' : 'text-accent-red'
+                }`}
+              >
                 剩餘 {remainingOutput.toLocaleString()}
               </span>
-              <span className="text-text-primary font-medium font-[JetBrains_Mono,monospace]">
-                {mech.output.toLocaleString()}
-              </span>
-            </div>
-          </div>
+            }
+          />
         </div>
       </div>
 
-      {/* 部件資訊 */}
-      <div className="mb-6">
-        <SectionLabel>部件資訊（滿級）</SectionLabel>
-        {hasParts ? (
-          <>
-            {/* 手機：機體圖 + 2×2 部件卡 */}
-            <div className="lg:hidden space-y-3">
-              <div className="bg-bg-card border border-border rounded-xl flex items-center justify-center h-40">
-                <FallbackImage
-                  candidates={imageCandidates(mech.portrait, `images/mechs/${mech.name}.webp`)}
-                  alt={mech.name}
-                  className="max-h-36 w-full object-contain"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {torso    && <PartCard part={torso}    name="軀幹" />}
-                {rightArm && <PartCard part={rightArm} name="右臂" />}
-                {leftArm  && <PartCard part={leftArm}  name="左臂" />}
-                {legs     && <PartCard part={legs}     name="腿部" />}
-              </div>
-            </div>
-            {/* 桌面：十字形佈局 */}
-            <div className="hidden lg:grid grid-cols-3 gap-3 items-stretch">
-              <div />
-              {torso ? <PartCard part={torso} name="軀幹" /> : <div />}
-              <div />
-              {rightArm ? <PartCard part={rightArm} name="右臂" /> : <div />}
-              <div className="bg-bg-card border border-border rounded-xl flex items-center justify-center min-h-[200px]">
-                <FallbackImage
-                  candidates={imageCandidates(mech.portrait, `images/mechs/${mech.name}.webp`)}
-                  alt={mech.name}
-                  className="max-h-52 w-full object-contain"
-                />
-              </div>
-              {leftArm ? <PartCard part={leftArm} name="左臂" /> : <div />}
-              <div />
-              {legs ? <PartCard part={legs} name="腿部" /> : <div />}
-              <div />
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-text-dim">部件資料不可用</p>
-        )}
-      </div>
+      {/* 主體：xl 以上左右分欄——左邊部件（寬而扁）、右邊模組（窄而長），
+          模組因此不必等部件捲完才出現 */}
+      <div className="xl:grid xl:grid-cols-[minmax(0,46fr)_minmax(0,54fr)] xl:gap-6 xl:items-start">
 
-      {/* 機甲模組 */}
-      <div>
-        <SectionLabel>機甲模組</SectionLabel>
-        <div className="space-y-5">
-
-          {/* 特性模組 + 8級模組 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <ModuleGroupLabel label="特性模組" accent="bg-accent-orange" />
-              {mod4 ? <ModuleCard mod={mod4} variant="detail" /> : <EmptyModuleSlot />}
-            </div>
-            <div>
-              <ModuleGroupLabel label="8級模組" accent="bg-accent-blue" />
-              {mod8 ? <ModuleCard mod={mod8} variant="detail" /> : <EmptyModuleSlot />}
-            </div>
-          </div>
-
-          {/* 副模組 */}
-          <div>
-            <ModuleGroupLabel label="副模組" accent="bg-accent-green" />
-            {fixedMods.length > 0 ? (
-              <div className={`grid grid-cols-1 ${fixedMods.length > 1 ? 'md:grid-cols-2' : ''} gap-4`}>
-                {fixedMods.map((m) => <ModuleCard key={m.id} mod={m} variant="detail" />)}
-              </div>
+        {/* 左欄：部件資訊 + 機體描述 */}
+        <div>
+          <div className="mb-5">
+            <SectionLabel
+              action={
+                hasParts ? <DensityToggle expanded={partsExpanded} onChange={togglePartsExpanded} /> : undefined
+              }
+            >
+              部件資訊（滿級）
+            </SectionLabel>
+            {hasParts ? (
+              <>
+                {/* 手機：機體圖 + 2×2 部件卡 */}
+                <div className="lg:hidden space-y-3">
+                  <div className="bg-bg-card border border-border rounded-xl flex items-center justify-center h-40 p-2">
+                    {portrait}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {torso    && <PartCard part={torso}    name="軀幹" expanded={partsExpanded} />}
+                    {rightArm && <PartCard part={rightArm} name="右臂" expanded={partsExpanded} />}
+                    {leftArm  && <PartCard part={leftArm}  name="左臂" expanded={partsExpanded} />}
+                    {legs     && <PartCard part={legs}     name="腿部" expanded={partsExpanded} />}
+                  </div>
+                </div>
+                {/* 桌面：十字形佈局，中央立繪為基準 */}
+                <div className="hidden lg:grid grid-cols-3 gap-2.5 items-stretch">
+                  <div />
+                  {torso ? <PartCard part={torso} name="軀幹" expanded={partsExpanded} /> : <div />}
+                  <div />
+                  {rightArm ? <PartCard part={rightArm} name="右臂" expanded={partsExpanded} /> : <div />}
+                  <div className="bg-bg-card border border-border rounded-xl flex items-center justify-center min-h-[200px] p-2">
+                    {portrait}
+                  </div>
+                  {leftArm ? <PartCard part={leftArm} name="左臂" expanded={partsExpanded} /> : <div />}
+                  <div />
+                  {legs ? <PartCard part={legs} name="腿部" expanded={partsExpanded} /> : <div />}
+                  <div />
+                </div>
+              </>
             ) : (
-              <EmptyModuleSlot />
+              <p className="text-sm text-text-dim">部件資料不可用</p>
             )}
           </div>
 
-          {/* 專屬模組 */}
-          <div>
-            <ModuleGroupLabel label="專屬模組" accent="bg-accent-cyan" />
-            {exclusiveMods.length > 0 ? (
-              <div className={`grid grid-cols-1 ${exclusiveMods.length > 1 ? 'md:grid-cols-2' : ''} gap-4`}>
-                {exclusiveMods.map((m) => (
-                  <ModuleCard key={m.id} mod={m} variant="detail" showBoundPart />
-                ))}
-              </div>
-            ) : (
-              <div className="bg-bg-dark/50 border border-dashed border-border rounded-xl p-4 flex items-center justify-center min-h-[48px]">
-                <span className="text-xs text-text-dim">此機甲無專屬模組</span>
-              </div>
-            )}
-          </div>
+          {/* 機體描述留在左欄底部：右欄的模組才是進頁要先看到的東西 */}
+          {mech.lore && (
+            <div className="bg-bg-card border border-border rounded-xl p-4 mb-5 xl:mb-0">
+              <SectionLabel>機體描述</SectionLabel>
+              <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-line">{mech.lore}</p>
+            </div>
+          )}
+        </div>
 
+        {/* 右欄：機甲模組。@container —— 要不要雙欄取決於這一欄自己的寬度，不是視窗寬度 */}
+        <div className="@container">
+          <SectionLabel>機甲模組</SectionLabel>
+          <div className="space-y-4">
+
+            {/* 特性模組 + 8級模組 */}
+            <div className="grid grid-cols-1 @[640px]:grid-cols-2 gap-3">
+              <div>
+                <ModuleGroupLabel label="特性模組" accent="bg-accent-orange" />
+                {mod4 ? <ModuleCard mod={mod4} variant="detail" /> : <EmptyModuleSlot />}
+              </div>
+              <div>
+                <ModuleGroupLabel label="8級模組" accent="bg-accent-blue" />
+                {mod8 ? <ModuleCard mod={mod8} variant="detail" /> : <EmptyModuleSlot />}
+              </div>
+            </div>
+
+            {/* 副模組 */}
+            <div>
+              <ModuleGroupLabel label="副模組" accent="bg-accent-green" />
+              {fixedMods.length > 0 ? (
+                <div className={`grid grid-cols-1 ${fixedMods.length > 1 ? '@[640px]:grid-cols-2' : ''} gap-3`}>
+                  {fixedMods.map((m) => <ModuleCard key={m.id} mod={m} variant="detail" />)}
+                </div>
+              ) : (
+                <EmptyModuleSlot />
+              )}
+            </div>
+
+            {/* 專屬模組 */}
+            <div>
+              <ModuleGroupLabel label="專屬模組" accent="bg-accent-cyan" />
+              {exclusiveMods.length > 0 ? (
+                <div className={`grid grid-cols-1 ${exclusiveMods.length > 1 ? '@[640px]:grid-cols-2' : ''} gap-3`}>
+                  {exclusiveMods.map((m) => (
+                    <ModuleCard key={m.id} mod={m} variant="detail" showBoundPart />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-bg-dark/50 border border-dashed border-border rounded-xl p-4 flex items-center justify-center min-h-[48px]">
+                  <span className="text-xs text-text-dim">此機甲無專屬模組</span>
+                </div>
+              )}
+            </div>
+
+          </div>
         </div>
       </div>
-
-      {/* 機體描述 */}
-      {mech.lore && (
-        <div className="mt-6 bg-bg-card border border-border rounded-xl p-5">
-          <SectionLabel>機體描述</SectionLabel>
-          <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-line">{mech.lore}</p>
-        </div>
-      )}
     </div>
   )
 }

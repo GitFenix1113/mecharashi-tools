@@ -21,19 +21,65 @@ import {
   toPageKey,
 } from './routeKeys.ts'
 
-/** 從 App.tsx 抽出所有路由樣板（含 index 路由）。 */
+/**
+ * 從 App.tsx 抽出所有路由樣板（含巢狀 route 的完整路徑）。
+ *
+ * 為什麼不是一行 `matchAll(/path="([^"]+)"/g)`：那樣抽到的是**片段**而不是樣板。
+ * PLAN-050 的 /versions 是巢狀 layout route，子 route 寫的是相對路徑 `quick`，
+ * 一行版會產出 `/quick` —— 一個不存在的網址。它同時造成兩種錯誤：真正的
+ * `/versions/quick` 被判為「App.tsx 有但沒登記」，而登記正確的人被逼著寫進假樣板。
+ *
+ * 因此改成掃描器：追蹤 <Route> 的巢狀層級，把父路徑接上子路徑。
+ * 標籤的結尾**不能**用正則找 —— `element={<PilotsPage />}` 裡就有 `>`，
+ * 只能逐字掃到「大括號深度為 0 且不在字串內」的那個 `>`。
+ */
 function extractPatternsFromApp(): Set<string> {
   const src = readFileSync(new URL('../../App.tsx', import.meta.url), 'utf8')
-  // 刻意用簡單的全域比對：App.tsx 裡除了 <Route> 之外沒有其他 path="..." 屬性。
-  // 若日後真的出現，這支測試會以「多出不明樣板」的形式失敗 —— 那也是我們要的訊號。
-  const raw = [...src.matchAll(/\bpath="([^"]+)"/g)].map((m) => m[1])
   const out = new Set<string>()
-  // <Route index> 對應根路徑
-  if (/<Route\s+index\b/.test(src)) out.add('/')
-  for (const p of raw) {
-    if (p === '/') continue // Layout 外殼本身不是一個頁面
-    out.add(p === '*' ? '*' : `/${p}`)
+  const stack: string[] = [] // 目前所在的父路徑（依 <Route> 巢狀層級）
+
+  const join = (parent: string, path: string): string => {
+    if (path === '*' || path.startsWith('/')) return path
+    return `${parent === '/' ? '' : parent}/${path}`
   }
+
+  for (let i = 0; i < src.length; i++) {
+    if (src.startsWith('</Route>', i)) {
+      stack.pop()
+      i += '</Route>'.length - 1
+      continue
+    }
+    if (!src.startsWith('<Route', i)) continue
+
+    // 掃到標籤結束的 `>`：略過字串內容與 element={...} 這類含 `>` 的屬性運算式
+    let j = i + '<Route'.length
+    let depth = 0
+    let quote: string | null = null
+    for (; j < src.length; j++) {
+      const c = src[j]
+      if (quote !== null) {
+        if (c === quote) quote = null
+        continue
+      }
+      if (c === '"' || c === "'") quote = c
+      else if (c === '{') depth++
+      else if (c === '}') depth--
+      else if (c === '>' && depth === 0) break
+    }
+
+    const tag = src.slice(i, j)
+    const selfClosing = tag.trimEnd().endsWith('/')
+    const parent = stack.length > 0 ? stack[stack.length - 1] : '/'
+    const pathAttr = /\bpath="([^"]+)"/.exec(tag)?.[1]
+    const full = pathAttr === undefined ? parent : join(parent, pathAttr)
+
+    // <Route index> 代表父路徑本身；`/`（Layout 外殼）不是一個頁面，只由 index route 補進來
+    if (/\bindex\b/.test(tag) || (pathAttr !== undefined && full !== '/')) out.add(full)
+
+    if (!selfClosing) stack.push(full)
+    i = j
+  }
+
   return out
 }
 
@@ -94,6 +140,16 @@ test('後台路由不納入統計', () => {
   assert.equal(isTracked('/pilots'), true)
   // 前綴比對必須以路徑分隔為界，不可把 /administrator 這類路徑誤排除
   assert.equal(isTracked('/administrator'), true)
+})
+
+test('只做轉址的 index route 不納入統計，但其下層照常計數', () => {
+  // /versions 是 <Navigate to="quick" replace />，使用者停不到那個網址上。
+  // 記它會多算一筆幽靈瀏覽，並讓「三個檢視各佔多少」（PLAN-050 A-6）失真。
+  assert.equal(isTracked('/versions'), false)
+  assert.equal(isTracked('/versions/quick'), true)
+  assert.equal(isTracked('/versions/grayops'), true)
+  assert.equal(isTracked('/versions/timeline'), true)
+  assert.equal(isTracked('/versions/timeline/:version'), true)
 })
 
 test('ENTITY_ROUTES 的樣板都真實存在於路由表', () => {

@@ -179,7 +179,7 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value cyan">規劃中</div>
+      <div class="meta-value cyan">開發中 · Phase A 已完成（待上線觀察）</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">前置依賴</div>
@@ -293,8 +293,30 @@
     Phase B 的可選升級路徑，而非否決項</strong> —— 若 Phase B 完成後頂帶仍在跟內容搶空間，直接走 C。
   </div>
 
+  <div class="warning-block">
+    <strong>決策一の修訂（站長定案，2026-08-19 Phase C 完成後）：改為「資料離開首頁」而不是「Hero 離開首頁」</strong><br>
+    原決策的方向是「內容優先 → 資料面板成為 <code>/</code> 的預設與唯一版面，站務收成頂帶」，
+    而 B-4 預備的升級路徑是把站務推到 <code>/about</code>。<strong>實際定案是反過來的那一邊</strong>：
+    <br><br>
+    <strong>「首頁就不要使用 Quick Table、灰燼行動、Timeline 三個快速分頁了，反正我們已經做了版本情報，
+    Quick Table 應該要盡量完整呈現。首頁就維持原本的公告 ＋ 開發者清單，剩下三者讓使用者去點吧。」</strong>
+    <br><br>
+    理由成立且比原決策更乾淨：Phase A 之後版本情報已經是完整的一區，速覽表留在首頁永遠只能拿到
+    <code>min(96vw, max(48vw, 780px))</code> —— 十一個欄位（類別 ＋ 5 版本 × 機師/機甲）在 780px 下
+    每格只剩 60px，等於<strong>兩邊都做不好</strong>。移出之後速覽表拿到 1500px，首頁則回歸單一職責。
+    <br><br>
+    連帶結果：<strong>B-1 的可收合頂帶（<code>HomeHeroBar</code>）與 <code>HomeTabPanel</code> 一併刪除</strong>
+    —— 收合是為了跟資料面板搶空間，面板走了就沒有東西要搶；首頁改回一般文件流，
+    footer 由 Layout 統一渲染，<code>.viewport-shell</code> 只剩 <code>/versions</code> 在用。
+    B-4（Hero 移到 <code>/about</code>）因此<strong>永久不執行</strong>：站務履歷留在首頁，曝光度沒有損失。
+  </div>
+
   <div class="decision-block">
     <strong>決策二（Q2）：導覽列新增「版本情報 ▾」下拉，三個檢視做成 routed tabs</strong><br>
+    <span style="color:var(--accent-yellow);">【2026-08-19 修訂】頁內的那條 tab bar 已隱藏 ——
+    導覽列的下拉就是入口，頁內再放一條是同一組導覽出現兩次，而它吃掉的是 Timeline 最缺的垂直空間。
+    「routed tabs」保留的是<strong>路由</strong>那一半（三個網址、深連結、分流統計），
+    不是<strong>外觀</strong>那一半。</span><br>
     <code>/versions/quick</code>｜<code>/versions/grayops</code>｜<code>/versions/timeline</code>，
     共用一個 layout route 與同一條 tab bar（外觀不必改）。
     沿用既有的 <code>ContentNavDropdown</code> 元件，導覽列只增加一項。
@@ -332,13 +354,22 @@
     <strong>Phase D（行動版）必須提到 Phase C 之前</strong>。
     <br><br>
     先量再改，是這個計畫唯一能把優先順序從猜測變成事實的方法。
+    <br><br>
+    <strong>2026-08-19 現況：</strong>Phase C 在數據回來之前就完成了（風險自負但成本已付），
+    因此「C 與 D 誰先」這個問題自然消解。<strong>決策四剩下的效力在於 D-1／D-2 值不值得做</strong>，
+    以及 <code>/versions</code> 的預設分頁該是哪一個 —— 兩者都還是等 A-6。
   </div>
 
   <div class="decision-block">
     <strong>決策五：Timeline 改主從分割（master–detail），比例 55/45</strong><br>
     甘特與卡片流各自擁有獨立的 <code>overflow-y-auto overscroll-contain</code> 捲動軸。
     1920 下左側 55%＝1000px → 每週欄 148px（遠高於 80px 下限）；
-    右側 820px 剛好跨過 <code>@2xl</code>（672px）雙欄門檻。
+    右側 820px 跨過雙欄門檻。
+    <strong>⚠ 這裡的「<code>@2xl</code>＝672px」在實作時被實測推翻</strong>：容器查詢的 rem 是對
+    <strong>根字級</strong>解析，本站根字級 19px，<code>@2xl</code>＝42rem 因此是 798px；
+    右欄扣掉內距只剩 780px，差 18px 卡在門檻下，雙欄從來沒生效過。
+    已改用 px 門檻 <code>@[760px]</code>（要限制的本來就是卡片寬度，是個 px 量）。
+    這與本計畫「已知技術陷阱」第 2 條是同一個坑 —— 連寫計畫的人自己也踩了一次。
     比例可拖曳並存 <code>localStorage</code>。
     <br><br>
     同時<strong>取消 <code>clip-path</code> 圓形展開的 modal</strong>：它讓「比較兩個版本」不可能，
@@ -425,12 +456,16 @@
     <ul style="margin:8px 0 0 16px;line-height:1.9;">
       <li>路由改造：<code>/versions/:view</code> 三個 routed tab ＋ <code>/versions/timeline/:version</code> 深連結</li>
       <li>導覽列新增「版本情報 ▾」下拉（桌機 <code>ContentNavDropdown</code> ／ 行動版 More 面板）</li>
-      <li>Hero 降級為可收合頂欄；<code>.homepage-snap</code> / <code>.snap-page</code> CSS 整段移除</li>
+      <li><s>Hero 降級為可收合頂欄</s> → <strong>改為：資料面板整組移出首頁</strong>，
+          首頁只留站務履歷與維護團隊（見決策一の修訂）；
+          <code>.homepage-snap</code> / <code>.snap-page</code> CSS 整段移除</li>
       <li>移除 <code>VersionTimeline</code> 的滾輪劫持與 <code>clip-path</code> modal</li>
       <li>Timeline 左右主從分割（可拖曳比例、各自獨立捲動軸）</li>
       <li>banner 改信箱式頂帶（桌機）／角落暈影（行動版）；三個透明度常數退場</li>
       <li>行動版分段切換器（甘特／活動）與迷你時間軸</li>
-      <li><code>/</code> 的「本週摘要」條（純衍生資料，不新增欄位）</li>
+      <li><s><code>/</code> 的</s> <strong><code>/versions</code> 分頁列的</strong>「本週摘要」條
+          （純衍生資料，不新增欄位）—— 首頁不再放版本資料，摘要條隨之改放版本情報，
+          三個檢視共用（Phase E 已重新界定）</li>
     </ul>
   </div>
 

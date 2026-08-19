@@ -18,10 +18,12 @@ export default function GrayOpsPanel() {
   const loading = !loadedKeys.has('grayOpsRoster')
 
   return (
-    <div className="bg-bg-dark/10 rounded-2xl p-4 backdrop-blur-sm">
+    <div className="bg-bg-dark/90 rounded-2xl p-4 backdrop-blur-sm">
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-[10px] font-bold tracking-[3px] text-accent-orange uppercase font-[Orbitron,sans-serif]">
-          灰燼行動未來機甲一覽
+        {/* 字級與版本速覽一致：獨立成頁之後這是頁面標題，不再是面板裡的眉標 */}
+        <span className="text-[18px] font-bold tracking-[2px] text-accent-orange font-[Orbitron,sans-serif]">
+          灰燼行動
+          <span className="ml-2 text-[13px] font-normal tracking-normal text-text-dim">未來機甲一覽</span>
         </span>
         {loading && <span className="text-[9px] text-text-dim animate-pulse">同步中…</span>}
         <div className="h-px flex-1 bg-border" />
@@ -32,23 +34,23 @@ export default function GrayOpsPanel() {
       )}
 
       {grayOpsRoster && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {COMPANIES.map(company => {
             const mechs = grayOpsRoster.companies[company] ?? []
             return (
               <div
                 key={company}
-                className={`rounded-xl border p-3 ${COMPANY_COLORS[company]}`}
+                className={`rounded-xl border p-4 ${COMPANY_COLORS[company]}`}
               >
-                <div className="text-[13px] font-bold tracking-wide mb-2 pb-1.5 border-b border-current/20">
+                <div className="text-[15px] font-bold tracking-wide mb-2.5 pb-2 border-b border-current/20">
                   {company}
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1.5">
                   {mechs.map((entry, i) => (
                     <GrayOpsMechRow key={i} entry={entry} />
                   ))}
                   {mechs.length === 0 && (
-                    <span className="text-[12px] text-text-dim">（尚無資料）</span>
+                    <span className="text-[13px] text-text-dim">（尚無資料）</span>
                   )}
                 </div>
               </div>

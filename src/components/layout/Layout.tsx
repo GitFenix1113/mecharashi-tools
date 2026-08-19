@@ -7,6 +7,7 @@ import AvatarDisplay from '../profile/AvatarDisplay'
 import ContentNavDropdown, { type ContentNavItem } from './ContentNavDropdown'
 import NavIcon from '../icons/NavIcon'
 import EmulatorBadge from './EmulatorBadge'
+import { VERSION_VIEWS } from '../versions/VersionViewTabs'
 
 // 友站：英文版 Mecharashi Wiki（對稱其站內指回本站的連結）
 const FRIEND_SITE_URL = 'https://mecharashi-wiki.cc/'
@@ -30,6 +31,18 @@ const catalogNavItems: ContentNavItem[] = [
   { to: '/components', label: '元件', icon: 'component' },
 ]
 
+// 「版本情報」下拉的子項（PLAN-050 A-3）。
+// 為什麼是獨立下拉而不是塞進「攻略/工具/文件 ▾」：版本情報是本站主打內容之一，
+// 藏在攻略底下與它的實際份量不對稱；而三個檢視是一組，做成三個頂層項會讓導覽列 +3。
+//
+// 由 VERSION_VIEWS 推導而不是自己再寫一份：頁內分頁列隱藏之後，這個下拉是三個檢視的
+// **唯一**導覽入口（首頁的入口按鈕也讀同一份），三處各寫一份遲早會有一處漏掉。
+const versionNavItems: ContentNavItem[] = VERSION_VIEWS.map((v) => ({
+  to: v.to,
+  label: v.zhLabel,
+  icon: v.icon,
+}))
+
 // 配裝模擬器：頂層平鋪項，僅管理員可見
 const simulatorItem: ContentNavItem = { to: '/simulator', label: '配裝模擬器', icon: 'simulator' }
 
@@ -51,6 +64,7 @@ const tabBarItems: ContentNavItem[] = [
 const tabBarPaths = new Set(tabBarItems.map((i) => i.to))
 // 行動版 More 面板：所有不在底部 Tab Bar 的項目（圖鑑剩餘 + 模擬器 + 攻略專區）
 const moreNavItems = [
+  ...versionNavItems,
   ...catalogNavItems.filter((item) => !tabBarPaths.has(item.to)),
   simulatorItem,
   ...contentNavItems,
@@ -69,7 +83,10 @@ export default function Layout() {
   // 一處呼叫即涵蓋全站，新增頁面不需要任何額外接線。
   usePageTracking()
 
-  const isHome = location.pathname === '/'
+  // 版本情報三分頁是「視窗高度外殼」（.viewport-shell）：頁面自己撐滿可用高度並
+  // 自帶捲動容器，再掛 footer 與底部佔位只會硬擠出一條文件捲軸。
+  // 首頁在 2026-08-19 站長定案後不再放資料面板，已改回一般文件流，故不在此列。
+  const isFullHeightPage = location.pathname.startsWith('/versions')
   const isAdmin = userProfile?.role === 'ADMIN' || userProfile?.role === 'OWNER'
   const visibleMoreNavItems = moreNavItems.filter((item) => item.to !== '/simulator' || isAdmin)
   const isMoreActive = visibleMoreNavItems.some((item) =>
@@ -124,6 +141,7 @@ export default function Layout() {
                 {item.label}
               </NavLink>
             ))}
+            <ContentNavDropdown label="版本情報" items={versionNavItems} />
             <ContentNavDropdown label="資料圖鑑" items={catalogNavItems} />
             {isAdmin && (
               <NavLink
@@ -247,14 +265,14 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* Footer — homepage manages its own footer inside snap container */}
-      {!isHome && <footer className="border-t border-border py-8 text-center text-text-dim text-sm">
+      {/* Footer — 版本情報三分頁自帶版面高度，不掛 footer */}
+      {!isFullHeightPage && <footer className="border-t border-border py-8 text-center text-text-dim text-sm">
         <p>米赫瑪超吉情豹站 — Milkhama PawInfo Station</p>
         <p className="mt-1">本站是氣吉敗壞的豹吉自己摸出來的，無營利，完全免費，與官方無關，但99%圖片資源都來源於官方WIKI</p>
       </footer>}
 
       {/* 手機底部 Tab Bar 佔位 — 防止 footer 被 fixed bar 遮住 */}
-      {!isHome && (
+      {!isFullHeightPage && (
         <div
           className="lg:hidden shrink-0"
           style={{ height: 'calc(3.5rem + env(safe-area-inset-bottom))' }}

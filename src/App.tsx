@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { GameDataProvider } from './contexts/GameDataContext'
 import { ReferenceProvider } from './contexts/ReferenceContext'
@@ -22,8 +22,14 @@ import DocumentsPage from './pages/documents/DocumentsPage'
 import ProfilePage from './pages/user/ProfilePage'
 import AdminPage from './pages/user/AdminPage'
 import ComponentsPage from './pages/components/ComponentsPage'
+import VersionsLayout from './pages/versions/VersionsLayout'
+import VersionQuickPage from './pages/versions/VersionQuickPage'
+import VersionGrayOpsPage from './pages/versions/VersionGrayOpsPage'
 import NotFoundPage from './pages/NotFoundPage'
 const WeaponDetailPage         = lazy(() => import('./pages/weapons/WeaponDetailPage'))
+// 時間線是最重的檢視（src/components/timeline/ 共 9 檔 1853 行）。路由化之前它無條件
+// 進首頁 bundle，現在只有真的走到 /versions/timeline 才載入（PLAN-050 A-5）。
+const VersionTimelinePage      = lazy(() => import('./pages/versions/VersionTimelinePage'))
 const AdminVersionListPage     = lazy(() => import('./pages/admin/AdminVersionListPage'))
 const AdminVersionEditorPage   = lazy(() => import('./pages/admin/AdminVersionEditorPage'))
 const AdminHistoryPage         = lazy(() => import('./pages/admin/AdminHistoryPage'))
@@ -53,6 +59,18 @@ function App() {
             <Route path="backpacks" element={<BackpacksPage />} />
             <Route path="modules" element={<ModulesPage />} />
             <Route path="components" element={<ComponentsPage />} />
+
+            {/* 版本情報三分頁（PLAN-050 A-1）。共用一個 layout route：tab bar 放在
+                VersionsLayout 裡，切換檢視時不重新掛載，Timeline 走 lazy 也只有內容區進 Suspense。
+                首頁 / 維持可用、不做破壞性轉址 —— Hero 的退場是 Phase B 的事。 */}
+            <Route path="versions" element={<VersionsLayout />}>
+              <Route index element={<Navigate to="quick" replace />} />
+              <Route path="quick" element={<VersionQuickPage />} />
+              <Route path="grayops" element={<VersionGrayOpsPage />} />
+              <Route path="timeline" element={<VersionTimelinePage />} />
+              {/* 單一版本深連結：可分享、可開兩個分頁比較兩個版本 */}
+              <Route path="timeline/:version" element={<VersionTimelinePage />} />
+            </Route>
             <Route path="simulator" element={<SimulatorPage />} />
             <Route path="research" element={<ResearchPage />} />
             <Route path="news" element={<NewsPage />} />

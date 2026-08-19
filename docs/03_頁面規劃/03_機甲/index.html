@@ -70,17 +70,32 @@
     <tr><th>資料來源</th><td>Firestore: mechs/{id} + modules（副模組）</td></tr>
   </table>
 
-  <div class="sub-h" style="margin-top:24px;">座艙式排版（3×3 格）</div>
+  <div class="sub-h" style="margin-top:24px;">座艙式排版（3×3 格）+ 左右分欄</div>
   <div class="info-block">
     <strong>📐 機甲詳情版面設計</strong>
-    仿「機甲整備」介面：3×3 格式排版。<br>
-    · 中央（中間格）：機甲立繪<br>
-    · 左上角：左臂部件屬性卡<br>
-    · 右上角：右臂部件屬性卡<br>
-    · 左下角：軀幹部件屬性卡<br>
-    · 右下角：腿部部件屬性卡<br>
-    · 上方：機甲基本資訊（出力/重量/裝甲類型）<br>
-    · 下方：副模組展示（4模/8模/固定模組）
+    頁首橫帶：機甲名稱 + 裝甲類型 + 登場版本，下接一列重點屬性（火力／閃避／移動力／重量／出力・剩餘）。<br>
+    主體在 <code>xl</code>（≥1280px）以上左右分欄，比例 46 : 54：<br>
+    · <strong>左欄</strong>＝部件資訊（3×3 座艙式十字，中央機甲立繪，上軀幹／左右臂／下腿部）＋ 機體描述<br>
+    · <strong>右欄</strong>＝機甲模組（特性模組 / 8級模組 / 副模組 / 專屬模組）<br>
+    <code>xl</code> 以下維持單欄堆疊；手機為「立繪 + 2×2 部件卡」。
+  </div>
+
+  <div class="info-block">
+    <strong>🎚️ 部件屬性密度切換（精簡 / 詳細）</strong>
+    部件資訊區塊右側的分段按鈕，控制部件卡要顯示全部數值還是各部位的 3 個重點值
+    （軀幹＝耐久/火力/出力、手臂＝耐久/火力/命中、腿部＝耐久/閃避/移動力）。<br>
+    · 預設「詳細」——圖鑑頁預設不藏資料，版面壓力由左右分欄與較小字級吸收。<br>
+    · 偏好記在 localStorage <code>mecharashi_mechdetail_partsExpanded</code>（<code>'1'</code>／<code>'0'</code>），
+      屬純本機 UI 偏好，不同步到帳戶（比照版本情報甘特圖的資訊列摺疊）。
+  </div>
+
+  <div class="sub-h" style="margin-top:24px;">為什麼要左右分欄</div>
+  <div class="info-block">
+    單欄時「屬性卡 → 部件十字 → 模組」三段串在同一條垂直軸上，模組永遠在摺線以下。
+    部件十字是<strong>寬而扁</strong>（3 欄 × 3 列，高度有上限），模組是<strong>窄而長</strong>（張數無上限），
+    兩者的長寬比需求正交，拆成左右兩欄後模組不必等部件捲完才出現。<br>
+    模組欄的雙欄門檻用 <strong>容器查詢</strong> <code>@[640px]</code> 而非視窗斷點——
+    要不要雙欄取決於該欄自己的寬度。
   </div>
 
   <div class="card-grid">
@@ -98,7 +113,8 @@
 
   <div class="wireframe" style="margin-top:20px;">
     <div class="wf-icon">🤖</div>
-    <p>座艙式版面草圖待規劃<br>3×3 格，中央立繪，四角部件卡，底部模組區</p>
+    <p>xl 以上：左欄 3×3 部件十字（中央立繪）+ 機體描述 ／ 右欄 機甲模組四區<br>
+       xl 以下：單欄堆疊，順序為 頁首屬性帶 → 部件 → 模組 → 機體描述</p>
   </div>
 </section>
 

@@ -27,6 +27,9 @@ export type NavIconName =
   | 'guide'
   | 'tool'
   | 'doc'
+  | 'table'
+  | 'target'
+  | 'timeline'
   | 'admin'
   | 'key'
   | 'globe'
@@ -123,6 +126,29 @@ const PATHS: Record<NavIconName, ReactNode> = {
       <path d="M6 3.6h7.6L18.4 8.4V20.4H6z" />
       <path d="M13.6 3.6v4.8h4.8" />
       <path d="M9 13h6.4M9 16.4h6.4" />
+    </>
+  ),
+  // 版本速覽：表格（外框 + 一橫一豎的分隔線）
+  table: (
+    <>
+      <rect x="3.6" y="4.6" width="16.8" height="14.8" rx="1.6" />
+      <path d="M3.6 9.4h16.8" />
+      <path d="M9.6 9.4v10" />
+    </>
+  ),
+  // 灰燼行動：準星（「行動」的意象，與圓形的地球 icon 靠內十字區隔）
+  target: (
+    <>
+      <circle cx="12" cy="12" r="7.4" />
+      <circle cx="12" cy="12" r="2.6" />
+      <path d="M12 2.6v3M12 18.4v3M2.6 12h3M18.4 12h3" />
+    </>
+  ),
+  // 版本時間線：甘特長條（左側軸 + 三條錯開的長條）
+  timeline: (
+    <>
+      <path d="M4.4 4.4v15.2h15.2" />
+      <path d="M7.6 7.6h9.2M7.6 12h5.6M7.6 16.4h7.4" />
     </>
   ),
   // 後台管理：調節滑桿（與「工具」的扳手區隔開）

@@ -33,6 +33,13 @@ export const ROUTE_PATTERNS: readonly string[] = [
   '/backpacks',
   '/modules',
   '/components',
+  // 版本情報三分頁（PLAN-050 A-1）。'/versions' 本身只是導向 quick 的 index route，
+  // 但樣板存在就要登記 —— 直接輸入網址的人會命中它。
+  '/versions',
+  '/versions/quick',
+  '/versions/grayops',
+  '/versions/timeline',
+  '/versions/timeline/:version',
   '/simulator',
   '/research',
   '/news',
@@ -57,8 +64,18 @@ export const ROUTE_PATTERNS: readonly string[] = [
 /** 不納入統計的樣板前綴：後台不是使用者行為，量它只會污染頁面熱度排行。 */
 const UNTRACKED_PREFIXES = ['/admin']
 
+/**
+ * 不納入統計的**完整樣板**（不含其下層）。
+ *
+ * `/versions` 是只做轉址的 index route（`<Navigate to="quick" replace />`），
+ * 使用者永遠停不到那個網址上 —— 記它等於每次都多算一筆幽靈瀏覽，
+ * 而且會讓「三個檢視各佔多少」這個 PLAN-050 A-6 唯一要問的問題失真。
+ */
+const UNTRACKED_EXACT = new Set(['/versions'])
+
 /** 該樣板是否納入統計。 */
 export function isTracked(pattern: string): boolean {
+  if (UNTRACKED_EXACT.has(pattern)) return false
   return !UNTRACKED_PREFIXES.some((p) => pattern === p || pattern.startsWith(`${p}/`))
 }
 
@@ -107,6 +124,10 @@ export const ROUTE_LABELS: Record<string, string> = {
   backpacks:             '背包圖鑑',
   modules:               '模組圖鑑',
   components:            '元件圖鑑',
+  versions_quick:        '版本速覽',
+  versions_grayops:      '灰燼行動',
+  versions_timeline:     '版本時間線',
+  versions_timeline_detail: '版本時間線（單一版本）',
   simulator:             '配裝模擬器',
   research:              '研究所',
   news:                  '最新消息',

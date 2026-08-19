@@ -21,7 +21,7 @@
 <header class="hero orange">
   <div class="hero-badge">◆ Page Design</div>
   <h1>首頁<span>HOME PAGE · /</span></h1>
-  <p class="hero-sub">吉祥物 Hero、歡迎訊息卡、貼章</p>
+  <p class="hero-sub">站名、網站更新履歷、維護團隊與社群 —— 資料在「版本情報」，首頁不重複</p>
 </header>
 
 <main class="container">
@@ -31,9 +31,10 @@
   <div class="section-title">頁面規格</div>
   <table class="spec-table">
     <tr><th>路由</th><td><code>/</code></td></tr>
-    <tr><th>開發階段</th><td>Phase 2</td></tr>
+    <tr><th>開發階段</th><td>PLAN-015（全屏 Tab 改版）→ PLAN-050 Phase A／B → 2026-08-19 站長定案（現行版面）</td></tr>
     <tr><th>登入需求</th><td>不需要（公開頁面）</td></tr>
-    <tr><th>資料來源</th><td>靜態（無需 Firestore）</td></tr>
+    <tr><th>資料來源</th><td>站務履歷為靜態 <code>src/data/siteChangelog/</code>；團隊由 <code>useSiteTeam</code> 取 OWNER／ADMIN。<strong>不讀 patchVersions</strong></td></tr>
+    <tr><th>版面</th><td>一般文件流（非視窗高度外殼），footer 與手機底部佔位由 Layout 統一渲染</td></tr>
   </table>
 </section>
 
@@ -43,24 +44,46 @@
 
   <div class="card-grid">
     <div class="card orange">
-      <div class="card-icon">🎯</div>
-      <h3>Hero Banner</h3>
-      <p>標題「獾迎！」搭配吉祥物貓咪圖（cat_no_bg.png），橘色漸層主調。下方一行文字列出網站功能概覽，不換行。</p>
+      <div class="card-icon">🏷️</div>
+      <h3>站名 ＋ 標語</h3>
+      <p>MECHARASHI / Milkhama PawInfo Station 漸層大標與「獾迎你的到來！」。
+      左濃右淡的遮罩保證左側文字可讀，右側把背景立繪讓出來（<code>body</code> 的
+      <code>background-attachment: fixed</code>，全站共用）。</p>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">🔗</div>
+      <h3>版本情報入口</h3>
+      <p>一排膠囊按鈕（icon ＋ 名稱 ＋ →）：版本速覽 · 灰燼行動 · 版本時間線。
+      導覽列已經有「版本情報 ▾」，這裡再放一次是因為首頁不自帶任何資料 ——
+      沒有入口的話，第一次來的人會停在一個看不到內容的頁面。
+      <br><br>
+      <strong>第一版是一行以「·」分隔的橘色文字連結，使用者回報「看不出來是能按的」</strong>——
+      可點性只靠顏色，而這站到處都是橘字。改成邊框＋淡底的按鈕之後，可點性靠**形狀**，
+      顏色退為強調。icon 與導覽列下拉共用同一組（<code>VERSION_VIEWS</code>），
+      讓「這三個是同一組東西」在兩處視覺一致。
+      <br><br>
+      仍然不是圖示卡片格：那是這個首頁早年拆掉的東西，而且會把首頁重新變成導航頁。
+      現在的高度是一行（約 40px），首頁依舊是站務頁。</p>
     </div>
     <div class="card blue">
-      <div class="card-icon">💬</div>
-      <h3>歡迎訊息卡</h3>
-      <p>暗色卡片，上下橘色漸層細線裝飾，滑鼠懸停時有橘紫光暈效果。顯示歡迎語與免費承諾文字。</p>
-    </div>
-    <div class="card yellow">
-      <div class="card-icon">🏷️</div>
-      <h3>意見接受貼章</h3>
-      <p>黑黃雙色貼章造型（略帶傾斜），強調會認真聆聽使用者建議的態度。</p>
+      <div class="card-icon">📜</div>
+      <h3>網站更新履歷 ＋ 維護團隊</h3>
+      <p><code>SiteChangelog</code>（預設三則、可展開為年／月分頁）與
+      <code>SiteTeamSection</code>（OWNER／ADMIN 頭像、LINE／Discord 社群）。</p>
     </div>
   </div>
 
   <div class="info-block" style="margin-top:1rem;">
-    <strong>⚠️ 已移除區塊</strong>：快速入口（圖示卡片格）、公告欄、最新改版資訊、最新攻略 — 改版時一併拆除，目前首頁為純視覺歡迎頁。
+    <strong>⚠️ 已移除區塊</strong>：<br>
+    · <strong>版本速覽面板</strong>（Quick Table / Gray Ops / Timeline 三分頁）——
+      2026-08-19 站長定案移出首頁。理由：版本情報已是完整的一區，速覽表留在首頁永遠只能拿到
+      48vw、十一個欄位擠成一團，等於兩邊都做不好。首頁回歸單一職責。<br>
+    · <strong>可收合站務頂帶</strong>（<code>HomeHeroBar</code>）—— 收合是為了跟資料面板搶空間，
+      面板走了就沒有東西要搶，連同 <code>HomeTabPanel</code> 一起刪除。<br>
+    · <strong>scroll-snap 兩頁架構</strong>（PLAN-015 的 <code>.homepage-snap</code> / <code>.snap-page</code>）——
+      它把「看 Hero 還是看資料」這個離散選擇綁在滾輪／觸控板這種連續輸入上，
+      「輕輕滾一下就整頁彈回 Hero」是結構必然。PLAN-050 Phase B 整段刪除。<br>
+    · 更早期的快速入口卡片格、公告欄、最新攻略區塊。
   </div>
 </section>
 
@@ -69,7 +92,7 @@
   <div class="section-title">區塊順序</div>
   <div class="wireframe">
     <div class="wf-icon">🏠</div>
-    <p>Hero Banner（標題 + 吉祥物 + 功能列）<br>↓<br>歡迎訊息卡<br>↓<br>意見接受貼章</p>
+    <p>Header（全域）<br>↓<br>站名 ＋ 標語<br>↓<br>版本情報：版本速覽 · 灰燼行動 · 版本時間線<br>↓<br>網站更新履歷<br>↓<br>維護團隊 ＋ 社群連結<br>↓<br>Footer（全域）</p>
   </div>
 </section>
 
@@ -77,11 +100,13 @@
   <div class="section-label">設計備註</div>
   <div class="section-title">開發注意事項</div>
   <div class="info-block">
-    <strong>✅ 已實作</strong>
-    · 吉祥物圖片路徑：<code>public/images/cat_no_bg.png</code>，以 <code>import.meta.env.BASE_URL</code> 拼接（相容 GitHub Pages base 路徑）<br>
-    · 功能概覽文字使用 <code>whitespace-nowrap</code> 防止換行<br>
-    · 歡迎卡片：hover 光暈動畫（duration-700）、上下橘色漸層細線<br>
-    · 貼章：<code>rotate(-1.5deg)</code> 微傾斜，視覺仿貼紙感
+    <strong>✅ 已實作</strong><br>
+    · 首頁不再是視窗高度外殼，<code>Layout</code> 的 <code>isFullHeightPage</code> 現在只認 <code>/versions</code><br>
+    · 入口按鈕的清單來源是 <code>VERSION_VIEWS</code>（<code>src/components/versions/VersionViewTabs.tsx</code>）——
+      <strong>導覽列的「版本情報 ▾」下拉也由它推導</strong>（<code>Layout.tsx</code> 的
+      <code>versionNavItems</code>），連 icon 都是同一份，新增檢視時不會有一處漏改<br>
+    · 站名與副標分成兩個元素：<code>bg-clip-text</code> 會讓所有子元素文字一起變透明<br>
+    · 首頁本身不觸發任何 Firestore 讀取（履歷是打包進 bundle 的靜態資料，團隊走既有的 <code>useSiteTeam</code>）
   </div>
 </section>
 
@@ -91,9 +116,11 @@
   <div class="info-block">
     <strong>✅ 字體大小切換（小 / 中 / 大）</strong><br>
     · 位置：Header 右側 User Area 左方<br>
-    · 點選後修改 <code>document.documentElement.style.fontSize</code>（14px / 16px / 18px），所有 <code>rem</code> 單位全站等比縮放<br>
+    · 點選後修改 <code>document.documentElement.style.fontSize</code>（17px / 19px / 21px），所有 <code>rem</code> 單位全站等比縮放<br>
     · 選擇以 <code>localStorage</code> 持久化，下次造訪自動套用<br>
-    · 實作位置：<code>src/components/layout/Layout.tsx</code>
+    · 實作位置：<code>src/components/layout/Layout.tsx</code> 的 <code>FONT_SIZE_MAP</code><br>
+    · ⚠ 預設是 <strong>19px</strong> 而非瀏覽器預設的 16px —— 所有 rem 與 Tailwind spacing 都是 1.19 倍，
+      按 16px 心算的版面預算會低估約兩成
   </div>
 </section>
 
@@ -104,7 +131,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-08-19 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

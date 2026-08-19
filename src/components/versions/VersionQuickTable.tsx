@@ -100,11 +100,11 @@ function RefThumbnail({ name, lookup, isPredicted }: {
     <img
       src={resolveIconSrc(imageUrl)}
       alt={name}
-      className="w-9 h-9 object-cover object-top rounded border border-border/50 group-hover:border-accent-orange transition-colors"
+      className="w-12 h-12 object-cover object-top rounded-md border border-border/50 group-hover:border-accent-orange transition-colors"
       onError={() => setBroken(true)}
     />
   ) : (
-    <span className={`text-[13px] leading-tight whitespace-nowrap ${isPredicted ? 'text-accent-cyan' : 'text-text-secondary'}`}>
+    <span className={`text-[14px] leading-tight whitespace-nowrap ${isPredicted ? 'text-accent-cyan' : 'text-text-secondary'}`}>
       {name}
     </span>
   )
@@ -143,9 +143,9 @@ function RefThumbnail({ name, lookup, isPredicted }: {
 function ThumbnailList({ items, isPredicted, lookup }: {
   items: string[]; isPredicted: boolean; lookup?: EntityLookup
 }) {
-  if (!items.length) return <span className="text-text-dim/30 text-xs">—</span>
+  if (!items.length) return <span className="text-text-dim/30 text-sm">—</span>
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1.5">
       {items.map((name, i) => (
         <RefThumbnail key={i} name={name} lookup={lookup} isPredicted={isPredicted} />
       ))}
@@ -154,11 +154,11 @@ function ThumbnailList({ items, isPredicted, lookup }: {
 }
 
 function TextList({ items, isPredicted }: { items: string[]; isPredicted: boolean }) {
-  if (!items.length) return <span className="text-text-dim/30 text-xs">—</span>
+  if (!items.length) return <span className="text-text-dim/30 text-sm">—</span>
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1.5">
       {items.map((item, i) => (
-        <span key={i} className={`text-[13px] leading-tight whitespace-nowrap ${isPredicted ? 'text-accent-cyan' : 'text-text-secondary'}`}>
+        <span key={i} className={`text-[14px] leading-tight whitespace-nowrap ${isPredicted ? 'text-accent-cyan' : 'text-text-secondary'}`}>
           {item}
         </span>
       ))}
@@ -175,10 +175,10 @@ function SplitCell({ left, right, isPredicted, isCurrent, lookupLeft, lookupRigh
   const bg = isCurrent ? 'bg-accent-green/5' : ''
   return (
     <>
-      <td className={`px-2 py-2 border-r border-b border-border/40 align-middle ${bg}`}>
+      <td className={`px-2.5 py-1.5 border-r border-b border-border/40 align-middle ${bg}`}>
         <ThumbnailList items={left} isPredicted={isPredicted} lookup={lookupLeft} />
       </td>
-      <td className={`px-2 py-2 border-r border-b border-border align-middle ${bg}`}>
+      <td className={`px-2.5 py-1.5 border-r border-b border-border align-middle ${bg}`}>
         <ThumbnailList items={right} isPredicted={isPredicted} lookup={lookupRight} />
       </td>
     </>
@@ -190,8 +190,8 @@ function SplitCell({ left, right, isPredicted, isCurrent, lookupLeft, lookupRigh
 function Cell({ items, isPredicted, isCurrent, lookup }: {
   items: string[]; isPredicted: boolean; isCurrent: boolean; lookup?: EntityLookup
 }) {
-  const base = `px-3 py-2 border-r border-b border-border align-middle ${isCurrent ? 'bg-accent-green/5' : ''}`
-  if (!items.length) return <td colSpan={2} className={`${base} text-center text-text-dim/30 text-xs`}>—</td>
+  const base = `px-3 py-1.5 border-r border-b border-border align-middle ${isCurrent ? 'bg-accent-green/5' : ''}`
+  if (!items.length) return <td colSpan={2} className={`${base} text-center text-text-dim/30 text-sm`}>—</td>
   return (
     <td colSpan={2} className={base}>
       {lookup
@@ -213,10 +213,10 @@ function WeaponPilotCell({ pairs, isPredicted, isCurrent, weaponLookup, pilotLoo
 }) {
   const bg = isCurrent ? 'bg-accent-green/5' : ''
   if (!pairs.length) {
-    return <td colSpan={2} className={`px-3 py-2 border-r border-b border-border align-middle text-center text-text-dim/30 text-xs ${bg}`}>—</td>
+    return <td colSpan={2} className={`px-3 py-1.5 border-r border-b border-border align-middle text-center text-text-dim/30 text-sm ${bg}`}>—</td>
   }
   return (
-    <td colSpan={2} className={`px-2 py-2 border-r border-b border-border align-top ${bg}`}>
+    <td colSpan={2} className={`px-2.5 py-1.5 border-r border-b border-border align-top ${bg}`}>
       <div className="flex flex-wrap gap-1.5">
         {pairs.map((pair, i) => (
           <div key={i} className="border border-border/30 rounded-lg shrink-0">
@@ -344,13 +344,22 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
     ) as Record<LookupKey, EntityLookup>
   }, [displayVersions])
 
+  // 底色從 bg-bg-dark/10 提到 /90：這張表過去只是首頁面板裡的一個分頁，背景立繪被
+  // 面板寬度擋掉大半；獨立成頁滿寬之後，整片高彩度的立繪就直接透到 11–13px 的欄位
+  // 文字下方（實測 v3.4 那一欄整片泛紅）。與 PLAN-050 C-3 拿掉甘特三顆透明度旋鈕
+  // 是同一個判斷：資料的底不該是一張亮度不受控的圖。
   return (
-    <div ref={containerRef} className="bg-bg-dark/10 rounded-2xl p-4 backdrop-blur-sm">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-[10px] font-bold tracking-[3px] text-accent-orange uppercase font-[Orbitron,sans-serif]">
-          版本濃縮資訊
+    <div ref={containerRef} className="bg-bg-dark/90 rounded-2xl px-4 py-2 backdrop-blur-sm">
+      <div className="flex items-center gap-2 mb-2">
+        {/*
+          區塊標題的字級：原本是 11px 的「眉標」（eyebrow）樣式 —— 那是它還只是首頁面板裡
+          一個分頁時的定位。獨立成頁之後它就是**頁面標題**，用 18px。
+          `uppercase` 一併拿掉：中文沒有大小寫，那個 class 在這裡從來沒有作用。
+        */}
+        <span className="text-[18px] font-bold tracking-[2px] text-accent-orange font-[Orbitron,sans-serif]">
+          版本速覽
         </span>
-        <span className="text-[10px] text-text-dim shrink-0">
+        <span className="text-[11px] text-text-dim shrink-0">
           <span className="text-accent-cyan">■</span> 預測值
           <span className="ml-1.5 text-accent-green">■</span> 台服當前
         </span>
@@ -360,7 +369,7 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
           onClick={handleExport}
           disabled={exporting}
           title="輸出圖片"
-          className="text-[10px] font-[Orbitron,sans-serif] tracking-wider text-text-dim hover:text-accent-orange transition-colors disabled:opacity-40 cursor-pointer select-none shrink-0"
+          className="text-[11px] font-[Orbitron,sans-serif] tracking-wider text-text-dim hover:text-accent-orange transition-colors disabled:opacity-40 cursor-pointer select-none shrink-0"
         >
           {exporting ? '輸出中…' : '↓ 輸出圖片'}
         </button>
@@ -371,13 +380,13 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
       )}
 
       <div ref={scrollWrapRef} className="overflow-x-auto rounded-xl border border-border">
-        <table className="w-full border-collapse text-sm" style={{ minWidth: '720px' }}>
+        <table className="w-full border-collapse text-sm" style={{ minWidth: '880px' }}>
           <thead>
             {/* Row 1: 類別 (rowSpan=2) + version headers (colSpan=2 each) */}
             <tr className="border-b border-border">
               <th
                 rowSpan={2}
-                className="sticky left-0 z-10 bg-bg-dark px-3 py-2.5 text-left text-[10px] font-bold tracking-[2px] text-accent-orange uppercase font-[Orbitron,sans-serif] border-r border-border whitespace-nowrap w-20 align-middle"
+                className="sticky left-0 z-10 bg-bg-dark px-3 py-2.5 text-left text-[11px] font-bold tracking-[2px] text-accent-orange uppercase font-[Orbitron,sans-serif] border-r border-border whitespace-nowrap w-24 align-middle"
               >
                 類別
               </th>
@@ -393,10 +402,14 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
                       isCurrent ? 'bg-accent-green/8 text-accent-green' : isPredicted ? 'text-accent-cyan' : 'text-text-secondary'
                     }`}
                   >
-                    <div className="text-[13px] font-bold font-[Orbitron,sans-serif] tracking-wide">
-                      v{v.version}{isCurrent ? ' ★' : ''}
+                    {/* 版本號與日期同一行：分兩行會讓表頭多吃 22px，而這張表要在 1080p
+                        不捲動就得把每一列的垂直預算都算到底（見下方 py-1.5 的說明）。 */}
+                    <div className="flex items-baseline justify-center gap-1.5 whitespace-nowrap">
+                      <span className="text-[15px] font-bold font-[Orbitron,sans-serif] tracking-wide">
+                        v{v.version}{isCurrent ? ' ★' : ''}
+                      </span>
+                      <span className="text-[11px] font-normal opacity-70">{twDate}</span>
                     </div>
-                    <div className="text-[11px] font-normal mt-0.5 opacity-70">{twDate}</div>
                   </th>
                 )
               })}
@@ -408,10 +421,10 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
                 const bg = isCurrent ? 'bg-accent-green/5' : ''
                 return (
                   <Fragment key={v.version}>
-                    <th className={`px-2 py-1 text-center text-[10px] text-text-dim font-normal border-r border-border/40 ${bg}`}>
+                    <th className={`px-2 py-1 text-center text-[11px] text-text-dim font-normal border-r border-border/40 ${bg}`}>
                       機師
                     </th>
-                    <th className={`px-2 py-1 text-center text-[10px] text-text-dim font-normal border-r border-border ${bg}`}>
+                    <th className={`px-2 py-1 text-center text-[11px] text-text-dim font-normal border-r border-border ${bg}`}>
                       機甲
                     </th>
                   </Fragment>
@@ -422,7 +435,7 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
           <tbody>
             {ROW_DEFS.map((row, rowIdx) => (
               <tr key={row.key} className={rowIdx % 2 === 1 ? 'bg-bg-card/30' : ''}>
-                <td className="sticky left-0 z-10 bg-bg-dark px-3 py-2 text-[13px] text-text-dim font-medium border-r border-b border-border whitespace-nowrap align-middle">
+                <td className="sticky left-0 z-10 bg-bg-dark px-3 py-1.5 text-[14px] text-text-dim font-medium border-r border-b border-border whitespace-nowrap align-middle">
                   {row.label}
                 </td>
                 {displayVersions.map(v => {

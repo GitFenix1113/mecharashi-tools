@@ -46,6 +46,9 @@ export default function ActivityCard({
   ].filter(r => r.items?.length)
   const isPredicted = act.confidence === 'predicted'
 
+  // 底色用 bg-bg-card（#12151c/0.65）而不是原本的 bg-bg-dark/60：PLAN-050 C-3 之後
+  // 卡片欄的容器已是不透明的 bg-bg-dark，同色系半透明疊上去等於沒有底色，
+  // 卡片只剩邊框可辨識。改用比容器**淺**一階的卡片色，層次才回得來。
   return (
     <div
       ref={el => registerRef(actKey, el)}
@@ -57,13 +60,13 @@ export default function ActivityCard({
       }}
       onMouseEnter={() => onHover(actKey)}
       onMouseLeave={() => onHover(null)}
-      className={`rounded-lg border border-l-[3px] bg-bg-dark/60 px-2.5 py-2 cursor-pointer
+      className={`rounded-lg border border-l-[3px] bg-bg-card px-2.5 py-2 cursor-pointer
                   transition-colors outline-none
                   focus-visible:ring-2 focus-visible:ring-accent-orange/60
                   ${tone.edge}
                   ${selected
-                    ? 'border-y-accent-cyan/50 border-r-accent-cyan/50 bg-bg-dark/85 ring-1 ring-accent-cyan/35'
-                    : 'border-y-border border-r-border hover:bg-bg-dark/80'}
+                    ? 'border-y-accent-cyan/50 border-r-accent-cyan/50 bg-bg-card-hover ring-1 ring-accent-cyan/35'
+                    : 'border-y-border border-r-border hover:bg-bg-card-hover'}
                   ${st.phase === 'ended' ? 'opacity-60' : ''}`}
     >
       {/* 標頭：型別 + 進度（全部由 startDate + weeks 算出，維護者零輸入） */}

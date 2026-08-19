@@ -114,58 +114,38 @@ select option {
   color: var(--color-text-primary);
 }
 
-/* ── PLAN-015: Page Snap (homepage only) ─────────────────────────── */
+/* ── PLAN-050: 視窗高度外殼（首頁 / 版本情報三分頁） ───────────────── */
 /*
- * 高度為什麼是 `3rem + 1px`：header 的實際佔位是「`h-12` ＋ `border-b`」。
+ * 高度為什麼是 `100vh - 3rem - 1px`：header 的實際佔位是「`h-12` ＋ `border-b`」。
  * `h-12` ＝ 12 × --spacing(0.25rem) ＝ 3rem，而**本站 root font-size 是 19px**
  * （Layout 的 FONT_SIZE_MAP，預設 md），所以 3rem 實測 57px、加邊框共 58px。
- * 首頁不渲染 footer 也不渲染手機 tab bar 佔位（Layout 的 `!isHome`），
- * 因此 main 的可用高度就是 100vh - 58px。
+ * 用這兩個頁面的 Layout 不渲染 footer 也不渲染手機 tab bar 佔位
+ * （Layout 的 `!isFullHeightPage`），因此 main 的可用高度就是 100vh - 58px。
  *
  * 那個 `1px` 不能省：main 是 `flex-1` 但沒有 `min-h-0`，它的 min-content 高度由
  * 本容器決定 —— 本容器只要比可用高度高 1px，main 就撐大 1px、root 超過
  * `min-h-screen`，整份文件多出一條 1px 捲軸（實測確認）。
+ * 行動版再扣底部 Tab Bar 的 `3.5rem + safe-area`（它是 fixed，會蓋住畫面底部）。
  *
- * 原本寫 4rem（＝76px）等於多扣 18px，那 18px 在畫面底部白白空著 ——
- * 而首頁的垂直空間已經緊到活動卡片流被推出摺線，能收回來的都要收。
+ * 為什麼這兩頁要吃固定高度、而不是像機師列表那樣走文件流：頁內的面板要把捲動
+ * 關在自己身上（`h-full` ／ `flex-1 min-h-0` ＋ 內層 overflow-y-auto），
+ * 而那需要祖先有明確高度。PLAN-050 Phase C 的左右主從分割（兩條獨立捲動軸）
+ * 更是完全依賴這一點。
  *
- * 為什麼是 mandatory 但**移除 scroll-snap-stop**（2026-08-19 實測後定案）：
- *
- * 真正造成「輕輕滾一下就整頁彈回 Hero」的是 `scroll-snap-stop: always`，
- * 不是 mandatory 本身。always 的語意是「一次手勢只准移動一個 snap 點、不准跳過」，
- * 也就是分頁器 —— 於是任何微小位移都被放大成整頁翻頁。
- * 這裡總共只有兩頁、不存在會被跳過的中間點，這個屬性從一開始就沒有用途。
- *
- * 中途曾改成 proximity，實測是**更糟的失敗模式**：小位移確實會被吸回原地
- * （中鍵自動捲動已驗證），但一般滾輪是多格累加，會越過吸附閾值而**停在半截**，
- * 上下兩頁各露一半，看起來像跑版。
- *
- * mandatory 保證捲動結束後一定落在某一頁（永遠不會有半截狀態），
- * 而少了 always 之後它吸附的是**最近**的那一頁 —— 誤觸的小位移會回到原頁，
- * 只有真的捲過中線才換頁。兩個屬性各司其職，這才是原本該有的組合。
- *
- * 注意這只是止血。真正的結構問題是「進站必須先穿過一道 Hero 門」，
- * 那要靠把 Hero 降級成可收合頂欄來解（見 _local-notes/2026-08/2026-08-19_
- * 首頁與時間線_版面重構UI-UX評估.html §2.5 方案 A），屆時整段 snap CSS 會刪除。
+ * ── 這裡原本是什麼（PLAN-015 的 .homepage-snap / .snap-page）──
+ * 首頁曾是一個 scroll-snap 的兩頁容器：第一頁 Hero、第二頁資料面板。
+ * 它把「看 Hero 還是看資料」這個離散選擇綁在滾輪／觸控板這種連續輸入上，
+ * 於是「輕輕滾一下就整頁彈回 Hero」是結構必然，而不是可以調參數修掉的 bug
+ * （2026-08-19 曾把 scroll-snap-stop 拿掉止血，proximity 則是更糟的失敗模式：
+ * 一般滾輪多格累加會越過吸附閾值而停在半截，上下兩頁各露一半）。
+ * PLAN-050 Phase B 把 Hero 降級成可收合頂帶之後，兩頁架構沒有存在理由，整段刪除。
  */
-.homepage-snap {
+.viewport-shell {
   height: calc(100vh - 3rem - 1px);
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none;
-}
-.homepage-snap::-webkit-scrollbar {
-  display: none;
-}
-
-.snap-page {
-  height: 100%;
-  scroll-snap-align: start;
-  flex-shrink: 0;
 }
 
 @media (max-width: 1023px) {
-  .homepage-snap {
+  .viewport-shell {
     height: calc(100vh - 3rem - 1px - 3.5rem - env(safe-area-inset-bottom));
   }
 }

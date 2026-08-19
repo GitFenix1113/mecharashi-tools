@@ -5,7 +5,7 @@ import type { GrayOpsMechEntry } from '../../types'
 
 /** 無圖（或候選全數失敗）時的等寬佔位，讓有圖無圖混排時名稱左緣仍對齊 */
 const placeholder = (
-  <span aria-hidden="true" className="w-6 h-6 shrink-0 rounded border border-dashed border-border/40" />
+  <span aria-hidden="true" className="w-8 h-8 shrink-0 rounded-md border border-dashed border-border/40" />
 )
 
 /**
@@ -38,12 +38,12 @@ export default function GrayOpsMechRow({ entry }: { entry: GrayOpsMechEntry }) {
           fallback={placeholder}
           alt=""
           aria-hidden="true"
-          className="w-6 h-6 shrink-0 rounded border border-border/50 object-cover object-top group-hover:border-accent-orange transition-colors"
+          className="w-8 h-8 shrink-0 rounded-md border border-border/50 object-cover object-top group-hover:border-accent-orange transition-colors"
         />
       ) : placeholder}
       <span
         className={
-          'text-[13px] leading-tight truncate text-text-secondary '
+          'flex-1 min-w-0 text-[14px] leading-tight truncate text-text-secondary '
           + (clickable
             ? 'underline underline-offset-2 decoration-dotted decoration-border group-hover:text-text-primary transition-colors'
             : '')
@@ -52,7 +52,7 @@ export default function GrayOpsMechRow({ entry }: { entry: GrayOpsMechEntry }) {
         {entry.name}
       </span>
       {entry.version && (
-        <span className="text-[11px] text-accent-cyan border border-accent-cyan/30 px-1 rounded leading-tight shrink-0">
+        <span className="text-[11px] text-accent-cyan border border-accent-cyan/30 px-1.5 py-0.5 rounded leading-none shrink-0">
           {entry.version}
         </span>
       )}
@@ -60,7 +60,7 @@ export default function GrayOpsMechRow({ entry }: { entry: GrayOpsMechEntry }) {
   )
 
   if (!clickable) {
-    return <div className="flex items-center gap-1.5 min-w-0">{inner}</div>
+    return <div className="flex items-center gap-2 min-w-0 py-0.5">{inner}</div>
   }
 
   // 詳情不自己畫：交給 PLAN-019 的引用浮窗（EntityRefView），它已能解析 mech 並提供
@@ -72,7 +72,7 @@ export default function GrayOpsMechRow({ entry }: { entry: GrayOpsMechEntry }) {
       onMouseEnter={e => hoverRef({ refType: 'mech', refId: entry.mechId! }, e.currentTarget)}
       onMouseLeave={leaveRef}
       onClick={e => { e.stopPropagation(); pinRef({ refType: 'mech', refId: entry.mechId! }, e.currentTarget) }}
-      className="group flex items-center gap-1.5 min-w-0 w-full text-left bg-transparent border-0 p-0 cursor-pointer"
+      className="group flex items-center gap-2 min-w-0 w-full text-left bg-transparent border-0 p-0 py-0.5 cursor-pointer"
     >
       {inner}
     </button>

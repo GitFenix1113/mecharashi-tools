@@ -69,6 +69,11 @@ export default function ActivityCardFlow({
   const hasLiveItems = groups.ongoing.length > 0 || groups.upcoming.length > 0
   const showEnded = showEndedOverride ?? !hasLiveItems
 
+  // 雙欄門檻用 px（`@[760px]`）而不是 Tailwind 的 `@2xl`：容器查詢的 rem 是對**根字級**
+  // 解析，而本站根字級是 19px 不是 16px（Layout 的 FONT_SIZE_MAP），`@2xl` ＝ 42rem 因此
+  // 不是 672px 而是 798px —— 再扣掉本容器的 px-2 內距，右欄 816px 只換算出 780px 的內容寬，
+  // 差 18px 卡在門檻下，PLAN-050 C-1 算好的雙欄從來沒有生效過（實測 1920 下只有單欄）。
+  // 這裡要限制的是**卡片寬度**，本來就是一個 px 量，直接寫 px 不必再跟根字級賭。
   const renderGroup = (phase: Phase, list: KeyedActivity[]) => {
     if (list.length === 0) return null
     const meta = GROUP_META[phase]
@@ -90,7 +95,7 @@ export default function ActivityCardFlow({
           )}
         </div>
         {!collapsed && (
-          <div className="grid grid-cols-1 @2xl:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 @[760px]:grid-cols-2 gap-2">
             {list.map(({ key, act, carriedFrom, rerun, selection }) => (
               <ActivityCard
                 key={key}
