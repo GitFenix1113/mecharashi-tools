@@ -276,6 +276,7 @@
 
 ### 🔧 維護
 
+- **assets**: 新增星夜女神機甲部件圖與斷湮武器圖示，並重新產生圖片 manifest (`5e69baa`)
 - **data**: 重新產生圖片 manifest（補上 Icon_weapon_影虎嘯） (`f9d17da`)
 - **admin**: 機師/機甲 ID 補流水號、新建防呆、排行榜標籤不再截斷 (`2e288d2`)
 - **parser**: 未認領原文三條規則，89 行降到 44 行（PARSER_VERSION 7） (`1e32a46`)
