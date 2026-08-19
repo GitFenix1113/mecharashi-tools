@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-18
+## [Unreleased] - 2026-08-19
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **page**: 版本情報獨立頁面 + 機甲詳情左右分欄 (`b42953b`)
 - 時間線未來版本自動顯示陸版 (`93f4beb`)
 - 公告解析器自動抓自選池名單（PARSER_VERSION 6） (`fe29a31`)
 - 自選池名單改掛在活動上，顯示於甘特 (`3993ad4`)
