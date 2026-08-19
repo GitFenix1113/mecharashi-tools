@@ -15,6 +15,7 @@ import { updateWeapon, docExists } from '../../../lib/firestoreApi'
 import { makeNumberedEntityId, maxEntitySeq, stripNumberedIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
+import { IconField } from '../../../components/admin/IconPicker'
 import { WEAPON_RARITY_CLASS, WEAPON_KIND_BY_TYPE, ALL_WEAPON_KINDS } from './constants'
 import { SkillEffectItem } from './PilotAdmin'
 
@@ -206,9 +207,12 @@ function WeaponSkillItem({
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <Field label="圖示路徑 iconLocal（本地）">
-              <input value={skill.iconLocal ?? ''} onChange={(e) => onChange({ ...skill, iconLocal: e.target.value || undefined })} className="input-field" placeholder="/images/weapons/skills/..." />
-            </Field>
+            <IconField
+              label="圖示路徑 iconLocal（本地）"
+              value={skill.iconLocal}
+              onChange={(v) => onChange({ ...skill, iconLocal: v || undefined })}
+              defaultFolder="skills"
+            />
             <Field label="圖示 URL icon（遠端，選填）">
               <input value={skill.icon ?? ''} onChange={(e) => onChange({ ...skill, icon: e.target.value || undefined })} className="input-field" placeholder="https://..." />
             </Field>
@@ -422,9 +426,12 @@ function WeaponEditPanel({
                 <option value={MechRestriction.HEAVY_ONLY}>heavy — 僅重型機甲</option>
               </select>
             </Field>
-            <Field label="圖示路徑 icon（選填）">
-              <input value={form.icon ?? ''} onChange={(e) => update('icon', e.target.value || undefined)} className="input-field" placeholder="/images/weapons/..." />
-            </Field>
+            <IconField
+              label="圖示路徑 icon（選填）"
+              value={form.icon}
+              onChange={(v) => update('icon', v || undefined)}
+              defaultFolder="weapons"
+            />
           </div>
         )}
 
