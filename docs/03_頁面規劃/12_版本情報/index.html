@@ -128,6 +128,26 @@
       縮圖列的上下內距 py-2.5 → py-1.5（縮圖自帶邊框，7px 留白已足夠）、
       專武配對卡與外層內距一併收緊。實測 1920×914（1080p 視窗扣掉分頁列與書籤列）
       內容高 817px / 可用 856px，三頁皆不捲動；字級切到「大」(21px) 時會捲，那是選了大字級的必然<br>
+    · <strong>速覽表可讀性改版（2026-08-21）</strong>：<br>
+      &nbsp;&nbsp;① <strong>機甲改用寬幅縮圖</strong>（94×57，<code>object-contain</code>）——
+      機甲 <code>portrait.webp</code> 是 560×340（1.65:1），過去與機師／武器／背包（皆 340×340）
+      共用同一個 57×57 的 <code>object-cover</code> 方框，等於<strong>左右各被裁掉 33%</strong>，
+      只剩機體中段、認不出是哪台。縮圖形狀改依 <code>refType</code> 自動決定（<code>ThumbnailList</code> 內判斷，
+      不由呼叫端各自傳，否則「機甲戰令」那種走 <code>Cell</code> 的列遲早會漏掉一處）。<br>
+      &nbsp;&nbsp;② <strong>武裝生產改為角標式</strong>：機師頭像縮成 24px 圓形疊在武器縮圖右下角，
+      取代原本「兩張 57px 上下堆疊 ＋ 淡框」的卡片。從屬關係改用<strong>大小差</strong>表達
+      （大的是主體、小的是註記），而不是只靠一條分隔線。列高 <strong>151 → 77px</strong>，
+      與其他列一致，<strong>右側那條只能捲 29px 的捲軸因此消失</strong>（內容 817 → 738 / 可視 788）。<br>
+      &nbsp;&nbsp;③ <strong>無圖項目改為晶片</strong>：裸文字在同一格裡只靠一個空白分隔
+      （「修補者背包 迷蹤者背包」），而旁邊全是有邊界的縮圖，讀起來像資料缺失而非「素材未到」。
+      晶片給它邊界／內距／底色；<strong>武器與機師包在同一個晶片內</strong>（<code>征伐 ▸ 奧德利</code>），
+      與角標式表達同一件事。邊境商店／鬥技場的純文字列一併換成同一個晶片。<br>
+      &nbsp;&nbsp;④ <strong>框線三階</strong>（全站 token 提亮，見系統架構）：版本欄之間 2.13:1、
+      資料列之間 1.62:1、機師｜機甲子欄 1.40:1 —— 改版前每一條線都是 1.25:1，
+      主結構與細分長得一模一樣，五個版本讀不成五個區塊。<br>
+      &nbsp;&nbsp;⑤ 三種無圖退路的分流保留：武器有圖＋機師有圖 → 角標；武器有圖＋機師無圖 →
+      縮圖下掛機師名；武器無圖 → 整組退回文字晶片（沒有主體可掛，角標會變成浮在半空的頭像）。
+      改版後 <strong>PNG 輸出（<code>html-to-image</code>）已實測確認角標與晶片都正確渲染</strong><br>
     · 橫幅改為頂部信箱式色帶：資料區因此是不透明實色，
       <code>BANNER_OPACITY</code> / <code>BANNER_SCRIM</code> / <code>SURFACE</code> 三顆透明度旋鈕全數退場<br>
     · 使用統計：五個樣板已登記於 <code>src/lib/analytics/routeKeys.ts</code>，<code>routeKeys.test.ts</code> 會擋下漏登記
