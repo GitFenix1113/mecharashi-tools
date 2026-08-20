@@ -1,10 +1,11 @@
 import { Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePageTracking } from '../../hooks/usePageTracking'
 import SignedOutBanner from './SignedOutBanner'
 import AvatarDisplay from '../profile/AvatarDisplay'
-import ContentNavDropdown, { type ContentNavItem } from './ContentNavDropdown'
+import NavExpandBar, { NavGroupTrigger, type ContentNavItem, type NavGroup } from './NavExpandBar'
+import SubNavTabs from './SubNavTabs'
 import NavIcon from '../icons/NavIcon'
 import EmulatorBadge from './EmulatorBadge'
 import { VERSION_VIEWS } from '../versions/VersionViewTabs'
@@ -16,12 +17,20 @@ type FontSize = 'sm' | 'md' | 'lg'
 const FONT_SIZE_MAP: Record<FontSize, string> = { sm: '17px', md: '19px', lg: '21px' }
 const FONT_SIZE_LABELS: Record<FontSize, string> = { sm: '小', md: '中', lg: '大' }
 
+// 桌機頂層項目共用的 class（首頁／版本三檢視／配裝模擬器）
+const topNavClass = ({ isActive }: { isActive: boolean }) =>
+  `px-3 py-2 rounded-lg text-sm no-underline transition-colors whitespace-nowrap ${
+    isActive
+      ? 'bg-accent-orange/10 text-accent-orange'
+      : 'text-text-secondary hover:text-text-primary hover:bg-bg-card'
+  }`
+
 // 桌面版直接平鋪的頂層項目（首頁）。桌機頂層只顯示文字，icon 供行動版共用。
 const navItems: ContentNavItem[] = [
   { to: '/', label: '首頁', icon: 'home' },
 ]
 
-// 「資料圖鑑」下拉的子項：桌面版以 ContentNavDropdown 懸停展開，行動版攤平進 More 面板
+// 「資料圖鑑」的子項：桌面版由 header 下緣的橫向展開條呈現，行動版攤平進 More 面板
 const catalogNavItems: ContentNavItem[] = [
   { to: '/pilots', label: '機師', icon: 'pilot' },
   { to: '/mechs', label: '機甲', icon: 'mech' },
@@ -31,8 +40,8 @@ const catalogNavItems: ContentNavItem[] = [
   { to: '/components', label: '元件', icon: 'component' },
 ]
 
-// 「版本情報」下拉的子項（PLAN-050 A-3）。
-// 為什麼是獨立下拉而不是塞進「攻略/工具/文件 ▾」：版本情報是本站主打內容之一，
+// 「版本情報」的子項（PLAN-050 A-3）。
+// 為什麼是獨立群組而不是塞進「攻略/工具/文件 ▾」：版本情報是本站主打內容之一，
 // 藏在攻略底下與它的實際份量不對稱；而三個檢視是一組，做成三個頂層項會讓導覽列 +3。
 //
 // 由 VERSION_VIEWS 推導而不是自己再寫一份：頁內分頁列隱藏之後，這個下拉是三個檢視的
@@ -41,6 +50,7 @@ const versionNavItems: ContentNavItem[] = VERSION_VIEWS.map((v) => ({
   to: v.to,
   label: v.zhLabel,
   icon: v.icon,
+  desc: v.desc,
 }))
 
 // 配裝模擬器：頂層平鋪項，僅管理員可見
@@ -48,10 +58,29 @@ const simulatorItem: ContentNavItem = { to: '/simulator', label: '配裝模擬�
 
 // 「攻略專區」下拉的子項
 const contentNavItems: ContentNavItem[] = [
-  { to: '/guides', label: '攻略', icon: 'guide' },
-  { to: '/tools', label: '工具', icon: 'tool' },
-  { to: '/documents', label: '文件', icon: 'doc' },
+  { to: '/guides', label: '攻略', icon: 'guide', desc: '元件掉落等資料型攻略' },
+  { to: '/tools', label: '工具', icon: 'tool', desc: '彩甲規劃器等計算工具' },
+  { to: '/documents', label: '文件', icon: 'doc', desc: '開發與資料庫設計文件' },
 ]
+
+// 桌面版導覽列的三個群組。`hint` 由項目數推導而不是手寫，免得日後加減子項時忘了改。
+const versionGroup: NavGroup = {
+  key: 'versions', label: '版本情報',
+  hint: `${versionNavItems.length} 個檢視`, items: versionNavItems,
+}
+const catalogGroup: NavGroup = {
+  key: 'catalog', label: '資料圖鑑',
+  hint: `${catalogNavItems.length} 個集合`, items: catalogNavItems,
+}
+const guidesGroup: NavGroup = {
+  key: 'guides', label: '攻略/工具/文件',
+  hint: `${contentNavItems.length} 個入口`, items: contentNavItems,
+}
+const NAV_GROUPS = [versionGroup, catalogGroup, guidesGroup]
+
+// 常駐分頁列（SubNavTabs）的候選群組：人在哪一群裡，那一群的成員就固定列在 header 下方。
+// 首頁與配裝模擬器不屬於任何群組，自然不會長出這條列。
+const SUB_NAV_GROUPS: ContentNavItem[][] = [versionNavItems, catalogNavItems, contentNavItems]
 
 const tabBarItems: ContentNavItem[] = [
   { to: '/', label: '首頁', icon: 'home' },
@@ -72,6 +101,9 @@ const moreNavItems = [
 
 export default function Layout() {
   const [moreOpen, setMoreOpen] = useState(false)
+  // 桌面版導覽列展開條：同一時間只有一個群組能開，所以狀態在這裡而不在觸發鈕裡
+  const [openGroup, setOpenGroup] = useState<string | null>(null)
+  const closeTimer = useRef<number | null>(null)
   const [fontSize, setFontSize] = useState<FontSize>(
     () => (localStorage.getItem('fontSize') as FontSize) || 'md'
   )
@@ -87,6 +119,11 @@ export default function Layout() {
   // 自帶捲動容器，再掛 footer 與底部佔位只會硬擠出一條文件捲軸。
   // 首頁在 2026-08-19 站長定案後不再放資料面板，已改回一般文件流，故不在此列。
   const isFullHeightPage = location.pathname.startsWith('/versions')
+  // 比對用 `=== to` 或 `to + '/'`：直接 startsWith(to) 會讓 /modules 誤配到未來的
+  // /modulesomething，也讓詳情頁（/pilots/xxx）正確落在圖鑑那一群。
+  const subNavItems = SUB_NAV_GROUPS.find((items) =>
+    items.some((i) => location.pathname === i.to || location.pathname.startsWith(`${i.to}/`))
+  )
   const isAdmin = userProfile?.role === 'ADMIN' || userProfile?.role === 'OWNER'
   const visibleMoreNavItems = moreNavItems.filter((item) => item.to !== '/simulator' || isAdmin)
   const isMoreActive = visibleMoreNavItems.some((item) =>
@@ -100,7 +137,40 @@ export default function Layout() {
 
   useEffect(() => {
     setMoreOpen(false)
+    setOpenGroup(null)
   }, [location.pathname])
+
+  // 展開條的滑鼠行為：進入任一觸發鈕就開，離開整個 header（含展開條本身）才關。
+  // 延遲 150ms 是給「從按鈕斜著滑到下方卡片」的路徑留餘裕 —— 橫向條比原本的垂直
+  // 浮層更遠，沒有這段寬容會一路關給你看。
+  const cancelClose = useCallback(() => {
+    if (closeTimer.current !== null) {
+      clearTimeout(closeTimer.current)
+      closeTimer.current = null
+    }
+  }, [])
+  const openNavGroup = useCallback((key: string) => {
+    cancelClose()
+    setOpenGroup(key)
+  }, [cancelClose])
+  const scheduleClose = useCallback(() => {
+    cancelClose()
+    closeTimer.current = window.setTimeout(() => setOpenGroup(null), 150)
+  }, [cancelClose])
+  const closeNavGroup = useCallback(() => {
+    cancelClose()
+    setOpenGroup(null)
+  }, [cancelClose])
+
+  useEffect(() => cancelClose, [cancelClose])
+
+  // Esc 關閉：鍵盤使用者沒有「把滑鼠移開」這個動作
+  useEffect(() => {
+    if (!openGroup) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenGroup(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [openGroup])
 
   const handleSignOut = async () => {
     await signOut()
@@ -110,12 +180,20 @@ export default function Layout() {
   const initial = (user?.displayName?.[0] ?? user?.email?.[0] ?? '?').toUpperCase()
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div
+      className="min-h-screen flex flex-col"
+      // .viewport-shell 用 100vh 減固定外框算高度，多出來的這條列必須讓它知道
+      style={{ '--subnav-h': subNavItems ? '2.25rem' : '0px' } as React.CSSProperties}
+    >
       {/* 本地模擬器環境標示（非模擬器模式不渲染任何東西） */}
       <EmulatorBadge />
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-bg-dark/95 backdrop-blur border-b border-border">
+      <header
+        className="sticky top-0 z-50 bg-bg-dark/95 backdrop-blur border-b border-border"
+        onMouseEnter={cancelClose}
+        onMouseLeave={scheduleClose}
+      >
         <div className="max-w-7xl mx-auto px-4 h-12 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2 no-underline shrink-0">
             <span className="text-accent-orange font-bold text-xl tracking-wider font-[Orbitron,sans-serif]">
@@ -126,38 +204,32 @@ export default function Layout() {
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-1 overflow-x-auto">
             {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === '/'}
-                className={({ isActive }) =>
-                  `px-3 py-2 rounded-lg text-sm no-underline transition-colors whitespace-nowrap ${
-                    isActive
-                      ? 'bg-accent-orange/10 text-accent-orange'
-                      : 'text-text-secondary hover:text-text-primary hover:bg-bg-card'
-                  }`
-                }
-              >
+              <NavLink key={item.to} to={item.to} end={item.to === '/'} className={topNavClass}>
                 {item.label}
               </NavLink>
             ))}
-            <ContentNavDropdown label="版本情報" items={versionNavItems} />
-            <ContentNavDropdown label="資料圖鑑" items={catalogNavItems} />
+            {[versionGroup, catalogGroup].map((group) => (
+              <NavGroupTrigger
+                key={group.key}
+                group={group}
+                isOpen={openGroup === group.key}
+                pinned={subNavItems === group.items}
+                onOpen={() => openNavGroup(group.key)}
+                onToggle={() => (openGroup === group.key ? closeNavGroup() : openNavGroup(group.key))}
+              />
+            ))}
             {isAdmin && (
-              <NavLink
-                to={simulatorItem.to}
-                className={({ isActive }) =>
-                  `px-3 py-2 rounded-lg text-sm no-underline transition-colors whitespace-nowrap ${
-                    isActive
-                      ? 'bg-accent-orange/10 text-accent-orange'
-                      : 'text-text-secondary hover:text-text-primary hover:bg-bg-card'
-                  }`
-                }
-              >
+              <NavLink to={simulatorItem.to} className={topNavClass}>
                 {simulatorItem.label}
               </NavLink>
             )}
-            <ContentNavDropdown label="攻略/工具/文件" items={contentNavItems} />
+            <NavGroupTrigger
+              group={guidesGroup}
+              isOpen={openGroup === guidesGroup.key}
+              pinned={subNavItems === guidesGroup.items}
+              onOpen={() => openNavGroup(guidesGroup.key)}
+              onToggle={() => (openGroup === guidesGroup.key ? closeNavGroup() : openNavGroup(guidesGroup.key))}
+            />
             {(userProfile?.role === 'ADMIN' || userProfile?.role === 'OWNER') && (
               <NavLink
                 to="/admin"
@@ -254,6 +326,15 @@ export default function Layout() {
             )}
           </div>
         </div>
+
+        {/* 群組內的常駐分頁列：人已經在這一群裡，換頁不必再 hover 展開條 */}
+        {subNavItems && <SubNavTabs items={subNavItems} />}
+
+        {/* 群組展開條：absolute 掛在 header 下緣（含分頁列），header 高度不變 */}
+        <NavExpandBar
+          group={NAV_GROUPS.find((g) => g.key === openGroup) ?? null}
+          onClose={closeNavGroup}
+        />
       </header>
 
       {/* 非預期登出橫幅（PLAN-045）。放在 header 與 main 之間、不進 main 的

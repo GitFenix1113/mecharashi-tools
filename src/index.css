@@ -140,13 +140,17 @@ select option {
  * 一般滾輪多格累加會越過吸附閾值而停在半截，上下兩頁各露一半）。
  * PLAN-050 Phase B 把 Hero 降級成可收合頂帶之後，兩頁架構沒有存在理由，整段刪除。
  */
+/*
+ * 扣掉的東西：header（3rem）＋ 它的下框線（1px）＋ 群組常駐分頁列（--subnav-h，
+ * 由 Layout 依當前路由設成 2.25rem 或 0px；見 SubNavTabs）。行動版再扣底部 Tab Bar。
+ */
 .viewport-shell {
-  height: calc(100vh - 3rem - 1px);
+  height: calc(100vh - 3rem - 1px - var(--subnav-h, 0px));
 }
 
 @media (max-width: 1023px) {
   .viewport-shell {
-    height: calc(100vh - 3rem - 1px - 3.5rem - env(safe-area-inset-bottom));
+    height: calc(100vh - 3rem - 1px - var(--subnav-h, 0px) - 3.5rem - env(safe-area-inset-bottom));
   }
 }
 /* ──────────────────────────────────────────────────────────────────── */

@@ -35,7 +35,7 @@
     <tr><th>開發階段</th><td>PLAN-050 Phase A（2026-08-19）</td></tr>
     <tr><th>登入需求</th><td>不需要（公開頁面）</td></tr>
     <tr><th>資料來源</th><td><code>patchVersions</code>（<code>usePatchVersions</code>，session 內單例快取）、<code>grayOpsRoster</code>（<code>GameDataContext</code>）</td></tr>
-    <tr><th>導覽入口</th><td>桌機「版本情報 ▾」下拉；行動版 More 面板前三項</td></tr>
+    <tr><th>導覽入口</th><td>桌機「版本情報 ▾」的橫向展開條；行動版 More 面板前三項。<strong>進到 <code>/versions/*</code> 之後</strong>，header 下方常駐一排分頁列（<code>layout/SubNavTabs</code>），三個檢視互切不必再展開選單</td></tr>
   </table>
 </section>
 
@@ -76,12 +76,16 @@
     <strong>ℹ️ 為什麼是三個獨立網址而不是一個頁面內切分頁</strong>：獨立網址同時拿到深連結、上一頁、Ctrl+F
     與使用統計分流，又保留「這三者是一組」的心智模型 —— 導覽列只 +1 項（一個下拉）而不是 +3 項。
     <br><br>
-    <strong>頁內的分頁列已於 2026-08-19 隱藏</strong>：導覽列的「版本情報 ▾」下拉已經是三個檢視的入口，
+    <strong>頁內的分頁列已於 2026-08-19 隱藏</strong>：導覽列的「版本情報 ▾」已經是三個檢視的入口，
     頁內再放一條同樣的分頁列是<strong>同一組導覽出現兩次</strong>，而它吃掉的是 Timeline 最缺的垂直空間。
-    三個檢視各自有自己的標題（「版本速覽」「灰燼行動」、Timeline 的版本橫幅帶），
-    不會變成認不出來的孤兒頁。元件保留在
-    <code>components/versions/VersionViewTabs.tsx</code>，要恢復只需在
-    <code>VersionsLayout</code> 加回一行。
+    <br><br>
+    <strong>2026-08-20：分頁列以另一種形式回來了</strong>——改由 <code>layout/SubNavTabs</code> 貼在
+    <strong>header 下方</strong>而非頁內，版本情報／圖鑑／攻略三群共用同一套。當初拿掉頁內分頁列的兩個理由
+    在那邊都解掉了：高度固定 <code>2.25rem</code> 且由 <code>--subnav-h</code> 從
+    <code>.viewport-shell</code> 扣除（不會多擠出捲軸），而它取代的是「每次換檢視都要把滑鼠移上導覽列、
+    等展開條出來、再挑一個」這段手續。<br>
+    <code>components/versions/VersionViewTabs.tsx</code> 因此<strong>不要再加回 <code>VersionsLayout</code></strong>，
+    元件本體留著只為了 <code>VERSION_VIEWS</code>。
   </div>
 </section>
 
@@ -90,7 +94,7 @@
   <div class="section-title">版面結構</div>
   <div class="wireframe">
     <div class="wf-icon">🗂️</div>
-    <p>Header（全域，含「版本情報 ▾」下拉）<br>↓<br>檢視內容（自帶捲動容器，overscroll-contain）</p>
+    <p>Header（全域，含「版本情報 ▾」展開條）<br>↓<br>常駐分頁列 SubNavTabs（2.25rem）<br>↓<br>檢視內容（自帶捲動容器，overscroll-contain）</p>
   </div>
 </section>
 
@@ -99,8 +103,12 @@
   <div class="section-title">開發注意事項</div>
   <div class="info-block">
     <strong>✅ 已實作（PLAN-050 Phase A）</strong><br>
-    · 外殼高度：<code>.viewport-shell</code>＝<code>calc(100vh - 3rem - 1px)</code>（與首頁共用），行動版再扣底部 Tab Bar；Layout 對 <code>/versions</code> 不渲染 footer 與底部佔位（比照首頁）<br>
-    · 分頁列元件：<code>src/components/versions/VersionViewTabs.tsx</code>（<strong>目前不渲染</strong>，見上）。
+    · 外殼高度：<code>.viewport-shell</code>＝<code>calc(100vh - 3rem - 1px - var(--subnav-h, 0px))</code>，行動版再扣底部 Tab Bar；
+      <code>--subnav-h</code> 由 <code>Layout</code> 依當前路由設成 <code>2.25rem</code>（有常駐分頁列）或 <code>0px</code>。
+      <strong>改分頁列高度時兩邊要一起改</strong>，否則這三頁會多出一條文件捲軸。
+      Layout 對 <code>/versions</code> 不渲染 footer 與底部佔位（比照首頁）<br>
+    · 分頁列元件：<code>src/components/layout/SubNavTabs.tsx</code>（header 下方常駐，全站群組共用）。
+      舊的頁內分頁列 <code>src/components/versions/VersionViewTabs.tsx</code> <strong>不渲染也不要加回來</strong>（見上）。
       其 <code>VERSION_VIEWS</code> 仍在使用 —— 首頁的入口連結由它產生，首頁自己不放任何版本資料，
       但要有地方讓人點進來<br>
     · Timeline 以 <code>lazy()</code> 載入，首頁初載 bundle 減少約 43 KB<br>

@@ -262,8 +262,13 @@
       等於<strong>同一組導覽出現兩次</strong>，而它吃掉的是 Timeline 最缺的垂直空間
       （<code>VersionsLayout</code> 少一行，Timeline 多約 50px）。
       三個檢視各自有標題，不會變成認不出來的孤兒頁。
-      元件保留在 <code>VersionViewTabs.tsx</code>，恢復只需加回一行；
-      其 <code>VERSION_VIEWS</code> 仍供首頁的入口連結使用。
+      元件保留在 <code>VersionViewTabs.tsx</code>，其 <code>VERSION_VIEWS</code> 仍供首頁的入口連結使用。
+      <br>
+      <strong>後續（2026-08-20）：分頁列以另一種形式回來了</strong> —— 改由 <code>layout/SubNavTabs</code> 貼在
+      <strong>header 下方</strong>（版本情報／圖鑑／攻略三群共用），高度固定 <code>2.25rem</code> 且由
+      <code>--subnav-h</code> 從 <code>.viewport-shell</code> 扣除，當初拿掉它的兩個理由（多一條捲軸、
+      吃掉 Timeline 的垂直空間）在那邊都解掉了。<code>VersionViewTabs</code> 因此<strong>不要再加回
+      <code>VersionsLayout</code></strong>。
       <br>
       ⚠ 連帶影響：<strong>A-2 的產物（route 驅動的分頁列）現在不出現在畫面上</strong>，
       但它換來的東西（三個網址、深連結、分流統計）完全保留 —— 那才是 A-2 的實際價值。<br>
@@ -450,6 +455,14 @@
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status done">已完成</span>
+    </div>
+    <div class="note-info">
+      <strong>後續演進（2026-08-20）：<code>ContentNavDropdown</code> 已刪除</strong>，A-3 的產物改由兩個元件承接 ——
+      <code>layout/NavExpandBar</code>（hover 時在 header 下緣長出的<strong>橫向展開條</strong>，取代垂直浮層：
+      浮層蓋住的是內容左上角，橫向條蓋住的是頂端一整條，而且塞得下每個檢視的一行說明）與
+      <code>layout/SubNavTabs</code>（進到群組之後 header 下方的<strong>常駐分頁列</strong>）。
+      決策二（獨立群組而非塞進攻略）仍然成立；<code>versionNavItems</code> 由 <code>VERSION_VIEWS</code> 推導的
+      單一來源也沒變，只是多了一個 <code>desc</code> 欄位餵給展開條。
     </div>
   </div>
 

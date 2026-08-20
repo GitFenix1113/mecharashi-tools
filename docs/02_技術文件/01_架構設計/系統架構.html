@@ -189,7 +189,7 @@
 
   <table class="spec-table">
     <tr><th>資料夾</th><th>職責</th><th>內容</th></tr>
-    <tr><td><code>layout/</code></td><td>全站外框</td><td><code>Layout</code>（導覽列 / 頁尾 / 版位）、<code>ContentNavDropdown</code>、<code>NavIcon</code>、<code>SignedOutBanner</code>、<code>EmulatorBadge</code>（模擬器環境標示）</td></tr>
+    <tr><td><code>layout/</code></td><td>全站外框</td><td><code>Layout</code>（導覽列 / 頁尾 / 版位）、<code>NavExpandBar</code>（群組的橫向展開條 ＋ 觸發鈕 <code>NavGroupTrigger</code>）、<code>SubNavTabs</code>（群組內的常駐分頁列）、<code>NavIcon</code>、<code>SignedOutBanner</code>、<code>EmulatorBadge</code>（模擬器環境標示）<br><span style="color:var(--text-dim);">※ 2026-08-20 起 <code>ContentNavDropdown</code>（floating-ui 垂直浮層）已刪除，見下方「導覽的兩層」。</span></td></tr>
     <tr><td><code>auth/</code></td><td>登入與權限</td><td><code>AuthModal</code>（登入 / 註冊）、<code>AdminRoute</code>（<code>/admin/*</code> 的角色 gate）</td></tr>
     <tr><td><code>refs/</code></td><td>實體引用層（PLAN-019 / 034）</td><td><code>RefText</code>（正文 <code>[xxx]</code> → chip）、<code>RefChip</code>、<code>EntityRefView</code>（浮窗內容）、<code>DiffHighlight</code>（專武強化差異）、<code>NdOverrideEmpty</code>（局部關閉算力覆寫）</td></tr>
     <tr><td><code>badges/</code></td><td>徽章 / 標籤</td><td><code>PilotBadges</code>、<code>MechBadges</code>、<code>WeaponBadges</code>、<code>WeaponRarityBadge</code>、<code>ModuleBadges</code>、<code>ComponentBadges</code>、<code>BackpackBadges</code></td></tr>
@@ -200,10 +200,29 @@
     <tr><td><code>planner/</code></td><td>科研規劃器</td><td><code>MechSelector</code>、<code>PartSlotCard</code>、<code>PlanResult</code>、<code>SuperFactoryPanel</code>、<code>Stepper</code>、<code>ModuleInput</code></td></tr>
     <tr><td><code>timeline/</code></td><td>版本時間軸</td><td><code>VersionTimeline</code>（網址 → 版本）、<code>VersionDetailView</code>（信箱式橫幅帶 ＋ 工具列）、<code>VersionRail</code>（常駐版本選擇列）、<code>VersionGanttPanel</code>（左右主從分割）、<code>ActivityBar</code> / <code>ActivityCard</code> / <code>ActivityCardFlow</code>、<code>GanttAxisOverlay</code>、<code>PatchInfoRow</code>（PLAN-048 刪除 <code>ActivityTimeline</code> / <code>CoreInfoPanel</code> / <code>VersionSidePanel</code> / <code>VersionDot</code>；PLAN-050 C-3 刪除 <code>VersionExpandedPanel</code> —— 橫幅搬到頂部色帶後，它負責的背景疊層沒有存在理由）</td></tr>
     <tr><td><code>home/</code></td><td>首頁區塊</td><td><code>SiteChangelog</code>、<code>SiteTeamSection</code>。<br><span style="color:var(--text-dim);">※ 2026-08-19 起首頁只剩站務履歷與維護團隊，資料面板整組退場（<code>HomeTabPanel</code> / <code>HomeHeroBar</code> 已刪除），版本檢視本體移入 <code>versions/</code>。</span></td></tr>
-    <tr><td><code>versions/</code></td><td>版本情報三分頁（PLAN-050）</td><td><code>VersionViewTabs</code>（route 驅動的分頁列，<strong>2026-08-19 起不渲染</strong> —— 導覽列的「版本情報 ▾」已是入口，頁內再放一條是同一組導覽出現兩次；其 <code>VERSION_VIEWS</code> 仍是三處導覽的<strong>單一來源</strong>：導覽列下拉、行動版 More 面板、首頁的入口按鈕，連 icon 都取自同一份）、<code>VersionQuickTable</code>、<code>GrayOpsPanel</code>／<code>GrayOpsMechRow</code></td></tr>
+    <tr><td><code>versions/</code></td><td>版本情報三分頁（PLAN-050）</td><td><code>VersionViewTabs</code>（route 驅動的分頁列，<strong>2026-08-19 起不渲染，2026-08-20 起角色由 <code>layout/SubNavTabs</code> 接手且不要再加回來</strong> —— 頁內再放一條是同一組導覽出現兩次；其 <code>VERSION_VIEWS</code> 仍是三處導覽的<strong>單一來源</strong>：導覽列展開條、行動版 More 面板、首頁的入口按鈕，連 icon 與說明文字都取自同一份）、<code>VersionQuickTable</code>、<code>GrayOpsPanel</code>／<code>GrayOpsMechRow</code></td></tr>
     <tr><td><code>profile/</code></td><td>個人頁</td><td><code>AvatarDisplay</code>、<code>AvatarPicker</code>、<code>PilotAvatarGallery</code>、<code>ProfileEditForm</code></td></tr>
     <tr><td><code>admin/</code></td><td>後台專用</td><td><code>RefPicker</code>（引用挑選器）、<code>IconPicker</code>、<code>AdminHalfEditorPanel</code>、<code>AdminTimedActivityEditor</code>、<code>analytics/</code>（<code>StatCard</code>／<code>BarList</code>／<code>TrendChart</code>）</td></tr>
   </table>
+
+  <div class="info-block" style="margin-top:16px;">
+    <strong>◆ 導覽的兩層：展開條管「怎麼進來」，分頁列管「進來之後怎麼換」（2026-08-20）</strong><br>
+    <code>NavExpandBar</code>（桌機）——「版本情報 ▾ / 資料圖鑑 ▾ / 攻略、工具、文件 ▾」hover 時，在 header
+    <strong>下緣</strong>長出與 header 同寬的一整條，子項橫向鋪開。取代原本的垂直浮層下拉：垂直浮層蓋住的是
+    內容區左上角（像一塊彈窗掉在資料上），橫向條蓋住的是頂端一整條（讀起來是 header 的延伸），而且整條的
+    寬度容得下每個子項配一行說明。<br>
+    <code>SubNavTabs</code>——人一旦落在某個群組裡（<code>/versions/*</code>、圖鑑六頁與其詳情頁、攻略三頁），
+    header 下方就<strong>常駐</strong>一排小 tab（高 <code>2.25rem</code>），換頁不必再 hover 展開條。
+    群組判定用「<code>pathname === item.to</code> 或以 <code>item.to + '/'</code> 開頭」，所以
+    <code>/pilots/pilot_088_曜</code> 也算在圖鑑那一群。<br>
+    <strong>兩層不重疊</strong>：某群的分頁列已經常駐時，導覽列上那顆觸發鈕會降級成<strong>狀態標籤</strong>
+    （不是 <code>button</code>、沒有 ▾、hover 不展開）—— 展開出跟下面一模一樣的內容是白工，而「按了沒反應的按鈕」
+    比不能按更糟。<br>
+    <strong>⚠ 高度接線</strong>：<code>SubNavTabs</code> 的 <code>h-9</code> 必須與 <code>index.css</code> 的
+    <code>--subnav-h</code> 一致 —— <code>.viewport-shell</code> 是 <code>100vh</code> 減固定外框算出來的，
+    這條列沒被扣掉就會多擠出一條文件捲軸。展開條則刻意用 <code>absolute</code> <strong>覆蓋</strong>而非撐高
+    header：它的高度在動畫中浮動，要同步就得每幀餵值。
+  </div>
 
   <div class="sub-h" style="margin-top:24px;">src/components/module/ 模組元件家族</div>
   <div class="info-block">

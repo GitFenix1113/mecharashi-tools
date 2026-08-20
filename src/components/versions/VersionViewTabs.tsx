@@ -13,10 +13,12 @@ import type { NavIconName } from '../icons/NavIcon'
  * `VERSION_VIEWS` 同時供首頁的入口連結使用 —— 首頁自己不再放任何版本資料，
  * 但要有地方讓人點進來。
  *
- * ⚠ **分頁列本身目前沒有被渲染**（2026-08-19 站長指示隱藏）：導覽列的
- * 「版本情報 ▾」下拉已是三個檢視的入口，頁內再放一條等於同一組導覽出現兩次，
- * 而它吃掉的是 Timeline 最缺的垂直空間。元件保留是為了隨時能加回
- * `VersionsLayout` 一行就復原；`VERSION_VIEWS` 則仍在使用中。
+ * ⚠ **分頁列本身沒有被渲染，而且不要再加回來**（2026-08-19 站長指示隱藏）。
+ * 這個角色在 2026-08-20 由 `components/layout/SubNavTabs` 接手：改貼在 header 下方，
+ * 版本情報／圖鑑／攻略三群共用同一套，而且它的高度有被 `.viewport-shell` 的
+ * `--subnav-h` 扣掉 —— 當初把頁內分頁列拿掉的理由（吃掉 Timeline 最缺的垂直空間、
+ * 且會多擠出一條文件捲軸）在那邊已經解掉了，這裡再放一條就是同一組導覽出現兩次。
+ * 元件本體留著只為了 `VERSION_VIEWS`（首頁入口與導覽列都讀它）。
  */
 
 export type VersionViewId = 'quick' | 'grayops' | 'timeline'
@@ -28,10 +30,12 @@ export const VERSION_VIEWS: {
   zhLabel: string
   to: string
   icon: NavIconName
+  /** 導覽列橫向展開條上的一行說明（見 NavExpandBar）；分頁列與首頁入口不使用 */
+  desc: string
 }[] = [
-  { id: 'quick',    label: 'Quick Table', zhLabel: '版本速覽',   to: '/versions/quick',    icon: 'table' },
-  { id: 'grayops',  label: 'Gray Ops',    zhLabel: '灰燼行動',   to: '/versions/grayops',  icon: 'target' },
-  { id: 'timeline', label: 'Timeline',    zhLabel: '版本時間線', to: '/versions/timeline', icon: 'timeline' },
+  { id: 'quick',    label: 'Quick Table', zhLabel: '版本速覽',   to: '/versions/quick',    icon: 'table',    desc: '各版本新增機師與機甲一覽' },
+  { id: 'grayops',  label: 'Gray Ops',    zhLabel: '灰燼行動',   to: '/versions/grayops',  icon: 'target',   desc: '未來登場機甲的四公司名單' },
+  { id: 'timeline', label: 'Timeline',    zhLabel: '版本時間線', to: '/versions/timeline', icon: 'timeline', desc: '卡池與活動檔期甘特圖' },
 ]
 
 export default function VersionViewTabs() {
