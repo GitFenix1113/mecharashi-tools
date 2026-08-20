@@ -57,8 +57,18 @@
   --color-text-primary: #e8eaed;
   --color-text-secondary: #9ca3af;
   --color-text-dim: #6b7280;
-  --color-border: #1e2330;
-  --color-border-accent: #2a3040;
+  /*
+   * 框線三階（2026-08-20 提亮）。舊值 border #1e2330 / accent #2a3040 在頁面底色
+   * #0a0c10 上只有 1.25:1 與 1.49:1 —— 深色介面的分隔線一般要 1.6–2.6:1，那兩個值
+   * 低到要湊近螢幕才看得見。提亮後：
+   *   subtle 1.40:1 … 同一區塊內的細分（例如速覽表的「機師｜機甲」子欄）
+   *   border 1.62:1 … 全站主力：卡片、輸入框、列分隔
+   *   accent 2.13:1 … 主結構：容器外框、速覽表的版本欄之間、浮窗邊界
+   * 級距刻意拉開 —— 三條都調亮但保持等距，只會變成三條同樣顯眼的線，讀不出階層。
+   */
+  --color-border-subtle: #262c3a;
+  --color-border: #2f3646;
+  --color-border-accent: #3f4859;
 }
 
 /*

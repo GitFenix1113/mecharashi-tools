@@ -318,7 +318,9 @@ export default function AdminHalfEditorPanel({ value, onChange }: Props) {
               onChange={e => update({ twIsPredicted: e.target.checked || undefined })}
               className="accent-accent-yellow"
             />
-            <span className="text-xs text-text-dim">預測值（台服日期未確認）</span>
+            {/* 語意在 2026-08-21 改了：預測值預設由日期自動判定（usePatchVersions 的
+                applyPredictedByDate），這顆只在「日期已過、版本卻還沒開」時才需要勾。 */}
+            <span className="text-xs text-text-dim">強制標為預測值（不勾＝未來日期自動視為預測）</span>
           </label>
         </div>
       </div>

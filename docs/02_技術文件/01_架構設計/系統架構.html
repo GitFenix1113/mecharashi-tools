@@ -77,6 +77,15 @@
     <span class="tech-tag secondary">React Router</span>
   </div>
 
+  <div class="info-block" style="margin-top:12px;">
+    <strong>◆ 框線三階（2026-08-21）</strong>　在頁面底色 <code>#0a0c10</code> 上的 WCAG 對比：<br>
+    ・<code>--color-border-subtle</code> <code>#262c3a</code> — <strong>1.40 : 1</strong>　同一區塊內的細分（速覽表的「機師｜機甲」子欄）<br>
+    ・<code>--color-border</code> <code>#2f3646</code> — <strong>1.62 : 1</strong>　全站主力：卡片、輸入框、列分隔、縮圖外框<br>
+    ・<code>--color-border-accent</code> <code>#3f4859</code> — <strong>2.13 : 1</strong>　主結構：容器外框、速覽表的版本欄之間、浮窗邊界<br>
+    <span style="opacity:.85;">舊值 border <code>#1e2330</code>／accent <code>#2a3040</code> 只有 1.25 與 1.49 —— 深色介面的分隔線一般要 1.6–2.6，那兩個值低到要湊近螢幕才看得見。三階的級距刻意拉開：三條都調亮但保持等距，只會變成三條同樣顯眼的線，讀不出階層。</span><br>
+    <span style="opacity:.85;">⚠ <strong>同一個 className 裡要讓兩個方向用不同顏色，必須寫 <code>border-r-*</code> / <code>border-b-*</code></strong>：<code>border-{color}</code> 設的是全方向顏色，兩個放在一起會互相覆蓋，且誰贏取決於 Tailwind 產生的樣式表順序而非書寫順序。</span>
+  </div>
+
   <div class="sub-h">後端 &amp; 資料庫</div>
   <div class="tech-row">
     <span class="tech-tag tertiary">Firebase Auth</span>

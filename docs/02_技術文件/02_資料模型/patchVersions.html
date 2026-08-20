@@ -250,7 +250,7 @@
 <span class="kw">export interface</span> <span class="ty">PatchHalf</span> {
   cnDate: <span class="ty">string</span>            <span class="cm">// 陸服起始日 YYYY/MM/DD（固定週四）</span>
   twDate?: <span class="ty">string</span>           <span class="cm">// 台服起始日（可含 "約 " 前綴）</span>
-  twIsPredicted?: <span class="ty">boolean</span>    <span class="cm">// 台服日期是否為預測值</span>
+  twIsPredicted?: <span class="ty">boolean</span>    <span class="cm">// 手動覆寫；未填則依 twDate 是否已過自動判定（見下）</span>
   weeks?: <span class="ty">number</span>            <span class="cm">// 本半版本幾週；未填視同 3。上半優先用「下半起始日」推算</span>
   pilots?: <span class="ty">string</span>[]          <span class="cm">// 本半版本新機師</span>
   mechs?: <span class="ty">string</span>[]            <span class="cm">// 本半版本新機甲</span>
@@ -269,6 +269,28 @@
   <span class="cm">/** @deprecated */</span> specialEvents?: <span class="ty">string</span>[]
   <span class="cm">/** @deprecated */</span> revivedBanners?: <span class="ty">string</span>[]
 }
+  </div>
+
+  <div class="warning-block">
+    <strong><code>twIsPredicted</code>：預測值是「算出來的」，不是勾出來的（2026-08-21）</strong><br><br>
+    台服未來的檔期沒有官方公告，全部照固定週期（21 天）往後推 —— 順帶一提，
+    <strong>「上半／下半」本身也是玩家依卡池自行的分類，官方沒有這種說法</strong>（<code>weeks</code>
+    保留可調就是為了這個）。所以規則只有一句：<strong>還沒發生的是預測，已經過去的才是事實</strong>，
+    而那是可以從 <code>twDate</code> 直接算出來的。<br><br>
+    因此 <code>usePatchVersions</code> 的 <code>applyPredictedByDate</code> 會在資料進前台前補上這個旗標：
+    <strong>欄位未填 → 依 <code>twDate</code> 是否已過自動判定</strong>；有填則尊重人工設定。
+    做成自動推導而不是後台手動勾，是因為<strong>手動旗標會過期</strong> —— 標成預測的版本一旦實際開跑，
+    就得有人記得回去取消勾選。實測 2026-08-21 掃過線上 25 個版本、50 個半版本，
+    <strong>這個欄位一個都沒填</strong>（且是「欄位不存在」而非存了 false），
+    而 v3.3–v3.6 的日期明顯是推算的 —— 手動維護的下場已經驗證過了。<br><br>
+    ⚠ 這個旗標<strong>不只影響顏色</strong>：<code>applyTwCurrent</code> 計算「台服當前版本」時會跳過預測版本，
+    公告解析的 <code>guessTarget</code> 推測「這篇屬於哪個版本」時同樣跳過。<br><br>
+    ⚠ 自動推導接不住的唯一情境是<strong>台服延期</strong>（推算日期已過、版本卻還沒開）——
+    這正是手動覆寫保留的理由：後台勾選即強制維持預測，直到有人填上真正的日期。
+    後台 checkbox 的標籤已同步改為「強制標為預測值（不勾＝未來日期自動視為預測）」。<br><br>
+    另有一套<strong>更早的舊機制</strong>：<code>twDate</code> 的「約 」前綴（如 <code>約 2026/08/27</code>），
+    前台顯示時以 <code>replace('約 ', '')</code> 剝除。線上資料已無此前綴，
+    僅 <code>src/data/patchVersions/</code> 的靜態 fallback 仍帶著。
   </div>
 
   <div class="warning-block">

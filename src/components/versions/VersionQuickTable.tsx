@@ -71,6 +71,45 @@ interface EntityLookup {
   ids: Map<string, string>
 }
 
+// ── Thumbnail shapes ──────────────────────────────────────────────────────────
+
+type ThumbVariant = 'default' | 'wide' | 'badge'
+
+/**
+ * 縮圖的形狀**依素材比例而定**，不是全部塞進同一個方框。
+ *
+ * 機師 / 武器 / 背包的素材都是 340×340（1:1），機甲的 `portrait.webp` 是 560×340
+ * （1.65:1）—— 過去四類共用 `w-12 h-12 object-cover`，機甲等於左右各被裁掉 33%，
+ * 只剩機體中段。同一列裡機師是一張完整的臉、機甲卻認不出是哪台，那就是使用者說的
+ * 「圖片排版不一致，看著有點辛苦」。
+ *
+ *   default … 1:1 素材。`object-top` 是為了人臉（臉在圖的上半）。
+ *   wide …… 機甲專用，94×57 貼合 1.65:1 原比例；用 contain 而非 cover，
+ *            日後若混進非 1.65 的機甲素材也不會被裁。
+ *   badge … 武裝生產格裡「這把武器屬於誰」的角標，疊在武器縮圖右下角。
+ *            邊框用底色而非邊框色：它要從下面那張圖上「浮起來」。
+ */
+/**
+ * 沒有圖時的文字樣式。**裸文字不行**：同一格裡兩個項目（「修補者背包 迷蹤者背包」）
+ * 只靠一個空白分隔，讀起來是一串字而不是兩個東西；而它旁邊的格子全是有邊界的縮圖，
+ * 文字格因此看起來像資料缺失，而不是「已建檔、素材還沒到」。
+ *
+ * 晶片給它三件事：邊界（這是一個項目）、內距（與相鄰項目分得開）、底色（有實體感）。
+ * 預測值沿用 cyan，連邊框一起換 —— 顏色是這張表既有的語彙，不另外發明。
+ */
+const textChipClass = (isPredicted: boolean) =>
+  `inline-flex items-center rounded-md border px-2 py-1 text-[13px] leading-tight whitespace-nowrap ${
+    isPredicted
+      ? 'border-accent-cyan/30 bg-accent-cyan/5 text-accent-cyan'
+      : 'border-border bg-bg-card/40 text-text-secondary'
+  }`
+
+const THUMB_CLASS: Record<ThumbVariant, string> = {
+  default: 'w-12 h-12 object-cover object-top rounded-md border border-border',
+  wide:    'w-20 h-12 object-contain rounded-md border border-border',
+  badge:   'w-6 h-6 object-cover object-top rounded-full border-2 border-bg-dark',
+}
+
 // ── RefThumbnail ──────────────────────────────────────────────────────────────
 
 /**
@@ -86,8 +125,10 @@ interface EntityLookup {
  * pilot / mech / weapon / backpack，有詳情頁的給「查看完整詳情」按鈕、沒有的就展開卡片，
  * 且資料是點開才 ensureLoaded——首頁掛載時不會多讀任何集合。
  */
-function RefThumbnail({ name, lookup, isPredicted }: {
-  name: string; lookup?: EntityLookup; isPredicted: boolean
+function RefThumbnail({ name, lookup, isPredicted, variant = 'default', chip = true }: {
+  name: string; lookup?: EntityLookup; isPredicted: boolean; variant?: ThumbVariant
+  /** false：不套晶片外殼，由呼叫端自己包（武器＋機師要包成同一個晶片） */
+  chip?: boolean
 }) {
   const [broken, setBroken] = useState(false)
   const { hoverRef, leaveRef, pinRef } = useReference()
@@ -100,11 +141,13 @@ function RefThumbnail({ name, lookup, isPredicted }: {
     <img
       src={resolveIconSrc(imageUrl)}
       alt={name}
-      className="w-12 h-12 object-cover object-top rounded-md border border-border/50 group-hover:border-accent-orange transition-colors"
+      className={`${THUMB_CLASS[variant]} group-hover:border-accent-orange transition-colors`}
       onError={() => setBroken(true)}
     />
   ) : (
-    <span className={`text-[14px] leading-tight whitespace-nowrap ${isPredicted ? 'text-accent-cyan' : 'text-text-secondary'}`}>
+    <span className={chip
+      ? textChipClass(isPredicted)
+      : `text-[13px] leading-tight whitespace-nowrap ${isPredicted ? 'text-accent-cyan' : 'text-text-secondary'}`}>
       {name}
     </span>
   )
@@ -144,10 +187,13 @@ function ThumbnailList({ items, isPredicted, lookup }: {
   items: string[]; isPredicted: boolean; lookup?: EntityLookup
 }) {
   if (!items.length) return <span className="text-text-dim/30 text-sm">—</span>
+  // 機甲一律走寬幅：這裡判斷 refType 而不是由呼叫端各自傳，否則「機甲戰令」那種
+  // 走 Cell 的列遲早會漏掉一處，變成同一張表裡機甲有兩種形狀
+  const variant: ThumbVariant = lookup?.refType === 'mech' ? 'wide' : 'default'
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-2">
       {items.map((name, i) => (
-        <RefThumbnail key={i} name={name} lookup={lookup} isPredicted={isPredicted} />
+        <RefThumbnail key={i} name={name} lookup={lookup} isPredicted={isPredicted} variant={variant} />
       ))}
     </div>
   )
@@ -155,12 +201,12 @@ function ThumbnailList({ items, isPredicted, lookup }: {
 
 function TextList({ items, isPredicted }: { items: string[]; isPredicted: boolean }) {
   if (!items.length) return <span className="text-text-dim/30 text-sm">—</span>
+  // 與 RefThumbnail 的無圖分支用同一個晶片：同一張表裡不該有兩種「文字項目」的長相。
+  // 這裡的項目沒有實體引用（邊境商店／鬥技場只是名稱＋日期），所以不可點，但外觀一致。
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-wrap items-center gap-2">
       {items.map((item, i) => (
-        <span key={i} className={`text-[14px] leading-tight whitespace-nowrap ${isPredicted ? 'text-accent-cyan' : 'text-text-secondary'}`}>
-          {item}
-        </span>
+        <span key={i} className={textChipClass(isPredicted)}>{item}</span>
       ))}
     </div>
   )
@@ -175,10 +221,10 @@ function SplitCell({ left, right, isPredicted, isCurrent, lookupLeft, lookupRigh
   const bg = isCurrent ? 'bg-accent-green/5' : ''
   return (
     <>
-      <td className={`px-2.5 py-1.5 border-r border-b border-border/40 align-middle ${bg}`}>
+      <td className={`px-2.5 py-1.5 border-r border-r-border-subtle border-b border-b-border align-middle ${bg}`}>
         <ThumbnailList items={left} isPredicted={isPredicted} lookup={lookupLeft} />
       </td>
-      <td className={`px-2.5 py-1.5 border-r border-b border-border align-middle ${bg}`}>
+      <td className={`px-2.5 py-1.5 border-r border-r-border-accent border-b border-b-border align-middle ${bg}`}>
         <ThumbnailList items={right} isPredicted={isPredicted} lookup={lookupRight} />
       </td>
     </>
@@ -190,7 +236,7 @@ function SplitCell({ left, right, isPredicted, isCurrent, lookupLeft, lookupRigh
 function Cell({ items, isPredicted, isCurrent, lookup }: {
   items: string[]; isPredicted: boolean; isCurrent: boolean; lookup?: EntityLookup
 }) {
-  const base = `px-3 py-1.5 border-r border-b border-border align-middle ${isCurrent ? 'bg-accent-green/5' : ''}`
+  const base = `px-3 py-1.5 border-r border-r-border-accent border-b border-b-border align-middle ${isCurrent ? 'bg-accent-green/5' : ''}`
   if (!items.length) return <td colSpan={2} className={`${base} text-center text-text-dim/30 text-sm`}>—</td>
   return (
     <td colSpan={2} className={base}>
@@ -213,29 +259,88 @@ function WeaponPilotCell({ pairs, isPredicted, isCurrent, weaponLookup, pilotLoo
 }) {
   const bg = isCurrent ? 'bg-accent-green/5' : ''
   if (!pairs.length) {
-    return <td colSpan={2} className={`px-3 py-1.5 border-r border-b border-border align-middle text-center text-text-dim/30 text-sm ${bg}`}>—</td>
+    return <td colSpan={2} className={`px-3 py-1.5 border-r border-r-border-accent border-b border-b-border align-middle text-center text-text-dim/30 text-sm ${bg}`}>—</td>
   }
   return (
-    <td colSpan={2} className={`px-2.5 py-1.5 border-r border-b border-border align-top ${bg}`}>
-      <div className="flex flex-wrap gap-1.5">
+    <td colSpan={2} className={`px-2.5 py-2 border-r border-r-border-accent border-b border-b-border align-middle ${bg}`}>
+      {/* gap 從 1.5(6px) 拉到 3(12px)：角標本身向外突出 4px，組間距若不拉開，
+          相鄰兩組會黏成一片，鄰近律就白費了 */}
+      <div className="flex flex-wrap items-center gap-3">
         {pairs.map((pair, i) => (
-          <div key={i} className="border border-border/30 rounded-lg shrink-0">
-            <div className="px-1.5 py-1 flex items-center justify-center">
-              <RefThumbnail name={pair.weapon} lookup={weaponLookup} isPredicted={isPredicted} />
-            </div>
-            {pair.pilot && (
-              <>
-                <div className="border-t border-border/25" />
-                <div className="px-1.5 py-1 flex items-center justify-center">
-                  <RefThumbnail name={pair.pilot} lookup={pilotLookup} isPredicted={isPredicted} />
-                </div>
-              </>
-            )}
-          </div>
+          <WeaponPilotBadge
+            key={i}
+            pair={pair}
+            isPredicted={isPredicted}
+            weaponLookup={weaponLookup}
+            pilotLookup={pilotLookup}
+          />
         ))}
       </div>
     </td>
   )
+}
+
+/**
+ * 一把武器與它的持有機師。
+ *
+ * 從屬關係用**大小差**表達：大的是主體（武器），小的掛在右下角是註記（誰用的）——
+ * 這是遊戲 UI 表達「持有者」的通用語彙。舊版把兩張 57px 的圖上下堆疊、外面套一個
+ * `border/30` 的框，讀起來是「兩個並列的東西」而不是一組，而且讓武裝生產列高達 151px
+ * （其他列多是 72px），整張表因此多出一條只能捲 29px 的捲軸。
+ *
+ * 三種情況分開處理，因為**縮圖與文字不能混著疊**：
+ *
+ *   武器有圖 ＋ 機師有圖 → 角標式
+ *   武器有圖 ＋ 機師無圖 → 武器縮圖下掛機師名（資訊不能因為沒素材就消失）
+ *   武器無圖（不分機師）  → 整組退回文字並排；沒有主體可以掛，角標會變成浮在半空的頭像
+ */
+function WeaponPilotBadge({ pair, isPredicted, weaponLookup, pilotLookup }: {
+  pair: WeaponPilotPair
+  isPredicted: boolean
+  weaponLookup?: EntityLookup
+  pilotLookup?: EntityLookup
+}) {
+  const hasWeaponIcon = !!weaponLookup?.icons.get(pair.weapon)
+  const hasPilotIcon  = !!pair.pilot && !!pilotLookup?.icons.get(pair.pilot)
+
+  if (!hasWeaponIcon) {
+    // 兩者包在**同一個**晶片裡：拆成兩個晶片的話，「征伐」與「奧德利」看起來就是
+    // 兩個並列的項目，而不是一把武器和它的持有者 —— 與角標式要表達的是同一件事
+    return (
+      <span className={`${textChipClass(isPredicted)} gap-1.5 shrink-0`}>
+        <RefThumbnail name={pair.weapon} lookup={weaponLookup} isPredicted={isPredicted} chip={false} />
+        {pair.pilot && (
+          <>
+            <span className="text-text-dim/50 text-[11px]">▸</span>
+            <span className="text-[12px] text-text-dim">
+              <RefThumbnail name={pair.pilot} lookup={pilotLookup} isPredicted={isPredicted} chip={false} />
+            </span>
+          </>
+        )}
+      </span>
+    )
+  }
+
+  const weapon = (
+    <span className="relative inline-flex shrink-0">
+      <RefThumbnail name={pair.weapon} lookup={weaponLookup} isPredicted={isPredicted} />
+      {hasPilotIcon && (
+        <span className="absolute -right-1 -bottom-1 inline-flex leading-none">
+          <RefThumbnail name={pair.pilot!} lookup={pilotLookup} isPredicted={isPredicted} variant="badge" />
+        </span>
+      )}
+    </span>
+  )
+
+  if (pair.pilot && !hasPilotIcon) {
+    return (
+      <span className="inline-flex flex-col items-center gap-0.5 shrink-0">
+        {weapon}
+        <RefThumbnail name={pair.pilot} lookup={pilotLookup} isPredicted={isPredicted} />
+      </span>
+    )
+  }
+  return weapon
 }
 
 // ── Row definitions ───────────────────────────────────────────────────────────
@@ -379,14 +484,14 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
         <p className="text-[11px] text-accent-yellow mb-2">⚠ 無法連線 Firestore，顯示本地資料</p>
       )}
 
-      <div ref={scrollWrapRef} className="overflow-x-auto rounded-xl border border-border">
+      <div ref={scrollWrapRef} className="overflow-x-auto rounded-xl border border-border-accent">
         <table className="w-full border-collapse text-sm" style={{ minWidth: '880px' }}>
           <thead>
             {/* Row 1: 類別 (rowSpan=2) + version headers (colSpan=2 each) */}
-            <tr className="border-b border-border">
+            <tr className="border-b border-border-accent">
               <th
                 rowSpan={2}
-                className="sticky left-0 z-10 bg-bg-dark px-3 py-2.5 text-left text-[11px] font-bold tracking-[2px] text-accent-orange uppercase font-[Orbitron,sans-serif] border-r border-border whitespace-nowrap w-24 align-middle"
+                className="sticky left-0 z-10 bg-bg-dark px-3 py-2.5 text-left text-[11px] font-bold tracking-[2px] text-accent-orange uppercase font-[Orbitron,sans-serif] border-r border-border-accent whitespace-nowrap w-24 align-middle"
               >
                 類別
               </th>
@@ -398,7 +503,7 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
                   <th
                     key={v.version}
                     colSpan={2}
-                    className={`px-3 py-2.5 text-center border-r border-border whitespace-nowrap ${
+                    className={`px-3 py-2.5 text-center border-r border-border-accent whitespace-nowrap ${
                       isCurrent ? 'bg-accent-green/8 text-accent-green' : isPredicted ? 'text-accent-cyan' : 'text-text-secondary'
                     }`}
                   >
@@ -415,16 +520,16 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
               })}
             </tr>
             {/* Row 2: 機師 / 機甲 sub-headers */}
-            <tr className="border-b border-border">
+            <tr className="border-b border-border-accent">
               {displayVersions.map(v => {
                 const isCurrent = v.isTwCurrent
                 const bg = isCurrent ? 'bg-accent-green/5' : ''
                 return (
                   <Fragment key={v.version}>
-                    <th className={`px-2 py-1 text-center text-[11px] text-text-dim font-normal border-r border-border/40 ${bg}`}>
+                    <th className={`px-2 py-1 text-center text-[11px] text-text-dim font-normal border-r border-border-subtle ${bg}`}>
                       機師
                     </th>
-                    <th className={`px-2 py-1 text-center text-[11px] text-text-dim font-normal border-r border-border ${bg}`}>
+                    <th className={`px-2 py-1 text-center text-[11px] text-text-dim font-normal border-r border-border-accent ${bg}`}>
                       機甲
                     </th>
                   </Fragment>
@@ -435,7 +540,7 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
           <tbody>
             {ROW_DEFS.map((row, rowIdx) => (
               <tr key={row.key} className={rowIdx % 2 === 1 ? 'bg-bg-card/30' : ''}>
-                <td className="sticky left-0 z-10 bg-bg-dark px-3 py-1.5 text-[14px] text-text-dim font-medium border-r border-b border-border whitespace-nowrap align-middle">
+                <td className="sticky left-0 z-10 bg-bg-dark px-3 py-1.5 text-[14px] text-text-dim font-medium border-r border-r-border-accent border-b border-b-border whitespace-nowrap align-middle">
                   {row.label}
                 </td>
                 {displayVersions.map(v => {
