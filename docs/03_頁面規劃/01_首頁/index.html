@@ -59,7 +59,7 @@
       <br><br>
       <strong>第一版是一行以「·」分隔的橘色文字連結，使用者回報「看不出來是能按的」</strong>——
       可點性只靠顏色，而這站到處都是橘字。改成邊框＋淡底的按鈕之後，可點性靠**形狀**，
-      顏色退為強調。icon 與導覽列下拉共用同一組（<code>VERSION_VIEWS</code>），
+      顏色退為強調。icon 與導覽列展開條共用同一組（<code>VERSION_VIEWS</code>），
       讓「這三個是同一組東西」在兩處視覺一致。
       <br><br>
       仍然不是圖示卡片格：那是這個首頁早年拆掉的東西，而且會把首頁重新變成導航頁。
@@ -103,8 +103,9 @@
     <strong>✅ 已實作</strong><br>
     · 首頁不再是視窗高度外殼，<code>Layout</code> 的 <code>isFullHeightPage</code> 現在只認 <code>/versions</code><br>
     · 入口按鈕的清單來源是 <code>VERSION_VIEWS</code>（<code>src/components/versions/VersionViewTabs.tsx</code>）——
-      <strong>導覽列的「版本情報 ▾」下拉也由它推導</strong>（<code>Layout.tsx</code> 的
-      <code>versionNavItems</code>），連 icon 都是同一份，新增檢視時不會有一處漏改<br>
+      <strong>導覽列的「版本情報 ▾」展開條與進站後的常駐分頁列也由它推導</strong>（<code>Layout.tsx</code> 的
+      <code>versionNavItems</code>），連 icon 與展開條上那行說明（<code>desc</code>，2026-08-20 新增，
+      首頁的膠囊按鈕不使用）都是同一份，新增檢視時不會有一處漏改<br>
     · 站名與副標分成兩個元素：<code>bg-clip-text</code> 會讓所有子元素文字一起變透明<br>
     · 首頁本身不觸發任何 Firestore 讀取（履歷是打包進 bundle 的靜態資料，團隊走既有的 <code>useSiteTeam</code>）
   </div>
