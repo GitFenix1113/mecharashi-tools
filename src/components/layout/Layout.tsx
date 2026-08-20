@@ -347,7 +347,7 @@ export default function Layout() {
       </main>
 
       {/* Footer — 版本情報三分頁自帶版面高度，不掛 footer */}
-      {!isFullHeightPage && <footer className="border-t border-border py-8 text-center text-text-dim text-sm">
+      {!isFullHeightPage && <footer className="border-t border-border py-6 text-center text-text-dim text-sm">
         <p>米赫瑪超吉情豹站 — Milkhama PawInfo Station</p>
         <p className="mt-1">本站是氣吉敗壞的豹吉自己摸出來的，無營利，完全免費，與官方無關，但99%圖片資源都來源於官方WIKI</p>
       </footer>}

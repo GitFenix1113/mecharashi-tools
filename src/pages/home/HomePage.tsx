@@ -24,7 +24,7 @@ export default function HomePage() {
       {/* 左濃右淡的遮罩：左側保證文字可讀，右側把背景立繪讓出來 */}
       <div className="absolute inset-0 bg-gradient-to-r from-bg-dark/85 via-bg-dark/50 lg:via-bg-dark/30 to-transparent pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-[min(92vw,780px)] px-6 lg:px-12 py-10 flex flex-col gap-5">
+      <div className="relative z-10 w-full max-w-[min(92vw,780px)] px-6 lg:px-12 py-8 flex flex-col gap-5">
         {/* 站名 */}
         <div>
           <h1 className="font-[Orbitron,sans-serif] text-3xl sm:text-4xl lg:text-5xl font-black tracking-wider leading-tight bg-gradient-to-br from-white to-accent-orange bg-clip-text text-transparent">
