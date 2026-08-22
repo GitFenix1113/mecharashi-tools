@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-20
+## [Unreleased] - 2026-08-22
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **og**: 社群連結預覽 Tier 1 上線；Tier 2 邊緣改寫待 Transform Rule 例外 (`40d3822`)
 - **nav**: 導覽改為橫向展開條＋群組常駐分頁列 (`bbb8327`)
 - **versions**: 版本備註支援多條 (`91b4fd1`)
 - **admin**: 武器編輯的圖示欄位改用 IconField 圖庫挑選器 (`9568d85`)
