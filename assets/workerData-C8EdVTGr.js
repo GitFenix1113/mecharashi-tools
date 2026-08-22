@@ -1,0 +1,1 @@
+var e=`same-origin`?.trim()??``,t=e===`same-origin`?``:e.replace(/\/+$/,``),n=!!e&&!0,r=e=>`${t}${e}`;async function i(e){let t=await fetch(r(e));if(!t.ok)throw Error(`Worker ${e} 失敗 ${t.status}`);return t.json()}var a=()=>i(`/api/versions`),o=e=>i(`/api/data/${e}`),s=()=>i(`/api/site-team`);export{r as a,a as i,o as n,s as r,n as t};
