@@ -91,3 +91,7 @@ scripts/bump-data-version.mjs
 # 換機器／重新 clone 時需重建（同 bump-data-version.mjs 的既有取捨）。
 scripts/check-nd-minsum-drift.mjs
 .claude/skills/data-patch/
+
+# PLAN-038 follow-up：社群卡片用的 JPEG 立繪，由 scripts/generate-og-entity-images.mjs
+# 於 build/dev 前置產生（約 4MB / 177 張）。可完全重現，不進版控。
+public/images/og/entities/

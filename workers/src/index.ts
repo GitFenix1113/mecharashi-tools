@@ -13,6 +13,8 @@ import {
   parseEntityPath,
   buildOgMeta,
   rewriteHtmlWithOg,
+  isDerivedPreviewImage,
+  DEFAULT_OG_IMAGE,
   SITE_ORIGIN,
   type OgCollection,
 } from './socialPreview'
@@ -270,6 +272,17 @@ async function handleSocialPreview(
     if (!doc) return passthrough() // 查無此實體（舊連結／改過 ID）
     const meta = buildOgMeta(target.collection, doc)
     if (!meta) return passthrough()
+
+    // 立繪的 JPEG 版本是 build 時產生的（見 socialPreview.ts 的 toPreviewSafeImage）。
+    // 資料層若哪天把 portrait 指到別的 webp 檔名，推導出來的路徑就會不存在 ——
+    // 那是**靜默**失敗（卡片變破圖，沒有任何錯誤），所以這裡花一次 HEAD 確認。
+    // 爬蟲請求量是每日幾十次量級，且 CF 邊緣快取會命中，成本可忽略。
+    if (isDerivedPreviewImage(meta.image)) {
+      const ok = await fetch(meta.image, { method: 'HEAD' })
+        .then(r => r.ok)
+        .catch(() => false)
+      if (!ok) meta.image = DEFAULT_OG_IMAGE
+    }
 
     const res = await passthrough()
     const contentType = res.headers.get('content-type') ?? ''

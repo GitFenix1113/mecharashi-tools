@@ -31,13 +31,22 @@ const OUT_FILE = path.join(IMAGES_DIR, 'manifest.json')
 
 const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.avif'])
 
+/**
+ * 不列入挑選器的資料夾（相對 public/images）。
+ * og/entities 是 build 時由 generate-og-entity-images.mjs 產生的社群卡片用 JPEG
+ * （177 張、每張都是既有立繪的副本），對後台選圖只是雜訊，也會讓 manifest 白白變大。
+ */
+const EXCLUDED_DIRS = new Set(['og/entities'])
+
 /** 遞迴收集 dir 底下所有圖檔，folders[相對資料夾] = [檔名...] */
 function collect(dir, relDir, folders) {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
   const files = []
   for (const ent of entries) {
     if (ent.isDirectory()) {
-      collect(path.join(dir, ent.name), relDir ? `${relDir}/${ent.name}` : ent.name, folders)
+      const childRel = relDir ? `${relDir}/${ent.name}` : ent.name
+      if (EXCLUDED_DIRS.has(childRel)) continue
+      collect(path.join(dir, ent.name), childRel, folders)
     } else if (IMAGE_EXT.has(path.extname(ent.name).toLowerCase()) && ent.name !== 'manifest.json') {
       files.push(ent.name)
     }

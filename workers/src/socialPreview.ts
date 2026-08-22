@@ -85,14 +85,42 @@ export interface OgMeta {
   image: string
 }
 
+/** 產出 JPEG 立繪的鏡射根目錄，見 scripts/generate-og-entity-images.mjs。 */
+const PREVIEW_JPEG_ROOT = '/images/og/entities'
+
+/**
+ * WebP 換成預先轉好的 JPEG。
+ *
+ * 為什麼：**WebP 在連結預覽器裡幾乎沒人支援** —— Facebook 的 OGP 只吃 JPEG/PNG/GIF，
+ * LINE 實測是「標題與描述都正常、就是沒有圖」；Discord 是少數支援的，所以只有它看起來沒問題。
+ * 站上的機師／機甲立繪 175/177 是 WebP，等於絕大多數卡片在 LINE 都沒有圖。
+ *
+ * build 前置的 scripts/generate-og-entity-images.mjs 會把這些立繪各轉一份 JPEG 到鏡射路徑：
+ *   /images/pilots/曜/half.webp → /images/og/entities/pilots/曜/half.jpg
+ *
+ * ⚠ 這裡的推導規則與那支腳本的 SOURCES 是一組的，改一邊要改另一邊。
+ *   萬一推導出來的檔案不存在，handleSocialPreview 會探測到並退回預設圖（不會留下破圖）。
+ */
+function toPreviewSafeImage(localPath: string): string {
+  if (!localPath.toLowerCase().endsWith('.webp')) return localPath
+  if (!localPath.startsWith('/images/')) return localPath
+  return `${PREVIEW_JPEG_ROOT}/${localPath.slice('/images/'.length).replace(/\.webp$/i, '.jpg')}`
+}
+
+/** 這個 og:image 是不是本模組推導出來的 JPEG 路徑（值得驗證存在性的那種）。 */
+export function isDerivedPreviewImage(url: string): boolean {
+  return url.startsWith(`${SITE_ORIGIN}${PREVIEW_JPEG_ROOT}/`)
+}
+
 /** 把文件裡的本地圖片路徑組成絕對網址；沒有值就回 null 交給呼叫端 fallback。 */
 function absoluteImage(path: unknown): string | null {
   if (typeof path !== 'string' || !path.trim()) return null
   const p = path.trim()
   if (p.startsWith('http://') || p.startsWith('https://')) return p
+  const local = toPreviewSafeImage(p.startsWith('/') ? p : `/${p}`)
   // 路徑含中文（/images/pilots/葉夫根尼/half.webp）→ 必須 encode 才是合法 URL。
   // encodeURI 而非 encodeURIComponent：要保留斜線。
-  return encodeURI(`${SITE_ORIGIN}${p.startsWith('/') ? '' : '/'}${p}`)
+  return encodeURI(`${SITE_ORIGIN}${local}`)
 }
 
 function str(v: unknown): string {

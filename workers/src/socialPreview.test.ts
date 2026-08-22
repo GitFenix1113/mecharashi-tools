@@ -11,6 +11,7 @@ import {
   isSocialCrawler,
   parseEntityPath,
   buildOgMeta,
+  isDerivedPreviewImage,
   DEFAULT_OG_IMAGE,
 } from './socialPreview.ts'
 
@@ -69,6 +70,23 @@ test('parseEntityPath：畸形輸入不會流進 Firestore 查詢', () => {
   assert.equal(parseEntityPath('/pilots/' + 'x'.repeat(300)), null)
 })
 
+test('buildOgMeta：webp 立繪要改指預先轉好的 JPEG（LINE 等預覽器不吃 webp）', () => {
+  const pilot = buildOgMeta('pilots', { name: '曜', portrait: '/images/pilots/曜/half.webp' })
+  assert.equal(
+    pilot?.image,
+    'https://mecharashi.wiki/images/og/entities/pilots/' + encodeURIComponent('曜') + '/half.jpg',
+  )
+  assert.equal(isDerivedPreviewImage(pilot.image), true)
+
+  // png 本來就吃得到，不可以動它
+  const weapon = buildOgMeta('weapons', { name: '碎鋼者', icon: '/images/weapons/Icon_weapon_1.png' })
+  assert.equal(weapon?.image, 'https://mecharashi.wiki/images/weapons/Icon_weapon_1.png')
+  assert.equal(isDerivedPreviewImage(weapon.image), false)
+
+  // 預設圖與外部絕對網址都不是推導來的，不該被探測
+  assert.equal(isDerivedPreviewImage(DEFAULT_OG_IMAGE), false)
+})
+
 test('buildOgMeta（pilots）：用 portrait，中文路徑要 encode 成絕對網址', () => {
   const meta = buildOgMeta('pilots', {
     name: '葉夫根尼',
@@ -83,7 +101,7 @@ test('buildOgMeta（pilots）：用 portrait，中文路徑要 encode 成絕對�
   assert.match(meta.description, /灰燼之子/)
   assert.equal(
     meta.image,
-    'https://mecharashi.wiki/images/pilots/' + encodeURIComponent('葉夫根尼') + '/half.webp',
+    'https://mecharashi.wiki/images/og/entities/pilots/' + encodeURIComponent('葉夫根尼') + '/half.jpg',
   )
 })
 
@@ -100,7 +118,7 @@ test('buildOgMeta：圖片欄位缺值一律 fallback 到預設圖，不可讓 o
     quality: 'S',
     halfPortrait: '/images/mechs/都卜勒/half.png',
   })
-  assert.equal(mech?.image, 'https://mecharashi.wiki/images/mechs/' + encodeURIComponent('都卜勒') + '/half.png')
+  assert.equal(mech?.image, 'https://mecharashi.wiki/images/mechs/' + encodeURIComponent('都卜勒') + '/half.png')  // png 不轉
 })
 
 test('buildOgMeta：沒有 name 就不做卡片（退回站名卡）', () => {
