@@ -167,19 +167,19 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">6</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">6</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">6</div>
+      <div class="summary-num" style="color:var(--text-primary)">7</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">0 / 6</span>
+      <span style="color:var(--accent-orange);">6 / 7</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 86%"></div>
     </div>
   </div>
 
@@ -211,7 +211,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; firestoreRest 補 runQuery</div>
       <div class="task-group-meta">workers/src/firestoreRest.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -226,7 +226,7 @@
         <div class="task-file">workers/src/firestoreRest.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">完成</span>
     </div>
   </div>
 
@@ -234,7 +234,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; /api/site-team 端點</div>
       <div class="task-group-meta">workers/src/index.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -250,7 +250,7 @@
         <div class="task-file">workers/src/index.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -262,7 +262,7 @@
         <div class="task-file">workers/src/index.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">完成</span>
     </div>
   </div>
 </section>
@@ -277,7 +277,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; getSiteTeamProfiles 改打 Worker</div>
       <div class="task-group-meta">src/lib/userApi.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -291,7 +291,7 @@
         <div class="task-file">src/lib/userApi.ts · src/hooks/useSiteTeam.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">完成</span>
     </div>
   </div>
 </section>
@@ -306,7 +306,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; firestore.rules 收緊 profile 讀取</div>
       <div class="task-group-meta">firestore.rules</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -321,7 +321,7 @@
         <div class="task-file">firestore.rules</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">完成</span>
     </div>
   </div>
 
@@ -329,7 +329,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 驗收與文件同步</div>
       <div class="task-group-meta">docs/02_技術文件/04_Firebase/</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
@@ -338,12 +338,19 @@
           ① 無痕視窗首頁維護團隊仍正常顯示；
           ② 該頁 Network 全文搜尋 <code>@</code> 找不到管理員 email；
           ③ 未登入直打 Firestore REST 的 runQuery 查 collectionGroup profile → permission denied；
-          ④ 管理員登入後台使用者管理，名單與 email 照常（未回歸）。
+          ④ 管理員登入後台使用者管理，名單與 email 照常（未回歸）。<br>
+          <strong style="color:var(--accent-green);">2026-08-23 實測：①②③ 通過</strong>——
+          未登入的獨立瀏覽器情境開首頁，3 位 OWNER ＋ 5 位 ADMIN 頭像照常，
+          該頁的 xhr/fetch 只有 <code>/api/site-team</code>（無任何 Firestore profile 查詢），
+          回應全文搜尋 <code>@</code> 零命中；匿名直打 <code>documents:runQuery</code> 查
+          collectionGroup <code>profile</code> 回 403 PERMISSION_DENIED。
+          <strong style="color:var(--accent-cyan);">④ 待管理員本人登入後台確認</strong>
+          （規則的 <code>isAdmin()</code> 分支本次未動，預期不受影響）。
         </div>
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
@@ -355,7 +362,7 @@
         <div class="task-file">docs/02_技術文件/04_Firebase/資料庫設計文件/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">完成</span>
     </div>
   </div>
 </section>
