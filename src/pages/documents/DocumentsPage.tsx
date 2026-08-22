@@ -17,13 +17,26 @@ interface DocCategory {
 
 const CATEGORIES: DocCategory[] = [
   {
-    label: 'Roadmap',
-    title: '網站規劃',
+    label: 'Overview',
+    title: '網站概要',
     items: [
-      { label: '規劃書', desc: '本站的整體構想、定位與功能藍圖', path: '01_規劃書/鋼嵐工具站_規劃書.html' },
+      {
+        label: '網站概要總覽',
+        desc: '這站是什麼、有哪些功能、資料哪裡來、目前做到哪了。第一次來的話從這份開始',
+        path: '01_規劃書/鋼嵐工具站_規劃書.html',
+      },
+    ],
+  },
+  {
+    label: 'Roadmap',
+    title: '開發紀錄',
+    items: [
       { label: '頁面規劃', desc: '各頁面的內容與版面規劃', path: '03_頁面規劃/index.html' },
-      { label: '階段性開發計畫', desc: '各階段功能計畫（執行中／歷史記錄）', path: '05_階段性開發計畫/index.html' },
-      { label: '開發進度表', desc: '功能開發進度總覽', path: '04_進度表/開發進度表.html' },
+      {
+        label: '階段性開發計畫',
+        desc: '各階段功能計畫的計畫書與進度表（執行中／觀察維護中／歷史記錄）',
+        path: '05_階段性開發計畫/index.html',
+      },
     ],
   },
   {
@@ -42,15 +55,16 @@ export default function DocumentsPage() {
       <div className="mb-6">
         <span className="text-[10px] font-bold tracking-[3px] text-accent-cyan uppercase font-[Orbitron,sans-serif]">Documents</span>
         <h1 className="text-3xl font-bold mt-2">文件</h1>
-        <p className="text-text-secondary mt-2">本站的規劃與設計文件。</p>
+        <p className="text-text-secondary mt-2">本站的公開文件：網站概要、開發紀錄與遊戲機制整理。</p>
       </div>
 
       {/* 醒目免責橫幅 */}
       <div className="mb-8 rounded-xl border border-accent-orange/40 bg-accent-orange/10 px-5 py-4 flex items-start gap-3">
         <span className="text-xl leading-none mt-0.5">📌</span>
         <p className="text-sm text-text-secondary leading-relaxed">
-          這裡的文件<strong className="text-accent-orange">僅供參考</strong>，用意是讓大家知道本站
-          <strong className="text-text-primary">有哪些計畫、想做什麼</strong>。內容可能與實際開發進度不同步，請勿當作正式說明。
+          想快速了解本站，看<strong className="text-text-primary">網站概要總覽</strong>就夠了。
+          其餘是<strong className="text-accent-orange">開發過程的紀錄</strong>，寫的是當下的想法與取捨，
+          可能與最終實作或目前進度不同步，請勿當作正式說明。
         </p>
       </div>
 
@@ -85,6 +99,17 @@ export default function DocumentsPage() {
           </div>
         </section>
       ))}
+
+      {/* 技術文件不對外的說明。放在最後、樣式低調：它不是內容，是回答「為什麼點某些連結會 404」。
+          實際的邊界由 scripts/copy-docs.mjs 的白名單保證（不複製 → 站上根本沒這些檔案），這裡只是說明。 */}
+      <div className="mt-10 rounded-xl border border-border bg-bg-card px-5 py-4 flex items-start gap-3">
+        <span className="text-base leading-none mt-0.5">🔒</span>
+        <p className="text-[12px] text-text-dim leading-relaxed">
+          系統架構、資料模型、資料庫設計與後台操作手冊等<strong className="text-text-secondary">技術文件不對外公開</strong>，
+          僅保留在原始碼庫中供維護者查閱——這些檔案不會被打包進網站，而不是隱藏連結而已。
+          因此上列文件中若有連結指向技術文件或已下架的舊文件（如早期的開發進度表），點了會找不到頁面，這是正常的。
+        </p>
+      </div>
     </div>
   )
 }

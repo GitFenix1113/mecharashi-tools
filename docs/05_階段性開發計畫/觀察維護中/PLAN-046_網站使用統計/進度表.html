@@ -155,7 +155,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">觀察維護中</a>
     <span>›</span>
     <span class="current">PLAN-046 進度表</span>
   </div>
@@ -166,7 +166,7 @@
   <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
     進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> 網站使用統計</span>
   </h1>
-  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-08</p>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-08 · 開發收束 2026-08-08 · <strong style="color:var(--accent-cyan);">2026-08-23 轉入觀察維護中</strong></p>
 </header>
 
 <main class="container">
@@ -203,6 +203,41 @@
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 92%"></div>
     </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>◆ 2026-08-23 轉入觀察維護中：</strong>
+    Phase A / B 的 18 項開發者任務已全數完成並上線，剩餘 2 項（A-0b、C-2 ①）皆為長期觀察性質、不阻塞任何開發。<br>
+    <strong>C-2 驗收的 ②③④ 已通過</strong>——以服務帳戶直讀 <code>analyticsDaily</code> / <code>analyticsEntity</code> 核對 2026-08-09～08-22 共 14 個完整日，
+    數字與後台儀表板實際渲染值一致（UPV 2,744 / 造訪 1,079 / 訪客 778 / 折返率 2.09），<strong>儀表板至此以真實資料驗證完畢，不再只是合成資料</strong>。
+    <br>· <strong>② 折返率</strong>：全期 <code>pv/upv</code> = <strong>2.10</strong>（每日 1.58–2.57），既未過度去重、亦無 session 誤切。
+      惟逐路由拆解發現 <code>versions_timeline_detail</code> 為 <strong>9.24</strong>（342 / 37），
+      而同型的機師／機甲／武器詳情頁都落在 2.5 附近——<b>疑為該頁 URL 驅動的子項切換造成重複計 pv</b>，
+      若屬實則它在頁面熱度榜上被系統性高估（pv 第 6、upv 第 15），且 B-3 圖說「差距越大＝資訊沒一次給足」的解讀會在此頁誤導。<b>待查</b>。
+    <br>· <strong>③ CN 佔比 — 本計畫最初的問題，已有答案</strong>：<strong>4.5%</strong>
+      （TW 44.2% / HK 14.6% / ID 6.5% / US 6.4% / MY 5.4% / CN 4.5%）。
+      關鍵交叉驗證：<code>byLang</code> 的 <code>zh_cn</code> 為 <strong>5.0%</strong>，與 CN 國碼幾乎重合——
+      若大量中國訪客掛 VPN，簡中語言比例應顯著高於 CN 國碼，兩者貼合代表
+      <strong>VPN 造成的低估不如原先擔心的嚴重，中國訪客實際量級即約 5%</strong>。此判讀<b>只有加了 byLang（決策十一）才做得出來</b>。
+      同一維度也證實了決策十一的第二個理由：<code>en</code> 佔 28.1% 但 US 僅 6.4%，
+      EN 服玩家確實被 <code>byCountry</code> 拆散到 ID / MY / PH / TH / VN / BR / AU，
+      <b>印尼（6.5%）甚至高於美國</b>——光看國家分布會完全描述錯自己的受眾。
+    <br>· <strong>④ 寫入量</strong>：日均 <strong>176</strong>、單日最高 <strong>395</strong>＝ 50,000 預算的 <strong>0.79%</strong>；
+      16 天<b>零熔斷、零缺漏日</b>。單日最高出現在 8/20 流量翻倍那天（實體榜前段全是新機師與 165–172 號段新武器，應為遊戲改版），
+      正是 A-5 把預算從 15,000 上調時所設想的情境。
+    <br>· <strong>① Cloudflare 對照：待補</strong>——自建 14 天日均 pv <strong>398.5</strong> / 造訪 <strong>74.9</strong>，
+      對 CF 舊基準（7/25 單日 397 / 93）<strong>pv 幾乎完全吻合，代表埋點沒有系統性漏送</strong>；
+      造訪低約 19%，推測即 A-2 預告過的「排除規則擋掉 8 個後台帳號的巡站，CF 沒擋」。
+      惟拿單日對日均不嚴謹，須取 <b>CF 同期（08-09～08-22）</b>數字才能結案。
+  </div>
+
+  <div class="warn-note">
+    <strong>觀察期間發現、尚未處理：</strong>
+    <br>· <b>趨勢圖把「統計啟用前」的日子補零</b>——30 天視圖從 07/25 起繪，但埋點 08-08 才上線，
+      07/25–08/07 那段貼地直線不是「沒流量」而是「沒量測」，90 天視圖會有三分之二是這條假零線。
+      這正是 B-3 資料誠實度要防的同一類問題，只是當初只想到熔斷截斷、沒想到啟用前。
+      修法：繪圖起點取 <code>max(範圍起點, 首筆資料日)</code>，或在啟用日畫垂直分隔線標「統計啟用於 08-08」。
+    <br>· <code>versions_timeline_detail</code> 折返率 9.24 的成因待查（見上）。
   </div>
 
   <div class="impact-note">
@@ -720,8 +755,11 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-046 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-046 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 觀察維護中</a>
 </footer>
 
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
 </body>
 </html>
