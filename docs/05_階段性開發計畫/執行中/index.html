@@ -49,15 +49,6 @@
         <a class="card-link" href="PLAN-049_問題回報與功能建議/進度表.html">→ 進度表</a>
       </div>
     </div>
-    <div class="card orange">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-048 · 時間線甘特圖改版</h3>
-      <p>甘特圖有三個結構性問題，而且<b>都不是調 CSS 能解的</b>。tooltip 被裁切是因為容器 <code>overflow-y-auto</code> 而浮窗 <code>absolute bottom-full</code> 永遠往上長——<b><code>z-index</code> 對 overflow 裁切無效</b>，實測共 11 層 clipping ancestor，只有 portal 有效。一週活動只剩一個 12px 圓點，因為 <code>activityToColumns()</code> 把起點量化到下一個週界，<b>實測 27/75 筆（36%）是這種</b>。而「維護者打了很多資料卻看不到」根本不是顯示問題——<code>TimedActivity</code> <b>沒有描述欄位</b>，獎勵只能硬塞進 <code>name</code>（<code>瑞歲百角戲(輕型通用改裝模組*1 仿生超導體*2)</code>）。<br>方案定調 <b>「甘特＝索引，卡片＝內容」</b>：甘特留在原地繼續與週次表共用同一條軸、降級成日精度概觀，內容改由正下方<b>同一個捲動容器</b>內的卡片流承載，並做甘特↔卡片↔週欄三向連動——這是四份提案中唯一<b>正面加強</b>「對照版本週次」原始動機的機制。評審抓到四案共同盲點：<b>把「資訊看不到」誤診成「資料不夠」</b>，玩家三個問題裡有兩個半能從既有 <code>startDate + weeks</code> 直接算出（第 N/M 週、剩幾天、末週），<b>零欄位、零維護成本、100% 覆蓋</b>。Phase 0 僅 5h、零資料模型變更即可全解前兩個痛點。<br>另含台版公告管線：實測台版是<b>靜態 JSON（副檔名 .html 但內容是 JSON），不需 Playwright</b>、無反爬，PoC 從 117 篇週報抽出 522 筆活動、名稱失敗率 0%；陸版公告頻道則已廢棄（2 篇、停在 2023-10），明確接受「台版自動化／陸版人工」的不對稱。<b>⚠ 258 篇公告只存在於前代理商網域 <code>ma.tentree-games.com</code>（代理權 2026-01-05 已移轉），全量歸檔優先度高於任何功能</b>，故排在 Phase 0。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-048_時間線甘特圖改版/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-048_時間線甘特圖改版/進度表.html">→ 進度表</a>
-      </div>
-    </div>
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-047 · 槽位與裝備限制模型</h3>
@@ -94,15 +85,6 @@
         <a class="card-link" href="PLAN-041_機師形態變化/進度表.html">→ 進度表</a>
       </div>
     </div>
-    <div class="card green">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-038 · 社群連結預覽（Open Graph）系統</h3>
-      <p>站長回報網站在 LINE 有連結預覽、Discord 完全沒有。診斷確認根因單一：<code>index.html</code> 沒有放任何 <code>og:*</code> 標籤——Discord 的爬蟲不執行 JS 也沒有 <code>&lt;title&gt;</code> fallback，找不到 <code>og:title</code>／<code>og:image</code> 就完全不顯示卡片；LINE 則退而求其次抓標題撐出陽春卡。分兩層修：Tier 1 補齊全站靜態標籤（可獨立上線）；Tier 2 延伸既有 Cloudflare Worker，用 HTMLRewriter 讓機師／機甲／武器詳情頁分享時顯示對應肖像與名稱。og:image 素材策略刻意重用既有實體圖片欄位，不另開一套美術維護線。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-038_社群連結預覽/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-038_社群連結預覽/進度表.html">→ 進度表</a>
-      </div>
-    </div>
     <div class="card pink">
       <div class="card-icon">◆</div>
       <h3>PLAN-026 · 召喚單位展示</h3>
@@ -115,7 +97,7 @@
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-019 · 實體引用與模擬基礎（總綱）</h3>
-      <p>【總綱 Master Plan】把「描述文字中對其他實體的引用」（如天賦內 [虛粒子形態]/[激發能]/[粒子爆發]）一般化為型別化、可解析、可模擬的關聯層。四層抽象：EntityRef 引用層、BUFF/形態模擬可達性圖、BOSS/關卡資料模型、表單式後台 + 查詢量控制。統合 PLAN-001/003/004/005 為子計畫，並拆出 019-A~E。</p>
+      <p>【總綱 Master Plan】把「描述文字中對其他實體的引用」（如天賦內 [虛粒子形態]/[激發能]/[粒子爆發]）一般化為型別化、可解析、可模擬的關聯層。四層抽象：EntityRef 引用層、BUFF 模擬可達性圖、<s>BOSS/關卡資料模型</s>（已 descope 移轉 PLAN-010）、表單式後台 + 查詢量控制。統合 PLAN-001/003/004/005，拆出 019-A~F，其後又長出 11 個延伸計畫（PLAN-021/022/023/024/030/032/034/039/041/043/026）。2026-08-22 全面校正：Layer 2 的 mutexGroup 形態機制已由 PLAN-041 移除改走 forms 集合；殘項收斂為 2 項（changeHistory 稽核剩 8 集合接線、補填進度儀表未開工），收掉即可轉入觀察維護中。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-019_實體引用與模擬基礎_總綱/計畫書.html">→ 計畫書</a>
         <a class="card-link" href="PLAN-019_實體引用與模擬基礎_總綱/進度表.html">→ 進度表</a>
