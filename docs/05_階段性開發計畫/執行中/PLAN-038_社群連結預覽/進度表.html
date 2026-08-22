@@ -167,12 +167,12 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">9</div>
+      <div class="summary-num" style="color:var(--accent-green)">11</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-red)">2</div>
-      <div class="summary-lbl">阻塞中</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
       <div class="summary-num" style="color:var(--text-dim)">0</div>
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">9 / 11</span>
+      <span style="color:var(--accent-green);">11 / 11</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 82%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -394,8 +394,8 @@
     </div>
   </div>
 
-    <div class="impact-note" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.06);">
-    <strong style="color:var(--accent-red);">阻塞：Transform Rule 先於 Workers 執行（2026-08-22 部署後實測）</strong>
+    <div class="impact-note" style="border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.06);">
+    <strong style="color:var(--accent-green);">已解除（2026-08-22 當日）：Transform Rule 先於 Workers 執行</strong>
     <br>
     部署後用 <code>wrangler tail</code> 觀察：三個 Discordbot 對詳情頁的請求
     <strong>Worker 零事件</strong>，同時段 <code>/api/*</code> 的事件（含真實訪客流量）一切正常。
@@ -411,13 +411,32 @@
     <br><br>
     程式碼端已配合改成 <strong>自行抓 <code>/index.html</code> 當骨架</strong>
     （能進 Worker 的請求＝沒被改寫過，直接 <code>fetch(request)</code> 會拿到 GitHub Pages 的 404）。
+    <br><br>
+    <strong>⚠ 例外條件必須同時綁路徑，不能只看 UA。</strong>
+    第一版例外只寫「UA 是爬蟲就不改寫」，但那條 Transform Rule 管的是全部 15 條 SPA 路徑，
+    而 Worker route 只接管 3 條詳情頁 —— 爬蟲抓 <code>/news</code>、<code>/pilots</code>（列表頁）時
+    會變成「不改寫、也沒人接手」→ 直接落到 GitHub Pages 的 404，卡片比修之前更糟（連站名卡都沒有）。
+    正解是例外要求「<em>是三條詳情頁</em> <strong>且</strong> <em>是社群爬蟲</em>」兩者同時成立，
+    路徑帶尾斜線（<code>/pilots/</code>）好讓例外範圍剛好等於 Worker route 範圍。
+    <br><br>
+    <strong>上線後的最終運算式（規則存在 Cloudflare Dashboard、不在版控，重建時照抄）：</strong>
+    原本的 <code>((http.request.method eq "GET" and ( ...15 條 SPA 路徑... )))</code> 一字未改，後面接：
+    <code>and not ( ( starts_with(path,"/pilots/") or starts_with(path,"/mechs/") or starts_with(path,"/weapons/") )
+    and ( lower(http.user_agent) contains "discordbot" or ... facebookexternalhit / line-poker / linebot /
+    slackbot / twitterbot / telegrambot / applebot ) )</code>。
+    <code>lower()</code> 是必要的 —— Cloudflare 的 <code>contains</code> 區分大小寫，
+    實際 UA 寫的是 <code>Discordbot</code>、<code>TwitterBot</code> 這種混合大小寫。
+    <br><br>
+    <strong>兩處 UA 清單刻意不同步：</strong>Worker 端列 17 個、Transform Rule 只列 8 個主要平台。
+    沒列進規則的爬蟲（WhatsApp／Reddit／Pinterest 等）會照舊被改寫成 index.html、拿到 Tier 1 站名卡
+    —— 是安全的降級，不需要為了對齊而把規則寫長。
   </div>
 
 <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-4 &nbsp; 驗證</div>
       <div class="task-group-meta">Discord／LINE 實測 + 一般使用者回歸</div>
-      <span class="status blocked">阻塞中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -428,7 +447,7 @@
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">阻塞中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -439,8 +458,33 @@
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">阻塞中</span>
+      <span class="status done">已完成</span>
     </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>B-4 驗證結果（2026-08-22，正式站實測）：</strong>
+    <table class="impact-table" style="margin-top:10px;">
+      <tr><th>情境</th><th>實測</th></tr>
+      <tr><td>Discordbot → 機師 <code>pilot_001_葉夫根尼</code></td>
+          <td><span class="badge-good">通過</span> title「葉夫根尼 · S 守護者｜米赫瑪超吉情豹站」、og:image 指向本人立繪、描述含全名與陣營</td></tr>
+      <tr><td>Discordbot → 機甲 <code>mech_001_都卜勒</code></td>
+          <td><span class="badge-good">通過</span> title「都卜勒 · S 機甲」、og:image 為 portrait.webp、描述取自 lore</td></tr>
+      <tr><td>Discordbot → 武器 <code>weapon_001_碎鋼者</code></td>
+          <td><span class="badge-good">通過</span> title「碎鋼者 · A 格鬥武器」、og:image 為武器圖示</td></tr>
+      <tr><td>Discordbot → 無圖武器 <code>weapon_173_衝擊炮</code></td>
+          <td><span class="badge-good">通過</span> og:image fallback 成 <code>/images/og/default.jpg</code>，卡片不會沒有圖</td></tr>
+      <tr><td>Discordbot → 不存在的 id</td>
+          <td><span class="badge-good">通過</span> 200 ＋ Tier 1 站名卡，不是錯誤頁</td></tr>
+      <tr><td>Discordbot → <code>/pilots</code>／<code>/news</code>／<code>/simulator</code>／<code>/</code></td>
+          <td><span class="badge-good">通過</span> 四者皆 200 ＋ 站名卡（確認例外沒有把非詳情頁打成 404）</td></tr>
+      <tr><td><strong>一般瀏覽器 UA → 詳情頁</strong></td>
+          <td><span class="badge-good">通過</span> 200、標籤仍是 Tier 1（未被改寫）、SPA 進入點 script 完整</td></tr>
+      <tr><td>卡片圖片本身可取得</td>
+          <td><span class="badge-good">通過</span> 三張圖皆 200（23KB／49KB／127KB）</td></tr>
+      <tr><td>回歸：<code>/api/versions</code> 與反爬守門</td>
+          <td><span class="badge-good">通過</span> 帶 Referer 200、裸打 403，與改動前一致</td></tr>
+    </table>
   </div>
 </section>
 
