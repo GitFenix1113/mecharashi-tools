@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { getSiteTeamProfiles } from '../lib/userApi'
-import type { UserProfile } from '../types'
+import type { SiteTeamMember } from '../types'
 
-let _cache: UserProfile[] | null = null
+let _cache: SiteTeamMember[] | null = null
 
 export function useSiteTeam() {
-  const [owners, setOwners] = useState<UserProfile[]>([])
-  const [admins, setAdmins] = useState<UserProfile[]>([])
+  const [owners, setOwners] = useState<SiteTeamMember[]>([])
+  const [admins, setAdmins] = useState<SiteTeamMember[]>([])
   const [loading, setLoading] = useState(_cache === null)
 
   useEffect(() => {

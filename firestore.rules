@@ -205,7 +205,10 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
 
       match /profile/{docId} {
-        allow read: if isOwner(userId) || isAdmin() || resource.data.role in ['ADMIN', 'OWNER'];
+        // PLAN-051：原本還有一條 `resource.data.role in ['ADMIN','OWNER']`（讓首頁的維護
+        // 團隊區塊在未登入時撈得到）。Firestore 沒有欄位級讀取授權，那條等於把管理員的
+        // email 送給每一位匿名訪客——已收回，公開欄位改由 Worker /api/site-team 供應。
+        allow read: if isOwner(userId) || isAdmin();
         // 建立時只允許 role='USER'，禁止自行設為 ADMIN/OWNER
         allow create: if isOwner(userId) &&
           request.resource.data.role == 'USER';
@@ -220,9 +223,10 @@ service cloud.firestore {
       }
     }
 
-    // ── collectionGroup 查詢（getAllUsers 使用 collectionGroup('profile')）──
+    // ── collectionGroup 查詢（後台 getAllUsers 使用 collectionGroup('profile')）──
+    // PLAN-051：同上收回匿名分支。前台已無任何 client 端的 profile 跨集合查詢。
     match /{path=**}/profile/{docId} {
-      allow read: if isAdmin() || resource.data.role in ['ADMIN', 'OWNER'];
+      allow read: if isAdmin();
     }
   }
 }

@@ -45,6 +45,25 @@
     驗證信寄出後帳號自動登出，使用者點擊信中連結後方可登入（<code>user.emailVerified === true</code>）。
     未驗證帳號嘗試登入時，系統會重新寄出驗證信並拒絕登入。Google 登入不受此限制。
   </div>
+
+  <div class="changed-block">
+    <strong>✅ 2026-08-23：profile 讀取收斂 ＋ 首頁團隊名單改由 Worker 供應（PLAN-051）</strong>
+    在此之前，安全規則有一條沒有 auth gate 的分支「<code>role</code> 是 ADMIN/OWNER 就人人可讀」，
+    為的是讓首頁的維護團隊區塊在未登入時顯示。但 Firestore 的授權單位是<strong>文件</strong>、
+    沒有欄位級 read mask，讀得到文件就是整份 <code>UserProfile</code>——<code>email</code> 也在裡面。<br>
+    現在 profile 的讀取是 <code>isOwner(userId) || isAdmin()</code>（<code>collectionGroup</code>
+    那條是 <code>isAdmin()</code>），<strong>匿名讀不到任何 profile</strong>。首頁名單改打
+    <code>GET /api/site-team</code>：Worker 以 service account 代讀 <code>collectionGroup('profile')</code>
+    後只回下列白名單欄位——
+    <code>uid</code> · <code>displayName</code> · <code>role</code> · <code>photoURL</code> ·
+    <code>avatarType</code> · <code>avatarUrl</code> · <code>avatarPilotId</code> ·
+    <code>gameNickname</code> · <code>gameServer</code> · <code>guild</code>。<br>
+    <strong>刻意用白名單而不是「排除 email」的黑名單</strong>：黑名單在本表新增欄位時會自動把新欄位
+    外洩出去。要讓新欄位公開，得同時改 <code>workers/src/index.ts</code> 的
+    <code>SITE_TEAM_FIELDS</code> 與 <code>src/types/user.ts</code> 的 <code>SiteTeamMember</code>。<br>
+    該端點在 Cloudflare 邊緣快取 <strong>1 小時</strong>（名單幾乎不變）——維護者改暱稱或頭像後，
+    首頁最多一小時才會反映。
+  </div>
 </section>
 
 <section class="section">
@@ -56,7 +75,7 @@
     <table class="data-table blue-head">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>displayName</td><td>string</td><td>顯示名稱</td></tr>
-      <tr><td>email</td><td>string</td><td>電子郵件</td></tr>
+      <tr><td>email</td><td>string</td><td>電子郵件。<strong>僅本人與管理員讀得到</strong>——後台使用者管理用，不在首頁團隊名單的公開白名單內（PLAN-051）</td></tr>
       <tr><td>role</td><td>UserRole</td><td>角色 Enum：USER / ADMIN / OWNER（GUEST 不存於 DB）</td></tr>
       <tr><td>globalResearch</td><td>object</td><td>玩家的全域科研等級設定</td></tr>
       <tr><td>pilotResearchSelections</td><td>object</td><td>各機師的個別科研選擇（{ pilotId: { slot1: optionIdx, ... } }）</td></tr>

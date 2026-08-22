@@ -10,6 +10,7 @@
 // 邏輯（記憶體 / localStorage / 遠端）得以原封不動延續到 Phase 3。
 
 import type { DataVersions } from './versions'
+import type { SiteTeamMember } from '../../types'
 
 const RAW_BASE = (import.meta.env.VITE_WORKER_API_BASE as string | undefined)?.trim() ?? ''
 
@@ -51,3 +52,13 @@ export const getWorkerDataVersions = (): Promise<DataVersions> => fetchJson<Data
 
 /** 讀單一公開集合，回傳形狀與對應的 firestoreApi getter 完全一致。 */
 export const fetchWorkerCollection = (key: string): Promise<unknown> => fetchJson<unknown>(`/api/data/${key}`)
+
+/**
+ * 讀首頁維護團隊名單（PLAN-051）。
+ *
+ * 與其他 getter 不同，這裡走 Worker 的理由不是「規則收緊後讀不到」而是**欄位過濾**：
+ * Firestore 沒有欄位級讀取授權，允許匿名讀 profile 就等於連 email 一起送出去。
+ * Worker 以 Admin 憑證代讀後只回白名單欄位，profile 仍然只有一份資料來源。
+ */
+export const fetchWorkerSiteTeam = (): Promise<SiteTeamMember[]> =>
+  fetchJson<SiteTeamMember[]>('/api/site-team')

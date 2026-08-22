@@ -194,3 +194,104 @@ export async function getDocument(
   const d = (await res.json()) as FsDocument
   return { ...decodeFields(d.fields ?? {}), id: extractId(d.name) }
 }
+
+// ── 查詢（PLAN-051 A-1）──────────────────────────────────────────────────────
+// listCollection 只能打「單一集合」，撈不到 users/{uid}/profile/main 這種子集合。
+// 跨父路徑要用 collectionGroup —— REST 對應的是 documents:runQuery + structuredQuery
+// 的 from[].allDescendants。做成通用函式（而非寫死 profile 查詢），之後其他跨集合
+// 端點都用得上。
+
+/** 只開放本專案會用到的運算子；要更多時再補，縮小誤用面。 */
+export type FilterOp = 'EQUAL' | 'NOT_EQUAL' | 'IN' | 'ARRAY_CONTAINS' | 'ARRAY_CONTAINS_ANY'
+
+export interface FieldFilterSpec {
+  /** 欄位路徑（巢狀用 `a.b`） */
+  field: string
+  op: FilterOp
+  /** 普通 JS 值，內部會轉成 typed value；`IN` 請傳陣列 */
+  value: unknown
+}
+
+export interface RunQuerySpec {
+  collectionId: string
+  /** true＝collectionGroup 查詢（跨所有父路徑）；false／省略＝只查根層同名集合 */
+  allDescendants?: boolean
+  where?: FieldFilterSpec
+  limit?: number
+}
+
+/**
+ * 查詢結果。刻意**不**沿用 listCollection 的 `{ ...data, id }`：
+ * collectionGroup 查詢下 id 是末段（profile 查詢時每一筆都是 'main'），本身沒有識別力，
+ * 真正的識別資訊在完整 name（含父文件 ID）裡。故把 name / id / data 三者分開交給呼叫端。
+ */
+export interface QueriedDoc {
+  /** 完整 document name：projects/…/documents/users/{uid}/profile/main */
+  name: string
+  /** name 的末段 */
+  id: string
+  data: Record<string, unknown>
+}
+
+/** decodeValue 的反向：普通 JS 值 → Firestore typed value（供查詢條件用）。 */
+function encodeValue(v: unknown): FsValue {
+  if (v === null || v === undefined) return { nullValue: null }
+  if (typeof v === 'boolean') return { booleanValue: v }
+  if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v }
+  if (typeof v === 'string') return { stringValue: v }
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(encodeValue) } }
+  if (typeof v === 'object') {
+    const fields: Record<string, FsValue> = {}
+    for (const [k, x] of Object.entries(v as Record<string, unknown>)) fields[k] = encodeValue(x)
+    return { mapValue: { fields } }
+  }
+  throw new Error(`runQuery：不支援的查詢值型別 ${typeof v}`)
+}
+
+/**
+ * 執行 structuredQuery。用 Admin access token → 繞過安全規則
+ * （PLAN-051 把 profile 讀取收回 isAdmin() 之後，這是唯一撈得到團隊名單的路徑）。
+ *
+ * ⚠ 回應是 `[{ document?, readTime, skippedResults? }, …]` 陣列：查無結果時仍會回一個
+ *   **沒有 document 的項目**（只帶 readTime），故必須濾掉再 map，否則會產生 undefined 項。
+ */
+export async function runQuery(
+  sa: ServiceAccount,
+  token: string,
+  spec: RunQuerySpec,
+): Promise<QueriedDoc[]> {
+  const structuredQuery: Record<string, unknown> = {
+    from: [{ collectionId: spec.collectionId, allDescendants: spec.allDescendants ?? false }],
+  }
+  if (spec.where) {
+    structuredQuery.where = {
+      fieldFilter: {
+        field: { fieldPath: spec.where.field },
+        op: spec.where.op,
+        value: encodeValue(spec.where.value),
+      },
+    }
+  }
+  if (spec.limit !== undefined) structuredQuery.limit = spec.limit
+
+  const res = await fetch(`${FS_BASE}/projects/${sa.project_id}/databases/(default)/documents:runQuery`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ structuredQuery }),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Firestore runQuery ${spec.collectionId} 失敗 ${res.status}: ${text.slice(0, 200)}`)
+  }
+  const rows = (await res.json()) as Array<{ document?: FsDocument }>
+  const out: QueriedDoc[] = []
+  for (const r of rows) {
+    if (!r.document) continue
+    out.push({
+      name: r.document.name,
+      id: extractId(r.document.name),
+      data: decodeFields(r.document.fields ?? {}),
+    })
+  }
+  return out
+}

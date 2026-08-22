@@ -96,26 +96,30 @@
         </tr>
         <tr>
           <td>用戶檔案<br><code>users/{uid}/profile/main</code></td>
-          <td>本人 ／ <code>isAdmin()</code> ／<br><strong style="color:var(--accent-yellow);">role 為 ADMIN/OWNER 者任何人可讀</strong></td>
+          <td>本人 ／ <code>isAdmin()</code></td>
           <td><code>create</code> 限 <code>role == 'USER'</code>；<br><code>update</code> 本人不得改 <code>role</code>，<code>isOwnerRole()</code> 可改任何人</td>
-          <td><strong>提權防護</strong>：建立時強制 <code>role='USER'</code>，更新時用 <code>diff().affectedKeys().hasAny(['role'])</code> 擋自改角色，只有 OWNER 能授予角色。<br>第三個讀取條件見下方警告。</td>
+          <td><strong>提權防護</strong>：建立時強制 <code>role='USER'</code>，更新時用 <code>diff().affectedKeys().hasAny(['role'])</code> 擋自改角色，只有 OWNER 能授予角色。<br>2026-08-23 起<strong>沒有任何匿名讀取分支</strong>，見下方。</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <div class="note-block">
-    <strong>⚠️ 已知缺口：管理員 profile 目前匿名可讀（PLAN-051 處理中）</strong>
-    <code>match /{path=**}/profile/{docId}</code> 與 <code>match /users/{userId}/profile/{docId}</code>
-    都帶有 <code>|| resource.data.role in ['ADMIN', 'OWNER']</code>，而<strong>這個條件沒有任何 auth gate</strong>。
+  <div class="changed-block">
+    <strong>✅ 2026-08-23：管理員 profile 的匿名讀取已收回（PLAN-051）</strong>
+    在此之前，<code>match /{path=**}/profile/{docId}</code> 與
+    <code>match /users/{userId}/profile/{docId}</code> 都帶著
+    <code>|| resource.data.role in ['ADMIN', 'OWNER']</code>，而<strong>這個條件沒有任何 auth gate</strong>。
     用意是讓首頁的維護團隊區塊在未登入時也能顯示（<code>getSiteTeamProfiles()</code> 走
     <code>collectionGroup('profile')</code>）。<br>
     代價是 Firestore 的授權單位是<strong>文件</strong>而不是欄位——沒有 field-level read mask，
-    讀得到文件就是整份 <code>UserProfile</code>，其中 <code>email</code> 是必填。
-    因此<strong>每一位匿名訪客的瀏覽器裡都有全部管理員的 email</strong>。<br>
-    嚴重度中而非高（email 不是憑證，後台入口仍是 Google 帳號 ＋ <code>isAdmin()</code>），
-    但它降低了針對管理員的釣魚門檻。解法是換資料來源而非改規則：
-    <a href="../../../05_階段性開發計畫/執行中/PLAN-051_管理員profile讀取收斂/計畫書.html" style="color:var(--accent-yellow);">→ PLAN-051</a>
+    讀得到文件就是整份 <code>UserProfile</code>，其中 <code>email</code> 是必填，
+    等於每一位匿名訪客的瀏覽器裡都有全部管理員的 email。<br>
+    <strong>解法是換資料來源而非改規則</strong>：兩條規則的匿名分支已移除（收成
+    <code>isOwner(userId) || isAdmin()</code> 與 <code>isAdmin()</code>），
+    首頁團隊名單改由 Worker 的 <code>GET /api/site-team</code> 以 service account 代讀、
+    <strong>只回白名單欄位</strong>（見 users.html）。profile 仍然只有一份資料來源，
+    Worker 只是在出口做欄位過濾。
+    <a href="../../../05_階段性開發計畫/執行中/PLAN-051_管理員profile讀取收斂/計畫書.html" style="color:var(--accent-green);">→ PLAN-051</a>
   </div>
 
   <div class="sub-h">關鍵片段</div>

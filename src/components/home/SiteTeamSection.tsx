@@ -1,8 +1,8 @@
 import AvatarDisplay from '../profile/AvatarDisplay'
 import { useSiteTeam } from '../../hooks/useSiteTeam'
-import type { UserProfile } from '../../types'
+import type { SiteTeamMember } from '../../types'
 
-function TeamCard({ profile }: { profile: UserProfile }) {
+function TeamCard({ profile }: { profile: SiteTeamMember }) {
   return (
     <div className="relative group cursor-default">
       <div className="rounded-full ring-2 ring-transparent group-hover:ring-accent-orange/60 transition-all duration-200">

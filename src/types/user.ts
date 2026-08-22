@@ -29,6 +29,25 @@ export interface UserProfile {
   viewPrefs?: ViewPrefs
 }
 
+// ─── 首頁維護團隊（PLAN-051）──────────────────────────────────────────────────
+// 匿名訪客拿得到的 profile 子集。Firestore 沒有欄位級讀取授權，因此 profile 的讀取
+// 已收回 isAdmin()，這份資料改由 Worker /api/site-team 以 Admin 憑證代讀後過濾供應。
+// 型別在此收窄是刻意的：讓型別系統擋住「以為這裡拿得到 email」的誤用。
+// ⚠ 對應 workers/src/index.ts 的 SITE_TEAM_FIELDS，兩邊要一起改。
+export type SiteTeamMember = Pick<
+  UserProfile,
+  | 'uid'
+  | 'displayName'
+  | 'role'
+  | 'photoURL'
+  | 'avatarType'
+  | 'avatarUrl'
+  | 'avatarPilotId'
+  | 'gameNickname'
+  | 'gameServer'
+  | 'guild'
+>
+
 // ─── 配裝（Firestore userBuilds / 本地快取）───────────────────────────────────
 
 export interface FloatingModSelection {

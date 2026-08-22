@@ -6,7 +6,7 @@
 // 回應格式刻意對齊前端 fetchCollection 的 `{ ...doc.data(), id }`，前端接線零轉換。
 
 import { parseServiceAccount, getAccessToken, type ServiceAccount } from './gcpAuth'
-import { listCollection, getDocument, commitIncrements } from './firestoreRest'
+import { listCollection, getDocument, commitIncrements, runQuery } from './firestoreRest'
 import { getDataVersions, effectiveVersion } from './versions'
 import {
   isSocialCrawler,
@@ -173,6 +173,24 @@ export default {
         const versions = await getDataVersions(sa, token)
         // 不邊緣快取：版本本身即快取失效訊號，須夠新（versions.ts 已有 60s isolate 級快取）。
         return json(versions, 200, { ...cors, 'cache-control': 'no-store' })
+      } catch (e) {
+        return json({ error: e instanceof Error ? e.message : String(e) }, 500, cors)
+      }
+    }
+
+    // 路由：GET /api/site-team → 首頁維護團隊名單（PLAN-051）
+    //
+    // 存在的理由是**欄位過濾**：Firestore 沒有欄位級讀取授權，一旦規則允許匿名讀
+    // profile，回去的就是整份文件（含 email）。故規則收回 isAdmin()，公開所需的
+    // 那幾個欄位改由本端點以 Admin 憑證代讀後過濾供應——profile 仍然只有一份。
+    if (url.pathname === '/api/site-team') {
+      if (request.method !== 'GET') return json({ error: 'method not allowed' }, 405, cors)
+      try {
+        const members = await loadSiteTeam(env, ctx, url.origin)
+        return new Response(JSON.stringify(members), {
+          status: 200,
+          headers: { ...cors, 'content-type': 'application/json; charset=utf-8' },
+        })
       } catch (e) {
         return json({ error: e instanceof Error ? e.message : String(e) }, 500, cors)
       }
@@ -435,4 +453,83 @@ function json(data: unknown, status: number, headers: Record<string, string>): R
     status,
     headers: { ...headers, 'content-type': 'application/json; charset=utf-8' },
   })
+}
+
+// ── 首頁維護團隊（PLAN-051）──────────────────────────────────────────────────
+
+/**
+ * 可公開的 profile 欄位白名單。
+ *
+ * 用白名單（列出要什麼）而不是黑名單（排除 email）：日後 UserProfile 新增欄位時，
+ * 黑名單會**自動把新欄位外洩出去**，白名單則預設不給——這正是本計畫要修的那類問題。
+ * email 與 researchLevels 一律不回。
+ *
+ * photoURL 有列入：AvatarDisplay 的頭像回退鏈在 avatarType 為 'google' 或未設定時吃它，
+ * 少了它「沒自訂頭像的維護者」在首頁會退成字母圓圈。它是 googleusercontent 的圖片網址，
+ * 不含 email，也早已是公開資訊。
+ *
+ * ⚠ 對應前端 `src/types/user.ts` 的 `SiteTeamMember`，兩邊要一起改。
+ */
+const SITE_TEAM_FIELDS = [
+  'displayName', 'role', 'photoURL',
+  'avatarType', 'avatarUrl', 'avatarPilotId',
+  'gameNickname', 'gameServer', 'guild',
+] as const
+
+/** users/{uid}/profile/main → uid。document name 是權威來源，profile.uid 欄位只是冗餘。 */
+function uidFromProfileName(name: string): string {
+  return name.match(/\/users\/([^/]+)\/profile\//)?.[1] ?? ''
+}
+
+const ROLE_ORDER: Record<string, number> = { OWNER: 0, ADMIN: 1 }
+
+/**
+ * 讀團隊名單（含邊緣快取）。
+ *
+ * 快取 1 小時而非比照 /api/data 的一天：/api/data 的 cache key 帶版本號，後台 bump 之後
+ * 舊快取自然失效；profile 沒有這種失效訊號，只能靠 TTL 到期。維護者改暱稱／頭像後
+ * 最多一小時才會反映在首頁——這是拿「幾乎零 Firestore read」換來的，於文件註明即可。
+ */
+async function loadSiteTeam(
+  env: Env,
+  ctx: ExecutionContext,
+  origin: string,
+): Promise<Array<Record<string, unknown>>> {
+  const cache = caches.default
+  const cacheKey = new Request(`${origin}/__cache/site-team`)
+  const hit = await cache.match(cacheKey)
+  if (hit) return (await hit.json()) as Array<Record<string, unknown>>
+
+  const sa = parseServiceAccount(env.FIREBASE_SA_KEY)
+  const token = await getAccessToken(sa)
+  const docs = await runQuery(sa, token, {
+    collectionId: 'profile',
+    allDescendants: true, // ＝ collectionGroup('profile')
+    where: { field: 'role', op: 'IN', value: ['ADMIN', 'OWNER'] },
+  })
+
+  const members = docs
+    .map(({ name, data }) => {
+      const out: Record<string, unknown> = { uid: uidFromProfileName(name) || data.uid }
+      for (const f of SITE_TEAM_FIELDS) if (data[f] !== undefined) out[f] = data[f]
+      return out
+    })
+    // 排序在伺服器做，讓「快取命中」與「回源」的順序一致，首頁不會因為快取到期而重排。
+    .sort((a, b) => {
+      const r = (ROLE_ORDER[String(a.role)] ?? 9) - (ROLE_ORDER[String(b.role)] ?? 9)
+      return r !== 0 ? r : String(a.displayName ?? '').localeCompare(String(b.displayName ?? ''))
+    })
+
+  ctx.waitUntil(
+    cache.put(
+      cacheKey,
+      new Response(JSON.stringify(members), {
+        headers: {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'public, max-age=3600',
+        },
+      }),
+    ),
+  )
+  return members
 }
