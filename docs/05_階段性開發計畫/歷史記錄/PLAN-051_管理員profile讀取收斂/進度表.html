@@ -144,7 +144,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-051 進度表</span>
   </div>
@@ -167,11 +167,11 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">6</div>
+      <div class="summary-num" style="color:var(--accent-green)">7</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">6 / 7</span>
+      <span style="color:var(--accent-orange);">7 / 7</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 86%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -329,7 +329,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 驗收與文件同步</div>
       <div class="task-group-meta">docs/02_技術文件/04_Firebase/</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -339,18 +339,20 @@
           ② 該頁 Network 全文搜尋 <code>@</code> 找不到管理員 email；
           ③ 未登入直打 Firestore REST 的 runQuery 查 collectionGroup profile → permission denied；
           ④ 管理員登入後台使用者管理，名單與 email 照常（未回歸）。<br>
-          <strong style="color:var(--accent-green);">2026-08-23 實測：①②③ 通過</strong>——
-          未登入的獨立瀏覽器情境開首頁，3 位 OWNER ＋ 5 位 ADMIN 頭像照常，
-          該頁的 xhr/fetch 只有 <code>/api/site-team</code>（無任何 Firestore profile 查詢），
-          回應全文搜尋 <code>@</code> 零命中；匿名直打 <code>documents:runQuery</code> 查
-          collectionGroup <code>profile</code> 回 403 PERMISSION_DENIED。
-          <strong style="color:var(--accent-cyan);">④ 待管理員本人登入後台確認</strong>
-          （規則的 <code>isAdmin()</code> 分支本次未動，預期不受影響）。
+          <strong style="color:var(--accent-green);">2026-08-23 實測：四項全數通過</strong>——
+          ① 未登入的獨立瀏覽器情境開首頁，3 位 OWNER ＋ 5 位 ADMIN 頭像照常；
+          ② 該頁的 xhr/fetch 只有 <code>/api/site-team</code>（無任何 Firestore profile 查詢），
+          回應全文搜尋 <code>@</code> 零命中；
+          ③ 匿名直打 <code>documents:runQuery</code> 查 collectionGroup <code>profile</code>
+          回 403 PERMISSION_DENIED；
+          ④ 管理員登入後台「用戶管理」，41 位用戶名單、email 與角色升降按鈕全部照常——
+          <code>collectionGroup</code> 查詢的判定是「結果集內每份文件都要可讀」，
+          少一條放行條件就會整個 permission denied 而不是少幾筆，所以這項要實測而非推論。
         </div>
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -370,7 +372,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-051 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-051 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 歷史記錄</a>
 </footer>
 
 <!--LAST-UPDATED-->
