@@ -31,6 +31,26 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-038 · 社群連結預覽（Open Graph）系統</h3>
+      <p>站長回報網站在 LINE 有連結預覽、Discord 完全沒有。根因單一且已證實：<code>index.html</code> 從未放過任何 <code>og:*</code> 標籤——Discord 的預覽爬蟲不執行 JS、也沒有 <code>&lt;title&gt;</code> fallback，找不到就整張卡片都不顯示；LINE 則退而抓標題撐出陽春卡，於是有「LINE 有、Discord 沒有」的落差。<b>Tier 1</b>（全站靜態標籤 ＋ <code>scripts/generate-og-image.mjs</code> 合成的 1200×630 品牌圖，64KB）獨立上線即解決「有沒有卡片」；<b>Tier 2</b> 由 Cloudflare Worker 在邊緣用 HTMLRewriter 改寫，讓機師／機甲／武器詳情頁顯示各自的立繪與名稱，素材全部重用既有 <code>portrait</code>／<code>icon</code> 欄位，不另開美術維護線，缺值一律 fallback 預設圖。<br><b>最大的意外在 Cloudflare 的處理順序</b>：Redirect Rules → Transform Rules → <b>Workers</b> → Cache → Origin。PLAN-029 那條 SPA fallback 的 Transform Rule 已先把 <code>/pilots/xxx</code> 改寫成 <code>/index.html</code>，於是 <code>mecharashi.wiki/pilots/*</code> 這條 route <b>一次都不會命中</b>（首次部署後 <code>wrangler tail</code> 實測：Discordbot 請求零事件，同時段 /api 正常）。解法是給該規則加例外，而例外<b>必須同時綁路徑與 UA</b>——只看 UA 會讓爬蟲抓 <code>/news</code>、<code>/pilots</code> 列表頁時「不改寫、也沒人接手」直接落到 GitHub Pages 404，比沒做還糟。route 也刻意只掛三條詳情頁而非整站 <code>/*</code>：實測單次冷啟動瀏覽會從 3 次計數變 <b>66 次</b>（76% 是圖片），且與 /api 共用同一個免費額度池。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-22 · 11 / 11 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-038_社群連結預覽/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-038_社群連結預覽/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-048 · 時間線甘特圖改版</h3>
+      <p>甘特圖的三個結構性問題<b>都不是調 CSS 能解的</b>：tooltip 被裁切是因為容器 <code>overflow-y-auto</code> 而浮窗 <code>absolute bottom-full</code> 永遠往上長（<b><code>z-index</code> 對 overflow 裁切無效</b>，實測 11 層 clipping ancestor，只有 portal 有效）；一週活動只剩一個 12px 圓點，因為 <code>activityToColumns()</code> 把起點量化到下一個週界（<b>實測 27/75 筆＝36%</b>）；而「打了很多資料卻看不到」根本不是顯示問題 —— <code>TimedActivity</code> <b>沒有描述欄位</b>，獎勵只能硬塞進 <code>name</code>。方案定調 <b>「甘特＝索引，卡片＝內容」</b>：甘特降級為日精度概觀、續與週次表共用同一條軸，內容改由同一捲動容器內的卡片流承載，並做甘特↔卡片↔週欄三向連動。評審抓到的四案共同盲點也一併兌現：玩家三個問題裡有兩個半能從既有 <code>startDate + weeks</code> 直接算出，<b>零欄位、零維護成本</b>。<br><b>兩項超出原訂範圍的追加</b>：① 計畫書估固定資訊表 234px、<b>實測 383px</b>，壓列密度後甘特＋卡片區只有 186px，核心目的仍落空 —— 使用者看過成果後提出「版本內容可收合」，實測資訊表 337 → <b>123px</b>、甘特＋卡片區 186 → <b>488px（2.6 倍）</b>，計畫書「未解問題」第 1 項實質解除；② 刪掉 PLAN-014 宣告取代卻從未移除的四個死碼元件（<code>ActivityTimeline</code> 等，實測零 import）。<br>台版公告管線落地：實測台版是<b>靜態 JSON（副檔名 .html 但內容是 JSON），不需 Playwright</b>，<b>266 篇公告全量歸檔完成、0 失敗</b> —— 這 258 篇此前<b>只</b>存在於前代理商網域 <code>ma.tentree-games.com</code>（代理權 2026-01-05 已移轉），站一收掉即不可逆，<b>該風險已解除</b>。後續建 staging 雙集合 + <code>/admin/announcements</code> 審核工作檯 + GitHub Actions 每週自動抓取，首灌 43 篇草稿 / 96 筆待審（排除儲值促銷後留 67 筆），一次補齊近五個月台版活動史；帶外驗證確認 <code>patchVersions</code> 版本號<b>未被 bump</b>，證實爬蟲只碰 staging。TTL 政策<b>建立、驗證後刻意關閉</b> —— 容量壓力不存在（一年 &lt;0.5MB vs 1GiB 免費額度），而 <code>rawText</code> 是公告原文的唯一備份，刪了不可再生。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-17 · 36 / 36 任務（另含上線步驟 A–D）· 台版公告 266 篇歸檔 0 失敗 · <code>npm test</code> 434 例全綠 · 每階段皆於 dev server 實機驗證（浮窗父鏈確認脫離 11 層裁切祖先、三向連動逐欄比對）· 已知取捨：陸版公告頻道已廢棄（2 篇、停在 2023-10），明確接受「台版自動化／陸版人工」的不對稱</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-048_時間線甘特圖改版/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-048_時間線甘特圖改版/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card orange">
       <div class="card-icon">◆</div>
       <h3>PLAN-040 · 固定武裝</h3>
