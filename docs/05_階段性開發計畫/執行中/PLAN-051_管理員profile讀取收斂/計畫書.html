@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-051 管理員 profile 讀取收斂 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-051 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-051</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    管理員 profile 讀取收斂<span style="-webkit-text-fill-color:var(--text-secondary);"> · Worker 代讀 · 欄位過濾 · 規則收緊</span>
+  </h1>
+  <p class="hero-sub">首頁的維護團隊改由 Worker 供應，Firestore 的 profile 讀取收回 isAdmin()——讓管理員 email 不再跟著首頁送進每一位匿名訪客的瀏覽器</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-051</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-23</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">Worker · 前端 · Firestore Rules</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value orange">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-029（Worker /api 架構）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>管理員的 email 目前任何人都讀得到，不需要登入</strong><br>
+    <code>firestore.rules</code> 有兩條 profile 讀取規則，第二個條件<strong>沒有任何 auth gate</strong>：
+    <div class="code-block" style="margin:10px 0;"><span class="cm">// firestore.rules（現況）</span>
+match /users/{userId}/profile/{docId} {
+  allow read: <span class="kw">if</span> isOwner(userId) || isAdmin() || resource.data.role <span class="kw">in</span> [<span class="st">'ADMIN'</span>, <span class="st">'OWNER'</span>];
+}
+match /{path=**}/profile/{docId} {
+  allow read: <span class="kw">if</span> isAdmin() || resource.data.role <span class="kw">in</span> [<span class="st">'ADMIN'</span>, <span class="st">'OWNER'</span>];
+}</div>
+    這是刻意的——首頁的維護團隊區塊（<code>SiteTeamSection</code>）要在未登入狀態顯示，
+    <code>getSiteTeamProfiles()</code> 用 <code>collectionGroup('profile')</code> 撈
+    <code>role in ['ADMIN','OWNER']</code>，沒有這條就撈不到。
+  </div>
+
+  <div class="problem-block">
+    <strong>根因：Firestore 沒有「欄位級」讀取授權</strong><br>
+    Security Rules 的授權單位是<strong>文件</strong>，沒有 field-level read mask。
+    一旦允許讀該文件，回去的就是整份文件——而
+    <code>UserProfile</code>（<code>src/types/user.ts</code>）的 <code>email</code> 是必填欄位。<br>
+    所以現況等於：<strong>每一位匿名訪客進首頁，瀏覽器裡就有全部管理員的 email</strong>
+    （開無痕視窗 + DevTools 看 <code>runQuery</code> 的回應即可自行驗證）。
+    這條路徑改不動規則就解不掉，只能換資料來源。
+  </div>
+
+  <div class="info-block">
+    <strong>嚴重度評估：中，不是高</strong><br>
+    email 不是憑證，拿到也登不進任何東西——本站的後台入口是 Google 帳號 + Firestore 的
+    <code>isAdmin()</code>，兩者都不因 email 外流而鬆動。<br>
+    值得修的理由是<strong>它降低了針對管理員的釣魚門檻</strong>：管理員帳號是後台唯一的鑰匙，
+    而「誰是管理員 + 他的 email」現在是首頁自動奉送的資訊。屬於該收但不緊急的洩漏。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：改資料來源，不試圖用規則遮欄位</strong><br>
+    如上，Firestore 沒有欄位級授權，任何「讓匿名讀得到但看不到 email」的規則寫法都不存在。
+    因此規則只能二選一：開放整份文件、或完全關閉。本計畫選<strong>完全關閉</strong>
+    （收回 <code>isAdmin()</code>），公開所需的那幾個欄位改由別的管道供應。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：走 Worker 代讀，不另開公開集合</strong><br>
+    三個方案比較：
+    <table class="impact-table">
+      <thead><tr><th>方案</th><th>做法</th><th>代價</th><th>結論</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>A. 公開集合</td>
+          <td>另建 <code>siteTeam/{uid}</code>，只放可公開欄位，<code>read: if true</code></td>
+          <td>同一份資料存兩處。維護者改暱稱／頭像要同步寫兩邊，遲早不一致</td>
+          <td><span class="badge-med">不採用</span></td>
+        </tr>
+        <tr>
+          <td>B. Worker 代讀</td>
+          <td>新增 <code>/api/site-team</code>，Worker 以 service account 讀 profile、<strong>只回傳白名單欄位</strong></td>
+          <td>要先幫 Worker 補 collectionGroup 查詢能力（見決策三）</td>
+          <td><span class="badge-good">採用</span></td>
+        </tr>
+        <tr>
+          <td>C. 不顯示團隊</td>
+          <td>首頁移除維護團隊區塊</td>
+          <td>犧牲功能。而且那是首頁少數有人味的東西</td>
+          <td><span class="badge-low">不採用</span></td>
+        </tr>
+      </tbody>
+    </table>
+    選 B 的關鍵是<strong>單一資料來源</strong>：profile 仍然只有一份，Worker 只是在出口做欄位過濾。
+    而且它與 PLAN-029 既有的 <code>/api/data/:collection</code> 是同一個模式——同源、免 CORS、
+    吃得到 zone 限流，還能在邊緣快取（團隊名單幾乎不變，可設長 TTL）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：Worker 需要先補 collectionGroup 查詢</strong><br>
+    <code>workers/src/firestoreRest.ts</code> 目前只有 <code>listCollection</code>（單一集合）、
+    <code>getDocument</code>、<code>commitIncrements</code>、<code>readCounterField</code>，
+    <strong>沒有 <code>runQuery</code></strong>。而 profile 是 <code>users/{uid}/profile/main</code>
+    這種子集合，要跨使用者撈就得用 <code>collectionGroup</code> + <code>allDescendants</code>。<br>
+    因此本計畫的第一步是在 <code>firestoreRest.ts</code> 補一個 <code>runQuery()</code>
+    （POST <code>documents:runQuery</code> ＋ <code>structuredQuery</code>）。這是通用能力，
+    之後其他需要跨集合查詢的端點都用得上。
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界情況：這三件事不會壞，但要驗</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>後台使用者管理</strong>：<code>getAllUsers()</code> 也走 <code>collectionGroup('profile')</code>，
+        但呼叫者是管理員，收緊後仍命中 <code>isAdmin()</code> 分支 → 不受影響。</li>
+      <li><strong>Worker 掛掉時的降級</strong>：<code>useSiteTeam</code> 現有的
+        <code>.catch(() =&gt; {})</code> 會讓 <code>SiteTeamSection</code> 回傳 <code>null</code>，
+        首頁少一塊而不是壞掉。這個行為要保留。</li>
+      <li><strong>本機與 preview 環境</strong>：那兩個環境的 <code>VITE_WORKER_API_BASE</code> 不是
+        <code>same-origin</code>，新端點要跟既有 <code>/api/*</code> 一樣吃得到 CORS 設定。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>workers/src/firestoreRest.ts</code> 新增 <code>runQuery()</code>（structuredQuery + allDescendants）</li>
+      <li><code>workers/src/index.ts</code> 新增 <code>/api/site-team</code> 端點，回傳<strong>白名單欄位</strong>
+        （<code>uid</code> / <code>displayName</code> / <code>role</code> / <code>avatarType</code> /
+        <code>avatarUrl</code> / <code>avatarPilotId</code> / <code>gameNickname</code> /
+        <code>gameServer</code> / <code>guild</code>）——<strong>不含 <code>email</code></strong>，
+        並加上邊緣快取標頭</li>
+      <li><code>src/lib/userApi.ts</code> 的 <code>getSiteTeamProfiles()</code> 改打 Worker</li>
+      <li><code>firestore.rules</code> 兩條 profile 規則移除 <code>|| resource.data.role in ['ADMIN','OWNER']</code>，
+        並 <code>firebase deploy --only firestore:rules</code></li>
+      <li>同步更新 <code>docs/02_技術文件/04_Firebase/資料庫設計文件/security-rules.html</code> 與
+        <code>users.html</code>（CLAUDE.md 規則 2）</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>把 email 從 <code>UserProfile</code> 移除</strong>。它在後台使用者管理有實際用途，
+        問題不在「存了 email」而在「誰讀得到」。</li>
+      <li><strong>其他集合的規則調整</strong>。遊戲資料早已是 <code>read: if isAdmin()</code>（PLAN-029），
+        本計畫只碰 profile 這兩條。</li>
+      <li><strong>Cloudinary unsigned upload preset 的收斂</strong>。那是另一個「前端限制擋不住直接呼叫」
+        的缺口，但修法在 Cloudinary Dashboard 而不在本 repo，另案處理。</li>
+      <li><strong>啟用 Firebase Storage</strong>。<code>storage.rules</code> 至今未部署（Storage 沒開），
+        與本計畫無關。</li>
+    </ul>
+  </div>
+
+  <div class="info-block">
+    <strong>驗收條件</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>無痕視窗開首頁 → 維護團隊區塊<strong>仍正常顯示</strong>（頭像、暱稱、伺服器、公會）</li>
+      <li>同一頁 DevTools 的 Network 全文搜尋 <code>@</code> → <strong>找不到任何管理員 email</strong></li>
+      <li>未登入狀態直打 Firestore REST 的 <code>documents:runQuery</code> 查 collectionGroup
+        <code>profile</code> → <strong>permission denied</strong></li>
+      <li>管理員登入後台使用者管理 → 名單與 email 照常顯示（未回歸）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-051 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-051 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>
