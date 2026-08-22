@@ -206,6 +206,7 @@
 
 ### 📚 文件
 
+- **plan**: PLAN-038 歸檔至歷史記錄 (`877db5c`)
 - **plan**: 新增 PLAN-050 首頁資訊架構重構，並補上 PLAN-049 文件 (`bec8d88`)
 - 補上 SECURITY.md、CONTRIBUTING.md 與 issue 回報模板 (`819724a`)
 - 台版公告解析規則技術文件 (`297f2d2`)
