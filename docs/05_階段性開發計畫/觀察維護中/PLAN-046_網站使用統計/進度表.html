@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-046 網站使用統計 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+
+.warn-note {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.25);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.warn-note strong { color: var(--accent-yellow); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">觀察維護中</a>
+    <span>›</span>
+    <span class="current">PLAN-046 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-046</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> 網站使用統計</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-08 · 開發收束 2026-08-08 · <strong style="color:var(--accent-cyan);">2026-08-23 轉入觀察維護中</strong></p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">24</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">2</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">18</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-cyan);">24 / 26</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 92%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>◆ 2026-08-23 轉入觀察維護中：</strong>
+    Phase A / B 的 18 項開發者任務已全數完成並上線，剩餘 2 項（A-0b、C-2 ①）皆為長期觀察性質、不阻塞任何開發。<br>
+    <strong>C-2 驗收的 ②③④ 已通過</strong>——以服務帳戶直讀 <code>analyticsDaily</code> / <code>analyticsEntity</code> 核對 2026-08-09～08-22 共 14 個完整日，
+    數字與後台儀表板實際渲染值一致（UPV 2,744 / 造訪 1,079 / 訪客 778 / 折返率 2.09），<strong>儀表板至此以真實資料驗證完畢，不再只是合成資料</strong>。
+    <br>· <strong>② 折返率</strong>：全期 <code>pv/upv</code> = <strong>2.10</strong>（每日 1.58–2.57），既未過度去重、亦無 session 誤切。
+      惟逐路由拆解發現 <code>versions_timeline_detail</code> 為 <strong>9.24</strong>（342 / 37），
+      而同型的機師／機甲／武器詳情頁都落在 2.5 附近——<b>疑為該頁 URL 驅動的子項切換造成重複計 pv</b>，
+      若屬實則它在頁面熱度榜上被系統性高估（pv 第 6、upv 第 15），且 B-3 圖說「差距越大＝資訊沒一次給足」的解讀會在此頁誤導。<b>待查</b>。
+    <br>· <strong>③ CN 佔比 — 本計畫最初的問題，已有答案</strong>：<strong>4.5%</strong>
+      （TW 44.2% / HK 14.6% / ID 6.5% / US 6.4% / MY 5.4% / CN 4.5%）。
+      關鍵交叉驗證：<code>byLang</code> 的 <code>zh_cn</code> 為 <strong>5.0%</strong>，與 CN 國碼幾乎重合——
+      若大量中國訪客掛 VPN，簡中語言比例應顯著高於 CN 國碼，兩者貼合代表
+      <strong>VPN 造成的低估不如原先擔心的嚴重，中國訪客實際量級即約 5%</strong>。此判讀<b>只有加了 byLang（決策十一）才做得出來</b>。
+      同一維度也證實了決策十一的第二個理由：<code>en</code> 佔 28.1% 但 US 僅 6.4%，
+      EN 服玩家確實被 <code>byCountry</code> 拆散到 ID / MY / PH / TH / VN / BR / AU，
+      <b>印尼（6.5%）甚至高於美國</b>——光看國家分布會完全描述錯自己的受眾。
+    <br>· <strong>④ 寫入量</strong>：日均 <strong>176</strong>、單日最高 <strong>395</strong>＝ 50,000 預算的 <strong>0.79%</strong>；
+      16 天<b>零熔斷、零缺漏日</b>。單日最高出現在 8/20 流量翻倍那天（實體榜前段全是新機師與 165–172 號段新武器，應為遊戲改版），
+      正是 A-5 把預算從 15,000 上調時所設想的情境。
+    <br>· <strong>① Cloudflare 對照：待補</strong>——自建 14 天日均 pv <strong>398.5</strong> / 造訪 <strong>74.9</strong>，
+      對 CF 舊基準（7/25 單日 397 / 93）<strong>pv 幾乎完全吻合，代表埋點沒有系統性漏送</strong>；
+      造訪低約 19%，推測即 A-2 預告過的「排除規則擋掉 8 個後台帳號的巡站，CF 沒擋」。
+      惟拿單日對日均不嚴謹，須取 <b>CF 同期（08-09～08-22）</b>數字才能結案。
+  </div>
+
+  <div class="warn-note">
+    <strong>觀察期間發現、尚未處理：</strong>
+    <br>· <b>趨勢圖把「統計啟用前」的日子補零</b>——30 天視圖從 07/25 起繪，但埋點 08-08 才上線，
+      07/25–08/07 那段貼地直線不是「沒流量」而是「沒量測」，90 天視圖會有三分之二是這條假零線。
+      這正是 B-3 資料誠實度要防的同一類問題，只是當初只想到熔斷截斷、沒想到啟用前。
+      修法：繪圖起點取 <code>max(範圍起點, 首筆資料日)</code>，或在啟用日畫垂直分隔線標「統計啟用於 08-08」。
+    <br>· <code>versions_timeline_detail</code> 折返率 9.24 的成因待查（見上）。
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    管理者可在後台看見「哪些頁面真的有人用、哪些機師機甲最多人查、訪客來自哪些國家」，
+    讓改版順序與資料補齊順序有依據；同時<strong>首次取得 PLAN-029 中國訪客策略是否有效的客觀證據</strong>。
+    使用者端零感知——不儲存任何可識別個人的行為資料。
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ 排程變更：Phase B 未等兩週，於 2026-08-08 當日一併完成（站長提議、重新評估後採納）</strong><br>
+    原規劃是 A、B 中間隔兩週（理由：儀表板在沒有資料時做完只能盯著空圖表）。
+    <strong>但那是動機問題不是技術問題，權重放太高了。</strong>重新評估後，現在做反而更好，理由與「埋點要先上」是同一條：<br>
+    · <strong>儀表板是這份資料的消費端，也是唯一能驗證 schema 有沒有缺的東西。</strong>
+      若兩週後才做、然後發現少了某個維度，<strong>那兩週的資料補不回來</strong>——統計不會回溯。
+      現在做，發現缺什麼的修正成本是零。<br>
+    · 資料稀疏時做，<strong>空狀態與少量資料的呈現一定會被處理對</strong>，而那正是之後永遠不會再測到的情況。<br>
+    <span style="color:var(--text-dim);">原本「A 先上線代表 Worker 寫入路徑的風險提早承擔、收益兩週後才兌現」這個代價，
+    也因為 B 一併完成而縮短為零。</span>
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">埋點與寫入管線</div>
+  <div class="section-desc">讓資料開始累積。此階段結束後沒有任何可見的 UI 變化，資料先躺在 Firestore 裡。</div>
+  <div class="impact-note"><strong>✅ 程式碼於 2026-08-08 完成</strong>：前端 4 檔（session／track／routeKeys／usePageTracking）＋ Worker 3 檔（collect／collectBudget／firestoreRest 寫入）＋ firestore.rules 兩個集合。<br><code>npm test</code> <strong>359 pass / 0 fail</strong>（新增 15 個：三層去重 8＋路由覆蓋 7）、<code>npm run build</code> 通過、ESLint 零新增錯誤。<br><strong>Worker 與 Firestore 規則已於 2026-08-08 部署，並以 curl 完成端到端實測</strong>：路由（無效 payload→204／GET→405／裸打無 Origin→403）、日文件與月文件皆正確產生、<code>byCountry</code> 取得 <code>TW</code>。<br><strong>最關鍵的一項獲得驗證：entity 的中文欄位路徑（<code>pilots.&#96;艾達&#96;</code>，反引號包裹）在真實 Firestore 上可行</strong>——這是本機無法驗證、且失敗會拖垮整包 commit 的唯一未知數。測試資料已刪除。<br><strong>前端已於 2026-08-08 部署完成</strong>（commit <code>cf39a05</code>），並確認線上 bundle 確實含埋點程式碼。<strong>Phase A 全數完成，資料開始累積。</strong><br><span style="color:var(--text-dim);">⚠ 自測方式：站長身為 OWNER 會被排除規則擋掉，<b>用自己的帳號逛站驗證不到</b>。請開無痕視窗（未登入＝訪客＝計入），且 flush 是在<b>離站時</b>才送出——要切分頁或關掉才會觸發，停在頁面上等不會有東西。<br>⚠ push 注意事項：pre-push hook 自動 commit 的 <code>CHANGELOG.md</code> 產生於 push 的 ref 算完之後，因此<b>第一次 push 不會帶到它</b>，需再 push 一次（hook 的固有行為，非本計畫問題）。</span></div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-0 &nbsp; 前置確認：邊緣限流規則</div>
+      <div class="task-group-meta">Cloudflare Dashboard · Security · WAF</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">✅ Workers 方案已確認：免費方案</div>
+        <div class="task-desc">
+          100,000 requests／日（超出回 Error 1027，UTC 午夜重置）。以實測基準推算，本計畫每日只增加約 <strong>150–220</strong> 次請求
+          （<strong>額度的 0.2%</strong>），<strong>自然流量不可能灌爆</strong>——需成長約 400 倍。<br>
+          <strong>重要澄清：</strong>惡意灌爆的風險<strong>今天就已存在</strong>——任何人現在就能猛打 <code>/api/data</code> 燒掉這 100k
+          （<code>antiScrapeBlock()</code> 回 403 時 Worker <strong>已經執行過、照樣計數</strong>）。
+          <code>/api/collect</code> 只是在已暴露的攻擊面上多一個端點，不是新增一類風險。
+        </div>
+      </div>
+      <div class="task-assignee">已確認</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">✅ 限流規則已確認存在：「API rate limit」（URI 路徑開始為 /api/・封鎖・使用中）</div>
+        <div class="task-desc">
+          <code>/api/collect</code> 因路徑前綴<strong>自動被涵蓋，A-6 第二項無事可做</strong>
+          （Free 方案僅含 1 條規則，當初刻意寫成路徑前綴正是為此）。
+          <span style="color:var(--text-dim);">附帶資訊：規則額度已用滿 1/1，日後若需第二條規則須升級方案。</span>
+        </div>
+      </div>
+      <div class="task-assignee">已確認</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">✅ 已由站長實測驗證限流規則會擋（2026-08-08）→ 轉為長期觀察</div>
+        <div class="task-desc">
+          原問題是「事件計數為 0」無法區分<strong>「沒人攻擊」</strong>與<strong>「規則設錯所以永遠不匹配」</strong>
+          ——兩者在 Dashboard 上長得一模一樣。實測後確認規則確實生效，此歧義解除。<br>
+          <strong>轉為觀察，不再列為待辦。</strong>站長註記：「未來也不知道會不會有漏洞」——這個保留是對的，
+          限流<b>本來就只是提高成本、不是防死</b>（住宅代理 + 分散 IP 仍可繞過，這是所有 per-IP 限流的共同上限）。<br>
+          <strong>日後要觀察什麼：</strong><br>
+          · <b>Security → Events</b>：是否出現非自己造成的封鎖記錄（＝有人在打）。<br>
+          · <b>Workers 請求數</b>（Cloudflare Dashboard）：這是額度耗盡的<u>領先指標</u>，比 Firestore 帳單早看到問題。
+            日常應遠低於 100,000／日；若某天量級跳一個數量級，先看是不是被灌而非流量成長。<br>
+          · <b>單一 IP 上限仍約 86,400 請求／日</b>（60 req／分）：真的遇到持續攻擊時，把門檻調到 30 req／分即可留出一半餘裕。
+            現在不預先調，以免誤傷首訪使用者（首訪約需 13 次 <code>/api</code> 請求）。<br>
+          <span style="color:var(--text-dim);">真出事時的止血順序：① <code>COLLECT_ENABLED=false</code> 關掉統計路徑
+          → ② 調低限流門檻 → ③ 必要時升 Workers Paid（$5／月，日額度限制消失）。</span>
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-0b &nbsp; 防護規則對「合作對象」的誤傷評估 <span style="font-size:12px;color:var(--text-dim);font-weight:400;">（低優先）</span></div>
+      <div class="task-group-meta">workers/src/index.ts · Cloudflare WAF</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">確認合作對象是否會被三層防線靜默擋下</div>
+        <div class="task-desc">
+          <strong>前提修正（2026-08-08 站長補充）：現行合作是<u>直接看原始碼與後台</u>，不走程式化抓取，
+          因此本項目前<u>不構成實際風險</u>，僅作為日後情境改變時的備查。</strong><br>
+          （同一前提也使「資料污染在雙方之間互相傳染」的顧慮不成立——對方看得到
+          <code>PilotTalent.manual</code> 與原始 API 值的結構差異。）<br>
+          若日後真的有人改用程式化存取，<strong>三層防線都會擋下</strong>：<br>
+          ① <code>antiScrapeBlock()</code> 的 Origin／Referer 檢查 → <code>curl</code> 不帶 Origin ⇒ <strong>403</strong>；<br>
+          ② 機房 ASN 封鎖 → 從任何 VPS／雲端主機發起 ⇒ <strong>403</strong>；<br>
+          ③ 限流 60 req／分 ⇒ <strong>封鎖</strong>。<br>
+          <strong>最糟的失敗模式是他們靜默地拿到 403、卻不會來跟你說</strong>，只覺得「這站怪怪的」。<br>
+          <strong>若要分享資料，用刻意的方式</strong>——給一份 JSON dump，或開一個帶 token 的專用端點。
+          <span style="color:var(--accent-yellow);"><strong>絕不要為了一個人放寬既有規則</strong></span>：規則是全域的，
+          放寬等於對所有爬蟲一起打開。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; session 與三層去重模組</div>
+      <div class="task-group-meta">src/lib/analytics/session.ts · track.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">visitorId / sessionId / 已報頁面 Set</div>
+        <div class="task-desc">
+          <code>visitorId</code>（localStorage 永久）、<code>sessionId</code>（<strong>10 分鐘</strong>閒置或跨午夜換手）、
+          已報頁面 Set（持久化到 localStorage 隨 sessionId 綁定，<strong>設 50 筆上限</strong>）。
+          跨午夜強制斷 session，避免資料寫進前一天的文件。
+        </div>
+        <div class="task-file">src/lib/analytics/session.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">活動訊號刷新 lastActiveAt</div>
+        <div class="task-desc">
+          由路由變更、<code>click</code>／<code>keydown</code>／<code>scroll</code>（<strong>節流 60 秒</strong>，只寫 localStorage、不發網路請求）、
+          <code>visibilitychange → visible</code> 共同刷新。
+          <strong>缺這一項，10 分鐘窗口會把慢讀者的 session 誤切，UPV 會往 PV 漂回去、削弱去重效果。</strong>
+        </div>
+        <div class="task-file">src/lib/analytics/session.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">PV / UPV 雙軌 buffer 與 flush 佇列</div>
+        <div class="task-desc">
+          記憶體 buffer 累加 <code>{ pv, upv }</code>；送出失敗進 localStorage 佇列下次補送。
+          <strong>佇列直接沿用 PLAN-045 的 <code>src/lib/diag/queue.ts</code> 模式</strong>（含長度上限），不重新設計。
+        </div>
+        <div class="task-file">src/lib/analytics/track.ts · queue.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 前端掛載、排除規則與路由 key</div>
+      <div class="task-group-meta">src/hooks/usePageTracking.ts · src/App.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">usePageTracking hook</div>
+        <div class="task-desc">
+          用 <code>useLocation()</code> ＋ <code>useMatches()</code> 取<strong>路由樣板</strong>（非實際網址）自動推導 pageKey；
+          在 <code>&lt;Layout /&gt;</code> 內呼叫一次。SPA 路由變更不觸發任何原生事件，必須自己接。
+        </div>
+        <div class="task-file">src/hooks/usePageTracking.ts · src/App.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">flush 時機與 sendBeacon</div>
+        <div class="task-desc">
+          <code>visibilitychange → hidden</code>（主力）、<code>pagehide</code>、每 5 分鐘定時、session 換手。
+          <strong>不用 <code>beforeunload</code></strong>（iOS Safari 不可靠）。
+          送出用 <code>navigator.sendBeacon</code> ＋ <code>text/plain</code> Blob（簡單請求，不觸發 CORS preflight）。
+        </div>
+        <div class="task-file">src/lib/analytics/track.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">排除規則</div>
+        <div class="task-desc">
+          <strong>所有具後台存取權的角色</strong>（ADMIN／OWNER ＋ PLAN-042 規劃中的 EDITOR）、<code>/admin/*</code> 路由、
+          <code>import.meta.env.DEV</code>（順帶解決 StrictMode 雙跑）、
+          <code>analytics_optout</code> 旗標、<code>navigator.webdriver</code>、<code>document.prerendering</code>。<br>
+          <strong>⚠ 角色判定要用「白名單以外全部排除」的寫法</strong>（只有明確的一般 USER／未登入才計入），
+          日後新增角色不會漏掉。<strong>小流量站這不是小事</strong>：日均僅約 93 次造訪，
+          站長與維護夥伴巡站就可能佔 10–20%，且會把「編輯者常看的頁」系統性推上熱度排行。
+        </div>
+        <div class="task-file">src/lib/analytics/track.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">路由覆蓋測試（防靜默失敗）</div>
+        <div class="task-desc">
+          <code>node --test</code> 斷言「<code>App.tsx</code> 的前台路由集合 ⊆ 統計標籤表」。
+          <strong>忘記登記新頁面 → npm test 直接紅並指名是哪條路由 → pre-push hook 擋下。</strong>
+          把「幾週後看報表才發現某頁一直沒統計」轉成 build 期錯誤。
+        </div>
+        <div class="task-file">src/lib/analytics/routeKeys.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; Worker /api/collect 端點</div>
+      <div class="task-group-meta">workers/src/index.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">端點與無名單防護</div>
+        <div class="task-desc">
+          沿用既有 <code>antiScrapeBlock()</code>；<strong>不放頁面白名單</strong>（決策八，避免重演 PLAN-043 雙名單不同步事故），
+          改用 <code>KEY_RE = /^[a-z][a-z0-9_]{0,39}$/</code> ＋ 單包 50 key ＋ 數值 clamp ＋ payload 8 KB 上限。
+          格式不合<strong>只丟該筆、不丟整包</strong>。一律回 <code>204</code> 不回任何資料。
+        </div>
+        <div class="task-file">workers/src/index.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">兩條安全鐵律 ＋ 補充維度</div>
+        <div class="task-desc">
+          <strong>鐵律①</strong> 文件路徑由伺服器時間算出，payload 絕不參與；
+          <strong>鐵律②</strong> 欄位路徑一律由程式碼組出，payload 只能提供數字。<br>
+          補上 <code>request.cf.country</code>（Q5 裁決納入）與 UA 判定的 device；<strong>IP 絕不落地</strong>。
+          例外一律吞掉，絕不因統計失敗影響使用者。<br>
+          <strong>另收 <code>byLang</code>（決策十一）</strong>：由前端送 <code>navigator.language</code> 分桶後的值
+          （<code>zh_tw / zh_cn / zh_other / en / ja / ko / other</code>），Worker 端以固定列舉驗證。
+          <strong>本站主客群是 EN 服與 CN 玩家，而 <code>byCountry</code> 會把 EN 服玩家拆散成十幾個國家、
+          又因 VPN 系統性低估 CN——缺這個維度就描述不了自己的受眾。</strong>
+        </div>
+        <div class="task-file">workers/src/index.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; Worker 寫入能力（Firestore REST commit）</div>
+      <div class="task-group-meta">workers/src/firestoreRest.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">commitIncrements()</div>
+        <div class="task-desc">
+          目前 <code>firestoreRest.ts</code> <strong>只有讀</strong>（<code>listCollection</code>／<code>getDocument</code>），須新增寫入。
+          用 <code>documents:commit</code> 的 <code>update</code>＋<code>updateMask</code>＋<code>updateTransforms</code> 組合——
+          <strong>單獨的 transform 在文件不存在時會失敗，但帶 updateMask 的 update 會「不存在就建立」，transform 隨之生效</strong>。
+          日文件與月 entity 文件放同一個 commit（上限 500 writes，遠遠夠用），維持一個 session 只算一次寫入。
+        </div>
+        <div class="task-file">workers/src/firestoreRest.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; 寫入預算熔斷器與 kill switch</div>
+      <div class="task-group-meta">workers/src/collectBudget.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">日寫入預算熔斷</div>
+        <div class="task-desc">
+          <code>analyticsDaily</code> 加 <code>writes</code> 欄位自增當燃料表——<strong>不需 KV、不需 Durable Objects</strong>。
+          isolate 層級快取 ＋ 自適應回查（&lt;50% 預算查 10 分鐘一次、&lt;80% 查 2 分鐘、逼近時 30 秒，約 1,440 reads／日）。<br>
+          預設 <code>COLLECT_DAILY_BUDGET=50000</code>（2026-08-08 從 15,000 上調）。
+          <strong>取向已改為「資料完整優先」</strong>：低預算會在流量暴增日（中國宣傳、被轉發、遊戲改版）觸發熔斷，
+          <strong>而那正是最該量測的日子</strong>。費用不構成理由——單日 50,000 次寫入超額部分僅約 US$0.05。
+          第一道通知改用 <strong>Firebase 用量告警（設 20,000）</strong>，熔斷器退居防惡意攻擊的最後防線。
+        </div>
+        <div class="task-file">workers/src/collectBudget.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">truncatedAt 標記 ＋ kill switch</div>
+        <div class="task-desc">
+          熔斷時<strong>放行最後一次寫入</strong>記下 <code>truncatedAt</code>／<code>truncatedReason</code>，之後完全停手。
+          <strong>最危險的不是熔斷，是熔斷了但報表看不出來</strong>——B-3 據此標示資料不完整。<br>
+          另加 <code>COLLECT_ENABLED</code> 環境變數 kill switch：出事改一個 secret 即整條路徑關閉，<strong>不需 deploy、不需 rollback</strong>。
+        </div>
+        <div class="task-file">workers/src/collectBudget.ts · index.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-6 &nbsp; Firestore 規則與邊緣限流</div>
+      <div class="task-group-meta">firestore.rules · Cloudflare Dashboard</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">analyticsDaily / analyticsEntity 規則</div>
+        <div class="task-desc">
+          <code>allow read: if isAdmin(); allow write: if false;</code>——
+          只有 Worker（service account 繞過規則）寫得進去。<strong>純新增，不改任何既有 match 區塊。</strong>
+          讀取用 <code>isAdmin()</code> 而非 <code>isOwnerRole()</code>：統計是站務資訊、不含裝置指紋，敏感度低於 <code>systemLog</code>。
+        </div>
+        <div class="task-file">firestore.rules</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Cloudflare Rate Limiting 納入 /api/collect</div>
+        <div class="task-desc">
+          <strong>若 A-0 確認為 Workers 免費方案，此項為必要而非選配。</strong>
+          限流規則在 WAF 階段執行、<strong>早於 Workers</strong>，被擋下的請求不消耗 Worker 請求額度——這正是它能保護 <code>/api/data</code> 的原因。
+          須確認能否與 PLAN-029 既有規則共用路徑條件（免費方案規則數有限）。
+        </div>
+        <div class="task-file">Cloudflare Dashboard · Security · Rate limiting rules</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label cyan">Phase B</div>
+  <div class="section-title">後台儀表板（Phase A 上線約兩週後動工）</div>
+  <div class="section-desc">（排程已變更，見上方說明——與 Phase A 同日完成。）</div><div class="impact-note"><strong>✅ 於 2026-08-08 完成</strong>：<code>src/lib/api/analytics.ts</code>（+ barrel）、<code>src/types/analytics.ts</code>、<code>src/pages/admin/AdminAnalyticsPage.tsx</code>、<code>src/components/admin/analytics/</code> 三個圖表元件、App.tsx 路由與 AdminPage 入口。<br><strong>已用合成資料在 Firestore 模擬器實測渲染</strong>（29 天資料，刻意含 1 天缺漏文件與 1 天被熔斷截斷）：熔斷警示橫幅、趨勢圖紅圈標記、缺漏日補零的凹陷、中文 entity 排行、以及<strong>空狀態</strong>皆正確。<br><code>npm test</code> 359 pass / 0 fail、<code>npm run build</code> 通過、ESLint <strong>零新增錯誤</strong>（實作中修掉自己引入的兩筆：effect 內同步 setState、標題誤用全形空白 U+3000）。<br>儀表板為 lazy chunk（13.95 kB / gzip 5.71 kB），<strong>不影響一般訪客的載入</strong>。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 統計讀取 API</div>
+      <div class="task-group-meta">src/lib/api/analytics.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">getDailyRange() / getEntityMonth()</div>
+        <div class="task-desc">
+          用 <code>getDocs</code> 取日期區間，<strong>不用 <code>onSnapshot</code></strong>（統計不需即時，卻會持續佔用連線與讀取配額）。
+          前端加 5 分鐘記憶體快取。看 30 天約 32 reads。<br>
+          <strong>不進 <code>GameDataContext</code></strong>——統計沒有版本 gate 概念，硬塞會汙染 <code>CollectionKey</code> 與 <code>bumpDataVersion</code> 的語意；
+          比照 <code>changeHistory</code>／<code>systemLog</code> 獨立取用。
+        </div>
+        <div class="task-file">src/lib/api/analytics.ts · src/lib/firestoreApi.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; /admin/analytics 頁面</div>
+      <div class="task-group-meta">src/pages/admin/AdminAnalyticsPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">頁面與路由</div>
+        <div class="task-desc">
+          接在 <code>App.tsx</code> 既有 <code>admin/*</code> 群組，<code>&lt;AdminRoute&gt;</code> ＋ <code>Suspense</code> lazy 載入——
+          與 <code>admin/history</code>／<code>admin/system-log</code> 完全同一寫法。時間範圍切換 7／30／90 天。
+        </div>
+        <div class="task-file">src/pages/admin/AdminAnalyticsPage.tsx · src/App.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">各區塊內容</div>
+        <div class="task-desc">
+          總量卡片（有效瀏覽／造訪次數／不重複訪客／<strong>折返率 pv÷upv</strong>）、每日趨勢、頁面熱度排行、
+          訪客組成（登入 vs 訪客・手機 vs 桌機）、<strong>國家分布</strong>（Q5）、
+          <strong>語言分布</strong>（決策十一）、<strong>熱門機師／機甲／武器 TOP 20</strong>（Q3 併入）。<br>
+          <strong>語言區塊要並列「該語言的 頁／造訪」</strong>——這是回答「EN 使用者是否因語言門檻而淺嘗即走」的關鍵對照，
+          單看人數看不出來。國家與語言<strong>兩張圖並排</strong>，並註明「國家＝連線位置（受 VPN 影響）、語言＝閱讀對象」。
+          後台須標註<strong>「UPV 去重窗口＝10 分鐘」</strong>與「UV 為裝置估算值」，避免日後與別站數字直接比較。
+        </div>
+        <div class="task-file">src/pages/admin/AdminAnalyticsPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 圖表元件與資料誠實度標示</div>
+      <div class="task-group-meta">src/components/admin/analytics/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">手刻 CSS 長條 ＋ SVG 折線</div>
+        <div class="task-desc">
+          <strong>不引進圖表函式庫</strong>——為幾張長條圖付出約 100 KB gzip 不划算，對中國訪客載入成本尤其不利。
+          站上視覺風格本來就適合純 CSS/SVG。
+        </div>
+        <div class="task-file">src/components/admin/analytics/BarList.tsx · TrendLine.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">truncatedAt 警示與誤差註記</div>
+        <div class="task-desc">
+          讀到 <code>truncatedAt</code> → 該日資料點改<strong>紅色虛線</strong>並標註「當日統計於 HH:MM 因寫入預算熔斷而中止，數字不完整」；
+          <strong>趨勢圖與 TOP N 自動排除被截斷的日子</strong>，避免污染比較基準。
+          另在頁尾列出已知誤差來源（清快取／無痕高估 UV、關頁太快可能漏送、只擋機房 IP 的爬蟲）。
+        </div>
+        <div class="task-file">src/components/admin/analytics/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label cyan">Phase C</div>
+  <div class="section-title">對照組與驗收</div>
+  <div class="section-desc">確認自建數字沒有系統性偏差，並回答本計畫最初的問題。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; Cloudflare Web Analytics 對照組</div>
+      <div class="task-group-meta">Cloudflare Dashboard</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">✅ 已於 2026-07-25 前後啟用（自動注入），已累積 14 天資料</div>
+        <div class="task-desc">
+          實測基準：過去 24 小時 <strong>造訪 93 · 頁面瀏覽 397</strong>（約 4.3 頁／造訪，含 SPA 路由變更）。
+          此數字已用來重算本計畫的寫入量推估（見計畫書 Scope 的實測基準線）。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">✅ 已調整：「排除歐盟訪客」改為完整啟用（2026-08-08）</div>
+        <div class="task-desc">
+          目前設定為<strong>「啟用，但排除歐盟的訪客資料」</strong>——歐盟訪客不會被注入 beacon、不被計入。<br>
+          <strong>建議改為單純「啟用」</strong>，理由不是隱私考量放寬，而是<strong>對照組的可比性</strong>：
+          PLAN-046 的自建埋點<strong>會</strong>計入歐盟訪客，若 CF 這邊排除，兩份資料就存在系統性差異，
+          C-2 的交叉驗證（趨勢形狀比對）會被這個缺口污染。
+          CF Web Analytics 本身無 cookie、不收集個資，完整啟用的隱私風險極低。<br>
+          <span style="color:var(--text-dim);">一鍵可改、隨時可退。若仍偏好保守，維持現狀也可以——只要記得驗收時把這個差異算進去。</span>
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 兩週資料驗收</div>
+      <div class="task-group-meta">—</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">驗收項目</div>
+        <div class="task-desc">
+          ① 自建與 Cloudflare 的總量趨勢<strong>形狀</strong>是否一致（絕對值必然有落差——自建不被攔截器擋、CF 會，看趨勢即可）；<br>
+          ② <code>PV / UPV</code> 折返率是否落在合理範圍（異常接近 1 → 去重過度；異常高 → 檢查 session 誤切）；<br>
+          ③ <strong><code>byCountry</code> 的 CN 佔比 —— 本計畫最初要回答的問題</strong>；<br>
+          ④ 每日寫入量是否如預估（若逼近預算須調整 flush 策略或提高預算）。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-046 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 觀察維護中</a>
+</footer>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

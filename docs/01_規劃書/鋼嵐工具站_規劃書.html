@@ -3,353 +3,385 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>鋼嵐工具站 — 專案規劃書 v2.0</title>
+<title>鋼嵐工具站 — 網站概要總覽</title>
 <link rel="stylesheet" href="../_shared/style.css">
 </head>
 <body>
 
 <header class="hero">
-  <div class="hero-badge">◆ PROJECT BLUEPRINT</div>
+  <div class="hero-badge">◆ SITE OVERVIEW</div>
   <h1>
     鋼嵐工具站
     <span>METAL STORM COMMUNITY TOOLKIT</span>
   </h1>
   <p class="hero-sub">
-    傷害模擬器 · 配裝計算器 · 角色資料庫 · 攻略百科
+    玩家自製的非官方資料站 — 查機體數值 · 追改版檔期 · 備戰下一個版本
   </p>
-  <div class="version-badge">V2.2 — Phase 1/2/4/5 ✅ · Phase 3/7 進行中 · PLAN-012 元件圖鑑新增</div>
+  <div class="version-badge">網站概要總覽 · 給想知道「這站上有什麼」的人</div>
 </header>
 
 <main class="container">
 
-<!-- ═══ 文件導覽 ═══ -->
+<!-- ═══ 00 這是什麼 ═══ -->
 <section class="section">
-  <div class="section-label">Document Map</div>
-  <div class="section-title">文件索引</div>
-  <div class="section-desc">點擊下方卡片可開啟對應的詳細文件。</div>
+  <div class="section-label">00 — About</div>
+  <div class="section-title">這是什麼網站</div>
+  <div class="section-desc">
+    鋼嵐工具站是《鋼嵐》（Metal Storm）的<strong>玩家自製資料站</strong>，把散在官網、遊戲內與各家公告裡的資料
+    收攏成一份可查、可比較、可追蹤的資料庫。目標很單純：<strong>想查一把武器的數值時，不用開三個分頁。</strong>
+  </div>
 
   <div class="card-grid">
-    <a class="card blue" href="../02_技術文件/index.html" style="text-decoration:none;color:inherit;">
-      <div class="card-icon">📐</div>
-      <h3>技術文件</h3>
-      <p>系統架構、資料模型（9個Collection）、傷害公式、配裝模擬器流程、Firebase 設計</p>
-      <span class="card-link">02_技術文件/ →</span>
-    </a>
-    <a class="card purple" href="../03_頁面規劃/index.html" style="text-decoration:none;color:inherit;">
-      <div class="card-icon">🖥️</div>
-      <h3>頁面規劃</h3>
-      <p>Site Map、各頁面版面設計摘要、元件清單、UI 草圖（10個頁面子資料夾）</p>
-      <span class="card-link">03_頁面規劃/ →</span>
-    </a>
-    <a class="card orange" href="../04_進度表/開發進度表.html" style="text-decoration:none;color:inherit;">
-      <div class="card-icon">📊</div>
-      <h3>開發進度表</h3>
-      <p>Phase 1–8 各階段任務完成狀態，即時追蹤開發進度</p>
-      <span class="card-link">04_進度表/開發進度表.html →</span>
-    </a>
-    <a class="card cyan" href="../02_技術文件/04_Firebase/Firebase資料庫設計文件.html" style="text-decoration:none;color:inherit;">
-      <div class="card-icon">🔥</div>
-      <h3>Firebase 資料庫設計</h3>
-      <p>完整 Firestore Schema、Security Rules、複合索引、Enum 定義</p>
-      <span class="card-link">02_技術文件/04_Firebase/ →</span>
-    </a>
-    <a class="card pink" href="../05_階段性開發計畫/index.html" style="text-decoration:none;color:inherit;">
-      <div class="card-icon">🗂️</div>
-      <h3>階段性開發計畫</h3>
-      <p>各 PLAN 計畫書與進度表（執行中 / 歷史記錄），追蹤功能開發的設計與進度</p>
-      <span class="card-link">05_階段性開發計畫/ →</span>
-    </a>
-    <a class="card green" href="../06_使用說明/index.html" style="text-decoration:none;color:inherit;">
-      <div class="card-icon">📖</div>
-      <h3>使用說明</h3>
-      <p>給維護者的後台操作圖文手冊（目前：描述引用標記 RefPicker 使用說明）</p>
-      <span class="card-link">06_使用說明/ →</span>
-    </a>
+    <div class="card cyan">
+      <div class="card-icon">🔎</div>
+      <h3>查得到</h3>
+      <p>機師、機甲、武器、背包、模組、元件六大圖鑑，含技能效果、數值成長與彼此的關聯。</p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">🗓️</div>
+      <h3>跟得上</h3>
+      <p>版本速覽、灰燼行動名單、卡池與活動檔期甘特圖，改版前後都知道自己在哪個階段。</p>
+    </div>
+    <div class="card green">
+      <div class="card-icon">🧮</div>
+      <h3>算得出</h3>
+      <p>彩甲升級規劃器、元件掉落總表等實用計算工具；完整的傷害模擬仍在開發中。</p>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>ℹ️ 關於這份文件</strong>
+    這份文件原本是網站的「開發規劃書」，用來追蹤整體進度。隨著功能陸續完工、開發改以
+    <a href="../05_階段性開發計畫/index.html" style="color:var(--accent-cyan);">階段性計畫（PLAN）</a>
+    逐項推進，「整體進度」已不再是看待本站的好角度。現在它改為<strong>網站概要總覽</strong>：
+    讓有興趣的人快速知道這裡有什麼、資料哪裡來、做到哪了。
   </div>
 </section>
 
-<!-- ═══ 系統架構 ═══ -->
+<!-- ═══ 01 功能一覽 ═══ -->
 <section class="section">
-  <div class="section-label">01 — Architecture</div>
-  <div class="section-title">系統架構概覽</div>
+  <div class="section-label">01 — Inside the Site</div>
+  <div class="section-title">站上有什麼</div>
   <div class="section-desc">
-    前端部署於 GitHub Pages，Firebase Firestore 統一管理所有遊戲資料與用戶資料。
-    <a href="../02_技術文件/01_架構設計/系統架構.html" style="color:var(--accent-cyan);">→ 完整架構文件</a>
+    下列連結可直接開啟對應頁面。各頁面的內容與版面規劃另見
+    <a href="../03_頁面規劃/index.html" style="color:var(--accent-cyan);">頁面規劃文件</a>。
   </div>
 
-  <div class="changed-block">
-    <strong>🔄 v2.0 架構重大調整：靜態 JSON → Firebase Firestore</strong>
-    舊架構：Google Sheets → GitHub Actions → Static JSON → 前端讀取。<br>
-    新架構：管理後台 → Firestore 遊戲資料 → 前端即時讀取。<br>
-    優點：資料即時更新、複雜關聯可直接透過 Document ID 引用、型別枚舉化消除不一致。
+  <div class="sub-h">📚 資料圖鑑 <span class="tag tag-new">6 個集合</span></div>
+  <div class="page-map">
+    <a class="page-item" href="../../pilots">
+      <h4>機師</h4>
+      <div class="route">/pilots</div>
+      <p>六維屬性、AP 消耗、天賦、技能、神經驅動與專屬武器；含官方立繪與角色故事。</p>
+    </a>
+    <a class="page-item" href="../../mechs">
+      <h4>機甲</h4>
+      <div class="route">/mechs</div>
+      <p>各部位耐久／火力／閃避／移動、重量與出力、副模組欄位、固定武裝與登場版本。</p>
+    </a>
+    <a class="page-item" href="../../weapons">
+      <h4>武器</h4>
+      <div class="route">/weapons</div>
+      <p>一般武器與專屬武器，含技能效果、改裝方案、元件插槽，以及製作／進階關係鏈。</p>
+    </a>
+    <a class="page-item" href="../../backpacks">
+      <h4>背包</h4>
+      <div class="route">/backpacks</div>
+      <p>依分類階層瀏覽，含技能效果、重量與裝配限制，以及特種背包的製作前置關係。</p>
+    </a>
+    <a class="page-item" href="../../modules">
+      <h4>模組</h4>
+      <div class="route">/modules</div>
+      <p>四模／八模／通用模組，各等級效果、稀有度與適用機甲，於機甲頁可直接內嵌查看。</p>
+    </a>
+    <a class="page-item" href="../../components">
+      <h4>元件</h4>
+      <div class="route">/components</div>
+      <p>觸發元件與應答元件全表，效果、稀有度、可插載體，搭配掉落總表規劃刷取路線。</p>
+    </a>
+  </div>
+
+  <div class="sub-h">🛰️ 版本情報 <span class="tag tag-new">3 個檢視</span></div>
+  <div class="page-map">
+    <a class="page-item" href="../../versions/quick">
+      <h4>版本速覽</h4>
+      <div class="route">/versions/quick</div>
+      <p>各版本新增的機師與機甲一覽表，最快找到「某支是哪個版本來的」。</p>
+    </a>
+    <a class="page-item" href="../../versions/grayops">
+      <h4>灰燼行動</h4>
+      <div class="route">/versions/grayops</div>
+      <p>未來登場機甲的四家公司名單，提前知道接下來可能出什麼。</p>
+    </a>
+    <a class="page-item" href="../../versions/timeline">
+      <h4>版本時間線</h4>
+      <div class="route">/versions/timeline</div>
+      <p>卡池與活動檔期甘特圖，可深連結到單一版本，開兩個分頁互相比較。</p>
+    </a>
+  </div>
+
+  <div class="sub-h">🧰 攻略與工具</div>
+  <div class="page-map">
+    <a class="page-item" href="../../tools/rainbow-planner">
+      <h4>彩甲升級規劃器</h4>
+      <div class="route">/tools/rainbow-planner</div>
+      <p>推算彩色機甲的升級路徑與素材需求，先算清楚再決定要不要下手。</p>
+    </a>
+    <a class="page-item" href="../../guides/component-drops">
+      <h4>元件掉落總表</h4>
+      <div class="route">/guides/component-drops</div>
+      <p>元件在哪些關卡會掉，反查「想要這顆該刷哪裡」。</p>
+    </a>
+    <a class="page-item" href="../../documents">
+      <h4>文件</h4>
+      <div class="route">/documents</div>
+      <p>你現在看的這類文件的入口：網站規劃、開發計畫與遊戲機制整理。</p>
+    </a>
+  </div>
+
+  <div class="sub-h">👤 個人功能</div>
+  <div class="page-map">
+    <a class="page-item" href="../../research">
+      <h4>科研設定</h4>
+      <div class="route">/research</div>
+      <p>登記自己的全域科研與機師科研等級，讓站上顯示的數值貼近你的實際帳號。</p>
+    </a>
+    <a class="page-item" href="../../profile">
+      <h4>個人中心</h4>
+      <div class="route">/profile</div>
+      <p>Google 登入後可保存個人設定與配裝紀錄；不登入也能瀏覽全部圖鑑內容。</p>
+    </a>
+  </div>
+
+  <div class="note-block">
+    <strong>⚙️ 尚未開放：配裝模擬器與傷害計算</strong>
+    配裝模擬器目前只對維護者開放，前台導覽列不會出現。原因是它的核心──<strong>傷害計算</strong>──
+    還沒完成：要把武器技能的生效條件、改裝方案、模組與元件、科研與神經驅動的各種加成
+    全部收斂成一套可驗證的公式，才有意義。這是本站目前最大的一塊未完工程。
+    公式整理進度見 <a href="../02_技術文件/03_遊戲機制/傷害公式.html" style="color:var(--accent-yellow);text-decoration:underline;">傷害公式</a>
+    與 <a href="../02_技術文件/03_遊戲機制/配裝模擬器流程.html" style="color:var(--accent-yellow);text-decoration:underline;">配裝模擬器流程</a>。
+  </div>
+</section>
+
+<!-- ═══ 02 資料從哪來 ═══ -->
+<section class="section">
+  <div class="section-label">02 — Data</div>
+  <div class="section-title">資料從哪來、可不可信</div>
+  <div class="section-desc">
+    站上所有數值都不是手打的。資料以程式從官方來源擷取後入庫，再由維護者逐項校對。
   </div>
 
   <div class="arch-diagram">
     <div class="arch-flow">
-      <div class="arch-node user"><strong>👤 玩家</strong><br>瀏覽 / 模擬 / 儲存</div>
-      <div class="arch-arrow">⟷</div>
-      <div class="arch-node frontend"><strong>🌐 GitHub Pages</strong><br>React + TypeScript</div>
-      <div class="arch-arrow">⟷</div>
-      <div class="arch-node auth"><strong>🔥 Firebase</strong><br>Firestore + Auth</div>
-    </div>
-    <br>
-    <div class="arch-flow">
-      <div class="arch-node data"><strong>🛠️ 管理員</strong><br>管理後台</div>
+      <div class="arch-node data"><strong>📡 官方來源</strong><br>官網 / 遊戲資料 / 台版公告</div>
       <div class="arch-arrow">→</div>
-      <div class="arch-node auth"><strong>🔥 Firestore</strong><br>直接讀寫遊戲資料</div>
+      <div class="arch-node admin"><strong>🛠️ 擷取與校對</strong><br>程式入庫 + 人工修正</div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node firestore"><strong>🗄️ 資料庫</strong><br>版本化的遊戲資料</div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node user"><strong>👤 你</strong><br>網站前台</div>
     </div>
   </div>
 
-  <div class="tech-row" style="margin-top:20px;">
-    <span class="tech-tag primary">React 18</span>
+  <div class="sub-h">幾件值得知道的事</div>
+  <div class="card-grid">
+    <div class="card yellow">
+      <div class="card-icon">📝</div>
+      <h3>有些天賦數值經過人工修正</h3>
+      <p>官方資料介面回傳的天賦文本是「晶片全點滿」狀態的數值，跟多數人帳號裡看到的不同。
+         這類條目由維護者改寫為通用敘述並鎖定保護，之後的自動更新不會把它洗掉。</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">🔄</div>
+      <h3>資料會快取在你的瀏覽器</h3>
+      <p>為了少連線、開得快，圖鑑資料會存在瀏覽器本機，並跟著資料版本號自動失效。
+         若剛改版而你看到的還是舊資料，重新整理一次即可。</p>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">🗓️</div>
+      <h3>版本時間線來自官方公告</h3>
+      <p>卡池與活動檔期由台版官方公告自動解析後，經人工審核才發佈，因此偶有延遲。
+         官方沒寫清楚的檔期，站上寧可留空也不猜。</p>
+    </div>
+    <div class="card green">
+      <div class="card-icon">🏛️</div>
+      <h3>舊資料不刪</h3>
+      <p>已下架的活動、早期版本的機體與當時的數值都保留著。這站同時是一份遊戲的編年紀錄，
+         而不只是「當前版本查詢器」。</p>
+    </div>
+  </div>
+
+  <div class="note-block">
+    <strong>⚠️ 仍請以遊戲內顯示為準</strong>
+    本站為玩家自製的非官方網站，與遊戲開發商、代理商無隸屬關係；遊戲名稱、圖像與文本的著作權均屬原權利人所有。
+    資料難免有誤或延遲，重要決策（例如要不要抽、要不要練）請對照遊戲內實際顯示。
+  </div>
+</section>
+
+<!-- ═══ 03 現況 ═══ -->
+<section class="section">
+  <div class="section-label">03 — Status</div>
+  <div class="section-title">目前做到哪了</div>
+  <div class="section-desc">
+    本站已不再用「總體進度百分比」來管理。基礎查詢功能大致完工後，後續開發改以一個個
+    <a href="../05_階段性開發計畫/index.html" style="color:var(--accent-cyan);">階段性計畫（PLAN）</a>
+    推進，各計畫獨立立案、獨立完工。下面是概略的現況分層。
+  </div>
+
+  <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">✅</div>
+      <h3>已初步完工</h3>
+      <p>六大資料圖鑑、版本情報三檢視、攻略與工具頁、登入與個人設定、手機版排版、
+         資料快取與載入效能、後台資料維護介面。日常查詢需求基本都能滿足。</p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">🔧</div>
+      <h3>持續改善中</h3>
+      <p>多數進行中的計畫屬於「把已有的東西做得更好」：資訊架構調整、資料補完、
+         引用與詞條的互動體驗、後台編輯效率、使用統計與問題回報管道。</p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">🧪</div>
+      <h3>規劃中 / 尚未開放</h3>
+      <p>傷害計算與配裝模擬、攻略文章系統、機甲故事館、機師形態變化與召喚單位展示、
+         槽位與裝備限制模型。這些是新板塊，時程視實際狀況而定。</p>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>📌 想看細節？</strong>
+    每個計畫都有自己的計畫書與進度表，分為
+    <strong>執行中</strong>（正在做）、<strong>觀察維護中</strong>（做完了但要長期填資料或觀察）、
+    <strong>歷史記錄</strong>（已完成歸檔）三區。
+    <a href="../05_階段性開發計畫/index.html" style="color:var(--accent-cyan);">→ 階段性開發計畫</a>
+  </div>
+</section>
+
+<!-- ═══ 04 技術概要 ═══ -->
+<section class="section">
+  <div class="section-label">04 — Tech</div>
+  <div class="section-title">技術概要</div>
+  <div class="section-desc">
+    給同樣在寫東西的人參考。這是一個由個人維護的專案，選型以「一個人維護得動」為前提。
+  </div>
+
+  <div class="tech-row">
+    <span class="tech-tag primary">React 19</span>
     <span class="tech-tag primary">TypeScript</span>
     <span class="tech-tag primary">Vite</span>
-    <span class="tech-tag secondary">Tailwind CSS</span>
+    <span class="tech-tag secondary">Tailwind CSS v4</span>
     <span class="tech-tag secondary">React Router</span>
     <span class="tech-tag tertiary">Firebase Auth</span>
     <span class="tech-tag tertiary">Cloud Firestore</span>
-    <span class="tech-tag tertiary">Cloudinary</span>
-    <span class="tech-tag">html2canvas</span>
+    <span class="tech-tag tertiary">Firebase Storage</span>
+    <span class="tech-tag">Cloudflare</span>
     <span class="tech-tag">GitHub Pages</span>
-  </div>
-</section>
-
-<!-- ═══ 功能模組 ═══ -->
-<section class="section">
-  <div class="section-label">02 — Feature Modules</div>
-  <div class="section-title">九大核心功能模組</div>
-  <div class="section-desc">
-    完整的配裝系統、科研系統與用戶管理。各模組頁面設計詳見
-    <a href="../03_頁面規劃/index.html" style="color:var(--accent-cyan);">頁面規劃</a>。
+    <span class="tech-tag">Playwright（資料擷取）</span>
   </div>
 
-  <div class="card-grid">
+  <div class="card-grid" style="margin-top:20px;">
     <div class="card blue">
-      <div class="card-icon">🔧</div>
-      <h3>配裝模擬器</h3>
-      <p>選機師 → 機甲 → 武器 → 背包 → 模組 → 元件。支援匯出分享圖。</p>
-    </div>
-    <div class="card orange">
-      <div class="card-icon">⚔️</div>
-      <h3>傷害計算系統</h3>
-      <p>基於傷害公式計算期望值，支援 A/B 組合對比，整合所有加成來源。（Phase 8）</p>
+      <div class="card-icon">🌐</div>
+      <h3>純前端 + 託管資料庫</h3>
+      <p>沒有自架後端。網站是靜態前端，資料放在託管資料庫，維護者透過站內後台直接編輯，
+         不必每次改資料都重新部署。</p>
     </div>
     <div class="card cyan">
-      <div class="card-icon">👤</div>
-      <h3>機師資料庫</h3>
-      <p>六維屬性、AP 系統、天賦、技能、神經驅動、個人科研配置、角色故事。</p>
-    </div>
-    <div class="card green">
-      <div class="card-icon">🤖</div>
-      <h3>機甲資料庫</h3>
-      <p>部件耐久/火力/閃避/移動、重量/出力、副模組效果、座艙式詳情頁。</p>
+      <div class="card-icon">⚡</div>
+      <h3>三層快取，省連線也省錢</h3>
+      <p>記憶體 → 瀏覽器本機 → 資料庫，配合每個集合的版本號決定要不要重抓。
+         多數瀏覽情境下不會真的連到資料庫。</p>
     </div>
     <div class="card purple">
-      <div class="card-icon">🔫</div>
-      <h3>武器資料庫</h3>
-      <p>武器種類與專屬武器，含技能效果（三種生效方式）、元件插槽、固定/浮動改裝，以及製作／進階關係鏈（前置↔可進階為，含複合武器）。</p>
-    </div>
-    <div class="card pink">
-      <div class="card-icon">🎒</div>
-      <h3>背包資料庫</h3>
-      <p>所有背包裝備，含技能效果、重量、裝配限制；並可用「特種背包製作」篩選與複合武器（裁決者等）並列瀏覽。</p>
-    </div>
-    <div class="card cyan">
-      <div class="card-icon">🧩</div>
-      <h3>模組圖鑑</h3>
-      <p>四模/八模/通用模組完整列表，各等級效果、稀有度篩選。</p>
-    </div>
-    <div class="card yellow">
-      <div class="card-icon">📰</div>
-      <h3>改版資訊 + 攻略</h3>
-      <p>改版預告、關卡攻略，管理者後台更新。</p>
-    </div>
-    <div class="card red">
-      <div class="card-icon">🔐</div>
-      <h3>用戶系統</h3>
-      <p>Google 登入、個人配裝紀錄、歷史記錄、科研設定、匯出分享圖。</p>
+      <div class="card-icon">🛡️</div>
+      <h3>邊緣代理與存取控制</h3>
+      <p>公開資料經由同源代理供應，並在邊緣做基本的來源檢查與流量限制，
+         以免資料被整包搬走或被灌爆額度。</p>
     </div>
   </div>
 </section>
 
-<!-- ═══ 管理系統 ═══ -->
-<section class="section">
-  <div class="section-label">03 — Admin</div>
-  <div class="section-title">管理者維護方案</div>
-
-  <div class="card-grid">
-    <div class="card green">
-      <div class="card-icon">🔥</div>
-      <h3>Firestore 後台</h3>
-      <p>管理者透過網站 AdminPage 直接讀寫 Firestore，即時更新遊戲資料，無需 CI/CD。</p>
-    </div>
-    <div class="card yellow">
-      <div class="card-icon">✏️</div>
-      <h3>攻略文章</h3>
-      <p>後台 Markdown 編輯器撰寫，Firebase Storage 上傳截圖。</p>
-    </div>
-    <div class="card blue">
-      <div class="card-icon">📢</div>
-      <h3>公告 / 改版資訊</h3>
-      <p>透過後台直接維護 Firestore 中的公告與改版時間軸資料。</p>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ 開發時程 ═══ -->
-<section class="section">
-  <div class="section-label">04 — Roadmap</div>
-  <div class="section-title">開發時程（8 Phases）</div>
-  <div class="section-desc">
-    完整的任務清單與完成狀態詳見
-    <a href="../04_進度表/開發進度表.html" style="color:var(--accent-cyan);">開發進度表</a>。
-  </div>
-
-  <div class="timeline">
-    <div class="timeline-item">
-      <div class="timeline-phase">Phase 1 ✅</div>
-      <div class="timeline-title">專案初始化 + 靜態資料</div>
-      <div class="timeline-tasks">
-        <span class="timeline-task">Vite 專案</span>
-        <span class="timeline-task">路由架構</span>
-        <span class="timeline-task">JSON 資料</span>
-        <span class="timeline-task">深色主題</span>
-      </div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-phase">Phase 2 ✅</div>
-      <div class="timeline-title">資料庫頁面 + 管理介面</div>
-      <div class="timeline-tasks">
-        <span class="timeline-task">機師圖鑑</span>
-        <span class="timeline-task">機甲圖鑑</span>
-        <span class="timeline-task">武器圖鑑</span>
-        <span class="timeline-task">背包圖鑑</span>
-        <span class="timeline-task">六維雷達圖</span>
-        <span class="timeline-task">模組-機甲關聯</span>
-      </div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-phase">Phase 3 🚧</div>
-      <div class="timeline-title">模組圖鑑 + 配裝模擬器基礎 + 匯出分享圖 + 元件圖鑑</div>
-      <div class="timeline-tasks">
-        <span class="timeline-task">模組圖鑑</span>
-        <span class="timeline-task">配裝選擇 UI</span>
-        <span class="timeline-task">自動篩選</span>
-        <span class="timeline-task">匯出分享圖</span>
-        <span class="timeline-task">元件圖鑑（PLAN-012）</span>
-      </div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-phase">Phase 4 🚧</div>
-      <div class="timeline-title">Firebase 資料庫建置 + 資料遷移</div>
-      <div class="timeline-tasks">
-        <span class="timeline-task">Firebase 專案</span>
-        <span class="timeline-task">enums.ts</span>
-        <span class="timeline-task">Security Rules</span>
-        <span class="timeline-task">JSON → Firestore</span>
-        <span class="timeline-task">前端讀取 Hooks</span>
-      </div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-phase">Phase 5 ✅</div>
-      <div class="timeline-title">用戶系統</div>
-      <div class="timeline-tasks">
-        <span class="timeline-task">Firebase Auth</span>
-        <span class="timeline-task">配裝存檔</span>
-        <span class="timeline-task">科研設定頁</span>
-        <span class="timeline-task">個人中心</span>
-      </div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-phase">Phase 6</div>
-      <div class="timeline-title">內容系統 + 管理後台擴充</div>
-      <div class="timeline-tasks">
-        <span class="timeline-task">攻略頁面</span>
-        <span class="timeline-task">Markdown 編輯器</span>
-        <span class="timeline-task">Firestore 資料編輯後台</span>
-      </div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-phase">Phase 7 🚧</div>
-      <div class="timeline-title">優化 + 部署</div>
-      <div class="timeline-tasks">
-        <span class="timeline-task">手機版優化</span>
-        <span class="timeline-task">效能優化</span>
-        <span class="timeline-task">Firestore 快取</span>
-        <span class="timeline-task">GitHub Pages 部署</span>
-      </div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-phase">Phase 8</div>
-      <div class="timeline-title">傷害計算系統</div>
-      <div class="timeline-tasks">
-        <span class="timeline-task">傷害公式引擎</span>
-        <span class="timeline-task">武器技能判斷</span>
-        <span class="timeline-task">改裝效果計算</span>
-        <span class="timeline-task">A/B 對比</span>
-        <span class="timeline-task">分享圖補填數據</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ 下一步 ═══ -->
+<!-- ═══ 05 文件分級 ═══ -->
 <section class="section" style="border-bottom:none;">
-  <div class="section-label">05 — Next Steps</div>
-  <div class="section-title">接下來的工作</div>
+  <div class="section-label">05 — Documents</div>
+  <div class="section-title">文件有哪些、哪些看得到</div>
+  <div class="section-desc">
+    本站的文件分成兩類：<strong>對外公開</strong>的規劃與機制整理，以及<strong>不對外</strong>的技術文件。
+  </div>
 
-  <div class="card-grid">
-    <div class="card yellow">
-      <div class="card-icon">1️⃣</div>
-      <h3>完成 PLAN-012 · 元件圖鑑</h3>
-      <p>建立 /components 頁面，展示觸元件 / 應元件清單，Firestore 資料與型別均已就緒，估計 2–3 天完成。
-        <a href="../05_階段性開發計畫/執行中/PLAN-012_元件圖鑑/計畫書.html" style="color:var(--accent-cyan);">→ PLAN-012 計畫書</a>
-      </p>
-    </div>
-    <div class="card purple">
-      <div class="card-icon">2️⃣</div>
-      <h3>完成 PLAN-001 · 技能 / Buff 架構重構</h3>
-      <p>完成 SkillEffect / SkillCondition / GameBuff 型別設計，為 Phase 4 buffs Collection 初始化鋪路。
-        <a href="../05_階段性開發計畫/執行中/PLAN-001_技能Buff架構重構/計畫書.html" style="color:var(--accent-cyan);">→ PLAN-001 計畫書</a>
-      </p>
-    </div>
-    <div class="card orange">
-      <div class="card-icon">3️⃣</div>
-      <h3>完成 PLAN-003 / PLAN-004 剩餘任務</h3>
-      <p>武器資料模型優化（3 項待完成）、技能資料抽離至獨立 Collections，提升資料一致性。
-        <a href="../05_階段性開發計畫/執行中/PLAN-003_武器資料模型優化/進度表.html" style="color:var(--accent-cyan);">→ PLAN-003 進度表</a>
-      </p>
-    </div>
-    <div class="card blue">
-      <div class="card-icon">4️⃣</div>
-      <h3>Phase 6 — 內容系統 + 管理後台擴充</h3>
-      <p>攻略頁面（Markdown 渲染）、改版資訊時間軸、管理後台 Firestore 遊戲資料直接編輯。
-        <a href="../04_進度表/開發進度表.html" style="color:var(--accent-cyan);">→ 開發進度表 Phase 6</a>
-      </p>
-    </div>
-    <div class="card red">
-      <div class="card-icon">5️⃣</div>
-      <h3>Phase 8 — 傷害計算系統</h3>
-      <p>傷害公式引擎、武器技能生效判斷、改裝效果計算、A/B 組合對比。依賴 PLAN-001 架構完成。
-        <a href="../02_技術文件/03_遊戲機制/傷害公式.html" style="color:var(--accent-cyan);">→ 傷害公式文件</a>
-      </p>
-    </div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>文件</th>
+          <th>內容</th>
+          <th>公開狀態</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="./鋼嵐工具站_規劃書.html" style="color:var(--accent-cyan);">網站概要總覽</a></td>
+          <td>本頁。網站定位、功能一覽、資料來源與現況</td>
+          <td>✅ 公開</td>
+        </tr>
+        <tr>
+          <td><a href="../03_頁面規劃/index.html" style="color:var(--accent-cyan);">頁面規劃</a></td>
+          <td>各頁面的內容編排與版面設計說明</td>
+          <td>✅ 公開</td>
+        </tr>
+        <tr>
+          <td><a href="../05_階段性開發計畫/index.html" style="color:var(--accent-cyan);">階段性開發計畫</a></td>
+          <td>各 PLAN 的計畫書與進度表（執行中／觀察維護中／歷史記錄）</td>
+          <td>✅ 公開</td>
+        </tr>
+        <tr>
+          <td><a href="../02_技術文件/03_遊戲機制/傷害公式.html" style="color:var(--accent-cyan);">遊戲機制</a></td>
+          <td>傷害公式、配裝模擬器計算流程的整理</td>
+          <td>✅ 公開</td>
+        </tr>
+        <tr>
+          <td>技術文件</td>
+          <td>系統架構、資料模型、資料庫設計與安全規則、後台設定指南</td>
+          <td>🔒 不對外</td>
+        </tr>
+        <tr>
+          <td>後台使用說明</td>
+          <td>維護者專用的後台操作圖文手冊</td>
+          <td>🔒 不對外</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note-block">
+    <strong>🔒 技術文件為什麼不放上來</strong>
+    這類文件包含資料庫結構、安全規則與後台操作細節，公開的效益有限、風險卻不小。
+    它們<strong>不會被打包進網站</strong>，只保留在原始碼庫中供維護者查閱——
+    也就是說，網站上根本沒有這些檔案，而不是「藏起連結」而已。
+    因此，其他文件裡若有連結指向技術文件、或指向已下架的舊文件（例如早期的「開發進度表」，
+    其 Phase 1–8 制已被 PLAN 制取代），點了會找不到頁面，這是正常的。
+  </div>
+
+  <div class="info-block">
+    <strong>💬 其餘文件歡迎自由取閱</strong>
+    公開的文件放著就是給人看的：想知道某個功能當初為什麼這樣設計、某個改版做了什麼取捨，
+    翻對應的 PLAN 計畫書通常都寫得比這頁詳細。內容以撰寫當下的想法為準，可能與最終實作有出入。
   </div>
 </section>
 
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 專案規劃書 v2.2 — Firebase Firestore 全面接管 / 型別枚舉化 / 8 Phase 開發時程 / PLAN-012 元件圖鑑<br>
-  <a href="../02_技術文件/index.html" style="color:var(--accent-cyan);text-decoration:none;">技術文件</a>
-  ｜ <a href="../03_頁面規劃/index.html" style="color:var(--accent-cyan);text-decoration:none;">頁面規劃</a>
-  ｜ <a href="../04_進度表/開發進度表.html" style="color:var(--accent-cyan);text-decoration:none;">開發進度表</a>
+  鋼嵐工具站 — 網站概要總覽 · 玩家自製非官方資料站<br>
+  <a href="../03_頁面規劃/index.html" style="color:var(--accent-cyan);text-decoration:none;">頁面規劃</a>
   ｜ <a href="../05_階段性開發計畫/index.html" style="color:var(--accent-cyan);text-decoration:none;">階段性開發計畫</a>
-  ｜ <a href="../06_使用說明/index.html" style="color:var(--accent-cyan);text-decoration:none;">使用說明</a>
+  ｜ <a href="../02_技術文件/03_遊戲機制/傷害公式.html" style="color:var(--accent-cyan);text-decoration:none;">傷害公式</a>
+  ｜ <a href="../../" style="color:var(--accent-cyan);text-decoration:none;">回到網站首頁</a>
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

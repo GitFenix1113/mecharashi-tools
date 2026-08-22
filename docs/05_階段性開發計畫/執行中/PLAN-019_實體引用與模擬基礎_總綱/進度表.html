@@ -73,18 +73,26 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
 <div class="container">
 
   <div class="meta-bar">
-    <div class="meta-item"><span class="label">狀態</span><span class="val yellow">進行中</span></div>
+    <div class="meta-item"><span class="label">狀態</span><span class="val yellow">收尾中 · 殘 2 項</span></div>
     <div class="meta-item"><span class="label">優先級</span><span class="val orange">HIGH</span></div>
     <div class="meta-item"><span class="label">建立日期</span><span class="val">2026-06-01</span></div>
     <div class="meta-item"><span class="label">定位</span><span class="val purple">Master Plan（大綱）</span></div>
     <div class="meta-item"><a href="計畫書.html" style="color:var(--accent-purple);font-size:13px;font-weight:600;">→ 計畫書</a></div>
   </div>
 
-  <div class="progress-bar"><div class="progress-bar-fill" style="width:90%;"></div></div>
-  <div class="progress-percent">約 90%（2026-06-30 019-B 可達性引擎落地）— 總綱型別 + 019-A 引用層 + 019-B 模擬可達性（反向索引/收斂/Buff 面板）+ 019-C 詞條庫/RefPicker + 019-E 插入引用 UI（四面板）+ 019-F BUFF 後台 已落地。殘項收斂為 <strong>019-E 稽核/儀表</strong> + 總綱文件（傷害數字本身屬 Phase 7，非本總綱）；019-D（BOSS/關卡）整層移轉 <a href="../PLAN-010_攻略系統/計畫書.html" style="color:var(--accent-cyan);">PLAN-010 攻略系統</a></div>
+  <div class="progress-bar"><div class="progress-bar-fill" style="width:94%;"></div></div>
+  <div class="progress-percent">約 94%（2026-08-22 全面校正）— 總綱型別 + 019-A 引用層 + 019-B 可達性引擎 + 019-C 詞條庫/RefPicker + 019-E 插入引用 UI + 019-F BUFF 後台 皆已落地並歸檔；資料模型 docs 亦已完成。<strong>殘項僅剩 2 項</strong>（changeHistory 稽核剩 8 集合接線、補填進度儀表未開工），兩項收掉即可轉入觀察維護中。019-D（BOSS/關卡）整層移轉 <a href="../PLAN-010_攻略系統/計畫書.html" style="color:var(--accent-cyan);">PLAN-010</a>；<strong>019-B 的形態互斥（mutexGroup）已由 <a href="../PLAN-041_機師形態變化/計畫書.html" style="color:var(--accent-cyan);">PLAN-041</a> 移除</strong>，見下方訂正。</div>
+
+  <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-left:3px solid var(--accent-red);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0;font-size:13px;color:var(--text-secondary);line-height:1.9;">
+    <strong style="color:var(--accent-red);">⚠ 2026-08-22 訂正：本表 2026-06-30 版有一處已與程式碼不符</strong><br>
+    舊版把 019-B 標為 DONE 並註明「引擎需資料端填妥形態 buff（如海莉絲虛/實粒子 + <code>mutexGroup</code>）才看得到內容（剩填值，非工程）」。
+    實際上 <strong>PLAN-041 已把整套 <code>mutexGroup</code> 形態互斥引擎拆除</strong>——全庫 0 筆 buff 曾填過該欄位，它從上線到被拆一次都沒渲染過。
+    <code>GameBuff.mutexGroup</code>、<code>reachableBuffs</code> 的 FormGroup 收斂、<code>SimulatorPage.activeForms</code>、BuffAdmin 互斥群組選擇器<strong>全數已刪</strong>。
+    形態改由 PLAN-041 的 <code>forms</code> 集合承載。<strong>請勿照舊文去補 <code>mutexGroup</code> 資料——那個欄位已經不存在了。</strong>
+  </div>
 
   <!-- 總綱基礎 -->
-  <div class="section-h">總綱基礎 <span class="badge badge-progress">IN PROGRESS</span></div>
+  <div class="section-h">總綱基礎 <span class="badge badge-done">DONE</span></div>
   <ul class="task-list">
     <li class="task-item">
       <span class="task-status done">✓</span>
@@ -94,13 +102,15 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     </li>
     <li class="task-item">
       <span class="task-status done">✓</span>
-      <span class="task-name done">GameBuff 擴充 mutexGroup / descriptionRefs；Module 加 buffIds</span>
+      <span class="task-name done">GameBuff 擴充 <s style="opacity:0.55;">mutexGroup</s> / descriptionRefs；Module 加 buffIds</span>
       <span class="task-meta">types</span>
+      <div class="task-note"><code>mutexGroup</code> 已於 2026-08 由 PLAN-041 移除（全庫 0 筆資料、從未渲染）；<code>descriptionRefs</code> 與 <code>Module.buffIds</code> 仍在。後續另由 PLAN-024 加 <code>levels[]</code>、PLAN-034 加 <code>EntityRef.level/fixedLevel</code>。</div>
     </li>
     <li class="task-item">
       <span class="task-status done">✓</span>
       <span class="task-name done">Boss / BossSkill / Stage / StageDropEntry 型別 + StageCategory enum</span>
       <span class="task-meta">types · enums</span>
+      <div class="task-note">⚠ 019-D descope 後型別仍留在 <code>src/types/boss.ts</code>，但<strong>無集合、無安全規則、無 API</strong>，其 <code>updatedBy/descriptionRefs/mechanicsRefs</code> 目前等同死碼。若日後真的建 bosses/stages，務必回頭把站點補進 <code>utils/entityRefs.ts</code>（PLAN-030 留下的警告）。</div>
     </li>
     <li class="task-item">
       <span class="task-status done">✓</span>
@@ -108,9 +118,16 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
       <span class="task-meta">types</span>
     </li>
     <li class="task-item">
-      <span class="task-status progress">▶</span>
-      <span class="task-name">總綱文件 + 子計畫交叉連結 + 資料模型 docs</span>
+      <span class="task-status done">✓</span>
+      <span class="task-name done">資料模型 docs</span>
       <span class="task-meta">docs</span>
+      <div class="task-note">引用層設計文件落在 <code>docs/02_技術文件/02_資料模型/skills_buffs.html</code> 的「共用引用型別 — EntityRef / DescriptionRefs」一節（含數值引用、levels、同名消歧、form refType、新增 RefType 要改的 5 檔 6 處清單），未另開 entity-refs 獨立頁；<code>glossaryTerms.html</code> 已建。</div>
+    </li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">總綱文件 + 子計畫交叉連結</span>
+      <span class="task-meta">docs</span>
+      <div class="task-note">2026-08-22 完成：Layer 2 mutexGroup 訂正、Layer 1 RefType 擴充現況、11 個延伸計畫補進子計畫表並全數加上交叉連結。</div>
     </li>
   </ul>
 
@@ -131,12 +148,12 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">RefPicker 後台填值 UI（PLAN-019-C 落地）：詞條管理與技能效果可直接把 [xxx] 標成可點引用</span><span class="task-meta">components/admin/RefPicker.tsx</span></li>
   </ul>
 
-  <div class="phase-label">PLAN-019-B · BUFF / 形態圖（Layer 2）<span class="badge badge-done" style="margin-left:8px;">DONE</span></div>
-  <div class="phase-note">由配裝 buffIds[] 建立反向索引，模擬器只提供可達 buff，再依互斥機制收斂。引擎為純函式（<code>src/utils/buffPool.ts</code> + <code>reachableBuffs.ts</code>，9 項單測），UI 落在配裝模擬器結果頁。亦是 PLAN-023 N3-3（晶片→能力 buffIds 注入）的共同接點。<br><strong>備註：</strong>面板顯示「可達增益 + 效果加總」已完成；最終<strong>傷害數字</strong>仍待 Phase 7 傷害公式；引擎需資料端填妥形態 buff（如海莉絲虛/實粒子 + <code>mutexGroup</code>）才看得到內容（剩填值，非工程）。</div>
+  <div class="phase-label">PLAN-019-B · BUFF / 形態圖（Layer 2）<span class="badge badge-done" style="margin-left:8px;">引擎 DONE</span><span class="badge" style="margin-left:6px;background:rgba(239,68,68,0.15);color:var(--accent-red);border:1px solid var(--accent-red);">形態部分已作廢</span></div>
+  <div class="phase-note">由配裝 buffIds[] 建立反向索引，模擬器只提供可達 buff，再收斂。引擎為純函式（<code>src/utils/buffPool.ts</code> + <code>reachableBuffs.ts</code>），UI 落在配裝模擬器結果頁。亦是 PLAN-023 N3-3（晶片→能力 buffIds 注入）的共同接點。<br><strong>備註：</strong>面板顯示「可達增益 + 效果加總」已完成；最終<strong>傷害數字</strong>不在本總綱範圍（屬未來傷害模擬 PLAN）。<br><strong style="color:var(--accent-red);">2026-08-22 訂正：</strong>舊備註「需資料端填妥形態 buff + <code>mutexGroup</code>（剩填值，非工程）」<strong>已作廢</strong>——PLAN-041 拆除了整套形態互斥引擎，形態改走 <code>forms</code> 集合，不是填值問題。</div>
   <ul class="task-list">
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">反向索引：可用 buff 池 = ⋃ 配裝實體 buffIds[]（buffIds 帶 <code>@N</code> 指定階梯級，見 PLAN-024 buffRef）</span><span class="task-meta">utils/buffPool.ts</span></li>
-    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">可達集收斂 — <strong>兩種分立互斥機制</strong>：① <code>mutexGroup</code> 形態擇一（虛粒子 ⟷ 實粒子）；② 同 buff 多 <code>level</code> 取最高（PLAN-024 階梯 buff，<strong>取代舊「階梯共用 mutexGroup」用法</strong>）；查無 buff 進 unresolved 優雅降級</span><span class="task-meta">utils/reachableBuffs.ts</span></li>
-    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">模擬器 Buff 面板：形態 active 切換 + 可達增益顯示 + SkillEffect 依 stat 加總（buffs/pilotSkills 納入 useAllGameData 預載）</span><span class="task-meta">SimulatorPage · useFirestore</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">可達集收斂：<s style="opacity:0.55;">① <code>mutexGroup</code> 形態擇一</s> <strong style="color:var(--accent-red);">（已由 PLAN-041 移除，勿還原）</strong>；② 同 buff 多 <code>level</code> 取最高（PLAN-024 階梯 buff）；另有 <code>excludeFromPool</code> 排除形態與神驅 buffUpgrades；查無 buff 進 unresolved 優雅降級</span><span class="task-meta">utils/reachableBuffs.ts</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">模擬器 Buff 面板：可達增益顯示 + SkillEffect 依 stat 加總（buffs/pilotSkills 納入 useAllGameData 預載）。<s style="opacity:0.55;">形態 active 切換</s> 已隨 PLAN-041 移除（<code>SimulatorPage.activeForms</code> 已刪）</span><span class="task-meta">SimulatorPage · useFirestore</span></li>
   </ul>
 
   <div class="phase-label">PLAN-019-C · 詞條庫<span class="badge badge-done" style="margin-left:8px;">DONE</span></div>
@@ -161,7 +178,24 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">插入引用 UI：RefPicker 接進 ModuleAdmin / WeaponAdmin / ComponentAdmin / BackpackAdmin（ComponentBase / Backpack.mainSkill 補 descriptionRefs）</span><span class="task-meta">PLAN-019-E</span></li>
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">GlossaryAdmin 詞條管理分頁（已於 019-C 落地）</span><span class="task-meta">PLAN-019-C</span></li>
     <li class="task-item"><span class="task-status pending">→</span><span class="task-name" style="text-decoration:line-through;color:var(--text-dim);">BossAdmin / StageAdmin（仿 PilotAdmin）</span><span class="task-meta">隨 019-D 移轉 PLAN-010</span></li>
-    <li class="task-item"><span class="task-status pending">○</span><span class="task-name">updatedBy/updatedAt 稽核 + 補填進度儀表</span><span class="task-meta">殘項</span></li>
+    <li class="task-item">
+      <span class="task-status done">✓</span>
+      <span class="task-name done">稽核層（原規劃 updatedBy/updatedAt）— <strong>已由 <a href="../../歷史記錄/PLAN-030_資料變更歷史/計畫書.html" style="color:var(--accent-cyan);">PLAN-030</a> 的 changeHistory 取代</strong></span>
+      <span class="task-meta">PLAN-030</span>
+      <div class="task-note">PLAN-030 交付的東西嚴格大於原規劃：append-only 黑盒子 + 刪除時級聯清除 <code>descriptionRefs</code>/<code>buffIds</code>/<code>termRef</code>/數值 token + 可反向套用的還原單 + AdminHistoryPage 還原 UI。原本要加的 <code>updatedBy/updatedAt</code> 欄位因此不必再做（目前僅 <code>src/types/boss.ts</code> 殘留兩處，屬已 descope 的 019-D 死碼）。</div>
+    </li>
+    <li class="task-item">
+      <span class="task-status progress">▶</span>
+      <span class="task-name"><strong>殘項 ①</strong>：changeHistory 稽核接線剩 <strong>8 個集合</strong></span>
+      <span class="task-meta">殘項</span>
+      <div class="task-note">已接：<code>buffs</code> / <code>skills</code> / <code>glossary</code> / <code>backpackSkills</code> / <code>forms</code>（各 3 處 <code>saveWithHistory</code>）。<br>未接：<strong>機師 / 機甲 / 武器 / 模組 / 元件 / 背包 / 神驅能力 / 灰域</strong>。PLAN-030 已把底層做成集合無關，每個集合只需 ① <code>ChangeTargetKind</code> union 加一個值 ② <code>update*</code> 改走 <code>saveWithHistory</code> ③ 需要刪除的再加 <code>delete*</code>；不需重構，也不動規則、索引與 TTL 政策。</div>
+    </li>
+    <li class="task-item">
+      <span class="task-status pending">○</span>
+      <span class="task-name"><strong>殘項 ②</strong>：補填進度儀表 — <span style="color:var(--accent-yellow);">從未開工，可考慮 descope</span></span>
+      <span class="task-meta">殘項</span>
+      <div class="task-note">全站搜不到任何實作（<code>src/pages/user/admin/</code> 下 15 個後台頁皆無）。原意是「哪些實體的哪些欄位還沒填」的總覽儀表，與 changeHistory（誰改了什麼）是不同的東西，後者無法替代。自 2026-06 列為殘項至今未動；若判定投報率低，建議比照 019-D 直接 descope 並註記，讓本總綱得以收尾。</div>
+    </li>
     <li class="task-item"><span class="task-status pending">→</span><span class="task-name" style="text-decoration:line-through;color:var(--text-dim);">新集合納入 GameDataContext 預載 + meta/gameData 版本 gate</span><span class="task-meta">已不需：不再建 bosses/stages；glossaryTerms/buffs 已於 019-C/F 接入</span></li>
   </ul>
 
@@ -172,12 +206,38 @@ body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Not
     <li class="task-item"><span class="task-status done">✓</span><span class="task-name done">AdminPage「BUFF 管理」分頁 + BuffAdmin 面板：列表/新增/編輯，buffType 下拉 + effects 編輯器 + 描述掛 RefPicker（複用 SkillEffectItem / RefPicker / shared）</span><span class="task-meta">AdminPage · BuffAdmin.tsx</span></li>
   </ul>
 
-  <div class="updated">最後更新：2026-06-30 · 019-B 可達性引擎（buffPool/reachableBuffs + 模擬器 Buff 面板）落地；殘項收斂為 019-E 稽核 + 總綱文件</div>
+  <!-- 延伸計畫 -->
+  <div class="section-h">延伸計畫（2026-08-22 補列） <span class="badge badge-done">MOSTLY DONE</span></div>
+  <div class="phase-note">019-A~F 之後，引用層又長出 11 個延伸計畫，本總綱原本一個都沒收。它們全部站在 Layer 1 之上，狀態彙整如下（詳見 <a href="計畫書.html" style="color:var(--accent-purple);">計畫書</a> 的子計畫表）。</div>
+  <ul class="task-list">
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done"><a href="../../歷史記錄/PLAN-021_神驅算力天賦改寫/計畫書.html" style="color:var(--accent-cyan);">PLAN-021</a> 神驅算力天賦改寫 — 引用層在神驅的第一次落地</span><span class="task-meta">已歸檔</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done"><a href="../../歷史記錄/PLAN-022_數值引用層/計畫書.html" style="color:var(--accent-cyan);">PLAN-022</a> 數值引用層 — Layer 1 的第二種 token <code>&lt;refId.attr&gt;</code></span><span class="task-meta">已歸檔</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done"><a href="../../歷史記錄/PLAN-023_神經驅動能力庫/計畫書.html" style="color:var(--accent-cyan);">PLAN-023</a> 神經驅動能力庫 — 補完引用層最後缺口 + <code>refType:'neuralDrive'</code>；supersede PLAN-004 下半場</span><span class="task-meta">已歸檔</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done"><a href="../../歷史記錄/PLAN-024_BUFF等級化重構/計畫書.html" style="color:var(--accent-cyan);">PLAN-024</a> BUFF 等級化重構 — <strong>改寫 Layer 2 收斂機制</strong>（levels[] 取代多份文件）</span><span class="task-meta">已歸檔</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done"><a href="../../歷史記錄/PLAN-030_資料變更歷史/計畫書.html" style="color:var(--accent-cyan);">PLAN-030</a> 資料變更歷史 — 引用層的反向操作（級聯清除 + 還原）；取代 019-E 原規劃稽核</span><span class="task-meta">已歸檔</span>
+      <div class="task-note">⚠ 留有一條給未來的警告：<code>src/types/boss.ts</code> 的 <code>descriptionRefs</code>/<code>mechanicsRefs</code> 型別還在但無集合、無規則、無 API。若 PLAN-010 哪天真的建 bosses/stages，<strong>務必回頭把站點補進 <code>utils/entityRefs.ts</code></strong>，否則會成為級聯清除的漏網之魚。</div>
+    </li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done"><a href="../../歷史記錄/PLAN-032_武器技能引用化/計畫書.html" style="color:var(--accent-cyan);">PLAN-032</a> 武器技能引用化 — 併入既有技能庫，收斂規則「有 descriptionRefs 的那份勝」</span><span class="task-meta">已歸檔</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done"><a href="../../歷史記錄/PLAN-034_神驅算力BUFF階覆寫層/計畫書.html" style="color:var(--accent-cyan);">PLAN-034</a> 神驅算力 BUFF 階覆寫層 — 擴 <code>EntityRef.level</code> / <code>fixedLevel</code></span><span class="task-meta">已歸檔</span></li>
+    <li class="task-item"><span class="task-status done">✓</span><span class="task-name done"><a href="../../歷史記錄/PLAN-039_引用標記同名消歧/計畫書.html" style="color:var(--accent-cyan);">PLAN-039</a> 引用標記同名消歧 — 修正 <code>DescriptionRefs</code> key 語意（<code>"駐陣|skill"</code>）</span><span class="task-meta">已歸檔</span></li>
+    <li class="task-item"><span class="task-status progress">▶</span><span class="task-name"><a href="../PLAN-041_機師形態變化/計畫書.html" style="color:var(--accent-cyan);">PLAN-041</a> 機師形態變化 — <strong>接管並拆除 019-B 形態機制</strong>；forms 集合 + <code>refType:'form'</code></span><span class="task-meta">執行中 20/25</span>
+      <div class="task-note">N1 全數完成。本總綱 Layer 2 的形態設計以此計畫為準，<strong>不是</strong>以本表舊文的 <code>mutexGroup</code> 為準。</div>
+    </li>
+    <li class="task-item"><span class="task-status progress">▶</span><span class="task-name"><a href="../../觀察維護中/PLAN-043_背包技能集合/計畫書.html" style="color:var(--accent-cyan);">PLAN-043</a> 背包技能集合 — 出向引用已接；<strong>N2 待做：<code>refType:'backpackSkill'</code></strong>（反向被引用）</span><span class="task-meta">觀察維護中</span></li>
+    <li class="task-item"><span class="task-status pending">○</span><span class="task-name"><a href="../PLAN-026_召喚單位展示/計畫書.html" style="color:var(--accent-cyan);">PLAN-026</a> 召喚單位展示 — <strong>待做：新增 <code>refType:'summon'</code></strong>，讓天賦正文 <code>[咕咕]</code> 接進引用層</span><span class="task-meta">執行中 0/13 · 未開工</span></li>
+  </ul>
+
+  <div class="phase-note" style="border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.05);">
+    <strong>收尾條件：</strong>上方兩個殘項（changeHistory 剩 8 集合接線、補填進度儀表）處理完，本總綱即可轉入<strong>觀察維護中</strong>。
+    屆時剩下的都是「新集合上線時回頭補 <code>RefType</code> 與 <code>entityRefs.ts</code> 站點」這類長期維護動作（如 PLAN-026 的 <code>summon</code>、PLAN-043 N2 的 <code>backpackSkill</code>），已不屬於本總綱的開發工作。
+  </div>
+
+  <div class="updated">最後更新：2026-08-22 · 全面校正 —— 訂正 019-B 形態機制（mutexGroup 已由 PLAN-041 移除）、補列 11 個延伸計畫、資料模型 docs 勾銷、殘項收斂為 2 項（changeHistory 剩 8 集合接線、補填進度儀表）</div>
 
 </div>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-06-17 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>
