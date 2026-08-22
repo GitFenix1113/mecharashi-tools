@@ -22,10 +22,47 @@
     <link rel="icon" type="image/png" href="/images/cat_no_bg.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>米赫瑪超吉情豹站 — Milkhama PawInfo Station</title>
+    <meta
+      name="description"
+      content="鋼嵐 Mecharashi 繁中資料站：機師、機甲、武器、模組完整資料查詢，配裝模擬與版本情報。非官方，完全免費。"
+    />
+
+    <!-- ── 社群連結預覽 Open Graph（PLAN-038 Tier 1）─────────────────────────────
+         Discord / LINE 等平台的預覽爬蟲**不執行 JS**，只解析拿到的原始 HTML，
+         所以這些標籤必須寫死在這裡，而不是由 React 掛載後動態塞。
+         沒有 og:* 時 Discord 連卡片都不給（LINE 會退而抓 <title> 撐出陽春卡）。
+
+         · og:url / og:image 一律用**絕對網址**——爬蟲讀不到相對路徑。
+         · 這是全站共用的預設卡片；機師／機甲／武器詳情頁的逐頁卡片屬 Tier 2，
+           由 Cloudflare Worker 在邊緣改寫（尚未實作）。
+         · og:image 素材規格與命名慣例見 public/images/og/README.md，
+           重產指令：node scripts/generate-og-image.mjs                              -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="米赫瑪超吉情豹站" />
+    <meta property="og:locale" content="zh_TW" />
+    <meta property="og:url" content="https://mecharashi.wiki/" />
+    <meta property="og:title" content="米赫瑪超吉情豹站 — Milkhama PawInfo Station" />
+    <meta
+      property="og:description"
+      content="鋼嵐 Mecharashi 繁中資料站：機師、機甲、武器、模組完整資料查詢，配裝模擬與版本情報。非官方，完全免費。"
+    />
+    <meta property="og:image" content="https://mecharashi.wiki/images/og/default.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="米赫瑪超吉情豹站 — 鋼嵐繁中資料與配裝模擬站" />
+
+    <!-- twitter:image 刻意與 og:image 共用同一張，不另外備圖。 -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="米赫瑪超吉情豹站 — Milkhama PawInfo Station" />
+    <meta
+      name="twitter:description"
+      content="鋼嵐 Mecharashi 繁中資料站：機師、機甲、武器、模組完整資料查詢，配裝模擬與版本情報。非官方，完全免費。"
+    />
+    <meta name="twitter:image" content="https://mecharashi.wiki/images/og/default.jpg" />
     <!-- 字體已改為自託管（見 src/index.css 檔首）：原本這裡是 fonts.googleapis.com 的
          render-blocking stylesheet，在中國被封鎖 → 訪客得等連線逾時才開始渲染。
          現在公開頁面對 Google 網域零依賴，全部資源皆由自有網域供應。 -->
-    <script type="module" crossorigin src="/assets/index-BDtSYv8V.js"></script>
+    <script type="module" crossorigin src="/assets/index-CYUzhF5u.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/jsx-runtime-BHwPObl3.js">
     <link rel="modulepreload" crossorigin href="/assets/firebase-o7Ok1vxa.js">
     <link rel="modulepreload" crossorigin href="/assets/BottomSheet-BTiqSSws.js">

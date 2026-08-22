@@ -167,15 +167,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">9</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
-      <div class="summary-lbl">進行中</div>
+      <div class="summary-num" style="color:var(--accent-red)">2</div>
+      <div class="summary-lbl">阻塞中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">11</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">0 / 11</span>
+      <span style="color:var(--accent-green);">9 / 11</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 82%"></div>
     </div>
   </div>
 
@@ -213,7 +213,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; 素材目錄慣例</div>
       <div class="task-group-meta">public/images/og/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -225,7 +225,7 @@
         <div class="task-file">public/images/og/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -233,7 +233,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; 全站預設 og:image 產出</div>
       <div class="task-group-meta">public/images/og/default.jpg</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -245,7 +245,7 @@
         <div class="task-file">public/images/og/default.jpg</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -253,7 +253,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-3 &nbsp; 站點簡介文案</div>
       <div class="task-group-meta">og:description</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -264,7 +264,7 @@
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -272,7 +272,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-4 &nbsp; index.html 補 Open Graph／Twitter 標籤</div>
       <div class="task-group-meta">index.html &lt;head&gt;</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -283,7 +283,7 @@
         <div class="task-file">index.html</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -294,7 +294,7 @@
         <div class="task-file">index.html</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -307,11 +307,27 @@
     延伸既有 Cloudflare Worker（PLAN-029），讓 pilots／mechs／weapons 三個 :id 詳情頁分享時顯示對應實體的名稱與圖片。
   </div>
 
+  <div class="impact-note">
+    <strong>2026-08-22 實作記錄：</strong>
+    程式碼已完成（<code>workers/src/socialPreview.ts</code> 新檔 ＋ <code>workers/src/index.ts</code> 接線 ＋
+    <code>workers/wrangler.jsonc</code> 三條 route），純函式測試 8 項全綠、<code>wrangler deploy --dry-run</code> 打包通過。
+    <strong>已於 2026-08-22 部署</strong>（8 條 route 全部生效），但功能尚未生效 —— 見下方阻塞說明。
+    <br><br>
+    三處與原計畫的偏離，都已在程式碼註解寫明理由：
+    <br>① <strong>改讀單一文件而非重用 /api/data 整包快取</strong>。原計畫寫「沿用整包邊緣快取、不新增 Firestore read」，
+    但 pilots 那包是 1.3 MB，為一筆資料 parse 整包在免費方案 10 ms CPU 預算下不划算；改成單文件 ＋ 專屬 cache entry
+    （key 一樣帶集合版本號），命中 0 read、未命中 1 read。
+    <br>② <strong>加了防迴圈保險絲</strong>（轉發回 origin 時蓋 <code>x-og-passthrough</code> 標記）。
+    同 zone fetch 照理不會重入 Worker，但這條路徑上的迴圈代價是整站頁面請求爆掉。
+    <br>③ <strong>Tier 2 的 twitter:card 降級為 summary</strong>（方形小卡）並移除 <code>og:image:width/height</code>：
+    立繪是直式、武器圖示是方形，套 Tier 1 那組 1200×630 的尺寸宣告會被平台裁切得很難看。
+  </div>
+
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; 爬蟲 UA 偵測</div>
       <div class="task-group-meta">workers/src/index.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -324,7 +340,7 @@
         <div class="task-file">workers/src/index.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -332,7 +348,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; 路徑解析與資料組裝</div>
       <div class="task-group-meta">pilots/:id · mechs/:id · weapons/:id</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -343,7 +359,7 @@
         <div class="task-file">workers/src/index.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -355,7 +371,7 @@
         <div class="task-file">workers/src/index.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -363,7 +379,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-3 &nbsp; HTMLRewriter 動態改寫</div>
       <div class="task-group-meta">workers/src/index.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -374,15 +390,34 @@
         <div class="task-file">workers/src/index.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
-  <div class="task-group">
+    <div class="impact-note" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.06);">
+    <strong style="color:var(--accent-red);">阻塞：Transform Rule 先於 Workers 執行（2026-08-22 部署後實測）</strong>
+    <br>
+    部署後用 <code>wrangler tail</code> 觀察：三個 Discordbot 對詳情頁的請求
+    <strong>Worker 零事件</strong>，同時段 <code>/api/*</code> 的事件（含真實訪客流量）一切正常。
+    原因是 PLAN-029 Phase 5-1 的 SPA fallback Transform Rule 已把 <code>/pilots/xxx</code>
+    改寫成 <code>/index.html</code>，而 Cloudflare 的處理順序是
+    <em>Transform Rules → Workers</em>，Worker 看到的路徑不再是 <code>/pilots/*</code>，route 匹配不到。
+    <br><br>
+    <strong>解法（需站長在 Cloudflare Dashboard 操作，程式碼端已就緒）：</strong>
+    在該 Transform Rule 的條件加上「社群爬蟲 UA 不套用」的例外，例如
+    <code>and not (lower(http.user_agent) contains "discordbot" or ...)</code>。
+    這樣真人流量的路徑照舊由 Transform Rule 處理（Worker 完全不執行、額度零增量），
+    只有爬蟲的請求會落到 Worker 手上做改寫。
+    <br><br>
+    程式碼端已配合改成 <strong>自行抓 <code>/index.html</code> 當骨架</strong>
+    （能進 Worker 的請求＝沒被改寫過，直接 <code>fetch(request)</code> 會拿到 GitHub Pages 的 404）。
+  </div>
+
+<div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-4 &nbsp; 驗證</div>
       <div class="task-group-meta">Discord／LINE 實測 + 一般使用者回歸</div>
-      <span class="status pending">待開始</span>
+      <span class="status blocked">阻塞中</span>
     </div>
     <div class="task-row">
       <div>
@@ -393,7 +428,7 @@
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status blocked">阻塞中</span>
     </div>
     <div class="task-row">
       <div>
@@ -404,7 +439,7 @@
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status blocked">阻塞中</span>
     </div>
   </div>
 </section>
