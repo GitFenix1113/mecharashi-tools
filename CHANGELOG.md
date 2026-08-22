@@ -208,6 +208,7 @@
 
 ### 📚 文件
 
+- **firebase**: 重寫過時的安全規則文件，新增 PLAN-051 (`cab761e`)
 - **plan**: PLAN-038 歸檔至歷史記錄 (`877db5c`)
 - **plan**: 新增 PLAN-050 首頁資訊架構重構，並補上 PLAN-049 文件 (`bec8d88`)
 - 補上 SECURITY.md、CONTRIBUTING.md 與 issue 回報模板 (`819724a`)
@@ -286,6 +287,7 @@
 
 ### 🔧 維護
 
+- **security**: storage.rules 收掉 banners 的「登入即可寫」 (`590f012`)
 - **assets**: 移除與 portrait 重複的機甲扁平立繪 (`5510af9`)
 - **assets**: 重新調整星夜女神機甲立繪尺寸 (`75868cb`)
 - **assets**: 新增星夜女神機甲部件圖與斷湮武器圖示，並重新產生圖片 manifest (`5e69baa`)
