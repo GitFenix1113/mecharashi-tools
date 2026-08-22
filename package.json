@@ -20,7 +20,7 @@
     "docs:stamp": "node scripts/stamp-docs.mjs",
     "push": "node scripts/push-with-changelog.mjs",
     "lint": "eslint .",
-    "test": "node --test \"src/**/*.test.ts\" \"scripts/**/*.test.mjs\"",
+    "test": "node --test \"src/**/*.test.ts\" \"scripts/**/*.test.mjs\" \"workers/src/**/*.test.ts\"",
     "preview": "vite preview",
     "prepare": "git config commit.template .gitmessage && git config core.hooksPath .githooks",
     "changelog": "node scripts/update-changelog.js",

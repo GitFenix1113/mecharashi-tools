@@ -9,6 +9,14 @@ import { parseServiceAccount, getAccessToken, type ServiceAccount } from './gcpA
 import { listCollection, getDocument, commitIncrements } from './firestoreRest'
 import { getDataVersions, effectiveVersion } from './versions'
 import {
+  isSocialCrawler,
+  parseEntityPath,
+  buildOgMeta,
+  rewriteHtmlWithOg,
+  SITE_ORIGIN,
+  type OgCollection,
+} from './socialPreview'
+import {
   buildTruncatedMark,
   buildWrites,
   countryBucket,
@@ -82,7 +90,13 @@ function getAllowedOrigins(env: Env): string[] {
   return env.ALLOWED_ORIGINS?.split(',').map(s => s.trim()) ?? DEFAULT_ALLOWED
 }
 
-/** 反爬守門：回傳 403 Response 表示擋下，null 表示放行。 */
+/**
+ * 反爬守門：回傳 403 Response 表示擋下，null 表示放行。
+ *
+ * ⚠ **只可套用在 /api/* 上**。頁面 HTML（PLAN-038 Phase B 的 route）必須繞過這裡：
+ *   Discordbot／LineBot 不帶 Origin／Referer／Sec-Fetch-Site，走進來會被判成爬蟲而 403，
+ *   等於擋掉整個社群預覽功能——連帶真人若拿到 403，看到的是整站壞掉。
+ */
 function antiScrapeBlock(request: Request, env: Env, cors: Record<string, string>): Response | null {
   const allowed = getAllowedOrigins(env)
   const origin = request.headers.get('origin') ?? ''
@@ -102,11 +116,30 @@ function antiScrapeBlock(request: Request, env: Env, cors: Record<string, string
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url)
+
+    // ── 頁面 HTML（PLAN-038 Phase B）────────────────────────────────────────
+    // wrangler.jsonc 的 route 讓 /pilots/* · /mechs/* · /weapons/* 也走進本 Worker。
+    // 這些請求**不是 API**，因此必須在反爬守門之前分流出去：守門要求 Origin／Referer／
+    // Sec-Fetch-Site，而社群爬蟲三者都沒有 —— 沿用同一條路等於親手 403 掉要服務的對象。
+    //
+    // ⚠ 只有正式站主機名才做。workers.dev 上沒有這些 route，放進來只會白跑一趟。
+    //
+    // ⚠⚠ 前提：這三條路徑必須被排除在 PLAN-029 的 SPA fallback Transform Rule 之外
+    //     （或該規則對社群爬蟲 UA 不生效），否則路徑在進 Worker 之前就已被改寫成
+    //     /index.html，route 根本匹配不到 —— 2026-08-22 首次部署就是這樣，Worker 零事件。
+    if (!url.pathname.startsWith('/api/')) {
+      if (url.hostname === 'mecharashi.wiki' || url.hostname === 'www.mecharashi.wiki') {
+        return handleSocialPreview(request, env, ctx)
+      }
+      return json({ error: 'not found' }, 404, corsHeaders(request, env))
+    }
+
     const cors = corsHeaders(request, env)
 
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors })
 
     // 反爬守門（PLAN-029 Phase 3-4 路線 A）：preflight 之後、實際處理之前硬擋。
+    // 作用域＝ /api/*（頁面 HTML 已在上方分流），見 antiScrapeBlock 的註解。
     const blocked = antiScrapeBlock(request, env, cors)
     if (blocked) return blocked
 
@@ -194,6 +227,108 @@ export default {
     }
   },
 } satisfies ExportedHandler<Env>
+
+/** 轉發回 origin 時蓋的標記，見 handleSocialPreview 的防迴圈保險絲。 */
+const OG_PASSTHROUGH_HEADER = 'x-og-passthrough'
+
+/**
+ * 社群連結預覽 Tier 2（PLAN-038 Phase B）。
+ *
+ * 只做一件事：**判定為社群爬蟲、且路徑是三種詳情頁時**，把 origin 回來的 index.html
+ * 裡的 og:* 換成該實體的名稱與立繪。其餘所有情況原樣轉發，行為與沒有這段程式碼一致。
+ *
+ * 為什麼每個分支都是 passthrough() 而不是錯誤：這條路徑上跑的是**整站的頁面請求**，
+ * 任何一個沒想到的狀況都不該讓訪客看不到網站。最壞結果只能是「退回 Tier 1 站名卡」。
+ */
+async function handleSocialPreview(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response> {
+  // 防迴圈保險絲。同 zone 的 fetch 照理不會再次觸發本 Worker（CF 自己會防迴圈），
+  // 但這條路徑上的迴圈代價是「整站頁面請求爆掉」，值得一個兩行的保險：
+  // 轉發時蓋一個標記，帶著標記進來的請求一律直接放行、不再進入改寫邏輯。
+  if (request.headers.get(OG_PASSTHROUGH_HEADER)) return fetch(request)
+
+  // ⚠ **不能** fetch(request)。GitHub Pages 上沒有 /pilots/xxx 這種檔案，深層路徑
+  //   之所以會回 200，是靠 PLAN-029 Phase 5-1 那條 Transform Rule 改寫成 /index.html。
+  //   而 Transform Rules 在 Cloudflare 的處理順序中**跑在 Workers 之前** —— 能走到這裡的
+  //   請求，代表它的路徑「沒有」被那條規則改寫過，直接轉發只會拿到 origin 的 404。
+  //   所以骨架一律自己抓 /index.html（＝在 Worker 內自行完成 SPA fallback）。
+  const passthrough = () =>
+    fetch(`${SITE_ORIGIN}/index.html`, { headers: { [OG_PASSTHROUGH_HEADER]: '1' } })
+
+  if (request.method !== 'GET' && request.method !== 'HEAD') return passthrough()
+  if (!isSocialCrawler(request.headers.get('user-agent'))) return passthrough()
+
+  const url = new URL(request.url)
+  const target = parseEntityPath(url.pathname)
+  if (!target) return passthrough() // 爬蟲抓的是列表頁／功能頁 → 吃 Tier 1 預設卡
+
+  try {
+    const doc = await loadEntityDoc(target.collection, target.id, env, ctx)
+    if (!doc) return passthrough() // 查無此實體（舊連結／改過 ID）
+    const meta = buildOgMeta(target.collection, doc)
+    if (!meta) return passthrough()
+
+    const res = await passthrough()
+    const contentType = res.headers.get('content-type') ?? ''
+    // 只改寫真的 HTML。CF 的 SPA 改寫若哪天變了行為（回 404 或非 HTML），原樣放行。
+    if (!res.ok || !contentType.includes('text/html')) return res
+
+    return rewriteHtmlWithOg(res, meta, `${SITE_ORIGIN}${url.pathname}`)
+  } catch (e) {
+    console.warn('[og] 動態改寫失敗，退回原始 HTML:', e)
+    return passthrough()
+  }
+}
+
+/**
+ * 讀單一實體文件（含邊緣快取）。
+ *
+ * 刻意**不重用 /api/data/:collection 的整包快取**：那包是 1.3 MB JSON（pilots），
+ * 為了一筆資料 parse 整包，在免費方案 10 ms CPU 的預算下不划算。改成單文件 +
+ * 自己的 cache entry：命中時 0 Firestore read，未命中也只有 1 read。
+ *
+ * cache key 帶該集合的版本號 —— 後台 bumpDataVersion 之後 key 就變了，
+ * 舊卡片內容自然失效，與 /api/data 的做法同源。
+ */
+async function loadEntityDoc(
+  collection: OgCollection,
+  id: string,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Record<string, unknown> | null> {
+  const sa = parseServiceAccount(env.FIREBASE_SA_KEY)
+  const token = await getAccessToken(sa)
+  const versions = await getDataVersions(sa, token)
+  const version = effectiveVersion(collection, versions)
+
+  const cache = caches.default
+  const cacheKey = new Request(
+    `${SITE_ORIGIN}/__cache/og/${collection}/${encodeURIComponent(id)}?v=${encodeURIComponent(version)}`,
+  )
+
+  const hit = await cache.match(cacheKey)
+  if (hit) return (await hit.json()) as Record<string, unknown>
+
+  const doc = await getDocument(sa, token, collection, id)
+  if (!doc) return null
+
+  const body = JSON.stringify(doc)
+  ctx.waitUntil(
+    cache.put(
+      cacheKey,
+      new Response(body, {
+        headers: {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'public, max-age=86400',
+        },
+      }),
+    ),
+  )
+  return doc
+}
 
 /**
  * 使用統計寫入（背景執行，PLAN-046）。

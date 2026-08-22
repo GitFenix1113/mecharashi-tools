@@ -178,7 +178,7 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value green">規劃中</div>
+      <div class="meta-value yellow">執行中 · Worker 已部署，卡在 Transform Rule 例外（2026-08-22）</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">前置依賴</div>
@@ -314,6 +314,29 @@
 
   <div class="warning-block">
     <ul style="margin:0 0 0 16px;line-height:1.9;">
+      <li><strong>Transform Rule 跑在 Workers 之前，會讓 route 匹配不到（2026-08-22 實際踩到）。</strong>
+        PLAN-029 Phase 5-1 用 Transform Rule 做 SPA fallback，把 <code>/pilots/*</code> 這類深層路徑
+        改寫成 <code>/index.html</code>。Cloudflare 的處理順序是
+        <em>Redirect Rules → Transform Rules → Workers → Cache → Origin</em>，
+        所以 Worker 看到的路徑早就變成 <code>/index.html</code>，
+        <code>mecharashi.wiki/pilots/*</code> 這條 route <strong>一次都不會命中</strong>
+        （首次部署後 <code>wrangler tail</code> 實測：三個 Discordbot 請求零事件，只有 /api 有）。
+        必解：讓那條 Transform Rule 對本計畫的目標請求不生效 —— 建議加 UA 例外（社群爬蟲不改寫），
+        真人流量完全不受影響、Worker 也不必承擔 SPA fallback 的可用性責任。
+        連帶結論：<strong>Worker 內不能 <code>fetch(request)</code></strong>，能走到 Worker 的請求就是沒被改寫過的，
+        原路徑在 GitHub Pages 上是 404 —— 骨架必須自己抓 <code>/index.html</code>。</li>
+      <li><strong>Worker 目前根本收不到 HTML 請求。</strong>
+        <code>workers/wrangler.jsonc</code> 的 routes 只有 <code>mecharashi.wiki/api/*</code>，
+        頁面 HTML 是 GitHub Pages 直出、不經 Worker。Phase B 的第一步其實是**新增 HTML route**
+        （<code>mecharashi.wiki/pilots/*</code> 等三條，或整站 <code>/*</code>）。
+        取捨：三條路徑限縮命中面、省 Workers 每日請求額度（與 <code>/api</code> 共用同一池）；
+        整站 <code>/*</code> 則未來任何新詳情頁都自動涵蓋，但真人訪客的每一次頁面請求都會計次。
+        （2026-08-22 開工前實查補記）</li>
+      <li><strong>antiScrapeBlock 會把要服務的爬蟲 403 掉。</strong>
+        <code>workers/src/index.ts</code> 現在是在 <code>fetch()</code> 最前面**無差別**執行反爬守門，
+        而 Discordbot／LineBot 不會帶 Origin／Referer／Sec-Fetch-Site。HTML 一旦走進 Worker，
+        現行邏輯會直接回 403 —— Phase B 的第二步必須先把這道守門限縮在 <code>/api/*</code> 之下，
+        否則等於親手擋掉本計畫要服務的對象。（2026-08-22 開工前實查補記）</li>
       <li><strong>本地路徑必須補 origin 才是合法 og:image。</strong><code>portrait</code>／<code>icon</code>
         存的都是 <code>/images/...</code> 這種相對路徑，Worker 端組 <code>og:image</code> 時忘記補
         <code>https://mecharashi.wiki</code> 前綴，等於重蹈本計畫要修的錯——爬蟲一樣讀不到相對路徑。</li>

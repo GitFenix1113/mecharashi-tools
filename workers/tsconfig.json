@@ -41,6 +41,8 @@
 			"node"
 		]
 	},
-	"exclude": ["test"],
+	/* *.test.ts 由 node --test 直接跑（Node 原生 type stripping，import 帶 .ts 副檔名），
+	   不進 wrangler 的型別檢查與打包 —— 比照專案根 tsconfig.app 對 src 測試檔的處理。 */
+	"exclude": ["test", "src/**/*.test.ts"],
 	"include": ["worker-configuration.d.ts", "src/**/*.ts"]
 }

@@ -22,7 +22,25 @@
 	 */
 	"routes": [
 		{ "pattern": "mecharashi.wiki/api/*", "zone_name": "mecharashi.wiki" },
-		{ "pattern": "www.mecharashi.wiki/api/*", "zone_name": "mecharashi.wiki" }
+		{ "pattern": "www.mecharashi.wiki/api/*", "zone_name": "mecharashi.wiki" },
+
+		/**
+		 * PLAN-038 Phase B：社群連結預覽的動態改寫。
+		 *
+		 * 只掛這三個詳情頁路徑，**刻意不用整站 `/*`**：SPA 站內換頁是 client-side routing，
+		 * 這幾條 route 只在「外部連結進站 / F5 重整 / 爬蟲來抓」時各命中一次，
+		 * 每日增量是幾十次量級。整站 `/*` 則每張圖、每支 JS 都要喚醒一次 Worker
+		 * ——實測單次冷啟動瀏覽會從 3 次計數暴增到 66 次（其中 76% 是圖片），
+		 * 而 /api 與頁面共用同一個免費額度池（100k/日），等於把那顆單點的引信縮短 20 倍。
+		 *
+		 * 未來若 backpacks/modules/components 開了 :id 詳情頁，在這裡加一行即可。
+		 */
+		{ "pattern": "mecharashi.wiki/pilots/*", "zone_name": "mecharashi.wiki" },
+		{ "pattern": "mecharashi.wiki/mechs/*", "zone_name": "mecharashi.wiki" },
+		{ "pattern": "mecharashi.wiki/weapons/*", "zone_name": "mecharashi.wiki" },
+		{ "pattern": "www.mecharashi.wiki/pilots/*", "zone_name": "mecharashi.wiki" },
+		{ "pattern": "www.mecharashi.wiki/mechs/*", "zone_name": "mecharashi.wiki" },
+		{ "pattern": "www.mecharashi.wiki/weapons/*", "zone_name": "mecharashi.wiki" }
 	],
 	/**
 	 * 灰度期間刻意保留 workers.dev 網址當回退路徑（前端隨時可切回去）。
