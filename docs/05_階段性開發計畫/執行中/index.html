@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-051 · 管理員 profile 讀取收斂</h3>
+      <p>安全性收斂。<code>firestore.rules</code> 的兩條 profile 讀取規則帶有 <code>resource.data.role in ['ADMIN','OWNER']</code>，而這個條件<b>沒有任何 auth gate</b>——它的用意是讓首頁的維護團隊區塊在未登入時也顯示，代價卻是：Firestore 的授權單位是<b>文件</b>而非欄位（沒有 field-level read mask），讀得到文件就是拿到整份 <code>UserProfile</code>，其中 <code>email</code> 是必填。<b>結果是每一位匿名訪客進首頁，瀏覽器裡就有全部管理員的 email</b>（無痕視窗 + DevTools 看 <code>runQuery</code> 回應即可驗證）。<br>嚴重度<b>中而非高</b>：email 不是憑證，拿到也登不進任何東西——後台入口是 Google 帳號 ＋ <code>isAdmin()</code>，兩者都不因 email 外流而鬆動；值得修是因為它<b>降低了針對管理員的釣魚門檻</b>，而管理員帳號正是後台唯一的鑰匙。<br>因為欄位級授權不存在，規則只能全開或全關，所以解法是<b>換資料來源</b>：新增 <code>/api/site-team</code>，由 Worker 以 service account 讀 profile 並<b>用白名單過濾欄位</b>（不是排除 email——黑名單會讓日後新增的欄位自動外洩），profile 規則收回 <code>isAdmin()</code>。不另開公開集合是為了維持<b>單一資料來源</b>，否則維護者改個暱稱要同步寫兩處。<br>前置工作是幫 Worker 補 <code>runQuery()</code>：<code>firestoreRest.ts</code> 目前只有 <code>listCollection</code>／<code>getDocument</code>，撈不到 <code>users/{uid}/profile/main</code> 這種子集合。順序上 <b>Phase B 前端切換必須早於 Phase C 收緊規則</b>，避免出現「規則已鎖、前端還沒好」的空窗。後台使用者管理走同一個 collectionGroup 但呼叫者是管理員，命中 <code>isAdmin()</code> 分支，不受影響。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-051_管理員profile讀取收斂/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-051_管理員profile讀取收斂/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card cyan">
       <div class="card-icon">◆</div>
       <h3>PLAN-050 · 首頁資訊架構重構</h3>
