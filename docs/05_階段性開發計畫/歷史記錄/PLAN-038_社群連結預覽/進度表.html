@@ -486,6 +486,28 @@
           <td><span class="badge-good">通過</span> 帶 Referer 200、裸打 403，與改動前一致</td></tr>
     </table>
   </div>
+
+  <div class="impact-note" style="border-color:rgba(234,179,8,0.3);background:rgba(234,179,8,0.06);">
+    <strong style="color:var(--accent-yellow);">歸檔後 follow-up（2026-08-23）：WebP 讓 LINE 的卡片沒有圖</strong>
+    <br>
+    站長實測 LINE：標題與描述都是 Tier 2 的實體資料（改寫確實生效），<strong>但沒有圖</strong>。
+    排查後排除「被擋」（用 LINE 的 UA 抓那張立繪回 200）與「抓不到站」，
+    真因是 <strong>og:image 是 WebP</strong> —— Facebook 的 OGP 規格只吃 JPEG／PNG／GIF，
+    LINE 同樣抓不出縮圖；Discord 是少數支援 WebP 的，所以只有它看起來正常。
+    資料層實測：pilots 87/88、mechs 88/89 是 webp（受影響），weapons 170/178 是 png（本來就正常）。
+    <br><br>
+    <strong>修法：</strong>新增 <code>scripts/generate-og-entity-images.mjs</code>，於 build／dev 前置把
+    177 張會被卡片用到的立繪各轉一份 JPEG 到鏡射路徑
+    （<code>/images/pilots/曜/half.webp</code> → <code>/images/og/entities/pilots/曜/half.jpg</code>，
+    帶 alpha 的立繪以站台底色 flatten），Worker 的 <code>absoluteImage</code> 據此推導。
+    <strong>產出物不進版控</strong>（約 4.1MB，可完全重現），所以新增機師／機甲零維護；
+    <code>generate-image-manifest.mjs</code> 一併排除該目錄，免得後台選圖多出 177 筆雜訊。
+    <br><br>
+    <strong>那條推導規則是兩份檔案的約定</strong>（腳本的 SOURCES ↔ Worker 的 toPreviewSafeImage），
+    資料層若把 portrait 指到別的 webp 檔名就會推導出不存在的路徑 —— 而那是<strong>靜默</strong>失敗
+    （卡片變破圖、沒有任何錯誤）。因此 Worker 在改寫前對推導出來的路徑做一次 HEAD，
+    不存在就退回預設圖。爬蟲請求每日幾十次量級、且吃 CF 邊緣快取，成本可忽略。
+  </div>
 </section>
 
 </main>
