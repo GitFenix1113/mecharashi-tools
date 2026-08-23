@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-22
+## [Unreleased] - 2026-08-23
 
 ### ⚠ 重大變更
 
@@ -209,6 +209,7 @@
 
 ### 📚 文件
 
+- **plan**: 新增 PLAN-052 配裝模擬器改版總綱與 A/B/C 子計畫、PLAN-042 升格為故事館總綱 (`5c85f1a`)
 - **plan**: PLAN-051 歸檔至歷史記錄（四項驗收全數通過） (`72c5de2`)
 - **plan**: PLAN-051 進度表更新為驗收中，補上實測結果 (`2b91798`)
 - **firebase**: 重寫過時的安全規則文件，新增 PLAN-051 (`cab761e`)
