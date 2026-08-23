@@ -282,18 +282,25 @@ export interface AllGameData {
    * 未載入的症狀是「配了背包但 buff 池少了那幾條」——**不會報錯**，故必須進 SIMULATOR_KEYS。
    */
   backpackSkills: BackpackSkillDoc[]
+  /**
+   * PLAN-052-A E-2：機師形態。少了它，模擬器問不出「這位機師有幾套獨立配裝」
+   * （equipSetKeys 會對海莉絲回 ['default']，三個分頁整排消失）也問不出形態的武裝鎖定
+   * ——**都不會報錯**，只是靜默少一塊，故必須進 SIMULATOR_KEYS。
+   * Worker 的 ARRAY_COLLECTIONS 已含 forms，那一側不用改。
+   */
+  forms: MechForm[]
 }
 
-const SIMULATOR_KEYS: CollectionKey[] = ['pilots', 'mechs', 'modules', 'weapons', 'backpacks', 'backpackSkills', 'components', 'globalResearch', 'buffs', 'pilotSkills']
+const SIMULATOR_KEYS: CollectionKey[] = ['pilots', 'mechs', 'modules', 'weapons', 'backpacks', 'backpackSkills', 'components', 'globalResearch', 'buffs', 'pilotSkills', 'forms']
 
 export function useAllGameData(): HookResult<AllGameData | null> {
-  const { pilots, mechs, weapons, backpacks, backpackSkills, modules, components, globalResearch, buffs, pilotSkills } = useGameData()
+  const { pilots, mechs, weapons, backpacks, backpackSkills, modules, components, globalResearch, buffs, pilotSkills, forms } = useGameData()
   const { loading, error } = useCollections(SIMULATOR_KEYS)
 
   const data = useMemo<AllGameData | null>(() => {
     if (loading) return null
-    return { pilots, mechs, weapons, backpacks, backpackSkills, modules, components, globalResearch, buffs, pilotSkills }
-  }, [loading, pilots, mechs, weapons, backpacks, backpackSkills, modules, components, globalResearch, buffs, pilotSkills])
+    return { pilots, mechs, weapons, backpacks, backpackSkills, modules, components, globalResearch, buffs, pilotSkills, forms }
+  }, [loading, pilots, mechs, weapons, backpacks, backpackSkills, modules, components, globalResearch, buffs, pilotSkills, forms])
 
   return { data, loading, error }
 }

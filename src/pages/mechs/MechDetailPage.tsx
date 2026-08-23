@@ -7,6 +7,7 @@ import { FallbackImage } from '../../components/common/FallbackImage'
 import { useMechWithModules } from '../../hooks/useFirestore'
 import { ModuleCard } from '../../components/module/ModuleCard'
 import { chassisFirepower, chassisWeight } from '../../utils/chassisStats'
+import { MechSlotPanel, MechPartsTable } from '../../components/mechs/MechSlotPanel'
 
 const ARMOR_STYLES: Record<string, string> = {
   輕型: 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/40',
@@ -106,7 +107,11 @@ function PartCard({ part, name, expanded }: { part: MechPart; name: string; expa
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="mb-1">
           <p className="font-bold text-[13px] text-text-primary leading-tight truncate">{name}</p>
-          <p className="text-[11px] text-text-dim leading-tight truncate">{part.interface}</p>
+          {/* 空接口不留白：留白會被讀成「這格沒有接口」，那是我們並不知道的否定陳述
+              （B 品質機甲 10 台 40 格未建檔、美杜莎MK2 是官方數值未公布） */}
+          <p className={`text-[11px] leading-tight truncate ${part.interface ? 'text-text-dim' : 'text-text-dim/70 italic'}`}>
+            {part.interface || '接口未建檔'}
+          </p>
         </div>
         <div className="flex-1 divide-y divide-border/70">
           {rows.map(({ key, label }) => (
@@ -315,6 +320,15 @@ export default function MechDetailPage() {
               <p className="text-sm text-text-dim">部件資料不可用</p>
             )}
           </div>
+
+          {/* PLAN-052-A E-1：槽位配置與四部位表。放在部件十字之後——
+              十字講的是「每個部位有多強」，這兩塊講的是「這台能裝什麼、數字從哪來」。 */}
+          {hasParts && (
+            <div className="space-y-3 mb-5">
+              <MechSlotPanel mech={mech} />
+              <MechPartsTable mech={mech} />
+            </div>
+          )}
 
           {/* 機體描述留在左欄底部：右欄的模組才是進頁要先看到的東西 */}
           {mech.lore && (

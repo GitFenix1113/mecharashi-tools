@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">25</div>
+      <div class="summary-num" style="color:var(--accent-green)">28</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">3</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">25 / 28</span>
+      <span style="color:var(--accent-cyan);">28 / 28</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 89%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -594,12 +594,17 @@
   <div class="section-label cyan">Phase E</div>
   <div class="section-title">前台唯讀呈現與收尾</div>
   <div class="section-desc">本子計畫唯一的前台改動，也是它能單獨上線的理由。</div>
+  <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);"><strong>已完成（2026-08-24）：</strong>新增 <code>src/components/mechs/MechSlotPanel.tsx</code>（槽位配置 ＋ 四部位表），接進 <code>MechDetailPage</code> 左欄；<code>SIMULATOR_KEYS</code> 已加 <code>forms</code>；PLAN-047 早已在歷史記錄並標明「由 PLAN-052 取代」。<br>
+  <b>本機實測三種機甲</b>：帕斯卡（中甲・有固定武裝）＝手部 2＋肩部 2＋背部 1，左右兩肩正確標成 🔒 衝擊炮並連到武器頁；灰伯勞（輕型・B 品質）＝<b>肩部整列不渲染</b>、附「肩部槽位只有中甲機甲才有」、四部位接口顯示「接口資料未建檔」、且<b>完全沒有出現「無固定武裝」字樣</b>；海莉絲虛粒子形態卡正確顯示「[耀星] 右手／[隕星] 左手／[千星] 背部」。火力亦已驗證為 Σ 四部位（帕斯卡 4,664 ＝ 1,166×4）。<br>
+  <b>兩個實作判斷</b>：① 槽位<b>依類型分列</b>而非單一 grid 流式排版——3 欄 grid 會把「左肩／右肩」拆到兩列，讀起來像兩個不相干的格子（已先做出流式版本、看過畫面才改）。② 「查武器名稱」隔離在 <code>FixedArmamentName</code> 子元件，只在真的有固定武裝時 mount——寫在外層會讓其餘 <b>87 台機甲的詳情頁都多載入 182 筆武器</b>。<br>
+  <b>與計畫原文的差異</b>：E-1 原文寫「沒有固定武裝 ⇒ <u>整區</u>不渲染」，但那會讓 87 台機甲都看不到槽位格數，與本階段「目標效果」宣稱的「第一次說得出這台有幾個手／肩／背槽」矛盾。實作採：<b>槽位格數全機種照常渲染</b>（那是 90/90 都成立的 derive），<b>只有「無固定武裝」這句否定陳述完全不寫</b>——計畫真正要防的是後者。<br>
+  <b>docs 已同步</b>：<code>03_頁面規劃/03_機甲/index.html</code>（版面說明 ＋ 槽位配置與四部位表的設計理由）。本階段未改資料，故不需 bump。</div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 機甲詳情頁唯讀區塊</div>
       <div class="task-group-meta">src/pages/mechs/MechDetailPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -610,7 +615,7 @@
         <div class="task-file">src/pages/mechs/MechDetailPage.tsx · src/components/mechs/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -621,7 +626,7 @@
         <div class="task-file">同上</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -629,7 +634,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-2 &nbsp; 接線與收尾</div>
       <div class="task-group-meta">多處</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -640,7 +645,7 @@
         <div class="task-file">src/hooks/useFirestore.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -651,7 +656,7 @@
         <div class="task-file">scripts/bump-data-version.mjs · docs/ · src/data/siteChangelog/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -662,7 +667,7 @@
         <div class="task-file">docs/05_階段性開發計畫/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
