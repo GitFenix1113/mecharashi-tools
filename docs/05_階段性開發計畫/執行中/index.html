@@ -40,15 +40,6 @@
         <a class="card-link" href="PLAN-052_配裝模擬器改版_總綱/進度表.html">→ 進度表</a>
       </div>
     </div>
-    <div class="card cyan">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-052-A · 配裝地基與槽位模型</h3>
-      <p>先把「數字對不對」與「槽位存不存在」解決，<b>UI 全部留到 052-B</b>。交付三支數值純函式並用官方四組整備截圖當 golden fixture：<code>totalWeight()</code>（取較重組）、<code>effectiveOutput(formKey)</code>（含強襲者背包 +300 與出力背包 +200/250/300）、<code>chassisFirepower()</code>（Σ 四部位）。接著建立全站唯一的槽位詞彙（<code>ArmamentMount</code> ＋ 正交的 <code>SlotBank</code>；mountKey 三段式 <code>bank:slot:side</code>——少了 bank 這一段，主手左手與備用左手會撞鍵、元件互相覆蓋）與 <code>ResolvedChassis</code> derive 層。<br>資料側落盤 <b>8 筆固定武裝</b>（比 PLAN-040 窮舉的 6 筆多兩筆）：帕斯卡／破曉者-01／霸王的肩掛、海莉絲虛粒子的耀星-右手／隕星-左手／千星-背部，以及<b>新建 <code>weapon_181_幽弧</code> ／ <code>weapon_182_夜燼</code></b>——曜的巡航形態專屬固定武裝，全庫查無，比照耀星用 <code>variableStats</code>。順帶把 <code>ArmorType</code>／<code>MechLicense</code>／<code>PartInterface</code> 收成 enum、MechAdmin 接口欄位改下拉、修 <code>globalResearch</code> 的 Record/Array 型別謊言與「中型 vs 中甲」鍵不一致。<br><b>本子計畫自己就能上線</b>：機甲詳情頁多出唯讀的「槽位配置 ＋ 固定武裝 ＋ 四部位表（含接口型別）」，並修正 83 台機甲被顯示成 1/4 的火力。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-052-A_配裝地基與槽位模型/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-052-A_配裝地基與槽位模型/進度表.html">→ 進度表</a>
-      </div>
-    </div>
     <div class="card orange">
       <div class="card-icon">◆</div>
       <h3>PLAN-052-B · 配裝模擬器主體</h3>

@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">1</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">4</div>
+      <div class="summary-num" style="color:var(--text-dim)">3</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">0 / 4</span>
+      <span style="color:var(--accent-purple);">1 / 4</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 25%"></div>
     </div>
   </div>
 
@@ -211,20 +211,33 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">052-A &nbsp; 配裝地基與槽位模型</div>
-      <div class="task-group-meta">7–8 天 · 可立即動工</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">2026-08-24 完成 · 28 / 28 工項</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">三支數值純函式 · 槽位型別 · ResolvedChassis · 8 筆固定武裝落盤 · 型別收緊</div>
         <div class="task-desc">
-          交付物含機甲詳情頁的「槽位配置 ＋ 固定武裝 ＋ 四部位表」唯讀區塊與火力顯示修正，
-          <b>不必等模擬器就能上線</b>。動工前先複查 users／builds 仍為 0 筆。
+          交付物含機甲詳情頁的「槽位配置 ＋ 四部位表」唯讀區塊與火力顯示修正，
+          <b>不必等模擬器就能上線</b>——已於 2026-08-24 全數完成並歸檔。<br>
+          <b>動工前實測結果：<code>users</code>／<code>userBuilds</code>／<code>builds</code> 三個集合皆 0 筆</b>
+          → <b>052-C／E 不需要任何遷移路徑</b>。<br>
+          <b>052-B 可直接依賴的成品</b>：<code>totalWeight()</code>／<code>effectiveOutput()</code>／
+          <code>chassisFirepower()</code>／<code>resolveChassis()</code>／<code>mechSlotCapacity()</code>／
+          <code>occupiedSlots()</code>／<code>lockedSlots()</code>／<code>enumerateSlots()</code>／
+          <code>equipSetKeys()</code>／<code>licenseAllows()</code>／<code>slotKey()</code>（品牌型別）。<br>
+          <b>052-B 計畫書提到的三個既有 bug，已修掉一個</b>：<code>:179</code> 的
+          <code>license === '中甲'</code> 恆為 false（37 位中型執照的機師看得到重型機甲）已於 D-1 收 enum 時
+          當場現形並修正，判定收進 <code>licenseAllows()</code>。另兩個（背槽與背包不互斥、順序相依的重量帳）
+          仍待 052-B。<br>
+          <b>052-B 需注意</b>：<code>mech_090_美杜莎MK2</code> 是管理者先建的佔位（官方數值未公布，含出力在內全部為 0），
+          <code>resolveChassis()</code> 解析得出來但 <code>output</code> 為 0，應當「數值未公布」處理而非渲染成
+          一台什麼都裝不下的機甲。
         </div>
-        <div class="task-file">PLAN-052-A_配裝地基與槽位模型/進度表.html</div>
+        <div class="task-file">PLAN-052-A_配裝地基與槽位模型/進度表.html（已歸檔至歷史記錄）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 

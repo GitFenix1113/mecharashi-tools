@@ -31,6 +31,29 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-A · 配裝地基與槽位模型</h3>
+      <p>PLAN-052 的第一個子計畫，先把「數字對不對」與「槽位存不存在」解決，UI 全部留到 052-B。
+      交付三支數值純函式並用官方四組整備截圖當 golden fixture（皆 ±0）：<code>totalWeight()</code>
+      <b>取較重組而非加總</b>（誤寫成加總會讓先鋒形態算出 2625，官方 1825）、<code>effectiveOutput()</code>、
+      <code>chassisFirepower()</code>（Σ 四部位）。建立全站唯一的槽位詞彙（<code>ArmamentMount</code> ＋ 正交的
+      <code>SlotBank</code>，<code>SlotKey</code> 做成<b>品牌型別</b>讓 tsc 真的擋得住手寫字面量）與
+      <code>ResolvedChassis</code> derive 層，並落盤 8 筆固定武裝（含新建的
+      <code>weapon_181_幽弧</code>／<code>weapon_182_夜燼</code>）。<br>
+      <b>三個被型別收緊當場抓出來的實 bug</b>：① 圖鑑的機甲火力顯示是實際值的 <b>1/4</b>（爬蟲抓的頂層欄位
+      在 83/90 台等於單一部位值，而詳情頁自己 reduce 了一份 ⇒ 同一台機甲兩個數字）；
+      ② 模擬器的 <code>license === '中甲'</code> <b>恆為 false</b>（執照值域是「中型」）⇒
+      37 位中型執照的機師看得到全部 90 台含駕駛不了的重型；
+      ③ <code>fixedMod.maxLevel = 70</code> 的根因是 WeaponAdmin <b>新武器的預設值</b>就是 70，不是誰打錯。<br>
+      前台交付機甲詳情頁的唯讀「槽位配置 ＋ 四部位表」——<b>沒有固定武裝時不渲染任何「無固定武裝」字樣</b>，
+      因為站上分不出「這台真的沒有」與「還沒有人建檔」。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-24 · 28 / 28 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-A_配裝地基與槽位模型/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-A_配裝地基與槽位模型/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-047 · 槽位與裝備限制模型</h3>
