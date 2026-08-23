@@ -1266,7 +1266,7 @@ function PilotEditPanel({
                 </select>
               </Field>
               <Field label="駕駛許可 license">
-                <select value={form.license} onChange={(e) => update('license', e.target.value)} className="input-field">
+                <select value={form.license} onChange={(e) => update('license', e.target.value as MechLicense)} className="input-field">
                   {Object.values(MechLicense).map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
               </Field>

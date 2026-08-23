@@ -37,6 +37,26 @@ export const ArmorType = {
 } as const;
 export type ArmorType = typeof ArmorType[keyof typeof ArmorType];
 
+/**
+ * 部件的模組接口型別（PLAN-052-A D-1）。
+ *
+ * 值就是資料庫裡的原字串（`'Ⅰ型接口'` / `'Ⅱ型接口'`），**刻意不縮寫成 `'Ⅰ'` / `'Ⅱ'`**：
+ * 縮寫要動 312 格資料與所有顯示層，換來的只是短一點的字面量；而收成 enum 的目的是
+ * 讓 tsc 擋下錯字，那件事用原字串就達成了（實測抓到的 `'ⅠⅠ型接口'` 現在無法指派）。
+ *
+ * ⚠ **空字串 ＝ 接口資料未建檔**，是合法值（見 `MechPart.interface`）。
+ *   B 品質機甲 10 台 40 格刻意不補（沒人配 B 機甲），美杜莎MK2 的 4 格是官方數值未公布。
+ */
+export const PartInterface = {
+  TYPE_I:  'Ⅰ型接口',
+  TYPE_II: 'Ⅱ型接口',
+} as const;
+export type PartInterface = typeof PartInterface[keyof typeof PartInterface];
+
+/** 接口未建檔的表示法。與 `PartInterface` 併用：`PartInterface | UNKNOWN_INTERFACE`。 */
+export const UNKNOWN_INTERFACE = '';
+export type UnknownInterface = typeof UNKNOWN_INTERFACE;
+
 export const MechPartPosition = {
   TORSO:     'torso',
   LEFT_ARM:  'leftArm',

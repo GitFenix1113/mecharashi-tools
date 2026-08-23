@@ -1,0 +1,89 @@
+{
+  "_comment": "PLAN-052-A D-3 校驗腳本的負向測試 fixture。刻意造壞六類問題各至少一筆，跑 node scripts/validate-mech-slots.mjs --fixture=scripts/tests/mech-slots.bad.json 應該讓六類全部觸發並以離開碼 1 結束。⚠ 這份是假資料，不對應線上任何文件。",
+
+  "weapons": [
+    { "id": "w_shoulder", "name": "測試肩武", "equipSlot": "shoulder" },
+    { "id": "w_hand",     "name": "測試單手", "equipSlot": "singleHand" },
+    { "id": "w_dual",     "name": "測試雙手", "equipSlot": "dualHand" },
+    { "id": "w_back",     "name": "測試背武", "equipSlot": "back" }
+  ],
+
+  "mechs": [
+    {
+      "id": "bad_01_斷鏈與槽位不符",
+      "name": "斷鏈與槽位不符",
+      "armorType": "中甲",
+      "parts": {
+        "torso":    { "position": "torso" },
+        "leftArm":  { "position": "leftArm",  "fixedArmament": [{ "weaponId": "w_不存在", "slot": "shoulder", "side": "left" }] },
+        "rightArm": { "position": "rightArm", "fixedArmament": [{ "weaponId": "w_hand", "slot": "shoulder", "side": "right" }] },
+        "legs":     { "position": "legs" }
+      }
+    },
+    {
+      "id": "bad_02_side誤用與缺漏",
+      "name": "side 誤用與缺漏",
+      "armorType": "中甲",
+      "parts": {
+        "torso":    { "position": "torso",    "fixedArmament": [{ "weaponId": "w_back", "slot": "back", "side": "left" }] },
+        "leftArm":  { "position": "leftArm",  "fixedArmament": [{ "weaponId": "w_shoulder", "slot": "shoulder" }] },
+        "rightArm": { "position": "rightArm" },
+        "legs":     { "position": "legs" }
+      }
+    },
+    {
+      "id": "bad_03_重複佔用",
+      "name": "重複佔用",
+      "armorType": "中甲",
+      "parts": {
+        "torso":    { "position": "torso" },
+        "leftArm":  { "position": "leftArm",  "fixedArmament": [{ "weaponId": "w_shoulder", "slot": "shoulder", "side": "left" }] },
+        "rightArm": { "position": "rightArm", "fixedArmament": [{ "weaponId": "w_shoulder", "slot": "shoulder", "side": "left" }] },
+        "legs":     { "position": "legs" }
+      }
+    },
+    {
+      "id": "bad_04_輕型卻有肩槽",
+      "name": "輕型卻有肩槽",
+      "armorType": "輕型",
+      "parts": {
+        "torso":    { "position": "torso" },
+        "leftArm":  { "position": "leftArm",  "fixedArmament": [{ "weaponId": "w_shoulder", "slot": "shoulder", "side": "left" }] },
+        "rightArm": { "position": "rightArm" },
+        "legs":     { "position": "legs" }
+      }
+    },
+    {
+      "id": "ok_01_乾淨的中甲",
+      "name": "乾淨的中甲",
+      "armorType": "中甲",
+      "parts": {
+        "torso":    { "position": "torso" },
+        "leftArm":  { "position": "leftArm",  "fixedArmament": [{ "weaponId": "w_shoulder", "slot": "shoulder", "side": "left" }] },
+        "rightArm": { "position": "rightArm", "fixedArmament": [{ "weaponId": "w_shoulder", "slot": "shoulder", "side": "right" }] },
+        "legs":     { "position": "legs" }
+      }
+    }
+  ],
+
+  "forms": [
+    {
+      "id": "bad_form_殘留weaponIds",
+      "name": "殘留 weaponIds",
+      "restrict": { "kind": "fixedArmament", "weaponIds": ["w_hand"], "mounts": [{ "weaponId": "w_hand", "slot": "singleHand", "side": "right" }] }
+    },
+    {
+      "id": "ok_form_乾淨",
+      "name": "乾淨形態",
+      "restrict": { "kind": "fixedArmament", "mounts": [
+        { "weaponId": "w_hand", "slot": "singleHand", "side": "right" },
+        { "weaponId": "w_back", "slot": "back" }
+      ] }
+    },
+    {
+      "id": "ok_form_weaponType不受檢",
+      "name": "武器類型限制",
+      "restrict": { "kind": "weaponType", "allow": ["格鬥"] }
+    }
+  ]
+}

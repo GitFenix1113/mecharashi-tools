@@ -163,3 +163,32 @@ export function lockedSlots(form: MechForm | null | undefined): FormSlotLock | n
     mounts: r.mounts,
   }
 }
+
+// ─── 顯示標籤 ───────────────────────────────────────────────────────────────
+
+const SLOT_LABEL: Record<string, string> = {
+  singleHand: '手',
+  dualHand:   '雙手',
+  shoulder:   '肩',
+  back:       '背部',
+}
+
+const SIDE_LABEL: Record<SlotSide, string> = { left: '左', right: '右' }
+
+/**
+ * 槽位的顯示名：`左手`／`右肩`／`背部`／`備用左手`。
+ *
+ * 放在 utils 而不是 badges/：機甲詳情頁、形態卡、後台編輯器三處都要用同一組字，
+ * 而它是純字串運算、沒有 React 依賴。與 `EQUIP_SLOT_LABELS`（武器徽章用「單手／雙手／
+ * 肩膀／背後」）刻意分開——那組講的是「這把武器裝在哪類槽」，這組講的是「機甲上的哪一格」。
+ */
+export function slotLabel(ref: SlotRef): string {
+  const base = SLOT_LABEL[ref.slot] ?? ref.slot
+  const sided = ref.side && slotAcceptsSide(ref.slot) ? `${SIDE_LABEL[ref.side]}${base}` : base
+  return ref.bank === 'backup' ? `備用${sided}` : sided
+}
+
+/** `ArmamentMount` 的顯示名（主手組）。固定武裝與形態武裝都掛在 main bank。 */
+export function mountLabel(mount: ArmamentMount): string {
+  return slotLabel({ bank: 'main', slot: mount.slot, side: mount.side })
+}

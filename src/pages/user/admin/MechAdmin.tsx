@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { Mech, Module, MechPart, Weapon } from '../../../types'
-import { ModuleSlot, ArmorType } from '../../../types/enums'
+import { ModuleSlot, ArmorType, PartInterface } from '../../../types/enums'
 import {
   Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog,
   GRID_AUTO_FIELDS, AdminEditTabs, type AdminEditTabDef,
@@ -8,6 +8,7 @@ import {
 } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { IconField, loadManifest } from '../../../components/admin/IconPicker'
+import { ArmamentMountEditor } from '../../../components/admin/ArmamentMountEditor'
 import { ModuleBoundPart } from '../../../components/module/ModuleBoundPart'
 import { updateMech, docExists } from '../../../lib/firestoreApi'
 import { makeNumberedEntityId, maxEntitySeq, stripNumberedIdPrefix } from '../../../utils/idSlug'
@@ -393,7 +394,7 @@ function MechEditPanel({
           <>
             <div className={`${GRID_AUTO_FIELDS} gap-3`}>
               <Field label="護甲類型 armorType">
-                <select className="input-field" value={form.armorType} onChange={(e) => set('armorType', e.target.value)}>
+                <select className="input-field" value={form.armorType} onChange={(e) => set('armorType', e.target.value as ArmorType)}>
                   {Object.values(ArmorType).map((t) => <option key={t} value={t}>{t}</option>)}
                   {form.armorType && !Object.values(ArmorType).includes(form.armorType as ArmorType) && (
                     <option value={form.armorType}>{form.armorType}（清單外）</option>
@@ -453,6 +454,7 @@ function MechEditPanel({
                 label={PART_LABELS[pos]}
                 part={form.parts?.[pos] ?? makeDefaultPart(pos)}
                 defaultFolder={mechFolder}
+                weapons={weapons}
                 onChange={(p) => setForm((f) => ({ ...f, parts: { ...f.parts, [pos]: p } }))}
               />
             ))}
@@ -577,39 +579,6 @@ function MechEditPanel({
         {/* ── 武器槽・外觀（原為兩個分頁，PLAN-033 C-1 併為一頁）── */}
         {tab === 'gear' && (
           <div className="space-y-3">
-            {/*
-              武器槽三欄位限 OWNER 可見（ADMIN 完全看不到這一區）。
-              理由是這三個欄位處於凍結狀態、等 PLAN-047 取代，而它們的三態語意有個不可逆的陷阱：
-              取消勾選寫入的是 undefined，會被寫入層的 stripUndefined 整個濾掉 ——
-              **一旦誰填了值，後台就再也取消不掉**。與其靠一段警告文字約束所有維護者，
-              不如直接讓只有清楚來龍去脈的人（OWNER）看得到它。
-
-              這是 UI 層的隱藏，不是安全邊界 —— 真正的寫入權限仍由 firestore.rules 把關，
-              ADMIN 依然寫得動 mechs 集合，只是後台不再提供填這三個欄位的入口。
-            */}
-            {isOwner && (
-              <>
-                <p className="text-xs text-text-dim font-medium tracking-wider uppercase">武器槽 slots</p>
-                {/* PLAN-040 E-1：凍結標記。不刪欄位、不改形狀，只讓維護者在 UI 上就看得到「別填」。 */}
-                <div className="text-xs rounded-lg border border-accent-yellow/30 bg-accent-yellow/5 px-3 py-2 space-y-1">
-                  <p className="text-accent-yellow font-bold">⚠ 已凍結 · PLAN-047 將取代，請勿填寫（僅站長可見）</p>
-                  <p className="text-text-dim leading-relaxed">
-                    目前 <strong className="text-text-secondary">0/89 台機甲有填</strong>，前台不讀這三個欄位。
-                    而且三態語意撞上寫入層的 <code>stripUndefined</code>——取消勾選寫的是 <code>undefined</code>，
-                    會被整個濾掉，<strong className="text-text-secondary">一旦填了就再也取消不掉</strong>。
-                    固定武裝的槽位表達由 PLAN-047 統一改掛在<strong className="text-text-secondary">部件</strong>上
-                    （左臂→左肩槽、右臂→右肩槽），在那之前這裡保持空白。
-                  </p>
-                </div>
-                <p className="text-xs text-text-dim">
-                  （原說明）勾選代表此機甲有該武器槽。空槽＝可自由裝備武器；選定武器＝部件綁死的固定武器。未勾選＝無此槽。
-                </p>
-                <SlotEditor label="左肩武器槽 leftShoulderSlot"  value={form.leftShoulderSlot}  weapons={weapons} onChange={(v) => set('leftShoulderSlot', v)} />
-                <SlotEditor label="右肩武器槽 rightShoulderSlot" value={form.rightShoulderSlot} weapons={weapons} onChange={(v) => set('rightShoulderSlot', v)} />
-                <SlotEditor label="背後武器槽 backSlot"          value={form.backSlot}          weapons={weapons} onChange={(v) => set('backSlot', v)} />
-              </>
-            )}
-
             {/* 武器槽隱藏時不畫上分隔線，否則 ADMIN 看到的是一條沒有上文的孤立橫線 */}
             <div className={`${isOwner ? 'pt-4 border-t border-border/60 ' : ''}space-y-3`}>
               <p className="text-xs text-text-dim font-medium tracking-wider uppercase">外觀 appearance</p>
@@ -647,7 +616,7 @@ const PART_LABELS: Record<MechPart['position'], string> = {
 }
 
 // 依 position 顯示條件式欄位的部件編輯器。
-function PartEditor({ label, part, defaultFolder, onChange }: { label: string; part: MechPart; defaultFolder: string; onChange: (p: MechPart) => void }) {
+function PartEditor({ label, part, defaultFolder, weapons, onChange }: { label: string; part: MechPart; defaultFolder: string; weapons: Weapon[]; onChange: (p: MechPart) => void }) {
   const num = (k: 'durable' | 'armor' | 'firepower' | 'weight' | 'hit' | 'dodge' | 'move' | 'antiRiot' | 'output', lbl: string) => (
     <NumberField label={lbl} value={part[k] ?? 0} onChange={(v) => onChange({ ...part, [k]: v })} />
   )
@@ -665,9 +634,20 @@ function PartEditor({ label, part, defaultFolder, onChange }: { label: string; p
         {part.position === 'torso' && num('antiRiot', '抗暴 antiRiot')}
         {part.position === 'torso' && num('output', '出力 output')}
       </div>
+      {/* PLAN-052-A D-1：接口改下拉選單。手打會產生「ⅠⅠ型接口」這種 tsc 抓不到的錯字
+          （實測星夜女神四格全中），而值域只有兩個值 —— 沒有理由留一個能打錯的輸入框。 */}
       <Field label="接口 interface">
-        <input className="input-field" value={part.interface ?? ''} placeholder="如 Ⅱ型接口"
-          onChange={(e) => onChange({ ...part, interface: e.target.value })} />
+        <select
+          className="input-field"
+          value={part.interface ?? ''}
+          onChange={(e) => onChange({ ...part, interface: e.target.value as PartInterface | '' })}
+        >
+          <option value="">（未建檔）</option>
+          {Object.values(PartInterface).map((v) => <option key={v} value={v}>{v}</option>)}
+        </select>
+        <p className="text-[11px] text-text-dim mt-1">
+          留「未建檔」代表<strong className="text-text-secondary">尚未取得資料</strong>，前台會顯示「接口資料未建檔」而不是留白。
+        </p>
       </Field>
       <IconField
         label={`部件圖片 icon（${part.position}）`}
@@ -681,37 +661,19 @@ function PartEditor({ label, part, defaultFolder, onChange }: { label: string; p
           placeholder="官方 CDN waparts/ 資產名；手建可留空"
           onChange={(e) => onChange({ ...part, mechaIcon: e.target.value || undefined })} />
       </Field>
+      {/* PLAN-052-A C-2：取代已刪除的 leftShoulderSlot/rightShoulderSlot/backSlot 三態欄位。
+          掛在部件而非機甲頂層，因為肩槽附屬於手臂（左臂→左肩、右臂→右肩）。 */}
+      <ArmamentMountEditor
+        label={`固定武裝 fixedArmament（${part.position}）`}
+        hint={<>焊死在這個部件上、無法更換的武裝。左臂帶左肩、右臂帶右肩——
+          帕斯卡是<strong className="text-text-secondary">同一把衝擊炮掛左右兩肩</strong>，
+          所以兩邊的部件各填一筆。沒有固定武裝的部件保持空白。</>}
+        value={part.fixedArmament ?? []}
+        weapons={weapons}
+        defaultSide={part.position === 'rightArm' ? 'right' : 'left'}
+        onChange={(mounts) => onChange({ ...part, fixedArmament: mounts.length ? mounts : [] })}
+      />
     </div>
   )
 }
 
-// 武器槽三態編輯器：undefined（無此槽）/ null（空槽）/ string（固定武器 ID）。
-function SlotEditor({
-  label, value, weapons, onChange,
-}: {
-  label: string
-  value: string | null | undefined
-  weapons: Weapon[]
-  onChange: (v: string | null | undefined) => void
-}) {
-  const present = value !== undefined
-  return (
-    <div className="border border-border rounded-lg p-3 space-y-2">
-      <label className="flex items-center gap-2 text-sm cursor-pointer">
-        <input type="checkbox" checked={present} onChange={(e) => onChange(e.target.checked ? null : undefined)} />
-        <span className="font-medium">{label}</span>
-      </label>
-      {present && (
-        <select
-          className="input-field"
-          value={value ?? ''}
-          onChange={(e) => onChange(e.target.value === '' ? null : e.target.value)}
-        >
-          <option value="">空槽（可自由裝備）</option>
-          {weapons.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
-          {value && !weapons.find((w) => w.id === value) && <option value={value}>{value}（清單外）</option>}
-        </select>
-      )}
-    </div>
-  )
-}

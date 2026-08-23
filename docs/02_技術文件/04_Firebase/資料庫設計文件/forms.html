@@ -65,6 +65,7 @@
       <tr><td>grantedBuffIds</td><td>string[]?</td><td>形態增益：天賦滿星另給的一次性 BUFF（正文多含「觸發效果後移除」）。與 <code>description</code> <strong>逐句零重疊</strong>，前台分兩段各自標來源、不合併</td></tr>
       <tr><td>entryNote</td><td>string?</td><td>入／退場條件，官方正文逐字。<strong>刻意不結構化</strong>——全站沒有回合模型可以消費它</td></tr>
       <tr><td>isSignature</td><td>boolean?</td><td>天賦專屬形態（海莉絲僅「虛粒子形態」為 true）。決定前台是否加 ★ 與金框、與一般戰鬥形態視覺分層</td></tr>
+      <tr><td>independentLoadout</td><td>boolean?</td><td>這個形態有<strong>自己獨立的一套武器背包配裝</strong>（PLAN-052-A C-3）。海莉絲的先鋒／突擊／戰術為 <code>true</code>；曜的兩個形態不設（共用同一套）。<br><small style="color:var(--text-dim)"><strong>⚠ 不可用 derive 取代。</strong>今天「<code>restrict.kind === 'weaponType'</code> 的形態數」恰好給出正確答案，但那是巧合——曜有一個 weaponType 形態卻共用同一套配裝，derive 會多開一個分頁，而且是靜默的（畫面多一格，沒有任何錯誤）。配裝分頁該開幾個是<strong>遊戲設定</strong>，不是形態限制型別的推論。<br>一律經由 <code>equipSetKeys(pilotId, forms)</code>（<code>src/utils/forms.ts</code>）消費；<code>kind === 'fixedArmament'</code> 的形態<strong>不佔分頁</strong>（鎖死整套，沒有東西可配）。</small></td></tr>
       <tr><td>manual</td><td>boolean?</td><td>手建文件保護旗標；官方無此資料，補丁腳本應略過</td></tr>
     </table>
   </div>
@@ -81,10 +82,16 @@
       </tr>
       <tr>
         <td><code>'fixedArmament'</code></td>
-        <td><code>weaponIds: string[]</code></td>
-        <td><strong>該形態下所有槽位皆不可調整</strong>（雙手＋雙肩＋背部），<u>不只是</u>被 <code>weaponIds</code> 佔住的那幾格——
+        <td><code>mounts: ArmamentMount[]</code></td>
+        <td><strong>該形態下所有槽位皆不可調整</strong>（雙手＋雙肩＋背部），<u>不只是</u>被 <code>mounts</code> 佔住的那幾格——
           實機實測「虛粒子形態沒辦法調整任何裝備」，遊戲內雙肩顯示為空的 <code>[+]</code> 但點不下去（<strong>空槽 ≠ 可填</strong>）。<br>
-          對應 PLAN-047 的「全鎖型」derive；帕斯卡／破曉者-01／霸王的肩槽封鎖是正交的「佔據型」，不歸本集合。</td>
+          對應 PLAN-052-A 的「全鎖型」derive <code>lockedSlots()</code>；帕斯卡／破曉者-01／霸王的肩槽封鎖是正交的
+          「佔據型」<code>occupiedSlots()</code>（掛 <code>MechPart.fixedArmament</code>），不歸本集合。<br>
+          <small style="color:var(--text-dim)">PLAN-052-A C-3 由 <code>weaponIds: string[]</code> 升級而來，改存
+          <code>{ weaponId, slot, side? }</code>（<code>slot</code> 沿用 <code>WeaponEquipSlot</code>，<strong>不另造第四套部位詞彙</strong>）。
+          現況：虛粒子＝耀星(右手)／隕星(左手)／千星(背部)；巡航＝幽弧(右手)／夜燼(左手)。
+          <br>⚠ 升級時務必用 <code>update()</code> 而不是 <code>set(merge:true)</code>——後者對 map 是遞迴合併，
+          舊的 <code>weaponIds</code> 會與新的 <code>mounts</code> 並存，成為 discriminant 之外的幽靈資料。</small></td>
       </tr>
     </table>
   </div>
@@ -104,7 +111,7 @@
         歸 <code>SkillVariant</code>，箭頭 <code>skill → form</code>。</li>
       <li><strong><code>hasFixedArmament</code></strong>：由 <code>restrict.kind</code> derive，不存平行布林。</li>
       <li><strong>配裝總重</strong>：官方形態卡左側的 1125 / 3125 / 1895 / 1825 是隨玩家配裝即時改變的 derived 值，落盤即失準。</li>
-      <li><strong>per-form 武器背包 loadout</strong>：屬模擬器範疇（<code>Build.weaponId</code> 是單值 string），已由 PLAN-047 承接。</li>
+
     </ul>
   </div>
 </section>
@@ -114,7 +121,7 @@
   <div class="section-title">箭頭方向</div>
 
   <div class="info-block">
-    <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.9;overflow-x:auto;">海莉絲的固定武裝：  form ─(restrict.fixedArmament.weaponIds)──→ weapon
+    <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.9;overflow-x:auto;">形態固定武裝：      form ─(restrict.fixedArmament.mounts[].weaponId)→ weapon
 形態增益：          form ─(grantedBuffIds)────────────────────→ buff
 正文引用：          form ─(descriptionRefs)──────────────────→ buff / term / skill …
 子技能矩陣（未做）： skill ─(SkillVariant.formId)──────────────→ form

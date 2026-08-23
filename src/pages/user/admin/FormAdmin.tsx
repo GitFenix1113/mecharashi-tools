@@ -11,6 +11,7 @@ import { slugify, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
+import { ArmamentMountEditor } from '../../../components/admin/ArmamentMountEditor'
 
 // ─── 機師形態管理（PLAN-041 Phase B）──────────────────────────────────────────
 //
@@ -211,7 +212,7 @@ function FormEditPanel({
   function switchKind(kind: FormRestrict['kind']) {
     update('restrict', kind === 'weaponType'
       ? { kind: 'weaponType', allow: [] }
-      : { kind: 'fixedArmament', weaponIds: [] })
+      : { kind: 'fixedArmament', mounts: [] })
   }
 
   function toggleAllow(t: WeaponType) {
@@ -236,13 +237,6 @@ function FormEditPanel({
   // 直接寫進 onChange 會被 TS 視為可能是 weaponType 分支。
   const fixed = form.restrict.kind === 'fixedArmament' ? form.restrict : null
   const allowed = form.restrict.kind === 'weaponType' ? form.restrict.allow : null
-
-  const weaponCandidates = useMemo(() => {
-    const mark = (f?: boolean) => (f ? '🔒' : undefined)
-    return [...gd.weapons]
-      .sort((a, b) => Number(!!b.isFixedArmament) - Number(!!a.isFixedArmament))
-      .map((w) => ({ id: w.id, name: w.name, badge: mark(w.isFixedArmament) }))
-  }, [gd.weapons])
 
   return (
     <AdminModal maxWidth="max-w-3xl" saving={saving} error={error} onSave={handleSubmit} onCancel={onCancel}>
@@ -270,6 +264,12 @@ function FormEditPanel({
               onChange={(e) => update('order', Number(e.target.value) || 0)}
               className="input-field"
             />
+            {/* PLAN-052-A C-3：分享碼的形態身分用 formId，不是 order。
+                沒有這行提醒的話，後台一次重排就會讓所有既存分享碼靜默指向另一個形態。 */}
+            <p className="text-[11px] text-text-dim mt-1 leading-relaxed">
+              ⚠ 此欄位<strong className="text-text-secondary">只影響顯示順序，不是識別碼</strong>——
+              配裝分頁與分享碼認的是形態 ID，重排順序不會影響既有的分享連結。
+            </p>
           </Field>
           <Field label="天賦專屬形態">
             <label className="flex items-center gap-2 text-sm text-text-secondary h-[38px]">
@@ -283,6 +283,26 @@ function FormEditPanel({
             </label>
           </Field>
         </div>
+
+        <Field label="獨立配裝">
+          <label className="flex items-start gap-2 text-sm text-text-secondary">
+            <input
+              type="checkbox"
+              checked={!!form.independentLoadout}
+              onChange={(e) => update('independentLoadout', e.target.checked || undefined)}
+              className="accent-accent-pink mt-1"
+            />
+            <span>
+              這個形態有自己獨立的一套武器背包（模擬器會為它開一個配裝分頁）。
+              {/* 不用 derive 取代：今天「weaponType 形態數」恰好給出正確答案，但那是巧合——
+                  曜有一個 weaponType 形態卻共用同一套配裝，derive 會多開一個分頁且沒有任何錯誤。 */}
+              <span className="block text-[11px] text-text-dim mt-1 leading-relaxed">
+                海莉絲的先鋒／突擊／戰術要勾；曜的兩個形態不勾（共用同一套）。
+                <strong className="text-text-secondary">武裝焊死的形態不需要勾</strong>——那種形態沒有東西可配。
+              </span>
+            </span>
+          </label>
+        </Field>
 
         <IconField
           label="形態圖示（選填）"
@@ -345,13 +365,13 @@ function FormEditPanel({
                 <strong className="text-accent-yellow">這個形態下所有槽位都不能動</strong>——雙手、雙肩、背部一律鎖住，
                 不是只有下面列出的武器那幾格。遊戲裡雙肩雖然顯示成空的 [+]，但點不下去。
               </p>
-              <IdListPicker
-                label="焊死在機體上的武器"
-                hint={<>🔒 標記＝無法更換也不能裝元件的固定武裝（全站只有 6 把），已排在候選最前面。</>}
-                value={fixed.weaponIds}
-                candidates={weaponCandidates}
-                onChange={(ids) => update('restrict', { ...fixed, weaponIds: ids })}
-                accent="yellow"
+              <ArmamentMountEditor
+                label="焊死在機體上的武裝"
+                hint={<>🔒 標記＝無法更換也不能裝元件的固定武裝，已排在候選最前面。槽位由武器自己的
+                  equipSlot 決定、不可手改（硬不變式），只有左右側需要選——耀星在右手、隕星在左手、千星在背部。</>}
+                value={fixed.mounts}
+                weapons={gd.weapons}
+                onChange={(mounts) => update('restrict', { ...fixed, mounts })}
               />
               {/* 「被鎖住的技能」不另設欄位：正文裡的 [虛粒子刃] 這類引用已完整表達，
                   再存一份 id 清單只會變成第二個真相源。詳見 types/form.ts 的註解。 */}
@@ -458,7 +478,7 @@ export default function FormAdmin({ initialSearch = '' }: { initialSearch?: stri
 
   const restrictLabel = (f: MechForm) =>
     f.restrict?.kind === 'fixedArmament'
-      ? `固定武裝 ${f.restrict.weaponIds.length}`
+      ? `固定武裝 ${f.restrict.mounts.length}`
       : `限 ${(f.restrict?.allow ?? []).join('・') || '未設定'}`
 
   return (

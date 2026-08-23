@@ -9,6 +9,7 @@
 
 import type { DescriptionRefs } from './common'
 import type { WeaponType } from './enums'
+import type { ArmamentMount } from './slots'
 
 /**
  * 形態的裝備限制。刻意用 discriminated union（sum type）而非 product：
@@ -40,14 +41,17 @@ export type FormRestrict =
   | {
       kind: 'fixedArmament'
       /**
-       * 該形態焊死的武器（海莉絲虛粒子形態＝耀星／隕星／千星，由 PLAN-040 建立）。
+       * 該形態焊死的武裝，含槽位（PLAN-052-A C-3 由 `weaponIds: string[]` 升級而來）。
+       * 海莉絲虛粒子＝耀星（右手）／隕星（左手）／千星（背部）；曜巡航＝幽弧（右手）／夜燼（左手）。
        *
-       * ⚠ **目前刻意只存 id、不存槽位。** 未來要標明「耀星右手／隕星左手／千星背部」時，
-       *    應升級成 PLAN-047 的 `ArmamentMount[]`（`{ weaponId; slot; side? }`），
-       *    **不可另造第四套部位詞彙**——全站已有 `WeaponEquipSlot` / `boundPart` /
-       *    `Backpack.slot` 三套。
+       * 沿用 `ArmamentMount`（`src/types/slots.ts`）而**不另造第四套部位詞彙**——
+       * 全站已有 `WeaponEquipSlot` / `boundPart` / `Backpack.slot` 三套；共用同一個 enum，
+       * `scripts/validate-mech-slots.mjs` 才寫得出「mount.slot 必須等於該武器的 equipSlot」。
+       *
+       * ⚠ 這裡的槽位是「**這些武裝在哪幾格**」，不是「**只有這幾格被鎖**」——
+       *   `kind === 'fixedArmament'` 的語意是鎖死**整套**配裝，見下方 MechForm 的型別註解。
        */
-      weaponIds: string[]
+      mounts: ArmamentMount[]
 
       // ⚠ 刻意**沒有** lockedSkillIds（2026-08-12 拿掉，PLAN-041 決策十）。
       //    「該形態下被鎖住的技能」已經由 description 內的 [虛粒子刃][虛粒子炮][虛粒子矩陣]
@@ -91,6 +95,19 @@ export interface MechForm {
   entryNote?: string
   /** 天賦專屬（虛粒子）。今天就有消費端：決定 UI 是否與三個戰鬥形態同排 */
   isSignature?: boolean
+  /**
+   * 這個形態有**自己獨立的一套武器背包配裝**（PLAN-052-A C-3）。
+   * 海莉絲的先鋒／突擊／戰術三個形態為 true；曜的兩個形態為 false（共用同一套）。
+   *
+   * ⚠ **不可用 derive 取代。** 今天「`restrict.kind === 'weaponType'` 的形態數」恰好
+   *   給出正確答案，但那是巧合：某位新調構師若有兩個純戰鬥形態卻只共用一套配裝，
+   *   derive 會多渲染一個分頁，而且是靜默的（畫面多一格，沒有任何錯誤）。
+   *   配裝分頁該開幾個是**遊戲設定**，不是形態限制型別的推論。
+   *
+   * 一律經由 `equipSetKeys(pilotId, forms)`（src/utils/forms.ts）消費，
+   * 不要在 UI 直接判斷這個布林。
+   */
+  independentLoadout?: boolean
   /** 手建文件保護旗標。官方無此資料、100% 手動維護，補丁腳本應略過 */
   manual?: boolean
 
@@ -113,8 +130,5 @@ export interface MechForm {
   //
   // ⚠ 不設「當前裝備重量」：官方形態卡左側的 1125 / 3125 / 1895 / 1825 是**配裝總重**，
   //    隨玩家配裝即時改變的 derived 值。落盤等於製造第二個真相源。
-  //
-  // ⚠ 不設 per-form 武器背包 loadout：天賦原文「可以獨立裝備武器背包」屬模擬器範疇
-  //    （Build.weaponId 是單值 string，改成 weaponIdByForm 是 userBuilds 的 breaking change）。
-  //    已由 PLAN-047 承接。
+
 }

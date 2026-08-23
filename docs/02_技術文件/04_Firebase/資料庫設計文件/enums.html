@@ -83,6 +83,24 @@
       <div class="enum-item"><span class="enum-key">LIGHT</span><span class="enum-val">輕型</span></div>
       <div class="enum-item"><span class="enum-key">MEDIUM</span><span class="enum-val">中甲</span></div>
       <div class="enum-item"><span class="enum-key">HEAVY</span><span class="enum-val">重型</span></div>
+      <div style="font-size:11px;color:var(--text-dim);line-height:1.7;margin-top:8px;">
+        ⚠ 與 <code>MechLicense</code>（輕型／<strong>中型</strong>／重型）<strong>只有中階不同名</strong>。
+        直接比對兩者會讓中甲靜默失配 —— 一律走 <code>licenseAllows()</code> /
+        <code>toArmorType()</code>（<code>src/utils/normalizeArmorType.ts</code>）。
+        <br>PLAN-052-A D-1 起 <code>Mech.armorType</code> 已由 <code>string</code> 收成本 enum。
+      </div>
+    </div>
+    <div class="enum-card">
+      <div class="enum-name">PartInterface — 部件模組接口（PLAN-052-A）</div>
+      <div class="enum-item"><span class="enum-key">TYPE_I</span><span class="enum-val">Ⅰ型接口</span></div>
+      <div class="enum-item"><span class="enum-key">TYPE_II</span><span class="enum-val">Ⅱ型接口</span></div>
+      <div style="font-size:11px;color:var(--text-dim);line-height:1.7;margin-top:8px;">
+        值就是資料庫原字串，<strong>刻意不縮寫成「Ⅰ／Ⅱ」</strong>：縮寫要動 312 格資料與所有顯示層，
+        而收成 enum 的目的（讓 tsc 擋下錯字）用原字串就達成了。
+        <br><code>''</code> ＝ <strong>接口資料未建檔</strong>，是合法值：B 品質機甲 10 台 40 格刻意不補、
+        <code>mech_090_美杜莎MK2</code> 4 格是官方數值未公布。UI 顯示「接口資料未建檔」，不留白也不猜。
+        <br>後台已改下拉選單 —— 實測抓到的 <code>'ⅠⅠ型接口'</code> 錯字（星夜女神四格全中）正是自由文字輸入的產物。
+      </div>
     </div>
     <div class="enum-card">
       <div class="enum-name">MechPartPosition — 機甲部件位置</div>

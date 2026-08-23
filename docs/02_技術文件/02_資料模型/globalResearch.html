@@ -34,6 +34,28 @@
   <div class="section-title">全域科研系統概覽</div>
   <div class="section-desc">全域科研因玩家不同而異，網站提供「科研設定」頁讓玩家手動輸入自己各項科研的等級，系統自動計算對應加成。</div>
 
+  <div class="warning-block" style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.25);border-left:3px solid var(--accent-yellow);border-radius:0 10px 10px 0;padding:16px 20px;margin:12px 0;">
+    <strong style="color:var(--accent-yellow);">⚠ 三個欄位都是 Array，不是 Record（PLAN-052-A D-2 修正）</strong><br>
+    <code>src/types/research.ts</code> 原本宣告成 <code>Record&lt;string, …&gt;</code>，於是
+    <code>gr.pilotResearchByClass['格鬥家']</code> <strong>恆為 undefined</strong>——而 tsc 完全不會抱怨
+    （索引一個 Record 本來就允許查無）。線上資料從第一天就是 Array，元素帶
+    <code>className</code> / <code>armorType</code> / <code>weaponType</code> 判別欄位。<br><br>
+
+    <strong style="color:var(--accent-yellow);">⚠ mechResearchByType 的鍵是「中型」，不是「中甲」</strong><br>
+    本表沿用官方科研頁的用詞（輕型／<strong>中型</strong>／重型，與 <code>MechLicense</code> 同），
+    而 <code>Mech.armorType</code> 是 <code>ArmorType</code>（輕型／<strong>中甲</strong>／重型）。只有中階不同名，
+    於是 <code>find(x =&gt; x.armorType === mech.armorType)</code> 在測試資料裡看起來正常、上線後
+    <strong>36/90 台中甲靜默拿 0 加成</strong>。<br>
+    一律走 <code>findMechResearch()</code>（<code>src/utils/normalizeArmorType.ts</code>），不要自己比對。
+    <strong>刻意不改資料</strong>：「中型」是官方用詞不是打錯，改成「中甲」等於用站內詞彙覆蓋官方說法，
+    而且任何一支 seed／匯入腳本重跑就會寫回來。<br><br>
+
+    <strong style="color:var(--accent-yellow);">⚠ 本集合不可刪</strong><br>
+    兩份盤點曾誤判它為「零消費端可移除」。它是<strong>全庫唯一填滿的公式數值表</strong>
+    （六職業／三裝甲／五武器種類全有值），對照全庫 <code>SkillEffect</code> 是 0/225 buffs、0/841 skills。
+    今天沒有消費端只代表傷害模擬還沒做。
+  </div>
+
   <div class="info-block">
     <strong>📋 玩家輸入機制</strong>
     登入用戶的科研設定存於 Firestore <code>users/{uid}/profile.globalResearch</code>，下次登入自動帶入。<br>
@@ -49,7 +71,7 @@
   <div class="data-table-wrap">
     <table class="data-table">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
-      <tr><td>className</td><td>PilotClass (Enum)</td><td>職業名（格鬥家/突擊手/狙擊手/戰術家/守護者/機械師）</td></tr>
+      <tr><td>className</td><td>string（PilotClass 值域）</td><td>職業名。<strong>實測只有 6 個</strong>：格鬥家／突擊手／狙擊手／戰術家／守護者／機械師<br><small style="color:var(--text-dim)">⚠ <strong>沒有「調構師」</strong>——海莉絲與後續調構師一律查不到加成。<code>findPilotResearch()</code> 對此回 <code>null</code>，呼叫端應呈現為「這個職業還沒有科研資料」，<strong>不是「加成為 0」</strong>。</small></td></tr>
       <tr class="group-header"><td colspan="3">▎固定值加成 flatBonus（滿等級時的數值）</td></tr>
       <tr><td>&nbsp;├ melee</td><td>number</td><td>格鬥素質 +（如 +2244）</td></tr>
       <tr><td>&nbsp;├ defense</td><td>number</td><td>防禦素質 +（如 +2244）</td></tr>
@@ -69,7 +91,7 @@
   <div class="data-table-wrap">
     <table class="data-table">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
-      <tr><td>armorType</td><td>ArmorType (Enum)</td><td>裝甲類型（輕型/中型/重型）</td></tr>
+      <tr><td>armorType</td><td>string</td><td>裝甲類型（輕型／<strong>中型</strong>／重型）<br><small style="color:var(--text-dim)">⚠ <strong>不是 <code>ArmorType</code></strong>：這裡是「中型」，<code>Mech.armorType</code> 是「中甲」。查詢一律走 <code>findMechResearch()</code>，見本頁頂端的警告。</small></td></tr>
       <tr class="group-header"><td colspan="3">▎固定值加成 flatBonus（滿等級時）</td></tr>
       <tr><td>&nbsp;├ torsoHP</td><td>number</td><td>軀幹耐久 +（如 +6029）</td></tr>
       <tr><td>&nbsp;├ legHP</td><td>number</td><td>腿部耐久 +（如 +4529）</td></tr>

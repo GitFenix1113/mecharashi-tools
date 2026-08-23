@@ -1,3 +1,6 @@
+import type { ArmamentMount } from './slots'
+import type { ArmorType, PartInterface, UnknownInterface } from './enums'
+
 // ─── 機甲部件（v1.4 新增：獨立部件資料）──────────────────────────────────────
 
 export interface MechPart {
@@ -16,7 +19,30 @@ export interface MechPart {
   /** 出力（僅軀幹有） */
   output?: number
   weight: number
-  interface: string
+  /**
+   * 模組接口型別（PLAN-052-A D-1 由 `string` 收成 enum）。
+   *
+   * ⚠ `''` ＝ **接口資料未建檔**，是合法值：B 品質機甲 10 台共 40 格刻意不補
+   *   （沒人配 B 機甲）、美杜莎MK2 的 4 格是官方數值尚未公布。
+   *   渲染層對空值應顯示「接口資料未建檔」，**不要**留白、更不要猜一個型別。
+   */
+  interface: PartInterface | UnknownInterface
+  /**
+   * 焊死在這個部件上的固定武裝（PLAN-052-A）。左臂帶左肩、右臂帶右肩——
+   * 肩槽**附屬於手臂**而非與部件正交（enums.ts 的 `WeaponEquipSlot.SHOULDER` 逐字：
+   * 「肩膀：左臂或右臂其中一個肩膀」），所以掛在部件上而不是機甲頂層。
+   *
+   * ⚠ 硬不變式：`mount.slot === weapons[mount.weaponId].equipSlot`，允許 0 例外
+   *   （由 `scripts/validate-mech-slots.mjs` 全庫校驗）。
+   * ⚠ 用**陣列**不用選填 scalar：帕斯卡是**同一把衝擊炮掛左右兩肩**，scalar 表達不了；
+   *   而且 scalar 的三態語意會撞上 `stripUndefined`（取消勾選寫的 `undefined` 被整個濾掉
+   *   ⇒ 一旦填了就再也取消不掉）——被本欄位取代的三個死槽位就是栽在這裡。
+   * ⚠ 渲染時 React key 一律用 `slotKey(ref)`，**不可**用 `weaponId`：
+   *   帕斯卡兩肩是同一個 weaponId，會撞 key。
+   *
+   * 由 derive 層 `occupiedSlots(mech.parts)` 消費（src/utils/mechSlots.ts）。
+   */
+  fixedArmament?: ArmamentMount[]
   /** 部件圖示路徑 /images/mechs/{機甲名}/{position}.png */
   icon?: string
   /** 遊戲內部資產名（用於 CDN waparts/ 路徑） */
@@ -28,7 +54,8 @@ export interface MechPart {
 export interface Mech {
   id: string
   name: string
-  armorType: string
+  /** 裝甲類型。PLAN-052-A D-1 由 `string` 收成 enum（實測值域乾淨：中甲 36／輕型 27／重型 27）。 */
+  armorType: ArmorType
   /**
    * ⚠ **爬蟲產物，語意不一致，勿讀。** 請用 `chassisFirepower(mech.parts)`（src/utils/chassisStats.ts）。
    *
@@ -58,28 +85,6 @@ export interface Mech {
   module8Id?: string
   /** → modules.json 固定模組 ID 列表（多數機甲1個，特殊機甲可有多個） */
   moduleFixedIds: string[]
-  /**
-   * ⚠ 【凍結中 · PLAN-047 將取代，請勿填寫】
-   *
-   * 原設計：肩膀／背後武器欄位，三態語意
-   *   undefined = 無此槽 ／ null = 空槽（可自由裝備）／ string = 固定武器 ID（部件綁死）
-   *
-   * 為什麼凍結而不是直接用（PLAN-040 決策六）：
-   *   1. **實測 0/63 台機甲有填**，前台零消費端；唯一的寫入端是 MechAdmin 的 SlotEditor。
-   *   2. 三態語意撞上 firestoreCore.ts 的 stripUndefined —— SlotEditor 取消勾選時寫的就是
-   *      `undefined`，會被整個濾掉而不是寫成「無此槽」→ **一旦某台機甲寫進了值，後台再也無法取消**。
-   *   3. scalar 表達不了帕斯卡「**同一把衝擊炮 × 左右兩肩**」。
-   *
-   * 為什麼不刪：替代品的形狀已經知道了。PLAN-047 定案把固定武裝掛
-   *   `MechPart.fixedArmament?: ArmamentMount[]`，`leftArm → 左肩槽` / `rightArm → 右肩槽`
-   *   是可程式化的映射，不需要額外資料——依據是 enums.ts 的 WeaponEquipSlot.SHOULDER 註解
-   *   逐字「肩膀：左臂或右臂其中一個肩膀」＋ 使用者實測「跟手臂綁在一起，左手綁左肩、右手綁右肩」。
-   *   也就是說肩槽與部件是**巢狀**（肩槽附屬於手臂）而非正交，刪掉再加回來是白工。
-   */
-  leftShoulderSlot?: string | null
-  rightShoulderSlot?: string | null
-  /** ⚠ 【凍結中 · PLAN-047 將取代，請勿填寫】理由同上方 leftShoulderSlot。 */
-  backSlot?: string | null
   portrait?: string
   /** 立繪半身像路徑 */
   halfPortrait?: string

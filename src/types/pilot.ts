@@ -1,3 +1,4 @@
+import type { MechLicense } from './enums'
 // ─── 機師 ──────────────────────────────────────────────────────────────────
 
 import type { DescriptionRefs } from './common'
@@ -240,7 +241,9 @@ export interface Pilot {
   rarity: string
   class: string
   faction: string
-  license: string
+  /** 機甲駕駛執照。PLAN-052-A D-1 由 `string` 收成 enum（實測值域乾淨：中型 37／重型 26／輕型 26）。
+   *  ⚠ 值域與 `ArmorType` **不同**：執照是「中型」、機甲裝甲是「中甲」，兩者不可直接比較。 */
+  license: MechLicense
   masterLevel: string
   /** 登場版本：機師首次實裝的遊戲版本號（對應 patchVersions，如 '3.3'）；未設定＝尚未回填 */
   debutVersion?: string

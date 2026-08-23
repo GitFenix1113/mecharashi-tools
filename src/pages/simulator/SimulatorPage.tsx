@@ -21,6 +21,7 @@ import { useAllGameData, type AllGameData } from '../../hooks/useFirestore'
 import { getAllPilotResearch } from '../../lib/firestoreApi'
 import { buildBuffPool } from '../../utils/buffPool'
 import { chassisFirepower } from '../../utils/chassisStats'
+import { licenseAllows } from '../../utils/normalizeArmorType'
 import { resolveBackpackSkills, buildBackpackSkillMap } from '../../utils/backpackSkills'
 import { resolveReachable, type ResolvedBuff } from '../../utils/reachableBuffs'
 import { resolvePilotSkills, buildSkillMap } from '../../utils/pilotSkills'
@@ -175,12 +176,12 @@ export default function SimulatorPage() {
     if (!data || !selectedPilot) return data?.mechs ?? []
     const license = selectedPilot.license
     if (!license) return data.mechs
-    return data.mechs.filter((m) => {
-      if (license === '重型') return true
-      if (license === '中甲') return m.armorType !== '重型'
-      if (license === '輕型') return m.armorType === '輕型'
-      return true
-    })
+    // ⚠ 執照與裝甲類型是**兩套詞彙**：執照是「輕型／中型／重型」（MechLicense），
+    //    機甲裝甲是「輕型／中甲／重型」（ArmorType），只有中階不同名。
+    //    這裡原本寫 `license === '中甲'`——分支**恆為 false**，於是 37 位持中型執照的
+    //    機師看得到全部 90 台機甲，包括他們駕駛不了的重型。tsc 當時抓不到（兩邊都是 string）。
+    //    判斷收在 licenseAllows() 一處，不要在各頁各寫一次（PLAN-052-A D-2）。
+    return data.mechs.filter((m) => licenseAllows(license, m.armorType))
   }, [data, selectedPilot])
 
   const getFilteredWeapons = useCallback(() => {

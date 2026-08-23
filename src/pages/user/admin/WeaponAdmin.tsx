@@ -45,11 +45,20 @@ function makeDefaultWeapon(id: string, name = ''): Weapon {
     triggerSlots: 0,
     effectSlots: 0,
     componentLimit: 0,
-    fixedMod: { planName: '', maxLevel: 70, effects: [] },
+    // ⚠ maxLevel 預設 10，不是 70。原本的預設值就是 70 —— 這不是誰打錯，
+    //   而是每一筆從後台新建的武器都會帶著它（實測 182 筆中有 2 筆是這樣來的）。
+    //   實際值域：172 筆是 10、8 筆是 0（全部是無改裝的固定武裝）。
+    fixedMod: { planName: '', maxLevel: FIXED_MOD_MAX_LEVEL, effects: [] },
     floatingMod: { planName: '', slots: 0, possibleEffects: [] },
     skills: [],
   }
 }
+
+/**
+ * 固定改裝的等級上限（PLAN-052-A D-2）。
+ * 實測全庫 182 筆：172 筆是 10、8 筆是 0（無改裝的固定武裝）、2 筆是 70（本表單的舊預設值）。
+ */
+const FIXED_MOD_MAX_LEVEL = 10
 
 // ─── 已掛載的技能庫引用（PLAN-032 M4）─────────────────────────────────────────
 //
@@ -534,7 +543,19 @@ function WeaponEditPanel({
               <div className="space-y-3 p-3 bg-bg-dark rounded-lg border border-border/60">
                 <div className={`${GRID_AUTO_FIELDS} gap-3`}>
                   <Field label="方案名稱 planName"><input value={form.fixedMod.planName} onChange={(e) => updateFixedMod('planName', e.target.value)} className="input-field" placeholder="如 機槍VIII" /></Field>
-                  <Field label="最高等級 maxLevel"><input type="number" value={form.fixedMod.maxLevel} onChange={(e) => updateFixedMod('maxLevel', Number(e.target.value))} className="input-field" /></Field>
+                  <Field label="最高等級 maxLevel">
+                    <input
+                      type="number" min={0} max={FIXED_MOD_MAX_LEVEL}
+                      value={form.fixedMod.maxLevel}
+                      onChange={(e) => updateFixedMod('maxLevel', Number(e.target.value))}
+                      className="input-field"
+                    />
+                    {form.fixedMod.maxLevel > FIXED_MOD_MAX_LEVEL && (
+                      <p className="text-[11px] text-accent-red mt-1">
+                        ⚠ 超過上限 {FIXED_MOD_MAX_LEVEL}（全庫 172 筆武器皆為 {FIXED_MOD_MAX_LEVEL}；無固定改裝的填 0）
+                      </p>
+                    )}
+                  </Field>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">

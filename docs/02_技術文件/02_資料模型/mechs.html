@@ -53,7 +53,7 @@
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>id</td><td>string</td><td>唯一識別碼</td></tr>
       <tr><td>name</td><td>string</td><td>機甲名稱</td></tr>
-      <tr><td>armorType</td><td>ArmorType (Enum)</td><td>輕型 / 中甲 / 重型</td></tr>
+      <tr><td>armorType</td><td><code>ArmorType</code></td><td>輕型 / 中甲 / 重型（實測 27／36／27）<br><small style="color:var(--text-dim)">PLAN-052-A D-1 由 <code>string</code> 收成 enum。⚠ 與 <code>Pilot.license</code>（輕型／<strong>中型</strong>／重型）只有中階不同名，直接比對會靜默失配——執照判定一律走 <code>licenseAllows()</code>。</small></td></tr>
       <tr><td>firepower</td><td>number</td><td>火力值（軀幹滿級）</td></tr>
       <tr><td>armor</td><td>number</td><td>裝甲值（軀幹滿級）</td></tr>
       <tr><td>evasion</td><td>number</td><td>閃避值（腿部滿級）</td></tr>
@@ -65,22 +65,19 @@
       <tr><td>&nbsp;├ armor</td><td>number</td><td>護甲值</td></tr>
       <tr><td>&nbsp;├ firepower</td><td>number</td><td>火力值</td></tr>
       <tr><td>&nbsp;├ weight</td><td>number</td><td>部件重量</td></tr>
-      <tr><td>&nbsp;├ interface</td><td>string</td><td>接口類型（如 "Ⅱ型接口"）</td></tr>
+      <tr><td>&nbsp;├ interface</td><td><code>PartInterface | ''</code></td><td>模組接口型別：<code>Ⅰ型接口</code>（32 格）／<code>Ⅱ型接口</code>（280 格）<br><small style="color:var(--text-dim)">PLAN-052-A D-1 由 <code>string</code> 收成 enum，後台改下拉選單（實測抓到 <code>ⅠⅠ型接口</code> 錯字 4 格，已修）。<br><code>''</code> ＝ <strong>接口資料未建檔</strong>，是合法值（44 格）：B 品質機甲 10 台 40 格刻意不補、<code>mech_090_美杜莎MK2</code> 4 格是官方數值未公布。UI 顯示「接口資料未建檔」，不留白也不猜。</small></td></tr>
       <tr><td>&nbsp;├ hit</td><td>number?</td><td>命中值（僅左右臂有）</td></tr>
       <tr><td>&nbsp;├ dodge</td><td>number?</td><td>閃避值（僅腿部有）</td></tr>
       <tr><td>&nbsp;├ move</td><td>number?</td><td>移動力（僅腿部有）</td></tr>
       <tr><td>&nbsp;├ output</td><td>number?</td><td>出力（僅軀幹有）</td></tr>
       <tr><td>&nbsp;├ antiRiot</td><td>number?</td><td>抗暴（僅軀幹有）</td></tr>
       <tr><td>&nbsp;├ icon</td><td>string?</td><td>部件圖示路徑 /images/mechs/{機甲名}/{position}.webp</td></tr>
-      <tr><td>&nbsp;└ mechaIcon</td><td>string?</td><td>遊戲內部資產名（用於官方 CDN waparts/ 路徑）</td></tr>
+      <tr><td>&nbsp;├ mechaIcon</td><td>string?</td><td>遊戲內部資產名（用於官方 CDN waparts/ 路徑）</td></tr>
+      <tr><td>&nbsp;└ fixedArmament</td><td>ArmamentMount[]?</td><td>焊死在這個部件上的固定武裝（PLAN-052-A）。<code>{ weaponId, slot, side? }</code>，<code>slot</code> 沿用 <code>WeaponEquipSlot</code>。<br><small style="color:var(--text-dim)">左臂 → 左肩、右臂 → 右肩（肩槽<strong>附屬於手臂</strong>，兩者是巢狀不是正交）。<strong>硬不變式：</strong><code>mount.slot === weapons[mount.weaponId].equipSlot</code>，允許 0 例外，由 <code>scripts/validate-mech-slots.mjs</code> 全庫校驗。<br>用陣列而非選填 scalar：帕斯卡是<strong>同一把衝擊炮掛左右兩肩</strong>，scalar 表達不了；且 scalar 的三態語意會撞上 <code>stripUndefined</code>（取消勾選寫的 <code>undefined</code> 被整個濾掉 ⇒ 一旦填了就再也取消不掉）——被本欄位取代的三個死槽位就是栽在這裡。<br>現況（2026-08-24）：帕斯卡／破曉者-01／霸王 各 2 筆，共 <strong>6 筆</strong>。<br>渲染時 React key 一律用 <code>slotKey(ref)</code>，<strong>不可</strong>用 <code>weaponId</code>（兩肩同一把會撞 key）。</small></td></tr>
       <tr class="group-header"><td colspan="3">▎副模組引用（指向 modules Collection）</td></tr>
       <tr><td>module4Id</td><td>string?</td><td>特性模組 ID（4模組槽位）→ modules Collection；無特性模組的機甲可省略</td></tr>
       <tr><td>module8Id</td><td>string?</td><td>8級模組 ID（8模組槽位）→ modules Collection；無8級模組的機甲可省略</td></tr>
       <tr><td>moduleFixedIds</td><td>string[]</td><td>固定副模組 ID 列表（可多個）→ modules Collection</td></tr>
-      <tr class="group-header"><td colspan="3">▎武器裝備欄位（計算機用）</td></tr>
-      <tr><td>leftShoulderSlot</td><td>string | null | undefined</td><td><strong style="color:var(--accent-yellow);">⚠ 已凍結 · PLAN-047 將取代，請勿填寫</strong><br>原設計：左肩武器槽。<code>undefined</code>（欄位不存在）= 無左肩槽；<code>null</code> = 空槽可自由裝備；<code>string</code> = 固定武器 ID（部件綁死）<br><small style="color:var(--text-dim)">凍結理由（PLAN-040 決策六）：① 實測 <strong>0/63 台機甲有填</strong>、前台零消費端；② 三態語意撞上 <code>firestoreCore.ts</code> 的 <code>stripUndefined</code>——後台取消勾選寫的就是 <code>undefined</code>，會被整個濾掉，<strong>一旦填了就再也取消不掉</strong>；③ scalar 表達不了帕斯卡「同一把衝擊炮 × 左右兩肩」。<br>取代品形狀已定：<code>MechPart.fixedArmament?: ArmamentMount[]</code>，<code>leftArm → 左肩槽</code> / <code>rightArm → 右肩槽</code> 為可程式化映射（肩槽附屬於手臂，兩者是<strong>巢狀</strong>不是正交）。故凍結而非刪除。</small></td></tr>
-      <tr><td>rightShoulderSlot</td><td>string | null | undefined</td><td><strong style="color:var(--accent-yellow);">⚠ 已凍結 · PLAN-047 將取代，請勿填寫</strong><br>原設計：右肩武器槽，邏輯同 <code>leftShoulderSlot</code>。</td></tr>
-      <tr><td>backSlot</td><td>string | null | undefined</td><td><strong style="color:var(--accent-yellow);">⚠ 已凍結 · PLAN-047 將取代，請勿填寫</strong><br>原設計：背後武器槽。<code>undefined</code> = 無背後槽；<code>null</code> = 空槽；<code>string</code> = 固定武器 ID</td></tr>
       <tr class="group-header"><td colspan="3">▎圖片路徑</td></tr>
       <tr><td>portrait</td><td>string?</td><td>完整立繪 /images/mechs/{name}/portrait.webp</td></tr>
       <tr><td>halfPortrait</td><td>string?</td><td>半身圖 /images/mechs/{name}/half.webp<br><small style="color:var(--text-dim)">注意：欄位名為 <code>halfPortrait</code>（非 <code>half</code>）。<br>現況：57 筆機甲的此欄指向從未進版控的 <code>half.png</code>，靠 <code>&lt;FallbackImage&gt;</code> 退回 <code>portrait</code> 顯示。</small></td></tr>

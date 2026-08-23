@@ -9,9 +9,10 @@ import { WORKER_ENABLED, getWorkerDataVersions, fetchWorkerCollection } from '..
 import { ALL_COLLECTION_KEYS, type CollectionKey } from '../lib/collectionKeys'
 
 export const EMPTY_GLOBAL_RESEARCH: GlobalResearch = {
-  pilotResearchByClass: {},
-  mechResearchByType:   {},
-  weaponResearchByType: {},
+  // PLAN-052-A D-2：三個欄位是 Array 不是 Record（型別原本說謊，線上資料一直是 Array）
+  pilotResearchByClass: [],
+  mechResearchByType:   [],
+  weaponResearchByType: [],
 }
 
 // PLAN-043 事後補強：清單移至零依賴的 lib/collectionKeys.ts，讓 node --test 讀得到

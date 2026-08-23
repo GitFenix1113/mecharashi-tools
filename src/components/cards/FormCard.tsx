@@ -4,6 +4,8 @@ import { useGameData } from '../../contexts/GameDataContext'
 import { resolveIconSrc } from '../../utils/assets'
 import { RefText } from '../refs/RefText'
 import { RefChip } from '../refs/RefChip'
+import { slotKey } from '../../types/slots'
+import { mountLabel } from '../../utils/mechSlots'
 
 /**
  * 機師形態卡（PLAN-041 D-3）。
@@ -120,13 +122,18 @@ export function FormCard({ form }: { form: MechForm }) {
               ：本形態下所有槽位皆不可調整
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {restrict.weaponIds.map((wid) => {
-                const w = gd.weapons.find((x) => x.id === wid)
+              {/* key 用 slotKey() 而不是 weaponId：同一把武器可能掛在兩格（帕斯卡的兩肩） */}
+              {restrict.mounts.map((mount) => {
+                const w = gd.weapons.find((x) => x.id === mount.weaponId)
                 return (
-                  <span key={wid} className="px-1.5 py-0.5 rounded border border-accent-yellow/30 bg-accent-yellow/10">
+                  <span
+                    key={slotKey({ bank: 'main', slot: mount.slot, side: mount.side })}
+                    className="px-1.5 py-0.5 rounded border border-accent-yellow/30 bg-accent-yellow/10"
+                  >
                     {w
-                      ? <RefChip inner={w.name} entity={{ refType: 'weapon', refId: wid }} />
-                      : <span className="text-accent-red">⚠ {wid}</span>}
+                      ? <RefChip inner={w.name} entity={{ refType: 'weapon', refId: mount.weaponId }} />
+                      : <span className="text-accent-red">⚠ {mount.weaponId}</span>}
+                    <span className="text-text-dim ml-1">{mountLabel(mount)}</span>
                   </span>
                 )
               })}
