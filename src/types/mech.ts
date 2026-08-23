@@ -29,6 +29,16 @@ export interface Mech {
   id: string
   name: string
   armorType: string
+  /**
+   * ⚠ **爬蟲產物，語意不一致，勿讀。** 請用 `chassisFirepower(mech.parts)`（src/utils/chassisStats.ts）。
+   *
+   * 實測 90 台（2026-08-23）：**83 台的頂層值 ＝ 單一部位的火力**（不是四部位總和），
+   * 2 台 ＝ Σ 四部位、5 台 ≈ Σ（手建有捨入誤差）。直接讀這裡的畫面，對 83/90 台
+   * 顯示的是實際火力的 1/4。
+   *
+   * 保留不刪的理由：它是 scrape-mechs.js 寫入的官方欄位，刪掉會讓每次重抓都產生 diff；
+   * 修值也沒用（下次重抓就洗回去）。正解是**顯示層一律 derive**，DB 原樣保存。
+   */
   firepower: number
   armor: number
   evasion: number

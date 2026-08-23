@@ -12,6 +12,7 @@ export * from './weapon'      // 武器：Weapon / WeaponSkill / *ModEffect
 export * from './backpack'    // 背包：Backpack
 export * from './backpackSkill' // 背包技能：BackpackSkillDoc / BackpackSkillLevel（PLAN-043）
 export * from './form'        // 機師形態：MechForm / FormRestrict（PLAN-041）
+export * from './slots'       // 槽位模型：ArmamentMount / SlotBank / SlotRef / SlotKey / SlotCapacity（PLAN-052-A）
 export * from './component'   // 元件：Component / Condition|FunctionComponent …
 export * from './research'    // 科研：GlobalResearch / PilotResearch / *ResearchBonus / UserResearchLevels
 export * from './user'        // 用戶/配裝：UserProfile / Build / UserBuild / FloatingModSelection

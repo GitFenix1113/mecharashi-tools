@@ -6,6 +6,7 @@ import { assetUrl, imageCandidates } from '../../utils/assets'
 import { FallbackImage } from '../../components/common/FallbackImage'
 import { useMechWithModules } from '../../hooks/useFirestore'
 import { ModuleCard } from '../../components/module/ModuleCard'
+import { chassisFirepower, chassisWeight } from '../../utils/chassisStats'
 
 const ARMOR_STYLES: Record<string, string> = {
   輕型: 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/40',
@@ -208,8 +209,10 @@ export default function MechDetailPage() {
   const legs     = mech.parts?.legs     && typeof mech.parts.legs     !== 'number' ? mech.parts.legs     as MechPart : null
   const hasParts = torso || leftArm || rightArm || legs
 
-  const totalFirepower = [torso, leftArm, rightArm, legs].reduce((sum, p) => sum + (p?.firepower ?? 0), 0)
-  const totalWeight = [torso, leftArm, rightArm, legs].reduce((sum, p) => sum + (p?.weight ?? 0), 0)
+  // 火力／重量走 chassisStats 的單一實作（本頁原本自己 reduce 一次，與 MechsPage 讀頂層欄位
+  // 的做法不一致 —— 同一台機甲在圖鑑顯示 1255、在詳情頁顯示 5020）
+  const totalFirepower = chassisFirepower(mech.parts)
+  const totalWeight = chassisWeight(mech.parts)
   const remainingOutput = mech.output - totalWeight
 
   const portrait = (

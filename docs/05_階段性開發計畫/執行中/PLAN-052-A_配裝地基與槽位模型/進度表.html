@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">9</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">28</div>
+      <div class="summary-num" style="color:var(--text-dim)">19</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">0 / 28</span>
+      <span style="color:var(--accent-cyan);">9 / 28</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 32%"></div>
     </div>
   </div>
 
@@ -198,7 +198,7 @@
     <strong>目標效果：</strong>
     機甲詳情頁第一次說得出「這台有幾個手／肩／背槽、哪些被固定武裝佔住」，四部位表顯示接口型別；<b>並修正 83 台機甲被顯示成 1/4 的火力</b>。對後續子計畫而言，這一階段交付的是「數字對得上、槽位問得出來」的地基。
   </div>
-  <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);"><strong style="color:var(--accent-yellow)">動工前驗收條件：</strong>① 重跑一次 users／builds 為 0 筆的實測（決定 052-C／E 是否需要遷移路徑）；② 確認 PLAN-047 已歸檔，避免兩份計畫共寫 <code>src/utils/mechSlots.ts</code>。</div>
+  <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);"><strong>動工前驗收條件：已於 2026-08-24 全部通過。</strong>① <code>users</code>／<code>userBuilds</code>／<code>builds</code> 三個集合實測<b>皆 0 筆</b> → 052-C／E 不需要任何遷移路徑；② PLAN-047 已在 <code>歷史記錄/</code>，無共寫 <code>src/utils/mechSlots.ts</code> 之虞。</div>
 </section>
 
 
@@ -207,12 +207,13 @@
   <div class="section-label cyan">Phase A</div>
   <div class="section-title">數值純函式與 golden fixture</div>
   <div class="section-desc">先把三個首屏數字算對。這一階段不碰 UI，交付物是「一組通過的測試」——重量與火力錯了，後面每一個畫面都是假的。</div>
+  <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);"><strong>已完成（2026-08-24）：</strong>三支純函式與 22 條測試全綠（<code>npm test</code> 527 pass），<code>tsc -b</code> 與 <code>npm run build</code> 皆通過。四組官方 golden fixture 皆 ±0；出力 3675／3375 兩組亦 ±0。火力實測重現計畫判斷：<b>90 台中 83 台頂層＝單一部位值、2 台＝Σ、5 台≈Σ（手建捨入差 3–4）</b>。</div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; totalWeight() ＋ golden fixture</div>
       <div class="task-group-meta">src/utils/loadoutWeight.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -223,7 +224,7 @@
         <div class="task-file">src/utils/loadoutWeight.ts · src/utils/loadoutWeight.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -231,7 +232,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; effectiveOutput(formKey) ＋ 出力加成表</div>
       <div class="task-group-meta">src/utils/effectiveOutput.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -242,7 +243,7 @@
         <div class="task-file">src/utils/effectiveOutput.ts · .test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -250,7 +251,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-3 &nbsp; chassisFirepower()：全站停止讀 mech.firepower</div>
       <div class="task-group-meta">src/utils/chassisStats.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -261,7 +262,7 @@
         <div class="task-file">src/utils/chassisStats.ts · src/types/mech.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -272,7 +273,7 @@
         <div class="task-file">src/pages/mechs/* · src/components/cards/*</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -282,12 +283,15 @@
   <div class="section-label cyan">Phase B</div>
   <div class="section-title">槽位型別與 derive 層</div>
   <div class="section-desc">建立全站唯一的槽位詞彙與容量真相入口（吞下 PLAN-047 Phase A）。不碰資料、不碰 UI。</div>
+  <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);"><strong>已完成（2026-08-24）：</strong>新增 <code>src/types/slots.ts</code>（已掛進 barrel）與 <code>src/utils/mechSlots.ts</code>，<code>ResolvedChassis</code> derive 併入 <code>chassisStats.ts</code>；31 條測試全綠（全站 558 pass），<code>tsc -b</code>／<code>npm run build</code>／新檔 lint 皆通過。<br>
+  <b>實作時的三個判斷</b>：① <code>SlotKey</code> 做成<b>品牌型別</b>（手寫字面量不可指派）——「禁止手寫字面量」只有這樣 tsc 才真的擋得住；② <code>lockedSlots()</code> 刻意<b>不回槽位清單</b>，只回 <code>FormSlotLock</code>，因為鎖的是「全部」，回清單會讓呼叫端誤以為只鎖那三格；③ C-3 落盤前 <code>FormSlotLock.mounts</code> 是 <code>undefined</code> 而<b>不從 weaponIds 反推槽位</b>（千星在背部，一律猜 singleHand 會寫成錯的肯定陳述）。<br>
+  <b>實測補充</b>：四部位 <b>90/90 皆為物件</b>（無 legacy、無缺件）→ <code>ResolvedChassis.parts</code> 用嚴格 <code>Record</code>，缺件回 <code>null</code> 而不補零值部位。另發現 <code>mech_090_美杜莎MK2</code> 是後台手建<b>空殼</b>（<code>manual: true</code>，含軀幹出力在內全部欄位皆 0）——解析得出來但 <code>output</code> 為 0，052-B 需當「資料未建檔」處理，不可渲染成一台什麼都裝不下的機甲。</div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; src/types/slots.ts（新檔）</div>
       <div class="task-group-meta">types</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -298,7 +302,7 @@
         <div class="task-file">src/types/slots.ts · src/types/index.ts(barrel)</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -309,7 +313,7 @@
         <div class="task-file">src/types/slots.ts · src/utils/slotKey.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -317,7 +321,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; src/utils/mechSlots.ts</div>
       <div class="task-group-meta">全站唯一的槽位真相入口</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -328,7 +332,7 @@
         <div class="task-file">src/utils/mechSlots.ts · .test.ts（90 台快照）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -339,7 +343,7 @@
         <div class="task-file">src/utils/mechSlots.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -350,7 +354,7 @@
         <div class="task-file">src/utils/chassisStats.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

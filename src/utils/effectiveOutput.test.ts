@@ -1,0 +1,82 @@
+// PLAN-052-A A-2：有效出力的 golden fixture
+//   npm test   →   node --test "src/**/*.test.ts"
+//
+// 官方整備截圖（海莉絲 × 彌造者）：先鋒／突擊形態 3675、戰術／虛粒子形態 3375。
+// 差值 300 來自**強襲者背包**（不是形態本身——形態身上沒有任何數值）。
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import {
+  effectiveOutput, backpackOutputBonus, hasUnknownBackpackBonus, moduleOutputBonus,
+  BACKPACK_OUTPUT_BONUS,
+} from './effectiveOutput.ts'
+
+/** 彌造者 parts.torso.output ＝ 3375（只有軀幹有出力） */
+const 彌造者 = { output: 3375 }
+
+const 強襲者背包 = { id: '60101706', type: 'BackupEquipment' }
+const 出力背包Ⅲ  = { id: '60100104', type: 'PowerAdd' }
+const 出力強化背包_首攻 = { id: '60102405', type: 'PowerAdd' }   // 15 筆複合出力背包之一，數值未建檔
+const 炬塔       = { id: 'weapon_049_炬塔', type: '戰術' }        // 背部武器，無出力加成
+
+test('golden fixture 先鋒／突擊形態 ＝ 3675（3375 ＋ 強襲者背包 300）', () => {
+  const r = effectiveOutput(彌造者, { back: 強襲者背包 })
+  assert.equal(r.total, 3675)
+  assert.equal(r.base, 3375)
+  assert.equal(r.backpack, 300)
+  assert.equal(r.hasUnknownBackpackBonus, false)
+})
+
+test('golden fixture 戰術／虛粒子形態 ＝ 3375（背部是武器或空，無加成）', () => {
+  assert.equal(effectiveOutput(彌造者, { back: 炬塔 }).total, 3375)
+  assert.equal(effectiveOutput(彌造者, { back: null }).total, 3375)
+  assert.equal(effectiveOutput(彌造者, {}).total, 3375)
+})
+
+test('出力背包三階 ＝ +200/250/300', () => {
+  assert.equal(backpackOutputBonus({ id: '60100102' }), 200)
+  assert.equal(backpackOutputBonus({ id: '60100103' }), 250)
+  assert.equal(backpackOutputBonus({ id: '60100104' }), 300)
+  assert.equal(effectiveOutput(彌造者, { back: 出力背包Ⅲ }).total, 3675)
+})
+
+test('數值未建檔的複合出力背包：加成回 0，但要標成「未知」而不是「沒有」', () => {
+  const r = effectiveOutput(彌造者, { back: 出力強化背包_首攻 })
+  assert.equal(r.backpack, 0)
+  assert.equal(r.total, 3375)
+  // 這個旗標就是為了讓 UI 講得出差別 —— 少了它，未知會被渲染成一個肯定的 0
+  assert.equal(r.hasUnknownBackpackBonus, true)
+  // 對照組：背部武器與空背部都不是「未知」，是真的沒有
+  assert.equal(hasUnknownBackpackBonus(炬塔), false)
+  assert.equal(hasUnknownBackpackBonus(null), false)
+  assert.equal(hasUnknownBackpackBonus(強襲者背包), false)
+})
+
+test('模組出力加成走 levels[] 的滿級（N3：全站一律滿級）', () => {
+  const 出力模組Ⅱ = {
+    output_bonus: 100,
+    levels: [
+      { level: 1, output_bonus: 25 }, { level: 2, output_bonus: 50 },
+      { level: 3, output_bonus: 75 }, { level: 4, output_bonus: 100 },
+    ],
+  } as never
+  assert.equal(moduleOutputBonus(出力模組Ⅱ), 100)
+  // levels 亂序也要取到最高階（不是取陣列最後一個）
+  const 亂序 = { output_bonus: 0, levels: [{ level: 4, output_bonus: 100 }, { level: 1, output_bonus: 25 }] } as never
+  assert.equal(moduleOutputBonus(亂序), 100)
+  // 沒有 levels（副模組以外的舊資料）退回頂層值
+  assert.equal(moduleOutputBonus({ output_bonus: 100, levels: [] } as never), 100)
+  assert.equal(moduleOutputBonus(null), 0)
+  // 242 筆模組中只有 2 筆非 0，其餘一律不影響出力
+  assert.equal(moduleOutputBonus({ output_bonus: 0, levels: [{ level: 4, output_bonus: 0 }] } as never), 0)
+})
+
+test('三個來源疊加：軀幹 ＋ 背包 ＋ Σ 模組', () => {
+  const 出力模組 = { output_bonus: 100, levels: [{ level: 4, output_bonus: 100 }] } as never
+  const r = effectiveOutput(彌造者, { back: 強襲者背包 }, [出力模組, 出力模組, null])
+  assert.equal(r.modules, 200)
+  assert.equal(r.total, 3375 + 300 + 200)
+})
+
+test('加成表只收已由官方畫面確認的四筆，避免用 weight 去猜', () => {
+  assert.deepEqual(Object.keys(BACKPACK_OUTPUT_BONUS).sort(), ['60100102', '60100103', '60100104', '60101706'])
+})

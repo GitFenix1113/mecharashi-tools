@@ -6,6 +6,7 @@ import { imageCandidates } from '../../utils/assets'
 import { FallbackImage } from '../../components/common/FallbackImage'
 import { ViewModeToggle } from '../../components/common/ViewModeToggle'
 import { MechQualityBadge } from '../../components/badges/MechBadges'
+import { chassisFirepower } from '../../utils/chassisStats'
 
 const ARMOR_TYPES = ['輕型', '中甲', '重型']
 
@@ -134,7 +135,10 @@ export default function MechsPage() {
         : 'bg-bg-card text-text-secondary border-border hover:border-border-accent hover:text-text-primary'
     }`
 
-  const MAX_FP = Math.max(...mechs.map((m) => m.firepower), 1)
+  // ⚠ 火力一律走 chassisFirepower(Σ 四部位)，**不可**讀 mech.firepower ——
+  //    後者實測 83/90 台等於單一部位值，直接讀會把火力顯示成實際的 1/4（見 Mech.firepower 註解）。
+  const firepowerOf = (m: { parts?: unknown }) => chassisFirepower(m.parts as never)
+  const MAX_FP = Math.max(...mechs.map(firepowerOf), 1)
   const MAX_EV = Math.max(...mechs.map((m) => m.evasion), 1)
 
   return (
@@ -335,7 +339,7 @@ export default function MechsPage() {
 
                 {/* Stat Bars */}
                 <div className="space-y-2">
-                  <StatBar label="火力" value={mech.firepower} max={MAX_FP} />
+                  <StatBar label="火力" value={firepowerOf(mech)} max={MAX_FP} />
                   <StatBar label="閃避" value={mech.evasion} max={MAX_EV} />
                   <MobilityGrid value={mech.mobility} />
                 </div>

@@ -20,6 +20,7 @@ import type {
 import { useAllGameData, type AllGameData } from '../../hooks/useFirestore'
 import { getAllPilotResearch } from '../../lib/firestoreApi'
 import { buildBuffPool } from '../../utils/buffPool'
+import { chassisFirepower } from '../../utils/chassisStats'
 import { resolveBackpackSkills, buildBackpackSkillMap } from '../../utils/backpackSkills'
 import { resolveReachable, type ResolvedBuff } from '../../utils/reachableBuffs'
 import { resolvePilotSkills, buildSkillMap } from '../../utils/pilotSkills'
@@ -912,7 +913,7 @@ function ResultStep({
           <div className="bg-bg-card rounded-lg p-3 border border-border">
             <div className="text-[13px] text-accent-blue uppercase tracking-wider mb-1">機甲</div>
             <div className="text-sm font-bold">{mech?.name ?? '未選擇'}</div>
-            {mech && <div className="text-[14px] text-text-dim">{mech.armorType} · 火力{mech.firepower}</div>}
+            {mech && <div className="text-[14px] text-text-dim">{mech.armorType} · 火力{chassisFirepower(mech.parts)}</div>}
           </div>
 
           {/* Weapon */}
