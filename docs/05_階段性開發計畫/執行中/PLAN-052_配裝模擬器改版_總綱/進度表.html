@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052 配裝模擬器改版 · 總綱 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-052 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-052</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">配裝模擬器改版 · 總綱</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-24</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label purple">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">4</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">4</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-purple);">0 / 4</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    把「只有兩個單值欄位」的配裝模型換成多槽・多形態・可分享的 Loadout v2。MVP（A＋B＋C，約 21–24 天）結束時，網友可以在七個槽位上配裝、看到與遊戲一致的重量／出力、存本機 10 套，並複製一串連結分享給別人 —— 完全公開、不需註冊。
+  </div>
+  <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);"><strong style="color:var(--accent-yellow)">動工前提醒：</strong>PLAN-047 應同時標記為被本計畫取代並歸檔（見計畫書決策十一），否則會有兩份執行中的計畫同時聲稱擁有 <code>src/utils/mechSlots.ts</code>。</div>
+</section>
+
+
+<!-- 子計畫進度 -->
+<section class="section">
+  <div class="section-label purple">Sub Plans</div>
+  <div class="section-title">子計畫狀態</div>
+  <div class="section-desc">本總綱不直接持有工作項；各子計畫的工項在自己的進度表。此表只追蹤「哪一個子計畫走到哪裡」。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">052-A &nbsp; 配裝地基與槽位模型</div>
+      <div class="task-group-meta">7–8 天 · 可立即動工</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三支數值純函式 · 槽位型別 · ResolvedChassis · 8 筆固定武裝落盤 · 型別收緊</div>
+        <div class="task-desc">
+          交付物含機甲詳情頁的「槽位配置 ＋ 固定武裝 ＋ 四部位表」唯讀區塊與火力顯示修正，
+          <b>不必等模擬器就能上線</b>。動工前先複查 users／builds 仍為 0 筆。
+        </div>
+        <div class="task-file">PLAN-052-A_配裝地基與槽位模型/進度表.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">052-B &nbsp; 配裝模擬器主體</div>
+      <div class="task-group-meta">8–10 天 · 依賴 052-A</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">整檔取代 SimulatorPage：三欄單頁 ＋ 槽位圖 ＋ 就地挑選器 ＋ 級聯</div>
+        <div class="task-desc">本專案最大的單一子計畫。順手修三個既有 bug（執照 enum、背槽不互斥、順序相依重量帳）。</div>
+        <div class="task-file">PLAN-052-B_配裝模擬器主體/進度表.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">052-C &nbsp; 分享碼與訪客本機書架</div>
+      <div class="task-group-meta">5–6 天 · 依賴 052-B</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">codec v1 ＋ share-id.lock.json ＋ /simulator?b= ＋ 本機書架 10 套</div>
+        <div class="task-desc">零後端出貨。<b>MVP 的最後一塊</b>：完成後網友可以複製連結互相分享配裝。</div>
+        <div class="task-file">PLAN-052-C_分享碼與訪客書架/進度表.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">052-D ~ H &nbsp; 後續子計畫</div>
+      <div class="task-group-meta">元件 / 雲端存檔 / 形態 / 模組槽＋混搭 / 熱門配裝</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">尚未建立文件，待各自動工時再由 plan-manager 建檔</div>
+        <div class="task-desc">
+          範圍與工程量見計畫書「實作範圍」表。
+          <b>052-G 的混搭階段卡在 Open Question Q-1（數值合成規則），模組槽階段不受影響。</b>
+        </div>
+        <div class="task-file">docs/05_階段性開發計畫/執行中/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-052 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

@@ -31,6 +31,41 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052 · 配裝模擬器改版 · 總綱</h3>
+      <p>現行配裝模擬器的根本問題不是「功能不足」，而是<b>資料模型只有兩個單值欄位</b>（<code>weaponId</code> / <code>backpackId</code>）——連「左手一把、右手一把」都表達不了，更擋住雙肩、備用手、海莉絲的多套形態配裝、以及把元件掛到每一把武器上。本總綱把它換成多槽・多形態・可分享的 <b>Loadout v2</b>，並拆成 A–H 八個可各自出貨的子計畫。<br>紅隊拿官方整備截圖逐格對帳，發現五份獨立設計<b>一致採用的公式都是錯的</b>：<b>備用武器組不是加總、是取較重者</b>（先鋒形態加總會得 2625，官方 1825，誤差 44%）；<b>機甲火力＝Σ四部位</b>，而 <code>mech.firepower</code> 是爬蟲產物——實測 83 台的頂層值等於單一部位值，也就是<b>站上現在顯示的火力是實際的 1/4</b>；<b>出力是 per-form 的</b>（3675 vs 3375 差的 300 來自強襲者背包）。第四條（<code>weapon.attack</code> 是連擊總和、官方顯示每擊值且差 17–18%）已裁決<b>延後至傷害計算</b>。<br>落盤形狀拍板為 <b>code-as-payload</b>：<code>users/{uid}/builds/{pilotId}</code> ＋ <code>slots</code> map，每格內容就是一串分享代碼——因為 Firestore 規則<b>沒有位元組長度運算子、不能對動態 key 迴圈、也沒有 count()</b>，巢狀結構在規則層設不了上限；收斂成單一字串後 <code>code.size() &lt;= 1024</code> 才是繞不過的硬牆，而 map key 白名單讓「每機師 5 套」變成結構性事實。<b>儲存＝分享是同一串字，沒有第二套序列化會漂移。</b><br>⚠ <b>時間窗</b>：users 集合實測 <b>0 筆</b>、builds <b>0 筆</b>，現在改模型零遷移成本；一旦全面公開（已定案）就再也不免費。<b>PLAN-047 由本計畫取代並歸檔</b>——它 0/22 未動工、驗收數字全部過期（mechs 63→90、weapons 172→180），且決策十二①②④（不改 Build 成多槽／不做形態獨立配裝／不做部件混裝）皆已被使用者裁決推翻。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052_配裝模擬器改版_總綱/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052_配裝模擬器改版_總綱/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-A · 配裝地基與槽位模型</h3>
+      <p>先把「數字對不對」與「槽位存不存在」解決，<b>UI 全部留到 052-B</b>。交付三支數值純函式並用官方四組整備截圖當 golden fixture：<code>totalWeight()</code>（取較重組）、<code>effectiveOutput(formKey)</code>（含強襲者背包 +300 與出力背包 +200/250/300）、<code>chassisFirepower()</code>（Σ 四部位）。接著建立全站唯一的槽位詞彙（<code>ArmamentMount</code> ＋ 正交的 <code>SlotBank</code>；mountKey 三段式 <code>bank:slot:side</code>——少了 bank 這一段，主手左手與備用左手會撞鍵、元件互相覆蓋）與 <code>ResolvedChassis</code> derive 層。<br>資料側落盤 <b>8 筆固定武裝</b>（比 PLAN-040 窮舉的 6 筆多兩筆）：帕斯卡／破曉者-01／霸王的肩掛、海莉絲虛粒子的耀星-右手／隕星-左手／千星-背部，以及<b>新建 <code>weapon_181_幽弧</code> ／ <code>weapon_182_夜燼</code></b>——曜的巡航形態專屬固定武裝，全庫查無，比照耀星用 <code>variableStats</code>。順帶把 <code>ArmorType</code>／<code>MechLicense</code>／<code>PartInterface</code> 收成 enum、MechAdmin 接口欄位改下拉、修 <code>globalResearch</code> 的 Record/Array 型別謊言與「中型 vs 中甲」鍵不一致。<br><b>本子計畫自己就能上線</b>：機甲詳情頁多出唯讀的「槽位配置 ＋ 固定武裝 ＋ 四部位表（含接口型別）」，並修正 83 台機甲被顯示成 1/4 的火力。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-A_配裝地基與槽位模型/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-A_配裝地基與槽位模型/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-B · 配裝模擬器主體</h3>
+      <p>整檔取代 1074 行的 8 步驟精靈。<b>精靈是錯的互動模型</b>——玩家必須走完 8 步才看得到結果，而配裝是反覆試的動作；現行還能無條件跳關，且 Step 6 在未選武器時連下一步按鈕都沒有。改成<b>單頁槽位圖 ＋ 就地挑選器 ＋ 常駐資訊面板</b>：一眼看到全部槽位、點槽位換裝備、即時看重量出力。三斷點（≥1280 三欄／1024–1279 兩欄／&lt;1024 單欄＋BottomSheet），斷點用視窗寬而<b>不用 <code>useIsMobile</code></b>（後者判的是粗指標，與版面寬度正交）。<br>核心是兩件事：<b>兩層拒絕呈現</b>（結構性→摺疊＋計數；情境性→灰掉＋原因＋<b>解法按鈕</b>，做成封閉聯集讓 tsc 逼你填說明），與<b>單一 <code>reconcile()</code> 級聯</b>（降級不清空、每次移除可復原；超重<b>不擋存檔</b>，否則會與「不自動卸武器」一起把人卡死）。<br>順手修三個讓過濾結果出錯的既有 bug：<code>:179</code> 用 <code>'中甲'</code> 比 <code>MechLicense.MEDIUM='中型'</code>（<b>37/89 位機師看得到重型機甲</b>，tsc 抓不到）、背槽與背包不互斥（181/181 個背包 <code>slot='back'</code>）、順序相依的重量帳。同時<b>正式全面公開</b>（移除導覽 ADMIN gate）。明確不渲染改裝／可達增益／戰術評分／科研——<b>不渲染，不是渲染空的</b>。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-B_配裝模擬器主體/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-B_配裝模擬器主體/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-C · 分享碼與訪客本機書架</h3>
+      <p><b>零後端出貨，MVP 的最後一塊。</b>把整套配裝壓成一串可貼進 Discord 的網址（<code>/simulator?b=</code>，走既有路徑因此<b>不必動 Cloudflare Dashboard</b>），並讓未登入的訪客把配裝存在自己的瀏覽器（10 套，不分機師）。實測：同一套配裝用 JSON ＋ 原樣 doc id 要 700+ bytes，二進位 TLV 打包只要 ≈70 bytes；最壞情況網址 ≈743 字元，只佔 Discord 上限的 37%。<br>id→數字<b>用既有 doc id 的流水號、不新增欄位</b>（再開一個 shareId 就是第二個真相源）。⚠ 唯一破口是<b>流水號被回收</b>——<code>idSlug.ts:82</code> 的 <code>maxEntitySeq</code> 是「掃現有 ID 取 max」，刪掉 178 再新增會再次產生 178，舊碼就靜默指向另一把武器；而本專案確實會改 doc id。因此 <code>share-id.lock.json</code> 進版控 ＋ <code>check-share-ids.mjs</code> 改指即 exit 1，<b>並寫進 data-patch skill 的流程</b>。<br>⚠ 總綱決策二讓 codec <b>同時是儲存格式</b>，所以它的 bug ＝ 使用者資料全毀：round-trip 10,000 份、模糊測試 10,000 次位元翻轉、每版凍 golden fixture <b>列為驗收條件</b>；decode 永不 throw，且「先結構後語意」——語意不合只標警示不拒絕套用（對方可能在分享改版前的配裝）。順手移除 <code>html2canvas</code> 並把全站第 5 份硬編站名收成常數。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-C_分享碼與訪客書架/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-C_分享碼與訪客書架/進度表.html">→ 進度表</a>
+      </div>
     </div>
     <div class="card cyan">
       <div class="card-icon">◆</div>
@@ -50,22 +85,31 @@
         <a class="card-link" href="PLAN-049_問題回報與功能建議/進度表.html">→ 進度表</a>
       </div>
     </div>
-    <div class="card purple">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-047 · 槽位與裝備限制模型</h3>
-      <p>機甲側<b>沒有任何欄位</b>說得出「我有幾個肩槽、幾個背槽」。武器側說得出自己的限制（<code>mechRestriction</code> / <code>equipSlot</code>），但反方向完全空白——REV-01 的［嵐質儲能艙］×2 要吃掉兩個肩槽這件事，<b>無法從武器側推導</b>。而模擬器的 <code>getFilteredWeapons</code> 全文<b>只有一條規則</b>（重量夠不夠），既不看機甲類型也不看槽位，於是輕型機甲照樣選得到 43 把中甲限定武器。本計畫補上共用槽位詞彙 <code>ArmamentMount</code>（<b>slot 直接沿用 <code>WeaponEquipSlot</code></b>——全站已有三套部位詞彙，第四套會與 <code>weapon.equipSlot</code> 不可互推，校驗腳本就寫不出來），並<b>刻意不開 <code>shoulderSlots</code> 欄位</b>：derive 規則已覆蓋 63/63，而同型別裡的 <code>leftShoulderSlot</code> 三欄設計良好卻<b>實測 0/62 填寫</b>，「保留未來可能性」改兌現成單一 derive 入口 <code>mechSlotCapacity()</code>。另有一條獨立的退場理由：<code>stripUndefined</code> 會濾掉 <code>undefined</code>，導致<b>槽位欄位一旦寫進去就再也取消不掉</b>。<br>「戰術武器限中甲」實測<b>不需要新規則</b>——<code>type==='戰術'</code>(43) 與 <code>mechRestriction==='medium'</code>(43) 雙向零反例，且 22 把肩武器 100% medium，武器側已 100% 表達。Phase D 順手修兩個既有 bug：背部武器與背包<b>可同時裝上</b>、以及 <code>:181</code> 把 <code>'中甲'</code>(ArmorType) 拿去比 <code>'中型'</code>(MechLicense) 造成的<b>靜默全放行</b>。掛 chassis 還是 MechPart 列為 Open Question（「同時攜帶兩門」的條件句與全機種通用的 <code>Ⅱ型接口</code> 都指向部件，但破曉者-01／霸王根本沒有武裝來源模組），連同舊存檔相容性一起阻塞資料落盤與 gate。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-047_槽位與裝備限制模型/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-047_槽位與裝備限制模型/進度表.html">→ 進度表</a>
-      </div>
-    </div>
     <div class="card red">
       <div class="card-icon">◆</div>
-      <h3>PLAN-042 · 機甲故事館</h3>
-      <p>機甲的逸聞目前只是詳情頁最底下一個 <code>&lt;p&gt;</code>，整段長文擠在數值表格之後；而官方遊戲內的逸聞是分 <b>PART 1 / PART 2</b> 章節、穿插娜塔莉亞等 NPC 頭像旁白的敘事體驗。本計畫另開 <code>/lore</code> 獨立路由做成左文右繪的沉浸式故事館，並復刻官網那招<b>「線稿顯影 → 彩圖疊上」</b>的立繪切換動畫——已實測拆解官網為四層背景圖 + 錯位淡入（線稿領先彩圖 250ms）；本站沒有線稿素材，改以 <b>color-dodge 素描濾鏡即時生成</b>，實測幾乎重現官方質感（邊緣偵測法已驗證不堪用）。順帶補上全站不存在的 <code>manufacturer</code> 欄位，以及撐得起全高面板的全身立繪素材層（現有 portrait 僅 560×340 半身裁切）。<br>因故事資料需<b>他人協助輸入</b>，另含兩塊：<b>新增 EDITOR 角色</b>（現行規則下所有集合皆 <code>read/write: if isAdmin()</code>，給人 ADMIN 等於交出全站讀寫權；改以 <code>affectedKeys().hasOnly()</code> 把可寫範圍鎖死在故事三欄位，且刻意不給 read、編輯台讀取改走 Worker <code>/api</code>），以及<b>靜態化出口</b>（資料定稿後逐台切成 <code>src/data/lore/</code> 零查詢，非全站一次切）。機師故事館與陣營勢力不在本期範圍。</p>
+      <h3>PLAN-042 · 故事館（總綱）</h3>
+      <p>【總綱 Master Plan】把機甲與機師的逸聞從詳情頁末端的一段純文字，升級為<b>獨立於圖鑑的沉浸式故事館</b>——自己的路由、自己的紙色視覺、自己的資料集合與編輯台。本總綱只放兩館共用的六條決策：<b>內容分兩層</b>（檔案層已滿 / 章節層全空，後者才是主體）、<b>接縫判準「誰是權威來源」</b>（爬蟲寫的留原集合、人寫的進 lore 集合）、<b>型別共用集合分家</b>（<code>pilotLore</code> / <code>mechLore</code>，因版本 gate 是集合級而不可合一）、<b>章間離散章內連續</b>的具名章節軸導覽（否決 scroll-snap，站內已為此失敗過一次）、<b>PART 進網址且鍵必須是後台自動產生的必填穩定鍵</b>（選填鍵依 0/5 定律必然為空）、<b>留在 Layout 之下用 <code>chromeMode: immersive</code> ＋ 紙色換膚</b>（脫離 Layout 會讓 PLAN-046 對整個故事館永遠 0 筆而測試全綠）。<br><span style="color:var(--accent-yellow);">2026-08-23 升格：</span>原名「PLAN-042 機甲故事館」，其「機師另立 PLAN」的排除理由（人像 vs 機體、版面需求不同）已因官方友情贊助的<b>54 張機師全身直幅立繪</b>（比例中位 0.58，與官網 hero 的 0.55 同族）而失效，兩館版面可共用一套，故升格為總綱並拆出 042-A / 042-B。同時確認內容輸入不是瓶頸（機師約三週一位、有 OCR 輔助），<b>EDITOR 角色與協作編輯台整段降級為備案</b>，是本次拆分最大的一筆工時節省。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-042_機甲故事館/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-042_機甲故事館/進度表.html">→ 進度表</a>
+        <a class="card-link" href="PLAN-042_故事館_總綱/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-042_故事館_總綱/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-042-A · 機師故事館</h3>
+      <p>把 89 位機師的檔案與逸聞做成一座<b>紙色的沉浸式展館</b>：左卷宗右立繪、章節以具名軸切換、線稿顯影成彩圖。<b>本子計畫同時建立兩館共用的全部元件</b>，042-B 機甲館直接引用——因此先做機師館，兩館的共用成本一次付清。<span style="color:var(--text-dim);">（卡片文案由 AI 依計畫書 hero-sub 重建，原文於 2026-08-24 因誤操作遺失，可自行改寫）</span></p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-042-A_機師故事館/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-042-A_機師故事館/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-042-B · 機甲故事館</h3>
+      <p>把 90 台機甲的逸聞接進 042-A 建立的故事館底盤。<b>元件與版面全部沿用</b>，本計畫只做機甲專屬的三件事：<b>立繪素材工程</b>（90 張人工出圖，最大成本）、<code>manufacturer</code> 欄位、<code>mechLore</code> 集合與機甲側頁面。<span style="color:var(--text-dim);">（卡片文案由 AI 依計畫書 hero-sub 重建，原文於 2026-08-24 因誤操作遺失，可自行改寫）</span></p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-042-B_機甲故事館/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-042-B_機甲故事館/進度表.html">→ 進度表</a>
       </div>
     </div>
     <div class="card yellow">

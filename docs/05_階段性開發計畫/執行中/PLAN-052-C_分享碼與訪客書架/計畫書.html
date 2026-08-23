@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-C 分享碼與訪客本機書架 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-052-C 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-052-C</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    分享碼與訪客本機書架<span style="-webkit-text-fill-color:var(--text-secondary);"> · Loadout Code · Local Shelf</span>
+  </h1>
+  <p class="hero-sub">零後端出貨：把整套配裝壓成一串可貼進 Discord 的網址，並讓未登入的訪客也能把配裝存在自己的瀏覽器。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label green">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value green">PLAN-052-C</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-24</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">utils/loadoutCode/* · share-id.lock.json · scripts/check-share-ids.mjs · lib/localBuilds · LoadoutExportCard · lib/siteMeta</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-052-B</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>052-B 上線後，玩家配完的東西<b>留不住也傳不出去</b></strong><br>
+    現行只有一顆「匯出分享圖」（<code>html2canvas</code>），圖片<b>沒辦法被還原成配裝</b>。
+    而總綱決策九已定案全面公開（未登入也能用）—— 訪客配了半小時，關掉分頁就沒了。
+  </div>
+
+  <div class="problem-block">
+    <strong>直接把 doc id 塞進網址會爆長</strong><br>
+    本站 doc id 是含中文的字串（<code>weapon_176_耀星</code>、<code>mech_022_帕斯卡</code>）。
+    實測：同一套典型配裝用 JSON ＋ 原樣 doc id 約 <b>700+ bytes</b>，而二進位打包只要 <b>≈70 bytes</b>（差 10 倍）。
+  </div>
+
+  <div class="warning-block">
+    <strong>codec 一旦上線就同時是「儲存格式」，bug ＝ 使用者資料全毀</strong><br>
+    總綱決策二把落盤收斂成「一串分享代碼」，所以 <code>loadoutCode</code> 不只是分享功能。
+    它的三個高風險點：<b>流水號被回收</b>（舊碼靜默指向另一把武器）、
+    <b>格式版本缺失</b>（英文 WIKI 已經踩過：新增第 18 欄時舊碼已流出，只好同時接受兩種長度）、
+    <b>解碼器 throw</b>（一個壞碼讓整頁白畫面）。
+  </div>
+
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：純前端自包含編碼，不開後端短碼</strong><br>
+    零後端、零 Firestore 寫入、<b>零 Cloudflare Dashboard 改動</b>
+    （分享碼放既有 <code>/simulator?b=</code>，該路徑已在 SPA fallback 白名單內）。
+    後端短碼要新增寫入面與濫用防護、吃 Worker 100k/日 額度，而且是<b>不可逆的資料負債</b>（發出去就永遠要能解）。<br>
+    <b>長度實測（估算）</b>：典型配裝 ≈70 bytes → 網址 ≈130 字元；
+    海莉絲多套 ≈216 字元；理論最壞 ≈743 字元。Discord 單則上限 2000 字元，<b>最壞情況只佔 37%</b>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：TLV/section 版面，header 永久凍結</strong><br>
+    <div class="code-block"><span class="cm">header（跨版本永久凍結，Worker 的 OG 只解這一段）</span>
+  FMT 1B  格式版本 = 1     <span class="cm">// ⚠ 與文件 schema 版本分開，不共用常數</span>
+  GAMEVER 1B               <span class="cm">// 只用於提示文案，不參與解析</span>
+  PILOT 1-3B / MECH 1-3B   <span class="cm">// varint(LEB128)，上限 3 bytes</span>
+<span class="cm">body（每段一個 tag + length，未知 tag 一律跳過並記入 unmodeled）</span>
+  §PARTS    NPART ＋ {部位 1B, 來源機甲 shareId}   <span class="cm">// 只寫與原廠不同的部位</span>
+  §SETS     NLOADOUT ＋ 每套 { FORM 1B, NMOUNT 1B, mounts…, BPFLAG ＋ BACKPACK }
+            mount: SLOTB 1B <span class="nm">(bit0-2 slot / bit3-4 side / bit5 bank / bit6 hasComp)</span>
+                   ＋ WEAPON varint ＋ NCOMP ＋ COMP[]
+  §MODULES  NMOD ＋ {部位 1B, 模組 shareId varint}  <span class="cm">// ⚠ 不存 level（部位推導值）</span>
+  CHK 1B    FNV-1a 低 8 位  <span class="cm">// 專治 Discord 換行截斷</span></div>
+    <b>三個必須在 v1 就正確的細節</b>（事後補要洗掉所有已存資料）：
+    ① SLOTB 的 <b>bank 位元</b>（少了它就編不出任何有備用武器的配裝）；
+    ② <b>§MODULES 段</b>（「code 是唯一落盤格式」＋「v1 不含模組」＝玩家選的模組存不下來，而 UI 看起來一切正常）；
+    ③ 形態身分<b>不可用 <code>form.order</code></b>（<code>FormAdmin.tsx:269-270</code> 是自由輸入欄位）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：shareId 用既有流水號，並用 lock 檔擋回收</strong><br>
+    <b>不新增 Firestore 欄位</b> —— 流水號已經印在 doc id 上，再開一個 <code>shareId</code> 就是第二個真相源。
+    核心不變式：<b>流水號是身分不是位置</b>（新增 <code>weapon_179</code> 不會讓 <code>weapon_178</code> 位移）。<br>
+    映射：<code>pilots/mechs/weapons/components</code> → <code>^{prefix}_(\d+)</code>；
+    <code>backpacks</code> → 官方 8 位數字 − 60,000,000；<code>modules</code> → <code>mod_&lt;數字&gt;</code>。<br>
+    ⚠ <b>唯一破口是流水號被回收</b>：<code>src/utils/idSlug.ts:82</code> 的 <code>maxEntitySeq</code> 是「掃現有 ID 取 max」，
+    刪掉 178 再新增會再次產生 178。而本專案<b>確實會改 doc id</b>（08-17 備份裡 mechs／pilots 各有 6 筆無流水號，08-23 才補號）。
+    ⇒ <code>share-id.lock.json</code> 進版控 ＋ <code>check-share-ids.mjs</code> 改指即 exit 1 ＋
+    後台續號改 <code>max(lock, live)+1</code>，<b>並寫進 data-patch skill 的流程</b>。<br>
+    <span class="badge-good">旁證</span> 英文 WIKI 也用一張進版控的永久別名表，註解逐字寫
+    「never changes once assigned, so a shared build stays valid forever」。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：解碼「先結構後語意」，且永不 throw</strong><br>
+    ① <b>輸入清洗</b>：去空白換行（Discord 會在 ~70 字元處換行）、抓 <code>b=</code> 之後、必要時 decodeURIComponent。<br>
+    ② <b>結構防護</b>（不過就拒絕）：長度上限、字元集、checksum、varint ≤ 3 bytes（擋 varint 炸彈）、
+       NLOADOUT／NMOUNT／NCOMP 上限（擋「小代碼展開成十萬個物件」）、讀完後不得有剩餘 bytes（擋 padding 走私）。<br>
+    ③ <b>版本分派</b>：FMT 比本 client 新 → 「這串代碼來自比你手上更新的版本，請重新整理頁面（Ctrl+F5）」——
+       站是 SPA，使用者 bundle 舊是最可能的原因，比「代碼無效」誠實且給得出下一步。<b>舊版解碼器永不刪除。</b><br>
+    ④ <b>語意驗證</b>：<b>全部放行，只標警示</b>（「此配裝有 N 項不符合現行規則」）——
+       對方可能在分享改版前的配裝，或想看看改了什麼。<b>絕不因此拒絕套用。</b><br>
+    ⚠ <b>舊快取誤判</b>：解不開時先打一次 <code>/api/versions</code>，版本落後就強制重載該集合，
+    重載後仍解不開才判為「已下架」—— 否則本週新上線的武器會被顯示成「已下架裝備 #181」，語意完全相反。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：訪客本機書架 10 套（不分機師）</strong><br>
+    與登入者的「每機師 5 套」<b>語意不同，UI 文案要分開寫</b>：
+    訪客「本機書架 7/10」／登入者「海莉絲 3/5」。<br>
+    只存代碼字串。每張卡永遠有一顆<b>「複製代碼」當人工備份出口</b>，
+    且 UI 明講「未登入的配裝只存在這台裝置」。052-E 上線後提供<b>手動勾選匯入</b>
+    （不自動合併 —— 自動合併會在配額滿時產生無聲的取捨）。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策六：測試是驗收條件，不是加分項</strong><br>
+    ① <b>round-trip property test</b>：隨機產 10,000 份合法配裝，斷言 <code>decode(encode(x))</code> 深等於 <code>x</code>。<br>
+    ② <b>模糊測試</b>：隨機位元翻轉 10,000 次，斷言不 throw、不無窮迴圈、checksum 攔截率 &gt; 99%。<br>
+    ③ <b>golden fixture</b>：每個 FMT 版本凍一組代碼字串 ＋ 期望解碼結果，<b>舊版解碼器永不刪除</b>。<br>
+    ④ <b>邊界</b>：空碼、只有 header、超長、非法字元、未來版本號。
+  </div>
+
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label green">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>src/utils/loadoutCode/</code>：<code>shareId.ts</code>／<code>codec.ts</code>／fixtures ＋ 三組測試</li>
+      <li><code>share-id.lock.json</code>（進版控）＋ <code>scripts/check-share-ids.mjs</code> ＋ 寫進 data-patch 流程</li>
+      <li><code>/simulator?b=</code> 讀取與「複製分享連結」；貼碼預覽卡與全套錯誤文案</li>
+      <li>訪客 localStorage 書架 10 套 ＋ 自動草稿</li>
+      <li>匯出圖重做（<code>html-to-image</code>、螢幕外固定 1080×1350、印全部 mounts ＋ 分享網址）並<b>移除 <code>html2canvas</code> 依賴</b></li>
+      <li><code>SITE_NAME</code> 收成單一常數（現行全站第 5 份硬編）</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>雲端存檔與 Firestore rules → <b>052-E</b>（本階段只有本機書架）</li>
+      <li>OG 預覽卡（要動 Cloudflare Dashboard 的 Transform Rule）→ <b>052-H</b></li>
+      <li>配裝標籤與熱門統計 → <b>052-H</b>（標籤白名單見總綱 Q-3）</li>
+      <li>元件／模組挑選 UI → 052-D／052-G；<b>但 codec 的對應段在本階段就要開好</b></li>
+    </ul>
+  </div>
+
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label green">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-052-C 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-052-C — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

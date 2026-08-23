@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042 故事館 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* 共用 style.css 未定義 red 變體（既有頁面多依賴其橘色預設，故不動共用檔），此處僅為本頁補上 */
+.hero-badge.red    { border-color: var(--accent-red); color: var(--accent-red); background: rgba(239,68,68,0.06); }
+.section-label.red { color: var(--accent-red); }
+
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+
+/* ── 版面配置預覽（wireframe）───────────────────────────── */
+.wf {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  margin: 16px 0;
+}
+.wf-caption {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.wf-frame {
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #161b22;
+}
+.wf-topbar {
+  height: 26px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid #30363d;
+  display: flex; align-items: center;
+  padding: 0 12px;
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+.wf-split { display: grid; grid-template-columns: 42fr 58fr; min-height: 340px; }
+.wf-left  { padding: 16px; border-right: 1px dashed #30363d; }
+.wf-right {
+  position: relative;
+  padding: 16px;
+  background:
+    repeating-linear-gradient(45deg, rgba(239,68,68,0.03) 0 8px, transparent 8px 16px),
+    #12161d;
+}
+.wf-box {
+  border: 1px dashed #4a5568;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  color: #8b949e;
+  line-height: 1.7;
+}
+.wf-box.solid { border-style: solid; }
+.wf-box strong { color: #c9d1d9; font-size: 12px; display: block; margin-bottom: 3px; }
+.wf-label {
+  display: inline-block;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin-bottom: 6px;
+}
+.wf-label.red   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.wf-label.cyan  { background: rgba(34,211,238,0.15); color: #22d3ee; border: 1px solid rgba(34,211,238,0.3); }
+.wf-label.green { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+.wf-art {
+  border: 1px solid rgba(239,68,68,0.4);
+  border-radius: 6px;
+  height: 210px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px;
+  color: #6e7681;
+  font-size: 11px;
+  background: radial-gradient(ellipse at 50% 60%, rgba(239,68,68,0.08), transparent 70%);
+}
+.wf-art .big { font-size: 26px; opacity: 0.5; }
+.wf-corner {
+  position: absolute; top: 14px; right: 16px;
+  text-align: right; font-size: 10px; color: #8b949e; line-height: 1.8;
+}
+.wf-vert {
+  position: absolute; top: 52px; right: 128px;
+  writing-mode: vertical-rl;
+  font-size: 15px; letter-spacing: 4px; color: #c9d1d9; font-weight: 700;
+}
+.wf-thumbs { display: flex; gap: 5px; margin-top: 12px; }
+.wf-thumb {
+  width: 40px; height: 26px;
+  border: 1px solid #30363d; border-radius: 3px;
+  background: rgba(255,255,255,0.03);
+}
+.wf-thumb.on { border-color: #b10000; border-width: 2px; background: rgba(239,68,68,0.12); }
+.wf-npc {
+  display: flex; gap: 8px; align-items: flex-start;
+  border-left: 2px solid rgba(34,211,238,0.5);
+  background: rgba(34,211,238,0.04);
+  border-radius: 0 6px 6px 0;
+  padding: 8px 10px; margin-top: 8px;
+}
+.wf-avatar {
+  width: 26px; height: 26px; border-radius: 4px; flex-shrink: 0;
+  background: rgba(34,211,238,0.15); border: 1px solid rgba(34,211,238,0.35);
+}
+.wf-scroll-hint {
+  text-align: center; font-size: 10px; color: #4a5568;
+  font-family: 'JetBrains Mono', monospace; margin-top: 6px;
+}
+.wf-mobile { display: grid; grid-template-columns: 260px 1fr; gap: 18px; align-items: start; }
+@media (max-width: 720px) {
+  .wf-split { grid-template-columns: 1fr; }
+  .wf-left { border-right: none; border-bottom: 1px dashed #30363d; }
+  .wf-mobile { grid-template-columns: 1fr; }
+  .wf-vert, .wf-corner { position: static; writing-mode: horizontal-tb; text-align: left; margin-bottom: 8px; }
+}
+
+/* ── 動畫時間軸圖 ── */
+.tl { margin: 16px 0; }
+.tl-row { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 12px; margin-bottom: 8px; }
+.tl-name { font-size: 12px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; text-align: right; }
+.tl-track { position: relative; height: 22px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.tl-bar { position: absolute; top: 0; bottom: 0; border-radius: 3px; display: flex; align-items: center; padding-left: 8px; font-size: 10px; color: #0d1117; font-weight: 700; }
+.tl-axis { display: grid; grid-template-columns: 96px 1fr; gap: 12px; margin-top: 4px; }
+.tl-ticks { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+/* ── 狀態徽章色階（沿用 PLAN-019 總綱定義） ── */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.badge-green  { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+.badge-yellow { background: rgba(234,179,8,0.15); color: var(--accent-yellow); }
+.badge-red    { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+.badge-purple { background: rgba(168,85,247,0.15); color: var(--accent-purple); }
+.badge-cyan   { background: rgba(6,182,212,0.15); color: var(--accent-cyan); }
+.badge-orange { background: rgba(255,107,43,0.15); color: var(--accent-orange); }
+
+/* ── 警示區塊（與 info/problem/decision-block 同一族，黃色） ── */
+.warn-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.22);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ── 對照表（沿用 PLAN-019 總綱定義） ── */
+.layer-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+.layer-table th { background: rgba(168,85,247,0.08); color: var(--accent-purple); font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 2px; padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
+.layer-table td { padding: 10px 14px; border: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
+.layer-table tr:hover td { background: var(--bg-card-hover); }
+.layer-table td:first-child { font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(239,68,68,0.13) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge red">◆ PLAN-042 · 總綱 MASTER</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-red) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    故事館<span style="-webkit-text-fill-color:var(--text-secondary);">Lore Museum · 總綱 · 章節逸聞 · 立繪顯影</span>
+  </h1>
+  <p class="hero-sub">把機甲與機師的逸聞升級為獨立於圖鑑的沉浸式故事館。本總綱統合兩館共用的資料模型、導覽形態、視覺調性與 chrome 決策，拆出 042-A 機師館（先做）與 042-B 機甲館。<br><span style="color:var(--accent-yellow);">2026-08-23 升格：</span>原「PLAN-042 機甲故事館」，因官方全身立繪素材到位、兩館比例同族，共用面遠大於預期，故升格為總綱。</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label red">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item"><div class="meta-label">計畫編號</div><div class="meta-value red">PLAN-042（總綱）</div></div>
+    <div class="meta-item"><div class="meta-label">建立日期</div><div class="meta-value ">2026-08-03（2026-08-23 升格總綱）</div></div>
+    <div class="meta-item"><div class="meta-label">影響範圍</div><div class="meta-value purple">types/lore · pilotLore / mechLore 集合 · pages/lore · Layout chromeMode · Worker routes</div></div>
+    <div class="meta-item"><div class="meta-label">優先級</div><div class="meta-value yellow">MID</div></div>
+    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value red">拆分完成 · 042-A 待開工</div></div>
+    <div class="meta-item"><div class="meta-label">定位</div><div class="meta-value cyan">Master Plan（大綱）</div></div>
+  </div>
+  <div class="info-block">
+    <strong>一句話：</strong>把機甲與機師的逸聞從詳情頁末端的一段純文字，升級為<strong>獨立於圖鑑的沉浸式故事館</strong>——
+    自己的路由、自己的視覺調性、自己的資料集合與編輯台。本總綱只放<strong>兩館共用的決策</strong>，
+    館別專屬的實作拆到 042-A（機師）與 042-B（機甲）。
+  </div>
+
+  <div class="warn-block">
+    <strong>2026-08-23 升格說明：</strong>本計畫原名「PLAN-042 機甲故事館」，範圍只含機甲，並在「不在範圍內」清單中
+    明列「機師故事館 —— 版面需求與機甲不同（人物半身像 vs 機體全身），另立 PLAN 處理」。<br>
+    該排除理由<strong>已於 2026-08-23 失效</strong>：官方友情贊助的素材包提供了 54 張機師<strong>全身直幅</strong>立繪，
+    比例中位 0.58，與機甲的直式全身同族（官網 <code>hero/</code> 是 768×1400 = 0.55）。
+    兩館的立繪欄版面因此可以共用同一套，不需要為比例做參數化。<br>
+    同時確認兩館共用的東西遠多於預期（路由、chrome、章節元件、顯影動畫、換膚層），
+    故將本計畫升格為總綱，拆出 042-A / 042-B。<strong>先做 042-A 機師館</strong>，理由見下方子計畫表。
+  </div>
+
+</section>
+<section class="section">
+  <div class="section-label cyan">Research</div>
+  <div class="section-title">官網動畫拆解（兩館共用的研究成果）</div>
+
+
+  <div class="info-block">
+    以瀏覽器直接解析 <code>ma.tentree-games.com</code> 的 DOM、CSS 與執行期 opacity 取樣，還原其實際行為。
+    技術棧 jQuery + fullpage.js + owl.carousel。<strong>機甲區（#mecha）與機師區（#hero）是同一套四層圖層架構</strong>，
+    連 keyframe 都共用（<code>.hero-name</code> 用的 keyframe 就叫 <code>mechaData</code>）——
+    官網自己就在兩區之間共用動畫，這是「兩館共用元件」最直接的背書。
+  </div>
+
+  <div class="data-table-wrap">
+    <table class="layer-table">
+      <tr><th>圖層</th><th>class（#hero）</th><th>檔名</th><th>z-index</th><th>內容</th></tr>
+      <tr><td>線稿</td><td><code>.hero-line</code></td><td><code>h01-1.png</code></td><td>1</td><td>藍圖線稿</td></tr>
+      <tr><td>彩圖</td><td><code>.hero-color</code></td><td><code>h01-2.png</code></td><td>2</td><td>完整彩繪立繪</td></tr>
+      <tr><td>姓名</td><td><code>.hero-name</code></td><td><code>h01-3.png</code></td><td>5</td><td>直書姓名（圖片）</td></tr>
+      <tr><td>資料塊</td><td><code>.hero-data</code></td><td><code>h01-4.png</code></td><td>5</td><td>陣營 / 駕駛許可 / 天賦</td></tr>
+    </table>
+  </div>
+
+  <div class="decision-block">
+    <strong>關鍵發現：線稿「領先」彩圖，而且兩區的領先量不同</strong><br>
+    實際 CSS：<code>.hero-line { animation: 1s cubic-bezier(.25,.46,.45,.94) both heroLine }</code>、
+    <code>.hero-color { animation: 1.05s ... both heroColor }</code>。
+    切換到第 3 位機師後 opacity 逐幀取樣（ms：線／彩／名／資料）：
+    <pre><code> 81: .06/.00/.00/.10 ｜ 268: .40/.00/.06/.76 ｜ 439: .67/.00/.67/1.0
+522: .76/.19/.83/1.0 ｜ 772: .93/.77/1.0/1.0 ｜ 1105: 1.0/1.0/1.0/1.0</code></pre>
+    <strong>機師區線稿領先彩圖約 450–500ms；機甲區實測是 250ms。</strong>
+    <code>LoreArt</code> 元件的延遲必須是 prop 而非寫死，否則兩館接上時要二次重構。
+  </div>
+
+  <div class="warn-block">
+    <strong>不照抄的部分：</strong>官網的姓名與資料塊是<strong>切好的 PNG</strong>（每個實體 4 張圖），而且官網只有 8 位機師（行銷精選頁）。
+    我們有 89 位機師 + 90 台機甲，且立繪構圖離散度極大（alpha bbox 寬度佔比 0.39–1.00、中心 x 0.38–0.64）。
+    <strong>「把文字壓在立繪的負空間上」我們做不到</strong>，硬做會有一大批壓到臉或壓到空白。<br>
+    → 版面必須是「<strong>固定骨架 ＋ 浮動立繪</strong>」：立繪待在自己的欄位、文字待在自己的欄位、兩者不互相依賴。
+    天花板是「每張都不出錯」，不是「每張都恰到好處」。
+  </div>
+
+</section>
+<section class="section">
+  <div class="section-label red">Architecture</div>
+  <div class="section-title">共用架構（兩館必須一致的六個決策）</div>
+
+
+  <div class="decision-block">
+    <strong>決策一：內容分成兩層，資料現況完全相反</strong>
+    <div class="data-table-wrap">
+      <table class="layer-table">
+        <tr><th>層</th><th>內容</th><th>現況</th><th>歸屬</th></tr>
+        <tr><td><strong>A 檔案層</strong></td>
+            <td>機師：<code>fullName</code> / <code>profile</code>{性別,血型,身高,<code>additionalInfo</code>} / <code>lore</code><br>
+                機甲：<code>lore</code> / 類型 / <code>manufacturer</code>（待新增）</td>
+            <td><span class="badge badge-green">機師 89/89 · 機甲 89/89</span></td>
+            <td>留在 <code>pilots</code> / <code>mechs</code></td></tr>
+        <tr><td><strong>B 章節層</strong></td>
+            <td>逸聞 PART 1..N，每 PART 有標題與數百字正文</td>
+            <td><span class="badge badge-red">0 筆，完全不存在</span></td>
+            <td>另開 <code>pilotLore</code> / <code>mechLore</code></td></tr>
+      </table>
+    </div>
+    <strong>B 層才是故事館的主體，A 層只是它的扉頁。</strong>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：接縫判準是「誰是權威來源」，不是「故事 vs 數值」</strong><br>
+    <strong>爬蟲寫的留 <code>pilots</code> / <code>mechs</code>；人寫的進 <code>pilotLore</code> / <code>mechLore</code>。</strong><br>
+    這條比「故事 vs 數值」好用，因為它能回答 <code>lore</code> 這種<u>看起來像故事、其實是官方原文鏡像</u>的邊界案例。
+    <ul>
+      <li><code>lore</code>（<code>detail.Introduction</code> 的鏡像）<strong>不搬</strong> —— 圖鑑的 hover 浮窗（<code>EntityRefView.tsx:68</code>）
+        與引用稽核（<code>entityRefs.ts:296</code>，origin 就叫「機師簡介」）都在用它。搬走 = 浮窗變空白，或兩個真相源。</li>
+      <li><code>profile</code> / <code>additionalInfo</code> <strong>不搬</strong> —— 爬蟲每次補丁都會重寫
+        （<code>scrape-pilots-v3.js:464-467, 483-489</code>）。搬走後兩份會慢慢漂移，<u>而且沒有任何機制會發現</u>。</li>
+      <li>lore 集合承載<strong>所有編輯得動的展示文本</strong>：章節、旁白、署名結構化、<code>additionalInfo</code> 的顯示順序與白名單。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：型別共用（<code>src/types/lore.ts</code>），集合分家（<code>pilotLore</code> / <code>mechLore</code>）</strong><br>
+    型別在兩館之間完全同構，<code>speakerId → pilots</code> 對機甲與機師都成立。
+    <strong>但集合不可合一</strong>，因為版本 gate 是集合級（<code>versions.ts:37-45</code>）、Worker 只有整包端點（無單文件路由）。
+    合一的後果是「改一台機甲的 PART 2 → 機師故事館的快取一起失效」「看一位機師的故事 → 連 90 台機甲的逸聞一起下載」。
+    <pre><code><span class="c">// src/types/lore.ts —— 兩館共用</span>
+export interface LoreCommentary { speakerId: string; text: string }
+export interface LoreChapter {
+  key:    string      <span class="c">// 穩定鍵，後台新增章節時自動產生。<b>必填</b>——見決策五</span>
+  label?: string      <span class="c">// 'PART 1'；未設定則依索引生成</span>
+  title:  string      <span class="c">// '光環遍身'</span>
+  body:   string      <span class="c">// 正文，支援 PLAN-019 的 [引用] 標記</span>
+  source?: string     <span class="c">// 出處署名（'——《週刊米赫瑪·文娛版》'）</span>
+  commentary?: LoreCommentary[]
+}</code></pre>
+    <div class="warn-block" style="margin-top:10px">
+      <strong>⚠ 新 CollectionKey 有七處同步成本，本專案已為此炸過一次。</strong>
+      <code>collectionKeys.ts</code> 檔頭自己列出這份清單被四處複製、每處都漏過；
+      PLAN-048 把「activityTypes 開成新 CollectionKey」列為否決項，註明「PLAN-043 就是漏掉 backpackSkills 炸在正式站」。<br>
+      要同步：<code>collectionKeys.ts</code>、<code>workers/src/index.ts</code> 的 <code>ARRAY_COLLECTIONS</code>（漏＝正式站 404、本機全綠）、
+      <code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>（漏＝整條指令 exit(1)）、<code>entityRefs</code> SPECS、
+      測試 helper、<code>firestore.rules</code>、<code>GameDataContext</code> 的 state ＋ switch ＋ 型別。
+    </div>
+    <div class="warn-block">
+      <strong>⚠ localStorage 已經在門檻上。</strong>實測全集合快取展開後佔用達 <strong>4.2–4.5 MB</strong>
+      （UTF-16 計，pilots 一個就 2.09 MB），逼近 Chrome 約 5 MB 上限。而 <code>GameDataContext.tsx:41-47</code> 的
+      <code>writeCache</code> catch <strong>是空的</strong>——配額超限的症狀是「每次都靜默重讀」，零錯誤訊息。<br>
+      <strong>逸聞集合要嘛跳過 localStorage 層、要嘛設體積上限。</strong>
+    </div>
+    <div class="warn-block">
+      <strong>⚠ 故事館全程不新增 <code>RefType</code>。</strong><code>common.ts:44-51</code> 逐字列出新增 RefType 要補五處窮舉消費端，
+      其中 <code>RefPicker.tsx:23</code> 的 <code>REF_TYPE_OPTIONS</code> 是手寫陣列、<u>漏了不報錯</u>。
+      <code>speakerId</code> 只允許指向 pilots。
+    </div>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：導覽形態是「章間離散、章內連續」</strong><br>
+    單章 pager ＋ 常駐<strong>具名</strong>章節軸（<code>PART 3 · 落葉需歸根</code>，不要圓點——圓點只說「還有別的」，具名軸說「別的是什麼」）。
+    <ul>
+      <li>換章<strong>只接離散輸入</strong>：點章節軸、◀▶、容器聚焦時的 ←→、手機水平滑動。<strong>絕不接滾輪。</strong></li>
+      <li>章內正文超高就正常垂直捲動。「一屏放得下」在本站做不到——
+        root font-size 是 <strong>19px 不是 16px</strong>（<code>Layout.tsx:17</code> 的 <code>FONT_SIZE_MAP</code>，且使用者可調三段），
+        1366×768 筆電扣掉 header/subnav 後只剩約 667px，一段 500 字約需 585px。<strong>任何按 16px 心算的版面預算都低估兩成。</strong></li>
+      <li><strong>N === 1 時整套導覽底盤不渲染</strong>（章節軸、頁碼、◀▶、下一章列全部不掛），單章佔滿閱讀區。
+        上線初期 N=1 是主路徑，不是邊界情況。</li>
+    </ul>
+    <div class="warn-block" style="margin-top:10px">
+      <strong>⚠ 明確否決 scroll-snap 分屏。</strong>站內已實作過、失敗過、並以明文原因刪除（<code>src/index.css:145-151</code>）：
+      「把離散選擇綁在滾輪／觸控板這種連續輸入上，於是『輕輕滾一下就整頁彈回 Hero』是<u>結構必然，而不是可以調參數修掉的 bug</u>」。
+      而且它本質仍是捲動，沒有解決「不要一直往下捲」的訴求。官網那套 fullpage.js 全屏換頁同樣不引入。
+    </div>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：PART 進網址，鍵必須是後台自動產生的必填穩定鍵</strong><br>
+    路由 <code>/lore/pilots/:id/:part</code>。<strong>網址是唯一真相</strong>（PLAN-050 判準，與便利性無關）——
+    為的是可分享的深連結、社群預覽卡、PLAN-046 的「哪個 PART 有人讀到」統計、瀏覽器上一頁。<br>
+    <strong>不能用陣列索引</strong>：日後在 PART 2 後插一章，所有已分享的連結會集體指向錯誤章節，<u>而且不報錯</u>。<br>
+    <strong>也不要開 <code>key?: string</code> 這種選填欄位</strong>——PLAN-041 已把 0/5 定律精確化為
+    「每一個投機性的<u>選填欄位</u>都是空的（SkillVariant 0/710、SkillArea 0/710、effects 全庫非空 0 個）」，
+    加 fallback 的選填鍵實務上沒人填，上線跑的就是那個以索引為底的 fallback。
+    <strong>正解：由後台編輯器在新增章節當下自動產生並寫入的必填鍵</strong>，讓「不填」在資料上不可能發生。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：留在 Layout 之下，用第三種 chrome ＋ 紙色換膚做「介面上分開」</strong>
+    <ul>
+      <li><strong>不要另開平行的頂層 Route。</strong><code>Layout.tsx:116</code> 是 <code>usePageTracking()</code> 的<u>全站唯一呼叫點</u>，
+        而 <code>routeKeys.test.ts</code> 只斷言路由有沒有登記進 <code>ROUTE_PATTERNS</code>、<u>不斷言它有沒有真的被追蹤</u>。
+        脫離 Layout 的後果是 PLAN-046 對整個故事館永遠 0 筆，而 <code>npm test</code> 全綠。</li>
+      <li>把 <code>Layout.tsx:121</code> 的 <code>isFullHeightPage</code> 布林升成
+        <code>chromeMode: 'default' | 'viewport' | 'immersive'</code>。目前那個布林同時決定 footer 與手機 Tab Bar 佔位，
+        再加一個特殊頁面就會變成多個布林交叉判斷。<br>
+        <code>immersive</code> ＝ 無 subnav、無 footer、無底部佔位、header 縮成一條半透明帶只留館名與「離館」。</li>
+      <li><strong>紙色展場</strong>：在祖先 <code>.lore-shell</code> 重寫 <code>--color-bg-dark</code> 等 token
+        （Tailwind v4 的 utility 在使用點讀 <code>var(--color-*)</code>，實測 dist CSS 內出現 343 次），
+        約 20 行 scoped CSS，退場只要拿掉那層 class。<br>
+        三個例外必處理：<code>:root { color-scheme: dark }</code> 不是 token（原生捲軸/下拉要另行宣告）、
+        body 的 <code>homepage_background.webp</code> 覆寫不掉（館內要自己鋪不透明底）、
+        全站約 35 處硬寫色值（集中在 <code>timeline/</code>、<code>auth/</code>、<code>profile/</code>，故事館幾乎不重用）。</li>
+      <li><strong>導覽列入口走 <code>NavGroupTrigger</code>，但 items 要排除在 <code>SUB_NAV_GROUPS</code> 之外</strong>——
+        它直接沿用 <code>NAV_GROUPS</code> 的同一份 items 陣列，只要把 <code>/lore/pilots</code> 寫進任何一個 group，
+        館內就會自己長出圖鑑式的分頁列，沉浸直接破功。</li>
+    </ul>
+    <div class="warn-block" style="margin-top:10px">
+      <strong>⚠ immersive 只能是「收掉 chrome」，不可再引入 scroll-snap 全屏。</strong>
+      PLAN-050 Phase B 正是為了捲動誤觸把 PLAN-015 的 scroll-snap 全屏架構整段移除。
+    </div>
+  </div>
+
+</section>
+<section class="section">
+  <div class="section-label red">Sub-Plans</div>
+  <div class="section-title">子計畫拆分（本總綱為大綱）</div>
+
+
+  <div class="data-table-wrap">
+    <table class="layer-table">
+      <tr><th>子計畫</th><th>範圍</th><th>素材與資料就緒度</th><th>狀態</th></tr>
+      <tr><td><a href="../PLAN-042-A_機師故事館/計畫書.html" style="color:var(--accent-orange);"><strong>PLAN-042-A</strong><br>機師故事館</a></td>
+          <td><strong>先做。</strong>共用元件（<code>LoreArt</code> / <code>LoreChapterPager</code> / 紙色換膚 / chromeMode）
+              全部在此建立，042-B 直接引用。加上機師館自己的頁面、<code>pilotLore</code> 集合、編輯台、Worker route。</td>
+          <td><span class="badge badge-green">立繪 53/89（S 級 85%）· lore 89/89</span></td>
+          <td><span class="badge badge-cyan">待開工</span></td></tr>
+      <tr><td><a href="../PLAN-042-B_機甲故事館/計畫書.html" style="color:var(--accent-yellow);"><strong>PLAN-042-B</strong><br>機甲故事館</a></td>
+          <td>機甲專屬：90 張 <code>lore-art</code> 素材工程、<code>manufacturer</code> 欄位、
+              <code>mechLore</code> 集合、機甲牆與機甲故事頁。<strong>元件全部沿用 042-A 的成果。</strong></td>
+          <td><span class="badge badge-red">立繪 0/90 · 需人工出圖</span></td>
+          <td><span class="badge badge-purple">阻塞於 042-A</span></td></tr>
+    </table>
+  </div>
+
+  <div class="decision-block">
+    <strong>為什麼先做機師（順序與原 PLAN-042 相反）</strong>
+    <div class="data-table-wrap">
+      <table class="layer-table">
+        <tr><th></th><th>機師（042-A）</th><th>機甲（042-B）</th></tr>
+        <tr><td>大立繪素材</td>
+            <td><span class="badge badge-green">54 檔官方全身立繪已到手</span>轉檔即用（高 1400 / WebP q88 / 平均 100 KB / 共 5.3 MB）</td>
+            <td><span class="badge badge-red">0 檔</span><code>portrait.webp</code> 只有 560×340，放大會糊</td></tr>
+        <tr><td>檔案簡介</td>
+            <td>89/89，且 <strong>34 篇引文體、35 篇帶出處署名</strong>（<code>——《週刊米赫瑪·文娛版》</code>）</td>
+            <td>89/89，但<strong>引文體 0 篇、署名 0 篇</strong></td></tr>
+        <tr><td>敘事型 metadata</td>
+            <td><code>additionalInfo</code> 81/89、<strong>94 種自由鍵名</strong>（入獄次數／嵐物質汙染程度／註冊寵物…）</td>
+            <td>幾乎沒有，<code>manufacturer</code> 還要新增</td></tr>
+      </table>
+    </div>
+    先做機師 ＝ 用近乎零的素材成本，把兩館共用的元件與版面全部驗證完；機甲版接上時只剩自己的素材工程要做。
+  </div>
+
+  <div class="warn-block">
+    <strong>降級為備案：EDITOR 角色與協作編輯台（原 PLAN-042 E 段）</strong><br>
+    原規劃新增 EDITOR 角色，以 <code>affectedKeys().hasOnly()</code> 做欄位級授權，並建協作者編輯台 <code>/lore-editor</code>。<br>
+    2026-08-23 確認<strong>內容輸入不是瓶頸</strong>（機師約三週才出一位新的，且有 OCR 工具輔助），
+    單人維護不需要協作台。<strong>整段降級為備案</strong>，省下：三處 UserRole 聯集（<code>enums.ts:309</code> / <code>user.ts:17</code> / <code>userApi.ts:71</code>）、
+    <code>firestore.rules</code> 欄位級授權、<code>changeHistory</code> 與 <code>meta</code> 放行、<code>EditorRoute</code>、docs 權限文件同步。<br>
+    <strong>這是本次拆分最大的一筆工時節省。</strong>日後若真要找人協作，另開 042-C。
+    <br><span style="color:var(--text-dim);">附帶好處：故事另開集合後，欄位級授權本來就可以換成一行
+    <code>match /pilotLore/{docId} { allow write: if isEditor() }</code>，少一個 Firestore rules 地雷面。</span>
+  </div>
+
+</section>
+<section class="section">
+  <div class="section-label purple">Scope</div>
+  <div class="section-title">總綱層級的範圍界定</div>
+
+
+  <div class="info-block">
+    <strong>本總綱負責：</strong>共用架構決策（上方六條）、官網研究成果、子計畫拆分與順序、跨館一致性的把關。
+    <strong>本總綱不含任何實作任務</strong>——所有 task 都在 042-A / 042-B 的進度表裡。
+  </div>
+
+  <div class="problem-block">
+    <strong>兩館都不做的事</strong>
+    <ul>
+      <li><strong>玩家標籤與評分</strong>（遊戲圖鑑裡的「老婆／暴力／抽爆」與 5.0★）——主觀且本站無資料，不列入。</li>
+      <li><strong>陣營／世界觀條目</strong>——陣營歸屬會隨劇情變動、資料易失效。
+        且 <code>glossaryTerms</code> 那 2 筆陣營詞條是為了複合 faction 值消歧而存在，不是陣營敘事的承載層；
+        <code>GlossaryTerm.aliases</code> 的契約是「<code>[xxx]</code> 引用的同義詞」，全站沒有 faction→term 的解析路徑。真要做需要新的解析層。</li>
+      <li><strong>官方 <code>lore</code> 原文插 <code>[xxx]</code> 標記</strong>——理由是<u>編輯分層</u>（<code>lore</code> 要當官方原文鏡像，
+        可編輯的展示文本住在 lore 集合），不是「爬蟲會洗掉」（實測補丁路徑 <code>scrape-pilots-v3.js:751-771</code> 從不寫 lore）。</li>
+      <li><strong>交叉連結自動生成</strong>——實測誤判明確：奧菲利亞被判成提及「瑪麗」（實為「羅斯瑪麗」的子字串）、
+        真嗣同時命中「迪恩」與「迪恩·奈特」（name/fullName 重複）。要連就人工連。</li>
+      <li><strong>官網 fullpage.js 全屏捲動換頁</strong>——與既有 Layout 衝突，且 PLAN-050 已為此移除過一次。</li>
+    </ul>
+  </div>
+
+  <div class="warn-block">
+    <strong>⚠ 原 PLAN-042 有三處過期指涉，子計畫不要照抄</strong>
+    <ul>
+      <li><code>src/components/Layout.tsx</code> / <code>src/components/AdminRoute.tsx</code> → 實際已在 <code>layout/</code> 與 <code>auth/</code> 子資料夾</li>
+      <li><code>MechDetailPage.tsx:548</code> → 實際 lore 區塊在 <code>:317</code></li>
+      <li><code>public/images/mechs/&lt;名&gt;/portrait.png</code> → 實際是 <code>.webp</code></li>
+      <li>品質表寫「直書名沿用 PLAN-029 已自託管的字體」→ <code>public/fonts/</code> 只有 orbitron 與 jetbrains-mono 兩個
+        <strong>latin 子集</strong>，<u>根本渲染不了中文直書名</u>。中文仍走系統堆疊（<code>index.css:94</code>）。</li>
+    </ul>
+  </div>
+
+</section>
+<section class="section">
+  <div class="section-label red">Progress</div>
+  <div class="section-title">子計畫進度</div>
+
+
+  <div class="info-block">
+    本總綱不追蹤個別任務。各子計畫進度見：
+    <a href="../PLAN-042-A_機師故事館/進度表.html" style="color:var(--accent-orange);">042-A 進度表</a> ·
+    <a href="../PLAN-042-B_機甲故事館/進度表.html" style="color:var(--accent-yellow);">042-B 進度表</a>
+  </div>
+  <div class="info-block">
+    <strong>相關評估紀錄：</strong>拆分依據來自 <code>_local-notes/2026-08/2026-08-23_機師故事館_版面方案初評.html</code>（v3，本機不進版控）——
+    含 5 維度深度評估、對抗性檢驗推翻的 18 條結論、以及正式站 Firestore 與素材包的實測數據。
+  </div>
+
+</section>
+
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-042 — <a href="../index.html" style="color:var(--accent-red);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

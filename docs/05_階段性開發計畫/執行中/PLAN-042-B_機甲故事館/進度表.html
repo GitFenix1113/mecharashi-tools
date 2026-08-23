@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-B 機甲故事館 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* 共用 style.css 未定義 red 變體（既有頁面多依賴其橘色預設，故不動共用檔），此處僅為本頁補上 */
+.hero-badge.red    { border-color: var(--accent-red); color: var(--accent-red); background: rgba(239,68,68,0.06); }
+.section-label.red { color: var(--accent-red); }
+
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+
+.note-warn {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.note-warn strong { color: var(--accent-yellow); }
+
+/* ── 狀態徽章色階（沿用 PLAN-019 總綱定義） ── */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.badge-green  { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+.badge-yellow { background: rgba(234,179,8,0.15); color: var(--accent-yellow); }
+.badge-red    { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+.badge-purple { background: rgba(168,85,247,0.15); color: var(--accent-purple); }
+.badge-cyan   { background: rgba(6,182,212,0.15); color: var(--accent-cyan); }
+.badge-orange { background: rgba(255,107,43,0.15); color: var(--accent-orange); }
+
+/* ── 警示區塊（與 info/problem/decision-block 同一族，黃色） ── */
+.warn-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.22);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ── 對照表（沿用 PLAN-019 總綱定義） ── */
+.layer-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+.layer-table th { background: rgba(168,85,247,0.08); color: var(--accent-purple); font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 2px; padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
+.layer-table td { padding: 10px 14px; border: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
+.layer-table tr:hover td { background: var(--bg-card-hover); }
+.layer-table td:first-child { font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-B 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(234,179,8,0.13) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge yellow">◆ PLAN-042-B</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">機甲故事館</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-23 · 標 <span class="badge badge-cyan">引用 042-A</span> 者不重做元件</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label yellow">Progress</div>
+  <div class="section-title">總進度</div>
+
+
+  <div class="summary-row">
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">0</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">9</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">9</div><div class="summary-lbl">開發者任務</div></div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">0 / 9</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 0%"></div></div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>機甲也有自己的展間，與機師館共用同一套節奏與視覺語言，
+    使用者在館內從機師走到機甲不會有斷裂感。
+  </div>
+
+  <div class="warn-block">
+    <strong>阻塞於 <a href="../PLAN-042-A_機師故事館/進度表.html" style="color:var(--accent-orange);">PLAN-042-A</a> 的 Phase C。</strong>
+    共用元件（<code>LoreArt</code>／<code>LoreChapterPager</code>／章節與旁白渲染／<code>chromeMode</code>／紙色換膚）
+    全部由 042-A 建立，本計畫只引用不重做。<br>
+    <strong>但 Phase M（素材）不受阻塞，可以並行開始</strong>——90 張出圖是本計畫的長尾，越早開工越好。
+  </div>
+
+</section>
+<section class="section">
+  <div class="section-label yellow">Phase M</div>
+  <div class="section-title">素材工程（可與 042-A 並行）</div>
+
+
+  <div class="section-desc">本計畫最大的一筆成本，也是它排在機師之後的唯一原因。不阻塞，建議最早開工。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">M-1 &nbsp; 機甲全身立繪出圖</div>
+      <div class="task-group-meta">public/images/mechs/<名>/lore-art.webp</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">規格與比例確認</div>
+        <div class="task-desc">長邊上限 1400px、四周約 5% 安全邊距、WebP、去背。<b>比例必須落在約 0.5–0.65 直幅</b>，對齊 042-A 實測的機師立繪中位 0.58 與官網 hero 的 0.55。<br><b>⚠ 出圖前先確認比例</b>——若做成別的比例，042-A 建立的立繪柱就得改成參數化，那是橫跨兩館的重構。</div>
+        <div class="task-file">public/images/mechs/&lt;名&gt;/lore-art.webp</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">90 台逐台出圖</div>
+        <div class="task-desc">現有 <code>portrait.webp</code> 只有 560×340 半身裁切，放大會糊，<b>不能當來源</b>。需另尋圖源或人工製作。這是長期作業，故事館首頁對缺圖者顯示「立繪待補」。</div>
+        <div class="task-file">public/images/mechs/</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">M-2 &nbsp; 偽線稿濾鏡以機甲素材重新調參</div>
+      <div class="task-group-meta">src/components/lore/LoreArt.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">重測，不可假設沿用人像參數</div>
+        <div class="task-desc">042-A 已測完人像（54 張，只有零觸發 &gt;35% 門檻）。<b>機體的金屬高光、硬邊輪廓與人像完全不同，參數與失效門檻都要重測</b>。沿用 042-A 建立的逐張旗標機制，量測腳本可直接複用。<br><span style='color:var(--text-dim);'>原 PLAN-042 說「已在官網彩圖上實測通過」——那是對<u>官網的圖</u>測的，不等於對<u>我們的機甲立繪</u>成立（我們的還沒畫）。</span></div>
+        <div class="task-file">src/components/lore/LoreArt.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+</section>
+<section class="section">
+  <div class="section-label yellow">Phase N</div>
+  <div class="section-title">資料模型</div>
+
+
+  <div class="section-desc">型別共用 042-A，集合分家。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">N-1 &nbsp; Mech.manufacturer 欄位</div>
+      <div class="task-group-meta">src/types/mech.ts · MechAdmin · docs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">型別、後台與 docs 同步</div>
+        <div class="task-desc">新增 <code>manufacturer?: string</code>。MechAdmin 加編輯欄位；依 CLAUDE.md 規則 2 同步 <code>docs/02_技術文件/02_資料模型/</code> 機甲資料模型頁。官方 API 未提供，人工填入。<br><b>⚠ 0/5 定律</b>：新加的選填欄位很可能長期低填充。後台機甲列表加「廠商」欄讓缺口可見，扉頁未填者顯示「廠商未載」而非留白。</div>
+        <div class="task-file">src/types/mech.ts · src/pages/user/admin/MechAdmin.tsx · docs/02_技術文件/02_資料模型/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">N-2 &nbsp; mechLore 集合</div>
+      <div class="task-group-meta">src/lib/api/mechLore.ts · 七處同步</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">集合與七處 CollectionKey 同步</div>
+        <div class="task-desc">型別直接 import 042-A 的 <code>src/types/lore.ts</code>，<b>不要另立一套</b>。七處同步清單同 042-A 的 A-2（<code>collectionKeys.ts</code>／Worker <code>ARRAY_COLLECTIONS</code>／<code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>／entityRefs SPECS／測試 helper／<code>firestore.rules</code>／<code>GameDataContext</code>）。寫入掛 <code>saveWithHistory</code>。</div>
+        <div class="task-file">src/lib/api/mechLore.ts · src/lib/collectionKeys.ts · workers/src/index.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+</section>
+<section class="section">
+  <div class="section-label yellow">Phase O</div>
+  <div class="section-title">機甲側頁面與編輯</div>
+
+
+  <div class="section-desc">元件全部引用 042-A，本階段只做機甲的接線。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">O-1 &nbsp; 機甲故事頁<span class="badge badge-cyan" style="margin-left:8px;">引用 042-A</span></div>
+      <div class="task-group-meta">src/pages/lore/MechLorePage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">路由與版面</div>
+        <div class="task-desc"><code>/lore/mechs/:id</code>（扉頁）與 <code>/lore/mechs/:id/:part</code>（章節）。版面直接引用 042-A 的立繪柱與 <code>LoreChapterPager</code>。扉頁的資訊錨點是「類型 / 製造廠商 / 登場版本」（機甲沒有 <code>additionalInfo</code> 這種自由鍵值）。</div>
+        <div class="task-file">src/pages/lore/MechLorePage.tsx · src/App.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">O-2 &nbsp; 館首頁的機甲分頁<span class="badge badge-cyan" style="margin-left:8px;">引用 042-A</span></div>
+      <div class="task-group-meta">src/pages/lore/LoreHomePage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機甲牆</div>
+        <div class="task-desc">042-A 已把館首頁做成「機甲｜機師」兩個分頁，本項只補機甲那一頁。縮圖用既有 <code>portrait.webp</code>。缺 <code>lore-art</code> 者以半透明卡標示「立繪待補」。</div>
+        <div class="task-file">src/pages/lore/LoreHomePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">O-3 &nbsp; 編輯台加機甲 tab<span class="badge badge-cyan" style="margin-left:8px;">引用 042-A</span></div>
+      <div class="task-group-meta">src/pages/admin/AdminLorePage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">接上 mechLore</div>
+        <div class="task-desc">編輯台本體由 042-A 建立（含章節 CRUD、必填 key 自動生成、OCR 貼上輔助）。本項只在實體選單加機甲來源、接上 <code>mechLore</code> 的讀寫。</div>
+        <div class="task-file">src/pages/admin/AdminLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">O-4 &nbsp; MechDetailPage lore 區塊改導引</div>
+      <div class="task-group-meta">src/pages/mechs/MechDetailPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">首句 ＋ 入館</div>
+        <div class="task-desc">同 042-A 的 D-4 做法：不能整段刪（<code>EntityRefView.tsx:79</code> 的 hover 浮窗在用 <code>m.lore</code>），也不能兩邊都完整顯示。改成「首句 ＋ 閱讀完整故事 ▸」。<br><b>⚠ lore 區塊在 <code>:317</code> 不是原 PLAN-042 寫的 <code>:548</code></b>（過期指涉）。寫入端 <code>MechAdmin.tsx:425</code> 也要一起看。<br><span style='color:var(--text-dim);'>註：機甲 lore 實測引文體 0 篇、署名 0 篇，不需要 042-A 那套引文卡與署名細線排版。</span></div>
+        <div class="task-file">src/pages/mechs/MechDetailPage.tsx:317 · src/pages/user/admin/MechAdmin.tsx:425</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">O-5 &nbsp; Worker 路徑涵蓋<span class="badge badge-cyan" style="margin-left:8px;">引用 042-A</span></div>
+      <div class="task-group-meta">workers/src/socialPreview.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">parseEntityPath 加機甲路徑</div>
+        <div class="task-desc">042-A 已把正則放寬到四段並加了 <code>/lore/*</code> route 與 CF Transform Rule 例外。本項只確認 <code>/lore/mechs/:id/:part</code> 命中、og 卡面素材（機甲用既有 og JPEG）正確。</div>
+        <div class="task-file">workers/src/socialPreview.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+</section>
+<section class="section">
+  <div class="section-label yellow">Phase P</div>
+  <div class="section-title">長期資料作業</div>
+
+
+  <div class="section-desc">非開發任務。開發收束後轉入「觀察維護中」追蹤。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P-1 &nbsp; 機甲逸聞內容輸入</div>
+      <div class="task-group-meta">mechLore 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">逐台輸入</div>
+        <div class="task-desc">90 台 × N PART，OCR 輔助。後台列表的「章節數」欄可視化缺口。</div>
+        <div class="task-file">mechLore 集合（後台作業）</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P-2 &nbsp; 廠商欄位補齊</div>
+      <div class="task-group-meta">mechs 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">90 台廠商人工填入</div>
+        <div class="task-desc">官方 API 未提供。後台機甲列表的「廠商」欄可視化缺口。</div>
+        <div class="task-file">mechs 集合（後台作業）</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+</section>
+
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-042-B — <a href="../index.html" style="color:var(--accent-yellow);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
