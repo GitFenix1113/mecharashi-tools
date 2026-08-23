@@ -144,7 +144,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-047 進度表</span>
   </div>
@@ -196,6 +196,24 @@
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 0%"></div>
     </div>
+  </div>
+
+  <div class="impact-note" style="background:rgba(168,85,247,0.08);border-color:rgba(168,85,247,0.3);">
+    <strong style="color:var(--accent-purple)">⚠ 本計畫已於 2026-08-24 被 PLAN-052 取代並歸檔（0/22 未動工，非完成）。</strong><br>
+    十二條設計決策中<b>十條被 PLAN-052 繼承</b>（ArmamentMount／SlotCapacity 共用型別、
+    固定武裝掛 <code>MechPart.fixedArmament</code>、佔據型與全鎖型兩個獨立 derive、
+    不開 <code>Mech.shoulderSlots</code>、一律用 <code>ArmorType.MEDIUM</code> 常數、
+    用陣列不用選填 scalar、<code>backupHand</code> 由背包決定…）；
+    <b>三條被使用者裁決推翻</b>：決策十二① 不改 Build 成多槽、② 不做形態獨立配裝、
+    <b>④ 不做部件混裝</b>（2026-08-23 決定要做）。<br>
+    另有兩項事實訂正：驗收數字全部過期（weapons 172→<b>180</b>、mechs 63→<b>90</b>、pilots 82→<b>89</b>、行號漂移 2 行）；
+    決策七「<code>equipSlot</code> × <code>mechRestriction</code> 完全無交錯」已被
+    <code>weapon_176_耀星</code>／<code>weapon_177_隕星</code>（singleHand + medium）推翻——
+    但結論更強：<b>gate 一律寫 <code>mechRestriction</code></b>（medium 49 筆 vs 戰術 44 筆）。<br>
+    → 後續請看
+    <a href="../../執行中/PLAN-052_配裝模擬器改版_總綱/計畫書.html" style="color:var(--accent-purple);">PLAN-052 總綱</a>
+    與
+    <a href="../../執行中/PLAN-052-A_配裝地基與槽位模型/進度表.html" style="color:var(--accent-purple);">PLAN-052-A</a>。
   </div>
 
   <div class="impact-note">
@@ -765,7 +783,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-047 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-047 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 歷史記錄</a>
 </footer>
 
 <!--LAST-UPDATED-->

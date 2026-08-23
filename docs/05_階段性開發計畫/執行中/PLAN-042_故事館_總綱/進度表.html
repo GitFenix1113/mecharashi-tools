@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042 故事館（總綱） — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* 共用 style.css 未定義 red 變體（既有頁面多依賴其橘色預設，故不動共用檔），此處僅為本頁補上 */
+.hero-badge.red    { border-color: var(--accent-red); color: var(--accent-red); background: rgba(239,68,68,0.06); }
+.section-label.red { color: var(--accent-red); }
+
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+
+.note-warn {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.note-warn strong { color: var(--accent-yellow); }
+
+/* ── 狀態徽章色階（沿用 PLAN-019 總綱定義） ── */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.badge-green  { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+.badge-yellow { background: rgba(234,179,8,0.15); color: var(--accent-yellow); }
+.badge-red    { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+.badge-purple { background: rgba(168,85,247,0.15); color: var(--accent-purple); }
+.badge-cyan   { background: rgba(6,182,212,0.15); color: var(--accent-cyan); }
+.badge-orange { background: rgba(255,107,43,0.15); color: var(--accent-orange); }
+
+/* ── 警示區塊（與 info/problem/decision-block 同一族，黃色） ── */
+.warn-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.22);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ── 對照表（沿用 PLAN-019 總綱定義） ── */
+.layer-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+.layer-table th { background: rgba(168,85,247,0.08); color: var(--accent-purple); font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 2px; padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
+.layer-table td { padding: 10px 14px; border: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
+.layer-table tr:hover td { background: var(--bg-card-hover); }
+.layer-table td:first-child { font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(239,68,68,0.13) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge red">◆ PLAN-042 · 總綱 MASTER</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-red) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">故事館（總綱）</span>
+  </h1>
+  <p class="hero-sub">總綱層級狀態與共用決策定案 · 個別任務見子計畫 · 建立於 2026-08-03（2026-08-23 升格）</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label red">Progress</div>
+  <div class="section-title">總綱狀態</div>
+
+
+  <div class="summary-row">
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">6</div><div class="summary-lbl">共用決策已定</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">2</div><div class="summary-lbl">子計畫</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">0</div><div class="summary-lbl">總綱層任務</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-yellow)">1</div><div class="summary-lbl">降級備案（EDITOR）</div></div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>讀故事的人有一個獨立於圖鑑的地方可去——自己的路由、自己的紙色展場、自己的章節節奏；
+    而查數值的人完全不受影響。
+  </div>
+
+  <div class="info-block">
+    <strong>本總綱不追蹤個別任務</strong>（比照 PLAN-019 總綱體例）。所有實作 task 在子計畫進度表：
+    <a href="../PLAN-042-A_機師故事館/進度表.html" style="color:var(--accent-orange);">→ 042-A 機師故事館</a> ·
+    <a href="../PLAN-042-B_機甲故事館/進度表.html" style="color:var(--accent-yellow);">→ 042-B 機甲故事館</a>
+  </div>
+
+</section>
+<section class="section">
+  <div class="section-label cyan">Decisions</div>
+  <div class="section-title">共用決策定案表</div>
+
+
+  <div class="data-table-wrap">
+    <table class="layer-table">
+      <tr><th>#</th><th>決策</th><th>定案</th><th>由誰實作</th></tr>
+      <tr><td>一</td><td>內容分層</td><td>A 檔案層（已滿）／ B 章節層（全空）；B 才是主體</td><td>兩館各自</td></tr>
+      <tr><td>二</td><td>資料接縫判準</td><td><strong>誰是權威來源</strong>：爬蟲寫的留原集合，人寫的進 lore 集合</td><td>兩館各自</td></tr>
+      <tr><td>三</td><td>型別與集合</td><td><code>src/types/lore.ts</code> 共用；<code>pilotLore</code> / <code>mechLore</code> 分家</td><td><span class="badge badge-orange">042-A 建立</span></td></tr>
+      <tr><td>四</td><td>導覽形態</td><td>章間離散、章內連續；具名章節軸；否決 scroll-snap</td><td><span class="badge badge-orange">042-A 建立</span></td></tr>
+      <tr><td>五</td><td>章節鍵</td><td>PART 進網址；後台自動產生的<strong>必填</strong>穩定鍵</td><td><span class="badge badge-orange">042-A 建立</span></td></tr>
+      <tr><td>六</td><td>chrome 與視覺</td><td><code>chromeMode: immersive</code> ＋ 紙色 <code>.lore-shell</code> 換膚</td><td><span class="badge badge-orange">042-A 建立</span></td></tr>
+    </table>
+  </div>
+
+  <div class="warn-block">
+    <strong>共用元件全部由 042-A 建立、042-B 直接引用。</strong>刻意不把它們另拆成第三個子計畫——
+    共用元件實務上一定是做 042-A 時順手長出來的，另立子計畫只會讓三份進度表互相漂移。<br>
+    042-B 的進度表對這些項目只列「引用」不列「實作」。
+  </div>
+
+</section>
+
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-042 — <a href="../index.html" style="color:var(--accent-red);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

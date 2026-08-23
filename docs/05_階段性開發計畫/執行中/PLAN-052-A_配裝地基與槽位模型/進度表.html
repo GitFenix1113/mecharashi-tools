@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-A 配裝地基與槽位模型 — 進度表 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-052-A 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-052-A</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">配裝地基與槽位模型</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-24</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">28</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">28</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-cyan);">0 / 28</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    機甲詳情頁第一次說得出「這台有幾個手／肩／背槽、哪些被固定武裝佔住」，四部位表顯示接口型別；<b>並修正 83 台機甲被顯示成 1/4 的火力</b>。對後續子計畫而言，這一階段交付的是「數字對得上、槽位問得出來」的地基。
+  </div>
+  <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);"><strong style="color:var(--accent-yellow)">動工前驗收條件：</strong>① 重跑一次 users／builds 為 0 筆的實測（決定 052-C／E 是否需要遷移路徑）；② 確認 PLAN-047 已歸檔，避免兩份計畫共寫 <code>src/utils/mechSlots.ts</code>。</div>
+</section>
+
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">數值純函式與 golden fixture</div>
+  <div class="section-desc">先把三個首屏數字算對。這一階段不碰 UI，交付物是「一組通過的測試」——重量與火力錯了，後面每一個畫面都是假的。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; totalWeight() ＋ golden fixture</div>
+      <div class="task-group-meta">src/utils/loadoutWeight.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">實作「取較重組」規則並用官方四組數字鎖住</div>
+        <div class="task-desc">
+          <code>chassis.weight + max(Σ主手, Σ備用) + Σ肩 + 背</code>。四組 fixture 全部來自官方整備截圖：先鋒 1825／突擊 1895／戰術 3125／虛粒子 1125（皆 ±0）。<b>⚠ 五份獨立設計原本都寫成加總，先鋒會算出 2625（誤差 44%）。</b>
+        </div>
+        <div class="task-file">src/utils/loadoutWeight.ts · src/utils/loadoutWeight.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; effectiveOutput(formKey) ＋ 出力加成表</div>
+      <div class="task-group-meta">src/utils/effectiveOutput.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">出力必須吃 formKey，不能吃整份 Build</div>
+        <div class="task-desc">
+          <code>parts.torso.output + 背包出力技能 + Σ模組 output_bonus</code>。背包加成硬編一張表並附測試：強襲者背包 +300（<code>bpskill_強襲者驅動·增傷</code>）、出力背包 Ⅰ/Ⅱ/Ⅲ = +200/250/300（<code>bpskill_出力增幅</code>、<code>type='PowerAdd'</code> 18 筆）。模組走 <code>levels[]</code> 的 <code>output_bonus</code>（實測僅 2 筆非 0）。<b>⚠ 注意循環：背包給出力、背包也吃重量，計算順序要定死並寫進函式註解。</b>
+        </div>
+        <div class="task-file">src/utils/effectiveOutput.ts · .test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; chassisFirepower()：全站停止讀 mech.firepower</div>
+      <div class="task-group-meta">src/utils/chassisStats.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">火力改 Σ 四部位，並在型別註解標死頂層欄位「勿讀」</div>
+        <div class="task-desc">
+          實測 83 台 scraped 機甲的頂層值 ＝ 單一部位值、7 台手建的 ≈ Σ；品質預覽四張截圖佐證四部位在同一品質階的火力完全相同（1040／1108／1186）。<b>只改顯示層</b>：DB 頂層欄位保留不動（爬蟲重抓不會把修好的值洗掉），在 <code>Mech.firepower</code> 加註解「爬蟲產物，語意不一致，勿讀，請用 chassisFirepower()」。
+        </div>
+        <div class="task-file">src/utils/chassisStats.ts · src/types/mech.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">盤點並改掉所有直接讀 mech.firepower 的地方</div>
+        <div class="task-desc">
+          <code>MechsPage</code>／<code>MechDetailPage</code>／卡片元件／模擬器結果頁。<b>⚠ 這會讓 83 台機甲的火力顯示變成 4 倍</b>，屬使用者可見變動 → 同一個 commit 在 <code>src/data/siteChangelog/</code> 寫一行「修正機甲火力顯示」。
+        </div>
+        <div class="task-file">src/pages/mechs/* · src/components/cards/*</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label cyan">Phase B</div>
+  <div class="section-title">槽位型別與 derive 層</div>
+  <div class="section-desc">建立全站唯一的槽位詞彙與容量真相入口（吞下 PLAN-047 Phase A）。不碰資料、不碰 UI。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; src/types/slots.ts（新檔）</div>
+      <div class="task-group-meta">types</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">ArmamentMount／SlotBank／SlotRef／SlotKey／SlotCapacity</div>
+        <div class="task-desc">
+          <code>slot</code> 直接用既有 <code>WeaponEquipSlot</code>，<b>不另造第四套部位詞彙</b>（PLAN-047 決策一）。<code>SlotBank</code> 與 slot 正交，故不違反該決策。註解要寫死兩件事：① 硬不變式 <code>mount.slot === weapon.equipSlot</code>；② <code>backupHand</code> 由背包決定（<code>type==='BackupEquipment'</code>，全庫 181 筆僅 <code>backpacks/60101706</code> 一筆）。
+        </div>
+        <div class="task-file">src/types/slots.ts · src/types/index.ts(barrel)</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">slotKey() / parseSlotKey() 單一入口 ＋ round-trip 測試</div>
+        <div class="task-desc">
+          格式 <code>bank:slot:side</code>（<code>main:singleHand:left</code>／<code>main:dualHand</code>）。<b>⚠ 禁止手寫字面量</b>：它是字串，打錯 tsc 不會擋。<b>⚠ 少了 bank 這一段，主手左手與備用左手會撞鍵、兩把武器的元件互相覆蓋。</b>
+        </div>
+        <div class="task-file">src/types/slots.ts · src/utils/slotKey.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; src/utils/mechSlots.ts</div>
+      <div class="task-group-meta">全站唯一的槽位真相入口</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">mechSlotCapacity()：中甲 2 肩、其餘 0</div>
+        <div class="task-desc">
+          <code>singleHand: 2</code>／<code>shoulder: mech.armorType === ArmorType.MEDIUM ? 2 : 0</code>／<code>back: 1</code>（全機種，否則 35 個限輕背包永遠無處可裝）／<code>backupHand: 0</code>。實測 90/90 無例外（25 把肩部武器 100% <code>mechRestriction='medium'</code>，三台宿主機甲全是中甲）。<b>⚠ 條件一律寫 <code>ArmorType.MEDIUM</code>，禁止中文字面量。</b>
+        </div>
+        <div class="task-file">src/utils/mechSlots.ts · .test.ts（90 台快照）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">occupiedSlots() 與 lockedSlots() 兩個獨立 derive，禁止合併</div>
+        <div class="task-desc">
+          ① 佔據型：讀 <code>parts.leftArm/rightArm.fixedArmament</code>，只擋該槽；② 全鎖型：讀形態 <code>restrict.kind === 'fixedArmament'</code>，擋全部。合併的代價：UI 講不出「被嵐質儲能艙佔住」與「這個形態不能換裝備」的差別；且兩者落盤層級不同（機甲資料 vs 形態資料）。
+        </div>
+        <div class="task-file">src/utils/mechSlots.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">ResolvedChassis derive（不含混搭 UI）</div>
+        <div class="task-desc">
+          <code>resolveChassis(mech, partOverrides?)</code> → 部位、重量、出力、火力、armorType、四個模組槽的接口型別。<b>⚠ 其餘數值（耐久／護甲／命中／閃避／抗暴／移動）的合成規則未確認（總綱 Q-1），本輪不開欄位。</b>
+        </div>
+        <div class="task-file">src/utils/chassisStats.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label cyan">Phase C</div>
+  <div class="section-title">資料落盤與後台</div>
+  <div class="section-desc">把 8 筆固定武裝與 forms 的型別升級寫進 Firestore，並補上後台入口。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 新建 2 筆固定武裝武器文件</div>
+      <div class="task-group-meta">weapons 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">weapon_181_幽弧（右手）／ weapon_182_夜燼（左手）</div>
+        <div class="task-desc">
+          曜的巡航形態專屬固定武裝，<b>全庫查無</b>（實測 180 筆武器中沒有這兩個名字）。<code>isFixedArmament: true</code>、<code>manual: true</code>、<code>equipSlot: 'singleHand'</code>；戰鬥中觀測值（幽弧 3663×1 射程 1+／夜燼 817×12 射程 1-3）<b>列入 <code>variableStats</code> 而非當成固定屬性</b> —— 比照耀星／隕星／千星，因為「連遊戲中都看不到詳細設定，只有進入戰鬥變形才能看到」。
+        </div>
+        <div class="task-file">scripts/temp_scripts/ · weapons 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; MechPart.fixedArmament 型別與 6 筆機甲資料</div>
+      <div class="task-group-meta">src/types/mech.ts · mechs 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">型別新增 ＋ 三個死槽位正式退場</div>
+        <div class="task-desc">
+          <code>MechPart.fixedArmament?: ArmamentMount[]</code>；同時刪除被 PLAN-040 凍結的 <code>leftShoulderSlot</code>／<code>rightShoulderSlot</code>／<code>backSlot</code>（實測 0/90 有填，前台零消費端，替代品已就位）。
+        </div>
+        <div class="task-file">src/types/mech.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">帕斯卡／破曉者-01／霸王 共 6 筆 mount 落盤</div>
+        <div class="task-desc">
+          左臂 → 左肩、右臂 → 右肩。<b>⚠ 同一把衝擊炮掛左右兩肩 ⇒ React key 必須用 <code>slotKey()</code> 而不是 <code>weaponId</code></b>，否則會撞 key。落盤後複查 mech_084–090 這 7 台新機甲是否有第 9 種固定武裝。
+        </div>
+        <div class="task-file">mechs 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">MechAdmin 固定武裝編輯器</div>
+        <div class="task-desc">
+          在部件編輯區加一組 <code>ArmamentMount[]</code> 編輯器（武器挑選 ＋ slot ＋ side）。<b>⚠ 用陣列不用選填 scalar</b>：<code>stripUndefined</code> 會把取消勾選寫的 <code>undefined</code> 整個濾掉，導致「一旦填了值就再也無法取消」（PLAN-040 決策六踩過）。
+        </div>
+        <div class="task-file">src/pages/user/admin/MechAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; forms 型別升級與 6 筆資料調整</div>
+      <div class="task-group-meta">src/types/form.ts · forms 集合</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">independentLoadout 旗標（海莉絲 4 筆 true、曜 0 筆）</div>
+        <div class="task-desc">
+          <b>不可用 derive</b>：今天「<code>restrict.kind==='weaponType'</code> 的形態數」恰好給出正確答案，但那是巧合 —— 某位新調構師有兩個純戰鬥形態卻只有一套配裝時就會靜默壞掉（多渲染一個分頁）。
+        </div>
+        <div class="task-file">src/types/form.ts · forms 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">restrict.weaponIds → mounts: ArmamentMount[]</div>
+        <div class="task-desc">
+          虛粒子：耀星＝右手、隕星＝左手、千星＝背部；巡航：幽弧＝右手、夜燼＝左手。<b>⚠ 不新增 <code>lockCurrent</code> 分支</b> —— 兩位調構師都是「換掉並鎖住」，union 維持兩支。
+        </div>
+        <div class="task-file">src/types/form.ts · forms 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">equipSetKeys(pilotId, forms) 單一入口 ＋ 測試</div>
+        <div class="task-desc">
+          有 <code>independentLoadout</code> 且 <code>kind==='weaponType'</code> 就回那些 formId，否則回 <code>['default']</code>。海莉絲 → 3 筆；曜 → <code>['default']</code>；其餘 87 位 → <code>['default']</code>。<b>UI 一律 map over 它，不要 map over <code>Object.keys(loadouts)</code>。</b>
+        </div>
+        <div class="task-file">src/utils/forms.ts · .test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">FormAdmin 擴充 ＋ order 欄位加註</div>
+        <div class="task-desc">
+          支援編輯 <code>independentLoadout</code> 與 <code>mounts</code>。<b>⚠ 在 <code>order</code> 欄位旁加一行說明「此欄位只影響顯示順序，不是識別碼」</b> ——分享碼的形態身分不可用它（後台一次重排就讓所有既存代碼靜默指向另一個形態）。
+        </div>
+        <div class="task-file">src/pages/user/admin/FormAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label cyan">Phase D</div>
+  <div class="section-title">型別收緊與資料修正</div>
+  <div class="section-desc">把幾個「tsc 抓不到」的字面量／型別謊言一次收乾淨，順手修三處資料。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 型別收緊批次</div>
+      <div class="task-group-meta">enums 化</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">ArmorType／MechLicense／PartInterface 三個 enum</div>
+        <div class="task-desc">
+          實測值域乾淨可直接收：armorType 中甲36／輕型27／重型27；license 中型37／重型26／輕型26；interface Ⅱ型 280／Ⅰ型 32／空 44／錯字 4。<b><code>PartInterface</code> 同時把 MechAdmin 改成下拉選單</b>（使用者：不然單獨修錯字意義不大）。
+        </div>
+        <div class="task-file">src/types/enums.ts · mech.ts · pilot.ts · MechAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">一次性正規化腳本：4 格「ⅠⅠ型接口」錯字 ＋ S 機甲 4 格空白</div>
+        <div class="task-desc">
+          B 機甲 40 格空白<b>不補</b>（沒人配 B 機甲），UI 對空白顯示「接口資料未建檔」。
+        </div>
+        <div class="task-file">scripts/temp_scripts/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 資料修正（順手做，成本近乎零）</div>
+      <div class="task-group-meta">多處</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">globalResearch 型別 Record→Array ＋ armorType 鍵統一</div>
+        <div class="task-desc">
+          宣告是 <code>Record&lt;string, …&gt;</code> 但線上資料是 <code>Array</code>（三個欄位皆是），<code>['格鬥家']</code> 恆 undefined 而 tsc 不會抱怨；且它的鍵是「中型」、mechs 是「中甲」（直接 join 會讓 36/90 台中甲靜默拿 0）。<b>⚠ 這個集合不可刪</b> —— 它是全庫唯一填滿的公式數值表（兩份盤點曾誤判為「零消費端可移除」）。
+        </div>
+        <div class="task-file">src/types/research.ts · src/utils/normalizeArmorType.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">觸元件W-警戒 3 筆補上「射擊」限定</div>
+        <div class="task-desc">
+          <code>comp_0072/0073/0074</code> 的 <code>allowedWeaponTypes</code> 是全 4 種，但 Normal 雙胞胎 <code>觸元件-警戒</code> 限「射擊」—— 已確認為漏填。
+        </div>
+        <div class="task-file">components 集合</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">weapon.fixedMod.maxLevel 的 2 筆 70 髒資料</div>
+        <div class="task-desc">
+          HMG-29C 與 笑謊者（其餘 170 筆是 10、6 筆是 0）。與 WeaponAdmin 的上限檢查一起處理。
+        </div>
+        <div class="task-file">weapons 集合 · WeaponAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 槽位一致性校驗腳本</div>
+      <div class="task-group-meta">scripts/validate-mech-slots.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">mount.slot === weapon.equipSlot，允許 0 例外</div>
+        <div class="task-desc">
+          掃全部機甲與形態的 <code>ArmamentMount[]</code>，逐筆比對該 weaponId 在 weapons 集合裡的 <code>equipSlot</code>。同時檢查：<code>side</code> 只在 singleHand／shoulder 出現；同一 <code>(bank, slot, side)</code> 不得重複；佔用數不得超過 <code>mechSlotCapacity()</code>。<b>這條規則只有在兩邊共用同一個 enum 時才寫得出來，是共用型別最直接的回報。</b>
+        </div>
+        <div class="task-file">scripts/validate-mech-slots.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label cyan">Phase E</div>
+  <div class="section-title">前台唯讀呈現與收尾</div>
+  <div class="section-desc">本子計畫唯一的前台改動，也是它能單獨上線的理由。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 機甲詳情頁唯讀區塊</div>
+      <div class="task-group-meta">src/pages/mechs/MechDetailPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">「槽位配置」區塊：手／肩／背各幾格、哪些被固定武裝佔住</div>
+        <div class="task-desc">
+          <b>沒有固定武裝 ⇒ 整區不渲染</b>，絕不渲染「無固定武裝」字樣 ——讓「未知」與「沒有」共用同一種呈現，不把肯定的否定陳述寫死在頁面上。
+        </div>
+        <div class="task-file">src/pages/mechs/MechDetailPage.tsx · src/components/mechs/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">四部位表：來源／重量／火力／接口型別</div>
+        <div class="task-desc">
+          唯讀（混搭 UI 在 052-G）。底部標一行「本站數值一律以滿級／滿品質階計算」。
+        </div>
+        <div class="task-file">同上</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 接線與收尾</div>
+      <div class="task-group-meta">多處</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">SIMULATOR_KEYS 加 'forms'</div>
+        <div class="task-desc">
+          <code>src/hooks/useFirestore.ts</code> 少一個 key，模擬器拿不到形態資料。Worker 的 <code>ARRAY_COLLECTIONS</code> 已含 forms，這一側不用改。
+        </div>
+        <div class="task-file">src/hooks/useFirestore.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">bump 版本 ＋ docs 同步 ＋ 網站更新履歷</div>
+        <div class="task-desc">
+          bump <code>mechs</code>／<code>weapons</code>／<code>forms</code>／<code>components</code>；同步 <code>docs/02_技術文件/02_資料模型/</code> 的 mech／weapon／form 頁與 enums 頁；履歷寫「修正機甲火力顯示」與「機甲詳情頁新增槽位配置」兩行。
+        </div>
+        <div class="task-file">scripts/bump-data-version.mjs · docs/ · src/data/siteChangelog/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">PLAN-047 歸檔（走 plan-manager 操作 B）</div>
+        <div class="task-desc">
+          標記為被 PLAN-052 取代。<b>不做的話會有兩份執行中的計畫同時聲稱擁有 <code>src/utils/mechSlots.ts</code>。</b>
+        </div>
+        <div class="task-file">docs/05_階段性開發計畫/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-052-A — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

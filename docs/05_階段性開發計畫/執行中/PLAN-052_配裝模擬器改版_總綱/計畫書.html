@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052 配裝模擬器改版 — 計畫書 — 鋼嵐工具站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-052 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-052</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    配裝模擬器改版<span style="-webkit-text-fill-color:var(--text-secondary);"> · 總綱 MASTER</span>
+  </h1>
+  <p class="hero-sub">把只有兩個單值欄位的配裝模型換成多槽・多形態・可分享的 Loadout v2，並拆成 A–H 八個可各自出貨的子計畫。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value purple">PLAN-052</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-24</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">types/slots・loadout・form・mech · utils/mechSlots・loadoutCode · SimulatorPage 全面重寫 · firestore.rules · MechAdmin／FormAdmin · docs</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value purple">執行中 · 總綱</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">無（PLAN-047 由本計畫取代）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>現行配裝模擬器的根本問題不是「功能不足」，是資料模型只有兩個單值欄位</strong><br>
+    <code>SimState</code>（<code>SimulatorPage.tsx:48-59</code>）與 <code>Build</code>（<code>src/types/user.ts:40-58</code>）
+    都只有 <code>weaponId</code> ／ <code>backpackId</code> 兩個單值 —— <b>連「左手一把、右手一把」都表達不了</b>。
+    它同時擋住五件事：① 中甲雙肩＋雙手＋背部的多槽配裝 ② 左右手區分
+    （曜的 <code>skill_映纏</code>「同時裝備刀劍及機槍」、<code>mod_異械模組</code>「雙手兩把種類不一致 +24%」都需要）
+    ③ 強襲者背包的備用套 ④ 海莉絲的 per-form 多套 ⑤ 元件掛到每一把武器上。
+    而且<b>沒有 <code>version</code> 欄位</b>，日後無法 lazy migration。
+  </div>
+
+  <div class="problem-block">
+    <strong>逐段稽核找到 31 條缺陷，其中三塊「渲染了但資料全庫皆空」</strong><br>
+    · <b>過濾層</b>：中型執照篩選靜默全放行（<code>:179</code> 用 <code>'中甲'</code> 比 <code>MechLicense.MEDIUM='中型'</code>，影響 37/89 位機師）、
+      <code>mechRestriction</code> 完全沒擋、背槽不互斥（181/181 個背包 <code>slot='back'</code>）、
+      出力帳漏算三種加成、順序相依的重量帳。<br>
+    · <b>元件層</b>：<code>componentLimit</code> 從未被讀取 ⇒ <b>135/180 把武器可以裝到 6 個元件</b>（官方是 4 個槽）；
+      W 型元件與 <code>allowedWeaponTypes</code> 從未過濾；元件是「整台機甲一組」而非掛在武器上。<br>
+    · <b>三個恆空面板</b>：改裝（180/180 把武器 <code>fixedMod.effects</code> 全空，且該步驟沒有下一步按鈕）、
+      科研（<code>pilotResearch</code> 只有 1 筆且 <code>pilotId</code> 對不上，89/89 位機師全失效）、
+      可達增益（全庫 buff／技能 effects 合計 0 筆、323 筆 <code>buffIds</code> 100% 解析失敗）。
+  </div>
+
+  <div class="warning-block">
+    <strong>時間窗：users 集合實測 0 筆文件、builds 0 筆</strong><br>
+    2026-08-23 以 <code>serviceAccountKey.json</code> 唯讀實測確認。<b>現在改配裝資料模型不需要遷移腳本</b>；
+    一旦對外開放存檔（本計畫已定案為<b>全面公開</b>），任何形狀錯誤都要洗使用者資料。<br>
+    ⚠ 動工前要再跑一次這個實測，並列入 052-A 的驗收條件。<br>
+    ⚠ 另注意：導覽列雖以 isAdmin gate，但 <code>App.tsx:74</code> 的路由<b>沒有 AdminRoute</b>、
+    <code>ProfilePage</code> 三處入口對所有登入者開放 —— 這個前提隨時可能被打破。
+  </div>
+
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label purple">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="info-block">
+    <strong>本計畫的由來與方法</strong><br>
+    2026-08-23 以 11 個 agent 做多階段調查（4 路現況盤點 → 5 路設計 → 2 路批判／紅隊），
+    再由使用者分三輪答覆 <b>35 題</b>遊戲事實與產品取捨。
+    完整調查、線框圖與逐條證據存於 <code>_local-notes/2026-08/2026-08-23_配裝模擬器_完整設計評估.html</code>（本機、不進版控）；
+    <b>本文件為權威記載，兩者衝突時以本文件為準</b>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策一：四條「數值必須先釘死」的遊戲事實</strong><br>
+    紅隊拿官方整備截圖逐格對帳，發現五份獨立設計<b>一致採用的公式都是錯的</b>。四條皆已由使用者裁決：<br>
+    ① <b>總重量 ＝ 機體 ＋ max(主手組, 備用組) ＋ 肩 ＋ 背</b> —— <b>不是加總</b>。
+       實測：先鋒 825＋max(800 戕神者, 850 Z15)＋150 ＝ 1825 ✓（加總會得 2625，誤差 44%）；
+       四個形態四組官方數字全數對帳通過。<br>
+    ② <b>機甲火力 ＝ Σ 四部位（＋科技）</b>；<code>mech.firepower</code> 頂層欄位是爬蟲抓官方欄位的產物、<b>毫無意義</b>。
+       佐證：品質預覽四張截圖中，軀幹／雙臂／腿部在同一品質階的火力數字<b>完全相同</b>（1040／1108／1186）
+       ⇒ 部位存的是「每部位值、四份鏡射」。實測 83 台 scraped 機甲的頂層值 ＝ 單一部位值，
+       7 台手建的頂層 ≈ Σ ⇒ <b>站上目前顯示的是實際的 1/4</b>。<br>
+    ③ <b>出力是 per-form 的</b>：3675 vs 3375 差的 300 來自強襲者背包；戰術／虛粒子形態的背槽被背部武器佔住 ⇒ 沒有背包。
+       ⇒ <code>effectiveOutput()</code> 與 <code>totalWeight()</code> 必須吃 formKey，不能吃整份 Build。<br>
+    ④ <b><code>weapon.attack</code> 是「全部連擊的總和」，官方顯示的是「每擊值」</b>，且官方值比 DB 高 17.3–18.6% 且逐把不同
+       （已排除機師五維、<code>kindCoefficient</code>、單一全域倍率；而命中值 1:1 完全相符）。
+       <b>使用者裁決：屬傷害計算範疇，延後至傷害模擬計畫。</b>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：Loadout v2 —— 落盤是「一串分享代碼」，記憶體是結構化型別</strong><br>
+    · <b>落盤</b>：<code>users/{uid}/builds/{pilotId}</code>，一位機師一份文件，<code>slots: {'0'..'4'}</code> map，
+      每格內容就是一串 base64url 分享代碼。<br>
+    · <b>三個決定性理由</b>：(1) Firestore 規則<b>沒有位元組長度運算子、不能對動態 key 迴圈、也沒有 count()</b>
+      —— 巢狀結構在規則層設不了上限，一個帳號可以塞近 1 MiB 的合法形狀 JSON；收斂成單一字串後
+      <code>code.size() &lt;= 1024</code> 是精確且繞不過的上限。
+      (2) map key 白名單讓「每機師 5 套」變成<b>結構性事實</b>（規則沒有 count()，計數欄位一定會漂移）。
+      (3) <b>儲存＝分享是同一串字</b>，沒有第二套序列化會漂移。<br>
+    · <b>記憶體</b>：結構化 <code>Loadout</code>（codec 的解碼目標），<b>元件內嵌在 mount 上</b>
+      —— 旁掛 <code>Record&lt;MountKey, …&gt;</code> 與 mounts 陣列是兩份要手動同步的資料，
+      刪掉左手武器忘了刪 key，下一把同槽武器會<b>靜默繼承上一把的元件</b>。
+      這與 <code>form.ts</code> 拒絕 <code>lockedSkillIds</code>、<code>weapon.ts</code> 拒絕反向索引是同一條理由。<br>
+    · <b>刻意不落盤</b>：機體數值、可達 buff、總重量、<code>Build.result</code>（現行有，刪除）、
+      機甲／武器名稱、模組等級、情境（目標裝甲／距離／HP%／AP）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：槽位詞彙 —— <code>bank</code> 是正交的第四個軸，不是第四套部位詞彙</strong><br>
+    PLAN-047 決策一禁止再開第四套部位詞彙（全站已有 <code>WeaponEquipSlot</code>／<code>MechPartPosition</code>／<code>Backpack.slot</code>）。
+    <code>SlotBank = 'main' | 'backup'</code> 不違反這條：它與 slot <b>正交</b> ——
+    備用手上的武器 <code>equipSlot</code> 仍然是 <code>singleHand</code>，
+    所以 <code>mount.slot === weapon.equipSlot</code> 這條 0 例外的硬規則不受影響。<br>
+    <b>mountKey 一律三段式 <code>bank:slot:side</code></b>，由 <code>slotKey()</code> 單一入口產生、
+    <code>parseSlotKey()</code> 解析，round-trip 進 <code>npm test</code>。<br>
+    ⚠ 紅隊發現：五份設計對這個軸有四種寫法，其中兩份的 mountKey 是 <code>slot:side</code> 兩段 ——
+    <b>主手左手與備用左手會產生同一個 key，兩把武器的元件互相覆蓋</b>。這不是風格差異，是會靜默毀資料的 bug。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：形態 —— 四個形態一視同仁，全鎖那一套不落盤</strong><br>
+    使用者逐字：「其實四個形態都是各自一套獨立裝備，只是虛粒子形態已經有固定武裝綁死了，你也改不了。」<br>
+    · <code>loadouts: Record&lt;formId, EquipSet&gt;</code>，沒有形態的機師固定用 <code>'default'</code> 一把鑰匙。<br>
+    · <b>全鎖形態（海莉絲虛粒子／曜巡航）不出現在 <code>loadouts</code> 裡</b> —— 那一套 100% 由
+      <code>form.restrict.mounts</code> derive；落盤第二份就會有兩份對不上的可能，而玩家本來就改不了。<br>
+    · <b>武器與背包都獨立</b>，所以各套的重量／出力預算完全分離。<br>
+    · <code>MechForm</code> 新增 <code>independentLoadout?: boolean</code>（<b>海莉絲 4 筆；曜 0 筆</b>），
+      並提供全站唯一入口 <code>equipSetKeys(pilotId, forms)</code>：有 independent 就回那些 formId，否則回 <code>['default']</code>。
+      <b>UI 一律 map over 它，不要 map over <code>Object.keys(loadouts)</code></b>
+      （後者在「存檔之後才新增形態」時會少畫一個分頁，而且不會報錯）。<br>
+    · <b><code>FormRestrict</code> 不需要 <code>lockCurrent</code> 分支</b>：曜的巡航形態也是「換掉並鎖住」
+      （專屬固定武裝 幽弧／夜燼，只是資料還沒建），兩位調構師走同一條規則。
+      <code>weaponIds: string[]</code> 升級為 <code>mounts: ArmamentMount[]</code>（才畫得出哪一把在哪個槽）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：元件 —— <code>componentLimit</code> 是總槽數，互斥判準是名稱後綴</strong><br>
+    使用者逐字：「那是<b>槽位</b>，一個槽一個元件，SS 和 S+ 武器總槽＝4，意思就是觸＋應總和四個，暫時沒有元件會佔領 2 個。」<br>
+    <b>五條合法性規則</b>（現行一條都沒做）：<br>
+    ① 總槽 <code>trigger + effect &lt;= componentLimit</code>（SS/S+ = 4、S = 3、A/B = 0）<br>
+    ② 分項 <code>trigger &lt;= 3</code> 且 <code>effect &lt;= 3</code>（不能 4 個全裝觸元件）<br>
+    ③ <code>componentsWType === 'W'</code> 只給 <code>dualHand</code>／<code>back</code> 武器（W 型 80 筆，符合條件的武器只有 49 把）<br>
+    ④ <code>allowedWeaponTypes</code> 過濾（<code>觸元件W-警戒</code> 3 筆是漏填，要補「射擊」限定）<br>
+    ⑤ <b>同族互斥：名稱後綴，觸／應<u>都</u>適用，且跨 W/Normal 變體</b>（「憑逸W 和 憑逸 不能兩顆都裝」）<br>
+    <b>互斥不落 Firestore 欄位</b>：判準既然就是名稱，落一個 <code>familyKey</code> 只是把同一件事寫第二遍，改名時兩份會靜默不同步。
+    改做 <code>componentFamilyKey()</code> 單一入口 ＋ CI 守門測試（斷言 208 筆推出 28 族且與 condition 文字雙射）。
+    ⚠ <code>conditionType</code> <b>絕對不可</b>當互斥鍵（實測 106 個觸元件裡 always 103 筆，用它會讓玩家永遠只能裝 1 個）。<br>
+    <b>求值模型</b>：觸元件成立時<b>逐一個別判定每個應元件</b>（2 觸 2 應 ⇒ 每個應元件各判兩次），
+    但<b>同一個應元件被多個觸元件觸發不疊加</b> ⇒ 期望值 <code>P = 1 − Π(1 − p_ij)</code>。
+    官方「組合特性」面板會直接印出每一條配對的最終機率（實測樣本：觸W-憑逸 Lv7 × 應 Lv4/5/6 → 33%／41%／47%），
+    <b>機率是「(觸,應) 配對」的屬性</b>；反推公式屬傷害計算範疇，本輪只顯示 Lv。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：模組 —— 四個接口槽是「額外裝備」，與機甲天生模組並存</strong><br>
+    使用者逐字：「品質預覽每個部位列出的三個模組<b>是機甲天生自己帶的</b>。每一個接口可以<b>再</b>『裝備』一個模組。」<br>
+    · <b>四個接口槽</b>（每部位 1 個），玩家各裝一個模組；<b>與天生模組並存、不互相取代</b>。<br>
+    · <b>接口 gate</b>：<code>MechPart.interface</code> 為 Ⅰ型 ⇒ 只能裝 <code>rarity === 'A'</code>；Ⅱ型 ⇒ A/S 皆可。
+      實測 360 格已填 316（S 機甲 248 格 Ⅱ型、A 機甲 Ⅰ/Ⅱ 各 32 格混合、B 機甲 40 格空白、4 格錯字「ⅠⅠ型接口」）。<br>
+    · <b>模組等級由「部位品質階級 × 部位種類」決定，不是玩家升的</b>
+      （升級某部位品質會讓某個模組 LV.1/8 → LV.2/8，且雙手提供的與軀幹腿部不同）。
+      牽涉特殊模組，<b>本輪延後：一律預設滿級、不給玩家選機甲品質階</b>。<br>
+    · ⇒ <b><code>Loadout.modules</code> 只存 <code>{部位: moduleId}</code>，不存 level</b> ——
+      level 是 <code>ResolvedChassis</code> 的推導值，存下來就是第二真相源。<br>
+    · ⚠ 讀數值時務必走 <code>levels[]</code>：實測 236/240 模組的數值住在 <code>levels[]</code>，
+      頂層平坦欄位 177/240 是 0（<code>mod_4001</code> 頂層 <code>acc_rate=0</code>，各級卻是 3/5/7/10）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：部件混搭 —— 做，但限同裝甲類型；數值合成規則未定前不出衍生數字</strong><br>
+    <b>PLAN-047 決策十二④「不做部件混裝」作廢</b>（使用者決定要做）。<br>
+    · <b>不能跨裝甲類型混搭</b> ⇒ 四個部位必定同類型 ⇒
+      「混搭後裝甲類型由誰決定」<b>這個問題自動消失</b>，雙肩槽與執照判定完全不受影響，
+      <code>PART_INCOMPATIBLE</code> 只需一行 <code>sourceMech.armorType === chassis.armorType</code>。<br>
+    · <b>只有軀幹有出力</b>；<b>總重量 ＝ 四部位 ＋ 武器</b>（實測彌造者 Σparts.weight = 825 = 頂層、
+      <code>torso.output</code> = 3375 = 頂層，兩者皆佐證）。<br>
+    · 機體所有數值一律由 <code>ResolvedChassis</code> 出，<b>全站停止讀 <code>mech.firepower</code></b>。<br>
+    · ⚠ <b>擋路的一題</b>：除火力外，其他數值的合成規則尚未確認（見 Open Question Q-1）。
+      <b>使用者裁決：數值問題先備註，未來再處理，配裝的 PLAN 與傷害計算的 PLAN 分開。</b>
+      ⇒ <b>部件混搭的 UI 排在模組槽之後，且在規則確認前不出混搭後的衍生數字。</b>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策八：分享代碼 —— 純前端自包含編碼，不開後端短碼</strong><br>
+    · 二進位 <b>TLV/section</b> 制（每段一個 tag + length，未知 tag 一律跳過並記入 unmodeled）＋ base64url ＋ 1 byte checksum。<br>
+    · <b>FMT 版本位元組與文件 schema 版本分開，不共用常數</b>：兩者演進節奏不同，強制共用會造成無謂的相互 bump，
+      而每一次無謂的 bump 都是一批舊碼失效。<br>
+    · <b>id → 數字用既有 doc id 的流水號，不新增欄位</b>（再開一個 <code>shareId</code> 欄位就是同一件事的第二個真相源）。
+      核心不變式：<b>流水號是身分不是位置</b> —— 新增 <code>weapon_179</code> 不會讓 <code>weapon_178</code> 位移。<br>
+    · ⚠ <b>唯一破口是流水號被回收</b>：<code>src/utils/idSlug.ts:82</code> 的 <code>maxEntitySeq</code> 是「掃現有 ID 取 max」，
+      刪掉 178 再新增會再次產生 178，舊代碼就靜默指向另一把武器。而本專案<b>確實會改 doc id</b>
+      （08-17 備份裡 mechs／pilots 各有 6 筆無流水號，08-23 才補號）。
+      ⇒ <code>share-id.lock.json</code>（進版控）＋ <code>scripts/check-share-ids.mjs</code>（改指即 exit 1）＋
+      後台續號改 <code>max(lock, live)+1</code>，<b>並寫進 data-patch skill 的流程</b>。<br>
+    · <b>三個必須在 v1 就正確的細節</b>（事後補要洗掉所有已存資料）：SLOTB 要有 bank 位元、
+      §MODULES 段要在 v1 就開、形態身分<b>不可用 <code>form.order</code></b>
+      （<code>FormAdmin.tsx:269-270</code> 是自由輸入欄位，後台一次重排就讓所有既存代碼靜默指向另一個形態）。<br>
+    · <b>旁證</b>：英文 WIKI（<code>mecharashi-wiki.cc/#builder</code>）實測也是純前端自包含編碼
+      （18 欄位以 <code>|</code> 串接視為 base-11、Horner 成 BigInt、輸出 hex），
+      且 id→數字同樣用一張<b>進版控的永久別名表</b>。
+      <b>但他們沒有版本欄位，新增第 18 欄時已被迫同時接受兩種長度</b> —— 這是我們採用 FMT ＋ TLV 的實戰依據。
+      他們也沒有元件、形態、部件混搭。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策九：配額與開放範圍</strong><br>
+    · <b>完全公開</b>：未登入也能用。⇒ 要移除導覽的 ADMIN gate；訪客本機書架成為 MVP 必要項。<br>
+    · <b>已登入：每機師 5 套</b>（Firestore 規則的 map key 白名單，結構性、繞不過）。
+      結構上限 ＝ 89 機師 × 5 ＝ 445 套 ≈ 525 KB/帳號（由 <code>exists(/pilots)</code> 鎖住）。<br>
+    · <b>未登入：總共 10 套，不分機師</b> —— 兩套配額語意不同，UI 文案要分開寫
+      （訪客「本機書架 7/10」／登入者「海莉絲 3/5」）。<br>
+    · 節流：<code>savedAt == request.time</code> ＋ 每文件 3 秒（<b>delete 也要節流</b>，否則 delete→create 可繞過）。
+      實測：無節流時單一帳號可寫 43M/日 ≈ US$78/日；3 秒節流後降到 ≈ US$6.1/日、儲存量由 <code>exists()</code> 封頂。<br>
+    · ⚠ 同一次 deploy 必須<b>順手收緊 <code>users/{userId}</code> 文件本體</b>
+      （現行 <code>allow read, write: if isOwner(userId)</code>，無 shape、無大小、無節流；
+      只鎖 builds 不鎖本體，上面所有保護都是裝飾）。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策十：明確不做的事（寫在這裡，防止下一輪重複討論）</strong><br>
+    · <b>戰術評分</b> —— 使用者逐字「不要，這是垃圾機制」。版面上明寫「官方公式未知，本站不提供猜測值」，不留空白區塊。<br>
+    · <b>武器等級欄位</b> —— LV.70 是武器等級、與改裝無關，且「70 級才開始，70 以下的事情都沒有資格被考慮」⇒ 一律滿級假設。<br>
+    · <b>機甲品質階級選擇</b>、<b>模組等級落盤</b> —— 見決策六。<br>
+    · <b>武器改裝分頁</b> —— 全庫 180/180 筆 <code>fixedMod.effects</code>／<code>floatingMod.possibleEffects</code> 皆空。
+      <b>不渲染，不是渲染空的</b>（現行 Step 6 渲染 3 個空格 0 顆按鈕、且沒有下一步按鈕，就是這個錯誤的現成教訓）。<br>
+    · <b>可達增益數值加總</b> —— 全庫 buff／技能 effects 0 筆、323 筆 buffId 100% 解析失敗。
+      第一版不做，並在上線 commit 更正 <code>src/data/siteChangelog/2026-07.ts:21</code>
+      對使用者宣稱過的「即時加總各項數值效果」。<br>
+    · <b>科研步驟</b> —— <code>pilotResearch</code> 只有 1 筆且 <code>pilotId</code> 格式對不上，對 89/89 位機師全失效。<br>
+    · <b>後端短碼服務</b>、<b>自由 hashtag</b>（改封閉標籤集合）、<b>i18n</b>（全站無 i18n 套件，<code>lang="zh-Hant"</code>，
+      <code>opencc-js</code> 只用於爬蟲簡繁轉換）、<b>新增頂層路由</b>
+      （分享碼放既有 <code>/simulator?b=</code>，把 Cloudflare Dashboard 依賴降為零）。<br>
+    · <b><code>exclusiveFor</code> 不是裝備限制</b> —— 官方截圖那套海莉絲用了七把別的機師的專武；
+      它只影響天賦強化。要寫進型別註解，避免日後有人「順手補上專武限制」。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策十一：PLAN-047 標記為被本計畫取代並歸檔</strong><br>
+    PLAN-047「槽位與裝備限制模型」0/22 工項未動工，其十二條決策<b>繼承十條、推翻三條</b>：
+    決策十二①②（不改 Build 成多槽／不做形態獨立配裝）與<b>決策十二④（不做部件混裝）</b>皆已被使用者裁決推翻。
+    此外它的驗收數字全部過期（weapons 172→180、mechs 63→90、pilots 82→89、行號漂移 2 行），
+    決策七「<code>equipSlot</code> × <code>mechRestriction</code> 完全無交錯」已被
+    <code>weapon_176_耀星</code>／<code>weapon_177_隕星</code>（singleHand + medium）推翻
+    —— 但結論更強：<b>gate 一律寫 <code>mechRestriction</code>，絕不可用 <code>type === '戰術'</code></b>
+    （medium 49 筆 vs 戰術 44 筆，差 5 筆）。<br>
+    <b>若不處置，會有兩份執行中的計畫同時聲稱擁有 <code>src/utils/mechSlots.ts</code>。</b><br>
+    PLAN-041 則相反：Phase G 剩下 5 項與配裝器只有弱相依，<b>維持獨立執行中</b>，
+    本計畫只從它借兩個型別修改（<code>independentLoadout</code> ＋ <code>weaponIds</code>→<code>mounts</code>）。
+  </div>
+
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label purple">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="info-block">
+    <strong>子計畫拆分（一個 PLAN ＝ 一個可驗收的出貨物）</strong>
+    <table class="impact-table">
+      <tr><th style="width:15%">子計畫</th><th style="width:40%">範圍</th><th style="width:10%">工程量</th><th>結束時網友看得到什麼</th></tr>
+      <tr>
+        <td><b>052-A</b><br>配裝地基與槽位模型</td>
+        <td>三支數值純函式 ＋ golden fixture／<code>types/slots.ts</code>／<code>utils/mechSlots.ts</code>／
+            <code>ResolvedChassis</code>／8 筆固定武裝落盤（含新建 幽弧・夜燼）／forms 型別升級／
+            型別收緊批次（<code>ArmorType</code>・<code>MechLicense</code>・<code>PartInterface</code>）／資料修正</td>
+        <td><span class="badge-med">7–8 天</span></td>
+        <td>機甲詳情頁多出「槽位配置 ＋ 固定武裝 ＋ 四部位表（含接口型別）」；火力顯示修正為真值</td>
+      </tr>
+      <tr>
+        <td><b>052-B</b><br>配裝模擬器主體</td>
+        <td>整檔取代 <code>SimulatorPage.tsx</code>：三欄單頁 ＋ 六態槽位圖 ＋ 就地挑選器 ＋ 分段出力條 ＋
+            級聯 <code>reconcile()</code> ＋ 兩層拒絕呈現 ＋ BottomSheet a11y ＋ 移除 ADMIN gate</td>
+        <td><span class="badge-high">8–10 天</span></td>
+        <td><b>可用的配裝模擬器</b>（不能存、不能分享、沒有元件）</td>
+      </tr>
+      <tr>
+        <td><b>052-C</b><br>分享碼與訪客書架</td>
+        <td>codec v1（TLV／bank 位元／§PARTS／§MODULES／元件段）＋ <code>share-id.lock.json</code> ＋
+            <code>/simulator?b=</code> ＋ 訪客 localStorage 書架 10 套 ＋ 匯出圖改 <code>html-to-image</code></td>
+        <td><span class="badge-med">5–6 天</span></td>
+        <td>複製一串連結貼給別人，對方點開直接看到同一套配裝。<b>不需註冊</b></td>
+      </tr>
+      <tr>
+        <td class="badge-low">052-D</td>
+        <td>元件負載與互斥（五條規則 ＋ <code>componentFamilyKey()</code> ＋ 組合特性預覽）</td>
+        <td>4–5 天</td><td>武器可以裝元件，而且第一次是對的：4 個槽、W 型只給雙手／背部、同族互斥</td>
+      </tr>
+      <tr>
+        <td class="badge-low">052-E</td>
+        <td>雲端存檔與配額（rules ＋ <code>buildsApi</code> ＋ ProfilePage 重寫 ＋ 訪客書架匯入 ＋ emulator rules 測試）</td>
+        <td>5–6 天</td><td>登入後每機師 5 格、跨裝置同步；本機存的可一鍵搬上去</td>
+      </tr>
+      <tr>
+        <td class="badge-low">052-F</td>
+        <td>形態獨立配裝（海莉絲 3 套可配 ＋ 1 唯讀；曜 1 套 ＋ 1 唯讀）</td>
+        <td>3–4 天</td><td>海莉絲四個分頁、四組正確的重量／出力</td>
+      </tr>
+      <tr>
+        <td class="badge-low">052-G</td>
+        <td>模組槽（原廠四部位 ＋ 接口 gate ＋ 機體效果彙總）→ <b>再</b>接部件混搭</td>
+        <td>2–3 ＋ 4 天</td><td>62 個通用模組第一次玩家可以碰；之後才是混搭</td>
+      </tr>
+      <tr>
+        <td class="badge-low">052-H</td>
+        <td>站內熱門配裝（標籤分面 ＋ pull 快照聚合）＋ 分享連結 OG 卡（機師立繪）</td>
+        <td>4–5 天</td><td>機師頁「大家怎麼配」；分享連結貼 Discord 長出預覽卡</td>
+      </tr>
+    </table>
+    <b>MVP ＝ 052-A ＋ 052-B ＋ 052-C ≈ 21–24 個日曆天。</b>
+    D 之後的子計畫待各自動工時再建文件。
+  </div>
+
+  <div class="warning-block">
+    <strong>MVP 階段三件絕對不能省的事</strong>（省了之後補要洗掉已存在的存檔與分享碼）<br>
+    ① <b>mountKey 三段式含 bank</b>　② <b>codec 是 TLV，且 v1 就含 §PARTS／§MODULES／元件段</b>
+    ③ <b>Build 與 code 各自帶版本號、且兩者不共用常數</b><br>
+    其餘都可以 additive 加上去。<br><br>
+    <b>MVP 砍掉的東西必須在 UI 上誠實交代</b>：武器格顯示「⚙ 0/4 · 元件功能建置中」（讓玩家看得到上限是 4 而不是 6）、
+    海莉絲配裝頁頂端常駐橫幅說明四套獨立配裝開發中、機甲卡先顯示唯讀的四部位表 ＋「混搭與模組配置開發中」。
+    <b>不要為了趕工做一個沒有 componentLimit gate 的元件面板</b> —— 那正是現行版本被判不合格的地方。
+  </div>
+
+  <div class="warning-block">
+    <strong>不在本總綱範圍內（交給傷害模擬計畫）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>attack 語意與 17–18% 差額</b>的逆向調查（決策一④）</li>
+      <li><b>元件觸發機率表</b>（Lv → %）的樣本蒐集與反推；本輪只顯示 Lv 並做「組合特性」預覽區塊</li>
+      <li><b>武器基礎／高級改裝資料</b>（全庫 0/180 筆）與「浮動改裝可重洗」的處理</li>
+      <li><b>混搭後除火力外的數值合成規則</b>（耐久／護甲／命中／閃避／抗暴／移動）—— 見 Q-1</li>
+      <li><b>科技加成</b>是否納入火力顯示：第一版顯示「Σ 四部位」並標註<b>不含科技</b>；
+          待 <code>globalResearch</code> 型別修正並與遊戲對帳成功後再開</li>
+      <li>任何<b>單一傷害數字</b>與<b>單輪理論輸出</b></li>
+    </ul>
+  </div>
+
+</section>
+
+
+<!-- 待答清單 -->
+<section class="section">
+  <div class="section-label yellow">Open Questions</div>
+  <div class="section-title">仍待確認（不阻塞 052-A／B／C）</div>
+
+  <div class="warning-block">
+    <strong>Q-1　混搭後除火力外的數值合成規則</strong>（阻塞 052-G 的混搭階段）<br>
+    各部位帶的數值種類不同：<b>軀幹</b>＝出力／抗暴／護甲／耐久；<b>手臂</b>＝命中／護甲／耐久；
+    <b>腿部</b>＝閃避／移動／護甲／耐久。而「單位概覽」把耐久<b>分四條顯示</b>
+    （軀幹 17855／手臂 9004 9004／腿部 13396），火力／閃避／移動卻是單一數字。
+    最需要釐清的是<b>命中</b>：兩隻手臂各有一個值，混搭成一左一右不同來源時是加總／平均／各手獨立？<br>
+    <b>使用者裁決：先備註，未來與傷害計算一起處理。</b>
+  </div>
+
+  <div class="warning-block">
+    <strong>Q-2　接口槽可以裝哪些「類別」的模組</strong>（影響 052-G 挑選器規模）<br>
+    已確認接口槽是「額外裝備」、與天生模組並存。但候選清單是只有<b>通用模組 62 筆</b>，
+    還是含<b>機甲特性模組 82</b>（<code>source: '拆機甲'</code>）與<b>機甲8級模組 63</b>（<code>source: '商店,機甲不可拆'</code>）共 207 筆？
+    （<code>機甲副模組</code> 11 筆 <code>available: false</code> 不可拆；<code>機甲專屬模組</code> 24 筆綁機甲。）
+    模組畫面右側清單中有帶機師頭像的項目，指向「拆機甲取得的專屬／特性模組」。<br>
+    <b>052-G 動工前需確認；在那之前先以 <code>available !== false</code> 為候選，並用 rarity × 接口型別 gate。</b>
+  </div>
+
+  <div class="warning-block">
+    <strong>Q-3　配裝標籤的封閉清單</strong>（阻塞 052-H 的分面統計）<br>
+    採<b>封閉標籤集合</b>而非自由 hashtag（自由字串會長出「PVP／pvp／競技場／競技」四個同義標籤，分面立刻碎掉）。
+    初稿待增刪：<code>PVP／競技場</code>　<code>PVE推圖</code>　<code>BOSS戰</code>　<code>灰域作戰</code>　<code>武裝討伐</code>
+    <code>日常掃蕩</code>　<code>萬用</code>　<code>低成本／養成中</code>。每套上限建議 3、允許 0 個。<br>
+    ⚠ 標籤存<b>穩定 key</b>（<code>pvp</code>／<code>boss</code>）而非中文顯示字串，顯示名走 label map ——
+    否則改名就會讓既存資料變孤兒值。標籤<b>不進分享碼</b>（它是評語不是配裝內容，
+    進了就會發生「同一套配裝因標籤不同而產生兩個代碼」並污染去重）。
+  </div>
+
+  <div class="info-block">
+    <strong>已拍板、記錄備查</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>火力欄位怎麼修</b>：只改顯示層（全站 derive Σ），DB 頂層欄位保留不動並在型別註解標「爬蟲產物，勿讀」
+          —— 零資料風險，且爬蟲重抓不會把修好的值洗掉。同一個 commit 在網站履歷寫一行「修正機甲火力顯示」。</li>
+      <li><b>混搭部件來源</b>：不做「擁有」限制，列出全部同裝甲類型機甲的部件。</li>
+      <li><b>「大家怎麼配」冷啟動</b>：顯示「還沒有足夠資料 —— 存一套配裝就會出現在這裡」＋ 導去模擬器的 CTA。</li>
+      <li><b>滿級假設</b>：在配裝器與機甲頁各放一行小字「本站數值一律以滿級／滿品質階計算」。</li>
+      <li><b>標竿人物推薦</b>：使用者尚未決定（「當備案吧，算是名人榜」），不進 052-H 範圍。</li>
+      <li><b>模組槽先於混搭</b>：052-G 拆成兩段 —— 先做原廠四部位的模組槽（不依賴 Q-1），混搭排在其後。</li>
+      <li><b>統計納入範圍</b>：全部納入，不排除管理員、不做 opt-out。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label purple">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-052 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  鋼嵐工具站 · 階段性開發計畫 · PLAN-052 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
