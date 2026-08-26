@@ -50,6 +50,8 @@ interface Props {
   compact?: boolean
   onOpenSlot: (ref: SlotRef) => void
   onClearSlot: (ref: SlotRef) => void
+  /** 開這一格武器的元件面板（PLAN-052-D）。⚙ 徽章只出現在裝得了元件的武器格上 */
+  onOpenComponents?: (ref: SlotRef) => void
 }
 
 /**
@@ -100,6 +102,31 @@ const LINE_MIN_WIDTH = 380
  */
 const DENSE_MAX_WIDTH = 570
 /**
+ * 這一格要不要 ⚙ 徽章，以及上面印幾個（PLAN-052-D）。
+ *
+ * ⚠ 判準是 **`componentLimit > 0`**，不是「這格有武器」：A／B 品質 39 把與 8 筆固定武裝
+ *   實測 `componentLimit` 皆為 0，給它們一顆點開只會看到「不可裝元件」的徽章，
+ *   等於在畫面上擺一個必然落空的入口。背包同理（沒有元件槽）。
+ */
+function componentBadge(
+  occ: SlotOccupant,
+  ref: SlotRef,
+  onOpenComponents?: (ref: SlotRef) => void,
+): { onComponents?: () => void; componentUsed?: number } {
+  if (!onOpenComponents) return {}
+  const weapon = occ.kind === 'weapon' ? occ.weapon
+    : occ.kind === 'fixed' ? occ.weapon
+    : occ.kind === 'formLocked' ? occ.weapon
+    : null
+  if (!weapon || weapon.componentLimit <= 0) return {}
+  const setup = occ.kind === 'weapon' ? occ.mount.setup : undefined
+  return {
+    onComponents: () => onOpenComponents(ref),
+    componentUsed: (setup?.triggerComponentIds?.length ?? 0) + (setup?.effectComponentIds?.length ?? 0),
+  }
+}
+
+/**
  * 低於這個容器寬度改用**極窄格**（`SlotCell` 的 `tight`）：手機直向時左右兩欄各只剩 ~120px。
  *
  * ⚠ 這個門檻**刻意與 `LINE_MIN_WIDTH` 同值**：低於它就不畫引線，而
@@ -110,7 +137,7 @@ const DENSE_MAX_WIDTH = 570
 const TIGHT_MAX_WIDTH = LINE_MIN_WIDTH
 
 export function LoadoutRig({
-  ctx, activeSlot, preview, flash, available, compact, onOpenSlot, onClearSlot,
+  ctx, activeSlot, preview, flash, available, compact, onOpenSlot, onClearSlot, onOpenComponents,
 }: Props) {
   const flashSet = useMemo(() => new Set(flash), [flash])
   const [tight, setTight] = useState(false)
@@ -184,6 +211,7 @@ export function LoadoutRig({
         tight={tight}
         onOpen={() => onOpenSlot(ref)}
         onClear={occ.kind === 'weapon' || occ.kind === 'backpack' ? () => onClearSlot(ref) : undefined}
+        {...componentBadge(occ, ref, onOpenComponents)}
       />
     )
   }

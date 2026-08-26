@@ -78,11 +78,22 @@ interface Props {
   tight?: boolean
   onOpen?: () => void
   onClear?: () => void
+  /**
+   * 開這一格武器的元件面板（PLAN-052-D）。給了才渲染 ⚙ 徽章 ——
+   * 呼叫端只在「這把武器裝得了元件」時才傳（`componentLimit > 0`）。
+   *
+   * ⚠ 總綱決策十二逐字：「武器格<b>整格點＝換武器</b>、<b>右下 ⚙ 徽章點＝開元件挑選器</b>」。
+   *   052-I 只把入口做在右欄的武器列上，於是「去機甲圖上找元件」這個第一直覺會撲空
+   *   —— 而那正是總綱寫的操作方式。這顆徽章補上它。
+   */
+  onComponents?: () => void
+  /** ⚙ 徽章上的「已裝／上限」。`used > 0` 時徽章轉為橙色，一眼看得出這格配過 */
+  componentUsed?: number
 }
 
 export function SlotCell({
   label, occupant, absentReason, seg, slotIcon, available, preview,
-  active, flash, compact, dense, tight, onOpen, onClear,
+  active, flash, compact, dense, tight, onOpen, onClear, onComponents, componentUsed = 0,
 }: Props) {
   // ⚠ 內距與間隙一律寫 **px**，不用 Tailwind 的 spacing 單位。
   //   本站 root font-size 是 19px（Layout 的 FONT_SIZE_MAP），`gap-2.5` 實測 11.9px、
@@ -271,6 +282,21 @@ export function SlotCell({
         <span className={`${HUD.numSm} ${segText} shrink-0 flex items-center gap-[3px]`}>
           {dualMark}{weight.toLocaleString()}
         </span>
+      )}
+      {onComponents && (
+        <button
+          type="button"
+          aria-label={`設定 ${label} 的 ${name} 的元件（已裝 ${componentUsed} 個）`}
+          title={componentUsed > 0 ? `元件 ${componentUsed} 個` : '設定元件'}
+          onClick={(e) => { e.stopPropagation(); onComponents() }}
+          className={`hud-cut-sm shrink-0 ${tight ? 'w-[17px] h-[17px]' : 'w-[20px] h-[20px]'} flex items-center justify-center border cursor-pointer transition-colors ${
+            componentUsed > 0
+              ? 'border-accent-orange/60 text-accent-orange hover:bg-accent-orange/10'
+              : 'border-border text-text-dim hover:text-accent-orange hover:border-accent-orange/60'
+          }`}
+        >
+          <LoadoutIcon name="gear" className="w-3 h-3" />
+        </button>
       )}
       {onClear && (
         <button

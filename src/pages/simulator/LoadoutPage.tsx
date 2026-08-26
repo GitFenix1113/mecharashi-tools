@@ -49,7 +49,7 @@ import { getDataVersions } from '../../lib/api/versions'
 import type { PickerRowItem } from '../../components/loadout/RejectionRow'
 import { BACKPACK_TYPE_CONFIG } from '../../components/badges/BackpackBadges'
 import {
-  backpackChoices, buildContext, buildWorld, canSelectMech, loadoutBudget, mountRefFor,
+  backpackChoices, buildContext, buildWorld, canSelectMech, loadoutBudget, mountRefFor, slotsOverlap,
   slotHasCandidates, slotOccupant, weaponChoices, type PickerEntry, type ResolutionAction,
 } from '../../utils/loadoutRules'
 import { INITIAL_SIM_STATE, simReduce, type LoadoutAction, type SimState } from './simReducer'
@@ -310,6 +310,20 @@ export default function LoadoutPage() {
   }, [ctx, send])
 
   const resolve = useCallback((action: ResolutionAction) => send(action), [send])
+
+  /**
+   * 開某一格武器的元件面板（PLAN-052-D）。槽位圖的 ⚙ 徽章與右欄武器列共用這一支。
+   *
+   * ⚠ 由 `ref` 反查 `weaponRows()` 的那一列而不是直接 `slotKey(ref)`：
+   *   雙手武器的列鍵是 `dualHand`，而槽位圖給的是它蓋住的兩格之一（`singleHand`）——
+   *   直接當鍵用會查無此列，症狀是「按了 ⚙ 什麼都沒發生」。
+   */
+  const openComponents = useCallback((ref: SlotRef) => {
+    const row = weaponRows(ctx).find((r) => slotsOverlap(r.ref, ref))
+    if (!row) return
+    setPicker(null)
+    setOpenRowKey(row.rowKey)
+  }, [ctx, setPicker])
 
   // ── 挑選器清單 ──
   const pilotEntries = useMemo<PickerEntry<Pilot>[]>(
@@ -727,6 +741,7 @@ export default function LoadoutPage() {
                 // 數值未公布的機甲（出力 0）不印「可用 N」——那個 N 是負的，
                 // 印出來等於用一個算不出來的數字去嚇人
                 available={budget.dataIncomplete ? undefined : budget.remaining}
+                onOpenComponents={openComponents}
                 compact={compactRig}
                 onOpenSlot={openSlot}
                 onClearSlot={clearSlot}

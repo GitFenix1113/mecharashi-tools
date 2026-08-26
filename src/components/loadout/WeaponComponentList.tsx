@@ -3,6 +3,7 @@ import type { SlotKey } from '../../types/slots'
 import { weaponRows, type WeaponRow } from '../../utils/loadoutRows'
 import { mountedComponentIds, weaponSiteAt, type LoadoutBudget, type LoadoutContext } from '../../utils/loadoutRules'
 import { HUD, SEG_TEXT, slotSegKey, type SegKey } from './loadoutTheme'
+import LoadoutIcon from '../icons/LoadoutIcon'
 
 // ─── 武器與元件列（PLAN-052-I D-3）───────────────────────────────────────────
 //
@@ -83,7 +84,13 @@ export function WeaponComponentList({ ctx, budget, activeRow, onOpen }: Props) {
                   : r.used === 0 ? '尚未裝設元件'
                   : componentNames(ctx, r)}
               </span>
-              <span className={`${HUD.num} text-[10px] text-text-dim ml-auto shrink-0`}>
+              {/* ⚠ 這一列本身就是入口，但整列可點**看不出來**（只有 hover 變色）——
+                  站長實測時第一個問題就是「怎麼設定元件」。⚙ 是那顆看得見的記號，
+                  與槽位圖武器格右下的徽章同一個圖示，兩處指向同一個面板。 */}
+              <span className={`${HUD.num} text-[10px] ml-auto shrink-0 flex items-center gap-[3px] ${
+                r.limit === 0 ? 'text-text-dim' : r.used > 0 ? 'text-accent-orange' : 'text-text-secondary'
+              }`}>
+                {r.limit > 0 && <LoadoutIcon name="gear" className="w-3 h-3" />}
                 {r.limit > 0 ? `${r.used}/${r.limit}` : '不可裝元件'}
               </span>
             </span>
@@ -95,7 +102,10 @@ export function WeaponComponentList({ ctx, budget, activeRow, onOpen }: Props) {
           ⚠ 手部「取較重者」這條**必須寫在這裡**（PLAN-052-I B-3）：它是最容易被誤判成
              系統少算的一條規則，而唯一能同時看到主手組與備用組兩排武器的地方就是這份清單。 */}
       <div className={`${HUD.body} text-text-dim border-t border-border pt-2 space-y-1`}>
-        <p>點任一把武器<strong className="text-text-secondary">配它的元件</strong>：觸 ＋ 應合計 4 個槽（S 品質 3 個），同族只能裝一顆。</p>
+        <p>
+          點任一列、或槽位圖上武器格右下的 <LoadoutIcon name="gear" className="inline w-3 h-3 align-[-1px]" />
+          ，<strong className="text-text-secondary">配它的元件</strong>：觸 ＋ 應合計 4 個槽（S 品質 3 個），同族只能裝一顆。
+        </p>
         {hasBackup ? (
           <p>
             主手組 <span className={HUD.num}>{w.mainHand.toLocaleString()}</span>、

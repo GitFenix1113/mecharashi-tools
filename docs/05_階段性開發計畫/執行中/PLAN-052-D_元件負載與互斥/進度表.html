@@ -529,7 +529,21 @@
           摺疊成「這把武器裝不了的 7 個（武器種類限定 7）」這一行，則同時回答了
           「我的元件呢」與「它們為什麼不在」。<br>
           <b>不重用 <code>RejectionRow</code></b>：那一支綁死 <code>WeaponIcon</code>
-          與「重量」副標，而元件沒有重量欄位。行為語彙（三種列、解法按鈕）照抄，長相各自維持。
+          與「重量」副標，而元件沒有重量欄位。行為語彙（三種列、解法按鈕）照抄，長相各自維持。<br>
+          <span class="badge-high">⚠ 驗收時補的一項</span>
+          <b>槽位圖的武器格右下補上 ⚙ 徽章</b>（<code>SlotCell</code> ／ <code>LoadoutRig</code> ／
+          <code>LoadoutIcon</code> 新增 <code>gear</code>）。052-I 把元件入口<b>只</b>做在右欄的
+          武器列上，而那一列整列可點卻沒有任何記號（只有 hover 變色）——
+          站長第一次試用的第一個問題就是<b>「我似乎沒看到怎麼設定元件？」</b>。
+          總綱決策十二本來就寫著「武器格<b>整格點＝換武器</b>、<b>右下 ⚙ 徽章點＝開元件挑選器</b>」，
+          去機甲圖上找是設計裡的第一直覺，只是那顆徽章一直沒被做出來。<br>
+          徽章只出現在 <code>componentLimit &gt; 0</code> 的武器格上 ——
+          A／B 品質 39 把與固定武裝 8 把給了也只會點開一句「不可裝元件」，
+          等於在畫面上擺一個必然落空的入口。已裝過的轉橙色，一眼看得出哪幾格配過。
+          右欄武器列同步補上同一顆 ⚙ 與 <code>n/N</code>，兩處指向同一個面板。<br>
+          反查那一列用 <code>slotsOverlap()</code> 而不是 <code>slotKey(ref)</code>：
+          雙手武器的列鍵是 <code>dualHand</code>，而槽位圖給的是它蓋住的兩格之一，
+          直接當鍵用會查無此列 —— 症狀是「按了 ⚙ 什麼都沒發生」。
         </div>
         <div class="task-file">src/components/loadout/ComponentPanel.tsx</div>
       </div>

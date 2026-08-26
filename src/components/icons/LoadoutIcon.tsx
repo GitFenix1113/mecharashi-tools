@@ -34,6 +34,7 @@ export type LoadoutIconName =
   | 'absent'
   | 'close'
   | 'plus'
+  | 'gear'
 
 const PATHS: Record<LoadoutIconName, ReactNode> = {
   // 左手：槍身朝左的側影（機匣 ＋ 槍管 ＋ 下掛握把）
@@ -105,6 +106,14 @@ const PATHS: Record<LoadoutIconName, ReactNode> = {
   close: <path d="M6 6l12 12M18 6 6 18" />,
   // 空槽：加號
   plus: <path d="M12 5v14M5 12h14" />,
+  // 元件：齒輪（PLAN-052-D）。總綱決策十二逐字「右下 ⚙ 徽章點＝開元件挑選器」——
+  // 用描邊圖示而不是 ⚙ 字符：字符在不同系統上字形不一致，也沒辦法跟著配色走（052-I 的既定方向）
+  gear: (
+    <>
+      <circle cx="12" cy="12" r="4.4" />
+      <path d="M12 4.2v3.6M12 19.8v-3.6M4.2 12h3.6M19.8 12h-3.6M6.5 6.5l2.6 2.6M17.5 17.5l-2.6-2.6M17.5 6.5l-2.6 2.6M6.5 17.5l2.6-2.6" />
+    </>
+  ),
 }
 
 export default function LoadoutIcon({
