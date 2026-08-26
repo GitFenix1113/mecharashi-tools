@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-G 模組槽與部件混搭 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-052-G 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-052-G</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">模組槽與部件混搭</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-27</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label purple">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">22</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">22</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-purple);">0 / 22</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    模擬器僅存的兩塊空白補上。第一段結束時，玩家可以在四個模組接口各裝一顆模組（186 顆候選）
+    並看到效果彙總；第二段結束時，四個部位可以換成別台同裝甲類型機甲的同位部件，
+    混搭後的重量／出力／火力直接出真值。兩段的成果都進分享碼與匯出圖。
+  </div>
+
+  <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.25);">
+    <strong style="color:var(--accent-yellow);">動工前必讀三件</strong><br>
+    ① <strong>A-1 是分享碼接線，不是「載入一個集合」</strong> —— <code>shareIndexes</code> 的
+      <code>module</code> 那一行今天傳空陣列。<code>component</code> 剛因為同一個坑漏改了三個 Phase，
+      而<strong>兩邊的畫面都不會說任何話</strong>。加集合與接索引是兩件事，A-1 一次做完並補實地驗收。<br>
+    ② <strong><code>mod_2030</code> 要明著排除</strong> —— 已裁決的候選規則
+      <code>boundMechId === null</code> 會把這顆官方廢案撈進清單（見計畫書決策一）。<br>
+    ③ <strong>模組的 <code>reconcile()</code> 不可照抄武器的「查不到就刪」</strong> ——
+      空 Map ＝ 還沒載入，不是沒有模組。照抄的症狀是貼一次分享碼、模組就被靜默清空一次
+      （計畫書決策六，052-D 的同一條教訓）。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label purple">Phase A</div>
+  <div class="section-title">地基與接線</div>
+  <div class="section-desc">
+    型別、資料載入、規則層純函式與守門測試。<strong>本階段不動任何 UI</strong> ——
+    做完之後畫面應該與今天一模一樣，而分享碼已經編得進模組、規則層已經答得出「這一格能不能裝這一顆」。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; <code>modules</code> 進 equip 階段 ＋ 分享碼索引接線</div>
+      <div class="task-group-meta">useFirestore.ts / LoadoutPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把 <code>modules</code> 加進 <code>LOADOUT_STAGE_KEYS.equip</code> 與 <code>LoadoutGameData</code></div>
+        <div class="task-desc">
+          241 筆，掛在 equip 而不是更早 —— 選完機甲之前一筆都用不到。
+          <code>useLoadoutGameData()</code> 的 <code>data</code> memo 與回傳型別同步加欄位。
+        </div>
+        <div class="task-file">src/hooks/useFirestore.ts:291</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">⚠ 同一個工項：把 <code>shareIndexes.module</code> 接上 <code>data.modules</code></div>
+        <div class="task-desc">
+          現行為 <code>buildShareIndex('module', [], shareIdAliases('module'))</code> ——
+          <strong>空陣列讓迴圈一次都不跑</strong>，別名補的是「推導不出號碼」的缺口、
+          補不了「集合沒進來」。改成 <code>data.modules.map((x) =&gt; x.id)</code> 並保留別名參數
+          （41 筆 <code>mod_40xx_2</code> 靠它）。<br>
+          <strong>這兩件事必須在同一個 commit 完成</strong>：052-D 的 A-3 只做了前半，
+          後半漏了三個 Phase，元件因此被靜默濾出分享碼。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx:241-248</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">驗證索引健康度：186／186 可分享、零撞號、零死別名</div>
+        <div class="task-desc">
+          2026-08-27 盤點已確認這三條成立（可推導 145 ＋ 別名 41）。
+          接線後跑 <code>scripts/check-share-ids.mjs</code> 確認 <code>maxAssigned</code> 水位無誤，
+          並把索引的 <code>unshareable</code> 長度斷言進測試 —— 它日後變非 0 就代表官方新增了
+          推導不出號碼的模組，那時要補別名而不是讓它靜默消失。
+        </div>
+        <div class="task-file">scripts/check-share-ids.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; <code>SlotRef</code> 擴成帶 <code>kind</code> 的聯集</div>
+      <div class="task-group-meta">src/types/slots.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">型別擴充 ＋ <code>slotKey()</code> / <code>parseSlotKey()</code> 支援 module kind</div>
+        <div class="task-desc">
+          總綱決策十二兌現。武器側維持現有字面格式（<code>bank:slot:side</code>）不動 ——
+          改格式等於讓所有既存分享碼與書架存檔失效；模組側用自己的前綴。
+          <strong><code>parseSlotKey(slotKey(ref))</code> 恆等於 <code>ref</code> 正規形</strong>
+          這條不變式要對兩種 kind 都成立。
+        </div>
+        <div class="task-file">src/types/slots.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">round-trip 測試擴充到 module kind</div>
+        <div class="task-desc">
+          <code>slotKey.test.ts</code> 既有案例全部保留（回歸防護），新增 module kind 的
+          四個部位 × 正反向。品牌型別的「禁止手寫字面量」規則對新 kind 一樣適用。
+        </div>
+        <div class="task-file">src/utils/slotKey.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; <code>moduleRules.ts</code>：候選池與接口 gate</div>
+      <div class="task-group-meta">src/utils/moduleRules.ts（新檔）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>moduleCandidates()</code> —— 候選池 186 筆的單一入口</div>
+        <div class="task-desc">
+          <code>boundMechId == null</code> ＆＆ <code>slot !== '機甲副模組'</code> ＆＆
+          <code>id !== 'mod_2030'</code>。廢案用 id 白名單排除、<strong>不改資料</strong>
+          （<code>managedBy: auto</code>，改了會被下次爬蟲洗回去）。
+          排除清單是具名常數並附上理由註解 —— 一個沒有理由的 id 白名單，下一個人不敢動也不敢留。
+        </div>
+        <div class="task-file">src/utils/moduleRules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>canEquipModule()</code> ＋ 五個新的 <code>REJECTION_CODES</code></div>
+        <div class="task-desc">
+          沿用 052-B／D 那張表與四個 tier（structural／situational／omitted／blocked），
+          <strong>不另開第二套拒絕模型</strong>。預計新增：
+          <code>MOD_NO_INTERFACE</code>（B 級機甲無接口・blocked）、
+          <code>MOD_IFACE_RARITY</code>（Ⅰ型接口只收 A 級・structural）、
+          <code>MOD_SLOT_TAKEN</code>（該接口已裝・situational ＋ 解法按鈕）、
+          <code>MOD_IFACE_UNKNOWN</code>（接口未建檔・blocked）、
+          <code>MOD_DATA_INCOMPLETE</code>（模組無 <code>levels[]</code>・structural）。<br>
+          ⚠ situational 的解法按鈕<strong>文案要與實際動作一致</strong> ——
+          既有的三筆（<code>BACK_SLOT_TAKEN</code> 等）寫「卸下 X 並裝上」但只送
+          <code>unequip</code>，本計畫不製造第四筆：寫「卸下 X」或真的做成兩段動作。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts（拒絕碼表）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; <code>LoadoutWorld.modules</code> 與載入 gate</div>
+      <div class="task-group-meta">src/utils/loadoutRules.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">世界層加 <code>modules: ReadonlyMap</code>，空 Map ＝ 跳過驗證</div>
+        <div class="task-desc">
+          <strong>空 Map 的意思是「還沒載入」，不是「這個世界沒有模組」</strong>（計畫書決策六）。
+          <code>buildWorld()</code> 的 <code>modules</code> 參數選填，比照 <code>components</code>。
+          註解要寫死這條 —— 052-D 在同一個位置留了一段警語，本計畫照抄那個規格。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts:168</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; CI 守門測試 ＋ fixture</div>
+      <div class="task-group-meta">scripts/gen-module-fixture.mjs / src/utils/moduleRules.test.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>gen-module-fixture.mjs</code>：直讀正式 Firestore 產出最小欄位快照</div>
+        <div class="task-desc">
+          比照 <code>gen-component-fixture.mjs</code>。只留守門測試要的欄位
+          （<code>id</code> / <code>name</code> / <code>slot</code> / <code>rarity</code> /
+          <code>boundMechId</code> / <code>boundPart</code> / <code>moduleAddLevel</code> /
+          <code>levels[].level</code> / <code>source</code>）——
+          全欄位快照會把描述文字帶進版控，diff 於是淹沒在無關變動裡。<br>
+          <strong>官方改版新增／改名模組後要重跑。</strong>
+        </div>
+        <div class="task-file">scripts/gen-module-fixture.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">守門斷言：候選池 186、Ⅰ型 42、排除項各自成立</div>
+        <div class="task-desc">
+          四條：① <code>moduleCandidates()</code> 回 186 筆；② 其中 <code>rarity === 'A'</code> 為 42 筆；
+          ③ 副模組 11 筆與 <code>mod_2030</code> 都不在裡面；④ 候選池 <code>levels[]</code> 覆蓋率 100%。<br>
+          <strong>掛掉時該修的是規則或資料，不是把斷言的數字改到剛好通過</strong> ——
+          這幾個數字掉了就代表官方改了模組的分類方式。
+        </div>
+        <div class="task-file">src/utils/moduleRules.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label purple">Phase B</div>
+  <div class="section-title">資料對帳與等級推導</div>
+  <div class="section-desc">
+    兩件會影響 UI 該說什麼的前置：一筆可疑的接口資料，與一條未經驗證的等級公式。
+    <strong>B-0 與 B-3 不阻塞 Phase C 的動工</strong>，但要在 Phase C 定案文案之前收掉。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-0 &nbsp; 星夜女神接口資料回官方對帳</div>
+      <div class="task-group-meta">資料側 · data-patch</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">確認 <code>mech_089_星夜女神</code> 四格是否真為 Ⅰ 型接口</div>
+        <div class="task-desc">
+          它是 256 格 S 級接口裡唯一的 4 格 Ⅰ 型，而 16 台有 Ⅰ 型的 A 級機甲 pattern 清一色是
+          <code>Ⅰ／Ⅱ／Ⅱ／Ⅰ</code>。依決策二，Ⅰ 型只收 A 級模組 ⇒ 一台 S 機只能裝 A 模組。
+          位置與筆數都與總綱原記的「4 格錯字 <code>ⅠⅠ型接口</code>」吻合，疑為 052-A 正規化時被改成 Ⅰ 型。<br>
+          若實為 Ⅱ 型：走 data-patch skill 修正並 <strong>bump 版本</strong>，
+          <strong>Ⅰ 型接口就只存在於 A 級機甲</strong>，Ⅰ 型候選池的用途只剩那 16 台。
+        </div>
+        <div class="task-file">mechs/mech_089_星夜女神</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; <code>moduleLevelOf()</code> 接上 Σ <code>moduleAddLevel</code></div>
+      <div class="task-group-meta">src/utils/chassisStats.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">總模組等級 ＝ Σ 四接口所裝模組的 <code>moduleAddLevel</code></div>
+        <div class="task-desc">
+          <code>moduleLevelOf()</code> 現行一律回滿級。依計畫書決策三改成推導：
+          裝滿四格 Ⅱ 型 ⇒ 8、A 級機甲的 <code>Ⅰ／Ⅱ／Ⅱ／Ⅰ</code> ⇒ 上限 6。<br>
+          <strong>模組自己的等級與這個總和的關係，在 E-3 驗證通過前一律標「本站推算」。</strong>
+          ⚠ 空接口貢獻 0 還是有基礎值，也在 E-3 一併確認 —— 全空時總和為 0
+          會讓天生模組變成 0 級，那不合理。
+        </div>
+        <div class="task-file">src/utils/chassisStats.ts:118</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">讀模組數值一律走 <code>levels[]</code></div>
+        <div class="task-desc">
+          候選池 186 筆全有 <code>levels[]</code>，而頂層平坦欄位全 0 者有 163 筆。
+          讀頂層的症狀是「模組裝上去沒有任何效果」<strong>而且不報錯</strong>。
+          <code>levels[]</code> 長度是 4 或 8（136／50 筆），不可假設固定 8。
+        </div>
+        <div class="task-file">src/utils/moduleRules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 兩處既有文案修正：B 級「沒有接口」≠「未建檔」</div>
+      <div class="task-group-meta">src/types/mech.ts / MechSlotPanel.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">改掉把 B 品質講成「未建檔」的註解與文案</div>
+        <div class="task-desc">
+          <code>mech.ts</code> 對 <code>''</code> 的註解現寫「B 品質刻意不補」（＝未建檔），
+          <code>MechSlotPanel</code> 與 <code>MechPartStrip</code> 對空值一律顯示「接口未建檔」。
+          依決策二：B 級 10 台 40 格是<strong>真的沒有這個槽</strong>，由 <code>quality</code> derive、
+          寫「此機甲無模組接口」；<strong>真正的未建檔只有美杜莎MK2 那 4 格</strong>。<br>
+          兩種狀態在同一個空字串上，只有 <code>quality</code> 分得開 —— 這是為什麼判定不能看空字串。
+        </div>
+        <div class="task-file">src/types/mech.ts:25 · src/components/mechs/MechSlotPanel.tsx:22</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label purple">Phase C</div>
+  <div class="section-title">模組槽可操作（第一段出貨）</div>
+  <div class="section-desc">
+    動作層、級聯與 UI。<strong>本階段結束即可上線</strong> ——
+    玩家在四個接口各裝一顆模組、看到效果彙總、分享碼帶得走、匯出圖印得出。部件混搭在 Phase D。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; reducer action ＋ <code>reconcile()</code> 級聯</div>
+      <div class="task-group-meta">src/pages/simulator/simReducer.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>equipModule</code> / <code>unequipModule</code> 兩個 action</div>
+        <div class="task-desc">
+          寫入 <code>draft.modules[pos]</code>。卸下用 <code>ResolutionAction</code> 的形狀，
+          與拒絕訊息上的解法按鈕共用同一個 union —— <strong>UI 不自己組動作</strong>，
+          否則會出現「按鈕寫卸下軀幹、實際卸腿部」這種只有玩家看得到的錯。<br>
+          ⚠ 未裝時<strong>欄位不存在</strong>，不存 <code>null</code>（<code>stripUndefined</code> 的老坑）。
+        </div>
+        <div class="task-file">src/pages/simulator/simReducer.ts:38</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">級聯：換機甲清 <code>draft.modules</code>，且被清掉要進 toast</div>
+        <div class="task-desc">
+          <code>RemovedItem.kind</code> 加 <code>'module'</code>。理由與元件完全相同：
+          <strong>模組藏在面板裡</strong>，換一台機甲就靜默丟掉四顆而不吭一聲，
+          是這一層最容易長出來的客服問題。<br>
+          ⚠ <strong>載入 gate 在這裡最要緊</strong>：<code>world.modules</code> 為空時
+          <strong>整段不動</strong> <code>draft.modules</code>，不可照抄武器的「查不到就刪」
+          （計畫書決策六）。
+        </div>
+        <div class="task-file">src/pages/simulator/simReducer.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">級聯測試：合法草稿恆等、外來草稿過 reconcile、未載入不清空</div>
+        <div class="task-desc">
+          第三條是本計畫最重要的一條測試，也是唯一能在單元層攔住決策六那個坑的地方：
+          <strong>world.modules 為空 Map 時，reconcile 後 <code>draft.modules</code> 必須原封不動。</strong>
+        </div>
+        <div class="task-file">src/pages/simulator/simReducer.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; <code>MechPartStrip</code> 由唯讀變可點</div>
+      <div class="task-group-meta">src/components/loadout/MechPartStrip.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">四張卡各加模組入口，並顯示已裝模組</div>
+        <div class="task-desc">
+          052-I 已把這一排畫在槽位圖下方（固定兩欄，<strong>不要改成 <code>xl:grid-cols-4</code></strong> ——
+          Tailwind 斷點看的是視窗寬，而這排卡片住在 520px 的欄裡）。本工項只加入口與狀態：
+          副標由「接口型別 ×1」改成「接口型別 · 已裝模組名／未裝」。<br>
+          ⚠ <strong>052-D 的教訓</strong>：元件入口第一版做成槽位圖上的 ⚙ 徽章，站長找不到，
+          最後改成格子下方的窄列。這裡的四張卡本身就是格子，<strong>整卡可點</strong>即可，
+          不要再造第二種徽章語彙。
+        </div>
+        <div class="task-file">src/components/loadout/MechPartStrip.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三種不可裝狀態各自寫清楚</div>
+        <div class="task-desc">
+          B 級「此機甲無模組接口」（quality derive）／美杜莎MK2「接口資料未建檔」／
+          Ⅰ 型「僅可裝 A 級模組」。<strong>三者不可共用一句話</strong> ——
+          留白或含糊會被讀成一個我們並不知道的否定陳述。
+        </div>
+        <div class="task-file">src/components/loadout/MechPartStrip.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 右欄 <code>ModulePanel</code></div>
+      <div class="task-group-meta">src/components/loadout/ModulePanel.tsx（新檔）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">比照 <code>ComponentPanel</code>，開在右欄同一個情境欄</div>
+        <div class="task-desc">
+          右欄目前是<strong>挑選器 ＞ 元件面板 ＞ 武器與元件列</strong>的切換式情境欄
+          （052-I D-3）。模組面板加進同一條切換鏈，<strong>不疊第二層彈窗</strong> ——
+          手機版 BottomSheet 疊兩層等於把返回鍵埋掉。標題比照「軀幹 · Ⅱ型接口」＋ 返回鍵。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx:861</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">186 筆的搜尋與篩選（<code>slot</code> ／ <code>rarity</code> ／ 效果類型）</div>
+        <div class="task-desc">
+          Ⅱ 型接口候選 186 筆，一頁列不完。<strong>052-D 的實測結論直接沿用</strong>：
+          元件面板第一版沒有搜尋，站長反映找不到東西，補了搜尋與篩選才可用。
+          分類建議依 <code>slot</code>（特性 74 ／ 8級 50 ／ 通用 62）；Ⅰ 型接口只有 42 筆，單頁即可。
+        </div>
+        <div class="task-file">src/components/loadout/ModulePanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每一列掛一行效果摘要（決策九降級後的形態）</div>
+        <div class="task-desc">
+          186 筆全有滿級 <code>description</code>，直接用、不必自己組字串。
+          原本這是為了消模組同名的歧義，而排除 <code>mod_2030</code> 之後池內已無同名
+          —— 它現在純粹是可讀性工項：只看「校準模組Ⅰ／Ⅱ」這種名字，玩家分不出差別
+          （實測兩者 <code>levels[]</code> 數值<strong>完全相同</strong>，差別只在貢獻的等級）。
+        </div>
+        <div class="task-file">src/components/loadout/ModulePanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 已裝效果彙總</div>
+      <div class="task-group-meta">src/components/loadout/EquippedEffects.tsx（新檔）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Σ 四部位模組加成，走 <code>levels[]</code> 的 30 個數值欄位</div>
+        <div class="task-desc">
+          <strong>候選池的 <code>buffIds</code> 與 <code>conditionalEffects</code> 都是 0 筆</strong>
+          （盤點結論），所以彙總不能走 PLAN-019 的 buff 層，只能加總 <code>levels[]</code>
+          的同名欄位。186 筆裡只有 7 筆的滿級同時碰到一個以上的欄位 ⇒ 表會很好讀。<br>
+          天生模組（<code>module4Id</code> / <code>module8Id</code> / <code>moduleFixedIds</code>）
+          <strong>一併顯示但不可編輯</strong> —— 玩家改不了它們，但它們確實在生效。
+        </div>
+        <div class="task-file">src/components/loadout/EquippedEffects.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">⚠ 不出衍生的戰力／傷害數字</div>
+        <div class="task-desc">
+          攻擊力口徑未定（DB 值＝全部連擊總和、官方卡片＝每擊值，差額 17.3–18.6% 且逐把不同），
+          總綱決策一④已裁決延後至傷害模擬計畫。本輪只出「裝了哪些、各自加了什麼」。
+        </div>
+        <div class="task-file">src/components/loadout/EquippedEffects.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-5 &nbsp; 分享碼與匯出圖帶上模組</div>
+      <div class="task-group-meta">codec.ts / LoadoutExportCard.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">codec 的 <code>§MODULES</code> 段實地驗收（不是單元測試）</div>
+        <div class="task-desc">
+          <code>encodePositionMap(draft.modules, ix.module, LIMITS.modules)</code> 已經寫好且有
+          golden fixture —— <strong>但它從來沒有被真實資料餵過</strong>，因為 A-1 之前索引是空的。
+          配一套含四顆模組的配裝、複製連結、在無痕視窗貼上、確認四顆都回來。<br>
+          <strong>單元測試抓不到這一層</strong>：codec 的測試自己建索引，壞掉的是頁面的接線。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/codec.ts:428</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">匯出長圖加模組區塊</div>
+        <div class="task-desc">
+          四部位各一行（部位／接口型別／模組名／效果）。
+          ⚠ 版面寬度 1000px 是硬限制，且底部已有分享碼整寬一條（052-C E-1）——
+          新區塊往中段插，不要動 footer。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-6 &nbsp; 拆掉「模組配置開發中」的告示</div>
+      <div class="task-group-meta">MechPartStrip.tsx / LoadoutPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">移除唯讀期的佔位文案</div>
+        <div class="task-desc">
+          <code>MechPartStrip</code> 那行「部件混搭開放後，每個部位可換成別台機甲的同位部件」
+          在 Phase C 結束時<strong>只能拆掉模組那半</strong> —— 混搭還沒開放，
+          那半句仍然是誠實的，改寫成只講混搭即可，Phase D 再整條拆掉。
+        </div>
+        <div class="task-file">src/components/loadout/MechPartStrip.tsx:39</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label purple">Phase D</div>
+  <div class="section-title">部件混搭（第二段出貨）</div>
+  <div class="section-desc">
+    四個部位可換成別台同裝甲類型機甲的同位部件。
+    <strong>Q-1 已解</strong>（除火力外一律 Σ 四部位、命中為左右手臂相加）⇒ 混搭後的機體數值可以直接出。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; <code>swapPart</code> / <code>resetPart</code> ＋ 級聯</div>
+      <div class="task-group-meta">src/pages/simulator/simReducer.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">寫入 <code>draft.parts[pos]</code>，只記與原廠不同的部位</div>
+        <div class="task-desc">
+          與原廠相同時<strong>刪掉鍵</strong>而不是寫入自己的 mechId —— 後者會讓每一份分享碼
+          都多帶四個永遠不變的號碼，而 <code>§PARTS</code> 是變長段。
+        </div>
+        <div class="task-file">src/pages/simulator/simReducer.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">⚠ 換機甲必須清 <code>draft.parts</code></div>
+        <div class="task-desc">
+          <code>loadout.ts</code> 的欄位註解逐字寫著「今天沒有任何程式會寫入它，因此
+          <code>reconcile()</code> 也還不會在換機甲時清掉它。052-G 接手時第一件事就是補上那條級聯」。
+          <strong>這就是那第一件事。</strong>換了機甲卻留著舊機甲的部件是靜默的錯，
+          而且會讓 <code>resolveChassis()</code> 算出一台不存在的機體。<br>
+          換<strong>裝甲類型</strong>時尤其要清 —— 否則會混出跨型機體，
+          而決策七的整條推論（雙肩槽與執照判定不受影響）就地失效。
+        </div>
+        <div class="task-file">src/types/loadout.ts:120 · simReducer.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; <code>PART_INCOMPATIBLE</code> ＋ 來源挑選器</div>
+      <div class="task-group-meta">loadoutRules.ts / PickerShell</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">同裝甲類型 gate（一行）</div>
+        <div class="task-desc">
+          <code>sourceMech.armorType === chassis.armorType</code>。
+          來源池：輕型 27 ／ 中甲 36 ／ 重型 27（扣掉自己是 26／35／26），一頁列得完、不必分頁。
+          352／360 個部位帶 <code>icon</code>，挑選器用得上。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">佔位機甲作為來源時標「數值未公布」</div>
+        <div class="task-desc">
+          <code>mech_090_美杜莎MK2</code> 四部位全 0（官方未公布）。列成一組重量 0 的
+          「免費部件」會讓玩家配出一台不存在的機體，而且看起來像 bug 而非資料狀態。
+          <strong>新機甲一律先建檔再補數值</strong>，同型佔位日後還會出現。
+        </div>
+        <div class="task-file">src/components/loadout/PickerVariants.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; <code>partOverrides</code> 接線 ＋ 全站改走 <code>ResolvedChassis</code></div>
+      <div class="task-group-meta">src/utils/chassisStats.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把 <code>draft.parts</code> 餵進 <code>resolveChassis()</code></div>
+        <div class="task-desc">
+          <code>partOverrides</code> 已實作（052-A B-2）且註解就寫著「混搭 UI 在 052-G」，
+          本工項只是接上。重量／出力／火力／命中全部自動變成混搭後的真值 —— Σ 四部位，
+          只有軀幹有出力（實測 89／90 台 torso <code>output</code> &gt; 0、非軀幹 0 台）。
+        </div>
+        <div class="task-file">src/utils/chassisStats.ts:130</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">確認全站已停止讀 <code>mech.firepower</code> 等頂層欄位</div>
+        <div class="task-desc">
+          總綱決策七：機體所有數值一律由 <code>ResolvedChassis</code> 出。
+          混搭一旦開放，任何還在讀機甲頂層欄位的地方都會顯示<strong>未混搭前的數字</strong> ——
+          不會報錯、只會不一致。掃一遍並補上。
+        </div>
+        <div class="task-file">全站</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 復原四部位表 ＋ 匯出圖帶混搭來源</div>
+      <div class="task-group-meta">LoadoutPage.tsx / MechPartsTable / LoadoutExportCard</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">解除 <code>MechPartsTable</code> 的註解，「來源」欄出真值</div>
+        <div class="task-desc">
+          它被下架的理由逐字是「四個部位現在 100% 固定來自本機甲，這裡列出來只是把機甲詳情頁的
+          同一張表再抄一遍」—— 混搭開放後這張表才開始回答「這一套是怎麼拼出來的」。<br>
+          ⚠ <code>MechPartsTable</code> <strong>自帶卡片框與標題</strong>（052-A 共用元件），
+          復原時不要再包一層 <code>Panel</code>。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx:880</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">匯出圖與分享碼 <code>§PARTS</code> 實地驗收</div>
+        <div class="task-desc">
+          與 C-5 同一套做法：配一套四部位來自四台不同機甲的配裝，複製連結、無痕視窗貼上、
+          確認四個來源都回來，且匯出圖上印得出來源機甲名。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label purple">Phase E</div>
+  <div class="section-title">驗收</div>
+  <div class="section-desc">
+    <strong>瀏覽器實地驗收，不是單元測試。</strong>本計畫最危險的兩個坑（分享碼接線、
+    等級公式假說）都在單元層看不見 —— 052-D 的元件索引就是實地驗收才抓到的。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 分享碼 round-trip 實地驗收</div>
+      <div class="task-group-meta">瀏覽器 · 無痕視窗</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">六種情況各走一次</div>
+        <div class="task-desc">
+          ① 只有模組；② 只有混搭；③ 模組＋混搭＋武器＋元件＋算力（全滿）；
+          ④ 別名模組（<code>mod_40xx_2</code>，41 筆走的是別名而非推導）；
+          ⑤ 貼進<strong>還沒載入完</strong>的頁面（決策六的載入 gate）；
+          ⑥ 本機書架存檔的讀回。<br>
+          ⚠ ⑤ 是最容易漏的一項，也是唯一會「貼一次清空一次」的那一種。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 級聯實地驗收</div>
+      <div class="task-group-meta">瀏覽器</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">換機甲／換裝甲類型／換機師，四顆模組與四個部件的去向</div>
+        <div class="task-desc">
+          三件事都要看到：① <code>draft.modules</code> 與 <code>draft.parts</code> 被清掉；
+          ② toast 說出被清掉了什麼（<strong>不可靜默</strong>）；③ [復原] 按得回來。<br>
+          B 級機甲（無接口）與美杜莎MK2（未建檔）各切一次，確認兩種文案分得開。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; <code>moduleAddLevel</code> 假說的實機驗證</div>
+      <div class="task-group-meta">遊戲內 · 使用者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">四個接口由空到滿，記錄天生模組的等級變化</div>
+        <div class="task-desc">
+          計畫書決策三的假說：Σ 四接口的 <code>moduleAddLevel</code> 決定天生模組等級。
+          要確認三件事：① 總和真的是天生模組的等級嗎；② 影響的是 8 級模組、特性模組，還是兩者；
+          ③ <strong>四格全空時的基礎值是多少</strong>（若為 0，天生模組就會是 0 級，那不合理）。<br>
+          <strong>假說被推翻時，改的是決策三，不是把公式湊到剛好符合某一台機甲。</strong>
+          驗證通過前，總模組等級一律標示為「本站推算」。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">使用者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-4 &nbsp; 回寫總綱</div>
+      <div class="task-group-meta">PLAN-052 總綱</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把本計畫推翻／修正的內容寫回總綱計畫書</div>
+        <div class="task-desc">
+          ① 決策六的數字：候選池 188 → <strong>186</strong>、Ⅰ型候選 41 → <strong>42</strong>、
+          modules 242 → 241、不綁機甲 199 → 198；<br>
+          ② 決策六追加：<code>mech</code> 的三個天生模組欄位與「為什麼它們同時在候選池裡是對的」；<br>
+          ③ 決策十三<strong>降級</strong>：候選池內已無同名，效果摘要改列為可讀性工項；<br>
+          ④ <strong>新增決策</strong>：<code>moduleAddLevel</code> 與總模組等級（本計畫決策三）；<br>
+          ⑤ 決策十的星夜女神對帳結果。
+        </div>
+        <div class="task-file">docs/05_階段性開發計畫/執行中/PLAN-052_配裝模擬器改版_總綱/計畫書.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-G — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

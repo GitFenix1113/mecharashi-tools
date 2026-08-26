@@ -175,11 +175,11 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">1</div>
+      <div class="summary-num" style="color:var(--text-dim)">2</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">7</div>
+      <div class="summary-num" style="color:var(--text-primary)">8</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">6 / 7</span>
+      <span style="color:var(--accent-purple);">6 / 8</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 86%"></div>
+      <div class="progress-bar-fill" style="width: 75%"></div>
     </div>
   </div>
 
@@ -402,8 +402,75 @@
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">052-E ~ H &nbsp; 後續子計畫</div>
-      <div class="task-group-meta">雲端存檔 / 形態 / 模組槽＋混搭 / 熱門配裝</div>
+      <div class="task-group-title">052-G &nbsp; 模組槽與部件混搭</div>
+      <div class="task-group-meta">2026-08-27 建檔 · 22 工項 · 兩段式</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">四個模組接口 ＋ 四部位混搭（22 工項，A–E 五個 Phase）</div>
+        <div class="task-desc">
+          模擬器僅存的兩塊空白。地基（<code>LoadoutDraft.parts</code>／<code>.modules</code>、
+          codec 的 <code>§PARTS</code>／<code>§MODULES</code>、<code>resolveChassis()</code> 的
+          <code>partOverrides</code> 與 <code>moduleLevelOf()</code>）全部已實作，
+          本計畫是<b>接線而非建造</b>。
+          <br><br>
+          <b>2026-08-27 直讀正式 Firestore 四輪盤點，修正決策六的四個數字</b>：
+          候選池 <b>186</b>（總綱推算 188 ＝ 199 − 11；實為 198 − 11 − <code>mod_2030</code>）、
+          Ⅰ型接口候選 <b>42</b>（總綱 41）、modules <b>241</b>（總綱 242，折光陣列孿生已於 08-26 合併刪除）、
+          不綁機甲 <b>198</b>（總綱 199）。其餘實測全數相符：接口 360 格（Ⅱ型 280／Ⅰ型 36／空白 44）、
+          B 級 10 台 40 格是真的沒有接口、真正未建檔只有美杜莎MK2 那 4 格、
+          副模組 11 筆（<code>available</code> 10 true／1 false ⇒ 不可當唯一 gate）、
+          <code>boundPart</code> 全為 null（部位 gate 不必做）。
+          候選池 186 筆<b>全部可分享、零撞號</b>（可推導 145 ＋ 既有別名 41），無需新增別名。
+          <br><br>
+          <b>⚠ 對決策六的補充：天生模組住在 <code>mech</code> 頂層</b>——
+          <code>module4Id</code>（76 台）／<code>module8Id</code>（80 台）／<code>moduleFixedIds</code>（104 個引用），
+          260 個引用零斷鏈。其中 <b>112 顆的 <code>boundMechId</code> 是 null</b>，
+          乍看會讓候選規則撈進「別台機甲的天生模組」。查 <code>source</code> 後確認
+          <b>那不是漏洞而是機制本身</b>：特性模組來源為「拆機甲／商店」、56 筆帶
+          <code>dismantleMechIds</code> ——拆一台機甲、把它的特性模組裝到自己機上就是這個玩法，
+          正是使用者說的「只要沒有綁定機甲，其他機甲都能使用」。<b>決策六原封不動成立。</b>
+          <br><br>
+          <b>對決策十三的修訂：候選池內已無同名，工項降級。</b>
+          唯一的同名對手 <code>mod_2030</code> 依決策一被明著排除（官方廢案：全集合零引用、
+          <code>source</code> 為字串 <code>"未知"</code>、無拆解來源），
+          <code>mod_2041</code> 於是成為池內唯一的「自擬合模組」；「匯流樞紐」兩筆是專屬模組、
+          <code>boundMechId</code> 有值、根本不進池。⇒「名稱下掛效果摘要」仍要做（186 筆全有滿級
+          <code>description</code>，對可讀性有價值），但不再是消歧義的剛需；
+          <b>「專屬模組補 <code>boundPart</code> 部位徽章」本輪不做</b>——專屬模組不進候選池。
+          <br><br>
+          <b>新增決策：<code>moduleAddLevel</code> 要做（使用者裁決 2026-08-27）。</b>
+          既有欄位、全站從未被讀取，資料模型文件寫著「配裝模擬器累加所有嵌入模組的此值，
+          以計算總模組等級」。實測 31 顆通用模組Ⅱ型（S 級）為 2、其餘 155 筆為 1。
+          工作假說：Σ 四接口決定天生模組等級——通用模組 62 筆是 31 對完美成對的Ⅰ／Ⅱ型（零例外）、
+          命名直接對上接口（「校準模組Ⅰ」配 Ⅰ 型接口）、S 機四格全Ⅱ型 ⇒ Σ 上限 8
+          而「機甲8級模組」<code>levels[]</code> 正好 8 筆、A 機 <code>Ⅰ／Ⅱ／Ⅱ／Ⅰ</code> ⇒ 上限 6。
+          <b>假說未經實機驗證</b>，E-3 專項驗收；通過前總模組等級一律標「本站推算」。
+          <br><br>
+          <b>⚠ 另一項待對帳（B-0）：星夜女神四格全 Ⅰ 型已確認。</b>
+          它是 256 格 S 級接口裡唯一的例外（16 台 A 級機甲清一色 <code>Ⅰ／Ⅱ／Ⅱ／Ⅰ</code>），
+          而 Ⅰ 型只收 A 級模組 ⇒ 一台 S 機只能裝 A 級模組。位置與筆數都與原記的
+          「4 格錯字 <code>ⅠⅠ型接口</code>」吻合，疑為 052-A 正規化時被改成 Ⅰ 型。
+          若實為 Ⅱ 型，則 <b>Ⅰ 型接口只存在於 A 級機甲</b>，Ⅰ 型候選池的用途只剩那 16 台。
+          <br><br>
+          <b>⚠ 動工第一件事是分享碼接線</b>（A-1）：<code>shareIndexes</code> 的
+          <code>module</code> 那一行今天傳空陣列，<code>component</code> 剛因為同一個坑漏改了整整三個 Phase
+          ——加集合與接索引是兩件事，A-1 一次做完並補實地驗收。
+          另兩件：<code>reconcile()</code> 對模組不可照抄武器的「查不到就刪」（空 Map ＝ 還沒載入）、
+          換機甲必須清 <code>draft.parts</code>（<code>loadout.ts</code> 的欄位註解已預告這是 052-G 的第一件事）。
+        </div>
+        <div class="task-file">PLAN-052-G_模組槽與部件混搭/進度表.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">052-E / F / H &nbsp; 後續子計畫</div>
+      <div class="task-group-meta">雲端存檔 / 形態 / 熱門配裝</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
@@ -411,21 +478,18 @@
         <div class="task-name">尚未建立文件，待各自動工時再由 plan-manager 建檔</div>
         <div class="task-desc">
           範圍與工程量見計畫書「實作範圍」表。
-          <b>2026-08-25：Q-1／Q-2 已裁決，052-G 兩個階段都不再有資料缺口</b>
-          （合成規則＝Σ 四部位；模組候選＝<code>boundMechId === null</code>）；
-          並追加<b>決策十二</b>（槽位定址走 <code>kind</code> 聯集 ＋ 模組／元件的版面落點）。
           <br><br>
-          <b>2026-08-26：追加決策十三 — 模組同名的消歧義歸 052-G，走顯示層不改資料。</b>
-          模組庫盤點後，去掉已修的 key-in 錯誤（<code>mod_4029_2</code>／<code>mod_4030_2</code> 名稱錯位）之後，
-          仍有兩筆真的同名：<code>mod_2030</code> 與 <code>mod_2041</code> 皆名為「自擬合模組」而效果完全不同。
-          <b>不改資料</b>——兩筆都是 <code>managedBy: auto</code>，改名會被下次爬蟲洗回去；
-          且同名本來就是官方命名，鏡射它才是對的。改為在模組選擇器的名稱下掛一行效果摘要，
-          機甲專屬模組再補一枚 <code>boundPart</code> 部位徽章（「匯流樞紐」那組本來就靠部位區分，非歧義）。
+          <b>052-E（雲端存檔）</b>：<code>draft.parts</code>／<code>draft.modules</code> 在 052-G 之後
+          第一次會有值，但雲端存檔的 schema 不必改（存的就是 <code>LoadoutDraft</code>）；
+          <b>052-G 決策六的載入 gate 對它同樣適用</b>——草稿會在集合載入完成前就被
+          <code>loadDraft</code> 灌進來。另接手方案名稱的登入 gate（052-I E-1）。
           <br>
-          ⚠ 同時發現 <code>mod_2030</code> 是<b>官方廢案</b>（全 12 個集合零引用、
-          <code>source</code> 為字串 <code>"未知"</code> 而非陣列、無拆解來源），
-          而 052-G 已裁決的候選規則 <code>boundMechId === null</code> <b>會把它撈進候選清單</b>——
-          動工時需明著排除，否則使用者會在選擇器裡看到一顆裝不到任何機甲上的幽靈模組。
+          <b>052-F（形態）</b>：模組與部件掛在<b>機甲</b>上、不隨形態變動 ⇒ 兩者都留在
+          <code>LoadoutDraft</code> 頂層、<b>不進 <code>EquipSet</code></b>（與 <code>ndLevels</code> 同理），
+          海莉絲四個分頁共用同一組模組與部件。另 052-I 的形態鎖定態樣式已寫好但今日無法從 UI 觸達
+          （<code>ctx.lock</code> 恆為 null），待形態分頁落地後補驗。
+          <br>
+          <b>052-H（熱門配裝）</b>：聚合維度會多出模組與部件來源兩項。
         </div>
         <div class="task-file">docs/05_階段性開發計畫/執行中/</div>
       </div>
