@@ -79,21 +79,30 @@ interface Props {
   onOpen?: () => void
   onClear?: () => void
   /**
-   * 開這一格武器的元件面板（PLAN-052-D）。給了才渲染 ⚙ 徽章 ——
+   * 開這一格武器的元件面板（PLAN-052-D）。給了才渲染下方那條元件列 ——
    * 呼叫端只在「這把武器裝得了元件」時才傳（`componentLimit > 0`）。
    *
-   * ⚠ 總綱決策十二逐字：「武器格<b>整格點＝換武器</b>、<b>右下 ⚙ 徽章點＝開元件挑選器</b>」。
-   *   052-I 只把入口做在右欄的武器列上，於是「去機甲圖上找元件」這個第一直覺會撲空
-   *   —— 而那正是總綱寫的操作方式。這顆徽章補上它。
+   * ⚠ 總綱決策十二要的是「武器格整格點＝換武器、另一個入口＝開元件挑選器」。
+   *   第一版做成右下一顆 20px 的 ⚙ 徽章，站長實測後的評語是「有點不顯眼」——
+   *   20px 的描邊圖示夾在重量與 ✕ 之間，本來就不會被當成一個獨立入口。
+   *   改成**格子下方一條整寬可點的窄列**（使用者裁決 2026-08-27）：
+   *   它有文字（「元件 0/4」）、有方向記號（▸），而且不與武器名爭寬度
+   *   —— 格內那一行已經在 truncate「弒神者(戕神…」了。
+   *
+   * ⚠ 這**不是**總綱決策十二警告過的那種「元件列」。那條警告針對的是
+   *   「一顆元件一格」（一把 4 格、四把 16 格，rig 會從 6 格長到 22 格）；
+   *   這裡是**一把武器一條摘要列**，而且只出現在裝得了元件的武器格下。
    */
   onComponents?: () => void
-  /** ⚙ 徽章上的「已裝／上限」。`used > 0` 時徽章轉為橙色，一眼看得出這格配過 */
+  /** 元件列上的「已裝／上限」。`used > 0` 時整列轉橙，一眼看得出哪幾格配過 */
   componentUsed?: number
+  /** 元件列上的上限（`componentLimit`） */
+  componentLimit?: number
 }
 
 export function SlotCell({
   label, occupant, absentReason, seg, slotIcon, available, preview,
-  active, flash, compact, dense, tight, onOpen, onClear, onComponents, componentUsed = 0,
+  active, flash, compact, dense, tight, onOpen, onClear, onComponents, componentUsed = 0, componentLimit = 0,
 }: Props) {
   // ⚠ 內距與間隙一律寫 **px**，不用 Tailwind 的 spacing 單位。
   //   本站 root font-size 是 19px（Layout 的 FONT_SIZE_MAP），`gap-2.5` 實測 11.9px、
@@ -253,6 +262,7 @@ export function SlotCell({
     : null
 
   return (
+    <div className="flex flex-col" style={{ gap: 2 }}>
     <div
       className={`${base} cursor-pointer ${
         active
@@ -283,21 +293,6 @@ export function SlotCell({
           {dualMark}{weight.toLocaleString()}
         </span>
       )}
-      {onComponents && (
-        <button
-          type="button"
-          aria-label={`設定 ${label} 的 ${name} 的元件（已裝 ${componentUsed} 個）`}
-          title={componentUsed > 0 ? `元件 ${componentUsed} 個` : '設定元件'}
-          onClick={(e) => { e.stopPropagation(); onComponents() }}
-          className={`hud-cut-sm shrink-0 ${tight ? 'w-[17px] h-[17px]' : 'w-[20px] h-[20px]'} flex items-center justify-center border cursor-pointer transition-colors ${
-            componentUsed > 0
-              ? 'border-accent-orange/60 text-accent-orange hover:bg-accent-orange/10'
-              : 'border-border text-text-dim hover:text-accent-orange hover:border-accent-orange/60'
-          }`}
-        >
-          <LoadoutIcon name="gear" className="w-3 h-3" />
-        </button>
-      )}
       {onClear && (
         <button
           type="button"
@@ -308,6 +303,29 @@ export function SlotCell({
           <LoadoutIcon name="close" className="w-3 h-3" />
         </button>
       )}
+    </div>
+
+    {/* 元件列：整條可點，見 `onComponents` 的註解 */}
+    {onComponents && (
+      <button
+        type="button"
+        aria-label={`設定 ${label} 的 ${name} 的元件（已裝 ${componentUsed} 個，上限 ${componentLimit} 個）`}
+        onClick={(e) => { e.stopPropagation(); onComponents() }}
+        className={`hud-cut-sm w-full flex items-center border cursor-pointer transition-colors ${
+          tight ? 'px-1.5 py-[3px]' : 'px-2 py-1'
+        } ${
+          componentUsed > 0
+            ? 'border-accent-orange/50 bg-accent-orange/10 text-accent-orange hover:bg-accent-orange/15'
+            : 'border-border bg-bg-dark/40 text-text-secondary hover:border-accent-orange/50 hover:text-accent-orange'
+        }`}
+        style={{ gap: 5 }}
+      >
+        <LoadoutIcon name="gear" className="w-3 h-3 shrink-0" />
+        <span className={`${HUD.body} ${tight ? 'text-[11px]' : ''} truncate`}>元件</span>
+        <span className={`${HUD.num} text-[11px] ml-auto shrink-0`}>{componentUsed}/{componentLimit}</span>
+        <span className="text-[10px] shrink-0 opacity-70">▸</span>
+      </button>
+    )}
     </div>
   )
 }

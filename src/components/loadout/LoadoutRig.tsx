@@ -112,7 +112,7 @@ function componentBadge(
   occ: SlotOccupant,
   ref: SlotRef,
   onOpenComponents?: (ref: SlotRef) => void,
-): { onComponents?: () => void; componentUsed?: number } {
+): { onComponents?: () => void; componentUsed?: number; componentLimit?: number } {
   if (!onOpenComponents) return {}
   const weapon = occ.kind === 'weapon' ? occ.weapon
     : occ.kind === 'fixed' ? occ.weapon
@@ -123,6 +123,7 @@ function componentBadge(
   return {
     onComponents: () => onOpenComponents(ref),
     componentUsed: (setup?.triggerComponentIds?.length ?? 0) + (setup?.effectComponentIds?.length ?? 0),
+    componentLimit: weapon.componentLimit,
   }
 }
 

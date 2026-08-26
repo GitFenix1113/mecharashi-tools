@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Component } from '../../types'
+import { WeaponEquipSlot } from '../../types/enums'
 import { ComponentIcon } from '../icons/ComponentIcon'
 import { ComponentTypeBadge, RarityBadge } from '../badges/ComponentBadges'
 import LoadoutIcon from '../icons/LoadoutIcon'
@@ -24,6 +25,11 @@ import {
 //   「我的元件呢」比多幾列雜訊更難處理 —— 玩家找不到一個他知道存在的東西時，
 //   會以為是站上缺資料，而不會想到是自己這把武器不相容。
 //
+// ⚠ **本面板不解說遊戲機制**（使用者裁決 2026-08-27）：規則會在玩家違反它的那一刻，
+//   由拒絕訊息連同解法一起講（決策二）—— 那才是它有用的時機。預先攤一段
+//   「觸 ＋ 應合計不得超過 4，兩種各自的格數只是上限」在面板上，讀的人還沒有要裝任何東西。
+//   槽位那三個數字（0/3、0/3、0/4）自己就說得完。
+//
 // ⚠ 但 `structural` 走**摺疊 ＋ 計數 ＋ 可展開**，這一點與武器挑選器**刻意不同**
 //   （PickerShell 在 052-I 驗收後改成一律不列）。差別來自數量與可行動性：
 //   單手武器上 208 筆裡有 80 筆 W 型 ＋ 少數種類限定共約 4 成是結構性拒絕，
@@ -41,6 +47,29 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'Function', label: '應元件' },
 ]
 
+/**
+ * 品質晶片。208 筆裡 S 88 ／ A 60 ／ B 60 —— 同一族的 S／A／B 是同一顆元件的三個版本，
+ * 效果只差 BUFF 階級，所以絕大多數時候玩家只想看 S。
+ */
+const RARITIES = ['S', 'A', 'B'] as const
+
+/**
+ * W 型晶片。**只在這把武器裝得了 W 型時才出現**（雙手／背部）——
+ * 單手武器上那顆晶片按下去必然是零筆，而玩家看不出是自己按的條件造成的
+ * （沿用 PickerShell「隱藏空選項」的同一條原則）。
+ */
+const W_TYPES = [
+  { key: 'W', label: 'W 型' },
+  { key: 'Normal', label: '一般' },
+] as const
+
+/** 晶片的共用樣式。選中＝橙框橙字橙底 */
+const chip = (on: boolean) =>
+  `hud-cut-sm px-2 py-0.5 text-[12px] border transition-colors cursor-pointer ${
+    on ? 'border-accent-orange text-accent-orange bg-accent-orange/10'
+       : 'border-border text-text-secondary hover:border-border-accent'
+  }`
+
 interface Props {
   ctx: LoadoutContext
   row: WeaponRow
@@ -53,6 +82,9 @@ interface Props {
 
 export function ComponentPanel({ ctx, row, onBack, onEquip, onResolve }: Props) {
   const [filter, setFilter] = useState<Filter>('all')
+  const [rarity, setRarity] = useState<string>('')
+  const [wType, setWType] = useState<string>('')
+  const [query, setQuery] = useState('')
   const [showBlocked, setShowBlocked] = useState(false)
 
   const weapon = row.weapon
@@ -80,11 +112,32 @@ export function ComponentPanel({ ctx, row, onBack, onEquip, onResolve }: Props) 
     [mounted],
   )
 
-  /** 尚未裝上的那些（已裝的另有專區，留在清單裡只會讓「可裝 n」這個數字說不清） */
-  const available = useMemo(
-    () => entries.filter((e) => !mountedIds.has(e.item.id) && (filter === 'all' || e.item.componentType === filter)),
-    [entries, mountedIds, filter],
-  )
+  /** 這把武器裝得了 W 型嗎 —— 決定 W 型晶片出不出現 */
+  const acceptsW = weapon?.equipSlot === WeaponEquipSlot.DUAL_HAND || weapon?.equipSlot === WeaponEquipSlot.BACK
+
+  /**
+   * 尚未裝上的那些（已裝的另有專區，留在清單裡只會讓「可裝 n」這個數字說不清），
+   * 再套上玩家選的篩選條件。
+   *
+   * ⚠ 搜尋比對**名稱 ＋ 效果敘述 ＋ 觸發條件**三處，不是只比名稱：
+   *   玩家記得的通常是「穿甲」「暴擊」這類效果字眼，而不是「應元件W-穿甲」這個全名。
+   */
+  const available = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return entries.filter((e) => {
+      const c = e.item
+      if (mountedIds.has(c.id)) return false
+      if (filter !== 'all' && c.componentType !== filter) return false
+      if (rarity && c.rarity !== rarity) return false
+      if (wType && c.componentsWType !== wType) return false
+      if (!q) return true
+      const cond = c.componentType === 'Condition' ? c.condition : ''
+      return `${c.name} ${c.description} ${cond}`.toLowerCase().includes(q)
+    })
+  }, [entries, mountedIds, filter, rarity, wType, query])
+
+  /** 篩到零筆時要說得出是哪一種零：條件太窄，還是這把武器真的沒得裝 */
+  const filtered = filter !== 'all' || !!rarity || !!wType || !!query.trim()
 
   const fits = available.filter((e) => e.rejection === null)
   const situational = available.filter((e) => e.rejection?.tier === 'situational')
@@ -120,13 +173,8 @@ export function ComponentPanel({ ctx, row, onBack, onEquip, onResolve }: Props) 
       <div className="grid grid-cols-3 mt-2.5" style={{ gap: 8 }}>
         <SlotStat label="觸元件" hint="什麼時候生效" value={`${usedTrigger} / ${weapon?.triggerSlots ?? 0}`} />
         <SlotStat label="應元件" hint="生效之後做什麼" value={`${usedEffect} / ${weapon?.effectSlots ?? 0}`} />
-        <SlotStat label="合計上限" hint="真正的牆" value={`${used} / ${row.limit}`} accent />
+        <SlotStat label="合計" hint="觸 ＋ 應" value={`${used} / ${row.limit}`} accent />
       </div>
-
-      <p className={`${HUD.body} text-text-dim mt-2`}>
-        觸 ＋ 應 <strong className="text-text-secondary">合計不得超過 {row.limit}</strong>
-        （SS／S+ 為 4、S 為 3、其餘不可裝）。兩種各自的格數只是上限，總數才是真正的牆。
-      </p>
 
       {row.limit === 0 ? (
         <p className={`${HUD.body} text-text-dim mt-2.5 border-t border-border pt-2.5`}>
@@ -178,24 +226,61 @@ export function ComponentPanel({ ctx, row, onBack, onEquip, onResolve }: Props) 
 
           {/* ── 可裝清單 ── */}
           <div className="mt-2.5 border-t border-border pt-2.5">
-            <div className="flex flex-wrap items-center" style={{ gap: 6 }}>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="搜尋名稱或效果（穿甲、暴擊、反擊…）"
+              className="hud-cut-sm w-full bg-bg-dark border border-border px-2.5 py-1.5 text-[12px] text-text-primary placeholder:text-text-dim focus:border-accent-orange/60 focus:outline-none"
+            />
+
+            <div className="flex flex-wrap items-center mt-2" style={{ gap: 6 }}>
               {FILTERS.map((f) => (
-                <button
-                  key={f.key}
-                  type="button"
-                  onClick={() => setFilter(f.key)}
-                  className={`hud-cut-sm px-2 py-0.5 text-[12px] border transition-colors cursor-pointer ${
-                    filter === f.key
-                      ? 'border-accent-orange text-accent-orange bg-accent-orange/10'
-                      : 'border-border text-text-secondary hover:border-border-accent'
-                  }`}
-                >
+                <button key={f.key} type="button" onClick={() => setFilter(f.key)} className={chip(filter === f.key)}>
                   {f.label}
                 </button>
               ))}
               <span className={`${HUD.body} text-text-dim ml-auto`}>
                 {loading ? '載入元件中…' : <>可裝 <span className={HUD.num}>{fits.length}</span> / {available.length} 個</>}
               </span>
+            </div>
+
+            <div className="flex flex-wrap items-center mt-1.5" style={{ gap: 6 }}>
+              {RARITIES.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRarity((v) => (v === r ? '' : r))}
+                  className={chip(rarity === r)}
+                >
+                  {r}
+                </button>
+              ))}
+              {/* W 型晶片只在裝得了 W 型的武器上出現，見 W_TYPES 的註解 */}
+              {acceptsW && (
+                <span className="flex items-center" style={{ gap: 6 }}>
+                  <span className="text-text-dim text-[11px]">·</span>
+                  {W_TYPES.map((w) => (
+                    <button
+                      key={w.key}
+                      type="button"
+                      onClick={() => setWType((v) => (v === w.key ? '' : w.key))}
+                      className={chip(wType === w.key)}
+                    >
+                      {w.label}
+                    </button>
+                  ))}
+                </span>
+              )}
+              {filtered && (
+                <button
+                  type="button"
+                  onClick={() => { setFilter('all'); setRarity(''); setWType(''); setQuery('') }}
+                  className="ml-auto text-[11px] text-text-dim hover:text-text-secondary underline underline-offset-2 cursor-pointer"
+                >
+                  清除條件
+                </button>
+              )}
             </div>
 
             {/* ⚠ 208 筆全列出來會讓右欄長到需要捲三個螢幕。清單自己捲（沿用 PickerShell 的
@@ -229,7 +314,9 @@ export function ComponentPanel({ ctx, row, onBack, onEquip, onResolve }: Props) 
 
               {!loading && available.length === 0 && (
                 <p className={`${HUD.body} text-text-dim`}>
-                  {used > 0 ? '這個分類的元件都已經裝上了。' : '這個分類目前沒有元件。'}
+                  {filtered ? '沒有符合條件的元件 —— 按上面的「清除條件」看全部。'
+                    : used > 0 ? '這把武器能裝的元件都已經裝上了。'
+                    : '目前沒有元件。'}
                 </p>
               )}
             </div>
@@ -366,11 +453,6 @@ function SynergyPreview({ trigger, effect }: { trigger: (Component | null)[]; ef
           </div>
         ))}
       </div>
-      <p className={`${HUD.body} text-text-dim mt-1.5`}>
-        每一條配對<strong className="text-text-secondary">各自判定</strong>；同一個應元件被多個觸元件
-        觸發<strong className="text-text-secondary">不疊加</strong>。實際機率由觸與應的 Lv 共同決定，
-        本站尚未建檔<strong className="text-text-secondary">，因此不顯示推估值</strong>。
-      </p>
     </div>
   )
 }

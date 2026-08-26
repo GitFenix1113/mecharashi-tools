@@ -103,8 +103,9 @@ export function WeaponComponentList({ ctx, budget, activeRow, onOpen }: Props) {
              系統少算的一條規則，而唯一能同時看到主手組與備用組兩排武器的地方就是這份清單。 */}
       <div className={`${HUD.body} text-text-dim border-t border-border pt-2 space-y-1`}>
         <p>
-          點任一列、或槽位圖上武器格右下的 <LoadoutIcon name="gear" className="inline w-3 h-3 align-[-1px]" />
-          ，<strong className="text-text-secondary">配它的元件</strong>：觸 ＋ 應合計 4 個槽（S 品質 3 個），同族只能裝一顆。
+          點任一列、或槽位圖上武器格下方的
+          <LoadoutIcon name="gear" className="inline w-3 h-3 align-[-1px] mx-[3px]" />
+          <strong className="text-text-secondary">元件</strong>列，配這一把的元件。
         </p>
         {hasBackup ? (
           <p>
