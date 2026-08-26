@@ -578,9 +578,10 @@ export default function LoadoutPage() {
       {/* ⚠ 常駐橫幅，不是「暫時的公告」：這一版明確不做的東西必須講清楚，
           否則玩家會把「找不到」當成 bug（決策四）。 */}
       <div className="hud-cut mb-3 border border-accent-cyan/25 bg-accent-cyan/5 px-3.5 py-2.5 text-[12px] text-text-secondary leading-relaxed">
-        本版提供<strong className="text-text-primary">槽位配裝與重量／出力計算</strong>。
-        元件、武器改裝、形態分頁、模組槽與部件混搭、存檔與分享碼<strong className="text-text-primary">尚在後續階段</strong>；
-        傷害數字因官方公式未知，本站不提供猜測值。
+        本版提供<strong className="text-text-primary">槽位配裝、重量／出力計算、元件與分享碼</strong>。
+        武器改裝、形態分頁、模組槽與部件混搭、雲端存檔<strong className="text-text-primary">尚在後續階段</strong>；
+        傷害數字因官方公式未知，本站不提供猜測值
+        （<strong className="text-text-primary">元件的觸發機率</strong>同理，面板只列出配對關係與 Lv）。
         {showBanner && (
           <>
             <br />
@@ -839,7 +840,13 @@ export default function LoadoutPage() {
                 整頁的主視覺壓扁。切換內容則沿用這一欄本來就有的行為（沒開挑選器時
                 放機甲唯讀資訊），不新增 z-index 層級、focus trap 與 Esc 這三份互動負債。 */}
           {(isMobile || !effectivePicker) && openRow && (
-            <ComponentPanel ctx={ctx} row={openRow} onBack={() => setOpenRowKey(null)} />
+            <ComponentPanel
+              ctx={ctx}
+              row={openRow}
+              onBack={() => setOpenRowKey(null)}
+              onEquip={(c) => send({ type: 'equipComponent', ref: openRow.ref, componentId: c.id })}
+              onResolve={resolve}
+            />
           )}
 
           {(isMobile || !effectivePicker) && !openRow && ctx.mech && (

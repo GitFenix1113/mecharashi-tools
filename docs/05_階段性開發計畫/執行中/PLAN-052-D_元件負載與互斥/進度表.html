@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">8</div>
+      <div class="summary-num" style="color:var(--accent-green)">11</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">7</div>
+      <div class="summary-num" style="color:var(--text-dim)">4</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">8 / 15</span>
+      <span style="color:var(--accent-cyan);">11 / 15</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 53%"></div>
+      <div class="progress-bar-fill" style="width: 73%"></div>
     </div>
   </div>
 
@@ -498,14 +498,17 @@
   <div class="section-label cyan">Phase C</div>
   <div class="section-title">面板可操作化</div>
   <div class="section-desc">
-    沿用 052-I 已核可的版面規格（總綱指定），只把唯讀換成可操作 —— <b>不重畫版面</b>。
+    沿用 052-I 已核可的版面規格（總綱指定），只把唯讀換成可操作 —— <b>不重畫版面</b>。<br>
+    <b>2026-08-27 完成（3／3）</b>：<code>npm test</code> 805 項全過、build 通過、
+    瀏覽器 console 零錯誤。<b>元件功能自本階段起玩家真的用得到</b>，
+    網站更新履歷已寫入一則 feat。
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; ComponentPanel 由唯讀改為可操作</div>
       <div class="task-group-meta">src/components/loadout/ComponentPanel.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -516,12 +519,22 @@
           <b>裝不上的元件留在清單裡並寫出原因，不直接濾掉</b> —— 052-I 已定的原則：
           「我的元件呢」比多幾列雜訊更難處理。structural 的那些走摺疊 ＋ 計數。<br>
           三個 <code>SlotStat</code>（觸／應／合計）的分子從佔位的 <code>—</code>
-          換成實數；<code>limit === 0</code> 的降級說明保留（那條本來就是對的）。
+          換成實數；<code>limit === 0</code> 的降級說明保留（那條本來就是對的）。<br>
+          <b>實際交付</b>：新增<b>「已裝上」專區</b>（卸下的唯一入口，各列一顆「卸下」鍵）。
+          已裝的那幾顆<b>從下方清單移出</b>——留在裡面會讓「可裝 n / N」這個數字說不清。<br>
+          <b>與計畫書的一處出入</b>：<code>structural</code> 走<b>摺疊 ＋ 計數 ＋ 可展開</b>，
+          而武器挑選器（<code>PickerShell</code>）在 052-I 驗收後改成<b>一律不列</b>——
+          兩者刻意不同。差別是數量與可行動性：單手武器上 208 筆裡約 4 成是結構性拒絕
+          （W 型 80 ＋ 種類限定），全部攤開會讓清單長度變成兩倍多，而那些列玩家一個字都改不了；
+          摺疊成「這把武器裝不了的 7 個（武器種類限定 7）」這一行，則同時回答了
+          「我的元件呢」與「它們為什麼不在」。<br>
+          <b>不重用 <code>RejectionRow</code></b>：那一支綁死 <code>WeaponIcon</code>
+          與「重量」副標，而元件沒有重量欄位。行為語彙（三種列、解法按鈕）照抄，長相各自維持。
         </div>
         <div class="task-file">src/components/loadout/ComponentPanel.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -529,7 +542,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 武器列顯示已裝元件</div>
       <div class="task-group-meta">WeaponComponentList.tsx / loadoutRows.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -540,12 +553,21 @@
           列上補元件名稱標籤，取代「尚未裝設元件」那句佔位。<br>
           <span class="badge-med">順修</span> <code>loadoutRows.ts</code> 的
           <code>locked</code> 欄位註解「兩者都仍可換元件」是錯的 ——
-          8 筆固定武裝的 <code>componentLimit</code> 實測全為 0（決策四）。
+          8 筆固定武裝的 <code>componentLimit</code> 實測全為 0（決策四）。<br>
+          <b>實際交付</b>：列上印出已裝元件的名稱（<code>觸元件W-背水・觸元件W-殲滅・…</code>），
+          <b>只印名字不印 Lv 與描述</b>——這一列寬約 190px，多一個字都會把後面的擠掉；
+          詳細的在面板裡，而整列本來就是通往面板的入口。
+          <code>locked</code> 的文案同步改為「機甲固定武裝」／「形態鎖定的武裝」，
+          不再承諾「元件仍可換」。<br>
+          <span class="badge-med">順修</span> 頁面抬頭那條常駐橫幅原本寫
+          「元件、⋯、存檔與分享碼<b>尚在後續階段</b>」——<b>元件與分享碼都已上線</b>，
+          留著會把已經做完的功能講成沒有。改為「本版提供槽位配裝、重量／出力計算、元件與分享碼」，
+          並補一句「元件的觸發機率同理（不提供猜測值），面板只列出配對關係與 Lv」。
         </div>
         <div class="task-file">src/components/loadout/WeaponComponentList.tsx · src/utils/loadoutRows.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -553,7 +575,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; 組合特性預覽</div>
       <div class="task-group-meta">src/components/loadout/ComponentPanel.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -564,12 +586,18 @@
           <span class="badge-high">⚠</span> <b>機率欄位標「待建檔」，不猜值</b> ——
           總綱 2026-08-25 再確認：Lv 到 % 的對照表要靠樣本蒐集反推，屬傷害計算範疇。
           官方面板印的是每條配對的最終機率，而本站今天只知道 Lv；
-          印一個推測值出去，玩家會拿它去做決定。
+          印一個推測值出去，玩家會拿它去做決定。<br>
+          <b>實際交付</b>：<code>SynergyPreview</code> 掛在「已裝上」專區下方。
+          面板上明著寫出<b>求值模型</b>——「每一條配對各自判定；同一個應元件被多個觸元件
+          觸發<b>不疊加</b>」。那一句非寫不可：玩家看到「3 條配對」時最容易生出的誤解
+          就是機率相加。<br>
+          兩種空狀態也各自寫清楚：只有觸沒有應 ⇒「觸元件成立之後沒有東西可以發動」；
+          只有應沒有觸 ⇒「應元件要有觸元件才會生效」。
         </div>
         <div class="task-file">src/components/loadout/ComponentPanel.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

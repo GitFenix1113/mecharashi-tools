@@ -32,9 +32,17 @@ export interface WeaponRow {
   /** 顯示名。武器查無時退回 doc id，讓斷鏈被看見 */
   name: string
   weight: number
-  /** 不可更換的來源：機甲部件焊死的 / 全鎖形態的。兩者都仍可換元件 */
+  /**
+   * 不可更換的來源：機甲部件焊死的 / 全鎖形態的。
+   *
+   * ⚠ 兩者都**不可裝元件**（PLAN-052-D 計畫書決策四）：全部 8 筆固定武裝
+   *   （衝擊炮／嵐質儲能艙／多功能彈倉／耀星／隕星／千星／幽弧／夜燼）的
+   *   `componentLimit` 實測皆為 0，雖然它們都是 S 品質而 S 的標準值是 3。
+   *   本欄位在 052-I 建立時註記「兩者都仍可換元件」，那是當時的假設，已被盤點推翻。
+   *   程式上不需要為此加任何判斷 —— 照讀 `componentLimit` 就自動正確。
+   */
   locked: 'fixed' | 'form' | null
-  /** 已裝元件數（觸 ＋ 應）。元件規則引擎在 052-D，在那之前恆為 0 */
+  /** 已裝元件數（觸 ＋ 應）。052-D Phase C 起是實數 */
   used: number
   /** 觸 ＋ 應的**合計**上限（SS／S+ = 4、S = 3、其餘 0）。不是觸 3 加應 3 的 6 */
   limit: number
@@ -119,7 +127,7 @@ export interface SheetRow {
   typeLabel: string
   /** 重量；空槽與無槽為 null（不是 0 —— 0 是「這件裝備真的不佔重量」，見固定武裝） */
   weight: number | null
-  /** 掛在這把武器上的元件 doc id。052-D 之前恆為空 */
+  /** 掛在這把武器上的元件 doc id（觸在前、應在後）。052-D Phase D 起匯出圖會印它 */
   componentIds: string[]
 }
 

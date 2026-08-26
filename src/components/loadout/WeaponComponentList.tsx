@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { SlotKey } from '../../types/slots'
 import { weaponRows, type WeaponRow } from '../../utils/loadoutRows'
-import type { LoadoutBudget, LoadoutContext } from '../../utils/loadoutRules'
+import { mountedComponentIds, weaponSiteAt, type LoadoutBudget, type LoadoutContext } from '../../utils/loadoutRules'
 import { HUD, SEG_TEXT, slotSegKey, type SegKey } from './loadoutTheme'
 
 // ─── 武器與元件列（PLAN-052-I D-3）───────────────────────────────────────────
@@ -13,9 +13,9 @@ import { HUD, SEG_TEXT, slotSegKey, type SegKey } from './loadoutTheme'
 // 元件回答的是「這一把怎麼改」（配置問題）。把元件標籤塞回槽位格上，那一格就得同時
 // 表達六種槽位狀態 ＋ 四顆元件標籤 ＋ 兩個計數，而它只有 190px 寬。
 //
-// ⚠ **本階段唯讀**：可裝／不可裝的規則引擎屬 052-D。這裡只負責長相與計數，
-//   所以列上不出現「＋ 加入元件」這種按下去沒有反應的入口 —— 設計畫布畫的是 052-D
-//   完成後的樣子。今天的誠實版本是「尚未裝設元件」＋ 元件面板抬頭的「建置中」告示。
+// ⚠ 列上**不放「＋ 加入元件」按鈕**（052-D Phase C 仍維持這一點）：整列本身就是入口，
+//   點進去才是那把武器的元件面板。列寬只有 ~190px，塞一顆按鈕會把武器名擠成兩三個字，
+//   而元件的實際操作需要看得到原因與解法 —— 那是面板的事，不是這一列的。
 //
 // ⚠ 內距與間隙一律寫 px（052-I B-2 踩過）：本站 root font-size 是 19px，
 //   Tailwind spacing 的實測值比看起來大 19%。
@@ -75,12 +75,13 @@ export function WeaponComponentList({ ctx, budget, activeRow, onOpen }: Props) {
             </span>
 
             <span className="flex items-center mt-1" style={{ gap: 5 }}>
-              {/* 052-D 之前 used 恆為 0；不畫「＋ 加入元件」是因為那顆按下去沒有反應 */}
+              {/* ⚠ 固定武裝與形態鎖定的武裝**不可裝元件**（052-D 決策四：8／8 實測 limit=0）。
+                  這裡原本寫「元件仍可換」，那是 052-I 當時的假設。 */}
               <span className={`${HUD.body} text-text-dim min-w-0 truncate`}>
-                {r.locked === 'fixed' ? '機甲固定武裝，元件仍可換'
-                  : r.locked === 'form' ? '形態鎖定，元件仍可換'
+                {r.limit === 0
+                  ? (r.locked === 'fixed' ? '機甲固定武裝' : r.locked === 'form' ? '形態鎖定的武裝' : `${r.weapon?.rarity ?? ''} 品質`)
                   : r.used === 0 ? '尚未裝設元件'
-                  : ''}
+                  : componentNames(ctx, r)}
               </span>
               <span className={`${HUD.num} text-[10px] text-text-dim ml-auto shrink-0`}>
                 {r.limit > 0 ? `${r.used}/${r.limit}` : '不可裝元件'}
@@ -94,7 +95,7 @@ export function WeaponComponentList({ ctx, budget, activeRow, onOpen }: Props) {
           ⚠ 手部「取較重者」這條**必須寫在這裡**（PLAN-052-I B-3）：它是最容易被誤判成
              系統少算的一條規則，而唯一能同時看到主手組與備用組兩排武器的地方就是這份清單。 */}
       <div className={`${HUD.body} text-text-dim border-t border-border pt-2 space-y-1`}>
-        <p>點任一把武器看它的元件。<strong className="text-text-secondary">元件功能建置中</strong>，面板目前唯讀。</p>
+        <p>點任一把武器<strong className="text-text-secondary">配它的元件</strong>：觸 ＋ 應合計 4 個槽（S 品質 3 個），同族只能裝一顆。</p>
         {hasBackup ? (
           <p>
             主手組 <span className={HUD.num}>{w.mainHand.toLocaleString()}</span>、
@@ -112,6 +113,21 @@ export function WeaponComponentList({ ctx, budget, activeRow, onOpen }: Props) {
       </div>
     </div>
   )
+}
+
+/**
+ * 列上那一行已裝元件的名稱。
+ *
+ * ⚠ 只印名字、不印 Lv 與描述：這一列寬約 190px，多一個字都會把後面的擠掉。
+ *   詳細的（Lv、效果、組合特性）在面板裡，而整列本來就是通往面板的入口。
+ *   查不到的元件印回 doc id —— 斷鏈要看得見（同 `weaponRows()` 的 name fallback）。
+ */
+function componentNames(ctx: LoadoutContext, r: WeaponRow): string {
+  const site = weaponSiteAt(ctx, r.ref)
+  const { trigger, effect } = mountedComponentIds(site)
+  return [...trigger, ...effect]
+    .map((id) => ctx.world.components.get(id)?.name ?? id)
+    .join('・')
 }
 
 /**
