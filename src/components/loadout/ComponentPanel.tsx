@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Component } from '../../types'
 import { COMPONENT_WEAPON_TYPES } from '../../types/enums'
-import { useComponents } from '../../hooks/useFirestore'
 import { ComponentIcon } from '../icons/ComponentIcon'
 import { ComponentTypeBadge, RarityBadge } from '../badges/ComponentBadges'
 import LoadoutIcon from '../icons/LoadoutIcon'
 import { HUD, HUD_PANEL } from './loadoutTheme'
 import type { WeaponRow } from '../../utils/loadoutRows'
+import type { LoadoutContext } from '../../utils/loadoutRules'
 
 // ─── 元件面板（PLAN-052-I D-3）───────────────────────────────────────────────
 //
@@ -26,9 +26,10 @@ import type { WeaponRow } from '../../utils/loadoutRows'
 //   `type`。其餘（W 型互斥、條件成不成立、觸應配對）一律不猜 —— 猜錯的規則會被
 //   052-D 推翻，而使用者已經照它配過一輪了。
 //
-// ⚠ `components` 集合（208 筆）**只在本面板掛載時才載入**：`useComponents()` 寫在這裡
-//   而不是 LoadoutPage，於是沒點進來的人一筆都不付。與 useLoadoutGameData 的分階段
-//   載入是同一條原則。
+// ⚠ `components` 集合（208 筆）自 PLAN-052-D A-3 起改由 **`equip` 階段載入**，
+//   本面板吃 `ctx.world.components`。原本寫在這裡的 `useComponents()` 已移除 ——
+//   規則層（`canEquipComponent`）與 `reconcile()` 都要認得元件，而它們不可能等到
+//   面板掛載才有資料。同一份資料留兩個載入路徑，必然有一次是多餘的。
 
 type Filter = 'all' | 'Condition' | 'Function'
 
@@ -54,12 +55,15 @@ function componentBlockReason(comp: Component, weaponType: string | undefined): 
 }
 
 interface Props {
+  ctx: LoadoutContext
   row: WeaponRow
   onBack: () => void
 }
 
-export function ComponentPanel({ row, onBack }: Props) {
-  const { data: components, loading } = useComponents()
+export function ComponentPanel({ ctx, row, onBack }: Props) {
+  // 空 Map ＝還沒載入完（見 LoadoutWorld.components 的註解），不是「沒有元件」
+  const components = useMemo(() => [...ctx.world.components.values()], [ctx.world.components])
+  const loading = components.length === 0
   const [filter, setFilter] = useState<Filter>('all')
 
   const weapon = row.weapon

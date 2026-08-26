@@ -12,7 +12,9 @@ import {
   buildContext, buildWorld, canEquipBackpack, canEquipWeapon, canSelectMech,
   loadoutBudget, mountCoverage, mountRefFor, slotOccupant, validateLoadout,
   weaponChoices, backpackChoices, structuralCounts, slotHasCandidates,
+  canEquipComponent, componentChoices, weaponSiteAt,
 } from './loadoutRules.ts'
+import type { Component } from '../types/index.ts'
 import { ArmorType, MechLicense, MechRestriction, WeaponEquipSlot, BackpackType, WeaponType, WeaponKind } from '../types/enums.ts'
 
 // ─── fixtures（數值取自 2026-08-23／24 線上實測）────────────────────────────
@@ -57,7 +59,7 @@ const 帕斯卡: Mech = {
 const weapon = (over: Partial<Weapon> & Pick<Weapon, 'id' | 'name' | 'weight' | 'equipSlot'>): Weapon => ({
   type: WeaponType.Melee, kind: '刀劍', kindCoefficient: 1, attack: 0, accuracy: 0, critValue: 0,
   rangeType: 'manhattan', minRange: 1, maxRange: 1, ammoCount: 0, hitCount: 1, rarity: 'SS',
-  mechRestriction: MechRestriction.NONE, isExclusive: false, triggerSlots: 0, effectSlots: 0, componentLimit: 4,
+  mechRestriction: MechRestriction.NONE, isExclusive: false, triggerSlots: 3, effectSlots: 3, componentLimit: 4,
   fixedMod: { planName: '', maxLevel: 0, effects: [] },
   floatingMod: { planName: '', slots: 0, possibleEffects: [] },
   skills: [], ...over,
@@ -70,10 +72,12 @@ const 夜魘     = weapon({ id: 'w_017', name: '夜魘',     weight: 500, equipS
 /** 25 把肩部武器實測 100% mechRestriction='medium' */
 const 熔火     = weapon({ id: 'w_044', name: '熔火', weight: 1200, equipSlot: WeaponEquipSlot.SHOULDER, type: WeaponType.Heavy, mechRestriction: MechRestriction.MEDIUM_ONLY })
 const 炬塔     = weapon({ id: 'w_049', name: '炬塔', weight: 1100, equipSlot: WeaponEquipSlot.BACK,     type: WeaponType.Heavy, mechRestriction: MechRestriction.MEDIUM_ONLY })
-const 耀星     = weapon({ id: 'w_176', name: '耀星', weight: 100, equipSlot: WeaponEquipSlot.SINGLE_HAND, type: WeaponType.Special, isFixedArmament: true })
-const 隕星     = weapon({ id: 'w_177', name: '隕星', weight: 100, equipSlot: WeaponEquipSlot.SINGLE_HAND, type: WeaponType.Special, isFixedArmament: true })
-const 千星     = weapon({ id: 'w_178', name: '千星', weight: 100, equipSlot: WeaponEquipSlot.BACK,        type: WeaponType.Special, isFixedArmament: true })
-const 衝擊炮   = weapon({ id: 'w_衝擊炮', name: '衝擊炮', weight: 0, equipSlot: WeaponEquipSlot.SHOULDER, type: WeaponType.Special, isFixedArmament: true })
+/** 固定武裝的 `componentLimit` 實測 8／8 皆為 0（雖然都是 S 品質）——見 052-D 計畫書決策四 */
+const 焊死 = { isFixedArmament: true, type: WeaponType.Special, triggerSlots: 0, effectSlots: 0, componentLimit: 0 } as const
+const 耀星     = weapon({ id: 'w_176', name: '耀星', weight: 100, equipSlot: WeaponEquipSlot.SINGLE_HAND, ...焊死 })
+const 隕星     = weapon({ id: 'w_177', name: '隕星', weight: 100, equipSlot: WeaponEquipSlot.SINGLE_HAND, ...焊死 })
+const 千星     = weapon({ id: 'w_178', name: '千星', weight: 100, equipSlot: WeaponEquipSlot.BACK,        ...焊死 })
+const 衝擊炮   = weapon({ id: 'w_衝擊炮', name: '衝擊炮', weight: 0, equipSlot: WeaponEquipSlot.SHOULDER, ...焊死 })
 
 /**
  * 盾（PLAN-052-J follow-up）。全庫 24 面全是 singleHand ——
@@ -133,12 +137,46 @@ const 虛粒子形態 = form({
   ] },
 })
 
+/** A／B 品質武器的 `componentLimit` 實測皆為 0（39 把） */
+const 廉價刀 = weapon({ id: 'w_b01', name: '廉價刀', weight: 100, equipSlot: WeaponEquipSlot.SINGLE_HAND, rarity: 'B', triggerSlots: 0, effectSlots: 0, componentLimit: 0 })
+/** S 品質 ＝ 3 個總槽（SS／S+ 才是 4） */
+const 三槽刀 = weapon({ id: 'w_s01', name: '三槽刀', weight: 100, equipSlot: WeaponEquipSlot.SINGLE_HAND, rarity: 'S', componentLimit: 3 })
+
+// ─── 元件 fixture（PLAN-052-D A-4／A-5，形狀取自 2026-08-26 正式資料）──────────
+//   命名一律吻合「觸元件｜應元件 ＋ 選配的 W ＋ 連字號 ＋ 後綴」，見 componentRules.ts
+
+const comp = (over: Partial<Component> & Pick<Component, 'id' | 'name' | 'componentType'>): Component => ({
+  moduleSubtype: 1, probabilityLevel: 5, description: '', rarity: 'S',
+  allowedWeaponTypes: ['射擊', '格鬥', '突擊', '戰術'],   // ＝後台「全選」＝不限（201／208 筆是這個形狀）
+  componentsWType: 'Normal',
+  ...(over.componentType === 'Condition' ? { conditionType: 'always', condition: '' } : {}),
+  ...over,
+} as Component)
+
+const 觸憑逸W = comp({ id: 'c_001', name: '觸元件W-憑逸', componentType: 'Condition', componentsWType: 'W', probabilityLevel: 7 })
+const 觸憑逸  = comp({ id: 'c_002', name: '觸元件-憑逸',  componentType: 'Condition', probabilityLevel: 6 })
+const 觸憑逸A = comp({ id: 'c_003', name: '觸元件-憑逸',  componentType: 'Condition', probabilityLevel: 6, rarity: 'A' })
+const 觸沉著  = comp({ id: 'c_004', name: '觸元件-沉著',  componentType: 'Condition' })
+const 觸壓迫  = comp({ id: 'c_005', name: '觸元件-壓迫',  componentType: 'Condition' })
+const 觸擊破  = comp({ id: 'c_006', name: '觸元件-擊破',  componentType: 'Condition' })
+/** 實測 7 筆部分限定之一：警戒族 6 筆全部限定「射擊」（計畫書決策七） */
+const 觸警戒  = comp({ id: 'c_007', name: '觸元件-警戒',  componentType: 'Condition', allowedWeaponTypes: ['射擊'] })
+const 應戰慄  = comp({ id: 'c_101', name: '應元件-戰慄',  componentType: 'Function' })
+const 應穿甲  = comp({ id: 'c_102', name: '應元件-穿甲',  componentType: 'Function' })
+const 應爆破  = comp({ id: 'c_103', name: '應元件-爆破',  componentType: 'Function' })
+const 應濺射  = comp({ id: 'c_104', name: '應元件-濺射',  componentType: 'Function' })
+/** 命名破格：官方哪天出一顆不照規則命名的元件（今天 0 筆） */
+const 破格元件 = comp({ id: 'c_999', name: '奇怪的元件', componentType: 'Function' })
+
+const COMPONENTS = [觸憑逸W, 觸憑逸, 觸憑逸A, 觸沉著, 觸壓迫, 觸擊破, 觸警戒, 應戰慄, 應穿甲, 應爆破, 應濺射, 破格元件]
+
 const WORLD = buildWorld({
   pilots: [海莉絲, 重型機師],
   mechs: [彌造者, 輕型機, 重型機, 美杜莎MK2, 帕斯卡, 獨臂機],
-  weapons: [群山之力, 貝奧武夫, 藝術突襲, 夜魘, 熔火, 炬塔, 耀星, 隕星, 千星, 衝擊炮, 聚合屏障, 玲瓏, 群星],
+  weapons: [群山之力, 貝奧武夫, 藝術突襲, 夜魘, 熔火, 炬塔, 耀星, 隕星, 千星, 衝擊炮, 聚合屏障, 玲瓏, 群星, 廉價刀, 三槽刀],
   backpacks: [強襲者背包, 出力背包Ⅲ, 輕型限定包],
   forms: [先鋒形態, 突擊形態, 虛粒子形態],
+  components: COMPONENTS,
 })
 
 const ctxOf = (set: EquipSet, opts: { mech?: Mech; setKey?: string; pilot?: Pilot } = {}) => {
@@ -549,4 +587,198 @@ test('盾：已經裝了兩面的舊配裝（如改版前存下的分享碼）�
 test('backpackChoices 把「僅輕型可裝」歸成結構性拒絕（不是默默不擋）', () => {
   const counts = structuralCounts(backpackChoices(ctxOf({ mounts: [] })))
   assert.deepEqual(counts, [['BACKPACK_ARMOR_TYPE', 1]])
+})
+
+
+// ─── 元件（PLAN-052-D Phase A）──────────────────────────────────────────────
+//
+// 五條規則的驗收 ＋ 兩個「靜默才可怕」的邊界（雙手武器的座標、主備各自獨立）。
+
+/** 在某一格裝一把武器，並掛上指定的元件 */
+const withComp = (
+  ref: { bank: 'main' | 'backup'; slot: string; side?: 'left' | 'right' },
+  weaponId: string,
+  trigger: string[] = [],
+  effect: string[] = [],
+): EquipSet => ({
+  mounts: [{
+    weaponId, bank: ref.bank, slot: ref.slot as never, side: ref.side,
+    setup: { triggerComponentIds: trigger, effectComponentIds: effect },
+  }],
+})
+
+test('元件①：空格沒有武器 ⇒ COMP_NO_SLOTS（元件掛在武器上）', () => {
+  const r = canEquipComponent(ctxOf({ mounts: [] }), 觸沉著, HAND_L)
+  assert.equal(r?.code, 'COMP_NO_SLOTS')
+  assert.equal(r?.tier, 'blocked')
+})
+
+test('元件①：B 品質武器不可裝元件（39 把 A／B 實測 limit=0）', () => {
+  const ctx = ctxOf(withComp(HAND_L, 廉價刀.id))
+  const r = canEquipComponent(ctx, 觸沉著, HAND_L)
+  assert.equal(r?.code, 'COMP_NO_SLOTS')
+  assert.match(r!.reason, /廉價刀/)
+})
+
+test('元件①：固定武裝不可裝元件，而且說得出是「固定武裝」', () => {
+  // 獨臂機的左手焊著耀星
+  const ctx = ctxOf({ mounts: [] }, { mech: 獨臂機 })
+  const r = canEquipComponent(ctx, 觸沉著, HAND_L)
+  assert.equal(r?.code, 'COMP_NO_SLOTS')
+  assert.match(r!.reason, /固定武裝/)
+})
+
+test('元件①：全鎖形態的武裝也不可裝（虛粒子的耀星／隕星／千星）', () => {
+  const ctx = ctxOf({ mounts: [] }, { setKey: 虛粒子形態.id })
+  const r = canEquipComponent(ctx, 觸沉著, HAND_R)
+  assert.equal(r?.code, 'COMP_NO_SLOTS')
+  assert.match(r!.reason, /形態鎖定/)
+})
+
+test('元件②：W 型裝到單手武器 ⇒ COMP_W_TYPE（structural，摺疊而非灰掉）', () => {
+  const ctx = ctxOf(withComp(HAND_L, 藝術突襲.id))
+  const r = canEquipComponent(ctx, 觸憑逸W, HAND_L)
+  assert.equal(r?.code, 'COMP_W_TYPE')
+  assert.equal(r?.tier, 'structural')
+})
+
+test('元件②：W 型裝到雙手武器與背部武器 ⇒ 放行', () => {
+  assert.equal(canEquipComponent(ctxOf(withComp(DUAL, 群山之力.id)), 觸憑逸W, DUAL), null)
+  assert.equal(canEquipComponent(ctxOf(withComp(BACK, 炬塔.id)), 觸憑逸W, BACK), null)
+})
+
+test('元件③：allowedWeaponTypes 不符 ⇒ COMP_WEAPON_TYPE，且訊息寫出這把是什麼類', () => {
+  // 藝術突襲是「突擊」類，而警戒族限定「射擊」
+  const ctx = ctxOf(withComp(HAND_L, 藝術突襲.id))
+  const r = canEquipComponent(ctx, 觸警戒, HAND_L)
+  assert.equal(r?.code, 'COMP_WEAPON_TYPE')
+  assert.equal(r?.tier, 'structural')
+  assert.match(r!.reason, /突擊/)
+})
+
+test('元件③：填滿四種類型＝後台「全選」＝不限（201／208 筆是這個形狀）', () => {
+  const ctx = ctxOf(withComp(HAND_L, 藝術突襲.id))
+  assert.equal(canEquipComponent(ctx, 觸沉著, HAND_L), null)
+  // 空陣列同樣視為不限
+  const 無限定 = comp({ id: 'c_008', name: '觸元件-無患', componentType: 'Condition', allowedWeaponTypes: [] })
+  const w2 = buildWorld({
+    pilots: [海莉絲], mechs: [彌造者], weapons: [藝術突襲], backpacks: [], forms: [],
+    components: [無限定],
+  })
+  const ctx2 = buildContext(
+    { pilotId: 海莉絲.id, mechId: 彌造者.id, sets: { default: withComp(HAND_L, 藝術突襲.id) } },
+    'default', w2,
+  )
+  assert.equal(canEquipComponent(ctx2, 無限定, HAND_L), null)
+})
+
+test('元件④：同族互斥跨 W／Normal 變體，且附「卸下 X」解法', () => {
+  const ctx = ctxOf(withComp(DUAL, 群山之力.id, [觸憑逸W.id]))
+  const r = canEquipComponent(ctx, 觸憑逸, DUAL)
+  assert.equal(r?.code, 'COMP_FAMILY')
+  assert.equal(r?.tier, 'situational')
+  assert.equal(r!.tier === 'situational' && r.resolution.label, '卸下觸元件W-憑逸')
+  assert.deepEqual(
+    r!.tier === 'situational' ? r.resolution.action : null,
+    { type: 'unequipComponent', ref: DUAL, componentId: 觸憑逸W.id },
+  )
+})
+
+test('元件④：同族互斥也跨 S／A／B 三階（同名不同品質是同一顆的三個版本）', () => {
+  const ctx = ctxOf(withComp(HAND_L, 藝術突襲.id, [觸憑逸.id]))
+  assert.equal(canEquipComponent(ctx, 觸憑逸A, HAND_L)?.code, 'COMP_FAMILY')
+})
+
+test('元件④：解法按鈕照實寫「卸下」，不承諾「並裝上」（052-J 的懸案不再複製）', () => {
+  const ctx = ctxOf(withComp(HAND_L, 藝術突襲.id, [觸憑逸.id]))
+  const r = canEquipComponent(ctx, 觸憑逸A, HAND_L)
+  assert.ok(r!.tier === 'situational' && !r.resolution.label.includes('裝上'))
+})
+
+test('元件④：不同族可以並存', () => {
+  const ctx = ctxOf(withComp(HAND_L, 藝術突襲.id, [觸憑逸.id]))
+  assert.equal(canEquipComponent(ctx, 觸沉著, HAND_L), null)
+})
+
+test('元件④：命名破格的元件永不互斥（null 族）', () => {
+  const ctx = ctxOf(withComp(HAND_L, 藝術突襲.id, [], [破格元件.id]))
+  assert.equal(canEquipComponent(ctx, 破格元件, HAND_L), null)
+})
+
+test('元件⑤：觸元件滿 3 ⇒ COMP_KIND_FULL（分項上限讀 triggerSlots）', () => {
+  const ctx = ctxOf(withComp(DUAL, 群山之力.id, [觸沉著.id, 觸壓迫.id, 觸擊破.id]))
+  const r = canEquipComponent(ctx, 觸憑逸, DUAL)
+  assert.equal(r?.code, 'COMP_KIND_FULL')
+  assert.equal(r?.tier, 'situational')
+  assert.match(r!.reason, /觸元件/)
+})
+
+test('元件⑤：觸滿 3 時應元件仍裝得上（分項與總槽是兩條規則）', () => {
+  const ctx = ctxOf(withComp(DUAL, 群山之力.id, [觸沉著.id, 觸壓迫.id, 觸擊破.id]))
+  assert.equal(canEquipComponent(ctx, 應戰慄, DUAL), null)
+})
+
+test('元件⑤：總槽才是真正的牆 —— SS 武器 3 觸 ＋ 1 應之後裝不下第 5 顆', () => {
+  const ctx = ctxOf(withComp(DUAL, 群山之力.id, [觸沉著.id, 觸壓迫.id, 觸擊破.id], [應戰慄.id]))
+  const r = canEquipComponent(ctx, 應穿甲, DUAL)
+  assert.equal(r?.code, 'COMP_SLOTS_FULL')
+  assert.match(r!.reason, /4/)
+})
+
+test('元件⑤：S 品質是 3 個總槽，不是 4', () => {
+  const ctx = ctxOf(withComp(HAND_L, 三槽刀.id, [觸沉著.id], [應戰慄.id, 應穿甲.id]))
+  const r = canEquipComponent(ctx, 應爆破, HAND_L)
+  assert.equal(r?.code, 'COMP_SLOTS_FULL')
+  assert.match(r!.reason, /3/)
+})
+
+test('元件⑤：已經裝著的那一顆不會被誤報成同族衝突或槽已滿', () => {
+  // 槽全滿，再問其中一顆已裝的 ⇒ 放行（面板要畫得出「已裝上」而不是灰掉）
+  const ctx = ctxOf(withComp(DUAL, 群山之力.id, [觸沉著.id, 觸壓迫.id, 觸擊破.id], [應戰慄.id]))
+  assert.equal(canEquipComponent(ctx, 觸沉著, DUAL), null)
+  assert.equal(canEquipComponent(ctx, 應戰慄, DUAL), null)
+})
+
+test('元件：雙手武器要用 dualHand 座標查得到 mount（slotOccupant 在此會回 empty）', () => {
+  const ctx = ctxOf(withComp(DUAL, 群山之力.id, [觸沉著.id]))
+  // slotOccupant 比對的是 slotKey，dualHand 的 coverage 不含自己 ⇒ 查不到
+  assert.equal(slotOccupant(ctx, DUAL).kind, 'empty')
+  // weaponSiteAt 比對覆蓋範圍 ⇒ 查得到
+  const site = weaponSiteAt(ctx, DUAL)
+  assert.equal(site.weapon?.id, 群山之力.id)
+  assert.deepEqual(site.mount?.setup?.triggerComponentIds, [觸沉著.id])
+})
+
+test('元件：主手與備用各裝一把同型武器，元件各自獨立（三段式鍵的實質驗證）', () => {
+  const ctx = ctxOf({
+    mounts: [
+      { weaponId: 藝術突襲.id, bank: 'main',   slot: WeaponEquipSlot.SINGLE_HAND, side: 'left', setup: { triggerComponentIds: [觸憑逸.id] } },
+      { weaponId: 藝術突襲.id, bank: 'backup', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left', setup: { triggerComponentIds: [觸沉著.id] } },
+    ],
+    backpackId: 強襲者背包.id,
+  })
+  assert.deepEqual(weaponSiteAt(ctx, HAND_L).mount?.setup?.triggerComponentIds, [觸憑逸.id])
+  assert.deepEqual(weaponSiteAt(ctx, BACKUP_L).mount?.setup?.triggerComponentIds, [觸沉著.id])
+  // 主手裝了憑逸，備用手再裝憑逸**不算衝突**（決策一：互斥範圍是單把武器內）
+  assert.equal(canEquipComponent(ctx, 觸憑逸A, BACKUP_L), null)
+})
+
+test('componentChoices：blocked 回空陣列（整個面板該降級說明，不是給空清單）', () => {
+  assert.deepEqual(componentChoices(ctxOf(withComp(HAND_L, 廉價刀.id)), HAND_L), [])
+})
+
+test('componentChoices：裝不上的留在清單裡並帶原因，不被濾掉', () => {
+  const entries = componentChoices(ctxOf(withComp(HAND_L, 藝術突襲.id)), HAND_L)
+  assert.equal(entries.length, COMPONENTS.length, '一顆都不能少')
+  const counts = structuralCounts(entries)
+  // 單手武器 ⇒ W 型 1 筆被摺疊；藝術突襲是突擊類 ⇒ 警戒（限射擊）1 筆被摺疊
+  assert.deepEqual(counts.sort(), [['COMP_WEAPON_TYPE', 1], ['COMP_W_TYPE', 1]].sort())
+})
+
+test('componentChoices：可裝的排前面，其中觸發機率等級高的優先', () => {
+  const entries = componentChoices(ctxOf(withComp(DUAL, 群山之力.id)), DUAL)
+  assert.equal(entries[0].rejection, null)
+  assert.equal(entries[0].item.id, 觸憑逸W.id, 'Lv7 應該排在 Lv6／Lv5 之前')
+  const firstRejected = entries.findIndex((e) => e.rejection !== null)
+  assert.ok(entries.slice(0, firstRejected).every((e) => e.rejection === null))
 })

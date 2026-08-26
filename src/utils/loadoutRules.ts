@@ -13,11 +13,11 @@
 //
 // 純函式、無 React / Firestore 依賴，可單測（npm test）。
 
-import type { Backpack, Mech, MechForm, Pilot, Weapon } from '../types'
+import type { Backpack, Component, Mech, MechForm, Pilot, Weapon } from '../types'
 import type { EquipSet, LoadoutMount } from '../types/loadout'
 import type { SlotCapacity, SlotKey, SlotRef } from '../types/slots.ts'
 import { slotKey, slotAcceptsSide } from '../types/slots.ts'
-import { ArmorType, MechLicense, MechRestriction, WeaponEquipSlot, WeaponKind } from '../types/enums.ts'
+import { ArmorType, COMPONENT_WEAPON_TYPES, MechLicense, MechRestriction, WeaponEquipSlot, WeaponKind } from '../types/enums.ts'
 import { fromAssemblableArmorType, licenseAllows, toArmorType } from './normalizeArmorType.ts'
 import { resolveChassis, type ResolvedChassis } from './chassisStats.ts'
 import {
@@ -27,6 +27,7 @@ import {
 import { weightBreakdown, type LoadoutWeightSet, type WeightBreakdown } from './loadoutWeight.ts'
 import { effectiveOutput, type OutputBreakdown } from './effectiveOutput.ts'
 import { DEFAULT_EQUIP_SET_KEY } from './forms.ts'
+import { isSameFamily, isWTypeComponent } from './componentRules.ts'
 
 // ─── 拒絕原因：封閉聯集 ─────────────────────────────────────────────────────
 //
@@ -36,7 +37,7 @@ import { DEFAULT_EQUIP_SET_KEY } from './forms.ts'
 //   (3) 若選了 situational，`rejectSituational()` 的簽章逼你附上 resolution。
 // 少了 (3) 就會出現「灰掉但沒有解法按鈕」的列 —— 那正是玩家會來問客服的那一種。
 
-/** 六組：骨架／機甲／槽位／武器／背部／負重。 */
+/** 七組：骨架／機甲／槽位／武器／背部／負重／元件。 */
 export const REJECTION_CODES = [
   // 骨架 —— 前置選擇還沒做
   'NO_PILOT', 'NO_MECH',
@@ -50,6 +51,9 @@ export const REJECTION_CODES = [
   'BACK_SLOT_TAKEN', 'BACKPACK_ARMOR_TYPE',
   // 負重
   'OVERWEIGHT',
+  // 元件 —— 掛在武器上的那一層（PLAN-052-D）
+  'COMP_NO_SLOTS', 'COMP_W_TYPE', 'COMP_WEAPON_TYPE',
+  'COMP_SLOTS_FULL', 'COMP_KIND_FULL', 'COMP_FAMILY',
 ] as const
 
 export type RejectionCode = typeof REJECTION_CODES[number]
@@ -80,6 +84,12 @@ export const REJECTION_TIER = {
   BACK_SLOT_TAKEN:     'situational',
   BACKPACK_ARMOR_TYPE: 'structural',
   OVERWEIGHT:          'situational',
+  COMP_NO_SLOTS:       'blocked',
+  COMP_W_TYPE:         'structural',
+  COMP_WEAPON_TYPE:    'structural',
+  COMP_SLOTS_FULL:     'situational',
+  COMP_KIND_FULL:      'situational',
+  COMP_FAMILY:         'situational',
 } as const satisfies Record<RejectionCode, RejectionTier>
 
 /** 摺疊列的短標籤（「因形態限定隱藏 90」的那個「形態限定」）。 */
@@ -99,6 +109,12 @@ export const REJECTION_LABEL = {
   BACK_SLOT_TAKEN:     '背槽已佔用',
   BACKPACK_ARMOR_TYPE: '機種限定',
   OVERWEIGHT:          '出力不足',
+  COMP_NO_SLOTS:       '不可裝元件',
+  COMP_W_TYPE:         '僅雙手／背部',
+  COMP_WEAPON_TYPE:    '武器種類限定',
+  COMP_SLOTS_FULL:     '元件槽已滿',
+  COMP_KIND_FULL:      '該類已滿',
+  COMP_FAMILY:         '同族已裝',
 } as const satisfies Record<RejectionCode, string>
 
 type CodesOfTier<T extends RejectionTier> =
@@ -119,6 +135,8 @@ export type BlockedCode     = CodesOfTier<'blocked'>
 export type ResolutionAction =
   | { type: 'unequip'; ref: SlotRef }
   | { type: 'unequipBackpack' }
+  /** 卸下某一把武器上的某顆元件（PLAN-052-D A-5）。`ref` 是**武器自己的座標** */
+  | { type: 'unequipComponent'; ref: SlotRef; componentId: string }
 
 export interface Resolution {
   /** 按鈕文案，如「卸下 左肩 熔火 可裝」 */
@@ -153,10 +171,21 @@ export interface LoadoutWorld {
   weapons: ReadonlyMap<string, Weapon>
   backpacks: ReadonlyMap<string, Backpack>
   forms: readonly MechForm[]
+  /**
+   * 元件（PLAN-052-D A-3）。自 `equip` 階段起載入 —— 元件掛在武器上，
+   * 沒有武器的階段一筆都用不到。
+   *
+   * ⚠ **空 Map 的意思是「還沒載入」，不是「這個世界沒有元件」。**
+   *   規則層必須據此**跳過**元件驗證而不是把元件當成查無資料清掉：
+   *   草稿會在載入完成前就被 `loadDraft` 灌進來（分享碼／本機書架／雲端存檔都走那條），
+   *   照著武器那套「查不到就刪」做，症狀是**貼一次分享碼、元件就被靜默清空一次**。
+   */
+  components: ReadonlyMap<string, Component>
 }
 
 export const EMPTY_WORLD: LoadoutWorld = {
   pilots: new Map(), mechs: new Map(), weapons: new Map(), backpacks: new Map(), forms: [],
+  components: new Map(),
 }
 
 export function buildWorld(data: {
@@ -165,6 +194,7 @@ export function buildWorld(data: {
   weapons: readonly Weapon[]
   backpacks: readonly Backpack[]
   forms: readonly MechForm[]
+  components?: readonly Component[]
 }): LoadoutWorld {
   const index = <T extends { id: string }>(xs: readonly T[]): Map<string, T> =>
     new Map(xs.map((x) => [x.id, x]))
@@ -174,6 +204,8 @@ export function buildWorld(data: {
     weapons: index(data.weapons),
     backpacks: index(data.backpacks),
     forms: data.forms,
+    // 選填：`equip` 之前的階段根本沒有這個欄位，而那時它應該是空的（＝尚未載入）
+    components: index(data.components ?? []),
   }
 }
 
@@ -562,6 +594,172 @@ export function canEquipWeapon(ctx: LoadoutContext, weapon: Weapon, ref: SlotRef
   return overweightRejection(ctx, { ref: mount, weight: weapon.weight }, weapon.name)
 }
 
+// ─── 元件：掛在武器上的那一層（PLAN-052-D Phase A）──────────────────────────
+
+/**
+ * 這一格上的武器、以及掛在它上面的元件設定。
+ *
+ * ⚠ **不要用 `slotOccupant()` 代替**：那一支比對的是 `slotKey(ref)`，而雙手武器的
+ *   `mountCoverage()` 產出的是**兩格 singleHand** 的鍵、不含 `main:dualHand` 自己——
+ *   拿 `weaponRows()` 給的 dualHand 座標去問它，會得到「這一格是空的」。
+ *   本支改用 `slotsOverlap()`（比對的是覆蓋範圍的交集），三種來源一視同仁。
+ */
+export interface WeaponSite {
+  weapon: Weapon | null
+  /** 玩家配的那一筆。固定武裝與全鎖形態的武裝**不在 mounts 裡**，故為 null */
+  mount: LoadoutMount | null
+  /** 不可更換的來源。兩者的 `componentLimit` 實測 8/8 皆為 0，見計畫書決策四 */
+  locked: 'fixed' | 'form' | null
+}
+
+export function weaponSiteAt(ctx: LoadoutContext, ref: SlotRef): WeaponSite {
+  const lookup = (id: string) => ctx.world.weapons.get(id) ?? null
+
+  const locked = lockedMounts(ctx).find((m) => slotsOverlap(m.ref, ref))
+  if (locked) return { weapon: lookup(locked.weaponId), mount: null, locked: 'form' }
+
+  for (const occ of ctx.occupied.values()) {
+    if (slotsOverlap(occ.ref, ref)) return { weapon: lookup(occ.mount.weaponId), mount: null, locked: 'fixed' }
+  }
+
+  const mount = ctx.set.mounts.find((m) => slotsOverlap(m, ref)) ?? null
+  return { weapon: mount ? lookup(mount.weaponId) : null, mount, locked: null }
+}
+
+/** 掛在這一把上的元件 doc id（觸在前、應在後）。查無武器時回空陣列。 */
+export function mountedComponentIds(site: WeaponSite): { trigger: string[]; effect: string[] } {
+  return {
+    trigger: site.mount?.setup?.triggerComponentIds ?? [],
+    effect: site.mount?.setup?.effectComponentIds ?? [],
+  }
+}
+
+/**
+ * W 型元件只吃**雙手／背部**武器。實測 W 型 80 筆，符合條件的武器 49 把。
+ */
+const W_TYPE_SLOTS: readonly string[] = [WeaponEquipSlot.DUAL_HAND, WeaponEquipSlot.BACK]
+
+/**
+ * `allowedWeaponTypes` 的判定：**空陣列或填滿全部種類，都等於不限**。
+ *
+ * ⚠ 後台的「全選」寫進去的就是四個值全填（實測 208 筆裡 201 筆是這個形狀），
+ *   把它當成「限定這四種」在語意上雖然等價，但少一種武器類型時就會出錯——
+ *   所以用「長度大於等於全部種類數」而不是「長度等於 4」。
+ *   （沿用 052-I `componentBlockReason()` 已經寫對的那一條。）
+ */
+function componentTypeAllows(comp: Pick<Component, 'allowedWeaponTypes'>, weaponType: string): boolean {
+  const allow = comp.allowedWeaponTypes ?? []
+  if (allow.length === 0 || allow.length >= COMPONENT_WEAPON_TYPES.length) return true
+  return allow.includes(weaponType)
+}
+
+/** 觸／應的中文短稱。錯誤訊息裡要講「觸元件已滿」而不是「Condition 已滿」。 */
+const KIND_LABEL: Record<string, string> = { Condition: '觸元件', Function: '應元件' }
+
+/**
+ * 這顆元件能不能裝到這一格的武器上。合法回 `null`。
+ *
+ * ── 五條規則（總綱決策五）與它們的順序 ──────────────────────────────────────
+ *   ① 這把武器有沒有元件槽（`componentLimit`）      → blocked，整個面板降級
+ *   ② W 型只給雙手／背部                            → structural，摺疊
+ *   ③ `allowedWeaponTypes`                          → structural，摺疊
+ *   ④ 同族互斥（**單把武器內**，使用者裁決）        → situational，附解法
+ *   ⑤ 數量：分項上限、總槽上限                      → situational，附解法
+ *
+ * 順序與 `canEquipWeapon()` 同一條原則：「這格根本不該列它」→「這顆裝不上」→
+ * 「現在裝不下」。數量放最後，因為前面任一條成立時，槽位滿不滿根本不是理由。
+ *
+ * ⚠ **`conditionType` 不參與判定**（計畫書決策五）：106 個觸元件裡 always 103 筆、
+ *   dualWield 3 筆，而「同時使用兩把武器攻擊」是戰鬥中的出手指令、不是配裝狀態。
+ *   配裝層判不了，猜了就會出現「站上說不會觸發、遊戲裡卻觸發了」。
+ *
+ * ⚠ **載入未完成時本支只會漏擋、不會誤擋**，那是刻意的安全方向：呼叫端手上已經有一顆
+ *   `Component` 物件（清單本身來自 `world.components`），所以走到這裡時集合必然已載入；
+ *   唯一會受影響的是同族互斥那一段用 id 反查已裝元件——查無時當成「不同族」放行。
+ *   真正需要**載入 gate** 的是 `reconcile()`：那裡是拿 id 反查、查不到就移除，
+ *   照著武器那套做會在分享碼比集合早到時把元件靜默清空（見 `LoadoutWorld.components`）。
+ */
+export function canEquipComponent(ctx: LoadoutContext, comp: Component, ref: SlotRef): Rejection | null {
+  if (!ctx.pilot) return reject('NO_PILOT', '請先選擇機師')
+  if (!ctx.mech || !ctx.chassis) return reject('NO_MECH', '請先選擇機甲')
+
+  const site = weaponSiteAt(ctx, ref)
+  const weapon = site.weapon
+  if (!weapon) return reject('COMP_NO_SLOTS', '這一格還沒有武器，元件掛在武器上')
+
+  // ── ① 這把武器有沒有元件槽 ──
+  //    A／B 品質 39 把、固定武裝 8 把（實測 componentLimit 皆為 0，計畫書決策四）
+  if (weapon.componentLimit <= 0) {
+    const why = site.locked === 'fixed' ? '固定武裝' : site.locked === 'form' ? '形態鎖定的武裝' : `${weapon.rarity} 品質武器`
+    return reject('COMP_NO_SLOTS', `${weapon.name}不可裝元件（${why}）`)
+  }
+
+  // ── ② W 型只給雙手／背部 ──
+  if (isWTypeComponent(comp) && !W_TYPE_SLOTS.includes(weapon.equipSlot)) {
+    return reject('COMP_W_TYPE', `W 型元件只能裝在雙手或背部武器上，${weapon.name}是${OWN_SLOT_LABEL[weapon.equipSlot] ?? weapon.equipSlot}武器`)
+  }
+
+  // ── ③ 武器種類限定 ──
+  if (!componentTypeAllows(comp, weapon.type)) {
+    return reject('COMP_WEAPON_TYPE', `僅限${(comp.allowedWeaponTypes ?? []).join('・')}武器 —— ${weapon.name}是${weapon.type}`)
+  }
+
+  const { trigger, effect } = mountedComponentIds(site)
+  const isCondition = comp.componentType === 'Condition'
+  const sameKind = isCondition ? trigger : effect
+  const kindLabel = KIND_LABEL[comp.componentType] ?? '元件'
+
+  // 已經裝著這一顆 ⇒ 不是「同族衝突」而是「已裝上」，兩者的文案完全不同。
+  // 呼叫端（面板）自己畫已裝狀態，這裡只要不把它誤報成同族衝突即可。
+  const already = sameKind.includes(comp.id)
+
+  // ── ④ 同族互斥：**單把武器內**（使用者裁決 2026-08-26）──
+  //    右手裝憑逸、左手也裝憑逸是可以的，所以只看這一筆 mount 的 setup。
+  if (!already) {
+    const clash = sameKind
+      .map((id) => ctx.world.components.get(id))
+      .find((other): other is Component => !!other && isSameFamily(other, comp))
+    if (clash) {
+      return rejectSituational('COMP_FAMILY', `已裝同族的${clash.name}，一把武器同族只能裝一顆`, {
+        label: `卸下${clash.name}`,
+        action: { type: 'unequipComponent', ref, componentId: clash.id },
+      })
+    }
+  }
+
+  // ── ⑤ 數量：分項上限 ＋ 總槽上限 ──
+  //    ⚠ 讀欄位不寫死 3（計畫書決策八）：實測 limit>0 的 135 把恆為 3／3，
+  //      但官方哪天出一把「觸 4 應 2」時，寫死的版本會安靜地擋掉合法配置。
+  if (!already) {
+    const kindCap = isCondition ? weapon.triggerSlots : weapon.effectSlots
+    if (sameKind.length >= kindCap) {
+      return rejectSituational('COMP_KIND_FULL', `${kindLabel}已達 ${kindCap} 個上限`, unloadFirst(ctx, ref, sameKind))
+    }
+    if (trigger.length + effect.length >= weapon.componentLimit) {
+      return rejectSituational('COMP_SLOTS_FULL', `${weapon.name}的元件槽已滿（${weapon.componentLimit} 個）`, unloadFirst(ctx, ref, [...trigger, ...effect]))
+    }
+  }
+
+  return null
+}
+
+/**
+ * 「先卸下一顆」的解法。挑**清單上的第一顆**而不是「最沒用的那顆」——
+ * 後者需要一套元件強弱的評分，而本站沒有那份資料（觸發機率表待建檔）。
+ *
+ * ⚠ 按鈕文案照實寫「卸下 X」，**不寫「卸下 X 並裝上」**：
+ *   `resolve` 只會送出 unequip，接著裝上那一步從來沒有實作過（052-J 收尾記下的懸案）。
+ *   承諾一個不會發生的第二步，是玩家會來問客服的那一種落差。
+ */
+function unloadFirst(ctx: LoadoutContext, ref: SlotRef, ids: readonly string[]): Resolution {
+  const first = ids[0]
+  const comp = first ? ctx.world.components.get(first) : undefined
+  return {
+    label: `卸下${comp?.name ?? '一顆元件'}`,
+    action: { type: 'unequipComponent', ref, componentId: first ?? '' },
+  }
+}
+
 /** 這個背包能不能裝。合法回 `null`。 */
 export function canEquipBackpack(ctx: LoadoutContext, backpack: Backpack): Rejection | null {
   if (!ctx.pilot) return reject('NO_PILOT', '請先選擇機師')
@@ -787,6 +985,34 @@ export function backpackChoices(ctx: LoadoutContext): PickerEntry<Backpack>[] {
     out.push({ item: b, rejection: r })
   }
   return out.sort(pickerOrder)
+}
+
+/**
+ * 某一把武器的元件清單。規則同 `weaponChoices()`：濾掉 omitted、
+ * blocked 早退回空陣列（整個面板該降級說明，而不是給一個空清單）。
+ *
+ * ⚠ **structural 的不濾掉**（052-I 已定的原則）：「我的元件呢」比多幾列雜訊更難處理——
+ *   玩家找不到一個他知道存在的東西時，會以為是站上缺資料，而不會想到是自己這把武器不相容。
+ *
+ * ⚠ 排序**不沿用 `pickerOrder()`**：那一支的次鍵是重量，而元件沒有重量欄位。
+ *   改成「可裝的在前 → 觸發機率等級高的在前 → 品質高的在前 → 名稱」——
+ *   Lv 是玩家挑元件時唯一看得到的強弱訊號（機率表待建檔，見計畫書不在範圍內）。
+ */
+export function componentChoices(ctx: LoadoutContext, ref: SlotRef): PickerEntry<Component>[] {
+  const out: PickerEntry<Component>[] = []
+  for (const c of ctx.world.components.values()) {
+    const r = canEquipComponent(ctx, c, ref)
+    if (r && r.tier === 'omitted') continue
+    if (r && r.tier === 'blocked') return []
+    out.push({ item: c, rejection: r })
+  }
+  const rank = (e: PickerEntry<Component>) =>
+    e.rejection === null ? 0 : e.rejection.tier === 'situational' ? 1 : 2
+  return out.sort((a, b) =>
+    rank(a) - rank(b)
+    || (b.item.probabilityLevel ?? 0) - (a.item.probabilityLevel ?? 0)
+    || rarityRank(a.item.rarity) - rarityRank(b.item.rarity)
+    || a.item.name.localeCompare(b.item.name, 'zh-Hant'))
 }
 
 /**

@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">5</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">15</div>
+      <div class="summary-num" style="color:var(--text-dim)">10</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">0 / 15</span>
+      <span style="color:var(--accent-cyan);">5 / 15</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 33%"></div>
     </div>
   </div>
 
@@ -207,14 +207,16 @@
   <div class="section-title">規則層地基</div>
   <div class="section-desc">
     純函式與型別，<b>不動 UI</b>。這一階段做完，模擬器的外觀一模一樣，
-    但規則層已經答得出「這顆元件能不能裝進這把武器」。
+    但規則層已經答得出「這顆元件能不能裝進這把武器」。<br>
+    <b>2026-08-26 完成（5／5）</b>：<code>npm test</code> 787 項全過
+    （新增 34 項：守門 11 ＋ 規則 23），<code>tsc -b</code> 與 <code>npm run build</code> 皆通過。
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; componentFamilyKey() 由名稱推族</div>
       <div class="task-group-meta">src/utils/componentRules.ts（新檔）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -224,12 +226,17 @@
           （計畫書決策二、三）。推不出來時回 <code>null</code> 而不是拋例外 ——
           官方新增一顆命名破格的元件時，該壞掉的是守門測試，不是玩家的頁面。<br>
           <b>不落 Firestore 欄位</b>：判準就是名稱，落一個 <code>familyKey</code>
-          只是把同一件事寫第二遍，改名時兩份會靜默不同步。
+          只是把同一件事寫第二遍，改名時兩份會靜默不同步。<br>
+          <b>實際交付</b>：新檔 <code>componentRules.ts</code> ——
+          <code>parseComponentName()</code>／<code>componentFamilyKey()</code>／
+          <code>isSameFamily()</code>／<code>isWTypeComponent()</code>。
+          <code>null</code> 族（命名破格）<b>連自己都不算同族</b>，
+          於是破格元件永遠不會因為互斥而裝不上。
         </div>
         <div class="task-file">src/utils/componentRules.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -237,7 +244,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; CI 守門測試：三條斷言</div>
       <div class="task-group-meta">src/utils/componentRules.test.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -250,12 +257,20 @@
           見計畫書決策二的完整分佈推算。任何一條掛掉都代表官方改了命名規則，
           該修的是函式而不是資料。<br>
           測試餵 fixture 而不是線上資料（<code>npm test</code> 不連 Firestore），
-          fixture 由盤點腳本產出。
+          fixture 由盤點腳本產出。<br>
+          <b>實際交付</b>：<code>scripts/gen-component-fixture.mjs</code>（直讀 Firestore，
+          官方改版後重跑）＋ <code>src/utils/__fixtures__/components.json</code>（208 筆，進版控，
+          只留守門與規則測試用得到的欄位——全欄位快照會把每次改版都會動的描述文字帶進 diff）。
+          <b>11 項全過</b>，並多釘住兩條計畫書沒列的不變式：
+          <b>④ 名稱前綴與 <code>componentType</code> 100% 一致</b>（互斥鍵由名稱推、
+          槽數規則讀 componentType，兩者不同步會讓元件佔錯槽）、
+          <b>⑤ 每個 W 型都有同族的 Normal 版本</b>（W 是「同效果但機率等級更高」的變體，
+          出現孤兒 W 族代表官方改了設計，跨變體互斥要重新確認）。
         </div>
         <div class="task-file">src/utils/componentRules.test.ts · scripts/fixtures/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -263,7 +278,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-3 &nbsp; LoadoutWorld 納入 components</div>
       <div class="task-group-meta">loadoutRules.ts / useFirestore.ts / ComponentPanel.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -276,12 +291,16 @@
           移除自己的 <code>useComponents()</code> —— 同一份資料兩個載入路徑，
           必然有一次是多餘的。<br>
           代價：首次進到配裝階段多讀 208 筆，與 weapons 182 筆同量級，
-          且走 localStorage 版本快取，重訪 0 read。
+          且走 localStorage 版本快取，重訪 0 read。<br>
+          <b>實際交付</b>：<code>buildWorld()</code> 的 <code>components</code> 參數<b>設為選填</b> ——
+          <code>equip</code> 之前的階段根本沒有這個欄位，而那時它本來就該是空的。
+          <code>ComponentPanel</code> 的 <code>useComponents()</code> 已移除，改吃
+          <code>ctx.world.components</code>；<code>loading</code> 判定改為「Map 是空的」。
         </div>
         <div class="task-file">src/utils/loadoutRules.ts · src/hooks/useFirestore.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -289,7 +308,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-4 &nbsp; canEquipComponent()：五條合法性規則</div>
       <div class="task-group-meta">src/utils/loadoutRules.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -305,12 +324,22 @@
              <code>mount.setup</code> 這一個物件，不掃全套 mounts。<br>
           <span class="badge-high">⚠</span> <code>conditionType</code> <b>不參與</b>可裝性判定
           （決策五）：always 103 筆、dualWield 3 筆，而「同時使用兩把武器攻擊」是戰鬥中的
-          出手指令、不是配裝狀態，配裝層判不了。
+          出手指令、不是配裝狀態，配裝層判不了。<br>
+          <b>實作時發現的坑</b>：不能用 <code>slotOccupant()</code> 取「這一格上的武器」——
+          它比對的是 <code>slotKey(ref)</code>，而雙手武器的 <code>mountCoverage()</code>
+          產出的是<b>兩格 singleHand</b> 的鍵、<b>不含 <code>main:dualHand</code> 自己</b>；
+          拿 <code>weaponRows()</code> 給的 dualHand 座標去問它，會得到「這一格是空的」——
+          症狀是<b>雙手武器的元件面板永遠顯示 0 個槽</b>。改寫一支
+          <code>weaponSiteAt()</code>（比對 <code>slotsOverlap()</code> 的覆蓋交集），
+          固定武裝／全鎖形態／玩家配的三種來源一視同仁。已加測試釘住。<br>
+          <b>另一項</b>：測試 fixture 的武器預設 <code>triggerSlots</code>／<code>effectSlots</code>
+          由 0／0 改為 3／3（實測 <code>limit&gt;0</code> 的 135 把恆為此值），
+          固定武裝則明著設為 0／0／0。
         </div>
         <div class="task-file">src/utils/loadoutRules.ts · src/utils/loadoutRules.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -318,7 +347,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-5 &nbsp; 6 個拒絕碼與 componentChoices()</div>
       <div class="task-group-meta">src/utils/loadoutRules.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -334,12 +363,19 @@
           不寫「卸下 X 並裝上」—— 052-J 收尾記下的懸案是現行三處文案承諾了 resolve 不會做的事，
           本計畫不製造第四、五、六筆。<br>
           <code>componentChoices()</code> 比照 <code>weaponChoices()</code>：
-          濾掉 omitted、blocked 早退回空陣列、可裝的排前面。
+          濾掉 omitted、blocked 早退回空陣列、可裝的排前面。<br>
+          <b>實際交付</b>：6 個拒絕碼皆已入三張表（<code>satisfies</code> 綁死）。
+          <code>componentChoices()</code> 的排序<b>不沿用 <code>pickerOrder()</code></b> ——
+          那一支的次鍵是重量，而元件沒有重量欄位；改成
+          「可裝的在前 → <code>probabilityLevel</code> 高的在前 → 品質 → 名稱」，
+          因為 Lv 是玩家今天唯一看得到的強弱訊號（機率表待建檔）。<br>
+          <b>已裝著的那一顆</b>會放行而非回報「同族衝突／槽已滿」——
+          面板要畫得出「已裝上」，而不是把玩家自己裝的東西灰掉。
         </div>
         <div class="task-file">src/utils/loadoutRules.ts · src/utils/loadoutRules.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

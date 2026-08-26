@@ -839,7 +839,7 @@ export default function LoadoutPage() {
                 整頁的主視覺壓扁。切換內容則沿用這一欄本來就有的行為（沒開挑選器時
                 放機甲唯讀資訊），不新增 z-index 層級、focus trap 與 Esc 這三份互動負債。 */}
           {(isMobile || !effectivePicker) && openRow && (
-            <ComponentPanel row={openRow} onBack={() => setOpenRowKey(null)} />
+            <ComponentPanel ctx={ctx} row={openRow} onBack={() => setOpenRowKey(null)} />
           )}
 
           {(isMobile || !effectivePicker) && !openRow && ctx.mech && (

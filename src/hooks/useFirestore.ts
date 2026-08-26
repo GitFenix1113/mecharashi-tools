@@ -281,11 +281,17 @@ export type LoadoutStage = 'pilot' | 'mech' | 'equip'
  *   算力面板的「目前生效能力」。它是小集合（能力庫），而少了它的症狀是**靜默的**——
  *   `resolveNeuralDriveLevel()` 會退回嵌入式舊欄位，已遷移的機師於是列出一排空白名稱。
  *   pilot 階段刻意不載：那時還沒有機師，一筆都用不到。
+ *
+ * ⚠ `components`（208 筆）自 `equip` 階段起載入（PLAN-052-D A-3）：規則層要驗證元件
+ *   就得認得元件，而 `reconcile()` 每次動作都會跑。掛在 equip 而不是更早，是因為那時
+ *   才有武器 —— 元件掛在武器上，沒有武器的階段一筆都用不到。
+ *   ⚠ 少了它的症狀**不是報錯而是靜默跳過驗證**（見 `canEquipComponent` 的載入 gate），
+ *   於是玩家會裝得上五顆元件；漏掉這一行不會有任何紅字。
  */
 const LOADOUT_STAGE_KEYS: Record<LoadoutStage, CollectionKey[]> = {
   pilot: ['pilots', 'forms'],
   mech:  ['pilots', 'forms', 'mechs', 'neuralDriveAbilities'],
-  equip: ['pilots', 'forms', 'mechs', 'weapons', 'backpacks', 'neuralDriveAbilities'],
+  equip: ['pilots', 'forms', 'mechs', 'weapons', 'backpacks', 'neuralDriveAbilities', 'components'],
 }
 
 export interface LoadoutGameData {
@@ -295,6 +301,7 @@ export interface LoadoutGameData {
   weapons: Weapon[]
   backpacks: Backpack[]
   neuralDriveAbilities: NeuralDriveAbility[]
+  components: Component[]
 }
 
 /**
@@ -303,7 +310,7 @@ export interface LoadoutGameData {
  * 對「階段會變」的本例則會靜默不載入第二階段）。
  */
 export function useLoadoutGameData(stage: LoadoutStage): HookResult<LoadoutGameData> {
-  const { pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities, loadedKeys, errorMap, ensureLoaded, reloadTick } = useGameData()
+  const { pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities, components, loadedKeys, errorMap, ensureLoaded, reloadTick } = useGameData()
   const keys = LOADOUT_STAGE_KEYS[stage]
 
   useEffect(() => { void ensureLoaded(LOADOUT_STAGE_KEYS[stage]) }, [ensureLoaded, reloadTick, stage])
@@ -312,8 +319,8 @@ export function useLoadoutGameData(stage: LoadoutStage): HookResult<LoadoutGameD
   const error = keys.map((k) => errorMap[k]).find(Boolean) ?? null
 
   const data = useMemo<LoadoutGameData>(
-    () => ({ pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities }),
-    [pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities],
+    () => ({ pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities, components }),
+    [pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities, components],
   )
   return { data, loading, error }
 }

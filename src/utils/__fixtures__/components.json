@@ -1,0 +1,2999 @@
+[
+ {
+  "id": "comp_0001_應元件W_蓬勃",
+  "name": "應元件W-蓬勃",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0002_應元件W_戰慄",
+  "name": "應元件W-戰慄",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0003_應元件W_戰慄",
+  "name": "應元件W-戰慄",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0004_應元件W_戰慄",
+  "name": "應元件W-戰慄",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0005_應元件W_騰挪",
+  "name": "應元件W-騰挪",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0006_應元件W_增幅",
+  "name": "應元件W-增幅",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 11,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0007_應元件W_號令",
+  "name": "應元件W-號令",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0008_應元件W_奮發",
+  "name": "應元件W-奮發",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0009_應元件W_奮發",
+  "name": "應元件W-奮發",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0010_應元件W_奮發",
+  "name": "應元件W-奮發",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0011_應元件W_激勵",
+  "name": "應元件W-激勵",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0012_應元件W_激勵",
+  "name": "應元件W-激勵",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0013_應元件W_激勵",
+  "name": "應元件W-激勵",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0014_應元件W_昂揚",
+  "name": "應元件W-昂揚",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0015_應元件W_昂揚",
+  "name": "應元件W-昂揚",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0016_應元件W_昂揚",
+  "name": "應元件W-昂揚",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0017_應元件W_重整",
+  "name": "應元件W-重整",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 8,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0018_應元件W_重整",
+  "name": "應元件W-重整",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 8,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0019_應元件W_重整",
+  "name": "應元件W-重整",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 8,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0020_應元件W_應急",
+  "name": "應元件W-應急",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0021_應元件W_應急",
+  "name": "應元件W-應急",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0022_應元件W_應急",
+  "name": "應元件W-應急",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0023_應元件W_濺射",
+  "name": "應元件W-濺射",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0024_應元件W_濺射",
+  "name": "應元件W-濺射",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0025_應元件W_濺射",
+  "name": "應元件W-濺射",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0026_應元件W_爆破",
+  "name": "應元件W-爆破",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0027_應元件W_爆破",
+  "name": "應元件W-爆破",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0028_應元件W_爆破",
+  "name": "應元件W-爆破",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0029_應元件W_穿甲",
+  "name": "應元件W-穿甲",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 9,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0030_應元件W_穿甲",
+  "name": "應元件W-穿甲",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 9,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0031_應元件W_穿甲",
+  "name": "應元件W-穿甲",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 9,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0032_應元件W_破足",
+  "name": "應元件W-破足",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0033_應元件W_破足",
+  "name": "應元件W-破足",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0034_應元件W_破足",
+  "name": "應元件W-破足",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0035_應元件W_破臂",
+  "name": "應元件W-破臂",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0036_應元件W_破臂",
+  "name": "應元件W-破臂",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0037_應元件W_破臂",
+  "name": "應元件W-破臂",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0038_應元件W_強擊",
+  "name": "應元件W-強擊",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0039_應元件W_強擊",
+  "name": "應元件W-強擊",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0040_應元件W_強擊",
+  "name": "應元件W-強擊",
+  "componentType": "Function",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0041_觸元件W_憑逸",
+  "name": "觸元件W-憑逸",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，自身擁有3個及以上增益效果時"
+ },
+ {
+  "id": "comp_0042_觸元件W_煥發",
+  "name": "觸元件W-煥發",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久為100%"
+ },
+ {
+  "id": "comp_0043_觸元件W_煥發",
+  "name": "觸元件W-煥發",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久為100%"
+ },
+ {
+  "id": "comp_0044_觸元件W_煥發",
+  "name": "觸元件W-煥發",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久為100%"
+ },
+ {
+  "id": "comp_0045_觸元件W_沉著",
+  "name": "觸元件W-沉著",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊前，如果沒有移動過"
+ },
+ {
+  "id": "comp_0046_觸元件W_壓迫",
+  "name": "觸元件W-壓迫",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標無法反擊"
+ },
+ {
+  "id": "comp_0047_觸元件W_擊破",
+  "name": "觸元件W-擊破",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 8,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若擊破部件"
+ },
+ {
+  "id": "comp_0048_觸元件W_釋能",
+  "name": "觸元件W-釋能",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "使用4點及以上AP的技能時"
+ },
+ {
+  "id": "comp_0049_觸元件W_釋能",
+  "name": "觸元件W-釋能",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "使用4點及以上AP的技能時"
+ },
+ {
+  "id": "comp_0050_觸元件W_釋能",
+  "name": "觸元件W-釋能",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "使用4點及以上AP的技能時"
+ },
+ {
+  "id": "comp_0051_觸元件W_精準",
+  "name": "觸元件W-精準",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若命中率高於80%"
+ },
+ {
+  "id": "comp_0052_觸元件W_精準",
+  "name": "觸元件W-精準",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若命中率高於80%"
+ },
+ {
+  "id": "comp_0053_觸元件W_精準",
+  "name": "觸元件W-精準",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若命中率高於80%"
+ },
+ {
+  "id": "comp_0054_觸元件W_殲滅",
+  "name": "觸元件W-殲滅",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 9,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標耐久低於50%"
+ },
+ {
+  "id": "comp_0055_觸元件W_殲滅",
+  "name": "觸元件W-殲滅",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 8,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標耐久低於50%"
+ },
+ {
+  "id": "comp_0056_觸元件W_殲滅",
+  "name": "觸元件W-殲滅",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標耐久低於50%"
+ },
+ {
+  "id": "comp_0057_觸元件W_攻堅",
+  "name": "觸元件W-攻堅",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標耐久高於50%"
+ },
+ {
+  "id": "comp_0058_觸元件W_攻堅",
+  "name": "觸元件W-攻堅",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標耐久高於50%"
+ },
+ {
+  "id": "comp_0059_觸元件W_攻堅",
+  "name": "觸元件W-攻堅",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標耐久高於50%"
+ },
+ {
+  "id": "comp_0060_觸元件W_背水",
+  "name": "觸元件W-背水",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 9,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久低於50%"
+ },
+ {
+  "id": "comp_0061_觸元件W_背水",
+  "name": "觸元件W-背水",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 8,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久低於50%"
+ },
+ {
+  "id": "comp_0062_觸元件W_背水",
+  "name": "觸元件W-背水",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久低於50%"
+ },
+ {
+  "id": "comp_0063_觸元件W_臨敵",
+  "name": "觸元件W-臨敵",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久高於50%"
+ },
+ {
+  "id": "comp_0064_觸元件W_臨敵",
+  "name": "觸元件W-臨敵",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久高於50%"
+ },
+ {
+  "id": "comp_0065_觸元件W_臨敵",
+  "name": "觸元件W-臨敵",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久高於50%"
+ },
+ {
+  "id": "comp_0066_觸元件W_合擊",
+  "name": "觸元件W-合擊",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動協力攻擊時"
+ },
+ {
+  "id": "comp_0067_觸元件W_合擊",
+  "name": "觸元件W-合擊",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動協力攻擊時"
+ },
+ {
+  "id": "comp_0068_觸元件W_合擊",
+  "name": "觸元件W-合擊",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動協力攻擊時"
+ },
+ {
+  "id": "comp_0069_觸元件W_連擊",
+  "name": "觸元件W-連擊",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動追擊或連續攻擊時"
+ },
+ {
+  "id": "comp_0070_觸元件W_連擊",
+  "name": "觸元件W-連擊",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動追擊或連續攻擊時"
+ },
+ {
+  "id": "comp_0071_觸元件W_連擊",
+  "name": "觸元件W-連擊",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動追擊或連續攻擊時"
+ },
+ {
+  "id": "comp_0072_觸元件W_警戒",
+  "name": "觸元件W-警戒",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊"
+  ],
+  "condition": "發動警戒射擊時"
+ },
+ {
+  "id": "comp_0073_觸元件W_警戒",
+  "name": "觸元件W-警戒",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊"
+  ],
+  "condition": "發動警戒射擊時"
+ },
+ {
+  "id": "comp_0074_觸元件W_警戒",
+  "name": "觸元件W-警戒",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊"
+  ],
+  "condition": "發動警戒射擊時"
+ },
+ {
+  "id": "comp_0075_觸元件W_反擊",
+  "name": "觸元件W-反擊",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動反擊時"
+ },
+ {
+  "id": "comp_0076_觸元件W_反擊",
+  "name": "觸元件W-反擊",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動反擊時"
+ },
+ {
+  "id": "comp_0077_觸元件W_反擊",
+  "name": "觸元件W-反擊",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動反擊時"
+ },
+ {
+  "id": "comp_0078_觸元件W_侵攻",
+  "name": "觸元件W-侵攻",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "S",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動使用範圍技能時"
+ },
+ {
+  "id": "comp_0079_觸元件W_侵攻",
+  "name": "觸元件W-侵攻",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "A",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動使用範圍技能時"
+ },
+ {
+  "id": "comp_0080_觸元件W_侵攻",
+  "name": "觸元件W-侵攻",
+  "componentType": "Condition",
+  "componentsWType": "W",
+  "rarity": "B",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動使用範圍技能時"
+ },
+ {
+  "id": "comp_0081_應元件_超然",
+  "name": "應元件-超然",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0082_應元件_強攻",
+  "name": "應元件-強攻",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0083_應元件_挫志",
+  "name": "應元件-挫志",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0084_應元件_挫志",
+  "name": "應元件-挫志",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0085_應元件_挫志",
+  "name": "應元件-挫志",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0086_應元件_迸發",
+  "name": "應元件-迸發",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0087_應元件_破軀",
+  "name": "應元件-破軀",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0088_應元件_破軀",
+  "name": "應元件-破軀",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0089_應元件_破軀",
+  "name": "應元件-破軀",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0090_應元件_整葺",
+  "name": "應元件-整葺",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0091_應元件_整葺",
+  "name": "應元件-整葺",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0092_應元件_整葺",
+  "name": "應元件-整葺",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0093_應元件_消彈",
+  "name": "應元件-消彈",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0094_應元件_短路",
+  "name": "應元件-短路",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0095_應元件_模糊",
+  "name": "應元件-模糊",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0096_應元件_模糊",
+  "name": "應元件-模糊",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0097_應元件_模糊",
+  "name": "應元件-模糊",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0098_應元件_蓬勃",
+  "name": "應元件-蓬勃",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0099_應元件_同愾",
+  "name": "應元件-同愾",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0100_應元件_擴膛",
+  "name": "應元件-擴膛",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 9,
+  "allowedWeaponTypes": [
+   "突擊"
+  ]
+ },
+ {
+  "id": "comp_0101_應元件_戰慄",
+  "name": "應元件-戰慄",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0102_應元件_戰慄",
+  "name": "應元件-戰慄",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0103_應元件_戰慄",
+  "name": "應元件-戰慄",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0104_應元件_騰挪",
+  "name": "應元件-騰挪",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0105_應元件_增幅",
+  "name": "應元件-增幅",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 10,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0106_應元件_號令",
+  "name": "應元件-號令",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0107_應元件_奮發",
+  "name": "應元件-奮發",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0108_應元件_奮發",
+  "name": "應元件-奮發",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0109_應元件_奮發",
+  "name": "應元件-奮發",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0110_應元件_激勵",
+  "name": "應元件-激勵",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0111_應元件_激勵",
+  "name": "應元件-激勵",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0112_應元件_激勵",
+  "name": "應元件-激勵",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0113_應元件_昂揚",
+  "name": "應元件-昂揚",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0114_應元件_昂揚",
+  "name": "應元件-昂揚",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0115_應元件_昂揚",
+  "name": "應元件-昂揚",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0116_應元件_重整",
+  "name": "應元件-重整",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0117_應元件_重整",
+  "name": "應元件-重整",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0118_應元件_重整",
+  "name": "應元件-重整",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0119_應元件_應急",
+  "name": "應元件-應急",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0120_應元件_應急",
+  "name": "應元件-應急",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0121_應元件_應急",
+  "name": "應元件-應急",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0122_應元件_濺射",
+  "name": "應元件-濺射",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0123_應元件_濺射",
+  "name": "應元件-濺射",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0124_應元件_濺射",
+  "name": "應元件-濺射",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0125_應元件_爆破",
+  "name": "應元件-爆破",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0126_應元件_爆破",
+  "name": "應元件-爆破",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0127_應元件_爆破",
+  "name": "應元件-爆破",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0128_應元件_穿甲",
+  "name": "應元件-穿甲",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 8,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0129_應元件_穿甲",
+  "name": "應元件-穿甲",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 8,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0130_應元件_穿甲",
+  "name": "應元件-穿甲",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 8,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0131_應元件_抵抗",
+  "name": "應元件-抵抗",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0132_應元件_抵抗",
+  "name": "應元件-抵抗",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0133_應元件_抵抗",
+  "name": "應元件-抵抗",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0134_應元件_破足",
+  "name": "應元件-破足",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0135_應元件_破足",
+  "name": "應元件-破足",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0136_應元件_破足",
+  "name": "應元件-破足",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0137_應元件_破臂",
+  "name": "應元件-破臂",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0138_應元件_破臂",
+  "name": "應元件-破臂",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0139_應元件_破臂",
+  "name": "應元件-破臂",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0140_應元件_強擊",
+  "name": "應元件-強擊",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0141_應元件_強擊",
+  "name": "應元件-強擊",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0142_應元件_強擊",
+  "name": "應元件-強擊",
+  "componentType": "Function",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ]
+ },
+ {
+  "id": "comp_0143_觸元件_激昂",
+  "name": "觸元件-激昂",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，如果發生暴擊"
+ },
+ {
+  "id": "comp_0144_觸元件_迅擊",
+  "name": "觸元件-迅擊",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "再攻擊時"
+ },
+ {
+  "id": "comp_0145_觸元件_迅擊",
+  "name": "觸元件-迅擊",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "再攻擊時"
+ },
+ {
+  "id": "comp_0146_觸元件_迅擊",
+  "name": "觸元件-迅擊",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "再攻擊時"
+ },
+ {
+  "id": "comp_0147_觸元件_決鬥",
+  "name": "觸元件-決鬥",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標可以反擊"
+ },
+ {
+  "id": "comp_0148_觸元件_決鬥",
+  "name": "觸元件-決鬥",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標可以反擊"
+ },
+ {
+  "id": "comp_0149_觸元件_決鬥",
+  "name": "觸元件-決鬥",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標可以反擊"
+ },
+ {
+  "id": "comp_0150_觸元件_猛襲",
+  "name": "觸元件-猛襲",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標部件完好"
+ },
+ {
+  "id": "comp_0151_觸元件_破近",
+  "name": "觸元件-破近",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "與相鄰1格的目標主動攻擊對戰時"
+ },
+ {
+  "id": "comp_0152_觸元件_共力",
+  "name": "觸元件-共力",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "同時使用兩把武器攻擊時"
+ },
+ {
+  "id": "comp_0153_觸元件_共力",
+  "name": "觸元件-共力",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "同時使用兩把武器攻擊時"
+ },
+ {
+  "id": "comp_0154_觸元件_共力",
+  "name": "觸元件-共力",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "同時使用兩把武器攻擊時"
+ },
+ {
+  "id": "comp_0155_觸元件_摧朽",
+  "name": "觸元件-摧朽",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，目標擁有3個及以上減益效果時"
+ },
+ {
+  "id": "comp_0156_觸元件_猛進",
+  "name": "觸元件-猛進",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊前，如果移動距離大於等於4格"
+ },
+ {
+  "id": "comp_0157_觸元件_猛進",
+  "name": "觸元件-猛進",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊前，如果移動距離大於等於4格"
+ },
+ {
+  "id": "comp_0158_觸元件_猛進",
+  "name": "觸元件-猛進",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊前，如果移動距離大於等於4格"
+ },
+ {
+  "id": "comp_0159_觸元件_襲遠",
+  "name": "觸元件-襲遠",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 8,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "與距離4格及以上的目標主動攻擊對戰時"
+ },
+ {
+  "id": "comp_0160_觸元件_襲遠",
+  "name": "觸元件-襲遠",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "與距離4格及以上的目標主動攻擊對戰時"
+ },
+ {
+  "id": "comp_0161_觸元件_襲遠",
+  "name": "觸元件-襲遠",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "與距離4格及以上的目標主動攻擊對戰時"
+ },
+ {
+  "id": "comp_0162_觸元件_遏近",
+  "name": "觸元件-遏近",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "與距離3格及以內的目標主動攻擊對戰時"
+ },
+ {
+  "id": "comp_0163_觸元件_憑逸",
+  "name": "觸元件-憑逸",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 6,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，自身擁有3個及以上增益效果時"
+ },
+ {
+  "id": "comp_0164_觸元件_無患",
+  "name": "觸元件-無患",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若有指令技能處於冷卻中"
+ },
+ {
+  "id": "comp_0165_觸元件_無患",
+  "name": "觸元件-無患",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若有指令技能處於冷卻中"
+ },
+ {
+  "id": "comp_0166_觸元件_無患",
+  "name": "觸元件-無患",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若有指令技能處於冷卻中"
+ },
+ {
+  "id": "comp_0167_觸元件_煥發",
+  "name": "觸元件-煥發",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久為100%"
+ },
+ {
+  "id": "comp_0168_觸元件_煥發",
+  "name": "觸元件-煥發",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久為100%"
+ },
+ {
+  "id": "comp_0169_觸元件_煥發",
+  "name": "觸元件-煥發",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久為100%"
+ },
+ {
+  "id": "comp_0170_觸元件_沉著",
+  "name": "觸元件-沉著",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊前，如果沒有移動過"
+ },
+ {
+  "id": "comp_0171_觸元件_壓迫",
+  "name": "觸元件-壓迫",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標無法反擊"
+ },
+ {
+  "id": "comp_0172_觸元件_擊破",
+  "name": "觸元件-擊破",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若擊破部件"
+ },
+ {
+  "id": "comp_0173_觸元件_釋能",
+  "name": "觸元件-釋能",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "使用4點及以上AP的技能時"
+ },
+ {
+  "id": "comp_0174_觸元件_釋能",
+  "name": "觸元件-釋能",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "使用4點及以上AP的技能時"
+ },
+ {
+  "id": "comp_0175_觸元件_釋能",
+  "name": "觸元件-釋能",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "使用4點及以上AP的技能時"
+ },
+ {
+  "id": "comp_0176_觸元件_精準",
+  "name": "觸元件-精準",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若命中率高於80%"
+ },
+ {
+  "id": "comp_0177_觸元件_精準",
+  "name": "觸元件-精準",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若命中率高於80%"
+ },
+ {
+  "id": "comp_0178_觸元件_精準",
+  "name": "觸元件-精準",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若命中率高於80%"
+ },
+ {
+  "id": "comp_0179_觸元件_殲滅",
+  "name": "觸元件-殲滅",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 8,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標耐久低於50%"
+ },
+ {
+  "id": "comp_0180_觸元件_殲滅",
+  "name": "觸元件-殲滅",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標耐久低於50%"
+ },
+ {
+  "id": "comp_0181_觸元件_殲滅",
+  "name": "觸元件-殲滅",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標耐久低於50%"
+ },
+ {
+  "id": "comp_0182_觸元件_攻堅",
+  "name": "觸元件-攻堅",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標耐久高於50%"
+ },
+ {
+  "id": "comp_0183_觸元件_攻堅",
+  "name": "觸元件-攻堅",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標耐久高於50%"
+ },
+ {
+  "id": "comp_0184_觸元件_攻堅",
+  "name": "觸元件-攻堅",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊對戰時，若目標耐久高於50%"
+ },
+ {
+  "id": "comp_0185_觸元件_背水",
+  "name": "觸元件-背水",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 8,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久低於50%"
+ },
+ {
+  "id": "comp_0186_觸元件_背水",
+  "name": "觸元件-背水",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 7,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久低於50%"
+ },
+ {
+  "id": "comp_0187_觸元件_背水",
+  "name": "觸元件-背水",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 5,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久低於50%"
+ },
+ {
+  "id": "comp_0188_觸元件_臨敵",
+  "name": "觸元件-臨敵",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久高於50%"
+ },
+ {
+  "id": "comp_0189_觸元件_臨敵",
+  "name": "觸元件-臨敵",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久高於50%"
+ },
+ {
+  "id": "comp_0190_觸元件_臨敵",
+  "name": "觸元件-臨敵",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動攻擊時，若自身耐久高於50%"
+ },
+ {
+  "id": "comp_0191_觸元件_堅守",
+  "name": "觸元件-堅守",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "持盾手受到攻擊時"
+ },
+ {
+  "id": "comp_0192_觸元件_堅守",
+  "name": "觸元件-堅守",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "持盾手受到攻擊時"
+ },
+ {
+  "id": "comp_0193_觸元件_堅守",
+  "name": "觸元件-堅守",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "持盾手受到攻擊時"
+ },
+ {
+  "id": "comp_0194_觸元件_合擊",
+  "name": "觸元件-合擊",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動協力攻擊時"
+ },
+ {
+  "id": "comp_0195_觸元件_合擊",
+  "name": "觸元件-合擊",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動協力攻擊時"
+ },
+ {
+  "id": "comp_0196_觸元件_合擊",
+  "name": "觸元件-合擊",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動協力攻擊時"
+ },
+ {
+  "id": "comp_0197_觸元件_連擊",
+  "name": "觸元件-連擊",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動追擊或連續攻擊時"
+ },
+ {
+  "id": "comp_0198_觸元件_連擊",
+  "name": "觸元件-連擊",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動追擊或連續攻擊時"
+ },
+ {
+  "id": "comp_0199_觸元件_連擊",
+  "name": "觸元件-連擊",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動追擊或連續攻擊時"
+ },
+ {
+  "id": "comp_0200_觸元件_警戒",
+  "name": "觸元件-警戒",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊"
+  ],
+  "condition": "發動警戒射擊時"
+ },
+ {
+  "id": "comp_0201_觸元件_警戒",
+  "name": "觸元件-警戒",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊"
+  ],
+  "condition": "發動警戒射擊時"
+ },
+ {
+  "id": "comp_0202_觸元件_警戒",
+  "name": "觸元件-警戒",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊"
+  ],
+  "condition": "發動警戒射擊時"
+ },
+ {
+  "id": "comp_0203_觸元件_反擊",
+  "name": "觸元件-反擊",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動反擊時"
+ },
+ {
+  "id": "comp_0204_觸元件_反擊",
+  "name": "觸元件-反擊",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動反擊時"
+ },
+ {
+  "id": "comp_0205_觸元件_反擊",
+  "name": "觸元件-反擊",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 1,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "發動反擊時"
+ },
+ {
+  "id": "comp_0206_觸元件_侵攻",
+  "name": "觸元件-侵攻",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "S",
+  "probabilityLevel": 4,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動使用範圍技能時"
+ },
+ {
+  "id": "comp_0207_觸元件_侵攻",
+  "name": "觸元件-侵攻",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "A",
+  "probabilityLevel": 3,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動使用範圍技能時"
+ },
+ {
+  "id": "comp_0208_觸元件_侵攻",
+  "name": "觸元件-侵攻",
+  "componentType": "Condition",
+  "componentsWType": "Normal",
+  "rarity": "B",
+  "probabilityLevel": 2,
+  "allowedWeaponTypes": [
+   "射擊",
+   "格鬥",
+   "突擊",
+   "戰術"
+  ],
+  "condition": "主動使用範圍技能時"
+ }
+]
