@@ -115,22 +115,28 @@ export function LoadoutRig({
   const flashSet = useMemo(() => new Set(flash), [flash])
   const [tight, setTight] = useState(false)
 
-  const dualRef: SlotRef = { bank: 'main', slot: WeaponEquipSlot.DUAL_HAND }
-  const dualMounted = ctx.set.mounts.some((m) => m.bank === 'main' && m.slot === WeaponEquipSlot.DUAL_HAND)
-  const dualLocked = !!ctx.lock?.mounts?.some((m) => m.slot === WeaponEquipSlot.DUAL_HAND)
-  const dual = dualMounted || dualLocked
-
   const hasShoulder = ctx.capacity.shoulder > 0
   const hasBackup = ctx.capacity.backupHand > 0
 
-  /** 左右兩欄各自的槽位座標，由上而下：肩 → 手 → 備用手。 */
+  /**
+   * 左右兩欄各自的槽位座標，由上而下：肩 → 手 → 備用手。
+   *
+   * ⚠ 雙手武器**不另闢一列**，而是同時出現在左右兩格（比照遊戲整備畫面：
+   *   「右手」「左手」兩張卡印的是同一把）。這靠的是 `slotOccupant()` ——
+   *   它用 `mountCoverage()` 查詢，一筆 dualHand mount 從左右任一手都查得到。
+   *   格內的「· 雙手」標記負責說明那是一把佔兩格，不是兩把（見 SlotCell）。
+   *
+   *   先前的做法是偵測到 dualHand 就把兩格收掉、改渲染一整列「雙手」——
+   *   那讓版面在裝上／卸下雙手武器時整個重排（兩欄少一列、中間多一列），
+   *   而且與遊戲畫面對不起來。
+   */
   const columnRefs = useCallback((side: 'left' | 'right'): SlotRef[] => {
     const out: SlotRef[] = []
     if (hasShoulder) out.push({ bank: 'main', slot: WeaponEquipSlot.SHOULDER, side })
-    if (!dual) out.push({ bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side })
+    out.push({ bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side })
     if (hasBackup) out.push({ bank: 'backup', slot: WeaponEquipSlot.SINGLE_HAND, side })
     return out
-  }, [hasShoulder, hasBackup, dual])
+  }, [hasShoulder, hasBackup])
 
   const left = useMemo(() => columnRefs('left'), [columnRefs])
   const right = useMemo(() => columnRefs('right'), [columnRefs])
@@ -168,7 +174,11 @@ export function LoadoutRig({
         slotIcon={slotIconName(ref.slot, ref.side)}
         available={occ.kind === 'empty' ? available : undefined}
         active={activeSlot === key}
-        flash={flashSet.has(slotLabel(ref))}
+        // 級聯閃橙的 flash 集合裝的是**異動當下那個座標**的標籤，而雙手武器的座標是
+        // 「雙手」不是「左手」—— 只比對 slotLabel(ref) 的話，裝上／卸下雙手武器時兩格都不會閃。
+        flash={flashSet.has(slotLabel(ref)) || (
+          occ.kind === 'weapon' && flashSet.has(slotLabel({ bank: occ.mount.bank, slot: occ.mount.slot, side: occ.mount.side }))
+        )}
         compact={compact}
         dense={dense}
         tight={tight}
@@ -188,7 +198,7 @@ export function LoadoutRig({
   const [dense, setDense] = useState(false)
 
   // 節點集合換人（換機甲、裝上背包解鎖備用槽）時要重量一次
-  const layoutKey = [...left, ...right].map(slotKey).join('|') + `:${dual}`
+  const layoutKey = [...left, ...right].map(slotKey).join('|')
 
   useEffect(() => {
     const rig = rigRef.current
@@ -294,24 +304,8 @@ export function LoadoutRig({
             />
           )}
 
-          {/* ── 整列：雙手武器（同時佔住左右手） ── */}
-          {dual && (
-            <SlotCell
-              label="雙手"
-              occupant={slotOccupant(ctx, { bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' })}
-              seg="hands"
-              slotIcon="dualHand"
-              active={activeSlot === slotKey({ bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' })}
-              flash={flashSet.has(slotLabel(dualRef))}
-              compact={compact}
-              dense={dense}
-              tight={tight}
-              onOpen={() => onOpenSlot({ bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' })}
-              onClear={() => onClearSlot(dualRef)}
-            />
-          )}
-
-          {/* ── 主體：左欄 ／ 機甲 ／ 右欄 ── */}
+          {/* ── 主體：左欄 ／ 機甲 ／ 右欄 ──
+              （雙手武器不在這裡另闢一列，見 columnRefs 的註解） ── */}
           {/* ⚠ `gap-x-6` 不是留白品味問題：引線的**可見長度就是這道縫**
               （落點在機甲圖框內，縫以內的線段會被機甲蓋住）。縮回 gap-2 等於沒有引線。 */}
           <div className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-y-2 items-center ${

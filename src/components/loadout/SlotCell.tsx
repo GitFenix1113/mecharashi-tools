@@ -2,6 +2,7 @@ import { WeaponIcon } from '../icons/WeaponIcon'
 import { LoadoutIcon, type LoadoutIconName } from '../icons/LoadoutIcon'
 import { HUD, SEG_TEXT, type SegKey } from './loadoutTheme'
 import type { SlotOccupant } from '../../utils/loadoutRules'
+import { WeaponEquipSlot } from '../../types/enums'
 
 // ─── 一格裝備位（PLAN-052-B B-2／PLAN-052-I B-1）──────────────────────────────
 //
@@ -225,6 +226,20 @@ export function SlotCell({
   const name = isBackpack ? occupant.backpack.name : (occupant.weapon?.name ?? occupant.mount.weaponId)
   const icon = isBackpack ? occupant.backpack.icon : occupant.weapon?.icon
   const weight = isBackpack ? occupant.backpack.weight : (occupant.weapon?.weight ?? 0)
+  /**
+   * 雙手武器同時出現在左右兩格（比照遊戲整備畫面：「右手」「左手」印的是同一把）。
+   * 兩格都印同一個重量，所以需要一枚標記說明它是**一把佔兩格**而不是兩把 ——
+   * 沒有它，800 × 2 會被讀成 1600。總重本來就只算一次（單一 mount）。
+   *
+   * ⚠ 標記**不能**接在「左手」後面當文字：實測這一欄只放得下約 5 個字，
+   *   「左手 · 雙手」會被 truncate 成「左手 · …」—— 防誤讀的字自己先被吃掉了。
+   *   改用既有的 dualHand 描邊圖示、貼在**會被誤讀的那個數字**旁邊，
+   *   只佔一個圖示寬，也符合 052-I「字符換描邊圖示」的既定方向。
+   */
+  const isDualHand = occupant.kind === 'weapon' && occupant.mount.slot === WeaponEquipSlot.DUAL_HAND
+  const dualMark = isDualHand
+    ? <LoadoutIcon name="dualHand" className="w-3 h-3 shrink-0 opacity-70" aria-label="雙手武器，佔用左右兩格，重量只計一次" />
+    : null
 
   return (
     <div
@@ -246,10 +261,16 @@ export function SlotCell({
           {label}{isBackpack ? ' · 背包' : ''}
         </span>
         <span className={`${nameSize} font-semibold text-text-primary ${nameClip}`}>{name}</span>
-        {dense && <span className={`${HUD.num} text-[11px] ${segText}`}>{weight.toLocaleString()}</span>}
+        {dense && (
+          <span className={`${HUD.num} text-[11px] ${segText} flex items-center gap-[3px]`}>
+            {dualMark}{weight.toLocaleString()}
+          </span>
+        )}
       </div>
       {!dense && (
-        <span className={`${HUD.numSm} ${segText} shrink-0`}>{weight.toLocaleString()}</span>
+        <span className={`${HUD.numSm} ${segText} shrink-0 flex items-center gap-[3px]`}>
+          {dualMark}{weight.toLocaleString()}
+        </span>
       )}
       {onClear && (
         <button
