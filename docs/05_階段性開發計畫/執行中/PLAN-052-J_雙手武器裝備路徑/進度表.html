@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">6</div>
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -179,7 +179,7 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">6</div>
+      <div class="summary-num" style="color:var(--text-primary)">8</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,7 +187,7 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-pink);">6 / 6</span>
+      <span style="color:var(--accent-pink);">8 / 8</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 100%"></div>
@@ -195,7 +195,7 @@
   </div>
 
   <div class="impact-note">
-    <strong>✅ 已實作（2026-08-26 · 6 / 6 工項）：</strong>
+    <strong>✅ 已實作（2026-08-26 · 8 / 8 工項）：</strong>
     全庫 40／182 把雙手武器（22%）重新成為可選裝備。
     這不是新功能，是把一批<b>本來就該在清單裡</b>的武器從規則層的早退裡放出來——
     規則層與重量層早已全部支援 <code>dualHand</code>，擋住的只有一條槽位比對。
@@ -359,6 +359,72 @@
           ③ 落在 backup bank 時走 <code>backupHand</code>，主／備<b>取較重者</b>而非相加。<br>
           ④ 任一手被固定武裝佔住 ⇒ <code>SLOT_OCCUPIED</code>（<b>灰掉並說明</b>，不是 omit）——
           omit 與 blocked 的差別正是這個 bug 的本體，要有測試釘住。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label pink">Phase D</div>
+  <div class="section-title">手部規則補件：盾擇一</div>
+  <div class="section-desc">同一次對話中由使用者提出的第二條手部規則。與雙手武器同屬「兩隻手之間的互斥關係」，故併入本計畫而非另立。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 手盾與大盾合計每組一面</div>
+      <div class="task-group-meta">src/utils/loadoutRules.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 SHIELD_LIMIT（situational）</div>
+        <div class="task-desc">
+          全庫 <b>24 面盾</b>——大盾 12（限重型、260–390 重）＋ 手盾 12（無機種限制、50–70 重）——
+          <b>全部是 <code>equipSlot: 'singleHand'</code></b>，所以沒有規則的話兩隻手各掛一面是選得出來的，而遊戲不允許。
+          <br>
+          <b>使用者裁決（2026-08-26）</b>：① 手盾與大盾<b>合計</b>一面（左手大盾＋右手手盾也不行）；
+          ② 判定範圍是<b>單一 bank</b>，主手組與備用組各自一面——兩組是替換關係而非並存，
+          與重量帳「主備取較重者」同一個道理。
+          <br>
+          用 <code>kind</code> 判定而非 <code>type</code>：格鬥類共 63 把，盾只有 24 面。
+          tier 取 <code>situational</code>（灰掉＋原因＋解法按鈕），不是 structural——卸下另一面就解得掉。
+          判斷順序放在機種／形態限定之後、負重之前：那兩條是「這把你根本用不了」，這條是「你得先卸下另一面」。
+          <br>
+          <b>換掉同一格的那一面不算衝突</b>（<code>slotsOverlap</code> 排除自己），
+          否則盾永遠換不掉、只能先卸再裝。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 測試與實地驗收</div>
+      <div class="task-group-meta">src/utils/loadoutRules.test.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">6 條測試 ＋ 瀏覽器實測</div>
+        <div class="task-desc">
+          右手再裝手盾被擋且解法指向左手那一面／大盾＋手盾也算兩面／主手組與備用組各自一面／
+          換掉同一格不算衝突／非盾的格鬥武器不受限／<b>已經裝了兩面的舊配裝會被 <code>validateLoadout</code> 指名</b>
+          （改版前存下的分享碼可能就是這種）。
+          <br>
+          ⚠ 加入盾的 fixture 後，<code>structuralCounts</code> 那條既有測試的期望值要跟著加一筆
+          <code>MECH_RESTRICTION</code>——群星是限重型大盾而彌造者是中甲。
+          <br>
+          <b>瀏覽器實測</b>：左手裝夾心曲奇後，右手清單 12 面手盾全部灰掉並顯示
+          「左手已裝夾心曲奇，盾一次只能裝一面」＋「卸下夾心曲奇並裝上」；按下解法後左手清空、
+          提示列附復原、清單的盾全部恢復可選。
         </div>
         <div class="task-file">src/utils/loadoutRules.test.ts</div>
       </div>

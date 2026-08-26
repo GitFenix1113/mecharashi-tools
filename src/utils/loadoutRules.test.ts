@@ -13,7 +13,7 @@ import {
   loadoutBudget, mountCoverage, mountRefFor, slotOccupant, validateLoadout,
   weaponChoices, backpackChoices, structuralCounts, slotHasCandidates,
 } from './loadoutRules.ts'
-import { ArmorType, MechLicense, MechRestriction, WeaponEquipSlot, BackpackType, WeaponType } from '../types/enums.ts'
+import { ArmorType, MechLicense, MechRestriction, WeaponEquipSlot, BackpackType, WeaponType, WeaponKind } from '../types/enums.ts'
 
 // ─── fixtures（數值取自 2026-08-23／24 線上實測）────────────────────────────
 
@@ -76,6 +76,15 @@ const 千星     = weapon({ id: 'w_178', name: '千星', weight: 100, equipSlot:
 const 衝擊炮   = weapon({ id: 'w_衝擊炮', name: '衝擊炮', weight: 0, equipSlot: WeaponEquipSlot.SHOULDER, type: WeaponType.Special, isFixedArmament: true })
 
 /**
+ * 盾（PLAN-052-J follow-up）。全庫 24 面全是 singleHand ——
+ * 沒有規則的話兩隻手各掛一面是選得出來的。
+ * 大盾 12 面一律 mechRestriction='heavy'、260–390 重；手盾 12 面無限制、50–70 重。
+ */
+const 聚合屏障 = weapon({ id: 'w_014', name: '聚合屏障', weight: 70, equipSlot: WeaponEquipSlot.SINGLE_HAND, kind: WeaponKind.Buckler })
+const 玲瓏     = weapon({ id: 'w_153', name: '玲瓏',     weight: 70, equipSlot: WeaponEquipSlot.SINGLE_HAND, kind: WeaponKind.Buckler })
+const 群星     = weapon({ id: 'w_011', name: '群星',     weight: 390, equipSlot: WeaponEquipSlot.SINGLE_HAND, kind: WeaponKind.Shield, mechRestriction: MechRestriction.HEAVY_ONLY })
+
+/**
  * 左手焊死一把固定武裝的機甲（PLAN-052-J C-1 邊界二）。
  * 帕斯卡焊的是**肩部**，碰不到手部格；要驗「雙手武器被佔住的那一手擋下」需要這台。
  */
@@ -127,7 +136,7 @@ const 虛粒子形態 = form({
 const WORLD = buildWorld({
   pilots: [海莉絲, 重型機師],
   mechs: [彌造者, 輕型機, 重型機, 美杜莎MK2, 帕斯卡, 獨臂機],
-  weapons: [群山之力, 貝奧武夫, 藝術突襲, 夜魘, 熔火, 炬塔, 耀星, 隕星, 千星, 衝擊炮],
+  weapons: [群山之力, 貝奧武夫, 藝術突襲, 夜魘, 熔火, 炬塔, 耀星, 隕星, 千星, 衝擊炮, 聚合屏障, 玲瓏, 群星],
   backpacks: [強襲者背包, 出力背包Ⅲ, 輕型限定包],
   forms: [先鋒形態, 突擊形態, 虛粒子形態],
 })
@@ -396,7 +405,8 @@ test('structuralCounts 數得出「因形態限定隱藏 N」（摺疊列的內�
   )
   const counts = structuralCounts(weaponChoices(ctx, HAND_L))
   // 藝術突襲與夜魘是突擊類 → 先鋒形態（格鬥／射擊）排除
-  assert.deepEqual(counts, [['FORM_WEAPON_TYPE', 2]])
+  // 群星是限重型的大盾，而彌造者是中甲 → 機種限定（盾的 fixture 加入後才有的第二種）
+  assert.deepEqual(counts, [['FORM_WEAPON_TYPE', 2], ['MECH_RESTRICTION', 1]])
 })
 
 test('slotHasCandidates：「這一格存在但沒有東西裝得上」要答得出來', () => {
@@ -484,6 +494,56 @@ test('052-J：往左手裝單手武器會擠掉正在佔兩格的雙手武器（
   // 重量預覽必須已經扣掉被擠掉的那把，否則「預覽說裝得下、按下去卻超重」
   const after = loadoutBudget(ctx, { add: { ref: HAND_L, weight: 藝術突襲.weight } })
   assert.equal(after.weight.mainHand, 藝術突襲.weight)
+})
+
+// ─── 盾擇一：手盾與大盾合計，每組一面 ───────────────────────────────────────
+//
+// 全庫 24 面盾（大盾 12 ＋ 手盾 12）**全部是 singleHand**，
+// 所以沒有這條規則的話，兩隻手各掛一面是選得出來的——而遊戲不允許。
+
+test('盾：左手已有手盾時，右手再裝手盾被擋，且解法指向卸下那一面', () => {
+  const ctx = ctxOf({ mounts: [{ weaponId: 聚合屏障.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }] })
+  const r = canEquipWeapon(ctx, 玲瓏, HAND_R)
+  assert.equal(r?.code, 'SHIELD_LIMIT')
+  assert.equal(r?.tier, 'situational')          // 改別的就能解 → 灰掉＋解法，不是隱藏
+  assert.ok(r && 'resolution' in r && r.resolution.action.type === 'unequip')
+  assert.match(r!.reason, /左手/)
+  assert.match(r!.reason, /聚合屏障/)
+})
+
+test('盾：大盾 ＋ 手盾 也算兩面（合計一面，不是同類各一面）', () => {
+  // 大盾限重型，故用重型機師＋重型機——否則會先撞 MECH_RESTRICTION 而測不到本條
+  const ctx = ctxOf(
+    { mounts: [{ weaponId: 群星.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }] },
+    { mech: 重型機, pilot: 重型機師 },
+  )
+  assert.equal(canEquipWeapon(ctx, 聚合屏障, HAND_R)?.code, 'SHIELD_LIMIT')
+})
+
+test('盾：主手組與備用組各自一面（兩組是替換關係，不並存）', () => {
+  const ctx = ctxOf({
+    mounts: [{ weaponId: 聚合屏障.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }],
+    backpackId: 強襲者背包.id,
+  })
+  assert.equal(canEquipWeapon(ctx, 玲瓏, BACKUP_L), null)
+})
+
+test('盾：換掉同一格的那一面不算衝突（否則盾永遠換不掉，只能先卸再裝）', () => {
+  const ctx = ctxOf({ mounts: [{ weaponId: 聚合屏障.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }] })
+  assert.equal(canEquipWeapon(ctx, 玲瓏, HAND_L), null)
+})
+
+test('盾：非盾的格鬥武器不受限（63 把格鬥類裡只有 24 面是盾，用 kind 不是 type）', () => {
+  const ctx = ctxOf({ mounts: [{ weaponId: 聚合屏障.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }] })
+  assert.equal(canEquipWeapon(ctx, 藝術突襲, HAND_R), null)
+})
+
+test('盾：已經裝了兩面的舊配裝（如改版前存下的分享碼）會被 validateLoadout 指名', () => {
+  const problems = validateLoadout(ctxOf({ mounts: [
+    { weaponId: 聚合屏障.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' },
+    { weaponId: 玲瓏.id,     bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'right' },
+  ] }))
+  assert.ok(problems.some((p) => p.code === 'SHIELD_LIMIT'))
 })
 
 test('backpackChoices 把「僅輕型可裝」歸成結構性拒絕（不是默默不擋）', () => {

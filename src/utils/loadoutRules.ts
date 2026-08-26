@@ -17,7 +17,7 @@ import type { Backpack, Mech, MechForm, Pilot, Weapon } from '../types'
 import type { EquipSet, LoadoutMount } from '../types/loadout'
 import type { SlotCapacity, SlotKey, SlotRef } from '../types/slots.ts'
 import { slotKey, slotAcceptsSide } from '../types/slots.ts'
-import { ArmorType, MechLicense, MechRestriction, WeaponEquipSlot } from '../types/enums.ts'
+import { ArmorType, MechLicense, MechRestriction, WeaponEquipSlot, WeaponKind } from '../types/enums.ts'
 import { fromAssemblableArmorType, licenseAllows, toArmorType } from './normalizeArmorType.ts'
 import { resolveChassis, type ResolvedChassis } from './chassisStats.ts'
 import {
@@ -45,7 +45,7 @@ export const REJECTION_CODES = [
   // 槽位 —— 這一格的定義問題
   'SLOT_MISMATCH', 'NO_SLOT', 'SLOT_OCCUPIED', 'FORM_LOCKED',
   // 武器 —— 這把武器本身裝不上
-  'MECH_RESTRICTION', 'FORM_WEAPON_TYPE', 'FIXED_ARMAMENT',
+  'MECH_RESTRICTION', 'FORM_WEAPON_TYPE', 'FIXED_ARMAMENT', 'SHIELD_LIMIT',
   // 背部 —— 背槽的擇一問題
   'BACK_SLOT_TAKEN', 'BACKPACK_ARMOR_TYPE',
   // 負重
@@ -76,6 +76,7 @@ export const REJECTION_TIER = {
   MECH_RESTRICTION:    'structural',
   FORM_WEAPON_TYPE:    'structural',
   FIXED_ARMAMENT:      'omitted',
+  SHIELD_LIMIT:        'situational',
   BACK_SLOT_TAKEN:     'situational',
   BACKPACK_ARMOR_TYPE: 'structural',
   OVERWEIGHT:          'situational',
@@ -94,6 +95,7 @@ export const REJECTION_LABEL = {
   MECH_RESTRICTION:    '機種限定',
   FORM_WEAPON_TYPE:    '形態限定',
   FIXED_ARMAMENT:      '固定武裝',
+  SHIELD_LIMIT:        '盾已達上限',
   BACK_SLOT_TAKEN:     '背槽已佔用',
   BACKPACK_ARMOR_TYPE: '機種限定',
   OVERWEIGHT:          '出力不足',
@@ -279,6 +281,21 @@ export function mountRefFor(weapon: Pick<Weapon, 'equipSlot'>, ref: SlotRef): Sl
     ? { bank: ref.bank, slot: WeaponEquipSlot.DUAL_HAND }
     : ref
 }
+
+/**
+ * 盾 —— 手盾與大盾，**每組最多一面**。
+ *
+ * 遊戲不允許同時裝兩面盾，而且手盾與大盾**合計**只能一面（左手大盾＋右手手盾也不行）。
+ * 全庫 24 面：大盾 12（限重型，260–390 重）＋ 手盾 12（無機種限制，50–70 重），
+ * 全部 `equipSlot: 'singleHand'` —— 也就是說沒有規則的話，兩隻手各掛一面是選得出來的。
+ *
+ * ⚠ 判定範圍是**單一 bank**：主手組與備用組各自算一面（使用者裁決 2026-08-26）。
+ *   兩組是替換關係而非並存——與重量帳「主備取較重者」同一個道理。
+ */
+const SHIELD_KINDS: readonly string[] = [WeaponKind.Shield, WeaponKind.Buckler]
+
+/** 這把是不是盾。用 `kind` 而非 `type`：格鬥類共 63 把，盾只有 24 面。 */
+export const isShield = (weapon: Pick<Weapon, 'kind'>): boolean => SHIELD_KINDS.includes(weapon.kind)
 
 /** 兩個座標是否碰到同一格。 */
 export function slotsOverlap(a: Pick<SlotRef, 'bank' | 'slot' | 'side'>, b: Pick<SlotRef, 'bank' | 'slot' | 'side'>): boolean {
@@ -512,6 +529,26 @@ export function canEquipWeapon(ctx: LoadoutContext, weapon: Weapon, ref: SlotRef
   const allow = ctx.form?.restrict.kind === 'weaponType' ? ctx.form.restrict.allow : null
   if (allow && !(allow as readonly string[]).includes(weapon.type)) {
     return reject('FORM_WEAPON_TYPE', `${ctx.form!.name}只能裝備${allow.join('／')}類武器`)
+  }
+
+  // ── 盾擇一：手盾與大盾**合計**每組一面 ──
+  // 放在機種／形態限定之後、負重之前：那兩條是「這把武器你根本用不了」，
+  // 而這一條是「你得先卸下另一面」——照決策二的順序，解得掉的排後面。
+  if (isShield(weapon)) {
+    const other = ctx.set.mounts.find((m) => {
+      if (m.bank !== mount.bank) return false            // 主手組／備用組各自一面
+      if (slotsOverlap(m, mount)) return false           // 這一格自己等下會被取代，不算衝突
+      const w = ctx.world.weapons.get(m.weaponId)
+      return !!w && isShield(w)
+    })
+    if (other) {
+      const w = ctx.world.weapons.get(other.weaponId)
+      const otherRef: SlotRef = { bank: other.bank, slot: other.slot, side: other.side }
+      return rejectSituational('SHIELD_LIMIT', `${slotLabel(otherRef)}已裝${w?.name ?? '盾'}，盾一次只能裝一面`, {
+        label: `卸下${w?.name ?? '盾'}並裝上`,
+        action: { type: 'unequip', ref: otherRef },
+      })
+    }
   }
 
   // ── 背槽擇一：背包 XOR 背部武器（SlotCapacity.back = 1）──
