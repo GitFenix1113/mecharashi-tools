@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-J 雙手武器裝備路徑 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-J 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge pink">◆ PLAN-052-J</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    雙手武器裝備路徑<span style="-webkit-text-fill-color:var(--text-secondary);"> · Dual-Hand · 規則層放行 · 座標轉換</span>
+  </h1>
+  <p class="hero-sub">全庫 40／182 把雙手武器在新模擬器裡沒有任何入口裝得上。要修的是規則層的一條早退，不是重畫槽位圖。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label pink">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value pink">PLAN-052-J</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-26</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">loadoutRules / simReducer / LoadoutPage</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value pink">開發中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-052-A（槽位模型）、052-B（模擬器主體）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>全庫 40／182 把雙手武器，在新模擬器裡沒有任何入口裝得上</strong><br>
+    2026-08-26 做 052-I Phase B 時在瀏覽器實測確認。點開任何一格手部，
+    清單裡一把雙手武器都不會出現——不是灰掉、不是附原因，是<b>整批被 omit</b>，
+    使用者看不到它們存在過。
+  </div>
+
+  <div class="info-block">
+    <strong>成因：兩個各自正確的決定撞在一起</strong><br>
+    ① <code>loadoutRules.ts</code> 的 <code>canEquipWeapon()</code> 第一條槽位檢查是
+    <code>if (weapon.equipSlot !== ref.slot) reject('SLOT_MISMATCH')</code>，
+    而 <code>SLOT_MISMATCH</code> 的 tier 是 <code>'omitted'</code>（連列都不列）。<br>
+    ② <code>mechSlots.ts</code> 的 <code>enumerateSlots()</code> <b>刻意不產生</b>
+    <code>dualHand</code> 座標——這個決定是<b>對的</b>：雙手武器佔的是兩格 singleHand，
+    不是第三格手部；產生它會讓畫面同時渲染出「一把雙手武器」與「兩個空著的手格」。<br>
+    於是 <code>weaponChoices(ctx, { slot:'singleHand' })</code> 把 40 把
+    <code>equipSlot:'dualHand'</code> 的武器全部濾掉，而 <code>dualHand</code> 的座標
+    又從來不會被產生去問一次。<b>兩條路都不通。</b>
+  </div>
+
+  <div class="info-block">
+    <strong>證據：作者原本就預期它會出現在手部清單裡（同檔內留著死碼）</strong><br>
+    · <code>LoadoutPage.tsx</code> 的 <code>replaceNote()</code> 有一整條
+    <code>w.equipSlot === DUAL_HAND</code> 分支，負責提示「裝上將同時取代左右手」——<b>今天永遠跑不到</b>。<br>
+    · <code>LoadoutRig</code> 特地用 <code>slotHasCandidates(ctx, dualRef)</code>
+    避免把手部畫成「沒有可裝的武器」，也就是它假設 dualRef 問得出東西。<br>
+    · 規則層與重量層其實<b>早就全部認得</b> dualHand：<code>mountCoverage()</code>
+    會把它攤成左右兩格、<code>slotsOverlap()</code>／<code>withoutSlot()</code>／
+    <code>slotExists()</code>／<code>isHandSlot()</code> 一應俱全。
+    唯一擋住的就是上面那一行早退。
+  </div>
+
+  <div class="problem-block">
+    <strong>為什麼現在修，不能拖</strong><br>
+    052-C 剛讓使用者能存本機書架、發分享碼。
+    <b>今天存下來的每一份配裝，都不可能包含雙手武器</b>——
+    等修好之後，這批已經發出去的分享碼會顯得莫名其妙地缺一整類武器，
+    而分享碼是只進不出的。愈晚修，愈多既成事實。
+  </div>
+
+  <div class="warning-block">
+    <strong>目前唯一畫得出雙手格的路徑</strong>是<b>形態鎖定</b>（<code>ctx.lock.mounts</code>）——
+    那條路不經過 <code>canEquipWeapon()</code>，所以看得到。
+    這也解釋了為什麼這個 bug 撐到 052-I 才被發現：
+    有雙手武器的形態畫面看起來完全正常。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label pink">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：修規則層，<u>不</u>讓 <code>enumerateSlots()</code> 產生 dualHand 座標</strong><br>
+    保留「雙手佔兩格 singleHand」這個模型——它是對的，槽位圖也是照它畫的。
+    改成：<b>手部座標願意接受雙手武器</b>，由規則層在內部把座標換成 dualHand。
+    反方向（產生第三格手部）會讓 <code>SlotCapacity</code>、槽位圖、匯出圖、
+    分享碼 codec 四處同時要處理一個不存在的格子。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：新增單一入口 <code>mountRefFor(weapon, ref)</code></strong><br>
+    回傳「這把武器裝在這一格時，<b>實際會佔住的座標</b>」：
+    雙手武器 ＋ 手部座標 ⇒ <code>{ bank, slot:'dualHand' }</code>（無 side），其餘原樣回傳。<br>
+    <code>canEquipWeapon()</code> 內部用它做佔用／重量判定，
+    UI 派發 <code>equipWeapon</code> 時也用它。<b>預覽與落地必須是同一支函式算出來的</b>，
+    否則會出現「清單說裝得上、按下去卻不是那樣」。這與 <code>loadoutWeightSet()</code>
+    「假想異動與實際落地共用一支」的既有原則同源。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：reducer 幾乎不用動</strong><br>
+    <code>placeWeapon()</code> 已經用 <code>slotsOverlap()</code> 過濾被取代的 mount，
+    而 <code>slotsOverlap()</code> 走的是 <code>mountCoverage()</code>——
+    餵它一個 dualHand ref，它<b>本來就會</b>同時擠掉左右手兩把、並寫入
+    <code>slot:'dualHand'</code>。所以 reducer 只要收到正確的 ref 就對了。
+    這是為什麼本計畫的改動面遠小於它的影響面。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：side 一律不寫</strong><br>
+    dualHand 的 <code>SlotRef</code> 不帶 <code>side</code>（<code>slotAcceptsSide()</code> 對它回 false）。
+    寫了會讓 <code>slotKey()</code> 產出 <code>main:dualHand:left</code> 這種
+    <b>永遠對不上 <code>mountCoverage()</code> 產物</b>的鍵，症狀是「裝上去了但那一格顯示還是空的」。
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界一：備用組（backup bank）</strong><br>
+    強襲者背包給的備用手是 0 或 2 格，<code>slotExists()</code> 對 dualHand 的判斷
+    （<code>capacity ≥ 2</code>）兩個 bank 通用，已經是對的。
+    但重量帳是<b>主手組與備用組取較重者</b>——一把雙手武器落在備用組時，
+    仍走 <code>isHandSlot()</code> 進 <code>backupHand</code>，需有測試釘住。
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界二：固定武裝佔住其中一手</strong><br>
+    只要左右任一格被固定武裝佔住，雙手武器就該是
+    <code>SLOT_OCCUPIED</code>（<b>灰掉並說明原因</b>，不是 omit）。
+    <code>canEquipWeapon()</code> 的佔用檢查已經 <code>for (const key of mountCoverage(ref))</code>，
+    換上 dualHand ref 後自動涵蓋兩格。
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界三：從雙手換回單手</strong><br>
+    手上是雙手武器時，往左手裝一把單手武器，<code>slotsOverlap()</code> 會擠掉那把雙手、
+    <b>右手變空</b>。這是對的行為，但提示文案要說得出來——
+    <code>LoadoutPage.tsx</code> 的 <code>replaceNote()</code> 那條死碼正是為此寫的，本計畫讓它復活。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label pink">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>loadoutRules.ts</code>：新增 <code>mountRefFor()</code>；
+          <code>canEquipWeapon()</code> 的槽位早退改為「雙手武器可進手部座標」；
+          <code>weaponChoices()</code> 與 <code>slotHasCandidates()</code> 跟著走同一條</li>
+      <li>UI 派發端（<code>LoadoutPage</code> / 挑選器）改用 <code>mountRefFor()</code> 產出的 ref</li>
+      <li>讓 <code>replaceNote()</code> 的 <code>DUAL_HAND</code> 分支真正跑得到，並確認文案正確</li>
+      <li>槽位圖：一把雙手武器橫跨左右兩格的呈現（<code>mountCoverage()</code> 已提供依據）</li>
+      <li>測試：40 把雙手武器可選、佔兩格、擠掉左右手、備用組重量、固定武裝佔手時灰掉附原因</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>分享碼 codec 不動</b>——<code>codec.ts</code> 的 <code>SLOT_OF</code> 早就有
+          <code>1: 'dualHand'</code>，格式本來就編得出來，只是至今沒有資料走到那條路</li>
+      <li>元件（052-D）、雲端存檔（052-E）、形態分頁（052-F）、模組槽（052-G）</li>
+      <li>已發出的分享碼不做任何回溯處理——它們本來就是合法的配裝，只是少了一類選擇</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label pink">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-052-J 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-J — <a href="../index.html" style="color:var(--accent-pink);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

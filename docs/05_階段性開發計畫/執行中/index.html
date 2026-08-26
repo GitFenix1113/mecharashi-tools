@@ -31,15 +31,6 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
-    <div class="card pink">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-052-J · 雙手武器裝備路徑</h3>
-      <p>2026-08-26 做 052-I Phase B 時在瀏覽器實測確認：<b>全庫 40／182 把雙手武器（22%），在新模擬器裡沒有任何入口裝得上</b>。點開任何一格手部，一把雙手武器都不會出現——不是灰掉、不是附原因，是<b>整批被 omit</b>，使用者看不到它們存在過。<br>成因是<b>兩個各自正確的決定撞在一起</b>：<code>canEquipWeapon()</code> 第一條槽位檢查 <code>weapon.equipSlot !== ref.slot</code> 直接 reject 成 <code>'omitted'</code>；而 <code>enumerateSlots()</code> <b>刻意不產生</b> <code>dualHand</code> 座標——後者是對的，雙手佔的是兩格 singleHand，產生第三格手部會讓畫面同時渲染「一把雙手武器」與「兩個空手格」。於是手部座標濾掉它們，而 dualHand 座標從來不會被拿去問一次，<b>兩條路都不通</b>。<br>證據是同檔留著的死碼：<code>replaceNote()</code> 有一整條「裝上將同時取代左右手」的分支<b>今天永遠跑不到</b>，<code>LoadoutRig</code> 還特地呼叫 <code>slotHasCandidates(ctx, dualRef)</code>——<b>作者原本就預期它會出現在手部清單裡</b>。而規則層與重量層其實早已全數認得 dualHand（<code>mountCoverage</code> / <code>slotsOverlap</code> / <code>withoutSlot</code> / <code>slotExists</code> / <code>isHandSlot</code>），連 codec 的 <code>SLOT_OF</code> 都有 <code>1:'dualHand'</code>。<b>擋住的只有那一行。</b><br>解法是新增單一入口 <code>mountRefFor(weapon, ref)</code>——手部座標願意接受雙手武器，由規則層在內部換成它實際佔住的 dualHand 座標；預覽與落地共用同一支，否則會「清單說裝得上、按下去卻不是那樣」。<b>reducer 一行都不用動</b>：<code>placeWeapon()</code> 走的是 <code>slotsOverlap()</code>，餵它 dualHand ref 本來就會擠掉左右手兩把並寫入 <code>slot:'dualHand'</code>。<br>⚠ <b>為什麼現在修</b>：052-C 剛讓使用者能存書架、發分享碼，而<b>今天存下來的每一份配裝都不可能包含雙手武器</b>。分享碼只進不出，愈晚修愈多既成事實。這個 bug 撐到 052-I 才被發現，是因為<b>形態鎖定</b>那條路不經過 <code>canEquipWeapon()</code>——有雙手武器的形態畫面看起來完全正常。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-052-J_雙手武器裝備路徑/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-052-J_雙手武器裝備路徑/進度表.html">→ 進度表</a>
-      </div>
-    </div>
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-052 · 配裝模擬器改版 · 總綱</h3>
