@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useSimulatorEntryVisible } from '../hooks/useSimulatorEntry'
 
 // 常見誤入路徑的熱門去處（對齊 Layout 導覽列的主要項目）
 const SUGGESTIONS = [
@@ -24,6 +25,12 @@ const SUGGESTIONS = [
  */
 export default function NotFoundPage() {
   const { pathname } = useLocation()
+  // 模擬器內部測試期間不對外露出入口（404 頁也算一處），見 hooks/useSimulatorEntry.ts
+  const simulatorEntryVisible = useSimulatorEntryVisible()
+  const suggestions = useMemo(
+    () => (simulatorEntryVisible ? SUGGESTIONS : SUGGESTIONS.filter((s) => s.to !== '/simulator')),
+    [simulatorEntryVisible]
+  )
 
   useEffect(() => {
     const meta = document.createElement('meta')
@@ -56,7 +63,7 @@ export default function NotFoundPage() {
           試試這些頁面
         </div>
         <div className="flex flex-wrap justify-center gap-2">
-          {SUGGESTIONS.map(({ to, label }) => (
+          {suggestions.map(({ to, label }) => (
             <Link
               key={to}
               to={to}

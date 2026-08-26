@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { useSimulatorEntryVisible } from '../../hooks/useSimulatorEntry'
 import { getUserBuilds, deleteBuild } from '../../lib/userApi'
 import type { UserBuild } from '../../types'
 import AvatarDisplay from '../../components/profile/AvatarDisplay'
@@ -12,6 +13,8 @@ type Tab = 'profile' | 'builds'
 export default function ProfilePage() {
   const { user, userProfile, loading, signOut, openAuthModal, refreshProfile } = useAuth()
   const navigate = useNavigate()
+  // 模擬器內部測試期間收起入口；已存的配裝仍可載入（BuildCard 的 onLoad 不受影響）
+  const simulatorEntryVisible = useSimulatorEntryVisible()
   const [tab, setTab] = useState<Tab>('profile')
   const [pickerOpen, setPickerOpen] = useState(false)
   const [builds, setBuilds] = useState<UserBuild[]>([])
@@ -148,12 +151,14 @@ export default function ProfilePage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold">我的配裝紀錄</h2>
-            <Link
-              to="/simulator"
-              className="text-sm text-accent-orange no-underline hover:text-accent-orange/80 transition-colors"
-            >
-              + 新增配裝
-            </Link>
+            {simulatorEntryVisible && (
+              <Link
+                to="/simulator"
+                className="text-sm text-accent-orange no-underline hover:text-accent-orange/80 transition-colors"
+              >
+                + 新增配裝
+              </Link>
+            )}
           </div>
 
           {buildsLoading ? (
@@ -164,12 +169,14 @@ export default function ProfilePage() {
             <div className="bg-bg-card border border-border rounded-xl p-8 text-center">
               <div className="text-3xl mb-3">📋</div>
               <p className="text-text-dim text-sm">尚無儲存的配裝</p>
-              <Link
-                to="/simulator"
-                className="inline-block mt-4 px-4 py-2 text-sm bg-accent-orange/10 text-accent-orange border border-accent-orange/30 rounded-lg hover:bg-accent-orange/20 transition-colors no-underline"
-              >
-                前往配裝模擬器
-              </Link>
+              {simulatorEntryVisible && (
+                <Link
+                  to="/simulator"
+                  className="inline-block mt-4 px-4 py-2 text-sm bg-accent-orange/10 text-accent-orange border border-accent-orange/30 rounded-lg hover:bg-accent-orange/20 transition-colors no-underline"
+                >
+                  前往配裝模擬器
+                </Link>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-3">

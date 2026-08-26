@@ -1,7 +1,8 @@
 import { Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePageTracking } from '../../hooks/usePageTracking'
+import { useSimulatorEntryVisible } from '../../hooks/useSimulatorEntry'
 import SignedOutBanner from './SignedOutBanner'
 import AvatarDisplay from '../profile/AvatarDisplay'
 import NavExpandBar, { NavGroupTrigger, type ContentNavItem, type NavGroup } from './NavExpandBar'
@@ -55,9 +56,10 @@ const versionNavItems: ContentNavItem[] = VERSION_VIEWS.map((v) => ({
 }))
 
 // 配裝模擬器：頂層平鋪項。
-// PLAN-052-B E-2 起**全面公開（未登入也能用）**，不再有 ADMIN gate——
-// 舊版的 gate 只擋得住導覽，App.tsx 的路由沒有 AdminRoute、ProfilePage 三處入口也對所有
-// 登入者開放，實際上是一個只讓人找不到、並未真正限制的半開放狀態。
+// PLAN-052-B E-2 曾全面公開（未登入也能用），但 052 的 MVP 在未經內部測試前就被推上正式站，
+// 2026-08-26 起改以 useSimulatorEntryVisible() 把「入口」收回內部：路由完全不動，測試者用
+// 直接網址進得去；一般訪客在導覽列、More 面板、個人頁、404 頁都看不到入口。
+// 這次是四處一起收的——舊版 gate 只擋導覽、漏掉 ProfilePage 三處，等於形同虛設。
 const simulatorItem: ContentNavItem = { to: '/simulator', label: '配裝模擬器', icon: 'simulator' }
 
 // 「攻略專區」下拉的子項
@@ -95,13 +97,13 @@ const tabBarItems: ContentNavItem[] = [
 ]
 
 const tabBarPaths = new Set(tabBarItems.map((i) => i.to))
-// 行動版 More 面板：所有不在底部 Tab Bar 的項目（圖鑑剩餘 + 模擬器 + 攻略專區）
-const moreNavItems = [
+// 行動版 More 面板：所有不在底部 Tab Bar 的項目（圖鑑剩餘 + 模擬器 + 攻略專區）。
+// 模擬器在內部測試期間不列入，故清單改由元件內依權限組裝（見 useSimulatorEntry.ts）。
+const moreNavItemsHead = [
   ...versionNavItems,
   ...catalogNavItems.filter((item) => !tabBarPaths.has(item.to)),
-  simulatorItem,
-  ...contentNavItems,
 ]
+const moreNavItemsTail = contentNavItems
 
 export default function Layout() {
   const [moreOpen, setMoreOpen] = useState(false)
@@ -113,6 +115,15 @@ export default function Layout() {
   )
   const { user, userProfile, loading, signOut, openAuthModal } = useAuth()
   const navigate = useNavigate()
+  // 配裝模擬器內部測試期間，四處入口（桌面導覽／More 面板／個人頁／404 頁）一起收
+  const simulatorEntryVisible = useSimulatorEntryVisible()
+  const moreNavItems = useMemo(
+    () =>
+      simulatorEntryVisible
+        ? [...moreNavItemsHead, simulatorItem, ...moreNavItemsTail]
+        : [...moreNavItemsHead, ...moreNavItemsTail],
+    [simulatorEntryVisible]
+  )
   const location = useLocation()
 
   // 使用統計埋點（PLAN-046）。掛在 Layout：它是所有前台頁面的共同外殼，
@@ -220,9 +231,11 @@ export default function Layout() {
                 onToggle={() => (openGroup === group.key ? closeNavGroup() : openNavGroup(group.key))}
               />
             ))}
-            <NavLink to={simulatorItem.to} className={topNavClass}>
-              {simulatorItem.label}
-            </NavLink>
+            {simulatorEntryVisible && (
+              <NavLink to={simulatorItem.to} className={topNavClass}>
+                {simulatorItem.label}
+              </NavLink>
+            )}
             <NavGroupTrigger
               group={guidesGroup}
               isOpen={openGroup === guidesGroup.key}
