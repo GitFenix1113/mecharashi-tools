@@ -221,17 +221,29 @@ export default function LoadoutPage() {
   /**
    * 分享碼的六個索引。
    *
-   * ⚠ `component` 與 `module` 目前恆為空索引 —— 本頁沒有載入那兩個集合（各 208／242 筆），
-   *   而在 052-D／052-G 之前也沒有任何 UI 會設定它們，載進來就是純浪費 read。
-   *   後果是**外來代碼裡的元件／模組會被標成解不開並丟掉**；今天不會發生（沒有產生器），
-   *   052-D／052-G 動工時把對應集合加進 `LOADOUT_STAGE_KEYS` 的 equip 階段即可。
+   * ⚠ `module` 仍是空索引 —— 本頁沒有載入那個集合（242 筆），而在 052-G 之前也沒有任何 UI
+   *   會設定它，載進來就是純浪費 read。後果是**外來代碼裡的模組會被標成解不開並丟掉**；
+   *   今天不會發生（沒有產生器），052-G 動工時把 `modules` 加進 `LOADOUT_STAGE_KEYS`
+   *   的 equip 階段、並把下面那一行接上 `data.modules` 即可。
+   *
+   * ⚠ **`component` 曾經是空索引，而那一行漏改了整整三個 Phase**（PLAN-052-D D-4 實地驗收抓到）。
+   *   A-3 已把 `components` 加進 equip 階段，但這裡仍寫著 `[]`，於是：
+   *   encode 時 `toShareId()` 回 null ⇒ **元件被靜默濾掉，分享碼裡根本沒有它們**；
+   *   decode 時 `toDocId()` 回 null ⇒ 元件進 `unresolved` 被丟掉。
+   *   玩家配好元件、複製連結、貼給別人，對方收到的是一套沒有元件的配裝 ——
+   *   而兩邊的畫面都不會說任何話。單元測試抓不到這種事：codec 的測試自己建含元件的索引，
+   *   壞掉的是**頁面這一層的接線**。
+   *
+   * ⚠ 時序上安全：`stage` 在有 `pending`（分享碼／書架／舊存檔）時直接跳 `equip`，
+   *   而還原那一段的守衛是 `if (pending && !loading)` —— `loading` 為 false 就代表
+   *   equip 階段的每個集合（含 components）都到齊了。
    */
   const shareIndexes = useMemo<ShareIndexes>(() => ({
     pilot:     buildShareIndex('pilot',     data.pilots.map((x) => x.id)),
     mech:      buildShareIndex('mech',      data.mechs.map((x) => x.id)),
     weapon:    buildShareIndex('weapon',    data.weapons.map((x) => x.id)),
     backpack:  buildShareIndex('backpack',  data.backpacks.map((x) => x.id)),
-    component: buildShareIndex('component', []),
+    component: buildShareIndex('component', data.components.map((x) => x.id)),
     module:    buildShareIndex('module',    [], shareIdAliases('module')),
   }), [data])
 

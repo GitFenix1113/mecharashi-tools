@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">11</div>
+      <div class="summary-num" style="color:var(--accent-green)">15</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">4</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">11 / 15</span>
+      <span style="color:var(--accent-cyan);">15 / 15</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 73%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
@@ -634,14 +634,16 @@
   <div class="section-label cyan">Phase D</div>
   <div class="section-title">落盤、順修與驗收</div>
   <div class="section-desc">
-    分享碼與匯出圖把元件帶出去，順手收掉兩筆與元件相關的既有缺陷。
+    分享碼與匯出圖把元件帶出去，順手收掉兩筆與元件相關的既有缺陷。<br>
+    <b>2026-08-27 完成（4／4）</b>：<code>npm test</code> 812 項全過。
+    <span class="badge-high">⚠ 實地驗收抓到一個 Phase A 漏改的破口</span>，見 D-4。
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 分享碼 round-trip 測試補到元件層</div>
       <div class="task-group-meta">src/utils/loadoutCode/codec.test.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -651,12 +653,21 @@
           codec v1 的元件段（觸數 1 byte ＋ 應數 1 byte ＋ 各自號碼）在 052-C 就寫好了，
           本項<b>不改格式</b>，只補測試：滿載 4 顆的武器、觸應各半、
           主手與備用同型武器各帶不同元件（確認兩筆 mount 的 setup 不互相污染）、
-          以及 golden fixture 加一組含元件的案例雙向釘住。
+          以及 golden fixture 加一組含元件的案例雙向釘住。<br>
+          <b>實際交付</b>：5 則新測試 ＋ golden fixture 第 7 案（54 字元，
+          由 <code>scripts/temp_scripts/gen-052d-fixture.mjs</code> 產出並自我驗證）。<br>
+          <b>補這一段的理由</b>：隨機 round-trip（10,000 份）本來就會生出帶元件的 mount，
+          但它的產生器<b>先把元件按號碼排好</b>才塞進 draft —— 於是
+          「<b>元件順序會被正規化</b>」這件事在那條測試裡是看不見的。
+          新測試明著釘住它：玩家「先裝 A 再裝 B」與「先裝 B 再裝 A」<b>產生同一串代碼</b>，
+          解回來的順序由號碼決定、不是當初裝的順序。那是刻意的取捨 ——
+          分享碼同時是儲存格式，同一套配裝有兩種碼就等於 canonical order 破功；
+          要保留裝配順序就得放棄這條，兩者不可兼得。
         </div>
         <div class="task-file">src/utils/loadoutCode/codec.test.ts · __fixtures__/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -664,7 +675,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; 匯出長圖印出元件</div>
       <div class="task-group-meta">loadoutRows.ts / LoadoutExportCard.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -673,13 +684,18 @@
           欄位是 052-I 留的，註解寫著「052-D 之前恆為空」。填上之後匯出圖的槽位表
           每一列要印出掛了哪幾顆。<br>
           注意圖是<b>印刷品</b>：看的人沒辦法點開來確認，所以元件為空的武器要印
-          「未裝元件」而不是留白（留白讀起來像「這張圖漏了」）。
-          印上去之後要重測圖高與檔案大小（052-I 實測 2000×2586、約 3MB）。
+          「未裝元件」而不是留白（留白讀起來像「這張圖漏了」）。<br>
+          <b>實際交付</b>：<code>SheetRow</code> 新增 <code>componentNames</code>，
+          在 <code>loadoutSheetRows()</code> 就解析好 —— <b>不讓 <code>SheetLine</code> 自己查</b>：
+          它只拿得到一列，要它查名字就得把整個 <code>ctx</code> 傳進每一列，
+          而那一層是純呈現、不該認得 <code>LoadoutWorld</code>。查無時退回 doc id，讓斷鏈在圖上看得見。<br>
+          圖上印的是<b>名字</b>而不是「元件 3」：<code>元件 2／觸元件W-背水・應元件W-增幅</code>。
+          瀏覽器實測抓到離屏版面的 DOM 確認（見 D-4）。
         </div>
         <div class="task-file">src/utils/loadoutRows.ts · src/components/loadout/LoadoutExportCard.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -687,7 +703,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; 順修：後台元件搜尋恆 0 筆</div>
       <div class="task-group-meta">src/lib/api/firestoreCore.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -701,12 +717,19 @@
           一行改動：換成 Unicode 私用區的哨兵字元（Firestore 前綴查詢的慣例終點）。<br>
           <span class="badge-high">⚠</span> 那個字元<b>必須用跳脫序列寫入原始碼</b>，
           切勿從任何文件複製貼上 —— 複製過程會把它吃掉，而結果與現在一樣是空字串。<br>
-          納入本計畫的理由：驗收元件規則必然要在後台核對元件資料，而 208 筆搜不了只能捲。
+          納入本計畫的理由：驗收元件規則必然要在後台核對元件資料，而 208 筆搜不了只能捲。<br>
+          <b>實際交付</b>：已換成 <code>'\uf8ff'</code>。
+          <span class="badge-high">⚠ 第一次寫入時真的踩到了註解裡警告的那件事</span> ——
+          用 Python 腳本替換時字串被解析成<b>那個字元本身</b>而不是六個 ASCII 字元，
+          <code>cat -A</code> 顯示 <code>M-oM-#M-?</code>（UTF-8 的 EF A3 BF）。
+          改用明確的碼位（<code>chr(0x5C) + 'uf8ff'</code>）重寫後才正確。
+          這正好證明那條警告不是多餘的。<br>
+          <b>瀏覽器實測</b>：後台元件管理搜尋「應元件」，先前 0 筆，現在列出結果。
         </div>
         <div class="task-file">src/lib/api/firestoreCore.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -714,7 +737,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-4 &nbsp; 瀏覽器實地驗收</div>
       <div class="task-group-meta">Chrome DevTools · emulator</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -729,12 +752,35 @@
           ⑦ 雙手武器的元件面板只出現一次；
           ⑧ 主手與備用各裝同型武器，元件互不影響；
           ⑨ 貼一段含元件的分享碼，元件完整還原（含<b>刻意在 components 載入前貼</b>的競態）；
-          ⑩ 匯出圖印得出元件。
+          ⑩ 匯出圖印得出元件。<br>
+          <b>十項全數通過</b>，並抓到一個單元測試看不到的破口 ——<br>
+          <span class="badge-high">⚠ 第⑨項抓到：<code>component</code> 的分享碼索引是空的</span>
+          <code>LoadoutPage</code> 的 <code>shareIndexes</code> 寫著
+          <code>buildShareIndex('component', [])</code>（052-C 留的，當時頁面沒有 components 資料）。
+          A-3 已把 <code>components</code> 加進 equip 階段，<b>但這一行漏改了整整三個 Phase</b>：
+          encode 時 <code>toShareId()</code> 回 null ⇒ <b>元件被靜默濾掉，分享碼裡根本沒有它們</b>；
+          decode 時 <code>toDocId()</code> 回 null ⇒ 進 <code>unresolved</code> 被丟掉。
+          玩家配好元件、複製連結、貼給別人，對方收到一套沒有元件的配裝，<b>而兩邊都不會說任何話</b>。<br>
+          <b>單元測試抓不到這種事</b>：codec 的測試自己建含元件的索引，壞掉的是<b>頁面這一層的接線</b>。
+          052-C 當初的註解甚至已經寫明「052-D 動工時把對應集合加進 equip 階段即可」——
+          集合加了，索引那一行沒接上。這就是實地驗收存在的理由。<br>
+          <b>順帶補的一項</b>：換掉一把帶元件的武器時，toast 原本只說「已由 X 取代」。
+          元件隨 mount 一起走、不各自進 <code>removed</code>，於是那一行讀起來像只換掉一把武器，
+          而玩家配的四顆元件也一起沒了。現在補成<b>「已由 X 取代（連同 N 顆元件）」</b>，
+          一句話講完、不必為此在清單上多列四行。<br>
+          <b>競態那一項</b>由結構保證而非時序運氣：<code>stage</code> 在有 <code>pending</code> 時
+          直接跳 <code>equip</code>，而還原的守衛是 <code>if (pending &amp;&amp; !loading)</code> ——
+          <code>loading</code> 為 false 就代表 equip 階段的每個集合（含 components）都到齊了。
+          reconcile 那一層的載入 gate 另有兩個世界對照的單元測試（B-2）。<br>
+          <b>其餘實測數字</b>：背部武器可裝 201／208（W 型可用）對比手盾 124／208（W 型整批摺疊）；
+          分享碼還原後武器列顯示「元件 2 / 4 · 觸元件W-背水・應元件W-增幅」；
+          匯出圖印出「元件 2／觸元件W-背水・應元件W-增幅」；
+          主手與備用各裝一把夾心曲奇、各帶不同觸元件，落盤後兩者互不影響。
         </div>
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

@@ -7,7 +7,7 @@ import assert from 'node:assert/strict'
 import type { Mech, MechForm, Pilot, Weapon } from '../types/index.ts'
 import { ArmorType, MechLicense, MechRestriction, WeaponEquipSlot, WeaponType } from '../types/enums.ts'
 import { buildWorld, buildContext } from './loadoutRules.ts'
-import { weaponRows } from './loadoutRows.ts'
+import { weaponRows, loadoutSheetRows } from './loadoutRows.ts'
 
 // ─── fixtures ───────────────────────────────────────────────────────────────
 
@@ -139,4 +139,35 @@ test('已裝元件數 ＝ 觸 ＋ 應（分母是 componentLimit，不是兩種�
   }))
   assert.equal(rows[0].used, 3)
   assert.equal(rows[0].limit, 4)
+})
+
+
+// ─── 匯出圖的槽位表（PLAN-052-D D-2）────────────────────────────────────────
+
+test('匯出圖：元件印的是名稱，查無的那一顆退回 doc id（斷鏈要在圖上看得見）', () => {
+  // 圖是印刷品：看的人沒辦法點開來確認，所以一個查不到的元件不能靜默消失
+  const world = buildWorld({
+    pilots: [機師], mechs: [基本機()], weapons: [單手刀], backpacks: [], forms: [],
+    components: [{ id: 'c_known', name: '應元件-穿甲', componentType: 'Function' } as never],
+  })
+  const ctx = buildContext({
+    pilotId: 機師.id, mechId: 'mech_a',
+    sets: { default: { mounts: [{
+      weaponId: 單手刀.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left',
+      setup: { triggerComponentIds: ['c_known'], effectComponentIds: ['c_已刪除'] },
+    }] } },
+  }, 'default', world)
+
+  const row = loadoutSheetRows(ctx).find((r) => r.state === 'weapon')
+  assert.deepEqual(row?.componentIds, ['c_known', 'c_已刪除'])
+  assert.deepEqual(row?.componentNames, ['應元件-穿甲', 'c_已刪除'])
+})
+
+test('匯出圖：沒裝元件的武器列印空陣列（呼叫端負責印「未裝元件」而不是留白）', () => {
+  const ctx = ctxOf({
+    pilotId: 機師.id, mechId: 'mech_a',
+    sets: { default: { mounts: [{ weaponId: 單手刀.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }] } },
+  })
+  const row = loadoutSheetRows(ctx).find((r) => r.state === 'weapon')
+  assert.deepEqual(row?.componentNames, [])
 })

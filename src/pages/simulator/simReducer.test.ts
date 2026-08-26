@@ -630,6 +630,22 @@ test('B-3：元件的移除會跳 toast，而且 [復原] 拿得回來', () => {
   assert.deepEqual(s3.draft.sets[s3.draft.activeSetKey].mounts[0].setup?.triggerComponentIds, [觸沉著.id])
 })
 
+test('B-3：換掉一把帶元件的武器，toast 要說出連同幾顆元件一起沒了', () => {
+  // 元件隨 mount 一起走、不各自進 removed；但「已由 X 取代」讀起來像只換掉一把武器，
+  // 而玩家配的四顆元件也一起沒了 —— 數量補在 why 裡
+  const s1 = simReduce(armed(), { type: 'equipComponent', ref: DUAL, componentId: 觸沉著.id }, WORLD)
+  const s2 = simReduce(s1, { type: 'equipComponent', ref: DUAL, componentId: 應戰慄.id }, WORLD)
+  const s3 = simReduce(s2, { type: 'equipWeapon', ref: HAND_L, weaponId: 藝術突襲.id }, WORLD)
+  const item = (s3.notice?.removed ?? []).find((r) => r.name === '群山之力')
+  assert.match(item!.why, /連同 2 顆元件/)
+})
+
+test('B-3：沒有元件的武器被取代時，不畫蛇添足加「連同 0 顆」', () => {
+  const s = simReduce(armed(), { type: 'equipWeapon', ref: HAND_L, weaponId: 藝術突襲.id }, WORLD)
+  const item = (s.notice?.removed ?? []).find((r) => r.name === '群山之力')
+  assert.ok(!item!.why.includes('連同'))
+})
+
 test('B-3：主手與備用各裝一把同型武器，元件互不影響', () => {
   const s = run(
     { type: 'selectPilot', pilotId: 中型機師.id },

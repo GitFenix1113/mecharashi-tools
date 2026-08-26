@@ -106,7 +106,23 @@ export interface PageQuery {
   pageSize?: number
 }
 
-const PREFIX_END = ''
+/**
+ * 前綴查詢的終點哨兵（PLAN-052-D D-3）。
+ *
+ * Firestore 沒有 `startsWith`，前綴查詢的慣用寫法是
+ * `name >= term` 且 `name < term + <排在所有字元之後的哨兵>`。
+ *
+ * ⚠ **這裡原本是空字串**，於是後半退化成 `name < term`——
+ *   與前半 `name >= term` 交集恆為空集合，**後台的名稱搜尋一直是 0 筆**。
+ *   受害的是走伺服器分頁的那兩個後台頁（components 208 筆、backpacks 181 筆），
+ *   而症狀看起來像「查無此資料」而不是「查詢寫錯了」。
+ *
+ * ⚠ **必須用跳脫序列寫**（`\uf8ff`，六個 ASCII 字元），
+ *   不要貼那個字元本身：它是 Unicode 私用區的碼位，複製貼上的過程
+ *   （文件、聊天視窗、剪貼簿）很容易把它吃掉，而吃掉之後就退回成空字串
+ *   —— 也就是這個 bug 原本的樣子。
+ */
+const PREFIX_END = '\uf8ff'
 
 export const getCollectionPage = async <T extends { id: string }>(
   collectionName: string,

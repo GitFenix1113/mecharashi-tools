@@ -390,6 +390,105 @@ test('已知 tag 但段內多出讀不完的位元組 ⇒ 當作 additive 新欄
   assert.equal(out.unmodeled[0].tag, TAG.SETS)
 })
 
+// ─── 元件層（PLAN-052-D D-1）─────────────────────────────────────────────────
+//
+// 隨機 round-trip（①）本來就會生出帶元件的 mount，但它的產生器**先把元件按號碼排好**
+// 才塞進 draft —— 於是「順序會被正規化」這件事在那條測試裡是看不見的。
+// 這一段補的是那些**特定形狀**：滿載、主備分離、亂序輸入。
+
+const compIx = INDEXES.component
+const byNum = (a: string, b: string) => (compIx.toShareId(a) ?? 0) - (compIx.toShareId(b) ?? 0)
+const [C1, C2, C3] = UNIVERSE.component
+
+const roundTrip = (draft: LoadoutDraft): LoadoutDraft => {
+  const code = encodeLoadout(draft, { indexes: INDEXES, gameVersion: '3.3' })
+  return ok(decodeLoadout(code, INDEXES)).draft
+}
+
+test('元件：滿載一把武器（觸 3 ＋ 應 1 ＝ componentLimit 上限）round-trip', () => {
+  const trigger = [C1, C2, C3].sort(byNum)
+  const draft: LoadoutDraft = {
+    activeSetKey: 'default',
+    pilotId: UNIVERSE.pilot[0],
+    mechId: UNIVERSE.mech[0],
+    sets: { default: { mounts: [{
+      weaponId: UNIVERSE.weapon[0], bank: 'main', slot: 'dualHand',
+      setup: { triggerComponentIds: trigger, effectComponentIds: [C1] },
+    }] } },
+  }
+  assert.deepEqual(roundTrip(draft), draft)
+})
+
+test('元件：觸應數量不對稱（只有觸／只有應）各自 round-trip，空的那一條不會冒出來', () => {
+  const base = (setup: LoadoutMount['setup']): LoadoutDraft => ({
+    activeSetKey: 'default',
+    sets: { default: { mounts: [{ weaponId: UNIVERSE.weapon[1], bank: 'main', slot: 'back', setup }] } },
+  })
+  const onlyTrigger = base({ triggerComponentIds: [C1] })
+  const onlyEffect = base({ effectComponentIds: [C2] })
+  assert.deepEqual(roundTrip(onlyTrigger), onlyTrigger)
+  assert.deepEqual(roundTrip(onlyEffect), onlyEffect)
+  // 「欄位不存在」與「空陣列」是兩件事：後者會讓 stripUndefined 之後再也清不掉
+  assert.equal(roundTrip(onlyTrigger).sets.default.mounts[0].setup?.effectComponentIds, undefined)
+  assert.equal(roundTrip(onlyEffect).sets.default.mounts[0].setup?.triggerComponentIds, undefined)
+})
+
+test('元件：主手與備用裝同一把武器、各帶不同元件 ⇒ 落盤之後仍然分離', () => {
+  // 總綱決策十二點名的風險：兩段式的 mountKey 會讓「主手左手」與「備用左手」撞成同一個鍵，
+  // 兩把武器的元件互相覆蓋。052-B 選擇把 setup **內嵌在 mount 上**，於是根本沒有鍵可撞 ——
+  // 這一則就是那個設計在**落盤格式**這一層的證明（codec 是 mount 一筆一筆寫的）。
+  const draft: LoadoutDraft = {
+    activeSetKey: 'default',
+    sets: { default: { mounts: [
+      { weaponId: UNIVERSE.weapon[0], bank: 'backup', slot: 'singleHand', side: 'left', setup: { triggerComponentIds: [C2] } },
+      { weaponId: UNIVERSE.weapon[0], bank: 'main', slot: 'singleHand', side: 'left', setup: { triggerComponentIds: [C1] } },
+    ].sort((a, b) => `${a.bank}:${a.slot}:${a.side}`.localeCompare(`${b.bank}:${b.slot}:${b.side}`)) } },
+  }
+  const out = roundTrip(draft)
+  const main = out.sets.default.mounts.find((m) => m.bank === 'main')
+  const backup = out.sets.default.mounts.find((m) => m.bank === 'backup')
+  assert.deepEqual(main?.setup?.triggerComponentIds, [C1])
+  assert.deepEqual(backup?.setup?.triggerComponentIds, [C2])
+})
+
+test('元件：裝配順序不影響代碼 —— 同一組元件恆為同一串（canonical order）', () => {
+  // ⚠ encode 會把元件**按號碼排序**。也就是說玩家「先裝 A 再裝 B」與「先裝 B 再裝 A」
+  //   產生的是同一串代碼，而解回來的順序由號碼決定、不是當初裝的順序。
+  //   那是刻意的：分享碼同時是儲存格式，同一套配裝有兩種碼就等於 canonical order 破功。
+  //   要保留玩家的裝配順序，就得放棄這條 —— 兩者不可兼得，這則測試把選擇釘住。
+  const mk = (trigger: string[]): LoadoutDraft => ({
+    activeSetKey: 'default',
+    sets: { default: { mounts: [{
+      weaponId: UNIVERSE.weapon[0], bank: 'main', slot: 'dualHand',
+      setup: { triggerComponentIds: trigger },
+    }] } },
+  })
+  const asc = [C1, C2].sort(byNum)
+  const desc = [...asc].reverse()
+  const codeA = encodeLoadout(mk(asc), { indexes: INDEXES, gameVersion: '3.3' })
+  const codeB = encodeLoadout(mk(desc), { indexes: INDEXES, gameVersion: '3.3' })
+  assert.equal(codeA, codeB, '同一組元件的兩種輸入順序必須產生同一串代碼')
+  assert.deepEqual(ok(decodeLoadout(codeB, INDEXES)).draft.sets.default.mounts[0].setup?.triggerComponentIds, asc)
+})
+
+test('元件：doc 被刪掉 ⇒ 那一顆進 unresolved，同一把武器上的其他元件照樣留著', () => {
+  // 缺號的元件推不出 doc id。整把武器的元件不該一起消失 —— 那會讓「站上少了一顆元件」
+  // 變成「我的四顆元件全沒了」。
+  const draft: LoadoutDraft = {
+    activeSetKey: 'default',
+    sets: { default: { mounts: [{
+      weaponId: UNIVERSE.weapon[0], bank: 'main', slot: 'dualHand',
+      setup: { triggerComponentIds: [C1, C2].sort(byNum) },
+    }] } },
+  }
+  const code = encodeLoadout(draft, { indexes: INDEXES, gameVersion: '3.3' })
+  // 只認得其中一顆的世界
+  const partial: ShareIndexes = { ...INDEXES, component: buildShareIndex('component', [C1]) }
+  const res = ok(decodeLoadout(code, partial))
+  assert.deepEqual(res.draft.sets.default.mounts[0].setup?.triggerComponentIds, [C1])
+  assert.equal(res.unresolved.filter((u) => u.kind === 'component').length, 1)
+})
+
 // ─── ③ golden fixture（舊版解碼器永不刪除）──────────────────────────────────
 
 const FIXTURE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '__fixtures__')

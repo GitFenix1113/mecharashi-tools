@@ -439,9 +439,12 @@ function SheetLine({ row }: { row: SheetRow }) {
         )}
         {row.name && row.note && <span style={{ fontSize: 11, color: C.dim }}>{row.note}</span>}
         {row.state === 'weapon' && (
-          <span style={{ fontSize: 11, color: C.dim }}>
-            {/* 052-D 之前 componentIds 恆為空；欄位先在圖上留位，免得元件上線後版面再變一次 */}
-            {row.componentIds.length > 0 ? `元件 ${row.componentIds.length}` : '未裝元件'}
+          <span style={{ fontSize: 11, color: row.componentNames.length > 0 ? C.sub : C.dim }}>
+            {/* ⚠ 圖是**印刷品**：看的人沒辦法點開來確認，所以印的是名字而不是「元件 3」。
+                沒裝的照樣印「未裝元件」而不是留白 —— 留白讀起來像「這張圖漏了」。 */}
+            {row.componentNames.length > 0
+              ? `元件 ${row.componentNames.length}／${row.componentNames.join('・')}`
+              : '未裝元件'}
           </span>
         )}
       </span>

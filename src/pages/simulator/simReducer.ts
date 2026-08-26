@@ -650,13 +650,20 @@ function commit(
 const flashOf = (removed: RemovedItem[]) => removed.map((r) => r.where).filter((x): x is string => !!x)
 
 function displacedItems(mounts: readonly LoadoutMount[], world: LoadoutWorld, why: string): RemovedItem[] {
-  return mounts.map((m) => ({
-    kind: 'weapon' as const,
-    id: m.weaponId,
-    name: world.weapons.get(m.weaponId)?.name ?? m.weaponId,
-    where: mountWhere(m),
-    why,
-  }))
+  return mounts.map((m) => {
+    // ⚠ 元件隨 mount 一起走，**不會**各自進 removed（它們不是被級聯判掉的，
+    //   而是它們掛著的那把武器整個離開了）。但玩家配了四顆元件、換一把武器就沒了，
+    //   而 toast 只說「已由 X 取代」——那一行讀起來像只換掉一把武器。
+    //   數量補在 why 裡：一句話講完，不必為此在清單上多列四行。
+    const n = mountedIds(m).length
+    return {
+      kind: 'weapon' as const,
+      id: m.weaponId,
+      name: world.weapons.get(m.weaponId)?.name ?? m.weaponId,
+      where: mountWhere(m),
+      why: n > 0 ? `${why}（連同 ${n} 顆元件）` : why,
+    }
+  })
 }
 
 function backpackItem(state: SimState, key: string, world: LoadoutWorld, off: boolean): RemovedItem[] {

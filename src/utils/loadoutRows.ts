@@ -127,8 +127,16 @@ export interface SheetRow {
   typeLabel: string
   /** 重量；空槽與無槽為 null（不是 0 —— 0 是「這件裝備真的不佔重量」，見固定武裝） */
   weight: number | null
-  /** 掛在這把武器上的元件 doc id（觸在前、應在後）。052-D Phase D 起匯出圖會印它 */
+  /** 掛在這把武器上的元件 doc id（觸在前、應在後） */
   componentIds: string[]
+  /**
+   * 同一批元件的顯示名（PLAN-052-D D-2）。匯出圖印的是這一份。
+   *
+   * ⚠ 在**這裡**解析而不是讓匯出卡自己查：`SheetLine` 只拿得到一列，
+   *   要它查名字就得把整個 `ctx` 傳進每一列 —— 而那一層是純呈現，
+   *   不該認得 `LoadoutWorld`。查無時退回 doc id，讓斷鏈在圖上看得見。
+   */
+  componentNames: string[]
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -148,19 +156,22 @@ export function loadoutSheetRows(ctx: LoadoutContext): SheetRow[] {
     const label = labelOverride ?? slotLabel(ref)
     const key = slotKey(ref)
     switch (occ.kind) {
-      case 'weapon':
+      case 'weapon': {
+        const mountedIds = [
+          ...(occ.mount.setup?.triggerComponentIds ?? []),
+          ...(occ.mount.setup?.effectComponentIds ?? []),
+        ]
         out.push({
           key, label, state: 'weapon',
           name: occ.weapon?.name ?? occ.mount.weaponId,
           note: null,
           typeLabel: TYPE_LABEL[occ.mount.slot] ?? '—',
           weight: occ.weapon?.weight ?? null,
-          componentIds: [
-            ...(occ.mount.setup?.triggerComponentIds ?? []),
-            ...(occ.mount.setup?.effectComponentIds ?? []),
-          ],
+          componentIds: mountedIds,
+          componentNames: mountedIds.map((id) => ctx.world.components.get(id)?.name ?? id),
         })
         break
+      }
       case 'fixed':
         out.push({
           key, label, state: 'fixed',
@@ -169,7 +180,7 @@ export function loadoutSheetRows(ctx: LoadoutContext): SheetRow[] {
           typeLabel: TYPE_LABEL[occ.occupied.mount.slot] ?? '—',
           // ⚠ 固定武裝的 weight 常態是 0（純封鎖型），那是真的 0 不是「沒有值」
           weight: occ.weapon?.weight ?? null,
-          componentIds: [],
+          componentIds: [], componentNames: [],
         })
         break
       case 'formLocked':
@@ -179,7 +190,7 @@ export function loadoutSheetRows(ctx: LoadoutContext): SheetRow[] {
           note: `${ctx.form?.name ?? '形態'}鎖定`,
           typeLabel: TYPE_LABEL[occ.ref.slot] ?? '—',
           weight: occ.weapon?.weight ?? null,
-          componentIds: [],
+          componentIds: [], componentNames: [],
         })
         break
       case 'backpack':
@@ -189,16 +200,16 @@ export function loadoutSheetRows(ctx: LoadoutContext): SheetRow[] {
           note: cap.backupHand > 0 ? '解鎖備用武器槽' : null,
           typeLabel: '背包',
           weight: occ.backpack.weight,
-          componentIds: [],
+          componentIds: [], componentNames: [],
         })
         break
       default:
-        out.push({ key, label, state: 'empty', name: null, note: null, typeLabel: '—', weight: null, componentIds: [] })
+        out.push({ key, label, state: 'empty', name: null, note: null, typeLabel: '—', weight: null, componentIds: [], componentNames: [] })
     }
   }
 
   const absent = (key: string, label: string, note: string) =>
-    out.push({ key, label, state: 'absent', name: null, note, typeLabel: '—', weight: null, componentIds: [] })
+    out.push({ key, label, state: 'absent', name: null, note, typeLabel: '—', weight: null, componentIds: [], componentNames: [] })
 
   // ── 手部：雙手武器佔滿兩格 → 只印一列 ──
   const dualMounted = ctx.set.mounts.some((m) => m.bank === 'main' && m.slot === WeaponEquipSlot.DUAL_HAND)
