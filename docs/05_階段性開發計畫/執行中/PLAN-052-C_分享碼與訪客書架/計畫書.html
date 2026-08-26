@@ -235,16 +235,36 @@
   GAMEVER 1B               <span class="cm">// 只用於提示文案，不參與解析</span>
   PILOT 1-3B / MECH 1-3B   <span class="cm">// varint(LEB128)，上限 3 bytes</span>
 <span class="cm">body（每段一個 tag + length，未知 tag 一律跳過並記入 unmodeled）</span>
-  §PARTS    NPART ＋ {部位 1B, 來源機甲 shareId}   <span class="cm">// 只寫與原廠不同的部位</span>
-  §SETS     NLOADOUT ＋ 每套 { FORM 1B, NMOUNT 1B, mounts…, BPFLAG ＋ BACKPACK }
-            mount: SLOTB 1B <span class="nm">(bit0-2 slot / bit3-4 side / bit5 bank / bit6 hasComp)</span>
-                   ＋ WEAPON varint ＋ NCOMP ＋ COMP[]
-  §MODULES  NMOD ＋ {部位 1B, 模組 shareId varint}  <span class="cm">// ⚠ 不存 level（部位推導值）</span>
-  CHK 1B    FNV-1a 低 8 位  <span class="cm">// 專治 Discord 換行截斷</span></div>
+  tag=1 §SETS     NLOADOUT varint ＋ ACTIVE 1B ＋ 每套 { KEY str, NMOUNT 1B, mounts…, BPFLAG 1B ＋ BACKPACK }
+                  mount: SLOTB 1B <span class="nm">(bit0-2 slot / bit3-4 side / bit5 bank / bit6 hasComp)</span>
+                         ＋ WEAPON varint ＋ <span class="nm">[NTRIG 1B ＋ NEFF 1B ＋ ids]</span>
+  tag=2 §PARTS    NPART varint ＋ {部位 1B, 來源機甲 shareId}   <span class="cm">// 只寫與原廠不同的部位</span>
+  tag=3 §MODULES  NMOD varint ＋ {部位 1B, 模組 shareId varint} <span class="cm">// ⚠ 不存 level（部位推導值）</span>
+  tag=4 §ND       NZONE varint ＋ {分區名 str, Lv 1B}           <span class="cm">// PLAN-052-I D-2</span>
+  tag=5 §NAME     方案名稱 str                                  <span class="cm">// PLAN-052-I E-1</span>
+  CHK 1B    FNV-1a 低 8 位  <span class="cm">// 專治 Discord 換行截斷</span>
+<span class="cm">str ＝ 長度 varint ＋ UTF-8 位元組。空段落一律整段不寫。</span></div>
     <b>三個必須在 v1 就正確的細節</b>（事後補要洗掉所有已存資料）：
     ① SLOTB 的 <b>bank 位元</b>（少了它就編不出任何有備用武器的配裝）；
     ② <b>§MODULES 段</b>（「code 是唯一落盤格式」＋「v1 不含模組」＝玩家選的模組存不下來，而 UI 看起來一切正常）；
     ③ 形態身分<b>不可用 <code>form.order</code></b>（<code>FormAdmin.tsx:269-270</code> 是自由輸入欄位）。
+    <div class="warning-block" style="margin-top:10px;">
+      <b>⚠ 2026-08-26 實作定案：本版面已依實作修訂，上表就是 <code>codec.ts</code> 的真實版面。</b>
+      與原規格的三處出入：<br>
+      ① 原寫 <code>FORM 1B</code>，但<b>沒有可用的 1 byte 形態身分</b>——上面第③條禁止用
+      <code>form.order</code>，而形態 doc id 是 <code>form_海莉絲_先鋒</code> 這種純名稱、沒有數字可推。
+      改成<b>長度前綴的 UTF-8 內嵌</b>：典型配裝只有一個 <code>default</code> 鍵（+8 bytes），
+      海莉絲三套實測整串 119 字元。換得零解析器耦合、精確 round-trip，
+      且形態被改名時說得出「原本是哪個鍵」。<br>
+      ② 原寫 mount 的 <code>NCOMP ＋ COMP[]</code>，但 <code>MountSetup</code> 是<b>觸／應兩條清單</b>，
+      合成一條就得再找一個位元存「這顆是觸還是應」，而 varint 裡沒有空位元可借
+      ⇒ 改成 <code>NTRIG 1B ＋ NEFF 1B ＋ ids</code>。<br>
+      ③ 新增 <code>§ND</code>（算力，來自 052-I 的跨計畫修訂）與 <code>§NAME</code>（方案名稱）兩段，
+      兩者都在 v1 就開。<br>
+      另補 <code>ACTIVE 1B</code>（目前分頁的索引，<code>0xff</code> ＝ 不在清單內）——
+      不編它的話 round-trip 就不是深等於，而深等於是決策六的驗收條件。
+      實測長度：空草稿 7 字元、典型單套 36、含元件與算力 79、海莉絲三套 119。
+    </div>
   </div>
 
   <div class="decision-block">

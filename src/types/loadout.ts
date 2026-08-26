@@ -7,7 +7,7 @@
 //   `bank` 沿用 `SlotBank`、座標一律走 `slotKey()`。本檔只是把「一格裝了什麼」補上。
 
 import type { SlotBank, SlotSide } from './slots'
-import type { WeaponEquipSlot } from './enums'
+import type { MechPartPosition, WeaponEquipSlot } from './enums'
 
 /**
  * 掛在**這一把武器上**的元件／改裝設定。
@@ -120,6 +120,27 @@ export interface LoadoutDraft {
    * 052-C 的 codec v1 必須把這一段一起編碼；v1 上線後再補等於升版本並遷移既有分享碼。
    */
   ndLevels?: Record<string, number>
+  /**
+   * 部件混搭：**部位 → 來源機甲 doc id**。只記與原廠不同的部位（PLAN-052-G）。
+   *
+   * ⚠ **052-C 的 codec v1 先開這個欄位，UI 與 `reconcile()` 由 052-G 補。**
+   *   理由是總綱決策八「MVP 三件不能省的事」第②條：分享碼同時是唯一的落盤格式，
+   *   v1 不含這一段，等 052-G 上線時玩家選的部件就存不下來，而畫面看起來一切正常。
+   *   欄位先在、值恆為 undefined，代價只是型別多一行；反過來則要遷移所有已存的分享碼。
+   *
+   * ⚠ 今天沒有任何程式會寫入它，因此 `reconcile()` 也**還不會**在換機甲時清掉它。
+   *   052-G 接手時第一件事就是補上那條級聯 —— 換了機甲卻留著舊機甲的部件是靜默的錯。
+   */
+  parts?: Partial<Record<MechPartPosition, string>>
+  /**
+   * 模組接口：**部位 → 模組 doc id**，每個部位一個（PLAN-052-G）。
+   *
+   * ⚠ **不存 level**（總綱決策六）：模組等級由「部位品質階級 × 部位種類」推導，
+   *   存下來就是第二個真相源。等級一律由 `ResolvedChassis` 出。
+   *
+   * 與 `parts` 同理，欄位由 052-C 的 codec v1 先開，UI 與級聯屬 052-G。
+   */
+  modules?: Partial<Record<MechPartPosition, string>>
 }
 
 /** 沒有機師也沒有機甲的空草稿。`activeSetKey` 用 forms.ts 的保留字，不用空字串。 */

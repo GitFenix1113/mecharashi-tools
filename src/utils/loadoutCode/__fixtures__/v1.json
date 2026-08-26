@@ -1,0 +1,183 @@
+{
+  "fmt": 1,
+  "note": "FMT v1 的 golden fixture（PLAN-052-C B-1）。這些代碼字串代表「已經流出去的碼」——解碼器永不刪除對它們的支援，而且編碼結果也必須維持一致（canonical order 不可漂移）。⚠ 任何一條測不過都不要改 fixture：那代表版面變了，應該升 FMT 並另凍一個 v2.json。",
+  "universe": {
+    "pilot": [
+      "pilot_001_艾達",
+      "pilot_049_海莉絲",
+      "pilot_088_曜",
+      "pilot_022_帕斯卡"
+    ],
+    "mech": [
+      "mech_001_初擊者",
+      "mech_052_彌造者",
+      "mech_090_美杜莎MK2"
+    ],
+    "weapon": [
+      "weapon_016_藝術突襲EX",
+      "weapon_049_炬塔_LW",
+      "weapon_176_耀星",
+      "weapon_182_夜燼"
+    ],
+    "component": [
+      "comp_0001_應元件W_蓬勃",
+      "comp_0080_觸元件W_憑逸",
+      "comp_0208_觸元件_警戒"
+    ],
+    "backpack": [
+      "60100104",
+      "60101706",
+      "61002705"
+    ],
+    "module": [
+      "mod_4001",
+      "mod_4032",
+      "mod_4001_2"
+    ],
+    "moduleAliases": {
+      "mod_4001_2": 1500001
+    }
+  },
+  "cases": [
+    {
+      "name": "空草稿",
+      "draft": {
+        "activeSetKey": "default",
+        "sets": {}
+      },
+      "code": "AQAAAAQ"
+    },
+    {
+      "name": "只選了機師",
+      "gameVersion": "3.3",
+      "draft": {
+        "activeSetKey": "default",
+        "sets": {},
+        "pilotId": "pilot_001_艾達"
+      },
+      "code": "ASEBAEY"
+    },
+    {
+      "name": "典型單套：雙手武器 ＋ 背包",
+      "gameVersion": "3.3",
+      "draft": {
+        "activeSetKey": "default",
+        "sets": {
+          "default": {
+            "mounts": [
+              {
+                "weaponId": "weapon_016_藝術突襲EX",
+                "bank": "main",
+                "slot": "dualHand"
+              },
+              {
+                "weaponId": "weapon_176_耀星",
+                "bank": "main",
+                "slot": "shoulder",
+                "side": "left"
+              }
+            ],
+            "backpackId": "60100104"
+          }
+        },
+        "pilotId": "pilot_022_帕斯卡",
+        "mechId": "mech_052_彌造者"
+      },
+      "code": "ASEWNAEUAQAHZGVmYXVsdAIBEAqwAQGIjgZC"
+    },
+    {
+      "name": "備用組 ＋ 元件 ＋ 算力 ＋ 方案名稱",
+      "gameVersion": "3.3",
+      "draft": {
+        "activeSetKey": "default",
+        "sets": {
+          "default": {
+            "mounts": [
+              {
+                "weaponId": "weapon_049_炬塔_LW",
+                "bank": "backup",
+                "slot": "singleHand",
+                "side": "left"
+              },
+              {
+                "weaponId": "weapon_182_夜燼",
+                "bank": "main",
+                "slot": "back",
+                "setup": {
+                  "triggerComponentIds": [
+                    "comp_0080_觸元件W_憑逸"
+                  ],
+                  "effectComponentIds": [
+                    "comp_0001_應元件W_蓬勃"
+                  ]
+                }
+              }
+            ],
+            "backpackId": "60101706"
+          }
+        },
+        "pilotId": "pilot_001_艾達",
+        "mechId": "mech_001_初擊者",
+        "ndLevels": {
+          "γ1": 8,
+          "γ2": 15
+        },
+        "name": "我的配裝"
+      },
+      "code": "ASEBAQEYAQAHZGVmYXVsdAIoMUO2AQEBUAEBypoGBAsCA86zMQgDzrMyDwUNDOaIkeeahOmFjeijnaw"
+    },
+    {
+      "name": "海莉絲三套獨立配裝",
+      "gameVersion": "3.3",
+      "draft": {
+        "activeSetKey": "form_海莉絲_突擊",
+        "sets": {
+          "form_海莉絲_先鋒": {
+            "mounts": [
+              {
+                "weaponId": "weapon_176_耀星",
+                "bank": "main",
+                "slot": "singleHand",
+                "side": "right"
+              }
+            ]
+          },
+          "form_海莉絲_戰術": {
+            "mounts": []
+          },
+          "form_海莉絲_突擊": {
+            "mounts": [
+              {
+                "weaponId": "weapon_016_藝術突襲EX",
+                "bank": "main",
+                "slot": "dualHand"
+              }
+            ],
+            "backpackId": "61002705"
+          }
+        },
+        "pilotId": "pilot_049_海莉絲",
+        "mechId": "mech_052_彌造者"
+      },
+      "code": "ASExNAFSAwIVZm9ybV_mtbfojonntbJf5YWI6YuSARCwAQAVZm9ybV_mtbfojonntbJf5oiw6KGTAAAVZm9ybV_mtbfojonntbJf56qB5pOKAQEQAdGZPXU"
+    },
+    {
+      "name": "052-G 預留段：部件混搭 ＋ 模組接口（含別名區號碼）",
+      "gameVersion": "3.3",
+      "draft": {
+        "activeSetKey": "default",
+        "sets": {},
+        "mechId": "mech_001_初擊者",
+        "parts": {
+          "torso": "mech_052_彌造者",
+          "legs": "mech_090_美杜莎MK2"
+        },
+        "modules": {
+          "torso": "mod_4001",
+          "leftArm": "mod_4001_2"
+        }
+      },
+      "code": "ASEAAQIFAgA0A1oDCAIAoR8B4cZbRA"
+    }
+  ]
+}

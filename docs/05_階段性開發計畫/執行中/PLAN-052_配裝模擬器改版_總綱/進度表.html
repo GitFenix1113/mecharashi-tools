@@ -279,7 +279,7 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">052-C &nbsp; 分享碼與訪客本機書架</div>
-      <div class="task-group-meta">5–6 天 · 依賴 052-B · Phase A 完成（2／11）</div>
+      <div class="task-group-meta">5–6 天 · 依賴 052-B · Phase A／B 完成（5／11）</div>
       <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
@@ -289,7 +289,7 @@
           <b>⚠ 2026-08-26 修訂（來自 052-I）</b>：codec v1 必須<b>新增算力段（§ND）</b>。
           現行規格的分段只有 <code>§SETS</code>／<code>§PARTS</code>／<code>§MODULES</code>／元件段，沒有算力；
           而算力已確定要進 <code>LoadoutDraft</code>。v1 上線後再補＝升版本並遷移既有分享碼，
-          正好違反總綱「MVP 三件不能省的事」第②條。<b>052-I 的 D-2 已於 2026-08-26 落地——<code>ndLevels</code> 已在 <code>LoadoutDraft</code> 內，codec v1 設計時直接把 §ND 納入即可。</b><br><b>Phase A 已完成（2026-08-26）</b>：身分層 ＋ 登錄簿 ＋ 對帳腳本落地，模組可分享數 162 → 203（41 筆永久別名），B-1 的 codec 可以直接用 <code>buildShareIndex(kind, docIds, shareIdAliases(kind))</code> 拿到號碼。
+          正好違反總綱「MVP 三件不能省的事」第②條。<b>052-I 的 D-2 已於 2026-08-26 落地——<code>ndLevels</code> 已在 <code>LoadoutDraft</code> 內，codec v1 設計時直接把 §ND 納入即可。</b><br><b>Phase A／B 已完成（2026-08-26）</b>：身分層 ＋ 登錄簿 ＋ 對帳腳本 ＋ codec v1 全部落地。模組可分享數 162 → 203（41 筆永久別名）。codec 實測長度：典型單套 36 字元、海莉絲三套 119、隨機一萬份最長 &lt; 900（Discord 上限 2000）；round-trip 一萬份、模糊測試一萬次翻轉攔截率 &gt; 99%、golden fixture 六案例雙向釘住。<b>§ND 段已在 v1 就位</b>，052-I 的時序要求兌現。剩下的是 C-1 網址讀寫、D-1 本機書架、E-1 匯出圖接分享碼。
         </div>
         <div class="task-file">PLAN-052-C_分享碼與訪客書架/進度表.html</div>
       </div>

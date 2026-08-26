@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">2</div>
+      <div class="summary-num" style="color:var(--accent-green)">5</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">9</div>
+      <div class="summary-num" style="color:var(--text-dim)">6</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">2 / 11</span>
+      <span style="color:var(--accent-green);">5 / 11</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 18%"></div>
+      <div class="progress-bar-fill" style="width: 45%"></div>
     </div>
   </div>
 
@@ -254,40 +254,40 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; codec v1</div>
       <div class="task-group-meta">src/utils/loadoutCode/codec.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">encode()：TLV 版面，含 bank 位元／§PARTS／§MODULES／元件段</div>
         <div class="task-desc">
-          多位元組整數一律 LEB128 varint（超過 3 bytes 視為 bug 直接 throw）；末端補 FNV-1a checksum；base64url <b>不補 =</b>。<b>寫入前一律以 slotKey 排序（canonical order）</b>，否則兩份內容相同的配裝會產出不同的代碼，也會讓 deepEqual 測試看順序不看內容。
+          <b>2026-08-26 完成。</b>LEB128 varint（超過 3 bytes 直接 throw——那是呼叫端的 bug，靜默截斷會產生解得開卻指錯的碼）；FNV-1a 低 8 位 checksum；base64url 不補 <code>=</code>，手寫而不用 <code>btoa</code>（後者要先轉 latin1，多一層會出錯的轉換）。<br><b>canonical order 全面落實</b>：sets 依鍵排序、mounts 依 <code>slotKey</code> 排序、元件依 shareId 排序、部位依代號排序——否則同一套配裝會產出兩種代碼，而 deepEqual 測試會退化成在測 <code>Object.keys</code> 的插入順序。<br><b>推不出號碼的武器編成 0（空格）而不是 throw</b>：把「有一把武器暫時不可分享」升級成「整套配裝分享不出去」不成比例。<br><b>實測長度</b>：空草稿 7 字元、典型單套 36、含元件與算力 79、海莉絲三套 119；隨機 10,000 份的最長 <b>&lt; 900</b> 字元（Discord 上限 2000）。
         </div>
-        <div class="task-file">src/utils/loadoutCode/codec.ts</div>
+        <div class="task-file">src/utils/loadoutCode/codec.ts · src/types/loadout.ts（052-G 的 parts／modules 欄位先開）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">decode()：四層防護，永不 throw</div>
         <div class="task-desc">
-          回 <code>{ resolved, unresolved[] }</code>。結構錯誤一律拒絕（可能是惡意或損毀）；語意錯誤一律放行但標警示（多半是改版後的舊配裝，使用者有權看到）。未知 tag 跳過並記入 <code>unmodeled</code>。
+          <b>2026-08-26 完成。</b>回 <code>{ ok, draft, gameVersion, unresolved[], unmodeled[] }</code>，<b>永不 throw</b>。<br><b>結構錯誤一律拒絕</b>（長度／字元集／checksum／varint ≤3 bytes／數量上限／段內殘餘）：那不是舊版配裝，是損毀或惡意輸入。每一種都有自己的中文文案——checksum 不符講的是「最常見的原因是聊天軟體換行時被截斷」而不是「代碼無效」，未來版本號講的是「請重新整理頁面（Ctrl+F5）」。<br><b>語意錯誤一律放行並標警示</b>（號碼查無此物、認不得的槽位）：對方可能在分享改版前的配裝。已測「武器下架」情境——其餘內容照樣套用，只有那一格空著並記進 <code>unresolved</code>。<br>未知 tag 跳過並記入 <code>unmodeled</code>；已知 tag 但段內多出位元組視為 additive 新欄位，同樣不是錯誤。
         </div>
         <div class="task-file">src/utils/loadoutCode/codec.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">三組測試 ＋ golden fixture（驗收條件）</div>
         <div class="task-desc">
-          round-trip 10,000 份／模糊測試 10,000 次位元翻轉（不 throw、不無窮迴圈、攔截率 &gt;99%）／每個 FMT 版本凍一組 fixture。<b>舊版解碼器永不刪除。</b>
+          <b>2026-08-26 完成，24 則測試全綠。</b>① round-trip 10,000 份隨機合法配裝深等於；② 模糊測試 10,000 次位元翻轉，<b>攔截率 &gt; 99%</b>、不 throw、不無窮迴圈（另有 2,000 次完全隨機位元組，以及 varint／數量兩種炸彈）；③ golden fixture <code>__fixtures__/v1.json</code> 六個案例，<b>雙向釘住</b>——解得回同一份草稿，而且同一份草稿要編回同一串代碼。<br>⚠ fixture 的 <code>draft</code> 一律存<b>解碼後的 canonical 形狀</b>（由建構方式保證自洽），不是人手寫的順序。<b>fixture 測不過時不要改 fixture</b>：那代表版面變了，應該升 FMT 並另凍一個 <code>v2.json</code>。
         </div>
         <div class="task-file">src/utils/loadoutCode/__fixtures__/ · codec.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
