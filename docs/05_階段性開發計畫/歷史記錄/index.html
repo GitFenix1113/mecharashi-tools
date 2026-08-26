@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card pink">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-J · 雙手武器裝備路徑</h3>
+      <p><b>全庫 40／182 把雙手武器（22%）從「模擬器裡沒有任何入口裝得上」變成裝得上。</b>2026-08-26 做 052-I Phase B 時瀏覽器實測發現：點開任何一格手部，雙手武器一把都不出現——不是灰掉、不是附原因，是<b>整批被 omit</b>。成因是兩個各自正確的決定撞在一起：<code>canEquipWeapon()</code> 第一條槽位檢查 <code>weapon.equipSlot !== ref.slot</code> 直接 reject，而 <code>enumerateSlots()</code> 刻意不產生 <code>dualHand</code> 座標（對的——雙手佔的是兩格 singleHand），於是<b>兩條路都不通</b>。證據是同檔留著的死碼 <code>replaceNote()</code> 那條「裝上將同時取代左右手」分支永遠跑不到。<br>解法是新增單一入口 <code>mountRefFor(weapon, ref)</code>：手部座標願意接受雙手武器，由規則層在內部換成它實際佔住的 dualHand 座標，預覽與落地共用同一支，<b>reducer 一行都沒動</b>。槽位圖比照遊戲整備畫面，<b>左右兩格各印同一把</b>。<br>Phase D 順手補上<b>盾擇一</b>：手盾與大盾合計每組一面，主手組與備用組各自計算（<code>SHIELD_LIMIT</code>，situational）。全程 Phase A–D 皆有瀏覽器實測（葉夫根尼＋赫拉克勒斯＋幻軌）。<br>⚠ <b>為什麼當時就得修</b>：052-C 剛讓使用者能存書架、發分享碼，而在此之前<b>存下來的每一份配裝都不可能包含雙手武器</b>；分享碼只進不出，愈晚修愈多既成事實。這個 bug 撐到 052-I 才被發現，是因為<b>形態鎖定</b>那條路不經過 <code>canEquipWeapon()</code>。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-26 · 8 / 8 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-J_雙手武器裝備路徑/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-J_雙手武器裝備路徑/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card green">
       <div class="card-icon">◆</div>
       <h3>PLAN-052-C · 分享碼與訪客本機書架</h3>
