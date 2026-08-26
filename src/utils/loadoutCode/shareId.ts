@@ -1,0 +1,153 @@
+// 分享碼的身分層：doc id ↔ shareId —— PLAN-052-C Phase A / A-1
+//
+// ── 這一層為什麼獨立成檔 ────────────────────────────────────────────────────
+// 總綱決策二讓分享碼同時是**儲存格式**，所以「數字 178 代表哪一把武器」這件事
+// 一旦錯掉，就不是「分享失敗」而是**別人的配裝解成另一把武器**，而且沒有任何徵兆。
+// codec（B-1）只負責把數字塞進 bytes；「數字是誰」全部由本檔回答。
+//
+// ── 映射規則（總綱決策八／本計畫決策三）────────────────────────────────────
+//   pilots / mechs / weapons / components → doc id 的流水號
+//   backpacks                             → 官方 8 位數字 − 60,000,000
+//   modules                               → `mod_<純數字>` 的數字
+// **不新增 Firestore 欄位**：流水號已經印在 doc id 上，再開一個 shareId 欄位
+// 就是同一件事的第二個真相源（改一邊忘了改另一邊，症狀同樣是解成別人）。
+//
+// 核心不變式：**流水號是身分不是位置** —— 新增 weapon_183 不會讓 weapon_182 位移。
+// ⚠ 唯一破口是**流水號被回收**（`idSlug.ts` 的 `maxEntitySeq()` 是「掃現有 ID 取 max」，
+//   刪掉 178 再新增會再次產生 178）⇒ 由 A-1 第二列的 `share-id.lock.json` ＋ CI 守門，
+//   本檔只負責推導與撞號偵測。
+//
+// 純函式、無 React / Firestore 依賴，可單測（npm test）。
+
+/** 可進分享碼的六種實體。與 `CollectionKey` 刻意分開：能被分享的只有這六個。 */
+export type ShareIdKind = 'pilot' | 'mech' | 'weapon' | 'component' | 'backpack' | 'module'
+
+/**
+ * shareId 的上限。codec 的 varint 一律 LEB128 且**超過 3 bytes 視為 bug**（本計畫 B-1），
+ * 3 bytes 能表達 0–2,097,151。超出的一律當「今天不可分享」而不是硬塞 —— 塞進去會產生
+ * 一串解得開卻指向錯誤實體的代碼。
+ *
+ * 實測（2026-08-25）最大值是背包的 1,002,705（官方 id 61002705），距上限還有一半空間。
+ */
+export const SHARE_ID_MAX = 2_097_151
+
+/** 背包沒有流水號，用官方 8 位數字扣掉這個基底 —— 全庫 180/181 筆都是 601xxxxx 起跳。 */
+export const BACKPACK_ID_OFFSET = 60_000_000
+
+/**
+ * 各實體的 doc id 形狀。
+ *
+ * ⚠ 三個容易寫錯的地方，都是實測（2026-08-25）逼出來的：
+ *   ① 元件的前綴是 `comp_` **不是** `component_`（208/208 筆皆為 `comp_0001_應元件W_蓬勃` 這種）。
+ *   ② 模組必須**全字匹配** `^mod_(\d+)$`：全庫有 31 筆 `mod_4001_2`（「校準模組Ⅱ」這種第二型），
+ *      若寫成前綴匹配，`mod_4001` 與 `mod_4001_2` 會推出同一個號碼 —— 那正是「解成另一個模組」。
+ *   ③ 大小寫敏感：有一筆 `MOD_折光陣列`，刻意不吃（大小寫不敏感只會讓撞號更難發現）。
+ */
+const ID_PATTERNS: Record<Exclude<ShareIdKind, 'backpack'>, RegExp> = {
+  pilot:     /^pilot_(\d+)(?:_|$)/,
+  mech:      /^mech_(\d+)(?:_|$)/,
+  weapon:    /^weapon_(\d+)(?:_|$)/,
+  component: /^comp_(\d+)(?:_|$)/,
+  module:    /^mod_(\d+)$/,
+}
+
+/**
+ * doc id → shareId。**推導不出來時回 `null`，永不 throw。**
+ *
+ * `null` 的語意是「這份文件**今天**不可分享」，呼叫端應該把該選項渲染成停用狀態並說明，
+ * 而不是當成錯誤 —— 資料側隨時可能新增形狀例外（實測：背包 `backpack_威能者背包` 1 筆、
+ * 模組 53 筆候選推導不出號碼），為了一筆例外讓整頁 throw 是不成比例的。
+ */
+export function toShareId(kind: ShareIdKind, docId: string | null | undefined): number | null {
+  if (!docId) return null
+
+  if (kind === 'backpack') {
+    // 官方 id 是 8 位純數字；`backpack_*` 這種站內 slug id 不吃（回 null 讓呼叫端停用）
+    if (!/^\d{8}$/.test(docId)) return null
+    const n = Number(docId) - BACKPACK_ID_OFFSET
+    return n > 0 && n <= SHARE_ID_MAX ? n : null
+  }
+
+  const m = ID_PATTERNS[kind].exec(docId)
+  if (!m) return null
+  const n = Number(m[1])                       // 前導零直接被 Number 吃掉：pilot_001 → 1
+  if (!Number.isInteger(n) || n <= 0) return null   // 0 保留給「無此欄位」，不發給任何實體
+  return n <= SHARE_ID_MAX ? n : null
+}
+
+/** 一個集合的雙向索引。`shareId → docId` 只能查表，因為推導是單向的（號碼不含名字）。 */
+export interface ShareIndex {
+  kind: ShareIdKind
+  /** shareId → doc id；查不到回 `null`（呼叫端顯示「已下架裝備 #n」） */
+  toDocId(shareId: number): string | null
+  /** doc id → shareId；推導不出來或因撞號被剔除時回 `null` */
+  toShareId(docId: string | null | undefined): number | null
+  /** 推導不出號碼的 doc id（今天不可分享，UI 停用） */
+  unshareable: readonly string[]
+  /** 撞號：同一個 shareId 被兩份以上文件推出來。**兩邊都會被剔除**，見下方註解 */
+  collisions: readonly ShareIdCollision[]
+  /** 可分享的筆數（＝索引大小），給 CI 報表用 */
+  size: number
+}
+
+export interface ShareIdCollision {
+  shareId: number
+  docIds: readonly string[]
+}
+
+/**
+ * 建索引。
+ *
+ * ⚠ **撞號的處理是「兩邊都剔除」，不是「先到先贏」，也不是 throw。**
+ *   · 不 throw：解碼器永不 throw 是本計畫決策四（一個壞碼讓整頁白畫面，比解不開更糟），
+ *     而這支會在瀏覽器裡跑。
+ *   · 不先到先贏：那會讓其中一份文件**靜默**取得另一份的身分 —— 正是我們最怕的失敗模式。
+ *   · 兩邊都剔除 ⇒ 該號碼解成「已下架裝備 #n」，是一個**看得見**的錯，而且不會指向錯的實體。
+ *   同時把撞號記進 `collisions`，由 `assertNoCollisions()`（CI／腳本用）大聲失敗。
+ */
+export function buildShareIndex(kind: ShareIdKind, docIds: readonly string[]): ShareIndex {
+  const byShareId = new Map<number, string>()
+  const dupes = new Map<number, string[]>()
+  const unshareable: string[] = []
+
+  for (const docId of docIds) {
+    const n = toShareId(kind, docId)
+    if (n === null) { unshareable.push(docId); continue }
+    const prev = byShareId.get(n)
+    if (prev === undefined) { byShareId.set(n, docId); continue }
+    if (prev !== docId) {
+      const list = dupes.get(n) ?? [prev]
+      if (!list.includes(docId)) list.push(docId)
+      dupes.set(n, list)
+    }
+  }
+
+  // 撞號的號碼整個拿掉 —— 留著就等於在兩份文件之間隨機挑一份給玩家
+  for (const n of dupes.keys()) byShareId.delete(n)
+
+  const byDocId = new Map<string, number>()
+  for (const [n, docId] of byShareId) byDocId.set(docId, n)
+
+  return {
+    kind,
+    toDocId: (shareId) => byShareId.get(shareId) ?? null,
+    toShareId: (docId) => (docId ? byDocId.get(docId) ?? null : null),
+    unshareable,
+    collisions: [...dupes.entries()].map(([shareId, ids]) => ({ shareId, docIds: ids })),
+    size: byShareId.size,
+  }
+}
+
+/**
+ * 撞號時 throw。**只給腳本／CI 用**（`scripts/check-share-ids.mjs`、seed 前檢查），
+ * 前台一律讀 `index.collisions` 自己決定怎麼呈現 —— 見 `buildShareIndex()` 的註解。
+ */
+export function assertNoCollisions(index: ShareIndex): void {
+  if (index.collisions.length === 0) return
+  const detail = index.collisions
+    .map((c) => `  #${c.shareId} ← ${c.docIds.join(' / ')}`)
+    .join('\n')
+  throw new Error(
+    `[shareId] ${index.kind} 有 ${index.collisions.length} 組撞號，分享碼會解成錯誤的實體：\n${detail}`,
+  )
+}
