@@ -128,3 +128,29 @@ export async function fetchData<T>(file: string): Promise<T> {
   if (!res.ok) throw new Error(`Failed to load ${file}`)
   return res.json()
 }
+
+/**
+ * 機師**全身立繪**的路徑（PLAN-052-I C-1）。回 `undefined` ＝ 推導不出來。
+ *
+ * DB 的 `pilot.portrait` 存的是頭像（`/images/pilots/<名>/half.webp`），全身立繪是
+ * 同一個資料夾裡的 `full.*`。沒有欄位存它，只能由頭像路徑推導 —— 推導規則收在這裡
+ * 而不是散在元件裡，是因為它有三個踩得到的邊界：
+ *
+ *   · 副檔名不一定是 `.webp`：阿列娜是 `half.png`（88 個資料夾裡的唯一例外）。
+ *     故只換檔名主體、保留原副檔名，再交給 `imageCandidates()` 補 `.webp` 變體。
+ *   · `portrait` 可能是**空字串**：賽拉沒有立繪資料夾（89 位機師 vs 88 個資料夾）。
+ *     回 `undefined`，呼叫端該顯示佔位而不是一個 404 的破圖。
+ *   · `portraitUrl`（官方 CDN）指的是 `characterHalf/` 底下的**頭像**，
+ *     推導不出全身像，所以呼叫端**不該**把它列入候選 —— 那只是白費一次必然 404 的請求。
+ *
+ * ⚠ 刻意只做「推路徑」不做 `imageCandidates()`：後者會讀 `import.meta.env.BASE_URL`，
+ *   在 `node --test` 下不存在（見本檔開頭 `base()` 的說明），包進來這條規則就測不了。
+ *   呼叫端寫 `imageCandidates(pilotFullArtPath(pilot))`。
+ */
+export function pilotFullArtPath(pilot: { portrait?: string } | null | undefined): string | undefined {
+  const p = pilot?.portrait
+  if (!p) return undefined
+  const full = p.replace(/(^|\/)half(\.[a-z0-9]+)$/i, '$1full$2')
+  // 換不動 ＝ 這不是預期的 half.* 命名，不要硬猜一個路徑出來
+  return full === p ? undefined : full
+}

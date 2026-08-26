@@ -1,0 +1,551 @@
+// 配裝狀態機 —— PLAN-052-B Phase A / A-1
+//
+// ── 為什麼所有級聯都塞進一支 reconcile() ────────────────────────────────────
+// 需求逐字是「選完機師才知道要篩選什麼機甲、選完機甲才知道哪個槽被限制住」——
+// 也就是說**每一個動作都可能讓別的地方失效**。散在各個 handler 的寫法會變成
+// N×N 條「換 A 時記得檢查 B」，而漏掉的那一條是靜默的（畫面上留著一件裝不上的裝備）。
+//
+// 這裡只有一條規則：**任何動作之後都跑同一支 reconcile()**。
+// 動作本身只做「把東西放進去／拿出來」這件結構性的事，合法性一律事後統一掃。
+//
+// ── 復原 ────────────────────────────────────────────────────────────────────
+// 每次級聯移除推一筆 undo（**只留最近 1 筆**）：多層 undo 在這種「邊試邊改」的介面裡
+// 幾乎沒有人用，卻要求使用者理解一個堆疊。toast 上的 [復原] 還原**整批**，不是逐件。
+// 第二層保險是頁面把 draft 寫進 localStorage（見 LoadoutPage 的 useLoadoutDraftCache）。
+//
+// 純函式、無 React 依賴，可單測（npm test）。
+
+import type { EquipSet, LoadoutDraft, LoadoutMount } from '../../types/loadout'
+import type { SlotRef } from '../../types/slots'
+import { WeaponEquipSlot } from '../../types/enums.ts'
+import { equipSetKeys, DEFAULT_EQUIP_SET_KEY } from '../../utils/forms.ts'
+import { licenseAllows } from '../../utils/normalizeArmorType.ts'
+import { slotLabel } from '../../utils/mechSlots.ts'
+import {
+  buildContext, canEquipWeapon, canEquipBackpack, loadoutBudget, slotsOverlap,
+  type LoadoutWorld, type ResolutionAction,
+} from '../../utils/loadoutRules.ts'
+import { ND_RULES, isGammaZone, zonePower } from '../../utils/ndOverrides.ts'
+import { sanitizeLoadoutName } from '../../utils/loadoutName.ts'
+
+// ─── 動作 ───────────────────────────────────────────────────────────────────
+
+/**
+ * ⚠ `unequip` / `unequipBackpack` 的形狀與 `loadoutRules` 的 `ResolutionAction` **必須一致**：
+ *   拒絕訊息上的解法按鈕會直接把那個 action 派進來。型別上用聯集納入，
+ *   而不是各寫一份 —— 兩份會在改名時靜默不同步。
+ */
+export type LoadoutAction =
+  | ResolutionAction
+  | { type: 'selectPilot'; pilotId: string }
+  | { type: 'selectMech'; mechId: string }
+  | { type: 'clearMech' }
+  | { type: 'setActiveSet'; key: string }
+  | { type: 'equipWeapon'; ref: SlotRef; weaponId: string }
+  | { type: 'equipBackpack'; backpackId: string }
+  | { type: 'clearSet' }
+  | { type: 'autoUnloadToFit' }
+  /** 設定整份神經驅動算力配置（分區名 → Lv）。面板一次送整份，不逐區增減 —— γ 上限是**跨區**的 */
+  | { type: 'setNdLevels'; levels: Record<string, number> }
+  /** 設定方案名稱。收原始輸入，清洗由 reducer 負責（見 sanitizeLoadoutName 的檔頭） */
+  | { type: 'setName'; name: string }
+  | { type: 'undo' }
+  | { type: 'dismissNotice' }
+  /** 由外部載入一份草稿（ProfilePage 的舊存檔、未來的分享碼）。一樣要過 reconcile */
+  | { type: 'loadDraft'; draft: LoadoutDraft }
+
+// ─── 狀態 ───────────────────────────────────────────────────────────────────
+
+/** 被級聯移除的一件裝備。UI 用它組 toast，也用它做 [復原]。 */
+export interface RemovedItem {
+  kind: 'weapon' | 'backpack'
+  id: string
+  /** 顯示名。查不到資料時退回 id —— 那代表資料斷鏈，該被看見而不是靜默留白 */
+  name: string
+  /** 武器才有：它原本在哪一格 */
+  where?: string
+  /** 為什麼被移除（中文，已填入具體對象） */
+  why: string
+}
+
+/**
+ * 一次級聯的完整回饋。`seq` 由狀態自己遞增 —— **不可用 Date.now()**：
+ * 同一毫秒內兩次級聯會撞 key，而且測試裡不可重現。
+ */
+export interface CascadeNotice {
+  seq: number
+  title: string
+  removed: RemovedItem[]
+  /** 額外說明（如出力變化）。與 removed 分開，因為它不是「被移除的東西」 */
+  notes: string[]
+  /** 這些格要閃橙 600ms */
+  flash: string[]
+  /** [復原] 可不可按。全清空／載入草稿這類動作不提供復原 */
+  undoable: boolean
+}
+
+export interface SimState {
+  draft: LoadoutDraft
+  /** 最近一次級聯前的草稿快照。只留 1 筆，見檔頭 */
+  undo: LoadoutDraft | null
+  notice: CascadeNotice | null
+  seq: number
+}
+
+export const INITIAL_SIM_STATE: SimState = {
+  draft: { activeSetKey: DEFAULT_EQUIP_SET_KEY, sets: {} },
+  undo: null,
+  notice: null,
+  seq: 0,
+}
+
+// ─── 小工具 ─────────────────────────────────────────────────────────────────
+
+const emptySet = (): EquipSet => ({ mounts: [] })
+
+function setOf(draft: LoadoutDraft, key: string): EquipSet {
+  return draft.sets[key] ?? emptySet()
+}
+
+function withSet(draft: LoadoutDraft, key: string, set: EquipSet): LoadoutDraft {
+  return { ...draft, sets: { ...draft.sets, [key]: set } }
+}
+
+/** 把 mount 攤成人類看得懂的「左肩 熔火」。 */
+function mountWhere(m: Pick<LoadoutMount, 'bank' | 'slot' | 'side'>): string {
+  return slotLabel({ bank: m.bank, slot: m.slot, side: m.side })
+}
+
+// ─── reconcile：唯一的級聯 ──────────────────────────────────────────────────
+
+/**
+ * 把一份草稿掃成合法狀態，並回報被移除了什麼。**所有動作的最後一步都是它。**
+ *
+ * 掃描順序刻意由外而內 —— 外層的決定會讓內層整片失效，反過來則不會：
+ *   機師執照 → 機甲 → 分頁鍵 → 背包 → 各槽武器
+ *
+ * ⚠ **超重不在這裡處理**（決策三）：超重是問題但不是非法，reconcile 不動它。
+ *   自動卸載只有玩家主動按 [自動卸至符合] 才會發生。
+ */
+export function reconcile(draft: LoadoutDraft, world: LoadoutWorld): { draft: LoadoutDraft; removed: RemovedItem[] } {
+  const removed: RemovedItem[] = []
+  let next = draft
+
+  // ── 機甲：執照容不下就整台移除（連帶所有 sets）──
+  const pilot = next.pilotId ? world.pilots.get(next.pilotId) : null
+  const mech = next.mechId ? world.mechs.get(next.mechId) : null
+  if (next.mechId && !mech) {
+    removed.push({ kind: 'weapon', id: next.mechId, name: next.mechId, why: '機甲資料已不存在' })
+    next = { ...next, mechId: undefined, sets: {} }
+  } else if (pilot && mech && !licenseAllows(pilot.license, mech.armorType)) {
+    removed.push({ kind: 'weapon', id: mech.id, name: mech.name, why: `${pilot.license}執照無法駕駛${mech.armorType}機甲` })
+    next = { ...next, mechId: undefined, sets: {} }
+  }
+  if (!next.mechId && Object.keys(next.sets).length > 0) next = { ...next, sets: {} }
+
+  // ── 分頁鍵：一律取自 equipSetKeys()，換機師時舊 formId 會整批失效 ──
+  const keys = next.pilotId ? equipSetKeys(next.pilotId, world.forms) : [DEFAULT_EQUIP_SET_KEY]
+  const sets: Record<string, EquipSet> = {}
+  for (const key of keys) if (next.sets[key]) sets[key] = next.sets[key]
+  if (Object.keys(sets).length !== Object.keys(next.sets).length) next = { ...next, sets }
+  if (!keys.includes(next.activeSetKey)) next = { ...next, activeSetKey: keys[0] }
+
+  // ── 逐套掃裝備 ──
+  for (const key of keys) {
+    const before = setOf(next, key)
+    if (before.mounts.length === 0 && !before.backpackId) continue
+
+    // 背包先掃：它決定備用槽存不存在，掃武器時要看的是掃完背包之後的容量
+    let ctx = buildContext(next, key, world)
+    let cur = before
+    if (ctx.backpack) {
+      const r = canEquipBackpack({ ...ctx, set: { ...cur, backpackId: undefined }, backpack: null }, ctx.backpack)
+      if (r && r.code !== 'OVERWEIGHT' && r.code !== 'BACK_SLOT_TAKEN') {
+        removed.push({ kind: 'backpack', id: ctx.backpack.id, name: ctx.backpack.name, why: r.reason })
+        cur = { ...cur, backpackId: undefined }
+        next = withSet(next, key, cur)
+        ctx = buildContext(next, key, world)
+      }
+    }
+
+    // 武器：逐格問 canEquipWeapon（把它自己先拿掉，否則它會與自己衝突）
+    const kept: LoadoutMount[] = []
+    for (const m of cur.mounts) {
+      const ref: SlotRef = { bank: m.bank, slot: m.slot, side: m.side }
+      const w = world.weapons.get(m.weaponId)
+      if (!w) {
+        removed.push({ kind: 'weapon', id: m.weaponId, name: m.weaponId, where: mountWhere(m), why: '武器資料已不存在' })
+        continue
+      }
+      const probe = { ...ctx, set: { ...cur, mounts: cur.mounts.filter((x) => !slotsOverlap(x, ref)) } }
+      const r = canEquipWeapon(probe, w, ref)
+      if (r && r.code !== 'OVERWEIGHT') {
+        removed.push({ kind: 'weapon', id: w.id, name: w.name, where: mountWhere(m), why: r.reason })
+        continue
+      }
+      kept.push(m)
+    }
+    if (kept.length !== cur.mounts.length) next = withSet(next, key, { ...cur, mounts: kept })
+  }
+
+  // ── 算力配置：掃成對得上目前機師的合法配置（PLAN-052-I D-2）──
+  next = reconcileNdLevels(next, world)
+
+  // ── 方案名稱：外部來源（舊存檔／分享碼／localStorage 手改）一樣要過清洗（PLAN-052-I E-1）──
+  //    setName 已經清過一次，這裡是給「不經 setName 進來的那些路徑」的第二道。
+  const cleanName = sanitizeLoadoutName(next.name)
+  if (cleanName !== next.name) {
+    next = cleanName === undefined ? withoutName(next) : { ...next, name: cleanName }
+  }
+
+  return { draft: next, removed }
+}
+
+/**
+ * 把 `draft.ndLevels` 掃成「對得上目前這位機師」的合法配置。
+ *
+ * 三道處理，一律**不進 `removed`**：算力被修正時面板上的方格會就地變樣，玩家看得到；
+ * 而 `RemovedItem` 只有 weapon / backpack 兩種 kind，為了算力開第三種只會讓每個讀
+ * removed 的地方都要多記得一個分支（而漏掉的症狀是靜默的）。
+ *
+ *   ① 鍵不屬於這位機師的分區 → 丟掉那一鍵（換機師的殘留、資料改版後分區改名）
+ *   ② Lv 超出該區的級數或為負 → clamp 進 `[0, levels.length]`
+ *   ③ γ 區合計超過 `gammaPairCap` → **整份丟掉**，退回 `defaultNdLevels()`
+ *
+ * 為什麼 ③ 是整份原子退場而不是逐區降級：降級得挑「降哪一區」，而任何挑法都是本站
+ * 替玩家做的一個他沒下過的決定（降錯邊 = 他精心配的那一區被砍）。整份退回預設值則是
+ * 一個**看得出來**的狀態 —— 兩條 Lv 條同時跳回預設，而不是其中一條莫名少一格。
+ * 這與 ndOverrides 建表時「一族有一階不合格就整族退場」是同一條理由。
+ *
+ * ⚠ 門檻與上限一律問 `ndOverrides.ts`，本檔不寫死 23 —— 官方開放超頻時只改那邊。
+ */
+function reconcileNdLevels(draft: LoadoutDraft, world: LoadoutWorld): LoadoutDraft {
+  const cur = draft.ndLevels
+  if (!cur) return draft
+
+  const drives = (draft.pilotId ? world.pilots.get(draft.pilotId)?.neuralDrive : undefined) ?? []
+  if (drives.length === 0) return withoutNdLevels(draft)
+
+  const clean: Record<string, number> = {}
+  for (const d of drives) {
+    const raw = cur[d.name]
+    if (raw == null || !Number.isFinite(raw)) continue
+    const lv = Math.max(0, Math.min(Math.trunc(raw), d.levels?.length ?? 0))
+    clean[d.name] = lv
+  }
+  if (Object.keys(clean).length === 0) return withoutNdLevels(draft)
+
+  const gammaSum = drives
+    .filter((d) => isGammaZone(d.name))
+    .reduce((n, d) => n + zonePower(d, clean[d.name] ?? 0), 0)
+  if (gammaSum > ND_RULES.gammaPairCap) return withoutNdLevels(draft)
+
+  // identity 穩定：沒有實際變動就回原物件，避免每次 reconcile 都讓 draft 變成新參考
+  const same = Object.keys(cur).length === Object.keys(clean).length
+    && Object.entries(clean).every(([k, v]) => cur[k] === v)
+  return same ? draft : { ...draft, ndLevels: clean }
+}
+
+/**
+ * 移除 `ndLevels` 欄位本身，**不是設成 `undefined`**。
+ *
+ * 「未設定」在本模型裡的表示法是「欄位不存在」（見 LoadoutDraft 的註解）：設成 `undefined`
+ * 會在 `JSON.stringify` 進 localStorage 時消失、卻在記憶體裡留著一個 `in` 判定為真的鍵，
+ * 於是「有沒有設定過」會在重新整理前後給出兩種答案。
+ */
+function sameNdLevels(a: Record<string, number> | undefined, b: Record<string, number> | undefined): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  const ka = Object.keys(a)
+  return ka.length === Object.keys(b).length && ka.every((k) => a[k] === b[k])
+}
+
+/** 移除 `name` 欄位本身（理由同 `withoutNdLevels`：未設定＝欄位不存在）。 */
+function withoutName(draft: LoadoutDraft): LoadoutDraft {
+  if (!('name' in draft)) return draft
+  const rest = { ...draft }
+  delete rest.name
+  return rest
+}
+
+function withoutNdLevels(draft: LoadoutDraft): LoadoutDraft {
+  if (!('ndLevels' in draft)) return draft
+  const rest = { ...draft }
+  delete rest.ndLevels           // `delete` 而不是設 undefined —— 見上方註解
+  return rest
+}
+
+// ─── 結構性放置（動作層）────────────────────────────────────────────────────
+
+/**
+ * 把一把武器放進某一格。純結構操作 —— 只處理「誰被誰取代」，不判合法性。
+ *
+ * 三條取代規則（全部來自槽位的幾何，不是遊戲規則）：
+ *   · 同一格已有東西 → 取代
+ *   · 裝雙手武器 → 同 bank 的左右手都被取代
+ *   · 裝單手武器 → 同 bank 原本的雙手武器被取代
+ *   · 裝背部武器 → 背包被卸下（背槽只有一格）
+ */
+function placeWeapon(set: EquipSet, ref: SlotRef, weaponId: string): { set: EquipSet; displaced: LoadoutMount[]; backpackOff: boolean } {
+  const displaced = set.mounts.filter((m) => slotsOverlap(m, ref))
+  const mounts = set.mounts.filter((m) => !slotsOverlap(m, ref))
+  mounts.push({ weaponId, bank: ref.bank, slot: ref.slot, side: ref.side })
+  const backpackOff = ref.slot === WeaponEquipSlot.BACK && !!set.backpackId
+  return {
+    set: { ...set, mounts, ...(backpackOff ? { backpackId: undefined } : {}) },
+    displaced,
+    backpackOff,
+  }
+}
+
+/** 卸下某一格（背槽的 ref 同時卸掉背包）。 */
+function clearSlot(set: EquipSet, ref: SlotRef): { set: EquipSet; displaced: LoadoutMount[]; backpackOff: boolean } {
+  const displaced = set.mounts.filter((m) => slotsOverlap(m, ref))
+  const backpackOff = ref.slot === WeaponEquipSlot.BACK && !!set.backpackId
+  return {
+    set: {
+      ...set,
+      mounts: set.mounts.filter((m) => !slotsOverlap(m, ref)),
+      ...(backpackOff ? { backpackId: undefined } : {}),
+    },
+    displaced,
+    backpackOff,
+  }
+}
+
+// ─── reducer ────────────────────────────────────────────────────────────────
+
+/**
+ * 一次狀態轉移。`world` 由呼叫端注入（`useReducer` 用 `useMemo` 綁一次），
+ * 讓 reducer 保持純函式、可單測。
+ */
+export function simReduce(state: SimState, action: LoadoutAction, world: LoadoutWorld): SimState {
+  switch (action.type) {
+    case 'dismissNotice':
+      return state.notice ? { ...state, notice: null } : state
+
+    case 'undo':
+      // 復原本身不再產生 notice，也不可再被復原 —— 兩層以上的來回只會讓人搞不清現在在哪
+      return state.undo ? { ...state, draft: state.undo, undo: null, notice: null } : state
+
+    case 'loadDraft': {
+      const { draft, removed } = reconcile(action.draft, world)
+      return commit(state, state.draft, draft, removed, '載入配裝', [], [], false)
+    }
+
+    case 'selectPilot': {
+      if (state.draft.pilotId === action.pilotId) return state
+      // ⚠ 換機師時**明確重置算力**，不倚賴 reconcile 的鍵過濾：兩位機師可以都有 γ1／γ2，
+      //    但兩條 Lv 條的 minSum 階梯逐機師不同 —— 沿用舊 Lv 會得到一個「級數對得上、
+      //    算力值卻是另一位機師的」配置，而那正好是過濾器看不出來的那一種。
+      const base: LoadoutDraft = { ...withoutNdLevels(state.draft), pilotId: action.pilotId }
+      const { draft, removed } = reconcile(base, world)
+      const name = world.pilots.get(action.pilotId)?.name ?? action.pilotId
+      return commit(state, state.draft, draft, removed, `已切換至 ${name}`, [], flashOf(removed), true)
+    }
+
+    case 'selectMech': {
+      if (state.draft.mechId === action.mechId) return state
+      // 換機甲時**保留**各套裝備，由 reconcile 逐槽驗證 —— 直接清空會讓「試試看換一台」
+      // 這個最常見的動作變成每次都要重配一輪
+      const base: LoadoutDraft = { ...state.draft, mechId: action.mechId }
+      const { draft, removed } = reconcile(base, world)
+      const name = world.mechs.get(action.mechId)?.name ?? action.mechId
+      return commit(state, state.draft, draft, removed, `已切換至 ${name}`, outputNote(state, draft, world), flashOf(removed), true)
+    }
+
+    case 'clearMech': {
+      const { draft, removed } = reconcile({ ...state.draft, mechId: undefined, sets: {} }, world)
+      return commit(state, state.draft, draft, removed, '已移除機甲', [], [], true)
+    }
+
+    case 'setActiveSet':
+      return state.draft.activeSetKey === action.key
+        ? state
+        : { ...state, draft: { ...state.draft, activeSetKey: action.key }, notice: null }
+
+    case 'equipWeapon': {
+      const key = state.draft.activeSetKey
+      const w = world.weapons.get(action.weaponId)
+      if (!w) return state
+      const { set, displaced, backpackOff } = placeWeapon(setOf(state.draft, key), action.ref, action.weaponId)
+      const base = withSet(state.draft, key, set)
+      const { draft, removed } = reconcile(base, world)
+      const all = [...displacedItems(displaced, world, `已由${w.name}取代`), ...backpackItem(state, key, world, backpackOff), ...removed]
+      return commit(state, state.draft, draft, all, `已裝上 ${w.name}`, outputNote(state, draft, world), [slotLabel(action.ref)], true)
+    }
+
+    case 'unequip': {
+      const key = state.draft.activeSetKey
+      const { set, displaced, backpackOff } = clearSlot(setOf(state.draft, key), action.ref)
+      if (displaced.length === 0 && !backpackOff) return state
+      const base = withSet(state.draft, key, set)
+      const { draft, removed } = reconcile(base, world)
+      const all = [...displacedItems(displaced, world, '已卸下'), ...backpackItem(state, key, world, backpackOff), ...removed]
+      return commit(state, state.draft, draft, all, '已卸下裝備', outputNote(state, draft, world), [], true)
+    }
+
+    case 'unequipBackpack': {
+      const key = state.draft.activeSetKey
+      const cur = setOf(state.draft, key)
+      if (!cur.backpackId) return state
+      const base = withSet(state.draft, key, { ...cur, backpackId: undefined })
+      const { draft, removed } = reconcile(base, world)
+      const all = [...backpackItem(state, key, world, true), ...removed]
+      return commit(state, state.draft, draft, all, '已卸下背包', outputNote(state, draft, world), [], true)
+    }
+
+    case 'equipBackpack': {
+      const key = state.draft.activeSetKey
+      const bp = world.backpacks.get(action.backpackId)
+      if (!bp) return state
+      const cur = setOf(state.draft, key)
+      // 背槽擇一：裝背包 ⇒ 背部武器自動卸下
+      const backMounts = cur.mounts.filter((m) => m.slot === WeaponEquipSlot.BACK)
+      const base = withSet(state.draft, key, {
+        ...cur,
+        mounts: cur.mounts.filter((m) => m.slot !== WeaponEquipSlot.BACK),
+        backpackId: action.backpackId,
+      })
+      const { draft, removed } = reconcile(base, world)
+      const all = [...displacedItems(backMounts, world, `背槽已由${bp.name}佔用`), ...removed]
+      return commit(state, state.draft, draft, all, `已裝上 ${bp.name}`, outputNote(state, draft, world), [], true)
+    }
+
+    case 'clearSet': {
+      const key = state.draft.activeSetKey
+      const cur = setOf(state.draft, key)
+      if (cur.mounts.length === 0 && !cur.backpackId) return state
+      const base = withSet(state.draft, key, emptySet())
+      return commit(state, state.draft, base, [], '已清空這套配裝', [], [], true)
+    }
+
+    case 'setNdLevels': {
+      // 一樣過 reconcile（clamp ＋ γ 上限）—— 面板自己也擋，但分享碼與草稿還原不經過面板
+      const { draft } = reconcile({ ...state.draft, ndLevels: action.levels }, world)
+      // 逐鍵比對而不是比參考：上一行的 spread 必然產生新物件，比參考恆為「有變動」
+      if (sameNdLevels(state.draft.ndLevels, draft.ndLevels)) return state
+      // 算力不動裝備，不需要 toast 也不需要 undo：Lv 條就在眼前，點回去就是復原
+      return { ...state, draft, notice: null }
+    }
+
+    case 'setName': {
+      const clean = sanitizeLoadoutName(action.name)
+      if (clean === state.draft.name) return state
+      // 命名不動裝備、不跳 toast、不進 undo：字就在輸入框裡，改回去就是復原
+      const draft = clean === undefined ? withoutName(state.draft) : { ...state.draft, name: clean }
+      return { ...state, draft, notice: null }
+    }
+
+    case 'autoUnloadToFit': {
+      // ⚠ 只有玩家**主動按下**才會走到這裡（決策三）：自動卸載不可由超重本身觸發，
+      //    否則玩家會發現自己剛裝上的東西無聲消失。
+      const key = state.draft.activeSetKey
+      const { set, removed } = unloadToFit(state.draft, key, world)
+      if (removed.length === 0) return state
+      const base = withSet(state.draft, key, set)
+      const { draft } = reconcile(base, world)
+      return commit(state, state.draft, draft, removed, '已卸至符合出力', outputNote(state, draft, world), [], true)
+    }
+
+    default:
+      return state
+  }
+}
+
+/** 產生新狀態並帶上一筆回饋。沒有任何移除時不跳 toast（每個動作都跳就等於沒有提示）。 */
+function commit(
+  state: SimState,
+  before: LoadoutDraft,
+  draft: LoadoutDraft,
+  removed: RemovedItem[],
+  title: string,
+  notes: string[],
+  flash: string[],
+  undoable: boolean,
+): SimState {
+  const seq = state.seq + 1
+  const worthShowing = removed.length > 0 || notes.length > 0
+  return {
+    draft,
+    undo: removed.length > 0 && undoable ? before : null,
+    notice: worthShowing
+      ? { seq, title, removed, notes, flash, undoable: undoable && removed.length > 0 }
+      : null,
+    seq,
+  }
+}
+
+const flashOf = (removed: RemovedItem[]) => removed.map((r) => r.where).filter((x): x is string => !!x)
+
+function displacedItems(mounts: readonly LoadoutMount[], world: LoadoutWorld, why: string): RemovedItem[] {
+  return mounts.map((m) => ({
+    kind: 'weapon' as const,
+    id: m.weaponId,
+    name: world.weapons.get(m.weaponId)?.name ?? m.weaponId,
+    where: mountWhere(m),
+    why,
+  }))
+}
+
+function backpackItem(state: SimState, key: string, world: LoadoutWorld, off: boolean): RemovedItem[] {
+  if (!off) return []
+  const id = setOf(state.draft, key).backpackId
+  if (!id) return []
+  return [{ kind: 'backpack', id, name: world.backpacks.get(id)?.name ?? id, why: '背槽只有一格' }]
+}
+
+/**
+ * 出力變化的說明。換背包時「−300 出力」是玩家最容易漏看、卻最影響後續判斷的一件事，
+ * 所以與被移除的東西並列在同一則 toast 上，而不是等他自己去看重量條。
+ */
+function outputNote(state: SimState, after: LoadoutDraft, world: LoadoutWorld): string[] {
+  const key = after.activeSetKey
+  const a = loadoutBudget(buildContext(state.draft, state.draft.activeSetKey, world)).output.total
+  const b = loadoutBudget(buildContext(after, key, world)).output.total
+  if (a === b) return []
+  const delta = b - a
+  return [`可用出力 ${a.toLocaleString()} → ${b.toLocaleString()}（${delta > 0 ? '+' : ''}${delta.toLocaleString()}）`]
+}
+
+/**
+ * 卸到不超重為止：**由重到輕**卸，且每一步都重算 —— 手部取較重組，卸掉較輕那一組
+ * 的武器省下的是 0，不重算就會出現「卸了三把還是超重」。
+ */
+function unloadToFit(draft: LoadoutDraft, key: string, world: LoadoutWorld): { set: EquipSet; removed: RemovedItem[] } {
+  let cur = setOf(draft, key)
+  const removed: RemovedItem[] = []
+  for (let guard = 0; guard < 16; guard++) {
+    const ctx = buildContext(withSet(draft, key, cur), key, world)
+    const budget = loadoutBudget(ctx)
+    if (!budget.over) break
+
+    const total = budget.weight.total
+    const cands: { m?: LoadoutMount; ref: SlotRef; saved: number }[] = cur.mounts.map((m) => {
+      const ref: SlotRef = { bank: m.bank, slot: m.slot, side: m.side }
+      return { m, ref, saved: total - loadoutBudget(ctx, { remove: [ref] }).weight.total }
+    })
+    if (cur.backpackId) {
+      const ref: SlotRef = { bank: 'main', slot: WeaponEquipSlot.BACK }
+      cands.push({ ref, saved: total - loadoutBudget(ctx, { remove: [ref] }).weight.total })
+    }
+    const best = cands.filter((c) => c.saved > 0).sort((a, b) => b.saved - a.saved)[0]
+    if (!best) break     // 卸光也裝不下（機體本身就超出出力）—— 停手，別空轉
+
+    if (best.m) {
+      removed.push({
+        kind: 'weapon',
+        id: best.m.weaponId,
+        name: world.weapons.get(best.m.weaponId)?.name ?? best.m.weaponId,
+        where: mountWhere(best.m),
+        why: '自動卸至符合出力',
+      })
+      cur = { ...cur, mounts: cur.mounts.filter((x) => x !== best.m) }
+    } else {
+      const id = cur.backpackId!
+      removed.push({ kind: 'backpack', id, name: world.backpacks.get(id)?.name ?? id, why: '自動卸至符合出力' })
+      cur = { ...cur, backpackId: undefined }
+    }
+  }
+  return { set: cur, removed }
+}

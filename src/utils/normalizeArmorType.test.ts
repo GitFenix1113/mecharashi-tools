@@ -3,7 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  toArmorType, licenseAllows, findMechResearch, findPilotResearch, findWeaponResearch,
+  toArmorType, fromAssemblableArmorType, licenseAllows, findMechResearch, findPilotResearch, findWeaponResearch,
 } from './normalizeArmorType.ts'
 
 /** 線上 globalResearch/global 的實際形狀（2026-08-24）：三個欄位都是 Array，鍵用「中型」 */
@@ -47,16 +47,23 @@ test('toArmorType：兩套詞彙都收斂到 ArmorType，認不得的回 null', 
   assert.equal(toArmorType(null), null)
 })
 
-test('licenseAllows：中型執照擋得住重型機甲（模擬器原本擋不住）', () => {
-  // 原本 SimulatorPage 寫 `license === '中甲'`，執照值域根本沒有「中甲」⇒ 分支恆 false
-  // ⇒ 37 位中型執照的機師看得到全部 90 台，包含駕駛不了的重型
-  assert.equal(licenseAllows('中型', '重型'), false)
+test('licenseAllows：執照與裝甲一對一，不是階梯式包含', () => {
+  // ① 原本 SimulatorPage 寫 `license === '中甲'`，執照值域根本沒有「中甲」⇒ 分支恆 false
+  //    ⇒ 37 位中型執照的機師看得到全部 90 台，包含駕駛不了的重型
+  // ② 2026-08-25：改成一對一 —— 執照是「機師的機種」不是「等級」，
+  //    原本的階梯式（重型全開／中型含輕型）讓重型機師照樣選得到輕型機甲
   assert.equal(licenseAllows('中型', '中甲'), true)
-  assert.equal(licenseAllows('中型', '輕型'), true)
-  assert.equal(licenseAllows('輕型', '中甲'), false)
+  assert.equal(licenseAllows('中型', '重型'), false)
+  assert.equal(licenseAllows('中型', '輕型'), false)
   assert.equal(licenseAllows('輕型', '輕型'), true)
+  assert.equal(licenseAllows('輕型', '中甲'), false)
   assert.equal(licenseAllows('重型', '重型'), true)
-  assert.equal(licenseAllows('重型', '輕型'), true)
+  assert.equal(licenseAllows('重型', '輕型'), false)
+  assert.equal(licenseAllows('重型', '中甲'), false)
+  // 認不得的值一律不擋（寧可多顯示，不要少）
+  assert.equal(licenseAllows('超重型', '重型'), true)
+  assert.equal(licenseAllows('重型', '超重型'), true)
+  assert.equal(licenseAllows(null, '重型'), true)
 })
 
 test('licenseAllows：未知輸入一律放行（寧可多顯示，不要靜默少一台）', () => {
@@ -92,4 +99,14 @@ test('科研表若哪天改用「中甲」，查詢仍成立（轉換層對兩�
   const 改過的 = { mechResearchByType: [{ armorType: '中甲', flatBonus: { torsoHP: 7000 }, percentBonus: {} }] }
   assert.equal(findMechResearch(改過的, '中甲')?.flatBonus.torsoHP, 7000)
   assert.equal(findMechResearch(改過的, '中型')?.flatBonus.torsoHP, 7000)
+})
+
+test('fromAssemblableArmorType：背包的英文第四套寫法（Medium → 中甲）', () => {
+  // 這是同一個概念的第四套詞彙，而且是唯一的英文版；toArmorType() 認不得它
+  assert.equal(fromAssemblableArmorType('Light'), '輕型')
+  assert.equal(fromAssemblableArmorType('Medium'), '中甲')
+  assert.equal(fromAssemblableArmorType('Heavy'), '重型')
+  assert.equal(toArmorType('Light'), null)          // ⚠ 誤用它會讓「僅輕型可裝」的背包全部不擋
+  assert.equal(fromAssemblableArmorType('中甲'), null)
+  assert.equal(fromAssemblableArmorType(undefined), null)
 })

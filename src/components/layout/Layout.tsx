@@ -53,7 +53,10 @@ const versionNavItems: ContentNavItem[] = VERSION_VIEWS.map((v) => ({
   desc: v.desc,
 }))
 
-// 配裝模擬器：頂層平鋪項，僅管理員可見
+// 配裝模擬器：頂層平鋪項。
+// PLAN-052-B E-2 起**全面公開（未登入也能用）**，不再有 ADMIN gate——
+// 舊版的 gate 只擋得住導覽，App.tsx 的路由沒有 AdminRoute、ProfilePage 三處入口也對所有
+// 登入者開放，實際上是一個只讓人找不到、並未真正限制的半開放狀態。
 const simulatorItem: ContentNavItem = { to: '/simulator', label: '配裝模擬器', icon: 'simulator' }
 
 // 「攻略專區」下拉的子項
@@ -124,9 +127,7 @@ export default function Layout() {
   const subNavItems = SUB_NAV_GROUPS.find((items) =>
     items.some((i) => location.pathname === i.to || location.pathname.startsWith(`${i.to}/`))
   )
-  const isAdmin = userProfile?.role === 'ADMIN' || userProfile?.role === 'OWNER'
-  const visibleMoreNavItems = moreNavItems.filter((item) => item.to !== '/simulator' || isAdmin)
-  const isMoreActive = visibleMoreNavItems.some((item) =>
+  const isMoreActive = moreNavItems.some((item) =>
     item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
   )
 
@@ -218,11 +219,9 @@ export default function Layout() {
                 onToggle={() => (openGroup === group.key ? closeNavGroup() : openNavGroup(group.key))}
               />
             ))}
-            {isAdmin && (
-              <NavLink to={simulatorItem.to} className={topNavClass}>
-                {simulatorItem.label}
-              </NavLink>
-            )}
+            <NavLink to={simulatorItem.to} className={topNavClass}>
+              {simulatorItem.label}
+            </NavLink>
             <NavGroupTrigger
               group={guidesGroup}
               isOpen={openGroup === guidesGroup.key}
@@ -384,7 +383,7 @@ export default function Layout() {
 
         {/* 導航格線 */}
         <div className="grid grid-cols-3 gap-2 px-4 pb-2">
-          {visibleMoreNavItems.map((item) => (
+          {moreNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

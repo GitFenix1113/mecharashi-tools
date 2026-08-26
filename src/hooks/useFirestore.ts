@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import type {
   Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component,
-  GlobalResearch, GameBuff, PilotSkillDoc, MechForm,
+  GlobalResearch, GameBuff, PilotSkillDoc, MechForm, NeuralDriveAbility,
 } from '../types'
 import { ModuleSlot } from '../types/enums'
 import { useGameData, EMPTY_GLOBAL_RESEARCH, type CollectionKey } from '../contexts/GameDataContext'
@@ -262,6 +262,60 @@ export function useGlobalResearch(): HookResult<GlobalResearch> {
   const { globalResearch } = useGameData()
   const { loading, error } = useCollections(['globalResearch'])
   return { data: globalResearch, loading, error }
+}
+
+// ── 配裝模擬器：分階段載入（PLAN-052-B B-1）─────────────────────
+
+/**
+ * 配裝器的載入階段。首屏只要 pilots + forms（機師挑選器）——
+ * 舊 SimulatorPage 一進頁就拉 11 個集合（含 208 筆元件、242 筆模組、buffs、技能庫），
+ * 而玩家在選完機師之前一筆都用不到。
+ *
+ * ⚠ 階段只能**累加**，不可回退：讀過的集合已經在記憶體快取裡，
+ *   「退回 pilot 階段」不會省任何 read，只會讓 UI 白閃一下。
+ */
+export type LoadoutStage = 'pilot' | 'mech' | 'equip'
+
+/**
+ * ⚠ `neuralDriveAbilities` 自 `mech` 階段起載入（PLAN-052-I D-1）：選完機師之後左欄就要畫
+ *   算力面板的「目前生效能力」。它是小集合（能力庫），而少了它的症狀是**靜默的**——
+ *   `resolveNeuralDriveLevel()` 會退回嵌入式舊欄位，已遷移的機師於是列出一排空白名稱。
+ *   pilot 階段刻意不載：那時還沒有機師，一筆都用不到。
+ */
+const LOADOUT_STAGE_KEYS: Record<LoadoutStage, CollectionKey[]> = {
+  pilot: ['pilots', 'forms'],
+  mech:  ['pilots', 'forms', 'mechs', 'neuralDriveAbilities'],
+  equip: ['pilots', 'forms', 'mechs', 'weapons', 'backpacks', 'neuralDriveAbilities'],
+}
+
+export interface LoadoutGameData {
+  pilots: Pilot[]
+  forms: MechForm[]
+  mechs: Mech[]
+  weapons: Weapon[]
+  backpacks: Backpack[]
+  neuralDriveAbilities: NeuralDriveAbility[]
+}
+
+/**
+ * 配裝器的資料。**不走 `useCollections()`** —— 那一支的 effect 依賴只有
+ * `[ensureLoaded, reloadTick]`，keys 變了不會重跑（對固定清單的呼叫端是對的，
+ * 對「階段會變」的本例則會靜默不載入第二階段）。
+ */
+export function useLoadoutGameData(stage: LoadoutStage): HookResult<LoadoutGameData> {
+  const { pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities, loadedKeys, errorMap, ensureLoaded, reloadTick } = useGameData()
+  const keys = LOADOUT_STAGE_KEYS[stage]
+
+  useEffect(() => { void ensureLoaded(LOADOUT_STAGE_KEYS[stage]) }, [ensureLoaded, reloadTick, stage])
+
+  const loading = !keys.every((k) => loadedKeys.has(k))
+  const error = keys.map((k) => errorMap[k]).find(Boolean) ?? null
+
+  const data = useMemo<LoadoutGameData>(
+    () => ({ pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities }),
+    [pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities],
+  )
+  return { data, loading, error }
 }
 
 // ── SimulatorPage 全量資料 ────────────────────────────────────────────────────

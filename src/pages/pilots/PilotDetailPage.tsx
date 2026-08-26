@@ -3,19 +3,20 @@ import { createPortal } from 'react-dom'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { BottomSheet } from '../../components/common/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import type { PilotStats, NeuralDrive, Weapon, PilotTalent, TalentNdVariant, DescriptionRefs } from '../../types'
+import type { NeuralDrive, Weapon, PilotTalent, TalentNdVariant, DescriptionRefs } from '../../types'
 import { formatWeaponReq } from '../../types'
 type NdLevel = NeuralDrive['levels'][number]
 import { assetUrl } from '../../utils/assets'
 import { usePilot, usePilotExclusiveWeapons, useFormsByPilot } from '../../hooks/useFirestore'
 import { FormCard } from '../../components/cards/FormCard'
+import { RadarChart } from '../../components/charts/RadarChart'
 import { useGameData } from '../../contexts/GameDataContext'
 import { resolvePilotSkills, buildSkillMap } from '../../utils/pilotSkills'
 import { resolveWeaponSkills, type ResolvedWeaponSkill } from '../../utils/weaponSkills'
 import { resolveNeuralDriveLevel, buildNdAbilityMap } from '../../utils/neuralDriveAbilities'
 import {
-  ND_RULES, isGammaZone, zonePower, defaultNdLevels, buildNdBuffOverrides,
-  effectiveLevel, buildNumLevelOf, type NdOverrideEntry,
+  isGammaZone, zonePower, defaultNdLevels, buildNdBuffOverrides,
+  effectiveLevel, buildNumLevelOf, ndAffectZones as affectZonesOf, type NdOverrideEntry,
 } from '../../utils/ndOverrides'
 import { parseNumRefs } from '../../utils/numRefs'
 import { NdOverrideContext, useNdOverrides } from '../../contexts/NdOverrideContext'
@@ -24,109 +25,21 @@ import { useReference } from '../../contexts/ReferenceContext'
 import { WeaponIcon } from '../../components/icons/WeaponIcon'
 import { DiffHighlight } from '../../components/refs/DiffHighlight'
 import { RefText } from '../../components/refs/RefText'
+import { SkillIcon } from '../../components/icons/SkillIcon'
+import { NdPowerBar } from '../../components/common/NdPowerBar'
 
 // ─── 神經驅動「全區算力選擇器」（PLAN-021 · 1-6）─────────────────────────────
-// 玩家在 tab 卡頂部點選各區 Lv（仿遊戲內 Lv 條），天賦敘述隨配置即時改寫。
 //
-// 規則引擎（ND_RULES / isGammaZone / zonePower / defaultNdLevels）已於 PLAN-034 B-3
-// 上移至 src/utils/ndOverrides.ts —— 天賦改寫與 BUFF 階覆寫層必須共用同一個門檻來源，
-// 各留一份必然漂移。未來官方開放上限（超頻）只改那邊的數字。
+// ⚠ 元件本體已於 PLAN-052-I D-1 上移至 `src/components/common/NdPowerBar.tsx`：
+//   配裝模擬器要在左欄放同一條 Lv 條，而 γ 上限（`ND_RULES.gammaPairCap`）與
+//   「點最上面那格＝降一級」這兩條互動規則各留一份必然漂移。這裡只留 `ndVariantLabel`
+//   —— 那是天賦變體的文案，不是算力規則。
+//
+// 規則引擎（ND_RULES / isGammaZone / zonePower / defaultNdLevels）則早於 PLAN-034 B-3
+// 上移至 src/utils/ndOverrides.ts。未來官方開放上限（超頻）只改那邊的數字。
 
 function ndVariantLabel(v: TalentNdVariant): string {
   return v.label ?? `${v.zone ? `${v.zone} ` : ''}算力 ≥ ${v.minSum}`
-}
-
-/** tab 卡頂部的算力配置列（三分頁常駐）。★ = 此區算力會改寫天賦（由 ndVariants.zone 推導） */
-function NdPowerBar({
-  drives, levels, affectZones, onChange,
-}: {
-  drives: NeuralDrive[]
-  levels: Record<string, number>
-  affectZones: Set<string>
-  onChange: (next: Record<string, number>) => void
-}) {
-  const [capHint, setCapHint] = useState(false)
-  const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const gammaSum = drives
-    .filter(d => isGammaZone(d.name))
-    .reduce((s, d) => s + zonePower(d, levels[d.name] ?? 0), 0)
-
-  function canSet(drive: NeuralDrive, lv: number): boolean {
-    if (!isGammaZone(drive.name)) return true
-    const others = drives
-      .filter(d => isGammaZone(d.name) && d.name !== drive.name)
-      .reduce((s, d) => s + zonePower(d, levels[d.name] ?? 0), 0)
-    return others + zonePower(drive, lv) <= ND_RULES.gammaPairCap
-  }
-
-  function clickSquare(drive: NeuralDrive, lv: number) {
-    const cur = levels[drive.name] ?? 0
-    const target = cur === lv ? lv - 1 : lv // 點最上面那格 = 降一級
-    if (target > cur && !canSet(drive, target)) {
-      setCapHint(true)
-      if (hintTimer.current) clearTimeout(hintTimer.current)
-      hintTimer.current = setTimeout(() => setCapHint(false), 2600)
-      return
-    }
-    onChange({ ...levels, [drive.name]: target })
-  }
-
-  return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 px-4 py-2 bg-accent-pink/[0.04] border-b border-border">
-      <span className="text-[11px] font-bold tracking-[2px] text-accent-pink uppercase whitespace-nowrap">
-        ▶ 神經驅動算力
-      </span>
-      {drives.map((d) => {
-        const cur = levels[d.name] ?? 0
-        return (
-          <span key={d.name} className="flex items-center gap-1.5">
-            <span className="relative text-[13px] font-bold text-text-primary">
-              {d.name}
-              {affectZones.has(d.name) && (
-                <span className="absolute -top-1.5 -right-2 text-[9px] text-accent-pink" title="此區算力會改寫天賦／技能敘述">★</span>
-              )}
-            </span>
-            <span className="flex gap-[3px] ml-1.5">
-              {d.levels.map((lvl, i) => {
-                const lv = i + 1
-                const on = cur >= lv
-                const locked = !on && !canSet(d, lv)
-                return (
-                  <button
-                    key={lv}
-                    type="button"
-                    title={`Lv${lv}（算力 ${lvl.minSum}）`}
-                    onClick={() => clickSquare(d, lv)}
-                    className={`w-3.5 h-3.5 rounded-[3px] border transition-all ${
-                      on
-                        ? 'bg-accent-yellow border-accent-yellow shadow-[0_0_5px_rgba(251,191,36,0.45)]'
-                        : locked
-                          ? 'bg-bg-dark border-border border-dashed opacity-25 cursor-not-allowed'
-                          : 'bg-bg-dark border-[#4a4f5e] hover:border-accent-yellow cursor-pointer'
-                    }`}
-                  />
-                )
-              })}
-            </span>
-            <span className="text-[11px] text-text-dim font-mono whitespace-nowrap">
-              {zonePower(d, cur)}
-            </span>
-          </span>
-        )
-      })}
-      <span className={`ml-auto text-[11.5px] font-mono px-2.5 py-0.5 rounded-md border border-border bg-bg-dark ${
-        gammaSum >= ND_RULES.gammaPairCap ? 'text-accent-red' : 'text-text-secondary'
-      }`}>
-        γ合計 {gammaSum} / {ND_RULES.gammaPairCap}
-      </span>
-      {capHint && (
-        <span className="w-full text-[11.5px] text-accent-red">
-          ⚠ γ 區合計算力上限 {ND_RULES.gammaPairCap}（上下16）—— 先降低另一個 γ 區。
-        </span>
-      )}
-    </div>
-  )
 }
 
 /**
@@ -351,147 +264,10 @@ function TalentCard({
   )
 }
 
-// ─── Radar Chart ─────────────────────────────────────────────────────────────
-
-const STAT_AXES: { key: keyof PilotStats; label: string; angle: number }[] = [
-  { key: 'shooting', label: '射擊', angle: -90 },
-  { key: 'defense', label: '防禦', angle: -30 },
-  { key: 'engineering', label: '機械', angle: 30 },
-  { key: 'melee', label: '格鬥', angle: 90 },
-  { key: 'assault', label: '突擊', angle: 150 },
-  { key: 'tactics', label: '戰術', angle: 210 },
-]
-
-const MAX_STAT = 5500
-const CX = 130
-const CY = 110
-const R = 75
-
-function toRad(deg: number) {
-  return (deg * Math.PI) / 180
-}
-
-function axisPoint(angle: number, scale: number) {
-  return {
-    x: CX + scale * R * Math.cos(toRad(angle)),
-    y: CY + scale * R * Math.sin(toRad(angle)),
-  }
-}
-
-function RadarChart({ stats }: { stats: PilotStats }) {
-  const gridLevels = [0.25, 0.5, 0.75, 1.0]
-
-  const statPoints = STAT_AXES.map((ax) => {
-    const scale = Math.min(stats[ax.key] / MAX_STAT, 1)
-    return axisPoint(ax.angle, scale)
-  })
-
-  const polyPoints = statPoints.map((p) => `${p.x},${p.y}`).join(' ')
-
-  return (
-    <svg viewBox="0 0 260 220" className="w-full select-none">
-      {/* Grid rings */}
-      {gridLevels.map((lvl) => {
-        const pts = STAT_AXES.map((ax) => axisPoint(ax.angle, lvl))
-        return (
-          <polygon
-            key={lvl}
-            points={pts.map((p) => `${p.x},${p.y}`).join(' ')}
-            fill="none"
-            stroke="#1e2330"
-            strokeWidth="1"
-          />
-        )
-      })}
-
-      {/* Axis lines */}
-      {STAT_AXES.map((ax) => {
-        const p = axisPoint(ax.angle, 1)
-        return (
-          <line
-            key={ax.key}
-            x1={CX}
-            y1={CY}
-            x2={p.x}
-            y2={p.y}
-            stroke="#1e2330"
-            strokeWidth="1"
-          />
-        )
-      })}
-
-      {/* Stat fill */}
-      <polygon
-        points={polyPoints}
-        fill="rgba(255,107,43,0.2)"
-        stroke="#ff6b2b"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-
-      {/* Labels */}
-      {STAT_AXES.map((ax) => {
-        const labelScale = 1.28
-        const p = axisPoint(ax.angle, labelScale)
-        const val = stats[ax.key]
-        const anchor =
-          Math.abs(ax.angle % 180) < 5
-            ? 'middle'
-            : ax.angle > 0 && ax.angle < 180
-            ? 'start'
-            : 'end'
-
-        return (
-          <g key={ax.key}>
-            <text
-              x={p.x}
-              y={p.y - 6}
-              textAnchor={anchor as 'middle' | 'start' | 'end'}
-              fill="#9ca3af"
-              fontSize="10"
-              fontFamily="'Noto Sans TC',sans-serif"
-            >
-              {ax.label}
-            </text>
-            <text
-              x={p.x}
-              y={p.y + 7}
-              textAnchor={anchor as 'middle' | 'start' | 'end'}
-              fill="#e8eaed"
-              fontSize="10"
-              fontWeight="600"
-              fontFamily="'JetBrains Mono',monospace"
-            >
-              {val.toLocaleString()}
-            </text>
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
-
 // ─── Skill Icon ───────────────────────────────────────────────────────────────
-
-function SkillIcon({ iconLocal, name, size = 'md' }: { iconLocal: string; name: string; size?: 'sm' | 'md' }) {
-  const [err, setErr] = useState(false)
-  const cls = size === 'sm' ? 'w-7 h-7' : 'w-10 h-10'
-  if (err || !iconLocal) {
-    return (
-      <div className={`${cls} rounded-lg bg-bg-dark border border-border flex items-center justify-center text-text-dim text-xs flex-shrink-0`}>
-        ?
-      </div>
-    )
-  }
-  return (
-    <img
-      src={assetUrl(iconLocal)}
-      alt={name}
-      className={`${cls} rounded-lg object-cover flex-shrink-0`}
-      onError={() => setErr(true)}
-    />
-  )
-}
+//
+// ⚠ 元件本體已上移至 `src/components/icons/SkillIcon.tsx`：配裝模擬器的「目前生效能力」
+//   清單要用同一顆圖示（含載入失敗時的 `?` 佔位方塊），各留一份必然漂移。
 
 // ─── Skill Type Badge ─────────────────────────────────────────────────────────
 
@@ -1110,17 +886,11 @@ export default function PilotDetailPage() {
     [ndOverrideMap],
   )
 
-  // ★ 標記：ndVariants 宣告的分區 ∪ 帶 buffUpgrades 的能力所在分區
-  const ndAffectZones = useMemo(() => {
-    const zones = new Set(
-      (pilot?.talents ?? []).flatMap(t => (t.ndVariants ?? []).map(v => v.zone)).filter((z): z is string => !!z)
-    )
-    for (const z of pilot?.neuralDrive ?? []) {
-      const has = (z.levels ?? []).some(lv => lv.abilityId && ndAbilityMap.get(lv.abilityId)?.buffUpgrades?.length)
-      if (has) zones.add(z.name)
-    }
-    return zones
-  }, [pilot, ndAbilityMap])
+  // ★ 標記的規則住在 ndOverrides.ts（052-I D-1）——配裝模擬器要標同一批分區
+  const ndAffectZones = useMemo(
+    () => affectZonesOf(pilot, (aid) => ndAbilityMap.get(aid)),
+    [pilot, ndAbilityMap],
+  )
 
   if (loading) {
     return (

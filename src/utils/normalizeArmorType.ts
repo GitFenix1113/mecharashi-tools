@@ -17,7 +17,7 @@
 // 純函式、無 React / Firestore 依賴，可單測（npm test）。
 
 import type { GlobalResearch, MechTypeResearchBonus, ClassResearchBonus, WeaponTypeResearchBonus } from '../types'
-import { ArmorType, MechLicense } from '../types/enums.ts'
+import { ArmorType, AssemblableArmorType, MechLicense } from '../types/enums.ts'
 
 /** 科研表／執照的裝甲用詞 → `ArmorType`。認不得的值回 `null`（不猜）。 */
 export function toArmorType(raw: string | null | undefined): ArmorType | null {
@@ -31,11 +31,34 @@ export function toArmorType(raw: string | null | undefined): ArmorType | null {
 }
 
 /**
+ * 背包的 `assemblableArmorType`（**英文**：`'Light' | 'Medium' | 'Heavy'`）→ `ArmorType`。
+ *
+ * ⚠ 這是同一個概念的**第四套**寫法，而且是唯一用英文的一套（API 欄位 AssemblableAirmenType 的原值）。
+ *   `toArmorType()` 只認中文，把 `'Light'` 餵進去會回 `null` ——
+ *   而 `null` 在多數呼叫端被當成「認不得就不擋」，症狀是 35 個「僅輕型可裝」的背包
+ *   在中甲／重型機甲上**照樣可選**。認不得的值一律回 `null`（不猜）。
+ */
+export function fromAssemblableArmorType(raw: string | null | undefined): ArmorType | null {
+  switch (raw) {
+    case AssemblableArmorType.LIGHT:  return ArmorType.LIGHT
+    case AssemblableArmorType.MEDIUM: return ArmorType.MEDIUM   // 'Medium' → '中甲'
+    case AssemblableArmorType.HEAVY:  return ArmorType.HEAVY
+    default: return null
+  }
+}
+
+/**
  * 這張執照能不能駕駛這個裝甲類型的機甲。
  *
- * 規則：重型執照全開、中型執照可駕駛輕型與中甲、輕型執照只能駕駛輕型。
+ * 規則：**一對一完全對應** —— 輕型執照只能駕駛輕型、中型執照只能駕駛中甲、重型執照只能駕駛重型。
+ *
+ * ⚠ 2026-08-25 修正：原本寫成「重型執照全開、中型可駕駛輕型與中甲」的階梯式包含關係，
+ *   那是憑直覺推的，遊戲裡沒有這回事 —— 症狀是重型執照的機師在模擬器裡看得到全部 90 台。
+ *   執照是「這位機師的機種」，不是「等級」。
+ *
  * 抽成函式是因為它有三個消費端（模擬器過濾、圖鑑標記、未來的分享碼驗證），
- * 而它正是那個「中型 vs 中甲」最容易寫錯的地方。
+ * 而它正是那個「中型 vs 中甲」最容易寫錯的地方 —— 兩邊都先過 `toArmorType()` 再比，
+ * 就不會有人再寫出 `license === '中甲'` 這種恆為 false 的分支。
  */
 export function licenseAllows(
   license: MechLicense | string | null | undefined,
@@ -44,12 +67,9 @@ export function licenseAllows(
   if (!license) return true                       // 未設定執照＝不過濾
   const armor = toArmorType(armorType)
   if (!armor) return true                         // 認不得的裝甲類型不擋（寧可多顯示，不要少）
-  switch (license) {
-    case MechLicense.HEAVY:  return true
-    case MechLicense.MEDIUM: return armor !== ArmorType.HEAVY
-    case MechLicense.LIGHT:  return armor === ArmorType.LIGHT
-    default: return true
-  }
+  const allowed = toArmorType(license)            // 執照走同一張表：'中型' → '中甲'
+  if (!allowed) return true                       // 認不得的執照同理不擋
+  return armor === allowed
 }
 
 /**

@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>配裝模擬器流程 — 鋼嵐工具站技術文件</title>
+<title>配裝模擬器流程 — 米赫瑪超吉情豹站技術文件</title>
 <link rel="stylesheet" href="../../_shared/style.css">
 </head>
 <body>
 
 <nav class="breadcrumb">
   <div class="container">
-    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 概要總覽</a>
+    <a href="../../01_規劃書/米赫瑪超吉情豹站_規劃書.html">📋 概要總覽</a>
     <span>›</span>
     <a href="../index.html">技術文件</a>
     <span>›</span>
@@ -22,112 +22,137 @@
 
 <header class="hero blue">
   <div class="hero-badge blue">◆ Game Mechanic</div>
-  <h1>配裝模擬器流程<span>SIMULATOR FLOW</span></h1>
-  <p class="hero-sub">Step 1–8 操作流程、自動篩選邏輯、匯出分享圖規格</p>
-  <div class="version-badge" style="background:var(--accent-blue);">v1.5 — 配裝與傷害計算分離</div>
+  <h1>配裝模擬器流程<span>LOADOUT FLOW</span></h1>
+  <p class="hero-sub">單頁槽位模型、合法性規則、級聯與重量帳（PLAN-052-B 改版後）</p>
+  <div class="version-badge" style="background:var(--accent-blue);">v2 — 8 步驟精靈已下線</div>
 </header>
 
 <main class="container">
 
 <section class="section">
-  <div class="section-label blue">分期說明</div>
-  <div class="section-title">實作分期計畫</div>
-
-  <div class="changed-block">
-    <strong>🔄 v1.5 調整：配裝與傷害計算分離</strong>
-    Phase 3 先實作配裝選擇 UI + 匯出分享圖模板（含元件/模組/機甲部位/武器展示），<strong>不含傷害計算</strong>。<br>
-    傷害計算（公式引擎、A/B 對比、武器改裝效果計算、科研加成計算）安排於最終 Phase 8 實作。
-  </div>
-</section>
-
-<section class="section">
-  <div class="section-label blue">操作流程</div>
-  <div class="section-title">Step 1–8 選配流程</div>
-
-  <div class="card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:16px;">
-    <div class="step-grid">
-      <div class="step-card">
-        <div class="step-number">STEP 1</div>
-        <div class="step-title">選擇機師</div>
-        <div class="step-desc">自動帶入六維、技能、天賦、神經驅動、駕駛等級。駕駛等級決定可選機甲範圍。</div>
-      </div>
-      <div class="step-card">
-        <div class="step-number">STEP 2</div>
-        <div class="step-title">選擇機甲</div>
-        <div class="step-desc">根據機師駕駛許可篩選可選機甲。自動帶入火力、副模組、裝甲類型、出力。</div>
-      </div>
-      <div class="step-card">
-        <div class="step-number">STEP 3</div>
-        <div class="step-title">選擇武器</div>
-        <div class="step-desc">根據機甲出力篩選（重量限制）。顯示所有技能與生效方式。專武天賦加強自動標記。</div>
-      </div>
-      <div class="step-card">
-        <div class="step-number">STEP 4</div>
-        <div class="step-title">選擇背包</div>
-        <div class="step-desc">根據機甲裝甲類型篩選（如「僅限輕型」）。根據剩餘出力（出力 - 武器重量）篩選重量。</div>
-      </div>
-      <div class="step-card">
-        <div class="step-number">STEP 5</div>
-        <div class="step-title">機師個別科研</div>
-        <div class="step-desc">機師/機甲/武裝特質各 I/II/III 欄位，有互斥提示。影響機師加成與傷害計算。</div>
-      </div>
-      <div class="step-card">
-        <div class="step-number">STEP 6</div>
-        <div class="step-title">武器改裝</div>
-        <div class="step-desc">固定改裝自動帶入。浮動改裝由使用者選擇已解鎖的效果（含條件觸發效果）。</div>
-      </div>
-      <div class="step-card">
-        <div class="step-number">STEP 7</div>
-        <div class="step-title">配置元件（觸/應）</div>
-        <div class="step-desc">根據武器的觸元件/應元件插槽數量，選擇觸發條件與效果。模擬器僅計算 6 種效果類型。</div>
-      </div>
-      <div class="step-card">
-        <div class="step-number">STEP 8</div>
-        <div class="step-title">敵方 + 戰鬥參數</div>
-        <div class="step-desc">敵方機師/機甲、技能倍率、連擊數、是否最佳射程、AP 消耗量。（Phase 8 實作）</div>
-      </div>
-      <div class="step-result">
-        <div class="step-number">RESULT</div>
-        <div class="step-title">即時計算結果</div>
-        <div class="step-desc">增傷% / 爆率% / 爆傷% / 命中% / 期望值，支援 A/B 對比與匯出圖片。（Phase 8 實作）</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="section-label blue">自動篩選</div>
-  <div class="section-title">篩選邏輯</div>
-
-  <div class="note-block">
-    <strong>⚡ 自動篩選邏輯</strong>
-    選了機甲後，武器和背包會自動根據「重量 ≤ 剩餘出力」和「裝甲類型限制」過濾不可裝備的選項。<br>
-    使用者不需要自己判斷能不能裝，介面直接過濾。
-  </div>
-
-  <div class="data-table-wrap">
-    <table class="data-table">
-      <tr><th>篩選點</th><th>條件</th><th>篩選依據</th></tr>
-      <tr><td>機甲選擇</td><td>機師駕駛許可</td><td>pilots.license ≥ mechs.armorType 等級</td></tr>
-      <tr><td>武器選擇</td><td>機甲出力限制</td><td>weapons.weight ≤ mechs.output</td></tr>
-      <tr><td>背包選擇</td><td>機甲裝甲類型限制</td><td>backpacks.mechRestriction == null || == mechs.armorType</td></tr>
-      <tr><td>背包選擇</td><td>剩餘出力限制</td><td>backpacks.weight ≤ mechs.output - weapons.weight</td></tr>
-    </table>
-  </div>
-</section>
-
-<section class="section">
-  <div class="section-label blue">匯出功能</div>
-  <div class="section-title">匯出分享圖模板（Phase 3 優先）</div>
+  <div class="section-label blue">互動模型</div>
+  <div class="section-title">為什麼不再是 Step 1–8</div>
 
   <div class="info-block">
-    <strong>📸 分享圖規格</strong>
-    尺寸：1200×675px，適合社群分享（16:9）。<br>
-    風格：仿遊戲深色卡片，橘色/藍色強調色。<br>
-    包含：機師立繪 + 機甲名 + 武器 + 背包 + 模組配置 + 元件 + 網站 Logo。<br>
-    技術：html2canvas 截圖 → PNG。手機端原生分享，PC 端下載。<br>
-    傷害數據欄位預留空位，待 Phase 8 傷害計算完成後填入。
+    <strong>🔄 v2 改版：整檔取代 8 步驟精靈</strong>
+    舊版把配裝拆成 8 個步驟，玩家必須走完 8 步才看得到結果——但配裝是「反覆試」的動作，
+    每試一次走 8 步，沒有人會用第二次。而且步驟列可無條件跳關，空手直跳 result 會渲染一頁「未選擇」。<br>
+    v2 的模型只有一句話：<strong>一眼看到全部槽位 → 點槽位換裝備 → 即時看重量／出力</strong>。
+    前置關係（機師 → 機甲 → 裝備）不再靠步驟強制，改由<strong>分階段載入</strong>與
+    <strong>級聯校驗</strong>表達：沒選機師時情境欄自動停在機師挑選器，選完自動往下一步。
   </div>
+
+  <table class="spec-table">
+    <tr><th>機師</th><td>HUD 的機師卡 → 情境欄開機師挑選器。決定執照與（若有）獨立配裝分頁數。</td></tr>
+    <tr><th>機甲</th><td>HUD 的機甲卡 → 機甲挑選器。依執照過濾（<strong>一對一</strong>：重型執照只開得到重型機甲），被擋下的摺疊成「因執照不符隱藏 N」。</td></tr>
+    <tr><th>武器</th><td>點槽位圖上任一格 → 該格的武器挑選器（只列 <code>equipSlot</code> 相符者）。</td></tr>
+    <tr><th>背包</th><td>背槽或「選擇背包」鈕。背包與背部武器共用同一格，兩邊的挑選器互相有 [改選…] 切換鍵。</td></tr>
+    <tr><th>元件／改裝／科研</th><td><strong>本版不渲染</strong>（見下方「明確不做的事」）。</td></tr>
+  </table>
+</section>
+
+<section class="section">
+  <div class="section-label blue">合法性規則</div>
+  <div class="section-title">單一入口 <code>src/utils/loadoutRules.ts</code></div>
+
+  <div class="info-block">
+    <strong>⚡ 為什麼要單一入口</strong>
+    舊版把「什麼裝得上」拆散在三個 <code>useCallback</code> 裡，於是同時存在三個各自寫錯的判斷。
+    v2 一律走 <code>canEquipWeapon()</code> / <code>canEquipBackpack()</code> / <code>validateLoadout()</code>，
+    重量帳一律走 <code>loadoutBudget()</code>。
+  </div>
+
+  <table class="spec-table">
+    <tr><th>檢查點</th><th>規則</th><th>錯誤碼／tier</th></tr>
+    <tr><td>機甲選擇</td><td><code>licenseAllows(pilot.license, mech.armorType)</code>。執照與裝甲<strong>一對一</strong>（不是階梯式包含，2026-08-25 修正）。<strong>禁止</strong>寫 <code>license === '中甲'</code>——執照是輕型／中型／重型，裝甲是輕型／中甲／重型。</td><td><code>LICENSE</code> · structural</td></tr>
+    <tr><td>槽位存在</td><td><code>mechSlotCapacity()</code>：單手 ×2、背 ×1；肩 ×2 <strong>僅中甲</strong>；備用 ×2 由 <code>type === 'BackupEquipment'</code> 的背包給（全庫僅強襲者背包一筆）。</td><td><code>NO_SLOT</code> · omitted</td></tr>
+    <tr><td>槽位相符</td><td><code>weapon.equipSlot === ref.slot</code>。雙手武器佔兩格單手，不是第三格。</td><td><code>SLOT_MISMATCH</code> · omitted</td></tr>
+    <tr><td>固定武裝</td><td>機甲部件的 <code>fixedArmament</code> 佔住的格不可更換；固定武裝本身不是可選裝備。</td><td><code>SLOT_OCCUPIED</code> / <code>FIXED_ARMAMENT</code></td></tr>
+    <tr><td>形態全鎖</td><td><code>form.restrict.kind === 'fixedArmament'</code> 鎖死<strong>整套</strong>（虛粒子／巡航），不只被 mounts 佔住的那幾格。</td><td><code>FORM_LOCKED</code> · blocked</td></tr>
+    <tr><td>機種限定</td><td><code>weapon.mechRestriction</code>。<strong>絕不可用 <code>type === '戰術'</code> 代替</strong>——實測 medium 49 筆 vs 戰術 44 筆，差 5 筆。</td><td><code>MECH_RESTRICTION</code> · structural</td></tr>
+    <tr><td>形態武器類型</td><td><code>form.restrict.allow</code> 白名單（「特殊」不參與過濾）。</td><td><code>FORM_WEAPON_TYPE</code> · structural</td></tr>
+    <tr><td>背包機種</td><td><code>backpack.assemblableArmorType</code> 正向邏輯，<code>[]</code> ＝ 無限制。<strong>值是英文</strong>（Light／Medium／Heavy），必須走 <code>fromAssemblableArmorType()</code>；餵給 <code>toArmorType()</code> 會全部回 null、等於完全不過濾。</td><td><code>BACKPACK_ARMOR_TYPE</code> · structural</td></tr>
+    <tr><td>背槽擇一</td><td>背包 <strong>XOR</strong> 背部武器（<code>SlotCapacity.back = 1</code>）。181/181 個背包 <code>slot='back'</code>。</td><td><code>BACK_SLOT_TAKEN</code> · situational</td></tr>
+    <tr><td>負重</td><td><code>totalWeight() &lt;= effectiveOutput()</code>，判定的是<strong>裝上之後</strong>的總重。<strong>不阻擋</strong>，只提示 ＋ 提供解法。</td><td><code>OVERWEIGHT</code> · situational</td></tr>
+  </table>
+
+  <div class="info-block">
+    <strong>🎚️ 四個呈現層級（tier）</strong>
+    <code>structural</code> 摺疊 ＋ 計數 ＋ [顯示並說明原因]；
+    <code>situational</code> 灰掉 ＋ 原因 ＋ <strong>解法按鈕</strong>（型別層強制附上）；
+    <code>omitted</code> 不列入清單；
+    <code>blocked</code> 整個挑選器降級並說明。
+    新增拒絕原因時 tsc 會逼你選邊並填中文說明。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label blue">級聯</div>
+  <div class="section-title">單一 <code>reconcile()</code></div>
+
+  <div class="info-block">
+    <strong>🔗 為什麼集中在一支函式</strong>
+    「選完機師才知道要篩選什麼機甲、選完機甲才知道哪個槽被限制住」——每一個動作都可能讓別的地方失效。
+    散在各 handler 會變成 N×N 條「換 A 時記得檢查 B」，而漏掉的那一條是靜默的。
+    v2 的規則只有一條：<strong>任何動作之後都跑同一支 <code>reconcile()</code></strong>，
+    動作本身只做結構性的放置／移除，合法性事後統一掃。掃描順序由外而內：機師執照 → 機甲 → 分頁鍵 → 背包 → 各槽武器。
+  </div>
+
+  <table class="spec-table">
+    <tr><th>動作</th><th>處置</th><th>回饋</th></tr>
+    <tr><td>換機師（同執照）</td><td>機甲保留，mounts 逐槽驗證</td><td>toast 列出被移除項 ＋ [復原]，該格閃橙</td></tr>
+    <tr><td>換機師（執照容不下）</td><td>機甲移除 → 連帶 mounts 與背包</td><td>自動回到機甲挑選</td></tr>
+    <tr><td>換機甲（中甲 → 輕／重）</td><td>肩槽整列消失 → 肩部武器移除；medium 限定武器移除</td><td>toast「移除 2 項：…」</td></tr>
+    <tr><td>換機甲（有固定武裝）</td><td>對應槽變 🔒 佔據態，原本裝的移除</td><td>「右肩已由固定武裝佔用」</td></tr>
+    <tr><td>換背包（強襲者 → 一般）</td><td>備用槽消失 → 兩格武器移除</td><td>toast 兩段：移除項 ＋ 出力變化</td></tr>
+    <tr><td>裝背部武器</td><td>背包自動卸下（背槽擇一）</td><td>toast 提供 [復原]</td></tr>
+    <tr><td>裝雙手武器</td><td>同 bank 的左右手都被取代</td><td>挑選器列上先印「裝上將取代 …」，不灰掉不阻擋</td></tr>
+    <tr><td>超重</td><td><strong>不自動卸、不阻擋</strong></td><td>條轉紅 ＋「超出 N」＋ [自動卸至符合]（須玩家主動按）</td></tr>
+  </table>
+
+  <div class="info-block">
+    <strong>↩️ 復原</strong>
+    每次級聯移除推一筆 undo（<strong>只留最近 1 筆</strong>），toast 上的 [復原] 還原<strong>整批</strong>。
+    第二層保險是把整份草稿寫進 localStorage <code>mecharashi_loadout_draft</code>。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label blue">數值</div>
+  <div class="section-title">重量與出力的口徑</div>
+
+  <table class="spec-table">
+    <tr><th>總重</th><td><code>機體 ＋ max(Σ主手, Σ備用) ＋ Σ肩 ＋ 背</code>。<strong>手部是取較重組，不是相加</strong>——備用組不與主手同時上場。寫成加總，海莉絲先鋒形態會算出 2625（官方 1825），誤差 44%，而且是往「裝不下」的方向錯。<br>機甲固定武裝與形態固定武裝<strong>計入</strong>（虛粒子 1125 ＝ 825 ＋ 耀星 100 ＋ 隕星 100 ＋ 千星 100）。</td></tr>
+    <tr><th>可用出力</th><td><code>parts.torso.output ＋ 背包加成 ＋ Σ 模組</code>。只有軀幹有出力。背包加成僅四筆已由官方畫面確認；另 15 筆「已知會給出力但數值未建檔」由 <code>hasUnknownBackpackBonus</code> 標成未知，<strong>不猜</strong>。</td></tr>
+    <tr><th>順序無關</th><td>先選背包或先選武器，剩餘出力必須相同——所有挑選器問同一支 <code>loadoutBudget()</code>。舊版選背包時扣武器重、選武器時不扣背包重，跳著選會得到兩份清單。</td></tr>
+    <tr><th>機甲火力</th><td>Σ 四部位（<code>chassisFirepower()</code>）。<strong>全站禁止讀 <code>mech.firepower</code></strong>：83/90 台的頂層值是單一部位值。</td></tr>
+    <tr><th>攻擊力</th><td>DB 值是「全部連擊的總和」，官方顯示的是「每擊值」，且官方值比 DB 高 17.3–18.6% 且逐把不同。→ 顯示 DB 原值並標「本站口徑，含連擊」，<strong>不做 ÷hitCount 的官方同格式渲染</strong>。差額屬傷害計算範疇。</td></tr>
+    <tr><th>等級</th><td>一律<strong>滿級／滿品質階</strong>。不開武器等級欄位、不給機甲品質階選擇。</td></tr>
+    <tr><th>數值未建檔</th><td><code>mech_090_美杜莎MK2</code> 全欄位為 0，是<strong>刻意的佔位</strong>（新機甲先建檔再補數值）。挑選器降級並說明「官方數值尚未公布」，不是渲染一台什麼都裝不下的機甲。</td></tr>
+  </table>
+</section>
+
+<section class="section">
+  <div class="section-label blue">範圍</div>
+  <div class="section-title">明確不做的事</div>
+
+  <div class="info-block">
+    <strong>🚫 不渲染，不是渲染空的</strong>
+    現行舊版 Step 6 渲染 3 個空格 0 顆按鈕，就是這個錯誤的現成教訓。<br>
+    · <strong>武器改裝</strong>——全庫 180/180 筆 <code>fixedMod.effects</code>／<code>floatingMod.possibleEffects</code> 皆空。<br>
+    · <strong>可達增益數值加總</strong>——全庫 buff／技能 <code>effects</code> 0 筆、323 筆 buffId 解析失敗。<br>
+    · <strong>戰術評分</strong>——零公式依據，<strong>本站永久不做</strong>；連「不提供猜測值」的告示都不留（2026-08-25 移除）。<br>
+    · <strong>單輪理論輸出</strong>——<code>attack</code> 語意未定。<br>
+    · <strong>科研步驟</strong>——<code>pilotResearch</code> 只有 1 筆且 pilotId 格式對不上，對 89/89 位機師全失效。
+  </div>
+
+  <table class="spec-table">
+    <tr><th>元件面板</th><td>PLAN-052-D。本版留可見佔位：武器列顯示「⚙ 0/<code>componentLimit</code>」。</td></tr>
+    <tr><th>存檔／分享碼／匯出圖</th><td>PLAN-052-C（本機書架＋分享碼）／052-E（雲端存檔）。本版<strong>不提供</strong>匯出。</td></tr>
+    <tr><th>形態分頁</th><td>PLAN-052-F。本版對有獨立配裝的機師只提供第一套，並以頁頂常駐橫幅說明。</td></tr>
+    <tr><th>模組槽與部件混搭</th><td>PLAN-052-G。本版機甲卡顯示唯讀四部位表 ＋「開發中」。</td></tr>
+    <tr><th>傷害計算</th><td>另立傷害模擬計畫。攻擊力口徑的差額在那裡釐清。</td></tr>
+  </table>
 </section>
 
 <section class="section">
@@ -137,22 +162,22 @@
     <a class="doc-item" href="傷害公式.html">
       <div class="doc-tag">Mechanic</div>
       <h4>⚔️ 傷害公式</h4>
-      <p>Step 8 的傷害計算引擎詳細公式</p>
+      <p>傷害計算引擎的完整公式（攻擊力口徑差額待其釐清）</p>
     </a>
     <a class="doc-item" href="../02_資料模型/weapons.html">
       <div class="doc-tag">Collection</div>
       <h4>🔫 weapons</h4>
-      <p>固定/浮動改裝欄位定義</p>
+      <p>equipSlot / mechRestriction / componentLimit 欄位定義</p>
     </a>
-    <a class="doc-item" href="../02_資料模型/components.html">
+    <a class="doc-item" href="../02_資料模型/backpacks.html">
       <div class="doc-tag">Collection</div>
-      <h4>⚡ components</h4>
-      <p>觸/應元件插槽結構</p>
+      <h4>🎒 backpacks</h4>
+      <p>slot / assemblableArmorType / BackupEquipment</p>
     </a>
     <a class="doc-item" href="../../03_頁面規劃/07_配裝模擬器/index.html">
       <div class="doc-tag">Page</div>
       <h4>🔧 配裝模擬器頁面</h4>
-      <p>模擬器頁面 UI 規劃</p>
+      <p>模擬器頁面 UI 規劃（三斷點版面、六態槽位圖）</p>
     </a>
   </div>
 </section>
@@ -160,11 +185,11 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 遊戲機制 · 配裝模擬器流程 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 技術文件總覽</a>
+  米赫瑪超吉情豹站 · 遊戲機制 · 配裝模擬器流程 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 技術文件總覽</a>
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-08-24 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

@@ -1,0 +1,405 @@
+// PLAN-052-B A-1：級聯（reconcile）的驗收
+//   npm test   →   node --test "src/**/*.test.ts"
+//
+// 每一則測試對應計畫書決策三那張表的一列。表上寫「換機甲（中甲→輕/重）→ 肩槽整列消失」，
+// 這裡就要真的看到肩部武器被移除、而且 toast 講得出被移除了什麼。
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import type { Backpack, Mech, MechForm, NeuralDrive, Pilot, Weapon } from '../../types/index.ts'
+import { INITIAL_SIM_STATE, reconcile, simReduce, type SimState } from './simReducer.ts'
+import { buildWorld, buildContext, loadoutBudget } from '../../utils/loadoutRules.ts'
+import { ArmorType, BackpackType, MechLicense, MechRestriction, WeaponEquipSlot, WeaponType } from '../../types/enums.ts'
+
+// ─── fixtures ───────────────────────────────────────────────────────────────
+
+const part = (weight: number, output?: number) =>
+  ({ position: 'torso', durable: 0, armor: 0, firepower: 0, weight, output, interface: 'Ⅱ型接口' }) as never
+
+const mech = (id: string, name: string, armorType: ArmorType): Mech => ({
+  id, name, armorType, firepower: 0, armor: 0, evasion: 0, mobility: 0, weight: 825, output: 3375,
+  parts: { torso: part(300, 3375), leftArm: part(175), rightArm: part(175), legs: part(175) },
+  moduleFixedIds: [],
+})
+
+const 彌造者 = mech('mech_052', '彌造者', ArmorType.MEDIUM)
+const 輕型機 = mech('mech_light', '輕型機', ArmorType.LIGHT)
+const 重型機 = mech('mech_heavy', '重型機', ArmorType.HEAVY)
+/** 第二台中甲：換機甲時「同機種換一台」用（執照一對一之後，跨機種那種換法會先被擋下） */
+const 中甲機2 = mech('mech_053', '中甲機2', ArmorType.MEDIUM)
+
+const weapon = (over: Partial<Weapon> & Pick<Weapon, 'id' | 'name' | 'weight' | 'equipSlot'>): Weapon => ({
+  type: WeaponType.Melee, kind: '刀劍', kindCoefficient: 1, attack: 0, accuracy: 0, critValue: 0,
+  rangeType: 'manhattan', minRange: 1, maxRange: 1, ammoCount: 0, hitCount: 1, rarity: 'SS',
+  mechRestriction: MechRestriction.NONE, isExclusive: false, triggerSlots: 0, effectSlots: 0, componentLimit: 4,
+  fixedMod: { planName: '', maxLevel: 0, effects: [] },
+  floatingMod: { planName: '', slots: 0, possibleEffects: [] }, skills: [], ...over,
+} as Weapon)
+
+const 群山之力 = weapon({ id: 'w_008', name: '群山之力', weight: 800, equipSlot: WeaponEquipSlot.DUAL_HAND })
+const 藝術突襲 = weapon({ id: 'w_016', name: '藝術突襲', weight: 420, equipSlot: WeaponEquipSlot.SINGLE_HAND, type: WeaponType.Assault })
+const 夜魘     = weapon({ id: 'w_017', name: '夜魘',     weight: 500, equipSlot: WeaponEquipSlot.SINGLE_HAND, type: WeaponType.Assault })
+const 熔火     = weapon({ id: 'w_044', name: '熔火', weight: 1200, equipSlot: WeaponEquipSlot.SHOULDER, type: WeaponType.Heavy, mechRestriction: MechRestriction.MEDIUM_ONLY })
+const 炬塔     = weapon({ id: 'w_049', name: '炬塔', weight: 1100, equipSlot: WeaponEquipSlot.BACK,     type: WeaponType.Heavy, mechRestriction: MechRestriction.MEDIUM_ONLY })
+
+const backpack = (over: Partial<Backpack> & Pick<Backpack, 'id' | 'name' | 'weight'>): Backpack => ({
+  type: BackpackType.HEAL, rarity: 'S', slot: WeaponEquipSlot.BACK, assemblableArmorType: [],
+  repairAmount: 0, skillIds: [], ...over,
+})
+const 強襲者背包 = backpack({ id: '60101706', name: '強襲者背包', weight: 150, type: BackpackType.BACKUP_EQUIPMENT })
+const 出力背包Ⅲ  = backpack({ id: '60100104', name: '出力背包Ⅲ', weight: 150, type: BackpackType.POWERADD })
+
+/**
+ * 神經驅動分區 fixture。`minSum` 階梯**逐機師不同**是本組測試的重點 ——
+ * 兩位機師都有 γ1／γ2，但同一個 Lv 換出來的算力值不一樣，所以換機師時不能沿用舊 Lv。
+ */
+const drive = (name: string, minSums: number[]): NeuralDrive => ({
+  name, icon: '', slots: [],
+  levels: minSums.map((minSum, i) => ({
+    level: i + 1, minSum, effect: '', skillName: `${name}能力${i + 1}`,
+    skillIcon: '', iconLocal: '', effects: [], buffIds: [],
+  })),
+})
+
+const 海莉絲: Pilot = { id: 'pilot_h', name: '海莉絲', license: MechLicense.MEDIUM } as Pilot
+const 輕型機師: Pilot = { id: 'pilot_l', name: '小輕', license: MechLicense.LIGHT } as Pilot
+/** 無形態的中型執照機師：測純結構級聯時用它，免得形態白名單搶先把武器擋掉 */
+const 中型機師: Pilot = { id: 'pilot_m', name: '阿中', license: MechLicense.MEDIUM } as Pilot
+/** 帶神經驅動的兩位機師（PLAN-052-I D-2）。γ 階梯刻意不同：ND甲 Lv3=7、ND乙 Lv3=13 */
+const ND甲: Pilot = {
+  id: 'pilot_nd_a', name: 'ND甲', license: MechLicense.MEDIUM,
+  neuralDrive: [drive('γ1', [1, 4, 7, 10, 13, 16]), drive('γ2', [1, 4, 7, 10, 13, 16])],
+} as Pilot
+const ND乙: Pilot = {
+  id: 'pilot_nd_b', name: 'ND乙', license: MechLicense.MEDIUM,
+  neuralDrive: [drive('γ1', [4, 8, 13]), drive('α1', [2, 5])],
+} as Pilot
+
+const form = (id: string, name: string, order: number, allow: string[]): MechForm => ({
+  id, pilotId: 海莉絲.id, name, order, description: '', independentLoadout: true,
+  restrict: { kind: 'weaponType', allow },
+} as MechForm)
+const 先鋒形態 = form('form_h_先鋒', '先鋒形態', 1, [WeaponType.Melee, WeaponType.Sniper])
+const 突擊形態 = form('form_h_突擊', '突擊形態', 2, [WeaponType.Assault])
+
+const WORLD = buildWorld({
+  pilots: [海莉絲, 輕型機師, 中型機師, ND甲, ND乙],
+  mechs: [彌造者, 輕型機, 重型機, 中甲機2],
+  weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
+  backpacks: [強襲者背包, 出力背包Ⅲ],
+  forms: [先鋒形態, 突擊形態],
+})
+
+const HAND_L = { bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' } as const
+const HAND_R = { bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'right' } as const
+const DUAL   = { bank: 'main', slot: WeaponEquipSlot.DUAL_HAND } as const
+const BKUP_L = { bank: 'backup', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' } as const
+const SHO_L  = { bank: 'main', slot: WeaponEquipSlot.SHOULDER, side: 'left' } as const
+const BACK   = { bank: 'main', slot: WeaponEquipSlot.BACK } as const
+
+/** 依序派發一串動作，回傳最終狀態。每一步都真的走 reducer —— 這裡測的就是「連著做」。 */
+const run = (...actions: Parameters<typeof simReduce>[1][]): SimState =>
+  actions.reduce<SimState>((s, a) => simReduce(s, a, WORLD), INITIAL_SIM_STATE)
+
+const setOf = (s: SimState, key = s.draft.activeSetKey) => s.draft.sets[key] ?? { mounts: [] }
+const names = (s: SimState) => (s.notice?.removed ?? []).map((r) => r.name)
+
+// ─── 基本流程 ───────────────────────────────────────────────────────────────
+
+test('選機師 → 選機甲 → 裝武器：一路走下來沒有任何級聯回饋（沒事就不跳 toast）', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },
+  )
+  assert.equal(setOf(s).mounts.length, 1)
+  assert.equal(s.notice, null)
+})
+
+test('分頁鍵一律取自 equipSetKeys()：海莉絲有 2 個獨立配裝分頁，預設落在第一個', () => {
+  const s = run({ type: 'selectPilot', pilotId: 海莉絲.id })
+  assert.equal(s.draft.activeSetKey, 先鋒形態.id)
+})
+
+test('換機師會讓舊 formId 分頁整批失效（不是留著一個點不到的孤兒分頁）', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },
+    { type: 'selectPilot', pilotId: 輕型機師.id },
+  )
+  assert.equal(s.draft.activeSetKey, 'default')
+  assert.deepEqual(Object.keys(s.draft.sets), [])
+})
+
+// ─── 決策三那張表 ───────────────────────────────────────────────────────────
+
+test('換機師（執照容不下）→ 機甲移除 → 連帶 mounts 與背包', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },
+    { type: 'selectPilot', pilotId: 輕型機師.id },
+  )
+  assert.equal(s.draft.mechId, undefined)
+  assert.ok(names(s).includes('彌造者'))
+  assert.match(s.notice!.removed[0].why, /輕型執照/)
+})
+
+// ⚠ 執照與裝甲一對一（2026-08-25）之後，一位機師換不到別的機種，而槽位形狀是 armorType 的函式，
+//   所以「換機甲→肩槽整列消失」在 reducer 層已經走不到了：跨機種的那一步會先被執照擋下。
+//   槽位縮水本身仍有覆蓋 —— loadoutRules.test「非中甲沒有肩槽 → NO_SLOT」與下面的換背包那則。
+test('換機甲跨機種（中甲→輕型）→ 執照擋下，整台連同該套裝備退回', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 中型機師.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipWeapon', ref: SHO_L, weaponId: 熔火.id },
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },
+    { type: 'selectMech', mechId: 輕型機.id },
+  )
+  assert.equal(s.draft.mechId, undefined)
+  assert.deepEqual(names(s), ['輕型機'])
+  assert.match(s.notice!.removed[0].why, /中型執照/)
+  assert.equal(setOf(s).mounts.length, 0)
+})
+
+test('換機甲不清空其餘裝備：「試試看換一台」不該每次都要重配一輪', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 中型機師.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },
+    { type: 'equipBackpack', backpackId: 出力背包Ⅲ.id },
+    { type: 'selectMech', mechId: 中甲機2.id },        // 同機種換一台 —— 執照擋不住的那種換法
+  )
+  assert.equal(s.draft.mechId, 中甲機2.id)
+  assert.equal(setOf(s).mounts.length, 1)
+  assert.equal(setOf(s).backpackId, 出力背包Ⅲ.id)
+})
+
+test('換背包（強襲者→一般）→ 備用槽消失 → 兩格武器移除 ＋ 出力變化寫進 toast', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'setActiveSet', key: 突擊形態.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipBackpack', backpackId: 強襲者背包.id },
+    { type: 'equipWeapon', ref: BKUP_L, weaponId: 藝術突襲.id },
+    { type: 'equipWeapon', ref: { bank: 'backup', slot: WeaponEquipSlot.SINGLE_HAND, side: 'right' }, weaponId: 夜魘.id },
+    { type: 'equipBackpack', backpackId: 出力背包Ⅲ.id },
+  )
+  assert.deepEqual(names(s).sort(), ['夜魘', '藝術突襲'])
+  // 強襲者 +300、出力背包Ⅲ +300 → 這一則的 note 只有在數字真的變了才出現
+  assert.equal(setOf(s).mounts.length, 0)
+})
+
+test('裝背部武器 → 背包自動卸下（背槽擇一），且 toast 可 [復原]', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'setActiveSet', key: 突擊形態.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipBackpack', backpackId: 出力背包Ⅲ.id },
+    { type: 'equipWeapon', ref: BACK, weaponId: 炬塔.id },
+  )
+  assert.equal(setOf(s).backpackId, undefined)
+  assert.ok(names(s).includes('出力背包Ⅲ'))
+  assert.equal(s.notice!.undoable, true)
+  // 背包 +300 出力沒了 —— 這是玩家最容易漏看的一件事，所以與移除項並列
+  assert.ok(s.notice!.notes.some((n) => n.includes('可用出力') && n.includes('-300')))
+})
+
+test('[復原] 還原整批，而不是逐件', () => {
+  const before = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'setActiveSet', key: 突擊形態.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipBackpack', backpackId: 強襲者背包.id },
+    { type: 'equipWeapon', ref: BKUP_L, weaponId: 藝術突襲.id },
+  )
+  const after = simReduce(before, { type: 'equipBackpack', backpackId: 出力背包Ⅲ.id }, WORLD)
+  assert.equal((after.draft.sets[突擊形態.id]?.mounts ?? []).length, 0)
+  const undone = simReduce(after, { type: 'undo' }, WORLD)
+  assert.deepEqual(undone.draft, before.draft)
+  assert.equal(undone.undo, null)          // 復原不可再被復原
+})
+
+test('裝雙手武器 → 兩隻手都被取代；再裝單手 → 雙手武器被取代', () => {
+  const a = run(
+    { type: 'selectPilot', pilotId: 中型機師.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipWeapon', ref: HAND_L, weaponId: 藝術突襲.id },
+    { type: 'equipWeapon', ref: HAND_R, weaponId: 夜魘.id },
+  )
+  assert.equal(setOf(a).mounts.length, 2)
+
+  const b = simReduce(a, { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id }, WORLD)
+  assert.equal(setOf(b).mounts.length, 1)
+  assert.equal(setOf(b).mounts[0].slot, WeaponEquipSlot.DUAL_HAND)
+  assert.deepEqual(names(b).sort(), ['夜魘', '藝術突襲'])
+
+  const c = simReduce(b, { type: 'equipWeapon', ref: HAND_L, weaponId: 藝術突襲.id }, WORLD)
+  assert.equal(setOf(c).mounts.length, 1)
+  assert.deepEqual(names(c), ['群山之力'])
+})
+
+// ─── 超重：不自動卸、不阻擋 ─────────────────────────────────────────────────
+
+test('超重不自動移除任何東西（決策三：擋了就會把人卡在既不能改也不能存的死狀態）', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 中型機師.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipWeapon', ref: SHO_L, weaponId: 熔火.id },
+    { type: 'equipWeapon', ref: { bank: 'main', slot: WeaponEquipSlot.SHOULDER, side: 'right' }, weaponId: 熔火.id },
+    { type: 'equipWeapon', ref: BACK, weaponId: 炬塔.id },
+  )
+  const ctx = buildContext(s.draft, s.draft.activeSetKey, WORLD)
+  assert.equal(loadoutBudget(ctx).over, true)
+  assert.equal(setOf(s).mounts.length, 3)
+})
+
+test('[自動卸至符合] 由重到輕卸，且每一步重算（手部取較重組會讓一次算完的版本卸不夠）', () => {
+  const over = run(
+    { type: 'selectPilot', pilotId: 中型機師.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipWeapon', ref: SHO_L, weaponId: 熔火.id },
+    { type: 'equipWeapon', ref: { bank: 'main', slot: WeaponEquipSlot.SHOULDER, side: 'right' }, weaponId: 熔火.id },
+    { type: 'equipWeapon', ref: BACK, weaponId: 炬塔.id },
+  )
+  assert.equal(loadoutBudget(buildContext(over.draft, over.draft.activeSetKey, WORLD)).over, true)
+  const fixed = simReduce(over, { type: 'autoUnloadToFit' }, WORLD)
+  const ctx = buildContext(fixed.draft, fixed.draft.activeSetKey, WORLD)
+  assert.equal(loadoutBudget(ctx).over, false)
+  assert.ok(fixed.notice!.removed.some((r) => r.why === '自動卸至符合出力'))
+})
+
+// ─── reconcile 本身 ─────────────────────────────────────────────────────────
+
+test('reconcile 對合法草稿是恆等的（不會每次 render 都製造一則假 toast）', () => {
+  const draft = {
+    pilotId: 海莉絲.id, mechId: 彌造者.id, activeSetKey: 先鋒形態.id,
+    sets: { [先鋒形態.id]: { mounts: [{ weaponId: 群山之力.id, bank: 'main' as const, slot: WeaponEquipSlot.DUAL_HAND }] } },
+  }
+  const { draft: after, removed } = reconcile(draft, WORLD)
+  assert.deepEqual(removed, [])
+  assert.deepEqual(after, draft)
+})
+
+test('reconcile 掃得掉指向已刪除資料的裝備（改版下架一把武器不該讓整頁壞掉）', () => {
+  const draft = {
+    pilotId: 海莉絲.id, mechId: 彌造者.id, activeSetKey: 先鋒形態.id,
+    sets: { [先鋒形態.id]: { mounts: [{ weaponId: 'w_不存在', bank: 'main' as const, slot: WeaponEquipSlot.DUAL_HAND }] } },
+  }
+  const { draft: after, removed } = reconcile(draft, WORLD)
+  assert.equal(after.sets[先鋒形態.id].mounts.length, 0)
+  assert.match(removed[0].why, /已不存在/)
+})
+
+test('loadDraft（舊存檔／分享碼）一樣要過 reconcile，不合法的部分會被掃掉', () => {
+  const s = simReduce(INITIAL_SIM_STATE, {
+    type: 'loadDraft',
+    draft: {
+      pilotId: 輕型機師.id, mechId: 重型機.id, activeSetKey: 'default',
+      sets: { default: { mounts: [{ weaponId: 炬塔.id, bank: 'main', slot: WeaponEquipSlot.BACK }] } },
+    },
+  }, WORLD)
+  assert.equal(s.draft.mechId, undefined)          // 輕型執照駕駛不了重型機甲
+  assert.equal(s.notice!.undoable, false)          // 載入不提供復原
+})
+
+// ─── 算力配置 ndLevels（PLAN-052-I D-2）──────────────────────────────────────
+
+const ndDraft = (pilotId: string, ndLevels?: Record<string, number>) => ({
+  pilotId, mechId: 彌造者.id, activeSetKey: 'default', sets: {},
+  ...(ndLevels ? { ndLevels } : {}),
+})
+
+test('ndLevels：合法配置原封不動，且不生出任何 removed', () => {
+  const draft = ndDraft(ND甲.id, { 'γ1': 3, 'γ2': 4 })   // 7 + 10 = 17 ≤ 23
+  const { draft: after, removed } = reconcile(draft, WORLD)
+  assert.deepEqual(removed, [])
+  assert.deepEqual(after.ndLevels, { 'γ1': 3, 'γ2': 4 })
+})
+
+test('ndLevels：不屬於這位機師的分區鍵會被掃掉（換機師的殘留）', () => {
+  const { draft } = reconcile(ndDraft(ND乙.id, { 'γ1': 2, 'γ2': 5, 'β9': 1 }), WORLD)
+  // γ2 / β9 不在 ND乙 身上 → 丟掉。**沒被提到的分區（α1）不會被補成 0**：
+  // 那是「未設定」，讀取端一律 `{ ...defaultNdLevels(), ...ndLevels }` 疊上去，
+  // 補 0 等於把一個玩家沒下過的「全關」決定寫死進草稿。
+  assert.deepEqual(draft.ndLevels, { 'γ1': 2 })
+})
+
+test('ndLevels：Lv 超出該區級數會被 clamp，不會留下一個查無此級的數字', () => {
+  const { draft } = reconcile(ndDraft(ND乙.id, { 'γ1': 99, 'α1': -3 }), WORLD)
+  assert.deepEqual(draft.ndLevels, { 'γ1': 3, 'α1': 0 })
+})
+
+test('ndLevels：γ 合計超過上限 → 整份退場，回到「未設定」而不是被砍一半', () => {
+  // γ1 Lv6 = 16、γ2 Lv6 = 16 → 合計 32 > 23
+  const { draft } = reconcile(ndDraft(ND甲.id, { 'γ1': 6, 'γ2': 6 }), WORLD)
+  assert.equal('ndLevels' in draft, false)
+})
+
+test('ndLevels：未設定時欄位不存在（不是 undefined —— 三態撞上 stripUndefined 會清不掉）', () => {
+  const { draft } = reconcile(ndDraft(ND甲.id), WORLD)
+  assert.equal('ndLevels' in draft, false)
+  // 沒有機師時同樣整份退場
+  const { draft: noPilot } = reconcile({ activeSetKey: 'default', sets: {}, ndLevels: { 'γ1': 3 } }, WORLD)
+  assert.equal('ndLevels' in noPilot, false)
+})
+
+test('換機師時算力重置：兩位機師都有 γ1，但 Lv3 的算力值不同，不得沿用', () => {
+  const a = simReduce(INITIAL_SIM_STATE, { type: 'selectPilot', pilotId: ND甲.id }, WORLD)
+  const withNd = simReduce(a, { type: 'setNdLevels', levels: { 'γ1': 3, 'γ2': 2 } }, WORLD)
+  assert.deepEqual(withNd.draft.ndLevels, { 'γ1': 3, 'γ2': 2 })
+
+  const b = simReduce(withNd, { type: 'selectPilot', pilotId: ND乙.id }, WORLD)
+  assert.equal('ndLevels' in b.draft, false)
+})
+
+test('setNdLevels：不動裝備、不跳 toast，且同一份配置重送是恆等的', () => {
+  const base = simReduce(INITIAL_SIM_STATE, { type: 'selectPilot', pilotId: ND甲.id }, WORLD)
+  const s1 = simReduce(base, { type: 'setNdLevels', levels: { 'γ1': 2, 'γ2': 2 } }, WORLD)
+  assert.equal(s1.notice, null)
+  const s2 = simReduce(s1, { type: 'setNdLevels', levels: { 'γ1': 2, 'γ2': 2 } }, WORLD)
+  assert.equal(s2, s1)
+})
+
+// ─── 方案名稱 name（PLAN-052-I E-1）────────────────────────────────────────────
+
+test('setName：寫入時就清洗（換行折成空白、前後空白 trim），不留給渲染端', () => {
+  const s = simReduce(INITIAL_SIM_STATE, { type: 'setName', name: '  星芒\n雙持流  ' }, WORLD)
+  assert.equal(s.draft.name, '星芒 雙持流')
+  assert.equal(s.notice, null)      // 命名不跳 toast
+})
+
+test('setName：清成空 → 欄位不存在（不是空字串）', () => {
+  const named = simReduce(INITIAL_SIM_STATE, { type: 'setName', name: '甲案' }, WORLD)
+  assert.equal(named.draft.name, '甲案')
+  const cleared = simReduce(named, { type: 'setName', name: '   ' }, WORLD)
+  assert.equal('name' in cleared.draft, false)
+})
+
+test('setName：同一個清洗結果重送是恆等的（每一鍵都新建 draft 會一直寫 localStorage）', () => {
+  const a = simReduce(INITIAL_SIM_STATE, { type: 'setName', name: '甲案' }, WORLD)
+  const b = simReduce(a, { type: 'setName', name: '甲案 ' }, WORLD)   // 清洗後同字
+  assert.equal(b, a)
+})
+
+test('reconcile：外部來源（分享碼／localStorage 手改）的髒名稱一樣要被清掉', () => {
+  const { draft } = reconcile({
+    pilotId: 海莉絲.id, mechId: 彌造者.id, activeSetKey: 先鋒形態.id, sets: {},
+    name: '換行\n進來的\t名字',
+  }, WORLD)
+  assert.equal(draft.name, '換行 進來的 名字')
+
+  const { draft: blank } = reconcile({
+    pilotId: 海莉絲.id, mechId: 彌造者.id, activeSetKey: 先鋒形態.id, sets: {}, name: '   ',
+  }, WORLD)
+  assert.equal('name' in blank, false)
+})
+
+test('reconcile：乾淨名稱不觸發改寫（合法草稿必須是恆等的）', () => {
+  const draft = {
+    pilotId: 海莉絲.id, mechId: 彌造者.id, activeSetKey: 先鋒形態.id,
+    sets: { [先鋒形態.id]: { mounts: [] } }, name: '乾淨名稱',
+  }
+  const { draft: after } = reconcile(draft, WORLD)
+  assert.deepEqual(after, draft)
+})

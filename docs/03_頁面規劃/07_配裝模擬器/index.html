@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>配裝模擬器頁面規劃 — 鋼嵐工具站</title>
+<title>配裝模擬器頁面規劃 — 米赫瑪超吉情豹站</title>
 <link rel="stylesheet" href="../../_shared/style.css">
 </head>
 <body>
 
 <nav class="breadcrumb">
   <div class="container">
-    <a href="../../01_規劃書/鋼嵐工具站_規劃書.html">📋 概要總覽</a>
+    <a href="../../01_規劃書/米赫瑪超吉情豹站_規劃書.html">📋 概要總覽</a>
     <span>›</span>
     <a href="../index.html">頁面規劃</a>
     <span>›</span>
@@ -20,9 +20,9 @@
 
 <header class="hero orange">
   <div class="hero-badge">◆ Page Design</div>
-  <h1>配裝模擬器<span>SIMULATOR PAGE · /simulator</span></h1>
-  <p class="hero-sub">核心工具頁：選配裝 → 自動篩選 → 匯出分享圖（傷害計算為 Phase 8）</p>
-  <div class="version-badge">Phase 3 — 配裝選擇 + 匯出 | Phase 8 — 傷害計算</div>
+  <h1>配裝模擬器<span>LOADOUT PAGE · /simulator</span></h1>
+  <p class="hero-sub">單頁槽位圖 ＋ 就地挑選器 ＋ 即時重量／出力（PLAN-052-B 改版）</p>
+  <div class="version-badge">PLAN-052-B 已上線 | 元件 052-D · 存檔／分享碼 052-C／E · 形態分頁 052-F · 模組與混搭 052-G</div>
 </header>
 
 <main class="container">
@@ -32,64 +32,190 @@
   <div class="section-title">配裝模擬器 /simulator</div>
 
   <table class="spec-table">
-    <tr><th>路由</th><td><code>/simulator</code></td></tr>
-    <tr><th>開發階段</th><td>Phase 3（配裝）/ Phase 8（傷害計算）</td></tr>
-    <tr><th>登入需求</th><td>不需要（未登入可用，登入後可存檔）</td></tr>
-    <tr><th>資料來源</th><td>Firestore: pilots / mechs / weapons / backpacks / modules / components / pilotResearch</td></tr>
+    <tr><th>路由</th><td><code>/simulator</code>（保留舊路徑：分享碼要用它，且不必動 Cloudflare Transform Rule）</td></tr>
+    <tr><th>元件</th><td><code>src/pages/simulator/LoadoutPage.tsx</code>（舊 <code>SimulatorPage.tsx</code> 已下線刪除）</td></tr>
+    <tr><th>登入需求</th><td><strong>不需要，且導覽列不再有 ADMIN gate</strong>（總綱決策九：完全公開，未登入也能用）</td></tr>
+    <tr><th>資料來源</th><td>
+      分階段 <code>ensureLoaded</code>（<code>useLoadoutGameData(stage)</code>）：<br>
+      · <code>pilot</code> 階段 → pilots / forms<br>
+      · <code>mech</code> 階段 → ＋ mechs / neuralDriveAbilities<br>
+      · <code>equip</code> 階段 → ＋ weapons / backpacks<br>
+      · <code>components</code>（208 筆）<strong>不進階段表</strong>，只在元件面板掛載時由
+      <code>useComponents()</code> 載入（PLAN-052-I D-3）。<br>
+      舊版一進頁就拉 11 個集合（含 208 筆元件、242 筆模組、buffs、技能庫），而玩家在選完機師之前一筆都用不到。<br>
+      <strong>⚠ <code>neuralDriveAbilities</code> 少了不會報錯</strong>：<code>resolveNeuralDriveLevel()</code>
+      會退回嵌入式舊欄位，已遷移的機師於是列出一排空白能力名（PLAN-052-I D-1）。
+    </td></tr>
+    <tr><th>狀態</th><td>
+      <code>LoadoutDraft</code>（<code>src/types/loadout.ts</code>）＋ <code>simReduce()</code>／<code>reconcile()</code>
+      （<code>src/pages/simulator/simReducer.ts</code>）。草稿自動寫入 localStorage
+      <code>mecharashi_loadout_draft</code>（單一份，書架是 052-C）。<br>
+      <strong>PLAN-052-I D-2 新增 <code>ndLevels?: Record&lt;string, number&gt;</code></strong>（分區名 → Lv）：
+      放草稿頂層不放 <code>EquipSet</code>（算力是機師屬性，不隨形態變），
+      <strong>只存玩家動過的分區</strong>——讀取端一律
+      <code>{ ...defaultNdLevels(), ...draft.ndLevels }</code> 疊上去，把預設值落盤等於複製一份會過期的規則。
+      <code>reconcile()</code> 會掃掉不屬於這位機師的分區鍵、clamp Lv，γ 合計超上限時<strong>整份退回預設</strong>；
+      換機師時明確重置。<strong>052-C 的 codec v1 必須把這一段一起編碼。</strong><br>
+      <strong>PLAN-052-I E-1 新增 <code>name?: string</code></strong>（方案名稱，上限 24 個碼點）：
+      一律經 <code>sanitizeLoadoutName()</code>（<code>src/utils/loadoutName.ts</code>）之後才落盤 ——
+      清洗放在<strong>寫入邊界</strong>（<code>setName</code> ＋ <code>reconcile</code>），
+      渲染端清洗會讓「存進去的」與「看到的」是兩個字串，而落盤的是髒的那個。
+      未命名時欄位不存在。<strong>命名與雲端保存需登入（gate 掛 052-E）</strong>，
+      未登入仍可配裝／分享／匯出。
+    </td></tr>
   </table>
 </section>
 
 <section class="section">
   <div class="section-label">UI 設計</div>
-  <div class="section-title">分步選配介面</div>
+  <div class="section-title">單頁槽位圖 ＋ 就地挑選器</div>
 
   <div class="card-grid">
     <div class="card orange">
       <div class="card-icon">📐</div>
-      <h3>版面策略</h3>
-      <p>左側：分步選配面板（Step 1~8）。右側：配裝預覽卡片（即時更新）。行動版：上下分割或 Tab 切換。</p>
+      <h3>三斷點版面</h3>
+      <p>
+        ≥1280 三欄「<strong>機師卡＋算力 340</strong> ｜ <strong>槽位 HUD 1fr</strong> ｜
+        <strong>情境欄 380</strong>」／1024–1279 兩欄（機師卡與槽位圖同欄，算力面板掛在槽位圖<strong>下方</strong>）／
+        &lt;1024 單欄。<strong>彈性欄是槽位圖不是清單</strong>（PLAN-052-I B-2）：
+        槽位圖是「左節點／機甲／右節點」三區橫排，給固定 400px 每欄只剩 ~80px，武器名全被截掉。<br>
+        <strong>右欄＝情境欄，一欄三種內容</strong>（PLAN-052-I D-3）：預設武器與元件列 →
+        開挑選器時整欄換成挑選器 → 點武器列鑽進元件面板。
+        <strong>刻意不做覆蓋層</strong>：四塊同時常駐會讓中欄掉到 ~430px，
+        低於 <code>LoadoutRig</code> 的 <code>DENSE_MAX_WIDTH = 570</code>，
+        而且覆蓋層要新增 z-index 層級、focus trap、Esc 三份互動負債。<br>
+        斷點用<strong>視窗寬</strong>（<code>useLayoutBreakpoint</code>），
+        與<strong>指標粗細</strong>（<code>useIsMobile</code>，決定就地面板 vs BottomSheet、有無 hover 預覽）<strong>正交</strong>——
+        平板因此得到「兩欄 ＋ BottomSheet ＋ 無 hover 預覽」，是刻意的組合。<br>
+        <strong>單欄版面（PLAN-052-I F-1）</strong>：三顆動作鍵移到<strong>底部固定列</strong>、方案名稱移出 sticky、
+        帳本列改兩列 <code>narrow</code> 版 ⇒ sticky 抬頭 381px → 225px。
+        槽位圖多一階 <strong>tight</strong>（門檻同 <code>LINE_MIN_WIDTH</code>：不畫引線就不需要那道縫），
+        <code>gap-x-2</code> ＋ 機甲圖 76px ＋ 名稱折兩行。<br>
+        ⚠ <strong>底部操作列不可貼底</strong>：<code>Layout.tsx</code> 已有一條
+        <code>fixed bottom-0</code> 的手機 Tab Bar（<code>h-14</code> ＋ safe-area、<code>z-50</code>），
+        本頁的列必須疊在它上面（<code>z-40</code>），toast 再疊在兩者之上。
+      </p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">🖼️</div>
+      <h3>匯出配裝長圖（052-I E）</h3>
+      <p>
+        <code>toPng(el, { backgroundColor: '#0a0c10', pixelRatio: 2, skipFonts: false })</code>，
+        實測 <strong>2000×2586</strong>、約 3MB、單次約 0.5 秒。浮水印兩層：footer 主標
+        （<code>mecharashi.wiki</code>＋站名全稱＋非官方聲明）與底噪 <code>MILKHAMA</code> wordmark；
+        右下印產生日期與遊戲版本（取 <code>patchVersions</code> 的 <code>isTwCurrent</code>）。
+        <strong>分享碼那一欄在 052-C 之前整個不印</strong>——印占位會有人拿去貼，而它解不開。<br>
+        ⚠ <strong>兩個 toPng 通用地雷</strong>：① StrictMode 的 effect 雙呼叫會吃掉「已啟動」旗標
+        （兩輪都沒拍成，而且只在 dev 出現）；② <strong>背景分頁不觸發 rAF</strong>，裸的雙層 rAF
+        在「按下匯出後切分頁」時永遠不 resolve——站上既有的兩處匯出都有這個問題。
+      </p>
     </div>
     <div class="card blue">
-      <div class="card-icon">⚡</div>
-      <h3>自動篩選提示</h3>
-      <p>選機甲後，武器選單自動過濾超重選項，背包選單過濾不相容裝甲類型。不可選的項目變灰但保留。</p>
+      <div class="card-icon">🎛️</div>
+      <h3>六態槽位圖 LoadoutRig</h3>
+      <p>
+        空／已裝／🔒佔據（機甲固定武裝）／🔒全鎖（形態）／▨無槽／預覽。
+        ▨無槽<strong>整格說明原因</strong>（「肩部槽位只有中甲機甲才有」「先鋒形態沒有可裝在左肩的武器」），
+        不是一個點不下去的空 <code>[+]</code>。雙手武器合併成寬格；備用組獨立一列（由強襲者背包給）。
+        React key 一律 <code>slotKey()</code>，不可用 weaponId（帕斯卡左右肩是同一把武器）。
+      </p>
+    </div>
+    <div class="card pink">
+      <div class="card-icon">🧠</div>
+      <h3>算力面板與「目前生效」</h3>
+      <p>
+        左欄機師卡下方（非三欄版則掛在槽位圖<strong>下方</strong>）。Lv 條與 γ 上限
+        （<code>ND_RULES.gammaPairCap = 23</code>）全部問 <code>src/utils/ndOverrides.ts</code>，
+        與 PLAN-034 的 BUFF 階覆寫層<strong>共用同一份門檻</strong>。<br>
+        「目前生效」<strong>逐級全列</strong>（每一級各給一個獨立能力，只印最高的等於少講 N−1 件事），
+        帶縮圖與 hover 說明，並可展開／收合 —— 互動與機師詳情頁一致。
+        <strong>「配裝概況」已下架</strong>：已用槽位在三個地方重複、平均射程沒有人會據以決策。
+      </p>
     </div>
     <div class="card green">
-      <div class="card-icon">📸</div>
-      <h3>匯出分享圖（Phase 3）</h3>
-      <p>html2canvas 截圖 → PNG。1200×675px 分享卡片，含機師/機甲/武器/背包/模組/元件資訊。傷害欄位預留。</p>
+      <div class="card-icon">⚡</div>
+      <h3>兩層拒絕呈現</h3>
+      <p>
+        <strong>situational</strong>（改別的就能解：OVERWEIGHT／BACK_SLOT_TAKEN）→ 灰掉 ＋ 原因 ＋ 解法按鈕
+        （「卸下 左肩 熔火 可裝」）。<br>
+        <strong>structural</strong>（改別的也解不掉：MECH_RESTRICTION／FORM_WEAPON_TYPE／BACKPACK_ARMOR_TYPE／LICENSE）
+        → 摺疊 ＋ 計數 ＋ [顯示並說明原因]。<br>
+        <strong>omitted</strong>（SLOT_MISMATCH／NO_SLOT／FIXED_ARMAMENT）不列入清單；
+        <strong>blocked</strong>（FORM_LOCKED／SLOT_OCCUPIED／數值未建檔）整個挑選器降級並說明。
+      </p>
     </div>
     <div class="card purple">
-      <div class="card-icon">🔖</div>
-      <h3>配裝存檔（Phase 5）</h3>
-      <p>登入用戶點擊「儲存配裝」後存入 Firestore users/{uid}/builds，可命名並在個人中心查看。</p>
+      <div class="card-icon">🔗</div>
+      <h3>級聯：降級不清空</h3>
+      <p>
+        全部集中在單一 <code>reconcile()</code>，不散在各 handler。換機師／機甲／背包造成的移除會跳
+        toast 列出被移除項並附 [復原]（只留最近 1 筆），對應的格閃橙。
+        <strong>超重不自動卸、不阻擋存檔</strong>——需要時由玩家主動按 [自動卸至符合]。
+      </p>
     </div>
     <div class="card red">
-      <div class="card-icon">⚔️</div>
-      <h3>傷害計算（Phase 8）</h3>
-      <p>填入敵方參數後顯示期望傷害，支援 A/B 組合對比。傷害來源拆解面板。</p>
+      <div class="card-icon">🚫</div>
+      <h3>這一版明確不渲染</h3>
+      <p>
+        武器改裝（全庫 0/180 筆資料）、可達增益數值加總（effects 0 筆）、戰術評分（零公式依據）、
+        單輪理論輸出（attack 語意未定）、科研步驟（89/89 機師失效）。
+        <strong>不渲染，不是渲染空的。</strong>其中<strong>戰術評分永久不做</strong>，版面上連告示都不留（2026-08-25 移除）。
+      </p>
     </div>
-  </div>
-
-  <div class="wireframe" style="margin-top:20px;">
-    <div class="wf-icon">⚔️</div>
-    <p>配裝模擬器版面草圖待規劃<br>左側選配步驟 + 右側即時預覽（桌面版）<br>行動版：步驟折疊，預覽在底部</p>
+    <div class="card orange">
+      <div class="card-icon">🧩</div>
+      <h3>後續階段的可見佔位</h3>
+      <p>
+        武器列顯示「⚙ 0/<code>componentLimit</code>」（讓玩家看得到上限是 4 而不是觸 3 加應 3 的 6）、
+        有獨立配裝的機師（海莉絲）頁頂常駐橫幅說明形態分頁開發中、
+        機甲卡顯示唯讀四部位表 ＋「部件混搭與模組配置開發中」。
+      </p>
+    </div>
   </div>
 </section>
 
 <section class="section">
+  <div class="section-label">數值口徑</div>
+  <div class="section-title">只出算得準的欄位</div>
+  <table class="spec-table">
+    <tr><th>總重</th><td>機體 ＋ <strong>max(主手組, 備用組)</strong> ＋ 肩 ＋ 背（<code>totalWeight()</code>）。<strong>不是加總</strong>——寫成加總先鋒形態會誤差 44%。固定武裝計入。</td></tr>
+    <tr><th>可用出力</th><td>軀幹出力 ＋ 背包加成 ＋ Σ 模組（<code>effectiveOutput()</code>）。15 筆「已知會給出力但數值未建檔」的背包標為未知，不猜。</td></tr>
+    <tr><th>機甲火力</th><td>Σ 四部位（<code>chassisFirepower()</code>）。<strong>全站禁止讀 <code>mech.firepower</code></strong>。</td></tr>
+    <tr><th>命中／射程</th><td>DB 原值，與官方 1:1 相符。</td></tr>
+    <tr><th>攻擊力</th><td>顯示 DB 原值並標「合計攻擊（本站口徑，含連擊）」。<strong>不做 ÷hitCount 的官方同格式渲染</strong>——官方值比 DB 高 17.3–18.6% 且逐把不同，屬傷害計算範疇（總綱決策一④）。</td></tr>
+    <tr><th>等級</th><td>一律滿級／滿品質階；不提供武器等級與機甲品質階選擇（總綱決策十）。</td></tr>
+  </table>
+</section>
+
+<section class="section">
   <div class="section-label">技術設計</div>
-  <div class="section-title">關聯技術文件</div>
+  <div class="section-title">關聯模組與文件</div>
+  <table class="spec-table">
+    <tr><th><code>src/types/loadout.ts</code></th><td>LoadoutDraft（含 <code>ndLevels</code>）／EquipSet／LoadoutMount／MountSetup</td></tr>
+    <tr><th><code>src/utils/loadoutRows.ts</code></th><td>weaponRows()——已裝武器攤平成清單（含機甲固定武裝與形態鎖定武裝、雙手武器去重）；loadoutSheetRows()——匯出圖用的完整槽位表，<strong>空槽與無槽也出現</strong>（看圖的人不能點開來確認「是沒裝還是沒有這一格」）</td></tr>
+    <tr><th><code>src/utils/loadoutName.ts</code></th><td>sanitizeLoadoutName()／LOADOUT_NAME_MAX = 24（碼點）——換行折成空白、控制字元與雙向覆寫字元移除、以碼點截斷（<code>slice()</code> 會把 emoji 切成孤立代理字）</td></tr>
+    <tr><th><code>src/components/loadout/LoadoutExportCard.tsx</code></th><td>匯出長圖版面（1000px 寬、高度隨內容）＋ <code>LoadoutExportRunner</code>（等圖與字體 → toPng → 下載）。<strong>不共用螢幕版面</strong>，字級與顏色寫死在該檔</td></tr>
+    <tr><th><code>src/utils/ndOverrides.ts</code></th><td>ND_RULES.gammaPairCap／zonePower()／defaultNdLevels()／ndAffectZones()——算力門檻的<strong>單一出處</strong>，與 PLAN-034 的 BUFF 階覆寫層共用</td></tr>
+    <tr><th><code>src/components/common/NdPowerBar.tsx</code></th><td>神經驅動算力配置列。<strong>一支元件兩種版型</strong>：<code>layout='inline'</code>（機師詳情頁）／<code>layout='panel'</code>（模擬器左欄，多一段「目前生效能力」）</td></tr>
+    <tr><th><code>src/components/common/NdActiveAbilities.tsx</code></th><td>「目前生效」清單：縮圖＋hover 浮窗（<code>createPortal</code>，面板的 clip-path 會裁掉就地定位的浮窗）／BottomSheet／展開詳情。<strong>互動語彙與機師詳情頁的神經驅動分頁對齊</strong></td></tr>
+    <tr><th><code>src/components/icons/SkillIcon.tsx</code></th><td>天賦／技能／神經驅動能力共用的方形圖示（自 PilotDetailPage 上移）。載入失敗渲染 <code>?</code> 佔位方塊而不是 null——少一顆會讓整排文字左右參差</td></tr>
+    <tr><th><code>src/utils/loadoutRules.ts</code></th><td>canEquipWeapon／canEquipBackpack／validateLoadout／loadoutBudget／weaponChoices／backpackChoices（＋封閉的拒絕原因聯集）</td></tr>
+    <tr><th><code>src/pages/simulator/simReducer.ts</code></th><td>simReduce()／reconcile()／undo</td></tr>
+    <tr><th><code>src/components/loadout/</code></th><td>loadoutTheme（字級／切角／分段色／slotSegKey／slotIconName）／LoadoutRig／SlotCell／MechPartStrip／OutputBar／PickerShell／PickerVariants／RejectionRow／PilotIdentityCard／WeaponComponentList／ComponentPanel／EquippedStats／LoadoutSummary／CascadeToast<br>（<code>HiddenCountBar</code> 已於 PLAN-052-I C 移除：結構性拒絕的項目一律不列，規則層的 <code>structuralCounts()</code> 保留）</td></tr>
+    <tr><th><code>src/components/common/BottomSheet.tsx</code></th><td>PLAN-052-B B-3 補齊 a11y（role/aria-modal/aria-labelledby/Escape/focus trap/焦點歸還）＋ footer slot ＋ scroll lock ＋ 堆疊只畫一層遮罩</td></tr>
+    <tr><th><code>src/components/charts/RadarChart.tsx</code></th><td>自 PilotDetailPage 抽出，兩處共用</td></tr>
+    <tr><th>052-A 地基</th><td><code>loadoutWeight</code>／<code>effectiveOutput</code>／<code>chassisStats</code>／<code>mechSlots</code>／<code>forms</code>／<code>normalizeArmorType</code></td></tr>
+  </table>
   <div class="doc-grid">
-    <a class="doc-item" href="../../02_技術文件/03_遊戲機制/配裝模擬器流程.html">
-      <div class="doc-tag">Mechanic</div>
-      <h4>🔧 配裝模擬器流程</h4>
-      <p>Step 1-8 詳細操作流程、自動篩選邏輯、匯出規格</p>
+    <a class="doc-item" href="../../05_階段性開發計畫/執行中/PLAN-052_配裝模擬器改版_總綱/計畫書.html">
+      <div class="doc-tag">Plan</div>
+      <h4>◆ PLAN-052 總綱</h4>
+      <p>十一條設計決策：數值事實、Loadout v2、槽位詞彙、形態、元件、模組、混搭、分享碼、配額</p>
     </a>
     <a class="doc-item" href="../../02_技術文件/03_遊戲機制/傷害公式.html">
       <div class="doc-tag">Mechanic</div>
       <h4>⚔️ 傷害公式</h4>
-      <p>Phase 8 傷害計算引擎的完整公式</p>
+      <p>傷害計算引擎（攻擊力口徑差額待此計畫釐清）</p>
     </a>
   </div>
 </section>
@@ -97,11 +223,11 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 頁面規劃 · 配裝模擬器 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 頁面規劃總覽</a>
+  米赫瑪超吉情豹站 · 頁面規劃 · 配裝模擬器 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 頁面規劃總覽</a>
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-08-24 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

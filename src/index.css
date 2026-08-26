@@ -225,3 +225,26 @@ select option {
 .htree-kid:first-child::after { top: 50%; }
 .htree-kid:last-child::after  { bottom: 50%; }
 .htree-kid:only-child::after  { display: none; }
+
+/* ── PLAN-052-I A-1：配裝模擬器的斜切角外框 ───────────────────────────────
+ *
+ * 機甲介面的外框語彙是「切角」而不是圓角。Tailwind 的 `rounded-*` 換不出這個形狀，
+ * 而 `clip-path: polygon()` 的值裡塞滿逗號與 calc()，寫成任意值類別
+ * （`[clip-path:polygon(14px_0,...)]`）幾乎不可讀，因此收在這裡當兩個 utility。
+ *
+ * 兩階對應兩種尺度：大區塊 14px（面板、帳本列、立繪卡）、小元件 8px（徽章、按鈕、槽位格）。
+ * 只有這兩階 —— 再多一階就讀不出階層，跟框線三階同一個道理。
+ *
+ * ⚠ 三個必須知道的副作用：
+ *   1. **切角上沒有框線**。clip-path 把 border 一起裁掉，斜邊是「底色切口」不是描邊。
+ *      這是刻意接受的長相（設計畫布已確認），不要再疊一層 SVG 去補那條斜線。
+ *   2. **會裁掉溢出的子元素**。掛了浮窗／下拉／BottomSheet 的容器不要用，
+ *      focus ring 與 `ring-*` 也會被切邊吃掉一角 —— 需要 ring 的互動元件請用外層包一層。
+ *   3. 與 `overflow-hidden` 疊用是安全的，但沒有必要（clip-path 本身就會裁）。
+ */
+.hud-cut {
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+.hud-cut-sm {
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}

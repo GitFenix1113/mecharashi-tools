@@ -13,7 +13,7 @@ import MechDetailPage from './pages/mechs/MechDetailPage'
 import WeaponsPage from './pages/weapons/WeaponsPage'
 import BackpacksPage from './pages/backpacks/BackpacksPage'
 import ModulesPage from './pages/modules/ModulesPage'
-import SimulatorPage from './pages/simulator/SimulatorPage'
+import LoadoutPage from './pages/simulator/LoadoutPage'
 import ResearchPage from './pages/simulator/ResearchPage'
 import NewsPage from './pages/news/NewsPage'
 import GuidesPage from './pages/guides/GuidesPage'
@@ -71,7 +71,10 @@ function App() {
               {/* 單一版本深連結：可分享、可開兩個分頁比較兩個版本 */}
               <Route path="timeline/:version" element={<VersionTimelinePage />} />
             </Route>
-            <Route path="simulator" element={<SimulatorPage />} />
+            {/* 路徑保留 /simulator（PLAN-052-B E-2）：052-C 的分享碼要用它，
+                而且不碰 Cloudflare 的 Transform Rule——新開頂層路由等於新增一個只存在於
+                CF Dashboard 的例外條件（PLAN-038 踩過）。 */}
+            <Route path="simulator" element={<LoadoutPage />} />
             <Route path="research" element={<ResearchPage />} />
             <Route path="news" element={<NewsPage />} />
             <Route path="guides" element={<GuidesPage />} />

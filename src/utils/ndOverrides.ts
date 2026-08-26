@@ -14,7 +14,7 @@
 //
 // 純函式、無 React / Firestore 依賴，可單測（npm test）。
 
-import type { NeuralDrive, NeuralDriveAbility, GameBuff, EntityRef, DescriptionRefs } from '../types'
+import type { NeuralDrive, NeuralDriveAbility, GameBuff, EntityRef, DescriptionRefs, PilotTalent } from '../types'
 import { parseBuffRef } from './buffRef.ts'
 
 // ─── 算力規則（自 PilotDetailPage 上移，使天賦與覆寫層共用同一門檻來源）────────────
@@ -56,6 +56,31 @@ export function defaultNdLevels(
     out[d.name] = hasUpgrade ? Math.min(1, max) : Math.min(ND_RULES.defaultLevels[d.name] ?? max, max)
   }
   return out
+}
+
+/**
+ * ★ 標記要打在哪些分區上：**天賦 `ndVariants` 宣告的分區 ∪ 帶 `buffUpgrades` 的能力所在分區**。
+ *
+ * 兩條來源缺一不可：前者是「這一區會換掉整段天賦正文」，後者是「這一區會把某個 buff 家族
+ * 抬階」——玩家看到的都是「字跟著算力變了」，只標其中一種會讓另一種變成沒有預告的變動。
+ *
+ * 放在這裡而不是各頁自算（PLAN-052-I D-1）：機師頁與配裝模擬器要在兩條 Lv 條上標同一批 ★，
+ * 各留一份必然漂移，而漂移的症狀是「同一位機師在兩頁的星號位置不一樣」。
+ */
+export function ndAffectZones(
+  pilot: { talents?: PilotTalent[]; neuralDrive?: NeuralDrive[] } | null | undefined,
+  abilityOf: (id: string) => NeuralDriveAbility | undefined,
+): Set<string> {
+  const zones = new Set(
+    (pilot?.talents ?? [])
+      .flatMap((t) => (t.ndVariants ?? []).map((v) => v.zone))
+      .filter((z): z is string => !!z),
+  )
+  for (const z of pilot?.neuralDrive ?? []) {
+    const has = (z.levels ?? []).some((lv) => lv.abilityId && abilityOf(lv.abilityId)?.buffUpgrades?.length)
+    if (has) zones.add(z.name)
+  }
+  return zones
 }
 
 // ─── 取級：以 level 值比對，不用陣列索引 ──────────────────────────────────────────
