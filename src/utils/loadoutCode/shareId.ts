@@ -75,7 +75,10 @@ export type ShareIdAliases = Readonly<Record<string, number>>
  *   ① 元件的前綴是 `comp_` **不是** `component_`（208/208 筆皆為 `comp_0001_應元件W_蓬勃` 這種）。
  *   ② 模組必須**全字匹配** `^mod_(\d+)$`：全庫有 31 筆 `mod_4001_2`（「校準模組Ⅱ」這種第二型），
  *      若寫成前綴匹配，`mod_4001` 與 `mod_4001_2` 會推出同一個號碼 —— 那正是「解成另一個模組」。
- *   ③ 大小寫敏感：有一筆 `MOD_折光陣列`，刻意不吃（大小寫不敏感只會讓撞號更難發現）。
+ *   ③ 大小寫敏感，刻意的：大小寫不敏感只會讓撞號更難發現。發現本規則時庫裡確實有一筆
+ *      `MOD_折光陣列`（與 `mod_折光陣列` 內容完全相同的孿生），已於 2026-08-26 由
+ *      `scripts/migrate-module-casing-twin.mjs` 合併刪除 —— 但守門仍維持大小寫敏感，
+ *      因為擋的是「下次又冒出一筆」，不是那一筆本身。
  */
 const ID_PATTERNS: Record<Exclude<ShareIdKind, 'backpack'>, RegExp> = {
   pilot:     /^pilot_(\d+)(?:_|$)/,
