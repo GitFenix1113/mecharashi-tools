@@ -1,5 +1,5 @@
 /**
- * 鋼嵐工具站 — 2025-05 模組與機甲資料修正
+ * 米赫瑪超吉情豹站 — 2025-05 模組與機甲資料修正
  *
  * 執行內容：
  *   [modules] 新增 sub_mod_護理模組（機甲副模組，無綁定機甲）
@@ -26,7 +26,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT      = resolve(__dirname, '..')
 const CONFIRM   = process.argv.includes('--confirm')
 
-console.log(`\n🔥 鋼嵐工具站 — 2025-05 模組/機甲修正 ${CONFIRM ? '[實際寫入]' : '[DRY RUN]'}\n`)
+console.log(`\n🔥 米赫瑪超吉情豹站 — 2025-05 模組/機甲修正 ${CONFIRM ? '[實際寫入]' : '[DRY RUN]'}\n`)
 
 // ── 載入環境變數 ──────────────────────────────────────────────────────────────
 const envPath = resolve(ROOT, '.env.migration')

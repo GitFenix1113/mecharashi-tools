@@ -1,5 +1,5 @@
 /**
- * 鋼嵐工具站 — Firestore 模組清理腳本
+ * 米赫瑪超吉情豹站 — Firestore 模組清理腳本
  *
  * 刪除 Firestore modules 集合中，ID 含 _4mod / _8mod / _fixed 的舊機甲副模組條目。
  * 可選加上 --sync 將 public/data/modules.json 一併 upsert 到 Firestore。
@@ -63,9 +63,9 @@ async function batchUpsert(modules) {
 
 async function main() {
   console.log('');
-  console.log('╔══════════════════════════════════════════════════╗');
-  console.log('║  鋼嵐工具站 — Firestore 模組清理腳本               ║');
-  console.log('╚══════════════════════════════════════════════════╝');
+  console.log('╔══════════════════════════════════════════════╗');
+  console.log('║  米赫瑪超吉情豹站 — Firestore 模組清理腳本  ║');
+  console.log('╚══════════════════════════════════════════════╝');
   console.log(`  模式: ${CONFIRM ? '實際執行' : 'Dry-run（僅列出，不刪除）'}  同步JSON: ${SYNC ? '✓' : '✗'}`);
   console.log('');
 

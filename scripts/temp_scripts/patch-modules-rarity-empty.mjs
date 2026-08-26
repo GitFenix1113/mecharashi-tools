@@ -1,5 +1,5 @@
 /**
- * 鋼嵐工具站 — 修正 modules rarity 空值
+ * 米赫瑪超吉情豹站 — 修正 modules rarity 空值
  *
  * 執行內容：
  *   將 modules 集合中所有 rarity 為空字串、null、或 undefined 的文件

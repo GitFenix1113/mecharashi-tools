@@ -4,7 +4,7 @@
 
 **[創用 CC 姓名標示—非商業性—相同方式分享 4.0 國際（CC BY-NC-SA 4.0）](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)**
 
-- **姓名標示 (BY)**：須註明出處「鋼嵐工具站 — Mecharashi Tools」並附上原始連結。
+- **姓名標示 (BY)**：須註明出處「米赫瑪超吉情豹站 — Milkhama PawInfo Station」並附上原始連結。
 - **非商業性 (NC)**：不得用於商業／營利目的。
 - **相同方式分享 (SA)**：基於本內容的衍生作品，須以相同條款釋出。
 

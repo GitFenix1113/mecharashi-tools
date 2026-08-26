@@ -1,5 +1,5 @@
 /**
- * 鋼嵐工具站 — Firestore 圖片路徑改指 WebP
+ * 米赫瑪超吉情豹站 — Firestore 圖片路徑改指 WebP
  *
  * convert-images-to-webp.mjs 產出 .webp 之後，Firestore 裡存的仍是 .png 路徑。
  * 本腳本深掃所有集合的每個字串欄位，找出形如 /images/**\/*.png 且磁碟上已有同名

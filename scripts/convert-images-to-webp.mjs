@@ -1,5 +1,5 @@
 /**
- * 鋼嵐工具站 — PNG/JPG 批次轉 WebP
+ * 米赫瑪超吉情豹站 — PNG/JPG 批次轉 WebP
  *
  * GitHub Pages 沒有圖片最佳化層，public/images 的原圖是多大就讓使用者下載多大。
  * 本腳本用 sharp 把 PNG/JPG 轉成 WebP（保留 alpha），並在轉檔前檢查透明度，
