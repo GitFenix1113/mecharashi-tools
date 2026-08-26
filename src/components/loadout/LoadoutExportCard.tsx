@@ -10,6 +10,7 @@ import type { LoadoutBudget, LoadoutContext } from '../../utils/loadoutRules'
 import { SEG_LABEL, type SegKey } from './loadoutTheme'
 import { usePatchVersions } from '../../hooks/usePatchVersions'
 import { SITE_DOMAIN, SITE_NAME, SITE_TITLE } from '../../lib/siteMeta'
+import { nextFrames } from '../../utils/nextFrames'
 
 // ─── 匯出配裝長圖（PLAN-052-I E-2）──────────────────────────────────────────
 //
@@ -595,21 +596,3 @@ async function waitForRenderReady(el: HTMLElement): Promise<void> {
   await nextFrames(2)
 }
 
-/**
- * 等 n 個動畫幀，**但帶逾時退場**。
- *
- * ⚠ 背景分頁不會觸發 `requestAnimationFrame`。裸的雙層 rAF 在「按下匯出後切去別的分頁」
- *   這個再普通不過的動作下會永遠不 resolve，按鈕就卡在「產生中…」——
- *   而使用者切回來只會看到一顆壞掉的按鈕，不會聯想到是自己切走造成的。
- */
-function nextFrames(n: number): Promise<void> {
-  return new Promise((resolve) => {
-    let left = n
-    const bail = setTimeout(resolve, 400)
-    const step = () => {
-      if (--left <= 0) { clearTimeout(bail); resolve(); return }
-      requestAnimationFrame(step)
-    }
-    requestAnimationFrame(step)
-  })
-}

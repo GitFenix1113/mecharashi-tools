@@ -7,6 +7,7 @@ import type { Component } from '../../../types'
 import { getAllStages, getComponentDrops, getBossImagePath } from '../../../data/bossDrops'
 import { ComponentIcon } from '../../../components/icons/ComponentIcon'
 import { assetUrl } from '../../../utils/assets'
+import { nextFrames } from '../../../utils/nextFrames'
 
 // ─── Tab 定義 ───────────────────────────────────────────────────────────────
 // 分頁維度直接映射既有型別：componentType（觸=Condition / 應=Function）× componentsWType。
@@ -128,7 +129,8 @@ export default function ComponentDropsPage() {
               }),
         ),
       )
-      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+      // ⚠ 帶逾時退場，見 nextFrames 檔頭：背景分頁不觸發 rAF
+      await nextFrames(2)
 
       const dataUrl = await toPng(el, { backgroundColor: '#0a0c10', pixelRatio: 2 })
       restore()

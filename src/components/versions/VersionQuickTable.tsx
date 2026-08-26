@@ -5,6 +5,7 @@ import { parseEntityIdValue } from '../../data/patchVersions/entityRef'
 import type { EntityRef, RefType } from '../../types'
 import { useReference } from '../../contexts/ReferenceContext'
 import { resolveIconSrc } from '../../utils/assets'
+import { nextFrames } from '../../utils/nextFrames'
 
 // ── Data helpers ──────────────────────────────────────────────────────────────
 
@@ -401,8 +402,9 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
       // Expand scroll wrapper so html2canvas sees full table width
       wrap.style.overflow = 'visible'
       wrap.style.width    = `${wrap.scrollWidth}px`
-      // Double rAF — wait for browser to reflow after style change
-      await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+      // 等重排落地後才拍。⚠ 帶逾時退場 —— 背景分頁不觸發 rAF，裸的雙層 rAF 會讓
+      //   「按下匯出後切去別的分頁」永遠不 resolve，按鈕卡在匯出中且沒有錯誤。
+      await nextFrames(2)
 
       const dataUrl = await toPng(containerRef.current, {
         backgroundColor: '#0a0c10',
