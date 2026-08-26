@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">5</div>
+      <div class="summary-num" style="color:var(--accent-green)">6</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -179,7 +179,7 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">6</div>
+      <div class="summary-num" style="color:var(--text-primary)">7</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">5 / 6</span>
+      <span style="color:var(--accent-purple);">6 / 7</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 83%"></div>
+      <div class="progress-bar-fill" style="width: 86%"></div>
     </div>
   </div>
 
@@ -359,8 +359,51 @@
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">052-D ~ H &nbsp; 後續子計畫</div>
-      <div class="task-group-meta">元件 / 雲端存檔 / 形態 / 模組槽＋混搭 / 熱門配裝</div>
+      <div class="task-group-title">052-D &nbsp; 元件負載與互斥</div>
+      <div class="task-group-meta">2026-08-27 完成 · 15 / 15 工項</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">五條規則 ＋ componentFamilyKey() ＋ 組合特性預覽（15 工項）</div>
+        <div class="task-desc">
+          元件是模擬器<b>最後一塊明著寫「建置中」的功能</b>——052-I D-3 已把面板畫出來，
+          但它唯讀。本子計畫把決策五的五條合法性規則落地，並拆掉那條常駐告示。<br>
+          <b>2026-08-26 直讀正式 Firestore 的盤點，兩處推翻決策五</b>：<br>
+          ① <b>族數是 56 不是 28</b>——觸 28 ＋ 應 28，總綱那個數字是<b>其中一半</b>
+             （24 族 6 筆 ＋ 12 族 3 筆 ＋ 8 族 2 筆 ＋ 12 族 1 筆 ＝ 208，族數 56，兩邊都對得起來）。
+             CI 守門測試的斷言要照 56 寫。<br>
+          ② <code>allowedWeaponTypes</code> 的「觸元件W-警戒 3 筆是漏填」<b>早已補齊</b>：
+             現為 7 筆部分限定且左右對稱（警戒族 6 筆「射擊」＋ 擴膛 1 筆「突擊」），
+             其餘 201 筆長度為 4 ＝ 後台「全選」＝不限。<b>本計畫零資料補丁。</b><br>
+          其餘實測全數相符：208 筆、W 80／Normal 128、可裝 W 型的武器 49 把、
+          always 103／dualWield 3（確認 <code>conditionType</code> 不可當互斥鍵）。
+          命名 208／208 全合規、觸應不共用任何後綴、觸元件 28 族與 <code>condition</code>
+          文字<b>完全雙射</b>——決策五要的那條守門斷言成立。<br>
+          <b>對決策十二的修訂</b>：<b>8 筆固定武裝的 <code>componentLimit</code> 全為 0</b>
+          （雖然都是 S 品質），代表能裝元件的武器 <b>100% 都在 <code>mounts</code> 裡</b>。
+          於是「元件的 key 必須掛在三段式 <code>mountKey</code>，否則主手左手與備用左手撞 key」
+          這條擔憂，<b>在 052-B 選擇把 <code>setup</code> 內嵌在 mount 上時就已經消解</b>——
+          沒有旁掛表，也就沒有 key 可撞；「刪格時連元件 key 一起刪」也自動成立。
+          <code>SlotRef</code> 的 <code>kind</code> 聯集擴充<b>元件用不到</b>，隨 052-G 一起做。<br>
+          <b>使用者裁決 2026-08-26</b>：同族互斥的判定範圍是<b>單把武器內</b>——
+          右手裝憑逸、左手也裝憑逸是可以的。規則層因此只看 <code>mount.setup</code> 一個物件。<br>
+          ⚠ <b>最危險的一條</b>：<code>reconcile()</code> 對武器是「查不到就刪」，
+          元件<b>絕對不可</b>照抄——草稿可能在 <code>components</code> 載入前就被
+          <code>loadDraft</code> 灌進來（分享碼／書架／052-E 雲端存檔都走這條），
+          症狀是<b>貼一次分享碼、元件就被靜默清空一次</b>。
+        </div>
+        <div class="task-file">PLAN-052-D_元件負載與互斥/進度表.html（已歸檔至歷史記錄）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">052-E ~ H &nbsp; 後續子計畫</div>
+      <div class="task-group-meta">雲端存檔 / 形態 / 模組槽＋混搭 / 熱門配裝</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">

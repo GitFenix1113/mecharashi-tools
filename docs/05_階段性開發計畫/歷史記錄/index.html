@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-D · 元件負載與互斥</h3>
+      <p><b>模擬器最後一塊「明著寫建置中」的功能上線了。</b>052-I 已經把元件面板畫出來，但它唯讀 —— 可裝／不可裝的規則引擎不存在，給出入口只會讓玩家按下去沒反應。舊模擬器的四項缺陷全數收掉：<code>componentLimit</code> <b>從未被讀取</b>（135／182 把武器可以裝到 6 個元件，官方是 4 個槽）、W 型從未過濾、<code>allowedWeaponTypes</code> 從未過濾；第四項「元件是整台機甲一組」早由 052-B 的 <code>MountSetup</code> 內嵌設計解掉。<br>建檔前直讀正式 Firestore 盤點 208 筆元件，<b>兩處推翻總綱決策五</b>：<b>族數是 56 不是 28</b>（觸 28 ＋ 應 28，那個數字是其中一半；24×6 ＋ 12×3 ＋ 8×2 ＋ 12×1 ＝ 208 對得起來），以及 <code>allowedWeaponTypes</code> 的「3 筆漏填」<b>早已補齊</b>（本計畫零資料補丁）。命名 208／208 全合規、觸應不共用任何後綴、觸元件 28 族與 <code>condition</code> 文字<b>完全雙射</b> —— 決策五要的守門斷言成立，並多釘住兩條實作時確認的不變式（名稱前綴與 <code>componentType</code> 100% 一致、每個 W 型都有同族的 Normal 版本）。<br>另一項盤點結論讓設計整個變簡單：<b>8 筆固定武裝的 <code>componentLimit</code> 全為 0</b>（雖然都是 S 品質），代表能裝元件的武器 100% 都在 <code>mounts</code> 裡 —— 總綱決策十二擔心的「主手左手與備用左手撞 key、元件互相覆蓋」，<b>在 052-B 選擇內嵌 setup 時就已經消解</b>：沒有旁掛表，也就沒有 key 可撞。互斥範圍經站長裁決為<b>單把武器內</b>。<br>⚠ <b>兩個只有實地驗收才抓得到的破口</b>：① <code>LoadoutPage</code> 的分享碼索引寫著 <code>buildShareIndex('component', [])</code>（052-C 留的），A-3 加了集合卻<b>漏改這一行整整三個 Phase</b> —— 元件被靜默濾掉、<b>分享碼裡根本沒有它們</b>，而兩邊都不會說話；codec 的單元測試抓不到，它自己建含元件的索引，壞掉的是頁面這一層的接線。② 站長第一次試用就問<b>「我似乎沒看到怎麼設定元件？」</b>：入口只做在右欄清單列上，而那一列整列可點卻沒有任何記號 —— 最終改成<b>武器格下方一條整寬的「⚙ 元件 0/4 ▸」</b>，並補上搜尋（比對名稱＋效果敘述＋觸發條件）與品質／W 型篩選。<br>面板<b>不解說遊戲機制</b>（站長裁決）：規則會在玩家違反它的那一刻由拒絕訊息連同解法一起講，那才是它有用的時機。組合特性只列配對與 Lv，<b>機率標「待建檔」不猜值</b>。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-27 · 15 / 15 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-D_元件負載與互斥/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-D_元件負載與互斥/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card pink">
       <div class="card-icon">◆</div>
       <h3>PLAN-052-J · 雙手武器裝備路徑</h3>

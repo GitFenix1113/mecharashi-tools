@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-D 元件負載與互斥 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-D 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-052-D</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">元件負載與互斥</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-26</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">15</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">15</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-cyan);">15 / 15</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    武器可以裝元件，<b>而且第一次就是對的</b> —— 4 個槽（不是 6 個）、W 型只給雙手／背部、
+    同族只能一顆。拆掉元件面板抬頭那條「元件功能建置中」的常駐告示。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">規則層地基</div>
+  <div class="section-desc">
+    純函式與型別，<b>不動 UI</b>。這一階段做完，模擬器的外觀一模一樣，
+    但規則層已經答得出「這顆元件能不能裝進這把武器」。<br>
+    <b>2026-08-26 完成（5／5）</b>：<code>npm test</code> 787 項全過
+    （新增 34 項：守門 11 ＋ 規則 23），<code>tsc -b</code> 與 <code>npm run build</code> 皆通過。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; componentFamilyKey() 由名稱推族</div>
+      <div class="task-group-meta">src/utils/componentRules.ts（新檔）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">互斥判準的單一入口</div>
+        <div class="task-desc">
+          解析「觸元件｜應元件 ＋ 選配的 W ＋ 連字號 ＋ 後綴」，回傳<b>帶觸／應前綴</b>的族鍵
+          （計畫書決策二、三）。推不出來時回 <code>null</code> 而不是拋例外 ——
+          官方新增一顆命名破格的元件時，該壞掉的是守門測試，不是玩家的頁面。<br>
+          <b>不落 Firestore 欄位</b>：判準就是名稱，落一個 <code>familyKey</code>
+          只是把同一件事寫第二遍，改名時兩份會靜默不同步。<br>
+          <b>實際交付</b>：新檔 <code>componentRules.ts</code> ——
+          <code>parseComponentName()</code>／<code>componentFamilyKey()</code>／
+          <code>isSameFamily()</code>／<code>isWTypeComponent()</code>。
+          <code>null</code> 族（命名破格）<b>連自己都不算同族</b>，
+          於是破格元件永遠不會因為互斥而裝不上。
+        </div>
+        <div class="task-file">src/utils/componentRules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; CI 守門測試：三條斷言</div>
+      <div class="task-group-meta">src/utils/componentRules.test.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">208 筆 → 56 族 ＋ condition 雙射</div>
+        <div class="task-desc">
+          ① 208 筆<b>全部</b>推得出族（0 例外）；② 族數恰為 <b>56</b>（觸 28 ＋ 應 28）；
+          ③ 觸元件的 <b>28 族與 condition 文字雙射</b>（沒有一族兩種 condition、
+          沒有一句 condition 跨兩族）。<br>
+          <span class="badge-high">⚠</span> 斷言 <b>56</b> 不是總綱寫的 28 —— 那個數字是其中一半，
+          見計畫書決策二的完整分佈推算。任何一條掛掉都代表官方改了命名規則，
+          該修的是函式而不是資料。<br>
+          測試餵 fixture 而不是線上資料（<code>npm test</code> 不連 Firestore），
+          fixture 由盤點腳本產出。<br>
+          <b>實際交付</b>：<code>scripts/gen-component-fixture.mjs</code>（直讀 Firestore，
+          官方改版後重跑）＋ <code>src/utils/__fixtures__/components.json</code>（208 筆，進版控，
+          只留守門與規則測試用得到的欄位——全欄位快照會把每次改版都會動的描述文字帶進 diff）。
+          <b>11 項全過</b>，並多釘住兩條計畫書沒列的不變式：
+          <b>④ 名稱前綴與 <code>componentType</code> 100% 一致</b>（互斥鍵由名稱推、
+          槽數規則讀 componentType，兩者不同步會讓元件佔錯槽）、
+          <b>⑤ 每個 W 型都有同族的 Normal 版本</b>（W 是「同效果但機率等級更高」的變體，
+          出現孤兒 W 族代表官方改了設計，跨變體互斥要重新確認）。
+        </div>
+        <div class="task-file">src/utils/componentRules.test.ts · scripts/fixtures/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; LoadoutWorld 納入 components</div>
+      <div class="task-group-meta">loadoutRules.ts / useFirestore.ts / ComponentPanel.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">equip 階段載入元件，面板改吃 world</div>
+        <div class="task-desc">
+          <code>LoadoutWorld</code> 增加 <code>components</code> 索引，
+          <code>buildWorld()</code> 一併建；<code>LOADOUT_STAGE_KEYS.equip</code> 加入
+          <code>components</code>（那時已經有武器了，是它自然的落點）。
+          <code>ComponentPanel</code> 改吃 <code>ctx.world.components</code>，
+          移除自己的 <code>useComponents()</code> —— 同一份資料兩個載入路徑，
+          必然有一次是多餘的。<br>
+          代價：首次進到配裝階段多讀 208 筆，與 weapons 182 筆同量級，
+          且走 localStorage 版本快取，重訪 0 read。<br>
+          <b>實際交付</b>：<code>buildWorld()</code> 的 <code>components</code> 參數<b>設為選填</b> ——
+          <code>equip</code> 之前的階段根本沒有這個欄位，而那時它本來就該是空的。
+          <code>ComponentPanel</code> 的 <code>useComponents()</code> 已移除，改吃
+          <code>ctx.world.components</code>；<code>loading</code> 判定改為「Map 是空的」。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts · src/hooks/useFirestore.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; canEquipComponent()：五條合法性規則</div>
+      <div class="task-group-meta">src/utils/loadoutRules.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">總槽 · 分項 · W 型 · 武器種類 · 同族互斥</div>
+        <div class="task-desc">
+          ① 總槽：觸 ＋ 應不超過 <code>componentLimit</code>（SS／S+ ＝ 4、S ＝ 3、其餘 0）<br>
+          ② 分項：觸不超過 <code>triggerSlots</code>、應不超過 <code>effectSlots</code>
+             —— <b>讀欄位不寫死 3</b>（決策八）<br>
+          ③ W 型只給 <code>dualHand</code> ／ <code>back</code> 武器（實測符合條件的武器 49 把）<br>
+          ④ <code>allowedWeaponTypes</code> 過濾 —— 空陣列或長度大於等於全部種類數皆視為不限
+             （沿用 052-I <code>componentBlockReason()</code> 已寫對的那條，資料無須補丁，見決策七）<br>
+          ⑤ 同族互斥，<b>範圍是單把武器內</b>（使用者裁決，決策一）：只看
+             <code>mount.setup</code> 這一個物件，不掃全套 mounts。<br>
+          <span class="badge-high">⚠</span> <code>conditionType</code> <b>不參與</b>可裝性判定
+          （決策五）：always 103 筆、dualWield 3 筆，而「同時使用兩把武器攻擊」是戰鬥中的
+          出手指令、不是配裝狀態，配裝層判不了。<br>
+          <b>實作時發現的坑</b>：不能用 <code>slotOccupant()</code> 取「這一格上的武器」——
+          它比對的是 <code>slotKey(ref)</code>，而雙手武器的 <code>mountCoverage()</code>
+          產出的是<b>兩格 singleHand</b> 的鍵、<b>不含 <code>main:dualHand</code> 自己</b>；
+          拿 <code>weaponRows()</code> 給的 dualHand 座標去問它，會得到「這一格是空的」——
+          症狀是<b>雙手武器的元件面板永遠顯示 0 個槽</b>。改寫一支
+          <code>weaponSiteAt()</code>（比對 <code>slotsOverlap()</code> 的覆蓋交集），
+          固定武裝／全鎖形態／玩家配的三種來源一視同仁。已加測試釘住。<br>
+          <b>另一項</b>：測試 fixture 的武器預設 <code>triggerSlots</code>／<code>effectSlots</code>
+          由 0／0 改為 3／3（實測 <code>limit&gt;0</code> 的 135 把恆為此值），
+          固定武裝則明著設為 0／0／0。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts · src/utils/loadoutRules.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; 6 個拒絕碼與 componentChoices()</div>
+      <div class="task-group-meta">src/utils/loadoutRules.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">四層呈現與帶解法的三條 situational</div>
+        <div class="task-desc">
+          擴充 <code>REJECTION_CODES</code> ／ <code>REJECTION_TIER</code> ／
+          <code>REJECTION_LABEL</code>（三張表由 <code>satisfies</code> 綁死，漏一個 tsc 就擋）：
+          <code>COMP_NO_SLOTS</code>（blocked）、<code>COMP_W_TYPE</code>、
+          <code>COMP_WEAPON_TYPE</code>（structural）、<code>COMP_SLOTS_FULL</code>、
+          <code>COMP_KIND_FULL</code>、<code>COMP_FAMILY</code>（situational）。<br>
+          <code>ResolutionAction</code> 增加「卸下某一把武器上的某顆元件」。<br>
+          <span class="badge-high">⚠</span> 三個新按鈕<b>照實寫「卸下 X」</b>，
+          不寫「卸下 X 並裝上」—— 052-J 收尾記下的懸案是現行三處文案承諾了 resolve 不會做的事，
+          本計畫不製造第四、五、六筆。<br>
+          <code>componentChoices()</code> 比照 <code>weaponChoices()</code>：
+          濾掉 omitted、blocked 早退回空陣列、可裝的排前面。<br>
+          <b>實際交付</b>：6 個拒絕碼皆已入三張表（<code>satisfies</code> 綁死）。
+          <code>componentChoices()</code> 的排序<b>不沿用 <code>pickerOrder()</code></b> ——
+          那一支的次鍵是重量，而元件沒有重量欄位；改成
+          「可裝的在前 → <code>probabilityLevel</code> 高的在前 → 品質 → 名稱」，
+          因為 Lv 是玩家今天唯一看得到的強弱訊號（機率表待建檔）。<br>
+          <b>已裝著的那一顆</b>會放行而非回報「同族衝突／槽已滿」——
+          面板要畫得出「已裝上」，而不是把玩家自己裝的東西灰掉。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts · src/utils/loadoutRules.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label cyan">Phase B</div>
+  <div class="section-title">動作層與級聯</div>
+  <div class="section-desc">
+    讓元件真的裝得上、卸得下，並且在武器被換掉時<b>說出來</b>。<br>
+    <b>2026-08-27 完成（3／3）</b>：<code>npm test</code> 805 項全過（本階段新增 18 項）。
+    UI 尚未接線（屬 Phase C），所以今天玩家還碰不到這兩個動作 ——
+    但 <code>reconcile()</code> 的元件級聯<b>已經生效</b>：既存分享碼帶進來的元件段會被驗證
+    （今天全部是空的，因為還沒有人裝得上元件，故零影響）。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; reducer 兩個動作</div>
+      <div class="task-group-meta">src/pages/simulator/simReducer.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">equipComponent ／ unequipComponent</div>
+        <div class="task-desc">
+          兩個動作都帶 <code>ref</code>（哪一把武器）＋ <code>componentId</code>，
+          就地改寫該筆 mount 的 <code>setup</code>，然後<b>走同一支 reconcile()</b> ——
+          「任何動作之後都跑同一支 reconcile」是本檔唯一的規則，元件不開特例。<br>
+          <code>setup</code> 為空時<b>整個欄位不存在</b>而不是留空陣列
+          （同 <code>backpackId</code> ／ <code>ndLevels</code>：三態撞上
+          <code>stripUndefined</code> 會變成「一旦填了就再也清不掉」）。<br>
+          <b>實際交付</b>：<code>equipComponent</code> 是新動作；<b>卸下沿用
+          <code>ResolutionAction</code> 的 <code>unequipComponent</code></b>（A-5 已定義），
+          於是拒絕訊息上的解法按鈕可以直接把 action 派進 reducer，兩邊共用同一個形狀。
+          三支小工具 <code>withSetup()</code> ／ <code>addComponent()</code> ／
+          <code>removeComponent()</code> 是動作層與級聯層的共同基礎。<br>
+          <b>裝上／卸下不跳 toast</b>：<code>commit()</code> 只在真的移除了什麼時才出提示
+          （沿用既有設計 —— 每個動作都跳就等於沒有提示）。那顆元件就在面板上看得見，
+          與裝上武器、改算力、改方案名稱同一條理由。
+        </div>
+        <div class="task-file">src/pages/simulator/simReducer.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; reconcile 的元件級聯</div>
+      <div class="task-group-meta">src/pages/simulator/simReducer.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">逐 mount 掃 setup，不合法的移除</div>
+        <div class="task-desc">
+          在既有的「逐格掃武器」之後補一段掃 setup：換了武器種類、換了機甲、
+          或元件 doc 被後台刪掉時，不再合法的元件要移除。<br>
+          <span class="badge-high">⚠ 本計畫最危險的一條</span>（決策六）：
+          <code>components</code> <b>尚未載入時整段跳過</b>，<b>不可</b>照抄武器那條
+          「查不到就刪」。草稿可能在 components 到齊之前就被 <code>loadDraft</code>
+          灌進來（分享碼、localStorage 書架、052-E 雲端存檔都走這條），
+          照抄的症狀是<b>貼一次分享碼、元件就被靜默清空一次</b>。<br>
+          換武器本身<b>不需要</b>額外程式：<code>placeWeapon()</code> 建新 mount 時不帶
+          setup，元件自動清空（決策四）—— 但要有測試釘住，否則哪天有人為了
+          「換同型武器保留配置」加一行，就會變成靜默繼承。<br>
+          <b>實際交付</b>：<code>reconcileSetups()</code> 的作法是<b>清空後逐顆重裝</b>，
+          而不是逐條寫「哪些情況要拿掉」—— 重裝走的就是 <code>canEquipComponent()</code>，
+          於是五條規則自動全套適用、順序也與玩家手動裝時一致
+          （與 reconcile 掃武器時「把它自己先拿掉再問」是同一個手法）。
+          外部來源把同一顆掛兩次時另行擋下：<code>canEquipComponent()</code> 對已裝的那顆是
+          <b>放行</b>的（面板要畫得出「已裝上」），所以重複必須在級聯這一層自己判。<br>
+          <b>載入 gate 已驗證</b>：測試用兩個世界對照 ——
+          <code>WORLD_LOADING</code>（<code>components</code> 尚未載入）下同一份草稿
+          <b>原樣保留且一個字都不說</b>；<code>WORLD</code> 下同族兩顆會被正確移除一顆。
+          第二則測試存在的理由是證明第一則不是因為規則沒接上。
+        </div>
+        <div class="task-file">src/pages/simulator/simReducer.ts · simReducer.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 元件被移除要進 toast</div>
+      <div class="task-group-meta">src/pages/simulator/simReducer.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">RemovedItem 開第三種 kind</div>
+        <div class="task-desc">
+          <code>RemovedItem.kind</code> 增加 <code>component</code>，
+          <code>where</code> 填「右手 叢林之災」（掛在哪一把上），<code>why</code> 填具體原因。<br>
+          這與算力的處理<b>刻意相反</b>（決策九）：算力被修正時面板方格會就地變樣、
+          玩家看得到；<b>元件不會</b> —— 它藏在要點兩層才看得到的面板裡，
+          換一把武器就靜默丟掉四顆而不吭一聲，是這一層最容易出的客服問題。<br>
+          [復原] 不必另外處理：undo 存的是整份草稿快照，本來就涵蓋。<br>
+          <b>實作時定的一條</b>：元件的 <code>where</code> 填<b>純槽位標籤</b>（「右手」），
+          <b>不是</b>「右手 叢林之災」—— <code>flashOf()</code> 拿這個字串去讓槽位圖閃橙，
+          混進武器名就再也對不上任何一格。掛在哪一把改由 <code>why</code> 講
+          （「藝術突襲：僅限射擊武器 —— 這把是突擊」）。已加測試釘住。<br>
+          <b>toast UI 零改動</b>：<code>CascadeToast</code> 只讀 <code>name</code> ／
+          <code>where</code> ／ <code>why</code>，不分 kind。
+        </div>
+        <div class="task-file">src/pages/simulator/simReducer.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label cyan">Phase C</div>
+  <div class="section-title">面板可操作化</div>
+  <div class="section-desc">
+    沿用 052-I 已核可的版面規格（總綱指定），只把唯讀換成可操作 —— <b>不重畫版面</b>。<br>
+    <b>2026-08-27 完成（3／3）</b>：<code>npm test</code> 805 項全過、build 通過、
+    瀏覽器 console 零錯誤。<b>元件功能自本階段起玩家真的用得到</b>，
+    網站更新履歷已寫入一則 feat。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; ComponentPanel 由唯讀改為可操作</div>
+      <div class="task-group-meta">src/components/loadout/ComponentPanel.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">拆掉建置中告示，接上裝／卸</div>
+        <div class="task-desc">
+          抬頭那條黃框「元件功能建置中」<b>整塊移除</b>；每一列接上裝上／卸下，
+          灰掉的列附原因與解法按鈕（四層呈現沿用 <code>REJECTION_TIER</code>）。<br>
+          <b>裝不上的元件留在清單裡並寫出原因，不直接濾掉</b> —— 052-I 已定的原則：
+          「我的元件呢」比多幾列雜訊更難處理。structural 的那些走摺疊 ＋ 計數。<br>
+          三個 <code>SlotStat</code>（觸／應／合計）的分子從佔位的 <code>—</code>
+          換成實數；<code>limit === 0</code> 的降級說明保留（那條本來就是對的）。<br>
+          <b>實際交付</b>：新增<b>「已裝上」專區</b>（卸下的唯一入口，各列一顆「卸下」鍵）。
+          已裝的那幾顆<b>從下方清單移出</b>——留在裡面會讓「可裝 n / N」這個數字說不清。<br>
+          <b>與計畫書的一處出入</b>：<code>structural</code> 走<b>摺疊 ＋ 計數 ＋ 可展開</b>，
+          而武器挑選器（<code>PickerShell</code>）在 052-I 驗收後改成<b>一律不列</b>——
+          兩者刻意不同。差別是數量與可行動性：單手武器上 208 筆裡約 4 成是結構性拒絕
+          （W 型 80 ＋ 種類限定），全部攤開會讓清單長度變成兩倍多，而那些列玩家一個字都改不了；
+          摺疊成「這把武器裝不了的 7 個（武器種類限定 7）」這一行，則同時回答了
+          「我的元件呢」與「它們為什麼不在」。<br>
+          <b>不重用 <code>RejectionRow</code></b>：那一支綁死 <code>WeaponIcon</code>
+          與「重量」副標，而元件沒有重量欄位。行為語彙（三種列、解法按鈕）照抄，長相各自維持。<br>
+          <span class="badge-high">⚠ 驗收時補的三項</span>
+          站長第一次試用就問<b>「我似乎沒看到怎麼設定元件？」</b>，接著提出兩項修正。<br>
+          <b>① 元件入口做成格子下方的可點窄列</b>（<code>SlotCell</code> ／ <code>LoadoutRig</code> ／
+          <code>LoadoutIcon</code> 新增 <code>gear</code>）。052-I 把入口<b>只</b>做在右欄的武器列上，
+          而那一列整列可點卻沒有任何記號（只有 hover 變色）。第一版補了右下一顆 20px 的 ⚙ 徽章，
+          站長的評語是<b>「有點不顯眼」</b>——20px 描邊圖示夾在重量與 ✕ 之間，本來就不會被當成獨立入口。
+          最終形態是<b>格子下方一條整寬的「⚙ 元件 0/4 ▸」</b>（使用者裁決）：有文字、有方向記號，
+          而且<b>不與武器名爭寬度</b>——格內那一行已經在 truncate「弒神者(戕神…」了。
+          已裝過的整列轉橙。<br>
+          ⚠ 這<b>不是</b>總綱決策十二警告過的那種「元件列」：那條警告針對「一顆元件一格」
+          （一把 4 格、四把 16 格，rig 會從 6 格長到 22 格）；這裡是<b>一把武器一條摘要列</b>，
+          且只出現在 <code>componentLimit &gt; 0</code> 的武器格下 ——
+          A／B 品質 39 把與固定武裝 8 把給了也只會點開一句「不可裝元件」。<br>
+          反查那一列用 <code>slotsOverlap()</code> 而不是 <code>slotKey(ref)</code>：
+          雙手武器的列鍵是 <code>dualHand</code>，而槽位圖給的是它蓋住的兩格之一，
+          直接當鍵用會查無此列 —— 症狀是「按了什麼都沒發生」。<br>
+          <b>② 面板加上搜尋與篩選</b>（站長：「很難找」）。搜尋比對<b>名稱 ＋ 效果敘述 ＋ 觸發條件</b>
+          三處，不是只比名稱 —— 玩家記得的是「穿甲」「暴擊」這類效果字眼。
+          另有觸／應、品質 S／A／B；<b>W 型那組只在裝得了 W 型的武器上出現</b>
+          （沿用 PickerShell「隱藏空選項」的原則：單手武器上按它必然零筆，而玩家看不出是自己按的條件造成的）。
+          篩到零筆時的文案與「這把武器真的沒得裝」分開寫，並給一顆「清除條件」。<br>
+          <b>③ 拿掉遊戲機制解說</b>（站長：「我們的頁面不用解釋這麼多遊戲機制的東西」）。
+          移除面板上「觸 ＋ 應合計不得超過 4（SS／S+ 為 4、S 為 3、其餘不可裝）。兩種各自的格數只是上限，
+          總數才是真正的牆」與組合特性下方的求值模型長註腳；<code>SlotStat</code> 第三格的
+          「真正的牆」改為「觸 ＋ 應」。<b>規則會在玩家違反它的那一刻由拒絕訊息連同解法一起講</b>
+          （決策二）——那才是它有用的時機；預先攤一段在面板上，讀的人還沒有要裝任何東西。
+          槽位那三個數字（0/3、0/3、0/4）自己就說得完。
+        </div>
+        <div class="task-file">src/components/loadout/ComponentPanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 武器列顯示已裝元件</div>
+      <div class="task-group-meta">WeaponComponentList.tsx / loadoutRows.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">列上的元件標籤與 n / N 實數</div>
+        <div class="task-desc">
+          <code>weaponRows()</code> 的 <code>used</code> 本來就從
+          <code>setup</code> 算（052-I 已寫好，只是恆為 0），本階段自動變成實數。
+          列上補元件名稱標籤，取代「尚未裝設元件」那句佔位。<br>
+          <span class="badge-med">順修</span> <code>loadoutRows.ts</code> 的
+          <code>locked</code> 欄位註解「兩者都仍可換元件」是錯的 ——
+          8 筆固定武裝的 <code>componentLimit</code> 實測全為 0（決策四）。<br>
+          <b>實際交付</b>：列上印出已裝元件的名稱（<code>觸元件W-背水・觸元件W-殲滅・…</code>），
+          <b>只印名字不印 Lv 與描述</b>——這一列寬約 190px，多一個字都會把後面的擠掉；
+          詳細的在面板裡，而整列本來就是通往面板的入口。
+          <code>locked</code> 的文案同步改為「機甲固定武裝」／「形態鎖定的武裝」，
+          不再承諾「元件仍可換」。<br>
+          <span class="badge-med">順修</span> 頁面抬頭那條常駐橫幅原本寫
+          「元件、⋯、存檔與分享碼<b>尚在後續階段</b>」——<b>元件與分享碼都已上線</b>，
+          留著會把已經做完的功能講成沒有。改為「本版提供槽位配裝、重量／出力計算、元件與分享碼」，
+          並補一句「元件的觸發機率同理（不提供猜測值），面板只列出配對關係與 Lv」。
+        </div>
+        <div class="task-file">src/components/loadout/WeaponComponentList.tsx · src/utils/loadoutRows.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 組合特性預覽</div>
+      <div class="task-group-meta">src/components/loadout/ComponentPanel.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">觸 × 應的配對關係，只出 Lv 不猜機率</div>
+        <div class="task-desc">
+          這把武器上每一顆觸元件 × 每一顆應元件列一條配對，各自標 Lv
+          （2 觸 2 應 ⇒ 4 條）。<br>
+          <span class="badge-high">⚠</span> <b>機率欄位標「待建檔」，不猜值</b> ——
+          總綱 2026-08-25 再確認：Lv 到 % 的對照表要靠樣本蒐集反推，屬傷害計算範疇。
+          官方面板印的是每條配對的最終機率，而本站今天只知道 Lv；
+          印一個推測值出去，玩家會拿它去做決定。<br>
+          <b>實際交付</b>：<code>SynergyPreview</code> 掛在「已裝上」專區下方。
+          面板上明著寫出<b>求值模型</b>——「每一條配對各自判定；同一個應元件被多個觸元件
+          觸發<b>不疊加</b>」。那一句非寫不可：玩家看到「3 條配對」時最容易生出的誤解
+          就是機率相加。<br>
+          兩種空狀態也各自寫清楚：只有觸沒有應 ⇒「觸元件成立之後沒有東西可以發動」；
+          只有應沒有觸 ⇒「應元件要有觸元件才會生效」。
+        </div>
+        <div class="task-file">src/components/loadout/ComponentPanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label cyan">Phase D</div>
+  <div class="section-title">落盤、順修與驗收</div>
+  <div class="section-desc">
+    分享碼與匯出圖把元件帶出去，順手收掉兩筆與元件相關的既有缺陷。<br>
+    <b>2026-08-27 完成（4／4）</b>：<code>npm test</code> 812 項全過。
+    <span class="badge-high">⚠ 實地驗收抓到一個 Phase A 漏改的破口</span>，見 D-4。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 分享碼 round-trip 測試補到元件層</div>
+      <div class="task-group-meta">src/utils/loadoutCode/codec.test.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">格式已就緒，補的是測試</div>
+        <div class="task-desc">
+          總綱決策十二點名「052-D 第一件事是把 round-trip 測試補到元件層」。
+          codec v1 的元件段（觸數 1 byte ＋ 應數 1 byte ＋ 各自號碼）在 052-C 就寫好了，
+          本項<b>不改格式</b>，只補測試：滿載 4 顆的武器、觸應各半、
+          主手與備用同型武器各帶不同元件（確認兩筆 mount 的 setup 不互相污染）、
+          以及 golden fixture 加一組含元件的案例雙向釘住。<br>
+          <b>實際交付</b>：5 則新測試 ＋ golden fixture 第 7 案（54 字元，
+          由 <code>scripts/temp_scripts/gen-052d-fixture.mjs</code> 產出並自我驗證）。<br>
+          <b>補這一段的理由</b>：隨機 round-trip（10,000 份）本來就會生出帶元件的 mount，
+          但它的產生器<b>先把元件按號碼排好</b>才塞進 draft —— 於是
+          「<b>元件順序會被正規化</b>」這件事在那條測試裡是看不見的。
+          新測試明著釘住它：玩家「先裝 A 再裝 B」與「先裝 B 再裝 A」<b>產生同一串代碼</b>，
+          解回來的順序由號碼決定、不是當初裝的順序。那是刻意的取捨 ——
+          分享碼同時是儲存格式，同一套配裝有兩種碼就等於 canonical order 破功；
+          要保留裝配順序就得放棄這條，兩者不可兼得。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/codec.test.ts · __fixtures__/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 匯出長圖印出元件</div>
+      <div class="task-group-meta">loadoutRows.ts / LoadoutExportCard.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">SheetRow.componentIds 終於有值</div>
+        <div class="task-desc">
+          欄位是 052-I 留的，註解寫著「052-D 之前恆為空」。填上之後匯出圖的槽位表
+          每一列要印出掛了哪幾顆。<br>
+          注意圖是<b>印刷品</b>：看的人沒辦法點開來確認，所以元件為空的武器要印
+          「未裝元件」而不是留白（留白讀起來像「這張圖漏了」）。<br>
+          <b>實際交付</b>：<code>SheetRow</code> 新增 <code>componentNames</code>，
+          在 <code>loadoutSheetRows()</code> 就解析好 —— <b>不讓 <code>SheetLine</code> 自己查</b>：
+          它只拿得到一列，要它查名字就得把整個 <code>ctx</code> 傳進每一列，
+          而那一層是純呈現、不該認得 <code>LoadoutWorld</code>。查無時退回 doc id，讓斷鏈在圖上看得見。<br>
+          圖上印的是<b>名字</b>而不是「元件 3」：<code>元件 2／觸元件W-背水・應元件W-增幅</code>。
+          瀏覽器實測抓到離屏版面的 DOM 確認（見 D-4）。
+        </div>
+        <div class="task-file">src/utils/loadoutRows.ts · src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 順修：後台元件搜尋恆 0 筆</div>
+      <div class="task-group-meta">src/lib/api/firestoreCore.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">PREFIX_END 是空字串</div>
+        <div class="task-desc">
+          <code>getCollectionPage()</code> 的前綴查詢下的是
+          「name 大於等於 term」<b>且</b>「name 小於 term ＋ PREFIX_END」，
+          而 <code>PREFIX_END</code> 目前是<b>空字串</b> ⇒ 後半變成「name 小於 term」，
+          與前半是空集合 ⇒ <b>搜尋恆 0 筆</b>。<code>components</code> 與
+          <code>backpacks</code> 兩個走伺服器分頁的後台頁都是受害者。<br>
+          一行改動：換成 Unicode 私用區的哨兵字元（Firestore 前綴查詢的慣例終點）。<br>
+          <span class="badge-high">⚠</span> 那個字元<b>必須用跳脫序列寫入原始碼</b>，
+          切勿從任何文件複製貼上 —— 複製過程會把它吃掉，而結果與現在一樣是空字串。<br>
+          納入本計畫的理由：驗收元件規則必然要在後台核對元件資料，而 208 筆搜不了只能捲。<br>
+          <b>實際交付</b>：已換成 <code>'\uf8ff'</code>。
+          <span class="badge-high">⚠ 第一次寫入時真的踩到了註解裡警告的那件事</span> ——
+          用 Python 腳本替換時字串被解析成<b>那個字元本身</b>而不是六個 ASCII 字元，
+          <code>cat -A</code> 顯示 <code>M-oM-#M-?</code>（UTF-8 的 EF A3 BF）。
+          改用明確的碼位（<code>chr(0x5C) + 'uf8ff'</code>）重寫後才正確。
+          這正好證明那條警告不是多餘的。<br>
+          <b>瀏覽器實測</b>：後台元件管理搜尋「應元件」，先前 0 筆，現在列出結果。
+        </div>
+        <div class="task-file">src/lib/api/firestoreCore.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 瀏覽器實地驗收</div>
+      <div class="task-group-meta">Chrome DevTools · emulator</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">逐項實測，不目測推斷</div>
+        <div class="task-desc">
+          比照 052-I F-2 與 052-J 的作法，用 Chrome DevTools 逐項實測而非目測推斷：<br>
+          ① SS 武器裝到第 5 顆被擋（總槽 4）；② 觸元件裝到第 4 顆被擋（分項 3）；
+          ③ W 型元件在單手武器上摺疊、在雙手武器上可裝；
+          ④ 警戒族在非射擊武器上摺疊並寫出原因；
+          ⑤ 同族第二顆灰掉並附「卸下 X」按鈕，按下去真的只卸下；
+          ⑥ 換武器後元件清空<b>並且跳 toast</b>，[復原] 能還原；
+          ⑦ 雙手武器的元件面板只出現一次；
+          ⑧ 主手與備用各裝同型武器，元件互不影響；
+          ⑨ 貼一段含元件的分享碼，元件完整還原（含<b>刻意在 components 載入前貼</b>的競態）；
+          ⑩ 匯出圖印得出元件。<br>
+          <b>十項全數通過</b>，並抓到一個單元測試看不到的破口 ——<br>
+          <span class="badge-high">⚠ 第⑨項抓到：<code>component</code> 的分享碼索引是空的</span>
+          <code>LoadoutPage</code> 的 <code>shareIndexes</code> 寫著
+          <code>buildShareIndex('component', [])</code>（052-C 留的，當時頁面沒有 components 資料）。
+          A-3 已把 <code>components</code> 加進 equip 階段，<b>但這一行漏改了整整三個 Phase</b>：
+          encode 時 <code>toShareId()</code> 回 null ⇒ <b>元件被靜默濾掉，分享碼裡根本沒有它們</b>；
+          decode 時 <code>toDocId()</code> 回 null ⇒ 進 <code>unresolved</code> 被丟掉。
+          玩家配好元件、複製連結、貼給別人，對方收到一套沒有元件的配裝，<b>而兩邊都不會說任何話</b>。<br>
+          <b>單元測試抓不到這種事</b>：codec 的測試自己建含元件的索引，壞掉的是<b>頁面這一層的接線</b>。
+          052-C 當初的註解甚至已經寫明「052-D 動工時把對應集合加進 equip 階段即可」——
+          集合加了，索引那一行沒接上。這就是實地驗收存在的理由。<br>
+          <b>順帶補的一項</b>：換掉一把帶元件的武器時，toast 原本只說「已由 X 取代」。
+          元件隨 mount 一起走、不各自進 <code>removed</code>，於是那一行讀起來像只換掉一把武器，
+          而玩家配的四顆元件也一起沒了。現在補成<b>「已由 X 取代（連同 N 顆元件）」</b>，
+          一句話講完、不必為此在清單上多列四行。<br>
+          <b>競態那一項</b>由結構保證而非時序運氣：<code>stage</code> 在有 <code>pending</code> 時
+          直接跳 <code>equip</code>，而還原的守衛是 <code>if (pending &amp;&amp; !loading)</code> ——
+          <code>loading</code> 為 false 就代表 equip 階段的每個集合（含 components）都到齊了。
+          reconcile 那一層的載入 gate 另有兩個世界對照的單元測試（B-2）。<br>
+          <b>其餘實測數字</b>：背部武器可裝 201／208（W 型可用）對比手盾 124／208（W 型整批摺疊）；
+          分享碼還原後武器列顯示「元件 2 / 4 · 觸元件W-背水・應元件W-增幅」；
+          匯出圖印出「元件 2／觸元件W-背水・應元件W-增幅」；
+          主手與備用各裝一把夾心曲奇、各帶不同觸元件，落盤後兩者互不影響。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-D — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>
