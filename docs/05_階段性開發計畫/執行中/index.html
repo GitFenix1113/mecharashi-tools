@@ -31,15 +31,7 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
-    <div class="card cyan">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-052-D · 元件負載與互斥</h3>
-      <p>元件是模擬器<b>最後一塊明著寫「建置中」的功能</b>。052-I 已經把面板畫出來，但它唯讀 —— 可裝／不可裝的規則引擎不存在，給出入口只會讓玩家按下去沒反應。舊模擬器的四項缺陷今天全數仍在：<code>componentLimit</code> <b>從未被讀取</b>（135／182 把武器可以裝到 6 個元件，官方是 4 個槽）、W 型從未過濾、<code>allowedWeaponTypes</code> 從未過濾。第四項「元件是整台機甲一組」已由 052-B 的 <code>MountSetup</code> 內嵌設計解掉。<br>2026-08-26 直讀正式 Firestore 盤點 208 筆元件，兩處推翻總綱決策五：<b>族數是 56 不是 28</b>（觸 28 ＋ 應 28，總綱那個數字是其中一半；24×6 ＋ 12×3 ＋ 8×2 ＋ 12×1 ＝ 208 對得起來），以及 <code>allowedWeaponTypes</code> 的「3 筆漏填」<b>早已補齊</b>（現為 7 筆部分限定且左右對稱，本計畫零資料補丁）。命名 208／208 全合規、觸應不共用任何後綴、觸元件 28 族與 <code>condition</code> 文字<b>完全雙射</b> —— 總綱要的守門斷言成立。<br>另一項盤點結論讓設計整個變簡單：<b>8 筆固定武裝的 <code>componentLimit</code> 全為 0</b>（雖然都是 S 品質），也就是能裝元件的武器 100% 都在 <code>mounts</code> 裡 —— 總綱決策十二擔心的「主手左手與備用左手撞 key、元件互相覆蓋」，<b>在 052-B 選擇內嵌 setup 時就已經消解</b>：沒有旁掛表，也就沒有 key 可撞。<br>⚠ <b>最危險的一條</b>：<code>reconcile()</code> 對武器是「查不到就刪」，元件<b>絕對不可</b>照抄 —— 草稿可能在 <code>components</code> 載入前就被分享碼／書架灌進來，照抄的症狀是<b>貼一次分享碼、元件就被靜默清空一次</b>，而畫面上什麼都不會說。元件藏在要點兩層才看得到的面板裡，所以它被級聯移除時<b>必須進 toast</b>（與算力刻意相反）。<br>互斥範圍經站長裁決為<b>單把武器內</b>（右手裝憑逸、左手也裝憑逸是可以的），於是規則層只看 <code>mount.setup</code> 一個物件，面板不必標「已裝在右手」。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-052-D_元件負載與互斥/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-052-D_元件負載與互斥/進度表.html">→ 進度表</a>
-      </div>
-    </div>
+
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-052 · 配裝模擬器改版 · 總綱</h3>
