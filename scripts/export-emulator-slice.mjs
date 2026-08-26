@@ -11,9 +11,21 @@
  *
  * 輸出：emulator-seed/<collection>.json（已被 .gitignore）
  *
+ * ── `--simulator`：配裝模擬器需要的整包資料（PLAN-052-C 後補）──────────────────
+ *
+ * 上面那份切片是為 PLAN-030 的 rules 測試設計的（1 名機師 ＋ 四個字典集合），
+ * **配裝模擬器一台機甲都看不到**：它要 mechs／weapons／backpacks／forms 才跑得起來。
+ * 而沒有本機資料的代價，是每一個 052-x 子計畫都只能靠單元測試背書 ——
+ * 元件互斥、模組接口、書架三態這些「要用眼睛看」的東西全部驗不了。
+ *
+ * 因此加一個 `--simulator`：機師全帶、模擬器要的集合整包帶，另外帶 `meta/gameData`
+ * （快取層的版本 gate 讀它）與 `patchVersions`（匯出圖的「遊戲版本」欄位讀它）。
+ * 量級約 1,100 份文件、數 MB，對模擬器來說是一次性的成本。
+ *
  *   node scripts/export-emulator-slice.mjs
  *   node scripts/export-emulator-slice.mjs --pilot pilot_艾達
  *   node scripts/export-emulator-slice.mjs --list-pilots     # 只列出可選機師，不匯出
+ *   node scripts/export-emulator-slice.mjs --simulator       # 配裝模擬器用的整包
  */
 
 import fs from 'fs'
@@ -32,12 +44,26 @@ const ROOT = resolve(__dirname, '..')
 //   任何與神經驅動能力相關的驗證都會「看起來完全正常」而測不出回歸 —— 恆綠、零資訊量。
 const DICT_COLLECTIONS = ['buffs', 'glossaryTerms', 'pilotSkills', 'neuralDriveAbilities']
 
+/**
+ * `--simulator` 額外整包帶走的集合。
+ *
+ * · forms／mechs／weapons／backpacks：`useLoadoutGameData()` 的 equip 階段清單，缺一頁就空白。
+ * · components／modules：052-D／052-G 要用；先帶著，免得屆時又要回頭改這支腳本。
+ * · backpackSkills：背包詳情引用它（PLAN-043 漏掛過一次的那個集合）。
+ * · patchVersions：匯出圖右下角的「遊戲版本」；取不到就整欄不印，於是驗不到那一欄。
+ */
+const SIM_COLLECTIONS = [
+  'forms', 'mechs', 'weapons', 'backpacks', 'backpackSkills',
+  'components', 'modules', 'patchVersions',
+]
+
 const args = process.argv.slice(2)
 const getArg = (flag) => {
   const i = args.indexOf(flag)
   return i !== -1 ? args[i + 1] : null
 }
 const LIST_ONLY = args.includes('--list-pilots')
+const SIMULATOR = args.includes('--simulator')
 
 function loadEnv(filename) {
   const envPath = resolve(ROOT, filename)
@@ -121,6 +147,9 @@ async function main() {
     : [pilots.find((p) => p.id === ranked[0]?.id)].filter(Boolean)
   if (!chosen.length) throw new Error('在 pilots 集合中找不到任何文件')
 
+  if (SIMULATOR) console.log(`模式：--simulator（機師全帶 ${pilots.length} 位 ＋ 模擬器集合整包）
+`)
+
   console.log(`選定 ${chosen.length} 位機師：`)
   for (const p of chosen) {
     const s = countRefs(p)
@@ -144,10 +173,21 @@ async function main() {
     console.log(`  · ${name.padEnd(16)} ${String(docs.length).padStart(5)} docs`)
   }
 
-  write('pilots', chosen)
+  write('pilots', SIMULATOR ? pilots : chosen)
   for (const col of DICT_COLLECTIONS) {
     const snap = await db.collection(col).get()
     write(col, snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+  }
+
+  if (SIMULATOR) {
+    for (const col of SIM_COLLECTIONS) {
+      const snap = await db.collection(col).get()
+      write(col, snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    }
+    // 版本 gate：`meta/gameData` 少了它，前端每次都會判定快取失效而重抓 ——
+    // 在模擬器裡不痛，但也就測不到快取層本身
+    const meta = await db.collection('meta').get()
+    write('meta', meta.docs.map((d) => ({ id: d.id, ...d.data() })))
   }
 
   console.log(`\n✅ 完成 → ${outDir}`)
