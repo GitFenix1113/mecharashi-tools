@@ -49,8 +49,8 @@ import { getDataVersions } from '../../lib/api/versions'
 import type { PickerRowItem } from '../../components/loadout/RejectionRow'
 import { BACKPACK_TYPE_CONFIG } from '../../components/badges/BackpackBadges'
 import {
-  backpackChoices, buildContext, buildWorld, canSelectMech, loadoutBudget, slotHasCandidates,
-  slotOccupant, weaponChoices, type PickerEntry, type ResolutionAction,
+  backpackChoices, buildContext, buildWorld, canSelectMech, loadoutBudget, mountRefFor,
+  slotHasCandidates, slotOccupant, weaponChoices, type PickerEntry, type ResolutionAction,
 } from '../../utils/loadoutRules'
 import { INITIAL_SIM_STATE, simReduce, type LoadoutAction, type SimState } from './simReducer'
 
@@ -798,15 +798,15 @@ export default function LoadoutPage() {
               blockedReason={blockedReason(ctx, effectivePicker.ref)}
               entries={weaponEntries}
               toRow={weaponRow}
-              remainingAfter={(w) => loadoutBudget(ctx, { add: { ref: effectivePicker.ref, weight: w.weight } }).remaining}
+              remainingAfter={(w) => loadoutBudget(ctx, { add: { ref: mountRefFor(w, effectivePicker.ref), weight: w.weight } }).remaining}
               replaceNote={(w) => replaceNote(ctx, effectivePicker.ref, w)}
               budgetLine={budgetLine}
               loading={loading}
               altAction={backAlt(effectivePicker.ref, () => setPicker({ kind: 'backpack' }))}
               useSheet={false}
-              onPick={(w) => send({ type: 'equipWeapon', ref: effectivePicker.ref, weaponId: w.id })}
+              onPick={(w) => send({ type: 'equipWeapon', ref: mountRefFor(w, effectivePicker.ref), weaponId: w.id })}
               onResolve={resolve}
-              onHoverItem={(w) => setHovered(w ? { slot: slotKey(effectivePicker.ref), weight: w.weight, name: w.name, icon: w.icon } : null)}
+              onHoverItem={(w) => setHovered(w ? { slot: slotKey(mountRefFor(w, effectivePicker.ref)), weight: w.weight, name: w.name, icon: w.icon } : null)}
               onClose={closePicker}
             />
           )}
@@ -906,13 +906,13 @@ export default function LoadoutPage() {
           blockedReason={blockedReason(ctx, effectivePicker.ref)}
           entries={weaponEntries}
           toRow={weaponRow}
-          remainingAfter={(w) => loadoutBudget(ctx, { add: { ref: effectivePicker.ref, weight: w.weight } }).remaining}
+          remainingAfter={(w) => loadoutBudget(ctx, { add: { ref: mountRefFor(w, effectivePicker.ref), weight: w.weight } }).remaining}
           replaceNote={(w) => replaceNote(ctx, effectivePicker.ref, w)}
           budgetLine={budgetLine}
           loading={loading}
           altAction={backAlt(effectivePicker.ref, () => setPicker({ kind: 'backpack' }))}
           useSheet
-          onPick={(w) => send({ type: 'equipWeapon', ref: effectivePicker.ref, weaponId: w.id })}
+          onPick={(w) => send({ type: 'equipWeapon', ref: mountRefFor(w, effectivePicker.ref), weaponId: w.id })}
           onResolve={resolve}
           onClose={closePicker}
         />

@@ -257,6 +257,29 @@ export function mountCoverage(mount: Pick<SlotRef, 'bank' | 'slot' | 'side'>): S
   return [slotKey({ bank: mount.bank, slot: mount.slot, side: mount.side })]
 }
 
+/**
+ * 這把武器裝進這一格時，**實際會佔住的座標**。
+ *
+ * 雙手武器 ＋ 手部座標 ⇒ `{ bank, slot:'dualHand' }`；其餘原樣回傳。
+ *
+ * ── 為什麼需要這一層（PLAN-052-J）────────────────────────────────────────────
+ * `enumerateSlots()` **刻意不產生** `dualHand` 座標（雙手佔的是兩格 singleHand，
+ * 不是第三格手部），所以挑選器只會拿著 `singleHand` 的 ref 來問。而
+ * `canEquipWeapon()` 原本第一條就是 `weapon.equipSlot !== ref.slot → 'omitted'`，
+ * 於是全庫 40/182 把雙手武器**在任何清單裡都不會出現**——不是灰掉，是連列都不列。
+ * 修法不是去產生第三格（那會讓槽位圖同時畫出「一把雙手武器」與「兩個空手格」），
+ * 而是讓手部座標願意接受它，再由這支把座標換算成它真正佔住的那個。
+ *
+ * ⚠ **不帶 `side`**。寫了會讓 `slotKey()` 產出 `main:dualHand:left`，
+ *   而 `mountCoverage()` 產的是不帶 side 的鍵 —— 兩者永遠對不上，
+ *   症狀是「裝上去了，但那一格顯示還是空的」。
+ */
+export function mountRefFor(weapon: Pick<Weapon, 'equipSlot'>, ref: SlotRef): SlotRef {
+  return weapon.equipSlot === WeaponEquipSlot.DUAL_HAND && ref.slot === WeaponEquipSlot.SINGLE_HAND
+    ? { bank: ref.bank, slot: WeaponEquipSlot.DUAL_HAND }
+    : ref
+}
+
 /** 兩個座標是否碰到同一格。 */
 export function slotsOverlap(a: Pick<SlotRef, 'bank' | 'slot' | 'side'>, b: Pick<SlotRef, 'bank' | 'slot' | 'side'>): boolean {
   const bs = mountCoverage(b)
@@ -462,14 +485,18 @@ export function canEquipWeapon(ctx: LoadoutContext, weapon: Weapon, ref: SlotRef
   if (ctx.lock) return reject('FORM_LOCKED', `${ctx.lock.formName}的武裝已鎖死，無法調整任何裝備`)
 
   // ── 槽位：不是拒絕，是槽的定義 ──
-  if (weapon.equipSlot !== ref.slot) {
+  // `mount` 是這把武器**實際佔住**的座標：雙手武器進手部格時會換成 dualHand（見 mountRefFor）。
+  // 底下每一條檢查都必須用 `mount` 而非 `ref`，否則雙手武器只會被當成佔住單邊那一格——
+  // 佔用漏掃另一手、重量少算被擠掉的那把。
+  const mount = mountRefFor(weapon, ref)
+  if (weapon.equipSlot !== mount.slot) {
     return reject('SLOT_MISMATCH', `${weapon.name}是${OWN_SLOT_LABEL[weapon.equipSlot] ?? weapon.equipSlot}武器`)
   }
-  if (!slotExists(ctx.capacity, ref)) return reject('NO_SLOT', `這台機甲沒有${slotLabel(ref)}`)
+  if (!slotExists(ctx.capacity, mount)) return reject('NO_SLOT', `這台機甲沒有${slotLabel(mount)}`)
   if (weapon.isFixedArmament) return reject('FIXED_ARMAMENT', '固定武裝焊死在機甲上，不是可選裝備')
 
   // ── 這一格被不可更換的東西佔住 ──
-  for (const key of mountCoverage(ref)) {
+  for (const key of mountCoverage(mount)) {
     const occ = ctx.occupied.get(key)
     if (occ) {
       const src = ctx.world.weapons.get(occ.mount.weaponId)
@@ -488,14 +515,14 @@ export function canEquipWeapon(ctx: LoadoutContext, weapon: Weapon, ref: SlotRef
   }
 
   // ── 背槽擇一：背包 XOR 背部武器（SlotCapacity.back = 1）──
-  if (ref.slot === WeaponEquipSlot.BACK && ctx.backpack) {
+  if (mount.slot === WeaponEquipSlot.BACK && ctx.backpack) {
     return rejectSituational('BACK_SLOT_TAKEN', `背槽已裝${ctx.backpack.name}`, {
       label: `替換背包並裝上`,
       action: { type: 'unequipBackpack' },
     })
   }
 
-  return overweightRejection(ctx, { ref, weight: weapon.weight }, weapon.name)
+  return overweightRejection(ctx, { ref: mount, weight: weapon.weight }, weapon.name)
 }
 
 /** 這個背包能不能裝。合法回 `null`。 */
@@ -739,7 +766,12 @@ export function slotHasCandidates(ctx: LoadoutContext, ref: SlotRef): boolean {
   const allow = ctx.form?.restrict.kind === 'weaponType' ? (ctx.form.restrict.allow as readonly string[]) : null
   const armor = toArmorType(ctx.chassis?.armorType)
   for (const w of ctx.world.weapons.values()) {
-    if (w.equipSlot !== ref.slot || w.isFixedArmament) continue
+    if (w.isFixedArmament) continue
+    // 與 canEquipWeapon() 同一條換算：手部格也接受雙手武器（它佔的是左右兩格）。
+    // 少了這行，一台只剩雙手武器可選的機甲會被畫成「沒有可裝的武器」。
+    const mount = mountRefFor(w, ref)
+    if (w.equipSlot !== mount.slot) continue
+    if (!slotExists(ctx.capacity, mount)) continue
     if (allow && !allow.includes(w.type)) continue
     const need = restrictedTo(w.mechRestriction)
     if (need && armor !== need) continue

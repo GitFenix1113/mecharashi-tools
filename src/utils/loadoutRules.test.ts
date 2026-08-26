@@ -10,7 +10,7 @@ import type { EquipSet } from '../types/loadout.ts'
 import {
   REJECTION_CODES, REJECTION_TIER, REJECTION_LABEL,
   buildContext, buildWorld, canEquipBackpack, canEquipWeapon, canSelectMech,
-  loadoutBudget, mountCoverage, slotOccupant, validateLoadout,
+  loadoutBudget, mountCoverage, mountRefFor, slotOccupant, validateLoadout,
   weaponChoices, backpackChoices, structuralCounts, slotHasCandidates,
 } from './loadoutRules.ts'
 import { ArmorType, MechLicense, MechRestriction, WeaponEquipSlot, BackpackType, WeaponType } from '../types/enums.ts'
@@ -75,6 +75,20 @@ const 隕星     = weapon({ id: 'w_177', name: '隕星', weight: 100, equipSlot:
 const 千星     = weapon({ id: 'w_178', name: '千星', weight: 100, equipSlot: WeaponEquipSlot.BACK,        type: WeaponType.Special, isFixedArmament: true })
 const 衝擊炮   = weapon({ id: 'w_衝擊炮', name: '衝擊炮', weight: 0, equipSlot: WeaponEquipSlot.SHOULDER, type: WeaponType.Special, isFixedArmament: true })
 
+/**
+ * 左手焊死一把固定武裝的機甲（PLAN-052-J C-1 邊界二）。
+ * 帕斯卡焊的是**肩部**，碰不到手部格；要驗「雙手武器被佔住的那一手擋下」需要這台。
+ */
+const 獨臂機: Mech = {
+  ...彌造者, id: 'mech_onearm', name: '獨臂機',
+  parts: {
+    torso:    part({ weight: 300, output: 3375 }) as never,
+    leftArm:  { ...part({ weight: 175 }), fixedArmament: [{ weaponId: 'w_176', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }] } as never,
+    rightArm: part({ weight: 175 }) as never,
+    legs:     part({ weight: 175 }) as never,
+  },
+}
+
 const backpack = (over: Partial<Backpack> & Pick<Backpack, 'id' | 'name' | 'weight'>): Backpack => ({
   type: BackpackType.HEAL, rarity: 'S', slot: WeaponEquipSlot.BACK, assemblableArmorType: [],
   repairAmount: 0, skillIds: [], ...over,
@@ -112,7 +126,7 @@ const 虛粒子形態 = form({
 
 const WORLD = buildWorld({
   pilots: [海莉絲, 重型機師],
-  mechs: [彌造者, 輕型機, 重型機, 美杜莎MK2, 帕斯卡],
+  mechs: [彌造者, 輕型機, 重型機, 美杜莎MK2, 帕斯卡, 獨臂機],
   weapons: [群山之力, 貝奧武夫, 藝術突襲, 夜魘, 熔火, 炬塔, 耀星, 隕星, 千星, 衝擊炮],
   backpacks: [強襲者背包, 出力背包Ⅲ, 輕型限定包],
   forms: [先鋒形態, 突擊形態, 虛粒子形態],
@@ -391,10 +405,85 @@ test('slotHasCandidates：「這一格存在但沒有東西裝得上」要答得
     { pilotId: 海莉絲.id, mechId: 彌造者.id, sets: { [先鋒形態.id]: { mounts: [] } } },
     先鋒形態.id, WORLD,
   )
-  assert.equal(slotHasCandidates(ctx, HAND_L), false)          // 單手：沒有
+  // ⚠ PLAN-052-J 之前這裡斷言 false，理由是「格鬥只有雙手武器」——
+  //   那條斷言把 bug 本身寫進了測試：雙手武器佔的就是兩格 singleHand，
+  //   手部格本來就該列得出它們（全庫 40/182 把因此在清單裡消失了）。
+  assert.equal(slotHasCandidates(ctx, HAND_L), true)           // 單手格：雙手武器算候選
   assert.equal(slotHasCandidates(ctx, DUAL), true)             // 雙手：有
   assert.equal(slotHasCandidates(ctx, SHO_L), false)           // 先鋒裝不了戰術類肩部武器
   assert.equal(slotHasCandidates(ctxOf({ mounts: [] }, { mech: 輕型機 }), SHO_L), false)   // 輕型無肩槽
+})
+
+// ─── PLAN-052-J：雙手武器的裝備路徑 ─────────────────────────────────────────
+//
+// 這一組全部釘同一件事：`enumerateSlots()` 刻意不產生 dualHand 座標（對的），
+// 所以挑選器只會拿 singleHand 的 ref 來問；手部格若不接受雙手武器，
+// 全庫 40/182 把就**沒有任何入口**——不是灰掉，是連列都不列。
+
+test('052-J：手部格的清單必須含雙手武器（修好前這裡是 0 把）', () => {
+  const names = weaponChoices(ctxOf({ mounts: [] }), HAND_L)
+    .filter((e) => e.rejection === null)
+    .map((e) => e.item.name)
+  assert.ok(names.includes('群山之力'), `左手清單缺雙手武器：${names.join('、')}`)
+  assert.ok(names.includes('貝奧武夫'))
+  // 單手武器當然還在——放行雙手不能把原本的擠掉
+  assert.ok(names.includes('藝術突襲'))
+})
+
+test('052-J：mountRefFor 把手部座標換成 dualHand，且**不帶 side**', () => {
+  assert.deepEqual(mountRefFor(群山之力, HAND_L), { bank: 'main', slot: WeaponEquipSlot.DUAL_HAND })
+  assert.deepEqual(mountRefFor(群山之力, HAND_R), { bank: 'main', slot: WeaponEquipSlot.DUAL_HAND })
+  assert.deepEqual(mountRefFor(群山之力, BACKUP_L), { bank: 'backup', slot: WeaponEquipSlot.DUAL_HAND })
+  // side 若被寫進去，slotKey() 會產出 main:dualHand:left，
+  // 而 mountCoverage() 產的是不帶 side 的鍵 —— 兩者永遠對不上，
+  // 症狀是「裝上去了但那一格顯示還是空的」。
+  assert.equal('side' in mountRefFor(群山之力, HAND_L), false)
+  // 非雙手武器原樣回傳（含背槽、肩部）
+  assert.deepEqual(mountRefFor(藝術突襲, HAND_L), HAND_L)
+  assert.deepEqual(mountRefFor(炬塔, BACK), BACK)
+})
+
+test('052-J：一把雙手武器佔住左右兩格，兩邊都查得到同一筆 mount', () => {
+  const ctx = ctxOf({ mounts: [{ weaponId: 群山之力.id, bank: 'main', slot: WeaponEquipSlot.DUAL_HAND }] })
+  for (const ref of [HAND_L, HAND_R]) {
+    const occ = slotOccupant(ctx, ref)
+    assert.equal(occ.kind, 'weapon')
+    assert.equal(occ.kind === 'weapon' ? occ.weapon?.name : null, '群山之力')
+  }
+  assert.equal(mountCoverage({ bank: 'main', slot: WeaponEquipSlot.DUAL_HAND }).length, 2)
+})
+
+test('052-J：左手被固定武裝佔住時，雙手武器要「灰掉並說明」而不是消失', () => {
+  const ctx = ctxOf({ mounts: [] }, { mech: 獨臂機 })
+  const r = canEquipWeapon(ctx, 群山之力, HAND_R)   // 從**右手**問，佔住的是左手
+  assert.equal(r?.code, 'SLOT_OCCUPIED')
+  // omit 與 blocked 的差別正是這個 bug 的本體：使用者要看得到它存在、也看得到原因
+  assert.notEqual(r && REJECTION_TIER[r.code], 'omitted')
+  assert.match(r!.reason, /左手/)
+})
+
+test('052-J：雙手武器落在備用組時走 backupHand，主／備取較重者而非相加', () => {
+  const ctx = ctxOf({
+    mounts: [
+      { weaponId: 貝奧武夫.id, bank: 'main',   slot: WeaponEquipSlot.DUAL_HAND },   // 850
+      { weaponId: 群山之力.id, bank: 'backup', slot: WeaponEquipSlot.DUAL_HAND },   // 800
+    ],
+    backpackId: 強襲者背包.id,
+  })
+  const b = loadoutBudget(ctx)
+  assert.equal(b.weight.mainHand, 850)
+  assert.equal(b.weight.backupHand, 800)
+  assert.equal(b.weight.hands, 850)          // ⚠ 不是 1650
+  assert.equal(b.weight.heavierBank, 'main')
+})
+
+test('052-J：往左手裝單手武器會擠掉正在佔兩格的雙手武器（右手一併變空）', () => {
+  const ctx = ctxOf({ mounts: [{ weaponId: 群山之力.id, bank: 'main', slot: WeaponEquipSlot.DUAL_HAND }] })
+  // 規則層要放行（重量夠），實際的擠掉由 placeWeapon() 的 slotsOverlap 完成
+  assert.equal(canEquipWeapon(ctx, 藝術突襲, HAND_L), null)
+  // 重量預覽必須已經扣掉被擠掉的那把，否則「預覽說裝得下、按下去卻超重」
+  const after = loadoutBudget(ctx, { add: { ref: HAND_L, weight: 藝術突襲.weight } })
+  assert.equal(after.weight.mainHand, 藝術突襲.weight)
 })
 
 test('backpackChoices 把「僅輕型可裝」歸成結構性拒絕（不是默默不擋）', () => {
