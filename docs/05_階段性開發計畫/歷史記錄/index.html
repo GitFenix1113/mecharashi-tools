@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>歷史記錄 — 鋼嵐工具站</title>
+<title>歷史記錄 — 米赫瑪超吉情豹站</title>
 <link rel="stylesheet" href="../../_shared/style.css">
 </head>
 <body>
@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-B · 配裝模擬器主體</h3>
+      <p>整檔取代 1074 行的 8 步驟精靈。<b>精靈是錯的互動模型</b>——玩家必須走完 8 步才看得到結果，而配裝是反覆試的動作；現行還能無條件跳關，且 Step 6 在未選武器時連下一步按鈕都沒有。改成<b>單頁槽位圖 ＋ 就地挑選器 ＋ 常駐資訊面板</b>：一眼看到全部槽位、點槽位換裝備、即時看重量出力。三斷點（≥1280 三欄／1024–1279 兩欄／&lt;1024 單欄＋BottomSheet），斷點用視窗寬而<b>不用 <code>useIsMobile</code></b>（後者判的是粗指標，與版面寬度正交）。<br>核心是兩件事：<b>兩層拒絕呈現</b>（結構性→摺疊＋計數；情境性→灰掉＋原因＋<b>解法按鈕</b>，做成封閉聯集讓 tsc 逼你填說明），與<b>單一 <code>reconcile()</code> 級聯</b>（降級不清空、每次移除可復原；超重<b>不擋存檔</b>，否則會與「不自動卸武器」一起把人卡死）。<br>順手修三個讓過濾結果出錯的既有 bug：<code>:179</code> 用 <code>'中甲'</code> 比 <code>MechLicense.MEDIUM='中型'</code>（<b>37/89 位機師看得到重型機甲</b>，tsc 抓不到）、背槽與背包不互斥（181/181 個背包 <code>slot='back'</code>）、順序相依的重量帳。同時<b>正式全面公開</b>（移除導覽 ADMIN gate）。明確不渲染改裝／可達增益／戰術評分／科研——<b>不渲染，不是渲染空的</b>。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-24 · 21 / 21 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-B_配裝模擬器主體/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-B_配裝模擬器主體/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card cyan">
       <div class="card-icon">◆</div>
       <h3>PLAN-052-A · 配裝地基與槽位模型</h3>
@@ -495,7 +505,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · 歷史記錄
+  米赫瑪超吉情豹站 · 階段性開發計畫 · 歷史記錄
 </footer>
 <!--LAST-UPDATED-->
 <div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-I 配裝模擬器視覺改版 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-052-I 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-052-I</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    配裝模擬器視覺改版<span style="-webkit-text-fill-color:var(--text-secondary);"> · HUD 版面 ／ 立繪 ／ 匯出圖</span>
+  </h1>
+  <p class="hero-sub">把 052-B 交付的「能用」升級成「好看且看得懂」：斜切角 HUD、立繪常駐、機甲主視覺槽位圖，以及一張可分享的配裝長圖</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-052-I</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-26</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">src/components/loadout/ · LoadoutPage · loadout.ts</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value orange">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-052-B（已完成）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>052-B 交付的是「能用」，不是「好看」</strong><br>
+    整頁字級擠在 <code>10–12px</code>（<code>text-[10px]</code> / <code>text-[11px]</code> / <code>text-[12px]</code> 幾乎是全部），
+    沒有主次階層；卡片一律圓角矩形＋細框線，是工程介面的長相，不是機甲遊戲的長相。
+    這一頁從頭到尾<strong>沒有經過任何美術方向的決策</strong>，只有版面邏輯決策——這是刻意的取捨（先把互動模型修對），
+    但取捨的帳現在要還。
+  </div>
+
+  <div class="problem-block">
+    <strong>站上 175 張美術資產，模擬器一張都沒用到</strong><br>
+    <code>public/images/pilots/</code> 有 87 位機師的 <code>full.webp</code>（去背立繪，1240×1080）與
+    <code>half.webp</code>（頭像 340×340）；<code>public/images/mechs/</code> 有 88 台機甲的
+    <code>portrait.webp</code>（3/4 特寫 560×340）與四部位圖。
+    模擬器目前全部以文字清單呈現，玩家在配一台看不見的機甲。
+  </div>
+
+  <div class="problem-block">
+    <strong>槽位圖不像機甲</strong><br>
+    <code>LoadoutRig</code> 現在是 2 欄 grid 方格＋文字標籤（手部／肩部／背部／備用各一列）。
+    功能正確、但沒有任何線索讓玩家意識到自己在對一台機體動手。
+  </div>
+
+  <div class="problem-block">
+    <strong>配好一套之後沒有產出物</strong><br>
+    052-B 明確不做匯出圖（<code>html2canvas</code> 已無 import）。玩家配完只能自己截圖，
+    截出來沒有站名、沒有分享碼、也沒有算力配置——圖被轉發之後找不回來源。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：不新造顏色，改的是「階」不是「色」</strong><br>
+    <code>src/index.css</code> 的 <code>@theme</code> token（<code>--color-accent-*</code>、
+    <code>--color-text-*</code>、框線三階）全部沿用，一個新色都不加。
+    要動的是三件事：<br>
+    ① <strong>字級階</strong>——拉出 <code>10 / 12 / 15 / 20 / 30px</code> 五階，數值走 JetBrains Mono 放大到 20–30px，
+    現在全部擠在 10–12px 是「什麼都同樣重要」＝「什麼都不重要」。<br>
+    ② <strong>外框語彙</strong>——以 <code>clip-path</code> 斜切角（大區塊 14px、小元件 8px）取代圓角矩形，作為全頁的機甲語彙。<br>
+    ③ <strong>圖示</strong>——見決策五。<br>
+    這條的意義是：改版不會外溢成全站改色，其他頁面一行都不用動。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：立繪常駐，不做入場動畫</strong><br>
+    機師立繪掛在左欄當常駐身分卡，<strong>不做「選角 → 全身照 → 滑動 → 展開配裝」的入場流程</strong>。
+    理由與 052-B 拆掉 8 步驟精靈完全相同：配裝是反覆試的動作，成本不在第一次而在第五次——
+    玩家換一把武器想看重量差多少，不該再看一次演出。
+    「選角感」改掛在三個不擋路的位置：頭像牆＝挑選器本體（決策四）、立繪＝常駐側欄、
+    左右滑動＝留給形態切換（052-F）與換機甲這種真的有兩個狀態要對比的地方。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：機甲主視覺用 <code>portrait.webp</code>，不拼四部位</strong><br>
+    實際檢視素材後推翻了「用四部位圖拼出一台機甲」的構想：
+    <code>torso</code> / <code>leftArm</code> / <code>rightArm</code> / <code>legs</code>
+    是<strong>各自獨立的 3/4 視角渲染</strong>，視角、光源、比例都不一致，排成人形會很怪。
+    因此中央主視覺用 <code>portrait.webp</code>（完整機體 3/4 特寫），槽位以 HUD 引線掛在四周；
+    四部位改成下方一排唯讀部件卡，等 052-G 部件混搭開放後才變成可換的東西。
+  </div>
+
+  <div class="warning-block">
+    <strong>素材缺口（不阻塞本計畫）：機甲沒有全身像。</strong>
+    <code>portrait.webp</code> 是特寫不是站姿全身。使用者已確認素材庫未來會補齊全身像，
+    屆時可直接替換中央主視覺、不動版面結構。本計畫按現有素材出貨。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：頭像牆必須有統一卡框</strong><br>
+    <code>half.webp</code> <strong>不是去背圖</strong>，每張帶各自不同的原生背景色（實測有灰、綠、粉）。
+    直接鋪成網格會花掉整面牆。每格一律：統一卡框 ＋ 底部漸層遮罩（壓住背景、讓名字讀得到）
+    ＋ 左側 3px 職業色條（沿用 <code>CLASS_CONFIG</code> 既有七職業配色）。
+    87 位必須 lazy load——全載約 2.6MB。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：<code>🔒</code> 與 <code>▨</code> 字符換成描邊 SVG</strong><br>
+    現行 <code>SlotCell</code> 用 emoji 與字符當圖示。字符在不同系統上字形不一致、無法跟著配色走、
+    也無法調線寬。改為 16/20px 網格的描邊 SVG，六態共用同一組。
+    六態的差異只走<strong>邊框樣式（實線／虛線）、底色、圖示</strong>三個維度，外框尺寸與斜切角一致。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：刪掉右欄的「重量帳」表</strong><br>
+    頂部常駐帳本列的分段條＋圖例已經回答「重量花在哪裡」（機體／手部／肩部／背部各多少）。
+    右欄再列一張同樣內容的表是重複資訊。表刪掉，只保留它獨有的那一句
+    ——「備用組較輕、不計入總重」——移到武器列的footer。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：算力面板進模擬器，並在 052-C 定案前落地</strong><br>
+    算力與配裝是同一件事的兩面，玩家不會想在兩個頁面之間對照。
+    好消息是<strong>引擎與 UI 都已存在</strong>：
+    <code>PilotDetailPage</code> 的 <code>NdPowerBar</code>（PLAN-021）已能點選各區 Lv，
+    規則引擎 <code>src/utils/ndOverrides.ts</code>（<code>ND_RULES</code> γ 區合計上限 23、
+    <code>zonePower()</code>、<code>defaultNdLevels()</code>）與 PLAN-034 的 BUFF 階覆寫層共用。
+    本計畫要做的只有三件：把 <code>NdPowerBar</code> 抽成共用元件、
+    在 <code>LoadoutDraft</code> 加 <code>ndLevels</code> 欄位、把面板放進左欄。<br>
+    <strong>時序是硬的</strong>：見下方「跨計畫修訂」——052-C 的分享碼 codec v1 一旦上線，
+    之後補算力就得升版本。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策八：匯出圖是另一份設計，不是螢幕版面的截圖</strong><br>
+    匯出長圖固定 <code>1000px</code> 寬、無互動、無捲動、資訊一次全給——那是印刷品邏輯，
+    與螢幕版面（響應式、互動、資訊分層）幾乎沒有共用設計，必須各畫一份。<br>
+    內容只有<strong>配裝與算力，不放技能表</strong>（使用者裁決）：
+    Key visual（立繪＋機甲）→ 方案名稱 → 四格數值總覽 → 槽位表（含每把武器的元件）→
+    算力分區 γ1／γ2 階梯 → 浮水印 footer。<br>
+    技術上不需新依賴：站上已有三處在用 <code>html-to-image</code> 的 <code>toPng</code>
+    （<code>VersionQuickTable</code> / <code>ComponentDropsPage</code> / <code>RainbowMechPlannerPage</code>，
+    皆 <code>pixelRatio: 2</code> ＋ <code>backgroundColor: '#0a0c10'</code>）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策九：浮水印分兩層，且要帶得回來源</strong><br>
+    ① footer 主標：<code>mecharashi.wiki</code> ＋「米赫瑪超吉情豹站 — Milkhama PawInfo Station」
+    ＋ 非官方聲明（與站上 footer 同一套措辭）。<br>
+    ② 底噪 wordmark：大字級低透明度的 <code>MILKHAMA</code>。<br>
+    右下角印<strong>分享碼與產生日期＋遊戲版本</strong>——圖被轉發之後，這是唯一能找回原配裝的線索，
+    也讓過期的圖看得出是哪個版本的數值。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十：方案名稱是 draft 欄位，命名需登入</strong><br>
+    方案名稱顯示在主版面標題列與匯出圖的最大一行。欄位存在 <code>LoadoutDraft</code>（本機草稿也有），
+    但<strong>命名與雲端保存需要登入</strong>（使用者裁決）；未登入者仍可配裝、分享、匯出圖，
+    只是圖上不帶自訂名稱。登入 gate 的實作掛 052-E。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>視覺地基</strong>：字級階、斜切角外框、六態共用的描邊 SVG 圖示組</li>
+      <li><strong>槽位圖重構</strong>：<code>LoadoutRig</code> 改為機甲主視覺 ＋ HUD 引線 ＋ 四部位唯讀卡</li>
+      <li><strong>槽位六態</strong>：<code>SlotCell</code> 六態改版（空／已裝／固定武裝／形態鎖定／無槽／預覽）</li>
+      <li><strong>機師身分卡</strong>：立繪常駐左欄（含 lazy load 與載入佔位）</li>
+      <li><strong>頭像牆挑選器</strong>：<code>PickerShell</code> 機師分支改為頭像網格 ＋ 職業／執照／品質篩選</li>
+      <li><strong>算力面板</strong>：<code>NdPowerBar</code> 抽共用元件 ＋ <code>LoadoutDraft.ndLevels</code> 欄位</li>
+      <li><strong>武器與元件列</strong>：右欄改版、每把武器顯示已裝元件與 <code>n/componentLimit</code>；刪除重量帳表</li>
+      <li><strong>方案名稱</strong>：<code>LoadoutDraft</code> 欄位 ＋ 標題列可編輯欄位</li>
+      <li><strong>匯出配裝長圖</strong>：1000px 版面、<code>html-to-image</code> 接線、兩層浮水印</li>
+      <li><strong>手機版</strong>：以上各項的 compact 版本 ＋ 底部固定操作列</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>元件規則引擎</strong>（五條規則、<code>componentFamilyKey()</code>、組合特性預覽）→ 052-D。
+          本計畫只做<strong>面板長相</strong>；面板上的可裝／不可裝判定要等 052-D 的規則。</li>
+      <li><strong>雲端存檔與登入 gate 實作</strong> → 052-E</li>
+      <li><strong>形態獨立配裝</strong>（四個分頁、四組數值）→ 052-F</li>
+      <li><strong>部件混搭與模組槽</strong>（四部位卡目前唯讀）→ 052-G</li>
+      <li><strong>分享碼 codec 本體</strong> → 052-C；本計畫只負責讓它<strong>把算力段納入 v1</strong></li>
+      <li><strong>機甲全身像</strong>——素材未齊，待使用者補齊後再議（決策三附註）</li>
+      <li><strong>入場動畫／選角演出</strong>——已評估後否決（決策二）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 跨計畫修訂 -->
+<section class="section">
+  <div class="section-label red">Amendments</div>
+  <div class="section-title">本計畫對其他子計畫的修訂</div>
+
+  <div class="warning-block">
+    這三條是<strong>本計畫發現、但要由別的子計畫執行</strong>的修訂。寫在這裡是為了不讓它們掉在計畫縫隙裡；
+    各子計畫動工時應先讀這一節。
+  </div>
+
+  <table class="impact-table">
+    <thead>
+      <tr><th>對象</th><th>修訂內容</th><th>為什麼不能拖</th><th>急迫度</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>052-C</strong><br>分享碼與訪客書架</td>
+        <td>codec v1 必須新增<strong>算力段（§ND）</strong>。現行計畫書的分段規格只有
+            <code>§SETS</code> / <code>§PARTS</code> / <code>§MODULES</code> / 元件段，
+            <strong>完全沒有算力</strong>（已逐字確認）。</td>
+        <td>總綱「MVP 三件絕對不能省的事」第②條就是「codec 是 TLV，且 v1 就含各段」。
+            v1 上線後補算力＝升版本＋既有分享碼要遷移。</td>
+        <td><span class="badge-high">動工前必改</span></td>
+      </tr>
+      <tr>
+        <td><strong>052-D</strong><br>元件負載與互斥</td>
+        <td>元件面板 UI 依本計畫畫板：觸元件（青）／應元件（橙）分區、
+            候選清單<strong>保留裝不上的元件並寫出原因</strong>（武器類型不符／條件不成立），不直接濾掉。</td>
+        <td>「我的元件呢」比多幾列雜訊難處理得多；且總綱已警告不要做一個沒有
+            <code>componentLimit</code> gate 的面板。</td>
+        <td><span class="badge-med">動工時採用</span></td>
+      </tr>
+      <tr>
+        <td><strong>052-E</strong><br>雲端存檔與配額</td>
+        <td>接手<strong>方案名稱</strong>的登入 gate：未登入可配裝／分享／匯出，但不能命名。</td>
+        <td>欄位由本計畫先落在 <code>LoadoutDraft</code>，gate 晚一步不影響資料形狀。</td>
+        <td><span class="badge-low">可延後</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="info-block">
+    <strong>建議排程：本計畫排在 052-C 之前，或至少與 052-C 的 codec 設計同時進行。</strong>
+    兩個理由：① 算力段必須進 v1（上表第一列）；
+    ② 052-C 會在同一頁加上分享列與書架面板，若等它做完再改視覺，等於同一頁改兩次版。
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-052-I 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-052_配裝模擬器改版_總綱/計畫書.html">
+      <div class="doc-tag">Master</div>
+      <h4>◆ PLAN-052 總綱</h4>
+      <p>子計畫拆分、決策一～十二、實作範圍表</p>
+    </a>
+    <a class="doc-item" href="../PLAN-052-C_分享碼與訪客書架/計畫書.html">
+      <div class="doc-tag">Sibling</div>
+      <h4>◆ PLAN-052-C 分享碼與訪客書架</h4>
+      <p>codec v1 需依本計畫新增算力段（見「跨計畫修訂」）</p>
+    </a>
+  </div>
+
+  <div class="info-block">
+    <strong>設計畫布（七張畫板，已核可）</strong>：桌機三欄、手機 390、頭像牆挑選器、機甲槽位圖、
+    槽位六態、元件配置面板、匯出長圖。工作檔在
+    <code>_local-notes/2026-08/2026-08-25_配裝模擬器視覺改版畫布/</code>
+    （該資料夾在 <code>.gitignore</code> 內，不進版控）。<br>
+    畫板上的<strong>機師／機甲／武器名稱是真的，其餘數值與元件名稱都是排版用的示意值</strong>，
+    實作時一律以 Firestore 為準。
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-I — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

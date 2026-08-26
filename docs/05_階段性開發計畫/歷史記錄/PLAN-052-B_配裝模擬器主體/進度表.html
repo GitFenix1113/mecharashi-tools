@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PLAN-052-B 配裝模擬器主體 — 進度表 — 鋼嵐工具站</title>
+<title>PLAN-052-B 配裝模擬器主體 — 進度表 — 米赫瑪超吉情豹站</title>
 <link rel="stylesheet" href="../../../_shared/style.css">
 <style>
 /* ── Status Badges ── */
@@ -144,7 +144,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-052-B 進度表</span>
   </div>
@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">21</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">21</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,11 +187,24 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">0 / 21</span>
+      <span style="color:var(--accent-green);">21 / 21</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ 已上線（2026-08-24）：</strong>
+    舊 <code>SimulatorPage.tsx</code>（1074 行、8 步驟精靈）已刪除，<code>/simulator</code> 指向新的
+    <code>LoadoutPage</code>，導覽列的 ADMIN gate 一併移除 —— <b>未登入也能用</b>。
+    三個既有 bug 隨規則層落地而修掉：執照過濾改走 <code>licenseAllows()</code>（37/89 位機師不再看得到重型機甲）、
+    背槽改為背包 XOR 背部武器、重量帳收斂到 <code>loadoutBudget()</code> 單一入口（順序不再影響可選清單）。
+    另外順手抓到第四個同類問題：背包的 <code>assemblableArmorType</code> 是<b>英文</b>值域，
+    餵給 <code>toArmorType()</code> 會全數回 null、等於完全不過濾 —— 已新增
+    <code>fromAssemblableArmorType()</code> 並補測試。
+    驗收：<code>npm test</code> 620 筆全綠（本計畫新增 30 + 15 筆）、<code>npm run build</code> 通過、
+    桌機／平板／手機三斷點與 BottomSheet 的 Escape・scroll lock 實機驗證。
   </div>
 
   <div class="impact-note">
@@ -211,7 +224,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; Loadout 型別與 reducer</div>
       <div class="task-group-meta">src/types/loadout.ts · src/pages/simulator/simReducer.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -222,7 +235,7 @@
         <div class="task-file">src/types/loadout.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -233,7 +246,7 @@
         <div class="task-file">src/pages/simulator/simReducer.ts · .test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -241,7 +254,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; 合法性規則層</div>
       <div class="task-group-meta">src/utils/loadoutRules.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -252,7 +265,7 @@
         <div class="task-file">src/utils/loadoutRules.ts · .test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -263,7 +276,7 @@
         <div class="task-file">src/utils/loadoutRules.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -278,7 +291,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; 版面骨架與 HUD</div>
       <div class="task-group-meta">src/pages/simulator/LoadoutPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -289,7 +302,7 @@
         <div class="task-file">src/pages/simulator/LoadoutPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -300,7 +313,7 @@
         <div class="task-file">src/components/loadout/OutputBar.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -308,7 +321,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; 槽位圖 LoadoutRig（六種狀態）</div>
       <div class="task-group-meta">src/components/loadout/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -319,7 +332,7 @@
         <div class="task-file">src/components/loadout/LoadoutRig.tsx · SlotCell.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -330,7 +343,7 @@
         <div class="task-file">src/components/loadout/LoadoutRig.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -338,7 +351,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-3 &nbsp; BottomSheet 共用元件改造</div>
       <div class="task-group-meta">src/components/common/BottomSheet.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -349,7 +362,7 @@
         <div class="task-file">src/components/common/BottomSheet.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -364,7 +377,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 挑選器與拒絕呈現</div>
       <div class="task-group-meta">src/components/loadout/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -375,7 +388,7 @@
         <div class="task-file">src/components/loadout/PickerShell.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -386,7 +399,7 @@
         <div class="task-file">src/components/loadout/RejectionRow.tsx · HiddenCountBar.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -397,7 +410,7 @@
         <div class="task-file">src/components/loadout/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -412,7 +425,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 資訊面板</div>
       <div class="task-group-meta">src/components/loadout/ · charts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -423,7 +436,7 @@
         <div class="task-file">src/components/loadout/EquippedStats.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -434,7 +447,7 @@
         <div class="task-file">src/components/charts/RadarChart.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -445,7 +458,7 @@
         <div class="task-file">src/components/loadout/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -460,7 +473,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 既有 bug 修正</div>
       <div class="task-group-meta">src/pages/simulator/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -471,7 +484,7 @@
         <div class="task-file">src/pages/simulator/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -482,7 +495,7 @@
         <div class="task-file">src/utils/loadoutRules.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -493,7 +506,7 @@
         <div class="task-file">src/utils/loadoutRules.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -501,7 +514,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-2 &nbsp; 開放範圍與下線</div>
       <div class="task-group-meta">Layout · App · docs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -512,7 +525,7 @@
         <div class="task-file">src/components/layout/Layout.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -523,7 +536,7 @@
         <div class="task-file">src/App.tsx · src/pages/simulator/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -534,7 +547,7 @@
         <div class="task-file">docs/ · src/data/siteChangelog/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -542,7 +555,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-052-B — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-B — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 歷史記錄</a>
 </footer>
 
 </body>

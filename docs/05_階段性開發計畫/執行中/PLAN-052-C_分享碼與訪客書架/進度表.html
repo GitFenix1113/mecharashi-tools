@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PLAN-052-C 分享碼與訪客本機書架 — 進度表 — 鋼嵐工具站</title>
+<title>PLAN-052-C 分享碼與訪客本機書架 — 進度表 — 米赫瑪超吉情豹站</title>
 <link rel="stylesheet" href="../../../_shared/style.css">
 <style>
 /* ── Status Badges ── */
@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">1</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">11</div>
+      <div class="summary-num" style="color:var(--text-dim)">10</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">0 / 11</span>
+      <span style="color:var(--accent-green);">1 / 11</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 9%"></div>
     </div>
   </div>
 
@@ -212,18 +212,22 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; shareId 映射與 lock 檔</div>
       <div class="task-group-meta">src/utils/loadoutCode/shareId.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">toShareId() / buildShareIndex()：零新欄位</div>
         <div class="task-desc">
-          回 <code>null</code> ＝「這份文件目前不可分享」，呼叫端渲染成停用狀態<b>不可 throw</b>（資料側隨時可能新增形狀例外）。<b>撞號則必須大聲失敗</b> —— 靜默的後果是分享碼解成另一把武器。實測可解析率：weapons 180/180、components 208/208、backpacks 180/181（1 筆 slug id 建議改號）、通用模組 62/62。
+          回 <code>null</code> ＝「這份文件目前不可分享」，呼叫端渲染成停用狀態<b>不可 throw</b>（資料側隨時可能新增形狀例外）。撞號的處理落地為<b>「兩邊都剔除 ＋ 記進 <code>collisions</code>」</b>，另給 <code>assertNoCollisions()</code> 供腳本／CI 大聲失敗
+          —— 前台 throw 會讓整頁白畫面（決策四），而「先到先贏」等於讓一份文件靜默取得另一份的身分。<br>
+          <b>2026-08-25 全量對帳（serviceAccountKey 直讀線上）</b>：pilots 89/89、mechs 90/90、weapons <b>182/182</b>、components 208/208、backpacks 180/181（<code>backpack_威能者背包</code> 待改號）、modules 162/242；<b>零撞號、全量 round-trip 通過</b>。<br>
+          ⚠ 兩個地雷已用測試釘死：元件前綴是 <code>comp_</code> 不是 <code>component_</code>；模組必須<b>全字匹配</b> <code>^mod_(\d+)$</code>（31 筆 <code>mod_4001_2</code> 型會與 <code>mod_4001</code> 撞號）。<br>
+          ⚠ <b>待決（阻塞 052-G，不阻塞本計畫）</b>：Q-2 裁決後模組候選＝<code>boundMechId === null</code> 共 199 筆，其中 <b>53 筆推導不出號碼</b>（<code>mod_4001_2</code> 型 ＋ <code>MOD_折光陣列</code>）⇒ 需在 lock 檔補一張永久別名表，或接受它們不可分享。
         </div>
-        <div class="task-file">src/utils/loadoutCode/shareId.ts · .test.ts</div>
+        <div class="task-file">src/utils/loadoutCode/shareId.ts · .test.ts（12 則測試）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -401,7 +405,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-052-C — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-C — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
 </footer>
 
 </body>

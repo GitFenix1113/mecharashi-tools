@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PLAN-052 配裝模擬器改版 · 總綱 — 進度表 — 鋼嵐工具站</title>
+<title>PLAN-052 配裝模擬器改版 · 總綱 — 進度表 — 米赫瑪超吉情豹站</title>
 <link rel="stylesheet" href="../../../_shared/style.css">
 <style>
 /* ── Status Badges ── */
@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">1</div>
+      <div class="summary-num" style="color:var(--accent-green)">2</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -179,7 +179,7 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">4</div>
+      <div class="summary-num" style="color:var(--text-primary)">5</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">1 / 4</span>
+      <span style="color:var(--accent-purple);">2 / 5</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 25%"></div>
+      <div class="progress-bar-fill" style="width: 40%"></div>
     </div>
   </div>
 
@@ -244,17 +244,35 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">052-B &nbsp; 配裝模擬器主體</div>
-      <div class="task-group-meta">8–10 天 · 依賴 052-A</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">2026-08-24 完成 · 21 / 21 工項</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">整檔取代 SimulatorPage：三欄單頁 ＋ 槽位圖 ＋ 就地挑選器 ＋ 級聯</div>
-        <div class="task-desc">本專案最大的單一子計畫。順手修三個既有 bug（執照 enum、背槽不互斥、順序相依重量帳）。</div>
-        <div class="task-file">PLAN-052-B_配裝模擬器主體/進度表.html</div>
+        <div class="task-desc">
+          舊 <code>SimulatorPage.tsx</code>（1074 行）已刪除，<code>/simulator</code> 指向
+          <code>LoadoutPage</code>；導覽列的 ADMIN gate 一併移除，<b>正式全面公開（未登入可用）</b>。<br>
+          <b>三個既有 bug 全數修掉</b>：執照 enum（052-A 已修，本輪接上單一入口）、
+          背槽改為背包 XOR 背部武器、重量帳收斂到 <code>loadoutBudget()</code>（順序不再影響可選清單）。<br>
+          <b>另抓到第四個同類問題</b>：背包的 <code>assemblableArmorType</code> 是<b>英文</b>值域
+          （<code>Light</code>／<code>Medium</code>／<code>Heavy</code>），餵給 <code>toArmorType()</code>
+          會全數回 <code>null</code> ⇒ 35 個「僅輕型可裝」的背包完全不受限。已新增
+          <code>fromAssemblableArmorType()</code> 並補測試。<br>
+          <b>052-C 可直接依賴的成品</b>：<code>LoadoutDraft</code>／<code>EquipSet</code>／<code>LoadoutMount</code>
+          （<code>src/types/loadout.ts</code>，即分享碼 codec 的解碼目標）、<code>reconcile()</code>
+          （載入外部草稿一律先過它）、<code>buildContext()</code>／<code>validateLoadout()</code>。
+          頁面已自帶 localStorage 單份草稿暫存（<code>mecharashi_loadout_draft</code>），
+          <b>書架的 10 套配額仍屬 052-C</b>。<br>
+          <b>052-C 需注意</b>：本版<b>不提供匯出圖</b>，<code>html2canvas</code> 現已無任何 import
+          （<code>VersionQuickTable</code> 走的是 <code>html-to-image</code>），可依 052-C 計畫直接移除依賴。<br>
+          <b>052-D／F／G 的可見佔位已留</b>：武器列的「⚙ 0/componentLimit」、
+          有獨立配裝的機師頁頂常駐橫幅、機甲卡的唯讀四部位表 ＋「混搭與模組配置開發中」。
+        </div>
+        <div class="task-file">PLAN-052-B_配裝模擬器主體/進度表.html（已歸檔至歷史記錄）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -267,8 +285,39 @@
     <div class="task-row">
       <div>
         <div class="task-name">codec v1 ＋ share-id.lock.json ＋ /simulator?b= ＋ 本機書架 10 套</div>
-        <div class="task-desc">零後端出貨。<b>MVP 的最後一塊</b>：完成後網友可以複製連結互相分享配裝。</div>
+        <div class="task-desc">零後端出貨。<b>MVP 的最後一塊</b>：完成後網友可以複製連結互相分享配裝。<br>
+          <b>⚠ 2026-08-26 修訂（來自 052-I）</b>：codec v1 必須<b>新增算力段（§ND）</b>。
+          現行規格的分段只有 <code>§SETS</code>／<code>§PARTS</code>／<code>§MODULES</code>／元件段，沒有算力；
+          而算力已確定要進 <code>LoadoutDraft</code>。v1 上線後再補＝升版本並遷移既有分享碼，
+          正好違反總綱「MVP 三件不能省的事」第②條。<b>建議 052-I 的 D-2 先落地，或至少與本計畫的 codec 設計同時定案。</b>
+        </div>
         <div class="task-file">PLAN-052-C_分享碼與訪客書架/進度表.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">052-I &nbsp; 配裝模擬器視覺改版</div>
+      <div class="task-group-meta">2026-08-26 建立 · 依賴 052-B</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">視覺層重做 ＋ 方案名稱 ＋ 匯出配裝長圖（17 工項）</div>
+        <div class="task-desc">
+          依已核可的七張設計畫布重做模擬器視覺層：字級五階、斜切角外框、描邊 SVG 圖示、
+          立繪常駐、機甲 <code>portrait</code> ＋ HUD 引線槽位、頭像牆挑選器、
+          算力面板進頁、武器與元件列、匯出長圖（1000px ＋ 兩層浮水印）。
+          <b>零新顏色、零新依賴</b>，不外溢其他頁面。<br>
+          <b>對其他子計畫的修訂</b>：052-C 需加 §ND 段（見上）；052-D 採用本計畫的元件面板 UI 規格；
+          052-E 接手方案名稱的登入 gate。<br>
+          <b>建議排在 052-C 之前</b>——除了算力段的時序，052-C 會在同一頁加分享列與書架面板，
+          等它做完再改視覺等於同一頁改兩次版。
+        </div>
+        <div class="task-file">PLAN-052-I_配裝模擬器視覺改版/進度表.html</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status pending">待開始</span>
@@ -286,7 +335,9 @@
         <div class="task-name">尚未建立文件，待各自動工時再由 plan-manager 建檔</div>
         <div class="task-desc">
           範圍與工程量見計畫書「實作範圍」表。
-          <b>052-G 的混搭階段卡在 Open Question Q-1（數值合成規則），模組槽階段不受影響。</b>
+          <b>2026-08-25：Q-1／Q-2 已裁決，052-G 兩個階段都不再有資料缺口</b>
+          （合成規則＝Σ 四部位；模組候選＝<code>boundMechId === null</code>）；
+          並追加<b>決策十二</b>（槽位定址走 <code>kind</code> 聯集 ＋ 模組／元件的版面落點）。
         </div>
         <div class="task-file">docs/05_階段性開發計畫/執行中/</div>
       </div>
@@ -299,7 +350,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-052 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
 </footer>
 
 </body>
