@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-B 配裝模擬器主體 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-B 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-052-B</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    配裝模擬器主體<span style="-webkit-text-fill-color:var(--text-secondary);"> · 單頁槽位圖 · 就地挑選器</span>
+  </h1>
+  <p class="hero-sub">整檔取代 8 步驟精靈：單頁槽位圖 ＋ 就地挑選器 ＋ 即時重量出力，並修好三個讓過濾結果出錯的既有 bug。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-052-B</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-24</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">pages/simulator/LoadoutPage · components/loadout/* · components/common/BottomSheet · components/charts/RadarChart · utils/loadoutRules · Layout</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">已完成（2026-08-24）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-052-A</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>8 步驟精靈是錯的互動模型</strong><br>
+    現行 <code>SimulatorPage.tsx</code>（1074 行）把配裝拆成 8 個步驟，玩家<b>必須走完 8 步才看得到結果</b>。
+    但配裝是「反覆試」的動作 —— 每試一次走 8 步，沒有人會用第二次。
+    而且步驟列可無條件跳關（<code>onStep={setStep}</code>），空手直跳 result 會渲染一頁「未選擇」；
+    Step 6（改裝）在未選武器時<b>連下一步按鈕都沒有</b>，只能靠步驟列脫身。
+  </div>
+
+  <div class="problem-block">
+    <strong>三個 bug 讓過濾結果是錯的</strong><br>
+    ① <code>:179</code> 寫 <code>license === '中甲'</code>，但 <code>MechLicense.MEDIUM = '中型'</code>（<code>'中甲'</code> 是 <code>ArmorType</code> 的值）
+       → 條件恆假 → <b>37/89 位機師（含海莉絲）看得到重型機甲</b>。tsc 抓不到，因為兩者都推導成 string。<br>
+    ② <code>getFilteredBackpacks</code> 不檢查背槽是否已被背部武器佔用 —— 實測 <b>181/181 個背包 <code>slot='back'</code></b>，
+       22 把背部武器可與任一背包並存。<br>
+    ③ <b>順序相依的重量帳</b>：選背包時扣武器重（<code>:201-202</code>），選武器時不扣背包重（<code>:187</code>）
+       → 用步驟列跳著選，兩種順序得到兩份不同的可選清單。
+  </div>
+
+  <div class="warning-block">
+    <strong>導覽 gate 與路由不一致，而本子計畫要正式全面公開</strong><br>
+    <code>Layout.tsx:128/:222</code> 讓「配裝模擬器」只對 ADMIN/OWNER 顯示，
+    但 <code>App.tsx:74</code> 的路由<b>沒有 <code>AdminRoute</code></b>，
+    且 <code>ProfilePage</code> 三處入口對所有登入者開放 —— 實際上是半開放狀態。
+    本子計畫依總綱決策九<b>正式全面公開</b>（未登入也能用），
+    因此本機書架（052-C）必須緊接著上線，否則訪客配完就沒了。
+  </div>
+
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：單頁槽位圖 ＋ 就地挑選器 ＋ 常駐資訊面板</strong><br>
+    不是抄遊戲的 3D 介面，而是把遊戲的<b>心智模型</b>搬到 web：<b>一眼看到全部槽位</b>、<b>點槽位換裝備</b>、<b>即時看重量／出力</b>。<br>
+    三個斷點：<b>≥1280 三欄</b>（槽位圖 400 ｜ 情境欄 1fr ｜ 資訊面板 380）、
+    <b>1024–1279 兩欄</b>（資訊面板移到左欄下方）、<b>&lt;1024 單欄 ＋ BottomSheet</b>。<br>
+    ⚠ <b>斷點用視窗寬，不用 <code>useIsMobile</code></b>：後者判的是 <code>(hover:none)+(pointer:coarse)</code>，
+    它決定「挑選器用就地面板還是 BottomSheet」與「hover 預覽還是點擊展開」，兩者正交。
+    平板（寬 1024、粗指標）因此會得到「兩欄版型 ＋ BottomSheet ＋ 無 hover 預覽」，這是刻意的。<br>
+    ⚠ <b>手機版槽位圖不縮成一欄清單</b>（「一眼看到全部槽位」是整個設計的前提），改壓縮格高與字級。
+    <b>BottomSheet 底部 sticky 預算列是必須不是加分</b> —— sheet 會蓋住 HUD 的重量條，沒有它玩家在挑選時是瞎選。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：兩層拒絕呈現 —— 結構性摺疊、情境性灰掉附解法</strong><br>
+    這是「玩家會不會來問客服」的分水嶺：<br>
+    · <b><code>structural</code></b>（玩家改別的選擇也解不掉）→ <b>摺疊隱藏 ＋ 計數 ＋ [顯示並說明原因]</b>：
+      <code>MECH_RESTRICTION</code>／<code>FORM_WEAPON_TYPE</code>／<code>BACKPACK_ARMOR_TYPE</code>。<br>
+    · <b><code>situational</code></b>（改別的就能解）→ <b>灰掉 ＋ 原因 ＋ 解法按鈕</b>：
+      <code>OVERWEIGHT</code>（「卸下 左肩 熔火 可裝」＋[卸下並裝上]）／<code>BACK_SLOT_TAKEN</code>（[替換背包]）。<br>
+    · <code>SLOT_MISMATCH</code>（equipSlot ≠ 本槽）<b>不列入清單</b> —— 那是槽的定義，不是拒絕。<br>
+    · <code>DATA_INCOMPLETE</code>（<code>mech_090_美杜莎MK2</code> 全 0 數值）→ <b>整個挑選器降級</b>並說明，
+      不是給一個空清單。<br>
+    做成封閉聯集，<b>新增拒絕原因時 tsc 逼你填 tier 與中文說明</b>，situational 還必須填 <code>resolution</code>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：級聯 —— 降級不清空，每次移除可復原</strong><br>
+    這是需求「選完機師才知道要篩選什麼機甲、選完機甲才知道哪個槽被限制住」的完整答案。
+    全部級聯集中在<b>單一 <code>reconcile()</code></b>，不散在各個 handler：
+    <table class="impact-table">
+      <tr><th style="width:26%">動作</th><th style="width:38%">處置</th><th>回饋</th></tr>
+      <tr><td>換機師（同執照範圍）</td><td>機甲<b>保留</b>，mounts 逐槽驗證</td><td>toast 列出被移除項 ＋ [復原]，該格閃橙 600ms</td></tr>
+      <tr><td>換機師（執照容不下）</td><td>機甲移除 → 連帶 mounts 與背包</td><td>自動切到機甲挑選</td></tr>
+      <tr><td>換機甲（中甲→輕/重）</td><td>肩槽整列消失 → 肩部武器移除；medium 限定武器移除</td><td>toast「移除 2 項：…」</td></tr>
+      <tr><td>換機甲（有固定武裝）</td><td>對應槽變 🔒 佔據態，原本裝的移除</td><td>「右肩已由 右臂部件 的 衝擊炮 佔用」</td></tr>
+      <tr><td>換背包（強襲者→一般）</td><td>備用槽消失 → 兩格武器移除；−300 出力</td><td>toast 兩段：移除項 ＋ 出力變化</td></tr>
+      <tr><td>裝背部武器</td><td>背包自動卸下（背槽擇一）</td><td>toast 提供 [還原背包]</td></tr>
+      <tr><td>裝雙手武器</td><td>另一手被取代</td><td>挑選器列上<b>先印</b>「裝上將取代 右手 麥克斯」，不灰掉不阻擋</td></tr>
+      <tr><td><b>超重</b></td><td>不自動卸、<b>不阻擋存檔／分享</b></td><td>條轉紅 ＋「超出 325」＋ [自動卸至符合]（須玩家主動按）</td></tr>
+    </table>
+    <b>超重不擋存檔是刻意的</b>：擋了就會與「不自動移除超重武器」一起把使用者卡在既不能改也不能存的死狀態，
+    而「等機甲升級／換強襲者背包就能裝」是真實的規劃用途。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：這一版明確不渲染的東西</strong><br>
+    <b>改裝分頁</b>（全庫 0/180 筆資料）、<b>可達增益數值加總</b>（buff/技能 effects 0 筆、323 筆 buffId 解析失敗）、
+    <b>戰術評分</b>（零公式依據）、<b>單輪理論輸出</b>（attack 語意未定）、<b>科研步驟</b>（89/89 位機師失效）。<br>
+    <b>不渲染，不是渲染空的</b> —— 現行 Step 6 渲染 3 個空格 0 顆按鈕就是這個錯誤的現成教訓。<br>
+    元件、形態多套、模組槽在後續子計畫，但<b>本版就要留下可見的佔位</b>：
+    武器格顯示「⚙ 0/4 · 元件功能建置中」（讓玩家看得到上限是 4 而不是 6）、
+    海莉絲配裝頁頂端常駐橫幅、機甲卡顯示唯讀四部位表 ＋「混搭與模組配置開發中」。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：BottomSheet 先補齊 a11y 再用</strong><br>
+    現行 <code>src/components/common/BottomSheet.tsx</code> 只有 portal ＋ 遮罩 onClick，
+    缺 <code>role="dialog"</code>／<code>aria-modal</code>／<code>aria-labelledby</code>／Escape 關閉／focus trap／焦點歸還，
+    也沒有 footer slot（sticky 預算列做不出來）。<br>
+    它已被 PLAN-019 的引用浮窗等處使用，配裝器會把它從「偶爾用的浮窗」升級成<b>手機上每次選武器都用</b>的主要互動
+    —— 因此<b>先單獨改一次共用元件並獨立驗收</b>，不要在配裝器裡分叉一份。
+  </div>
+
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>LoadoutDraft</code>／<code>EquipSet</code>／<code>LoadoutMount</code> 型別 ＋ <code>simReducer</code> ＋ 單一 <code>reconcile()</code></li>
+      <li><code>validateLoadout()</code> 與 <code>canEquip()</code>（含具名錯誤碼與 tier）</li>
+      <li>三斷點版面：HUD（機師／機甲／分段重量條）、六態槽位圖、就地挑選器／BottomSheet、資訊面板</li>
+      <li>兩層拒絕呈現 ＋ 級聯 toast 與 [復原]</li>
+      <li>BottomSheet 共用元件的 a11y ＋ footer slot 改造；RadarChart 從 <code>PilotDetailPage</code> 抽出</li>
+      <li>分階段 <code>ensureLoaded</code>（首屏只載 pilots＋forms）</li>
+      <li>修三個既有 bug（執照 enum、背槽不互斥、順序相依重量帳）；移除導覽 ADMIN gate</li>
+      <li>舊 <code>SimulatorPage</code> 下線</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>分享碼／存檔／匯出圖重做 → <b>052-C</b>（本版暫時沿用現有匯出，或直接不提供）</li>
+      <li>元件面板 → <b>052-D</b>；雲端存檔 → <b>052-E</b>；形態分頁 → <b>052-F</b>；模組槽與混搭 → <b>052-G</b></li>
+      <li>任何傷害數字、戰術評分、改裝、科研（見決策四）</li>
+    </ul>
+  </div>
+
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-052-B 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-B — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

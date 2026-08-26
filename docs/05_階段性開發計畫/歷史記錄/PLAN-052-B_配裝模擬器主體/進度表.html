@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-B 配裝模擬器主體 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-B 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-052-B</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">配裝模擬器主體</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-24</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label orange">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">21</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">21</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-green);">21 / 21</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ 已上線（2026-08-24）：</strong>
+    舊 <code>SimulatorPage.tsx</code>（1074 行、8 步驟精靈）已刪除，<code>/simulator</code> 指向新的
+    <code>LoadoutPage</code>，導覽列的 ADMIN gate 一併移除 —— <b>未登入也能用</b>。
+    三個既有 bug 隨規則層落地而修掉：執照過濾改走 <code>licenseAllows()</code>（37/89 位機師不再看得到重型機甲）、
+    背槽改為背包 XOR 背部武器、重量帳收斂到 <code>loadoutBudget()</code> 單一入口（順序不再影響可選清單）。
+    另外順手抓到第四個同類問題：背包的 <code>assemblableArmorType</code> 是<b>英文</b>值域，
+    餵給 <code>toArmorType()</code> 會全數回 null、等於完全不過濾 —— 已新增
+    <code>fromAssemblableArmorType()</code> 並補測試。
+    驗收：<code>npm test</code> 620 筆全綠（本計畫新增 30 + 15 筆）、<code>npm run build</code> 通過、
+    桌機／平板／手機三斷點與 BottomSheet 的 Escape・scroll lock 實機驗證。
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    網友第一次看到<b>能用的配裝模擬器</b>：選機師 → 選機甲 → 在七個槽位上配武器與背包，即時看到與遊戲一致的重量／出力，選不到的東西會告訴你為什麼、還能一鍵解決。<span style="color:var(--text-dim)">本階段不能存、不能分享、沒有元件 —— 那是 052-C 與 052-D。</span>
+  </div>
+</section>
+
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label orange">Phase A</div>
+  <div class="section-title">狀態與規則層</div>
+  <div class="section-desc">先把「配裝是什麼形狀、什麼合法、換東西時怎麼連動」寫成純函式與 reducer，UI 之後才接。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; Loadout 型別與 reducer</div>
+      <div class="task-group-meta">src/types/loadout.ts · src/pages/simulator/simReducer.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">LoadoutDraft／EquipSet／LoadoutMount／MountSetup</div>
+        <div class="task-desc">
+          <code>mounts</code> 是所有已裝備武器的<b>唯一清單，背部武器不例外</b>；<code>backpackId</code> <b>不存 null</b>，用「欄位不存在」表示沒有（三態撞上 <code>stripUndefined</code>，PLAN-047 決策六踩過）。<code>MountSetup</code>（元件／改裝）<b>內嵌在 mount 上</b>，不旁掛 Record。<b>⚠ 不開武器等級欄位</b>（一律滿級假設）。
+        </div>
+        <div class="task-file">src/types/loadout.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">simReducer ＋ 單一 reconcile()</div>
+        <div class="task-desc">
+          所有級聯集中在一支函式，不散在 handler。每次級聯移除推一筆 undo（只留最近 1 筆），toast 上的 [復原] 還原整批。第二層保險是既有的 <code>useDraftAutosave</code> 寫 localStorage。
+        </div>
+        <div class="task-file">src/pages/simulator/simReducer.ts · .test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 合法性規則層</div>
+      <div class="task-group-meta">src/utils/loadoutRules.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">validateLoadout() ＋ canEquip() 單一入口</div>
+        <div class="task-desc">
+          六組錯誤碼：骨架／機甲／槽位／武器／背部／負重。<b>gate 一律用 <code>mechRestriction</code>，絕不可用 <code>type === '戰術'</code></b>（實測 medium 49 筆 vs 戰術 44 筆，差 5 筆＝3 把肩掛固定武裝＋耀星＋隕星）。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts · .test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">拒絕原因做成封閉聯集（含 tier 與中文說明）</div>
+        <div class="task-desc">
+          <code>structural</code> 摺疊＋計數；<code>situational</code> 灰掉＋原因＋<code>resolution</code>。新增值時 tsc 逼你選邊 —— 這是把「玩家看不懂為什麼選不到」擋在型別層。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label orange">Phase B</div>
+  <div class="section-title">版面骨架與共用元件</div>
+  <div class="section-desc">三斷點版面、六態槽位圖，以及配裝器要重度使用的 BottomSheet 改造。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 版面骨架與 HUD</div>
+      <div class="task-group-meta">src/pages/simulator/LoadoutPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三斷點 grid ＋ sticky HUD</div>
+        <div class="task-desc">
+          ≥1280 三欄／1024–1279 兩欄／&lt;1024 單欄。HUD <code>sticky top-[56px]</code>（讓開既有 Layout 的 sticky header），內含機師卡、機甲卡、動作鍵與<b>分段重量條</b>（每一段對應一個槽，hover 高亮左欄對應格）。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">分段出力條顯示 max() 語意</div>
+        <div class="task-desc">
+          主手組與備用組<b>取較重者</b>計入（052-A 的 <code>totalWeight()</code>），條上要標明「手部：主手 800 與 備用 850 取較重者」，否則玩家會以為少算了。
+        </div>
+        <div class="task-file">src/components/loadout/OutputBar.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 槽位圖 LoadoutRig（六種狀態）</div>
+      <div class="task-group-meta">src/components/loadout/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">SlotCell 六態：空／已裝／🔒佔據／🔒全鎖／▨無槽／預覽</div>
+        <div class="task-desc">
+          <b>▨無槽要整格說明原因</b>（例：「先鋒形態無可裝武器」「此機甲無肩槽」），不是一個點不下去的空 [+] —— 官方就是這樣，而玩家會以為是 bug。<b>React key 一律用 <code>slotKey()</code></b>，不可用 weaponId（帕斯卡左右肩是同一把武器會撞 key）。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutRig.tsx · SlotCell.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">雙手武器合併成寬格；備用組為獨立列</div>
+        <div class="task-desc">
+          官方把背包夾在兩個備用槽中間；本設計把背包<b>獨立一列</b> —— 背包不是手，而雙手武器在備用槽要合併成寬格，夾在中間會讓合併格跨越不相干的欄。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutRig.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; BottomSheet 共用元件改造</div>
+      <div class="task-group-meta">src/components/common/BottomSheet.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補齊六項 a11y ＋ footer slot ＋ scroll lock</div>
+        <div class="task-desc">
+          <code>role="dialog"</code>／<code>aria-modal</code>／<code>aria-labelledby</code>／Escape 關閉／focus trap／焦點歸還；另加 footer slot（放 sticky 預算列）、<code>safe-area-inset-bottom</code>、body scroll lock、堆疊時只畫一層遮罩。<b>⚠ 它已被 PLAN-019 引用浮窗等處使用，改動要獨立驗收。</b>
+        </div>
+        <div class="task-file">src/components/common/BottomSheet.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label orange">Phase C</div>
+  <div class="section-title">挑選器與拒絕呈現</div>
+  <div class="section-desc">決定玩家「找不到某把武器時看到什麼」——這一段做不好就會變成客服問題。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 挑選器與拒絕呈現</div>
+      <div class="task-group-meta">src/components/loadout/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">PickerShell：就地面板 ↔ BottomSheet 的容器抽換</div>
+        <div class="task-desc">
+          同一份清單邏輯，兩種容器。手機版 sheet <b>底部必須有 sticky 預算列</b>（顯示「目前餘 X → 裝上後 Y」，超重轉紅）—— sheet 蓋住 HUD 的重量條。
+        </div>
+        <div class="task-file">src/components/loadout/PickerShell.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">RejectionRow ＋ HiddenCountBar</div>
+        <div class="task-desc">
+          情境性拒絕的列要印原因與<b>解法按鈕</b>；結構性拒絕摺疊成一行計數（例：「共 180 把：因形態隱藏 90 · 固定武裝排除 6　[顯示原因]」）。
+        </div>
+        <div class="task-file">src/components/loadout/RejectionRow.tsx · HiddenCountBar.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">點列即裝上（無確認鍵）＋ hover 預覽</div>
+        <div class="task-desc">
+          hover 列時左欄該槽顯示預覽、頂部條顯示半透明的新分段。粗指標裝置不做 hover 預覽。
+        </div>
+        <div class="task-file">src/components/loadout/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label orange">Phase D</div>
+  <div class="section-title">資訊面板</div>
+  <div class="section-desc">只呈現算得準的數字；算不準的明講不提供。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 資訊面板</div>
+      <div class="task-group-meta">src/components/loadout/ · charts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">裝配武器數值列表：只出與官方 1:1 相符的欄位</div>
+        <div class="task-desc">
+          <b>重量／射程／命中</b>（實測 戕神者 DB accuracy=1466 ＝ 官方 1466）。攻擊力顯示 DB 原值並標「合計攻擊（本站口徑，含連擊）」，<b>不做 ×hitCount 的官方同格式渲染</b> —— 那個 17–18% 差額未解（總綱決策一④，屬傷害計算）。
+        </div>
+        <div class="task-file">src/components/loadout/EquippedStats.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">RadarChart 從 PilotDetailPage 抽成共用元件</div>
+        <div class="task-desc">
+          機師六維雷達（滿級值，不隨配裝變動）。兩處共用。
+        </div>
+        <div class="task-file">src/components/charts/RadarChart.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">配裝概況 ＋「本站數值一律以滿級／滿品質階計算」一行小字</div>
+        <div class="task-desc">
+          已用槽位、總重、平均射程。<b>戰術評分位置明寫「官方公式未知，本站不提供猜測值」，不留空白區塊。</b>
+        </div>
+        <div class="task-file">src/components/loadout/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label orange">Phase E</div>
+  <div class="section-title">既有 bug 修正與上線</div>
+  <div class="section-desc">順手把三個讓過濾結果出錯的 bug 修掉，並正式全面公開。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 既有 bug 修正</div>
+      <div class="task-group-meta">src/pages/simulator/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">執照篩選：改用 MechLicense enum</div>
+        <div class="task-desc">
+          <code>:179</code> 的 <code>'中甲'</code> → <code>MechLicense.MEDIUM</code>。影響 37/89 位機師（含海莉絲）。052-A 已把 <code>Pilot.license</code> 收成 enum，這裡只是接上。
+        </div>
+        <div class="task-file">src/pages/simulator/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">背槽擇一：背包 XOR 背部武器</div>
+        <div class="task-desc">
+          由 <code>SlotCapacity.back = 1</code> 統一處理（181/181 個背包 <code>slot='back'</code>）。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">重量帳改由 totalWeight() 單一入口，消除順序相依</div>
+        <div class="task-desc">
+          現行選背包扣武器重、選武器不扣背包重。改成任何挑選器都問同一支函式。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 開放範圍與下線</div>
+      <div class="task-group-meta">Layout · App · docs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">移除導覽的 ADMIN gate，正式全面公開</div>
+        <div class="task-desc">
+          <code>Layout.tsx:128/:222</code>。⚠ 一旦公開，<b>「users 0 筆」這個前提就不再成立</b> —— 052-C 的本機書架必須緊接著上線，052-E 雲端存檔也不能拖太久。
+        </div>
+        <div class="task-file">src/components/layout/Layout.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">舊 SimulatorPage 下線 ＋ 路由指向新頁</div>
+        <div class="task-desc">
+          保留 <code>/simulator</code> 路徑（分享碼要用它，且不必動 Cloudflare Transform Rule）。
+        </div>
+        <div class="task-file">src/App.tsx · src/pages/simulator/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">docs 同步 ＋ 網站更新履歷</div>
+        <div class="task-desc">
+          更新 <code>docs/03_頁面規劃/07_配裝模擬器/</code>；履歷寫「配裝模擬器全新改版」。<b>同時更正 <code>src/data/siteChangelog/2026-07.ts:21</code></b> 對使用者宣稱過的「即時加總各項數值效果」（該面板實際上恆空）。
+        </div>
+        <div class="task-file">docs/ · src/data/siteChangelog/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-B — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

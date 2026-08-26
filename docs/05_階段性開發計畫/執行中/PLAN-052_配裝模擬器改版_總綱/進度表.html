@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PLAN-052 配裝模擬器改版 · 總綱 — 進度表 — 鋼嵐工具站</title>
+<title>PLAN-052 配裝模擬器改版 · 總綱 — 進度表 — 米赫瑪超吉情豹站</title>
 <link rel="stylesheet" href="../../../_shared/style.css">
 <style>
 /* ── Status Badges ── */
@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">4</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,11 +175,11 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">4</div>
+      <div class="summary-num" style="color:var(--text-dim)">1</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">4</div>
+      <div class="summary-num" style="color:var(--text-primary)">5</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">0 / 4</span>
+      <span style="color:var(--accent-purple);">4 / 5</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 80%"></div>
     </div>
   </div>
 
@@ -211,54 +211,120 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">052-A &nbsp; 配裝地基與槽位模型</div>
-      <div class="task-group-meta">7–8 天 · 可立即動工</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">2026-08-24 完成 · 28 / 28 工項</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">三支數值純函式 · 槽位型別 · ResolvedChassis · 8 筆固定武裝落盤 · 型別收緊</div>
         <div class="task-desc">
-          交付物含機甲詳情頁的「槽位配置 ＋ 固定武裝 ＋ 四部位表」唯讀區塊與火力顯示修正，
-          <b>不必等模擬器就能上線</b>。動工前先複查 users／builds 仍為 0 筆。
+          交付物含機甲詳情頁的「槽位配置 ＋ 四部位表」唯讀區塊與火力顯示修正，
+          <b>不必等模擬器就能上線</b>——已於 2026-08-24 全數完成並歸檔。<br>
+          <b>動工前實測結果：<code>users</code>／<code>userBuilds</code>／<code>builds</code> 三個集合皆 0 筆</b>
+          → <b>052-C／E 不需要任何遷移路徑</b>。<br>
+          <b>052-B 可直接依賴的成品</b>：<code>totalWeight()</code>／<code>effectiveOutput()</code>／
+          <code>chassisFirepower()</code>／<code>resolveChassis()</code>／<code>mechSlotCapacity()</code>／
+          <code>occupiedSlots()</code>／<code>lockedSlots()</code>／<code>enumerateSlots()</code>／
+          <code>equipSetKeys()</code>／<code>licenseAllows()</code>／<code>slotKey()</code>（品牌型別）。<br>
+          <b>052-B 計畫書提到的三個既有 bug，已修掉一個</b>：<code>:179</code> 的
+          <code>license === '中甲'</code> 恆為 false（37 位中型執照的機師看得到重型機甲）已於 D-1 收 enum 時
+          當場現形並修正，判定收進 <code>licenseAllows()</code>。另兩個（背槽與背包不互斥、順序相依的重量帳）
+          仍待 052-B。<br>
+          <b>052-B 需注意</b>：<code>mech_090_美杜莎MK2</code> 是管理者先建的佔位（官方數值未公布，含出力在內全部為 0），
+          <code>resolveChassis()</code> 解析得出來但 <code>output</code> 為 0，應當「數值未公布」處理而非渲染成
+          一台什麼都裝不下的機甲。
         </div>
-        <div class="task-file">PLAN-052-A_配裝地基與槽位模型/進度表.html</div>
+        <div class="task-file">PLAN-052-A_配裝地基與槽位模型/進度表.html（已歸檔至歷史記錄）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">052-B &nbsp; 配裝模擬器主體</div>
-      <div class="task-group-meta">8–10 天 · 依賴 052-A</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">2026-08-24 完成 · 21 / 21 工項</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">整檔取代 SimulatorPage：三欄單頁 ＋ 槽位圖 ＋ 就地挑選器 ＋ 級聯</div>
-        <div class="task-desc">本專案最大的單一子計畫。順手修三個既有 bug（執照 enum、背槽不互斥、順序相依重量帳）。</div>
-        <div class="task-file">PLAN-052-B_配裝模擬器主體/進度表.html</div>
+        <div class="task-desc">
+          舊 <code>SimulatorPage.tsx</code>（1074 行）已刪除，<code>/simulator</code> 指向
+          <code>LoadoutPage</code>；導覽列的 ADMIN gate 一併移除，<b>正式全面公開（未登入可用）</b>。<br>
+          <b>三個既有 bug 全數修掉</b>：執照 enum（052-A 已修，本輪接上單一入口）、
+          背槽改為背包 XOR 背部武器、重量帳收斂到 <code>loadoutBudget()</code>（順序不再影響可選清單）。<br>
+          <b>另抓到第四個同類問題</b>：背包的 <code>assemblableArmorType</code> 是<b>英文</b>值域
+          （<code>Light</code>／<code>Medium</code>／<code>Heavy</code>），餵給 <code>toArmorType()</code>
+          會全數回 <code>null</code> ⇒ 35 個「僅輕型可裝」的背包完全不受限。已新增
+          <code>fromAssemblableArmorType()</code> 並補測試。<br>
+          <b>052-C 可直接依賴的成品</b>：<code>LoadoutDraft</code>／<code>EquipSet</code>／<code>LoadoutMount</code>
+          （<code>src/types/loadout.ts</code>，即分享碼 codec 的解碼目標）、<code>reconcile()</code>
+          （載入外部草稿一律先過它）、<code>buildContext()</code>／<code>validateLoadout()</code>。
+          頁面已自帶 localStorage 單份草稿暫存（<code>mecharashi_loadout_draft</code>），
+          <b>書架的 10 套配額仍屬 052-C</b>。<br>
+          <b>052-C 需注意</b>：本版<b>不提供匯出圖</b>，<code>html2canvas</code> 現已無任何 import
+          （<code>VersionQuickTable</code> 走的是 <code>html-to-image</code>），可依 052-C 計畫直接移除依賴。<br>
+          <b>052-D／F／G 的可見佔位已留</b>：武器列的「⚙ 0/componentLimit」、
+          有獨立配裝的機師頁頂常駐橫幅、機甲卡的唯讀四部位表 ＋「混搭與模組配置開發中」。
+        </div>
+        <div class="task-file">PLAN-052-B_配裝模擬器主體/進度表.html（已歸檔至歷史記錄）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">052-C &nbsp; 分享碼與訪客本機書架</div>
-      <div class="task-group-meta">5–6 天 · 依賴 052-B</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">5–6 天 · 依賴 052-B · 全五個 Phase 完成（11／11）</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">codec v1 ＋ share-id.lock.json ＋ /simulator?b= ＋ 本機書架 10 套</div>
-        <div class="task-desc">零後端出貨。<b>MVP 的最後一塊</b>：完成後網友可以複製連結互相分享配裝。</div>
+        <div class="task-name">codec v1 ＋ 分享碼登錄簿 ＋ /simulator?b= ＋ 本機書架 10 套</div>
+        <div class="task-desc">零後端出貨。<b>MVP 的最後一塊</b>：完成後網友可以複製連結互相分享配裝。<br>
+          <b>⚠ 2026-08-26 修訂（來自 052-I）</b>：codec v1 必須<b>新增算力段（§ND）</b>。
+          現行規格的分段只有 <code>§SETS</code>／<code>§PARTS</code>／<code>§MODULES</code>／元件段，沒有算力；
+          而算力已確定要進 <code>LoadoutDraft</code>。v1 上線後再補＝升版本並遷移既有分享碼，
+          正好違反總綱「MVP 三件不能省的事」第②條。<b>052-I 的 D-2 已於 2026-08-26 落地——<code>ndLevels</code> 已在 <code>LoadoutDraft</code> 內，codec v1 設計時直接把 §ND 納入即可。</b><br><b>Phase A／B 已完成（2026-08-26）</b>：身分層 ＋ 登錄簿 ＋ 對帳腳本 ＋ codec v1 全部落地。模組可分享數 162 → 203（41 筆永久別名）。codec 實測長度：典型單套 36 字元、海莉絲三套 119、隨機一萬份最長 &lt; 900（Discord 上限 2000）；round-trip 一萬份、模糊測試一萬次翻轉攔截率 &gt; 99%、golden fixture 六案例雙向釘住。<b>§ND 段已在 v1 就位</b>，052-I 的時序要求兌現。<b>C-1 也已完成（2026-08-26）</b>：<code>/simulator?b=</code> 讀取、「複製分享連結」（只給連結不給裸碼——Discord 的 <code>_斜體_</code> 會吃掉 base64url 的底線）、貼碼對話框（套用前先給預覽、五種錯誤文案分開寫、舊快取防護避免把新武器誤標成「已下架」）。<b>玩家現在已經可以互相分享配裝了。</b><b>E-1 亦已完成（2026-08-26）</b>：匯出的長圖底部印上分享碼（footer 底下整寬一條，而非原規格的右側小欄位——碼是變長的，79 字元起會把站名浮水印擠出 1000px 畫面），那張圖因此從「好看但找不回來源」變成「轉發到哪都還原得回配裝」；站名常數同時收進 <code>src/lib/siteMeta.ts</code>。<b>D-1 本機書架亦已完成（2026-08-26），052-C 全數收尾（11／11）——MVP 三塊（A＋B＋C）到齊。</b>訪客可存 10 套在自己的瀏覽器，卡片分 <code>ok</code>／<code>degraded</code>／<code>broken</code> 三態，永不自動刪除也永不自動修復。實作期間抓到並修掉兩個會把存檔誤報成「全毀」的 bug（資料未載齊時索引不完整 ⇒ 全部判成查不到；同一個窗口編出來的碼會少掉還沒載入的武器）。
+        </div>
         <div class="task-file">PLAN-052-C_分享碼與訪客書架/進度表.html</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">052-I &nbsp; 配裝模擬器視覺改版</div>
+      <div class="task-group-meta">2026-08-26 完成 · 17 / 17 工項</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">視覺層重做 ＋ 方案名稱 ＋ 匯出配裝長圖（17 工項）</div>
+        <div class="task-desc">
+          依已核可的七張設計畫布重做模擬器視覺層：字級五階、斜切角外框、描邊 SVG 圖示、
+          立繪常駐、機甲 <code>portrait</code> ＋ HUD 引線槽位、頭像牆挑選器、
+          算力面板進頁、武器與元件列、匯出長圖（1000px ＋ 兩層浮水印）。
+          <b>零新顏色、零新依賴</b>，不外溢其他頁面。<br>
+          <b>對其他子計畫的修訂</b>：052-C 需加 §ND 段（見上）；052-D 採用本計畫的元件面板 UI 規格；
+          052-E 接手方案名稱的登入 gate。<br>
+          <b>已排在 052-C 之前完成</b>——除了算力段的時序，052-C 會在同一頁加分享列與書架面板，
+          等它做完再改視覺等於同一頁改兩次版。<br>
+          <b>實際交付</b>：F-2 以 Chrome DevTools 逐項實測六種邊界情況（非目測推斷）；
+          匯出圖 <code>2000×2586</code>／約 3MB／約 0.5 秒，<b>分享碼欄整欄不印</b>（等 052-C——印佔位字串會有人拿去貼，而它解不開）；
+          元件面板本階段<b>唯讀並明著寫「元件功能建置中」</b>，可裝／不可裝的判定屬 052-D；
+          <b>形態鎖定態今日無法從 UI 觸達</b>（<code>ctx.lock</code> 恆為 null，樣式已寫好），待 052-F 形態分頁落地後補驗。
+        </div>
+        <div class="task-file">PLAN-052-I_配裝模擬器視覺改版/進度表.html（已歸檔至歷史記錄）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -273,7 +339,21 @@
         <div class="task-name">尚未建立文件，待各自動工時再由 plan-manager 建檔</div>
         <div class="task-desc">
           範圍與工程量見計畫書「實作範圍」表。
-          <b>052-G 的混搭階段卡在 Open Question Q-1（數值合成規則），模組槽階段不受影響。</b>
+          <b>2026-08-25：Q-1／Q-2 已裁決，052-G 兩個階段都不再有資料缺口</b>
+          （合成規則＝Σ 四部位；模組候選＝<code>boundMechId === null</code>）；
+          並追加<b>決策十二</b>（槽位定址走 <code>kind</code> 聯集 ＋ 模組／元件的版面落點）。
+          <br><br>
+          <b>2026-08-26：追加決策十三 — 模組同名的消歧義歸 052-G，走顯示層不改資料。</b>
+          模組庫盤點後，去掉已修的 key-in 錯誤（<code>mod_4029_2</code>／<code>mod_4030_2</code> 名稱錯位）之後，
+          仍有兩筆真的同名：<code>mod_2030</code> 與 <code>mod_2041</code> 皆名為「自擬合模組」而效果完全不同。
+          <b>不改資料</b>——兩筆都是 <code>managedBy: auto</code>，改名會被下次爬蟲洗回去；
+          且同名本來就是官方命名，鏡射它才是對的。改為在模組選擇器的名稱下掛一行效果摘要，
+          機甲專屬模組再補一枚 <code>boundPart</code> 部位徽章（「匯流樞紐」那組本來就靠部位區分，非歧義）。
+          <br>
+          ⚠ 同時發現 <code>mod_2030</code> 是<b>官方廢案</b>（全 12 個集合零引用、
+          <code>source</code> 為字串 <code>"未知"</code> 而非陣列、無拆解來源），
+          而 052-G 已裁決的候選規則 <code>boundMechId === null</code> <b>會把它撈進候選清單</b>——
+          動工時需明著排除，否則使用者會在選擇器裡看到一顆裝不到任何機甲上的幽靈模組。
         </div>
         <div class="task-file">docs/05_階段性開發計畫/執行中/</div>
       </div>
@@ -286,7 +366,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · PLAN-052 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
 </footer>
 
 </body>

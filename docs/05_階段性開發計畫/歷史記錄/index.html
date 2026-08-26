@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>歷史記錄 — 鋼嵐工具站</title>
+<title>歷史記錄 — 米赫瑪超吉情豹站</title>
 <link rel="stylesheet" href="../../_shared/style.css">
 </head>
 <body>
@@ -31,6 +31,59 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-C · 分享碼與訪客本機書架</h3>
+      <p><b>零後端出貨，MVP 的最後一塊——玩家現在可以互相分享配裝了。</b>整套配裝壓成一串可貼進 Discord 的網址（<code>/simulator?b=</code>，走既有路徑因此<b>沒動過 Cloudflare Dashboard</b>），未登入的訪客也能把配裝存在自己的瀏覽器（10 套，不分機師）。實測長度：空草稿 7 字元、典型單套 36、含元件與算力 79、海莉絲三套 119、隨機一萬份最長 &lt; 900（Discord 上限 2000）。<br>id→數字<b>用既有 doc id 的流水號、不新增欄位</b>。⚠ 唯一破口是<b>流水號被回收</b>（<code>maxEntitySeq</code> 是「掃現有 ID 取 max」，刪掉 178 再新增會再產生 178，舊碼就靜默指向另一把武器），因此 <code>share-id.lock.json</code> 進版控 ＋ <code>check-share-ids.mjs</code> 改指即 exit 1 ＋ 後台續號改 <code>max(lock, live)+1</code>，<b>並寫進 data-patch skill 的流程第 5 步</b>。2026-08-25 全量對帳零撞號；模組另開別名區（<code>aliasBase = 1,500,000</code>）把可分享數從 162 拉到 203。<br>⚠ 總綱決策二讓 codec <b>同時是儲存格式</b>，bug ＝ 使用者資料全毀，因此三組測試列為驗收條件並全數通過：round-trip 一萬份深等於、模糊測試一萬次位元翻轉攔截率 &gt; 99%、golden fixture 六案例雙向釘住。decode <b>永不 throw</b> 且「先結構後語意」——語意不合只標警示不拒絕套用（對方可能在分享改版前的配裝）；錯誤文案逐種分開寫，<b>沒有一句是「代碼無效」</b>。<br>訪客書架<b>只存代碼字串</b>、失效分 <code>ok</code>／<code>degraded</code>／<code>broken</code> 三態，<b>永不自動刪除也永不自動修復</b>。收尾把分享碼接進匯出長圖（footer 底下整寬一條——碼是變長的，放右側小欄位會把站名浮水印擠出畫面），並把全站第 5 份硬編站名收成 <code>src/lib/siteMeta.ts</code>，另加測試綁住 <code>index.html</code> 與 Worker 那兩份 import 不到的複本。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-26 · 11 / 11 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-C_分享碼與訪客書架/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-C_分享碼與訪客書架/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-I · 配裝模擬器視覺改版</h3>
+      <p>052-B 交付的是「能用」，不是「好看」——整頁字級擠在 <code>10–12px</code>、卡片一律圓角矩形，是工程介面的長相；而站上 <b>87 位機師的立繪與頭像、88 台機甲的圖，模擬器一張都沒用到</b>，玩家在配一台看不見的機甲。依已核可的七張設計畫布重做視覺層：字級五階（<code>10/12/15/20/30px</code>）、<code>clip-path</code> 斜切角（14px／8px 兩階）取代圓角、<code>🔒</code>／<code>▨</code> 字符換描邊 SVG、立繪常駐左欄、<code>LoadoutRig</code> 從方格 grid 變成掛在機甲 <code>portrait</code> 四周的 HUD 引線槽位 ＋ 四部位唯讀卡、挑選器改成頭像牆。<b>零新顏色、零新依賴</b>，其他頁面一行未動。<br>兩個構想在檢視素材後被推翻並記錄在案：<b>四部位圖拼不出一台機甲</b>（<code>torso</code>／<code>leftArm</code>／<code>rightArm</code>／<code>legs</code> 是各自獨立的 3/4 視角渲染，視角光源比例都不同），<b>頭像不是去背圖</b>（<code>half.webp</code> 帶各自不同的原生背景色，必須統一卡框壓住否則整面牆會花掉）。「選角 → 全身照 → 滑動 → 展開」的入場流程<b>經評估後否決</b>——那是把 052-B 剛拆掉的 8 步驟精靈換一套皮裝回去，成本不在第一次而在第五次。<br>另交付三件：<b>算力面板</b>（<code>NdPowerBar</code> 抽成共用元件，機師頁與模擬器同一支、門檻規則仍單一來源於 <code>ndOverrides.ts</code>；<code>LoadoutDraft.ndLevels</code> 落地）、<b>方案名稱</b>（24 碼點上限，登入 gate 掛 052-E）、<b>匯出配裝長圖</b>（固定 1000px、只放配裝與算力不放技能、兩層浮水印 ＋ 產生日期與遊戲版本，走站上已在用的 <code>html-to-image</code>；實測 <code>2000×2586</code>／約 3MB／約 0.5 秒）。<b>分享碼欄整欄不印</b>，等 052-C——印佔位字串會有人拿去貼而它解不開。<br>⚠ 對其他子計畫留下三條修訂：<b>052-C 的 codec v1 必須新增算力段（§ND）</b>（<code>ndLevels</code> 已進 <code>LoadoutDraft</code>，v1 上線後再補就要升版本並遷移既有分享碼）、052-D 的元件面板依本計畫畫板、052-E 接手方案名稱的登入 gate。<br>F-2 以 Chrome DevTools 逐項實測六種邊界情況（非目測推斷），僅<b>形態鎖定態今日無法從 UI 觸達</b>（<code>ctx.lock</code> 恆為 null，樣式已寫好），待 052-F 形態分頁落地後補驗。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-26 · 17 / 17 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-I_配裝模擬器視覺改版/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-I_配裝模擬器視覺改版/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-B · 配裝模擬器主體</h3>
+      <p>整檔取代 1074 行的 8 步驟精靈。<b>精靈是錯的互動模型</b>——玩家必須走完 8 步才看得到結果，而配裝是反覆試的動作；現行還能無條件跳關，且 Step 6 在未選武器時連下一步按鈕都沒有。改成<b>單頁槽位圖 ＋ 就地挑選器 ＋ 常駐資訊面板</b>：一眼看到全部槽位、點槽位換裝備、即時看重量出力。三斷點（≥1280 三欄／1024–1279 兩欄／&lt;1024 單欄＋BottomSheet），斷點用視窗寬而<b>不用 <code>useIsMobile</code></b>（後者判的是粗指標，與版面寬度正交）。<br>核心是兩件事：<b>兩層拒絕呈現</b>（結構性→摺疊＋計數；情境性→灰掉＋原因＋<b>解法按鈕</b>，做成封閉聯集讓 tsc 逼你填說明），與<b>單一 <code>reconcile()</code> 級聯</b>（降級不清空、每次移除可復原；超重<b>不擋存檔</b>，否則會與「不自動卸武器」一起把人卡死）。<br>順手修三個讓過濾結果出錯的既有 bug：<code>:179</code> 用 <code>'中甲'</code> 比 <code>MechLicense.MEDIUM='中型'</code>（<b>37/89 位機師看得到重型機甲</b>，tsc 抓不到）、背槽與背包不互斥（181/181 個背包 <code>slot='back'</code>）、順序相依的重量帳。同時<b>正式全面公開</b>（移除導覽 ADMIN gate）。明確不渲染改裝／可達增益／戰術評分／科研——<b>不渲染，不是渲染空的</b>。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-24 · 21 / 21 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-B_配裝模擬器主體/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-B_配裝模擬器主體/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-A · 配裝地基與槽位模型</h3>
+      <p>PLAN-052 的第一個子計畫，先把「數字對不對」與「槽位存不存在」解決，UI 全部留到 052-B。
+      交付三支數值純函式並用官方四組整備截圖當 golden fixture（皆 ±0）：<code>totalWeight()</code>
+      <b>取較重組而非加總</b>（誤寫成加總會讓先鋒形態算出 2625，官方 1825）、<code>effectiveOutput()</code>、
+      <code>chassisFirepower()</code>（Σ 四部位）。建立全站唯一的槽位詞彙（<code>ArmamentMount</code> ＋ 正交的
+      <code>SlotBank</code>，<code>SlotKey</code> 做成<b>品牌型別</b>讓 tsc 真的擋得住手寫字面量）與
+      <code>ResolvedChassis</code> derive 層，並落盤 8 筆固定武裝（含新建的
+      <code>weapon_181_幽弧</code>／<code>weapon_182_夜燼</code>）。<br>
+      <b>三個被型別收緊當場抓出來的實 bug</b>：① 圖鑑的機甲火力顯示是實際值的 <b>1/4</b>（爬蟲抓的頂層欄位
+      在 83/90 台等於單一部位值，而詳情頁自己 reduce 了一份 ⇒ 同一台機甲兩個數字）；
+      ② 模擬器的 <code>license === '中甲'</code> <b>恆為 false</b>（執照值域是「中型」）⇒
+      37 位中型執照的機師看得到全部 90 台含駕駛不了的重型；
+      ③ <code>fixedMod.maxLevel = 70</code> 的根因是 WeaponAdmin <b>新武器的預設值</b>就是 70，不是誰打錯。<br>
+      前台交付機甲詳情頁的唯讀「槽位配置 ＋ 四部位表」——<b>沒有固定武裝時不渲染任何「無固定武裝」字樣</b>，
+      因為站上分不出「這台真的沒有」與「還沒有人建檔」。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-24 · 28 / 28 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-A_配裝地基與槽位模型/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-A_配裝地基與槽位模型/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-047 · 槽位與裝備限制模型</h3>
@@ -472,7 +525,7 @@
 </main>
 
 <footer class="footer">
-  鋼嵐工具站 · 階段性開發計畫 · 歷史記錄
+  米赫瑪超吉情豹站 · 階段性開發計畫 · 歷史記錄
 </footer>
 <!--LAST-UPDATED-->
 <div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>

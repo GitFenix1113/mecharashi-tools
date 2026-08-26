@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-C 分享碼與訪客本機書架 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-C 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-052-C</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">分享碼與訪客本機書架</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-24</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label green">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">11</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">11</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-green);">11 / 11</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ 已完成（2026-08-26，11 / 11）：</strong>
+    分享碼、貼碼、網址讀寫、訪客書架、匯出圖分享碼全數上線，<b>MVP 三塊（052-A ＋ B ＋ C）到齊</b>。
+    驗收條件全數通過：round-trip 一萬份深等於、模糊測試一萬次翻轉攔截率 &gt; 99%、golden fixture 六案例雙向釘住、全量 shareId 對帳零撞號。
+    <br><br>
+    <strong>目標效果：</strong>
+    網友可以<b>把配裝存在自己的瀏覽器（10 套）</b>，並<b>複製一串連結貼給別人，對方點開直接看到同一套配裝</b>。完全不需要註冊、不碰 Firestore 寫入、不動 Cloudflare 後台。<b>這是 MVP 的最後一塊</b> —— 完成後「網友敲碗的配裝分享」就算兌現。
+  </div>
+  <div class="impact-note" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2);"><strong style="color:var(--accent-red)">最高風險：</strong>總綱決策二讓 codec 同時是<b>儲存格式</b>，因此 codec 的 bug ＝ 使用者資料全毀。Phase B 的三組測試與 Phase A 的 lock 檔<b>列為驗收條件</b>，不可跳過。</div>
+</section>
+
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">shareId 與防回收</div>
+  <div class="section-desc">先把「id ↔ 數字」這層釘死，因為它一旦錯就是分享碼解成別的武器。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; shareId 映射與 lock 檔</div>
+      <div class="task-group-meta">src/utils/loadoutCode/shareId.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">toShareId() / buildShareIndex()：零新欄位</div>
+        <div class="task-desc">
+          回 <code>null</code> ＝「這份文件目前不可分享」，呼叫端渲染成停用狀態<b>不可 throw</b>（資料側隨時可能新增形狀例外）。撞號的處理落地為<b>「兩邊都剔除 ＋ 記進 <code>collisions</code>」</b>，另給 <code>assertNoCollisions()</code> 供腳本／CI 大聲失敗
+          —— 前台 throw 會讓整頁白畫面（決策四），而「先到先贏」等於讓一份文件靜默取得另一份的身分。<br>
+          <b>2026-08-25 全量對帳（serviceAccountKey 直讀線上）</b>：pilots 89/89、mechs 90/90、weapons <b>182/182</b>、components 208/208、backpacks 180/181（<code>backpack_威能者背包</code> 待改號）、modules 162/242；<b>零撞號、全量 round-trip 通過</b>。<br>
+          ⚠ 兩個地雷已用測試釘死：元件前綴是 <code>comp_</code> 不是 <code>component_</code>；模組必須<b>全字匹配</b> <code>^mod_(\d+)$</code>（31 筆 <code>mod_4001_2</code> 型會與 <code>mod_4001</code> 撞號）。<br>
+          ⚠ <b>待決（阻塞 052-G，不阻塞本計畫）</b>：Q-2 裁決後模組候選＝<code>boundMechId === null</code> 共 199 筆，其中 <b>53 筆推導不出號碼</b>（<code>mod_4001_2</code> 型 ＋ <code>MOD_折光陣列</code>）⇒ 需在 lock 檔補一張永久別名表，或接受它們不可分享。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/shareId.ts · .test.ts（12 則測試）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">share-id.lock.json ＋ check-share-ids.mjs ＋ 寫進 data-patch 流程</div>
+        <div class="task-desc">
+          <b>2026-08-26 完成。</b>登錄簿刻意<b>拆成兩個檔，按擁有權而非主題</b>：<code>src/utils/loadoutCode/shareIdRegistry.json</code>（<b>決定</b>：人工別名 ＋ 號碼水位，2KB，會進 bundle）與 <code>share-id.lock.json</code>（<b>觀測</b>：完整推導快照，35KB，前端永不 import）。合成一個檔就得二選一——放 <code>src/</code> 讓 34KB 的推導表進 bundle，或放根目錄讓前端 import 不到（<code>tsconfig.app.json</code> 的 include 只有 <code>src</code>）。<br>腳本用既有 <code>serviceAccountKey.json</code> 直讀線上（只呼叫 <code>listDocuments()</code>，不取內容）。<b>分類即嚴重度</b>：改指／消失／撞號／別名越界／別名 stale → exit 1；<b>純新增 exit 0</b>——每次改版都會新增，讓它每次都紅只會訓練出「無視這支腳本」的習慣，而 lock 落後的降級是溫和的（只有新增那幾筆沒被保護）。<br>後台續號改成 <code>max(shareIdFloor(kind), maxEntitySeq(...)) + 1</code>，水位<b>只增不減</b>——記的是「發過」不是「還在」，刪掉最後一筆不會讓號碼倒退被回收。已寫進 data-patch skill 的標準流程第 5 步與收尾檢查（與 bump 版本同一時機）。
+          <b>別名區裁決（2026-08-26）：指派 41 筆。</b>推導不出號碼的模組有 80 筆，其中落在 052-G 挑選器候選池的 42 筆＝可見池 188 筆的 <b>22%</b>，「配得出來卻分享不了」的比例太高，故開別名區（<code>aliasBase = 1,500,000</code>，高過所有 kind 的推導上限——背包的推導值就落在百萬級，實測最大 1,002,705）。模組可分享數 <b>162 → 203</b>。<br>⚠ 過程中抓到三件資料問題（<b>本輪不修，留給 data-patch</b>）：① <code>MOD_折光陣列</code> 與 <code>mod_折光陣列</code> <b>24 個欄位完全相同</b>，是純重複——只給小寫那筆別名，大寫那筆留在 <code>unshareable</code> 待清；② <code>mod_4030_2</code> 與 <code>mod_4032_2</code> 名稱都是「浮游炮模組Ⅱ」但 <code>icon</code> 分別指向 <code>Icon_entry_40301</code>／<code>40311</code>，<b>是不同模組、名稱被抓錯</b>（<code>mod_4031</code> 正好缺號），兩筆都給號碼；③ 第二型的號碼<b>從 4029 起錯位一格</b>（<code>mod_4029_2</code>＝刀劍模組Ⅱ 卻對應 <code>mod_4030</code>＝刀劍模組Ⅰ），且缺「電鋸模組Ⅱ」。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/shareIdRegistry.json ＋ .ts · share-id.lock.json · scripts/check-share-ids.mjs（＋14 則測試）· shareId.ts（別名區，＋6 則測試）· Mech／Pilot／WeaponAdmin · .claude/skills/data-patch/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">codec v1 與測試</div>
+  <div class="section-desc">codec 同時是儲存格式，測試是驗收條件不是加分項。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; codec v1</div>
+      <div class="task-group-meta">src/utils/loadoutCode/codec.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">encode()：TLV 版面，含 bank 位元／§PARTS／§MODULES／元件段</div>
+        <div class="task-desc">
+          <b>2026-08-26 完成。</b>LEB128 varint（超過 3 bytes 直接 throw——那是呼叫端的 bug，靜默截斷會產生解得開卻指錯的碼）；FNV-1a 低 8 位 checksum；base64url 不補 <code>=</code>，手寫而不用 <code>btoa</code>（後者要先轉 latin1，多一層會出錯的轉換）。<br><b>canonical order 全面落實</b>：sets 依鍵排序、mounts 依 <code>slotKey</code> 排序、元件依 shareId 排序、部位依代號排序——否則同一套配裝會產出兩種代碼，而 deepEqual 測試會退化成在測 <code>Object.keys</code> 的插入順序。<br><b>推不出號碼的武器編成 0（空格）而不是 throw</b>：把「有一把武器暫時不可分享」升級成「整套配裝分享不出去」不成比例。<br><b>實測長度</b>：空草稿 7 字元、典型單套 36、含元件與算力 79、海莉絲三套 119；隨機 10,000 份的最長 <b>&lt; 900</b> 字元（Discord 上限 2000）。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/codec.ts · src/types/loadout.ts（052-G 的 parts／modules 欄位先開）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">decode()：四層防護，永不 throw</div>
+        <div class="task-desc">
+          <b>2026-08-26 完成。</b>回 <code>{ ok, draft, gameVersion, unresolved[], unmodeled[] }</code>，<b>永不 throw</b>。<br><b>結構錯誤一律拒絕</b>（長度／字元集／checksum／varint ≤3 bytes／數量上限／段內殘餘）：那不是舊版配裝，是損毀或惡意輸入。每一種都有自己的中文文案——checksum 不符講的是「最常見的原因是聊天軟體換行時被截斷」而不是「代碼無效」，未來版本號講的是「請重新整理頁面（Ctrl+F5）」。<br><b>語意錯誤一律放行並標警示</b>（號碼查無此物、認不得的槽位）：對方可能在分享改版前的配裝。已測「武器下架」情境——其餘內容照樣套用，只有那一格空著並記進 <code>unresolved</code>。<br>未知 tag 跳過並記入 <code>unmodeled</code>；已知 tag 但段內多出位元組視為 additive 新欄位，同樣不是錯誤。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/codec.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三組測試 ＋ golden fixture（驗收條件）</div>
+        <div class="task-desc">
+          <b>2026-08-26 完成，24 則測試全綠。</b>① round-trip 10,000 份隨機合法配裝深等於；② 模糊測試 10,000 次位元翻轉，<b>攔截率 &gt; 99%</b>、不 throw、不無窮迴圈（另有 2,000 次完全隨機位元組，以及 varint／數量兩種炸彈）；③ golden fixture <code>__fixtures__/v1.json</code> 六個案例，<b>雙向釘住</b>——解得回同一份草稿，而且同一份草稿要編回同一串代碼。<br>⚠ fixture 的 <code>draft</code> 一律存<b>解碼後的 canonical 形狀</b>（由建構方式保證自洽），不是人手寫的順序。<b>fixture 測不過時不要改 fixture</b>：那代表版面變了，應該升 FMT 並另凍一個 <code>v2.json</code>。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/__fixtures__/ · codec.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label green">Phase C</div>
+  <div class="section-title">網址讀寫與貼碼</div>
+  <div class="section-desc">使用者實際會碰到的那一段：複製連結、貼進來、看到別人的配裝。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 網址讀寫與貼碼 UX</div>
+      <div class="task-group-meta">src/pages/simulator/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">/simulator?b= 讀取 ＋「複製分享連結」</div>
+        <div class="task-desc">
+          <b>2026-08-26 完成。</b>UI 只提供「複製分享<b>連結</b>」一顆主按鈕，<b>不給裸碼</b>—— base64url 含 <code>_</code>，Discord 的 <code>_斜體_</code> 語法會把裸碼中間的底線吃掉，對方複製到的是壞碼；網址會被當成連結、不套用 markdown，因此安全。<br><code>?b=</code> 的優先權<b>高於本機草稿</b>：點開別人連結的人要的是那一套，把他自己配到一半的東西端出來會讓「連結壞掉了」變成最合理的解讀。<br>header 的 GAMEVER 欄位與匯出圖<b>共用 <code>usePatchVersions()</code></b>——各取各的必然漂移，而漂移的症狀是同一套配裝的圖與代碼標著不同版本。<br>⚠ <b>窄版用短標籤「複製連結」</b>：底部固定列在超重時會有四顆（＋「自動卸至符合」），瀏覽器實測 390px ＋「大」字級下四顆只剩 <b>8px</b> 餘裕，換短標籤後有 <b>56px</b>。貼碼鍵刻意<b>不進</b>底部固定列（那裡是反覆會按的三顆），改放在方案名稱欄旁邊——兩者同屬「這一套的身分」：命名它，或者換成別人的那一套。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx · src/utils/loadoutCode/shareLink.ts（＋8 則測試）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">貼碼預覽 ＋ 錯誤文案 ＋ 舊快取防護</div>
+        <div class="task-desc">
+          <b>2026-08-26 完成。</b>錯誤文案逐種分開寫，瀏覽器實測五種輸入：閒聊文字→「這段文字裡找不到分享碼」；代碼被竄改或截斷→「<b>最常見的原因是聊天軟體換行時被截斷</b>，請重新複製完整的一整串」；混到中文→「含有不屬於分享碼的字元」；更新版本的碼→「請重新整理頁面（Ctrl+F5）」。<b>沒有一句是「代碼無效」</b>——那句話不給任何下一步。<br><b>套用前一律先給預覽</b>（機師／機甲／幾套／幾把武器／方案名稱）：那一按會覆蓋掉手上正在配的那一套，而它沒有第二份備份。<br><b>舊快取防護</b>：解得開但有查不到的裝備時，先比對本機 <code>mecharashi_gd_*</code> 的版本與伺服器（<code>staleCacheKeys()</code>，落後才顯示「重新載入資料」）——本週剛上線的武器被說成「已下架」語意剛好相反。只在真的有解不開的東西時才發那一次請求。<br>⚠ 對話框<b>由呼叫端條件式掛載</b>而不收 <code>open</code>：收了就得在 effect 裡清內部狀態，而那是 effect 的誤用（eslint <code>react-hooks</code> 會擋，理由也對）。卸載即歸零，不可能忘記清哪一個欄位。
+        </div>
+        <div class="task-file">src/components/loadout/PasteCodeDialog.tsx · LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label green">Phase D</div>
+  <div class="section-title">訪客本機書架</div>
+  <div class="section-desc">全面公開之下唯一的存檔方式，直到 052-E 上線。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 訪客本機書架</div>
+      <div class="task-group-meta">src/lib/localBuilds.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">localStorage 書架 10 套（不分機師）＋ 自動草稿</div>
+        <div class="task-desc">
+          只存代碼字串。<b>UI 文案與登入者的「每機師 5 套」分開寫</b>。每張卡有「複製代碼」當人工備份出口，並明講「未登入的配裝只存在這台裝置」。<br>
+          <b>2026-08-26 完成。</b>真的<b>只存代碼字串</b>（外加一個 <code>savedAt</code>）——卡片上的名稱／機師／機甲／幾把武器全部當場解出來，沒有第二個真相源。<b>自動草稿維持存結構化草稿、不改存代碼</b>：推導不出號碼的裝備會被編成 0（空格），草稿存成代碼等於下一次重整就靜默弄丟玩家自己配上去的背包；書架是「我要留著的成品」，代價換得起，草稿不行。<br>
+          <b>同一串代碼只佔一格</b>（就地更新時間並移到最前）：不去重的話，連按兩下就會把配額吃成十張一模一樣的卡。<b>滿了一律拒絕、不淘汰最舊的那一筆</b>——「我明明存過」是這個功能最不能出現的一句話。<br>
+          ⚠ <b>入口改成一顆「書架 N/10」</b>，存入鍵在對話框裡而不是底部固定列：那一列在超重時已有四顆，C-1 實測 390px ＋「大」字級下只剩 56px 餘裕，第五顆會擠爆；而配額只有在對話框裡看得到——存不進去的那一刻，答案就在同一個畫面上。<br>
+          ⚠ <b>每張卡的備份出口給的是「複製連結」不是裸碼</b>（與計畫書原文的「複製代碼」不同）：理由同 C-1——base64url 含 <code>_</code>，Discord 的 <code>_斜體_</code> 會把裸碼中間的底線吃掉；連結裡就包著同一串碼，備份效力相同而貼到哪都不會壞。與抬頭那顆共用同一支 <code>copyLinkFor()</code>。
+        </div>
+        <div class="task-file">src/lib/localBuilds.ts · .test.ts（17 則測試）· LocalShelfDialog.tsx · LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">失效三態（ok／degraded／broken）</div>
+        <div class="task-desc">
+          部分裝備下架 → 缺的格留空並顯示「已下架裝備 #181」佔位卡；機師或機甲不存在 → 只能檢視、匯出代碼、刪除。<b>永不自動刪除、也永不自動修復。</b><br>
+          <b>2026-08-26 完成。</b><code>classifyBuild()</code> 三態：全在＝<code>ok</code>；少數裝備查不到＝<code>degraded</code>（照樣可套用，卡片列出「已下架 #181、#204」）；<b>機師或機甲不在了＝<code>broken</code>，套用鍵停用</b>——沒有機師的配裝套用後只會得到一個空模擬器，而使用者會以為是自己按錯。代碼結構性損毀也歸 <code>broken</code>，直接印解碼器自己的中文說明。<br>
+          <b>刪除是兩段式的</b>（點一下變成「刪掉就找不回來了，確定嗎？」），與貼碼對話框「不加第二層確認」的取捨相反、理由也相反：套用只是覆蓋掉手上這一套，刪除是永久的。<br>
+          ⚠ <b>實測抓到兩個會誤報成「全毀」的 bug，已修</b>：① 對話框開啟時把載入階段推到 <code>equip</code>——只載了 pilots 的時候，每一筆存檔的機甲都會被判成「查不到」，新訪客打開書架會看到十套全紅；載入未完成期間一律顯示「載入遊戲資料中…」而不判三態。② 同一批把<b>編碼</b>也擋在 <code>loading</code> 之後（複製連結／匯出圖／存入）：在「機甲已載入、武器還沒」的那一瞬編出來的碼是一套<b>沒有武器</b>的配裝，而它看起來完全正常、貼給別人也解得開。<br>
+          ⚠ 另修兩個版面問題（瀏覽器 390px 實測）：對話框開著時<b>不再自動彈出機師挑選器</b>（手機版它是 BottomSheet，會整片蓋在書架上，而那正是新訪客最可能按書架的時機）；兩個對話框改 <code>z-[60]</code>——底部 Tab Bar 與 BottomSheet 都是 z-50 且在 DOM 裡更後面。
+        </div>
+        <div class="task-file">src/lib/localBuilds.ts · LocalShelfDialog.tsx · PasteCodeDialog.tsx · LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label green">Phase E</div>
+  <div class="section-title">匯出圖與收尾</div>
+  <div class="section-desc">順手把兩個既有的技術債清掉。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 匯出圖與站名常數</div>
+      <div class="task-group-meta">src/components/loadout/LoadoutExportCard.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">匯出卡接上分享碼（版面已由 052-I 交付）</div>
+        <div class="task-desc">
+          <b>⚠ 2026-08-26 修訂：原規格已被 052-I 追過。</b>原文寫「匯出卡重做：1080×1350、印全部 mounts、底部印分享網址」，但 052-I 已交付 <code>LoadoutExportCard.tsx</code>：固定 1000px 寬（<code>pixelRatio: 2</code> 產出 2000×2586、約 3MB、約 0.5 秒）、mounts 全印（空槽與無槽標「未裝備」／「—」）、兩層浮水印、<code>html-to-image</code> 已接、<code>html2canvas</code> 已無任何 import。<br>本工項<b>剩下的實際範圍</b>：把 <code>shareCode</code> 傳進去（元件已預留該 prop，沒值就整欄不印——印佔位字串會有人拿去貼而它解不開）。<br>
+          <b>2026-08-26 完成。</b>碼在 <code>LoadoutPage</code> 編、當作 prop 傳進去，<b>不在元件裡編</b>——encode 要六個集合的 shareId 索引，把它們拉進來等於讓一張圖的版面依賴整份遊戲資料。與「複製分享連結」共用同一支 <code>encodeCurrent()</code>，因此圖上的碼與複製到的連結<b>必然是同一串</b>；<code>gameVersion</code> 兩邊也同源（<code>usePatchVersions</code> 的 <code>isTwCurrent</code>），否則圖上印的版本與碼裡編的版本會漂移。<b>只在 <code>exporting</code> 為真時才編</b>：每改一格配裝就重編一次是白工。編不出來（超出上限／認不得的槽位）回 <code>null</code> ⇒ 那一欄整個不印，不讓整頁掛掉。<br>
+          ⚠ <b>版面改了一處</b>：分享碼<b>不放</b> GENERATED 旁邊的小欄位，改成 footer 底下<b>整寬一條</b>。理由是碼是變長的（典型 36、含元件與算力 79、三套 119 字元）而卡片固定 1000px 寬——放右欄的話 79 字元起就會把左邊的站名浮水印擠出畫面，而那正是這張圖存在的理由。整寬 ＋ <code>break-all</code> 自己折行，卡片高度跟著長，任何長度都不壓到別的東西。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx · src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">SITE_NAME 收成單一常數</div>
+        <div class="task-desc">
+          現行站名硬編<b>全站第 5 份</b>（Layout ×2、index.html ×3、ConnectivityPage、SimulatorPage）。收進 <code>src/lib/siteMeta.ts</code> 並用測試綁住 Worker 那一份。<br>
+          <b>2026-08-26 完成。</b>常數 <code>SITE_NAME</code>／<code>SITE_NAME_EN</code>／<code>SITE_TITLE</code>／<code>SITE_ORIGIN</code>／<code>SITE_DOMAIN</code>，收掉 src 內 6 處硬編（Layout ×2、LoadoutExportCard ×3——含匯出圖抬頭與網域浮水印、ConnectivityPage、HomePage）。<br>
+          <b>兩份 import 不到、只能用測試綁</b>：<code>index.html</code>（爬蟲讀的是原始 HTML，og:* 必須寫死）與 <code>workers/src/socialPreview.ts</code>（Cloudflare 獨立 bundle，同 <code>collectionKeys.test.ts</code> 的處境）。另加一則<b>反向守衛</b>：掃過整個 <code>src/</code>，再出現硬編站名就失敗並指名檔案——否則這個常數會在下一個新頁面上被重新硬編一次，而那正是這次要修的東西。
+        </div>
+        <div class="task-file">src/lib/siteMeta.ts · .test.ts（4 則測試）· Layout · HomePage · ConnectivityPage · LoadoutExportCard</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-C — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

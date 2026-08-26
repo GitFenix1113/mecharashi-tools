@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-I 配裝模擬器視覺改版 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-I 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-052-I</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> 配裝模擬器視覺改版</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-26</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label orange">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">17</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">17</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-orange);">17 / 17</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    模擬器從「工程介面」變成「看得出在配一台機甲」：立繪與機甲圖常駐、槽位掛在機體四周、
+    算力與武器元件在同一頁，最後能匯出一張帶站名浮水印的配裝長圖（分享碼欄待 052-C 落地後補上）。
+    <strong>零新依賴</strong>（<code>html-to-image</code> 站上已在用），
+    <strong>零新顏色</strong>（沿用既有 token），不外溢到其他頁面。
+  </div>
+
+  <div class="impact-note" style="border-color:rgba(34,197,94,0.25);background:rgba(34,197,94,0.05);">
+    <strong>時序限制已解除（2026-08-26）：</strong>
+    Phase D-2（<code>LoadoutDraft.ndLevels</code>）已完成，<strong>052-C 的 codec v1 現在必須把算力段一起編碼</strong>。
+    現行 codec 規格的分段只有 §SETS / §PARTS / §MODULES / 元件段 —— 定案前補上算力段，
+    v1 上線後再補就是升版本並遷移既有分享碼。詳見計畫書「跨計畫修訂」。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label orange">Phase A</div>
+  <div class="section-title">視覺地基</div>
+  <div class="section-desc">先把「階」立起來。這一階段結束時全站 token 一個都沒改，但模擬器已經有可辨識的視覺語彙可用。</div>
+
+  <div class="impact-note">
+    <strong>已落地（2026-08-26）：</strong>
+    共用排版類收在 <code>src/components/loadout/loadoutTheme.ts</code>（字級五階 <code>HUD.*</code>、
+    外框組合 <code>HUD_PANEL</code> / <code>HUD_CHIP</code>、分段配色 <code>SEG_COLOR</code> / <code>SEG_TEXT</code>
+    與槽位圖示對照 <code>slotIconName()</code>）；斜切角是 <code>index.css</code> 的兩個 utility
+    <code>.hud-cut</code>（14px）／<code>.hud-cut-sm</code>（8px）。
+    圖示組在 <code>src/components/icons/LoadoutIcon.tsx</code>，11 個名稱、viewBox 24×24、
+    <code>strokeWidth 1.6</code>（與 <code>NavIcon</code> 同一套規範），
+    <code>SlotCell</code> 與 <code>PickerShell</code> 的 🔒 / ▨ / ＋ / ✕ 四個字符已全數換掉。
+    顏色 token 一個都沒加，其他頁面未受影響。
+    <br>
+    <strong>⚠ 後續 Phase 要知道的兩件事：</strong>
+    ① <code>clip-path</code> 會裁掉溢出的子元素與 focus ring —— 掛浮窗／下拉／BottomSheet 的容器不要直接套切角（B-2 的 HUD 引線、C-2 的頭像牆篩選下拉都會踩到）。
+    ② <code>slotIconName()</code> 放在 <code>loadoutTheme.ts</code> 而不是 <code>LoadoutIcon.tsx</code>：
+    後者只能匯出元件，多匯出一個函式會讓 Vite 的 fast refresh 對整檔失效。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 字級階與斜切角外框</div>
+      <div class="task-group-meta">src/components/loadout/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">建立模擬器專用的排版共用類</div>
+        <div class="task-desc">
+          字級收斂成 <code>10 / 12 / 15 / 20 / 30px</code> 五階（微標籤 Orbitron 10–11px、
+          內文 12–13px、卡片標題 15px、區塊標題 20px、主要數值 JetBrains Mono 24–30px）；
+          外框以 <code>clip-path</code> 斜切角取代圓角（大區塊 14px、小元件 8px）。
+          <strong>不新增任何顏色 token</strong>，沿用 <code>index.css</code> 現有 <code>@theme</code>。
+        </div>
+        <div class="task-file">src/components/loadout/ · src/index.css（僅在必要時加 utility）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 描邊 SVG 圖示組</div>
+      <div class="task-group-meta">src/components/icons/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">取代 🔒 / ▨ 等字符</div>
+        <div class="task-desc">
+          16/20px 網格、統一線寬的描邊 SVG：單手／肩部／背部／背包／鎖定／無槽／加號。
+          字符在不同系統字形不一致、無法跟著配色走，也調不了線寬。
+        </div>
+        <div class="task-file">src/components/icons/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 常駐帳本列改版</div>
+      <div class="task-group-meta">src/components/loadout/OutputBar.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">分段條 ＋ 大數值 ＋ 餘量卡</div>
+        <div class="task-desc">
+          分段配色維持現行 <code>SEG_COLOR</code>（機體灰／手部青／肩部紫／背部藍），
+          總重與可用出力放大到 30px，餘量／超出獨立成一張綠或紅的小卡。
+          「手部取較重者」的說明保留在圖例列——這是最容易被誤判為系統少算的一條規則。
+        </div>
+        <div class="task-file">src/components/loadout/OutputBar.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label orange">Phase B</div>
+  <div class="section-title">機甲與槽位</div>
+  <div class="section-desc">解決「不像機甲」。槽位從方格 grid 變成掛在機體四周的 HUD。</div>
+
+  <div class="impact-note">
+    <strong>已落地（2026-08-26）：</strong>
+    <code>SlotCell</code> 六態改成同一個橫列外框（圖示方塊／標籤＋名稱／重量），差異只走
+    邊框樣式、底色、圖示三個維度；重量改用該部位的分段色（<code>SEG_TEXT</code>），
+    與帳本列同一套顏色。<code>LoadoutRig</code> 重寫為「左節點 ／ 機甲 <code>portrait.webp</code> ／ 右節點」
+    三區 HUD，引線由 <code>ResizeObserver</code> 量真實 DOM 後以像素座標繪製。
+    四部位唯讀卡拆成 <code>MechPartStrip.tsx</code>。
+    <br>
+    <strong>與計畫書的三點差異（實作時的裁決）：</strong>
+    ① <strong>版面彈性欄換人</strong>：槽位圖從 400px 固定欄改吃 <code>1fr</code>，挑選器改固定 360px。
+    400px 扣掉中央機甲後每欄只剩 ~80px，武器名與重量全被截掉（實測）。
+    ② <strong>三種槽位不進左右欄</strong>，各自佔一整列：無肩槽（那是「整排不存在」，
+    畫成左右兩個一樣的灰格等於把同一句話說兩遍）、雙手武器（同時佔住左右手）、背部（不屬於任一側）。
+    ③ <strong>B-3 的「重量帳表」在程式碼裡並不存在</strong>——那張表只出現在設計畫布上。
+    實際執行的是同一條原則：把「配裝概況」裡與帳本列重複的<strong>總重</strong>拿掉，
+    只留帳本列答不出來的（已用槽位／平均射程）。
+    「備用組較輕、不計入總重」要移到的<strong>武器列 footer 屬 D-3</strong>，
+    <strong>已於 D-3 完成移轉</strong>（並補上主手組／備用組的實際數字與目前採計哪一組），
+    槽位圖下方那一句同步移除。
+    <br>
+    <strong>⚠ 後續 Phase 要知道的三件事：</strong>
+    ① 節點的內距與間隙一律寫 <strong>px</strong>，不用 Tailwind spacing 單位——本站 root
+    font-size 是 19px，<code>gap-2.5</code> 實測 11.9px，一格 190px 的節點會被內距與間隙吃光。
+    ② 引線的<strong>可見長度就是節點欄與機甲之間的縫</strong>（落點在機甲圖框內），
+    <code>gap-x-6</code> 縮小等於沒有引線。
+    ③ <code>SlotCell</code> 的窄版（<code>dense</code>）由 <code>LoadoutRig</code> 量容器寬度決定
+    （<code>DENSE_MAX_WIDTH</code>），不由視窗斷點猜——這一欄的寬度在 Phase C／D 還會再變。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 槽位六態改版</div>
+      <div class="task-group-meta">src/components/loadout/SlotCell.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">六態只走三個維度</div>
+        <div class="task-desc">
+          空／已裝／固定武裝／形態鎖定／無槽／預覽，共用同一外框尺寸與斜切角；
+          差異只走<strong>邊框樣式（實線／虛線）、底色、圖示</strong>。
+          兩條既有規則不得回退：<strong>無槽要整格寫出原因</strong>（不是點不動的空框）、
+          <strong>固定武裝仍計入總重</strong>所以必須畫在格上。
+          預覽態要同時顯示換裝後的重量與是否超重。
+        </div>
+        <div class="task-file">src/components/loadout/SlotCell.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 槽位圖重構為機甲 HUD</div>
+      <div class="task-group-meta">src/components/loadout/LoadoutRig.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">中央 portrait ＋ 引線槽位 ＋ 四部位唯讀卡</div>
+        <div class="task-desc">
+          中央放 <code>portrait.webp</code>（3/4 特寫），槽位卡分列左右並以 SVG 引線連到機體。
+          引線的 <code>viewBox</code> 必須與容器實際尺寸等比，否則節點對不上（設計階段已踩過）。
+          下方一排四部位唯讀卡（<code>torso</code>/<code>leftArm</code>/<code>rightArm</code>/<code>legs</code>）
+          並標示接口型別，等 052-G 才變成可換。
+          「一眼看到全部槽位」的前提不變——<strong>手機版也不縮成一欄清單</strong>。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutRig.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 刪除右欄重量帳表</div>
+      <div class="task-group-meta">src/pages/simulator/LoadoutPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">去重複，保留獨有資訊</div>
+        <div class="task-desc">
+          頂部分段條＋圖例已回答「重量花在哪裡」。整張表刪除，只把它獨有的
+          「備用組較輕、不計入總重」移到武器列的 footer。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label orange">Phase C</div>
+  <div class="section-title">身分與挑選器</div>
+  <div class="section-desc">把 175 張美術資產放進來，並讓「選角感」落在不擋路的位置。</div>
+
+  <div class="impact-note">
+    <strong>已落地（2026-08-26）：</strong>
+    <code>PilotIdentityCard.tsx</code>（立繪常駐左欄，固定高度＋右下出血＋左側漸層）、
+    <code>PickerVariants.tsx</code>（<code>PilotAvatarCard</code> 頭像牆格 ／ <code>MechPickerCard</code> 機甲橫向卡）。
+    <code>PickerShell</code> 新增三個 prop：<code>variant</code>（list／pilotGrid／mechCard）、
+    <code>filters</code>（晶片篩選組）、<code>hint</code>（清單上方一行提要）。
+    全身立繪路徑由 <code>pilotFullArtPath()</code>（<code>src/utils/assets.ts</code>，含 5 條測試）推導。
+    <br>
+    <strong>版面同時重排</strong>：三欄改成「機師卡＋配裝概況（340px）／槽位 HUD（1fr）／挑選器（380px）」，
+    順序照設計畫布——機師在左、機甲在中。兩欄版把機師卡疊在槽位圖上方。
+    <br>
+    <strong>三個實作時的裁決：</strong>
+    ① <strong>執照不符的機師不逐格印原因</strong>。89 位裡通常有三分之二執照與目前機甲不符，
+    逐格印兩行字會讓整面牆變成說明文。改成該格去飽和 ＋ 一顆黃色 <code>!</code> 角標（完整句子進 <code>title</code>），
+    原因只在清單上方講一次（<code>hint</code>）。仍然**可選不擋**，與武器的 replaceNote 同一條原則。
+    ② <strong>篩選一律比對資料欄位</strong>（<code>PickerFilterGroup.test</code>），不比對 <code>row.meta</code> 字串——
+    副標措辭改一個字就會靜默篩出零筆。
+    ③ 全身立繪只做「推路徑」不含 <code>imageCandidates()</code>：後者讀 <code>import.meta.env.BASE_URL</code>，
+    在 <code>node --test</code> 下不存在，包進去這條規則就測不了。
+    <br>
+    <strong>⚠ 三個踩過的資料邊界（後續 Phase 與匯出圖都會遇到）：</strong>
+    ① <code>pilot.portrait</code> 存的是**頭像** <code>half.webp</code>，全身像是同資料夾的 <code>full.*</code>，沒有欄位存它。
+    ② 副檔名不一定是 webp：阿列娜是 <code>half.png</code>（88 個資料夾裡唯一）。
+    ③ <strong>89 位機師但只有 88 個立繪資料夾</strong>——賽拉的 <code>portrait</code> 是空字串，
+    已驗證身分卡會退成純文字（不留破圖、不跳版面）。
+    <br>
+    <strong>Tailwind v4 陷阱：</strong>職業色條用 <code>TONE_BAR</code> 查表把 <code>text-*</code> 換成 <code>bg-*</code>，
+    <strong>不可</strong>用字串替換——掃描器只認原始碼裡出現過的完整類名，執行期拼出來的
+    <code>bg-accent-green</code> 不會被產生，會靜默變成沒有底色的色條。
+    <br>
+    <strong>驗收後的三處修正（使用者指示，同日）：</strong>
+    ① 機師卡<strong>拿掉 AP／回復</strong>——那是戰鬥資源，與「這台裝得下什麼」無關，
+    放上來只是把機師詳情頁的數字再抄一份；卡高隨之由 264 收到 228px。
+    ② 機甲挑選器<strong>取消篩選列</strong>——機師執照本來就把裝甲類型限死成一種，
+    再給「輕型／中甲／重型」三顆晶片，其中兩顆按下去必然零筆。清單直接就是這位機師開得動的機甲；
+    開不動的仍由 <code>HiddenCountBar</code> 摺疊成一行計數（要看原因按一下就展開）。
+    ③ 武器挑選器<strong>新增類型與品質篩選</strong>（<code>WEAPON_FILTERS</code>）。
+    類型刻意不含「特殊」——那是固定武裝專用的 type，而固定武裝一律被
+    <code>canEquipWeapon</code> 以 FIXED_ARMAMENT 擋在挑選器外，列出來會是恆為零筆的晶片。
+    <br>
+    <strong>第二輪驗收後的六處（使用者指示，同日）：</strong>
+    ④ 槽位面板抬頭加上機甲名／裝甲徽章與一顆<strong>更換機甲</strong>鍵，與機師卡的「更換機師」對稱
+    （<code>Panel</code> 新增 <code>titleExtra</code> / <code>action</code>）。
+    ⑤ <strong>刪除摺疊計數列</strong>（原 <code>HiddenCountBar</code>，檔案已移除）：結構性拒絕的項目
+    一律不列，不再提供展開。規則層的 <code>structuralCounts()</code>（含兩條測試）<strong>刻意保留</strong>——
+    「有幾件因為什麼被排除」是資料層答得出來的問題，052-C 的分享碼與匯出圖都可能要用。
+    ⑥ 挑選器排序改成<strong>品質由高到低</strong>、同品質再依重量由輕到重
+    （<code>pickerOrder</code>）。純按重量排會把一堆 B 品質輕武器頂到最上面。
+    ⑦ <strong>挑選器一律以「全部」開始，沒有預設篩選。</strong>
+    曾經讓武器／背包預設只看 SS，但那要求「預設值在這份清單裡真的存在」才套得上
+    （否則一開挑選器就是零筆，玩家還看不出是自己沒選過的條件造成的）——
+    <strong>一個要靠額外守則才安全的預設值，不如不要</strong>，故整個 <code>defaultValue</code> 機制移除。
+    改由排序負責把好東西頂上來（見 ⑥）。
+    ⑧ 背包新增<strong>種類篩選</strong>（<code>BACKPACK_FILTERS</code>，標籤走圖鑑那份
+    <code>BACKPACK_TYPE_CONFIG</code>——<code>b.type</code> 是英文 enum，直接印會是一排開發者字）。
+    ⑨ <strong>空選項自動隱藏</strong>：晶片只列出這份清單裡真的存在的值，整組只剩一個值時整組不畫。
+    背槽因此自動沒有「類型」那一列（背部武器 21 把全是戰術類），也不會出現按下去恆為零筆的晶片。
+    ⑩ <strong>搜尋列凍結在頂端</strong>（<code>sticky</code>）。
+    ⚠ 底色必須用不透明的 <code>bg-bg-tooltip</code>：<code>bg-bg-card</code> 帶 0.65 alpha，
+    列會從它底下透出來，看起來像有一行卡在搜尋框上面（實測踩過）。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 機師身分卡（立繪常駐）</div>
+      <div class="task-group-meta">src/components/loadout/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">左欄常駐立繪 ＋ 職業／執照／AP／形態</div>
+        <div class="task-desc">
+          <code>full.webp</code>（去背，1240×1080）靠右下出血、左側加深色漸層讓文字讀得到。
+          職業徽章沿用 <code>CLASS_CONFIG</code> 七職業配色。
+          <strong>不做入場動畫</strong>（計畫書決策二）。需處理載入佔位，避免立繪到位時版面跳動。
+        </div>
+        <div class="task-file">src/components/loadout/ · public/images/pilots/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 頭像牆挑選器</div>
+      <div class="task-group-meta">src/components/loadout/PickerShell.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機師分支改為頭像網格</div>
+        <div class="task-desc">
+          <code>half.webp</code> <strong>不是去背圖</strong>（帶各自不同的原生背景色），
+          每格必須統一卡框 ＋ 底部漸層遮罩 ＋ 左側職業色條，否則整面牆會花掉。
+          篩選列：職業（7）／執照（3）／品質；不符執照者<strong>保留並標灰寫出原因</strong>，
+          與現行「兩層拒絕呈現」的原則一致。87 位必須 lazy load（全載約 2.6MB）。
+        </div>
+        <div class="task-file">src/components/loadout/PickerShell.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 機甲挑選器卡片化</div>
+      <div class="task-group-meta">src/components/loadout/PickerShell.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機甲列表帶 portrait 縮圖</div>
+        <div class="task-desc">
+          沿用頭像牆的卡框語彙，但機甲是橫向卡（<code>portrait.webp</code> 為 560×340）。
+          須保留現行的「裝甲類型／出力／可用槽位」與換機甲時的級聯提示。
+          <strong>邊界</strong>：數值未公布的佔位機甲（如 <code>mech_090_美杜莎MK2</code>，出力 0）
+          要顯示「數值未建檔」而不是渲染成一台什麼都裝不下的機甲。
+        </div>
+        <div class="task-file">src/components/loadout/PickerShell.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label orange">Phase D</div>
+  <div class="section-title">算力與元件列</div>
+  <div class="section-desc">把「算力」與「元件」帶進同一頁。D-2 的時序限制已解除，見頂部提醒。</div>
+
+  <div class="impact-note">
+    <strong>已落地（2026-08-26）：</strong>
+    <code>NdPowerBar</code> 上移至 <code>src/components/common/NdPowerBar.tsx</code>，
+    <strong>一支元件兩種版型</strong>（<code>layout='inline'</code> 機師頁橫向列／<code>layout='panel'</code>
+    模擬器直式面板），<code>canSet</code>／「點最上面那格＝降一級」／γ 上限提示三條互動規則只有一份。
+    ★ 標記的推導也一併上移成 <code>ndOverrides.ts</code> 的 <code>ndAffectZones()</code>，兩頁共用。
+    <code>LoadoutDraft.ndLevels</code> 落地並進 <code>reconcile()</code>；右欄改為
+    <strong>情境欄</strong>（<code>WeaponComponentList</code> ／ <code>ComponentPanel</code> ／ 挑選器三選一）。
+    新增 <code>src/utils/loadoutRows.ts</code>（7 條測試）與 <code>simReducer</code> 的算力測試 7 條。
+    <br>
+    <strong>版面取捨（動工前提案、使用者裁決）</strong>：D-3 的武器列進場後版面會變成四塊，
+    定案為<strong>「右欄＝情境欄，內容切換」</strong>——三欄骨架不變，右欄依情境換內容：
+    預設武器與元件列 → 開挑選器時整欄換成挑選器 → 點武器列鑽進元件面板（帶「← 返回」）。
+    <strong>不做覆蓋層</strong>：四塊在 <code>max-w-[1600px]</code> 底下同時常駐會讓中欄只剩 ~430px，
+    低於 <code>LoadoutRig</code> 的 <code>DENSE_MAX_WIDTH = 570</code> —— 為了同時看見一份清單
+    而把機甲主視覺壓成窄版，代價方向錯了；而且覆蓋層要新增 z-index 層級、focus trap、Esc 三份互動負債。
+    切換內容則是沿用這一欄本來就有的行為（沒開挑選器時放機甲唯讀資訊）。
+    <br>
+    <strong>與計畫書的四點差異（實作時的裁決）</strong>：
+    ① <strong>算力面板在非三欄版掛在槽位圖「下方」</strong>，不是機師卡下方。兩欄版的那一欄有 ~660px 寬，
+    「目前生效」逐級列出來可以到十幾列（肖妮 16 列），擺在上面等於要捲過一整螢幕才看得到機甲；
+    三欄版的左欄只有 340px 且沒有別的東西爭位置，才維持設計畫布的位置。
+    ② <strong>「目前生效」逐級全列，不只列最高階</strong>：神經驅動每一級各給一個能力
+    （不是同一個能力的多階），只印最高的等於少講了三件事。
+    ③ <strong>武器列上不畫「＋ 加入元件」</strong>：設計畫布畫的是 052-D 完成後的樣子，
+    今天那顆按下去沒有反應。誠實版本是「尚未裝設元件」＋ 元件面板抬頭的建置中告示。
+    ④ <strong>B-3 欠的那句已還</strong>：「備用組與主手取較重者」自槽位圖下方移到武器列 footer，
+    並補上實際數字（主手組 N／備用組 M／目前採計哪一組）——規則寫在看得到證據的地方才有用。
+    <br>
+    <strong>元件面板本階段只判一條規則</strong>：<code>allowedWeaponTypes</code> 有沒有含這把武器的
+    <code>type</code>（實測 208 筆中 7 筆對戰術武器不相容）。W 型互斥、觸應配對、條件成不成立
+    <strong>一律不猜</strong>——猜錯的規則會被 052-D 推翻，而使用者已經照它配過一輪了。
+    裝不上的沉底、去飽和、寫出原因，<strong>不濾掉</strong>。
+    <code>components</code>（208 筆）只在面板掛載時才載入（<code>useComponents()</code> 寫在面板裡）。
+    <br>
+    <strong>⚠ 三個後續 Phase 要知道的事：</strong>
+    ① <code>draft.ndLevels</code> <strong>只存玩家動過的分區</strong>，讀取端一律
+    <code>{ ...defaultNdLevels(), ...draft.ndLevels }</code> 疊上去——把預設值落盤等於複製一份會過期的規則
+    （<code>defaultNdLevels()</code> 會依 <code>buffUpgrades</code> 決定 Lv1 還是滿級）。
+    ② γ 合計超上限時 <code>reconcile()</code> <strong>整份丟掉退回預設</strong>，不逐區降級——
+    降級得挑「降哪一區」，任何挑法都是本站替玩家做的一個他沒下過的決定。面板自己會先擋，
+    這條只對分享碼／草稿還原生效。
+    ③ 元件面板的清單自己捲（<code>max-h-[52vh] overflow-y-auto</code>），
+    <strong>不是只列前 N 筆</strong>——截斷會讓「裝不上的留在清單裡」名存實亡。
+    <br>
+    <strong>載入成本</strong>：<code>neuralDriveAbilities</code> 進了 <code>LOADOUT_STAGE_KEYS</code> 的
+    <code>mech</code>／<code>equip</code> 兩階（<code>pilot</code> 階刻意不載）。少了它的症狀是靜默的：
+    <code>resolveNeuralDriveLevel()</code> 退回嵌入式舊欄位，已遷移的機師會列出一排空白能力名。
+    <br>
+    <strong>驗收後的兩處修正（使用者指示，同日）：</strong>
+    ① <strong>「目前生效」補上縮圖、hover 說明與展開／收合</strong>，獨立成
+    <code>src/components/common/NdActiveAbilities.tsx</code>。互動語彙<strong>與機師詳情頁的神經驅動分頁對齊</strong>
+    （細指標 hover 出浮窗／粗指標點擊開 BottomSheet／兩者皆有「展開詳情」就地攤開）——
+    同一個玩家在兩頁看同一批能力，手感必須一樣，所以不另發明一套。
+    圖示元件 <code>SkillIcon</code> 一併自 <code>PilotDetailPage</code> 上移至
+    <code>src/components/icons/SkillIcon.tsx</code>（含載入失敗時的 <code>?</code> 佔位方塊，
+    那顆方塊<strong>不可退成 null</strong>：圖示排在名稱左邊，少一顆整排文字就左右參差）。
+    敘述走 <code>RefText</code> 而不是純文字 —— 印成裸括號會變成全站唯一一個「引用不會亮」的地方；
+    它本身會優雅降級，且只有正文真的含數值 token 時才去載 <code>buffs</code>。
+    <strong>⚠ 浮窗必須走 <code>createPortal</code></strong>：面板外框是 <code>hud-cut</code>（clip-path），
+    絕對定位在面板裡會被裁掉（A-1 已記過這條）。
+    ② <strong>「配裝概況」面板下架</strong>：它只剩兩個數字，而兩個都已被別處答掉或答不準 ——
+    已用槽位在武器列抬頭（「共 N 把」）、匯出圖（「N 個槽位 · 已裝 M」）與槽位圖本身都看得到，
+    第三份只是多一個要對帳的數字；平均射程則是把不同用途的武器射程平均起來，得到一個沒有人會據以決策的數。
+    <code>LoadoutSummary.tsx</code> 本體保留（沿用 <code>EquippedStats</code> 那條 ⏸ 慣例）——
+    等傷害模擬把「情境有效值」定義出來後，這一欄要放的是那種真的答得出問題的彙總。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; NdPowerBar 抽成共用元件</div>
+      <div class="task-group-meta">src/components/common/NdPowerBar.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機師頁與模擬器共用同一支</div>
+        <div class="task-desc">
+          <code>NdPowerBar</code> 目前是 <code>PilotDetailPage</code> 的區域元件。
+          抽出來兩頁共用，規則仍全部來自 <code>src/utils/ndOverrides.ts</code>
+          （<code>ND_RULES.gammaPairCap = 23</code>、<code>zonePower()</code>、<code>defaultNdLevels()</code>）——
+          <strong>不得複製第二份門檻邏輯</strong>，那份與 PLAN-034 的 BUFF 階覆寫層共用，各留一份必然漂移。
+          模擬器版另需顯示「目前生效能力」清單（玩家要看得到點下去換到什麼）。
+        </div>
+        <div class="task-file">src/components/common/NdPowerBar.tsx · src/utils/ndOverrides.ts（新增 ndAffectZones）· src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; LoadoutDraft 新增 ndLevels</div>
+      <div class="task-group-meta">src/types/loadout.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">算力配置納入配裝草稿</div>
+        <div class="task-desc">
+          <code>ndLevels?: Record&lt;string, number&gt;</code>（分區名 → Lv）。
+          須進 <code>reconcile()</code>：換機師時重置（不同機師的分區與門檻不同），
+          並比照 <code>backpackId</code> <strong>不存 null、用「欄位不存在」表示未設定</strong>
+          （<code>stripUndefined</code> 會讓三態變成一旦填了就清不掉）。<br>
+          <strong>必須在 052-C codec v1 定案前完成</strong>——現行 codec 規格沒有算力段。
+        </div>
+        <div class="task-file">src/types/loadout.ts · src/pages/simulator/simReducer.ts（reconcileNdLevels ＋ setNdLevels）· simReducer.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 武器與元件列 ＋ 元件面板外殼</div>
+      <div class="task-group-meta">src/components/loadout/WeaponComponentList.tsx · ComponentPanel.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每把武器顯示已裝元件與上限</div>
+        <div class="task-desc">
+          右欄每把武器一列，顯示已裝元件標籤（觸元件青／應元件橙，沿用
+          <code>ComponentBadges</code> 既有配色與詞彙）與 <code>n / componentLimit</code>；
+          點擊開啟元件面板。<strong>本計畫只做面板長相與槽位呈現</strong>，
+          可裝／不可裝的規則引擎屬 052-D；在 052-D 落地前，面板維持唯讀並標明「元件功能建置中」。
+          面板的呈現原則：裝不上的元件<strong>保留在清單並寫出原因</strong>，不直接濾掉。
+        </div>
+        <div class="task-file">src/components/loadout/WeaponComponentList.tsx · ComponentPanel.tsx · src/utils/loadoutRows.ts（＋7 條測試）· src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label orange">Phase E</div>
+  <div class="section-title">方案名稱與匯出配裝圖</div>
+  <div class="section-desc">這一階段結束時，配裝第一次有了可以貼給別人的產出物。</div>
+
+  <div class="impact-note">
+    <strong>已落地（2026-08-26）：</strong>
+    <code>LoadoutDraft.name</code> ＋ <code>sanitizeLoadoutName()</code>
+    （<code>src/utils/loadoutName.ts</code>，上限 <strong>24 個碼點</strong>，含 7 條測試）；
+    <code>LoadoutExportCard.tsx</code>（1000px 寬的離屏長圖）與同檔的
+    <code>LoadoutExportRunner</code>（等圖與字體就緒 → <code>toPng</code> → 下載）；
+    <code>loadoutSheetRows()</code> 供應含空槽與無槽的完整槽位表。
+    HUD 列新增「方案名稱」輸入框與「匯出配裝圖」鍵。實測產出 <strong>2000×2586</strong>
+    （<code>pixelRatio: 2</code>）、約 3MB、單次約 0.5 秒。
+    <br>
+    <strong>與計畫書的五點差異（實作時的裁決）</strong>：
+    ① <strong>高度不固定</strong>：計畫書寫「固定 1000px 的離屏版面」，固定的是<strong>寬</strong>。
+    槽位數、算力分區數、能力數逐機師不同，寫死高度的下場是最下面的算力表被裁掉。
+    ② <strong>未命名時把機師名升成主標</strong>，不另印一行「未命名配裝」、也不把機師名印兩次。
+    未命名是正常狀態（命名要登入，掛 052-E），在別人的分享圖上寫「這張沒做完」是錯的回饋。
+    ③ <strong>分享碼那一欄整個不印</strong>（不是印占位）：印一個佔位字串會有人拿去貼，而它解不開。
+    052-C 完成後把 <code>shareCode</code> prop 接上即可，版面已留位。
+    ④ <strong>匯出圖的字級／顏色寫死在該檔，不吃 <code>loadoutTheme</code></strong>：
+    這張圖的字級階與螢幕版不同（主標 44px vs 螢幕版最大 30px），而且 html-to-image 會把
+    computed style 內聯 —— 用 CSS 變數在這裡沒有好處，只會讓「圖上為什麼長這樣」跨三個檔才查得到。
+    ⑤ <strong>「整排不存在」只寫一列</strong>（沿用 B-2 的裁決）：沒有肩槽時印兩列一樣的
+    「沒有肩槽」等於把同一句話說兩遍；備用槽同理，印成一列「未裝強襲者背包 → 沒有備用武器槽」。
+    <br>
+    <strong>⚠ 兩個踩過的坑（後續 Phase 與任何 toPng 都會遇到）：</strong>
+    ① <strong>StrictMode 的 effect 雙呼叫會吃掉「已啟動」旗標</strong>。原本用
+    <code>startedRef</code> 去重，結果 run → cleanup（取消第一輪）→ run（看到旗標直接 return）
+    ⇒ 兩輪都沒拍成，按鈕永遠停在「產生中…」。要命的是<strong>這個症狀只在 dev 出現</strong>，
+    正式站看起來是好的。正解是讓 effect 本來就可重入：cleanup 取消上一輪、新的一輪重拍。
+    ② <strong>背景分頁不觸發 <code>requestAnimationFrame</code></strong>。
+    站上既有的匯出（<code>VersionQuickTable</code>／<code>RainbowMechPlannerPage</code>）都用裸的雙層 rAF，
+    使用者按下匯出後切去別的分頁就會永遠不 resolve。本檔的 <code>nextFrames()</code> 帶 400ms 逾時退場。
+    <br>
+    <strong>等待策略是輪詢不是監聽</strong>：<code>FallbackImage</code> 在載入失敗時會換下一個候選，
+    一次性的 <code>load</code>／<code>error</code> 監聽會在第一次失敗就放行，於是拍到一張還沒換好的圖。
+    改成輪詢 <code>img.complete</code>（5 秒硬上限，逾時仍出圖並 <code>console.warn</code>）——
+    少一張圖好過一個按了沒反應的按鈕。
+    <br>
+    <strong>載入成本</strong>：<code>patchVersions</code>（footer 的遊戲版本，取 <code>isTwCurrent</code>）
+    只在 <code>LoadoutExportRunner</code> 掛載時才讀，而 runner <strong>只在按下匯出時掛載</strong> ——
+    不匯出的人零成本。代價是要自己等圖與字體就緒（見上），常駐一份離屏卡則相反。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 方案名稱欄位</div>
+      <div class="task-group-meta">src/types/loadout.ts · src/utils/loadoutName.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">draft 欄位 ＋ 標題列可編輯</div>
+        <div class="task-desc">
+          <code>name?: string</code> 進 <code>LoadoutDraft</code>，顯示在主版面標題列與匯出圖最大的一行。
+          <strong>命名與雲端保存需登入</strong>；未登入仍可配裝／分享／匯出，只是圖上不帶自訂名稱。
+          登入 gate 的實作掛 052-E，本階段只做欄位與 UI。需設長度上限並過濾換行（會進圖）。
+        </div>
+        <div class="task-file">src/types/loadout.ts · src/utils/loadoutName.ts（＋7 條測試）· src/pages/simulator/simReducer.ts（setName ＋ reconcile 清洗，＋5 條測試）· LoadoutPage.tsx（LoadoutNameField）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 匯出長圖版面元件</div>
+      <div class="task-group-meta">src/components/loadout/LoadoutExportCard.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">固定 1000px 的離屏版面</div>
+        <div class="task-desc">
+          獨立元件、<strong>不共用螢幕版面</strong>（印刷品邏輯：無捲動、無互動、資訊一次全給）。
+          內容順序：Key visual（立繪＋機甲）→ 方案名稱 → 四格數值總覽（總重／出力／餘量／γ合計）
+          → 分段條 → 槽位表（每列含該武器的元件）→ 算力分區 γ1／γ2 階梯 → footer。
+          <strong>只放配裝與算力，不放技能表</strong>。空槽與無槽也要出現在表上（標「未裝備」／「—」）。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx · src/utils/loadoutRows.ts（loadoutSheetRows）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; toPng 接線與浮水印</div>
+      <div class="task-group-meta">LoadoutExportRunner（同檔）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">產圖、浮水印、下載</div>
+        <div class="task-desc">
+          沿用站上既有做法：<code>toPng(el, { backgroundColor: '#0a0c10', pixelRatio: 2 })</code>
+          （參考 <code>VersionQuickTable</code>／<code>ComponentDropsPage</code>／<code>RainbowMechPlannerPage</code>）。
+          浮水印兩層：footer 主標（<code>mecharashi.wiki</code> ＋ 站名全稱 ＋ 非官方聲明）與底噪 wordmark；
+          右下角印<strong>分享碼、產生日期、遊戲版本</strong>。
+          <strong>依賴</strong>：分享碼由 052-C 提供；052-C 未完成前先印占位或隱藏該欄，不可印假碼。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx（LoadoutExportRunner／waitForRenderReady／nextFrames）· src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label orange">Phase F</div>
+  <div class="section-title">手機版與收尾</div>
+  <div class="section-desc">兩個正交的響應式軸不要合併：版面欄數看視窗寬，互動方式看指標粗細。</div>
+
+  <div class="impact-note">
+    <strong>已落地（2026-08-26）：</strong>
+    <code>OutputBar</code> 新增 <code>narrow</code> 版型、<code>SlotCell</code>／<code>LoadoutRig</code>
+    新增 <strong>tight</strong> 第三階、單欄版面新增底部固定操作列。
+    實測 iPhone 390×844：sticky 抬頭自 <strong>381px → 225px</strong>（占畫面 45% → 27%）。
+    <br>
+    <strong>⚠ 動工前沒看到、看了才知道的兩件事：</strong>
+    ① <strong>站上已經有一條 <code>fixed bottom-0</code> 的手機 Tab Bar</strong>
+    （<code>Layout.tsx</code>，<code>h-14</code> ＋ safe-area，<code>z-50</code>）。本頁的操作列
+    <strong>不可貼底</strong>，必須疊在它上面（<code>bottom: calc(3.5rem + safe-area)</code>、<code>z-40</code>）——
+    貼底會把站上的主導覽整條蓋掉。
+    ② <strong>槽位圖在 390px 下橫向溢出並被面板的 clip-path 裁掉</strong>（畫面上是「左」「可用」被切一半）：
+    左右兩欄各只剩 <strong>63px</strong>，而一格光是內距 ＋ 圖示 ＋ 卸下鍵就要 82px，名稱欄是負數。
+    根因是 <code>gap-x-6</code>（實測 28.5px ×2 ＝ 57px）＋ 機甲圖下方 <code>whitespace-nowrap</code> 的
+    「Chassis 800」把中間欄撐到 113px（圖本身只有 76px）。
+    <br>
+    <strong>tight 這一階做了什麼（皆為「拿掉重複的、換回可讀的」）：</strong>
+    · <code>gap-x-6 → gap-x-2</code> —— <strong>門檻刻意與 <code>LINE_MIN_WIDTH</code> 同值</strong>：
+    低於它就不畫引線，而那 57px 的縫存在的唯一理由就是「引線的可見長度」（B-2 已記）。線不畫了，縫就是純浪費。<br>
+    · 機甲圖 96 → 76px；<strong>「Chassis N」整行不畫</strong>（帳本列圖例已寫「機體 N」）。<br>
+    · 空槽的「可用 N」不印（<code>whitespace-nowrap</code> 要 62px，名稱欄只有 56px）——
+    帳本列的 REMAINING 卡就釘在畫面頂端，同一個數字兩公分外已經看得到。<br>
+    · 圖示 30 → 24px、卸下鍵 20 → 17px、內距與間隙再收一階。<br>
+    · <strong>裝備名改折兩行而不是截斷</strong>（<code>line-clamp-2 break-all</code>）：
+    <code>truncate</code> 會把每一把武器都變成「夾心…」，一整排看不出裝了什麼。手機上垂直空間比水平便宜。<br>
+    · 兩欄改 <code>self-start</code>（只在 tight）：折行後兩欄高度不同，<code>items-center</code>
+    會讓「左肩／右肩」不在同一條線上。
+    <br>
+    <strong>版面搬移（單欄時）：</strong>
+    ① 三顆動作鍵（匯出／自動卸至符合／清空）自 sticky 抬頭移到底部固定列 —— 拇指可及，抬頭也少一列。
+    <strong>沒有「存進書架」</strong>：那是 052-C，渲染一顆按下去沒反應的按鈕比少一顆更糟。
+    ② 方案名稱移出 sticky 進到流內（貼著機師卡）—— 它是設定一次的欄位，不是要一直盯著的即時回饋。
+    ③ 帳本列改 <code>narrow</code> 兩列版（大數值 ＋ 餘量卡同列、條與圖例第二列）。
+    <strong>刻意不沿用 <code>compact</code></strong>：那一版把主要數值壓成 12px，而粗指標裝置沒有 hover 預覽，
+    這條列是換裝後唯一的即時回饋，必須一眼讀得到。
+    <br>
+    <strong>順手修掉一個既有缺陷</strong>：<code>CascadeToast</code> 的 <code>bottom-4</code>
+    在手機上本來就被站上的 Tab Bar 整條蓋住 —— 而 toast 上的 <strong>[復原]</strong> 是級聯拿掉裝備後唯一的補救。
+    新增 <code>raised</code> prop，單欄時抬到兩層固定列之上（實測 toast 底 711 / 操作列頂 720 / Tab Bar 頂 777，無重疊）。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 手機版 compact</div>
+      <div class="task-group-meta">LoadoutPage · SlotCell · LoadoutRig · OutputBar · CascadeToast</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">壓縮格高與字級，不改資訊結構</div>
+        <div class="task-desc">
+          沿用現行的兩軸判斷（<code>useLayoutBreakpoint()</code> 決定欄數、
+          <code>useIsMobile()</code> 決定就地面板 vs BottomSheet 與有無 hover 預覽）。
+          槽位<strong>不縮成一欄清單</strong>；底部固定操作列（存進書架／匯出圖）；
+          頂部帳本列常駐——粗指標裝置沒有 hover 預覽，帳本列是唯一的即時回饋。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx（底部操作列／方案名稱搬移）· SlotCell.tsx ＋ LoadoutRig.tsx（tight 第三階）· OutputBar.tsx（narrow 版型）· CascadeToast.tsx（raised）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; 視覺回歸檢查</div>
+      <div class="task-group-meta">2026-08-26 · 瀏覽器實測</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把六種邊界情況逐一看過</div>
+        <div class="task-desc">
+          ① 槽位六態各一次；② 超重（分段條撐滿＋紅色溢出）；③ 中甲以外機甲的無槽列；
+          ④ 數值未公布的佔位機甲（出力 0）；⑤ 長武器名與長機師名的截斷；
+          ⑥ 立繪／頭像載入失敗時的退場（不可留白框，也不可讓版面跳動）。
+          匯出圖另需確認：中文字體在 <code>toPng</code> 下的落字正確、<code>pixelRatio: 2</code> 的檔案大小可接受。
+        </div>
+        <div class="task-file">2026-08-26 逐項實測，結果見下</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+
+    <div class="impact-note" style="margin:0 0 0 0;">
+      <strong>逐項結果（2026-08-26，Chrome DevTools 實測，非目測推斷）：</strong>
+      <br>
+      <strong>① 槽位六態 —— 五種通過，一種今天觸達不到</strong><br>
+      · <strong>空</strong> ✓（都卜勒｜「點擊裝備 · 可用 800」）<br>
+      · <strong>已裝</strong> ✓（夾心曲奇｜分段色重量 ＋ 卸下鍵）<br>
+      · <strong>固定武裝</strong> ✓（帕斯卡｜左右肩「機甲固定武裝 · 衝擊炮 · 0」黃框鎖頭；武器列同步顯示「不可裝元件」）<br>
+      · <strong>無槽</strong> ✓（見 ③）<br>
+      · <strong>預覽</strong> ✓（hover 挑選器「藝術突襲·LW」→ 格變「換成這把 / 360 / 餘 1,640」，帳本列長出半透明橙色預覽段）<br>
+      · <strong>形態鎖定</strong> —— <strong>今日無法從 UI 觸達</strong>。<code>equipSetKeys()</code>
+      只收 <code>restrict.kind === 'weaponType'</code> 的形態，全鎖形態依總綱決策四不進 <code>sets</code>，
+      於是 <code>ctx.lock</code> 恆為 null。手動把 <code>activeSetKey</code> 塞成全鎖形態的 id，
+      <code>reconcile()</code> 會（正確地）把它掃回 <code>default</code>。
+      <strong>待 052-F 的形態分頁落地後補驗</strong> —— 這一態的樣式已寫好，只是沒有路徑走到。
+      <br>
+      <strong>② 超重</strong> ✓（390px 實測 2,770 / 2,740：總重轉紅、餘量卡整張換成紅色並改寫成「OVER 30」、
+      分段條撐滿並帶紅框，底部操作列長出第三顆「自動卸至符合」且三顆仍放得下）<br>
+      <strong>③ 中甲以外的無槽列</strong> ✓（虹＋都卜勒｜「肩部 / 肩部槽位只有中甲機甲才有」整列一則，
+      不是左右兩個一樣的灰格）<br>
+      <strong>④ 出力 0 的佔位機甲</strong> ✓（美杜莎MK2｜帳本列 0 / 0 ＋ 黃字說明；
+      空槽<strong>不印「可用 N」</strong>（那個數會是負的）；機甲圖退成「尚無立繪」文字；四部位「接口未建檔」；
+      挑選器列上也寫「官方數值尚未公布，暫時無法計算可用出力」）<br>
+      <strong>⑤ 長名截斷</strong> ✓（武器「藝術突襲·LW」在格上完整；機師「洛莎・審判」在身分卡完整，
+      量測 <code>scrollWidth === clientWidth</code>，無裁切）<br>
+      <strong>⑥ 立繪載入失敗</strong> ✓（賽拉｜<code>portrait</code> 為空字串 → 身分卡退成純文字，
+      不留破圖框、卡高不變、版面不跳）
+      <br>
+      <strong>匯出圖</strong> ✓ —— 中文（Noto Sans TC）與 Orbitron／JetBrains Mono 在 <code>toPng</code>
+      下落字正確；<code>pixelRatio: 2</code> 產出 <strong>2000×2586、約 3MB、單次約 0.5 秒</strong>，
+      連續三次皆正常（Phase E 已驗）。
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-I — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>
