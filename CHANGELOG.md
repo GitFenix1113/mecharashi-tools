@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-23
+## [Unreleased] - 2026-08-26
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,12 @@
 
 ### ✨ 新功能
 
+- **loadout**: PLAN-052-C 完工 — 本機書架與匯出圖分享碼（11／11 歸檔） (`6e71d83`)
+- **loadout**: PLAN-052-C Phase C — 分享連結與貼碼 (`6eaf4a4`)
+- **loadout**: PLAN-052-B／052-I 配裝模擬器單頁改版與視覺層 (`8ef5b5b`)
+- **mech**: PLAN-052-A Phase E — 機甲詳情頁的槽位配置與四部位表 (`6f6d0a8`)
+- **mech**: PLAN-052-A Phase C／D — 固定武裝落盤、型別收緊與槽位校驗 (`aa85d0d`)
+- **mech**: PLAN-052-A Phase A／B — 配裝數值純函式與槽位模型地基 (`326d1f8`)
 - **og**: Tier 2 逐頁預覽卡片上線並通過正式站實測 (`0572191`)
 - **og**: 社群連結預覽 Tier 1 上線；Tier 2 邊緣改寫待 Transform Rule 例外 (`40d3822`)
 - **nav**: 導覽改為橫向展開條＋群組常駐分頁列 (`bbb8327`)
@@ -138,6 +144,11 @@
 
 ### 🐛 修復
 
+- **export**: 匯出圖在背景分頁永遠卡住 —— 三處，不是記憶裡的兩處 (`e8cf198`)
+- **loadout**: 盾擇一 —— 手盾與大盾合計每組一面（052-J Phase D，8／8） (`7fef58c`)
+- **loadout**: 雙手武器改為左右兩格各印一把（比照遊戲整備畫面） (`9f994fd`)
+- **loadout**: PLAN-052-J 完工 — 雙手武器終於裝得上（6／6） (`6dcf3c1`)
+- **data**: 模組庫盤點的四批修正全數寫入正式資料 (`6e07f5d`)
 - **security**: 首頁維護團隊改由 Worker 供應，profile 讀取收回 isAdmin()（PLAN-051） (`d382d4e`)
 - **og**: 立繪改用預轉的 JPEG，LINE 的卡片才有圖 (`135a11d`)
 - **layout**: 首頁捲動誤觸彈回、面板寬度斷點 (`1b8f53f`)
@@ -209,6 +220,9 @@
 
 ### 📚 文件
 
+- **plan**: PLAN-052-I 歸檔至歷史記錄（17 / 17 全數完成） (`fbd9be8`)
+- **plan**: PLAN-052-B 歸檔、052-I 建檔、052-C 與總綱進度更新 (`f93c5a9`)
+- **plan**: PLAN-052-A 歸檔至歷史記錄（28 / 28 全數完成） (`3ceb87b`)
 - **plan**: 新增 PLAN-052 配裝模擬器改版總綱與 A/B/C 子計畫、PLAN-042 升格為故事館總綱 (`5c85f1a`)
 - **plan**: PLAN-051 歸檔至歷史記錄（四項驗收全數通過） (`72c5de2`)
 - **plan**: PLAN-051 進度表更新為驗收中，補上實測結果 (`2b91798`)
@@ -291,6 +305,14 @@
 
 ### 🔧 維護
 
+- **data**: 補齊 levels[] 未填數值與填錯欄位（模組盤點第三批） (`a412217`)
+- **data**: 模組分級一致性修正腳本 ＋ 折光陣列註解回填 (`f5a7086`)
+- **data**: 模組庫大小寫孿生與 Ⅱ 級 key-in 錯誤的修正腳本 (`7ea5545`)
+- **tooling**: export-emulator-slice 新增 --simulator 整包模式 (`26b8514`)
+- **loadout**: PLAN-052-C Phase B 完成 — 分享碼 codec v1 (`fbee214`)
+- **loadout**: PLAN-052-C Phase A 完成 — 分享碼登錄簿與號碼守門 (`6a15230`)
+- **loadout**: PLAN-052-C A-1 分享碼身分層（doc id ↔ shareId） (`c22bd8a`)
+- 全站更名為米赫瑪超吉情豹站 (`c438724`)
 - **security**: storage.rules 收掉 banners 的「登入即可寫」 (`590f012`)
 - **assets**: 移除與 portrait 重複的機甲扁平立繪 (`5510af9`)
 - **assets**: 重新調整星夜女神機甲立繪尺寸 (`75868cb`)
