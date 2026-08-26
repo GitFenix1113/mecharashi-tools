@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">5</div>
+      <div class="summary-num" style="color:var(--accent-green)">7</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">6</div>
+      <div class="summary-num" style="color:var(--text-dim)">4</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">5 / 11</span>
+      <span style="color:var(--accent-green);">7 / 11</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 45%"></div>
+      <div class="progress-bar-fill" style="width: 64%"></div>
     </div>
   </div>
 
@@ -302,29 +302,29 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 網址讀寫與貼碼 UX</div>
       <div class="task-group-meta">src/pages/simulator/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">/simulator?b= 讀取 ＋「複製分享連結」</div>
         <div class="task-desc">
-          <b>UI 只提供「複製分享<u>連結</u>」一顆主按鈕，不給裸碼</b> —— base64url 含 <code>_</code>，Discord 的 <code>_斜體_</code> 語法會把裸碼中間的底線吃掉，對方複製到的是壞碼；網址會被當成連結、不套用 markdown，因此安全。
+          <b>2026-08-26 完成。</b>UI 只提供「複製分享<b>連結</b>」一顆主按鈕，<b>不給裸碼</b>—— base64url 含 <code>_</code>，Discord 的 <code>_斜體_</code> 語法會把裸碼中間的底線吃掉，對方複製到的是壞碼；網址會被當成連結、不套用 markdown，因此安全。<br><code>?b=</code> 的優先權<b>高於本機草稿</b>：點開別人連結的人要的是那一套，把他自己配到一半的東西端出來會讓「連結壞掉了」變成最合理的解讀。<br>header 的 GAMEVER 欄位與匯出圖<b>共用 <code>usePatchVersions()</code></b>——各取各的必然漂移，而漂移的症狀是同一套配裝的圖與代碼標著不同版本。<br>⚠ <b>窄版用短標籤「複製連結」</b>：底部固定列在超重時會有四顆（＋「自動卸至符合」），瀏覽器實測 390px ＋「大」字級下四顆只剩 <b>8px</b> 餘裕，換短標籤後有 <b>56px</b>。貼碼鍵刻意<b>不進</b>底部固定列（那裡是反覆會按的三顆），改放在方案名稱欄旁邊——兩者同屬「這一套的身分」：命名它，或者換成別人的那一套。
         </div>
-        <div class="task-file">src/pages/simulator/LoadoutPage.tsx</div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx · src/utils/loadoutCode/shareLink.ts（＋8 則測試）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">貼碼預覽 ＋ 錯誤文案 ＋ 舊快取防護</div>
         <div class="task-desc">
-          E_TOO_LONG／E_MALFORMED／E_CHECKSUM（「代碼不完整，可能複製時被截斷」）／E_FUTURE（「請重新整理頁面」）。解不開時先打 <code>/api/versions</code> 檢查版本，落後就強制重載該集合再判定，避免把本週新武器誤標成「已下架」。
+          <b>2026-08-26 完成。</b>錯誤文案逐種分開寫，瀏覽器實測五種輸入：閒聊文字→「這段文字裡找不到分享碼」；代碼被竄改或截斷→「<b>最常見的原因是聊天軟體換行時被截斷</b>，請重新複製完整的一整串」；混到中文→「含有不屬於分享碼的字元」；更新版本的碼→「請重新整理頁面（Ctrl+F5）」。<b>沒有一句是「代碼無效」</b>——那句話不給任何下一步。<br><b>套用前一律先給預覽</b>（機師／機甲／幾套／幾把武器／方案名稱）：那一按會覆蓋掉手上正在配的那一套，而它沒有第二份備份。<br><b>舊快取防護</b>：解得開但有查不到的裝備時，先比對本機 <code>mecharashi_gd_*</code> 的版本與伺服器（<code>staleCacheKeys()</code>，落後才顯示「重新載入資料」）——本週剛上線的武器被說成「已下架」語意剛好相反。只在真的有解不開的東西時才發那一次請求。<br>⚠ 對話框<b>由呼叫端條件式掛載</b>而不收 <code>open</code>：收了就得在 effect 裡清內部狀態，而那是 effect 的誤用（eslint <code>react-hooks</code> 會擋，理由也對）。卸載即歸零，不可能忘記清哪一個欄位。
         </div>
-        <div class="task-file">src/components/loadout/PasteCodeDialog.tsx</div>
+        <div class="task-file">src/components/loadout/PasteCodeDialog.tsx · LoadoutPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

@@ -35,6 +35,15 @@ import { mechSlotCapacity } from '../../utils/mechSlots'
 import { licenseAllows } from '../../utils/normalizeArmorType'
 import type { PickerFilterGroup } from '../../components/loadout/PickerShell'
 import { CascadeToast } from '../../components/loadout/CascadeToast'
+import { PasteCodeDialog } from '../../components/loadout/PasteCodeDialog'
+import { buildShareIndex } from '../../utils/loadoutCode/shareId'
+import { shareIdAliases } from '../../utils/loadoutCode/shareIdRegistry'
+import { encodeLoadout, decodeLoadout, type ShareIndexes } from '../../utils/loadoutCode/codec'
+import { readShareCode, buildShareUrl, staleCacheKeys } from '../../utils/loadoutCode/shareLink'
+import { useGameData } from '../../contexts/GameDataContext'
+import { usePatchVersions } from '../../hooks/usePatchVersions'
+import { WORKER_ENABLED, getWorkerDataVersions } from '../../lib/api/workerData'
+import { getDataVersions } from '../../lib/api/versions'
 import type { PickerRowItem } from '../../components/loadout/RejectionRow'
 import { BACKPACK_TYPE_CONFIG } from '../../components/badges/BackpackBadges'
 import {
@@ -103,6 +112,23 @@ function legacyBuildToDraft(build: UserBuild, weapons: ReadonlyMap<string, Weapo
   }
 }
 
+/**
+ * 把網址上的分享碼解成草稿。**解不開時回 `undefined` 而不是丟例外** ——
+ * 一個壞連結讓整頁白畫面，比看到空的模擬器更糟。
+ *
+ * ⚠ 解得開但有查不到的裝備時**照樣套用**（決策四）：對方可能在分享改版前的配裝，
+ *   而「少一把武器」遠好過「整套都不給你看」。差別由 `notice` 說出來。
+ */
+function decodeShared(code: string, indexes: ShareIndexes): { draft?: LoadoutDraft; notice?: string } {
+  const res = decodeLoadout(code, indexes)
+  if (!res.ok) return { notice: res.message }
+  const n = res.unresolved.length
+  return {
+    draft: res.draft,
+    notice: n > 0 ? `這套配裝裡有 ${n} 項裝備在站上查不到，那幾格是空的。若這是剛上線的裝備，重新整理頁面（Ctrl+F5）後再試一次。` : undefined,
+  }
+}
+
 type ActivePicker =
   | { kind: 'pilot' }
   | { kind: 'mech' }
@@ -150,12 +176,22 @@ export default function LoadoutPage() {
 
   // 有待還原的草稿時直接跳到最終階段：reconcile 會把「查不到資料的裝備」掃掉，
   // 在武器還沒載入時還原，等於把整套配裝洗掉 —— 而且沒有任何錯誤訊息
-  const [pending, setPending] = useState<{ draft?: LoadoutDraft; legacy?: UserBuild } | null>(() => {
+  const [pending, setPending] = useState<{ draft?: LoadoutDraft; legacy?: UserBuild; code?: string } | null>(() => {
+    // ⚠ 順序就是優先權，不要調換：**網址上的分享碼永遠贏過本機草稿**。
+    //   點開別人連結的人，要的是那一套；把他自己上次配到一半的東西端出來，
+    //   會讓「連結壞掉了」變成最合理的解讀。
+    const shared = readShareCode(window.location.search)
+    if (shared) return { code: shared }
     const incoming = (location.state as { build?: UserBuild } | null)?.build
     if (incoming) return { legacy: incoming }
     const cached = readDraftCache()
     return cached ? { draft: cached } : null
   })
+
+  /** 分享碼送進來的東西解不開時要說出來（那幾格會是空的）。 */
+  const [shareNotice, setShareNotice] = useState<string | null>(null)
+  const [pasteOpen, setPasteOpen] = useState(false)
+  const [copied, setCopied] = useState<'ok' | 'fail' | null>(null)
 
   const stage: LoadoutStage =
     pending ? 'equip'
@@ -164,7 +200,29 @@ export default function LoadoutPage() {
     : 'equip'
 
   const { data, loading } = useLoadoutGameData(stage)
+  // 分享碼 header 的 GAMEVER 欄位。**與匯出圖用同一個來源**——各取各的必然漂移，
+  // 而漂移的症狀是同一套配裝的圖與代碼標著不同版本。這支有靜態 fallback 且模組層快取，
+  // 不會擋住畫面，代價是每個 session 多一次小集合請求。
+  const { data: patchVersions } = usePatchVersions()
+  const { reload: reloadGameData } = useGameData()
   const world = useMemo(() => buildWorld(data), [data])
+
+  /**
+   * 分享碼的六個索引。
+   *
+   * ⚠ `component` 與 `module` 目前恆為空索引 —— 本頁沒有載入那兩個集合（各 208／242 筆），
+   *   而在 052-D／052-G 之前也沒有任何 UI 會設定它們，載進來就是純浪費 read。
+   *   後果是**外來代碼裡的元件／模組會被標成解不開並丟掉**；今天不會發生（沒有產生器），
+   *   052-D／052-G 動工時把對應集合加進 `LOADOUT_STAGE_KEYS` 的 equip 階段即可。
+   */
+  const shareIndexes = useMemo<ShareIndexes>(() => ({
+    pilot:     buildShareIndex('pilot',     data.pilots.map((x) => x.id)),
+    mech:      buildShareIndex('mech',      data.mechs.map((x) => x.id)),
+    weapon:    buildShareIndex('weapon',    data.weapons.map((x) => x.id)),
+    backpack:  buildShareIndex('backpack',  data.backpacks.map((x) => x.id)),
+    component: buildShareIndex('component', []),
+    module:    buildShareIndex('module',    [], shareIdAliases('module')),
+  }), [data])
 
   const send = useCallback((a: LoadoutAction) => {
     setState((s) => simReduce(s, a, world))
@@ -174,7 +232,12 @@ export default function LoadoutPage() {
   // 還原：資料齊了就在 render 期間併進 state（React 官方的「render 期間調整 state」模式 ——
   // 同一次 render 內立即重跑，不會多畫一幀，也不必用 effect 製造串聯渲染）。
   if (pending && !loading) {
-    const draft = pending.legacy ? legacyBuildToDraft(pending.legacy, world.weapons) : pending.draft
+    let draft = pending.legacy ? legacyBuildToDraft(pending.legacy, world.weapons) : pending.draft
+    if (pending.code) {
+      const res = decodeShared(pending.code, shareIndexes)
+      draft = res.draft
+      if (res.notice) setShareNotice(res.notice)
+    }
     setPending(null)
     if (draft) setState((s) => simReduce(s, { type: 'loadDraft', draft }, world))
   }
@@ -200,6 +263,14 @@ export default function LoadoutPage() {
     () => picker ?? (!state.draft.pilotId ? { kind: 'pilot' } : !state.draft.mechId ? { kind: 'mech' } : null),
     [picker, state.draft.pilotId, state.draft.mechId],
   )
+
+  // 複製的成功回饋是按鈕文字換成「已複製連結」，兩秒後換回來 ——
+  // 不換回來的話，下一次按下去就沒有任何回饋了
+  useEffect(() => {
+    if (!copied) return
+    const t = setTimeout(() => setCopied(null), 2000)
+    return () => clearTimeout(t)
+  }, [copied])
 
   const closePicker = useCallback(() => { setPickerRaw(null); setHovered(null) }, [])
 
@@ -286,8 +357,56 @@ export default function LoadoutPage() {
   //
   //    ⚠ **沒有「存進書架」**：那是 052-C，還沒有實作。計畫書 F-1 把它與匯出並列，
   //      但渲染一顆按下去沒反應的按鈕比少一顆更糟（決策四：不渲染，不是渲染空的）。
+  // ── 分享（PLAN-052-C C-1）──
+  //
+  //    ⚠ **只給「複製分享連結」，不給裸碼。** base64url 含 `_`，而 Discord 的 `_斜體_`
+  //      語法會把裸碼中間的底線吃掉，對方複製到的是一串看起來正常、實際解不開的碼。
+  //      網址會被當成連結、不套用 markdown，因此是安全的。
+  const gameVersion = useMemo(() => patchVersions.find((v) => v.isTwCurrent)?.version, [patchVersions])
+  const copyShareLink = useCallback(async () => {
+    try {
+      const code = encodeLoadout(state.draft, { indexes: shareIndexes, gameVersion })
+      const url = buildShareUrl(code, window.location.origin, import.meta.env.BASE_URL)
+      await navigator.clipboard.writeText(url)
+      setCopied('ok')
+    } catch {
+      // 剪貼簿在非安全來源（http）與部分行動瀏覽器會直接拒絕；encode 也可能因為超出上限而丟
+      setCopied('fail')
+    }
+  }, [state.draft, shareIndexes, gameVersion])
+
+  /**
+   * 本機遊戲資料是否落後於伺服器（決策四的舊快取防護）。
+   * 只在貼碼有解不開的東西時才被呼叫 —— 沒事不多打這一次請求。
+   */
+  const checkStale = useCallback(async () => {
+    const server = await (WORKER_ENABLED ? getWorkerDataVersions() : getDataVersions())
+    return staleCacheKeys(server, ['pilots', 'mechs', 'weapons', 'backpacks', 'forms']).length > 0
+  }, [])
+
+  const pasteButton = (
+    <button
+      type="button"
+      onClick={() => setPasteOpen(true)}
+      className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-border text-text-secondary hover:text-text-primary hover:border-border-accent transition-colors cursor-pointer whitespace-nowrap"
+    >
+      貼上分享碼
+    </button>
+  )
+
   const actionButtons = (
     <>
+      <button
+        type="button"
+        onClick={copyShareLink}
+        disabled={!ctx.mech}
+        className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-accent-cyan/50 bg-accent-cyan/10 text-accent-cyan hover:bg-accent-cyan/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+      >
+        {/* ⚠ 窄版用短標籤：底部固定列在超重時會有四顆（＋「自動卸至符合」），
+            實測 390px ＋「大」字級下四顆只剩 8px 餘裕，換成短標籤後有 32px。
+            「複製連結」仍然講得出重點——這顆給的是連結不是裸碼。 */}
+        {copied === 'ok' ? '已複製連結' : bp === 'narrow' ? '複製連結' : '複製分享連結'}
+      </button>
       <button
         type="button"
         onClick={() => { setExportError(null); setExporting(true) }}
@@ -456,6 +575,10 @@ export default function LoadoutPage() {
             />
           )}
 
+          {/* 貼碼是「一個 session 用一次」的動作，所以不進底部固定操作列（那裡是反覆會按的三顆）。
+              放在名稱欄旁邊：兩者同屬「這一套的身分」——命名它，或者換成別人的那一套。 */}
+          {bp !== 'narrow' && pasteButton}
+
           {/* 單欄版面時動作鍵移到底部固定列（拇指可及、且抬頭少一列） */}
           {bp !== 'narrow' && <div className="flex items-center gap-1.5 ml-auto">{actionButtons}</div>}
         </div>
@@ -489,12 +612,15 @@ export default function LoadoutPage() {
         <div className="space-y-3 min-w-0">
           {/* 窄版的方案名稱：自 sticky 抬頭移下來，貼著機師卡 —— 「這套是誰的、叫什麼」是同一件事 */}
           {bp === 'narrow' && (
-            <LoadoutNameField
-              value={state.draft.name}
-              disabled={!ctx.mech}
-              onChange={(name) => send({ type: 'setName', name })}
-              full
-            />
+            <div className="flex items-stretch gap-1.5">
+              <LoadoutNameField
+                value={state.draft.name}
+                disabled={!ctx.mech}
+                onChange={(name) => send({ type: 'setName', name })}
+                full
+              />
+              {pasteButton}
+            </div>
           )}
           {bp !== 'wide' && (
             <PilotIdentityCard
@@ -758,6 +884,43 @@ export default function LoadoutPage() {
         </div>
       )}
 
+      {pasteOpen && <PasteCodeDialog
+        onClose={() => setPasteOpen(false)}
+        indexes={shareIndexes}
+        world={world}
+        onApply={(draft) => send({ type: 'loadDraft', draft })}
+        onCheckStale={checkStale}
+        onReload={reloadGameData}
+      />}
+
+      {/* 從分享連結進來、但有東西解不開時的說明。**不是錯誤**——配裝已經套用了，
+          這只是在交代「為什麼有幾格是空的」，所以用黃字而不是紅字。 */}
+      {shareNotice && (
+        <div
+          className="fixed left-1/2 -translate-x-1/2 z-50 max-w-[min(34rem,calc(100vw-2rem))] hud-cut-sm border border-accent-yellow/50 bg-bg-tooltip px-3.5 py-2 text-[12px] text-text-secondary leading-relaxed"
+          style={{ bottom: bp === 'narrow' ? 'calc(7rem + env(safe-area-inset-bottom))' : '1rem' }}
+        >
+          {shareNotice}
+          <button
+            type="button"
+            onClick={() => setShareNotice(null)}
+            className="ml-3 text-text-dim hover:text-text-primary cursor-pointer whitespace-nowrap"
+          >
+            知道了
+          </button>
+        </div>
+      )}
+
+      {/* 複製失敗要說出來：非安全來源（http）與部分行動瀏覽器會直接拒絕剪貼簿，
+          而按鈕文字不變等於「按了沒反應」 */}
+      {copied === 'fail' && (
+        <div
+          className="fixed left-1/2 -translate-x-1/2 z-50 hud-cut-sm border border-accent-red/50 bg-bg-tooltip px-3.5 py-2 text-[12px] text-accent-red"
+          style={{ bottom: bp === 'narrow' ? 'calc(7rem + env(safe-area-inset-bottom))' : '1rem' }}
+        >
+          複製失敗，你的瀏覽器不允許本站寫入剪貼簿。
+        </div>
+      )}
       {/* ⚠ 匯出失敗一定要說出來：這顆按鈕的成功回饋是「瀏覽器開始下載」，
           失敗時若什麼都不做，使用者只會看到按鈕跳回原狀，以為自己沒按到 */}
       {exportError && (
