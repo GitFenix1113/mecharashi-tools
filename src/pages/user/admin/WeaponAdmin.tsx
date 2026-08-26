@@ -13,6 +13,7 @@ import {
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updateWeapon, docExists } from '../../../lib/firestoreApi'
 import { makeNumberedEntityId, maxEntitySeq, stripNumberedIdPrefix } from '../../../utils/idSlug'
+import { shareIdFloor } from '../../../utils/loadoutCode/shareIdRegistry'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
@@ -788,7 +789,15 @@ export default function WeaponAdmin({
   // ⚠ 流水號讓「同一名稱兩次建立」產出兩個**不同**的 ID，撞 ID 檢查因此救不了重複；
   //   真正擋重複的是 findEntityClash 的 **name** 維度，所以 existingItems 必須是
   //   `gd.weapons` 全集合（useClientPaged 的 source，本頁一定已整包載入）而非 `filtered`。
-  const nextSeq = useMemo(() => maxEntitySeq('weapon', gd.weapons.map((w) => w.id)) + 1, [gd.weapons])
+  // ⚠ 續號取 **max(登錄簿水位, 線上最大值) + 1**，不是單純的線上最大值（PLAN-052-C A-1）。
+  //   maxEntitySeq() 是「掃現有 ID 取 max」，刪掉最後一台武器之後最大值就會退回去，
+  //   下一次新增於是**再發一次同一個號碼** —— 而分享碼存的正是這個號碼，
+  //   所有已流出、含該號碼的代碼會就此指向另一個實體，沒有任何徵兆。
+  //   登錄簿記的是「發過」而不是「還在」，所以號碼只會往前走。
+  const nextSeq = useMemo(
+    () => Math.max(maxEntitySeq('weapon', gd.weapons.map((w) => w.id)), shareIdFloor('weapon')) + 1,
+    [gd.weapons],
+  )
 
   const { creating, newId, setNewId, newIdError, setNewIdError, openCreate, cancelCreate, confirmCreate, derivedId } =
     useNewItemCreation(

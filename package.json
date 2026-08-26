@@ -20,6 +20,8 @@
     "docs:stamp": "node scripts/stamp-docs.mjs",
     "push": "node scripts/push-with-changelog.mjs",
     "lint": "eslint .",
+    "check:share-ids": "node scripts/check-share-ids.mjs",
+    "check:share-ids:accept": "node scripts/check-share-ids.mjs --accept",
     "test": "node --test \"src/**/*.test.ts\" \"scripts/**/*.test.mjs\" \"workers/src/**/*.test.ts\"",
     "preview": "vite preview",
     "prepare": "git config commit.template .gitmessage && git config core.hooksPath .githooks",

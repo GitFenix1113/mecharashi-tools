@@ -14,8 +14,18 @@
 //
 // 核心不變式：**流水號是身分不是位置** —— 新增 weapon_183 不會讓 weapon_182 位移。
 // ⚠ 唯一破口是**流水號被回收**（`idSlug.ts` 的 `maxEntitySeq()` 是「掃現有 ID 取 max」，
-//   刪掉 178 再新增會再次產生 178）⇒ 由 A-1 第二列的 `share-id.lock.json` ＋ CI 守門，
-//   本檔只負責推導與撞號偵測。
+//   刪掉 178 再新增會再次產生 178）⇒ 由 `share-id.lock.json` ＋ `scripts/check-share-ids.mjs`
+//   守門，本檔只負責推導與撞號偵測。
+//
+// ── 別名區（A-1 第二列，2026-08-26 裁決）──────────────────────────────────
+// 推導規則有 doc id 形狀的前提，全庫有 80 筆模組不合形狀（`mod_4001_2` 這種第二型、
+// 以及 `mod_凌嘯框架` 這種純名稱 id）。其中落在 052-G 挑選器候選池的有 42 筆
+// ＝ 可見池 188 筆的 22%，「配得出來卻分享不了」的比例太高，故開別名區手工指派。
+//
+// 別名是 **`docId → 號碼` 的人工指派**，寫進 `share-id.lock.json` 的 `aliases` 區後永久不動
+// （英文 WIKI 的同名機制註解逐字寫 "never changes once assigned"）。
+// 它同時是比推導**更強**的一層保護：推導區改掉 doc id 的號碼那一段會讓既有分享碼全指錯，
+// 別名區則只要把 lock 裡那個號碼指向新的 docId，已流出的碼照樣解得開。
 //
 // 純函式、無 React / Firestore 依賴，可單測（npm test）。
 
@@ -33,6 +43,30 @@ export const SHARE_ID_MAX = 2_097_151
 
 /** 背包沒有流水號，用官方 8 位數字扣掉這個基底 —— 全庫 180/181 筆都是 601xxxxx 起跳。 */
 export const BACKPACK_ID_OFFSET = 60_000_000
+
+/**
+ * 別名區的起點：**手工指派的號碼一律 ≥ 這個值**，推導出來的一律在它以下。
+ *
+ * 為什麼是 1,500,000 而不是更小的數：號碼空間是**每個 kind 各自獨立**的，
+ * 所以這個門檻必須高過**所有** kind 的推導上限，而背包的推導值就落在百萬級
+ * （官方 8 位數 − 60,000,000，實測最大 1,002,705）。取 1.5M 之後，
+ * 背包要再發 497,295 個新品才可能碰到別名區 —— 不會發生，
+ * 而且真的接近時 `scripts/check-share-ids.mjs` 會在上線前就擋下來（撞號即 exit 1）。
+ *
+ * 上限側還剩 597,151 個位置（到 `SHARE_ID_MAX`），指派 41 筆只用掉 0.007%。
+ *
+ * ⚠ 代價是**別名一律吃滿 3 bytes 的 varint**（推導區的模組號碼只要 2 bytes）。
+ *   一套配裝最多 4 個模組槽 ⇒ 最壞多 4 bytes，對 ≈70 bytes 的典型碼是可接受的交換。
+ */
+export const ALIAS_BASE = 1_500_000
+
+/**
+ * 別名表：`docId → 手工指派的號碼`。來源是 `share-id.lock.json` 的 `aliases` 區（反轉後）。
+ *
+ * 刻意用 docId 當 key（而不是號碼當 key）：呼叫端手上有的是 doc id，
+ * 而反向查詢由 `buildShareIndex()` 自己建表 —— 一份資料兩個方向，不要讓呼叫端各建各的。
+ */
+export type ShareIdAliases = Readonly<Record<string, number>>
 
 /**
  * 各實體的 doc id 形狀。
@@ -82,10 +116,18 @@ export interface ShareIndex {
   toDocId(shareId: number): string | null
   /** doc id → shareId；推導不出來或因撞號被剔除時回 `null` */
   toShareId(docId: string | null | undefined): number | null
-  /** 推導不出號碼的 doc id（今天不可分享，UI 停用） */
+  /** 推導不出號碼**且沒有別名**的 doc id（今天不可分享，UI 停用） */
   unshareable: readonly string[]
   /** 撞號：同一個 shareId 被兩份以上文件推出來。**兩邊都會被剔除**，見下方註解 */
   collisions: readonly ShareIdCollision[]
+  /**
+   * 指向不存在文件的別名（該 docId 已被刪或改名）。
+   *
+   * 前台**不必理會**——那個號碼查不到就是「已下架裝備 #n」，本來就是預期行為。
+   * 但 CI 要看：一筆 stale 別名代表某個已流出的分享碼從此解不開，
+   * 該由人決定是「把別名改指到新 docId」（救回舊碼）還是「確認這東西真的沒了」。
+   */
+  staleAliases: readonly string[]
   /** 可分享的筆數（＝索引大小），給 CI 報表用 */
   size: number
 }
@@ -105,14 +147,21 @@ export interface ShareIdCollision {
  *   · 兩邊都剔除 ⇒ 該號碼解成「已下架裝備 #n」，是一個**看得見**的錯，而且不會指向錯的實體。
  *   同時把撞號記進 `collisions`，由 `assertNoCollisions()`（CI／腳本用）大聲失敗。
  */
-export function buildShareIndex(kind: ShareIdKind, docIds: readonly string[]): ShareIndex {
+export function buildShareIndex(
+  kind: ShareIdKind,
+  docIds: readonly string[],
+  aliases: ShareIdAliases = {},
+): ShareIndex {
   const byShareId = new Map<number, string>()
   const dupes = new Map<number, string[]>()
   const unshareable: string[] = []
 
   for (const docId of docIds) {
-    const n = toShareId(kind, docId)
-    if (n === null) { unshareable.push(docId); continue }
+    // 推導優先於別名：推得出來就用推的，別名只補推導的缺口。
+    // 反過來（別名蓋過推導）會讓「改 doc id 的號碼」這件事被別名默默吸收掉，
+    // 於是 lock 檔再也抓不到回收 —— 那正是這一層要防的事。
+    const n = toShareId(kind, docId) ?? aliases[docId] ?? null
+    if (n === null || !Number.isInteger(n) || n <= 0 || n > SHARE_ID_MAX) { unshareable.push(docId); continue }
     const prev = byShareId.get(n)
     if (prev === undefined) { byShareId.set(n, docId); continue }
     if (prev !== docId) {
@@ -128,12 +177,17 @@ export function buildShareIndex(kind: ShareIdKind, docIds: readonly string[]): S
   const byDocId = new Map<string, number>()
   for (const [n, docId] of byShareId) byDocId.set(docId, n)
 
+  // 別名指向的文件已經不在集合裡 ⇒ 那個號碼從此解不開。不影響前台，但 CI 要知道。
+  const present = new Set(docIds)
+  const staleAliases = Object.keys(aliases).filter((docId) => !present.has(docId))
+
   return {
     kind,
     toDocId: (shareId) => byShareId.get(shareId) ?? null,
     toShareId: (docId) => (docId ? byDocId.get(docId) ?? null : null),
     unshareable,
     collisions: [...dupes.entries()].map(([shareId, ids]) => ({ shareId, docIds: ids })),
+    staleAliases,
     size: byShareId.size,
   }
 }

@@ -6,7 +6,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  toShareId, buildShareIndex, assertNoCollisions, SHARE_ID_MAX, BACKPACK_ID_OFFSET,
+  toShareId, buildShareIndex, assertNoCollisions, SHARE_ID_MAX, BACKPACK_ID_OFFSET, ALIAS_BASE,
 } from './shareId.ts'
 
 // ─── 正常路徑：六種實體（樣本取自 2026-08-25 線上實測的真實 doc id）────────────
@@ -127,4 +127,52 @@ test('實測形狀樣本：各集合的代表性 id 都推得出號碼', () => {
   for (const [kind, docId, expected] of samples) {
     assert.equal(toShareId(kind, docId), expected, `${kind} ${docId}`)
   }
+})
+
+// ─── 別名區（A-1 第二列）─────────────────────────────────────────────────────
+
+test('別名補上推導不出號碼的文件，並且雙向都通', () => {
+  const ids = ['mod_4001', 'mod_4001_2', 'mod_凌嘯框架']
+  const idx = buildShareIndex('module', ids, { mod_4001_2: 1_500_001, mod_凌嘯框架: 1_500_032 })
+
+  assert.equal(idx.toShareId('mod_4001'), 4001)          // 推導區照舊
+  assert.equal(idx.toShareId('mod_4001_2'), 1_500_001)   // 別名區
+  assert.equal(idx.toDocId(1_500_032), 'mod_凌嘯框架')
+  assert.deepEqual(idx.unshareable, [])
+  assert.equal(idx.size, 3)
+})
+
+test('推導優先於別名 —— 否則改掉 doc id 的號碼會被別名靜默吸收，lock 檔就抓不到回收', () => {
+  // 有人替一份「推得出號碼」的文件也寫了別名：推導值必須贏
+  const idx = buildShareIndex('module', ['mod_4001'], { mod_4001: 1_500_999 })
+  assert.equal(idx.toShareId('mod_4001'), 4001)
+  assert.equal(idx.toDocId(1_500_999), null)
+})
+
+test('別名與推導撞號一樣兩邊都剔除 —— 別名區不享有豁免', () => {
+  // 手工把別名寫成 4001（落在推導區）就會與 mod_4001 相撞
+  const idx = buildShareIndex('module', ['mod_4001', 'mod_4001_2'], { mod_4001_2: 4001 })
+  assert.equal(idx.toDocId(4001), null, '撞號的號碼要整個拿掉')
+  assert.equal(idx.collisions.length, 1)
+  assert.deepEqual([...idx.collisions[0].docIds].sort(), ['mod_4001', 'mod_4001_2'])
+})
+
+test('別名指向不存在的文件 ⇒ 記進 staleAliases，但不 throw、也不算 unshareable', () => {
+  const idx = buildShareIndex('module', ['mod_4001'], { mod_已刪除的東西: 1_500_500 })
+  assert.deepEqual(idx.staleAliases, ['mod_已刪除的東西'])
+  assert.deepEqual(idx.unshareable, [])
+  assert.equal(idx.toDocId(1_500_500), null, '查不到就是「已下架裝備 #n」')
+})
+
+test('別名值超出 varint 上限或非正整數一律當作沒有 —— 不可產生解得開卻指錯的號碼', () => {
+  const bad = { a: SHARE_ID_MAX + 1, b: 0, c: -5, d: 1.5, e: NaN }
+  const idx = buildShareIndex('module', ['a', 'b', 'c', 'd', 'e'], bad)
+  assert.deepEqual(idx.unshareable, ['a', 'b', 'c', 'd', 'e'])
+  assert.equal(idx.size, 0)
+})
+
+test('ALIAS_BASE 高過所有 kind 的推導上限 —— 背包的百萬級推導值是這個門檻的成因', () => {
+  // 實測（2026-08-25）背包最大推導值 1,002,705，模組最大 4,032
+  assert.ok(ALIAS_BASE > 1_002_705, '別名區必須高過背包的推導上限')
+  assert.ok(ALIAS_BASE < SHARE_ID_MAX, '別名區必須還在 varint 3 bytes 內')
 })

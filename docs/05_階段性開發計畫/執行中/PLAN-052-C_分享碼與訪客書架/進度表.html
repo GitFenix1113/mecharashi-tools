@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">1</div>
+      <div class="summary-num" style="color:var(--accent-green)">2</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">10</div>
+      <div class="summary-num" style="color:var(--text-dim)">9</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">1 / 11</span>
+      <span style="color:var(--accent-green);">2 / 11</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 9%"></div>
+      <div class="progress-bar-fill" style="width: 18%"></div>
     </div>
   </div>
 
@@ -212,7 +212,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; shareId 映射與 lock 檔</div>
       <div class="task-group-meta">src/utils/loadoutCode/shareId.ts</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -233,12 +233,13 @@
       <div>
         <div class="task-name">share-id.lock.json ＋ check-share-ids.mjs ＋ 寫進 data-patch 流程</div>
         <div class="task-desc">
-          lock 檔進版控；腳本用既有 <code>serviceAccountKey.json</code> 直讀線上資料，<b>改指即 exit(1)</b>。後台續號改成 <code>max(lock, live)+1</code>。<b>⚠ 必須寫進 data-patch skill 的流程文件（與 bump 版本同一時機）</b>，否則哪天有人「整理流水號」就會炸掉全部存檔與已流出的分享碼。
+          <b>2026-08-26 完成。</b>登錄簿刻意<b>拆成兩個檔，按擁有權而非主題</b>：<code>src/utils/loadoutCode/shareIdRegistry.json</code>（<b>決定</b>：人工別名 ＋ 號碼水位，2KB，會進 bundle）與 <code>share-id.lock.json</code>（<b>觀測</b>：完整推導快照，35KB，前端永不 import）。合成一個檔就得二選一——放 <code>src/</code> 讓 34KB 的推導表進 bundle，或放根目錄讓前端 import 不到（<code>tsconfig.app.json</code> 的 include 只有 <code>src</code>）。<br>腳本用既有 <code>serviceAccountKey.json</code> 直讀線上（只呼叫 <code>listDocuments()</code>，不取內容）。<b>分類即嚴重度</b>：改指／消失／撞號／別名越界／別名 stale → exit 1；<b>純新增 exit 0</b>——每次改版都會新增，讓它每次都紅只會訓練出「無視這支腳本」的習慣，而 lock 落後的降級是溫和的（只有新增那幾筆沒被保護）。<br>後台續號改成 <code>max(shareIdFloor(kind), maxEntitySeq(...)) + 1</code>，水位<b>只增不減</b>——記的是「發過」不是「還在」，刪掉最後一筆不會讓號碼倒退被回收。已寫進 data-patch skill 的標準流程第 5 步與收尾檢查（與 bump 版本同一時機）。
+          <b>別名區裁決（2026-08-26）：指派 41 筆。</b>推導不出號碼的模組有 80 筆，其中落在 052-G 挑選器候選池的 42 筆＝可見池 188 筆的 <b>22%</b>，「配得出來卻分享不了」的比例太高，故開別名區（<code>aliasBase = 1,500,000</code>，高過所有 kind 的推導上限——背包的推導值就落在百萬級，實測最大 1,002,705）。模組可分享數 <b>162 → 203</b>。<br>⚠ 過程中抓到三件資料問題（<b>本輪不修，留給 data-patch</b>）：① <code>MOD_折光陣列</code> 與 <code>mod_折光陣列</code> <b>24 個欄位完全相同</b>，是純重複——只給小寫那筆別名，大寫那筆留在 <code>unshareable</code> 待清；② <code>mod_4030_2</code> 與 <code>mod_4032_2</code> 名稱都是「浮游炮模組Ⅱ」但 <code>icon</code> 分別指向 <code>Icon_entry_40301</code>／<code>40311</code>，<b>是不同模組、名稱被抓錯</b>（<code>mod_4031</code> 正好缺號），兩筆都給號碼；③ 第二型的號碼<b>從 4029 起錯位一格</b>（<code>mod_4029_2</code>＝刀劍模組Ⅱ 卻對應 <code>mod_4030</code>＝刀劍模組Ⅰ），且缺「電鋸模組Ⅱ」。
         </div>
-        <div class="task-file">share-id.lock.json · scripts/check-share-ids.mjs · .claude/skills/data-patch/</div>
+        <div class="task-file">src/utils/loadoutCode/shareIdRegistry.json ＋ .ts · share-id.lock.json · scripts/check-share-ids.mjs（＋14 則測試）· shareId.ts（別名區，＋6 則測試）· Mech／Pilot／WeaponAdmin · .claude/skills/data-patch/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -379,9 +380,9 @@
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">匯出卡重做：1080×1350、印全部 mounts、底部印分享網址</div>
+        <div class="task-name">匯出卡接上分享碼（版面已由 052-I 交付）</div>
         <div class="task-desc">
-          改用 <code>html-to-image</code> 的 <code>toPng</code>（與站上其他三處一致）並<b>移除 <code>html2canvas</code> 依賴</b>；螢幕外固定寬渲染（現行 <code>minWidth:600</code> 在窄螢幕會被裁）；<code>handleExport</code> 補 try/catch ＋ toast；<b>空的區塊一律不渲染</b>（現行卡片印一塊恆空的「可達增益」）；超重時整條轉紅並印「超出出力 N」。
+          <b>⚠ 2026-08-26 修訂：原規格已被 052-I 追過。</b>原文寫「匯出卡重做：1080×1350、印全部 mounts、底部印分享網址」，但 052-I 已交付 <code>LoadoutExportCard.tsx</code>：固定 1000px 寬（<code>pixelRatio: 2</code> 產出 2000×2586、約 3MB、約 0.5 秒）、mounts 全印（空槽與無槽標「未裝備」／「—」）、兩層浮水印、<code>html-to-image</code> 已接、<code>html2canvas</code> 已無任何 import。<br>本工項<b>剩下的實際範圍</b>：把 <code>shareCode</code> 傳進去（元件已預留該 prop，沒值就整欄不印——印佔位字串會有人拿去貼而它解不開）。<b>工程量應由 5–6 天往下修。</b>
         </div>
         <div class="task-file">src/components/loadout/LoadoutExportCard.tsx · package.json</div>
       </div>
