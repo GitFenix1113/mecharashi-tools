@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-D 元件負載與互斥 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-052-D 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-052-D</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    元件負載與互斥<span style="-webkit-text-fill-color:var(--text-secondary);"> · Components · 五條規則 · 同族互斥 · 組合特性</span>
+  </h1>
+  <p class="hero-sub">元件是模擬器最後一塊「明著寫建置中」的功能。全庫 135/182 把武器裝得上元件，而現行版本一條規則都沒有——連 componentLimit 都從未被讀取過。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value cyan">PLAN-052-D</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-26</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">loadoutRules / simReducer / ComponentPanel / codec</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value cyan">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-052-B（模擬器主體）、052-I（面板 UI 規格）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>元件是模擬器最後一塊「明著寫建置中」的功能</strong><br>
+    052-I D-3 已經把元件面板畫出來了，但它<b>唯讀</b>，而且抬頭常駐一條
+    「元件功能建置中」的告示——那不是佔位文案，是當時<b>唯一誠實</b>的呈現方式：
+    可裝／不可裝的規則引擎不存在，給出「加入元件」的入口，玩家按下去要嘛沒反應、
+    要嘛得到一個之後會被推翻的結果。本計畫就是來拆掉那條告示的。
+  </div>
+
+  <div class="problem-block">
+    <strong>舊模擬器的元件層：五條規則一條都沒有</strong><br>
+    總綱決策五盤點的四項缺陷，今天全數仍在（新模擬器只是<b>沒開放</b>元件，不是修好了）：<br>
+    · <code>componentLimit</code> <b>從未被讀取</b> ⇒ 135/182 把武器可以裝到 6 個元件（官方是 4 個槽）<br>
+    · <code>componentsWType</code> 為 W 的元件<b>從未過濾</b> ⇒ W 型元件裝得上任何武器<br>
+    · <code>allowedWeaponTypes</code> 從未過濾<br>
+    · 元件是「整台機甲一組」而非掛在武器上<br>
+    最後一條已由 052-B 的 <code>MountSetup</code> 解掉（元件內嵌在 mount 上），
+    其餘三條加上同族互斥，就是本計畫的<b>五條合法性規則</b>。
+  </div>
+
+  <div class="info-block">
+    <strong>2026-08-26 全庫盤點（直讀正式 Firestore）</strong><br>
+    <table class="impact-table">
+      <tr><th>項目</th><th>實測</th><th>與總綱決策五的對照</th></tr>
+      <tr><td>元件總數</td><td>208 筆（觸 106 ／ 應 102）</td><td><span class="badge-good">相符</span></td></tr>
+      <tr><td>W 型元件</td><td>W 80 ／ Normal 128</td><td><span class="badge-good">相符</span></td></tr>
+      <tr><td>可裝 W 型的武器</td><td>49 把（<code>dualHand</code> 40 ＋ <code>back</code> 22 之中 <code>limit&gt;0</code> 者）</td><td><span class="badge-good">相符</span></td></tr>
+      <tr><td><code>conditionType</code></td><td>always 103 ／ dualWield 3（共 106）</td><td><span class="badge-good">相符 — 確認不可當互斥鍵</span></td></tr>
+      <tr><td><b>族數</b></td><td><b>56 族</b>（觸 28 ＋ 應 28）</td><td><span class="badge-high">總綱寫 28，見決策二</span></td></tr>
+      <tr><td><code>allowedWeaponTypes</code> 部分限定</td><td>7 筆（警戒族 6 筆「射擊」＋ 擴膛 1 筆「突擊」）</td><td><span class="badge-high">總綱說 3 筆漏填，實測已補齊，見決策七</span></td></tr>
+      <tr><td>可裝元件的武器</td><td>135 / 182（SS 49 ＋ S+ 39 ＝ limit 4；S 47 ＝ limit 3）</td><td>—</td></tr>
+      <tr><td>不可裝元件的武器</td><td>47 把（A 23 ＋ B 16 ＋ <b>固定武裝 8</b>）</td><td><span class="badge-high">固定武裝這一項見決策四</span></td></tr>
+      <tr><td><code>triggerSlots</code> ／ <code>effectSlots</code></td><td><code>limit&gt;0</code> 時恆為 3／3；<code>limit=0</code> 時恆為 0／0（0 例外）</td><td>—</td></tr>
+    </table>
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 為什麼元件層的 bug 特別難被發現</strong><br>
+    元件<b>藏在面板裡</b> —— 要點開右欄的武器列、再鑽進元件面板才看得到。
+    武器裝錯了槽位圖上看得出來，重量算錯了出力條會變色，<b>但元件被靜默移除或超裝，
+    畫面上一點事都沒有</b>。這條性質決定了本計畫的兩個設計：
+    元件被級聯移除<b>必須進 toast</b>（決策九），以及規則層在資料未載入時
+    <b>寧可整段跳過驗證，也不可「查不到就刪」</b>（決策六）。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label cyan">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：同族互斥的判定範圍 ＝ 單把武器內</strong>（使用者裁決 2026-08-26）<br>
+    一把武器上「觸元件W-憑逸」與「觸元件-憑逸」不能並存；但<b>右手裝憑逸、左手也裝憑逸是可以的</b>。<br>
+    理由三條：① <code>componentLimit</code> 是<b>武器</b>的屬性，其餘四條規則全是單武器範圍，
+    互斥獨自跨武器會讓五條規則分屬兩個作用域；② 官方「組合特性」面板是<b>逐武器</b>的；
+    ③ 元件是可重複掉落的道具，同族 S／A／B 三階本來就並存於資料。<br>
+    <b>工程上的回報</b>：<code>canEquipComponent()</code> 只需要看
+    <code>mount.setup</code> 這一個物件，不必掃全套 mounts，也不必在面板每一列標
+    「已裝在右手」—— 那一層 UI 完全不用做。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：族數是 56 不是 28 —— CI 守門測試的斷言要照這個寫</strong><br>
+    總綱決策五寫「斷言 208 筆推出 28 族」。實測是<b>觸 28 族 ＋ 應 28 族 ＝ 56 族</b>，
+    總綱那個數字是<b>其中一半</b>。分佈：24 族有 6 筆（W／Normal × S／A／B）、
+    12 族有 3 筆（僅 Normal × S／A／B）、8 族有 2 筆（W／Normal 各一，皆 S）、12 族只有 1 筆
+    —— 24×6 ＋ 12×3 ＋ 8×2 ＋ 12×1 ＝ <b>208</b>，24＋12＋8＋12 ＝ <b>56</b>，兩邊都對得起來。<br>
+    另外三條實測結論讓 <code>componentFamilyKey()</code> 可以寫得很簡單：<br>
+    · 命名 <b>208 / 208 筆</b>全部吻合「觸元件｜應元件 ＋ 選配的 W ＋ 連字號 ＋ 後綴」，0 例外<br>
+    · 觸與應<b>沒有共用任何一個後綴</b>（0 筆）⇒ 後綴本身就足以區分，但
+      <code>familyKey</code> 仍<b>帶上觸／應前綴</b> —— 今天不需要，
+      而官方哪天出一顆同名的應元件時，不帶前綴的版本會靜默把兩族併成一族。<br>
+    · 觸元件的 <b>28 族與 <code>condition</code> 文字完全雙射</b>（沒有一族有兩種 condition、
+      也沒有一句 condition 跨兩族），總綱要的那條守門斷言成立。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：<code>componentFamilyKey()</code> 單一入口，互斥不落 Firestore 欄位</strong>（總綱決策五，重申）<br>
+    判準既然就是名稱，落一個 <code>familyKey</code> 欄位只是把同一件事寫第二遍，
+    改名時兩份會靜默不同步。改做純函式 ＋ <b>CI 守門測試</b>，斷言三條：
+    208 筆全部推得出族、族數恰為 56、觸元件的族與 condition 雙射。
+    任何一條掛掉就是官方改了命名規則，那時該修的是這支函式，而不是資料。<br>
+    <span class="badge-high">⚠</span> <code>conditionType</code> <b>絕對不可</b>當互斥鍵 ——
+    106 個觸元件裡 always 佔 103 筆，用它會讓玩家永遠只能裝一顆觸元件。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：不可更換的武器一律不可裝元件 —— 而這讓內嵌設計毫無破口</strong><br>
+    全部 8 筆固定武裝（機甲部件焊死的 3 筆：衝擊炮／嵐質儲能艙／多功能彈倉；
+    全鎖形態的 5 筆：耀星／隕星／千星／幽弧／夜燼）<b>componentLimit 全部為 0</b>，8／8 無例外
+    —— 雖然它們都是 S 品質，而 S 品質武器的標準值是 3。也就是說<b>資料層已經把這條規則寫死了</b>，
+    程式只要照讀 <code>componentLimit</code> 就自動正確。<br>
+    <b>連帶的重要結論</b>：能裝元件的武器 <b>100% 都在 <code>draft.sets[].mounts</code> 裡</b>。
+    於是總綱決策十二擔心的那件事 ——「元件的 key 必須掛在三段式 <code>mountKey</code>，
+    否則主手左手與備用左手會撞 key、兩把武器的元件互相覆蓋」——<b>在 052-B 選擇把
+    <code>setup</code> 內嵌在 mount 上時就已經消解了</b>：根本沒有旁掛表，也就沒有 key 可撞。
+    同理「刪格時務必連元件 key 一起刪」也自動成立（刪 mount ＝ 連 setup 一起刪），
+    而 <code>placeWeapon()</code> 建立新 mount 時<b>不帶 setup</b>，換武器自動清元件。<br>
+    <span class="badge-med">順修</span> <code>src/utils/loadoutRows.ts</code> 的
+    <code>locked</code> 欄位註解寫著「兩者都仍可換元件」—— 那是 052-I 當時的假設，
+    被這次盤點推翻，要一起改掉（<code>ComponentPanel</code> 的呈現本來就是對的）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：<code>conditionType</code> 不參與可裝性判定，也不做「不會觸發」提示</strong><br>
+    106 個觸元件只有兩種 conditionType：always 103 筆、dualWield 3 筆（觸元件-共力 S／A／B，
+    condition 文字「同時使用兩把武器攻擊時」）。<br>
+    dualWield 看起來像是配裝層判得出來的（左右手都有武器 ＝ 雙持），<b>但它不是</b>：
+    「同時使用兩把武器攻擊」是戰鬥中的一個<b>出手指令</b>，不是「裝了兩把武器」這個狀態。
+    配裝層判不了，猜了就會出現「站上說不會觸發、遊戲裡卻觸發了」。<br>
+    ⇒ 本輪對 3 筆 dualWield 元件<b>不擋、不灰、不加註</b>，與其餘 103 筆一視同仁。
+    條件求值屬傷害計算範疇（總綱已劃出本計畫之外）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：<code>components</code> 進 <code>equip</code> 階段；未載入時整段跳過驗證</strong><br>
+    規則層要驗證元件就得認得元件，所以 <code>LoadoutWorld</code> 必須納入
+    <code>components</code>，而 <code>useLoadoutGameData</code> 的
+    <code>equip</code> 階段是它自然的落點（那時已經有武器了）。代價是首次進到配裝階段
+    多讀 208 筆 —— 與 <code>weapons</code> 182 筆同量級，且走 localStorage 版本快取，重訪 0 read。
+    <code>ComponentPanel</code> 隨之改吃 <code>world.components</code>，不再自己
+    <code>useComponents()</code>（同一份資料兩個載入路徑必然有一次是多餘的）。<br>
+    <span class="badge-high">⚠ 這是本計畫最危險的一條</span>
+    <code>reconcile()</code> 對武器的作法是「<b>查不到就刪</b>」（理由寫「武器資料已不存在」）。
+    元件<b>絕對不可</b>照抄：載入是非同步的，草稿可能在 <code>components</code> 到齊之前
+    就被 <code>loadDraft</code> 灌進來（分享碼、localStorage 書架、052-E 的雲端存檔都走這條），
+    照抄的症狀是<b>貼一次分享碼、元件就被靜默清空一次</b>，而畫面上什麼都不會說。
+    ⇒ <code>components</code> 尚未載入時，元件驗證<b>整段跳過</b>，原樣保留。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：<code>allowedWeaponTypes</code> 的漏填已經補好了 —— 本計畫只要照讀</strong><br>
+    總綱決策五寫「觸元件W-警戒 3 筆是漏填，要補『射擊』限定」。2026-08-26 實測：
+    <b>該補的都補了</b>。目前 7 筆有部分限定，且左右對稱：<br>
+    · 警戒族 <b>6 筆全部</b>限定「射擊」（W 版 <code>comp_0072</code> ／ <code>comp_0073</code> ／
+      <code>comp_0074</code> ＋ Normal 版 <code>comp_0200</code> ／ <code>comp_0201</code> ／ <code>comp_0202</code>）<br>
+    · 應元件-擴膛 1 筆限定「突擊」（該族只有這 1 筆，無 W 變體）<br>
+    其餘 201 筆的 <code>allowedWeaponTypes</code> 長度為 <b>4</b>（＝後台「全選」的形狀，等於不限）。
+    ⇒ 判定式沿用 052-I <code>componentBlockReason()</code> 已經寫對的那條：
+    <b>空陣列或長度大於等於全部種類數，都視為不限</b>。本計畫<b>不需要任何資料補丁</b>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策八：分項上限讀欄位，不寫死 3</strong><br>
+    實測 <code>limit&gt;0</code> 的 135 把武器，<code>triggerSlots</code> 與
+    <code>effectSlots</code> <b>恆為 3</b>（0 例外），寫死也不會錯。但欄位既然存在就該讀它
+    —— 寫死 3 的版本在官方哪天出一把「觸 4 應 2」的武器時，會<b>安靜地擋掉合法配置</b>，
+    而那種 bug 沒有人會回報，因為玩家只會以為自己記錯了。<br>
+    三條數量規則因此是：
+    觸數不超過 <code>triggerSlots</code>、應數不超過 <code>effectSlots</code>、
+    <b>兩者相加不超過 <code>componentLimit</code></b> —— <b>總數才是真正的牆</b>
+    （4 個槽不是「觸 3 ＋ 應 3 ＝ 6」）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策九：元件被級聯移除必須進 toast（<code>RemovedItem</code> 開第三種 kind）</strong><br>
+    這與 052-I 對算力的處理<b>刻意相反</b>：算力被修正時面板上的方格會就地變樣、玩家看得到，
+    所以它不進 <code>removed</code>；<b>元件不會</b> —— 它藏在要點兩層才看得到的面板裡。
+    換一把武器就靜默丟掉四顆元件而不吭一聲，是這一層最容易出的客服問題。<br>
+    ⇒ <code>RemovedItem.kind</code> 增加 <code>component</code> 這一種，
+    <code>where</code> 欄位填「右手 叢林之災」（掛在哪一把上），
+    <code>why</code> 填具體原因。<b>[復原] 一併涵蓋</b>（undo 存的是整份草稿快照，本來就涵蓋）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十：新增 6 個拒絕碼，沿用既有的四層呈現</strong><br>
+    元件不另造一套拒絕模型，直接擴充 <code>REJECTION_CODES</code> ／ <code>REJECTION_TIER</code> ／
+    <code>REJECTION_LABEL</code>（三張表由 <code>satisfies</code> 綁在一起，漏一個 tsc 就擋）：
+    <table class="impact-table">
+      <tr><th>代碼</th><th>層級</th><th>時機</th><th>呈現</th></tr>
+      <tr><td><code>COMP_NO_SLOTS</code></td><td>blocked</td><td>這把武器 <code>componentLimit</code> 為 0（A／B 品質 39 把 ＋ 固定武裝 8 把）</td><td>整個面板降級說明，不給空清單</td></tr>
+      <tr><td><code>COMP_W_TYPE</code></td><td>structural</td><td>W 型元件裝到非 <code>dualHand</code> ／ <code>back</code> 武器</td><td>摺疊 ＋ 計數「僅雙手／背部 80」</td></tr>
+      <tr><td><code>COMP_WEAPON_TYPE</code></td><td>structural</td><td><code>allowedWeaponTypes</code> 不含這把武器的 <code>type</code></td><td>摺疊 ＋ 計數（沿用 052-I 已寫好的中文句）</td></tr>
+      <tr><td><code>COMP_SLOTS_FULL</code></td><td>situational</td><td>觸 ＋ 應已達 <code>componentLimit</code></td><td>灰掉 ＋ 原因 ＋ 解法按鈕</td></tr>
+      <tr><td><code>COMP_KIND_FULL</code></td><td>situational</td><td>該類（觸／應）已達自己的 slots</td><td>灰掉 ＋ 原因 ＋ 解法按鈕</td></tr>
+      <tr><td><code>COMP_FAMILY</code></td><td>situational</td><td>同族已裝一顆（決策一：單把武器內）</td><td>灰掉 ＋「已裝觸元件W-憑逸」＋ 解法按鈕</td></tr>
+    </table>
+    <span class="badge-high">⚠</span> 三個 situational 的解法按鈕，需要
+    <code>ResolutionAction</code> 增加一種「卸下某一把武器上的某顆元件」的動作。
+    <code>rejectSituational()</code> 的簽章逼你附解法，所以漏不掉 —— 但要留意
+    052-J 收尾時記下的那筆懸案：<b>現行三處解法按鈕的文案都寫「卸下 X 並裝上」，
+    而 resolve 只送 unequip，實際不會接著裝上</b>。
+    本計畫的三個新按鈕<b>照實寫「卸下 X」</b>，不製造第四、五、六筆同樣的落差。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 邊界情況清單（測試要一條一條釘住）</strong><br>
+    · <b>雙手武器</b>：一把佔兩格，但元件只有一組（<code>mounts</code> 只有一筆）——
+      面板不可出現兩次，<code>weaponRows()</code> 已用 <code>rowKey</code> 去重，本計畫只要不破壞它<br>
+    · <b>主手／備用同一把武器</b>：兩個 bank 各一筆 mount，元件<b>各自獨立</b>（決策一是「單把武器」＝單筆 mount）<br>
+    · <b>換武器</b>：<code>placeWeapon()</code> 不帶 setup ⇒ 元件自動清空。要有測試釘住，
+      否則哪天有人為了「換同型武器保留配置」加一行，就會變成靜默繼承<br>
+    · <b>換機甲／換機師</b>：mount 整批失效時 setup 跟著走，不需要額外級聯<br>
+    · <b>形態分頁</b>：海莉絲三套各自的元件互不影響（sets 本來就是分開的）<br>
+    · <b>分享碼 round-trip</b>：codec v1 的元件段已就緒（觸數 1 byte ＋ 應數 1 byte ＋ 各自的號碼，
+      <code>LIMITS.componentsPerKind</code> 為 8），本計畫要補的是<b>測試</b>而不是格式<br>
+    · <b>元件 doc 消失</b>（後台刪除）：decode 已標 <code>unresolved</code> 不 throw；
+      reconcile 要在 <code>components</code> <b>確實載入</b>的前提下才移除（決策六）
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label cyan">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>componentFamilyKey()</code> 純函式 ＋ CI 守門測試（208 筆 → 56 族 ＋ condition 雙射）</li>
+      <li><code>canEquipComponent()</code>：五條規則、6 個拒絕碼、三個帶解法的 situational</li>
+      <li><code>LoadoutWorld</code> 納入 <code>components</code>；<code>equip</code> 階段載入；未載入時跳過驗證</li>
+      <li>reducer 動作 <code>equipComponent</code> ／ <code>unequipComponent</code>，走同一支 <code>reconcile()</code></li>
+      <li><code>RemovedItem</code> 增加 <code>component</code> kind，元件被移除進 toast 與 [復原]</li>
+      <li><code>ComponentPanel</code> 由唯讀改為可操作（拆掉「建置中」告示），沿用 052-I 的版面規格</li>
+      <li><code>WeaponComponentList</code> 列上顯示已裝元件與 <code>⚙ n / N</code> 實數</li>
+      <li><b>組合特性預覽</b>：觸 × 應的配對關係與各自 Lv（機率欄位標「待建檔」，不猜值）</li>
+      <li>分享碼 round-trip 測試<b>補到元件層</b>（總綱決策十二點名 052-D 的第一件事）</li>
+      <li>匯出長圖印出元件（<code>SheetRow.componentIds</code> 已留欄位，052-D 之前恆為空）</li>
+      <li><span class="badge-med">順修</span> <code>PREFIX_END</code> 目前是空字串，
+        使後台元件搜尋<b>恆 0 筆</b>（name 大於等於 term 且 name 小於 term 是空集合）——
+        而本計畫的驗收必然要在後台核對元件</li>
+      <li><span class="badge-med">順修</span> <code>loadoutRows.ts</code> 的
+        「固定武裝與形態鎖定武裝仍可換元件」錯誤註解（決策四）</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>觸發機率表（Lv → %）</b>的樣本蒐集與反推，以及「同一個應元件被多個觸元件觸發不疊加」
+        的期望值公式 —— 總綱 2026-08-25 再確認「以後再補」，本輪組合特性只出 Lv 與配對關係</li>
+      <li><b>條件求值</b>（觸元件成不成立）：屬傷害計算計畫</li>
+      <li><b>元件「擁有」限制</b>：與混搭部件同一裁決，不做庫存</li>
+      <li><b>模組接口槽</b>：052-G 第一階段（元件與模組共用 <code>kind</code> 聯集的槽位定址，
+        但兩者各自出貨）</li>
+      <li><b>元件掉落來源</b>：站上已有元件掉落總表（PLAN-027），面板只連過去不重做</li>
+      <li><code>SlotRef</code> 擴成 <code>kind</code> 聯集（總綱決策十二）：<b>元件用不到</b> ——
+        它內嵌在 mount 上、不需要自己的座標。那項型別擴充是<b>模組</b>的前置，隨 052-G 一起做</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label cyan">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-052-D 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-052_配裝模擬器改版_總綱/計畫書.html">
+      <div class="doc-tag">Master</div>
+      <h4>◆ PLAN-052 總綱</h4>
+      <p>決策五（元件五條規則）與決策十二（版面落點）的出處</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-052-I_配裝模擬器視覺改版/計畫書.html">
+      <div class="doc-tag">UI 規格</div>
+      <h4>◆ PLAN-052-I</h4>
+      <p>元件面板的版面規格與唯讀版本（本計畫接手它）</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-052-C_分享碼與訪客書架/計畫書.html">
+      <div class="doc-tag">Codec</div>
+      <h4>◆ PLAN-052-C</h4>
+      <p>分享碼 codec v1 的元件段（格式已就緒，本計畫補測試）</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-D — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
