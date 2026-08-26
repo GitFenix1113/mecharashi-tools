@@ -144,7 +144,7 @@
     <span>›</span>
     <a href="../../index.html">階段性開發計畫</a>
     <span>›</span>
-    <a href="../index.html">執行中</a>
+    <a href="../index.html">歷史記錄</a>
     <span>›</span>
     <span class="current">PLAN-052-C 進度表</span>
   </div>
@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">7</div>
+      <div class="summary-num" style="color:var(--accent-green)">11</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">4</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,14 +187,18 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">7 / 11</span>
+      <span style="color:var(--accent-green);">11 / 11</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 64%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
   <div class="impact-note">
+    <strong>✅ 已完成（2026-08-26，11 / 11）：</strong>
+    分享碼、貼碼、網址讀寫、訪客書架、匯出圖分享碼全數上線，<b>MVP 三塊（052-A ＋ B ＋ C）到齊</b>。
+    驗收條件全數通過：round-trip 一萬份深等於、模糊測試一萬次翻轉攔截率 &gt; 99%、golden fixture 六案例雙向釘住、全量 shareId 對帳零撞號。
+    <br><br>
     <strong>目標效果：</strong>
     網友可以<b>把配裝存在自己的瀏覽器（10 套）</b>，並<b>複製一串連結貼給別人，對方點開直接看到同一套配裝</b>。完全不需要註冊、不碰 Firestore 寫入、不動 Cloudflare 後台。<b>這是 MVP 的最後一塊</b> —— 完成後「網友敲碗的配裝分享」就算兌現。
   </div>
@@ -339,29 +343,37 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 訪客本機書架</div>
       <div class="task-group-meta">src/lib/localBuilds.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">localStorage 書架 10 套（不分機師）＋ 自動草稿</div>
         <div class="task-desc">
-          只存代碼字串。<b>UI 文案與登入者的「每機師 5 套」分開寫</b>。每張卡有「複製代碼」當人工備份出口，並明講「未登入的配裝只存在這台裝置」。
+          只存代碼字串。<b>UI 文案與登入者的「每機師 5 套」分開寫</b>。每張卡有「複製代碼」當人工備份出口，並明講「未登入的配裝只存在這台裝置」。<br>
+          <b>2026-08-26 完成。</b>真的<b>只存代碼字串</b>（外加一個 <code>savedAt</code>）——卡片上的名稱／機師／機甲／幾把武器全部當場解出來，沒有第二個真相源。<b>自動草稿維持存結構化草稿、不改存代碼</b>：推導不出號碼的裝備會被編成 0（空格），草稿存成代碼等於下一次重整就靜默弄丟玩家自己配上去的背包；書架是「我要留著的成品」，代價換得起，草稿不行。<br>
+          <b>同一串代碼只佔一格</b>（就地更新時間並移到最前）：不去重的話，連按兩下就會把配額吃成十張一模一樣的卡。<b>滿了一律拒絕、不淘汰最舊的那一筆</b>——「我明明存過」是這個功能最不能出現的一句話。<br>
+          ⚠ <b>入口改成一顆「書架 N/10」</b>，存入鍵在對話框裡而不是底部固定列：那一列在超重時已有四顆，C-1 實測 390px ＋「大」字級下只剩 56px 餘裕，第五顆會擠爆；而配額只有在對話框裡看得到——存不進去的那一刻，答案就在同一個畫面上。<br>
+          ⚠ <b>每張卡的備份出口給的是「複製連結」不是裸碼</b>（與計畫書原文的「複製代碼」不同）：理由同 C-1——base64url 含 <code>_</code>，Discord 的 <code>_斜體_</code> 會把裸碼中間的底線吃掉；連結裡就包著同一串碼，備份效力相同而貼到哪都不會壞。與抬頭那顆共用同一支 <code>copyLinkFor()</code>。
         </div>
-        <div class="task-file">src/lib/localBuilds.ts · .test.ts</div>
+        <div class="task-file">src/lib/localBuilds.ts · .test.ts（17 則測試）· LocalShelfDialog.tsx · LoadoutPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">失效三態（ok／degraded／broken）</div>
         <div class="task-desc">
-          部分裝備下架 → 缺的格留空並顯示「已下架裝備 #181」佔位卡；機師或機甲不存在 → 只能檢視、匯出代碼、刪除。<b>永不自動刪除、也永不自動修復。</b>
+          部分裝備下架 → 缺的格留空並顯示「已下架裝備 #181」佔位卡；機師或機甲不存在 → 只能檢視、匯出代碼、刪除。<b>永不自動刪除、也永不自動修復。</b><br>
+          <b>2026-08-26 完成。</b><code>classifyBuild()</code> 三態：全在＝<code>ok</code>；少數裝備查不到＝<code>degraded</code>（照樣可套用，卡片列出「已下架 #181、#204」）；<b>機師或機甲不在了＝<code>broken</code>，套用鍵停用</b>——沒有機師的配裝套用後只會得到一個空模擬器，而使用者會以為是自己按錯。代碼結構性損毀也歸 <code>broken</code>，直接印解碼器自己的中文說明。<br>
+          <b>刪除是兩段式的</b>（點一下變成「刪掉就找不回來了，確定嗎？」），與貼碼對話框「不加第二層確認」的取捨相反、理由也相反：套用只是覆蓋掉手上這一套，刪除是永久的。<br>
+          ⚠ <b>實測抓到兩個會誤報成「全毀」的 bug，已修</b>：① 對話框開啟時把載入階段推到 <code>equip</code>——只載了 pilots 的時候，每一筆存檔的機甲都會被判成「查不到」，新訪客打開書架會看到十套全紅；載入未完成期間一律顯示「載入遊戲資料中…」而不判三態。② 同一批把<b>編碼</b>也擋在 <code>loading</code> 之後（複製連結／匯出圖／存入）：在「機甲已載入、武器還沒」的那一瞬編出來的碼是一套<b>沒有武器</b>的配裝，而它看起來完全正常、貼給別人也解得開。<br>
+          ⚠ 另修兩個版面問題（瀏覽器 390px 實測）：對話框開著時<b>不再自動彈出機師挑選器</b>（手機版它是 BottomSheet，會整片蓋在書架上，而那正是新訪客最可能按書架的時機）；兩個對話框改 <code>z-[60]</code>——底部 Tab Bar 與 BottomSheet 都是 z-50 且在 DOM 裡更後面。
         </div>
-        <div class="task-file">src/lib/localBuilds.ts</div>
+        <div class="task-file">src/lib/localBuilds.ts · LocalShelfDialog.tsx · PasteCodeDialog.tsx · LoadoutPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -376,29 +388,33 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 匯出圖與站名常數</div>
       <div class="task-group-meta">src/components/loadout/LoadoutExportCard.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">匯出卡接上分享碼（版面已由 052-I 交付）</div>
         <div class="task-desc">
-          <b>⚠ 2026-08-26 修訂：原規格已被 052-I 追過。</b>原文寫「匯出卡重做：1080×1350、印全部 mounts、底部印分享網址」，但 052-I 已交付 <code>LoadoutExportCard.tsx</code>：固定 1000px 寬（<code>pixelRatio: 2</code> 產出 2000×2586、約 3MB、約 0.5 秒）、mounts 全印（空槽與無槽標「未裝備」／「—」）、兩層浮水印、<code>html-to-image</code> 已接、<code>html2canvas</code> 已無任何 import。<br>本工項<b>剩下的實際範圍</b>：把 <code>shareCode</code> 傳進去（元件已預留該 prop，沒值就整欄不印——印佔位字串會有人拿去貼而它解不開）。<b>工程量應由 5–6 天往下修。</b>
+          <b>⚠ 2026-08-26 修訂：原規格已被 052-I 追過。</b>原文寫「匯出卡重做：1080×1350、印全部 mounts、底部印分享網址」，但 052-I 已交付 <code>LoadoutExportCard.tsx</code>：固定 1000px 寬（<code>pixelRatio: 2</code> 產出 2000×2586、約 3MB、約 0.5 秒）、mounts 全印（空槽與無槽標「未裝備」／「—」）、兩層浮水印、<code>html-to-image</code> 已接、<code>html2canvas</code> 已無任何 import。<br>本工項<b>剩下的實際範圍</b>：把 <code>shareCode</code> 傳進去（元件已預留該 prop，沒值就整欄不印——印佔位字串會有人拿去貼而它解不開）。<br>
+          <b>2026-08-26 完成。</b>碼在 <code>LoadoutPage</code> 編、當作 prop 傳進去，<b>不在元件裡編</b>——encode 要六個集合的 shareId 索引，把它們拉進來等於讓一張圖的版面依賴整份遊戲資料。與「複製分享連結」共用同一支 <code>encodeCurrent()</code>，因此圖上的碼與複製到的連結<b>必然是同一串</b>；<code>gameVersion</code> 兩邊也同源（<code>usePatchVersions</code> 的 <code>isTwCurrent</code>），否則圖上印的版本與碼裡編的版本會漂移。<b>只在 <code>exporting</code> 為真時才編</b>：每改一格配裝就重編一次是白工。編不出來（超出上限／認不得的槽位）回 <code>null</code> ⇒ 那一欄整個不印，不讓整頁掛掉。<br>
+          ⚠ <b>版面改了一處</b>：分享碼<b>不放</b> GENERATED 旁邊的小欄位，改成 footer 底下<b>整寬一條</b>。理由是碼是變長的（典型 36、含元件與算力 79、三套 119 字元）而卡片固定 1000px 寬——放右欄的話 79 字元起就會把左邊的站名浮水印擠出畫面，而那正是這張圖存在的理由。整寬 ＋ <code>break-all</code> 自己折行，卡片高度跟著長，任何長度都不壓到別的東西。
         </div>
-        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx · package.json</div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx · src/pages/simulator/LoadoutPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">SITE_NAME 收成單一常數</div>
         <div class="task-desc">
-          現行站名硬編<b>全站第 5 份</b>（Layout ×2、index.html ×3、ConnectivityPage、SimulatorPage）。收進 <code>src/lib/siteMeta.ts</code> 並用測試綁住 Worker 那一份。
+          現行站名硬編<b>全站第 5 份</b>（Layout ×2、index.html ×3、ConnectivityPage、SimulatorPage）。收進 <code>src/lib/siteMeta.ts</code> 並用測試綁住 Worker 那一份。<br>
+          <b>2026-08-26 完成。</b>常數 <code>SITE_NAME</code>／<code>SITE_NAME_EN</code>／<code>SITE_TITLE</code>／<code>SITE_ORIGIN</code>／<code>SITE_DOMAIN</code>，收掉 src 內 6 處硬編（Layout ×2、LoadoutExportCard ×3——含匯出圖抬頭與網域浮水印、ConnectivityPage、HomePage）。<br>
+          <b>兩份 import 不到、只能用測試綁</b>：<code>index.html</code>（爬蟲讀的是原始 HTML，og:* 必須寫死）與 <code>workers/src/socialPreview.ts</code>（Cloudflare 獨立 bundle，同 <code>collectionKeys.test.ts</code> 的處境）。另加一則<b>反向守衛</b>：掃過整個 <code>src/</code>，再出現硬編站名就失敗並指名檔案——否則這個常數會在下一個新頁面上被重新硬編一次，而那正是這次要修的東西。
         </div>
-        <div class="task-file">src/lib/siteMeta.ts</div>
+        <div class="task-file">src/lib/siteMeta.ts · .test.ts（4 則測試）· Layout · HomePage · ConnectivityPage · LoadoutExportCard</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -406,7 +422,7 @@
 </main>
 
 <footer class="footer">
-  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-C — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-C — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 歷史記錄</a>
 </footer>
 
 </body>

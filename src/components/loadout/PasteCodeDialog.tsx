@@ -12,9 +12,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { LoadoutDraft } from '../../types/loadout'
 import type { LoadoutWorld } from '../../utils/loadoutRules'
-import { decodeLoadout, type ShareIndexes, type DecodeResult, type UnresolvedRef } from '../../utils/loadoutCode/codec'
+import { decodeLoadout, type ShareIndexes, type DecodeResult } from '../../utils/loadoutCode/codec'
 import { readShareCode } from '../../utils/loadoutCode/shareLink'
-import { HUD_PANEL } from './loadoutTheme'
+import { HUD_PANEL, SHARE_KIND_LABEL } from './loadoutTheme'
 
 interface Props {
   /**
@@ -24,6 +24,12 @@ interface Props {
    *   卸載即歸零 —— 不必寫任何清理程式碼，也不可能忘記清哪一個欄位。
    */
   onClose: () => void
+  /**
+   * 遊戲資料還在載入。**為真時一律不給套用**：索引還不完整，`decodeLoadout()` 會把
+   * 還沒載到的集合全部判成「查不到」，套用出去的是一套沒有武器的配裝——而畫面上
+   * 看起來只是「這串代碼裡有東西下架了」。
+   */
+  loading?: boolean
   indexes: ShareIndexes
   world: LoadoutWorld
   onApply: (draft: LoadoutDraft) => void
@@ -36,12 +42,7 @@ interface Props {
   onReload?: () => void
 }
 
-const KIND_LABEL: Record<UnresolvedRef['kind'], string> = {
-  pilot: '機師', mech: '機甲', weapon: '武器',
-  component: '元件', backpack: '背包', module: '模組',
-}
-
-export function PasteCodeDialog({ onClose, indexes, world, onApply, onCheckStale, onReload }: Props) {
+export function PasteCodeDialog({ onClose, loading, indexes, world, onApply, onCheckStale, onReload }: Props) {
   const [raw, setRaw] = useState('')
   /**
    * 版本檢查的結果，**連同它是針對哪一串輸入算的**一起存。
@@ -88,12 +89,14 @@ export function PasteCodeDialog({ onClose, indexes, world, onApply, onCheckStale
   }, [result, world])
 
   const apply = useCallback(() => {
+    if (loading) return
     if (result?.ok) { onApply(result.draft); onClose() }
-  }, [result, onApply, onClose])
+  }, [loading, result, onApply, onClose])
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      // ⚠ z-[60]：手機底部 Tab Bar 與 BottomSheet 都是 z-50，而它們在 DOM 裡更後面
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div role="dialog" aria-modal="true" aria-label="貼上分享碼" className={`${HUD_PANEL} w-full max-w-lg p-4 sm:p-5`}>
@@ -140,7 +143,13 @@ export function PasteCodeDialog({ onClose, indexes, world, onApply, onCheckStale
               </div>
             </div>
 
-            {unresolvedCount > 0 && (
+            {loading && (
+              <p className="hud-cut-sm border border-border bg-bg-dark px-3 py-2 text-[12px] text-text-dim leading-relaxed">
+                遊戲資料還在載入，先不能套用（現在算出來的「查不到」不作數）。
+              </p>
+            )}
+
+            {!loading && unresolvedCount > 0 && (
               <div className="hud-cut-sm border border-accent-yellow/40 bg-accent-yellow/5 px-3 py-2 text-[12px] text-text-secondary leading-relaxed">
                 {stale === true ? (
                   <>
@@ -159,7 +168,7 @@ export function PasteCodeDialog({ onClose, indexes, world, onApply, onCheckStale
                 ) : (
                   <>
                     有 {unresolvedCount} 項裝備在站上查不到（
-                    {[...new Set(result.unresolved.map((u) => KIND_LABEL[u.kind]))].join('、')}
+                    {[...new Set(result.unresolved.map((u) => SHARE_KIND_LABEL[u.kind]))].join('、')}
                     ），套用後那幾格會是空的。其餘內容都會照樣載入。
                   </>
                 )}
@@ -185,7 +194,7 @@ export function PasteCodeDialog({ onClose, indexes, world, onApply, onCheckStale
           <button
             type="button"
             onClick={apply}
-            disabled={!result?.ok}
+            disabled={!result?.ok || loading}
             className="hud-cut-sm text-[12px] px-3 py-1.5 border border-accent-cyan/50 bg-accent-cyan/10 text-accent-cyan hover:bg-accent-cyan/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             套用這套配裝

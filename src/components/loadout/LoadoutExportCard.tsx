@@ -9,6 +9,7 @@ import { resolveNeuralDriveLevel } from '../../utils/neuralDriveAbilities'
 import type { LoadoutBudget, LoadoutContext } from '../../utils/loadoutRules'
 import { SEG_LABEL, type SegKey } from './loadoutTheme'
 import { usePatchVersions } from '../../hooks/usePatchVersions'
+import { SITE_DOMAIN, SITE_NAME, SITE_TITLE } from '../../lib/siteMeta'
 
 // ─── 匯出配裝長圖（PLAN-052-I E-2）──────────────────────────────────────────
 //
@@ -72,8 +73,11 @@ export interface LoadoutExportCardProps {
   /** 遊戲版本（如 `3.3`）。取不到時傳 undefined，該欄整個不印 */
   gameVersion?: string
   /**
-   * 分享碼。**052-C 未完成前一律傳 undefined，該欄整個不印**（計畫書 E-3）——
+   * 分享碼（`encodeLoadout()` 的產物）。**沒值時該欄整個不印**——
    * 印一個佔位字串會讓人拿去貼，而它解不開。
+   *
+   * ⚠ 由呼叫端編好傳進來，不在這裡編：這個元件是純渲染，而 encode 需要六個集合的
+   *   shareId 索引，把它們拉進來等於讓一張圖的版面依賴整份遊戲資料。
    */
   shareCode?: string
 }
@@ -147,7 +151,7 @@ export function LoadoutExportCard({
         <div style={{ position: 'absolute', right: 24, top: 20, display: 'flex', alignItems: 'center', gap: 9 }}>
           <span style={{ fontFamily: ORB, fontSize: 13, fontWeight: 900, letterSpacing: 2, color: C.orange }}>MILKHAMA</span>
           <span style={{ width: 1, height: 15, background: C.lineStrong }} />
-          <span style={{ fontSize: 13, fontWeight: 700, color: C.sub }}>米赫瑪超吉情豹站</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.sub }}>{SITE_NAME}</span>
         </div>
 
         <div style={{
@@ -302,35 +306,53 @@ export function LoadoutExportCard({
 
       {/* ── 浮水印 footer ── */}
       <div style={{
-        position: 'relative', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 20,
-        padding: '18px 24px', background: 'linear-gradient(90deg, #14161d, #0a0c10 62%)',
+        position: 'relative', flexShrink: 0,
+        background: 'linear-gradient(90deg, #14161d, #0a0c10 62%)',
         borderTop: `2px solid ${C.orange}`, overflow: 'hidden',
       }}>
-        {/* 底噪 wordmark：截圖被裁掉 footer 時仍留下一層來源痕跡 */}
-        <div style={{
-          position: 'absolute', right: -20, top: -34, fontFamily: ORB, fontSize: 84, fontWeight: 900,
-          letterSpacing: 8, color: 'rgba(255,255,255,0.032)', whiteSpace: 'nowrap',
-        }}>MILKHAMA</div>
-        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <span style={{ fontFamily: ORB, fontSize: 15, fontWeight: 900, letterSpacing: 1, color: C.orange }}>
-            mecharashi.wiki
-          </span>
-          <span style={{ fontSize: 12, color: C.sub }}>米赫瑪超吉情豹站 — Milkhama PawInfo Station · 配裝模擬器</span>
-          <span style={{ fontSize: 11, color: C.dim }}>非官方社群工具 · 無營利 · 與官方無關</span>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 20, padding: '18px 24px' }}>
+          {/* 底噪 wordmark：截圖被裁掉 footer 時仍留下一層來源痕跡 */}
+          <div style={{
+            position: 'absolute', right: -20, top: -34, fontFamily: ORB, fontSize: 84, fontWeight: 900,
+            letterSpacing: 8, color: 'rgba(255,255,255,0.032)', whiteSpace: 'nowrap',
+          }}>MILKHAMA</div>
+          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <span style={{ fontFamily: ORB, fontSize: 15, fontWeight: 900, letterSpacing: 1, color: C.orange }}>
+              {SITE_DOMAIN}
+            </span>
+            <span style={{ fontSize: 12, color: C.sub }}>{SITE_TITLE} · 配裝模擬器</span>
+            <span style={{ fontSize: 11, color: C.dim }}>非官方社群工具 · 無營利 · 與官方無關</span>
+          </div>
+          <div style={{ position: 'relative', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 18 }}>
+            <FooterField
+              label="GENERATED"
+              value={gameVersion ? `${generatedAt} · 遊戲版本 ${gameVersion}` : generatedAt}
+            />
+          </div>
         </div>
-        <div style={{ position: 'relative', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 18 }}>
-          {/* ⚠ 分享碼由 052-C 提供；沒有就整欄不印。印佔位字串會有人拿去貼，而它解不開 */}
-          {shareCode && (
-            <>
-              <FooterField label="SHARE CODE" value={shareCode} strong />
-              <div style={{ width: 1, height: 34, background: '#2f3646' }} />
-            </>
-          )}
-          <FooterField
-            label="GENERATED"
-            value={gameVersion ? `${generatedAt} · 遊戲版本 ${gameVersion}` : generatedAt}
-          />
-        </div>
+
+        {/* ── 分享碼帶（PLAN-052-C E-1）──
+            沒有碼就**整條不印**：印佔位字串會有人拿去貼，而它解不開。
+
+            ⚠ 為什麼是整寬一條、而不是 052-I 原本放在 GENERATED 旁邊的小欄位：
+              分享碼是**變長**的（實測空草稿 7 字元、典型 36、含元件與算力 79、
+              三套 119），而卡片固定 1000px 寬。放右欄的話 79 字元起就會把左邊的
+              站名浮水印擠出畫面 —— 而那正是這張圖存在的理由。整寬 ＋ `break-all`
+              讓它自己折行，卡片高度跟著長，任何長度都不會壓到別的東西。 */}
+        {shareCode && (
+          <div style={{
+            position: 'relative', display: 'flex', alignItems: 'baseline', gap: 10,
+            padding: '10px 24px 14px', borderTop: '1px solid #232936',
+          }}>
+            <span style={{
+              fontFamily: ORB, fontSize: 9, letterSpacing: 2, color: C.dim, flexShrink: 0,
+            }}>SHARE CODE</span>
+            <span style={{
+              fontFamily: MONO, fontSize: 12, lineHeight: 1.45, color: C.sub,
+              wordBreak: 'break-all', minWidth: 0,
+            }}>{shareCode}</span>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -457,14 +479,11 @@ function ZoneBar({ drive, lv, starred }: { drive: NeuralDrive; lv: number; starr
   )
 }
 
-function FooterField({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+function FooterField({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
       <span style={{ fontFamily: ORB, fontSize: 9, letterSpacing: 2, color: C.dim }}>{label}</span>
-      <span style={{
-        fontFamily: MONO, fontSize: strong ? 15 : 13, letterSpacing: strong ? 1 : 0,
-        fontWeight: strong ? 700 : 400, color: strong ? C.text : C.sub,
-      }}>{value}</span>
+      <span style={{ fontFamily: MONO, fontSize: 13, color: C.sub }}>{value}</span>
     </div>
   )
 }
@@ -484,7 +503,7 @@ function FooterField({ label, value, strong }: { label: string; value: string; s
 // ⚠ 拍的是 host 的**子元素**不是 host 本身：host 帶著 `position: fixed; left: -10000px`，
 //   html-to-image 會把那份 computed style 一起複製到 clone 上，內容就被推出畫布外了。
 
-interface RunnerProps extends Omit<LoadoutExportCardProps, 'generatedAt' | 'gameVersion' | 'shareCode'> {
+interface RunnerProps extends Omit<LoadoutExportCardProps, 'generatedAt' | 'gameVersion'> {
   /** 完成（或失敗）時回報。`error` 為 null ＝ 成功 */
   onDone: (error: Error | null) => void
 }

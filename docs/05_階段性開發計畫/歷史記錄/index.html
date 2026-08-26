@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-C · 分享碼與訪客本機書架</h3>
+      <p><b>零後端出貨，MVP 的最後一塊——玩家現在可以互相分享配裝了。</b>整套配裝壓成一串可貼進 Discord 的網址（<code>/simulator?b=</code>，走既有路徑因此<b>沒動過 Cloudflare Dashboard</b>），未登入的訪客也能把配裝存在自己的瀏覽器（10 套，不分機師）。實測長度：空草稿 7 字元、典型單套 36、含元件與算力 79、海莉絲三套 119、隨機一萬份最長 &lt; 900（Discord 上限 2000）。<br>id→數字<b>用既有 doc id 的流水號、不新增欄位</b>。⚠ 唯一破口是<b>流水號被回收</b>（<code>maxEntitySeq</code> 是「掃現有 ID 取 max」，刪掉 178 再新增會再產生 178，舊碼就靜默指向另一把武器），因此 <code>share-id.lock.json</code> 進版控 ＋ <code>check-share-ids.mjs</code> 改指即 exit 1 ＋ 後台續號改 <code>max(lock, live)+1</code>，<b>並寫進 data-patch skill 的流程第 5 步</b>。2026-08-25 全量對帳零撞號；模組另開別名區（<code>aliasBase = 1,500,000</code>）把可分享數從 162 拉到 203。<br>⚠ 總綱決策二讓 codec <b>同時是儲存格式</b>，bug ＝ 使用者資料全毀，因此三組測試列為驗收條件並全數通過：round-trip 一萬份深等於、模糊測試一萬次位元翻轉攔截率 &gt; 99%、golden fixture 六案例雙向釘住。decode <b>永不 throw</b> 且「先結構後語意」——語意不合只標警示不拒絕套用（對方可能在分享改版前的配裝）；錯誤文案逐種分開寫，<b>沒有一句是「代碼無效」</b>。<br>訪客書架<b>只存代碼字串</b>、失效分 <code>ok</code>／<code>degraded</code>／<code>broken</code> 三態，<b>永不自動刪除也永不自動修復</b>。收尾把分享碼接進匯出長圖（footer 底下整寬一條——碼是變長的，放右側小欄位會把站名浮水印擠出畫面），並把全站第 5 份硬編站名收成 <code>src/lib/siteMeta.ts</code>，另加測試綁住 <code>index.html</code> 與 Worker 那兩份 import 不到的複本。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-26 · 11 / 11 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-C_分享碼與訪客書架/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-C_分享碼與訪客書架/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card orange">
       <div class="card-icon">◆</div>
       <h3>PLAN-052-I · 配裝模擬器視覺改版</h3>

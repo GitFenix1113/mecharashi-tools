@@ -118,3 +118,15 @@ export function slotIconName(slot: string, side?: 'left' | 'right'): LoadoutIcon
     default:           return 'plus'
   }
 }
+
+/**
+ * 分享碼裡「解不開的那一筆」是什麼種類（PLAN-052-C）。
+ *
+ * ⚠ 放在這裡而不是各對話框自己寫一份：貼碼對話框與本機書架都要把 `UnresolvedRef.kind`
+ *   翻成中文，而兩份各寫的下場，就是同一個 `component` 在一個地方叫「元件」、
+ *   另一個地方叫「改裝」。
+ */
+export const SHARE_KIND_LABEL: Record<'pilot' | 'mech' | 'weapon' | 'component' | 'backpack' | 'module', string> = {
+  pilot: '機師', mech: '機甲', weapon: '武器',
+  component: '元件', backpack: '背包', module: '模組',
+}

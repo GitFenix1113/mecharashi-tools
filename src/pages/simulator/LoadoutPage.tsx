@@ -36,6 +36,8 @@ import { licenseAllows } from '../../utils/normalizeArmorType'
 import type { PickerFilterGroup } from '../../components/loadout/PickerShell'
 import { CascadeToast } from '../../components/loadout/CascadeToast'
 import { PasteCodeDialog } from '../../components/loadout/PasteCodeDialog'
+import { LocalShelfDialog } from '../../components/loadout/LocalShelfDialog'
+import { readShelf, SHELF_LIMIT } from '../../lib/localBuilds'
 import { buildShareIndex } from '../../utils/loadoutCode/shareId'
 import { shareIdAliases } from '../../utils/loadoutCode/shareIdRegistry'
 import { encodeLoadout, decodeLoadout, type ShareIndexes } from '../../utils/loadoutCode/codec'
@@ -193,8 +195,17 @@ export default function LoadoutPage() {
   const [pasteOpen, setPasteOpen] = useState(false)
   const [copied, setCopied] = useState<'ok' | 'fail' | null>(null)
 
+  // ── 本機書架（PLAN-052-C D-1）──
+  //    筆數留在這一層，抬頭那顆鍵才印得出 `3/10`；對話框改動後回報上來。
+  //    ⚠ 初值用 lazy initializer：`readShelf()` 每次 render 都跑一次是白讀 localStorage。
+  const [shelfOpen, setShelfOpen] = useState(false)
+  const [shelfCount, setShelfCount] = useState(() => readShelf().length)
+
+  // ⚠ **兩個對話框一開就跳到 equip 階段**：它們都要「整個宇宙」才說得出真話。
+  //   只載了 pilots 的時候，任何代碼裡的機甲與武器都會被判成「站上查不到」——
+  //   而那是最嚇人的一種誤報：使用者打開書架，看到自己十套存檔全部標成失效。
   const stage: LoadoutStage =
-    pending ? 'equip'
+    pending || pasteOpen || shelfOpen ? 'equip'
     : !state.draft.pilotId ? 'pilot'
     : !state.draft.mechId ? 'mech'
     : 'equip'
@@ -259,9 +270,16 @@ export default function LoadoutPage() {
   // ── 挑選器 ──
   // 沒有機師／機甲時，情境欄自動停在該選的那一步 —— 不必先點一下才知道要從哪裡開始。
   // 包 useMemo 是因為它會進到下面幾支 useMemo 的依賴：每次 render 產生新物件會讓清單白算一次
+  //
+  // ⚠ **對話框開著時一律不開挑選器**（D-1 瀏覽器實測）：還沒選機師的人一進頁面，
+  //   挑選器就自動開著；手機版它是 BottomSheet，會整片蓋在書架／貼碼對話框上面
+  //   —— 而那正是新訪客最可能先按書架的時機。「自動停在該選的那一步」在對話框開著時
+  //   本來就不成立：現在該做的是那個對話框裡的事。`picker` 本身不清掉，關掉就回來。
   const effectivePicker = useMemo<ActivePicker>(
-    () => picker ?? (!state.draft.pilotId ? { kind: 'pilot' } : !state.draft.mechId ? { kind: 'mech' } : null),
-    [picker, state.draft.pilotId, state.draft.mechId],
+    () => (pasteOpen || shelfOpen
+      ? null
+      : picker ?? (!state.draft.pilotId ? { kind: 'pilot' } : !state.draft.mechId ? { kind: 'mech' } : null)),
+    [picker, pasteOpen, shelfOpen, state.draft.pilotId, state.draft.mechId],
   )
 
   // 複製的成功回饋是按鈕文字換成「已複製連結」，兩秒後換回來 ——
@@ -363,17 +381,48 @@ export default function LoadoutPage() {
   //      語法會把裸碼中間的底線吃掉，對方複製到的是一串看起來正常、實際解不開的碼。
   //      網址會被當成連結、不套用 markdown，因此是安全的。
   const gameVersion = useMemo(() => patchVersions.find((v) => v.isTwCurrent)?.version, [patchVersions])
-  const copyShareLink = useCallback(async () => {
+
+  /**
+   * 把手上這一套編成分享碼。**編不出來回 `null` 而不是往外丟**——
+   * `encodeLoadout` 對呼叫端的 bug 一律 throw（超出上限、認不得的槽位），
+   * 而這兩個呼叫點（複製連結、匯出圖）都寧可少一個東西，也不要整頁掛掉。
+   */
+  //
+  // ⚠ **資料沒載齊就不編**（`loading`）：`toShareId()` 查不到的東西會被編成 0（空格），
+  //   所以在「機甲已載入、武器還沒」的那個瞬間編出來的碼，會是一套沒有武器的配裝——
+  //   而它看起來完全正常，貼給別人也解得開。呼叫端一律連 `loading` 一起擋。
+  const encodeCurrent = useCallback((): string | null => {
     try {
-      const code = encodeLoadout(state.draft, { indexes: shareIndexes, gameVersion })
-      const url = buildShareUrl(code, window.location.origin, import.meta.env.BASE_URL)
-      await navigator.clipboard.writeText(url)
-      setCopied('ok')
-    } catch {
-      // 剪貼簿在非安全來源（http）與部分行動瀏覽器會直接拒絕；encode 也可能因為超出上限而丟
-      setCopied('fail')
+      return encodeLoadout(state.draft, { indexes: shareIndexes, gameVersion })
+    } catch (err) {
+      console.error('[Loadout] encode error:', err)
+      return null
     }
   }, [state.draft, shareIndexes, gameVersion])
+
+  /** 把任一串代碼變成連結並放進剪貼簿。書架的每張卡也走這一支 —— 兩處給的必須是同一種東西。 */
+  const copyLinkFor = useCallback(async (code: string): Promise<boolean> => {
+    try {
+      await navigator.clipboard.writeText(buildShareUrl(code, window.location.origin, import.meta.env.BASE_URL))
+      return true
+    } catch {
+      // 剪貼簿在非安全來源（http）與部分行動瀏覽器會直接拒絕
+      return false
+    }
+  }, [])
+
+  const copyShareLink = useCallback(async () => {
+    const code = encodeCurrent()
+    setCopied(code && await copyLinkFor(code) ? 'ok' : 'fail')
+  }, [encodeCurrent, copyLinkFor])
+
+  // 匯出圖右下角的分享碼（E-1）。**只在真的要拍照時才編**：平常沒人看它，
+  // 而每次改一格配裝就重編一次是白工。編不出來時傳 undefined ⇒ 那一欄整個不印
+  // （元件的約定），因為印一串解不開的碼會有人拿去貼。
+  const exportShareCode = useMemo(
+    () => (exporting ? encodeCurrent() ?? undefined : undefined),
+    [exporting, encodeCurrent],
+  )
 
   /**
    * 本機遊戲資料是否落後於伺服器（決策四的舊快取防護）。
@@ -390,7 +439,22 @@ export default function LoadoutPage() {
       onClick={() => setPasteOpen(true)}
       className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-border text-text-secondary hover:text-text-primary hover:border-border-accent transition-colors cursor-pointer whitespace-nowrap"
     >
-      貼上分享碼
+      {/* ⚠ 窄版用短標籤：這一列在 390px 上是「名稱欄 ＋ 貼碼 ＋ 書架」三件，
+          長標籤會把輸入框壓到只剩幾十像素（同 C-1 對底部固定列的量測） */}
+      {bp === 'narrow' ? '貼碼' : '貼上分享碼'}
+    </button>
+  )
+
+  const shelfButton = (
+    <button
+      type="button"
+      onClick={() => setShelfOpen(true)}
+      className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-border text-text-secondary hover:text-text-primary hover:border-border-accent transition-colors cursor-pointer whitespace-nowrap"
+    >
+      書架
+      <span className="ml-1.5 font-[JetBrains_Mono,monospace] tabular-nums text-text-dim">
+        {shelfCount}/{SHELF_LIMIT}
+      </span>
     </button>
   )
 
@@ -399,7 +463,7 @@ export default function LoadoutPage() {
       <button
         type="button"
         onClick={copyShareLink}
-        disabled={!ctx.mech}
+        disabled={!ctx.mech || loading}
         className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-accent-cyan/50 bg-accent-cyan/10 text-accent-cyan hover:bg-accent-cyan/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
       >
         {/* ⚠ 窄版用短標籤：底部固定列在超重時會有四顆（＋「自動卸至符合」），
@@ -410,7 +474,7 @@ export default function LoadoutPage() {
       <button
         type="button"
         onClick={() => { setExportError(null); setExporting(true) }}
-        disabled={!ctx.mech || exporting}
+        disabled={!ctx.mech || exporting || loading}
         className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-accent-orange/50 bg-accent-orange/10 text-accent-orange hover:bg-accent-orange/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {exporting ? '產生中…' : '匯出配裝圖'}
@@ -578,6 +642,7 @@ export default function LoadoutPage() {
           {/* 貼碼是「一個 session 用一次」的動作，所以不進底部固定操作列（那裡是反覆會按的三顆）。
               放在名稱欄旁邊：兩者同屬「這一套的身分」——命名它，或者換成別人的那一套。 */}
           {bp !== 'narrow' && pasteButton}
+          {bp !== 'narrow' && shelfButton}
 
           {/* 單欄版面時動作鍵移到底部固定列（拇指可及、且抬頭少一列） */}
           {bp !== 'narrow' && <div className="flex items-center gap-1.5 ml-auto">{actionButtons}</div>}
@@ -620,6 +685,7 @@ export default function LoadoutPage() {
                 full
               />
               {pasteButton}
+              {shelfButton}
             </div>
           )}
           {bp !== 'wide' && (
@@ -884,8 +950,20 @@ export default function LoadoutPage() {
         </div>
       )}
 
+      {shelfOpen && <LocalShelfDialog
+        onClose={() => setShelfOpen(false)}
+        indexes={shareIndexes}
+        world={world}
+        currentCode={ctx.mech && !loading ? encodeCurrent() : null}
+        onApply={(draft) => send({ type: 'loadDraft', draft })}
+        onCopyLink={copyLinkFor}
+        onShelfChange={setShelfCount}
+        loading={loading}
+      />}
+
       {pasteOpen && <PasteCodeDialog
         onClose={() => setPasteOpen(false)}
+        loading={loading}
         indexes={shareIndexes}
         world={world}
         onApply={(draft) => send({ type: 'loadDraft', draft })}
@@ -948,6 +1026,7 @@ export default function LoadoutPage() {
           ndAbilityMap={ndAbilityMap}
           ndZones={ndZones}
           name={state.draft.name}
+          shareCode={exportShareCode}
           onDone={finishExport}
         />
       )}
@@ -1060,7 +1139,7 @@ function LoadoutNameField({
   return (
     <label
       className={`hud-cut-sm block px-2.5 py-1.5 border bg-bg-card transition-colors ${
-        full ? 'w-full' : 'flex-1 min-w-[10rem] max-w-[20rem]'
+        full ? 'w-full min-w-0' : 'flex-1 min-w-[10rem] max-w-[20rem]'
       } ${
         disabled ? 'border-border opacity-40' : 'border-border focus-within:border-accent-orange/60'
       }`}

@@ -9,6 +9,7 @@ import SubNavTabs from './SubNavTabs'
 import NavIcon from '../icons/NavIcon'
 import EmulatorBadge from './EmulatorBadge'
 import { VERSION_VIEWS } from '../versions/VersionViewTabs'
+import { SITE_NAME, SITE_TITLE } from '../../lib/siteMeta'
 
 // 友站：英文版 Mecharashi Wiki（對稱其站內指回本站的連結）
 const FRIEND_SITE_URL = 'https://mecharashi-wiki.cc/'
@@ -198,7 +199,7 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 h-12 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2 no-underline shrink-0">
             <span className="text-accent-orange font-bold text-xl tracking-wider font-[Orbitron,sans-serif]">
-              米赫瑪超吉情豹站
+              {SITE_NAME}
             </span>
           </Link>
 
@@ -347,7 +348,7 @@ export default function Layout() {
 
       {/* Footer — 版本情報三分頁自帶版面高度，不掛 footer */}
       {!isFullHeightPage && <footer className="border-t border-border py-6 text-center text-text-dim text-sm">
-        <p>米赫瑪超吉情豹站 — Milkhama PawInfo Station</p>
+        <p>{SITE_TITLE}</p>
         <p className="mt-1">本站是氣吉敗壞的豹吉自己摸出來的，無營利，完全免費，與官方無關，但99%圖片資源都來源於官方WIKI</p>
       </footer>}
 

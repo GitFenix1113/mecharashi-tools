@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { WORKER_ENABLED, workerUrl } from '../../lib/api/workerData'
+import { SITE_NAME } from '../../lib/siteMeta'
 
 /**
  * 連線診斷頁（PLAN-029 Phase 5-3：中國讀取實測）
@@ -123,7 +124,7 @@ export default function ConnectivityPage() {
   }, [run])
 
   const report = [
-    `【米赫瑪超吉情豹站 連線診斷】${startedAt}`,
+    `【${SITE_NAME} 連線診斷】${startedAt}`,
     ...results.map(r => {
       const state = r.status === 'ok' ? '✅' : r.status === 'fail' ? '❌' : '…'
       const ms = r.ms !== undefined ? `${r.ms}ms` : '-'

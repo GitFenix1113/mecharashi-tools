@@ -40,15 +40,6 @@
         <a class="card-link" href="PLAN-052_配裝模擬器改版_總綱/進度表.html">→ 進度表</a>
       </div>
     </div>
-    <div class="card green">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-052-C · 分享碼與訪客本機書架</h3>
-      <p><b>零後端出貨，MVP 的最後一塊。</b>把整套配裝壓成一串可貼進 Discord 的網址（<code>/simulator?b=</code>，走既有路徑因此<b>不必動 Cloudflare Dashboard</b>），並讓未登入的訪客把配裝存在自己的瀏覽器（10 套，不分機師）。實測：同一套配裝用 JSON ＋ 原樣 doc id 要 700+ bytes，二進位 TLV 打包只要 ≈70 bytes；最壞情況網址 ≈743 字元，只佔 Discord 上限的 37%。<br>id→數字<b>用既有 doc id 的流水號、不新增欄位</b>（再開一個 shareId 就是第二個真相源）。⚠ 唯一破口是<b>流水號被回收</b>——<code>idSlug.ts:82</code> 的 <code>maxEntitySeq</code> 是「掃現有 ID 取 max」，刪掉 178 再新增會再次產生 178，舊碼就靜默指向另一把武器；而本專案確實會改 doc id。因此 <code>share-id.lock.json</code> 進版控 ＋ <code>check-share-ids.mjs</code> 改指即 exit 1，<b>並寫進 data-patch skill 的流程</b>。<br>⚠ 總綱決策二讓 codec <b>同時是儲存格式</b>，所以它的 bug ＝ 使用者資料全毀：round-trip 10,000 份、模糊測試 10,000 次位元翻轉、每版凍 golden fixture <b>列為驗收條件</b>；decode 永不 throw，且「先結構後語意」——語意不合只標警示不拒絕套用（對方可能在分享改版前的配裝）。順手移除 <code>html2canvas</code> 並把全站第 5 份硬編站名收成常數。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-052-C_分享碼與訪客書架/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-052-C_分享碼與訪客書架/進度表.html">→ 進度表</a>
-      </div>
-    </div>
     <div class="card cyan">
       <div class="card-icon">◆</div>
       <h3>PLAN-050 · 首頁資訊架構重構</h3>
