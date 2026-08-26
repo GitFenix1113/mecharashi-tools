@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">5</div>
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">10</div>
+      <div class="summary-num" style="color:var(--text-dim)">7</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">5 / 15</span>
+      <span style="color:var(--accent-cyan);">8 / 15</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 33%"></div>
+      <div class="progress-bar-fill" style="width: 53%"></div>
     </div>
   </div>
 
@@ -385,14 +385,18 @@
   <div class="section-label cyan">Phase B</div>
   <div class="section-title">動作層與級聯</div>
   <div class="section-desc">
-    讓元件真的裝得上、卸得下，並且在武器被換掉時<b>說出來</b>。
+    讓元件真的裝得上、卸得下，並且在武器被換掉時<b>說出來</b>。<br>
+    <b>2026-08-27 完成（3／3）</b>：<code>npm test</code> 805 項全過（本階段新增 18 項）。
+    UI 尚未接線（屬 Phase C），所以今天玩家還碰不到這兩個動作 ——
+    但 <code>reconcile()</code> 的元件級聯<b>已經生效</b>：既存分享碼帶進來的元件段會被驗證
+    （今天全部是空的，因為還沒有人裝得上元件，故零影響）。
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; reducer 兩個動作</div>
       <div class="task-group-meta">src/pages/simulator/simReducer.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -403,12 +407,20 @@
           「任何動作之後都跑同一支 reconcile」是本檔唯一的規則，元件不開特例。<br>
           <code>setup</code> 為空時<b>整個欄位不存在</b>而不是留空陣列
           （同 <code>backpackId</code> ／ <code>ndLevels</code>：三態撞上
-          <code>stripUndefined</code> 會變成「一旦填了就再也清不掉」）。
+          <code>stripUndefined</code> 會變成「一旦填了就再也清不掉」）。<br>
+          <b>實際交付</b>：<code>equipComponent</code> 是新動作；<b>卸下沿用
+          <code>ResolutionAction</code> 的 <code>unequipComponent</code></b>（A-5 已定義），
+          於是拒絕訊息上的解法按鈕可以直接把 action 派進 reducer，兩邊共用同一個形狀。
+          三支小工具 <code>withSetup()</code> ／ <code>addComponent()</code> ／
+          <code>removeComponent()</code> 是動作層與級聯層的共同基礎。<br>
+          <b>裝上／卸下不跳 toast</b>：<code>commit()</code> 只在真的移除了什麼時才出提示
+          （沿用既有設計 —— 每個動作都跳就等於沒有提示）。那顆元件就在面板上看得見，
+          與裝上武器、改算力、改方案名稱同一條理由。
         </div>
         <div class="task-file">src/pages/simulator/simReducer.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -416,7 +428,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; reconcile 的元件級聯</div>
       <div class="task-group-meta">src/pages/simulator/simReducer.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -431,12 +443,22 @@
           照抄的症狀是<b>貼一次分享碼、元件就被靜默清空一次</b>。<br>
           換武器本身<b>不需要</b>額外程式：<code>placeWeapon()</code> 建新 mount 時不帶
           setup，元件自動清空（決策四）—— 但要有測試釘住，否則哪天有人為了
-          「換同型武器保留配置」加一行，就會變成靜默繼承。
+          「換同型武器保留配置」加一行，就會變成靜默繼承。<br>
+          <b>實際交付</b>：<code>reconcileSetups()</code> 的作法是<b>清空後逐顆重裝</b>，
+          而不是逐條寫「哪些情況要拿掉」—— 重裝走的就是 <code>canEquipComponent()</code>，
+          於是五條規則自動全套適用、順序也與玩家手動裝時一致
+          （與 reconcile 掃武器時「把它自己先拿掉再問」是同一個手法）。
+          外部來源把同一顆掛兩次時另行擋下：<code>canEquipComponent()</code> 對已裝的那顆是
+          <b>放行</b>的（面板要畫得出「已裝上」），所以重複必須在級聯這一層自己判。<br>
+          <b>載入 gate 已驗證</b>：測試用兩個世界對照 ——
+          <code>WORLD_LOADING</code>（<code>components</code> 尚未載入）下同一份草稿
+          <b>原樣保留且一個字都不說</b>；<code>WORLD</code> 下同族兩顆會被正確移除一顆。
+          第二則測試存在的理由是證明第一則不是因為規則沒接上。
         </div>
         <div class="task-file">src/pages/simulator/simReducer.ts · simReducer.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -444,7 +466,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-3 &nbsp; 元件被移除要進 toast</div>
       <div class="task-group-meta">src/pages/simulator/simReducer.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -455,12 +477,18 @@
           這與算力的處理<b>刻意相反</b>（決策九）：算力被修正時面板方格會就地變樣、
           玩家看得到；<b>元件不會</b> —— 它藏在要點兩層才看得到的面板裡，
           換一把武器就靜默丟掉四顆而不吭一聲，是這一層最容易出的客服問題。<br>
-          [復原] 不必另外處理：undo 存的是整份草稿快照，本來就涵蓋。
+          [復原] 不必另外處理：undo 存的是整份草稿快照，本來就涵蓋。<br>
+          <b>實作時定的一條</b>：元件的 <code>where</code> 填<b>純槽位標籤</b>（「右手」），
+          <b>不是</b>「右手 叢林之災」—— <code>flashOf()</code> 拿這個字串去讓槽位圖閃橙，
+          混進武器名就再也對不上任何一格。掛在哪一把改由 <code>why</code> 講
+          （「藝術突襲：僅限射擊武器 —— 這把是突擊」）。已加測試釘住。<br>
+          <b>toast UI 零改動</b>：<code>CascadeToast</code> 只讀 <code>name</code> ／
+          <code>where</code> ／ <code>why</code>，不分 kind。
         </div>
         <div class="task-file">src/pages/simulator/simReducer.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

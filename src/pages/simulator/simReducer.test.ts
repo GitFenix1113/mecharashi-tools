@@ -5,7 +5,7 @@
 // 這裡就要真的看到肩部武器被移除、而且 toast 講得出被移除了什麼。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import type { Backpack, Mech, MechForm, NeuralDrive, Pilot, Weapon } from '../../types/index.ts'
+import type { Backpack, Component, Mech, MechForm, NeuralDrive, Pilot, Weapon } from '../../types/index.ts'
 import { INITIAL_SIM_STATE, reconcile, simReduce, type SimState } from './simReducer.ts'
 import { buildWorld, buildContext, loadoutBudget } from '../../utils/loadoutRules.ts'
 import { ArmorType, BackpackType, MechLicense, MechRestriction, WeaponEquipSlot, WeaponType } from '../../types/enums.ts'
@@ -30,7 +30,7 @@ const 中甲機2 = mech('mech_053', '中甲機2', ArmorType.MEDIUM)
 const weapon = (over: Partial<Weapon> & Pick<Weapon, 'id' | 'name' | 'weight' | 'equipSlot'>): Weapon => ({
   type: WeaponType.Melee, kind: '刀劍', kindCoefficient: 1, attack: 0, accuracy: 0, critValue: 0,
   rangeType: 'manhattan', minRange: 1, maxRange: 1, ammoCount: 0, hitCount: 1, rarity: 'SS',
-  mechRestriction: MechRestriction.NONE, isExclusive: false, triggerSlots: 0, effectSlots: 0, componentLimit: 4,
+  mechRestriction: MechRestriction.NONE, isExclusive: false, triggerSlots: 3, effectSlots: 3, componentLimit: 4,
   fixedMod: { planName: '', maxLevel: 0, effects: [] },
   floatingMod: { planName: '', slots: 0, possibleEffects: [] }, skills: [], ...over,
 } as Weapon)
@@ -81,7 +81,42 @@ const form = (id: string, name: string, order: number, allow: string[]): MechFor
 const 先鋒形態 = form('form_h_先鋒', '先鋒形態', 1, [WeaponType.Melee, WeaponType.Sniper])
 const 突擊形態 = form('form_h_突擊', '突擊形態', 2, [WeaponType.Assault])
 
+// ─── 元件 fixture（PLAN-052-D Phase B）──────────────────────────────────────
+
+const comp = (over: Partial<Component> & Pick<Component, 'id' | 'name' | 'componentType'>): Component => ({
+  moduleSubtype: 1, probabilityLevel: 5, description: '', rarity: 'S',
+  allowedWeaponTypes: [WeaponType.Sniper, WeaponType.Melee, WeaponType.Assault, WeaponType.Heavy],
+  componentsWType: 'Normal',
+  ...(over.componentType === 'Condition' ? { conditionType: 'always', condition: '' } : {}),
+  ...over,
+} as Component)
+
+const 觸憑逸W = comp({ id: 'c_001', name: '觸元件W-憑逸', componentType: 'Condition', componentsWType: 'W' })
+const 觸憑逸  = comp({ id: 'c_002', name: '觸元件-憑逸',  componentType: 'Condition' })
+const 觸沉著  = comp({ id: 'c_003', name: '觸元件-沉著',  componentType: 'Condition' })
+const 觸壓迫  = comp({ id: 'c_004', name: '觸元件-壓迫',  componentType: 'Condition' })
+const 觸擊破  = comp({ id: 'c_005', name: '觸元件-擊破',  componentType: 'Condition' })
+const 應戰慄  = comp({ id: 'c_101', name: '應元件-戰慄',  componentType: 'Function' })
+const 應穿甲  = comp({ id: 'c_102', name: '應元件-穿甲',  componentType: 'Function' })
+/** 警戒族實測限定「射擊」（7 筆部分限定之一） */
+const 觸警戒  = comp({ id: 'c_006', name: '觸元件-警戒', componentType: 'Condition', allowedWeaponTypes: [WeaponType.Sniper] })
+
+const COMPONENTS = [觸憑逸W, 觸憑逸, 觸沉著, 觸壓迫, 觸擊破, 應戰慄, 應穿甲, 觸警戒]
+
 const WORLD = buildWorld({
+  pilots: [海莉絲, 輕型機師, 中型機師, ND甲, ND乙],
+  mechs: [彌造者, 輕型機, 重型機, 中甲機2],
+  weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
+  backpacks: [強襲者背包, 出力背包Ⅲ],
+  forms: [先鋒形態, 突擊形態],
+  components: COMPONENTS,
+})
+
+/**
+ * 元件**尚未載入**的世界（PLAN-052-D 決策六）。
+ * 分享碼／本機書架／雲端存檔都可能在 `components` 到齊之前就把草稿灌進來。
+ */
+const WORLD_LOADING = buildWorld({
   pilots: [海莉絲, 輕型機師, 中型機師, ND甲, ND乙],
   mechs: [彌造者, 輕型機, 重型機, 中甲機2],
   weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
@@ -402,4 +437,211 @@ test('reconcile：乾淨名稱不觸發改寫（合法草稿必須是恆等的�
   }
   const { draft: after } = reconcile(draft, WORLD)
   assert.deepEqual(after, draft)
+})
+
+
+// ─── 元件（PLAN-052-D Phase B）──────────────────────────────────────────────
+
+/** 走到「已選機師機甲、雙手裝了群山之力」的起點 */
+const armed = () => run(
+  { type: 'selectPilot', pilotId: 中型機師.id },
+  { type: 'selectMech', mechId: 彌造者.id },
+  { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },
+)
+const setupOf = (s: SimState, i = 0) => setOf(s).mounts[i]?.setup
+
+test('B-1：裝上一顆觸元件，落在 triggerComponentIds', () => {
+  const s = simReduce(armed(), { type: 'equipComponent', ref: DUAL, componentId: 觸沉著.id }, WORLD)
+  assert.deepEqual(setupOf(s)?.triggerComponentIds, [觸沉著.id])
+  assert.equal(setupOf(s)?.effectComponentIds, undefined, '空的那一條不留空陣列')
+  // 沒有任何東西被移除 ⇒ 不跳 toast（沿用既有設計：每個動作都跳就等於沒有提示）。
+  // 那顆元件就在面板上，看得見；與裝上武器、改算力、改名同一條理由。
+  assert.equal(s.notice, null)
+})
+
+test('B-1：應元件落在 effectComponentIds（兩條清單分開）', () => {
+  const s = simReduce(armed(), { type: 'equipComponent', ref: DUAL, componentId: 應戰慄.id }, WORLD)
+  assert.deepEqual(setupOf(s)?.effectComponentIds, [應戰慄.id])
+  assert.equal(setupOf(s)?.triggerComponentIds, undefined)
+})
+
+test('B-1：空格裝不了元件（元件掛在武器上，不是掛在格子上）', () => {
+  const before = armed()
+  const after = simReduce(before, { type: 'equipComponent', ref: SHO_L, componentId: 觸沉著.id }, WORLD)
+  assert.equal(after, before, '狀態原樣回傳，不產生 notice')
+})
+
+test('B-1：重複裝同一顆不動作（不是裝兩份，也不是報錯）', () => {
+  const s1 = simReduce(armed(), { type: 'equipComponent', ref: DUAL, componentId: 觸沉著.id }, WORLD)
+  const s2 = simReduce(s1, { type: 'equipComponent', ref: DUAL, componentId: 觸沉著.id }, WORLD)
+  assert.equal(s2, s1)
+})
+
+test('B-1：卸下最後一顆之後，setup 欄位整個消失（不留 {} 也不留空陣列）', () => {
+  const s1 = simReduce(armed(), { type: 'equipComponent', ref: DUAL, componentId: 觸沉著.id }, WORLD)
+  const s2 = simReduce(s1, { type: 'unequipComponent', ref: DUAL, componentId: 觸沉著.id }, WORLD)
+  assert.equal(setupOf(s2), undefined)
+  assert.equal(s2.notice, null, '卸下是玩家主動且看得見的動作，不需要 toast')
+})
+
+test('B-1：卸下沒裝的元件不動作', () => {
+  const before = armed()
+  assert.equal(simReduce(before, { type: 'unequipComponent', ref: DUAL, componentId: 觸沉著.id }, WORLD), before)
+})
+
+test('B-1：解法按鈕派來的 unequipComponent 走的是同一條路（形狀與 ResolutionAction 一致）', () => {
+  // 同族已滿時 canEquipComponent 給的 action，直接餵給 reducer 要能生效
+  const s1 = simReduce(armed(), { type: 'equipComponent', ref: DUAL, componentId: 觸憑逸W.id }, WORLD)
+  const s2 = simReduce(s1, { type: 'unequipComponent', ref: DUAL, componentId: 觸憑逸W.id }, WORLD)
+  assert.equal(setupOf(s2), undefined)
+})
+
+test('B-2：換掉武器，元件跟著清空（placeWeapon 不帶 setup）', () => {
+  const s1 = simReduce(armed(), { type: 'equipComponent', ref: DUAL, componentId: 觸沉著.id }, WORLD)
+  const s2 = simReduce(s1, { type: 'equipWeapon', ref: HAND_L, weaponId: 藝術突襲.id }, WORLD)
+  // 雙手武器被單手擠掉 ⇒ 那筆 mount 連同 setup 一起消失
+  assert.equal(setOf(s2).mounts.length, 1)
+  assert.equal(setupOf(s2), undefined)
+  assert.ok(names(s2).includes('群山之力'), 'toast 說得出被取代的是哪一把')
+})
+
+test('B-2：換機甲讓武器整批失效時，元件跟著走（不需要第二條級聯）', () => {
+  const s1 = run(
+    { type: 'selectPilot', pilotId: 中型機師.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipWeapon', ref: SHO_L, weaponId: 熔火.id },
+  )
+  const s2 = simReduce(s1, { type: 'equipComponent', ref: SHO_L, componentId: 觸沉著.id }, WORLD)
+  assert.deepEqual(setupOf(s2)?.triggerComponentIds, [觸沉著.id])
+  // 中甲限定的熔火在輕型機上裝不了 —— 但中型執照開不了輕型機，改用 reconcile 直接驗
+  const moved = reconcile({ ...s2.draft, mechId: 輕型機.id }, WORLD)
+  assert.equal(moved.draft.sets[s2.draft.activeSetKey]?.mounts.length ?? 0, 0)
+})
+
+test('B-2 ⚠ 最危險的一條：components 尚未載入時，元件原樣保留', () => {
+  // 分享碼／本機書架／雲端存檔都可能比集合早到。照抄武器那套「查不到就刪」，
+  // 症狀是貼一次分享碼、元件就被靜默清空一次，而且連 toast 都不會跳。
+  const draft = {
+    pilotId: 中型機師.id, mechId: 彌造者.id, activeSetKey: 'default',
+    sets: { default: { mounts: [{
+      weaponId: 群山之力.id, bank: 'main' as const, slot: WeaponEquipSlot.DUAL_HAND,
+      setup: { triggerComponentIds: [觸沉著.id, 觸壓迫.id], effectComponentIds: [應戰慄.id] },
+    }] } },
+  }
+  const { draft: out, removed } = reconcile(draft, WORLD_LOADING)
+  assert.deepEqual(out.sets.default.mounts[0].setup?.triggerComponentIds, [觸沉著.id, 觸壓迫.id])
+  assert.deepEqual(out.sets.default.mounts[0].setup?.effectComponentIds, [應戰慄.id])
+  assert.deepEqual(removed, [], '一句話都不該說 —— 它根本沒有資格判斷')
+})
+
+test('B-2：載入完成後同一份草稿會被正常驗證（證明上一則不是因為規則沒接上）', () => {
+  const draft = {
+    pilotId: 中型機師.id, mechId: 彌造者.id, activeSetKey: 'default',
+    sets: { default: { mounts: [{
+      weaponId: 群山之力.id, bank: 'main' as const, slot: WeaponEquipSlot.DUAL_HAND,
+      setup: { triggerComponentIds: [觸憑逸W.id, 觸憑逸.id] },   // 同族兩顆
+    }] } },
+  }
+  const { draft: out, removed } = reconcile(draft, WORLD)
+  assert.deepEqual(out.sets.default.mounts[0].setup?.triggerComponentIds, [觸憑逸W.id], '第一顆留下')
+  assert.equal(removed.length, 1)
+  assert.equal(removed[0].kind, 'component')
+  assert.equal(removed[0].name, '觸元件-憑逸')
+})
+
+test('B-2：元件 doc 不存在（後台刪了）⇒ 移除並說得出來', () => {
+  const draft = {
+    pilotId: 中型機師.id, mechId: 彌造者.id, activeSetKey: 'default',
+    sets: { default: { mounts: [{
+      weaponId: 群山之力.id, bank: 'main' as const, slot: WeaponEquipSlot.DUAL_HAND,
+      setup: { triggerComponentIds: ['c_已刪除'] },
+    }] } },
+  }
+  const { draft: out, removed } = reconcile(draft, WORLD)
+  assert.equal(out.sets.default.mounts[0].setup, undefined)
+  assert.equal(removed[0].why, '元件資料已不存在')
+  assert.equal(removed[0].name, 'c_已刪除', '查不到就退回 id，讓斷鏈被看見')
+})
+
+test('B-2：壞掉的外部來源把同一顆掛兩次 ⇒ 留一顆並報出重複', () => {
+  const draft = {
+    pilotId: 中型機師.id, mechId: 彌造者.id, activeSetKey: 'default',
+    sets: { default: { mounts: [{
+      weaponId: 群山之力.id, bank: 'main' as const, slot: WeaponEquipSlot.DUAL_HAND,
+      setup: { triggerComponentIds: [觸沉著.id, 觸沉著.id] },
+    }] } },
+  }
+  const { draft: out, removed } = reconcile(draft, WORLD)
+  assert.deepEqual(out.sets.default.mounts[0].setup?.triggerComponentIds, [觸沉著.id])
+  assert.match(removed[0].why, /重複/)
+})
+
+test('B-2：超量的 setup（外部來源帶 5 顆）截到 componentLimit，且逐顆說明', () => {
+  const draft = {
+    pilotId: 中型機師.id, mechId: 彌造者.id, activeSetKey: 'default',
+    sets: { default: { mounts: [{
+      weaponId: 群山之力.id, bank: 'main' as const, slot: WeaponEquipSlot.DUAL_HAND,
+      setup: {
+        triggerComponentIds: [觸沉著.id, 觸壓迫.id, 觸擊破.id],
+        effectComponentIds: [應戰慄.id, 應穿甲.id],
+      },
+    }] } },
+  }
+  const { draft: out, removed } = reconcile(draft, WORLD)
+  const setup = out.sets.default.mounts[0].setup!
+  assert.equal((setup.triggerComponentIds?.length ?? 0) + (setup.effectComponentIds?.length ?? 0), 4)
+  assert.equal(removed.length, 1)
+  assert.equal(removed[0].name, '應元件-穿甲', '超出的是最後一顆')
+})
+
+test('B-2：武器種類限定的元件在換了武器之後會被移除，並指名是哪一把', () => {
+  const draft = {
+    pilotId: 中型機師.id, mechId: 彌造者.id, activeSetKey: 'default',
+    sets: { default: { mounts: [{
+      weaponId: 藝術突襲.id, bank: 'main' as const, slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' as const,
+      setup: { triggerComponentIds: [觸警戒.id] },   // 警戒限定「射擊」，藝術突襲是「突擊」
+    }] } },
+  }
+  const { removed } = reconcile(draft, WORLD)
+  assert.equal(removed.length, 1)
+  assert.match(removed[0].why, /藝術突襲/)
+  assert.match(removed[0].why, /射擊/)
+})
+
+test('B-3：元件被移除時 where 是純槽位標籤（混進武器名會讓 flash 對不上任何一格）', () => {
+  const draft = {
+    pilotId: 中型機師.id, mechId: 彌造者.id, activeSetKey: 'default',
+    sets: { default: { mounts: [{
+      weaponId: 藝術突襲.id, bank: 'main' as const, slot: WeaponEquipSlot.SINGLE_HAND, side: 'right' as const,
+      setup: { triggerComponentIds: [觸警戒.id] },
+    }] } },
+  }
+  const { removed } = reconcile(draft, WORLD)
+  assert.equal(removed[0].where, '右手')
+  assert.ok(!removed[0].where!.includes('藝術突襲'), '武器名歸 why 講')
+})
+
+test('B-3：元件的移除會跳 toast，而且 [復原] 拿得回來', () => {
+  const s1 = simReduce(armed(), { type: 'equipComponent', ref: DUAL, componentId: 觸沉著.id }, WORLD)
+  const s2 = simReduce(s1, { type: 'equipWeapon', ref: HAND_L, weaponId: 藝術突襲.id }, WORLD)
+  assert.ok(s2.notice, '換武器丟掉元件必須有回饋')
+  assert.equal(s2.notice?.undoable, true)
+  const s3 = simReduce(s2, { type: 'undo' }, WORLD)
+  assert.deepEqual(s3.draft.sets[s3.draft.activeSetKey].mounts[0].setup?.triggerComponentIds, [觸沉著.id])
+})
+
+test('B-3：主手與備用各裝一把同型武器，元件互不影響', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 中型機師.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipBackpack', backpackId: 強襲者背包.id },
+    { type: 'equipWeapon', ref: HAND_L, weaponId: 藝術突襲.id },
+    { type: 'equipWeapon', ref: BKUP_L, weaponId: 藝術突襲.id },
+    { type: 'equipComponent', ref: HAND_L, componentId: 觸沉著.id },
+    { type: 'equipComponent', ref: BKUP_L, componentId: 觸壓迫.id },
+  )
+  const main = setOf(s).mounts.find((m) => m.bank === 'main')
+  const backup = setOf(s).mounts.find((m) => m.bank === 'backup')
+  assert.deepEqual(main?.setup?.triggerComponentIds, [觸沉著.id])
+  assert.deepEqual(backup?.setup?.triggerComponentIds, [觸壓迫.id])
 })

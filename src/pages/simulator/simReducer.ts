@@ -15,15 +15,15 @@
 //
 // 純函式、無 React 依賴，可單測（npm test）。
 
-import type { EquipSet, LoadoutDraft, LoadoutMount } from '../../types/loadout'
+import type { EquipSet, LoadoutDraft, LoadoutMount, MountSetup } from '../../types/loadout'
 import type { SlotRef } from '../../types/slots'
 import { WeaponEquipSlot } from '../../types/enums.ts'
 import { equipSetKeys, DEFAULT_EQUIP_SET_KEY } from '../../utils/forms.ts'
 import { licenseAllows } from '../../utils/normalizeArmorType.ts'
 import { slotLabel } from '../../utils/mechSlots.ts'
 import {
-  buildContext, canEquipWeapon, canEquipBackpack, loadoutBudget, slotsOverlap,
-  type LoadoutWorld, type ResolutionAction,
+  buildContext, canEquipWeapon, canEquipBackpack, canEquipComponent, loadoutBudget, slotsOverlap,
+  type LoadoutContext, type LoadoutWorld, type ResolutionAction,
 } from '../../utils/loadoutRules.ts'
 import { ND_RULES, isGammaZone, zonePower } from '../../utils/ndOverrides.ts'
 import { sanitizeLoadoutName } from '../../utils/loadoutName.ts'
@@ -51,18 +51,39 @@ export type LoadoutAction =
   | { type: 'setName'; name: string }
   | { type: 'undo' }
   | { type: 'dismissNotice' }
+  /**
+   * 把一顆元件掛到某一把武器上（PLAN-052-D B-1）。`ref` 是**武器自己的座標**
+   * （雙手武器 ＝ `dualHand`，不是它蓋住的兩格之一）。
+   *
+   * ⚠ 卸下用的是 `ResolutionAction` 裡的 `unequipComponent` —— 拒絕訊息上的解法按鈕
+   *   會直接派它進來，兩邊共用同一個形狀（見本 union 開頭的註解）。
+   */
+  | { type: 'equipComponent'; ref: SlotRef; componentId: string }
   /** 由外部載入一份草稿（ProfilePage 的舊存檔、未來的分享碼）。一樣要過 reconcile */
   | { type: 'loadDraft'; draft: LoadoutDraft }
 
 // ─── 狀態 ───────────────────────────────────────────────────────────────────
 
-/** 被級聯移除的一件裝備。UI 用它組 toast，也用它做 [復原]。 */
+/**
+ * 被級聯移除的一件裝備。UI 用它組 toast，也用它做 [復原]。
+ *
+ * ⚠ `component` 這一種**非開不可**（PLAN-052-D 決策九），與算力的處理刻意相反：
+ *   算力被 reconcile 修正時，面板上的方格會就地變樣、玩家看得到，所以它不進 removed；
+ *   **元件不會** —— 它藏在「點開武器列再鑽進面板」兩層之後。換一把武器就靜默丟掉
+ *   四顆元件而不吭一聲，是這一層最容易長出來的客服問題。
+ */
 export interface RemovedItem {
-  kind: 'weapon' | 'backpack'
+  kind: 'weapon' | 'backpack' | 'component'
   id: string
   /** 顯示名。查不到資料時退回 id —— 那代表資料斷鏈，該被看見而不是靜默留白 */
   name: string
-  /** 武器才有：它原本在哪一格 */
+  /**
+   * 它原本在哪一格。
+   *
+   * ⚠ 元件填的是**純槽位標籤**（「右手」）而不是「右手 叢林之災」：
+   *   `flashOf()` 拿這個字串去讓槽位圖閃橙，混進武器名就再也對不上任何一格。
+   *   掛在哪一把由 `why` 講（「叢林之災已換成熔火」）。
+   */
   where?: string
   /** 為什麼被移除（中文，已填入具體對象） */
   why: string
@@ -109,6 +130,47 @@ function setOf(draft: LoadoutDraft, key: string): EquipSet {
 
 function withSet(draft: LoadoutDraft, key: string, set: EquipSet): LoadoutDraft {
   return { ...draft, sets: { ...draft.sets, [key]: set } }
+}
+
+/** 掛在這一筆 mount 上的元件 doc id（觸在前、應在後）。 */
+function mountedIds(m: LoadoutMount): string[] {
+  return [...(m.setup?.triggerComponentIds ?? []), ...(m.setup?.effectComponentIds ?? [])]
+}
+
+/**
+ * 換掉一筆 mount 的元件設定。
+ *
+ * ⚠ **兩條清單都空時整個 `setup` 欄位不存在**，不留 `{}` 也不留空陣列 ——
+ *   同 `backpackId` / `ndLevels`：三態（有值／空／不存在）撞上 `stripUndefined`
+ *   （firestoreCore.ts）會變成「一旦填了就再也清不掉」。
+ */
+function withSetup(m: LoadoutMount, trigger: readonly string[], effect: readonly string[]): LoadoutMount {
+  const next: LoadoutMount = { ...m }
+  if (trigger.length === 0 && effect.length === 0) {
+    delete next.setup
+    return next
+  }
+  const setup: MountSetup = {}
+  if (trigger.length) setup.triggerComponentIds = [...trigger]
+  if (effect.length) setup.effectComponentIds = [...effect]
+  next.setup = setup
+  return next
+}
+
+/** 加一顆元件。已經在清單裡時原樣回傳 —— 呼叫端負責判斷那是不是錯誤。 */
+function addComponent(m: LoadoutMount, id: string, isCondition: boolean): LoadoutMount {
+  const trigger = m.setup?.triggerComponentIds ?? []
+  const effect = m.setup?.effectComponentIds ?? []
+  if (trigger.includes(id) || effect.includes(id)) return m
+  return isCondition ? withSetup(m, [...trigger, id], effect) : withSetup(m, trigger, [...effect, id])
+}
+
+/** 拿掉一顆元件。不在清單裡時原樣回傳。 */
+function removeComponent(m: LoadoutMount, id: string): LoadoutMount {
+  const trigger = m.setup?.triggerComponentIds ?? []
+  const effect = m.setup?.effectComponentIds ?? []
+  if (!trigger.includes(id) && !effect.includes(id)) return m
+  return withSetup(m, trigger.filter((x) => x !== id), effect.filter((x) => x !== id))
 }
 
 /** 把 mount 攤成人類看得懂的「左肩 熔火」。 */
@@ -186,6 +248,11 @@ export function reconcile(draft: LoadoutDraft, world: LoadoutWorld): { draft: Lo
       kept.push(m)
     }
     if (kept.length !== cur.mounts.length) next = withSet(next, key, { ...cur, mounts: kept })
+
+    // ── 元件：逐把武器把 setup 重新裝一次（PLAN-052-D B-2）──
+    const comp = reconcileSetups(next, key, world)
+    next = comp.draft
+    removed.push(...comp.removed)
   }
 
   // ── 算力配置：掃成對得上目前機師的合法配置（PLAN-052-I D-2）──
@@ -199,6 +266,82 @@ export function reconcile(draft: LoadoutDraft, world: LoadoutWorld): { draft: Lo
   }
 
   return { draft: next, removed }
+}
+
+/**
+ * 把一套配裝裡每一把武器的元件設定掃成合法狀態（PLAN-052-D B-2）。
+ *
+ * 作法是**清空後逐顆重裝**，而不是逐條寫「哪些情況要拿掉」——
+ * 重裝走的是 `canEquipComponent()`，於是五條規則自動全套適用、順序也與玩家手動裝時一致。
+ * 與 reconcile 掃武器時「把它自己先拿掉再問」是同一個手法。
+ *
+ * ⚠ **`components` 尚未載入時整段跳過**（計畫書決策六，本計畫最危險的一條）。
+ *   `reconcile()` 對武器的作法是「查不到就刪」，元件**絕對不可**照抄：載入是非同步的，
+ *   而草稿會在集合到齊之前就被 `loadDraft` 灌進來（分享碼、localStorage 書架、
+ *   052-E 的雲端存檔都走那條）。照抄的症狀是**貼一次分享碼、元件就被靜默清空一次**，
+ *   而畫面上什麼都不會說 —— 連 toast 都不會跳，因為那在它眼裡是一次成功的級聯。
+ *   空 Map 的意思是「還沒載入」，不是「這個世界沒有元件」。
+ *
+ * ⚠ 換武器**不經過這裡**：`placeWeapon()` 建立新 mount 時本來就不帶 setup，
+ *   元件自動清空（計畫書決策四）。那條路上的 toast 由 `equipWeapon` 的 displaced 負責。
+ */
+function reconcileSetups(
+  draft: LoadoutDraft, key: string, world: LoadoutWorld,
+): { draft: LoadoutDraft; removed: RemovedItem[] } {
+  if (world.components.size === 0) return { draft, removed: [] }
+
+  const cur = setOf(draft, key)
+  if (!cur.mounts.some((m) => m.setup)) return { draft, removed: [] }
+
+  const removed: RemovedItem[] = []
+  const baseCtx = buildContext(draft, key, world)
+  let mounts = cur.mounts
+  let changed = false
+
+  for (let i = 0; i < mounts.length; i++) {
+    const m = mounts[i]
+    const ids = [
+      ...(m.setup?.triggerComponentIds ?? []),
+      ...(m.setup?.effectComponentIds ?? []),
+    ]
+    if (ids.length === 0) continue
+
+    const ref: SlotRef = { bank: m.bank, slot: m.slot, side: m.side }
+    const where = slotLabel(ref)
+    const weaponName = world.weapons.get(m.weaponId)?.name ?? m.weaponId
+    let acc = withSetup(m, [], [])
+
+    for (const id of ids) {
+      const c = world.components.get(id)
+      if (!c) {
+        removed.push({ kind: 'component', id, name: id, where, why: '元件資料已不存在' })
+        continue
+      }
+      // 壞掉的外部來源可能把同一顆掛兩次；`canEquipComponent` 對已裝的那顆是放行的
+      // （面板要畫得出「已裝上」），所以重複要在這裡自己擋
+      if (mountedIds(acc).includes(id)) {
+        removed.push({ kind: 'component', id, name: c.name, where, why: `${weaponName}重複掛載了同一顆元件` })
+        continue
+      }
+      const probe: LoadoutContext = {
+        ...baseCtx,
+        set: { ...cur, mounts: mounts.map((x, j) => (j === i ? acc : x)) },
+      }
+      const r = canEquipComponent(probe, c, ref)
+      if (r) {
+        removed.push({ kind: 'component', id, name: c.name, where, why: `${weaponName}：${r.reason}` })
+        continue
+      }
+      acc = addComponent(acc, c.id, c.componentType === 'Condition')
+    }
+
+    if (mountedIds(acc).length !== ids.length) {
+      mounts = mounts.map((x, j) => (j === i ? acc : x))
+      changed = true
+    }
+  }
+
+  return changed ? { draft: withSet(draft, key, { ...cur, mounts }), removed } : { draft, removed }
 }
 
 /**
@@ -410,6 +553,34 @@ export function simReduce(state: SimState, action: LoadoutAction, world: Loadout
       const { draft, removed } = reconcile(base, world)
       const all = [...displacedItems(backMounts, world, `背槽已由${bp.name}佔用`), ...removed]
       return commit(state, state.draft, draft, all, `已裝上 ${bp.name}`, outputNote(state, draft, world), [], true)
+    }
+
+    case 'equipComponent': {
+      const key = state.draft.activeSetKey
+      const c = world.components.get(action.componentId)
+      if (!c) return state
+      const cur = setOf(state.draft, key)
+      const i = cur.mounts.findIndex((m) => slotsOverlap(m, action.ref))
+      if (i < 0) return state                       // 這一格沒有武器（元件掛在武器上）
+      const next = addComponent(cur.mounts[i], c.id, c.componentType === 'Condition')
+      if (next === cur.mounts[i]) return state      // 已經裝著這一顆
+      const base = withSet(state.draft, key, { ...cur, mounts: cur.mounts.map((m, j) => (j === i ? next : m)) })
+      const { draft, removed } = reconcile(base, world)
+      // 元件不佔重量 ⇒ 不必報出力變化（`outputNote` 恆為空，呼叫它只是白算一次）
+      return commit(state, state.draft, draft, removed, `已裝上 ${c.name}`, [], [slotLabel(action.ref)], true)
+    }
+
+    case 'unequipComponent': {
+      const key = state.draft.activeSetKey
+      const cur = setOf(state.draft, key)
+      const i = cur.mounts.findIndex((m) => slotsOverlap(m, action.ref))
+      if (i < 0) return state
+      const next = removeComponent(cur.mounts[i], action.componentId)
+      if (next === cur.mounts[i]) return state      // 本來就沒裝
+      const base = withSet(state.draft, key, { ...cur, mounts: cur.mounts.map((m, j) => (j === i ? next : m)) })
+      const { draft, removed } = reconcile(base, world)
+      const name = world.components.get(action.componentId)?.name ?? action.componentId
+      return commit(state, state.draft, draft, removed, `已卸下 ${name}`, [], [slotLabel(action.ref)], true)
     }
 
     case 'clearSet': {
