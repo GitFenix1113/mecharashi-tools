@@ -1,4 +1,6 @@
+import type { Component } from '../../types'
 import { WeaponIcon } from '../icons/WeaponIcon'
+import { ComponentIcon } from '../icons/ComponentIcon'
 import { LoadoutIcon, type LoadoutIconName } from '../icons/LoadoutIcon'
 import { HUD, SEG_TEXT, type SegKey } from './loadoutTheme'
 import type { SlotOccupant } from '../../utils/loadoutRules'
@@ -98,11 +100,26 @@ interface Props {
   componentUsed?: number
   /** 元件列上的上限（`componentLimit`） */
   componentLimit?: number
+  /**
+   * 已裝元件的**縮圖**（PLAN-052-G C-8，使用者裁決 2026-08-27）。
+   *
+   * 使用者逐字：「模組和元件選擇後，介面是否能更直觀些？用縮圖或什麼方式讓玩家
+   * 看得出來裝了什麼。」在那之前這一列只有「元件 3/4」——那個數字說得出**幾顆**，
+   * 說不出**哪幾顆**，而玩家配完一輪之後想確認的正是後者。
+   *
+   * ⚠ 有縮圖時**縮圖取代「元件」兩個字**，不是並排：這一列住在一格 152px 的節點下方，
+   *   文字 ＋ 四枚圖示 ＋ 計數 ＋ ▸ 放不下（dense 模式實測會把計數擠掉）。
+   *   圖示本身就說得出那是元件，字反而是那個可以省的。
+   * ⚠ `tight`（手機直向，欄寬 ~120px）**一律不畫縮圖**，退回原本的文字版 ——
+   *   那裡連武器名都只剩得下省略號。
+   */
+  componentIcons?: readonly Component[]
 }
 
 export function SlotCell({
   label, occupant, absentReason, seg, slotIcon, available, preview,
-  active, flash, compact, dense, tight, onOpen, onClear, onComponents, componentUsed = 0, componentLimit = 0,
+  active, flash, compact, dense, tight, onOpen, onClear, onComponents,
+  componentUsed = 0, componentLimit = 0, componentIcons,
 }: Props) {
   // ⚠ 內距與間隙一律寫 **px**，不用 Tailwind 的 spacing 單位。
   //   本站 root font-size 是 19px（Layout 的 FONT_SIZE_MAP），`gap-2.5` 實測 11.9px、
@@ -321,7 +338,15 @@ export function SlotCell({
         style={{ gap: 5 }}
       >
         <LoadoutIcon name="gear" className="w-3 h-3 shrink-0" />
-        <span className={`${HUD.body} ${tight ? 'text-[11px]' : ''} truncate`}>元件</span>
+        {!tight && componentIcons && componentIcons.length > 0 ? (
+          <span className="flex items-center min-w-0" style={{ gap: 1 }}>
+            {componentIcons.map((c, i) => (
+              <ComponentIcon key={`${c.id}#${i}`} comp={c} size={18} />
+            ))}
+          </span>
+        ) : (
+          <span className={`${HUD.body} ${tight ? 'text-[11px]' : ''} truncate`}>元件</span>
+        )}
         <span className={`${HUD.num} text-[11px] ml-auto shrink-0`}>{componentUsed}/{componentLimit}</span>
         <span className="text-[10px] shrink-0 opacity-70">▸</span>
       </button>

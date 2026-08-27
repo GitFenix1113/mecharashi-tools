@@ -800,15 +800,14 @@ export default function LoadoutPage() {
                 選好機師與機甲之後，這裡會列出它全部的槽位。
               </p>
             )}
-            {ctx.mech && (
-              <button
-                type="button"
-                onClick={() => setPicker({ kind: 'backpack' })}
-                className="hud-cut-sm mt-2 w-full text-[12px] px-2.5 py-1.5 border border-border text-text-secondary hover:text-text-primary hover:border-border-accent transition-colors cursor-pointer"
-              >
-                {ctx.backpack ? `更換背包（${ctx.backpack.name}）` : '選擇背包'}
-              </button>
-            )}
+            {/* ⏸ 「選擇背包」按鈕已移除（PLAN-052-G C-8，使用者裁決 2026-08-27）：
+                   它與槽位圖上的**背部**那一格是同一件事。背包在任何狀態下都是
+                   ≤2 次點擊可達 —— `openSlot()` 依現況決定開哪一邊（已裝背包 → 背包清單；
+                   否則 → 武器清單），而兩邊的挑選器抬頭都帶著「改選背包／改選背部武器」
+                   的切換鍵（`backAlt` / `BACK_WEAPON_ALT`）。
+                ⚠ 代價是「背槽也能放背包」要點進去才發現。可接受的理由是那個發現點
+                   就在挑選器抬頭 —— 比一顆孤立在槽位圖外的按鈕更靠近使用情境。
+                   若日後要補回入口，該補的是**背部那一格的空態文案**，不是這顆按鈕。 */}
           </Panel>
 
           {/* ⚠ 非三欄版時算力面板掛在槽位圖**下方**，不是機師卡下方（052-I D-1 驗收）：

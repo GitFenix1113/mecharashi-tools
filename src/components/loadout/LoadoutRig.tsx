@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { Component } from '../../types'
 import type { ModuleSlotRef, SlotKey, WeaponSlotRef } from '../../types/slots'
 import { slotKey } from '../../types/slots'
 import { WeaponEquipSlot } from '../../types/enums'
@@ -114,10 +115,16 @@ const DENSE_MAX_WIDTH = 570
  *   等於在畫面上擺一個必然落空的入口。背包同理（沒有元件槽）。
  */
 function componentBadge(
+  ctx: LoadoutContext,
   occ: SlotOccupant,
   ref: WeaponSlotRef,
   onOpenComponents?: (ref: WeaponSlotRef) => void,
-): { onComponents?: () => void; componentUsed?: number; componentLimit?: number } {
+): {
+  onComponents?: () => void
+  componentUsed?: number
+  componentLimit?: number
+  componentIcons?: Component[]
+} {
   if (!onOpenComponents) return {}
   const weapon = occ.kind === 'weapon' ? occ.weapon
     : occ.kind === 'fixed' ? occ.weapon
@@ -125,10 +132,14 @@ function componentBadge(
     : null
   if (!weapon || weapon.componentLimit <= 0) return {}
   const setup = occ.kind === 'weapon' ? occ.mount.setup : undefined
+  const ids = [...(setup?.triggerComponentIds ?? []), ...(setup?.effectComponentIds ?? [])]
   return {
     onComponents: () => onOpenComponents(ref),
-    componentUsed: (setup?.triggerComponentIds?.length ?? 0) + (setup?.effectComponentIds?.length ?? 0),
+    componentUsed: ids.length,
     componentLimit: weapon.componentLimit,
+    // 查不到的 id 濾掉：那一顆的資料斷鏈由元件面板印紅字，格子上的縮圖列不適合承載錯誤
+    // —— 一枚空框在四枚圖示中間會被讀成「有一顆我不認得的元件」，而那是對的但幫不上忙。
+    componentIcons: ids.map((id) => ctx.world.components.get(id)).filter((c): c is Component => !!c),
   }
 }
 
@@ -218,7 +229,7 @@ export function LoadoutRig({
         tight={tight}
         onOpen={() => onOpenSlot(ref)}
         onClear={occ.kind === 'weapon' || occ.kind === 'backpack' ? () => onClearSlot(ref) : undefined}
-        {...componentBadge(occ, ref, onOpenComponents)}
+        {...componentBadge(ctx, occ, ref, onOpenComponents)}
       />
     )
   }

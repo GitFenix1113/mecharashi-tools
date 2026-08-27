@@ -3,8 +3,7 @@ import type { Module } from '../../types'
 import type { ModuleSlotRef } from '../../types/slots'
 import { ModuleSlotBadge, ModuleRarityBadge } from '../badges/ModuleBadges'
 import { ModuleStatTags } from '../module/ModuleStatTags'
-import { imageCandidates } from '../../utils/assets'
-import { FallbackImage } from '../common/FallbackImage'
+import { ModuleIcon } from '../icons/ModuleIcon'
 import LoadoutIcon from '../icons/LoadoutIcon'
 import { HUD, HUD_PANEL } from './loadoutTheme'
 import { CATALOG_SLOTS, SLOT_LABELS, partLabel } from '../../utils/moduleSlots'
@@ -296,25 +295,6 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onResolve }: Props) {
 function summaryOf(mod: Module): string {
   const last = mod.levels?.[mod.levels.length - 1]
   return last?.description ?? mod.description ?? ''
-}
-
-/** 圖示載不到時留一個框，而不是把 <img> 藏起來 —— 後者會讓每一列高度不一致。 */
-function ModuleIcon({ mod, size }: { mod: Module | null; size: number }) {
-  const box = { width: size, height: size }
-  if (!mod?.icon) {
-    return <span className="shrink-0 hud-cut-sm bg-bg-dark border border-border-subtle" style={box} />
-  }
-  return (
-    <span className="shrink-0" style={box}>
-      <FallbackImage
-        candidates={imageCandidates(mod.icon)}
-        alt=""
-        loading="lazy"
-        className="w-full h-full object-contain"
-        fallback={<span className="block w-full h-full hud-cut-sm bg-bg-dark border border-border-subtle" />}
-      />
-    </span>
-  )
 }
 
 /**

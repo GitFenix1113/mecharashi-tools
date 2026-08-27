@@ -10,6 +10,7 @@ import {
 import { ModuleSlot } from '../../types/enums'
 import type { LoadoutContext } from '../../utils/loadoutRules'
 import { ModuleStatTags } from '../module/ModuleStatTags'
+import { ModuleIcon } from '../icons/ModuleIcon'
 import { HUD } from './loadoutTheme'
 
 // ─── 已裝效果彙總（PLAN-052-G C-4 ／ C-7 同族堆疊）──────────────────────────
@@ -211,6 +212,8 @@ function SlotRow({ line }: { line: SlotLine }) {
         <span className="text-[11px] text-text-secondary">{partLabel(position)}</span>
         <span className="text-[9px] text-text-dim truncate">{iface}</span>
       </span>
+      {/* 縮圖：讓「裝了什麼」不必讀字（C-8）。未裝時留同尺寸的框，列高才一致 */}
+      <ModuleIcon mod={mod} size={26} />
       <span className="flex flex-col min-w-0 grow" style={{ gap: 2 }}>
         <span className="flex items-baseline" style={{ gap: 5 }}>
           <span className={`${HUD.body} truncate ${mod ? 'text-text-primary' : 'text-text-dim'}`}>
@@ -246,6 +249,7 @@ function PlainRow({ where, mod, fallbackId, level }: {
   return (
     <div className="flex items-start bg-bg-dark border border-border-subtle" style={{ gap: 8, padding: '5px 8px' }}>
       <span className="shrink-0 w-11 text-[11px] text-text-secondary leading-tight">{where}</span>
+      <ModuleIcon mod={mod} size={26} />
       <span className="flex flex-col min-w-0 grow" style={{ gap: 2 }}>
         <span className="flex items-baseline" style={{ gap: 5 }}>
           <span className={`${HUD.body} truncate ${mod ? 'text-text-primary' : 'text-text-dim'}`}>

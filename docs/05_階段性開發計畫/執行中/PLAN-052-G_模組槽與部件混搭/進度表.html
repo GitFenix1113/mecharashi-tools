@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">15</div>
+      <div class="summary-num" style="color:var(--accent-green)">16</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -179,18 +179,18 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">22</div>
+      <div class="summary-num" style="color:var(--text-primary)">23</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度 <small style="color:var(--text-dim)">（以 22 個工項計；C-7 為 2026-08-27 追加，E-3 已延後、不計入）</small></span>
-      <span style="color:var(--accent-purple);">15 / 22</span>
+      <span>整體完成度 <small style="color:var(--text-dim)">（以 23 個工項計；C-7／C-8 為 2026-08-27 追加，E-3 已延後、不計入）</small></span>
+      <span style="color:var(--accent-purple);">16 / 23</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 68%"></div>
+      <div class="progress-bar-fill" style="width: 70%"></div>
     </div>
   </div>
 
@@ -976,6 +976,87 @@
           那是型別缺欄位、不是抄錯，本輪由「印該階敘述」的 fallback 接住。
         </div>
         <div class="task-file">src/utils/moduleRules.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-8 &nbsp; 可讀性三件（縮圖 ／ 十字排版 ／ 移除重複入口）</div>
+      <div class="task-group-meta">2026-08-27 追加 · 使用者裁決</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">① 模組與元件裝上之後要看得出「裝了什麼」</div>
+        <div class="task-desc">
+          使用者逐字：「模組和元件選擇後，介面是否能更直觀些？用縮圖或什麼方式讓玩家
+          看得出來裝了什麼。」在那之前兩邊都只有文字 ——
+          四部位卡是「Ⅱ型接口 · 刀劍模組Ⅱ」，武器格下的元件列是「元件 3/4」。
+          前者要讀完名字才知道裝了什麼，後者說得出<strong>幾顆</strong>、說不出<strong>哪幾顆</strong>，
+          而玩家配完一輪之後想確認的正是後者。
+          <br><br>
+          <strong>✅ 已落地：</strong>新檔 <code>components/icons/ModuleIcon.tsx</code>
+          （配裝器三處共用：四部位卡、模組面板、效果彙總）。
+          元件那邊直接用既有的 <code>ComponentIcon</code>，它畫的就是遊戲裡那個六角外框 ＋ 圖示的樣子。<br>
+          ⚠ <code>ModuleIcon</code> <strong>與圖鑑 <code>ModuleCard</code> 那顆刻意分開</strong>：
+          那一顆是 <code>rounded-lg</code> 的大圖卡（圖鑑語彙），這一顆是 <code>hud-cut-sm</code>
+          的小切角方塊（配裝器 HUD 語彙）。合併會讓其中一邊看起來像從另一頁貼過來的。<br>
+          ⚠ 元件列上<strong>縮圖取代「元件」兩個字</strong>，不是並排：這一列住在一格 152px 的節點下方，
+          文字 ＋ 四枚圖示 ＋ 計數 ＋ ▸ 放不下（dense 模式實測會把計數擠掉）。
+          圖示本身就說得出那是元件，字反而是那個可以省的。
+          <code>tight</code>（手機直向、欄寬 ~120px）則<strong>一律不畫縮圖</strong>退回文字版 ——
+          那裡連武器名都只剩得下省略號。<br>
+          ⚠ 查不到的元件 id 從縮圖列<strong>濾掉</strong>（斷鏈由面板印紅字）：
+          一枚空框夾在三枚圖示中間會被讀成「有一顆我不認得的元件」—— 那句話是對的，但幫不上忙。
+        </div>
+        <div class="task-file">components/icons/ModuleIcon.tsx · SlotCell.tsx · LoadoutRig.tsx · EquippedEffects.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">② 四部位改十字排版（軀幹 ／ 左臂 右臂 ／ 腿部）</div>
+        <div class="task-desc">
+          使用者：「四個部位的排版看是否能用上下左右排，更接近遊戲中畫面。」
+          遊戲的整備畫面就是人形排列，而原本的 2×2 方陣讀不出哪一格對應機體的哪裡 ——
+          玩家得靠讀字才知道。十字排列讓位置自己說話，
+          與正上方那張槽位圖（左肩右肩／左手右手左右分欄）也是同一套空間語彙。
+          <br><br>
+          <strong>✅ 已落地：</strong>軀幹與腿部整寬、雙臂並排（<code>col-span-2</code> ＋ 2 欄）。
+          卡片同時長高一行放縮圖與該族合計等級（<code>Lv4/4</code>）——
+          使用者已確認「中間這欄還很寬裕，往下擴充沒問題」。<br>
+          ⚠ <strong>左臂在左、右臂在右，與遊戲畫面相反</strong>（遊戲是從正面看機體，左右對調）。
+          刻意不跟：本頁正上方的槽位圖已經是「左肩在左」，兩者同時出現在一個畫面上，
+          一個跟機體、一個跟畫面會變成同一頁裡的兩套左右。<strong>以畫面為準</strong>是一致的那一邊。<br>
+          ⚠ 仍然<strong>固定兩欄</strong>，不要用 <code>xl:grid-cols-4</code>：
+          Tailwind 的斷點看的是視窗寬，而這排卡片住在一個 520px 的欄裡。
+        </div>
+        <div class="task-file">src/components/loadout/MechPartStrip.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">③ 移除槽位圖下方那顆「選擇背包」按鈕</div>
+        <div class="task-desc">
+          使用者：「部位那邊應該不用選擇『背包』了，跟上面的選擇背部是重複功能，
+          或是你有其他考量也可以反駁我。」
+          <strong>查過可達性之後同意，沒有反駁。</strong><br>
+          點槽位圖上的<strong>背部</strong>那一格時，<code>openSlot()</code> 依現況決定開哪一邊
+          （已裝背包 → 背包清單；否則 → 武器清單），而兩邊的挑選器抬頭都帶著
+          「改選背包／改選背部武器」的切換鍵（<code>backAlt</code> / <code>BACK_WEAPON_ALT</code>）——
+          <strong>背包在任何狀態下都是 ≤2 次點擊可達</strong>，那顆按鈕沒有提供第三條路。<br>
+          ⚠ 代價是「背槽也能放背包」要點進去才發現。可接受的理由是那個發現點
+          <strong>就在挑選器抬頭</strong>，比一顆孤立在槽位圖外的按鈕更靠近使用情境。
+          若日後決定要補回入口，該補的是<strong>背部那一格的空態文案</strong>，不是這顆按鈕 ——
+          原處已留註解寫明這一點。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status done">已完成</span>
