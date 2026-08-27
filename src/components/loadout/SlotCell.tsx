@@ -339,9 +339,12 @@ export function SlotCell({
       >
         <LoadoutIcon name="gear" className="w-3 h-3 shrink-0" />
         {!tight && componentIcons && componentIcons.length > 0 ? (
-          <span className="flex items-center min-w-0" style={{ gap: 1 }}>
+          /* ⚠ 尺寸依格寬分兩階（使用者回饋 2026-08-27：18px 太小、上下還有空間）。
+             四枚 26px ＝ 104px，一格 190px 的節點放得下（⚙ 12 ＋ 計數 24 ＋ ▸ 10 ＋ 間隙）；
+             dense（~152px）退到 22px，再大會把計數擠掉。tight 一律不畫，見上方註解。 */
+          <span className="flex items-center min-w-0" style={{ gap: 2 }}>
             {componentIcons.map((c, i) => (
-              <ComponentIcon key={`${c.id}#${i}`} comp={c} size={18} />
+              <ComponentIcon key={`${c.id}#${i}`} comp={c} size={dense || compact ? 22 : 26} />
             ))}
           </span>
         ) : (

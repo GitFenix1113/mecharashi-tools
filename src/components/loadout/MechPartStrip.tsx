@@ -85,12 +85,20 @@ export function MechPartStrip({ ctx, onOpenModule, activePosition }: Props) {
         </span>
       </div>
 
-      {/* 十字排列：軀幹 ／ 左臂 右臂 ／ 腿部 —— 位置自己說話，不必讀字 */}
+      {/* 十字排列：軀幹 ／ 左臂 右臂 ／ 腿部 —— 位置自己說話，不必讀字。
+          ⚠ 軀幹與腿部**置中且與手臂卡等寬**，不是整寬（使用者回饋 2026-08-27）：
+            拉成整寬時那兩張卡的內容全靠左、右半邊一片空，看起來像沒排完 ——
+            而「十字」的形狀也因此讀不出來（整寬的兩條只是兩條橫線）。
+            寬度用 `calc(50% - 半個 gap)` 對齊手臂那一列，三層的邊緣才切齊。 */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="col-span-2">{card(MechPartPosition.TORSO)}</div>
+        <div className="col-span-2 flex justify-center">
+          <div className="w-[calc(50%-0.25rem)]">{card(MechPartPosition.TORSO)}</div>
+        </div>
         {card(MechPartPosition.LEFT_ARM)}
         {card(MechPartPosition.RIGHT_ARM)}
-        <div className="col-span-2">{card(MechPartPosition.LEGS)}</div>
+        <div className="col-span-2 flex justify-center">
+          <div className="w-[calc(50%-0.25rem)]">{card(MechPartPosition.LEGS)}</div>
+        </div>
       </div>
     </section>
   )
