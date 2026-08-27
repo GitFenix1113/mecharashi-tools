@@ -5,14 +5,15 @@ import { ModuleSlotBadge, ModuleRarityBadge } from '../badges/ModuleBadges'
 import { ModuleStatTags } from '../module/ModuleStatTags'
 import { ModuleIcon } from '../icons/ModuleIcon'
 import LoadoutIcon from '../icons/LoadoutIcon'
-import { HUD, HUD_PANEL } from './loadoutTheme'
+import { HUD, HUD_ACTIONABLE, HUD_BTN, HUD_BTN_DANGER, HUD_INPUT, HUD_PANEL } from './loadoutTheme'
+import { ActionChevron } from './ActionChevron'
 import { CATALOG_SLOTS, SLOT_LABELS, partLabel } from '../../utils/moduleSlots'
 import {
   interfaceState, moduleStatsAt, moduleStacks, moduleFamilyKey, moduleAddLevel, moduleMaxLevel,
 } from '../../utils/moduleRules'
 import {
-  moduleChoices, canEquipModule, REJECTION_LABEL, structuralCounts,
-  type LoadoutContext, type PickerEntry, type Rejection, type ResolutionAction,
+  moduleChoices, canEquipModule, planModuleFill, REJECTION_LABEL, structuralCounts,
+  type LoadoutContext, type ModuleFillPlan, type PickerEntry, type Rejection, type ResolutionAction,
 } from '../../utils/loadoutRules'
 import type { ModuleStack } from '../../utils/moduleRules'
 
@@ -55,10 +56,25 @@ const SLOT_FILTERS = [
 const RARITIES = ['S', 'A'] as const
 
 const chip = (on: boolean) =>
-  `hud-cut-sm px-2 py-0.5 text-[12px] border transition-colors cursor-pointer ${
+  `hud-cut-sm px-2 py-0.5 text-[13px] border transition-colors cursor-pointer ${
     on ? 'border-accent-orange text-accent-orange bg-accent-orange/10'
        : 'border-border text-text-secondary hover:border-border-accent'
   }`
+
+/**
+ * 清單列的縮圖尺寸（使用者要求 2026-08-28）。
+ *
+ * 使用者逐字：「右邊的 ICON 也可以大一點，使用者大多都是認 ICON」——
+ * 這份清單一次要掃過上百筆，而玩家腦中的索引鍵是圖不是名字。
+ *
+ * ⚠ 34/30 是右欄裡**最小**的一組圖：武器挑選器是整片 `aspect-square` 的方塊、
+ *   機甲是 78×52 的橫縮圖，只有這兩份清單停在 34。放大到 46/42 才是同一套語彙。
+ * ⚠ 代價是名稱欄少 12px（列寬約 391，文字欄 330 → 318）。名稱本來就 `truncate`，
+ *   而這一列真正不能犧牲的是名字 —— 再往上加就要先把徽章那組收窄。
+ */
+const ROW_ICON = 46
+/** 「已裝上」那一列：右側多一顆卸下鍵，比候選列小一階 */
+const MOUNTED_ICON = 42
 
 interface Props {
   ctx: LoadoutContext
@@ -67,11 +83,18 @@ interface Props {
   onBack: () => void
   /** 裝上一顆。UI 不自己組 action —— 與 `onResolve` 同一條理由 */
   onEquip: (mod: Module) => void
+  /**
+   * 一鍵裝滿（使用者要求 2026-08-27）：把這顆裝到這一族滿級為止。
+   *
+   * ⚠ 動幾格由 `planModuleFill()` 算，這裡只負責派出去。按鈕上的字也取自同一份計畫 ——
+   *   「裝滿 4 格」印出來卻只裝 2 格，是這個功能最容易長出來的謊。
+   */
+  onFill: (mod: Module) => void
   /** 卸下，以及拒絕訊息附的解法按鈕。動作由規則層給，UI 只負責派出去 */
   onResolve: (action: ResolutionAction) => void
 }
 
-export function ModulePanel({ ctx, ref_, onBack, onEquip, onResolve }: Props) {
+export function ModulePanel({ ctx, ref_, onBack, onEquip, onFill, onResolve }: Props) {
   const [slot, setSlot] = useState('')
   const [rarity, setRarity] = useState('')
   const [query, setQuery] = useState('')
@@ -95,6 +118,14 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onResolve }: Props) {
     [ctx.modules, ctx.world.modules],
   )
   const equippedStack = equipped ? stacks.get(moduleFamilyKey(equipped)) ?? null : null
+  /**
+   * 已裝那一顆的「補滿」計畫（`null` ＝ 這一格是空的）。已滿級時 `FillButton` 自己不畫。
+   *
+   * ⚠ **刻意不包 `useMemo`**：包了會被 React Compiler 判成
+   *   「Existing memoization could not be preserved」而**整個元件放棄最佳化** ——
+   *   為了省一次四格的迴圈，賠掉整支面板的自動記憶化。編譯器自己會處理這一行。
+   */
+  const equippedFill = equipped ? planModuleFill(ctx, equipped) : null
 
   /**
    * ⚠ 搜尋比對**名稱 ＋ 滿階效果敘述**，不是只比名稱：玩家記得的通常是
@@ -140,7 +171,7 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onResolve }: Props) {
         <button
           type="button"
           onClick={onBack}
-          className="hud-cut-sm shrink-0 px-2 py-1 border border-border text-[12px] text-text-secondary hover:text-text-primary hover:border-border-accent transition-colors cursor-pointer"
+          className={`${HUD_BTN} shrink-0 px-2 py-1 text-[13px]`}
         >
           ← 返回
         </button>
@@ -167,7 +198,7 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onResolve }: Props) {
                 className="flex items-center bg-bg-dark border border-accent-orange/30"
                 style={{ gap: 9, padding: '7px 9px' }}
               >
-                <ModuleIcon mod={equipped} size={30} />
+                <ModuleIcon mod={equipped} size={MOUNTED_ICON} />
                 <span className="flex flex-col min-w-0 grow" style={{ gap: 2 }}>
                   <span className={`${HUD.bodyStrong} text-text-primary truncate`}>
                     {/* 查無 ＝ 資料斷鏈，要看得見而不是靜默留白（同元件面板的 fallback） */}
@@ -181,10 +212,13 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onResolve }: Props) {
                       : '模組資料已不存在'}
                   </span>
                 </span>
+                {/* 補滿：裝了一顆看到「Lv1 / 4」的當下，正是想把它疊起來的時刻 ——
+                    這顆鍵放在那行字旁邊，比放回清單裡更接近使用情境 */}
+                <FillButton plan={equippedFill} onFill={onFill} />
                 <button
                   type="button"
                   onClick={() => onResolve({ type: 'unequipModule', ref: ref_ })}
-                  className="hud-cut-sm shrink-0 px-2 py-1 border border-border text-[12px] text-text-secondary hover:text-accent-red hover:border-accent-red/50 transition-colors cursor-pointer"
+                  className={`${HUD_BTN_DANGER} shrink-0 px-2 py-1 text-[13px]`}
                 >
                   卸下
                 </button>
@@ -194,7 +228,7 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onResolve }: Props) {
                   <ModuleStatTags
                     stats={moduleStatsAt(equippedStack.mod, equippedStack.level)}
                     variant="chip"
-                    className="flex flex-wrap gap-1.5 mt-1.5 text-[12px]"
+                    className="flex flex-wrap gap-1.5 mt-1.5 text-[13px]"
                   />
                   <StackNote stack={equippedStack} />
                 </>
@@ -209,7 +243,7 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onResolve }: Props) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="搜尋名稱或效果（暴擊、出力、命中…）"
-              className="hud-cut-sm w-full bg-bg-dark border border-border px-2.5 py-1.5 text-[12px] text-text-primary placeholder:text-text-dim focus:border-accent-orange/60 focus:outline-none"
+              className={`${HUD_INPUT} w-full px-2.5 py-1.5 text-[13px]`}
             />
 
             <div className="flex flex-wrap items-center mt-2" style={{ gap: 6 }}>
@@ -250,7 +284,7 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onResolve }: Props) {
                 「我的模組呢」變成一個站上自己製造的問題。 */}
             <div className="flex flex-col mt-2 max-h-[52vh] overflow-y-auto pr-0.5" style={{ gap: 6 }}>
               {fits.map((e) => (
-                <ModuleRow key={e.item.id} entry={e} stacks={stacks} onEquip={onEquip} />
+                <ModuleRow key={e.item.id} entry={e} ctx={ctx} stacks={stacks} onEquip={onEquip} onFill={onFill} />
               ))}
 
               {/* 結構性拒絕：摺疊成一行計數，可展開。展開後照樣寫出每一筆的原因 */}
@@ -269,7 +303,7 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onResolve }: Props) {
                     )}
                   </button>
                   {showBlocked && structural.map((e) => (
-                    <ModuleRow key={e.item.id} entry={e} stacks={stacks} onEquip={onEquip} />
+                    <ModuleRow key={e.item.id} entry={e} ctx={ctx} stacks={stacks} onEquip={onEquip} onFill={onFill} />
                   ))}
                 </>
               )}
@@ -311,10 +345,12 @@ function summaryOf(mod: Module): string {
  * ⚠ 沒有第三種：模組這一層一個 situational 拒絕都不剩，所以本列**不接** `onResolve` ——
  *   留一條永遠走不到的解法分支，下一個人會照它寫 UI。
  */
-function ModuleRow({ entry, stacks, onEquip }: {
+function ModuleRow({ entry, ctx, stacks, onEquip, onFill }: {
   entry: PickerEntry<Module>
+  ctx: LoadoutContext
   stacks: ReadonlyMap<string, ModuleStack>
   onEquip: (mod: Module) => void
+  onFill: (mod: Module) => void
 }) {
   const { item: mod, rejection } = entry
   const blocked = rejection !== null
@@ -327,12 +363,25 @@ function ModuleRow({ entry, stacks, onEquip }: {
   const stack = stacks.get(moduleFamilyKey(mod)) ?? null
   const wouldWaste = stack !== null && stack.sum >= cap
 
+  /**
+   * 一鍵裝滿的計畫。**在這裡算而不是塞進按鈕裡**：footer 那一行要不要存在，
+   * 取決於「有沒有堆疊現況」與「按鈕會不會出現」兩件事，而後者只有計畫答得出來。
+   * 兩者都沒有卻畫一個空的 flex 行，會在每一列多出一道 gap。
+   *
+   * ⚠ `multiOnly` 的判準在這裡：清單列上只在**會動兩格以上**時才給按鈕 ——
+   *   一格的話它與「點這一列」是同一件事，多一顆鍵只是把每一列變擠。
+   */
+  const fill = useMemo(() => {
+    if (blocked) return null
+    const plan = planModuleFill(ctx, mod)
+    return plan.noop || plan.targets.length < 2 ? null : plan
+  }, [blocked, ctx, mod])
+
   return (
     <div
-      className={`flex items-start border transition-colors ${
-        blocked
-          ? 'bg-bg-dark border-border-subtle opacity-60'
-          : 'bg-bg-dark border-border hover:border-accent-orange/60 cursor-pointer'
+      // `group` 讓 `ActionChevron` 的 hover 變色跟著整列走
+      className={`group flex items-start border ${
+        blocked ? 'bg-bg-dark border-border-subtle opacity-60' : HUD_ACTIONABLE
       }`}
       style={{ gap: 9, padding: '7px 9px' }}
       onClick={blocked ? undefined : () => onEquip(mod)}
@@ -342,16 +391,23 @@ function ModuleRow({ entry, stacks, onEquip }: {
         if (!blocked && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onEquip(mod) }
       }}
     >
-      <ModuleIcon mod={mod} size={34} />
+      <ModuleIcon mod={mod} size={ROW_ICON} />
       <span className="flex flex-col min-w-0 grow" style={{ gap: 3 }}>
+        {/* ⚠ 第一行**只放名字與徽章**，一鍵裝滿那顆鍵不進來（2026-08-27 實測回報）：
+            這一欄只有約 318px（縮圖放大到 46 之後，見 `ROW_ICON`），而那顆鍵最寬要 110px。它與兩顆 `shrink-0` 的徽章並排時，
+            唯一還能縮的就是名字 —— 於是整份清單的模組名被 `truncate` 壓成一個字
+            （「人 ·」「日 ·」「加 ·」）。名字是這份清單唯一不能犧牲的東西，
+            按鈕改掛到最後一行的右端（見下方 footer）。 */}
         <span className="flex items-center" style={{ gap: 6 }}>
           <span className={`${HUD.bodyStrong} text-text-primary truncate`}>{mod.name}</span>
           {/* 印「這一顆貢獻幾級」而不是「它最高幾階」：等級是堆出來的，
               而挑選的當下要回答的是「裝下去會前進多少」（PLAN-052-G C-7） */}
-          <span className={`${HUD.num} text-[11px] text-text-dim shrink-0`}>＋{add} 級</span>
+          <span className={`${HUD.num} text-[12px] text-text-dim shrink-0`}>＋{add} 級</span>
           <span className="shrink-0 ml-auto flex items-center" style={{ gap: 4 }}>
             <ModuleSlotBadge slot={mod.slot} />
             <ModuleRarityBadge rarity={mod.rarity} />
+            {/* 「這一列點得下去」的靜態記號；裝不上的那些沒有 */}
+            {!blocked && <ActionChevron className="ml-0.5" />}
           </span>
         </span>
 
@@ -360,11 +416,20 @@ function ModuleRow({ entry, stacks, onEquip }: {
         ) : (
           <>
             <span className={`${HUD.body} text-text-secondary`}>{summaryOf(mod)}</span>
-            {stack && (
-              <span className={`text-[11px] ${wouldWaste ? 'text-accent-yellow/90' : 'text-text-dim'}`}>
-                {wouldWaste
-                  ? `已裝 ${stack.positions.length} 顆同族、Lv${stack.level} / ${stack.cap} 已滿 —— 再裝一顆不會再提升`
-                  : `已裝 ${stack.positions.length} 顆同族、Lv${stack.level} / ${stack.cap}，再裝這顆 → Lv${Math.min(stack.sum + add, cap)}`}
+            {/* footer：堆疊現況（左）＋ 一鍵裝滿（右）。兩者講的是同一件事的兩半 ——
+                「現在幾級」與「一次補到幾級」，擺在同一行才對得起來。
+                ⚠ 堆疊那句用 `min-w-0` 讓它自己被截斷，按鈕 `shrink-0`：
+                  這一行沒有名字要保護，該讓的是說明文。 */}
+            {(stack || fill) && (
+              <span className="flex items-end" style={{ gap: 6 }}>
+                {stack && (
+                  <span className={`text-[12px] min-w-0 ${wouldWaste ? 'text-accent-yellow/90' : 'text-text-dim'}`}>
+                    {wouldWaste
+                      ? `已裝 ${stack.positions.length} 顆同族、Lv${stack.level} / ${stack.cap} 已滿 —— 再裝一顆不會再提升`
+                      : `已裝 ${stack.positions.length} 顆同族、Lv${stack.level} / ${stack.cap}，再裝這顆 → Lv${Math.min(stack.sum + add, cap)}`}
+                  </span>
+                )}
+                <span className="ml-auto shrink-0"><FillButton plan={fill} onFill={onFill} /></span>
               </span>
             )}
           </>
@@ -372,6 +437,78 @@ function ModuleRow({ entry, stacks, onEquip }: {
       </span>
     </div>
   )
+}
+
+/**
+ * 一鍵裝滿（使用者要求 2026-08-27）。
+ *
+ * ⚠ **按鈕上的字是計畫算出來的，不是寫死的「四顆」**：同一顆按鈕在不同情況下
+ *   要說不同的話，因為它真的會做不同的事 ——
+ *
+ *     通用 A 級（＋1／顆，上限 4）在 S 級機甲上 → 「裝滿 4 格」
+ *     通用 S 級（＋2／顆，上限 4）             → 「裝滿 2 格」（塞四格是白費兩格）
+ *     S 級模組在 A 級機甲上                     → 「裝滿 2 格」（軀幹與腿是 Ⅰ型接口，裝不上）
+ *     已經滿級／沒有格可動                       → **整顆不畫**
+ *
+ *   寫死「四顆」的版本在後三種情況都會跳票，而跳票的方式是靜默的：按了、動了幾格、
+ *   數字沒到玩家以為的位置。
+ *
+ * ⚠ **不自己算計畫**：呼叫端要靠同一份計畫決定整行要不要畫（見 `ModuleRow` 的 `fill`），
+ *   兩邊各算一次就會出現「行畫了但按鈕沒出現」這種空行。`plan` 為 null ＝ 不畫。
+ *
+ * ── 為什麼是**實心**（使用者回饋 2026-08-27：「容易跟標籤搞混」）─────────────
+ * 第一版用的是 `border-accent-orange/50 ＋ bg-accent-orange/10 ＋ text-accent-orange`
+ * —— 那正是本站**徽章**的配方（`ModuleSlotBadge` / `ModuleRarityBadge` 是
+ * `rounded border ＋ 同色淡底`）。同一列裡它與「特性模組」「S」並排，三者
+ * 顏色不同但形狀與明度階完全一樣，於是它讀起來像第三顆標籤而不是一顆鍵。
+ *
+ * 差異化**不靠再加一個顏色**（052-I 決策一：一個新顏色都不加），靠三件既有語彙：
+ *   ① **實心底 ＋ 深色字** —— 這一列裡唯一的實心色塊。徽章一律是淡底，
+ *      整份清單掃過去，實心的那一塊自己會跳出來。
+ *   ② **一顆 ＋ 圖示** —— 標籤不會有圖示。這是「這是動作」最短的一句話。
+ *   ③ **hover 會變** —— 徽章不動，鍵會亮。滑到才發現的差異救不了第一眼，
+ *      但它確認了第一眼的猜測。
+ */
+function FillButton({ plan, onFill }: {
+  /** `planModuleFill()` 的結果。**由呼叫端算**——它同時要靠這份計畫決定整行要不要畫 */
+  plan: ModuleFillPlan | null
+  onFill: (mod: Module) => void
+}) {
+  if (!plan || plan.noop) return null
+
+  const n = plan.targets.length
+  const label = plan.levelBefore > 0 ? `再補 ${n} 格` : `裝滿 ${n} 格`
+
+  return (
+    <button
+      type="button"
+      // ⚠ 這顆鍵住在**整列可點**的容器裡（點列＝裝這一格），不擋下事件的話
+      //   會同時觸發兩個動作，而其中一個是玩家沒要的
+      onClick={(e) => { e.stopPropagation(); onFill(plan.mod) }}
+      title={fillTitle(plan)}
+      className="hud-cut-sm shrink-0 inline-flex items-center gap-1 px-2 py-[3px] text-[11px] font-bold
+        bg-accent-orange text-bg-dark hover:bg-accent-yellow
+        shadow-[0_1px_6px_rgba(255,107,43,0.35)] transition-colors cursor-pointer"
+    >
+      <LoadoutIcon name="plus" className="w-3 h-3 shrink-0" strokeWidth={3} />
+      {label} → Lv{plan.levelAfter}
+    </button>
+  )
+}
+
+/** 按鈕的 `title`：把「會動哪幾格、會換掉誰、為什麼只有這幾格」一次講完。 */
+function fillTitle(plan: ModuleFillPlan): string {
+  const parts = [`裝到 ${plan.targets.map(partLabel).join('、')}，Lv${plan.levelBefore} → Lv${plan.levelAfter}/${plan.cap}`]
+  if (plan.displaced.length > 0) {
+    parts.push(`會換掉：${plan.displaced.map((d) => partLabel(d.position)).join('、')}（可復原）`)
+  }
+  if (plan.levelAfter < plan.cap) {
+    // 沒補滿要說出是哪一種沒補滿：接口不收，還是格數本來就不夠（8 級模組）
+    parts.push(plan.blockedSlots > 0
+      ? `有 ${plan.blockedSlots} 格的接口裝不下這顆，所以只到 Lv${plan.levelAfter}`
+      : `四個接口全滿也只到 Lv${plan.levelAfter}，其餘由機甲自帶的那顆補`)
+  }
+  return parts.join('\n')
 }
 
 /**
@@ -384,7 +521,7 @@ function ModuleRow({ entry, stacks, onEquip }: {
 function StackNote({ stack }: { stack: ModuleStack }) {
   if (stack.overflow > 0) {
     return (
-      <p className="mt-1.5 text-[11px] leading-relaxed text-accent-yellow/90">
+      <p className="mt-1.5 text-[12px] leading-relaxed text-accent-yellow/90">
         ⚠ 這一族已裝 <strong>{stack.positions.length}</strong> 顆，合計
         <strong> {stack.sum} </strong>級，但它只有 <strong>{stack.cap}</strong> 階 ——
         超出的 <strong>{stack.overflow}</strong> 級<strong>不會生效</strong>，
@@ -394,13 +531,13 @@ function StackNote({ stack }: { stack: ModuleStack }) {
   }
   if (stack.level >= stack.cap) {
     return (
-      <p className="mt-1.5 text-[11px] leading-relaxed text-text-dim">
+      <p className="mt-1.5 text-[12px] leading-relaxed text-text-dim">
         這一族已達上限 Lv{stack.cap}，再多裝不會提升。
       </p>
     )
   }
   return (
-    <p className="mt-1.5 text-[11px] leading-relaxed text-text-dim">
+    <p className="mt-1.5 text-[12px] leading-relaxed text-text-dim">
       再裝一顆同族可再 ＋{moduleAddLevel(stack.mod)} 級（上限 Lv{stack.cap}）。
     </p>
   )
@@ -412,7 +549,7 @@ function StackNote({ stack }: { stack: ModuleStack }) {
  */
 function RejectionLine({ rejection }: { rejection: Rejection }) {
   return (
-    <span className="flex flex-wrap items-center text-[12px] text-accent-red/85 leading-relaxed" style={{ gap: 5 }}>
+    <span className="flex flex-wrap items-center text-[13px] text-accent-red/85 leading-relaxed" style={{ gap: 5 }}>
       <LoadoutIcon name="absent" className="w-[13px] h-[13px] shrink-0" />
       {rejection.reason}
     </span>

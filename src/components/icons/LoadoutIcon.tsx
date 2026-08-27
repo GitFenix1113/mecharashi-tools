@@ -35,6 +35,7 @@ export type LoadoutIconName =
   | 'close'
   | 'plus'
   | 'gear'
+  | 'swap'
 
 const PATHS: Record<LoadoutIconName, ReactNode> = {
   // 左手：槍身朝左的側影（機匣 ＋ 槍管 ＋ 下掛握把）
@@ -106,6 +107,12 @@ const PATHS: Record<LoadoutIconName, ReactNode> = {
   close: <path d="M6 6l12 12M18 6 6 18" />,
   // 空槽：加號
   plus: <path d="M12 5v14M5 12h14" />,
+  /** 換一個（更換機師／機甲）。兩條反向箭頭 —— 「替換」在 HUD 語彙裡就是這個形狀 */
+  swap: (
+    <>
+      <path d="M4 8h13l-3-3M20 16H7l3 3" />
+    </>
+  ),
   // 元件：齒輪（PLAN-052-D）。總綱決策十二逐字「右下 ⚙ 徽章點＝開元件挑選器」——
   // 用描邊圖示而不是 ⚙ 字符：字符在不同系統上字形不一致，也沒辦法跟著配色走（052-I 的既定方向）
   gear: (

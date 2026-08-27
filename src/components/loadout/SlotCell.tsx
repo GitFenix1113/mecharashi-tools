@@ -3,7 +3,7 @@ import { WeaponIcon } from '../icons/WeaponIcon'
 import { ComponentIcon } from '../icons/ComponentIcon'
 import { LoadoutIcon, type LoadoutIconName } from '../icons/LoadoutIcon'
 import { HUD, SEG_TEXT, type SegKey } from './loadoutTheme'
-import type { SlotOccupant } from '../../utils/loadoutRules'
+import type { SlotOccupant, WeaponUpgradePlan } from '../../utils/loadoutRules'
 import { WeaponEquipSlot } from '../../types/enums'
 
 // ─── 一格裝備位（PLAN-052-B B-2／PLAN-052-I B-1）──────────────────────────────
@@ -78,6 +78,17 @@ interface Props {
    *   本階把圖示縮到 24px、內距與間隙再收，讓名稱欄拿回可讀的寬度。
    */
   tight?: boolean
+  /**
+   * 寬格（使用者要求 2026-08-28：「加大上下高度、ICON 再放大，現在這樣看很吃力」）。
+   *
+   * ⚠ 這一階是 `dense` / `tight` 的**反方向**，而且判準不同：那兩階問的是
+   *   「格子會不會擠爆」，這一階問的是「欄寬已經吃滿上限了沒有」——
+   *   由 `LoadoutRig` 的 `ROOMY_CELL_MIN_WIDTH` 決定，不要在這裡猜。
+   * ⚠ 它動的是**高度與圖示**，不動名稱欄的寬度政策：欄寬在這一階是封頂的
+   *   （`SLOT_MAX_WIDTH`），所以放大圖示與元件縮圖都要在那 250px 裡算得過來
+   *   —— 元件那排四枚 32px ＋ ⚙ ＋ 計數 ＋ ▸ 實測約 217px，那是這一階的天花板。
+   */
+  roomy?: boolean
   onOpen?: () => void
   onClear?: () => void
   /**
@@ -96,6 +107,13 @@ interface Props {
    *   這裡是**一把武器一條摘要列**，而且只出現在裝得了元件的武器格下。
    */
   onComponents?: () => void
+  /**
+   * 這一格的武器有進階版可以直接做上去（使用者要求 2026-08-27）。
+   * 由 `planWeaponUpgrade()` 供應；未傳或為 null ＝ 整條不畫。
+   */
+  upgrade?: WeaponUpgradePlan | null
+  /** 按下升級。UI 不自己組 action —— 同 `onComponents` 的分工 */
+  onUpgrade?: () => void
   /** 元件列上的「已裝／上限」。`used > 0` 時整列轉橙，一眼看得出哪幾格配過 */
   componentUsed?: number
   /** 元件列上的上限（`componentLimit`） */
@@ -118,7 +136,7 @@ interface Props {
 
 export function SlotCell({
   label, occupant, absentReason, seg, slotIcon, available, preview,
-  active, flash, compact, dense, tight, onOpen, onClear, onComponents,
+  active, flash, compact, dense, tight, roomy, onOpen, onClear, onComponents, upgrade, onUpgrade,
   componentUsed = 0, componentLimit = 0, componentIcons,
 }: Props) {
   // ⚠ 內距與間隙一律寫 **px**，不用 Tailwind 的 spacing 單位。
@@ -127,14 +145,17 @@ export function SlotCell({
   //   剩下的寬度連「點擊裝備」四個字都放不下（實測會折成兩行）。
   const pad = tight ? 'px-[6px] py-[5px] gap-[6px]'
     : compact || dense ? 'px-[8px] py-[6px] gap-[8px]'
+    : roomy ? 'px-[12px] py-[11px] gap-[11px]'
     : 'px-[10px] py-[8px] gap-[9px]'
   // ⚠ tight 的格高要**放得下兩行名稱**：不然折行的那一格會比隔壁高一截，
   //   左右兩欄的「左肩／右肩」就不在同一條線上，整張 HUD 看起來像沒對齊。
-  const minH = tight ? 'min-h-[60px]' : compact ? 'min-h-[48px]' : 'min-h-[56px]'
+  // roomy 的 72px 是拿**垂直**空間換可讀性：欄寬封頂之後那一欄不再變寬，
+  // 而寬容器的垂直空間是這張圖上最不缺的東西（見 `roomy` 的註解）。
+  const minH = tight ? 'min-h-[60px]' : compact ? 'min-h-[48px]' : roomy ? 'min-h-[72px]' : 'min-h-[56px]'
   const base = `hud-cut-sm relative w-full flex items-center border transition-colors ${pad} ${minH}`
   // ⚠ flash 不能用 ring（會被切角裁掉），改用外框變色 ＋ 底色
   const flashOn = flash ? 'border-accent-orange bg-accent-orange/15' : ''
-  const nameSize = tight ? 'text-[11.5px]' : compact ? 'text-[12px]' : 'text-[13px]'
+  const nameSize = tight ? 'text-[12px]' : compact ? 'text-[13px]' : roomy ? 'text-[15px]' : 'text-[14px]'
   /**
    * 裝備名的溢出處理。
    *
@@ -151,12 +172,12 @@ export function SlotCell({
       <div
         className={`${base} border-dashed border-border bg-[repeating-linear-gradient(135deg,transparent,transparent_5px,rgba(255,255,255,0.028)_5px,rgba(255,255,255,0.028)_10px)] ${flashOn}`}
       >
-        <IconBox compact={compact} dense={dense} tight={tight} dashed>
+        <IconBox compact={compact} dense={dense} tight={tight} roomy={roomy} dashed>
           <LoadoutIcon name="absent" className="w-4 h-4 text-text-dim" />
         </IconBox>
         <div className="flex flex-col min-w-0 flex-1">
           <span className={`${HUD.labelCjk} text-text-dim truncate`}>{label}</span>
-          <span className="text-[12px] text-text-dim leading-snug">{absentReason ?? '無此槽位'}</span>
+          <span className="text-[13px] text-text-dim leading-snug">{absentReason ?? '無此槽位'}</span>
         </div>
       </div>
     )
@@ -168,7 +189,7 @@ export function SlotCell({
     const over = preview.remainingAfter !== undefined && preview.remainingAfter < 0
     return (
       <div className={`${base} border-accent-orange bg-accent-orange/10`}>
-        <IconBox compact={compact} dense={dense} tight={tight} tone="orange">
+        <IconBox compact={compact} dense={dense} tight={tight} roomy={roomy} tone="orange">
           <WeaponIcon icon={preview.icon} name={preview.name} size="sm" />
         </IconBox>
         <div className="flex flex-col min-w-0 flex-1">
@@ -198,7 +219,7 @@ export function SlotCell({
     const name = w?.name ?? (occupant.kind === 'fixed' ? occupant.occupied.mount.weaponId : occupant.weaponId)
     return (
       <div className={`${base} border-accent-yellow/45 bg-accent-yellow/5 ${flashOn}`}>
-        <IconBox compact={compact} dense={dense} tight={tight} tone="yellow">
+        <IconBox compact={compact} dense={dense} tight={tight} roomy={roomy} tone="yellow">
           <LoadoutIcon
             name={occupant.kind === 'fixed' ? 'lock' : 'lockForm'}
             className="w-4 h-4 text-accent-yellow"
@@ -209,7 +230,7 @@ export function SlotCell({
           <span className={`${nameSize} font-semibold text-accent-yellow ${nameClip}`}>{name}</span>
           {/* 重量刻意用 dim 而不是分段色：它計入總重，但玩家對它無能為力 */}
           {dense && (
-            <span className={`${HUD.num} text-[11px] text-text-dim`}>{(w?.weight ?? 0).toLocaleString()}</span>
+            <span className={`${HUD.num} text-[12px] text-text-dim`}>{(w?.weight ?? 0).toLocaleString()}</span>
           )}
         </div>
         {!dense && (
@@ -233,7 +254,7 @@ export function SlotCell({
             : 'border-border-accent bg-bg-card/70 hover:border-accent-orange/60 hover:bg-bg-card-hover'
         } ${flashOn}`}
       >
-        <IconBox compact={compact} dense={dense} tight={tight} dashed tone="orange">
+        <IconBox compact={compact} dense={dense} tight={tight} roomy={roomy} dashed tone="orange">
           <LoadoutIcon name={slotIcon ?? 'plus'} className="w-4 h-4 text-accent-orange" />
         </IconBox>
         <div className="flex flex-col min-w-0 flex-1">
@@ -244,7 +265,7 @@ export function SlotCell({
                  字會溢出格外並被面板的切角裁掉。手機上帳本列的 REMAINING 卡就釘在畫面頂端
                  （sticky、20px 綠字），同一個數字在兩公分外已經看得到。 */}
           {dense && !tight && available !== undefined && (
-            <span className={`${HUD.num} text-[11px] text-text-dim whitespace-nowrap`}>
+            <span className={`${HUD.num} text-[12px] text-text-dim whitespace-nowrap`}>
               可用 {available.toLocaleString()}
             </span>
           )}
@@ -291,7 +312,7 @@ export function SlotCell({
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.() } }}
     >
-      <IconBox compact={compact} dense={dense} tight={tight}>
+      <IconBox compact={compact} dense={dense} tight={tight} roomy={roomy}>
         <WeaponIcon icon={icon} name={name} size="sm" />
       </IconBox>
       <div className="flex flex-col min-w-0 flex-1">
@@ -322,6 +343,52 @@ export function SlotCell({
       )}
     </div>
 
+    {/* ── 升級列（使用者要求 2026-08-27）──
+        「熠光有進階版叫裁決者」——PLAN-031 早就存了製作關係，但模擬器一直沒有消費端，
+        玩家得自己記得，然後回挑選器從 180 把裡找它。
+
+        ⚠ 樣式沿用**實心橘**那一套（同「裝滿 N 格」「裝上專武」）：這一頁的實心色塊
+          只代表一件事 —— 站上替你一次做完好幾步的捷徑。徽章一律淡底。
+        ⚠ 擺在元件列**上面**：升級會換掉整把武器（連元件一起重配），
+          先問「要不要換一把」再問「這一把怎麼改」才是正確的順序。
+        ⚠ 裝不上時**不畫成按鈕而是一行灰字**：一顆按不動的鍵只會讓人一直去按。
+          但那條資訊仍要留著 —— 玩家該知道這把有進階版，只是現在這台機甲吃不下。 */}
+    {upgrade && (
+      upgrade.rejection ? (
+        <p
+          className={`${HUD.body} text-text-dim px-1 leading-snug`}
+          title={upgrade.rejection.reason}
+        >
+          可升級為 {upgrade.to.name}（{upgrade.rejection.reason}）
+        </p>
+      ) : (
+        <button
+          type="button"
+          aria-label={`把 ${label} 的 ${upgrade.from.name} 升級為 ${upgrade.to.name}`}
+          onClick={(e) => { e.stopPropagation(); onUpgrade?.() }}
+          title={`${upgrade.from.name} → ${upgrade.to.name}${
+            upgrade.weightDelta !== 0 ? `（重量 ${upgrade.weightDelta > 0 ? '+' : ''}${upgrade.weightDelta}）` : ''
+          }`}
+          className={`hud-cut-sm w-full flex items-center border-0 cursor-pointer transition-colors
+            bg-accent-orange text-bg-dark hover:bg-accent-yellow font-bold ${
+            tight ? 'px-1.5 py-[3px]' : 'px-2 py-1'
+          }`}
+          style={{ gap: 5 }}
+        >
+          <LoadoutIcon name="plus" className="w-3 h-3 shrink-0" strokeWidth={3} />
+          <span className={`${HUD.body} min-w-0 truncate`}>
+            {tight ? '升級' : `升級為 ${upgrade.to.name}`}
+          </span>
+          {/* 重量差只在**真的有差**時印 —— 實測 42 條邊裡 39 條同重，印「+0」是純噪音 */}
+          {upgrade.weightDelta !== 0 && (
+            <span className={`${HUD.num} text-[11px] ml-auto shrink-0`}>
+              {upgrade.weightDelta > 0 ? '+' : ''}{upgrade.weightDelta}
+            </span>
+          )}
+        </button>
+      )
+    )}
+
     {/* 元件列：整條可點，見 `onComponents` 的註解 */}
     {onComponents && (
       <button
@@ -329,7 +396,7 @@ export function SlotCell({
         aria-label={`設定 ${label} 的 ${name} 的元件（已裝 ${componentUsed} 個，上限 ${componentLimit} 個）`}
         onClick={(e) => { e.stopPropagation(); onComponents() }}
         className={`hud-cut-sm w-full flex items-center border cursor-pointer transition-colors ${
-          tight ? 'px-1.5 py-[3px]' : 'px-2 py-1'
+          tight ? 'px-1.5 py-[3px]' : roomy ? 'px-2 py-[7px]' : 'px-2 py-1'
         } ${
           componentUsed > 0
             ? 'border-accent-orange/50 bg-accent-orange/10 text-accent-orange hover:bg-accent-orange/15'
@@ -337,14 +404,17 @@ export function SlotCell({
         }`}
         style={{ gap: 5 }}
       >
-        <LoadoutIcon name="gear" className="w-3 h-3 shrink-0" />
+        <LoadoutIcon name="gear" className={`shrink-0 ${roomy ? 'w-3.5 h-3.5' : 'w-3 h-3'}`} />
         {!tight && componentIcons && componentIcons.length > 0 ? (
-          /* ⚠ 尺寸依格寬分兩階（使用者回饋 2026-08-27：18px 太小、上下還有空間）。
-             四枚 26px ＝ 104px，一格 190px 的節點放得下（⚙ 12 ＋ 計數 24 ＋ ▸ 10 ＋ 間隙）；
-             dense（~152px）退到 22px，再大會把計數擠掉。tight 一律不畫，見上方註解。 */
-          <span className="flex items-center min-w-0" style={{ gap: 2 }}>
+          /* ⚠ 尺寸依格寬分三階（使用者回饋 2026-08-27：18px 太小、上下還有空間；
+             2026-08-28：ICON 再放大）。四枚 26px ＝ 104px，一格 190px 的節點放得下
+             （⚙ 12 ＋ 計數 24 ＋ ▸ 10 ＋ 間隙）；dense（~152px）退到 22px，再大會把計數擠掉。
+             roomy 的欄寬封頂在 250px，四枚 32px ＝ 128，連同 ⚙、計數、▸ 與間隙實測約 217px
+             —— 那已經是這一欄放得下的天花板，**再往上加就會把計數擠掉**。
+             tight 一律不畫，見上方註解。 */
+          <span className="flex items-center min-w-0" style={{ gap: roomy ? 3 : 2 }}>
             {componentIcons.map((c, i) => (
-              <ComponentIcon key={`${c.id}#${i}`} comp={c} size={dense || compact ? 22 : 26} />
+              <ComponentIcon key={`${c.id}#${i}`} comp={c} size={dense || compact ? 22 : roomy ? 32 : 26} />
             ))}
           </span>
         ) : (
@@ -363,16 +433,23 @@ export function SlotCell({
  * 尺寸一致是「六格疊在一起時三條線對齊」的前提。
  */
 function IconBox({
-  children, compact, dense, tight, dashed, tone,
+  children, compact, dense, tight, roomy, dashed, tone,
 }: {
   children: React.ReactNode
   compact?: boolean
   dense?: boolean
   tight?: boolean
+  roomy?: boolean
   dashed?: boolean
   tone?: 'orange' | 'yellow'
 }) {
-  const dim = tight ? 'w-[24px] h-[24px]' : compact || dense ? 'w-[30px] h-[30px]' : 'w-[34px] h-[34px]'
+  // ⚠ roomy 的 42px 不只是「大一點」：`WeaponIcon size="sm"` 實測是 38px
+  //   （w-8 ＝ 2rem，而本站 root 是 19px），34px 的框本來就框不住它 ——
+  //   放大到 42 順手把那 4px 的溢出收乾淨。
+  const dim = tight ? 'w-[24px] h-[24px]'
+    : compact || dense ? 'w-[30px] h-[30px]'
+    : roomy ? 'w-[42px] h-[42px]'
+    : 'w-[34px] h-[34px]'
   const border =
     tone === 'orange' ? 'border-accent-orange/40'
     : tone === 'yellow' ? 'border-accent-yellow/35'

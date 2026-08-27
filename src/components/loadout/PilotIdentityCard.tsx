@@ -2,7 +2,8 @@ import type { Pilot } from '../../types'
 import { imageCandidates, pilotFullArtPath } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
 import { CLASS_CONFIG } from '../badges/PilotBadges'
-import { HUD } from './loadoutTheme'
+import { HUD, HUD_BTN, HUD_TAG } from './loadoutTheme'
+import LoadoutIcon from '../icons/LoadoutIcon'
 
 // ─── 機師身分卡（PLAN-052-I C-1）────────────────────────────────────────────
 //
@@ -17,8 +18,21 @@ import { HUD } from './loadoutTheme'
 //   往下推（下面還有配裝概況、之後還有算力面板）。固定高度 ＋ 出血裁切，
 //   載入前後版面完全不動。
 //
-// ⚠ 立繪**靠右下出血**、左側壓一層深色漸層：`full.webp` 是去背直式圖，
+// ⚠ 立繪**靠右下出血**、左側壓一層深色漸層：`full.webp` 是去背橫式圖，
 //   人物重心偏中上，直接鋪滿會讓左側的名字與徽章壓在臉上。
+//
+// ⚠ **這裡刻意不用官方原稿 `art.webp`**（2026-08-28 實測後的決定）。
+//
+//   站上有兩種機師立繪，構圖不同、不是同一張的兩種尺寸：
+//     · `full.webp`  1240×1080  橫式半身特寫（官方 CDN 裁切圖，87/88 位有）
+//     · `art.webp`    863×1600  直式完整全身（官方原稿，只有 52/88 位有）
+//
+//   直式全身版本做出來比對過：在這張卡的尺寸下，**半身特寫的臉更大、更認得出是誰**，
+//   而全身圖為了塞下腿部，頭只剩約 38px。身分卡要回答的是「這位是誰」，不是「他站著長怎樣」。
+//   加上原稿只有 59% 覆蓋率，用它等於讓四成機師走另一種版面。
+//
+//   機師原稿改留給**機師故事館**那種有整頁高度可用、且以「看人物」為目的的頁面。
+//   查詢工具在 `utils/assets`（`hasPilotArt()` / `pilotKeyArtPath()`）已經備好，這裡只是不用。
 
 /** 職業色只取 `text-*` 那一段 —— CLASS_CONFIG 的值是「文字色 底色 框線」三件一組。 */
 function classText(pilotClass: string): string {
@@ -44,8 +58,9 @@ export function PilotIdentityCard({
         <button
           type="button"
           onClick={onChange}
-          className="hud-cut-sm px-4 py-1.5 border border-accent-orange/50 bg-accent-orange/10 text-[13px] text-accent-orange hover:bg-accent-orange/20 transition-colors cursor-pointer"
+          className={`${HUD_BTN} px-4 py-1.5 text-[13px] inline-flex items-center gap-1.5`}
         >
+          <LoadoutIcon name="plus" className="w-3.5 h-3.5" strokeWidth={2.4} />
           選擇機師
         </button>
       </section>
@@ -93,8 +108,12 @@ export function PilotIdentityCard({
         <button
           type="button"
           onClick={onChange}
-          className="hud-cut-sm mt-auto self-start px-3.5 py-1.5 border border-border-accent bg-bg-dark/80 text-[13px] text-text-primary hover:border-accent-orange/60 transition-colors cursor-pointer"
+          // ⚠ 這顆鍵與上方三個標籤原本長得一模一樣（切角＋框線＋深底），
+          //   四個框排在一起沒有任何線索指出哪一個按得下去（使用者回報 2026-08-27）。
+          //   現在標籤讓出切角改圓角，按鈕保留切角並補一顆圖示與 hover。
+          className={`${HUD_BTN} mt-auto self-start px-3.5 py-1.5 text-[13px] inline-flex items-center gap-1.5`}
         >
+          <LoadoutIcon name="swap" className="w-3.5 h-3.5" />
           更換機師
         </button>
       </div>
@@ -102,13 +121,16 @@ export function PilotIdentityCard({
   )
 }
 
+/**
+ * 職業／品質／執照三個**唯讀標籤**。
+ *
+ * ⚠ **圓角、不是切角**（使用者要求 2026-08-27）：切角在配裝器裡是「可互動」的語彙，
+ *   標籤佔著它會讓旁邊真正的按鈕失去辨識度。站上既有的徽章元件本來就是圓角，
+ *   這裡只是把漏掉的那個例外補回來。
+ */
 function Chip({ children, tone }: { children: React.ReactNode; tone?: string }) {
   return (
-    <span
-      className={`hud-cut-sm px-2 py-0.5 text-[12px] font-bold border border-current/40 bg-bg-dark/70 ${
-        tone ?? 'text-text-secondary'
-      }`}
-    >
+    <span className={`${HUD_TAG} px-2 py-0.5 text-[12px] font-bold border-current/40 ${tone ?? 'text-text-secondary'}`}>
       {children}
     </span>
   )

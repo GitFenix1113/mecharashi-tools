@@ -4,7 +4,7 @@ import type { Backpack, Mech, Pilot, UserBuild, Weapon } from '../../types'
 import type { LoadoutDraft } from '../../types/loadout'
 import type { ModuleSlotRef, SlotKey, WeaponSlotRef } from '../../types/slots'
 import { slotKey } from '../../types/slots'
-import { WeaponEquipSlot, WeaponType } from '../../types/enums'
+import { WeaponEquipSlot, WeaponKind, WeaponType } from '../../types/enums'
 import type { MechPartPosition } from '../../types/enums'
 import { useLoadoutGameData, type LoadoutStage } from '../../hooks/useFirestore'
 import { useIsMobile } from '../../hooks/useIsMobile'
@@ -14,6 +14,7 @@ import { slotLabel } from '../../utils/mechSlots'
 // ⏸ 部件混搭未開放前，四部位表暫時下架（見下方 JSX 內註解）。模組槽已於 052-G Phase C 開放
 // import { MechPartsTable } from '../../components/mechs/MechSlotPanel'
 import { PilotIcon } from '../../components/icons/PilotIcon'
+import LoadoutIcon from '../../components/icons/LoadoutIcon'
 import { LoadoutRig } from '../../components/loadout/LoadoutRig'
 import { OutputBar } from '../../components/loadout/OutputBar'
 import { PickerShell } from '../../components/loadout/PickerShell'
@@ -26,13 +27,13 @@ import { WeaponComponentList } from '../../components/loadout/WeaponComponentLis
 import { weaponRows } from '../../utils/loadoutRows'
 import { ComponentPanel } from '../../components/loadout/ComponentPanel'
 import { ModulePanel } from '../../components/loadout/ModulePanel'
-import { EquippedEffects } from '../../components/loadout/EquippedEffects'
+import { EquippedEffects, ModuleThumbStrip } from '../../components/loadout/EquippedEffects'
 import { LoadoutExportRunner } from '../../components/loadout/LoadoutExportCard'
 import { sanitizeLoadoutName, LOADOUT_NAME_MAX } from '../../utils/loadoutName'
 import { NdPowerBar } from '../../components/common/NdPowerBar'
 import { buildNdAbilityMap } from '../../utils/neuralDriveAbilities'
 import { defaultNdLevels, ndAffectZones } from '../../utils/ndOverrides'
-import { HUD, HUD_PANEL } from '../../components/loadout/loadoutTheme'
+import { HUD, HUD_BTN, HUD_INPUT, HUD_PANEL } from '../../components/loadout/loadoutTheme'
 import { CLASS_CONFIG } from '../../components/badges/PilotBadges'
 import { mechSlotCapacity } from '../../utils/mechSlots'
 import { licenseAllows } from '../../utils/normalizeArmorType'
@@ -46,6 +47,9 @@ import { shareIdAliases } from '../../utils/loadoutCode/shareIdRegistry'
 import { encodeLoadout, decodeLoadout, type ShareIndexes } from '../../utils/loadoutCode/codec'
 import { readShareCode, buildShareUrl, staleCacheKeys } from '../../utils/loadoutCode/shareLink'
 import { useGameData } from '../../contexts/GameDataContext'
+import { buildSkillMap } from '../../utils/pilotSkills'
+import { PilotTalentStrip } from '../../components/loadout/PilotTalentStrip'
+import { WeaponSkillPanel, WeaponSkillStrip } from '../../components/loadout/WeaponSkillPanel'
 import { usePatchVersions } from '../../hooks/usePatchVersions'
 import { WORKER_ENABLED, getWorkerDataVersions } from '../../lib/api/workerData'
 import { getDataVersions } from '../../lib/api/versions'
@@ -230,6 +234,23 @@ export default function LoadoutPage() {
   const { reload: reloadGameData } = useGameData()
   const world = useMemo(() => buildWorld(data), [data])
 
+  // ── 技能庫（PLAN-032 的 `pilotSkills`）──────────────────────────────────────
+  //
+  // 武器技能與機師專武的天賦強化都住在這裡。**刻意不放進 `LOADOUT_STAGE_KEYS`**：
+  //
+  //   ① 那份清單的 `loading` 同時是**分享碼的編碼閘門**（`ctx.mech && !loading` 才敢編）。
+  //      技能與分享碼毫無關係，把它加進去等於讓「複製分享連結」多等一個集合。
+  //   ② 它只在 `equip` 階段有意義（要先有武器才有武器技能），而 `ensureLoaded()`
+  //      本來就會記住已載入的集合，重複呼叫是零成本的。
+  //
+  // ⚠ 空 Map ＝ **還沒載入**，不是「這些武器沒有技能」（同 components／modules 那一條）。
+  //   兩者都會渲染成空清單，但意思相反，故一律連 `skillsLoading` 一起傳下去。
+  const gd = useGameData()
+  const needSkills = stage === 'equip'
+  useEffect(() => { if (needSkills) void gd.ensureLoaded(['pilotSkills']) }, [needSkills, gd])
+  const skillMap = useMemo(() => buildSkillMap(gd.pilotSkills), [gd.pilotSkills])
+  const skillsLoading = needSkills && !gd.loadedKeys.has('pilotSkills')
+
   /**
    * 分享碼的六個索引。
    *
@@ -401,16 +422,31 @@ export default function LoadoutPage() {
   // ⚠ **彈性欄從挑選器換到槽位圖**（PLAN-052-I B-2）。槽位圖現在是
   //   「左節點 ／ 機甲 ／ 右節點」三個區塊橫排，原本的 400px 固定欄扣掉中央機甲之後
   //   每欄只剩 ~80px，武器名與重量全被截掉，整張圖退化成一排看不懂的圖示。
-  //   挑選器反過來是一份清單，寬度給固定的 360px 就夠；把 1fr 讓給槽位圖，
+  //   挑選器反過來是一份清單，固定寬度就夠；把 1fr 讓給槽位圖，
   //   視窗越寬機甲 HUD 越舒展，而不是把空間浪費在一份清單的右側留白上。
-  //   （槽位圖自己還會量容器寬度切換窄版，見 LoadoutRig 的 DENSE_MAX_WIDTH。）
+  //   （槽位圖自己還會量容器寬度切換窄版與立繪級距，見 LoadoutRig 的
+  //    DENSE_MAX_WIDTH / ROOMY_MIN_WIDTH。）
   //
-  // ⚠ PLAN-052-I C-1 起是**三塊**：機師身分卡（左，含配裝概況）／槽位 HUD（中，1fr）／
-  //   挑選器（右，固定 380px）。順序刻意照設計畫布——機師在左、機甲在中，
-  //   與玩家腦中的「誰開這台」一致。兩欄版把機師卡疊在槽位圖上方（同一欄）。
+  // ⚠ PLAN-052-I C-1 起是**三塊**：機師身分卡（左，320px，含配裝概況）／
+  //   裝備與模組 HUD（中，1fr）／挑選器（右，420px）。順序刻意照設計畫布——
+  //   機師在左、機甲在中，與玩家腦中的「誰開這台」一致。
+  //   兩欄版把機師卡疊在槽位圖上方（同一欄）。
+  //
+  //   中欄實際寬度 ＝ min(視窗, 1920) − 804（外距 32 ＋ 320 ＋ 420 ＋ 兩道 gap 32）：
+  //     1280 → 476 ／ 1440 → 636 ／ 1600 → 796 ／ 1760 → 956 ／ 1920 → 1116
+  //   對照 LoadoutRig 的三道門檻（610 窄版 ／ 780、950 立繪放大），
+  //   1440 起脫離窄版、1600 起立繪 210px、1760 起 240px。
   const gridClass =
-    bp === 'wide' ? 'grid grid-cols-[340px_minmax(0,1fr)_380px] gap-4 items-start'
-    : bp === 'medium' ? 'grid grid-cols-[minmax(0,1fr)_380px] gap-4 items-start'
+    // ⚠ 右欄 380 → 420（使用者回饋 2026-08-27）：模組面板的清單列要同時放下
+    //   模組名、＋N 級與兩顆徽章，380px 扣掉內距只剩約 330px，名字被壓成一個字。
+    //   欄寬與那一列的排版是**一起**修的 —— 只放寬欄寬，換個更長的模組名還是會被壓掉。
+    //   ⚠ 所以「放大中間」時**動的是左欄不是右欄**（使用者要求 2026-08-28）：
+    //     右欄收回 400 就等於把上面那個修好的東西推回去一半。
+    // ⚠ 左欄 360 → 320（2026-08-28）：中欄各斷點因此 +40px。320 扣掉內距約 296px，
+    //   與兩欄版那一欄的寬度同級 —— 而左欄的內容（機師卡／天賦條／算力）本來就已經
+    //   照著那個寬度做過截斷處理（見 `PilotTalentStrip` 的專武按鈕註解）。
+    bp === 'wide' ? 'grid grid-cols-[320px_minmax(0,1fr)_420px] gap-4 items-start'
+    : bp === 'medium' ? 'grid grid-cols-[minmax(0,1fr)_420px] gap-4 items-start'
     : 'flex flex-col gap-4'
 
   const budgetLine = (
@@ -498,7 +534,7 @@ export default function LoadoutPage() {
     <button
       type="button"
       onClick={() => setPasteOpen(true)}
-      className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-border text-text-secondary hover:text-text-primary hover:border-border-accent transition-colors cursor-pointer whitespace-nowrap"
+      className={`${HUD_BTN} text-[12px] px-2.5 py-1.5 whitespace-nowrap`}
     >
       {/* ⚠ 窄版用短標籤：這一列在 390px 上是「名稱欄 ＋ 貼碼 ＋ 書架」三件，
           長標籤會把輸入框壓到只剩幾十像素（同 C-1 對底部固定列的量測） */}
@@ -510,7 +546,7 @@ export default function LoadoutPage() {
     <button
       type="button"
       onClick={() => setShelfOpen(true)}
-      className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-border text-text-secondary hover:text-text-primary hover:border-border-accent transition-colors cursor-pointer whitespace-nowrap"
+      className={`${HUD_BTN} text-[12px] px-2.5 py-1.5 whitespace-nowrap`}
     >
       書架
       <span className="ml-1.5 font-[JetBrains_Mono,monospace] tabular-nums text-text-dim">
@@ -553,7 +589,7 @@ export default function LoadoutPage() {
         type="button"
         onClick={() => send({ type: 'clearSet' })}
         disabled={!ctx.mech}
-        className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-border text-text-secondary hover:text-text-primary hover:border-border-accent transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        className={`${HUD_BTN} text-[12px] px-2.5 py-1.5`}
       >
         清空
       </button>
@@ -623,7 +659,12 @@ export default function LoadoutPage() {
 
   return (
     <div
-      className="max-w-[1600px] mx-auto px-3 sm:px-4 py-4"
+      // ⚠ **本頁刻意比站上其他頁寬**（`max-w-7xl` ＝ 1280px）：三欄同時常駐是這一頁的
+      //   整個設計前提（機師／槽位 HUD／情境欄），1280px 底下中欄只剩約 340px，
+      //   槽位圖會被自己的 `DENSE_MAX_WIDTH` 逼進窄版。
+      //   1600 → 1920（使用者回饋 2026-08-27：1920 螢幕上左右還有 320px 沒用到）。
+      //   不做無上限：超寬螢幕上一列從左到右掃過去，眼睛要走的距離比多看到的東西值錢。
+      className="max-w-[1920px] mx-auto px-3 sm:px-4 py-4"
       // 單欄版面底部有兩層固定列（本頁操作列 ＋ Layout 的手機 Tab Bar），
       // 內容要讓開，否則最後一個面板永遠被蓋住一半
       style={bp === 'narrow' ? { paddingBottom: 'calc(3.25rem + env(safe-area-inset-bottom))' } : undefined}
@@ -731,6 +772,14 @@ export default function LoadoutPage() {
         {bp === 'wide' && (
           <div className="space-y-3 min-w-0">
             <PilotIdentityCard pilot={ctx.pilot} onChange={() => setPicker({ kind: 'pilot' })} />
+            {/* 天賦條緊貼機師卡：兩者回答的是同一個問題（「這位機師帶來什麼」），
+                而專武強化只有在天賦旁邊才對比得起來 */}
+            <PilotTalentStrip
+              ctx={ctx}
+              skillMap={skillMap}
+              loading={skillsLoading}
+              onEquipWeapon={(ref, weaponId) => send({ type: 'equipWeapon', ref, weaponId })}
+            />
             {ndPanel}
           </div>
         )}
@@ -757,10 +806,24 @@ export default function LoadoutPage() {
               compact={bp === 'narrow'}
             />
           )}
+          {/* ⚠ 窄版的天賦條只留縮圖不留名稱（`compact`）：這一欄同時是槽位圖那一欄，
+              四個天賦名一路排下來會把槽位圖推出首屏。 */}
+          {bp !== 'wide' && (
+            <PilotTalentStrip
+              ctx={ctx}
+              skillMap={skillMap}
+              loading={skillsLoading}
+              compact={bp === 'narrow'}
+              onEquipWeapon={(ref, weaponId) => send({ type: 'equipWeapon', ref, weaponId })}
+            />
+          )}
           {/* ⚠ 抬頭與機師卡的「更換機師」對稱：兩個主要選擇都在**自己的區塊裡**
               各有一顆換裝鍵，而不是只有機師有、機甲得回頂上的 HUD 找（PLAN-052-I 驗收） */}
           <Panel
-            title="槽位"
+            // ⚠ 不叫「槽位」（使用者要求 2026-08-28）：這張面板從 052-G 起就同時裝著
+            //   武器槽位圖與四部位模組卡，而「槽位」只講到了上半部 —— 找模組的人
+            //   會略過這個抬頭。抬頭要蓋住裡面實際有的兩件事。
+            title="裝備與模組"
             titleExtra={ctx.mech ? (
               <span className="flex items-center gap-2 min-w-0">
                 <span className={`${HUD.bodyStrong} text-text-primary truncate`}>{ctx.mech.name}</span>
@@ -789,6 +852,8 @@ export default function LoadoutPage() {
                 // 印出來等於用一個算不出來的數字去嚇人
                 available={budget.dataIncomplete ? undefined : budget.remaining}
                 onOpenComponents={openComponents}
+                // 升級走的就是 `equipWeapon`（同一格換一把）—— 取代、toast、[復原] 全部沿用既有那條
+                onUpgrade={(ref, weaponId) => send({ type: 'equipWeapon', ref, weaponId })}
                 onOpenModule={openModule}
                 activeModule={openModulePos}
                 compact={compactRig}
@@ -797,7 +862,7 @@ export default function LoadoutPage() {
               />
             ) : (
               <p className="text-[12px] text-text-dim leading-relaxed">
-                選好機師與機甲之後，這裡會列出它全部的槽位。
+                選好機師與機甲之後，這裡會列出它全部的裝備槽位與模組接口。
               </p>
             )}
             {/* ⏸ 「選擇背包」按鈕已移除（PLAN-052-G C-8，使用者裁決 2026-08-27）：
@@ -809,6 +874,26 @@ export default function LoadoutPage() {
                    就在挑選器抬頭 —— 比一顆孤立在槽位圖外的按鈕更靠近使用情境。
                    若日後要補回入口，該補的是**背部那一格的空態文案**，不是這顆按鈕。 */}
           </Panel>
+
+          {/* ── 效果兩欄（使用者要求 2026-08-27）──
+              模組與武器各佔半邊，收合態是縮圖、展開態是細節（見 `Panel` 的 `preview`）。
+
+              ⚠ 兩欄的高度**刻意不對齊**（`items-start`）：一邊展開一邊收合是常態，
+                拉成等高會讓收合的那一欄長出一大塊空白。
+              ⚠ 窄版改單欄：半個中欄在窄版只剩 ~170px，縮圖排不下一行。 */}
+          {ctx.mech && (
+            <div className={`grid gap-3 items-start ${bp === 'narrow' ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              <Panel title="模組效果" preview={<ModuleThumbStrip ctx={ctx} />}>
+                <EquippedEffects ctx={ctx} />
+              </Panel>
+              <Panel
+                title="武器技能"
+                preview={<WeaponSkillStrip ctx={ctx} skillMap={skillMap} loading={skillsLoading} />}
+              >
+                <WeaponSkillPanel ctx={ctx} skillMap={skillMap} loading={skillsLoading} />
+              </Panel>
+            </div>
+          )}
 
           {/* ⚠ 非三欄版時算力面板掛在槽位圖**下方**，不是機師卡下方（052-I D-1 驗收）：
               兩欄版的這一欄有 ~660px 寬，「目前生效」逐級列出來可以到十幾列，
@@ -898,10 +983,13 @@ export default function LoadoutPage() {
               一欄三種內容，依情境切換：**挑選器 ＞ 元件面板 ＞ 武器與元件列**。
 
               ⚠ 為什麼挑選器不做成覆蓋層：四塊（機師＋算力／機甲 HUD／武器元件／挑選器）
-                在 max-w-[1600px] 底下同時常駐，中欄只剩 ~430px —— 機甲 HUD 會被逼進窄版
-                （LoadoutRig 的 DENSE_MAX_WIDTH = 570），等於為了同時看見一份清單而把
-                整頁的主視覺壓扁。切換內容則沿用這一欄本來就有的行為（沒開挑選器時
-                放機甲唯讀資訊），不新增 z-index 層級、focus trap 與 Esc 這三份互動負債。 */}
+                同時常駐的話，中欄要讓出第四欄的寬度 —— 1440px 螢幕上只剩約 490px，
+                低於 `LoadoutRig` 的 `DENSE_MAX_WIDTH`（570），機甲 HUD 會被逼進窄版，
+                等於為了同時看見一份清單而把整頁的主視覺壓扁。
+                （2026-08-27 放寬到 1920 之後，**滿版時**中欄約 640px 已經撐得住，
+                 但那只成立於最寬的那一檔；門檻本身沒有變。）
+                切換內容則沿用這一欄本來就有的行為（沒開挑選器時放機甲唯讀資訊），
+                不新增 z-index 層級、focus trap 與 Esc 這三份互動負債。 */}
           {(isMobile || !effectivePicker) && openRow && (
             <ComponentPanel
               ctx={ctx}
@@ -919,6 +1007,8 @@ export default function LoadoutPage() {
               ref_={openModuleRef}
               onBack={() => setOpenModulePos(null)}
               onEquip={(m) => send({ type: 'equipModule', ref: openModuleRef, moduleId: m.id })}
+              // 一鍵裝滿不指定格 —— 動哪幾格由 `planModuleFill()` 決定（使用者要求 2026-08-27）
+              onFill={(m) => send({ type: 'fillModule', moduleId: m.id })}
               onResolve={resolve}
             />
           )}
@@ -934,16 +1024,16 @@ export default function LoadoutPage() {
             </Panel>
           )}
 
-          {/* 模組效果彙總（PLAN-052-G C-4）。放在武器列之後 —— 玩家先配武器、
-              模組是後面才碰的那一層，而它的入口在中欄的四部位卡上。 */}
-          {(isMobile || !effectivePicker) && !openRow && !openModuleRef && ctx.mech && (
-            <Panel title="模組效果"><EquippedEffects ctx={ctx} /></Panel>
-          )}
+          {/* ⏸ 「武器技能」與「模組效果」已於 2026-08-27 移到**中欄槽位圖下方**（使用者要求）。
+                 兩者原本掛在這一欄，但這一欄只有 380px，兩個逐列展開的清單疊起來是一根長條，
+                 而中欄下方（四部位卡以下）本來就是空的。搬過去後改成「收合＝縮圖／展開＝細節」，
+                 並且**不再受挑選器開合影響** —— 開著挑選器挑武器時仍看得到目前的技能與加成，
+                 那正是要比較的時候。 */}
 
           {(isMobile || !effectivePicker) && !openRow && !openModuleRef && ctx.mech && (
             <>
               {/* ⏸ 四部位表仍然下架，但**理由只剩一半了**（PLAN-052-G C-6）：
-                     模組接口已經可以配（入口是槽位圖下方的四部位卡，彙總在右欄「模組效果」），
+                     模組接口已經可以配（入口是槽位圖下方的四部位卡，彙總在中欄下方的「模組效果」），
                      而四個部位仍然 100% 來自本機甲 —— 這張表現在列出來還是把機甲詳情頁的
                      同一張表再抄一遍。等部件混搭（Phase D）開放後，它才開始回答
                      「這一套是怎麼拼出來的」，屆時連同「來源」欄一起復原。
@@ -1130,15 +1220,29 @@ export default function LoadoutPage() {
 // ─── 小元件與映射 ───────────────────────────────────────────────────────────
 
 function Panel({
-  title, titleExtra, action, children,
+  title, titleExtra, action, preview, children,
 }: {
   title: string
   /** 標題右側的補充（機甲名、裝甲徽章…） */
   titleExtra?: React.ReactNode
   /** 標題列最右邊的一顆動作鍵 */
   action?: { label: string; onClick: () => void; disabled?: boolean }
+  /**
+   * 收合態的內容（縮圖條）。**給了才變成可收合面板**，且預設是收合的。
+   *
+   * ⚠ 收合態刻意**不是空的**（使用者要求 2026-08-27）：一個收起來什麼都看不到的面板，
+   *   等於把資訊藏進一顆要按的按鈕，玩家配裝時每換一把武器就得再按一次。
+   *   收合＝縮圖（一眼知道「裝了什麼」），展開＝細節（讀得到「加多少、怎麼生效」）。
+   *
+   * ⚠ 預設收合而不是預設展開：這兩區加起來比槽位圖還長，展開態當預設會把
+   *   四部位卡推出首屏 —— 而那是配裝的主操作區。
+   */
+  preview?: React.ReactNode
   children: React.ReactNode
 }) {
+  const collapsible = preview !== undefined
+  const [open, setOpen] = useState(false)
+
   return (
     <section className={`${HUD_PANEL} p-3.5 space-y-2`}>
       <div className="flex items-center gap-2 min-w-0">
@@ -1149,13 +1253,30 @@ function Panel({
             type="button"
             onClick={action.onClick}
             disabled={action.disabled}
-            className="hud-cut-sm ml-auto shrink-0 px-3 py-1 border border-border-accent bg-bg-dark/80 text-[12px] text-text-primary hover:border-accent-orange/60 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className={`${HUD_BTN} ml-auto shrink-0 px-3 py-1 text-[12px] inline-flex items-center gap-1.5`}
           >
+            <LoadoutIcon name="swap" className="w-3.5 h-3.5 shrink-0" />
             {action.label}
           </button>
         )}
+        {collapsible && (
+          // 互動語彙沿用「目前生效」那顆（NdActiveAbilities）——同一頁裡的兩顆收合鍵
+          // 長得不一樣，會讓人以為它們做的是不同的事
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            className={`hud-cut-sm ml-auto shrink-0 px-2 py-0.5 text-[11px] border transition-colors cursor-pointer ${
+              open
+                ? 'border-accent-orange/50 text-accent-orange bg-accent-orange/10'
+                : 'border-border text-text-secondary hover:border-border-accent'
+            }`}
+          >
+            {open ? '▼ 收合' : '▶ 展開'}
+          </button>
+        )}
       </div>
-      {children}
+      {collapsible && !open ? preview : children}
     </section>
   )
 }
@@ -1174,12 +1295,21 @@ function HudCard({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`hud-cut-sm flex-1 min-w-[9rem] max-w-[16rem] text-left px-2.5 py-1.5 border transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-        active ? 'border-accent-orange bg-accent-orange/10' : 'border-border bg-bg-card hover:border-border-accent'
+      // ⚠ 這兩顆（機師／機甲）長得像唯讀資訊欄 —— 它們**是按鈕**，點下去開挑選器。
+      //   右側補一顆 `swap` 圖示：標籤不會有圖示，那是最短的一句「這裡按得下去」
+      //   （使用者回報 2026-08-27：看不出哪裡可以按）。
+      className={`hud-cut-sm flex-1 min-w-[9rem] max-w-[16rem] text-left px-2.5 py-1.5 border transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed group ${
+        active ? 'border-accent-orange bg-accent-orange/10' : 'border-border bg-bg-card hover:border-accent-orange/60'
       }`}
     >
       <div className={`${HUD.labelCjk} text-text-dim leading-tight`}>{label}</div>
-      <div className={`${HUD.bodyStrong} text-text-primary mt-0.5 truncate`}>{children}</div>
+      <div className="flex items-center gap-1.5 mt-0.5">
+        <span className={`${HUD.bodyStrong} text-text-primary min-w-0 truncate`}>{children}</span>
+        <LoadoutIcon
+          name="swap"
+          className="w-3.5 h-3.5 ml-auto shrink-0 text-text-dim group-hover:text-accent-orange transition-colors"
+        />
+      </div>
     </button>
   )
 }
@@ -1224,11 +1354,11 @@ function LoadoutNameField({
 
   return (
     <label
-      className={`hud-cut-sm block px-2.5 py-1.5 border bg-bg-card transition-colors ${
+      // ⚠ 用 `HUD_INPUT`（切角 ＋ 2px 底線）：沒有底線時它看起來就是一顆長按鈕，
+      //   玩家不會想到可以在裡面打字（使用者回報 2026-08-27）
+      className={`${HUD_INPUT} block px-2.5 py-1.5 ${
         full ? 'w-full min-w-0' : 'flex-1 min-w-[10rem] max-w-[20rem]'
-      } ${
-        disabled ? 'border-border opacity-40' : 'border-border focus-within:border-accent-orange/60'
-      }`}
+      } ${disabled ? 'opacity-40' : 'focus-within:border-accent-orange/60 focus-within:border-b-accent-orange'}`}
     >
       <span className={`${HUD.labelCjk} text-text-dim leading-tight block`}>方案名稱</span>
       <input
@@ -1332,6 +1462,21 @@ const WEAPON_FILTERS: readonly PickerFilterGroup<Weapon>[] = [
       { value: WeaponType.Heavy, label: WeaponType.Heavy },
     ],
     test: (w, v) => w.type === v,
+  },
+  {
+    // ── 種類：類型的**子篩選**（使用者要求 2026-08-27）────────────────────
+    //
+    // 「篩了格鬥就該看得到刀劍／長柄／電鋸」。這一排只在選了類型之後才出現，
+    // 且只列得出該類型底下**這一格真的裝得上**的種類 —— 由 `PickerShell` 實測算出，
+    // 這裡不維護任何「類型 → 種類」對照表（見 `dependsOn` 的註解）。
+    //
+    // ⚠ 選項刻意直接鋪 `WeaponKind` 全 17 值，包含「固定武裝」：多餘的值一律由
+    //   `available` 濾掉（固定武裝被 `canEquipWeapon` 擋在挑選器外，永遠不會出現）。
+    //   在這裡先手動剔除，等於把同一條規則寫兩次，而第二份會在官方新增種類時過期。
+    key: 'kind', label: '種類',
+    dependsOn: 'type',
+    options: Object.values(WeaponKind).map((k) => ({ value: k, label: k })),
+    test: (w, v) => w.kind === v,
   },
   {
     key: 'rarity', label: '品質',

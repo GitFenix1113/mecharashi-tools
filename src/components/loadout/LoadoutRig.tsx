@@ -2,18 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Component } from '../../types'
 import type { ModuleSlotRef, SlotKey, WeaponSlotRef } from '../../types/slots'
 import { slotKey } from '../../types/slots'
-import { WeaponEquipSlot } from '../../types/enums'
-import type { MechPartPosition } from '../../types/enums'
+import { MechPartPosition, WeaponEquipSlot } from '../../types/enums'
 import { slotLabel } from '../../utils/mechSlots'
 import { imageCandidates } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
 import {
-  backpackHasCandidates, slotExists, slotHasCandidates, slotOccupant,
+  backpackHasCandidates, planWeaponUpgrade, slotExists, slotHasCandidates, slotOccupant,
   type LoadoutContext, type SlotOccupant,
 } from '../../utils/loadoutRules'
 import { SlotCell, type SlotCellPreview } from './SlotCell'
 import { HUD, slotIconName, slotSegKey } from './loadoutTheme'
-import { MechPartStrip } from './MechPartStrip'
+import { MechPartCard, PART_MIX_NOTE } from './MechPartStrip'
 
 // ─── 槽位圖（PLAN-052-B B-2／PLAN-052-I B-2）──────────────────────────────────
 //
@@ -31,10 +30,35 @@ import { MechPartStrip } from './MechPartStrip'
 //   這裡改成 ResizeObserver 量真實矩形、viewBox 直接等於容器像素尺寸，
 //   於是任何寬度、任何節點高度（長武器名換行）都對得上。
 //
+// ⚠ **畫面左欄放的是機體的「右」側**（使用者裁決 2026-08-27）：本頁是從正面看機體，
+//   所以機體的右臂出現在畫面左邊，與遊戲整備畫面一致。改版前是「左肩在畫面左」——
+//   那讀起來直覺，但玩家對照遊戲時會發現兩邊左右相反，而槽位標籤仍寫著「左肩」，
+//   於是每一次對照都要在腦內翻一次。下方四部位卡（MechPartStrip）同時翻面，
+//   一頁裡只有一套左右。
+//
 // ⚠ 三種槽位刻意**不進左右兩欄**，而是自己佔一整列：
 //     無肩槽    → 那是「整排不存在」，畫成左右兩個一樣的灰格只是把同一句話說兩遍
 //     雙手武器  → 它同時佔住左右手，畫在其中一欄會讓對面憑空缺一格
 //     背部      → 它不屬於左也不屬於右
+//
+// ── 四部位模組卡「歸位」（使用者要求 2026-08-28）────────────────────────────
+// 在那之前四部位卡是掛在這張圖**下方**的一整塊十字（`MechPartStrip` 自己排）。
+// 於是同一台機體被講了兩次：上面講武器掛在哪、下面講模組裝在哪，玩家要自己把
+// 兩張圖疊起來。現在四張卡直接長在這張圖上，由上而下：
+//
+//     軀幹（整列置中半寬）
+//     肩／臂／手／備用手  ｜ 機甲 ｜  肩／臂／手／備用手   ← 臂卡插在肩與手之間
+//     腿部（整列置中半寬）
+//     背部（整列）
+//
+// 於是「右肩 → 右臂 → 右手 → 右備用」是一路讀下來的**同一欄**，而那個順序就是
+// 機體由上而下的解剖順序 —— 武器與模組相鄰，十字的形狀（軀幹在上、雙臂在中、
+// 腿部在下）長在真正的機體上。
+//
+// ⚠ 容器窄到 `dense` 以下時雙臂**退回整寬兩欄**（見該處註解）：側欄在那個寬度
+//   只剩約 120px，塞不下兩行內容的部位卡。那不是第二套版面，是同一個十字的窄版。
+// ⚠ 部位卡**不接引線**：引線回答「這一格屬於機體哪一側」，而部位卡自己就是部位，
+//   給它拉一條指回機體的線只是把同一句話說第二遍。
 //
 // ⚠ 官方把背包夾在兩個備用槽中間；本設計把**背包放在背部那一列**——背包不是手，
 //   而它與背部武器共用同一格，擺在一起才看得出兩者互斥。
@@ -54,6 +78,11 @@ interface Props {
   onClearSlot: (ref: WeaponSlotRef) => void
   /** 開這一格武器的元件面板（PLAN-052-D）。⚙ 徽章只出現在裝得了元件的武器格上 */
   onOpenComponents?: (ref: WeaponSlotRef) => void
+  /**
+   * 把這一格的武器換成它的進階版（使用者要求 2026-08-27）。
+   * 未傳＝不畫升級列（匯出圖等唯讀情境）。
+   */
+  onUpgrade?: (ref: WeaponSlotRef, weaponId: string) => void
   /** 開某個部位的模組面板（PLAN-052-G C-2）。未傳＝四部位卡維持唯讀 */
   onOpenModule?: (ref: ModuleSlotRef) => void
   /** 模組面板正對著的那個部位，畫成選中狀態 */
@@ -103,10 +132,15 @@ const LINE_MIN_WIDTH = 380
 /**
  * 低於這個容器寬度，槽位格改用窄版（重量排到名稱下方）。
  *
- * 由 `(W − 內距 26 − 機甲 132 − 兩道 gap 56) / 2 ≥ 190` 反推。190px 是一格能同時放下
- * 圖示、武器名與右側重量的實測下限；再窄下去名稱欄會被壓成省略號。
+ * 由 `(W − 內距 26 − 機甲 132 − 兩道 gap 56) / 2 ≥ 200` 反推。200px 是一格能同時放下
+ * 圖示、武器名與右側重量的下限；再窄下去名稱欄會被壓成省略號。
+ *
+ * ⚠ **2026-08-27 由 570 上調到 610**：`SlotCell` 的名稱字級隨字階調整由 13px → 14px
+ *   （使用者要求），一格放得下的下限因此從 190 變成 200。字級改了而這個門檻沒跟著改，
+ *   症狀是「在 570–610 之間的寬度下，名稱被截斷但系統還認為自己是寬版」——
+ *   而它不會有任何錯誤訊息。
  */
-const DENSE_MAX_WIDTH = 570
+const DENSE_MAX_WIDTH = 610
 /**
  * 這一格要不要 ⚙ 徽章，以及上面印幾個（PLAN-052-D）。
  *
@@ -153,12 +187,65 @@ function componentBadge(
  */
 const TIGHT_MAX_WIDTH = LINE_MIN_WIDTH
 
+/**
+ * ── 寬容器的空間分配：**欄寬封頂，餘裕全給立繪**（使用者要求 2026-08-28）─────
+ *
+ * 使用者逐字：「裝備名稱似乎普遍沒有那麼長，我想是不是可以把中間的圖再放大、
+ * 縮窄裝備欄位的寬度」。在那之前兩側是 `minmax(0,1fr)`，於是視窗每寬 100px 就有
+ * 100px 被平均倒進兩欄的**右側留白**（實測：中欄 1050px 時單欄 365px，而一格真正
+ * 用得到的是圖示 42 ＋ 六個字 90 ＋ 重量 30 ＋ 內距間隙 ≈ 200）。版面越寬，
+ * 主視覺佔比反而越小 —— 而這一頁的主角就是那台機體。
+ *
+ * 現在改成：側欄 `minmax(0, SLOT_MAX_WIDTH)`、中欄 `minmax(MECH_MIN_WIDTH, 1fr)`。
+ * grid 先把非彈性軌撐到上限（250），剩下的**全部**歸中欄，立繪再以 `max-w` 封頂。
+ *
+ * ⚠ 中欄那個 `min` 不可省：沒有它，兩側會在窄容器把中欄壓成幾十 px。
+ *   值取 164 ＝ 改版前的固定立繪尺寸，於是 610–738 這一段的欄寬與改版前逐 px 相同。
+ *
+ * ⚠ `SLOT_MAX_WIDTH` 是**唯一**要調的數字：嫌欄位還太寬就往下調，
+ *   發現某把武器名被截就往上調。250 的依據是上面那筆 200px 實測 ＋ 50px 餘裕。
+ *   （名稱本來就有 `truncate`，調過頭的後果是省略號，不是破版。）
+ */
+const SLOT_MAX_WIDTH = 250
+/** 中欄的下限 ＝ 改版前的固定立繪尺寸。見 `SLOT_MAX_WIDTH` 的第二條註解。 */
+const MECH_MIN_WIDTH = 164
+/**
+ * ⚠ **class 一律寫成完整字面值，不可用樣板字串把常數插進去。**
+ *   Tailwind v4 掃的是原始碼裡出現過的字串，`grid-cols-[minmax(0,${X}px)_…]`
+ *   產不出任何 class —— 而它不會報錯，症狀是版面靜靜地退回瀏覽器預設的單軌 grid。
+ *   下面兩個 grid 字串裡的數字必須與上面兩個常數一致（常數只給 JS 的門檻算式用）。
+ */
+const ROOMY_GRID_COLS = 'grid-cols-[minmax(0,250px)_minmax(164px,1fr)_minmax(0,250px)]'
+const NARROW_GRID_COLS = 'grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]'
+/**
+ * 立繪方框：跟著中欄軌走，由 `max-w` 封頂，`aspect-square` 保證高度不靠圖片決定。
+ *
+ * 340 的理由：再大就變成「一張機甲圖，旁邊附了幾個槽」——而這張圖要回答的是
+ * 「哪一格裝了什麼」，機甲長相有詳情頁。
+ * 觸控版收到 240：那裡的格高與字級都已經為手指放大過，圖不必再搶版面。
+ */
+const MECH_BOX = 'w-full max-w-[340px] aspect-square'
+const MECH_BOX_COMPACT = 'w-full max-w-[240px] aspect-square'
+
+/**
+ * 側欄**確定吃滿 `SLOT_MAX_WIDTH`** 的容器寬 ＝ 250×2 ＋ 164 ＋ 內距 26 ＋ 兩道 gap 48。
+ *
+ * 到了這個寬度才把格子放大（`SlotCell` 的 `roomy`：格高、圖示、元件縮圖全部升一階）。
+ * ⚠ 判準是**欄位真的變寬了沒有**，不是容器寬本身：低於這個值時欄寬還在跟中欄搶，
+ *   那時放大格子只會把武器名擠掉 —— 元件那排四枚 32px 縮圖尤其吃寬度。
+ */
+const ROOMY_CELL_MIN_WIDTH = SLOT_MAX_WIDTH * 2 + MECH_MIN_WIDTH + 26 + 48
+
 export function LoadoutRig({
   ctx, activeSlot, preview, flash, available, compact, onOpenSlot, onClearSlot, onOpenComponents,
-  onOpenModule, activeModule,
+  onUpgrade, onOpenModule, activeModule,
 }: Props) {
   const flashSet = useMemo(() => new Set(flash), [flash])
   const [tight, setTight] = useState(false)
+  // ⚠ 存**布林**不是原始寬度：存寬度會讓拖曳視窗的每一幀都 setState 重繪整張圖。
+  //   立繪的實際尺寸不進 state —— 它由 CSS（`w-full max-w-… aspect-square`）算，
+  //   所以連續縮放也不會有任何一次多餘的 render。
+  const [roomyCells, setRoomyCells] = useState(false)
 
   const hasShoulder = ctx.capacity.shoulder > 0
   const hasBackup = ctx.capacity.backupHand > 0
@@ -183,8 +270,10 @@ export function LoadoutRig({
     return out
   }, [hasShoulder, hasBackup])
 
-  const left = useMemo(() => columnRefs('left'), [columnRefs])
-  const right = useMemo(() => columnRefs('right'), [columnRefs])
+  // ⚠ **變數名指的是畫面欄位，不是機體側**：畫面左欄裝的是機體右側的槽位（見檔頭）。
+  //   引線的幾何（`measure()`）與機甲落點的鏡射也一律吃畫面側，兩者因此自動對齊。
+  const left = useMemo(() => columnRefs('right'), [columnRefs])
+  const right = useMemo(() => columnRefs('left'), [columnRefs])
 
   const renderCell = (ref: WeaponSlotRef) => {
     const key = slotKey(ref)
@@ -207,6 +296,7 @@ export function LoadoutRig({
           absentReason={emptyReason(ctx, ref)}
           compact={compact}
           dense={dense}
+          roomy={roomyCells}
         />
       )
     }
@@ -227,8 +317,16 @@ export function LoadoutRig({
         compact={compact}
         dense={dense}
         tight={tight}
+        roomy={roomyCells}
         onOpen={() => onOpenSlot(ref)}
         onClear={occ.kind === 'weapon' || occ.kind === 'backpack' ? () => onClearSlot(ref) : undefined}
+        // 升級列：`planWeaponUpgrade()` 自己會對「沒武器／沒進階版／焊死的武裝」回 null，
+        // 所以這裡不必先判斷 `occ.kind` —— 那會是同一條規則的第二份
+        upgrade={onUpgrade ? planWeaponUpgrade(ctx, ref) : null}
+        onUpgrade={onUpgrade && (() => {
+          const plan = planWeaponUpgrade(ctx, ref)
+          if (plan && !plan.rejection) onUpgrade(plan.ref, plan.to.id)
+        })}
         {...componentBadge(ctx, occ, ref, onOpenComponents)}
       />
     )
@@ -255,6 +353,7 @@ export function LoadoutRig({
       const box = rig.getBoundingClientRect()
       setDense(box.width < DENSE_MAX_WIDTH)
       setTight(box.width < TIGHT_MAX_WIDTH)
+      setRoomyCells(box.width >= ROOMY_CELL_MIN_WIDTH)
       if (!mech || box.width < LINE_MIN_WIDTH) { setLines(null); return }
       const m = mech.getBoundingClientRect()
       const anchor = (a: [number, number], side: 'left' | 'right'): [number, number] => {
@@ -307,6 +406,59 @@ export function LoadoutRig({
 
   const backRef: WeaponSlotRef = { bank: 'main', slot: WeaponEquipSlot.BACK }
 
+  /**
+   * 四部位資料到齊了嗎。
+   *
+   * ⚠ 包住卡片的**容器**也要看這一條，不能只靠 `MechPartCard` 自己回 null：
+   *   卡片回 null 之後那些 `<div>` 仍然在，而它們是 `flex flex-col gap-2` 的子元素 ——
+   *   一個零高度的子元素照樣吃掉兩道 gap，於是機甲圖上下各多出一段沒來由的空白。
+   */
+  const hasParts = !!ctx.mech && !!ctx.chassis
+
+  /** 一張部位卡（模組接口）。 */
+  const partCard = (position: MechPartPosition) => (
+    <MechPartCard
+      ctx={ctx}
+      position={position}
+      onOpenModule={onOpenModule}
+      activePosition={activeModule}
+    />
+  )
+
+  /**
+   * 一欄的內容：武器格由上而下（肩 → 手 → 備用手），**臂卡插在肩與手之間**
+   * （使用者裁決 2026-08-28）。
+   *
+   * ⚠ 初版把臂卡接在整欄的最下面。那讀起來是「武器歸武器、模組收在下面」——
+   *   又退回成兩個分開的清單，只是換了個位置擺。插在肩與手中間才是真的**歸位**：
+   *   由上而下的順序就是機體由上而下的解剖順序（肩 → 臂 → 手），
+   *   而「手上這把武器」與「這條手臂的模組」從此貼在一起。
+   * ⚠ 無肩槽（輕型機）時插點是 index 0 ＝ 這一欄的最上面。那時整張圖最上方另有一條
+   *   「肩部槽位只有中甲機甲才有」的整列，所以相對順序仍然是 肩區 → 臂 → 手。
+   */
+  const renderColumn = (refs: WeaponSlotRef[], arm: MechPartPosition) => {
+    const cells: React.ReactNode[] = refs.map((ref) => (
+      <div key={slotKey(ref)} ref={bindNode(slotKey(ref))}>{renderCell(ref)}</div>
+    ))
+    if (!dense && hasParts) {
+      cells.splice(hasShoulder ? 1 : 0, 0, <div key={`arm-${arm}`}>{partCard(arm)}</div>)
+    }
+    return cells
+  }
+
+  /**
+   * 十字的上下兩端（軀幹／腿部）：**置中且只佔半寬**。
+   *
+   * ⚠ 不要拉成整寬（使用者回饋 2026-08-27，該裁決隨卡片一起搬過來）：整寬時卡片內容
+   *   全靠左、右半邊一片空，看起來像沒排完 —— 而「十字」的形狀也因此讀不出來
+   *   （整寬的兩條只是兩條橫線）。半寬對齊的是雙臂那兩張卡的外緣。
+   */
+  const partRow = (position: MechPartPosition) => hasParts && (
+    <div className="flex justify-center">
+      <div className="w-[calc(50%-0.25rem)]">{partCard(position)}</div>
+    </div>
+  )
+
   return (
     <div className="space-y-3">
       <div
@@ -347,33 +499,62 @@ export function LoadoutRig({
               compact={compact}
               dense={dense}
               tight={tight}
+              roomy={roomyCells}
             />
           )}
+
+          {/* ── 十字的上端：軀幹 ── */}
+          {partRow(MechPartPosition.TORSO)}
 
           {/* ── 主體：左欄 ／ 機甲 ／ 右欄 ──
               （雙手武器不在這裡另闢一列，見 columnRefs 的註解） ── */}
           {/* ⚠ `gap-x-6` 不是留白品味問題：引線的**可見長度就是這道縫**
               （落點在機甲圖框內，縫以內的線段會被機甲蓋住）。縮回 gap-2 等於沒有引線。 */}
-          <div className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-y-2 items-center ${
+          {/* ⚠ 兩種軌道設定：窄容器（`dense`／`tight`）維持舊的 `1fr auto 1fr` ——
+              那裡沒有餘裕可以分配，封頂只會把中欄壓垮。寬容器改成「側欄封頂、
+              中欄吃下全部餘裕」，見 `SLOT_MAX_WIDTH` 的註解。 */}
+          <div className={`grid gap-y-2 items-center ${
             tight ? 'gap-x-2' : 'gap-x-6'
+          } ${
+            dense || tight ? NARROW_GRID_COLS : ROOMY_GRID_COLS
           }`}>
             {/* ⚠ tight 時兩欄改 `self-start`：格內名稱折行後左右兩欄高度不同，
                 `items-center` 會把矮的那一欄往下推，於是「左肩／右肩」不在同一條線上。
                 只在 tight 覆寫、不動桌機版 —— 那裡兩欄等高，置中才讓機甲對齊兩欄的正中。 */}
+            {/* 畫面左欄＝機體右側，所以這一欄插的是**右臂**（見檔頭那條左右裁決） */}
             <div className={`flex flex-col gap-2 min-w-0 ${tight ? 'self-start' : ''}`}>
-              {left.map((ref) => (
-                <div key={slotKey(ref)} ref={bindNode(slotKey(ref))}>{renderCell(ref)}</div>
-              ))}
+              {renderColumn(left, MechPartPosition.RIGHT_ARM)}
             </div>
 
             <MechVisual ctx={ctx} ref={mechRef} compact={compact} dense={dense} tight={tight} />
 
             <div className={`flex flex-col gap-2 min-w-0 ${tight ? 'self-start' : ''}`}>
-              {right.map((ref) => (
-                <div key={slotKey(ref)} ref={bindNode(slotKey(ref))}>{renderCell(ref)}</div>
-              ))}
+              {renderColumn(right, MechPartPosition.LEFT_ARM)}
             </div>
           </div>
+
+          {/* ── 窄容器：雙臂退回整寬兩欄 ──
+              ⚠ 這不是「兩套版面」，是同一個十字的**窄版**（代價是臂卡離開了肩與手
+                之間那個插點）：`dense` 以下側欄只剩約
+                120px（門檻的算式見 `DENSE_MAX_WIDTH`），而部位卡是兩行內容
+                （部位名＋接口／模組縮圖＋名稱＋Lv），120px 會把模組名壓成一個字。
+                退到整寬兩欄之後每張仍有約 200px —— 與歸位之前那個十字裡的寬度相同。
+              ⚠ 判準用**量到的容器寬**（`dense`）而不是 Tailwind 斷點：這一欄的寬度
+                同時受三欄版型與視窗寬影響，斷點答不出「這一欄現在多寬」。 */}
+          {dense && hasParts && (
+            <div className="grid grid-cols-2 gap-2">
+              {partCard(MechPartPosition.RIGHT_ARM)}
+              {partCard(MechPartPosition.LEFT_ARM)}
+            </div>
+          )}
+
+          {/* ── 十字的下端：腿部 ──
+              ⚠ 排在背部**之上**（使用者裁決 2026-08-28，翻掉了初版的排法）。
+                初版的論證是「背部與肩、手同屬武器格，不該被一張部位卡從中切開」——
+                那個一致性輸給了**解剖順序**：十字的四端要圍著機體長，而腿接在軀幹下面、
+                不在背包下面。背部反而是這一疊裡唯一「掛上去」的東西，擺在最後
+                讀起來是收尾，不是被插隊。 */}
+          {partRow(MechPartPosition.LEGS)}
 
           {/* ── 整列：背部（背包與背部武器共用這一格，互斥） ── */}
           {slotExists(ctx.capacity, backRef) && renderCell(backRef)}
@@ -384,7 +565,12 @@ export function LoadoutRig({
              那裡是唯一能同時看到主手組與備用組兩排武器的地方，規則寫在看得到證據的位置
              才有用。槽位圖回答的是「哪一格裝了什麼」，不兼任重量規則的說明欄。 */}
 
-      <MechPartStrip ctx={ctx} onOpenModule={onOpenModule} activePosition={activeModule} />
+      {/* 部位卡歸位後唯一剩下的整區級說明（見 `PART_MIX_NOTE`）。
+          ⚠ 沒有機甲時不出聲：那時整張圖是空的，一句關於「部件混搭」的預告
+            會是畫面上唯一的一行字。 */}
+      {hasParts && (
+        <p className="text-[11px] text-text-dim leading-tight text-right">{PART_MIX_NOTE}</p>
+      )}
     </div>
   )
 }
@@ -408,12 +594,19 @@ const MechVisual = ({
   dense?: boolean
   tight?: boolean
 }) => {
-  // ⚠ tight 時再縮一階：這張圖與左右兩欄搶的是同一份寬度，而在這個尺寸下
-  //   「看得出裝了什麼」比「看得清機甲長相」重要（機甲長相有詳情頁）。
+  // ⚠ tight／dense 時是**寫死的方框**：那裡的中欄是 `auto` 軌，沒有可以撐開的餘裕，
+  //   而在那個尺寸下「看得出裝了什麼」比「看得清機甲長相」重要（機甲長相有詳情頁）。
+  //
+  // ⚠ 寬容器改成 `w-full max-w-… aspect-square`：中欄軌已經吃下全部餘裕（見
+  //   `SLOT_MAX_WIDTH`），這裡只要跟著軌走、再由 `max-w` 封頂即可。
+  //   **必須維持正方形、而且尺寸就是圖的實際尺寸**：引線的落點是這個方框的
+  //   比例座標（`ANCHOR`），方框一旦比圖寬，橘點就會飄到機體外面的空白上。
+  //   `aspect-square` 讓高度由寬度算出來，所以立繪非同步載入也不會推位
+  //   —— 那正是這裡當初寫死尺寸的原因，換法不同、保證相同。
   const size = tight ? 'w-[76px] h-[76px]'
-    : compact ? 'w-[96px] h-[96px]'
-    : dense ? 'w-[120px] h-[120px]'
-    : 'w-[164px] h-[164px]'
+    : dense ? (compact ? 'w-[96px] h-[96px]' : 'w-[120px] h-[120px]')
+    : compact ? MECH_BOX_COMPACT
+    : MECH_BOX
   return (
     <div className="flex flex-col items-center gap-1 shrink-0">
       <div ref={ref} className={`relative ${size} flex items-center justify-center`}>

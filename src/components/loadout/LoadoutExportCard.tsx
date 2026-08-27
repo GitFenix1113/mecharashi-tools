@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { toPng } from 'html-to-image'
 import type { NeuralDrive, NeuralDriveAbility } from '../../types'
-import { imageCandidates, pilotFullArtPath } from '../../utils/assets'
+import { imageCandidates, pilotFullArtPath, mechKeyArtPath } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
 import { loadoutSheetRows, type SheetRow } from '../../utils/loadoutRows'
 import { ND_RULES, isGammaZone, zonePower } from '../../utils/ndOverrides'
@@ -104,9 +104,23 @@ export function LoadoutExportCard({
   const usedSlots = rows.filter((r) => r.name !== null).length
   const realSlots = rows.filter((r) => r.state !== 'absent').length
 
+  // ── 主視覺的兩張圖 ────────────────────────────────────────────────────────
+  //
+  // ⚠ **機師用 `full.webp`（半身特寫）、機甲用 `art.webp`（原稿全身）—— 兩邊來源不同是刻意的**
+  //   （2026-08-28，實際輸出比對後的決定）。
+  //
+  //   機師的直式全身原稿試過了：在這張圖上它會把人物壓成一條窄長的立像，而半身特寫的
+  //   臉更大、更像一張「這是誰的配裝」的封面。全身原稿改留給機師故事館那種以看人物為
+  //   目的的頁面（查詢工具在 `utils/assets` 已備好：`hasPilotArt()` / `pilotKeyArtPath()`）。
+  //
+  //   機甲相反：`portrait` 是上半身 3/4 特寫，在這裡放大只是把裁切放大；原稿是完整機體
+  //   含武裝，而這張圖有 1000px 可用，放得下它真正的樣子。
+  //
+  // ⚠ 因此機甲圖**不再與螢幕版共用來源**（螢幕中欄仍是 `portrait`），匯出時多一次下載
+  //   約 101KB，不再是快取命中。`toPng` 前已有等待幀的機制（`nextFrames`）。
+  //   缺原稿的 5 台由候選鏈自動退回 `portrait`。
   const art = imageCandidates(pilotFullArtPath(pilot))
-  // 與 LoadoutRig 同一個來源（`mech.portrait`），圖已在頁面上載入過 → 匯出時是快取命中
-  const mechArt = imageCandidates(mech?.portrait)
+  const mechArt = imageCandidates(mechKeyArtPath(mech), mech?.portrait)
 
   const named = !!name
   const title = name ?? pilot?.name ?? '未命名配裝'
@@ -124,6 +138,7 @@ export function LoadoutExportCard({
     }}>
       {/* ── Key visual：立繪 ＋ 機甲 ＋ 方案名稱 ── */}
       <div style={{
+        // 高度維持 356：機師改回半身特寫（372×324）後，加高只會在人物頭頂多一片空白。
         position: 'relative', height: 356, flexShrink: 0, overflow: 'hidden',
         background: 'linear-gradient(118deg, #14161d 0%, #1b1207 42%, #0a0c10 100%)',
       }}>
@@ -133,6 +148,26 @@ export function LoadoutExportCard({
           background: 'linear-gradient(160deg, rgba(255,107,43,0.30), rgba(255,107,43,0.02) 68%)',
         }} />
 
+        {/* ⚠ 機甲先畫、機師後畫：兩張在底部有重疊帶，機師必須壓在機甲之上
+            —— 他是這張圖的主角，而機甲橫幅是背景襯底。 */}
+        {mechArt.length > 0 && (
+          <FallbackImage
+            candidates={mechArt}
+            alt=""
+            fallback={null}
+            // 500 寬（原本 portrait 是 350）。⚠ 這**不是**把圖放大 43% —— 原稿的機體只佔
+            // 畫框 68% 寬（實測 83 張的中位；portrait 是 100% 滿版），500×0.68 ≈ 340px，
+            // 剛好與原本 350px 的滿版裁切相當。照原尺寸 350 換上去，機體反而會縮水成 238px。
+            // 再往上到 560 時，機體會頂到左邊「機甲 / 裝甲 / 形態」那一行（實測）。
+            //
+            // 貼齊右下不留邊：橫式動作圖靠邊出血才像封面；置中會把那 32% 的透明留白
+            // 一起擺進版面，看起來像機體浮在半空。
+            style={{
+              position: 'absolute', right: 0, bottom: 0, width: 500, opacity: 0.92,
+              filter: 'drop-shadow(0 16px 30px rgba(0,0,0,0.7))',
+            }}
+          />
+        )}
         {art.length > 0 && (
           <FallbackImage
             candidates={art}
@@ -141,17 +176,6 @@ export function LoadoutExportCard({
             style={{
               position: 'absolute', left: 18, bottom: -12, width: 372,
               filter: 'drop-shadow(0 18px 34px rgba(0,0,0,0.7))',
-            }}
-          />
-        )}
-        {mechArt.length > 0 && (
-          <FallbackImage
-            candidates={mechArt}
-            alt=""
-            fallback={null}
-            style={{
-              position: 'absolute', right: 22, bottom: 58, width: 350, opacity: 0.94,
-              filter: 'drop-shadow(0 16px 30px rgba(0,0,0,0.7))',
             }}
           />
         )}

@@ -1,3 +1,7 @@
+// ⚠ 帶 `.ts` 副檔名：本檔要能被 `node --test` 直接載入（見下方 `base()` 的說明），
+//   而 node 的 ESM 解析不補副檔名。專案既有慣例同此（buffPool.ts、entityRefs.ts…）。
+import { PILOT_ART_INDEX } from '../data/artIndex.ts'
+
 /**
  * 刻意做成函式而非模組層級常數：`import.meta.env` 在 node --test 下不存在，
  * 模組層級取值會讓整個檔案一 import 就拋 TypeError，連純函式都測不了。
@@ -153,4 +157,63 @@ export function pilotFullArtPath(pilot: { portrait?: string } | null | undefined
   const full = p.replace(/(^|\/)half(\.[a-z0-9]+)$/i, '$1full$2')
   // 換不動 ＝ 這不是預期的 half.* 命名，不要硬猜一個路徑出來
   return full === p ? undefined : full
+}
+
+/**
+ * 機師**官方原稿全身立繪**的路徑（`/images/pilots/<名>/art.webp`）。
+ *
+ * 與 `pilotFullArtPath()` 是**兩張不同構圖的圖**，不是同一張的兩種尺寸：
+ *   · `full.webp` 1240×1080  橫式半身特寫（官方 CDN 的裁切圖，名為 full 其實只到大腿）
+ *   · `art.webp`   863×1600  直式**完整全身**（2026-08 取得的原稿）
+ *
+ * ⚠ 副檔名固定 `.webp`，不跟著 `portrait` 走：原稿是由 `scripts/import-source-art.mjs`
+ *   統一輸出的，不存在 `full.*` 那種 `阿列娜/half.png` 的歷史例外。
+ */
+export function pilotKeyArtPath(pilot: { portrait?: string } | null | undefined): string | undefined {
+  const dir = pilotArtDir(pilot)
+  return dir ? `/images/pilots/${dir}/art.webp` : undefined
+}
+
+/**
+ * 由 `pilot.portrait` 取出圖片資料夾名（`/images/pilots/<這一段>/half.webp`）。
+ *
+ * ⚠ **不能用 `pilot.name` 代替**：少數機師的資料夾名與顯示名有簡繁／譯名差異
+ *   （素材端的「羅斯瑪莉」對到站上的「羅斯瑪麗」等 7 筆，見 import-source-art.mjs
+ *   的 NAME_FIXES）。資料夾名才是 `portrait` 路徑實際指向的那一段。
+ */
+export function pilotArtDir(pilot: { portrait?: string } | null | undefined): string | undefined {
+  const m = pilot?.portrait?.match(/(?:^|\/)pilots\/([^/]+)\/[^/]+$/)
+  return m ? m[1] : undefined
+}
+
+/**
+ * 這位機師**有沒有**原稿全身立繪。52/88 位有 —— 缺的那 36 位不是例外，是常態的一半。
+ *
+ * ⚠ 版面必須在**渲染前**就問這件事，不能等 `FallbackImage` 載失敗才知道：
+ *   直式全身與橫式半身的構圖不同，等圖載完再換版面會讓卡片在那一刻跳動一次，
+ *   而 `PilotIdentityCard` 寫死高度的用意正是杜絕這種跳動。
+ *
+ * 索引由 `scripts/generate-art-index.mjs` 在 build/predev 掃圖庫產生。
+ */
+export function hasPilotArt(pilot: { portrait?: string } | null | undefined): boolean {
+  const dir = pilotArtDir(pilot)
+  return !!dir && PILOT_ART_INDEX.has(dir)
+}
+
+/**
+ * 機甲**官方原稿全身圖**的路徑（`/images/mechs/<名>/art.webp`，1600×864 橫式含武裝）。
+ *
+ * ⚠ 機甲**不需要**索引（對照 `hasPilotArt()`）：`art` 與既有的 `portrait`（560×340）
+ *   長寬比只差 0.2，同一個橫框放兩張都成立，所以呼叫端一律寫
+ *   `imageCandidates(mechKeyArtPath(mech), mech.portrait)`，缺原稿的 5 台自動退回。
+ *
+ * ⚠ 只換最後一段檔名、**不沿用原副檔名**：`mech.portrait` 至今仍有 `.png` 的歷史值
+ *   （爬蟲寫入端未跟上），而原稿一律是 `.webp`。
+ */
+export function mechKeyArtPath(mech: { portrait?: string } | null | undefined): string | undefined {
+  const p = mech?.portrait
+  if (!p) return undefined
+  const art = p.replace(/(^|\/)[^/]+$/, '$1art.webp')
+  // 換不動 ＝ 這不是預期的 `<資料夾>/<檔名>` 形式，不要硬猜一個路徑出來
+  return art === p ? undefined : art
 }

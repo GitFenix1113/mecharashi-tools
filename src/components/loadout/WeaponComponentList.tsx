@@ -4,6 +4,7 @@ import { weaponRows, type WeaponRow } from '../../utils/loadoutRows'
 import { mountedComponentIds, weaponSiteAt, type LoadoutBudget, type LoadoutContext } from '../../utils/loadoutRules'
 import { HUD, SEG_TEXT, slotSegKey, type SegKey } from './loadoutTheme'
 import LoadoutIcon from '../icons/LoadoutIcon'
+import { ActionChevron } from './ActionChevron'
 
 // ─── 武器與元件列（PLAN-052-I D-3）───────────────────────────────────────────
 //
@@ -60,7 +61,7 @@ export function WeaponComponentList({ ctx, budget, activeRow, onOpen }: Props) {
             key={r.rowKey}
             type="button"
             onClick={() => onOpen(r)}
-            className={`w-full text-left bg-bg-dark border-l-2 transition-colors cursor-pointer ${
+            className={`group w-full text-left bg-bg-dark border-l-2 transition-colors cursor-pointer ${
               activeRow === r.rowKey ? 'bg-accent-orange/10' : 'hover:bg-bg-card'
             } ${SEG_BORDER[slotSegKey(r.ref.slot)]}`}
             style={{ padding: '8px 10px' }}
@@ -93,6 +94,10 @@ export function WeaponComponentList({ ctx, budget, activeRow, onOpen }: Props) {
                 {r.limit > 0 && <LoadoutIcon name="gear" className="w-3 h-3" />}
                 {r.limit > 0 ? `${r.used}/${r.limit}` : '不可裝元件'}
               </span>
+              {/* ⚠ 這顆記號**即使不可裝元件也要有**：整列仍然點得下去（開的是那把武器的
+                  元件面板，只是面板會說明為什麼不可裝）。以「有沒有元件可配」決定要不要畫，
+                  等於讓玩家以為那幾列是死的。 */}
+              <ActionChevron className="shrink-0" />
             </span>
           </button>
         ))}

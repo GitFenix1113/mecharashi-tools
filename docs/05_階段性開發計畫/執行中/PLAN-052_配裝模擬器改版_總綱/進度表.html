@@ -469,6 +469,414 @@
 
   <div class="task-group">
     <div class="task-group-header">
+      <div class="task-group-title">使用者回饋追加 &nbsp; 左右翻面 · 武器子篩選 · 技能與天賦層</div>
+      <div class="task-group-meta">2026-08-27 · 不另立子計畫（四項皆為既有畫面的就地增修）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">四項使用者要求一次落地</div>
+        <div class="task-desc">
+          <b>① 左右臂翻面</b>：槽位圖（<code>LoadoutRig</code>）與四部位卡（<code>MechPartStrip</code>）
+          <b>同時</b>改成「畫面左＝機體右」，與遊戲整備畫面（從正面看機體）一致。
+          <b>兩處必須一起翻</b>——只翻一邊會製造出同一頁裡的兩套左右，這正是
+          <code>MechPartStrip</code> 原註解主張「以畫面為準」的理由，該理由在翻面後仍然成立。
+          槽位標籤文字（「左肩／右手」）<b>不動</b>：那是機體自己的左右。
+          引線幾何吃的是<b>畫面側</b>，故自動跟著對齊，無須另外改。
+          <br><br>
+          <b>② 武器種類子篩選</b>：<code>PickerFilterGroup</code> 新增 <code>dependsOn</code>，
+          「種類」掛在「類型」底下——選了格鬥才出現刀劍／長柄／電鋸…。
+          子組的選項由目前這份清單<b>實測算出</b>，<b>不維護「類型→種類」對照表</b>
+          （多一張表就多一個會與資料失同步的地方）。
+          <code>available</code> / <code>active</code> 因此必須合併成單一 memo 跑兩趟：
+          子組的可用值取決於父組的生效值，拆成兩個 memo 會互相依賴。
+          父組改選時殘留的子值靠既有的「不在可用集合就退回全部」自動退位。
+          <br><br>
+          <b>③ 專武天賦強化</b>（<code>PilotTalentStrip</code>，左欄機師卡下方）：天賦縮圖條，
+          被專武強化的掛金框＋「強」角標，點開展 <code>DiffHighlight</code> 前後對比。
+          <b>未裝專武時也出現</b>（改印「裝上 XX 可強化 N 個天賦」）——這一區的用處是回答
+          「該不該把專武塞進這一套」，而那個問題是在還沒裝的時候問的。
+          <b>不塞進 <code>PilotIdentityCard</code></b>：那張卡的高度是刻意寫死的（立繪非同步載入）。
+          <br><br>
+          <b>④ 武器技能</b>（<code>WeaponSkillPanel</code>，右欄武器列之後）：
+          <b>按生效方式分組</b>（攜帶／裝備中／使用時）而非按武器——混搭專武的整個道理
+          就在生效方式上，按武器分組只是把武器詳情頁抄四遍。
+          生效方式是<b>掛載側</b>欄位、逐把不同（PLAN-032 決策三：44 個同名群組有 38 個衝突），
+          故不可用技能名去重。
+          <br><br>
+          <b>資料層</b>：<code>pilotSkills</code>（技能庫）<b>刻意不進 <code>LOADOUT_STAGE_KEYS</code></b>——
+          那份清單的 <code>loading</code> 同時是分享碼的編碼閘門，而技能與分享碼無關；
+          改在 <code>stage === 'equip'</code> 時另行 <code>ensureLoaded(['pilotSkills'])</code>。
+          空 Map ＝ 還沒載入、不是「沒有技能」，兩個新元件都吃 <code>loading</code> 把兩句話分開；
+          <code>PilotTalentStrip</code> 另以 <code>world.weapons.size</code> 擋掉
+          「這位機師沒有專武」這句在初始狀態下必然出現的錯話。
+          <br><br>
+          <b>驗收缺口</b>：本機 dev 無法載入資料（Worker <code>/api</code> 的 CORS 白名單不含 localhost，
+          且 Firestore 公開集合已是 <code>read:if isAdmin()</code>），四項<b>皆未經瀏覽器實測</b>，
+          只過了 <code>tsc -b</code>／ESLint／878 筆單元測試。實機確認仍待站長。
+        </div>
+        <div class="task-file">src/components/loadout/{LoadoutRig,MechPartStrip,PickerShell,PilotTalentStrip,WeaponSkillPanel}.tsx · src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+
+    <div class="task-row">
+      <div>
+        <div class="task-name">⑤ 效果兩區搬到中欄 ＋ 收合縮圖　⑥ 模組一鍵裝滿　⑦ 模組數值資料修正</div>
+        <div class="task-desc">
+          <b>⑤ 版面（使用者要求）</b>：「武器技能」與「模組效果」自右欄（380px，兩個清單疊起來是根長條）
+          移到<b>中欄槽位圖下方</b>，左右各半、<code>items-start</code>。
+          <code>Panel</code> 新增 <code>preview</code>：給了就變可收合面板，<b>收合態不是空的而是縮圖</b>
+          （模組＝接口與自帶的縮圖排＋合計標籤；武器技能＝一種生效方式一列的圖示排）。
+          預設收合——兩區加起來比槽位圖還長，展開當預設會把四部位卡推出首屏。
+          副作用是好的：兩區<b>不再受挑選器開合影響</b>，挑武器時仍看得到目前的技能與加成。
+          <br><br>
+          <b>⑥ 模組一鍵裝滿（<code>planModuleFill()</code> ＋ <code>fillModule</code> action）</b>：
+          同族疊等級是模組的主要玩法，而現況要「面板→挑→返回→換格→再挑同一顆」點四輪。
+          <b>刻意不是「無腦塞滿四格」</b>——全庫實測說了算：機甲接口只有三種組合
+          （S 級 64 台四格全 Ⅱ型／A 級 16 台是 Ⅰ Ⅱ Ⅱ Ⅰ／B 級 10 台無接口），
+          候選池補滿需要的格數是 4 格 105 顆・2 格 31 顆・8 格（補不滿）50 顆。
+          「一律四格」在兩種常見情況都跳票：通用 S 級（＋2 級／顆）<b>兩格就滿</b>、
+          塞四格正是站上超限提醒在勸阻的事；A 級機甲的軀幹與腿是 Ⅰ型接口，
+          S 級模組<b>最多只裝得上雙臂</b>。所以按鈕的字一律由計畫產生
+          （「裝滿 4 格 → Lv4」／「再補 1 格」），已滿級或無格可動則整顆不畫。
+          優先吃空格、不夠才覆蓋別族，被換掉的進 toast 且可 [復原]。8 條單元測試釘住。
+          <br><br>
+          <b>⑦ 資料修正</b>：<code>patch-module-weapon-dmg-fields.mjs</code> 修掉 41 個欄位／9 份文件並 bump
+          （欄位放錯 2 顆＝<code>patch-module-tier2-keyin.mjs</code> 改了名稱敘述卻沒改數值欄的後遺症；
+          數值打錯 4 處；拳套模組Ⅱ Lv1 多一個 <code>dmg_pile = -5</code>；三顆 Ⅰ 級整族沒填）。
+          新增 <code>check-module-stat-drift.mjs</code>（唯讀，已進 data-patch 收尾清單）——
+          那 21 欄官方來源沒有、100% 人工鍵入，抄錯行時<b>畫面不會報錯</b>。
+          <code>moduleRules.test.ts</code> 的 <code>KNOWN_TIER_MISMATCH</code> 白名單因此清空、機制留著。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts · src/pages/simulator/simReducer.ts · src/components/loadout/{ModulePanel,EquippedEffects,WeaponSkillPanel}.tsx · scripts/{patch-module-weapon-dmg-fields,check-module-stat-drift}.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+
+    <div class="task-row">
+      <div>
+        <div class="task-name">⑧ 同族合併一列　⑨ 字級規則　⑩ 可點／唯讀差異化　⑪ 一鍵裝上專武</div>
+        <div class="task-desc">
+          <b>⑧ 同族合併</b>：效果彙總的模組接口段改成<b>按族一列</b>。逐格列在最常見的配法下
+          會長成四列同一顆模組，其中三列的內容是「與軀幹、右臂、腿部同族」——同一句話講三遍，
+          真正的資訊只出現在第一列。合併後一列答完「裝在哪幾格、幾級、加什麼」，
+          並補一個 <code>×N</code> 上標。<b>空格與無接口不合併</b>（各自代表一個玩家可以動的位置）；
+          <b>縮圖版仍逐格畫</b>（一排四顆要對應四個接口，合併會讓「幾格被佔用」看不出來）。
+          <code>SlotLine.primary</code> / <code>sharedWith</code> 隨之移除。
+          <br><br>
+          <b>⑨ 字級規則</b>（寫進 <code>loadoutTheme.ts</code>）：<b>10px 只給拉丁字母與數字</b>
+          （Orbitron 標籤、<code>Lv2/4</code>、<code>×3</code> 這類上標），
+          <b>中文句子一律 ≥ 11px</b> —— 本站 root 是 19px，10px 的漢字在這個比例下已經糊掉。
+          <code>HUD.labelCjk</code> 10→11（`label` 維持 10：它只放拉丁字）。
+          <b>不是全部放大一號</b>：角標跟著放大會與模組名搶注意力，字級階是分主次不是比大小。
+          同時修掉三處會長出橫向捲軸的地方（專武按鈕的武器名可截斷、縮圖角標的 <code>-right-1</code>
+          用 <code>pr-1</code> 吸收）。
+          <br><br>
+          <b>⑩ 可點／唯讀差異化</b>：新增 <code>HUD_ACTIONABLE</code> / <code>HUD_READONLY</code>
+          與 <code>ActionChevron</code>（右緣一個 <code>›</code>）。框線階解決的是<b>同時看到兩者</b>時的比較，
+          <code>›</code> 解決的是<b>只看到一個</b>時的判斷——一列孤零零擺著時玩家沒有對照組。
+          <b>靜態的、不是 hover 才出現</b>：手機沒有 hover，而配裝器有一半使用情境在手機上。
+          ⚠ 角標放右緣垂直置中，<b>不放右下角</b>——<code>hud-cut</code> 切掉的正是左上與右下兩角。
+          套用於模組列／武器元件列／四部位卡；效果彙總的兩種列明確改走 <code>HUD_READONLY</code>。
+          <br><br>
+          <b>⑪ 一鍵裝上專武</b>（<code>planWeaponAutoEquip()</code>）：天賦條說「裝上 XX 可強化 2 個天賦」，
+          而玩家接著要做的是「找到槽 → 開挑選器 → 在 180 把裡找它」。這顆鍵收掉中間兩步。
+          <b>不挑「最好的」槽，只挑「裝得上的第一格」</b>（空格優先）——哪一手拿哪一把是玩家偏好，
+          站上沒有立場替他決定；要保證的是<b>按下去一定成功</b>，否則按鈕根本不出現並改印原因。
+          雙手武器回 <code>dualHand</code> 座標（與挑選器那條路徑一致）。
+          <code>alreadyEquipped</code> 是獨立欄位：「不必做」與「做不到」都讓 <code>ref</code> 為 null，
+          但一個該安靜、一個該說話——第一版沒有它，「輕型機沒有肩槽」被靜默當成「已經裝好了」。
+          6 條單元測試釘住。
+        </div>
+        <div class="task-file">src/components/loadout/{ActionChevron,EquippedEffects,MechPartStrip,ModulePanel,PilotTalentStrip,WeaponComponentList,loadoutTheme}.tsx · src/utils/loadoutRules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+
+    <div class="task-row">
+      <div>
+        <div class="task-name">⑫ 專武按鈕給左右手選項　⑬ 內文字階 ＋1px</div>
+        <div class="task-desc">
+          <b>⑫ 左右手選項</b>：<code>planWeaponAutoEquip()</code> 由「回第一格」改成
+          <b>回所有裝得上的位置</b>（空格優先），UI 一個位置一顆鍵。
+          第一版替所有人決定了左手，而慣用手是偏好不是最佳解。
+          <b>盾牌沒有任何特判</b>——<code>SHIELD_LIMIT</code> 已經在 <code>canEquipWeapon()</code>
+          擋掉同組第二面，裝上左手之後右手那個選項自己消失；在計畫層再寫一次就是
+          把同一條規則寫兩次，而第二份會在規則改動時過期。
+          雙手武器按 <code>slotKey()</code> 去重（左右手指向同一個 <code>dualHand</code> 座標，
+          不去重會出現兩顆做同一件事的按鈕）。
+          <br>
+          <b>⚠ 修訂（使用者裁決，同日）：已裝上**不**收掉按鈕。</b>玩家可能想雙手都拿同一把專武、
+          或左手拿著再往肩上掛一把——<b>只有「已經拿著它的那一格」從選項裡拿掉</b>，其餘位置照給，
+          文案改口成「再裝一把」。掃的是所有槽型相符的位置（背部、雙肩、雙手），不限於手。
+          第一版一發現裝過就收掉整顆按鈕，等於替玩家否決了雙持；而盾牌那個例外**仍然自己成立**，
+          不需要為它多寫一行。沒有位置時一律安靜，<b>唯獨超重要說</b>——那是玩家改得動的事，
+          也正是「想雙持卻沒看到按鈕」時缺的那一句。
+          <br><br>
+          <b>⑬ 內文字階 ＋1px</b>：<code>body</code> 12→13、<code>bodyStrong</code> 13→14、
+          <code>cardTitle</code> 15→16、<code>numSm</code> 12→13。原本那組是為
+          <code>max-w-[1600px]</code> ＋ 380px 情境欄訂的，版面放寬到 1920 之後在更大的留白裡偏小。
+          <b>只動內文三階與 <code>numSm</code></b>：微標籤與大數值不動，否則整頁只是等比放大，
+          字級階要表達的主次關係原地踏步。四個使用者點名的區域另補硬寫的字級
+          （槽位格、四部位卡、模組面板、武器技能）。
+          <br>
+          ⚠ 連帶把 <code>LoadoutRig.DENSE_MAX_WIDTH</code> 570→610：`SlotCell` 名稱 13→14px 之後，
+          一格放得下的下限由 190 變成 200px。字級改了而門檻沒跟著改，症狀是
+          「570–610 之間名稱被截斷，但系統還認為自己是寬版」——而它不會有任何錯誤訊息。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts · src/components/loadout/{loadoutTheme,PilotTalentStrip,SlotCell,LoadoutRig,MechPartStrip,ModulePanel,WeaponSkillPanel,EquippedEffects}.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+
+    <div class="task-row">
+      <div>
+        <div class="task-name">⑭ 武器一鍵升級（PLAN-031 的製作關係第一次有消費端）</div>
+        <div class="task-desc">
+          「熠光有進階版的背包武器叫裁決者，遇到這種情況請讓使用者可以直接 UPGRADE。」——使用者逐字。
+          <code>Weapon.upgrade.fromWeaponId</code> 自 PLAN-031 就存在，但<b>模擬器一直沒有消費端</b>：
+          玩家得自己記得，然後回挑選器從 180 把裡找它。
+          <br><br>
+          <b>全庫實測（42 條邊）決定了介面形狀</b>：
+          <b>一對多為 0</b> ⇒ 按鈕不必問「升級成哪一個」；
+          <b>0 條變重</b>（39 條同重、2 條變輕）⇒ 升級幾乎不可能被 <code>OVERWEIGHT</code> 擋下，
+          重量差只在真的有差時才印（印「+0」是純噪音）；
+          3 條是特種背包製作（熠光→裁決者、草莓通心粉→糖衣毀滅者、諸神黃昏→天燼審判）；
+          <b>存在多段鏈</b>（炬塔·改 → 熠光 → 裁決者）—— <code>planWeaponUpgrade()</code>
+          只看一步不遞迴，升完一段下一段的按鈕自己長出來（多跳一次是玩家的決定）。
+          <br><br>
+          <b>仍然要問 <code>canEquipWeapon()</code></b>：子武器的 <code>mechRestriction</code> /
+          <code>type</code> 未必與母武器相同，「幾乎不可能」不是「不會」。
+          裝不上時<b>不畫成按鈕而是一行灰字</b>（「可升級為 X（限重型機甲）」）——
+          一顆按不動的鍵只會讓人一直去按，但那條資訊仍要留著。
+          焊死的武裝（<code>fixed</code> / <code>formLocked</code>）不給升級鍵。
+          <br><br>
+          位置在<b>槽位格的元件列上方</b>：升級會換掉整把武器（連元件一起重配），
+          先問「要不要換一把」再問「這一把怎麼改」才是正確的順序。
+          動作直接走既有的 <code>equipWeapon</code>，取代／toast／[復原] 全部沿用。
+          <br>
+          ⚠ 測試的兩把 fixture <b>刻意不進共用 <code>WORLD</code></b> 而自建 <code>UPGRADE_WORLD</code>：
+          它們是突擊類武器，加進共用世界會改到「因形態限定隱藏 N 筆」那條無關測試的期望值
+          ——共用 fixture 最典型的擴散傷害（實際踩到並回退）。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts · src/components/loadout/{SlotCell,LoadoutRig}.tsx · src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+
+    <div class="task-row">
+      <div>
+        <div class="task-name">⑮ 專武變體切換（含修掉一個「顯示哪一把靠運氣」的既存 bug）</div>
+        <div class="task-desc">
+          「裝了熠光按鈕就變成裁決者，裝了裁決者按鈕就變成熠光。」＋「裁決者也會強化天賦。」
+          <br><br>
+          <b>資料實測揭露了一個既存 bug</b>：<b>3 位機師各有兩把專武</b>——
+          肖妮（熠光／裁決者）、洛莎·審判（諸神黃昏／天燼審判）、菲婭（草莓通心粉／糖衣毀滅者），
+          而且<b>母武器與進階版都掛 <code>isExclusive</code> 並指向同一位機師、都強化同一個天賦</b>。
+          <code>PilotTalentStrip</code> 原本用 <code>find()</code> 只取一把 ⇒
+          <b>站上顯示哪一把取決於 Map 的迭代順序</b>。
+          <br><br>
+          <b>修法</b>：新增 <code>pilotExclusiveWeapons()</code> 回**整條鏈**、由母到子。
+          排序<b>走鏈而不是 <code>sort()</code></b>——比較函式對「A 是 B 的母武器」這種偏序不可靠，
+          兩兩比較之外的元素會讓結果取決於排序演算法的實作。接不上的附在後面不吞掉。
+          <br><br>
+          <b>介面</b>：每一把「還沒裝上」的變體各一條按鈕，動詞跟著現況走——
+          沒裝＝「裝上專武」／已裝母武器＝「升級為」／已裝進階版＝「換回」／已拿著同一把＝「再裝一把」。
+          四種狀態共用一句「裝上專武」的話，在後三種讀起來都像「你還沒裝」。
+          （「換回」是真的用得到的方向：材料還沒湊齊時的現實選擇。）
+          <br><br>
+          <b>強化正文改取自「目前裝著的那一把」</b>，沒裝才退回鏈頭當預覽。兩個變體強化的天賦名相同
+          但<b>正文未必相同</b>，拿母武器的敘述代表已裝上的進階版，畫面會顯示與現況不符的文字。
+          狀態句同理改印 <code>equippedVariant.name</code>——裝著裁決者卻寫「已裝熠光」是一句錯的肯定陳述，
+          而它剛好出現在玩家做完升級、正在確認結果的那一刻。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts · src/components/loadout/PilotTalentStrip.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+
+    <div class="task-row">
+      <div>
+        <div class="task-name">⑯ 按鈕／輸入／標籤三種語彙：切角 ＝ 可互動，圓角 ＝ 唯讀</div>
+        <div class="task-desc">
+          「請把能輸入資料、能操作按下的功能按鈕樣式，和一般說明做出區別 ——
+          我截圖的部分（機師卡）就看不出哪裡可以按。」
+          <br><br>
+          <b>病灶</b>：機師卡上「戰術家 / S / 中型執照」三個<b>標籤</b>與「更換機師」這顆<b>按鈕</b>
+          用的是同一套視覺（切角 ＋ 框線 ＋ 深底）。四個框排在一起，沒有任何線索指出哪一個按得下去。
+          <br><br>
+          <b>規則</b>（寫進 <code>loadoutTheme.ts</code>）：
+          <code>hud-cut-sm</code>（<b>切角</b>）＝ 按鈕・篩選晶片・輸入框；
+          <code>rounded</code>（<b>圓角</b>）＝ 標籤・徽章・狀態 chip。
+          這條之所以可靠，是因為切角本來就是本站 HUD 的主動語彙，而站上既有的徽章元件
+          （<code>ModuleSlotBadge</code> / <code>ModuleRarityBadge</code>）<b>本來就是圓角</b>——
+          規則不是新發明，是把已存在的分野講清楚並補上例外。
+          三者另有各自專屬的一件事：按鈕 → hover 轉橘 ＋ <code>cursor-pointer</code>；
+          輸入 → <b>2px 底線</b>、focus 時整條轉橘（沒有它，「方案名稱」看起來就是一顆長按鈕）；
+          標籤 → 什麼都不會動。
+          <br><br>
+          新增 <code>HUD_BTN</code> / <code>HUD_BTN_SOLID</code> / <code>HUD_BTN_DANGER</code> /
+          <code>HUD_INPUT</code> / <code>HUD_TAG</code>。<b>實心橘仍只保留給「捷徑」</b>
+          （裝滿 N 格／裝上專武／升級為 X）——一般按鈕若也用它，「這是捷徑」的訊號會被稀釋成「這是按鈕」。
+          機師／機甲兩顆大選擇鍵另補 <code>swap</code> 圖示：它們最像唯讀資訊欄，而標籤不會有圖示。
+          <br>
+          ⚠ 破壞性按鈕<b>不可寫成 <code>HUD_BTN</code> ＋ <code>hover:!text-accent-red</code></b>：
+          兩條 hover 規則特異性相同，勝負取決於產生出來的 CSS 順序而非 class 字串順序 ——
+          那是會隨別處新增類名而改變結果的賭注；且 v4 的 important 是<b>後綴</b>，
+          v3 的前綴寫法無效（站上另一處的 <code>!px-1.5</code> 同樣可疑，未在本次處理）。
+          改開一個 <code>HUD_BTN_DANGER</code>。
+        </div>
+        <div class="task-file">src/components/loadout/{loadoutTheme,PilotIdentityCard,ModulePanel,ComponentPanel,PickerShell}.tsx · src/components/icons/LoadoutIcon.tsx · src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">使用者回饋追加 &nbsp; 部位卡歸位 · 中欄放大 · 可讀性</div>
+      <div class="task-group-meta">2026-08-28 · 不另立子計畫（皆為既有畫面的就地增修）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">① 一鍵裝上專武：雙持的路又被關掉一次（修）</div>
+        <div class="task-desc">
+          使用者回報「本來左右手專武可以快速加入，現在又變回只能一次加一隻手」。
+          真因在 <code>PilotTalentStrip</code> 算 <code>equipPlans</code> 時多了一道
+          <code>.filter(w =&gt; w.id !== equippedVariant?.id)</code>——多數機師只有<b>一把</b>專武變體，
+          右手一裝上，唯一那筆就被濾掉，整條捷徑消失，<code>EquipWeaponBar</code> 的
+          「再裝一把」分支成為死碼。這是舊 bug（<code>!equipped &amp;&amp; …</code>）換個寫法回來，
+          而該處註解上一行還寫著「裝上之後仍然要算」。
+          <b>修法是把判斷交還規則層</b>：<code>planWeaponAutoEquip()</code> 本來就會把已拿著它的那一格
+          從 <code>options</code> 移除並回報 <code>alreadyEquipped</code>，兩手都拿滿時
+          <code>options</code> 為空且 <code>rejection</code> 為 null（安靜收掉）。
+          該行為早有測試守著（<code>loadoutRules.test.ts</code>「左手已有這一把 ⇒ 右手照樣給選項」一直是綠的），
+          壞的只有 UI 這一層。已把「不可再加這個 filter」寫進註解。
+        </div>
+        <div class="task-file">src/components/loadout/PilotTalentStrip.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">② 四部位卡歸位：拆掉「下方那一塊十字」，長進槽位圖裡</div>
+        <div class="task-desc">
+          在此之前四部位卡是掛在槽位圖<b>下方</b>的一整塊十字（<code>MechPartStrip</code> 自己排版），
+          於是同一台機體被講了兩次：上面講武器掛在哪、下面講模組裝在哪，玩家要自己把兩張圖疊起來。
+          現在 <code>MechPartStrip</code> 只出<b>一張卡</b>（<code>MechPartCard</code>），排版由
+          <code>LoadoutRig</code> 決定，由上而下：軀幹（整列置中半寬）／
+          <b>臂卡插在同側的肩與手之間</b>／腿部／背部。
+          於是「右肩 → 右臂 → 右手 → 右備用」是一路讀下來的同一欄，順序即機體由上而下的解剖順序。
+          <br><br>
+          <b>兩次翻案都記在註解裡</b>：⒜ 腿部與背部的上下（初版把背部排在腿部之上，論證是
+          「背部與肩、手同屬武器格，不該被部位卡從中切開」——輸給解剖順序）；
+          ⒝ 臂卡的位置（初版接在整欄最下面，那讀起來仍是「武器歸武器、模組收在下面」，
+          等於換個位置擺兩份清單）。
+          <br><br>
+          ⚠ <code>dense</code>（容器 &lt; 610px）時雙臂<b>退回整寬兩欄</b>：側欄在那個寬度只剩約 120px，
+          放不下兩行內容的部位卡。<b>那不是第二套版面，是同一個十字的窄版。</b>
+          ⚠ 包住卡片的容器也要看 <code>hasParts</code>：卡片自己回 null 之後那些
+          <code>&lt;div&gt;</code> 仍在，而零高度的子元素照樣吃掉 <code>flex-col gap-2</code> 的兩道 gap。
+          ⚠ 部位卡<b>不接引線</b>：引線回答「這一格屬於機體哪一側」，而部位卡自己就是部位。
+          <br><br>
+          抬頭同時由「槽位」改為「<b>裝備與模組</b>」——這張面板自 052-G 起就同時裝著兩者，
+          舊抬頭只講到上半部，來找模組的人會略過它。
+          <code>Parts · Modules</code> 抬頭隨歸位拆掉（卡片已不相鄰，抬頭會指向四張散開的卡），
+          原本那句「部件混搭開放後…」改由 <code>PART_MIX_NOTE</code> 掛在整張圖的最下緣。
+        </div>
+        <div class="task-file">src/components/loadout/{LoadoutRig,MechPartStrip}.tsx · src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">③ 中欄放大：欄寬封頂，餘裕全給立繪</div>
+        <div class="task-desc">
+          使用者逐字：「裝備名稱似乎普遍沒有那麼長，可以把中間的圖再放大、縮窄裝備欄位的寬度」。
+          在此之前兩側是 <code>minmax(0,1fr)</code>，於是視窗每寬 100px 就有 100px 被平均倒進
+          兩欄的<b>右側留白</b>（實測：中欄 1050px 時單欄 365px，而一格真正用得到的是
+          圖示 42 ＋ 六個字 90 ＋ 重量 30 ＋ 內距間隙 ≈ 200）。版面越寬，主視覺佔比反而越小。
+          <br><br>
+          改成側欄 <code>minmax(0,250px)</code>、中欄 <code>minmax(164px,1fr)</code>：
+          grid 先把非彈性軌撐到上限，剩下的<b>全部</b>歸中欄，立繪再以
+          <code>w-full max-w-[340px] aspect-square</code> 封頂。
+          中欄那個 <code>min</code> 取 164（＝改版前的固定立繪尺寸），
+          於是<b>容器 610–738 這一段與改版前逐 px 相同</b>，窄端零回歸。
+          三欄比例另由 <code>360/1fr/420</code> 改為 <code>320/1fr/420</code>，中欄各斷點 +40px；
+          <b>右欄 420 不動</b>——那是 2026-08-27 為模組清單列從 380 調上來的，收窄等於推回一半。
+          <br><br>
+          ⚠ 立繪改用 <code>aspect-square</code> 而非寫死 px：高度由寬度算出來，
+          <b>立繪非同步載入一樣不會推位</b>（那正是當初寫死尺寸的原因，換法不同、保證相同）。
+          方框必須維持正方形且等於圖的實際尺寸，否則引線落點（<code>ANCHOR</code> 是方框的比例座標）
+          會飄到機體外面的空白上。
+          <br><br>
+          ⚠ <b>踩過一次</b>：第一版把 class 寫成
+          <code>`grid-cols-[minmax(0,${SLOT_MAX_WIDTH}px)_…]`</code>。
+          Tailwind v4 掃的是原始碼裡的<b>字面值</b>，樣板插值產不出任何 class，
+          <b>而且不會報錯</b>——症狀是版面靜靜退回單軌 grid。已改為完整字面值常數並附警告註解。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutRig.tsx · src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">④ 可讀性：格高、圖示、清單縮圖一起升一階</div>
+        <div class="task-desc">
+          使用者回報「現在這樣看很吃力」「使用者大多都是認 ICON」。
+          <code>SlotCell</code> 新增 <code>roomy</code> 一階（格高 56→72、武器圖示 34→42、
+          元件縮圖 26→32、名稱 14→15px）。
+          <b>判準是「欄寬吃滿上限了沒有」而不是容器寬本身</b>：門檻
+          <code>ROOMY_CELL_MIN_WIDTH = 250×2 + 164 + 26 + 48 = 738</code>，
+          低於它時欄寬還在跟中欄搶，那時放大格子只會把武器名擠掉。
+          元件那排四枚 32px ＋ ⚙ ＋ 計數 ＋ ▸ 實測約 217px，<b>那是 250px 欄寬的天花板</b>。
+          順帶修掉既有溢出：<code>WeaponIcon size="sm"</code> 實測 38px
+          （<code>w-8</code> ＝ 2rem，而本站 root 是 19px），34px 的框本來就框不住它。
+          <br><br>
+          右欄兩份清單的縮圖同步放大（候選列 34→46、已裝上列 30→42）：
+          它們是右欄裡<b>最小</b>的一組圖——武器挑選器是整片 <code>aspect-square</code> 方塊、
+          機甲是 78×52 橫縮圖，只有這兩份停在 34。<b>模組面板一併改</b>，
+          否則同一個面板槽裡會出現兩套語彙。代價是名稱欄少 12px（文字欄 330 → 318），
+          名稱本來就 <code>truncate</code>；再往上加就要先收窄徽章那組。
+        </div>
+        <div class="task-file">src/components/loadout/{SlotCell,ComponentPanel,ModulePanel}.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">驗收缺口：版面仍未經瀏覽器實測</div>
+        <div class="task-desc">
+          與 2026-08-27 那一輪相同的限制：本機 dev 讀不到資料
+          （Worker <code>/api</code> 的 CORS 白名單不含 localhost，且公開集合已是
+          <code>read:if isAdmin()</code>），故上述版面<b>只過了 <code>tsc -b</code>／ESLint／920 筆單元測試</b>，
+          由站長在本機 HMR 逐項目視確認。
+          <b>已知待觀察</b>：手部槽位因臂卡插入而下移約一張卡的高度，
+          而引線落點是立繪高度的固定比例（肩 .24／手 .55／備用 .84），線會比之前斜；
+          若視覺上不可接受，調 <code>ANCHOR</code> 三組數字即可。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已確認</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
       <div class="task-group-title">052-E / F / H &nbsp; 後續子計畫</div>
       <div class="task-group-meta">雲端存檔 / 形態 / 熱門配裝</div>
       <span class="status pending">待開始</span>

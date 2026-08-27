@@ -4,7 +4,7 @@ import { RejectionRow, type PickerRowItem } from './RejectionRow'
 import { type PickerEntry, type ResolutionAction } from '../../utils/loadoutRules'
 import { LoadoutIcon } from '../icons/LoadoutIcon'
 import { MechPickerCard, PilotAvatarCard } from './PickerVariants'
-import { HUD } from './loadoutTheme'
+import { HUD, HUD_BTN, HUD_INPUT } from './loadoutTheme'
 
 // ─── 挑選器容器（PLAN-052-B C-1）─────────────────────────────────────────────
 //
@@ -27,6 +27,19 @@ export interface PickerFilterGroup<T> {
   label: string
   options: readonly { value: string; label: string; tone?: string }[]
   test: (item: T, value: string) => boolean
+  /**
+   * **子篩選**（使用者要求 2026-08-27）：這一組隸屬於另一組（值是那一組的 `key`），
+   * 只在父組**有選值時**才出現，且選項只列得出「符合父組當下選擇」的那些值。
+   *
+   * 為什麼不直接把所有值攤平成一排：武器的種類有 17 個，攤開來是一整片與當下無關的晶片
+   * （選了格鬥還看得到「導彈」「浮游炮」）。父子兩層讓第二排永遠只有 3～7 顆，
+   * 而且每一顆都是父組底下真的存在的。
+   *
+   * ⚠ **不需要維護一張「父值 → 子值」對照表**：子組的選項由目前這份清單實測算出來
+   *   （見下方 `available` 的兩趟計算）。多一張表就是多一個會與資料失同步的地方 ——
+   *   官方哪天新增一種格鬥武器，表沒改就會靜默少一顆晶片。
+   */
+  dependsOn?: string
 }
 
 // ⚠ **刻意沒有「預設篩選」**。曾經讓武器／背包預設只看 SS，但那要求「預設值在這份清單裡
@@ -134,7 +147,7 @@ function AltButton({ label, onClick }: { label: string; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 text-[11px] px-2 py-0.5 rounded border border-border text-text-secondary hover:text-text-primary hover:border-border-accent transition-colors cursor-pointer"
+      className={`${HUD_BTN} shrink-0 text-[12px] px-2 py-0.5`}
     >
       {label}
     </button>
@@ -150,41 +163,50 @@ function PickerBody<T extends { id: string }>({
   const [chosen, setChosen] = useState<Record<string, string>>({})
 
   /**
-   * 每一組篩選在**這份清單裡實際存在**的選項值。
+   * `available` 每一組篩選在**這份清單裡實際存在**的選項值。
+   * `active`    實際生效的篩選值（＝ `chosen` 濾掉那些「選了但這份清單沒有」的）。
    *
-   * ⚠ 用途有二：
+   * ⚠ **兩者必須一起算**：子篩選（`dependsOn`）的可用值取決於父組**已生效**的選擇，
+   *   而父組的生效值又取決於它自己的可用值 —— 拆成兩個 `useMemo` 會互相依賴。
+   *   這裡改成單一 memo、跑兩趟：先無依賴的組，再依賴組。
+   *
+   * `available` 的用途有三：
    *   ① 隱藏空選項 —— 背槽只有戰術類武器，就不該讓「格鬥／射擊／突擊」三顆晶片出現，
    *      那是按下去必然零筆的晶片。
-   *   ② 讓**換一格之後殘留的選擇**自動退回「全部」（見下方 `active`）。
-   *   結構性拒絕的項目一律不算數（它們根本不會被列出來）。
-   */
-  const available = useMemo(() => {
-    const map = new Map<string, Set<string>>()
-    for (const g of filters ?? []) {
-      const set = new Set<string>()
-      for (const e of entries) {
-        if (e.rejection?.tier === 'structural') continue
-        for (const o of g.options) if (g.test(e.item, o.value)) set.add(o.value)
-      }
-      map.set(g.key, set)
-    }
-    return map
-  }, [entries, filters])
-
-  /**
-   * 實際生效的篩選值。與 `chosen` 唯一的差別：選了但**這份清單裡沒有**的值退回「全部」。
+   *   ② 讓**換一格之後殘留的選擇**自動退回「全部」。這條不是防禦性程式碼，是真的會發生：
+   *      挑選器元件在切換槽位時不會重新掛載，於是「在手部選了格鬥 → 改點背槽」
+   *      會留下一個背槽篩不出任何東西的條件。**子篩選靠同一條自動退位**：
+   *      類型從格鬥改成戰術時，殘留的「刀劍」不在新的可用集合裡 → 自動回「全部」。
+   *   ③ 子組的**空集合 ＝ 這一組現在不該出現**（父組還沒選）。
    *
-   * ⚠ 這條不是防禦性程式碼，是真的會發生：挑選器元件在切換槽位時不會重新掛載，
-   *   於是「在手部選了格鬥 → 改點背槽」會留下一個背槽篩不出任何東西的條件。
+   * 結構性拒絕的項目一律不算數（它們根本不會被列出來）。
    */
-  const active = useMemo(() => {
-    const out: Record<string, string> = {}
-    for (const g of filters ?? []) {
-      const v = chosen[g.key]
-      out[g.key] = v && available.get(g.key)?.has(v) ? v : ''
+  const { available, active } = useMemo(() => {
+    const groups = filters ?? []
+    const pool = entries.filter((e) => e.rejection?.tier !== 'structural')
+    const avail = new Map<string, Set<string>>()
+    const act: Record<string, string> = {}
+
+    // pass 0 ＝ 無依賴的組；pass 1 ＝ 子組（此時父組的 act 已經定案）
+    for (const pass of [0, 1] as const) {
+      for (const g of groups) {
+        if ((pass === 0) !== !g.dependsOn) continue
+        const parent = g.dependsOn ? groups.find((p) => p.key === g.dependsOn) : undefined
+        const set = new Set<string>()
+        // 父組沒選（或宣告了一個不存在的父鍵）→ 留空集合，這一組整組不畫
+        if (!parent || act[parent.key]) {
+          const scope = parent ? pool.filter((e) => parent.test(e.item, act[parent.key])) : pool
+          for (const e of scope) {
+            for (const o of g.options) if (g.test(e.item, o.value)) set.add(o.value)
+          }
+        }
+        avail.set(g.key, set)
+        const v = chosen[g.key]
+        act[g.key] = v && set.has(v) ? v : ''
+      }
     }
-    return out
-  }, [filters, chosen, available])
+    return { available: avail, active: act }
+  }, [entries, filters, chosen])
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -241,7 +263,7 @@ function PickerBody<T extends { id: string }>({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="搜尋名稱或種類…"
-          className="hud-cut-sm w-full px-2.5 py-1.5 bg-bg-dark border border-border text-[13px] text-text-primary placeholder:text-text-dim focus:border-accent-orange/60 focus:outline-none"
+          className={`${HUD_INPUT} w-full px-2.5 py-1.5 text-[13px]`}
         />
       </div>
 
@@ -254,7 +276,15 @@ function PickerBody<T extends { id: string }>({
             const opts = g.options.filter((o) => has?.has(o.value))
             if (opts.length <= 1) return null
             return (
-              <div key={g.key} className="flex flex-wrap items-center gap-1.5">
+              <div
+                key={g.key}
+                // 子篩選縮排並掛一條左框線：讓「這一排是上一排的細分」用版面說，
+                // 不必再多一句說明文。父組沒選時這一整排根本不存在（`available` 給空集合），
+                // 所以不會出現一條指向空氣的縮排。
+                className={`flex flex-wrap items-center gap-1.5 ${
+                  g.dependsOn ? 'ml-2 pl-2 border-l border-border-accent/50' : ''
+                }`}
+              >
                 <span className={`${HUD.labelCjk} text-text-dim w-8 shrink-0`}>{g.label}</span>
                 <FilterChip
                   label="全部"
@@ -273,7 +303,7 @@ function PickerBody<T extends { id: string }>({
               </div>
             )
           })}
-          <p className="text-[10px] text-text-dim text-right">
+          <p className="text-[11px] text-text-dim text-right">
             符合 <span className={HUD.num}>{rows.length}</span> / {entries.length}
           </p>
         </div>

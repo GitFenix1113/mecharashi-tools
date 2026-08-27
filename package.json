@@ -5,14 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "predev": "node scripts/generate-og-entity-images.mjs && node scripts/generate-image-manifest.mjs && node scripts/copy-docs.mjs",
+    "predev": "node scripts/generate-og-entity-images.mjs && node scripts/generate-image-manifest.mjs && node scripts/generate-art-index.mjs && node scripts/copy-docs.mjs",
     "predev:emu": "npm run predev",
     "dev:emu": "vite --mode emulator",
     "emu": "firebase emulators:start --import ./emulator-data --export-on-exit ./emulator-data",
     "emu:fresh": "firebase emulators:start --export-on-exit ./emulator-data",
     "emu:seed": "node scripts/seed-emulator.mjs",
     "emu:slice": "node scripts/export-emulator-slice.mjs",
-    "build": "node scripts/generate-og-entity-images.mjs && node scripts/generate-image-manifest.mjs && node scripts/copy-docs.mjs && tsc -b && vite build",
+    "build": "node scripts/generate-og-entity-images.mjs && node scripts/generate-image-manifest.mjs && node scripts/generate-art-index.mjs && node scripts/copy-docs.mjs && tsc -b && vite build",
     "manifest:images": "node scripts/generate-image-manifest.mjs",
     "images:webp": "node scripts/convert-images-to-webp.mjs",
     "images:paths": "node scripts/patch-image-paths.mjs",
@@ -41,7 +41,8 @@
     "scrape:mechs:reset": "node scripts/scrape-mechs.js --clear-mechs --force",
     "migrate": "node scripts/migrate-to-firestore.mjs",
     "migrate:dry": "node scripts/migrate-to-firestore.mjs --dry-run",
-    "emu:test-rules": "node scripts/test-emulator-rules.mjs"
+    "emu:test-rules": "node scripts/test-emulator-rules.mjs",
+    "index:art": "node scripts/generate-art-index.mjs"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.19",

@@ -5,7 +5,7 @@ import { WeaponEquipSlot } from '../../types/enums'
 import { ComponentIcon } from '../icons/ComponentIcon'
 import { ComponentTypeBadge, RarityBadge } from '../badges/ComponentBadges'
 import LoadoutIcon from '../icons/LoadoutIcon'
-import { HUD, HUD_PANEL } from './loadoutTheme'
+import { HUD, HUD_BTN, HUD_INPUT, HUD_PANEL } from './loadoutTheme'
 import type { WeaponRow } from '../../utils/loadoutRows'
 import {
   componentChoices, mountedComponentIds, weaponSiteAt,
@@ -69,6 +69,21 @@ const chip = (on: boolean) =>
     on ? 'border-accent-orange text-accent-orange bg-accent-orange/10'
        : 'border-border text-text-secondary hover:border-border-accent'
   }`
+
+/**
+ * 清單列的縮圖尺寸（使用者要求 2026-08-28）。
+ *
+ * 使用者逐字：「右邊的 ICON 也可以大一點，使用者大多都是認 ICON」——
+ * 這份清單一次要掃過上百筆，而玩家腦中的索引鍵是圖不是名字。
+ *
+ * ⚠ 34/30 是右欄裡**最小**的一組圖：武器挑選器是整片 `aspect-square` 的方塊、
+ *   機甲是 78×52 的橫縮圖，只有這兩份清單停在 34。放大到 46/42 才是同一套語彙。
+ * ⚠ 代價是名稱欄少 12px（列寬約 391，文字欄 330 → 318）。名稱本來就 `truncate`，
+ *   而這一列真正不能犧牲的是名字 —— 再往上加就要先把徽章那組收窄。
+ */
+const ROW_ICON = 46
+/** 「已裝上」那一列：右側多一顆卸下鍵，比候選列小一階 */
+const MOUNTED_ICON = 42
 
 interface Props {
   ctx: LoadoutContext
@@ -150,7 +165,7 @@ export function ComponentPanel({ ctx, row, onBack, onEquip, onResolve }: Props) 
         <button
           type="button"
           onClick={onBack}
-          className="hud-cut-sm shrink-0 px-2 py-1 border border-border text-[12px] text-text-secondary hover:text-text-primary hover:border-border-accent transition-colors cursor-pointer"
+          className={`${HUD_BTN} shrink-0 px-2 py-1 text-[13px]`}
         >
           ← 返回
         </button>
@@ -195,7 +210,7 @@ export function ComponentPanel({ ctx, row, onBack, onEquip, onResolve }: Props) 
                     style={{ gap: 9, padding: '7px 9px' }}
                   >
                     <span className="shrink-0">
-                      {comp ? <ComponentIcon comp={comp} size={30} /> : <LoadoutIcon name="absent" className="w-[30px] h-[30px] text-accent-red/70" />}
+                      {comp ? <ComponentIcon comp={comp} size={MOUNTED_ICON} /> : <LoadoutIcon name="absent" className="w-[42px] h-[42px] text-accent-red/70" />}
                     </span>
                     <span className="flex flex-col min-w-0 grow" style={{ gap: 2 }}>
                       <span className={`${HUD.bodyStrong} text-text-primary truncate`}>
@@ -231,7 +246,7 @@ export function ComponentPanel({ ctx, row, onBack, onEquip, onResolve }: Props) 
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="搜尋名稱或效果（穿甲、暴擊、反擊…）"
-              className="hud-cut-sm w-full bg-bg-dark border border-border px-2.5 py-1.5 text-[12px] text-text-primary placeholder:text-text-dim focus:border-accent-orange/60 focus:outline-none"
+              className={`${HUD_INPUT} w-full px-2.5 py-1.5 text-[13px]`}
             />
 
             <div className="flex flex-wrap items-center mt-2" style={{ gap: 6 }}>
@@ -357,7 +372,7 @@ function ComponentRow({ entry, onEquip, onResolve }: {
         if (!blocked && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onEquip(comp) }
       }}
     >
-      <span className="shrink-0"><ComponentIcon comp={comp} size={34} /></span>
+      <span className="shrink-0"><ComponentIcon comp={comp} size={ROW_ICON} /></span>
       <span className="flex flex-col min-w-0 grow" style={{ gap: 3 }}>
         <span className="flex items-center" style={{ gap: 6 }}>
           <span className={`${HUD.bodyStrong} text-text-primary truncate`}>{comp.name}</span>
@@ -462,7 +477,7 @@ function SlotStat({ label, hint, value, accent }: { label: string; hint: string;
     <div className={`hud-cut-sm border bg-bg-dark/40 ${accent ? 'border-accent-orange/40' : 'border-border'}`} style={{ padding: '6px 8px' }}>
       <div className={`${HUD.labelCjk} text-text-dim leading-tight truncate`}>{label}</div>
       <div className={`${HUD.num} text-[15px] leading-tight mt-0.5 ${accent ? 'text-accent-orange' : 'text-text-primary'}`}>{value}</div>
-      <div className="text-[10px] text-text-dim leading-tight mt-0.5 truncate">{hint}</div>
+      <div className="text-[11px] text-text-dim leading-tight mt-0.5 truncate">{hint}</div>
     </div>
   )
 }

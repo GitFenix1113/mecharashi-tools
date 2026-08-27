@@ -103,20 +103,20 @@ export function PilotAvatarCard({
 
         <span className="absolute left-2 right-2 bottom-1.5 flex flex-col text-left">
           <span className="text-[13px] font-bold text-text-primary leading-tight truncate">{item.name}</span>
-          <span className={`text-[10px] leading-tight truncate ${tone}`}>{item.meta}</span>
+          <span className={`text-[11px] leading-tight truncate ${tone}`}>{item.meta}</span>
         </span>
       </button>
 
       {rejection && (
         <div className="flex flex-col gap-1">
-          <span className={`text-[10px] leading-tight ${situational ? 'text-accent-yellow/90' : 'text-text-dim'}`}>
+          <span className={`text-[11px] leading-tight ${situational ? 'text-accent-yellow/90' : 'text-text-dim'}`}>
             {rejection.reason}
           </span>
           {situational && onResolve && (
             <button
               type="button"
               onClick={onResolve}
-              className="hud-cut-sm self-start text-[10px] px-2 py-0.5 border border-accent-orange/40 text-accent-orange hover:bg-accent-orange/10 transition-colors cursor-pointer"
+              className="hud-cut-sm self-start text-[11px] px-2 py-0.5 border border-accent-orange/40 text-accent-orange hover:bg-accent-orange/10 transition-colors cursor-pointer"
             >
               {rejection.tier === 'situational' ? rejection.resolution.label : ''}
             </button>

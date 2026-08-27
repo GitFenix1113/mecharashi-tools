@@ -423,19 +423,19 @@ test('C-7：stackLevelOf 對沒裝的模組回 0（＝「沒裝」，不是 0 �
 // Ⅰ 與 Ⅱ 是**同一顆模組的兩個貢獻階**，`levels[]` 本來就該逐欄相同（實測 31 族裡 27 族相同），
 // 所以「兩者不一致」是一個抓得到抄錯的訊號。本測試把它釘住。
 //
-// ⚠ 已知的 4 族是**資料缺陷，不是規則問題** —— 要走 data-patch 流程改 Firestore 並 bump 版本，
-//   不屬於 PLAN-052-G（本計畫只碰模擬器，不改資料）。列在具名白名單裡，修好之後把該行刪掉；
-//   **不要為了讓測試變綠而放寬條件** —— 這張表的用途正是讓下一筆抄錯立刻被看見。
+// ⚠ **原本白名單裡的 4 族已於 2026-08-27 修好**（`patch-module-weapon-dmg-fields.mjs`，
+//   合計 41 個欄位、9 份文件，含一顆沒人發現的 `dmg_pile = -5`）。白名單因此清空，
+//   但**機制留著**：下一次人工鍵入抄錯行時，它是那一行要寫進來的地方。
+//
+// ⚠ 真正逐欄比對數值的是 `scripts/check-module-stat-drift.mjs`（唯讀，已進 data-patch
+//   收尾清單）。這裡守不到數值，是因為 fixture 刻意不留數值欄位與敘述文字
+//   （見 `gen-module-fixture.mjs` 檔頭：全欄位快照會讓 diff 淹沒在無關的文字變動裡）。
+//   兩者是分工不是重複：這裡守**階數與族的存在**，那支守**欄位與數值**。
 
 /** 已知不一致的族（`slot:基底名`）。每一筆都要寫清楚錯在哪，一個沒有理由的白名單沒有人敢動。 */
-const KNOWN_TIER_MISMATCH: Record<string, string> = {
-  '通用模組:刀劍模組':   'Ⅰ 滿階無數值；Ⅱ 的 10% 落在 dmg_funnel（應為 dmg_blade）',
-  '通用模組:電鋸模組':   'Ⅱ 的 10% 落在 dmg_blade（應為 dmg_chainsaw）',
-  '通用模組:拳套模組':   'Ⅰ 滿階無數值（Ⅱ 的 dmg_fist 是對的）',
-  '通用模組:浮游炮模組': 'Ⅰ 滿階無數值（Ⅱ 的 dmg_funnel 是對的）',
-}
+const KNOWN_TIER_MISMATCH: Record<string, string> = {}
 
-test('資料守門：31 個 Ⅰ／Ⅱ 配對的滿階數值一致（4 族已知抄錯，待 data-patch）', () => {
+test('資料守門：31 個 Ⅰ／Ⅱ 配對的階數一致（數值由 check-module-stat-drift.mjs 守）', () => {
   const fam = new Map<string, Fixture[]>()
   for (const m of POOL) {
     const k = moduleFamilyKey(m)

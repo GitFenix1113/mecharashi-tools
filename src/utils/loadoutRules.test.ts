@@ -12,7 +12,8 @@ import {
   buildContext, buildWorld, canEquipBackpack, canEquipWeapon, canSelectMech,
   loadoutBudget, mountCoverage, mountRefFor, slotOccupant, validateLoadout,
   weaponChoices, backpackChoices, structuralCounts, slotHasCandidates,
-  canEquipComponent, componentChoices, weaponSiteAt, canEquipModule,
+  canEquipComponent, componentChoices, weaponSiteAt, canEquipModule, planModuleFill, planWeaponAutoEquip,
+  planWeaponUpgrade, pilotExclusiveWeapons,
 } from './loadoutRules.ts'
 import type { Component, Module } from '../types/index.ts'
 import { ArmorType, MechLicense, MechRestriction, WeaponEquipSlot, BackpackType, WeaponType, WeaponKind, MechPartPosition, ModuleSlot, PartInterface } from '../types/enums.ts'
@@ -224,6 +225,25 @@ const 空殼模組 = mod({ id: 'mod_4999', name: '空殼模組', rarity: 'S', le
 
 const MODULES = [通用S, 通用A, 八級S, 破曉專屬, 副模組, 空殼模組]
 
+// ── 升級邊（PLAN-031 的 `Weapon.upgrade`）──
+//
+// ⚠ 這兩把**刻意不進共用的 `WORLD`**：它們是突擊類武器，加進去會讓
+//   「structuralCounts 數得出因形態限定隱藏 N 筆」那條測試的期望值跟著變 ——
+//   一個與升級無關的測試被別人的 fixture 改掉，是共用 fixture 最典型的擴散傷害。
+//   它們改走下方的 `UPGRADE_WORLD`。
+// ⚠ 仍然宣告在 `WORLD` 之前：`const` 有 TDZ，兩者的相對順序不能倒過來。
+/** 進階版：夜魘 → 終末之嘆（比照實測：S+ → SS、同重、同槽） */
+const 終末之嘆 = weapon({
+  id: 'w_017_up', name: '終末之嘆', weight: 500, equipSlot: WeaponEquipSlot.SINGLE_HAND,
+  type: WeaponType.Assault, rarity: 'SS', upgrade: { fromWeaponId: 夜魘.id },
+})
+/** 機種限定與母武器不同的進階版：守「子武器不合法時要說出來，而不是當成沒有進階版」 */
+const 重甲限定進階 = weapon({
+  id: 'w_017_up2', name: '重甲限定進階', weight: 500, equipSlot: WeaponEquipSlot.SINGLE_HAND,
+  type: WeaponType.Assault, rarity: 'SS', mechRestriction: MechRestriction.HEAVY_ONLY,
+  upgrade: { fromWeaponId: 藝術突襲.id },
+})
+
 const WORLD = buildWorld({
   pilots: [海莉絲, 重型機師],
   mechs: [彌造者, 輕型機, 重型機, 美杜莎MK2, 帕斯卡, 獨臂機, A級機, B級機, 壞接口機],
@@ -233,6 +253,18 @@ const WORLD = buildWorld({
   components: COMPONENTS,
   modules: MODULES,
 })
+
+/** 升級測試專用的小世界（見上方 fixture 的註解）。 */
+const UPGRADE_WORLD = buildWorld({
+  pilots: [海莉絲], mechs: [彌造者], forms: [],
+  weapons: [藝術突襲, 夜魘, 終末之嘆, 重甲限定進階],
+  backpacks: [],
+})
+const upgradeCtx = (set: EquipSet) => buildContext(
+  { pilotId: 海莉絲.id, mechId: 彌造者.id, sets: { default: set } },
+  'default',
+  UPGRADE_WORLD,
+)
 
 const ctxOf = (
   set: EquipSet,
@@ -913,6 +945,280 @@ test('052-G：沒有 levels[] 的模組擋下 —— 判準不是頂層那排全
   const r = canEquipModule(ctx, 空殼模組, TORSO)
   assert.equal(r?.code, 'MOD_DATA_INCOMPLETE')
   assert.equal(r?.tier, 'structural')
+})
+
+// ─── 機師的專武變體（使用者要求 2026-08-27）───────────────────────────────
+//
+// 實測：3 位機師各有兩把專武（母武器與進階版**都**掛 isExclusive、都指向同一位機師、
+// 都強化同一個天賦）。舊版用 `find()` 只取一把 —— 站上顯示哪一把取決於 Map 的迭代順序。
+
+const 肖妮 = { ...海莉絲, id: 'pilot_010_肖妮', name: '肖妮' }
+const 熠光 = weapon({
+  id: 'w_back_1', name: '熠光', weight: 1100, equipSlot: WeaponEquipSlot.BACK,
+  type: WeaponType.Heavy, rarity: 'SS', mechRestriction: MechRestriction.MEDIUM_ONLY,
+  isExclusive: true, exclusiveFor: 肖妮.id,
+})
+const 裁決者 = weapon({
+  id: 'w_back_2', name: '裁決者', weight: 1100, equipSlot: WeaponEquipSlot.BACK,
+  type: WeaponType.Heavy, rarity: 'SS', mechRestriction: MechRestriction.MEDIUM_ONLY,
+  isExclusive: true, exclusiveFor: 肖妮.id,
+  upgrade: { fromWeaponId: 'w_back_1', station: 'specialBackpack' },
+})
+
+const VARIANT_WORLD = buildWorld({
+  pilots: [肖妮], mechs: [彌造者], forms: [], backpacks: [],
+  // ⚠ 順序刻意**反過來放**（子在母之前）：本函式要靠走鏈排序，不能靠輸入順序碰運氣
+  weapons: [裁決者, 熠光, 藝術突襲],
+})
+const variantCtx = () => buildContext(
+  { pilotId: 肖妮.id, mechId: 彌造者.id, sets: { default: { mounts: [] } } },
+  'default',
+  VARIANT_WORLD,
+)
+
+test('專武變體：兩把都回，且依升級鏈由母到子（輸入順序是反的）', () => {
+  const list = pilotExclusiveWeapons(variantCtx(), 肖妮.id)
+  assert.deepEqual(list.map((w) => w.name), ['熠光', '裁決者'],
+    '走鏈排序 —— 靠 sort() 比較「A 是 B 的母武器」這種偏序不可靠')
+})
+
+test('專武變體：沒有專武的機師回空陣列（不是回一把別人的）', () => {
+  assert.deepEqual(pilotExclusiveWeapons(variantCtx(), 'pilot_不存在'), [])
+})
+
+test('專武變體：只有一把時原樣回（多數機師是這一種）', () => {
+  const w = buildWorld({
+    pilots: [肖妮], mechs: [彌造者], forms: [], backpacks: [], weapons: [熠光],
+  })
+  const ctx = buildContext({ pilotId: 肖妮.id, mechId: 彌造者.id, sets: { default: { mounts: [] } } }, 'default', w)
+  assert.deepEqual(pilotExclusiveWeapons(ctx, 肖妮.id).map((x) => x.name), ['熠光'])
+})
+
+// ─── 一鍵升級（使用者要求 2026-08-27）─────────────────────────────────────
+//
+// 全庫 42 條升級邊、**一對多為 0**（所以按鈕不必問「升級成哪一個」）、
+// **0 條變重**（所以幾乎不可能被 OVERWEIGHT 擋下）。這一段守的是那三件事的介面表現。
+
+const HAND_L_REF = { bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' } as const
+
+test('一鍵升級：裝著母武器 ⇒ 指得出進階版與重量差', () => {
+  const ctx = upgradeCtx({ mounts: [{ weaponId: 夜魘.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }] })
+  const plan = planWeaponUpgrade(ctx, HAND_L_REF)
+  assert.equal(plan?.from.id, 夜魘.id)
+  assert.equal(plan?.to.id, 終末之嘆.id)
+  assert.equal(plan?.weightDelta, 0, '實測 42 條邊裡 39 條同重 —— 印「+0」是噪音，UI 據此不印')
+  assert.equal(plan?.rejection, null)
+  assert.deepEqual(plan?.ref, HAND_L_REF, '升級寫回同一格')
+})
+
+test('一鍵升級：鏈的最後一段與空格都回 null（整條不畫）', () => {
+  const ctx = upgradeCtx({ mounts: [{ weaponId: 終末之嘆.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }] })
+  assert.equal(planWeaponUpgrade(ctx, HAND_L_REF), null, '終末之嘆沒有下一段')
+  assert.equal(planWeaponUpgrade(ctx, { bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'right' }), null,
+    '空格沒有武器可升級')
+})
+
+test('一鍵升級：進階版裝不上時仍回計畫，但帶著原因（UI 印灰字不畫按鈕）', () => {
+  // 重甲限定進階 限重型，而彌造者是中甲
+  const ctx = upgradeCtx({ mounts: [{ weaponId: 藝術突襲.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }] })
+  const plan = planWeaponUpgrade(ctx, HAND_L_REF)
+  assert.equal(plan?.to.id, 重甲限定進階.id)
+  assert.equal(plan?.rejection?.code, 'MECH_RESTRICTION',
+    '「有進階版但這台吃不下」與「沒有進階版」是兩件事，不可都回 null')
+})
+
+test('一鍵升級：焊死的武裝沒有升級鍵（承諾一個做不到的動作比沒有更糟）', () => {
+  // 帕斯卡的固定武裝（衝擊炮）佔著右肩，那一格的 occupant.kind 是 fixed
+  const ctx = ctxOf({ mounts: [] }, { mech: 帕斯卡 })
+  const shoulder = { bank: 'main', slot: WeaponEquipSlot.SHOULDER, side: 'right' } as const
+  assert.equal(planWeaponUpgrade(ctx, shoulder), null)
+})
+
+// ─── 一鍵裝上專武（使用者要求 2026-08-27）─────────────────────────────────
+//
+// 這顆按鈕的承諾是「按下去一定裝得上」。所以要守的是：挑得出格就一定合法、
+// 挑不出來就要說得出原因，而**雙手武器送進 reducer 的座標必須是 dualHand**
+// ——與挑選器那條路徑一致，否則它會被當成只佔單邊那一格。
+
+test('一鍵裝上：兩手都空 ⇒ 給兩個選項，讓玩家自己點哪一手', () => {
+  // 使用者要求 2026-08-27：「如果還有手能裝，就給使用者點左右手」——
+  // 第一版只回第一格，等於替所有人決定了左手。
+  const plan = planWeaponAutoEquip(ctxOf({ mounts: [] }), 藝術突襲)
+  assert.deepEqual(plan.options.map((o) => o.ref.side), ['left', 'right'])
+  assert.deepEqual(plan.options.map((o) => o.displaces), [null, null])
+  assert.equal(plan.rejection, null)
+})
+
+test('一鍵裝上：雙手武器只有一個選項，座標是 dualHand', () => {
+  // 左右手都指向同一格 —— 不去重會出現兩顆做同一件事的按鈕
+  const plan = planWeaponAutoEquip(ctxOf({ mounts: [] }), 群山之力)
+  assert.equal(plan.options.length, 1)
+  assert.equal(plan.options[0].ref.slot, WeaponEquipSlot.DUAL_HAND, '送進 reducer 的形狀要與挑選器那條路徑一致')
+})
+
+test('一鍵裝上：空格排在覆蓋前面', () => {
+  const ctx = ctxOf({
+    mounts: [{ weaponId: 藝術突襲.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }],
+  })
+  const plan = planWeaponAutoEquip(ctx, 夜魘)
+  assert.equal(plan.options[0].ref.side, 'right', '空的那隻手要排第一個')
+  assert.equal(plan.options[0].displaces, null)
+  assert.equal(plan.options[1].displaces, 藝術突襲.name, '第二個選項會換掉左手那把，title 要說得出來')
+})
+
+test('一鍵裝上：盾牌裝上一面之後，另一手那個選項自己消失（不必特判）', () => {
+  // 使用者要求 2026-08-27：「盾牌類因為只能裝一個，裝上就要把按鈕隱藏了」。
+  // ⚠ 這裡**沒有任何一行盾的特判** —— `SHIELD_LIMIT` 已經在 canEquipWeapon 擋掉第二面，
+  //   在計畫層再寫一次就是把同一條規則寫兩次，而第二份會在規則改動時過期。
+  const 空手 = planWeaponAutoEquip(ctxOf({ mounts: [] }), 聚合屏障)
+  assert.equal(空手.options.length, 2, '一面都沒裝時左右手都可以')
+
+  const 裝了一面 = ctxOf({
+    mounts: [{ weaponId: 玲瓏.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }],
+  })
+  const plan = planWeaponAutoEquip(裝了一面, 聚合屏障)
+  // 右手（空的）被 SHIELD_LIMIT 擋下；左手則是「換掉那一面盾」——那是合法的
+  assert.equal(plan.options.every((o) => o.ref.side !== 'right'), true, '右手不該還留著選項')
+  assert.deepEqual(plan.options.map((o) => o.displaces), [玲瓏.name])
+})
+
+test('一鍵裝上：左手已有這一把 ⇒ **右手照樣給選項**（玩家可能想雙持）', () => {
+  // 使用者裁決 2026-08-27：「也許使用者想雙手都拿專武，所以除非那個部位已經拿了專武，
+  // 不然就顯示裝備按鈕給使用者」。舊版一發現裝過就收掉整顆按鈕，等於替玩家否決了雙持。
+  const ctx = ctxOf({
+    mounts: [{ weaponId: 藝術突襲.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }],
+  })
+  const plan = planWeaponAutoEquip(ctx, 藝術突襲)
+  assert.equal(plan.alreadyEquipped, true)
+  assert.deepEqual(plan.options.map((o) => o.ref.side), ['right'], '左手那一格沒事可做，右手照給')
+  assert.equal(plan.rejection, null)
+})
+
+test('一鍵裝上：兩手都拿著同一把 ⇒ 沒有位置了，安靜收掉（不報「做不到」）', () => {
+  const ctx = ctxOf({
+    mounts: [
+      { weaponId: 藝術突襲.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' },
+      { weaponId: 藝術突襲.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'right' },
+    ],
+  })
+  const plan = planWeaponAutoEquip(ctx, 藝術突襲)
+  assert.deepEqual(plan.options, [])
+  assert.equal(plan.alreadyEquipped, true)
+  assert.equal(plan.rejection, null, '玩家想要的事已經成立 —— 這不是一個該報原因的狀態')
+})
+
+test('一鍵裝上：同一面盾裝了左手 ⇒ 右手不給選項（SHIELD_LIMIT 自己擋掉，無特判）', () => {
+  const ctx = ctxOf({
+    mounts: [{ weaponId: 聚合屏障.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }],
+  })
+  const plan = planWeaponAutoEquip(ctx, 聚合屏障)
+  assert.equal(plan.alreadyEquipped, true)
+  assert.deepEqual(plan.options, [], '盾一組只能一面 —— 這是「除了盾以外才給雙持」的那個例外')
+  assert.equal(plan.rejection, null, '安靜收掉，不是報錯')
+})
+
+test('一鍵裝上：想雙持但會超重 ⇒ **這一種要說**（其餘無位置的情況安靜）', () => {
+  // 「想雙持卻沒看到按鈕」時，「再裝一把會超重」正是玩家缺的那一句 —— 而那是他改得動的事。
+  // 盾只能一面、位置用完了那些則不出聲，免得每一套配裝底下都掛一行與當下無關的說明。
+  const ctx = ctxOf({
+    mounts: [
+      { weaponId: 熔火.id, bank: 'main', slot: WeaponEquipSlot.SHOULDER, side: 'left' },
+      { weaponId: 群山之力.id, bank: 'main', slot: WeaponEquipSlot.DUAL_HAND },
+    ],
+  })
+  const plan = planWeaponAutoEquip(ctx, 熔火)
+  assert.equal(plan.alreadyEquipped, true)
+  if (plan.options.length === 0 && plan.rejection) {
+    assert.equal(plan.rejection.code, 'OVERWEIGHT', '會被報出來的只有超重這一種')
+  }
+})
+
+test('一鍵裝上：肩部武器同樣可以雙持（位置不限於手）', () => {
+  // 使用者逐字：「位置可能是背後、肩膀、雙手」——掃的是所有槽型相符的位置
+  const 空 = planWeaponAutoEquip(ctxOf({ mounts: [] }), 熔火)
+  assert.deepEqual(空.options.map((o) => o.ref.side), ['left', 'right'])
+  assert.equal(空.options[0].ref.slot, WeaponEquipSlot.SHOULDER)
+})
+
+test('一鍵裝上：一格都挑不出來時要給原因，不是靜默回空陣列', () => {
+  // 熔火限中甲、且是肩部武器 —— 輕型機沒有肩槽
+  const plan = planWeaponAutoEquip(ctxOf({ mounts: [] }, { mech: 輕型機 }), 熔火)
+  assert.deepEqual(plan.options, [])
+  assert.equal(plan.alreadyEquipped, false, '這是「做不到」，不是「不必做」——兩者的選項都是空的')
+  assert.ok(plan.rejection, '按鈕不畫的時候，那句原因就是玩家唯一的線索')
+  assert.equal(plan.rejection?.code, 'NO_SLOT')
+})
+
+// ─── 一鍵裝滿（使用者要求 2026-08-27）──────────────────────────────────────
+//
+// 這一段守的是**按鈕不會跳票**：它印「裝滿 N 格 → LvX」，那 N 與 X 必須是真的。
+// 全庫實測（2026-08-27）的三種接口組合與三種「補滿需要幾格」都各有一條。
+
+/** 通用 S 級的真實形狀：＋2 級／顆、上限 4 ⇒ **兩格就滿**（候選池 31 顆） */
+const 通用S2 = mod({ id: 'mod_4103', name: '通用S二階模組', rarity: 'S', moduleAddLevel: 2 })
+
+test('一鍵裝滿：＋1 級的模組在 S 級機甲上裝滿四格（最常見的那一種）', () => {
+  const plan = planModuleFill(ctxOf({ mounts: [] }), 通用A)
+  assert.deepEqual(plan.targets, ['torso', 'leftArm', 'rightArm', 'legs'])
+  assert.equal(plan.levelAfter, 4)
+  assert.equal(plan.cap, 4)
+  assert.equal(plan.displaced.length, 0)
+  assert.equal(plan.noop, false)
+})
+
+test('一鍵裝滿：＋2 級的模組**只裝兩格**——塞滿四格是白費兩格', () => {
+  // 這正是站上自己的超限提醒在勸玩家別做的事。做一顆專門製造超限的按鈕會自相矛盾。
+  const plan = planModuleFill(ctxOf({ mounts: [] }), 通用S2)
+  assert.equal(plan.targets.length, 2)
+  assert.equal(plan.levelAfter, 4, '兩格就到上限')
+})
+
+test('一鍵裝滿：A 級機甲上的 S 級模組只裝得上雙臂 —— 承諾「四顆」會跳票', () => {
+  // A 級機甲 16 台的接口一律是 Ⅰ Ⅱ Ⅱ Ⅰ：軀幹與腿部只收 A 級模組
+  const plan = planModuleFill(ctxOf({ mounts: [] }, { mech: A級機 }), 通用S)
+  assert.deepEqual(plan.targets, ['leftArm', 'rightArm'])
+  assert.equal(plan.blockedSlots, 2, '軀幹與腿部裝不下')
+  assert.equal(plan.levelAfter, 2, '＋1 級 × 兩格 ⇒ 只到 Lv2，離上限 4 還有距離')
+  assert.ok(plan.levelAfter < plan.cap, '按鈕必須說得出「為什麼沒補滿」')
+})
+
+test('一鍵裝滿：8 級模組四格全滿也只到 Lv4，其餘由機甲自帶那顆補', () => {
+  const plan = planModuleFill(ctxOf({ mounts: [] }), 八級S)
+  assert.equal(plan.targets.length, 4)
+  assert.equal(plan.cap, 8)
+  assert.equal(plan.levelAfter, 4)
+  assert.equal(plan.blockedSlots, 0, '不是接口擋的 —— 是格數本來就不夠，兩種說法不可共用')
+})
+
+test('一鍵裝滿：空格優先，不夠才覆蓋別族（一鍵的破壞力要盡量小）', () => {
+  const ctx = ctxOf({ mounts: [] }, { modules: { torso: 通用S.id, leftArm: 通用S.id } })
+  const plan = planModuleFill(ctx, 通用A)
+  // 右臂與腿部是空的 ⇒ 先吃它們；還差兩格才輪到覆蓋軀幹與左臂
+  assert.deepEqual(plan.targets.slice(0, 2), ['rightArm', 'legs'])
+  assert.deepEqual(plan.displaced.map((d) => d.position), ['torso', 'leftArm'])
+  assert.equal(plan.levelAfter, 4)
+})
+
+test('一鍵裝滿：已裝著的**同族**不重裝 —— 它已經在貢獻等級了', () => {
+  const ctx = ctxOf({ mounts: [] }, { modules: { torso: 通用A.id } })
+  const plan = planModuleFill(ctx, 通用A)
+  assert.equal(plan.targets.includes('torso' as never), false)
+  assert.equal(plan.levelBefore, 1)
+  assert.equal(plan.targets.length, 3, '只補其餘三格')
+  assert.equal(plan.levelAfter, 4)
+})
+
+test('一鍵裝滿：已滿級 ⇒ noop（按鈕整顆不畫，而不是畫一顆按下去沒事的）', () => {
+  const full = { torso: 通用A.id, leftArm: 通用A.id, rightArm: 通用A.id, legs: 通用A.id }
+  const plan = planModuleFill(ctxOf({ mounts: [] }, { modules: full }), 通用A)
+  assert.equal(plan.noop, true)
+  assert.deepEqual(plan.targets, [])
+})
+
+test('一鍵裝滿：B 品質機甲沒有接口 ⇒ noop，四格全記在 blockedSlots', () => {
+  const plan = planModuleFill(ctxOf({ mounts: [] }, { mech: B級機 }), 通用A)
+  assert.equal(plan.noop, true)
+  assert.equal(plan.blockedSlots, 4)
 })
 
 test('052-G C-9：接口已裝別顆**不是**拒絕 —— 直接替換，不必先卸下', () => {

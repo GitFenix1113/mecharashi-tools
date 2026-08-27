@@ -77,7 +77,7 @@ export function OutputBar({ budget, previewBudget, onHoverSegment, compact, narr
   )
 
   const legend = (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-text-dim">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-text-dim">
       {segs.map((s) => (
         <span key={s.key} className="inline-flex items-center gap-1">
           <i className={`inline-block w-2 h-2 ${SEG_COLOR[s.key]}`} />
@@ -99,7 +99,7 @@ export function OutputBar({ budget, previewBudget, onHoverSegment, compact, narr
   const notes = (
     <>
       {output.hasUnknownBackpackBonus && (
-        <p className="text-[10px] text-accent-yellow/90 leading-relaxed">
+        <p className="text-[11px] text-accent-yellow/90 leading-relaxed">
           此背包已知會提供出力，但本站尚未取得數值 —— 實際可用出力會高於上方數字。
         </p>
       )}
@@ -117,7 +117,7 @@ export function OutputBar({ budget, previewBudget, onHoverSegment, compact, narr
     return (
       <div className="space-y-1">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-[10px] text-text-dim">總重 ／ 可用出力</span>
+          <span className="text-[11px] text-text-dim">總重 ／ 可用出力</span>
           <span className={`${HUD.numSm}`}>
             <strong className={over ? 'text-accent-red' : 'text-text-primary'}>
               {weight.total.toLocaleString()}

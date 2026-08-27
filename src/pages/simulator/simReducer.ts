@@ -24,7 +24,8 @@ import { slotLabel } from '../../utils/mechSlots.ts'
 import { partLabel } from '../../utils/moduleSlots.ts'
 import { MECH_PART_ORDER } from '../../utils/chassisStats.ts'
 import {
-  buildContext, canEquipWeapon, canEquipBackpack, canEquipComponent, canEquipModule, loadoutBudget, slotsOverlap,
+  buildContext, canEquipWeapon, canEquipBackpack, canEquipComponent, canEquipModule, loadoutBudget,
+  planModuleFill, slotsOverlap,
   type LoadoutContext, type LoadoutWorld, type ResolutionAction,
 } from '../../utils/loadoutRules.ts'
 import { ND_RULES, isGammaZone, zonePower } from '../../utils/ndOverrides.ts'
@@ -69,6 +70,14 @@ export type LoadoutAction =
    *   會直接派它進來，兩邊共用同一個形狀（見本 union 開頭的註解）。
    */
   | { type: 'equipModule'; ref: ModuleSlotRef; moduleId: string }
+  /**
+   * 一鍵裝滿（使用者要求 2026-08-27）：把這顆模組裝到**這一族滿級**為止。
+   *
+   * ⚠ 動幾格、動哪幾格一律由 `planModuleFill()` 決定，**這裡不重算** ——
+   *   按鈕上印的字與實際動作各算一次，就是兩者對不起來的開始
+   *   （按鈕寫「裝滿 4 格」卻只裝了 2 格，而畫面不會說任何話）。
+   */
+  | { type: 'fillModule'; moduleId: string }
   /** 由外部載入一份草稿（ProfilePage 的舊存檔、未來的分享碼）。一樣要過 reconcile */
   | { type: 'loadDraft'; draft: LoadoutDraft }
 
@@ -725,6 +734,35 @@ export function simReduce(state: SimState, action: LoadoutAction, world: Loadout
         : []
       // 模組不佔重量 ⇒ 不必報出力變化（`outputNote` 恆為空，呼叫它只是白算一次）
       return commit(state, state.draft, draft, [...displaced, ...removed], `已裝上 ${mod.name}`, [], [], true)
+    }
+
+    case 'fillModule': {
+      const mod = world.modules.get(action.moduleId)
+      if (!mod) return state
+      // ⚠ 模組掛在**機甲**上、不隨形態變動（052-F 已定），但 `buildContext` 仍要
+      //   一個分頁鍵才組得出情境——用目前這一頁的即可，模組那一段的結果與它無關。
+      const ctx = buildContext(state.draft, state.draft.activeSetKey, world)
+      const plan = planModuleFill(ctx, mod)
+      if (plan.noop) return state
+
+      let base = state.draft
+      for (const position of plan.targets) base = withModule(base, position, action.moduleId)
+      const { draft, removed } = reconcile(base, world)
+
+      // 被換掉的那幾顆逐件列出來 —— 一鍵動了好幾格，不逐件報等於讓玩家自己去比對
+      // 前後畫面找出少了什麼（與 equipModule 的 displaced 同一條，只是這裡可能有多筆）
+      const displaced: RemovedItem[] = plan.displaced.map(({ position, moduleId }) => ({
+        kind: 'module', id: moduleId,
+        name: world.modules.get(moduleId)?.name ?? moduleId,
+        where: partLabel(position),
+        why: `已由${mod.name}取代`,
+      }))
+      const where = plan.targets.map(partLabel).join('、')
+      return commit(
+        state, state.draft, draft, [...displaced, ...removed],
+        `${where}裝上 ${mod.name} → Lv${plan.levelAfter}/${plan.cap}`,
+        [], [], true,
+      )
     }
 
     case 'unequipModule': {

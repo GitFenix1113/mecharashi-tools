@@ -22,14 +22,17 @@ import { fromAssemblableArmorType, licenseAllows, toArmorType } from './normaliz
 import { resolveChassis, type ResolvedChassis } from './chassisStats.ts'
 import { compareModuleBySlot, partLabel } from './moduleSlots.ts'
 import {
-  loadoutSlotCapacity, occupiedSlots, lockedSlots, slotLabel,
+  enumerateSlots, loadoutSlotCapacity, occupiedSlots, lockedSlots, slotLabel,
   type FormSlotLock, type OccupiedSlot,
 } from './mechSlots.ts'
 import { weightBreakdown, type LoadoutWeightSet, type WeightBreakdown } from './loadoutWeight.ts'
 import { effectiveOutput, type OutputBreakdown } from './effectiveOutput.ts'
 import { DEFAULT_EQUIP_SET_KEY } from './forms.ts'
 import { isSameFamily, isWTypeComponent } from './componentRules.ts'
-import { interfaceAcceptsRarity, interfaceState, isModuleCandidate, moduleCandidates } from './moduleRules.ts'
+import {
+  interfaceAcceptsRarity, interfaceState, isModuleCandidate, moduleCandidates,
+  moduleAddLevel, moduleFamilyKey, moduleMaxLevel, moduleStacks,
+} from './moduleRules.ts'
 
 // ─── 拒絕原因：封閉聯集 ─────────────────────────────────────────────────────
 //
@@ -893,6 +896,352 @@ export function canEquipModule(ctx: LoadoutContext, mod: Module, ref: ModuleSlot
   //   一顆卸下鍵，那是「我要讓這一格空著」的唯一入口，與替換是兩件不同的事。
 
   return null
+}
+
+// ─── 機師的專武變體（使用者要求 2026-08-27）───────────────────────────────────
+//
+// 「如果他裝備了熠光，那按鈕就變成裁決者；裝了裁決者，按鈕就變成熠光。」——使用者逐字。
+//
+// ⚠ **一位機師可以有不只一把專武**（實測 2026-08-27）：3 位機師各有兩把，
+//   而且**母武器與進階版都掛 `isExclusive` 並指向同一位機師**：
+//       肖妮      熠光 → 裁決者
+//       洛莎·審判  諸神黃昏 → 天燼審判
+//       菲婭      草莓通心粉 → 糖衣毀滅者
+//   三對全是背部武器，而且**兩把都強化同一個天賦**（熠光與裁決者都強化「晨星科技」）。
+//
+// ⚠ 這使得「找出這位機師的專武」**不能寫成 `find()`**：那會回傳 Map 迭代順序上
+//   先遇到的那一把 —— 對這三位機師來說，站上顯示哪一把是碰運氣的。
+//   本函式回**整條鏈**，由母到子排好，呼叫端自己決定要用哪一把。
+
+/**
+ * 這位機師的全部專武，**依升級鏈由母到子**排序。
+ *
+ * ⚠ 排序不是 `sort()` 而是**走鏈**：先找出鏈頭（`upgrade.fromWeaponId` 不在這批裡的那把），
+ *   再一路往下接。`sort()` 的比較函式對「A 是 B 的母武器」這種偏序不可靠 ——
+ *   兩兩比較之外的元素會讓結果取決於實作的排序演算法。
+ *   接不上的（資料異常：鏈斷了、或有兩條獨立的鏈）一律附在後面，不吞掉。
+ */
+export function pilotExclusiveWeapons(ctx: LoadoutContext, pilotId: string): Weapon[] {
+  const mine: Weapon[] = []
+  for (const w of ctx.world.weapons.values()) {
+    if (w.isExclusive && w.exclusiveFor === pilotId) mine.push(w)
+  }
+  if (mine.length <= 1) return mine
+
+  const ids = new Set(mine.map((w) => w.id))
+  const childOf = new Map<string, Weapon>()
+  for (const w of mine) {
+    const from = w.upgrade?.fromWeaponId
+    if (from && ids.has(from)) childOf.set(from, w)
+  }
+
+  const out: Weapon[] = []
+  const used = new Set<string>()
+  for (const head of mine) {
+    const from = head.upgrade?.fromWeaponId
+    if (from && ids.has(from)) continue        // 不是鏈頭
+    for (let cur: Weapon | undefined = head; cur && !used.has(cur.id); cur = childOf.get(cur.id)) {
+      used.add(cur.id)
+      out.push(cur)
+    }
+  }
+  // 鏈接不上的（理論上不該有）附在後面 —— 少列一把專武是靜默的，而它會讓玩家找不到東西
+  for (const w of mine) if (!used.has(w.id)) out.push(w)
+  return out
+}
+
+// ─── 一鍵升級（使用者要求 2026-08-27）─────────────────────────────────────────
+//
+// 「這個熠光有進階版的背包武器叫做裁決者，如果遇到這種情況，請讓使用者可以直接 UPGRADE。」
+//
+// PLAN-031 已經把製作關係存成 `Weapon.upgrade.fromWeaponId`，但那份資料在模擬器裡
+// 一直沒有消費端 —— 玩家得自己記得「熠光還能再做成裁決者」，然後回挑選器從 180 把裡找它。
+//
+// ── 全庫實測（2026-08-27，42 條邊）──────────────────────────────────────────
+//   · **一對多為 0** ⇒ 一把武器最多一個進階版，按鈕不必問「升級成哪一個」
+//   · 39 條同重、2 條變輕（炎嘯·改 480 → 迦具土 400）、**0 條變重**
+//     ⇒ 升級**永遠不會**把配裝壓成超重，這顆按鈕幾乎不可能被 OVERWEIGHT 擋下
+//   · 3 條是特種背包製作（複合武器）：熠光→裁決者、草莓通心粉→糖衣毀滅者、諸神黃昏→天燼審判
+//   · 存在**多段鏈**：炬塔·改 → 熠光 → 裁決者。升完一段之後下一段的按鈕會自己長出來
+//     ——本函式只看一步，不遞迴（多跳一次是玩家的決定，不是站上替他做完）
+//
+// ⚠ 仍然要問 `canEquipWeapon()`：子武器的 `mechRestriction` / `type` 未必與母武器相同，
+//   而那兩者會讓升級在特定機甲或形態上不合法。「幾乎不可能」不是「不會」。
+
+/** `planWeaponUpgrade()` 的結果。`rejection` 有值 ＝ 有進階版但這一套裝不上。 */
+export interface WeaponUpgradePlan {
+  /** 目前這一格裝著的那把 */
+  from: Weapon
+  /** 它的進階版 */
+  to: Weapon
+  /** 升級後要寫進哪一格（已過 `mountRefFor()`，直接丟 `equipWeapon`） */
+  ref: WeaponSlotRef
+  /** 重量差。負數＝變輕。實測 0 或負，沒有正的 */
+  weightDelta: number
+  rejection: Rejection | null
+}
+
+/**
+ * 這一格裝著的武器有沒有可以直接做上去的進階版。**唯讀。**
+ *
+ * 回 `null` ＝ 這一格沒有武器、或那把沒有進階版（呼叫端整條不畫）。
+ *
+ * ⚠ **只認 `kind === 'weapon'`**：機甲固定武裝與形態鎖定的武裝是焊死的，
+ *   給它們一顆升級鍵等於承諾一個做不到的動作（`equipWeapon` 也會被規則層擋下）。
+ */
+export function planWeaponUpgrade(ctx: LoadoutContext, ref: WeaponSlotRef): WeaponUpgradePlan | null {
+  const occ = slotOccupant(ctx, ref)
+  if (occ.kind !== 'weapon' || !occ.weapon) return null
+  const from = occ.weapon
+
+  // 反向索引（`upgradeTo`）刻意不存在資料裡（PLAN-031：雙向欄位失同步無機制可察），
+  // 這裡現掃。182 把 × 每頁最多 6 格，成本可以忽略
+  let to: Weapon | undefined
+  for (const w of ctx.world.weapons.values()) {
+    if (w.upgrade?.fromWeaponId === from.id) { to = w; break }
+  }
+  if (!to) return null
+
+  // ⚠ `withoutSlot()`：母武器會被子武器取代，留著它問會讓兩者互相衝突
+  //   （盾／背槽這類「一組只能一件」的規則會誤報）——同 `weaponChoices()` 的處理
+  return {
+    from, to,
+    ref: mountRefFor(to, ref),
+    weightDelta: to.weight - from.weight,
+    rejection: canEquipWeapon(withoutSlot(ctx, ref), to, ref),
+  }
+}
+
+// ─── 一鍵裝上（專武快速裝備，使用者要求 2026-08-27）───────────────────────────
+//
+// 「選完機甲後，專武天賦旁邊加一個按鈕，讓使用者快速將專武裝備上。」——使用者逐字。
+//
+// 天賦條會說「裝上〈XX〉可強化 2 個天賦」，而玩家看到那句話之後要做的事是：
+// 找到那把武器該去的槽 → 開挑選器 → 在 180 把裡找到它。這一支把中間那兩步收掉。
+//
+// ⚠ **不挑「最好的」槽，只挑「裝得上的第一格」**：哪一手拿哪一把是玩家的偏好，
+//   站上沒有立場替他決定。真正要保證的是**這顆按鈕不會失敗** —— 按下去要嘛裝上，
+//   要嘛按鈕根本不出現（附上原因）。
+//
+// ⚠ 空格優先，與 `planModuleFill()` 同一條：一鍵的破壞力要盡量小。
+
+/** 一個可以裝的位置。UI 一格一顆按鈕。 */
+export interface WeaponAutoEquipOption {
+  /**
+   * 要裝去哪一格。**已經過 `mountRefFor()`**（雙手武器回 `dualHand` 座標），
+   * 呼叫端直接丟給 `equipWeapon` 即可 —— 挑選器那條路徑也是先 `mountRefFor()` 再 dispatch，
+   * 兩條路徑送進 reducer 的形狀必須一致，否則雙手武器會被當成只佔單邊那一格。
+   */
+  ref: WeaponSlotRef
+  /** 「左手」「備用右手」——`slotLabel(ref)`，先算好省得呼叫端再 import 一次 */
+  label: string
+  /** 這一格原本裝著什麼（會被換掉），給按鈕的 title 用 */
+  displaces: string | null
+}
+
+/** `planWeaponAutoEquip()` 的結果。`options` 非空 ＝ 裝得上；否則 `rejection` 說明為什麼不行。 */
+export interface WeaponAutoEquipPlan {
+  weapon: Weapon
+  /**
+   * **所有**裝得上的位置，空格優先（使用者要求 2026-08-27：「如果還有手能裝，
+   * 就給使用者點左右手」）。第一版只回第一格，那等於替玩家決定了慣用手。
+   *
+   * ⚠ **盾牌自動只剩一個選項**，不必特判：`canEquipWeapon()` 的 `SHIELD_LIMIT`
+   *   會擋掉同一組的第二面盾，所以裝上左手之後右手那個選項自己就消失了。
+   *   在這裡另寫一條「盾牌只能一面」的規則，就是把同一條規則寫兩次 ——
+   *   而第二份會在規則改動時過期。
+   *
+   * ⚠ **雙手武器只會有一個選項**：左右手都指向同一個 `dualHand` 座標，
+   *   按 `slotKey()` 去重（不去重會出現兩顆做同一件事的按鈕）。
+   */
+  options: WeaponAutoEquipOption[]
+  /** `options` 為空時的原因。挑「最接近成功」的那一條 —— 全部都是 structural 就取第一條 */
+  rejection: Rejection | null
+  /**
+   * 這把**已經至少裝了一把**。
+   *
+   * ⚠ 「已經裝了」**不代表 `options` 是空的**（使用者裁決 2026-08-27）：玩家可能想
+   *   雙手都拿同一把專武、或左手拿著再往肩上掛一把。已經拿著它的那一格會從選項裡
+   *   拿掉（那一格沒事可做），其餘位置照給。
+   *   第一版一發現裝過就把整顆按鈕收掉，等於替玩家否決了雙持。
+   *
+   * ⚠ **盾牌不必特判**：`SHIELD_LIMIT` 會讓第二面盾在 `canEquipWeapon()` 就被擋下，
+   *   於是「左手已有這面盾」時右手那個選項自己消失、`options` 變空、按鈕自己不見。
+   *
+   * ⚠ 與「做不到」（`rejection` 有值）**是兩件事，不可靠 `options` 為空合併判斷**：
+   *   兩者都會讓選項是空的，但一個該安靜、一個該說話。第一版沒有這個欄位，
+   *   結果「輕型機沒有肩槽」被靜默當成「已經裝好了」——按鈕不見、原因也不見。
+   */
+  alreadyEquipped: boolean
+}
+
+/**
+ * 「把這把武器裝到第一個裝得上的槽」。**唯讀，不改任何東西。**
+ *
+ * ⚠ 已經裝著這把武器時回 `ref: null` ＋ `rejection: null` —— 兩者都空的意思是
+ *   「不必做任何事」，與「做不到」（有 rejection）分得開。呼叫端據此決定不畫按鈕。
+ */
+export function planWeaponAutoEquip(ctx: LoadoutContext, weapon: Weapon): WeaponAutoEquipPlan {
+  const occupantEmpty: WeaponSlotRef[] = []
+  const taken: WeaponSlotRef[] = []
+
+  let alreadyEquipped = false
+
+  for (const ref of enumerateSlots(ctx.capacity)) {
+    // 槽型不合的連問都不必問（背部武器不會裝進手部），省掉一堆必然的 SLOT_MISMATCH。
+    // ⚠ 這一圈掃的是**所有**槽型相符的位置 —— 雙手、雙肩、背部都在內，
+    //   而不是只有手（使用者逐字：「位置可能是背後、肩膀、雙手」）。
+    const mount = mountRefFor(weapon, ref)
+    if (weapon.equipSlot !== mount.slot) continue
+    const occ = slotOccupant(ctx, ref)
+    // 這一格已經拿著它 ⇒ 這一格沒事可做，但**別的位置照給**（見 `alreadyEquipped` 的註解）
+    if (occ.kind === 'weapon' && occ.weapon?.id === weapon.id) { alreadyEquipped = true; continue }
+    ;(occ.kind === 'empty' ? occupantEmpty : taken).push(ref)
+  }
+
+  // 這台機甲根本沒有這種槽（輕型機沒有肩槽）——**要說出來**，不是回一個空計畫。
+  // `canEquipWeapon()` 走不到這一條，因為上面的槽型過濾已經把候選清成零筆。
+  if (occupantEmpty.length === 0 && taken.length === 0) {
+    return {
+      weapon, options: [], alreadyEquipped,
+      // 已經裝滿了它自己（雙手都是同一把）⇒ 安靜收掉，不是「這台沒有這種槽」
+      rejection: alreadyEquipped
+        ? null
+        : reject('NO_SLOT', `這台機甲沒有${OWN_SLOT_LABEL[weapon.equipSlot] ?? weapon.equipSlot}槽位`),
+    }
+  }
+
+  const options: WeaponAutoEquipOption[] = []
+  const seen = new Set<SlotKey>()
+  let firstRejection: Rejection | null = null
+
+  for (const ref of [...occupantEmpty, ...taken]) {
+    // ⚠ 用 `withoutSlot()` 問：那一格現在裝的東西會被換掉，留著它會讓這把武器
+    //   與**即將被自己取代的那一件**互相衝突（同 `weaponChoices()` 的處理）
+    const r = canEquipWeapon(withoutSlot(ctx, ref), weapon, ref)
+    if (r !== null) {
+      // situational（重量不夠這類「改別的就能解」）優先報，它比 structural 有行動空間
+      if (!firstRejection || (firstRejection.tier === 'structural' && r.tier === 'situational')) {
+        firstRejection = r
+      }
+      continue
+    }
+    const mount = mountRefFor(weapon, ref)
+    const key = slotKey(mount)
+    if (seen.has(key)) continue          // 雙手武器：左右手指向同一格（見 `options` 的註解）
+    seen.add(key)
+    const occ = slotOccupant(ctx, ref)
+    options.push({
+      ref: mount,
+      label: slotLabel(mount),
+      displaces: occ.kind === 'weapon' ? occ.weapon?.name ?? null : null,
+    })
+  }
+
+  return {
+    weapon, options, alreadyEquipped,
+    rejection:
+      // 有選項就不必報原因 —— 那條原因是「某一格不行」，而玩家已經有能走的路了
+      options.length > 0 ? null
+      // 已經裝著它、其餘位置又都不行：多數情況該安靜（盾只能一面、位置本來就用完了），
+      // **唯獨超重要說**。那是玩家改得動的事，而「想雙持卻沒看到按鈕」時，
+      // 「再裝一把會超重」正是他缺的那一句。其餘一律不出聲，免得每一套配裝底下
+      // 都掛著一行與他當下無關的說明。
+      : alreadyEquipped ? (firstRejection?.code === 'OVERWEIGHT' ? firstRejection : null)
+      : firstRejection,
+  }
+}
+
+// ─── 一鍵裝滿（使用者要求 2026-08-27）─────────────────────────────────────────
+//
+// 「模組是否有辦法設計一個直接四顆套用的操作方式？」——使用者逐字。
+//
+// 同族疊等級是模組這一層的主要玩法（裝一顆通用Ⅱ 是 Lv2、兩顆才 Lv4），而現況要點四次：
+// 四部位卡 → 面板 → 挑一顆 → 返回 → 換一格 → 再挑同一顆…。整套操作的形狀
+// 與玩家腦中的「我要這顆模組滿級」完全對不上。
+//
+// ── 為什麼是「裝到滿級」而不是「無腦塞滿四格」──────────────────────────────
+// 實測資料說了算（2026-08-27 全庫）：
+//
+//     機甲接口只有三種組合：S 級 64 台四格全 Ⅱ型／A 級 16 台是 Ⅰ Ⅱ Ⅱ Ⅰ／B 級 10 台無接口
+//     候選池 186 顆的「補滿需要幾格」：4 格 105 顆・2 格 31 顆・8 格（補不滿）50 顆
+//
+// 於是「一律四格」在兩個常見情況下都是錯的：
+//   · 通用 S 級模組（31 顆，＋2 級／顆）**兩格就滿 Lv4**，塞四格白費兩格 ——
+//     而站上自己的超限提醒正是在勸玩家別這樣做。做一顆專門製造超限的按鈕自相矛盾。
+//   · A 級機甲的軀幹與腿部是 Ⅰ型接口（只收 A 級模組），一顆 S 級模組
+//     **最多只裝得上雙臂兩格**。承諾「四顆」到那裡會直接跳票。
+//
+// 所以這一支回答的是「這顆模組在這台機甲上，最多能到幾級、要動哪幾格」，
+// 而按鈕的字面一律由本計畫產生（「裝滿 4 格」／「再補 1 格」），不寫死「四顆」。
+//
+// ── 優先動空格 ────────────────────────────────────────────────────────────
+// 要覆蓋別人時先挑空的那幾格：一鍵操作的破壞力要盡量小。真的動到了別顆，
+// 被換掉的一律進 toast 並可 [復原]（與 `equipModule` 的 displaced 同一條）。
+
+/** `planModuleFill()` 的結果。**呼叫端不自己算**——按鈕的字與 reducer 的動作同源。 */
+export interface ModuleFillPlan {
+  mod: Module
+  /** 要裝上去的格，依 `MechPartPosition` 宣告順序（空格優先，見檔頭） */
+  targets: MechPartPosition[]
+  /** 會被換掉的模組（`targets` 的子集），給 toast 用 */
+  displaced: { position: MechPartPosition; moduleId: string }[]
+  /** 這一族目前的生效等級（還沒動之前） */
+  levelBefore: number
+  /** 執行後的生效等級 */
+  levelAfter: number
+  cap: number
+  /** 接口裝不下這顆的格數（Ⅰ型接口 ＋ S 級模組，或整台沒有接口） */
+  blockedSlots: number
+  /** 已經滿級（或沒有格可動）＝ 這顆按鈕不該出現 */
+  noop: boolean
+}
+
+/**
+ * 「把這顆模組裝到滿級」的計畫。**唯讀，不改任何東西。**
+ *
+ * ⚠ 已經裝著**同族**的格子一律不動：它們已經在貢獻等級了，重裝一次只是把
+ *   Ⅰ 換成 Ⅱ 這種邊際情況，而那會讓「一鍵」變成一個玩家預測不到的重排。
+ */
+export function planModuleFill(ctx: LoadoutContext, mod: Module): ModuleFillPlan {
+  const cap = moduleMaxLevel(mod)
+  const add = moduleAddLevel(mod)
+  const family = moduleFamilyKey(mod)
+  const stacks = moduleStacks(ctx.modules, (id) => ctx.world.modules.get(id))
+  const stack = stacks.get(family) ?? null
+  const levelBefore = stack?.level ?? 0
+
+  const open: MechPartPosition[] = []      // 空格
+  const occupied: MechPartPosition[] = []  // 裝了別族的格
+  let blockedSlots = 0
+
+  for (const position of Object.values(MechPartPosition)) {
+    if (canEquipModule(ctx, mod, { kind: 'module', position }) !== null) { blockedSlots++; continue }
+    const cur = ctx.modules[position]
+    const curMod = cur ? ctx.world.modules.get(cur) : undefined
+    // 已經是同族 → 它已經在貢獻等級，不動它
+    if (curMod && moduleFamilyKey(curMod) === family) continue
+    if (cur) occupied.push(position)
+    else open.push(position)
+  }
+
+  const targets: MechPartPosition[] = []
+  const displaced: ModuleFillPlan['displaced'] = []
+  let sum = stack?.sum ?? 0
+  for (const position of [...open, ...occupied]) {
+    if (sum >= cap) break
+    targets.push(position)
+    const cur = ctx.modules[position]
+    if (cur) displaced.push({ position, moduleId: cur })
+    sum += add
+  }
+
+  return {
+    mod, targets, displaced, levelBefore,
+    levelAfter: Math.min(sum, cap),
+    cap, blockedSlots,
+    noop: targets.length === 0,
+  }
 }
 
 /** 這個背包能不能裝。合法回 `null`。 */
