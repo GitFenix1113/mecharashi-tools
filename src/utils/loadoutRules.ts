@@ -13,13 +13,14 @@
 //
 // 純函式、無 React / Firestore 依賴，可單測（npm test）。
 
-import type { Backpack, Component, Mech, MechForm, Pilot, Weapon } from '../types'
+import type { Backpack, Component, Mech, MechForm, Module, Pilot, Weapon } from '../types'
 import type { EquipSet, LoadoutMount } from '../types/loadout'
-import type { SlotCapacity, SlotKey, SlotRef } from '../types/slots.ts'
+import type { ModuleSlotRef, SlotCapacity, SlotKey, WeaponSlotRef } from '../types/slots.ts'
 import { slotKey, slotAcceptsSide } from '../types/slots.ts'
-import { ArmorType, COMPONENT_WEAPON_TYPES, MechLicense, MechRestriction, WeaponEquipSlot, WeaponKind } from '../types/enums.ts'
+import { ArmorType, COMPONENT_WEAPON_TYPES, MechLicense, MechRestriction, MechPartPosition, WeaponEquipSlot, WeaponKind } from '../types/enums.ts'
 import { fromAssemblableArmorType, licenseAllows, toArmorType } from './normalizeArmorType.ts'
 import { resolveChassis, type ResolvedChassis } from './chassisStats.ts'
+import { compareModuleBySlot, partLabel } from './moduleSlots.ts'
 import {
   loadoutSlotCapacity, occupiedSlots, lockedSlots, slotLabel,
   type FormSlotLock, type OccupiedSlot,
@@ -28,6 +29,7 @@ import { weightBreakdown, type LoadoutWeightSet, type WeightBreakdown } from './
 import { effectiveOutput, type OutputBreakdown } from './effectiveOutput.ts'
 import { DEFAULT_EQUIP_SET_KEY } from './forms.ts'
 import { isSameFamily, isWTypeComponent } from './componentRules.ts'
+import { interfaceAcceptsRarity, interfaceState, isModuleCandidate, moduleCandidates } from './moduleRules.ts'
 
 // ─── 拒絕原因：封閉聯集 ─────────────────────────────────────────────────────
 //
@@ -37,7 +39,7 @@ import { isSameFamily, isWTypeComponent } from './componentRules.ts'
 //   (3) 若選了 situational，`rejectSituational()` 的簽章逼你附上 resolution。
 // 少了 (3) 就會出現「灰掉但沒有解法按鈕」的列 —— 那正是玩家會來問客服的那一種。
 
-/** 七組：骨架／機甲／槽位／武器／背部／負重／元件。 */
+/** 八組：骨架／機甲／槽位／武器／背部／負重／元件／模組。 */
 export const REJECTION_CODES = [
   // 骨架 —— 前置選擇還沒做
   'NO_PILOT', 'NO_MECH',
@@ -54,6 +56,9 @@ export const REJECTION_CODES = [
   // 元件 —— 掛在武器上的那一層（PLAN-052-D）
   'COMP_NO_SLOTS', 'COMP_W_TYPE', 'COMP_WEAPON_TYPE',
   'COMP_SLOTS_FULL', 'COMP_KIND_FULL', 'COMP_FAMILY',
+  // 模組 —— 掛在機甲四個接口上的那一層（PLAN-052-G）
+  'MOD_NO_INTERFACE', 'MOD_IFACE_UNKNOWN', 'MOD_IFACE_RARITY',
+  'MOD_NOT_CANDIDATE', 'MOD_DATA_INCOMPLETE', 'MOD_SLOT_TAKEN',
 ] as const
 
 export type RejectionCode = typeof REJECTION_CODES[number]
@@ -90,6 +95,12 @@ export const REJECTION_TIER = {
   COMP_SLOTS_FULL:     'situational',
   COMP_KIND_FULL:      'situational',
   COMP_FAMILY:         'situational',
+  MOD_NO_INTERFACE:    'blocked',
+  MOD_IFACE_UNKNOWN:   'blocked',
+  MOD_IFACE_RARITY:    'structural',
+  MOD_NOT_CANDIDATE:   'structural',
+  MOD_DATA_INCOMPLETE: 'structural',
+  MOD_SLOT_TAKEN:      'situational',
 } as const satisfies Record<RejectionCode, RejectionTier>
 
 /** 摺疊列的短標籤（「因形態限定隱藏 90」的那個「形態限定」）。 */
@@ -115,6 +126,12 @@ export const REJECTION_LABEL = {
   COMP_SLOTS_FULL:     '元件槽已滿',
   COMP_KIND_FULL:      '該類已滿',
   COMP_FAMILY:         '同族已裝',
+  MOD_NO_INTERFACE:    '無模組接口',
+  MOD_IFACE_UNKNOWN:   '接口型別不明',
+  MOD_IFACE_RARITY:    '僅可裝 A 級',
+  MOD_NOT_CANDIDATE:   '不可自由裝配',
+  MOD_DATA_INCOMPLETE: '數值未建檔',
+  MOD_SLOT_TAKEN:      '接口已裝',
 } as const satisfies Record<RejectionCode, string>
 
 type CodesOfTier<T extends RejectionTier> =
@@ -133,10 +150,18 @@ export type BlockedCode     = CodesOfTier<'blocked'>
  *   這種只有玩家看得到的錯。reducer 的 action union 反過來包含這兩個形狀。
  */
 export type ResolutionAction =
-  | { type: 'unequip'; ref: SlotRef }
+  | { type: 'unequip'; ref: WeaponSlotRef }
   | { type: 'unequipBackpack' }
   /** 卸下某一把武器上的某顆元件（PLAN-052-D A-5）。`ref` 是**武器自己的座標** */
-  | { type: 'unequipComponent'; ref: SlotRef; componentId: string }
+  | { type: 'unequipComponent'; ref: WeaponSlotRef; componentId: string }
+  /**
+   * 卸下某一個接口上的模組（PLAN-052-G A-3）。
+   *
+   * ⚠ **reducer 的對應分支在 C-1 才落地**，在那之前這個 action 派進去會走到
+   *   `simReducer` 的 `default: return state` —— 也就是**靜默沒反應**。今天走不到
+   *   （Phase A 不接任何 UI，沒有人會產生這個 action），但 C-1 的第一件事就是補上它。
+   */
+  | { type: 'unequipModule'; ref: ModuleSlotRef }
 
 export interface Resolution {
   /** 按鈕文案，如「卸下 左肩 熔火 可裝」 */
@@ -181,11 +206,22 @@ export interface LoadoutWorld {
    *   照著武器那套「查不到就刪」做，症狀是**貼一次分享碼、元件就被靜默清空一次**。
    */
   components: ReadonlyMap<string, Component>
+  /**
+   * 模組（PLAN-052-G A-4）。自 `equip` 階段起載入 —— 四個接口掛在機甲上，
+   * 選完機甲之前一筆都用不到。
+   *
+   * ⚠ **空 Map 的意思是「還沒載入」，不是「這個世界沒有模組」**，與 `components`
+   *   逐字同一條（計畫書決策六）。規則層必須據此**跳過**模組驗證、`reconcile()` 必須
+   *   **不動** `draft.modules`：草稿會在載入完成前就被 `loadDraft` 灌進來
+   *   （分享碼／本機書架／052-E 雲端存檔都走那條），照著武器那套「查不到就刪」做，
+   *   症狀是**貼一次分享碼、四顆模組就被靜默清空一次**。
+   */
+  modules: ReadonlyMap<string, Module>
 }
 
 export const EMPTY_WORLD: LoadoutWorld = {
   pilots: new Map(), mechs: new Map(), weapons: new Map(), backpacks: new Map(), forms: [],
-  components: new Map(),
+  components: new Map(), modules: new Map(),
 }
 
 export function buildWorld(data: {
@@ -195,6 +231,7 @@ export function buildWorld(data: {
   backpacks: readonly Backpack[]
   forms: readonly MechForm[]
   components?: readonly Component[]
+  modules?: readonly Module[]
 }): LoadoutWorld {
   const index = <T extends { id: string }>(xs: readonly T[]): Map<string, T> =>
     new Map(xs.map((x) => [x.id, x]))
@@ -206,6 +243,7 @@ export function buildWorld(data: {
     forms: data.forms,
     // 選填：`equip` 之前的階段根本沒有這個欄位，而那時它應該是空的（＝尚未載入）
     components: index(data.components ?? []),
+    modules: index(data.modules ?? []),
   }
 }
 
@@ -230,6 +268,14 @@ export interface LoadoutContext {
   capacity: SlotCapacity
   /** 機甲部件焊死的固定武裝佔住的格 */
   occupied: ReadonlyMap<SlotKey, OccupiedSlot>
+  /**
+   * 四個模組接口上各裝了什麼：**部位 → 模組 doc id**（PLAN-052-G A-4）。
+   *
+   * ⚠ 取自 `draft.modules` 而**不是** `set`：模組掛在機甲上、不隨形態分頁變動
+   *   （與 `ndLevels` 同理，見 `LoadoutDraft.modules`）。放進 `EquipSet` 會讓
+   *   海莉絲的四個分頁各存一份模組，而那是同一台機甲的同四個接口。
+   */
+  modules: Readonly<Partial<Record<MechPartPosition, string>>>
   world: LoadoutWorld
 }
 
@@ -240,7 +286,12 @@ export interface LoadoutContext {
  *   那是正確的：那一套 100% 由 `form.restrict.mounts` derive，見 `lockedMounts()`。
  */
 export function buildContext(
-  draft: { pilotId?: string; mechId?: string; sets: Record<string, EquipSet> },
+  draft: {
+    pilotId?: string
+    mechId?: string
+    sets: Record<string, EquipSet>
+    modules?: Partial<Record<MechPartPosition, string>>
+  },
   setKey: string,
   world: LoadoutWorld,
 ): LoadoutContext {
@@ -254,13 +305,16 @@ export function buildContext(
   return {
     pilot,
     mech,
-    chassis: resolveChassis(mech),
+    // ⚠ `moduleMap` 一定要傳：少了它 `moduleLevelOf()` 恆回 0，而 0 的語意是「查無此模組」。
+    //   模組等級一律由這裡 derive、**不存進草稿**（總綱決策六：存下來就是第二真相源）。
+    chassis: resolveChassis(mech, { moduleMap: world.modules }),
     form,
     lock: lockedSlots(form),
     set,
     backpack,
     capacity: loadoutSlotCapacity(mech, backpack),
     occupied: occupiedSlots(mech?.parts),
+    modules: draft.modules ?? {},
     world,
   }
 }
@@ -273,7 +327,7 @@ export type SlotOccupant =
   | { kind: 'weapon'; mount: LoadoutMount; weapon: Weapon | null }
   | { kind: 'backpack'; backpack: Backpack }
   | { kind: 'fixed'; occupied: OccupiedSlot; weapon: Weapon | null }
-  | { kind: 'formLocked'; weaponId: string; ref: SlotRef; weapon: Weapon | null }
+  | { kind: 'formLocked'; weaponId: string; ref: WeaponSlotRef; weapon: Weapon | null }
 
 /**
  * 一筆 mount 實際佔住哪幾格。
@@ -281,7 +335,7 @@ export type SlotOccupant =
  * ⚠ `dualHand` 佔的是**兩格 singleHand**，不是第三格手部（`enumerateSlots()` 刻意不列它）。
  *   少了這條，畫面會同時渲染出「一把雙手武器」與「兩個空著的手格」。
  */
-export function mountCoverage(mount: Pick<SlotRef, 'bank' | 'slot' | 'side'>): SlotKey[] {
+export function mountCoverage(mount: Pick<WeaponSlotRef, 'bank' | 'slot' | 'side'>): SlotKey[] {
   if (mount.slot === WeaponEquipSlot.DUAL_HAND) {
     return [
       slotKey({ bank: mount.bank, slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }),
@@ -308,7 +362,7 @@ export function mountCoverage(mount: Pick<SlotRef, 'bank' | 'slot' | 'side'>): S
  *   而 `mountCoverage()` 產的是不帶 side 的鍵 —— 兩者永遠對不上，
  *   症狀是「裝上去了，但那一格顯示還是空的」。
  */
-export function mountRefFor(weapon: Pick<Weapon, 'equipSlot'>, ref: SlotRef): SlotRef {
+export function mountRefFor(weapon: Pick<Weapon, 'equipSlot'>, ref: WeaponSlotRef): WeaponSlotRef {
   return weapon.equipSlot === WeaponEquipSlot.DUAL_HAND && ref.slot === WeaponEquipSlot.SINGLE_HAND
     ? { bank: ref.bank, slot: WeaponEquipSlot.DUAL_HAND }
     : ref
@@ -330,13 +384,13 @@ const SHIELD_KINDS: readonly string[] = [WeaponKind.Shield, WeaponKind.Buckler]
 export const isShield = (weapon: Pick<Weapon, 'kind'>): boolean => SHIELD_KINDS.includes(weapon.kind)
 
 /** 兩個座標是否碰到同一格。 */
-export function slotsOverlap(a: Pick<SlotRef, 'bank' | 'slot' | 'side'>, b: Pick<SlotRef, 'bank' | 'slot' | 'side'>): boolean {
+export function slotsOverlap(a: Pick<WeaponSlotRef, 'bank' | 'slot' | 'side'>, b: Pick<WeaponSlotRef, 'bank' | 'slot' | 'side'>): boolean {
   const bs = mountCoverage(b)
   return mountCoverage(a).some((k) => bs.includes(k))
 }
 
 /** 全鎖形態焊死的武裝（含槽位）。沒鎖、或 mounts 尚未落盤時回空陣列。 */
-export function lockedMounts(ctx: LoadoutContext): { weaponId: string; ref: SlotRef }[] {
+export function lockedMounts(ctx: LoadoutContext): { weaponId: string; ref: WeaponSlotRef }[] {
   return (ctx.lock?.mounts ?? []).map((m) => ({
     weaponId: m.weaponId,
     ref: { bank: 'main' as const, slot: m.slot, side: slotAcceptsSide(m.slot) ? m.side : undefined },
@@ -344,7 +398,7 @@ export function lockedMounts(ctx: LoadoutContext): { weaponId: string; ref: Slot
 }
 
 /** 這一格現在是誰。查詢順序 ＝ 不可更換者優先，玩家配的最後。 */
-export function slotOccupant(ctx: LoadoutContext, ref: SlotRef): SlotOccupant {
+export function slotOccupant(ctx: LoadoutContext, ref: WeaponSlotRef): SlotOccupant {
   const key = slotKey(ref)
   const lookup = (id: string) => ctx.world.weapons.get(id) ?? null
 
@@ -365,7 +419,7 @@ export function slotOccupant(ctx: LoadoutContext, ref: SlotRef): SlotOccupant {
 }
 
 /** 這一格存不存在（容量問題，與裝不裝得上無關）。 */
-export function slotExists(capacity: SlotCapacity, ref: Pick<SlotRef, 'bank' | 'slot' | 'side'>): boolean {
+export function slotExists(capacity: SlotCapacity, ref: Pick<WeaponSlotRef, 'bank' | 'slot' | 'side'>): boolean {
   const sideIndex = ref.side === 'right' ? 2 : 1
   switch (ref.slot) {
     case WeaponEquipSlot.SINGLE_HAND:
@@ -390,9 +444,9 @@ export function slotExists(capacity: SlotCapacity, ref: Pick<SlotRef, 'bank' | '
  */
 export interface BudgetHypothesis {
   /** 假想裝上：`weight` 是它的重量；`backpackId` 有值代表這是背包（會取代背槽武器） */
-  add?: { ref: SlotRef; weight: number; backpackId?: string }
+  add?: { ref: WeaponSlotRef; weight: number; backpackId?: string }
   /** 假想卸下這幾格（背槽的 ref 同時卸掉背包） */
-  remove?: readonly Pick<SlotRef, 'bank' | 'slot' | 'side'>[]
+  remove?: readonly Pick<WeaponSlotRef, 'bank' | 'slot' | 'side'>[]
 }
 
 const w0 = (x: { weight?: number } | null | undefined) => ({ weight: x?.weight ?? 0 })
@@ -528,7 +582,7 @@ const OWN_SLOT_LABEL: Record<string, string> = {
  * ⚠ 判斷順序刻意由「這格根本不該列它」→「這把裝不上」→「現在裝不下」：
  *   負重放最後，因為前面任何一條成立時，重量根本不該被拿來當理由。
  */
-export function canEquipWeapon(ctx: LoadoutContext, weapon: Weapon, ref: SlotRef): Rejection | null {
+export function canEquipWeapon(ctx: LoadoutContext, weapon: Weapon, ref: WeaponSlotRef): Rejection | null {
   if (!ctx.pilot) return reject('NO_PILOT', '請先選擇機師')
   if (!ctx.mech || !ctx.chassis) return reject('NO_MECH', '請先選擇機甲')
   if (ctx.lock) return reject('FORM_LOCKED', `${ctx.lock.formName}的武裝已鎖死，無法調整任何裝備`)
@@ -575,7 +629,7 @@ export function canEquipWeapon(ctx: LoadoutContext, weapon: Weapon, ref: SlotRef
     })
     if (other) {
       const w = ctx.world.weapons.get(other.weaponId)
-      const otherRef: SlotRef = { bank: other.bank, slot: other.slot, side: other.side }
+      const otherRef: WeaponSlotRef = { bank: other.bank, slot: other.slot, side: other.side }
       return rejectSituational('SHIELD_LIMIT', `${slotLabel(otherRef)}已裝${w?.name ?? '盾'}，盾一次只能裝一面`, {
         label: `卸下${w?.name ?? '盾'}並裝上`,
         action: { type: 'unequip', ref: otherRef },
@@ -612,7 +666,7 @@ export interface WeaponSite {
   locked: 'fixed' | 'form' | null
 }
 
-export function weaponSiteAt(ctx: LoadoutContext, ref: SlotRef): WeaponSite {
+export function weaponSiteAt(ctx: LoadoutContext, ref: WeaponSlotRef): WeaponSite {
   const lookup = (id: string) => ctx.world.weapons.get(id) ?? null
 
   const locked = lockedMounts(ctx).find((m) => slotsOverlap(m.ref, ref))
@@ -679,7 +733,7 @@ const KIND_LABEL: Record<string, string> = { Condition: '觸元件', Function: '
  *   真正需要**載入 gate** 的是 `reconcile()`：那裡是拿 id 反查、查不到就移除，
  *   照著武器那套做會在分享碼比集合早到時把元件靜默清空（見 `LoadoutWorld.components`）。
  */
-export function canEquipComponent(ctx: LoadoutContext, comp: Component, ref: SlotRef): Rejection | null {
+export function canEquipComponent(ctx: LoadoutContext, comp: Component, ref: WeaponSlotRef): Rejection | null {
   if (!ctx.pilot) return reject('NO_PILOT', '請先選擇機師')
   if (!ctx.mech || !ctx.chassis) return reject('NO_MECH', '請先選擇機甲')
 
@@ -751,7 +805,7 @@ export function canEquipComponent(ctx: LoadoutContext, comp: Component, ref: Slo
  *   `resolve` 只會送出 unequip，接著裝上那一步從來沒有實作過（052-J 收尾記下的懸案）。
  *   承諾一個不會發生的第二步，是玩家會來問客服的那一種落差。
  */
-function unloadFirst(ctx: LoadoutContext, ref: SlotRef, ids: readonly string[]): Resolution {
+function unloadFirst(ctx: LoadoutContext, ref: WeaponSlotRef, ids: readonly string[]): Resolution {
   const first = ids[0]
   const comp = first ? ctx.world.components.get(first) : undefined
   return {
@@ -760,13 +814,89 @@ function unloadFirst(ctx: LoadoutContext, ref: SlotRef, ids: readonly string[]):
   }
 }
 
+// ─── 模組（PLAN-052-G A-3）──────────────────────────────────────────────────
+
+/**
+ * 這顆模組能不能裝進這個接口。合法回 `null`。
+ *
+ * ── 五條規則與它們的順序 ────────────────────────────────────────────────────
+ *   ① 這一格有沒有接口（空字串 ＝ 沒有）        → blocked，整個面板降級
+ *   ② 接口型別認不認得                          → blocked，整個面板降級
+ *   ③ 這顆玩家拿不拿得到（候選池）              → structural，摺疊
+ *   ④ 這顆有沒有各階數值（`levels[]`）          → structural，摺疊
+ *   ⑤ Ⅰ型接口只收 A 級                          → structural，摺疊
+ *   ⑥ 這一格已經裝了別顆                        → situational，附解法
+ *
+ * 順序與 `canEquipWeapon()` / `canEquipComponent()` 同一條原則：
+ * 「這格根本不該列它」→「這顆裝不上」→「現在裝不下」。已裝放最後，
+ * 因為前面任一條成立時，這格空不空根本不是理由。
+ *
+ * ⚠ **①②③ 三種不可裝的狀態不可共用一句話**（C-2 會逐字用到這裡的 reason）：
+ *   「這台沒有模組接口」（B 品質）／「接口型別不明」（資料異常）／「僅可裝 A 級模組」
+ *   是三件不同的事，含糊或留白會被讀成一個我們並不知道的否定陳述。
+ *
+ * ⚠ **載入未完成時本支只會漏擋、不會誤擋**，與 `canEquipComponent()` 同一個安全方向：
+ *   呼叫端手上已經有一顆 `Module` 物件（清單來自 `world.modules`），走到這裡時集合必然已載入。
+ *   真正需要**載入 gate** 的是 `reconcile()` —— 那裡是拿 id 反查、查不到就移除，
+ *   照著武器那套做會在分享碼比集合早到時把四顆模組靜默清空（見 `LoadoutWorld.modules`）。
+ */
+export function canEquipModule(ctx: LoadoutContext, mod: Module, ref: ModuleSlotRef): Rejection | null {
+  if (!ctx.pilot) return reject('NO_PILOT', '請先選擇機師')
+  if (!ctx.mech || !ctx.chassis) return reject('NO_MECH', '請先選擇機甲')
+
+  const iface = interfaceState(ctx.chassis.moduleSlots[ref.position]?.iface)
+
+  // ── ① 這台機甲沒有模組接口（B 品質 10 台 40 格，官方基礎階與滿階皆空）──
+  if (iface === 'none') return reject('MOD_NO_INTERFACE', `${ctx.mech.name}沒有模組接口`)
+
+  // ── ② 認不得的接口型別 ──
+  //    今天走不到（全庫 360 格零例外，由 mechInterface.test.ts 守著），留著是因為
+  //    官方新增型別時，「不知道」必須降級說明，而不是被當成「沒有接口」。
+  if (iface === 'unknown') return reject('MOD_IFACE_UNKNOWN', `${partLabel(ref.position)}的接口型別無法辨識`)
+
+  // ── ③ 玩家拿不到的模組 ──
+  //    挑選器本來就只列 `moduleCandidates()`，這條擋的是**外來草稿**：
+  //    分享碼／舊存檔可能帶著一顆綁在別台機甲上的專屬模組。
+  if (!isModuleCandidate(mod)) {
+    const why = mod.boundMechId != null
+      ? `${ctx.world.mechs.get(mod.boundMechId)?.name ?? '另一台機甲'}的專屬模組`
+      : '機甲自帶的副模組'
+    return reject('MOD_NOT_CANDIDATE', `${mod.name}是${why}，不可自由裝配`)
+  }
+
+  // ── ④ 沒有各階數值 ──
+  //    ⚠ 判準是 `levels[]` 而**不是**頂層那排平坦欄位：候選池 186 筆全有 levels，
+  //      而頂層全 0 者有 163 筆（計畫書決策四）。看頂層的症狀是「裝上去沒有任何效果」。
+  if (!mod.levels?.length) return reject('MOD_DATA_INCOMPLETE', `${mod.name}的各階數值未建檔`)
+
+  // ── ⑤ Ⅰ型接口只收 A 級 ──
+  if (!interfaceAcceptsRarity(iface, mod.rarity)) {
+    return reject('MOD_IFACE_RARITY', `${iface}只能裝 A 級模組，${mod.name}是 ${mod.rarity} 級`)
+  }
+
+  // ── ⑥ 這一格已經裝了別顆 ──
+  //    裝著的就是這一顆 ⇒ 不是拒絕而是「已裝上」，呼叫端自己畫該狀態（同元件那條）。
+  const occupantId = ctx.modules[ref.position]
+  if (occupantId && occupantId !== mod.id) {
+    const occupant = ctx.world.modules.get(occupantId)
+    return rejectSituational('MOD_SLOT_TAKEN', `${partLabel(ref.position)}已裝${occupant?.name ?? '一顆模組'}`, {
+      // ⚠ 文案照實寫「卸下 X」，**不寫「卸下 X 並裝上」**：`resolve` 只送 unequip，
+      //   接著裝上那一步從來沒有實作過（見 `unloadFirst()` 的同一條註解）。
+      label: `卸下${occupant?.name ?? '這顆模組'}`,
+      action: { type: 'unequipModule', ref },
+    })
+  }
+
+  return null
+}
+
 /** 這個背包能不能裝。合法回 `null`。 */
 export function canEquipBackpack(ctx: LoadoutContext, backpack: Backpack): Rejection | null {
   if (!ctx.pilot) return reject('NO_PILOT', '請先選擇機師')
   if (!ctx.mech || !ctx.chassis) return reject('NO_MECH', '請先選擇機甲')
   if (ctx.lock) return reject('FORM_LOCKED', `${ctx.lock.formName}無法攜帶背包`)
 
-  const backRef: SlotRef = { bank: 'main', slot: WeaponEquipSlot.BACK }
+  const backRef: WeaponSlotRef = { bank: 'main', slot: WeaponEquipSlot.BACK }
   const occ = ctx.occupied.get(slotKey(backRef))
   if (occ) {
     const src = ctx.world.weapons.get(occ.mount.weaponId)
@@ -826,7 +956,7 @@ function overweightRejection(
   })
 }
 
-interface Relief { ref: SlotRef; name: string; action: ResolutionAction }
+interface Relief { ref: WeaponSlotRef; name: string; action: ResolutionAction }
 
 /**
  * 找出「卸掉它就裝得下」的一件已裝備物。
@@ -837,18 +967,18 @@ interface Relief { ref: SlotRef; name: string; action: ResolutionAction }
  */
 function bestRelief(ctx: LoadoutContext, add: NonNullable<BudgetHypothesis['add']>, need: number): Relief | null {
   const cands: { saved: number; relief: Relief }[] = []
-  const savedBy = (remove: Pick<SlotRef, 'bank' | 'slot' | 'side'>) =>
+  const savedBy = (remove: Pick<WeaponSlotRef, 'bank' | 'slot' | 'side'>) =>
     loadoutBudget(ctx, { add }).weight.total - loadoutBudget(ctx, { add, remove: [remove] }).weight.total
 
   for (const m of ctx.set.mounts) {
     if (slotsOverlap(m, add.ref)) continue          // 本來就會被取代的不算解法
     const w = ctx.world.weapons.get(m.weaponId)
     if (!w) continue
-    const ref: SlotRef = { bank: m.bank, slot: m.slot, side: m.side }
+    const ref: WeaponSlotRef = { bank: m.bank, slot: m.slot, side: m.side }
     cands.push({ saved: savedBy(ref), relief: { ref, name: w.name, action: { type: 'unequip', ref } } })
   }
   if (ctx.backpack && add.ref.slot !== WeaponEquipSlot.BACK) {
-    const ref: SlotRef = { bank: 'main', slot: WeaponEquipSlot.BACK }
+    const ref: WeaponSlotRef = { bank: 'main', slot: WeaponEquipSlot.BACK }
     cands.push({
       saved: savedBy(ref),
       relief: { ref, name: ctx.backpack.name, action: { type: 'unequipBackpack' } },
@@ -865,7 +995,7 @@ export interface LoadoutProblem {
   code: RejectionCode
   reason: string
   /** 有槽位的問題才有，UI 用來閃該格 */
-  ref?: SlotRef
+  ref?: WeaponSlotRef
 }
 
 /**
@@ -887,7 +1017,7 @@ export function validateLoadout(ctx: LoadoutContext): LoadoutProblem[] {
   if (ctx.lock) return problems     // 全鎖形態：整套由資料 derive，玩家沒有可犯的錯
 
   for (const m of ctx.set.mounts) {
-    const ref: SlotRef = { bank: m.bank, slot: m.slot, side: m.side }
+    const ref: WeaponSlotRef = { bank: m.bank, slot: m.slot, side: m.side }
     const w = ctx.world.weapons.get(m.weaponId)
     if (!w) { problems.push({ code: 'SLOT_MISMATCH', reason: `${slotLabel(ref)}的武器資料已不存在`, ref }); continue }
     const r = canEquipWeapon(withoutSlot(ctx, ref), w, ref)
@@ -911,7 +1041,7 @@ export function validateLoadout(ctx: LoadoutContext): LoadoutProblem[] {
 }
 
 /** 檢查「已經裝著的東西」時，要先把它自己拿掉再問，否則它會與自己衝突。 */
-function withoutSlot(ctx: LoadoutContext, ref: SlotRef): LoadoutContext {
+function withoutSlot(ctx: LoadoutContext, ref: WeaponSlotRef): LoadoutContext {
   return { ...ctx, set: { ...ctx.set, mounts: ctx.set.mounts.filter((m) => !slotsOverlap(m, ref)) } }
 }
 
@@ -961,7 +1091,7 @@ function pickerOrder<T extends { weight: number; rarity?: string }>(
  * 回傳空陣列代表**這一格結構上沒有東西可裝**（例：戰術形態的手部 —— 戰術類武器
  * 全庫只有肩 22 與背 22，手部一把都沒有）。呼叫端該整格說明原因，不是給一個空清單。
  */
-export function weaponChoices(ctx: LoadoutContext, ref: SlotRef): PickerEntry<Weapon>[] {
+export function weaponChoices(ctx: LoadoutContext, ref: WeaponSlotRef): PickerEntry<Weapon>[] {
   const out: PickerEntry<Weapon>[] = []
   // 掃描時把「這一格現在裝的那件」先拿掉，否則它會與自己衝突（顯示成背槽已佔用）
   const bare = withoutSlot(ctx, ref)
@@ -998,7 +1128,7 @@ export function backpackChoices(ctx: LoadoutContext): PickerEntry<Backpack>[] {
  *   改成「可裝的在前 → 觸發機率等級高的在前 → 品質高的在前 → 名稱」——
  *   Lv 是玩家挑元件時唯一看得到的強弱訊號（機率表待建檔，見計畫書不在範圍內）。
  */
-export function componentChoices(ctx: LoadoutContext, ref: SlotRef): PickerEntry<Component>[] {
+export function componentChoices(ctx: LoadoutContext, ref: WeaponSlotRef): PickerEntry<Component>[] {
   const out: PickerEntry<Component>[] = []
   for (const c of ctx.world.components.values()) {
     const r = canEquipComponent(ctx, c, ref)
@@ -1016,6 +1146,37 @@ export function componentChoices(ctx: LoadoutContext, ref: SlotRef): PickerEntry
 }
 
 /**
+ * 某個模組接口的候選清單（PLAN-052-G C-3）。
+ *
+ * ⚠ **來源是 `moduleCandidates()` 而不是整個 `world.modules`**：241 筆裡有 55 筆
+ *   玩家根本拿不到（專屬 24 ／ 副模組 11 ／ 廢案 1 ／ 綁機甲的特性模組），
+ *   把它們列進來再標「不可自由裝配」，等於在 186 筆的清單裡摻進三成永遠選不了的雜訊。
+ *   這與元件那邊「裝不上的留在清單裡」不同調 —— 那裡的拒絕是**這把武器**的限制
+ *   （換一把就能裝，所以要看得見）；這裡的是**這顆模組根本不存在於玩家的倉庫**。
+ *
+ * `blocked` 一律回空陣列：整個面板該降級說明（B 品質沒有接口），不是給一個空清單。
+ *
+ * 排序：可裝的在前 → 槽位（特性／8級／通用）→ 品質高到低 → 名稱。
+ * 槽位當主鍵是因為面板的分類晶片就是照它分的，兩者一致才不會「按鈕排一種、結果排另一種」。
+ */
+export function moduleChoices(ctx: LoadoutContext, ref: ModuleSlotRef): PickerEntry<Module>[] {
+  const out: PickerEntry<Module>[] = []
+  for (const m of moduleCandidates(ctx.world.modules.values())) {
+    const r = canEquipModule(ctx, m, ref)
+    if (r && r.tier === 'omitted') continue
+    if (r && r.tier === 'blocked') return []
+    out.push({ item: m, rejection: r })
+  }
+  const rank = (e: PickerEntry<Module>) =>
+    e.rejection === null ? 0 : e.rejection.tier === 'situational' ? 1 : 2
+  return out.sort((a, b) =>
+    rank(a) - rank(b)
+    || compareModuleBySlot(a.item.slot, b.item.slot)
+    || rarityRank(a.item.rarity) - rarityRank(b.item.rarity)
+    || a.item.name.localeCompare(b.item.name, 'zh-Hant'))
+}
+
+/**
  * 這一格在**結構上**有沒有東西可裝（不看重量、不看誰佔著）。
  *
  * 專供槽位圖判斷「要不要整格說明原因」用，所以刻意寫成一次早退的掃描而不是走 `weaponChoices()`——
@@ -1024,7 +1185,7 @@ export function componentChoices(ctx: LoadoutContext, ref: SlotRef): PickerEntry
  * 回 false 的實例：戰術形態的手部 —— 戰術類武器全庫只有肩 22 與背 22，手部一把都沒有。
  * 那一格會顯示「戰術形態沒有可裝在手部的武器」，而不是一個點不下去的空 `[+]`。
  */
-export function slotHasCandidates(ctx: LoadoutContext, ref: SlotRef): boolean {
+export function slotHasCandidates(ctx: LoadoutContext, ref: WeaponSlotRef): boolean {
   if (!slotExists(ctx.capacity, ref)) return false
   const allow = ctx.form?.restrict.kind === 'weaponType' ? (ctx.form.restrict.allow as readonly string[]) : null
   const armor = toArmorType(ctx.chassis?.armorType)

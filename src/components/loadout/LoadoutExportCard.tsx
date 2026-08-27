@@ -7,6 +7,13 @@ import { loadoutSheetRows, type SheetRow } from '../../utils/loadoutRows'
 import { ND_RULES, isGammaZone, zonePower } from '../../utils/ndOverrides'
 import { resolveNeuralDriveLevel } from '../../utils/neuralDriveAbilities'
 import type { LoadoutBudget, LoadoutContext } from '../../utils/loadoutRules'
+import { MECH_PART_ORDER } from '../../utils/chassisStats'
+import { partLabel } from '../../utils/moduleSlots'
+import {
+  interfaceState, moduleStatsAt, sumModuleStats, moduleStacks, moduleFamilyKey,
+  type ModuleStats,
+} from '../../utils/moduleRules'
+import { STAT_LABELS } from '../../utils/moduleStats'
 import { SEG_LABEL, type SegKey } from './loadoutTheme'
 import { usePatchVersions } from '../../hooks/usePatchVersions'
 import { SITE_DOMAIN, SITE_NAME, SITE_TITLE } from '../../lib/siteMeta'
@@ -305,6 +312,17 @@ export function LoadoutExportCard({
         </div>
       </div>
 
+      {/* ── 模組接口（PLAN-052-G C-5）──
+          四部位各一行：部位／接口型別／模組名／效果。
+
+          ⚠ **整寬一條插在中段，不動 footer**（進度表 C-5）：卡片寬 1000px 是硬限制，
+            而底部已經有分享碼整寬一條（052-C E-1）。塞進上面那個兩欄網格會把槽位表
+            擠窄，而那張表才是這張圖的主角。
+
+          ⚠ 這台機甲**沒有接口**（B 品質）時整段不印：印四行「無模組接口」是四行雜訊，
+            而它並不回答任何人的問題。 */}
+      <ModuleBand ctx={ctx} />
+
       {/* ── 浮水印 footer ── */}
       <div style={{
         position: 'relative', flexShrink: 0,
@@ -355,6 +373,112 @@ export function LoadoutExportCard({
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ─── 模組帶（PLAN-052-G C-5）────────────────────────────────────────────────
+
+/**
+ * 數值欄位攤成「命中+15%」這種字串，依 `STAT_LABELS` 的鍵序。
+ *
+ * ⚠ 只借 label／suffix／prefix，**不借 color** —— 那是 Tailwind 類別，
+ *   而這張圖的顏色一律寫死十六進位（見檔頭）。
+ */
+function statText(stats: ModuleStats): string {
+  return STAT_LABELS
+    .filter(({ key }) => (stats[key] ?? 0) !== 0)
+    .map(({ key, label, suffix, prefix }) => `${label}${prefix ?? '+'}${stats[key]}${suffix}`)
+    .join('　')   // 全形空格：欄位之間留白，但不換行
+}
+
+function ModuleBand({ ctx }: { ctx: LoadoutContext }) {
+  const { mech, chassis } = ctx
+  if (!mech || !chassis) return null
+
+  // ⚠ **同族只算一次**（PLAN-052-G C-7）：同一顆模組裝兩格是升它的等級、不是兩份效果。
+  //   逐格加總會讓四顆刀劍模組Ⅱ 在圖上印出四倍加成 —— 而圖是印刷品，
+  //   看的人沒辦法點開來對帳，錯在圖上比錯在畫面上更難收回。
+  const stacks = moduleStacks(ctx.modules, (id) => ctx.world.modules.get(id))
+  const seen = new Set<string>()
+
+  const lines = MECH_PART_ORDER.map((pos) => {
+    const id = ctx.modules[pos]
+    const mod = id ? ctx.world.modules.get(id) ?? null : null
+    const iface = interfaceState(chassis.moduleSlots[pos].iface)
+    const stack = mod ? stacks.get(moduleFamilyKey(mod)) ?? null : null
+    const key = mod ? moduleFamilyKey(mod) : ''
+    const primary = !!mod && !seen.has(key)
+    if (mod) seen.add(key)
+    return {
+      pos,
+      iface: iface === 'none' ? '無接口' : iface === 'unknown' ? '型別不明' : iface,
+      usable: iface !== 'none' && iface !== 'unknown',
+      name: mod?.name ?? (id ?? null),
+      stack,
+      // 第二格起只標「同族」，不重印一次數值
+      stats: mod && primary && stack ? moduleStatsAt(stack.mod, stack.level) : {},
+      dup: !!mod && !primary,
+    }
+  })
+
+  // 這台沒有任何接口 ⇒ 整段不印（B 品質 10 台）
+  if (!lines.some((l) => l.usable)) return null
+
+  const equipped = lines.filter((l) => l.name).length
+  const total = sumModuleStats([...stacks.values()].map((st) => moduleStatsAt(st.mod, st.level)))
+  const totalText = statText(total)
+  const wasted = [...stacks.values()].filter((st) => st.overflow > 0)
+
+  return (
+    <div style={{ borderTop: `1px solid ${C.line}`, background: C.bg }}>
+      <SectionHead title="模組接口" note={`${equipped} / ${lines.length} 已裝`} tone={C.green} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: C.line }}>
+        {lines.map((l) => (
+          <div key={l.pos} style={{
+            display: 'flex', alignItems: 'baseline', gap: 10,
+            padding: '9px 16px', background: C.bg, minWidth: 0,
+          }}>
+            <span style={{ fontSize: 12, color: C.sub, width: 34, flexShrink: 0 }}>{partLabel(l.pos)}</span>
+            <span style={{
+              fontFamily: MONO, fontSize: 10, color: C.dim, width: 58, flexShrink: 0, whiteSpace: 'nowrap',
+            }}>{l.iface}</span>
+            <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+              <span style={{ fontSize: 13, color: l.name ? C.text : C.dim }}>
+                {l.name ?? (l.usable ? '未裝' : '—')}
+                {l.stack && (
+                  <span style={{
+                    fontFamily: MONO, fontSize: 10,
+                    color: l.stack.overflow > 0 ? C.yellow : C.dim,
+                  }}> Lv{l.stack.level} / {l.stack.cap}</span>
+                )}
+              </span>
+              {l.dup ? (
+                <span style={{ fontSize: 11, color: C.dim }}>同族疊加，效果不重複計算</span>
+              ) : l.name && statText(l.stats) ? (
+                <span style={{ fontSize: 11, color: C.sub }}>{statText(l.stats)}</span>
+              ) : null}
+            </span>
+          </div>
+        ))}
+      </div>
+      {(totalText || wasted.length > 0) && (
+        <div style={{
+          padding: '9px 16px', borderTop: `1px solid ${C.line}`,
+          background: 'rgba(18,21,28,0.5)', fontSize: 12, color: C.sub, lineHeight: 1.7,
+        }}>
+          {totalText && (
+            <div><span style={{ color: C.dim, marginRight: 10 }}>四格合計</span>{totalText}</div>
+          )}
+          {/* 超限提醒也要印在圖上：看圖的人同樣會照著配 */}
+          {wasted.map((st) => (
+            <div key={moduleFamilyKey(st.mod)} style={{ color: C.yellow, fontSize: 11 }}>
+              ⚠ {st.mod.name} 裝了 {st.positions.length} 顆、合計 {st.sum} 級，
+              但上限 {st.cap} 級 —— 超出的 {st.overflow} 級不生效
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

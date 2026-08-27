@@ -287,11 +287,16 @@ export type LoadoutStage = 'pilot' | 'mech' | 'equip'
  *   才有武器 —— 元件掛在武器上，沒有武器的階段一筆都用不到。
  *   ⚠ 少了它的症狀**不是報錯而是靜默跳過驗證**（見 `canEquipComponent` 的載入 gate），
  *   於是玩家會裝得上五顆元件；漏掉這一行不會有任何紅字。
+ *
+ * ⚠ `modules`（241 筆）自 `equip` 階段起載入（PLAN-052-G A-1）：四個模組接口掛在機甲上，
+ *   選完機甲之前一筆都用不到。它同時是**分享碼的第六個索引**的資料來源 ——
+ *   加集合與接索引是兩件事，兩件都做完才算數（見 `LoadoutPage` 的 `shareIndexes`）。
+ *   052-D 的 A-3 只做了前半、後半漏了三個 Phase，元件因此被靜默濾出分享碼。
  */
 const LOADOUT_STAGE_KEYS: Record<LoadoutStage, CollectionKey[]> = {
   pilot: ['pilots', 'forms'],
   mech:  ['pilots', 'forms', 'mechs', 'neuralDriveAbilities'],
-  equip: ['pilots', 'forms', 'mechs', 'weapons', 'backpacks', 'neuralDriveAbilities', 'components'],
+  equip: ['pilots', 'forms', 'mechs', 'weapons', 'backpacks', 'neuralDriveAbilities', 'components', 'modules'],
 }
 
 export interface LoadoutGameData {
@@ -302,6 +307,7 @@ export interface LoadoutGameData {
   backpacks: Backpack[]
   neuralDriveAbilities: NeuralDriveAbility[]
   components: Component[]
+  modules: Module[]
 }
 
 /**
@@ -310,7 +316,7 @@ export interface LoadoutGameData {
  * 對「階段會變」的本例則會靜默不載入第二階段）。
  */
 export function useLoadoutGameData(stage: LoadoutStage): HookResult<LoadoutGameData> {
-  const { pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities, components, loadedKeys, errorMap, ensureLoaded, reloadTick } = useGameData()
+  const { pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities, components, modules, loadedKeys, errorMap, ensureLoaded, reloadTick } = useGameData()
   const keys = LOADOUT_STAGE_KEYS[stage]
 
   useEffect(() => { void ensureLoaded(LOADOUT_STAGE_KEYS[stage]) }, [ensureLoaded, reloadTick, stage])
@@ -319,8 +325,8 @@ export function useLoadoutGameData(stage: LoadoutStage): HookResult<LoadoutGameD
   const error = keys.map((k) => errorMap[k]).find(Boolean) ?? null
 
   const data = useMemo<LoadoutGameData>(
-    () => ({ pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities, components }),
-    [pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities, components],
+    () => ({ pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities, components, modules }),
+    [pilots, forms, mechs, weapons, backpacks, neuralDriveAbilities, components, modules],
   )
   return { data, loading, error }
 }

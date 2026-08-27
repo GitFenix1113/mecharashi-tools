@@ -2,15 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import type { Backpack, Mech, Pilot, UserBuild, Weapon } from '../../types'
 import type { LoadoutDraft } from '../../types/loadout'
-import type { SlotKey, SlotRef } from '../../types/slots'
+import type { ModuleSlotRef, SlotKey, WeaponSlotRef } from '../../types/slots'
 import { slotKey } from '../../types/slots'
 import { WeaponEquipSlot, WeaponType } from '../../types/enums'
+import type { MechPartPosition } from '../../types/enums'
 import { useLoadoutGameData, type LoadoutStage } from '../../hooks/useFirestore'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useLayoutBreakpoint } from '../../hooks/useLayoutBreakpoint'
 import { equipSetKeys, equipSetLabel, hasIndependentLoadouts, DEFAULT_EQUIP_SET_KEY } from '../../utils/forms'
 import { slotLabel } from '../../utils/mechSlots'
-// ⏸ 部件混搭未開放前，四部位表暫時下架（見下方 JSX 內註解）
+// ⏸ 部件混搭未開放前，四部位表暫時下架（見下方 JSX 內註解）。模組槽已於 052-G Phase C 開放
 // import { MechPartsTable } from '../../components/mechs/MechSlotPanel'
 import { PilotIcon } from '../../components/icons/PilotIcon'
 import { LoadoutRig } from '../../components/loadout/LoadoutRig'
@@ -24,6 +25,8 @@ import { PilotIdentityCard } from '../../components/loadout/PilotIdentityCard'
 import { WeaponComponentList } from '../../components/loadout/WeaponComponentList'
 import { weaponRows } from '../../utils/loadoutRows'
 import { ComponentPanel } from '../../components/loadout/ComponentPanel'
+import { ModulePanel } from '../../components/loadout/ModulePanel'
+import { EquippedEffects } from '../../components/loadout/EquippedEffects'
 import { LoadoutExportRunner } from '../../components/loadout/LoadoutExportCard'
 import { sanitizeLoadoutName, LOADOUT_NAME_MAX } from '../../utils/loadoutName'
 import { NdPowerBar } from '../../components/common/NdPowerBar'
@@ -93,7 +96,7 @@ function writeDraftCache(draft: LoadoutDraft) {
  */
 function legacyBuildToDraft(build: UserBuild, weapons: ReadonlyMap<string, Weapon>): LoadoutDraft {
   const w = build.weaponId ? weapons.get(build.weaponId) : undefined
-  const slot = (w?.equipSlot ?? WeaponEquipSlot.SINGLE_HAND) as SlotRef['slot']
+  const slot = (w?.equipSlot ?? WeaponEquipSlot.SINGLE_HAND) as WeaponSlotRef['slot']
   return {
     pilotId: build.pilotId || undefined,
     mechId: build.mechId || undefined,
@@ -134,7 +137,7 @@ function decodeShared(code: string, indexes: ShareIndexes): { draft?: LoadoutDra
 type ActivePicker =
   | { kind: 'pilot' }
   | { kind: 'mech' }
-  | { kind: 'weapon'; ref: SlotRef }
+  | { kind: 'weapon'; ref: WeaponSlotRef }
   | { kind: 'backpack' }
   | null
 
@@ -152,6 +155,15 @@ export default function LoadoutPage() {
    *   一份指向已不存在裝備的面板。存 key 則每次 render 重新查 —— 查不到就自動退回清單。
    */
   const [openRowKey, setOpenRowKey] = useState<SlotKey | null>(null)
+
+  /**
+   * 右欄鑽進模組面板的那個接口（PLAN-052-G C-3）。
+   *
+   * ⚠ 存**部位**而不是整個 ref 物件：部位是四個固定值，而 ref 每次重建都是新參考，
+   *   放進 state 會讓每一次 render 都觸發下游 memo 重算。也與 `openRowKey` 存 key
+   *   不存快照同一條理由 —— 機甲換掉時這個部位一樣還在，面板自己會重新查。
+   */
+  const [openModulePos, setOpenModulePos] = useState<MechPartPosition | null>(null)
 
   // ── 匯出配裝圖（PLAN-052-I E-3）──
   //    `exporting` 為真時才掛載離屏版面；失敗一定要說出來（按了沒反應是最糟的回饋）
@@ -221,10 +233,11 @@ export default function LoadoutPage() {
   /**
    * 分享碼的六個索引。
    *
-   * ⚠ `module` 仍是空索引 —— 本頁沒有載入那個集合（242 筆），而在 052-G 之前也沒有任何 UI
-   *   會設定它，載進來就是純浪費 read。後果是**外來代碼裡的模組會被標成解不開並丟掉**；
-   *   今天不會發生（沒有產生器），052-G 動工時把 `modules` 加進 `LOADOUT_STAGE_KEYS`
-   *   的 equip 階段、並把下面那一行接上 `data.modules` 即可。
+   * ⚠ **`module` 也曾經是空索引**，一路空到 PLAN-052-G A-1 —— 而空陣列的意思不是
+   *   「沒有別名」而是「這個集合根本沒進來」：`buildShareIndex()` 的迴圈一次都不跑，
+   *   別名參數補的是「推導不出號碼」的缺口（41 筆 `mod_40xx_2` 第二型靠它），
+   *   補不了一個空的來源。A-1 把「加集合」與「接索引」在同一個 commit 做完，
+   *   正是因為兩者分開做過一次、而後半漏了三個 Phase（見下一段）。
    *
    * ⚠ **`component` 曾經是空索引，而那一行漏改了整整三個 Phase**（PLAN-052-D D-4 實地驗收抓到）。
    *   A-3 已把 `components` 加進 equip 階段，但這裡仍寫著 `[]`，於是：
@@ -236,7 +249,7 @@ export default function LoadoutPage() {
    *
    * ⚠ 時序上安全：`stage` 在有 `pending`（分享碼／書架／舊存檔）時直接跳 `equip`，
    *   而還原那一段的守衛是 `if (pending && !loading)` —— `loading` 為 false 就代表
-   *   equip 階段的每個集合（含 components）都到齊了。
+   *   equip 階段的每個集合（含 components 與 modules）都到齊了。
    */
   const shareIndexes = useMemo<ShareIndexes>(() => ({
     pilot:     buildShareIndex('pilot',     data.pilots.map((x) => x.id)),
@@ -244,7 +257,7 @@ export default function LoadoutPage() {
     weapon:    buildShareIndex('weapon',    data.weapons.map((x) => x.id)),
     backpack:  buildShareIndex('backpack',  data.backpacks.map((x) => x.id)),
     component: buildShareIndex('component', data.components.map((x) => x.id)),
-    module:    buildShareIndex('module',    [], shareIdAliases('module')),
+    module:    buildShareIndex('module',    data.modules.map((x) => x.id), shareIdAliases('module')),
   }), [data])
 
   const send = useCallback((a: LoadoutAction) => {
@@ -304,7 +317,7 @@ export default function LoadoutPage() {
 
   const closePicker = useCallback(() => { setPickerRaw(null); setHovered(null) }, [])
 
-  const openSlot = useCallback((ref: SlotRef) => {
+  const openSlot = useCallback((ref: WeaponSlotRef) => {
     setHovered(null)
     // 背槽同時是背包的位置。預設開哪一邊依現狀而定 —— 已裝背包、
     // 或這台機甲／這個形態根本沒有背部武器可選時，直接開背包清單。
@@ -316,7 +329,7 @@ export default function LoadoutPage() {
     }
   }, [ctx, setPicker])
 
-  const clearSlot = useCallback((ref: SlotRef) => {
+  const clearSlot = useCallback((ref: WeaponSlotRef) => {
     const occ = slotOccupant(ctx, ref)
     send(occ.kind === 'backpack' ? { type: 'unequipBackpack' } : { type: 'unequip', ref })
   }, [ctx, send])
@@ -330,12 +343,25 @@ export default function LoadoutPage() {
    *   雙手武器的列鍵是 `dualHand`，而槽位圖給的是它蓋住的兩格之一（`singleHand`）——
    *   直接當鍵用會查無此列，症狀是「按了 ⚙ 什麼都沒發生」。
    */
-  const openComponents = useCallback((ref: SlotRef) => {
+  const openComponents = useCallback((ref: WeaponSlotRef) => {
     const row = weaponRows(ctx).find((r) => slotsOverlap(r.ref, ref))
     if (!row) return
     setPicker(null)
     setOpenRowKey(row.rowKey)
+    setOpenModulePos(null)
   }, [ctx, setPicker])
+
+  /**
+   * 開某個接口的模組面板（PLAN-052-G C-3）。四部位卡整卡可點，共用這一支。
+   *
+   * ⚠ 進來時把挑選器與元件面板都關掉：右欄是**一欄多種內容的切換鏈**，
+   *   同時開兩種會讓返回鍵不知道要退回哪一層。
+   */
+  const openModule = useCallback((ref: ModuleSlotRef) => {
+    setPicker(null)
+    setOpenRowKey(null)
+    setOpenModulePos(ref.position)
+  }, [setPicker])
 
   // ── 挑選器清單 ──
   const pilotEntries = useMemo<PickerEntry<Pilot>[]>(
@@ -361,7 +387,7 @@ export default function LoadoutPage() {
   const previewBudget = useMemo(() => {
     if (!hovered) return null
     const ref = effectivePicker?.kind === 'weapon' ? effectivePicker.ref
-      : effectivePicker?.kind === 'backpack' ? ({ bank: 'main', slot: WeaponEquipSlot.BACK } as SlotRef)
+      : effectivePicker?.kind === 'backpack' ? ({ bank: 'main', slot: WeaponEquipSlot.BACK } as WeaponSlotRef)
       : null
     if (!ref) return null
     return loadoutBudget(ctx, { add: { ref, weight: hovered.weight } })
@@ -395,6 +421,15 @@ export default function LoadoutPage() {
   const openRow = useMemo(
     () => (openRowKey && ctx.mech ? weaponRows(ctx).find((r) => r.rowKey === openRowKey) ?? null : null),
     [openRowKey, ctx],
+  )
+
+  /**
+   * 右欄的模組面板要對著哪一格（PLAN-052-G C-3）。
+   * 機甲沒了就自動退回清單 —— 接口是機甲的，同 `openRow` 的處置。
+   */
+  const openModuleRef = useMemo<ModuleSlotRef | null>(
+    () => (openModulePos && ctx.chassis ? { kind: 'module', position: openModulePos } : null),
+    [openModulePos, ctx.chassis],
   )
 
   // ── 三顆動作鍵。單欄版面時整組搬到底部固定列，其餘版面留在 sticky 抬頭右側（F-1）──
@@ -604,8 +639,8 @@ export default function LoadoutPage() {
       {/* ⚠ 常駐橫幅，不是「暫時的公告」：這一版明確不做的東西必須講清楚，
           否則玩家會把「找不到」當成 bug（決策四）。 */}
       <div className="hud-cut mb-3 border border-accent-cyan/25 bg-accent-cyan/5 px-3.5 py-2.5 text-[12px] text-text-secondary leading-relaxed">
-        本版提供<strong className="text-text-primary">槽位配裝、重量／出力計算、元件與分享碼</strong>。
-        武器改裝、形態分頁、模組槽與部件混搭、雲端存檔<strong className="text-text-primary">尚在後續階段</strong>；
+        本版提供<strong className="text-text-primary">槽位配裝、重量／出力計算、元件、模組槽與分享碼</strong>。
+        武器改裝、形態分頁、部件混搭、雲端存檔<strong className="text-text-primary">尚在後續階段</strong>；
         傷害數字因官方公式未知，本站不提供猜測值
         （<strong className="text-text-primary">元件的觸發機率</strong>同理，面板只列出配對關係與 Lv）。
         {showBanner && (
@@ -754,6 +789,8 @@ export default function LoadoutPage() {
                 // 印出來等於用一個算不出來的數字去嚇人
                 available={budget.dataIncomplete ? undefined : budget.remaining}
                 onOpenComponents={openComponents}
+                onOpenModule={openModule}
+                activeModule={openModulePos}
                 compact={compactRig}
                 onOpenSlot={openSlot}
                 onClearSlot={clearSlot}
@@ -876,7 +913,18 @@ export default function LoadoutPage() {
             />
           )}
 
-          {(isMobile || !effectivePicker) && !openRow && ctx.mech && (
+          {/* 模組面板 —— 切換鏈的第四種內容（PLAN-052-G C-3）。入口是槽位圖下方的四部位卡 */}
+          {(isMobile || !effectivePicker) && !openRow && openModuleRef && (
+            <ModulePanel
+              ctx={ctx}
+              ref_={openModuleRef}
+              onBack={() => setOpenModulePos(null)}
+              onEquip={(m) => send({ type: 'equipModule', ref: openModuleRef, moduleId: m.id })}
+              onResolve={resolve}
+            />
+          )}
+
+          {(isMobile || !effectivePicker) && !openRow && !openModuleRef && ctx.mech && (
             <Panel title="武器與元件">
               <WeaponComponentList
                 ctx={ctx}
@@ -887,18 +935,23 @@ export default function LoadoutPage() {
             </Panel>
           )}
 
-          {(isMobile || !effectivePicker) && !openRow && ctx.mech && (
+          {/* 模組效果彙總（PLAN-052-G C-4）。放在武器列之後 —— 玩家先配武器、
+              模組是後面才碰的那一層，而它的入口在中欄的四部位卡上。 */}
+          {(isMobile || !effectivePicker) && !openRow && !openModuleRef && ctx.mech && (
+            <Panel title="模組效果"><EquippedEffects ctx={ctx} /></Panel>
+          )}
+
+          {(isMobile || !effectivePicker) && !openRow && !openModuleRef && ctx.mech && (
             <>
-              {/* ⏸ 四部位表暫時下架：四個部位現在 100% 固定來自本機甲，這裡列出來只是把
-                     機甲詳情頁的同一張表再抄一遍。等部件混搭（各部位可換不同機甲）開放後，
-                     這張表才開始回答「這一套是怎麼拼出來的」，屆時連同模組接口一起復原。
+              {/* ⏸ 四部位表仍然下架，但**理由只剩一半了**（PLAN-052-G C-6）：
+                     模組接口已經可以配（入口是槽位圖下方的四部位卡，彙總在右欄「模組效果」），
+                     而四個部位仍然 100% 來自本機甲 —— 這張表現在列出來還是把機甲詳情頁的
+                     同一張表再抄一遍。等部件混搭（Phase D）開放後，它才開始回答
+                     「這一套是怎麼拼出來的」，屆時連同「來源」欄一起復原。
                   ⚠ MechPartsTable 自帶卡片框與標題（052-A 共用元件），復原時不要再包一層 Panel。
+                  ⚠ 下面那句佔位文案**不要照抄回來**：模組那半已經不成立了。
               <div className="space-y-2">
                 <MechPartsTable mech={ctx.mech} />
-                <p className="text-[11px] text-text-dim leading-relaxed px-1">
-                  部件混搭與模組配置<strong className="text-text-secondary">開發中</strong> ——
-                  目前四個部位固定來自本機甲，四個模組接口尚未開放裝配。
-                </p>
               </div>
               */}
               <p className="text-[11px] text-text-dim leading-relaxed px-1">
@@ -1359,7 +1412,7 @@ const backpackRow = (b: Backpack): PickerRowItem => ({
  *
  * 兩個實際會走到的來源：全鎖形態（虛粒子／巡航）與機甲數值未公布（美杜莎MK2）。
  */
-function blockedReason(ctx: ReturnType<typeof buildContext>, ref: SlotRef): string | null {
+function blockedReason(ctx: ReturnType<typeof buildContext>, ref: WeaponSlotRef): string | null {
   if (ctx.lock) return `${ctx.lock.formName}的武裝已鎖死，這個形態無法調整任何裝備。`
   const occ = ctx.occupied.get(slotKey(ref))
   if (occ) {
@@ -1376,7 +1429,7 @@ function blockedReason(ctx: ReturnType<typeof buildContext>, ref: SlotRef): stri
  * 背槽專用的切換鍵。背包與背部武器共用同一格但是兩份不同的清單，
  * 而其他槽位沒有另一份清單可換 —— 回 `undefined` 就不會長出那顆鍵。
  */
-function backAlt(ref: SlotRef, onClick: () => void) {
+function backAlt(ref: WeaponSlotRef, onClick: () => void) {
   return ref.slot === WeaponEquipSlot.BACK ? { label: '改選背包', onClick } : undefined
 }
 
@@ -1388,7 +1441,7 @@ const BACK_WEAPON_ALT = (onClick: () => void) => ({ label: '改選背部武器',
  * ⚠ 只印字，**不灰掉也不阻擋**（決策三）：換手上那把是配裝最常見的動作，
  *   擋下來只會逼玩家先卸再裝、多按一次。
  */
-function replaceNote(ctx: ReturnType<typeof buildContext>, ref: SlotRef, w: Weapon): string | undefined {
+function replaceNote(ctx: ReturnType<typeof buildContext>, ref: WeaponSlotRef, w: Weapon): string | undefined {
   const targets = w.equipSlot === WeaponEquipSlot.DUAL_HAND
     ? ctx.set.mounts.filter((m) => m.bank === ref.bank && (m.slot === WeaponEquipSlot.SINGLE_HAND || m.slot === WeaponEquipSlot.DUAL_HAND))
     : ctx.set.mounts.filter((m) => m.bank === ref.bank && m.slot === ref.slot && m.side === ref.side)

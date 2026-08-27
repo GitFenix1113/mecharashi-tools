@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { SlotKey, SlotRef } from '../../types/slots'
+import type { ModuleSlotRef, SlotKey, WeaponSlotRef } from '../../types/slots'
 import { slotKey } from '../../types/slots'
 import { WeaponEquipSlot } from '../../types/enums'
+import type { MechPartPosition } from '../../types/enums'
 import { slotLabel } from '../../utils/mechSlots'
 import { imageCandidates } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
@@ -48,10 +49,14 @@ interface Props {
   /** 目前餘量，畫在空槽上（「可用 320」）。機甲數值未公布時傳 undefined */
   available?: number
   compact?: boolean
-  onOpenSlot: (ref: SlotRef) => void
-  onClearSlot: (ref: SlotRef) => void
+  onOpenSlot: (ref: WeaponSlotRef) => void
+  onClearSlot: (ref: WeaponSlotRef) => void
   /** 開這一格武器的元件面板（PLAN-052-D）。⚙ 徽章只出現在裝得了元件的武器格上 */
-  onOpenComponents?: (ref: SlotRef) => void
+  onOpenComponents?: (ref: WeaponSlotRef) => void
+  /** 開某個部位的模組面板（PLAN-052-G C-2）。未傳＝四部位卡維持唯讀 */
+  onOpenModule?: (ref: ModuleSlotRef) => void
+  /** 模組面板正對著的那個部位，畫成選中狀態 */
+  activeModule?: MechPartPosition | null
 }
 
 /**
@@ -110,8 +115,8 @@ const DENSE_MAX_WIDTH = 570
  */
 function componentBadge(
   occ: SlotOccupant,
-  ref: SlotRef,
-  onOpenComponents?: (ref: SlotRef) => void,
+  ref: WeaponSlotRef,
+  onOpenComponents?: (ref: WeaponSlotRef) => void,
 ): { onComponents?: () => void; componentUsed?: number; componentLimit?: number } {
   if (!onOpenComponents) return {}
   const weapon = occ.kind === 'weapon' ? occ.weapon
@@ -139,6 +144,7 @@ const TIGHT_MAX_WIDTH = LINE_MIN_WIDTH
 
 export function LoadoutRig({
   ctx, activeSlot, preview, flash, available, compact, onOpenSlot, onClearSlot, onOpenComponents,
+  onOpenModule, activeModule,
 }: Props) {
   const flashSet = useMemo(() => new Set(flash), [flash])
   const [tight, setTight] = useState(false)
@@ -158,8 +164,8 @@ export function LoadoutRig({
    *   那讓版面在裝上／卸下雙手武器時整個重排（兩欄少一列、中間多一列），
    *   而且與遊戲畫面對不起來。
    */
-  const columnRefs = useCallback((side: 'left' | 'right'): SlotRef[] => {
-    const out: SlotRef[] = []
+  const columnRefs = useCallback((side: 'left' | 'right'): WeaponSlotRef[] => {
+    const out: WeaponSlotRef[] = []
     if (hasShoulder) out.push({ bank: 'main', slot: WeaponEquipSlot.SHOULDER, side })
     out.push({ bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side })
     if (hasBackup) out.push({ bank: 'backup', slot: WeaponEquipSlot.SINGLE_HAND, side })
@@ -169,7 +175,7 @@ export function LoadoutRig({
   const left = useMemo(() => columnRefs('left'), [columnRefs])
   const right = useMemo(() => columnRefs('right'), [columnRefs])
 
-  const renderCell = (ref: SlotRef) => {
+  const renderCell = (ref: WeaponSlotRef) => {
     const key = slotKey(ref)
     const occ: SlotOccupant = slotOccupant(ctx, ref)
     // 這一格結構上有沒有東西可裝？
@@ -288,7 +294,7 @@ export function LoadoutRig({
     else nodeRefs.current.delete(key)
   }, [])
 
-  const backRef: SlotRef = { bank: 'main', slot: WeaponEquipSlot.BACK }
+  const backRef: WeaponSlotRef = { bank: 'main', slot: WeaponEquipSlot.BACK }
 
   return (
     <div className="space-y-3">
@@ -367,7 +373,7 @@ export function LoadoutRig({
              那裡是唯一能同時看到主手組與備用組兩排武器的地方，規則寫在看得到證據的位置
              才有用。槽位圖回答的是「哪一格裝了什麼」，不兼任重量規則的說明欄。 */}
 
-      <MechPartStrip mech={ctx.mech} />
+      <MechPartStrip ctx={ctx} onOpenModule={onOpenModule} activePosition={activeModule} />
     </div>
   )
 }
@@ -431,7 +437,7 @@ const MechVisual = ({
  *
  * 這是玩家最容易當成 bug 的一種狀態 —— 官方的做法是給一個點得下去卻永遠空著的 `[+]`。
  */
-function emptyReason(ctx: LoadoutContext, ref: SlotRef): string {
+function emptyReason(ctx: LoadoutContext, ref: WeaponSlotRef): string {
   if (ctx.form?.restrict.kind === 'weaponType') {
     return `${ctx.form.name}沒有可裝在${slotLabel(ref)}的武器`
   }

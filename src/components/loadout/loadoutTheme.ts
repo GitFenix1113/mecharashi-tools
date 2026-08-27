@@ -105,7 +105,7 @@ export function slotSegKey(slot: string): SegKey {
  * ⚠ 放在這裡而不是 `LoadoutIcon.tsx`：那個檔只能匯出元件，多匯出一個函式會讓
  *   Vite 的 fast refresh 對整檔失效（`react-refresh/only-export-components`）。
  *
- * 參數收 `string` 而不是 `WeaponEquipSlot`：呼叫端拿到的常常是已經字串化的 `SlotRef.slot`，
+ * 參數收 `string` 而不是 `WeaponEquipSlot`：呼叫端拿到的常常是已經字串化的 `WeaponSlotRef.slot`，
  * 收窄型別只會逼出一堆 cast。未知值一律回 `plus`（空槽）——不認得的槽位當成「還沒裝東西」，
  * 比丟例外或畫成鎖頭安全。
  */

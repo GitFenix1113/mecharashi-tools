@@ -5,10 +5,10 @@
 // 這裡就要真的看到肩部武器被移除、而且 toast 講得出被移除了什麼。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import type { Backpack, Component, Mech, MechForm, NeuralDrive, Pilot, Weapon } from '../../types/index.ts'
+import type { Backpack, Component, Mech, MechForm, Module, NeuralDrive, Pilot, Weapon } from '../../types/index.ts'
 import { INITIAL_SIM_STATE, reconcile, simReduce, type SimState } from './simReducer.ts'
 import { buildWorld, buildContext, loadoutBudget } from '../../utils/loadoutRules.ts'
-import { ArmorType, BackpackType, MechLicense, MechRestriction, WeaponEquipSlot, WeaponType } from '../../types/enums.ts'
+import { ArmorType, BackpackType, MechLicense, MechRestriction, WeaponEquipSlot, WeaponType, MechPartPosition, ModuleSlot, PartInterface } from '../../types/enums.ts'
 
 // ─── fixtures ───────────────────────────────────────────────────────────────
 
@@ -103,22 +103,72 @@ const 觸警戒  = comp({ id: 'c_006', name: '觸元件-警戒', componentType: 
 
 const COMPONENTS = [觸憑逸W, 觸憑逸, 觸沉著, 觸壓迫, 觸擊破, 應戰慄, 應穿甲, 觸警戒]
 
+// ─── 模組 fixture（PLAN-052-G C-1）──────────────────────────────────────────
+//   接口 ＝ f(quality, position)：S ⇒ ⅡⅡⅡⅡ／A ⇒ ⅠⅡⅡⅠ／B ⇒ 無接口（mechInterface.ts）
+
+const ifacePart = (weight: number, iface: string, output?: number) =>
+  ({ position: 'torso', durable: 0, armor: 0, firepower: 0, weight, output, interface: iface }) as never
+
+/** A 品質中甲：軀幹與腿部 Ⅰ 型（只收 A 級模組），雙臂 Ⅱ 型 */
+const A級中甲: Mech = {
+  ...mech('mech_a', 'A級中甲', ArmorType.MEDIUM),
+  parts: {
+    torso:    ifacePart(300, PartInterface.TYPE_I, 3375),
+    leftArm:  ifacePart(175, PartInterface.TYPE_II),
+    rightArm: ifacePart(175, PartInterface.TYPE_II),
+    legs:     ifacePart(175, PartInterface.TYPE_I),
+  },
+}
+
+/** B 品質中甲：四格全空 ＝ **這台沒有模組接口**（不是「未建檔」） */
+const B級中甲: Mech = {
+  ...mech('mech_b', 'B級中甲', ArmorType.MEDIUM),
+  parts: {
+    torso:    ifacePart(300, '', 3375),
+    leftArm:  ifacePart(175, ''),
+    rightArm: ifacePart(175, ''),
+    legs:     ifacePart(175, ''),
+  },
+}
+
+const mod = (over: Partial<Module> & Pick<Module, 'id' | 'name' | 'rarity'>): Module => ({
+  slot: ModuleSlot.UNIVERSAL, boundMechId: null, boundPart: null,
+  dmg: 0, crit_rate: 0, critDmg: 0, acc_rate: 0, firepower_rate: 0, armor_rate: 0,
+  crit_resist_rate: 0, output_bonus: 0, dodge_rate: 0, durable_rate: 0, dmg_resist_rate: 0,
+  description: '',
+  levels: [1, 2, 3, 4].map((level) => ({ level, dmg: level * 2 })) as never,
+  ...over,
+} as Module)
+
+const 通用S = mod({ id: 'mod_4101', name: '通用S模組', rarity: 'S' })
+const 通用S2 = mod({ id: 'mod_4103', name: '第二顆S模組', rarity: 'S' })
+const 通用A = mod({ id: 'mod_4102', name: '通用A模組', rarity: 'A' })
+/** 綁機甲的專屬模組：分享碼可能把它灌進來，但只有那台裝得上 */
+const 破曉專屬 = mod({ id: 'mod_9001', name: '匯流樞紐', rarity: 'S', slot: ModuleSlot.EXCLUSIVE, boundMechId: 'mech_026' })
+
+const MODULES = [通用S, 通用S2, 通用A, 破曉專屬]
+
+const TORSO = { kind: 'module', position: MechPartPosition.TORSO } as const
+const L_ARM = { kind: 'module', position: MechPartPosition.LEFT_ARM } as const
+const LEGS  = { kind: 'module', position: MechPartPosition.LEGS } as const
+
 const WORLD = buildWorld({
   pilots: [海莉絲, 輕型機師, 中型機師, ND甲, ND乙],
-  mechs: [彌造者, 輕型機, 重型機, 中甲機2],
+  mechs: [彌造者, 輕型機, 重型機, 中甲機2, A級中甲, B級中甲],
   weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
   backpacks: [強襲者背包, 出力背包Ⅲ],
   forms: [先鋒形態, 突擊形態],
   components: COMPONENTS,
+  modules: MODULES,
 })
 
 /**
- * 元件**尚未載入**的世界（PLAN-052-D 決策六）。
- * 分享碼／本機書架／雲端存檔都可能在 `components` 到齊之前就把草稿灌進來。
+ * 元件與模組**尚未載入**的世界（PLAN-052-D 決策六 ／ PLAN-052-G 決策六）。
+ * 分享碼／本機書架／雲端存檔都可能在這兩個集合到齊之前就把草稿灌進來。
  */
 const WORLD_LOADING = buildWorld({
   pilots: [海莉絲, 輕型機師, 中型機師, ND甲, ND乙],
-  mechs: [彌造者, 輕型機, 重型機, 中甲機2],
+  mechs: [彌造者, 輕型機, 重型機, 中甲機2, A級中甲, B級中甲],
   weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
   backpacks: [強襲者背包, 出力背包Ⅲ],
   forms: [先鋒形態, 突擊形態],
@@ -660,4 +710,161 @@ test('B-3：主手與備用各裝一把同型武器，元件互不影響', () =>
   const backup = setOf(s).mounts.find((m) => m.bank === 'backup')
   assert.deepEqual(main?.setup?.triggerComponentIds, [觸沉著.id])
   assert.deepEqual(backup?.setup?.triggerComponentIds, [觸壓迫.id])
+})
+
+// ─── 模組接口（PLAN-052-G C-1）─────────────────────────────────────────────
+
+test('052-G：裝上一顆模組 —— 寫進 draft.modules，未裝的部位欄位不存在', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipModule', ref: TORSO, moduleId: 通用S.id },
+  )
+  assert.deepEqual(s.draft.modules, { torso: 通用S.id })
+  // ⚠ 沒裝的三格**不可以**是 null（stripUndefined 的老坑）
+  assert.equal('leftArm' in (s.draft.modules ?? {}), false)
+  // 沒有任何東西被移除 ⇒ 不跳 toast（每個動作都跳就等於沒有提示，見 commit()）
+  assert.equal(s.notice, null)
+})
+
+test('052-G：卸下最後一顆之後，modules 欄位本身消失（不留一個空物件）', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipModule', ref: TORSO, moduleId: 通用S.id },
+    { type: 'unequipModule', ref: TORSO },
+  )
+  assert.equal('modules' in s.draft, false)
+  assert.equal(s.notice, null)
+})
+
+test('052-G：同一格換一顆 —— 被換掉的那顆要進 toast（不是靜默覆蓋）', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipModule', ref: TORSO, moduleId: 通用S.id },
+    { type: 'equipModule', ref: TORSO, moduleId: 通用S2.id },
+  )
+  assert.deepEqual(s.draft.modules, { torso: 通用S2.id })
+  assert.deepEqual(names(s), [通用S.name])
+  assert.match(s.notice!.removed[0].why, /已由第二顆S模組取代/)
+  assert.equal(s.notice!.removed[0].where, '軀幹')
+})
+
+test('052-G：四個接口各裝一顆，彼此不互斥（模組沒有同族、也沒有容量帳）', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipModule', ref: TORSO, moduleId: 通用S.id },
+    { type: 'equipModule', ref: L_ARM, moduleId: 通用S2.id },
+    { type: 'equipModule', ref: LEGS, moduleId: 通用A.id },
+  )
+  assert.deepEqual(s.draft.modules, { torso: 通用S.id, leftArm: 通用S2.id, legs: 通用A.id })
+  assert.equal(s.notice, null)
+})
+
+test('052-G 級聯：換到 A 級機甲 —— Ⅰ 型的軀幹／腿部掉 S 級模組，Ⅱ 型的手臂留著', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipModule', ref: TORSO, moduleId: 通用S.id },
+    { type: 'equipModule', ref: L_ARM, moduleId: 通用S2.id },
+    { type: 'equipModule', ref: LEGS, moduleId: 通用A.id },
+    { type: 'selectMech', mechId: A級中甲.id },
+  )
+  // 軀幹是 Ⅰ 型 ⇒ S 級掉；左臂是 Ⅱ 型 ⇒ 留；腿部是 Ⅰ 型但裝的是 A 級 ⇒ 留
+  assert.deepEqual(s.draft.modules, { leftArm: 通用S2.id, legs: 通用A.id })
+  assert.deepEqual(names(s), [通用S.name])
+  assert.match(s.notice!.removed[0].why, /只能裝 A 級模組/)
+})
+
+test('052-G 級聯：換到 B 級機甲 —— 四格全掉，且每一顆都講得出原因', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipModule', ref: TORSO, moduleId: 通用S.id },
+    { type: 'equipModule', ref: L_ARM, moduleId: 通用S2.id },
+    { type: 'selectMech', mechId: B級中甲.id },
+  )
+  assert.equal('modules' in s.draft, false)
+  assert.deepEqual(names(s).sort(), [通用S.name, 通用S2.name].sort())
+  for (const r of s.notice!.removed) assert.match(r.why, /沒有模組接口/)
+})
+
+test('052-G 級聯：同品質換一台 —— 模組原封不動留著（不是「換機甲就清空」）', () => {
+  // 與同一支 reconcile() 對武器的處置一致：直接清空會讓「試試看換一台」
+  // 這個最常見的動作變成每次都要重配一輪。模組不綁機甲，S 模組在另一台 S 機甲上照樣合法。
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipModule', ref: TORSO, moduleId: 通用S.id },
+    { type: 'selectMech', mechId: 中甲機2.id },
+  )
+  assert.deepEqual(s.draft.modules, { torso: 通用S.id })
+  assert.equal(s.notice, null)
+})
+
+test('052-G 級聯：移除機甲 —— 四格全清，理由是「沒有機甲就沒有模組接口」', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipModule', ref: TORSO, moduleId: 通用S.id },
+    { type: 'clearMech' },
+  )
+  assert.equal('modules' in s.draft, false)
+  assert.match(s.notice!.removed.find((r) => r.kind === 'module')!.why, /沒有機甲就沒有模組接口/)
+})
+
+test('052-G 級聯：外來草稿帶進別台機甲的專屬模組 —— 過 reconcile 被擋下並說明', () => {
+  const { draft, removed } = reconcile(
+    {
+      activeSetKey: 'default', sets: {},
+      pilotId: 海莉絲.id, mechId: 彌造者.id,
+      modules: { torso: 破曉專屬.id, leftArm: 通用S.id, legs: 'mod_不存在' },
+    },
+    WORLD,
+  )
+  assert.deepEqual(draft.modules, { leftArm: 通用S.id })
+  assert.deepEqual(
+    removed.filter((r) => r.kind === 'module').map((r) => r.why).sort(),
+    ['模組資料已不存在', `${破曉專屬.name}是另一台機甲的專屬模組，不可自由裝配`].sort(),
+  )
+})
+
+test('052-G 決策六（本計畫最重要的一條）：modules 未載入時，reconcile 不動 draft.modules', () => {
+  // 空 Map ＝ 還沒載入，不是「這個世界沒有模組」。照抄武器那套「查不到就刪」的症狀是
+  // **貼一次分享碼、四顆模組就被靜默清空一次**，而畫面上什麼都不會說。
+  const before = {
+    activeSetKey: 'default', sets: {},
+    pilotId: 海莉絲.id, mechId: 彌造者.id,
+    // 連「這台 B 級機甲根本沒有接口」這種必定非法的組合都不可以動 ——
+    // 因為我們現在還不知道 mod_4101 是什麼，任何判斷都是猜的
+    modules: { torso: 通用S.id, leftArm: 破曉專屬.id },
+  }
+  const { draft, removed } = reconcile(before, WORLD_LOADING)
+  assert.deepEqual(draft.modules, before.modules)
+  assert.deepEqual(removed.filter((r) => r.kind === 'module'), [])
+})
+
+test('052-G：合法草稿過 reconcile 恆等（不產生新參考、也不跳 toast）', () => {
+  const before = {
+    activeSetKey: 'default', sets: {},
+    pilotId: 海莉絲.id, mechId: 彌造者.id,
+    modules: { torso: 通用S.id, leftArm: 通用A.id },
+  }
+  const { draft, removed } = reconcile(before, WORLD)
+  assert.deepEqual(removed.filter((r) => r.kind === 'module'), [])
+  assert.equal(draft.modules, before.modules, 'modules 應原樣傳遞，不必要地換參考會讓 memo 全部失效')
+})
+
+test('052-G：[復原] 把被級聯清掉的模組整批救回來', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipModule', ref: TORSO, moduleId: 通用S.id },
+    { type: 'selectMech', mechId: B級中甲.id },
+  )
+  assert.equal('modules' in s.draft, false)
+  const back = simReduce(s, { type: 'undo' }, WORLD)
+  assert.deepEqual(back.draft.modules, { torso: 通用S.id })
 })

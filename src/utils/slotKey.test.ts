@@ -5,11 +5,12 @@
 // 鍵是字串，撞鍵的後果是「兩把武器的元件互相覆蓋」這種靜默錯誤，不是例外。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { slotKey, parseSlotKey, slotAcceptsSide, SLOT_BANKS } from '../types/slots.ts'
-import type { SlotRef } from '../types/slots.ts'
+import { slotKey, parseSlotKey, slotAcceptsSide, isModuleSlotRef, SLOT_BANKS } from '../types/slots.ts'
+import type { ModuleSlotRef, WeaponSlotRef } from '../types/slots.ts'
+import { MechPartPosition } from '../types/enums.ts'
 
 /** 一台中甲機甲 ＋ 強襲者背包所能出現的全部格子（main 5 格 ＋ backup 2 格） */
-const ALL_REFS: SlotRef[] = [
+const ALL_REFS: WeaponSlotRef[] = [
   { bank: 'main',   slot: 'singleHand', side: 'left' },
   { bank: 'main',   slot: 'singleHand', side: 'right' },
   { bank: 'main',   slot: 'dualHand' },
@@ -67,4 +68,56 @@ test('slotAcceptsSide：只有單手與肩部分左右', () => {
 
 test('SLOT_BANKS 是 bank 的唯一列舉來源', () => {
   assert.deepEqual([...SLOT_BANKS], ['main', 'backup'])
+})
+
+// ─── 模組 kind（PLAN-052-G A-2）─────────────────────────────────────────────
+//
+// 聯集多一個成員之後，「parseSlotKey(slotKey(ref)) 恆等於 ref 正規形」這條不變式
+// 必須對**兩種 kind 都**成立 —— 破了它的症狀與武器側一樣是靜默的：
+// 模組面板拿一個解不回來的鍵去查已裝模組，畫面只會顯示「未裝」。
+
+const ALL_MODULE_REFS: ModuleSlotRef[] = [
+  { kind: 'module', position: MechPartPosition.TORSO },
+  { kind: 'module', position: MechPartPosition.LEFT_ARM },
+  { kind: 'module', position: MechPartPosition.RIGHT_ARM },
+  { kind: 'module', position: MechPartPosition.LEGS },
+]
+
+test('round-trip：四個模組接口 parse(key(ref)) 都回到原 ref', () => {
+  for (const ref of ALL_MODULE_REFS) {
+    assert.deepEqual(parseSlotKey(slotKey(ref)), ref, `${JSON.stringify(ref)} 沒有 round-trip`)
+  }
+})
+
+test('模組鍵的格式就是 module:position', () => {
+  assert.equal(slotKey({ kind: 'module', position: MechPartPosition.TORSO }), 'module:torso')
+  assert.equal(slotKey({ kind: 'module', position: MechPartPosition.LEGS }), 'module:legs')
+})
+
+test('模組鍵與武器鍵永不撞號（module 不可能是一個 bank）', () => {
+  const keys = [...ALL_REFS, ...ALL_MODULE_REFS].map(slotKey)
+  assert.equal(new Set(keys).size, keys.length)
+  // 反向也要成立：任何武器鍵都解不成模組 ref，反之亦然
+  for (const ref of ALL_REFS) assert.equal(parseSlotKey(slotKey(ref))?.kind, undefined)
+  for (const ref of ALL_MODULE_REFS) assert.equal(parseSlotKey(slotKey(ref))?.kind, 'module')
+})
+
+test('武器側的正規形不帶 kind：明寫 kind:weapon 也產生同一個鍵', () => {
+  // `kind` 選填的代價就是這條：兩種寫法必須是同一格，否則同一把武器會有兩個鍵
+  assert.equal(
+    slotKey({ kind: 'weapon', bank: 'main', slot: 'singleHand', side: 'left' }),
+    slotKey({ bank: 'main', slot: 'singleHand', side: 'left' }),
+  )
+})
+
+test('模組鍵校驗 position 值域（它不進分享碼，認不得就是打錯了）', () => {
+  for (const bad of ['module:torsoo', 'module:', 'module', 'module:torso:left', 'Module:torso', 'module:main']) {
+    assert.equal(parseSlotKey(bad), null, `${JSON.stringify(bad)} 應為 null`)
+  }
+})
+
+test('isModuleSlotRef 是全站唯一的 narrow 入口', () => {
+  assert.equal(isModuleSlotRef({ kind: 'module', position: MechPartPosition.TORSO }), true)
+  assert.equal(isModuleSlotRef({ bank: 'main', slot: 'back' }), false)
+  assert.equal(isModuleSlotRef({ kind: 'weapon', bank: 'main', slot: 'back' }), false)
 })

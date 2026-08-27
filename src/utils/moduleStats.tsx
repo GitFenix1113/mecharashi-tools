@@ -1,17 +1,17 @@
 import React from 'react'
-import type { ModuleLevel } from '../types'
+import type { ModuleStatKey } from './moduleRules.ts'
 import { WeaponType, WeaponKind } from '../types/enums'
 
 /**
- * 從型別中挑出「數值欄位」。
- * 舊寫法 `Exclude<keyof ModuleLevel, 'level' | 'description'>` 會把 descriptionRefs 也算成數值鍵，
- * 改由 NonNullable<T[K]> extends number 判定，新增非數值欄位時不必再手動 Exclude。
+ * 數值欄位鍵。
+ *
+ * ⚠ 定義搬到 `moduleRules.ts`（PLAN-052-G B-1），本檔改為 re-export ——
+ *   規則層要拿同一組鍵做 Σ 加總，兩邊各定義一份就會在官方新增欄位時靜默不同步，
+ *   而下面 `STAT_META` 的窮盡檢查只守得住本檔那一份。
+ *   舊寫法 `Exclude<keyof ModuleLevel, 'level' | 'description'>` 會把 descriptionRefs
+ *   也算成數值鍵，判定改由 `NonNullable<T[K]> extends number` 負責，行為不變。
  */
-type NumericKeys<T> = {
-  [K in keyof T]-?: NonNullable<T[K]> extends number ? K : never
-}[keyof T]
-
-export type StatKey = NumericKeys<Omit<ModuleLevel, 'level'>>
+export type StatKey = ModuleStatKey
 
 export interface StatMeta {
   label: string

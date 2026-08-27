@@ -14,7 +14,7 @@
 // 純函式、無 React 依賴，可單測（npm test）。
 
 import type { Weapon } from '../types/index.ts'
-import type { SlotKey, SlotRef } from '../types/slots.ts'
+import type { SlotKey, WeaponSlotRef } from '../types/slots.ts'
 import { slotKey } from '../types/slots.ts'
 import { enumerateSlots, slotLabel } from './mechSlots.ts'
 import { WeaponEquipSlot } from '../types/enums.ts'
@@ -25,7 +25,7 @@ import { slotOccupant, type LoadoutContext } from './loadoutRules.ts'
 export interface WeaponRow {
   rowKey: SlotKey
   /** 這把武器自己的座標（雙手武器 ＝ `dualHand`，不是它蓋住的兩格之一） */
-  ref: SlotRef
+  ref: WeaponSlotRef
   label: string
   /** 查無資料時為 null —— 呼叫端要能畫出「斷鏈」而不是靜默留白 */
   weapon: Weapon | null
@@ -54,7 +54,7 @@ export function weaponRows(ctx: LoadoutContext): WeaponRow[] {
 
   for (const ref of enumerateSlots(ctx.capacity)) {
     const occ = slotOccupant(ctx, ref)
-    let own: SlotRef
+    let own: WeaponSlotRef
     let weapon: Weapon | null
     let fallbackId: string
     let locked: WeaponRow['locked']
@@ -151,7 +151,7 @@ export function loadoutSheetRows(ctx: LoadoutContext): SheetRow[] {
   const out: SheetRow[] = []
   const cap = ctx.capacity
 
-  const push = (ref: SlotRef, labelOverride?: string) => {
+  const push = (ref: WeaponSlotRef, labelOverride?: string) => {
     const occ = slotOccupant(ctx, ref)
     const label = labelOverride ?? slotLabel(ref)
     const key = slotKey(ref)
@@ -226,14 +226,14 @@ export function loadoutSheetRows(ctx: LoadoutContext): SheetRow[] {
     absent('main:shoulder:none', '肩部', '肩部槽位只有中甲機甲才有')
   } else {
     for (const side of ['left', 'right'] as const) {
-      const ref: SlotRef = { bank: 'main', slot: WeaponEquipSlot.SHOULDER, side }
+      const ref: WeaponSlotRef = { bank: 'main', slot: WeaponEquipSlot.SHOULDER, side }
       if (slotExists(cap, ref)) push(ref)
       else absent(slotKey(ref), slotLabel(ref), '此機甲沒有這一格')
     }
   }
 
   // ── 背部（背包與背部武器共用） ──
-  const backRef: SlotRef = { bank: 'main', slot: WeaponEquipSlot.BACK }
+  const backRef: WeaponSlotRef = { bank: 'main', slot: WeaponEquipSlot.BACK }
   if (slotExists(cap, backRef)) push(backRef)
   else absent(slotKey(backRef), '背部', '此機甲沒有背部槽')
 

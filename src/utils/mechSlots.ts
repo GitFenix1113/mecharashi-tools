@@ -3,7 +3,7 @@
 // 「這台機甲有幾格、哪一格被佔住、整套是不是被鎖死」——全站只由本檔回答。
 // 純函式、無 React / Firestore 依賴，可單測（npm test）。
 
-import type { ArmamentMount, SlotCapacity, SlotKey, SlotRef, SlotSide } from '../types'
+import type { ArmamentMount, SlotCapacity, SlotKey, WeaponSlotRef, SlotSide } from '../types'
 import type { MechForm } from '../types'
 import { slotKey, slotAcceptsSide } from '../types/slots.ts'
 import { ArmorType, MechPartPosition, BackpackType, WeaponEquipSlot } from '../types/enums.ts'
@@ -62,8 +62,8 @@ export function loadoutSlotCapacity(
  * ⚠ 刻意**不**列出 `dualHand`：雙手武器佔的是兩格 singleHand，不是第三格手部。
  *   把它也列成一格，畫面上會多出一個永遠不該存在的空位。
  */
-export function enumerateSlots(capacity: SlotCapacity): SlotRef[] {
-  const out: SlotRef[] = []
+export function enumerateSlots(capacity: SlotCapacity): WeaponSlotRef[] {
+  const out: WeaponSlotRef[] = []
   const sides: SlotSide[] = ['left', 'right']
   for (let i = 0; i < capacity.singleHand; i++) {
     out.push({ bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: sides[i] })
@@ -82,7 +82,7 @@ export function enumerateSlots(capacity: SlotCapacity): SlotRef[] {
 
 /** 某一格被固定武裝佔住的事實。`sourcePart` 讓 UI 講得出「這是右臂帶來的」。 */
 export interface OccupiedSlot {
-  ref: SlotRef
+  ref: WeaponSlotRef
   mount: ArmamentMount
   sourcePart: MechPartPosition
 }
@@ -117,7 +117,7 @@ export function occupiedSlots(
     for (const mount of part.fixedArmament ?? []) {
       // side 未填時由部件位置補：左臂 → 左，右臂 → 右（可程式化的映射，不需額外資料）
       const side = mount.side ?? (slotAcceptsSide(mount.slot) ? ARM_SIDE[pos] : undefined)
-      const ref: SlotRef = side ? { bank: 'main', slot: mount.slot, side } : { bank: 'main', slot: mount.slot }
+      const ref: WeaponSlotRef = side ? { bank: 'main', slot: mount.slot, side } : { bank: 'main', slot: mount.slot }
       out.set(slotKey(ref), { ref, mount, sourcePart: pos })
     }
   }
@@ -182,7 +182,7 @@ const SIDE_LABEL: Record<SlotSide, string> = { left: '左', right: '右' }
  * 而它是純字串運算、沒有 React 依賴。與 `EQUIP_SLOT_LABELS`（武器徽章用「單手／雙手／
  * 肩膀／背後」）刻意分開——那組講的是「這把武器裝在哪類槽」，這組講的是「機甲上的哪一格」。
  */
-export function slotLabel(ref: SlotRef): string {
+export function slotLabel(ref: WeaponSlotRef): string {
   const base = SLOT_LABEL[ref.slot] ?? ref.slot
   const sided = ref.side && slotAcceptsSide(ref.slot) ? `${SIDE_LABEL[ref.side]}${base}` : base
   return ref.bank === 'backup' ? `備用${sided}` : sided

@@ -16,13 +16,15 @@
 // 純函式、無 React 依賴，可單測（npm test）。
 
 import type { EquipSet, LoadoutDraft, LoadoutMount, MountSetup } from '../../types/loadout'
-import type { SlotRef } from '../../types/slots'
-import { WeaponEquipSlot } from '../../types/enums.ts'
+import type { ModuleSlotRef, WeaponSlotRef } from '../../types/slots'
+import { MechPartPosition, WeaponEquipSlot } from '../../types/enums.ts'
 import { equipSetKeys, DEFAULT_EQUIP_SET_KEY } from '../../utils/forms.ts'
 import { licenseAllows } from '../../utils/normalizeArmorType.ts'
 import { slotLabel } from '../../utils/mechSlots.ts'
+import { partLabel } from '../../utils/moduleSlots.ts'
+import { MECH_PART_ORDER } from '../../utils/chassisStats.ts'
 import {
-  buildContext, canEquipWeapon, canEquipBackpack, canEquipComponent, loadoutBudget, slotsOverlap,
+  buildContext, canEquipWeapon, canEquipBackpack, canEquipComponent, canEquipModule, loadoutBudget, slotsOverlap,
   type LoadoutContext, type LoadoutWorld, type ResolutionAction,
 } from '../../utils/loadoutRules.ts'
 import { ND_RULES, isGammaZone, zonePower } from '../../utils/ndOverrides.ts'
@@ -41,7 +43,7 @@ export type LoadoutAction =
   | { type: 'selectMech'; mechId: string }
   | { type: 'clearMech' }
   | { type: 'setActiveSet'; key: string }
-  | { type: 'equipWeapon'; ref: SlotRef; weaponId: string }
+  | { type: 'equipWeapon'; ref: WeaponSlotRef; weaponId: string }
   | { type: 'equipBackpack'; backpackId: string }
   | { type: 'clearSet' }
   | { type: 'autoUnloadToFit' }
@@ -58,7 +60,15 @@ export type LoadoutAction =
    * ⚠ 卸下用的是 `ResolutionAction` 裡的 `unequipComponent` —— 拒絕訊息上的解法按鈕
    *   會直接派它進來，兩邊共用同一個形狀（見本 union 開頭的註解）。
    */
-  | { type: 'equipComponent'; ref: SlotRef; componentId: string }
+  | { type: 'equipComponent'; ref: WeaponSlotRef; componentId: string }
+  /**
+   * 把一顆模組裝進某個接口（PLAN-052-G C-1）。`ref` 是**模組座標**（`{ kind:'module', position }`），
+   * 不是武器格 —— 兩者由 `SlotRef` 的 kind 分開（決策五）。
+   *
+   * ⚠ 卸下用的是 `ResolutionAction` 裡的 `unequipModule` —— 拒絕訊息上的解法按鈕
+   *   會直接派它進來，兩邊共用同一個形狀（見本 union 開頭的註解）。
+   */
+  | { type: 'equipModule'; ref: ModuleSlotRef; moduleId: string }
   /** 由外部載入一份草稿（ProfilePage 的舊存檔、未來的分享碼）。一樣要過 reconcile */
   | { type: 'loadDraft'; draft: LoadoutDraft }
 
@@ -73,7 +83,7 @@ export type LoadoutAction =
  *   四顆元件而不吭一聲，是這一層最容易長出來的客服問題。
  */
 export interface RemovedItem {
-  kind: 'weapon' | 'backpack' | 'component'
+  kind: 'weapon' | 'backpack' | 'component' | 'module'
   id: string
   /** 顯示名。查不到資料時退回 id —— 那代表資料斷鏈，該被看見而不是靜默留白 */
   name: string
@@ -178,6 +188,36 @@ function mountWhere(m: Pick<LoadoutMount, 'bank' | 'slot' | 'side'>): string {
   return slotLabel({ bank: m.bank, slot: m.slot, side: m.side })
 }
 
+// ─── 模組接口（PLAN-052-G C-1）──────────────────────────────────────────────
+
+/**
+ * 把某個接口設成某顆模組。
+ *
+ * ⚠ **未裝時欄位不存在，不存 `null`**（`stripUndefined` 的老坑，同 `backpackId` / `ndLevels`）：
+ *   三態（有值／null／undefined）撞上 Firestore 的 `stripUndefined` 會變成
+ *   「一旦填了就再也清不掉」——052-E 的雲端存檔存的就是這份 `LoadoutDraft`。
+ */
+function withModule(draft: LoadoutDraft, position: MechPartPosition, moduleId: string): LoadoutDraft {
+  return { ...draft, modules: { ...draft.modules, [position]: moduleId } }
+}
+
+/** 清掉某個接口。清完整份都空了就把 `modules` 欄位本身拿掉（理由同 `withoutNdLevels`）。 */
+function withoutModule(draft: LoadoutDraft, position: MechPartPosition): LoadoutDraft {
+  if (!draft.modules?.[position]) return draft
+  const modules = { ...draft.modules }
+  delete modules[position]
+  return withModules(draft, modules)
+}
+
+/** 換掉整份 `modules`；空了就移除欄位本身。 */
+function withModules(draft: LoadoutDraft, modules: Partial<Record<MechPartPosition, string>>): LoadoutDraft {
+  if (Object.keys(modules).length > 0) return { ...draft, modules }
+  if (!('modules' in draft)) return draft
+  const rest = { ...draft }
+  delete rest.modules
+  return rest
+}
+
 // ─── reconcile：唯一的級聯 ──────────────────────────────────────────────────
 
 /**
@@ -233,7 +273,7 @@ export function reconcile(draft: LoadoutDraft, world: LoadoutWorld): { draft: Lo
     // 武器：逐格問 canEquipWeapon（把它自己先拿掉，否則它會與自己衝突）
     const kept: LoadoutMount[] = []
     for (const m of cur.mounts) {
-      const ref: SlotRef = { bank: m.bank, slot: m.slot, side: m.side }
+      const ref: WeaponSlotRef = { bank: m.bank, slot: m.slot, side: m.side }
       const w = world.weapons.get(m.weaponId)
       if (!w) {
         removed.push({ kind: 'weapon', id: m.weaponId, name: m.weaponId, where: mountWhere(m), why: '武器資料已不存在' })
@@ -254,6 +294,11 @@ export function reconcile(draft: LoadoutDraft, world: LoadoutWorld): { draft: Lo
     next = comp.draft
     removed.push(...comp.removed)
   }
+
+  // ── 模組接口：掃成「這台機甲的這四格裝得下」的合法配置（PLAN-052-G C-1）──
+  const mods = reconcileModules(next, world)
+  next = mods.draft
+  removed.push(...mods.removed)
 
   // ── 算力配置：掃成對得上目前機師的合法配置（PLAN-052-I D-2）──
   next = reconcileNdLevels(next, world)
@@ -306,7 +351,7 @@ function reconcileSetups(
     ]
     if (ids.length === 0) continue
 
-    const ref: SlotRef = { bank: m.bank, slot: m.slot, side: m.side }
+    const ref: WeaponSlotRef = { bank: m.bank, slot: m.slot, side: m.side }
     const where = slotLabel(ref)
     const weaponName = world.weapons.get(m.weaponId)?.name ?? m.weaponId
     let acc = withSetup(m, [], [])
@@ -342,6 +387,82 @@ function reconcileSetups(
   }
 
   return changed ? { draft: withSet(draft, key, { ...cur, mounts }), removed } : { draft, removed }
+}
+
+/**
+ * 把 `draft.modules` 掃成合法狀態（PLAN-052-G C-1）。
+ *
+ * ── ⚠ 這一段是本計畫最危險的地方（計畫書決策六，052-D 的同一條教訓）──────────
+ * **`modules` 尚未載入時整段跳過。** `reconcile()` 對武器的作法是「查不到就刪」，
+ * 模組**絕對不可**照抄：載入是非同步的，而草稿會在集合到齊之前就被 `loadDraft`
+ * 灌進來（分享碼、localStorage 書架、052-E 的雲端存檔都走那條）。
+ * 照抄的症狀是**貼一次分享碼、四顆模組就被靜默清空一次**，而畫面上什麼都不會說 ——
+ * 連 toast 都不會跳，因為那在它眼裡是一次成功的級聯。
+ * 空 Map 的意思是「還沒載入」，不是「這個世界沒有模組」。
+ *
+ * ── 為什麼是「逐格驗證」而不是「換機甲一律清空」──────────────────────────
+ * 進度表 C-1 原寫「換機甲清 `draft.modules`」，本實作改成**過 `canEquipModule()` 逐格驗證**，
+ * 理由與同一支 `reconcile()` 對武器的處置逐字相同（見 `selectMech` 的註解：
+ * 「直接清空會讓『試試看換一台』這個最常見的動作變成每次都要重配一輪」）：
+ *   · 模組**不綁機甲**（候選池的判準就是 `boundMechId == null`），一顆 S 級模組在
+ *     另一台 S 級機甲的同一個 Ⅱ 型接口上仍然完全合法 —— 清掉它是本站替玩家做的
+ *     一個他沒下過的決定。
+ *   · 真的不合法時（換到 A 級機甲的 Ⅰ 型接口、換到 B 級沒有接口的機甲、機甲被移除）
+ *     驗證自然會清掉，而且**帶著原因進 toast**。
+ * 那一列真正在意的是「不可以靜默丟掉」，而不是清空的範圍 —— 這裡兩者都滿足，
+ * 且保留得更多。`draft.parts`（部件混搭）則是另一回事：那是**別台機甲的部件**，
+ * 換基底機甲時必須清空，屬 Phase D。
+ *
+ * ⚠ 沒有機甲時直接清空整份：接口是機甲的，機甲不在，四格就不存在。
+ *   這一條**不受載入 gate 保護也是對的** —— 它不需要認得任何一顆模組。
+ */
+function reconcileModules(
+  draft: LoadoutDraft, world: LoadoutWorld,
+): { draft: LoadoutDraft; removed: RemovedItem[] } {
+  const cur = draft.modules
+  if (!cur || Object.keys(cur).length === 0) return { draft, removed: [] }
+
+  // 沒有機甲 ⇒ 沒有接口。與 `sets` 在機甲被移除時一起清掉是同一條理由。
+  if (!draft.mechId || !world.mechs.get(draft.mechId)) {
+    const removed: RemovedItem[] = MECH_PART_ORDER
+      .filter((pos) => cur[pos])
+      .map((pos) => ({
+        kind: 'module' as const,
+        id: cur[pos]!,
+        name: world.modules.get(cur[pos]!)?.name ?? cur[pos]!,
+        where: partLabel(pos),
+        why: '沒有機甲就沒有模組接口',
+      }))
+    return { draft: withModules(draft, {}), removed }
+  }
+
+  // ⚠ 載入 gate —— 見本函式的檔頭。這一行拿掉的症狀是靜默的。
+  if (world.modules.size === 0) return { draft, removed: [] }
+
+  const removed: RemovedItem[] = []
+  const kept: Partial<Record<MechPartPosition, string>> = {}
+  // 逐格驗證時 ctx 只需要重建一次：模組彼此不互斥（沒有同族、沒有容量帳），
+  // 一格的去留不影響另一格能不能裝。這與武器那邊「裝上去會改變容量」不同。
+  const baseCtx = buildContext(withModules(draft, {}), draft.activeSetKey, world)
+
+  for (const position of MECH_PART_ORDER) {
+    const id = cur[position]
+    if (!id) continue
+    const mod = world.modules.get(id)
+    if (!mod) {
+      removed.push({ kind: 'module', id, name: id, where: partLabel(position), why: '模組資料已不存在' })
+      continue
+    }
+    const r = canEquipModule({ ...baseCtx, modules: kept }, mod, { kind: 'module', position })
+    if (r) {
+      removed.push({ kind: 'module', id, name: mod.name, where: partLabel(position), why: r.reason })
+      continue
+    }
+    kept[position] = id
+  }
+
+  if (removed.length === 0) return { draft, removed }
+  return { draft: withModules(draft, kept), removed }
 }
 
 /**
@@ -429,7 +550,7 @@ function withoutNdLevels(draft: LoadoutDraft): LoadoutDraft {
  *   · 裝單手武器 → 同 bank 原本的雙手武器被取代
  *   · 裝背部武器 → 背包被卸下（背槽只有一格）
  */
-function placeWeapon(set: EquipSet, ref: SlotRef, weaponId: string): { set: EquipSet; displaced: LoadoutMount[]; backpackOff: boolean } {
+function placeWeapon(set: EquipSet, ref: WeaponSlotRef, weaponId: string): { set: EquipSet; displaced: LoadoutMount[]; backpackOff: boolean } {
   const displaced = set.mounts.filter((m) => slotsOverlap(m, ref))
   const mounts = set.mounts.filter((m) => !slotsOverlap(m, ref))
   mounts.push({ weaponId, bank: ref.bank, slot: ref.slot, side: ref.side })
@@ -442,7 +563,7 @@ function placeWeapon(set: EquipSet, ref: SlotRef, weaponId: string): { set: Equi
 }
 
 /** 卸下某一格（背槽的 ref 同時卸掉背包）。 */
-function clearSlot(set: EquipSet, ref: SlotRef): { set: EquipSet; displaced: LoadoutMount[]; backpackOff: boolean } {
+function clearSlot(set: EquipSet, ref: WeaponSlotRef): { set: EquipSet; displaced: LoadoutMount[]; backpackOff: boolean } {
   const displaced = set.mounts.filter((m) => slotsOverlap(m, ref))
   const backpackOff = ref.slot === WeaponEquipSlot.BACK && !!set.backpackId
   return {
@@ -583,6 +704,38 @@ export function simReduce(state: SimState, action: LoadoutAction, world: Loadout
       return commit(state, state.draft, draft, removed, `已卸下 ${name}`, [], [slotLabel(action.ref)], true)
     }
 
+    case 'equipModule': {
+      const mod = world.modules.get(action.moduleId)
+      if (!mod) return state
+      const { position } = action.ref
+      if (state.draft.modules?.[position] === action.moduleId) return state   // 已經裝著這一顆
+      // 覆蓋前先記下被換掉的那一顆 —— 面板上「裝上」是一步，而它同時卸下了另一顆，
+      // 不說的話玩家會以為兩顆都在（與 equipWeapon 的 displaced 同一條理由）。
+      const prev = state.draft.modules?.[position]
+      const base = withModule(state.draft, position, action.moduleId)
+      const { draft, removed } = reconcile(base, world)
+      const displaced: RemovedItem[] = prev && prev !== action.moduleId
+        ? [{
+            kind: 'module', id: prev,
+            name: world.modules.get(prev)?.name ?? prev,
+            where: partLabel(position),
+            why: `已由${mod.name}取代`,
+          }]
+        : []
+      // 模組不佔重量 ⇒ 不必報出力變化（`outputNote` 恆為空，呼叫它只是白算一次）
+      return commit(state, state.draft, draft, [...displaced, ...removed], `已裝上 ${mod.name}`, [], [], true)
+    }
+
+    case 'unequipModule': {
+      const { position } = action.ref
+      const id = state.draft.modules?.[position]
+      if (!id) return state
+      const base = withoutModule(state.draft, position)
+      const { draft, removed } = reconcile(base, world)
+      const name = world.modules.get(id)?.name ?? id
+      return commit(state, state.draft, draft, removed, `已卸下 ${name}`, [], [], true)
+    }
+
     case 'clearSet': {
       const key = state.draft.activeSetKey
       const cur = setOf(state.draft, key)
@@ -699,12 +852,12 @@ function unloadToFit(draft: LoadoutDraft, key: string, world: LoadoutWorld): { s
     if (!budget.over) break
 
     const total = budget.weight.total
-    const cands: { m?: LoadoutMount; ref: SlotRef; saved: number }[] = cur.mounts.map((m) => {
-      const ref: SlotRef = { bank: m.bank, slot: m.slot, side: m.side }
+    const cands: { m?: LoadoutMount; ref: WeaponSlotRef; saved: number }[] = cur.mounts.map((m) => {
+      const ref: WeaponSlotRef = { bank: m.bank, slot: m.slot, side: m.side }
       return { m, ref, saved: total - loadoutBudget(ctx, { remove: [ref] }).weight.total }
     })
     if (cur.backpackId) {
-      const ref: SlotRef = { bank: 'main', slot: WeaponEquipSlot.BACK }
+      const ref: WeaponSlotRef = { bank: 'main', slot: WeaponEquipSlot.BACK }
       cands.push({ ref, saved: total - loadoutBudget(ctx, { remove: [ref] }).weight.total })
     }
     const best = cands.filter((c) => c.saved > 0).sort((a, b) => b.saved - a.saved)[0]

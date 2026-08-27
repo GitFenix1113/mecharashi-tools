@@ -12,10 +12,11 @@ import {
   buildContext, buildWorld, canEquipBackpack, canEquipWeapon, canSelectMech,
   loadoutBudget, mountCoverage, mountRefFor, slotOccupant, validateLoadout,
   weaponChoices, backpackChoices, structuralCounts, slotHasCandidates,
-  canEquipComponent, componentChoices, weaponSiteAt,
+  canEquipComponent, componentChoices, weaponSiteAt, canEquipModule,
 } from './loadoutRules.ts'
-import type { Component } from '../types/index.ts'
-import { ArmorType, MechLicense, MechRestriction, WeaponEquipSlot, BackpackType, WeaponType, WeaponKind } from '../types/enums.ts'
+import type { Component, Module } from '../types/index.ts'
+import { ArmorType, MechLicense, MechRestriction, WeaponEquipSlot, BackpackType, WeaponType, WeaponKind, MechPartPosition, ModuleSlot, PartInterface } from '../types/enums.ts'
+import type { MechPartPosition as MechPartPositionType } from '../types/enums.ts'
 
 // ─── fixtures（數值取自 2026-08-23／24 線上實測）────────────────────────────
 
@@ -170,19 +171,85 @@ const 破格元件 = comp({ id: 'c_999', name: '奇怪的元件', componentType:
 
 const COMPONENTS = [觸憑逸W, 觸憑逸, 觸憑逸A, 觸沉著, 觸壓迫, 觸擊破, 觸警戒, 應戰慄, 應穿甲, 應爆破, 應濺射, 破格元件]
 
+// ─── 模組 fixture（PLAN-052-G A-3，形狀取自 2026-08-27 正式資料）───────────────
+//   接口 ＝ f(quality, position)：S ⇒ ⅡⅡⅡⅡ／A ⇒ ⅠⅡⅡⅠ／B ⇒ 無接口（見 mechInterface.ts）
+
+/** A 品質：軀幹與腿部 Ⅰ 型、雙臂 Ⅱ 型。全庫 16 台長這樣，也是 Ⅰ 型接口唯一的棲地 */
+const A級機: Mech = {
+  ...彌造者, id: 'mech_a', name: 'A級機',
+  parts: {
+    torso:    { ...part({ weight: 300, output: 3375 }), interface: PartInterface.TYPE_I } as never,
+    leftArm:  part({ weight: 175 }) as never,
+    rightArm: part({ weight: 175 }) as never,
+    legs:     { ...part({ weight: 175 }), interface: PartInterface.TYPE_I } as never,
+  },
+}
+
+/** B 品質：四格全空。**空字串的唯一語意是「這台沒有模組接口」**，不是「未建檔」 */
+const B級機: Mech = {
+  ...彌造者, id: 'mech_b', name: 'B級機',
+  parts: {
+    torso:    { ...part({ weight: 300, output: 3375 }), interface: '' } as never,
+    leftArm:  { ...part({ weight: 175 }), interface: '' } as never,
+    rightArm: { ...part({ weight: 175 }), interface: '' } as never,
+    legs:     { ...part({ weight: 175 }), interface: '' } as never,
+  },
+}
+
+/** 星夜女神踩過的那個坑：兩個 U+2160 拼出來的假「Ⅱ」。不是合法值，該被看見而不是當成沒接口 */
+const 壞接口機: Mech = {
+  ...彌造者, id: 'mech_bad', name: '壞接口機',
+  parts: { ...彌造者.parts, torso: { ...part({ weight: 300, output: 3375 }), interface: 'ⅠⅠ型接口' } as never } as never,
+}
+
+const mod = (over: Partial<Module> & Pick<Module, 'id' | 'name' | 'rarity'>): Module => ({
+  slot: ModuleSlot.UNIVERSAL, boundMechId: null, boundPart: null,
+  dmg: 0, crit_rate: 0, critDmg: 0, acc_rate: 0, firepower_rate: 0, armor_rate: 0,
+  crit_resist_rate: 0, output_bonus: 0, dodge_rate: 0, durable_rate: 0, dmg_resist_rate: 0,
+  description: '',
+  // ⚠ 四階版本是多數（候選池 186 筆裡 136 筆是 4 階），別把 8 當預設
+  levels: [1, 2, 3, 4].map((level) => ({ level })) as never,
+  ...over,
+} as Module)
+
+const 通用S = mod({ id: 'mod_4101', name: '通用S模組', rarity: 'S' })
+const 通用A = mod({ id: 'mod_4102', name: '通用A模組', rarity: 'A' })
+const 八級S = mod({ id: 'mod_8001', name: '8級S模組', rarity: 'S', slot: ModuleSlot.SLOT_8, levels: [1,2,3,4,5,6,7,8].map((level) => ({ level })) as never })
+/** 綁機甲的專屬模組：只有那台裝得上，不進候選池 */
+const 破曉專屬 = mod({ id: 'mod_9001', name: '匯流樞紐', rarity: 'S', slot: ModuleSlot.EXCLUSIVE, boundMechId: 'mech_026' })
+/** 機甲天生自帶、玩家取得不了的副模組（`available` 值域已漂移，不可拿它當 gate） */
+const 副模組 = mod({ id: 'mod_7001', name: '內建副模組', rarity: 'S', slot: ModuleSlot.BUILT_IN, available: true })
+/** 沒有各階數值：頂層那排平坦欄位全 0，裝上去不會有任何效果而且不報錯 */
+const 空殼模組 = mod({ id: 'mod_4999', name: '空殼模組', rarity: 'S', levels: [] })
+
+const MODULES = [通用S, 通用A, 八級S, 破曉專屬, 副模組, 空殼模組]
+
 const WORLD = buildWorld({
   pilots: [海莉絲, 重型機師],
-  mechs: [彌造者, 輕型機, 重型機, 美杜莎MK2, 帕斯卡, 獨臂機],
+  mechs: [彌造者, 輕型機, 重型機, 美杜莎MK2, 帕斯卡, 獨臂機, A級機, B級機, 壞接口機],
   weapons: [群山之力, 貝奧武夫, 藝術突襲, 夜魘, 熔火, 炬塔, 耀星, 隕星, 千星, 衝擊炮, 聚合屏障, 玲瓏, 群星, 廉價刀, 三槽刀],
   backpacks: [強襲者背包, 出力背包Ⅲ, 輕型限定包],
   forms: [先鋒形態, 突擊形態, 虛粒子形態],
   components: COMPONENTS,
+  modules: MODULES,
 })
 
-const ctxOf = (set: EquipSet, opts: { mech?: Mech; setKey?: string; pilot?: Pilot } = {}) => {
+const ctxOf = (
+  set: EquipSet,
+  opts: {
+    mech?: Mech; setKey?: string; pilot?: Pilot
+    /** 四個接口上各裝了什麼（PLAN-052-G）。**放頂層、不放進 set** —— 模組不隨形態分頁變動 */
+    modules?: Partial<Record<MechPartPositionType, string>>
+  } = {},
+) => {
   const key = opts.setKey ?? 'default'
   return buildContext(
-    { pilotId: (opts.pilot ?? 海莉絲).id, mechId: (opts.mech ?? 彌造者).id, sets: { [key]: set } },
+    {
+      pilotId: (opts.pilot ?? 海莉絲).id,
+      mechId: (opts.mech ?? 彌造者).id,
+      sets: { [key]: set },
+      modules: opts.modules,
+    },
     key,
     WORLD,
   )
@@ -781,4 +848,109 @@ test('componentChoices：可裝的排前面，其中觸發機率等級高的優�
   assert.equal(entries[0].item.id, 觸憑逸W.id, 'Lv7 應該排在 Lv6／Lv5 之前')
   const firstRejected = entries.findIndex((e) => e.rejection !== null)
   assert.ok(entries.slice(0, firstRejected).every((e) => e.rejection === null))
+})
+
+// ─── 模組接口 gate（PLAN-052-G A-3）────────────────────────────────────────
+//
+// 這一段守的是「四張卡各自該說什麼」。三種不可裝的狀態**不可共用一句話**：
+// 留白或含糊會被讀成一個我們並不知道的否定陳述 —— 那正是 2026-08-27 修掉的
+// 「B 品質機甲接口資料未建檔」那句錯話的成因。
+
+const TORSO = { kind: 'module', position: MechPartPosition.TORSO } as const
+const L_ARM = { kind: 'module', position: MechPartPosition.LEFT_ARM } as const
+const LEGS  = { kind: 'module', position: MechPartPosition.LEGS } as const
+
+test('052-G：Ⅱ型接口 A／S 皆可裝', () => {
+  const ctx = ctxOf({ mounts: [] })
+  assert.equal(canEquipModule(ctx, 通用S, TORSO), null)
+  assert.equal(canEquipModule(ctx, 通用A, TORSO), null)
+  assert.equal(canEquipModule(ctx, 八級S, LEGS), null)
+})
+
+test('052-G：Ⅰ型接口只收 A 級 —— S 級被 structural 摺疊，不是灰掉', () => {
+  const ctx = ctxOf({ mounts: [] }, { mech: A級機 })
+  // 軀幹與腿部是 Ⅰ 型
+  const r = canEquipModule(ctx, 通用S, TORSO)
+  assert.equal(r?.code, 'MOD_IFACE_RARITY')
+  assert.equal(r?.tier, 'structural')
+  assert.equal(canEquipModule(ctx, 通用S, LEGS)?.code, 'MOD_IFACE_RARITY')
+  // A 級裝得上；而同一台的雙臂是 Ⅱ 型，S 級在那裡沒問題
+  assert.equal(canEquipModule(ctx, 通用A, TORSO), null)
+  assert.equal(canEquipModule(ctx, 通用S, L_ARM), null)
+})
+
+test('052-G：B 品質機甲「沒有模組接口」是 blocked —— 整個面板降級，不是給一個空清單', () => {
+  const ctx = ctxOf({ mounts: [] }, { mech: B級機 })
+  const r = canEquipModule(ctx, 通用A, TORSO)
+  assert.equal(r?.code, 'MOD_NO_INTERFACE')
+  assert.equal(r?.tier, 'blocked')
+  assert.match(r!.reason, /沒有模組接口/)
+  // ⚠ 這句話**不可以**是「未建檔」：那個狀態自 2026-08-27 起已經不存在
+  assert.doesNotMatch(r!.reason, /未建檔/)
+})
+
+test('052-G：認不得的接口型別是 unknown 而不是「沒有接口」（星夜女神那個坑）', () => {
+  const ctx = ctxOf({ mounts: [] }, { mech: 壞接口機 })
+  const r = canEquipModule(ctx, 通用A, TORSO)
+  assert.equal(r?.code, 'MOD_IFACE_UNKNOWN')
+  assert.equal(r?.tier, 'blocked')
+  // 「不知道」與「沒有」是兩件事，兩者共用一句話就等於對玩家說了一個我們並不知道的否定陳述
+  assert.notEqual(r?.code, 'MOD_NO_INTERFACE')
+  // 同一台的其他三格是正常的 Ⅱ 型，不受影響
+  assert.equal(canEquipModule(ctx, 通用S, L_ARM), null)
+})
+
+test('052-G：候選池外的模組擋在規則層 —— 分享碼帶進來的專屬／副模組不會靜默裝上', () => {
+  const ctx = ctxOf({ mounts: [] })
+  const 專屬 = canEquipModule(ctx, 破曉專屬, TORSO)
+  assert.equal(專屬?.code, 'MOD_NOT_CANDIDATE')
+  assert.equal(專屬?.tier, 'structural')
+  assert.equal(canEquipModule(ctx, 副模組, TORSO)?.code, 'MOD_NOT_CANDIDATE')
+})
+
+test('052-G：沒有 levels[] 的模組擋下 —— 判準不是頂層那排全 0 的平坦欄位', () => {
+  const ctx = ctxOf({ mounts: [] })
+  const r = canEquipModule(ctx, 空殼模組, TORSO)
+  assert.equal(r?.code, 'MOD_DATA_INCOMPLETE')
+  assert.equal(r?.tier, 'structural')
+})
+
+test('052-G：接口已裝別顆 ＝ situational ＋ 解法按鈕，且按鈕指的是同一格', () => {
+  const ctx = ctxOf({ mounts: [] }, { modules: { torso: 通用S.id } })
+  const r = canEquipModule(ctx, 通用A, TORSO)
+  assert.equal(r?.code, 'MOD_SLOT_TAKEN')
+  assert.equal(r?.tier, 'situational')
+  assert.ok(r && 'resolution' in r)
+  // 文案照實寫「卸下 X」——`resolve` 只送 unequip，沒有「並裝上」那一步
+  assert.equal(r.resolution.label, `卸下${通用S.name}`)
+  assert.deepEqual(r.resolution.action, { type: 'unequipModule', ref: TORSO })
+  // 別的格不受影響
+  assert.equal(canEquipModule(ctx, 通用A, L_ARM), null)
+})
+
+test('052-G：裝著的就是這一顆 ⇒ 不是拒絕而是「已裝上」（文案完全不同）', () => {
+  const ctx = ctxOf({ mounts: [] }, { modules: { torso: 通用S.id } })
+  assert.equal(canEquipModule(ctx, 通用S, TORSO), null)
+})
+
+test('052-G：模組等級一律由 chassis derive（buildContext 有把 world.modules 傳進去）', () => {
+  // 少了 moduleMap 的話 moduleLevelOf() 恆回 0，而 0 的語意是「查無此模組」——
+  // 症狀是右欄的效果彙總全部顯示 0 級加成，且不報錯
+  const ctx = ctxOf({ mounts: [] })
+  assert.equal(ctx.chassis!.moduleLevelOf(通用S.id), 4)
+  assert.equal(ctx.chassis!.moduleLevelOf(八級S.id), 8)
+  assert.equal(ctx.chassis!.moduleLevelOf('mod_不存在'), 0)
+})
+
+test('052-G：載入 gate —— 世界裡沒有模組時，規則層不誤報（空 Map ＝ 還沒載入）', () => {
+  const 空世界 = buildWorld({
+    pilots: [海莉絲], mechs: [彌造者], weapons: [], backpacks: [], forms: [],
+  })
+  const ctx = buildContext({ pilotId: 海莉絲.id, mechId: 彌造者.id, sets: {}, modules: { torso: 通用S.id } }, 'default', 空世界)
+  assert.equal(ctx.world.modules.size, 0)
+  // 呼叫端手上已經有 Module 物件時（清單來自 world.modules），本支只會漏擋不會誤擋：
+  // 這一格「已裝」查不到名字，退回泛稱而不是把它當成空格
+  const r = canEquipModule(ctx, 通用A, TORSO)
+  assert.equal(r?.code, 'MOD_SLOT_TAKEN')
+  assert.equal(r && 'resolution' in r && r.resolution.label, '卸下這顆模組')
 })

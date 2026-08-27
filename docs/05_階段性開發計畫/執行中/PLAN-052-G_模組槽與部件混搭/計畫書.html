@@ -244,7 +244,7 @@
       <tr><td>B 品質機甲</td><td>10 台 40 格全空</td><td>相符 —— 是「沒有接口」不是未建檔</td></tr>
       <tr><td>真正未建檔</td><td>僅 <code>mech_090_美杜莎MK2</code> 4 格</td><td>相符</td></tr>
       <tr><td>候選池的分享碼覆蓋</td><td>可推導 145 ＋ 別名 41 ＝ <strong>186／186，零撞號</strong></td><td>別名表無死指標，無需新增別名</td></tr>
-      <tr><td>候選池 <code>levels[]</code></td><td>186／186 有；長度 4 者 136 筆、長度 8 者 50 筆</td><td>頂層平坦欄位全 0 者 163 筆 ⇒ 必走 levels[]</td></tr>
+      <tr><td>候選池 <code>levels[]</code></td><td>186／186 有；長度 4 者 136 筆、長度 8 者 50 筆</td><td>頂層平坦欄位全 0 者 <strong>131</strong> 筆 ⇒ 必走 levels[]<br><small>⚠ 原記 163，2026-08-27 B-1 動工時重算不出來（任何分母／鍵空間組合皆非），已更正</small></td></tr>
       <tr><td><code>buffIds</code> ／ <code>conditionalEffects</code></td><td><strong>候選池 0 筆 ／ 0 筆</strong></td><td>總綱未記，直接決定右欄能彙總什麼 —— 見決策八</td></tr>
       <tr><td>混搭來源池</td><td>90／90 台四部位齊全；輕型 27 ／ 中甲 36 ／ 重型 27</td><td>總綱未記數字</td></tr>
       <tr><td><code>mod_2030</code>（官方廢案）</td><td>仍在：<code>source</code> 為字串 <code>"未知"</code>、<code>managedBy: auto</code>、無拆解來源</td><td>相符 —— 需明著排除，見決策一</td></tr>
@@ -317,6 +317,16 @@
 
   <div class="decision-block">
     <strong>決策三：<code>moduleAddLevel</code> 與總模組等級 —— <span style="color:var(--accent-yellow)">本輪延後</span>（使用者裁決 2026-08-27，當日修訂）</strong><br>
+    <span style="color:var(--accent-red)">⚠ <strong>2026-08-27 再次修訂：本決策的延後理由已被推翻，改為「做」。</strong></span>
+    使用者在 Phase C 交付後說明了真正的機制：<strong>同一顆模組可以裝在多個接口上，
+    而那正是升它等級的方式</strong> —— 每顆 ＋<code>moduleAddLevel</code>，
+    上限是該模組 <code>levels[]</code> 的階數。逐字：「四顆刀劍模組Ⅱ，總和 8 級，
+    但實際上上限還是 4，不會超過生效」。<br>
+    也就是說 <strong>Σ 不是常數</strong>（下面那段「全站預設滿階 ⇒ Σ 是常數」的推論，
+    前提是把 Σ 當成「四個接口的接口階加總」，而實際上它是「玩家裝了哪些模組的加總」）。
+    使用者裁決：<strong>等級改成推導 ＋ 加超限提醒</strong>。落地見進度表 C-7 與下方決策十一。<br>
+    以下這一段保留原文，因為它記錄了當時為什麼會那樣推 —— 而那個誤會值得留著。<br><br>
+
     <span class="dim">裁決經過：先裁決「要做，它就是接口槽的意義」；同日查證接口規則後，
     使用者複審為<strong>「不算很優先，目前我們都預設最高等級，以後再處理」</strong>。</span><br><br>
     <strong>為什麼延後是對的</strong>：這整個機制的觸發條件是<strong>機甲品質階級會變動</strong>，
@@ -347,7 +357,14 @@
     · <strong>模組不佔重量</strong> ⇒ 出力條與 <code>loadoutBudget()</code> 完全不必動，
       這是本計畫與 052-D 最大的差異（元件也不佔重量，但元件有 <code>componentLimit</code> 這個容量帳）。<br>
     · <strong>讀數值務必走 <code>levels[]</code></strong>：候選池 186 筆全有 <code>levels[]</code>，
-      而頂層平坦欄位全 0 者有 163 筆。讀頂層的症狀是「模組裝上去沒有任何效果」，且不報錯。
+      而頂層平坦欄位全 0 者有 <strong>131</strong> 筆。讀頂層的症狀是「模組裝上去沒有任何效果」，且不報錯。<br>
+      <small>⚠ <strong>原記 163，2026-08-27（B-1 動工日）重算更正為 131。</strong>
+      鍵空間取「全庫 <code>levels[]</code> 出現過的數值鍵聯集」，分母是候選池 186；
+      換任何一種分母（198／241）或鍵空間（每筆自己的 levels[0]／11 個基礎欄位）都得不到 163。<br>
+      更正後的結論不僅不變，還更尖銳：剩下的 55 筆頂層有值，其中 <strong>53 筆恰等於滿階值</strong>
+      （1 筆等於第 1 階、1 筆兩者皆非）。也就是說讀頂層會得到
+      <strong>「七成靜默歸零、三成剛好正確」</strong>這種最難查的分佈 ——
+      抽查幾顆很可能剛好抽到對的那三成。守門斷言在 <code>moduleRules.test.ts</code>。</small>
   </div>
 
   <div class="decision-block">
@@ -445,6 +462,31 @@
     ② <strong>後台依 quality 給建議值</strong> —— <code>MechAdmin</code> 的接口欄位在偏離規則時
       出黃字提示並附一鍵改回；未知 quality 則降級說明而不是宣稱它錯。
   </div>
+
+  <div class="decision-block">
+    <strong>決策十一：同族堆疊 ＝ 升等級，不是疊效果（使用者裁決 2026-08-27，Phase C 後追加）</strong><br>
+    交付 Phase C 時把「同一顆模組可以裝兩格」列為待確認；使用者確認那<strong>就是機制本身</strong>。<br>
+    · <strong>等級 ＝ <code>min(Σ 同族 moduleAddLevel, levels[].length)</code></strong>。
+      一顆通用模組Ⅱ 是 Lv2、兩顆才是 Lv4；四顆是 Σ 8 但封頂 4，多的 4 級<strong>不生效</strong>。<br>
+    · <strong>族鍵 ＝ 名稱去掉尾端的 Ⅰ／Ⅱ</strong>（＋ slot 前綴防跨槽撞名）。
+      實測候選池去階後恰為 <strong>155 族</strong>：124 個單人族（特性 74 ＋ 8級 50）＋
+      <strong>31 個雙人族</strong>，後者全部是 <code>校準模組Ⅰ</code>(A／add 1) ／
+      <code>校準模組Ⅱ</code>(S／add 2) 這種配對、階數一致、零跨槽撞名。
+      ⇒ 一顆 Ⅱ ＝ 兩顆 Ⅰ，混裝相加。<br>
+    · <strong>合計走「族」而不是走「格」。</strong> 逐格加總會讓四顆同族算出四倍加成 ——
+      那是這一層最容易長出來的錯，而且它長得很像是對的。<br>
+    · <strong>超限是提醒而不是拒絕。</strong> 裝四顆同族是合法操作，只是其中兩顆白費，
+      那是玩家的選擇不是非法配置；擋下來會讓「我就想這樣擺」變成做不到的事。
+      提醒出現在三處：挑選的當下（最重要）、彙總面板、匯出圖。<br>
+    · <strong>8 級模組的差額明講、不猜。</strong> 它有 8 階而四個接口最多貢獻 4 級；
+      差額來自機甲自帶的那一顆（等級隨品質階，使用者：「一套 S 級甲整套金 3 時剛好 4 級，
+      搭配 4 顆就能 8 級」，並指出這是資源有限時的<strong>過渡期</strong>選項）。
+      站上只算接口那一段並把差額寫在畫面上 —— 品質階模型屬另一份尚未動工的計畫。<br>
+    ⚠ <code>ResolvedChassis.moduleLevelOf()</code> <strong>維持回滿階</strong>，
+    只給機甲自帶那幾顆用：它不知道別格裝了什麼，答不出堆疊。接口上的一律走
+    <code>moduleStacks()</code>。
+  </div>
+
 </section>
 
 <!-- 實作範圍 -->

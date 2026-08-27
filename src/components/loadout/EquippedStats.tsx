@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Weapon } from '../../types'
-import type { SlotRef } from '../../types/slots'
+import type { WeaponSlotRef } from '../../types/slots'
 import { slotKey } from '../../types/slots'
 import { slotLabel } from '../../utils/mechSlots'
 import { WeaponEquipSlot } from '../../types/enums'
@@ -44,7 +44,7 @@ export function EquippedStats({ ctx }: { ctx: LoadoutContext }) {
 
   if (rows.length === 0) {
     // 逐格走訪（含固定武裝），順序與槽位圖一致 —— 兩邊對不上時，玩家會以為漏了一把
-    const refs: SlotRef[] = enumerateSlots(ctx.capacity)
+    const refs: WeaponSlotRef[] = enumerateSlots(ctx.capacity)
     const dualBanks = new Set(
       ctx.set.mounts.filter((m) => m.slot === WeaponEquipSlot.DUAL_HAND).map((m) => m.bank),
     )
