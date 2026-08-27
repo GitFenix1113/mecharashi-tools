@@ -12,9 +12,9 @@ import { HUD } from './loadoutTheme'
 // 這四張卡不能長得像可以點 —— 一個看起來能點卻沒有反應的卡片，比一張標明
 // 「建置中」的卡片難處理得多（決策：整排底部寫出「開放後可換」，而不是靜默唯讀）。
 //
-// ⚠ 接口空字串 ＝ **接口資料未建檔**，不是「這格沒有接口」。
-//   B 品質機甲 10 台共 40 格刻意不補、美杜莎MK2 的 4 格是官方未公布 ——
-//   兩者都要寫出來，留白會被讀成一個我們並不知道的否定陳述。
+// ⚠ 接口空字串 ＝ **這台機甲沒有模組接口**（2026-08-27 起只有這一種語意）。
+//   今天只有 B 品質機甲（10 台 40 格）屬於這一種，官方基礎階與滿階皆空、已佐證。
+//   仍然要把它寫出來 —— 留白會被讀成「應該有但我們沒查到」，而事實正好相反。
 //
 // ⚠ 四部位任一缺席時 `resolveChassis()` 回 null → **整區不渲染**，不補零值部位。
 //   一排重量 0、火力 0 的假部件比「這台資料不完整」難查太多。
@@ -23,8 +23,8 @@ const PART_LABEL: Record<string, string> = {
   torso: '軀幹', leftArm: '左臂', rightArm: '右臂', legs: '腿部',
 }
 
-/** 接口未建檔的呈現。與機甲詳情頁（MechSlotPanel）同一句措辭。 */
-const IFACE_UNKNOWN = '接口未建檔'
+/** 沒有模組接口時的呈現。與機甲詳情頁（MechSlotPanel）同一句措辭。 */
+const IFACE_NONE = '無模組接口'
 
 export function MechPartStrip({ mech }: { mech: Mech | null }) {
   const chassis = resolveChassis(mech)
@@ -69,7 +69,7 @@ export function MechPartStrip({ mech }: { mech: Mech | null }) {
                     iface ? 'text-text-dim' : 'text-text-dim italic'
                   }`}
                 >
-                  {iface ? `${iface} ×1` : IFACE_UNKNOWN}
+                  {iface ? `${iface} ×1` : IFACE_NONE}
                 </span>
               </div>
             </div>

@@ -1,0 +1,902 @@
+[
+ {
+  "id": "mech_001_都卜勒",
+  "name": "都卜勒",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_002_格萊楊",
+  "name": "格萊楊",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_003_暮色之牙",
+  "name": "暮色之牙",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_004_強電場",
+  "name": "強電場",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_005_海拉",
+  "name": "海拉",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_006_XR",
+  "name": "XR",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_007_開拓者",
+  "name": "開拓者",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_008_狼獾",
+  "name": "狼獾",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_009_朝陽",
+  "name": "朝陽",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_010_青鳥",
+  "name": "青鳥",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_011_日弩",
+  "name": "日弩",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_012_赫拉克勒斯",
+  "name": "赫拉克勒斯",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_013_吉爾萊斯",
+  "name": "吉爾萊斯",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_014_戴亞斯",
+  "name": "戴亞斯",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_015_金剛",
+  "name": "金剛",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_016_恐爪",
+  "name": "恐爪",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_017_馬爾薩斯",
+  "name": "馬爾薩斯",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_018_龍雀",
+  "name": "龍雀",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_019_塔納託斯",
+  "name": "塔納託斯",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_020_光暉",
+  "name": "光暉",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_021_雷克斯",
+  "name": "雷克斯",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_022_帕斯卡",
+  "name": "帕斯卡",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_023_藍柱石",
+  "name": "藍柱石",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_024_銀閃",
+  "name": "銀閃",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_025_遊騎兵",
+  "name": "遊騎兵",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_026_破曉者-02",
+  "name": "破曉者-02",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_027_破曉者-01",
+  "name": "破曉者-01",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_028_破曉者-00",
+  "name": "破曉者-00",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_029_恐頜",
+  "name": "恐頜",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_030_伊格尼特",
+  "name": "伊格尼特",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_031_銜尾蛇",
+  "name": "銜尾蛇",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_032_奧德修斯",
+  "name": "奧德修斯",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_033_影子兔",
+  "name": "影子兔",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_034_復仇女神",
+  "name": "復仇女神",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_035_天角獸",
+  "name": "天角獸",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_036_螣蛇",
+  "name": "螣蛇",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_037_裁決者",
+  "name": "裁決者",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_038_信仰之眼",
+  "name": "信仰之眼",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_039_影武者",
+  "name": "影武者",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_040_芬裡厄",
+  "name": "芬里厄",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_041_疾嘯",
+  "name": "疾嘯",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_042_雪鴞",
+  "name": "雪鴞",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_043_盜火者",
+  "name": "盜火者",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_044_巨像",
+  "name": "巨像",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_045_夜天光",
+  "name": "夜天光",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_046_赫克托爾",
+  "name": "赫克托爾",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_047_幻惑",
+  "name": "幻惑",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_048_輝龍",
+  "name": "輝龍",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_049_影虎",
+  "name": "影虎",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_050_霸王",
+  "name": "霸王",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_051_君權",
+  "name": "君權",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_052_彌造者",
+  "name": "彌造者",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_053_殉道士",
+  "name": "殉道士",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_054_奔霄",
+  "name": "奔霄",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_055_螢石",
+  "name": "螢石",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_056_惡兆",
+  "name": "惡兆",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_057_獵鬥士",
+  "name": "獵鬥士",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_058_燧石",
+  "name": "燧石",
+  "quality": "A",
+  "armorType": "輕型",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_059_刃齒虎",
+  "name": "刃齒虎",
+  "quality": "A",
+  "armorType": "輕型",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_060_灰伯勞",
+  "name": "灰伯勞",
+  "quality": "B",
+  "armorType": "輕型",
+  "torso": "",
+  "leftArm": "",
+  "rightArm": "",
+  "legs": ""
+ },
+ {
+  "id": "mech_061_波耶",
+  "name": "波耶",
+  "quality": "A",
+  "armorType": "輕型",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_062_狄安娜",
+  "name": "狄安娜",
+  "quality": "A",
+  "armorType": "輕型",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_063_極光",
+  "name": "極光",
+  "quality": "A",
+  "armorType": "輕型",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_064_原點",
+  "name": "原點",
+  "quality": "B",
+  "armorType": "輕型",
+  "torso": "",
+  "leftArm": "",
+  "rightArm": "",
+  "legs": ""
+ },
+ {
+  "id": "mech_065_阿克爾",
+  "name": "阿克爾",
+  "quality": "B",
+  "armorType": "輕型",
+  "torso": "",
+  "leftArm": "",
+  "rightArm": "",
+  "legs": ""
+ },
+ {
+  "id": "mech_066_鬥將",
+  "name": "鬥將",
+  "quality": "A",
+  "armorType": "中甲",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_067_阿拉什",
+  "name": "阿拉什",
+  "quality": "A",
+  "armorType": "中甲",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_068_走鵑",
+  "name": "走鵑",
+  "quality": "A",
+  "armorType": "中甲",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_069_高嶺",
+  "name": "高嶺",
+  "quality": "A",
+  "armorType": "中甲",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_070_赫爾墨斯",
+  "name": "赫爾墨斯",
+  "quality": "A",
+  "armorType": "中甲",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_071_鐵鋒",
+  "name": "鐵鋒",
+  "quality": "A",
+  "armorType": "中甲",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_072_提塔利克",
+  "name": "提塔利克",
+  "quality": "B",
+  "armorType": "中甲",
+  "torso": "",
+  "leftArm": "",
+  "rightArm": "",
+  "legs": ""
+ },
+ {
+  "id": "mech_073_氣旋",
+  "name": "氣旋",
+  "quality": "B",
+  "armorType": "中甲",
+  "torso": "",
+  "leftArm": "",
+  "rightArm": "",
+  "legs": ""
+ },
+ {
+  "id": "mech_074_工蟻",
+  "name": "工蟻",
+  "quality": "B",
+  "armorType": "中甲",
+  "torso": "",
+  "leftArm": "",
+  "rightArm": "",
+  "legs": ""
+ },
+ {
+  "id": "mech_075_野隼",
+  "name": "野隼",
+  "quality": "B",
+  "armorType": "中甲",
+  "torso": "",
+  "leftArm": "",
+  "rightArm": "",
+  "legs": ""
+ },
+ {
+  "id": "mech_076_百夫長",
+  "name": "百夫長",
+  "quality": "B",
+  "armorType": "重型",
+  "torso": "",
+  "leftArm": "",
+  "rightArm": "",
+  "legs": ""
+ },
+ {
+  "id": "mech_077_山魈",
+  "name": "山魈",
+  "quality": "A",
+  "armorType": "重型",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_078_鋼魘",
+  "name": "鋼魘",
+  "quality": "A",
+  "armorType": "重型",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_079_鱷龜",
+  "name": "鱷龜",
+  "quality": "A",
+  "armorType": "重型",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_080_尖兵",
+  "name": "尖兵",
+  "quality": "B",
+  "armorType": "重型",
+  "torso": "",
+  "leftArm": "",
+  "rightArm": "",
+  "legs": ""
+ },
+ {
+  "id": "mech_081_淤泥",
+  "name": "淤泥",
+  "quality": "A",
+  "armorType": "重型",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_082_卡戎",
+  "name": "卡戎",
+  "quality": "A",
+  "armorType": "重型",
+  "torso": "Ⅰ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅰ型接口"
+ },
+ {
+  "id": "mech_083_澤亞雷德",
+  "name": "澤亞雷德",
+  "quality": "B",
+  "armorType": "重型",
+  "torso": "",
+  "leftArm": "",
+  "rightArm": "",
+  "legs": ""
+ },
+ {
+  "id": "mech_084_莫比烏斯X",
+  "name": "莫比烏斯X",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_085_奈芙蒂斯",
+  "name": "奈芙蒂斯",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_086_棱鏡",
+  "name": "棱鏡",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_087_尼德霍格",
+  "name": "尼德霍格",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_088_雪崩",
+  "name": "雪崩",
+  "quality": "S",
+  "armorType": "重型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_089_星夜女神",
+  "name": "星夜女神",
+  "quality": "S",
+  "armorType": "輕型",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ },
+ {
+  "id": "mech_090_美杜莎MK2",
+  "name": "美杜莎MK2",
+  "quality": "S",
+  "armorType": "中甲",
+  "torso": "Ⅱ型接口",
+  "leftArm": "Ⅱ型接口",
+  "rightArm": "Ⅱ型接口",
+  "legs": "Ⅱ型接口"
+ }
+]

@@ -289,16 +289,30 @@
   </div>
 
   <div class="decision-block">
-    <strong>決策二：接口 gate 走 <code>rarity</code>，B 品質「沒有接口」由 <code>quality</code> derive</strong><br>
+    <strong>決策二：接口 gate 走 <code>rarity</code>；接口本身 ＝ f(quality, position)</strong><br>
+    <span style="color:var(--accent-green)">✅ 2026-08-27 已查證並落地</span>，見
+    <code>_local-notes/2026-08/2026-08-27_機甲模組接口_資料基礎規則.html</code>。<br>
     · Ⅰ型接口 ⇒ 只收 <code>rarity === 'A'</code>（42 筆）；Ⅱ型接口 ⇒ A／S 皆可（186 筆）。<br>
-    · <strong>B 品質機甲 10 台 40 格空白 ＝ 真的沒有這個槽</strong>，不是未建檔。UI 寫
-      「此機甲無模組接口」，判定由 <code>quality === 'B'</code> derive 而非看空字串 ——
-      空字串同時承載「沒有」與「不知道」兩種語意，只有 <code>quality</code> 分得開。<br>
-    · <strong>真正的未建檔只有 <code>mech_090_美杜莎MK2</code> 那 4 格</strong>（v3.6 佔位機甲，
-      官方數值未公布，含出力在內全為 0）。這一格要顯示「接口資料未建檔」。<br>
-    · ⇒ 連帶要改兩處既有文案：<code>src/types/mech.ts</code> 對 <code>''</code> 的註解
-      （現寫「B 品質刻意不補」＝未建檔）與 <code>MechSlotPanel</code> 的
-      <code>IFACE_UNKNOWN</code> 呈現，兩處今天都把 B 級講成「未建檔」。
+    · <strong>接口型別不是機甲的固定屬性，是「品質階級 × 部位」的函式</strong> ——
+      官方 API 83 台 × 4 部位 ＝ 332 格零例外：
+      <strong>S ⇒ ⅡⅡⅡⅡ／A ⇒ ⅠⅡⅡⅠ</strong>（軀幹與腿部為 Ⅰ）<strong>／B ⇒ 無接口</strong>。
+      <code>armorType</code> 完全不影響。<br>
+    · 官方每格同時有基礎階與滿階兩個值（<code>rawPart.Interface</code> ／
+      <code>rawPart.manji.Interface</code>），<strong>爬蟲取 <code>manji</code></strong>
+      ⇒ 站上存的是滿品質階，與全站滿級口徑一致。
+      基礎階：S 級是 ⅠⅠⅠⅠ、<strong>A 級完全沒有接口</strong>。<br>
+    · 規則落在 <code>src/utils/mechInterface.ts</code>（<code>expectedInterface()</code> /
+      <code>isInterfaceOffRule()</code>），CI 守門在 <code>mechInterface.test.ts</code>（9 案例全綠），
+      fixture 由 <code>scripts/gen-mech-interface-fixture.mjs</code> 產出。
+      <strong>資料仍是真相源</strong> —— 規則只用來守門，不取代資料
+      （規則是今天 83 台的觀察、不是官方保證；改成 derive 的話，破格機甲會讓公式靜默給錯答案且無處可修）。<br>
+    · <strong>⚠ 「接口資料未建檔」這個狀態已經不存在</strong>：美杜莎MK2 那 4 格已依 S 級規則補上 Ⅱ 型，
+      44 格空字串收斂成 40 格、<strong>全部屬於 B 品質</strong>。空字串於是只剩單一語意「這台沒有模組接口」，
+      原本「只有 quality 分得開」的兩義問題自動消失。<br>
+    · 連帶已完成的文案收斂（原 B-2）：<code>enums.ts</code> 的 <code>UNKNOWN_INTERFACE</code>
+      更名為 <code>NO_INTERFACE</code>、<code>mech.ts</code> 與 <code>chassisStats.ts</code> 的註解、
+      <code>MechSlotPanel</code>／<code>MechPartStrip</code>／<code>MechDetailPage</code> 三處
+      改印「無模組接口」。
   </div>
 
   <div class="decision-block">
@@ -399,19 +413,31 @@
     「機甲專屬模組補 <code>boundPart</code> 部位徽章」這一項<strong>本輪不做</strong>：專屬模組不進候選池。
   </div>
 
+  <div class="decision-block">
+    <strong>決策十：星夜女神的接口資料 —— <span style="color:var(--accent-green)">✅ 2026-08-27 已對帳並修正</span></strong><br>
+    原記為「動工前需回官方對帳」，已完成。結論與使用者的判斷一致：<strong>人員輸入錯誤</strong>。<br>
+    · <strong>它不在官方 83 台名單裡</strong> —— v3.5 新機甲，官方 API 尚未收錄，那四格是人工輸入的。
+      <strong>⇒ 修改不會被下次爬蟲洗回去。</strong><br>
+    · <code>ⅠⅠⅠⅠ</code> 正好是 S 級的<strong>基礎階</strong> pattern，可能是照著尚未升滿階的遊戲畫面輸入的。<br>
+    · PLAN-052-A D-1 的程式碼註解逐字寫著「實測星夜女神四格全中（<code>ⅠⅠ型接口</code>）」——
+      原值是兩個 <code>U+2160</code> 拼出來的假「Ⅱ」，<strong>D-1 正規化時收斂成單一個 Ⅰ，方向收錯了</strong>。原意是 Ⅱ。<br>
+    · <strong>已修正為 ⅡⅡⅡⅡ</strong>，同時依使用者裁決把 <code>mech_090_美杜莎MK2</code> 四格
+      一併補成 ⅡⅡⅡⅡ（S 級規則零例外，套用規則而非編造數值）。共 2 台 8 格，<code>mechs</code> 版本已 bump。<br>
+    ⇒ <strong>Ⅰ 型接口今天只存在於 16 台 A 級機甲</strong>（與使用者原本的說法一致），
+      Ⅰ 型候選池（42 筆）的用途也只剩那 16 台。守門測試已把這條釘住。
+  </div>
+
   <div class="warning-block">
-    <strong>⚠ 決策十：星夜女神的接口資料需要回官方對帳（動工前，不阻塞 Phase A）</strong><br>
-    <code>mech_089_星夜女神</code>（S 級・v3.5）<strong>四個部位全是 Ⅰ 型接口</strong>，已確認不是誤讀。
-    可疑的理由三條：<br>
-    · 16 台有 Ⅰ 型接口的 A 級機甲，pattern 清一色是 <code>Ⅰ／Ⅱ／Ⅱ／Ⅰ</code>（軀幹與腿部為 Ⅰ），
-      無一例外；星夜女神是唯一的四格全 Ⅰ。<br>
-    · 它是 256 格 S 級接口裡唯一的 4 格 Ⅰ 型（其餘 248 格全 Ⅱ 型、4 格是美杜莎MK2 的未建檔）。<br>
-    · 依決策二，Ⅰ 型接口只收 A 級模組 ⇒ 一台 S 級機甲只能裝 A 級模組，且依決策三的假說
-      Σ 上限只有 4（全 S 機是 8）—— 遊戲設計上不合理。<br>
-    位置與筆數都與總綱原記的「4 格錯字 <code>ⅠⅠ型接口</code>」吻合，
-    <strong>疑為 052-A 資料修正時被正規化成 Ⅰ 型</strong>。<br>
-    ⇒ B-0 先回官方對帳。若實為 Ⅱ 型則走 data-patch 修正並 bump 版本，
-    <strong>Ⅰ 型接口就只存在於 A 級機甲</strong>（與使用者說法一致），Ⅰ 型候選池的用途也只剩那 16 台。
+    <strong>⚠ 從這件事學到、且已寫進程式碼的一課：下拉選單擋不住「選錯」</strong><br>
+    後台的接口欄位<strong>早在 PLAN-052-A D-1 就是下拉選單</strong>，而這個錯誤穿過了它 ——
+    星夜女神存的是<strong>合法的 enum 值</strong>，只是選錯了那一個。
+    型別擋不住、下拉擋不住，<strong>只有規則層擋得住</strong>。<br>
+    因此本輪補了兩層（使用者裁決 2026-08-27）：<br>
+    ① <strong>CI 守門</strong> —— <code>mechInterface.test.ts</code> 斷言全庫 360 格符合規則、
+      空字串只出現在 B 品質、Ⅰ 型只存在於 A 品質；破格機甲走具名白名單
+      （<code>KNOWN_EXCEPTIONS</code>，今天是空的，加東西前要先回官方對帳）。<br>
+    ② <strong>後台依 quality 給建議值</strong> —— <code>MechAdmin</code> 的接口欄位在偏離規則時
+      出黃字提示並附一鍵改回；未知 quality 則降級說明而不是宣稱它錯。
   </div>
 </section>
 

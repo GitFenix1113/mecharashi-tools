@@ -107,10 +107,11 @@ function PartCard({ part, name, expanded }: { part: MechPart; name: string; expa
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="mb-1">
           <p className="font-bold text-[13px] text-text-primary leading-tight truncate">{name}</p>
-          {/* 空接口不留白：留白會被讀成「這格沒有接口」，那是我們並不知道的否定陳述
-              （B 品質機甲 10 台 40 格未建檔、美杜莎MK2 是官方數值未公布） */}
+          {/* 空接口不留白：留白會被讀成「應該有但我們沒查到」，而事實正好相反 ——
+              這台機甲確實沒有這個槽（今天只有 B 品質機甲，官方兩階皆空、已佐證）。
+              語意見 src/utils/mechInterface.ts */}
           <p className={`text-[11px] leading-tight truncate ${part.interface ? 'text-text-dim' : 'text-text-dim/70 italic'}`}>
-            {part.interface || '接口未建檔'}
+            {part.interface || '無模組接口'}
           </p>
         </div>
         <div className="flex-1 divide-y divide-border/70">

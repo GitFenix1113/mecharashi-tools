@@ -1,5 +1,5 @@
 import type { ArmamentMount } from './slots'
-import type { ArmorType, PartInterface, UnknownInterface } from './enums'
+import type { ArmorType, PartInterface, NoInterface } from './enums'
 
 // ─── 機甲部件（v1.4 新增：獨立部件資料）──────────────────────────────────────
 
@@ -22,11 +22,15 @@ export interface MechPart {
   /**
    * 模組接口型別（PLAN-052-A D-1 由 `string` 收成 enum）。
    *
-   * ⚠ `''` ＝ **接口資料未建檔**，是合法值：B 品質機甲 10 台共 40 格刻意不補
-   *   （沒人配 B 機甲）、美杜莎MK2 的 4 格是官方數值尚未公布。
-   *   渲染層對空值應顯示「接口資料未建檔」，**不要**留白、更不要猜一個型別。
+   * ⚠ `''` ＝ **這台機甲沒有模組接口**，是合法值，今天只有 B 品質機甲（10 台 40 格）
+   *   屬於這一種 —— 官方 API 的基礎階與滿品質階皆為空，是「沒有」而不是「不知道」。
+   *   渲染層對空值應顯示「無模組接口」，**不要**留白、更不要講成「未建檔」。
+   *
+   * ⚠ 值由「品質階級 × 部位」決定，不是每台機甲各自的自由欄位 ——
+   *   規則與 CI 守門在 `src/utils/mechInterface.ts`（S ⇒ ⅡⅡⅡⅡ／A ⇒ ⅠⅡⅡⅠ／B ⇒ 無）。
+   *   存的是**滿品質階**的值（爬蟲取 `manji`），與全站滿級口徑一致。
    */
-  interface: PartInterface | UnknownInterface
+  interface: PartInterface | NoInterface
   /**
    * 焊死在這個部件上的固定武裝（PLAN-052-A）。左臂帶左肩、右臂帶右肩——
    * 肩槽**附屬於手臂**而非與部件正交（enums.ts 的 `WeaponEquipSlot.SHOULDER` 逐字：

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { Mech, Module, MechPart, Weapon } from '../../../types'
-import { ModuleSlot, ArmorType, PartInterface } from '../../../types/enums'
+import { ModuleSlot, ArmorType, PartInterface, MechPartPosition } from '../../../types/enums'
+import { expectedInterface, isInterfaceOffRule } from '../../../utils/mechInterface'
 import {
   Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog,
   GRID_AUTO_FIELDS, AdminEditTabs, type AdminEditTabDef,
@@ -462,6 +463,7 @@ function MechEditPanel({
                 key={pos}
                 label={PART_LABELS[pos]}
                 part={form.parts?.[pos] ?? makeDefaultPart(pos)}
+                quality={form.quality ?? ''}
                 defaultFolder={mechFolder}
                 weapons={weapons}
                 onChange={(p) => setForm((f) => ({ ...f, parts: { ...f.parts, [pos]: p } }))}
@@ -625,10 +627,13 @@ const PART_LABELS: Record<MechPart['position'], string> = {
 }
 
 // 依 position 顯示條件式欄位的部件編輯器。
-function PartEditor({ label, part, defaultFolder, weapons, onChange }: { label: string; part: MechPart; defaultFolder: string; weapons: Weapon[]; onChange: (p: MechPart) => void }) {
+function PartEditor({ label, part, quality, defaultFolder, weapons, onChange }: { label: string; part: MechPart; quality: string; defaultFolder: string; weapons: Weapon[]; onChange: (p: MechPart) => void }) {
   const num = (k: 'durable' | 'armor' | 'firepower' | 'weight' | 'hit' | 'dodge' | 'move' | 'antiRiot' | 'output', lbl: string) => (
     <NumberField label={lbl} value={part[k] ?? 0} onChange={(v) => onChange({ ...part, [k]: v })} />
   )
+  // 接口的規則建議（2026-08-27）。`null` ＝ 這個 quality 沒有規則，UI 據此降級說明。
+  const suggested = expectedInterface(quality, part.position as MechPartPosition)
+  const offRule = isInterfaceOffRule(quality, part.position as MechPartPosition, part.interface)
   return (
     <div className="border border-border rounded-lg p-3 space-y-3">
       <div className="font-bold text-sm text-accent-cyan">{label}</div>
@@ -643,20 +648,47 @@ function PartEditor({ label, part, defaultFolder, weapons, onChange }: { label: 
         {part.position === 'torso' && num('antiRiot', '抗暴 antiRiot')}
         {part.position === 'torso' && num('output', '出力 output')}
       </div>
-      {/* PLAN-052-A D-1：接口改下拉選單。手打會產生「ⅠⅠ型接口」這種 tsc 抓不到的錯字
-          （實測星夜女神四格全中），而值域只有兩個值 —— 沒有理由留一個能打錯的輸入框。 */}
+      {/* PLAN-052-A D-1：接口改下拉選單。手打會產生「ⅠⅠ型接口」這種 tsc 抓不到的錯字，
+          而值域只有兩個值 —— 沒有理由留一個能打錯的輸入框。
+          ⚠ 2026-08-27：下拉選單**沒能擋住**那個錯 —— 星夜女神四格存的是**合法的 enum 值**，
+          只是選錯了那一個（原值 `ⅠⅠ型接口` ＝ 兩個 U+2160 拼出來的假「Ⅱ」，
+          D-1 正規化時收成單一個 Ⅰ，方向收錯了）。型別擋不住、下拉擋不住，只有規則擋得住。
+          所以再加兩層：依 quality 給建議值，以及偏離規則時的黃字提示 ＋ 一鍵改回。
+          規則本體在 src/utils/mechInterface.ts，CI 守門在 mechInterface.test.ts。 */}
       <Field label="接口 interface">
         <select
           className="input-field"
           value={part.interface ?? ''}
           onChange={(e) => onChange({ ...part, interface: e.target.value as PartInterface | '' })}
         >
-          <option value="">（未建檔）</option>
+          <option value="">（無接口）</option>
           {Object.values(PartInterface).map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
-        <p className="text-[11px] text-text-dim mt-1">
-          留「未建檔」代表<strong className="text-text-secondary">尚未取得資料</strong>，前台會顯示「接口資料未建檔」而不是留白。
-        </p>
+        {suggested === null ? (
+          <p className="text-[11px] text-text-dim mt-1">
+            品質 <code>{quality || '（未填）'}</code> 沒有對應的接口規則 ——
+            先填品質，或依官方資料自行選擇。
+          </p>
+        ) : offRule ? (
+          <p className="text-[11px] text-accent-yellow mt-1">
+            ⚠ 與規則不符：<strong>{quality}</strong> 品質的{label}滿階應為{' '}
+            <strong>{suggested === '' ? '無接口' : suggested}</strong>。
+            確定官方就是這樣才留著，否則
+            <button
+              type="button"
+              className="underline ml-1 hover:text-accent-cyan"
+              onClick={() => onChange({ ...part, interface: suggested })}
+            >
+              改成 {suggested === '' ? '無接口' : suggested}
+            </button>
+          </p>
+        ) : (
+          <p className="text-[11px] text-text-dim mt-1">
+            符合 <strong className="text-text-secondary">{quality}</strong> 品質的接口規則。
+            「無接口」代表<strong className="text-text-secondary">這台機甲沒有這個槽</strong>（B 品質），
+            不是「資料未建檔」。
+          </p>
+        )}
       </Field>
       <IconField
         label={`部件圖片 icon（${part.position}）`}

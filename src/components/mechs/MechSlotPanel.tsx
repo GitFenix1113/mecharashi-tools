@@ -18,8 +18,12 @@ const PART_LABELS: Record<string, string> = {
   torso: '軀幹', leftArm: '左臂', rightArm: '右臂', legs: '腿部',
 }
 
-/** 接口未建檔的呈現。空白會被讀成「這格沒有接口」，那是一個我們並不知道的否定陳述。 */
-const IFACE_UNKNOWN = '接口資料未建檔'
+/**
+ * 沒有模組接口時的呈現。留白會被讀成「這裡應該有東西但我們沒查到」，
+ * 而事實正好相反 —— 這台機甲**確實沒有**這個槽（2026-08-27 起空字串只有這一種語意，
+ * 見 `src/utils/mechInterface.ts`）。所以要把否定陳述明著寫出來。
+ */
+const IFACE_NONE = '無模組接口'
 
 /** 槽位分列的順序與列標。與 enumerateSlots() 的產出順序一致。 */
 const SLOT_GROUPS: { slot: string; label: string }[] = [
@@ -166,7 +170,7 @@ export function MechPartsTable({ mech }: { mech: Mech }) {
                     {part.firepower.toLocaleString()}
                   </td>
                   <td className={`py-1.5 pl-2 ${iface ? 'text-text-secondary' : 'text-text-dim italic'}`}>
-                    {iface || IFACE_UNKNOWN}
+                    {iface || IFACE_NONE}
                   </td>
                 </tr>
               )

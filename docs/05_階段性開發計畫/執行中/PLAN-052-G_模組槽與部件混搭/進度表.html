@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">4</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">22</div>
+      <div class="summary-num" style="color:var(--text-dim)">18</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">0 / 22</span>
+      <span style="color:var(--accent-purple);">4 / 22</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 18%"></div>
     </div>
   </div>
 
@@ -421,23 +421,26 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-0 &nbsp; 星夜女神接口資料回官方對帳</div>
-      <div class="task-group-meta">資料側 · data-patch</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">2026-08-27 完成 · 資料側</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">確認 <code>mech_089_星夜女神</code> 四格是否真為 Ⅰ 型接口</div>
+        <div class="task-name">✅ 已對帳並修正 —— 結論是人員輸入錯誤</div>
         <div class="task-desc">
-          它是 256 格 S 級接口裡唯一的 4 格 Ⅰ 型，而 16 台有 Ⅰ 型的 A 級機甲 pattern 清一色是
-          <code>Ⅰ／Ⅱ／Ⅱ／Ⅰ</code>。依決策二，Ⅰ 型只收 A 級模組 ⇒ 一台 S 機只能裝 A 模組。
-          位置與筆數都與總綱原記的「4 格錯字 <code>ⅠⅠ型接口</code>」吻合，疑為 052-A 正規化時被改成 Ⅰ 型。<br>
-          若實為 Ⅱ 型：走 data-patch skill 修正並 <strong>bump 版本</strong>，
-          <strong>Ⅰ 型接口就只存在於 A 級機甲</strong>，Ⅰ 型候選池的用途只剩那 16 台。
+          直接問官方 API（<code>aircraft_data/detail</code>）83 台 × 4 部位。
+          <strong>星夜女神不在官方名單裡</strong>（v3.5 新機甲，API 尚未收錄）⇒ 那四格是人工輸入的，
+          <strong>修改不會被爬蟲洗回去</strong>。原值 <code>ⅠⅠ型接口</code> 是兩個 <code>U+2160</code>
+          拼出來的假「Ⅱ」，PLAN-052-A D-1 正規化時收成單一個 Ⅰ、方向收錯。<br>
+          <strong>已修正為 ⅡⅡⅡⅡ</strong>；依使用者裁決一併把 <code>mech_090_美杜莎MK2</code> 四格
+          補成 ⅡⅡⅡⅡ（S 級規則零例外，套用規則而非編造）。共 2 台 8 格，<code>mechs</code> 版本已 bump。<br>
+          ⇒ <strong>Ⅰ 型接口今天只存在於 16 台 A 級機甲</strong>，Ⅰ 型候選池（42 筆）的用途只剩那 16 台。<br>
+          規則整理見 <code>_local-notes/2026-08/2026-08-27_機甲模組接口_資料基礎規則.html</code>。
         </div>
-        <div class="task-file">mechs/mech_089_星夜女神</div>
+        <div class="task-file">mechs/mech_089_星夜女神 · mechs/mech_090_美杜莎MK2</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -453,9 +456,13 @@
         <div class="task-desc">
           <code>moduleLevelOf()</code> 現行一律回滿級。依計畫書決策三改成推導：
           裝滿四格 Ⅱ 型 ⇒ 8、A 級機甲的 <code>Ⅰ／Ⅱ／Ⅱ／Ⅰ</code> ⇒ 上限 6。<br>
-          <strong>模組自己的等級與這個總和的關係，在 E-3 驗證通過前一律標「本站推算」。</strong>
-          ⚠ 空接口貢獻 0 還是有基礎值，也在 E-3 一併確認 —— 全空時總和為 0
-          會讓天生模組變成 0 級，那不合理。
+          <strong>⚠ B-0 的官方資料大幅強化了這條假說</strong>：官方每格同時有基礎階與滿階兩個值，
+          而 <strong>S 級機甲的接口是「基礎 ⅠⅠⅠⅠ → 滿階 ⅡⅡⅡⅡ」</strong>
+          ——升品質階讓接口從 Ⅰ 變 Ⅱ、可裝的模組 <code>addLv</code> 從 1 變 2、總和從 4 變 8，
+          而「機甲8級模組」的 <code>levels[]</code> 正好 8 筆。這正是總綱決策六說的
+          「升級某部位品質會讓某個模組 LV.1/8 → LV.2/8」。<br>
+          <strong>仍是假說</strong>（官方資料佐證的是接口隨品質階變動，不是「Σ 決定天生模組等級」本身），
+          E-3 驗證前一律標「本站推算」。⚠ 空接口貢獻 0 還是有基礎值也在 E-3 一併確認。
         </div>
         <div class="task-file">src/utils/chassisStats.ts:118</div>
       </div>
@@ -479,24 +486,58 @@
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">B-2 &nbsp; 兩處既有文案修正：B 級「沒有接口」≠「未建檔」</div>
-      <div class="task-group-meta">src/types/mech.ts / MechSlotPanel.tsx</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-title">B-2 &nbsp; 接口語意收斂 ＋ 規則層防呆</div>
+      <div class="task-group-meta">2026-08-27 完成 · 6 檔 ＋ 新規則檔 ＋ 守門測試</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">改掉把 B 品質講成「未建檔」的註解與文案</div>
+        <div class="task-name">✅ 「接口資料未建檔」這個狀態已經不存在</div>
         <div class="task-desc">
-          <code>mech.ts</code> 對 <code>''</code> 的註解現寫「B 品質刻意不補」（＝未建檔），
-          <code>MechSlotPanel</code> 與 <code>MechPartStrip</code> 對空值一律顯示「接口未建檔」。
-          依決策二：B 級 10 台 40 格是<strong>真的沒有這個槽</strong>，由 <code>quality</code> derive、
-          寫「此機甲無模組接口」；<strong>真正的未建檔只有美杜莎MK2 那 4 格</strong>。<br>
-          兩種狀態在同一個空字串上，只有 <code>quality</code> 分得開 —— 這是為什麼判定不能看空字串。
+          美杜莎MK2 那 4 格補齊之後，44 格空字串收斂成 40 格、<strong>全部屬於 B 品質</strong>
+          ⇒ 空字串只剩單一語意「這台沒有模組接口」，原本「只有 <code>quality</code> 分得開」的
+          兩義問題自動消失。<br>
+          已改：<code>enums.ts</code> 的 <code>UNKNOWN_INTERFACE</code> →
+          <strong><code>NO_INTERFACE</code></strong>（名字錯了比沒有名字更難查）、
+          <code>mech.ts</code> 與 <code>chassisStats.ts</code> 的欄位註解、
+          <code>MechSlotPanel</code>／<code>MechPartStrip</code>／<code>MechDetailPage</code>
+          三處改印<strong>「無模組接口」</strong>。
         </div>
-        <div class="task-file">src/types/mech.ts:25 · src/components/mechs/MechSlotPanel.tsx:22</div>
+        <div class="task-file">src/types/enums.ts · src/types/mech.ts · src/utils/chassisStats.ts · 3 個渲染處</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">✅ 規則層：<code>mechInterface.ts</code> ＋ CI 守門（9 案例）</div>
+        <div class="task-desc">
+          <code>expectedInterface(quality, position)</code> ／ <code>expectedInterfaces()</code> ／
+          <code>hasModuleInterface()</code> ／ <code>isInterfaceOffRule()</code>。
+          守門斷言四條：全庫 360 格符合規則、quality 組成與各型格數（Ⅱ288／Ⅰ32／空40）、
+          空字串只出現在 B 品質、<strong>Ⅰ 型只存在於 A 品質</strong>（052-G 決策二直接依賴這條）。
+          破格機甲走具名白名單 <code>KNOWN_EXCEPTIONS</code>（今天是空的）。<br>
+          <strong>資料仍是真相源</strong> —— 規則只守門、不取代資料。
+        </div>
+        <div class="task-file">src/utils/mechInterface.ts · mechInterface.test.ts · scripts/gen-mech-interface-fixture.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">✅ 後台依 quality 給建議值 ＋ 偏離提示</div>
+        <div class="task-desc">
+          <strong>下拉選單擋不住「選錯」</strong> —— 接口欄位早在 D-1 就是下拉，
+          而星夜女神存的是<strong>合法的 enum 值</strong>、只是選錯那一個。
+          <code>MechAdmin</code> 的 <code>PartEditor</code> 現在收 <code>quality</code>，
+          偏離規則時出黃字說明「<code>S</code> 品質的軀幹滿階應為 Ⅱ型接口」並附一鍵改回；
+          未知 quality 則降級說明而不是宣稱它錯（「不知道」不等於「錯」）。
+        </div>
+        <div class="task-file">src/pages/user/admin/MechAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

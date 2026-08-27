@@ -60,7 +60,7 @@
       <tr><td>&nbsp;├ armor</td><td>number</td><td>護甲值</td></tr>
       <tr><td>&nbsp;├ firepower</td><td>number</td><td>火力值</td></tr>
       <tr><td>&nbsp;├ weight</td><td>number</td><td>部件重量</td></tr>
-      <tr><td>&nbsp;├ interface</td><td>string</td><td>接口類型（如 "Ⅱ型接口"）</td></tr>
+      <tr><td>&nbsp;├ interface</td><td>string</td><td>模組接口型別（<code>Ⅰ型接口</code>／<code>Ⅱ型接口</code>／<code>''</code> ＝ 無接口）。值由「品質階級 × 部位」決定：S ⇒ ⅡⅡⅡⅡ／A ⇒ ⅠⅡⅡⅠ／B ⇒ 無接口，存滿品質階的值。規則與守門在 <code>src/utils/mechInterface.ts</code></td></tr>
       <tr><td>&nbsp;├ hit</td><td>number?</td><td>命中值（僅左右臂）</td></tr>
       <tr><td>&nbsp;├ dodge</td><td>number?</td><td>閃避值（僅腿部）</td></tr>
       <tr><td>&nbsp;├ move</td><td>number?</td><td>移動力（僅腿部）</td></tr>

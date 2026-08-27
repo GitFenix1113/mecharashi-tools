@@ -91,15 +91,25 @@
       </div>
     </div>
     <div class="enum-card">
-      <div class="enum-name">PartInterface — 部件模組接口（PLAN-052-A）</div>
+      <div class="enum-name">PartInterface — 部件模組接口（PLAN-052-A，2026-08-27 修訂）</div>
       <div class="enum-item"><span class="enum-key">TYPE_I</span><span class="enum-val">Ⅰ型接口</span></div>
       <div class="enum-item"><span class="enum-key">TYPE_II</span><span class="enum-val">Ⅱ型接口</span></div>
       <div style="font-size:11px;color:var(--text-dim);line-height:1.7;margin-top:8px;">
-        值就是資料庫原字串，<strong>刻意不縮寫成「Ⅰ／Ⅱ」</strong>：縮寫要動 312 格資料與所有顯示層，
+        值就是資料庫原字串，<strong>刻意不縮寫成「Ⅰ／Ⅱ」</strong>：縮寫要動 360 格資料與所有顯示層，
         而收成 enum 的目的（讓 tsc 擋下錯字）用原字串就達成了。
-        <br><code>''</code> ＝ <strong>接口資料未建檔</strong>，是合法值：B 品質機甲 10 台 40 格刻意不補、
-        <code>mech_090_美杜莎MK2</code> 4 格是官方數值未公布。UI 顯示「接口資料未建檔」，不留白也不猜。
-        <br>後台已改下拉選單 —— 實測抓到的 <code>'ⅠⅠ型接口'</code> 錯字（星夜女神四格全中）正是自由文字輸入的產物。
+        <br><code>''</code>（常數 <code>NO_INTERFACE</code>，2026-08-27 由 <code>UNKNOWN_INTERFACE</code> 更名）
+        ＝ <strong>這台機甲沒有模組接口</strong>，是合法值。今天只有 B 品質機甲（10 台 40 格）屬於這一種，
+        且官方 API 的基礎階與滿品質階皆為空 —— 它是「沒有」而不是「不知道」。
+        UI 顯示<strong>「無模組接口」</strong>，不留白也不講成「未建檔」。
+        <br><strong>值由「品質階級 × 部位」決定，不是每台機甲的自由欄位</strong>：
+        S ⇒ ⅡⅡⅡⅡ／A ⇒ ⅠⅡⅡⅠ（軀幹與腿部為 Ⅰ）／B ⇒ 無接口。
+        官方 83 台 × 4 部位 332 格零例外；站上存的是<strong>滿品質階</strong>的值（爬蟲取 <code>manji</code>），
+        與全站滿級口徑一致。規則與 CI 守門在 <code>src/utils/mechInterface.ts</code> ＋
+        <code>mechInterface.test.ts</code>（fixture 由 <code>scripts/gen-mech-interface-fixture.mjs</code> 產出）。
+        <br>⚠ <strong>下拉選單擋不住選錯</strong>：星夜女神四格曾被存成 Ⅰ 型（原值
+        <code>'ⅠⅠ型接口'</code> ＝ 兩個 <code>U+2160</code> 拼出來的假「Ⅱ」，D-1 正規化時收錯方向），
+        而那是<strong>合法的 enum 值</strong>。2026-08-27 已依規則修正為 Ⅱ 型，
+        並補上規則層守門與後台的偏離提示 —— 型別與下拉都擋不住的錯，只有規則擋得住。
       </div>
     </div>
     <div class="enum-card">

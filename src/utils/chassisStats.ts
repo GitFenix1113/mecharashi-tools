@@ -110,9 +110,13 @@ export interface ResolvedChassis {
   /**
    * 四個模組槽的接口型別（Ⅰ型／Ⅱ型）。
    *
-   * ⚠ 目前是 `string` 而非 enum：實測 360 格中有 44 格空白、4 格是「ⅠⅠ型接口」錯字，
-   *   D-1 正規化並收成 `PartInterface` 之後這裡才跟著收。
-   *   **空字串 ＝ 接口資料未建檔**，UI 應顯示「未建檔」而不是留白或猜一個型別。
+   * ⚠ 目前是 `string` 而非 enum：這一層只是把 `MechPart.interface` 原樣搬過來，
+   *   收成 `PartInterface | NoInterface` 的工作留給呼叫端（混搭後四個來源可能不同台）。
+   *   **空字串 ＝ 這台機甲沒有模組接口**（2026-08-27 起只有這一種語意），
+   *   UI 應顯示「無模組接口」而不是留白、更不要講成「未建檔」。
+   *
+   * ⚠ 值由「品質階級 × 部位」決定 —— 規則與 CI 守門在 `src/utils/mechInterface.ts`。
+   *   實測 360 格：Ⅱ型 288 ／ Ⅰ型 32 ／ 空 40，零例外。
    */
   moduleSlots: Record<typeof MECH_PART_ORDER[number], { iface: string }>
   /**

@@ -65,7 +65,7 @@
       <tr><td>&nbsp;├ armor</td><td>number</td><td>護甲值</td></tr>
       <tr><td>&nbsp;├ firepower</td><td>number</td><td>火力值</td></tr>
       <tr><td>&nbsp;├ weight</td><td>number</td><td>部件重量</td></tr>
-      <tr><td>&nbsp;├ interface</td><td><code>PartInterface | ''</code></td><td>模組接口型別：<code>Ⅰ型接口</code>（32 格）／<code>Ⅱ型接口</code>（280 格）<br><small style="color:var(--text-dim)">PLAN-052-A D-1 由 <code>string</code> 收成 enum，後台改下拉選單（實測抓到 <code>ⅠⅠ型接口</code> 錯字 4 格，已修）。<br><code>''</code> ＝ <strong>接口資料未建檔</strong>，是合法值（44 格）：B 品質機甲 10 台 40 格刻意不補、<code>mech_090_美杜莎MK2</code> 4 格是官方數值未公布。UI 顯示「接口資料未建檔」，不留白也不猜。</small></td></tr>
+      <tr><td>&nbsp;├ interface</td><td><code>PartInterface | ''</code></td><td>模組接口型別：<code>Ⅰ型接口</code>（32 格）／<code>Ⅱ型接口</code>（288 格）／<code>''</code> 無接口（40 格）<br><small style="color:var(--text-dim)"><strong>值由「品質階級 × 部位」決定，不是每台機甲的自由欄位</strong>：S ⇒ ⅡⅡⅡⅡ／A ⇒ ⅠⅡⅡⅠ（軀幹與腿部為 Ⅰ）／B ⇒ 無接口。官方 API 83 台 332 格零例外；存的是<strong>滿品質階</strong>的值（爬蟲取 <code>manji</code>，基礎階與滿階不同：S 級基礎是 ⅠⅠⅠⅠ、A 級基礎完全沒有接口）。規則與 CI 守門在 <code>src/utils/mechInterface.ts</code>。<br><code>''</code>（常數 <code>NO_INTERFACE</code>）＝ <strong>這台機甲沒有模組接口</strong>，今天只有 B 品質 10 台 40 格；UI 顯示「無模組接口」，<strong>不再有「未建檔」這個狀態</strong>。<br>2026-08-27 修正 2 台 8 格：<code>mech_089_星夜女神</code>（人工建檔輸入錯誤，原值 <code>ⅠⅠ型接口</code> 被 D-1 正規化時收成 Ⅰ 型，方向錯了）與 <code>mech_090_美杜莎MK2</code>（依 S 級規則補齊）。後台除下拉選單外另加偏離規則的黃字提示。</small></td></tr>
       <tr><td>&nbsp;├ hit</td><td>number?</td><td>命中值（僅左右臂有）</td></tr>
       <tr><td>&nbsp;├ dodge</td><td>number?</td><td>閃避值（僅腿部有）</td></tr>
       <tr><td>&nbsp;├ move</td><td>number?</td><td>移動力（僅腿部有）</td></tr>

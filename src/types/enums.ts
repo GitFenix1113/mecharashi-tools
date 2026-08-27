@@ -44,8 +44,12 @@ export type ArmorType = typeof ArmorType[keyof typeof ArmorType];
  * 縮寫要動 312 格資料與所有顯示層，換來的只是短一點的字面量；而收成 enum 的目的是
  * 讓 tsc 擋下錯字，那件事用原字串就達成了（實測抓到的 `'ⅠⅠ型接口'` 現在無法指派）。
  *
- * ⚠ **空字串 ＝ 接口資料未建檔**，是合法值（見 `MechPart.interface`）。
- *   B 品質機甲 10 台 40 格刻意不補（沒人配 B 機甲），美杜莎MK2 的 4 格是官方數值未公布。
+ * ⚠ **空字串 ＝ 這台機甲沒有模組接口**，是合法值（見 `MechPart.interface`）。
+ *   2026-08-27 起只有 B 品質機甲（10 台 40 格）是這一種，且**官方基礎階與滿階皆空**、
+ *   已由官方 API 佐證 —— 它是「沒有」而不是「不知道」。
+ *   在那之前這個值還兼任「接口資料未建檔」（美杜莎MK2 那 4 格），兩義共用一個值、
+ *   只有 `quality` 分得開；該筆已依 S 級規則補上 Ⅱ 型，語意於是收斂成單一種。
+ *   ⇒ **渲染層不要再把空字串講成「未建檔」**，那句話今天已經不對了。
  */
 export const PartInterface = {
   TYPE_I:  'Ⅰ型接口',
@@ -53,9 +57,14 @@ export const PartInterface = {
 } as const;
 export type PartInterface = typeof PartInterface[keyof typeof PartInterface];
 
-/** 接口未建檔的表示法。與 `PartInterface` 併用：`PartInterface | UNKNOWN_INTERFACE`。 */
-export const UNKNOWN_INTERFACE = '';
-export type UnknownInterface = typeof UNKNOWN_INTERFACE;
+/**
+ * 「沒有模組接口」的表示法。與 `PartInterface` 併用：`PartInterface | NO_INTERFACE`。
+ *
+ * ⚠ 2026-08-27 由 `UNKNOWN_INTERFACE` 更名 —— 舊名寫的是「未建檔」，
+ *   而那個狀態已經不存在（見 `PartInterface` 的註解）。名字錯了比沒有名字更難查。
+ */
+export const NO_INTERFACE = '';
+export type NoInterface = typeof NO_INTERFACE;
 
 export const MechPartPosition = {
   TORSO:     'torso',
