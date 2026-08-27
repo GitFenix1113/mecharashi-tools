@@ -175,11 +175,11 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">18</div>
+      <div class="summary-num" style="color:var(--text-dim)">16</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">22</div>
+      <div class="summary-num" style="color:var(--text-primary)">20</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">4 / 22</span>
+      <span style="color:var(--accent-purple);">4 / 20</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 18%"></div>
+      <div class="progress-bar-fill" style="width: 20%"></div>
     </div>
   </div>
 
@@ -446,28 +446,25 @@
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">B-1 &nbsp; <code>moduleLevelOf()</code> 接上 Σ <code>moduleAddLevel</code></div>
-      <div class="task-group-meta">src/utils/chassisStats.ts</div>
+      <div class="task-group-title">B-1 &nbsp; 模組數值一律走 <code>levels[]</code></div>
+      <div class="task-group-meta">src/utils/moduleRules.ts · Σ moduleAddLevel 已延後</div>
       <span class="status pending">待開始</span>
     </div>
-    <div class="task-row">
+    <div class="task-row" style="opacity:.6">
       <div>
-        <div class="task-name">總模組等級 ＝ Σ 四接口所裝模組的 <code>moduleAddLevel</code></div>
+        <div class="task-name">⏸ 總模組等級 ＝ Σ <code>moduleAddLevel</code> —— <strong>本輪延後</strong></div>
         <div class="task-desc">
-          <code>moduleLevelOf()</code> 現行一律回滿級。依計畫書決策三改成推導：
-          裝滿四格 Ⅱ 型 ⇒ 8、A 級機甲的 <code>Ⅰ／Ⅱ／Ⅱ／Ⅰ</code> ⇒ 上限 6。<br>
-          <strong>⚠ B-0 的官方資料大幅強化了這條假說</strong>：官方每格同時有基礎階與滿階兩個值，
-          而 <strong>S 級機甲的接口是「基礎 ⅠⅠⅠⅠ → 滿階 ⅡⅡⅡⅡ」</strong>
-          ——升品質階讓接口從 Ⅰ 變 Ⅱ、可裝的模組 <code>addLv</code> 從 1 變 2、總和從 4 變 8，
-          而「機甲8級模組」的 <code>levels[]</code> 正好 8 筆。這正是總綱決策六說的
-          「升級某部位品質會讓某個模組 LV.1/8 → LV.2/8」。<br>
-          <strong>仍是假說</strong>（官方資料佐證的是接口隨品質階變動，不是「Σ 決定天生模組等級」本身），
-          E-3 驗證前一律標「本站推算」。⚠ 空接口貢獻 0 還是有基礎值也在 E-3 一併確認。
+          使用者裁決 2026-08-27（同日複審）：<strong>「不算很優先，目前我們都預設最高等級，以後再處理」</strong>。<br>
+          這個機制的觸發條件是<strong>品質階級會變動</strong>，而總綱決策六已定「一律預設滿級、
+          不給玩家選機甲品質階」⇒ 接口恆為滿階值 ⇒ <strong>Σ 是一個常數</strong>，
+          算出來對每台機甲都固定。做了不會讓任何畫面更準，只多一層要維護的推導。<br>
+          <code>moduleLevelOf()</code> 維持現行行為（一律回滿級），<code>moduleAddLevel</code> 讀都不讀。
+          已查證的事實留在計畫書決策三，動工時不必重查。
         </div>
         <div class="task-file">src/utils/chassisStats.ts:118</div>
       </div>
-      <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <div class="task-assignee">—</div>
+      <span class="status pending">已延後</span>
     </div>
     <div class="task-row">
       <div>
@@ -979,26 +976,25 @@
     </div>
   </div>
 
-  <div class="task-group">
+  <div class="task-group" style="opacity:.6">
     <div class="task-group-header">
-      <div class="task-group-title">E-3 &nbsp; <code>moduleAddLevel</code> 假說的實機驗證</div>
-      <div class="task-group-meta">遊戲內 · 使用者</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-title">E-3 &nbsp; <code>moduleAddLevel</code> 假說的實機驗證 —— <strong>移出本計畫</strong></div>
+      <div class="task-group-meta">隨決策三延後</div>
+      <span class="status pending">已延後</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">四個接口由空到滿，記錄天生模組的等級變化</div>
+        <div class="task-name">⏸ 等到開放玩家選機甲品質階時再做</div>
         <div class="task-desc">
-          計畫書決策三的假說：Σ 四接口的 <code>moduleAddLevel</code> 決定天生模組等級。
-          要確認三件事：① 總和真的是天生模組的等級嗎；② 影響的是 8 級模組、特性模組，還是兩者；
-          ③ <strong>四格全空時的基礎值是多少</strong>（若為 0，天生模組就會是 0 級，那不合理）。<br>
-          <strong>假說被推翻時，改的是決策三，不是把公式湊到剛好符合某一台機甲。</strong>
-          驗證通過前，總模組等級一律標示為「本站推算」。
+          全站預設滿階 ⇒ 升階換接口那條路今天不會被觸達，沒有可驗證的差異。
+          真正需要它的時機是開放品質階選擇之時。<br>
+          仍未驗證的兩件記在計畫書決策三：影響的是 8 級模組、特性模組還是兩者；
+          四格全空時的基礎值（若為 0，天生模組會變 0 級，那不合理）。
         </div>
         <div class="task-file">—</div>
       </div>
-      <div class="task-assignee">使用者</div>
-      <span class="status pending">待開始</span>
+      <div class="task-assignee">—</div>
+      <span class="status pending">已延後</span>
     </div>
   </div>
 

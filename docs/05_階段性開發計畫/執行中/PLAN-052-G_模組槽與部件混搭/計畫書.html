@@ -316,22 +316,28 @@
   </div>
 
   <div class="decision-block">
-    <strong>決策三：<code>moduleAddLevel</code> 要做 —— 它就是接口槽的意義（使用者裁決 2026-08-27）</strong><br>
-    <code>Module.moduleAddLevel</code> 是既有欄位，資料模型文件寫著
-    「配裝模擬器累加所有嵌入模組的 <code>moduleAddLevel</code>，以計算總模組等級」，但全站從未被讀取。
-    實測值域極乾淨：<strong>31 顆通用模組Ⅱ型（S 級）是 2，其餘 155 筆全是 1</strong>。<br><br>
-    <strong>工作假說（自洽但未經實機驗證）</strong>：四個接口的 Σ <code>moduleAddLevel</code>
-    決定機甲天生模組的等級。佐證四條：<br>
-    · 通用模組 62 筆是 <strong>31 對完美成對的Ⅰ／Ⅱ型</strong>，零例外；Ⅰ型全為 A 級 <code>addLv=1</code>、Ⅱ型全為 S 級 <code>addLv=2</code><br>
-    · <strong>命名直接對上接口</strong>：「校準模組Ⅰ」配 Ⅰ 型接口、「校準模組Ⅱ」配 Ⅱ 型接口<br>
-    · S 級機甲四格全 Ⅱ 型 ⇒ Σ 上限 8，而「機甲8級模組」的 <code>levels[]</code> 正好 8 筆<br>
-    · A 級機甲接口為 <code>Ⅰ／Ⅱ／Ⅱ／Ⅰ</code>（16 台完全一致）⇒ Σ 上限 6<br>
-    另注：<code>mod_4001</code> 與 <code>mod_4001_2</code> 的 <code>levels[]</code> 數值<strong>完全相同</strong>
-    （3／5／7／10），差別只在 rarity 與 addLv —— 這也支持「Ⅱ型的價值在於它貢獻的等級，不在自己的數值」。<br><br>
-    <strong>⚠ 這是假說，不是已知事實。</strong>E-3 排一項實機驗收：進遊戲把某台 S 機的四個接口
-    由空到滿逐一裝上，記錄天生 8 級模組的等級變化。<strong>假說被推翻時，改的是這一條決策，
-    不是把公式湊到剛好符合某一台機甲。</strong>在驗收通過之前，總模組等級一律標示為
-    「本站推算」而非官方值。
+    <strong>決策三：<code>moduleAddLevel</code> 與總模組等級 —— <span style="color:var(--accent-yellow)">本輪延後</span>（使用者裁決 2026-08-27，當日修訂）</strong><br>
+    <span class="dim">裁決經過：先裁決「要做，它就是接口槽的意義」；同日查證接口規則後，
+    使用者複審為<strong>「不算很優先，目前我們都預設最高等級，以後再處理」</strong>。</span><br><br>
+    <strong>為什麼延後是對的</strong>：這整個機制的觸發條件是<strong>機甲品質階級會變動</strong>，
+    而總綱決策六已定「一律預設滿級、不給玩家選機甲品質階」。
+    站上永遠只呈現滿階 ⇒ 接口恆為滿階值（S ⇒ ⅡⅡⅡⅡ／A ⇒ ⅠⅡⅡⅠ）⇒
+    <strong>Σ <code>moduleAddLevel</code> 是一個常數</strong>，算出來的總模組等級對每台機甲都固定。
+    做了不會讓任何畫面變得更準，只會多一層要維護的推導。<br><br>
+    <strong>本輪改為</strong>：<code>moduleLevelOf()</code> 維持現行行為（一律回滿級），
+    <code>moduleAddLevel</code> 欄位讀都不讀。B-1 只保留「讀數值一律走 <code>levels[]</code>」那一項，
+    E-3 的實機驗證整項移出本計畫。<br><br>
+    <strong>要動工時需要知道的（已查證，不必重查）</strong>：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>值域：31 顆通用模組Ⅱ型（S 級）為 <code>2</code>，其餘 155 筆為 <code>1</code>。</li>
+      <li>官方每格接口有<strong>基礎階與滿階兩個值</strong>，升階讓接口 Ⅰ→Ⅱ ——
+          S 級 Σ 從 4 變 8，而「機甲8級模組」的 <code>levels[]</code> 正好 8 筆；
+          A 級基礎階完全沒有接口、滿階為 ⅠⅡⅡⅠ ⇒ Σ 上限 6。</li>
+      <li>⚠ 仍未驗證的兩件：影響的是 8 級模組、特性模組還是兩者；四格全空時的基礎值
+          （若為 0，天生模組會變 0 級，那不合理）。</li>
+      <li>真正需要它的時機是<strong>開放玩家選機甲品質階</strong>之時 ——
+          在那之前它是一個算得出來但沒有人會看到差異的數字。</li>
+    </ul>
   </div>
 
   <div class="decision-block">
@@ -495,7 +501,7 @@
       海莉絲四個分頁共用同一組模組與部件。<br>
     · <strong>052-H（熱門配裝）</strong>：聚合的維度會多出模組與部件來源兩項。<br>
     · <strong>總綱</strong>：決策六的數字（188 → 186、41 → 42）、決策十三的降級、
-      追加的決策三（<code>moduleAddLevel</code>）需要回寫總綱計畫書。
+      追加的決策三（<code>moduleAddLevel</code>）—— 已於同日複審為<strong>延後</strong>（全站預設滿階 ⇒ Σ 是常數），總綱決策六「一律預設滿級」維持不變、不必改。
   </div>
 </section>
 
