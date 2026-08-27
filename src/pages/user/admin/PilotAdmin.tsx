@@ -15,6 +15,7 @@ import { shareIdFloor } from '../../../utils/loadoutCode/shareIdRegistry'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { buildSkillMap } from '../../../utils/pilotSkills'
 import { buildNdAbilityMap } from '../../../utils/neuralDriveAbilities'
+import { ndMinSumForLevel, ndZoneMaxLevel, expectedNdLevels, ndZoneOffRule } from '../../../utils/neuralDriveLevels'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
 import { PILOT_RARITY_CLASS, TRIGGER_DISPLAY, STAT_OPTIONS } from './constants'
@@ -830,7 +831,11 @@ function NdAbilitySelect({
 
 // ─── 神驅分區卡（分區名 / 圖示 / 插槽 / 各級門檻）────────────────────────────────
 // 前台固定四區（PilotDetailPage 的 ND_ORDER），分區名以選單約束，避免打錯導致前台漏顯示。
-const ND_ZONE_OPTIONS = ['α', 'β', 'γ1', 'γ2']
+// 分區名選項。'γ' 是 **B 級機師只有一個伽瑪區**時官方 API 給的名字（實質就是 γ1），
+// 10 位 B 級機師是這個結構（α+β+γ），與 79 位的 α+β+γ1+γ2 並存 ——
+// 沒列進來的話那 10 位一改分區就會掉值。名稱照官方原樣存，不改寫成 γ1：
+// TalentNdVariant.zone 等處是以分區名鬆耦合引用的，改名會把那些引用打斷。
+const ND_ZONE_OPTIONS = ['α', 'β', 'γ', 'γ1', 'γ2']
 
 // 插槽晶片固定三種。寫入的 value 沿用官方 WIKI 命名（攻擊/迴避/暴擊，暫不動資料），
 // 但後台顯示改用「顏色」標籤——WIKI 命名與實際能力有落差、易混淆；顏色對齊前台 SlotChips。
@@ -853,7 +858,9 @@ function chipTypeOf(slot: string): string {
 
 function makeNdLevel(level: number): NeuralDriveLevel {
   // PLAN-023 新格式：只留 abilityId 引用；嵌入欄位給空值（type 要求 required）
-  return { level, minSum: 0, abilityId: '', effect: '', skillName: '', skillIcon: '', iconLocal: '', effects: [], buffIds: [] }
+  // minSum 依 neuralDriveLevels 規則帶入（1 起跳、每級 +3）。原本固定給 0，而 0 在
+  // PLAN-034 覆寫層是**零門檻恆真**——新增等級後忘了改就會首屏即生效，且畫面無異常可辨。
+  return { level, minSum: ndMinSumForLevel(level) ?? 0, abilityId: '', effect: '', skillName: '', skillIcon: '', iconLocal: '', effects: [], buffIds: [] }
 }
 
 function NdZoneCard({
@@ -893,6 +900,32 @@ function NdZoneCard({
   function addLevel()      { upd('levels', [...levels, makeNdLevel(levels.length + 1)]) }
   function removeLevel(i: number) { upd('levels', levels.filter((_, li) => li !== i)) }
 
+  // ── 等級／算力門檻的規則層（2026-08-28，src/utils/neuralDriveLevels.ts）──────
+  // α β 三級、γ 系六級；minSum = 1 + (Lv-1)×3。普查當下全庫僅有的 3 筆偏離全部來自
+  // manual 機師的手打錯字（尼爾 α Lv3=0、淬鋒·凱登 β Lv3=6、安 γ1 Lv5=12，已更正），
+  // 而 minSum=0 在覆寫層是零門檻恆真 —— 所以這裡改成「選了分區就帶好」。
+  const maxLevel = ndZoneMaxLevel(zone.name)
+  const offRule = ndZoneOffRule(zone.name, levels)
+  const hasOff = !!offRule && (offRule.levelCountOff || offRule.offIndexes.length > 0)
+  const offSet = new Set(offRule?.offIndexes ?? [])
+
+  /** 選分區名時，若還沒有任何等級就依規則整組帶入（既有等級一律不動，避免洗掉能力引用）。 */
+  function pickName(name: string) {
+    const gen = levels.length === 0 ? expectedNdLevels(name) : null
+    onChange(gen ? { ...zone, name, levels: gen.map((g) => makeNdLevel(g.level)) } : { ...zone, name })
+  }
+
+  /**
+   * 依規則重排等級序號與門檻。**只補不刪**：既有各級的 abilityId 依序保留，
+   * 缺的補上，多出來的原封不動留在後面等人判斷 —— 刪掉的能力引用救不回來。
+   */
+  function applyLevelRule() {
+    const expected = expectedNdLevels(zone.name)
+    if (!expected) return
+    const fixed = expected.map((e, i) => ({ ...(levels[i] ?? makeNdLevel(e.level)), level: e.level, minSum: e.minSum }))
+    upd('levels', [...fixed, ...levels.slice(expected.length)])
+  }
+
   return (
     <div className="border border-accent-purple/25 rounded-lg bg-bg-dark/50">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border/40">
@@ -905,7 +938,7 @@ function NdZoneCard({
         <span className="text-accent-purple shrink-0">◆</span>
         <select
           value={zone.name}
-          onChange={(e) => upd('name', e.target.value)}
+          onChange={(e) => pickName(e.target.value)}
           className="input-field flex-1"
         >
           <option value="">— 選擇分區 —</option>
@@ -954,12 +987,42 @@ function NdZoneCard({
 
         {/* 各級門檻 + 能力引用 */}
         <div>
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between mb-1.5 gap-2">
             <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">各級 levels（算力門檻 + 能力）</span>
-            <button type="button" onClick={addLevel} className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors">+ 新增等級</button>
+            <div className="flex items-center gap-2 shrink-0">
+              {maxLevel !== null && levels.length >= maxLevel && (
+                <span className="text-[11px] text-text-dim">{zone.name} 分區依規則共 {maxLevel} 級</span>
+              )}
+              <button
+                type="button"
+                onClick={addLevel}
+                disabled={maxLevel !== null && levels.length >= maxLevel}
+                className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-accent-cyan"
+              >+ 新增等級</button>
+            </div>
           </div>
+          {/* 規則提示（2026-08-28）：算力門檻是「等級」的函式、等級數是「分區」的函式，
+              新建時已自動帶入；這條橫幅只在既有資料偏離規則時出現，附一鍵修正。
+              不自動改寫既有值 —— 資料仍是真相源，官方哪天出破格分區要看得見、改得動。 */}
+          {hasOff && (
+            <p className="text-[11px] text-accent-yellow mb-1.5">
+              ⚠ 與規則不符：<strong>{zone.name}</strong> 分區應為 {offRule?.expectedCount} 級、
+              算力門檻 {expectedNdLevels(zone.name)?.map((e) => e.minSum).join(' / ')}
+              {offRule?.levelCountOff && <>（目前 {levels.length} 級{levels.length > (offRule?.expectedCount ?? 0) && <>，多出來的請自行刪除 —— 一鍵帶入只補不刪</>}）</>}
+              {offRule && offRule.offIndexes.length > 0 && (
+                <>（第 {offRule.offIndexes.map((i) => i + 1).join('、')} 列的 Lv／門檻對不上）</>
+              )}
+              。確定官方就是這樣才留著，否則
+              <button
+                type="button"
+                className="underline ml-1 hover:text-accent-cyan"
+                onClick={applyLevelRule}
+              >依規則帶入</button>
+              （只補不刪，既有能力引用照順序保留）
+            </p>
+          )}
           {levels.length === 0 ? (
-            <p className="text-xs text-text-dim py-1">尚未填入等級</p>
+            <p className="text-xs text-text-dim py-1">尚未填入等級{maxLevel !== null && '（按上方「依規則帶入」可一次補齊 ' + maxLevel + ' 級）'}</p>
           ) : (
             /* PLAN-033 C-2：各級卡片是同質獨立單元，原本一級一排（含能力挑選器約 140px），
                5 級就要捲 700px。改自動格線後寬版排成 2～3 欄，垂直長度砍掉一半以上。
@@ -967,7 +1030,7 @@ function NdZoneCard({
                兩欄與能力挑選器，220px 會把它們擠成單欄、反而變高。 */
             <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2 items-start">
               {levels.map((lv, i) => (
-                <div key={i} className="p-2 bg-bg-card/40 rounded border border-border/40 space-y-2">
+                <div key={i} className={`p-2 bg-bg-card/40 rounded border space-y-2 ${offSet.has(i) ? 'border-accent-yellow/50' : 'border-border/40'}`}>
                   <div className="flex items-center gap-2">
                     <div className={`${GRID_AUTO_FIELDS} gap-2 flex-1`}>
                       <Field label="Lv level">
@@ -1010,6 +1073,20 @@ function PilotNeuralDriveTab({
 
   function updateZone(idx: number, updated: NeuralDrive) { onChange(neuralDrive.map((z, i) => (i === idx ? updated : z))) }
   function addZone() { onChange([...neuralDrive, { name: '', icon: '', slots: [], levels: [] }]) }
+
+  /**
+   * 一鍵建立整組分區骨架（2026-08-28）。全庫 89 位機師的分區組成只有兩種：
+   * α+β+γ1+γ2（79 位）與 α+β+γ（10 位 B 級機師，單一伽瑪區）。各級的算力門檻依規則帶入。
+   *
+   * **刻意不帶插槽**：每區恰好 3 格是有規則的，但晶片顏色（攻擊／迴避／暴擊）逐機師不同、
+   * 無從推導。自動生 3 格就得順便編一組顏色 —— 那是拿「看起來填好了」換掉「還沒填」。
+   */
+  function seedZones(names: string[]) {
+    onChange(names.map((name) => ({
+      name, icon: '', slots: [],
+      levels: (expectedNdLevels(name) ?? []).map((g) => makeNdLevel(g.level)),
+    })))
+  }
   function removeZone(idx: number) { onChange(neuralDrive.filter((_, i) => i !== idx)) }
   function moveZone(idx: number, dir: -1 | 1) {
     const j = idx + dir
@@ -1034,7 +1111,22 @@ function PilotNeuralDriveTab({
       </div>
 
       {neuralDrive.length === 0 ? (
-        <p className="text-text-dim text-sm text-center py-8">無神經驅動分區，可點右上角「新增分區」建立</p>
+        <div className="text-center py-8 space-y-3">
+          <p className="text-text-dim text-sm">無神經驅動分區，可點右上角「新增分區」逐區建立，或直接帶入標準結構：</p>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => seedZones(['α', 'β', 'γ1', 'γ2'])}
+              className="text-[13px] px-3 py-1.5 text-accent-purple border border-accent-purple/40 rounded hover:bg-accent-purple/10 transition-colors"
+            >帶入 α · β · γ1 · γ2（多數機師的結構）</button>
+            <button
+              type="button"
+              onClick={() => seedZones(['α', 'β', 'γ'])}
+              className="text-[13px] px-3 py-1.5 text-text-dim border border-border rounded hover:bg-bg-card/60 transition-colors"
+            >帶入 α · β · γ（B 級單一伽瑪區的結構）</button>
+          </div>
+          <p className="text-[11px] text-text-dim">各級的 Lv 與算力門檻（α β：1/4/7；γ 系：1/4/7/10/13/16）會一併帶好；插槽與能力仍需人工填。</p>
+        </div>
       ) : (
         <div className="space-y-2">
           {neuralDrive.map((z, idx) => (

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { Mech, Module, MechPart, Weapon } from '../../../types'
 import { ModuleSlot, ArmorType, PartInterface, MechPartPosition } from '../../../types/enums'
-import { expectedInterface, isInterfaceOffRule } from '../../../utils/mechInterface'
+import { expectedInterface, expectedInterfaces, isInterfaceOffRule } from '../../../utils/mechInterface'
 import {
   Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog,
   GRID_AUTO_FIELDS, AdminEditTabs, type AdminEditTabDef,
@@ -19,6 +19,17 @@ import { useGameData } from '../../../contexts/GameDataContext'
 import { useAuth } from '../../../contexts/AuthContext'
 
 type MechFilters = { armorType: string }
+
+/** 四部位的固定順序（軀幹→左臂→右臂→腿）；接口規則與部件編輯器共用。 */
+const PART_ORDER = [
+  MechPartPosition.TORSO, MechPartPosition.LEFT_ARM, MechPartPosition.RIGHT_ARM, MechPartPosition.LEGS,
+] as const
+
+/**
+ * 品質選項。實測值域乾淨（S 64 / A 16 / B 10 台），且品質決定四部位接口
+ * —— 打錯一個字母就會帶入錯的接口，故收成下拉、不留手打空間（清單外的舊值仍保留）。
+ */
+const QUALITY_OPTIONS = ['S', 'A', 'B']
 
 // 空白部件工廠：依 position 帶上該部位專屬欄位（臂 hit、腿 dodge/move、軀幹 antiRiot/output）。
 function makeDefaultPart(position: MechPart['position']): MechPart {
@@ -300,6 +311,7 @@ function MechEditPanel({
   const [error, setError]   = useState<string | null>(null)
   const [tab, setTab]       = useState<MechEditTab>('basic')
   const [autoFillMsg, setAutoFillMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [qualityNote, setQualityNote] = useState<string | null>(null)
   const gameVersions = useGameVersions()
   const { userProfile } = useAuth()
   const isOwner = userProfile?.role === 'OWNER'
@@ -307,7 +319,8 @@ function MechEditPanel({
   // 本機甲的圖片資料夾（public/images/mechs/{機甲名}）；供 IconPicker 預設開啟與自動帶入使用。
   const mechFolder = `mechs/${form.name}`
 
-  useEffect(() => { setForm({ ...mech }) }, [mech])
+  // 換一台機甲時把品質的「已帶入接口」提示清掉，否則會掛在別台身上讀成剛剛動過
+  useEffect(() => { setForm({ ...mech }); setQualityNote(null) }, [mech])
 
   const availableModules = useMemo(
     () => modules.filter((m) => m.boundMechId === form.id || !m.boundMechId),
@@ -330,6 +343,34 @@ function MechEditPanel({
   )
 
   const set = <K extends keyof Mech>(key: K, value: Mech[K]) => setForm((f) => ({ ...f, [key]: value }))
+
+  /**
+   * 改品質時，四部位接口依規則一併帶入（2026-08-28）。
+   *
+   * 規則見 src/utils/mechInterface.ts：接口 ＝ f(quality, position)，全庫 90 台 360 格零例外
+   * （S → 四格 Ⅱ；A → 軀幹/腿 Ⅰ、雙臂 Ⅱ；B → 無接口）。原本只在「部件」分頁給建議與
+   * 一鍵修正，等於每建一台 S 級機甲就要在另一個分頁選四次 Ⅱ 型 —— 而那四次全都是同一個答案。
+   *
+   * 仍**不**改成純衍生：值照樣存進 Firestore、照樣可在部件分頁改。官方哪天出一台破格機甲時，
+   * 改得動、而且部件分頁的黃字提示會把它講出來。這裡帶入的是預設值，不是判決。
+   */
+  function setQuality(q: string | undefined) {
+    const want = q ? expectedInterfaces(q) : null
+    setForm((f) => {
+      if (!want) return { ...f, quality: q }
+      const parts = { ...f.parts } as Mech['parts']
+      for (const pos of PART_ORDER) {
+        parts[pos] = { ...(f.parts?.[pos] ?? makeDefaultPart(pos)), interface: want[pos] }
+      }
+      return { ...f, quality: q, parts }
+    })
+    setQualityNote(
+      !want ? null
+        : want.torso === '' ? `已依 ${q} 品質規則把四部位設為「無接口」`
+        : want.torso === want.leftArm ? `已依 ${q} 品質規則把四部位接口帶成 ${want.torso}`
+        : `已依 ${q} 品質規則帶入接口：軀幹/腿部 ${want.torso}、雙臂 ${want.leftArm}`,
+    )
+  }
 
   // 依機甲名稱掃 public/images/mechs/{名稱}/，把標準檔名（torso/leftArm/rightArm/legs/portrait/half）
   // 的圖片路徑一次補進四部件與立繪。找不到資料夾或某檔則略過該項。
@@ -412,8 +453,17 @@ function MechEditPanel({
                 </select>
               </Field>
               <Field label="品質 quality">
-                <input className="input-field" value={form.quality ?? ''} placeholder="如 S / A"
-                  onChange={(e) => set('quality', e.target.value || undefined)} />
+                <select className="input-field" value={form.quality ?? ''}
+                  onChange={(e) => setQuality(e.target.value || undefined)}>
+                  <option value="">（未設定）</option>
+                  {QUALITY_OPTIONS.map((q) => <option key={q} value={q}>{q}</option>)}
+                  {form.quality && !QUALITY_OPTIONS.includes(form.quality) && (
+                    <option value={form.quality}>{form.quality}（清單外）</option>
+                  )}
+                </select>
+                <p className={`text-[11px] mt-1 ${qualityNote ? 'text-accent-green' : 'text-text-dim'}`}>
+                  {qualityNote ?? '選定後會依規則自動帶入四部位的模組接口（S → Ⅱ型／A → 軀幹腿 Ⅰ、雙臂 Ⅱ／B → 無接口），可到「部件」分頁調整。'}
+                </p>
               </Field>
               <NumberField label="火力 firepower" value={form.firepower} onChange={(v) => set('firepower', v)} />
               <NumberField label="裝甲 armor" value={form.armor} onChange={(v) => set('armor', v)} />
@@ -458,7 +508,7 @@ function MechEditPanel({
                 </span>
               )}
             </div>
-            {(['torso', 'leftArm', 'rightArm', 'legs'] as const).map((pos) => (
+            {PART_ORDER.map((pos) => (
               <PartEditor
                 key={pos}
                 label={PART_LABELS[pos]}
