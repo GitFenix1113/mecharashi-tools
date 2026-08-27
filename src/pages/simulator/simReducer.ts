@@ -441,8 +441,9 @@ function reconcileModules(
 
   const removed: RemovedItem[] = []
   const kept: Partial<Record<MechPartPosition, string>> = {}
-  // 逐格驗證時 ctx 只需要重建一次：模組彼此不互斥（沒有同族、沒有容量帳），
-  // 一格的去留不影響另一格能不能裝。這與武器那邊「裝上去會改變容量」不同。
+  // 逐格驗證時 ctx 只建一次：模組彼此不互斥（沒有同族互斥、沒有容量帳，
+  // 而「這格已裝別顆」自 C-9 起也不再是拒絕），一格的去留不影響另一格能不能裝。
+  // 這與武器那邊「裝上去會改變容量、所以要把自己先拿掉再問」不同。
   const baseCtx = buildContext(withModules(draft, {}), draft.activeSetKey, world)
 
   for (const position of MECH_PART_ORDER) {
@@ -453,7 +454,7 @@ function reconcileModules(
       removed.push({ kind: 'module', id, name: id, where: partLabel(position), why: '模組資料已不存在' })
       continue
     }
-    const r = canEquipModule({ ...baseCtx, modules: kept }, mod, { kind: 'module', position })
+    const r = canEquipModule(baseCtx, mod, { kind: 'module', position })
     if (r) {
       removed.push({ kind: 'module', id, name: mod.name, where: partLabel(position), why: r.reason })
       continue

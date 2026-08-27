@@ -58,7 +58,7 @@ export const REJECTION_CODES = [
   'COMP_SLOTS_FULL', 'COMP_KIND_FULL', 'COMP_FAMILY',
   // 模組 —— 掛在機甲四個接口上的那一層（PLAN-052-G）
   'MOD_NO_INTERFACE', 'MOD_IFACE_UNKNOWN', 'MOD_IFACE_RARITY',
-  'MOD_NOT_CANDIDATE', 'MOD_DATA_INCOMPLETE', 'MOD_SLOT_TAKEN',
+  'MOD_NOT_CANDIDATE', 'MOD_DATA_INCOMPLETE',
 ] as const
 
 export type RejectionCode = typeof REJECTION_CODES[number]
@@ -100,7 +100,6 @@ export const REJECTION_TIER = {
   MOD_IFACE_RARITY:    'structural',
   MOD_NOT_CANDIDATE:   'structural',
   MOD_DATA_INCOMPLETE: 'structural',
-  MOD_SLOT_TAKEN:      'situational',
 } as const satisfies Record<RejectionCode, RejectionTier>
 
 /** 摺疊列的短標籤（「因形態限定隱藏 90」的那個「形態限定」）。 */
@@ -131,7 +130,6 @@ export const REJECTION_LABEL = {
   MOD_IFACE_RARITY:    '僅可裝 A 級',
   MOD_NOT_CANDIDATE:   '不可自由裝配',
   MOD_DATA_INCOMPLETE: '數值未建檔',
-  MOD_SLOT_TAKEN:      '接口已裝',
 } as const satisfies Record<RejectionCode, string>
 
 type CodesOfTier<T extends RejectionTier> =
@@ -874,18 +872,25 @@ export function canEquipModule(ctx: LoadoutContext, mod: Module, ref: ModuleSlot
     return reject('MOD_IFACE_RARITY', `${iface}只能裝 A 級模組，${mod.name}是 ${mod.rarity} 級`)
   }
 
-  // ── ⑥ 這一格已經裝了別顆 ──
-  //    裝著的就是這一顆 ⇒ 不是拒絕而是「已裝上」，呼叫端自己畫該狀態（同元件那條）。
-  const occupantId = ctx.modules[ref.position]
-  if (occupantId && occupantId !== mod.id) {
-    const occupant = ctx.world.modules.get(occupantId)
-    return rejectSituational('MOD_SLOT_TAKEN', `${partLabel(ref.position)}已裝${occupant?.name ?? '一顆模組'}`, {
-      // ⚠ 文案照實寫「卸下 X」，**不寫「卸下 X 並裝上」**：`resolve` 只送 unequip，
-      //   接著裝上那一步從來沒有實作過（見 `unloadFirst()` 的同一條註解）。
-      label: `卸下${occupant?.name ?? '這顆模組'}`,
-      action: { type: 'unequipModule', ref },
-    })
-  }
+  // ── ⑥ 這一格已經裝了別顆 ⇒ **不是拒絕**（使用者裁決 2026-08-27，PLAN-052-G C-9）──
+  //
+  //    第一版把它做成 situational 拒絕 ＋「卸下 X」按鈕（照抄元件那一層）。那是錯的：
+  //    元件有**容量帳**（觸／應各 3、合計 4），所以「先卸一顆」是真的在解一個限制；
+  //    模組一格就是一顆，**換上去就是換掉**，沒有任何東西需要先騰出來。
+  //
+  //    副作用比想像的大 —— 實測畫面上那一格只要裝了東西，整份清單就變成
+  //    「可裝 0 / 62 顆」全部灰掉，玩家得先卸再裝，兩步做一件事。
+  //
+  //    使用者逐字：「模組不要用『卸下』，直接替換，模組頂多超限，如果我們一開始
+  //    就把不符合接口的模組篩除，就不存在無法替換的限制。」—— 前半句是結論，
+  //    後半句是理由：①②③④⑤ 已經把裝不上的擋光了，走到這裡的每一顆都合法，
+  //    於是「這格已裝別顆」不構成任何一種拒絕。
+  //
+  //    ⇒ 直接放行。替換由 reducer 的 `equipModule` 完成，被換掉的那顆進 toast
+  //      （見 simReducer 的 `equipModule`）—— 玩家仍然知道自己換掉了什麼。
+  //
+  // ⚠ `unequipModule` 這個 action **沒有跟著移除**：模組面板的「已裝上」區塊仍留著
+  //   一顆卸下鍵，那是「我要讓這一格空著」的唯一入口，與替換是兩件不同的事。
 
   return null
 }

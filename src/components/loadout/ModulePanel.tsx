@@ -27,7 +27,13 @@ import type { ModuleStack } from '../../utils/moduleRules'
 // ⚠ **版面刻意照抄 `ComponentPanel`**：兩者是同一件事的兩個實例（從一格鑽進去、
 //   配一個東西上去），玩家在其中一邊學會的操作應該原封不動適用於另一邊。
 //   差異只有三處，而且都是資料造成的：模組**一格只有一顆**（沒有觸／應的容量帳）、
-//   **不佔重量**（沒有預算列）、**沒有同族互斥**（唯一的情境拒絕是「這格已裝別顆」）。
+//   **不佔重量**（沒有預算列）、而且**一個情境拒絕都沒有**——
+//   接口 gate 把裝不上的擋光了，列得出來的每一顆都直接可裝（C-9）。
+//
+// ⚠ **點一顆就換上去，不必先卸下**（使用者裁決 2026-08-27）：元件那邊的「卸下 X」
+//   解的是容量帳（觸／應各 3、合計 4），而模組一格就是一顆，換上去就是換掉。
+//   照抄的第一版讓「那一格裝了東西 ⇒ 整份清單灰掉」，兩步做一件事。
+//   「已裝上」區塊仍留一顆卸下鍵 —— 那是「我要讓這一格空著」，與替換是兩件事。
 //
 // ⚠ **清單只列候選池的 186 筆**（見 `moduleChoices()`）：與元件面板「裝不上的也留在
 //   清單裡」不同調 —— 那裡的拒絕是「這把武器」的限制，換一把就能裝，所以要看得見；
@@ -109,7 +115,7 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onResolve }: Props) {
   /** 篩到零筆時要說得出是哪一種零：條件太窄，還是這個接口真的沒得裝 */
   const filtered = !!slot || !!rarity || !!query.trim()
   const fits = available.filter((e) => e.rejection === null)
-  const situational = available.filter((e) => e.rejection?.tier === 'situational')
+  // situational 這一階**模組沒有**（C-9），所以清單只有「可裝」與「摺疊的結構性拒絕」兩段
   const structural = available.filter((e) => e.rejection?.tier === 'structural')
   const counts = structuralCounts(available)
 
@@ -243,8 +249,8 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onResolve }: Props) {
                 `max-h + overflow-y-auto`），而**不是**只列前 N 筆 —— 截斷會讓
                 「我的模組呢」變成一個站上自己製造的問題。 */}
             <div className="flex flex-col mt-2 max-h-[52vh] overflow-y-auto pr-0.5" style={{ gap: 6 }}>
-              {[...fits, ...situational].map((e) => (
-                <ModuleRow key={e.item.id} entry={e} stacks={stacks} onEquip={onEquip} onResolve={onResolve} />
+              {fits.map((e) => (
+                <ModuleRow key={e.item.id} entry={e} stacks={stacks} onEquip={onEquip} />
               ))}
 
               {/* 結構性拒絕：摺疊成一行計數，可展開。展開後照樣寫出每一筆的原因 */}
@@ -263,7 +269,7 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onResolve }: Props) {
                     )}
                   </button>
                   {showBlocked && structural.map((e) => (
-                    <ModuleRow key={e.item.id} entry={e} stacks={stacks} onEquip={onEquip} onResolve={onResolve} />
+                    <ModuleRow key={e.item.id} entry={e} stacks={stacks} onEquip={onEquip} />
                   ))}
                 </>
               )}
@@ -298,16 +304,17 @@ function summaryOf(mod: Module): string {
 }
 
 /**
- * 清單的一列。三種狀態沿用元件面板的語彙：
- *   可裝        → 正常可點
- *   situational → 灰掉 ＋ 原因 ＋ **解法按鈕**（模組這一層只有「這格已裝別顆」）
- *   structural  → 灰掉 ＋ 原因，**沒有**解法按鈕（改別的也解不掉）
+ * 清單的一列。**只有兩種狀態**（C-9 之後）：
+ *   可裝       → 正常可點，點下去就裝上（那一格有東西的話就換掉它）
+ *   structural → 灰掉 ＋ 原因，**沒有解法按鈕**（改別的也解不掉）
+ *
+ * ⚠ 沒有第三種：模組這一層一個 situational 拒絕都不剩，所以本列**不接** `onResolve` ——
+ *   留一條永遠走不到的解法分支，下一個人會照它寫 UI。
  */
-function ModuleRow({ entry, stacks, onEquip, onResolve }: {
+function ModuleRow({ entry, stacks, onEquip }: {
   entry: PickerEntry<Module>
   stacks: ReadonlyMap<string, ModuleStack>
   onEquip: (mod: Module) => void
-  onResolve: (action: ResolutionAction) => void
 }) {
   const { item: mod, rejection } = entry
   const blocked = rejection !== null
@@ -349,7 +356,7 @@ function ModuleRow({ entry, stacks, onEquip, onResolve }: {
         </span>
 
         {blocked ? (
-          <RejectionLine rejection={rejection} onResolve={onResolve} />
+          <RejectionLine rejection={rejection} />
         ) : (
           <>
             <span className={`${HUD.body} text-text-secondary`}>{summaryOf(mod)}</span>
@@ -399,25 +406,15 @@ function StackNote({ stack }: { stack: ModuleStack }) {
   )
 }
 
-/** 拒絕原因那一行。型別層已逼 `rejectSituational()` 填 resolution，這裡只負責畫出來。 */
-function RejectionLine({ rejection, onResolve }: {
-  rejection: Rejection
-  onResolve: (action: ResolutionAction) => void
-}) {
-  const resolution = rejection.tier === 'situational' ? rejection.resolution : null
+/**
+ * 拒絕原因那一行。**不畫解法按鈕** —— 模組只剩 structural／blocked 兩種拒絕（C-9），
+ * 而 structural 的定義就是「改別的也解不掉」，給它一顆按鈕等於承諾一個做不到的動作。
+ */
+function RejectionLine({ rejection }: { rejection: Rejection }) {
   return (
     <span className="flex flex-wrap items-center text-[12px] text-accent-red/85 leading-relaxed" style={{ gap: 5 }}>
       <LoadoutIcon name="absent" className="w-[13px] h-[13px] shrink-0" />
       {rejection.reason}
-      {resolution && (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onResolve(resolution.action) }}
-          className="hud-cut-sm px-2 py-0.5 border border-accent-orange/50 text-[11px] text-accent-orange hover:bg-accent-orange/10 transition-colors cursor-pointer"
-        >
-          {resolution.label}
-        </button>
-      )}
     </span>
   )
 }

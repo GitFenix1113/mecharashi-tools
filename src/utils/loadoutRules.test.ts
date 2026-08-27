@@ -915,17 +915,29 @@ test('052-G：沒有 levels[] 的模組擋下 —— 判準不是頂層那排全
   assert.equal(r?.tier, 'structural')
 })
 
-test('052-G：接口已裝別顆 ＝ situational ＋ 解法按鈕，且按鈕指的是同一格', () => {
+test('052-G C-9：接口已裝別顆**不是**拒絕 —— 直接替換，不必先卸下', () => {
+  // 使用者裁決 2026-08-27：「模組不要用『卸下』，直接替換，模組頂多超限，
+  // 如果我們一開始就把不符合接口的模組篩除，就不存在無法替換的限制。」
+  //
+  // 第一版把它做成 situational ＋「卸下 X」按鈕（照抄元件那一層）——
+  // 但元件有容量帳（觸／應各 3、合計 4），先卸一顆是真的在解一個限制；
+  // 模組一格就是一顆，換上去就是換掉，沒有東西需要騰出來。
+  // 副作用：那一格只要裝了東西，整份清單就變成「可裝 0 / 62 顆」全部灰掉。
   const ctx = ctxOf({ mounts: [] }, { modules: { torso: 通用S.id } })
-  const r = canEquipModule(ctx, 通用A, TORSO)
-  assert.equal(r?.code, 'MOD_SLOT_TAKEN')
-  assert.equal(r?.tier, 'situational')
-  assert.ok(r && 'resolution' in r)
-  // 文案照實寫「卸下 X」——`resolve` 只送 unequip，沒有「並裝上」那一步
-  assert.equal(r.resolution.label, `卸下${通用S.name}`)
-  assert.deepEqual(r.resolution.action, { type: 'unequipModule', ref: TORSO })
-  // 別的格不受影響
+  assert.equal(canEquipModule(ctx, 通用A, TORSO), null, '已裝別顆時仍應直接可裝（替換）')
   assert.equal(canEquipModule(ctx, 通用A, L_ARM), null)
+  // 拒絕碼表裡不該再有它 —— 留著一個永遠不會發生的碼，下一個人會照它寫 UI
+  assert.equal(REJECTION_CODES.includes('MOD_SLOT_TAKEN' as never), false)
+})
+
+test('052-G C-9：模組這一層已經沒有任何 situational 拒絕（接口 gate 擋光了）', () => {
+  // ①②③④⑤ 全是 blocked／structural：走得到「可以裝」的那些，一律直接可裝。
+  const moduleCodes = REJECTION_CODES.filter((c) => c.startsWith('MOD_'))
+  assert.deepEqual(
+    moduleCodes.filter((c) => REJECTION_TIER[c] === 'situational'), [],
+    '模組多出一個 situational 拒絕 —— 那代表又出現了「要先做某件事才裝得上」的關卡，'
+    + '動手之前先確認那件事真的存在（C-9 拿掉的那一個並不存在）',
+  )
 })
 
 test('052-G：裝著的就是這一顆 ⇒ 不是拒絕而是「已裝上」（文案完全不同）', () => {
@@ -948,9 +960,8 @@ test('052-G：載入 gate —— 世界裡沒有模組時，規則層不誤報�
   })
   const ctx = buildContext({ pilotId: 海莉絲.id, mechId: 彌造者.id, sets: {}, modules: { torso: 通用S.id } }, 'default', 空世界)
   assert.equal(ctx.world.modules.size, 0)
-  // 呼叫端手上已經有 Module 物件時（清單來自 world.modules），本支只會漏擋不會誤擋：
-  // 這一格「已裝」查不到名字，退回泛稱而不是把它當成空格
-  const r = canEquipModule(ctx, 通用A, TORSO)
-  assert.equal(r?.code, 'MOD_SLOT_TAKEN')
-  assert.equal(r && 'resolution' in r && r.resolution.label, '卸下這顆模組')
+  // 呼叫端手上已經有 Module 物件時（清單來自 world.modules），本支**只會漏擋不會誤擋**：
+  // 集合沒載入完不影響①〜⑤ 任何一條的判定（它們看的是接口與模組自己），
+  // 所以這裡照樣回 null 而不是編一個查不到名字的拒絕出來。
+  assert.equal(canEquipModule(ctx, 通用A, TORSO), null)
 })

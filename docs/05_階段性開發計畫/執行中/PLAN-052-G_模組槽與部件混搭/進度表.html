@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">16</div>
+      <div class="summary-num" style="color:var(--accent-green)">17</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -179,18 +179,18 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">23</div>
+      <div class="summary-num" style="color:var(--text-primary)">24</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度 <small style="color:var(--text-dim)">（以 23 個工項計；C-7／C-8 為 2026-08-27 追加，E-3 已延後、不計入）</small></span>
-      <span style="color:var(--accent-purple);">16 / 23</span>
+      <span>整體完成度 <small style="color:var(--text-dim)">（以 24 個工項計；C-7〜C-9 為 2026-08-27 追加，E-3 已延後、不計入）</small></span>
+      <span style="color:var(--accent-purple);">17 / 24</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 70%"></div>
+      <div class="progress-bar-fill" style="width: 71%"></div>
     </div>
   </div>
 
@@ -365,7 +365,7 @@
           ⚠ situational 的解法按鈕<strong>文案要與實際動作一致</strong> ——
           既有的三筆（<code>BACK_SLOT_TAKEN</code> 等）寫「卸下 X 並裝上」但只送
           <code>unequip</code>，本計畫不製造第四筆：寫「卸下 X」或真的做成兩段動作。
-        <br><br><strong>✅ 2026-08-27 完成，但落地的是 <em>六</em> 個碼而不是五個：</strong>計畫的五個之外多一個 <code>MOD_NOT_CANDIDATE</code>（structural・「不可自由裝配」）。理由：挑選器只列 <code>moduleCandidates()</code>，但<strong>外來草稿不經過挑選器</strong> ——分享碼或舊存檔可以帶一顆綁在別台機甲上的專屬模組進來，少了這個碼，C-1 的 <code>reconcile()</code> 就會把它靜默裝上。<br>⚠ <code>MOD_IFACE_UNKNOWN</code> 的標籤改為「<strong>接口型別不明</strong>」，不用計畫原寫的「接口未建檔」—— 決策二已經確認那個狀態不存在了，而這個碼今天守的是另一件事：認不得的接口值（星夜女神那個假「Ⅱ」）。「不知道」與「沒有」共用一句話，正是 B-2 修掉的那個錯。<br>situational 只有 <code>MOD_SLOT_TAKEN</code> 一個，文案照實寫「卸下 X」、不寫「並裝上」（不製造第四筆承諾了第二步卻沒實作的解法）。<br>⚠ <code>ResolutionAction</code> 已加 <code>unequipModule</code>，但 <strong>reducer 的對應分支要等 C-1</strong> —— 在那之前派它進去會走到 <code>default: return state</code>（靜默沒反應）。今天走不到（Phase A 不接 UI），兩邊都留了 ⚠ 註解。</div>
+        <br><br><strong>✅ 2026-08-27 完成，但落地的是 <em>六</em> 個碼而不是五個：</strong>計畫的五個之外多一個 <code>MOD_NOT_CANDIDATE</code>（structural・「不可自由裝配」）。理由：挑選器只列 <code>moduleCandidates()</code>，但<strong>外來草稿不經過挑選器</strong> ——分享碼或舊存檔可以帶一顆綁在別台機甲上的專屬模組進來，少了這個碼，C-1 的 <code>reconcile()</code> 就會把它靜默裝上。<br>⚠ <code>MOD_IFACE_UNKNOWN</code> 的標籤改為「<strong>接口型別不明</strong>」，不用計畫原寫的「接口未建檔」—— 決策二已經確認那個狀態不存在了，而這個碼今天守的是另一件事：認不得的接口值（星夜女神那個假「Ⅱ」）。「不知道」與「沒有」共用一句話，正是 B-2 修掉的那個錯。<br>situational 原本只有 <code>MOD_SLOT_TAKEN</code> 一個 —— <strong style="color:var(--accent-yellow)">而它已於 C-9 整個移除</strong>（模組一格一顆，換上去就是換掉，那不是一個需要先解掉的限制）。模組這一層現在一個 situational 都不剩（不製造第四筆承諾了第二步卻沒實作的解法）。<br>⚠ <code>ResolutionAction</code> 已加 <code>unequipModule</code>，但 <strong>reducer 的對應分支要等 C-1</strong> —— 在那之前派它進去會走到 <code>default: return state</code>（靜默沒反應）。今天走不到（Phase A 不接 UI），兩邊都留了 ⚠ 註解。</div>
         <div class="task-file">src/utils/loadoutRules.ts（拒絕碼表）</div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -1066,6 +1066,58 @@
           原處已留註解寫明這一點。
         </div>
         <div class="task-file">src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-9 &nbsp; 模組直接替換 —— 移除 <code>MOD_SLOT_TAKEN</code></div>
+      <div class="task-group-meta">2026-08-27 追加 · 使用者裁決</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">「這格已裝別顆」不是拒絕，是一個不存在的關卡</div>
+        <div class="task-desc">
+          使用者逐字：「模組不要用『卸下』，直接替換，模組頂多超限，如果我們一開始
+          就把不符合接口的模組篩除，就不存在無法替換的限制。」
+          <br><br>
+          <strong>錯在哪：</strong>A-3 把這一條做成 <code>situational</code> 拒絕 ＋「卸下 X」按鈕，
+          是<strong>照抄元件那一層</strong>抄來的。但兩者的前提不同 ——
+          元件有<strong>容量帳</strong>（觸／應各 3、合計 4），所以「先卸一顆」是真的在解一個限制；
+          <strong>模組一格就是一顆，換上去就是換掉</strong>，沒有任何東西需要先騰出來。<br>
+          副作用比預期大：實地驗收時那一格只要裝了東西，整份清單就變成
+          <strong>「可裝 0 / 62 顆」全部灰掉</strong>，玩家得先卸再裝、兩步做一件事。
+          <br><br>
+          <strong>✅ 已落地：</strong><code>MOD_SLOT_TAKEN</code> 從
+          <code>REJECTION_CODES</code> / <code>REJECTION_TIER</code> / <code>REJECTION_LABEL</code>
+          三張表與 <code>canEquipModule()</code> 一併移除。替換由 reducer 的
+          <code>equipModule</code> 完成（那一段本來就寫好了），被換掉的那顆進 toast
+          並附「復原」—— 玩家仍然知道自己換掉了什麼。<br>
+          實測：點一顆 → 直接換上，toast 寫「已裝上 加姆裝置 ／ 移除 1 項：軀幹 天穹樞紐 ／
+          已由加姆裝置取代」，清單維持「可裝 185 / 185 顆」。
+          <br><br>
+          <strong>⚠ 沒有跟著移除的：</strong><code>unequipModule</code> 這個 action 與面板
+          「已裝上」區塊那顆卸下鍵仍然留著 —— 那是<strong>「我要讓這一格空著」</strong>，
+          與替換是兩件不同的事。<br>
+          <strong>⚠ 連帶清掉的死路：</strong>模組這一層現在<strong>一個 situational 拒絕都不剩</strong>，
+          所以 <code>ModulePanel</code> 的 <code>situational</code> 分段、<code>ModuleRow</code> 的
+          <code>onResolve</code> 參數、<code>RejectionLine</code> 的解法按鈕分支全部拿掉 ——
+          留一條永遠走不到的解法分支，下一個人會照它寫 UI。
+          守門測試釘住這件事：<code>REJECTION_CODES</code> 裡任何 <code>MOD_</code> 開頭的碼
+          都不得是 <code>situational</code>。
+          <br><br>
+          <strong>結構性拒絕仍然留在清單裡（摺疊）</strong>，沒有照使用者說的「一開始就篩除」——
+          那句話是<strong>推論的前提</strong>（因為已經 gate 過，所以列得出來的都能裝），
+          而不是要把它們藏掉。Ⅰ 型接口上有 144 顆 S 級裝不上，摺疊成
+          「這個接口裝不了的 144 顆（僅可裝 A 級 144）」同時回答了「我的模組呢」與
+          「它們為什麼不在」；真的移掉，那個問題就沒有人回答了。
+          <span class="dim">（若要改成完全不列，是 <code>moduleChoices()</code> 一行的事。）</span>
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts · ModulePanel.tsx · simReducer.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status done">已完成</span>
