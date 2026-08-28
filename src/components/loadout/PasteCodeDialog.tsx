@@ -85,7 +85,15 @@ export function PasteCodeDialog({ onClose, loading, indexes, world, onApply, onC
     const setKeys = Object.keys(d.sets)
     const weapons = setKeys.reduce((n, k) => n + (d.sets[k].mounts?.length ?? 0), 0)
     const backpacks = setKeys.filter((k) => d.sets[k].backpackId).length
-    return { pilot, mech, sets: setKeys.length, weapons, backpacks, name: d.name }
+    // ⚠ 模組與元件也要數（052-G E-1 實地驗收補上）。本段是 052-C 寫的，那時
+    //   元件（052-D）與模組（052-G）都還不存在，於是一份**只有模組**的配裝在這裡
+    //   會顯示成「武器 0 把」——看起來像貼了一個空的東西，而下一顆按鈕寫著
+    //   「套用會取代你目前正在配的這一套」。預覽的用途就是讓人知道自己要換掉什麼，
+    //   少數兩類等於在最需要它的那一刻失能。
+    const modules = Object.values(d.modules ?? {}).filter(Boolean).length
+    const components = setKeys.reduce((n, k) => n + (d.sets[k].mounts ?? []).reduce(
+      (m, mt) => m + (mt.setup?.triggerComponentIds?.length ?? 0) + (mt.setup?.effectComponentIds?.length ?? 0), 0), 0)
+    return { pilot, mech, sets: setKeys.length, weapons, backpacks, modules, components, name: d.name }
   }, [result, world])
 
   const apply = useCallback(() => {
@@ -140,6 +148,8 @@ export function PasteCodeDialog({ onClose, loading, indexes, world, onApply, onC
                 {preview.sets > 1 && <>{preview.sets} 套配裝<span className="mx-2 text-border">·</span></>}
                 武器 {preview.weapons} 把
                 {preview.backpacks > 0 && <><span className="mx-2 text-border">·</span>背包 {preview.backpacks}</>}
+                {preview.modules > 0 && <><span className="mx-2 text-border">·</span>模組 {preview.modules} 顆</>}
+                {preview.components > 0 && <><span className="mx-2 text-border">·</span>元件 {preview.components} 個</>}
               </div>
             </div>
 

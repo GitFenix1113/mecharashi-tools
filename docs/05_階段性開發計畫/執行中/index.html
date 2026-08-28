@@ -34,7 +34,30 @@
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-052-G · 模組槽與部件混搭</h3>
-      <p>模擬器僅存的兩塊空白。<b>四個模組接口沒有入口</b>——052-I 畫出來的四部位卡是唯讀的，卡片底下那行「部件混搭開放後，每個部位可換成別台機甲的同位部件」就是在等這個計畫；<b>四個部位固定來自同一台機甲</b>——右欄的四部位表整個被註解掉，註解逐字寫著「等部件混搭開放後，這張表才開始回答『這一套是怎麼拼出來的』」。<br><b>地基早就鋪好，工程量不在「造」而在「接」</b>：<code>LoadoutDraft.parts</code> / <code>.modules</code> 兩個欄位、codec v1 的 <code>§PARTS</code> / <code>§MODULES</code> 兩段、<code>resolveChassis()</code> 的 <code>partOverrides</code> 與 <code>moduleLevelOf()</code> 全部已實作且有測試——而全部處於「開了但沒接線」的狀態。<b>而接線正是這個專案最會出事的地方</b>：<code>shareIndexes</code> 的 <code>module</code> 那一行今天傳空陣列，<code>component</code> 剛因為同一個坑漏改了整整三個 Phase，症狀是元件被靜默濾出分享碼、<b>encode 與 decode 兩邊的畫面都不說話</b>，單元測試抓不到（codec 的測試自己建索引），是瀏覽器實地驗收才發現的。A-1 因此把「載入集合」與「接索引」綁成同一個工項。<br><b>2026-08-27 直讀正式 Firestore 四輪盤點</b>，修正總綱決策六的四個數字：候選池 <b>186</b>（非 188）、Ⅰ型接口候選 <b>42</b>（非 41）、modules 241（非 242）、不綁機甲 198（非 199）。並發現總綱未點名的 <code>mech.module4Id</code> / <code>module8Id</code> / <code>moduleFixedIds</code>——天生模組住在這裡，而其中 <b>112 顆的 <code>boundMechId</code> 是 null</b>，一度看似會讓已裁決的候選規則撈進「別台機甲的天生模組」。查 <code>source</code> 才確定<b>那不是漏洞而是機制本身</b>：特性模組來源是「拆機甲／商店」、56 筆帶 <code>dismantleMechIds</code>，拆一台機甲把它的特性模組裝到自己機上就是這個玩法。決策六原封不動成立。<br>另兩處收斂：決策十三的<b>同名消歧義在候選池裡已不存在</b>（唯一的同名對手 <code>mod_2030</code> 是官方廢案、依決策一明著排除），該工項降級為可讀性的效果摘要；<b>新增決策三</b>——<code>moduleAddLevel</code>（31 顆通用模組Ⅱ型為 2、其餘 155 筆為 1）要做，使用者裁決「它就是接口槽的意義」，工作假說為 Σ 四接口決定天生模組等級（S 機四格全Ⅱ型 ⇒ 8，恰好是「8級模組」<code>levels[]</code> 的長度），<b>假說未經實機驗證，E-3 專項驗收，通過前一律標「本站推算」</b>。<br>⚠ <b>星夜女神四格全 Ⅰ 型已確認</b>，是 256 格 S 級接口裡唯一的例外（16 台 A 級機甲清一色 <code>Ⅰ／Ⅱ／Ⅱ／Ⅰ</code>），依接口 gate 會變成「一台 S 機只能裝 A 級模組」——疑為 052-A 正規化時的誤改，B-0 回官方對帳。</p>
+      <p>模擬器僅存的兩塊空白。<b>四個模組接口沒有入口</b>——052-I 畫出來的四部位卡是唯讀的，卡片底下那行「部件混搭開放後，每個部位可換成別台機甲的同位部件」就是在等這個計畫；<b>四個部位固定來自同一台機甲</b>——右欄的四部位表整個被註解掉，註解逐字寫著「等部件混搭開放後，這張表才開始回答『這一套是怎麼拼出來的』」。<br><b>地基早就鋪好，工程量不在「造」而在「接」</b>：<code>LoadoutDraft.parts</code> / <code>.modules</code> 兩個欄位、codec v1 的 <code>§PARTS</code> / <code>§MODULES</code> 兩段、<code>resolveChassis()</code> 的 <code>partOverrides</code> 與 <code>moduleLevelOf()</code> 全部已實作且有測試——而全部處於「開了但沒接線」的狀態。<b>而接線正是這個專案最會出事的地方</b>：<code>shareIndexes</code> 的 <code>module</code> 那一行今天傳空陣列，<code>component</code> 剛因為同一個坑漏改了整整三個 Phase，症狀是元件被靜默濾出分享碼、<b>encode 與 decode 兩邊的畫面都不說話</b>，單元測試抓不到（codec 的測試自己建索引），是瀏覽器實地驗收才發現的。A-1 因此把「載入集合」與「接索引」綁成同一個工項。<br><b>2026-08-27 直讀正式 Firestore 四輪盤點</b>，修正總綱決策六的四個數字：候選池 <b>186</b>（非 188）、Ⅰ型接口候選 <b>42</b>（非 41）、modules 241（非 242）、不綁機甲 198（非 199）。並發現總綱未點名的 <code>mech.module4Id</code> / <code>module8Id</code> / <code>moduleFixedIds</code>——天生模組住在這裡，而其中 <b>112 顆的 <code>boundMechId</code> 是 null</b>，一度看似會讓已裁決的候選規則撈進「別台機甲的天生模組」。查 <code>source</code> 才確定<b>那不是漏洞而是機制本身</b>：特性模組來源是「拆機甲／商店」、56 筆帶 <code>dismantleMechIds</code>，拆一台機甲把它的特性模組裝到自己機上就是這個玩法。決策六原封不動成立。<br>另兩處收斂：決策十三的<b>同名消歧義在候選池裡已不存在</b>（唯一的同名對手 <code>mod_2030</code> 是官方廢案、依決策一明著排除），該工項降級為可讀性的效果摘要；<b>新增決策三</b>——<code>moduleAddLevel</code>（31 顆通用模組Ⅱ型為 2、其餘 155 筆為 1）要做，使用者裁決「它就是接口槽的意義」，工作假說為 Σ 四接口決定天生模組等級（S 機四格全Ⅱ型 ⇒ 8，恰好是「8級模組」<code>levels[]</code> 的長度），<b>假說未經實機驗證，E-3 專項驗收，通過前一律標「本站推算」</b>。<br>⚠ <b>星夜女神四格全 Ⅰ 型已確認</b>，是 256 格 S 級接口裡唯一的例外（16 台 A 級機甲清一色 <code>Ⅰ／Ⅱ／Ⅱ／Ⅰ</code>），依接口 gate 會變成「一台 S 機只能裝 A 級模組」——疑為 052-A 正規化時的誤改，B-0 回官方對帳。<br>
+        <b style="color:var(--accent-green);">✅ Phase E 的模組那一半完成（2026-08-28，19/25）</b>——
+        <b>先驗已出貨的那一段，再開 Phase D。</b>模組槽在 Phase C 就對站長可見（C-6 已拆掉告示），
+        而分享碼<b>同時是儲存格式</b>；等部件混搭做完再一起驗，紅了會分不出是哪一段出貨壞的。<br>
+        <b>E-1</b>：①只有模組／④別名模組（<code>mod_4026_2</code>）／⑤未載入時貼碼／⑥本機書架 <b>四種情況通過</b>
+        （②③ 要 <code>§PARTS</code>，Phase D 之後補）。<b>E-2</b>：換機甲與換機師的級聯
+        <b>三件事都看到了</b>——四顆全清、toast <b>逐顆具名</b>、[復原] 完整還原。<br>
+        ⚠ <b>⑤ 換了做法才真的驗到</b>：在 <code>?b=</code> 冷開頁注入 fetch 延遲<b>攔不到 Firestore</b>
+        （SDK 走自己的 WebChannel），那樣只是「看起來測過了」；
+        改成<b>在還沒選機師的空頁面上貼碼</b>——那時 <code>modules</code> 根本還沒請求，
+        才是決策六那條 gate 唯一真正的觸發條件。<br>
+        ⚠ <b>抓到一個活的錯誤數字（E-0）</b>：<code>loadoutBudget()</code> 沒把 <code>modules</code> 傳給
+        <code>effectiveOutput()</code> ⇒ <b>裝上出力模組，可用出力一動也不動</b>。
+        052-F A-2 挖出這條時模組還不能裝（latent），<b>Phase C 上線後就變成活的</b>。
+        <b>而第一版修法也是錯的，是瀏覽器實測抓出來的</b>：逐格取滿級 ⇒ 左上角 +100、
+        右欄彙總 +50（那顆當下是 Lv2），<b>同一頁兩個數字打臉且兩邊都不報錯</b> ——
+        C-7 的檔頭早就預告過這個坑。改走 <code>moduleStacks()</code>，
+        並把 <code>effectiveOutput()</code> 的第三參數改成收 <code>{ mod, level }</code>，
+        <b>用型別逼每個呼叫端回答「在第幾級」</b>。<br>
+        ⚠ <b>E-2 有一項前提已不成立</b>：「美杜莎MK2（未建檔）」——直讀正式庫確認
+        <b>90 台機甲沒有一台軀幹出力為 0</b>，那台已補完數值（接口是本計畫 B-0 自己修的）。
+        <b>但 <code>dataIncomplete</code> 不可以刪</b>：新機甲一律先建檔再補數值，下一台建檔時就會再走到。<br>
+        另修兩處摘要遺漏：<b>貼碼預覽</b>與<b>書架卡片</b>都不數模組與元件（052-C 寫的，那時兩者還不存在），
+        純模組配裝在那裡會顯示成「武器 0 把」——<b>預覽的用途就是讓人知道自己要換掉什麼</b>。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-052-G_模組槽與部件混搭/計畫書.html">→ 計畫書</a>
         <a class="card-link" href="PLAN-052-G_模組槽與部件混搭/進度表.html">→ 進度表</a>

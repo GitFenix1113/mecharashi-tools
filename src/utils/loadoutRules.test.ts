@@ -42,7 +42,14 @@ const 彌造者: Mech = {
 const 輕型機: Mech = { ...彌造者, id: 'mech_light', name: '輕型機', armorType: ArmorType.LIGHT }
 const 重型機: Mech = { ...彌造者, id: 'mech_heavy', name: '重型機', armorType: ArmorType.HEAVY }
 
-/** 美杜莎MK2：官方數值未公布的**刻意佔位**（全 0）。不是髒資料，見 resolveChassis 註解。 */
+/**
+ * 官方數值未公布的**刻意佔位**（全 0）。不是髒資料，見 resolveChassis 註解。
+ *
+ * ⚠ 這顆 fixture 沿用「美杜莎MK2」這個名字只是為了對得上歷史紀錄 —— 那台**已經補完數值**
+ *   （2026-08-28 直讀正式庫：output 2605、四格 Ⅱ型接口），全庫今天沒有任何一台是全 0。
+ *   本 fixture 因此是這條路徑**唯一的實例**，刪掉它等於讓 `dataIncomplete` 變成無人看守的分支，
+ *   而下一台新機甲建檔的那天它就會再被走到。
+ */
 const 美杜莎MK2: Mech = {
   ...彌造者, id: 'mech_090', name: '美杜莎MK2', weight: 0, output: 0,
   parts: { torso: part() as never, leftArm: part() as never, rightArm: part() as never, legs: part() as never },
@@ -223,8 +230,24 @@ const 破曉專屬 = mod({ id: 'mod_9001', name: '匯流樞紐', rarity: 'S', sl
 const 副模組 = mod({ id: 'mod_7001', name: '內建副模組', rarity: 'S', slot: ModuleSlot.BUILT_IN, available: true })
 /** 沒有各階數值：頂層那排平坦欄位全 0，裝上去不會有任何效果而且不報錯 */
 const 空殼模組 = mod({ id: 'mod_4999', name: '空殼模組', rarity: 'S', levels: [] })
+/**
+ * 唯一會改變**出力**的那一種模組（實測正式庫 186 筆候選池裡有 2 筆：
+ * `mod_4026` 出力模組Ⅰ／`mod_4026_2` 出力模組Ⅱ，`levels[]` 皆為 `[25,50,75,100]`）。
+ *
+ * ⚠ 這顆 fixture 存在的唯一理由是**釘住呼叫端有沒有把模組傳給 `effectiveOutput()`**。
+ *   在它之前，模組對 budget 完全沒有可觀測的影響 ⇒ 那條接線斷了也不會有任何測試變紅。
+ */
+const 出力Ⅱ = mod({
+  id: 'mod_4026_2', name: '出力模組Ⅱ', rarity: 'S', moduleAddLevel: 2,
+  levels: [25, 50, 75, 100].map((output_bonus, i) => ({ level: i + 1, output_bonus })) as never,
+})
+/** 同族的 Ⅰ 階（`moduleFamilyKey()` 會把尾綴的 Ⅰ／Ⅱ 去掉 ⇒ 與上面同族、會一起堆疊） */
+const 出力Ⅰ = mod({
+  id: 'mod_4026', name: '出力模組Ⅰ', rarity: 'A', moduleAddLevel: 1,
+  levels: [25, 50, 75, 100].map((output_bonus, i) => ({ level: i + 1, output_bonus })) as never,
+})
 
-const MODULES = [通用S, 通用A, 八級S, 破曉專屬, 副模組, 空殼模組]
+const MODULES = [通用S, 通用A, 八級S, 破曉專屬, 副模組, 空殼模組, 出力Ⅱ, 出力Ⅰ]
 
 // ── 升級邊（PLAN-031 的 `Weapon.upgrade`）──
 //
@@ -370,6 +393,66 @@ test('重量帳走 totalWeight 單一入口：825 + 800 + 150 = 1775，出力 33
   assert.equal(b.output.total, 3675)
   assert.equal(b.remaining, 1900)
   assert.equal(b.over, false)
+})
+
+// ── 模組的出力加成（PLAN-052-G E-1 收尾 · 052-F A-2 挖出來的斷線）─────────────
+//
+// `effectiveOutput()` 的第三個參數 `modules` 自 052-A 就在，`moduleOutputBonus()` 也有自己的測試，
+// 但 `loadoutBudget()` **呼叫時沒有傳** ⇒ `OutputBreakdown.modules` 恆為 0。
+// 052-F A-2 查出這條時模組還不能裝（latent）；052-G Phase C 讓四個接口上線之後就變成
+// 「裝上出力模組，可用出力不動」，而右欄的已裝效果彙總照樣印著 +100 —— 同一頁兩個數字互相打臉。
+//
+// ⚠ 為什麼這個洞能活這麼久：**模組原本對 budget 完全沒有可觀測的影響**。
+//   既有的模組測試全在驗「裝不裝得上」與「級聯」，而既有的 budget 測試一顆模組都沒裝。
+//   兩組測試各自全綠，中間那條線斷了沒有人會知道。
+
+test('052-G：出力模組要進 budget —— 裝一顆Ⅱ ＝ Lv2 ＝ +50（不是滿級的 +100）', () => {
+  const 沒裝 = loadoutBudget(ctxOf({ mounts: [] }))
+  const 裝一顆 = loadoutBudget(ctxOf({ mounts: [] }, { modules: { torso: 出力Ⅱ.id } }))
+  assert.equal(沒裝.output.total, 3375)
+  // ⚠ 這個 50 就是 2026-08-28 本機實測時右欄印的那個數字。取滿級會得到 +100，
+  //   而畫面上的已裝效果彙總（走 stackLevelOf()）印 +50 —— 同一頁兩個數字互相打臉。
+  assert.equal(裝一顆.output.modules, 50, 'OutputBreakdown.modules 不可恆為 0，也不可取滿級')
+  assert.equal(裝一顆.output.total, 3425)
+  // 斷言差值而不只是「算得出數字」——接線斷掉時兩者會相等，而那正是本測試要防的狀態
+  assert.equal(裝一顆.output.total - 沒裝.output.total, 50)
+  assert.equal(裝一顆.remaining - 沒裝.remaining, 50, '可用出力跟著動，超重判定才會對')
+})
+
+test('052-G：同族兩顆是「疊成更高等級」，不是兩份加成 —— 兩顆Ⅱ ⇒ Lv4 ⇒ +100', () => {
+  // ⚠ 這一則防的是最誘人的那個寫法：逐格 map 出四筆餵給 effectiveOutput()。
+  //   那樣兩顆會變成 +50 ×2 ＝ 100（數字碰巧一樣！），四顆會變成 200 而正確答案仍是 100
+  //   —— 兩顆時看起來對、四顆時才錯，是最難發現的一種。
+  const 兩顆 = loadoutBudget(ctxOf({ mounts: [] }, { modules: { torso: 出力Ⅱ.id, legs: 出力Ⅱ.id } }))
+  assert.equal(兩顆.output.modules, 100)           // sum 2+2 ＝ 4 ⇒ Lv4 ⇒ 100
+  const 四顆 = loadoutBudget(ctxOf({ mounts: [] }, {
+    modules: { torso: 出力Ⅱ.id, leftArm: 出力Ⅱ.id, rightArm: 出力Ⅱ.id, legs: 出力Ⅱ.id },
+  }))
+  assert.equal(四顆.output.modules, 100, '超出 cap 的兩顆是白費，不是再加 100')
+  assert.equal(四顆.output.total, 3475)
+})
+
+test('052-G：Ⅰ 與 Ⅱ 同族一起堆 —— 1 ＋ 2 ＝ Lv3 ⇒ +75', () => {
+  const b = loadoutBudget(ctxOf({ mounts: [] }, { modules: { torso: 出力Ⅱ.id, legs: 出力Ⅰ.id } }))
+  assert.equal(b.output.modules, 75)
+  assert.equal(b.output.total, 3450)
+})
+
+test('052-G：模組與背包的出力加成疊加，且各自記在自己的欄位裡', () => {
+  const b = loadoutBudget(ctxOf(
+    { mounts: [], backpackId: 強襲者背包.id },
+    { modules: { torso: 出力Ⅱ.id } },
+  ))
+  assert.equal(b.output.base, 3375)
+  assert.equal(b.output.backpack, 300)
+  assert.equal(b.output.modules, 50)
+  assert.equal(b.output.total, 3725)
+})
+
+test('052-G：沒有出力加成的模組不會動到出力（別把「有裝東西」當成「有加成」）', () => {
+  const b = loadoutBudget(ctxOf({ mounts: [] }, { modules: { torso: 通用S.id, legs: 空殼模組.id } }))
+  assert.equal(b.output.modules, 0)
+  assert.equal(b.output.total, 3375)
 })
 
 test('手部取較重組（不是加總）—— 主手 800 ／ 備用 850 只計 850', () => {

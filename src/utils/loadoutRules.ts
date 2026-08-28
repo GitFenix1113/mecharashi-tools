@@ -528,8 +528,12 @@ export interface LoadoutBudget {
   remaining: number
   over: boolean
   /**
-   * 機體數值未公布（mech_090_美杜莎MK2 全 0）。出力 0 會讓所有東西都判成超重 ——
+   * 機體數值未公布（新機甲的佔位：先建檔、數值全 0）。出力 0 會讓所有東西都判成超重 ——
    * UI 應顯示「官方數值未公布」而不是渲染一台什麼都裝不下的機甲。
+   *
+   * ⚠ **今天全庫 0 台會讓這個旗標為 true**（2026-08-28 直讀正式庫核對）：原註解舉的
+   *   `mech_090_美杜莎MK2` 已補完數值。這條路徑因此**只剩測試在走**，但它不是死碼——
+   *   下一台新機甲建檔時就會再被走到（見 `resolveChassis()` 的佔位慣例註解）。
    */
   dataIncomplete: boolean
 }
@@ -549,7 +553,20 @@ export function loadoutBudget(ctx: LoadoutContext, hypo: BudgetHypothesis = {}):
     : (droppingBack ? null : ctx.backpack)
   const back = backpack ?? (backWeapon ? ctx.world.weapons.get(backWeapon.weaponId) ?? null : null)
 
-  const output = effectiveOutput({ output: chassis?.output ?? 0 }, { back })
+  // ⚠ 模組必須一起傳進去。`effectiveOutput` 的第三個參數自 052-A 就在、
+  //   `moduleOutputBonus()` 也有測試，但**呼叫端一直沒接** ⇒ `OutputBreakdown.modules` 恆為 0。
+  //   052-F A-2 查出這條時模組還不能裝（latent）；052-G Phase C 讓四個接口上線之後，
+  //   它就變成「裝上出力模組，可用出力不動」。實測候選池 186 筆裡有 2 筆會命中
+  //   （`mod_4026` 出力模組Ⅰ／`mod_4026_2` 出力模組Ⅱ，來源皆為商店，滿級各 +100）。
+  //
+  // ⚠ 走 `moduleStacks()` 而**不是**逐格取滿級——這是本機實測抓到的第二層錯：
+  //   接口上的模組是同族堆疊制（052-G C-7），裝一顆通用Ⅱ 是 **Lv2**、裝兩顆才是 Lv4。
+  //   逐格取滿級會讓 OutputBar 加 +100，而右欄的已裝效果彙總（走 `stackLevelOf()`）印 +50，
+  //   同一頁兩個數字互相打臉；同族兩顆還會被算成兩份加成。
+  //   `moduleStacks()` 回的就是**每族一筆＋已收斂的等級**，與 `EquippedEffects` / 匯出圖同一支。
+  const stacks = moduleStacks(ctx.modules, (id) => ctx.world.modules.get(id))
+  const mods = [...stacks.values()].map((st) => ({ mod: st.mod, level: st.level }))
+  const output = effectiveOutput({ output: chassis?.output ?? 0 }, { back }, mods)
   return {
     weight,
     output,

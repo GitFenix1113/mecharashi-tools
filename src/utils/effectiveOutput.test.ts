@@ -71,10 +71,29 @@ test('模組出力加成走 levels[] 的滿級（N3：全站一律滿級）', ()
 })
 
 test('三個來源疊加：軀幹 ＋ 背包 ＋ Σ 模組', () => {
-  const 出力模組 = { output_bonus: 100, levels: [{ level: 4, output_bonus: 100 }] } as never
-  const r = effectiveOutput(彌造者, { back: 強襲者背包 }, [出力模組, 出力模組, null])
-  assert.equal(r.modules, 200)
-  assert.equal(r.total, 3375 + 300 + 200)
+  const 四階 = [25, 50, 75, 100].map((output_bonus, i) => ({ level: i + 1, output_bonus }))
+  const 出力模組 = { output_bonus: 100, levels: 四階 } as never
+  // ⚠ 一族一筆。同族兩顆是「疊成更高的等級」而不是兩份加成（052-G C-7），
+  //   收斂成 level 是 `moduleStacks()` 的事，本檔只負責照著給的等級取值。
+  const r = effectiveOutput(彌造者, { back: 強襲者背包 }, [{ mod: 出力模組, level: 4 }, null])
+  assert.equal(r.modules, 100)
+  assert.equal(r.total, 3375 + 300 + 100)
+})
+
+test('不同族的兩顆才是兩份加成，而且各取各自的生效等級', () => {
+  const 四階 = [25, 50, 75, 100].map((output_bonus, i) => ({ level: i + 1, output_bonus }))
+  const a = { output_bonus: 100, levels: 四階 } as never
+  const b = { output_bonus: 100, levels: 四階 } as never
+  const r = effectiveOutput(彌造者, { back: null }, [{ mod: a, level: 2 }, { mod: b, level: 3 }])
+  assert.equal(r.modules, 50 + 75)
+})
+
+test('省略 level ⇒ 取滿級（未接堆疊的呼叫端沿用舊語意）', () => {
+  const 四階 = [25, 50, 75, 100].map((output_bonus, i) => ({ level: i + 1, output_bonus }))
+  const m = { output_bonus: 100, levels: 四階 } as never
+  assert.equal(effectiveOutput(彌造者, { back: null }, [{ mod: m }]).modules, 100)
+  // 指定一個不存在的階 ⇒ 0，不可悄悄退回滿級（那會讓算錯的等級看起來是對的）
+  assert.equal(effectiveOutput(彌造者, { back: null }, [{ mod: m, level: 9 }]).modules, 0)
 })
 
 test('加成表只收已由官方畫面確認的四筆，避免用 weight 去猜', () => {

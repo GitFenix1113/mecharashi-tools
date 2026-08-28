@@ -75,18 +75,43 @@ export function hasUnknownBackpackBonus(back: BackMount | null | undefined): boo
 }
 
 /**
+ * 一顆已裝上的模組，**連同它在這套配裝下的生效等級**。
+ *
+ * ⚠ 等級一定要由呼叫端算好傳進來（`moduleRules.ts` 的 `moduleStacks()` ＋ `stackLevelOf()`）。
+ *   本檔刻意**不自己推等級**：接口上的模組是「同族堆疊」制——裝一顆通用Ⅱ 是 Lv2、
+ *   裝兩顆才是 Lv4（052-G C-7），而那件事只有看得到四個接口的呼叫端答得出來。
+ */
+export interface ModuleAtLevel {
+  mod: Pick<Module, 'output_bonus' | 'levels'>
+  /** 生效等級（1-based，對應 `levels[].level`）。省略 ⇒ 取滿級 */
+  level?: number
+}
+
+/**
  * 單一模組的出力加成。
  *
- * 本輪一律取**滿級**（PLAN-052 N3：全站數值以滿級／滿品質階計算）。
- * 實測 242 筆模組只有 2 筆非 0（`mod_4026_2` 出力模組Ⅱ／`sub_mod_出力模組`，滿級皆 +100）。
+ * 實測 **241 筆模組有 3 筆非 0**（2026-08-28 直讀正式庫重數，訂正原註解的「242 筆 2 筆」）：
+ * `mod_4026` 出力模組Ⅰ（A・商店）／`mod_4026_2` 出力模組Ⅱ（S・商店）／
+ * `sub_mod_出力模組`（機甲副模組），`levels[]` 皆為 `[25,50,75,100]`。
+ * ⚠ **前兩筆在 186 筆候選池裡、玩家裝得到**；副模組那筆是機甲天生自帶，不進候選池。
+ * 原註解漏掉的正是「出力模組Ⅰ」——少算一筆會讓人以為這條路徑只影響一顆 S 級模組。
  *
- * ⚠ 走 `levels[]` 的最高階而不是頂層 `output_bonus`：頂層值在多數集合裡是「某一階的快照」，
+ * ⚠ **`level` 不是選填的方便參數，而是這支函式唯一會算錯的地方。**
+ *   2026-08-28 本機實測：接口上裝一顆出力模組Ⅱ，右欄的已裝效果彙總印「出力 +50」（Lv2），
+ *   而這裡若取滿級會給 +100 —— 同一頁兩個數字互相打臉。
+ *   省略 `level` 只適用於「本來就以滿級計」的呼叫（例如單測與尚未接上堆疊的路徑）。
+ *
+ * ⚠ 走 `levels[]` 而不是頂層 `output_bonus`：頂層值在多數集合裡是「某一階的快照」，
  *   等級化之後（PLAN-024）唯一可信的是 levels。levels 缺席時才退回頂層。
  */
-export function moduleOutputBonus(mod: Pick<Module, 'output_bonus' | 'levels'> | null | undefined): number {
+export function moduleOutputBonus(
+  mod: Pick<Module, 'output_bonus' | 'levels'> | null | undefined,
+  level?: number,
+): number {
   if (!mod) return 0
   const levels = mod.levels ?? []
   if (levels.length > 0) {
+    if (level != null) return levels.find((l) => l.level === level)?.output_bonus ?? 0
     const top = levels.reduce((a, b) => (b.level > a.level ? b : a))
     return top.output_bonus ?? 0
   }
@@ -98,16 +123,19 @@ export function moduleOutputBonus(mod: Pick<Module, 'output_bonus' | 'levels'> |
  *
  * @param chassis 走 `chassisOutput(mech.parts)` 取得的軀幹出力（**不是** `mech.output` 頂層欄位）
  * @param set     **該形態**的裝備組（見檔頭）
- * @param modules 已裝載的模組（順序無關）
+ * @param modules 已裝載的模組**與其生效等級**（順序無關）。
+ *                ⚠ 每一族只傳**一筆**：同族兩顆是「疊成一個更高的等級」，不是兩份加成
+ *                （`moduleStacks()` 回的就是每族一筆，直接餵它即可）。
+ *                傳兩筆同族會把 +50 算成 +100，而畫面上完全看不出來。
  */
 export function effectiveOutput(
   chassis: { output: number },
   set: OutputSet,
-  modules: readonly (Pick<Module, 'output_bonus' | 'levels'> | null | undefined)[] = [],
+  modules: readonly (ModuleAtLevel | null | undefined)[] = [],
 ): OutputBreakdown {
   const base = chassis?.output ?? 0
   const backpack = backpackOutputBonus(set.back)
-  const mods = modules.reduce((acc, m) => acc + moduleOutputBonus(m), 0)
+  const mods = modules.reduce((acc, m) => acc + (m ? moduleOutputBonus(m.mod, m.level) : 0), 0)
   return {
     base,
     backpack,

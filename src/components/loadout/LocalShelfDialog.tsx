@@ -225,6 +225,12 @@ function ShelfCard({
   const mech = d?.mechId ? world.mechs.get(d.mechId)?.name ?? d.mechId : null
   const setKeys = d ? Object.keys(d.sets) : []
   const weapons = setKeys.reduce((n, k) => n + (d?.sets[k].mounts?.length ?? 0), 0)
+  // ⚠ 模組與元件也要數（052-G E-1 實地驗收補上，與 `PasteCodeDialog` 同一處遺漏）。
+  //   這段是 052-C 寫的，那時兩者都還不存在。書架卡是使用者**分辨十張卡**的唯一依據，
+  //   而一份純模組配裝在這裡會顯示成「武器 0 把」——十張長得一樣的卡等於沒有摘要。
+  const modules = Object.values(d?.modules ?? {}).filter(Boolean).length
+  const components = setKeys.reduce((n, k) => n + (d?.sets[k].mounts ?? []).reduce(
+    (m, mt) => m + (mt.setup?.triggerComponentIds?.length ?? 0) + (mt.setup?.effectComponentIds?.length ?? 0), 0), 0)
 
   // 名稱一律由代碼當場解出來（決策五：只存代碼字串）。連名稱都解不出來時退到日期，
   // 因為那一刻使用者唯一分得出兩張卡的線索就是「什麼時候存的」
@@ -253,6 +259,8 @@ function ShelfCard({
           <span className="text-text-dim">機甲</span> {mech ?? '未選'}
           {setKeys.length > 1 && <><span className="mx-2 text-border">·</span>{setKeys.length} 套</>}
           <span className="mx-2 text-border">·</span>武器 {weapons} 把
+          {modules > 0 && <><span className="mx-2 text-border">·</span>模組 {modules} 顆</>}
+          {components > 0 && <><span className="mx-2 text-border">·</span>元件 {components} 個</>}
         </div>
       )}
 
