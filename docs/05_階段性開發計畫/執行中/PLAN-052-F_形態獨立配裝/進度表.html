@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-F  · 形態獨立配裝 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-052-F 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-052-F</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> · 形態獨立配裝</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-28</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label purple">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">1</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">13</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">14</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-purple);">1 / 14</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 7%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    海莉絲與曜在模擬器裡<b>不再只有一套配裝</b>——三個形態各一套、鎖死的兩套看得到裝了什麼，而每一套的重量與出力各自成立。這是模擬器最後一處「答案不完整」的地方，也是使用者裁決「對外要是完整的功能」之後最先該補上的一塊。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label purple">Phase A</div>
+  <div class="section-title">資料裁決與盤點</div>
+  <div class="section-desc">動工前把兩個「答案在使用者腦中、不在程式裡」的問題先問掉。憑推測補資料，會把一句可能寫錯的規格固化成事實。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-0 &nbsp; PLAN-041 進度表的過期 badge 補正</div>
+      <div class="task-group-meta">docs/05_… /PLAN-041_機師形態變化/進度表.html</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把 Phase C 的 5 個 pending badge 更新為已完成</div>
+        <div class="task-desc">
+          2026-08-28 直讀正式庫切片查證：<code>forms</code> 6 筆齊全、<b>19 條</b> <code>refType:&#39;form&#39;</code> 引用已完成遷移、<code>pilotSkills</code> 的舊形態文件已清除（僅剩不相干的 <code>skill_形態切換1</code>）。C-1／C-2／C-3 的 <b>group 標題已寫「已完成」，但個別 task-row 的 badge 仍是「待開始」</b>，於是 summary 顯示 20/25。<br>⚠ <b>這是本專案第三次遇到同一種病</b>（前兩次：模擬器已知 bug 清單的 #5／#6、module 分享碼索引）：<b>文件說沒做、實際做完了</b>——而複查花掉的時間，正是文件原本要省下的。本項順手把 summary 改成 25/25，並在 Phase C 標註查證日期與方法。
+        </div>
+        <div class="task-file">docs/05_階段性開發計畫/執行中/PLAN-041_機師形態變化/進度表.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 曜的 <code>independentLoadout</code>：<strong>已裁決 —— 資料是對的，不要動</strong></div>
+      <div class="task-group-meta">使用者裁決 2026-08-28 · 結論：走 ②</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機兵形態到底有沒有獨立配裝？ —— <strong>沒有</strong></div>
+        <div class="task-desc">
+          <b>使用者裁決 2026-08-28（逐字）</b>：「曜的兩筆形態：遊戲中實際上<b>連形態頁面都沒有</b>，
+          就跟一般機師一樣只能配一套裝備。但真實狀況就是，因為曜只有原始的機兵形態和巡航形態，
+          而<b>巡航形態裝備是固定武裝</b>，所以確實也只能弄一套裝備。」<br><br>
+          ⇒ <b>結論走 ②：<code>independentLoadout: undefined</code> 是正確資料，本計畫不碰 forms 集合。</b><br><br>
+          <b>⚠ 這一條要寫死，因為它長得很像一個 bug。</b>總綱計畫書寫著「曜 1 套 ＋ 1 唯讀」，
+          而資料上曜拿不到任何分頁——下一個看到那句話的人很容易「順手把欄位補上」。
+          總綱那句的「1 套」指的是<b>一般機師的預設那一套</b>，不是一個形態分頁；
+          曜<b>不該出現分頁列</b>（<code>hasIndependentLoadouts('pilot_088_曜')</code> 回 false 正是對的行為）。
+          A-3 把這句話回寫進總綱，讓資料與規格不再互相打臉。<br><br>
+          <b>連帶的範圍收斂</b>：分頁列這個功能<b>今天全站只有海莉絲一個使用者</b>。
+          這不是縮水，是把驗收面積講清楚——B-1 的驗收因此只有兩種情況要看：
+          海莉絲（3 個分頁）與<b>其餘 88 位機師（分頁列整排不渲染）</b>。
+        </div>
+        <div class="task-file">forms 集合（不修改）· 驗收於 B-1</div>
+      </div>
+      <div class="task-assignee">使用者</div>
+      <span class="status done">已裁決</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 逐套 budget 的基準值</div>
+      <div class="task-group-meta">總綱紅隊實測數據</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把「出力是 per-form」的實測數字釘成驗收基準</div>
+        <div class="task-desc">
+          總綱紅隊已驗過：先鋒 <b>3675</b> vs 另一形態 <b>3375</b>，差的 300 來自強襲者背包。本項把那組數字釘成 Phase E 的驗收基準，<b>而不是等做完再回頭找一個「看起來對」的數字</b>。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 回寫總綱：曜那句話</div>
+      <div class="task-group-meta">PLAN-052 總綱計畫書</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把「曜 1 套 ＋ 1 唯讀」改寫成不會被誤讀的版本</div>
+        <div class="task-desc">
+          依 A-1 的裁決，改寫為：<b>曜沒有形態分頁</b>（遊戲中也沒有形態頁面），
+          走一般機師的單套配裝；巡航形態為固定武裝，以唯讀卡呈現。
+          <br>⚠ 一併在該處註明「<code>forms</code> 裡曜兩筆的 <code>independentLoadout</code> 空著是正確的，不要補」——
+          規格與資料在同一頁互相打臉時，後來的人一定會去改比較好改的那一邊，而那一邊是資料。
+        </div>
+        <div class="task-file">docs/05_階段性開發計畫/執行中/PLAN-052_配裝模擬器改版_總綱/計畫書.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label purple">Phase B</div>
+  <div class="section-title">分頁列 UI</div>
+  <div class="section-desc">本計畫的主體，也是唯一真正「沒有東西」的一段——其餘全是既有地基的接線與驗收。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 分頁列元件</div>
+      <div class="task-group-meta">src/components/loadout/（新元件）· LoadoutPage</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">依 <code>equipSetKeys()</code> 渲染分頁，切換 <code>activeSetKey</code></div>
+        <div class="task-desc">
+          ⚠ <b>一律 map over <code>equipSetKeys()</code>，不可 map over <code>Object.keys(draft.sets)</code></b>（決策一，<code>utils/forms.ts</code> 的註解已釘死）：後者是「已經存過東西的分頁」，新建的配裝一個鍵都沒有 ⇒ <b>分頁整排消失</b>；而且鍵的順序由寫入順序決定，換一台機甲就可能重排。<br>分頁身分用 <b>formId</b> 不用 <code>order</code>——後台一次重排就會讓既存分享碼靜默指向另一個形態。<br>只有一個分頁時<b>整排不渲染</b>（<code>equipSetLabel()</code> 對 <code>default</code> 回 null 正是為此），不要畫一個叫「預設」的孤兒分頁。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 切換分頁時的狀態正確性</div>
+      <div class="task-group-meta">simReducer · loadoutRules</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每套各自的槽位圖、重量／出力、模組與元件</div>
+        <div class="task-desc">
+          <code>buildContext(draft, key, world)</code> 已經吃 key，理論上切換即正確；本項負責<b>驗</b>而不是造。重點在三個容易串味的東西：<b>模組</b>（裝在機甲上——四套共用，還是各自一份？）、<b>機甲本身</b>（四套共用同一台）、<b>元件</b>（掛在武器 mount 上，應隨套走）。⚠ 這三者的歸屬<b>今天沒有任何測試釘住</b>，而分頁一旦存在，串味不會有任何錯誤訊息。
+        </div>
+        <div class="task-file">src/pages/simulator/simReducer.ts · src/utils/loadoutRules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 形態限制的可見性</div>
+      <div class="task-group-meta">SlotCell · PickerShell</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">切到某個形態時，被該形態擋掉的武器要說得出原因</div>
+        <div class="task-desc">
+          <code>FORM_WEAPON_TYPE</code> 這條規則已經在 <code>canEquipWeapon()</code> 裡，訊息是「XX形態只能裝備○○／△△類武器」。本項確認它在<b>挑選器的灰列</b>與<b>空槽的說明</b>兩處都出得來（<code>emptyReason()</code> 已有對應分支，但沒有畫面驗過）。
+        </div>
+        <div class="task-file">src/components/loadout/{SlotCell,PickerShell}.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label purple">Phase C</div>
+  <div class="section-title">唯讀形態卡</div>
+  <div class="section-desc">兩套鎖死的形態今天是零存在感，玩家會把它當成「站上漏了」——而那正是總綱決策四要避免的事。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 唯讀卡：<strong>只給虛粒子</strong>（巡航依 A-1 不畫）</div>
+      <div class="task-group-meta">src/components/loadout/（新元件）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">分頁列尾端掛一張不可點的形態卡 —— <strong>海莉絲虛粒子一張，就這一張</strong></div>
+        <div class="task-desc">
+          印形態名、限制敘述與那三把固定武裝（耀星／隕星／千星）。<br>
+          ⚠ <b>不可做成分頁</b>：點進去什麼都不能改，那是一個假的互動——這正是 <code>equipSetKeys()</code>
+          當初把 <code>fixedArmament</code> 排除在外的理由，<b>本項是那個決定的另一半</b>。<br>
+          ⚠ <b>不渲染 <code>lockedSkillIds</code></b>（PLAN-041 決策十）：矩陣已掛成千星的武器技能、渲染會重複；
+          且該形態下三支其實被強化為 EX 版，列基礎版名稱等於顯示玩家看不到的東西。<br><br>
+          <b>⚠ 曜的巡航形態不畫這張卡</b>（依 A-1 的裁決連帶收斂，2026-08-28）：
+          使用者明確說明<b>遊戲中曜連形態頁面都沒有，就跟一般機師一樣</b>。
+          曜沒有分頁列，一張孤零零的唯讀卡會變成<b>站上多出一個遊戲沒有的東西</b>——
+          而這一頁的整個設計前提是「玩家一邊看站上一邊對照遊戲時不必翻譯」。<br>
+          幽弧／夜燼<b>不會因此消失</b>：它們在武器圖鑑查得到（PLAN-040 已建檔），
+          那裡才是「這兩把是什麼」的正確去處；配裝頁回答的是「這一套裝了什麼」。<br>
+          ⇒ 因此唯讀卡的判準<b>不是</b>「這位機師有沒有 <code>fixedArmament</code> 形態」，
+          而是「<b>這位機師有沒有分頁列</b>」——有分頁列，鎖死的那一格才需要被解釋。
+        </div>
+        <div class="task-file">src/components/loadout/ · src/utils/forms.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 固定武裝的重量語意</div>
+      <div class="task-group-meta">loadoutRules</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">唯讀形態要不要算重量／出力？</div>
+        <div class="task-desc">
+          固定武裝的重量實測為 <b>0</b>（已知 bug #10「固定武裝被選成主武器」的成因就是這個），所以「算」與「不算」在數字上等價；<b>但畫面要說哪一句並不等價</b>。建議：唯讀卡不印預算條，改印一行「此形態武裝固定，不佔配裝額度」。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label purple">Phase D</div>
+  <div class="section-title">分享碼 · 匯出圖 · 橫幅</div>
+  <div class="section-desc">多套配裝一旦存在，「分享的是哪一套」就必須有一個答案——而今天沒有人問過這個問題。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 分享碼的多套語意</div>
+      <div class="task-group-meta">src/utils/loadoutCode/codec.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">encode 帶全部分頁，還是只帶當前那一套？</div>
+        <div class="task-desc">
+          建議<b>帶全部</b>：分享的語意是「這位機師的整份配裝」，與書架一致，也才對得起雲端存檔（052-E）「每機師 5 格」的配額設計。<br>⚠ <b>必須實地驗收，不可只靠 codec 單元測試</b>——052-D 的元件索引就是「單測全綠、頁面接線漏掉、encode 與 decode 兩邊都不說話」的先例（codec 的測試自己建索引，壞的是頁面那一層）。<br>驗收方式：本機 emulator 配一套海莉絲三分頁 → 複製分享連結 → 無痕視窗貼上 → 三個分頁逐一比對。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/codec.ts · src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 匯出圖印哪一套</div>
+      <div class="task-group-meta">LoadoutExportCard</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">印當前那一套，並在圖上標明形態名</div>
+        <div class="task-desc">
+          一張圖塞四套會失去「一眼看懂」的價值；<b>而不標形態名的圖，轉發到第三手之後會變成一個無法歸屬的數字</b>——那正是 052-C 當初把分享碼印在圖底部所要解決的同一類問題。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 頁首橫幅與黃字警語</div>
+      <div class="task-group-meta">LoadoutPage</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把「形態分頁開發中」的兩處一起拿掉</div>
+        <div class="task-desc">
+          橫幅列著「武器改裝、形態分頁、部件混搭、雲端存檔<b>尚在後續階段</b>」，另有一句只對有形態的機師顯示的黃字「目前僅提供『XX形態』一套，形態分頁開發中」。<br>⚠ <b>那是常駐橫幅、不是暫時公告</b>（總綱決策四）——留著就是站上自己說了一句不再成立的話。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label purple">Phase E</div>
+  <div class="section-title">驗收</div>
+  <div class="section-desc">本計畫是第一個從頭到尾有本機實機管道可用的子計畫（管道建於 2026-08-28）。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 逐套 budget 的單元測試</div>
+      <div class="task-group-meta">src/utils/loadoutRules.test.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">同一份 draft、兩個 key ⇒ 兩個獨立的 budget</div>
+        <div class="task-desc">
+          以海莉絲的先鋒／突擊兩套對帳 A-2 釘下的基準（3675 / 3375，差 300 ＝ 強襲者背包）。<br>⚠ 斷言要寫「兩者<b>不相等</b>且各自等於基準」，不可只斷言「算得出數字」——052-J 的教訓是<b>把 bug 本身寫進測試</b>會讓它恆綠。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 瀏覽器實地驗收</div>
+      <div class="task-group-meta">emulator 管道</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">走 2026-08-28 建好的本機管道逐項目視</div>
+        <div class="task-desc">
+          <code>node scripts/export-emulator-slice.mjs --simulator</code> → <code>npm run emu</code> → <code>npm run emu:seed</code> → <code>npm run dev:emu</code>。<br>驗收清單：海莉絲三個分頁各配一套 → 切換不串味 → 分享連結 round-trip → 匯出圖 → 唯讀卡 → 曜（依 A-1 的裁決結果）→ 其餘 87 位機師仍是單套且<b>看不到分頁列</b>。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者 · 站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-F — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
