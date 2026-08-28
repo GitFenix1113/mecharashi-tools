@@ -8,6 +8,7 @@ import assert from 'node:assert/strict'
 import type { Backpack, Component, Mech, MechForm, Module, NeuralDrive, Pilot, Weapon } from '../../types/index.ts'
 import { INITIAL_SIM_STATE, reconcile, simReduce, type SimState } from './simReducer.ts'
 import { buildWorld, buildContext, loadoutBudget } from '../../utils/loadoutRules.ts'
+import { equipSetKeys } from '../../utils/forms.ts'
 import { ArmorType, BackpackType, MechLicense, MechRestriction, WeaponEquipSlot, WeaponType, MechPartPosition, ModuleSlot, PartInterface } from '../../types/enums.ts'
 
 // ─── fixtures ───────────────────────────────────────────────────────────────
@@ -80,6 +81,13 @@ const form = (id: string, name: string, order: number, allow: string[]): MechFor
 } as MechForm)
 const 先鋒形態 = form('form_h_先鋒', '先鋒形態', 1, [WeaponType.Melee, WeaponType.Sniper])
 const 突擊形態 = form('form_h_突擊', '突擊形態', 2, [WeaponType.Assault])
+/**
+ * 第三個形態。`WeaponType.Heavy` 的值就是「戰術」（enums.ts）——
+ * 而實測全庫 44 把戰術武器**只有 back 22 ＋ shoulder 22**，一把都上不了手部槽。
+ * 這條資料事實是 052-F A-2 訂正 E-1 配對的理由：先鋒／突擊能裝的武器全在手部、
+ * 背槽都空著 ⇒ 兩者都掛得上強襲者背包 ⇒ **出力同為 3675**，拿它們對帳測不出東西。
+ */
+const 戰術形態 = form('form_h_戰術', '戰術形態', 3, [WeaponType.Heavy])
 
 // ─── 元件 fixture（PLAN-052-D Phase B）──────────────────────────────────────
 
@@ -157,7 +165,7 @@ const WORLD = buildWorld({
   mechs: [彌造者, 輕型機, 重型機, 中甲機2, A級中甲, B級中甲],
   weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
   backpacks: [強襲者背包, 出力背包Ⅲ],
-  forms: [先鋒形態, 突擊形態],
+  forms: [先鋒形態, 突擊形態, 戰術形態],
   components: COMPONENTS,
   modules: MODULES,
 })
@@ -171,7 +179,22 @@ const WORLD_LOADING = buildWorld({
   mechs: [彌造者, 輕型機, 重型機, 中甲機2, A級中甲, B級中甲],
   weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
   backpacks: [強襲者背包, 出力背包Ⅲ],
-  forms: [先鋒形態, 突擊形態],
+  forms: [先鋒形態, 突擊形態, 戰術形態],
+})
+
+/**
+ * **forms 尚未載入**的世界（PLAN-052-F D-1 的載入 gate）。
+ * 分享碼／localStorage 草稿／雲端存檔都可能在 forms 到齊之前就把草稿灌進來，
+ * 而那一份草稿的鍵是 formId —— 沒有 forms 就認不得它們。
+ */
+const WORLD_NO_FORMS = buildWorld({
+  pilots: [海莉絲, 輕型機師, 中型機師, ND甲, ND乙],
+  mechs: [彌造者, 輕型機, 重型機, 中甲機2, A級中甲, B級中甲],
+  weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
+  backpacks: [強襲者背包, 出力背包Ⅲ],
+  forms: [],                     // ⚠ 空陣列 ＝「這個集合根本沒進來」，不是「這個世界沒有形態」
+  components: COMPONENTS,
+  modules: MODULES,
 })
 
 const HAND_L = { bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' } as const
@@ -200,8 +223,13 @@ test('選機師 → 選機甲 → 裝武器：一路走下來沒有任何級聯�
   assert.equal(s.notice, null)
 })
 
-test('分頁鍵一律取自 equipSetKeys()：海莉絲有 2 個獨立配裝分頁，預設落在第一個', () => {
+test('分頁鍵一律取自 equipSetKeys()：海莉絲有 3 個獨立配裝分頁，預設落在第一個', () => {
   const s = run({ type: 'selectPilot', pilotId: 海莉絲.id })
+  assert.deepEqual(
+    equipSetKeys(海莉絲.id, [突擊形態, 戰術形態, 先鋒形態]),
+    [先鋒形態.id, 突擊形態.id, 戰術形態.id],
+    '順序由 order 決定，不是由傳入順序或寫入順序決定',
+  )
   assert.equal(s.draft.activeSetKey, 先鋒形態.id)
 })
 
@@ -867,4 +895,201 @@ test('052-G：[復原] 把被級聯清掉的模組整批救回來', () => {
   assert.equal('modules' in s.draft, false)
   const back = simReduce(s, { type: 'undo' }, WORLD)
   assert.deepEqual(back.draft.modules, { torso: 通用S.id })
+})
+
+
+// ─── 形態分頁：什麼隨套走、什麼四套共用（PLAN-052-F B-2）────────────────────
+//
+// 分頁列一旦存在，這件事就會被玩家一直做，而**串味不會有任何錯誤訊息**：
+// 在先鋒配好的那把武器出現在突擊頁、或是在突擊頁裝的模組把先鋒頁的一起換掉，
+// 兩者在畫面上都長得像「正常運作」。型別註解已經寫明歸屬
+// （`EquipSet` ＝ 隨套；`LoadoutDraft.modules` / `.ndLevels` / `mechId` ＝ 頂層共用），
+// 但在本組測試之前**沒有任何一條測試釘住它**。
+//
+// 先鋒 allow 格鬥／射擊、突擊 allow 突擊、戰術 allow 戰術 —— 各套刻意用**裝不進對方**的武器，
+// 免得測試在「其實兩邊共用同一份 mounts」時仍然全綠。
+
+/** 走到「海莉絲 ＋ 彌造者、停在先鋒分頁」的共同起點 */
+const 兩分頁起點 = () => run(
+  { type: 'selectPilot', pilotId: 海莉絲.id },
+  { type: 'selectMech', mechId: 彌造者.id },
+)
+const step = (s: SimState, ...actions: Parameters<typeof simReduce>[1][]): SimState =>
+  actions.reduce<SimState>((acc, a) => simReduce(acc, a, WORLD), s)
+
+test('052-F B-2：切分頁只換 activeSetKey —— 兩套裝備一件都不動，也不跳 toast', () => {
+  const s = step(兩分頁起點(),
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },
+    { type: 'setActiveSet', key: 突擊形態.id },
+  )
+  assert.equal(s.draft.activeSetKey, 突擊形態.id)
+  assert.equal(s.draft.sets[先鋒形態.id]?.mounts.length, 1, '離開的那一頁要原封不動')
+  assert.equal(s.draft.sets[突擊形態.id], undefined, '沒配過的分頁不該被預先建成空物件')
+  assert.equal(s.notice, null)
+})
+
+test('052-F B-2：兩個分頁各配一套 —— 各自成立，互不覆蓋', () => {
+  const s = step(兩分頁起點(),
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },     // 先鋒（格鬥）
+    { type: 'setActiveSet', key: 突擊形態.id },
+    { type: 'equipWeapon', ref: HAND_R, weaponId: 藝術突襲.id },   // 突擊（突擊）
+  )
+  assert.deepEqual(s.draft.sets[先鋒形態.id]?.mounts.map((m) => m.weaponId), [群山之力.id])
+  assert.deepEqual(s.draft.sets[突擊形態.id]?.mounts.map((m) => m.weaponId), [藝術突襲.id])
+})
+
+test('052-F B-2：背包隨套走（背槽是 EquipSet 的欄位，不是機甲的）', () => {
+  const s = step(兩分頁起點(),
+    { type: 'equipBackpack', backpackId: 強襲者背包.id },
+    { type: 'setActiveSet', key: 突擊形態.id },
+  )
+  assert.equal(s.draft.sets[先鋒形態.id]?.backpackId, 強襲者背包.id)
+  assert.equal(s.draft.sets[突擊形態.id]?.backpackId, undefined, '另一頁不該跟著長出一個背包')
+})
+
+test('052-F B-2：元件隨套走 —— 兩頁各一把同型武器，元件互不影響', () => {
+  const s = step(兩分頁起點(),
+    { type: 'setActiveSet', key: 突擊形態.id },
+    { type: 'equipWeapon', ref: HAND_R, weaponId: 藝術突襲.id },
+    { type: 'equipComponent', ref: HAND_R, componentId: 觸沉著.id },
+    { type: 'setActiveSet', key: 先鋒形態.id },
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },
+    { type: 'equipComponent', ref: DUAL, componentId: 觸壓迫.id },
+  )
+  const 突擊手 = s.draft.sets[突擊形態.id]?.mounts.find((m) => m.weaponId === 藝術突襲.id)
+  const 先鋒手 = s.draft.sets[先鋒形態.id]?.mounts.find((m) => m.weaponId === 群山之力.id)
+  assert.deepEqual(突擊手?.setup?.triggerComponentIds, [觸沉著.id])
+  assert.deepEqual(先鋒手?.setup?.triggerComponentIds, [觸壓迫.id])
+})
+
+test('052-F B-2：模組四套共用 —— 在哪一頁裝的都寫進 draft.modules 同一份', () => {
+  const s = step(兩分頁起點(),
+    { type: 'equipModule', ref: TORSO, moduleId: 通用S.id },
+    { type: 'setActiveSet', key: 突擊形態.id },
+    { type: 'equipModule', ref: L_ARM, moduleId: 通用A.id },
+  )
+  // 兩顆都在頂層那一份，而**不是**各自跑進所屬分頁的 EquipSet
+  assert.deepEqual(s.draft.modules, { torso: 通用S.id, leftArm: 通用A.id })
+  assert.equal('modules' in (s.draft.sets[先鋒形態.id] ?? {}), false)
+  assert.equal('modules' in (s.draft.sets[突擊形態.id] ?? {}), false)
+})
+
+test('052-F B-2：機甲四套共用 —— 換機甲不是換分頁，四套一起重掃', () => {
+  const s = step(兩分頁起點(),
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },     // 先鋒（格鬥）
+    { type: 'setActiveSet', key: 戰術形態.id },
+    { type: 'equipWeapon', ref: SHO_L, weaponId: 熔火.id },        // 戰術（戰術・中甲限定）
+    { type: 'setActiveSet', key: 先鋒形態.id },
+    { type: 'selectMech', mechId: 中甲機2.id },
+  )
+  assert.equal(s.draft.mechId, 中甲機2.id)
+  // 同品質中甲 ⇒ 兩套都留著。重點是「換的是同一台機甲」而不是「換了目前這一頁的機甲」——
+  // 站在先鋒分頁上按下換機甲，另外兩頁一樣要被重掃過
+  assert.equal(s.draft.sets[先鋒形態.id]?.mounts.length, 1)
+  assert.equal(s.draft.sets[戰術形態.id]?.mounts.length, 1)
+})
+
+test('052-F B-2：神經驅動算力四套共用（掛在機師身上，不隨形態變動）', () => {
+  const s = step(
+    run({ type: 'selectPilot', pilotId: ND甲.id }, { type: 'selectMech', mechId: 彌造者.id }),
+    { type: 'setNdLevels', levels: { γ1: 2, γ2: 3 } },
+  )
+  assert.deepEqual(s.draft.ndLevels, { γ1: 2, γ2: 3 })
+  assert.equal('ndLevels' in (s.draft.sets[s.draft.activeSetKey] ?? {}), false)
+})
+
+test('052-F B-2：切到不存在的分頁鍵不動作 —— 不留一個畫面看不到、卻收得下裝備的幽靈鍵', () => {
+  const s = step(兩分頁起點(), { type: 'setActiveSet', key: 'form_不存在' })
+  assert.equal(s.draft.activeSetKey, 先鋒形態.id)
+  // 若這裡沒擋，畫面會退回第一個分頁（LoadoutPage 的 fallback），
+  // 但 equipWeapon 讀的是 draft.activeSetKey 本人 ⇒ 武器寫進幽靈鍵、看起來憑空消失
+  const t = step(s, { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id })
+  assert.deepEqual(Object.keys(t.draft.sets), [先鋒形態.id])
+})
+
+test('052-F B-2：每一套各自算重量／出力 —— 同一份 draft、兩個 key ⇒ 兩份不同的預算', () => {
+  // ⚠ 配對是 **先鋒 vs 戰術**，不是先鋒 vs 突擊（052-F A-2 的訂正）：
+  //   先鋒與突擊能裝的武器全在手部槽、背槽都空著 ⇒ 兩者都掛得上強襲者背包 ⇒ 同為 3675，
+  //   那樣的斷言會綠，卻正好漏掉它要防的那件事（052-J「把 bug 本身寫進測試」的同一個坑）。
+  const s = step(兩分頁起點(),
+    { type: 'equipBackpack', backpackId: 強襲者背包.id },          // 先鋒：背槽掛背包
+    { type: 'setActiveSet', key: 戰術形態.id },
+    { type: 'equipWeapon', ref: BACK, weaponId: 炬塔.id },         // 戰術：背槽被戰術武器佔住
+  )
+  const 先鋒 = loadoutBudget(buildContext(s.draft, 先鋒形態.id, WORLD))
+  const 戰術 = loadoutBudget(buildContext(s.draft, 戰術形態.id, WORLD))
+  // 出力：軀幹 3375 ＋ 強襲者背包 300 ＝ 3675；背部武器不給出力 ⇒ 戰術停在 3375。
+  // 這組數字就是總綱紅隊拿官方整備截圖對帳出來、A-2 逐項回查資料層釘死的基準。
+  assert.equal(先鋒.output.total, 3675)
+  assert.equal(戰術.output.total, 3375)
+  assert.notEqual(先鋒.output.total, 戰術.output.total)
+  assert.equal(先鋒.output.total - 戰術.output.total, 300)
+  // 重量：兩套背槽掛的東西不同 ⇒ 總重也各自成立
+  assert.equal(先鋒.weight.total, 825 + 150)
+  assert.equal(戰術.weight.total, 825 + 1100)
+})
+
+// ─── 分享碼的多套語意（PLAN-052-F D-1）──────────────────────────────────────
+//
+// 分享的語意是「這位機師的**整份**配裝」，不是「目前這一頁」——
+// codec 早就是這樣寫的（`encodeSets()` 寫全部的鍵 ＋ 一個 ACTIVE 索引），
+// 本組測試釘的是**吃進來的那一端**：`loadDraft` → `reconcile` 有沒有把它們留住。
+
+test('052-F D-1：外來草稿帶三個形態分頁 ⇒ 三套全留，activeSetKey 也照收', () => {
+  const incoming: LoadoutDraft = {
+    pilotId: 海莉絲.id, mechId: 彌造者.id,
+    activeSetKey: 戰術形態.id,
+    sets: {
+      [先鋒形態.id]: { mounts: [{ weaponId: 群山之力.id, bank: 'main', slot: WeaponEquipSlot.DUAL_HAND }] },
+      [突擊形態.id]: { mounts: [{ weaponId: 藝術突襲.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'right' }] },
+      [戰術形態.id]: { mounts: [{ weaponId: 炬塔.id, bank: 'main', slot: WeaponEquipSlot.BACK }] },
+    },
+  }
+  const s = simReduce(INITIAL_SIM_STATE, { type: 'loadDraft', draft: incoming }, WORLD)
+  assert.deepEqual(Object.keys(s.draft.sets).sort(), [先鋒形態.id, 戰術形態.id, 突擊形態.id].sort())
+  assert.equal(s.draft.activeSetKey, 戰術形態.id, '分享碼帶的是「他當時看的那一頁」，收進來要停在同一頁')
+  assert.deepEqual(s.notice?.removed ?? [], [])
+})
+
+test('052-F D-1 ⚠ 最危險的一條：forms 尚未載入時，三個形態分頁不可以被靜默刪掉', () => {
+  // 沒有這條 gate 的話：equipSetKeys() 在 forms 為空時對海莉絲也只回 ['default']
+  //  ⇒ 三個 formId 分頁全部不在 keys 裡 ⇒ 在鍵的過濾那一步被整批丟掉。
+  //  而那一步**不進 removed**，所以不跳 toast、不留 [復原]、畫面一個字都不說。
+  assert.deepEqual(equipSetKeys(海莉絲.id, WORLD_NO_FORMS.forms), ['default'], '前提：沒有 forms 就認不得那三個鍵')
+
+  const incoming: LoadoutDraft = {
+    pilotId: 海莉絲.id, mechId: 彌造者.id,
+    activeSetKey: 突擊形態.id,
+    sets: {
+      [先鋒形態.id]: { mounts: [{ weaponId: 群山之力.id, bank: 'main', slot: WeaponEquipSlot.DUAL_HAND }] },
+      [突擊形態.id]: { mounts: [{ weaponId: 藝術突襲.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'right' }] },
+    },
+  }
+  const { draft, removed } = reconcile(incoming, WORLD_NO_FORMS)
+  assert.deepEqual(Object.keys(draft.sets).sort(), [先鋒形態.id, 突擊形態.id].sort(), '兩套都要在')
+  assert.equal(draft.activeSetKey, 突擊形態.id)
+  assert.deepEqual(removed, [])
+})
+
+test('052-F D-1：forms 到齊之後，同一份草稿會被正常驗證（證明上一則不是因為規則沒接上）', () => {
+  const incoming: LoadoutDraft = {
+    pilotId: 海莉絲.id, mechId: 彌造者.id, activeSetKey: 先鋒形態.id,
+    sets: {
+      [先鋒形態.id]: { mounts: [] },
+      form_不存在: { mounts: [{ weaponId: 群山之力.id, bank: 'main', slot: WeaponEquipSlot.DUAL_HAND }] },
+    },
+  }
+  const { draft } = reconcile(incoming, WORLD)
+  assert.deepEqual(Object.keys(draft.sets), [先鋒形態.id], '認得 forms 之後，不屬於這位機師的鍵照樣要掃掉')
+})
+
+test('052-F D-1：換機師仍然整批失效（gate 不可以順手把這條擋掉）', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },
+    { type: 'selectPilot', pilotId: 中型機師.id },
+  )
+  assert.deepEqual(Object.keys(s.draft.sets), [])
+  assert.equal(s.draft.activeSetKey, 'default')
 })

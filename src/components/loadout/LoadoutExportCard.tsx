@@ -68,6 +68,15 @@ const MONO = "'JetBrains Mono', ui-monospace, monospace"
 
 export interface LoadoutExportCardProps {
   ctx: LoadoutContext
+  /**
+   * 這位機師一共有幾個配裝分頁（＝ `equipSetKeys().length`，PLAN-052-F D-2）。
+   *
+   * 圖上印的**只有 `ctx` 那一套**（一張圖塞四套會失去「一眼看懂」的價值），
+   * 但分享碼帶的是**整份配裝**。兩者語意不同，而收圖的人手上只有這張圖 ——
+   * 不講的話，他會以為那串碼貼下去只會得到圖上這一套。
+   * `<= 1` 時整句不印：88 位機師只有一套，多印一句只是雜訊。
+   */
+  setCount?: number
   budget: LoadoutBudget
   /** 已疊過 defaultNdLevels 的完整算力配置 */
   ndLevels: Record<string, number>
@@ -91,7 +100,7 @@ export interface LoadoutExportCardProps {
 }
 
 export function LoadoutExportCard({
-  ctx, budget, ndLevels, ndAbilityMap, ndZones, name, generatedAt, gameVersion, shareCode,
+  ctx, setCount, budget, ndLevels, ndAbilityMap, ndZones, name, generatedAt, gameVersion, shareCode,
 }: LoadoutExportCardProps) {
   const { pilot, mech } = ctx
   const rows = loadoutSheetRows(ctx)
@@ -390,6 +399,13 @@ export function LoadoutExportCard({
             <span style={{
               fontFamily: ORB, fontSize: 9, letterSpacing: 2, color: C.dim, flexShrink: 0,
             }}>SHARE CODE</span>
+            {/* ⚠ 圖上是**一套**、碼裡是**整份**（PLAN-052-F D-2 / 決策四①）。
+                收圖的人手上只有這張圖，不講的話他會以為貼下去只會得到圖上這一套。 */}
+            {(setCount ?? 1) > 1 && (
+              <span style={{ fontSize: 11, color: C.dim, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                （含 {setCount} 個形態分頁）
+              </span>
+            )}
             <span style={{
               fontFamily: MONO, fontSize: 12, lineHeight: 1.45, color: C.sub,
               wordBreak: 'break-all', minWidth: 0,
@@ -697,9 +713,14 @@ export function LoadoutExportRunner({ onDone, ...card }: RunnerProps) {
         if (!alive) return
         const dataUrl = await toPng(el, { backgroundColor: '#0a0c10', pixelRatio: 2, skipFonts: false })
         if (!alive) return
+        // ⚠ 檔名帶上形態名（PLAN-052-F D-2）：海莉絲三個分頁各匯一張，
+        //   不帶的話三張是同一個檔名，瀏覽器只會加 (1)(2) —— 而那個編號與形態無關，
+        //   存到桌面之後就分不出哪張是哪一套了。這與「圖上要標形態名」是同一個理由，
+        //   只是換成檔案總管那一層。沒有形態的機師不加後綴（88 位機師照舊）。
         const base = (card.name ?? card.ctx.mech?.name ?? 'loadout').replace(BAD_FILENAME, '_')
+        const suffix = card.ctx.form?.name ? `_${card.ctx.form.name.replace(BAD_FILENAME, '_')}` : ''
         const a = document.createElement('a')
-        a.download = `配裝_${base}.png`
+        a.download = `配裝_${base}${suffix}.png`
         a.href = dataUrl
         document.body.appendChild(a)
         a.click()
@@ -712,7 +733,7 @@ export function LoadoutExportRunner({ onDone, ...card }: RunnerProps) {
     }
     void run()
     return () => { alive = false }
-  }, [loading, onDone, card.name, card.ctx.mech?.name])
+  }, [loading, onDone, card.name, card.ctx.mech?.name, card.ctx.form?.name])
 
   return (
     <div

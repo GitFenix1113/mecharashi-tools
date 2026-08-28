@@ -3,7 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  equipSetKeys, hasIndependentLoadouts, equipSetLabel, DEFAULT_EQUIP_SET_KEY,
+  equipSetKeys, hasIndependentLoadouts, equipSetLabel, lockedFormCards, DEFAULT_EQUIP_SET_KEY,
 } from './forms.ts'
 
 /** 線上 forms 集合的實際 6 筆（2026-08-24），加上 C-3 要落盤的 independentLoadout */
@@ -77,4 +77,35 @@ test('equipSetLabel：default 回 null（單一分頁不該渲染分頁列）', 
   assert.equal(equipSetLabel(DEFAULT_EQUIP_SET_KEY, FORMS), null)
   assert.equal(equipSetLabel('form_海莉絲_突擊', FORMS), '突擊')
   assert.equal(equipSetLabel('form_不存在', FORMS), null)
+})
+
+// ─── 唯讀形態卡（PLAN-052-F C-1）────────────────────────────────────────────
+
+test('lockedFormCards：海莉絲 → 虛粒子一張（分頁列的另一半）', () => {
+  assert.deepEqual(lockedFormCards('pilot_海莉絲', FORMS).map((f) => f.id), ['form_海莉絲_虛粒子'])
+})
+
+test('lockedFormCards：曜 → 0 張 —— 判準是「有沒有分頁列」，不是「有沒有 fixedArmament 形態」', () => {
+  // 曜同樣有一個 fixedArmament 形態（巡航），但他沒有分頁列。
+  // 畫一張孤零零的唯讀卡＝站上多出一個遊戲沒有的東西（使用者裁決 2026-08-28）。
+  assert.equal(FORMS.filter((f) => f.pilotId === 'pilot_曜' && f.restrict.kind === 'fixedArmament').length, 1)
+  assert.equal(hasIndependentLoadouts('pilot_曜', FORMS), false)
+  assert.deepEqual(lockedFormCards('pilot_曜', FORMS), [])
+})
+
+test('lockedFormCards：沒有形態的機師 → 0 張', () => {
+  assert.deepEqual(lockedFormCards('pilot_艾達', FORMS), [])
+  assert.deepEqual(lockedFormCards('pilot_海莉絲', []), [])
+  assert.deepEqual(lockedFormCards('pilot_海莉絲', null), [])
+})
+
+test('lockedFormCards：只回該機師自己的，且依 order 排序', () => {
+  const 多鎖 = [
+    { id: 'form_z_可配', pilotId: 'p', name: '可配', order: 1,
+      independentLoadout: true, restrict: { kind: 'weaponType', allow: [] } },
+    { id: 'form_z_鎖B', pilotId: 'p', name: '鎖B', order: 9, restrict: { kind: 'fixedArmament', mounts: [] } },
+    { id: 'form_z_鎖A', pilotId: 'p', name: '鎖A', order: 2, restrict: { kind: 'fixedArmament', mounts: [] } },
+    { id: 'form_別人_鎖', pilotId: 'q', name: '別人', order: 1, restrict: { kind: 'fixedArmament', mounts: [] } },
+  ] as never
+  assert.deepEqual(lockedFormCards('p', 多鎖).map((f) => f.id), ['form_z_鎖A', 'form_z_鎖B'])
 })

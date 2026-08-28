@@ -9,7 +9,7 @@ import type { MechPartPosition } from '../../types/enums'
 import { useLoadoutGameData, type LoadoutStage } from '../../hooks/useFirestore'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useLayoutBreakpoint } from '../../hooks/useLayoutBreakpoint'
-import { equipSetKeys, equipSetLabel, hasIndependentLoadouts, DEFAULT_EQUIP_SET_KEY } from '../../utils/forms'
+import { equipSetKeys, equipSetLabel, hasIndependentLoadouts, lockedFormCards, DEFAULT_EQUIP_SET_KEY } from '../../utils/forms'
 import { slotLabel } from '../../utils/mechSlots'
 // ⏸ 部件混搭未開放前，四部位表暫時下架（見下方 JSX 內註解）。模組槽已於 052-G Phase C 開放
 // import { MechPartsTable } from '../../components/mechs/MechSlotPanel'
@@ -18,6 +18,8 @@ import LoadoutIcon from '../../components/icons/LoadoutIcon'
 import { LoadoutRig } from '../../components/loadout/LoadoutRig'
 import { OutputBar } from '../../components/loadout/OutputBar'
 import { PickerShell } from '../../components/loadout/PickerShell'
+import { FormTabs } from '../../components/loadout/FormTabs'
+import { LockedFormCard } from '../../components/loadout/LockedFormCard'
 // ⏸ 攻擊力口徑未定，「裝配武器」面板暫時下架（見 infoPanel 內註解）
 // import { EquippedStats } from '../../components/loadout/EquippedStats'
 // ⏸ 「配裝概況」面板已下架（見下方 infoPanel 的註解）；LoadoutSummary.tsx 本體保留備用
@@ -304,7 +306,10 @@ export default function LoadoutPage() {
   // 還原完成前不寫：否則會用初始空草稿蓋掉使用者上次留下的那一份。
   useEffect(() => { if (restored) writeDraftCache(state.draft) }, [state.draft, restored])
 
-  // ── 分頁鍵：一律取自 equipSetKeys()（形態分頁 UI 在 052-F，本版固定用第一個） ──
+  // ── 分頁鍵：一律取自 equipSetKeys()（分頁列 UI 見 <FormTabs>，PLAN-052-F B-1）──
+  //
+  // ⚠ 不可改成 Object.keys(state.draft.sets)：那是「已經存過東西的分頁」，
+  //   新建的配裝一個鍵都沒有 ⇒ 分頁整排消失，而且不會報錯。
   const setKeys = useMemo(
     () => (state.draft.pilotId ? equipSetKeys(state.draft.pilotId, data.forms) : [DEFAULT_EQUIP_SET_KEY]),
     [state.draft.pilotId, data.forms],
@@ -312,6 +317,24 @@ export default function LoadoutPage() {
   const activeKey = setKeys.includes(state.draft.activeSetKey) ? state.draft.activeSetKey : setKeys[0]
   const ctx = useMemo(() => buildContext(state.draft, activeKey, world), [state.draft, activeKey, world])
   const budget = useMemo(() => loadoutBudget(ctx), [ctx])
+
+  // ── 唯讀形態卡：鎖死整套配裝、因此不佔分頁的那幾個形態（PLAN-052-F C-1）──
+  //
+  // ⚠ 判準是 `lockedFormCards()`（＝「這位機師**有沒有分頁列**」），
+  //   不是「有沒有 fixedArmament 形態」：曜同樣有一個（巡航），但他沒有分頁列，
+  //   畫了就是站上多出一個遊戲沒有的東西。規則收在 utils/forms.ts，本頁不自己判。
+  //
+  // ⚠ 每一張卡吃**自己那個 formId 的 ctx**，不是目前分頁那一份：
+  //   全鎖形態的整套 100% 由 form.restrict.mounts derive，`loadoutWeightSet()`
+  //   對 `ctx.lock` 有專門的分支；傳錯會算出別頁的重量、掛上這一頁的名字。
+  const lockedForms = useMemo(
+    () => (state.draft.pilotId ? lockedFormCards(state.draft.pilotId, data.forms) : []),
+    [state.draft.pilotId, data.forms],
+  )
+  const lockedCards = useMemo(
+    () => lockedForms.map((form) => ({ form, ctx: buildContext(state.draft, form.id, world) })),
+    [lockedForms, state.draft, world],
+  )
 
   // ── 挑選器 ──
   // 沒有機師／機甲時，情境欄自動停在該選的那一步 —— 不必先點一下才知道要從哪裡開始。
@@ -449,8 +472,15 @@ export default function LoadoutPage() {
     : bp === 'medium' ? 'grid grid-cols-[minmax(0,1fr)_420px] gap-4 items-start'
     : 'flex flex-col gap-4'
 
+  // 挑選器底部的帳本列。⚠ 也要帶形態名：挑選器一開，面板抬頭那排分頁就被蓋掉了，
+  // 而挑選器本身正是「這一格要裝什麼」的地方 —— 玩家最需要確定自己在配哪一套的時刻。
   const budgetLine = (
-    <OutputBar budget={previewBudget ?? budget} compact onHoverSegment={setHoverSegment} />
+    <OutputBar
+      budget={previewBudget ?? budget}
+      compact
+      onHoverSegment={setHoverSegment}
+      formName={setKeys.length > 1 ? equipSetLabel(activeKey, data.forms) : null}
+    />
   )
 
   // ── 右欄的元件面板：由 key 反查目前的列（查不到＝那把武器已不在了 → 自動退回清單）──
@@ -680,20 +710,21 @@ export default function LoadoutPage() {
       {/* ⚠ 常駐橫幅，不是「暫時的公告」：這一版明確不做的東西必須講清楚，
           否則玩家會把「找不到」當成 bug（決策四）。 */}
       <div className="hud-cut mb-3 border border-accent-cyan/25 bg-accent-cyan/5 px-3.5 py-2.5 text-[12px] text-text-secondary leading-relaxed">
-        本版提供<strong className="text-text-primary">槽位配裝、重量／出力計算、元件、模組槽與分享碼</strong>。
-        武器改裝、形態分頁、部件混搭、雲端存檔<strong className="text-text-primary">尚在後續階段</strong>；
+        本版提供<strong className="text-text-primary">槽位配裝、重量／出力計算、元件、模組槽、形態分頁與分享碼</strong>。
+        武器改裝、部件混搭、雲端存檔<strong className="text-text-primary">尚在後續階段</strong>；
         傷害數字因官方公式未知，本站不提供猜測值
         （<strong className="text-text-primary">元件的觸發機率</strong>同理，面板只列出配對關係與 Lv）。
+        {/* ⚠ 「形態分頁開發中」那句黃字已於 PLAN-052-F D-3 移除 —— 這是**常駐橫幅**不是暫時公告
+            （總綱決策四），留著就是站上自己說了一句不再成立的話。
+            取而代之的是一句只在有分頁列時出現的說明：分頁列本身講得出「有幾套」，
+            但講不出「切過去之後哪些東西會跟著換、哪些不會」，而那正是玩家第一次看到三個分頁時會問的。 */}
         {showBanner && (
           <>
             <br />
-            <span className="text-accent-yellow/90">
-              {ctx.pilot?.name ?? '這位機師'}的每個戰鬥形態各有一套獨立配裝 ——
-              目前僅提供
-              <strong className="text-text-primary">
-                「{equipSetLabel(activeKey, data.forms) ?? '預設'}」
-              </strong>
-              一套，形態分頁開發中。
+            <span className="text-accent-cyan/90">
+              {ctx.pilot?.name ?? '這位機師'}的每個戰鬥形態<strong className="text-text-primary">各有一套獨立配裝</strong> ——
+              武器、背包、元件與重量／出力<strong className="text-text-primary">逐頁分開</strong>；
+              機甲、模組與神經驅動算力<strong className="text-text-primary">四套共用</strong>。
             </span>
           </>
         )}
@@ -757,6 +788,11 @@ export default function LoadoutPage() {
               budget={budget}
               previewBudget={previewBudget}
               onHoverSegment={setHoverSegment}
+              // 分頁列已搬到「裝備與模組」面板抬頭（使用者回饋 2026-08-28：擺在 sticky 裡
+              // 太不顯眼、找了一陣子才找到）。搬走之後這條 sticky 的數字就少了歸屬 ——
+              // 捲到頁面下半部時，「3,675」看不出是哪一個形態的。這一行把形態名補回來：
+              // 一個小標籤，不是第二排分頁（那會讓同一件事在畫面上出現兩次）。
+              formName={setKeys.length > 1 ? equipSetLabel(activeKey, data.forms) : null}
               narrow={bp === 'narrow'}
             />
           </div>
@@ -824,14 +860,39 @@ export default function LoadoutPage() {
             //   武器槽位圖與四部位模組卡，而「槽位」只講到了上半部 —— 找模組的人
             //   會略過這個抬頭。抬頭要蓋住裡面實際有的兩件事。
             title="裝備與模組"
-            titleExtra={ctx.mech ? (
-              <span className="flex items-center gap-2 min-w-0">
-                <span className={`${HUD.bodyStrong} text-text-primary truncate`}>{ctx.mech.name}</span>
-                <span className={`hud-cut-sm shrink-0 px-1.5 py-0.5 text-[11px] font-bold border border-current/40 bg-bg-dark/70 ${
-                  ARMOR_TONE[ctx.mech.armorType] ?? 'text-text-secondary'
-                }`}>
-                  {ctx.mech.armorType}
-                </span>
+            // ⚠ 分頁列掛在**這裡**，不在 sticky 抬頭裡（使用者回饋 2026-08-28：
+            //   「這邊有點不顯眼，我找了一陣子才找到形態切換的操作」）。
+            //   原本的擺法是為了讓分頁與正下方的重量／出力條一起 sticky，
+            //   但那一排混在機師／機甲／方案名稱那幾顆同色卡片之間，看起來像又一個欄位。
+            //   面板抬頭是「這一套裝了什麼」的標題列 —— 分頁換的正是那個「這一套」，
+            //   而且它就在槽位圖正上方，切完之後眼睛不用移動。
+            //   代價（sticky 的數字失去歸屬）由 OutputBar 的 formName 標籤補上。
+            titleExtra={(ctx.mech || setKeys.length > 1) ? (
+              <span className="flex items-center gap-2 flex-wrap min-w-0">
+                {ctx.mech && (
+                  <>
+                    <span className={`${HUD.bodyStrong} text-text-primary truncate`}>{ctx.mech.name}</span>
+                    <span className={`hud-cut-sm shrink-0 px-1.5 py-0.5 text-[11px] font-bold border border-current/40 bg-bg-dark/70 ${
+                      ARMOR_TONE[ctx.mech.armorType] ?? 'text-text-secondary'
+                    }`}>
+                      {ctx.mech.armorType}
+                    </span>
+                  </>
+                )}
+                {setKeys.length > 1 && (
+                  <FormTabs
+                    setKeys={setKeys}
+                    activeKey={activeKey}
+                    forms={data.forms}
+                    sets={state.draft.sets}
+                    onSelect={(key) => send({ type: 'setActiveSet', key })}
+                    // 分頁列尾端的唯讀標記（C-1）。**不是分頁、不可點**——點進去什麼都不能改，
+                    // 那是一個假的互動。它只負責回答「官方形態頁上的第四格呢」，
+                    // 完整的說明在槽位圖下方那張 <LockedFormCard>。
+                    // 視覺上靠 052-I 已定的規則分辨：切角＝可互動，圓角＝唯讀。
+                    lockedForms={lockedForms}
+                  />
+                )}
               </span>
             ) : undefined}
             action={{
@@ -874,6 +935,17 @@ export default function LoadoutPage() {
                    就在挑選器抬頭 —— 比一顆孤立在槽位圖外的按鈕更靠近使用情境。
                    若日後要補回入口，該補的是**背部那一格的空態文案**，不是這顆按鈕。 */}
           </Panel>
+
+          {/* ── 唯讀形態卡（PLAN-052-F C-1）──
+              位置刻意在**槽位圖之後**：這一欄由上而下回答的是「這一套裝了什麼」，
+              而這張卡回答的是同一個問題的第四個答案（那個玩家改不了的形態）。
+              放在槽位圖之前會把主操作區推下去，而它是一張讀完就不會再看的參考卡。
+              ⚠ gate 用 `lockedCards`（＝有分頁列才有卡），不是 `ctx.mech`：
+                沒選機甲時它仍然該出現——「這個形態鎖哪三把」與機甲無關，
+                而那正是玩家還在挑機甲時會想知道的事。 */}
+          {lockedCards.map(({ form, ctx: lockedCtx }) => (
+            <LockedFormCard key={form.id} form={form} ctx={lockedCtx} />
+          ))}
 
           {/* ── 效果兩欄（使用者要求 2026-08-27）──
               模組與武器各佔半邊，收合態是縮圖、展開態是細節（見 `Panel` 的 `preview`）。
@@ -944,6 +1016,7 @@ export default function LoadoutPage() {
               open
               title={`選擇 ${slotLabel(effectivePicker.ref)} 的武器`}
               filters={WEAPON_FILTERS}
+              hint={formWeaponHint(ctx)}
               blockedReason={blockedReason(ctx, effectivePicker.ref)}
               entries={weaponEntries}
               toRow={weaponRow}
@@ -1079,6 +1152,7 @@ export default function LoadoutPage() {
           open
           title={`選擇 ${slotLabel(effectivePicker.ref)} 的武器`}
           filters={WEAPON_FILTERS}
+          hint={formWeaponHint(ctx)}
           blockedReason={blockedReason(ctx, effectivePicker.ref)}
           entries={weaponEntries}
           toRow={weaponRow}
@@ -1197,6 +1271,9 @@ export default function LoadoutPage() {
       {exporting && ctx.mech && (
         <LoadoutExportRunner
           ctx={ctx}
+          // 圖印**當前這一套**（ctx 就是 activeKey 那一份），分享碼帶的是整份配裝 ——
+          // 兩者語意不同，所以圖上要講出分頁總數（D-2）。
+          setCount={setKeys.length}
           budget={budget}
           ndLevels={ndLevels}
           ndAbilityMap={ndAbilityMap}
@@ -1245,7 +1322,10 @@ function Panel({
 
   return (
     <section className={`${HUD_PANEL} p-3.5 space-y-2`}>
-      <div className="flex items-center gap-2 min-w-0">
+      {/* ⚠ `flex-wrap`：`titleExtra` 自 PLAN-052-F 起可能帶著形態分頁列（3 顆按鈕 ＋ 1 個唯讀標記），
+          不換行的話 360px 上會把「彌造者」壓成一個字再加省略號。換行讓分頁自己掉到第二列，
+          `action` 的 `ml-auto` 在第一列照舊靠右。 */}
+      <div className="flex items-center gap-2 flex-wrap min-w-0">
         <h2 className={`${HUD.cardTitle} text-text-primary shrink-0`}>{title}</h2>
         {titleExtra}
         {action && (
@@ -1550,6 +1630,30 @@ const backpackRow = (b: Backpack): PickerRowItem => ({
   id: b.id, name: b.name, icon: b.icon, weight: b.weight,
   meta: `${BACKPACK_TYPE_CONFIG[b.type]?.label ?? b.type} · ${b.rarity}`,
 })
+
+/**
+ * 「這個形態只收某幾類武器」的說明（PLAN-052-F B-3）。
+ *
+ * ⚠ **這一條非有不可，因為那個規則今天在挑選器裡是完全隱形的。**
+ *   `FORM_WEAPON_TYPE` 是 `structural` tier，而 052-I 驗收後 PickerShell
+ *   把 structural 的項目**整批不列**（原本會摺疊成一行計數，改成不列的理由是
+ *   「那一行對玩家沒有可行動的資訊」）。於是切到戰術形態、點開右手那一格，
+ *   玩家看到的是一句「這一格沒有任何可裝的裝備。」—— 規則本身、以及規則講得
+ *   一清二楚的那句「戰術形態只能裝備戰術類武器」，一個字都不會出現。
+ *
+ *   `canEquipWeapon()` 的那句 reason 之所以到不了畫面，是因為它只掛在被濾掉的列上。
+ *   本函式把同一件事講在**清單之上**：不論清單是短了一截還是整個空掉，都看得到。
+ *
+ * ⚠ 不重複實作 allow 清單的判斷 —— 直接讀 `ctx.form.restrict`，
+ *   與 `canEquipWeapon()` 的 `FORM_WEAPON_TYPE` 分支同一個來源。
+ *   全鎖形態（`fixedArmament`）不走這裡：那是 `blockedReason()` 的 `ctx.lock`，
+ *   整個挑選器降級，不是「清單短了一截」。
+ */
+function formWeaponHint(ctx: ReturnType<typeof buildContext>): string | null {
+  const r = ctx.form?.restrict
+  if (r?.kind !== 'weaponType') return null
+  return `${ctx.form!.name}只能裝備${r.allow.join('／')}類武器，其餘不列入清單。`
+}
 
 /**
  * 整個挑選器不該開的原因（`blocked` tier）。降級並說明，不是給一個空清單。

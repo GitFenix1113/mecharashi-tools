@@ -64,3 +64,34 @@ export function equipSetLabel(
   if (key === DEFAULT_EQUIP_SET_KEY) return null
   return (forms ?? []).find((f) => f.id === key)?.name ?? null
 }
+
+/**
+ * 這位機師身上「鎖死整套配裝」的形態 —— 分頁列尾端那張**唯讀卡**要畫的東西
+ * （PLAN-052-F C-1），依 `order` 排序。
+ *
+ * ⚠ **判準是「這位機師有沒有分頁列」，不是「有沒有 `fixedArmament` 形態」**
+ *   （總綱決策四的補充裁決，2026-08-28）。
+ *
+ *   `equipSetKeys()` 刻意讓鎖死的形態不佔分頁 —— 那是對的：點進去什麼都不能改，
+ *   是一個假的互動。但那個決定有另一半沒有做完：海莉絲切到虛粒子時，
+ *   耀星／隕星／千星在模擬器裡是**零存在感**的，玩家會把它當成「站上漏了」。
+ *   本函式就是那另一半。
+ *
+ *   ⚠ 但它**只在有分頁列時成立**：曜同樣有一個 `fixedArmament` 形態（巡航），
+ *   而遊戲裡曜連形態頁面都沒有 —— 畫一張孤零零的唯讀卡，等於站上多出一個
+ *   遊戲沒有的東西，而這一頁的整個設計前提是「玩家一邊看站上一邊對照遊戲時不必翻譯」。
+ *   有分頁列，鎖死的那一格才需要被解釋。
+ *   幽弧／夜燼不會因此消失：它們在武器圖鑑查得到（PLAN-040 已建檔），
+ *   那裡才是「這兩把是什麼」的去處；配裝頁回答的是「這一套裝了什麼」。
+ *
+ * 實測（2026-08-28）：海莉絲 → 1 筆（虛粒子）、曜 → 0 筆、其餘 87 位 → 0 筆。
+ */
+export function lockedFormCards(
+  pilotId: string,
+  forms: readonly MechForm[] | null | undefined,
+): MechForm[] {
+  if (!hasIndependentLoadouts(pilotId, forms)) return []
+  return (forms ?? [])
+    .filter((f) => f.pilotId === pilotId && f.restrict?.kind === 'fixedArmament')
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+}

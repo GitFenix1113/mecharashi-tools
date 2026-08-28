@@ -34,9 +34,20 @@ interface Props {
    *   實測 390px 寬時預設版會 wrap 成三列共 ~180px，本版兩列 ~110px。
    */
   narrow?: boolean
+  /**
+   * 目前這一套屬於哪個形態（PLAN-052-F，分頁列搬家之後補的）。
+   *
+   * 分頁列住在「裝備與模組」面板的抬頭列，捲到頁面下半部就看不見了，
+   * 而這條帳本列是 sticky 的 —— 少了這個標籤，「3,675」就是一個**無法歸屬的數字**
+   * （052-C 把分享碼印在匯出圖底部所解的是同一類問題）。
+   *
+   * ⚠ 它是**標籤不是分頁**：不可點、不加 hover。同一件事在畫面上出現兩排可以點的東西，
+   *   只會讓人不確定哪一排才是真的。沒有形態的機師傳 `null`，整個不渲染。
+   */
+  formName?: string | null
 }
 
-export function OutputBar({ budget, previewBudget, onHoverSegment, compact, narrow }: Props) {
+export function OutputBar({ budget, previewBudget, onHoverSegment, compact, narrow, formName }: Props) {
   const { weight, output, remaining, over, dataIncomplete } = budget
   const segs: { key: SegKey; value: number }[] = [
     { key: 'chassis',  value: weight.chassis },
@@ -117,7 +128,10 @@ export function OutputBar({ budget, previewBudget, onHoverSegment, compact, narr
     return (
       <div className="space-y-1">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-[11px] text-text-dim">總重 ／ 可用出力</span>
+          <span className="text-[11px] text-text-dim">
+            總重 ／ 可用出力
+            {formName && <span className="ml-1.5 text-accent-orange">{formName}</span>}
+          </span>
           <span className={`${HUD.numSm}`}>
             <strong className={over ? 'text-accent-red' : 'text-text-primary'}>
               {weight.total.toLocaleString()}
@@ -156,7 +170,14 @@ export function OutputBar({ budget, previewBudget, onHoverSegment, compact, narr
 
   const totals = (
     <div className="flex flex-col gap-0.5">
-      <span className={`${HUD.label} text-text-dim`}>Total / Output</span>
+      <span className="flex items-center gap-1.5 flex-wrap">
+        <span className={`${HUD.label} text-text-dim`}>Total / Output</span>
+        {formName && (
+          <span className="rounded border border-accent-orange/40 bg-accent-orange/10 px-1.5 py-px text-[11px] text-accent-orange">
+            {formName}
+          </span>
+        )}
+      </span>
       <span className="flex items-baseline gap-1.5">
         <span className={`${narrow ? HUD.numMd : HUD.numLg} ${over ? 'text-accent-red' : 'text-text-primary'}`}>
           {weight.total.toLocaleString()}

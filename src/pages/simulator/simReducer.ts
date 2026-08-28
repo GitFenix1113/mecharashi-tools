@@ -255,11 +255,38 @@ export function reconcile(draft: LoadoutDraft, world: LoadoutWorld): { draft: Lo
   if (!next.mechId && Object.keys(next.sets).length > 0) next = { ...next, sets: {} }
 
   // ── 分頁鍵：一律取自 equipSetKeys()，換機師時舊 formId 會整批失效 ──
-  const keys = next.pilotId ? equipSetKeys(next.pilotId, world.forms) : [DEFAULT_EQUIP_SET_KEY]
-  const sets: Record<string, EquipSet> = {}
-  for (const key of keys) if (next.sets[key]) sets[key] = next.sets[key]
-  if (Object.keys(sets).length !== Object.keys(next.sets).length) next = { ...next, sets }
-  if (!keys.includes(next.activeSetKey)) next = { ...next, activeSetKey: keys[0] }
+  //
+  // ⚠ **載入 gate**（PLAN-052-F D-1）：`forms` 還沒到齊時整段跳過。
+  //   這一段是「不在 keys 裡的分頁一律丟掉」，而 `equipSetKeys()` 在 forms 為空時
+  //   對海莉絲**也**只回 `['default']` —— 於是一份帶著三個形態分頁的外來草稿
+  //   （分享碼／localStorage 草稿／052-E 的雲端存檔）會被**整批靜默刪掉**：
+  //   不進 `removed`（丟棄發生在鍵的過濾、不在逐件掃描），因此不跳 toast、不留 [復原]，
+  //   玩家看到的是「貼了碼，三套只剩一套」而畫面一個字都不說。
+  //
+  //   今天 `LoadoutPage` 的還原守衛（`if (pending && !loading)`）擋得住這條路，
+  //   但那是**另一個檔案裡的時序**，而 `reconcile()` 每個動作都會跑。
+  //   同一種「集合比草稿晚到」的坑，元件（052-D 決策六）與模組（052-G 決策六）
+  //   各自都在這支函式裡留了一行 gate，本行是形態的那一份。
+  //
+  //   gate 的判準是 `world.forms.length === 0` ＝「這個集合根本沒進來」，
+  //   不是「這位機師沒有形態」—— 全庫恆有 6 筆，空陣列只可能是未載入。
+  //   代價是最多多留一份等下一次 reconcile 掃掉，遠小於靜默刪掉玩家三套配裝。
+  const formsLoaded = world.forms.length > 0
+  let keys: string[]
+  if (!next.pilotId) {
+    keys = [DEFAULT_EQUIP_SET_KEY]
+  } else if (formsLoaded) {
+    keys = equipSetKeys(next.pilotId, world.forms)
+  } else {
+    // gate 觸發：草稿裡有什麼分頁就掃什麼，一個都不丟
+    keys = Object.keys(next.sets).length > 0 ? Object.keys(next.sets) : [DEFAULT_EQUIP_SET_KEY]
+  }
+  if (formsLoaded || !next.pilotId) {
+    const sets: Record<string, EquipSet> = {}
+    for (const key of keys) if (next.sets[key]) sets[key] = next.sets[key]
+    if (Object.keys(sets).length !== Object.keys(next.sets).length) next = { ...next, sets }
+    if (!keys.includes(next.activeSetKey)) next = { ...next, activeSetKey: keys[0] }
+  }
 
   // ── 逐套掃裝備 ──
   for (const key of keys) {
@@ -633,10 +660,23 @@ export function simReduce(state: SimState, action: LoadoutAction, world: Loadout
       return commit(state, state.draft, draft, removed, '已移除機甲', [], [], true)
     }
 
-    case 'setActiveSet':
+    // 切分頁：**只換一個字串**，不動任何一套裝備、不跑 reconcile、不留 undo 紀錄。
+    //
+    // ⚠ key 一定要驗過再收（PLAN-052-F B-2）。UI 那一側（`LoadoutPage`）在渲染時
+    //   已經把不合法的 activeSetKey 退回 `setKeys[0]`，但那只修了**畫面**——
+    //   `equipWeapon` 之類的動作讀的是 `state.draft.activeSetKey` 本人。
+    //   兩邊各修各的，症狀會是「畫面停在先鋒分頁，裝上的武器卻寫進一個不存在的鍵」：
+    //   沒有錯誤訊息、裝備看起來憑空消失，而 reconcile 下次會把那個幽靈鍵整包掃掉。
+    //   收在這裡，是因為這裡是唯一的寫入點。
+    case 'setActiveSet': {
+      const keys = state.draft.pilotId
+        ? equipSetKeys(state.draft.pilotId, world.forms)
+        : [DEFAULT_EQUIP_SET_KEY]
+      if (!keys.includes(action.key)) return state
       return state.draft.activeSetKey === action.key
         ? state
         : { ...state, draft: { ...state.draft, activeSetKey: action.key }, notice: null }
+    }
 
     case 'equipWeapon': {
       const key = state.draft.activeSetKey

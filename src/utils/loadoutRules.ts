@@ -230,7 +230,8 @@ export function buildWorld(data: {
   mechs: readonly Mech[]
   weapons: readonly Weapon[]
   backpacks: readonly Backpack[]
-  forms: readonly MechForm[]
+  /** ⚠ 空陣列 ＝ 尚未載入（見 `reconcile()` 的形態載入 gate），不是「這個世界沒有形態」 */
+  forms?: readonly MechForm[]
   components?: readonly Component[]
   modules?: readonly Module[]
 }): LoadoutWorld {
@@ -241,7 +242,10 @@ export function buildWorld(data: {
     mechs: index(data.mechs),
     weapons: index(data.weapons),
     backpacks: index(data.backpacks),
-    forms: data.forms,
+    // 與 components／modules 同一條：缺欄位 ＝ 那個階段還沒載入，該是空的。
+    // 給預設而不是讓它變 undefined —— 一個 undefined 會讓 reconcile 的載入 gate 直接爆炸，
+    // 而那條 gate 存在的理由正是「集合晚到時不要出事」。
+    forms: data.forms ?? [],
     // 選填：`equip` 之前的階段根本沒有這個欄位，而那時它應該是空的（＝尚未載入）
     components: index(data.components ?? []),
     modules: index(data.modules ?? []),

@@ -13,8 +13,9 @@ import {
   loadoutBudget, mountCoverage, mountRefFor, slotOccupant, validateLoadout,
   weaponChoices, backpackChoices, structuralCounts, slotHasCandidates,
   canEquipComponent, componentChoices, weaponSiteAt, canEquipModule, planModuleFill, planWeaponAutoEquip,
-  planWeaponUpgrade, pilotExclusiveWeapons,
+  planWeaponUpgrade, pilotExclusiveWeapons, lockedMounts,
 } from './loadoutRules.ts'
+import { equipSetKeys } from './forms.ts'
 import type { Component, Module } from '../types/index.ts'
 import { ArmorType, MechLicense, MechRestriction, WeaponEquipSlot, BackpackType, WeaponType, WeaponKind, MechPartPosition, ModuleSlot, PartInterface } from '../types/enums.ts'
 import type { MechPartPosition as MechPartPositionType } from '../types/enums.ts'
@@ -393,6 +394,29 @@ test('全鎖形態的重量由 form.restrict.mounts derive ＝ golden fixture �
     WORLD,
   )
   assert.equal(loadoutBudget(ctx).weight.total, 1125)   // 825 + (100+100) + 100
+})
+
+// PLAN-052-F C-1／C-2：唯讀形態卡靠的就是上面那條路 —— 拿一個**不在分頁清單裡**的
+// formId 去 buildContext()。這一條把那個契約寫出來，因為它看起來像個矛盾。
+test('052-F：唯讀卡的 key 不在 equipSetKeys 裡，但 buildContext 照樣解得開', () => {
+  const keys = equipSetKeys(海莉絲.id, WORLD.forms)
+  assert.equal(keys.includes(虛粒子形態.id), false, '全鎖形態不佔分頁 —— 點進去什麼都不能改')
+
+  const ctx = buildContext({ pilotId: 海莉絲.id, mechId: 彌造者.id, sets: {} }, 虛粒子形態.id, WORLD)
+  assert.equal(ctx.form?.id, 虛粒子形態.id)
+  assert.ok(ctx.lock, '全鎖形態要有 lock，唯讀卡的整份清單由它 derive')
+  assert.equal(lockedMounts(ctx).length, 3)
+})
+
+// C-2 的訂正：原工項寫「固定武裝的重量實測為 0，所以算與不算等價」——**不成立**。
+// 耀星／隕星／千星各 100，而官方整備畫面顯示的 1125 正是把它們算進去的結果。
+test('052-F C-2：固定武裝的重量不是 0（那三把各 100），所以「算不算」在數字上不等價', () => {
+  const ctx = buildContext({ pilotId: 海莉絲.id, mechId: 彌造者.id, sets: {} }, 虛粒子形態.id, WORLD)
+  const armament = lockedMounts(ctx)
+    .reduce((n, m) => n + (WORLD.weapons.get(m.weaponId)?.weight ?? 0), 0)
+  assert.equal(armament, 300)
+  assert.equal(loadoutBudget(ctx).weight.total, 彌造者.weight + 300)
+  assert.notEqual(loadoutBudget(ctx).weight.total, 彌造者.weight, '不算的話會少 300，畫面上就會與官方對不上')
 })
 
 test('全鎖形態下任何裝備動作都被擋，且訊息指名形態', () => {
