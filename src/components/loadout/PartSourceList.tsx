@@ -84,7 +84,11 @@ export function PartSourceList({ ctx, position, onSwap }: Props) {
         className={`${HUD_INPUT} w-full mt-2`}
       />
 
-      <div className="flex flex-col mt-2" style={{ gap: 6 }}>
+      {/* ⚠ **清單自己捲**（`max-h + overflow-y-auto`，與模組清單同一組數字）：
+          36 台每台一列，不加高度上限的話右欄會被撐長，換一個部位就要把整頁捲回去
+          —— 而挑選這件事應該在原地完成。使用者回報 2026-08-28。
+          ⚠ `pr-0.5` 是留給捲軸的：不留的話捲軸會壓在列的右邊界上。 */}
+      <div className="flex flex-col mt-2 max-h-[52vh] overflow-y-auto pr-0.5" style={{ gap: 6 }}>
         {filtered.map((e) => (
           <PartRow
             key={e.item.id}

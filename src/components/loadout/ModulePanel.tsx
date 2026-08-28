@@ -203,24 +203,44 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onFill, onResolve, onS
       </div>
 
       {/* ── 分段：一個部位的兩個問題 ──
-          「裝了什麼模組」與「這一格是誰的」。⚠ 兩顆都是 `<button>` 而且**永遠都在**——
-          只在混搭可用時才長出第二顆，會讓玩家在不同機甲上看到不一樣的面板骨架。 */}
-      <div className="flex mt-2" style={{ gap: 6 }}>
+          「裝了什麼模組」與「這一格是誰的」。
+
+          ⚠ **第一版做成兩顆小晶片，使用者實測看不出來可以選**（2026-08-28，逐字：
+            「按鈕跟之前一樣的問題，不太顯眼，沒仔細看，看不出來可以選」）。
+            成因很具體：那兩顆與下方的篩選晶片**同尺寸、同形狀、同一組顏色**，
+            於是被讀成「又一組篩選標籤」而不是「兩個模式擇一」——
+            而且未選中那顆用 `text-text-dim`，看起來像停用。
+            這是 052-F 分頁列那次的同一種病：元件本身沒錯，錯在它長得像旁邊那些不是它的東西。
+
+          ⚠ 改法**不是把它變大就好**，而是給它一個「軌道」：
+            外面一層底色框、兩顆各佔一半寬、選中那顆整塊填色 ——
+            一個框裡兩個等寬的東西、其中一個被填滿，是「二擇一」最短的視覺說法。
+            未選中那顆改用 `text-text-secondary`（不是 dim）並保留 hover，讓它看起來按得下去。
+
+          ⚠ 兩顆**永遠都在**：只在混搭可用時才長出第二顆，會讓玩家在不同機甲上
+            看到不一樣的面板骨架。 */}
+      <div
+        role="tablist"
+        aria-label={`${partLabel(ref_.position)}要設定什麼`}
+        className="grid grid-cols-2 mt-2 p-0.5 bg-bg-dark border border-border"
+        style={{ gap: 2 }}
+      >
         {([['module', '模組'], ['part', '部件來源']] as const).map(([key, label]) => (
           <button
             key={key}
             type="button"
+            role="tab"
+            aria-selected={tab === key}
             onClick={() => setTab(key)}
-            aria-pressed={tab === key}
-            className={`hud-cut-sm px-2.5 py-1 text-[13px] border transition-colors cursor-pointer ${
+            className={`px-2 py-1.5 text-[14px] leading-tight transition-colors cursor-pointer ${
               tab === key
-                ? 'border-accent-orange text-accent-orange bg-accent-orange/10'
-                : 'border-border text-text-dim hover:text-text-secondary hover:border-border-strong'
+                ? 'bg-accent-orange/20 text-accent-orange font-bold'
+                : 'text-text-secondary hover:bg-bg-card hover:text-text-primary'
             }`}
           >
             {label}
             {/* 換過的那一格在分段上就看得出來，不必切進去才知道（同 052-F 的形態標籤） */}
-            {key === 'part' && swapped && <span className="ml-1 text-accent-orange">★</span>}
+            {key === 'part' && swapped && <span className="ml-1 text-accent-orange">◆</span>}
           </button>
         ))}
       </div>
