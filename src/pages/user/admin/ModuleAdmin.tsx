@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { Module, Mech, ConditionalEffect, ModuleLevel, DescriptionRefs } from '../../../types'
+import type { Module, Mech, ConditionalEffect, ModuleLevel, DescriptionRefs, ModuleUnlock } from '../../../types'
 import {
-  ModuleRarity, ModuleSlot, ModuleSource, ModuleDataSource, ConditionalTrigger,
+  ModuleRarity, ModuleSlot, ModuleSource, ModuleDataSource, ConditionalTrigger, MechPartPosition,
 } from '../../../types/enums'
 import {
   Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton,
@@ -377,6 +377,177 @@ function ModuleLevelItem({
 }
 
 // ─── 模組編輯面板 ──────────────────────────────────────────────────────────────
+// ─── PLAN-052-K C-1：部位倍率 ──────────────────────────────────────────────────
+/**
+ * `slotLevelMultiplier` 的部位多選。沿用緊鄰的 `boundPart` 同一組 checkbox 樣式 ——
+ * 兩者都是「這顆模組跟哪些部位有關」，長得不一樣只會讓人以為語意也不一樣。
+ *
+ * ⚠ 空陣列一律收成 `undefined`：`[]` 與「沒有這個欄位」在這裡是同一件事
+ *   （不像 `MechPart.innateModules` 那樣兩者有別），留著空陣列只是髒資料。
+ */
+function SlotLevelMultiplierField({ value, onChange }: {
+  value?: MechPartPosition[]
+  onChange: (v: MechPartPosition[] | undefined) => void
+}) {
+  const parts = value ?? []
+  return (
+    <Field label="部位倍率 slotLevelMultiplier（複選，空白=無）">
+      <div className="flex flex-wrap gap-4 mt-1">
+        {PART_OPTIONS.map(({ value: pos, label }) => {
+          const checked = parts.includes(pos as MechPartPosition)
+          return (
+            <label key={pos} className="flex items-center gap-1.5 text-sm cursor-pointer hover:text-text-primary">
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => {
+                  const next = checked
+                    ? parts.filter((p) => p !== pos)
+                    : [...parts, pos as MechPartPosition]
+                  onChange(next.length > 0 ? next : undefined)
+                }}
+                className="accent-accent-orange w-3.5 h-3.5"
+              />
+              {label}
+            </label>
+          )
+        })}
+      </div>
+      <p className="text-[14px] text-text-dim mt-1 leading-relaxed">
+        勾選的部位，<span className="text-accent-cyan">該部位插槽中的模組等級翻倍</span>，
+        <span className="text-accent-red">不含天生貢獻</span>（站長實測：該部位插一顆刀劍模組Ⅱ ⇒ 2×2＝4 直接滿級）。
+        <br />
+        今天全站只有破曉者-02 的兩顆〈匯流樞紐〉有值（軀幹一顆、腿部一顆）。
+        兩顆<span className="text-accent-orange">同名而效果不同</span>，所以這裡要勾的是
+        <span className="text-accent-orange">描述裡寫的那個部位</span>，不是這顆模組綁在哪個部位。
+      </p>
+    </Field>
+  )
+}
+
+// ─── PLAN-052-K C-2：啟用條件 ─────────────────────────────────────────────────
+type UnlockKind = '' | 'moduleAtMaxLevel' | 'pilotOnly'
+
+/**
+ * `unlockCondition` 的兩形狀編輯器：先選 kind，再依 kind 顯示對應輸入。
+ *
+ * ⚠ 觸發者的下拉列**全部模組**，不只本機甲的 —— 但把本機甲那些排在最前面的 optgroup。
+ *   復仇女神四顆的觸發者〈迸發模組〉是同機甲的 8 級模組，不過規則上沒有「必須同機甲」這回事，
+ *   寫死成只列同機甲的話，遇到跨機甲觸發就只能改程式。
+ * ⚠ 條件不成立時模組**不會從畫面消失**，只會顯示成停用態（決策五）——
+ *   這裡的說明必須講清楚，否則維護者會拿它當「隱藏這顆模組」的開關。
+ */
+function UnlockConditionField({ value, boundMechId, onChange }: {
+  value?: ModuleUnlock
+  boundMechId?: string | null
+  onChange: (v: ModuleUnlock | undefined) => void
+}) {
+  const gd = useGameData()
+  useEffect(() => { gd.ensureLoaded(['pilots']) }, [gd])
+
+  const kind: UnlockKind = value?.kind ?? ''
+  const [sameMech, otherMods] = useMemo(() => {
+    const same: Module[] = []
+    const other: Module[] = []
+    for (const m of gd.modules) (boundMechId && m.boundMechId === boundMechId ? same : other).push(m)
+    return [same, other]
+  }, [gd.modules, boundMechId])
+
+  const pilotIds = value?.kind === 'pilotOnly' ? value.pilotIds : []
+  const pilotName = (id: string) => gd.pilots.find((p) => p.id === id)?.name ?? id
+
+  function switchKind(next: UnlockKind) {
+    if (next === '') return onChange(undefined)
+    if (next === 'moduleAtMaxLevel') return onChange({ kind: 'moduleAtMaxLevel', moduleId: '' })
+    return onChange({ kind: 'pilotOnly', pilotIds: [] })
+  }
+
+  return (
+    <Field label="啟用條件 unlockCondition（未設定=無條件生效）">
+      <select value={kind} onChange={(e) => switchKind(e.target.value as UnlockKind)} className="input-field">
+        <option value="">無條件生效（241 筆裡 235 筆是這一種）</option>
+        <option value="moduleAtMaxLevel">某顆模組達滿級才解鎖</option>
+        <option value="pilotOnly">限定機師才能發動</option>
+      </select>
+
+      {value?.kind === 'moduleAtMaxLevel' && (
+        <>
+          <select
+            value={value.moduleId}
+            onChange={(e) => onChange({ kind: 'moduleAtMaxLevel', moduleId: e.target.value })}
+            className="input-field mt-2"
+          >
+            <option value="">（請選擇觸發的模組）</option>
+            {sameMech.length > 0 && (
+              <optgroup label="本機甲的模組">
+                {sameMech.map((m) => <option key={m.id} value={m.id}>{m.name}（{m.id}）</option>)}
+              </optgroup>
+            )}
+            <optgroup label="其他模組">
+              {otherMods.map((m) => <option key={m.id} value={m.id}>{m.name}（{m.id}）</option>)}
+            </optgroup>
+          </select>
+          {!value.moduleId && (
+            <p className="text-[14px] text-accent-red mt-1">尚未選擇觸發的模組 —— 這樣存下去，這顆模組會<b>永遠</b>處於停用態。</p>
+          )}
+          {value.moduleId && !(gd.modules.find((m) => m.id === value.moduleId)?.levels ?? []).length && (
+            <p className="text-[14px] text-accent-yellow mt-1">
+              ⚠ 這顆觸發模組沒有 <code>levels[]</code> ⇒ 滿級是 0 級，條件<b>永遠不成立</b>。先去把它的等級資料補齊。
+            </p>
+          )}
+        </>
+      )}
+
+      {value?.kind === 'pilotOnly' && (
+        <>
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {pilotIds.map((id) => (
+              <span key={id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange text-xs">
+                {pilotName(id)}
+                <button
+                  type="button"
+                  className="hover:text-accent-red"
+                  onClick={() => onChange({ kind: 'pilotOnly', pilotIds: pilotIds.filter((x) => x !== id) })}
+                  title="移除"
+                >✕</button>
+              </span>
+            ))}
+            {pilotIds.length === 0 && (
+              <span className="text-[14px] text-accent-red">尚未指定機師 —— 這樣存下去，這顆模組會<b>永遠</b>處於停用態。</span>
+            )}
+          </div>
+          <select
+            value=""
+            onChange={(e) => {
+              const id = e.target.value
+              if (id && !pilotIds.includes(id)) onChange({ kind: 'pilotOnly', pilotIds: [...pilotIds, id] })
+            }}
+            className="input-field mt-2"
+          >
+            <option value="">＋ 加入機師…</option>
+            {gd.pilots
+              .filter((p) => !pilotIds.includes(p.id))
+              .map((p) => <option key={p.id} value={p.id}>{p.name}（{p.id}）</option>)}
+          </select>
+        </>
+      )}
+
+      <p className="text-[14px] text-text-dim mt-1 leading-relaxed">
+        條件不成立時，模組<span className="text-accent-red">不會從畫面上消失</span>，
+        而是顯示成<span className="text-accent-cyan">停用態並講出原因</span>
+        —— 直接消失的話玩家會以為是 bug。這裡<span className="text-accent-red">不是</span>「隱藏這顆模組」的開關。
+        <br />
+        ⚠ 只填<span className="text-accent-orange">整顆模組的生效條件</span>。
+        像影虎〈虎魄·無束〉L2「當[虎王]駕駛一整套[影虎]時…」那種是
+        <span className="text-accent-orange">效果內的條件</span>，模組本身照樣存在、照樣算等級 —— 那些不要填在這裡。
+        <br />
+        ⚠ 觸發者是<span className="text-accent-orange">別顆模組</span>：復仇女神四顆〈模型-XX〉自己的描述裡
+        沒有「限制解除」四個字，那句話在〈迸發模組〉的 LV8 文本裡。
+      </p>
+    </Field>
+  )
+}
+
 type EditTab = 'basic' | 'stats' | 'weapon' | 'levels' | 'conditional'
 
 const EDIT_TABS: AdminEditTabDef<EditTab>[] = [
@@ -517,7 +688,24 @@ function ModuleEditPanel({
                 {(!form.boundPart || (Array.isArray(form.boundPart) && form.boundPart.length === 0)) && (
                   <p className="text-[14px] text-text-dim mt-1">不限部位</p>
                 )}
+                {/* PLAN-052-K：`boundPart` 不只是顯示用的標籤，它是**專屬模組逐部位等級的輸入**——
+                    level = (levels.length > boundPart.length) ? 2 : 1。沒填就會從每一格靜默消失。 */}
+                {form.slot === ModuleSlot.EXCLUSIVE && (!form.boundPart || form.boundPart.length === 0) && (
+                  <p className="text-[14px] text-accent-yellow mt-1 leading-relaxed">
+                    ⚠ 專屬模組沒填綁定部位，會<b>從機甲的每一個部位消失</b>（不是不限部位）——
+                    它與 <code>levels[]</code> 的階數一起決定「這顆在哪一格出幾級」。
+                  </p>
+                )}
               </Field>
+              <SlotLevelMultiplierField
+                value={form.slotLevelMultiplier}
+                onChange={(v) => update('slotLevelMultiplier', v)}
+              />
+              <UnlockConditionField
+                value={form.unlockCondition}
+                boundMechId={form.boundMechId}
+                onChange={(v) => update('unlockCondition', v)}
+              />
               <Field label="遊戲取得途徑（複選）">
                 <div className="flex flex-wrap gap-4 mt-1">
                   {Object.values(ModuleSource).map((v) => {

@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { Mech, Module, MechPart, Weapon } from '../../../types'
+import type { Mech, Module, MechPart, Weapon, InnateModuleEntry } from '../../../types'
 import { ModuleSlot, ArmorType, PartInterface, MechPartPosition } from '../../../types/enums'
 import { expectedInterface, expectedInterfaces, isInterfaceOffRule } from '../../../utils/mechInterface'
+import { resolveInnateModules } from '../../../utils/innateModules'
+import { InnateSourceBadge } from '../../../components/badges/InnateBadges'
 import {
   Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog,
   GRID_AUTO_FIELDS, AdminEditTabs, type AdminEditTabDef,
@@ -336,6 +338,19 @@ function MechEditPanel({
   // 本機甲已有的專屬 / 綁定模組；為 0 時代表可能是全新手建機甲，於模組分頁提示跨分頁工作流。
   const boundToThis  = useMemo(() => modules.filter((m) => m.boundMechId === form.id), [modules, form.id])
   const moduleById   = useMemo(() => new Map(modules.map((m) => [m.id, m])), [modules])
+  /**
+   * 天生模組覆寫列的下拉候選（PLAN-052-K C-4）：[本機甲已引用的, 其他]。
+   *
+   * 「已引用的」＝ 特性 / 8級 / moduleFixedIds 這三個欄位指到的那些 —— 覆寫十之八九就是在
+   * 這幾顆之間搬部位或改級數。仍列出全部模組：規則上沒有「只能是自己引用過的」這回事，
+   * 寫死的話遇到例外就只能改程式。
+   */
+  const innateModuleOptions = useMemo<[Module[], Module[]]>(() => {
+    const own = new Set([form.module4Id, form.module8Id, ...(form.moduleFixedIds ?? [])].filter(Boolean) as string[])
+    const a: Module[] = []; const b: Module[] = []
+    for (const m of modules) (own.has(m.id) ? a : b).push(m)
+    return [a, b]
+  }, [modules, form.module4Id, form.module8Id, form.moduleFixedIds])
   // 專屬模組：boundMechId 指向本機甲且槽位為「機甲專屬模組」；前台以此反查歸入「專屬模組」區（此處唯讀顯示）。
   const exclusiveBound = useMemo(
     () => modules.filter((m) => m.boundMechId === form.id && m.slot === ModuleSlot.EXCLUSIVE),
@@ -513,9 +528,12 @@ function MechEditPanel({
                 key={pos}
                 label={PART_LABELS[pos]}
                 part={form.parts?.[pos] ?? makeDefaultPart(pos)}
+                mech={form}
                 quality={form.quality ?? ''}
                 defaultFolder={mechFolder}
                 weapons={weapons}
+                moduleById={moduleById}
+                moduleOptions={innateModuleOptions}
                 onChange={(p) => setForm((f) => ({ ...f, parts: { ...f.parts, [pos]: p } }))}
               />
             ))}
@@ -676,8 +694,176 @@ const PART_LABELS: Record<MechPart['position'], string> = {
   legs:     '腿部 legs',
 }
 
+// ─── PLAN-052-K C-3 / C-4 / C-5：天生模組的推導預覽與人工覆寫 ──────────────────
+/**
+ * 一個部位的「天生模組」區塊。
+ *
+ * ── 為什麼後台要看得到推導結果（C-3）────────────────────────────────────────
+ * 矩陣不落盤、全部用算的（決策一），所以維護者手上原本**沒有任何東西**可以看 ——
+ * 而他要判斷的正是「規則算出來的對不對、要不要覆寫」。沒有這塊預覽，覆寫入口等於盲填。
+ *
+ * ── 為什麼覆寫是整格取代（C-4）──────────────────────────────────────────────
+ * 半推導半覆寫是最難查的狀態：畫面上那個數字來自哪一半，看的人永遠不確定。
+ * 所以「改成人工指定」會先把**當前推導結果複製一份**當編輯起點 ——
+ * 給空表會讓人以為要從頭填，而從頭填出來的東西通常比規則還錯。
+ *
+ * ⚠ 「清除」寫回的是 `undefined`（照規則算），**不是 `[]`**（這個部位沒有任何天生模組）。
+ *   兩者差很多，而且都存得進 Firestore。
+ */
+function InnateModulesField({ mech, position, moduleById, moduleOptions, onChange }: {
+  mech: Mech
+  position: MechPartPosition
+  moduleById: Map<string, Module>
+  /** 覆寫列的下拉候選：[本機甲已引用的, 其他] */
+  moduleOptions: [Module[], Module[]]
+  onChange: (entries: InnateModuleEntry[] | undefined) => void
+}) {
+  const lookup = (id: string) => moduleById.get(id)
+  const res = resolveInnateModules(mech, position, lookup)
+  const [ownMods, otherMods] = moduleOptions
+  const nameOf = (id: string) => moduleById.get(id)?.name ?? id
+  const isOverride = res.source === 'override'
+  // 覆寫時 `res.entries` 就是那格填的內容（只多帶一個 source 標記），所以編輯列直接讀它 ——
+  // 另外去 `mech.parts[pos].innateModules` 讀一次會多一條可能走偏的路徑。
+  const entries: InnateModuleEntry[] = isOverride
+    ? res.entries.map((e) => ({ moduleId: e.moduleId, level: e.level }))
+    : []
+
+  const patch = (next: InnateModuleEntry[]) => onChange(next)
+
+  return (
+    <Field label={`天生模組（${position}）`}>
+      <div className={`border rounded-lg p-2.5 space-y-2 ${isOverride ? 'border-accent-orange/40 bg-accent-orange/5' : 'border-border bg-bg-dark/30'}`}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <InnateSourceBadge source={res.source} showRule />
+          <span className="text-[11px] text-text-dim">
+            {isOverride
+              ? '這一格由人工指定，規則不再參與'
+              : '由規則算出（品質規則表 ＋ 專屬模組的 boundPart / levels），唯讀'}
+          </span>
+          <span className="ml-auto flex gap-2">
+            {isOverride ? (
+              <button
+                type="button"
+                className="text-[11px] px-2 py-1 rounded border border-border text-text-secondary hover:border-border-accent hover:text-text-primary transition-colors"
+                onClick={() => onChange(undefined)}
+                title="把欄位設回 undefined（照規則算），不是設成空陣列"
+              >清除、回到推導</button>
+            ) : (
+              <button
+                type="button"
+                className="text-[11px] px-2 py-1 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange hover:bg-accent-orange/20 transition-colors"
+                onClick={() => patch(res.entries.map((e) => ({ moduleId: e.moduleId, level: e.level })))}
+                title="以目前的推導結果為起點，改成人工指定"
+              >改成人工指定</button>
+            )}
+          </span>
+        </div>
+
+        {/* ── 推導結果（唯讀）── */}
+        {!isOverride && (
+          res.entries.length === 0 ? (
+            <p className="text-[11px] text-text-dim">
+              這個部位沒有天生模組。
+              {mech.quality === 'B' && '（B 品質全站四部位皆為 0，這是規則、不是資料缺漏）'}
+            </p>
+          ) : (
+            <ul className="space-y-0.5">
+              {res.entries.map((e) => (
+                <li key={e.moduleId} className="text-[11px] flex items-baseline gap-2">
+                  <span className="text-text-secondary truncate">{nameOf(e.moduleId)}</span>
+                  <span className="text-accent-cyan font-mono">Lv{e.level}</span>
+                  {!moduleById.has(e.moduleId) && <span className="text-accent-red">⚠ 查無此模組</span>}
+                </li>
+              ))}
+            </ul>
+          )
+        )}
+
+        {/* ── 人工覆寫（可編輯）── */}
+        {isOverride && (
+          <div className="space-y-1.5">
+            {entries.length === 0 && (
+              <p className="text-[11px] text-accent-yellow">
+                空清單 ＝「這個部位<b>沒有任何</b>天生模組」。若本意是「照規則算」，請按上方的「清除、回到推導」。
+              </p>
+            )}
+            {entries.map((e, idx) => (
+              <div key={idx} className="flex gap-1.5 items-center">
+                <select
+                  className="input-field flex-1 min-w-0 text-xs"
+                  value={e.moduleId}
+                  onChange={(ev) => patch(entries.map((x, i) => (i === idx ? { ...x, moduleId: ev.target.value } : x)))}
+                >
+                  <option value="">（請選擇模組）</option>
+                  {ownMods.length > 0 && (
+                    <optgroup label="本機甲已引用的模組">
+                      {ownMods.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    </optgroup>
+                  )}
+                  <optgroup label="其他模組">
+                    {otherMods.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </optgroup>
+                </select>
+                <input
+                  type="number"
+                  min={1}
+                  className="input-field w-20 text-xs"
+                  value={e.level}
+                  onChange={(ev) => patch(entries.map((x, i) => (i === idx ? { ...x, level: Number(ev.target.value) } : x)))}
+                  title="這個部位單獨貢獻的級數（不是該模組的最終等級）"
+                />
+                <button
+                  type="button"
+                  className="text-xs px-2 py-1 rounded border border-accent-red/40 text-accent-red hover:bg-accent-red/10"
+                  onClick={() => patch(entries.filter((_, i) => i !== idx))}
+                >移除</button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="text-[11px] px-2 py-1 rounded border border-border text-text-secondary hover:border-border-accent hover:text-text-primary"
+              onClick={() => patch([...entries, { moduleId: '', level: 1 }])}
+            >＋ 新增一列</button>
+            <p className="text-[11px] text-text-dim leading-relaxed">
+              等級是<span className="text-text-secondary">這個部位單獨貢獻的級數</span>，不是該模組的最終等級 ——
+              最終等級是四個部位加總、再加上插槽貢獻後封頂。
+            </p>
+          </div>
+        )}
+
+        {/* ── 資料缺口（不論推導或覆寫都要講）── */}
+        {res.unknownQuality && (
+          <p className="text-[11px] text-accent-red">
+            ⚠ 品質 <code>{mech.quality || '（未填）'}</code> 不在規則表裡 ⇒
+            特性／8級／副模組三類<b>算不出來</b>（下方只剩專屬模組）。先把品質填成 S / A / B。
+          </p>
+        )}
+        {res.missingBoundPart.length > 0 && (
+          <p className="text-[11px] text-accent-yellow">
+            ⚠ 這幾顆專屬模組沒填 <code>boundPart</code>，因此<b>不會出現在任何部位</b>：
+            {res.missingBoundPart.map((id) => nameOf(id)).join('、')}
+            —— 去「模組管理」把綁定部位補上。
+          </p>
+        )}
+      </div>
+    </Field>
+  )
+}
+
 // 依 position 顯示條件式欄位的部件編輯器。
-function PartEditor({ label, part, quality, defaultFolder, weapons, onChange }: { label: string; part: MechPart; quality: string; defaultFolder: string; weapons: Weapon[]; onChange: (p: MechPart) => void }) {
+function PartEditor({ label, part, mech, quality, defaultFolder, weapons, moduleById, moduleOptions, onChange }: {
+  label: string
+  part: MechPart
+  /** 整台機甲 —— 天生模組的推導要看 `quality` 與三個模組欄位，不只這一格（PLAN-052-K C-3） */
+  mech: Mech
+  quality: string
+  defaultFolder: string
+  weapons: Weapon[]
+  moduleById: Map<string, Module>
+  moduleOptions: [Module[], Module[]]
+  onChange: (p: MechPart) => void
+}) {
   const num = (k: 'durable' | 'armor' | 'firepower' | 'weight' | 'hit' | 'dodge' | 'move' | 'antiRiot' | 'output', lbl: string) => (
     <NumberField label={lbl} value={part[k] ?? 0} onChange={(v) => onChange({ ...part, [k]: v })} />
   )
@@ -686,7 +872,12 @@ function PartEditor({ label, part, quality, defaultFolder, weapons, onChange }: 
   const offRule = isInterfaceOffRule(quality, part.position as MechPartPosition, part.interface)
   return (
     <div className="border border-border rounded-lg p-3 space-y-3">
-      <div className="font-bold text-sm text-accent-cyan">{label}</div>
+      {/* PLAN-052-K C-5：覆寫過的部位一眼看得出來 —— 沉默的覆寫＝沉默的技術債。
+          與前台配裝面板共用同一個 InnateSourceBadge（橘色 ◆，沿用 052-G「◆來源機甲」）。 */}
+      <div className="font-bold text-sm text-accent-cyan flex items-center gap-2">
+        {label}
+        {part.innateModules !== undefined && <InnateSourceBadge source="override" className="font-normal" />}
+      </div>
       <div className={`${GRID_AUTO_FIELDS} gap-3`}>
         {num('durable', '耐久 durable')}
         {num('armor', '護甲 armor')}
@@ -754,6 +945,13 @@ function PartEditor({ label, part, quality, defaultFolder, weapons, onChange }: 
       </Field>
       {/* PLAN-052-A C-2：取代已刪除的 leftShoulderSlot/rightShoulderSlot/backSlot 三態欄位。
           掛在部件而非機甲頂層，因為肩槽附屬於手臂（左臂→左肩、右臂→右肩）。 */}
+      <InnateModulesField
+        mech={mech}
+        position={part.position as MechPartPosition}
+        moduleById={moduleById}
+        moduleOptions={moduleOptions}
+        onChange={(entries) => onChange({ ...part, innateModules: entries })}
+      />
       <ArmamentMountEditor
         label={`固定武裝 fixedArmament（${part.position}）`}
         hint={<>焊死在這個部件上、無法更換的武裝。左臂帶左肩、右臂帶右肩——

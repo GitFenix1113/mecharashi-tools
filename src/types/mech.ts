@@ -3,6 +3,19 @@ import type { ArmorType, PartInterface, NoInterface } from './enums'
 
 // ─── 機甲部件（v1.4 新增：獨立部件資料）──────────────────────────────────────
 
+/**
+ * 一個部位提供的天生模組貢獻（PLAN-052-K）。
+ *
+ * `level` 是**這個部位單獨貢獻的級數**，不是該模組的最終等級 ——
+ * 最終等級是四個部位加總後再封頂（見 `src/utils/innateModules.ts`）。
+ */
+export interface InnateModuleEntry {
+  /** → modules 集合的文件 ID */
+  moduleId: string
+  /** 這個部位貢獻幾級（今天的值域是 1 或 2） */
+  level: number
+}
+
 export interface MechPart {
   position: 'torso' | 'leftArm' | 'rightArm' | 'legs'
   durable: number
@@ -47,6 +60,23 @@ export interface MechPart {
    * 由 derive 層 `occupiedSlots(mech.parts)` 消費（src/utils/mechSlots.ts）。
    */
   fixedArmament?: ArmamentMount[]
+  /**
+   * 天生模組的**人工覆寫**（PLAN-052-K 決策三）。
+   *
+   * `undefined` ＝ 照規則推導（**絕大多數台走這條**，見 `src/utils/innateModules.ts`）。
+   * 一旦填了就**整格取代**推導結果。
+   *
+   * ⚠ **不做部分合併，這是刻意的。** 半推導半覆寫是最難查的狀態 ——
+   *   畫面上那個數字來自哪一半，看的人永遠不確定。要覆寫就整格自己說清楚。
+   * ⚠ `[]`（空陣列）與 `undefined` **不同**：空陣列的語意是「這個部位沒有任何天生模組」，
+   *   `undefined` 才是「照規則算」。後台的「清除」要寫回 `undefined`。
+   * ⚠ 為什麼掛在部位不掛在模組：異常的形狀一定是「某台機甲的某個部位很奇怪」，
+   *   而專屬模組本來就 `boundMechId` 綁單台 ⇒ 模組層級的覆寫是這個的特例。
+   *
+   * 存在的理由：官方 `aircraft_data` 停在 v3.2 而站上已到 v3.6，v3.3 之後的機甲
+   * 沒有任何官方資料可比對 —— 規則算錯時要有一條不必改程式的出路。
+   */
+  innateModules?: InnateModuleEntry[]
   /** 部件圖示路徑 /images/mechs/{機甲名}/{position}.png */
   icon?: string
   /** 遊戲內部資產名（用於 CDN waparts/ 路徑） */

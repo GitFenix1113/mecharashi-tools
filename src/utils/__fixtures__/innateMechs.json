@@ -1,0 +1,906 @@
+[
+ {
+  "id": "mech_001_都卜勒",
+  "name": "都卜勒",
+  "quality": "S",
+  "module4Id": "mod_2001",
+  "module8Id": "mod_3005",
+  "moduleFixedIds": [
+   "sub_mod_回避模組"
+  ]
+ },
+ {
+  "id": "mech_002_格萊楊",
+  "name": "格萊楊",
+  "quality": "S",
+  "module4Id": "mod_2003",
+  "module8Id": "mod_3001",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_003_暮色之牙",
+  "name": "暮色之牙",
+  "quality": "S",
+  "module4Id": "mod_2006",
+  "module8Id": "mod_3010",
+  "moduleFixedIds": [
+   "sub_mod_耐久模組"
+  ]
+ },
+ {
+  "id": "mech_004_強電場",
+  "name": "強電場",
+  "quality": "S",
+  "module4Id": "mod_2005",
+  "module8Id": "mod_3014",
+  "moduleFixedIds": [
+   "sub_mod_增傷模組"
+  ]
+ },
+ {
+  "id": "mech_005_海拉",
+  "name": "海拉",
+  "quality": "S",
+  "module4Id": "mod_2025",
+  "module8Id": "mod_3019",
+  "moduleFixedIds": [
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_006_XR",
+  "name": "XR",
+  "quality": "S",
+  "module4Id": "mod_2007",
+  "module8Id": "mod_3016",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_007_開拓者",
+  "name": "開拓者",
+  "quality": "S",
+  "module4Id": "mod_2011",
+  "module8Id": "mod_3023",
+  "moduleFixedIds": [
+   "sub_mod_防爆模組"
+  ]
+ },
+ {
+  "id": "mech_008_狼獾",
+  "name": "狼獾",
+  "quality": "S",
+  "module4Id": "mod_2010",
+  "module8Id": "mod_3003",
+  "moduleFixedIds": [
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_009_朝陽",
+  "name": "朝陽",
+  "quality": "S",
+  "module4Id": "mod_2012",
+  "module8Id": "mod_3024",
+  "moduleFixedIds": [
+   "sub_mod_防爆模組"
+  ]
+ },
+ {
+  "id": "mech_010_青鳥",
+  "name": "青鳥",
+  "quality": "S",
+  "module4Id": "mod_2002",
+  "module8Id": "mod_3010",
+  "moduleFixedIds": [
+   "sub_mod_增傷模組"
+  ]
+ },
+ {
+  "id": "mech_011_日弩",
+  "name": "日弩",
+  "quality": "S",
+  "module4Id": "mod_2008",
+  "module8Id": "mod_3017",
+  "moduleFixedIds": [
+   "sub_mod_承傷模組"
+  ]
+ },
+ {
+  "id": "mech_012_赫拉克勒斯",
+  "name": "赫拉克勒斯",
+  "quality": "S",
+  "module4Id": "mod_2021",
+  "module8Id": "mod_3008",
+  "moduleFixedIds": [
+   "sub_mod_承傷模組"
+  ]
+ },
+ {
+  "id": "mech_013_吉爾萊斯",
+  "name": "吉爾萊斯",
+  "quality": "S",
+  "module4Id": "mod_2017",
+  "module8Id": "mod_3015",
+  "moduleFixedIds": [
+   "sub_mod_護理模組"
+  ]
+ },
+ {
+  "id": "mech_014_戴亞斯",
+  "name": "戴亞斯",
+  "quality": "S",
+  "module4Id": "mod_2019",
+  "module8Id": "mod_3013",
+  "moduleFixedIds": [
+   "sub_mod_耐久模組"
+  ]
+ },
+ {
+  "id": "mech_015_金剛",
+  "name": "金剛",
+  "quality": "S",
+  "module4Id": "mod_2023",
+  "module8Id": "mod_3011",
+  "moduleFixedIds": [
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_016_恐爪",
+  "name": "恐爪",
+  "quality": "S",
+  "module4Id": "mod_2015",
+  "module8Id": "mod_3002",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_017_馬爾薩斯",
+  "name": "馬爾薩斯",
+  "quality": "S",
+  "module4Id": "mod_2009",
+  "module8Id": "mod_3007",
+  "moduleFixedIds": [
+   "sub_mod_耐久模組"
+  ]
+ },
+ {
+  "id": "mech_018_龍雀",
+  "name": "龍雀",
+  "quality": "S",
+  "module4Id": "mod_2020",
+  "module8Id": "mod_3004",
+  "moduleFixedIds": [
+   "sub_mod_護甲模組"
+  ]
+ },
+ {
+  "id": "mech_019_塔納託斯",
+  "name": "塔納託斯",
+  "quality": "S",
+  "module4Id": "mod_2029",
+  "module8Id": "mod_3016",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_020_光暉",
+  "name": "光暉",
+  "quality": "S",
+  "module4Id": "mod_2032",
+  "module8Id": "mod_3022",
+  "moduleFixedIds": [
+   "sub_mod_回避模組"
+  ]
+ },
+ {
+  "id": "mech_021_雷克斯",
+  "name": "雷克斯",
+  "quality": "S",
+  "module4Id": "mod_2031",
+  "module8Id": "mod_3009",
+  "moduleFixedIds": [
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_022_帕斯卡",
+  "name": "帕斯卡",
+  "quality": "S",
+  "module4Id": null,
+  "module8Id": "mod_3006",
+  "moduleFixedIds": [
+   "mod_帕斯卡_fixed_1",
+   "mod_帕斯卡_fixed_2",
+   "mod_帕斯卡_fixed_3",
+   "mod_帕斯卡_fixed_4",
+   "sub_mod_出力模組"
+  ]
+ },
+ {
+  "id": "mech_023_藍柱石",
+  "name": "藍柱石",
+  "quality": "S",
+  "module4Id": "mod_2033",
+  "module8Id": "mod_3025",
+  "moduleFixedIds": [
+   "sub_mod_耐久模組"
+  ]
+ },
+ {
+  "id": "mech_024_銀閃",
+  "name": "銀閃",
+  "quality": "S",
+  "module4Id": "mod_2036",
+  "module8Id": "mod_3008",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_025_遊騎兵",
+  "name": "遊騎兵",
+  "quality": "S",
+  "module4Id": "mod_2035",
+  "module8Id": "mod_3026",
+  "moduleFixedIds": [
+   "sub_mod_護甲模組"
+  ]
+ },
+ {
+  "id": "mech_026_破曉者-02",
+  "name": "破曉者-02",
+  "quality": "S",
+  "module4Id": null,
+  "module8Id": "mod_3027",
+  "moduleFixedIds": [
+   "mod_破曉者-02_fixed_1",
+   "mod_破曉者-02_fixed_2",
+   "mod_破曉者-02_fixed_3",
+   "mod_破曉者-02_fixed_4",
+   "sub_mod_火力模組"
+  ]
+ },
+ {
+  "id": "mech_027_破曉者-01",
+  "name": "破曉者-01",
+  "quality": "S",
+  "module4Id": null,
+  "module8Id": "mod_3009",
+  "moduleFixedIds": [
+   "mod_破曉者-01_fixed_1",
+   "mod_破曉者-01_fixed_2",
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_028_破曉者-00",
+  "name": "破曉者-00",
+  "quality": "S",
+  "module4Id": "mod_2037",
+  "module8Id": "mod_3028",
+  "moduleFixedIds": [
+   "sub_mod_耐久模組"
+  ]
+ },
+ {
+  "id": "mech_029_恐頜",
+  "name": "恐頜",
+  "quality": "S",
+  "module4Id": "mod_2041",
+  "module8Id": "mod_3030",
+  "moduleFixedIds": [
+   "sub_mod_承傷模組"
+  ]
+ },
+ {
+  "id": "mech_030_伊格尼特",
+  "name": "伊格尼特",
+  "quality": "S",
+  "module4Id": "mod_2040",
+  "module8Id": "mod_3006",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_031_銜尾蛇",
+  "name": "銜尾蛇",
+  "quality": "S",
+  "module4Id": "mod_2042",
+  "module8Id": "mod_3031",
+  "moduleFixedIds": [
+   "sub_mod_回避模組"
+  ]
+ },
+ {
+  "id": "mech_032_奧德修斯",
+  "name": "奧德修斯",
+  "quality": "S",
+  "module4Id": "mod_2043",
+  "module8Id": "mod_3032",
+  "moduleFixedIds": [
+   "sub_mod_承傷模組"
+  ]
+ },
+ {
+  "id": "mech_033_影子兔",
+  "name": "影子兔",
+  "quality": "S",
+  "module4Id": "mod_2044",
+  "module8Id": "mod_3033",
+  "moduleFixedIds": [
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_034_復仇女神",
+  "name": "復仇女神",
+  "quality": "S",
+  "module4Id": "mod_2045",
+  "module8Id": "mod_3034",
+  "moduleFixedIds": [
+   "mod_復仇女神_fixed_1",
+   "mod_復仇女神_fixed_2",
+   "mod_復仇女神_fixed_3",
+   "mod_復仇女神_fixed_4",
+   "sub_mod_火力模組"
+  ]
+ },
+ {
+  "id": "mech_035_天角獸",
+  "name": "天角獸",
+  "quality": "S",
+  "module4Id": "mod_2024",
+  "module8Id": "mod_3035",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_036_螣蛇",
+  "name": "螣蛇",
+  "quality": "S",
+  "module4Id": "mod_2046",
+  "module8Id": "mod_3038",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_037_裁決者",
+  "name": "裁決者",
+  "quality": "S",
+  "module4Id": "mod_2047",
+  "module8Id": "mod_3036",
+  "moduleFixedIds": [
+   "sub_mod_承傷模組"
+  ]
+ },
+ {
+  "id": "mech_038_信仰之眼",
+  "name": "信仰之眼",
+  "quality": "S",
+  "module4Id": null,
+  "module8Id": "mod_3037",
+  "moduleFixedIds": [
+   "mod_信仰之眼_fixed_1",
+   "mod_信仰之眼_fixed_2",
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_039_影武者",
+  "name": "影武者",
+  "quality": "S",
+  "module4Id": "mod_2050",
+  "module8Id": "mod_3040",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_040_芬裡厄",
+  "name": "芬里厄",
+  "quality": "S",
+  "module4Id": "mod_2049",
+  "module8Id": "mod_3039",
+  "moduleFixedIds": [
+   "sub_mod_承傷模組"
+  ]
+ },
+ {
+  "id": "mech_041_疾嘯",
+  "name": "疾嘯",
+  "quality": "S",
+  "module4Id": "mod_2051",
+  "module8Id": "mod_3041",
+  "moduleFixedIds": [
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_042_雪鴞",
+  "name": "雪鴞",
+  "quality": "S",
+  "module4Id": "mod_2052",
+  "module8Id": "mod_3042",
+  "moduleFixedIds": [
+   "sub_mod_回避模組"
+  ]
+ },
+ {
+  "id": "mech_043_盜火者",
+  "name": "盜火者",
+  "quality": "S",
+  "module4Id": "mod_2053",
+  "module8Id": "mod_3043",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_044_巨像",
+  "name": "巨像",
+  "quality": "S",
+  "module4Id": "mod_2054",
+  "module8Id": "mod_3044",
+  "moduleFixedIds": [
+   "sub_mod_耐久模組"
+  ]
+ },
+ {
+  "id": "mech_045_夜天光",
+  "name": "夜天光",
+  "quality": "S",
+  "module4Id": "mod_2055",
+  "module8Id": "mod_3045",
+  "moduleFixedIds": [
+   "sub_mod_火力模組"
+  ]
+ },
+ {
+  "id": "mech_046_赫克托爾",
+  "name": "赫克托爾",
+  "quality": "S",
+  "module4Id": "mod_2056",
+  "module8Id": "mod_3046",
+  "moduleFixedIds": [
+   "sub_mod_回避模組"
+  ]
+ },
+ {
+  "id": "mech_047_幻惑",
+  "name": "幻惑",
+  "quality": "S",
+  "module4Id": "mod_2060",
+  "module8Id": "mod_3051",
+  "moduleFixedIds": [
+   "sub_mod_耐久模組"
+  ]
+ },
+ {
+  "id": "mech_048_輝龍",
+  "name": "輝龍",
+  "quality": "S",
+  "module4Id": "mod_2057",
+  "module8Id": "mod_3047",
+  "moduleFixedIds": [
+   "mod_輝龍_fixed_1",
+   "mod_輝龍_fixed_2",
+   "mod_輝龍_fixed_3",
+   "mod_輝龍_fixed_4",
+   "sub_mod_火力模組"
+  ]
+ },
+ {
+  "id": "mech_049_影虎",
+  "name": "影虎",
+  "quality": "S",
+  "module4Id": "mod_2058",
+  "module8Id": "mod_3049",
+  "moduleFixedIds": [
+   "mod_影虎_fixed_1",
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_050_霸王",
+  "name": "霸王",
+  "quality": "S",
+  "module4Id": "mod_2062",
+  "module8Id": "mod_3053",
+  "moduleFixedIds": [
+   "mod_2064",
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_051_君權",
+  "name": "君權",
+  "quality": "S",
+  "module4Id": "mod_2059",
+  "module8Id": "mod_3050",
+  "moduleFixedIds": [
+   "sub_mod_增傷模組"
+  ]
+ },
+ {
+  "id": "mech_052_彌造者",
+  "name": "彌造者",
+  "quality": "S",
+  "module4Id": "mod_2065",
+  "module8Id": "mod_3054",
+  "moduleFixedIds": [
+   "mod_彌造者_fixed_1",
+   "sub_mod_火力模組"
+  ]
+ },
+ {
+  "id": "mech_053_殉道士",
+  "name": "殉道士",
+  "quality": "S",
+  "module4Id": "mod_2067",
+  "module8Id": "mod_3055",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_054_奔霄",
+  "name": "奔霄",
+  "quality": "S",
+  "module4Id": "mod_2068",
+  "module8Id": "mod_3056",
+  "moduleFixedIds": [
+   "sub_mod_火力模組"
+  ]
+ },
+ {
+  "id": "mech_055_螢石",
+  "name": "螢石",
+  "quality": "S",
+  "module4Id": "mod_2061",
+  "module8Id": "mod_3052",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_056_惡兆",
+  "name": "惡兆",
+  "quality": "S",
+  "module4Id": "mod_2070",
+  "module8Id": "mod_3058",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_057_獵鬥士",
+  "name": "獵鬥士",
+  "quality": "S",
+  "module4Id": "mod_2069",
+  "module8Id": "mod_3057",
+  "moduleFixedIds": [
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_058_燧石",
+  "name": "燧石",
+  "quality": "A",
+  "module4Id": "mod_1001",
+  "module8Id": "mod_3005",
+  "moduleFixedIds": [
+   "sub_mod_回避模組"
+  ]
+ },
+ {
+  "id": "mech_059_刃齒虎",
+  "name": "刃齒虎",
+  "quality": "A",
+  "module4Id": "mod_1003",
+  "module8Id": "mod_3016",
+  "moduleFixedIds": [
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_060_灰伯勞",
+  "name": "灰伯勞",
+  "quality": "B",
+  "module4Id": null,
+  "module8Id": null,
+  "moduleFixedIds": []
+ },
+ {
+  "id": "mech_061_波耶",
+  "name": "波耶",
+  "quality": "A",
+  "module4Id": "mod_1002",
+  "module8Id": "mod_3002",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_062_狄安娜",
+  "name": "狄安娜",
+  "quality": "A",
+  "module4Id": "mod_1006",
+  "module8Id": "mod_3014",
+  "moduleFixedIds": [
+   "sub_mod_回避模組"
+  ]
+ },
+ {
+  "id": "mech_063_極光",
+  "name": "極光",
+  "quality": "A",
+  "module4Id": "mod_1007",
+  "module8Id": "mod_3008",
+  "moduleFixedIds": [
+   "sub_mod_防爆模組"
+  ]
+ },
+ {
+  "id": "mech_064_原點",
+  "name": "原點",
+  "quality": "B",
+  "module4Id": null,
+  "module8Id": null,
+  "moduleFixedIds": []
+ },
+ {
+  "id": "mech_065_阿克爾",
+  "name": "阿克爾",
+  "quality": "B",
+  "module4Id": null,
+  "module8Id": null,
+  "moduleFixedIds": []
+ },
+ {
+  "id": "mech_066_鬥將",
+  "name": "鬥將",
+  "quality": "A",
+  "module4Id": "mod_1011",
+  "module8Id": "mod_3007",
+  "moduleFixedIds": [
+   "sub_mod_護理模組"
+  ]
+ },
+ {
+  "id": "mech_067_阿拉什",
+  "name": "阿拉什",
+  "quality": "A",
+  "module4Id": "mod_1003",
+  "module8Id": "mod_3003",
+  "moduleFixedIds": [
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_068_走鵑",
+  "name": "走鵑",
+  "quality": "A",
+  "module4Id": "mod_1005",
+  "module8Id": "mod_3022",
+  "moduleFixedIds": [
+   "sub_mod_耐久模組"
+  ]
+ },
+ {
+  "id": "mech_069_高嶺",
+  "name": "高嶺",
+  "quality": "A",
+  "module4Id": "mod_1010",
+  "module8Id": "mod_3008",
+  "moduleFixedIds": [
+   "sub_mod_防爆模組"
+  ]
+ },
+ {
+  "id": "mech_070_赫爾墨斯",
+  "name": "赫爾墨斯",
+  "quality": "A",
+  "module4Id": "mod_1004",
+  "module8Id": "mod_3017",
+  "moduleFixedIds": [
+   "sub_mod_耐久模組"
+  ]
+ },
+ {
+  "id": "mech_071_鐵鋒",
+  "name": "鐵鋒",
+  "quality": "A",
+  "module4Id": "mod_1002",
+  "module8Id": "mod_3001",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_072_提塔利克",
+  "name": "提塔利克",
+  "quality": "B",
+  "module4Id": null,
+  "module8Id": null,
+  "moduleFixedIds": []
+ },
+ {
+  "id": "mech_073_氣旋",
+  "name": "氣旋",
+  "quality": "B",
+  "module4Id": null,
+  "module8Id": null,
+  "moduleFixedIds": []
+ },
+ {
+  "id": "mech_074_工蟻",
+  "name": "工蟻",
+  "quality": "B",
+  "module4Id": null,
+  "module8Id": null,
+  "moduleFixedIds": []
+ },
+ {
+  "id": "mech_075_野隼",
+  "name": "野隼",
+  "quality": "B",
+  "module4Id": null,
+  "module8Id": null,
+  "moduleFixedIds": []
+ },
+ {
+  "id": "mech_076_百夫長",
+  "name": "百夫長",
+  "quality": "B",
+  "module4Id": null,
+  "module8Id": null,
+  "moduleFixedIds": []
+ },
+ {
+  "id": "mech_077_山魈",
+  "name": "山魈",
+  "quality": "A",
+  "module4Id": "mod_1001",
+  "module8Id": "mod_3020",
+  "moduleFixedIds": [
+   "sub_mod_護甲模組"
+  ]
+ },
+ {
+  "id": "mech_078_鋼魘",
+  "name": "鋼魘",
+  "quality": "A",
+  "module4Id": "mod_1002",
+  "module8Id": "mod_3004",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_079_鱷龜",
+  "name": "鱷龜",
+  "quality": "A",
+  "module4Id": "mod_1009",
+  "module8Id": "mod_3008",
+  "moduleFixedIds": [
+   "sub_mod_防爆模組"
+  ]
+ },
+ {
+  "id": "mech_080_尖兵",
+  "name": "尖兵",
+  "quality": "B",
+  "module4Id": null,
+  "module8Id": null,
+  "moduleFixedIds": []
+ },
+ {
+  "id": "mech_081_淤泥",
+  "name": "淤泥",
+  "quality": "A",
+  "module4Id": "mod_1011",
+  "module8Id": "mod_3007",
+  "moduleFixedIds": [
+   "sub_mod_護理模組"
+  ]
+ },
+ {
+  "id": "mech_082_卡戎",
+  "name": "卡戎",
+  "quality": "A",
+  "module4Id": "mod_1008",
+  "module8Id": "mod_3015",
+  "moduleFixedIds": [
+   "sub_mod_護甲模組"
+  ]
+ },
+ {
+  "id": "mech_083_澤亞雷德",
+  "name": "澤亞雷德",
+  "quality": "B",
+  "module4Id": null,
+  "module8Id": null,
+  "moduleFixedIds": []
+ },
+ {
+  "id": "mech_084_莫比烏斯X",
+  "name": "莫比烏斯X",
+  "quality": "S",
+  "module4Id": "mod_原點核心",
+  "module8Id": "mod_臨界模組",
+  "moduleFixedIds": [
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_085_奈芙蒂斯",
+  "name": "奈芙蒂斯",
+  "quality": "S",
+  "module4Id": "mod_深淵鏈路",
+  "module8Id": "mod_乘勢模組",
+  "moduleFixedIds": [
+   "sub_mod_增傷模組"
+  ]
+ },
+ {
+  "id": "mech_086_棱鏡",
+  "name": "棱鏡",
+  "quality": "S",
+  "module4Id": "mod_折光陣列",
+  "module8Id": "mod_殘勇模組",
+  "moduleFixedIds": [
+   "sub_mod_暴擊模組"
+  ]
+ },
+ {
+  "id": "mech_087_尼德霍格",
+  "name": "尼德霍格",
+  "quality": "S",
+  "module4Id": "mod_末日中樞",
+  "module8Id": "mod_威障模組",
+  "moduleFixedIds": [
+   "sub_mod_耐久模組"
+  ]
+ },
+ {
+  "id": "mech_088_雪崩",
+  "name": "雪崩",
+  "quality": "S",
+  "module4Id": "mod_凌嘯框架",
+  "module8Id": "mod_獵群模組",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_089_星夜女神",
+  "name": "星夜女神",
+  "quality": "S",
+  "module4Id": "mod_輝曜核心",
+  "module8Id": "mod_異械模組",
+  "moduleFixedIds": [
+   "mod_星夜女神_fixed_1",
+   "sub_mod_火力模組"
+  ]
+ },
+ {
+  "id": "mech_090_美杜莎MK2",
+  "name": "美杜莎MK2",
+  "quality": "S",
+  "module4Id": "mod_異步感應器",
+  "module8Id": "mod_滅卻模組",
+  "moduleFixedIds": [
+   "sub_mod_增傷模組"
+  ]
+ }
+]

@@ -18,8 +18,10 @@ import { HUD, HUD_ACTIONABLE, HUD_INPUT } from './loadoutTheme'
 //   輕型 27 ／ 中甲 36 ／ 重型 27。模擬器的用途是「試配」，要求玩家先把倉庫輸入一遍
 //   等於把它變成另一種資料錄入工具。
 //
-// ⚠ **基底機甲留在清單裡而且排第一** —— 它是「還原成原廠」的唯一入口。
+// ⚠ **基底機甲留在清單裡而且排第一** —— 它是「還原為選定機甲」的唯一入口。
 //   把它濾掉的話，換錯之後就只剩「整台重選一次」這條路。
+//   ⚠ 那一列的徽章寫**「選定機甲」**（使用者要求 2026-08-29，原本是「原廠」）：
+//     「原廠」聽起來像在講這台機甲出廠時的樣子，而它實際指的是**上面「機甲」那格選的那台**。
 //
 // ⚠ **不列跨型與佔位機甲**（規則層標成 structural，`partChoices()` 已濾掉）。
 //   被濾掉幾台由下面那句 hint 交代 —— 靜默消失會被讀成「站上漏了」，
@@ -28,7 +30,7 @@ import { HUD, HUD_ACTIONABLE, HUD_INPUT } from './loadoutTheme'
 interface Props {
   ctx: LoadoutContext
   position: MechPartPosition
-  /** 換成這一台的同位部件。傳入基底機甲＝還原成原廠（reducer 會收掉那個鍵） */
+  /** 換成這一台的同位部件。傳入基底機甲＝還原為選定機甲（reducer 會收掉那個鍵） */
   onSwap: (source: Mech) => void
 }
 
@@ -148,7 +150,7 @@ function PartRow({ source, position, isBase, isCurrent, onSwap }: {
         <span className="flex items-center" style={{ gap: 6 }}>
           <span className={`${HUD.bodyStrong} text-text-primary truncate`}>{source.name}</span>
           {isBase && (
-            <span className={`${HUD.body} text-text-dim shrink-0`}>原廠</span>
+            <span className={`${HUD.body} text-text-dim shrink-0`}>選定機甲</span>
           )}
           <span className="shrink-0 ml-auto flex items-center" style={{ gap: 4 }}>
             {isCurrent

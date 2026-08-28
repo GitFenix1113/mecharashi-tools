@@ -24,7 +24,7 @@
   <div class="hero-badge cyan">◆ Data Model</div>
   <h1>modules<span>模組資料 · MODULE DATA</span></h1>
   <p class="hero-sub">4模/8模/通用模組/副模組 — 各等級效果 — 雙來源擷取</p>
-  <div class="version-badge" style="background:var(--accent-cyan);color:#000;">UPDATED v2.3</div>
+  <div class="version-badge" style="background:var(--accent-cyan);color:#000;">UPDATED v2.4</div>
 </header>
 
 <main class="container">
@@ -32,6 +32,18 @@
 <section class="section">
   <div class="section-label cyan">v1.6 更新</div>
   <div class="section-title">重構說明</div>
+
+  <div class="changed-block">
+    <strong>🔄 v2.4 更新：天生模組逐部位化新增兩個結構化欄位（PLAN-052-K）</strong>
+    &nbsp;• 新增 <code>slotLevelMultiplier</code>（<code>MechPartPosition[]?</code>）：列出「這顆模組會讓哪些部位的<strong>插槽貢獻</strong>翻倍」。
+    目前只有破曉者-02 的兩顆〈匯流樞紐〉（軀幹一顆、腿部一顆）。<strong>⚠ 翻的是插槽貢獻，不含天生貢獻</strong>（站長實測）<br>
+    &nbsp;• 新增 <code>unlockCondition</code>（union，兩種形狀）：<code>{ kind:'moduleAtMaxLevel'; moduleId }</code>（復仇女神四顆〈模型-XX〉，
+    觸發者是<strong>別顆模組</strong> <code>mod_3034</code>〈迸發模組〉）與 <code>{ kind:'pilotOnly'; pilotIds }</code>（彌造者〈帕姆斯陣列〉＝海莉絲、星夜女神〈觀星者單元〉＝曜）<br>
+    &nbsp;• <strong>為什麼要落成結構化欄位而不是解析描述</strong>：兩顆〈匯流樞紐〉<strong>同名但效果不同</strong>（20391 軀幹／20394 腿部），
+    任何用名稱查表的程式都會撞在一起；而復仇女神四顆的描述裡<u>沒有</u>「限制解除」字樣（那句話在〈迸發模組〉LV8 的文本裡），
+    掃自己描述的做法會全數漏掉<br>
+    &nbsp;• 241 筆模組裡 <code>slotLevelMultiplier</code> 有值 2 筆、<code>unlockCondition</code> 有值 6 筆；其餘欄位不變
+  </div>
 
   <div class="changed-block">
     <strong>🔄 v2.3 更新：新增 moduleLevel 欄位（配裝模擬器用）</strong>
@@ -113,6 +125,8 @@
       <tr><td>dismantleMechIds</td><td>string[]?</td><td>拆解可得此模組的機甲 ID 陣列（對應 mechs collection）；顯示時 mapping 為機甲 name；僅 source 含 "拆機甲" 時填寫</td></tr>
       <tr><td>managedBy</td><td>ModuleDataSource (Enum)</td><td>後台資料維護標記："auto"（腳本自動擷取）/ "manual"（管理者手動新增）。<strong>與 source 語義不同，勿混用</strong></td></tr>
       <tr><td>moduleAddLevel</td><td>number</td><td>模組增加等級（配裝時，在插槽中增加模組等級計算用，配裝時會計算嵌入的模組總和；預設 1）</td></tr>
+      <tr><td>slotLevelMultiplier</td><td>MechPartPosition[]?</td><td><strong>v2.4 新增</strong>。這顆模組讓哪些部位的<strong>插槽</strong>貢獻等級翻倍（<strong>不含天生貢獻</strong>）。今天只有破曉者-02 的兩顆〈匯流樞紐〉：<code>mod_破曉者-02_fixed_4</code> = <code>["torso"]</code>、<code>mod_破曉者-02_fixed_1</code> = <code>["legs"]</code>。同一部位被兩顆點到時連乘</td></tr>
+      <tr><td>unlockCondition</td><td>union?</td><td><strong>v2.4 新增</strong>。這顆模組的啟用條件，兩種形狀：<code>{ kind:'moduleAtMaxLevel', moduleId }</code>（該模組<strong>結算後等級</strong>達其 <code>levels.length</code> 才生效）／<code>{ kind:'pilotOnly', pilotIds }</code>（限定機師）。<strong>⚠ 不要把「效果內的條件」寫進來</strong>——影虎〈虎魄·無束〉L2 與輝龍龍威 L2 的「當[某人]駕駛整套[某機]時…」是效果的條件，模組本身照樣存在、照樣算等級</td></tr>
       <tr><td>output_bonus</td><td>number</td><td>機甲出力增加（預設 0）</td></tr>
       <tr><td>dmg</td><td>number</td><td>增傷加成 % — 最高等級值</td></tr>
       <tr><td>crit_rate</td><td>number</td><td>暴擊率加成 — 最高等級值</td></tr>

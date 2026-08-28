@@ -121,7 +121,7 @@ export interface LoadoutDraft {
    */
   ndLevels?: Record<string, number>
   /**
-   * 部件混搭：**部位 → 來源機甲 doc id**。只記與原廠不同的部位（PLAN-052-G）。
+   * 部件混搭：**部位 → 來源機甲 doc id**。只記與選定機甲不同的部位（PLAN-052-G）。
    *
    * ⚠ **052-C 的 codec v1 先開這個欄位，UI 與 `reconcile()` 由 052-G 補。**
    *   理由是總綱決策八「MVP 三件不能省的事」第②條：分享碼同時是唯一的落盤格式，

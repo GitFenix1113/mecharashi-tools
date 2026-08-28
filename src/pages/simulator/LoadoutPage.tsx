@@ -412,10 +412,22 @@ export default function LoadoutPage() {
     () => data.pilots.map((p) => ({ item: p, rejection: null })),
     [data.pilots],
   )
+  // 預設排序：選得上的在前 → 品質 S→A→B → 登場版本新→舊（使用者要求 2026-08-29）。
+  //
+  // ⚠ **「選得上的在前」必須留在最外層**：開不動的機甲由 `HiddenCountBar` 摺成一行計數，
+  //   而它摺的是清單尾端連續的那一段 —— 品質排到前面去會把它拆散。
+  // ⚠ 第四層用名稱收尾**不是可有可無**：`Array.prototype.sort` 的穩定性保證的是
+  //   「比較結果相等時維持原順序」，而原順序來自 Firestore 的回傳，同品質同版本的兩台
+  //   會在不同 session 換位置。定住它，清單才不會每次開都長得不一樣。
   const mechEntries = useMemo<PickerEntry<Mech>[]>(
     () => data.mechs
       .map((m) => ({ item: m, rejection: canSelectMech(ctx.pilot, m) }))
-      .sort((a, b) => (a.rejection ? 1 : 0) - (b.rejection ? 1 : 0)),
+      .sort((a, b) =>
+        (a.rejection ? 1 : 0) - (b.rejection ? 1 : 0)
+        || (MECH_QUALITY_ORDER[a.item.quality ?? ''] ?? 99) - (MECH_QUALITY_ORDER[b.item.quality ?? ''] ?? 99)
+        || debutRank(b.item) - debutRank(a.item)
+        || a.item.name.localeCompare(b.item.name, 'zh-Hant'),
+      ),
     [data.mechs, ctx.pilot],
   )
   const weaponEntries = useMemo<PickerEntry<Weapon>[]>(
@@ -755,8 +767,19 @@ export default function LoadoutPage() {
           >
             {ctx.mech ? (
               <span className="flex items-center gap-1.5 min-w-0">
-                <span className="truncate">{ctx.mech.name}</span>
+                {/* ⚠ 印的是**軀幹那台**（`identityMech`），與面板抬頭、中央立繪、匯出圖同一個判準
+                    （使用者回報 2026-08-29：「左上的替換機甲沒有跟著變動」）。
+                    這一格與那三處講的是同一件事「這是哪一台」，各自答一次就會不一致。 */}
+                <span className="truncate">{(ctx.identityMech ?? ctx.mech).name}</span>
                 <span className="text-[10px] text-text-dim shrink-0">{ctx.mech.armorType}</span>
+                {/* ⚠ **這顆卡片按下去換的是基底**，不是上面印的那台 —— 不講的話它會變成
+                    「我按了帕斯卡，結果換掉的是整台」。面板抬頭寫「軀幹來源 · 基底 X」，
+                    這裡欄位窄，只留後半段。 */}
+                {ctx.identityMech && ctx.identityMech.id !== ctx.mech.id && (
+                  <span className="text-[10px] text-text-dim shrink-0 whitespace-nowrap">
+                    基底 {ctx.mech.name}
+                  </span>
+                )}
               </span>
             ) : '選擇機甲'}
           </HudCard>
@@ -871,12 +894,25 @@ export default function LoadoutPage() {
               <span className="flex items-center gap-2 flex-wrap min-w-0">
                 {ctx.mech && (
                   <>
-                    <span className={`${HUD.bodyStrong} text-text-primary truncate`}>{ctx.mech.name}</span>
+                    {/* ⚠ 印的是**軀幹那台**（`identityMech`，使用者要求 2026-08-29）：
+                        混搭之後「這是哪一台」由軀幹決定，中間的立繪也跟著它換。 */}
+                    <span className={`${HUD.bodyStrong} text-text-primary truncate`}>
+                      {(ctx.identityMech ?? ctx.mech).name}
+                    </span>
+                    {/* ⚠ 裝甲徽章一律取**基底**：混搭不能跨裝甲類型（總綱決策七）⇒ 兩者必然相同，
+                        而這一格回答的是「這套配裝屬於哪個裝甲級距」，那是基底的屬性。 */}
                     <span className={`hud-cut-sm shrink-0 px-1.5 py-0.5 text-[11px] font-bold border border-current/40 bg-bg-dark/70 ${
                       ARMOR_TONE[ctx.mech.armorType] ?? 'text-text-secondary'
                     }`}>
                       {ctx.mech.armorType}
                     </span>
+                    {/* ⚠ 兩者不同時**一定要把基底講出來**：右邊那顆「更換機甲」換的是基底，
+                        不講的話它看起來像在換上面印的那台（＝軀幹來源）。 */}
+                    {ctx.identityMech && ctx.identityMech.id !== ctx.mech.id && (
+                      <span className="text-[11px] text-text-dim shrink-0 whitespace-nowrap">
+                        軀幹來源 · 基底 {ctx.mech.name}
+                      </span>
+                    )}
                   </>
                 )}
                 {setKeys.length > 1 && (
@@ -920,6 +956,7 @@ export default function LoadoutPage() {
                 compact={compactRig}
                 onOpenSlot={openSlot}
                 onClearSlot={clearSlot}
+                onApplyChassis={(sourceMechId) => send({ type: 'applyChassisOf', sourceMechId })}
               />
             ) : (
               <p className="text-[12px] text-text-dim leading-relaxed">
@@ -1000,6 +1037,7 @@ export default function LoadoutPage() {
               open
               title="選擇機甲"
               variant="mechCard"
+              filters={MECH_FILTERS}
               selectedId={ctx.mech?.id}
               entries={mechEntries}
               toRow={mechRow}
@@ -1083,7 +1121,7 @@ export default function LoadoutPage() {
               // 一鍵裝滿不指定格 —— 動哪幾格由 `planModuleFill()` 決定（使用者要求 2026-08-27）
               onFill={(m) => send({ type: 'fillModule', moduleId: m.id })}
               onResolve={resolve}
-              // 部件混搭（Phase D）。換成基底機甲＝還原原廠，由 reducer 收掉那個鍵 ——
+              // 部件混搭（Phase D）。換成基底機甲＝還原為選定機甲，由 reducer 收掉那個鍵 ——
               // 呼叫端不必自己判斷該派 swapPart 還是 resetPart
               onSwapPart={(src) => send({
                 type: 'swapPart', position: openModuleRef.position, sourceMechId: src.id,
@@ -1115,7 +1153,7 @@ export default function LoadoutPage() {
                   機甲詳情頁的同一張表再抄一遍」。混搭開放後它才開始回答「這一套是怎麼拼出來的」——
                   而那是槽位圖上的四張卡答不出來的：卡上只印得下一個來源名，
                   這張表同時給得出四格的重量、火力與合計。
-                  ⚠ 一定要傳 `ctx.chassis`：這支元件自己 `resolveChassis(mech)` 會解出**原廠**，
+                  ⚠ 一定要傳 `ctx.chassis`：這支元件自己 `resolveChassis(mech)` 會解出**選定機甲那台**，
                      於是表格印四行「彌造者」而上方總重是混搭後的數字，兩者當場打臉。
                   ⚠ MechPartsTable 自帶卡片框與標題（052-A 共用元件），不要再包一層 Panel。 */}
               <MechPartsTable
@@ -1123,11 +1161,22 @@ export default function LoadoutPage() {
                 chassis={ctx.chassis}
                 nameOf={(id) => ctx.world.mechs.get(id)?.name}
               />
+              {/* ⚠ 連的是**軀幹那台**（`identityMech`）：這一句緊接在四部位表下方，
+                  而那張表逐格印的就是來源 —— 表上四行寫著帕斯卡、下面卻請人去看彌造者，
+                  讀起來像連錯了。混搭時另外把基底那台也給一條路，不然它就沒有入口了。 */}
               <p className="text-[11px] text-text-dim leading-relaxed px-1">
                 想看完整資料？前往
-                <Link to={`/mechs/${ctx.mech.id}`} className="text-accent-orange no-underline mx-1">
-                  {ctx.mech.name} 詳情頁
+                <Link to={`/mechs/${(ctx.identityMech ?? ctx.mech).id}`} className="text-accent-orange no-underline mx-1">
+                  {(ctx.identityMech ?? ctx.mech).name} 詳情頁
                 </Link>
+                {ctx.identityMech && ctx.identityMech.id !== ctx.mech.id && (
+                  <>
+                    ／基底
+                    <Link to={`/mechs/${ctx.mech.id}`} className="text-accent-orange no-underline mx-1">
+                      {ctx.mech.name}
+                    </Link>
+                  </>
+                )}
                 。
               </p>
             </>
@@ -1148,7 +1197,7 @@ export default function LoadoutPage() {
       )}
       {isMobile && effectivePicker?.kind === 'mech' && (
         <PickerShell
-          open title="選擇機甲" variant="mechCard" selectedId={ctx.mech?.id}
+          open title="選擇機甲" variant="mechCard" filters={MECH_FILTERS} selectedId={ctx.mech?.id}
           entries={mechEntries} toRow={mechRow} budgetLine={budgetLine} loading={loading} useSheet
           onPick={(m) => { send({ type: 'selectMech', mechId: m.id }); setPicker(null) }}
           onResolve={resolve} onClose={closePicker}
@@ -1524,11 +1573,49 @@ const PILOT_FILTERS: readonly PickerFilterGroup<Pilot>[] = [
   },
 ]
 
-// ⚠ **機甲挑選器刻意沒有篩選列。** 機師的執照本來就把裝甲類型限死成一種
+// ─── 機甲挑選器的篩選與排序（使用者要求 2026-08-29）──────────────────────────
+//
+// ⚠ **只有品質這一組，刻意沒有「裝甲類型」。** 機師的執照本來就把裝甲類型限死成一種
 //   （中型執照 → 只有中甲），再給一排「輕型／中甲／重型」的晶片，其中兩顆按下去
-//   必然是零筆 —— 那不是篩選，是把已經成立的限制再問一次。
-//   清單直接就是「這位機師開得動的機甲」；開不動的仍由 `HiddenCountBar` 摺疊成
-//   一行計數（「共 90 項：因執照不符隱藏 54」），要看原因按一下就展開。
+//   必然是零筆 —— 那不是篩選，是把已經成立的限制再問一次。品質不同：S／A／B 在
+//   任何一種執照底下都同時存在（線上 S 64 / A 16 / B 10），三顆都篩得出東西。
+//   開不動的機甲仍由 `HiddenCountBar` 摺疊成一行計數，要看原因按一下就展開。
+
+/**
+ * 品質階序。**同時決定兩件事**：晶片的排列順序，以及清單的預設排序（S→A→B）。
+ *
+ * ⚠ 這份與 `MechsPage` 的 `QUALITY_ORDER` 是**兩份刻意分開的複本**，因為兩邊的排序
+ *   優先序相反：圖鑑以「版本新→舊」為主鍵（看改版新增了什麼），挑選器以「品質」為主鍵
+ *   （選裝時先問這台強不強）。共用一份常數不會讓兩邊的排序變成同一件事，只會讓
+ *   下一個改其中一邊的人以為改了另一邊。
+ *
+ * `EX` 目前無機甲使用，先列著讓值域完整 —— `PickerShell` 會自動隱藏這份清單裡
+ * 一筆都沒有的選項（見它的 `available`），所以列著不會多出一顆按了是零筆的晶片。
+ */
+const MECH_QUALITY_ORDER: Record<string, number> = { EX: 0, S: 1, A: 2, B: 3 }
+
+const MECH_FILTERS: readonly PickerFilterGroup<Mech>[] = [
+  {
+    key: 'quality', label: '品質',
+    // 不給 tone：同一個對話框裡機甲名已經用 `ARMOR_TONE` 上了色（輕型青／中甲紫／
+    // 重型橘），品質晶片再上一組色會讓紫色同時代表「中甲」與「A 級」。
+    // 武器／背包的品質晶片也是無色的，這裡跟著它們走。
+    options: Object.keys(MECH_QUALITY_ORDER).map((q) => ({ value: q, label: q })),
+    test: (m, v) => m.quality === v,
+  },
+]
+
+/**
+ * 登場版本轉成可比大小的數字。無版本回 -1（新→舊排序時自然沉到最後）。
+ *
+ * ⚠ **不用 `parseFloat`**（圖鑑那份用了）：`'3.10'` 會被解成 3.1，與 `'3.1'` 撞在一起。
+ *   目前官方的次版號沒破過 8（1.0–1.8 → 2.0），所以圖鑑那份還沒踩到；
+ *   這裡按段拆比較，多一行就不必賭它永遠不破 9。
+ */
+function debutRank(m: Mech): number {
+  const [maj, min] = (m.debutVersion ?? '').split('.').map(Number)
+  return Number.isFinite(maj) ? maj * 1000 + (Number.isFinite(min) ? min : 0) : -1
+}
 
 // ─── 武器挑選器的篩選（使用者要求：品質 ＋ 類型）──────────────────────────────
 
@@ -1675,7 +1762,9 @@ function blockedReason(ctx: ReturnType<typeof buildContext>, ref: WeaponSlotRef)
     return `${slotLabel(occ.ref)}已由固定武裝${w ? `「${w.name}」` : ''}佔用，無法更換。`
   }
   if (ctx.chassis && ctx.chassis.output === 0) {
-    return `${ctx.mech?.name ?? '這台機甲'}的官方數值尚未公布，無法計算可用出力，因此暫不提供配裝。`
+    // ⚠ 判準是 `chassis.output`（**只有軀幹有出力**），所以缺數值的是**軀幹那台**，
+    //   不是基底 —— 混搭時講錯名字會讓人去翻一台資料其實齊全的機甲。
+    return `${(ctx.identityMech ?? ctx.mech)?.name ?? '這台機甲'}的官方數值尚未公布，無法計算可用出力，因此暫不提供配裝。`
   }
   return null
 }

@@ -1,9 +1,8 @@
-import { useMemo } from 'react'
 import { MechPartPosition } from '../../types/enums'
 import type { ModuleSlotRef } from '../../types/slots'
 import { imageCandidates } from '../../utils/assets'
 import { partLabel } from '../../utils/moduleSlots'
-import { interfaceState, moduleStacks, moduleFamilyKey } from '../../utils/moduleRules'
+import { interfaceState, moduleFamilyKey, type ModuleStack } from '../../utils/moduleRules'
 import type { LoadoutContext } from '../../utils/loadoutRules'
 import { FallbackImage } from '../common/FallbackImage'
 import { ModuleIcon } from '../icons/ModuleIcon'
@@ -66,7 +65,10 @@ const IFACE_UNKNOWN = '接口型別不明'
  *   硬留一個抬頭會指向四張不相鄰的卡。這句話改由 `LoadoutRig` 掛在整張圖的最下緣。
  *   模組那半已經拆掉（C-6）；部件混搭還沒開放，那半句仍然是誠實的。
  */
-export const PART_MIX_NOTE = '部件混搭開放後，每個部位可換成別台機甲的同位部件'
+// ⚠ 原文是「部件混搭**開放後**，每個部位可換成別台機甲的同位部件」——那是 052-G Phase D
+//   出貨**之前**寫的預告，功能上線之後它就變成一句錯話（而且旁邊就是可以按的入口）。
+//   2026-08-29 更正為現況：講「怎麼做」而不是「什麼時候會有」。
+export const PART_MIX_NOTE = '點部位的模組接口，可把該部位換成別台同型機甲的同位部件'
 
 interface Props {
   ctx: LoadoutContext
@@ -95,11 +97,9 @@ interface Props {
  *   就是同一條規則的四份副本，而它們會各自過期。
  */
 export function MechPartCard({ ctx, position, onOpenModule, activePosition, roomy }: Props) {
-  // 同族堆疊：卡片上的 Lv 是**那一族的合計**，不是這一格自己的（C-7）
-  const stacks = useMemo(
-    () => moduleStacks(ctx.modules, (id) => ctx.world.modules.get(id)),
-    [ctx.modules, ctx.world.modules],
-  )
+  // 同族堆疊：卡片上的 Lv 是**那一族的合計**（含天生貢獻，PLAN-052-K D-1），
+  // 不是這一格自己的（C-7）。一律取 `ctx.stacks`，不在元件裡再算一次。
+  const stacks = ctx.stacks
 
   if (!ctx.mech || !ctx.chassis) return null
 
@@ -117,7 +117,7 @@ export function MechPartCard({ ctx, position, onOpenModule, activePosition, room
 
 function PartCard({ ctx, stacks, position, active, roomy, onOpen }: {
   ctx: LoadoutContext
-  stacks: ReturnType<typeof moduleStacks>
+  stacks: ReadonlyMap<string, ModuleStack>
   position: MechPartPosition
   active: boolean
   roomy?: boolean
@@ -129,7 +129,7 @@ function PartCard({ ctx, stacks, position, active, roomy, onOpen }: {
   /**
    * 這一格換過部件沒有（PLAN-052-G Phase D）。
    *
-   * ⚠ **一定要印出來。** 混搭上線之後實測發現：換完之後這張卡長得和原廠**一模一樣** ——
+   * ⚠ **一定要印出來。** 混搭上線之後實測發現：換完之後這張卡長得和選定機甲**一模一樣** ——
    *   唯一的線索是總重那個數字，以及面板裡某一段上的一顆星。關掉面板就什麼都不剩了，
    *   而那正是「看起來完整、實際上不是」的那一種畫面。
    *
@@ -169,7 +169,7 @@ function PartCard({ ctx, stacks, position, active, roomy, onOpen }: {
           </span>
           <span className={`${HUD.num} text-[11px] leading-tight ${usable ? 'text-text-dim' : 'text-text-dim italic'}`}>
             {ifaceText}
-            {/* 換過的部件：印來源機甲名。沒換過時整段不畫 —— 88 台原廠卡上寫「原廠」是四行雜訊 */}
+            {/* 換過的部件：印來源機甲名。沒換過時整段不畫 —— 沒換過的卡上寫「選定機甲」是四行雜訊 */}
           {swappedFrom && (
             <span className="text-[11px] text-accent-orange leading-tight truncate shrink min-w-0">
               ◆{swappedFrom}

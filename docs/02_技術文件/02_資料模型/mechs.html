@@ -24,7 +24,7 @@
   <div class="hero-badge green">◆ Data Model</div>
   <h1>mechs<span>機甲資料 · MECH DATA</span></h1>
   <p class="hero-sub">部件詳細資料、出力/重量、副模組引用 — 僅儲存滿級（manji）數據</p>
-  <div class="version-badge" style="background:var(--accent-green);">UPDATED v1.4</div>
+  <div class="version-badge" style="background:var(--accent-green);">UPDATED v1.5</div>
 </header>
 
 <main class="container">
@@ -32,6 +32,19 @@
 <section class="section">
   <div class="section-label green">v1.4 更新</div>
   <div class="section-title">重構說明</div>
+
+  <div class="changed-block">
+    <strong>🔄 v1.5 更新：天生模組改為逐部位推導（PLAN-052-K）</strong>
+    遊戲裡一顆天生模組的等級是<strong>四個部位各自貢獻的等級加總</strong>，而本集合只存
+    <code>module4Id</code> / <code>module8Id</code> / <code>moduleFixedIds</code> 三個 id ——<strong>沒有部位、也沒有等級</strong>。<br>
+    <strong>矩陣刻意不落盤</strong>：90 台 × 4 部位 ≈ 1500 格全是規則的產物，落盤會在官方改版時過期，
+    而選填欄位不會被填滿（0/5 定律）。通則由 <code>src/utils/innateModules.ts</code> 的
+    <code>INNATE_LEVEL_RULE</code> 算出（滿階：S ⇒ 特性位 1／8 級 2／副模組 1 每部位；A ⇒ 8 級模組只有軀幹與腿部各 1；B ⇒ 全 0），
+    專屬模組則由 <code>(boundPart, levels.length)</code> 推導，<strong>零新欄位</strong>。<br>
+    <strong>例外的出口是新欄位 <code>parts.{position}.innateModules</code></strong>（見下表）——整格取代、不做部分合併。<br>
+    對帳：<code>node scripts/check-part-module-drift.mjs</code>（唯讀，逐格比對官方 <code>aircraft_data</code>；
+    基準線 2026-08-29 全 83 台 × 932 格全中。⚠ 官方停在 v3.2，v3.3 之後的 7 台對不到）。
+  </div>
 
   <div class="changed-block">
     <strong>🔄 v1.4 修正：部件詳細資料獨立 + 模組映射</strong>
@@ -73,11 +86,13 @@
       <tr><td>&nbsp;├ antiRiot</td><td>number?</td><td>抗暴（僅軀幹有）</td></tr>
       <tr><td>&nbsp;├ icon</td><td>string?</td><td>部件圖示路徑 /images/mechs/{機甲名}/{position}.webp</td></tr>
       <tr><td>&nbsp;├ mechaIcon</td><td>string?</td><td>遊戲內部資產名（用於官方 CDN waparts/ 路徑）</td></tr>
-      <tr><td>&nbsp;└ fixedArmament</td><td>ArmamentMount[]?</td><td>焊死在這個部件上的固定武裝（PLAN-052-A）。<code>{ weaponId, slot, side? }</code>，<code>slot</code> 沿用 <code>WeaponEquipSlot</code>。<br><small style="color:var(--text-dim)">左臂 → 左肩、右臂 → 右肩（肩槽<strong>附屬於手臂</strong>，兩者是巢狀不是正交）。<strong>硬不變式：</strong><code>mount.slot === weapons[mount.weaponId].equipSlot</code>，允許 0 例外，由 <code>scripts/validate-mech-slots.mjs</code> 全庫校驗。<br>用陣列而非選填 scalar：帕斯卡是<strong>同一把衝擊炮掛左右兩肩</strong>，scalar 表達不了；且 scalar 的三態語意會撞上 <code>stripUndefined</code>（取消勾選寫的 <code>undefined</code> 被整個濾掉 ⇒ 一旦填了就再也取消不掉）——被本欄位取代的三個死槽位就是栽在這裡。<br>現況（2026-08-24）：帕斯卡／破曉者-01／霸王 各 2 筆，共 <strong>6 筆</strong>。<br>渲染時 React key 一律用 <code>slotKey(ref)</code>，<strong>不可</strong>用 <code>weaponId</code>（兩肩同一把會撞 key）。</small></td></tr>
+      <tr><td>&nbsp;├ fixedArmament</td><td>ArmamentMount[]?</td><td>焊死在這個部件上的固定武裝（PLAN-052-A）。<code>{ weaponId, slot, side? }</code>，<code>slot</code> 沿用 <code>WeaponEquipSlot</code>。<br><small style="color:var(--text-dim)">左臂 → 左肩、右臂 → 右肩（肩槽<strong>附屬於手臂</strong>，兩者是巢狀不是正交）。<strong>硬不變式：</strong><code>mount.slot === weapons[mount.weaponId].equipSlot</code>，允許 0 例外，由 <code>scripts/validate-mech-slots.mjs</code> 全庫校驗。<br>用陣列而非選填 scalar：帕斯卡是<strong>同一把衝擊炮掛左右兩肩</strong>，scalar 表達不了；且 scalar 的三態語意會撞上 <code>stripUndefined</code>（取消勾選寫的 <code>undefined</code> 被整個濾掉 ⇒ 一旦填了就再也取消不掉）——被本欄位取代的三個死槽位就是栽在這裡。<br>現況（2026-08-24）：帕斯卡／破曉者-01／霸王 各 2 筆，共 <strong>6 筆</strong>。<br>渲染時 React key 一律用 <code>slotKey(ref)</code>，<strong>不可</strong>用 <code>weaponId</code>（兩肩同一把會撞 key）。</small></td></tr>
+      <tr><td>&nbsp;└ innateModules</td><td>InnateModuleEntry[]?</td><td><strong>v1.5 新增</strong>。這個部位天生帶哪幾顆模組、各貢獻幾級：<code>{ moduleId, level }[]</code>。<br><small style="color:var(--text-dim)"><code>undefined</code> ＝ <strong>照規則推導</strong>（絕大多數台走這條，全庫今天 0 台有值）；填了就<strong>整格取代</strong>，<strong>不做部分合併</strong>。<br><code>[]</code> 與 <code>undefined</code> <strong>語意不同</strong>：<code>[]</code> ＝「這個部位沒有任何天生模組」、<code>undefined</code> ＝「照規則算」。後台的「清除」寫回的是 <code>undefined</code>。<br><code>level</code> 是<strong>這個部位單獨貢獻的級數</strong>，不是該模組的最終等級（最終等級 ＝ Σ四部位天生貢獻 ＋ Σ(插槽貢獻 × 部位倍率)，封頂於 <code>levels.length</code>）。<br><strong>⚠ 它住在部件上，所以混搭時跟著換進來的那一格走</strong>——與 <code>fixedArmament</code> 同一條性質。<br>後台入口：機甲編輯 → 部件分頁 → 各部位卡的「改成人工指定」。</small></td></tr>
       <tr class="group-header"><td colspan="3">▎副模組引用（指向 modules Collection）</td></tr>
       <tr><td>module4Id</td><td>string?</td><td>特性模組 ID（4模組槽位）→ modules Collection；無特性模組的機甲可省略</td></tr>
       <tr><td>module8Id</td><td>string?</td><td>8級模組 ID（8模組槽位）→ modules Collection；無8級模組的機甲可省略</td></tr>
-      <tr><td>moduleFixedIds</td><td>string[]</td><td>固定副模組 ID 列表（可多個）→ modules Collection</td></tr>
+      <tr><td>moduleFixedIds</td><td>string[]</td><td>固定副模組 ID 列表（可多個）→ modules Collection；含<strong>機甲副模組</strong>與<strong>機甲專屬模組</strong>兩類，靠 <code>module.slot</code> 分流（<strong>不要看 id 前綴</strong>：A 級的燧石特性模組是 <code>mod_1001</code>、霸王的專屬模組是 <code>mod_2064</code>）</td></tr>
+      <tr><td colspan="3"><small style="color:var(--text-dim)"><strong>⚠ 這三個欄位只有 id，沒有部位也沒有等級。</strong>「哪個部位帶它、各幾級」一律由 <code>resolveInnateModules()</code> 算出（見上方 v1.5 更新），例外才落在 <code>parts.{position}.innateModules</code>。<strong>不要在畫面上直接讀這三個欄位當「自帶模組清單」</strong>——那正是 PLAN-052-K 修掉的 bug：混搭換掉一個部位後它一顆都不會變。</small></td></tr>
       <tr class="group-header"><td colspan="3">▎圖片路徑</td></tr>
       <tr><td>portrait</td><td>string?</td><td>完整立繪 /images/mechs/{name}/portrait.webp</td></tr>
       <tr><td>halfPortrait</td><td>string?</td><td>半身圖 /images/mechs/{name}/half.webp<br><small style="color:var(--text-dim)">注意：欄位名為 <code>halfPortrait</code>（非 <code>half</code>）。<br>現況：57 筆機甲的此欄指向從未進版控的 <code>half.png</code>，靠 <code>&lt;FallbackImage&gt;</code> 退回 <code>portrait</code> 顯示。</small></td></tr>

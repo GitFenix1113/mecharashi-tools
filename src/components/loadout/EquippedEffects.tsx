@@ -5,12 +5,14 @@ import { MECH_PART_ORDER } from '../../utils/chassisStats'
 import { partLabel } from '../../utils/moduleSlots'
 import {
   interfaceState, moduleLevelAt, moduleStatsAt, sumModuleStats,
-  moduleStacks, moduleFamilyKey, type ModuleStack,
+  moduleFamilyKey, type ModuleStack,
 } from '../../utils/moduleRules'
 import { ModuleSlot } from '../../types/enums'
-import type { LoadoutContext } from '../../utils/loadoutRules'
+import { activeStacks, type LoadoutContext } from '../../utils/loadoutRules'
+import type { InnateSource, UnlockBlock } from '../../utils/innateModules'
 import { ModuleStatTags } from '../module/ModuleStatTags'
 import { ModuleIcon } from '../icons/ModuleIcon'
+import { InnateSourceBadge } from '../badges/InnateBadges'
 import { HUD, HUD_READONLY } from './loadoutTheme'
 
 // ─── 已裝效果彙總（PLAN-052-G C-4 ／ C-7 同族堆疊）──────────────────────────
@@ -28,12 +30,26 @@ import { HUD, HUD_READONLY } from './loadoutTheme'
 // ⚠ **不出衍生的戰力／傷害數字**（總綱決策一④已裁決延後）：攻擊力口徑未定
 //   （DB 值＝全部連擊總和、官方卡片＝每擊值，差額 17.3–18.6% 且逐把不同）。
 //
-// ⚠ **天生模組一併顯示但不可編輯**（進度表 C-4）：`module4Id` / `module8Id` /
-//   `moduleFixedIds` 是機甲自帶的（全庫 260 個引用、零斷鏈），玩家改不了它們，
-//   但它們確實在生效。藏起來會讓合計對不上；混進四個接口那一區則會讓玩家
-//   以為自己可以換掉它們 —— 所以分兩區、並標明「不可更換」。
-//   ⚠ 它們的等級**不走同族堆疊**（那是接口那一段的機制），維持滿級呈現。
-//   8 級模組的差額見下方 `EightLevelNote`。
+// ⚠ **天生模組一併顯示但不可編輯**：玩家改不了它們，但它們確實在生效。藏起來會讓
+//   合計對不上；混進四個接口那一區則會讓玩家以為自己可以換掉它們 —— 所以分兩區、
+//   並標明「不可更換」。
+//
+// ── 天生那一區改成逐部位推導（PLAN-052-K D-1）──────────────────────────────
+// 改寫前這一區讀的是機甲**頂層**三個欄位、等級一律取滿級（`chassis.moduleLevelOf`），
+// 於是 052-G Phase D 讓玩家換部位之後它整區說謊：換掉滿階帕斯卡的右臂，遊戲裡
+// 〈彙編矩陣〉整顆消失、〈蓄能模組〉8→6、〈出力模組〉4→3，站上一顆都不動。
+//
+// 現在的來源是 `ctx.chassis.innateByPart`（逐格取自**那一格的來源機甲**），
+// 等級則來自 `ctx.stacks` —— 天生與插槽**共用同一個等級池**：
+//
+//     level = min( Σ天生貢獻 ＋ Σ(插槽貢獻 × 部位倍率), cap )
+//
+// ⚠ 合計因此**只加 `ctx.stacks` 一次**。改寫前是「stacks ＋ 天生逐顆」相加，
+//   那在兩邊出現同一族時會算兩份；現在同一族只會有一筆。
+//
+// ⚠ **未解鎖的不刪掉，改成停用態**（決策五 / D-3）：復仇女神少一個部位 ⇒ 迸發模組
+//   只剩 6 級 ⇒ 四顆〈模型-XX〉一起失效。直接讓它們從清單消失，玩家會以為是 bug。
+//   合計走 `activeStacks()`，畫面走 `ctx.stacks` ＋ `ctx.moduleBlocks`。
 
 interface SlotLine {
   position: MechPartPosition
@@ -43,6 +59,15 @@ interface SlotLine {
   /** 查無資料時要印出來的 id（斷鏈要看得見，不是靜默留白） */
   fallbackId?: string
   stack: ModuleStack | null
+  /**
+   * 沒解鎖的原因（PLAN-052-K D-3）。**今天恆為 null** —— 六顆有條件的模組全是
+   * 機甲專屬／隱藏模組，進不了候選池，插不到接口上。
+   *
+   * ⚠ 仍然接起來的理由：合計走 `activeStacks()`（會扣掉未解鎖的），這一列若不跟著扣，
+   *   哪天官方出一顆有條件的通用模組，畫面就會變成「這一列印著加成、合計卻沒算它」
+   *   —— 一個沒有任何錯誤訊息、只能靠人肉對帳發現的差異。
+   */
+  block: UnlockBlock | null
 }
 // ⏸ `primary` / `sharedWith` 已隨「相同模組合併成一列」移除（使用者要求 2026-08-27）：
 //    它們是逐格列時代用來避免重印數值的補丁 —— 第二格起改印「與軀幹同族」。
@@ -63,10 +88,9 @@ interface SlotLine {
 function useModuleView(ctx: LoadoutContext) {
   const { mech, chassis } = ctx
 
-  const stacks = useMemo(
-    () => moduleStacks(ctx.modules, (id) => ctx.world.modules.get(id)),
-    [ctx.modules, ctx.world.modules],
-  )
+  // 天生 ＋ 插槽同一個等級池，在 `buildContext()` 算好（PLAN-052-K D-1）。
+  // 這裡再算一次的話，右欄的 Lv 與四部位卡、OutputBar、匯出圖會各說各話。
+  const stacks = ctx.stacks
 
   const slots = useMemo<SlotLine[]>(() => {
     if (!chassis) return []
@@ -82,38 +106,86 @@ function useModuleView(ctx: LoadoutContext) {
         mod,
         fallbackId: id && !mod ? id : undefined,
         stack,
+        block: (mod && ctx.moduleBlocks.get(moduleFamilyKey(mod))) || null,
       }
     })
   }, [ctx, chassis, stacks])
 
-  const innate = useMemo(() => {
+  /**
+   * 機甲自帶的那幾顆 —— **逐部位推導後再依模組收成一列**（PLAN-052-K D-1）。
+   *
+   * ⚠ 一顆天生模組通常四個部位都有份（S 級的 8 級模組每部位 2 級），
+   *   逐部位列會變成同一顆講四遍。收成一列、把貢獻的部位列在左欄，
+   *   與接口那一區「按族合併」是同一種讀法。
+   *
+   * ⚠ 等級取 `stacks`（含插槽貢獻並已封頂），不是四格相加：天生與插槽共用一個池，
+   *   自己加會得到一個沒封頂、而且與旁邊那一區對不起來的數字。
+   */
+  const innate = useMemo<InnateLine[]>(() => {
     if (!mech || !chassis) return []
-    const ids = [mech.module4Id, mech.module8Id, ...(mech.moduleFixedIds ?? [])]
-      .filter((x): x is string => !!x)
-    return ids.map((id, i) => {
+    const order: string[] = []
+    const acc = new Map<string, { positions: MechPartPosition[]; source: InnateSource; sum: number }>()
+    const gaps: InnateLine[] = []
+
+    for (const pos of MECH_PART_ORDER) {
+      const res = chassis.innateByPart[pos]
+      for (const e of res.entries) {
+        let it = acc.get(e.moduleId)
+        if (!it) { it = { positions: [], source: 'rule', sum: 0 }; acc.set(e.moduleId, it); order.push(e.moduleId) }
+        it.positions.push(pos)
+        it.sum += e.level
+        // 一格是人工填的，整顆就標人工 —— 混搭時四格可能來自四台，其中一台被覆寫過
+        if (e.source === 'override') it.source = 'override'
+      }
+      // 資料缺口不靜默：這兩類算不出部位，但它們**確實掛在機甲上**。
+      // 不列出來的話畫面與遊戲差一顆，而且沒有任何症狀。
+      for (const id of res.missingBoundPart) gaps.push(gapLine(id, '專屬模組未填部位'))
+      for (const id of res.unknownModuleIds) gaps.push(gapLine(id, '模組資料已不存在'))
+    }
+
+    const lines = order.map((id) => {
+      const it = acc.get(id)!
       const mod = ctx.world.modules.get(id) ?? null
+      const stack = mod ? stacks.get(moduleFamilyKey(mod)) ?? null : null
       return {
-        key: `${id}#${i}`,
-        where: mod?.slot ?? '機甲自帶',
+        key: id,
         mod,
         fallbackId: mod ? undefined : id,
-        level: mod ? chassis.moduleLevelOf(id) : 0,
+        positions: it.positions,
+        source: it.source,
+        innateSum: it.sum,
+        // 查無模組時退回天生那一段的合計 —— 至少講得出「它給了幾級」
+        level: stack?.level ?? it.sum,
+        cap: stack?.cap ?? 0,
+        slotCount: stack?.positions.length ?? 0,
+        block: (mod && ctx.moduleBlocks.get(moduleFamilyKey(mod))) || null,
       }
     })
-  }, [mech, chassis, ctx.world.modules])
+    // 缺口去重（四個部位可能各回報同一顆）
+    const seen = new Set(lines.map((l) => l.key))
+    return [...lines, ...gaps.filter((g) => !seen.has(g.key) && seen.add(g.key))]
+  }, [mech, chassis, ctx.world.modules, ctx.moduleBlocks, stacks])
 
   const equippedCount = slots.filter((l) => l.mod).length
   // 空 Map ＝還沒載入完（見 LoadoutWorld.modules），不是「這台沒有天生模組」
   const loading = ctx.world.modules.size === 0
 
-  /** 合計：接口那段**每族一次**（見檔頭），天生那段逐顆 */
-  const total = useMemo(() => sumModuleStats([
-    ...[...stacks.values()].map((st) => moduleStatsAt(st.mod, st.level)),
-    ...innate.map((l) => (l.mod ? moduleStatsAt(l.mod, l.level) : {})),
-  ]), [stacks, innate])
+  /**
+   * 合計：**每族一次**，天生與插槽已在 `stacks` 裡合流（見檔頭），
+   * 未解鎖的那幾族不算（`activeStacks()`）。
+   */
+  const total = useMemo(() => sumModuleStats(
+    activeStacks(ctx).map((st) => moduleStatsAt(st.mod, st.level)),
+  ), [ctx])
 
-  const wasted = [...stacks.values()].filter((st) => st.overflow > 0)
-  const hasEightLevel = [...stacks.values()].some((st) => st.mod.slot === ModuleSlot.SLOT_8)
+  // ⚠ **只提醒玩家動得到的那些**（`positions.length > 0`）：純天生就超出上限的族
+  //   （若哪天出現）不是玩家裝出來的，那句「把多的那幾格換掉」會變成在怪他。
+  const wasted = [...stacks.values()].filter((st) => st.overflow > 0 && st.positions.length > 0)
+  // ⚠ 條件是「**接口上**裝了 8 級模組」而不是「這一族是 8 級模組」：
+  //   自帶那一顆自 D-1 起也進 stacks，用後者的話 S／A 級 74 台每台都會跳這段說明。
+  const hasEightLevel = [...stacks.values()].some(
+    (st) => st.mod.slot === ModuleSlot.SLOT_8 && st.positions.length > 0,
+  )
 
   /**
    * **按族合併**的接口列（使用者要求 2026-08-27：「相同的模組展示一條即可」）。
@@ -143,6 +215,52 @@ function useModuleView(ctx: LoadoutContext) {
   return { mech, chassis, slots, merged, innate, equippedCount, loading, total, wasted, hasEightLevel }
 }
 
+/** 機甲自帶的一列：一顆模組 ＋ 它由哪些部位帶來、幾級、生不生效。 */
+interface InnateLine {
+  /** ＝ 模組 doc id */
+  key: string
+  mod: Module | null
+  /** 查無資料時要印出來的 id（斷鏈要看得見，不是靜默留白） */
+  fallbackId?: string
+  /** 哪幾個部位帶來這一顆。資料缺口列為空 */
+  positions: MechPartPosition[]
+  source: InnateSource
+  /** Σ 天生貢獻（未封頂）。與 `level` 的差額就是插槽那一段 */
+  innateSum: number
+  /** 生效等級（天生 ＋ 插槽，已封頂） */
+  level: number
+  cap: number
+  /** 這一族同時也裝在幾個接口上（0 ＝ 純天生） */
+  slotCount: number
+  /** 沒解鎖的原因（PLAN-052-K D-3）。`null` ＝ 生效中 */
+  block: UnlockBlock | null
+  /** 資料缺口的說明。有值時這一列算不出部位與等級，只是為了**不讓它消失** */
+  gap?: string
+}
+
+/** 算不出部位／查無資料的那幾顆。仍然列出來 —— 它們確實掛在機甲上。 */
+const gapLine = (id: string, gap: string): InnateLine => ({
+  key: id, mod: null, fallbackId: id, positions: [], source: 'rule',
+  innateSum: 0, level: 0, cap: 0, slotCount: 0, block: null, gap,
+})
+
+/**
+ * 沒解鎖的原因，講成人話。
+ *
+ * ⚠ `required <= 0` 是**資料斷鏈**（觸發者查無 `levels[]`），不是「需要 LV.0」——
+ *   照字面印會變成一句玩家永遠達不成、也看不懂的條件。
+ */
+function blockText(block: UnlockBlock, ctx: LoadoutContext): string {
+  if (block.kind === 'pilotOnly') {
+    const names = block.pilotIds.map((id) => ctx.world.pilots.get(id)?.name ?? id).join('、')
+    return `只有 ${names} 駕駛時才會啟動`
+  }
+  const name = ctx.world.modules.get(block.moduleId)?.name ?? block.moduleId
+  return block.required > 0
+    ? `需要〈${name}〉達 LV.${block.required}（目前 LV.${block.current}）`
+    : `需要〈${name}〉滿級，但該模組的階數未建檔`
+}
+
 /** 合併後的一列：一顆模組（或一個空格）＋ 它佔的所有部位。 */
 interface MergedLine {
   key: string
@@ -159,7 +277,7 @@ export function EquippedEffects({ ctx }: { ctx: LoadoutContext }) {
   return (
     <div className="space-y-2.5">
       <Group label={`模組接口（${equippedCount} / ${slots.length}）`}>
-        {merged.map((m) => <SlotRow key={m.key} merged={m} />)}
+        {merged.map((m) => <SlotRow key={m.key} merged={m} ctx={ctx} />)}
       </Group>
 
       {/* 超限提醒（使用者裁決 2026-08-27）—— 提醒而不是擋：裝四顆同族是合法操作，
@@ -170,9 +288,13 @@ export function EquippedEffects({ ctx }: { ctx: LoadoutContext }) {
           className="hud-cut-sm border border-accent-yellow/30 bg-accent-yellow/5 px-2.5 py-2 text-[12px] leading-relaxed text-accent-yellow/90"
         >
           ⚠ <strong>{st.mod.name}</strong> 裝了 {st.positions.length} 顆（
-          {st.positions.map(partLabel).join('、')}），合計 <strong>{st.sum}</strong> 級，
-          但它只有 <strong>{st.cap}</strong> 階 —— 超出的 <strong>{st.overflow}</strong> 級
-          <strong>不會生效</strong>。把多的那幾格換成別的模組，等於白拿一份加成。
+          {st.positions.map(partLabel).join('、')}）＝ <strong>{st.sum}</strong> 級
+          {/* 天生那一段要講出來，否則「裝 2 顆共 2 級卻超出 8 階」讀起來像算錯
+              （PLAN-052-K D-1：滿階 S 級甲自帶的 8 級模組本身就給滿 8 級） */}
+          {st.innateSum > 0 && <>，加上機甲自帶的 <strong>{st.innateSum}</strong> 級</>}
+          ，合計 <strong>{st.sum + st.innateSum}</strong> 級，但它只有 <strong>{st.cap}</strong> 階
+          —— 超出的 <strong>{st.overflow}</strong> 級<strong>不會生效</strong>。
+          把多的那幾格換成別的模組，等於白拿一份加成。
         </p>
       ))}
 
@@ -182,15 +304,7 @@ export function EquippedEffects({ ctx }: { ctx: LoadoutContext }) {
         <Group label="機甲自帶 · 不可更換">
           {loading && innate.length === 0
             ? <p className={`${HUD.body} text-text-dim`}>載入模組中…</p>
-            : innate.map((l) => (
-                <PlainRow
-                  key={l.key}
-                  where={l.where}
-                  mod={l.mod}
-                  fallbackId={l.fallbackId}
-                  level={l.level}
-                />
-              ))}
+            : innate.map((l) => <InnateRow key={l.key} line={l} ctx={ctx} />)}
         </Group>
       )}
 
@@ -229,6 +343,7 @@ export function EquippedEffects({ ctx }: { ctx: LoadoutContext }) {
  */
 export function ModuleThumbStrip({ ctx }: { ctx: LoadoutContext }) {
   const { mech, chassis, slots, innate, equippedCount, loading, total, wasted } = useModuleView(ctx)
+  const blocked = innate.filter((l) => l.block)
 
   if (!mech || !chassis) return null
   if (loading) return <p className={`${HUD.body} text-text-dim`}>載入模組中…</p>
@@ -260,9 +375,16 @@ export function ModuleThumbStrip({ ctx }: { ctx: LoadoutContext }) {
               <Thumb
                 key={l.key}
                 mod={l.mod}
-                level={l.level || undefined}
+                // 未啟動的不印等級：印了就等於宣稱它在生效（PLAN-052-K D-3）
+                level={l.block ? undefined : l.level || undefined}
+                cap={l.block ? undefined : l.cap || undefined}
                 innate
-                title={`${l.where}（不可更換）｜${l.mod?.name ?? l.fallbackId ?? '—'}`}
+                disabled={!!l.block}
+                title={
+                  l.block
+                    ? `${l.mod?.name ?? l.fallbackId ?? '—'}｜未啟動：${blockText(l.block, ctx)}`
+                    : `${l.positions.map(partLabel).join('、') || '—'} 自帶（不可更換）｜${l.mod?.name ?? l.fallbackId ?? '—'}`
+                }
               />
             ))}
           </>
@@ -283,6 +405,13 @@ export function ModuleThumbStrip({ ctx }: { ctx: LoadoutContext }) {
       {wasted.length > 0 && (
         <p className="text-[12px] text-accent-yellow/90 leading-snug">
           ⚠ {wasted.map((st) => st.mod.name).join('、')} 同族超限，多的幾級不會生效 —— 展開看細節。
+        </p>
+      )}
+
+      {/* 停用的天生模組（D-3）。收合態一排灰圖但不講原因＝玩家眼中的 bug */}
+      {blocked.length > 0 && (
+        <p className="text-[12px] text-text-dim leading-snug">
+          {blocked.map((l) => l.mod?.name ?? l.fallbackId).join('、')} 目前未啟動 —— 展開看條件。
         </p>
       )}
     </div>
@@ -320,24 +449,27 @@ function Thumb({ mod, level, cap, over, disabled, innate, title }: {
 }
 
 /**
- * 8 級模組的差額說明。
+ * 8 級模組的口徑說明。
  *
- * 8 級模組有 8 階，而四個接口最多只給得出 4 級（`moduleAddLevel` 恆為 1）。
- * 差額來自**機甲自帶的那一顆**（`Mech.module8Id`），它的等級隨機甲品質階走 ——
- * 使用者 2026-08-27 逐字：「一套 S 級甲，整套金 3 的時候，他的 8 級模組會剛好 4 級，
- * 這時候搭配 4 顆 8 級模組就能 8 級」，並指出這是資源有限時的**過渡期選項**。
+ * ⚠ **原文案已被 PLAN-052-K D-1 推翻**，逐字留在這裡當教訓：它說「站上目前只算接口
+ *   這一段，機甲那一段還沒建模，所以這裡的數字會偏低」——自帶那一段建模之後這句話
+ *   從「誠實的免責」變成「錯的」，而它不會自己壞掉、也不會有測試抓到。
  *
- * ⚠ 站上**不替機甲自帶那一顆推等級**（需要一整套品質階模型，屬另一份尚未動工的計畫），
- *   所以這裡明講差額在哪，而不是靜默顯示一個只到 4 的數字讓人以為那就是全部。
+ * 現在的事實：接口最多貢獻 4 級（`moduleAddLevel` 恆為 1），而**滿階 S 級甲自帶的
+ * 那一顆每部位 2 級、四部位合計就是 8 級 ＝ 上限**（`INNATE_LEVEL_RULE`），
+ * 所以在滿階假設下再插同族只會超限。使用者 2026-08-27 講的「整套金 3 時剛好 4 級、
+ * 搭配 4 顆就能 8 級」是**過渡期**的配法 —— 站上一律以滿階計（總綱 N3），
+ * 那個中間階不在模型內。
  */
 function EightLevelNote() {
   return (
     <p className="hud-cut-sm border border-border-subtle bg-bg-dark/40 px-2.5 py-2 text-[12px] leading-relaxed text-text-dim">
-      8 級模組共 8 階，而四個接口最多貢獻 4 級 —— 另外那 4 級來自
-      <strong className="text-text-secondary">機甲自己帶的那一顆 8 級模組</strong>，
-      它的等級隨機甲品質階走（S 級甲整套滿階時約 4 級）。
-      站上目前<strong className="text-text-secondary">只算接口這一段</strong>，
-      機甲那一段還沒建模，所以這裡的數字會偏低。
+      8 級模組共 8 階：四個接口最多貢獻 4 級，其餘來自
+      <strong className="text-text-secondary">機甲自己帶的那一顆</strong>（上方「機甲自帶」區）。
+      站上一律以<strong className="text-text-secondary">滿階</strong>計算 ——
+      滿階 S 級甲自帶的 8 級模組每部位 2 級、合計就已經是 8 級，
+      這時接口再插同一族只會超限；A 級甲自帶 2 級（軀幹、腿部各 1，雙臂 0）。
+      實際遊戲中機甲品質沒滿時自帶那一段會較低，插同族就補得上來。
     </p>
   )
 }
@@ -351,9 +483,9 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-function SlotRow({ merged }: { merged: MergedLine }) {
+function SlotRow({ merged, ctx }: { merged: MergedLine; ctx: LoadoutContext }) {
   const { positions, line } = merged
-  const { iface, mod, fallbackId, stack } = line
+  const { iface, mod, fallbackId, stack, block } = line
   // 合併後左欄要放得下「軀幹、左臂、右臂、腿部」——四個詞折成兩行，欄寬給到 w-16。
   // ⚠ 這一欄**不可 truncate**：它是「這顆裝在哪」的唯一答案，截掉就變成一個看不出範圍的清單。
   const where = positions.map(partLabel).join('、')
@@ -389,34 +521,68 @@ function SlotRow({ merged }: { merged: MergedLine }) {
         {fallbackId && !mod && (
           <span className="text-[11px] text-accent-red/80">模組資料已不存在</span>
         )}
+        {block && (
+          <span className="text-[11px] text-accent-yellow/90 leading-snug">{blockText(block, ctx)}</span>
+        )}
         {/* 合併之後**每一族只印一次數值**，「與 X 同族」那句話連同重複的列一起消失 */}
-        {mod && <Effect mod={mod} level={stack?.level ?? 0} />}
+        {mod && !block && <Effect mod={mod} level={stack?.level ?? 0} />}
       </span>
     </div>
   )
 }
 
-function PlainRow({ where, mod, fallbackId, level }: {
-  where: string
-  mod: Module | null
-  fallbackId?: string
-  level: number
-}) {
+/**
+ * 機甲自帶的一列。
+ *
+ * ⚠ 左欄印的是**哪幾個部位帶來這一顆**，不是模組類別（改寫前印 `mod.slot`）。
+ *   混搭之後「這顆從哪來」才是玩家真正要知道的事 —— 換掉右臂會讓某幾顆掉級或整顆消失，
+ *   而那條因果只有部位講得出來。類別退到第二行。
+ *
+ * ⚠ 未解鎖的**不隱藏**（D-3）：灰掉、不印數值、把條件寫在下面一行。
+ *   直接讓它消失的話，玩家換掉一個部位後看到清單少了四顆而畫面沒有任何解釋。
+ */
+function InnateRow({ line, ctx }: { line: InnateLine; ctx: LoadoutContext }) {
+  const { mod, fallbackId, positions, source, level, cap, slotCount, block, gap } = line
+  const blocked = !!block
+
   return (
-    <div className={`flex items-start border ${HUD_READONLY}`} style={{ gap: 8, padding: '5px 8px' }}>
-      <span className="shrink-0 w-11 text-[12px] text-text-secondary leading-tight">{where}</span>
-      <ModuleIcon mod={mod} size={26} />
-      <span className="flex flex-col min-w-0 grow" style={{ gap: 2 }}>
-        <span className="flex items-baseline" style={{ gap: 5 }}>
-          <span className={`${HUD.body} truncate ${mod ? 'text-text-primary' : 'text-text-dim'}`}>
-            {mod?.name ?? fallbackId ?? '未裝'}
-          </span>
-          {mod && level > 0 && <span className={`${HUD.num} text-[10px] text-text-dim shrink-0`}>Lv{level}</span>}
+    <div
+      className={`flex items-start border ${HUD_READONLY} ${blocked ? 'opacity-60' : ''}`}
+      style={{ gap: 8, padding: '5px 8px' }}
+    >
+      {/* 四個部位全中時是「軀幹、左臂、右臂、腿部」——與接口那一區同寬、同折行方式 */}
+      <span className="shrink-0 w-16 flex flex-col leading-tight">
+        <span className="text-[12px] text-text-secondary">
+          {positions.length > 0 ? positions.map(partLabel).join('、') : '—'}
         </span>
-        {fallbackId && !mod && (
-          <span className="text-[11px] text-accent-red/80">模組資料已不存在</span>
+        {mod && <span className="text-[11px] text-text-dim truncate">{mod.slot}</span>}
+      </span>
+      <ModuleIcon mod={mod} size={26} className={blocked ? 'opacity-45' : ''} />
+      <span className="flex flex-col min-w-0 grow" style={{ gap: 2 }}>
+        <span className="flex items-baseline flex-wrap" style={{ gap: 5 }}>
+          <span className={`${HUD.body} truncate ${mod && !blocked ? 'text-text-primary' : 'text-text-dim'}`}>
+            {mod?.name ?? fallbackId ?? '—'}
+          </span>
+          {blocked ? (
+            <span className="text-[11px] text-text-dim shrink-0">未啟動</span>
+          ) : (
+            level > 0 && (
+              <span className={`${HUD.num} text-[10px] text-text-dim shrink-0`}>
+                Lv{level}{cap > 0 ? ` / ${cap}` : ''}
+              </span>
+            )
+          )}
+          {/* 這一族同時也插在接口上 ⇒ 上面那個 Lv 不全是自帶的，要講 */}
+          {slotCount > 0 && !blocked && (
+            <span className="text-[10px] text-text-dim shrink-0">含接口 {slotCount} 格</span>
+          )}
+          <InnateSourceBadge source={source} className="shrink-0" />
+        </span>
+        {gap && <span className="text-[11px] text-accent-red/80">{gap}</span>}
+        {block && (
+          <span className="text-[11px] text-accent-yellow/90 leading-snug">{blockText(block, ctx)}</span>
         )}
-        {mod && <Effect mod={mod} level={level} />}
+        {mod && !blocked && <Effect mod={mod} level={level} />}
       </span>
     </div>
   )

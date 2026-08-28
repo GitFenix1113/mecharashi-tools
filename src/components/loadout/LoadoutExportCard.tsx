@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, type CSSProperties } from 'react'
 import { toPng } from 'html-to-image'
 import type { NeuralDrive, NeuralDriveAbility } from '../../types'
-import { imageCandidates, pilotFullArtPath, mechKeyArtPath } from '../../utils/assets'
+import { hasMechArt, imageCandidates, pilotFullArtPath, mechKeyArtPath } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
 import { loadoutSheetRows, type SheetRow } from '../../utils/loadoutRows'
 import { ND_RULES, isGammaZone, zonePower } from '../../utils/ndOverrides'
 import { resolveNeuralDriveLevel } from '../../utils/neuralDriveAbilities'
-import type { LoadoutBudget, LoadoutContext } from '../../utils/loadoutRules'
+import { activeStacks, type LoadoutBudget, type LoadoutContext } from '../../utils/loadoutRules'
 import { MECH_PART_ORDER } from '../../utils/chassisStats'
 import { partLabel } from '../../utils/moduleSlots'
 import {
-  interfaceState, moduleStatsAt, sumModuleStats, moduleStacks, moduleFamilyKey,
+  interfaceState, moduleStatsAt, sumModuleStats, moduleFamilyKey,
   type ModuleStats,
 } from '../../utils/moduleRules'
 import { STAT_LABELS } from '../../utils/moduleStats'
@@ -65,6 +65,83 @@ const C = {
 
 const ORB = "'Orbitron', sans-serif"
 const MONO = "'JetBrains Mono', ui-monospace, monospace"
+
+interface HeroLayout {
+  /** hero 區塊高度 */
+  h: number
+  /** 左側橘色斜切色塊 */
+  skew: { left: number; top: number; width: number; height: number }
+  mech: CSSProperties
+  pilot: CSSProperties
+  /** 文字區塊的落點（`right` 固定 24，兩套一致） */
+  text: { left: number; top: number; gap: number }
+}
+
+/**
+ * 主視覺的**兩套版面**（2026-08-29）。由 `hasMechArt()` 選，不是由使用者選。
+ *
+ * ⚠ 兩套的差別不只是機甲那張圖的尺寸，是**整個 hero 的構圖與高度**：
+ *
+ *   - `cutout`（83 台有去背原稿 `art.webp`）：**垂直兩段**、hero 高 600。
+ *     文字帶讓開整條上方，兩張圖貼底並排；機甲鎖高 421 ⇒ 機體實寬約 530px、右側出血。
+ *   - `photo`（5 台只有 `portrait.webp`）：**水平三段**、hero 高 356 —— 也就是 052-D 初版
+ *     的比例（機師 372 ｜ 文字 404 起 ｜ 機甲 350 貼右）。機甲留邊、不出血。
+ *
+ * **為什麼不硬湊成一套**：`portrait.webp` 只有 560×340。`cutout` 那套要 421 高，
+ * 換算過去要放大 1.24 倍 —— 而 `photo` 的 350 寬是**縮小**，同一張圖反而銳利。
+ * 600px 的高帶對一張放不大的圖來說也太空：兩個毛病是同一件事的兩面，
+ * 因為**那套版面的每個數字都是照 1600×864 的原稿算的**。
+ *
+ * ⚠ **不是因為 portrait 沒去背**（2026-08-29 更正，實測全 88 台的 alpha）：`portrait`
+ *   **也是去背圖**（透明像素 10–36%，88/88）。曾有一台不是（星夜女神），當天換圖修掉了。
+ *   分流的理由請只講解析度 —— 拿去背與否當理由，下次補圖的人會不知道該補什麼。
+ *
+ * ⚠ **同一套內的數字互相咬合**（文字帶下緣 ↔ 圖的上緣 ↔ hero 高度），改任一個都要
+ *   把那一套的三處一起重算。**跨套之間沒有關係，不要順手同步** —— 它們本來就該不一樣。
+ *
+ * ⚠ 補上某台的 `art.webp` 之後，那台會**自動換到 `cutout`**（索引由 `generate-art-index.mjs`
+ *   在 build/predev 重掃）。這是預期行為：`photo` 是退路，不是另一種風格選項。
+ */
+const HERO: Record<'cutout' | 'photo', HeroLayout> = {
+  cutout: {
+    h: 600,
+    skew: { left: -120, top: -80, width: 660, height: 800 },
+    // 原稿一律 1600×864（實測 83 張），而**機體只佔畫框約 68% 寬**（其餘是透明留白）
+    // —— 所以「高 421」換算出的機體實寬約 530px（初版水平三段時只有約 340px）。
+    //
+    // ⚠ **鎖高不鎖寬**（`height` ＋ `width:auto`）：會撞到文字帶的是**上緣**，而上緣
+    //   只由高度決定。421 高、`bottom:-8` ⇒ 佔 y 171–592，上緣落在文字帶（到 y≈157）
+    //   下方 14px —— 這 14px 就是全部的餘裕，動高度前先量。
+    //
+    // `right:-86` 是為了讓**機體**（而不是那個含 32% 透明留白的畫框）貼近右邊界；
+    // 不推的話右側會空掉 85px，看起來像機體浮在半空。
+    mech: {
+      right: -86, bottom: -8, height: 421, width: 'auto', maxWidth: 900, opacity: 0.94,
+      filter: 'drop-shadow(0 16px 30px rgba(0,0,0,0.7))',
+    },
+    // ⚠ 跟著機甲一起長（372 → 470）：只放大機甲的話，機師會被比成一個小人。
+    //   `full.webp` 是 1240×1080 的橫式半身特寫 ⇒ 470 寬 ≈ 409 高，
+    //   `bottom:-18` ⇒ 佔 y 209–618（下緣出血），頭頂同樣落在文字帶下方。
+    pilot: { left: -6, bottom: -18, width: 470 },
+    // 文字帶佔上方整條 ⇒ 左右邊界可以放寬；`left:34` 與左邊那道橘色斜切對齊。
+    // `gap:6` 是為了把整塊壓在 y≤160（LOADOUT SHEET 11 ＋ 標題 44 ＋ 分隔 3 ＋ 兩行 37）。
+    text: { left: 34, top: 26, gap: 6 },
+  },
+  photo: {
+    h: 356,
+    skew: { left: -120, top: -60, width: 620, height: 500 },
+    // 350 寬：比原圖的 560 小 ⇒ 是**縮小**，銳利。硬撐到 cutout 那套的尺寸只會糊。
+    // `bottom:58` 讓它與底部那條橘線之間留一段呼吸，而不是坐在線上。
+    mech: {
+      right: 22, bottom: 58, width: 350, opacity: 0.94,
+      filter: 'drop-shadow(0 16px 30px rgba(0,0,0,0.7))',
+    },
+    pilot: { left: 18, bottom: -12, width: 372 },
+    // 文字在中欄：`left:404` 讓開機師（18 ＋ 372 ＝ 390），可用寬度只剩 572 ——
+    // 長方案名會換行，`nameSize()` 已按字數降級，這裡不再另外處理。
+    text: { left: 404, top: 66, gap: 8 },
+  },
+}
 
 export interface LoadoutExportCardProps {
   ctx: LoadoutContext
@@ -129,6 +206,12 @@ export function LoadoutExportCard({
   //   約 101KB，不再是快取命中。`toPng` 前已有等待幀的機制（`nextFrames`）。
   //   缺原稿的 5 台由候選鏈自動退回 `portrait`。
   const art = imageCandidates(pilotFullArtPath(pilot))
+  // ⚠ **有沒有去背原稿決定整個 hero 的版面，不是只決定機甲那張圖的尺寸**（2026-08-29）。
+  //   `art.webp` 是 1600×864 ⇒ 放得大、可以出血 ⇒ 走 `cutout`（垂直兩段、高 600）；
+  //   `portrait.webp` 只有 560×340 ⇒ 走 `photo`（水平三段、高 356，052-D 的初版比例）。
+  //   兩套的差異與理由寫在 `HERO` 上。
+  const mechIsCutout = hasMechArt(mech)
+  const L = HERO[mechIsCutout ? 'cutout' : 'photo']
   const mechArt = imageCandidates(mechKeyArtPath(mech), mech?.portrait)
 
   const named = !!name
@@ -147,34 +230,33 @@ export function LoadoutExportCard({
     }}>
       {/* ── Key visual：立繪 ＋ 機甲 ＋ 方案名稱 ── */}
       <div style={{
-        // 高度維持 356：機師改回半身特寫（372×324）後，加高只會在人物頭頂多一片空白。
-        position: 'relative', height: 356, flexShrink: 0, overflow: 'hidden',
+        // ── 兩套版面，由 `L` 決定（見 `HERO`）─────────────────────────────────
+        //
+        // `cutout`：**垂直兩段**（文字帶佔上方全寬，兩張圖貼底並排）。
+        //   2026-08-29 使用者回饋「機甲 art 圖很帥，但佔版面太少」而來 —— 舊的水平三段
+        //   把機甲鎖死在 548 寬以內（機體左緣 ＝ 1000 − 0.84×寬，要 ≥ 540 才不壓到標題），
+        //   只比初版大 10%，達不到「佔版面」。⇒ 文字必須整條讓開，機體才長得到 530px。
+        //
+        // `photo`：**水平三段**，也就是初版（052-D）的比例。留給沒有原稿的 5 台。
+        position: 'relative', height: L.h, flexShrink: 0, overflow: 'hidden',
         background: 'linear-gradient(118deg, #14161d 0%, #1b1207 42%, #0a0c10 100%)',
       }}>
         <div style={{
-          position: 'absolute', left: -120, top: -60, width: 620, height: 500,
+          position: 'absolute', ...L.skew,
           transform: 'skewX(-14deg)',
           background: 'linear-gradient(160deg, rgba(255,107,43,0.30), rgba(255,107,43,0.02) 68%)',
         }} />
 
-        {/* ⚠ 機甲先畫、機師後畫：兩張在底部有重疊帶，機師必須壓在機甲之上
-            —— 他是這張圖的主角，而機甲橫幅是背景襯底。 */}
+        {/* ⚠ 機甲先畫、機師後畫：`cutout` 時兩張在底部有重疊帶，機師必須壓在機甲之上
+            —— 他是這張圖的主角，而機甲橫幅是背景襯底。（`photo` 時兩張不重疊，
+            但順序照舊 —— 兩套共用同一段 JSX，只換 `L`。） */}
         {mechArt.length > 0 && (
           <FallbackImage
             candidates={mechArt}
             alt=""
             fallback={null}
-            // 500 寬（原本 portrait 是 350）。⚠ 這**不是**把圖放大 43% —— 原稿的機體只佔
-            // 畫框 68% 寬（實測 83 張的中位；portrait 是 100% 滿版），500×0.68 ≈ 340px，
-            // 剛好與原本 350px 的滿版裁切相當。照原尺寸 350 換上去，機體反而會縮水成 238px。
-            // 再往上到 560 時，機體會頂到左邊「機甲 / 裝甲 / 形態」那一行（實測）。
-            //
-            // 貼齊右下不留邊：橫式動作圖靠邊出血才像封面；置中會把那 32% 的透明留白
-            // 一起擺進版面，看起來像機體浮在半空。
-            style={{
-              position: 'absolute', right: 0, bottom: 0, width: 500, opacity: 0.92,
-              filter: 'drop-shadow(0 16px 30px rgba(0,0,0,0.7))',
-            }}
+            // 尺寸與落點見 `HERO`（兩套版面各有一組，理由寫在那裡）。
+            style={{ position: 'absolute', ...L.mech }}
           />
         )}
         {art.length > 0 && (
@@ -182,8 +264,10 @@ export function LoadoutExportCard({
             candidates={art}
             alt=""
             fallback={null}
+            // 尺寸與落點見 `HERO`：`cutout` 跟著機甲一起長到 470，`photo` 維持初版的 372。
+            // ⚠ 兩張圖的大小是**綁在一起**的 —— 只放大機甲的話，這位會被比成一個小人。
             style={{
-              position: 'absolute', left: 18, bottom: -12, width: 372,
+              position: 'absolute', ...L.pilot,
               filter: 'drop-shadow(0 18px 34px rgba(0,0,0,0.7))',
             }}
           />
@@ -196,8 +280,11 @@ export function LoadoutExportCard({
         </div>
 
         <div style={{
-          position: 'absolute', left: 404, top: 66, right: 24,
-          display: 'flex', flexDirection: 'column', gap: 8,
+          // ⚠ 這一塊在兩套版面裡**站的位置不同**（見 `HERO`）：
+          //   `cutout` 佔上方整條（兩張圖都貼底，上緣在 y≈171 之後），
+          //   `photo` 是中欄（`left:404`，讓開左邊的機師立繪）。
+          position: 'absolute', left: L.text.left, top: L.text.top, right: 24,
+          display: 'flex', flexDirection: 'column', gap: L.text.gap,
         }}>
           <div style={{ fontFamily: ORB, fontSize: 11, letterSpacing: 2, color: C.orange }}>LOADOUT SHEET</div>
           {/*
@@ -226,7 +313,13 @@ export function LoadoutExportCard({
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: C.sub, flexWrap: 'wrap' }}>
-            <span style={{ color: C.text, fontWeight: 700 }}>{mech?.name ?? '未選機甲'}</span>
+            {/* ⚠ 印**軀幹那台**（`identityMech`），與畫面的抬頭、立繪同一個判準。
+                兩邊各自決定「這是哪一台」的話，轉發到第三手的人手上只有這張圖，
+                而圖與站上的畫面會對不起來 —— 混搭本來就是最需要說清楚的那一種配裝。 */}
+            <span style={{ color: C.text, fontWeight: 700 }}>{ctx.identityMech?.name ?? mech?.name ?? '未選機甲'}</span>
+            {ctx.identityMech && mech && ctx.identityMech.id !== mech.id && (
+              <span style={{ color: C.sub }}>（基底 {mech.name}）</span>
+            )}
             {mech?.armorType && <><span style={{ color: C.lineStrong }}>/</span><span>{mech.armorType}</span></>}
             {ctx.form?.name && <><span style={{ color: C.lineStrong }}>/</span><span style={{ color: C.yellow }}>{ctx.form.name}</span></>}
           </div>
@@ -439,7 +532,9 @@ function ModuleBand({ ctx }: { ctx: LoadoutContext }) {
   // ⚠ **同族只算一次**（PLAN-052-G C-7）：同一顆模組裝兩格是升它的等級、不是兩份效果。
   //   逐格加總會讓四顆刀劍模組Ⅱ 在圖上印出四倍加成 —— 而圖是印刷品，
   //   看的人沒辦法點開來對帳，錯在圖上比錯在畫面上更難收回。
-  const stacks = moduleStacks(ctx.modules, (id) => ctx.world.modules.get(id))
+  //   ⚠ 走 `ctx.stacks`（含天生貢獻，PLAN-052-K D-1），不要在這裡自己算一次：
+  //     圖上的 Lv 與畫面上的 Lv 對不起來是這張圖最難查的一種錯。
+  const stacks = ctx.stacks
   const seen = new Set<string>()
 
   const lines = MECH_PART_ORDER.map((pos) => {
@@ -460,7 +555,7 @@ function ModuleBand({ ctx }: { ctx: LoadoutContext }) {
       stats: mod && primary && stack ? moduleStatsAt(stack.mod, stack.level) : {},
       dup: !!mod && !primary,
       /**
-       * 這一格的部件來源（PLAN-052-G Phase D）。原廠回 null ⇒ 整段不印。
+       * 這一格的部件來源（PLAN-052-G Phase D）。選定機甲回 null ⇒ 整段不印。
        *
        * ⚠ **圖上非印不可**：混搭之後圖上的重量／火力是拼出來的，
        *   而轉發到第三手的人手上只有這張圖 —— 不標來源，那張圖就變成一組
@@ -477,7 +572,9 @@ function ModuleBand({ ctx }: { ctx: LoadoutContext }) {
 
   const equipped = lines.filter((l) => l.name).length
   const swapped = lines.filter((l) => l.from).length
-  const total = sumModuleStats([...stacks.values()].map((st) => moduleStatsAt(st.mod, st.level)))
+  // ⚠ 合計含**天生模組**（PLAN-052-K D-1：兩者共用同一個等級池），並排除未解鎖的那幾族。
+  //   改寫前這張圖的合計只算四個接口 —— 與右欄的彙總（一直都含天生）差一大截。
+  const total = sumModuleStats(activeStacks(ctx).map((st) => moduleStatsAt(st.mod, st.level)))
   const totalText = statText(total)
   const wasted = [...stacks.values()].filter((st) => st.overflow > 0)
 
@@ -498,7 +595,7 @@ function ModuleBand({ ctx }: { ctx: LoadoutContext }) {
             <span style={{
               fontFamily: MONO, fontSize: 10, color: C.dim, width: 58, flexShrink: 0, whiteSpace: 'nowrap',
             }}>{l.iface}</span>
-            {/* 混搭來源。原廠不印 —— 88 台原廠圖上多四行「本機甲」是四行雜訊 */}
+            {/* 混搭來源。選定機甲不印 —— 沒混搭的圖上多四行「本機甲」是四行雜訊 */}
             {l.from && (
               <span style={{ fontSize: 11, color: C.orange, flexShrink: 0, whiteSpace: 'nowrap' }}>◆{l.from}</span>
             )}
@@ -736,7 +833,10 @@ export function LoadoutExportRunner({ onDone, ...card }: RunnerProps) {
         //   不帶的話三張是同一個檔名，瀏覽器只會加 (1)(2) —— 而那個編號與形態無關，
         //   存到桌面之後就分不出哪張是哪一套了。這與「圖上要標形態名」是同一個理由，
         //   只是換成檔案總管那一層。沒有形態的機師不加後綴（88 位機師照舊）。
-        const base = (card.name ?? card.ctx.mech?.name ?? 'loadout').replace(BAD_FILENAME, '_')
+        // 沒有方案名時退回機甲名 —— 取**圖上印的那台**（`identityMech`），
+        // 否則檔名會與圖裡的抬頭不同名
+        const base = (card.name ?? card.ctx.identityMech?.name ?? card.ctx.mech?.name ?? 'loadout')
+          .replace(BAD_FILENAME, '_')
         const suffix = card.ctx.form?.name ? `_${card.ctx.form.name.replace(BAD_FILENAME, '_')}` : ''
         const a = document.createElement('a')
         a.download = `配裝_${base}${suffix}.png`
@@ -752,7 +852,7 @@ export function LoadoutExportRunner({ onDone, ...card }: RunnerProps) {
     }
     void run()
     return () => { alive = false }
-  }, [loading, onDone, card.name, card.ctx.mech?.name, card.ctx.form?.name])
+  }, [loading, onDone, card.name, card.ctx.identityMech?.name, card.ctx.mech?.name, card.ctx.form?.name])
 
   return (
     <div

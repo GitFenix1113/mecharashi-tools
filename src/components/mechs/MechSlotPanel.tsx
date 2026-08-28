@@ -134,8 +134,8 @@ function FixedArmamentName({ mount }: { mount: ArmamentMount }) {
  * 「來源」欄自 PLAN-052-G Phase D 起**開始出真值** —— 四個部位可以來自四台不同的機甲，
  * 而這張表是唯一能一眼答出「這一套是怎麼拼出來的」的地方。
  *
- * ⚠ **混搭時一定要傳 `chassis`。** 機甲詳情頁看的是原廠那一台，自己解就好；
- *   但模擬器手上的是**混搭後**的機體，這支自己 `resolveChassis(mech)` 會解出原廠
+ * ⚠ **混搭時一定要傳 `chassis`。** 機甲詳情頁看的是選定的那一台，自己解就好；
+ *   但模擬器手上的是**混搭後**的機體，這支自己 `resolveChassis(mech)` 會解出選定機甲那台
  *   —— 表格於是印著四行「本機甲」而總重卻是混搭後的數字，兩者當場打臉。
  *   兩邊各解一次是同一份真相的兩個來源，而它們一定會漂移。
  * @param nameOf 由 doc id 取機甲名（模擬器傳 `world.mechs`；不傳時退回印 id）
@@ -171,7 +171,7 @@ export function MechPartsTable(
               return (
                 <tr key={pos} className="border-t border-border/70">
                   <td className="py-1.5 pr-2 text-text-primary font-medium">{PART_LABELS[pos] ?? pos}</td>
-                  {/* 非原廠的那一列標成橘色 —— 這張表的用途就是一眼看出「哪幾格不是原廠的」 */}
+                  {/* 非選定機甲的那一列標成橘色 —— 這張表的用途就是一眼看出「哪幾格不是選定機甲的」 */}
                   <td className={`py-1.5 px-2 truncate max-w-[140px] ${
                     sourceMechId === mech.id ? 'text-text-dim' : 'text-accent-orange'
                   }`}>

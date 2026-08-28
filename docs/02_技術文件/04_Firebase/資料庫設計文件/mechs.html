@@ -66,7 +66,9 @@
       <tr><td>&nbsp;├ move</td><td>number?</td><td>移動力（僅腿部）</td></tr>
       <tr><td>&nbsp;├ output</td><td>number?</td><td>出力（僅軀幹）</td></tr>
       <tr><td>&nbsp;├ antiRiot</td><td>number?</td><td>抗暴（僅軀幹）</td></tr>
-      <tr><td>&nbsp;└ icon</td><td>string?</td><td>部件圖示路徑</td></tr>
+      <tr><td>&nbsp;├ icon</td><td>string?</td><td>部件圖示路徑</td></tr>
+      <tr><td>&nbsp;├ fixedArmament</td><td>ArmamentMount[]?</td><td>焊死在這個部件上的固定武裝 <code>{ weaponId, slot, side? }</code>（PLAN-052-A）。左臂帶左肩、右臂帶右肩</td></tr>
+      <tr><td>&nbsp;└ innateModules</td><td>InnateModuleEntry[]?</td><td><strong>PLAN-052-K 新增。</strong>這個部位天生帶哪幾顆模組、各貢獻幾級：<code>{ moduleId, level }[]</code>。<code>undefined</code> ＝ 照規則推導（今天全庫 0 台有值）；填了就<strong>整格取代</strong>。<code>[]</code>（沒有天生模組）與 <code>undefined</code>（照規則算）<strong>語意不同</strong></td></tr>
     </table>
   </div>
 </section>
@@ -76,8 +78,13 @@
   <div class="section-title">關聯說明</div>
   <div class="info-block">
     <strong>🔗 模組引用</strong>
-    mechs document 透過 <code>module4Id</code>、<code>module8Id</code>、<code>moduleFixedIds[]</code> 引用 modules collection 中的副模組文件（slot = BUILT_IN 的模組）。
-    查詢特定機甲的副模組時，可使用 modules collection 的複合索引 <code>boundMechId + boundPart</code> 反向查詢。
+    mechs document 透過 <code>module4Id</code>、<code>module8Id</code>、<code>moduleFixedIds[]</code> 引用 modules collection 中的模組文件
+    （<code>moduleFixedIds</code> 含<strong>機甲副模組</strong>與<strong>機甲專屬模組</strong>兩類，靠 <code>module.slot</code> 分流，<strong>不要看 id 前綴</strong>）。
+    查詢特定機甲的副模組時，可使用 modules collection 的複合索引 <code>boundMechId + boundPart</code> 反向查詢。<br><br>
+    <strong>⚠ 這三個欄位只有 id，沒有部位、也沒有等級。</strong>遊戲裡一顆天生模組的等級是四個部位各自貢獻的加總，
+    而那張矩陣（90 台 × 4 部位 ≈ 1500 格）<strong>刻意不落盤</strong>、由 <code>src/utils/innateModules.ts</code> 的規則算出，
+    例外才落在 <code>parts.{position}.innateModules</code>（PLAN-052-K）。
+    對帳腳本：<code>node scripts/check-part-module-drift.mjs</code>。
   </div>
 </section>
 

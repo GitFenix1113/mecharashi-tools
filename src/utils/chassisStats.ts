@@ -13,8 +13,12 @@
 //
 // 純函式、無 React / Firestore 依賴，可單測（npm test）。
 
-import type { MechPart } from '../types'
+import type { MechPart, Module } from '../types'
 import { ArmorType, MechPartPosition } from '../types/enums.ts'
+import {
+  resolveInnateModules, slotMultipliers,
+  type InnateMechInput, type InnateResolution,
+} from './innateModules.ts'
 
 /** 四部位的正規順序。UI 逐格渲染與本檔的加總一律用它，避免各處自己寫陣列而漏掉部位。 */
 export const MECH_PART_ORDER = [
@@ -126,14 +130,53 @@ export interface ResolvedChassis {
    * 故 0 不會與真實等級混淆；呼叫端該把它當「不知道」而不是「零級」。
    */
   moduleLevelOf(moduleId: string): number
+  /**
+   * 四個部位各自**天生帶了哪幾顆模組、各貢獻幾級**（PLAN-052-K D-2）。
+   *
+   * ⚠ **逐格取自那一格的來源機甲**，不是基底機甲 —— 這正是本計畫要修的那個 bug：
+   *   052-G Phase D 之後右臂可以來自別台，而「自帶」那一列以前讀的是
+   *   `mech` 頂層三個欄位，換了部位一顆都不動。驗收基準（滿階帕斯卡換右臂）：
+   *   〈彙編矩陣〉整顆消失、〈蓄能模組〉8→6、〈出力模組〉4→3。
+   *
+   * ⚠ 這裡的 `level` 是**該部位單獨的貢獻、未封頂**。要拿「這顆模組實際幾級」
+   *   一律走 `moduleStacks()`（天生 ＋ 插槽同一個等級池），不要自己把四格加起來。
+   *
+   * ⚠ **未解鎖的也在裡面**（復仇女神四顆〈模型-XX〉）。過濾是 UI 的事，
+   *   而且要顯示成停用態並講出原因，不是讓它消失 —— 見 `unlockBlocker()`。
+   *
+   * `moduleMap` 沒傳時專屬／副模組那兩類查不到 slot ⇒ 只算得出特性位與 8 級模組。
+   */
+  innateByPart: Record<typeof MECH_PART_ORDER[number], InnateResolution>
+  /**
+   * 天生模組帶來的**插槽貢獻倍率**（部位 → ×N）。今天只有破曉者-02 的兩顆
+   * 〈匯流樞紐〉（軀幹一顆、腿部一顆）。⚠ 翻的是插槽那一段，**不含天生貢獻**。
+   * 直接餵給 `moduleStacks({ positionMultiplier })`。
+   */
+  positionMultiplier: Partial<Record<typeof MECH_PART_ORDER[number], number>>
+}
+
+/**
+ * 一個部位的來源。混搭時是「換進來的那一台」，未混搭時就是基底機甲本身。
+ *
+ * ⚠ 自 052-K D-2 起**不只要 `parts`**：天生模組是 `quality` ＋ 三個頂層欄位的函數，
+ *   所以來源機甲要整台傳進來。只傳 `{ id, parts }` 的症狀是「換了部位、重量火力都變了，
+ *   但自帶那一列還是選定機甲那台的」—— 也就是這個計畫要修的 bug 只修好一半。
+ */
+export interface ChassisMechInput extends Omit<InnateMechInput, 'parts'> {
+  id: string
+  armorType?: string
+  parts?: MechPartsInput
 }
 
 /** resolveChassis 的選項。 */
 export interface ResolveChassisOptions {
   /** 混搭：指定某個部位改用另一台機甲的同名部位（052-G 的 UI 才會用到） */
-  partOverrides?: Partial<Record<typeof MECH_PART_ORDER[number], { id: string; parts?: MechPartsInput }>>
-  /** 模組 id → 模組資料。只為了 `moduleLevelOf()`；不傳的話該方法恆回 0 */
-  moduleMap?: ReadonlyMap<string, { levels?: { level: number }[] }>
+  partOverrides?: Partial<Record<typeof MECH_PART_ORDER[number], ChassisMechInput>>
+  /**
+   * 模組 id → 模組資料。`moduleLevelOf()` 與**天生模組推導**都要它；
+   * 不傳的話前者恆回 0、後者只算得出特性位與 8 級模組（其餘兩類要靠 `slot` 分流）。
+   */
+  moduleMap?: ReadonlyMap<string, Module>
 }
 
 /**
@@ -155,17 +198,34 @@ export interface ResolveChassisOptions {
  *   看到它沒有測試以外的實例而想刪掉的人，請先看 `docs` 的資料佔位慣例。
  */
 export function resolveChassis(
-  mech: { id: string; armorType: string; parts?: MechPartsInput } | null | undefined,
+  mech: (ChassisMechInput & { armorType: string }) | null | undefined,
   opts: ResolveChassisOptions = {},
 ): ResolvedChassis | null {
   if (!mech) return null
   const resolved = {} as Record<typeof MECH_PART_ORDER[number], ResolvedPart>
+  const innateByPart = {} as Record<typeof MECH_PART_ORDER[number], InnateResolution>
+  const lookup = (id: string) => opts.moduleMap?.get(id)
   for (const pos of MECH_PART_ORDER) {
     const override = opts.partOverrides?.[pos]
     const source = override ?? mech
     const part = partOf(override ? override.parts : mech.parts, pos)
     if (!part) return null
     resolved[pos] = { sourceMechId: source.id, part }
+    // 只餵這一格的 part：`resolveInnateModules()` 只讀 `parts[pos].innateModules`，
+    // 而**混搭時人工覆寫住在換進來的那一格上**（後台填在來源機甲的那個部位）。
+    // 直接傳 `source.parts` 也可以，但那條路要先過 legacy 的「四個耐久數字」格式，
+    // 而 `partOf()` 已經把它正規化掉了。
+    innateByPart[pos] = resolveInnateModules(
+      {
+        quality: source.quality,
+        module4Id: source.module4Id,
+        module8Id: source.module8Id,
+        moduleFixedIds: source.moduleFixedIds,
+        parts: { [pos]: part },
+      },
+      pos,
+      lookup,
+    )
   }
 
   const partsView = {
@@ -187,6 +247,8 @@ export function resolveChassis(
     // D-1 會把 Mech.armorType 本身收成 enum，屆時這個 cast 可刪
     armorType: mech.armorType as ArmorType,
     moduleSlots,
+    innateByPart,
+    positionMultiplier: slotMultipliers(innateByPart, lookup),
     moduleLevelOf(moduleId: string): number {
       const levels = opts.moduleMap?.get(moduleId)?.levels ?? []
       return levels.reduce((max, l) => (l.level > max ? l.level : max), 0)

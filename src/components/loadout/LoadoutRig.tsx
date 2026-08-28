@@ -3,6 +3,7 @@ import type { Component } from '../../types'
 import type { ModuleSlotRef, SlotKey, WeaponSlotRef } from '../../types/slots'
 import { slotKey } from '../../types/slots'
 import { MechPartPosition, WeaponEquipSlot } from '../../types/enums'
+import { MECH_PART_ORDER } from '../../utils/chassisStats'
 import { slotLabel } from '../../utils/mechSlots'
 import { imageCandidates } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
@@ -87,6 +88,11 @@ interface Props {
   onOpenModule?: (ref: ModuleSlotRef) => void
   /** 模組面板正對著的那個部位，畫成選中狀態 */
   activeModule?: MechPartPosition | null
+  /**
+   * 四個部位一次全部換成同一台（使用者要求 2026-08-29）。
+   * 未傳＝不畫那一列（匯出圖等唯讀情境）。
+   */
+  onApplyChassis?: (sourceMechId: string) => void
 }
 
 /**
@@ -238,7 +244,7 @@ const ROOMY_CELL_MIN_WIDTH = SLOT_MAX_WIDTH * 2 + MECH_MIN_WIDTH + 26 + 48
 
 export function LoadoutRig({
   ctx, activeSlot, preview, flash, available, compact, onOpenSlot, onClearSlot, onOpenComponents,
-  onUpgrade, onOpenModule, activeModule,
+  onUpgrade, onOpenModule, activeModule, onApplyChassis,
 }: Props) {
   const flashSet = useMemo(() => new Set(flash), [flash])
   const [tight, setTight] = useState(false)
@@ -567,17 +573,66 @@ export function LoadoutRig({
              才有用。槽位圖回答的是「哪一格裝了什麼」，不兼任重量規則的說明欄。 */}
 
       {/* 部位卡歸位後唯一剩下的整區級說明（見 `PART_MIX_NOTE`）。
-          ⚠ 沒有機甲時不出聲：那時整張圖是空的，一句關於「部件混搭」的預告
+          ⚠ 沒有機甲時不出聲：那時整張圖是空的，一句關於「部件混搭」的說明
             會是畫面上唯一的一行字。 */}
       {hasParts && (
-        <p className="text-[11px] text-text-dim leading-tight text-right">{PART_MIX_NOTE}</p>
+        <div className="flex items-center justify-end flex-wrap" style={{ gap: 8 }}>
+          <ApplyChassisAction ctx={ctx} onApply={onApplyChassis} />
+          <p className="text-[11px] text-text-dim leading-tight text-right">{PART_MIX_NOTE}</p>
+        </div>
       )}
     </div>
   )
 }
 
 /**
+ * 「其餘部位也套用軀幹那台」（使用者要求 2026-08-29）。
+ *
+ * 換完軀幹之後想讓其餘三格跟著走是最常見的下一步，而逐格點要開四次面板、
+ * 在四份 36 台的清單裡各找一次同一台。
+ *
+ * ⚠ **只在真的混搭時才出現**：沒得按的按鈕會讓人以為自己漏了什麼設定。
+ * ⚠ 目標一律是**軀幹那台**（＝`identityMech`，也就是抬頭與立繪印的那台）——
+ *   「跟畫面上那台一致」是這顆按鈕唯一講得清楚的語意。軀幹本來就是選定機甲時，
+ *   它自然變成「整台還原為選定機甲」，同一顆按鈕、不必另外做一顆。
+ *
+ * ⚠ 用詞是**「選定機甲」**而不是「原廠」（使用者要求 2026-08-29）：
+ *   「原廠」聽起來像在講這台機甲出廠時的樣子，而它實際指的是**上面那格選的那台**。
+ */
+function ApplyChassisAction({ ctx, onApply }: {
+  ctx: LoadoutContext
+  onApply?: (sourceMechId: string) => void
+}) {
+  const target = ctx.identityMech
+  const chassis = ctx.chassis
+  if (!onApply || !target || !chassis) return null
+  // 有任何一格不是軀幹那台 ⇒ 這顆按鈕有事可做
+  const mixed = MECH_PART_ORDER.some((pos) => chassis.parts[pos].sourceMechId !== target.id)
+  if (!mixed) return null
+
+  const isBase = target.id === ctx.mech?.id
+  return (
+    <button
+      type="button"
+      onClick={() => onApply(target.id)}
+      className={`hud-cut-sm shrink-0 px-2 py-1 text-[11px] leading-tight border border-accent-orange/40
+        text-accent-orange hover:bg-accent-orange/10 transition-colors`}
+      title={isBase
+        ? `四個部位全部還原成選定機甲 ${target.name} 的`
+        : `四個部位全部換成 ${target.name} 的（目前只有軀幹來自它）`}
+    >
+      {isBase ? '其餘部位還原為選定機甲' : `其餘部位也套用 ${target.name}`}
+    </button>
+  )
+}
+
+/**
  * 中央機甲主視覺。
+ *
+ * ⚠ **畫的是 `ctx.identityMech`（軀幹的來源），不是基底機甲**（使用者要求 2026-08-29）：
+ *   把帕斯卡的軀幹裝到彌造者上、立繪卻還是彌造者的話，這張圖與正上方那顆
+ *   <b>◆帕斯卡</b> 當場打臉，而圖是這一區最先被看到的東西。
+ *   未混搭時 `identityMech === mech`，行為與改寫前完全相同。
  *
  * ⚠ 用 `portrait.webp`（完整機體 3/4 特寫），**不拼四部位圖**（計畫書決策三）：
  *   `torso / leftArm / rightArm / legs` 是各自獨立的 3/4 渲染，視角、光源、比例都不一致，
@@ -615,10 +670,12 @@ const MechVisual = ({
           aria-hidden
           className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,107,43,0.18),transparent_68%)]"
         />
-        {ctx.mech && (
+        {(ctx.identityMech ?? ctx.mech) && (
           <FallbackImage
-            candidates={imageCandidates(ctx.mech.portrait)}
-            alt={ctx.mech.name}
+            // 立繪換人時要重新掛載，否則 FallbackImage 會沿用上一台已解析好的候選
+            key={(ctx.identityMech ?? ctx.mech)!.id}
+            candidates={imageCandidates((ctx.identityMech ?? ctx.mech)!.portrait)}
+            alt={(ctx.identityMech ?? ctx.mech)!.name}
             loading="lazy"
             className="relative max-w-full max-h-full object-contain drop-shadow-[0_10px_22px_rgba(0,0,0,0.6)]"
             fallback={<span className="relative text-[10px] text-text-dim">尚無立繪</span>}

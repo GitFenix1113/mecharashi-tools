@@ -1480,3 +1480,39 @@ test('052-G：載入 gate —— 世界裡沒有模組時，規則層不誤報�
   // 所以這裡照樣回 null 而不是編一個查不到名字的拒絕出來。
   assert.equal(canEquipModule(ctx, 通用A, TORSO), null)
 })
+
+// ─── identityMech：顯示身份跟著軀幹走（使用者要求 2026-08-29）──────────────────
+
+test('identityMech：未混搭時就是基底機甲本身', () => {
+  const ctx = buildContext(
+    { pilotId: 海莉絲.id, mechId: 彌造者.id, sets: { default: { mounts: [] } } },
+    'default', WORLD,
+  )
+  assert.equal(ctx.identityMech?.id, 彌造者.id)
+})
+
+test('identityMech：換掉軀幹 ⇒ 顯示身份跟著軀幹那台走', () => {
+  const ctx = buildContext(
+    { pilotId: 海莉絲.id, mechId: 彌造者.id, sets: { default: { mounts: [] } }, parts: { torso: 輕量中甲.id } },
+    'default', WORLD,
+  )
+  assert.equal(ctx.identityMech?.id, 輕量中甲.id, '抬頭與中央立繪都讀這一支')
+  assert.equal(ctx.mech?.id, 彌造者.id, '⚠ 基底不受影響 —— 執照、形態、分享碼一律走 mech')
+})
+
+test('identityMech ⚠ 換掉的不是軀幹時，顯示身份不動', () => {
+  const ctx = buildContext(
+    { pilotId: 海莉絲.id, mechId: 彌造者.id, sets: { default: { mounts: [] } }, parts: { legs: 輕量中甲.id } },
+    'default', WORLD,
+  )
+  assert.equal(ctx.identityMech?.id, 彌造者.id, '腿部換人不會讓整台改名')
+})
+
+test('identityMech：軀幹來源查無資料時退回基底，不留 null', () => {
+  const ctx = buildContext(
+    { pilotId: 海莉絲.id, mechId: 彌造者.id, sets: { default: { mounts: [] } }, parts: { torso: '不存在的機甲' } },
+    'default', WORLD,
+  )
+  // reconcile 會清掉這種髒資料，但 buildContext 本身也不能讓抬頭與立繪整塊消失
+  assert.equal(ctx.identityMech?.id, 彌造者.id)
+})

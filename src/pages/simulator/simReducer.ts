@@ -73,13 +73,23 @@ export type LoadoutAction =
   /**
    * 部件混搭（PLAN-052-G D-1）：把某個部位換成 `sourceMechId` 的同位部件。
    *
-   * ⚠ **與原廠相同時走 `resetPart` 而不是寫入自己的 mechId** —— 這個 reducer 會替你
+   * ⚠ **與選定機甲相同時走 `resetPart` 而不是寫入自己的 mechId** —— 這個 reducer 會替你
    *   收掉，但呼叫端也不該假裝它們是兩件不同的事。理由是分享碼：`§PARTS` 是變長段，
    *   寫入自己的 id 會讓**每一份**分享碼都多帶四個永遠不變的號碼。
    */
   | { type: 'swapPart'; position: MechPartPosition; sourceMechId: string }
-  /** 把某個部位還原成原廠（刪掉那個鍵）。 */
+  /** 把某個部位還原為**選定機甲**的同位部件（刪掉那個鍵）。 */
   | { type: 'resetPart'; position: MechPartPosition }
+  /**
+   * **四個部位一次全部換成同一台**（使用者要求 2026-08-29）。
+   *
+   * 換完軀幹之後想「其餘三格也跟著走」是最常見的下一步，而逐格點四次要開四個面板。
+   * 傳基底機甲 ＝ 整台還原為選定機甲（與 `swapPart` 同一條收斂）。
+   *
+   * ⚠ **任一格不合法就整批不做**：半套的結果比什麼都沒發生更難解釋
+   *   （畫面會變成「我按了套用，但只換了兩格，而且沒有人告訴我為什麼」）。
+   */
+  | { type: 'applyChassisOf'; sourceMechId: string }
   /**
    * 一鍵裝滿（使用者要求 2026-08-27）：把這顆模組裝到**這一族滿級**為止。
    *
@@ -233,7 +243,7 @@ function withPart(draft: LoadoutDraft, position: MechPartPosition, sourceMechId:
   return { ...draft, parts: { ...draft.parts, [position]: sourceMechId } }
 }
 
-/** 把某個部位還原成原廠。清完整份都空了就把 `parts` 欄位本身拿掉（理由同 `withModules`）。 */
+/** 把某個部位還原成選定機甲。清完整份都空了就把 `parts` 欄位本身拿掉（理由同 `withModules`）。 */
 function withoutPart(draft: LoadoutDraft, position: MechPartPosition): LoadoutDraft {
   if (!draft.parts?.[position]) return draft
   const parts = { ...draft.parts }
@@ -490,8 +500,8 @@ function reconcileSetups(
 /**
  * 部件混搭的級聯（PLAN-052-G D-1）。
  *
- * `draft.parts` 是**部位 → 來源機甲 id**，而且**只記與原廠不同的那幾格**
- * （與原廠相同時刪鍵而不是寫入自己的 mechId —— 後者會讓每一份分享碼都多帶四個
+ * `draft.parts` 是**部位 → 來源機甲 id**，而且**只記與選定機甲不同的那幾格**
+ * （與選定機甲相同時刪鍵而不是寫入自己的 mechId —— 後者會讓每一份分享碼都多帶四個
  * 永遠不變的號碼，而 `§PARTS` 是變長段）。
  *
  * ⚠ **換基底機甲必須清掉不合法的部件。** `loadout.ts` 的欄位註解逐字預告過這條：
@@ -539,7 +549,7 @@ function reconcileParts(
     const srcId = cur[pos]
     if (!srcId) continue
 
-    // 與原廠相同 ⇒ **不是移除**，是把鍵收掉（語意完全相同，只是不佔分享碼的位元）
+    // 與選定機甲相同 ⇒ **不是移除**，是把鍵收掉（語意完全相同，只是不佔分享碼的位元）
     if (srcId === base.id) continue
 
     const src = world.mechs.get(srcId)
@@ -933,7 +943,7 @@ export function simReduce(state: SimState, action: LoadoutAction, world: Loadout
       // 規則層是唯一判準 —— UI 已經只列合法來源，但分享碼與書架不經過 UI
       if (canSwapPart(ctx, src, position)) return state
 
-      // 「換回原廠」與「換成別台」在資料上是兩種寫法，但對玩家是同一個動作：
+      // 「換回選定機甲」與「換成別台」在資料上是兩種寫法，但對玩家是同一個動作：
       // 挑選器裡基底機甲就排在第一個。收在這裡，呼叫端不必自己判斷該派哪一個 action。
       const base = src.id === state.draft.mechId
         ? withoutPart(state.draft, position)
@@ -945,8 +955,30 @@ export function simReduce(state: SimState, action: LoadoutAction, world: Loadout
       //   與 equipWeapon 同一條理由；模組那邊不報是因為模組不佔重量。
       return commit(
         state, state.draft, draft, removed,
-        src.id === state.draft.mechId ? `${label}已還原為原廠` : `${label}已換成 ${src.name} 的`,
+        src.id === state.draft.mechId ? `${label}已還原為選定機甲` : `${label}已換成 ${src.name} 的`,
         outputNote(state, draft, world), [label], true,
+      )
+    }
+
+    case 'applyChassisOf': {
+      const src = world.mechs.get(action.sourceMechId)
+      if (!src) return state
+      const ctx = buildContext(state.draft, state.draft.activeSetKey, world)
+      // 規則層是唯一判準（同 swapPart）。⚠ 先全部驗完再動手 —— 驗一格換一格會做出半套。
+      for (const pos of MECH_PART_ORDER) if (canSwapPart(ctx, src, pos)) return state
+
+      const isBase = src.id === state.draft.mechId
+      const base = isBase
+        ? withoutParts(state.draft)
+        : { ...state.draft, parts: Object.fromEntries(MECH_PART_ORDER.map((p) => [p, src.id])) }
+      if (base === state.draft) return state
+      const { draft, removed } = reconcile(base, world)
+      // 四格全閃：這個動作動的是整台，只閃軀幹會讓人以為只換了一格
+      const labels = MECH_PART_ORDER.map(partLabel)
+      return commit(
+        state, state.draft, draft, removed,
+        isBase ? '四個部位已全部還原為選定機甲' : `四個部位已全部套用 ${src.name} 的`,
+        outputNote(state, draft, world), labels, true,
       )
     }
 
@@ -956,7 +988,7 @@ export function simReduce(state: SimState, action: LoadoutAction, world: Loadout
       const base = withoutPart(state.draft, action.position)
       const { draft, removed } = reconcile(base, world)
       const label = partLabel(action.position)
-      return commit(state, state.draft, draft, removed, `${label}已還原為原廠`, outputNote(state, draft, world), [label], true)
+      return commit(state, state.draft, draft, removed, `${label}已還原為選定機甲`, outputNote(state, draft, world), [label], true)
     }
 
     case 'unequipModule': {

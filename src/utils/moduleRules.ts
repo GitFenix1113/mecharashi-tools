@@ -10,6 +10,7 @@
 // 純函式、無 React／Firestore 依賴，可單測（npm test）。
 
 import type { Module, ModuleLevel } from '../types/module.ts'
+import type { InnateModuleEntry } from '../types/mech.ts'
 import { MechPartPosition, ModuleRarity, ModuleSlot, PartInterface } from '../types/enums.ts'
 
 // ─── 候選池 ─────────────────────────────────────────────────────────────────
@@ -196,8 +197,6 @@ export function sumModuleStats(all: readonly ModuleStats[]): ModuleStats {
 //     裝一顆「噴火器模組」（Ⅰ）→ `∧ LV.1/4`（亮 1 格）
 //   遊戲自己的模組畫面就是把**同族加總**列成一條、並在預覽替換時標出 ∧／∨ 的增減，
 //   與本檔的 `moduleStacks()` ＋ 超限提醒是同一套語意。
-//   ⚠ 別把這條與 052-G **E-3（已延後）** 搞混：E-3 問的是「機甲品質階升階讓接口
-//     Ⅰ→Ⅱ 之後，那個 Σ 會不會另外餵給 8 級／特性模組」，與本式（玩家裝了幾顆）無關。
 //
 // ── 為什麼族鍵是「名稱去掉尾端的 Ⅰ／Ⅱ」──────────────────────────────────
 // 2026-08-27 全庫實測：候選池 186 筆去階後恰為 **155 族**，其中 31 族有兩名成員、
@@ -212,14 +211,25 @@ export function sumModuleStats(all: readonly ModuleStats[]): ModuleStats {
 //   同名的特性模組時，不帶前綴的版本會把兩族靜默併成一族 —— 與 `componentFamilyKey()`
 //   帶觸／應前綴是同一條理由。
 //
-// ── 沒有納入的一段：機甲自帶的 8 級模組 ────────────────────────────────────
-// 8 級模組有 **8 階**，而四個接口最多只給得出 4 級（add 恆為 1）。差額來自
-// **機甲自帶的那一顆**（`Mech.module8Id`），它本身的等級隨機甲品質階走 ——
-// 使用者 2026-08-27 逐字：「一套 S 級甲，整套金 3 的時候，他的 8 級模組會剛好 4 級，
-// 這時候搭配 4 顆 8 級模組就能 8 級」，並指出這在遊戲中是資源有限時的**過渡期選項**。
+// ── 天生模組也進同一個池（PLAN-052-K）──────────────────────────────────────
+// 「機甲自帶的那一顆」與「玩家插上去的那些」**共用同一個等級條目** ——
+// 遊戲內〈機甲整備〉的模組清單就是把兩者列在同一張表、同一種 `LV.x/y` 格式，
+// 差別只在天生的那些在四個部位欄位有數字、插槽來的四格全空。
 //
-// ⚠ **本檔只算接口那一段**，不替機甲自帶的那一顆推等級 —— 那需要一整套品質階模型，
-//   而它屬於另一份尚未動工的計畫。差額由 UI 明講，不靜默補一個猜出來的數字。
+//   完整式子： level = min( Σ天生貢獻 ＋ Σ(插槽貢獻 × 部位倍率) , cap )
+//
+// 天生那一段由 `innateModules.ts` 的 `resolveInnateModules()` 算（滿階時
+// 8 級模組每部位 2、特性位與副模組每部位 1），從 `opts.innate` 傳進來；
+// 部位倍率來自 `slotMultipliers()`（今天只有破曉者-02〈匯流樞紐〉會把某個部位的
+// **插槽**貢獻 ×2）。
+//
+// ⚠ 兩者分開記在 `sum`／`innateSum` 而不是併成一個數：超限提醒要講的是
+//   「你插上去的那幾顆有幾級白費」，把天生的算進去會讓那句話變成在怪玩家。
+// ⚠ 不傳 `opts` 時行為與 052-G 完全相同（`innateSum` 恆 0）—— 既有呼叫端不受影響。
+//
+// ⚠ 這同時是 052-G **E-3「延後」的答案**。當初延後的理由是「全站預設滿階 ⇒ Σ 是常數」，
+//   而 052-G Phase D 的部件混搭打破了那個前提：**滿配假設擋掉的是「品質階」這個維度，
+//   擋不掉「來源機甲」這個維度** —— 換進來的部件帶的是它原本那台機甲的模組。
 
 const TIER_SUFFIX = /[ⅠⅡ]$/
 
@@ -244,20 +254,38 @@ export const moduleFamilyKey = (mod: Pick<Module, 'name' | 'slot'>): string =>
 export interface ModuleStack {
   /** 同族任一顆（`levels[]` 相同，讀數值用哪一顆都一樣）。取等級貢獻最高的那顆當代表 */
   mod: Module
-  /** 這一族裝在哪些部位，依 `MECH_PART_ORDER` 的順序 */
+  /** 這一族**裝在**哪些接口，依 `MECH_PART_ORDER` 的順序。天生的不算在這裡 */
   positions: MechPartPosition[]
-  /** Σ `moduleAddLevel`（**未封頂**，超限提醒要看的就是這個數） */
+  /** Σ 插槽貢獻（`moduleAddLevel` × 部位倍率，**未封頂**；超限提醒看的就是這個數） */
   sum: number
+  /** 這一族的**天生**貢獻來自哪些部位（PLAN-052-K）。沒傳 `opts.innate` 時恆為空 */
+  innatePositions: MechPartPosition[]
+  /** Σ 天生貢獻（**未封頂**）。沒傳 `opts.innate` 時恆為 0 */
+  innateSum: number
   /** 上限 ＝ `levels[].length` */
   cap: number
-  /** 實際生效等級 ＝ `min(sum, cap)` */
+  /** 實際生效等級 ＝ `min(sum + innateSum, cap)` */
   level: number
   /** 超出上限、**不會生效**的級數。0 ＝ 沒有浪費 */
   overflow: number
 }
 
+/** `moduleStacks()` 的選項（PLAN-052-K）。全部省略時行為與 052-G 相同。 */
+export interface ModuleStacksOptions {
+  /**
+   * 部位倍率：該部位的**插槽**貢獻 ×N。來自 `innateModules.ts` 的 `slotMultipliers()`
+   * （今天只有破曉者-02〈匯流樞紐〉，軀幹／腿部各一顆，各自 ×2）。
+   */
+  positionMultiplier?: Partial<Record<MechPartPosition, number>>
+  /**
+   * 天生模組的逐部位貢獻，來自 `resolveInnateModules()`。
+   * 與插槽貢獻**共用同一個等級池**（見上方註解）。
+   */
+  innate?: Partial<Record<MechPartPosition, readonly InnateModuleEntry[]>>
+}
+
 /**
- * 把四個接口上的模組收成「每一族一筆」。
+ * 把四個接口上的模組（以及天生模組，若有傳）收成「每一族一筆」。
  *
  * `lookup` 查不到的 id 直接跳過 —— 資料斷鏈由呼叫端各自呈現（面板印紅字、
  * 匯總印 id），這一層只負責算得出來的那些。
@@ -265,28 +293,48 @@ export interface ModuleStack {
 export function moduleStacks(
   installed: Readonly<Partial<Record<MechPartPosition, string>>>,
   lookup: (id: string) => Module | undefined,
+  opts: ModuleStacksOptions = {},
 ): Map<string, ModuleStack> {
   const out = new Map<string, ModuleStack>()
+
+  /** 取得（或建立）某一族的那一筆。等級與溢出一律最後統一算，避免兩處各算一次而漂移。 */
+  const bucket = (mod: Module): ModuleStack => {
+    const key = moduleFamilyKey(mod)
+    let st = out.get(key)
+    if (!st) {
+      st = { mod, positions: [], sum: 0, innatePositions: [], innateSum: 0, cap: moduleMaxLevel(mod), level: 0, overflow: 0 }
+      out.set(key, st)
+    }
+    // 代表取貢獻高的那一顆（Ⅱ 勝過 Ⅰ）—— 只影響顯示用的名稱與圖示，數值兩者相同
+    else if (moduleAddLevel(mod) > moduleAddLevel(st.mod)) st.mod = mod
+    return st
+  }
+
   // 依 MechPartPosition 的宣告順序走，讓 positions 的順序穩定（UI 與匯出圖共用它）
   for (const position of Object.values(MechPartPosition)) {
+    // ① 天生貢獻。先於插槽是刻意的：某些機甲的天生模組同時是候選池裡的模組
+    //    （特性模組可以拆機甲取得），先建桶能讓代表模組取到天生的那一顆。
+    for (const e of opts.innate?.[position] ?? []) {
+      const mod = lookup(e.moduleId)
+      if (!mod || e.level <= 0) continue
+      const st = bucket(mod)
+      st.innateSum += e.level
+      if (!st.innatePositions.includes(position)) st.innatePositions.push(position)
+    }
+    // ② 插槽貢獻 × 部位倍率
     const id = installed[position]
     if (!id) continue
     const mod = lookup(id)
     if (!mod) continue
-    const key = moduleFamilyKey(mod)
-    const prev = out.get(key)
-    const cap = moduleMaxLevel(mod)
-    if (!prev) {
-      const sum = moduleAddLevel(mod)
-      out.set(key, { mod, positions: [position], sum, cap, level: Math.min(sum, cap), overflow: Math.max(0, sum - cap) })
-      continue
-    }
-    prev.positions.push(position)
-    prev.sum += moduleAddLevel(mod)
-    prev.level = Math.min(prev.sum, prev.cap)
-    prev.overflow = Math.max(0, prev.sum - prev.cap)
-    // 代表取貢獻高的那一顆（Ⅱ 勝過 Ⅰ）—— 只影響顯示用的名稱與圖示，數值兩者相同
-    if (moduleAddLevel(mod) > moduleAddLevel(prev.mod)) prev.mod = mod
+    const st = bucket(mod)
+    st.positions.push(position)
+    st.sum += moduleAddLevel(mod) * (opts.positionMultiplier?.[position] ?? 1)
+  }
+
+  for (const st of out.values()) {
+    const total = st.sum + st.innateSum
+    st.level = Math.min(total, st.cap)
+    st.overflow = Math.max(0, total - st.cap)
   }
   return out
 }

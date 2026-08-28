@@ -9,7 +9,7 @@ import { HUD, HUD_ACTIONABLE, HUD_BTN, HUD_BTN_DANGER, HUD_INPUT, HUD_PANEL } fr
 import { ActionChevron } from './ActionChevron'
 import { CATALOG_SLOTS, SLOT_LABELS, partLabel } from '../../utils/moduleSlots'
 import {
-  interfaceState, moduleStatsAt, moduleStacks, moduleFamilyKey, moduleAddLevel, moduleMaxLevel,
+  interfaceState, moduleStatsAt, moduleFamilyKey, moduleAddLevel, moduleMaxLevel,
 } from '../../utils/moduleRules'
 import {
   moduleChoices, canEquipModule, planModuleFill, REJECTION_LABEL, structuralCounts,
@@ -96,7 +96,7 @@ interface Props {
   onResolve: (action: ResolutionAction) => void
   /**
    * 把這一個部位換成 `source` 的同位部件（PLAN-052-G Phase D）。
-   * 傳入基底機甲＝還原成原廠 —— reducer 會把那個鍵收掉（見 `swapPart` 的註解）。
+   * 傳入基底機甲＝還原為選定機甲 —— reducer 會把那個鍵收掉（見 `swapPart` 的註解）。
    */
   onSwapPart: (source: Mech) => void
 }
@@ -135,10 +135,7 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onFill, onResolve, onS
    * 四個接口的同族堆疊（PLAN-052-G C-7）。**一格一格看是看不出超限的** ——
    * 「四顆刀劍模組Ⅱ 合計 8 級但上限 4」這件事只有把四格一起算才講得出來。
    */
-  const stacks = useMemo(
-    () => moduleStacks(ctx.modules, (id) => ctx.world.modules.get(id)),
-    [ctx.modules, ctx.world.modules],
-  )
+  const stacks = ctx.stacks
   const equippedStack = equipped ? stacks.get(moduleFamilyKey(equipped)) ?? null : null
   /**
    * 已裝那一顆的「補滿」計畫（`null` ＝ 這一格是空的）。已滿級時 `FillButton` 自己不畫。

@@ -31,8 +31,10 @@ import { DEFAULT_EQUIP_SET_KEY } from './forms.ts'
 import { isSameFamily, isWTypeComponent } from './componentRules.ts'
 import {
   interfaceAcceptsRarity, interfaceState, isModuleCandidate, moduleCandidates,
-  moduleAddLevel, moduleFamilyKey, moduleMaxLevel, moduleStacks,
+  moduleAddLevel, moduleFamilyKey, moduleMaxLevel, moduleStacks, stackLevelOf,
+  type ModuleStack,
 } from './moduleRules.ts'
+import { innateEntries, unlockBlocker, type UnlockBlock } from './innateModules.ts'
 
 // ─── 拒絕原因：封閉聯集 ─────────────────────────────────────────────────────
 //
@@ -272,6 +274,23 @@ export function buildWorld(data: {
 export interface LoadoutContext {
   pilot: Pilot | null
   mech: Mech | null
+  /**
+   * **顯示用的「這是哪一台」** ——取**軀幹**的來源機甲（使用者要求 2026-08-29）。
+   * 未混搭、或軀幹來源查不到時就是 `mech` 本身。
+   *
+   * 混搭之後「這是哪一台」不再有唯一答案，而遊戲裡定義外觀與身份的是軀幹：
+   * 把帕斯卡的軀幹裝到彌造者上，畫面卻印著彌造者、立繪也是彌造者 ——
+   * 那張圖與槽位圖上那顆 <b>◆帕斯卡</b> 直接打臉。
+   *
+   * ⚠ **只給畫面用，不可拿來做任何判斷。** 執照、形態、分享碼、
+   *   `partOverrides` 的「選定機甲」基準全部走 `mech`（基底機甲）——
+   *   拿這一支去 gate 的話，換個軀幹就會變成另一台機甲能不能開的問題。
+   *   規則層要「這一格來自哪台」請走 `chassis.parts[pos].sourceMechId`。
+   *
+   * ⚠ 兩者不同時 UI **要把基底也講出來**（「基底 彌造者」）：
+   *   否則「更換機甲」那顆按鈕看起來像在換帕斯卡，而它換的是彌造者。
+   */
+  identityMech: Mech | null
   /** 機體數值的唯一入口。四部位不齊時為 null（實測 90/90 齊全，今天走不到） */
   chassis: ResolvedChassis | null
   /** 目前分頁對應的形態；`default` 分頁為 null */
@@ -292,7 +311,35 @@ export interface LoadoutContext {
    *   海莉絲的四個分頁各存一份模組，而那是同一台機甲的同四個接口。
    */
   modules: Readonly<Partial<Record<MechPartPosition, string>>>
+  /**
+   * **這一套的模組等級池**，每族一筆（PLAN-052-K D-1）。天生模組與四個接口
+   * 共用同一個池 —— `level = min(Σ天生 ＋ Σ(插槽 × 部位倍率), cap)`。
+   *
+   * ⚠ **不要自己再呼叫一次 `moduleStacks()`。** 改寫前有六處各自呼叫，而其中只有
+   *   一處會記得補 `{ innate, positionMultiplier }` ⇒ 右欄的彙總、OutputBar 的可用出力、
+   *   匯出圖三個數字各說各話。同一份真相要有同一個來源，這裡就是那個來源。
+   *
+   * ⚠ **含未解鎖的那幾族**（復仇女神四顆〈模型-XX〉）：它們要出現在畫面上、
+   *   標成停用並講出原因。要「實際生效的加成」請走 `activeStacks()`。
+   */
+  stacks: ReadonlyMap<string, ModuleStack>
+  /**
+   * 沒解鎖的那幾族（鍵同 `stacks`，值是**結構化的原因**）。
+   * 空 Map ＝ 全部生效（241 筆模組裡只有 6 筆有 `unlockCondition`）。
+   */
+  moduleBlocks: ReadonlyMap<string, UnlockBlock>
   world: LoadoutWorld
+}
+
+/**
+ * **實際生效**的模組堆疊（已排除未解鎖的）。要拿模組加成一律走這支。
+ *
+ * ⚠ 與 `ctx.stacks` 的差別只有解鎖：畫面要列出全部（含停用態），
+ *   算數字只能算生效的。兩者混用的症狀是「復仇女神少一個部位，
+ *   四顆〈模型-XX〉在清單上灰了，但合計加成沒變」。
+ */
+export function activeStacks(ctx: LoadoutContext): ModuleStack[] {
+  return [...ctx.stacks.entries()].filter(([k]) => !ctx.moduleBlocks.has(k)).map(([, st]) => st)
 }
 
 /**
@@ -322,25 +369,58 @@ export function buildContext(
 
   // ── 部件混搭（PLAN-052-G Phase D）────────────────────────────────────────
   //
-  // `draft.parts` 是**部位 → 來源機甲 id**，只記與原廠不同的那幾格。
+  // `draft.parts` 是**部位 → 來源機甲 id**，只記與選定機甲不同的那幾格。
   // `resolveChassis()` 的 `partOverrides` 自 052-A B-2 就實作好了，本行只是接上。
   //
-  // ⚠ 查不到來源機甲時**當作沒換**（退回原廠）而不是整台解不出來：
+  // ⚠ 查不到來源機甲時**當作沒換**（退回選定機甲）而不是整台解不出來：
   //   草稿是外來的（分享碼／書架／雲端存檔），而 `world.mechs` 可能還沒載入完。
   //   真正不合法的那些由 `reconcile()` 帶著原因清掉並進 toast，這裡只負責算得出畫面。
+  //
+  // ⚠ 傳的是**整台來源機甲**而不是 `{ id, parts }`（PLAN-052-K D-2）：天生模組是
+  //   `quality` ＋ 三個頂層欄位的函數，只給 parts 的話重量火力會跟著換、
+  //   自帶那一列卻還停在選定機甲 —— 那正是本計畫要修的 bug 的另一半。
   const partOverrides = draft.parts && mech
     ? Object.fromEntries(
         Object.entries(draft.parts).flatMap(([pos, srcId]) => {
           const src = srcId ? world.mechs.get(srcId) : null
-          return src && src.id !== mech.id ? [[pos, { id: src.id, parts: src.parts }] as const] : []
+          return src && src.id !== mech.id ? [[pos, src] as const] : []
         }),
       )
     : undefined
   const chassis = resolveChassis(mech, { moduleMap: world.modules, partOverrides })
 
+  // ── 等級池：天生 ＋ 插槽（PLAN-052-K D-1）────────────────────────────────
+  const installed = draft.modules ?? {}
+  const lookupModule = (id: string) => world.modules.get(id)
+  const stacks = moduleStacks(installed, lookupModule, chassis
+    ? { innate: innateEntries(chassis.innateByPart), positionMultiplier: chassis.positionMultiplier }
+    : {})
+
+  // ── 觸發式模組（決策五 / D-3）───────────────────────────────────────────
+  //
+  // 一次過就夠：今天六顆有條件的模組**沒有一顆是別人的觸發者**
+  // （觸發者是〈迸發模組〉mod_3034 與兩位機師），所以不需要疊代到收斂。
+  // 哪天出現「A 解鎖 B、B 解鎖 C」時這裡要改成迴圈 —— 屆時症狀是 C 永遠解不開。
+  const unlockCtx = {
+    levelOf: (id: string) => { const m = lookupModule(id); return m ? stackLevelOf(stacks, m) : 0 },
+    maxLevelOf: (id: string) => { const m = lookupModule(id); return m ? moduleMaxLevel(m) : 0 },
+    pilotId: pilot?.id ?? null,
+  }
+  const moduleBlocks = new Map<string, UnlockBlock>()
+  for (const [key, st] of stacks) {
+    const block = unlockBlocker(st.mod, unlockCtx)
+    if (block) moduleBlocks.set(key, block)
+  }
+
+  // 顯示身份 ＝ 軀幹的來源（見 `identityMech` 的註解）。查不到一律退回基底機甲，
+  // 不留 null —— 那會讓抬頭與立繪在資料斷鏈時整塊消失，而基底是永遠拿得到的。
+  const torsoSourceId = chassis?.parts.torso.sourceMechId
+  const identityMech = (torsoSourceId ? world.mechs.get(torsoSourceId) : null) ?? mech
+
   return {
     pilot,
     mech,
+    identityMech,
     // ⚠ `moduleMap` 一定要傳：少了它 `moduleLevelOf()` 恆回 0，而 0 的語意是「查無此模組」。
     //   模組等級一律由這裡 derive、**不存進草稿**（總綱決策六：存下來就是第二真相源）。
     chassis,
@@ -357,7 +437,9 @@ export function buildContext(
       ? { torso: chassis.parts.torso.part, leftArm: chassis.parts.leftArm.part,
           rightArm: chassis.parts.rightArm.part, legs: chassis.parts.legs.part }
       : mech?.parts),
-    modules: draft.modules ?? {},
+    modules: installed,
+    stacks,
+    moduleBlocks,
     world,
   }
 }
@@ -601,9 +683,11 @@ export function loadoutBudget(ctx: LoadoutContext, hypo: BudgetHypothesis = {}):
   //   接口上的模組是同族堆疊制（052-G C-7），裝一顆通用Ⅱ 是 **Lv2**、裝兩顆才是 Lv4。
   //   逐格取滿級會讓 OutputBar 加 +100，而右欄的已裝效果彙總（走 `stackLevelOf()`）印 +50，
   //   同一頁兩個數字互相打臉；同族兩顆還會被算成兩份加成。
-  //   `moduleStacks()` 回的就是**每族一筆＋已收斂的等級**，與 `EquippedEffects` / 匯出圖同一支。
-  const stacks = moduleStacks(ctx.modules, (id) => ctx.world.modules.get(id))
-  const mods = [...stacks.values()].map((st) => ({ mod: st.mod, level: st.level }))
+  //   `ctx.stacks` 就是**每族一筆＋已收斂的等級**，與 `EquippedEffects` / 匯出圖同一份。
+  //
+  // ⚠ 走 `activeStacks()`：未解鎖的模組（復仇女神四顆）不能算進可用出力，
+  //   否則「換掉一個部位 → 清單上灰掉了，但出力沒變」（PLAN-052-K D-3）。
+  const mods = activeStacks(ctx).map((st) => ({ mod: st.mod, level: st.level }))
   const output = effectiveOutput({ output: chassis?.output ?? 0 }, { back }, mods)
   return {
     weight,
@@ -1266,8 +1350,7 @@ export function planModuleFill(ctx: LoadoutContext, mod: Module): ModuleFillPlan
   const cap = moduleMaxLevel(mod)
   const add = moduleAddLevel(mod)
   const family = moduleFamilyKey(mod)
-  const stacks = moduleStacks(ctx.modules, (id) => ctx.world.modules.get(id))
-  const stack = stacks.get(family) ?? null
+  const stack = ctx.stacks.get(family) ?? null
   const levelBefore = stack?.level ?? 0
 
   const open: MechPartPosition[] = []      // 空格
@@ -1286,7 +1369,9 @@ export function planModuleFill(ctx: LoadoutContext, mod: Module): ModuleFillPlan
 
   const targets: MechPartPosition[] = []
   const displaced: ModuleFillPlan['displaced'] = []
-  let sum = stack?.sum ?? 0
+  // ⚠ 起算含**天生貢獻**（PLAN-052-K）：一顆 8 級模組在滿階 S 級甲上天生就有 8 級，
+  //   只看插槽那一段會算出「還要再插四格」，而那四格一級都不會生效。
+  let sum = (stack?.sum ?? 0) + (stack?.innateSum ?? 0)
   for (const position of [...open, ...occupied]) {
     if (sum >= cap) break
     targets.push(position)
@@ -1602,8 +1687,8 @@ export function moduleChoices(ctx: LoadoutContext, ref: ModuleSlotRef): PickerEn
 /**
  * 這一格可不可以換成 `source` 的同位部件。可以回 `null`。
  *
- * ⚠ 「換成自己」不是拒絕 —— 那是**還原成原廠**，由 reducer 的 `resetPart` 表達
- *   （見 `swapPart` 的註解：與原廠相同時刪掉鍵而不是寫入自己的 mechId）。
+ * ⚠ 「換成自己」不是拒絕 —— 那是**還原成選定機甲**，由 reducer 的 `resetPart` 表達
+ *   （見 `swapPart` 的註解：與選定機甲相同時刪掉鍵而不是寫入自己的 mechId）。
  */
 export function canSwapPart(
   ctx: LoadoutContext,
@@ -1646,7 +1731,7 @@ export function canSwapPart(
  * 池子是**全庫同裝甲類型**：輕型 27 ／ 中甲 36 ／ 重型 27（含自己）。
  * 一頁列得完，不必分頁；每個部位都帶 icon（352／360 有圖）。
  *
- * ⚠ **基底機甲自己留在清單裡**，而且排第一 —— 它是「還原成原廠」的入口。
+ * ⚠ **基底機甲自己留在清單裡**，而且排第一 —— 它是「還原成選定機甲」的入口。
  *   把它濾掉的話，換錯之後就只剩「整台重選一次」這條路。
  *
  * ⚠ 與 `moduleChoices()` 一樣濾掉 omitted、blocked 早退空陣列；
@@ -1661,7 +1746,7 @@ export function partChoices(ctx: LoadoutContext, position: MechPartPosition): Pi
     if (r) continue                       // structural：不列（見檔頭）
     out.push({ item: m, rejection: null })
   }
-  // 原廠排第一，其餘依重量輕到重（混搭的第一動機就是減重）、再依名稱
+  // 選定機甲排第一，其餘依重量輕到重（混搭的第一動機就是減重）、再依名稱
   const baseId = ctx.mech?.id
   return out.sort((a, b) =>
     (a.item.id === baseId ? -1 : 0) - (b.item.id === baseId ? -1 : 0)

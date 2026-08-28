@@ -956,6 +956,65 @@ test('052-G D：resetPart 還原單一格，其餘不動', () => {
   assert.deepEqual(s.draft.parts, { legs: 輕量中甲.id })
 })
 
+// ─── applyChassisOf：四格一次套用（使用者要求 2026-08-29）────────────────────
+
+test('applyChassisOf：四個部位一次全部換成同一台', () => {
+  const s = simReduce(混搭起點(), { type: 'applyChassisOf', sourceMechId: 輕量中甲.id }, WORLD)
+  assert.deepEqual(s.draft.parts, {
+    torso: 輕量中甲.id, leftArm: 輕量中甲.id, rightArm: 輕量中甲.id, legs: 輕量中甲.id,
+  })
+})
+
+test('applyChassisOf：傳基底機甲 ⇒ 整台還原成原廠（刪掉 parts 欄位本身）', () => {
+  const s = step(混搭起點(),
+    { type: 'swapPart', position: MechPartPosition.TORSO, sourceMechId: 輕量中甲.id },
+    { type: 'swapPart', position: MechPartPosition.LEGS, sourceMechId: 輕量中甲.id },
+    { type: 'applyChassisOf', sourceMechId: 彌造者.id },
+  )
+  assert.equal('parts' in s.draft, false, '與 swapPart 換回原廠同一條收斂：刪鍵，不是寫入自己的 mechId')
+})
+
+test('applyChassisOf ⚠ 任一格不合法就**整批不做**（半套比什麼都沒發生更難解釋）', () => {
+  const base = 混搭起點()
+  const s = simReduce(base, { type: 'applyChassisOf', sourceMechId: 輕型機.id }, WORLD)
+  assert.equal(s, base, '跨裝甲類型 ⇒ 整個 state 原封不動，不留半套的 parts')
+})
+
+test('applyChassisOf：從只換了軀幹的狀態接上去，其餘三格會補齊', () => {
+  const s = step(混搭起點(),
+    { type: 'swapPart', position: MechPartPosition.TORSO, sourceMechId: 輕量中甲.id },
+    { type: 'applyChassisOf', sourceMechId: 輕量中甲.id },
+  )
+  assert.deepEqual(s.draft.parts, {
+    torso: 輕量中甲.id, leftArm: 輕量中甲.id, rightArm: 輕量中甲.id, legs: 輕量中甲.id,
+  })
+  // ⚠ 這一步沒有任何裝備被級聯移除 ⇒ **不提供 [復原]**（`undo` 是級聯專用的，
+  //   見 `commit()`：`removed.length > 0` 才設）。寫成「一次套用是一步 undo」是錯的，
+  //   而那個誤解會讓人在 UI 上做出一顆按了沒反應的復原鍵。
+  assert.equal(s.undo, null, '沒有東西被移除 ⇒ 不掛 [復原]')
+})
+
+test('applyChassisOf：覆蓋掉既有的混搭，四格一律指向目標（不是只補沒換過的那幾格）', () => {
+  const s = step(混搭起點(),
+    { type: 'swapPart', position: MechPartPosition.TORSO, sourceMechId: 中甲機2.id },
+    { type: 'swapPart', position: MechPartPosition.LEGS, sourceMechId: 輕量中甲.id },
+    { type: 'applyChassisOf', sourceMechId: 輕量中甲.id },
+  )
+  assert.deepEqual(s.draft.parts, {
+    torso: 輕量中甲.id, leftArm: 輕量中甲.id, rightArm: 輕量中甲.id, legs: 輕量中甲.id,
+  }, '軀幹原本是中甲機2 的，套用之後要被蓋掉')
+})
+
+test('applyChassisOf：重量與出力真的跟著四格一起走（不是只換了名字）', () => {
+  const before = 混搭起點()
+  const after = simReduce(before, { type: 'applyChassisOf', sourceMechId: 輕量中甲.id }, WORLD)
+  const b = loadoutBudget(buildContext(before.draft, before.draft.activeSetKey, WORLD))
+  const a = loadoutBudget(buildContext(after.draft, after.draft.activeSetKey, WORLD))
+  assert.equal(b.weight.total, 825, '彌造者 Σ 四部位')
+  assert.equal(a.weight.total, 525, '輕量中甲 Σ 四部位')
+  assert.equal(a.output.total, 3000, '出力只看軀幹，跟著換過去')
+})
+
 test('052-G D：跨裝甲類型的來源一律不收（規則層擋在 reducer 裡，不靠 UI）', () => {
   const base = 混搭起點()
   const s = simReduce(base, { type: 'swapPart', position: MechPartPosition.TORSO, sourceMechId: 輕型機.id }, WORLD)

@@ -1,6 +1,6 @@
 // ⚠ 帶 `.ts` 副檔名：本檔要能被 `node --test` 直接載入（見下方 `base()` 的說明），
 //   而 node 的 ESM 解析不補副檔名。專案既有慣例同此（buffPool.ts、entityRefs.ts…）。
-import { PILOT_ART_INDEX } from '../data/artIndex.ts'
+import { MECH_ART_INDEX, PILOT_ART_INDEX } from '../data/artIndex.ts'
 
 /**
  * 刻意做成函式而非模組層級常數：`import.meta.env` 在 node --test 下不存在，
@@ -203,9 +203,16 @@ export function hasPilotArt(pilot: { portrait?: string } | null | undefined): bo
 /**
  * 機甲**官方原稿全身圖**的路徑（`/images/mechs/<名>/art.webp`，1600×864 橫式含武裝）。
  *
- * ⚠ 機甲**不需要**索引（對照 `hasPilotArt()`）：`art` 與既有的 `portrait`（560×340）
- *   長寬比只差 0.2，同一個橫框放兩張都成立，所以呼叫端一律寫
- *   `imageCandidates(mechKeyArtPath(mech), mech.portrait)`，缺原稿的 5 台自動退回。
+ * ⚠ **會退回 `portrait` 的呼叫端要先問 `hasMechArt()`**（2026-08-29 更正）。
+ *   原註解寫「機甲不需要索引，因為 art 與 portrait 長寬比只差 0.2，同一個橫框通吃」——
+ *   比例是真的接近，但那不是重點：**兩者差在解析度**。`art` 是 1600×864、`portrait`
+ *   只有 560×340。匯出圖把機甲放大到 421 高時，`art` 是縮小（銳利），退回 `portrait`
+ *   的那 5 台卻是放大 1.24 倍（糊）。要放大／出血的版面請分流；只當縮圖用的照舊。
+ *
+ * ⚠ **不要寫「portrait 是不透明的矩形裁切」**（2026-08-29 二次更正，實測全 88 台的 alpha）：
+ *   `portrait` **也是去背圖**，透明像素佔 10–36%。曾經有一台不是（星夜女神的來源 PNG
+ *   沒有 alpha，格子被烘進像素），已於同日換掉 —— 現在 88/88 全數帶 alpha。
+ *   再遇到這種圖請修圖，不要讓版面去遷就它。
  *
  * ⚠ 只換最後一段檔名、**不沿用原副檔名**：`mech.portrait` 至今仍有 `.png` 的歷史值
  *   （爬蟲寫入端未跟上），而原稿一律是 `.webp`。
@@ -216,4 +223,27 @@ export function mechKeyArtPath(mech: { portrait?: string } | null | undefined): 
   const art = p.replace(/(^|\/)[^/]+$/, '$1art.webp')
   // 換不動 ＝ 這不是預期的 `<資料夾>/<檔名>` 形式，不要硬猜一個路徑出來
   return art === p ? undefined : art
+}
+
+/**
+ * 由 `mech.portrait` 取出圖片資料夾名（`/images/mechs/<這一段>/portrait.webp`）。
+ * 寫法與 `pilotArtDir()` 一致 —— 兩邊的路徑慣例相同，比對規則也該相同。
+ */
+function mechArtDir(mech: { portrait?: string } | null | undefined): string | undefined {
+  const m = mech?.portrait?.match(/(?:^|\/)mechs\/([^/]+)\/[^/]+$/)
+  return m ? m[1] : undefined
+}
+
+/**
+ * 這台機甲**有沒有**去背原稿（`art.webp`，1600×864）。83/88 台有。
+ *
+ * ⚠ 判準是**「這張圖撐不撐得起放大出血的版面」**，不是「圖存不存在」：沒有原稿時
+ *   `portrait` 一定在，但它只有 560×340，放到匯出圖的 421 高要放大 1.24 倍。
+ *   要放大／出血的版面請改一種畫法，見 `mechKeyArtPath()` 的兩條 ⚠。
+ *
+ * 索引由 `scripts/generate-art-index.mjs` 在 build/predev 掃圖庫產生。
+ */
+export function hasMechArt(mech: { portrait?: string } | null | undefined): boolean {
+  const dir = mechArtDir(mech)
+  return !!dir && MECH_ART_INDEX.has(dir)
 }

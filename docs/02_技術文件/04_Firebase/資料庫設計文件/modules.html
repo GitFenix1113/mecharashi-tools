@@ -45,7 +45,9 @@
       <tr><td>name</td><td>string</td><td>模組名稱</td></tr>
       <tr><td>slot</td><td>ModuleSlot</td><td>槽位 Enum：機甲特性模組 / 機甲8級模組 / 通用模組 / 機甲副模組</td></tr>
       <tr><td>boundMechId</td><td>string?</td><td>綁定機甲 ID → 引用 mechs collection；null = 可獨立取得</td></tr>
-      <tr><td>boundPart</td><td>MechPart?</td><td>綁定部位 Enum：torso / leftArm / rightArm / legs；null = 無綁定</td></tr>
+      <tr><td>boundPart</td><td>MechPart[]?</td><td>綁定部位<strong>陣列</strong>（v2.2 起為複數）：torso / leftArm / rightArm / legs；<code>null</code> 或 <code>[]</code> = 無綁定。<br><strong>⚠ 比對一律用集合語意</strong>：正式庫裡 <code>["leftArm","rightArm"]</code> 與 <code>["rightArm","leftArm"]</code> <strong>兩種順序同時存在</strong>，陣列相等會漏。<br>它同時是天生模組逐部位等級的<strong>輸入</strong>（PLAN-052-K）：<code>level = (levels.length &gt; boundPart.length) ? 2 : 1</code></td></tr>
+      <tr><td>slotLevelMultiplier</td><td>MechPart[]?</td><td><strong>PLAN-052-K 新增。</strong>這顆模組讓哪些部位的<strong>插槽</strong>貢獻等級翻倍（<strong>不含天生貢獻</strong>）。今天 2 筆：破曉者-02 的兩顆〈匯流樞紐〉（軀幹一顆、腿部一顆）——<strong>同名但效果不同</strong>，所以必須落成結構化欄位而不是解析描述</td></tr>
+      <tr><td>unlockCondition</td><td>union?</td><td><strong>PLAN-052-K 新增。</strong>啟用條件，兩種形狀：<code>{ kind:'moduleAtMaxLevel', moduleId }</code>／<code>{ kind:'pilotOnly', pilotIds }</code>。今天 6 筆（復仇女神 ×4 ＋ 彌造者 ＋ 星夜女神）。<br><strong>⚠ 觸發者是別顆模組</strong>：復仇女神四顆的描述裡<u>沒有</u>「限制解除」字樣，那句話在 <code>mod_3034</code>〈迸發模組〉LV8 的文本裡 —— 掃自己描述的做法會全數漏掉</td></tr>
       <tr><td>available</td><td>boolean</td><td>可獨立取得：特性/8級/通用 = true；副模組 = false</td></tr>
       <tr><td>source</td><td>ModuleSource</td><td>遊戲取得途徑 Enum：商店 / 拆機甲 / 未知</td></tr>
       <tr><td>managedBy</td><td>DataManaged</td><td>資料維護方式 Enum：SCRIPT / MANUAL</td></tr>

@@ -66,6 +66,11 @@ const items = snap.docs
       source: m.source ?? null,
       managedBy: m.managedBy ?? null,
       levels: (m.levels ?? []).map((l) => ({ level: l.level })),
+      // PLAN-052-K 的兩個結構化欄位。帶進 fixture 是為了讓守門測試盯的是**正式庫的那 8 格**，
+      // 而不是測試自己捏出來的假物件 —— 這兩個欄位今天只有 8 筆有值，
+      // 而「有值的那幾筆消失了」正是最需要被擋下來的那種變動。
+      slotLevelMultiplier: m.slotLevelMultiplier ?? null,
+      unlockCondition: m.unlockCondition ?? null,
       // 頂層那排平坦數值欄位是不是**全 0**。守門測試靠它釘住「讀數值一律走 levels[]」
       // 那條規則的依據 —— 不存布林而存原始數值的話，每次改版都會有一堆與本測試無關的 diff。
       flatAllZero: STAT_KEYS.every((k) => !m[k]),
