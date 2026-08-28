@@ -422,6 +422,7 @@ export function LoadoutRig({
       position={position}
       onOpenModule={onOpenModule}
       activePosition={activeModule}
+      roomy={roomyCells}
     />
   )
 

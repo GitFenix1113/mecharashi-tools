@@ -76,6 +76,15 @@ interface Props {
   onOpenModule?: (ref: ModuleSlotRef) => void
   /** 目前面板開著的那一格，畫成選中狀態 */
   activePosition?: MechPartPosition | null
+  /**
+   * 寬格（與 `SlotCell` 的 `roomy` 同一階、同一組數字）。
+   *
+   * ⚠ **這不是可有可無的一致性**：2026-08-28 起臂卡就插在同側武器格之間
+   *   （肩 → 臂 → 手），而武器格在 roomy 階是 72px 高。臂卡不跟著升階的話，
+   *   一欄之內會出現 72／59／72 的階梯 —— 而那正好是整張圖上最顯眼的位置。
+   *   （本機實測就是這個數字：補之前 59px，補之後與鄰居齊平。）
+   */
+  roomy?: boolean
 }
 
 /**
@@ -85,7 +94,7 @@ interface Props {
  *   guard 留在卡身上而不是呼叫端：呼叫端散在槽位圖的四個位置，各寫一次
  *   就是同一條規則的四份副本，而它們會各自過期。
  */
-export function MechPartCard({ ctx, position, onOpenModule, activePosition }: Props) {
+export function MechPartCard({ ctx, position, onOpenModule, activePosition, roomy }: Props) {
   // 同族堆疊：卡片上的 Lv 是**那一族的合計**，不是這一格自己的（C-7）
   const stacks = useMemo(
     () => moduleStacks(ctx.modules, (id) => ctx.world.modules.get(id)),
@@ -100,16 +109,18 @@ export function MechPartCard({ ctx, position, onOpenModule, activePosition }: Pr
       stacks={stacks}
       position={position}
       active={activePosition === position}
+      roomy={roomy}
       onOpen={onOpenModule}
     />
   )
 }
 
-function PartCard({ ctx, stacks, position, active, onOpen }: {
+function PartCard({ ctx, stacks, position, active, roomy, onOpen }: {
   ctx: LoadoutContext
   stacks: ReturnType<typeof moduleStacks>
   position: MechPartPosition
   active: boolean
+  roomy?: boolean
   onOpen?: (ref: ModuleSlotRef) => void
 }) {
   const { part } = ctx.chassis!.parts[position]
@@ -150,7 +161,7 @@ function PartCard({ ctx, stacks, position, active, onOpen }: {
         {usable && (
           equipped ? (
             <span className="flex items-center min-w-0" style={{ gap: 5 }}>
-              <ModuleIcon mod={equipped} size={22} />
+              <ModuleIcon mod={equipped} size={roomy ? 26 : 22} />
               <span className="text-[12px] text-accent-orange truncate leading-tight">{equipped.name}</span>
               {stack && (
                 <span className={`${HUD.num} text-[10px] shrink-0 ml-auto ${
@@ -162,7 +173,7 @@ function PartCard({ ctx, stacks, position, active, onOpen }: {
             </span>
           ) : (
             <span className="flex items-center" style={{ gap: 5 }}>
-              <ModuleIcon mod={null} size={22} className="border-dashed" />
+              <ModuleIcon mod={null} size={roomy ? 26 : 22} className="border-dashed" />
               <span className="text-[12px] text-text-dim leading-tight">
                 {equippedId ? '模組資料已不存在' : '未裝模組'}
               </span>
@@ -173,7 +184,13 @@ function PartCard({ ctx, stacks, position, active, onOpen }: {
     </>
   )
 
-  const shell = 'hud-cut-sm group flex items-center gap-2 px-2 py-1.5 border transition-colors w-full'
+  // ⚠ roomy 的三個數字與 `SlotCell` **逐字相同**（`px-[12px] py-[11px] gap-[11px]` ＋ `min-h-[72px]`）：
+  //   這兩種卡在 roomy 階是上下相鄰的，任何一邊自己調都會讓那一欄的節奏散掉。
+  //   部位圖示本身不必放大 —— `w-9` 在本站的 19px root 下已是 42.75px，恰好等於
+  //   SlotCell roomy 的 42px 圖示框（見 IconBox 的註解）。
+  const shell = `hud-cut-sm group flex items-center border transition-colors w-full ${
+    roomy ? 'gap-[11px] px-[12px] py-[11px] min-h-[72px]' : 'gap-2 px-2 py-1.5'
+  }`
 
   if (!clickable) {
     return (
