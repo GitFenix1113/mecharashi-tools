@@ -31,6 +31,22 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-F · 形態獨立配裝</h3>
+      <p><b>模擬器最後一處「答案不完整」的地方補上了：海莉絲從一套配裝變成三個分頁各一套，第四個鎖死的形態以一張唯讀卡交代。</b>這與「還沒做元件」不同——元件缺席時玩家知道自己沒看到，<b>形態缺席時玩家看到的是一個看起來完整、實際上只對四分之一情況成立的配裝</b>。地基（<code>draft.sets</code> / <code>activeSetKey</code> 自 052-A、<code>reconcile()</code> 逐套掃、<code>canEquipWeapon()</code> 的 <code>FORM_WEAPON_TYPE</code>、<code>utils/forms.ts</code> 三支純函式）早就鋪好，<b>缺的只是那排分頁沒被畫出來</b>。<br>
+      <b>逐套預算是本計畫的價值所在</b>：先鋒背槽空著、掛得上強襲者背包 ⇒ <b>3,675</b>；戰術背槽被戰術武器佔住 ⇒ <b>3,375</b>。那 300 的差距在遊戲裡本來就存在，站上先前只印得出其中一個數字。<code>OutputBar</code> 因此帶上形態標籤，捲到頁面下半部也不會看到一個不知道屬於哪一套的數字。<br>
+      ⚠ <b>三個「答案在使用者腦中、不在程式裡」的問題先問掉才動工</b>（Phase A）。最關鍵的一條：<b>曜沒有形態分頁，資料本來就是對的</b>——遊戲裡曜連形態頁面都沒有，<code>independentLoadout: undefined</code> ⇒ <code>equipSetKeys()</code> 回 <code>['default']</code> <b>是正確行為不是 bug</b>。總綱原本寫著「曜 1 套 ＋ 1 唯讀」，已改寫並明文寫上<b>「不要順手把欄位補上」</b>：規格與資料互相打臉時，後來的人一定會去改比較好改的那一邊，而那一邊是資料。<b>唯讀卡的判準因此收成「這位機師有沒有分頁列」</b>（<code>lockedFormCards()</code> 第一行就是這個判斷，可單測），今天全站只有海莉絲虛粒子一張。<br>
+      ⚠ <b>三個工項的前提在動工時就已經不成立，均已訂正並留下紀錄</b>：① <b>A-2</b> 訂正 E-1 的對帳配對——原訂「先鋒 vs 突擊」<b>兩邊都是 3675</b>（能裝的武器全落在手部槽、背槽都空著），測試會綠卻什麼都沒防到，是 052-J「把 bug 本身寫進測試」的同一個坑；② <b>B-3</b> 的「挑選器灰列」在 052-I 之後已不存在（structural 項目整批不列），那句「戰術形態只能裝備戰術類武器」<b>一個字都到不了畫面</b>，改成講在清單之上；③ <b>C-2</b> 的三句前提全錯——固定武裝<b>各 100 合計 300 不是 0</b>，<code>loadoutWeightSet()</code> 的 golden fixture 寫著虛粒子 <b>1,125</b> 而那正是官方整備畫面的數字，原本建議印的「不佔配裝額度」<b>會同時與引擎、官方畫面、既有測試三邊打臉</b>。<b>「改不了」與「不佔額度」是兩件事。</b><br>
+      另修兩個沒有錯誤訊息的真洞：<code>setActiveSet</code> <b>不驗 key</b>（頁面那側會把不合法的鍵退回第一個分頁，但<b>那只修了畫面</b>——動作讀的是 <code>draft.activeSetKey</code> 本人，症狀是「畫面停在先鋒分頁，裝上的武器卻寫進一個不存在的鍵」）；<code>reconcile()</code> 在 <code>forms</code> <b>尚未載入時會把三個形態分頁靜默整批刪掉</b>，且<b>不進 <code>removed</code></b> ⇒ 沒有 toast、沒有 [復原]，玩家看到的是「貼了碼，三套只剩一套」。已補上形態的載入 gate（元件 052-D 與模組 052-G 在同一支函式裡各有一行，這是形態的那一份）。<br>
+      ⚠ <b>站長實測推翻了分頁列的位置</b>：初版擺在 sticky 抬頭（理由是「分頁與它統轄的數字一起 sticky」），實際回饋是<b>「這邊有點不顯眼，我找了一陣子才找到」</b>——那一排混在幾顆同色同形的卡片之間，看起來像又一個欄位而不是可以切換的東西。<b>理論上的歸屬性輸給實際上的找不到。</b>改到「裝備與模組」面板抬頭（槽位圖正上方），sticky 數字的歸屬改由 <code>OutputBar</code> 的形態標籤補上。<b>這個問題沒有任何一條測試、也沒有任何一次開發者目視抓得出來</b>——功能全對、數字全對、RWD 全過，只是玩家找不到。<br>
+      驗收：<code>npm test</code> <b>939 則全綠</b>（含 15 則新測試釘住「什麼隨套走、什麼四套共用」——武器／背包／元件逐頁分開，機甲／模組／算力四套共用，<b>而串味不會有任何錯誤訊息</b>）；本機 emulator 逐項實測，分享連結在<b>全新瀏覽器 context</b> round-trip 三頁全相符；匯出 PNG <b>實際下載並開圖確認無破圖</b>（2000×2696）——先前的驗收是攔 <code>a.download</code> 讀檔名，而 <code>toPng()</code> 會失敗的方式<b>正好都不影響檔名</b>。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-28 · 14 / 14 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-F_形態獨立配裝/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-F_形態獨立配裝/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card cyan">
       <div class="card-icon">◆</div>
       <h3>PLAN-052-D · 元件負載與互斥</h3>

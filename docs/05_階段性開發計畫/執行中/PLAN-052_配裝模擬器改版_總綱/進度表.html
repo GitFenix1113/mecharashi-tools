@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">6</div>
+      <div class="summary-num" style="color:var(--accent-green)">7</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -179,7 +179,7 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">8</div>
+      <div class="summary-num" style="color:var(--text-primary)">9</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">6 / 8</span>
+      <span style="color:var(--accent-purple);">7 / 9</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 75%"></div>
+      <div class="progress-bar-fill" style="width: 78%"></div>
     </div>
   </div>
 
@@ -394,6 +394,46 @@
           症狀是<b>貼一次分享碼、元件就被靜默清空一次</b>。
         </div>
         <div class="task-file">PLAN-052-D_元件負載與互斥/進度表.html（已歸檔至歷史記錄）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">052-F &nbsp; 形態獨立配裝</div>
+      <div class="task-group-meta">2026-08-28 完成 · 14 / 14 工項</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">分頁列 ＋ 唯讀形態卡 ＋ 逐套預算（14 工項）</div>
+        <div class="task-desc">
+          海莉絲從<b>一套</b>配裝變成<b>三個分頁各一套</b>，第四個鎖死的形態以唯讀卡交代。
+          <b>逐套預算是本子計畫的價值所在</b>：先鋒背槽空著、掛得上強襲者背包 ⇒ <b>3,675</b>；
+          戰術背槽被戰術武器佔住 ⇒ <b>3,375</b>。那 300 的差距在遊戲裡本來就存在，
+          站上先前只印得出其中一個數字。<br>
+          <b>對總綱的三處回寫</b>（皆已改在計畫書內）：<br>
+          ① <b>曜沒有形態分頁</b>（使用者裁決 2026-08-28）——遊戲裡曜連形態頁面都沒有，
+             <code>independentLoadout: undefined</code> 是<b>正確資料</b>，
+             <code>equipSetKeys('pilot_088_曜')</code> 回 <code>['default']</code> 不是 bug。
+             總綱原表列的「曜 1 套 ＋ 1 唯讀」已改寫，並明文寫上「不要順手把欄位補上」——
+             <b>規格與資料互相打臉時，後來的人一定會去改比較好改的那一邊，而那一邊是資料。</b><br>
+          ② <b>決策四的 independentLoadout 筆數由「海莉絲 4 筆」改為 3 筆</b>
+             （虛粒子那筆是 <code>undefined</code>，寫 4 筆會誘導人去補一筆不存在的第 4 筆）。<br>
+          ③ <b>唯讀卡的判準是「這位機師有沒有分頁列」</b>，不是「有沒有 <code>fixedArmament</code> 形態」——
+             有分頁列，鎖死的那一格才需要被解釋。<br>
+          <b>對其他子計畫的兩條交代</b>：052-I 那條「形態鎖定態樣式已寫好但無法從 UI 觸達」
+          <b>今日仍未觸達</b>——本計畫確認 <code>ctx.lock</code> 走的是<b>全鎖形態整個挑選器降級</b>那條路，
+          而虛粒子不開分頁 ⇒ 玩家永遠選不到它 ⇒ 那段樣式今天依舊是死碼（不屬本計畫範圍）；
+          模組／算力／機甲<b>四套共用</b>已由測試釘住，與本群組原先的預告一致。<br>
+          ⚠ <b>另抓到一條歸屬 052-G 的既有斷線</b>：<code>loadoutBudget()</code> 呼叫
+          <code>effectiveOutput()</code> 時<b>沒有傳第三個參數 <code>modules</code></b>
+          ⇒ <code>OutputBreakdown.modules</code> 恆為 0。全庫只有 2 筆模組有出力加成（各 +100），
+          <b>模組要先能被玩家裝上去，這條線才有東西可接</b>。
+        </div>
+        <div class="task-file">PLAN-052-F_形態獨立配裝/進度表.html（已歸檔至歷史記錄）</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status done">已完成</span>
@@ -877,8 +917,8 @@
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">052-E / F / H &nbsp; 後續子計畫</div>
-      <div class="task-group-meta">雲端存檔 / 形態 / 熱門配裝</div>
+      <div class="task-group-title">052-E / H &nbsp; 後續子計畫</div>
+      <div class="task-group-meta">雲端存檔 / 熱門配裝 —— 052-F 已於 2026-08-28 完工歸檔</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
@@ -892,10 +932,9 @@
           <b>052-G 決策六的載入 gate 對它同樣適用</b>——草稿會在集合載入完成前就被
           <code>loadDraft</code> 灌進來。另接手方案名稱的登入 gate（052-I E-1）。
           <br>
-          <b>052-F（形態）</b>：模組與部件掛在<b>機甲</b>上、不隨形態變動 ⇒ 兩者都留在
-          <code>LoadoutDraft</code> 頂層、<b>不進 <code>EquipSet</code></b>（與 <code>ndLevels</code> 同理），
-          海莉絲四個分頁共用同一組模組與部件。另 052-I 的形態鎖定態樣式已寫好但今日無法從 UI 觸達
-          （<code>ctx.lock</code> 恆為 null），待形態分頁落地後補驗。
+          <b>052-F（形態）已於 2026-08-28 完工歸檔</b>，見上方獨立群組——
+          原本預告的「模組與部件留在 <code>LoadoutDraft</code> 頂層、不進 <code>EquipSet</code>」
+          已由測試釘住並成立。
           <br>
           <b>052-H（熱門配裝）</b>：聚合維度會多出模組與部件來源兩項。
         </div>
