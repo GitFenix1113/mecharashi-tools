@@ -11,6 +11,7 @@ import {
   REJECTION_CODES, REJECTION_TIER, REJECTION_LABEL,
   buildContext, buildWorld, canEquipBackpack, canEquipWeapon, canSelectMech,
   loadoutBudget, mountCoverage, mountRefFor, slotOccupant, validateLoadout,
+  canSwapPart, partChoices,
   weaponChoices, backpackChoices, structuralCounts, slotHasCandidates,
   canEquipComponent, componentChoices, weaponSiteAt, canEquipModule, planModuleFill, planWeaponAutoEquip,
   planWeaponUpgrade, pilotExclusiveWeapons, lockedMounts,
@@ -18,6 +19,7 @@ import {
 import { equipSetKeys } from './forms.ts'
 import type { Component, Module } from '../types/index.ts'
 import { ArmorType, MechLicense, MechRestriction, WeaponEquipSlot, BackpackType, WeaponType, WeaponKind, MechPartPosition, ModuleSlot, PartInterface } from '../types/enums.ts'
+import { slotKey } from '../types/slots.ts'
 import type { MechPartPosition as MechPartPositionType } from '../types/enums.ts'
 
 // ─── fixtures（數值取自 2026-08-23／24 線上實測）────────────────────────────
@@ -53,6 +55,20 @@ const 重型機: Mech = { ...彌造者, id: 'mech_heavy', name: '重型機', arm
 const 美杜莎MK2: Mech = {
   ...彌造者, id: 'mech_090', name: '美杜莎MK2', weight: 0, output: 0,
   parts: { torso: part() as never, leftArm: part() as never, rightArm: part() as never, legs: part() as never },
+}
+
+/**
+ * 部件混搭的來源（PLAN-052-G Phase D）：同為中甲，但**每個部位都比彌造者輕**，
+ * 軀幹出力也不同 —— 換過去之後重量與出力都會動，測試才驗得到「數值真的跟著走」。
+ */
+const 輕量中甲: Mech = {
+  ...彌造者, id: 'mech_lightweight', name: '輕量中甲', weight: 525, output: 3000,
+  parts: {
+    torso:    part({ weight: 150, output: 3000 }) as never,
+    leftArm:  part({ weight: 125 }) as never,
+    rightArm: part({ weight: 125 }) as never,
+    legs:     part({ weight: 125 }) as never,
+  },
 }
 
 /** 帕斯卡：左右肩各焊一把衝擊炮（同一個 weaponId 掛兩肩 —— 撞 key 的現成教訓） */
@@ -270,7 +286,7 @@ const 重甲限定進階 = weapon({
 
 const WORLD = buildWorld({
   pilots: [海莉絲, 重型機師],
-  mechs: [彌造者, 輕型機, 重型機, 美杜莎MK2, 帕斯卡, 獨臂機, A級機, B級機, 壞接口機],
+  mechs: [彌造者, 輕型機, 重型機, 美杜莎MK2, 帕斯卡, 獨臂機, A級機, B級機, 壞接口機, 輕量中甲],
   weapons: [群山之力, 貝奧武夫, 藝術突襲, 夜魘, 熔火, 炬塔, 耀星, 隕星, 千星, 衝擊炮, 聚合屏障, 玲瓏, 群星, 廉價刀, 三槽刀],
   backpacks: [強襲者背包, 出力背包Ⅲ, 輕型限定包],
   forms: [先鋒形態, 突擊形態, 虛粒子形態],
@@ -296,6 +312,8 @@ const ctxOf = (
     mech?: Mech; setKey?: string; pilot?: Pilot
     /** 四個接口上各裝了什麼（PLAN-052-G）。**放頂層、不放進 set** —— 模組不隨形態分頁變動 */
     modules?: Partial<Record<MechPartPositionType, string>>
+    /** 部件混搭：部位 → 來源機甲 id（PLAN-052-G Phase D）。同樣放頂層 */
+    parts?: Partial<Record<MechPartPositionType, string>>
   } = {},
 ) => {
   const key = opts.setKey ?? 'default'
@@ -305,6 +323,7 @@ const ctxOf = (
       mechId: (opts.mech ?? 彌造者).id,
       sets: { [key]: set },
       modules: opts.modules,
+      parts: opts.parts,
     },
     key,
     WORLD,
@@ -315,6 +334,7 @@ const HAND_R = { bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'right' 
 const DUAL   = { bank: 'main', slot: WeaponEquipSlot.DUAL_HAND } as const
 const BACKUP_L = { bank: 'backup', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' } as const
 const SHO_L  = { bank: 'main', slot: WeaponEquipSlot.SHOULDER, side: 'left' } as const
+const SHO_R  = { bank: 'main', slot: WeaponEquipSlot.SHOULDER, side: 'right' } as const
 const BACK   = { bank: 'main', slot: WeaponEquipSlot.BACK } as const
 
 // ─── 封閉聯集的完整性 ───────────────────────────────────────────────────────
@@ -453,6 +473,88 @@ test('052-G：沒有出力加成的模組不會動到出力（別把「有裝東
   const b = loadoutBudget(ctxOf({ mounts: [] }, { modules: { torso: 通用S.id, legs: 空殼模組.id } }))
   assert.equal(b.output.modules, 0)
   assert.equal(b.output.total, 3375)
+})
+
+// ─── 部件混搭（PLAN-052-G Phase D）────────────────────────────────────────────
+//
+// 規則只有一行（同裝甲類型），但它接的東西很多：重量／出力是 Σ 四部位、
+// 固定武裝住在部件上、模組接口也住在部件上。本組測試釘的是「換過去之後那些全部跟著走」。
+
+test('052-G D：換一個部位 ⇒ 重量與出力真的跟著走（不是只換了一個名字）', () => {
+  const 原廠 = loadoutBudget(ctxOf({ mounts: [] }))
+  assert.equal(原廠.weight.total, 825)
+  assert.equal(原廠.output.total, 3375)
+
+  // 軀幹換成輕量中甲的（300 → 150、出力 3375 → 3000）
+  const 換軀幹 = loadoutBudget(ctxOf({ mounts: [] }, { parts: { torso: 輕量中甲.id } }))
+  assert.equal(換軀幹.weight.total, 825 - 300 + 150)
+  assert.equal(換軀幹.output.total, 3000, '出力只看軀幹 —— 換的正是那一格')
+})
+
+test('052-G D：只有軀幹有出力 ⇒ 換手臂不動出力，但動重量', () => {
+  const b = loadoutBudget(ctxOf({ mounts: [] }, { parts: { leftArm: 輕量中甲.id } }))
+  assert.equal(b.output.total, 3375, '手臂沒有出力欄位')
+  assert.equal(b.weight.total, 825 - 175 + 125)
+})
+
+test('052-G D：四格全換 ⇒ 等於整台換過去（Σ 四部位，沒有殘留原廠的那一格）', () => {
+  const all = { torso: 輕量中甲.id, leftArm: 輕量中甲.id, rightArm: 輕量中甲.id, legs: 輕量中甲.id }
+  const b = loadoutBudget(ctxOf({ mounts: [] }, { parts: all }))
+  assert.equal(b.weight.total, 525)
+  assert.equal(b.output.total, 3000)
+})
+
+test('052-G D ⚠ 固定武裝要跟著換過去的部件走（讀基底機甲的話兩邊都錯）', () => {
+  // 帕斯卡的雙臂各焊一把衝擊炮在同側肩上。把彌造者的右臂換成帕斯卡的 ⇒ 右肩被佔住、左肩沒有。
+  const ctx = ctxOf({ mounts: [] }, { parts: { rightArm: 帕斯卡.id } })
+  assert.ok(ctx.occupied.get(slotKey(SHO_R)), '換進來的部件帶的固定武裝要出現')
+  assert.equal(ctx.occupied.get(slotKey(SHO_L)), undefined, '沒換的那一側不該憑空長出固定武裝')
+  // 反過來：帕斯卡把右臂換成彌造者的乾淨手臂 ⇒ 右肩空出來
+  const ctx2 = ctxOf({ mounts: [] }, { mech: 帕斯卡, parts: { rightArm: 彌造者.id } })
+  assert.equal(ctx2.occupied.get(slotKey(SHO_R)), undefined, '換走的部件不該還佔著格子')
+  assert.ok(ctx2.occupied.get(slotKey(SHO_L)), '沒換的那一側照舊')
+})
+
+test('052-G D：模組接口跟著換過去的部件走（Ⅱ 型換成 Ⅰ 型 ⇒ S 級模組裝不上）', () => {
+  const ctx = ctxOf({ mounts: [] }, { parts: { torso: A級機.id } })   // A 級機的軀幹是 Ⅰ 型
+  assert.equal(ctx.chassis?.moduleSlots.torso.iface, PartInterface.TYPE_I)
+  const r = canEquipModule(ctx, 通用S, TORSO)
+  assert.equal(r?.code, 'MOD_IFACE_RARITY')
+})
+
+test('052-G D：canSwapPart —— 同型放行、跨型擋下並說得出是哪兩型', () => {
+  const ctx = ctxOf({ mounts: [] })
+  assert.equal(canSwapPart(ctx, 輕量中甲, MechPartPosition.TORSO), null)
+  assert.equal(canSwapPart(ctx, 彌造者, MechPartPosition.TORSO), null, '換成自己＝還原原廠，不是拒絕')
+  const r = canSwapPart(ctx, 重型機, MechPartPosition.TORSO)
+  assert.equal(r?.code, 'PART_INCOMPATIBLE')
+  assert.match(r!.reason, /重型/)
+  // ⚠ 是「中甲」不是「中型」—— ArmorType 的值是 輕型／中甲／重型（官方命名本來就不齊），
+  //   而 MechLicense 那邊是 輕型／中型／重型。兩套詞彙只差一個字，正是已知 bug #2 的成因。
+  assert.match(r!.reason, /中甲/, '兩型都要講出來，只說「不相容」等於沒說')
+})
+
+test('052-G D：佔位機甲（四部位全 0）不可作為混搭來源', () => {
+  const r = canSwapPart(ctxOf({ mounts: [] }), 美杜莎MK2, MechPartPosition.TORSO)
+  assert.equal(r?.code, 'PART_DATA_INCOMPLETE')
+  // ⚠ 判準是**整台**四部位重量為 0，不是這一格為 0 —— 單一部位重量 0 是可能的真值
+  assert.equal(canSwapPart(ctxOf({ mounts: [] }), 輕量中甲, MechPartPosition.TORSO), null)
+})
+
+test('052-G D：來源池只列同裝甲類型，而且原廠排第一（那是「還原」的入口）', () => {
+  const list = partChoices(ctxOf({ mounts: [] }), MechPartPosition.TORSO)
+  assert.equal(list[0].item.id, 彌造者.id, '基底機甲要排第一，否則換錯之後只剩整台重選一條路')
+  const ids = list.map((e) => e.item.id)
+  assert.ok(!ids.includes(輕型機.id) && !ids.includes(重型機.id), '跨型不可入池')
+  assert.ok(!ids.includes(美杜莎MK2.id), '佔位機甲不可入池 —— 列成一組重量 0 的免費部件會配出不存在的機體')
+  assert.ok(ids.includes(輕量中甲.id))
+  assert.ok(list.every((e) => e.rejection === null), '入池的每一台都要是真的可換')
+})
+
+test('052-G D：來源池依重量輕到重排（混搭的第一動機就是減重）', () => {
+  const list = partChoices(ctxOf({ mounts: [] }), MechPartPosition.TORSO).slice(1)   // 跳過原廠
+  const ws = list.map((e) => e.item.parts?.torso && typeof e.item.parts.torso !== 'number' ? e.item.parts.torso.weight : 0)
+  assert.deepEqual(ws, [...ws].sort((a, b) => a - b))
 })
 
 test('手部取較重組（不是加總）—— 主手 800 ／ 備用 850 只計 850', () => {

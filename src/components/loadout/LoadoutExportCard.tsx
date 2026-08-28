@@ -459,6 +459,16 @@ function ModuleBand({ ctx }: { ctx: LoadoutContext }) {
       // 第二格起只標「同族」，不重印一次數值
       stats: mod && primary && stack ? moduleStatsAt(stack.mod, stack.level) : {},
       dup: !!mod && !primary,
+      /**
+       * 這一格的部件來源（PLAN-052-G Phase D）。原廠回 null ⇒ 整段不印。
+       *
+       * ⚠ **圖上非印不可**：混搭之後圖上的重量／火力是拼出來的，
+       *   而轉發到第三手的人手上只有這張圖 —— 不標來源，那張圖就變成一組
+       *   查不回去的數字（與 052-C 把分享碼印在圖底部、052-F 標形態名同一類問題）。
+       */
+      from: chassis.parts[pos].sourceMechId !== mech.id
+        ? ctx.world.mechs.get(chassis.parts[pos].sourceMechId)?.name ?? chassis.parts[pos].sourceMechId
+        : null,
     }
   })
 
@@ -466,13 +476,18 @@ function ModuleBand({ ctx }: { ctx: LoadoutContext }) {
   if (!lines.some((l) => l.usable)) return null
 
   const equipped = lines.filter((l) => l.name).length
+  const swapped = lines.filter((l) => l.from).length
   const total = sumModuleStats([...stacks.values()].map((st) => moduleStatsAt(st.mod, st.level)))
   const totalText = statText(total)
   const wasted = [...stacks.values()].filter((st) => st.overflow > 0)
 
   return (
     <div style={{ borderTop: `1px solid ${C.line}`, background: C.bg }}>
-      <SectionHead title="模組接口" note={`${equipped} / ${lines.length} 已裝`} tone={C.green} />
+      <SectionHead
+        title={swapped > 0 ? '部件與模組接口' : '模組接口'}
+        note={swapped > 0 ? `${equipped} / ${lines.length} 已裝 · ${swapped} 格混搭` : `${equipped} / ${lines.length} 已裝`}
+        tone={C.green}
+      />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: C.line }}>
         {lines.map((l) => (
           <div key={l.pos} style={{
@@ -483,6 +498,10 @@ function ModuleBand({ ctx }: { ctx: LoadoutContext }) {
             <span style={{
               fontFamily: MONO, fontSize: 10, color: C.dim, width: 58, flexShrink: 0, whiteSpace: 'nowrap',
             }}>{l.iface}</span>
+            {/* 混搭來源。原廠不印 —— 88 台原廠圖上多四行「本機甲」是四行雜訊 */}
+            {l.from && (
+              <span style={{ fontSize: 11, color: C.orange, flexShrink: 0, whiteSpace: 'nowrap' }}>◆{l.from}</span>
+            )}
             <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
               <span style={{ fontSize: 13, color: l.name ? C.text : C.dim }}>
                 {l.name ?? (l.usable ? '未裝' : '—')}

@@ -19,7 +19,7 @@ import type { ModuleSlotRef, SlotCapacity, SlotKey, WeaponSlotRef } from '../typ
 import { slotKey, slotAcceptsSide } from '../types/slots.ts'
 import { ArmorType, COMPONENT_WEAPON_TYPES, MechLicense, MechRestriction, MechPartPosition, WeaponEquipSlot, WeaponKind } from '../types/enums.ts'
 import { fromAssemblableArmorType, licenseAllows, toArmorType } from './normalizeArmorType.ts'
-import { resolveChassis, type ResolvedChassis } from './chassisStats.ts'
+import { resolveChassis, partOf, chassisWeight, type ResolvedChassis } from './chassisStats.ts'
 import { compareModuleBySlot, partLabel } from './moduleSlots.ts'
 import {
   enumerateSlots, loadoutSlotCapacity, occupiedSlots, lockedSlots, slotLabel,
@@ -62,6 +62,8 @@ export const REJECTION_CODES = [
   // 模組 —— 掛在機甲四個接口上的那一層（PLAN-052-G）
   'MOD_NO_INTERFACE', 'MOD_IFACE_UNKNOWN', 'MOD_IFACE_RARITY',
   'MOD_NOT_CANDIDATE', 'MOD_DATA_INCOMPLETE',
+  // 部件混搭 —— 四個部位各自換來源機甲（PLAN-052-G Phase D）
+  'PART_INCOMPATIBLE', 'PART_DATA_INCOMPLETE',
 ] as const
 
 export type RejectionCode = typeof REJECTION_CODES[number]
@@ -103,6 +105,13 @@ export const REJECTION_TIER = {
   MOD_IFACE_RARITY:    'structural',
   MOD_NOT_CANDIDATE:   'structural',
   MOD_DATA_INCOMPLETE: 'structural',
+  // ⚠ 兩者都選 structural（＝玩家改別的選擇也解不掉），因此**不會出現在挑選器清單裡**
+  //   （PickerShell 自 052-I 起把 structural 整批不列）。這是刻意的：
+  //   · 裝甲類型不符 —— 來源池本來就只列同型，這條擋的是**外來草稿**（分享碼／舊存檔）。
+  //   · 數值未公布 —— 列成一組重量 0 的「免費部件」會讓玩家配出一台不存在的機體。
+  //   被濾掉的數量由挑選器的 hint 一句話交代（同 052-F B-3 的做法），不是靜默消失。
+  PART_INCOMPATIBLE:   'structural',
+  PART_DATA_INCOMPLETE: 'structural',
 } as const satisfies Record<RejectionCode, RejectionTier>
 
 /** 摺疊列的短標籤（「因形態限定隱藏 90」的那個「形態限定」）。 */
@@ -133,6 +142,8 @@ export const REJECTION_LABEL = {
   MOD_IFACE_RARITY:    '僅可裝 A 級',
   MOD_NOT_CANDIDATE:   '不可自由裝配',
   MOD_DATA_INCOMPLETE: '數值未建檔',
+  PART_INCOMPATIBLE:   '裝甲類型不符',
+  PART_DATA_INCOMPLETE: '數值未公布',
 } as const satisfies Record<RejectionCode, string>
 
 type CodesOfTier<T extends RejectionTier> =
@@ -296,6 +307,7 @@ export function buildContext(
     mechId?: string
     sets: Record<string, EquipSet>
     modules?: Partial<Record<MechPartPosition, string>>
+    parts?: Partial<Record<MechPartPosition, string>>
   },
   setKey: string,
   world: LoadoutWorld,
@@ -307,18 +319,44 @@ export function buildContext(
     : world.forms.find((f) => f.id === setKey) ?? null
   const set = draft.sets[setKey] ?? { mounts: [] }
   const backpack = (set.backpackId ? world.backpacks.get(set.backpackId) : null) ?? null
+
+  // ── 部件混搭（PLAN-052-G Phase D）────────────────────────────────────────
+  //
+  // `draft.parts` 是**部位 → 來源機甲 id**，只記與原廠不同的那幾格。
+  // `resolveChassis()` 的 `partOverrides` 自 052-A B-2 就實作好了，本行只是接上。
+  //
+  // ⚠ 查不到來源機甲時**當作沒換**（退回原廠）而不是整台解不出來：
+  //   草稿是外來的（分享碼／書架／雲端存檔），而 `world.mechs` 可能還沒載入完。
+  //   真正不合法的那些由 `reconcile()` 帶著原因清掉並進 toast，這裡只負責算得出畫面。
+  const partOverrides = draft.parts && mech
+    ? Object.fromEntries(
+        Object.entries(draft.parts).flatMap(([pos, srcId]) => {
+          const src = srcId ? world.mechs.get(srcId) : null
+          return src && src.id !== mech.id ? [[pos, { id: src.id, parts: src.parts }] as const] : []
+        }),
+      )
+    : undefined
+  const chassis = resolveChassis(mech, { moduleMap: world.modules, partOverrides })
+
   return {
     pilot,
     mech,
     // ⚠ `moduleMap` 一定要傳：少了它 `moduleLevelOf()` 恆回 0，而 0 的語意是「查無此模組」。
     //   模組等級一律由這裡 derive、**不存進草稿**（總綱決策六：存下來就是第二真相源）。
-    chassis: resolveChassis(mech, { moduleMap: world.modules }),
+    chassis,
     form,
     lock: lockedSlots(form),
     set,
     backpack,
     capacity: loadoutSlotCapacity(mech, backpack),
-    occupied: occupiedSlots(mech?.parts),
+    // ⚠ 固定武裝要讀**混搭後**的部件，不是 `mech.parts`（PLAN-052-G Phase D）。
+    //   固定武裝住在部件上（帕斯卡的衝擊炮在雙肩、破曉者-01 的嵐質儲能艙、霸王的多功能彈倉），
+    //   換掉右臂就等於換掉它帶來的那一格。讀基底機甲的症狀是**兩邊都錯**：
+    //   換走的部件仍然佔著格子，換進來的部件帶的固定武裝卻不見了 —— 而且沒有任何錯誤訊息。
+    occupied: occupiedSlots(chassis
+      ? { torso: chassis.parts.torso.part, leftArm: chassis.parts.leftArm.part,
+          rightArm: chassis.parts.rightArm.part, legs: chassis.parts.legs.part }
+      : mech?.parts),
     modules: draft.modules ?? {},
     world,
   }
@@ -1549,6 +1587,91 @@ export function moduleChoices(ctx: LoadoutContext, ref: ModuleSlotRef): PickerEn
     || compareModuleBySlot(a.item.slot, b.item.slot)
     || rarityRank(a.item.rarity) - rarityRank(b.item.rarity)
     || a.item.name.localeCompare(b.item.name, 'zh-Hant'))
+}
+
+// ─── 部件混搭：四個部位各自換來源機甲（PLAN-052-G Phase D）──────────────────
+//
+// 總綱決策七：**同裝甲類型**、Σ 四部位、換基底機甲即清空。
+// 規則本身只有一行（`source.armorType === base.armorType`），
+// 但那一行帶掉了一整串本來會很難的問題：不能跨型 ⇒ 四部位必定同型 ⇒
+// 「混搭後裝甲類型由誰決定」自動消失，雙肩槽與執照判定完全不受影響。
+//
+// ⚠ **本站不做擁有限制**（總綱 Open Question ④ 的預設答案）：來源池是全庫同型機甲，
+//   不問玩家有沒有那台。模擬器的用途是「試配」，擋在這裡等於要玩家先把倉庫輸入一遍。
+
+/**
+ * 這一格可不可以換成 `source` 的同位部件。可以回 `null`。
+ *
+ * ⚠ 「換成自己」不是拒絕 —— 那是**還原成原廠**，由 reducer 的 `resetPart` 表達
+ *   （見 `swapPart` 的註解：與原廠相同時刪掉鍵而不是寫入自己的 mechId）。
+ */
+export function canSwapPart(
+  ctx: LoadoutContext,
+  source: Mech,
+  position: MechPartPosition,
+): Rejection | null {
+  if (!ctx.mech || !ctx.chassis) return reject('NO_MECH', '請先選擇機甲')
+
+  // ① 同裝甲類型 —— 決策七的那一行
+  if (source.armorType !== ctx.mech.armorType) {
+    // ⚠ 兩型都要寫出來。`ArmorType` 的值是 輕型／**中甲**／重型（官方命名本來就不齊），
+    //   只說「不相容」等於沒說 —— 玩家看不出來是自己這台的問題還是那台的問題。
+    return reject(
+      'PART_INCOMPATIBLE',
+      `不能跨裝甲類型混搭：${source.name}是${source.armorType}，這台是${ctx.mech.armorType}`,
+    )
+  }
+
+  // ② 來源機甲沒有這個部位（或還是 legacy 的耐久數字）
+  const part = partOf(source.parts, position)
+  if (!part) return reject('PART_DATA_INCOMPLETE', `${source.name}的${partLabel(position)}資料未建檔`)
+
+  // ③ 佔位機甲：四部位全 0（新機甲一律先建檔再補數值）
+  //
+  //    ⚠ 判準看**整台**而不是這一個部位：單一部位的重量 0 是可能的真值
+  //      （純封鎖型固定武裝那幾件就是 0），而「整台四部位加起來是 0」才是佔位。
+  //    ⚠ 2026-08-28 直讀正式庫：**今天 0 台命中**（90 台的四部位重量全部 > 0）。
+  //      留著是因為佔位慣例保證它會再出現 —— 列成一組重量 0 的「免費部件」
+  //      會讓玩家配出一台不存在的機體，而且看起來像 bug 而不是資料狀態。
+  if (chassisWeight(source.parts) === 0) {
+    return reject('PART_DATA_INCOMPLETE', `${source.name}的官方數值尚未公布`)
+  }
+
+  return null
+}
+
+/**
+ * 某一個部位的來源機甲清單（PLAN-052-G D-2）。
+ *
+ * 池子是**全庫同裝甲類型**：輕型 27 ／ 中甲 36 ／ 重型 27（含自己）。
+ * 一頁列得完，不必分頁；每個部位都帶 icon（352／360 有圖）。
+ *
+ * ⚠ **基底機甲自己留在清單裡**，而且排第一 —— 它是「還原成原廠」的入口。
+ *   把它濾掉的話，換錯之後就只剩「整台重選一次」這條路。
+ *
+ * ⚠ 與 `moduleChoices()` 一樣濾掉 omitted、blocked 早退空陣列；
+ *   structural（裝甲類型不符／數值未公布）**也不列** —— 它們不是「這一格的限制」，
+ *   而是「這台機甲根本不該出現在這個池子裡」。被濾掉幾筆由挑選器的 hint 交代。
+ */
+export function partChoices(ctx: LoadoutContext, position: MechPartPosition): PickerEntry<Mech>[] {
+  const out: PickerEntry<Mech>[] = []
+  for (const m of ctx.world.mechs.values()) {
+    const r = canSwapPart(ctx, m, position)
+    if (r && r.tier === 'blocked') return []
+    if (r) continue                       // structural：不列（見檔頭）
+    out.push({ item: m, rejection: null })
+  }
+  // 原廠排第一，其餘依重量輕到重（混搭的第一動機就是減重）、再依名稱
+  const baseId = ctx.mech?.id
+  return out.sort((a, b) =>
+    (a.item.id === baseId ? -1 : 0) - (b.item.id === baseId ? -1 : 0)
+    || (partOf(a.item.parts, position)?.weight ?? 0) - (partOf(b.item.parts, position)?.weight ?? 0)
+    || a.item.name.localeCompare(b.item.name, 'zh-Hant'))
+}
+
+/** 這一格今天的來源機甲 id（沒換過＝基底機甲本人）。 */
+export function partSourceId(ctx: LoadoutContext, position: MechPartPosition): string | null {
+  return ctx.chassis?.parts[position].sourceMechId ?? null
 }
 
 /**

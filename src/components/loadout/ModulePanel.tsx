@@ -16,6 +16,8 @@ import {
   type LoadoutContext, type ModuleFillPlan, type PickerEntry, type Rejection, type ResolutionAction,
 } from '../../utils/loadoutRules'
 import type { ModuleStack } from '../../utils/moduleRules'
+import type { Mech } from '../../types'
+import { PartSourceList } from './PartSourceList'
 
 // ─── 模組面板（PLAN-052-G C-3）──────────────────────────────────────────────
 //
@@ -92,9 +94,25 @@ interface Props {
   onFill: (mod: Module) => void
   /** 卸下，以及拒絕訊息附的解法按鈕。動作由規則層給，UI 只負責派出去 */
   onResolve: (action: ResolutionAction) => void
+  /**
+   * 把這一個部位換成 `source` 的同位部件（PLAN-052-G Phase D）。
+   * 傳入基底機甲＝還原成原廠 —— reducer 會把那個鍵收掉（見 `swapPart` 的註解）。
+   */
+  onSwapPart: (source: Mech) => void
 }
 
-export function ModulePanel({ ctx, ref_, onBack, onEquip, onFill, onResolve }: Props) {
+export function ModulePanel({ ctx, ref_, onBack, onEquip, onFill, onResolve, onSwapPart }: Props) {
+  /**
+   * 這個面板回答一個部位的**兩個**問題：「裝了什麼模組」與「這一格是誰的」（Phase D）。
+   *
+   * ⚠ 兩者收在同一個面板、共用同一顆返回鍵（使用者裁決 2026-08-28）。
+   *   另一個做法是在部位卡上多一顆按鈕，但那會讓同一張卡有兩個點擊目標 ——
+   *   而那張卡本來就已經是「整張可點」。
+   *
+   * ⚠ 切段**不重置模組那一段的篩選條件**：`slot`／`rarity`／`query` 的 state 留著。
+   *   來回看一下部件再切回來，篩選被清空是「我剛剛打的字呢」那一種挫折。
+   */
+  const [tab, setTab] = useState<'module' | 'part'>('module')
   const [slot, setSlot] = useState('')
   const [rarity, setRarity] = useState('')
   const [query, setQuery] = useState('')
@@ -102,6 +120,10 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onFill, onResolve }: P
 
   // 空 Map ＝還沒載入完（見 LoadoutWorld.modules 的註解），不是「沒有模組」
   const loading = ctx.world.modules.size === 0
+
+  /** 這一格換過部件沒有（★ 記號的判準）。`sourceMechId` 與基底不同就是換過 */
+  const swapped = !!ctx.chassis && !!ctx.mech
+    && ctx.chassis.parts[ref_.position].sourceMechId !== ctx.mech.id
 
   const iface = interfaceState(ctx.chassis?.moduleSlots[ref_.position]?.iface)
   const equippedId = ctx.modules[ref_.position]
@@ -176,10 +198,36 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onFill, onResolve }: P
           ← 返回
         </button>
         <h2 className={`${HUD.cardTitle} text-text-primary min-w-0 truncate`}>
-          {partLabel(ref_.position)} 的模組
+          {partLabel(ref_.position)}
         </h2>
       </div>
 
+      {/* ── 分段：一個部位的兩個問題 ──
+          「裝了什麼模組」與「這一格是誰的」。⚠ 兩顆都是 `<button>` 而且**永遠都在**——
+          只在混搭可用時才長出第二顆，會讓玩家在不同機甲上看到不一樣的面板骨架。 */}
+      <div className="flex mt-2" style={{ gap: 6 }}>
+        {([['module', '模組'], ['part', '部件來源']] as const).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setTab(key)}
+            aria-pressed={tab === key}
+            className={`hud-cut-sm px-2.5 py-1 text-[13px] border transition-colors cursor-pointer ${
+              tab === key
+                ? 'border-accent-orange text-accent-orange bg-accent-orange/10'
+                : 'border-border text-text-dim hover:text-text-secondary hover:border-border-strong'
+            }`}
+          >
+            {label}
+            {/* 換過的那一格在分段上就看得出來，不必切進去才知道（同 052-F 的形態標籤） */}
+            {key === 'part' && swapped && <span className="ml-1 text-accent-orange">★</span>}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'part' ? (
+        <PartSourceList ctx={ctx} position={ref_.position} onSwap={onSwapPart} />
+      ) : (<>
       <p className={`${HUD.body} text-text-dim mt-1.5`}>
         {iface === 'none' ? '無模組接口'
           : iface === 'unknown' ? '接口型別不明'
@@ -319,6 +367,7 @@ export function ModulePanel({ ctx, ref_, onBack, onEquip, onFill, onResolve }: P
           </div>
         </>
       )}
+      </>)}
     </section>
   )
 }

@@ -123,8 +123,23 @@ function PartCard({ ctx, stacks, position, active, roomy, onOpen }: {
   roomy?: boolean
   onOpen?: (ref: ModuleSlotRef) => void
 }) {
-  const { part } = ctx.chassis!.parts[position]
+  const { part, sourceMechId } = ctx.chassis!.parts[position]
   const iface = interfaceState(ctx.chassis!.moduleSlots[position].iface)
+
+  /**
+   * 這一格換過部件沒有（PLAN-052-G Phase D）。
+   *
+   * ⚠ **一定要印出來。** 混搭上線之後實測發現：換完之後這張卡長得和原廠**一模一樣** ——
+   *   唯一的線索是總重那個數字，以及面板裡某一段上的一顆星。關掉面板就什麼都不剩了，
+   *   而那正是「看起來完整、實際上不是」的那一種畫面。
+   *
+   * ⚠ 它是**標記不是按鈕**：整張卡已經是一個點擊目標（開部位面板），
+   *   在同一張卡上長出第二個可點的東西，只會讓人不確定點哪裡會發生什麼
+   *   —— 與 052-F 把形態歸屬做成 OutputBar 上一個橘色標籤（而不是第二排分頁）同一條理由。
+   */
+  const swappedFrom = sourceMechId !== ctx.mech!.id
+    ? ctx.world.mechs.get(sourceMechId)?.name ?? sourceMechId
+    : null
   const equippedId = ctx.modules[position]
   const equipped = equippedId ? ctx.world.modules.get(equippedId) ?? null : null
   const stack = equipped ? stacks.get(moduleFamilyKey(equipped)) ?? null : null
@@ -154,7 +169,13 @@ function PartCard({ ctx, stacks, position, active, roomy, onOpen }: {
           </span>
           <span className={`${HUD.num} text-[11px] leading-tight ${usable ? 'text-text-dim' : 'text-text-dim italic'}`}>
             {ifaceText}
-          </span>
+            {/* 換過的部件：印來源機甲名。沒換過時整段不畫 —— 88 台原廠卡上寫「原廠」是四行雜訊 */}
+          {swappedFrom && (
+            <span className="text-[11px] text-accent-orange leading-tight truncate shrink min-w-0">
+              ◆{swappedFrom}
+            </span>
+          )}
+        </span>
         </span>
 
         {/* 已裝：縮圖 ＋ 名稱 ＋ 該族合計等級。未裝：一句話，不留白 */}

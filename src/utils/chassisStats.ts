@@ -37,7 +37,7 @@ export type MechPartsInput = Partial<Record<
 >> | null | undefined
 
 /** 取出單一部位物件；legacy 的 number 與缺件一律回 null。 */
-function partOf(parts: MechPartsInput, pos: typeof MECH_PART_ORDER[number]): MechPart | null {
+export function partOf(parts: MechPartsInput, pos: typeof MECH_PART_ORDER[number]): MechPart | null {
   const p = parts?.[pos]
   return p && typeof p !== 'number' ? p : null
 }

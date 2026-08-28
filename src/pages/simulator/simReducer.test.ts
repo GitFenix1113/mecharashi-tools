@@ -28,6 +28,13 @@ const 重型機 = mech('mech_heavy', '重型機', ArmorType.HEAVY)
 /** 第二台中甲：換機甲時「同機種換一台」用（執照一對一之後，跨機種那種換法會先被擋下） */
 const 中甲機2 = mech('mech_053', '中甲機2', ArmorType.MEDIUM)
 
+/** 部件混搭的來源（PLAN-052-G Phase D）：同為中甲、每個部位都更輕，換過去數值才動得到 */
+const 輕量中甲: Mech = {
+  ...mech('mech_lw', '輕量中甲', ArmorType.MEDIUM),
+  weight: 525, output: 3000,
+  parts: { torso: part(150, 3000), leftArm: part(125), rightArm: part(125), legs: part(125) },
+}
+
 const weapon = (over: Partial<Weapon> & Pick<Weapon, 'id' | 'name' | 'weight' | 'equipSlot'>): Weapon => ({
   type: WeaponType.Melee, kind: '刀劍', kindCoefficient: 1, attack: 0, accuracy: 0, critValue: 0,
   rangeType: 'manhattan', minRange: 1, maxRange: 1, ammoCount: 0, hitCount: 1, rarity: 'SS',
@@ -162,7 +169,7 @@ const LEGS  = { kind: 'module', position: MechPartPosition.LEGS } as const
 
 const WORLD = buildWorld({
   pilots: [海莉絲, 輕型機師, 中型機師, ND甲, ND乙],
-  mechs: [彌造者, 輕型機, 重型機, 中甲機2, A級中甲, B級中甲],
+  mechs: [彌造者, 輕型機, 重型機, 中甲機2, A級中甲, B級中甲, 輕量中甲],
   weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
   backpacks: [強襲者背包, 出力背包Ⅲ],
   forms: [先鋒形態, 突擊形態, 戰術形態],
@@ -176,7 +183,7 @@ const WORLD = buildWorld({
  */
 const WORLD_LOADING = buildWorld({
   pilots: [海莉絲, 輕型機師, 中型機師, ND甲, ND乙],
-  mechs: [彌造者, 輕型機, 重型機, 中甲機2, A級中甲, B級中甲],
+  mechs: [彌造者, 輕型機, 重型機, 中甲機2, A級中甲, B級中甲, 輕量中甲],
   weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
   backpacks: [強襲者背包, 出力背包Ⅲ],
   forms: [先鋒形態, 突擊形態, 戰術形態],
@@ -189,10 +196,25 @@ const WORLD_LOADING = buildWorld({
  */
 const WORLD_NO_FORMS = buildWorld({
   pilots: [海莉絲, 輕型機師, 中型機師, ND甲, ND乙],
-  mechs: [彌造者, 輕型機, 重型機, 中甲機2, A級中甲, B級中甲],
+  mechs: [彌造者, 輕型機, 重型機, 中甲機2, A級中甲, B級中甲, 輕量中甲],
   weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
   backpacks: [強襲者背包, 出力背包Ⅲ],
   forms: [],                     // ⚠ 空陣列 ＝「這個集合根本沒進來」，不是「這個世界沒有形態」
+  components: COMPONENTS,
+  modules: MODULES,
+})
+
+/**
+ * **mechs 尚未載入**的世界（PLAN-052-G Phase D 的載入 gate）。
+ * 部件混搭記的是「部位 → 來源機甲 id」，集合沒到齊時每一格都會「查不到」——
+ * 照著「查不到就刪」做，症狀是貼一次分享碼、混搭的部件就被靜默清空一次。
+ */
+const WORLD_NO_MECHS = buildWorld({
+  pilots: [海莉絲, 輕型機師, 中型機師, ND甲, ND乙],
+  mechs: [],                     // ⚠ 空陣列 ＝「這個集合根本沒進來」
+  weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
+  backpacks: [強襲者背包, 出力背包Ⅲ],
+  forms: [先鋒形態, 突擊形態, 戰術形態],
   components: COMPONENTS,
   modules: MODULES,
 })
@@ -897,6 +919,143 @@ test('052-G：[復原] 把被級聯清掉的模組整批救回來', () => {
   assert.deepEqual(back.draft.modules, { torso: 通用S.id })
 })
 
+
+// ─── 部件混搭：swapPart / resetPart 與級聯（PLAN-052-G Phase D）──────────────
+//
+// `draft.parts` 只記**與原廠不同**的部位。與原廠相同時刪鍵而不是寫入自己的 mechId ——
+// 後者會讓每一份分享碼都多帶四個永遠不變的號碼，而 §PARTS 是變長段。
+//
+// ⚠ 這一段最容易長出來的錯是「換機甲就整批清空 parts」。同裝甲類型換一台時那些部件
+//   **仍然合法**，清掉它是替玩家做了一個他沒下過的決定 —— 與武器、模組在同一支
+//   reconcile() 裡的處置逐字同一條理由。真正必須清的是**跨裝甲類型**那一種。
+
+const 混搭起點 = () => run(
+  { type: 'selectPilot', pilotId: 海莉絲.id },
+  { type: 'selectMech', mechId: 彌造者.id },
+)
+
+test('052-G D：swapPart 只寫入被換掉的那一格', () => {
+  const s = simReduce(混搭起點(), { type: 'swapPart', position: MechPartPosition.TORSO, sourceMechId: 輕量中甲.id }, WORLD)
+  assert.deepEqual(s.draft.parts, { torso: 輕量中甲.id })
+})
+
+test('052-G D：換回基底機甲 ⇒ 刪鍵，不是寫入自己的 mechId', () => {
+  const s = step(混搭起點(),
+    { type: 'swapPart', position: MechPartPosition.TORSO, sourceMechId: 輕量中甲.id },
+    { type: 'swapPart', position: MechPartPosition.TORSO, sourceMechId: 彌造者.id },   // 挑選器裡原廠排第一
+  )
+  assert.equal('parts' in s.draft, false, '整份都空了就把欄位本身拿掉（否則會編出一段空的 §PARTS）')
+})
+
+test('052-G D：resetPart 還原單一格，其餘不動', () => {
+  const s = step(混搭起點(),
+    { type: 'swapPart', position: MechPartPosition.TORSO, sourceMechId: 輕量中甲.id },
+    { type: 'swapPart', position: MechPartPosition.LEGS, sourceMechId: 輕量中甲.id },
+    { type: 'resetPart', position: MechPartPosition.TORSO },
+  )
+  assert.deepEqual(s.draft.parts, { legs: 輕量中甲.id })
+})
+
+test('052-G D：跨裝甲類型的來源一律不收（規則層擋在 reducer 裡，不靠 UI）', () => {
+  const base = 混搭起點()
+  const s = simReduce(base, { type: 'swapPart', position: MechPartPosition.TORSO, sourceMechId: 輕型機.id }, WORLD)
+  // 整個 state 原封不動：不寫入、不跳新 toast、不留 undo 紀錄
+  assert.equal(s, base, '被規則擋下的動作要完全不動狀態')
+})
+
+test('052-G D ⚠ 換機甲的級聯：同裝甲類型換一台 ⇒ 部件留著（不是「換機甲就清空」）', () => {
+  const s = step(混搭起點(),
+    { type: 'swapPart', position: MechPartPosition.TORSO, sourceMechId: 輕量中甲.id },
+    { type: 'selectMech', mechId: 中甲機2.id },
+  )
+  assert.deepEqual(s.draft.parts, { torso: 輕量中甲.id }, '規則只有一行「同裝甲類型」，換一台中甲不會讓它失效')
+})
+
+test('052-G D ⚠ 「換裝甲類型」在 UI 上沒有路徑 —— 換機師時機甲先失效，部件跟著走', () => {
+  // ⚠ 這一則原本想測「換到別的裝甲類型的基底機甲 ⇒ 部件清掉」，但那個情境**到不了**：
+  //   執照鎖死裝甲類型，挑選器根本列不出別型的機甲。真正會發生的是換機師 ——
+  //   機甲先因執照失效被移除，`reconcileParts` 於是走「沒有機甲」那條。
+  //   （與 052-G E-2 實測到的同一件事：「換裝甲類型」不是一個獨立的操作入口。）
+  const s = step(
+    run({ type: 'selectPilot', pilotId: 中型機師.id }, { type: 'selectMech', mechId: 彌造者.id }),
+    { type: 'swapPart', position: MechPartPosition.TORSO, sourceMechId: 輕量中甲.id },
+    { type: 'selectPilot', pilotId: 輕型機師.id },       // 執照換掉 ⇒ 中甲整台失效
+  )
+  assert.equal('parts' in s.draft, false)
+  const parts = (s.notice?.removed ?? []).filter((r) => r.kind === 'part')
+  assert.equal(parts.length, 1, '不可靜默清空')
+  assert.equal(parts[0].where, '軀幹', '要說得出是哪一格')
+  assert.match(parts[0].why, /沒有機甲/)
+})
+
+test('052-G D：跨型的部件只可能從外來草稿進來，而它會被擋下並說明', () => {
+  // UI 到不了的那條路（見上一則），分享碼／書架／雲端存檔到得了 —— gate 因此不能省。
+  const bad: LoadoutDraft = {
+    pilotId: 海莉絲.id, mechId: 彌造者.id,
+    activeSetKey: 'default', sets: {},
+    parts: { torso: 重型機.id },
+  }
+  const s = simReduce(INITIAL_SIM_STATE, { type: 'loadDraft', draft: bad }, WORLD)
+  assert.equal('parts' in s.draft, false)
+  const r = (s.notice?.removed ?? []).find((x) => x.kind === 'part')
+  assert.match(r?.why ?? '', /跨裝甲類型/)
+  assert.match(r?.why ?? '', /重型/)
+  assert.match(r?.why ?? '', /中甲/, '兩型都要講出來')
+})
+
+test('052-G D：機甲被移除 ⇒ 四格全清，理由是「沒有機甲就沒有可以替換的部位」', () => {
+  const s = step(混搭起點(),
+    { type: 'swapPart', position: MechPartPosition.TORSO, sourceMechId: 輕量中甲.id },
+    { type: 'clearMech' },
+  )
+  assert.equal('parts' in s.draft, false)
+  const parts = (s.notice?.removed ?? []).filter((r) => r.kind === 'part')
+  assert.equal(parts.length, 1)
+  assert.match(parts[0].why, /沒有機甲/)
+})
+
+test('052-G D ⚠ 最危險的一條：mechs 尚未載入時，混搭的部件不可以被靜默刪掉', () => {
+  const incoming: LoadoutDraft = {
+    pilotId: 海莉絲.id, mechId: 彌造者.id,
+    activeSetKey: 'default', sets: {},
+    parts: { torso: 輕量中甲.id, legs: 輕量中甲.id },
+  }
+  const s = simReduce(INITIAL_SIM_STATE, { type: 'loadDraft', draft: incoming }, WORLD_NO_MECHS)
+  assert.deepEqual(s.draft.parts, { torso: 輕量中甲.id, legs: 輕量中甲.id })
+})
+
+test('052-G D：mechs 到齊之後，同一份草稿會被正常驗證（證明上一則不是因為規則沒接上）', () => {
+  const bad: LoadoutDraft = {
+    pilotId: 海莉絲.id, mechId: 彌造者.id,
+    activeSetKey: 'default', sets: {},
+    parts: { torso: 輕型機.id },        // 跨型
+  }
+  const s = simReduce(INITIAL_SIM_STATE, { type: 'loadDraft', draft: bad }, WORLD)
+  assert.equal('parts' in s.draft, false)
+})
+
+test('052-G D：來源機甲的 doc 不存在（後台刪了）⇒ 移除並說得出來', () => {
+  const bad: LoadoutDraft = {
+    pilotId: 海莉絲.id, mechId: 彌造者.id,
+    activeSetKey: 'default', sets: {},
+    parts: { torso: 'mech_不存在' },
+  }
+  const s = simReduce(INITIAL_SIM_STATE, { type: 'loadDraft', draft: bad }, WORLD)
+  assert.equal('parts' in s.draft, false)
+  // ⚠ 與上面的載入 gate 是兩件事：集合空＝還沒到，單一台查不到＝真的斷鏈
+  assert.match((s.notice?.removed ?? []).find((r) => r.kind === 'part')?.why ?? '', /已不存在/)
+})
+
+test('052-G D：[復原] 把被級聯清掉的部件救回來', () => {
+  const s = step(
+    run({ type: 'selectPilot', pilotId: 中型機師.id }, { type: 'selectMech', mechId: 彌造者.id }),
+    { type: 'swapPart', position: MechPartPosition.TORSO, sourceMechId: 輕量中甲.id },
+    { type: 'clearMech' },
+  )
+  assert.equal('parts' in s.draft, false)
+  const back = simReduce(s, { type: 'undo' }, WORLD)
+  assert.deepEqual(back.draft.parts, { torso: 輕量中甲.id })
+})
 
 // ─── 形態分頁：什麼隨套走、什麼四套共用（PLAN-052-F B-2）────────────────────
 //

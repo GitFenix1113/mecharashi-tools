@@ -167,15 +167,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">19</div>
+      <div class="summary-num" style="color:var(--accent-green)">24</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">5</div>
+      <div class="summary-num" style="color:var(--text-dim)">1</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -186,11 +186,11 @@
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度 <small style="color:var(--text-dim)">（以 25 個工項計；C-7〜C-9 與 E-0 為追加，E-3 已延後、不計入。E-1 的 ②③ 待 Phase D 才驗得到）</small></span>
-      <span style="color:var(--accent-purple);">19 / 25</span>
+      <span>整體完成度 <small style="color:var(--text-dim)">（以 25 個工項計；C-7〜C-9 與 E-0 為追加，E-3 已延後、不計入。剩 E-4 回寫總綱）</small></span>
+      <span style="color:var(--accent-purple);">24 / 25</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 76%"></div>
+      <div class="progress-bar-fill" style="width: 96%"></div>
     </div>
   </div>
 
@@ -1136,20 +1136,27 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; <code>swapPart</code> / <code>resetPart</code> ＋ 級聯</div>
-      <div class="task-group-meta">src/pages/simulator/simReducer.ts</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">2026-08-28 完成 · reducer ＋ 11 則新測試</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">寫入 <code>draft.parts[pos]</code>，只記與原廠不同的部位</div>
         <div class="task-desc">
           與原廠相同時<strong>刪掉鍵</strong>而不是寫入自己的 mechId —— 後者會讓每一份分享碼
-          都多帶四個永遠不變的號碼，而 <code>§PARTS</code> 是變長段。
+          都多帶四個永遠不變的號碼，而 <code>§PARTS</code> 是變長段。<br><br>
+          <span style="color:var(--accent-green);"><b>實際完成（2026-08-28）</b><br>
+          兩個 action ＋ <code>withPart()</code>／<code>withoutPart()</code>。
+          <b>「換回原廠」與「換成別台」收在同一個 action 裡</b> —— 挑選器中基底機甲就排在第一個，
+          對玩家是同一個動作；呼叫端不必自己判斷該派哪一個。整份都空了連 <code>parts</code>
+          欄位本身一起拿掉（留 <code>{}</code> 會被 codec 編成一段空的 §PARTS）。<br>
+          規則層是唯一判準：<code>canSwapPart()</code> 擋下的一律<b>整個 state 原封不動</b>回傳
+          —— 不寫入、不跳 toast、不留 undo。UI 只列合法來源，但分享碼與書架不經過 UI。</span>
         </div>
         <div class="task-file">src/pages/simulator/simReducer.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1160,20 +1167,36 @@
           <strong>這就是那第一件事。</strong>換了機甲卻留著舊機甲的部件是靜默的錯，
           而且會讓 <code>resolveChassis()</code> 算出一台不存在的機體。<br>
           換<strong>裝甲類型</strong>時尤其要清 —— 否則會混出跨型機體，
-          而決策七的整條推論（雙肩槽與執照判定不受影響）就地失效。
+          而決策七的整條推論（雙肩槽與執照判定不受影響）就地失效。<br><br>
+          <span style="color:var(--accent-green);"><b>實際完成（2026-08-28）：<code>reconcileParts()</code>，
+          但<u>不是「換機甲就整批清空」</u>。</b><br>
+          同裝甲類型換一台時那些部件<b>仍然合法</b>（規則只有一行），清掉它是替玩家做了一個
+          他沒下過的決定 —— 與武器、模組在同一支 <code>reconcile()</code> 裡的處置逐字同一條理由。
+          真正會清的四種：來源機甲查無、跨型、佔位機甲、基底機甲整台不見。<br>
+          ⚠ <b>排序：部件一定要掃在模組之前。</b>換掉的部件會帶來不同的模組接口
+          （Ⅰ型只收 A 級、B 級根本沒有接口），先掃部件、再拿定案後的接口去驗模組。
+          反過來的症狀是「模組驗的是上一個部件的接口」—— 一次動作差一拍，畫面上完全看不出來。<br>
+          ⚠ <b>載入 gate（第四份）</b>：元件 052-D、模組 052-G、形態 052-F，這是部件的那一份。
+          <code>world.mechs</code> 為空 ＝ 集合還沒進來，整段跳過。</span><br><br>
+          <span style="color:var(--accent-yellow);"><b>⚠ 「換裝甲類型時尤其要清」這一句要訂正：那個入口在 UI 上不存在。</b><br>
+          執照鎖死裝甲類型，挑選器根本列不出別型的機甲。真正會發生的是<b>換機師</b> ——
+          機甲先因執照失效被移除，部件於是走「沒有機甲」那一條。
+          跨型的部件<b>只可能從外來草稿進來</b>（分享碼／書架／052-E 雲端存檔），
+          gate 因此不能省，但它防的不是玩家的手。
+          （與 E-2 實測到的同一件事：工項把兩個入口寫成了兩件事。）</span>
         </div>
         <div class="task-file">src/types/loadout.ts:120 · simReducer.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; <code>PART_INCOMPATIBLE</code> ＋ 來源挑選器</div>
-      <div class="task-group-meta">loadoutRules.ts / PickerShell</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">2026-08-28 完成 · 規則層 ＋ 面板分段</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1181,12 +1204,28 @@
         <div class="task-desc">
           <code>sourceMech.armorType === chassis.armorType</code>。
           來源池：輕型 27 ／ 中甲 36 ／ 重型 27（扣掉自己是 26／35／26），一頁列得完、不必分頁。
-          352／360 個部位帶 <code>icon</code>，挑選器用得上。
+          352／360 個部位帶 <code>icon</code>，挑選器用得上。<br><br>
+          <span style="color:var(--accent-green);"><b>實際完成（2026-08-28）</b><br>
+          新增兩個拒絕碼 <code>PART_INCOMPATIBLE</code>／<code>PART_DATA_INCOMPLETE</code>（皆 structural）、
+          <code>canSwapPart()</code> 與 <code>partChoices()</code>。實測來源池 <b>36 台</b>（中甲，含原廠），
+          另 54 台不列入。<br>
+          ⚠ <b>訊息裡兩型都要寫出來</b>：「不能跨裝甲類型混搭：重型機是<b>重型</b>，這台是<b>中甲</b>」。
+          只說「不相容」等於沒說 —— 而且 <code>ArmorType</code> 的值是 輕型／<b>中甲</b>／重型、
+          <code>MechLicense</code> 是 輕型／<b>中型</b>／重型，兩套詞彙只差一個字
+          （已知 bug #2 的成因，測試裡也釘了一句提醒）。<br>
+          <b>基底機甲留在池裡而且排第一</b> —— 它是「還原成原廠」的唯一入口；濾掉的話換錯之後
+          只剩「整台重選一次」。其餘依<b>該部位重量輕到重</b>排（混搭的第一動機就是減重）。<br>
+          ◆ <b>入口位置（使用者裁決 2026-08-28）：面板內分成兩段。</b>
+          點部位卡 → 右欄面板頂部一排「模組 / 部件來源」。
+          另一個做法是在部位卡上多一顆按鈕，但那張卡<b>本來就是整張可點</b>，
+          同一張卡有兩個點擊目標只會讓人不確定點哪裡會發生什麼。
+          切段<b>不重置模組那一段的篩選條件</b> —— 來回看一下再切回來，
+          篩選被清空是「我剛剛打的字呢」那一種挫折。</span>
         </div>
         <div class="task-file">src/utils/loadoutRules.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1194,20 +1233,30 @@
         <div class="task-desc">
           <code>mech_090_美杜莎MK2</code> 四部位全 0（官方未公布）。列成一組重量 0 的
           「免費部件」會讓玩家配出一台不存在的機體，而且看起來像 bug 而非資料狀態。
-          <strong>新機甲一律先建檔再補數值</strong>，同型佔位日後還會出現。
+          <strong>新機甲一律先建檔再補數值</strong>，同型佔位日後還會出現。<br><br>
+          <span style="color:var(--accent-yellow);"><b>⚠ 前提已不成立：<code>mech_090_美杜莎MK2</code> 早就補完數值了。</b><br>
+          2026-08-28 直讀正式庫：<b>90 台機甲的四部位重量全部 &gt; 0</b>，那台是
+          output 2605 / weight 835 / 四格 Ⅱ型接口。<b>今天 0 台命中這條路。</b><br>
+          仍然實作了（<code>PART_DATA_INCOMPLETE</code>），理由是佔位慣例保證它會再出現 ——
+          但判準改成看<b>整台四部位重量為 0</b> 而不是這一個部位為 0：
+          單一部位重量 0 是可能的真值（純封鎖型固定武裝那幾件就是 0）。<br>
+          呈現上走 structural ⇒ <b>不列進清單</b>，被濾掉幾台由清單上方那句 hint 交代
+          （「另外 54 台因裝甲類型不符或官方數值未公布不列入」）——
+          列成一組重量 0 的「免費部件」會讓玩家配出一台不存在的機體，
+          而靜默消失會被讀成「站上漏了」。這是 052-F B-3 學到的同一課。</span>
         </div>
         <div class="task-file">src/components/loadout/PickerVariants.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; <code>partOverrides</code> 接線 ＋ 全站改走 <code>ResolvedChassis</code></div>
-      <div class="task-group-meta">src/utils/chassisStats.ts</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">2026-08-28 完成 · 接線 ＋ 全站稽核</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1215,12 +1264,22 @@
         <div class="task-desc">
           <code>partOverrides</code> 已實作（052-A B-2）且註解就寫著「混搭 UI 在 052-G」，
           本工項只是接上。重量／出力／火力／命中全部自動變成混搭後的真值 —— Σ 四部位，
-          只有軀幹有出力（實測 89／90 台 torso <code>output</code> &gt; 0、非軀幹 0 台）。
+          只有軀幹有出力（實測 89／90 台 torso <code>output</code> &gt; 0、非軀幹 0 台）。<br><br>
+          <span style="color:var(--accent-green);"><b>實際完成（2026-08-28）：<code>buildContext()</code> 一行接上，
+          但<u>連帶修了一個沒人預告的地方</u>。</b><br>
+          ⚠ <b>固定武裝也住在部件上</b>（帕斯卡的衝擊炮在雙肩、破曉者-01 的嵐質儲能艙、霸王的多功能彈倉），
+          而 <code>occupiedSlots(mech?.parts)</code> 讀的是<b>基底機甲</b>的部件。
+          不改的話症狀是<b>兩邊都錯</b>：換走的部件仍然佔著格子，換進來的部件帶的固定武裝卻不見了
+          —— 而且沒有任何錯誤訊息。已改成讀 <code>chassis.parts[*].part</code>。<br>
+          本機實測：彌造者的右臂換成帕斯卡的 ⇒ 總重 825 → <b>775</b>，
+          <b>右肩當場長出「機甲固定武裝 衝擊炮」</b>，左肩沒有；換回原廠 ⇒ 兩者都復原。<br>
+          ⚠ 查不到來源機甲時<b>當作沒換</b>（退回原廠）而不是整台解不出來 ——
+          草稿是外來的，而 <code>world.mechs</code> 可能還沒載入完。</span>
         </div>
         <div class="task-file">src/utils/chassisStats.ts:130</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1228,20 +1287,31 @@
         <div class="task-desc">
           總綱決策七：機體所有數值一律由 <code>ResolvedChassis</code> 出。
           混搭一旦開放，任何還在讀機甲頂層欄位的地方都會顯示<strong>未混搭前的數字</strong> ——
-          不會報錯、只會不一致。掃一遍並補上。
+          不會報錯、只會不一致。掃一遍並補上。<br><br>
+          <span style="color:var(--accent-green);"><b>稽核結果（2026-08-28）：模擬器已經是乾淨的，一行都不必改。</b><br>
+          全站 grep 後只剩三類讀頂層欄位的地方，而三類都是對的：<br>
+          · <b>機甲圖鑑</b>（<code>MechDetailPage</code>／<code>MechsPage</code>）—— 看的是<b>原廠那一台</b>，
+            混搭只存在於模擬器的草稿裡。<br>
+          · <b>基底機甲挑選器</b>的 <code>出力 ${m.output}</code> —— 那是「這台機甲本身的數值」，
+            選的當下還沒有任何混搭。<br>
+          · <code>MechSlotPanel</code> 已經走 <code>chassis.firepower</code>。<br>
+          模擬器本身<b>一處都沒有</b>讀 <code>mech.weight/output/firepower</code>。<br>
+          ⚠ 順手核對頂層欄位可不可信：<b>90 台的頂層 <code>output</code> 與軀幹出力、
+          頂層 <code>weight</code> 與 Σ 四部位，全部一致</b>；壞掉的只有 <code>firepower</code>
+          （總綱決策七講的那個 1/4），而 <code>MechsPage</code> 早已繞開它。</span>
         </div>
         <div class="task-file">全站</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-4 &nbsp; 復原四部位表 ＋ 匯出圖帶混搭來源</div>
-      <div class="task-group-meta">LoadoutPage.tsx / MechPartsTable / LoadoutExportCard</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">2026-08-28 完成 · 四部位表復原 ＋ 匯出圖帶來源</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1250,12 +1320,26 @@
           它被下架的理由逐字是「四個部位現在 100% 固定來自本機甲，這裡列出來只是把機甲詳情頁的
           同一張表再抄一遍」—— 混搭開放後這張表才開始回答「這一套是怎麼拼出來的」。<br>
           ⚠ <code>MechPartsTable</code> <strong>自帶卡片框與標題</strong>（052-A 共用元件），
-          復原時不要再包一層 <code>Panel</code>。
+          復原時不要再包一層 <code>Panel</code>。<br><br>
+          <span style="color:var(--accent-green);"><b>實際完成（2026-08-28）</b><br>
+          「來源」欄出真值，<b>非原廠那一列標成橘色</b> —— 這張表的用途就是一眼看出哪幾格不是原廠的。<br>
+          ⚠ <b>必須把 <code>ctx.chassis</code> 傳進去。</b>這支元件原本自己
+          <code>resolveChassis(mech)</code>，那會解出<b>原廠</b> ——
+          表格印四行「彌造者」而上方總重是混搭後的數字，兩者當場打臉。
+          機甲詳情頁維持不傳（它看的本來就是原廠）。<br>
+          實測：右臂換帕斯卡 ⇒ 表上「右臂 帕斯卡 120 1,166 Ⅱ型接口」、合計 <b>775</b>，與 OutputBar 相符。</span><br><br>
+          <span style="color:var(--accent-cyan);"><b>◆ 另補一個實測才發現的洞：換過的部件在槽位圖上看不出來。</b><br>
+          第一版做完之後，換完部件的部位卡與原廠<b>長得一模一樣</b> ——
+          唯一的線索是總重那個數字，以及面板裡某一段上的一顆星，關掉面板就什麼都不剩。<br>
+          已在部位卡上加一個橘色來源標記（<code>◆帕斯卡</code>），沒換過時整段不畫
+          —— 88 台原廠卡上寫「原廠」是四行雜訊。
+          <b>它是標記不是按鈕</b>：整張卡已經是一個點擊目標，
+          與 052-F 把形態歸屬做成 OutputBar 上一個橘色標籤（而不是第二排分頁）同一條理由。</span>
         </div>
         <div class="task-file">src/pages/simulator/LoadoutPage.tsx:880</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1263,11 +1347,21 @@
         <div class="task-desc">
           與 C-5 同一套做法：配一套四部位來自四台不同機甲的配裝，複製連結、無痕視窗貼上、
           確認四個來源都回來，且匯出圖上印得出來源機甲名。
+          <br>
+          <span style="color:var(--accent-green);"><b>實際完成（2026-08-28）</b><br>
+          匯出圖：模組帶的抬頭在有混搭時改成「<b>部件與模組接口</b>」、note 加「<b>N 格混搭</b>」，
+          該列印 <code>◆來源機甲名</code>（橘字，原廠不印）。
+          實測圖上「右臂 Ⅱ型接口 ◆帕斯卡 暴擊模組Ⅱ Lv2/4」、抬頭「4 / 4 已裝 · 1 格混搭」。<br>
+          ⚠ 圖上非印不可的理由與 052-C 把分享碼印在圖底部、052-F 標形態名同一類：
+          混搭之後圖上的重量／火力是<b>拼出來的</b>，而轉發到第三手的人手上只有這張圖。<br>
+          分享碼 round-trip（全新 isolated context）：連結 210 字元 →
+          總重 <b>775</b>、右臂 <code>◆帕斯卡</code>、右肩的固定武裝、四部位表四列全部相符，
+          無 toast、console 零錯誤。<b>E-1 的 ②③ 因此一併補上</b>（見 Phase E）。</span>
         </div>
         <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -1337,8 +1431,8 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 分享碼 round-trip 實地驗收</div>
-      <div class="task-group-meta">2026-08-28 · 模組四情況通過；②③ 待 Phase D</div>
-      <span class="status doing">進行中</span>
+      <div class="task-group-meta">2026-08-28 · 六種情況全部通過</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1370,7 +1464,13 @@
             證明堆疊等級跟著退回 Lv2）⇒ 從書架套用 ⇒ 四格與 3,475 完整回來。<br>
           · console 全程零錯誤、零警告。</span><br><br>
 
-          <span style="color:var(--accent-yellow);"><b>⚠ ② 只有混搭／③ 全滿 兩種情況本輪驗不了 —— 部件混搭是 Phase D，還沒做。</b><br>
+          <span style="color:var(--accent-green);"><b>② ③ 已於 2026-08-28 稍晚補上（Phase D 完工後同日回來補的）。</b><br>
+          素材：彌造者 ＋ 右臂換成帕斯卡的（附固定武裝）＋ 四顆模組 ＋ 三個形態分頁的武器 ＋ 算力。
+          連結 210 字元 → 全新 isolated context 開啟 ⇒ 總重 <b>775</b>、
+          右臂 <code>◆帕斯卡</code>、右肩的「機甲固定武裝 衝擊炮」、四部位表四列、四個接口
+          全部相符，無 toast、console 零錯誤。<b>§PARTS 這一段因此也走過真實的 round-trip。</b><br>
+          （下面這一段保留當時的判斷紀錄。）</span><br><br>
+          <span style="color:var(--accent-yellow);"><b>⚠ 當時（Phase D 之前）② 只有混搭／③ 全滿 兩種情況驗不了。</b><br>
           刻意<b>不</b>把它們算成通過：這兩項要的是 <code>§PARTS</code> 那一段，
           而本輪連一個能產生 <code>draft.parts</code> 的 UI 入口都沒有。
           Phase D 收尾時回到本工項補這兩項即可 —— <b>先驗模組那一半是刻意的順序</b>：
@@ -1391,7 +1491,7 @@
         <div class="task-file">src/components/loadout/PasteCodeDialog.tsx · src/components/loadout/LocalShelfDialog.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">①④⑤⑥ 通過</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 

@@ -24,7 +24,7 @@ import { slotLabel } from '../../utils/mechSlots.ts'
 import { partLabel } from '../../utils/moduleSlots.ts'
 import { MECH_PART_ORDER } from '../../utils/chassisStats.ts'
 import {
-  buildContext, canEquipWeapon, canEquipBackpack, canEquipComponent, canEquipModule, loadoutBudget,
+  buildContext, canEquipWeapon, canEquipBackpack, canEquipComponent, canEquipModule, canSwapPart, loadoutBudget,
   planModuleFill, slotsOverlap,
   type LoadoutContext, type LoadoutWorld, type ResolutionAction,
 } from '../../utils/loadoutRules.ts'
@@ -71,6 +71,16 @@ export type LoadoutAction =
    */
   | { type: 'equipModule'; ref: ModuleSlotRef; moduleId: string }
   /**
+   * 部件混搭（PLAN-052-G D-1）：把某個部位換成 `sourceMechId` 的同位部件。
+   *
+   * ⚠ **與原廠相同時走 `resetPart` 而不是寫入自己的 mechId** —— 這個 reducer 會替你
+   *   收掉，但呼叫端也不該假裝它們是兩件不同的事。理由是分享碼：`§PARTS` 是變長段，
+   *   寫入自己的 id 會讓**每一份**分享碼都多帶四個永遠不變的號碼。
+   */
+  | { type: 'swapPart'; position: MechPartPosition; sourceMechId: string }
+  /** 把某個部位還原成原廠（刪掉那個鍵）。 */
+  | { type: 'resetPart'; position: MechPartPosition }
+  /**
    * 一鍵裝滿（使用者要求 2026-08-27）：把這顆模組裝到**這一族滿級**為止。
    *
    * ⚠ 動幾格、動哪幾格一律由 `planModuleFill()` 決定，**這裡不重算** ——
@@ -92,7 +102,7 @@ export type LoadoutAction =
  *   四顆元件而不吭一聲，是這一層最容易長出來的客服問題。
  */
 export interface RemovedItem {
-  kind: 'weapon' | 'backpack' | 'component' | 'module'
+  kind: 'weapon' | 'backpack' | 'component' | 'module' | 'part'
   id: string
   /** 顯示名。查不到資料時退回 id —— 那代表資料斷鏈，該被看見而不是靜默留白 */
   name: string
@@ -218,6 +228,22 @@ function withoutModule(draft: LoadoutDraft, position: MechPartPosition): Loadout
   return withModules(draft, modules)
 }
 
+/** 換掉某個部位的來源機甲。 */
+function withPart(draft: LoadoutDraft, position: MechPartPosition, sourceMechId: string): LoadoutDraft {
+  return { ...draft, parts: { ...draft.parts, [position]: sourceMechId } }
+}
+
+/** 把某個部位還原成原廠。清完整份都空了就把 `parts` 欄位本身拿掉（理由同 `withModules`）。 */
+function withoutPart(draft: LoadoutDraft, position: MechPartPosition): LoadoutDraft {
+  if (!draft.parts?.[position]) return draft
+  const parts = { ...draft.parts }
+  delete parts[position]
+  if (Object.keys(parts).length > 0) return { ...draft, parts }
+  const rest = { ...draft }
+  delete rest.parts
+  return rest
+}
+
 /** 換掉整份 `modules`；空了就移除欄位本身。 */
 function withModules(draft: LoadoutDraft, modules: Partial<Record<MechPartPosition, string>>): LoadoutDraft {
   if (Object.keys(modules).length > 0) return { ...draft, modules }
@@ -330,6 +356,15 @@ export function reconcile(draft: LoadoutDraft, world: LoadoutWorld): { draft: Lo
     next = comp.draft
     removed.push(...comp.removed)
   }
+
+  // ── 部件混搭：掃成「這台基底機甲拼得出來」的合法配置（PLAN-052-G D-1）──
+  //
+  // ⚠ **一定要排在模組之前**：換掉的部件會帶來不同的模組接口
+  //   （Ⅰ型只收 A 級、B 級根本沒有接口），先掃部件、再拿定案後的接口去驗模組。
+  //   反過來的症狀是「模組驗的是上一個部件的接口」——一次動作差一拍，畫面上完全看不出來。
+  const prts = reconcileParts(next, world)
+  next = prts.draft
+  removed.push(...prts.removed)
 
   // ── 模組接口：掃成「這台機甲的這四格裝得下」的合法配置（PLAN-052-G C-1）──
   const mods = reconcileModules(next, world)
@@ -452,6 +487,91 @@ function reconcileSetups(
  * ⚠ 沒有機甲時直接清空整份：接口是機甲的，機甲不在，四格就不存在。
  *   這一條**不受載入 gate 保護也是對的** —— 它不需要認得任何一顆模組。
  */
+/**
+ * 部件混搭的級聯（PLAN-052-G D-1）。
+ *
+ * `draft.parts` 是**部位 → 來源機甲 id**，而且**只記與原廠不同的那幾格**
+ * （與原廠相同時刪鍵而不是寫入自己的 mechId —— 後者會讓每一份分享碼都多帶四個
+ * 永遠不變的號碼，而 `§PARTS` 是變長段）。
+ *
+ * ⚠ **換基底機甲必須清掉不合法的部件。** `loadout.ts` 的欄位註解逐字預告過這條：
+ *   「換了機甲卻留著舊機甲的部件是靜默的錯，而且會讓 `resolveChassis()` 算出一台
+ *   不存在的機體」。換**裝甲類型**時尤其要清 —— 否則會混出跨型機體，
+ *   而決策七的整條推論（雙肩槽與執照判定不受影響）就地失效。
+ *
+ * ⚠ 但不是「換機甲就整批清空」：同裝甲類型換一台時，那些部件**仍然合法**
+ *   （規則只有一行 `source.armorType === base.armorType`）。清掉它是本站替玩家
+ *   做了一個他沒下過的決定 —— 與武器、模組在同一支函式裡的處置逐字同一條理由。
+ *
+ * ⚠ **載入 gate**（與元件 052-D 決策六、模組 052-G 決策六、形態 052-F D-1 同一條）：
+ *   `world.mechs` 是空的代表**集合還沒載入**，不是「這個世界沒有機甲」。
+ *   照著「查不到就刪」做，症狀是貼一次分享碼、混搭的部件就被靜默清空一次。
+ *   判準是集合本身為空，而不是「這一台查不到」—— 後者是真的斷鏈，該被清掉並說明。
+ */
+function reconcileParts(
+  draft: LoadoutDraft, world: LoadoutWorld,
+): { draft: LoadoutDraft; removed: RemovedItem[] } {
+  const cur = draft.parts
+  if (!cur || Object.keys(cur).length === 0) return { draft, removed: [] }
+
+  // 載入 gate：集合根本沒進來 ⇒ 這一輪什麼都不判
+  if (world.mechs.size === 0) return { draft, removed: [] }
+
+  const base = draft.mechId ? world.mechs.get(draft.mechId) : null
+
+  // 沒有基底機甲 ⇒ 沒有東西可以被換。與 `sets`／`modules` 在機甲被移除時一起清是同一條理由。
+  if (!base) {
+    const removed: RemovedItem[] = MECH_PART_ORDER
+      .filter((pos) => cur[pos])
+      .map((pos) => ({
+        kind: 'part' as const,
+        id: cur[pos]!,
+        name: world.mechs.get(cur[pos]!)?.name ?? cur[pos]!,
+        where: partLabel(pos),
+        why: '沒有機甲就沒有可以替換的部位',
+      }))
+    return { draft: withoutParts(draft), removed }
+  }
+
+  const removed: RemovedItem[] = []
+  const kept: Partial<Record<MechPartPosition, string>> = {}
+  for (const pos of MECH_PART_ORDER) {
+    const srcId = cur[pos]
+    if (!srcId) continue
+
+    // 與原廠相同 ⇒ **不是移除**，是把鍵收掉（語意完全相同，只是不佔分享碼的位元）
+    if (srcId === base.id) continue
+
+    const src = world.mechs.get(srcId)
+    if (!src) {
+      removed.push({ kind: 'part', id: srcId, name: srcId, where: partLabel(pos), why: '來源機甲資料已不存在' })
+      continue
+    }
+    const r = canSwapPart(buildContext({ ...draft, parts: {} }, draft.activeSetKey, world), src, pos)
+    if (r) {
+      removed.push({ kind: 'part', id: srcId, name: src.name, where: partLabel(pos), why: r.reason })
+      continue
+    }
+    kept[pos] = srcId
+  }
+
+  if (removed.length === 0 && Object.keys(kept).length === Object.keys(cur).length) {
+    return { draft, removed: [] }
+  }
+  return {
+    draft: Object.keys(kept).length ? { ...draft, parts: kept } : withoutParts(draft),
+    removed,
+  }
+}
+
+/** 刪掉 `parts` 這個鍵本身（不是設成空物件 —— 空物件會被 codec 編成一段空的 §PARTS）。 */
+function withoutParts(draft: LoadoutDraft): LoadoutDraft {
+  if (!('parts' in draft)) return draft
+  const rest = { ...draft }
+  delete rest.parts
+  return rest
+}
+
 function reconcileModules(
   draft: LoadoutDraft, world: LoadoutWorld,
 ): { draft: LoadoutDraft; removed: RemovedItem[] } {
@@ -803,6 +923,40 @@ export function simReduce(state: SimState, action: LoadoutAction, world: Loadout
         `${where}裝上 ${mod.name} → Lv${plan.levelAfter}/${plan.cap}`,
         [], [], true,
       )
+    }
+
+    case 'swapPart': {
+      const src = world.mechs.get(action.sourceMechId)
+      if (!src) return state
+      const { position } = action
+      const ctx = buildContext(state.draft, state.draft.activeSetKey, world)
+      // 規則層是唯一判準 —— UI 已經只列合法來源，但分享碼與書架不經過 UI
+      if (canSwapPart(ctx, src, position)) return state
+
+      // 「換回原廠」與「換成別台」在資料上是兩種寫法，但對玩家是同一個動作：
+      // 挑選器裡基底機甲就排在第一個。收在這裡，呼叫端不必自己判斷該派哪一個 action。
+      const base = src.id === state.draft.mechId
+        ? withoutPart(state.draft, position)
+        : withPart(state.draft, position, action.sourceMechId)
+      if (base === state.draft) return state
+      const { draft, removed } = reconcile(base, world)
+      const label = partLabel(position)
+      // ⚠ 換部件會動到重量與出力（Σ 四部位、只有軀幹有出力）⇒ 要報出力變化，
+      //   與 equipWeapon 同一條理由；模組那邊不報是因為模組不佔重量。
+      return commit(
+        state, state.draft, draft, removed,
+        src.id === state.draft.mechId ? `${label}已還原為原廠` : `${label}已換成 ${src.name} 的`,
+        outputNote(state, draft, world), [label], true,
+      )
+    }
+
+    case 'resetPart': {
+      const srcId = state.draft.parts?.[action.position]
+      if (!srcId) return state
+      const base = withoutPart(state.draft, action.position)
+      const { draft, removed } = reconcile(base, world)
+      const label = partLabel(action.position)
+      return commit(state, state.draft, draft, removed, `${label}已還原為原廠`, outputNote(state, draft, world), [label], true)
     }
 
     case 'unequipModule': {

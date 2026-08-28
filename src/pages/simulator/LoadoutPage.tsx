@@ -12,7 +12,7 @@ import { useLayoutBreakpoint } from '../../hooks/useLayoutBreakpoint'
 import { equipSetKeys, equipSetLabel, hasIndependentLoadouts, lockedFormCards, DEFAULT_EQUIP_SET_KEY } from '../../utils/forms'
 import { slotLabel } from '../../utils/mechSlots'
 // ⏸ 部件混搭未開放前，四部位表暫時下架（見下方 JSX 內註解）。模組槽已於 052-G Phase C 開放
-// import { MechPartsTable } from '../../components/mechs/MechSlotPanel'
+import { MechPartsTable } from '../../components/mechs/MechSlotPanel'
 import { PilotIcon } from '../../components/icons/PilotIcon'
 import LoadoutIcon from '../../components/icons/LoadoutIcon'
 import { LoadoutRig } from '../../components/loadout/LoadoutRig'
@@ -1083,6 +1083,11 @@ export default function LoadoutPage() {
               // 一鍵裝滿不指定格 —— 動哪幾格由 `planModuleFill()` 決定（使用者要求 2026-08-27）
               onFill={(m) => send({ type: 'fillModule', moduleId: m.id })}
               onResolve={resolve}
+              // 部件混搭（Phase D）。換成基底機甲＝還原原廠，由 reducer 收掉那個鍵 ——
+              // 呼叫端不必自己判斷該派 swapPart 還是 resetPart
+              onSwapPart={(src) => send({
+                type: 'swapPart', position: openModuleRef.position, sourceMechId: src.id,
+              })}
             />
           )}
 
@@ -1105,17 +1110,19 @@ export default function LoadoutPage() {
 
           {(isMobile || !effectivePicker) && !openRow && !openModuleRef && ctx.mech && (
             <>
-              {/* ⏸ 四部位表仍然下架，但**理由只剩一半了**（PLAN-052-G C-6）：
-                     模組接口已經可以配（入口是槽位圖下方的四部位卡，彙總在中欄下方的「模組效果」），
-                     而四個部位仍然 100% 來自本機甲 —— 這張表現在列出來還是把機甲詳情頁的
-                     同一張表再抄一遍。等部件混搭（Phase D）開放後，它才開始回答
-                     「這一套是怎麼拼出來的」，屆時連同「來源」欄一起復原。
-                  ⚠ MechPartsTable 自帶卡片框與標題（052-A 共用元件），復原時不要再包一層 Panel。
-                  ⚠ 下面那句佔位文案**不要照抄回來**：模組那半已經不成立了。
-              <div className="space-y-2">
-                <MechPartsTable mech={ctx.mech} />
-              </div>
-              */}
+              {/* 四部位表 —— PLAN-052-G Phase D 復原（下架的兩個理由現在都不成立了）。
+                  下架時的理由逐字是「四個部位現在 100% 固定來自本機甲，這裡列出來只是把
+                  機甲詳情頁的同一張表再抄一遍」。混搭開放後它才開始回答「這一套是怎麼拼出來的」——
+                  而那是槽位圖上的四張卡答不出來的：卡上只印得下一個來源名，
+                  這張表同時給得出四格的重量、火力與合計。
+                  ⚠ 一定要傳 `ctx.chassis`：這支元件自己 `resolveChassis(mech)` 會解出**原廠**，
+                     於是表格印四行「彌造者」而上方總重是混搭後的數字，兩者當場打臉。
+                  ⚠ MechPartsTable 自帶卡片框與標題（052-A 共用元件），不要再包一層 Panel。 */}
+              <MechPartsTable
+                mech={ctx.mech}
+                chassis={ctx.chassis}
+                nameOf={(id) => ctx.world.mechs.get(id)?.name}
+              />
               <p className="text-[11px] text-text-dim leading-relaxed px-1">
                 想看完整資料？前往
                 <Link to={`/mechs/${ctx.mech.id}`} className="text-accent-orange no-underline mx-1">

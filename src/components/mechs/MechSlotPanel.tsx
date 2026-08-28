@@ -11,7 +11,7 @@ import type { Mech } from '../../types'
 import type { ArmamentMount } from '../../types'
 import { slotKey } from '../../types/slots'
 import { mechSlotCapacity, enumerateSlots, occupiedSlots, slotLabel } from '../../utils/mechSlots'
-import { resolveChassis, MECH_PART_ORDER } from '../../utils/chassisStats'
+import { resolveChassis, MECH_PART_ORDER, type ResolvedChassis } from '../../utils/chassisStats'
 import { useWeapons } from '../../hooks/useFirestore'
 
 const PART_LABELS: Record<string, string> = {
@@ -131,12 +131,23 @@ function FixedArmamentName({ mount }: { mount: ArmamentMount }) {
 /**
  * 唯讀的四部位表：來源／重量／火力／接口型別。
  *
- * 「來源」欄今天恆等於本機甲，看起來多餘——但混搭部位（PLAN-052 Q20 / 052-G）之後
- * 四個部位可以來自四台不同的機甲，這一欄就是那時唯一能回答「這是哪來的」的地方。
- * 先把欄位擺好，混搭 UI 上線時不必改表格結構。
+ * 「來源」欄自 PLAN-052-G Phase D 起**開始出真值** —— 四個部位可以來自四台不同的機甲，
+ * 而這張表是唯一能一眼答出「這一套是怎麼拼出來的」的地方。
+ *
+ * ⚠ **混搭時一定要傳 `chassis`。** 機甲詳情頁看的是原廠那一台，自己解就好；
+ *   但模擬器手上的是**混搭後**的機體，這支自己 `resolveChassis(mech)` 會解出原廠
+ *   —— 表格於是印著四行「本機甲」而總重卻是混搭後的數字，兩者當場打臉。
+ *   兩邊各解一次是同一份真相的兩個來源，而它們一定會漂移。
+ * @param nameOf 由 doc id 取機甲名（模擬器傳 `world.mechs`；不傳時退回印 id）
  */
-export function MechPartsTable({ mech }: { mech: Mech }) {
-  const chassis = resolveChassis(mech)
+export function MechPartsTable(
+  { mech, chassis: given, nameOf }: {
+    mech: Mech
+    chassis?: ResolvedChassis | null
+    nameOf?: (id: string) => string | undefined
+  },
+) {
+  const chassis = given ?? resolveChassis(mech)
   if (!chassis) return null   // 四部位不齊 → 整區不渲染（不補零值部位）
 
   return (
@@ -160,8 +171,11 @@ export function MechPartsTable({ mech }: { mech: Mech }) {
               return (
                 <tr key={pos} className="border-t border-border/70">
                   <td className="py-1.5 pr-2 text-text-primary font-medium">{PART_LABELS[pos] ?? pos}</td>
-                  <td className="py-1.5 px-2 text-text-dim truncate max-w-[140px]">
-                    {sourceMechId === mech.id ? mech.name : sourceMechId}
+                  {/* 非原廠的那一列標成橘色 —— 這張表的用途就是一眼看出「哪幾格不是原廠的」 */}
+                  <td className={`py-1.5 px-2 truncate max-w-[140px] ${
+                    sourceMechId === mech.id ? 'text-text-dim' : 'text-accent-orange'
+                  }`}>
+                    {sourceMechId === mech.id ? mech.name : (nameOf?.(sourceMechId) ?? sourceMechId)}
                   </td>
                   <td className="py-1.5 px-2 text-right text-text-secondary font-[JetBrains_Mono,monospace]">
                     {part.weight.toLocaleString()}
