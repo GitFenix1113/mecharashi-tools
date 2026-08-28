@@ -167,30 +167,30 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">17</div>
+      <div class="summary-num" style="color:var(--accent-green)">19</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">7</div>
+      <div class="summary-num" style="color:var(--text-dim)">5</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">24</div>
+      <div class="summary-num" style="color:var(--text-primary)">25</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
 
   <div class="progress-wrap">
     <div class="progress-label">
-      <span>整體完成度 <small style="color:var(--text-dim)">（以 24 個工項計；C-7〜C-9 為 2026-08-27 追加，E-3 已延後、不計入）</small></span>
-      <span style="color:var(--accent-purple);">17 / 24</span>
+      <span>整體完成度 <small style="color:var(--text-dim)">（以 25 個工項計；C-7〜C-9 與 E-0 為追加，E-3 已延後、不計入。E-1 的 ②③ 待 Phase D 才驗得到）</small></span>
+      <span style="color:var(--accent-purple);">19 / 25</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 71%"></div>
+      <div class="progress-bar-fill" style="width: 76%"></div>
     </div>
   </div>
 
@@ -1283,9 +1283,62 @@
 
   <div class="task-group">
     <div class="task-group-header">
+      <div class="task-group-title">E-0 &nbsp; 出力模組沒有被算進 budget（2026-08-28 追加）</div>
+      <div class="task-group-meta">052-F A-2 挖出的斷線 · Phase C 上線後由 latent 轉 live</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">loadoutBudget() 沒把 modules 傳給 effectiveOutput()</div>
+        <div class="task-desc">
+          <code>effectiveOutput()</code> 的第三個參數 <code>modules</code> 自 052-A 就在、
+          <code>moduleOutputBonus()</code> 也有自己的測試，但 <b>呼叫端一直沒接</b>
+          ⇒ <code>OutputBreakdown.modules</code> <b>恆為 0</b>。<br>
+          052-F 的 A-2 查出這條時<b>模組還不能裝</b>，所以當時歸類為 latent 並掛到本計畫；
+          <b>Phase C 讓四個接口上線之後它就變成活的錯誤數字</b>：玩家裝上出力模組，
+          左上角的可用出力<b>一動也不動</b>。<br>
+          2026-08-28 直讀正式庫重數：<b>241 筆模組有 3 筆有出力加成</b>
+          （原註解寫「242 筆 2 筆」，漏掉了 <code>mod_4026</code> 出力模組Ⅰ）——
+          <code>mod_4026</code>（A・商店）與 <code>mod_4026_2</code>（S・商店）<b>都在 186 筆候選池裡、
+          玩家裝得到</b>；<code>sub_mod_出力模組</code> 是機甲副模組、不進候選池。<br><br>
+
+          <span style="color:var(--accent-red);"><b>⚠ 第一版修法是錯的，而且錯得很像對的 —— 是瀏覽器實測抓出來的。</b><br>
+          先前的寫法是「逐格取模組、各自取滿級」，單元測試全綠、頁面上的出力也確實從
+          3,375 動到了 3,475。<b>但右欄的已裝效果彙總同時印著「出力 +50」</b> ——
+          因為那顆出力模組Ⅱ 當下是 <b>Lv2/4</b>（<code>moduleAddLevel: 2</code>，裝一顆＝2 級），
+          彙總走的是 <code>stackLevelOf()</code>。<b>同一頁兩個數字互相打臉，而兩邊都不會報錯。</b><br>
+          這正是 C-7 的檔頭已經預告過的那個坑逐字重現：
+          「逐格加總會讓四顆刀劍模組Ⅱ 算出四倍加成 —— 那是這一區最容易長出來的錯，
+          而且它長得很像是對的。」<br>
+          <b>改法</b>：改走 <code>moduleStacks()</code>（回的就是<b>每族一筆＋已收斂的等級</b>），
+          與 <code>EquippedEffects</code> 和匯出圖同一支。
+          <code>effectiveOutput()</code> 的第三參數同時改成收
+          <code>{ mod, level }</code>，<b>強迫每個呼叫端回答「在第幾級」</b> ——
+          那正是這個 bug 的本體，型別擋得住就不要靠註解。</span><br><br>
+
+          <span style="color:var(--accent-green);"><b>實測（emulator）：</b>
+          裝一顆 出力模組Ⅱ ⇒ 軀幹 <b>Lv2/4</b>、OutputBar <b>3,425</b>、彙總 <b>出力 +50</b>（兩處一致）；
+          再於腿部裝第二顆同族 ⇒ 兩格都變 <b>Lv4/4</b>、OutputBar <b>3,475</b>、彙總 <b>+100</b>；
+          卸掉一顆 ⇒ 退回 3,425。<br>
+          <b>測試</b>：<code>loadoutRules.test.ts</code> 新增 5 則、
+          <code>effectiveOutput.test.ts</code> 改寫 1 則 ＋ 新增 2 則。
+          其中一則專門釘「四顆同族 ⇒ 仍是 +100 而不是 +200」——
+          <b>兩顆時逐格加總碰巧也是 100，四顆才會露餡</b>，只測兩顆會得到一個恆綠的假保證。<br>
+          <b>已驗證這組測試在修好之前真的會紅</b>（暫時還原呼叫端 ⇒ 3 則失敗、
+          「無加成模組」那則照樣綠）—— 052-J「把 bug 本身寫進測試」的反向檢查。</span>
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts:563 · src/utils/effectiveOutput.ts · 兩支測試</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 分享碼 round-trip 實地驗收</div>
-      <div class="task-group-meta">瀏覽器 · 無痕視窗</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">2026-08-28 · 模組四情況通過；②③ 待 Phase D</div>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
@@ -1295,20 +1348,58 @@
           ④ 別名模組（<code>mod_40xx_2</code>，41 筆走的是別名而非推導）；
           ⑤ 貼進<strong>還沒載入完</strong>的頁面（決策六的載入 gate）；
           ⑥ 本機書架存檔的讀回。<br>
-          ⚠ ⑤ 是最容易漏的一項，也是唯一會「貼一次清空一次」的那一種。
+          ⚠ ⑤ 是最容易漏的一項，也是唯一會「貼一次清空一次」的那一種。<br><br>
+
+          <span style="color:var(--accent-green);"><b>實測結果（2026-08-28，emulator ＋ 全新 isolated context）——
+          模組那一半四種情況全部通過。</b><br>
+          素材：海莉絲 ＋ 彌造者，四個接口裝滿
+          （軀幹／腿部 出力模組Ⅱ 同族 ⇒ <b>Lv4</b>、右臂 暴擊模組Ⅱ Lv2、左臂 人機鏈接 Lv1），
+          方案名稱「模組四格測試」，分享連結 204 字元。<br>
+          · <b>① 只有模組</b>：全新 context 開連結 ⇒ 四格逐格相符、等級相符、
+            出力 <b>3,475</b>、名稱還原，無 toast、無靜默丟棄。<br>
+          · <b>④ 別名模組</b>：<code>mod_4026_2</code>（出力模組Ⅱ）正是走別名那 41 筆之一，
+            ① 的那一份就涵蓋了它 —— round-trip 後仍是同一顆。<br>
+          · <b>⑤ 貼進還沒載入完的頁面</b>：<b>換了做法才真的驗到。</b>
+            先試在 <code>?b=</code> 的冷開頁注入 fetch 延遲，但 <b>Firestore SDK 走自己的
+            WebChannel 傳輸、攔不到</b>，頁面照樣 1.5 秒就載齊 —— 那樣只是「看起來測過了」。
+            改成<b>在還沒選機師的空頁面上用「貼上分享碼」對話框貼</b>：
+            那時 <code>equip</code> 階段的 <code>modules</code> 根本還沒請求，
+            是 052-G 決策六那條 gate 唯一真正的觸發條件。
+            結果：套用後 <b>四顆模組全數存活</b>，逐格取樣 6 秒內未出現任何一刻被清空。<br>
+          · <b>⑥ 本機書架</b>：存入 ⇒ 手動卸掉軀幹那顆（4/4 → 3/4、出力 3,475 → 3,425，
+            證明堆疊等級跟著退回 Lv2）⇒ 從書架套用 ⇒ 四格與 3,475 完整回來。<br>
+          · console 全程零錯誤、零警告。</span><br><br>
+
+          <span style="color:var(--accent-yellow);"><b>⚠ ② 只有混搭／③ 全滿 兩種情況本輪驗不了 —— 部件混搭是 Phase D，還沒做。</b><br>
+          刻意<b>不</b>把它們算成通過：這兩項要的是 <code>§PARTS</code> 那一段，
+          而本輪連一個能產生 <code>draft.parts</code> 的 UI 入口都沒有。
+          Phase D 收尾時回到本工項補這兩項即可 —— <b>先驗模組那一半是刻意的順序</b>：
+          模組已經對站長可見（C-6 拆掉告示）而分享碼同時是儲存格式，
+          等 D 做完再一起驗，紅了會分不出是哪一段出貨壞的。</span><br><br>
+
+          <span style="color:var(--accent-red);"><b>⚠ 抓到兩個真的缺陷（都不是模組本身，是「模組沒有被算進去」）</b><br>
+          <b>① 貼碼對話框的預覽不數模組與元件。</b>
+          實測貼一份四顆模組的配裝，預覽只印「機師 海莉絲 · 機甲 彌造者 · 3 套配裝 · 武器 2 把 · 背包 1」——
+          <b>模組一個字都沒有</b>。這段是 052-C 寫的，那時元件（052-D）與模組（052-G）都還不存在。
+          症狀最糟的一種是「純模組配裝」：預覽會顯示<b>武器 0 把</b>，看起來像貼了個空的東西，
+          而下一顆按鈕寫著「套用會取代你目前正在配的這一套」—— <b>預覽的用途就是讓人知道自己要換掉什麼，
+          少數兩類等於在最需要它的那一刻失能。</b>已補上「模組 N 顆」「元件 N 個」（0 則不印）。<br>
+          <b>② 本機書架卡片同一處遺漏。</b>卡片摘要是使用者<b>分辨十張卡</b>的唯一依據，
+          而純模組配裝在那裡也是「武器 0 把」⇒ 十張長得一樣的卡等於沒有摘要。同樣補上。<br>
+          兩處都已實測：預覽與卡片現在都印出「模組 4 顆」。</span>
         </div>
-        <div class="task-file">—</div>
+        <div class="task-file">src/components/loadout/PasteCodeDialog.tsx · src/components/loadout/LocalShelfDialog.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">①④⑤⑥ 通過</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">E-2 &nbsp; 級聯實地驗收</div>
-      <div class="task-group-meta">瀏覽器</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">2026-08-28 · 模組級聯通過；一項前提已不成立</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1316,12 +1407,41 @@
         <div class="task-desc">
           三件事都要看到：① <code>draft.modules</code> 與 <code>draft.parts</code> 被清掉；
           ② toast 說出被清掉了什麼（<strong>不可靜默</strong>）；③ [復原] 按得回來。<br>
-          B 級機甲（無接口）與美杜莎MK2（未建檔）各切一次，確認兩種文案分得開。
+          B 級機甲（無接口）與美杜莎MK2（未建檔）各切一次，確認兩種文案分得開。<br><br>
+
+          <span style="color:var(--accent-green);"><b>實測結果（2026-08-28）—— 三件事都看到了。</b><br>
+          · <b>換機甲</b>（S 彌造者 → B 提塔利克）：四顆模組全清，
+            toast <b>逐顆具名</b>「移除 4 項：軀幹 出力模組Ⅱ · 左臂 人機鏈接 ·
+            右臂 暴擊模組Ⅱ · 腿部 出力模組Ⅱ」，槽位圖四格改印
+            <b>「無模組接口」</b>；按 [復原] ⇒ 機甲與四顆模組、出力 3,475 一起回來。<br>
+          · <b>換機師</b>（海莉絲 中型 → 阿德里安 重型）：執照鎖死裝甲類型 ⇒ 機甲一併失效，
+            toast「移除 <b>5</b> 項：彌造者 · 軀幹 出力模組Ⅱ · …」——
+            <b>機甲自己也列在裡面</b>，不是只講模組；[復原] 同樣完整還原。<br>
+          · <b>「換裝甲類型」沒有獨立的操作路徑</b>：執照已經把裝甲類型鎖死，
+            挑選器裡根本列不出別類的機甲 ⇒ 這件事只能經由換機師達成，已由上一條涵蓋。
+            （這不是漏驗，是工項把兩個入口寫成了兩件事。）<br>
+          · console 零錯誤。<br>
+          ⚠ toast 有逾時，前兩次都是<b>手速不夠</b>而不是 [復原] 壞掉 ——
+            改成把「換 → 按復原」壓在同一段腳本裡才驗到。留這一句給下一個人。</span><br><br>
+
+          <span style="color:var(--accent-yellow);"><b>⚠ 「美杜莎MK2（未建檔）」這一半驗不了 —— 前提已經不成立。</b><br>
+          2026-08-28 直讀正式庫核對：<b>90 台機甲沒有一台軀幹出力為 0</b>，
+          <code>mech_090_美杜莎MK2</code> 已補完數值（output <b>2605</b>、weight <b>835</b>、
+          四格皆 <b>Ⅱ型接口</b>，<code>manual: true</code> 仍在）。接口那一半其實是<b>本計畫自己的
+          B-0 在 2026-08-27 修掉的</b>，工項文字沒跟著更新。<br>
+          空接口今天只剩 <b>B 級那 10 台的 40 格</b>，而那是「真的沒有這個槽」（由 quality derive）。
+          ⇒ <b>兩種文案今天只剩一種有實例</b>，不存在「分不分得開」的問題。<br>
+          <b>⚠ 但 <code>dataIncomplete</code> 那條路不可以刪。</b>站上的佔位慣例是
+          <b>新機甲一律先建檔再補數值</b>，下一台新機甲建檔的那天它就會再被走到。
+          已把三處把美杜莎當活例子的註解改寫成「今天 0 台命中、但這不是死碼」
+          （<code>chassisStats.ts</code> 的 <code>resolveChassis()</code>、
+          <code>loadoutRules.ts</code> 的 <code>LoadoutBudget.dataIncomplete</code>、
+          與測試 fixture），並在 fixture 上註明它是<b>這條路徑唯一的實例，刪掉等於讓分支無人看守</b>。</span>
         </div>
-        <div class="task-file">—</div>
+        <div class="task-file">src/utils/chassisStats.ts · src/utils/loadoutRules.ts · src/utils/loadoutRules.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
