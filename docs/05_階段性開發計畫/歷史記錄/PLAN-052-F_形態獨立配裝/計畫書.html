@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-F 形態獨立配裝 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-F 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-052-F</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    形態獨立配裝<span style="-webkit-text-fill-color:var(--text-secondary);"> · 海莉絲三套 · 一張唯讀卡 · 曜不開分頁</span>
+  </h1>
+  <p class="hero-sub">模擬器今天對海莉絲給出一套配裝，而遊戲裡是三套可配＋一套鎖死。這不是「缺一個功能」，是對這位機師給出不完整的答案。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value purple">PLAN-052-F</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-28</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">LoadoutPage · simReducer · utils/forms · loadoutCode/codec · LoadoutExportCard · forms 集合</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value cyan">進行中 · Phase A～D 完成，剩 E 驗收（2026-08-28）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-041（資料已完成）· 052-A C-3 sets 模型（已完成）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <!-- 範例區塊：依實際情況複製增減 info-block / problem-block -->
+  <div class="problem-block">
+    <strong>問題一：對兩位機師，站上今天給的是一個不完整的答案</strong><br>
+    海莉絲有四個形態，其中<b>三個各有一套獨立配裝</b>（先鋒／突擊／戰術），第四個（虛粒子）鎖死整套固定武裝。
+    曜有兩個形態（機兵／巡航）。而模擬器目前<b>只提供一套</b>，頁首橫幅明寫「形態分頁開發中」。<br>
+    這與「還沒做元件」不同：元件缺席時玩家知道自己沒看到；<b>形態缺席時玩家看到的是一個看起來完整、實際上只對四分之一情況成立的配裝</b>。
+    重量與出力尤其如此——總綱紅隊已經驗過「出力是 per-form 的」（先鋒 3675 vs 另一形態 3375，差的 300 來自強襲者背包）。
+  </div>
+
+  <div class="info-block">
+    <strong>問題二：地基全都鋪好了，卡在最後一段 UI</strong><br>
+    <code>LoadoutDraft.sets: Record&lt;key, EquipSet&gt;</code> 與 <code>activeSetKey</code> 是 052-A C-3 就落地的模型；
+    <code>reconcile()</code> 已經<b>逐套</b>掃裝備、換機師時舊 formId 會整批失效；
+    <code>canEquipWeapon()</code> 已有 <code>FORM_WEAPON_TYPE</code> 這條規則；
+    <code>utils/forms.ts</code> 的 <code>equipSetKeys()</code>／<code>equipSetLabel()</code>／<code>hasIndependentLoadouts()</code>
+    三支純函式已完成且有單元測試；<code>LoadoutPage</code> 甚至已經在算 <code>activeKey</code>、
+    並用 <code>hasIndependentLoadouts()</code> 決定要不要多印一句黃字警語。<br>
+    <b>缺的只是：那排分頁沒有被畫出來。</b>本計畫的工程量因此不在「造」，而在「接 ＋ 補三個沒人回答的問題」。
+  </div>
+
+  <div class="warning-block">
+    <strong>問題三：兩套鎖死的形態，今天完全看不到</strong><br>
+    <code>equipSetKeys()</code> 刻意讓 <code>restrict.kind === 'fixedArmament'</code> 的形態<b>不佔分頁</b>
+    （註解逐字：「那種形態鎖死整套配裝，沒有東西可配，開一個分頁只會給使用者一個什麼都不能點的畫面」）。
+    這個決定是對的，<b>但它的另一半沒有做</b>：海莉絲切到虛粒子時，
+    耀星／隕星／千星在模擬器裡是<b>零存在感</b>的——玩家在三個分頁之間切換，
+    卻找不到官方形態頁上明明有的第四格，會把它當成「站上漏了」，而那正是總綱決策四要避免的事。<br>
+    ⚠ <b>曜是另一回事</b>（見決策二／決策三）：遊戲裡曜連形態頁面都沒有，
+    所以它的巡航形態<b>不該</b>在配裝頁長出任何東西。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label purple">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <!-- 範例區塊：每個關鍵決策一個 decision-block；邊界情況用 warning-block -->
+  <div class="info-block">
+    <strong>資料現況（2026-08-28 直讀正式庫切片，不必重查）</strong><br>
+    <code>forms</code> 集合共 <b>6 筆</b>，涵蓋 2 位機師：<br>
+    · 海莉絲 4 筆——先鋒／突擊／戰術為 <code>weaponType</code> ＋ <code>independentLoadout: true</code> ＋ 各帶 1 筆形態增益 buff；
+      虛粒子為 <code>fixedArmament</code> ＋ <code>isSignature: true</code>、buff 留空（靠［粒子爆發］拿滿三份）。<br>
+    · 曜 2 筆——機兵為 <code>weaponType</code>、巡航為 <code>fixedArmament</code>，
+      <b>兩筆的 <code>independentLoadout</code> 皆為 <code>undefined</code></b>。<br>
+    另已查證：<b>20 條</b>（<span style="color:var(--accent-yellow);">建檔時記的是 19 條，2026-08-28 Phase A-0 重數為 20</span>）<code>refType: 'form'</code> 的 inbound 引用已完成遷移、<b>0 條 dangling</b>，
+    <code>pilotSkills</code> 裡的舊形態文件已清除（僅剩不相干的 <code>skill_形態切換1</code>）。
+    <b>亦即 PLAN-041 Phase C 的資料工作實際上已經完成</b>，其進度表的 5 個 pending badge 是過期的顯示（見 Phase A-0）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策一：分頁鍵一律取自 <code>equipSetKeys()</code>，UI 不自己算</strong><br>
+    這條在 <code>utils/forms.ts</code> 的註解裡已經釘死，本計畫只是第一個真正遵守它的消費端：
+    <b>不可 map over <code>Object.keys(draft.sets)</code></b>——那是「已經存過東西的分頁」，
+    新建的配裝一個鍵都沒有、分頁會整排消失；而且鍵的順序由寫入順序決定，換一台機甲就可能重排。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：鎖死的形態不佔分頁，改用唯讀卡 —— 但<u>只在有分頁列的機師身上</u></strong>
+    <span style="color:var(--accent-green);">— ✅ 已完成（2026-08-28，C-1）</span><br>
+    <span style="color:var(--accent-green);">判準落地成 <code>lockedFormCards(pilotId, forms)</code>（<code>utils/forms.ts</code>），
+    第一行就是 <code>if (!hasIndependentLoadouts(...)) return []</code> ——
+    「有沒有分頁列」這件事因此<b>寫在程式裡、可單測</b>，而不是寫在某個元件的註解裡。
+    實測：海莉絲 1 張、曜 0 張、其餘 87 位 0 張。<br>
+    呈現刻意拆成兩處：<b>分頁列尾端一個唯讀標記</b>
+    （<code>&lt;span&gt;</code>、不掛 <code>role="tab"</code>，靠 052-I 的
+    「切角＝可互動／圓角＝唯讀」與分頁區分）回答<b>「還有第四個形態」</b>；
+    <b>槽位圖下方一張 <code>&lt;LockedFormCard&gt;</code></b> 回答<b>「它裝了什麼」</b>。</span><br>
+    維持 <code>equipSetKeys()</code> 現行行為（<code>fixedArmament</code> 不生分頁），
+    另在分頁列尾端掛一張<b>唯讀卡</b>：印形態名、限制敘述與那幾把固定武裝。
+    它<b>不可點成分頁</b>——點進去什麼都不能改，那是一個假的互動。<br>
+    ⚠ <b>判準不是「有沒有 <code>fixedArmament</code> 形態」，而是「有沒有分頁列」</b>
+    （2026-08-28 依決策三連帶收斂）：<b>有分頁列，鎖死的那一格才需要被解釋</b>。
+    於是今天實際會畫的只有<b>海莉絲的虛粒子一張</b>；曜沒有分頁列，畫了就是站上多出一個遊戲沒有的東西。
+    幽弧／夜燼不會因此消失——它們在武器圖鑑查得到（PLAN-040 已建檔），
+    那裡才是「這兩把是什麼」的去處；配裝頁回答的是「這一套裝了什麼」。<br>
+    ⚠ 虛粒子的 <code>lockedSkillIds</code> <b>不渲染</b>（PLAN-041 決策十已拍板：矩陣已掛成千星的武器技能、
+    渲染會重複，且形態下三支其實被強化為 EX 版，列基礎版名稱等於顯示玩家看不到的東西）。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策三：曜沒有形態分頁 —— 已裁決，而且資料本來就是對的</strong><br>
+    <b>使用者裁決 2026-08-28（逐字）</b>：「曜的兩筆形態：遊戲中實際上<b>連形態頁面都沒有</b>，
+    就跟一般機師一樣只能配一套裝備。但真實狀況就是，因為曜只有原始的機兵形態和巡航形態，
+    而<b>巡航形態裝備是固定武裝</b>，所以確實也只能弄一套裝備。」<br>
+    ⇒ 曜兩筆形態的 <code>independentLoadout: undefined</code> <b>是正確資料，本計畫不碰 <code>forms</code> 集合</b>；
+    <code>equipSetKeys('pilot_088_曜')</code> 回 <code>['default']</code> 同樣是正確行為。<br>
+    ⚠ <b>這一條要寫死，因為它長得很像一個 bug。</b>總綱寫著「曜 1 套 ＋ 1 唯讀」，
+    而資料上曜拿不到任何分頁——那句的「1 套」指的是<b>一般機師的預設那一套</b>，不是形態分頁。
+    <b>規格與資料在同一頁互相打臉時，後來的人一定會去改比較好改的那一邊，而那一邊是資料。</b>
+    A-3 負責把總綱那句話改寫掉。<br>
+    <b>連帶的範圍收斂</b>：分頁列這個功能<b>今天全站只有海莉絲一個使用者</b>。
+    這不是縮水，是把驗收面積講清楚——只有兩種情況要看：海莉絲（3 個分頁）與其餘 88 位（分頁列整排不渲染）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：分享碼與匯出圖帶哪一套</strong>
+    <span style="color:var(--accent-green);">— ✅ 已完成（2026-08-28，D-1／D-2）</span><br>
+    <span style="color:var(--accent-green);"><b>① 分享碼帶全部 —— codec 本來就是這樣寫的</b>
+    （<code>encodeSets()</code> 寫全部的鍵 ＋ 一個 ACTIVE 索引），
+    10,000 份 round-trip 早已涵蓋多套。<b>缺的是吃進來那一端</b>：
+    <code>reconcile()</code> 在 <code>forms</code> 未載入時會把三個形態分頁<b>整批靜默刪掉</b>
+    （不進 <code>removed</code> ⇒ 不跳 toast、無 [復原]），已補上形態的載入 gate。<br>
+    <b>② 匯出圖印當前那一套，並標明形態名 —— 抬頭本來就有</b>
+    （<code>ctx.form?.name</code>，黃字）。補的是<b>分享碼旁的「（含 N 個形態分頁）」</b>
+    （圖上一套、碼裡整份，收圖的人手上只有這張圖）與<b>檔名帶形態名</b>
+    （三張同名只會被瀏覽器加 (1)(2)，而那個編號與形態無關）。<br>
+    <b>③ 實地驗收已做</b>：三分頁各配一套 → 複製連結 → 全新瀏覽器 context 開啟 →
+    三頁逐一比對相符，<code>activeSetKey</code> 與方案名稱一併還原。</span><br>
+    codec v1 已有 <code>sets</code> 的段落結構，但本計畫要明確驗收兩件今天沒有人回答過的事：<br>
+    ① encode 是<b>帶全部分頁</b>還是只帶當前那一套？（帶全部＝分享的是「這位機師的整份配裝」，
+    語意與書架一致，也才對得起「每機師 5 格」的雲端配額設計）<br>
+    ② 匯出圖印哪一套？<b>建議印當前那一套並在圖上標明形態名</b>——一張圖塞四套會失去「一眼看懂」的價值，
+    而不標形態名的圖在轉發第三手之後會變成一個無法歸屬的數字。<br>
+    ⚠ 這一條要<b>實地驗收</b>，不可只靠 codec 單元測試：052-D 的元件索引就是「單測全綠、頁面接線漏掉」的先例。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：每一套的重量／出力各自獨立</strong>
+    <span style="color:var(--accent-green);">— ✅ 單元測試已補（2026-08-28，B-2；E-1 的實測對帳仍待做）</span><br>
+    <code>buildContext(draft, key, world)</code> 已經吃 key，理論上成立；但<b>沒有任何測試或畫面驗過它</b>。
+    本計畫補一組單元測試釘住「同一份 draft、兩個 key ⇒ 兩個獨立的 budget」，
+    並以海莉絲的<b>先鋒／戰術</b>兩套實測對帳（總綱紅隊那組 3675 / 3375 的數字正好可以當基準）。<br>
+    <br>
+    <b style="color:var(--accent-yellow);">⚠ 配對已於 Phase A-2 訂正（2026-08-28）：原寫「先鋒／突擊」是錯的。</b><br>
+    回查 <code>weapons</code> 的 <code>weaponType &times; equipSlot</code> 分布：<b>先鋒</b>（格鬥／射擊）與
+    <b>突擊</b>（突擊）能裝的武器<b>全部落在 singleHand／dualHand，back 一把都沒有</b>
+    ⇒ 背槽空著 ⇒ <b>兩者都裝得下強襲者背包 ⇒ 都是 3675</b>；
+    能拉開差距的是 <b>戰術</b>——它能裝的 44 把<b>只有 back 22 ＋ shoulder 22</b>，
+    背槽被戰術武器佔住 ⇒ 沒有背包 ⇒ <b>3375</b>。<br>
+    沿用原配對會得到 3675 vs 3675，而那個測試<b>會綠</b>（兩個 key 各自算了一次），
+    卻正好漏掉它要防的那件事——052-J「把 bug 本身寫進測試」的同一個坑。<br>
+    <span style="color:var(--text-dim);">
+    · <b>基準的組成</b>：3375 ＝ <code>mech_052_彌造者</code> 的 <code>parts.torso.output</code>；
+      ＋300 ＝ <code>backpacks/60101706</code> 強襲者背包，數值的唯一文字來源是
+      <code>bpskill_強襲者驅動·增傷</code> 正文「機兵獲得額外 300 出力」
+      （該技能 <code>effects</code> 為空，故 <code>effectiveOutput.ts</code> 硬編 <code>BACKPACK_OUTPUT_BONUS</code>）。
+      引擎今天就算得出 3675，Phase E 不必先補功能。<br>
+    · <b>3375 不是形態自帶的減益</b>，而是「背槽被武器佔住」的結果——戰術形態若只掛 shoulder 武器、
+      把背槽留給背包，一樣是 3675。所以 E-1 的 fixture 必須寫明兩套的背槽各掛什麼，否則數字不可重現。<br>
+    · <b>一條既有斷線（不在本計畫範圍）</b>：<code>loadoutBudget()</code> 呼叫
+      <code>effectiveOutput({ output }, { back })</code> 時<b>沒傳第三個參數 <code>modules</code></b>
+      ⇒ <code>OutputBreakdown.modules</code> 恆為 0。全庫只有 2 筆模組有出力加成
+      （<code>mod_4026_2</code>／<code>sub_mod_出力模組</code>，滿級 +100），本基準不受影響，
+      但 <b>E-1 的 fixture 不要裝出力模組</b>。歸屬 <b>052-G</b>（模組要先能被玩家裝上去，這條線才有東西可接）。</span>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：完工後更新頁首常駐橫幅</strong>
+    <span style="color:var(--accent-green);">— ✅ 已完成（2026-08-28，隨 B-1 一起出貨）</span><br>
+    <span style="color:var(--accent-green);">原本排在 Phase D（工項 D-3），實作時發現兩處文字與分頁列在<b>同一段 JSX</b> 裡：
+    分頁列上線的那一刻，「形態分頁尚在後續階段」就是站上自己說的一句假話，沒有理由讓它多活一個 Phase。<br>
+    ① 橫幅：「形態分頁」從未完成清單<b>移進已提供清單</b>；未完成剩「武器改裝、部件混搭、雲端存檔」。<br>
+    ② 黃字警語整句換掉並改為青色（那不再是警語）：
+    新句改講<b>「哪些東西逐頁分開、哪些四套共用」</b>——分頁列本身講得出「有幾套」，
+    卻講不出「切過去之後哪些東西會跟著換」，而那正是玩家第一次看到三個分頁時會問的第一個問題。</span><br>
+    <span style="color:var(--text-dim);">以下為原始工項描述，保留供追溯：</span><br>
+    橫幅目前列著「武器改裝、形態分頁、部件混搭、雲端存檔<b>尚在後續階段</b>」，
+    並在有形態的機師身上多印一句黃字「目前僅提供『先鋒形態』一套，形態分頁開發中」。
+    這兩處都要一起改——<b>那是常駐橫幅不是暫時公告</b>（總綱決策四），留著就是站上自己說了一句不再成立的話。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label purple">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>分頁列 UI</b>：依 <code>equipSetKeys()</code> 渲染、切換 <code>activeSetKey</code>、每套各自的重量／出力與槽位圖</li>
+      <li><b>唯讀形態卡</b>：虛粒子與巡航兩套固定武裝的呈現（決策二）</li>
+      <li><b>曜的資料裁決</b>與（若裁決為「有」）<code>independentLoadout</code> 補值</li>
+      <li><b>分享碼／匯出圖</b>的多套語意驗收與（必要時）修正（決策四）</li>
+      <li><b>逐套 budget</b> 的單元測試與實測對帳（決策五）</li>
+      <li>頁首橫幅與黃字警語更新（決策六）</li>
+      <li><b>實機驗收</b>：走 2026-08-28 新建的 emulator 管道（<code>emu:slice --simulator</code> → <code>emu:seed</code> → <code>dev:emu</code>）</li>
+      <li>順手：PLAN-041 進度表的過期 badge 補正（A-0）</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>形態切換的戰鬥效果模擬</b>——本站不提供傷害猜測值，這條與總綱一致</li>
+      <li><b>虛粒子 EX 技能的呈現</b>——PLAN-041 決策十已拍板不渲染 <code>lockedSkillIds</code></li>
+      <li><b>雲端存檔</b>（052-E）與<b>部件混搭</b>（052-G 後半）——各自獨立出貨</li>
+      <li><b>對外開放模擬器入口</b>——使用者裁決 2026-08-28：「希望對外是完整的功能」，
+          <code>SIMULATOR_INTERNAL_ONLY</code> 維持 <code>true</code>，開放時機另議</li>
+      <li>新增更多形態資料——今天只有海莉絲與曜有形態，其餘 87 位機師走 <code>default</code></li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label purple">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-052-F 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-F — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

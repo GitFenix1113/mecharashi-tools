@@ -291,13 +291,28 @@
     · <b>全鎖形態（海莉絲虛粒子／曜巡航）不出現在 <code>loadouts</code> 裡</b> —— 那一套 100% 由
       <code>form.restrict.mounts</code> derive；落盤第二份就會有兩份對不上的可能，而玩家本來就改不了。<br>
     · <b>武器與背包都獨立</b>，所以各套的重量／出力預算完全分離。<br>
-    · <code>MechForm</code> 新增 <code>independentLoadout?: boolean</code>（<b>海莉絲 4 筆；曜 0 筆</b>），
+    · <code>MechForm</code> 新增 <code>independentLoadout?: boolean</code>（<b>海莉絲 3 筆（先鋒／突擊／戰術）；曜 0 筆</b>），
       並提供全站唯一入口 <code>equipSetKeys(pilotId, forms)</code>：有 independent 就回那些 formId，否則回 <code>['default']</code>。
       <b>UI 一律 map over 它，不要 map over <code>Object.keys(loadouts)</code></b>
       （後者在「存檔之後才新增形態」時會少畫一個分頁，而且不會報錯）。<br>
     · <b><code>FormRestrict</code> 不需要 <code>lockCurrent</code> 分支</b>：曜的巡航形態也是「換掉並鎖住」
-      （專屬固定武裝 幽弧／夜燼，只是資料還沒建），兩位調構師走同一條規則。
-      <code>weaponIds: string[]</code> 升級為 <code>mounts: ArmamentMount[]</code>（才畫得出哪一把在哪個槽）。
+      （專屬固定武裝 幽弧／夜燼，<b>2026-08-28 查證：<code>weapon_181_幽弧</code>／<code>weapon_182_夜燼</code> 已建檔，皆 <code>isFixedArmament: true</code>；<code>form_曜_巡航</code> 的 <code>restrict.mounts</code> 已掛上這兩把</b>），兩位調構師走同一條規則。
+      <code>weaponIds: string[]</code> 升級為 <code>mounts: ArmamentMount[]</code>（才畫得出哪一把在哪個槽）。<br>
+    <br>
+    <b style="color:var(--accent-yellow);">⚠ 補充裁決（2026-08-28，使用者）：曜沒有形態分頁，而且 forms 裡那兩筆空著的 <code>independentLoadout</code> 是正確資料。</b><br>
+    使用者逐字：「曜的兩筆形態：遊戲中實際上連形態頁面都沒有，就跟一般機師一樣只能配一套裝備。
+    但真實狀況就是，因為曜只有原始的機兵形態和巡航形態，而巡航形態裝備是固定武裝，所以確實也只能弄一套裝備。」<br>
+    ⇒ 曜走一般機師的<b>單套 <code>default</code> 配裝</b>，<code>equipSetKeys('pilot_088_曜')</code> 回
+    <code>['default']</code>、<code>hasIndependentLoadouts()</code> 回 <code>false</code>，<b>皆是正確行為，不是 bug</b>。<br>
+    ⇒ <b>不要「順手」把 <code>form_曜_機兵</code> 的 <code>independentLoadout</code> 補成 <code>true</code></b>——
+    補了就會在站上長出一個遊戲裡不存在的分頁列。規格與資料在同一頁互相打臉時，
+    後來的人一定會去改比較好改的那一邊，而那一邊是資料，所以這句話寫在這裡。<br>
+    ⇒ <b>唯讀卡的判準是「這位機師有沒有分頁列」，不是「有沒有 <code>fixedArmament</code> 形態」</b>：
+    有分頁列，鎖死的那一格才需要被解釋。因此 052-F 只畫海莉絲虛粒子一張唯讀卡，
+    曜的巡航形態不畫——幽弧／夜燼在武器圖鑑查得到（PLAN-040 已建檔），
+    那裡才是「這兩把是什麼」的去處；配裝頁回答的是「這一套裝了什麼」。<br>
+    <span style="color:var(--text-dim);">（本段回寫自 PLAN-052-F 的 A-1／A-3；原表列「曜 1 套 ＋ 1 唯讀」的「1 套」
+    指的是一般機師的預設那一套，不是一個形態分頁，已一併改寫掉以免誤讀。）</span>
   </div>
 
   <div class="decision-block">
@@ -507,9 +522,9 @@
         <td>5–6 天</td><td>登入後每機師 5 格、跨裝置同步；本機存的可一鍵搬上去</td>
       </tr>
       <tr>
-        <td class="badge-low">052-F</td>
-        <td>形態獨立配裝（海莉絲 3 套可配 ＋ 1 唯讀；曜 1 套 ＋ 1 唯讀）</td>
-        <td>3–4 天</td><td>海莉絲四個分頁、四組正確的重量／出力</td>
+        <td><b>052-F</b> <span style="color:var(--accent-green);">✅</span></td>
+        <td>形態獨立配裝（<b>海莉絲 3 個分頁 ＋ 1 張唯讀卡；曜沒有分頁列</b>）</td>
+        <td><span style="color:var(--accent-green);">已完成<br>2026-08-28</span></td><td>海莉絲三個分頁、三組各自成立的重量／出力，第四個形態以唯讀卡交代<br><span style="color:var(--text-dim);font-size:12px;">實際 1 天（14 工項）—— 地基自 052-A 就鋪好，工程量在「接」而不在「造」</span></td>
       </tr>
       <tr>
         <td class="badge-low">052-G</td>
