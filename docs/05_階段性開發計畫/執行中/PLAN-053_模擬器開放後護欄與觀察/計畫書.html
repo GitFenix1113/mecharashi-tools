@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-053 模擬器開放後護欄與觀察 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-053 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(239,68,68,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge red">◆ PLAN-053</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-red) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    模擬器開放後護欄與觀察<span style="-webkit-text-fill-color:var(--text-secondary);"> · Guardrails</span>
+  </h1>
+  <p class="hero-sub">模擬器 2026-08-29 對外開放，而它從 052-E 起才第一次寫 Firestore。總綱決策九承諾的兩道護欄沒有跟著出貨 —— 先把它們補上，再談觀察。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label red">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value red">PLAN-053</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-29</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">firestore.rules · buildsApi · 用量告警</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value red">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-052-E（已完成）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：總綱決策九承諾的兩道護欄，沒有跟著 052-E 出貨。</strong><br>
+    決策九明訂兩件事：①<b>節流</b> —— <code>savedAt == request.time</code> ＋ 每文件 3 秒，
+    <b>且 delete 也要節流</b>（否則 delete→create 可繞過）；實測「無節流時單一帳號可寫
+    <b>43M/日 ≈ US$78/日</b>，3 秒節流後降到 ≈ US$6.1/日」。②<b>同一次 deploy 必須順手收緊
+    <code>users/{userId}</code> 文件本體</b>，並附了理由：「只鎖 builds 不鎖本體，
+    <b>上面所有保護都是裝飾</b>」。
+    <br><br>
+    <b>兩條都不在線上。</b>實際部署的 <code>match /builds/{buildId}</code> 只有
+    <code>isOwner</code> ＋ doc id 正規式 ＋ <code>shapeOk</code>；client 側
+    （<code>src/lib/buildsApi.ts</code>）也沒有任何節流。
+    <br>
+    <b>⚠ 這不是被裁決延後的，是建檔時整條沒被承接</b> —— PLAN-052-E 的計畫書與進度表
+    全文搜「節流」是<b>零結果</b>。歸檔進度表記了三處「與計畫書不同的實作決定」，
+    但沒有這一條，因為它從來沒有進入 052-E 的視野。
+    <br><br>
+    而 <b>2026-08-29 模擬器已對外開放</b>。決策九算的那個 US$78/日 情境，
+    今天第一次成為真實可達的狀態，而不是紙上推演。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：站上既有的寫入熔斷器，保護不到雲端書架。</strong><br>
+    <code>workers/src/collectBudget.ts</code>（PLAN-046 決策七）是一套完整的寫入預算熔斷器，
+    但它守的是<b>統計寫入</b>，而統計走 Cloudflare Worker。
+    <b>雲端書架是 client 用 Firebase SDK 直連 Firestore 的</b>，一次也不會經過 Worker ——
+    那套熔斷器對它<b>永遠不會被呼叫到</b>。
+    <br><br>
+    ⇒ <b>雲端書架唯一能施加速率限制的地方，就是 Firestore 規則本身。</b>
+    這正是問題一那條節流不能只當成「漏做的一項」的原因：它不是眾多防線中的一道，它是<b>唯一</b>的一道。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：<code>users/{userId}</code> 文件本體仍然全開。</strong><br>
+    <code>firestore.rules</code> 的 <code>match /users/{userId}</code> 至今仍是 PLAN-011 為 v1
+    <code>Build</code> 寫的一行 <code>allow read, write: if isOwner(userId)</code>：
+    <b>不驗形狀、不驗大小、不驗節流</b>。任何登入者都能往自己的 <code>users/{uid}</code>
+    塞任意內容、任意大小、任意頻率。
+    <br><br>
+    <b>而站上程式從來不寫這個文件。</b><code>userApi.ts</code> 只寫
+    <code>users/{uid}/profile/main</code>，<code>buildsApi.ts</code> 只寫
+    <code>users/{uid}/builds/{pilotId}</code>。052-E 復驗時發現的
+    「<code>users</code> 集合 0 筆是量測假象、父文件是空殼」正是這件事的另一面 ——
+    <b>那些父文件之所以是空殼，就是因為沒有任何程式寫過它們</b>。
+    <br><br>
+    ⇒ 這是一條<b>純粹的攻擊面，零功能依賴</b>。收緊成
+    <code>allow write: if false</code> 不會弄壞任何現有行為，而它今天擋下的東西是全部。
+  </div>
+
+  <div class="info-block">
+    <strong>時間窗和 052-E 當初的論證同構，而且更緊。</strong>
+    052-E 動手的理由是「<code>builds</code> 0 筆 ⇒ 現在改模型零遷移成本，一旦全面公開就再也不免費」。
+    <b>現在已經公開了</b>，但開放才剛發生、文件數仍極少 ——
+    問題一那條節流會牽動 <code>updatedAt</code> 的<b>型別變更</b>（見決策二），
+    那是一次破壞性 schema 改動，<b>每晚一天成本就高一點</b>。A-1 要先直讀正式庫把實際筆數量出來，
+    而不是沿用 052-E 那個「0 筆」的數字 —— 052-E 自己就是被一個過期數字絆過的計畫。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label red">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：先補護欄，觀察是第二順位。</strong><br>
+    這個計畫的名字有兩半，但兩半不等重。<b>護欄是缺件補完</b>（決策九已經論證過、已經算過錢、
+    只是沒出貨），<b>觀察是新建能力</b>。缺件補完不需要再討論要不要做，只需要決定怎麼做；
+    所以 Phase A 全部是護欄，Phase B 才是告警與可觀察性。
+    <br>
+    <b>如果這個計畫只做得完一半，要做完的是 A 那一半。</b>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：節流要成立，<code>updatedAt</code> 必須從 string 改成 timestamp。這是技術必然，不是偏好。</strong><br>
+    規則側節流只有一種寫法：<code>request.time &gt; resource.data.updatedAt + duration.value(3, 's')</code>，
+    而它<b>要求 <code>updatedAt</code> 是 timestamp</b>。現行是 client 寫進來的 ISO 字串
+    （規則只驗 <code>updatedAt is string</code>），既不能拿來做時間運算，
+    <b>也可以被偽造</b> —— client 想寫哪個時間就寫哪個時間。
+    <br><br>
+    所以連帶還要加 <code>request.resource.data.updatedAt == request.time</code>：
+    否則 client 只要每次都寫一個「很久以前」的 <code>updatedAt</code>，節流條件就永遠成立，
+    <b>那道節流會安靜地失效而不報錯</b>。決策九原文寫的 <code>savedAt == request.time</code>
+    就是這一條，本計畫沿用，只是欄位名改用既有的 <code>updatedAt</code>（不新增第二個時間欄位）。
+    <br><br>
+    ⚠ <b>這是破壞性 schema 變更</b>：既有文件的 <code>updatedAt</code> 是字串。
+    規則若直接改成只認 timestamp，<b>舊文件會變成更新不了、而且看不出為什麼</b>
+    （症狀是「我這位機師存不了、別位可以」）。過渡做法見 A-4。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策三：<code>create</code> 節流不了，所以「doc id 空間有多大」＝「不受節流的寫入有多少次」。</strong><br>
+    <b>這不是選擇，是技術事實。</b>節流條件必須讀 <code>resource.data.updatedAt</code>，
+    而 <code>create</code> 時文件不存在、<code>resource</code> 是 null —— 存取它會讓規則求值直接失敗。
+    所以 A-3 必須拆成 <b><code>create</code>（無節流）</b>與
+    <b><code>update</code> / <code>delete</code>（有節流）</b>兩條，沒有第三種寫法。
+    <br><br>
+    ⇒ 於是 doc id 能有幾種寫法，就等於攻擊者能做幾次不受節流的寫入。
+    現行 <code>'^pilot_[0-9]{3}_.*'</code> 的 <code>.*</code> 讓它是<b>無限</b>。
+    <br>
+    <b>⚠ 這就是「只做 A-3 不做 A-5」會失敗的地方：門裝好了，旁邊的路沒關。</b>
+    見決策四的兩行算式 —— 那條路不關，決策九算的 US$78/日 一分不降。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：加 <code>exists(/pilots/{buildId})</code>，而且與 A-3 綁成同一次出貨。（使用者裁決 2026-08-29）</strong><br>
+    決策九原本就寫了「結構上限 ＝ 89 機師 × 5 ＝ 445 套 ≈ 525 KB/帳號（<b>由 <code>exists(/pilots)</code> 鎖住</b>）」，
+    實際出貨的是 <code>buildId.matches('^pilot_[0-9]{3}_.*')</code> —— 那個 <code>.*</code>
+    讓 <code>pilot_001_a</code>、<code>pilot_001_b</code>… <b>無限延伸</b>，
+    所以「doc id 正規式把面縮小」在<b>份數</b>這個維度上其實幾乎沒有縮小。
+    <code>exists()</code> 是唯一能把份數真正封頂到「實際機師數」的辦法。
+    <br><br>
+    <b>⚠ 建檔時把它寫成「封頂儲存量的可選項」是錯的框架。</b>儲存量那個風險確實小
+    （每份有界 ≈ 20 KB，塞滿 1 GB 要 5 萬份文件、寫入費卻不到 US$0.1）——
+    052-E A-3 據此接受殘餘風險並沒有算錯。<b>真正的作用是讓 A-3 生效</b>，兩行算式：
+    <br>
+    · <b>只做 A-3</b>：doc id 空間無限 ⇒ 每個新 id 各 <code>create</code> 一次、完全不受節流
+      ⇒ 仍是 43M/日 ⇒ <b>≈ US$78/日，決策九的數字一分不降</b>。<br>
+    · <b>A-3 ＋ exists()</b>：doc id 空間 ＝ 實際機師數（89）⇒ 89 份 ÷ 3 秒 ≈ 30 writes/秒
+      ≈ 2.6M/日 ⇒ <b>≈ US$4.6/日</b>。
+    <br>
+    後者對得上決策九自己算的「3 秒節流後 ≈ US$6.1/日」——
+    <b>也就是說決策九那個數字本來就內含 exists() 封頂</b>。它把兩者寫在一起不是並列兩項防護，是一組。
+    <br><br>
+    <b>接得上，零轉換</b>：<code>buildId</code> 就是 pilots 的 doc id
+    （<code>buildsApi.ts</code> 的 <code>buildDoc(uid, pilotId)</code>，形如 <code>pilot_001_艾達</code>）。
+    規則裡的 <code>get</code>／<code>exists</code> 是<b>特權讀取</b>，不受 pilots 那條
+    <code>read: if isAdmin()</code> 影響（A-6 要有一條測試釘住這件事，因為它違反直覺）。
+    <br><br>
+    <b>代價：</b>每次存檔多一次計費 document read。存檔是人手按的動作 ——
+    以本站實測日寫入 ≈ 228 次的量級，這連告警門檻的零頭都不到。
+    <br>
+    <b>⚠ 折衷方案不成立，先排除：</b>收緊正規式（限制後綴長度、字元集）<b>完全不縮小份數</b>，
+    後綴仍可任意變化；改成純編號 <code>'^pilot_[0-9]{3}$'</code> 也只是把無限換成 1000，
+    1000 ÷ 3 秒 ≈ US$50/日，一樣不夠。<b>要封到「實際機師數」只有 <code>exists()</code> 一條路。</b>
+  </div>
+
+  <div class="info-block">
+    <strong>原本列為 <code>exists()</code> 最大代價的「機師 id 漂移」，實際上不成立。（使用者裁決 2026-08-29）</strong><br>
+    <code>scrape-pilots-v3.js</code> 產的 id 是 <code>pilot_{陣列位置+1}_{繁中譯名}</code>，
+    所以理論上官方改一個譯名、或在中間插入一位機師，那位（乃至其後全部）的 id 就會變，
+    而 <code>exists()</code> 會把這件事從「靜默對不上」變成「存檔被拒」。
+    <br><br>
+    <b>但這條路今天不會被走到：全站資料已不再由爬蟲驅動</b>（使用者：官方根本不更新 ——
+    <code>aircraft_data</code> 停在 v3.2，站上已 v3.6，v3.3 之後的機甲全靠人工建檔）。
+    id 因此是<b>人工維護的穩定鍵</b>，不是每次重抓都可能重算的衍生值。
+    <br>
+    ⇒ 不因這條風險放棄 <code>exists()</code>。日後若真的改號，處置沿用既有流程
+    （改號本來就要處理熱度統計的幽靈 key），多帶一支 builds 遷移即可。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：告警優先於熔斷，沿用 PLAN-046 決策七的取向。</strong><br>
+    <code>collectBudget.ts</code> 的註解已經把這個取向寫得很清楚：
+    「第一道通知請用 Firebase 用量告警（建議設 20,000），<b>熔斷器只當防惡意攻擊的最後防線</b>」，
+    並且 2026-08-08 特地把預算從「省額度」改為「資料完整優先」，理由是低預算會在流量暴增日誤觸。
+    <br><br>
+    <b>對雲端書架而言這個取向更該成立</b>：統計熔斷了只是少一筆數據，
+    <b>書架熔斷了等於使用者按下「存入」而存不進去</b> —— 那是使用者可見的功能故障。
+    在沒有任何證據顯示有人在濫用之前，不值得為它冒這個險。
+    <br>
+    ⇒ Phase B 做的是<b>看得見</b>（告警、後台用量），不是<b>自動擋</b>。
+    自動熔斷明確排除在範圍外。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：<code>SIMULATOR_INTERNAL_ONLY</code> 留著不刪，而且要把收回條件寫成數字。</strong><br>
+    旗標已於 2026-08-29 改為 <code>false</code>，但檔案與四處呼叫刻意保留 ——
+    收回的代價因此是「改一個字」。
+    <br><br>
+    但<b>「什麼情況下該收回」如果沒有事先寫下來，真的發生時就會變成臨場判斷</b>，
+    而臨場判斷發生在最不適合判斷的時刻（帳單來了、或有人正在濫用）。
+    C-1 要把門檻寫成具體數字（日寫入次數、日費用、異常帳號數），
+    連同「收回之後要做什麼」一起寫進 <code>useSimulatorEntry.ts</code> 的檔頭 ——
+    那裡已經是這件事的單一事實來源。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label red">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b><code>firestore.rules</code></b>：收緊 <code>users/{userId}</code> 文件本體、
+        <code>builds</code> 寫入節流（含 delete）、<code>updatedAt</code> 綁 <code>request.time</code>、
+        補上「節流擋不住份數」的註解</li>
+      <li><b><code>src/lib/buildsApi.ts</code></b>：<code>updatedAt</code> 型別調整、
+        被節流拒絕時的錯誤呈現（<b>不能只是一個 403</b>）</li>
+      <li><b><code>scripts/test-emulator-rules.mjs</code></b>：新規則逐條補測，
+        包含「舊字串文件在過渡期仍能更新」這個回歸</li>
+      <li><b>Firebase 用量告警</b>與 <b>Cloudflare 方案／額度確認</b>（站長任務）</li>
+      <li><b>後台可見的雲端書架用量</b>（有多少人在用、寫入量落在哪個級距）</li>
+      <li><b>收回條件成文化</b>：門檻數字寫進 <code>useSimulatorEntry.ts</code> 檔頭</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>自動熔斷器</b> —— 見決策五：書架熔斷等於使用者存不了檔，先告警不自動擋</li>
+      <li><b>Cloud Function 份數計數器</b> —— 052-E A-3 否決的理由不變：
+        把一次 client 寫入換成一條會冷啟動、需要監控、會失敗的後端路徑</li>
+      <li><b>052-H 站內熱門配裝 ＋ OG 卡</b> —— 前置條件（流量）雖已解除，但要等分布看得出形狀，
+        見總綱進度表</li>
+      <li><b>武器改裝</b> —— 總綱決策十：全庫 180/180 筆 <code>fixedMod.effects</code>／
+        <code>floatingMod.possibleEffects</code> 皆空，<b>不渲染，不是渲染空的</b>；
+        要動它得先解決資料，不是 UI</li>
+      <li><b>任何模擬器功能面的新增</b> —— 這個計畫只做護欄與觀察，一項功能都不加</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label red">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-053 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-053 — <a href="../index.html" style="color:var(--accent-red);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

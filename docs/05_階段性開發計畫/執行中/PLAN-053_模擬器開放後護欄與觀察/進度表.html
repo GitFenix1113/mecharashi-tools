@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-053 模擬器開放後護欄與觀察 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-053 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(239,68,68,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge red">◆ PLAN-053</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-red) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">模擬器開放後護欄與觀察</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-29</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label red">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-red)">4</div>
+      <div class="summary-lbl">站長任務</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">13</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-red);">0 / 14</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    把「開放」這個決定的代價變成<b>擋得住、看得見、收得回</b>的三件事 ——
+    ①總綱決策九承諾但沒出貨的兩道護欄補上線；
+    ②雲端書架的用量在燒成帳單之前就有人知道；
+    ③<code>SIMULATOR_INTERNAL_ONLY</code> 的收回門檻是事先寫好的數字，而不是出事當下的臨場判斷。
+    <br>
+    <b>使用者端不會看到任何變化 —— 這個計畫做得好的樣子就是沒有故事可講。</b>
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label red">Phase A</div>
+  <div class="section-title">補上決策九漏掉的兩道護欄</div>
+  <div class="section-desc">
+    這一段是<b>缺件補完</b>，不是新功能：決策九已經論證過、算過錢，只是沒有跟著 052-E 出貨。
+    <b>整個計畫如果只做得完一半，要做完的是這一半。</b>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 直讀正式庫復驗現況</div>
+      <div class="task-group-meta">scripts/temp_scripts/ · serviceAccountKey.json</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">量出 builds 實際筆數、users 父文件有無資料、updatedAt 現存型別分布</div>
+        <div class="task-desc">
+          <b>不要沿用 052-E 那個「0 筆」的數字。</b>052-E 自己就是被過期數字絆過的計畫
+          （總綱四個「看起來很確定」的數字被它的四輪盤點修正過，而它的
+          「<code>users</code> 0 筆」後來也證實是量測假象 —— 父文件是空殼，
+          <code>getDocs</code> 看不到 missing document）。
+          <br><br>
+          要量三件：①<code>collectionGroup('builds')</code> 現在有幾份文件、分佈在幾個帳號；
+          ②有沒有任何 <code>users/{uid}</code> <b>父文件本身</b>帶著欄位（若有，A-2 就不是零風險）；
+          ③既有 <code>updatedAt</code> 全部是字串，還是已經混了別的型別（決定 A-4 過渡期要容忍幾種）。
+          <br>
+          用 <code>serviceAccountKey.json</code> 直讀，不經前台（純讀正式站資料的既定做法）。
+        </div>
+        <div class="task-file">scripts/temp_scripts/audit-builds.mjs（新增，一次性）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 收緊 users/{userId} 文件本體</div>
+      <div class="task-group-meta">firestore.rules:205</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">allow read, write: if isOwner → 讀保留、寫關掉</div>
+        <div class="task-desc">
+          決策九：「只鎖 builds 不鎖本體，<b>上面所有保護都是裝飾</b>」。
+          現行那一行是 PLAN-011 為 v1 <code>Build</code> 寫的，而 v1 <code>Build</code>
+          已於 052-E 整條刪除 —— <b>它守的東西已經不存在了</b>。
+          <br><br>
+          站上程式從不寫這個文件（<code>userApi</code> 只寫 <code>profile/main</code>，
+          <code>buildsApi</code> 只寫 <code>builds/{pilotId}</code>），
+          所以 <code>allow write: if false</code> 的功能風險是零 —— 但仍以 A-1 的實測為準。
+          <br>
+          <b>讀要保留</b>：子集合的規則不繼承父文件，關掉讀不影響子集合，但沒有必要，
+          且未來若要放公開欄位會需要它。
+          <br>
+          ⚠ 規則檔要寫明<b>為什麼是 false 而不是某個形狀檢查</b>：
+          沒有形狀可檢查，因為沒有任何程式寫它。
+        </div>
+        <div class="task-file">firestore.rules</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; builds 寫入節流（含 delete）</div>
+      <div class="task-group-meta">firestore.rules · 總綱決策九</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每文件 3 秒節流，update 與 delete 各一條</div>
+        <div class="task-desc">
+          <code>request.time &gt; resource.data.updatedAt + duration.value(3, 's')</code>。
+          <b>delete 也要掛</b>，否則 delete→create 的循環可以完全繞過節流（決策九原文就寫了）。
+          <br><br>
+          ⚠ <b>依賴 A-4</b>：這個條件要求 <code>updatedAt</code> 是 timestamp，
+          而現行是 client 寫的 ISO 字串。兩項要一起上，分開上會得到一條靜默失效的節流。
+          <br>
+          ⚠ <b>誠實註解（決策三）</b>：<code>create</code> 時沒有 <code>resource</code>，
+          所以 <b>create 一律不受節流</b>；對無限多個 doc id 各 create 一次，這條一次也不會生效。
+          規則註解要寫明「<b>節流不是『文件份數擋不住』的補救</b>」，
+          否則下一個讀規則的人會以為份數連帶被限住了。
+        </div>
+        <div class="task-file">firestore.rules</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; updatedAt：string → timestamp，且綁 request.time</div>
+      <div class="task-group-meta">firestore.rules · src/lib/buildsApi.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">型別變更 ＋ 過渡期雙型別容忍 ＋ client 改送 serverTimestamp()</div>
+        <div class="task-desc">
+          規則加 <code>request.resource.data.updatedAt == request.time</code>：
+          少了這條，client 每次寫一個「很久以前」的時間就能讓節流條件永遠成立，
+          <b>那道節流會安靜地失效而不報錯</b>（決策二）。
+          <br><br>
+          client 側 <code>buildsApi.ts</code> 三處寫入（<code>saveSlot</code> /
+          <code>deleteSlot</code> / 整份刪除）的 <code>now.toISOString()</code>
+          改成 <code>serverTimestamp()</code>。
+          <br>
+          ⚠ 連帶：<code>listBuilds</code> 目前用 <code>updatedAt.localeCompare</code> 排序
+          （「新的在前」），型別改了這行會壞 —— <b>而且是靜默壞掉，排序只是變得沒有意義</b>。
+          <br><br>
+          ⚠ <b>過渡期</b>：既有文件的 <code>updatedAt</code> 是字串，規則若只認 timestamp，
+          <b>舊文件會更新不了而且看不出為什麼</b>（症狀：這位機師存不了、別位可以）。
+          依 A-1 的實測筆數二選一 —— 筆數極少就<b>直接以腳本回寫</b>（乾淨，無過渡期）；
+          筆數已有規模就規則<b>暫時容忍兩種型別</b>、舊字串文件豁免節流，回寫完再收掉。
+          <b>要寫下豁免何時收掉，否則過渡期就是永久。</b>
+        </div>
+        <div class="task-file">firestore.rules · src/lib/buildsApi.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; exists(/pilots/{buildId})：A-3 的必要組件</div>
+      <div class="task-group-meta">firestore.rules · 決策四（已裁決加入）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">doc id 必須是真的機師 —— 與 A-3 同一次出貨，不可分開上</div>
+        <div class="task-desc">
+          <b>⚠ 這一項單獨看沒有價值，它的作用是讓 A-3 生效。</b>
+          <code>create</code> 節流不了（決策三），所以 doc id 空間就是不受節流的寫入次數：
+          <b>只做 A-3</b> ⇒ id 空間無限 ⇒ 仍是 43M/日 ≈ US$78/日；
+          <b>A-3 ＋ 本項</b> ⇒ id 空間 89 ⇒ 89 ÷ 3 秒 ≈ 2.6M/日 ≈ US$4.6/日
+          （對得上決策九算的 US$6.1/日）。
+          <b>分開上等於裝了一道旁邊有路可繞的門，而帳單數字一分不降。</b>
+          <br><br>
+          <b>寫法</b>：<code>exists(/databases/$(database)/documents/pilots/$(buildId))</code>，
+          掛在 <code>create, update</code> 上、<b>不要掛 delete</b>（沿用既有原則：
+          清掉一份垃圾文件永遠不會讓情況變糟，擋下刪除只會製造刪不掉的殘留）。
+          <code>buildId</code> 就是 pilots 的 doc id，零轉換。
+          <br>
+          ⚠ 規則裡的 <code>exists()</code> 是<b>特權讀取</b>，不受 pilots 那條
+          <code>read: if isAdmin()</code> 影響 —— 這點違反直覺，A-6 要有測試釘住。
+          <br>
+          ⚠ 保留正規式，<b>不要用 <code>exists()</code> 取代它</b>：正規式是先擋掉明顯畸形的 id，
+          省下那次 <code>exists()</code> 的計費讀取。
+          <br><br>
+          <b>「機師 id 漂移」不構成阻礙</b>（使用者裁決 2026-08-29）：全站資料已不再由爬蟲驅動，
+          id 是人工維護的穩定鍵。詳見計畫書決策四後的說明。
+        </div>
+        <div class="task-file">firestore.rules</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-6 &nbsp; emulator 規則測試補齊</div>
+      <div class="task-group-meta">scripts/test-emulator-rules.mjs · npm run emu:test-rules</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新規則逐條補測，含「過渡期舊文件仍能更新」的回歸</div>
+        <div class="task-desc">
+          052-E B-5 建立的測試檔已涵蓋四條 gate，這裡續寫：
+          ①<code>users/{uid}</code> 父文件寫入被拒；
+          ②同一份 builds 文件 3 秒內第二次寫入被拒、超過 3 秒放行；
+          ③delete 同樣受節流；
+          ④<code>updatedAt</code> 不等於 <code>request.time</code> 時被拒（防偽造）；
+          ⑤<b>過渡期字串型 <code>updatedAt</code> 的舊文件仍能更新</b> —— 這一條是回歸測試，
+          它守的是 A-4 那個「靜默壞掉」的故障。
+          <br>
+          ⚠ 規則裡的 4096 與 client 的 <code>CLOUD_CODE_MAX_CHARS</code> 是手抄的兩份，
+          既有註解已警告改一邊要改另一邊；本次若動到 shape 檢查要一併復驗。
+        </div>
+        <div class="task-file">scripts/test-emulator-rules.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-7 &nbsp; 被節流拒絕時，UI 要講得出人話</div>
+      <div class="task-group-meta">src/lib/buildsApi.ts · ShelfDialog</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">permission-denied 分流：節流 vs 真的沒權限</div>
+        <div class="task-desc">
+          Firestore 規則拒絕一律回 <code>permission-denied</code>，<b>規則不會告訴 client 是哪一條擋的</b>。
+          使用者連按兩次「存入」撞到 3 秒節流時，若照現行路徑會看到一句和「你沒有權限」
+          長得一模一樣的錯誤。
+          <br><br>
+          做法：<code>saveSlot</code> 在送出前記下本文件上次成功寫入的時間，
+          <b>在 client 側先攔</b> —— 撞到就直接回一個「剛剛才存過，請稍候再試」，根本不發那次請求
+          （順便省一次被拒的寫入）。規則那條是防線，client 這條是體感。
+          <br>
+          ⚠ 沿用 052-E 已建立的誠實文案原則：離線逾時那次的教訓是
+          「<b>那次寫入我們取消不了，所以不能說『沒有存進去』</b>」 —— 節流這裡相反，
+          請求根本沒送出，<b>可以</b>明確說沒有存進去。
+        </div>
+        <div class="task-file">src/lib/buildsApi.ts · src/components/loadout/ShelfDialog.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label red">Phase B</div>
+  <div class="section-title">告警與可觀察性</div>
+  <div class="section-desc">
+    決策五：<b>先看得見，不自動擋。</b>書架熔斷等於使用者存不了檔，
+    在沒有證據顯示有人濫用之前不值得冒這個險。
+    <br><br>
+    <b>⭐ 2026-08-29 已完成一次流量與額度盤點，本階段各工項的門檻與優先序都改用實測值</b>：
+    Firestore 月費 <b>&lt; US$0.15</b>／讀取用掉免費額度 <b>75%</b>／寫入僅 <b>1.1%</b>／
+    日均不重複訪客 <b>59</b>。報告存於
+    <code>_local-notes/2026-08/2026-08-29_流量與額度餘裕評估.html</code>（不進版控）。
+    <br>
+    ⚠ <b>使用統計於 2026-08-08 才上線</b>，所以後台那幾個「近 30 天」總數實際只涵蓋約 20 天，
+    直接除以 30 會低估三分之一。這次是靠比對 Firebase 讀取曲線才發現的，見 B-4。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; Firebase 用量告警</div>
+      <div class="task-group-meta">Firebase Console · Blaze · 2026-08-29 已設定</div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">確認告警真的存在，而且會送到人手上</div>
+        <div class="task-desc">
+          <code>collectBudget.ts</code> 的註解建議過「第一道通知請用 Firebase 用量告警（建議設 20,000）」，
+          但那是 PLAN-046 對<b>統計寫入</b>講的，而且<b>沒有任何文件記載它到底設了沒有</b>。
+          <br><br>
+          <b>Firebase 是 Blaze：超支會計費，不會停擺。</b>這代表沒有任何「自動煞車」——
+          告警是唯一會主動通知人的東西。要確認三件：①預算告警存在且門檻合理；
+          ②通知寄到會被看到的信箱；③<b>實際試觸發過一次</b>（沒試過的告警等於不存在）。
+          <br><br>
+          <b>✅ 2026-08-29：告警已由站長設定。</b>剩下第三件 —— 試觸發一次。
+          <br>
+          ⚠ 站長判斷「很難突破」，<b>流量盤點證實了這個直覺</b>：日均寫入 228 次，
+          離免費額度 20,000 有 <b>88 倍</b>，離決策九那個 43M/日 的情境有 <b>188,000 倍</b>。
+          <b>這是好事（不會誤報），但要記住告警在 Blaze 上是「事後通知」不是煞車</b> ——
+          無節流時的寫入速率約 500 次／秒，<b>單一惡意帳號 14 秒就能寫完全站 30 天的寫入量</b>。
+          真正限制速率的是 A-3＋A-5，不是這條告警。
+        </div>
+        <div class="task-file">—（Firebase Console 設定，結果記回本表）</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status doing">進行中</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; Cloudflare 方案與額度確認</div>
+      <div class="task-group-meta">Workers · /api · <b>2026-08-29 已降級</b></div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">/api 的每日請求額度是不是開放後的隱藏單點</div>
+        <div class="task-desc">
+          前台遊戲資料走 Worker 代讀（<code>read: if isAdmin()</code>，一般使用者讀不到 Firestore），
+          所以 <b><code>/api</code> 掛掉等於全站沒有資料</b>，不只是模擬器。
+          <br>
+          Workers 免費方案是每日 100k requests —— <b>模擬器開放後這個數字第一次有機會被逼近</b>。
+          要確認：①目前實際方案；②近期每日請求量與尖峰；③超過額度時的行為（是擋下還是計費）。
+          <br><br>
+          <b>⬇ 2026-08-29 盤點後降級為「確認一次、記下基準值」。</b>粗估每日請求：
+          <code>/api</code> 集合代讀 ≈ 59 位新訪客 × 14 個集合 ≈ <b>830</b>、
+          統計回報 beacon ≈ <b>220–460</b>，合計約 <b>1,500–3,000 次／日</b> ——
+          距離免費方案的 100,000 次／日有 <b>30–60 倍餘裕</b>（兩個數量級）。
+          <br>
+          ⇒ 它<b>不再是「開放後的隱藏單點」</b>，也<b>不再是 C-1 的前置</b>：
+          門檻實際上由 Firestore 側的實測值決定，與 Cloudflare 方案無關。
+          仍要做的只剩確認現行方案 ＋ 把當下請求量記進本表當基準。
+          <br>
+          ⚠ <b>真正的變數不是自然成長，是爬蟲</b>（PLAN-029 的反爬兩層守的就是這個）。
+          上面那組數字全為估算，實際值以 Dashboard 為準。
+        </div>
+        <div class="task-file">—（Cloudflare Dashboard，結果記回本表）</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 後台看得到雲端書架用量</div>
+      <div class="task-group-meta">src/pages/admin/ · <b>2026-08-29 已升級</b></div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">幾個帳號在用、幾份文件、有沒有離群帳號</div>
+        <div class="task-desc">
+          最小可用即可：<code>collectionGroup('builds')</code> 的文件數、涉及帳號數、
+          <b>單一帳號文件數的最大值</b>（那是決策三那條「擋不住份數」唯一看得見的症狀）。
+          <br>
+          ⚠ 這是後台頁，讀取量本身要留意 —— 走既有的分頁／聚合慣例，
+          <b>不要為了一張監看頁把整個 collectionGroup 每次都撈一遍</b>。
+          <br><br>
+          <b>⬆ 2026-08-29 優先序上調，從「有了不錯」變成 C-1 的必要組件。</b>
+          C-1 定出的三條門檻裡，日寫入與日讀取都有現成量測管道（Firebase 用量面板），
+          <b>只有「單一帳號 builds 份數」沒有任何地方看得到</b> ——
+          而那正是決策三「<code>create</code> 不受節流」唯一會顯現的症狀。
+          <br>
+          ⇒ 沒有這一項，C-1 的第三條門檻就只是一句寫在檔頭、沒有人能執行的話。
+        </div>
+        <div class="task-file">src/pages/admin/（沿用既有後台頁慣例）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 模擬器使用量納入既有統計</div>
+      <div class="task-group-meta">src/lib/analytics/routeKeys.ts（已含 /simulator）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">確認開放後 /simulator 的流量真的被記到，並看得出趨勢</div>
+        <div class="task-desc">
+          PLAN-046 的統計已經涵蓋 <code>/simulator</code>（<code>routeKeys.ts</code> 有這條），
+          所以<b>這一項多半是確認而不是開發</b> —— 先看後台統計頁在開放後有沒有正常長出數字，
+          有就結案。
+          <br>
+          這條數列同時是 052-H 的輸入：<b>「流量累積到看得出分布」這個條件要靠它來判斷</b>，
+          否則 052-H 的動工時機又會變成臨場感覺。
+          <br><br>
+          <b>⚠ 2026-08-29 追加一項（這一項是要改程式的）：把統計的有效起算日標在後台統計頁上。</b>
+          統計於 <b>2026-08-08</b> 才上線，所以面板上「近 30 天」的四個總數實際只涵蓋約 20 天，
+          <b>直接除以 30 會把日均低估三分之一</b>。這次是靠比對 Firebase 讀取曲線
+          （同期每天 2–4 萬次讀取，站上卻顯示零流量）才發現的 ——
+          <b>不標起算日，等於留給下一個人重新發現一次</b>，而 052-H 判斷動工時機正是要看這條數列。
+          <br>
+          做法不必複雜：面板上有一行「資料自 2026-08-08 起算」即可；
+          窗口早於起算日時，日均那幾個數字要用實際天數而不是窗口天數。
+        </div>
+        <div class="task-file">src/pages/admin/AdminAnalyticsPage.tsx（起算日標示）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label red">Phase C</div>
+  <div class="section-title">收回條件與結案</div>
+  <div class="section-desc">
+    旗標留著的意義，在於<b>收回是一個已經想好的動作</b>，而不是出事當下的臨場判斷。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 把收回門檻寫成數字</div>
+      <div class="task-group-meta">src/hooks/useSimulatorEntry.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">日寫入次數 / 日費用 / 異常帳號數，三條線各一個數字</div>
+        <div class="task-desc">
+          寫進 <code>useSimulatorEntry.ts</code> 檔頭 —— 那裡已經是這件事的單一事實來源
+          （2026-08-26 收回、2026-08-29 開放兩段都記在那裡）。
+          <br><br>
+          內容要包含：①三條門檻各自的數字與量測方式；②<b>越線之後做什麼</b>
+          （改旗標？只關雲端書架？先聯絡使用者？）；③誰來看、多久看一次。
+          <br>
+          <b>✅ 2026-08-29 的流量盤點已經給出基準線，三條門檻可直接採用。</b>
+          現況值：日寫入 <b>228</b>／日讀取 <b>37,667</b>／單帳號 builds 份數 <b>0</b>。
+        </div>
+        <div style="overflow-x:auto;margin:10px 0;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:30rem;">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:7px 10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);font-size:11px;color:var(--text-dim);font-weight:400;font-family:'Orbitron',sans-serif;letter-spacing:1px;">門檻</th>
+                <th style="text-align:left;padding:7px 10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);font-size:11px;color:var(--text-dim);font-weight:400;font-family:'Orbitron',sans-serif;letter-spacing:1px;">建議值</th>
+                <th style="text-align:left;padding:7px 10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);font-size:11px;color:var(--text-dim);font-weight:400;font-family:'Orbitron',sans-serif;letter-spacing:1px;">相對現況</th>
+                <th style="text-align:left;padding:7px 10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);font-size:11px;color:var(--text-dim);font-weight:400;font-family:'Orbitron',sans-serif;letter-spacing:1px;">越線代表什麼</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;">日寫入</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;font-family:'JetBrains Mono',monospace;white-space:nowrap;">5,000</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;font-family:'JetBrains Mono',monospace;white-space:nowrap;">22×</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;">有人在大量寫入。仍只佔免費額度 25%，<b>越線時還沒真的花到錢</b>。</td>
+              </tr>
+              <tr>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;">日讀取</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;font-family:'JetBrains Mono',monospace;white-space:nowrap;">80,000</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;font-family:'JetBrains Mono',monospace;white-space:nowrap;">2.1×</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;">新訪客暴增或被爬。超出免費額度但月費仍 &lt; US$1。</td>
+              </tr>
+              <tr>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;">單帳號 builds 份數</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;font-family:'JetBrains Mono',monospace;white-space:nowrap;">&gt; 89</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;font-family:'JetBrains Mono',monospace;white-space:nowrap;">—</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;">份數失控的唯一可見訊號（89 ＝ 實際機師數，A-5 上線後正常值不可能超過）。<b>量測管道由 B-3 提供。</b></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="task-desc">
+          <b>三條線都刻意訂在「遠高於自然波動、遠低於任何有感費用」</b>——
+          越線時帳單還是零，但那個數字不可能是自然流量造成的。誤報成本近乎零，所以可以訂得敏感。
+          <br>
+          ⚠ <b>原本寫的「門檻要等 B-1／B-2 的答案」已不成立</b>：B-1 已設定、B-2 已降級，
+          而門檻其實是由 Firestore 側的實測值決定的，與 Cloudflare 方案無關。
+          <br>
+          ⚠ <b>盯錯地方的風險</b>：注意力目前在寫入（因為 052-E 是第一次寫 Firestore），
+          但額度上真正接近上限的是<b>讀取</b>（75% vs 1.1%）——
+          流量成長 <b>1.4 倍</b>讀取就會開始計費。金額仍小，但那會是第一個動起來的數字。
+        </div>
+        <div class="task-file">src/hooks/useSimulatorEntry.ts</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 觀察窗與結案條件</div>
+      <div class="task-group-meta">本進度表</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">定一段觀察期，期滿沒事就轉「觀察維護中」或歸檔</div>
+        <div class="task-desc">
+          <b>沒有結案條件的觀察計畫會永遠掛在執行中</b>，然後變成沒有人看的一張表。
+          建議：Phase A 上線後觀察一段固定期間，期間內三條門檻都沒被觸及 ⇒
+          轉入<b>觀察維護中</b>（開發已收束、只剩長期看數字），
+          再一段期間無事則歸檔。實際長度待定。
+        </div>
+        <div class="task-file">docs/05_階段性開發計畫/</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 文件同步</div>
+      <div class="task-group-meta">docs/02_技術文件/04_Firebase/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">security-rules.html 與 users.html 跟著規則改動更新</div>
+        <div class="task-desc">
+          CLAUDE.md 規則 2：<code>firestore.rules</code> 與用戶資料結構的變更要同步
+          <code>docs/02_技術文件/04_Firebase/資料庫設計文件/</code> 對應頁。
+          A-2／A-3／A-4 都是<b>結構性變更</b>（權限收緊、欄位型別改變），必須同步。
+          <br>
+          <b>與 A 同一個 commit 出</b>，不要留到最後補 —— 補的那一次通常不會發生。
+        </div>
+        <div class="task-file">docs/02_技術文件/04_Firebase/資料庫設計文件/security-rules.html · users.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-053 — <a href="../index.html" style="color:var(--accent-red);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
