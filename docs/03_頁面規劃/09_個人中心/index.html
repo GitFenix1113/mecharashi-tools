@@ -53,7 +53,7 @@
     <div class="card blue">
       <div class="card-icon">📁</div>
       <h3>我的配裝 Tab</h3>
-      <p>已儲存的配裝列表，顯示配裝名稱、機師/機甲/武器摘要、更新時間。可刪除、可載入至模擬器。</p>
+      <p>雲端書架：<b>依機師分組</b>，每位機師最多 5 張卡。顯示方案名稱、機甲、武器數與失效狀態，可刪除、可帶代碼載入模擬器。</p>
     </div>
   </div>
 </section>
@@ -106,24 +106,32 @@
       <th>說明</th>
     </tr>
     <tr>
-      <td>配裝列表</td>
-      <td>從 Firestore <code>users/{uid}/builds</code> 讀取，依 updatedAt 降序排列</td>
+      <td>資料來源</td>
+      <td><code>users/{uid}/builds/{pilotId}</code>（<b>一位機師一份文件</b>，<code>slots</code> 是 '0'～'4' 的 map，每格是一串 base64url 分享代碼）。經 <code>listCloudBuilds()</code> 一次讀取，<b>不用 <code>onSnapshot</code></b>。<br>⚠ 2026-08-29（PLAN-052-E）換過模型：舊版一份文件是一整套配裝（<code>buildName</code>／<code>weaponId</code>…），已整條刪除，<code>userApi</code> 的 <code>getUserBuilds</code>／<code>saveBuild</code>／<code>deleteBuild</code> 三支也不存在了。</td>
+    </tr>
+    <tr>
+      <td>分組與排序</td>
+      <td><b>依機師分組</b>，每組最多 5 張卡並依格位（1–5）排序；機師之間依該機師的 <code>updatedAt</code> 由新到舊。</td>
     </tr>
     <tr>
       <td>配裝卡片</td>
-      <td>顯示：配裝名稱、機師名稱、機甲名稱、武器 ID、最後更新日期</td>
+      <td>格號、方案名稱（或機甲名）、機甲、武器數、形態數。<b>全部由代碼當場解出來</b>，不存名稱快照——第二個真相源遲早會對不上。<br>失效三態走 <code>classifyBuild()</code>（<code>lib/buildStatus.ts</code>，與模擬器書架<b>同一支</b>）：<code>degraded</code> 標「有 N 項裝備已下架」，<code>broken</code> 停用載入鍵並說明原因。</td>
     </tr>
     <tr>
       <td>載入配裝</td>
-      <td>點擊「載入配裝」按鈕，使用 React Router navigate state 將配裝資料帶至 <code>/simulator</code>，並直接跳到結果步驟</td>
+      <td>導向 <code>/simulator?b=&lt;代碼&gt;</code>，與書架、分享碼<b>同一條進場路徑</b>。<br>⚠ 舊版那條 <code>navigate('/simulator', { state: { build } })</code> 已刪除——第二種進場方式意味著 LoadoutPage 要維護兩套還原邏輯。</td>
     </tr>
     <tr>
       <td>刪除配裝</td>
-      <td>點擊垃圾桶圖示，確認後呼叫 <code>deleteBuild(uid, buildId)</code> 刪除</td>
+      <td>兩段式確認後呼叫 <code>deleteCloudBuild(uid, pilotId, slot)</code>。<b>刪掉最後一格時整份文件一起刪</b>，不留 <code>slots: {}</code> 的空殼。</td>
     </tr>
     <tr>
       <td>空狀態</td>
-      <td>顯示引導前往 <code>/simulator</code> 新增配裝的提示</td>
+      <td>說明「在配裝模擬器配好一套，打開『書架 → 雲端』就能存進來」，並點出每位機師 5 格、換裝置看得到。</td>
+    </tr>
+    <tr>
+      <td>載入成本</td>
+      <td>清單獨立成 <code>components/profile/CloudBuildList.tsx</code>，<b>只在本分頁開啟時掛載</b>——它要 <code>useLoadoutGameData('equip')</code>（六個集合）才解得開代碼，寫在 ProfilePage 裡會變成「只是開個人資料頁也把整個遊戲資料庫拉一次」。</td>
     </tr>
   </table>
 </section>

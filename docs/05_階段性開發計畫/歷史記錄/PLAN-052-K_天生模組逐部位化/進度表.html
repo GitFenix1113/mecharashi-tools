@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-K 天生模組逐部位化 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-K 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-052-K</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> · 天生模組逐部位化</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-28</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">33</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">0</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">33</div><div class="summary-lbl">工作項</div></div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-green);">33 / 33</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 100%"></div></div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    換掉一個部位時，「自帶 4」那一列會跟著改變 —— 綁在那個部位的專屬模組消失、通用模組降級、
+    換上去的部件帶來它原本那台機甲的模組。而<b>通則全部用算的、例外逐格可人工覆寫</b>，
+    官方 API 落後兩個版本也不影響維護。
+  </div>
+
+  <div class="impact-note" style="border-left-color:var(--accent-yellow);">
+    <strong>⚠ 動工前先驗資料再信文件。</strong>
+    2026-08-28 一天之內遇到四次「工項前提已不成立」（052-F B-3／C-2、052-G E-2／D-2／E-4×2）。
+    本進度表引用的所有數字都是當天直讀正式庫與官方 API 得到的，但下次開工前請重跑一次。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">資料模型與推導層</div>
+  <div class="section-desc">先把「矩陣是算出來的」這件事變成程式裡的一等公民。這一段沒有任何 UI，做完之後 <code>resolveInnateModules()</code> 應該能對站上 90 台跑出與官方一致的結果。</div>
+  <div class="impact-note" style="border-left-color:var(--accent-green);">
+    <strong>✅ Phase A 完成（2026-08-28，10 / 10）。</strong>
+    新檔 <code>src/utils/innateModules.ts</code> ＋ <code>innateModules.test.ts</code>（27 條）
+    ＋ fixture 產生器 <code>scripts/gen-innate-mech-fixture.mjs</code>；
+    <code>moduleStacks()</code> 擴充為吃 <code>{ innate, positionMultiplier }</code>（不傳時行為與 052-G 完全相同）。
+    <b>994 測試全綠、build 通過、改到的檔 lint 乾淨。</b><br>
+    <b>八台代表機甲的完整矩陣與官方 API 逐格相同</b>（帕斯卡／輝龍／燧石／信仰之眼／破曉者-02／
+    復仇女神／影虎／霸王）—— 期望值是從官方 <code>aircraft_data</code> 獨立解出來的，
+    不是從實作反推的。復仇女神那四顆〈模型-XX〉是唯一的例外（官方不回傳），
+    期望值來自站上資料 ＋ 站長截圖的「限制解除」說明。<br>
+    ⚠ <b>順手釘住了兩件會被 Phase B 動到的事</b>：① B-1 補完 <code>levels[]</code> 之後
+    推導結果<b>不變</b>（已有獨立測試守著，否則腳本一跑整張矩陣會靜默換一組數字）；
+    ② 星夜女神〈觀星者單元〉缺 <code>boundPart</code> 會被<b>指名回報</b>，
+    B-2 補完之後那條測試會掛 —— <b>那正是修好了的訊號</b>，把它從清單移除即可。<br>
+    ⚠ 另外抓到一條會誤導後續實作的事：<b>特性模組不是只有 <code>20xx</code></b>
+    （A 級的燧石是 <code>mod_1001</code>）、<b>專屬模組也不是只有 5 位數</b>
+    （霸王〈AI火控單元〉是 <code>mod_2064</code>）—— <b>判類別一律看 <code>slot</code>，不看 id 前綴</b>。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 型別：三個新欄位</div>
+      <div class="task-group-meta">src/types/mech.ts · module.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>MechPart.innateModules?</code></div>
+        <div class="task-desc"><code>{ moduleId: string; level: number }[]</code>。undefined ＝ 照規則推導；填了就<b>整格取代</b>。註解要寫明「整格取代、不做部分合併」，否則下一個人一定會想做 merge。</div>
+        <div class="task-file">src/types/mech.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>Module.slotLevelMultiplier?</code></div>
+        <div class="task-desc"><code>MechPartPosition[]</code>。列出「這顆模組會讓哪些部位的<b>插槽貢獻</b>翻倍」。目前只有破曉者-02〈匯流樞紐〉兩顆（20391 軀幹 / 20394 腿部）。⚠ 翻的是插槽貢獻，<b>不含天生貢獻</b>（站長實測）。</div>
+        <div class="task-file">src/types/module.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>Module.unlockCondition?</code></div>
+        <div class="task-desc">兩種形狀的 union：<code>{ kind:'moduleAtMaxLevel'; moduleId }</code>（復仇女神四顆，觸發者是 <code>mod_3034</code> 迸發模組）與 <code>{ kind:'pilotOnly'; pilotIds }</code>（帕姆斯陣列＝海莉絲、觀星者單元＝曜）。</div>
+        <div class="task-file">src/types/module.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 規則表常數</div>
+      <div class="task-group-meta">src/utils/innateModules.ts（新檔）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">滿階規則表（九個數字）</div>
+        <div class="task-desc">S：特性位/8級/副 ＝ 每部位 1 / 2 / 1。A：1 / <b>軀幹1＋腿1（雙臂 0）</b> / 1。B：全 0。<br>常數旁要寫上驗證來源：<b>57 台 SSR × 兩端點 × 四部位，8級與副模組 57／57 全中</b>；特性位 54／57，三個例外（輝龍／影虎／霸王）是額外疊了專屬模組。</div>
+        <div class="task-file">src/utils/innateModules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 推導純函式</div>
+      <div class="task-group-meta">src/utils/innateModules.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>resolveInnateModules(mech, position, modulesById)</code></div>
+        <div class="task-desc">回傳 <code>{ moduleId, level, source: 'rule' | 'override' }[]</code>。<b><code>source</code> 是必要的</b>——決策三要求 UI 分得出推導與覆寫，把它做進回傳型別，UI 就不可能忘記標。<br>優先序：<code>part.innateModules</code> 存在 → 整格取代並標 <code>override</code>；否則走規則表 ＋ 專屬模組推導。</div>
+        <div class="task-file">src/utils/innateModules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">專屬模組那條規則</div>
+        <div class="task-desc"><code>若 position ∈ module.boundPart：level = (levels.length &gt; boundPart.length) ? 2 : 1</code>。<br>⚠ <code>boundPart</code> 比對<b>一律走集合</b>——<code>["leftArm","rightArm"]</code> 與 <code>["rightArm","leftArm"]</code> 兩種順序在正式庫裡<b>同時存在</b>，陣列相等會漏。</div>
+        <div class="task-file">src/utils/innateModules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 迴歸 fixture：24 顆專屬模組</div>
+      <div class="task-group-meta">src/utils/innateModules.test.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">逐顆比對預期矩陣</div>
+        <div class="task-desc">把 24 顆專屬模組的 <code>(boundPart, levels.length) → 每部位等級</code> 寫成 fixture。已驗過零例外：帕斯卡 ×4（各 1）、信仰之眼〈超限框架〉（各 1、合計 2）、輝龍 ×4 與影虎〈虎魄〉（各 <b>2</b>）、霸王〈AI火控〉（各 1、合計 2）、彌造者〈帕姆斯陣列〉（各 2，<b>站長實機確認</b>）。</div>
+        <div class="task-file">src/utils/innateModules.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三台代表機甲的完整矩陣</div>
+        <div class="task-desc">帕斯卡（四顆專屬各據一格）／輝龍（特性＋專屬疊在同一部位）／燧石（A 級，8級模組只有軀幹＋腿）。這三台涵蓋了所有形狀。</div>
+        <div class="task-file">src/utils/innateModules.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; 觸發條件求值</div>
+      <div class="task-group-meta">src/utils/innateModules.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>isModuleUnlocked(module, ctx)</code></div>
+        <div class="task-desc"><code>moduleAtMaxLevel</code>：查 ctx 裡那顆模組的<b>結算後等級</b>是否等於其 <code>levels.length</code>。<code>pilotOnly</code>：查當前機師。<br>⚠ <b>觸發者是別顆模組，不是模組自己</b>——復仇女神四顆的描述裡<u>沒有</u>「限制解除」字樣，那句話在〈迸發模組〉LV8 的文本裡。任何「掃自己的描述」的做法都會漏掉這四顆。</div>
+        <div class="task-file">src/utils/innateModules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-6 &nbsp; 部位倍率併入既有結算</div>
+      <div class="task-group-meta">src/utils/…（moduleStacks / moduleLevelOf）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">插槽貢獻 × 部位倍率</div>
+        <div class="task-desc">完整式子：<code>Σ四部位天生貢獻 ＋ Σ四部位[ Σ該部位插槽 moduleAddLevel × 部位倍率 ]</code>，封頂於該模組最大等級。<br>⚠ 接進 <code>moduleStacks()</code>（每族一筆＋收斂後的等級），<b>不要逐格加總</b>——052-G E-0 的教訓：逐格會讓四顆刀劍模組Ⅱ算出四倍加成，而且長得很像是對的。</div>
+        <div class="task-file">src/utils/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">資料補完</div>
+  <div class="section-desc">推導層的輸入是 <code>boundPart</code> 與 <code>levels[]</code>，先把它們補齊，否則 Phase A 算出來的東西是對的規則配錯的資料。</div>
+  <div class="impact-note" style="border-left-color:var(--accent-green);">
+    <strong>✅ Phase B 完成（2026-08-28，6 / 6）。</strong>
+    正式庫共 <b>15 次欄位寫入、涵蓋 11 份模組文件</b>（復仇女神四顆兩邊都動到）：
+    <code>levels[]</code> 7 筆（補新等級 7、修正文字 3）、<code>unlockCondition</code> 6 筆、<code>slotLevelMultiplier</code> 2 筆。
+    <code>modules</code> 版本已 bump，emulator slice 已重出。
+    <b>996 測試全綠、build 通過、改到的檔 lint 乾淨。</b><br>
+    ① <b>Phase A 釘住的兩件事都如預期發生</b>：補完 <code>levels[]</code> 之後每部位貢獻
+    <b>一格都沒變</b>（守著這件事的獨立測試沒動）；星夜女神那條「指名回報」的測試如期掛掉 ——
+    已改寫成守著<b>反向</b>：〈觀星者單元〉要在軀幹出 2 級、其餘三格沒有它。<br>
+    ② 新腳本 <code>scripts/patch-module-unlock-conditions.mjs</code>（B-3＋B-4）。
+    後台編輯器要 Phase C 才有，所以這 8 格用腳本落值：每一格寫入前先驗
+    <b>名稱／boundMechId／描述特徵字串</b>，任一項對不上就<b>整批中止</b>；
+    並先確認 <code>pilot_049_海莉絲</code>／<code>pilot_088_曜</code>／<code>mod_3034</code> 真的存在 ——
+    斷鏈的引用會讓那顆模組<b>永遠</b>解不開，而畫面上沒有任何症狀。<br>
+    ③ fixture 現在也帶 <code>unlockCondition</code> 與 <code>slotLevelMultiplier</code>，
+    兩條 <code>slotMultipliers</code>／<code>moduleStacks</code> 測試裡原本自己捏欄位的 monkey-patch 已拆掉
+    ⇒ <b>守的是正式庫那 8 格，不是測試自己捏的假物件</b>。<br>
+    ⚠ <b>順手撿到一條與本計畫無關的漂移</b>：<code>moduleRules.test.ts</code> 的「頂層平坦欄位全 0」
+    由 131／55 變成 <b>128／58</b>。原因是 <code>flatAllZero</code> 的鍵空間 ＝ 全庫
+    <code>levels[]</code> 出現過的數值鍵聯集，而 <code>34dfd5a</code>
+    （patch-module-weapon-dmg-fields）把 <code>dmg_fist</code>／<code>dmg_blade</code>／<code>dmg_funnel</code>
+    寫進了 <code>levels[]</code>、fixture 當時沒重跑 —— 這次一起浮出來。結論不變，分母更誠實。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 專屬模組 levels[] 回填</div>
+      <div class="task-group-meta">scripts/patch-exclusive-module-levels.mjs（已寫好）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">跑 <code>--fix-text --apply</code></div>
+        <div class="task-desc">dry-run 結果：<b>補新等級 7、修正文字 3</b>。三顆的 <code>levels[1]</code> 存的其實是<b>最高級</b>的文字（流態發生器 15%→應為 10%、重生者組件 50%→30%、強襲者組件 15%→6%）；復仇女神四顆是<b>空陣列</b>。<br>腳本只碰 <code>levels[]</code>，<code>managedBy: manual</code> 的文件連 <code>--fix-text</code> 都不動。會自動 bump modules 版本。</div>
+        <div class="task-file">scripts/patch-exclusive-module-levels.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 星夜女神〈觀星者單元〉boundPart</div>
+      <div class="task-group-meta">modules/mod_星夜女神_fixed_1</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補 <code>boundPart</code></div>
+        <div class="task-desc">✅ 站長人工填入 <code>["torso"]</code>（與彌造者〈帕姆斯陣列〉同型：描述開頭「解除限制，獲得以下效果」＋「※只有[曜]能發動此模組※」＋ 2 階綁一格 ⇒ 那一格自己出 <b>2 級</b>）。<br>⚠ 星夜女神不在官方 API 的 83 台裡，<b>無法用腳本對帳</b> —— 這一格永遠只能靠人工，所以測試改成守著反向：它要出現在軀幹、且只出現在軀幹。</div>
+        <div class="task-file">modules/mod_星夜女神_fixed_1</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 6 顆觸發式模組填 unlockCondition</div>
+      <div class="task-group-meta">scripts/patch-module-unlock-conditions.mjs（新檔）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">復仇女神 ×4</div>
+        <div class="task-desc"><code>{ kind:'moduleAtMaxLevel', moduleId:'mod_3034' }</code>（迸發模組）。官方 LV8 文本逐字：「進入[限制解除]狀態，激活集成在部位內的額外模組效果」。</div>
+        <div class="task-file">mod_復仇女神_fixed_1..4</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">彌造者／星夜女神</div>
+        <div class="task-desc"><code>pilotIds:['pilot_049_海莉絲']</code> 與 <code>['pilot_088_曜']</code>。兩顆的描述末尾都有「※只有[X]能發動此模組※」（人工加的，不在官方文本裡）。<br>⚠ <b>不該進來的</b>：影虎〈虎魄·無束〉L2 與輝龍龍威 L2 的「當[某人]駕駛整套[某機]時…」是<b>效果內的條件</b>，模組本身照樣存在、照樣算等級 —— 混進來的話那六顆會在非專屬機師下整顆消失（已有測試釘住）。</div>
+        <div class="task-file">mod_彌造者_fixed_1 · mod_星夜女神_fixed_1</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 匯流樞紐 2 顆填 slotLevelMultiplier</div>
+      <div class="task-group-meta">modules/mod_破曉者-02_fixed_1 · _fixed_4</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">軀幹 / 腿部各一</div>
+        <div class="task-desc">兩顆<b>同名但效果不同</b>：<code>20391</code>＝「<b>軀幹</b>插槽中的模組等級翻倍」→ <code>mod_破曉者-02_fixed_4</code>；<code>20394</code>＝「<b>腿部</b>…」→ <code>fixed_1</code>。<br>⚠ 名稱不唯一 ⇒ <b>任何用名稱查表的程式都會撞在一起</b>，這也是為什麼要落成結構化欄位而不是 parse 描述。</div>
+        <div class="task-file">modules</div>
+      </div>
+      <div class="task-assignee">管理員</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-5 &nbsp; bump 與本機同步</div>
+      <div class="task-group-meta">scripts/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">bump modules ＋ emulator slice</div>
+        <div class="task-desc">✅ 兩支腳本各自 bump 過 <code>modules</code>（最後一次 <code>2026-08-28T15:21:56Z</code>），<b>沒有人工改的欄位需要補跑</b> —— B-3／B-4 也走了腳本。<code>export-emulator-slice.mjs --simulator</code> 已重出（modules 241 筆）。</div>
+        <div class="task-file">scripts/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label yellow">Phase C</div>
+  <div class="section-title">後台維護介面</div>
+  <div class="section-desc"><b>這一段是本計畫能不能長期活下去的關鍵。</b>官方 API 停在 v3.2、站上已到 v3.6，v3.3 之後的 7 台完全靠人工建檔 —— 後台不是「順便加個欄位」，是主要輸入管道。</div>
+  <div class="impact-note" style="border-left-color:var(--accent-green);">
+    <strong>✅ Phase C 完成（C-1～C-4：2026-08-28；C-5 的前台那一半：2026-08-29，5 / 5）。</strong>
+    <code>ModuleAdmin</code> 兩個新欄位、<code>MechAdmin</code> 四張部位卡各有推導預覽與覆寫入口；
+    新增共用標記元件 <code>src/components/badges/InnateBadges.tsx</code>。
+    <b>996 測試全綠、build 通過、改到的檔沒有新增 lint 錯誤</b>（既有的 4 條 set-state-in-effect
+    ／react-refresh 都在我沒動的地方）。<br>
+    ✅ <b>C-5 的前台那一半已隨 D-1 補上（2026-08-29）</b>：<code>EquippedEffects</code> 的
+    <code>InnateRow</code> import 的就是後台那一顆 <code>InnateSourceBadge</code>，
+    覆寫過的部位在兩邊看到的是同一個橘色 <code>◆</code>。<br>
+    ⚠ <b>計畫書寫的「C-2 用 RefPicker」是誤判。</b><code>RefPicker</code> 是把描述裡的
+    <code>[xxx]</code> token 對應到實體的 <code>descriptionRefs</code> 編輯器，
+    <b>不是通用的實體挑選器</b>，而且它的 <code>useCandidates()</code> 沒有 export。
+    C-2 改為在 ModuleAdmin 內建兩個專用選擇器（觸發模組用 optgroup 分「本機甲／其他」、
+    機師用 chips ＋ 加入下拉）。<br>
+    ⚠ <b>本階段未經瀏覽器實測</b>：<code>/admin</code> 需要互動式登入，自動化跑不了。
+    型別與 build 過了，但「點下去會怎樣」要等 <b>E-3 的「後台覆寫走一遍」</b>。<br>
+    ① 覆寫入口刻意做成<b>「複製當前推導結果當編輯起點」</b>而不是給空表 ——
+    空表會讓人以為要從頭填，而從頭填出來的通常比規則還錯。<br>
+    ② 「清除」寫回 <code>undefined</code>（照規則算），不是 <code>[]</code>（這格沒有任何天生模組）。
+    UI 上兩者也分得出來：留成空清單會跳黃字提醒「若本意是照規則算，請按清除」。<br>
+    ③ 三個資料缺口在部位卡上直接講出來：品質不在規則表、專屬模組缺 <code>boundPart</code>、
+    覆寫指到查無的模組 —— 這些原本都是<b>靜默消失</b>型的錯。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; ModuleAdmin：slotLevelMultiplier</div>
+      <div class="task-group-meta">src/pages/user/admin/ModuleAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">部位多選欄位</div>
+        <div class="task-desc">放在「基本」分頁、緊鄰既有的 <code>boundPart</code>（同一組 <code>MechPartPosition</code> 的 checkbox 樣式可直接沿用，見 ModuleAdmin.tsx:499-517）。旁邊一行說明：「該部位的<b>插槽</b>貢獻等級翻倍，不含天生貢獻」。</div>
+        <div class="task-file">src/pages/user/admin/ModuleAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; ModuleAdmin：unlockCondition</div>
+      <div class="task-group-meta">src/pages/user/admin/ModuleAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">兩種形狀的編輯器</div>
+        <div class="task-desc">先選 kind（無 / 某模組滿級 / 機師限定），再依 kind 顯示對應輸入。<br>⚠ <b>原本寫的「用 <code>RefPicker</code>」是誤判</b>：那支是 <code>descriptionRefs</code> 的「token → 實體」對應器，<b>不是通用實體挑選器</b>（它的 <code>useCandidates()</code> 也沒有 export）。改為就地做兩個專用選擇器：觸發模組用 <code>optgroup</code> 分「本機甲／其他」、機師用可移除的 chips ＋ 加入下拉。<br>未選觸發者 / 未指定機師會跳紅字講出後果（<b>這顆會永遠停用</b>）；觸發者沒有 <code>levels[]</code>（滿級＝0）也會擋。</div>
+        <div class="task-file">src/pages/user/admin/ModuleAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; MechAdmin：推導結果唯讀預覽</div>
+      <div class="task-group-meta">src/pages/user/admin/MechAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每個部位顯示「規則算出來的天生模組」</div>
+        <div class="task-desc">接在既有的部位卡（<code>MechAdmin.tsx</code> 的 parts 區塊，已有 interface 欄位與 <code>expectedInterface</code> / <code>isInterfaceOffRule</code> 的先例）。列出 <code>{模組名} Lv{n}</code>，並標明資料來源是規則。<br>⇒ 維護者<b>看得到規則算成什麼</b>，這是他判斷「要不要覆寫」的唯一依據。</div>
+        <div class="task-file">src/pages/user/admin/MechAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; MechAdmin：innateModules 覆寫入口</div>
+      <div class="task-group-meta">src/pages/user/admin/MechAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">「改成人工指定」／「清除、回到推導」</div>
+        <div class="task-desc">點下去把當前推導結果<b>複製一份</b>當作編輯起點（而不是給一張空表 —— 空表會讓人以為要從頭填）。每列一個模組下拉（<code>optgroup</code> 分「本機甲已引用的／其他」）＋ 等級數字 ＋ 移除。<br>「清除」把欄位設回 <code>undefined</code>，<b>不是空陣列</b> —— 空陣列的語意是「這個部位沒有任何天生模組」，兩者差很多。<b>UI 上也分得出來</b>：留成空清單會跳黃字提醒「若本意是照規則算，請按清除、回到推導」。<br>等級輸入旁註明那是<b>這個部位單獨貢獻的級數</b>，不是該模組的最終等級。</div>
+        <div class="task-file">src/pages/user/admin/MechAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-5 &nbsp; 「推導 / 覆寫」的視覺標示</div>
+      <div class="task-group-meta">admin ＋ loadout</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">後台與前台用同一種標記</div>
+        <div class="task-desc">沿用 052-G Phase D 的作法（橘色 <code>◆</code>）：覆寫過的部位要一眼看得出來。共用元件 <code>InnateSourceBadge</code>（<code>src/components/badges/InnateBadges.tsx</code>）<b>後台四張部位卡與前台「機甲自帶」清單都在用同一顆</b>。<br>✅ 前台那一半隨 D-1 完成（2026-08-29）：<code>InnateRow</code> 逐列印出「哪幾個部位帶來這一顆」，覆寫過的那一顆掛橘色 <code>◆ 人工覆寫</code>；混搭時只要<b>四格裡有任何一格是覆寫的</b>，整顆就標人工（來源可能是換進來的那一台）。<br>⚠ 052-G 的教訓逐字：「這類<b>做完之後外觀沒有任何改變</b>的功能，收尾時一定要退一步看整頁。」沉默的覆寫＝沉默的技術債。</div>
+        <div class="task-file">src/components/badges/InnateBadges.tsx（共用）· MechAdmin · EquippedEffects</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">Phase D</div>
+  <div class="section-title">模擬器接線</div>
+  <div class="section-desc">把「自帶 4」那一列從機甲頂層三欄位改成逐部位推導。這是 052-G Phase D 之後就一直是錯的那一塊。</div>
+  <div class="impact-note" style="border-left-color:var(--accent-green);">
+    <strong>✅ Phase D 完成（2026-08-29，3 / 3）。</strong>
+    新檔 <code>src/utils/innateLoadout.test.ts</code>（11 條，驗的是「規則有沒有真的接上」，
+    與 <code>innateModules.test.ts</code> 驗「規則本身對不對」分工）。
+    <b>1007 測試全綠、build 通過、改到的檔 lint 乾淨。</b><br>
+    ⭐ <b>真正的修法是把等級池收成一個</b>。原本 <code>moduleStacks()</code> 被
+    <b>六個地方各自呼叫一次</b>（EquippedEffects／ModulePanel／MechPartStrip／匯出圖／
+    可用出力／planModuleFill），只在其中一處補 <code>{ innate, positionMultiplier }</code> 的話，
+    右欄的 Lv、四部位卡的 Lv、OutputBar 的可用出力與匯出圖會<b>各說各話</b>。
+    改成在 <code>buildContext()</code> 算一次、掛成 <code>ctx.stacks</code>，六處全部改讀它。<br>
+    ⚠ <b>順手抓到三條會靜默出錯的事</b>：<br>
+    ① <code>partOverrides</code> 原本只傳 <code>{ id, parts }</code> —— 天生模組是
+    <code>quality</code> ＋ 三個頂層欄位的函數，不整台傳進去就會變成「重量火力跟著換、
+    自帶那一列停在原廠」，也就是這個 bug 只修一半。<br>
+    ② <code>planModuleFill()</code>（「補滿」按鈕）起算沒有天生那一段 ⇒ 會叫玩家再插四格
+    <b>一級都不會生效</b>的模組。<br>
+    ③ <code>resolveInnateModules()</code> 對查不到的 <code>moduleFixedIds</code> 是
+    <b>靜默 continue</b>，改寫前那顆會印紅字「模組資料已不存在」、改寫後會整顆消失 ——
+    補了 <code>unknownModuleIds</code> 回報（今天全庫 0 筆）才沒有製造出一個新的沉默缺口。<br>
+    ⚠ <b><code>EightLevelNote</code> 的文案被自己推翻了</b>：它寫著「站上目前只算接口這一段，
+    機甲那一段還沒建模，所以這裡的數字會偏低」—— D-1 之後這句從「誠實的免責」變成「錯的」，
+    而它不會自己壞掉、也不會有測試抓到。已改寫並把教訓留在該函式的註解裡。
+    <b>滿階 S 級甲自帶的 8 級模組本身就給滿 8 級</b>（每部位 2 × 四部位 ＝ cap），
+    所以接口再插同族只會超限 —— 超限提醒的文案也一併補上天生那一段，
+    否則「裝 2 顆共 2 級卻超出 8 階」讀起來像算錯。<br>
+    ⚠ <b>本階段未經瀏覽器實測</b>（E-3 的三項就是為此存在）。型別、單測與 build 都過了，
+    但「畫面長什麼樣、停用態夠不夠明顯」還沒有人看過。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; EquippedEffects 的 innate 改寫</div>
+      <div class="task-group-meta">src/components/loadout/EquippedEffects.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">改讀 <code>resolveInnateModules</code></div>
+        <div class="task-desc">✅ <code>innate</code> 改讀 <code>ctx.chassis.innateByPart</code>（逐部位、逐格取來源機甲），等級改讀 <code>ctx.stacks</code>。<br>⚠ <b>合計因此只能加一次</b>：改寫前是「stacks（接口）＋ 天生逐顆」相加，天生與插槽合流之後同一族出現在兩邊就會<b>算兩份</b>。現在合計 ＝ <code>activeStacks(ctx)</code>，匯出圖的合計也一併改成同一支（它原本<b>完全沒算天生那一段</b>）。<br>⚠ 清單改成<b>按模組收成一列</b>、左欄印「哪幾個部位帶來它」而不是模組類別：S 級的 8 級模組四個部位都有份，逐部位列會變成同一顆講四遍；而混搭之後「這顆從哪來」才是玩家要的資訊。</div>
+        <div class="task-file">src/components/loadout/EquippedEffects.tsx · LoadoutExportCard · ModulePanel · MechPartStrip</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 混搭時跟著部件走</div>
+      <div class="task-group-meta">src/utils/（resolveChassis）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">天生模組進 ResolvedChassis</div>
+        <div class="task-desc">✅ <code>ResolvedChassis</code> 新增 <code>innateByPart</code> 與 <code>positionMultiplier</code>，逐格用<b>那一格的來源機甲</b>解。三條驗收基準<b>有測試逐項守著</b>（滿階帕斯卡換右臂 → 輝龍）：〈彙編矩陣〉整顆消失、〈蓄能模組〉8→<b>6</b>、〈出力模組〉4→<b>3</b>；換進來那格<b>帶來輝龍自己的四條線</b>（盈輝 2／勇氣核心 1／火力 1／龍威·揚鋒 2），而輝龍綁別的部位的三顆龍威不跟過來。<br>⚠ 那條「先問一次這個欄位是不是也住在部件上」的教訓<b>當場又中一次</b>：<code>MechPart.innateModules</code>（人工覆寫）也住在部件上，所以混搭時覆寫跟著換進來的那一格走 —— 已有測試釘住。<br>⚠ <code>moduleMap</code> 的型別從 <code>{ levels }</code> 放寬成整顆 <code>Module</code>：專屬／副模組要靠 <code>slot</code> 分流，不給整顆就只算得出特性位與 8 級模組。</div>
+        <div class="task-file">src/utils/chassisStats.ts · loadoutRules.ts · innateLoadout.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 觸發式模組失效的顯示</div>
+      <div class="task-group-meta">src/components/loadout/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">不能只是消失</div>
+        <div class="task-desc">✅ <code>ctx.moduleBlocks</code>（族鍵 → 結構化原因）＋ <code>activeStacks()</code>：<b>畫面列全部、數字只算生效的</b>。停用列灰掉、不印等級與數值，改印一行原因 ——「需要〈迸發模組〉達 LV.8（目前 LV.6）」／「只有 海莉絲 駕駛時才會啟動」。收合的縮圖列也會補一句「X、Y 目前未啟動」，否則收合態只看得到一排灰圖。<br>⚠ <b>可用出力也要扣</b>（<code>loadoutBudget</code> 改走 <code>activeStacks()</code>）：清單灰了但出力沒動，等於畫面自己打自己。<br>⚠ <code>required &lt;= 0</code>（觸發者斷鏈）印的是「該模組的階數未建檔」，不是「需要 LV.0」。<br>⚠ 一次過就夠：今天六顆有條件的模組<b>沒有一顆是別人的觸發者</b>，不必疊代到收斂。出現「A 解鎖 B、B 解鎖 C」時要改迴圈 —— 屆時症狀是 C 永遠解不開。</div>
+        <div class="task-file">src/utils/loadoutRules.ts · src/components/loadout/EquippedEffects.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label orange">Phase E</div>
+  <div class="section-title">對帳、驗收與文件</div>
+  <div class="section-desc">讓「奇怪的東西」自己浮出來，而不是等站長發現畫面怪怪的。</div>
+  <div class="impact-note" style="border-left-color:var(--accent-green);">
+    <strong>✅ Phase E 完成（2026-08-29，9 / 9）。</strong>
+    對帳腳本 <code>scripts/check-part-module-drift.mjs</code>（新檔）、data-patch skill 兩條檢查清單、
+    瀏覽器實地驗收三項全過、docs 四份 ＋ 052 總綱決策六回寫 ＋ scrape-mechs.js 檔頭更正。<br>
+    ⭐ <b>對帳結果：83 台 × 932 格逐格全中</b>，規則表一格都不用動。<br>
+    ⚠ <b>腳本 import 站上真正在跑的那份實作</b>（<code>src/utils/innateModules.ts</code>），不在腳本裡重寫規則
+    —— 重寫的話兩邊會各自漂移，那時它就從「安全網」變成「兩份都錯但互相同意」。<br>
+    ⚠ <b>E-3 抓到三件程式外的事</b>（都不影響 Phase D 的正確性，但都是靜默的）。前兩件<b>已於同日修完</b>：<br><br>
+
+    <b>① ✅ <code>sub_mod_防爆模組</code> 的名稱錯字已改。</b>原本 <code>name</code> 是「防<b>暴</b>模組」，
+    而官方與它自己的 doc id 都是「防<b>爆</b>」（效果文字「被暴擊率降低」裡的「暴」是暴擊，與模組名無關）。
+    站長判定為手動輸入的錯字 ⇒ 改資料，不在腳本裡登記例外。改名前先驗過全庫沒有第二顆同名（否則會靜默併族，
+    <code>moduleFamilyKey</code> 用的就是名稱）。對帳腳本現在 <b>exit 0 全綠</b>。<br><br>
+
+    <b>② ✅ U+FFFD 截斷字：全庫實際是 <span style="color:var(--accent-red)">23 個欄位</span>，不是 2 筆。</b><br>
+    根因：各爬蟲的 <code>fetchJson()</code> 都寫成 <code>res.on('data', c =&gt; data += c)</code>
+    而<b>沒有先 <code>res.setEncoding('utf8')</code></b> —— chunk 是 Buffer，<code>+=</code> 會逐塊 toString，
+    一個 UTF-8 中文字剛好跨在邊界時就<b>碎掉一個字</b>。症狀極不穩定（只有大回應、切在剛好的位置才中），
+    所以它不是某次改版壞掉，而是<b>每次重抓都可能在不同欄位長出一個新的</b>。
+    <b>同一個 bug 在本計畫的新腳本裡當場重現了一次</b>（官方回的〈整備模組〉碎成亂碼、
+    害它一度被誤判成「站上沒有這顆模組」）。<br>
+    ⇒ <b>根因修了 8 支 fetcher</b>（scrape-mechs／modules／weapons／pilots-v3／backpacks／components
+    ＋ patch-exclusive-module-levels ＋ check-nd-minsum-drift）。
+    ⚠ 圖片下載那兩條走 <code>chunks.push(Buffer)</code>，<b>刻意不動</b> —— 設了會壞。<br>
+    ⇒ 既有資料由 <code>scripts/temp_scripts/repair-fffd-descriptions.mjs</code> 補：
+    modules 2 ／ pilots 18 ／ weapons 3，<b>23/23 全部修復、0 筆需人工</b>，
+    modules ／ pilots ／ weapons 三個集合已 bump、fixture 已重出、slice 已重出。<br>
+    ⭐ <b>修法刻意不用猜的</b>：「每1連擊」「戰後回復」用讀的都猜得出來，但猜出來的字沒有來源，
+    而且必然有一兩筆會猜錯 —— 錯字混在一堆正確文字裡就再也查不出來。
+    腳本改成把壞字串切成<code>前綴＋&lt;FFFD&gt;＋後綴</code>，拉官方 detail、把回應裡每個字串展開成候選
+    （原文／去標籤 × 原樣／繁化），<b>只接受「長度剛好、前後綴完全吻合」且恰好一個</b>的候選，
+    再寫回<b>整個官方字串</b>（結果與爬蟲下次跑出來的完全一致）。<br><br>
+
+    <b>③ 前台兩處文案已被自己推翻</b>（未擅自改，屬 052-G 的產品文案）：<code>PART_MIX_NOTE</code>
+    「部件混搭<b>開放後</b>…」與頁首橫幅「部件混搭…<b>尚在後續階段</b>」—— 052-G Phase D 早就出貨了。<br>
+    ⚠ <b>emulator 資料曾經是舊的</b>：驗收一開始四顆〈模型-XX〉印不出 Lv（<code>levels[]</code> 還是空的），
+    <code>npm run emu:seed</code> 重灌才對。<b>本機驗收前先重灌 slice</b>，否則會把「資料舊」誤判成「程式錯」。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 對帳腳本</div>
+      <div class="task-group-meta">scripts/check-part-module-drift.mjs（新檔）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">官方矩陣 vs 站上推導，逐格 diff</div>
+        <div class="task-desc">拉 <code>aircraft_data/detail</code>，軀幹陣列是<b>整台總表</b>、其餘三部位是壓縮字串 <code>&lt;族id&gt;:&lt;等級&gt;/</code>，<b>軀幹自身 ＝ 總表 − 其他三部位</b>（全 83 台驗算無負值、無孤兒）。與規則預測值逐格比對。<br>只讀不寫，比照 <code>check-module-stat-drift.mjs</code>。</div>
+        <div class="task-file">scripts/check-part-module-drift.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三種結果三種處置</div>
+        <div class="task-desc">✅ 三種結果三種處置都寫進報表；「一整批」的判準是同一組 <code>(品質, slot, 部位, 官方值, 站上值)</code> 出現 ≥3 台。<br>⚠ 它<b>只能覆蓋官方有的 83 台</b>，v3.3 之後的 7 台永遠對不到 —— 報表末尾<b>逐台列出</b>，否則「全中」會被誤讀成「全站都對」。<br>⚠ 名稱是脆弱的 join key：只靠名稱配對的話，一個錯字會讓那顆模組的四格<b>完全沒被比對到</b>，卻在報表上偽裝成「官方有站上沒有」＋「站上有官方沒有」兩筆。⇒ 加了<b>矩陣形狀</b>後援配對（兩側各自唯一時才配），名稱歧異另開一節報告。<br>⚠ 「站上有、官方沒有」用 <code>unlockCondition</code> 分流：有的歸預期內（隱藏模組 5 筆），沒有的才可疑。</div>
+        <div class="task-file">scripts/check-part-module-drift.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 掛進 data-patch 流程</div>
+      <div class="task-group-meta">.claude/skills/data-patch/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">改版更新資料後必跑</div>
+        <div class="task-desc">與既有的 <code>check-module-stat-drift</code> / <code>check-nd-minsum-drift</code> 並列，寫進 skill 的檢查清單。</div>
+        <div class="task-file">.claude/skills/data-patch/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; 實地驗收</div>
+      <div class="task-group-meta">瀏覽器</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">帕斯卡換右臂</div>
+        <div class="task-desc">✅ 帕斯卡右臂換成開拓者，四項逐一對上：〈彙編矩陣〉整顆消失／〈蓄能模組〉8→<b>6</b>（部位列也從「軀幹、左臂、右臂、腿部」變成「軀幹、左臂、腿部」）／〈出力模組〉4→<b>3</b>（出力 +100→+75，左上角可用出力同步 2,775→2,750）／開拓者帶來自己的三顆（協調模塊 Lv1、修理模組 Lv2、防暴模組 Lv1）。<br>⭐ <b>連效果文字都跟著降階</b>（蓄能 Lv8 的「傷害提升18%」→ Lv6 的「12%」）—— 這是改寫前完全看不到的東西。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">復仇女神換一個部位</div>
+        <div class="task-desc">✅ 復仇女神腿部換成帕斯卡：〈迸發模組〉8→6，其餘三顆〈模型-XX〉轉為灰色「未啟動」並印出<b>「需要〈迸發模組〉達 LV.8（目前 LV.6）」</b>；〈模型-無恙〉綁腿部，隨部件離開（本來就不該在）。<br>⚠ 一開始四顆印不出 Lv —— 是 <b>emulator 資料舊</b>（<code>levels[]</code> 還是空的），不是程式錯。<code>npm run emu:seed</code> 重灌後正常。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">後台覆寫走一遍</div>
+        <div class="task-desc">✅ 後台帕斯卡 → 部件 → 軀幹「改成人工指定」→ 蓄能模組 Lv2 改 Lv5 → 儲存。前台三顆（蓄能／張量核心／出力模組，都吃軀幹那一格）都掛上<b>橘色 ◆ 人工覆寫</b>，蓄能由 5+2+2+2 封頂為 Lv8。按「清除、回到推導」再存 → 徽章消失、值回到推導矩陣。<br>⭐ 後台與前台用的是<b>同一顆</b> <code>InnateSourceBadge</code>（C-5 的目的達成）。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-4 &nbsp; 文件同步</div>
+      <div class="task-group-meta">docs/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">資料模型與集合文件</div>
+        <div class="task-desc"><code>docs/02_技術文件/02_資料模型/</code> 的 mech / module 頁、<code>04_Firebase/資料庫設計文件/</code> 的 mechs / modules 集合頁，補三個新欄位。</div>
+        <div class="task-file">docs/02_技術文件/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">回寫 052 總綱</div>
+        <div class="task-desc">決策六補上「天生模組逐部位」的說明；並記下 <b>E-3 延後的前提已被 052-G Phase D 打破</b>（當初的理由是「滿階下 Σ 是常數」，但滿配假設擋不掉「來源機甲」這個維度）。</div>
+        <div class="task-file">docs/05_階段性開發計畫/執行中/PLAN-052_配裝模擬器改版_總綱/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">修掉 scrape-mechs.js 檔頭的誤判</div>
+        <div class="task-desc">「API 回頭刪東西」<b>是錯的</b>：復仇女神四顆與帕姆斯陣列一直都在 <code>module_data</code> 字典裡（20455–20458、20661），只是它們是彩甲「限制解除」才啟動的隱藏模組，本來就不在部件的 <code>ModuleCarried</code>。</div>
+        <div class="task-file">scripts/scrape-mechs.js</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-K — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

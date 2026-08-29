@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-K 天生模組逐部位化 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-K 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-052-K</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    天生模組逐部位化<span style="-webkit-text-fill-color:var(--text-secondary);"> · Innate Modules by Part</span>
+  </h1>
+  <p class="hero-sub">天生模組住在機甲頂層三個欄位、沒有部位也沒有等級 —— 部件混搭上線後那一列一顆都不動。改成用規則推導、保留逐格人工覆寫，並把後台補成主要輸入管道。</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+  <div class="plan-meta">
+    <div class="meta-item"><div class="meta-label">計畫編號</div><div class="meta-value cyan">PLAN-052-K</div></div>
+    <div class="meta-item"><div class="meta-label">建立日期</div><div class="meta-value">2026-08-28</div></div>
+    <div class="meta-item"><div class="meta-label">影響範圍</div><div class="meta-value purple">types / utils / loadout / admin / scripts</div></div>
+    <div class="meta-item"><div class="meta-label">優先級</div><div class="meta-value yellow">HIGH</div></div>
+    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value cyan">已完成 · 33 / 33（2026-08-29）</div></div>
+    <div class="meta-item"><div class="meta-label">前置依賴</div><div class="meta-value cyan">PLAN-052-G（已完成 25/25）</div></div>
+  </div>
+  <div class="info-block">
+    <strong>一句話：</strong>一顆天生模組的等級 ＝ <b>四個部位各自貢獻的等級加總</b>（＋插槽貢獻 × 部位倍率），
+    而站上把它存成機甲頂層的三個 id、沒有部位也沒有等級。
+    052-G Phase D 讓玩家能換部位之後，這一列就開始說謊了 —— 而且不報錯。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：換了部位，天生模組一顆都不動</strong><br>
+    模擬器「模組效果」面板分兩塊：<b>接口 0/4</b>（玩家自己裝的）已於 052-G Phase D 跟著部件走；
+    <b>自帶 4</b> 讀的是 <code>mech.module4Id</code> / <code>module8Id</code> / <code>moduleFixedIds</code>
+    —— <b>機甲頂層的三個欄位</b>，與部位無關。所以換掉右臂，自帶那一列原封不動。<br>
+    遊戲裡不是這樣：換掉滿階帕斯卡的右臂，〈彙編矩陣〉<b>整顆消失</b>、〈蓄能模組〉8→6、〈出力模組〉4→3。
+    <b>症狀是「數字看起來很合理但就是錯的」，沒有任何錯誤訊息。</b>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：三個機制在資料模型裡不存在</strong><br>
+    ① <b>逐部位等級</b>：<code>MechPart</code> 的 14 個欄位
+    （<code>antiRiot, armor, dodge, durable, firepower, fixedArmament, hit, icon, interface,
+    mechaIcon, move, output, position, weight</code>）沒有一個講「這個部位帶哪顆模組」。<br>
+    ② <b>部位倍率</b>：破曉者-02〈匯流樞紐〉的效果是「<b>某部位插槽中的模組等級翻倍</b>」
+    （20391 軀幹 / 20394 腿部，兩顆<b>同名但效果不同</b>）—— 這件事目前<b>只存在描述文字裡</b>，程式讀不到。<br>
+    ③ <b>觸發式模組</b>：共 6 顆。復仇女神四顆〈模型-武／月升／憐愛／無恙〉的前提是
+    <b>〈迸發模組〉達 LV.MAX(8)</b> 進入「限制解除」；彌造者〈帕姆斯陣列〉與星夜女神〈觀星者單元〉
+    則是<b>機師限定</b>（海莉絲 / 曜）。混搭掉一個部位 → 迸發只剩 6 級 → <b>四顆一起失效</b>。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：官方 API 已落後兩個版本，不能當主要管道</strong><br>
+    站上 <b>90 台</b>機甲已更新到 <b>v3.6</b>，官方 <code>aircraft_data</code> 只有 <b>83 台</b>、停在 <b>v3.2</b>。
+    v3.3 之後的 7 台（莫比烏斯X / 奈芙蒂斯 / 稜鏡 / 尼德霍格 / 雪崩 / 星夜女神 / 美杜莎MK2）
+    官方完全沒有資料，全靠維護者人工建檔 —— 而他們<b>都已經填好了</b>三個模組欄位。<br>
+    ⇒ <b>這個計畫的重心不是爬蟲，是後台。</b>爬蟲與對帳腳本只能覆蓋官方有的那 83 台，是輔助不是主力。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：矩陣<u>不落盤</u>，用規則推導</strong><br>
+    90 台 × 4 部位 × 3～7 顆 ≈ <b>1500 格</b>，而這 1500 格全部是規則的產物。落盤的後果是
+    官方改版時它會過期、而規則會自動跟上；再加上<b>0/5 定律</b>（選填欄位不會被填滿），
+    1500 格人工欄位必然腐爛。<b>通則用算的，例外才落盤。</b><br>
+    滿配假設下（見決策六）規則表只有九個數字：
+    <div class="code-block">品質 S（滿階）：特性位 每部位 1　8級模組 每部位 2　副模組 每部位 1
+品質 A（滿階）：特性位 每部位 1　8級模組 <b>軀幹1 ＋ 腿1（雙臂 0）</b>　副模組 每部位 1
+品質 B        ：全 0（10 台實測沒有模組資料，也沒有接口欄位）</div>
+    <b>驗證：</b>57 台 SSR × 兩個端點 × 四部位 —— <b>8 級模組與副模組 57／57 全中</b>；
+    「特性位」54／57，三個例外（輝龍／影虎／霸王）是<b>額外疊了一顆專屬模組</b>，不是規律錯。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：專屬模組的逐部位等級，用<u>現有欄位</u>推導</strong><br>
+    <div class="code-block">若 position ∈ module.boundPart：
+    level = (module.levels.length &gt; module.boundPart.length) ? 2 : 1</div>
+    拿站上全部 <b>24 顆專屬模組</b>驗過，<b>零例外</b>：帕斯卡四顆（bp=1, lv=1 → 各 1）、
+    信仰之眼〈超限框架〉（bp=2, lv=2 → 各 1，合計 2）、輝龍四顆龍威與影虎〈虎魄·無束〉
+    （bp=1, lv=2 → <b>各 2</b>）、霸王〈AI火控單元〉（bp=2, lv=2 → 各 1）。
+    彌造者〈帕姆斯陣列〉（bp=1, lv=2 → 各 2）由站長<b>實機確認</b>：軀幹 LV1～LV3 為 1 級、
+    <b>LV4（彩）為 2 級</b>。<br>
+    ⚠ <code>boundPart</code> 與 <code>levels[]</code> <b>早就填好了</b>，這條規則等於免費 ——
+    但也因此 <b>B-1（回填 levels）是這條規則的前置</b>，那不只是文字、是推導的輸入。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：手動空間掛在<u>部位</u>上，整格取代</strong><br>
+    <div class="code-block">interface MechPart {
+  /** 天生模組覆寫。undefined ＝ 照規則推導（絕大多數台）；
+   *  一旦填了就<b>整格取代</b>推導結果，不做部分合併。 */
+  innateModules?: { moduleId: string; level: number }[]
+}</div>
+    三個刻意的選擇：<br>
+    ① <b>掛在部位不掛在模組</b> —— 異常的形狀一定是「某台機甲的某個部位很奇怪」，
+    而專屬模組本來就綁單台，模組層級的覆寫是這個的特例。<br>
+    ② <b>整格取代，不做部分合併</b> —— 半推導半覆寫是最難 debug 的狀態，
+    你永遠不確定畫面上那個數字來自哪一半。<br>
+    ③ <b>UI 必須看得出來</b> —— 後台與前台都要標「規則算的 / 人工覆寫」。
+    這與 052-G Phase D 的教訓同源：換過的部件原本在槽位圖上長得跟原廠一模一樣，
+    最後靠一個橘色 <code>◆來源機甲</code> 標記才救回來。<b>沉默的覆寫會變成沉默的技術債。</b>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：後台是<u>主要</u>輸入管道，爬蟲是輔助</strong><br>
+    官方落後兩版（問題三），新機甲一律先在後台建檔。因此本計畫的 Phase C 不是「順便加個欄位」，
+    <b>是這個計畫能不能長期活下去的關鍵</b>：<br>
+    · <code>ModuleAdmin</code> 補兩個欄位：<code>slotLevelMultiplier</code>（部位多選）、<code>unlockCondition</code>。<br>
+    · <code>MechAdmin</code> 的每個部位區塊<b>顯示規則推導出的天生模組</b>（唯讀預覽），
+      並提供「改成人工指定」的入口與「清除、回到推導」。<br>
+    ⇒ 維護者看得到規則算成什麼，發現不對就地覆寫，<b>不需要動程式、也不需要等我們</b>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：<code>unlockCondition</code> 有兩種形狀</strong><br>
+    <div class="code-block">type ModuleUnlock =
+  | { kind: 'moduleAtMaxLevel'; moduleId: string }   // 復仇女神 ×4（觸發者＝迸發模組 mod_3034）
+  | { kind: 'pilotOnly';        pilotIds: string[] } // 帕姆斯陣列＝海莉絲、觀星者單元＝曜</div>
+    ⚠ <b>觸發者是「別顆模組」，不是模組自己</b> —— 復仇女神四顆〈模型-XX〉的描述裡<u>沒有</u>
+    「限制解除」字樣，那句話寫在〈迸發模組〉的 LV8 文本裡。
+    <b>任何用「掃自己的描述」來判定的做法都會漏掉這四顆。</b><br>
+    ⚠ 這與「效果內的條件」不同：影虎〈虎魄·無束〉L2 的「當[虎王]駕駛一整套[影虎]時…」、
+    輝龍龍威 L2 的「當[戰部渡]駕駛整套[輝龍]時…」<b>不影響模組存不存在</b>，不進 <code>unlockCondition</code>。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策六：一律滿配假設（站長裁決 2026-08-28）</strong><br>
+    逐字：「配裝模擬器還沒正式進入傷害模擬，這功能意義不大。」⇒ <b>不支援「金三＋插槽」這類非滿配</b>，
+    品質 LV2／LV3 的部件數值也不去補（官方 API 本來也只有兩個端點，而且
+    <code>manji</code> ＝ 等級70＋品質MAX，<b>兩個維度混在一起分不開</b>）。<br>
+    ⚠ 但要注意：<b>滿配假設擋掉的是「品質階」這個維度，擋不掉「來源機甲」這個維度。</b>
+    052-G 的 E-3 當初以「Σ 是常數」為由延後，那個前提已被 Phase D 打破 —— 換進來的部件
+    帶的是<b>它原本那台機甲的模組</b>（不同 id、不同組合），不是同一組常數。
+  </div>
+
+  <div class="info-block">
+    <strong>決策七：對帳腳本降級為輔助，但一定要有</strong><br>
+    新增 <code>scripts/check-part-module-drift.mjs</code>（<b>只讀不寫</b>），跟現有的
+    <code>check-module-stat-drift.mjs</code> / <code>check-nd-minsum-drift.mjs</code> 同一類：
+    拉官方 API 解出真實矩陣，與站上規則算出的預測矩陣逐格 diff。三種結果三種處置 ——
+    <b>全中</b>（什麼都不用做）／<b>某台某格不符</b>（填 <code>innateModules</code>）／
+    <b>一整批不符</b>（改規則表，版本性變更）。<br>
+    它只能覆蓋官方有的 83 台，但價值在於<b>「奇怪的東西」會被自動抓到，而不是等站長發現畫面怪怪的</b>。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>型別</b>：<code>MechPart.innateModules?</code>、<code>Module.slotLevelMultiplier?</code>、<code>Module.unlockCondition?</code></li>
+      <li><b>推導層</b>：規則表常數 ＋ <code>resolveInnateModules()</code> 純函式 ＋ 24 顆專屬模組的迴歸 fixture</li>
+      <li><b>資料補完</b>：專屬模組 <code>levels[]</code> 回填（腳本已備）、星夜女神〈觀星者單元〉<code>boundPart</code>、
+          6 顆觸發式模組的 <code>unlockCondition</code>、匯流樞紐 2 顆的 <code>slotLevelMultiplier</code></li>
+      <li><b>後台</b>：ModuleAdmin 兩個新欄位；MechAdmin 部位面板的推導預覽 ＋ 覆寫入口 ＋ 來源標示</li>
+      <li><b>模擬器接線</b>：<code>EquippedEffects</code> 的 innate 改讀推導結果；混搭時跟著部件走</li>
+      <li><b>對帳腳本</b> ＋ 掛進 <code>data-patch</code> skill 流程</li>
+      <li><b>docs 同步</b>：資料模型頁、Firestore 集合文件、回寫 052 總綱</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>非滿配配裝</b>（「金三＋插槽」）—— 決策六已裁決不做</li>
+      <li><b>A 級的完整品質階梯</b> —— 只做滿階那一列。A 級品質 LV1 時只有特性模組、連接口欄位都不存在，是另一套規律</li>
+      <li><b>品質 LV2／LV3 的部件數值</b> —— 官方沒有，且與等級維度混在一起</li>
+      <li><b>傷害模擬</b> —— 模組效果怎麼進傷害公式仍延後</li>
+      <li><b>爬蟲改寫</b> —— <code>scrape-mechs.js</code> 的逐部位 parser 不在本輪；官方落後兩版，先把後台與推導做起來。
+          （檔頭那條「API 回頭刪東西」的警告<b>是誤判</b>，順手改掉即可：那 5 顆一直都在 <code>module_data</code> 字典裡，
+          只是不在部件的 <code>ModuleCarried</code>。）</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label cyan">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-052-K 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-052_配裝模擬器改版_總綱/計畫書.html">
+      <div class="doc-tag">總綱</div>
+      <h4>◆ PLAN-052 配裝模擬器改版</h4>
+      <p>決策六／七（模組槽與候選池）是本計畫的上位規格</p>
+    </a>
+    <a class="doc-item" href="../PLAN-052-G_模組槽與部件混搭/計畫書.html">
+      <div class="doc-tag">前置</div>
+      <h4>◆ PLAN-052-G 模組槽與部件混搭</h4>
+      <p>Phase D 讓部件可換，也因此讓天生模組那一列開始說謊</p>
+    </a>
+  </div>
+  <div class="info-block">
+    調查全文（含逐台矩陣、官方 id ↔ doc id 對照表 22 筆、全 83 台驗算）留在
+    <code>_local-notes/2026-08/2026-08-28_官方API逐部位模組資料_八台重點查詢.html</code>（不進版控）。
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-K — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

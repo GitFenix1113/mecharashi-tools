@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-E 雲端存檔與配額 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-E 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-052-E</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">雲端存檔與配額</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-29</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label green">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">28</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">28</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-green);">28 / 28 — <strong>✅ 全數完成</strong></span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    登入之後配裝存得住 —— 每位機師 5 格、換一台裝置照樣看得到，
+    本機書架那 10 套一鍵搬上去。落盤的就是那一串分享代碼，儲存與分享沒有第二套序列化。
+  </div>
+  <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);">
+    <strong style="color:var(--accent-green)">Phase A 已結案（2026-08-29）：</strong>三個前提都驗過／裁決過了 —— <b>A-1</b> <code>builds</code> 復驗 0 筆（決策三成立，走刪除），<b>A-2</b> 名稱<b>不</b>加登入 gate（推翻 052-I E-1 的預告），<b>A-3</b> 接受「文件份數無界」的殘餘風險（規則註解要明寫哪一條沒守住）。⇒ <b>B 可以動了。</b><br>另：本計畫是模擬器<b>第一次</b>寫 Firestore，<code>useSimulatorEntry.ts</code> 檔頭那句「全程沒有任何 Firestore 寫入」在 E-4 要一併訂正。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">動工前必須先答的三件事</div>
+  <div class="section-desc">本專案反覆踩到的坑是「工項的前提在動工時就已經不成立」（052-F 三項、052-G 兩項、052-K 一項）。這三件的答案會改變後面要寫的程式，所以先問掉。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 直讀正式 Firestore 復驗 builds 是不是真的 0 筆</div>
+      <div class="task-group-meta">scripts/temp_scripts/ · serviceAccountKey.json 直讀</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">決策三的破壞性刪除依賴這個數字</div>
+        <div class="task-desc">
+          總綱寫 <code>users</code> 0 筆、<code>builds</code> 0 筆，那是 2026-08 的盤點。<b>決策三要刪掉 v1 <code>Build</code> 的整條路徑，而「零遷移」完全建立在這個數字上。</b><br>⚠ 不可以只信文件——052-G 的四輪盤點就修正過總綱四個看起來很確定的數字（候選池 188→186、Ⅰ型 41→42、modules 242→241、不綁機甲 199→198）。<br>順帶查：<code>users</code> 有幾份 profile（有多少個實際帳號）、有沒有任何一份 builds 文件的 id 不是 <code>pilot_</code> 開頭（決策二的正規式會擋掉它）。<b>若真的有非 0 筆，決策三當場作廢，改走遷移腳本並回寫計畫書。</b><br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong><code>builds</code> <b>兩種算法互相對上</b> —— <code>collectionGroup('builds')</code> 全站掃描 0 筆、逐 42 個 uid 複查加總 0 筆。⇒ <b>決策三「刪除而非遷移」成立</b>，零遷移成本，決策二的 doc id 正規式也沒有既有資料需要相容。<br>⚠ <b>順帶訂正總綱一個數字</b>：總綱寫「<code>users</code> 集合實測 0 筆」，但實際有 <b>42 個帳號</b>（profile 子文件 42 份）。那句話不是筆誤而是<b>量測假象</b> —— <code>users/{uid}</code> 父文件是空殼（只有子集合、沒有欄位），Firestore 的 <code>getDocs</code> 看不到這種 missing document（<code>listDocuments()</code> 回 42 個參照，其中「真的存在」的父文件 <b>0</b> 個）。決策三不受影響（關鍵數字是 <code>builds</code>），但總綱那句已一併改寫，否則下一個人會拿它推論出「站上沒有使用者」。
+        </div>
+        <div class="task-file">scripts/temp_scripts/count-user-builds.mjs（一次性）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 方案名稱要不要登入才能用（決策五待裁決）</div>
+      <div class="task-group-meta">src/pages/simulator/LoadoutPage.tsx:1469 · src/utils/loadoutName.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">052-I E-1 預告了 gate，但實際落地時前提就變了</div>
+        <div class="task-desc">
+          052-I E-1 逐字：「命名與雲端保存需登入……登入 gate 的實作掛 052-E」。而 <code>LoadoutNameField</code> 今天<b>對訪客完全開放</b>，<code>name</code> 已編進 codec 的 <code>§NAME</code> 段、已印在匯出圖最大的一行上。<br><b>建議：不 gate。</b>回頭加 gate 會讓訪客既有的分享碼與匯出圖失去名稱，換來的好處是零（名稱不佔 Firestore、不是特權、不是配額）。<b>只有「存到雲端」需要登入。</b><br>⇒ 使用者裁決後把答案寫回計畫書決策五，並在 <code>loadoutName.ts</code> 檔頭第 6 行（「052-E 的雲端保存 —— 落盤之後就洗不掉了」）補一句下落，否則下一個讀那個檔頭的人會以為 gate 還沒做。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 裁決：不加 gate</strong>（採決策五的建議，正式推翻 052-I E-1 的預告）。名稱對訪客維持開放，<b>只有「存到雲端」需要登入</b>。⇒ <code>loadoutName.ts</code> 檔頭第 6 行的「052-E 的雲端保存」已補上下落，讀到那裡的人不會再以為 gate 還沒做。
+        </div>
+        <div class="task-file">docs 決策五 ＋ src/utils/loadoutName.ts 檔頭</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 確認接受「文件份數無界」這個殘餘風險（決策二）</div>
+      <div class="task-group-meta">firestore.rules</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">規則沒有 count()，這一條擋不住，要明著承認</div>
+        <div class="task-desc">
+          四條 gate 擋得住形狀、大小、slot 數與身分，<b>擋不住「一個帳號開幾份 builds 文件」</b>——Firestore 規則沒有 <code>count()</code>，也驗不了 <code>{pilotId}</code> 是不是真的機師。<br>建議處置：doc id 正規式（<code>^pilot_[0-9]{3}_</code>）縮小面 ＋ 接受殘餘風險。每份有界 ≈ 5.5 KB，要塞出有意義的量需要極大量寫入，而寫入受專案配額與計費保護（已是 Blaze）。<br>⚠ 另一個選項是 Cloud Function 計數器，但那會把「存一套配裝」從一次 client 寫入變成一條需要冷啟動、需要監控、會失敗的後端路徑，<b>為了一個沒有實際攻擊者的風險</b>。<br>⇒ 無論選哪一條，<b>規則的註解裡要寫出哪一條沒被守住</b>。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 裁決：接受殘餘風險</strong>（doc id 正規式 <code>^pilot_[0-9]{3}_</code> 縮小面，<b>不</b>上 Cloud Function 計數器）。⇒ <b>B-4 寫規則時，註解必須明寫「份數這一條沒守住」</b> —— 這是本裁決的交付物，不是選配。
+        </div>
+        <div class="task-file">firestore.rules 註解</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">資料層與安全規則</div>
+  <div class="section-desc">先把「存得下、存不壞、別人拿不到」做出來並用 emulator 釘住，再談 UI。這一段是本計畫唯一不可逆的部分：規則上線後，已存的資料就得永遠符合它。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; CloudBuildDoc 型別</div>
+      <div class="task-group-meta">src/types/loadout.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">放進 loadout 領域，不放進 types/user.ts</div>
+        <div class="task-desc">
+          <code>slots: Partial&lt;Record&lt;CloudSlot, string&gt;&gt;</code>（<code>CloudSlot = '0'|'1'|'2'|'3'|'4'</code>）＋ <code>updatedAt</code>。<br>⚠ <b>刻意不放 <code>types/user.ts</code></b>：它屬於配裝領域而不是使用者領域，而 <code>user.ts</code> 裡那份 v1 <code>Build</code> 正要被 B-6 刪掉——把新型別放進同一個檔會讓「哪一個是現行的」再一次需要用讀的才知道。<br>⚠ <b>不存機師名快照、不存機甲名、不存解好的草稿</b>（比照 <code>localBuilds.ts</code> 規則①）：卡片上要顯示的一切都由代碼當場解出來，第二個真相源遲早會對不上。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong><code>CloudSlot</code>／<code>CLOUD_SLOTS</code>／<code>CLOUD_SLOTS_PER_PILOT</code>／<code>CLOUD_CODE_MAX_CHARS</code>／<code>isCloudSlot()</code>／<code>CloudBuildDoc</code> 落在 <code>types/loadout.ts</code>（不放 <code>user.ts</code>，理由照計畫）。<br>順手訂正同檔 <code>name</code> 欄位那句「命名與雲端保存<b>需登入</b>」—— A-2 已推翻，留著會讓下一個人以為 gate 還沒做。
+        </div>
+        <div class="task-file">src/types/loadout.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; buildsApi.ts（新檔）</div>
+      <div class="task-group-meta">src/lib/buildsApi.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">雲端書架的讀／寫／刪，零 React、零 UI 文案</div>
+        <div class="task-desc">
+          四支：<code>listCloudBuilds(uid)</code>／<code>saveCloudBuild(uid, pilotId, slot, code)</code>／<code>deleteCloudBuild(uid, pilotId, slot)</code>／<code>deleteCloudPilotDoc(uid, pilotId)</code>。<br>⚠ <b>寫入一律 <code>setDoc(..., { merge: true })</code> 並用點路徑 <code>slots.${slot}</code></b>——整份覆寫會把<b>同一位機師的其他 4 格一起洗掉</b>，而且不會報錯。這是本檔最容易寫錯、也最貴的一行。<br>⚠ 刪最後一格時要不要順手刪掉整份文件？<b>要</b>——留一份 <code>slots: {}</code> 的空文件會讓 <code>listCloudBuilds</code> 多讀一筆、也會讓「這位機師我存過東西嗎」變成兩種都對的答案。<br>比照 <code>localBuilds.ts</code>：零 React、零 Firebase 以外的相依、錯誤一律回結構化結果而不丟例外（呼叫端要說得出是哪一種失敗）。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成，但與計畫書有兩處出入：</strong><br>① <b>計畫書寫「<code>setDoc(..., {merge:true})</code> 並用點路徑 <code>slots.${slot}</code>」——那條在 <code>setDoc</code> 上是錯的。</b>JS SDK 只有 <code>updateDoc</code> 會把鍵裡的點解讀成欄位路徑；<code>setDoc</code> 一律當<b>字面欄位名</b>，會產生一個名叫 <code>slots.0</code> 的頂層欄位，然後被規則的 <code>hasOnly([&#39;slots&#39;,&#39;updatedAt&#39;])</code> 擋掉，收到一個看不懂的 403。⇒ 實作用 <code>setDoc(ref, { slots: { [slot]: code } }, { merge: true })</code>：<code>merge</code> 會<b>遞迴合併巢狀 map</b>，其他四格原封不動。點路徑留給 <code>deleteCloudBuild</code> 的 <code>updateDoc</code> ＋ <code>deleteField()</code>（那邊它是對的，也是 JS SDK 裡唯一能從 map 拿掉一個 key 的方式）。這條語意由 B-5 的 emulator 測試實際驗過（只更新第 0 格後，第 1 格仍在）。<br>② <b>測試檔名不是 <code>buildsApi.test.ts</code></b>：<code>buildsApi</code> 要 import <code>./firebase</code>，而那個檔在載入時就讀 <code>import.meta.env</code> —— <code>node --test</code> 根本 import 不進來。⇒ 純規則（doc id 正規式、base64url 字元集、格位白名單、<code>validateCloudSave</code>／<code>freeSlots</code>／<code>sanitizeSlots</code>）拆到 <code>src/utils/cloudBuildRules.ts</code>，測試是 <code>cloudBuildRules.test.ts</code>（8 條全綠）；<code>buildsApi.ts</code> 只留 I/O 與錯誤翻譯，並 re-export 那些純函式讓呼叫端只認一個入口。<br>四支之外多一支 <code>getCloudBuild()</code>（單一機師），刪最後一格時整份文件一起刪。
+        </div>
+        <div class="task-file">src/lib/buildsApi.ts（新）＋ src/lib/buildsApi.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; firestore.rules：取代 users/{userId}/builds/{buildId}</div>
+      <div class="task-group-meta">firestore.rules:221</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">四條 gate ＋ 一條寫明擋不住的</div>
+        <div class="task-desc">
+          現行是一行 <code>allow read, write: if isOwner(userId)</code>（PLAN-011 為 v1 Build 寫的）。改為：<br>① <code>isOwner(userId)</code>；② 頂層 <code>hasOnly(['slots','updatedAt'])</code>；③ <code>slots.keys().hasOnly(['0','1','2','3','4'])</code>；④ 每格 <code>size() &lt;= 1024</code>；⑤ <code>buildId.matches('^pilot_[0-9]{3}_.*')</code>。<br>⚠ <b><code>string.size()</code> 是字元數不是位元組數。</b>base64url 全 ASCII 所以1024 字元 == 1024 bytes <b>剛好成立</b>——註解要寫明「這一格只准放 base64url」，否則哪天有人塞中文進去，上限就悄悄變成 4 KB。<br>⚠ 規則沒有 <code>count()</code>，<b>文件份數擋不住</b>（A-3 已裁決接受）。照 <code>changeHistory</code>／<code>analyticsDaily</code> 的慣例把理由與殘餘風險寫進註解。<br>⚠ <b>逐格檢查 map 的每個 value</b> 在規則語言裡沒有迴圈——要用 <code>slots.values().hasOnly()</code> 之類的技巧或逐 key 展開五條，B-5 的測試必須實際打第 1025 個字元進去驗，不能只看規則讀起來對。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong>五條 gate 全數落地，<code>slotOk()</code> ＋ <code>shapeOk()</code> 兩個規則函式，逐格<b>展開五條</b>（規則語言沒有 map 迭代）。空字串格位也擋掉（它會通過「有沒有這一格」卻解不出東西，UI 只會渲染一張空白卡片）。<code>delete</code> 刻意<b>不驗</b>形狀與 doc id —— 擋下刪除只會讓形狀不對的舊文件變成刪不掉的殘留。<br><b>上限改成 4096 而不是計畫書原訂的 1024</b>（見 B-4）。殘餘風險註解已寫進規則本體，逐字說明「份數這一條沒有被守住」與「<code>size()</code> 是字元數不是位元組數」。<br>⚠ <b>規則檔已改但<span style="color:var(--accent-yellow)">尚未部署</span></b>：正式站仍在跑舊的那一行 <code>allow read, write: if isOwner(userId)</code>，要 <code>firebase deploy --only firestore:rules</code> 才生效。
+        </div>
+        <div class="task-file">firestore.rules</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 量測最壞情況的碼長，確認 1024 是對的數字</div>
+      <div class="task-group-meta">src/utils/loadoutCode/codec.test.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">上線後改上限，等於讓已存的存檔存不回去</div>
+        <div class="task-desc">
+          現有 golden fixture 只有 7 筆、最長 <b>119 字元</b>——那是手寫的小案例，<b>不能拿來當上限的依據</b>。<br>要量的是滿載：7 個 mount × 4 個元件 ＋ 4 個部件來源 ＋ 4 顆模組 ＋ 24 碼點的中文名稱＋ 海莉絲三套形態，各欄位都取「號碼最大、最難壓縮」的值。<br><b>如果超過 1024 就必須現在改</b>：規則上線之後再放寬，對已經存進去的人沒有影響；但如果是<b>存的時候剛好卡在邊界</b>，症狀會是「這一套存不進去而別的可以」，而使用者無從得知為什麼。<br>⇒ 產出一條測試把最壞碼長釘住，日後 codec 加段落時會直接紅給你看。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成 —— 而且量出來的結果推翻了 1024：</strong><table class="impact-table" style="margin:10px 0"><tr><th>情境</th><th>碼長</th></tr><tr><td>今天真實滿載（海莉絲 3 形態 × 7 mount × 4 元件 ＋ 4 部件 ＋ 4 模組 ＋ 24 字名稱）</td><td>654–686</td></tr><tr><td>號碼全滿（shareId 吃滿 3-byte varint）＋ 真實形態鍵</td><td>842</td></tr><tr><td>號碼全滿 ＋ 形態鍵吃滿 64 bytes</td><td>1006</td></tr><tr><td>真實號碼 · <b>5 套形態</b></td><td>975</td></tr><tr><td>號碼全滿 · <b>4 套形態</b></td><td><b style="color:var(--accent-red)">1051</b>（1024 在這裡就破了）</td></tr></table>每多一套獨立形態約 <b>+160 字元</b>。今天夠用，但官方哪天給某位機師第 4 套形態，1024 就會開始拒收，而依決策二自己的規矩「上限只能放寬不能收緊」——<b>挑小了才是不可逆的錯</b>。<br>⇒ <b>使用者裁決：改成 4096，與 codec 自己的解碼上限 <code>LIMITS.codeChars</code> 對齊。</b>兩邊不一致會生出一段「解得開卻存不了」的落差，而落差裡的症狀是「這一套存不進去、別的可以」。單份文件最壞 5 × 4096 ≈ 20 KB，對 Firestore 的 1 MiB 上限無感；而 A-3 已接受「份數無界」，每格上限本來就不是真正的防濫用手段，它的工作是<b>別誤殺合法存檔</b>。<br>釘住的方式是兩條常駐測試：①<code>CLOUD_CODE_MAX_CHARS === LIMITS.codeChars</code>；② 刻意造的滿載草稿（3 套與 5 套形態）都要塞得進上限 —— 隨機產生器測不到這個，它每個欄位只有 20–50% 機率出現，一萬份裡湊不出「全部吃滿」的那一份。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/codec.test.ts（新增一條上限測試）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-5 &nbsp; emulator 規則測試</div>
+      <div class="task-group-meta">scripts/test-emulator-rules.mjs · npm run emu:test-rules</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">至少八條，而且每一條都要真的被規則拒絕</div>
+        <div class="task-desc">
+          擴充既有腳本（PLAN-030 A-3 建的）。它的做法已經對了、照抄即可：<b>不能用 Admin SDK 測規則</b>（送的是 <code>Bearer owner</code>，繞過所有規則、永遠綠），要用 Auth emulator 換真 ID token 再打 Firestore REST。<br>八條：本人可讀、本人可寫、<b>他人不可讀</b>、<b>他人不可寫</b>、第 6 個 slot key 被拒、1025 字元被拒、多餘頂層 key 被拒、doc id 不合正規式被拒。<br>⚠ <b>「被拒」要驗 HTTP 403 而不是「沒有拋錯」</b>——寫進去卻沒生效與被規則擋掉，在 client SDK 上看起來可以一模一樣。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：14 條全綠，連跑兩輪都綠</strong>（本人建立／讀取、4096 放行、4097 被擋、第 6 格被擋、空字串格被擋、多餘頂層 key 被擋、<code>updatedAt</code> 型別被擋、doc id 正規式被擋、他人讀寫被擋、局部更新後另一格仍在、本人可刪）。<br><b>比計畫多驗兩件事：</b>①「剛好 4096 應放行」—— 只驗被擋那一側的話，一條永遠為假的規則也會讓測試變綠；②「只更新第 0 格之後第 1 格沒被洗掉」—— 那正是 B-2 最容易寫錯的一行的底層語意。<br>⚠ <b>順手修掉兩個既有的紅燈</b>（與本計畫無關，但它們讓整個腳本跑不完）：① <code>LOG_BODY</code> 寫死 <code>actorUid: &#39;test&#39;</code>，而規則早在 PLAN-030 Phase C 就加了 <code>actorUid == request.auth.uid</code> —— 那條收緊之後就沒人再跑過這個腳本，連「管理員可新增」都是紅的；② 對照組斷言「一般使用者讀 buffs 應得 200」，但 PLAN-029 已把遊戲資料收成 <code>read: if isAdmin()</code>（前台改走 Worker），正確預期是 403。另補上前後清理 —— <code>POST ?documentId=</code> 對已存在的文件回 <b>409</b>，殘留會讓第二次執行假性變紅。
+        </div>
+        <div class="task-file">scripts/test-emulator-rules.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-6 &nbsp; 刪掉 v1 Build 的整條路徑</div>
+      <div class="task-group-meta">src/types/user.ts · src/lib/userApi.ts · src/pages/simulator/LoadoutPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三層都還在，只是因為集合是空的所以走不到</div>
+        <div class="task-desc">
+          刪：<code>types/user.ts</code> 的 <code>Build</code>／<code>UserBuild</code>（<code>FloatingModSelection</code> 要先確認沒有別處用）；<code>userApi.ts</code> 的 <code>getUserBuilds</code>／<code>saveBuild</code>／<code>deleteBuild</code>＋ <code>buildsCol</code>；<code>LoadoutPage.tsx</code> 的 <code>legacyBuildToDraft()</code>（:103）、<code>pending.legacy</code> 分支（:199／:206／:294）；<code>types/index.ts</code> 的 re-export。<br>⚠ <b>前提是 A-1 復驗 0 筆</b>。非 0 就停下來改走遷移。<br>⚠ <code>userApi.saveBuild</code> 與 <code>localBuilds.saveBuild</code> <b>今天同名</b>，刪掉前者之後 grep 才會乾淨——這也是為什麼這件事要在 C 之前做完，不然新寫的雲端存檔會在搜尋結果裡跟兩個舊的混在一起。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成（A-1 復驗 0 筆為前提）：</strong><code>types/user.ts</code> 的 <code>Build</code>／<code>UserBuild</code>／<code>FloatingModSelection</code>（全庫零引用）共 32 行刪除；<code>userApi</code> 三支 ＋ <code>buildsCol</code> ＋ 連帶的四個 firestore import 刪除，原地留一段說明去向的註解；<code>LoadoutPage</code> 的 <code>legacyBuildToDraft()</code>（30 行）、<code>pending.legacy</code> 分支、<code>location.state.build</code> 入口、以及因此不再有人用的 <code>useLocation</code> 一併移除；<code>types/index.ts</code> 的 barrel 註解訂正。<br><code>ProfilePage</code> 的 v1 <code>BuildCard</code>、讀取／刪除路徑、四個 state 與 effect 全數移除，「我的配裝」分頁暫時只剩空狀態 —— <b>與過去看到的畫面完全一致</b>（集合本來就是空的），C-6 接上雲端書架。<br>✔ <code>tsc -b</code> 綠、本次改動檔案 ESLint 乾淨、<code>npm test</code> 1027 全過。
+        </div>
+        <div class="task-file">src/types/user.ts · src/types/index.ts · src/lib/userApi.ts · src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-7 &nbsp; docs 同步：users 資料庫設計文件</div>
+      <div class="task-group-meta">docs/02_技術文件/04_Firebase/資料庫設計文件/users.html</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">CLAUDE.md 規則 2 的觸發條件命中兩條</div>
+        <div class="task-desc">
+          <code>src/lib/userApi.ts</code>（Firestore 讀寫邏輯）與使用者資料結構同時變動。<br>要更新的：<code>builds</code> 子集合從 v1 <code>Build</code> 改成 <code>{ slots, updatedAt }</code>、doc id 從 <code>addDoc</code> 亂數改成 <code>{pilotId}</code>、安全規則四條 gate。<br>⚠ 順帶檢查 <code>enums.html</code> 有沒有引用到被刪的型別。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong><code>users.html</code> 的 <code>03 — builds</code> 整段改寫（新形狀表、doc id ＝ pilotId、五條 gate 表、「為什麼落盤是一串代碼」、殘餘風險告示、複合索引改成「不需要」），並加一則變更記錄說明舊模型為何是刪除而非遷移。<br>⚠ <b>順帶修正兩份被漏掉的文件</b>：<code>enums.html</code> 查無被刪型別（乾淨）；但 <code>security-rules.html</code> 的權限表只寫 <code>isOwner</code>（沒有新的四條 gate），且索引表還留著 <code>users/{uid}/builds — createdAt DESC</code> —— 新模型沒有 <code>createdAt</code>，那條索引不存在（<code>firestore.indexes.json</code> 裡本來就沒有，是文件自己寫出來的）。兩處都已訂正。
+        </div>
+        <div class="task-file">docs/02_技術文件/04_Firebase/資料庫設計文件/users.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label green">Phase C</div>
+  <div class="section-title">雲端書架 UI</div>
+  <div class="section-desc">使用者要找的是「我存的那一套」，不該先回答「它在哪裡」。所以雲端不是第二顆按鈕，是同一個對話框的第二個分頁。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 書架對話框分頁化</div>
+      <div class="task-group-meta">src/components/loadout/LocalShelfDialog.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">同一個對話框兩個分頁，不是兩顆按鈕</div>
+        <div class="task-desc">
+          抬頭那顆「書架」鍵不變（它今天印 <code>3/10</code>），對話框內分成<b>「本機」與「雲端」兩個分頁</b>。<br>理由：兩顆按鈕會逼使用者在按之前就回答「我上次存在哪裡」——而那正是他打開書架想知道的事。<br>⚠ 檔名要不要改？<b>要</b>（<code>LocalShelfDialog</code> → <code>ShelfDialog</code>）：一個叫 Local 的元件裡面裝著雲端分頁，是下一個人一定會看錯的地方。<br>⚠ 未登入時<b>雲端分頁不隱藏</b>——見 C-4。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong><code>git mv LocalShelfDialog.tsx → ShelfDialog.tsx</code>（保住 git 歷史），內部拆成 <code>LocalTab</code> / <code>CloudTab</code> 兩個子元件 ＋ 共用的 <code>ShelfCard</code>。抬頭那顆鍵仍只有一顆、仍印本機的 <code>N/10</code>。<br>⚠ <code>CloudTab</code> 掛 <code>key={uid}</code>：登入／登出時整個重掛，清單與「剛存入」等狀態一次歸零。原本寫成在 effect 裡 <code>setEntries(null)</code>，被 <code>react-hooks/set-state-in-effect</code> 擋下 —— 那條規則是對的，同步 setState 會製造串聯渲染。
+        </div>
+        <div class="task-file">src/components/loadout/ShelfDialog.tsx（改名）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 存到雲端：機師槽位選擇與覆寫確認</div>
+      <div class="task-group-meta">src/components/loadout/ShelfDialog.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">覆寫時要說出被覆寫的是哪一套</div>
+        <div class="task-desc">
+          存檔目標是<b>當前草稿的機師</b>（<code>draft.pilotId</code>），使用者只選 0–4 哪一格。<br>已有內容的格子要<b>解碼出名稱與機甲印在格子上</b>，而不是先按下去再問「確定要覆寫嗎？」——那句話沒有提供任何做決定需要的資訊，等於把責任推給使用者。<br>⚠ 五格都滿時<b>拒絕並請使用者自己挑一格</b>，不淘汰最舊的（沿用 <code>localBuilds.ts</code> 規則②：「我明明存過」是這個功能最不能出現的一句話）。<br>⚠ 同一串代碼已在這位機師的某一格 ⇒ <b>就地更新時間而不是佔第二格</b>（沿用 <code>saveBuild</code> 的 <code>deduped</code> 語意）。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong>五個格位鍵<b>各自印出裡面是什麼</b>（解碼出方案名稱或機甲名），所以「要不要覆寫」在按下去之前就看得見，不需要事後跳一句「確定嗎？」。五格都滿時不擋、改印「挑一格覆寫 —— 這裡不會自動淘汰最舊的那一套」。<br>⚠ <strong style="color:var(--accent-green)">實機驗收補了一條計畫要求但初版漏做的行為：</strong>計畫寫「同一串代碼已在某一格 ⇒ 不佔第二格」，初版只顯示提示、按下別格仍會存出重複。現在改成<b>搬移</b>：先寫新格、成功後再刪舊格（順序不可反 —— 先刪後寫的話，中間失敗就等於把存檔弄丟了），空格子的字也隨之變成「移到這格」。<br>已在 emulator 實機跑過：存第 1 格 → 搬到第 3 格 → Firestore 內只剩一個 slot key，沒有複本。
+        </div>
+        <div class="task-file">src/components/loadout/ShelfDialog.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 兩種配額的文案分開寫</div>
+      <div class="task-group-meta">src/components/loadout/ShelfDialog.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">localBuilds.ts 的檔頭註解早就預告了這一條</div>
+        <div class="task-desc">
+          <code>localBuilds.ts:17</code> 逐字：「與登入者的『每機師 5 套』<b>語意不同，UI 文案要分開寫</b>：訪客是『本機書架 7/10』（全站共用一個配額），登入者是『海莉絲 3/5』。」<br>⇒ 本機分頁印全站計數，雲端分頁印<b>當前機師</b>的計數，且雲端分頁要能看到「其他機師也存了幾套」（否則使用者不知道自己總共存了什麼）。<br>⚠ 抬頭那顆鍵印哪一個數字？<b>印本機的</b>——它在未登入時也要有意義，而且雲端計數是 per-pilot，抬頭那裡沒有機師脈絡。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong>本機分頁印「本機書架 7/10 · 全站共用，不分機師」，雲端分頁印「雲端書架 · 洛莎·審判 3/5 · 每位機師各 5 格」，抬頭那顆鍵維持本機計數。雲端分頁底部另有一行「其他機師：曜 2 套、艾達 1 套…」，否則使用者只看得到當前機師的五格，會以為自己的雲端書架是空的。完整清單指向個人中心。
+        </div>
+        <div class="task-file">src/components/loadout/ShelfDialog.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 未登入時：說出來，不要隱藏</div>
+      <div class="task-group-meta">src/components/loadout/ShelfDialog.tsx · src/contexts/AuthContext.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">隱藏會讓「這站沒有雲端存檔」變成最合理的解讀</div>
+        <div class="task-desc">
+          雲端分頁照樣顯示，內容換成一句話 ＋ 登入入口：「登入後可以把配裝存到雲端，換裝置也看得到。每位機師 5 格。」<br>⚠ 同 052-B 決策四那條常駐橫幅的理由：<b>這一版明確不做／需要條件的東西必須講清楚，否則玩家會把「找不到」當成 bug</b>。<br>⚠ 登入後要不要自動跳回書架？<b>要</b>——不然使用者按了登入、轉一圈回來，得自己重新找到剛才那顆鍵。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong>未登入時雲端分頁照樣在，內容是一句說明 ＋ 登入鍵 ＋「登入之後這個分頁就會直接變成你的雲端書架，不用重新打開」——登入框關掉後書架還開著，<code>uid</code> 一有值就重掛成雲端書架，不需要「跳回書架」的額外邏輯。<br>⚠ <strong style="color:var(--accent-green)">順手修掉一個會讓這條完全不能用的 bug：</strong><code>AuthModal</code> 是 <code>z-50</code>，而書架／貼碼對話框與 IconPicker 都是 <code>z-[60]</code> —— 從書架按「登入」叫出來的登入框會渲染在<b>書架後面</b>，看起來像按了沒反應。改成 <code>z-[70]</code>（登入框本來就該蓋在所有東西之上）。實機用 <code>elementFromPoint</code> 驗過：畫面正中央命中的是登入框。
+        </div>
+        <div class="task-file">src/components/loadout/ShelfDialog.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-5 &nbsp; 卡片共用 classifyBuild() 三態</div>
+      <div class="task-group-meta">src/lib/localBuilds.ts:175</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">雲端與本機的失效判定必須是同一支</div>
+        <div class="task-desc">
+          <code>classifyBuild(code, indexes)</code> 已經回 <code>ok</code>／<code>degraded</code>／<code>broken</code> 三態，雲端<b>直接用它，不另寫一份</b>——兩份判定遲早會在同一串代碼上給出不同答案。<br>⚠ <code>classifyBuild</code> 住在 <code>localBuilds.ts</code> 裡而它即將不只服務本機書架。要不要搬出去？<b>要</b>——搬到 <code>src/lib/buildStatus.ts</code>，<code>localBuilds</code> 與 <code>buildsApi</code> 各自 import。（同 B-1 不把新型別塞進 <code>user.ts</code> 的理由。）<br>⚠ 決策六的載入 gate 在這裡生效：<b>集合還沒載入完就分類，會把整架存檔全部標成失效</b>——最嚇人的一種誤報。既有的四份 gate 已經處理了這件事（<code>LoadoutPage.tsx:224</code> 的註解逐字寫著），雲端書架要接上同一份，不新寫第五份。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong><code>classifyBuild()</code> 與 <code>BuildStatus</code>／<code>BuildState</code> 搬到新檔 <code>src/lib/buildStatus.ts</code>，本機／雲端／個人中心三處共用同一支。<code>localBuilds.ts</code> 因此不再 import codec，檔頭的交叉引用一併改指新家；<code>localBuilds.test.ts</code> 的 6 條 <code>classifyBuild</code> 測試原封不動改 import 路徑。<br>載入 gate 接的是既有那一份（<code>loading</code> 一路從 LoadoutPage 傳進雲端分頁），沒有新寫第五份。
+        </div>
+        <div class="task-file">src/lib/buildStatus.ts（搬出）· src/lib/localBuilds.ts · src/lib/buildsApi.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-6 &nbsp; ProfilePage「我的配裝」重寫</div>
+      <div class="task-group-meta">src/pages/user/ProfilePage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">現在這個 tab 讀的是永遠是空的 v1 集合</div>
+        <div class="task-desc">
+          <code>getUserBuilds()</code> ＋ <code>BuildCard</code>（v1 欄位）整段換成雲端書架列表，按機師分組、每組最多 5 張卡。<br>刪掉 <code>navigate('/simulator', { state: { build } })</code> 這條 v1 載入路徑，改成帶代碼進模擬器（與書架、分享碼同一條路）。<br>⚠ <code>simulatorEntryVisible</code> 的三處判斷保留：內部測試期一般使用者仍看不到「前往配裝模擬器」的入口，但<b>已存的配裝要看得到</b>（該檔第 16 行的註解已經是這個意思）。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong>清單獨立成 <code>components/profile/CloudBuildList.tsx</code>，<b>只在「我的配裝」分頁開啟時掛載</b> —— 它要 <code>useLoadoutGameData(&#39;equip&#39;)</code> 才解得開代碼，而 hook 不能條件式呼叫；寫在 ProfilePage 裡就變成「只是開個人資料頁也把整個遊戲資料庫拉一次」。按機師分組、每組最多 5 張卡、「載入配裝」帶 <code>?b=代碼</code> 進模擬器（與書架、分享碼同一條路徑）。<br>⚠ <strong style="color:var(--accent-green)">實機抓到一個只有跑起來才看得見的 bug：</strong>這裡建 <code>module</code> 索引時漏了第三個參數（<code>shareIdAliases(&#39;module&#39;)</code>）。41 顆模組的號碼是手工指派、推導不出來的，少了別名表就一律解不出 docId ⇒ <b>每一套帶模組的存檔都被誤判成「有 N 項裝備已下架」</b>。兩張卡當場都紅了。單元測試抓不到這種事 —— 壞的是頁面這一層的接線（同 052-D D-4 抓到的空索引）。
+        </div>
+        <div class="task-file">src/pages/user/ProfilePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-7 &nbsp; 寫入失敗要逐種說出來</div>
+      <div class="task-group-meta">src/components/loadout/ShelfDialog.tsx · src/lib/buildsApi.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">這是模擬器第一次會有「存不進去」這件事</div>
+        <div class="task-desc">
+          至少四種要分開講：<b>離線</b>（訊息要說「等一下再試」而不是「失敗」）、<b>規則拒絕</b>（代碼太長／格式不對——這是 bug，要能看出來）、<b>未登入 / token 過期</b>、<b>配額滿</b>。<br>⚠ <b>不可以假裝存好了。</b><code>localBuilds.writeShelf</code> 的註解已經立過這條規矩（「配額用盡／隱私模式 —— 呼叫端要說出來，不可以假裝存好了」），雲端沿用。<br>⚠ PLAN-045 的教訓：token 續期被擋會讓寫入在<b>看起來已登入</b>的狀態下失敗。這一種要把使用者導去重新登入，而不是顯示一句技術錯誤。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong><code>CLOUD_ERROR</code> 八種各有各的說法，對應 <code>buildsApi</code> 的結構化 <code>reason</code>：離線說「等一下再試，你的配裝還在畫面上」；規則拒絕／token 過期說「先登出再登入一次，若仍失敗請回報」（PLAN-045 的教訓：token 續期被擋會讓寫入在看起來還登入著的狀態下失敗）；代碼太長／字元集不對明講是站上的 bug。搬移時若「寫新格成功、刪舊格失敗」不會報成存檔失敗 —— 東西還在，只是暫時佔兩格。
+        </div>
+        <div class="task-file">src/components/loadout/ShelfDialog.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label green">Phase D</div>
+  <div class="section-title">訪客書架匯入</div>
+  <div class="section-desc">管理者測試期配的每一套都在 localStorage 裡。這一段的價值在於它們不用重配一次——也是這條路徑唯一一次有真實資料可以測。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 匯入預覽：逐筆解碼、勾選</div>
+      <div class="task-group-meta">src/components/loadout/ShelfDialog.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">先讓人看到自己要搬的是什麼</div>
+        <div class="task-desc">
+          逐筆解碼印出「機師 · 方案名稱 · 幾把武器 · 存的時間」，預設全勾。<br>⚠ <code>broken</code> 的那幾筆<b>不可勾選</b>但要列出來並說明原因（機師或機甲不在了）——直接濾掉會變成「我明明有 10 套，怎麼只剩 7 套」。<br>⚠ <code>degraded</code> 的<b>可以匯入</b>：少一把武器遠好過整套不給搬（<code>localBuilds.ts</code> 三態註解的原話）。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong>雲端分頁底下多一個「從本機書架匯入（N 套）」的摺疊面板。逐筆解碼印出「方案名稱 · 機師 · 機甲 · 幾把武器 · 存的時間」，預設全勾。<br><b>broken 的列出來但 checkbox 停用</b>並附上原因（機師或機甲查不到）—— 直接濾掉會變成「我明明有 10 套，怎麼只剩 7 套」。degraded 照樣可勾，卡片上標明「有 N 項裝備已下架，匯入後那幾格會是空的」。
+        </div>
+        <div class="task-file">src/components/loadout/ShelfDialog.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 目標槽位自動配置與「這位機師滿了」</div>
+      <div class="task-group-meta">src/lib/buildsApi.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">兩種配額語意不同，塞不下是正常結果</div>
+        <div class="task-desc">
+          訪客是「全站 10 格」、雲端是「每機師 5 格」⇒ <b>10 套完全可能全是同一位機師</b>，<b>塞不下必然會發生</b>。<br>同機師的多筆依存入時間順序填 <code>0</code>..<code>4</code>；第 6 筆起明確標「<b>這位機師的 5 格滿了</b>」，並<b>留在本機書架上</b>。<br>⚠ 已被雲端佔用的格子要跳過，不是覆寫——匯入不該蓋掉使用者手動存的東西。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成，但規劃邏輯不在 buildsApi：</strong><code>planCloudImport()</code> 放在 <code>utils/cloudBuildRules.ts</code>（同 B-2 的理由 ——<code>buildsApi</code> import <code>./firebase</code>，<code>node --test</code> 進不來，而這段正是最需要被釘住的）。<b>整批一起算，不逐筆各算各的</b>：同一位機師的第二筆要知道第一筆佔走了哪一格，否則兩筆會挑到同一格、後寫的把先寫的蓋掉而且不報錯。已佔用的格子跳過不覆寫。<br>⚠ <b>與計畫書的一處出入</b>：原文寫「依存入時間順序填 0..4」，實作改成<b>與畫面一致的順序（新的在前）</b>。① 使用者看到的清單就是由上而下填進 1..5，不必在心裡做第二種排序；② 塞不下時被留在本機的如果是<b>最新</b>那一套，才是真的難以解釋。<br>實機驗過：6 套同機師 → 5 套進雲端、第 6 套標「洛莎·審判的 5 格滿了」並留在本機。
+        </div>
+        <div class="task-file">src/lib/buildsApi.ts ＋ 測試</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 不清空 localStorage（決策四）</div>
+      <div class="task-group-meta">src/lib/localBuilds.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">清空等於替瀏覽器的下一個人做決定</div>
+        <div class="task-desc">
+          匯入成功的那幾筆<b>標記「已在雲端」</b>但留在架上。<br>三條理由：① 同一個瀏覽器可能有多人用；② 匯入到一半失敗時清空 ＝ 資料消失；③ 使用者可能只是想備份一份。<br>⚠ 「已在雲端」怎麼判定？<b>比對代碼字串</b>，不另存一個旗標——旗標是第二個真相源，在雲端那一邊被刪掉之後它會繼續說謊。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong>匯入完全不動 <code>localStorage</code>，成功的那幾筆改成在本機分頁的卡片右上角標「已在雲端」。<b>標記是比對代碼字串算出來的，不存旗標</b>（決策四）—— 旗標是第二個真相源，雲端那邊被刪掉之後它會繼續說謊。為此把雲端清單的狀態提到對話框那一層（兩個分頁共用）。<br>實機驗過：匯入後本機仍是 <b>6/10</b>，其中 5 張標「已在雲端」（第 6 張沒進去所以沒標）。
+        </div>
+        <div class="task-file">src/lib/localBuilds.ts · ShelfDialog</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 逐筆回報，不是整批成功／失敗</div>
+      <div class="task-group-meta">src/components/loadout/ShelfDialog.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">部分成功是這條路徑最常見的結果</div>
+        <div class="task-desc">
+          結束後印一張逐筆結果：<b>已匯入 N 筆 · 機師已滿 M 筆 · 無法匯入 K 筆（附原因）</b>。<br>⚠ 一個 toast 說「匯入完成」會讓使用者以為 10 套都上去了，而實際上可能只有 6 套——他要到換裝置那天才會發現。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong>結果行印「已匯入 N 套 · 雲端已有 M 套 · 機師的 5 格滿了 K 套 · 無法匯入 · 未勾選 · 寫入失敗」，每一列另外標自己的下場（已存入第 n 格／雲端已有第 n 格／某某的 5 格滿了／機師或機甲查不到）。寫入採<b>逐筆序列</b>而不是 <code>Promise.all</code>：失敗時要知道是哪幾筆，而且並行寫同一份文件會讓「其他格子」的合併結果變成競態。<br>⚠ <strong style="color:var(--accent-green)">實機抓到一個統計 bug 並修掉：</strong>摘要原本算的是即時的 <code>plan</code>，而跑完之後 <code>plan</code> 會<b>重算</b>（雲端狀態變了），剛匯入的那幾筆全部變成 duplicate ——結果行印出「已匯入 5 套 · 雲端已有 5 套」，同一批東西被數了兩次。改成一律算執行結果 <code>done</code>。
+        </div>
+        <div class="task-file">src/components/loadout/ShelfDialog.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-5 &nbsp; 匯入是 idempotent</div>
+      <div class="task-group-meta">src/lib/buildsApi.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">按兩次不會佔掉兩格</div>
+        <div class="task-desc">
+          同一串代碼已在該機師的任一格 ⇒ <b>跳過，不重複佔格</b>（沿用 <code>localBuilds.saveBuild</code> 的 <code>deduped</code> 語意）。<br>⚠ 不去重的話，配額會被同一套配裝的複本吃光，而使用者看到的是五張長得一樣的卡片——<code>localBuilds.ts</code> 已經為本機書架寫過這一句。<br>⇒ 進 <code>npm test</code>：連按兩次匯入，雲端筆數不變。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成：</strong>去重先於配額 —— 同一串代碼已在該機師任一格就標 duplicate 並跳過，連五格全滿時也是回「已經有了」而不是「滿了」。<br>測試 11 條（<code>cloudBuildRules.test.ts</code>）：整批一起算不撞格、已佔用跳過、per-pilot 配額、第 6 筆起 full、broken 不佔格、未勾不佔格、<b>連按兩次全部 duplicate 且雲端筆數不變</b>、統計數字。<br>實機驗過：第二次按下去 6 筆全是「雲端已有」、匯入鍵變成「匯入 0 套」且停用；Firestore 內仍是 5 格。另外刪掉第 3 格後再匯入，<b>只有原本住那一格的那一套</b>回填，其餘照樣跳過。
+        </div>
+        <div class="task-file">src/lib/buildsApi.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label green">Phase E</div>
+  <div class="section-title">驗收、文案訂正與回寫</div>
+  <div class="section-desc">052-G E-1 的教訓：codec 的單元測試自己建索引，抓不到接線問題；真正發現問題的是瀏覽器實地驗收。這一段全部在真的瀏覽器上做。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; emulator 實地驗收</div>
+      <div class="task-group-meta">npm run emu:slice → emu:seed → dev:emu</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">本機驗收前先重灌 slice，否則會把「資料舊」誤判成「程式錯」</div>
+        <div class="task-desc">
+          三步驟跑通（<code>slice --simulator</code> → <code>emu:seed</code> → <code>dev:emu</code>）。052-K E-3 就踩過一次：四顆模組印不出 Lv，其實是 emulator 資料是舊的。<br>要驗的六件：① 存一套、重整、還在；② 五格滿了被拒且訊息有用；③ 覆寫時看得到被覆寫的是哪一套；④ 刪最後一格後整份文件消失；⑤ 未登入看得到雲端分頁與登入入口；⑥ 登入後自動回到書架。<br>⚠ 坑（已記錄）：emulator 可能早就在跑、dev base 是 <code>/</code> 不是 <code>/mecharashi-tools/</code>、port 未必 5173。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 六件全通過。</strong>slice 依規定重灌（<code>emu:slice --simulator</code> → <code>emu:seed</code> → <code>dev:emu</code>）。① 存一套、重整、還在（Firestore 內形狀正確：<code>slots</code>／<code>updatedAt</code> 兩個 key、doc id ＝ <code>pilot_032_洛莎審判</code>）；② 五格滿了印「挑一格覆寫 —— 這裡不會自動淘汰最舊的那一套」；③ 五個格位鍵各印出裡面是什麼（覆寫 六號機／五號機…），<code>title</code> 另寫「（會被覆寫）」；④ 刪最後一格後 <code>collectionGroup</code> 與 <code>listDocuments()</code> 都是 0（沒有空殼）；⑤ 未登入雲端分頁照樣在；⑥ 從書架按登入 → 登入框關閉、<b>書架沒有被關掉</b>、雲端分頁當場變成登入狀態。<br>⚠ <strong style="color:var(--accent-green)">環境坑（都已記進 _local-notes 的驗收紀錄）：</strong>重新 seed 會換掉 admin 的 uid；emulator 模式下<b>一般使用者載不了遊戲資料</b>（規則是 <code>read: if isAdmin()</code>，正式站走 Worker 代讀但 emulator 沒有），測試帳號要手動給 <code>role: OWNER</code>，否則畫面永遠停在「載入遊戲資料中…」；殺掉 <code>npm run emu</code> 的 wrapper 不會帶走 java／node 子程序。
+        </div>
+        <div class="task-file">本機 emulator</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 決策六的載入 gate 實地驗收</div>
+      <div class="task-group-meta">src/components/loadout/ShelfDialog.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">052-G E-1 ⑤ 換了做法才真的驗到</div>
+        <div class="task-desc">
+          ⚠ <b>注入 fetch 延遲攔不到 Firestore</b>（SDK 走自己的 WebChannel），那樣只是「看起來測過了」。<br>真正的觸發條件：<b>在還沒選機師的空頁面上打開雲端書架</b>——那時 <code>weapons</code>／<code>modules</code>／<code>components</code> 根本還沒請求。<br>正確行為：<b>不可以把整架存檔標成失效</b>（顯示載入中或先載集合）。這是「最嚇人的一種誤報」，<code>LoadoutPage.tsx:224</code> 的註解已經逐字寫過。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 通過，但第一次測是假的。</strong>第一次取樣 25 次<b>一次都沒抓到載入視窗</b> —— 遊戲資料已在 localStorage 快取裡、瞬間到齊，那正是「看起來測過了」。清掉 13 個 <code>mecharashi_gd_*</code> 快取鍵、強迫真的去 Firestore 抓之後重測：<b>抓到載入視窗</b>（2 次取樣顯示「載入遊戲資料中…」），期間 <b>0 次</b>誤報「查不到／已下架」。<br>觸發條件照計畫用「還沒選機師的空頁面」，沒有注入 fetch 延遲（那攔不到 Firestore 的 WebChannel）。
+        </div>
+        <div class="task-file">本機 emulator</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; 跨裝置與破壞性測試</div>
+      <div class="task-group-meta">兩個瀏覽器 profile · REST 直打規則</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">跨裝置是這個計畫的賣點，要真的用兩個瀏覽器驗</div>
+        <div class="task-desc">
+          ① 兩個獨立瀏覽器 profile 登入同一帳號：A 存、B 重整看得到。<b>不可以用同一個瀏覽器開兩個分頁</b>——那共用 IndexedDB，測不到真正的跨裝置。<br>② 手改 localStorage 塞壞資料，確認書架不整個掛掉（<code>readShelf</code> 已有這個契約）。<br>③ 用 REST 帶另一個帳號的 token 打別人的 builds，確認 403。<br>④ 離線（devtools offline）存檔，確認訊息是「等一下再試」而不是靜默失敗。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 四項全做，其中一項抓到 bug。</strong>① <b>跨裝置</b>：以獨立取得的 ID token（另一個 session，不共用任何 client 狀態）打 Firestore REST，讀到瀏覽器剛寫的同一份 5 格。⚠ 不是字面上的兩個瀏覽器 profile —— chrome-devtools 的 <code>isolatedContext</code> 實測<b>沒有隔離 IndexedDB</b>（隔離頁仍是登入狀態），改用獨立 token 這條等價路徑。② <b>壞資料</b>：塞 8 筆畸形資料（缺欄位／型別全錯／null／字串／數字／壞代碼）⇒ 頁面沒掛、5 筆壞的丟掉、3 筆留著，壞代碼那一筆有說明。③ 他人 token 打別人的 builds ⇒ 403（由 <code>emu:test-rules</code> 常駐驗證）。<br>④ <b>離線 —— <strong style="color:var(--accent-green)">抓到並修掉一個真 bug</strong></b>：Firestore JS SDK 離線時<b>不會讓 <code>setDoc</code> 失敗</b>，而是把寫入排進佇列等連線回來，promise 永遠不 settle。實測按下存入後<b>觀察 12 秒毫無反應</b>，UI 永久停在「存入中…」—— C-7 那句離線文案根本沒機會出現。⇒ <code>buildsApi</code> 加 10 秒逾時與新的 <code>pending</code> 失敗碼；文案刻意<b>不說「沒有存進去」</b>（那次寫入取消不了，連線回來可能自己成功），改說「送出了但沒等到確認，這一頁重整或關掉就會取消」。修完重測：<b>10.6 秒</b>給出說法。
+        </div>
+        <div class="task-file">本機 ＋ 正式站（管理者帳號）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-4 &nbsp; 常駐橫幅文案訂正 ＋ siteChangelog</div>
+      <div class="task-group-meta">src/pages/simulator/LoadoutPage.tsx:726 · src/data/siteChangelog/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">站上正在說一句已經不成立的話</div>
+        <div class="task-desc">
+          橫幅現在寫「武器改裝、<b>部件混搭</b>、<b>雲端存檔</b>尚在後續階段」——部件混搭 <b>052-G Phase D 就出貨了</b>（052-K E-3 記過但當時歸屬 052-G，而 052-G 已歸檔，等於沒人認領），雲端存檔則由本計畫出貨。<br>⚠ 這是<b>常駐橫幅不是暫時公告</b>（總綱決策四）：留著就是站上自己說了一句不再成立的話。<br>⇒ 訂正後只剩「武器改裝」與「傷害數字不提供猜測值」兩件。同時把 <code>useSimulatorEntry.ts</code> 檔頭那句「模擬器全程沒有任何 Firestore 寫入」訂正掉。<br>⚠ 依 CLAUDE.md 規則 1，本工項要一併寫 <code>src/data/siteChangelog/</code>。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成。</strong>橫幅改成「本版提供槽位配裝、重量／出力計算、元件、模組槽、<b>部件混搭</b>、形態分頁、分享碼與<b>雲端存檔</b>。武器改裝尚在後續階段」——部件混搭與雲端存檔從「尚在後續階段」移到「本版提供」，其餘兩件（武器改裝、不提供傷害猜測值）不動。<code>useSimulatorEntry.ts</code> 檔頭那句「模擬器全程沒有任何 Firestore 寫入」<b>保留原文但標明已失效</b>（它是當初決定「不 revert、只收起入口」的依據，抹掉就看不懂當時為什麼那樣決定）。<code>src/data/siteChangelog/2026-08.ts</code> 新增一筆 <code>feat</code>，七點寫給使用者看。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx · src/hooks/useSimulatorEntry.ts · src/data/siteChangelog/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-5 &nbsp; 回寫總綱</div>
+      <div class="task-group-meta">docs/05_階段性開發計畫/執行中/PLAN-052_配裝模擬器改版_總綱/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">052-E / H 那個合併群組要拆開</div>
+        <div class="task-desc">
+          總綱進度表現在把 <b>052-E 與 052-H 併在同一個 task-group</b>（「後續子計畫 · 待開始」）。本計畫完成後要拆成兩組：052-E 獨立成組並標已完成、052-H 留待開始。<br>同時更新總進度數字（本計畫完成時 10 → 11 個子計畫、10 已完成）。<br>決策二（code-as-payload）要補上<b>實作與規劃的差異</b>——尤其是「份數擋不住」這一條，總綱當初沒有寫。<b>保留原文不抹掉。</b><br>⚠ 052-K E-4 的教訓：回寫工項自己的前提也可能是錯的（它假設有「決策十三」，而那條記在進度表不在計畫書）。<b>先找到再改。</b><br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成 —— 但本工項自己的前提是錯的。</strong>本工項寫「總綱把 052-E 與 052-H 併在同一個 task-group」，<b>實際上它們早就是兩個獨立的組</b>（052-K E-4 的教訓再現：回寫工項自己的前提也要先驗）。所以沒有「拆開」這件事要做。<br>實際做的：052-E 那一組標為已完成並附完成註記；總覽 <b>9 / 11 → 10 / 11</b>；決策二補上三點實作落差（上限 1024→4096 及其實測理由、<b>份數擋不住</b>這個結論總綱當初沒寫出來、<code>size()</code> 是字元數不是位元組數）；並訂正總綱進度表裡三處過期的 1024 與「每份 ≈ 5.5 KB」。原文一律保留、只在後面加註。
+        </div>
+        <div class="task-file">PLAN-052 總綱 計畫書.html ＋ 進度表.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-6 &nbsp; 文件同步與歸檔</div>
+      <div class="task-group-meta">docs/ · _local-notes/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">規則 2 的觸發條件與 052-I 的遺留註解</div>
+        <div class="task-desc">
+          ① <code>users.html</code>（B-7 已做，這裡複查）；② <code>docs/03_頁面規劃/</code> 的個人檔案頁（「我的配裝」整段行為改變）；③ <code>docs/02_技術文件/01_架構設計/系統架構.html</code> 的元件分類表（<code>ShelfDialog</code> 改名、<code>buildStatus.ts</code> 新檔）。<br>④ <code>loadoutName.ts</code> 檔頭第 6 行「052-E 的雲端保存 —— 落盤之後就洗不掉了」要補上決策五的下落。<br>⑤ 驗證截圖與臨時分析依規則 4 放 <code>_local-notes/2026-XX/</code>。<br><br><strong style="color:var(--accent-green)">✅ 2026-08-29 完成，五項都做了。</strong>① <code>users.html</code> 複查（B-7 已改，確認上限寫的是 4096）；② <code>docs/03_頁面規劃/09_個人中心/</code> 的「我的配裝 Tab」整段規格改寫（資料來源、分組排序、卡片欄位、載入路徑改帶 <code>?b=</code>、刪除語意、載入成本）；③ 系統架構的元件分類表 —— <code>profile/</code> 補 <code>CloudBuildList</code>，並<b>補上整列缺席的 <code>loadout/</code> 分類</b>（052-B～K 建的 24 個元件從沒被登記，順帶標明 <code>ShelfDialog</code> 由 <code>LocalShelfDialog</code> 改名、以及純邏輯各住在哪裡）；④ <code>loadoutName.ts</code> 檔頭已於 Phase A 補上決策五的下落，本輪順手修正誤植的工項編號（A-1 → A-2）；⑤ 驗收紀錄寫進 <code>_local-notes/2026-08/2026-08-29_PLAN-052-E_實地驗收紀錄.md</code>（已確認被 gitignore）。
+        </div>
+        <div class="task-file">docs/ 三份 ＋ src/utils/loadoutName.ts 檔頭</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-E — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>
