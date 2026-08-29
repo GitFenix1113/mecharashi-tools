@@ -7,15 +7,19 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   effectiveOutput, backpackOutputBonus, hasUnknownBackpackBonus, moduleOutputBonus,
-  BACKPACK_OUTPUT_BONUS,
+  SKILL_OUTPUT_BONUS,
 } from './effectiveOutput.ts'
 
 /** 彌造者 parts.torso.output ＝ 3375（只有軀幹有出力） */
 const 彌造者 = { output: 3375 }
 
-const 強襲者背包 = { id: '60101706', type: 'BackupEquipment' }
-const 出力背包Ⅲ  = { id: '60100104', type: 'PowerAdd' }
-const 出力強化背包_首攻 = { id: '60102405', type: 'PowerAdd' }   // 15 筆複合出力背包之一，數值未建檔
+// PLAN-043 Phase F：加成改由 skillIds 決定，fixture 因此要帶著背包實際掛的技能。
+const 強襲者背包 = { id: '60101706', type: 'BackupEquipment', skillIds: ['bpskill_強襲者驅動·增傷'] }
+const 出力背包Ⅲ  = { id: '60100104', type: 'PowerAdd', skillIds: ['bpskill_出力增幅@3'] }
+/** S+ 複合出力背包 ＝ 出力背包 ＋ 強化背包·首攻，兩支技能一起掛（Phase F 回填） */
+const 出力強化背包_首攻 = { id: '60102405', type: 'PowerAdd', skillIds: ['bpskill_出力增幅@3', 'bpskill_首攻強化@3'] }
+/** Phase F 回填前的樣子：type 標著 PowerAdd，卻沒有任何技能可查 */
+const 未建檔出力背包 = { id: '60102405', type: 'PowerAdd', skillIds: [] }
 const 炬塔       = { id: 'weapon_049_炬塔', type: '戰術' }        // 背部武器，無出力加成
 
 test('golden fixture 先鋒／突擊形態 ＝ 3675（3375 ＋ 強襲者背包 300）', () => {
@@ -32,15 +36,25 @@ test('golden fixture 戰術／虛粒子形態 ＝ 3375（背部是武器或空�
   assert.equal(effectiveOutput(彌造者, {}).total, 3375)
 })
 
-test('出力背包三階 ＝ +200/250/300', () => {
-  assert.equal(backpackOutputBonus({ id: '60100102' }), 200)
-  assert.equal(backpackOutputBonus({ id: '60100103' }), 250)
-  assert.equal(backpackOutputBonus({ id: '60100104' }), 300)
+test('出力背包三階 ＝ +200/250/300（鍵是技能族，不是背包 id）', () => {
+  assert.equal(backpackOutputBonus({ skillIds: ['bpskill_出力增幅@1'] }), 200)
+  assert.equal(backpackOutputBonus({ skillIds: ['bpskill_出力增幅@2'] }), 250)
+  assert.equal(backpackOutputBonus({ skillIds: ['bpskill_出力增幅@3'] }), 300)
   assert.equal(effectiveOutput(彌造者, { back: 出力背包Ⅲ }).total, 3675)
 })
 
-test('數值未建檔的複合出力背包：加成回 0，但要標成「未知」而不是「沒有」', () => {
+test('PLAN-043 Phase F：S+ 複合出力背包吃到與基礎款相同的 +300', () => {
+  // 這 15 筆過去一律標「未知」；skillIds 回填後它們與出力背包Ⅲ 掛同一支 bpskill_出力增幅@3。
   const r = effectiveOutput(彌造者, { back: 出力強化背包_首攻 })
+  assert.equal(r.backpack, 300)
+  assert.equal(r.total, 3675)
+  assert.equal(r.hasUnknownBackpackBonus, false)
+  // 變體側（首攻強化Ⅲ）不給出力 ⇒ 不可因為掛了兩支技能就變成 +600
+  assert.equal(backpackOutputBonus(出力強化背包_首攻), 300)
+})
+
+test('沒掛技能的出力背包：加成回 0，但要標成「未知」而不是「沒有」', () => {
+  const r = effectiveOutput(彌造者, { back: 未建檔出力背包 })
   assert.equal(r.backpack, 0)
   assert.equal(r.total, 3375)
   // 這個旗標就是為了讓 UI 講得出差別 —— 少了它，未知會被渲染成一個肯定的 0
@@ -96,6 +110,9 @@ test('省略 level ⇒ 取滿級（未接堆疊的呼叫端沿用舊語意）', 
   assert.equal(effectiveOutput(彌造者, { back: null }, [{ mod: m, level: 9 }]).modules, 0)
 })
 
-test('加成表只收已由官方畫面確認的四筆，避免用 weight 去猜', () => {
-  assert.deepEqual(Object.keys(BACKPACK_OUTPUT_BONUS).sort(), ['60100102', '60100103', '60100104', '60101706'])
+test('加成表只收已由官方畫面確認的技能，避免用 weight 去猜', () => {
+  // 4 筆背包 id → 2 支技能族，卻涵蓋全部 19 個會給出力的背包（含 15 筆 S+ 複合款）
+  assert.deepEqual(Object.keys(SKILL_OUTPUT_BONUS).sort(), [
+    'bpskill_出力增幅@1', 'bpskill_出力增幅@2', 'bpskill_出力增幅@3', 'bpskill_強襲者驅動·增傷',
+  ].sort())
 })

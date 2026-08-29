@@ -8,8 +8,16 @@
 // ── 為什麼加成表要硬編 ────────────────────────────────────────────────────
 // 實測（2026-08-23）：`bpskill_出力增幅` 與 `bpskill_強襲者驅動·增傷` 兩支背包技能的
 // `effects` 都是**空陣列**，三個等級也一樣 —— 出力加成的數值全庫沒有落盤。
-// 現行 SkillEffect 也表達不了「+N 出力」這個維度。所以本檔硬編一張 id → 加成表，
+// 現行 SkillEffect 也表達不了「+N 出力」這個維度。所以本檔硬編一張加成表，
 // 並用測試鎖住；等哪天 effects 真的填了，改成讀 effects 再刪掉這張表即可。
+//
+// ── 表的鍵是「技能」而不是「背包」（PLAN-043 Phase F，2026-08-30）──────────
+// 原本硬編的是背包 doc id，於是 15 筆「出力干擾／強化背包·◯◯」全部標成「未知」——
+// 它們確實給出力，只是站上沒有數值。後來查清這 98 筆 S+ 複合背包的技能是可推導的
+// （＝功能背包技能 ＋ 變體背包技能，官方文本 97/98 逐字相符），`skillIds` 一填，
+// 15 筆複合出力背包就跟基礎款掛同一支 `bpskill_出力增幅@3`。
+// 把鍵從**實例**移到**技能族**之後，這張表從 4 筆背包 id 縮成 2 支技能、
+// 卻涵蓋全部 19 個會給出力的背包，而且日後官方再出複合款也自動命中。
 //
 // ── 計算順序（與 loadoutWeight 的循環）──────────────────────────────────────
 // 背包同時吃重量又給出力，看似循環，其實兩邊都只讀「已選定的背包」這一個事實，沒有先後依賴。
@@ -22,25 +30,32 @@ import type { Module } from '../types'
 import { BackpackType } from '../types/enums.ts'
 
 /**
- * 背包出力加成表（doc id → +出力）。
+ * 出力加成表（`skillIds` 的引用字串 → +出力）。
  *
- * ⚠ 只列**已由官方畫面確認數值**的四筆。其餘 15 筆「出力干擾背包·◯◯」「出力強化背包·◯◯」
- *   （皆 `type: 'PowerAdd'`、weight 150）雖然名字帶出力、也確實會給出力，
- *   但本站尚未取得數值 → 一律回 0 並由 `hasUnknownBackpackBonus()` 標成「未知」，
- *   **不要**用 weight 150 去猜成 +300：那是把猜測寫成事實。
+ * ⚠ 只列**已由官方畫面確認數值**的技能。鍵要與背包 `skillIds` 的元素**逐字相同**
+ *   （含 `@N`）——階梯技能的每一級是不同的加成，`bpskill_出力增幅` 不帶級沒有意義。
+ * ⚠ 不要用 weight 去猜沒建檔的背包：那是把猜測寫成事實。查不到就讓
+ *   `hasUnknownBackpackBonus()` 標成「未知」。
  */
-export const BACKPACK_OUTPUT_BONUS: Readonly<Record<string, number>> = {
-  '60100102': 200,  // 出力背包Ⅰ（weight 100）· bpskill_出力增幅@1
-  '60100103': 250,  // 出力背包Ⅱ（weight 125）· bpskill_出力增幅@2
-  '60100104': 300,  // 出力背包Ⅲ（weight 150）· bpskill_出力增幅@3
-  '60101706': 300,  // 強襲者背包（weight 150）· bpskill_強襲者驅動·增傷；同時給備用武器槽
+export const SKILL_OUTPUT_BONUS: Readonly<Record<string, number>> = {
+  'bpskill_出力增幅@1': 200,        // 出力背包Ⅰ（weight 100）
+  'bpskill_出力增幅@2': 250,        // 出力背包Ⅱ（weight 125）
+  'bpskill_出力增幅@3': 300,        // 出力背包Ⅲ（weight 150）＋ 15 筆 S+ 複合出力背包
+  'bpskill_強襲者驅動·增傷': 300,   // 強襲者背包（SS，weight 150）；同時給備用武器槽
 }
 
-/** 背部掛載物（背包 **XOR** 背部武器，同一格）。武器沒有出力加成，只有背包會命中加成表。 */
+/**
+ * 背部掛載物（背包 **XOR** 背部武器，同一格）。武器沒有出力加成，只有背包會命中加成表。
+ *
+ * `skillIds` 直接沿用 `Backpack` 的同名欄位，呼叫端把整個 backpack 傳進來即可
+ * （`loadoutRules.ts` 從 `ctx.world.backpacks` 取的就是完整 doc）。背部武器沒有這個欄位 ⇒ 恆 0。
+ */
 export interface BackMount {
   id?: string
   /** 背包為 BackpackType；武器為 WeaponType（射擊／格鬥／…），兩者值域不重疊 */
   type?: string
+  /** 背包掛載的技能引用（`bpskill_出力增幅@3` 這種，可能多筆；PLAN-043） */
+  skillIds?: string[]
 }
 
 /** 出力計算需要的裝備組。與 `LoadoutWeightSet` 共用同一個 `back` 欄位，一格一個名字。 */
@@ -62,16 +77,28 @@ export interface OutputBreakdown {
   hasUnknownBackpackBonus: boolean
 }
 
-/** 背包出力加成；非背包（背部武器）或不在表內一律 0。 */
+/**
+ * 背包出力加成；非背包（背部武器）或掛的技能不在表內一律 0。
+ *
+ * 加總而非取第一筆：S+ 複合背包掛兩支技能，雖然現況只有功能側那支會給出力，
+ * 但「哪一支給」是資料決定的，不該由讀取順序決定。
+ */
 export function backpackOutputBonus(back: BackMount | null | undefined): number {
-  return (back?.id && BACKPACK_OUTPUT_BONUS[back.id]) || 0
+  return (back?.skillIds ?? []).reduce((sum, raw) => sum + (SKILL_OUTPUT_BONUS[raw] ?? 0), 0)
 }
 
-/** 該背部掛載物是否「已知會給出力、但數值未建檔」（15 筆複合出力背包）。 */
+/**
+ * 該背部掛載物是否「已知會給出力、但數值未建檔」。
+ *
+ * 判準是 `type === PowerAdd` 卻算不出加成 —— 出力背包這條線的每一款都給出力，
+ * 所以算出 0 只可能是資料沒建（技能沒掛、或掛了新技能但表裡沒有），不可能是真的沒有。
+ * Phase F 回填 98 筆 `skillIds` 之後這裡實務上恆 false，但守門要留著：
+ * 官方下次出新的出力背包時，它會再度亮起來，而不是靜靜地算成 0。
+ */
 export function hasUnknownBackpackBonus(back: BackMount | null | undefined): boolean {
   if (!back?.id) return false
-  if (back.id in BACKPACK_OUTPUT_BONUS) return false
-  return back.type === BackpackType.POWERADD
+  if (back.type !== BackpackType.POWERADD) return false
+  return backpackOutputBonus(back) === 0
 }
 
 /**

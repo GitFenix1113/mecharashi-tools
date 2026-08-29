@@ -72,7 +72,7 @@
       <tr><td>repairAmount</td><td>number</td><td>修理量；非修理類背包填 0（API: AmountOfRepair）</td></tr>
       <tr><td colspan="3" style="color:var(--accent-orange);font-weight:700;">▎craft — 製作前置（BackpackCraft，🆕 PLAN-036；僅 SS／S+ 已建立關聯者有值，無值＝未關聯）</td></tr>
       <tr><td>&nbsp;└ prereqBackpackId</td><td>string</td><td>前置主背包 doc id（一律「低一階」背包）：<strong>SS ← S+</strong>（無法由名字反推，後台手輸）、<strong>S+ ← S</strong>（名稱可推、腳本填）。只存這一個 id，種類／線／變體皆 derive → 引用 backpacks 自身</td></tr>
-      <tr><td>skillIds</td><td>string[]</td><td>🆕 PLAN-043：掛載的背包技能 doc id → 引用 <code>backpackSkills</code> collection。元素可含 <code>@N</code> 指定等級（<code>bpskill_移動強化@1</code>）</td></tr>
+      <tr><td>skillIds</td><td>string[]</td><td>🆕 PLAN-043：掛載的背包技能 doc id → 引用 <code>backpackSkills</code> collection。元素可含 <code>@N</code> 指定等級（<code>bpskill_移動強化@1</code>）。<strong>Phase F 起順序有語意</strong>：<code>[0]</code>＝本體側、<code>[1..]</code>＝材料側（不帶底線加成）。全庫 181 筆長度為 1（A/B/S/SS）或 2（S+ 複合背包）</td></tr>
       <tr><td>flavor</td><td>string?</td><td>🆕 PLAN-043：遊戲內背包卡下方的灰字風味文案。屬於背包而非技能，官方 WIKI 未錄入、純人工維護</td></tr>
     </table>
   </div>

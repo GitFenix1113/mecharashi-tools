@@ -22,6 +22,7 @@ import { STAT_LABELS } from '../../utils/moduleStats'
 import { RefText } from '../../components/refs/RefText'
 import {
   resolveBackpackSkills,
+  composeBackpackSkills,
   buildBackpackSkillMap,
   type ResolvedBackpackSkill,
 } from '../../utils/backpackSkills'
@@ -378,13 +379,17 @@ export default function BackpacksPage() {
   const { weapons, backpackSkills, pilotSkills, ensureLoaded, loadedKeys } = useGameData()
   const navigate = useNavigate()
 
-  // PLAN-043：技能本體改由 backpackSkills 集合提供（22 筆，有版本快取，回訪 0 read）
+  // PLAN-043：技能本體改由 backpackSkills 集合提供（47 筆，有版本快取，回訪 0 read）
   useEffect(() => { void ensureLoaded(['backpackSkills']) }, [ensureLoaded])
-  // 一次算完全部（180 筆 × 各 0–1 個技能，成本可忽略）。
+  // 一次算完全部（181 筆 × 各 1–2 個技能，成本可忽略）。
   // 刻意不做「render 期間才算、算完存進閉包 Map」的惰性快取——那會在 render 中變異狀態。
+  //
+  // ⚠ 合成（Phase F）擺在這個唯一入口，於是 tooltip、卡片上的技能標籤與搜尋比對
+  //   自動吃到同一份結果。S+ 複合背包的兩支技能在此併成一張「出力增幅Ⅲ·攻擊」的卡，
+  //   形狀與遊戲內一致；其餘背包原樣通過。
   const skillsById = useMemo(() => {
     const map = buildBackpackSkillMap(backpackSkills)
-    return new Map(backpacks.map((bp) => [bp.id, resolveBackpackSkills(bp, map)]))
+    return new Map(backpacks.map((bp) => [bp.id, composeBackpackSkills(bp, resolveBackpackSkills(bp, map))]))
   }, [backpacks, backpackSkills])
   const skillsOf = (bp: Backpack): ResolvedBackpackSkill[] => skillsById.get(bp.id) ?? []
 

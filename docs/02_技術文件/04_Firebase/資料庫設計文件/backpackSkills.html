@@ -126,6 +126,9 @@
     <strong>🔁 遷移腳本</strong><br>
     · <code>scripts/migrate-plan043-extract.mjs</code>（Stage 1）：把 <code>Backpack.mainSkill</code> 抽成獨立 doc 並寫回 <code>skillIds</code>，<strong>不動 mainSkill</strong>。
     實測 180 個背包中 22 個有 mainSkill（＝全部 SS），去重後 22 筆唯一技能、0 碰撞、0 共用。<br>
+    <small style="color:var(--text-dim)">2026-08-30 現況：47 筆（23 支階梯技能族 ＋ 23 支 SS 專屬 ＋ 1 支 Phase F 的
+    <code>bpskill_首攻強化_60902405</code>）。98 筆 S+ 複合背包<strong>沒有</strong>新增技能——
+    它們指回既有的兩支 S 級技能，見 <a href="backpacks.html">backpacks</a> 的 Phase F 章節。</small><br>
     · 去重鍵一律用 <code>name</code>，<strong>絕不可用 <code>icon</code></strong>——實測 <code>Icon_skill_passive_5232.png</code> 一個圖對到三個不同技能。<br>
     · 安全規則：<code>backpackSkills</code> read/write 皆 <code>isAdmin()</code>（比照 <code>pilotSkills</code>，見 security-rules）。
   </div>

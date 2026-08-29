@@ -134,8 +134,11 @@ const backpack = (over: Partial<Backpack> & Pick<Backpack, 'id' | 'name' | 'weig
 })
 
 /** 全庫唯一給備用武器槽的背包，同時 +300 出力 */
-const 強襲者背包 = backpack({ id: '60101706', name: '強襲者背包', weight: 150, type: BackpackType.BACKUP_EQUIPMENT })
-const 出力背包Ⅲ  = backpack({ id: '60100104', name: '出力背包Ⅲ', weight: 150, type: BackpackType.POWERADD })
+// ⚠ `skillIds` 不是裝飾：PLAN-043 Phase F 之後出力加成是**由掛載的技能決定**的
+//   （`SKILL_OUTPUT_BONUS`），fixture 少了它就只是一個 weight 150 的空背包，
+//   底下所有「出力 3375 + 300」的斷言會一起垮掉。
+const 強襲者背包 = backpack({ id: '60101706', name: '強襲者背包', weight: 150, type: BackpackType.BACKUP_EQUIPMENT, skillIds: ['bpskill_強襲者驅動·增傷'] })
+const 出力背包Ⅲ  = backpack({ id: '60100104', name: '出力背包Ⅲ', weight: 150, type: BackpackType.POWERADD, skillIds: ['bpskill_出力增幅@3'] })
 const 輕型限定包 = backpack({ id: 'bp_light', name: '輕型限定包', weight: 100, assemblableArmorType: ['Light'] })
 
 const pilot = (over: Partial<Pilot> & Pick<Pilot, 'id' | 'name' | 'license'>): Pilot => ({

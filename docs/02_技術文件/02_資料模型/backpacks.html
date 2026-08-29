@@ -83,6 +83,49 @@
     · <strong>修理量</strong>：新增 <code>repairAmount: number</code>（API: AmountOfRepair；非修理類背包填 0）<br>
     · <strong>附帶技能</strong>：<code>skill</code> 欄位改名為 <code>mainSkill</code>，並補入 API 欄位（id / icon / buffIds）；僅 SS 稀有度（SSSR）背包才有此欄位
   </div>
+
+  <div class="info-block" style="background:rgba(56,189,248,0.06);border-color:rgba(56,189,248,0.25);">
+    <strong>🧩 S+ 複合背包 ＝ 兩支既有技能的組合（PLAN-043 Phase F，2026-08-30）</strong><br><br>
+    98 筆 S+ 複合背包的 <code>skillIds</code> 原本<strong>全空</strong>，模擬器因此對「出力干擾／強化背包·◯◯」算不出出力。
+    官方 API 其實有這 98 筆的技能文本（<code>WithPassiveSkills[]</code>），只是 Phase B 遷移時沒收進來。<br><br>
+
+    以官方資料自我比對後確認，複合技能是<strong>可推導的</strong>，因此<strong>不新建技能 doc</strong>，
+    而是讓複合背包指回既有的兩支 S 級技能：
+
+    <table style="margin:10px 0;">
+      <tr><td>複合技能文本</td><td>＝ 功能背包(S級)技能全文 ∪ 變體背包(S級)技能的「非底線行」</td><td><strong>97 / 98</strong></td></tr>
+      <tr><td>複合技能名</td><td>＝ 功能技能名 + <code>·</code> + 變體</td><td><strong>98 / 98</strong></td></tr>
+      <tr><td>BufCarried</td><td>＝ 兩者聯集</td><td><strong>97 / 98</strong></td></tr>
+    </table>
+
+    映射全由既有欄位 derive：功能軸走 <code>type</code>（PowerAdd→出力背包、Heal→修理背包…），
+    變體軸走 <code>parseBackpackName()</code> 的 line + variant。旁證：S+ 修理系的
+    <code>repairAmount</code> 與 S 級修理背包同為 <strong>204</strong>、<code>weight</code> 同為 150 ——
+    複合背包確實只是兩個 S 級疊在一起，數值零提升。<br><br>
+
+    <strong style="color:var(--accent-yellow);">⚠ 底線行只認本體側那一份。</strong>
+    「軀幹耐久值提升X%」在官方複合文本裡只出現一次，來自功能側；變體側那份被丟掉。
+    <code>修理裝置Ⅰ</code> 自己就沒有底線行 ⇒ <strong>9 筆修理系複合背包完全沒有軀幹加成</strong>，即使變體側有。
+    <strong>把規則寫成「取最強」或「去重」都會在這 9 筆上算錯</strong>——在出力／移動／飛行等線上
+    「取最強」剛好等價（本體側本來就較強），但修理系會憑空長出材料側的 +10%。<br><br>
+
+    <strong>顯示：合成單卡，形狀與遊戲內一致。</strong>
+    <code>composeBackpackSkills()</code> 把兩支併成一張卡——名字
+    <code>本體技能名 + '·' + 變體</code>（變體取自<strong>背包名</strong>而非材料技能名：
+    材料叫「攻擊壓制Ⅲ」，官方複合名卻是「出力增幅Ⅲ·攻擊」）、圖示沿用本體側、
+    正文依「本體特徵 → 材料特徵 → 底線」三段組出。
+    合成後的 <code>id</code>/<code>doc</code> 仍是本體側那一支，合成名在
+    <code>backpackSkills</code> 裡<strong>查無此人</strong>，要追來源請走
+    <code>composedFrom</code>（<code>origin</code> 也保留兩支）。<br><br>
+
+    <strong>唯一例外：</strong><code>彈藥強化背包·首攻</code>。官方寫「每回合第1次主動攻擊<strong>時</strong>」，
+    而 S 級 <code>強化背包·首攻</code> 是「主動攻擊<strong>對戰</strong>時」——彈藥包是戰術家用的，
+    戰術家幾乎沒有「對戰」技能，兩字之差是實質差異（buff 亦不同：600433 vs 600431）。
+    故為它單建一支專用技能 <code>bpskill_首攻強化_60902405</code>（<code>backpackSkills</code> 因此為 47 筆）。<br><br>
+
+    腳本：<code>scripts/derive-composite-backpack-skills.mjs</code>（dry-run 為預設；
+    每一筆都拿官方三份文本現場驗證組合律，不通過就不寫該筆）。
+  </div>
 </section>
 
 <!-- BackpackType 列舉 -->
@@ -193,7 +236,7 @@
       <tr><td>repairAmount</td><td>number</td><td>修理量；非修理類背包固定填 0<br><small style="color:var(--text-dim)">API: AmountOfRepair · parseInt；不存在時預設 0</small></td></tr>
       <tr class="group-header"><td colspan="3">▎製作前置 craft?（BackpackCraft，🆕 PLAN-036；僅 SS／S+ 且已建立關聯者有值，無值＝未關聯）</td></tr>
       <tr><td>&nbsp;└ prereqBackpackId</td><td>string</td><td>前置主背包 doc id（一律「低一階」背包）：<strong>SS ← S+</strong>（無法由名字 derive，後台手輸）、<strong>S+ ← S</strong>（名稱可推、腳本填）。只存這一個 id；種類／線／變體皆由此 id 查 backpacks 表 derive。前台無值時優雅降級為「未關聯」，不報錯。<br><small style="color:var(--text-dim)">詳見下方「背包的前置主背包」章節</small></td></tr>
-      <tr><td>skillIds</td><td>string[]</td><td>🆕 PLAN-043：掛載的背包技能 doc id（引用 <code>backpackSkills</code> 集合）。元素格式同 <code>buffIds</code>，可含 <code>@N</code> 指定等級（如 <code>bpskill_移動強化@1</code> ＝ 移動強化Ⅰ）。<br><small style="color:var(--text-dim)">用陣列而非單一 id：目前實務長度恆為 0 或 1，但改陣列的成本只是渲染側多一層 map，日後出現雙技能背包不必再遷移一次</small></td></tr>
+      <tr><td>skillIds</td><td>string[]</td><td>🆕 PLAN-043：掛載的背包技能 doc id（引用 <code>backpackSkills</code> 集合）。元素格式同 <code>buffIds</code>，可含 <code>@N</code> 指定等級（如 <code>bpskill_移動強化@1</code> ＝ 移動強化Ⅰ）。<strong>順序有語意</strong>：<code>[0]</code>＝本體側（完整生效）、<code>[1..]</code>＝材料側（不帶底線加成）。<br><small style="color:var(--text-dim)">用陣列而非單一 id 的預留已由 Phase F 兌現：98 筆 S+ 複合背包各掛兩支，全庫 181 筆的長度分佈為 1 或 2</small></td></tr>
       <tr><td>flavor</td><td>string?</td><td>🆕 PLAN-043：遊戲內背包卡下方的灰字風味文案（如移動背包的「直接將額外動能輸送到腿部傳動裝置…」）。屬於<strong>背包</strong>而非技能——換背包掛同一個技能時這段不會跟著走。官方 WIKI 未錄入，純人工維護</td></tr>
     </table>
   </div>

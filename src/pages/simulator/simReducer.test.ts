@@ -53,8 +53,9 @@ const backpack = (over: Partial<Backpack> & Pick<Backpack, 'id' | 'name' | 'weig
   type: BackpackType.HEAL, rarity: 'S', slot: WeaponEquipSlot.BACK, assemblableArmorType: [],
   repairAmount: 0, skillIds: [], ...over,
 })
-const 強襲者背包 = backpack({ id: '60101706', name: '強襲者背包', weight: 150, type: BackpackType.BACKUP_EQUIPMENT })
-const 出力背包Ⅲ  = backpack({ id: '60100104', name: '出力背包Ⅲ', weight: 150, type: BackpackType.POWERADD })
+// ⚠ `skillIds` 決定出力加成（PLAN-043 Phase F 起鍵是技能族而非背包 id），拿掉就變空背包。
+const 強襲者背包 = backpack({ id: '60101706', name: '強襲者背包', weight: 150, type: BackpackType.BACKUP_EQUIPMENT, skillIds: ['bpskill_強襲者驅動·增傷'] })
+const 出力背包Ⅲ  = backpack({ id: '60100104', name: '出力背包Ⅲ', weight: 150, type: BackpackType.POWERADD, skillIds: ['bpskill_出力增幅@3'] })
 
 /**
  * 神經驅動分區 fixture。`minSum` 階梯**逐機師不同**是本組測試的重點 ——
