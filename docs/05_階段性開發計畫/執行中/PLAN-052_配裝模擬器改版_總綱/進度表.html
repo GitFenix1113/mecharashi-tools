@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">10</div>
+      <div class="summary-num" style="color:var(--accent-green)">12</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -179,7 +179,7 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">11</div>
+      <div class="summary-num" style="color:var(--text-primary)">13</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">10 / 11</span>
+      <span style="color:var(--accent-purple);">12 / 13</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 82%"></div>
+      <div class="progress-bar-fill" style="width: 92%"></div>
     </div>
   </div>
 
@@ -1027,6 +1027,153 @@
 
   <div class="task-group">
     <div class="task-group-header">
+      <div class="task-group-title">052-L &nbsp; 匯出圖改版與技能配置</div>
+      <div class="task-group-meta">2026-08-29 建檔 · 七個 Phase · 2026-08-30 全數完成（44／44）· 已歸檔</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">位置化槽位 ＋ 方案備註 ＋ 攜帶技能（29 工項，A–F 六個 Phase）</div>
+        <div class="task-desc">
+          <b>團隊 2026-08-29 的八項回饋，本子計畫承接 2–8 共七項。</b>
+          逐項查過原始碼與正式庫之後，它們不是同一種東西：五項（4／5／6／7／8）是匯出圖的
+          <b>版面</b>問題、兩項（2／3）要動<b>資料模型與分享碼</b>、
+          而第一項（三碼三圖）根本不是圖的問題 ⇒ 見下方 052-H。
+          <br><br>
+          <b>三個要修的現況：</b>
+          ① 圖上今天印的是 <code>statText()</code>，而候選池 <b>186 顆模組有 119 顆（64%）滿級數值欄全為 0</b>
+          ⇒ 三分之二的模組在圖上只有一個名字；而且它<b>會漏掉觸發條件卻看起來像完整答案</b>
+          （猛擊裝置的「格鬥傷害+15%」省略了 description 裡的「有 70% 的概率發動」）。
+          ② <code>ND_RULES.gammaPairCap = 23</code> 是「上下 16＋7」的<b>雙區共用預算</b>，
+          但實測有 <b>10 位 1.0 老角只有單一個 γ 區</b>（分區名就是單一字元 <code>γ</code>，天花板 16），
+          他們的圖上印著 <code>16 / 23</code> —— 讀起來像「還差 7 沒點滿」，而那 7 點永遠不存在。
+          ③ 裝備條列表與遊戲整備畫面對不起來，而<b>螢幕版早就是位置化的</b>
+          （<code>LoadoutRig</code> 的十字，左右也已翻過面）—— 這一項是把已裁決過三次的空間語彙
+          搬到印刷品上，不是重新設計。
+          <br><br>
+          <b>兩個新欄位都走 TLV 追加段</b>：<code>TAG.NOTE = 6</code>（方案備註）與
+          <code>TAG.SKILLS = 7</code>（攜帶技能三格）。解碼器遇到不認得的 tag 會跳過並記進
+          <code>unmodeled</code>、不拒收整串 ⇒ <b>對舊 client 零遷移，且不必 bump <code>FMT_VERSION</code></b>。
+          兩段都必須寫在 <code>§NAME</code> <b>之後</b>，否則既有的 golden fixture 碼會位元不同。
+          <br><br>
+          <b>四項使用者裁決（2026-08-29）：</b>
+          ① 技能<b>固定三格自由替換 ＋ 一格科研「改」技能</b>，後者站上無資料 ⇒
+          <b>欄位先開、UI 隱藏</b>（理由同 052-C 先開 <code>§PARTS</code>／<code>§MODULES</code>：分享碼只進不出）；
+          ② 候選池 ＝ <code>pilot.skills</code> − 職業單元（<code>unitType === '6'</code>）− <b>天生技能</b>
+          —— ⚠ <b>絕不可用 <code>unitType === '0'</code></b>，全庫 853 筆技能有 <b>706 筆沒有這個欄位</b>。
+          <b>⚠ 2026-08-30 修訂（使用者裁決）：<code>manual</code> 那一條是多的，拿掉。</b>
+          使用者逐字：「天生自帶的技能，我們歸類為『職業單元』。職業單元是不用攜帶的，
+          其他一般技能都是選擇性技能。」<code>manual</code> 記的是「這筆資料誰建的」（後台手建 vs 爬蟲），
+          與攜帶無關；而且 3.3+ 那七位機師整份資料由後台手建、<b>九筆技能全帶著它</b>
+          ⇒ 拿它過濾會讓那七位的候選池<b>整個歸零</b>。
+          <b>判準只留 <code>unitType === '6'</code> 一條</b>，89／89 機師各有 6～9 個候選。細節見 052-L 的 D-4；
+          ③ <b>圖上不放火力</b>：它不含元件、模組、天賦，而讀者會拿它比兩套配裝的強弱 ⇒ 這張圖明確不談強度；
+          ④ 圖底<b>完整碼 ＋ QR</b>（QR 讓「別人螢幕截圖你的圖」也還原得回配裝，需新增一個能離線產生的純 JS 套件）。
+          <br><br>
+          <b>Phase A 可以獨立出貨</b>（零資料模型變動、零裁決），而且它是唯一一組
+          <b>靠刪東西就修掉線上錯誤</b>的改動 —— 刪掉「γ 算力合計」那一格，
+          上面第 ② 個錯誤的兩個印出處同時消失。
+          <b>B 必須接在 A 之後</b>：位置化的十字要整寬 1000px，而整寬要等神經驅動縮成兩條 γ
+          從兩欄 grid 移出來。
+          <br><br>
+          ⚠ <b>三條會靜默壞掉的</b>：① 匯出圖<b>不可直接複用 <code>&lt;LoadoutRig&gt;</code></b>
+          （SVG 的 <code>var()</code> 解析不到／<code>ResizeObserver</code> 競態／<code>lazy</code> 圖等不到，
+          三個都不報錯）—— 幾何抽成 <code>rigLayout()</code> 純函式、兩邊各自渲染；
+          ② <code>reconcile()</code> 對技能<b>只做成員檢查、絕不查技能庫</b>（空 Map ＝ 還沒載入），
+          照抄武器的「查不到就刪」會變成「貼一次分享碼、技能就被清空一次」（052-D 的元件踩過）；
+          ③ 六種槽位狀態（含 <code>fixed</code>／<code>formLocked</code>）<b>不可收成三種</b>，
+          那是圖上唯一在說「這一格你換不了」的訊號。
+          <br><br>
+          <b>✅ 2026-08-30 完工回寫（41／41，六個 Phase 全數完成）。</b>
+          上面三個現況錯誤都已修（模組改印該等級官方敘述、γ 的分母兩個印出處一起拿掉、
+          裝備區換成與遊戲整備畫面同構的十字，幾何走新的 <code>rigLayout()</code> 純函式）。
+          兩個新欄位照原訂走 TLV 追加段，<b><code>FMT_VERSION</code> 沒有 bump</b>、
+          既有 golden fixture 原樣通過 ⇒ 零遷移。四項使用者裁決全數落地
+          （其中②的候選池判準已依 2026-08-30 的裁決改成只留 <code>unitType === '6'</code>）。
+          <br>
+          <b>Phase E 另外補上回饋 1 的本站那一半</b>：一顆「複製摘要」把同一套配裝輸出成
+          <b>可搜尋、可 Ctrl+F、可貼進 wiki 的純文字</b>（PNG 這三件都做不到），
+          圖底則同時保留完整碼與 QR。為了讓文字與圖不漂移，模組列、γ 分區過濾、槽位座標
+          三處抽成共用函式（各留一份的漂移症狀是「圖上寫 Lv4、複製出來的文字寫 Lv2」，
+          而兩邊都不會報錯）。
+          <br>
+          <b>Phase F 的兩項驗收在真的瀏覽器裡量完</b>：匯出 <b>787 ms</b>、最壞情況圖高
+          <b>2,792 CSS px</b>（離 iOS 的 canvas 上限還有 33%，且高度是右欄明細在決定、
+          不是算力欄）；縮圖壓到 156px 後<b>只有 HERO 與重量色帶活著</b>，
+          「縮圖只負責讓人點開」因此從假設變成量過的裁決。
+          <br>
+          <b>Phase G 收了同日的三項使用者回饋</b>：底部那顆「清空」拆成
+          <b>清空裝備</b>與<b>全部清空</b>（兩顆都走 <code>commitClear()</code>，
+          <b>一定跳 toast 且附 [復原]</b> —— 先前那顆是靜默且不可復原的，
+          而拆完之後兩顆相鄰、標籤只差兩個字）；窄版底部固定列改成<b>換行 ＋ 量高</b>，
+          退掉 052-I 自己就預告過會壞的那組寫死常數（<code>7rem</code> / <code>3.25rem</code>）；
+          匯出圖補上<b>每一格的武器／背包圖示</b>、<b>背部改半寬</b>對齊十字下端，
+          並在<b>沒有強襲者背包時整段不提備用槽</b>（181 個背包只有 1 個解得開它）。
+          <br>
+          ⚠ <b>回饋 1 的另一半（分享連結 OG 卡）仍歸 052-H</b>，052-L 明著劃在範圍外。
+        </div>
+        <div class="task-file">歷史記錄/PLAN-052-L_匯出圖改版與技能配置/進度表.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">052-M &nbsp; 模組算力加成與 α／β 鎖定</div>
+      <div class="task-group-meta">2026-08-30 建檔並完工 · 三個 Phase（7／7）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">「已解鎖的神經驅動分區中最低的區域算力+3」（7 工項，A–C 三個 Phase）</div>
+        <div class="task-desc">
+          <b>由 052-L 收尾時發現的漏洞開出來的。</b> 強擊模組的 <b>LV.MAX</b> 官方文案帶著
+          「已解鎖的神經驅動分區中<b>最低的區域算力+3</b>」，而站上先前只把它當成
+          <b>一段被印出來的文字</b> —— 模擬器不知道它會動算力，於是 Lv 條的格數、
+          匯出圖的能力清單、純文字摘要的分區等級<b>全部少一級</b>。
+          <br><br>
+          <b>⚠ 不是理論問題，選了機甲就會發生。</b> 機甲<b>疾嘯</b>（S・輕型）的
+          <code>module8Id</code> 就是 <code>mod_3041</code> 強擊模組，而 S 品質的天生規則是
+          <code>slot8: everyPart(2)</code> ⇒ 四部位各 2 級 <b>＝ 8 ＝ LV.MAX</b>，
+          <b>玩家一格接口都不必插</b>。而部件混搭（052-G Phase D）讓它變成一個
+          <b>會跳動的臨界</b>：留 4 部位＝觸發、換掉一格＝6 級＝不觸發。
+          另一顆是星夜女神的〈觀星者單元〉（限曜駕駛）。全庫 241 顆掃過就這兩顆。
+          <br><br>
+          <b>本子計畫真正的內容是把一個量拆成兩個</b>：<b>投入算力</b>（玩家點的、
+          吃 <code>gammaPairCap = 23</code> 的預算、存進分享碼）與<b>生效算力</b>
+          （含加成、決定哪些能力亮著、印在圖上）。先前兩者是同一個數，所以三個消費端
+          各自都「剛好對」；一旦不相等（<b>投入 23 可以生效 26</b>），
+          任何一處混用都不會報錯，只會讓格子與數字對不起來。
+          <br><br>
+          <b>⚠ 加成一律不落盤。</b> <code>reconcileNdLevels()</code> 有一條
+          「γ 合計 &gt; 23 就<b>整份丟掉</b>退回預設」—— 把加成寫進 <code>draft.ndLevels</code> 的話，
+          一套完全合法的 26 會被那條閘門<b>靜默洗回預設值</b>。
+          分享碼因此不動、<code>FMT_VERSION</code> 不 bump（加成是推導值）。
+          <br><br>
+          <b>兩項使用者裁決（2026-08-30）：</b>
+          ① <b>α／β 鎖死在滿級、不開放調整</b> —— 它們只有 3 級且取得成本極低，實務上人人點滿；
+          鎖掉之後加成的落點<b>自動只剩 γ</b>（判準是「升得上去才算候選」，
+          不是另外寫一條排除規則）。⚠ 這條與資料一致：實測 178 個 α／β 分區
+          <b>零個</b>帶 <code>buffUpgrades</code> ⇒ 預設本來就給滿級，值不會變。
+          ② <b>γ1 與 γ2 平手時加在 γ1</b> —— 這是<b>實機測出來的</b>，官方文案沒講；
+          程式上靠一個嚴格小於的比較符達成，<b>改它之前請先重測</b>。
+          <br><br>
+          <b>⚠ 一個讓事情變簡單的資料事實</b>：實測 89 位機師、346 個分區，
+          相鄰 <code>minSum</code> 的間距<b>一律是 3，零例外</b> ⇒ 「+3 算力」＝「恰好 +1 級」，
+          不必處理「加了但沒跨過門檻」那種半吊子狀態。程式仍用查表法（不寫 <code>lv + 1</code>），
+          間距哪天改掉才不會靜默算錯。
+        </div>
+        <div class="task-file">歷史記錄/PLAN-052-M_模組算力加成/進度表.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
       <div class="task-group-title">052-H &nbsp; 站內熱門配裝 ＋ 分享連結 OG 卡</div>
       <div class="task-group-meta">尚未建檔 —— <b>前置條件已解除（2026-08-29 對外開放），等流量累積</b></div>
       <span class="status pending">待開始</span>
@@ -1048,6 +1195,23 @@
           講不講得清楚」，而不是「哪個計畫做完了」，所以不該由某個計畫的完工去觸發。
           <b>但前置條件解除 ≠ 現在就能動工</b>：流量要累積到分布看得出形狀才有東西可聚合，
           在那之前做出來的維度切法仍然是自己人榜。⇒ <b>改為等資料，不是等開放。</b>
+          <br><br>
+          <b>⚠ 2026-08-29 修訂（來自 052-L）：這個計畫的兩半阻礙不同，OG 卡那一半今天就能動工。</b>
+          「熱門配裝」要等流量（上面那段），但<b>「分享連結 OG 卡」唯一的阻礙是「沒有對外連結可預覽」
+          —— 而那個阻礙已於 2026-08-29 解除</b>。而且它正是團隊回饋第一項
+          （「輸出方案 A／B／C 三個代碼 ＋ 三張圖」）的正解：
+          三個連結貼進 Discord ＝ 三張自動展開的預覽，<b>零下載、iOS 可用，而且點得回站上</b>
+          —— PNG 永遠做不到最後一項，而「可以點回來看完整資料」才是本站相對社群一圖流的真正優勢。
+          <br>
+          今天 <code>workers/src/socialPreview.ts</code> 的路徑正規式是
+          <code>^\/(pilots|mechs|weapons)\/([^/]+)\/?$</code> —— <b><code>/simulator?b=</code> 完全不在範圍內</b>，
+          所以分享連結貼進 Discord 出來的是一張通用站名卡，關於那套配裝一個字都沒有。
+          成本比預期低：<code>codec.ts</code> 只 import 型別 ＋ <code>slotKey</code> ＋ shareId 型別，
+          <b>零 React、零 Firebase，可直接搬進 Worker</b>；Worker 已有 Firestore REST 與 HTML 改寫層；
+          OG 圖可直接用既有的 <code>/images/og/entities/*.jpg</code>。
+          <br>
+          ⇒ <b>動工時建議把本計畫拆成兩半，OG 卡先出。</b>
+          052-L 已明著把它劃在自己的範圍外，不要重複實作。
           <br><br>
           <b>052-G／K 之後，聚合維度會多出模組與部件來源兩項。</b>
           <br>

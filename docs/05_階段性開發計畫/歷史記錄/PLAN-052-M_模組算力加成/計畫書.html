@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-M 模組算力加成與 α／β 鎖定 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-M 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-052-M</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    模組算力加成與 α／β 鎖定<span style="-webkit-text-fill-color:var(--text-secondary);"> · 強擊模組 LV.MAX · 生效算力 vs 投入算力</span>
+  </h1>
+  <p class="hero-sub">有些模組會加神經驅動算力，於是「γ 合計 ≤ 23」這條線第一次不成立。把「玩家投入」與「實際生效」拆成兩個量，並順手把 α／β 鎖死。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value cyan">PLAN-052-M</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-30</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">ndPowerBonus · NdPowerBar · 匯出圖 · 純文字摘要 · simReducer</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value cyan">已完成</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-052-K（ctx.stacks 含天生）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>① 有模組會加算力，而本站完全沒有模型</strong><br>
+    強擊模組的 <b>LV.MAX</b> 官方文案：「攻擊耐久百分比高於60%的部位時，傷害提升18%；
+    <b>已解鎖的神經驅動分區中最低的區域算力+3</b>」。這句話站上一直只是<b>被印出來的一段文字</b>——
+    模擬器不知道它會動算力，於是條上的格數、匯出圖上的能力清單、純文字摘要的分區等級<b>全部少一級</b>。
+  </div>
+
+  <div class="problem-block">
+    <strong>② 這不是理論問題，今天就會自己發生</strong><br>
+    機甲<b>疾嘯</b>（S・輕型）的 <code>module8Id</code> 就是 <code>mod_3041</code> 強擊模組，
+    而 S 品質的天生規則是 <code>slot8: everyPart(2)</code> ⇒ 四部位各 2 級 <b>＝ 8 ＝ LV.MAX</b>。
+    <b>選了疾嘯、玩家一格接口都不必插，加成就在。</b>
+    而部件混搭（052-G Phase D）讓它變成一個<b>會跳動的臨界</b>：留 4 部位＝8 級（觸發）、
+    換掉一格＝6 級（不觸發）。
+    <br><br>
+    另一顆是星夜女神的專屬模組〈觀星者單元〉（<code>mod_星夜女神_fixed_1</code>，Lv2 ＝滿階），
+    但它帶 <code>unlockCondition: pilotOnly [曜]</code>。
+    <b>全庫 241 顆模組掃過，帶這個效果的就這兩顆</b>（判準：敘述含「算力」「神經驅動」「分區」）。
+  </div>
+
+  <div class="problem-block">
+    <strong>③ 「γ 合計 ≤ 23」這條線第一次不成立</strong><br>
+    <code>ND_RULES.gammaPairCap = 23</code> 是「上下 16＋7」的雙區共用預算。
+    但<b>加成不花這個預算</b> ⇒ 生效算力可以是 <b>16 ＋ 10 ＝ 26</b>。
+    而站上有三處把 23 當成硬上限：<code>NdPowerBar</code> 的選取閘門與兩處「γ 合計 X / 23」、
+    <code>reconcileNdLevels()</code> 的「超過就<b>整份丟掉</b>退回預設」。
+    <br>
+    ⚠ 最後那一條是本計畫最需要防的：把加成落盤進 <code>draft.ndLevels</code> 的話，
+    一套完全合法的 26 會被那條閘門<b>靜默洗回預設值</b>。
+  </div>
+
+  <div class="info-block">
+    <strong>一個讓事情變簡單的資料事實</strong><br>
+    實測 89 位機師、346 個分區：形狀只有兩種
+    （79 位 <code>α[1,4,7] β[1,4,7] γ1[1,4,7,10,13,16] γ2[…]</code>、
+    10 位 1.0 老角是單一個 <code>γ</code> 區），
+    而<b>相鄰 minSum 的間距一律是 3，零例外</b>。
+    ⇒ <b>「+3 算力」＝「恰好 +1 級」</b>，不必處理「加了但沒跨過門檻」那種半吊子狀態。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label cyan">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：α／β 鎖死在滿級，不開放調整</strong>（使用者裁決 2026-08-30）<br>
+    使用者逐字：「因為 α／β 的 LV 最高只有 3，根本無法提升……這遊戲但凡有點正常腦子的人
+    都不會不塞滿 α／β」。⇒ 面板上它們亮著但點不動，資料層連那一鍵都不存。
+    <br><br>
+    ⚠ <b>仍然畫出來，不是整列隱藏</b>：看過遊戲的人找不到 α／β 會以為本站漏了資料。
+    畫成「亮著但點不動」才同時說出「它在」與「它不歸你管」，並在下面補一句理由。
+    <br>
+    ⚠ 這條與資料一致而不是硬湊：實測 <b>178 個 α／β 分區零個帶 <code>buffUpgrades</code></b>
+    ⇒ <code>defaultNdLevels()</code> 對它們本來就給滿級，鎖死之後<b>值一個都不會變</b>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：落點 ＝ γ 區裡「還能再升」而且算力最低的那一區</strong><br>
+    官方說的是「已解鎖的分區中最低的」，而 α／β 恆滿級 ⇒ 它們<b>自動出局</b>
+    （判準是「升得上去」，不是另外寫一條「排除 α／β」）。
+    ⇒ 加成<b>一定落在 γ1 或 γ2</b>，與使用者的結論一致。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：平手時加在 γ1 —— 這是實機測出來的</strong><br>
+    使用者逐字：「比較特殊的情況是 γ1 和 γ2 算力相等時，那會加在哪？我在遊戲時測，<b>他會加在 γ1</b>。」
+    <br>
+    ⚠ 官方文案<b>沒有</b>講並列怎麼辦。程式上是靠「用嚴格 <code>&lt;</code> 比較 ⇒ 留住先遇到的那一區」
+    做到的，一個比較符就能靜默漂走。<b>改那一行之前請先重測。</b>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：加成不落盤，拆成「投入」與「生效」兩個量</strong><br>
+    <code>draft.ndLevels</code> 永遠只存<b>玩家投入</b>的 Lv；生效值由
+    <code>effectiveNdLevels()</code> 當場疊出來。這與站上已經解過的兩個問題同構
+    （模組等級拆 <code>innateSum</code>／<code>sum</code>、可用出力拆機體＋背包＋模組）。
+    <br>
+    ⚠ 落盤的實際代價見問題③：<code>reconcileNdLevels()</code> 那條 23 的閘門會把合法的 26
+    <b>靜默洗回預設值</b>。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ UI 上兩個一定要分開講的字</strong><br>
+    ① 徽章從<b>「γ 合計」改成「γ 投入」</b>：<b>23 是可投入上限，不是生效上限</b>。
+    印成 <code>26 / 23</code> 會被讀成「上限壞了」或「本站算錯」。
+    <br>
+    ② <b>一定要指名它「現在」落在哪一區</b>：落點是「算力最低的 γ 區」，
+    玩家把 γ2 升一級就可能整個跳到 γ1 —— 不標的話，畫面上是「我動這裡、那裡自己亮起來」。
+    <br>
+    ③ 加成格畫成<b>虛線描邊的黃</b>，與玩家投入的實心格分得開；
+    匯出圖用<b>同一套視覺語彙</b>（同源，不是各畫各的）。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 選取閘門只算投入值</strong><br>
+    <code>canSet()</code> 把加成算進去的話，<b>裝上模組反而少能點一格</b> —— 那是反的。
+    加成不花 γ 預算，這條就是它的直接後果。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label cyan">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>規則層新支 <code>src/utils/ndPowerBonus.ts</code>：加成模組名單、落點挑選、生效等級換算</li>
+      <li><code>NdPowerBar</code>：α／β 鎖死、加成格、徽章改「投入」、落點說明（兩個版型共用）</li>
+      <li>匯出長圖與純文字摘要：印<b>生效</b>算力並附上來源</li>
+      <li><code>reconcileNdLevels()</code>：掃掉 α／β 那一鍵，並把「23 只看投入值」釘進註解</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>兩顆加成模組同時生效</b>——今天走不到（強擊模組只有疾嘯天生帶滿、觀星者單元是星夜女神專屬），
+        而「各挑一次最低區」還是「同一區 +6」官方沒講也沒得測。程式上<b>只取一顆</b>並在註解裡標明。</li>
+      <li><b>分享碼格式</b>——加成是推導值，碼裡只帶玩家投入的 Lv，<b>不必動 <code>FMT_VERSION</code></b>。</li>
+      <li><b>BUFF 階覆寫層</b>（<code>buildNdBuffOverrides</code>）——今天只有機師詳情頁在用，
+        而那一頁沒有配裝、拿不到加成。模擬器接上覆寫層時要記得餵<b>生效</b>值。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label cyan">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-052-M 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-M — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>
