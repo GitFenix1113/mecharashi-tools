@@ -89,10 +89,15 @@
           <td>PLAN-046。唯一寫入者是 Worker（service account）。<strong>對所有 client 禁寫，包含管理員</strong>：訪客也要統計 ⇒ 不能要求登入 ⇒ 若改 client 直寫就得開 <code>create: if true</code>，那等於讓任何人用迴圈寫爆每日寫入額度並任意灌水。走 Worker 則有格式防護、數量上限、寫入預算熔斷三層把關。</td>
         </tr>
         <tr>
-          <td>用戶資料<br><code>users/{uid}</code><br><code>users/{uid}/builds/*</code></td>
+          <td>用戶資料<br><code>users/{uid}</code><br><code>users/{uid}/builds/{pilotId}</code></td>
           <td>本人</td>
           <td>本人</td>
-          <td><code>isOwner(userId)</code>：<code>request.auth.uid == userId</code>。</td>
+          <td><code>isOwner(userId)</code>：<code>request.auth.uid == userId</code>。<strong>管理員也讀不到別人的存檔</strong>。<br>
+            <strong>builds 另有四條形狀 gate（PLAN-052-E）</strong>：頂層只准 <code>slots</code>/<code>updatedAt</code>、
+            <code>slots</code> 的 key 只准 <code>'0'</code>～<code>'4'</code>（每機師 5 格是<strong>結構性事實</strong>）、
+            每格 <code>size()</code> 介於 1～4096 字元、doc id 須符合 <code>^pilot_[0-9]{3}_.*</code>。<br>
+            ⚠ <strong>擋不住文件份數</strong>——規則語言沒有 <code>count()</code>，A-3 已裁決接受此殘餘風險（每份有界 ≈ 20 KB）。
+            細節見 <a href="users.html" style="color:var(--accent-cyan);">users 文件</a>。</td>
         </tr>
         <tr>
           <td>用戶檔案<br><code>users/{uid}/profile/main</code></td>
@@ -240,7 +245,6 @@ service firebase.storage {
       <tr><td>weapons</td><td>isExclusive ASC, category ASC</td><td>專武篩選</td></tr>
       <tr><td>components</td><td>slot ASC, rarity DESC</td><td>依觸/應元件分類篩選</td></tr>
       <tr><td>skills</td><td>tags ARRAY_CONTAINS, type ASC</td><td>依標籤搜尋技能</td></tr>
-      <tr><td>users/{uid}/builds</td><td>createdAt DESC</td><td>個人配裝依時間排序</td></tr>
     </table>
   </div>
 

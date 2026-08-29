@@ -1,51 +1,26 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useSimulatorEntryVisible } from '../../hooks/useSimulatorEntry'
-import { getUserBuilds, deleteBuild } from '../../lib/userApi'
-import type { UserBuild } from '../../types'
 import AvatarDisplay from '../../components/profile/AvatarDisplay'
 import AvatarPicker from '../../components/profile/AvatarPicker'
 import ProfileEditForm from '../../components/profile/ProfileEditForm'
+import CloudBuildList from '../../components/profile/CloudBuildList'
 
 type Tab = 'profile' | 'builds'
 
 export default function ProfilePage() {
   const { user, userProfile, loading, signOut, openAuthModal, refreshProfile } = useAuth()
-  const navigate = useNavigate()
-  // 模擬器內部測試期間收起入口；已存的配裝仍可載入（BuildCard 的 onLoad 不受影響）
+  // 模擬器內部測試期間收起入口（PLAN-052 總綱）
   const simulatorEntryVisible = useSimulatorEntryVisible()
   const [tab, setTab] = useState<Tab>('profile')
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [builds, setBuilds] = useState<UserBuild[]>([])
-  const [buildsLoading, setBuildsLoading] = useState(false)
-  const [buildsLoaded, setBuildsLoaded] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!user || tab !== 'builds' || buildsLoaded) return
-    setBuildsLoading(true)
-    getUserBuilds(user.uid)
-      .then(setBuilds)
-      .catch(console.error)
-      .finally(() => {
-        setBuildsLoading(false)
-        setBuildsLoaded(true)
-      })
-  }, [user, tab, buildsLoaded])
-
-  const handleDelete = async (buildId: string) => {
-    if (!user || !confirm('確定要刪除此配裝？')) return
-    setDeletingId(buildId)
-    try {
-      await deleteBuild(user.uid, buildId)
-      setBuilds((prev) => prev.filter((b) => b.id !== buildId))
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setDeletingId(null)
-    }
-  }
+  // ⚠ 「我的配裝」列的是**雲端書架**（PLAN-052-E C-6）。v1 `Build` 那條路徑
+  //   （`userApi.getUserBuilds` ＋ `BuildCard` ＋ `navigate('/simulator', { state: { build } })`）
+  //   已於 B-6 整條刪除 —— 集合實測 0 筆，沒有東西要遷。
+  //   ⚠ 清單獨立成 `CloudBuildList` 並**只在分頁開啟時掛載**：它要載入六個遊戲資料集合
+  //   才解得開代碼，寫在這裡會變成「只是開個人資料頁也把整個遊戲資料庫拉一次」。
 
   if (loading) {
     return (
@@ -161,36 +136,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {buildsLoading ? (
-            <div className="bg-bg-card border border-border rounded-xl p-8 text-center text-text-dim">
-              載入配裝中...
-            </div>
-          ) : builds.length === 0 ? (
-            <div className="bg-bg-card border border-border rounded-xl p-8 text-center">
-              <div className="text-3xl mb-3">📋</div>
-              <p className="text-text-dim text-sm">尚無儲存的配裝</p>
-              {simulatorEntryVisible && (
-                <Link
-                  to="/simulator"
-                  className="inline-block mt-4 px-4 py-2 text-sm bg-accent-orange/10 text-accent-orange border border-accent-orange/30 rounded-lg hover:bg-accent-orange/20 transition-colors no-underline"
-                >
-                  前往配裝模擬器
-                </Link>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {builds.map((build) => (
-                <BuildCard
-                  key={build.id}
-                  build={build}
-                  deleting={deletingId === build.id}
-                  onDelete={() => handleDelete(build.id)}
-                  onLoad={() => navigate('/simulator', { state: { build } })}
-                />
-              ))}
-            </div>
-          )}
+          <CloudBuildList uid={user.uid} />
         </div>
       )}
 
@@ -205,67 +151,6 @@ export default function ProfilePage() {
           onClose={() => setPickerOpen(false)}
         />
       )}
-    </div>
-  )
-}
-
-function BuildCard({
-  build,
-  deleting,
-  onDelete,
-  onLoad,
-}: {
-  build: UserBuild
-  deleting: boolean
-  onDelete: () => void
-  onLoad: () => void
-}) {
-  const date = build.updatedAt
-    ? new Date(build.updatedAt).toLocaleDateString('zh-TW', { year: 'numeric', month: 'short', day: 'numeric' })
-    : '—'
-
-  const pilotName = build.pilotId?.replace(/^pilot_\d+_/, '') ?? null
-  const mechName = build.mechId?.replace(/^mech_/, '') ?? null
-
-  return (
-    <div className="bg-bg-card border border-border rounded-xl p-4 flex items-start gap-4 hover:border-border-accent transition-colors">
-      <div className="flex-1 min-w-0">
-        <div className="font-bold text-base truncate">{build.buildName || '未命名配裝'}</div>
-        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
-          {pilotName && (
-            <span className="text-[13px] text-text-dim">
-              機師: <span className="text-text-secondary">{pilotName}</span>
-            </span>
-          )}
-          {mechName && (
-            <span className="text-[13px] text-text-dim">
-              機甲: <span className="text-text-secondary">{mechName}</span>
-            </span>
-          )}
-          {build.weaponId && (
-            <span className="text-[13px] text-text-dim">
-              武器: <span className="text-text-secondary">{build.weaponId}</span>
-            </span>
-          )}
-        </div>
-        <div className="text-[13px] text-text-dim mt-1.5">更新：{date}</div>
-      </div>
-      <div className="shrink-0 flex flex-col gap-1 items-end">
-        <button
-          onClick={onLoad}
-          className="px-3 py-1.5 text-xs font-medium bg-accent-orange/10 text-accent-orange border border-accent-orange/30 rounded-lg hover:bg-accent-orange/20 transition-colors cursor-pointer"
-        >
-          載入配裝
-        </button>
-        <button
-          onClick={onDelete}
-          disabled={deleting}
-          className="p-1.5 text-text-dim hover:text-accent-red transition-colors cursor-pointer disabled:opacity-40"
-          title="刪除配裝"
-        >
-          {deleting ? '...' : '🗑️'}
-        </button>
-      </div>
     </div>
   )
 }

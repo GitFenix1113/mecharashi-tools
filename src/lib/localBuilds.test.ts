@@ -9,8 +9,10 @@ import type { LoadoutDraft } from '../types/loadout'
 import { buildShareIndex } from '../utils/loadoutCode/shareId.ts'
 import { encodeLoadout, type ShareIndexes } from '../utils/loadoutCode/codec.ts'
 import {
-  readShelf, saveBuild, deleteBuild, classifyBuild, SHELF_KEY, SHELF_LIMIT,
+  readShelf, saveBuild, deleteBuild, SHELF_KEY, SHELF_LIMIT,
 } from './localBuilds.ts'
+// 052-E C-5：三態判定搬到 buildStatus.ts（本機與雲端書架共用同一支）
+import { classifyBuild } from './buildStatus.ts'
 
 // ─── 假的 storage ────────────────────────────────────────────────────────────
 

@@ -215,10 +215,12 @@
   </div>
 
   <div class="warning-block">
-    <strong>時間窗：users 集合實測 0 筆文件、builds 0 筆</strong><br>
+    <strong>時間窗：builds 實測 0 筆（users 那個 0 是量測假象，實為 42 個帳號）</strong><br>
     2026-08-23 以 <code>serviceAccountKey.json</code> 唯讀實測確認。<b>現在改配裝資料模型不需要遷移腳本</b>；
     一旦對外開放存檔（本計畫已定案為<b>全面公開</b>），任何形狀錯誤都要洗使用者資料。<br>
-    ⚠ 動工前要再跑一次這個實測，並列入 052-A 的驗收條件。<br>
+    <span style="color:var(--accent-green)"><b>✅ 052-E A-1 已於 2026-08-29 復驗：<code>builds</code> 仍是 0 筆</b></span>（<code>collectionGroup</code> 全站掃描與逐 uid 複查兩種算法對上），零遷移成立。<br>
+    ⚠ <b>但原文「<code>users</code> 集合實測 0 筆文件」會誤導</b>：站上實際有 <b>42 個帳號</b>。那個 0 是<b>量測假象</b> —— <code>users/{uid}</code> 父文件是空殼（只有子集合、沒有欄位），<code>getDocs(collection(&#39;users&#39;))</code> 看不到這種 missing document；<code>listDocuments()</code> 回 42 個參照、其中「真的存在」的父文件 0 個，profile 子文件 42 份。<br>
+    ⇒ <b>「零遷移成本」成立（因為 <code>builds</code> 是 0），但「站上沒有使用者」是錯的推論。</b>往後要引用帳號數請查 profile 子文件，不要查 <code>users</code> 集合本身。<br>
     ⚠ 另注意：導覽列雖以 isAdmin gate，但 <code>App.tsx:74</code> 的路由<b>沒有 AdminRoute</b>、
     <code>ProfilePage</code> 三處入口對所有登入者開放 —— 這個前提隨時可能被打破。
   </div>
@@ -261,7 +263,19 @@
       每格內容就是一串 base64url 分享代碼。<br>
     · <b>三個決定性理由</b>：(1) Firestore 規則<b>沒有位元組長度運算子、不能對動態 key 迴圈、也沒有 count()</b>
       —— 巢狀結構在規則層設不了上限，一個帳號可以塞近 1 MiB 的合法形狀 JSON；收斂成單一字串後
-      <code>code.size() &lt;= 1024</code> 是精確且繞不過的上限。
+      <code>code.size()</code> 是精確且繞不過的上限。<br>
+      <span style="color:var(--accent-green)"><b>✅ 2026-08-29 實作落地（PLAN-052-E），三點與本決策原文不同：</b></span><br>
+      <b>① 上限是 4096 不是 1024。</b>052-E B-4 實測滿載碼長：今天真實最壞 654–686 字元，
+      「號碼全滿 ＋ 真實形態鍵」842，「號碼全滿 ＋ 4 套獨立形態」<b>1051 —— 1024 在這裡就破了</b>
+      （每多一套形態約 +160 字元）。而上限<b>只能放寬不能收緊</b>（收緊會讓已存的存檔存不回去），
+      所以挑小了才是不可逆的錯。4096 同時與 codec 自己的解碼上限 <code>LIMITS.codeChars</code> 對齊，
+      消掉「解得開卻存不了」那一段落差；單份文件最壞 5 × 4096 ≈ 20 KB，對 1 MiB 無感。<br>
+      <b>② 本決策說「規則沒有 count()」是對的，但沒有把結論寫出來：文件份數擋不住。</b>
+      規則也驗不了「<code>{pilotId}</code> 真的是一位機師」——一個帳號可以開任意多份 builds 文件。
+      052-E A-3 已裁決<b>接受這個殘餘風險</b>（doc id 正規式 <code>^pilot_[0-9]{3}_</code> 縮小面，
+      不上 Cloud Function 計數器），並要求把「哪一條沒被守住」寫進規則註解本體。<br>
+      <b>③ <code>string.size()</code> 是字元數不是位元組數。</b>base64url 全為 ASCII，
+      所以「4096 字元 == 4096 bytes」<b>剛好</b>成立 —— 這是巧合不是保證，那一格只准放 base64url。
       (2) map key 白名單讓「每機師 5 套」變成<b>結構性事實</b>（規則沒有 count()，計數欄位一定會漂移）。
       (3) <b>儲存＝分享是同一串字</b>，沒有第二套序列化會漂移。<br>
     · <b>記憶體</b>：結構化 <code>Loadout</code>（codec 的解碼目標），<b>元件內嵌在 mount 上</b>

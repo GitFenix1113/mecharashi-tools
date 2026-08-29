@@ -19,6 +19,7 @@ import {
   FMT_VERSION, TAG, LIMITS,
   type ShareIndexes, type DecodeOk,
 } from './codec.ts'
+import { CLOUD_CODE_MAX_CHARS } from '../../types/loadout.ts'
 
 // ─── 測試用的實體宇宙（取自 2026-08-25 線上實測的真實 doc id 形狀）──────────
 
@@ -523,4 +524,121 @@ test('③ golden fixture：凍住的代碼字串必須永遠解得回同一份�
 test('③ fixture 的版本號必須與本 client 一致，否則代表有人改了版面卻沒凍新 fixture', () => {
   const files = fs.readdirSync(FIXTURE_DIR).filter((f) => f.endsWith('.json'))
   assert.ok(files.includes(`v${FMT_VERSION}.json`), `缺少 v${FMT_VERSION}.json`)
+})
+
+// ─── ④ 雲端存檔的碼長上限（PLAN-052-E B-4）──────────────────────────────────
+//
+// 這一段守的不是 codec 而是 **firestore.rules**：規則裡有一條 `size() <= 4096`，
+// 而規則語言讀不到 TS 常數，兩個數字只能手動同步。上限**只能放寬不能收緊**
+// （收緊會讓已經存進去的存檔存不回去，症狀是「這一套存不了、別的可以」），
+// 所以這裡把「最壞情況要塞得下」釘成常駐測試：日後有人加段落把碼撐大，先紅在這裡，
+// 而不是等某個玩家存不了他的配裝。
+
+/** 造一組「號碼吃滿 3 bytes varint」的索引 —— shareId 的極限就是 varint 的極限。 */
+function maxIndexes(): { indexes: ShareIndexes; ids: Record<string, string[]> } {
+  const MAXID = 2_097_151   // SHARE_ID_MAX
+  const ids = {
+    pilot: [`pilot_${MAXID}_極`],
+    mech: [`mech_${MAXID}_極`],
+    weapon: Array.from({ length: 7 }, (_, i) => `weapon_${MAXID - i}_極`),
+    component: Array.from({ length: 4 }, (_, i) => `comp_${MAXID - i}_極`),
+    backpack: [`${60_000_000 + MAXID}`],
+    module: Array.from({ length: 4 }, (_, i) => `mod_${MAXID - i}`),
+  }
+  return {
+    ids,
+    indexes: {
+      pilot: buildShareIndex('pilot', ids.pilot),
+      mech: buildShareIndex('mech', ids.mech),
+      weapon: buildShareIndex('weapon', ids.weapon),
+      component: buildShareIndex('component', ids.component),
+      backpack: buildShareIndex('backpack', ids.backpack),
+      module: buildShareIndex('module', ids.module),
+    },
+  }
+}
+
+/**
+ * **滿載**草稿：`n` 套形態 × 7 個 mount（雙手 2 ＋ 雙肩 2 ＋ 背 1 ＋ 備用 2）
+ * × 4 個元件（`componentLimit` 上限）＋ 背包 ＋ 4 部件 ＋ 4 模組 ＋ 4 分區算力 ＋ 24 碼點名稱。
+ *
+ * ⚠ 隨機產生器（① round-trip）**測不到這個**：它每個欄位都只有 20–50% 機率出現，
+ *   一萬份裡不會湊出「全部欄位同時吃滿」的那一份。上限必須刻意造。
+ */
+function maxDraft(ids: Record<string, string[]>, setKeys: string[], name: string): LoadoutDraft {
+  const SLOTS: Array<Pick<LoadoutMount, 'slot' | 'side' | 'bank'>> = [
+    { slot: 'singleHand', side: 'left', bank: 'main' },
+    { slot: 'singleHand', side: 'right', bank: 'main' },
+    { slot: 'shoulder', side: 'left', bank: 'main' },
+    { slot: 'shoulder', side: 'right', bank: 'main' },
+    { slot: 'back', bank: 'main' },
+    { slot: 'singleHand', side: 'left', bank: 'backup' },
+    { slot: 'singleHand', side: 'right', bank: 'backup' },
+  ]
+  const sets: Record<string, EquipSet> = {}
+  for (const key of setKeys) {
+    const mounts: LoadoutMount[] = SLOTS.map((s, i) => ({
+      weaponId: ids.weapon[i % ids.weapon.length],
+      bank: s.bank,
+      slot: s.slot,
+      ...(s.side ? { side: s.side } : {}),
+      setup: {
+        triggerComponentIds: [ids.component[0], ids.component[1], ids.component[2]],
+        effectComponentIds: [ids.component[3]],
+      },
+    }))
+    mounts.sort((a, b) => {
+      const k = (m: LoadoutMount) => (m.side ? `${m.bank}:${m.slot}:${m.side}` : `${m.bank}:${m.slot}`)
+      return k(a).localeCompare(k(b))
+    })
+    sets[key] = { mounts, backpackId: ids.backpack[0] }
+  }
+  return {
+    activeSetKey: setKeys[0],
+    sets,
+    pilotId: ids.pilot[0],
+    mechId: ids.mech[0],
+    name,
+    ndLevels: { 'γ1': 24, 'γ2': 24, 'α': 24, 'β': 24 },
+    parts: { torso: ids.mech[0], leftArm: ids.mech[0], rightArm: ids.mech[0], legs: ids.mech[0] },
+    modules: { torso: ids.module[0], leftArm: ids.module[1], rightArm: ids.module[2], legs: ids.module[3] },
+  } as LoadoutDraft
+}
+
+test('④ 雲端上限與 codec 的解碼上限必須是同一個數字', () => {
+  // 不一致就會生出一段「解得開卻存不了」的落差 —— 那一段裡的配裝，
+  // 使用者看得到、貼得出去、就是存不進雲端書架，而且沒有任何訊息說得出為什麼。
+  assert.equal(
+    CLOUD_CODE_MAX_CHARS, LIMITS.codeChars,
+    'firestore.rules 的 size() 上限與 codec 的 codeChars 脫鉤了 —— 兩邊要一起改',
+  )
+})
+
+test('④ 最壞情況的代碼必須塞得進雲端的一格（含未來多一套形態的餘裕）', () => {
+  const max = maxIndexes()
+  const emoji = '🚀'.repeat(24)          // 24 碼點 × 4 bytes ＝ 名稱的位元組上限
+  const keys = (n: number) => Array.from({ length: n }, (_, i) => 'form_' + '極'.repeat(19) + i)
+
+  // 今天的最壞：海莉絲 3 套獨立形態
+  const c3 = encodeLoadout(maxDraft(max.ids, keys(3), emoji), { indexes: max.indexes, gameVersion: '3.3' })
+  assert.ok(
+    c3.length <= CLOUD_CODE_MAX_CHARS,
+    `3 套形態的最壞碼長 ${c3.length} 已超過雲端單格上限 ${CLOUD_CODE_MAX_CHARS}`,
+  )
+  assert.equal(decodeLoadout(c3, max.indexes).ok, true, '最壞碼自己要解得開')
+
+  // 餘裕：每多一套形態約 +200 字元（號碼全滿時）。官方哪天多給兩套也要活得下來，
+  // 因為上限只能放寬不能收緊，而放寬的那一刻已經有人存不進去了。
+  const c5 = encodeLoadout(maxDraft(max.ids, keys(5), emoji), { indexes: max.indexes, gameVersion: '3.3' })
+  assert.ok(
+    c5.length <= CLOUD_CODE_MAX_CHARS,
+    `5 套形態的最壞碼長 ${c5.length} 超過上限 ${CLOUD_CODE_MAX_CHARS} —— 上限不夠用，放寬它（不可收緊）`,
+  )
+
+  // 把實測值釘住：日後 codec 加段落讓它逼近上限時，這一條會先說話
+  assert.ok(
+    c3.length < 1400 && c5.length < 1900,
+    `碼長比 052-E B-4 實測時大幅膨脹（3 套 ${c3.length}、5 套 ${c5.length}）——`
+    + 'codec 加了新段落嗎？確認雲端上限與 Discord 的 2000 字元上限都還撐得住',
+  )
 })

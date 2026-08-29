@@ -92,8 +92,10 @@ export interface LoadoutDraft {
    *
    * ⚠ 未命名時**欄位不存在**（同 `backpackId` / `ndLevels`），不存空字串。
    *
-   * 命名與雲端保存**需登入**（總綱），但未登入仍可配裝／分享／匯出，只是圖上不帶自訂名稱 ——
-   * 登入 gate 的實作掛 052-E，本階段只做欄位與 UI。
+   * ⚠ **命名不需登入**（052-E A-2 裁決，2026-08-29）：原本總綱寫「命名與雲端保存需登入」，
+   *   但名稱早已編進分享碼的 `§NAME` 段、也印在匯出圖上，回頭 gate 會讓訪客既有的分享碼與
+   *   匯出圖失去名稱，換來的好處是零（名稱不佔 Firestore、不是特權、也不是配額）。
+   *   **只有「存到雲端」需要登入**（見本檔 `CloudBuildDoc`）。
    */
   name?: string
   /** 目前顯示中的分頁鍵。恆為 `equipSetKeys()` 的成員之一，由 reconcile 保證 */
@@ -147,4 +149,84 @@ export interface LoadoutDraft {
 export const EMPTY_DRAFT: LoadoutDraft = {
   activeSetKey: 'default',
   sets: {},
+}
+
+// ─── 雲端存檔的落盤形狀（PLAN-052-E B-1）─────────────────────────────────────
+//
+// `users/{uid}/builds/{pilotId}` —— **一位機師一份文件**，`slots` 是 `'0'`～`'4'` 的 map，
+// 每一格的內容就是一串 base64url 分享代碼（總綱決策二：儲存＝分享，沒有第二套序列化）。
+//
+// ⚠ **刻意放在 loadout 領域而不是 `types/user.ts`**：它屬於配裝而不是使用者，而 `user.ts`
+//   裡那份 v1 `Build` 正要被 B-6 刪掉 —— 兩份存檔型別擺在同一個檔，會讓「哪一個是現行的」
+//   變成要用讀的才知道。
+//
+// ⚠ **只存代碼**（比照 `localBuilds.ts` 規則①）：不存機師名快照、不存機甲名、不存解好的
+//   草稿。卡片上要顯示的一切都由代碼**當場解**出來 —— 第二個真相源遲早會與第一個對不上，
+//   而對不上的那天不會有任何錯誤訊息。
+//
+// ⚠ 與訪客本機書架**語意不同**：訪客是「本機書架 7/10」（全站共用一個配額），
+//   登入者是「海莉絲 3/5」（每機師各 5 格）。UI 文案要分開寫。
+
+/** 一位機師的五個存檔格。**map key 而非陣列索引** —— 見 `CLOUD_SLOTS_PER_PILOT`。 */
+export type CloudSlot = '0' | '1' | '2' | '3' | '4'
+
+/** 五個合法格位，順序即顯示順序。 */
+export const CLOUD_SLOTS: readonly CloudSlot[] = ['0', '1', '2', '3', '4']
+
+/**
+ * 每位機師的存檔格數。
+ *
+ * ⚠ 這個數字在 `firestore.rules` 裡有**第二份**（`slots.keys().hasOnly(['0','1','2','3','4'])`）。
+ *   規則語言讀不到 TS 常數，兩邊只能手動同步，而**規則才是權威**：規則沒放行的格子，
+ *   client 寫進去只會拿到 403。改這裡就要一起改那裡，並補一條 emulator 測試。
+ *
+ * 用 map key 白名單而不是「一個計數欄位」：5 格因此是**結構性事實**而不是一個會漂移的數字
+ *   —— 計數欄位可以被 client 寫成 99，key 白名單不行。
+ */
+export const CLOUD_SLOTS_PER_PILOT = 5
+
+/**
+ * 單格代碼的字元上限，與 `firestore.rules` 的 `size() <= 4096` 同步。
+ *
+ * **為什麼是 4096 而不是計畫書原訂的 1024**（052-E B-4 實測後裁決，2026-08-29）：
+ * 這個數字刻意與 codec 自己的解碼上限 `LIMITS.codeChars` **對齊** —— 兩邊不一致就會出現
+ * 一段「解得開卻存不了」的落差，而落差裡的症狀是「這一套存不進去，別的可以」，
+ * 使用者無從得知為什麼。實測（B-4）：
+ *
+ * | 情境 | 碼長 |
+ * |---|---|
+ * | 今天真實滿載（海莉絲 3 形態 × 7 mount × 4 元件 ＋ 4 部件 ＋ 4 模組 ＋ 24 字名稱） | 654–686 |
+ * | 號碼全滿（shareId 吃滿 3-byte varint）＋ 真實形態鍵 | 842 |
+ * | 號碼全滿 ＋ 形態鍵吃滿 64 bytes | 1006 |
+ * | 號碼全滿 · **4 套形態** | **1051** ← 1024 在這裡就破了 |
+ *
+ * 每多一套獨立形態約 **+160 字元**。官方哪天給某位機師第 4 套形態，1024 就會開始拒收，
+ * 而依決策二自己的規矩「上限只能放寬、不能收緊」——挑小了才是不可逆的錯。
+ * 單份文件最壞 5 × 4096 ≈ 20 KB，對 Firestore 的 1 MiB 上限無感；而 A-3 已裁決接受
+ * 「文件份數無界」，所以每格上限本來就不是真正的防濫用手段，它的工作是**別誤殺合法存檔**。
+ *
+ * ⚠ 規則語言的 `string.size()` 回的是**字元數**不是位元組數。base64url 全為 ASCII，
+ *   所以「4096 字元 == 4096 bytes」**剛好**成立 —— 這是巧合不是保證：
+ *   **這一格只准放 base64url**。哪天有人往裡面塞中文，上限就悄悄變成 16 KB。
+ *
+ * ⚠ 與 `LIMITS.codeChars` 的一致性由 `codec.test.ts` 釘住（不在此 import，
+ *   否則 `types/` 會反向依賴 `utils/loadoutCode/`，而 codec 本來就 import 本檔）。
+ */
+export const CLOUD_CODE_MAX_CHARS = 4096
+
+/** `'0'`～`'4'` 以外一律不是合法格位（外來輸入的唯一入口）。 */
+export function isCloudSlot(x: unknown): x is CloudSlot {
+  return typeof x === 'string' && (CLOUD_SLOTS as readonly string[]).includes(x)
+}
+
+/**
+ * 一位機師的雲端存檔文件。doc id **就是** `pilotId`。
+ *
+ * ⚠ `slots` 是 `Partial`：**沒存的格子沒有那個 key**，不是空字串。空字串會通過
+ *   「有沒有這一格」的檢查卻解不出任何東西，UI 會渲染出一張空白卡片。
+ */
+export interface CloudBuildDoc {
+  slots: Partial<Record<CloudSlot, string>>
+  /** ISO 字串（與 `profile` 同慣例）。整份文件一個，不是每格一個。 */
+  updatedAt: string
 }

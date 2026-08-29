@@ -2,22 +2,17 @@ import {
   doc,
   getDoc,
   setDoc,
-  collection,
   collectionGroup,
   getDocs,
-  addDoc,
-  deleteDoc,
   query,
-  orderBy,
   limit,
   where,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { WORKER_ENABLED, fetchWorkerSiteTeam } from './api/workerData'
-import type { UserProfile, UserBuild, Build, UserResearchLevels, SiteTeamMember } from '../types'
+import type { UserProfile, UserResearchLevels, SiteTeamMember } from '../types'
 
 const profileDoc = (uid: string) => doc(db, 'users', uid, 'profile', 'main')
-const buildsCol = (uid: string) => collection(db, 'users', uid, 'builds')
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const snap = await getDoc(profileDoc(uid))
@@ -112,22 +107,15 @@ export async function saveResearchLevels(
   )
 }
 
-export async function getUserBuilds(uid: string): Promise<UserBuild[]> {
-  const q = query(buildsCol(uid), orderBy('updatedAt', 'desc'))
-  const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ ...d.data(), id: d.id }) as UserBuild)
-}
-
-export async function saveBuild(uid: string, build: Build): Promise<string> {
-  const now = new Date().toISOString()
-  const ref = await addDoc(buildsCol(uid), {
-    ...build,
-    createdAt: build.createdAt ?? now,
-    updatedAt: now,
-  })
-  return ref.id
-}
-
-export async function deleteBuild(uid: string, buildId: string): Promise<void> {
-  await deleteDoc(doc(db, 'users', uid, 'builds', buildId))
-}
+// ── 配裝存檔已移出本檔（PLAN-052-E B-6，2026-08-29）─────────────────────────
+//
+// 原本這裡有 `getUserBuilds` / `saveBuild` / `deleteBuild` 三支，寫的是 v1 `Build`
+// （單一 `weaponId` ＋ `backpackId`，沒有槽位概念）。總綱判死了那個模型，而 A-1 直讀
+// 正式 Firestore 復驗 `builds` **實測 0 筆**，所以是刪除而不是遷移 —— 零遷移成本。
+//
+// 現行的雲端書架在 **`src/lib/buildsApi.ts`**：`users/{uid}/builds/{pilotId}`，
+// 一位機師一份文件、五格，每格是一串分享代碼。
+//
+// ⚠ 刪掉這三支還有一個實際理由：`userApi.saveBuild` 與 `localBuilds.saveBuild`
+//   **同名**。兩份都在的時候，搜尋 `saveBuild` 會撈到三個不同的東西，
+//   而其中一個已經沒有人呼叫、卻看起來一樣可用。

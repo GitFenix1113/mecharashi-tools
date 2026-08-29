@@ -218,8 +218,73 @@ service cloud.firestore {
           (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])) ||
           isOwnerRole();
       }
+      // ── 雲端書架（PLAN-052-E B-3）─────────────────────────────────────────
+      //
+      // 形狀：`users/{uid}/builds/{pilotId}` ＝ `{ slots: { '0'..'4': <base64url 代碼> }, updatedAt }`
+      // 一位機師一份文件、一份五格，每格就是一串分享代碼（總綱決策二：儲存＝分享，
+      // 沒有第二套序列化）。原本這裡是一行 `allow read, write: if isOwner(userId)`
+      // ——PLAN-011 為 v1 `Build` 寫的，不驗形狀、不驗大小、不驗份數。
+      //
+      // 這四條擋得住：
+      //   ① 身分  `isOwner(userId)` —— 別人的書架讀不到也寫不了
+      //   ② 形狀  頂層只准 `slots` / `updatedAt`
+      //   ③ 格數  `slots` 的 key 只准 '0'～'4' ⇒ **「每機師 5 格」是結構性事實**，
+      //           而不是一個可以被 client 寫成 99 的計數欄位
+      //   ④ 大小  每格 <= 4096 字元
+      //
+      // ⚠ **擋不住的第五件：文件份數。** 規則語言沒有 `count()`，也驗不了
+      //   「`{pilotId}` 真的是一位存在的機師」——**一個帳號可以開任意多份 builds 文件**。
+      //   052-E A-3 已裁決**接受這個殘餘風險**：doc id 正規式把面縮小，每份有界
+      //   （5 × 4096 ＋ overhead ≈ 20 KB），要塞出有意義的量需要極大量寫入，
+      //   而寫入本身受 Firebase 專案配額與計費保護（已是 Blaze）。
+      //   另一個選項是 Cloud Function 計數器，但那會把「存一套配裝」從一次 client 寫入
+      //   變成一條需要冷啟動、需要監控、會失敗的後端路徑，為了一個沒有實際攻擊者的風險。
+      //   **下一個讀這段規則的人必須知道：這一條沒有被守住。**
+      //
+      // ⚠ `size()` 回的是**字元數**不是位元組數。base64url 全為 ASCII，所以
+      //   「4096 字元 == 4096 bytes」**剛好**成立 —— 這是巧合不是保證：
+      //   **這一格只准放 base64url**。哪天有人往裡面塞中文，上限就悄悄變成 16 KB。
+      //   client 側有一條字元集檢查（`utils/cloudBuildRules.ts` 的 `BASE64URL_RE`），
+      //   但規則這側**驗不了字元集**（沒辦法把正規式套在 map 的 value 上）——
+      //   那是禮貌，不是防線。
+      //
+      // ⚠ 4096 與 client 的 `CLOUD_CODE_MAX_CHARS` 是**手抄的兩份**（規則語言讀不到
+      //   TS 常數）。改一邊要改另一邊，並跑 `npm run emu:test-rules`。上限**只能放寬、
+      //   不能收緊**：收緊會讓已經存進去的存檔存不回去，而症狀是「這一套存不了、
+      //   別的可以」，使用者無從得知為什麼。4096 的由來見 052-E B-4 的實測。
+      //
+      // ⚠ 逐格檢查是**展開五條**而不是迴圈：規則語言沒有 map 的迭代，也沒有
+      //   「對每個 value 做同一件事」的寫法。加第六格時這裡要多一行，
+      //   而 B-5 的 emulator 測試會抓到漏改。
       match /builds/{buildId} {
-        allow read, write: if isOwner(userId);
+        // 沒有那一格 ⇒ 放行（不是每個人都存滿五格）；有那一格 ⇒ 必須是非空的短字串。
+        // 空字串刻意擋掉：它會通過「有沒有這一格」的檢查卻解不出任何東西，
+        // UI 只會渲染出一張空白卡片。
+        function slotOk(slots, k) {
+          return !(k in slots)
+            || (slots.get(k, '') is string
+                && slots.get(k, '').size() > 0
+                && slots.get(k, '').size() <= 4096);
+        }
+        function shapeOk(d) {
+          return d.keys().hasOnly(['slots', 'updatedAt'])
+            && d.keys().hasAll(['slots', 'updatedAt'])
+            && d.updatedAt is string
+            && d.slots is map
+            && d.slots.keys().hasOnly(['0', '1', '2', '3', '4'])
+            && slotOk(d.slots, '0')
+            && slotOk(d.slots, '1')
+            && slotOk(d.slots, '2')
+            && slotOk(d.slots, '3')
+            && slotOk(d.slots, '4');
+        }
+        allow read: if isOwner(userId);
+        // 刪除不驗形狀也不驗 doc id：清掉一份垃圾文件永遠不會讓情況變糟，
+        // 而擋下刪除只會讓「形狀不對的舊文件」變成刪不掉的殘留。
+        allow delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && buildId.matches('^pilot_[0-9]{3}_.*')
+          && shapeOk(request.resource.data);
       }
     }
 

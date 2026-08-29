@@ -47,36 +47,3 @@ export type SiteTeamMember = Pick<
   | 'gameServer'
   | 'guild'
 >
-
-// ─── 配裝（Firestore userBuilds / 本地快取）───────────────────────────────────
-
-export interface FloatingModSelection {
-  stat: string
-  condition: string | null
-  value: number
-}
-
-export interface Build {
-  buildName: string
-  pilotId: string
-  mechId: string
-  weaponId: string
-  backpackId: string
-  modules: {
-    slot4: string | null
-    slot8: string | null
-    fixed: string[]
-  }
-  weaponFixedMod: Record<string, number>
-  weaponFloatingMod: FloatingModSelection[]
-  triggerComponents: string[]
-  effectComponents: string[]
-  pilotResearch: Record<string, number>
-  result?: Record<string, number>
-  createdAt?: string | number
-}
-
-export interface UserBuild extends Build {
-  id: string
-  updatedAt: string
-}

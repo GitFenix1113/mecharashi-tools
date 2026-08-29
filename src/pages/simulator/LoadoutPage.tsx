@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import type { Backpack, Mech, Pilot, UserBuild, Weapon } from '../../types'
+import { Link } from 'react-router-dom'
+import type { Backpack, Mech, Pilot, Weapon } from '../../types'
 import type { LoadoutDraft } from '../../types/loadout'
 import type { ModuleSlotRef, SlotKey, WeaponSlotRef } from '../../types/slots'
 import { slotKey } from '../../types/slots'
@@ -42,7 +42,7 @@ import { licenseAllows } from '../../utils/normalizeArmorType'
 import type { PickerFilterGroup } from '../../components/loadout/PickerShell'
 import { CascadeToast } from '../../components/loadout/CascadeToast'
 import { PasteCodeDialog } from '../../components/loadout/PasteCodeDialog'
-import { LocalShelfDialog } from '../../components/loadout/LocalShelfDialog'
+import { ShelfDialog } from '../../components/loadout/ShelfDialog'
 import { readShelf, SHELF_LIMIT } from '../../lib/localBuilds'
 import { buildShareIndex } from '../../utils/loadoutCode/shareId'
 import { shareIdAliases } from '../../utils/loadoutCode/shareIdRegistry'
@@ -94,36 +94,6 @@ function writeDraftCache(draft: LoadoutDraft) {
 }
 
 /**
- * 把 ProfilePage 傳進來的**舊格式**存檔轉成草稿。
- *
- * 舊 `Build` 只有一把武器（`weaponId`），沒有槽位概念 —— 槽位由武器自己的 `equipSlot` 決定。
- * 轉不出來的部分（改裝、元件、科研）一律丟棄：那些在本版都不渲染（決策四），
- * 留著只會變成一份沒有任何東西讀得到的殘影。
- */
-function legacyBuildToDraft(build: UserBuild, weapons: ReadonlyMap<string, Weapon>): LoadoutDraft {
-  const w = build.weaponId ? weapons.get(build.weaponId) : undefined
-  const slot = (w?.equipSlot ?? WeaponEquipSlot.SINGLE_HAND) as WeaponSlotRef['slot']
-  return {
-    pilotId: build.pilotId || undefined,
-    mechId: build.mechId || undefined,
-    activeSetKey: DEFAULT_EQUIP_SET_KEY,
-    sets: {
-      [DEFAULT_EQUIP_SET_KEY]: {
-        mounts: w
-          ? [{
-              weaponId: w.id,
-              bank: 'main' as const,
-              slot,
-              side: slot === WeaponEquipSlot.SINGLE_HAND || slot === WeaponEquipSlot.SHOULDER ? ('left' as const) : undefined,
-            }]
-          : [],
-        ...(build.backpackId ? { backpackId: build.backpackId } : {}),
-      },
-    },
-  }
-}
-
-/**
  * 把網址上的分享碼解成草稿。**解不開時回 `undefined` 而不是丟例外** ——
  * 一個壞連結讓整頁白畫面，比看到空的模擬器更糟。
  *
@@ -148,7 +118,6 @@ type ActivePicker =
   | null
 
 export default function LoadoutPage() {
-  const location = useLocation()
   const bp = useLayoutBreakpoint()
   const isMobile = useIsMobile()
 
@@ -196,14 +165,15 @@ export default function LoadoutPage() {
 
   // 有待還原的草稿時直接跳到最終階段：reconcile 會把「查不到資料的裝備」掃掉，
   // 在武器還沒載入時還原，等於把整套配裝洗掉 —— 而且沒有任何錯誤訊息
-  const [pending, setPending] = useState<{ draft?: LoadoutDraft; legacy?: UserBuild; code?: string } | null>(() => {
+  const [pending, setPending] = useState<{ draft?: LoadoutDraft; code?: string } | null>(() => {
     // ⚠ 順序就是優先權，不要調換：**網址上的分享碼永遠贏過本機草稿**。
     //   點開別人連結的人，要的是那一套；把他自己上次配到一半的東西端出來，
     //   會讓「連結壞掉了」變成最合理的解讀。
+    //   （原本這裡還有第三條：ProfilePage 用 `location.state.build` 送 v1 `Build` 進來。
+    //   那條連同 `legacyBuildToDraft()` 已於 052-E B-6 刪除 —— 集合實測 0 筆，沒有東西要遷。
+    //   雲端書架改走 `buildsApi`，送進來的一律是分享代碼，與這裡的 `code` 同一條路徑。）
     const shared = readShareCode(window.location.search)
     if (shared) return { code: shared }
-    const incoming = (location.state as { build?: UserBuild } | null)?.build
-    if (incoming) return { legacy: incoming }
     const cached = readDraftCache()
     return cached ? { draft: cached } : null
   })
@@ -291,7 +261,7 @@ export default function LoadoutPage() {
   // 還原：資料齊了就在 render 期間併進 state（React 官方的「render 期間調整 state」模式 ——
   // 同一次 render 內立即重跑，不會多畫一幀，也不必用 effect 製造串聯渲染）。
   if (pending && !loading) {
-    let draft = pending.legacy ? legacyBuildToDraft(pending.legacy, world.weapons) : pending.draft
+    let draft = pending.draft
     if (pending.code) {
       const res = decodeShared(pending.code, shareIndexes)
       draft = res.draft
@@ -722,11 +692,14 @@ export default function LoadoutPage() {
       {/* ⚠ 常駐橫幅，不是「暫時的公告」：這一版明確不做的東西必須講清楚，
           否則玩家會把「找不到」當成 bug（決策四）。 */}
       <div className="hud-cut mb-3 border border-accent-cyan/25 bg-accent-cyan/5 px-3.5 py-2.5 text-[12px] text-text-secondary leading-relaxed">
-        本版提供<strong className="text-text-primary">槽位配裝、重量／出力計算、元件、模組槽、形態分頁與分享碼</strong>。
-        武器改裝、部件混搭、雲端存檔<strong className="text-text-primary">尚在後續階段</strong>；
+        本版提供<strong className="text-text-primary">槽位配裝、重量／出力計算、元件、模組槽、部件混搭、形態分頁、分享碼與雲端存檔</strong>。
+        武器改裝<strong className="text-text-primary">尚在後續階段</strong>；
         傷害數字因官方公式未知，本站不提供猜測值
         （<strong className="text-text-primary">元件的觸發機率</strong>同理，面板只列出配對關係與 Lv）。
-        {/* ⚠ 「形態分頁開發中」那句黃字已於 PLAN-052-F D-3 移除 —— 這是**常駐橫幅**不是暫時公告
+        {/* ⚠ 052-E E-4（2026-08-29）：拿掉「部件混搭、雲端存檔尚在後續階段」——
+            部件混搭在 052-G Phase D 就出貨了（052-K E-3 記過，但當時歸屬 052-G 而它已歸檔，
+            等於沒人認領），雲端存檔則由 052-E 出貨。兩者都改列進「本版提供」。
+            ⚠ 「形態分頁開發中」那句黃字已於 PLAN-052-F D-3 移除 —— 這是**常駐橫幅**不是暫時公告
             （總綱決策四），留著就是站上自己說了一句不再成立的話。
             取而代之的是一句只在有分頁列時出現的說明：分頁列本身講得出「有幾套」，
             但講不出「切過去之後哪些東西會跟著換、哪些不會」，而那正是玩家第一次看到三個分頁時會問的。 */}
@@ -1256,11 +1229,12 @@ export default function LoadoutPage() {
         </div>
       )}
 
-      {shelfOpen && <LocalShelfDialog
+      {shelfOpen && <ShelfDialog
         onClose={() => setShelfOpen(false)}
         indexes={shareIndexes}
         world={world}
         currentCode={ctx.mech && !loading ? encodeCurrent() : null}
+        pilotId={state.draft.pilotId ?? null}
         onApply={(draft) => send({ type: 'loadDraft', draft })}
         onCopyLink={copyLinkFor}
         onShelfChange={setShelfCount}

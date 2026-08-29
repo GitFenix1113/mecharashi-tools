@@ -10,7 +10,7 @@
 //
 //   ② **永不自動刪除**。書架滿了就拒絕存入並請使用者自己刪一套，不淘汰最舊的那一筆
 //      ——「我明明存過」是這個功能最不能出現的一句話。解不開的舊代碼同樣留著
-//      （見 `classifyBuild`）：它可能只是這個瀏覽器的遊戲資料太舊。
+//      （見 `buildStatus.ts` 的 `classifyBuild`）：它可能只是這個瀏覽器的遊戲資料太舊。
 //
 //   ③ **永不自動修復**。裝備下架就讓那一格空著並說出來，不要「順手」換一把相近的。
 //
@@ -21,9 +21,6 @@
 //   自動草稿（`mecharashi_loadout_draft`）**不在這裡**：那一份存的是結構化草稿而非
 //   代碼，因為它必須無損（推導不出號碼的裝備編碼會變成 0 ⇒ 存成代碼會在下一次
 //   重整時靜默弄丟玩家自己配上去的背包）。書架是「我要留著的成品」，代價換得起。
-
-import type { LoadoutDraft } from '../types/loadout'
-import { decodeLoadout, type ShareIndexes, type UnresolvedRef } from '../utils/loadoutCode/codec.ts'
 
 /** localStorage 鍵。改它等同清空所有人的書架，改之前先想好遷移。 */
 export const SHELF_KEY = 'mecharashi_loadout_shelf'
@@ -142,48 +139,4 @@ export function deleteBuild(id: string, store: Store | undefined = defaultStore(
 function newId(now: number): string {
   const tail = Math.random().toString(36).slice(2, 8)
   return `${now.toString(36)}-${tail}`
-}
-
-// ─── 失效三態 ────────────────────────────────────────────────────────────────
-
-/**
- * 一筆存檔對**現在這一版遊戲資料**還有多少效力。
- *
- *   `ok`        全部裝備都在，照樣套用。
- *   `degraded`  少數裝備查不到（下架、或這個瀏覽器的資料太舊）。**照樣可以套用**，
- *               那幾格會是空的 —— 「少一把武器」遠好過「整套都不給你看」（決策四）。
- *   `broken`    機師或機甲不在了，或代碼本身損毀。**只能檢視、複製、刪除，不可套用**：
- *               沒有機師的配裝套用後只會得到一個空模擬器，而使用者會以為是自己按錯。
- */
-export type BuildState = 'ok' | 'degraded' | 'broken'
-
-export interface BuildStatus {
-  state: BuildState
-  /**
-   * 解得開時的草稿。**`state === 'broken'` 時不可以拿去套用**（結構是合法的，
-   * 但少了身分）——只用來在卡片上顯示「這原本是什麼」。
-   */
-  draft?: LoadoutDraft
-  /** 查不到的引用全集（含身分）。卡片上印成「已下架裝備 #181」。 */
-  missing: UnresolvedRef[]
-  /** 其中屬於身分的那些，也就是 `broken` 的理由。文案由 UI 層寫。 */
-  missingIdentity: ('pilot' | 'mech')[]
-  /** 只有代碼**結構性損毀**時才有（來自解碼器，已是中文且給得出下一步）。 */
-  message?: string
-}
-
-export function classifyBuild(code: string, indexes: ShareIndexes): BuildStatus {
-  const res = decodeLoadout(code, indexes)
-  if (!res.ok) return { state: 'broken', missing: [], missingIdentity: [], message: res.message }
-
-  const missingIdentity = res.unresolved
-    .filter((u) => u.kind === 'pilot' || u.kind === 'mech')
-    .map((u) => u.kind as 'pilot' | 'mech')
-
-  const state: BuildState =
-    missingIdentity.length > 0 ? 'broken'
-    : res.unresolved.length > 0 ? 'degraded'
-    : 'ok'
-
-  return { state, draft: res.draft, missing: res.unresolved, missingIdentity }
 }

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-E 雲端存檔與配額 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-E 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-052-E</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    雲端存檔與配額<span style="-webkit-text-fill-color:var(--text-secondary);">Cloud Builds · 每機師 5 格 · 訪客書架匯入</span>
+  </h1>
+  <p class="hero-sub">登入後配裝存進 Firestore、跨裝置同步；本機書架一鍵搬上去。落盤形狀就是那一串分享代碼。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label green">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value green">PLAN-052-E</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-29</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">firestore.rules · src/lib/buildsApi.ts（新）· src/lib/userApi.ts · src/types/user.ts · src/types/loadout.ts · LoadoutPage · LocalShelfDialog · ProfilePage</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">✅ 已完成（2026-08-29）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">052-A／B／C／D／F／G／I／J（皆已完成）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>① 登入使用者今天的存檔能力是 0，而管理者的測試配裝正躺在 localStorage 裡</strong><br>
+    052-C 給的是<b>訪客本機書架</b>（<code>mecharashi_loadout_shelf</code>，全站共用 10 格）。
+    它的檔頭第一句就寫著「<b>未登入者唯一的存檔方式，直到 052-E 的雲端存檔上線</b>」——
+    而登入者今天用的<b>也是同一個</b>，因為沒有第二條路。
+    後果：清一次瀏覽器資料、換一台電腦、換一個瀏覽器，配裝就沒了，而且<b>沒有任何預警</b>。
+    <b>目前管理者測試期配出來的每一套都在這個處境。</b>
+  </div>
+
+  <div class="problem-block">
+    <strong>② <code>users/{uid}/builds</code> 的安全規則今天沒有任何上限</strong><br>
+    <code>firestore.rules</code> 現行只有一行 <code>allow read, write: if isOwner(userId)</code>——
+    那是 PLAN-011 時代為 v1 <code>Build</code> 寫的，<b>不驗形狀、不驗大小、不驗份數</b>。
+    一個登入帳號可以往自己的子集合塞近 1 MiB 的合法 JSON、塞無限份文件，全部合法。
+    這正是總綱決策二選擇 code-as-payload 的理由：<b>Firestore 規則沒有位元組長度運算子、
+    不能對動態 key 迴圈、也沒有 count()</b>，巢狀結構在規則層根本設不了上限。
+  </div>
+
+  <div class="problem-block">
+    <strong>③ v1 <code>Build</code> 那條路徑還活著，而且從模擬器一路接到 ProfilePage</strong><br>
+    <code>types/user.ts:59</code> 的 <code>Build</code> 仍是總綱判死的兩個單值欄位模型
+    （<code>weaponId</code> / <code>backpackId</code>）；<code>userApi.ts</code> 的
+    <code>getUserBuilds</code>／<code>saveBuild</code>／<code>deleteBuild</code> 三支還在；
+    ProfilePage 的「我的配裝」tab 還在讀它，並用
+    <code>navigate('/simulator', { state: { build } })</code> 送進 LoadoutPage 的
+    <code>legacyBuildToDraft()</code>（<code>LoadoutPage.tsx:103</code>／<code>:206</code>／<code>:294</code>）。
+    <b>三層都還在，只是因為集合是空的所以永遠走不到。</b>
+    再放著，它會變成「兩份都聲稱自己是存檔格式」的第二個真相源。
+  </div>
+
+  <div class="warning-block">
+    <strong>④ 時間窗正在關 —— 這是本計畫排在 052-H 前面的唯一理由</strong><br>
+    總綱寫得很直白：<code>users</code> 集合實測 <b>0 筆</b>、<code>builds</code> <b>0 筆</b>，
+    「<b>現在改模型零遷移成本；一旦全面公開（已定案）就再也不免費</b>」。
+    <code>SIMULATOR_INTERNAL_ONLY = true</code> 讓這個窗還開著，
+    <b>而使用者已裁決「全部功能完成並校正後再開放」</b>——所以窗會一直開到本計畫做完。
+    對照組是 052-H（站內熱門配裝）：它的輸入是流量，內部測試期只有幾位管理者在配，
+    <b>聚合出來的「熱門」是自己人榜、OG 卡沒有對外連結可預覽</b>，做完了驗不了，
+    真實分布一進來還得重來。<b>E 先於 H 不是重要性排序，是可行性排序。</b>
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：落盤形狀沿用總綱決策二，本計畫不重新討論</strong><br>
+    <code>users/{uid}/builds/{pilotId}</code>，一位機師一份文件，
+    <code>slots</code> 是 <code>'0'</code>～<code>'4'</code> 的 map，<b>每格內容就是一串 base64url 分享代碼</b>。<br>
+    三條理由原封不動成立：(1) 收斂成單一字串後 <code>code.size() &lt;= 1024</code>
+    是規則層<b>唯一精確且繞不過</b>的上限；(2) map key 白名單讓「每機師 5 套」變成
+    <b>結構性事實</b>而不是一個會漂移的計數欄位；(3) <b>儲存＝分享是同一串字</b>，
+    沒有第二套序列化。<br>
+    ⇒ 本計畫是<b>接線與把關</b>，不是重新設計資料模型。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：規則要擋的是四件事，而第五件擋不住 —— 明著寫出來，不假裝擋住了</strong><br>
+    <b>擋得住</b>：① 頂層 key 白名單（<code>hasOnly(['slots','updatedAt'])</code>）；
+    ② slot key 白名單（<code>slots.keys().hasOnly(['0','1','2','3','4'])</code>）⇒ 5 格是結構性事實；
+    ③ 每格 <code>code.size() &lt;= 4096</code>（<b>B-4 實測後由 1024 上調</b>，見下）；④ <code>isOwner(userId)</code>。<br>
+    <b>擋不住的第五件：文件份數。</b>規則沒有 <code>count()</code>，也驗不了
+    「<code>{pilotId}</code> 真的是一位存在的機師」。一個帳號可以開任意多份 builds 文件。<br>
+    ⇒ 處置：用 doc id 正規式把面縮小（<code>buildId.matches('^pilot_[0-9]{3}_.*')</code>），
+    並<b>接受份數無界這個殘餘風險</b>。理由：每份有界（5 × 4096 ＋ overhead ≈ 20 KB），
+    要塞出有意義的量需要極大量寫入，而寫入本身受 Firebase 專案配額與計費保護。
+    <b>這條要寫進規則的註解</b>——下一個讀規則的人必須知道哪一條沒被守住。<br>
+    ⚠ <b><code>string.size()</code> 回的是字元數不是位元組數。</b>base64url 全為 ASCII，
+    所以 4096 字元 == 4096 bytes <b>剛好成立</b>。這是巧合不是保證，
+    註解要寫明「這一格只准放 base64url」，否則哪天有人往裡面塞中文，上限就悄悄變成 16 KB。<br>
+    <span style="color:var(--accent-green)"><b>✅ B-4 實測後把 1024 改成 4096（2026-08-29，使用者裁決）</b></span>：「號碼全滿 ＋ 4 套獨立形態」量到 <b>1051 字元</b>，1024 在那裡就破了，而每多一套形態約 +160 字元。依本決策自己的規矩「上限只能放寬不能收緊」，挑小了才是不可逆的錯。4096 同時與 codec 的解碼上限 <code>LIMITS.codeChars</code> 對齊，消掉「解得開卻存不了」那段落差。<br>
+    <span style="color:var(--accent-green)"><b>✅ A-3 已裁決（2026-08-29）：接受殘餘風險</b></span> —— 走 doc id 正規式縮小面，<b>不</b>上 Cloud Function 計數器（那會把「存一套配裝」從一次 client 寫入變成一條需要冷啟動、需要監控、會失敗的後端路徑，為了一個沒有實際攻擊者的風險）。<b>B-4 的交付物因此包含那段「份數沒守住」的註解</b>，不是選配。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：v1 <code>Build</code> 走「刪除」而不是「遷移」—— 但動手前要再驗一次 0 筆</strong><br>
+    <code>builds</code> 實測 0 筆 ⇒ 沒有東西要遷。<code>Build</code>／<code>UserBuild</code> 型別、
+    <code>userApi</code> 三支、<code>legacyBuildToDraft()</code>、<code>pending.legacy</code> 分支、
+    ProfilePage 的 v1 <code>BuildCard</code> 全數刪除。<br>
+    ⚠ <b>這是本計畫唯一的破壞性動作</b>，而它依賴的「0 筆」是 2026-08 盤點的數字。
+    <b>A-1 必須直讀正式 Firestore 復驗</b>，不可以只信文件上的數字——
+    052-G 的四輪盤點就修正過總綱四個看起來很確定的數字。<br>
+    <span style="color:var(--accent-green)"><b>✅ A-1 已復驗（2026-08-29）：<code>builds</code> 確認 0 筆</b></span> —— <code>collectionGroup('builds')</code> 全站掃描 0 筆、逐 42 個 uid 複查加總 0 筆，兩種算法互相對上。<b>決策三成立，零遷移成本。</b>（<code>scripts/temp_scripts/count-user-builds.mjs</code>，唯讀）<br>
+    ⚠ <b>但總綱那句「<code>users</code> 集合實測 0 筆」要訂正</b>：實際有 <b>42 個帳號</b>。那不是筆誤而是<b>量測假象</b> —— <code>users/{uid}</code> 父文件是空殼（只有子集合、無欄位），<code>getDocs</code> 看不到這種 missing document（<code>listDocuments()</code> 42 個參照、其中真的存在的 <b>0</b> 個）。本決策不受影響（關鍵數字是 <code>builds</code>），但<b>「站上沒有使用者」這個推論是錯的</b>，B 段之後凡是引用「使用者數」的地方都要用 42 而不是 0。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：訪客書架是「匯入」不是「搬移」—— localStorage 那 10 格不清空</strong><br>
+    三條理由：① <b>同一個瀏覽器可能有多人用</b>（家用電腦），清空等於替別人做決定；
+    ② 匯入到一半失敗時清空 ＝ 資料消失；③ 兩種配額<b>語意不同</b>——
+    訪客是「本機書架 7/10」（全站共用），登入是「海莉絲 3/5」（每機師），
+    <b>10 套完全可能全是同一位機師</b>。<br>
+    ⇒ <b>「塞不下」是正常結果不是錯誤</b>，必須逐筆回報而不是整批成功／失敗。
+    <code>localBuilds.ts:17</code> 的檔頭註解早就預告了這一條（「UI 文案要分開寫」）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：方案名稱<b>不</b>加登入 gate —— 推翻 052-I E-1 的預告</strong><br>
+    052-I E-1 寫著「命名與雲端保存需登入，登入 gate 的實作掛 052-E」。
+    <b>那個前提在實作落地時就已經不成立了</b>：<code>name</code> 今天對訪客完全開放、
+    已經編進 codec 的 <code>§NAME</code> 段（<code>codec.ts:59</code>／<code>:430</code>）、
+    已經印在匯出圖最大的一行上。<br>
+    回頭 gate 它的代價是<b>訪客既有的分享碼與匯出圖會失去名稱</b>，換來的好處是零——
+    名稱不佔 Firestore、不是特權、也不是配額。052-I 當初的假設是「命名是雲端保存的一部分」，
+    實際落地後兩者分開了。<b>⇒ 只有「存到雲端」需要登入。</b>
+    <span style="color:var(--accent-green)"><b>✅ A-2 已裁決（2026-08-29）：不加 gate，本決策定案。</b></span> <code>loadoutName.ts</code> 檔頭第 6 行已補上下落註記。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：載入 gate 接既有那一份，不新寫第五份</strong><br>
+    052-G 決策六那條 gate 對雲端存檔<b>同樣適用</b>——草稿會在集合載入完成前就被
+    <code>loadDraft</code> 灌進來，而空 Map 不等於「查不到」。<br>
+    052-G Phase D 已經把它補到第四份（元件／模組／形態／部件）。
+    <b>雲端書架與分享碼走的是同一條解碼路徑</b>（<code>classifyBuild()</code> → <code>decodeLoadout()</code>），
+    所以這裡要做的是<b>接上</b>而不是再寫一份。<br>
+    ⚠ 052-G E-1 ⑤ 踩過一次：在 <code>?b=</code> 冷開頁注入 fetch 延遲<b>攔不到 Firestore</b>
+    （SDK 走自己的 WebChannel），那樣只是「看起來測過了」。
+    真正的觸發條件是<b>在還沒選機師的空頁面上開雲端書架</b>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：雲端書架用 <code>getDocs</code> 一次抓，<b>不</b>用 <code>onSnapshot</code></strong><br>
+    跨裝置同步的實際需求是「換一台裝置打開時看得到」，不是「A 裝置存、B 裝置立刻跳出來」。
+    <code>onSnapshot</code> 會讓每個開著模擬器的分頁長期佔一條連線並持續計費讀取，
+    換來一個沒有人在等的即時性。<b>符合 CLAUDE.md 的 Firestore 慣例</b>
+    （靜態資料 <code>getDocs</code> 一次抓、需即時才 <code>onSnapshot</code>）。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 這是模擬器的第一次 Firestore 寫入</strong><br>
+    <code>useSimulatorEntry.ts</code> 的檔頭明著寫：目前「<b>模擬器全程沒有任何 Firestore 寫入</b>
+    （書架走 localStorage、分享碼是純前端 codec）」——那句話正是當初決定「不 revert、
+    只收起入口」的依據之一。<b>本計畫做完之後它就不成立了</b>，該檔註解要一併訂正。<br>
+    連帶影響：讀寫額度、離線行為、規則被拒的錯誤呈現，三者從本計畫起才第一次在模擬器上存在。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label green">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>安全規則</b>：<code>users/{userId}/builds/{buildId}</code> 四條 gate ＋ 殘餘風險註解</li>
+      <li><b><code>src/lib/buildsApi.ts</code>（新檔）</b>：雲端書架的讀／寫／刪，零 React、零 UI 文案（比照 <code>localBuilds.ts</code>）</li>
+      <li><b>雲端書架 UI</b>：與本機書架<b>同一個對話框的兩個分頁</b>，共用 <code>classifyBuild()</code> 三態</li>
+      <li><b>每機師 5 格的槽位選擇與覆寫確認</b>（覆寫時要說出被覆寫的是哪一套，不是「確定嗎？」）</li>
+      <li><b>訪客書架匯入</b>：逐筆預覽、勾選、逐筆回報、idempotent、<b>不清空 localStorage</b></li>
+      <li><b>v1 <code>Build</code> 全鏈刪除</b>：型別 ／ <code>userApi</code> 三支 ／ <code>legacyBuildToDraft()</code> ／ ProfilePage 舊卡</li>
+      <li><b>ProfilePage「我的配裝」重寫</b>成雲端書架</li>
+      <li><b>emulator 規則測試</b>：擴充 <code>scripts/test-emulator-rules.mjs</code>（Auth emulator 換真 token 打 REST）</li>
+      <li><b>常駐橫幅文案訂正</b>：拿掉已經不成立的「部件混搭、雲端存檔尚在後續階段」</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>開放模擬器（<code>SIMULATOR_INTERNAL_ONLY = false</code>）</b>——使用者已裁決「全部功能完成並校正後再開放」，那是獨立的一次決定，不夾帶在本計畫裡</li>
+      <li><b>052-H 站內熱門配裝與 OG 卡</b>——需要真實流量才驗得了</li>
+      <li><b>即時同步 / 協作編輯</b>（決策七）</li>
+      <li><b>配裝的公開瀏覽</b>（「看別人的雲端書架」）——雲端存檔是私有的，公開走分享碼</li>
+      <li><b>Cloud Function 計數器</b>擋文件份數（決策二已裁決接受殘餘風險）</li>
+      <li><b>方案名稱的登入 gate</b>（決策五推翻）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label green">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-052-E 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-E — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

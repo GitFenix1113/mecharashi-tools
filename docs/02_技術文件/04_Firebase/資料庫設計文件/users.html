@@ -26,7 +26,7 @@
     users — 用戶資料
     <span>MECHARASHI — FIRESTORE SCHEMA v1.0</span>
   </h1>
-  <p class="hero-sub">用戶設定檔（profile）· 配裝紀錄（builds）· 僅本人可讀寫</p>
+  <p class="hero-sub">用戶設定檔（profile）· 雲端書架（builds，每機師 5 格）· 僅本人可讀寫</p>
   <div class="version-badge" style="background:var(--accent-blue);color:#fff;">V1.2 — 2026-05-24</div>
 </header>
 
@@ -93,34 +93,69 @@
 
 <section class="section">
   <div class="section-label blue">03 — builds</div>
-  <div class="section-title">users/{uid}/builds/{buildId} — 用戶配裝</div>
+  <div class="section-title">users/{uid}/builds/{pilotId} — 雲端書架</div>
 
-  <div class="sub-h">🗃️ users/{uid}/builds/{buildId} — 用戶配裝 <span class="tag tag-user">USER DATA</span></div>
+  <div class="changed-block">
+    <strong>✅ 2026-08-29 換過模型（PLAN-052-E）。</strong>
+    舊版一份文件是一整套配裝（<code>buildName</code> / <code>weaponId</code> / <code>backpackId</code> …，
+    doc id 是 <code>addDoc</code> 的亂數），那個模型只裝得下「一把武器」，沒有槽位、形態、部件與模組的概念。
+    改版前直讀正式 Firestore 復驗過 <strong><code>builds</code> 實測 0 筆</strong>，
+    所以是<strong>刪除而不是遷移</strong>——舊欄位一個都沒有保留，<code>userApi</code> 的
+    <code>getUserBuilds</code> / <code>saveBuild</code> / <code>deleteBuild</code> 三支也已移除。
+    現行的讀寫入口是 <code>src/lib/buildsApi.ts</code>。
+  </div>
+
+  <div class="sub-h">🗃️ users/{uid}/builds/{pilotId} — 一位機師一份文件 <span class="tag tag-user">USER DATA</span></div>
   <div class="data-table-wrap">
     <table class="data-table blue-head">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
-      <tr><td>buildName</td><td>string</td><td>配裝名稱</td></tr>
-      <tr><td>pilotId</td><td>string</td><td>→ pilots collection</td></tr>
-      <tr><td>mechId</td><td>string</td><td>→ mechs collection</td></tr>
-      <tr><td>weaponId</td><td>string</td><td>→ weapons collection</td></tr>
-      <tr><td>backpackId</td><td>string</td><td>→ backpacks collection</td></tr>
-      <tr><td>modules</td><td>object</td><td>模組選擇（4模/8模/通用各選一個 module ID）</td></tr>
-      <tr><td>weaponFixedMod</td><td>object</td><td>武器固定改裝效果</td></tr>
-      <tr><td>weaponFloatingMod[]</td><td>array</td><td>武器浮動改裝已選效果 { stat, condition, value }</td></tr>
-      <tr><td>triggerComponents[]</td><td>string[]</td><td>觸元件 ID 列表 → components collection</td></tr>
-      <tr><td>effectComponents[]</td><td>string[]</td><td>應元件 ID 列表 → components collection</td></tr>
-      <tr><td>pilotResearch</td><td>object</td><td>此配裝的個別科研選擇</td></tr>
-      <tr><td>result</td><td>object?</td><td>計算結果快照（Phase 8 傷害計算後填入）</td></tr>
-      <tr><td>createdAt</td><td>timestamp</td><td>建立時間</td></tr>
-      <tr><td>updatedAt</td><td>timestamp</td><td>最後更新時間</td></tr>
+      <tr><td><strong>doc id</strong></td><td>string</td><td><strong>就是 <code>pilotId</code></strong>（如 <code>pilot_049_海莉絲</code>）。規則以 <code>^pilot_[0-9]{3}_.*</code> 把關</td></tr>
+      <tr><td>slots</td><td>map</td><td>鍵只准 <code>'0'</code>～<code>'4'</code>（每位機師 5 格）；值是一串 <strong>base64url 分享代碼</strong>，每格 ≤ 4096 字元。沒存的格子<strong>沒有那個 key</strong>，不是空字串</td></tr>
+      <tr><td>updatedAt</td><td>string</td><td>ISO 字串。<strong>整份文件一個</strong>，不是每格一個</td></tr>
     </table>
+  </div>
+
+  <div class="info-block">
+    <strong>為什麼落盤的是「一串代碼」而不是結構化欄位</strong>（總綱決策二）：
+    <br>① <strong>儲存＝分享，沒有第二套序列化</strong> —— 存進雲端的那一串，就是貼給別人的那一串。
+    <br>② 收斂成單一字串後，<code>code.size() &lt;= 4096</code> 是<strong>規則層唯一精確且繞不過的上限</strong>：
+    Firestore 規則沒有位元組長度運算子、不能對動態 key 迴圈、也沒有 <code>count()</code>，
+    巢狀結構在規則層根本設不了上限。
+    <br>③ map key 白名單讓「每機師 5 套」變成<strong>結構性事實</strong>，而不是一個會漂移、
+    且 client 可以自己寫成 99 的計數欄位。
+    <br>⚠ 因此這裡<strong>不存</strong>機師名快照、機甲名、或解好的草稿：卡片上要顯示的一切都由代碼<strong>當場解</strong>出來。
+    第二個真相源遲早會與第一個對不上，而對不上的那天不會有任何錯誤訊息。
+  </div>
+
+  <div class="sub-h" style="margin-top:24px;">安全規則（firestore.rules）</div>
+  <div class="data-table-wrap">
+    <table class="data-table blue-head">
+      <tr><th>gate</th><th>條件</th><th>擋住什麼</th></tr>
+      <tr><td>身分</td><td><code>isOwner(userId)</code></td><td>別人的書架讀不到也寫不了（<strong>管理員也一樣</strong>）</td></tr>
+      <tr><td>形狀</td><td><code>keys().hasOnly(['slots','updatedAt'])</code> ＋ <code>updatedAt is string</code></td><td>夾帶額外欄位</td></tr>
+      <tr><td>格數</td><td><code>slots.keys().hasOnly(['0'..'4'])</code></td><td>第 6 格（配額變成結構性事實）</td></tr>
+      <tr><td>大小</td><td>每格 <code>size() &gt; 0 &amp;&amp; size() &lt;= 4096</code></td><td>超長代碼、空字串格位</td></tr>
+      <tr><td>doc id</td><td><code>buildId.matches('^pilot_[0-9]{3}_.*')</code></td><td>任意命名的文件（縮小面，見下）</td></tr>
+    </table>
+  </div>
+
+  <div class="note-block">
+    <strong>⚠ 擋不住的第五件：文件份數。</strong>
+    規則語言沒有 <code>count()</code>，也驗不了「<code>{pilotId}</code> 真的是一位存在的機師」——
+    <strong>一個帳號可以開任意多份 builds 文件</strong>。PLAN-052-E A-3 已裁決<strong>接受這個殘餘風險</strong>：
+    每份有界（5 × 4096 ＋ overhead ≈ 20 KB），要塞出有意義的量需要極大量寫入，
+    而寫入本身受專案配額與計費保護。另一個選項是 Cloud Function 計數器，
+    但那會把「存一套配裝」從一次 client 寫入變成一條需要冷啟動、需要監控、會失敗的後端路徑。
+    <br>⚠ 另注意 <code>size()</code> 回的是<strong>字元數</strong>不是位元組數。base64url 全為 ASCII，
+    所以「4096 字元 == 4096 bytes」<strong>剛好</strong>成立 —— <strong>這一格只准放 base64url</strong>，
+    哪天有人往裡面塞中文，上限就悄悄變成 16 KB。
   </div>
 
   <div class="sub-h" style="margin-top:24px;">複合索引</div>
   <div class="data-table-wrap">
     <table class="data-table blue-head">
       <tr><th>欄位組合</th><th>用途</th></tr>
-      <tr><td>users/{uid}/builds — createdAt DESC</td><td>個人配裝依時間排序</td></tr>
+      <tr><td>（不需要）</td><td>書架一次抓整個子集合（<code>getDocs</code>，決策七不用 <code>onSnapshot</code>），份數上限＝機師數，排序在 client 做</td></tr>
     </table>
   </div>
 </section>

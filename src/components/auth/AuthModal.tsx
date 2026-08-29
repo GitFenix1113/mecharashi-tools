@@ -126,7 +126,10 @@ export default function AuthModal({ isOpen, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+      // ⚠ z-[70]：登入框必須蓋在**所有**東西之上（PLAN-052-E C-4）。原本是 z-50，
+      //   而書架／貼碼對話框與 IconPicker 都是 z-[60] —— 從書架的「登入」鍵叫出登入框時，
+      //   它會渲染在書架**後面**，看起來像按了沒反應。手機 Tab Bar 與 BottomSheet 是 z-50。
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4"
       onClick={onClose}
     >
       <div

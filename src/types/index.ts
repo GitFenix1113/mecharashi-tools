@@ -16,7 +16,7 @@ export * from './slots'       // 槽位模型：ArmamentMount / SlotBank / Weapo
 export * from './loadout'     // 配裝草稿：LoadoutDraft / EquipSet / LoadoutMount / MountSetup（PLAN-052-B）
 export * from './component'   // 元件：Component / Condition|FunctionComponent …
 export * from './research'    // 科研：GlobalResearch / PilotResearch / *ResearchBonus / UserResearchLevels
-export * from './user'        // 用戶/配裝：UserProfile / Build / UserBuild / FloatingModSelection
+export * from './user'        // 用戶：UserProfile / UserProfileInput（配裝存檔看 ./loadout 的 CloudBuildDoc）
 export * from './grayOps'     // 灰燼行動：GrayOpsRoster / GrayOpsMechEntry
 export * from './boss'        // BOSS/關卡：Boss / BossSkill / Stage / StageDropEntry
 export * from './changeHistory' // PLAN-030 變更歷史：ChangeHistoryEntry / DeleteSnapshot / ReversePatch
