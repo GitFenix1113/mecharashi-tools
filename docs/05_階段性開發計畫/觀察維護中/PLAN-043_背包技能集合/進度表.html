@@ -179,7 +179,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">21</div>
+      <div class="summary-num" style="color:var(--accent-green)">26</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -191,7 +191,7 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">20</div>
+      <div class="summary-num" style="color:var(--text-primary)">25</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -199,7 +199,7 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">21 / 21</span>
+      <span style="color:var(--accent-cyan);">26 / 26</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 100%"></div>
@@ -359,6 +359,41 @@
     順序顛倒 = 活站背包技能整區空白（PLAN-032 已記錄過同型事故）。
   </div>
 </section>
+
+  <div class="impact-note" style="background:rgba(56,189,248,0.06);border-color:rgba(56,189,248,0.2);">
+    <strong style="color:var(--accent-cyan);">Phase F 實作紀錄（2026-08-30）· S+ 複合背包補完：</strong>
+    <ul style="margin:8px 0 0 18px;">
+      <li><b>98 筆 S+ 複合背包的 <code>skillIds</code> 原本全空</b>，模擬器因此對「出力干擾／強化背包·◯◯」
+        算不出出力（<code>effectiveOutput.ts</code> 一律標「未知」）。起因是 Phase B 遷移只收了
+        <code>mainSkill</code>（＝全部 SS），而官方 API 其實在 <code>WithPassiveSkills[]</code> 裡
+        <b>對這 98 筆也有完整技能文本</b>。</li>
+      <li><b>不新建 98 筆技能 doc。</b>以官方資料自我比對後確認複合技能是可推導的：
+        <b>文本 ＝ 功能背包(S級)技能全文 ∪ 變體背包(S級)技能的非底線行（97/98 逐字）</b>、
+        技能名 ＝ 功能技能名 + <code>·</code> + 變體（98/98）、<code>BufCarried</code> ＝ 兩者聯集（97/98）。
+        因此讓複合背包<b>指回既有的兩支 S 級技能</b>，<code>backpackSkills</code> 維持不擴編。
+        Phase A 把 <code>skillIds</code> 開成陣列的預留，在此兌現。</li>
+      <li><b>底線行只認本體側那一份。</b>「軀幹耐久值提升X%」在官方複合文本裡只出現一次、來自功能側。
+        <code>修理裝置Ⅰ</code> 自己就沒有底線行 ⇒ <b>9 筆修理系複合背包完全沒有軀幹加成</b>，即使變體側有——
+        規則寫成「取最大」或「去重」都會在這 9 筆上算錯，只有「丟棄材料側那份」是對的。
+        由 <code>resolveBackpackSkills()</code> 的 <code>role: 'base' | 'addon'</code> ＋
+        <code>stripBaselineClause()</code> 落實，含修理系反例的單測共 14 則。</li>
+      <li><b><code>effectiveOutput</code> 的加成表，鍵從「背包 id」改成「技能引用」。</b>
+        4 筆背包 id → 2 支技能族，卻涵蓋全部 19 個會給出力的背包（含 15 筆 S+ 複合款），
+        且日後官方再出複合款會自動命中。15 筆「未知」就此歸零。</li>
+      <li><b>唯一例外 <code>彈藥強化背包·首攻</code>：</b>官方寫「每回合第1次主動攻擊<b>時</b>」，
+        而 S 級是「主動攻擊<b>對戰</b>時」。使用者裁決那不是筆誤——彈藥包是戰術家用的，
+        戰術家幾乎沒有「對戰」技能（buff 亦不同：600433 vs 600431）。故單建一支專用技能
+        <code>bpskill_首攻強化_60902405</code>，<code>backpackSkills</code> 因此為 47 筆。</li>
+      <li><b style="color:var(--accent-yellow);">⚠ 踩到的坑：</b>bump 版本時把
+        <code>meta/gameData</code> 當成「頂層欄位 ＋ 遞增整數」，實際上是
+        <b>巢狀 <code>versions.&lt;key&gt;</code> ＋ ISO 時間戳</b>（見 <code>lib/api/versions.ts</code>）。
+        錯誤版本印出「已 bump」但快取完全沒失效，是最難察覺的失敗。已修正並清掉殘渣欄位；
+        <code>meta/gameData</code> 頂層仍留有 <code>mechs: 1</code> / <code>modules: 1</code>，
+        是更早的腳本犯過同一個錯（未清，不在本 Phase 範圍）。</li>
+      <li>驗收：<code>npm test</code> <b>1161 則全過</b>（新增 Phase F 相關 14 則）、<code>tsc -b</code> 通過；
+        寫入後正式庫覆蓋率 <b>181/181 背包全部有技能</b>（S+ 98/98 各掛兩支）。</li>
+    </ul>
+  </div>
 
 <!-- Phase A -->
 <section class="section">
@@ -930,6 +965,145 @@
           純內部的型別／腳本改動不需入履歷。
         </div>
         <div class="task-file">src/data/siteChangelog/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label cyan">Phase F</div>
+  <div class="section-title">S+ 複合背包補完（2026-08-30）</div>
+  <div class="section-desc">
+    98 筆 S+ 複合背包的 <code>skillIds</code> 全空 ⇒ 模擬器算不出出力。查清複合技能<b>是可推導的</b>
+    （＝功能背包技能 ＋ 變體背包技能，官方文本 97/98 逐字相符），故指回既有的兩支 S 級技能而<b>不擴編</b>。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 驗證組合律（佐證義務）</div>
+      <div class="task-group-meta">scripts/temp_scripts/（唯讀）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">以官方資料自我比對 98 筆</div>
+        <div class="task-desc">
+          拿官方三份文本（複合／功能／變體）互相比對，避開繁簡轉換問題。結論：
+          <b>文本 97/98 逐字相符</b>、<b>技能名 98/98</b>、<b>BufCarried 97/98</b>。<br>
+          旁證「數值零提升」：S+ 修理系的 <code>repairAmount</code> 與 S 級修理背包同為 <b>204</b>
+          （B 167 / A 183 / S 204 / SS 211）、<code>weight</code> 同為 150。<br>
+          <b>關鍵細節：</b>底線行「軀幹耐久值提升X%」<b>只認本體側那一份</b>——
+          <code>修理裝置Ⅰ</code> 沒有底線行 ⇒ 9 筆修理系複合背包完全沒有軀幹加成。
+        </div>
+        <div class="task-file">驗證任務（產物 gitignored）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; derive 腳本回填 98 筆</div>
+      <div class="task-group-meta">scripts/derive-composite-backpack-skills.mjs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">映射由既有欄位 derive，官方文本當守門</div>
+        <div class="task-desc">
+          功能軸走 <code>type</code>（PowerAdd→出力背包、Heal→修理背包…），變體軸走
+          <code>parseBackpackName()</code>（PLAN-035）的 line + variant。<b>零人工輸入</b>，
+          改版時改 S 級一處、98 筆自動跟隨。<br>
+          <b>每一筆都拿官方三份文本現場驗證組合律，不通過就不寫該筆</b>；dry-run 是預設行為。<br>
+          例外 <code>彈藥強化背包·首攻</code> 寫進腳本的 <code>EXCEPTIONS</code>（含要建的技能 doc），
+          讓整條路徑可重跑而不是靠人工補一刀。
+        </div>
+        <div class="task-file">scripts/derive-composite-backpack-skills.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-3 &nbsp; 解析層：本體／材料側與底線裁剪</div>
+      <div class="task-group-meta">src/utils/backpackSkills.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">role: 'base' | 'addon' ＋ stripBaselineClause()</div>
+        <div class="task-desc">
+          <b>顯示為兩個技能框</b>（使用者裁決），材料側扣掉底線句 ⇒ 兩框聯集 ＝ 官方合併文案，
+          顯示的每個字都是官方原文。角色由<b>順序</b>決定（<code>[0]</code>＝本體），
+          不為此擴 <code>id@N</code> 的引用語法。<br>
+          角色看「已成功解析的筆數」而非原 index：本體側斷鏈時材料側遞補為本體側，
+          不會留下一份「只有材料、底線被扣掉」的殘缺顯示。<br>
+          <b><code>effects</code> 刻意還沒裁</b>：全庫 46 筆技能的 effects 至今都是空陣列，
+          「軀幹耐久」該用哪個 stat 名沒有資料佐證，現在編一個等於把猜測寫進程式。<br>
+          <b>前台零改動</b>——<code>BackpacksPage</code> 早就是 <code>skills.map()</code>。
+        </div>
+        <div class="task-file">src/utils/backpackSkills.ts · backpackSkills.test.ts（+5 則）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-4 &nbsp; 出力加成表改以技能為鍵</div>
+      <div class="task-group-meta">src/utils/effectiveOutput.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">BACKPACK_OUTPUT_BONUS → SKILL_OUTPUT_BONUS</div>
+        <div class="task-desc">
+          鍵從<b>實例</b>（背包 doc id）移到<b>技能族</b>（<code>bpskill_出力增幅@3</code>）：
+          4 筆 → 2 支，卻涵蓋全部 19 個會給出力的背包，15 筆「未知」歸零，
+          日後官方再出複合款自動命中。<br>
+          <code>hasUnknownBackpackBonus()</code> 判準改為「<code>type === PowerAdd</code> 卻算不出加成」——
+          實務上恆 false，但守門留著：官方下次出新出力背包時它會再亮起來，而不是靜靜算成 0。<br>
+          <b style="color:var(--accent-yellow);">⚠ 連帶</b>：<code>loadoutRules</code> /
+          <code>simReducer</code> 的背包 fixture 都得補 <code>skillIds</code>，否則出力斷言全垮。
+        </div>
+        <div class="task-file">src/utils/effectiveOutput.ts · 3 個測試檔的 fixture</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-5 &nbsp; 合成單卡（顯示形狀對齊遊戲內）</div>
+      <div class="task-group-meta">src/utils/backpackSkills.ts · BackpacksPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">composeBackpackSkills()</div>
+        <div class="task-desc">
+          F-3 落地後實看效果，<b>兩個技能框與遊戲內不一致</b>（遊戲顯示成單一技能「出力增幅Ⅲ·攻擊」）。
+          使用者裁決改為<b>合成單卡</b>，且仍<b>不擴編</b>——名字、正文、圖示全部由既有兩支現組。<br>
+          名字 ＝ <code>本體技能名 + '·' + 變體</code>，變體取自<b>背包名</b>而非材料技能名
+          （材料叫「攻擊壓制Ⅲ」，官方複合名卻是「出力增幅Ⅲ·攻擊」）；
+          正文依「本體特徵 → 材料特徵 → 底線」三段組出；圖示沿用本體側。<br>
+          <b style="color:var(--accent-yellow);">⚠ 底線是「取本體側」不是「取最強」。</b>
+          兩者在出力／移動／飛行等線上剛好等價，但 <code>修理裝置Ⅰ</code> 沒有底線句 ⇒
+          「取最強」會讓 9 筆修理系複合背包憑空長出材料側的 +10%。單測直接拿修理系當反例釘住。<br>
+          合成擺在 <code>BackpacksPage</code> 建 <code>skillsById</code> 的<b>唯一入口</b>，
+          tooltip、卡片標籤與搜尋比對因此自動一致。<br>
+          <b>驗收：</b><code>npm test</code> <b>1167 全過</b>（本項 +6 則）；本機實看
+          <code>出力干擾背包·攻擊</code> 與官方截圖逐行對齊、<code>修理干擾背包·護甲</code> 確實無軀幹加成。
+        </div>
+        <div class="task-file">src/utils/backpackSkills.ts · backpackSkills.test.ts · BackpacksPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status done">已完成</span>
