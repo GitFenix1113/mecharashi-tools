@@ -31,6 +31,11 @@ import { HUD } from './loadoutTheme'
 //
 // ⚠ **不做任何數值彙總**（沿用「模組效果」那一區的同一條）：技能效果沒有可加總的
 //   結構化欄位可用，硬湊一個「合計」會是推測值，而玩家會拿它去做決定。
+//
+// ⚠ **別人專武的天賦強化整列不顯示**（使用者裁決 2026-08-30：「只有本人會強化，
+//   拿別人的專武，是無法強化的」）。判準、過濾範圍與「為什麼不是整組 carry 收掉」
+//   都寫在 `SkillLine.enhance` 與 `useSkillGroups` 的 `lines` 上 —— 尤其那筆
+//   「無畏撩牙／無畏獠牙」的資料漂移，它就是不用天賦名當判準的理由。
 
 interface Props {
   ctx: LoadoutContext
@@ -47,6 +52,21 @@ interface SkillLine {
   weaponName: string
   /** 專武（`isExclusive`）：混搭的主角，值得在列上標出來 */
   exclusive: boolean
+  /**
+   * 這個技能的「強化天賦」對**現在這位機師**成不成立（使用者回報 2026-08-30）。
+   *
+   *   · `null`     ── 這技能根本不強化天賦
+   *   · `'own'`    ── 這把是本人的專武 ⇒ 強化真的會生效
+   *   · `'foreign'`── 混搭來的別人的專武 ⇒ **不會生效**，整列不顯示（見 `useSkillGroups`）
+   *
+   * ⚠ 判準是武器的 `exclusiveFor === pilot.id`，**不是**「這位機師有沒有這個天賦名」
+   *   （使用者裁決 2026-08-30）。兩者原則上等價，但天賦名是**兩份各自維護的字串**，
+   *   而實測已經漂了一筆：[斷湮] 的 `enhancesTalentName` 是「無畏撩牙」，佐伊的天賦叫
+   *   「無畏獠牙」（撩／獠）—— 名字比對會把她**自己的**專武判成別人的，然後靜靜藏掉。
+   *   `exclusiveFor` 是一個 doc id，錯了會整個對不上，不會這樣半錯。
+   *   實測 47 個天賦強化技能 100% 掛在 `isExclusive` 且有 `exclusiveFor` 的武器上。
+   */
+  enhance: 'own' | 'foreign' | null
   sk: ResolvedWeaponSkill
 }
 
@@ -78,22 +98,42 @@ function useSkillGroups(ctx: LoadoutContext, skillMap: Map<string, PilotSkillDoc
   // 它同時已經含入機甲固定武裝與形態鎖定的武裝 —— 那兩種一樣會帶技能。
   const rows = useMemo(() => weaponRows(ctx), [ctx])
 
-  const lines = useMemo<SkillLine[]>(() => {
+  // 沒選機師 ⇒ `pilotId` 為 null，而 `exclusiveFor` 恆為某個 doc id ⇒ 任何專武都算 foreign。
+  // 那是對的：沒有機師就沒有天賦可強化。
+  const pilotId = ctx.pilot?.id ?? null
+
+  const allLines = useMemo<SkillLine[]>(() => {
     const out: SkillLine[] = []
     for (const r of rows) {
       if (!r.weapon) continue   // 斷鏈由「武器與元件」那一列負責印，這裡不重複報一次
+      const own = !!r.weapon.exclusiveFor && r.weapon.exclusiveFor === pilotId
       for (const [i, sk] of resolveWeaponSkills(r.weapon.skills, skillMap).entries()) {
         out.push({
           key: `${r.rowKey}#${i}`,
           where: r.label,
           weaponName: r.weapon.name,
           exclusive: !!r.weapon.isExclusive,
+          enhance: sk.enhancesTalentName ? (own ? 'own' : 'foreign') : null,
           sk,
         })
       }
     }
     return out
-  }, [rows, skillMap])
+  }, [rows, skillMap, pilotId])
+
+  /**
+   * 別人的專武帶來的天賦強化**整列不顯示**（使用者裁決 2026-08-30：
+   * 「不屬於這位機師的天賦強化就直接不顯示」）。
+   *
+   * ⚠ 過濾的是**天賦強化技能**，不是「別人的專武的技能」，更不是整組「攜帶生效」：
+   *   實測 89 個 carry 技能裡只有 47 個是天賦強化，另外 42 個是 S+「·改」系列的純效果
+   *   技能（赤狐·改／凝神待發、群山之力·改／餘怒…）—— 那些混搭來照樣生效，
+   *   而它們正是玩家混搭專武要的東西。把整組 carry 收掉會拿走一半的答案。
+   *
+   * ⚠ 過濾**在分組之前**：分組後再濾，抬頭的計數會與列數對不上。
+   */
+  const lines = useMemo(() => allLines.filter((l) => l.enhance !== 'foreign'), [allLines])
+  const hiddenEnhance = allLines.length - lines.length
 
   const groups = useMemo(() => {
     const known = ACTIVATION_ORDER.map((a) => ({ activation: a as string, items: lines.filter((l) => l.sk.activation === a) }))
@@ -103,11 +143,11 @@ function useSkillGroups(ctx: LoadoutContext, skillMap: Map<string, PilotSkillDoc
       .filter((g) => g.items.length > 0)
   }, [lines])
 
-  return { groups, lines, hasWeapons: rows.some((r) => r.weapon) }
+  return { groups, lines, hiddenEnhance, hasWeapons: rows.some((r) => r.weapon) }
 }
 
 export function WeaponSkillPanel({ ctx, skillMap, loading }: Props) {
-  const { groups, lines, hasWeapons } = useSkillGroups(ctx, skillMap)
+  const { groups, lines, hiddenEnhance, hasWeapons } = useSkillGroups(ctx, skillMap)
 
   if (loading) {
     return <p className={`${HUD.body} text-text-dim`}>載入技能庫中…</p>
@@ -124,8 +164,11 @@ export function WeaponSkillPanel({ ctx, skillMap, loading }: Props) {
   if (lines.length === 0) {
     return (
       <p className={`${HUD.body} text-text-dim leading-relaxed`}>
-        目前這一套的武器都沒有技能。武器技能集中在高品質的武器上（S+ 與 SS），
-        A／B 品質的武器多半只有數值。
+        {/* ⚠ 「都沒有技能」與「有技能但這位機師吃不到」是兩句不同的話：全部被濾掉時
+            照印前者，等於對著一套裝著三把專武的配裝說它們沒有技能。 */}
+        {hiddenEnhance > 0
+          ? `這一套的武器技能都是專武的天賦強化，而專武的天賦強化只有原機師吃得到 —— 換人拿不會生效，因此這裡沒有可顯示的技能。`
+          : `目前這一套的武器都沒有技能。武器技能集中在高品質的武器上（S+ 與 SS），A／B 品質的武器多半只有數值。`}
       </p>
     )
   }
@@ -147,10 +190,21 @@ export function WeaponSkillPanel({ ctx, skillMap, loading }: Props) {
         </div>
       ))}
 
-      <p className="text-[11px] text-text-dim leading-relaxed border-t border-border pt-2">
-        同一個技能名在不同武器上<strong className="text-text-secondary">生效方式可能不同</strong>
-        （實測 44 個同名群組有 38 個不一樣）—— 混搭時要看的是上面那顆徽章，不是技能名。
-      </p>
+      <div className="text-[11px] text-text-dim leading-relaxed border-t border-border pt-2 space-y-1">
+        <p>
+          同一個技能名在不同武器上<strong className="text-text-secondary">生效方式可能不同</strong>
+          （實測 44 個同名群組有 38 個不一樣）—— 混搭時要看的是上面那顆徽章，不是技能名。
+        </p>
+        {/* 只在真的濾掉東西時才印，且只講**發生了什麼**：不重述被藏起來的內容。
+            沒有這一句的話，混搭三把專武卻只看到兩個技能會讀成「站上漏了」。 */}
+        {hiddenEnhance > 0 && (
+          <p>
+            已隱藏 <strong className="text-text-secondary">{hiddenEnhance}</strong> 個
+            <strong className="text-text-secondary">只有原機師吃得到</strong>的天賦強化 ——
+            專武的天賦強化不會跟著武器走，混搭時吃得到的是上面這些。
+          </p>
+        )}
+      </div>
     </div>
   )
 }
@@ -168,12 +222,18 @@ export function WeaponSkillPanel({ ctx, skillMap, loading }: Props) {
  *   六個技能名會折成三行，而那正是它從右欄搬過來要解決的問題。
  */
 export function WeaponSkillStrip({ ctx, skillMap, loading }: Props) {
-  const { groups, lines, hasWeapons } = useSkillGroups(ctx, skillMap)
+  const { groups, lines, hiddenEnhance, hasWeapons } = useSkillGroups(ctx, skillMap)
 
   if (loading) return <p className={`${HUD.body} text-text-dim`}>載入技能庫中…</p>
   if (!hasWeapons) return <p className={`${HUD.body} text-text-dim`}>還沒有裝上任何武器。</p>
   if (lines.length === 0) {
-    return <p className={`${HUD.body} text-text-dim`}>目前這一套的武器都沒有技能（技能集中在 S+ 與 SS）。</p>
+    return (
+      <p className={`${HUD.body} text-text-dim`}>
+        {hiddenEnhance > 0
+          ? '這一套的武器技能都是別人專武的天賦強化 —— 換人拿不會生效。'
+          : '目前這一套的武器都沒有技能（技能集中在 S+ 與 SS）。'}
+      </p>
+    )
   }
 
   return (
@@ -194,7 +254,8 @@ export function WeaponSkillStrip({ ctx, skillMap, loading }: Props) {
                 <span
                   className="absolute inset-0"
                   title={`${l.sk.name}｜${l.where} · ${l.weaponName}${
-                    l.sk.enhancesTalentName ? `｜強化天賦：${l.sk.enhancesTalentName}` : ''
+                    // `foreign` 的列已經在 `useSkillGroups` 濾掉了，這裡只剩 own／null
+                    l.enhance === 'own' ? `｜強化天賦：${l.sk.enhancesTalentName}` : ''
                   }
 ${l.sk.description}`}
                 />
@@ -207,6 +268,10 @@ ${l.sk.description}`}
       {/* 金框那顆是專武 —— 一排沒有文字的圖示裡，那圈金色需要一句話才讀得懂 */}
       {lines.some((l) => l.exclusive) && (
         <p className="text-[11px] text-text-dim">金框 ＝ 專武技能。展開看效果與來源。</p>
+      )}
+      {/* 收合態同樣要交代少掉的那幾顆：這一排是用「數得出幾顆」在回答問題的 */}
+      {hiddenEnhance > 0 && (
+        <p className="text-[11px] text-text-dim">已隱藏 {hiddenEnhance} 個只有原機師吃得到的天賦強化。</p>
       )}
     </div>
   )
@@ -224,7 +289,7 @@ function ActivationChip({ activation }: { activation: string }) {
 }
 
 function SkillRow({ line }: { line: SkillLine }) {
-  const { where, weaponName, exclusive, sk } = line
+  const { where, weaponName, exclusive, enhance, sk } = line
   return (
     <div className="flex items-start bg-bg-dark border border-border-subtle" style={{ gap: 8, padding: '6px 8px' }}>
       <SkillIcon iconLocal={sk.iconLocal} name={sk.name} size="sm" />
@@ -243,7 +308,7 @@ function SkillRow({ line }: { line: SkillLine }) {
         {/* ⚠ 專武技能的「強化天賦」在這裡**只點名、不展開**：完整的前後對比在左欄的
             天賦條（`PilotTalentStrip`），那裡才有天賦原文可以做差異對比。
             兩處各印一份長文，右欄會被一段與武器無關的天賦正文淹掉。 */}
-        {sk.enhancesTalentName && (
+        {enhance === 'own' && (
           <span className="text-[12px] text-accent-yellow/90 leading-snug">
             ▶ 強化天賦：{sk.enhancesTalentName}（前後對比看左邊的天賦欄）
           </span>

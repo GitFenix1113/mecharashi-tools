@@ -19,7 +19,7 @@
 //
 // 純函式、無 React 依賴，可單測（npm test）。
 
-import type { Weapon } from '../types/index.ts'
+import type { Component, Weapon } from '../types/index.ts'
 import type { MechPartPosition } from '../types/enums.ts'
 import type { SlotKey, WeaponSlotRef } from '../types/slots.ts'
 import { slotKey } from '../types/slots.ts'
@@ -111,18 +111,39 @@ export function weaponRows(ctx: LoadoutContext): WeaponRow[] {
   return out
 }
 
+/** 一顆已掛上的元件。`comp` 為 null ＝ 資料斷鏈（doc 被刪／id 打錯），見 `slotComponents()`。 */
+export interface SlotComponent {
+  /** 掛載側存的 doc id。查得到時等同 `comp.id` */
+  id: string
+  /** 顯示名。查無時退回 doc id，讓斷鏈看得見 */
+  name: string
+  comp: Component | null
+}
+
 /**
- * 這一列武器上掛的元件**顯示名**（觸在前、應在後）。
+ * 這一列武器上掛的元件（觸在前、應在後）。
  *
- * ⚠ 在這裡解析而不是讓呼叫端各查一次：右欄的武器列與匯出圖的明細帶要的是同一份名字，
- *   兩邊各寫一份的下場是同一顆元件在一處叫本名、另一處叫 doc id。
- *   查無時**退回 doc id**，讓斷鏈看得見 —— 匯出圖是印刷品，看的人沒辦法點開來對帳。
+ * ⚠ 在這裡解析而不是讓呼叫端各查一次：右欄的武器列、匯出圖的明細帶與純文字摘要要的是
+ *   同一份名字與同一個順序，各寫一份的下場是同一顆元件在一處叫本名、另一處叫 doc id。
+ *   查無時**退回 doc id 且 `comp` 為 null**，讓斷鏈看得見 —— 匯出圖是印刷品，
+ *   看的人沒辦法點開來對帳。（有 id 卻查不到 ⇒ 不可靜默略過，同 `moduleRows()` 那一條。）
  *
  * 收的是 `ref` 而不是整列：呼叫端手上不見得有 `WeaponRow`（挑選器只有座標）。
  */
-export function slotComponentNames(ctx: LoadoutContext, ref: WeaponSlotRef): string[] {
+export function slotComponents(ctx: LoadoutContext, ref: WeaponSlotRef): SlotComponent[] {
   const { trigger, effect } = mountedComponentIds(weaponSiteAt(ctx, ref))
-  return [...trigger, ...effect].map((id) => ctx.world.components.get(id)?.name ?? id)
+  return [...trigger, ...effect].map((id) => {
+    const comp = ctx.world.components.get(id) ?? null
+    return { id, name: comp?.name ?? id, comp }
+  })
+}
+
+/**
+ * 同上，只要顯示名（純文字場合：右欄的武器列、純文字摘要）。
+ * 走同一支解析，兩者的順序與斷鏈退路因此永遠一致。
+ */
+export function slotComponentNames(ctx: LoadoutContext, ref: WeaponSlotRef): string[] {
+  return slotComponents(ctx, ref).map((c) => c.name)
 }
 
 // ─── 模組：四個接口攤平成清單（PLAN-052-L E-1，自 `ModuleBand` 抽出）──────────

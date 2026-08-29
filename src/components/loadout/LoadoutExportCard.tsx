@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, type CSSProperties } from 'react'
 import { toPng } from 'html-to-image'
-import type { NeuralDrive, NeuralDriveAbility, Pilot, PilotSkillDoc } from '../../types'
+import type { Component, NeuralDrive, NeuralDriveAbility, Pilot, PilotSkillDoc } from '../../types'
 import { hasMechArt, imageCandidates, pilotFullArtPath, mechKeyArtPath } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
-import { moduleRows, slotComponentNames, wastedModuleStacks, weaponRows } from '../../utils/loadoutRows'
+import { moduleRows, slotComponents, wastedModuleStacks, weaponRows } from '../../utils/loadoutRows'
+import { ComponentsWType } from '../../types/enums'
+import type { WeaponSlotRef } from '../../types/slots'
 import { rigLayout, rigSlots } from '../../utils/rigLayout'
 import { defaultNdLevels, printedNdZones, zonePower } from '../../utils/ndOverrides'
 import type { NdPowerBonus } from '../../utils/ndPowerBonus'
@@ -879,6 +881,16 @@ function WeaponDetailBand({ ctx }: { ctx: LoadoutContext }) {
   const rows = weaponRows(ctx)
   const used = rows.reduce((n, r) => n + r.used, 0)
   const limit = rows.reduce((n, r) => n + r.limit, 0)
+  /**
+   * 縮圖欄要不要留（見下方那一格）。
+   *
+   * ⚠ 這裡與十字（`ExportSlotCell`）刻意**不同條**：那邊是獨立的格子，缺圖就不佔位；
+   *   這裡是**一份由上而下的清單**，逐列各自決定要不要留 30px，會讓槽位標籤忽左忽右。
+   *   實測全庫 182 把有 10 把沒有圖，而那 10 把正是 8 筆固定武裝 ＋ 征伐 ＋ 速射格林炮
+   *   —— 也就是最常與別把武器同框出現的那幾把。
+   * ⚠ 但**整帶都沒有圖時不留**：那時留下的是一條沒有任何內容的空欄。
+   */
+  const iconGutter = rows.some((r) => r.weapon?.icon)
 
   return (
     <>
@@ -893,31 +905,49 @@ function WeaponDetailBand({ ctx }: { ctx: LoadoutContext }) {
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {rows.map((r) => (
             <div key={r.rowKey} style={{
-              display: 'flex', flexDirection: 'column', gap: 3,
+              display: 'flex', gap: 10,
               padding: '9px 16px', borderBottom: `1px solid ${C.line}`,
             }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 9 }}>
-                <span style={{ fontSize: 11, color: C.sub, width: 52, flexShrink: 0 }}>{r.label}</span>
-                <span style={{
-                  fontSize: 14, fontWeight: 700, minWidth: 0, wordBreak: 'break-word',
-                  color: r.locked ? C.yellow : C.text,
-                }}>{r.name}</span>
-                {/* ⚠ 分母是 componentLimit（觸＋應的**合計**上限），不是兩種各自的格數相加。
-                    limit 為 0 的（A／B 品質 39 把與 8 筆固定武裝）印「不可裝元件」而不是 0/0 */}
-                <span style={{
-                  marginLeft: 'auto', fontFamily: MONO, fontSize: 11, flexShrink: 0,
-                  color: r.limit === 0 ? C.dim : r.used > 0 ? C.orange : C.sub,
-                }}>
-                  {r.limit > 0 ? `元件 ${r.used} / ${r.limit}` : '不可裝元件'}
-                </span>
-              </div>
-              {/* ⚠ 沒裝的照樣印「未裝元件」而不是留白 —— 留白讀起來像「這張圖漏了」。
-                  查不到的元件印回 doc id（slotComponentNames），斷鏈要在圖上看得見。 */}
-              {r.limit > 0 && (
-                <span style={{ fontSize: 11, color: r.used > 0 ? C.sub : C.dim, paddingLeft: 61, lineHeight: 1.6 }}>
-                  {r.used > 0 ? slotComponentNames(ctx, r.ref).join('・') : '未裝元件'}
+              {/* 武器縮圖（使用者回饋 2026-08-30）。尺寸與 `ExportSlotCell` 的 30px 同階
+                  —— 同一把武器在十字與這裡各出現一次，差一階會看起來像兩件不同的東西。
+                  ⚠ 缺圖時**留空不畫框**（同 `ModuleBand` 那一條）：一個空方塊夾在正常圖示
+                    中間，會被讀成「有一把我不認得的武器」，而實際上只是我們少一張圖。 */}
+              {iconGutter && (
+                <span style={{ width: 30, height: 30, flexShrink: 0, marginTop: 1 }}>
+                  {r.weapon?.icon && (
+                    <FallbackImage
+                      candidates={imageCandidates(r.weapon.icon)}
+                      alt=""
+                      fallback={null}
+                      style={{ width: 30, height: 30, objectFit: 'contain', display: 'block' }}
+                    />
+                  )}
                 </span>
               )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0, flexGrow: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 9 }}>
+                  <span style={{ fontSize: 11, color: C.sub, width: 52, flexShrink: 0 }}>{r.label}</span>
+                  <span style={{
+                    fontSize: 14, fontWeight: 700, minWidth: 0, wordBreak: 'break-word',
+                    color: r.locked ? C.yellow : C.text,
+                  }}>{r.name}</span>
+                  {/* ⚠ 分母是 componentLimit（觸＋應的**合計**上限），不是兩種各自的格數相加。
+                      limit 為 0 的（A／B 品質 39 把與 8 筆固定武裝）印「不可裝元件」而不是 0/0 */}
+                  <span style={{
+                    marginLeft: 'auto', fontFamily: MONO, fontSize: 11, flexShrink: 0,
+                    color: r.limit === 0 ? C.dim : r.used > 0 ? C.orange : C.sub,
+                  }}>
+                    {r.limit > 0 ? `元件 ${r.used} / ${r.limit}` : '不可裝元件'}
+                  </span>
+                </div>
+                {/* ⚠ 沒裝的照樣印「未裝元件」而不是留白 —— 留白讀起來像「這張圖漏了」。
+                    查不到的元件印回 doc id（`slotComponents()`），斷鏈要在圖上看得見。 */}
+                {r.limit > 0 && (
+                  r.used > 0 ? <ComponentChips ctx={ctx} slot={r.ref} /> : (
+                    <span style={{ fontSize: 11, color: C.dim, lineHeight: 1.6 }}>未裝元件</span>
+                  )
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -931,6 +961,72 @@ function WeaponDetailBand({ ctx }: { ctx: LoadoutContext }) {
         數值以武器滿級（LV.70）與滿品質階為前提。
       </div>
     </>
+  )
+}
+
+/**
+ * 一列武器上掛的元件：**圖示 ＋ 名稱**（使用者回饋 2026-08-30）。
+ *
+ * 改寫前這裡是一行「觸元件-共力・應元件-擴膛・…」的頓號串。點名四顆元件要讀四個
+ * 六字名，而玩家在遊戲裡認的是那顆圖 —— 十字上的武器格早就畫著同一批圖示
+ * （`SlotCell`／`ExportRig`），這一帶卻只有字，同一件事在同一張圖上長成兩個樣子。
+ *
+ * ⚠ 換行由 `flexWrap` 負責、**名字自己不折**（`nowrap`）：一顆元件的圖與它的名字
+ *   斷在兩行，讀起來會像多了一顆沒有名字的元件。
+ */
+function ComponentChips({ ctx, slot }: { ctx: LoadoutContext; slot: WeaponSlotRef }) {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '5px 12px', paddingLeft: 61 }}>
+      {slotComponents(ctx, slot).map((c, i) => (
+        <span key={`${c.id}#${i}`} style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+          <ExportComponentIcon comp={c.comp} size={26} />
+          <span style={{ fontSize: 11, color: C.sub, whiteSpace: 'nowrap' }}>{c.name}</span>
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * 元件圖示：外框（觸／應，W 型另一套）＋ 斜掛其上的技能圖，與站上的 `ComponentIcon`
+ * 同一個構圖。
+ *
+ * ⚠ **不借用 `ComponentIcon`**（同 `ModuleBand` 那一條）：那顆帶 Tailwind 類別，
+ *   而本檔一律寫死十六進位；它也直接吃 `assetUrl()` 而沒有 `.webp` 退路。
+ * ⚠ 外框佔滿整格（站上版是 80%）：26px 的格子裡再縮兩成，斜掛的那張技能圖只剩 12px。
+ *   內圖仍是外框的 60%（＝站上 48/80 的同一個比例），構圖因此沒有變，只是整體放大。
+ * ⚠ 查不到的元件（`comp` 為 null）不畫框：名字已經退回 doc id 在說這件事了，
+ *   補一個空框只會多一個問號。
+ */
+function ExportComponentIcon({ comp, size }: { comp: Component | null; size: number }) {
+  if (!comp) return null
+  const isW = comp.componentsWType === ComponentsWType.W
+  const outer = comp.outerFrameLocal
+    ?? `/images/components/OuterFrame/statetype_${comp.componentType}${isW ? '_W' : ''}.png`
+  return (
+    <span style={{ position: 'relative', width: size, height: size, flexShrink: 0, display: 'block' }}>
+      <FallbackImage
+        candidates={imageCandidates(outer)}
+        alt=""
+        fallback={null}
+        style={{
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          width: '100%', height: '100%', objectFit: 'contain',
+        }}
+      />
+      {comp.iconLocal && (
+        <FallbackImage
+          candidates={imageCandidates(comp.iconLocal)}
+          alt=""
+          fallback={null}
+          style={{
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-51%, -52%) rotate(16deg)',
+            width: '60%', height: '60%', objectFit: 'contain',
+          }}
+        />
+      )}
+    </span>
   )
 }
 

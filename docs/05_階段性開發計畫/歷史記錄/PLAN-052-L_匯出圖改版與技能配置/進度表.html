@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">44</div>
+      <div class="summary-num" style="color:var(--accent-green)">46</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -179,7 +179,7 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">44</div>
+      <div class="summary-num" style="color:var(--text-primary)">46</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,7 +187,7 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-pink);">44 / 44</span>
+      <span style="color:var(--accent-pink);">46 / 46</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 100%"></div>
@@ -195,8 +195,10 @@
   </div>
 
   <div class="impact-note">
-    <strong>✅ 全案 44／44 收工（2026-08-30）。</strong>
-    Phase F 的兩項驗收完成後，<b>Phase G</b> 又收了同日回饋的三項（兩顆清空鍵、匯出圖的圖示與十字對齊、備用槽說明退場）。<br><br>
+    <strong>✅ 全案 46／46 收工（2026-08-30）。</strong>
+    Phase F 的兩項驗收完成後，<b>Phase G</b> 又收了同日回饋的<b>五項</b>（兩顆清空鍵、匯出圖的圖示與十字對齊、
+    備用槽說明退場，以及當天稍晚的兩項：<b>別人專武的天賦強化不再顯示</b>、
+    <b>匯出圖的武器與元件明細帶補上圖示</b>）。<br><br>
     <strong>Phase F（2／2）：</strong>
     兩項都在真的瀏覽器裡量，不是目測推斷。
     <br><br>
@@ -1516,7 +1518,8 @@
 <section class="section">
   <div class="section-label pink">Phase G</div>
   <div class="section-title">上線後的使用者回饋</div>
-  <div class="section-desc">F 驗收完當天（2026-08-30）站長看著成品提的三項。都是「東西全在、但讀的人得多做一次功」那一類。3／3。</div>
+  <div class="section-desc">F 驗收完當天（2026-08-30）站長看著成品提的五項。前三項都是「東西全在、但讀的人得多做一次功」那一類；
+    後兩項（G-4／G-5）是同日稍晚的第二輪回饋，一項是<b>印了一件不會發生的事</b>、一項仍是那條「認圖比認名字快」。5／5。</div>
 
   <div class="task-group">
     <div class="task-group-header">
@@ -1610,6 +1613,78 @@
           那是機甲本身的差異，不是某一件背包的效果。
         </div>
         <div class="task-file">src/utils/rigLayout.ts · components/loadout/LoadoutRig.tsx · LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-4 &nbsp; 別人專武的天賦強化不顯示</div>
+      <div class="task-group-meta">WeaponSkillPanel</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">判準走 <code>exclusiveFor === pilot.id</code>，整列濾掉</div>
+        <div class="task-desc">
+          <b>問題</b>：專武的天賦強化<b>只有原機師本人吃得到</b>（站長回報：「拿別人的專武，是無法強化的」），
+          但「武器技能」區不管誰拿都照印一句「▶ 強化天賦：XX」。混搭專武正是這一區存在的理由，
+          於是那句話出現的時機，剛好就是它<b>最會被拿去做決定</b>的時機。<br>
+          <b>做法</b>：<code>SkillLine</code> 加一個 <code>enhance: 'own' | 'foreign' | null</code>，
+          <code>foreign</code> 的<b>整列在分組之前</b>濾掉（分組後再濾，抬頭的計數會與列數對不上）。
+          展開態、收合態縮圖、縮圖的 <code>title</code> 三處同源。<br>
+          ⚠ <b>判準是 <code>exclusiveFor === pilot.id</code>，不是「這位機師有沒有這個天賦名」</b>（站長裁決）。
+          兩者原則上等價，但天賦名是<b>兩份各自維護的字串</b>，而正式庫已經漂了一筆：
+          [斷湮] 的 <code>enhancesTalentName</code> 寫「無畏<b>撩</b>牙」、佐伊的天賦叫「無畏<b>獠</b>牙」
+          ⇒ 名字比對會把她<b>自己的</b>專武判成別人的，然後靜靜藏掉。
+          <code>exclusiveFor</code> 是一個 doc id，錯了會整個對不上，不會這樣半錯。
+          （該筆錯字已由站長於同日自行修正；機師詳情頁與左欄天賦條仍是名字為鍵，那是它們既有的寫法。）<br>
+          ⚠ <b>濾的是「天賦強化技能」，不是「別人專武的技能」，更不是整組「攜帶生效」</b>：
+          實測全庫 <b>89 個 carry 技能只有 47 個是天賦強化</b>，另外 42 個是 S+「·改」系列的純效果技能
+          （凝神待發、餘怒…）——那些混搭來照樣生效，<b>而它們正是混搭專武要的東西</b>。
+          收掉整組會拿走一半的答案。（47 個天賦強化技能 100% 掛在 <code>isExclusive</code> 且有
+          <code>exclusiveFor</code> 的武器上，49 把專武也都有 <code>exclusiveFor</code>。）<br>
+          ⚠ <b>被濾掉時要說一聲</b>：底下印「已隱藏 N 個只有原機師吃得到的天賦強化」。
+          三把專武全是強化時整組會消失，沒有這一句會讀成「站上漏了」。
+          全數被濾光時的空狀態句也另寫一句 ——
+          原本那句「這一套的武器都沒有技能」，對著一套裝了三把專武的配裝說是<b>錯的</b>。
+        </div>
+        <div class="task-file">src/components/loadout/WeaponSkillPanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-5 &nbsp; 匯出圖的武器與元件明細帶補上圖示</div>
+      <div class="task-group-meta">loadoutRows ／ LoadoutExportCard</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">武器縮圖 30px ＋ 元件改「圖示 ＋ 名稱」</div>
+        <div class="task-desc">
+          G-2 只補了<b>十字那幾格</b>；圖底的「武器與元件」明細帶仍然只有字，
+          元件是一串「觸元件-共力・應元件-擴膛…」的頓號串。同一張圖上，同一批東西長成兩個樣子。<br>
+          <b>做法</b>：<code>slotComponentNames()</code> 拆成 <code>slotComponents()</code>
+          （帶回 <code>Component</code> 物件供畫圖）＋ 名字版薄包裝 ——
+          右欄清單與純文字摘要仍走名字版，<b>順序與斷鏈退路因此永遠同源</b>。
+          元件圖示是外框（觸／應，W 型另一套）＋ 斜掛其上的技能圖，與站上 <code>ComponentIcon</code> 同構圖，
+          但<b>不借用那顆元件</b>（它帶 Tailwind 類別，而本檔一律寫死十六進位；也沒有 <code>.webp</code> 退路）。
+          外框在這裡佔滿整格（站上版 80%）：26px 的格子裡再縮兩成，斜掛的技能圖只剩 12px。<br>
+          ⚠ <b>武器縮圖欄的留白規則與十字刻意不同</b>：<code>ExportSlotCell</code> 是獨立的格子，
+          缺圖就不佔位；這裡是<b>一份由上而下的清單</b>，逐列各自決定要不要留 30px 會讓槽位標籤忽左忽右。
+          ⇒ 改成「整帶有任一把有圖就留欄位、該列缺圖則留空不畫框」。
+          實測 182 把武器有 <b>10 把沒有圖</b>，而那 10 把正是 8 筆固定武裝 ＋ 征伐 ＋ 速射格林炮
+          —— 也就是最常與別把武器同框的那幾把。<br>
+          ⚠ 元件那一側沒有這個問題：<b>208 顆元件的 <code>iconLocal</code> 與
+          <code>outerFrameLocal</code> 全部有值</b>（實測）。
+        </div>
+        <div class="task-file">src/utils/loadoutRows.ts · components/loadout/LoadoutExportCard.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status done">已完成</span>
