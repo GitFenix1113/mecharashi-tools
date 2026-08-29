@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-28
+## [Unreleased] - 2026-08-29
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **simulator**: PLAN-052-E 雲端存檔與配額 —— 存進帳號、換裝置也在；並正式對外開放 (`ed7004c`)
 - **simulator**: PLAN-052-K 天生模組逐部位化 —— 換部位，自帶模組跟著變 (`dd97392`)
 - **simulator**: PLAN-052-G Phase D 部件混搭 —— 四個部位各自換來源機甲 (`22f2952`)
 - **simulator**: PLAN-052-F 形態獨立配裝 —— 海莉絲三個分頁各一套，虛粒子以唯讀卡交代 (`71c754f`)
