@@ -171,7 +171,7 @@
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
@@ -179,7 +179,7 @@
       <div class="summary-lbl">站長任務</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">14</div>
+      <div class="summary-num" style="color:var(--text-dim)">13</div>
       <div class="summary-lbl">待開始</div>
     </div>
   </div>
@@ -438,13 +438,21 @@
   <div class="section-desc">
     決策五：<b>先看得見，不自動擋。</b>書架熔斷等於使用者存不了檔，
     在沒有證據顯示有人濫用之前不值得冒這個險。
+    <br><br>
+    <b>⭐ 2026-08-29 已完成一次流量與額度盤點，本階段各工項的門檻與優先序都改用實測值</b>：
+    Firestore 月費 <b>&lt; US$0.15</b>／讀取用掉免費額度 <b>75%</b>／寫入僅 <b>1.1%</b>／
+    日均不重複訪客 <b>59</b>。報告存於
+    <code>_local-notes/2026-08/2026-08-29_流量與額度餘裕評估.html</code>（不進版控）。
+    <br>
+    ⚠ <b>使用統計於 2026-08-08 才上線</b>，所以後台那幾個「近 30 天」總數實際只涵蓋約 20 天，
+    直接除以 30 會低估三分之一。這次是靠比對 Firebase 讀取曲線才發現的，見 B-4。
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; Firebase 用量告警</div>
-      <div class="task-group-meta">Firebase Console · Blaze</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">Firebase Console · Blaze · 2026-08-29 已設定</div>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
@@ -456,18 +464,26 @@
           <b>Firebase 是 Blaze：超支會計費，不會停擺。</b>這代表沒有任何「自動煞車」——
           告警是唯一會主動通知人的東西。要確認三件：①預算告警存在且門檻合理；
           ②通知寄到會被看到的信箱；③<b>實際試觸發過一次</b>（沒試過的告警等於不存在）。
+          <br><br>
+          <b>✅ 2026-08-29：告警已由站長設定。</b>剩下第三件 —— 試觸發一次。
+          <br>
+          ⚠ 站長判斷「很難突破」，<b>流量盤點證實了這個直覺</b>：日均寫入 228 次，
+          離免費額度 20,000 有 <b>88 倍</b>，離決策九那個 43M/日 的情境有 <b>188,000 倍</b>。
+          <b>這是好事（不會誤報），但要記住告警在 Blaze 上是「事後通知」不是煞車</b> ——
+          無節流時的寫入速率約 500 次／秒，<b>單一惡意帳號 14 秒就能寫完全站 30 天的寫入量</b>。
+          真正限制速率的是 A-3＋A-5，不是這條告警。
         </div>
         <div class="task-file">—（Firebase Console 設定，結果記回本表）</div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; Cloudflare 方案與額度確認</div>
-      <div class="task-group-meta">Workers · /api</div>
+      <div class="task-group-meta">Workers · /api · <b>2026-08-29 已降級</b></div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
@@ -478,8 +494,19 @@
           所以 <b><code>/api</code> 掛掉等於全站沒有資料</b>，不只是模擬器。
           <br>
           Workers 免費方案是每日 100k requests —— <b>模擬器開放後這個數字第一次有機會被逼近</b>。
-          要確認：①目前實際方案；②近期每日請求量與尖峰；③超過額度時的行為
-          （是擋下還是計費）。<b>這一項的答案會決定 C-1 的收回門檻怎麼定。</b>
+          要確認：①目前實際方案；②近期每日請求量與尖峰；③超過額度時的行為（是擋下還是計費）。
+          <br><br>
+          <b>⬇ 2026-08-29 盤點後降級為「確認一次、記下基準值」。</b>粗估每日請求：
+          <code>/api</code> 集合代讀 ≈ 59 位新訪客 × 14 個集合 ≈ <b>830</b>、
+          統計回報 beacon ≈ <b>220–460</b>，合計約 <b>1,500–3,000 次／日</b> ——
+          距離免費方案的 100,000 次／日有 <b>30–60 倍餘裕</b>（兩個數量級）。
+          <br>
+          ⇒ 它<b>不再是「開放後的隱藏單點」</b>，也<b>不再是 C-1 的前置</b>：
+          門檻實際上由 Firestore 側的實測值決定，與 Cloudflare 方案無關。
+          仍要做的只剩確認現行方案 ＋ 把當下請求量記進本表當基準。
+          <br>
+          ⚠ <b>真正的變數不是自然成長，是爬蟲</b>（PLAN-029 的反爬兩層守的就是這個）。
+          上面那組數字全為估算，實際值以 Dashboard 為準。
         </div>
         <div class="task-file">—（Cloudflare Dashboard，結果記回本表）</div>
       </div>
@@ -491,7 +518,7 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-3 &nbsp; 後台看得到雲端書架用量</div>
-      <div class="task-group-meta">src/pages/admin/</div>
+      <div class="task-group-meta">src/pages/admin/ · <b>2026-08-29 已升級</b></div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
@@ -503,6 +530,13 @@
           <br>
           ⚠ 這是後台頁，讀取量本身要留意 —— 走既有的分頁／聚合慣例，
           <b>不要為了一張監看頁把整個 collectionGroup 每次都撈一遍</b>。
+          <br><br>
+          <b>⬆ 2026-08-29 優先序上調，從「有了不錯」變成 C-1 的必要組件。</b>
+          C-1 定出的三條門檻裡，日寫入與日讀取都有現成量測管道（Firebase 用量面板），
+          <b>只有「單一帳號 builds 份數」沒有任何地方看得到</b> ——
+          而那正是決策三「<code>create</code> 不受節流」唯一會顯現的症狀。
+          <br>
+          ⇒ 沒有這一項，C-1 的第三條門檻就只是一句寫在檔頭、沒有人能執行的話。
         </div>
         <div class="task-file">src/pages/admin/（沿用既有後台頁慣例）</div>
       </div>
@@ -527,8 +561,17 @@
           <br>
           這條數列同時是 052-H 的輸入：<b>「流量累積到看得出分布」這個條件要靠它來判斷</b>，
           否則 052-H 的動工時機又會變成臨場感覺。
+          <br><br>
+          <b>⚠ 2026-08-29 追加一項（這一項是要改程式的）：把統計的有效起算日標在後台統計頁上。</b>
+          統計於 <b>2026-08-08</b> 才上線，所以面板上「近 30 天」的四個總數實際只涵蓋約 20 天，
+          <b>直接除以 30 會把日均低估三分之一</b>。這次是靠比對 Firebase 讀取曲線
+          （同期每天 2–4 萬次讀取，站上卻顯示零流量）才發現的 ——
+          <b>不標起算日，等於留給下一個人重新發現一次</b>，而 052-H 判斷動工時機正是要看這條數列。
+          <br>
+          做法不必複雜：面板上有一行「資料自 2026-08-08 起算」即可；
+          窗口早於起算日時，日均那幾個數字要用實際天數而不是窗口天數。
         </div>
-        <div class="task-file">—（確認為主，必要時才改）</div>
+        <div class="task-file">src/pages/admin/AdminAnalyticsPage.tsx（起算日標示）</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status pending">待開始</span>
@@ -560,7 +603,51 @@
           內容要包含：①三條門檻各自的數字與量測方式；②<b>越線之後做什麼</b>
           （改旗標？只關雲端書架？先聯絡使用者？）；③誰來看、多久看一次。
           <br>
-          ⚠ 門檻數字要等 B-1／B-2 的答案 —— 在不知道 Cloudflare 方案與 Firebase 告警現況之前定的數字是憑空的。
+          <b>✅ 2026-08-29 的流量盤點已經給出基準線，三條門檻可直接採用。</b>
+          現況值：日寫入 <b>228</b>／日讀取 <b>37,667</b>／單帳號 builds 份數 <b>0</b>。
+        </div>
+        <div style="overflow-x:auto;margin:10px 0;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:30rem;">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:7px 10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);font-size:11px;color:var(--text-dim);font-weight:400;font-family:'Orbitron',sans-serif;letter-spacing:1px;">門檻</th>
+                <th style="text-align:left;padding:7px 10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);font-size:11px;color:var(--text-dim);font-weight:400;font-family:'Orbitron',sans-serif;letter-spacing:1px;">建議值</th>
+                <th style="text-align:left;padding:7px 10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);font-size:11px;color:var(--text-dim);font-weight:400;font-family:'Orbitron',sans-serif;letter-spacing:1px;">相對現況</th>
+                <th style="text-align:left;padding:7px 10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);font-size:11px;color:var(--text-dim);font-weight:400;font-family:'Orbitron',sans-serif;letter-spacing:1px;">越線代表什麼</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;">日寫入</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;font-family:'JetBrains Mono',monospace;white-space:nowrap;">5,000</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;font-family:'JetBrains Mono',monospace;white-space:nowrap;">22×</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;">有人在大量寫入。仍只佔免費額度 25%，<b>越線時還沒真的花到錢</b>。</td>
+              </tr>
+              <tr>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;">日讀取</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;font-family:'JetBrains Mono',monospace;white-space:nowrap;">80,000</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;font-family:'JetBrains Mono',monospace;white-space:nowrap;">2.1×</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;">新訪客暴增或被爬。超出免費額度但月費仍 &lt; US$1。</td>
+              </tr>
+              <tr>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;">單帳號 builds 份數</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;font-family:'JetBrains Mono',monospace;white-space:nowrap;">&gt; 89</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;font-family:'JetBrains Mono',monospace;white-space:nowrap;">—</td>
+                <td style="padding:7px 10px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;">份數失控的唯一可見訊號（89 ＝ 實際機師數，A-5 上線後正常值不可能超過）。<b>量測管道由 B-3 提供。</b></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="task-desc">
+          <b>三條線都刻意訂在「遠高於自然波動、遠低於任何有感費用」</b>——
+          越線時帳單還是零，但那個數字不可能是自然流量造成的。誤報成本近乎零，所以可以訂得敏感。
+          <br>
+          ⚠ <b>原本寫的「門檻要等 B-1／B-2 的答案」已不成立</b>：B-1 已設定、B-2 已降級，
+          而門檻其實是由 Firestore 側的實測值決定的，與 Cloudflare 方案無關。
+          <br>
+          ⚠ <b>盯錯地方的風險</b>：注意力目前在寫入（因為 052-E 是第一次寫 Firestore），
+          但額度上真正接近上限的是<b>讀取</b>（75% vs 1.1%）——
+          流量成長 <b>1.4 倍</b>讀取就會開始計費。金額仍小，但那會是第一個動起來的數字。
         </div>
         <div class="task-file">src/hooks/useSimulatorEntry.ts</div>
       </div>
