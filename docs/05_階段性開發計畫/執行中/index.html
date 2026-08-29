@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card red">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-053 · 模擬器開放後護欄與觀察</h3>
+      <p>配裝模擬器已於 <b>2026-08-29 對外開放</b>（<code>SIMULATOR_INTERNAL_ONLY</code> 改為 <code>false</code>），而它從 052-E 起才第一次寫 Firestore。問題是 <b>052 總綱決策九承諾的兩道護欄沒有跟著出貨</b>：①每文件 3 秒<b>寫入節流</b>（決策九實測：無節流時單一帳號可寫 <b>43M/日 ≈ US$78/日</b>，3 秒節流後 ≈ US$6.1/日），②<b>收緊 <code>users/{userId}</code> 文件本體</b>（決策九原文：「只鎖 builds 不鎖本體，<b>上面所有保護都是裝飾</b>」）。兩條都不是被裁決延後的——PLAN-052-E 的計畫書與進度表全文搜「節流」是<b>零結果</b>，它們在建檔時整條沒被承接。<br>而站上既有的寫入熔斷器（<code>collectBudget.ts</code>，PLAN-046）<b>保護不到雲端書架</b>：那套守的是走 Worker 的統計寫入，書架卻是 client 用 Firebase SDK <b>直連 Firestore</b>，熔斷器一次也不會被呼叫到 ⇒ <b>Firestore 規則是唯一能施加速率限制的地方</b>。<br>節流連帶要求 <code>updatedAt</code> 從 client 寫的 ISO 字串改成 <b>timestamp 並綁 <code>request.time</code></b>（否則 client 寫一個「很久以前」的時間就能讓節流<b>安靜失效</b>）——這是破壞性 schema 變更，<b>時間窗與 052-E 同構且更緊</b>。<br>取向沿用 PLAN-046 決策七：<b>先告警，不自動熔斷</b>——書架熔斷等於使用者按下「存入」而存不進去。旗標刻意留著不刪，收回代價維持在改一個字，但<b>收回門檻要事先寫成數字</b>，而不是出事當下的臨場判斷。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-053_模擬器開放後護欄與觀察/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-053_模擬器開放後護欄與觀察/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-052 · 配裝模擬器改版 · 總綱</h3>
