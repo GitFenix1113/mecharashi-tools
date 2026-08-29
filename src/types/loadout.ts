@@ -59,6 +59,48 @@ export interface LoadoutMount {
  * ⚠ 背包與背部武器**共用同一格**（`main:back`）。型別上不擋，因為擋不住——
  *   互斥由 `loadoutRules` 的 BACK_SLOT_TAKEN 統一處理（SlotCapacity.back = 1）。
  */
+/**
+ * 攜帶技能的格數（PLAN-052-L D-1，使用者裁決 2026-08-29）。
+ *
+ * 遊戲的技能列是「三格自由替換 ＋ 一格『改』技能」。本站只開得出前三格 ——
+ * 第四格要選的是科研後期才給的「改」技能，而站上**沒有這份資料**（見 `LoadoutSkills.mod`）。
+ */
+export const CARRIED_SKILL_SLOTS = 3
+
+/**
+ * 一位機師帶上場的技能（PLAN-052-L D-1，團隊回饋 3）。
+ *
+ * ⚠ **放頂層、不放進 `EquipSet`**（同 `ndLevels`）：技能是**機師**的屬性，不隨形態變動。
+ *   掛在 set 上會讓海莉絲的三個形態分頁各存一份技能，而玩家改了其中一頁之後，
+ *   另外兩頁會與這一頁不一致 —— 那是同一位機師的同一組技能。
+ */
+export interface LoadoutSkills {
+  /**
+   * 三格自由替換的技能 doc id（`pilotSkills` 集合）。**緊湊陣列、沒有洞**，
+   * 長度 ≤ `CARRIED_SKILL_SLOTS`，順序即顯示順序。
+   *
+   * ⚠ **不用稀疏陣列表達「第二格空著」**：`[a, , c]` 經 `JSON.stringify`
+   *   （localStorage 草稿與雲端存檔都會經過）會變成 `[a, null, c]`，
+   *   於是「空格」在重新整理前後是兩種型別，而 `null` 會被下游當成一個技能 id 去查。
+   *   要表達「只帶了兩個」就存長度 2 的陣列。
+   *
+   * ⚠ 成員一律是**目前這位機師的候選池**裡的 id，由 `reconcile()` 保證
+   *   （見 `carriedSkillPool()`）。換機師時不屬於他的會被掃掉。
+   */
+  carried: string[]
+  /**
+   * 科研「改」技能（使用者裁決 2026-08-29 逐字：「最後一格相當特殊，它並不是自由選擇技能，
+   * 而是選『改』技能，那是科研到後期給的額外傷害技能，目前站上沒建立這部分資料 ——
+   * 我覺得可以保留這個資料型態和欄位，但格子隱藏」）。
+   *
+   * ⚠ **欄位先開、UI 隱藏，不要因為今天沒有 UI 就把它刪掉。** 理由與 052-C 先開
+   *   §PARTS／§MODULES 完全相同：分享碼同時是唯一的落盤格式，而它**只進不出** ——
+   *   等資料建好了才補這一格，等於升 `FMT_VERSION` 並遷移所有已流出的碼。
+   *   今天多一個恆為 undefined 的欄位，代價是型別多一行。
+   */
+  mod?: string
+}
+
 export interface EquipSet {
   mounts: LoadoutMount[]
   backpackId?: string
@@ -98,6 +140,20 @@ export interface LoadoutDraft {
    *   **只有「存到雲端」需要登入**（見本檔 `CloudBuildDoc`）。
    */
   name?: string
+  /**
+   * 方案備註（PLAN-052-L C-2，團隊回饋 2）。**分享一套配裝時「為什麼這樣配」的位置。**
+   *
+   * ⚠ 一律經 `sanitizeLoadoutNote()`（`src/utils/loadoutName.ts`，與名稱**同一檔、
+   *   共用同一條不可見字元正規式**）之後才進來。與名稱的唯一實質差別是**保留換行**，
+   *   上限 100 碼點 ／ 6 行。清洗放寫入邊界兩道（`setNote` ＋ `reconcile`），
+   *   不放渲染端 —— 渲染端清洗會讓「存進去的」與「看到的」是兩個字串，而落盤的是髒的那個。
+   *
+   * ⚠ 未填寫時**欄位不存在**（同 `name` / `backpackId` / `ndLevels`），不存空字串、不存 `null`。
+   *
+   * ⚠ **這是會被印在公開分享圖上的自由文字。** 匯出圖必須把它標成
+   *   「由分享者填寫」——備註與站上資料共用同一套排版，不標的話讀者會把它當成本站的判斷。
+   */
+  note?: string
   /** 目前顯示中的分頁鍵。恆為 `equipSetKeys()` 的成員之一，由 reconcile 保證 */
   activeSetKey: string
   sets: Record<string, EquipSet>
@@ -122,6 +178,14 @@ export interface LoadoutDraft {
    * 052-C 的 codec v1 必須把這一段一起編碼；v1 上線後再補等於升版本並遷移既有分享碼。
    */
   ndLevels?: Record<string, number>
+  /**
+   * 攜帶技能（PLAN-052-L D-1，團隊回饋 3）。**未設定時欄位不存在**（同 `ndLevels`）。
+   *
+   * ⚠ 判定「有沒有帶技能」一律看 `skills?.carried?.length`，不要看 `'skills' in draft`：
+   *   `reconcile()` 掃掉不屬於目前機師的技能之後，可能留下一個 `carried: []`，
+   *   而那與「沒帶」是同一件事。
+   */
+  skills?: LoadoutSkills
   /**
    * 部件混搭：**部位 → 來源機甲 doc id**。只記與選定機甲不同的部位（PLAN-052-G）。
    *

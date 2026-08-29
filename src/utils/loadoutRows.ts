@@ -1,7 +1,13 @@
-// 已裝武器攤平成清單（PLAN-052-I D-3）
+// 已裝武器／已裝模組攤平成清單（PLAN-052-I D-3、PLAN-052-L E-1）
 //
-// 「這一套裝了哪幾把武器、各自能放幾個元件」——右欄的武器與元件列、以及未來的匯出長圖
-// （052-I E-2）都問這一支。
+// 「這一套裝了哪幾把武器、各自能放幾個元件」——右欄的武器與元件列、
+// 以及匯出長圖的「武器與元件」明細帶（PLAN-052-L B-5）都問這一支。
+//
+// 「四個接口上各裝了什麼、那一族現在幾級、該級的官方敘述是什麼」——匯出長圖的
+// 「模組效果」帶與**純文字摘要**（E-1）都問 `moduleRows()`。
+// ⚠ 模組那一組是 E-1 從 `LoadoutExportCard` 的 `ModuleBand` **原樣抽出來**的：
+//   摘要與圖必須列出同一批模組、同一個等級、同一段敘述，而各留一份的漂移症狀是
+//   「圖上寫 Lv4、複製出來的文字寫 Lv2」—— 兩邊都不會報錯。
 //
 // ⚠ **不要直接 map `ctx.set.mounts`**：那份清單少了機甲固定武裝（`ctx.occupied`）與
 //   全鎖形態的武裝（`ctx.lock`），而那兩種**一樣佔槽、一樣吃元件、一樣計入總重**。
@@ -14,12 +20,14 @@
 // 純函式、無 React 依賴，可單測（npm test）。
 
 import type { Weapon } from '../types/index.ts'
+import type { MechPartPosition } from '../types/enums.ts'
 import type { SlotKey, WeaponSlotRef } from '../types/slots.ts'
 import { slotKey } from '../types/slots.ts'
 import { enumerateSlots, slotLabel } from './mechSlots.ts'
-import { WeaponEquipSlot } from '../types/enums.ts'
-import { slotExists } from './loadoutRules.ts'
-import { slotOccupant, type LoadoutContext } from './loadoutRules.ts'
+import { mountedComponentIds, slotOccupant, weaponSiteAt, type LoadoutContext } from './loadoutRules.ts'
+import { MECH_PART_ORDER } from './chassisStats.ts'
+import { partLabel } from './moduleSlots.ts'
+import { interfaceState, moduleFamilyKey, moduleLevelAt, type ModuleStack } from './moduleRules.ts'
 
 /** 一列。`rowKey` 取自**佔用者自己的 ref**，於是雙手武器橫跨兩格也只出現一次。 */
 export interface WeaponRow {
@@ -103,148 +111,98 @@ export function weaponRows(ctx: LoadoutContext): WeaponRow[] {
   return out
 }
 
-// ─── 匯出長圖的完整槽位表（PLAN-052-I E-2）──────────────────────────────────
-//
-// 與 `weaponRows()` 的差別是**空槽與無槽也要出現**：匯出圖是印刷品，看的人沒辦法
-// 點開來確認「是沒裝，還是這台根本沒有這一格」。表上少一列，讀者只會得出
-// 「這張圖漏了」而不是「這一格不存在」。
-//
-// ⚠ 「整排不存在」只寫一列（沿用 LoadoutRig B-2 的裁決）：沒有肩槽時畫成左右兩格一樣的
-//   「沒有肩槽」，等於把同一句話說兩遍。備用槽同理。
+/**
+ * 這一列武器上掛的元件**顯示名**（觸在前、應在後）。
+ *
+ * ⚠ 在這裡解析而不是讓呼叫端各查一次：右欄的武器列與匯出圖的明細帶要的是同一份名字，
+ *   兩邊各寫一份的下場是同一顆元件在一處叫本名、另一處叫 doc id。
+ *   查無時**退回 doc id**，讓斷鏈看得見 —— 匯出圖是印刷品，看的人沒辦法點開來對帳。
+ *
+ * 收的是 `ref` 而不是整列：呼叫端手上不見得有 `WeaponRow`（挑選器只有座標）。
+ */
+export function slotComponentNames(ctx: LoadoutContext, ref: WeaponSlotRef): string[] {
+  const { trigger, effect } = mountedComponentIds(weaponSiteAt(ctx, ref))
+  return [...trigger, ...effect].map((id) => ctx.world.components.get(id)?.name ?? id)
+}
 
-export type SheetRowState = 'weapon' | 'backpack' | 'fixed' | 'formLocked' | 'empty' | 'absent'
+// ─── 模組：四個接口攤平成清單（PLAN-052-L E-1，自 `ModuleBand` 抽出）──────────
 
-export interface SheetRow {
-  key: string
-  /** 部位名。整排不存在時是「肩部」／「備用槽」這種群組名，不是「左肩」 */
+/** 一格接口上的模組。**不可用的接口（無／不明）不進來**，見 `moduleRows()`。 */
+export interface ModuleRow {
+  position: MechPartPosition
+  /** 部位顯示名（軀幹／左臂…） */
   label: string
-  state: SheetRowState
-  /** 裝備名；空槽與無槽為 null */
-  name: string | null
-  /** 這一列要多講的一句（無槽原因／不可更換的來源／背包解鎖了什麼） */
-  note: string | null
-  /** 「類型」欄。無槽與空槽印「—」 */
-  typeLabel: string
-  /** 重量；空槽與無槽為 null（不是 0 —— 0 是「這件裝備真的不佔重量」，見固定武裝） */
-  weight: number | null
-  /** 掛在這把武器上的元件 doc id（觸在前、應在後） */
-  componentIds: string[]
-  /**
-   * 同一批元件的顯示名（PLAN-052-D D-2）。匯出圖印的是這一份。
-   *
-   * ⚠ 在**這裡**解析而不是讓匯出卡自己查：`SheetLine` 只拿得到一列，
-   *   要它查名字就得把整個 `ctx` 傳進每一列 —— 而那一層是純呈現，
-   *   不該認得 `LoadoutWorld`。查無時退回 doc id，讓斷鏈在圖上看得見。
-   */
-  componentNames: string[]
+  /** 顯示名。有 id 卻查不到模組 ＝ 資料斷鏈，退回 doc id 讓它被看見，不靜默消失 */
+  name: string
+  /** 縮圖路徑。⚠ 缺圖的 4 顆（凌嘯框架／滅卻模組／獵群模組／異步感應器）為 null */
+  icon: string | null
+  /** 這一族的堆疊結果（含天生貢獻）。資料斷鏈時為 null */
+  stack: ModuleStack | null
+  /** 這一族在前面的部位已經印過了 ⇒ 只標「同族疊加」，不重印一次敘述 */
+  dup: boolean
+  /** 該族**目前等級**那一階的官方敘述。`dup` 或查無資料時為空字串 */
+  description: string
 }
 
-const TYPE_LABEL: Record<string, string> = {
-  [WeaponEquipSlot.SINGLE_HAND]: '單手',
-  [WeaponEquipSlot.DUAL_HAND]: '雙手',
-  [WeaponEquipSlot.SHOULDER]: '肩膀',
-  [WeaponEquipSlot.BACK]: '背後',
-}
+/**
+ * 四個接口上各裝了什麼。順序固定走 `MECH_PART_ORDER`。
+ *
+ * ⚠ **同族只算一次**（PLAN-052-G C-7）：同一顆模組裝兩格是升它的等級、不是兩份效果。
+ *   逐格印敘述會讓四顆刀劍模組Ⅱ 看起來像四倍加成 —— 第二格起因此只回 `dup: true`。
+ *
+ * ⚠ 等級一律取自 `ctx.stacks`（含天生貢獻，PLAN-052-K D-1），**不要在呼叫端自己再算
+ *   一次 `moduleStacks()`**：圖上的 Lv 與畫面上的 Lv 對不起來是最難查的一種錯。
+ *
+ * ⚠ 敘述取**該族目前等級**那一階（不是滿階），與螢幕版 `EquippedEffects` 同一個來源。
+ *   ⚠ 也**不要退回 `statText()` 那種攤平數值**（PLAN-052-L A-3）：候選池 186 顆有 119 顆
+ *     滿級數值欄全為 0 ⇒ 三分之二的模組只剩一個名字；而且它會省略觸發條件卻看起來像
+ *     完整答案（猛擊裝置攤平成「格鬥傷害+15%」，官方敘述是「有 70% 的概率發動」）。
+ *
+ * ⚠ 接口型別**不印**（A-2，團隊逐字：「不需要解釋接口類型」），但仍決定這一格要不要
+ *   進清單 —— 只拿掉顯示、不拿掉計算。
+ */
+export function moduleRows(ctx: LoadoutContext): ModuleRow[] {
+  const { chassis } = ctx
+  if (!ctx.mech || !chassis) return []
 
-/** 匯出圖用：所有**可能**的槽位各一列（存在的照狀態、不存在的整排一列）。 */
-export function loadoutSheetRows(ctx: LoadoutContext): SheetRow[] {
-  const out: SheetRow[] = []
-  const cap = ctx.capacity
+  const seen = new Set<string>()
+  const out: ModuleRow[] = []
 
-  const push = (ref: WeaponSlotRef, labelOverride?: string) => {
-    const occ = slotOccupant(ctx, ref)
-    const label = labelOverride ?? slotLabel(ref)
-    const key = slotKey(ref)
-    switch (occ.kind) {
-      case 'weapon': {
-        const mountedIds = [
-          ...(occ.mount.setup?.triggerComponentIds ?? []),
-          ...(occ.mount.setup?.effectComponentIds ?? []),
-        ]
-        out.push({
-          key, label, state: 'weapon',
-          name: occ.weapon?.name ?? occ.mount.weaponId,
-          note: null,
-          typeLabel: TYPE_LABEL[occ.mount.slot] ?? '—',
-          weight: occ.weapon?.weight ?? null,
-          componentIds: mountedIds,
-          componentNames: mountedIds.map((id) => ctx.world.components.get(id)?.name ?? id),
-        })
-        break
-      }
-      case 'fixed':
-        out.push({
-          key, label, state: 'fixed',
-          name: occ.weapon?.name ?? occ.occupied.mount.weaponId,
-          note: '機甲固定武裝',
-          typeLabel: TYPE_LABEL[occ.occupied.mount.slot] ?? '—',
-          // ⚠ 固定武裝的 weight 常態是 0（純封鎖型），那是真的 0 不是「沒有值」
-          weight: occ.weapon?.weight ?? null,
-          componentIds: [], componentNames: [],
-        })
-        break
-      case 'formLocked':
-        out.push({
-          key, label, state: 'formLocked',
-          name: occ.weapon?.name ?? occ.weaponId,
-          note: `${ctx.form?.name ?? '形態'}鎖定`,
-          typeLabel: TYPE_LABEL[occ.ref.slot] ?? '—',
-          weight: occ.weapon?.weight ?? null,
-          componentIds: [], componentNames: [],
-        })
-        break
-      case 'backpack':
-        out.push({
-          key, label, state: 'backpack',
-          name: occ.backpack.name,
-          note: cap.backupHand > 0 ? '解鎖備用武器槽' : null,
-          typeLabel: '背包',
-          weight: occ.backpack.weight,
-          componentIds: [], componentNames: [],
-        })
-        break
-      default:
-        out.push({ key, label, state: 'empty', name: null, note: null, typeLabel: '—', weight: null, componentIds: [], componentNames: [] })
-    }
+  for (const pos of MECH_PART_ORDER) {
+    const id = ctx.modules[pos]
+    if (!id) continue
+    const iface = interfaceState(chassis.moduleSlots[pos].iface)
+    if (iface === 'none' || iface === 'unknown') continue
+
+    const mod = ctx.world.modules.get(id) ?? null
+    const stack = mod ? ctx.stacks.get(moduleFamilyKey(mod)) ?? null : null
+    const key = mod ? moduleFamilyKey(mod) : ''
+    const dup = !!mod && seen.has(key)
+    if (mod) seen.add(key)
+
+    out.push({
+      position: pos,
+      label: partLabel(pos),
+      name: mod?.name ?? id,
+      icon: mod?.icon ?? null,
+      stack,
+      dup,
+      description: mod && !dup && stack
+        ? moduleLevelAt(stack.mod, stack.level)?.description || stack.mod.description || ''
+        : '',
+    })
   }
-
-  const absent = (key: string, label: string, note: string) =>
-    out.push({ key, label, state: 'absent', name: null, note, typeLabel: '—', weight: null, componentIds: [], componentNames: [] })
-
-  // ── 手部：雙手武器佔滿兩格 → 只印一列 ──
-  const dualMounted = ctx.set.mounts.some((m) => m.bank === 'main' && m.slot === WeaponEquipSlot.DUAL_HAND)
-  const dualLocked = !!ctx.lock?.mounts?.some((m) => m.slot === WeaponEquipSlot.DUAL_HAND)
-  if (dualMounted || dualLocked) {
-    push({ bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }, '雙手')
-  } else {
-    push({ bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' })
-    push({ bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'right' })
-  }
-
-  // ── 肩部：整排不存在時只寫一列 ──
-  if (cap.shoulder <= 0) {
-    absent('main:shoulder:none', '肩部', '肩部槽位只有中甲機甲才有')
-  } else {
-    for (const side of ['left', 'right'] as const) {
-      const ref: WeaponSlotRef = { bank: 'main', slot: WeaponEquipSlot.SHOULDER, side }
-      if (slotExists(cap, ref)) push(ref)
-      else absent(slotKey(ref), slotLabel(ref), '此機甲沒有這一格')
-    }
-  }
-
-  // ── 背部（背包與背部武器共用） ──
-  const backRef: WeaponSlotRef = { bank: 'main', slot: WeaponEquipSlot.BACK }
-  if (slotExists(cap, backRef)) push(backRef)
-  else absent(slotKey(backRef), '背部', '此機甲沒有背部槽')
-
-  // ── 備用組：由強襲者背包解鎖，沒解鎖時整排不存在 ──
-  if (cap.backupHand <= 0) {
-    absent('backup:none', '備用槽', '未裝強襲者背包 → 沒有備用武器槽')
-  } else {
-    for (const side of ['left', 'right'] as const) {
-      push({ bank: 'backup', slot: WeaponEquipSlot.SINGLE_HAND, side })
-    }
-  }
-
   return out
+}
+
+/**
+ * 裝超過上限、**多出來的級數不生效**的那幾族（PLAN-052-L A-4）。玩家會照著調配置，
+ * 所以圖上與文字摘要都必留。
+ *
+ * ⚠ `positions.length > 0` 不可省：`ctx.stacks` 同時含**天生模組**（PLAN-052-K D-1，
+ *   兩者共用同一個等級池），而天生模組一格接口都沒佔。少了這個條件，會印出
+ *   「裝了 0 顆、合計 8 級」這種話。
+ */
+export function wastedModuleStacks(ctx: LoadoutContext): ModuleStack[] {
+  return [...ctx.stacks.values()].filter((st) => st.overflow > 0 && st.positions.length > 0)
 }

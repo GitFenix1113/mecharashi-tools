@@ -93,7 +93,7 @@ export function PasteCodeDialog({ onClose, loading, indexes, world, onApply, onC
     const modules = Object.values(d.modules ?? {}).filter(Boolean).length
     const components = setKeys.reduce((n, k) => n + (d.sets[k].mounts ?? []).reduce(
       (m, mt) => m + (mt.setup?.triggerComponentIds?.length ?? 0) + (mt.setup?.effectComponentIds?.length ?? 0), 0), 0)
-    return { pilot, mech, sets: setKeys.length, weapons, backpacks, modules, components, name: d.name }
+    return { pilot, mech, sets: setKeys.length, weapons, backpacks, modules, components, name: d.name, note: d.note }
   }, [result, world])
 
   const apply = useCallback(() => {
@@ -151,6 +151,15 @@ export function PasteCodeDialog({ onClose, loading, indexes, world, onApply, onC
                 {preview.modules > 0 && <><span className="mx-2 text-border">·</span>模組 {preview.modules} 顆</>}
                 {preview.components > 0 && <><span className="mx-2 text-border">·</span>元件 {preview.components} 個</>}
               </div>
+              {/* ⚠ 貼進來的碼帶備註卻不顯示，使用者會以為沒帶到（PLAN-052-L C-4）。
+                  ⚠ 標「由分享者填寫」：這一段是**別人寫的字**，與上面那幾行本站算出來的
+                     資料共用同一個框，不標的話會被讀成本站的判斷。 */}
+              {preview.note && (
+                <div className="mt-1.5 pt-1.5 border-t border-border/70">
+                  <div className="text-[10px] text-text-dim leading-tight mb-0.5">備註（由分享者填寫）</div>
+                  <p className="text-[12px] text-text-secondary leading-relaxed whitespace-pre-line">{preview.note}</p>
+                </div>
+              )}
             </div>
 
             {loading && (

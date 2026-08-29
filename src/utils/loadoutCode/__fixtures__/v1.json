@@ -34,6 +34,18 @@
    "mod_4032",
    "mod_4001_2"
   ],
+  "pilotSkill": [
+   "skill_槍林彈雨",
+   "skill_一人成軍",
+   "skill_超導",
+   "SKILL_彈道收束"
+  ],
+  "pilotSkillAliases": {
+   "skill_槍林彈雨": 1500010,
+   "skill_一人成軍": 1500011,
+   "skill_超導": 1500012,
+   "SKILL_彈道收束": 1500013
+  },
   "moduleAliases": {
    "mod_4001_2": 1500001
   }
@@ -231,6 +243,58 @@
     }
    },
    "code": "ASExNAEhAQAHZGVmYXVsdANoEAEA0AFDMQABUEgQAgEBUAEBypoGpQ"
+  },
+  {
+   "name": "052-L：方案備註（§NOTE 追加段，含換行）",
+   "gameVersion": "3.3",
+   "draft": {
+    "activeSetKey": "default",
+    "sets": {
+     "default": {
+      "mounts": [
+       {
+        "weaponId": "weapon_016_藝術突襲EX",
+        "bank": "main",
+        "slot": "dualHand"
+       }
+      ]
+     }
+    },
+    "pilotId": "pilot_049_海莉絲",
+    "mechId": "mech_052_彌造者",
+    "name": "對空特化",
+    "note": "手部留 300 換備用\n背包吃滿，PvE 清場用"
+   },
+   "code": "ASExNAEOAQAHZGVmYXVsdAEBEAAFDQzlsI3nqbrnibnljJYGNTTmiYvpg6jnlZkgMzAwIOaPm-WCmeeUqArog4zljIXlkIPmu7_vvIxQdkUg5riF5aC055SolA"
+  },
+  {
+   "name": "052-L：攜帶技能（§SKILLS 追加段，三格 ＋「改」技能）",
+   "gameVersion": "3.3",
+   "draft": {
+    "activeSetKey": "default",
+    "sets": {
+     "default": {
+      "mounts": [
+       {
+        "weaponId": "weapon_016_藝術突襲EX",
+        "bank": "main",
+        "slot": "dualHand"
+       }
+      ]
+     }
+    },
+    "pilotId": "pilot_001_艾達",
+    "mechId": "mech_001_初擊者",
+    "skills": {
+     "carried": [
+      "skill_槍林彈雨",
+      "skill_一人成軍",
+      "skill_超導"
+     ],
+     "mod": "SKILL_彈道收束"
+    }
+   },
+   "code": "ASEBAQEOAQAHZGVmYXVsdAEBEAAHDQPqxlvrxlvsxlvtxluA"
   }
  ]
 }

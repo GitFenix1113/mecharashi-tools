@@ -1,3 +1,4 @@
+import type { ShareIdKind } from '../../utils/loadoutCode/shareId'
 import type { LoadoutIconName } from '../icons/LoadoutIcon'
 
 // ─── 配裝模擬器視覺地基（PLAN-052-I A-1）─────────────────────────────────────
@@ -239,7 +240,10 @@ export function slotIconName(slot: string, side?: 'left' | 'right'): LoadoutIcon
  *   翻成中文，而兩份各寫的下場，就是同一個 `component` 在一個地方叫「元件」、
  *   另一個地方叫「改裝」。
  */
-export const SHARE_KIND_LABEL: Record<'pilot' | 'mech' | 'weapon' | 'component' | 'backpack' | 'module', string> = {
+export const SHARE_KIND_LABEL: Record<ShareIdKind, string> = {
   pilot: '機師', mech: '機甲', weapon: '武器',
   component: '元件', backpack: '背包', module: '模組',
+  // PLAN-052-L D-3。⚠ 型別刻意用 `ShareIdKind` 而不是就地列舉那六個字串：
+  //   codec 加第七種實體時，漏翻的症狀是對話框上印出一個 `undefined`。
+  pilotSkill: '技能',
 }

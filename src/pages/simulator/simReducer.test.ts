@@ -5,8 +5,8 @@
 // 這裡就要真的看到肩部武器被移除、而且 toast 講得出被移除了什麼。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import type { Backpack, Component, Mech, MechForm, Module, NeuralDrive, Pilot, Weapon } from '../../types/index.ts'
-import { INITIAL_SIM_STATE, reconcile, simReduce, type SimState } from './simReducer.ts'
+import type { Backpack, Component, LoadoutDraft, Mech, MechForm, Module, NeuralDrive, Pilot, PilotSkillDoc, Weapon } from '../../types/index.ts'
+import { INITIAL_SIM_STATE, isEmptyDraft, reconcile, simReduce, type SimState } from './simReducer.ts'
 import { buildWorld, buildContext, loadoutBudget } from '../../utils/loadoutRules.ts'
 import { equipSetKeys } from '../../utils/forms.ts'
 import { ArmorType, BackpackType, MechLicense, MechRestriction, WeaponEquipSlot, WeaponType, MechPartPosition, ModuleSlot, PartInterface } from '../../types/enums.ts'
@@ -80,6 +80,37 @@ const ND甲: Pilot = {
 const ND乙: Pilot = {
   id: 'pilot_nd_b', name: 'ND乙', license: MechLicense.MEDIUM,
   neuralDrive: [drive('γ1', [4, 8, 13]), drive('α1', [2, 5])],
+} as Pilot
+
+// ─── 技能 fixture（PLAN-052-L D-3）──────────────────────────────────────────
+//   一位機師的九筆技能裡混著兩種**選不動**的：職業單元（unitType '6'）與天生技能
+//   （manual）。候選池規則見 `carriedSkills.ts`。
+
+const skillDoc = (id: string, over: Partial<PilotSkillDoc> = {}): PilotSkillDoc => ({
+  id, name: id.replace(/^skill_/, ''), type: '被動技能',
+  description: '', icon: '', iconLocal: '', effects: [], buffIds: [], ...over,
+})
+
+const 職業單元 = skillDoc('skill_職業單元', { unitType: '6' })
+/** 帶 `manual` 的一般技能。⚠ 它**是可選的** —— `manual` 記的是「這筆資料誰建的」，不是「天生」 */
+const 手建技能 = skillDoc('skill_手建', { manual: true })
+const 技能甲 = skillDoc('skill_甲')
+const 技能乙 = skillDoc('skill_乙')
+const 技能丙 = skillDoc('skill_丙')
+const 技能丁 = skillDoc('skill_丁')
+/** 別人的技能：換機師時要被掃掉的那一個 */
+const 技能戊 = skillDoc('skill_戊')
+
+const SKILLS: PilotSkillDoc[] = [職業單元, 手建技能, 技能甲, 技能乙, 技能丙, 技能丁, 技能戊]
+
+/** 帶技能的機師（不動既有的機師 fixture —— 那幾位有各自的測試在依賴它們的形狀） */
+const 技能機師: Pilot = {
+  id: 'pilot_sk', name: '技能機師', license: MechLicense.MEDIUM,
+  skills: [職業單元.id, 手建技能.id, 技能甲.id, 技能乙.id, 技能丙.id, 技能丁.id],
+} as Pilot
+const 技能機師2: Pilot = {
+  id: 'pilot_sk2', name: '技能機師二號', license: MechLicense.MEDIUM,
+  skills: [職業單元.id, 技能戊.id],
 } as Pilot
 
 const form = (id: string, name: string, order: number, allow: string[]): MechForm => ({
@@ -168,13 +199,31 @@ const L_ARM = { kind: 'module', position: MechPartPosition.LEFT_ARM } as const
 const LEGS  = { kind: 'module', position: MechPartPosition.LEGS } as const
 
 const WORLD = buildWorld({
-  pilots: [海莉絲, 輕型機師, 中型機師, ND甲, ND乙],
+  pilots: [海莉絲, 輕型機師, 中型機師, ND甲, ND乙, 技能機師, 技能機師2],
   mechs: [彌造者, 輕型機, 重型機, 中甲機2, A級中甲, B級中甲, 輕量中甲],
   weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
   backpacks: [強襲者背包, 出力背包Ⅲ],
   forms: [先鋒形態, 突擊形態, 戰術形態],
   components: COMPONENTS,
   modules: MODULES,
+  pilotSkills: SKILLS,
+})
+
+/**
+ * **技能庫尚未載入**的世界（PLAN-052-L D-3 的載入 gate）。
+ *
+ * ⚠ 這一份比元件／模組那兩個 gate 更容易踩到：`pilotSkills` **不在**
+ *   `LOADOUT_STAGE_KEYS` 裡，所以「還沒載入」在頁面上是常態而不是開頁的一瞬間。
+ */
+const WORLD_NO_SKILLS = buildWorld({
+  pilots: [海莉絲, 輕型機師, 中型機師, ND甲, ND乙, 技能機師, 技能機師2],
+  mechs: [彌造者, 輕型機, 重型機, 中甲機2, A級中甲, B級中甲, 輕量中甲],
+  weapons: [群山之力, 藝術突襲, 夜魘, 熔火, 炬塔],
+  backpacks: [強襲者背包, 出力背包Ⅲ],
+  forms: [先鋒形態, 突擊形態, 戰術形態],
+  components: COMPONENTS,
+  modules: MODULES,
+  // ⚠ 缺欄位 ＝「這個集合根本沒進來」，不是「這個世界沒有技能」
 })
 
 /**
@@ -461,8 +510,20 @@ test('ndLevels：不屬於這位機師的分區鍵會被掃掉（換機師的殘
 })
 
 test('ndLevels：Lv 超出該區級數會被 clamp，不會留下一個查無此級的數字', () => {
-  const { draft } = reconcile(ndDraft(ND乙.id, { 'γ1': 99, 'α1': -3 }), WORLD)
-  assert.deepEqual(draft.ndLevels, { 'γ1': 3, 'α1': 0 })
+  const { draft } = reconcile(ndDraft(ND乙.id, { 'γ1': 99 }), WORLD)
+  assert.deepEqual(draft.ndLevels, { 'γ1': 3 })
+})
+
+test('ndLevels：α／β 那一鍵一律掃掉（PLAN-052-M 起鎖死滿級、不開放調整）', () => {
+  // ⚠ 這會改寫舊分享碼的語意：帶著 α 的舊碼貼進來之後 α 回到滿級。
+  //   那是刻意的 —— 鎖死之後玩家自己再也改不回來，留著它等於製造一個
+  //   「面板上看得到、誰都動不了」的狀態。丟掉之後 defaultNdLevels() 給滿級。
+  const { draft } = reconcile(ndDraft(ND乙.id, { 'γ1': 2, 'α1': 1 }), WORLD)
+  assert.deepEqual(draft.ndLevels, { 'γ1': 2 })
+
+  // 整份只有 α 時 → 沒有東西留下 ⇒ 欄位本身不存在（同「未設定」）
+  const { draft: onlyAlpha } = reconcile(ndDraft(ND乙.id, { 'α1': 1 }), WORLD)
+  assert.equal('ndLevels' in onlyAlpha, false)
 })
 
 test('ndLevels：γ 合計超過上限 → 整份退場，回到「未設定」而不是被砍一半', () => {
@@ -1310,4 +1371,186 @@ test('052-F D-1：換機師仍然整批失效（gate 不可以順手把這條擋
   )
   assert.deepEqual(Object.keys(s.draft.sets), [])
   assert.equal(s.draft.activeSetKey, 'default')
+})
+
+// ─── 攜帶技能（PLAN-052-L Phase D）──────────────────────────────────────────
+//
+// 這一組的每一條錯法都是**靜默**的：載入 gate 漏了就「貼一次分享碼、技能少一批」，
+// 緊湊陣列破了就在 localStorage 往返之後長出一個 null，而兩者都不會報錯。
+
+const 技能草稿 = (carried: string[], over: Partial<LoadoutDraft> = {}): LoadoutDraft => ({
+  activeSetKey: 'default', sets: {},
+  pilotId: 技能機師.id, mechId: 彌造者.id,
+  // ⚠ 空的時候**不放 `skills` 鍵**：未設定＝欄位不存在（見 `LoadoutDraft.skills`）。
+  //   留一個 `{ carried: [] }` 會讓「有沒有帶技能」在這裡與 reconcile 之後給出兩種答案。
+  ...(carried.length ? { skills: { carried } } : {}),
+  ...over,
+})
+
+test('技能：放進空格 ⇒ 依序排進三格', () => {
+  let st: SimState = { ...INITIAL_SIM_STATE, draft: 技能草稿([]) }
+  st = simReduce(st, { type: 'equipSkill', index: 0, skillId: 技能甲.id }, WORLD)
+  st = simReduce(st, { type: 'equipSkill', index: 1, skillId: 技能乙.id }, WORLD)
+  assert.deepEqual(st.draft.skills?.carried, [技能甲.id, 技能乙.id])
+})
+
+test('技能：index 超出目前長度 ⇒ 收斂成 append，不挖洞', () => {
+  // 挖洞的話那個洞會在 JSON.stringify（localStorage 草稿／雲端存檔）之後變成 null，
+  // 而下游會拿 null 去查技能。
+  let st: SimState = { ...INITIAL_SIM_STATE, draft: 技能草稿([]) }
+  st = simReduce(st, { type: 'equipSkill', index: 2, skillId: 技能甲.id }, WORLD)
+  assert.deepEqual(st.draft.skills?.carried, [技能甲.id])
+})
+
+test('技能：同一個技能放到別格是對調不是複製', () => {
+  // 畫面上是三個固定的格子，所以「把第 3 格的東西放到第 1 格」＝兩格對調。
+  // 插入並往後推是清單語意，那會讓第 2 格的東西自己跑到第 3 格。
+  let st: SimState = { ...INITIAL_SIM_STATE, draft: 技能草稿([技能甲.id, 技能乙.id, 技能丙.id]) }
+  st = simReduce(st, { type: 'equipSkill', index: 0, skillId: 技能丙.id }, WORLD)
+  assert.deepEqual(st.draft.skills?.carried, [技能丙.id, 技能乙.id, 技能甲.id])
+  assert.equal(new Set(st.draft.skills?.carried).size, 3, '不可以出現重複的技能')
+})
+
+test('技能：滿三格之後再放第四個 ⇒ 只換掉那一格，不會變成四格', () => {
+  const st = simReduce(
+    { ...INITIAL_SIM_STATE, draft: 技能草稿([技能甲.id, 技能乙.id, 技能丙.id]) },
+    { type: 'equipSkill', index: 1, skillId: 技能丁.id }, WORLD,
+  )
+  assert.deepEqual(st.draft.skills?.carried, [技能甲.id, 技能丁.id, 技能丙.id])
+})
+
+test('技能：移除之後陣列往前收，且最後一個移除掉整個欄位', () => {
+  let st: SimState = { ...INITIAL_SIM_STATE, draft: 技能草稿([技能甲.id, 技能乙.id]) }
+  st = simReduce(st, { type: 'unequipSkill', skillId: 技能甲.id }, WORLD)
+  assert.deepEqual(st.draft.skills?.carried, [技能乙.id])
+  st = simReduce(st, { type: 'unequipSkill', skillId: 技能乙.id }, WORLD)
+  assert.equal('skills' in st.draft, false, '未設定＝欄位不存在，不是留一個空陣列')
+})
+
+test('⚠ 技能：職業單元選不進去（天生自帶、不佔格）', () => {
+  const st = simReduce(
+    { ...INITIAL_SIM_STATE, draft: 技能草稿([]) },
+    { type: 'equipSkill', index: 0, skillId: 職業單元.id }, WORLD,
+  )
+  assert.equal('skills' in st.draft, false, '職業單元不佔格，塞進去要被掃掉')
+})
+
+test('⚠ 技能：帶 manual 的一般技能**選得進去** —— manual 不是「天生」的判準', () => {
+  // `manual` 記的是「這筆資料是後台手建還是爬蟲抓的」，與要不要攜帶無關。
+  // 拿它當判準會讓 3.3+ 那七位機師（九筆技能全帶 manual）的候選池整個歸零。
+  const st = simReduce(
+    { ...INITIAL_SIM_STATE, draft: 技能草稿([]) },
+    { type: 'equipSkill', index: 0, skillId: 手建技能.id }, WORLD,
+  )
+  assert.deepEqual(st.draft.skills?.carried, [手建技能.id])
+})
+
+test('技能：換機師時掃掉不屬於他的那幾個', () => {
+  const st = simReduce(
+    { ...INITIAL_SIM_STATE, draft: 技能草稿([技能甲.id, 技能乙.id]) },
+    { type: 'selectPilot', pilotId: 技能機師2.id }, WORLD,
+  )
+  assert.equal('skills' in st.draft, false, '新機師一個都帶不動 ⇒ 整個欄位消失')
+})
+
+test('⚠ 技能庫尚未載入時 reconcile 一個都不准動（本 Phase 最危險的一條）', () => {
+  // 照著武器那套「查不到就刪」做，症狀是**貼一次分享碼、三個技能就被靜默清空一次**，
+  // 而畫面上什麼都不會說 —— 連 toast 都不會跳，因為那在它眼裡是一次成功的級聯。
+  const draft = 技能草稿([技能甲.id, 職業單元.id, 'skill_誰知道'])
+  const st = simReduce({ ...INITIAL_SIM_STATE, draft }, { type: 'loadDraft', draft }, WORLD_NO_SKILLS)
+  assert.deepEqual(
+    st.draft.skills?.carried, [技能甲.id, 職業單元.id, 'skill_誰知道'],
+    '空 Map ＝ 還沒載入，不是「這些技能不存在」',
+  )
+})
+
+test('⚠ 技能：「改」技能（mod）不受候選池檢查 —— 它不在 pilot.skills 裡', () => {
+  // 站上今天沒有這份資料、也沒有 UI，但分享碼**只進不出**：別的 client 寫進去的值
+  // 必須原樣留著。拿候選池去驗它一定驗不過 ⇒ 每跑一次 reconcile 就清掉一次。
+  const draft = 技能草稿([技能甲.id], { skills: { carried: [技能甲.id], mod: 'skill_科研改' } })
+  const st = simReduce({ ...INITIAL_SIM_STATE, draft }, { type: 'loadDraft', draft }, WORLD)
+  assert.equal(st.draft.skills?.mod, 'skill_科研改')
+  assert.deepEqual(st.draft.skills?.carried, [技能甲.id])
+})
+
+test('技能：三格是上限 —— 外來草稿帶四個進來只留前三個', () => {
+  const draft = 技能草稿([技能甲.id, 技能乙.id, 技能丙.id, 技能丁.id])
+  const st = simReduce({ ...INITIAL_SIM_STATE, draft }, { type: 'loadDraft', draft }, WORLD)
+  assert.deepEqual(st.draft.skills?.carried, [技能甲.id, 技能乙.id, 技能丙.id])
+})
+
+// ─── 兩顆清空鍵（使用者回饋 2026-08-30）────────────────────────────────────
+//
+// 拆之前只有一顆「清空」，做的是 `clearSet`（這一套的裝備），而它旁邊三顆都是
+// 「把整份配裝交出去」——於是「清空」讀起來像「全部重來」。這一組釘的就是
+// **兩顆各自的邊界**：多清或少清都不會有錯誤訊息，只會讓人回頭找不到東西。
+
+test('清空裝備：卸下武器與背包，但機師／機甲／模組／算力一律留著', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },
+    { type: 'equipBackpack', backpackId: 強襲者背包.id },
+    { type: 'equipModule', ref: TORSO, moduleId: 通用S.id },
+    { type: 'clearSet' },
+  )
+  assert.deepEqual(setOf(s).mounts, [])
+  assert.equal(setOf(s).backpackId, undefined)
+  assert.equal(s.draft.pilotId, 海莉絲.id, '機師不是裝備')
+  assert.equal(s.draft.mechId, 彌造者.id, '機甲不是裝備')
+  assert.deepEqual(s.draft.modules, { torso: 通用S.id }, '模組裝在機甲上，不隨裝備一起清')
+})
+
+test('清空裝備：只動目前這一個分頁（另外兩個形態的配裝在畫面上看不到，清掉等於靜默損失）', () => {
+  const keys = equipSetKeys(海莉絲.id, [先鋒形態, 突擊形態, 戰術形態])
+  const s = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    // 兩頁各裝一把「那一頁裝得上」的武器：先鋒收格鬥／狙擊、突擊只收突擊
+    { type: 'setActiveSet', key: keys[0] },
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },
+    { type: 'setActiveSet', key: keys[1] },
+    { type: 'equipWeapon', ref: HAND_L, weaponId: 藝術突襲.id },
+    { type: 'clearSet' },
+  )
+  assert.deepEqual(setOf(s, keys[1]).mounts, [], '站在第二頁按的，清的就是第二頁')
+  assert.equal(setOf(s, keys[0]).mounts.length, 1, '第一頁原封不動')
+})
+
+test('全部清空：連機師與機甲一起丟掉，回到剛進頁面的樣子', () => {
+  const s = run(
+    { type: 'selectPilot', pilotId: ND甲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },
+    { type: 'setNdLevels', levels: { 'γ1': 3 } },
+    { type: 'setName', name: '我的配裝' },
+    { type: 'clearAll' },
+  )
+  assert.deepEqual(s.draft, INITIAL_SIM_STATE.draft)
+})
+
+test('兩顆清空鍵都跳 toast 且都能 [復原] —— 它們相鄰、只差兩個字，按錯的代價是整套配裝', () => {
+  const before = run(
+    { type: 'selectPilot', pilotId: 海莉絲.id },
+    { type: 'selectMech', mechId: 彌造者.id },
+    { type: 'equipWeapon', ref: DUAL, weaponId: 群山之力.id },
+  )
+  for (const type of ['clearSet', 'clearAll'] as const) {
+    const cleared = simReduce(before, { type }, WORLD)
+    assert.equal(cleared.notice?.undoable, true, `${type} 沒有 [復原] ⇒ 按錯只能憑記憶重配一次`)
+    const undone = simReduce(cleared, { type: 'undo' }, WORLD)
+    assert.deepEqual(undone.draft, before.draft, `${type} 的 [復原] 沒有把東西拿回來`)
+  }
+})
+
+test('全部清空：草稿已經是空的就什麼都不做（跳一則「已全部清空」卻沒有變化，比沒有回饋更糟）', () => {
+  const s = simReduce(INITIAL_SIM_STATE, { type: 'clearAll' }, WORLD)
+  assert.equal(s, INITIAL_SIM_STATE)
+  assert.equal(s.notice, null)
+})
+
+test('isEmptyDraft：只選了機師也算「有東西」—— 那正是要按全部清空的人', () => {
+  assert.equal(isEmptyDraft(INITIAL_SIM_STATE.draft), true)
+  const onlyPilot = run({ type: 'selectPilot', pilotId: 海莉絲.id })
+  assert.equal(isEmptyDraft(onlyPilot.draft), false, '按鈕會 disabled ⇒ 選錯機師的人清不掉')
 })

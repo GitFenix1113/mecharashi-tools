@@ -59,6 +59,41 @@ export function defaultNdLevels(
 }
 
 /**
+ * 「**分享出去的東西上要印哪幾個分區**」——匯出長圖與純文字摘要共用
+ * （PLAN-052-L B-3 建立、E-1 抽出）。
+ *
+ * 團隊逐字：「α 和 β 兩個算力區不用理會，玩家一定會塞滿，真正有差異的是 γ1 和 γ2 ——
+ * 這邊要滿，玩家必須投入一種昂貴的資源叫做仿生超導體」。
+ *
+ * ⇒ **γ 恆印；α／β 只在偏離 `defaultNdLevels()` 時才印**（正常情況成本 0）。
+ *
+ * ⚠ **α／β 那條分支自 PLAN-052-M 起是安全網、不是常態路徑**：模擬器已把 α／β 鎖死在
+ *   滿級（`NdPowerBar` 不給點、`reconcileNdLevels` 連那一鍵都掃掉）⇒ 偏離值進不來。
+ *   **但這條分支不要刪** —— 它擋的是「哪天又開放調整、或別的呼叫端傳了偏離值」，
+ *   而刪掉之後那種情況會靜默地少印一整區。成本是一次 `!==` 比較。
+ *
+ * ⚠ **不可以改寫成「印一句 α／β 全機師一致，本圖略」**：那是資料上的巧合、不是規則。
+ *   （鎖死之後這句話變成「本站的規則」而非「資料的巧合」，措辭因此改成
+ *   「α／β 固定滿級」—— 那是本站說得出理由的一句話。）
+ *
+ * ⚠ γ 的判準一律走 `isGammaZone()`（`startsWith('γ')`），**不可寫成
+ *   `['γ1','γ2'].includes(name)`** —— 全庫有 10 位 1.0 老角的分區名就是單一字元 `γ`，
+ *   寫死會讓他們整區從圖上消失。
+ *
+ * ⚠ 抽成共用的理由與 `ndAffectZones()` 同一條：圖與文字摘要**必須印出同一批分區**。
+ *   各寫一份的漂移症狀是「同一套配裝，圖上有 α、複製出來的文字沒有」，而兩邊都不會報錯。
+ */
+export function printedNdZones(
+  drives: readonly NeuralDrive[] | undefined,
+  levels: Record<string, number>,
+  defaults: Record<string, number>,
+): NeuralDrive[] {
+  return (drives ?? []).filter(
+    (d) => isGammaZone(d.name) || (levels[d.name] ?? 0) !== (defaults[d.name] ?? 0),
+  )
+}
+
+/**
  * ★ 標記要打在哪些分區上：**天賦 `ndVariants` 宣告的分區 ∪ 帶 `buffUpgrades` 的能力所在分區**。
  *
  * 兩條來源缺一不可：前者是「這一區會換掉整段天賦正文」，後者是「這一區會把某個 buff 家族

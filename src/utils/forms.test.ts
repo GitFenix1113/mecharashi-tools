@@ -5,6 +5,7 @@ import assert from 'node:assert/strict'
 import {
   equipSetKeys, hasIndependentLoadouts, equipSetLabel, lockedFormCards, DEFAULT_EQUIP_SET_KEY,
 } from './forms.ts'
+import type { MechForm } from '../types/index.ts'
 
 /** 線上 forms 集合的實際 6 筆（2026-08-24），加上 C-3 要落盤的 independentLoadout */
 const FORMS = [
@@ -20,7 +21,8 @@ const FORMS = [
     restrict: { kind: 'weaponType', allow: ['突擊', '格鬥', '射擊'] } },
   { id: 'form_曜_巡航', pilotId: 'pilot_曜', name: '巡航', order: 2,
     restrict: { kind: 'fixedArmament', mounts: [] } },
-] as never
+// 刻意的部分 fixture（缺 description 等欄位）：equipSetKeys 這組只看 pilotId / order / restrict
+] as unknown as MechForm[]
 
 test('海莉絲 → 3 個分頁（虛粒子不佔分頁：鎖死整套，沒有東西可配）', () => {
   assert.deepEqual(equipSetKeys('pilot_海莉絲', FORMS), [

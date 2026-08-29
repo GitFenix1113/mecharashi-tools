@@ -2,7 +2,7 @@
 //   npm test   →   node --test "src/**/*.test.ts"
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { chassisFirepower, chassisWeight, chassisOutput, mechParts, MECH_PART_ORDER } from './chassisStats.ts'
+import { chassisFirepower, chassisWeight, chassisOutput, mechParts, MECH_PART_ORDER, type MechPartsInput } from './chassisStats.ts'
 
 /** 彌造者（mech_052）線上實測值：四部位火力各 1255、重量合計 825、軀幹出力 3375 */
 const 彌造者 = {
@@ -10,7 +10,8 @@ const 彌造者 = {
   leftArm:  { position: 'leftArm',  firepower: 1255, weight: 175 },
   rightArm: { position: 'rightArm', firepower: 1255, weight: 175 },
   legs:     { position: 'legs',     firepower: 1255, weight: 235 },
-} as never
+// 刻意的部分 fixture（缺 durable / armor / interface）：這幾支只讀 firepower / weight / output
+} as unknown as NonNullable<MechPartsInput>
 
 test('本檔存在的理由：火力是 Σ 四部位，不是頂層欄位', () => {
   // 線上 mech_052 的頂層 firepower ＝ 1255 ＝ **單一部位值**（90 台中 83 台如此）

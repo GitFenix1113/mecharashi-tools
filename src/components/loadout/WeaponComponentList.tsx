@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { SlotKey } from '../../types/slots'
-import { weaponRows, type WeaponRow } from '../../utils/loadoutRows'
-import { mountedComponentIds, weaponSiteAt, type LoadoutBudget, type LoadoutContext } from '../../utils/loadoutRules'
+import { slotComponentNames, weaponRows, type WeaponRow } from '../../utils/loadoutRows'
+import type { LoadoutBudget, LoadoutContext } from '../../utils/loadoutRules'
 import { HUD, SEG_TEXT, slotSegKey, type SegKey } from './loadoutTheme'
 import LoadoutIcon from '../icons/LoadoutIcon'
 import { ActionChevron } from './ActionChevron'
@@ -83,7 +83,7 @@ export function WeaponComponentList({ ctx, budget, activeRow, onOpen }: Props) {
                 {r.limit === 0
                   ? (r.locked === 'fixed' ? '機甲固定武裝' : r.locked === 'form' ? '形態鎖定的武裝' : `${r.weapon?.rarity ?? ''} 品質`)
                   : r.used === 0 ? '尚未裝設元件'
-                  : componentNames(ctx, r)}
+                  : slotComponentNames(ctx, r.ref).join('・')}
               </span>
               {/* ⚠ 這一列本身就是入口，但整列可點**看不出來**（只有 hover 變色）——
                   站長實測時第一個問題就是「怎麼設定元件」。⚙ 是那顆看得見的記號，
@@ -129,21 +129,6 @@ export function WeaponComponentList({ ctx, budget, activeRow, onOpen }: Props) {
       </div>
     </div>
   )
-}
-
-/**
- * 列上那一行已裝元件的名稱。
- *
- * ⚠ 只印名字、不印 Lv 與描述：這一列寬約 190px，多一個字都會把後面的擠掉。
- *   詳細的（Lv、效果、組合特性）在面板裡，而整列本來就是通往面板的入口。
- *   查不到的元件印回 doc id —— 斷鏈要看得見（同 `weaponRows()` 的 name fallback）。
- */
-function componentNames(ctx: LoadoutContext, r: WeaponRow): string {
-  const site = weaponSiteAt(ctx, r.ref)
-  const { trigger, effect } = mountedComponentIds(site)
-  return [...trigger, ...effect]
-    .map((id) => ctx.world.components.get(id)?.name ?? id)
-    .join('・')
 }
 
 /**

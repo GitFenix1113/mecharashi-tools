@@ -18,9 +18,12 @@
 //   訪客是「本機書架 7/10」（全站共用一個配額），登入者是「海莉絲 3/5」。
 //
 // ⚠ 本檔零 React、零 Firebase，storage 一律當參數收 —— 這樣才單測得起來。
+//   （唯一的 import 是 codec 的 `sameLoadout`，那也是純函式。）
 //   自動草稿（`mecharashi_loadout_draft`）**不在這裡**：那一份存的是結構化草稿而非
 //   代碼，因為它必須無損（推導不出號碼的裝備編碼會變成 0 ⇒ 存成代碼會在下一次
 //   重整時靜默弄丟玩家自己配上去的背包）。書架是「我要留著的成品」，代價換得起。
+
+import { sameLoadout } from '../utils/loadoutCode/codec.ts'
 
 /** localStorage 鍵。改它等同清空所有人的書架，改之前先想好遷移。 */
 export const SHELF_KEY = 'mecharashi_loadout_shelf'
@@ -92,9 +95,15 @@ export type SaveResult =
 /**
  * 把一串代碼存進書架。
  *
- * **同一串代碼不會存成兩筆**：連按兩下、或把剛套用的那一套原封不動再存一次，
+ * **同一套配裝不會存成兩筆**：連按兩下、或把剛套用的那一套原封不動再存一次，
  * 都只是把它移到最前面並更新時間。不去重的話，配額會被同一套配裝的複本吃光，
  * 而使用者看到的是十張長得一模一樣的卡片。
+ *
+ * ⚠ **判定走 `sameLoadout()` 而不是字串相等**（PLAN-052-L C-6）：加了方案備註之後，
+ *   「只改了一句備註」＝新字串 ⇒ 會佔掉第二格，而使用者的本意是修正同一套。
+ *   而「三個只差一點的方案」正是這個機制最脆弱的輸入。
+ *   ⚠ 就地更新時**存的是新的那一串**（`code` 而不是 `hit.code`）：
+ *   使用者剛改的備註要留下來，否則書架會安靜地把它改回舊的那一句。
  *
  * 滿了**一律拒絕**，不淘汰最舊的（規則②）。
  */
@@ -107,9 +116,9 @@ export function saveBuild(
   if (!store) return { ok: false, reason: 'storage' }
 
   const shelf = readShelf(store)
-  const hit = shelf.find((e) => e.code === code)
+  const hit = shelf.find((e) => sameLoadout(e.code, code))
   if (hit) {
-    const next = [{ ...hit, savedAt: opts.now }, ...shelf.filter((e) => e.id !== hit.id)]
+    const next = [{ ...hit, code, savedAt: opts.now }, ...shelf.filter((e) => e.id !== hit.id)]
     return writeShelf(next, store)
       ? { ok: true, shelf: next, id: hit.id, deduped: true }
       : { ok: false, reason: 'storage' }

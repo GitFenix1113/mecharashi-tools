@@ -38,7 +38,7 @@ export function isSkillId(entry: string | PilotSkill): entry is string {
  */
 export function resolvePilotSkills(
   skills: Pilot['skills'] | undefined,
-  skillMap: Map<string, PilotSkillDoc>,
+  skillMap: ReadonlyMap<string, PilotSkillDoc>,
 ): PilotSkillDoc[] {
   if (!Array.isArray(skills)) return []
   const out: PilotSkillDoc[] = []

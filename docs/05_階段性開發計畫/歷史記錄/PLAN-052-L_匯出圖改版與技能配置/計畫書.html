@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-L 匯出圖改版與技能配置 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-L 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge pink">◆ PLAN-052-L</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    匯出圖改版與技能配置<span style="-webkit-text-fill-color:var(--text-secondary);"> · 位置化槽位 · 方案備註 · 攜帶技能</span>
+  </h1>
+  <p class="hero-sub">團隊八項回饋中的七項（2–8）。把匯出長圖從條列表改成與遊戲整備畫面同構的位置化版面，補上「方案備註」與「攜帶技能」兩個新欄位，並順手修掉四個現行錯誤。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label pink">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value pink">PLAN-052-L</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-29</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">LoadoutExportCard · codec · simReducer</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value pink">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-052-K（ctx.stacks）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <p style="color:var(--text-secondary);font-size:14px;line-height:1.9;">
+    團隊在 2026-08-29 提出八項回饋。逐項查過原始碼與正式庫之後，它們<strong>不是同一種東西</strong>：
+    五項（4／5／6／7／8）是匯出圖的版面問題、兩項（2／3）要動資料模型與分享碼、
+    第一項根本不是圖的問題。本計畫承接其中的 <strong>2–8 共七項</strong>；
+    回饋 1 的正解是分享連結 OG 卡，歸 <strong>PLAN-052-H</strong> 既有範圍（見下方「不在範圍內」）。
+  </p>
+
+  <div class="problem-block">
+    <strong>① 圖上三分之二的模組只有一個名字</strong><br>
+    匯出圖今天印的是 <code>statText()</code> —— 把模組的數值欄攤平成「命中+15%」。
+    實測候選池 186 顆有 <strong>119 顆（64%）滿級數值欄全為 0</strong> ⇒ 回空字串。
+    而且它<strong>會漏掉觸發條件卻看起來像完整答案</strong>：猛擊裝置的 <code>statText</code> 是「格鬥傷害+15%」，
+    它的滿級 <code>description</code> 是「使用格鬥武器攻擊時<strong>有 70% 的概率發動</strong>，傷害提升 15%」。
+    圖是印刷品、無法點開對帳 —— 印一個省略了機率的數字比不印更糟。
+  </div>
+
+  <div class="problem-block">
+    <strong>② 10 位機師被印上一個永遠達不到的分母</strong><br>
+    <code>ND_RULES.gammaPairCap = 23</code> 是「上下 16＋7」的<strong>雙區共用預算</strong>，
+    但實測 89 位機師裡有 <strong>10 位 1.0 老角只有單一個 γ 區</strong>（分區名就是單一字元 <code>γ</code>，天花板 16）。
+    他們的圖上印著 <code>16 / 23</code>，讀起來像「還差 7 沒點滿」，而那 7 點永遠不存在。
+    兩個印出處：<code>Stat</code> 的 suffix 與 <code>SectionHead</code> 的 note。
+  </div>
+
+  <div class="problem-block">
+    <strong>③ 裝備條列表與遊戲整備畫面對不起來</strong><br>
+    團隊逐字：「遊戲中是有相對位置的，條列有點不好對」。
+    而<strong>螢幕版早就是位置化的</strong> —— <code>LoadoutRig</code> 是十字＋立繪＋引線，左右也已經翻過面
+    （畫面左＝機體右，與遊戲整備畫面一致）。這一項是把已經裁決過三次的空間語彙搬到印刷品上，不是重新設計。
+  </div>
+
+  <div class="problem-block">
+    <strong>④ 另外兩個沒人回報過的既有錯誤</strong><br>
+    · 分段條的 <code>pct()</code> 分母寫死 <code>w.total</code> ⇒ 那條<strong>永遠填滿 100%</strong>，與超不超重完全無關 —— 它今天不傳達任何資訊。
+    <span class="badge-low">註</span> 螢幕版 <code>OutputBar</code> 的註解說超重時「條會撐出一截紅色」，
+    但 <code>scale = max(output.total, weight.total, 1)</code> 而四個分段加起來<em>就是</em> <code>weight.total</code>，
+    超重時剛好填滿 100%，紅的只有邊框 —— <strong>那一段紅色不存在，不可照抄</strong>。<br>
+    · 超限提醒（<code>wasted</code>）沒有 <code>positions.length &gt; 0</code> 條件 ⇒ 天生模組也在 <code>stacks</code> 裡，
+    可能印出「裝了 0 顆、合計 8 級」。
+  </div>
+
+  <div class="info-block">
+    <strong>本計畫的版面稿</strong>　四張畫板（現況基準／批 1 立即可出／機體同構全圖／神經驅動三層級）已在本機
+    <code>_local-notes/2026-08/2026-08-29_匯出圖改版畫布/</code>，逐項評估在
+    <code>_local-notes/2026-08/2026-08-29_配裝模擬器_八項回饋評估.html</code>。
+    兩者皆<strong>不進版控</strong>（CLAUDE.md 規則 4），實作時的權威是本計畫書。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label pink">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：不共用螢幕版面，但把幾何抽成純函式</strong><br>
+    沿用 052-I E-2 的既有原則（匯出圖不吃 <code>loadoutTheme</code>、字級階與螢幕版不同、顏色一律寫死十六進位）。
+    但回饋 5 要的「相對位置」與 <code>LoadoutRig</code> 是<strong>同一套空間裁決</strong>
+    （畫面左＝機體右／臂卡插在肩與手之間／雙手武器左右兩格都畫／背包放在背部那一列），
+    重畫一套一定會漂，而漂掉的症狀是「同一台機體在畫面與圖上左右相反」。<br>
+    ⇒ 新增 <code>src/utils/rigLayout.ts</code> 純函式，回傳「哪一列、哪一欄、哪個部位」，<strong>螢幕與匯出各自渲染</strong>。
+    與 <code>loadoutRows.ts</code> 既有的做法同構（一支純函式、兩個消費端）。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 絕不可把 <code>&lt;LoadoutRig&gt;</code> 元件本身塞進匯出卡</strong><br>
+    一次帶進三個<strong>靜默</strong>失效點：① SVG 的 <code>var()</code> 在 <code>html-to-image</code> 裡解析不到
+    （它對 <code>&lt;svg&gt;</code> 直接深拷貝、子元素不經 <code>cloneCSSStyle()</code>）；
+    ② <code>ResizeObserver</code> 與「掛載即開拍」的競態；③ <code>loading="lazy"</code> 的圖永遠等不到。
+    外加一堆點不動的假入口（「點擊裝備」、<code>✕</code> 卸下鍵、<code>›</code> chevron、「可用 1,870」）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：不畫引線</strong><br>
+    理由有兩層。① SVG 顏色在匯出時解析不到 <code>var()</code>（見決策一的警告），要畫就得全部寫字面十六進位；
+    ② 中央的 <code>portrait.webp</code> 實測只有 <strong>560×340</strong>，塞進方框後上下留白，
+    而 <code>ANCHOR</code> 的備用槽落點（<code>.84</code>）會掉在<strong>機體外的空白上</strong> ——
+    <code>LoadoutRig.tsx</code> 的註解正是在警告這件事。<br>
+    ⇒ 靠<strong>欄位置本身</strong>表達左右，底部一行說明「畫面左欄是機體右側（正面視角）」。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策三：六種槽位狀態一個都不能少</strong><br>
+    <code>loadoutRows.ts</code> 的狀態是
+    <code>weapon · backpack · fixed · formLocked · empty · absent</code>。
+    位置化時最自然的做法是收成「已裝／空槽／無槽」三種 —— 那會<strong>靜默丟掉 <code>fixed</code>（機甲焊死的武裝）
+    與 <code>formLocked</code>（形態鎖定）的黃字</strong>，而那是圖上唯一在說「這一格你換不了」的訊號。<br>
+    同理 <code>weight === null</code>（沒有這一格）與 <code>weight === 0</code>（真的不佔重量，固定武裝就是）
+    <strong>不可以都印成 <code>—</code></strong>。<br>
+    三態的畫法：已裝＝實線框＋深底；空槽＝<strong>橘色虛線框</strong>＋「未裝備」；
+    無槽＝<strong>灰虛線＋斜紋底</strong>＋原因。「整排不存在」一律整寬<strong>一列</strong>，
+    不畫成左右兩個一樣的灰格（沿用 052-I 的既有裁決）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：γ 恆印、α／β 只在偏離預設時印、不印任何分母</strong><br>
+    團隊逐字：「α 和 β 兩個算力區不用理會，玩家一定會塞滿，真正有差異的是 γ1 和 γ2 ——
+    這邊要滿，玩家必須投入一種昂貴的資源叫做仿生超導體」。<br>
+    · 過濾一律走既有的 <code>isGammaZone()</code>（<code>startsWith('γ')</code>），
+    <strong>不可寫成 <code>['γ1','γ2'].includes(name)</code></strong> —— 那 10 位老角會整區消失。<br>
+    · <strong>不印任何合計分母</strong>（見問題②）。<br>
+    · 印<strong>能力敘述</strong>（版面層級 C）：實測 440 筆 <code>neuralDriveAbilities</code> 敘述
+    <strong>p50 26 字／p90 48／max 100</strong>，含 <code>&lt;token&gt;</code> <strong>0 筆</strong>、
+    含句號 <strong>0 筆</strong>、含 <code>[引用]</code> 339 筆。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 兩條容易寫錯的</strong><br>
+    ① <strong>不要印「α／β 全機師一致，本圖略」這種靜態文案。</strong>那是資料上的巧合、不是規則 ——
+    <code>NdPowerBar</code> 的每一區都是可點的按鈕，玩家<em>可以</em>把 α 拉到 Lv1 而它會被編進 <code>§ND</code>。
+    到時圖上寫著「一致」、圖底的碼裡帶著 <code>α:1</code>，兩者互相打臉且零錯誤訊息。
+    <strong>正解是 α／β 只在偏離 <code>defaultNdLevels()</code> 時才印</strong>，正常情況成本 0px。<br>
+    ② <strong>不要為敘述寫「只取首句」的截斷。</strong>這份資料 0 筆有句號 —— 那個截斷是 no-op，
+    只會讓下一個人以為高度有上界。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：模組印滿級 <code>description</code>，不印 <code>statText()</code>；四格合計整段刪除</strong><br>
+    見問題①。實作要點：186／186 有滿級敘述；<strong>33 筆含換行</strong>（用 <code>white-space: pre-line</code>）、
+    31 筆含 <code>[引用]</code>（原樣印，官方文案本來就長那樣）、
+    <strong>0 筆含 <code>&lt;token&gt;</code></strong> ⇒ <strong>不必為候選池建 sanitizer</strong>
+    （只有印天生模組時才可能碰到 <code>mod_輝曜核心</code>）。<br>
+    合計拿掉（條件由 <code>(totalText || wasted.length)</code> 改成 <code>wasted.length &gt; 0</code>），
+    但<strong>超限提醒必留</strong> —— 那是玩家會照著配的東西。<br>
+    模組 icon：候選池 186 顆有 <strong>182 顆有 <code>icon</code></strong>，本機 PNG 檔案 100% 存在；
+    缺圖的 4 顆（凌嘯框架／滅卻模組／獵群模組／異步感應器）<strong>名稱照印、圖示位置留空白不畫框</strong>
+    —— 一個空的切角方塊夾在三顆正常圖示中間會被讀成「有一顆我不認得的模組」。<br>
+    接口型別欄退場（釋出 58＋10＝<strong>68px</strong> 橫向），但<strong>只拿掉顯示、不拿掉計算</strong>：
+    <code>iface</code> 仍決定「未裝」vs「—」的文案與 B 品質 10 台整段不印；
+    <code>unknown</code> 時在名稱位置印「接口型別不明」。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：圖上不放火力（使用者裁決 2026-08-29）</strong><br>
+    四格 <code>Stat</code> 刪光之後，圖上就沒有任何「這一套有多強」的數字，只剩重量。
+    曾評估補上 <code>chassisFirepower(parts)</code>（現成、混搭也正確、一個 import 加一格的事），
+    <strong>裁決不放</strong> —— 它<strong>不含元件、模組、天賦</strong>，
+    而讀者會拿它去比兩套配裝的強弱，那個比較是錯的。<br>
+    ⇒ <strong>這張圖明確不談強度。</strong>日後若要放，前提是先有一個把元件與模組算進去的口徑。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：技能四格模型 —— 三格自由替換 ＋ 一格「改」技能（開欄位、不開 UI）</strong><br>
+    使用者裁決 2026-08-29 逐字：「固定三格＋一格。三格是自由替換機師的技能；
+    最後一格相當特殊，它並不是自由選擇技能，而是選『改』技能，那是科研到後期給的額外傷害技能，
+    目前站上沒建立這部分資料 —— 我覺得可以保留這個資料型態和欄位，但格子隱藏。」<br>
+    <strong>候選池 ＝ <code>pilot.skills</code> − 職業單元 − <code>manual: true</code></strong>（使用者裁決）：<br>
+    · 職業單元判準是 <code>unitType === '6'</code>，寫在<strong>技能文件自身</strong> ——
+    全庫 853 筆技能只有 7 筆帶它（七個職業共用），而 <strong>89／89 機師恰好各命中 1 筆</strong>，
+    含那 7 位沒有 <code>biometicComputer</code> 的 3.3+ 新機師。<br>
+    · <code>manual: true</code> 那 86 筆是維護者手動補的「官網查無」技能，玩家在遊戲裡選不到。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 絕不可用 <code>unitType === '0'</code>（核心單元）當候選池</strong><br>
+    全庫 853 筆技能有 <strong>706 筆根本沒有 <code>unitType</code> 欄位</strong>，
+    用 0 過濾會讓<strong>每一位</strong>機師的池子只剩不到兩成。<br>
+    <span class="badge-med">資料觀察</span> 貝爾莎社群圖那三個技能（高光時刻／超距問候／貝爾莎強襲）
+    正好是她生物電腦軌上<strong>最後三個核心單元</strong>，而那條軌是一條沒有分岔的直線
+    （全 82 位只有 36 節點與 26 節點兩種形狀，零例外）。這條線索指向「攜帶池可能與解鎖順序有關」，
+    但站上沒有規則可依，且 3.3+ 的 7 位機師連 <code>biometicComputer</code> 都沒有 ⇒ 本計畫走 <code>pilot.skills</code>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策八：備註與技能都走 TLV 追加段，不 bump <code>FMT_VERSION</code></strong><br>
+    <code>TAG.NOTE = 6</code>、<code>TAG.SKILLS = 7</code>。分享碼解碼器遇到不認得的 tag
+    會<strong>跳過並記進 <code>unmodeled</code>，不拒收整串</strong> ⇒ 對舊 client <strong>零遷移</strong>。<br>
+    · 兩段都必須寫在 <code>§NAME</code> <strong>之後</strong> —— 否則所有既有的 golden fixture 碼會位元不同。<br>
+    · 備註碼長成本約 <strong>+4.1 base64 字元／中文字</strong>；100 字 ≈ +410，相對 4096 上限毫無壓力
+    （今天最壞是「號碼全滿 ＋ 4 套形態」的 1051）。<br>
+    · 技能<strong>走 shareId 登錄簿</strong>，不存 <code>pilot.skills</code> 的位序 ——
+    位序法省下的 2 bytes 換不到「爬蟲改一次順序、全站舊分享碼一起指到別的技能」這個風險，
+    而且它不會報錯。<br>
+    · <code>firestore.rules</code> <strong>不必改</strong>：兩者都寄生在既有的代碼字串裡。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 三條實作邊界</strong><br>
+    ① <code>codec.test.ts</code> 既有的長度門檻斷言要<strong>有意識地重定基準</strong>（加了最壞備註後會破）。
+    fixture <strong>既有 case 不得變動</strong>，只能追加。<br>
+    ② <code>reconcile()</code> 對技能<strong>只做成員檢查、絕不查技能庫</strong> ——
+    空 <code>Map</code> ＝ 還沒載入，不是「這個技能不存在」。武器那條「查不到就刪」照抄過來，
+    症狀會是<strong>「貼一次分享碼、技能就被靜默清空一次」</strong>（052-D 的元件正是踩過這個坑）。<br>
+    ③ <code>pilotSkills</code> <strong>刻意不在 <code>LOADOUT_STAGE_KEYS</code></strong> ——
+    那份 loading 同時是分享碼的編碼閘門。解法<strong>不是</strong>把它加進去（會讓「複製分享連結」多等一個集合），
+    而是讓編碼閘門<strong>只在 <code>draft.skills</code> 非空時</strong>才等它。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策九：書架去重改成比對「本體」</strong><br>
+    今天書架與雲端的「已存過」判定是<strong>比對整串代碼字串</strong>。
+    加了備註之後，「只改備註」＝新字串 ⇒「已在雲端」徽章翻假、再存一次會佔掉第二格而不是就地更新。
+    三個「只差一點」的方案正是這個機制最脆弱的輸入。<br>
+    ⇒ 改成比對<strong>去掉 <code>§NAME</code> 與 <code>§NOTE</code> 之後的本體</strong> —— 那才是「同一套配裝」的定義。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十：圖底印完整碼 ＋ QR（使用者裁決 2026-08-29）</strong><br>
+    加了 100 字備註之後，圖底的完整碼會從 1 行變成約 5 行；而備註在同一張圖上被印了兩次
+    （一次是正文，一次藏在碼裡）。裁決是<strong>兩者都留，並補一個 QR</strong> ——
+    QR 編的是完整分享連結，於是「別人螢幕截圖你的圖」也還原得回配裝，這是純文字碼做不到的。<br>
+    ⚠ 站上目前沒有 QR 套件，要新增一個約 15KB 的依賴。<strong>必須是能離線產生的純 JS 套件</strong>，
+    不可打任何 API —— 匯出是離屏 <code>toPng</code>，網路請求會讓它變成不確定的等待。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label pink">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>回饋 6／7／8</strong>（Phase A）：模組 icon、接口型別欄退場、印滿級 description、
+        刪四格合計、四格 Stat 收成一條窄帶、刪總算力分母，外加四個既有錯誤。</li>
+      <li><strong>回饋 4／5</strong>（Phase B）：<code>rigLayout()</code> 純函式與位置化槽位圖、
+        神經驅動只印 γ 並附能力敘述。</li>
+      <li><strong>回饋 2</strong>（Phase C）：方案備註欄位、清洗、<code>§NOTE</code> 段、圖上區塊、書架去重語意。</li>
+      <li><strong>回饋 3</strong>（Phase D）：攜帶技能三格、<code>§SKILLS</code> 段、shareId 登錄簿、
+        挑選 UI、圖上 chip。第四格「改」技能<strong>只開欄位</strong>。</li>
+      <li><strong>回饋 1 的本站那一半</strong>（Phase E）：「複製配裝摘要（純文字）」按鈕 ＋ 圖底 QR。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>分享連結 OG 卡</strong> —— 回饋 1 的正解，但屬 <strong>PLAN-052-H</strong> 既有範圍
+        （該計畫的名字就是「站內熱門配裝 ＋ 分享連結 OG 卡」）。
+        今天 <code>workers/src/socialPreview.ts</code> 的路徑正規式只吃
+        <code>/(pilots|mechs|weapons)/</code>，<code>/simulator?b=</code> 不在裡面 ⇒
+        分享連結貼進 Discord 是一張通用站名卡。<strong>那一半的唯一阻礙（沒有對外連結可預覽）已於 2026-08-29 解除。</strong></li>
+      <li><strong>批次匯出三張 PNG</strong> —— 使用者裁決不做。瀏覽器的「是否允許下載多個檔案」被拒絕後，
+        第 2、3 張會<strong>靜默消失</strong>而 <code>onDone</code> 仍回報成功；且多形態機師會變成 3 × 形態數
+        （海莉絲 4 形態 ⇒ 12 張圖對 3 個碼）。等 OG 卡驗過再決定要不要做。</li>
+      <li><strong>自動差異摘要</strong>（三方案 diff）—— 它依賴批次匯出時同時握有三份 draft，隨上一條一起延後。</li>
+      <li><strong>「改」技能的資料建檔</strong> —— 站上沒有這份資料，本計畫只開欄位。</li>
+      <li><strong>螢幕版的版面改動</strong> —— 除了技能挑選 UI 這個新入口，螢幕版不動。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label pink">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-052-L 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-L — <a href="../index.html" style="color:var(--accent-pink);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

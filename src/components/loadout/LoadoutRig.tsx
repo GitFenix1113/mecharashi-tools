@@ -5,6 +5,7 @@ import { slotKey } from '../../types/slots'
 import { MechPartPosition, WeaponEquipSlot } from '../../types/enums'
 import { MECH_PART_ORDER } from '../../utils/chassisStats'
 import { slotLabel } from '../../utils/mechSlots'
+import { rigColumnRefs } from '../../utils/rigLayout'
 import { imageCandidates } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
 import {
@@ -254,10 +255,13 @@ export function LoadoutRig({
   const [roomyCells, setRoomyCells] = useState(false)
 
   const hasShoulder = ctx.capacity.shoulder > 0
-  const hasBackup = ctx.capacity.backupHand > 0
 
   /**
    * 左右兩欄各自的槽位座標，由上而下：肩 → 手 → 備用手。
+   *
+   * ⚠ **一律走 `rigColumnRefs()`（PLAN-052-L B-1），不在這裡自己排一次**：
+   *   匯出長圖的十字用的是同一支，而「畫面左欄＝機體右側」這條翻面裁決各寫一份的
+   *   漂移症狀是「同一台機體在畫面上與圖上左右相反」—— 兩邊都不會報錯。
    *
    * ⚠ 雙手武器**不另闢一列**，而是同時出現在左右兩格（比照遊戲整備畫面：
    *   「右手」「左手」兩張卡印的是同一把）。這靠的是 `slotOccupant()` ——
@@ -268,18 +272,10 @@ export function LoadoutRig({
    *   那讓版面在裝上／卸下雙手武器時整個重排（兩欄少一列、中間多一列），
    *   而且與遊戲畫面對不起來。
    */
-  const columnRefs = useCallback((side: 'left' | 'right'): WeaponSlotRef[] => {
-    const out: WeaponSlotRef[] = []
-    if (hasShoulder) out.push({ bank: 'main', slot: WeaponEquipSlot.SHOULDER, side })
-    out.push({ bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side })
-    if (hasBackup) out.push({ bank: 'backup', slot: WeaponEquipSlot.SINGLE_HAND, side })
-    return out
-  }, [hasShoulder, hasBackup])
-
   // ⚠ **變數名指的是畫面欄位，不是機體側**：畫面左欄裝的是機體右側的槽位（見檔頭）。
   //   引線的幾何（`measure()`）與機甲落點的鏡射也一律吃畫面側，兩者因此自動對齊。
-  const left = useMemo(() => columnRefs('right'), [columnRefs])
-  const right = useMemo(() => columnRefs('left'), [columnRefs])
+  const left = useMemo(() => rigColumnRefs(ctx.capacity, 'right'), [ctx.capacity])
+  const right = useMemo(() => rigColumnRefs(ctx.capacity, 'left'), [ctx.capacity])
 
   const renderCell = (ref: WeaponSlotRef) => {
     const key = slotKey(ref)
@@ -460,11 +456,13 @@ export function LoadoutRig({
    *   全靠左、右半邊一片空，看起來像沒排完 —— 而「十字」的形狀也因此讀不出來
    *   （整寬的兩條只是兩條橫線）。半寬對齊的是雙臂那兩張卡的外緣。
    */
-  const partRow = (position: MechPartPosition) => hasParts && (
+  const halfRow = (node: React.ReactNode) => (
     <div className="flex justify-center">
-      <div className="w-[calc(50%-0.25rem)]">{partCard(position)}</div>
+      <div className="w-[calc(50%-0.25rem)]">{node}</div>
     </div>
   )
+
+  const partRow = (position: MechPartPosition) => hasParts && halfRow(partCard(position))
 
   return (
     <div className="space-y-3">
@@ -563,8 +561,11 @@ export function LoadoutRig({
                 讀起來是收尾，不是被插隊。 */}
           {partRow(MechPartPosition.LEGS)}
 
-          {/* ── 整列：背部（背包與背部武器共用這一格，互斥） ── */}
-          {slotExists(ctx.capacity, backRef) && renderCell(backRef)}
+          {/* ── 背部（背包與背部武器共用這一格，互斥）──
+              ⚠ **與腿部同寬**（使用者回饋 2026-08-30）：這一格是十字的下端，
+                拉成整寬時它比正上方那張半寬的腿部卡寬了一倍，右半邊只有一個重量數字，
+                十字的下端因此看起來是散的。半寬之後上下兩端對齊同一組外緣。 */}
+          {slotExists(ctx.capacity, backRef) && halfRow(renderCell(backRef))}
         </div>
       </div>
 

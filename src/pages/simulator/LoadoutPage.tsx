@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { Backpack, Mech, Pilot, Weapon } from '../../types'
+import type { Backpack, Mech, Pilot, PilotSkillDoc, Weapon } from '../../types'
 import type { LoadoutDraft } from '../../types/loadout'
 import type { ModuleSlotRef, SlotKey, WeaponSlotRef } from '../../types/slots'
 import { slotKey } from '../../types/slots'
@@ -29,13 +29,20 @@ import { WeaponComponentList } from '../../components/loadout/WeaponComponentLis
 import { weaponRows } from '../../utils/loadoutRows'
 import { ComponentPanel } from '../../components/loadout/ComponentPanel'
 import { ModulePanel } from '../../components/loadout/ModulePanel'
+import { SkillPanel } from '../../components/loadout/SkillPanel'
+import { CarriedSkillRow } from '../../components/loadout/CarriedSkillRow'
 import { EquippedEffects, ModuleThumbStrip } from '../../components/loadout/EquippedEffects'
 import { LoadoutExportRunner } from '../../components/loadout/LoadoutExportCard'
-import { sanitizeLoadoutName, LOADOUT_NAME_MAX } from '../../utils/loadoutName'
+import { loadoutSummaryText } from '../../utils/loadoutSummaryText'
+import {
+  sanitizeLoadoutName, LOADOUT_NAME_MAX,
+  sanitizeLoadoutNote, LOADOUT_NOTE_MAX, LOADOUT_NOTE_MAX_LINES,
+} from '../../utils/loadoutName'
 import { NdPowerBar } from '../../components/common/NdPowerBar'
 import { buildNdAbilityMap } from '../../utils/neuralDriveAbilities'
 import { defaultNdLevels, ndAffectZones } from '../../utils/ndOverrides'
-import { HUD, HUD_BTN, HUD_INPUT, HUD_PANEL } from '../../components/loadout/loadoutTheme'
+import { ndPowerBonus, effectiveNdLevels } from '../../utils/ndPowerBonus'
+import { HUD, HUD_BTN, HUD_BTN_DANGER, HUD_INPUT, HUD_PANEL } from '../../components/loadout/loadoutTheme'
 import { CLASS_CONFIG } from '../../components/badges/PilotBadges'
 import { mechSlotCapacity } from '../../utils/mechSlots'
 import { licenseAllows } from '../../utils/normalizeArmorType'
@@ -45,7 +52,7 @@ import { PasteCodeDialog } from '../../components/loadout/PasteCodeDialog'
 import { ShelfDialog } from '../../components/loadout/ShelfDialog'
 import { readShelf, SHELF_LIMIT } from '../../lib/localBuilds'
 import { buildShareIndex } from '../../utils/loadoutCode/shareId'
-import { shareIdAliases } from '../../utils/loadoutCode/shareIdRegistry'
+import { shareIdAliases, shareIdRegisteredIds } from '../../utils/loadoutCode/shareIdRegistry'
 import { encodeLoadout, decodeLoadout, type ShareIndexes } from '../../utils/loadoutCode/codec'
 import { readShareCode, buildShareUrl, staleCacheKeys } from '../../utils/loadoutCode/shareLink'
 import { useGameData } from '../../contexts/GameDataContext'
@@ -61,7 +68,7 @@ import {
   backpackChoices, buildContext, buildWorld, canSelectMech, loadoutBudget, mountRefFor, slotsOverlap,
   slotHasCandidates, slotOccupant, weaponChoices, type PickerEntry, type ResolutionAction,
 } from '../../utils/loadoutRules'
-import { INITIAL_SIM_STATE, simReduce, type LoadoutAction, type SimState } from './simReducer'
+import { INITIAL_SIM_STATE, isEmptyDraft, simReduce, type LoadoutAction, type SimState } from './simReducer'
 
 // ─── 配裝模擬器（PLAN-052-B）─────────────────────────────────────────────────
 //
@@ -140,6 +147,13 @@ export default function LoadoutPage() {
    */
   const [openModulePos, setOpenModulePos] = useState<MechPartPosition | null>(null)
 
+  /**
+   * 右欄鑽進技能面板的那一格（PLAN-052-L D-4）。存**格號**而不是技能 id：
+   * 那一格可能是空的，而「第 2 格」在換機師之後仍然是第 2 格。
+   * 與 `openModulePos` 存部位、`openRowKey` 存 key 同一條 —— 不存快照。
+   */
+  const [openSkillIndex, setOpenSkillIndex] = useState<number | null>(null)
+
   // ── 匯出配裝圖（PLAN-052-I E-3）──
   //    `exporting` 為真時才掛載離屏版面；失敗一定要說出來（按了沒反應是最糟的回饋）
   const [exporting, setExporting] = useState(false)
@@ -152,7 +166,7 @@ export default function LoadoutPage() {
   /** 開挑選器時一律收起元件面板：兩者同住右欄，疊在一起會讓「返回」變成回到哪裡都說不準 */
   const setPicker = useCallback((next: ActivePicker) => {
     setPickerRaw(next)
-    if (next) setOpenRowKey(null)
+    if (next) { setOpenRowKey(null); setOpenSkillIndex(null) }
   }, [])
   const [hovered, setHovered] = useState<{ slot: SlotKey; weight: number; name: string; icon?: string } | null>(null)
   const [hoverSegment, setHoverSegment] = useState<string | null>(null)
@@ -181,7 +195,12 @@ export default function LoadoutPage() {
   /** 分享碼送進來的東西解不開時要說出來（那幾格會是空的）。 */
   const [shareNotice, setShareNotice] = useState<string | null>(null)
   const [pasteOpen, setPasteOpen] = useState(false)
-  const [copied, setCopied] = useState<'ok' | 'fail' | null>(null)
+  /**
+   * 複製回饋。**要分得出複製的是哪一種東西**（PLAN-052-L E-1 起有兩顆複製鍵）——
+   * 只存 `'ok'` 的話，按「複製摘要」會讓旁邊的「複製分享連結」跟著變成「已複製」，
+   * 而使用者手上的剪貼簿裡其實是另一種東西。
+   */
+  const [copied, setCopied] = useState<'link' | 'summary' | 'fail' | null>(null)
 
   // ── 本機書架（PLAN-052-C D-1）──
   //    筆數留在這一層，抬頭那顆鍵才印得出 `3/10`；對話框改動後回報上來。
@@ -204,7 +223,14 @@ export default function LoadoutPage() {
   // 不會擋住畫面，代價是每個 session 多一次小集合請求。
   const { data: patchVersions } = usePatchVersions()
   const { reload: reloadGameData } = useGameData()
-  const world = useMemo(() => buildWorld(data), [data])
+  // ⚠ 提前到 `world` 之前宣告：`buildWorld()` 現在要吃技能庫（見下方「技能庫」那一段
+  //   的完整理由）。`useGameData()` 是同一個 context，多取一次沒有成本。
+  const gd = useGameData()
+  const gdSkills = gd.pilotSkills
+  // ⚠ `world` 要**連技能庫一起帶**（PLAN-052-L D-3）：`reconcile()` 的候選池檢查靠它，
+  //   而它刻意不在 `LOADOUT_STAGE_KEYS` 裡（見下方技能庫那一段）。空 Map 時 reconcile
+  //   會跳過驗證而不是清空 —— 那條 gate 寫在 `reconcileSkills()` 裡。
+  const world = useMemo(() => buildWorld({ ...data, pilotSkills: gdSkills }), [data, gdSkills])
 
   // ── 技能庫（PLAN-032 的 `pilotSkills`）──────────────────────────────────────
   //
@@ -217,10 +243,24 @@ export default function LoadoutPage() {
   //
   // ⚠ 空 Map ＝ **還沒載入**，不是「這些武器沒有技能」（同 components／modules 那一條）。
   //   兩者都會渲染成空清單，但意思相反，故一律連 `skillsLoading` 一起傳下去。
-  const gd = useGameData()
-  const needSkills = stage === 'equip'
+  /**
+   * ⚠ **一有機師就要載，不是等到 `equip`**（PLAN-052-L D-4 瀏覽器實測抓到）。
+   *
+   * 原本寫的是 `stage === 'equip'`（武器技能要先有武器）。但 D-4 的技能卡 gate 是
+   * `ctx.pilot` —— 技能是機師的屬性，選機甲之前就該選得動。於是在「選完機師、
+   * 還沒選機甲」那一段，`skillMap` 是空的而 `skillsLoading` 是 **false**
+   * （`needSkills` 為假就恆為假）⇒ 卡片把「還沒載入」渲染成
+   * 「這位機師的技能資料還沒建到可以挑選的程度」——一句**指控資料有缺**的話，
+   * 而實際上只是集合還沒去拿。這正是本計畫反覆警告的那一類：
+   * 空 Map ＝ 還沒載入，不是「沒有」。
+   *
+   * ⚠ 這**不等於**把 `pilotSkills` 加進 `LOADOUT_STAGE_KEYS`：那份 `loading` 同時是
+   *   別處的閘門（見上方註解①），加進去會讓「複製分享連結」多等一個集合。
+   *   這裡動的只有「什麼時候去拿」。
+   */
+  const needSkills = !!state.draft.pilotId
   useEffect(() => { if (needSkills) void gd.ensureLoaded(['pilotSkills']) }, [needSkills, gd])
-  const skillMap = useMemo(() => buildSkillMap(gd.pilotSkills), [gd.pilotSkills])
+  const skillMap = useMemo(() => buildSkillMap(gdSkills), [gdSkills])
   const skillsLoading = needSkills && !gd.loadedKeys.has('pilotSkills')
 
   /**
@@ -251,6 +291,23 @@ export default function LoadoutPage() {
     backpack:  buildShareIndex('backpack',  data.backpacks.map((x) => x.id)),
     component: buildShareIndex('component', data.components.map((x) => x.id)),
     module:    buildShareIndex('module',    data.modules.map((x) => x.id), shareIdAliases('module')),
+    /**
+     * ⚠ 技能的來源刻意是**登錄簿而不是 `gd.pilotSkills`**（PLAN-052-L D-2）。
+     *
+     * 這一格是本檔最容易長出上面那兩個 ⚠ 的地方：`pilotSkills` **不在**
+     * `LOADOUT_STAGE_KEYS` 裡（見 `useFirestore.ts` 與下方技能庫那一段），
+     * 所以「集合還沒到」在這裡是**常態**。接成 `gd.pilotSkills` 的話，
+     * 在它到齊之前按下「複製分享連結」，三個技能會被**靜默濾掉** ——
+     * 而那正是 052-D 元件那個漏了三個 Phase 的坑。
+     *
+     * 技能的號碼 100% 來自登錄簿（doc id 推不出數字），登錄簿又是靜態 JSON、永遠在
+     * ⇒ 直接拿它當來源，encode／decode 都不必等任何集合。理由全文見
+     * `shareIdRegisteredIds()`。
+     *
+     * ⚠ 這**不代表**技能面板不必等集合：號碼查得到，但技能的**名稱與圖示**還是要
+     *   `pilotSkills` 才有 —— 那一半由 `skillsLoading` 負責（見匯出鍵的 `busy`）。
+     */
+    pilotSkill: buildShareIndex('pilotSkill', shareIdRegisteredIds('pilotSkill'), shareIdAliases('pilotSkill')),
   }), [data])
 
   const send = useCallback((a: LoadoutAction) => {
@@ -288,6 +345,34 @@ export default function LoadoutPage() {
   const ctx = useMemo(() => buildContext(state.draft, activeKey, world), [state.draft, activeKey, world])
   const budget = useMemo(() => loadoutBudget(ctx), [ctx])
 
+  /** 「全部清空」要不要 disable。與 reducer 共用同一支判斷，不各判各的 */
+  const draftEmpty = isEmptyDraft(state.draft)
+
+  // ── 底部固定列的實際高度（PLAN-052-L）────────────────────────────────────
+  //
+  // 為什麼要量而不是寫死：這一列的按鈕數會變（超重時多一顆「自動卸至符合」），
+  // 而字級是使用者設定（Layout 的 FONT_SIZE_MAP，root 19px 起跳）—— 兩者一疊加，
+  // 390px 上就會換行、整列從一排變兩排。原本 toast 的 `bottom: 7rem` 與內容的
+  // `paddingBottom: 3.25rem` 都是照「一排」寫死的常數，換行時 toast 會被壓在列底下，
+  // 而 toast 上有 [復原] —— 清空之後唯一救得回來的那顆按鈕。
+  // 量一次餵給兩邊，這條假設就不會再被下一顆按鈕弄壞。
+  const barRef = useRef<HTMLDivElement | null>(null)
+  const [barH, setBarH] = useState(0)
+  useEffect(() => {
+    const el = barRef.current
+    if (!el) { setBarH(0); return }
+    // offsetHeight 而不是 contentRect：這一列有 py-2 與上框線，contentRect 量不到
+    const measure = () => setBarH(el.offsetHeight)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [bp])
+  /** 首次 render（還沒量到）時的保底值：一排按鈕實測約 40px */
+  const barPx = barH || 40
+  /** 固定列上緣再留一點呼吸空間 —— toast 與內容都靠它讓開 */
+  const raisedBottom = `calc(3.5rem + ${barPx}px + 0.75rem + env(safe-area-inset-bottom))`
+
   // ── 唯讀形態卡：鎖死整套配裝、因此不佔分頁的那幾個形態（PLAN-052-F C-1）──
   //
   // ⚠ 判準是 `lockedFormCards()`（＝「這位機師**有沒有分頁列**」），
@@ -314,11 +399,18 @@ export default function LoadoutPage() {
   //   挑選器就自動開著；手機版它是 BottomSheet，會整片蓋在書架／貼碼對話框上面
   //   —— 而那正是新訪客最可能先按書架的時機。「自動停在該選的那一步」在對話框開著時
   //   本來就不成立：現在該做的是那個對話框裡的事。`picker` 本身不清掉，關掉就回來。
+  //
+  // ⚠ **技能面板開著時同樣不自動開挑選器**（PLAN-052-L D-4 瀏覽器實測抓到）：
+  //   技能卡的 gate 是 `ctx.pilot`（技能是機師的屬性，選機甲之前就該選得動），
+  //   但「還沒選機甲」正是自動挑選器會佔住右欄的時候 —— 於是點下第 1 格什麼都不會發生，
+  //   而畫面上沒有任何訊息說得出為什麼。`openSkillSlot()` 已經把 `picker` 清掉了，
+  //   擋不住的是這裡的**自動回退**。理由與上面那條對話框完全相同：
+  //   「自動停在該選的那一步」在使用者剛剛親手點開別的東西時本來就不成立。
   const effectivePicker = useMemo<ActivePicker>(
-    () => (pasteOpen || shelfOpen
+    () => (pasteOpen || shelfOpen || openSkillIndex !== null
       ? null
       : picker ?? (!state.draft.pilotId ? { kind: 'pilot' } : !state.draft.mechId ? { kind: 'mech' } : null)),
-    [picker, pasteOpen, shelfOpen, state.draft.pilotId, state.draft.mechId],
+    [picker, pasteOpen, shelfOpen, openSkillIndex, state.draft.pilotId, state.draft.mechId],
   )
 
   // 複製的成功回饋是按鈕文字換成「已複製連結」，兩秒後換回來 ——
@@ -363,6 +455,7 @@ export default function LoadoutPage() {
     setPicker(null)
     setOpenRowKey(row.rowKey)
     setOpenModulePos(null)
+    setOpenSkillIndex(null)
   }, [ctx, setPicker])
 
   /**
@@ -375,6 +468,20 @@ export default function LoadoutPage() {
     setPicker(null)
     setOpenRowKey(null)
     setOpenModulePos(ref.position)
+    setOpenSkillIndex(null)
+  }, [setPicker])
+
+  /**
+   * 開技能面板（PLAN-052-L D-4）。中欄的三格整格可點，共用這一支。
+   *
+   * ⚠ 進來時把切換鏈上的其他三種都關掉，理由與 `openModule` 逐字相同：
+   *   右欄是一欄多種內容，同時開兩種會讓返回鍵不知道要退回哪一層。
+   */
+  const openSkillSlot = useCallback((index: number) => {
+    setPicker(null)
+    setOpenRowKey(null)
+    setOpenModulePos(null)
+    setOpenSkillIndex(index)
   }, [setPicker])
 
   // ── 挑選器清單 ──
@@ -509,10 +616,16 @@ export default function LoadoutPage() {
     }
   }, [state.draft, shareIndexes, gameVersion])
 
-  /** 把任一串代碼變成連結並放進剪貼簿。書架的每張卡也走這一支 —— 兩處給的必須是同一種東西。 */
-  const copyLinkFor = useCallback(async (code: string): Promise<boolean> => {
+  /** 一串代碼 → 可以直接貼給別人的絕對網址。**只有這一支**（剪貼簿與 QR 都問它）。 */
+  const shareUrlFor = useCallback(
+    (code: string) => buildShareUrl(code, window.location.origin, import.meta.env.BASE_URL),
+    [],
+  )
+
+  /** 任意文字進剪貼簿。**兩顆複製鍵共用**，於是「被瀏覽器拒絕」的處置只有一種。 */
+  const writeClipboard = useCallback(async (text: string): Promise<boolean> => {
     try {
-      await navigator.clipboard.writeText(buildShareUrl(code, window.location.origin, import.meta.env.BASE_URL))
+      await navigator.clipboard.writeText(text)
       return true
     } catch {
       // 剪貼簿在非安全來源（http）與部分行動瀏覽器會直接拒絕
@@ -520,18 +633,140 @@ export default function LoadoutPage() {
     }
   }, [])
 
+  /** 把任一串代碼變成連結並放進剪貼簿。書架的每張卡也走這一支 —— 兩處給的必須是同一種東西。 */
+  const copyLinkFor = useCallback(
+    (code: string) => writeClipboard(shareUrlFor(code)),
+    [writeClipboard, shareUrlFor],
+  )
+
   const copyShareLink = useCallback(async () => {
     const code = encodeCurrent()
-    setCopied(code && await copyLinkFor(code) ? 'ok' : 'fail')
+    setCopied(code && await copyLinkFor(code) ? 'link' : 'fail')
   }, [encodeCurrent, copyLinkFor])
 
-  // 匯出圖右下角的分享碼（E-1）。**只在真的要拍照時才編**：平常沒人看它，
-  // 而每次改一格配裝就重編一次是白工。編不出來時傳 undefined ⇒ 那一欄整個不印
-  // （元件的約定），因為印一串解不開的碼會有人拿去貼。
+  // ── 神經驅動算力（PLAN-052-I D-1）──
+  //
+  // ⚠ **宣告位置提前到動作鍵之前**（PLAN-052-L E-1）：算力面板、匯出圖、純文字摘要
+  //   三個消費者，而後兩者住在上面的按鈕列裡。const 有 TDZ，排在後面會直接爆。
+  //
+  // ⚠ **讀取時才把預設值疊上去**，不在選機師時寫死一份進 draft：`defaultNdLevels()` 會依
+  //   該機師的 buffUpgrades 決定給 Lv1 還是滿級，把它的輸出落盤等於複製一份會過期的規則。
+  //   `draft.ndLevels` 因此只存「玩家真的動過的分區」，其餘一律回落預設（含資料改版後
+  //   新增的分區 —— 舊分享碼沒有那一鍵，疊上去就自動有了合理值）。
+  const ndAbilityMap = useMemo(() => buildNdAbilityMap(data.neuralDriveAbilities), [data.neuralDriveAbilities])
+  const ndLevels = useMemo(
+    () => ({
+      ...defaultNdLevels(ctx.pilot?.neuralDrive, (aid) => ndAbilityMap.get(aid)),
+      ...state.draft.ndLevels,
+    }),
+    [ctx.pilot, ndAbilityMap, state.draft.ndLevels],
+  )
+  const ndZones = useMemo(
+    () => ndAffectZones(ctx.pilot, (aid) => ndAbilityMap.get(aid)),
+    [ctx.pilot, ndAbilityMap],
+  )
+
+  /**
+   * 模組給的算力加成（PLAN-052-M）。強擊模組 LV.MAX ／ 觀星者單元 ——
+   * 「已解鎖的神經驅動分區中最低的區域算力 +3」。
+   *
+   * ⚠ 收的是 `ndLevels`（**投入**值），吐的是「加在哪一區、加完幾級」。
+   *   絕不能把 `ndLevelsEffective` 餵回去 —— 那會每 render 再加一次 3。
+   * ⚠ 走 `ctx.stacks`（含天生貢獻）：疾嘯那 8 級是**天生**的，
+   *   四部位各 2 級湊滿 LV.MAX，玩家一格接口都不必插。
+   */
+  const ndBonus = useMemo(
+    () => ndPowerBonus(ctx.pilot?.neuralDrive, ndLevels, ctx.stacks, ctx.moduleBlocks),
+    [ctx.pilot, ndLevels, ctx.stacks, ctx.moduleBlocks],
+  )
+  /**
+   * **生效**的分區 Lv ＝ 投入 ＋ 加成。
+   *
+   * 「哪些能力亮著」「圖上與純文字摘要印幾級」一律用這一份；
+   * 「玩家投入多少 / γ 預算用掉多少」一律用上面的 `ndLevels`。
+   * ⚠ 兩者在有加成時**本來就不相等**（投入 23 可以生效 26）——
+   *   混用不會報錯，只會讓條上的格子與徽章的數字對不起來。
+   */
+  const ndLevelsEffective = useMemo(() => effectiveNdLevels(ndLevels, ndBonus), [ndLevels, ndBonus])
+
+  // 匯出圖右下角的分享碼（052-C E-1）與圖底 QR 的連結（052-L E-2）。
+  // **只在真的要拍照時才編**：平常沒人看它，而每次改一格配裝就重編一次是白工。
+  // 編不出來時兩者都是 undefined ⇒ 整條分享碼帶不印（元件的約定），
+  // 因為印一串解不開的碼會有人拿去貼。
   const exportShareCode = useMemo(
     () => (exporting ? encodeCurrent() ?? undefined : undefined),
     [exporting, encodeCurrent],
   )
+  const exportShareUrl = useMemo(
+    () => (exportShareCode ? shareUrlFor(exportShareCode) : undefined),
+    [exportShareCode, shareUrlFor],
+  )
+
+  /**
+   * 匯出圖上的攜帶技能（PLAN-052-L D-5）。**解析好才傳**，元件保持純渲染。
+   *
+   * ⚠ 查不到的 id 直接跳過而不是塞一個佔位：這張圖是印刷品，一顆寫著 `skill_xxx`
+   *   的 chip 讀者無從查證。真的斷鏈時圖上少一個，畫面上的三格則會顯示 doc id
+   *   （`CarriedSkillRow` 那一段）—— 兩邊的角色不同：畫面要能除錯，圖只要誠實。
+   */
+  const carriedSkillDocs = useMemo(
+    () => (state.draft.skills?.carried ?? [])
+      .map((id) => skillMap.get(id))
+      .filter((d): d is PilotSkillDoc => !!d),
+    [state.draft.skills?.carried, skillMap],
+  )
+
+  /**
+   * 匯出閘門（PLAN-052-L D-6）。
+   *
+   * ⚠ `waitForRenderReady()` **只等圖與字體、不等集合** —— 在 `pilotSkills` 到齊之前
+   *   開拍，拍到的是一張技能區空白的圖，而「沒帶技能」與「還沒載入」在那張圖上
+   *   長得一模一樣（B-3 的 α／β 那一條也是同一種病）。
+   *
+   * ⚠ 條件式而不是把 `pilotSkills` 加進 `LOADOUT_STAGE_KEYS`：那份 `loading` 同時是
+   *   別的東西的閘門，加進去會讓每一次「複製分享連結」都多等一個集合。
+   *   **沒帶技能的人一秒都不必等**（今天絕大多數的圖）。
+   *
+   * ⚠ 分享碼**不需要**這道閘門：技能的號碼來自靜態登錄簿而不是集合
+   *   （見上方 `shareIndexes` 的 `pilotSkill`），所以編碼從來不會因為集合沒到而漏東西。
+   */
+  const skillsNotReady = skillsLoading && (state.draft.skills?.carried?.length ?? 0) > 0
+
+  /**
+   * 「複製配裝摘要（純文字）」（PLAN-052-L E-1）。
+   *
+   * 團隊回饋 1：本站的優勢是「資料詳細、可引用」——而 PNG 不可引用、不可搜尋、
+   * 不可貼進 wiki。這顆按鈕給的就是那個可引用的出口。
+   *
+   * ⚠ **走與「複製分享連結」同一條剪貼簿路徑**（`writeClipboard`）：http 與部分行動
+   *   瀏覽器會直接拒絕，而錯誤文案只該有一份。
+   * ⚠ 連結**編不出來就整段不印**（`shareUrl` 傳 undefined），不塞佔位字串 ——
+   *   同匯出圖的處置，理由也一樣：印一串打不開的東西會有人拿去貼。
+   * ⚠ 技能與匯出圖共用 `carriedSkillDocs`，所以這顆也吃同一道 `skillsNotReady` 閘門：
+   *   `pilotSkills` 還沒到齊時複製出來的摘要會少一整段，而「沒帶技能」與「還沒載入」
+   *   在那段文字裡長得一模一樣。
+   */
+  const copySummary = useCallback(async () => {
+    const code = encodeCurrent()
+    const d = new Date()
+    const p = (n: number) => String(n).padStart(2, '0')
+    const text = loadoutSummaryText({
+      ctx, budget, ndAbilityMap,
+      ndLevels: ndLevelsEffective,
+      ndBonus,
+      name: state.draft.name,
+      note: state.draft.note,
+      skills: carriedSkillDocs,
+      setCount: setKeys.length,
+      shareUrl: code ? shareUrlFor(code) : undefined,
+      generatedAt: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`,
+      gameVersion,
+    })
+    setCopied(await writeClipboard(text) ? 'summary' : 'fail')
+  }, [
+    ctx, budget, ndLevelsEffective, ndBonus, ndAbilityMap, state.draft.name, state.draft.note,
+    carriedSkillDocs, setKeys.length, encodeCurrent, shareUrlFor, gameVersion, writeClipboard,
+  ])
 
   /**
    * 本機遊戲資料是否落後於伺服器（決策四的舊快取防護）。
@@ -578,53 +813,75 @@ export default function LoadoutPage() {
         {/* ⚠ 窄版用短標籤：底部固定列在超重時會有四顆（＋「自動卸至符合」），
             實測 390px ＋「大」字級下四顆只剩 8px 餘裕，換成短標籤後有 32px。
             「複製連結」仍然講得出重點——這顆給的是連結不是裸碼。 */}
-        {copied === 'ok' ? '已複製連結' : bp === 'narrow' ? '複製連結' : '複製分享連結'}
+        {copied === 'link' ? '已複製連結' : bp === 'narrow' ? '複製連結' : '複製分享連結'}
+      </button>
+      {/* ── 複製配裝摘要（PLAN-052-L E-1）──
+          團隊說本站的優勢是「資料詳細、可引用」，而 PNG 不可引用、不可搜尋、
+          不可貼進 wiki。這顆給的是可 Ctrl+F 的那一份。
+          ⚠ 與匯出圖吃**同一道** `skillsNotReady` 閘門：摘要裡也有攜帶技能那一段，
+            而「沒帶技能」與「還沒載入」在純文字裡同樣分不出來。
+          ⚠ 樣式刻意與左邊的連結鍵同一支青色：兩顆都是「把這一套交出去」，
+            用不同顏色會讓人以為其中一顆會改到配裝。 */}
+      <button
+        type="button"
+        onClick={copySummary}
+        disabled={!ctx.mech || loading || skillsNotReady}
+        className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-accent-cyan/50 bg-accent-cyan/10 text-accent-cyan hover:bg-accent-cyan/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+      >
+        {copied === 'summary' ? '已複製摘要' : bp === 'narrow' ? '摘要' : '複製摘要'}
       </button>
       <button
         type="button"
         onClick={() => { setExportError(null); setExporting(true) }}
-        disabled={!ctx.mech || exporting || loading}
-        className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-accent-orange/50 bg-accent-orange/10 text-accent-orange hover:bg-accent-orange/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled={!ctx.mech || exporting || loading || skillsNotReady}
+        className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-accent-orange/50 bg-accent-orange/10 text-accent-orange hover:bg-accent-orange/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
       >
-        {exporting ? '產生中…' : '匯出配裝圖'}
+        {/* ⚠ 窄版縮成「匯出圖」（E-1）：底部固定列多了一顆「摘要」，
+            而改版前四顆在 390px ＋「大」字級下只剩 32px 餘裕。 */}
+        {exporting ? '產生中…' : bp === 'narrow' ? '匯出圖' : '匯出配裝圖'}
       </button>
       {budget.over && (
         <button
           type="button"
           onClick={() => send({ type: 'autoUnloadToFit' })}
-          className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-accent-red/40 text-accent-red hover:bg-accent-red/10 transition-colors cursor-pointer"
+          className="hud-cut-sm text-[12px] px-2.5 py-1.5 border border-accent-red/40 text-accent-red hover:bg-accent-red/10 transition-colors cursor-pointer whitespace-nowrap"
         >
-          自動卸至符合
+          {/* ⚠ 窄版縮成「卸至符合」（E-1，390px ＋「大」字級實測）：多了「摘要」那顆之後，
+              長標籤會被 flex 壓到換行。
+              （換行本身在 052-L 之後**不再是災難**：固定列改成量高度餵給 toast 與內容
+              留白，見上方 `barH`。但擠成一列仍然比較好讀，短標籤照留。） */}
+          {bp === 'narrow' ? '卸至符合' : '自動卸至符合'}
         </button>
       )}
+      {/* ── 兩顆清空鍵（使用者回饋 2026-08-30）──
+          原本只有一顆「清空」，做的是「這一套的裝備」；但畫面上另外三顆按鈕都是
+          「把整份配裝交出去」，於是那顆孤零零的「清空」讀起來像「全部重來」——
+          想換一位機師從頭配的人按下去，機師與機甲卻還在原位。
+          拆成兩顆之後**兩件事都講得出範圍**，而不是靠使用者按一次來發現。
+
+          ⚠ 兩顆刻意用不同顏色（灰／紅框）：它們相鄰、標籤只差兩個字，
+            同色的話按錯只是機率問題，而右邊那顆會把機師與機甲一起帶走。
+          ⚠ 兩顆都不做二次確認，改為事後可 [復原]（見 simReducer 的 commitClear）。 */}
       <button
         type="button"
         onClick={() => send({ type: 'clearSet' })}
         disabled={!ctx.mech}
-        className={`${HUD_BTN} text-[12px] px-2.5 py-1.5`}
+        className={`${HUD_BTN} text-[12px] px-2.5 py-1.5 whitespace-nowrap`}
       >
-        清空
+        {/* 窄版縮一個字（同列其餘四顆的量測見上面幾則 ⚠） */}
+        {bp === 'narrow' ? '清裝備' : '清空裝備'}
+      </button>
+      <button
+        type="button"
+        onClick={() => send({ type: 'clearAll' })}
+        // ⚠ 這顆的 disabled **不看 ctx.mech**：只選了機師還沒選機甲的人，
+        //   要的正是這顆（清掉重挑）。判準是「草稿裡還有沒有東西」。
+        disabled={draftEmpty}
+        className={`${HUD_BTN_DANGER} text-[12px] px-2.5 py-1.5 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border-accent disabled:hover:text-text-secondary`}
+      >
+        {bp === 'narrow' ? '全清空' : '全部清空'}
       </button>
     </>
-  )
-
-  // ── 神經驅動算力面板（PLAN-052-I D-1）──
-  //
-  // ⚠ **讀取時才把預設值疊上去**，不在選機師時寫死一份進 draft：`defaultNdLevels()` 會依
-  //   該機師的 buffUpgrades 決定給 Lv1 還是滿級，把它的輸出落盤等於複製一份會過期的規則。
-  //   `draft.ndLevels` 因此只存「玩家真的動過的分區」，其餘一律回落預設（含資料改版後
-  //   新增的分區 —— 舊分享碼沒有那一鍵，疊上去就自動有了合理值）。
-  const ndAbilityMap = useMemo(() => buildNdAbilityMap(data.neuralDriveAbilities), [data.neuralDriveAbilities])
-  const ndLevels = useMemo(
-    () => ({
-      ...defaultNdLevels(ctx.pilot?.neuralDrive, (aid) => ndAbilityMap.get(aid)),
-      ...state.draft.ndLevels,
-    }),
-    [ctx.pilot, ndAbilityMap, state.draft.ndLevels],
-  )
-  const ndZones = useMemo(
-    () => ndAffectZones(ctx.pilot, (aid) => ndAbilityMap.get(aid)),
-    [ctx.pilot, ndAbilityMap],
   )
 
   const ndPanel = !ctx.pilot?.neuralDrive?.length ? null : (
@@ -638,9 +895,12 @@ export default function LoadoutPage() {
       <NdPowerBar
         layout="panel"
         drives={ctx.pilot.neuralDrive}
+        // ⚠ 這裡傳**投入**值：γ 預算閘門要讀它，而加成不花預算。
+        //   傳生效值的症狀是「裝上加成模組，反而少能點一格」。
         levels={ndLevels}
         affectZones={ndZones}
         abilityMap={ndAbilityMap}
+        bonus={ndBonus}
         onChange={(levels) => send({ type: 'setNdLevels', levels })}
       />
     </Panel>
@@ -679,7 +939,7 @@ export default function LoadoutPage() {
       className="max-w-[1920px] mx-auto px-3 sm:px-4 py-4"
       // 單欄版面底部有兩層固定列（本頁操作列 ＋ Layout 的手機 Tab Bar），
       // 內容要讓開，否則最後一個面板永遠被蓋住一半
-      style={bp === 'narrow' ? { paddingBottom: 'calc(3.25rem + env(safe-area-inset-bottom))' } : undefined}
+      style={bp === 'narrow' ? { paddingBottom: `calc(${barPx}px + 1.25rem + env(safe-area-inset-bottom))` } : undefined}
     >
       <header className="mb-3">
         <div className={`${HUD.label} text-accent-orange`}>Loadout Simulator</div>
@@ -957,6 +1217,43 @@ export default function LoadoutPage() {
             <LockedFormCard key={form.id} form={form} ctx={lockedCtx} />
           ))}
 
+          {/* ── 攜帶技能（PLAN-052-L D-4，團隊回饋 3）──
+              位置在**槽位圖之後、備註之前**。這一欄由上而下是「這一套裝了什麼」→
+              「機師帶什麼上場」→「為什麼這樣配」→「它實際加了多少」。
+              技能屬於第二個問題：它與武器一樣是「帶了什麼」，只是帶的是機師那一半。
+              ⚠ 排在備註**之前**（備註是 C-4 定的「配完之後才問得出來的問題」），
+                與匯出圖右欄的順序刻意不同 —— 圖上備註在最前面是因為那是分享者的話，
+                而畫面上這一欄是操作區，操作在說明之前。
+              ⚠ gate 用 `ctx.pilot` 而不是 `ctx.mech`：技能是**機師**的屬性，
+                與 `ndLevels` 同一條（選機甲之前就該看得到、也該選得動）。 */}
+          {ctx.pilot && (
+            <Panel title="攜帶技能">
+              <CarriedSkillRow
+                pilot={ctx.pilot}
+                skillMap={skillMap}
+                loading={skillsLoading}
+                carried={state.draft.skills?.carried ?? []}
+                activeIndex={openSkillIndex}
+                onOpenSlot={openSkillSlot}
+              />
+            </Panel>
+          )}
+
+          {/* ── 方案備註（PLAN-052-L C-4）──
+              位置在**槽位圖之後、效果兩欄之前**：這一欄由上而下是「這一套裝了什麼」→
+              「為什麼這樣配」→「它實際加了多少」。備註屬於第二個問題，而那個問題
+              只有在配完之後才問得出來。
+              ⚠ 不放進 sticky 抬頭（方案名稱在那裡）：那是一條**兩行的輸入框**，
+                常駐在抬頭等於長期佔掉一整列，而多數人不會填它。
+              ⚠ gate 用 `ctx.mech`，與方案名稱同一條：沒選機甲時整套配裝還不存在，
+                這時填備註只會在換機甲時變成一句對不上的話。 */}
+          {ctx.mech && (
+            <LoadoutNoteField
+              value={state.draft.note}
+              onChange={(note) => send({ type: 'setNote', note })}
+            />
+          )}
+
           {/* ── 效果兩欄（使用者要求 2026-08-27）──
               模組與武器各佔半邊，收合態是縮圖、展開態是細節（見 `Panel` 的 `preview`）。
 
@@ -1102,7 +1399,21 @@ export default function LoadoutPage() {
             />
           )}
 
-          {(isMobile || !effectivePicker) && !openRow && !openModuleRef && ctx.mech && (
+          {/* 技能面板 —— 切換鏈的第五種內容（PLAN-052-L D-4）。入口是中欄的三格 */}
+          {(isMobile || !effectivePicker) && !openRow && !openModuleRef && openSkillIndex !== null && (
+            <SkillPanel
+              pilot={ctx.pilot}
+              skillMap={skillMap}
+              loading={skillsLoading}
+              index={openSkillIndex}
+              carried={state.draft.skills?.carried ?? []}
+              onBack={() => setOpenSkillIndex(null)}
+              onPick={(skillId) => send({ type: 'equipSkill', index: openSkillIndex, skillId })}
+              onClear={(skillId) => send({ type: 'unequipSkill', skillId })}
+            />
+          )}
+
+          {(isMobile || !effectivePicker) && !openRow && !openModuleRef && openSkillIndex === null && ctx.mech && (
             <Panel title="武器與元件">
               <WeaponComponentList
                 ctx={ctx}
@@ -1119,7 +1430,7 @@ export default function LoadoutPage() {
                  並且**不再受挑選器開合影響** —— 開著挑選器挑武器時仍看得到目前的技能與加成，
                  那正是要比較的時候。 */}
 
-          {(isMobile || !effectivePicker) && !openRow && !openModuleRef && ctx.mech && (
+          {(isMobile || !effectivePicker) && !openRow && !openModuleRef && openSkillIndex === null && ctx.mech && (
             <>
               {/* 四部位表 —— PLAN-052-G Phase D 復原（下架的兩個理由現在都不成立了）。
                   下架時的理由逐字是「四個部位現在 100% 固定來自本機甲，這裡列出來只是把
@@ -1222,10 +1533,15 @@ export default function LoadoutPage() {
           ⚠ z-40：要壓在內容之上，但要低於 BottomSheet 與 Tab Bar 的 z-50。 */}
       {bp === 'narrow' && (
         <div
+          ref={barRef}
           className="fixed inset-x-0 z-40 border-t border-border-accent bg-bg-tooltip px-3 py-2"
           style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom))' }}
         >
-          <div className="flex items-center gap-1.5">{actionButtons}</div>
+          {/* ⚠ `flex-wrap`：390px ＋「大」字級下，超重時的六顆（複製連結／摘要／匯出圖／
+              卸至符合／清裝備／全清空）排不進一列。不換行的代價不是難看，是最右邊那顆
+              **整顆看不見也按不到**（本列沒有橫向捲軸）。換行造成的高度變化由上面的
+              `barH` 量測吸收 —— 這是那個寫死常數退場的原因。 */}
+          <div className="flex flex-wrap items-center gap-1.5">{actionButtons}</div>
         </div>
       )}
 
@@ -1256,7 +1572,7 @@ export default function LoadoutPage() {
       {shareNotice && (
         <div
           className="fixed left-1/2 -translate-x-1/2 z-50 max-w-[min(34rem,calc(100vw-2rem))] hud-cut-sm border border-accent-yellow/50 bg-bg-tooltip px-3.5 py-2 text-[12px] text-text-secondary leading-relaxed"
-          style={{ bottom: bp === 'narrow' ? 'calc(7rem + env(safe-area-inset-bottom))' : '1rem' }}
+          style={{ bottom: bp === 'narrow' ? raisedBottom : '1rem' }}
         >
           {shareNotice}
           <button
@@ -1274,7 +1590,7 @@ export default function LoadoutPage() {
       {copied === 'fail' && (
         <div
           className="fixed left-1/2 -translate-x-1/2 z-50 hud-cut-sm border border-accent-red/50 bg-bg-tooltip px-3.5 py-2 text-[12px] text-accent-red"
-          style={{ bottom: bp === 'narrow' ? 'calc(7rem + env(safe-area-inset-bottom))' : '1rem' }}
+          style={{ bottom: bp === 'narrow' ? raisedBottom : '1rem' }}
         >
           複製失敗，你的瀏覽器不允許本站寫入剪貼簿。
         </div>
@@ -1285,7 +1601,7 @@ export default function LoadoutPage() {
         <div
           className="fixed left-1/2 -translate-x-1/2 z-50 hud-cut-sm border border-accent-red/50 bg-bg-tooltip px-3.5 py-2 text-[12px] text-accent-red"
           // 窄版要讓開底部兩層固定列，否則訊息會被蓋在後面（等同沒有回饋）
-          style={{ bottom: bp === 'narrow' ? 'calc(7rem + env(safe-area-inset-bottom))' : '1rem' }}
+          style={{ bottom: bp === 'narrow' ? raisedBottom : '1rem' }}
         >
           匯出配裝圖失敗：{exportError}
           <button
@@ -1305,18 +1621,23 @@ export default function LoadoutPage() {
           // 兩者語意不同，所以圖上要講出分頁總數（D-2）。
           setCount={setKeys.length}
           budget={budget}
-          ndLevels={ndLevels}
+          // 圖上印的是**生效**算力（含模組加成），來源另外用一行交代 —— 見 `NeuralDriveBand`
+          ndLevels={ndLevelsEffective}
+          ndBonus={ndBonus}
           ndAbilityMap={ndAbilityMap}
           ndZones={ndZones}
           name={state.draft.name}
+          note={state.draft.note}
+          skills={carriedSkillDocs}
           shareCode={exportShareCode}
+          shareUrl={exportShareUrl}
           onDone={finishExport}
         />
       )}
 
       <CascadeToast
         notice={state.notice}
-        raised={bp === 'narrow'}
+        raisedBottom={bp === 'narrow' ? raisedBottom : undefined}
         onUndo={() => send({ type: 'undo' })}
         onDismiss={() => send({ type: 'dismissNotice' })}
       />
@@ -1481,6 +1802,74 @@ function LoadoutNameField({
         onChange={(e) => handle(e.target.value)}
         placeholder="未命名（會印在匯出圖上）"
         className={`${HUD.bodyStrong} w-full mt-0.5 bg-transparent text-text-primary placeholder:text-text-dim placeholder:font-normal focus:outline-none disabled:cursor-not-allowed`}
+      />
+    </label>
+  )
+}
+
+
+/**
+ * 方案備註輸入框（PLAN-052-L C-4，團隊回饋 2）。
+ *
+ * ⚠ `raw` / `seen` 的 derived-state 模式**與 `LoadoutNameField` 逐字相同**，理由也相同：
+ *   清洗會 trim 尾端空白與空行，直接把清洗結果餵回 textarea 的話，使用者按下 Enter
+ *   的那一刻換行就被吃掉 —— 於是永遠打不出第二行。
+ *
+ * ⚠ **有字數計數器**（名稱那顆沒有）：名稱的上限靠 `maxLength` 就擋得住，
+ *   而備註同時受「100 碼點」與「6 行」兩條限制，後者 `maxLength` 表達不了。
+ *   不給計數器的話，第七行會在送出的那一刻無聲消失。
+ *
+ * ⚠ 提示文字要講出**它會被印在公開圖上**：這是全站唯一一個「使用者寫的字會出現在
+ *   別人看到的圖上」的欄位，而匯出圖那一側也標了「由分享者填寫」。兩邊都講一次。
+ */
+function LoadoutNoteField({
+  value, disabled, onChange,
+}: {
+  value: string | undefined
+  disabled?: boolean
+  onChange: (raw: string) => void
+}) {
+  const [raw, setRaw] = useState(value ?? '')
+  const [seen, setSeen] = useState(value ?? '')
+  if (seen !== (value ?? '')) {
+    setSeen(value ?? '')
+    setRaw(value ?? '')
+  }
+
+  const handle = (next: string) => {
+    setRaw(next)
+    setSeen(sanitizeLoadoutNote(next) ?? '')
+    onChange(next)
+  }
+
+  // 碼點數，不是 `raw.length`（UTF-16）—— 上限本身就是用碼點算的
+  const used = [...raw].length
+  const over = used > LOADOUT_NOTE_MAX
+
+  return (
+    <label
+      className={`${HUD_INPUT} block px-2.5 py-1.5 w-full min-w-0 ${
+        disabled ? 'opacity-40' : 'focus-within:border-accent-orange/60 focus-within:border-b-accent-orange'
+      }`}
+    >
+      <span className="flex items-baseline gap-2">
+        <span className={`${HUD.labelCjk} text-text-dim leading-tight`}>方案備註</span>
+        <span className="text-[11px] text-text-dim leading-tight">會印在匯出圖與分享碼上</span>
+        <span className={`${HUD.numSm} ml-auto ${over ? 'text-accent-orange' : 'text-text-dim'}`}>
+          {used} / {LOADOUT_NOTE_MAX}
+        </span>
+      </span>
+      <textarea
+        value={raw}
+        disabled={disabled}
+        rows={2}
+        // ⚠ 這個 `maxLength` 是 UTF-16 長度、且**含換行**，只是別讓人打了一大段才發現被截。
+        //   真正的上限（碼點數 ＋ 行數）由 `sanitizeLoadoutNote()` 決定。
+        maxLength={LOADOUT_NOTE_MAX * 2}
+        onBlur={() => setRaw(value ?? '')}
+        onChange={(e) => handle(e.target.value)}
+        placeholder={`為什麼這樣配？（最多 ${LOADOUT_NOTE_MAX_LINES} 行）`}
+        className={`${HUD.body} w-full mt-0.5 bg-transparent text-text-primary placeholder:text-text-dim resize-y min-h-[2.6rem] focus:outline-none disabled:cursor-not-allowed`}
       />
     </label>
   )

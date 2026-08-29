@@ -3,6 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { resolveChassis } from './chassisStats.ts'
+import type { Module } from '../types/index.ts'
 
 /** 彌造者（mech_052）線上實測值 */
 const 彌造者 = {
@@ -106,7 +107,8 @@ test('moduleLevelOf：本輪一律回滿級；查不到回 0（＝不知道，�
     ['mod_4026_2', { levels: [{ level: 1 }, { level: 2 }, { level: 3 }, { level: 4 }] }],
     ['mod_亂序',   { levels: [{ level: 8 }, { level: 1 }] }],
     ['mod_無級',   { levels: [] }],
-  ])
+    // 刻意的部分 fixture：moduleLevelOf 只讀 levels
+  ]) as unknown as ReadonlyMap<string, Module>
   const c = resolveChassis(彌造者, { moduleMap })!
   assert.equal(c.moduleLevelOf('mod_4026_2'), 4)
   assert.equal(c.moduleLevelOf('mod_亂序'), 8)     // 取最高階，不是取陣列最後一個

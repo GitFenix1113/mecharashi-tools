@@ -52,8 +52,12 @@ test('備用槽由背包給，且只有強襲者背包給得出來（181 筆中�
 })
 
 test('判定走 type 而不是 doc id（換 id 或新增同型背包都不該漏判）', () => {
-  assert.equal(backpackBackupHandSlots({ id: '99999999', type: 'BackupEquipment' }), 2)
-  assert.equal(backpackBackupHandSlots({ id: BACKUP_EQUIPMENT_BACKPACK_ID, type: 'Heal' }), 0)
+  // 存成變數再傳：這兩筆刻意多帶 id（本則測的就是「id 不參與判定」），
+  // 直接寫成字面值會被 TS 的 excess property check 擋下來
+  const 換了id的強襲者背包 = { id: '99999999', type: 'BackupEquipment' }
+  const 借了強襲者id的補血背包 = { id: BACKUP_EQUIPMENT_BACKPACK_ID, type: 'Heal' }
+  assert.equal(backpackBackupHandSlots(換了id的強襲者背包), 2)
+  assert.equal(backpackBackupHandSlots(借了強襲者id的補血背包), 0)
 })
 
 test('enumerateSlots：中甲＋強襲者背包 ＝ 7 格，順序固定且鍵互不相同', () => {

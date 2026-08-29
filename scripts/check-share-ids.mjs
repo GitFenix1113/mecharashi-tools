@@ -35,7 +35,7 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { buildShareIndex, assertNoCollisions, ALIAS_BASE, SHARE_ID_MAX } from '../src/utils/loadoutCode/shareId.ts'
+import { buildShareIndex, assertNoCollisions, toShareId, ALIAS_BASE, SHARE_ID_MAX } from '../src/utils/loadoutCode/shareId.ts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -56,7 +56,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export const LOCK_PATH = path.resolve(__dirname, '../share-id.lock.json')
 export const REGISTRY_PATH = path.resolve(__dirname, '../src/utils/loadoutCode/shareIdRegistry.json')
 
-/** kind → Firestore 集合名。與 `ShareIdKind` 一一對應，六個都要在。 */
+/** kind → Firestore 集合名。與 `ShareIdKind` 一一對應，七個都要在。 */
 export const KIND_COLLECTIONS = Object.freeze({
   pilot: 'pilots',
   mech: 'mechs',
@@ -64,9 +64,57 @@ export const KIND_COLLECTIONS = Object.freeze({
   component: 'components',
   backpack: 'backpacks',
   module: 'modules',
+  pilotSkill: 'pilotSkills',
 })
 
+/**
+ * 號碼**推導不出來就自動續號**的 kind（PLAN-052-L D-2）。
+ *
+ * `pilotSkills` 的 doc id 是 `skill_槍林彈雨` 這種純名稱，一個數字都推不出來，
+ * 所以它的 853 筆號碼全部住在別名區。手寫 853 筆是不可能維護的 ——
+ * 而且每次改版都會多幾筆，漏一筆的症狀是**那個技能被靜默濾出分享碼**
+ * （`toShareId()` 回 null ⇒ encode 時整個跳過，畫面上不會有任何話）。
+ *
+ * ⚠ 續號仍然是 **append-only**：只發給「還沒有號碼」的 doc id，既有的一個都不動。
+ *   這一層的核心承諾（號碼一旦發出就是那份文件的永久身分）因此沒有改變 ——
+ *   自動化的只是「發號」這個動作，不是「改號」。
+ *
+ * ⚠ 其餘 kind **不自動續號**：它們推得出號碼，別名是給少數形狀例外的人工補丁
+ *   （`mod_4001_2` 那 41 筆），而人工指派的東西不該被腳本悄悄長出來。
+ */
+export const AUTO_ALIAS_KINDS = Object.freeze(['pilotSkill'])
+
 // ─── 純邏輯（可單測，不碰 Firestore／檔案系統）────────────────────────────────
+
+/**
+ * 替「推導不出號碼、也還沒有別名」的 doc id **自動續號**（PLAN-052-L D-2）。
+ *
+ * 回傳一份**新的**別名表（既有的原樣保留），以及這次新發的號碼，給報表用。
+ *
+ * ⚠ **append-only**：既有別名一個都不改。續號從 `max(ALIAS_BASE, 目前最大別名) + 1` 起跳，
+ *   所以刪掉一筆文件也不會讓水位倒退、把那個號碼發給別人 —— 那正是這整套機制要防的回收。
+ *
+ * ⚠ 依 doc id **排序後**才發號：`listDocuments()` 的順序沒有保證，不排序的話
+ *   同一份資料在兩台機器上會發出兩組不同的號碼，而 diff 會變成一團無法審查的東西。
+ *
+ * ⚠ 越過 `SHARE_ID_MAX` 時**停止發號並回報**，不硬塞：塞進去會產生一串
+ *   解得開卻指向錯誤實體的代碼。剩餘空間有 59 萬個，今天用不到 0.2%。
+ */
+export function autoAssignAliases(kind, docIds, aliases) {
+  const next = { ...aliases }
+  const assigned = []
+  const exhausted = []
+  let cursor = Math.max(ALIAS_BASE - 1, ...Object.values(next).filter((n) => Number.isInteger(n)))
+  for (const docId of [...docIds].sort()) {
+    if (next[docId] !== undefined) continue          // 已經有號碼 —— 永不改動
+    if (toShareId(kind, docId) !== null) continue    // 推得出來就不必別名
+    if (cursor + 1 > SHARE_ID_MAX) { exhausted.push(docId); continue }
+    cursor += 1
+    next[docId] = cursor
+    assigned.push({ docId, shareId: cursor })
+  }
+  return { aliases: next, assigned, exhausted }
+}
 
 /**
  * 把一個 kind 的線上 doc id 清單整理成 lock 檔的「觀測區」形狀。
@@ -142,7 +190,9 @@ export function isFatal(report) {
       k.collisions.length ||
       k.aliasIssues.outOfBand.length ||
       k.aliasIssues.reused.length ||
-      k.aliasIssues.stale.length,
+      k.aliasIssues.stale.length ||
+      // 別名區號碼用盡：那幾筆從此不可分享，而且 --accept 再跑幾次也不會變好
+      (k.exhaustedAliases?.length ?? 0),
   )
 }
 
@@ -173,14 +223,29 @@ function buildReport(live, lock, registry) {
   for (const kind of Object.keys(KIND_COLLECTIONS)) {
     const locked = lock?.kinds?.[kind]
     const reg = registry?.kinds?.[kind]
-    const aliases = reg?.aliases ?? {}
-    const observed = observeKind(kind, live[kind], aliases, reg?.maxAssigned ?? 0)
+    const stored = reg?.aliases ?? {}
+
+    /**
+     * ⚠ **報表一律以「registry 裡今天真的有的別名」為準**（`stored`），不是續號之後的那一份。
+     *   拿續號後的表去算 `unshareable`，唯讀模式會印出一份「一切正常」的報表，
+     *   而 bundle 裡的 registry 根本還沒有那些號碼 —— 那正是這支腳本要抓的落差。
+     *   續號的結果只在 --accept／--init 時才寫進去（見 main()）。
+     */
+    const pending = AUTO_ALIAS_KINDS.includes(kind)
+      ? autoAssignAliases(kind, live[kind], stored)
+      : { aliases: stored, assigned: [], exhausted: [] }
+
+    const observed = observeKind(kind, live[kind], stored, reg?.maxAssigned ?? 0)
     kinds[kind] = {
       observed,
-      aliases,
+      aliases: stored,
+      /** 續號之後的別名表 —— 只有 --accept／--init 會把它寫回 registry */
+      nextAliases: pending.aliases,
+      pendingAliases: pending.assigned,
+      exhaustedAliases: pending.exhausted,
       diff: diffKind(observed, locked),
       collisions: observed._index.collisions,
-      aliasIssues: checkAliases(aliases, observed._index),
+      aliasIssues: checkAliases(stored, observed._index),
     }
   }
   return { kinds }
@@ -242,8 +307,25 @@ function printReport(report, { hasLock }) {
       const head = added.slice(0, 6).map((a) => `#${a.shareId} ${a.docId}`).join('、')
       console.log(`\n  + [${kind}] 新增 ${added.length} 筆：${head}${added.length > 6 ? ' …' : ''}`)
     }
+    for (const docId of k.exhaustedAliases ?? []) {
+      fatal++
+      console.log(`\n  ‼ [${kind}] 別名區號碼用盡，${docId} 發不到號 ⇒ 它從此不可分享。`)
+    }
   }
-  return { fatal, additions }
+
+  // 待發號：與「純新增」同一個嚴重度 —— 不擋，但一定要講。
+  // 沒有號碼的 doc id 會被 `encodeLoadout()` **靜默跳過**（`toShareId()` 回 null），
+  // 而畫面上不會有任何話 —— 那正是 052-D 元件漏接索引時的症狀。
+  let pendingTotal = 0
+  for (const [kind, k] of Object.entries(report.kinds)) {
+    const pend = k.pendingAliases ?? []
+    if (!pend.length) continue
+    pendingTotal += pend.length
+    const head = pend.slice(0, 4).map((a) => `${a.docId} → #${a.shareId}`).join('、')
+    console.log(`\n  ⊕ [${kind}] ${pend.length} 筆還沒有號碼（今天不可分享）：${head}${pend.length > 4 ? ' …' : ''}`)
+    console.log('      ⇒ 這幾筆會被靜默濾出分享碼。跑 --accept 續號。')
+  }
+  return { fatal, additions, pendingTotal }
 }
 
 // ─── 主流程 ──────────────────────────────────────────────────────────────────
@@ -278,7 +360,7 @@ async function main() {
   }
 
   console.log('分享碼身分對帳 —— share-id.lock.json vs 線上 Firestore')
-  const { fatal, additions } = printReport(report, { hasLock: hasLock && !MODE.init })
+  const { fatal, additions, pendingTotal } = printReport(report, { hasLock: hasLock && !MODE.init })
 
   if (MODE.init || MODE.accept) {
     if (fatal && !MODE.force && MODE.accept) {
@@ -303,7 +385,10 @@ async function main() {
       kinds: {},
     }
     for (const [kind, k] of Object.entries(report.kinds)) {
-      nextRegistry.kinds[kind] = { maxAssigned: k.observed.maxAssigned, aliases: k.aliases }
+      // ⚠ 別名寫回的是 `nextAliases`（＝既有 ＋ 這次續號），不是 `aliases`：
+      //   `autoAssignAliases()` 是 append-only，既有號碼一個都沒動，
+      //   所以「腳本永不改寫人工指派的號碼」這條承諾仍然成立。
+      nextRegistry.kinds[kind] = { maxAssigned: k.observed.maxAssigned, aliases: k.nextAliases ?? k.aliases }
       nextLock.kinds[kind] = {
         collection: k.observed.collection,
         derived: k.observed.derived,
@@ -322,8 +407,11 @@ async function main() {
     console.log('  確認過後跑：node scripts/check-share-ids.mjs --accept')
     process.exit(1)
   }
-  if (additions) {
-    console.log(`\n✓ 沒有改指或消失。lock 落後 ${additions} 筆新增，請跑 --accept 更新。`)
+  if (additions || pendingTotal) {
+    const parts = []
+    if (additions) parts.push(`lock 落後 ${additions} 筆新增`)
+    if (pendingTotal) parts.push(`${pendingTotal} 筆待發號`)
+    console.log(`\n✓ 沒有改指或消失。${parts.join('、')}，請跑 --accept 更新。`)
     process.exit(0)
   }
   console.log('\n✓ 完全一致。')

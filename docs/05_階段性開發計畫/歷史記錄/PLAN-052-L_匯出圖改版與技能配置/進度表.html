@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-L 匯出圖改版與技能配置 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-L 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge pink">◆ PLAN-052-L</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">匯出圖改版與技能配置</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-29</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label pink">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">44</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">44</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-pink);">44 / 44</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ 全案 44／44 收工（2026-08-30）。</strong>
+    Phase F 的兩項驗收完成後，<b>Phase G</b> 又收了同日回饋的三項（兩顆清空鍵、匯出圖的圖示與十字對齊、備用槽說明退場）。<br><br>
+    <strong>Phase F（2／2）：</strong>
+    兩項都在真的瀏覽器裡量，不是目測推斷。
+    <br><br>
+    <b>耗時與圖高</b>：最壞情況（cutout HERO ＋ γ 點滿 23／23 ＋ 滿版備註 ＋ 技能三格 ＋
+    四個不同族的模組 ＋ 五把武器）匯出 <b>787 ms</b>、<b>2,792 CSS px</b>、4.87 MB，
+    <b>console 沒有逾時警告</b> ⇒ A-1 那條「lazy 圖固定燒滿 5 秒」確實消失。
+    離 iOS Safari 的 canvas 上限（約 4,175 CSS px）還有 <b>33%</b>。
+    逐段量出來之後才看得清楚的一件事：<b>高度是右欄的明細在決定（1,070），不是算力欄（799）</b>
+    —— 算力欄還有 271px 才會變成瓶頸，所以「玩家把 α／β 調離預設」這條路徑<b>不會把圖撐長</b>。
+    <br><br>
+    <b>縮圖尺規</b>：壓到 156px 之後，<b>只有 HERO 與重量色帶活著</b>；
+    11–13px 的正文全部變成材質，QR 縮到約 33px（看得出是 QR、掃不動）。
+    另外釘住一條先前沒人量過的：<b>超重紅斜紋的可見度是比例不是常數</b>——
+    寬度 ＝ <code>1000 × 超重 ／ 總重</code>，實測超重 20／總重 1,970 只有 10 CSS px、
+    縮圖上 1.56px（看不見），而 14% 那種在縮圖上是 22px（一眼看到）。
+    ⇒ <b>裁決：維持現狀，把「縮圖只負責讓人點開」寫成刻意的決定</b>，
+    不為了縮圖去動主版面（把總重搬進 HERO 會賠掉「總重與四段色帶同一行」的對照關係）。
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ Phase E 已於 2026-08-30 完成（E-1～E-3 三項，另加一項瀏覽器實測 E-4）。</strong>
+    這一套配裝現在有<b>三個出口</b>：一張圖（給看的）、一段純文字（給引用的）、一個 QR（給掃的）。
+    <br><br>
+    <b>⚠ 摘要與匯出圖必須共用同一批資料，於是抽出了三支共用函式</b>——
+    這不是順手重構，是本 Phase 唯一會出的那種錯：同一套配裝、兩份輸出、內容對不起來，
+    而<b>兩邊都不會報錯</b>。抽出的是
+    <code>moduleRows()</code>／<code>wastedModuleStacks()</code>（自 <code>ModuleBand</code>，
+    同族去重與「該等級敘述」的規則一起搬走）、
+    <code>printedNdZones()</code>（自 <code>NeuralDriveBand</code>，γ 恆印／α・β 偏離預設才印）。
+    <code>RigSlot</code> 另補一個 <code>ref</code> 欄位，讓摘要接得上
+    <code>slotComponentNames()</code>——不補的話呼叫端就得自己重建座標，
+    而那正是 <code>rigLayout.ts</code> 存在的理由（左右翻面只寫一次）。
+    <br><br>
+    <b>⚠ QR 的三條線都是「不畫」而不是「畫小一點」。</b>
+    套件選 <code>uqr</code>（零依賴、純 ESM、同步、<b>27 KB 未壓縮</b>），畫成
+    <b>inline SVG 的單一 <code>&lt;path&gt;</code></b>：逐列把連續黑模組合併成一段 <code>h</code>，
+    否則 v40 的 31,329 格會讓 <code>html-to-image</code> 深拷貝三萬個節點。
+    <b>固定 210px</b>；<code>encode()</code> 對超長輸入<b>會 throw</b>（跑在 render 期間 ⇒
+    一個例外＝按了匯出沒反應）故一律 catch 成 <code>null</code>；
+    每模組不足 <b>3 個實體像素</b>（<code>pixelRatio 2</code> 換算）時同樣回 <code>null</code>——
+    <b>掃不動的 QR 比沒有 QR 更糟</b>，看圖的人會先試著掃、失敗才回頭找那串碼。
+    實測分界：碼約 <b>1,460 字元以內畫得出來</b>（含「號碼全滿 ＋ 4 套形態 ＋ 滿備註」），
+    再長就只留完整碼。
+    <br><br>
+    <b>⚠ 兩個只有瀏覽器看得出來的，已修</b>：
+    ① 分享碼帶初版靠上對齊，而碼通常只有 1–3 行、QR 高 210 ⇒ 左欄下方空掉一大塊，
+    看起來像有東西沒印出來（改 <code>align-items: center</code>，並在 QR 下補一行
+    「掃描直接開啟這一套」——左邊是要用<b>貼</b>的碼、右邊是要用<b>掃</b>的連結，兩者用法不同）；
+    ② 底部固定列多了「摘要」那顆之後，<b>390px ＋「大」字級 ＋ 超重</b>的最壞情況下
+    「自動卸至符合」<b>被 flex 壓到換行</b>，整條列從 39px 變成 61px——
+    而那會把 toast 的 <code>bottom: 7rem</code> 假設一起弄壞。窄版標籤縮成
+    「匯出圖」「卸至符合」並補 <code>whitespace-nowrap</code> 之後，實測餘裕 <b>21px</b>、單行 39px。
+    <br><br>
+    <b>⚠ bundle 成本 +0.7 KB gzip</b>（主 chunk 370.6 → 371.3 KB）。
+    新依賴看起來 27 KB，但只 import 了 <code>encode</code>，其餘（<code>renderSVG</code>／
+    ANSI／Unicode 那幾支）被 tree-shake 掉——與 D 的技能登錄簿 +16 KB 不同，
+    那份是<b>資料</b>、搖不掉。
+    <br><br>
+    <b>⏸ 一項本 Phase 沒動的</b>：分享連結的 OG 卡（回饋 1 的另一半）仍歸 052-H。
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ Phase D 已於 2026-08-30 完成（D-1～D-6 六項，另加一項瀏覽器實測 D-7），六條路徑逐項驗過。</strong>
+    模擬器第一次讓玩家<b>選機師技能</b>：三格自由替換，走分享碼的 <code>§SKILLS</code> 追加段
+    （<b>不 bump <code>FMT_VERSION</code></b>，7 筆既有 golden fixture 原樣通過 ⇒ 零遷移），
+    印在匯出圖上（<b>圖高成本實測 0px</b>——技能帶完全落在右欄既有的空白裡）。
+    第四格「改」技能<b>只開欄位不開 UI</b>。
+    <br><br>
+    <b>⚠ 候選池規則已依使用者裁決修正</b>：計畫書原訂的
+    「<code>pilot.skills</code> − 職業單元 − <code>manual</code>」<b>多了 <code>manual</code> 那一條</b>。
+    使用者逐字：「天生自帶的技能，我們歸類為『職業單元』。職業單元是不用攜帶的，
+    其他一般技能都是選擇性技能。」而 <code>manual</code> 記的是「這筆資料誰建的」，
+    與攜帶無關——3.3+ 那七位整份資料由後台手建、九筆技能全帶著它，
+    拿它過濾會讓他們的候選池<b>整個歸零</b>。
+    <b>判準只留 <code>unitType === '6'</code> 一條</b>之後，89／89 機師各有 <b>6～9 個候選</b>。
+    <br><br>
+    <b>⚠ 兩個只有瀏覽器看得出來的錯，已修</b>：① 技能卡在「選完機師、還沒選機甲」時就看得到，
+    而那正是<b>自動挑選器佔住右欄</b>的時候 ⇒ 點下去什麼都不會發生；
+    ② 同一段裡 <code>pilotSkills</code> 還沒開始載，卡片把「還沒載入」渲染成
+    <b>「這位機師的技能資料還沒建到可以挑選的程度」</b>——一句指控資料有缺的話。
+    後者正是本計畫反覆警告的那一類（空 Map ＝ 還沒載入），只是這次它從規則層跑到了<b>文案層</b>。
+    <br><br>
+    <b>⚠ 一項要留意的成本</b>：技能登錄簿（853 筆別名）進 bundle，
+    主 chunk 實測 <b>+16 KB gzip</b>（344 → 361 KB）。<code>LoadoutPage</code> 目前是
+    <b>eager import</b>（不是 lazy），所以沒開模擬器的訪客也會扛到。
+    要不要處理是 PLAN-053 那條線的決定，本計畫不動它。
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ Phase C 已於 2026-08-30 完成（8／8）。</strong>
+    模擬器多了一個<b>方案備註</b>欄位：100 碼點／6 行，走分享碼的 <code>§NOTE</code> 追加段
+    （<b>不 bump <code>FMT_VERSION</code></b>，舊 client 跳過不拒收 ⇒ 零遷移），
+    印在匯出圖上並標「由分享者填寫，非本站資料」。
+    <br><br>
+    <b>⚠ 一個只有在「書架滿了」時才會發生的 bug，實測抓到並修掉</b>：「存入」鍵的停用條件
+    是「書架滿了 <b>且</b> 這串碼不在架上」，而後者原本是<b>字串相等</b>。於是十格滿了的人
+    只想改一句自己那一套的備註，按鈕會直接變成停用——而畫面上沒有任何訊息說得出為什麼。
+    <br><br>
+    <b>⚠ 一項語意變更請留意</b>：去重從此比「去掉名稱與備註之後的本體」，
+    所以<b>裝備完全相同、只有方案名稱不同</b>的兩套，在書架上算同一套（就地更新）。
+    這是計畫書決策九的原文；若團隊認為名稱該區分書架項目，反悔成本是一個 <code>TAG.NAME</code>。
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ Phase B 已於 2026-08-29 完成（8／8），六種退化情況逐項實測。</strong>
+    匯出圖的裝備區從<b>四欄條列表</b>換成<b>與遊戲整備畫面同構的十字</b>（整寬 1000px），
+    神經驅動縮成 371px 一欄、只印 γ 並附能力敘述。<b>圖高 1,609 → 1,767～1,999</b> CSS px
+    （離 iOS Safari 換算的 4,175 上限還有約一倍餘裕，最壞情況的正式量測留給 F-2）。
+    <br><br>
+    <b>⚠ 又一個只有瀏覽器看得出來的錯，已修</b>：初版的主列是「左右各一個 flex column」，
+    於是只要某一格多一行註記（固定武裝、雙手武器），同一列的左右兩格就會錯開，
+    而且<b>越往下累積越多</b>——實測帕斯卡那張圖上「右肩」與「左肩」差了 5px。
+    <b>一張講相對位置的圖，左右不成對就失去了它存在的理由。</b>
+    改成單一 grid、每一對指定同一個 <code>gridRow</code> 之後，同列等高由排版保證。
+    <br><br>
+    <b>⏸ 一項刻意的暫時狀態</b>：B-5 的目標版面右格是「備註 ＋ 攜帶技能」，
+    但兩者要等 Phase C／D 才有欄位。本輪先由「武器與元件 ＋ 模組效果」佔住那一格
+    ——空著會讓整張圖看起來像沒排完。C／D 出貨時把它們往下併成整寬明細帶即可。
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ Phase A 已於 2026-08-29 完成（6／6），並在瀏覽器裡實測過。</strong>
+    走本機 emulator（<code>emu</code> → <code>emu:seed</code> → <code>dev:emu</code>）跑完整條路徑，
+    <b>不是目測推斷</b>：拿一套真實配裝（洛莎·審判 ／ XR ／ 3 顆模組）按下匯出，
+    把離屏的匯出卡拉進畫面逐項核對。<b>圖高 1,650 → 1,609</b>——刪掉四格 Stat 省下的 85px
+    大半被模組敘述吃回去，但換來的是「三分之二的模組從只有名字變成講得出效果」。
+    <br><br>
+    <b>⚠ 實測抓到一個讀不出來的設計，已修</b>：超重那一段原本畫成 45% 的半透明紅，
+    蓋在背部那段的藍（<code>#3b82f6</code>）上會<b>混成紫色</b>——而紫色正是圖例裡「肩部」的顏色。
+    實測那張圖的肩部是 0，於是條的最右端看起來像「肩部佔了一截」。
+    改成<b>紅色斜紋</b>：斜紋是質地不是顏色，疊在四種底色上都還讀得出「這一段是警告」。
+    這正是這個專案反覆出現的那類問題——<b>只過 tsc 與單元測試看不出來。</b>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    匯出的配裝長圖從「一張條列表」變成「一張與遊戲整備畫面同構、每顆模組都講得出效果、
+    而且帶得動方案備註與攜帶技能」的圖。同時修掉四個現行錯誤，其中兩個今天正在線上發生。
+  </div>
+
+  <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);">
+    <strong style="color:var(--accent-yellow);">出貨順序：</strong>
+    <b>Phase A～F 全數完成</b>（A／B 2026-08-29、C／D／E／F 2026-08-30）。
+    B-5 的暫時狀態已於 C-5 收掉——但<b>不是照原訂的方式</b>：右欄改成
+    「備註 → 武器與元件 → 模組效果」的明細欄，而不是「備註＋技能」一列加整寬明細帶
+    （那樣必然留下空格，理由見 C-5）。D-5 的攜帶技能<b>已照這個順序接在備註後面</b>。
+    <br>
+    F 的兩項驗收都在真的瀏覽器裡做完（不是目測推斷）：匯出 <b>787 ms</b>、
+    最壞情況 <b>2,792 CSS px</b>（離 iOS 上限還有 33%）、
+    縮圖尺規則把「縮圖只負責讓人點開」從假設變成<b>量過的裁決</b>。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label pink">Phase A</div>
+  <div class="section-title">立即可出：模組帶與數值列（回饋 6／7／8）</div>
+  <div class="section-desc">不動資料模型、不動分享碼、不需要任何裁決。這一批同時補上一個現存缺口（今天 64% 的模組在圖上只有名字）並修掉兩個線上錯誤。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 匯出圖的圖示不借用 ModuleIcon（動工第一件）</div>
+      <div class="task-group-meta">LoadoutExportCard.tsx · ModuleBand</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">直接內聯 FallbackImage，不引入 ModuleIcon</div>
+        <div class="task-desc">
+          <b>計畫原訂「給 <code>ModuleIcon</code> 加 eager prop」，實作時推翻</b>——那顆元件有三個地方
+          與匯出圖的規矩相衝，而且第三個會讓每次匯出都變慢：<br>
+          ① 它帶 <b>Tailwind 類別</b>（<code>hud-cut-sm bg-bg-dark border-border-subtle</code>），
+          而本檔的既有原則是「顏色與內距一律寫死十六進位，不吃 <code>loadoutTheme</code>」；<br>
+          ② 它缺圖時畫的是<b>一個有框的空方塊</b>，而匯出圖的裁決是<b>留白不畫框</b>
+          （空框夾在三顆正常圖示中間會被讀成「有一顆我不認得的模組」）；<br>
+          ③ 它寫死 <code>loading="lazy"</code>，而匯出宿主掛在 <code>position:fixed; left:-10000px</code>
+          ⇒ 瀏覽器認定圖不在可視區、永遠不開始載入 ⇒ <code>img.complete</code> 恆為 <code>false</code>
+          ⇒ <code>waitForRenderReady()</code> 的輪詢<b>每次匯出固定燒滿 5 秒逾時</b>，圖是對的、
+          症狀純粹是「變慢」，而且沒有任何錯誤訊息。<br>
+          ⇒ 改為直接用 <code>FallbackImage</code> ＋ <code>imageCandidates(mod.icon)</code>
+          ＋ 內聯 px 樣式（<b>與這張圖的立繪、機甲原稿走同一條路</b>，那兩者本來就沒傳
+          <code>loading</code>，預設即 eager）。三個問題一次消失，且不必替一個沒有消費端的
+          prop 在共用元件上開洞。<br>
+          ⚠ <b>Phase B／D 若讓任何新的圖示元件進到離屏渲染，先確認它有沒有這三條。</b>
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 模組帶加 ICON、接口型別欄退場</div>
+      <div class="task-group-meta">LoadoutExportCard.tsx · ModuleBand</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每列改成 [icon 26px] 部位 · 模組名 Lv4/8</div>
+        <div class="task-desc">
+          候選池 186 顆有 <b>182 顆有 icon</b>，本機 PNG 檔案 100% 存在。
+          缺圖的 4 顆（凌嘯框架／滅卻模組／獵群模組／異步感應器）<b>名稱照印、圖示位置留空白不畫框</b>。<br>
+          接口型別欄拿掉，釋出 58＋10＝<b>68px</b> 橫向給名稱與效果欄。
+          ⚠ <b>只拿掉顯示、不拿掉計算</b>：<code>iface</code> 仍決定「未裝」vs「—」的文案、
+          B 品質 10 台整段不印；<code>unknown</code> 時在名稱位置印「接口型別不明」。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 模組效果改印該等級的官方敘述</div>
+      <div class="task-group-meta">LoadoutExportCard.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">以 moduleLevelAt() 的滿級敘述取代 statText()</div>
+        <div class="task-desc">
+          實測：候選池 186 顆中 <b>119 顆（64%）滿級數值欄全為 0</b> ⇒ <code>statText()</code> 回空字串。
+          滿級 <code>description</code> 則是 186／186 齊全（min 8／p50 31／p90 63／max 119 字）。<br>
+          <b>33 筆含換行</b> ⇒ 用 <code>white-space: pre-line</code>；31 筆含 <code>[引用]</code> ⇒ 原樣印；
+          <b>0 筆含 <code>&lt;token&gt;</code></b> ⇒ 不必為候選池建 sanitizer。<br>
+          ⚠ 仍走 <code>ctx.stacks</code>（PLAN-052-K 的單一入口），不在卡片裡自己算一次——
+          圖上的 Lv 與畫面對不起來是這張圖最難查的錯。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 刪掉「四格合計」、修好超限提醒</div>
+      <div class="task-group-meta">LoadoutExportCard.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">合計整行移除；wasted 補 positions.length &gt; 0</div>
+        <div class="task-desc">
+          團隊逐字：「合計效果先隱藏，這部分站內的資訊不夠詳盡，很容易有半成品的感覺」。
+          條件由 <code>(totalText || wasted.length &gt; 0)</code> 改成 <code>wasted.length &gt; 0</code>。<br>
+          <b>超限提醒必留</b>——那是玩家會照著配的東西。順手補上 <code>positions.length &gt; 0</code>：
+          天生模組也在 <code>stacks</code> 裡，沒有這個條件會印出「裝了 0 顆、合計 8 級」這種話。<br>
+          ⚠ 拿掉合計之後，「數值以武器滿級（LV.70）與滿品質階為前提」那句免責<b>要有明確落點</b>——
+          改版後推導層數更多了（模組 Lv 是本站推導的，然後照那個 Lv 去印該階的效果全文）。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; 四格 Stat 收成一條窄帶、刪掉總算力分母</div>
+      <div class="task-group-meta">LoadoutExportCard.tsx · Stat / SectionHead</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">85px 四格 → 18px 分段條 ＋ 44px 資訊列</div>
+        <div class="task-desc">
+          團隊逐字：「出力只要配得進去就不是重要資訊，剩餘出力也不能怎樣，可以縮小版面。總算力也不用特別標」。<br>
+          總重是主角、出力降級成灰色分母、「餘 N」或「超重 N」是唯一的彩色數字。<br>
+          <b>順手修掉線上錯誤</b>：<code>γ 算力合計</code> 那格與 <code>SectionHead</code> 的
+          <code>${gammaSum} / 23</code> 一起刪 ⇒ 10 位單一 γ 區機師的假分母
+          （天花板 16 卻印 <code>16 / 23</code>）兩處同時消失。<br>
+          ⚠ <b>不放火力</b>（決策六）：這張圖明確不談強度。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-6 &nbsp; 分段條分母與超重訊號</div>
+      <div class="task-group-meta">LoadoutExportCard.tsx · pct()</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">pct() 分母改 max(output, weight)，並自己畫超出的那一段</div>
+        <div class="task-desc">
+          今天分母寫死 <code>w.total</code> ⇒ 那條<b>永遠填滿 100%</b>，與超不超重完全無關。<br>
+          ⚠ <b>不可照抄螢幕版 <code>OutputBar</code></b>：它的註解說超重時「條會撐出一截紅色」，
+          但四個分段加起來<i>就是</i> <code>weight.total</code>，超重時剛好填滿 100%，
+          <b>紅的只有邊框</b>——那一段紅色不存在。要有就得自己畫。<br>
+          超重的醒目度：<b>留一個誠實的載體就夠</b>——一行 15px 紅色粗體「超重 N」＋分段條紅框。
+          不要為了醒目而發明三個在 Discord 縮圖（約 156px 寬、6.4 倍縮小）下都看不見的訊號。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label pink">Phase B</div>
+  <div class="section-title">版面重構：位置化槽位與 γ 算力（回饋 4／5）</div>
+  <div class="section-desc">與 Phase A 綁在同一條線上：位置化的十字要整寬 1000px，而整寬要等神經驅動縮成兩條 γ 從兩欄 grid 移出來。<b>2026-08-29 完工</b>，六種退化情況已在真的瀏覽器裡逐項驗過。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; rigLayout() 幾何純函式</div>
+      <div class="task-group-meta">src/utils/rigLayout.ts（新）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把「哪一列、哪一欄、哪個部位」抽成純函式，螢幕與匯出各自渲染</div>
+        <div class="task-desc">
+          與 <code>loadoutRows.ts</code> 既有做法同構（一支純函式、兩個消費端）。
+          回傳的空間語彙<b>逐條沿用 <code>LoadoutRig</code> 的既有裁決</b>：
+          畫面左欄＝機體右側／臂卡插在肩與手之間／雙手武器左右兩格都畫（重量只計一次）／
+          背包放在背部那一列／「整排不存在」只出一列。<br>
+          ⚠ <b>絕不可把 <code>&lt;LoadoutRig&gt;</code> 元件本身塞進匯出卡</b>（見計畫書決策一的警告：三個靜默失效點）。<br>
+          <b>實作時多做的一件事：<code>LoadoutRig</code> 也改吃 <code>rigColumnRefs()</code>。</b>
+          原訂只讓匯出端消費這支純函式，但那樣「畫面左欄＝機體右側」仍有兩份實作 ——
+          而那條裁決的漂移症狀是<b>同一台機體在畫面與圖上左右相反</b>，兩邊都不會報錯。
+          螢幕版因此刪掉自己那支 <code>columnRefs()</code>（版面一個 px 都沒動）。<br>
+          <b>另外補了兩個欄位</b>：<code>dual: 'primary' | 'echo'</code>（雙手武器的重量只由
+          <code>primary</code> 那格印，印兩次會讓讀者把 800 讀成 1600）與 <code>slotType</code>
+          （渲染端拿它查重量分段色；<b>整排不存在的那一列也有值</b> —— 一列灰掉的肩部仍然是肩部）。
+        </div>
+        <div class="task-file">src/utils/rigLayout.ts · components/loadout/LoadoutRig.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">單元測試：五種機體形狀</div>
+        <div class="task-desc">
+          中甲／輕甲／B 品質（無模組接口）／雙手武器／有無備用槽，驗列序與「整排不存在」的判定。
+          實際寫了 11 條，另含：固定武裝 <code>weight === 0</code> 與空槽 <code>null</code> 不可混為一談、
+          武器斷鏈退回 doc id、<code>rigColumnRefs()</code> 收的是機體側而不是畫面側。
+        </div>
+        <div class="task-file">src/utils/rigLayout.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 匯出版十字與六種槽位狀態</div>
+      <div class="task-group-meta">components/loadout/export/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">ExportRig / ExportSlotCell / ExportPartCard</div>
+        <div class="task-desc">
+          軀幹（置中半寬 480）／主列三欄 300｜300｜300（gap 30，合計 960）／腿部（置中半寬）／背部整列／備用槽。<br>
+          ⚠ <b>六種狀態一個都不能少</b>（決策三）：
+          <code>weapon · backpack · fixed · formLocked · empty · absent</code>。
+          收成「已裝／空槽／無槽」三種會靜默丟掉 <code>fixed</code> 與 <code>formLocked</code> 的黃字——
+          那是圖上唯一在說「這一格你換不了」的訊號。
+          <code>weight === null</code> 與 <code>=== 0</code> 也不可都印 <code>—</code>
+          （實作是 <code>null</code> 整個不印、<code>0</code> 照印，圖上因此沒有任何一個 <code>—</code>）。<br>
+          ⚠ <b>不畫引線</b>（決策二）。⚠ 所有數字必須是 <b>px 字面值</b>，
+          不可用 Tailwind 類別或 <code>rem</code>——站上 root 字級使用者可調（17/19/21px），
+          用 rem 會讓同一套配裝在不同人手上匯出成不同尺寸的圖。<br>
+          <b>實作時新增 <code>export/exportTheme.ts</code></b>：調色盤與字體從 <code>LoadoutExportCard.tsx</code>
+          原值搬出來共用。匯出圖從此不只一個元件，而兩邊各抄一份十六進位就是漂移的起點。<br>
+          <b>三種框的畫法</b>：已裝＝實線＋深底、空槽＝橘色虛線、無槽＝灰虛線＋<b>斜紋底</b>
+          （斜紋是質地不是顏色，同 A-6 超重那一段的理由——純灰的空框會被讀成「這張圖漏了」）。
+          左框線用<b>重量分段色</b>，與上方出力帶的圖例同一組色。
+        </div>
+        <div class="task-file">src/components/loadout/export/ExportRig.tsx · exportTheme.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">⚠ 實測後改：主列改成單一 grid，左右成對佔同一個 grid row</div>
+        <div class="task-desc">
+          初版是「左右各一個 flex column」。<b>那在瀏覽器裡是錯的</b>：兩欄各自堆疊，
+          只要某一格多一行註記（固定武裝的「機甲固定武裝」、雙手的「重量計一次」），
+          同一列的左右兩格就會錯開，而且<b>越往下累積越多</b>——實測帕斯卡那張圖上
+          「右肩」與「左肩」差了 5px。<b>一張講相對位置的圖，左右不成對就失去了它存在的理由。</b><br>
+          改成一個 grid、每一對指定同一個 <code>gridRow</code>、機體那格 <code>1 / span N</code>
+          跨滿整欄之後，同列等高是排版保證的，不必靠內容剛好一樣長。
+          槽位格與部位卡因此各加一個 <code>grow</code> prop（撐滿 grid cell）。<br>
+          ⚠ 這一條<b>只過 tsc 與單元測試看不出來</b>——與 A-6 那個紫色斜紋是同一類問題。
+        </div>
+        <div class="task-file">src/components/loadout/export/ExportRig.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 神經驅動只印 γ ＋ 能力敘述</div>
+      <div class="task-group-meta">LoadoutExportCard.tsx · NeuralDriveBand</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">isGammaZone() 過濾；α／β 只在偏離預設時印；印能力敘述</div>
+        <div class="task-desc">
+          ⚠ <b>不可寫成 <code>['γ1','γ2'].includes(name)</code></b>——10 位 1.0 老角的分區名是單一字元
+          <code>γ</code>，寫死會讓他們整區消失。（阿德里安已實測：單一 <code>γ</code> 區照印、且沒有分母。）<br>
+          ⚠ <b>不要印「α／β 全機師一致，本圖略」這種靜態文案</b>：玩家可以把 α 拉到 Lv1 而它會被編進
+          <code>§ND</code>，屆時圖與圖底的碼互相打臉且零錯誤訊息。
+          正解是<b>只在偏離 <code>defaultNdLevels()</code> 時才印</b>，正常情況成本 0px。<br>
+          敘述：440 筆 p50 26 字／p90 48／max 100，含 <code>&lt;token&gt;</code> 0 筆、
+          含句號 0 筆（⇒ <b>不要寫「只取首句」的截斷，那是 no-op</b>）。<br>
+          退路：若實作出來覺得太滿，「只給每區最高一級印敘述」是一行 <code>if</code> 就能退的位置。<br>
+          <b>實作時補的兩句</b>：① 印出來的分區少於全部時，加一行「本圖只印 γ 區…其餘分區維持預設，不另列」——
+          不講的話，看過機師頁的人會以為這張圖漏了兩區；措辭刻意<b>只講這張圖印了什麼</b>，
+          不對沒印的分區做任何斷言。② ★ 註解只列<b>印出來的</b>那幾區：
+          <code>ndAffectZones()</code> 可能含一個帶 <code>buffUpgrades</code> 的 α 區，而它在預設值時不會被印，
+          照抄整個集合會讓讀者去找一條不存在的條。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; loadoutSheetRows() 退場</div>
+      <div class="task-group-meta">src/utils/loadoutRows.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">移除條列表與它唯一的生產端</div>
+        <div class="task-desc">
+          <code>loadoutSheetRows()</code> 的生產端只有匯出卡（另兩處在測試），退場風險低。
+          <code>weaponRows()</code> 不動——右欄的武器與元件列還在用。<br>
+          ⚠ 退場前先確認 B-2 已把六種狀態全部接上，否則會出現「表沒了、狀態也沒了」。<br>
+          <b>元件名稱的解析改成一支 <code>slotComponentNames(ctx, ref)</code></b>：
+          它原本住在 <code>SheetRow.componentNames</code> 裡，而那份型別要退場；
+          <code>WeaponComponentList</code> 也有一份自己的私有版本。收成一支公開純函式、兩個消費端
+          （右欄武器列、匯出圖明細帶）——兩邊各查一次的下場是同一顆元件在一處叫本名、
+          另一處叫 doc id。原本綁在 <code>loadoutSheetRows</code> 上的兩條測試改測這一支。
+        </div>
+        <div class="task-file">src/utils/loadoutRows.ts · loadoutRows.test.ts · components/loadout/WeaponComponentList.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-5 &nbsp; 整張圖重排</div>
+      <div class="task-group-meta">LoadoutExportCard.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">HERO ／ 出力窄帶 ／ 十字 ／ 算力｜明細欄 ／ footer</div>
+        <div class="task-desc">
+          神經驅動縮成 371px 一欄，十字因此拿到<b>整寬 1000px</b>。<br>
+          <b>非印不可的既有內容一項都不能掉</b>（已逐項在實測圖上確認）：手部取主手／備用<b>較重者</b>與未計入的那一組數字、
+          混搭來源 <code>◆</code>（已改由部位卡承載）、形態名（HERO ＋ 檔名 ＋「含 N 個形態分頁」）、
+          LV.70 免責、分享碼帶。<br>
+          <b>⏸ 與計畫書的差異：右欄暫由「武器與元件 ＋ 模組效果」佔住。</b>
+          B-5 的目標版面是「算力 371px ｜ <b>備註 ＋ 攜帶技能</b>」，明細帶則是「武器元件 ｜ 模組效果」左右各半。
+          但備註（Phase C）與技能（Phase D）都還沒有欄位，右格空著會讓整張圖看起來像沒排完。
+          <b>C／D 出貨時的動作</b>：備註＋技能搬進右格、這兩塊往下併成整寬的明細帶。<br>
+          <b>模組帶同時改成「模組效果」、只印裝了東西的那幾格。</b>
+          位置化的十字上線之後，「哪個部位有沒有接口、裝了什麼、Lv 幾」四部位卡上全部都有——
+          再印一次四行「未裝」就是把同一句話在同一張圖上說第二遍，而且它排在十字下方、
+          看起來像另一份資料。一顆都沒裝時整段不印（B 品質那 10 台由部位卡的「無模組接口」交代）；
+          <b>超限提醒必留</b>——它在十字上沒有落點。<br>
+          <b>抬頭改成「已裝 N / M 格」</b>：原本的「M 個槽位 · 已裝 N」與右欄的「共 1 把」並排時
+          會被讀成互相矛盾（雙手武器佔兩格、但只有一把）。<br>
+          ⏸ 方案序號徽章（<code>PLAN A</code>）<b>未做</b>：那是「三方案並排」情境的東西，
+          而三方案批次匯出已裁決不做（見「不在範圍內」）。等 OG 卡驗過再決定。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-6 &nbsp; 六種退化情況瀏覽器實測</div>
+      <div class="task-group-meta">Chrome DevTools · 本機模擬器</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">逐項實測而非目測推斷（2026-08-29）</div>
+        <div class="task-desc">
+          做法：把 <code>HTMLAnchorElement.prototype.click</code> 攔下來，
+          把 <code>toPng</code> 產出的 dataURL 塞回頁面上的一個 <code>&lt;img&gt;</code> ——
+          於是驗的是<b>真的那張 PNG</b>，不是離屏 DOM。<br>
+          ① <b>輕甲無肩槽</b>（艾達／灰伯勞）：肩部整寬一列＋斜紋，兩欄裡沒有肩格、臂卡插點退到最上面。<br>
+          ② <b>B 品質無模組接口</b>（灰伯勞）：四張部位卡印「無模組接口」且不畫模組那一行，模組效果帶整段不印。<br>
+          ③ <b>單一 γ 區的老機師</b>（阿德里安）：單一 <code>γ</code> 照印、<b>沒有任何分母</b>（問題②的兩個印出處都已消失）。<br>
+          ④ <b>雙手武器</b>（貝奧武夫·改）：左右兩格都畫、都帶「雙手」標記，重量 850 只在畫面左欄印一次，
+          右欄那格寫「與另一手同一把，重量計一次」。<br>
+          ⑤ <b>部件混搭</b>（帕斯卡＋裁決者的腿）：腿部卡上 <code>◆裁決者</code>。
+          同一張圖另外驗到：固定武裝（衝擊炮 ×2）黃字＋<b>重量 0 照印</b>、
+          強襲者背包在背部那一列並標「解鎖備用武器槽」、備用槽兩格進兩欄、「含 3 個形態分頁」。<br>
+          ⑥ <b>缺 <code>art.webp</code> 走 <code>photo</code> 版面</b>（尼德霍格，5 台之一）：hero 高 356 那套，圖沒有被拉糊。<br>
+          <b>圖高</b>：1,767／1,939／1,999 CSS px（2000×3534～3998 PNG）。
+          iOS Safari 換算的上限約 4,175 CSS px，最壞情況的正式量測留給 F-2。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label pink">Phase C</div>
+  <div class="section-title">方案備註（回饋 2）</div>
+  <div class="section-desc">新增一個會被印在公開分享圖上、也會存進 Firestore 的自由文字欄位。清洗與去重語意是這個 Phase 的重點，不是 UI。<b>2026-08-30 完工</b>（6／6，另加一項實測時發現的修正）。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; sanitizeLoadoutNote()</div>
+      <div class="task-group-meta">src/utils/loadoutName.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">與方案名稱共用同一條不可見字元正規式</div>
+        <div class="task-desc">
+          放在 <code>loadoutName.ts</code> 同一個檔——分開寫會讓那條 <code>INVISIBLE</code>
+          正規式有第二份，而兩份必然漂移。<br>
+          差異：備註<b>保留換行</b>（名稱是折成空白），上限 <b>100 碼點 ／ 6 行</b>。
+          切字一律用碼點（<code>[...str]</code>）不用 <code>slice</code>，避免切開代理對。<br>
+          <b>實作細節三條</b>：① <code>\r\n</code> 必須在切行**之前**正規化——
+          <code>\r</code> 已被 <code>INVISIBLE</code> 吃掉，不先處理的話每一行尾會多一個看不見的東西；
+          ② 行內空白用 <code>[^\S\n]</code> 折而不是 <code>\s</code>（後者含 <code>\n</code>，會把整段折成一行，那是名稱的做法）；
+          ③ <b>連續空行壓成一行</b>——三個 Enter 與十個 Enter 在圖上只是兩塊不同大小的空白，
+          而使用者的本意都是「這裡分段」。<br>
+          <b>12 條測試</b>，含一條「清洗是冪等的」：<code>reconcile</code> 是第二道，跑第二次不可以再變一次。
+        </div>
+        <div class="task-file">src/utils/loadoutName.ts · loadoutName.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; LoadoutDraft.note ＋ reducer</div>
+      <div class="task-group-meta">types/loadout.ts · simReducer.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">setNote / withoutNote / reconcile 第二道清洗</div>
+        <div class="task-desc">
+          比照 <code>name</code> 的既有做法：<b>未設定＝欄位不存在</b>（不存空字串、不存 <code>null</code>，
+          否則撞上 <code>stripUndefined</code> 會變成「一旦填了就再也清不掉」）。<br>
+          清洗放寫入邊界兩道（<code>setNote</code> ＋ <code>reconcile</code>），
+          不放渲染端——渲染端清洗會讓「存進去的」與「看到的」是兩個字串，而落盤的是髒的那個。<br>
+          ⚠ <code>reconcile</code> 那一道<b>比名稱那一道更不能省</b>：備註是**別人的自由文字**
+          （分享碼帶進來的），而它會被原樣印在公開圖上。
+        </div>
+        <div class="task-file">src/types/loadout.ts · src/pages/simulator/simReducer.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; codec TAG.NOTE = 6</div>
+      <div class="task-group-meta">src/utils/loadoutCode/codec.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">追加段落，不 bump FMT_VERSION</div>
+        <div class="task-desc">
+          ⚠ 必須寫在 <code>§NAME</code> 之後，否則所有既有的 golden fixture 碼會位元不同。<b>已確認：7 筆既有 fixture 全數原樣通過。</b><br>
+          ⚠ fixture 既有 case 不得變動，只追加一筆帶備註的。<b>實作時多做一件</b>：
+          產生腳本原本整份 <code>JSON.stringify</code> 回寫，那會把既有 7 筆的縮排全部改掉
+          （473 行的 diff 會把真正新增的那一筆蓋掉）。改成**只在陣列尾端插入一段**，
+          最終 diff 是乾淨的 <b>+23 行、0 刪除</b>。<br>
+          ⚠ 長度門檻<b>已有意識地重定基準</b>（實測值）：最壞 3 套形態 1,010 → <b>1,550</b>、
+          5 套 1,530 → <b>2,070</b>，門檻取 1,950／2,450。
+          <b>5 套的理論最壞已越過 Discord 的 2,000 字元上限</b>——那需要「號碼全滿 ＋ 四位元組 emoji
+          填滿名稱與備註 ＋ 五套形態」，今天不存在（真實最壞是海莉絲 3 套）。
+          但它說明備註從此是這串碼裡最大的一塊。<br>
+          ⚠ 隨機 round-trip 的 <code>maxChars &lt; 900</code> 那條**不必**重定（實測仍只有 291）——
+          已在該處註明，免得下一個人以為兩條都要跟著動。<br>
+          <b>codec 不清洗</b>：解碼只負責把 bytes 變回字串，清洗是 <code>reconcile()</code> 的事。
+          在 codec 裡多清一次會讓 round-trip 測試的相等失效，而那個相等正是把關的東西。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/codec.ts · codec.test.ts · __fixtures__/v1.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 輸入 UI ＋ 貼碼對話框</div>
+      <div class="task-group-meta">LoadoutPage.tsx · PasteCodeDialog.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">textarea ＋ 字數計數器；貼進來的碼要顯示備註</div>
+        <div class="task-desc">
+          比照方案名稱那顆輸入框的 <code>raw</code>／<code>seen</code> derived-state 模式
+          （清洗會 trim 尾端空白與空行，直接把清洗結果餵回去的話，按 Enter 的那一刻換行就被吃掉
+          ⇒ 永遠打不出第二行）。走 <code>HUD_INPUT</code>（2px 底線、focus 轉橘）。<br>
+          <b>多做一件：字數計數器。</b> 名稱靠 <code>maxLength</code> 就擋得住，
+          而備註同時受「100 碼點」與「6 行」兩條限制，後者 <code>maxLength</code> 表達不了——
+          不給計數器的話，第七行會在送出的那一刻無聲消失。計數用<b>碼點</b>不是 <code>length</code>。<br>
+          <b>位置：中欄的槽位圖之後、效果兩欄之前</b>（不是 sticky 抬頭）。這一欄由上而下是
+          「這一套裝了什麼」→「為什麼這樣配」→「它實際加了多少」，而備註屬於第二個問題，
+          那個問題只有配完之後才問得出來。放進 sticky 等於讓一條兩行的輸入框長期佔掉一整列，
+          而多數人不會填它。<br>
+          <code>PasteCodeDialog</code> 顯示備註並標<b>「（由分享者填寫）」</b>——
+          它與上面那幾行本站算出來的資料共用同一個框。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx · components/loadout/PasteCodeDialog.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-5 &nbsp; 匯出圖備註區塊</div>
+      <div class="task-group-meta">LoadoutExportCard.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">橘色左 rule ＋「由分享者填寫」標記</div>
+        <div class="task-desc">
+          位置在算力右側、技能之上（讀者看完機體之後、翻到細節之前）。
+          <code>white-space: pre-line</code>。沒有備註時整塊不印，不留空框。<br>
+          ⚠ 「由分享者填寫，非本站資料」是必要的反釣魚標記：備註與站上資料共用同一套排版，
+          不標的話讀者會把它當成本站的判斷。<br>
+          ⚠ 沒把備註塞進 HERO 或檔名——長度不可控，會把十字推下去。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">順手收掉 B-5 的暫時狀態——但沒有照原訂的方式收</div>
+        <div class="task-desc">
+          B-5 原訂「算力 371px ｜ <b>備註＋技能</b>」一列、下面再接整寬的「武器元件 ｜ 模組效果」明細帶。
+          做到 C 才看得出那樣<b>必然留下空格</b>：備註是選填的（多數圖沒有）、Phase D 的技能是三個
+          chip（約 60px），而算力那一欄常常 700px 高——右格會空掉大半，
+          <b>而那正是 B-5 想避免的事</b>。<br>
+          ⇒ 改成右欄是一個由上而下的<b>明細欄</b>：備註 → 武器與元件 → 模組效果。
+          備註的位置仍然符合 C-5 的裁決（算力右側、技能之上），而且<b>有沒有備註都不會留下空框</b>。
+          Phase D 的攜帶技能接在備註後面、武器與元件之前。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-6 &nbsp; 書架去重改比對「本體」</div>
+      <div class="task-group-meta">codec.ts · localBuilds.ts · cloudBuildRules.ts · ShelfDialog.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">loadoutIdentity()：去掉 §NAME、§NOTE 與 GAMEVER 之後再比對</div>
+        <div class="task-desc">
+          今天是比對整串代碼字串。加了備註之後「只改備註」＝新字串 ⇒
+          「已在雲端」徽章翻假、再存一次會佔掉第二格而不是就地更新。<br>
+          <b>比計畫多拿掉一樣：header 的 <code>GAMEVER</code>。</b> 那個 byte 記的是
+          「這串碼是哪一版做的」、而且註解本來就寫著「不參與解析」——留著的話，
+          同一套配裝在改版前後各存一次會佔兩格。<br>
+          ⚠ <b>純位元組操作，不經 <code>decodeLoadout()</code></b>：那需要六份 shareId 索引，
+          而書架這一層刻意零依賴；而且解碼再重編會把「解不開的引用」洗成 0，
+          兩串不同的碼會因此撞成同一個鍵。<br>
+          ⚠ <b>未知 tag 一律保留在識別鍵裡</b>：那是別的 client 加的配裝資料，
+          丟掉會讓兩套不同的配裝撞成同一個鍵——症狀是「存第二套時被當成重複、就地覆蓋掉第一套」。<br>
+          ⚠ 解不開時回 <code>null</code>，呼叫端（<code>loadoutKey()</code>）退回比對原字串。
+          那個 <code>?? code</code> 收在一支函式裡，三個去重點共用——各寫一次的話總有一處會忘記。<br>
+          四個去重點全部改過：本機書架 <code>saveBuild</code>、雲端匯入 <code>planCloudImport</code>、
+          「已在雲端」徽章、雲端五格的 <code>dupSlot</code>。<br>
+          <b>⚠ 語意變更，請留意</b>：兩套「裝備完全相同、只有方案名稱不同」的配裝，
+          從此在書架上算<b>同一套</b>（就地更新，新的名稱覆蓋舊的）。這是計畫書決策九的原文
+          （「去掉 §NAME 與 §NOTE 之後的本體」）。若團隊認為名稱應該區分書架項目，
+          反悔的成本是 <code>loadoutIdentity()</code> 裡拿掉一個 <code>TAG.NAME</code>。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/codec.ts · src/lib/localBuilds.ts · src/utils/cloudBuildRules.ts · components/loadout/ShelfDialog.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">⚠ 實測抓到：書架滿了就改不了自己的備註</div>
+        <div class="task-desc">
+          「存入」鍵的停用條件是 <code>full && !onShelfAlready</code>，而
+          <code>onShelfAlready</code> 原本是<b>字串相等</b>。於是：書架十格滿了、使用者只想改一句
+          自己那一套的備註 ⇒ 那串碼「不在架上」⇒ <b>按鈕變成停用，而畫面上沒有任何訊息說得出為什麼</b>。
+          判定改走 <code>sameLoadout()</code> 之後消失。<br>
+          順手把那顆鍵改成三種狀態各一句：<b>存入目前這一套</b> ／
+          <b>更新架上那一套的名稱／備註</b> ／ <b>目前這一套已在架上</b>。
+          中間那一句不可以也寫「已在架上」——按下去確實會做事（把新的名稱與備註存回去），
+          而一顆寫著「已經有了」的按鈕沒有人會去按。
+        </div>
+        <div class="task-file">src/components/loadout/ShelfDialog.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-7 &nbsp; 瀏覽器實測（本機 emulator）</div>
+      <div class="task-group-meta">Chrome DevTools</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">五條路徑逐項走過（2026-08-30）</div>
+        <div class="task-desc">
+          ① <b>輸入</b>：三行備註（含一個空行）打進 textarea，計數器 41 / 100，落盤進
+          <code>mecharashi_loadout_draft</code> 且換行保留。<br>
+          ② <b>匯出圖</b>：橘色 <code>NOTE</code> 區塊出現在算力右側最上方，換行照印，
+          底下標「由分享者填寫，非本站資料」。圖高 1,999 → <b>2,017 CSS px</b>。<br>
+          ③ <b>分享碼</b>：複製分享連結 → 238 字元（含備註），貼回貼碼對話框後
+          <b>備註原樣顯示並標「（由分享者填寫）」</b>。<br>
+          ④ <b>去重</b>：存入書架 → 只改備註 → 再存 ⇒ 書架仍是 <b>1 筆</b>，
+          且存下來的是<b>新的那一串</b>（剛改的備註留著，不會被改回舊的那一句）。<br>
+          ⑤ <b>按鈕文案</b>：字串一模一樣時「目前這一套已在架上」，只差備註時
+          「更新架上那一套的名稱／備註」，兩者都實際按過。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label pink">Phase D</div>
+  <div class="section-title">技能配置（回饋 3）</div>
+  <div class="section-desc">模擬器第一次讓玩家選機師技能。三格自由替換 ＋ 一格「改」技能只開欄位不開 UI。2026-08-30 完工（D-1～D-6，另加 D-7 瀏覽器實測），六條路徑已在真的瀏覽器裡逐項驗過。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; LoadoutDraft.skills 型別</div>
+      <div class="task-group-meta">src/types/loadout.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">carried[3] ＋ mod（隱藏欄位）</div>
+        <div class="task-desc">
+          <b>放頂層、不放進 <code>EquipSet</code></b>——技能是機師的屬性、不隨形態變動，
+          與 <code>ndLevels</code> 同一條理由。<br>
+          <b>緊湊陣列，不用稀疏陣列表達「第二格空著」</b>：<code>[a, , c]</code> 經
+          <code>JSON.stringify</code>（localStorage 草稿與雲端存檔都會經過）會變成
+          <code>[a, null, c]</code>，於是「空格」在重新整理前後是兩種型別，而
+          <code>null</code> 會被下游當成一個技能 id 去查。要表達「只帶了兩個」就存長度 2。<br>
+          ⚠ <code>mod</code>（科研「改」技能）<b>欄位先開、UI 隱藏</b>：站上沒有這份資料，
+          但分享碼<b>只進不出</b>，之後才補等於升版本並遷移既有的碼。
+        </div>
+        <div class="task-file">src/types/loadout.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; pilotSkills 納入 shareId 登錄簿</div>
+      <div class="task-group-meta">shareId.ts · shareIdRegistry.json · check-share-ids.mjs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">853 筆全部走別名區，並讓對帳腳本自動續號</div>
+        <div class="task-desc">
+          <code>pilotSkills</code> 的 doc id 是 <code>skill_槍林彈雨</code> 這種<b>純名稱，
+          一個數字都推不出來</b>（與形態鍵同一種形狀）⇒ 它是第一個「號碼 100% 來自別名區」的 kind。<br>
+          <b>與計畫的差異：別名改由腳本自動續號，不是人工指派。</b> 853 筆手寫不可能維護，
+          而且每次改版都會多幾筆、漏一筆的症狀是那個技能被<b>靜默濾出分享碼</b>。
+          <code>autoAssignAliases()</code> 仍是 <b>append-only</b>（只發給還沒有號碼的 doc id，
+          既有的一個都不動），所以「號碼一旦發出就是那份文件的永久身分」這條承諾沒有變——
+          自動化的只是「發號」，不是「改號」。<br>
+          唯讀模式新增一種回報：<b>「N 筆還沒有號碼（今天不可分享）」</b>，與「純新增」同一個嚴重度
+          （不擋，但一定要講）。已跑 <code>--accept</code>：853／853 可分享、對帳「完全一致」，
+          registry 的 diff 是 <b>+858 行、0 刪除</b>。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/shareId.ts · shareIdRegistry.ts/.json · scripts/check-share-ids.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">⚠ 索引來源改成登錄簿本身，而不是 <code>gd.pilotSkills</code></div>
+        <div class="task-desc">
+          <b>這是 052-D「元件漏接索引三個 Phase」那個坑在本 Phase 的形狀，而且更容易踩到。</b>
+          <code>buildShareIndex(kind, docIds, aliases)</code> 的 <code>docIds</code> 是拿來
+          <b>推導</b>號碼的；技能一個都推不出來 ⇒ 傳線上 docIds 的唯一作用是
+          <b>把別名表過濾成「目前載入了的那些」</b>。而 <code>pilotSkills</code>
+          <b>不在 <code>LOADOUT_STAGE_KEYS</code> 裡</b>，所以「集合還沒到」是常態不是例外：
+          空清單 ⇒ 空索引 ⇒ 技能被靜默濾出分享碼，而兩邊畫面都不會說任何話。<br>
+          ⇒ 改用 <code>shareIdRegisteredIds()</code>（登錄簿是靜態 JSON、永遠在），
+          <b>encode 與 decode 都不必等任何集合</b>，那一整類 bug 消失。
+          代價是「這個技能被刪掉了」不再由索引反映——但那本來就由名稱查不到來表達
+          （同「已下架裝備 #n」），而 CI 的 <code>staleAliases</code> 會把它報出來。<br>
+          <b>三個接線點全部接上</b>：LoadoutPage、CloudBuildList（這一頁根本沒載
+          <code>pilotSkills</code>，是最容易漏的那個）、PasteCodeDialog 的中文標籤
+          （其型別改吃 <code>ShareIdKind</code>，漏翻會在對話框上印出一個 <code>undefined</code>）。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx · components/profile/CloudBuildList.tsx · loadoutTheme.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; codec TAG.SKILLS = 7 ＋ reconcile</div>
+      <div class="task-group-meta">codec.ts · simReducer.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">追加段落，不 bump FMT_VERSION</div>
+        <div class="task-desc">
+          版面 <code>NCARRIED ＋ 號碼 × N ＋ MOD</code>，排在 §NOTE 之後（＝整串最後）。
+          <b><code>mod</code> 恆寫一個 varint 即使是 0</b>：省掉它就得靠「段內還有沒有剩」判斷有無，
+          而解碼器的既有規約是「段內沒讀完 ⇒ 記進 <code>unmodeled</code>」——
+          於是每一份不帶「改」技能的碼都會多出一筆假的未知段落。1 byte 換掉那個歧義。<br>
+          <b>7 筆既有 golden fixture 全數原樣通過</b>（沒帶技能的草稿完全不產生這一段），
+          另追加一筆帶技能的，diff 是乾淨的 +64 行、0 刪除。
+          <b>長度門檻不必重定</b>：最壞情況只多約 14 bytes。<br>
+          <b>技能順序照原樣保留，不做 canonical 排序</b>（與元件相反）：玩家排的順序就是他要的順序。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/codec.ts · codec.test.ts · __fixtures__/v1.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">reconcile 只做成員檢查，載入 gate 一條都不能少</div>
+        <div class="task-desc">
+          ⚠ <b>絕不可照抄武器的「查不到就刪」</b>：<code>world.pilotSkills</code> 空 Map ＝ 還沒載入。
+          症狀會是「貼一次分享碼、技能就被靜默清空一次」。已補常駐測試。<br>
+          ⚠ <b><code>mod</code> 一律不動</b>：它不在 <code>pilot.skills</code> 裡（那是另一條科研線給的），
+          拿候選池去驗它一定驗不過 ⇒ 每跑一次 reconcile 就清掉一次。<br>
+          <b>不進 <code>removed</code>、不跳 toast</b>（與算力同一條、與元件相反）：技能面板就在中欄、
+          換機師時整片會就地換掉，玩家看得到；元件之所以要 toast，是因為它藏在兩層之後。
+        </div>
+        <div class="task-file">src/pages/simulator/simReducer.ts · simReducer.test.ts · utils/loadoutRules.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 技能挑選 UI</div>
+      <div class="task-group-meta">LoadoutPage.tsx · 右欄情境欄</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">⚠ 候選池規則已修正（使用者裁決 2026-08-30）</div>
+        <div class="task-desc">
+          計畫書原訂 <code>pilot.skills</code> − 職業單元 − <code>manual: true</code>。
+          <b>那條 <code>manual</code> 是多的，而且會壞事。</b><br>
+          使用者裁決逐字：「<b>天生自帶的技能，我們歸類為『職業單元』。職業單元是不用攜帶的，
+          其他一般技能都是選擇性技能。</b>」——也就是說「要不要攜帶」這件事，
+          資料裡早就由技能自己的 <code>unitType</code> 回答了（後台那顆下拉的三個值：
+          <code>'6'</code> 職業單元／<code>'0'</code> 核心單元／未填 一般技能），
+          <b>只有職業單元不佔格</b>。<br>
+          <code>manual</code> 記的是<b>「這筆資料是誰建的」</b>（後台手建 vs 爬蟲），與攜帶無關。
+          實測它還會壞事：3.3+ 的七位機師（淬鋒·凱登／安／黑障／尼爾／阿列娜／曜／賽拉）
+          官網還沒放、整份資料由後台手建，於是<b>九筆技能全部帶著 <code>manual: true</code></b>
+          ⇒ 拿它過濾會讓那七位的候選池<b>整個歸零</b>，而畫面上只會說「沒有可選的技能」——
+          一句看起來像資料沒建好、實際上是我們自己濾掉的話。<br>
+          ⇒ <b>判準只留 <code>unitType === '6'</code> 一條。</b>
+          實測 89／89 機師恰好各有 1 個職業單元，候選池 <b>6～9 個</b>，三格一律填得滿。<br>
+          ⚠ <b>職業單元濾掉就好，不必顯示</b>（使用者裁決，同日第二次）。曾經在三格下方
+          列一行「職業單元 ／ 天生自帶，不佔上面的三格」，已移除 —— 使用者逐字：
+          「<b>這個不用顯示，這遊戲但凡有點腦子的、真的有玩的玩家不會不知道</b>」。
+          那一行是在替玩家解釋一件他本來就知道的事，而且它與上面三格長得夠像，
+          反而要多花一眼才確認得出「這個點不動」。挑選面板底下那句同理的說明也一併拿掉。
+          <br>
+          連帶把 <code>carriedSkillPool()</code> 收成 <code>carriableSkills()</code>：
+          <code>innate</code> 沒有消費端之後就是死欄位，而這個專案的既有規矩是
+          「不替沒有消費端的東西留介面」。
+        </div>
+        <div class="task-file">src/utils/carriedSkills.ts · carriedSkills.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者 · 站長</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三格卡（中欄）＋ 挑選面板（右欄切換鏈的第五種內容）</div>
+        <div class="task-desc">
+          中欄的三格排在<b>槽位圖之後、備註之前</b>（這一欄由上而下是「這一套裝了什麼」→
+          「機師帶什麼上場」→「為什麼這樣配」→「它實際加了多少」）。
+          gate 用 <code>ctx.pilot</code> 而不是 <code>ctx.mech</code>——技能是機師的屬性。<br>
+          面板<b>版面照抄 <code>ModulePanel</code></b>：兩者是同一件事的兩個實例（從一格鑽進去、
+          配一個東西上去）。差異只有兩處而且都是資料造成的：技能不佔重量也沒有接口限制
+          （沒有預算列、沒有拒絕態），候選池小（5～9 筆）⇒ 篩選只留一個搜尋框。<br>
+          <b>放進已經有東西的那一格是取代、放進別格是對調</b>（畫面上是三個固定的格子，
+          所以是「格」的語意不是「清單」的語意）。⚠ 不可以寫成「先拿掉再插入」：
+          那在滿三格時會把最後一格擠掉（<code>[甲,乙,丙]</code> 放丁進第 2 格會變成
+          <code>[甲,丁,乙]</code>，丙 無聲消失）。清單上會先標「已在第 N 格 · 點此對調」。
+        </div>
+        <div class="task-file">src/components/loadout/CarriedSkillRow.tsx · SkillPanel.tsx · LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">⚠ 實測抓到：自動挑選器把技能面板擋住了</div>
+        <div class="task-desc">
+          技能卡的 gate 是 <code>ctx.pilot</code>，所以它在<b>「選完機師、還沒選機甲」</b>那一段就看得到——
+          而那正是<b>自動挑選器佔住右欄的時候</b>（「沒選機甲時自動停在該選的那一步」）。
+          於是點下第 1 格<b>什麼都不會發生</b>，畫面上也沒有任何訊息說得出為什麼。<br>
+          <code>openSkillSlot()</code> 本來就會把 <code>picker</code> 清掉，擋不住的是
+          <code>effectivePicker</code> 裡的<b>自動回退</b>。修法沿用既有那一條
+          （對話框開著時同樣不自動開挑選器）：<b>使用者剛剛親手點開別的東西時，
+          「自動停在該選的那一步」本來就不成立。</b>
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-5 &nbsp; 匯出圖技能區塊</div>
+      <div class="task-group-meta">LoadoutExportCard.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">chip（icon ＋ 名稱 ＋ 型別），接在備註之後</div>
+        <div class="task-desc">
+          <b>不印技能敘述</b>（p50 42 字／max 213，只有 4 筆含句號 ⇒「只取首句」是 no-op）；
+          <b>不印格數分母</b>（「攜帶 3 / 4」會被讀成漏了一個）；第四格「改」技能整格不印。<br>
+          缺 <code>iconLocal</code> 的畫<b>實心底 ＋ 型別首字</b>（被／指／主／P），不是虛線空框。
+          ⚠ 這與模組帶（A-2）「缺圖就留白不畫框」<b>刻意不同</b>：那裡每一列都有部位標籤與名稱
+          撐著版面，這裡的 chip 只有一顆圖示 ＋ 一個名字，留白會讓那顆 chip 塌掉半邊。<br>
+          <b>圖高成本實測 0px</b>：技能帶完全落在右欄既有的空白裡（那一列的高度由左邊
+          371px 的算力欄決定）。同一套配裝有無技能都是 1,887 CSS px。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx · export/exportTheme.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-6 &nbsp; 載入閘門與匯出閘門</div>
+      <div class="task-group-meta">useFirestore.ts · LoadoutPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">編碼閘門不必動；匯出閘門條件化</div>
+        <div class="task-desc">
+          <b>與計畫的差異：分享碼那一半的閘門不需要了。</b> 技能的號碼來自靜態登錄簿而不是集合
+          （見 D-2 第二列），所以編碼從來不會因為集合沒到而漏東西——
+          <b>那一整類 bug 是被移除的，不是被閘門擋住的。</b><br>
+          匯出那一半照做：<code>waitForRenderReady()</code> 只等圖與字體、不等集合，
+          <b>拍到一張「技能區空白」的圖是看不出來的</b>。閘門是條件式的
+          （技能還在載 <b>且</b> 這一套真的有帶技能）——<b>沒帶技能的人一秒都不必等</b>。<br>
+          <code>pilotSkills</code> 仍然<b>不在 <code>LOADOUT_STAGE_KEYS</code></b>。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">⚠ 實測抓到：一有機師就要載，不是等到 equip 階段</div>
+        <div class="task-desc">
+          原本寫的是 <code>stage === 'equip'</code>（武器技能要先有武器）。但 D-4 的技能卡
+          在<b>選完機師、還沒選機甲</b>時就看得到，於是那一段 <code>skillMap</code> 是空的、
+          而 <code>skillsLoading</code> 是 <b>false</b>（載入條件為假就恆為假）
+          ⇒ 卡片把「還沒載入」渲染成<b>「這位機師的技能資料還沒建到可以挑選的程度」</b>——
+          一句<b>指控資料有缺</b>的話，而實際上只是集合還沒去拿。<br>
+          <b>這正是本計畫反覆警告的那一類（空 Map ＝ 還沒載入，不是「沒有」），
+          只是這一次它從規則層跑到了文案層。</b>
+          兩道一起補：載入條件改成「有機師就載」，且元件自己也把
+          <code>skillMap.size === 0</code> 當成載入中——呼叫端的 loading 有可能因為
+          「還沒開始載」而是 false。<br>
+          ⚠ 這<b>不等於</b>把 <code>pilotSkills</code> 加進 <code>LOADOUT_STAGE_KEYS</code>：
+          那份 loading 是別處的閘門，加進去會讓「複製分享連結」多等一個集合。這裡動的只有
+          「什麼時候去拿」。
+        </div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx · components/loadout/CarriedSkillRow.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-7 &nbsp; 瀏覽器實測（本機 emulator）</div>
+      <div class="task-group-meta">Chrome DevTools</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">六條路徑逐項走過（2026-08-30）</div>
+        <div class="task-desc">
+          ① <b>一般機師</b>（洛莎）：卡片上只有三個空格（職業單元那一列已依裁決移除），
+          面板列出 <b>8 個</b>候選（含彈道收束——它帶著 <code>manual</code>，舊規則會擋掉它）。<br>
+          ② <b>手建機師</b>（曜）：三格可選、面板 8 個候選。
+          舊規則在這裡顯示的是「資料還沒建到可以挑選的程度」。<br>
+          ③ <b>對調</b>：把第 3 格的技能放進第 1 格 ⇒ 清單先標「已在第 3 格 · 點此對調」，
+          按下去變成兩格對調，沒有出現重複、也沒有東西消失。<br>
+          ④ <b>分享碼</b>：複製出來的碼<b>逐位元拆開驗過</b>——
+          <code>tag 7 ／ count 3 ／ 1500296,1500709,1500440 ／ mod 0</code>，
+          三個號碼回查登錄簿正是那三個技能且順序相同。貼回網址列後三格原樣還原。
+          規則修正後另驗一次<b>大寫 <code>SKILL_</code> 前綴的 doc id</b>
+          （<code>1500029 = SKILL_彈道收束</code>）同樣編得出、解得回。<br>
+          ⑤ <b>匯出圖</b>：技能帶出現在算力右側、備註之下、武器與元件之上，三顆 chip 圖示正常；
+          圖高與沒有技能時相同（1,887 CSS px）。<br>
+          ⑥ <b>缺圖退化</b>（曜的映纏／溯還／逐星歛月，三個都缺 <code>iconLocal</code>）：
+          chip 畫成實心底 ＋「被」「P」「指」，三顆都保持完整形狀，沒有虛線空框。<br>
+          全程 console 零 error／warn。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label pink">Phase E</div>
+  <div class="section-title">分享出口：純文字摘要 ＋ QR（回饋 1 的本站那一半）</div>
+  <div class="section-desc">團隊說本站的優勢是「資料詳細可引用」。PNG 不可引用、不可搜尋、不可貼進 wiki——這個 Phase 補上真正可引用的那個出口。OG 卡歸 052-H。2026-08-30 完工（3／3，另加一項瀏覽器實測 E-4）。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 複製配裝摘要（純文字）</div>
+      <div class="task-group-meta">loadoutSummaryText.ts · LoadoutPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">一顆按鈕，輸出可貼進 Discord／wiki／論壇的純文字</div>
+        <div class="task-desc">
+          內容：方案名／機師·機甲·裝甲·形態／重量與出力／逐格的槽位與武器（含元件名）／
+          模組與該等級效果／γ 等級與解鎖的能力名／攜帶技能／備註／分享連結。<br>
+          <b>成本最低、字面上就是「可引用」</b>：可搜尋、可 Ctrl+F、無 canvas 上限、
+          無下載權限條、全平台可用。走與「複製分享連結」<b>同一條</b>剪貼簿路徑
+          （抽成 <code>writeClipboard()</code>——<code>http</code> 與部分行動瀏覽器會直接拒絕，
+          而錯誤文案只該有一份）。<br>
+          <b>⚠ 實作時定下的三條格式規則</b>（寫在檔頭）：
+          ① <b>一個 markdown 記號都不能用</b>——同一段文字會被貼進 Discord（吃 markdown）、
+          wiki（吃另一套）、純文字框（都不吃），用了記號就得挑一種贏；階層一律用
+          <code>■</code> 與 <code>·</code> 這種本身就是字的符號。
+          ② <b>分享連結獨佔一行</b>（base64url 含底線，Discord 的斜體語法會吃掉它；
+          網址被自動連結才安全，前提是不黏其他字）。<b>同樣不印裸碼。</b>
+          ③ 數字固定 <code>en-US</code> 千分位——不帶 locale 的 <code>toLocaleString()</code>
+          會讓同一套配裝在不同人的機器上複製出不同的字串。<br>
+          <b>⚠ 與匯出圖共用取值函式</b>（<code>rigLayout</code>／<code>moduleRows</code>／
+          <code>printedNdZones</code>），不自己再算一次。兩份輸出講同一套配裝卻給出不同數字，
+          讀者無從判斷哪一份是對的。<br>
+          <b>與圖刻意不同的兩處</b>：模組敘述的換行<b>壓成一行</b>（原樣保留會打斷條列階層，
+          但備註的換行照留——那是使用者刻意打的）；算力<b>只印能力名不印敘述</b>，
+          且<b>不印 ★</b>（★ 的意思是「這一區會改寫敘述的階名」，而純文字裡沒有敘述可改）。<br>
+          吃與匯出圖<b>同一道</b> <code>skillsNotReady</code> 閘門：<code>pilotSkills</code>
+          沒到齊時複製出來會少一整段，而「沒帶技能」與「還沒載入」在純文字裡同樣分不出來。
+        </div>
+        <div class="task-file">src/utils/loadoutSummaryText.ts（新）· src/utils/loadoutSummaryText.test.ts（新，23 例）· src/pages/simulator/LoadoutPage.tsx · src/utils/loadoutRows.ts · src/utils/ndOverrides.ts · src/utils/rigLayout.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 圖底 QR</div>
+      <div class="task-group-meta">loadoutQr.ts · LoadoutExportCard.tsx · 新依賴 uqr</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">QR 編完整分享連結，與完整碼並存</div>
+        <div class="task-desc">
+          使用者裁決 2026-08-29：完整碼 ＋ QR 都留。QR 讓「別人螢幕截圖你的圖」也還原得回配裝。<br>
+          套件選 <b><code>uqr</code></b>（零依賴、純 ESM、<b>同步</b>、27 KB 未壓縮、自帶型別）。
+          畫成 <b>inline SVG 的單一 <code>&lt;path&gt;</code></b>：逐列把連續的黑模組合併成一段
+          <code>h</code> 指令——v40 有 31,329 格，一格一個 <code>&lt;rect&gt;</code> 會讓
+          <code>html-to-image</code> 深拷貝三萬個節點。<br>
+          ⚠ 顏色一律寫成<b>字面十六進位的 presentation attribute</b>：
+          <code>html-to-image</code> 對 <code>&lt;svg&gt;</code> 直接深拷貝、
+          子元素不經 <code>cloneCSSStyle()</code>，一個 <code>var()</code> 都解析不到。<br>
+          ⚠ <b>兩條「不畫」而不是「畫小一點」的線</b>：
+          ① <code>encode()</code> 對超長輸入<b>會 throw</b>，而它跑在匯出卡的 render 期間
+          ⇒ 一個例外＝按了匯出沒反應 ⇒ 一律 catch 成 <code>null</code>；
+          ② 每模組不足 <b>3 個實體像素</b>時也回 <code>null</code>——掃不動的 QR 比沒有更糟。
+          <code>pixelRatio</code> 由呼叫端傳入（<code>EXPORT_PIXEL_RATIO</code> 移進
+          <code>exportTheme</code>，與 <code>toPng()</code> 共用同一份）。<br>
+          靜區固定 4 個模組並<b>算進 size</b>，不用外層 padding 充當——那會讓閘門的判斷失準。
+        </div>
+        <div class="task-file">src/utils/loadoutQr.ts（新）· src/utils/loadoutQr.test.ts（新，9 例）· src/components/loadout/LoadoutExportCard.tsx · src/components/loadout/export/exportTheme.ts · package.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; 分享碼帶重排</div>
+      <div class="task-group-meta">LoadoutExportCard.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">碼變長之後的版面（帶備註時約 5 行）</div>
+        <div class="task-desc">
+          維持整寬一條 ＋ <code>break-all</code>（052-C E-1 的既有裁決，覆核後照舊：
+          放右欄的話 79 字元起就會把站名浮水印擠出 1000px 畫面）。
+          <b>QR 放右側固定 210px</b>——碼會伸縮、QR 不會，否則每張圖的底部都不一樣寬。
+          左欄的 <code>minWidth: 0</code> 不可省，否則 <code>break-all</code> 的長碼會把 QR 推出畫面。<br>
+          <code>setCount &gt; 1</code> 時那句「含 N 個形態分頁」<b>不可省</b>——
+          圖上是一套、碼與 QR 裡都是整份，收圖的人手上只有這張圖。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-4 &nbsp; 瀏覽器實測（本輪追加）</div>
+      <div class="task-group-meta">Chrome DevTools · localhost:5173</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三個出口逐項驗過，QR 逐格比對</div>
+        <div class="task-desc">
+          拿一套真實配裝（洛莎·審判 ／ 君權 ／ 3 顆模組 ／ 3 顆元件 ／ 一個攜帶技能 ／
+          兩行備註 ／ 超重 320）走完整路徑，<b>不是目測推斷</b>（052-I F-2 立的規矩）。<br>
+          <b>① 摘要</b>：攔下 <code>clipboard.writeText</code> 取出實際字串，
+          逐段核對——元件名、模組敘述、γ1／γ2 與能力名、α／β 未列、備註換行、連結獨佔一行、
+          遊戲版本 3.2。按鈕回饋切成「已複製摘要」而<b>不會連帶把旁邊那顆變成「已複製」</b>
+          （<code>copied</code> 從 <code>'ok'</code> 拆成 <code>'link' | 'summary'</code>）。<br>
+          <b>② QR</b>：攔下下載的 dataURL，從 PNG 裡把 QR 區域取樣回 65×65 矩陣，
+          與 <code>encode(分享連結)</code> 的期望矩陣逐格比對——<b>4,225 / 4,225 全中</b>。
+          QR 在 PNG 裡實測 <b>420×420 實體像素</b>（＝210 CSS px × pixelRatio 2），
+          右緣落在 x=1952（＝(1000−24)×2），與版面一致。<br>
+          <b>③ 版面</b>：圖高 2000×4,964（＝2,482 CSS px），
+          距 iOS Safari 的 canvas 換算上限（約 4,175 CSS px）仍有餘裕。
+          底部固定列在 <b>390px ＋「大」字級 ＋ 超重</b>（五顆按鈕）下實測單行 39px、餘裕 21px。<br>
+          <b>⚠ 順帶記下一個不屬於本 Phase 的既有錯</b>：技能挑選面板開著時 console 有
+          <b>nested <code>&lt;button&gt;</code></b> 的 React 警告——
+          <code>SkillPanel</code> 的候選列是一顆 <code>&lt;button&gt;</code>，
+          而效果全文裡的 <code>[引用]</code> chip（<code>RefChip</code>）本身也是
+          <code>&lt;button&gt;</code>。屬 Phase D 的範圍，未在本輪修改。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label pink">Phase F</div>
+  <div class="section-title">驗收</div>
+  <div class="section-desc">兩件都要在真的瀏覽器裡做，不是目測推斷。052-I F-2 立的規矩。2026-08-30 完成（2／2）。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 縮圖尺規實測</div>
+      <div class="task-group-meta">Discord ／ 手機</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把成品壓到 156px 寬，確認哪些主張還成立</div>
+        <div class="task-desc">
+          <b>做法</b>：把實際匯出的 PNG 用瀏覽器自己的高品質縮放畫進 156px 寬的 canvas，
+          再用<b>最近鄰放大 4 倍</b>看 —— 放大不會增加任何資訊，所以螢幕上看得到的
+          就是縮圖裡真的存在的東西。<br>
+          <b>✅ 活下來的</b>：方案名（44px → 6.9px，<b>讀得出來</b>）、機師立繪與機甲原稿
+          （辨識度完全沒掉，這是縮圖唯一真正有效的訊號）、四段重量色帶（清楚可見）、
+          抬頭的分段色塊（橘＝裝備配置、粉＝算力，看得出「這張圖有分段」）。<br>
+          <b>❌ 沒活下來的</b>：<b>11–13px 的正文全部變成材質</b>（1.7–2.0px）——
+          槽位名、武器名、模組名、算力能力名一個都讀不到；
+          總重那組數字（20px → 3.1px）只剩一團白影；<b>QR 縮到約 33px，看得出是 QR、掃不動</b>。<br>
+          <b>⚠ 超重紅斜紋的可見度不是常數，是比例</b>（本輪實測釘住）：紅段寬
+          ＝ <code>1000 × 超重 ／ 總重</code>，縮圖上再乘 0.156。
+          取一套 <b>超重 20 ／ 總重 1,970</b> 的實例量出來是 <b>20 實體 px ＝ 10 CSS px</b>
+          （與公式相符），縮圖上只有 <b>1.56px ⇒ 完全看不見</b>；
+          而 14% 那種（超重 320 ／ 總重 2,270）在縮圖上是 22px，一眼就看得到。
+          ⇒ 「縮圖看得到超重」<b>只對嚴重超重成立</b>，輕微超重看不出來。<br>
+          <b>裁決：維持現狀，並把「縮圖只負責讓人點開」寫成刻意的決定。</b>
+          現行版面本來就把 HERO 放在最上面（600 / 2,792 ＝ 整張圖的 21%），
+          縮圖層拿到的正好是「誰的什麼方案」＋一條重量色帶——與計畫書列的可接受結論一致。
+          <b>不為了縮圖去改主版面</b>：把總重搬進 HERO 放大，換來的是縮圖上多一個數字，
+          賠掉的是原尺寸下「總重與四段色帶在同一行」這個對照關係，而後者才是真正在用的人在看的。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者 · 站長</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; 匯出耗時與圖高回歸</div>
+      <div class="task-group-meta">Chrome DevTools</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">確認 A-1 真的省掉那 5 秒，並量出新的圖高上界</div>
+        <div class="task-desc">
+          <b>測的是最壞情況</b>，逐項堆到頂：<b>cutout HERO</b>（君權有 <code>art.webp</code>）＋
+          <b>γ 點滿 23／23</b>（γ1 Lv6 ＋ γ2 Lv3 ＝ 9 條能力敘述，這是 23 這個上限下的最大條數）＋
+          <b>滿版備註</b>（96 碼點／6 行）＋ <b>攜帶技能 3 格全滿</b> ＋
+          <b>四個接口四個不同族的模組</b>（4 段敘述，不是同族疊加）＋
+          強襲者背包解鎖備用組後<b>五把武器</b>（左肩因出力不足裝不上，是這台機甲的真實限制）。<br>
+          <b>① 耗時</b>：<b>787 / 828 ms</b>（第二、三次），首次 1,370 ms（含 <code>art.webp</code> 冷啟）。
+          console <b>沒有</b> <code>[Loadout] 匯出圖等待逾時</code>
+          ⇒ <b>A-1 那條「lazy 圖永遠等不到、固定燒滿 5 秒」確實不見了</b>。<br>
+          <b>② 圖高</b>：<b>2000 × 5,584 PNG ＝ 2,792 CSS px、4.87 MB</b>
+          （改版前基準：1,650 CSS px ／ 2000×3300 ／ 約 3MB ／ 約 0.5 秒）。
+          iOS Safari 的 canvas 面積上限換算 <b>約 4,175 CSS px ⇒ 餘裕約 1,383px（33%）</b>。<br>
+          <b>③ 逐段高度</b>（實測，趁離屏宿主還掛著量的）：
+          HERO 600 ｜ 出力帶 18 ＋ 圖例 48 ＋ 手部規則 28 ｜ <b>十字 639</b> ｜
+          <b>中段 grid 1,098</b> ｜ footer ＋ 分享碼帶 362。<br>
+          <b>⚠ 高度是由右欄的明細決定，不是算力欄</b>：右欄自然高 <b>1,070</b>
+          （備註 200 ＋ 技能 126 ＋ 武器與元件 364 ＋ 模組效果 340），
+          算力欄只有 <b>799</b>（抬頭 47 ＋ 九條能力 703 ＋ 註 49）。
+          ⇒ 算力欄還有 <b>271px 的空檔</b>才會變成瓶頸——
+          就算玩家把 α／β 都調離預設（那會讓兩區也被印出來，各多一條 bar ＋ 最多 2 條能力），
+          <b>總高也不會變</b>。要再長只可能來自右欄：多一把武器（約 +64px）、
+          或模組與元件用到最長的官方文案（模組敘述 max 119 字）。
+          <b>估上界約 3,000 CSS px，離 4,175 仍有約 28% 餘裕。</b>
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase G -->
+<section class="section">
+  <div class="section-label pink">Phase G</div>
+  <div class="section-title">上線後的使用者回饋</div>
+  <div class="section-desc">F 驗收完當天（2026-08-30）站長看著成品提的三項。都是「東西全在、但讀的人得多做一次功」那一類。3／3。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-1 &nbsp; 「清空」拆成兩顆</div>
+      <div class="task-group-meta">simReducer ／ LoadoutPage</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">清空裝備 ｜ 全部清空，兩顆都可 [復原]</div>
+        <div class="task-desc">
+          <b>問題</b>：原本只有一顆「清空」，做的是 <code>clearSet</code>（當前分頁的武器與背包）。
+          但同一列另外三顆都是「把整份配裝交出去」，於是那顆孤零零的「清空」讀起來像
+          <b>全部重來</b> —— 想換一位機師從頭配的人按下去，機師與機甲卻還在原位。<br>
+          <b>做法</b>：新增 <code>clearAll</code>（回到初始草稿：機師／機甲／裝備／模組／算力／名稱／備註全清）。
+          <code>clearSet</code> 語意不動，<b>只清當前分頁</b> —— 海莉絲三個形態各有一套，
+          站在「突擊」按下去卻連「先鋒」一起清掉，是玩家在畫面上看不到的損失。<br>
+          ⚠ <b>兩顆都改走新的 <code>commitClear()</code>，一定跳 toast 且附 [復原]</b>：
+          <code>commit()</code> 的 <code>worthShowing</code> / <code>undoable</code> 都綁在
+          <code>removed.length > 0</code> 上，而清空是玩家自己按的整批刪除、一件
+          <code>RemovedItem</code> 都不會產生 ⇒ <b>拆之前的「清空」是靜默且不可復原的</b>。
+          一顆的時候還過得去，兩顆長得一樣又相鄰之後，按錯的代價是整套配裝。
+          <b>刻意不做二次確認</b>：本頁的安全網一向是事後的 [復原]（見 <code>CascadeToast</code> 檔頭），
+          多一個「確定嗎？」只會讓常用的那顆每次都多按一下。顏色改灰／紅框區分。<br>
+          ⚠ 連帶修掉一個<b>窄版的定時炸彈</b>：底部固定列在 390px ＋「大」字級下，
+          超重時會有六顆按鈕（複製連結／摘要／匯出圖／卸至符合／清裝備／全清空）——
+          排不進一列，而本列沒有橫向捲軸 ⇒ <b>最右邊那顆整顆看不見也按不到</b>。
+          改法：列本身 <code>flex-wrap</code>，高度用 <code>ResizeObserver</code> 量一次，
+          餵給內容底部留白與三處 toast 的 <code>bottom</code>。
+          原本寫死的 <code>7rem</code> / <code>3.25rem</code> 全部退場 ——
+          <b>052-I F-1 的註解自己就預告過這個坑</b>（「換行的代價是把 toast 的 7rem 假設一起弄壞」，
+          而 toast 上正是唯一的 [復原]）。<code>CascadeToast</code> 的
+          <code>raised?: boolean</code> 因此改成 <code>raisedBottom?: string</code>。
+        </div>
+        <div class="task-file">src/pages/simulator/simReducer.ts · LoadoutPage.tsx · components/loadout/CascadeToast.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-2 &nbsp; 匯出圖的槽位格帶上圖示</div>
+      <div class="task-group-meta">rigLayout ／ ExportRig</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">武器與背包的 icon 進 RigSlot，匯出圖照畫</div>
+        <div class="task-desc">
+          螢幕上每一格都有圖，匯出圖卻只有字 —— 而大家<b>認圖比認名字快</b>。<br>
+          ⚠ <b>圖示由 <code>rigLayout()</code> 給，不讓渲染端自己去 <code>world</code> 查一次</b>：
+          「這一格裝了什麼」在 <code>slotAt()</code> 裡已經解過一次，而一般武器、機甲固定武裝、
+          形態鎖定、雙手武器的第二格、背包<b>各有各的來源</b>，渲染端再解一次必然漏掉幾種。
+          新增 <code>RigSlot.icon</code>（B-1 那條「同一件事只寫一份」的延伸）。<br>
+          ⚠ <b>空槽與無槽不佔位</b>（沿用 A-1 的既有裁決）：補一個空框會被讀成
+          「有一件我不認得的裝備」。尺寸 30px，與相鄰的部位卡同階。
+        </div>
+        <div class="task-file">src/utils/rigLayout.ts · components/loadout/export/ExportRig.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-3 &nbsp; 十字的下端對齊，備用槽說明退場</div>
+      <div class="task-group-meta">rigLayout ／ LoadoutRig ／ LoadoutExportCard</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">背部改半寬（螢幕與圖都改）；沒有備用槽就不解釋備用槽</div>
+        <div class="task-desc">
+          <b>① 背部與腿部同寬。</b> 背部是十字的下端，卻是唯一整寬的一格 ——
+          它比正上方那張半寬的腿部卡寬了一倍、右半邊只有一個重量數字，
+          <b>十字的形狀因此讀不出來</b>（同 B-2 對軀幹／腿部那條 2026-08-27 裁決的另一半）。
+          幾何走 <code>RigBlock.half</code>，螢幕與匯出圖同源；
+          「整排不存在」的肩部<b>維持整寬</b> —— 那一列講的是一整排，不是十字的一端。<br>
+          <b>② 沒有備用槽就整段不印。</b> 先前不論如何都會畫一列
+          「備用槽 · 未裝強襲者背包 → 沒有備用武器槽」，圖上另有一句
+          「手部取主手／備用較重者」。<b>全庫 181 個背包只有強襲者一個解得開它</b>
+          ⇒ 這兩段在幾乎每一張圖上都是在解釋一個<b>這張配裝裡根本不存在</b>的東西：
+          看圖的人得先讀懂一個與自己無關的機制，才能確認自己沒漏看什麼。
+          解鎖時備用格本來就在兩欄裡（<code>rigColumnRefs</code>），看得見就不需要解釋。<br>
+          ⚠ <b>有備用組時兩段照印</b>：那時圖上有兩排武器而總重只算了較重的一排，
+          那句話才是真的在防誤判（E-1 的純文字摘要本來就是這樣 gate 的，這次是把匯出圖對齊它）。<br>
+          ⚠ 檔頭裁決⑤（「整排不存在只出一列」）<b>仍適用於肩部</b> ——
+          那是機甲本身的差異，不是某一件背包的效果。
+        </div>
+        <div class="task-file">src/utils/rigLayout.ts · components/loadout/LoadoutRig.tsx · LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-L — <a href="../index.html" style="color:var(--accent-pink);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

@@ -11,6 +11,9 @@ import {
   planCloudImport, summarizeImportPlan,
 } from './cloudBuildRules.ts'
 import { CLOUD_CODE_MAX_CHARS, CLOUD_SLOTS, CLOUD_SLOTS_PER_PILOT, isCloudSlot, type CloudSlot } from '../types/loadout.ts'
+import type { LoadoutDraft } from '../types/loadout'
+import { buildShareIndex } from './loadoutCode/shareId.ts'
+import { encodeLoadout, type ShareIndexes } from './loadoutCode/codec.ts'
 
 const PILOT = 'pilot_049_海莉絲'
 const CODE = 'AQMhI0-_'
@@ -213,4 +216,35 @@ test('summarizeImportPlan：五種下場各自數對', () => {
   assert.deepEqual(summarizeImportPlan(rows), {
     willImport: 4, duplicate: 1, full: 2, broken: 1, unselected: 1,
   })
+})
+
+// ─── 去重比的是「本體」（PLAN-052-L C-6）──────────────────────────────────
+//
+// ⚠ 這裡刻意用**真的編出來的碼**而不是 'AAA' 這種假字串：`sameLoadout()` 對解不開的
+//   輸入會退回比對原字串，用假碼測等於什麼都沒測到（兩邊都走 fallback）。
+
+test('雲端匯入：只差備註 ⇒ duplicate，不佔第二格', () => {
+  const base: LoadoutDraft = {
+    activeSetKey: 'default',
+    sets: { default: { mounts: [{ weaponId: 'weapon_016_藝術突襲EX', bank: 'main', slot: 'dualHand' }] } },
+    pilotId: PILOT,
+  }
+  const ix: ShareIndexes = {
+    pilot: buildShareIndex('pilot', [PILOT]),
+    mech: buildShareIndex('mech', ['mech_001_初擊者']),
+    weapon: buildShareIndex('weapon', ['weapon_016_藝術突襲EX']),
+    component: buildShareIndex('component', []),
+    backpack: buildShareIndex('backpack', []),
+    module: buildShareIndex('module', []),
+    pilotSkill: buildShareIndex('pilotSkill', []),
+  }
+  const plain = encodeLoadout(base, { indexes: ix })
+  const withNote = encodeLoadout({ ...base, note: '對空優先' }, { indexes: ix })
+  assert.notEqual(plain, withNote, '前提：加了備註本來就是另一串碼')
+
+  const rows = planCloudImport(
+    [item('a', PILOT, withNote)],
+    cloudOf({ [PILOT]: { '2': plain } }),
+  )
+  assert.deepEqual(rows.map((r) => r.outcome), [{ kind: 'duplicate', slot: '2' }])
 })

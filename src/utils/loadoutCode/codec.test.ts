@@ -16,7 +16,7 @@ import { buildShareIndex } from './shareId.ts'
 import {
   encodeLoadout, decodeLoadout, cleanCodeInput, checksum8,
   toBase64Url, fromBase64Url, packGameVersion, unpackGameVersion,
-  FMT_VERSION, TAG, LIMITS,
+  FMT_VERSION, TAG, LIMITS, loadoutIdentity,
   type ShareIndexes, type DecodeOk,
 } from './codec.ts'
 import { CLOUD_CODE_MAX_CHARS } from '../../types/loadout.ts'
@@ -30,9 +30,19 @@ const UNIVERSE = {
   component: ['comp_0001_應元件W_蓬勃', 'comp_0080_觸元件W_憑逸', 'comp_0208_觸元件_警戒'],
   backpack: ['60100104', '60101706', '61002705'],
   module: ['mod_4001', 'mod_4032', 'mod_4001_2'],
+  // 技能的 doc id 是純名稱，一個號碼都推不出來 ⇒ 全部走別名（PLAN-052-L D-2）
+  pilotSkill: ['skill_槍林彈雨', 'skill_一人成軍', 'skill_超導', 'SKILL_彈道收束'],
 }
 
 const ALIASES = { mod_4001_2: 1_500_001 }
+
+/** 技能別名。線上是 853 筆由 `check-share-ids.mjs --accept` 續號，這裡取四筆代表 */
+const SKILL_ALIASES: Record<string, number> = {
+  skill_槍林彈雨: 1_500_010,
+  skill_一人成軍: 1_500_011,
+  skill_超導: 1_500_012,
+  SKILL_彈道收束: 1_500_013,
+}
 
 const INDEXES: ShareIndexes = {
   pilot: buildShareIndex('pilot', UNIVERSE.pilot),
@@ -41,6 +51,7 @@ const INDEXES: ShareIndexes = {
   component: buildShareIndex('component', UNIVERSE.component),
   backpack: buildShareIndex('backpack', UNIVERSE.backpack),
   module: buildShareIndex('module', UNIVERSE.module, ALIASES),
+  pilotSkill: buildShareIndex('pilotSkill', UNIVERSE.pilotSkill, SKILL_ALIASES),
 }
 
 const ok = (r: ReturnType<typeof decodeLoadout>): DecodeOk => {
@@ -176,6 +187,16 @@ function randomDraft(r: () => number): LoadoutDraft {
     draft.ndLevels = nd
   }
   if (chance(0.3)) draft.name = ['我的配裝', 'アサルト', 'Build #7', '甲乙丙丁戊'][Math.floor(r() * 4)]
+  // 備註（PLAN-052-L C-3）。⚠ 這裡放的必須是**已經清洗過**的字串：codec 不清洗
+  //   （那是 reconcile 的事），塞一個含換行尾巴的進去只會測到「codec 沒有幫我 trim」。
+  if (chance(0.25)) {
+    draft.note = [
+      '對空優先',
+      '手部留 300 換備用\n背包吃滿',
+      'PvE 清場用\n\n手動控 AP',
+      '🚀 速攻',
+    ][Math.floor(r() * 4)]
+  }
   if (chance(0.2)) {
     const parts: Record<string, string> = {}
     for (const p of ['torso', 'leftArm', 'rightArm', 'legs']) if (chance(0.5)) parts[p] = pick(UNIVERSE.mech)
@@ -185,6 +206,19 @@ function randomDraft(r: () => number): LoadoutDraft {
     const mods: Record<string, string> = {}
     for (const p of ['torso', 'leftArm', 'rightArm', 'legs']) if (chance(0.5)) mods[p] = pick(UNIVERSE.module)
     if (Object.keys(mods).length) draft.modules = mods as LoadoutDraft['modules']
+  }
+  // 攜帶技能（PLAN-052-L D-3）。
+  // ⚠ 產生**去重後**的清單：codec 的 round-trip 是逐位元的，而重複的 id 在解碼側
+  //   會原樣回來（codec 不去重 —— 那是 reconcile 的事），塞重複值只會讓這個測試
+  //   在測「產生器有沒有去重」。
+  if (chance(0.3)) {
+    const n = 1 + Math.floor(r() * 3)
+    const carried = [...new Set(Array.from({ length: n }, () => pick(UNIVERSE.pilotSkill)))]
+    const skills: NonNullable<LoadoutDraft['skills']> = { carried }
+    // 「改」技能今天沒有 UI，但欄位已開 ⇒ round-trip 必須涵蓋它，否則等資料建好了
+    // 才發現它編不回來，而那時已經有人存了碼
+    if (chance(0.3)) skills.mod = pick(UNIVERSE.pilotSkill)
+    draft.skills = skills
   }
   return draft
 }
@@ -206,6 +240,8 @@ test('① round-trip：10,000 份隨機合法配裝，decode(encode(x)) 深等�
   }
   // 決策一估的是「典型 ≈130 字元、最壞 ≈743 bytes」。這裡把實測最壞值釘住，
   // 之後有人加段落把碼撐爆 Discord 的 2000 字元上限時，這條會先紅
+  // ⚠ 這條**不必**為 §NOTE 重定基準（PLAN-052-L C-3 實測）：加了備註之後隨機最壞
+  //   仍只有 291 字元。要重定的是下面 ④ 那條 —— 那裡的備註是刻意灌到 100 碼點上限的。
   assert.ok(maxChars < 900, `最長代碼 ${maxChars} 字元，超出預期`)
 })
 
@@ -440,10 +476,10 @@ test('元件：主手與備用裝同一把武器、各帶不同元件 ⇒ 落盤
   // 這一則就是那個設計在**落盤格式**這一層的證明（codec 是 mount 一筆一筆寫的）。
   const draft: LoadoutDraft = {
     activeSetKey: 'default',
-    sets: { default: { mounts: [
+    sets: { default: { mounts: ([
       { weaponId: UNIVERSE.weapon[0], bank: 'backup', slot: 'singleHand', side: 'left', setup: { triggerComponentIds: [C2] } },
       { weaponId: UNIVERSE.weapon[0], bank: 'main', slot: 'singleHand', side: 'left', setup: { triggerComponentIds: [C1] } },
-    ].sort((a, b) => `${a.bank}:${a.slot}:${a.side}`.localeCompare(`${b.bank}:${b.slot}:${b.side}`)) } },
+    ] as LoadoutMount[]).sort((a, b) => `${a.bank}:${a.slot}:${a.side}`.localeCompare(`${b.bank}:${b.slot}:${b.side}`)) } },
   }
   const out = roundTrip(draft)
   const main = out.sets.default.mounts.find((m) => m.bank === 'main')
@@ -490,6 +526,88 @@ test('元件：doc 被刪掉 ⇒ 那一顆進 unresolved，同一把武器上的
   assert.equal(res.unresolved.filter((u) => u.kind === 'component').length, 1)
 })
 
+// ─── §SKILLS（PLAN-052-L D-3）────────────────────────────────────────────────
+
+/** 只有機師與機甲的骨架，給技能那幾條測試用 */
+const skillBase: LoadoutDraft = {
+  activeSetKey: 'default',
+  sets: {},
+  pilotId: UNIVERSE.pilot[0],
+  mechId: UNIVERSE.mech[0],
+}
+
+test('技能：三格 ＋「改」技能 round-trip（號碼全在別名區，3 bytes varint）', () => {
+  const draft: LoadoutDraft = {
+    ...skillBase,
+    skills: { carried: UNIVERSE.pilotSkill.slice(0, 3), mod: UNIVERSE.pilotSkill[3] },
+  }
+  const res = ok(decodeLoadout(encodeLoadout(draft, { indexes: INDEXES, gameVersion: '3.3' }), INDEXES))
+  assert.deepEqual(res.draft.skills, draft.skills)
+})
+
+test('技能：只帶一格時不會冒出空的第二、三格（順序即顯示順序）', () => {
+  const draft: LoadoutDraft = { ...skillBase, skills: { carried: [UNIVERSE.pilotSkill[1]] } }
+  const res = ok(decodeLoadout(encodeLoadout(draft, { indexes: INDEXES, gameVersion: '3.3' }), INDEXES))
+  assert.deepEqual(res.draft.skills, { carried: [UNIVERSE.pilotSkill[1]] })
+  assert.equal('mod' in (res.draft.skills ?? {}), false, '沒有「改」技能時不可以生出一個 mod 鍵')
+})
+
+test('技能：順序照原樣保留 —— 三格是有序的，不可以像元件那樣排序', () => {
+  // 元件走 canonical order（同一組元件恆為同一串），技能**不可以**：
+  // 玩家排的順序就是他要的順序，重排等於默默改了他的配裝。
+  const a = [UNIVERSE.pilotSkill[2], UNIVERSE.pilotSkill[0], UNIVERSE.pilotSkill[1]]
+  const res = ok(decodeLoadout(
+    encodeLoadout({ ...skillBase, skills: { carried: a } }, { indexes: INDEXES, gameVersion: '3.3' }),
+    INDEXES,
+  ))
+  assert.deepEqual(res.draft.skills?.carried, a)
+})
+
+test('技能：沒帶技能的草稿完全不產生 §SKILLS 段（既有的碼一個位元都不變）', () => {
+  const opts = { indexes: INDEXES, gameVersion: '3.3' }
+  const bare = encodeLoadout(skillBase, opts)
+  const empty = encodeLoadout({ ...skillBase, skills: { carried: [] } }, opts)
+  assert.equal(empty, bare, '空的 carried 不可以生出一個段落 —— 那會讓每一份舊碼變長')
+  const res = ok(decodeLoadout(bare, INDEXES))
+  assert.equal('skills' in res.draft, false, '沒有段落就不該有欄位（未設定＝欄位不存在）')
+})
+
+test('技能：號碼查不到 ⇒ 那一格進 unresolved，其餘兩格照樣留著', () => {
+  const draft: LoadoutDraft = { ...skillBase, skills: { carried: UNIVERSE.pilotSkill.slice(0, 3) } }
+  const code = encodeLoadout(draft, { indexes: INDEXES, gameVersion: '3.3' })
+  // 只認得其中兩個的世界（技能被下架／登錄簿還沒同步）
+  const partial: ShareIndexes = {
+    ...INDEXES,
+    pilotSkill: buildShareIndex(
+      'pilotSkill', UNIVERSE.pilotSkill.slice(0, 2),
+      { [UNIVERSE.pilotSkill[0]]: SKILL_ALIASES[UNIVERSE.pilotSkill[0]], [UNIVERSE.pilotSkill[1]]: SKILL_ALIASES[UNIVERSE.pilotSkill[1]] },
+    ),
+  }
+  const res = ok(decodeLoadout(code, partial))
+  assert.deepEqual(res.draft.skills?.carried, UNIVERSE.pilotSkill.slice(0, 2))
+  assert.equal(res.unresolved.filter((u) => u.kind === 'pilotSkill').length, 1)
+})
+
+test('技能：段落上限擋得住宣告一萬格的代碼（炸彈引信，不是遊戲規則）', () => {
+  const bomb = new Uint8Array([
+    FMT_VERSION, 0, 0, 0,
+    TAG.SKILLS, 3, 0xff, 0xff, 0x7f,   // len=3、NCARRIED = 2,097,151
+  ])
+  const body = Uint8Array.from([...bomb, checksum8(bomb)])
+  const res = decodeLoadout(toBase64Url(body), INDEXES)
+  assert.equal(res.ok, false)
+  assert.equal(res.ok ? '' : res.reason, 'too-many-items')
+})
+
+test('⚠ 技能不同的兩串碼，識別鍵必須不同 —— 技能是配裝的一部分，不是標籤', () => {
+  // §NAME／§NOTE 被剝掉是因為它們不改變「這一套會怎麼打」。技能會，所以它必須留在鍵裡。
+  // 剝掉的症狀：換三個技能存進書架，會就地覆蓋掉原本那一套。
+  const opts = { indexes: INDEXES, gameVersion: '3.3' }
+  const a = encodeLoadout({ ...skillBase, skills: { carried: [UNIVERSE.pilotSkill[0]] } }, opts)
+  const b = encodeLoadout({ ...skillBase, skills: { carried: [UNIVERSE.pilotSkill[1]] } }, opts)
+  assert.notEqual(loadoutIdentity(a), loadoutIdentity(b))
+})
+
 // ─── ③ golden fixture（舊版解碼器永不刪除）──────────────────────────────────
 
 const FIXTURE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '__fixtures__')
@@ -507,6 +625,11 @@ test('③ golden fixture：凍住的代碼字串必須永遠解得回同一份�
       component: buildShareIndex('component', fx.universe.component),
       backpack: buildShareIndex('backpack', fx.universe.backpack),
       module: buildShareIndex('module', fx.universe.module, fx.universe.moduleAliases ?? {}),
+      // ⚠ 舊 fixture 沒有這兩個欄位 ⇒ 空索引。那是對的：它們是 §SKILLS 出現**之前**
+      //   凍下來的碼，本來就不含技能，而空索引正好證明解碼器不會憑空生出一個。
+      pilotSkill: buildShareIndex(
+        'pilotSkill', fx.universe.pilotSkill ?? [], fx.universe.pilotSkillAliases ?? {},
+      ),
     }
     for (const c of fx.cases) {
       const res = decodeLoadout(c.code, ix)
@@ -544,6 +667,8 @@ function maxIndexes(): { indexes: ShareIndexes; ids: Record<string, string[]> } 
     component: Array.from({ length: 4 }, (_, i) => `comp_${MAXID - i}_極`),
     backpack: [`${60_000_000 + MAXID}`],
     module: Array.from({ length: 4 }, (_, i) => `mod_${MAXID - i}`),
+    // 三格 ＋ 一格「改」＝ 4 個號碼，全部吃滿 3 bytes varint（PLAN-052-L D-3）
+    pilotSkill: Array.from({ length: 4 }, (_, i) => `skill_極${i}`),
   }
   return {
     ids,
@@ -554,18 +679,24 @@ function maxIndexes(): { indexes: ShareIndexes; ids: Record<string, string[]> } 
       component: buildShareIndex('component', ids.component),
       backpack: buildShareIndex('backpack', ids.backpack),
       module: buildShareIndex('module', ids.module),
+      // 技能推不出號碼 ⇒ 別名，且刻意取滿 3 bytes 的值（見上方 ids.pilotSkill）
+      pilotSkill: buildShareIndex(
+        'pilotSkill', ids.pilotSkill,
+        Object.fromEntries(ids.pilotSkill.map((id, i) => [id, MAXID - i])),
+      ),
     },
   }
 }
 
 /**
  * **滿載**草稿：`n` 套形態 × 7 個 mount（雙手 2 ＋ 雙肩 2 ＋ 背 1 ＋ 備用 2）
- * × 4 個元件（`componentLimit` 上限）＋ 背包 ＋ 4 部件 ＋ 4 模組 ＋ 4 分區算力 ＋ 24 碼點名稱。
+ * × 4 個元件（`componentLimit` 上限）＋ 背包 ＋ 4 部件 ＋ 4 模組 ＋ 4 分區算力
+ * ＋ 24 碼點名稱 ＋ 100 碼點備註。
  *
  * ⚠ 隨機產生器（① round-trip）**測不到這個**：它每個欄位都只有 20–50% 機率出現，
  *   一萬份裡不會湊出「全部欄位同時吃滿」的那一份。上限必須刻意造。
  */
-function maxDraft(ids: Record<string, string[]>, setKeys: string[], name: string): LoadoutDraft {
+function maxDraft(ids: Record<string, string[]>, setKeys: string[], name: string, note: string): LoadoutDraft {
   const SLOTS: Array<Pick<LoadoutMount, 'slot' | 'side' | 'bank'>> = [
     { slot: 'singleHand', side: 'left', bank: 'main' },
     { slot: 'singleHand', side: 'right', bank: 'main' },
@@ -599,9 +730,12 @@ function maxDraft(ids: Record<string, string[]>, setKeys: string[], name: string
     pilotId: ids.pilot[0],
     mechId: ids.mech[0],
     name,
+    note,
     ndLevels: { 'γ1': 24, 'γ2': 24, 'α': 24, 'β': 24 },
     parts: { torso: ids.mech[0], leftArm: ids.mech[0], rightArm: ids.mech[0], legs: ids.mech[0] },
     modules: { torso: ids.module[0], leftArm: ids.module[1], rightArm: ids.module[2], legs: ids.module[3] },
+    // 三格全滿 ＋「改」技能（PLAN-052-L D-3）。號碼全吃滿 3 bytes ⇒ 這一段約 +14 bytes
+    skills: { carried: ids.pilotSkill.slice(0, 3), mod: ids.pilotSkill[3] },
   } as LoadoutDraft
 }
 
@@ -617,10 +751,14 @@ test('④ 雲端上限與 codec 的解碼上限必須是同一個數字', () => 
 test('④ 最壞情況的代碼必須塞得進雲端的一格（含未來多一套形態的餘裕）', () => {
   const max = maxIndexes()
   const emoji = '🚀'.repeat(24)          // 24 碼點 × 4 bytes ＝ 名稱的位元組上限
+  // 100 碼點 × 4 bytes ＝ 備註的位元組上限（PLAN-052-L C-3）。
+  // ⚠ 這一項是 052-L 加進來的，下面兩條長度門檻因此**有意識地重定過基準**——
+  //   它們破掉不代表 bug，代表版面又長了一段，要重新確認上限撐不撐得住。
+  const noteMax = '🚀'.repeat(100)
   const keys = (n: number) => Array.from({ length: n }, (_, i) => 'form_' + '極'.repeat(19) + i)
 
   // 今天的最壞：海莉絲 3 套獨立形態
-  const c3 = encodeLoadout(maxDraft(max.ids, keys(3), emoji), { indexes: max.indexes, gameVersion: '3.3' })
+  const c3 = encodeLoadout(maxDraft(max.ids, keys(3), emoji, noteMax), { indexes: max.indexes, gameVersion: '3.3' })
   assert.ok(
     c3.length <= CLOUD_CODE_MAX_CHARS,
     `3 套形態的最壞碼長 ${c3.length} 已超過雲端單格上限 ${CLOUD_CODE_MAX_CHARS}`,
@@ -629,16 +767,109 @@ test('④ 最壞情況的代碼必須塞得進雲端的一格（含未來多一�
 
   // 餘裕：每多一套形態約 +200 字元（號碼全滿時）。官方哪天多給兩套也要活得下來，
   // 因為上限只能放寬不能收緊，而放寬的那一刻已經有人存不進去了。
-  const c5 = encodeLoadout(maxDraft(max.ids, keys(5), emoji), { indexes: max.indexes, gameVersion: '3.3' })
+  const c5 = encodeLoadout(maxDraft(max.ids, keys(5), emoji, noteMax), { indexes: max.indexes, gameVersion: '3.3' })
   assert.ok(
     c5.length <= CLOUD_CODE_MAX_CHARS,
     `5 套形態的最壞碼長 ${c5.length} 超過上限 ${CLOUD_CODE_MAX_CHARS} —— 上限不夠用，放寬它（不可收緊）`,
   )
 
   // 把實測值釘住：日後 codec 加段落讓它逼近上限時，這一條會先說話
+  // 基準重定於 PLAN-052-L C-3（加了 §NOTE，最壞備註 100 碼點的四位元組 emoji ≈ +540 字元）。
+  // 實測：3 套 1010 → **1550**、5 套 1530 → **2070**。門檻取 1950／2450 留餘裕。
+  // ⚠ 5 套的最壞已經越過 Discord 的 2000 字元上限 —— 那是**理論最壞**（號碼全滿 ＋
+  //   四位元組 emoji 填滿名稱與備註 ＋ 五套形態），今天不存在（真實最壞是海莉絲 3 套 = 1550）。
+  //   但它說明一件事：備註從此是這串碼裡最大的一塊，日後要再加段落前先量這裡。
   assert.ok(
-    c3.length < 1400 && c5.length < 1900,
-    `碼長比 052-E B-4 實測時大幅膨脹（3 套 ${c3.length}、5 套 ${c5.length}）——`
-    + 'codec 加了新段落嗎？確認雲端上限與 Discord 的 2000 字元上限都還撐得住',
+    c3.length < 1950 && c5.length < 2450,
+    `碼長比 PLAN-052-L C-3 重定基準時大幅膨脹（3 套 ${c3.length}、5 套 ${c5.length}）——`
+    + 'codec 又加了新段落嗎？確認雲端上限與 Discord 的 2000 字元上限都還撐得住',
   )
+})
+
+// ─── 識別鍵（PLAN-052-L C-6）────────────────────────────────────────────────
+//
+// 「同一套配裝」的定義。錯的方向有兩個，而兩個都不會報錯：
+//   · 太寬 ⇒ 兩套不同的配裝撞成同一個鍵 ⇒ 存第二套時就地覆蓋掉第一套
+//   · 太窄 ⇒「只改了備註」被當成新的一套 ⇒ 佔掉第二格，而「已在雲端」徽章翻假
+
+test('只差備註的兩串碼，識別鍵相同（C-6 存在的全部理由）', () => {
+  const base: LoadoutDraft = {
+    activeSetKey: 'default',
+    sets: { default: { mounts: [{ weaponId: UNIVERSE.weapon[0], bank: 'main', slot: 'dualHand' }] } },
+    pilotId: UNIVERSE.pilot[0],
+    mechId: UNIVERSE.mech[0],
+  }
+  const opts = { indexes: INDEXES, gameVersion: '3.3' }
+  const a = encodeLoadout(base, opts)
+  const b = encodeLoadout({ ...base, note: '對空優先' }, opts)
+  const c = encodeLoadout({ ...base, note: '改成打地面' }, opts)
+  assert.notEqual(a, b, '前提：加了備註本來就是另一串碼')
+  assert.equal(loadoutIdentity(a), loadoutIdentity(b))
+  assert.equal(loadoutIdentity(b), loadoutIdentity(c))
+})
+
+test('只差方案名稱的兩串碼，識別鍵也相同（名稱是標籤，不是配裝）', () => {
+  const base: LoadoutDraft = {
+    activeSetKey: 'default', sets: {}, pilotId: UNIVERSE.pilot[1],
+  }
+  const opts = { indexes: INDEXES, gameVersion: '3.3' }
+  const a = encodeLoadout({ ...base, name: '方案 A' }, opts)
+  const b = encodeLoadout({ ...base, name: '方案 B', note: '換個說法' }, opts)
+  assert.equal(loadoutIdentity(a), loadoutIdentity(b))
+})
+
+test('只差遊戲版本提示的兩串碼，識別鍵相同（那記的是「哪一版做的」，不是裝了什麼）', () => {
+  const draft: LoadoutDraft = { activeSetKey: 'default', sets: {}, mechId: UNIVERSE.mech[2] }
+  const a = encodeLoadout(draft, { indexes: INDEXES, gameVersion: '3.2' })
+  const b = encodeLoadout(draft, { indexes: INDEXES, gameVersion: '3.3' })
+  assert.notEqual(a, b)
+  assert.equal(loadoutIdentity(a), loadoutIdentity(b))
+})
+
+test('⚠ 裝備真的不一樣時，識別鍵必須不同（太寬會就地覆蓋掉別人存的那一套）', () => {
+  const opts = { indexes: INDEXES, gameVersion: '3.3' }
+  const one = encodeLoadout({
+    activeSetKey: 'default',
+    sets: { default: { mounts: [{ weaponId: UNIVERSE.weapon[0], bank: 'main', slot: 'dualHand' }] } },
+    note: '同一則備註',
+  }, opts)
+  const two = encodeLoadout({
+    activeSetKey: 'default',
+    sets: { default: { mounts: [{ weaponId: UNIVERSE.weapon[1], bank: 'main', slot: 'back' }] } },
+    note: '同一則備註',
+  }, opts)
+  assert.notEqual(loadoutIdentity(one), loadoutIdentity(two))
+})
+
+test('未知段落要保留在識別鍵裡 —— 那是別的 client 加的配裝資料', () => {
+  // 手工造一串「header ＋ 一段未知 tag 99」的碼，兩串只差那一段的內容
+  const mk = (payload: number[]) => {
+    const body = Uint8Array.from([1, 33, 0, 0, 99, payload.length, ...payload])
+    return toBase64Url(Uint8Array.from([...body, checksum8(body)]))
+  }
+  assert.notEqual(loadoutIdentity(mk([1, 2])), loadoutIdentity(mk([3, 4])))
+})
+
+test('解不開時回 null（呼叫端退回比對原字串，那是改寫前的行為）', () => {
+  assert.equal(loadoutIdentity(''), null)
+  assert.equal(loadoutIdentity('!!!not base64!!!'), null)
+  assert.equal(loadoutIdentity('AQ'), null, '比 header 還短')
+})
+
+test('識別鍵吃得下網址與被換行截斷的輸入（與 cleanCodeInput 同一條入口）', () => {
+  const code = encodeLoadout(
+    { activeSetKey: 'default', sets: {}, pilotId: UNIVERSE.pilot[0], note: '甲' },
+    { indexes: INDEXES, gameVersion: '3.3' },
+  )
+  assert.equal(loadoutIdentity(`https://mecharashi.wiki/simulator?b=${code}`), loadoutIdentity(code))
+})
+
+test('識別鍵不是代碼：拿去解碼一定失敗（它沒有 checksum）', () => {
+  const code = encodeLoadout(
+    { activeSetKey: 'default', sets: {}, pilotId: UNIVERSE.pilot[0] },
+    { indexes: INDEXES, gameVersion: '3.3' },
+  )
+  const id = loadoutIdentity(code)!
+  assert.notEqual(id, code)
+  assert.equal(decodeLoadout(id, INDEXES).ok, false, '識別鍵只用來比對，不可以被當成代碼存起來')
 })

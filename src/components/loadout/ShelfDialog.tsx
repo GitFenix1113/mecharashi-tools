@@ -24,7 +24,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { LoadoutDraft } from '../../types/loadout'
 import { CLOUD_SLOTS, CLOUD_SLOTS_PER_PILOT, type CloudSlot } from '../../types/loadout'
 import type { LoadoutWorld } from '../../utils/loadoutRules'
-import type { ShareIndexes } from '../../utils/loadoutCode/codec'
+import { loadoutKey, sameLoadout, type ShareIndexes } from '../../utils/loadoutCode/codec'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   readShelf, saveBuild, deleteBuild, SHELF_LIMIT,
@@ -123,7 +123,7 @@ export function ShelfDialog({
 
   // ── 雲端書架的狀態放在**對話框這一層**，不放在雲端分頁裡（052-E D-3）──────
   //
-  // 本機分頁要在每張卡上標「已在雲端」，而那個判定是**比對代碼字串**（決策四：
+  // 本機分頁要在每張卡上標「已在雲端」，而那個判定是**比對代碼本身**（決策四：
   // 不另存旗標 —— 旗標是第二個真相源，雲端那邊被刪掉之後它會繼續說謊）。
   // 判定要用到雲端清單，所以清單必須是兩個分頁共用的。
   //
@@ -156,12 +156,18 @@ export function ShelfDialog({
     [],
   )
 
-  /** 已經在雲端的代碼全集 —— 本機分頁靠它標「已在雲端」（比對字串，不存旗標）。 */
+  /**
+   * 已經在雲端的**識別鍵**全集 —— 本機分頁靠它標「已在雲端」（比對，不存旗標）。
+   *
+   * ⚠ 存的是 `loadoutKey()` 而不是原始代碼（PLAN-052-L C-6）：加了備註之後，
+   *   同一套配裝在本機與雲端的字串可能只差那一句話，而徽章會因此翻假 ——
+   *   使用者看到「沒在雲端」，再存一次就佔掉第二格。
+   */
   const cloudCodes = useMemo(() => {
     const set = new Set<string>()
     for (const e of entries ?? []) for (const s of CLOUD_SLOTS) {
       const c = e.slots[s]
-      if (c) set.add(c)
+      if (c) set.add(loadoutKey(c))
     }
     return set
   }, [entries])
@@ -314,7 +320,16 @@ function LocalTab({
   )
 
   const full = shelf.length >= SHELF_LIMIT
-  const onShelfAlready = !!currentCode && shelf.some((e) => e.code === currentCode)
+  /**
+   * 架上那一筆**同一套配裝**（PLAN-052-L C-6）。含「只差方案名稱／備註」的那一筆。
+   *
+   * ⚠ 改寫前這裡是字串相等，而那會在書架**滿了**的時候變成一個真的 bug：
+   *   使用者只想改一句備註，按鈕卻因為「這串碼不在架上 ＋ 十格已滿」而變成停用 ——
+   *   於是他改不了自己那一套的備註，而畫面上沒有任何訊息說得出為什麼。
+   */
+  const shelfHit = currentCode ? shelf.find((e) => sameLoadout(e.code, currentCode)) ?? null : null
+  /** 連字串都一模一樣 ⇒ 按下去只會更新時間；差在名稱／備註時按下去是**更新內容** */
+  const identical = !!shelfHit && shelfHit.code === currentCode
 
   return (
     <div className="flex flex-col min-h-0">
@@ -336,12 +351,15 @@ function LocalTab({
         <button
           type="button"
           onClick={save}
-          disabled={!currentCode || (full && !onShelfAlready)}
+          disabled={!currentCode || (full && !shelfHit)}
           className="hud-cut-sm text-[12px] px-3 py-1.5 border border-accent-cyan/50 bg-accent-cyan/10 text-accent-cyan hover:bg-accent-cyan/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {onShelfAlready ? '目前這一套已在架上' : '存入目前這一套'}
+          {/* 三種狀態各一句：架上沒有／架上有但名稱備註改過／一模一樣。
+              中間那一句不可以也寫「已在架上」—— 按下去確實會做事（把新的名稱與備註存回去），
+              而一顆寫著「已經有了」的按鈕沒有人會去按。 */}
+          {identical ? '目前這一套已在架上' : shelfHit ? '更新架上那一套的名稱／備註' : '存入目前這一套'}
         </button>
-        {full && !onShelfAlready && (
+        {full && !shelfHit && (
           <span className="text-[11px] text-text-dim">書架已滿，先刪一套</span>
         )}
       </div>
@@ -365,7 +383,7 @@ function LocalTab({
               loading={loading}
               status={statuses.get(entry.id)!}
               world={world}
-              inCloud={cloudCodes.has(entry.code)}
+              inCloud={cloudCodes.has(loadoutKey(entry.code))}
               highlighted={entry.id === justSavedId}
               copied={entry.id === copiedId}
               confirming={entry.id === pendingDelete}
@@ -438,22 +456,20 @@ function CloudTab({
 
   const used = mine ? CLOUD_SLOTS.filter((s) => mine.slots[s] !== undefined).length : 0
   const free = freeSlots(mine?.slots)
-  /** 同一串代碼已經在某一格 ⇒ 就地更新而不是佔第二格（沿用 `localBuilds.saveBuild` 的 deduped 語意） */
-  const dupSlot = currentCode
-    ? CLOUD_SLOTS.find((s) => mine?.slots[s] === currentCode) ?? null
-    : null
+  /** 同一套配裝已經在某一格 ⇒ 就地更新而不是佔第二格（沿用 `localBuilds.saveBuild` 的 deduped 語意） */
+  const dupSlot = currentCode ? findSameSlot(mine?.slots, currentCode) : null
 
   /**
    * 存到第 n 格。
    *
-   * ⚠ **同一串代碼不會佔兩格**（沿用 `localBuilds.saveBuild` 的 deduped 語意）：
+   * ⚠ **同一套配裝不會佔兩格**（沿用 `localBuilds.saveBuild` 的 deduped 語意）：
    *   它已經在別格而使用者挑了一個新格子時，這裡做的是**搬移** —— 先寫新的、再刪舊的。
    *   不去重的話，五格會被同一套配裝的複本吃光，而使用者看到的是幾張長得一模一樣的卡。
    *   順序不可以反過來：先刪後寫的話，中間那一刻寫入失敗就等於把存檔弄丟了。
    */
   const save = useCallback(async (slot: CloudSlot) => {
     if (!uid || !pilotId || !currentCode) return
-    const from = CLOUD_SLOTS.find((s) => mine?.slots[s] === currentCode) ?? null
+    const from = findSameSlot(mine?.slots, currentCode)
     setBusySlot(slot)
     setSaveError(null)
     const r = await saveCloudBuild(uid, pilotId, slot, currentCode)
@@ -568,7 +584,7 @@ function CloudTab({
           <div className="mt-3">
             <div className="text-[11px] text-text-dim mb-1.5">
               {!currentCode ? '目前這一套還編不成代碼（至少要有機甲）'
-                : dupSlot ? `目前這一套已經在第 ${Number(dupSlot) + 1} 格 —— 再按一次只會更新時間，不會多佔一格`
+                : dupSlot ? `目前這一套已經在第 ${Number(dupSlot) + 1} 格 —— 再按一次是就地更新（含改過的名稱與備註），不會多佔一格`
                 : free.length === 0 ? '五格都滿了。挑一格覆寫 —— 這裡不會自動淘汰最舊的那一套'
                 : '存入哪一格？'}
             </div>
@@ -1071,4 +1087,19 @@ function ShelfCard({
       </div>
     </li>
   )
+}
+
+/**
+ * 這位機師的五格裡，**哪一格裝的是同一套配裝**（PLAN-052-L C-6）。
+ *
+ * ⚠ 比的是 `loadoutKey()` 不是字串相等：加了備註之後「同一套但改過一句話」是同一套，
+ *   不該佔第二格 —— 而使用者的本意是修正，不是另存新檔。
+ */
+function findSameSlot(
+  slots: Partial<Record<CloudSlot, string>> | undefined,
+  code: string,
+): CloudSlot | null {
+  if (!slots || !code) return null
+  const key = loadoutKey(code)
+  return CLOUD_SLOTS.find((s) => { const c = slots[s]; return c !== undefined && loadoutKey(c) === key }) ?? null
 }

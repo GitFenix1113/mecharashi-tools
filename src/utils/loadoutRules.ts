@@ -13,7 +13,7 @@
 //
 // 純函式、無 React / Firestore 依賴，可單測（npm test）。
 
-import type { Backpack, Component, Mech, MechForm, Module, Pilot, Weapon } from '../types'
+import type { Backpack, Component, Mech, MechForm, Module, Pilot, PilotSkillDoc, Weapon } from '../types'
 import type { EquipSet, LoadoutMount } from '../types/loadout'
 import type { ModuleSlotRef, SlotCapacity, SlotKey, WeaponSlotRef } from '../types/slots.ts'
 import { slotKey, slotAcceptsSide } from '../types/slots.ts'
@@ -231,11 +231,24 @@ export interface LoadoutWorld {
    *   症狀是**貼一次分享碼、四顆模組就被靜默清空一次**。
    */
   modules: ReadonlyMap<string, Module>
+  /**
+   * 全站技能字典（PLAN-052-L D-3）。集合的物理名是 `pilotSkills`，但它的真實契約是
+   * 「所有技能」——武器技能也住在裡面（見 `PilotSkillDoc` 與 PLAN-032 決策一）。
+   *
+   * ⚠ **空 Map ＝ 還沒載入，不是「這個世界沒有技能」**，與 `components`／`modules`
+   *   逐字同一條。`reconcile()` 必須據此**不動** `draft.skills`：草稿會在載入完成前就被
+   *   `loadDraft` 灌進來（分享碼／本機書架／雲端存檔都走那條），照著武器那套
+   *   「查不到就刪」做，症狀是**貼一次分享碼、三個技能就被靜默清空一次**。
+   *
+   * ⚠ 這一份比前兩者更容易踩到：`pilotSkills` **不在** `LOADOUT_STAGE_KEYS` 裡
+   *   （見 `useFirestore.ts`），所以「還沒載入」在這裡是常態而不是開頁的一瞬間。
+   */
+  pilotSkills: ReadonlyMap<string, PilotSkillDoc>
 }
 
 export const EMPTY_WORLD: LoadoutWorld = {
   pilots: new Map(), mechs: new Map(), weapons: new Map(), backpacks: new Map(), forms: [],
-  components: new Map(), modules: new Map(),
+  components: new Map(), modules: new Map(), pilotSkills: new Map(),
 }
 
 export function buildWorld(data: {
@@ -247,6 +260,8 @@ export function buildWorld(data: {
   forms?: readonly MechForm[]
   components?: readonly Component[]
   modules?: readonly Module[]
+  /** ⚠ 缺欄位／空陣列 ＝ 尚未載入（見 `LoadoutWorld.pilotSkills`），不是「沒有技能」 */
+  pilotSkills?: readonly PilotSkillDoc[]
 }): LoadoutWorld {
   const index = <T extends { id: string }>(xs: readonly T[]): Map<string, T> =>
     new Map(xs.map((x) => [x.id, x]))
@@ -262,6 +277,7 @@ export function buildWorld(data: {
     // 選填：`equip` 之前的階段根本沒有這個欄位，而那時它應該是空的（＝尚未載入）
     components: index(data.components ?? []),
     modules: index(data.modules ?? []),
+    pilotSkills: index(data.pilotSkills ?? []),
   }
 }
 

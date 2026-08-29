@@ -38,7 +38,8 @@ import { moduleStacks, moduleFamilyKey } from './moduleRules.ts'
 const here = path.dirname(fileURLToPath(import.meta.url))
 const load = <T>(f: string): T => JSON.parse(fs.readFileSync(path.join(here, '__fixtures__', f), 'utf8'))
 
-interface MechFixture extends InnateMechInput {
+/** 落盤 JSON 的原始形狀：沒有的欄位存成 null（InnateMechInput 那側是 undefined） */
+interface MechFixtureRaw {
   id: string
   name: string
   quality: string
@@ -46,6 +47,7 @@ interface MechFixture extends InnateMechInput {
   module8Id: string | null
   moduleFixedIds: string[]
 }
+type MechFixture = InnateMechInput & { id: string; name: string; quality: string }
 interface ModFixture {
   id: string; name: string; slot: string; rarity: string
   boundMechId: string | null; boundPart: string[] | null
@@ -55,7 +57,12 @@ interface ModFixture {
   unlockCondition: { kind: string; moduleId?: string; pilotIds?: string[] } | null
 }
 
-const MECHS = load<MechFixture[]>('innateMechs.json')
+// null → undefined：resolveInnateModules 兩者都當「沒有」，型別上則只認 undefined
+const MECHS: MechFixture[] = load<MechFixtureRaw[]>('innateMechs.json').map((m) => ({
+  ...m,
+  module4Id: m.module4Id ?? undefined,
+  module8Id: m.module8Id ?? undefined,
+}))
 const MODS = load<ModFixture[]>('modules.json')
 const BY_ID = new Map<string, Module>(MODS.map((m) => [m.id, m as unknown as Module]))
 const lookup = (id: string) => BY_ID.get(id)
@@ -417,7 +424,7 @@ test('B-3：unlockCondition 只有六顆有值，且指向存在的觸發者', (
 test('moduleStacks：破曉者-02 的實測配置（無瑕者 ×2、刀劍Ⅱ ×2）四條線全對', () => {
   // 站長遊戲畫面：無瑕者單元 LV.MAX／獨行模組 LV.MAX／火力模組 LV.MAX／刀劍模組 LV.MAX
   const byPart = resolveInnateByPart(() => mechOf('破曉者-02'), lookup)
-  const innate = Object.fromEntries(POS.map((p) => [p, byPart[p].entries])) as Record<MechPartPosition, { moduleId: string; level: number }[]>
+  const innate = Object.fromEntries(POS.map((p) => [p, byPart[p].entries])) as unknown as Record<MechPartPosition, { moduleId: string; level: number }[]>
 
   const stacks = moduleStacks(
     { torso: 'mod_2042', legs: 'mod_2042', leftArm: 'mod_4030_2', rightArm: 'mod_4030_2' },
@@ -449,7 +456,7 @@ test('moduleStacks：天生與插槽共用同一個等級池，超限算在插�
   // 帕斯卡的天生蓄能模組已經 8 級（滿）；再插一顆同族的上去，多的就是白費。
   const 帕斯卡 = mechOf('帕斯卡')
   const byPart = resolveInnateByPart(() => 帕斯卡, lookup)
-  const innate = Object.fromEntries(POS.map((p) => [p, byPart[p].entries])) as Record<MechPartPosition, { moduleId: string; level: number }[]>
+  const innate = Object.fromEntries(POS.map((p) => [p, byPart[p].entries])) as unknown as Record<MechPartPosition, { moduleId: string; level: number }[]>
   const stacks = moduleStacks({ torso: 'mod_3006' }, lookup, { innate })
   const st = stacks.get(moduleFamilyKey(BY_ID.get('mod_3006')!))!
   assert.equal(st.innateSum, 8)

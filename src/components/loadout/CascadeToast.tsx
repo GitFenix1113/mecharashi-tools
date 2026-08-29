@@ -19,8 +19,13 @@ interface Props {
    * ⚠ 這不是新需求，是**修既有缺陷**：站上的手機 Tab Bar 高 3.5rem，
    *   `bottom-4` 的 toast 在手機上本來就被它整條蓋住 —— 而 toast 上有 [復原]，
    *   那是級聯拿掉裝備之後唯一的補救按鈕。
+   *
+   * ⚠ 收的是**算好的 CSS `bottom` 值**而不是布林：操作列的高度會隨按鈕數與
+   *   使用者字級變（超重時多一顆、窄畫面會換行），這裡曾經寫死 `7rem`，
+   *   而那個常數一被換行破壞，就是「[復原] 被壓在列底下」。
+   *   由 `LoadoutPage` 量測固定列高度後算出；`undefined` ＝ 不抬高。
    */
-  raised?: boolean
+  raisedBottom?: string
   onUndo: () => void
   onDismiss: () => void
 }
@@ -28,7 +33,7 @@ interface Props {
 /** 自動收起的秒數。夠讀完兩三行、又不會一直擋著畫面。 */
 const AUTO_DISMISS_MS = 7000
 
-export function CascadeToast({ notice, raised, onUndo, onDismiss }: Props) {
+export function CascadeToast({ notice, raisedBottom, onUndo, onDismiss }: Props) {
   // ⚠ onDismiss 放 ref（且在 effect 裡同步）：呼叫端多半寫成 inline 箭頭函式，
   //   每次 render 都是新 reference，直接放進下方的依賴陣列會讓自動收起的計時器
   //   一直重新開始—— toast 就永遠不會自己收起，而且沒有任何錯誤訊息。
@@ -50,7 +55,7 @@ export function CascadeToast({ notice, raised, onUndo, onDismiss }: Props) {
       role="status"
       aria-live="polite"
       className="fixed left-1/2 -translate-x-1/2 z-40 w-[min(92vw,26rem)] rounded-xl border border-border-accent bg-bg-tooltip shadow-lg px-3.5 py-3"
-      style={{ bottom: raised ? 'calc(7rem + env(safe-area-inset-bottom))' : '1rem' }}
+      style={{ bottom: raisedBottom ?? '1rem' }}
     >
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">

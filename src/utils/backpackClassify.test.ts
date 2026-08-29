@@ -19,7 +19,7 @@ import type { Backpack } from '../types'
 function bp(partial: Partial<Backpack> & Pick<Backpack, 'id' | 'name'>): Backpack {
   return {
     type: 'PowerAdd', rarity: 'S', weight: 0, slot: 'back',
-    assemblableArmorType: [], repairAmount: 0, ...partial,
+    assemblableArmorType: [], repairAmount: 0, skillIds: [], ...partial,
   }
 }
 

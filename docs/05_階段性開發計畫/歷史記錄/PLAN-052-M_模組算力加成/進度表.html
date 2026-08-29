@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-M 模組算力加成與 α／β 鎖定 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">歷史記錄</a>
+    <span>›</span>
+    <span class="current">PLAN-052-M 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-052-M</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">模組算力加成與 α／β 鎖定</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-30</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">7</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">7</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-cyan);">7 / 7</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>✅ 2026-08-30 一次做完（7／7），並在真的瀏覽器裡逐項驗過。</strong>
+    模擬器第一次算得出<b>模組給的神經驅動算力</b>：強擊模組 LV.MAX 讓「算力最低的 γ 區」免費升一級。
+    這在站上不是新功能，而是<b>補一個一直缺的模型</b> —— 選了疾嘯就會發生，而先前條上的格數、
+    匯出圖的能力清單、純文字摘要的分區等級<b>全部少一級</b>。
+    <br><br>
+    <b>⚠ 本計畫真正的內容是把一個量拆成兩個</b>：<b>投入算力</b>（玩家點的、吃 23 的預算、
+    存進分享碼）與<b>生效算力</b>（含加成、決定哪些能力亮著、印在圖上）。
+    先前它們是同一個數，所以三個消費端各自都「剛好對」；一旦不相等，
+    任何一處混用都不會報錯，只會讓格子與數字對不起來。
+    <br><br>
+    <b>⚠ 順手鎖掉 α／β</b>（使用者裁決）。它們只有 3 級、取得成本極低，實務上人人點滿。
+    鎖掉之後加成的落點自動只剩 γ —— 這不是為了配合加成才做的，但兩者剛好互相成立。
+    <br><br>
+    <b>實機驗過的四種情況</b>（疾嘯 ＋ 淬鋒·凱登）：
+    預設（γ1 7／γ2 1 → 落 γ2、生效 4）、
+    <b>投入 23 → 生效 26</b>（γ1 16 ＋ γ2 7 → 落 γ2、生效 10，就是使用者說的「10＋16」）、
+    <b>平手落 γ1</b>（γ1 10 ＝ γ2 10 → 落 γ1、生效 13），
+    以及匯出圖與純文字摘要各印一次來源。全程 console 零 error／warn。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">規則層</div>
+  <div class="section-desc">「有沒有加成、加在哪一區、加完幾級」只能有一份答案。畫面、匯出圖、純文字摘要三個消費端一律問它。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 加成模組名單與觸發判定</div>
+      <div class="task-group-meta">ndPowerBonus.ts（新）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">哪幾顆模組會加算力、什麼時候生效</div>
+        <div class="task-desc">
+          全庫 241 顆模組掃過（判準：頂層或任一階敘述含「算力」「神經驅動」「分區」），
+          帶這個效果的<b>就兩顆</b>：<code>mod_3041</code> 強擊模組（8 階，Lv8 才有）與
+          <code>mod_星夜女神_fixed_1</code> 觀星者單元（2 階，且限曜駕駛）。<br>
+          ⚠ <b>用 doc id 建表、不掃敘述文字</b>：文案是官方的、會隨改版重寫，而「有沒有這個效果」是規則。
+          掃字串的下場是官方把「區域算力」改成「分區算力」就整條靜默失效。
+          代價是新增這種模組要來補一行 —— 由守門測試釘住現況（名單恰好兩顆、加成值恰好一種）。<br>
+          ⚠ 觸發判定走 <code>ctx.stacks</code>（<b>含天生貢獻</b>）＋ <code>ctx.moduleBlocks</code>（解鎖條件）。
+          <b>不要自己再算一次 <code>moduleStacks()</code></b>：疾嘯那 8 級是天生的，
+          漏掉 innate 就永遠觸發不了 —— 而那正是這顆模組今天唯一走得到的路徑。<br>
+          ⚠ <b>只取一顆、不累加</b>：兩顆同時生效今天走不到，而疊加規則官方沒講也沒得測。
+        </div>
+        <div class="task-file">src/utils/ndPowerBonus.ts · src/utils/ndPowerBonus.test.ts（13 例）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 落點挑選與生效等級換算</div>
+      <div class="task-group-meta">ndPowerBonus.ts（新）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">「已解鎖分區中最低的」到底是哪一區</div>
+        <div class="task-desc">
+          候選 ＝ γ 區裡<b>還能再升</b>的那幾個。α／β 恆滿級因此<b>自動出局</b> ——
+          不是另外寫一條「排除 α／β」，而是同一條「升得上去才算候選」的直接後果。<br>
+          <b>★ 平手加在 γ1</b>（使用者實機確認 2026-08-30，官方文案沒講）。
+          程式上靠「用嚴格小於比較 ⇒ 留住先遇到的那一區」達成 ——
+          <b>一個比較符就能靜默漂走，改之前請先重測</b>。<br>
+          生效等級用「門檻不超過生效算力的最高一級」查表，<b>不寫成「投入級數 +1」</b>：
+          實測全庫 minSum 間距一律 3 ⇒ 今天兩者等價（守門測試釘住這個前提），
+          但官方改掉間距時查表法自動正確、「+1」會靜默算錯一級。<br>
+          ⚠ γ 全滿級時回一筆「沒有落點」的加成而<b>不是 null</b>：
+          那是「有加成但沒地方去」，圖上要講得出來。今天只有單一 γ 區的 10 位老角走得到。
+        </div>
+        <div class="task-file">src/utils/ndPowerBonus.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label cyan">Phase B</div>
+  <div class="section-title">畫面</div>
+  <div class="section-desc">兩個版型共用同一支 <code>NdPowerBar</code>（機師詳情頁的橫向列、模擬器的直式面板），所以規則只寫一次。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; α／β 鎖死在滿級</div>
+      <div class="task-group-meta">NdPowerBar.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">亮著、但點不動，並講出理由</div>
+        <div class="task-desc">
+          判準是「不是 γ 區」（<code>!isGammaZone()</code>）——
+          <b>不要改成列舉分區名</b>：全庫只有 α／β／γ／γ1／γ2 五種，
+          但那 10 位老角的分區名是<b>單一字元 γ</b>。<br>
+          格子畫成實心黃但 <code>disabled</code> ＋ 降一階透明度 ＋ 去掉光暈與 hover，
+          title 寫「固定滿級，本站不開放調整」，面板下方另補一行理由。<br>
+          ⚠ <b>仍然畫出來，不是整列隱藏</b>：看過遊戲的人找不到 α／β 會以為本站漏了資料。
+          畫成「亮著但點不動」才同時說出「它在」與「它不歸你管」。<br>
+          ⚠ 這條與資料一致而不是硬湊：實測 178 個 α／β 分區<b>零個</b>帶 <code>buffUpgrades</code>
+          ⇒ <code>defaultNdLevels()</code> 本來就給滿級，鎖死之後值一個都不會變。
+        </div>
+        <div class="task-file">src/components/common/NdPowerBar.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 加成格與「投入」徽章</div>
+      <div class="task-group-meta">NdPowerBar.tsx · LoadoutPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把生效與投入在同一個面板上分開講</div>
+        <div class="task-desc">
+          格子的狀態從三態變<b>四態</b>：<code>on</code>（玩家點亮）／
+          <b><code>bonus</code>（模組給的）</b>／<code>open</code>／<code>locked</code>。
+          加成格畫成<b>虛線描邊的淡黃</b>，仍然可以點（點下去就是把那一級真的投入，加成跟著往上跳一格）。<br>
+          ⚠ <code>bonus</code> 要壓在 <code>open</code> 之前判：那一格本來就是「還沒點的下一格」，
+          不特別畫的話它與旁邊的空格長得一樣，加成等於沒說出來。<br>
+          徽章從<b>「γ 合計」改成「γ 投入」</b> —— <b>23 是可投入上限，不是生效上限</b>；
+          印成 26／23 會被讀成「上限壞了」。分區右邊的讀數則改印<b>生效</b>算力（落點那一區標黃）：
+          決定哪些能力亮著的是它。兩個數字在有加成時<b>本來就不相等</b>，所以字要先改對。<br>
+          <b>落點說明一行</b>：「⊕ 強擊模組 LV.MAX：算力最低的分區 +3 —— 現在落在 γ2（生效算力 10）」。
+          ⚠ <b>一定要指名現在落在哪一區</b>：落點會隨玩家調整而跳，不標的話畫面上是
+          「我動這裡、那裡自己亮起來」。<br>
+          ⚠ 選取閘門 <code>canSet()</code> <b>只算投入值</b>：把加成算進去的話，
+          裝上模組反而少能點一格 —— 那是反的。<br>
+          「目前生效能力」那一段改吃<b>生效</b> Lv，否則會出現「條上亮了第 4 格、下面少一個能力」。
+        </div>
+        <div class="task-file">src/components/common/NdPowerBar.tsx · src/pages/simulator/LoadoutPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label cyan">Phase C</div>
+  <div class="section-title">分享出口與資料層</div>
+  <div class="section-desc">圖與純文字印的是生效值，而玩家在遊戲裡點的是投入值 —— 不講來源的話，收到的人會以為本站算錯一格。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 匯出圖印生效算力並附來源</div>
+      <div class="task-group-meta">LoadoutExportCard.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Lv 條上補虛線格，段尾補一行來源</div>
+        <div class="task-desc">
+          <code>ndLevels</code> 改收<b>生效</b>值、另收一個 <code>ndBonus</code>。
+          <code>ZoneBar</code> 的最上面那一格在落點區畫成<b>虛線描邊的淡黃</b> ——
+          與螢幕版<b>同一套視覺語彙</b>（同源，不是各畫各的）。<br>
+          段尾補一塊黃色左線的說明：「⊕ 強擊模組 LV.MAX：已解鎖分區中算力最低的一區 +3 ——
+          落在 γ1，生效算力 13（上方 Lv 條已含這一級）」。<br>
+          ⚠ <b>有加成就一定要印這一行</b>：圖上印的是生效值、而玩家在遊戲裡點的是投入值，
+          兩者差一級。不講來源的話，收到圖的人會拿它去對自己的畫面，然後以為本站算錯了一格。<br>
+          順手把「其餘分區維持預設，不另列」改成<b>「α／β 固定滿級，不另列」</b> ——
+          鎖死之後那句話從「資料上的巧合」變成「本站說得出理由的規則」。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 純文字摘要同步</div>
+      <div class="task-group-meta">loadoutSummaryText.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">落點區標 ⊕，段尾同樣補來源</div>
+        <div class="task-desc">
+          與匯出圖<b>收同一筆 <code>ndBonus</code></b>：兩份輸出講同一套配裝卻給不同數字，
+          讀者無從判斷哪一份是對的，而且兩邊都不會報錯（PLAN-052-L E-1 立下的原則）。<br>
+          輸出形如「· ⊕ γ1 Lv5（算力 13）：…」，段尾另補一行
+          「（⊕ 強擊模組 LV.MAX：算力最低的分區 +3 —— 落在 γ1，上面的 Lv 已含這一級）」。
+        </div>
+        <div class="task-file">src/utils/loadoutSummaryText.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 資料層：α／β 那一鍵掃掉，並釘死 23 只看投入值</div>
+      <div class="task-group-meta">simReducer.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">reconcileNdLevels 的第二條與第四條</div>
+        <div class="task-desc">
+          <code>reconcileNdLevels()</code> 新增一條：<b>非 γ 區的鍵一律不留</b>。<br>
+          ⚠ 這會<b>改寫舊分享碼的語意</b>：一串帶著 α 設定的舊碼貼進來之後，α 會回到滿級。
+          這是刻意的 —— 鎖死之後那一鍵玩家自己再也改不回來，留著它等於製造一個
+          「面板上看得到、但誰都動不了」的狀態。丟掉之後 <code>defaultNdLevels()</code> 給滿級，
+          而 α／β 零個帶 <code>buffUpgrades</code> ⇒ 預設本來就是滿級，值不會亂跳。<br>
+          ⚠ 同時把「γ 合計超過 23 就整份丟掉」那一條的註解<b>釘死</b>：它讀的必須是<b>投入</b>值。
+          加成不花 γ 預算，拿生效值去比 23 的話，一套完全合法的 26 會被這條閘門
+          <b>靜默洗回預設值</b> —— <b>加成因此一律不落盤</b>。<br>
+          分享碼格式不動、<code>FMT_VERSION</code> 不 bump：加成是推導值。
+        </div>
+        <div class="task-file">src/pages/simulator/simReducer.ts · src/pages/simulator/simReducer.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-M — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 歷史記錄</a>
+</footer>
+
+</body>
+</html>

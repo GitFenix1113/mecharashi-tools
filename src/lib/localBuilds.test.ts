@@ -51,6 +51,7 @@ const indexesOf = (u: typeof UNIVERSE): ShareIndexes => ({
   component: buildShareIndex('component', u.component),
   backpack: buildShareIndex('backpack', u.backpack),
   module: buildShareIndex('module', u.module),
+  pilotSkill: buildShareIndex('pilotSkill', []),
 })
 
 const INDEXES = indexesOf(UNIVERSE)
@@ -69,7 +70,40 @@ const DRAFT: LoadoutDraft = {
 
 const CODE = encodeLoadout(DRAFT, { indexes: INDEXES })
 
+/**
+ * **只差名稱**的另一串碼。
+ *
+ * ⚠ PLAN-052-L C-6 起這**不再是另一套配裝**：去重比的是去掉 §NAME／§NOTE 之後的本體。
+ *   要造「真的不一樣的一套」請用 `variant()`。
+ */
 const named = (name: string) => encodeLoadout({ ...DRAFT, name }, { indexes: INDEXES })
+
+/** **只差備註**的另一串碼（同上：同一套配裝）。 */
+const noted = (note: string) => encodeLoadout({ ...DRAFT, note }, { indexes: INDEXES })
+
+/**
+ * 第 `n` 套**真的不一樣**的配裝：換武器格與算力，本體因此不同。
+ *
+ * ⚠ 產生「不同的一套」不可以只改名稱（C-6 之後那是同一套）——
+ *   拿它去測配額，會測成「十套全部去重成一套」而看起來像配額壞了。
+ */
+const variant = (n: number) => encodeLoadout({
+  ...DRAFT,
+  name: `第${n}套`,
+  // ⚠ 用 `n` 本人而不是 `n % 7`：取模會讓 variant(1) 與 variant(99) 本體相同，
+  //   於是「滿了一律拒絕」那條測成了去重
+  ndLevels: { 'γ1': n },
+  sets: {
+    default: {
+      mounts: [{
+        weaponId: UNIVERSE.weapon[n % UNIVERSE.weapon.length],
+        bank: 'main',
+        slot: 'singleHand',
+        side: n % 2 === 0 ? 'left' : 'right',
+      }],
+    },
+  },
+}, { indexes: INDEXES })
 
 // ─── 讀取：壞資料一律降級，不炸 ──────────────────────────────────────────────
 
@@ -104,8 +138,8 @@ test('readShelf：超過配額的舊資料只讀前 10 筆（配額縮小過也�
 
 test('saveBuild：新的排在最前面', () => {
   const store = fakeStore()
-  const a = named('A')
-  const b = named('B')
+  const a = variant(1)
+  const b = variant(2)
   saveBuild(a, { now: 1000, store })
   const r = saveBuild(b, { now: 2000, store })
   assert.equal(r.ok, true)
@@ -115,7 +149,7 @@ test('saveBuild：新的排在最前面', () => {
 test('saveBuild：同一串代碼只佔一格，就地更新時間並移到最前（連按兩下不吃掉配額）', () => {
   const store = fakeStore()
   const first = saveBuild(CODE, { now: 1000, store })
-  saveBuild(named('別套'), { now: 1500, store })
+  saveBuild(variant(5), { now: 1500, store })   // ⚠ 真的別套，不可以只改名稱（C-6）
   const again = saveBuild(CODE, { now: 3000, store })
 
   assert.equal(again.ok && again.deduped, true)
@@ -129,9 +163,9 @@ test('saveBuild：同一串代碼只佔一格，就地更新時間並移到最�
 test('saveBuild：滿了一律拒絕，不淘汰最舊的那一筆（「我明明存過」是最不能出現的一句話）', () => {
   const store = fakeStore()
   for (let i = 0; i < SHELF_LIMIT; i++) {
-    assert.equal(saveBuild(named(`第${i}套`), { now: 1000 + i, store }).ok, true, `第 ${i} 套應該存得進去`)
+    assert.equal(saveBuild(variant(i), { now: 1000 + i, store }).ok, true, `第 ${i} 套應該存得進去`)
   }
-  const overflow = named('第十一套')
+  const overflow = variant(99)
   const r = saveBuild(overflow, { now: 9999, store })
   assert.deepEqual(r, { ok: false, reason: 'full' })
 
@@ -143,7 +177,7 @@ test('saveBuild：滿了一律拒絕，不淘汰最舊的那一筆（「我明�
 
 test('saveBuild：滿了但存的是架上已有的那一串 ⇒ 仍然成功（去重不佔新格）', () => {
   const store = fakeStore()
-  const codes = Array.from({ length: SHELF_LIMIT }, (_, i) => named(`第${i}套`))
+  const codes = Array.from({ length: SHELF_LIMIT }, (_, i) => variant(i))
   codes.forEach((c, i) => saveBuild(c, { now: 1000 + i, store }))
   const r = saveBuild(codes[0], { now: 9999, store })
   assert.equal(r.ok && r.deduped, true)
@@ -160,8 +194,8 @@ test('saveBuild：空代碼不入架（編碼失敗時呼叫端傳進來的就�
 
 test('saveBuild：同一毫秒內存兩套也要有不同的 id（連點）', () => {
   const store = fakeStore()
-  const a = saveBuild(named('A'), { now: 777, store })
-  const b = saveBuild(named('B'), { now: 777, store })
+  const a = saveBuild(variant(1), { now: 777, store })
+  const b = saveBuild(variant(2), { now: 777, store })
   assert.notEqual(a.ok && a.id, b.ok && b.id)
 })
 
@@ -169,9 +203,9 @@ test('saveBuild：同一毫秒內存兩套也要有不同的 id（連點）', ()
 
 test('deleteBuild：刪掉指定那一筆，其餘不動；刪不存在的 id 不是錯誤', () => {
   const store = fakeStore()
-  const a = named('A')
+  const a = variant(1)
   saveBuild(a, { now: 1, store })
-  const rb = saveBuild(named('B'), { now: 2, store })
+  const rb = saveBuild(variant(2), { now: 2, store })
   const id = rb.ok ? rb.id : ''
 
   assert.deepEqual(deleteBuild(id, store).map((e) => e.code), [a])
@@ -225,4 +259,50 @@ test('classifyBuild：不修復也不刪除 —— 同一串壞代碼分類幾�
   classifyBuild(CODE, thin)
   classifyBuild(CODE, thin)
   assert.equal(readShelf(store).length, 1)
+})
+
+// ─── 去重比的是「本體」（PLAN-052-L C-6）──────────────────────────────────
+
+test('只改了備註 ⇒ 同一套，就地更新而不是佔第二格（C-6 存在的全部理由）', () => {
+  const store = fakeStore()
+  const first = saveBuild(CODE, { now: 1000, store })
+  const again = saveBuild(noted('對空優先，手部留 300'), { now: 2000, store })
+
+  assert.equal(again.ok && again.deduped, true, '「只改備註」不可以吃掉第二格')
+  assert.equal(again.ok && again.id, first.ok && first.id, '同一筆的 id 不變')
+  const shelf = readShelf(store)
+  assert.equal(shelf.length, 1)
+  // ⚠ 就地更新時存的是**新的那一串**：使用者剛改的備註要留下來，
+  //   否則書架會安靜地把它改回舊的那一句
+  assert.equal(shelf[0].code, noted('對空優先，手部留 300'))
+  assert.equal(shelf[0].savedAt, 2000)
+})
+
+test('只改了方案名稱 ⇒ 也是同一套（名稱是標籤，不是配裝）', () => {
+  const store = fakeStore()
+  saveBuild(named('PvE'), { now: 1000, store })
+  const r = saveBuild(named('PvP'), { now: 2000, store })
+  assert.equal(r.ok && r.deduped, true)
+  assert.equal(readShelf(store).length, 1)
+  assert.equal(readShelf(store)[0].code, named('PvP'), '新的名稱要留下來')
+})
+
+test('⚠ 裝備真的不一樣時不可以去重（太寬會就地覆蓋掉使用者存過的另一套）', () => {
+  const store = fakeStore()
+  saveBuild(variant(1), { now: 1000, store })
+  const r = saveBuild(variant(2), { now: 2000, store })
+  assert.equal(r.ok && r.deduped, false)
+  assert.equal(readShelf(store).length, 2)
+})
+
+test('解不開的舊碼退回比對原字串，不會互相撞成同一筆', () => {
+  const store = fakeStore()
+  saveBuild('這串解不開', { now: 1000, store })
+  const r = saveBuild('這串也解不開', { now: 2000, store })
+  assert.equal(r.ok && r.deduped, false)
+  assert.equal(readShelf(store).length, 2)
+  // 同一串壞碼仍然去重（退回字串相等）
+  const again = saveBuild('這串解不開', { now: 3000, store })
+  assert.equal(again.ok && again.deduped, true)
+  assert.equal(readShelf(store).length, 2)
 })

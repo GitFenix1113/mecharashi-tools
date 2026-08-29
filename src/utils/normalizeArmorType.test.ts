@@ -5,9 +5,10 @@ import assert from 'node:assert/strict'
 import {
   toArmorType, fromAssemblableArmorType, licenseAllows, findMechResearch, findPilotResearch, findWeaponResearch,
 } from './normalizeArmorType.ts'
+import type { GlobalResearch } from '../types/index.ts'
 
 /** 線上 globalResearch/global 的實際形狀（2026-08-24）：三個欄位都是 Array，鍵用「中型」 */
-const GR = {
+const GR: GlobalResearch = {
   pilotResearchByClass: [
     { className: '格鬥家', flatBonus: { melee: 2244 }, percentBonus: { melee: 20 } },
     { className: '突擊手', flatBonus: {}, percentBonus: {} },

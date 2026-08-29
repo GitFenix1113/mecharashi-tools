@@ -3,10 +3,10 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { activityStatus } from './activityStatus.ts'
-import type { TimedActivity } from '../../data/patchVersions/types.ts'
+import type { VisibleActivity } from '../../data/patchVersions/types.ts'
 
 /** 2026/08/06（週四）起 3 週 → 最後一天是 8/26（週三），8/27 00:00 結束 */
-const ACT: TimedActivity = { name: '瑞歲百角戲', startDate: '2026/08/06', weeks: 3, type: 'limitedEvent' }
+const ACT: VisibleActivity = { name: '瑞歲百角戲', startDate: '2026/08/06', weeks: 3, type: 'limitedEvent' }
 
 test('endExclusive = 起始日 + weeks*7 天', () => {
   const st = activityStatus(ACT, new Date(2026, 7, 10))
@@ -54,7 +54,7 @@ test('isFinalWeek 只在最後一週為真', () => {
 })
 
 test('一週活動：第 1 週即末週', () => {
-  const one: TimedActivity = { ...ACT, weeks: 1 }
+  const one: VisibleActivity = { ...ACT, weeks: 1 }
   const st = activityStatus(one, new Date(2026, 7, 6))
   assert.equal(st.weekIndex, 1)
   assert.equal(st.isFinalWeek, true)

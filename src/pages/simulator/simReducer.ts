@@ -29,7 +29,9 @@ import {
   type LoadoutContext, type LoadoutWorld, type ResolutionAction,
 } from '../../utils/loadoutRules.ts'
 import { ND_RULES, isGammaZone, zonePower } from '../../utils/ndOverrides.ts'
-import { sanitizeLoadoutName } from '../../utils/loadoutName.ts'
+import { sanitizeLoadoutName, sanitizeLoadoutNote } from '../../utils/loadoutName.ts'
+import { keepCarriableSkills } from '../../utils/carriedSkills.ts'
+import { CARRIED_SKILL_SLOTS } from '../../types/loadout.ts'
 
 // ─── 動作 ───────────────────────────────────────────────────────────────────
 
@@ -46,12 +48,40 @@ export type LoadoutAction =
   | { type: 'setActiveSet'; key: string }
   | { type: 'equipWeapon'; ref: WeaponSlotRef; weaponId: string }
   | { type: 'equipBackpack'; backpackId: string }
+  /**
+   * 清空**這一套的裝備**：目前分頁的武器與背包（連同掛在武器上的元件）。
+   * 機師、機甲、模組、算力、方案名稱一律留著 —— 它們不是「裝備」。
+   */
   | { type: 'clearSet' }
+  /**
+   * 全部清空：**連機師與機甲一起丟掉**，回到剛進頁面的狀態。
+   *
+   * ⚠ 與 `clearSet` 是底部同一列相鄰的兩顆按鈕，長得一樣、差別只在「連人帶機」
+   *   還是「只有裝備」—— 所以兩者都走 `commitClear()`，一定跳 toast 且附 [復原]。
+   *   按錯的代價是整套配裝，而這是唯一救得回來的路。
+   */
+  | { type: 'clearAll' }
   | { type: 'autoUnloadToFit' }
   /** 設定整份神經驅動算力配置（分區名 → Lv）。面板一次送整份，不逐區增減 —— γ 上限是**跨區**的 */
   | { type: 'setNdLevels'; levels: Record<string, number> }
   /** 設定方案名稱。收原始輸入，清洗由 reducer 負責（見 sanitizeLoadoutName 的檔頭） */
   | { type: 'setName'; name: string }
+  /** 設定方案備註（PLAN-052-L C-2）。同 setName：收原始輸入，清洗由 reducer 負責 */
+  | { type: 'setNote'; note: string }
+  /**
+   * 把一個技能放進第 `index` 格（PLAN-052-L D-4）。
+   *
+   * ⚠ `index` 可以等於目前的長度（＝放進第一個空格），但**不可以跳過空格**：
+   *   `carried` 是緊湊陣列（見 `LoadoutSkills.carried`），reducer 會把超出長度的
+   *   index 收斂成 append。挖洞的話那個洞會在 `JSON.stringify` 之後變成 `null`，
+   *   而下游會拿 `null` 去查技能。
+   *
+   * ⚠ 同一個技能已經在別格時**是搬移不是複製**：遊戲裡帶兩個一樣的技能沒有意義，
+   *   而重複的 id 會讓「移除」變成一個位置不確定的動作。
+   */
+  | { type: 'equipSkill'; index: number; skillId: string }
+  /** 拿掉一個攜帶技能（PLAN-052-L D-4）。**用 id 不用 index**：拿掉之後陣列會往前收， */
+  | { type: 'unequipSkill'; skillId: string }
   | { type: 'undo' }
   | { type: 'dismissNotice' }
   /**
@@ -140,7 +170,13 @@ export interface CascadeNotice {
   notes: string[]
   /** 這些格要閃橙 600ms */
   flash: string[]
-  /** [復原] 可不可按。全清空／載入草稿這類動作不提供復原 */
+  /**
+   * [復原] 可不可按。
+   *
+   * ⚠ 清空類動作（`clearSet` / `clearAll`）**提供**復原（見 `commitClear`）：
+   *   兩顆按鈕相鄰、都不會二次確認，沒有復原的話按錯就只能憑記憶重配一次。
+   *   `loadDraft` 仍然不提供 —— 貼碼與書架都還在原地，再來一次即可。
+   */
   undoable: boolean
 }
 
@@ -384,11 +420,22 @@ export function reconcile(draft: LoadoutDraft, world: LoadoutWorld): { draft: Lo
   // ── 算力配置：掃成對得上目前機師的合法配置（PLAN-052-I D-2）──
   next = reconcileNdLevels(next, world)
 
+  // ── 攜帶技能：掃成「目前這位機師帶得動」的配置（PLAN-052-L D-3）──
+  next = reconcileSkills(next, world)
+
   // ── 方案名稱：外部來源（舊存檔／分享碼／localStorage 手改）一樣要過清洗（PLAN-052-I E-1）──
   //    setName 已經清過一次，這裡是給「不經 setName 進來的那些路徑」的第二道。
   const cleanName = sanitizeLoadoutName(next.name)
   if (cleanName !== next.name) {
     next = cleanName === undefined ? withoutName(next) : { ...next, name: cleanName }
+  }
+
+  // ── 方案備註：同上的第二道（PLAN-052-L C-2）──
+  //    ⚠ 這一道比名稱那一道**更不能省**：備註是別人的自由文字（分享碼帶進來的），
+  //      而它會被原樣印在公開的匯出圖上。
+  const cleanNote = sanitizeLoadoutNote(next.note)
+  if (cleanNote !== next.note) {
+    next = cleanNote === undefined ? withoutNote(next) : { ...next, note: cleanNote }
   }
 
   return { draft: next, removed }
@@ -640,8 +687,18 @@ function reconcileModules(
  * removed 的地方都要多記得一個分支（而漏掉的症狀是靜默的）。
  *
  *   ① 鍵不屬於這位機師的分區 → 丟掉那一鍵（換機師的殘留、資料改版後分區改名）
- *   ② Lv 超出該區的級數或為負 → clamp 進 `[0, levels.length]`
- *   ③ γ 區合計超過 `gammaPairCap` → **整份丟掉**，退回 `defaultNdLevels()`
+ *   ② **非 γ 區（α／β）→ 丟掉那一鍵**（PLAN-052-M：它們鎖死在滿級、不開放調整）
+ *   ③ Lv 超出該區的級數或為負 → clamp 進 `[0, levels.length]`
+ *   ④ γ 區合計超過 `gammaPairCap` → **整份丟掉**，退回 `defaultNdLevels()`
+ *
+ * ⚠ ② 會**改寫舊分享碼的語意**：一串帶著 `α:1` 的舊碼貼進來之後，α 會回到滿級。
+ *   這是刻意的 —— 鎖死之後那一鍵玩家自己再也改不回來，留著它等於製造一個
+ *   「面板上看得到、但誰都動不了」的狀態。丟掉之後 `defaultNdLevels()` 給滿級，
+ *   而實測 178 個 α／β 分區零個帶 `buffUpgrades` ⇒ 預設本來就是滿級，值不會亂跳。
+ *
+ * ⚠ ④ 讀的必須是**玩家投入**的 Lv，**不是**生效值（`effectiveNdLevels()`）。
+ *   模組加成不花 γ 預算，所以生效算力可以到 26 —— 拿生效值去比 23 的話，
+ *   一套完全合法的配裝會被這條閘門**靜默洗回預設值**。加成因此一律不落盤（PLAN-052-M）。
  *
  * 為什麼 ③ 是整份原子退場而不是逐區降級：降級得挑「降哪一區」，而任何挑法都是本站
  * 替玩家做的一個他沒下過的決定（降錯邊 = 他精心配的那一區被砍）。整份退回預設值則是
@@ -659,6 +716,8 @@ function reconcileNdLevels(draft: LoadoutDraft, world: LoadoutWorld): LoadoutDra
 
   const clean: Record<string, number> = {}
   for (const d of drives) {
+    // ② α／β 不開放調整 ⇒ 那一鍵一律不留（見上方 ⚠）
+    if (!isGammaZone(d.name)) continue
     const raw = cur[d.name]
     if (raw == null || !Number.isFinite(raw)) continue
     const lv = Math.max(0, Math.min(Math.trunc(raw), d.levels?.length ?? 0))
@@ -691,11 +750,108 @@ function sameNdLevels(a: Record<string, number> | undefined, b: Record<string, n
   return ka.length === Object.keys(b).length && ka.every((k) => a[k] === b[k])
 }
 
+/**
+ * 把攜帶技能掃成「目前這位機師帶得動」的配置（PLAN-052-L D-3）。
+ *
+ * ⚠ **`pilotSkills` 還沒載入時整段跳過**（本計畫最危險的一條，與元件／模組逐字相同）。
+ *   `reconcile()` 對武器的作法是「查不到就刪」，技能**絕對不可**照抄：載入是非同步的，
+ *   而草稿會在集合到齊之前就被 `loadDraft` 灌進來（分享碼、localStorage 書架、
+ *   雲端存檔都走那條）。照抄的症狀是**貼一次分享碼、三個技能就被靜默清空一次**，
+ *   而畫面上什麼都不會說 —— 連 toast 都不會跳，因為那在它眼裡是一次成功的級聯。
+ *
+ *   ⚠ 這一份比元件／模組更容易踩到：`pilotSkills` **不在** `LOADOUT_STAGE_KEYS` 裡
+ *     （見 `useFirestore.ts`），所以「還沒載入」是常態而不是開頁的一瞬間。
+ *
+ * ⚠ **`mod`（科研「改」技能）一律不動。** 它不在 `pilot.skills` 裡（那是另一條科研線
+ *   給的），拿候選池去驗它一定驗不過 ⇒ 每跑一次 reconcile 就清掉一次。
+ *   站上今天沒有這份資料、也沒有 UI，但分享碼**只進不出**：別的 client（或未來的我們）
+ *   寫進去的值必須原樣留著。
+ *
+ * ⚠ **不進 `removed`、不跳 toast**（與算力同一條、與元件相反）：技能面板就在中欄、
+ *   換機師時整片會就地換掉，玩家看得到。元件之所以要 toast，是因為它藏在
+ *   「點開武器列再鑽進面板」兩層之後。
+ */
+function reconcileSkills(draft: LoadoutDraft, world: LoadoutWorld): LoadoutDraft {
+  const cur = draft.skills
+  if (!cur) return draft
+  if (world.pilotSkills.size === 0) return draft        // ← 載入 gate，見上方 ⚠
+
+  const pilot = draft.pilotId ? world.pilots.get(draft.pilotId) ?? null : null
+  const carried = keepCarriableSkills(cur.carried ?? [], pilot, world.pilotSkills)
+    .slice(0, CARRIED_SKILL_SLOTS)
+
+  if (carried.length === 0 && !cur.mod) return withoutSkills(draft)
+  // identity 穩定：沒有實際變動就回原物件，避免每次 reconcile 都讓 draft 變成新參考
+  const same = carried.length === (cur.carried?.length ?? 0)
+    && carried.every((id, i) => cur.carried?.[i] === id)
+  return same ? draft : { ...draft, skills: { ...cur, carried } }
+}
+
+/** 移除 `skills` 欄位本身（理由同 `withoutNdLevels`：未設定＝欄位不存在）。 */
+function withoutSkills(draft: LoadoutDraft): LoadoutDraft {
+  if (!('skills' in draft)) return draft
+  const rest = { ...draft }
+  delete rest.skills
+  return rest
+}
+
+/**
+ * 把一個技能放進第 `index` 格。**純結構操作**，合法性由 `reconcile()` 事後統一掃。
+ *
+ * 三條規則（畫面上是**三個固定的格子**，所以是「格」的語意不是「清單」的語意）：
+ *   · 那一格已經有東西 → **取代**它。
+ *   · `index` 超出目前長度 → 放進第一個空格（append）。緊湊陣列不挖洞：挖出來的洞
+ *     會在 `JSON.stringify`（localStorage 草稿／雲端存檔）之後變成 `null`，
+ *     而下游會拿 `null` 去查技能。
+ *   · 這個技能已經在別格 → 與目標格**對調**，不是複製。
+ *
+ * ⚠ 不可以寫成「先拿掉再插入」：那在滿三格時會把最後一格擠掉
+ *   （`[甲,乙,丙]` 放丁進第 2 格會變成 `[甲,丁,乙]`，丙 無聲消失），
+ *   而玩家看到的是「我換了第 2 格，第 3 格自己不見了」。
+ */
+function withCarriedSkill(draft: LoadoutDraft, index: number, skillId: string): LoadoutDraft {
+  const cur = draft.skills?.carried ?? []
+  // 目標格：夾在 [0, 目前長度] 之間，且不超過三格
+  const at = Math.min(Math.max(index, 0), Math.min(cur.length, CARRIED_SKILL_SLOTS - 1))
+  const next = [...cur]
+  const from = next.indexOf(skillId)
+  if (at < next.length) {
+    // 對調（`from < 0` 時就是單純取代 —— 舊的那一格沒有人要搬回去）
+    if (from >= 0) next[from] = next[at]
+    next[at] = skillId
+  } else if (from >= 0) {
+    // 已經在格子裡，而目標是「空格」⇒ 搬到最後
+    next.splice(from, 1)
+    next.push(skillId)
+  } else {
+    next.push(skillId)
+  }
+  return { ...draft, skills: { ...draft.skills, carried: next.slice(0, CARRIED_SKILL_SLOTS) } }
+}
+
+/**
+ * 兩份草稿的攜帶技能是不是一樣（逐格比對，不比參考）。
+ *
+ * ⚠ 比參考恆為「有變動」：上面每個 case 的 spread 必然產生新物件。同 `sameNdLevels`。
+ */
+function sameCarried(a: LoadoutDraft, b: LoadoutDraft): boolean {
+  const x = a.skills?.carried ?? [], y = b.skills?.carried ?? []
+  return x.length === y.length && x.every((id, i) => y[i] === id)
+}
+
 /** 移除 `name` 欄位本身（理由同 `withoutNdLevels`：未設定＝欄位不存在）。 */
 function withoutName(draft: LoadoutDraft): LoadoutDraft {
   if (!('name' in draft)) return draft
   const rest = { ...draft }
   delete rest.name
+  return rest
+}
+
+/** 移除 `note` 欄位本身（同 `withoutName`）。 */
+function withoutNote(draft: LoadoutDraft): LoadoutDraft {
+  if (!('note' in draft)) return draft
+  const rest = { ...draft }
+  delete rest.note
   return rest
 }
 
@@ -1005,8 +1161,22 @@ export function simReduce(state: SimState, action: LoadoutAction, world: Loadout
       const key = state.draft.activeSetKey
       const cur = setOf(state.draft, key)
       if (cur.mounts.length === 0 && !cur.backpackId) return state
+      // 只動這一個分頁：海莉絲三個形態各有一套裝備，站在「突擊」按下去卻連
+      // 「先鋒」一起清掉，是玩家在畫面上看不到的損失（那一頁要切過去才看得見）。
       const base = withSet(state.draft, key, emptySet())
-      return commit(state, state.draft, base, [], '已清空這套配裝', [], [], true)
+      return commitClear(state, base, '已清空裝備', '武器與背包（連同掛在上面的元件）都卸下了；機師、機甲、模組與算力留著')
+    }
+
+    case 'clearAll': {
+      // 已經是空的就什麼都不做 —— 跳一則「已全部清空」卻什麼都沒變，比沒有回饋更糟
+      if (isEmptyDraft(state.draft)) return state
+      // 不跑 reconcile：連機師與機甲都沒了，沒有任何東西需要驗證
+      return commitClear(
+        state,
+        { activeSetKey: DEFAULT_EQUIP_SET_KEY, sets: {} },
+        '已全部清空',
+        '機師、機甲、裝備、模組、算力與方案名稱都清掉了',
+      )
     }
 
     case 'setNdLevels': {
@@ -1023,6 +1193,32 @@ export function simReduce(state: SimState, action: LoadoutAction, world: Loadout
       if (clean === state.draft.name) return state
       // 命名不動裝備、不跳 toast、不進 undo：字就在輸入框裡，改回去就是復原
       const draft = clean === undefined ? withoutName(state.draft) : { ...state.draft, name: clean }
+      return { ...state, draft, notice: null }
+    }
+
+    case 'setNote': {
+      const clean = sanitizeLoadoutNote(action.note)
+      if (clean === state.draft.note) return state
+      // 理由同 `setName`：不動裝備、不跳 toast、不進 undo
+      const draft = clean === undefined ? withoutNote(state.draft) : { ...state.draft, note: clean }
+      return { ...state, draft, notice: null }
+    }
+
+    case 'equipSkill': {
+      // 一樣過 reconcile（候選池成員檢查 ＋ 裁到三格）—— 面板自己也擋，
+      // 但分享碼與草稿還原不經過面板
+      const { draft } = reconcile(withCarriedSkill(state.draft, action.index, action.skillId), world)
+      if (sameCarried(state.draft, draft)) return state
+      // 技能不動裝備，不需要 toast 也不需要 undo：三個格子就在眼前，點回去就是復原
+      return { ...state, draft, notice: null }
+    }
+
+    case 'unequipSkill': {
+      const cur = state.draft.skills?.carried ?? []
+      if (!cur.includes(action.skillId)) return state
+      const carried = cur.filter((id) => id !== action.skillId)
+      const base: LoadoutDraft = { ...state.draft, skills: { ...state.draft.skills, carried } }
+      const { draft } = reconcile(base, world)
       return { ...state, draft, notice: null }
     }
 
@@ -1063,6 +1259,40 @@ function commit(
       : null,
     seq,
   }
+}
+
+/**
+ * 清空類動作的共用出口（PLAN-052-L）。
+ *
+ * 為什麼不走 `commit()`：它只在「有東西被級聯移除」時才給 toast 與 [復原]
+ * （`worthShowing` / `undoable && removed.length > 0`），而清空是**玩家自己**
+ * 按下去的整批刪除，一件 `RemovedItem` 都不會產生 —— 於是原本的「清空」是
+ * 靜默且不可復原的。兩顆清空鍵相鄰之後，那個組合會直接吃掉整套配裝。
+ *
+ * 這裡刻意**不做二次確認**：本頁的安全網一向是事後的 [復原]（見 CascadeToast 檔頭），
+ * 多一個「確定嗎？」只會讓常用的那顆（清空裝備）每次都多按一下。
+ */
+function commitClear(state: SimState, draft: LoadoutDraft, title: string, note: string): SimState {
+  const seq = state.seq + 1
+  return {
+    draft,
+    undo: state.draft,
+    notice: { seq, title, removed: [], notes: [note], flash: [], undoable: true },
+    seq,
+  }
+}
+
+/**
+ * 這份草稿是不是「什麼都還沒選」。給 `clearAll` 與按鈕的 disabled 共用 ——
+ * 兩邊各判各的，遲早會出現「按鈕亮著、按下去卻什麼都沒發生」。
+ */
+export function isEmptyDraft(d: LoadoutDraft): boolean {
+  return !d.pilotId && !d.mechId && !d.name && !d.note
+    && Object.keys(d.ndLevels ?? {}).length === 0
+    && !d.skills?.carried?.length
+    && Object.keys(d.parts ?? {}).length === 0
+    && Object.keys(d.modules ?? {}).length === 0
+    && Object.values(d.sets).every((s) => s.mounts.length === 0 && !s.backpackId)
 }
 
 const flashOf = (removed: RemovedItem[]) => removed.map((r) => r.where).filter((x): x is string => !!x)

@@ -29,8 +29,16 @@
 //
 // 純函式、無 React / Firestore 依賴，可單測（npm test）。
 
-/** 可進分享碼的六種實體。與 `CollectionKey` 刻意分開：能被分享的只有這六個。 */
-export type ShareIdKind = 'pilot' | 'mech' | 'weapon' | 'component' | 'backpack' | 'module'
+/**
+ * 可進分享碼的七種實體。與 `CollectionKey` 刻意分開：能被分享的只有這七個。
+ *
+ * ⚠ `pilotSkill`（PLAN-052-L D-2）是**第一個號碼全部來自別名區**的 kind：
+ *   它的 doc id 是 `skill_槍林彈雨` 這種純名稱，一個數字都推不出來（見 `ID_PATTERNS`）。
+ *   因此它的別名由 `scripts/check-share-ids.mjs` **自動續號**而不是人工指派 ——
+ *   853 筆手寫是不可能維護的，而每次改版都會多幾筆。續號仍然是 append-only：
+ *   號碼一旦發出就不再更動，這一層的核心承諾沒有變。
+ */
+export type ShareIdKind = 'pilot' | 'mech' | 'weapon' | 'component' | 'backpack' | 'module' | 'pilotSkill'
 
 /**
  * shareId 的上限。codec 的 varint 一律 LEB128 且**超過 3 bytes 視為 bug**（本計畫 B-1），
@@ -80,12 +88,16 @@ export type ShareIdAliases = Readonly<Record<string, number>>
  *      `scripts/migrate-module-casing-twin.mjs` 合併刪除 —— 但守門仍維持大小寫敏感，
  *      因為擋的是「下次又冒出一筆」，不是那一筆本身。
  */
-const ID_PATTERNS: Record<Exclude<ShareIdKind, 'backpack'>, RegExp> = {
+const ID_PATTERNS: Partial<Record<ShareIdKind, RegExp>> = {
   pilot:     /^pilot_(\d+)(?:_|$)/,
   mech:      /^mech_(\d+)(?:_|$)/,
   weapon:    /^weapon_(\d+)(?:_|$)/,
   component: /^comp_(\d+)(?:_|$)/,
   module:    /^mod_(\d+)$/,
+  // ⚠ `pilotSkill` **刻意沒有 pattern**：全庫 853 筆 doc id 是 `skill_槍林彈雨`／
+  //   `SKILL_彈道收束` 這種純名稱，零個數字可推。它的號碼 100% 來自別名區，
+  //   而 `toShareId()` 回 null 正是 `buildShareIndex()` 去查別名的觸發條件。
+  //   `backpack` 也不在這裡，但理由不同（它走官方 8 位數字減基底，見 `toShareId()`）。
 }
 
 /**
@@ -105,7 +117,8 @@ export function toShareId(kind: ShareIdKind, docId: string | null | undefined): 
     return n > 0 && n <= SHARE_ID_MAX ? n : null
   }
 
-  const m = ID_PATTERNS[kind].exec(docId)
+  // 沒有 pattern 的 kind（`pilotSkill`）一律推不出號碼 ⇒ 交給別名區
+  const m = ID_PATTERNS[kind]?.exec(docId)
   if (!m) return null
   const n = Number(m[1])                       // 前導零直接被 Number 吃掉：pilot_001 → 1
   if (!Number.isInteger(n) || n <= 0) return null   // 0 保留給「無此欄位」，不發給任何實體

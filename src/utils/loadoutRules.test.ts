@@ -1000,7 +1000,7 @@ test('元件④：同族互斥也跨 S／A／B 三階（同名不同品質是同
 test('元件④：解法按鈕照實寫「卸下」，不承諾「並裝上」（052-J 的懸案不再複製）', () => {
   const ctx = ctxOf(withComp(HAND_L, 藝術突襲.id, [觸憑逸.id]))
   const r = canEquipComponent(ctx, 觸憑逸A, HAND_L)
-  assert.ok(r!.tier === 'situational' && !r.resolution.label.includes('裝上'))
+  assert.ok(r!.tier === 'situational' && !r!.resolution.label.includes('裝上'))
 })
 
 test('元件④：不同族可以並存', () => {

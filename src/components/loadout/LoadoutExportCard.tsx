@@ -1,20 +1,19 @@
 import { useEffect, useMemo, useRef, type CSSProperties } from 'react'
 import { toPng } from 'html-to-image'
-import type { NeuralDrive, NeuralDriveAbility } from '../../types'
+import type { NeuralDrive, NeuralDriveAbility, Pilot, PilotSkillDoc } from '../../types'
 import { hasMechArt, imageCandidates, pilotFullArtPath, mechKeyArtPath } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
-import { loadoutSheetRows, type SheetRow } from '../../utils/loadoutRows'
-import { ND_RULES, isGammaZone, zonePower } from '../../utils/ndOverrides'
+import { moduleRows, slotComponentNames, wastedModuleStacks, weaponRows } from '../../utils/loadoutRows'
+import { rigLayout, rigSlots } from '../../utils/rigLayout'
+import { defaultNdLevels, printedNdZones, zonePower } from '../../utils/ndOverrides'
+import type { NdPowerBonus } from '../../utils/ndPowerBonus'
 import { resolveNeuralDriveLevel } from '../../utils/neuralDriveAbilities'
-import { activeStacks, type LoadoutBudget, type LoadoutContext } from '../../utils/loadoutRules'
-import { MECH_PART_ORDER } from '../../utils/chassisStats'
-import { partLabel } from '../../utils/moduleSlots'
-import {
-  interfaceState, moduleStatsAt, sumModuleStats, moduleFamilyKey,
-  type ModuleStats,
-} from '../../utils/moduleRules'
-import { STAT_LABELS } from '../../utils/moduleStats'
+import type { LoadoutBudget, LoadoutContext } from '../../utils/loadoutRules'
+import { moduleFamilyKey } from '../../utils/moduleRules'
 import { SEG_LABEL, type SegKey } from './loadoutTheme'
+import { ExportRig, ExportRigLegend } from './export/ExportRig'
+import { C, EXPORT_PIXEL_RATIO, MONO, ORB, SEG_HEX } from './export/exportTheme'
+import { loadoutQr } from '../../utils/loadoutQr'
 import { usePatchVersions } from '../../hooks/usePatchVersions'
 import { SITE_DOMAIN, SITE_NAME, SITE_TITLE } from '../../lib/siteMeta'
 import { nextFrames } from '../../utils/nextFrames'
@@ -35,36 +34,22 @@ import { nextFrames } from '../../utils/nextFrames'
 //   反而讓「圖上為什麼長這樣」得跨三個檔案才查得到。
 //
 // ⚠ **只放配裝與算力，不放技能表**（計畫書 E-2）。技能是機師詳情頁的事；把它塞進來
-//   會讓這張圖從「我的配裝」變成「機師懶人包」，而後者本站已經有一頁了。
+// 會讓這張圖從「我的配裝」變成「機師懶人包」，而後者本站已經有一頁了。
+//   （PLAN-052-L Phase D 會加上**攜帶技能**三格 —— 那是「這一套帶了哪三個」，
+//    不是技能表，且不印敘述。上面那一條仍然成立。）
 //
-// ⚠ 空槽與無槽**必須出現在表上**（`loadoutSheetRows()`）：看圖的人不能點開來確認
+// ⚠ 空槽與無槽**必須出現在十字上**（`rigLayout()`）：看圖的人不能點開來確認
 //   「是沒裝，還是這台根本沒有這一格」。
+//
+// ⚠ **裝備區已從條列表改成位置化的十字**（PLAN-052-L B-2／B-5）。團隊逐字：
+//   「遊戲中是有相對位置的，條列有點不好對」。幾何（哪一列、哪一欄、哪個部位）
+//   一律問 `src/utils/rigLayout.ts`，畫法在 `./export/ExportRig.tsx`；
+//   本檔只負責把它們排進整張圖的順序裡。
 
-/** 分段條與圖例的顏色。寫死十六進位 —— 見檔頭「不吃 loadoutTheme」的理由。 */
-const SEG_HEX: Record<SegKey, string> = {
-  chassis: 'rgba(107,114,128,0.55)',
-  hands: '#06b6d4',
-  shoulder: '#a855f7',
-  back: '#3b82f6',
-}
+// 顏色、字體、卡片寬度已搬出到 `./export/exportTheme`（PLAN-052-L B-2）——
+// 本檔不再是匯出圖的唯一元件（十字在 `./export/ExportRig`），
+// 而兩邊各抄一份調色盤就是漂移的起點。值一個都沒動。
 
-const C = {
-  bg: '#0a0c10',
-  panel: '#14161d',
-  line: '#262c3a',
-  lineStrong: '#3f4859',
-  text: '#e8eaed',
-  sub: '#9ca3af',
-  dim: '#6b7280',
-  orange: '#ff6b2b',
-  green: '#22c55e',
-  red: '#ef4444',
-  yellow: '#eab308',
-  pink: '#ec4899',
-} as const
-
-const ORB = "'Orbitron', sans-serif"
-const MONO = "'JetBrains Mono', ui-monospace, monospace"
 
 interface HeroLayout {
   /** hero 區塊高度 */
@@ -155,13 +140,44 @@ export interface LoadoutExportCardProps {
    */
   setCount?: number
   budget: LoadoutBudget
-  /** 已疊過 defaultNdLevels 的完整算力配置 */
+  /**
+   * 已疊過 `defaultNdLevels` 的完整算力配置。
+   *
+   * ⚠ 呼叫端要傳**生效值**（`effectiveNdLevels()`，含模組加成）而不是投入值：
+   *   圖上要印的是「哪些能力亮著」。加成的來源另外由 `ndBonus` 交代 —— 只印生效值
+   *   不講來源的話，讀者會拿它去對遊戲裡自己點的那幾格，然後以為本站算錯。
+   */
   ndLevels: Record<string, number>
+  /**
+   * 模組給的算力加成（PLAN-052-M）。**沒有就傳 undefined，那一行整個不印。**
+   * 有值時在算力段末尾補一句來源（強擊模組 LV.MAX ／ 觀星者單元）。
+   */
+  ndBonus?: NdPowerBonus | null
   ndAbilityMap: Map<string, NeuralDriveAbility>
   /** ★ 分區（此區算力會改寫敘述） */
   ndZones: Set<string>
   /** 方案名稱。未命名時印機師名當標題 —— 標題留白會讓整張圖看起來像沒做完 */
   name?: string
+  /**
+   * 方案備註（PLAN-052-L C-5）。**沒填時整塊不印**，不留空框。
+   *
+   * ⚠ 與 `name` 一樣由呼叫端傳入而不是從 `ctx` 取：`LoadoutContext` 是「這一套裝了什麼」
+   *   的解析結果，名稱與備註都不在裡面（它們不隨形態分頁變動）。
+   * ⚠ 這是**別人寫的自由文字**，圖上必須標「由分享者填寫」——見 `NoteBand`。
+   */
+  note?: string
+  /**
+   * 攜帶技能（PLAN-052-L D-5）。**已解析好的技能文件**，由呼叫端查表 ——
+   * 同 `name` / `note` / `ndAbilityMap`：`LoadoutContext` 是「這一套裝了什麼」的解析
+   * 結果，而技能不隨形態分頁變動，不在裡面。
+   *
+   * ⚠ 呼叫端要在 `pilotSkills` **載入完成之後**才開拍（見 `LoadoutPage` 的匯出閘門）：
+   *   `waitForRenderReady()` 只等圖與字體、不等集合，拍到一張「技能區空白」的圖
+   *   是看不出來的 —— 沒帶技能與還沒載入在這張圖上長得一模一樣。
+   *
+   * ⚠ 只放三格自由替換的那幾個。「改」技能不印（見 `SkillBand`）。
+   */
+  skills?: readonly PilotSkillDoc[]
   /** 產生日期 `YYYY-MM-DD`。由呼叫端傳入而不是這裡取 `new Date()`，元件才保持純渲染 */
   generatedAt: string
   /** 遊戲版本（如 `3.3`）。取不到時傳 undefined，該欄整個不印 */
@@ -174,21 +190,34 @@ export interface LoadoutExportCardProps {
    *   shareId 索引，把它們拉進來等於讓一張圖的版面依賴整份遊戲資料。
    */
   shareCode?: string
+  /**
+   * 完整分享**連結**（`buildShareUrl()` 的產物）。圖底那顆 QR 編的就是它（E-2）。
+   *
+   * ⚠ 與 `shareCode` **兩者都要**、不是二選一（使用者裁決 2026-08-29）：
+   *   碼給「看得到這張圖的檔案」的人手抄，QR 給「別人螢幕截圖你的圖」的人掃。
+   *   兩條還原路徑不同，少哪一條都會有一群人回不去。
+   *
+   * ⚠ QR 編的是**連結**不是裸碼：掃出來要能直接開，而裸碼掃出來只是一串亂碼。
+   *   同呼叫端在 `origin` 上組好傳進來 —— 這個元件讀不到 `window`（它要保持純渲染）。
+   */
+  shareUrl?: string
 }
 
 export function LoadoutExportCard({
-  ctx, setCount, budget, ndLevels, ndAbilityMap, ndZones, name, generatedAt, gameVersion, shareCode,
+  ctx, setCount, budget, ndLevels, ndBonus, ndAbilityMap, ndZones, name, note, skills, generatedAt, gameVersion,
+  shareCode, shareUrl,
 }: LoadoutExportCardProps) {
   const { pilot, mech } = ctx
-  const rows = loadoutSheetRows(ctx)
   const w = budget.weight
-  const drives = pilot?.neuralDrive ?? []
-  const gammaSum = drives
-    .filter((d) => isGammaZone(d.name))
-    .reduce((n, d) => n + zonePower(d, ndLevels[d.name] ?? 0), 0)
 
-  const usedSlots = rows.filter((r) => r.name !== null).length
-  const realSlots = rows.filter((r) => r.state !== 'absent').length
+  // ── 位置化槽位（PLAN-052-L B-2）────────────────────────────────────────────
+  //
+  // ⚠ 版面與計數**共用同一份 `blocks`**：各算一次的話會出現「圖上畫了 6 格、
+  //   抬頭寫 5 個槽位」這種錯，而它只有逐張圖數格子才看得出來。
+  const rigBlocks = rigLayout(ctx)
+  const slots = rigSlots(rigBlocks)
+  const usedSlots = slots.filter((s) => s.name !== null).length
+  const realSlots = slots.filter((s) => s.state !== 'absent').length
 
   // ── 主視覺的兩張圖 ────────────────────────────────────────────────────────
   //
@@ -217,9 +246,20 @@ export function LoadoutExportCard({
   const named = !!name
   const title = name ?? pilot?.name ?? '未命名配裝'
 
-  // 分段條：以總重為分母。總重 0（尚未配裝）時整條留空，不做 0/0
-  const total = w.total || 0
-  const pct = (n: number) => (total > 0 ? `${(n / total) * 100}%` : '0%')
+  /**
+   * 分段條的分母（PLAN-052-L A-6）。
+   *
+   * ⚠ **改寫前分母是 `w.total`**，於是四個分段加起來恆為 100% —— 那條**永遠是滿的**，
+   *   與超不超重完全無關，也就是它一個位元的資訊都沒有傳達。
+   *
+   * 現在分母是「可用出力與總重的較大者」：沒超重時條只填到 `總重 / 出力`（＝還有多少餘裕
+   * 一眼看得出來），超重時填滿，而超出的那一段由下面那塊紅色覆蓋標出來。
+   *
+   * ⚠ **不要照抄螢幕版 `OutputBar` 的「條會自己撐出一截紅色」**：它的分段加總就是
+   *   `weight.total`，超重時剛好填滿 100%，紅的只有邊框 —— 那一截紅色不存在。要有就得自己畫。
+   */
+  const scale = Math.max(budget.output.total, w.total, 1)
+  const pct = (n: number) => `${(n / scale) * 100}%`
 
   return (
     <div style={{
@@ -331,123 +371,138 @@ export function LoadoutExportCard({
         }} />
       </div>
 
-      {/* ── 四格數值總覽 ── */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 1,
-        background: C.line, flexShrink: 0,
-      }}>
-        <Stat label="TOTAL WEIGHT" value={w.total.toLocaleString()} />
-        <Stat label="OUTPUT" value={budget.output.total.toLocaleString()} tone={C.orange} />
-        <Stat
-          label={budget.over ? 'OVERWEIGHT' : 'REMAINING'}
-          value={budget.dataIncomplete ? '—' : Math.abs(budget.remaining).toLocaleString()}
-          tone={budget.dataIncomplete ? C.dim : budget.over ? C.red : C.green}
-        />
-        <Stat
-          label="γ 算力合計"
-          value={gammaSum.toLocaleString()}
-          suffix={`/${ND_RULES.gammaPairCap}`}
-          tone={C.pink}
-        />
-      </div>
+      {/* ── 出力帶（PLAN-052-L A-5）──────────────────────────────────────────
+          改寫前是**四格 30px 大字的 `Stat`（85px）＋ 16px 條 ＋ 40px 圖例**，合計約 141px。
+          團隊逐字：「出力只要配得進去就不是重要資訊，剩餘出力也不能怎樣，可以縮小版面。
+          總算力也不用特別標」。⇒ 收成 18px 條 ＋ 一行資訊列，約 80px。
 
-      {/* ── 分段條 ＋ 圖例 ── */}
-      <div style={{ display: 'flex', height: 16, flexShrink: 0, background: C.panel }}>
+          ⚠ **`γ 算力合計` 那一格連同它的 `/23` 一起刪掉，這順手修好一個線上錯誤**：
+            `ND_RULES.gammaPairCap = 23` 是「上下 16＋7」的**雙區**共用預算，而全庫有
+            **10 位 1.0 老角只有單一個 γ 區**（分區名就是單一字元 `γ`，天花板 16）——
+            他們的圖上一直印著 `16 / 23`，讀起來像「還差 7 沒點滿」，而那 7 點永遠不存在。
+            另一處同樣的分母在下方 `SectionHead` 的 note，一起拿掉。
+
+          ⚠ **不補「火力」**（使用者裁決 2026-08-29）：`chassisFirepower()` 是現成的，
+            但它**不含元件、模組、天賦**，而讀者會拿它去比兩套配裝的強弱 —— 那個比較是錯的。
+            這張圖明確不談強度；要談的前提是先有一個把元件與模組算進去的口徑。 */}
+      <div style={{ position: 'relative', display: 'flex', height: 18, flexShrink: 0, background: C.panel }}>
         <div style={{ width: pct(w.chassis), background: SEG_HEX.chassis }} />
         <div style={{ width: pct(w.hands), background: SEG_HEX.hands }} />
         <div style={{ width: pct(w.shoulder), background: SEG_HEX.shoulder }} />
         <div style={{ width: pct(w.back), background: SEG_HEX.back }} />
+        {/* 超出出力預算的那一段。條本身照實畫到 `w.total`，紅色是**蓋在上面**的，
+            於是「超了多少」與「哪一段超的」兩件事同時看得到。
+
+            ⚠ **用紅色斜紋而不是半透明紅**（2026-08-29 瀏覽器實測後改）：
+              45% 的紅蓋在背部那段的藍（`#3b82f6`）上會混成紫色 —— 而紫色正是圖例裡
+              **肩部**的顏色。實測那張圖上肩部是 0，於是條的最右端看起來像「肩部佔了一截」。
+              斜紋是**質地**不是顏色，疊在四種底色上都還讀得出「這一段是警告」。 */}
+        {budget.over && !budget.dataIncomplete && (
+          <div style={{
+            position: 'absolute', top: 0, bottom: 0, right: 0,
+            left: pct(budget.output.total),
+            background: 'repeating-linear-gradient(135deg, rgba(239,68,68,0.92) 0 5px, rgba(239,68,68,0.55) 5px 10px)',
+            borderLeft: `2px solid ${C.red}`,
+          }} />
+        )}
       </div>
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 20, padding: '9px 20px',
+        display: 'flex', alignItems: 'center', gap: 18, padding: '10px 20px 4px',
         fontSize: 12, color: C.sub, background: C.panel, flexShrink: 0,
       }}>
         <Legend seg="chassis" n={w.chassis} />
         <Legend seg="hands" n={w.hands} />
         <Legend seg="shoulder" n={w.shoulder} />
         <Legend seg="back" n={w.back} />
-        {/* ⚠ 手部「取較重者」必須寫在圖上：那是最容易被誤判成本站少算的一條規則 */}
-        <span style={{ marginLeft: 'auto', color: C.dim }}>
-          手部取主手／備用<strong style={{ color: C.sub }}>較重者</strong>
-          {ctx.capacity.backupHand > 0
-            ? `，${w.heavierBank === 'main' ? '備用組' : '主手組'} ${Math.min(w.mainHand, w.backupHand).toLocaleString()} 未計入`
-            : ''}
+        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'baseline', gap: 10 }}>
+          {/* 總重是主角、出力降級成灰色分母、餘量／超重是唯一的彩色數字 */}
+          <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 800, color: C.text }}>
+            {w.total.toLocaleString()}
+          </span>
+          <span style={{ fontFamily: MONO, fontSize: 13, color: C.dim }}>
+            ／ 出力 {budget.output.total.toLocaleString()}
+          </span>
+          {budget.dataIncomplete ? (
+            // ⚠ 不印破折號：那會被讀成「本站算不出來」。講清楚是官方還沒公布
+            <span style={{ fontSize: 12, color: C.dim }}>官方數值未公布，餘量無法計算</span>
+          ) : (
+            <span style={{
+              fontFamily: MONO, fontSize: 15, fontWeight: 700,
+              color: budget.over ? C.red : C.green,
+            }}>
+              {budget.over
+                ? `超重 ${Math.abs(budget.remaining).toLocaleString()}`
+                : `餘 ${budget.remaining.toLocaleString()}`}
+            </span>
+          )}
         </span>
       </div>
+      {/* ⚠ 手部「取較重者」必須寫在圖上：那是最容易被誤判成本站少算的一條規則。
+          自成一列而不是擠在圖例右邊 —— 右邊現在是總重那組數字。
 
-      {/* ── 主體：槽位表 ｜ 算力分區 ── */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 372px', gap: 1,
-        background: C.line, alignItems: 'stretch',
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column', background: C.bg, minWidth: 0 }}>
-          <SectionHead title="裝備配置" note={`${realSlots} 個槽位 · 已裝 ${usedSlots}`} tone={C.orange} />
-          <SheetHeader />
-          {rows.map((r) => <SheetLine key={r.key} row={r} />)}
-          <div style={{
-            marginTop: 'auto', padding: '12px 16px', borderTop: `1px solid ${C.line}`,
-            background: 'rgba(18,21,28,0.5)', fontSize: 11, color: C.dim, lineHeight: 1.7,
-          }}>
-            數值以武器滿級（LV.70）與滿品質階為前提。空槽標「未裝備」、此機甲沒有的格標「—」。
-          </div>
+          ⚠ **沒有備用槽就整條不印**（使用者裁決 2026-08-30）：全庫 181 個背包只有
+            強襲者一個解得開備用槽，於是這句話在絕大多數圖上都是在解釋一個
+            **這張配裝裡不存在**的東西 —— 看圖的人得先讀懂一個與自己無關的機制，
+            才能確認沒漏看什麼。有備用組時它才是真的在防誤判（那時兩排武器都在圖上，
+            而總重只算了其中一排）。同一條裁決也拿掉了十字底下那一列「備用槽」說明格。 */}
+      {ctx.capacity.backupHand > 0 && (
+        <div style={{
+          padding: '0 20px 9px', fontSize: 11, color: C.dim, background: C.panel, flexShrink: 0,
+        }}>
+          手部取主手／備用<strong style={{ color: C.sub }}>較重者</strong>
+          {`，${w.heavierBank === 'main' ? '備用組' : '主手組'} ${Math.min(w.mainHand, w.backupHand).toLocaleString()} 未計入`}
         </div>
+      )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', background: C.bg, minWidth: 0 }}>
-          <SectionHead title="神經驅動算力" note={`${gammaSum} / ${ND_RULES.gammaPairCap}`} tone={C.pink} />
-          {drives.length === 0 ? (
-            <p style={{ padding: '14px 16px', fontSize: 12, color: C.dim }}>這位機師沒有神經驅動資料。</p>
-          ) : (
-            <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {drives.map((d, i) => (
-                <div key={d.name} style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                  {i > 0 && <div style={{ height: 1, background: C.line, marginBottom: 7 }} />}
-                  <ZoneBar drive={d} lv={ndLevels[d.name] ?? 0} starred={ndZones.has(d.name)} />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingLeft: 26 }}>
-                    {(d.levels ?? []).filter((lvl) => lvl.level <= (ndLevels[d.name] ?? 0)).map((lvl) => {
-                      const abilityName = resolveNeuralDriveLevel(lvl, ndAbilityMap).name
-                      if (!abilityName) return null
-                      return (
-                        <div key={lvl.level} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                          {/* ⚠ 寬度要放得下兩位數 minSum（`Lv6 · 16`）並強制不換行：
-                              52px 在 minSum ≥ 10 時會把「· 16」擠到第二行（實測） */}
-                          <span style={{
-                            fontFamily: MONO, fontSize: 11, color: C.dim,
-                            width: 64, flexShrink: 0, whiteSpace: 'nowrap',
-                          }}>
-                            Lv{lvl.level} · {lvl.minSum}
-                          </span>
-                          <span style={{ fontSize: 13, color: C.text, minWidth: 0 }}>{abilityName}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {ndZones.size > 0 && (
-            <div style={{
-              margin: '0 16px 14px', padding: '10px 12px',
-              background: 'rgba(236,72,153,0.07)', borderLeft: `2px solid ${C.pink}`,
-              fontSize: 12, color: C.sub, lineHeight: 1.7,
-            }}>
-              標<span style={{ color: C.pink, fontWeight: 700 }}> ★ </span>的分區（
-              {[...ndZones].join('、')}）會就地改寫天賦與技能敘述的階名。
-            </div>
-          )}
-        </div>
+      {/* ── 裝備配置：位置化的十字（PLAN-052-L B-2／B-5）────────────────────
+          改寫前這裡是「部位／武器／類型／重量」的四欄條列表，與右邊 372px 的算力欄
+          並排。現在條列表退場（`loadoutSheetRows()` 一併退場，B-4），十字拿到**整寬
+          1000px** —— 而整寬的前提就是算力那一欄先縮成兩條 γ 移出去（B-3）。
+
+          ⚠ 「類型」欄（單手／雙手／肩膀／背後）**不再另闢一欄**：位置本身就是答案，
+            而唯一位置講不清楚的雙手武器由格內的「雙手」標記負責。 */}
+      <div style={{ borderTop: `1px solid ${C.line}` }}>
+        <SectionHead title="裝備配置" note={`已裝 ${usedSlots} / ${realSlots} 格`} tone={C.orange} />
+        <ExportRig ctx={ctx} blocks={rigBlocks} />
+        <ExportRigLegend />
       </div>
 
-      {/* ── 模組接口（PLAN-052-G C-5）──
-          四部位各一行：部位／接口型別／模組名／效果。
+      {/* ── 神經驅動算力 ｜ 備註 ＋ 明細 ───────────────────────────────────
+          ── 與 B-5 目標版面的差異（PLAN-052-L C-5，實測後的裁決）────────────
+          B-5 原訂「算力 371px ｜ 備註＋技能」一列、下面再接一條整寬的
+          「武器元件 ｜ 模組效果」明細帶。實作到 C 才看得出那樣**必然留下空格**：
+          備註是選填的（多數圖沒有），Phase D 的技能是三個 chip（約 60px），
+          而算力那一欄常常 700px 高 —— 右格會空掉大半，而那正是 B-5 想避免的事。
+          ⇒ 改成右欄是一個**由上而下的明細欄**：備註 → 武器與元件 → 模組效果。
+            備註的位置仍然符合 C-5 的裁決（「算力右側、技能之上；讀者看完機體之後、
+            翻到細節之前」），而且**有沒有備註都不會留下空框**。
+            Phase D 的攜帶技能接在備註後面、武器與元件之前。 */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '371px minmax(0, 1fr)', gap: 1,
+        background: C.line, alignItems: 'stretch', borderTop: `1px solid ${C.line}`,
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', background: C.bg, minWidth: 0 }}>
+          {/* ⚠ note 恆空：改寫前這裡印 `${gammaSum} / 23`，而 23 是**雙區**共用預算，
+              對 10 位只有單一個 γ 區的老機師是一個永遠達不到的分母（A-5 已拿掉）。 */}
+          <SectionHead title="神經驅動算力" tone={C.pink} />
+          <NeuralDriveBand
+            pilot={pilot}
+            ndLevels={ndLevels}
+            ndBonus={ndBonus}
+            ndAbilityMap={ndAbilityMap}
+            ndZones={ndZones}
+          />
+        </div>
 
-          ⚠ **整寬一條插在中段，不動 footer**（進度表 C-5）：卡片寬 1000px 是硬限制，
-            而底部已經有分享碼整寬一條（052-C E-1）。塞進上面那個兩欄網格會把槽位表
-            擠窄，而那張表才是這張圖的主角。
-
-          ⚠ 這台機甲**沒有接口**（B 品質）時整段不印：印四行「無模組接口」是四行雜訊，
-            而它並不回答任何人的問題。 */}
-      <ModuleBand ctx={ctx} />
+        {/* 右欄＝**備註 ＋ 明細欄**：為什麼這樣配、武器上掛了什麼元件、模組給了什麼效果。
+            十字回答位置，這裡回答內容。 */}
+        <div style={{ display: 'flex', flexDirection: 'column', background: C.bg, minWidth: 0 }}>
+          <NoteBand note={note} />
+          <SkillBand skills={skills ?? []} />
+          <WeaponDetailBand ctx={ctx} />
+          <ModuleBand ctx={ctx} />
+        </div>
+      </div>
 
       {/* ── 浮水印 footer ── */}
       <div style={{
@@ -476,33 +531,43 @@ export function LoadoutExportCard({
           </div>
         </div>
 
-        {/* ── 分享碼帶（PLAN-052-C E-1）──
+        {/* ── 分享碼帶（PLAN-052-C E-1 ／ PLAN-052-L E-2・E-3）──
             沒有碼就**整條不印**：印佔位字串會有人拿去貼，而它解不開。
 
-            ⚠ 為什麼是整寬一條、而不是 052-I 原本放在 GENERATED 旁邊的小欄位：
+            ⚠ 碼本身維持**整寬一條 ＋ `break-all`**（052-C E-1 的既有裁決，E-3 覆核後照舊）：
               分享碼是**變長**的（實測空草稿 7 字元、典型 36、含元件與算力 79、
-              三套 119），而卡片固定 1000px 寬。放右欄的話 79 字元起就會把左邊的
-              站名浮水印擠出畫面 —— 而那正是這張圖存在的理由。整寬 ＋ `break-all`
-              讓它自己折行，卡片高度跟著長，任何長度都不會壓到別的東西。 */}
+              三套 119；加了 100 字備註後約 +410），而卡片固定 1000px 寬。
+              放右欄的話 79 字元起就會把左邊的站名浮水印擠出畫面 —— 而那正是這張圖
+              存在的理由。整寬 ＋ `break-all` 讓它自己折行，卡片高度跟著長。
+
+            ⚠ QR 走**固定尺寸的右欄**（E-3）：它與碼不同，尺寸不隨長度變 ——
+              一塊會左右伸縮的方塊會讓每張圖的底部看起來都不一樣寬。
+              左邊那一欄 `minWidth: 0` 不可省，否則 `break-all` 的長碼會把 QR 推出畫面。 */}
         {shareCode && (
           <div style={{
-            position: 'relative', display: 'flex', alignItems: 'baseline', gap: 10,
+            // ⚠ `center` 而不是 `flex-start`（2026-08-30 實測後改）：碼通常只有 1–3 行，
+            //   而 QR 高 210 —— 靠上對齊時左欄下面會空掉一大塊，看起來像有東西沒印出來。
+            position: 'relative', display: 'flex', alignItems: 'center', gap: 20,
             padding: '10px 24px 14px', borderTop: '1px solid #232936',
           }}>
-            <span style={{
-              fontFamily: ORB, fontSize: 9, letterSpacing: 2, color: C.dim, flexShrink: 0,
-            }}>SHARE CODE</span>
-            {/* ⚠ 圖上是**一套**、碼裡是**整份**（PLAN-052-F D-2 / 決策四①）。
-                收圖的人手上只有這張圖，不講的話他會以為貼下去只會得到圖上這一套。 */}
-            {(setCount ?? 1) > 1 && (
-              <span style={{ fontSize: 11, color: C.dim, flexShrink: 0, whiteSpace: 'nowrap' }}>
-                （含 {setCount} 個形態分頁）
-              </span>
-            )}
-            <span style={{
-              fontFamily: MONO, fontSize: 12, lineHeight: 1.45, color: C.sub,
-              wordBreak: 'break-all', minWidth: 0,
-            }}>{shareCode}</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexGrow: 1, minWidth: 0 }}>
+              <span style={{
+                fontFamily: ORB, fontSize: 9, letterSpacing: 2, color: C.dim, flexShrink: 0,
+              }}>SHARE CODE</span>
+              {/* ⚠ 圖上是**一套**、碼裡是**整份**（PLAN-052-F D-2 / 決策四①）。
+                  收圖的人手上只有這張圖，不講的話他會以為貼下去只會得到圖上這一套。
+                  ⚠ 這一句**不可省**（E-3 明列）：QR 掃出來的也是整份，同一個誤會。 */}
+              {(setCount ?? 1) > 1 && (
+                <span style={{ fontSize: 11, color: C.dim, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                  （含 {setCount} 個形態分頁）
+                </span>
+              )}
+              <span style={{
+                fontFamily: MONO, fontSize: 12, lineHeight: 1.45, color: C.sub,
+                wordBreak: 'break-all', minWidth: 0,
+              }}>{shareCode}</span>
+            </div>
+            <ShareQr url={shareUrl} />
           </div>
         )}
       </div>
@@ -510,98 +575,118 @@ export function LoadoutExportCard({
   )
 }
 
-// ─── 模組帶（PLAN-052-G C-5）────────────────────────────────────────────────
+// ─── 圖底的 QR（PLAN-052-L E-2）─────────────────────────────────────────────
+//
+// 編的是**完整分享連結**，於是「別人螢幕截圖你的圖」也還原得回配裝 —— 那是純文字碼
+// 做不到的（二手截圖上要一個字一個字抄 base64url，而 `l/I/1`、`O/0` 分不出來）。
+//
+// ⚠ **inline SVG ＋ 字面十六進位**，不是 `<img>` 也不是 canvas：
+//   `<img src={dataUrl}>` 是非同步的（`waitForRenderReady()` 只等 `img.complete`，
+//   但 QR 是在 render 期間才算出來的，來不及進那一輪輪詢）；canvas 要等 effect，
+//   而 effect 跑在 `toPng()` 之後。inline SVG 在 render 當下就完成了。
+//   ⚠ `html-to-image` 對 `<svg>` 直接**深拷貝**、子元素不經 `cloneCSSStyle()`
+//     ⇒ 這裡的顏色只能是 presentation attribute 上的字面值，一個 `var()` 都不能有。
+//
+// ⚠ **白底 ＋ 靜區**：QR 的規格假設「暗模組在亮底上」，而這張圖的底是 `#0a0c10`。
+//   靜區已經算在 `size` 裡（`loadoutQr()` 的 `BORDER`），所以整塊直接鋪白即可，
+//   不要再加 padding —— 那會讓實際的每模組像素數與閘門算的不一致。
+//
+// ⚠ **`loadoutQr()` 回 `null` 時整塊不畫**（超長碼／畫出來會掃不動）。此時左邊的完整碼
+//   仍在，還原路徑沒有斷。⚠ 不要在這裡補一個「QR 太長，略」的說明框：
+//   那是在向讀者解釋一個他從來沒看過的東西為什麼不見了。
 
-/**
- * 數值欄位攤成「命中+15%」這種字串，依 `STAT_LABELS` 的鍵序。
- *
- * ⚠ 只借 label／suffix／prefix，**不借 color** —— 那是 Tailwind 類別，
- *   而這張圖的顏色一律寫死十六進位（見檔頭）。
- */
-function statText(stats: ModuleStats): string {
-  return STAT_LABELS
-    .filter(({ key }) => (stats[key] ?? 0) !== 0)
-    .map(({ key, label, suffix, prefix }) => `${label}${prefix ?? '+'}${stats[key]}${suffix}`)
-    .join('　')   // 全形空格：欄位之間留白，但不換行
+function ShareQr({ url }: { url: string | undefined }) {
+  const qr = useMemo(() => (url ? loadoutQr(url, EXPORT_PIXEL_RATIO) : null), [url])
+  if (!qr) return null
+  return (
+    <div style={{
+      flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+    }}>
+      <div style={{ width: qr.boxPx, height: qr.boxPx, background: '#ffffff' }}>
+        <svg
+          width={qr.boxPx}
+          height={qr.boxPx}
+          viewBox={`0 0 ${qr.size} ${qr.size}`}
+          // shapeRendering：模組邊界落在非整數像素上時不要抗鋸齒成灰邊（掃描器讀的是黑白）
+          shapeRendering="crispEdges"
+          style={{ display: 'block' }}
+        >
+          <path d={qr.d} fill="#0a0c10" />
+        </svg>
+      </div>
+      {/* ⚠ 這一行**不是裝飾**：左邊那串是要用貼的「碼」，這一塊是要用掃的「連結」，
+          兩者的用法不同。不講的話，一個沒有標籤的方塊會被讀成「這是什麼？」 */}
+      <span style={{ fontSize: 10, color: C.dim, whiteSpace: 'nowrap' }}>掃描直接開啟這一套</span>
+    </div>
+  )
 }
 
+// ─── 模組效果（PLAN-052-G C-5 ／ PLAN-052-L B-5）──────────────────────────
+
+// ⚠ **改印官方敘述、不再印攤平的數值**（PLAN-052-L A-3）。
+//
+// 改寫前這裡用 `statText()` 把 `ModuleLevel` 的數值欄攤成「命中+15%」。兩個問題：
+//
+//   ① **候選池 186 顆裡有 119 顆（64%）該階的數值欄全為 0** ⇒ 回空字串
+//      ⇒ 圖上三分之二的模組**只有一個名字**。
+//   ② 它**會省略觸發條件卻看起來像完整答案**：猛擊裝置的 `statText` 是「格鬥傷害+15%」，
+//      而官方敘述是「使用格鬥武器攻擊時**有 70% 的概率發動**，傷害提升 15%」。
+//      圖是印刷品、看的人沒辦法點開來對帳 —— 印一個省略了機率的數字比不印更糟。
+//
+// 取的是**這一族目前等級**那一階的敘述（不是滿階），與螢幕版 `EquippedEffects` 同一個來源。
+// 實測 186／186 都有敘述（p50 31 字、p90 63、max 119）；33 筆含換行（故用 `pre-line`）、
+// 31 筆含 `[引用]`（原樣印，官方文案本來就長那樣）、**0 筆含 `<token>`**
+// ⇒ 候選池不需要 sanitizer（只有天生模組那條路才可能碰到）。
+//
+// ── B-5 起只印**裝了東西的那幾格** ──────────────────────────────────────────
+// 改寫前這裡是四部位各一行（含「未裝」與「無模組接口」）。位置化的十字上線之後，
+// 「哪個部位有沒有接口、裝了什麼、Lv 幾」四部位卡上全部都有 —— 再印一次四行「未裝」
+// 就是把同一句話在同一張圖上說第二遍，而且它排在十字下方、看起來像另一份資料。
+//
+// ⚠ 「這台沒有模組接口」（B 品質 10 台）的話**仍然講得出來**：部位卡上印的是
+//   「無模組接口」。這一段整個不印不會讓那件事消失。
+// ⚠ 超限提醒（`wasted`）必留 —— 那是玩家會照著配的東西，而它在十字上沒有落點。
+
 function ModuleBand({ ctx }: { ctx: LoadoutContext }) {
-  const { mech, chassis } = ctx
-  if (!mech || !chassis) return null
+  // ⚠ **清單本身走 `moduleRows()`**（PLAN-052-L E-1 自本函式抽出去的）：純文字摘要要
+  //   列出同一批模組、同一個等級、同一段敘述。原本那 25 行留在這裡的話，兩邊必然漂移，
+  //   而漂移的症狀是「圖上寫 Lv4、複製出來的文字寫 Lv2」—— 兩邊都不會報錯。
+  //   同族只算一次、等級走 `ctx.stacks`、敘述取該級官方文案，理由都寫在那一支上。
+  const lines = moduleRows(ctx)
+  const wasted = wastedModuleStacks(ctx)
 
-  // ⚠ **同族只算一次**（PLAN-052-G C-7）：同一顆模組裝兩格是升它的等級、不是兩份效果。
-  //   逐格加總會讓四顆刀劍模組Ⅱ 在圖上印出四倍加成 —— 而圖是印刷品，
-  //   看的人沒辦法點開來對帳，錯在圖上比錯在畫面上更難收回。
-  //   ⚠ 走 `ctx.stacks`（含天生貢獻，PLAN-052-K D-1），不要在這裡自己算一次：
-  //     圖上的 Lv 與畫面上的 Lv 對不起來是這張圖最難查的一種錯。
-  const stacks = ctx.stacks
-  const seen = new Set<string>()
-
-  const lines = MECH_PART_ORDER.map((pos) => {
-    const id = ctx.modules[pos]
-    const mod = id ? ctx.world.modules.get(id) ?? null : null
-    const iface = interfaceState(chassis.moduleSlots[pos].iface)
-    const stack = mod ? stacks.get(moduleFamilyKey(mod)) ?? null : null
-    const key = mod ? moduleFamilyKey(mod) : ''
-    const primary = !!mod && !seen.has(key)
-    if (mod) seen.add(key)
-    return {
-      pos,
-      iface: iface === 'none' ? '無接口' : iface === 'unknown' ? '型別不明' : iface,
-      usable: iface !== 'none' && iface !== 'unknown',
-      name: mod?.name ?? (id ?? null),
-      stack,
-      // 第二格起只標「同族」，不重印一次數值
-      stats: mod && primary && stack ? moduleStatsAt(stack.mod, stack.level) : {},
-      dup: !!mod && !primary,
-      /**
-       * 這一格的部件來源（PLAN-052-G Phase D）。選定機甲回 null ⇒ 整段不印。
-       *
-       * ⚠ **圖上非印不可**：混搭之後圖上的重量／火力是拼出來的，
-       *   而轉發到第三手的人手上只有這張圖 —— 不標來源，那張圖就變成一組
-       *   查不回去的數字（與 052-C 把分享碼印在圖底部、052-F 標形態名同一類問題）。
-       */
-      from: chassis.parts[pos].sourceMechId !== mech.id
-        ? ctx.world.mechs.get(chassis.parts[pos].sourceMechId)?.name ?? chassis.parts[pos].sourceMechId
-        : null,
-    }
-  })
-
-  // 這台沒有任何接口 ⇒ 整段不印（B 品質 10 台）
-  if (!lines.some((l) => l.usable)) return null
-
-  const equipped = lines.filter((l) => l.name).length
-  const swapped = lines.filter((l) => l.from).length
-  // ⚠ 合計含**天生模組**（PLAN-052-K D-1：兩者共用同一個等級池），並排除未解鎖的那幾族。
-  //   改寫前這張圖的合計只算四個接口 —— 與右欄的彙總（一直都含天生）差一大截。
-  const total = sumModuleStats(activeStacks(ctx).map((st) => moduleStatsAt(st.mod, st.level)))
-  const totalText = statText(total)
-  const wasted = [...stacks.values()].filter((st) => st.overflow > 0)
+  // 一顆都沒裝、也沒有超限可講 ⇒ 整段不印（十字上的部位卡已經把「未裝」講完了）
+  if (lines.length === 0 && wasted.length === 0) return null
 
   return (
     <div style={{ borderTop: `1px solid ${C.line}`, background: C.bg }}>
-      <SectionHead
-        title={swapped > 0 ? '部件與模組接口' : '模組接口'}
-        note={swapped > 0 ? `${equipped} / ${lines.length} 已裝 · ${swapped} 格混搭` : `${equipped} / ${lines.length} 已裝`}
-        tone={C.green}
-      />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: C.line }}>
+      <SectionHead title="模組效果" note={`${lines.length} 顆`} tone={C.green} />
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
         {lines.map((l) => (
-          <div key={l.pos} style={{
-            display: 'flex', alignItems: 'baseline', gap: 10,
-            padding: '9px 16px', background: C.bg, minWidth: 0,
+          <div key={l.position} style={{
+            display: 'flex', gap: 11,
+            padding: '10px 16px', borderBottom: `1px solid ${C.line}`, minWidth: 0,
           }}>
-            <span style={{ fontSize: 12, color: C.sub, width: 34, flexShrink: 0 }}>{partLabel(l.pos)}</span>
-            <span style={{
-              fontFamily: MONO, fontSize: 10, color: C.dim, width: 58, flexShrink: 0, whiteSpace: 'nowrap',
-            }}>{l.iface}</span>
-            {/* 混搭來源。選定機甲不印 —— 沒混搭的圖上多四行「本機甲」是四行雜訊 */}
-            {l.from && (
-              <span style={{ fontSize: 11, color: C.orange, flexShrink: 0, whiteSpace: 'nowrap' }}>◆{l.from}</span>
-            )}
-            <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-              <span style={{ fontSize: 13, color: l.name ? C.text : C.dim }}>
-                {l.name ?? (l.usable ? '未裝' : '—')}
+            {/* 縮圖欄固定 26px：缺圖時**留空不畫框** —— 一個空方塊夾在三顆正常圖示中間，
+                會被讀成「有一顆我不認得的模組」，而實際上只是我們少一張圖 */}
+            <span style={{ width: 26, height: 26, flexShrink: 0, marginTop: 2 }}>
+              {l.icon && (
+                <FallbackImage
+                  candidates={imageCandidates(l.icon)}
+                  alt=""
+                  fallback={null}
+                  // ⚠ 直接畫 `<img>` 而不是借用 `ModuleIcon`：那顆帶 Tailwind 類別
+                  //   （本檔一律寫死十六進位，見檔頭）、畫的是有框的降級態，
+                  //   而且它寫死 `loading="lazy"` —— 匯出宿主在 `left:-10000px`，
+                  //   lazy 的圖永遠不會開始載入，`waitForRenderReady()` 會固定燒滿 5 秒逾時。
+                  style={{ width: 26, height: 26, objectFit: 'contain', display: 'block' }}
+                />
+              )}
+            </span>
+            <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0, flexGrow: 1 }}>
+              <span style={{ fontSize: 13, color: C.text }}>
+                <span style={{ color: C.sub, marginRight: 8 }}>{l.label}</span>
+                {l.name}
                 {l.stack && (
                   <span style={{
                     fontFamily: MONO, fontSize: 10,
@@ -611,30 +696,35 @@ function ModuleBand({ ctx }: { ctx: LoadoutContext }) {
               </span>
               {l.dup ? (
                 <span style={{ fontSize: 11, color: C.dim }}>同族疊加，效果不重複計算</span>
-              ) : l.name && statText(l.stats) ? (
-                <span style={{ fontSize: 11, color: C.sub }}>{statText(l.stats)}</span>
+              ) : l.description ? (
+                <span style={{
+                  fontSize: 11, color: C.sub, lineHeight: 1.6, whiteSpace: 'pre-line',
+                }}>{l.description}</span>
               ) : null}
             </span>
           </div>
         ))}
       </div>
-      {(totalText || wasted.length > 0) && (
-        <div style={{
-          padding: '9px 16px', borderTop: `1px solid ${C.line}`,
-          background: 'rgba(18,21,28,0.5)', fontSize: 12, color: C.sub, lineHeight: 1.7,
-        }}>
-          {totalText && (
-            <div><span style={{ color: C.dim, marginRight: 10 }}>四格合計</span>{totalText}</div>
-          )}
-          {/* 超限提醒也要印在圖上：看圖的人同樣會照著配 */}
-          {wasted.map((st) => (
-            <div key={moduleFamilyKey(st.mod)} style={{ color: C.yellow, fontSize: 11 }}>
-              ⚠ {st.mod.name} 裝了 {st.positions.length} 顆、合計 {st.sum} 級，
-              但上限 {st.cap} 級 —— 超出的 {st.overflow} 級不生效
-            </div>
-          ))}
-        </div>
-      )}
+      {/* ── 帶尾（PLAN-052-L A-4）────────────────────────────────────────────
+          ⚠ **「四格合計」整段刪除**（團隊逐字：「合計效果先隱藏，這部分站內的資訊不夠詳盡，
+            很容易有半成品的感覺」）。它原本是 `statText(Σ activeStacks)`，而上面已經說明
+            那個攤平口徑本身就會漏掉觸發條件 —— 把一堆這種數字再加總，只會把誤差放大。
+
+          ⚠ 這一條**只要這一段有印就要有**：模組等級是**本站推算**的（部位品質階 ×
+            部位種類，見 PLAN-052-K），而這一輪起圖上印的是「照那個推算等級取出來的官方
+            敘述」—— 推導層數比改版前多一層，那句免責因此更需要，不是更不需要。 */}
+      <div style={{
+        padding: '9px 16px', background: 'rgba(18,21,28,0.5)',
+        fontSize: 11, color: C.dim, lineHeight: 1.7,
+      }}>
+        {wasted.map((st) => (
+          <div key={moduleFamilyKey(st.mod)} style={{ color: C.yellow }}>
+            ⚠ {st.mod.name} 裝了 {st.positions.length} 顆、合計 {st.sum} 級，
+            但上限 {st.cap} 級 —— 超出的 {st.overflow} 級不生效
+          </div>
+        ))}
+        <div>模組等級由部位品質階與部位種類推算，效果取該等級的官方敘述。</div>
+      </div>
     </div>
   )
 }
@@ -649,17 +739,9 @@ function nameSize(text: string): number {
   return 30
 }
 
-function Stat({ label, value, suffix, tone }: { label: string; value: string; suffix?: string; tone?: string }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '16px 20px', background: C.bg }}>
-      <span style={{ fontFamily: ORB, fontSize: 10, letterSpacing: 2, color: C.dim }}>{label}</span>
-      <span style={{ fontFamily: MONO, fontSize: 30, fontWeight: 800, lineHeight: 1.15, color: tone ?? C.text }}>
-        {value}
-        {suffix && <span style={{ fontSize: 16, color: C.dim }}>{suffix}</span>}
-      </span>
-    </div>
-  )
-}
+// ⏸ `Stat`（四格 30px 大字）已於 PLAN-052-L A-5 退場 —— 見上方「出力帶」的說明。
+//    不要為了「圖上總得有個大數字」把它加回來：團隊明說出力與剩餘出力都不重要，
+//    而唯一還想印的強度數字（火力）已被裁決不放（口徑不含元件與模組）。
 
 function Legend({ seg, n }: { seg: SegKey; n: number }) {
   return (
@@ -670,74 +752,309 @@ function Legend({ seg, n }: { seg: SegKey; n: number }) {
   )
 }
 
-function SectionHead({ title, note, tone }: { title: string; note: string; tone: string }) {
+/** `note` 選填：沒有可講的數字時整個右側不畫，不要印一個空字串佔位（PLAN-052-L A-5） */
+function SectionHead({ title, note, tone }: { title: string; note?: string; tone: string }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
       background: 'rgba(255,255,255,0.03)', borderBottom: `1px solid ${C.lineStrong}`,
     }}>
       <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: tone }}>{title}</span>
-      <span style={{ marginLeft: 'auto', fontFamily: MONO, fontSize: 12, color: C.dim }}>{note}</span>
+      {note && (
+        <span style={{ marginLeft: 'auto', fontFamily: MONO, fontSize: 12, color: C.dim }}>{note}</span>
+      )}
     </div>
   )
 }
 
-const GRID = '96px minmax(0, 1fr) 74px 84px'
 
-function SheetHeader() {
-  const cell = { fontSize: 11, color: C.dim } as const
+// ─── 方案備註（PLAN-052-L C-5）────────────────────────────────────────────
+//
+// 團隊回饋 2：分享一套配裝時，說不出「為什麼這樣配」。這一塊就是那句話。
+//
+// ⚠ 「由分享者填寫」是**必要的反釣魚標記**（計畫書 C-5）：備註與這張圖上其他所有
+//   內容共用同一套排版，而其他每一段都是本站從遊戲資料算出來的。不標的話，
+//   一句「這套打 XX 副本必過」會被讀成本站的判斷。
+//
+// ⚠ **沒有備註時整塊不印，不留空框**：一個空的框在一張公開圖上讀起來像「這裡漏了」。
+//
+// ⚠ 別把備註塞進 HERO 或檔名（計畫書 C-5）：長度不可控（100 碼點／6 行），
+//   會把十字整個推下去。
+//
+// ⚠ `white-space: pre-line`：換行是使用者刻意打的（`sanitizeLoadoutNote()` 特地留著它，
+//   那正是備註與方案名稱唯一的實質差別）。
+
+function NoteBand({ note }: { note: string | undefined }) {
+  if (!note) return null
   return (
     <div style={{
-      display: 'grid', gridTemplateColumns: GRID, gap: 12, alignItems: 'center',
-      padding: '8px 16px', borderBottom: `1px solid ${C.line}`, background: 'rgba(18,21,28,0.5)',
+      margin: '14px 16px', padding: '10px 14px',
+      borderLeft: `3px solid ${C.orange}`, background: 'rgba(255,107,43,0.06)',
     }}>
-      <span style={cell}>部位</span>
-      <span style={cell}>武器 / 背包</span>
-      <span style={cell}>類型</span>
-      <span style={{ ...cell, fontFamily: MONO, textAlign: 'right' }}>重量</span>
+      <div style={{
+        fontFamily: ORB, fontSize: 9, letterSpacing: 2, color: C.orange, marginBottom: 5,
+      }}>NOTE</div>
+      <p style={{
+        fontSize: 13, color: C.text, lineHeight: 1.75, whiteSpace: 'pre-line', margin: 0,
+      }}>{note}</p>
+      <div style={{ fontSize: 10, color: C.dim, marginTop: 6 }}>由分享者填寫，非本站資料</div>
     </div>
   )
 }
 
-function SheetLine({ row }: { row: SheetRow }) {
-  const locked = row.state === 'fixed' || row.state === 'formLocked'
+// ─── 攜帶技能（PLAN-052-L D-5，團隊回饋 3）───────────────────────────────────
+//
+// 三個 chip：圖示 ＋ 名稱 ＋ 型別。位置在備註之後、武器與元件之前
+// （B-5 的目標版面：「Phase D 的攜帶技能接在備註後面」）。
+//
+// ⚠ **不印技能敘述**：實測 p50 42 字／max 213，而且只有 4 筆含句號 ⇒
+//   「只取首句」是 no-op（同 B-3 對神經驅動敘述的那一條）。整段印下去，這張圖會從
+//   「我的配裝」變成機師懶人包 —— 而那一頁本站已經有了。
+//
+// ⚠ **不印格數分母**（「攜帶 2 / 4」）：第四格是「改」技能，站上沒有那份資料、
+//   UI 也隱藏著（見 `LoadoutSkills.mod`）。把它算進分母，讀者會以為這張圖漏了一個。
+//   要有數字就只講**印出來的那幾個**。
+//
+// ⚠ 缺 iconLocal 的 14 筆（619 個被持有技能中）畫**實心底 ＋ 型別首字**，
+//   不要虛線空框：空框讀起來像「一個我不認得的東西」，而實際上只是我們少一張圖。
+//   ⚠ 這與模組帶（A-2）「缺圖就留白不畫框」刻意不同：那裡每一列都有部位標籤與名稱
+//     撐著版面，這裡的 chip 只有一顆圖示 ＋ 一個名字，留白會讓那顆 chip 塌掉半邊。
+//
+// ⚠ 第四格「改」技能整格不印（`draft.skills.mod` 有值也一樣）：站上沒有這份資料，
+//   印一個查不到名字的東西只會是一個問號。
+
+function SkillBand({ skills }: { skills: readonly PilotSkillDoc[] }) {
+  if (skills.length === 0) return null
   return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: GRID, gap: 12, alignItems: 'center',
-      padding: '11px 16px', borderBottom: `1px solid ${C.line}`,
-      background: row.state === 'absent' ? 'rgba(255,255,255,0.012)' : undefined,
-    }}>
-      <span style={{ fontSize: 13, color: C.sub }}>{row.label}</span>
-
-      <span style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-        {row.name ? (
-          <span style={{ fontSize: 15, fontWeight: 700, color: locked ? C.yellow : C.text }}>{row.name}</span>
-        ) : (
-          <span style={{ fontSize: 13, color: C.dim }}>
-            {row.state === 'absent' ? (row.note ?? '此機甲沒有這一格') : '未裝備'}
-          </span>
-        )}
-        {row.name && row.note && <span style={{ fontSize: 11, color: C.dim }}>{row.note}</span>}
-        {row.state === 'weapon' && (
-          <span style={{ fontSize: 11, color: row.componentNames.length > 0 ? C.sub : C.dim }}>
-            {/* ⚠ 圖是**印刷品**：看的人沒辦法點開來確認，所以印的是名字而不是「元件 3」。
-                沒裝的照樣印「未裝元件」而不是留白 —— 留白讀起來像「這張圖漏了」。 */}
-            {row.componentNames.length > 0
-              ? `元件 ${row.componentNames.length}／${row.componentNames.join('・')}`
-              : '未裝元件'}
-          </span>
-        )}
-      </span>
-
-      <span style={{ fontSize: 13, color: row.typeLabel === '—' ? C.dim : C.sub }}>{row.typeLabel}</span>
-      <span style={{ fontFamily: MONO, fontSize: 14, textAlign: 'right', color: row.weight === null ? C.dim : C.text }}>
-        {row.weight === null ? '—' : row.weight.toLocaleString()}
-      </span>
+    <div style={{ borderTop: `1px solid ${C.line}`, background: C.bg }}>
+      <SectionHead title="攜帶技能" note={`${skills.length} 個`} tone={C.cyan} />
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '12px 16px' }}>
+        {skills.map((sk) => (
+          <div key={sk.id} style={{
+            display: 'flex', alignItems: 'center', gap: 8, minWidth: 0,
+            padding: '6px 10px 6px 6px', background: C.panel, border: `1px solid ${C.lineStrong}`,
+          }}>
+            {sk.iconLocal ? (
+              <FallbackImage
+                candidates={imageCandidates(sk.iconLocal)}
+                alt=""
+                // ⚠ 退化態走下面那顆方塊，不是 `null`：這一格塌掉會讓 chip 少半邊
+                fallback={<SkillTypeBox type={sk.type} />}
+                style={{ width: 28, height: 28, objectFit: 'cover', display: 'block', flexShrink: 0 }}
+              />
+            ) : <SkillTypeBox type={sk.type} />}
+            <span style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+              <span style={{ fontSize: 13, color: C.text, whiteSpace: 'nowrap' }}>{sk.name}</span>
+              <span style={{ fontSize: 10, color: C.dim, whiteSpace: 'nowrap' }}>{sk.type}</span>
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
 
-function ZoneBar({ drive, lv, starred }: { drive: NeuralDrive; lv: number; starred: boolean }) {
+/** 缺圖時的退化方塊：實心底 ＋ 型別首字（被／主／指…）。見 `SkillBand` 的 ⚠。 */
+function SkillTypeBox({ type }: { type: string }) {
+  return (
+    <span style={{
+      width: 28, height: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: '#1f2530', border: `1px solid ${C.lineStrong}`, fontSize: 13, color: C.sub,
+    }}>{[...(type || '?')][0]}</span>
+  )
+}
+
+// ─── 武器與元件明細（PLAN-052-L B-5）────────────────────────────────────────
+//
+// 十字回答的是「哪一格裝了什麼」（幾何問題），這一帶回答的是「這一把怎麼改」
+// （配置問題）。把元件名塞回 300px 的槽位格上，那一格就得同時表達六種狀態
+// ＋ 四個元件名 ＋ 兩個計數 —— 與螢幕版右欄拆出武器列是同一條理由。
+//
+// ⚠ 順序與清單一律走 `weaponRows()`（＝ `enumerateSlots()` 的順序），與十字同源：
+//   兩份東西講同一件事卻排不成同一個順序，讀者只會以為其中一份漏了。
+// ⚠ 固定武裝與形態鎖定的武裝**要進這份清單**——它們一樣佔槽、一樣計入總重，
+//   而那正是玩家最想確認自己有沒有看漏的幾把。
+
+function WeaponDetailBand({ ctx }: { ctx: LoadoutContext }) {
+  const rows = weaponRows(ctx)
+  const used = rows.reduce((n, r) => n + r.used, 0)
+  const limit = rows.reduce((n, r) => n + r.limit, 0)
+
+  return (
+    <>
+      <SectionHead
+        title="武器與元件"
+        note={limit > 0 ? `${rows.length} 把 · 元件 ${used} / ${limit}` : `${rows.length} 把`}
+        tone={SEG_HEX.hands}
+      />
+      {rows.length === 0 ? (
+        <p style={{ padding: '14px 16px', fontSize: 12, color: C.dim }}>這一套還沒有裝上任何武器。</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {rows.map((r) => (
+            <div key={r.rowKey} style={{
+              display: 'flex', flexDirection: 'column', gap: 3,
+              padding: '9px 16px', borderBottom: `1px solid ${C.line}`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 9 }}>
+                <span style={{ fontSize: 11, color: C.sub, width: 52, flexShrink: 0 }}>{r.label}</span>
+                <span style={{
+                  fontSize: 14, fontWeight: 700, minWidth: 0, wordBreak: 'break-word',
+                  color: r.locked ? C.yellow : C.text,
+                }}>{r.name}</span>
+                {/* ⚠ 分母是 componentLimit（觸＋應的**合計**上限），不是兩種各自的格數相加。
+                    limit 為 0 的（A／B 品質 39 把與 8 筆固定武裝）印「不可裝元件」而不是 0/0 */}
+                <span style={{
+                  marginLeft: 'auto', fontFamily: MONO, fontSize: 11, flexShrink: 0,
+                  color: r.limit === 0 ? C.dim : r.used > 0 ? C.orange : C.sub,
+                }}>
+                  {r.limit > 0 ? `元件 ${r.used} / ${r.limit}` : '不可裝元件'}
+                </span>
+              </div>
+              {/* ⚠ 沒裝的照樣印「未裝元件」而不是留白 —— 留白讀起來像「這張圖漏了」。
+                  查不到的元件印回 doc id（slotComponentNames），斷鏈要在圖上看得見。 */}
+              {r.limit > 0 && (
+                <span style={{ fontSize: 11, color: r.used > 0 ? C.sub : C.dim, paddingLeft: 61, lineHeight: 1.6 }}>
+                  {r.used > 0 ? slotComponentNames(ctx, r.ref).join('・') : '未裝元件'}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {/* 免責的落點（A-4 註記的那一條）：改版後推導層數更多了 —— 模組 Lv 是本站推算的，
+          然後照那個 Lv 去印該階的效果全文。 */}
+      <div style={{
+        padding: '10px 16px', borderTop: `1px solid ${C.line}`,
+        background: 'rgba(18,21,28,0.5)', fontSize: 11, color: C.dim, lineHeight: 1.7,
+      }}>
+        數值以武器滿級（LV.70）與滿品質階為前提。
+      </div>
+    </>
+  )
+}
+
+// ─── 神經驅動算力：只印 γ（PLAN-052-L B-3）──────────────────────────────────
+//
+// 團隊逐字：「α 和 β 兩個算力區不用理會，玩家一定會塞滿，真正有差異的是 γ1 和 γ2 ——
+// 這邊要滿，玩家必須投入一種昂貴的資源叫做仿生超導體」。
+//
+// ⚠ **哪幾區要印**一律問 `printedNdZones()`（PLAN-052-L E-1 抽出，與純文字摘要共用）。
+//   γ 的判準是 `startsWith('γ')`、α／β 只在偏離預設時才印，兩條 ⚠ 都寫在那一支上
+//   —— 尤其「不可寫成 `['γ1','γ2'].includes()`」與「不可印『α／β 全機師一致』」。
+//
+// ⚠ 敘述**不要寫「只取首句」的截斷**：實測 440 筆能力敘述含句號 0 筆 —— 那個截斷是
+//   no-op，只會讓下一個人以為高度有上界。（真的嫌太滿時，退路是「只給每區最高一級
+//   印敘述」，那是一行 if。）
+//   440 筆 p50 26 字／p90 48／max 100，含 <token> 0 筆 ⇒ 不必為它建 sanitizer；
+//   含 [引用] 339 筆 ⇒ 原樣印（官方文案本來就長那樣，同模組敘述的處置）。
+
+function NeuralDriveBand({ pilot, ndLevels, ndBonus, ndAbilityMap, ndZones }: {
+  pilot: Pilot | null
+  ndLevels: Record<string, number>
+  ndBonus?: NdPowerBonus | null
+  ndAbilityMap: Map<string, NeuralDriveAbility>
+  ndZones: Set<string>
+}) {
+  const drives = pilot?.neuralDrive ?? []
+  const defaults = defaultNdLevels(pilot?.neuralDrive, (aid) => ndAbilityMap.get(aid))
+  // ⚠ 過濾走共用的 `printedNdZones()`（PLAN-052-L E-1 抽出）：純文字摘要必須印出
+  //   **同一批分區**，各寫一份的漂移症狀是「圖上有 α、複製出來的文字沒有」。
+  const shown = printedNdZones(drives, ndLevels, defaults)
+
+  if (drives.length === 0) {
+    return <p style={{ padding: '14px 16px', fontSize: 12, color: C.dim }}>這位機師沒有神經驅動資料。</p>
+  }
+
+  // ★ 只標**印出來的**那幾區：一個沒出現在圖上的分區名會讓讀者去找一條不存在的條
+  const starred = [...ndZones].filter((z) => shown.some((d) => d.name === z))
+
+  return (
+    <>
+      <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {shown.map((d, i) => {
+          const lv = ndLevels[d.name] ?? 0
+          return (
+            <div key={d.name} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {i > 0 && <div style={{ height: 1, background: C.line, marginBottom: 6 }} />}
+              <ZoneBar drive={d} lv={lv} starred={ndZones.has(d.name)} boosted={ndBonus?.zone === d.name} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {(d.levels ?? []).filter((lvl) => lvl.level <= lv).map((lvl) => {
+                  const ability = resolveNeuralDriveLevel(lvl, ndAbilityMap)
+                  // 資料未遷移且嵌入欄位也空 → 不印一列空白（那一列除了佔位什麼都沒說）
+                  if (!ability.name) return null
+                  return (
+                    <div key={lvl.level} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                        {/* ⚠ 寬度要放得下兩位數 minSum（Lv6 · 16）並強制不換行：
+                            52px 在 minSum ≥ 10 時會把「· 16」擠到第二行（實測） */}
+                        <span style={{
+                          fontFamily: MONO, fontSize: 11, color: C.dim,
+                          width: 64, flexShrink: 0, whiteSpace: 'nowrap',
+                        }}>
+                          Lv{lvl.level} · {lvl.minSum}
+                        </span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: C.text, minWidth: 0 }}>{ability.name}</span>
+                      </div>
+                      {ability.description && (
+                        <span style={{ fontSize: 11, color: C.sub, lineHeight: 1.6, paddingLeft: 72 }}>
+                          {ability.description}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* α／β 沒有印出來這件事要交代一句 —— 不講的話，看過機師頁的人會以為這張圖漏了兩區。
+          ⚠ 措辭不可寫成「α／β 全機師一致」（見上方 ⚠）：這句只講「這張圖印了什麼」，
+            不對沒印出來的那幾區做任何斷言。 */}
+      {shown.length < drives.length && (
+        <div style={{ padding: '0 16px 12px', fontSize: 11, color: C.dim, lineHeight: 1.7 }}>
+          本圖只印 γ 區（仿生超導體投入的差異在這裡）；α／β 固定滿級，不另列。
+        </div>
+      )}
+
+      {/* ── 模組給的算力加成（PLAN-052-M）──────────────────────────────────────
+          ⚠ **有加成就一定要印這一行**：上面那幾條 Lv 條印的是**生效**算力，
+            而玩家在遊戲裡點出來的是投入值 —— 兩者差一級。不講來源的話，
+            收到圖的人會拿它去對自己的畫面，然後以為本站算錯了一格。
+          ⚠ 落點會跳（它是「算力最低的 γ 區」），所以要指名**現在**落在哪一區。 */}
+      {ndBonus && (
+        <div style={{
+          margin: '0 16px 14px', padding: '9px 12px',
+          background: 'rgba(234,179,8,0.07)', borderLeft: `2px solid ${C.yellow}`,
+          fontSize: 11, color: C.sub, lineHeight: 1.7,
+        }}>
+          <span style={{ color: C.yellow, fontWeight: 700 }}>⊕ {ndBonus.moduleName} LV.MAX</span>
+          {ndBonus.zone
+            ? `：已解鎖分區中算力最低的一區 +${ndBonus.amount} —— 落在 ${ndBonus.zone}，生效算力 ${ndBonus.power}（上方 Lv 條已含這一級）`
+            : `：已解鎖分區中算力最低的一區 +${ndBonus.amount} —— 但 γ 區已滿級，這 ${ndBonus.amount} 點沒有落點`}
+        </div>
+      )}
+
+      {starred.length > 0 && (
+        <div style={{
+          margin: '0 16px 14px', padding: '10px 12px',
+          background: 'rgba(236,72,153,0.07)', borderLeft: `2px solid ${C.pink}`,
+          fontSize: 12, color: C.sub, lineHeight: 1.7,
+        }}>
+          標<span style={{ color: C.pink, fontWeight: 700 }}> ★ </span>的分區（
+          {starred.join('、')}）會就地改寫天賦與技能敘述的階名。
+        </div>
+      )}
+    </>
+  )
+}
+function ZoneBar({ drive, lv, starred, boosted }: {
+  drive: NeuralDrive; lv: number; starred: boolean
+  /** 這一區吃到模組加成 ⇒ 最上面那一格畫成虛線（見 `NeuralDriveBand` 的 ⚠） */
+  boosted?: boolean
+}) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
       <span style={{ fontSize: 17, fontWeight: 800, position: 'relative', width: 30, flexShrink: 0 }}>
@@ -747,14 +1064,18 @@ function ZoneBar({ drive, lv, starred }: { drive: NeuralDrive; lv: number; starr
         )}
       </span>
       <span style={{ display: 'flex', gap: 4, flexGrow: 1, minWidth: 0 }}>
-        {(drive.levels ?? []).map((l) => (
-          <i key={l.level} style={{
-            flexGrow: 1, minWidth: 0, height: 16, display: 'block',
-            background: l.level <= lv ? C.yellow : C.panel,
-            border: l.level <= lv ? 'none' : `1px solid #2f3646`,
-            boxSizing: 'border-box',
-          }} />
-        ))}
+        {(drive.levels ?? []).map((l) => {
+          // 加成給的就是最上面那一格：畫成虛線描邊的淡黃，與玩家投入的實心格分得開。
+          // 與螢幕版 `NdPowerBar` 的加成格同一套視覺語彙（同源，不是各畫各的）。
+          const bonusCell = boosted && l.level === lv
+          return (
+            <i key={l.level} style={{
+              flexGrow: 1, minWidth: 0, height: 16, display: 'block', boxSizing: 'border-box',
+              background: bonusCell ? 'rgba(234,179,8,0.3)' : l.level <= lv ? C.yellow : C.panel,
+              border: bonusCell ? `1px dashed ${C.yellow}` : l.level <= lv ? 'none' : `1px solid #2f3646`,
+            }} />
+          )
+        })}
       </span>
       <span style={{ fontFamily: MONO, fontSize: 14, color: C.text, width: 28, textAlign: 'right', flexShrink: 0 }}>
         {zonePower(drive, lv)}
@@ -827,7 +1148,7 @@ export function LoadoutExportRunner({ onDone, ...card }: RunnerProps) {
       try {
         await waitForRenderReady(el)
         if (!alive) return
-        const dataUrl = await toPng(el, { backgroundColor: '#0a0c10', pixelRatio: 2, skipFonts: false })
+        const dataUrl = await toPng(el, { backgroundColor: '#0a0c10', pixelRatio: EXPORT_PIXEL_RATIO, skipFonts: false })
         if (!alive) return
         // ⚠ 檔名帶上形態名（PLAN-052-F D-2）：海莉絲三個分頁各匯一張，
         //   不帶的話三張是同一個檔名，瀏覽器只會加 (1)(2) —— 而那個編號與形態無關，

@@ -115,6 +115,9 @@ npm run preview    # 預覽 production build
 ```
 
 - **Windows + PowerShell 環境**：路徑用反斜線；POSIX 腳本（如 git hook）走 Bash 工具。
+- **測試檔也吃型別檢查**：`tsconfig.test.json`（由根 `tsconfig.json` 的 references 帶進 `tsc -b`）專收 `src/**/*.test.ts`。
+  它們被 `tsconfig.app.json` `exclude` 在外，先前**沒有任何專案收留**——IDE 因此連 `node:test` 都認不得（`@types/node` 進不來），
+  而測試裡的型別錯誤永遠不會被 build 擋下。新增測試檔不必做任何設定，但**改 tsconfig 時三個專案要一起想**。
 - `npm run prepare`（postinstall）會把 `core.hooksPath` 設為 `.githooks/`，並安裝 `.gitmessage` commit template。
 - 環境變數：Firebase 設定全走 `VITE_FIREBASE_*` + App Check 的 `VITE_FIREBASE_APPCHECK_SITE_KEY` / `VITE_APPCHECK_DEBUG_TOKEN`，放 `.env.local`（不進版控）。
 

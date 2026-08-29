@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { NeuralDrive, NeuralDriveAbility } from '../../types'
 import { ND_RULES, isGammaZone, zonePower } from '../../utils/ndOverrides'
+import { effectiveNdLevels, type NdPowerBonus } from '../../utils/ndPowerBonus'
 import { NdActiveAbilities } from './NdActiveAbilities'
 
 // ─── 神經驅動算力配置列（PLAN-021 · 1-6／PLAN-052-I D-1）──────────────────────
@@ -22,6 +23,20 @@ import { NdActiveAbilities } from './NdActiveAbilities'
 // ⚠ panel 版的內距與間隙**一律寫 px**（052-I B-2 踩過）：本站 root font-size 是 19px，
 //   Tailwind 的 spacing 單位是 rem 的倍數，`gap-2.5` 實測 11.9px —— 分區列會被撐開，
 //   Lv 條反而被擠窄。
+//
+// ── PLAN-052-M 起的兩條 ──────────────────────────────────────────────────────
+//
+// ⚠ **α／β 鎖死在滿級、不開放調整**（使用者裁決 2026-08-30）。它們只有 3 級、取得成本低，
+//   實務上人人點滿；開放調整只是替一個沒有人會做的選擇留一組按鈕。
+//   ⚠ **仍然畫出來**，不是整列隱藏：看過遊戲的人找不到 α／β 會以為本站漏了資料。
+//     畫成「亮著但點不動」才同時說出「它在」與「它不歸你管」。
+//   ⚠ 這條與資料一致而不是硬湊：實測 178 個 α／β 分區**零個**帶 `buffUpgrades`
+//     ⇒ `defaultNdLevels()` 對它們一律給滿級，鎖死之後值一個都不會變。
+//
+// ⚠ **加成格與投入格必須長得不一樣**（`bonus`）。模組給的算力不花 γ 預算，
+//   所以「條上亮到第 4 格」與「投入徽章 23／23」會同時成立 —— 兩者混成同一種黃色的話，
+//   玩家只會覺得數字自己在跳。加成格畫成**虛線描邊的黃**，並在下面明說它落在哪一區。
+//   ⚠ 徽章的字是**「投入」不是「合計」**：23 是可投入上限，不是生效上限（生效可以到 26）。
 
 export interface NdPowerBarProps {
   drives: NeuralDrive[]
@@ -37,10 +52,18 @@ export interface NdPowerBarProps {
    * 比沒有那一段更難理解（決策四：不渲染，不是渲染空的）。
    */
   abilityMap?: Map<string, NeuralDriveAbility>
+  /**
+   * 模組給的算力加成（PLAN-052-M）。**由呼叫端算好傳進來**，本元件不查模組 ——
+   * 機師詳情頁根本沒有配裝，讓這支元件去問 `ctx` 等於把一條 Lv 條綁死在模擬器上。
+   *
+   * ⚠ `levels` 收的仍然是**玩家投入**的值，不是生效值：那條 γ 預算閘門（`canSet`）
+   *   要讀投入值，而加成不花預算。兩者混用的症狀是「裝上模組反而少能點一格」。
+   */
+  bonus?: NdPowerBonus | null
 }
 
 export function NdPowerBar({
-  drives, levels, affectZones, onChange, layout = 'inline', abilityMap,
+  drives, levels, affectZones, onChange, layout = 'inline', abilityMap, bonus,
 }: NdPowerBarProps) {
   const [capHint, setCapHint] = useState(false)
   const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -49,8 +72,14 @@ export function NdPowerBar({
     .filter(d => isGammaZone(d.name))
     .reduce((s, d) => s + zonePower(d, levels[d.name] ?? 0), 0)
 
+  /**
+   * α／β **不開放調整**（見檔頭）。判準就是「不是 γ 區」—— 不要改成列舉分區名，
+   * 全庫只有 α／β／γ／γ1／γ2 五種，但那 10 位老角的分區名是單一字元 `γ`。
+   */
+  const isFixedZone = (drive: NeuralDrive) => !isGammaZone(drive.name)
+
   function canSet(drive: NeuralDrive, lv: number): boolean {
-    if (!isGammaZone(drive.name)) return true
+    if (isFixedZone(drive)) return false
     const others = drives
       .filter(d => isGammaZone(d.name) && d.name !== drive.name)
       .reduce((s, d) => s + zonePower(d, levels[d.name] ?? 0), 0)
@@ -58,6 +87,7 @@ export function NdPowerBar({
   }
 
   function clickSquare(drive: NeuralDrive, lv: number) {
+    if (isFixedZone(drive)) return
     const cur = levels[drive.name] ?? 0
     const target = cur === lv ? lv - 1 : lv // 點最上面那格 = 降一級
     if (target > cur && !canSet(drive, target)) {
@@ -69,14 +99,34 @@ export function NdPowerBar({
     onChange({ ...levels, [drive.name]: target })
   }
 
-  /** 某一格的三態：已點亮／可點／被 γ 上限鎖住。兩個版型共用同一套判定。 */
-  const stateOf = (d: NeuralDrive, lv: number): 'on' | 'open' | 'locked' => {
+  /**
+   * 某一格的四態。兩個版型共用同一套判定。
+   *
+   *   `on`     玩家投入點亮的
+   *   `bonus`  **模組加成給的那一格**（PLAN-052-M）—— 亮著，但不是玩家的預算換來的
+   *   `open`   還可以點
+   *   `locked` 被 γ 投入上限擋住／或這一區根本不開放調整（α／β）
+   *
+   * ⚠ `bonus` 要壓在 `open` 之前判：那一格本來就是「還沒點的下一格」，
+   *   不特別畫的話它與旁邊的空格長得一樣，加成就等於沒說出來。
+   */
+  const stateOf = (d: NeuralDrive, lv: number): 'on' | 'bonus' | 'open' | 'locked' => {
     const cur = levels[d.name] ?? 0
     if (cur >= lv) return 'on'
+    if (bonus?.zone === d.name && lv <= bonus.level) return 'bonus'
     return canSet(d, lv) ? 'open' : 'locked'
   }
 
-  const capText = `⚠ γ 區合計算力上限 ${ND_RULES.gammaPairCap}（上下16）—— 先降低另一個 γ 區。`
+  const capText = `⚠ γ 區可投入算力上限 ${ND_RULES.gammaPairCap}（上下16）—— 先降低另一個 γ 區。`
+
+  /**
+   * 加成那一行的說明。**一定要講出它落在哪一區**：落點是「算力最低的 γ 區」，
+   * 玩家把 γ2 降一級就可能整個跳到 γ1 —— 不標的話，畫面上是「我動這裡、那裡自己亮起來」。
+   */
+  const bonusText = !bonus ? null
+    : bonus.zone
+      ? `⊕ ${bonus.moduleName} LV.MAX：算力最低的分區 +${bonus.amount} —— 現在落在 ${bonus.zone}（生效算力 ${bonus.power}）`
+      : `⊕ ${bonus.moduleName} LV.MAX：算力最低的分區 +${bonus.amount} —— 但 γ 區已滿級，這 ${bonus.amount} 點沒有落點`
 
   if (layout === 'panel') {
     return (
@@ -90,6 +140,9 @@ export function NdPowerBar({
         stateOf={stateOf}
         onSquare={clickSquare}
         abilityMap={abilityMap}
+        bonus={bonus}
+        bonusText={bonusText}
+        isFixedZone={isFixedZone}
       />
     )
   }
@@ -113,25 +166,38 @@ export function NdPowerBar({
               {d.levels.map((lvl, i) => {
                 const lv = i + 1
                 const st = stateOf(d, lv)
+                const fixed = isFixedZone(d)
                 return (
                   <button
                     key={lv}
                     type="button"
-                    title={`Lv${lv}（算力 ${lvl.minSum}）`}
+                    disabled={fixed}
+                    title={fixed
+                      ? `${d.name} 固定滿級，本站不開放調整`
+                      : st === 'bonus'
+                        ? `${bonus?.moduleName} 加成給的（算力 +${bonus?.amount}）`
+                        : `Lv${lv}（算力 ${lvl.minSum}）`}
                     onClick={() => clickSquare(d, lv)}
                     className={`w-3.5 h-3.5 rounded-[3px] border transition-all ${
                       st === 'on'
-                        ? 'bg-accent-yellow border-accent-yellow shadow-[0_0_5px_rgba(251,191,36,0.45)]'
-                        : st === 'locked'
-                          ? 'bg-bg-dark border-border border-dashed opacity-25 cursor-not-allowed'
-                          : 'bg-bg-dark border-[#4a4f5e] hover:border-accent-yellow cursor-pointer'
+                        ? `bg-accent-yellow border-accent-yellow ${fixed ? 'opacity-60 cursor-default' : 'shadow-[0_0_5px_rgba(251,191,36,0.45)]'}`
+                        : st === 'bonus'
+                          // 加成格：虛線描邊的黃 —— 亮著，但看得出不是實心的那一種
+                          ? 'bg-accent-yellow/25 border-accent-yellow border-dashed cursor-pointer'
+                          : st === 'locked'
+                            ? `bg-bg-dark border-border border-dashed opacity-25 ${fixed ? 'cursor-default' : 'cursor-not-allowed'}`
+                            : 'bg-bg-dark border-[#4a4f5e] hover:border-accent-yellow cursor-pointer'
                     }`}
                   />
                 )
               })}
             </span>
-            <span className="text-[11px] text-text-dim font-mono whitespace-nowrap">
-              {zonePower(d, cur)}
+            {/* 讀數是**生效**算力（含加成）：它決定哪些能力亮著，而那才是玩家在看的。
+                投入了多少請看右邊的徽章 —— 兩者在有加成時本來就不相等。 */}
+            <span className={`text-[11px] font-mono whitespace-nowrap ${
+              bonus?.zone === d.name ? 'text-accent-yellow font-bold' : 'text-text-dim'
+            }`}>
+              {bonus?.zone === d.name ? bonus.power : zonePower(d, cur)}
             </span>
           </span>
         )
@@ -139,8 +205,9 @@ export function NdPowerBar({
       <span className={`ml-auto text-[11.5px] font-mono px-2.5 py-0.5 rounded-md border border-border bg-bg-dark ${
         gammaSum >= ND_RULES.gammaPairCap ? 'text-accent-red' : 'text-text-secondary'
       }`}>
-        γ合計 {gammaSum} / {ND_RULES.gammaPairCap}
+        γ投入 {gammaSum} / {ND_RULES.gammaPairCap}
       </span>
+      {bonusText && <span className="w-full text-[11.5px] text-accent-yellow">{bonusText}</span>}
       {capHint && <span className="w-full text-[11.5px] text-accent-red">{capText}</span>}
     </div>
   )
@@ -150,6 +217,7 @@ export function NdPowerBar({
 
 function NdPowerPanel({
   drives, levels, affectZones, gammaSum, capHint, capText, stateOf, onSquare, abilityMap,
+  bonus, bonusText, isFixedZone,
 }: {
   drives: NeuralDrive[]
   levels: Record<string, number>
@@ -157,9 +225,12 @@ function NdPowerPanel({
   gammaSum: number
   capHint: boolean
   capText: string
-  stateOf: (d: NeuralDrive, lv: number) => 'on' | 'open' | 'locked'
+  stateOf: (d: NeuralDrive, lv: number) => 'on' | 'bonus' | 'open' | 'locked'
   onSquare: (d: NeuralDrive, lv: number) => void
   abilityMap?: Map<string, NeuralDriveAbility>
+  bonus?: NdPowerBonus | null
+  bonusText: string | null
+  isFixedZone: (d: NeuralDrive) => boolean
 }) {
   return (
     <div className="flex flex-col" style={{ gap: 11 }}>
@@ -179,26 +250,39 @@ function NdPowerPanel({
             <span className="flex grow min-w-0" style={{ gap: 4 }}>
               {d.levels.map((lvl) => {
                 const st = stateOf(d, lvl.level)
+                const fixed = isFixedZone(d)
                 return (
                   <button
                     key={lvl.level}
                     type="button"
-                    title={`${d.name} Lv${lvl.level}（算力 ${lvl.minSum}）`}
+                    disabled={fixed}
+                    title={fixed
+                      ? `${d.name} 固定滿級，本站不開放調整`
+                      : st === 'bonus'
+                        ? `${bonus?.moduleName} 加成給的（算力 +${bonus?.amount}）`
+                        : `${d.name} Lv${lvl.level}（算力 ${lvl.minSum}）`}
                     onClick={() => onSquare(d, lvl.level)}
                     className={`grow min-w-0 transition-all ${
                       st === 'on'
-                        ? 'bg-accent-yellow shadow-[0_0_7px_rgba(234,179,8,0.5)] cursor-pointer'
-                        : st === 'locked'
-                          ? 'bg-bg-dark border border-dashed border-border opacity-35 cursor-not-allowed'
-                          : 'bg-bg-dark border border-[#4a4f5e] hover:border-accent-yellow cursor-pointer'
+                        ? `bg-accent-yellow ${fixed ? 'opacity-55 cursor-default' : 'shadow-[0_0_7px_rgba(234,179,8,0.5)] cursor-pointer'}`
+                        : st === 'bonus'
+                          // 加成格：虛線描邊的黃 —— 亮著，但看得出不是玩家的預算換來的
+                          ? 'bg-accent-yellow/25 border border-dashed border-accent-yellow cursor-pointer'
+                          : st === 'locked'
+                            ? `bg-bg-dark border border-dashed border-border opacity-35 ${fixed ? 'cursor-default' : 'cursor-not-allowed'}`
+                            : 'bg-bg-dark border border-[#4a4f5e] hover:border-accent-yellow cursor-pointer'
                     }`}
                     style={{ height: 18 }}
                   />
                 )
               })}
             </span>
-            <span className="shrink-0 text-right font-[JetBrains_Mono,monospace] tabular-nums text-[14px] text-text-primary" style={{ width: 28 }}>
-              {zonePower(d, levels[d.name] ?? 0)}
+            {/* 讀數是**生效**算力（含加成）—— 決定哪些能力亮著的是它。
+                投入了多少請看下面的徽章：有加成時兩者本來就不相等。 */}
+            <span className={`shrink-0 text-right font-[JetBrains_Mono,monospace] tabular-nums text-[14px] ${
+              bonus?.zone === d.name ? 'text-accent-yellow font-bold' : 'text-text-primary'
+            }`} style={{ width: 28 }}>
+              {bonus?.zone === d.name ? bonus.power : zonePower(d, levels[d.name] ?? 0)}
             </span>
           </div>
         ))}
@@ -207,13 +291,23 @@ function NdPowerPanel({
       <div className={`self-start hud-cut-sm border px-2 py-0.5 font-[JetBrains_Mono,monospace] tabular-nums text-[12px] bg-bg-dark ${
         gammaSum >= ND_RULES.gammaPairCap ? 'border-accent-red/50 text-accent-red' : 'border-border text-text-secondary'
       }`}>
-        γ 合計 {gammaSum} / {ND_RULES.gammaPairCap}
+        γ 投入 {gammaSum} / {ND_RULES.gammaPairCap}
       </div>
+
+      {bonusText && <p className="text-[11.5px] text-accent-yellow leading-relaxed">{bonusText}</p>}
+      {/* α／β 點不動這件事要講一次。⚠ 不講的話，玩家會以為那兩條壞掉了 */}
+      <p className="text-[11px] text-text-dim leading-relaxed">
+        α／β 固定滿級、不開放調整 —— 它們只有 3 級且取得成本低，實務上人人點滿。
+      </p>
 
       {capHint && <p className="text-[11.5px] text-accent-red leading-relaxed">{capText}</p>}
 
-      {/* 「目前生效」的圖示、hover 說明與展開詳情獨立成一支（互動語彙與機師詳情頁對齊） */}
-      {abilityMap && <NdActiveAbilities drives={drives} levels={levels} abilityMap={abilityMap} />}
+      {/* 「目前生效」的圖示、hover 說明與展開詳情獨立成一支（互動語彙與機師詳情頁對齊）。
+          ⚠ 這裡吃的是**生效** Lv：它列的就是「現在亮著哪些能力」，而加成給的那一級
+            確實亮著。傳投入值進去的症狀是「條上亮了第 4 格、下面卻少一個能力」。 */}
+      {abilityMap && (
+        <NdActiveAbilities drives={drives} levels={effectiveNdLevels(levels, bonus ?? null)} abilityMap={abilityMap} />
+      )}
     </div>
   )
 }

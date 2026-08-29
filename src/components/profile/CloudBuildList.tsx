@@ -25,7 +25,7 @@ import { CLOUD_SLOTS, CLOUD_SLOTS_PER_PILOT, type CloudSlot } from '../../types/
 import { classifyBuild, type BuildStatus } from '../../lib/buildStatus'
 import { listCloudBuilds, deleteCloudBuild, type CloudBuildEntry, type CloudBuildsFailure } from '../../lib/buildsApi'
 import { buildShareIndex } from '../../utils/loadoutCode/shareId'
-import { shareIdAliases } from '../../utils/loadoutCode/shareIdRegistry'
+import { shareIdAliases, shareIdRegisteredIds } from '../../utils/loadoutCode/shareIdRegistry'
 import { SHARE_PARAM } from '../../utils/loadoutCode/shareLink'
 import type { ShareIndexes } from '../../utils/loadoutCode/codec'
 
@@ -66,6 +66,11 @@ export default function CloudBuildList({ uid }: { uid: string }) {
     //   「有 N 項裝備已下架」——實機跑 052-E C-6 時就是這樣紅了兩張卡。
     //   （LoadoutPage 的 shareIndexes 一直有帶，這裡是接線層漏抄。）
     module: buildShareIndex('module', data.modules.map((x) => x.id), shareIdAliases('module')),
+    // ⚠ 技能的來源是**登錄簿而不是集合**（PLAN-052-L D-2）：這一頁根本沒載 `pilotSkills`
+    //   （`useLoadoutGameData('equip')` 不含它），傳空陣列就會讓每一套帶技能的存檔
+    //   被誤判成「有 N 項裝備已下架」——與上面那條模組別名漏抄是同一種錯。理由詳見
+    //   `shareIdRegisteredIds()`。
+    pilotSkill: buildShareIndex('pilotSkill', shareIdRegisteredIds('pilotSkill'), shareIdAliases('pilotSkill')),
   }), [data])
 
   const pilotName = useMemo(

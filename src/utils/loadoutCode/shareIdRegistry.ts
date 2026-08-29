@@ -42,3 +42,30 @@ export function shareIdFloor(kind: ShareIdKind): number {
 export function shareIdAliases(kind: ShareIdKind): ShareIdAliases {
   return KINDS[kind]?.aliases ?? {}
 }
+
+/**
+ * 登錄簿裡**有號碼的所有 doc id**（PLAN-052-L D-2）。
+ *
+ * ── 為什麼要這一支 ──────────────────────────────────────────────────────────
+ * `buildShareIndex(kind, docIds, aliases)` 的 `docIds` 是拿來**推導**號碼的。
+ * 但 `pilotSkill` 一個號碼都推不出來（doc id 是 `skill_槍林彈雨` 這種純名稱），
+ * 它的 853 個號碼 100% 住在別名區 ⇒ 這時傳線上 docIds 的唯一作用是
+ * **把別名表過濾成「目前還在的那些」**，而那個過濾正是危險的來源：
+ *
+ *   · `pilotSkills` **不在** `LOADOUT_STAGE_KEYS` 裡（見 `useFirestore.ts`），
+ *     所以「集合還沒到」是常態而不是例外；
+ *   · 空清單 ⇒ 空索引 ⇒ `toShareId()` 全回 null ⇒ **技能被靜默濾出分享碼**，
+ *     玩家配好、複製連結、貼給別人，對方收到一套沒有技能的配裝，
+ *     而兩邊的畫面都不會說任何話。那正是 052-D 元件漏接索引時的症狀。
+ *
+ * ⇒ 這一種 kind 改用**登錄簿本身**當來源：它是靜態 JSON，永遠在，於是 encode／decode
+ *   都不必等任何集合，那一整類 bug 消失。代價是「這個技能已經被刪掉了」不再由索引反映
+ *   —— 但那本來就由名稱查不到來表達（同「已下架裝備 #n」），
+ *   而 `scripts/check-share-ids.mjs` 的 `staleAliases` 會在 CI 把它報出來。
+ *
+ * ⚠ **推得出號碼的 kind 不可以用這一支**：它們的別名只是少數形狀例外的補丁
+ *   （modules 那 41 筆），拿別名當全集會漏掉其餘 203 顆。
+ */
+export function shareIdRegisteredIds(kind: ShareIdKind): string[] {
+  return Object.keys(KINDS[kind]?.aliases ?? {})
+}

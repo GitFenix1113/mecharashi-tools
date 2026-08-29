@@ -16,6 +16,7 @@ import {
   freezeNumRefs,
 } from './numRefs.ts'
 import type { NumRefSource, NumLevelOf } from './numRefs.ts'
+import type { DescriptionRefs } from '../types/index.ts'
 
 // 模擬 GameDataContext 的 buff 查詢
 const BUFFS: Record<string, NumRefSource> = {
@@ -36,7 +37,7 @@ const BUFFS: Record<string, NumRefSource> = {
 const lookup = (refId: string) => BUFFS[refId]
 
 // [xxx] → 引用對照（DescriptionRefs 形狀）
-const refs = {
+const refs: DescriptionRefs = {
   凝勢I: { refType: 'buff', refId: 'buff_凝勢I' },
   星爆: { refType: 'buff', refId: 'buff_星爆' },
 }
@@ -293,7 +294,7 @@ test('freezeNumRefs：刻意不吃 levelOf —— 凍結寫回全站正文，不
 })
 
 test('orderRefsByFirstMention + compileSugar：EntityRef.level → 產生 .lvN token（PLAN-024 B-2）', () => {
-  const leveledRefs = { 凝勢: { refType: 'buff', refId: 'buff_凝勢', level: 3 } }
+  const leveledRefs: DescriptionRefs = { 凝勢: { refType: 'buff', refId: 'buff_凝勢', level: 3 } }
   const ordered = orderRefsByFirstMention('攜帶[凝勢]觸發', leveledRefs)
   assert.deepEqual(ordered, ['buff_凝勢.lv3'])
   assert.equal(compileSugar('可疊加$1層', ordered), '可疊加<buff_凝勢.lv3.maxStack>層')

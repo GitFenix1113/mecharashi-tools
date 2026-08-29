@@ -255,6 +255,7 @@ test('C-5：四個接口的模組全部進得了分享碼、也解得回來（�
     component: buildShareIndex('component', []),
     backpack: buildShareIndex('backpack', []),
     module: buildShareIndex('module', MODULES.map((m) => m.id), MODULE_ALIASES),
+    pilotSkill: buildShareIndex('pilotSkill', []),
   }
 
   // 刻意挑**一顆走推導、一顆走別名**（別名的號碼 ≥ ALIAS_BASE，吃滿 3 bytes varint）
@@ -293,6 +294,7 @@ test('C-5：候選池 186 顆逐一走完 encode → decode，一顆都不掉', 
     component: buildShareIndex('component', []),
     backpack: buildShareIndex('backpack', []),
     module: buildShareIndex('module', MODULES.map((m) => m.id), MODULE_ALIASES),
+    pilotSkill: buildShareIndex('pilotSkill', []),
   }
   const bad: string[] = []
   for (const m of POOL) {

@@ -87,13 +87,19 @@
         斷點用<strong>視窗寬</strong>（<code>useLayoutBreakpoint</code>），
         與<strong>指標粗細</strong>（<code>useIsMobile</code>，決定就地面板 vs BottomSheet、有無 hover 預覽）<strong>正交</strong>——
         平板因此得到「兩欄 ＋ BottomSheet ＋ 無 hover 預覽」，是刻意的組合。<br>
-        <strong>單欄版面（PLAN-052-I F-1）</strong>：三顆動作鍵移到<strong>底部固定列</strong>、方案名稱移出 sticky、
+        <strong>單欄版面（PLAN-052-I F-1）</strong>：動作鍵移到<strong>底部固定列</strong>、方案名稱移出 sticky、
         帳本列改兩列 <code>narrow</code> 版 ⇒ sticky 抬頭 381px → 225px。
         槽位圖多一階 <strong>tight</strong>（門檻同 <code>LINE_MIN_WIDTH</code>：不畫引線就不需要那道縫），
         <code>gap-x-2</code> ＋ 機甲圖 76px ＋ 名稱折兩行。<br>
         ⚠ <strong>底部操作列不可貼底</strong>：<code>Layout.tsx</code> 已有一條
         <code>fixed bottom-0</code> 的手機 Tab Bar（<code>h-14</code> ＋ safe-area、<code>z-50</code>），
-        本頁的列必須疊在它上面（<code>z-40</code>），toast 再疊在兩者之上。
+        本頁的列必須疊在它上面（<code>z-40</code>），toast 再疊在兩者之上。<br>
+        ⚠ <strong>這一列的高度是量出來的，不是常數</strong>（2026-08-30）：按鈕數會變
+        （超重多一顆「自動卸至符合」、清空拆成兩顆之後共六顆），字級又是使用者設定
+        ⇒ 390px 上必然換行。列本身改 <code>flex-wrap</code>（不換行的代價不是難看，是<strong>最右邊那顆整顆按不到</strong>——本列沒有橫向捲軸），
+        高度用 <code>ResizeObserver</code> 量一次，餵給內容底部留白與三處 toast 的 <code>bottom</code>；
+        原本那組寫死的 <code>7rem</code>／<code>3.25rem</code> 全部退場——它們一被換行破壞，
+        症狀就是「[復原] 被壓在操作列底下」。
       </p>
     </div>
     <div class="card orange">
@@ -101,7 +107,10 @@
       <h3>匯出配裝長圖（052-I E）</h3>
       <p>
         <code>toPng(el, { backgroundColor: '#0a0c10', pixelRatio: 2, skipFonts: false })</code>，
-        實測 <strong>2000×2586</strong>、約 3MB、單次約 0.5 秒。浮水印兩層：footer 主標
+        <span style="color:var(--text-dim);">（052-I 初版實測 2000×2586、約 3MB、約 0.5 秒）</span>
+        <strong>PLAN-052-L 改版後：2000×5,584 ＝ 2,792 CSS px、4.87MB、787ms</strong>
+        （最壞情況，離 iOS Safari 的 canvas 上限還有 33%）。裝備區換成與螢幕同構的十字，
+        <strong>每一格都印武器／背包圖示</strong>（2026-08-30；空槽不補空框——那會被讀成「有一件我不認得的裝備」）。浮水印兩層：footer 主標
         （<code>mecharashi.wiki</code>＋站名全稱＋非官方聲明）與底噪 <code>MILKHAMA</code> wordmark；
         右下印產生日期與遊戲版本（取 <code>patchVersions</code> 的 <code>isTwCurrent</code>）。
         <strong>分享碼那一欄在 052-C 的 E-1 把它接進來之前整個不印</strong>——印占位會有人拿去貼，而它解不開。<br>
@@ -116,8 +125,19 @@
       <p>
         空／已裝／🔒佔據（機甲固定武裝）／🔒全鎖（形態）／▨無槽／預覽。
         ▨無槽<strong>整格說明原因</strong>（「肩部槽位只有中甲機甲才有」「先鋒形態沒有可裝在左肩的武器」），
-        不是一個點不下去的空 <code>[+]</code>。雙手武器合併成寬格；備用組獨立一列（由強襲者背包給）。
-        React key 一律 <code>slotKey()</code>，不可用 weaponId（帕斯卡左右肩是同一把武器）。
+        不是一個點不下去的空 <code>[+]</code>。雙手武器左右兩格都畫同一把、重量只印一次；
+        備用組由強襲者背包解鎖，解鎖後直接進左右兩欄。
+        React key 一律 <code>slotKey()</code>，不可用 weaponId（帕斯卡左右肩是同一把武器）。<br>
+        <strong>幾何自 PLAN-052-L B-1 起集中在 <code>src/utils/rigLayout.ts</code></strong>：螢幕版與匯出圖
+        各自渲染（字級階、互動語彙、可用寬度都不同），但「畫面左欄＝機體右側」「臂卡插在肩與手之間」
+        這類空間裁決只有一份 —— 各寫一次的漂移症狀是「同一台機體在畫面上與圖上左右相反」，而兩邊都不會報錯。<br>
+        ⚠ <strong>十字的四端一律半寬置中</strong>（軀幹／腿部／<strong>背部</strong>，2026-08-30 起背部也是）：
+        整寬時內容全靠左、右半邊一片空，與正上方的腿部卡對不齊，十字的形狀因此讀不出來。
+        「整排不存在」的肩部仍是整寬 —— 那一列講的是一整排，不是十字的一端。<br>
+        ⚠ <strong>沒有備用槽就不解釋備用槽</strong>（2026-08-30）：先前圖底固定畫一列
+        「未裝強襲者背包 → 沒有備用武器槽」＋一句「手部取主手／備用較重者」。
+        181 個背包只有 1 個解得開它 ⇒ 那兩段幾乎每張圖都在解釋一個<strong>這套配裝裡不存在</strong>的東西。
+        真的解鎖時兩段照印（那時圖上有兩排武器，而總重只算較重的一排）。
       </p>
     </div>
     <div class="card pink">
@@ -144,6 +164,25 @@
         <strong>blocked</strong>（FORM_LOCKED／SLOT_OCCUPIED／數值未建檔）整個挑選器降級並說明。
       </p>
     </div>
+    <div class="card cyan">
+      <div class="card-icon">🧹</div>
+      <h3>兩顆清空鍵</h3>
+      <p>
+        <strong>清空裝備</strong>＝目前分頁的武器與背包（連同掛在武器上的元件）；
+        <strong>全部清空</strong>＝連機師與機甲一起丟掉，回到初始草稿。
+        拆開的理由（使用者回饋 2026-08-30）：同一列另外三顆都是「把整份配裝交出去」，
+        於是一顆孤零零的「清空」讀起來像「全部重來」——想換機師從頭配的人按下去，
+        機師與機甲卻還在原位。<br>
+        ⚠ <strong>清空裝備只動當前分頁</strong>：海莉絲三個形態各有一套，站在「突擊」按下去
+        不該把「先鋒」那一套也帶走（那一頁要切過去才看得見，是靜默損失）。<br>
+        ⚠ <strong>兩顆都跳 toast 並附 [復原]</strong>（<code>commitClear()</code>）：
+        <code>commit()</code> 只在「有東西被級聯移除」時才給提示與復原，而清空是玩家自己按的整批刪除，
+        一件 <code>RemovedItem</code> 都不會產生 ⇒ 拆成兩顆之前，「清空」是<strong>靜默且不可復原</strong>的。
+        兩顆相鄰、標籤只差兩個字，按錯的代價是整套配裝。<br>
+        ⚠ <strong>不做二次確認</strong>：本頁的安全網一向是事後的 [復原]，
+        「確定嗎？」只會讓常按的那顆每次都多按一下。顏色改為灰／紅框以區分。
+      </p>
+    </div>
     <div class="card purple">
       <div class="card-icon">🔗</div>
       <h3>級聯：降級不清空</h3>
@@ -164,11 +203,13 @@
     </div>
     <div class="card orange">
       <div class="card-icon">🧩</div>
-      <h3>後續階段的可見佔位</h3>
+      <h3>後續階段的可見佔位（已全數兌現）</h3>
       <p>
-        武器列顯示「⚙ 0/<code>componentLimit</code>」（讓玩家看得到上限是 4 而不是觸 3 加應 3 的 6）、
-        有獨立配裝的機師（海莉絲）頁頂常駐橫幅說明形態分頁開發中、
-        機甲卡顯示唯讀四部位表 ＋「部件混搭與模組配置開發中」。
+        <span style="color:var(--text-dim);">本卡記的是 052-B 當時留下的三個佔位：武器列的「⚙ 0/<code>componentLimit</code>」、
+        海莉絲頁頂那條「形態分頁開發中」橫幅、機甲卡的唯讀四部位表 ＋「部件混搭與模組配置開發中」。</span><br>
+        三個都已由後續子計畫接手完成：<strong>元件（052-D）</strong>、<strong>形態分頁（052-F）</strong>、
+        <strong>模組槽與部件混搭（052-G）</strong>。留著這張卡是為了記住那個做法本身——
+        <strong>可見佔位要寫得出「之後會有什麼」，而不是渲染一個點不下去的空格</strong>。
       </p>
     </div>
   </div>

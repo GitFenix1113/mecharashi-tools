@@ -34,7 +34,7 @@
 //
 // 純函式、無 React／Firestore 依賴，可單測（npm test）。
 
-import type { LoadoutDraft, EquipSet, LoadoutMount } from '../../types/loadout'
+import type { LoadoutDraft, EquipSet, LoadoutMount, LoadoutSkills } from '../../types/loadout'
 import type { SlotBank, SlotSide } from '../../types/slots'
 import type { MechPartPosition, WeaponEquipSlot } from '../../types/enums'
 import { slotKey } from '../../types/slots.ts'
@@ -57,6 +57,21 @@ export const TAG = {
   ND: 4,
   /** 方案名稱（PLAN-052-I E-1）。 */
   NAME: 5,
+  /**
+   * 方案備註（PLAN-052-L C-3）。**追加段，不 bump `FMT_VERSION`**：
+   * 舊 client 遇到不認得的 tag 會跳過並記進 `unmodeled`，不拒收整串 ⇒ 零遷移。
+   *
+   * ⚠ **必須寫在 §NAME 之後**（`encodeLoadout` 的順序就是版面順序）：
+   *   插在前面會讓所有既有的 golden fixture 碼位元不同 —— 那些是「已經流出去的碼」。
+   */
+  NOTE: 6,
+  /**
+   * 攜帶技能（PLAN-052-L D-3）。**追加段，不 bump `FMT_VERSION`**，理由同 `NOTE`。
+   *
+   * ⚠ **排在 §NOTE 之後**（＝整串的最後）：`encodeLoadout()` 的順序就是版面順序，
+   *   插在前面會讓所有既有的 golden fixture 碼位元不同 —— 那些是已經流出去的碼。
+   */
+  SKILLS: 7,
 } as const
 
 /** 槽位 → 3 bits。**保留 8 個位置**，遊戲加第五種槽位時是加值而非升版本。 */
@@ -94,6 +109,20 @@ export const LIMITS = {
   keyBytes: 64,
   /** 方案名稱：`LOADOUT_NAME_MAX` 是 24 碼點，最壞 4 bytes/碼點 */
   nameBytes: 128,
+  /**
+   * 方案備註：`LOADOUT_NOTE_MAX` 是 100 碼點，最壞 4 bytes/碼點 ＝ 400。
+   * 取 512 留餘裕 —— 這個數字是**炸彈引信**不是「合理值」，寬到不會誤殺、窄到炸不掉瀏覽器。
+   */
+  noteBytes: 512,
+  /**
+   * 攜帶技能格數。**這是炸彈引信不是規則** —— 真正的規則是
+   * `CARRIED_SKILL_SLOTS`（3），由 `reconcile()` 裁到那個長度。
+   *
+   * 這裡取 8 而不是 3：解碼器的工作是「別讓一段 3 bytes 的代碼宣告十萬個項目」，
+   * 不是替遊戲規則把關。哪天官方開第四格，收得下的碼一律照收 ——
+   * 上限只能放寬不能收緊（052-E 決策二），而在這裡誤殺的症狀是整串碼被拒收。
+   */
+  skills: 8,
 } as const
 
 // ─── 位元組讀寫 ──────────────────────────────────────────────────────────────
@@ -409,6 +438,36 @@ function encodeNd(ndLevels: Record<string, number> | undefined): Writer {
 }
 
 /**
+ * §SKILLS 的內容（PLAN-052-L D-3）。
+ *
+ * 版面：`NCARRIED varint ＋ 號碼 varint × N ＋ MOD varint`（`MOD` 為 0 ＝ 沒有）。
+ *
+ * ⚠ **`mod` 恆寫一個 varint，即使是 0**：省掉它就得靠「段內還有沒有剩」來判斷有無，
+ *   而 `decodeLoadout()` 的既有規約是「段內沒讀完 ⇒ 記進 `unmodeled`」——
+ *   於是每一份不帶「改」技能的碼都會多出一筆假的未知段落。1 byte 換掉那個歧義。
+ *
+ * ⚠ 查不到號碼的技能**整個跳過**（同 `encodePositionMap` 的既有作法）。今天不會發生：
+ *   853／853 都在登錄簿裡（D-2），而 `scripts/check-share-ids.mjs` 會在上線前
+ *   把「還沒發號」報出來 —— 那正是它新增 `pendingAliases` 的理由。
+ */
+function encodeSkills(skills: LoadoutSkills | undefined, index: ShareIndex): Writer {
+  const w = new Writer()
+  if (!skills) return w
+  const carried = (skills.carried ?? [])
+    .map((id) => index.toShareId(id))
+    .filter((n): n is number => n !== null)
+  const mod = skills.mod ? index.toShareId(skills.mod) ?? 0 : 0
+  if (carried.length === 0 && mod === 0) return w
+  if (carried.length > LIMITS.skills) {
+    throw new Error(`[codec] 攜帶技能數超過上限（${carried.length} > ${LIMITS.skills}）`)
+  }
+  w.varint(carried.length)
+  for (const n of carried) w.varint(n)
+  w.varint(mod)
+  return w
+}
+
+/**
  * 把一份草稿編成分享碼。
  *
  * **會 throw**（與 `decodeLoadout` 相反）：這裡的例外一律是呼叫端的 bug
@@ -432,6 +491,14 @@ export function encodeLoadout(draft: LoadoutDraft, opts: EncodeOptions): string 
     nameBody.str(draft.name, LIMITS.nameBytes)
     section(w, TAG.NAME, nameBody)
   }
+  // ⚠ §NOTE 必須排在 §NAME 之後（見 `TAG.NOTE` 的註解）
+  if (draft.note) {
+    const noteBody = new Writer()
+    noteBody.str(draft.note, LIMITS.noteBytes)
+    section(w, TAG.NOTE, noteBody)
+  }
+  // ⚠ §SKILLS 排在最後（見 `TAG.SKILLS` 的註解）
+  section(w, TAG.SKILLS, encodeSkills(draft.skills, ix.pilotSkill))
 
   const body = w.toBytes()
   const out = new Uint8Array(body.length + 1)
@@ -439,6 +506,78 @@ export function encodeLoadout(draft: LoadoutDraft, opts: EncodeOptions): string 
   out[body.length] = checksum8(body)
   if (out.length > LIMITS.bytes) throw new Error(`[codec] 代碼過長（${out.length} > ${LIMITS.bytes} bytes）`)
   return toBase64Url(out)
+}
+
+/**
+ * 同一套配裝的**識別鍵**（PLAN-052-L C-6）。
+ *
+ * ── 為什麼需要它 ────────────────────────────────────────────────────────────
+ * 書架與雲端的「已存過」判定原本是**比對整串代碼字串**。加上備註之後，
+ * 「只改了備註」＝新字串 ⇒「已在雲端」徽章翻假、再存一次會佔掉第二格而不是就地更新。
+ * 而「三個只差一點的方案」正是這個機制最脆弱的輸入 —— 它們的差別可能只在備註裡。
+ *
+ * ⇒ 拿掉三樣東西之後再比：
+ *   · **§NAME**   方案名稱是標籤，不是配裝
+ *   · **§NOTE**   備註是說明，不是配裝
+ *   · **GAMEVER** header 那個「不參與解析」的版本提示。它記的是**這串碼是哪一版做的**，
+ *                 不是這一套裝了什麼；留著的話，同一套配裝在改版前後存兩次會佔兩格。
+ *
+ * 回傳的字串**只用來比對**，不可以拿去解碼、更不可以存起來當代碼
+ * （它沒有 checksum，而且丟掉了名稱與備註）。
+ *
+ * 解不開時回 `null` —— 呼叫端請退回比對原字串（那是改寫前的行為，至少不會更糟）。
+ *
+ * ⚠ 純位元組操作，**不經 `decodeLoadout()`**：那需要六份 shareId 索引，而書架這一層
+ *   （`localBuilds.ts`）刻意零依賴。而且解碼再重編會把「解不開的引用」洗成 0，
+ *   兩串不同的碼會因此撞成同一個鍵。
+ */
+export function loadoutIdentity(raw: string): string | null {
+  const s = cleanCodeInput(raw)
+  if (!s) return null
+  const all = fromBase64Url(s)
+  if (!all || all.length < 5 || all.length > LIMITS.bytes) return null
+  const body = all.subarray(0, all.length - 1)   // 去掉 CHK
+
+  try {
+    const r = new Reader(body)
+    const w = new Writer()
+    w.byte(r.byte())      // FMT
+    r.byte()              // GAMEVER —— 讀掉但不寫回（見上方）
+    w.varint(r.varint())  // PILOT
+    w.varint(r.varint())  // MECH
+
+    while (r.remaining > 0) {
+      const tag = r.byte()
+      const len = r.varint()
+      if (len > r.remaining) return null
+      const start = r.offset
+      r.skip(len)
+      // 未知 tag 一律**保留**：它是別的 client 加的配裝資料，丟掉會讓兩套不同的
+      // 配裝撞成同一個鍵（而症狀是「存第二套時被當成重複、就地覆蓋掉第一套」）
+      if (tag === TAG.NAME || tag === TAG.NOTE) continue
+      w.byte(tag)
+      w.varint(len)
+      w.bytes(body.subarray(start, start + len))
+    }
+    return toBase64Url(w.toBytes())
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 比對「是不是同一套配裝」時用的鍵（PLAN-052-L C-6）。
+ *
+ * ＝ `loadoutIdentity()`，但**解不開時退回原字串**。書架與雲端的三個去重點一律走這一支，
+ * 各自寫一次 `?? code` 的話，總有一處會忘記而變成「壞掉的舊碼永遠被判定成不重複」。
+ */
+export function loadoutKey(code: string): string {
+  return loadoutIdentity(code) ?? code
+}
+
+/** 兩串碼是不是同一套配裝（忽略方案名稱、備註與遊戲版本提示）。 */
+export function sameLoadout(a: string, b: string): boolean {
+  return a === b || loadoutKey(a) === loadoutKey(b)
 }
 
 // ─── decode ──────────────────────────────────────────────────────────────────
@@ -564,6 +703,34 @@ function readPositionMap(
   return out
 }
 
+/**
+ * 讀 §SKILLS（PLAN-052-L D-3）。版面見 `encodeSkills()`。
+ *
+ * ⚠ 查不到 doc id 的號碼進 `unresolved` 並**跳過那一格**，不整串拒收（決策四④）：
+ *   對方可能在分享一個本站剛下架／還沒同步的技能。
+ * ⚠ **不裁到三格**：那是 `reconcile()` 的事。codec 只把 bytes 變回結構，
+ *   在這裡多裁一次會讓 round-trip 測試的相等失效，而那個相等正是把關的東西。
+ */
+function readSkills(r: Reader, index: ShareIndex, unresolved: UnresolvedRef[]): LoadoutSkills | null {
+  const n = r.varint()
+  if (n > LIMITS.skills) throw new RangeError('too-many-items')
+  const carried: string[] = []
+  for (let i = 0; i < n; i++) {
+    const num = r.varint()
+    const id = index.toDocId(num)
+    if (id) carried.push(id)
+    else unresolved.push({ kind: 'pilotSkill', shareId: num, at: `skill:${i + 1}` })
+  }
+  const modNum = r.varint()
+  const out: LoadoutSkills = { carried }
+  if (modNum > 0) {
+    const id = index.toDocId(modNum)
+    if (id) out.mod = id
+    else unresolved.push({ kind: 'pilotSkill', shareId: modNum, at: 'skill:mod' })
+  }
+  return carried.length > 0 || out.mod ? out : null
+}
+
 function readNd(r: Reader): Record<string, number> {
   const n = r.varint()
   if (n > LIMITS.ndZones) throw new RangeError('too-many-items')
@@ -653,6 +820,20 @@ export function decodeLoadout(raw: string, indexes: ShareIndexes): DecodeResult 
         case TAG.NAME: {
           const name = sub.str(LIMITS.nameBytes)
           if (name) draft.name = name
+          break
+        }
+        case TAG.NOTE: {
+          // ⚠ 這裡**不清洗**：codec 只負責把 bytes 變回字串，清洗是 `reconcile()` 的事
+          //   （寫入邊界兩道，見 `sanitizeLoadoutNote` 的檔頭）。在這裡多清一次，
+          //   會讓「解出來的」與「reconcile 之後的」在測試裡對不起來，而 round-trip
+          //   測試正是靠那個相等在把關。
+          const note = sub.str(LIMITS.noteBytes)
+          if (note) draft.note = note
+          break
+        }
+        case TAG.SKILLS: {
+          const skills = readSkills(sub, indexes.pilotSkill, unresolved)
+          if (skills) draft.skills = skills
           break
         }
         default:

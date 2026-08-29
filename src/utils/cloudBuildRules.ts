@@ -13,6 +13,7 @@
 //   純規則放這裡才單測得到，而它們正是最需要被釘住的部分。
 
 import { CLOUD_CODE_MAX_CHARS, CLOUD_SLOTS, isCloudSlot, type CloudSlot } from '../types/loadout.ts'
+import { sameLoadout } from './loadoutCode/codec.ts'
 
 /**
  * doc id 的形狀。**`firestore.rules` 裡有第二份**（`buildId.matches('^pilot_[0-9]{3}_.*')`）。
@@ -117,8 +118,11 @@ export type ImportOutcome =
   /** 會被寫進雲端的第 `slot` 格 */
   | { kind: 'import'; slot: CloudSlot }
   /**
-   * 同一串代碼已經在這位機師的第 `slot` 格 ⇒ **跳過**，不重複佔格。
+   * 同一套配裝已經在這位機師的第 `slot` 格 ⇒ **跳過**，不重複佔格。
    * 這條就是「匯入是 idempotent」的全部：連按兩次不會佔掉兩格（D-5）。
+   *
+   * ⚠ 判定走 `sameLoadout()` 而不是字串相等（PLAN-052-L C-6）——
+   *   「同一套但備註改過一次」是同一套，不該佔第二格。
    */
   | { kind: 'duplicate'; slot: CloudSlot }
   /** 這位機師的 5 格已經滿了（含這次批次裡較前面的那幾筆佔走的） */
@@ -181,7 +185,7 @@ export function planCloudImport(
 
     const slots = slotsOf(it.pilotId)
     // 去重先於配額：五格滿了但這一套本來就在裡面時，答案是「已經有了」而不是「滿了」
-    const dup = CLOUD_SLOTS.find((s) => slots[s] === it.code)
+    const dup = CLOUD_SLOTS.find((s) => { const c = slots[s]; return c !== undefined && sameLoadout(c, it.code) })
     if (dup) return { ...base, outcome: { kind: 'duplicate', slot: dup } }
 
     const free = CLOUD_SLOTS.find((s) => slots[s] === undefined)

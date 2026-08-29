@@ -4,12 +4,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { activityGeometry, todayPct, parseDate, addDays, generateWeeks, halfEndDate, suggestWeeksUntilHalfEnd, DEFAULT_HALF_WEEKS, DAY_MS } from './ganttGeometry.ts'
-import type { TimedActivity } from '../../data/patchVersions/types.ts'
+import type { VisibleActivity } from '../../data/patchVersions/types.ts'
 
 /** 2026/08/06 起連續 7 週（皆為週四），對應 v3.5 的軸 */
 const WEEKS = Array.from({ length: 7 }, (_, i) => addDays(parseDate('2026/08/06'), i * 7))
 
-function act(startDate: string, weeks: number): TimedActivity {
+function act(startDate: string, weeks: number): VisibleActivity {
   return { name: 'x', startDate, weeks, type: 'limitedEvent' }
 }
 

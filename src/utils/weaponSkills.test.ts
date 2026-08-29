@@ -14,7 +14,7 @@ const 凝神待發: PilotSkillDoc = {
   type: '被動技能',
   domain: 'weapon',
   description: '普通攻擊前，若沒有移動過，本次攻擊可以[瞄準]，每回合最多發動3次',
-  descriptionRefs: { description: { 瞄準: { refType: 'glossary', refId: 'gt_瞄準' } } },
+  descriptionRefs: { 瞄準: { refType: 'term', refId: 'term_瞄準' } },
   icon: 'https://cdn/Icon_skill_passive_5186.png',
   iconLocal: '/images/weapons/skills/Icon_skill_passive_5186.png',
   effects: [],
