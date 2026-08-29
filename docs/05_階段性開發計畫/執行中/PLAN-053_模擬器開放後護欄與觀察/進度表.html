@@ -175,8 +175,8 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-red)">3</div>
-      <div class="summary-lbl">需站長裁決</div>
+      <div class="summary-num" style="color:var(--accent-red)">4</div>
+      <div class="summary-lbl">站長任務</div>
     </div>
     <div class="summary-card">
       <div class="summary-num" style="color:var(--text-dim)">14</div>
@@ -337,31 +337,38 @@
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">A-5 &nbsp; 裁決：要不要加 exists(/pilots/{buildId})</div>
-      <div class="task-group-meta">決策四 · 推翻 052-E A-3 需使用者同意</div>
+      <div class="task-group-title">A-5 &nbsp; exists(/pilots/{buildId})：A-3 的必要組件</div>
+      <div class="task-group-meta">firestore.rules · 決策四（已裁決加入）</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">重新問一次「文件份數擋不住」這個殘餘風險</div>
+        <div class="task-name">doc id 必須是真的機師 —— 與 A-3 同一次出貨，不可分開上</div>
         <div class="task-desc">
-          052-E A-3 裁決<b>接受</b>這個風險，但那是在<b>沒有節流、沒有 <code>exists()</code>、
-          且模擬器還沒開放</b>三個前提下做的 —— 三個前提現在都變了。
+          <b>⚠ 這一項單獨看沒有價值，它的作用是讓 A-3 生效。</b>
+          <code>create</code> 節流不了（決策三），所以 doc id 空間就是不受節流的寫入次數：
+          <b>只做 A-3</b> ⇒ id 空間無限 ⇒ 仍是 43M/日 ≈ US$78/日；
+          <b>A-3 ＋ 本項</b> ⇒ id 空間 89 ⇒ 89 ÷ 3 秒 ≈ 2.6M/日 ≈ US$4.6/日
+          （對得上決策九算的 US$6.1/日）。
+          <b>分開上等於裝了一道旁邊有路可繞的門，而帳單數字一分不降。</b>
           <br><br>
-          <b>加的好處</b>：份數真正封頂到實際機師數（決策九原本就是這樣設計的，只是沒實作）。
-          現行 <code>'^pilot_[0-9]{3}_.*'</code> 那個 <code>.*</code> 讓 doc id 無限延伸，
-          所以「正規式把面縮小」在<b>份數</b>這個維度上幾乎沒有縮小。
+          <b>寫法</b>：<code>exists(/databases/$(database)/documents/pilots/$(buildId))</code>，
+          掛在 <code>create, update</code> 上、<b>不要掛 delete</b>（沿用既有原則：
+          清掉一份垃圾文件永遠不會讓情況變糟，擋下刪除只會製造刪不掉的殘留）。
+          <code>buildId</code> 就是 pilots 的 doc id，零轉換。
           <br>
-          <b>加的代價</b>：①每次存檔多一次計費 document read（低頻，可忽略）；
-          ②<b>機師 id 改號會讓舊存檔存不回去</b> —— 本專案改過號，且已知改號會在熱度統計留幽靈 key，
-          這是真實會發生、症狀又難懂的故障模式。
+          ⚠ 規則裡的 <code>exists()</code> 是<b>特權讀取</b>，不受 pilots 那條
+          <code>read: if isAdmin()</code> 影響 —— 這點違反直覺，A-6 要有測試釘住。
+          <br>
+          ⚠ 保留正規式，<b>不要用 <code>exists()</code> 取代它</b>：正規式是先擋掉明顯畸形的 id，
+          省下那次 <code>exists()</code> 的計費讀取。
           <br><br>
-          <b>本計畫不自行拍板。</b>推翻一個已成立的裁決屬於使用者。
-          決定「不加」也要把上面這段寫進規則註解，讓下一次不必重推。
+          <b>「機師 id 漂移」不構成阻礙</b>（使用者裁決 2026-08-29）：全站資料已不再由爬蟲驅動，
+          id 是人工維護的穩定鍵。詳見計畫書決策四後的說明。
         </div>
-        <div class="task-file">firestore.rules（視裁決結果）</div>
+        <div class="task-file">firestore.rules</div>
       </div>
-      <div class="task-assignee">站長</div>
+      <div class="task-assignee">開發者</div>
       <span class="status pending">待開始</span>
     </div>
   </div>
