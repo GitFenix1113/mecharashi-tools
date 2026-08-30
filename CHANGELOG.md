@@ -341,6 +341,7 @@
 
 ### 🔧 維護
 
+- **infra**: 關閉 workers.dev + 補 SPA fallback 白名單，並立防再犯檢查項 (`e4e5e15`)
 - **images**: 匯入官方原稿藝術大圖 —— 機師 52、機甲 83 張 art.webp (`8c8f437`)
 - **loadout**: PLAN-052-D Phase B 完成 — 元件的動作層與級聯（8／15） (`99c248a`)
 - **loadout**: PLAN-052-D Phase A 完成 — 元件規則層地基（5／15） (`0253e59`)
