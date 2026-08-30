@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { SITE_CHANGELOG } from '../../data/siteChangelog'
 import type { ChangelogEntry, ChangelogType } from '../../data/siteChangelog'
 
@@ -58,6 +58,29 @@ function TabButton({ label, active, onClick }: { label: string; active: boolean;
   )
 }
 
+/**
+ * 履歷正文只允許 <b>（強調）與 <br>（分段）兩種標籤——來源是版控裡的靜態 TS 檔，
+ * 不是使用者輸入。仍不走 dangerouslySetInnerHTML：自行切成 React 節點，
+ * 日後就算有人往 summary 塞了別的標籤，也只會被當成純文字印出來，不會執行。
+ */
+function renderSummary(summary: string, expanded: boolean): ReactNode[] {
+  const nodes: ReactNode[] = []
+  let bold = false
+  summary.split(/(<b>|<\/b>|<br\s*\/?>)/i).forEach((part, i) => {
+    if (!part) return
+    const tag = part.toLowerCase()
+    if (tag === '<b>') { bold = true; return }
+    if (tag === '</b>') { bold = false; return }
+    if (/^<br\s*\/?>$/.test(tag)) {
+      // 折疊預覽是單行 truncate，換行會撐破版面 → 退化成一個空白
+      nodes.push(expanded ? <br key={i} /> : ' ')
+      return
+    }
+    nodes.push(bold ? <b key={i} className="font-semibold text-text-primary">{part}</b> : part)
+  })
+  return nodes
+}
+
 /** 單筆履歷列 */
 function ChangelogRow({ entry, expanded }: { entry: ChangelogEntry; expanded: boolean }) {
   const meta = TYPE_META[entry.type]
@@ -71,7 +94,7 @@ function ChangelogRow({ entry, expanded }: { entry: ChangelogEntry; expanded: bo
     >
       <span className={`font-mono tabular-nums shrink-0 text-accent-orange/85 ${expanded ? 'pt-0.5 w-5 text-right' : ''}`}>{dateLabel}</span>
       <span className={`shrink-0 font-semibold w-9 text-center ${meta.color} ${expanded ? 'pt-0.5' : ''}`}>{meta.label}</span>
-      <span className={`flex-1 text-text-secondary ${expanded ? 'break-words leading-relaxed' : 'truncate'}`}>{entry.summary}</span>
+      <span className={`flex-1 text-text-secondary ${expanded ? 'break-words leading-relaxed' : 'truncate'}`}>{renderSummary(entry.summary, expanded)}</span>
       {!expanded && (
         <span className="shrink-0 text-text-dim group-hover:text-text-secondary transition-colors">›</span>
       )}
