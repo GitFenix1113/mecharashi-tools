@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-29
+## [Unreleased] - 2026-08-30
 
 ### ⚠ 重大變更
 
@@ -156,6 +156,7 @@
 
 ### 🐛 修復
 
+- **simulator**: 機師天賦預設顯示滿星版 —— 附滿星差異標示與 ⇌ 滿星／初始切換 (`dbed1c8`)
 - **simulator**: PLAN-052-L G-4／G-5 —— 別人專武的天賦強化不顯示、匯出圖明細帶補圖示 (`db62921`)
 - **simulator**: 出力模組沒被算進可用出力；貼碼預覽與書架卡片不數模組元件 (`789effd`)
 - **mechs**: 模組接口資料全面對帳 —— 修正 2 台 8 格，並補上規則層守門 (`ef6bb64`)
