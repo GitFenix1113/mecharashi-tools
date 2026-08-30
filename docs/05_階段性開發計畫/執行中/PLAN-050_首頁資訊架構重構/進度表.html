@@ -1038,10 +1038,28 @@
         <td>✔ 已可分辨（<code>versions_quick</code> / <code>_grayops</code> / <code>_timeline</code>），<strong>待上線累積</strong></td><td>A</td></tr>
     <tr><td>行動裝置佔比</td><td>未知</td><td>可分辨並據以排序</td><td><strong>待上線累積</strong>（A-6）</td><td>A</td></tr>
     <tr><td>版本可否分享連結</td><td>否</td><td>是（<code>/versions/timeline/:version</code>）</td>
-        <td style="color:var(--accent-green);">✔ 是，且網址就是狀態</td><td>A + C</td></tr>
+        <td style="color:var(--accent-green);">✔ 是，且網址就是狀態<br><span style="color:var(--accent-orange);font-size:11px;">（2026-08-19～08-30 一度只成立一半，見下方註記；08-30 已修）</span></td><td>A + C</td></tr>
     <tr><td>透明度魔數數量</td><td class="num">3 個</td><td class="num">0 個</td>
         <td style="color:var(--accent-green);">✔ 0 個（三個常數皆退場）</td><td>C</td></tr>
   </table>
+
+  <div class="note-info" style="border-color:rgba(249,115,22,0.35);background:rgba(249,115,22,0.06);">
+    <strong style="color:var(--accent-orange);">⚠ 2026-08-30 補記：分享連結在邊緣層被打了 11 天的折扣（已修）</strong><br>
+    A-1 建的 <code>/versions</code> 三條路由在正式站<strong>一直回 HTTP 404</strong>，從 08-19 上線到 08-30 複查 PLAN-029 殘項時實測才發現。
+    真人完全察覺不到——<code>public/404.html</code> 的 GitHub Pages 重導 shim 會把瀏覽器導到 <code>/?/versions/timeline</code> 再由
+    <code>index.html</code> 用 <code>history.replaceState</code> 還原，頁面照常顯示。但底下四件事全是錯的：
+    ① HTTP 狀態碼 404；② 多一次 <code>/?/</code> 中繼跳轉（＝2 筆 document 請求，正是 PLAN-029 路線 B 當初驗收「僅 1 筆」消掉的東西）；
+    ③ 搜尋引擎不收錄；④ 貼到 Discord／LINE 展開時抓到 404。<br>
+    <strong>真因</strong>：正式站的 SPA 深層路徑靠 Cloudflare 的 Transform Rule（URL 改寫）在邊緣改寫成 <code>/index.html</code>，
+    而 Free 方案不給用 regex，那條規則是<strong>逐條列舉路徑前綴的白名單</strong>——它設於 2026-07-26（PLAN-029 5-1），
+    <code>/versions</code> 是 08-19 才建的，沒人回頭補登記。這份白名單<strong>只存在 CF Dashboard、不在版控</strong>，
+    <code>npm run build</code>／<code>npm test</code> 都抓不到，本機 dev 與 PR preview 也不經過它。<br>
+    <strong>已修（2026-08-30）</strong>：白名單補上 <code>/versions</code> 與 <code>/connectivity</code>，實測六條全 200、回應本體不再含重導 shim
+    ＝ 恢復單次 document 請求；全 33 條路由總掃唯一非 200 的是 <code>/notarealpath</code>（404，符合設計意圖）。<br>
+    <strong>防再犯</strong>：已寫成 CLAUDE.md 第 3 節的檢查項「新增頂層路由時：同步 Cloudflare Transform Rule 白名單」。
+    諷刺的是 <a href="../../../../src/App.tsx" style="color:var(--accent-orange);">App.tsx</a> 早有一段註解記下這個陷阱
+    （PLAN-052-B 決定沿用 <code>/simulator</code> 就是為了不新增頂層路由、不碰這條規則），但教訓沒有變成流程，所以還是漏了一次。
+  </div>
 
   <div class="note-info">
     <strong>1024 / 1366 / 1920 三個寬度的實測（2026-08-19，<code>/versions/timeline</code> v3.1）</strong><br>
