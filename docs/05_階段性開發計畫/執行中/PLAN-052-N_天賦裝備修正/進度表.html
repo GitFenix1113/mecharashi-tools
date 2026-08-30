@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-N 天賦裝備修正 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 700; }
+.summary-lbl { font-size: 11px; color: var(--text-dim); letter-spacing: 2px; margin-top: 4px; }
+
+.progress-wrap { margin: 20px 0 28px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--text-dim); margin-bottom: 6px;
+}
+.progress-bar-bg {
+  height: 8px; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: 99px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+  border-radius: 99px;
+}
+
+.impact-note {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 14px 0;
+  overflow: hidden;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.task-group-title { font-weight: 700; font-size: 15px; color: var(--text-primary); }
+.task-group-meta  { font-size: 12px; color: var(--text-dim); margin-left: auto; }
+
+.task-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.task-row:last-child { border-bottom: none; }
+.task-row > div:first-child { flex: 1; min-width: 0; }
+.task-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.task-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
+.task-file {
+  font-family: ui-monospace, monospace; font-size: 11.5px;
+  color: var(--text-dim); margin-top: 6px;
+}
+.task-assignee {
+  font-size: 11px; color: var(--text-dim);
+  white-space: nowrap; padding-top: 2px;
+}
+
+.status {
+  font-size: 11px; padding: 3px 10px; border-radius: 99px;
+  white-space: nowrap; font-weight: 600;
+}
+.status.done    { background: rgba(34,197,94,0.12);  color: var(--accent-green); }
+.status.doing   { background: rgba(34,211,238,0.12); color: var(--accent-cyan); }
+.status.pending { background: rgba(255,255,255,0.06); color: var(--text-dim); }
+.status.blocked { background: rgba(239,68,68,0.12);  color: var(--accent-red); }
+
+.data-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+.data-table th { background: var(--bg-card); border: 1px solid var(--border); padding: 6px 10px; text-align: left; color: var(--text-dim); font-size: 11px; letter-spacing: 1px; }
+.data-table td { border: 1px solid var(--border); padding: 6px 10px; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-052-N 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-052-N</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> · 天賦裝備修正</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-30</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">16</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">2</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">18</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-cyan);">16 / 18</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 89%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    維娜點得到電磁炮、瑪汀妮點得到修理背包（今天兩人都被<b>錯誤封鎖</b>），
+    9 位機師的負重減免真的算進總重，而「天賦提升了沒有」從一個藏在元件裡的顯示偏好，
+    變成會跟著分享碼與匯出圖一起走的<b>配裝參數</b>。
+  </div>
+
+  <div class="impact-note" style="border-left-color:var(--accent-yellow);background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);">
+    <strong>建議施作順序：</strong>
+    <b>A → B</b> 是主線（做完就解掉錯誤封鎖與重量誤差）；<b>C</b> 只有洛莎／艾琳／里貝卡三人會用到
+    （減重只在提升後才有），但一旦 B 落地就<b>不能拖太久</b> —— 在 C 之前，這三人的重量等於預設吃滿潛。
+    <b>D</b> 是解釋層，缺了它玩家會看到一個對不上遊戲的數字卻不知為何。<b>E 隨時可做，也可以不做。</b>
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">資料層 —— 讓這些規則存得下來</div>
+  <div class="section-desc">型別、後台編輯 UI、A 類 9 筆填值。做完這一階，資料在庫裡但還沒有任何人讀。</div>
+
+  <div class="impact-note" style="border-left-color:var(--accent-green);background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);">
+    <strong>✅ 2026-08-30 完成（6／6）。</strong>
+    <b>11 條規則已寫入 9 位機師</b>（維娜／瑪汀妮各 2 條：解除限制 ＋ 減重），
+    <code>pilots</code> 版本已 bump，<code>npm run build</code> 通過。
+    <br><br>
+    <b>健檢的實測結果比預期好</b>：關鍵字掃到 32 筆疑似漏填，其中
+    <b>「強訊號」（負重／重量／額外裝備）恰好 9 筆 —— 正是要填的那 9 位，零誤報零漏報</b>；
+    其餘 23 筆全落在「弱訊號」（射程／耐久／彈藥，多是「耐久值高於50%」這類戰鬥條件）。
+    填完之後 <code>check-talent-loadout-mods.mjs</code> 的 ❷❸ 全綠：
+    11 條規則的對象在庫中都匹配得到，數值也都能在正文裡找到同一個數字。
+    <br><br>
+    <b>⚠ 施作中改了一項設計：❶ 漏填提示不計入離開碼。</b>
+    原規格是三類都 <code>exit 1</code>，但實測誤報率 44%（32 命中／18 真需要）——
+    <b>永遠是紅的檢查等於沒有檢查</b>，管理者會學會忽略它。
+    改為只有 ❷（對象失效）❸（數值漂移）計入離開碼，那兩類是「已填的東西壞了」，
+    確定性錯誤；❶ 是探索性提示，分「強／弱訊號」兩組印出來供人掃視。
+    <br><br>
+    <b>⚠ 另一項修正：健檢腳本直接 <code>import</code> TS。</b>
+    原以為 <code>.mjs</code> 吃不下 <code>.ts</code>、必須把關鍵字複製一份，
+    但既有的 <code>check-nd-minsum-drift.mjs</code> 已經在 import
+    <code>neuralDriveLevels.ts</code>（Node 24 型別剝離）。
+    ⇒ 偵測邏輯<b>只有一份</b>（<code>src/utils/talentLoadoutMods.ts</code>），
+    後台黃字與批次健檢不會給出不同答案。
+    <br><br>
+    <b>使用者裁決（2026-08-30）</b>：凱莉〈白鸛〉的「狙擊步槍」<b>按字面只含
+    <code>狙擊步槍</code>，不含 <code>輕型狙擊步槍</code></b>（站上是兩個不同的 WeaponKind）。
+    日後實機驗出輕型也吃減重的話，加一條規則即可。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; TalentLoadoutMod 型別</div>
+      <div class="task-group-meta">src/types/pilot.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">封閉聯集 ＋ <code>PilotTalent.loadoutMods</code> 選填欄位</div>
+        <div class="task-desc">
+          依計畫書決策一／二落地 <code>EquipTarget</code> / <code>EquipStat</code> / <code>TalentTier</code> /
+          <code>TalentLoadoutMod</code>。<b>不改任何既有欄位</b>，18 筆天賦以外的 71 筆天然合法。<br>
+          ⚠ 依 CLAUDE.md 規則 2，改 <code>types/index.ts</code> 要同步
+          <code>docs/02_技術文件/02_資料模型/</code> 的機師資料模型頁。
+        </div>
+        <div class="task-file">src/types/pilot.ts · docs/02_技術文件/02_資料模型/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">⚠ <b>同一筆改動必須包含爬蟲白名單</b> —— 否則填的值會被靜默清空</div>
+        <div class="task-desc">
+          <code>scrape-pilots-v3.js</code> 的 <code>mergeTalentsArray()</code>（:616）是
+          <b>白名單制</b>：<code>{...freshTalent, effects, buffIds, enhancedEffects, descriptionRefs, ndVariants, manual…}</code>
+          —— 只有列名的欄位會從既有文件保留下來，<b>其餘一律被官方 fresh 物件覆蓋</b>。<br>
+          <code>loadoutMods</code> 不在名單裡 ⇒ <b>下一次跑機師補丁，人工填的規則就沒了</b>，
+          而官方 fresh 沒有這個欄位 ⇒ <code>isDifferent()</code> 只會說「talents 有變」，
+          <b>不會有任何錯誤訊息</b>，直到某位玩家回報「維娜又裝不了電磁炮」。<br>
+          修法是一行：<code>loadoutMods: talent.loadoutMods ?? undefined,</code>。
+          <b>⚠ 不可留到 Phase B 再補</b> —— A-3 填完值到補丁跑起來之間的任何一次重抓都會清空它。
+        </div>
+        <div class="task-file">scripts/scrape-pilots-v3.js:616 mergeTalentsArray()</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; PilotAdmin 天賦區編輯 UI</div>
+      <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">結構化輸入，不是塞 JSON 字串</div>
+        <div class="task-desc">
+          一列一條規則：<b>類型</b>（數值修正／解除限制）→ <b>對象</b>（武器種類下拉／背包種類下拉）→
+          <b>屬性</b>（僅數值修正時）→ <b>加算/乘算</b> → <b>值</b> → <b>初始/提升後</b>。<br>
+          ⚠ 武器種類與背包種類一律走 <code>WeaponKind</code> / <code>BackpackType</code> enum 下拉，
+          <b>不給自由輸入</b> —— 「火箭」打成「火箭炮」不會有任何錯誤訊息，只會靜默匹配不到任何武器。
+        </div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; A 類 9 筆填值 ＋ bump 版本</div>
+      <div class="task-group-meta">Firestore pilots</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">維娜／瑪汀妮／凱莉／羅斯瑪麗／哈達威／格蘭特／洛莎／艾琳／里貝卡</div>
+        <div class="task-desc">
+          數值見計畫書 A 類表。維娜與瑪汀妮<b>各兩條</b>（allowEquip ＋ stat），其餘各一條。<br>
+          ⚠ 凱莉是全庫唯一的 <code>mode:'pct'</code>（狙擊步槍 −15%），<b>務必當成第一個測試案例</b>。<br>
+          ⚠ 寫完必須 <code>bumpDataVersion('pilots')</code>，否則所有 client 讀到舊快取（CLAUDE.md §6.2）。
+        </div>
+        <div class="task-file">scripts/temp_scripts/ 一次性腳本 · scripts/bump-data-version.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 後台「這個天賦可能要填」提示</div>
+      <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">正文命中關鍵字 ＋ <code>loadoutMods</code> 為空 ⇒ 顯示一行黃字</div>
+        <div class="task-desc">
+          <b>這是整個計畫最容易失敗的地方</b>：新機師上線時，沒有任何東西會告訴管理者
+          「這個天賦要填配裝規則」。爬蟲把正文抓進來，管理者填完 buffIds 就關掉頁面，
+          三個月後才有人回報數字不對。<br>
+          提示文案舉例：「正文提到<b>負重</b>，但尚未填配裝規則 —— 若此天賦不改裝備，忽略即可。」<br>
+          ⚠ <b>這是提醒，不是把關</b>：關鍵字必然會漏（本計畫評估期間就漏過一次，見計畫書
+          「方法論教訓」）。漏報＝回到現狀、不會更糟；誤報＝多一行可忽略的字。
+          <b>不要</b>為此加「已確認不需要」的 dismiss 欄位 —— 依 0/5 定律，那個欄位不會有人填。<br>
+          關鍵字集合刻意放寬：<code>負重｜重量｜射程｜彈倉｜彈藥｜耐久｜額外裝備｜可裝備</code>。
+        </div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx（天賦分頁右欄）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; check-talent-loadout-mods.mjs 健檢</div>
+      <div class="task-group-meta">scripts/ · 掛進 data-patch 收尾清單</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">唯讀掃全庫，抓三類問題</div>
+        <div class="task-desc">
+          比照 <code>check-nd-minsum-drift.mjs</code> / <code>check-module-stat-drift.mjs</code> 的既有慣例
+          （唯讀、有落差時 <code>exit 1</code>），並加進 data-patch skill 的<b>收尾檢查清單</b>。<br>
+          ① <b>漏填</b>：正文命中關鍵字但 <code>loadoutMods</code> 為空（同 A-4 的判準，補在批次側）。<br>
+          ② <b>對象打錯</b>：<code>target.kind</code> 匹配不到<b>任何一把武器／背包</b>
+          —— 「火箭」打成「火箭炮」會靜默匹配 0 筆，畫面上與「沒填」完全一樣。<br>
+          ③ ⭐ <b>數值漂移</b>：從正文抽出數字（<code>−360</code> / <code>降低130</code> / <code>15%</code>）
+          與 <code>amount</code> 比對。<b>這一類是前兩類都抓不到的</b>：官方把 −130 調成 −150 時，
+          爬蟲會更新正文、<code>loadoutMods</code> 卻停在舊值，而兩邊<b>都有值</b>
+          ⇒ 沒有任何既有檢查會出聲。
+        </div>
+        <div class="task-file">scripts/check-talent-loadout-mods.mjs · .claude/skills/data-patch/SKILL.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label cyan">Phase B</div>
+  <div class="section-title">規則層 —— 解掉錯誤封鎖與重量誤差</div>
+  <div class="section-desc">本階段做完，維娜／瑪汀妮就能配裝，9 位機師的總重也會對。這是整個計畫的價值所在。</div>
+
+  <div class="impact-note" style="border-left-color:var(--accent-green);background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);">
+    <strong>✅ 2026-08-30 完成（4／4）。</strong>
+    <b>錯誤封鎖已解除</b>：維娜點得到電磁炮、瑪汀妮點得到修理背包，且兩人的總重都算對了。
+    全測試 <b>1191 綠</b>（新增 24 條），<code>npm run build</code> 通過。
+    <br><br>
+    ⭐ <b>golden case 對帳成功</b>：使用者的維娜整備截圖
+    <code>945 ＋ 390 ＋ (1100−360) ＝ 2075 ＝ 出力 2075</code> 四個數字全中，
+    且「剛好滿載不可判成超重」也一併釘住。
+    <b>線上真資料複驗</b>（不是 fixture）：維娜電磁炮 800→440、凱莉狙擊 700→595（−15% ⇒ −105）、
+    格蘭特重機槍 800→600、洛莎機槍 340→260 且<b>潛能 0 時維持 340</b>、
+    瑪汀妮修理背包 600→300；沒有規則的海莉絲 <code>empty</code>、數字一動不動。
+    <br><br>
+    <b>⚠ 施作中補了一個計畫沒寫到的洞：hover 預覽會與落地不一致。</b>
+    <code>BudgetHypothesis.add</code> 原本只帶 <code>weight</code>（呼叫端傳的<b>原重</b>），
+    於是維娜 hover 電磁炮會預覽成 +1100、按下去卻只加 740 ——
+    <b>正是 052-B 檔頭列的 bug ③ 換一種形式重演</b>。
+    改為 <code>add</code> 可帶 <code>weaponId</code> / <code>backpackId</code>，
+    由 <code>loadoutWeightSet()</code> 自己查修正（<code>weight</code> 降為 fallback），
+    並補一條測試斷言「預覽 ＝ 落地」。
+    <br><br>
+    <b>⚠ 測試 fixture 走獨立世界。</b> 起初把維娜／巨像／炬塔加進共用 <code>WORLD</code>，
+    立刻打壞兩條<b>與天賦無關</b>的既有測試（<code>weaponChoices 濾掉 omitted</code>、
+    <code>structuralCounts</code>）—— 這正是該檔第 324 行早就寫下的教訓。
+    改為 <code>TALENT_WORLD</code>，比照既有的 <code>UPGRADE_WORLD</code>。
+    <br><br>
+    <b>挑選器 hint 無需另外改</b>：<code>structuralCounts()</code> 只是數
+    <code>weaponChoices()</code> 的結果，而後者走同一支 <code>canEquipWeapon()</code>
+    ⇒ 豁免自動傳導。已補測試釘住「維娜身上的『因機種限定隱藏 N』從 2 變 1」。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; talentLoadoutMods.ts（新檔）</div>
+      <div class="task-group-meta">src/utils/talentLoadoutMods.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">純函式查詢表 ＋ 單測</div>
+        <div class="task-desc">
+          <code>resolveTalentMods(pilot, potential)</code> 把天賦裡的規則收成
+          <code>allowsEquip(item)</code> / <code>statOf(item, stat)</code> 兩支查詢。
+          純函式、無 React／Firestore 依賴，比照 <code>componentRules</code> / <code>moduleRules</code> 的既有分工。<br>
+          <b>tier 判定</b>：<code>potential &gt;= TALENT_BOOST_POTENTIAL(=3)</code> ⇒ <code>'max'</code>，
+          常數就定義在本檔（決策七：使用者確認遊戲至今無破例，日後要改只動這一行）。<br>
+          ⚠ <code>mode:'pct'</code> 與 <code>'flat'</code> 同時存在時的順序要定死並寫進測試
+          （現況每個 target 至多一條規則，但別讓順序變成未定義行為）。
+        </div>
+        <div class="task-file">src/utils/talentLoadoutMods.ts · talentLoadoutMods.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 機種限制豁免</div>
+      <div class="task-group-meta">src/utils/loadoutRules.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">canEquipWeapon / canEquipBackpack ＋ 挑選器 hint</div>
+        <div class="task-desc">
+          <code>restrictedTo()</code> 那一段與背包的 <code>BACKPACK_ARMOR_TYPE</code> 各加一道豁免。
+          <b>不新增 RejectionCode</b>（決策五）。<br>
+          ⚠ <b>挑選器的摺疊計數要一起改</b>：「因機種限定隱藏 12」在維娜身上必須變成 0，
+          否則清單裡看得到電磁炮、底下卻寫著隱藏 12 個 —— 那是玩家會來問的那一種矛盾。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts · src/components/loadout/PickerShell.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 重量帳接線</div>
+      <div class="task-group-meta">src/utils/loadoutRules.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">在組 LoadoutWeightSet 時 map，<b>loadoutWeight.ts 不動</b></div>
+        <div class="task-desc">
+          決策四：把武器／背包 map 成 <code>{ weight: statOf(item,'weight') }</code> 再交給
+          <code>weightBreakdown()</code>。<code>loadoutWeight.ts</code> 保持「只吃 <code>{ weight }</code>、不認識機師」。<br>
+          ⚠ UI 要講「1100 → 740」，所以同時要把<b>原重</b>帶出來
+          （建議 <code>WeightBreakdown</code> 加 <code>reducedBy</code>，供 D-1 使用）。<br>
+          ⚠ 別忘了<b>備用手組</b>（強襲者背包給的那組）也要套用同一份修正 —— 它走的是
+          <code>max(Σ主手, Σ備用)</code>，漏套會讓採計組選錯邊。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.ts · src/utils/loadoutWeight.ts（僅型別）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; golden case 單測</div>
+      <div class="task-group-meta">src/utils/loadoutRules.test.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">用維娜的實機截圖當第一個 golden case</div>
+        <div class="task-desc">
+          <code>巨像部件 945 ＋ 承諾之誓 390 ＋ 炬塔·改Ⅱ(1100−360)=740 ＝ 2075 ＝ 出力 2075</code>
+          —— 這組數字來自使用者的遊戲截圖，四項全部對得上，是<b>唯一有實機佐證的案例</b>，釘住它。<br>
+          另補：凱莉的 −15%（唯一 pct）、洛莎的 potential 2 vs 3 兩種結果、
+          瑪汀妮的背包豁免、以及「沒有任何 loadoutMods 的機師結果完全不變」的回歸測。
+        </div>
+        <div class="task-file">src/utils/loadoutRules.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label cyan">Phase C</div>
+  <div class="section-title">狀態層 —— 潛能等級進入配裝草稿</div>
+  <div class="section-desc">把「天賦提升了沒有」從元件內的 useState 升格成會跟著分享碼走的配裝參數。</div>
+
+  <div class="impact-note" style="border-left-color:var(--accent-green);background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);">
+    <strong>✅ 2026-08-30 完成（3／3）。</strong>
+    全測試 <b>1200 綠</b>（新增 10 條），<code>npm run build</code> 通過。
+    <br><br>
+    ⭐ <b>瀏覽器實機驗收</b>（洛莎 × 棱鏡 × 昏星繼光，機槍 420）：
+    <table class="data-table" style="margin:8px 0;">
+      <tr><th>潛能</th><th>手部重量</th><th>總重</th></tr>
+      <tr><td>0</td><td>420</td><td>1,250</td></tr>
+      <tr><td>2</td><td>420</td><td>1,250</td></tr>
+      <tr><td><b>3</b></td><td><b>340</b></td><td><b>1,170</b></td></tr>
+      <tr><td>5</td><td>340</td><td>1,170</td></tr>
+    </table>
+    <b>門檻精準落在第 3 階</b>，與使用者裁決一致。維娜（<code>since:'base'</code>）則切到 0 潛
+    重量仍是 740 —— 兩種 <code>since</code> 的行為都對。
+    <br><br>
+    <b>順帶實機證實了 Phase B 的成果</b>：維娜 × 巨像的背槽挑選器
+    <b>列出全部 12 把電磁炮</b>（以前這個清單對她是空的），每一列的「裝上後餘」
+    都用減重後的值（稜鏡 800 ⇒ 餘 690、其餘 1,100 ⇒ 餘 390），裝上後總重
+    <code>945 ＋ 740 ＝ 1,685</code>。
+    <br><br>
+    <b>⚠ 一項與 <code>ndLevels</code> 相反的設計：換機師時<b>不清掉</b>潛能。</b>
+    潛能是**與機師無關的純量**（每位機師都有 0–5 這六階），清掉的話玩家在 A 機師調成 2 潛、
+    切到 B 再切回來就變回滿潛，而他從沒動過那個選擇。
+    <code>ndLevels</code> 要清是因為<b>分區名逐機師不同</b>，這裡沒有這個問題。
+    實機也確認了：維娜調成 0 潛後切到洛莎，仍是 0 潛。
+    <br><br>
+    <b>codec：滿潛與未設定編出來的碼「位元組完全相同」</b>（滿潛整段不寫），
+    既有 46 條 codec 測試與 golden fixture <b>一條都沒被打破</b> —— 追加段的零遷移成本兌現。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; LoadoutDraft.potential ＋ reconcile</div>
+      <div class="task-group-meta">src/types/loadout.ts · src/pages/simulator/simReducer.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">0–5，<b>欄位不存在＝滿潛 5</b></div>
+        <div class="task-desc">
+          決策六。存例外不存常態，同 <code>ndLevels</code> / <code>backpackId</code> 的既有慣例
+          —— 三態撞上 <code>stripUndefined</code> 會變成「一旦填了就再也清不掉」。<br>
+          <code>reconcile()</code> 只需 clamp 到 0–5；<b>換機師時保留</b>（玩家切回去不會莫名被重設）。
+        </div>
+        <div class="task-file">src/types/loadout.ts · src/pages/simulator/simReducer.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; codec §TALENT 追加段</div>
+      <div class="task-group-meta">src/utils/loadoutCode/codec.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">1 byte，<b>不 bump FMT_VERSION</b></div>
+        <div class="task-desc">
+          比照 <code>§NOTE</code>（052-L C-3）與 <code>§SKILLS</code>（052-L D-3）的追加段前例。
+          排在既有段之後（<code>encodeLoadout()</code> 的順序就是版面順序）。<br>
+          ⚠ 滿潛（常態）時<b>整段不寫</b>，絕大多數分享碼長度零增加。<br>
+          ⚠ round-trip 與 golden fixture 要照 052-C 的既有規格補上。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/codec.ts · codec.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 潛能選擇器 UI</div>
+      <div class="task-group-meta">src/components/loadout/PilotTalentStrip.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">0–5 小選擇器，取代現有的 <code>⇌ 滿星／初始</code> 切換</div>
+        <div class="task-desc">
+          現有 <code>viewMax</code> 的 <code>useState</code> 改讀 draft。<b>這是一個真實需求，不只是為了天賦</b>：
+          多數玩家不是滿潛（要抽 6 次同一位機師），「我只有 1 潛，天賦還沒加強」是配裝時會問的問題。<br>
+          ⚠ 只有<b>有 loadoutMods 的機師</b>調整潛能才會改變數字；其餘機師純粹切換正文顯示，
+          UI 上不必分開處理，但文案別暗示「調潛能會變強」。
+        </div>
+        <div class="task-file">src/components/loadout/PilotTalentStrip.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label cyan">Phase D</div>
+  <div class="section-title">呈現層 —— 讓玩家看得懂數字為什麼變了</div>
+  <div class="section-desc">缺了這一階，總重會突然少 360 而沒有任何解釋，玩家只會覺得站上算錯。</div>
+
+  <div class="impact-note" style="border-left-color:var(--accent-green);background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);">
+    <strong>✅ 2026-08-30 完成（3／3）。</strong>
+    全測試 <b>1204 綠</b>（新增 4 條），<code>npm run build</code> 通過，三項都在瀏覽器實機驗收。
+    <br><br>
+    ⭐ <b>三者連動實測</b>（洛莎 × 昏星繼光）：
+    <table class="data-table" style="margin:8px 0;">
+      <tr><th>潛能</th><th>天賦角標</th><th>總重列</th><th>手部</th></tr>
+      <tr><td>3</td><td>★</td><td>天賦減重 −80（昏星繼光 −80 · 原型體）</td><td>340</td></tr>
+      <tr><td>2</td><td>☆</td><td><b>整條不印</b></td><td>420</td></tr>
+    </table>
+    武器卡則<b>始終印原重 420</b> —— 與官方整備畫面逐格一致（決策八）。
+    <br><br>
+    <b>匯出圖</b>（實測攔截渲染中的卡片）印出兩列：<br>
+    　<code>天賦減重 −80（昏星繼光 −80 · 原型體）　武器格印的是原重，減免只反映在總重 —— 與遊戲內整備畫面一致</code><br>
+    　<code>機師潛能 3 / 5　天賦已加強</code><br>
+    後者<b>只在未滿潛時印</b>：滿潛是預設值，每張圖都印是雜訊；但少了它，同一套配裝在
+    不同潛能下的兩張圖會看起來像其中一張算錯。
+    <br><br>
+    <b>⚠ 施作中修掉一個自己造的 bug：明細在半路被丟掉。</b>
+    <code>talentRelief</code> 的明細改由 <code>loadoutWeightSet()</code> 的<b>同一次走訪</b>產出
+    （減免掛在 <code>WeightedItem.relief</code> 上，而 <code>loadoutWeight.ts</code> 只讀
+    <code>weight</code>、完全不認識這個欄位）—— 這樣「總重少了多少」與「是哪幾件少的」天然一致，
+    也天然處理了「手部取較重組」。但第一版在組 <code>entries</code> 時只取了 <code>.weight</code>，
+    於是<b>手部與背部武器的明細全被丟掉</b>，維娜的電磁炮明明減了 360、解釋卻是空的。
+    單測抓到了（<code>talentRelief 講得出減了多少</code>）。
+    <br><br>
+    <b>⚠ 另一條被測試釘住的不變式</b>：<b>沒被採計的備用組，其減重不可出現在解釋裡</b>。
+    洛莎主手機槍（420→340）＋ 備用組 900 ⇒ 採計備用組，此時總重裡<b>根本沒有那 80</b>，
+    解釋若仍說「減了 80」，玩家把數字加一遍就會對不上。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 總重列的減免標示</div>
+      <div class="task-group-meta">src/components/loadout/OutputBar.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">明細印<b>原重</b>，說明掛<b>總重</b>那一列</div>
+        <div class="task-desc">
+          決策八，與官方 UI 一致（實機截圖：武器明細印 1100，扣減只反映在總重 2075）。
+          格式如 <code>2075（電磁炮 −360 · 罪業信條）</code>。<br>
+          ⚠ <b>不要</b>把武器卡上的重量改成扣減後的值 —— 那會與遊戲內的武器明細對不上。
+        </div>
+        <div class="task-file">src/components/loadout/OutputBar.tsx · LoadoutSummary.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; ★ 角標（與專武金框並存）</div>
+      <div class="task-group-meta">src/components/loadout/PilotTalentStrip.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">兩種「強化」必須是兩種視覺</div>
+        <div class="task-desc">
+          決策九（使用者裁決：做，可以試試看）。<code>★</code> ＝ 天賦提升（機師自己的成長）、
+          金框 ＝ 專武強化（外部裝備帶來的），<b>兩者可同時成立</b>（洛莎滿潛 ＋ 裝上專武）。<br>
+          <b>順帶</b>：前台文案由「滿星」改為遊戲原文「提升」，資料欄位名
+          <code>descriptionMax</code> 維持不動。
+        </div>
+        <div class="task-file">src/components/loadout/PilotTalentStrip.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 匯出圖</div>
+      <div class="task-group-meta">src/components/loadout/export/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">角標 ＋ 總重標示進圖，狀態一律從 draft 讀</div>
+        <div class="task-desc">
+          匯出圖是<b>唯讀情境</b>，提升狀態必須從 draft 讀而不是元件 state —— 否則會印出
+          「天賦顯示初始版、總重卻是滿潛算的」這種自相矛盾的圖，而圖會被轉發出去。
+        </div>
+        <div class="task-file">src/components/loadout/export/ExportRig.tsx · LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label cyan">Phase E</div>
+  <div class="section-title">選配 —— B 類 9 筆（彈量／射程／耐久）</div>
+  <div class="section-desc">形狀與 A 類相同，但不影響合法性。做或不做都不阻塞主線。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; B 類 9 筆入庫</div>
+      <div class="task-group-meta">Firestore pilots</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">菲婭／吉賽爾／鄭樂萱／尼爾／安／瑪蒂爾達／弗雷姬塔／葉夫根尼／阿德里安</div>
+        <div class="task-desc">
+          數值見計畫書 B 類表。<b>只入庫、不接規則層</b>（決策二）。<br>
+          ⚠ 安／瑪蒂爾達／阿德里安帶「雙手完好」「裝配盾牌」等<b>條件</b>，
+          本結構<b>表達不了條件</b> —— 這三筆要嘛先不填，要嘛填了但在 UI 上標明「條件未判定」。
+          條件屬 C 類，歸傷害模擬層。
+        </div>
+        <div class="task-file">scripts/temp_scripts/ 一次性腳本</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 武器卡顯示</div>
+      <div class="task-group-meta">src/components/loadout/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">彈量／射程的修正提示</div>
+        <div class="task-desc">
+          同 D-1 的原則：<b>印原值 ＋ 標修正</b>，不要就地改寫數字。
+        </div>
+        <div class="task-file">src/components/loadout/SlotCell.tsx · EquippedStats.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-N — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

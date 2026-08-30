@@ -31,6 +31,7 @@ import {
 import { ND_RULES, isGammaZone, zonePower } from '../../utils/ndOverrides.ts'
 import { sanitizeLoadoutName, sanitizeLoadoutNote } from '../../utils/loadoutName.ts'
 import { keepCarriableSkills } from '../../utils/carriedSkills.ts'
+import { MAX_POTENTIAL } from '../../utils/talentLoadoutMods.ts'
 import { CARRIED_SKILL_SLOTS } from '../../types/loadout.ts'
 
 // ─── 動作 ───────────────────────────────────────────────────────────────────
@@ -64,6 +65,8 @@ export type LoadoutAction =
   | { type: 'autoUnloadToFit' }
   /** 設定整份神經驅動算力配置（分區名 → Lv）。面板一次送整份，不逐區增減 —— γ 上限是**跨區**的 */
   | { type: 'setNdLevels'; levels: Record<string, number> }
+  /** 潛能等級 0–5（PLAN-052-N C-3）。滿潛會被 `reconcile` 寫成「欄位不存在」 */
+  | { type: 'setPotential'; potential: number }
   /** 設定方案名稱。收原始輸入，清洗由 reducer 負責（見 sanitizeLoadoutName 的檔頭） */
   | { type: 'setName'; name: string }
   /** 設定方案備註（PLAN-052-L C-2）。同 setName：收原始輸入，清洗由 reducer 負責 */
@@ -422,6 +425,9 @@ export function reconcile(draft: LoadoutDraft, world: LoadoutWorld): { draft: Lo
 
   // ── 攜帶技能：掃成「目前這位機師帶得動」的配置（PLAN-052-L D-3）──
   next = reconcileSkills(next, world)
+
+  // ── 潛能等級：clamp 進 0–5（PLAN-052-N C-1）──
+  next = reconcilePotential(next)
 
   // ── 方案名稱：外部來源（舊存檔／分享碼／localStorage 手改）一樣要過清洗（PLAN-052-I E-1）──
   //    setName 已經清過一次，這裡是給「不經 setName 進來的那些路徑」的第二道。
@@ -862,6 +868,34 @@ function withoutNdLevels(draft: LoadoutDraft): LoadoutDraft {
   return rest
 }
 
+function withoutPotential(draft: LoadoutDraft): LoadoutDraft {
+  if (!('potential' in draft)) return draft
+  const rest = { ...draft }
+  delete rest.potential          // 同上：`delete` 而不是設 undefined
+  return rest
+}
+
+/**
+ * 把 `draft.potential` 掃成合法值（PLAN-052-N C-1）。
+ *
+ * ⚠ **換機師時不清掉**（與 `ndLevels` / `skills.carried` 相反）：潛能是一個
+ *   **與機師無關的純量** —— 每位機師都有 0–5 這六階，換人之後那個數字照樣成立。
+ *   清掉的話，玩家在 A 機師調成 2 潛、切到 B 再切回來就變回滿潛，
+ *   而他從沒動過那個選擇。ndLevels 要清是因為**分區名**逐機師不同，這裡沒有這個問題。
+ *
+ * ⚠ 滿潛（`MAX_POTENTIAL`）**寫回「欄位不存在」**而不是留著 `potential: 5`：
+ *   兩者語意相同，但留著會讓每一份滿潛的分享碼多帶一個 §TALENT 段
+ *   —— 而那是絕大多數的配裝（見 `LoadoutDraft.potential` 的預設值註解）。
+ */
+function reconcilePotential(draft: LoadoutDraft): LoadoutDraft {
+  const cur = draft.potential
+  if (cur == null) return draft
+  if (!Number.isFinite(cur)) return withoutPotential(draft)
+  const lv = Math.max(0, Math.min(Math.trunc(cur), MAX_POTENTIAL))
+  if (lv === MAX_POTENTIAL) return withoutPotential(draft)
+  return lv === cur ? draft : { ...draft, potential: lv }
+}
+
 // ─── 結構性放置（動作層）────────────────────────────────────────────────────
 
 /**
@@ -1177,6 +1211,15 @@ export function simReduce(state: SimState, action: LoadoutAction, world: Loadout
         '已全部清空',
         '機師、機甲、裝備、模組、算力與方案名稱都清掉了',
       )
+    }
+
+    case 'setPotential': {
+      // 一樣過 reconcile（clamp ＋ 滿潛寫回「欄位不存在」）—— UI 自己也擋，
+      // 但分享碼與草稿還原不經過 UI
+      const { draft } = reconcile({ ...state.draft, potential: action.potential }, world)
+      if ((state.draft.potential ?? MAX_POTENTIAL) === (draft.potential ?? MAX_POTENTIAL)) return state
+      // 同 setNdLevels：不動裝備 ⇒ 不需要 toast 也不需要 undo，選擇器就在眼前
+      return { ...state, draft, notice: null }
     }
 
     case 'setNdLevels': {

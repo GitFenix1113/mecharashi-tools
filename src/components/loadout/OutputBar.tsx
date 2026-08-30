@@ -16,6 +16,11 @@ import { HUD, SEG_COLOR, SEG_LABEL, type SegKey } from './loadoutTheme'
 // ⚠ **手部那一段必須標明「取較重者」**。官方的算法是 `max(Σ主手, Σ備用)` 而不是相加，
 //   所以裝了強襲者背包的玩家會看到「主手 800、備用 850，但條上只有 850」——
 //   不寫清楚，他會以為系統少算了一把武器（實際上寫成加總才是錯的，先鋒形態會誤差 44%）。
+//
+// ⚠ **天賦減重同理，而且更需要說**（PLAN-052-N D-1）：維娜的電磁炮在武器卡上寫 1,100、
+//   在總重裡只算 740。那個 360 的落差如果沒有一句話交代，玩家會判定站上算錯 ——
+//   而這裡的數字其實是對的（對照使用者的整備截圖：945＋390＋740＝2,075）。
+//   **武器卡維持原重**（與官方整備畫面逐格一致），解釋只出現在總重這一列。
 
 interface Props {
   budget: LoadoutBudget
@@ -48,7 +53,7 @@ interface Props {
 }
 
 export function OutputBar({ budget, previewBudget, onHoverSegment, compact, narrow, formName }: Props) {
-  const { weight, output, remaining, over, dataIncomplete } = budget
+  const { weight, output, remaining, over, dataIncomplete, talentRelief } = budget
   const segs: { key: SegKey; value: number }[] = [
     { key: 'chassis',  value: weight.chassis },
     { key: 'hands',    value: weight.hands },
@@ -95,6 +100,16 @@ export function OutputBar({ budget, previewBudget, onHoverSegment, compact, narr
           {SEG_LABEL[s.key]} <span className={HUD.num}>{s.value.toLocaleString()}</span>
         </span>
       ))}
+      {/* ⚠ 這一句不是裝飾：沒有它，總重會有一個玩家對不上的落差（見檔頭） */}
+      {talentRelief && (
+        <span className="text-accent-cyan/90">
+          天賦減重 <span className={HUD.num}>−{talentRelief.total.toLocaleString()}</span>
+          <span className="text-text-dim">
+            （{talentRelief.items.map((r) => `${r.name} −${r.reducedBy.toLocaleString()}`).join('、')}
+            {talentRelief.items[0]?.talentName ? ` · ${talentRelief.items[0].talentName}` : ''}）
+          </span>
+        </span>
+      )}
       {/* ⚠ 這一句不是裝飾：沒有它，裝了強襲者背包的玩家會以為系統少算了一把武器 */}
       {weight.backupHand > 0 && (
         <span>

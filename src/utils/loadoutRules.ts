@@ -35,6 +35,7 @@ import {
   type ModuleStack,
 } from './moduleRules.ts'
 import { innateEntries, unlockBlocker, type UnlockBlock } from './innateModules.ts'
+import { resolveTalentMods, type ResolvedTalentMods } from './talentLoadoutMods.ts'
 
 // ─── 拒絕原因：封閉聯集 ─────────────────────────────────────────────────────
 //
@@ -344,6 +345,17 @@ export interface LoadoutContext {
    * 空 Map ＝ 全部生效（241 筆模組裡只有 6 筆有 `unlockCondition`）。
    */
   moduleBlocks: ReadonlyMap<string, UnlockBlock>
+  /**
+   * 這位機師的天賦對配裝的修正（PLAN-052-N）：解除機種限制 ＋ 裝備負重減免。
+   * 89 位裡只有 18 位非空，其餘共用同一個 `empty` 實例。
+   *
+   * ⚠ **合法性與重量都要問它，不要各自判斷**：維娜能裝電磁炮（`allowsWeapon`）
+   *   與電磁炮在她身上只有 740 重（`weaponWeight`）是同一份資料的兩個面向，
+   *   拆開判斷就會出現「裝得上但算成 1100 ⇒ 超重裝不下」這種自相矛盾。
+   *
+   * ⚠ 潛能等級在 Phase C 之前一律是滿潛（見 `resolveTalentMods` 的預設值）。
+   */
+  talentMods: ResolvedTalentMods
   world: LoadoutWorld
 }
 
@@ -371,6 +383,8 @@ export function buildContext(
     sets: Record<string, EquipSet>
     modules?: Partial<Record<MechPartPosition, string>>
     parts?: Partial<Record<MechPartPosition, string>>
+    /** 潛能等級 0–5（PLAN-052-N）。**未給＝滿潛**，見 `LoadoutDraft.potential` */
+    potential?: number
   },
   setKey: string,
   world: LoadoutWorld,
@@ -456,6 +470,8 @@ export function buildContext(
     modules: installed,
     stacks,
     moduleBlocks,
+    // PLAN-052-N：潛能未設定時 `resolveTalentMods` 自己套滿潛預設（見該函式的 @param）
+    talentMods: resolveTalentMods(pilot, draft.potential),
     world,
   }
 }
@@ -584,13 +600,20 @@ export function slotExists(capacity: SlotCapacity, ref: Pick<WeaponSlotRef, 'ban
  * 預覽與實際落地必須是同一支函式算出來的，否則「預覽說裝得下、按下去卻超重」。
  */
 export interface BudgetHypothesis {
-  /** 假想裝上：`weight` 是它的重量；`backpackId` 有值代表這是背包（會取代背槽武器） */
-  add?: { ref: WeaponSlotRef; weight: number; backpackId?: string }
+  /**
+   * 假想裝上：`weight` 是它的重量；`backpackId` 有值代表這是背包（會取代背槽武器）。
+   *
+   * ⚠ **有 `weaponId` / `backpackId` 時以 id 為準**（PLAN-052-N）：天賦減重要查得到
+   *   種類才算得出來，而 `weight` 是呼叫端傳進來的**原重**。只吃 `weight` 的話，
+   *   維娜的挑選器會顯示「裝上炬塔 +1100 ⇒ 超重」，按下去之後總重卻只加 740 ——
+   *   預覽與落地是兩個數字，正是本檔開頭列的 bug ③ 換一種形式重演。
+   *   `weight` 保留為 fallback：查不到實體時（資料未載齊）仍算得出一個數。
+   */
+  add?: { ref: WeaponSlotRef; weight: number; backpackId?: string; weaponId?: string }
   /** 假想卸下這幾格（背槽的 ref 同時卸掉背包） */
   remove?: readonly Pick<WeaponSlotRef, 'bank' | 'slot' | 'side'>[]
 }
 
-const w0 = (x: { weight?: number } | null | undefined) => ({ weight: x?.weight ?? 0 })
 const isHandSlot = (slot: string) =>
   slot === WeaponEquipSlot.SINGLE_HAND || slot === WeaponEquipSlot.DUAL_HAND
 
@@ -604,17 +627,38 @@ const isHandSlot = (slot: string) =>
  */
 export function loadoutWeightSet(ctx: LoadoutContext, hypo: BudgetHypothesis = {}): LoadoutWeightSet {
   const weapon = (id: string) => ctx.world.weapons.get(id)
+  // PLAN-052-N：**每一件裝備的重量都經過這裡**——固定武裝與備用手組也不例外。
+  // 漏套備用組的症狀特別隱晦：`max(Σ主手, Σ備用)` 會選錯邊，總重看起來只是「有點怪」。
+  //
+  // ⚠ 被改過的那幾件**順手把明細掛在同一個物件上**（`relief`）。`LoadoutWeightSet` 吃的是
+  //   結構型別 `{ weight }`，多帶欄位不影響 `loadoutWeight.ts` 一個字 —— 而這讓
+  //   「總重少了多少」與「是哪幾件少的」由**同一次走訪**產出，天然一致。
+  //   另外寫一支函式去數明細的話，就要把背槽 XOR、固定武裝、取較重組那一整套再寫一次，
+  //   而那正是本檔開頭列的「同一件事在三處各寫一次」。
+  const ww = (id: string | undefined): WeightedItem => {
+    const w = id ? weapon(id) : null
+    const info = ctx.talentMods.weaponWeightInfo(w)
+    return info && info.reducedBy !== 0 && w
+      ? { weight: info.value, relief: { name: w.name, reducedBy: info.reducedBy, talentName: info.talentName } }
+      : { weight: w?.weight ?? 0 }
+  }
+  const bw = (bp: Backpack | null | undefined): WeightedItem => {
+    const info = ctx.talentMods.backpackWeightInfo(bp)
+    return info && info.reducedBy !== 0 && bp
+      ? { weight: info.value, relief: { name: bp.name, reducedBy: info.reducedBy, talentName: info.talentName } }
+      : { weight: bp?.weight ?? 0 }
+  }
 
   // 全鎖形態：整套由 form.restrict.mounts derive，draft 那一份（必為空）與假想異動都不參與
   const locked = lockedMounts(ctx)
   if (locked.length > 0) {
     const pick = (test: (slot: string) => boolean) =>
-      locked.filter((m) => test(m.ref.slot)).map((m) => w0(weapon(m.weaponId)))
+      locked.filter((m) => test(m.ref.slot)).map((m) => ww(m.weaponId))
     const back = locked.find((m) => m.ref.slot === WeaponEquipSlot.BACK)
     return {
       mainHand: pick(isHandSlot),
       shoulder: pick((s) => s === WeaponEquipSlot.SHOULDER),
-      back: back ? w0(weapon(back.weaponId)) : null,
+      back: back ? ww(back.weaponId) : null,
     }
   }
 
@@ -623,9 +667,16 @@ export function loadoutWeightSet(ctx: LoadoutContext, hypo: BudgetHypothesis = {
   const droppingBack = dropped.some((r) => r.bank === 'main' && r.slot === WeaponEquipSlot.BACK)
   const entries = ctx.set.mounts
     .filter((m) => !dropped.some((r) => slotsOverlap(m, r)))
-    .map((m) => ({ bank: m.bank as string, slot: m.slot as string, weight: weapon(m.weaponId)?.weight ?? 0 }))
+    // ⚠ **連 `relief` 一起帶著走**，不要只取 `.weight`：手部與背部武器都經由 `entries`
+    //   進到最後的結構，途中把明細丟掉的話，`talentRelief` 就只剩背包那一件講得出來
+    //   （實測就是這樣先錯了一次：維娜的電磁炮明明減了 360，解釋卻是空的）。
+    .map((m) => ({ bank: m.bank as string, slot: m.slot as string, ...ww(m.weaponId) }))
   if (hypo.add) {
-    entries.push({ bank: hypo.add.ref.bank, slot: hypo.add.ref.slot, weight: hypo.add.weight })
+    // id 優先、`weight` 只是 fallback（見 BudgetHypothesis.add 的註解）
+    const added: WeightedItem = hypo.add.weaponId ? ww(hypo.add.weaponId)
+      : hypo.add.backpackId ? bw(ctx.world.backpacks.get(hypo.add.backpackId))
+      : { weight: hypo.add.weight }
+    entries.push({ bank: hypo.add.ref.bank, slot: hypo.add.ref.slot, ...added })
   }
 
   // 2. 背槽：背包 XOR 背部武器 XOR 固定武裝。裝背包 ⇒ 背部武器已在上一步被 drop
@@ -633,32 +684,70 @@ export function loadoutWeightSet(ctx: LoadoutContext, hypo: BudgetHypothesis = {
   const backpackKept = hypo.add?.backpackId !== undefined
     ? ctx.world.backpacks.get(hypo.add.backpackId)
     : (droppingBack || backEntry ? null : ctx.backpack)
-  const fixed = [...ctx.occupied.values()].map((o) => ({ slot: o.mount.slot, weight: weapon(o.mount.weaponId)?.weight ?? 0 }))
+  const fixed = [...ctx.occupied.values()].map((o) => ({ slot: o.mount.slot, ...ww(o.mount.weaponId) }))
   const backFixed = fixed.find((f) => f.slot === WeaponEquipSlot.BACK)
 
-  const sumOf = (test: (e: { bank: string; slot: string }) => boolean) =>
-    entries.filter(test).map((e) => ({ weight: e.weight }))
+  const sumOf = (test: (e: { bank: string; slot: string }) => boolean): WeightedItem[] =>
+    entries.filter(test).map((e) => ({ weight: e.weight, relief: e.relief }))
 
   return {
     mainHand: [
       ...sumOf((e) => e.bank === 'main' && isHandSlot(e.slot)),
-      ...fixed.filter((f) => isHandSlot(f.slot)).map(w0),
+      ...fixed.filter((f) => isHandSlot(f.slot)),
     ],
     backupHand: sumOf((e) => e.bank === 'backup' && isHandSlot(e.slot)),
     shoulder: [
       ...sumOf((e) => e.slot === WeaponEquipSlot.SHOULDER),
-      ...fixed.filter((f) => f.slot === WeaponEquipSlot.SHOULDER).map(w0),
+      ...fixed.filter((f) => f.slot === WeaponEquipSlot.SHOULDER),
     ],
-    back: backpackKept ? w0(backpackKept)
-      : backEntry ? { weight: backEntry.weight }
-      : backFixed ? w0(backFixed)
+    back: backpackKept ? bw(backpackKept)
+      : backEntry ? { weight: backEntry.weight, relief: backEntry.relief }
+      : backFixed ? { weight: backFixed.weight, relief: backFixed.relief }
       : null,
   }
+}
+
+/**
+ * 一件裝備在重量帳裡的樣子。`relief` 只在**被天賦改過重量**時存在（PLAN-052-N D-1）。
+ *
+ * ⚠ 結構上仍是 `loadoutWeight.ts` 的 `Weighted` —— 那支只讀 `weight`，多這個欄位它不認識也不在乎。
+ */
+export interface WeightedItem {
+  weight: number
+  relief?: { name: string; reducedBy: number; talentName: string | null }
+}
+
+/** 這一套配裝被天賦減掉的重量（PLAN-052-N D-1）。沒有任何減免時整個為 `null` */
+export interface TalentRelief {
+  /** 減免總量（正數 ＝ 變輕了） */
+  total: number
+  /** 逐件明細。**只含實際採計的那一組** —— 備用組沒被採計就不該出現在解釋裡 */
+  items: { name: string; reducedBy: number; talentName: string | null }[]
+}
+
+/**
+ * 這一套的天賦減重明細。**由 `loadoutWeightSet()` 的同一次走訪產出**，
+ * 因此 `total` 與 `items` 天然一致，也天然處理了「手部取較重組」。
+ */
+function talentReliefOf(set: LoadoutWeightSet, weight: WeightBreakdown): TalentRelief | null {
+  const hands = weight.heavierBank === 'backup' ? set.backupHand : set.mainHand
+  const items = [...(hands ?? []), ...(set.shoulder ?? []), ...(set.back ? [set.back] : [])]
+    .map((x) => (x as WeightedItem).relief)
+    .filter((r): r is NonNullable<WeightedItem['relief']> => !!r)
+  if (items.length === 0) return null
+  return { total: items.reduce((n, r) => n + r.reducedBy, 0), items }
 }
 
 /** 出力預算的完整答案。UI 要的所有數字都在這裡，不要在元件裡重算任何一項。 */
 export interface LoadoutBudget {
   weight: WeightBreakdown
+  /**
+   * 天賦減重的解釋（PLAN-052-N D-1）。`null` ＝ 這位機師沒有任何減重（89 位裡的 80 位）。
+   *
+   * ⚠ **UI 一定要印它**：總重少掉 360 而畫面上沒有任何說明，玩家只會覺得站上算錯了。
+   *   武器明細那邊維持**原重**（與官方整備畫面一致），解釋掛在總重這一列。
+   */
+  talentRelief: TalentRelief | null
   output: OutputBreakdown
   /** 可用出力 − 總重。負數 ＝ 超重（不阻擋存檔，見決策三） */
   remaining: number
@@ -676,7 +765,8 @@ export interface LoadoutBudget {
 
 export function loadoutBudget(ctx: LoadoutContext, hypo: BudgetHypothesis = {}): LoadoutBudget {
   const chassis = ctx.chassis
-  const weight = weightBreakdown(loadoutWeightSet(ctx, hypo), { weight: chassis?.weight ?? 0 })
+  const set = loadoutWeightSet(ctx, hypo)
+  const weight = weightBreakdown(set, { weight: chassis?.weight ?? 0 })
 
   // 出力只看背槽上的那一件（武器無加成、背包才有）。與重量走同一份異動假設。
   const dropped = [...(hypo.remove ?? []), ...(hypo.add ? [hypo.add.ref] : [])]
@@ -710,6 +800,7 @@ export function loadoutBudget(ctx: LoadoutContext, hypo: BudgetHypothesis = {}):
     output,
     remaining: output.total - weight.total,
     over: weight.total > output.total,
+    talentRelief: talentReliefOf(set, weight),
     dataIncomplete: !!chassis && chassis.output === 0,
   }
 }
@@ -768,8 +859,11 @@ export function canEquipWeapon(ctx: LoadoutContext, weapon: Weapon, ref: WeaponS
   }
 
   // ── 武器本身 ──
+  // ⚠ 機師天賦可以豁免這一條（PLAN-052-N）：維娜〈罪業信條〉讓重型機甲裝得上
+  //   medium-only 的電磁炮。**不新增 RejectionCode** —— 豁免的結果是「不觸發既有的拒絕」，
+  //   不是「一種新的拒絕」；玩家看到的就是那把武器正常出現在清單裡。
   const need = restrictedTo(weapon.mechRestriction)
-  if (need && toArmorType(ctx.chassis.armorType) !== need) {
+  if (need && toArmorType(ctx.chassis.armorType) !== need && !ctx.talentMods.allowsWeapon(weapon)) {
     return reject('MECH_RESTRICTION', `僅${need}機甲可裝備`)
   }
   const allow = ctx.form?.restrict.kind === 'weaponType' ? ctx.form.restrict.allow : null
@@ -805,7 +899,7 @@ export function canEquipWeapon(ctx: LoadoutContext, weapon: Weapon, ref: WeaponS
     })
   }
 
-  return overweightRejection(ctx, { ref: mount, weight: weapon.weight }, weapon.name)
+  return overweightRejection(ctx, { ref: mount, weight: weapon.weight, weaponId: weapon.id }, weapon.name)
 }
 
 // ─── 元件：掛在武器上的那一層（PLAN-052-D Phase A）──────────────────────────
@@ -1420,10 +1514,13 @@ export function canEquipBackpack(ctx: LoadoutContext, backpack: Backpack): Rejec
   // 正向邏輯：[] ＝ 無限制；有值則必須包含本機甲的裝甲類型。
   // ⚠ 背包這一欄是**英文**（'Light'/'Medium'/'Heavy'），要走 fromAssemblableArmorType()——
   //   餵給 toArmorType() 會全部回 null，症狀是 35 個「僅輕型可裝」的背包完全不受限。
+  // ⚠ 同 canEquipWeapon：機師天賦可豁免（PLAN-052-N）——
+  //   瑪汀妮〈良藥苦機〉讓輕型機甲裝得上 Medium-only 的修理背包（14/14 個都是）。
   const allowed = (backpack.assemblableArmorType ?? [])
     .map(fromAssemblableArmorType)
     .filter((a): a is ArmorType => a !== null)
-  if (allowed.length > 0 && !allowed.includes(toArmorType(ctx.chassis.armorType) as ArmorType)) {
+  if (allowed.length > 0 && !allowed.includes(toArmorType(ctx.chassis.armorType) as ArmorType)
+      && !ctx.talentMods.allowsBackpack(backpack)) {
     return reject('BACKPACK_ARMOR_TYPE', `僅${allowed.join('／')}機甲可裝備`)
   }
 

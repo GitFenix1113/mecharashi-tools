@@ -873,3 +873,52 @@ test('識別鍵不是代碼：拿去解碼一定失敗（它沒有 checksum）',
   assert.notEqual(id, code)
   assert.equal(decodeLoadout(id, INDEXES).ok, false, '識別鍵只用來比對，不可以被當成代碼存起來')
 })
+
+// ─── §TALENT：潛能等級（PLAN-052-N C-2）────────────────────────────────────
+
+test('§TALENT：0–4 潛能 round-trip', () => {
+  for (const potential of [0, 1, 2, 3, 4]) {
+    const draft: LoadoutDraft = {
+      activeSetKey: 'default',
+      pilotId: UNIVERSE.pilot[0],
+      mechId: UNIVERSE.mech[0],
+      sets: { default: { mounts: [] } },
+      potential,
+    }
+    assert.deepEqual(roundTrip(draft), draft, `潛能 ${potential}`)
+  }
+})
+
+test('§TALENT：滿潛與未設定編出來的碼**完全相同**（滿潛不寫任何位元組）', () => {
+  const base: LoadoutDraft = {
+    activeSetKey: 'default',
+    pilotId: UNIVERSE.pilot[0],
+    mechId: UNIVERSE.mech[0],
+    sets: { default: { mounts: [] } },
+  }
+  const opts = { indexes: INDEXES, gameVersion: '3.3' } as const
+  assert.equal(
+    encodeLoadout({ ...base, potential: 5 }, opts),
+    encodeLoadout(base, opts),
+    '滿潛是預設值 ⇒ 絕大多數的碼長度不受本段影響',
+  )
+  // 解回來也不該冒出一個 potential 欄位
+  assert.equal('potential' in roundTrip(base), false)
+  assert.equal('potential' in roundTrip({ ...base, potential: 5 }), false)
+})
+
+test('§TALENT：追加段不影響既有的碼 —— 不帶潛能的草稿位元組數不變', () => {
+  const draft: LoadoutDraft = {
+    activeSetKey: 'default',
+    pilotId: UNIVERSE.pilot[0],
+    mechId: UNIVERSE.mech[0],
+    sets: { default: { mounts: [{ weaponId: UNIVERSE.weapon[0], bank: 'main', slot: 'dualHand' }] } },
+  }
+  const withP = encodeLoadout({ ...draft, potential: 2 }, { indexes: INDEXES, gameVersion: '3.3' })
+  const without = encodeLoadout(draft, { indexes: INDEXES, gameVersion: '3.3' })
+  assert.ok(withP.length > without.length, '帶了潛能才會多出那一段')
+  // 舊碼（不含 §TALENT）照樣解得開，且沒有 unmodeled
+  const dec = ok(decodeLoadout(without, INDEXES))
+  assert.deepEqual(dec.unmodeled, [])
+  assert.equal('potential' in dec.draft, false)
+})

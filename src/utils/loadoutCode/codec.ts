@@ -39,6 +39,7 @@ import type { SlotBank, SlotSide } from '../../types/slots'
 import type { MechPartPosition, WeaponEquipSlot } from '../../types/enums'
 import { slotKey } from '../../types/slots.ts'
 import type { ShareIdKind, ShareIndex } from './shareId.ts'
+import { MAX_POTENTIAL } from '../talentLoadoutMods.ts'
 
 // ─── 常數 ────────────────────────────────────────────────────────────────────
 
@@ -72,6 +73,16 @@ export const TAG = {
    *   插在前面會讓所有既有的 golden fixture 碼位元不同 —— 那些是已經流出去的碼。
    */
   SKILLS: 7,
+  /**
+   * 潛能等級（PLAN-052-N C-2）。**追加段，不 bump `FMT_VERSION`**，理由同 `NOTE`。
+   *
+   * ⚠ **排在 §SKILLS 之後**（＝整串的最後）：`encodeLoadout()` 的順序就是版面順序，
+   *   插在前面會讓所有既有的 golden fixture 碼位元不同 —— 那些是已經流出去的碼。
+   *
+   * ⚠ **滿潛時整段不寫**：滿潛是預設值（見 `LoadoutDraft.potential`），也是絕大多數配裝的狀態
+   *   ⇒ 幾乎每一份碼的長度都不受本段影響。
+   */
+  TALENT: 8,
 } as const
 
 /** 槽位 → 3 bits。**保留 8 個位置**，遊戲加第五種槽位時是加值而非升版本。 */
@@ -424,6 +435,24 @@ function encodePositionMap(
   return w
 }
 
+/**
+ * §TALENT 的內容（PLAN-052-N C-2）。版面：**潛能等級 1 byte**。
+ *
+ * ⚠ **只有非滿潛才寫**：滿潛＝欄位不存在＝預設值（`reconcile` 也是這樣正規化的），
+ *   於是絕大多數的碼完全不含本段。空 Writer ⇒ `section()` 不會寫出任何位元組。
+ *
+ * ⚠ 用 1 byte 而不是 3 bits：今天只要存 0–5，但潛能將來若要連帶記
+ *   「哪幾階已解鎖」（各機師階梯內容不同，見 052-N §6.2）就需要一個 bitmask，
+ *   而那正好是 1 byte。省下的 5 bits 換不到任何東西，卻要為此升版本。
+ */
+function encodePotential(potential: number | undefined): Writer {
+  const w = new Writer()
+  if (potential == null || !Number.isInteger(potential)) return w
+  if (potential < 0 || potential >= MAX_POTENTIAL) return w
+  w.byte(potential)
+  return w
+}
+
 function encodeNd(ndLevels: Record<string, number> | undefined): Writer {
   const w = new Writer()
   const entries = Object.entries(ndLevels ?? {})
@@ -499,6 +528,8 @@ export function encodeLoadout(draft: LoadoutDraft, opts: EncodeOptions): string 
   }
   // ⚠ §SKILLS 排在最後（見 `TAG.SKILLS` 的註解）
   section(w, TAG.SKILLS, encodeSkills(draft.skills, ix.pilotSkill))
+  // ⚠ §TALENT 排在 §SKILLS 之後（見 `TAG.TALENT` 的註解）
+  section(w, TAG.TALENT, encodePotential(draft.potential))
 
   const body = w.toBytes()
   const out = new Uint8Array(body.length + 1)
@@ -834,6 +865,13 @@ export function decodeLoadout(raw: string, indexes: ShareIndexes): DecodeResult 
         case TAG.SKILLS: {
           const skills = readSkills(sub, indexes.pilotSkill, unresolved)
           if (skills) draft.skills = skills
+          break
+        }
+        case TAG.TALENT: {
+          // ⚠ 這裡**不 clamp**：codec 只負責把 bytes 變回數字，範圍由 `reconcile()` 收
+          //   （同 §NOTE 不清洗、§ND 不 clamp 的既有規約）。在這裡多收一次，
+          //   round-trip 測試會對不起來 —— 而那個相等正是把關的東西。
+          draft.potential = sub.byte()
           break
         }
         default:

@@ -1,4 +1,4 @@
-import type { MechLicense } from './enums'
+import type { BackpackType, MechLicense, WeaponKind } from './enums'
 // ─── 機師 ──────────────────────────────────────────────────────────────────
 
 import type { DescriptionRefs } from './common'
@@ -144,6 +144,67 @@ export interface TalentNdVariant {
   descriptionRefs?: DescriptionRefs
 }
 
+// ─── 天賦對配裝的修正（PLAN-052-N）──────────────────────────────────────────
+//
+// 「機師天賦會改寫『什麼裝得上』與『這把多重』」這件事的唯一資料來源。全庫 18 筆
+// （9 筆改重量、9 筆改彈量／射程／耐久），來源**只有天賦** —— modules / components /
+// backpacks / pilotSkills / neuralDriveAbilities / buffs 全部 0 筆。
+//
+// ⚠ **刻意不塞進 `SkillEffect`**（PLAN-052-N 決策一）：那是「戰鬥期的數值加成」的通道
+//   （`scope` / `condition` 全是戰鬥詞彙），而這裡是「建構期的裝備屬性改寫」——
+//   消費端、值域、生命週期三者都不交集。混進去的代價是 `EquippedEffects` 那類
+//   「攤平加總所有 effects」的地方會開始列出「機槍重量 −80」，而要擋掉它就得在
+//   **每一個消費端各寫一次過濾**；且「解除限制」根本沒有 value 可放，只能塞 `value: 0`。
+//
+// ⚠ 本欄位是**人工維護**的，爬蟲補丁必須保留它 —— `scrape-pilots-v3.js` 的
+//   `mergeTalentsArray()` 是**白名單制**，漏列即被官方 fresh 物件靜默覆蓋。
+
+/**
+ * 這條規則作用在哪些裝備上。
+ *
+ * 封閉聯集：新增一種來源，`tsc` 會逼規則層（`talentLoadoutMods.ts`）補上對應分支，
+ * 而不是靜默地對新種類回 false。
+ */
+export type EquipTarget =
+  /** 武器種類（'電磁炮' / '火箭' / '機槍'…）—— 18 筆裡 17 筆走這個 */
+  | { on: 'weaponKind'; kind: WeaponKind }
+  /** 背包種類（'Heal' ＝ 修理背包）—— 目前僅瑪汀妮一筆 */
+  | { on: 'backpackType'; type: BackpackType }
+  /** 指定單一武器。**目前全庫 0 筆**，保留給「只對某一把生效」的未來天賦 */
+  | { on: 'weaponId'; id: string }
+
+/**
+ * 可被天賦改寫的裝備屬性。
+ *
+ * ⚠ **只有 `weight` 會進配裝規則層**（合法性／負重帳），其餘四個先入庫供顯示與未來的
+ *   傷害模擬使用 —— 它們不影響「裝不裝得上」，接進去只是把未驗證的數字送進計算。
+ */
+export type EquipStat = 'weight' | 'ammoCount' | 'maxRange' | 'minRange' | 'durability'
+
+/**
+ * 生效門檻。`'base'` ＝ 天賦一到手就有；`'max'` ＝ 潛能第 3 階「天賦能力加強」之後才有。
+ *
+ * ⚠ 用單一欄位而不是 `mods` / `enhancedMods` 兩個陣列（比照 `effects` / `enhancedEffects`）：
+ *   後者會逼編輯者把 base 的內容**整份複製**到 enhanced 陣列（提升後＝初始的一切 ＋ 新增子句），
+ *   而漏複製的症狀是「天賦點滿之後反而變重」，且不會有任何錯誤訊息。
+ *   實測 18 筆**沒有一筆兩態數值不同**；真的出現時再補選填 `maxAmount`，那是加欄位不是改結構。
+ */
+export type TalentTier = 'base' | 'max'
+
+export type TalentLoadoutMod =
+  /**
+   * 裝備數值修正。`amount` 一律**帶號**（−130 / −0.15 / +2），`mode` 決定加算或乘算。
+   * 全庫唯一的 `'pct'` 是凱莉〈白鸛〉的狙擊步槍負重 −15%（`amount: -0.15`）。
+   */
+  | { kind: 'stat'; target: EquipTarget; stat: EquipStat; mode: 'flat' | 'pct'; amount: number; since: TalentTier }
+  /**
+   * 解除機甲機種限制（維娜的電磁炮、瑪汀妮的修理背包）。**刻意不帶值**。
+   *
+   * 語意是「這個對象不再受 `mechRestriction` / `assemblableArmorType` 的裝甲類型 gate」，
+   * **不是**「多給一格」—— 使用者實機確認：武器仍裝在原本的格子（電磁炮＝背槽）。
+   */
+  | { kind: 'allowEquip'; target: EquipTarget; since: TalentTier }
+
 export interface PilotTalent {
   name: string
   type: string
@@ -158,6 +219,11 @@ export interface PilotTalent {
   buffIds:          string[]
   /** 神經驅動算力改寫變體（PLAN-021）；建議依 minSum 升序排列 */
   ndVariants?:      TalentNdVariant[]
+  /**
+   * 此天賦對配裝的修正（PLAN-052-N）。**未填 ＝ 這個天賦不改任何裝備**，
+   * 全庫 89 筆天賦裡只有 18 筆需要填。人工維護，爬蟲補丁不得覆寫。
+   */
+  loadoutMods?:     TalentLoadoutMod[]
   /**
    * 手動修正過的天賦正文（PLAN-021）。官方 API 的天賦正文可能是「滿晶片狀態」文本
    * （艾達案例：7層/5AP/星爆 皆為 γ2≥16 才有的值），人工去污染後設 true，

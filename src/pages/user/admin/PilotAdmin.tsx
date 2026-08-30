@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, TalentNdVariant, SkillEffect, SkillCondition, NeuralDrive, NeuralDriveLevel, NeuralDriveAbility } from '../../../types'
+import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, TalentNdVariant, SkillEffect, SkillCondition, NeuralDrive, NeuralDriveLevel, NeuralDriveAbility, TalentLoadoutMod, EquipTarget, EquipStat, TalentTier } from '../../../types'
 import { formatWeaponReq } from '../../../types'
-import { ItemRarity, PilotClass, MechLicense, WeaponType } from '../../../types/enums'
+import { ItemRarity, PilotClass, MechLicense, WeaponType, WeaponKind, BackpackType } from '../../../types/enums'
+import { BACKPACK_TYPE_CONFIG } from '../../../components/badges/BackpackBadges'
+import { loadoutModHintWords } from '../../../utils/talentLoadoutMods'
 import { useGameVersions } from '../../../hooks/useGameVersions'
 import {
   Field, AdminModal, useClientPaged, LoadMoreButton, useNewItemCreation, NewItemDialog,
@@ -244,6 +246,231 @@ function EffectListEditor({
               index={i}
               onChange={(updated) => { const next = [...effects]; next[i] = updated; onChange(next) }}
               onRemove={() => onChange(effects.filter((_, idx) => idx !== i))}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── 配裝修正編輯器（PLAN-052-N A-2）──────────────────────────────────────────
+//
+// 「這個天賦會讓什麼裝得上、讓什麼變輕」的輸入處。全庫 89 個天賦裡只有 18 個要填，
+// 所以預設整區是收起來的一行字，不佔右欄的視覺預算。
+//
+// ⚠ **對象一律走 enum 下拉，不給自由輸入**：「火箭」打成「火箭炮」會匹配到 0 把武器，
+//   而畫面上與「沒填」長得一模一樣 —— 沒有錯誤、沒有紅字，只是安靜地不生效。
+
+const EQUIP_STAT_OPTIONS: { key: EquipStat; label: string }[] = [
+  { key: 'weight',     label: '負重 / 重量　（唯一會進配裝規則的）' },
+  { key: 'ammoCount',  label: '彈倉容量' },
+  { key: 'maxRange',   label: '最大射程' },
+  { key: 'minRange',   label: '最小射程' },
+  { key: 'durability', label: '耐久值' },
+]
+
+/** 對象選擇：先選來源（武器種類／背包種類／指定武器），再選值 */
+function EquipTargetEditor({ target, onChange }: { target: EquipTarget; onChange: (t: EquipTarget) => void }) {
+  return (
+    <>
+      <Field label="對象來源 on">
+        <select
+          value={target.on}
+          onChange={(e) => {
+            const on = e.target.value as EquipTarget['on']
+            // 換來源＝換聯集分支，必須整個換掉而不是改一個 key——
+            // 留著舊分支的欄位會存出 { on:'backpackType', kind:'火箭' } 這種讀不出來的東西
+            onChange(
+              on === 'weaponKind'   ? { on, kind: WeaponKind.RailGun }
+              : on === 'backpackType' ? { on, type: BackpackType.HEAL }
+              : { on: 'weaponId', id: '' },
+            )
+          }}
+          className="input-field text-xs"
+        >
+          <option value="weaponKind">武器種類</option>
+          <option value="backpackType">背包種類</option>
+          <option value="weaponId">指定單一武器（罕見）</option>
+        </select>
+      </Field>
+      {target.on === 'weaponKind' && (
+        <Field label="武器種類 kind">
+          <select
+            value={target.kind}
+            onChange={(e) => onChange({ on: 'weaponKind', kind: e.target.value as WeaponKind })}
+            className="input-field text-xs"
+          >
+            {Object.values(WeaponKind).map((k) => <option key={k} value={k}>{k}</option>)}
+          </select>
+        </Field>
+      )}
+      {target.on === 'backpackType' && (
+        <Field label="背包種類 type">
+          <select
+            value={target.type}
+            onChange={(e) => onChange({ on: 'backpackType', type: e.target.value as BackpackType })}
+            className="input-field text-xs"
+          >
+            {Object.values(BackpackType).map((t) => (
+              <option key={t} value={t}>{BACKPACK_TYPE_CONFIG[t]?.label ?? t}（{t}）</option>
+            ))}
+          </select>
+        </Field>
+      )}
+      {target.on === 'weaponId' && (
+        <Field label="武器 doc id">
+          <input
+            value={target.id}
+            onChange={(e) => onChange({ on: 'weaponId', id: e.target.value })}
+            className="input-field text-xs"
+            placeholder="weapon_047_稜鏡"
+          />
+        </Field>
+      )}
+    </>
+  )
+}
+
+function LoadoutModItem({
+  mod, index, onChange, onRemove,
+}: {
+  mod: TalentLoadoutMod
+  index: number
+  onChange: (updated: TalentLoadoutMod) => void
+  onRemove: () => void
+}) {
+  return (
+    <div className="border border-border/50 rounded-lg p-2.5 space-y-2 bg-bg-card/30">
+      <div className="flex items-center justify-between">
+        <span className="text-[13px] text-text-dim">規則 #{index + 1}</span>
+        <button
+          onClick={onRemove}
+          className="text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10"
+        >
+          ✕ 移除
+        </button>
+      </div>
+      <div className={`${GRID_AUTO_FIELDS} gap-2`}>
+        <Field label="類型 kind">
+          <select
+            value={mod.kind}
+            onChange={(e) => {
+              const kind = e.target.value as TalentLoadoutMod['kind']
+              if (kind === mod.kind) return
+              onChange(
+                kind === 'stat'
+                  ? { kind: 'stat', target: mod.target, stat: 'weight', mode: 'flat', amount: 0, since: mod.since }
+                  : { kind: 'allowEquip', target: mod.target, since: mod.since },
+              )
+            }}
+            className="input-field text-xs"
+          >
+            <option value="stat">數值修正</option>
+            <option value="allowEquip">解除機種限制</option>
+          </select>
+        </Field>
+        <EquipTargetEditor target={mod.target} onChange={(target) => onChange({ ...mod, target })} />
+        {mod.kind === 'stat' && (
+          <>
+            <Field label="屬性 stat">
+              <select
+                value={mod.stat}
+                onChange={(e) => onChange({ ...mod, stat: e.target.value as EquipStat })}
+                className="input-field text-xs"
+              >
+                {EQUIP_STAT_OPTIONS.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
+              </select>
+            </Field>
+            <Field label="計算方式 mode">
+              <select
+                value={mod.mode}
+                onChange={(e) => onChange({ ...mod, mode: e.target.value as 'flat' | 'pct' })}
+                className="input-field text-xs"
+              >
+                <option value="flat">加算（−130）</option>
+                <option value="pct">百分比（−0.15）</option>
+              </select>
+            </Field>
+            <Field label="數值 amount（帶號）">
+              <input
+                type="number"
+                step={mod.mode === 'pct' ? 0.01 : 1}
+                value={mod.amount}
+                onChange={(e) => onChange({ ...mod, amount: Number(e.target.value) })}
+                className="input-field"
+              />
+            </Field>
+          </>
+        )}
+        <Field label="生效門檻 since">
+          <select
+            value={mod.since}
+            onChange={(e) => onChange({ ...mod, since: e.target.value as TalentTier })}
+            className="input-field text-xs"
+          >
+            <option value="base">初始（天賦一到手就有）</option>
+            <option value="max">提升後（潛能第 3 階）</option>
+          </select>
+        </Field>
+      </div>
+      {/* 百分比很容易填成 −15 而不是 −0.15，兩者差 100 倍且都不會報錯 —— 當場把換算印出來 */}
+      {mod.kind === 'stat' && mod.mode === 'pct' && (
+        <p className={`text-[12px] ${Math.abs(mod.amount) >= 1 ? 'text-accent-red' : 'text-text-dim'}`}>
+          ＝ {(mod.amount * 100).toFixed(1)}%
+          {Math.abs(mod.amount) >= 1 && '　⚠ 百分比要填小數（−15% 是 −0.15），這個值看起來大了 100 倍'}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function LoadoutModsEditor({
+  mods, hintWords, onChange,
+}: {
+  mods: TalentLoadoutMod[]
+  /** 正文命中的關鍵字（A-4）；空陣列＝正文看起來不像在講裝備 */
+  hintWords: string[]
+  onChange: (next: TalentLoadoutMod[]) => void
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">
+          配裝修正 loadoutMods
+        </span>
+        <button
+          onClick={() => onChange([...mods, {
+            kind: 'stat', target: { on: 'weaponKind', kind: WeaponKind.RailGun },
+            stat: 'weight', mode: 'flat', amount: 0, since: 'base',
+          }])}
+          className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+        >
+          + 新增規則
+        </button>
+      </div>
+
+      {/* A-4：正文像在講裝備、卻一條都沒填 —— 這是整個 PLAN-052-N 最容易失敗的地方 */}
+      {mods.length === 0 && hintWords.length > 0 && (
+        <p className="text-[12px] text-accent-yellow border border-accent-yellow/30 bg-accent-yellow/5 rounded px-2 py-1.5 mb-2 leading-relaxed">
+          正文提到<b>{hintWords.join('、')}</b>，但尚未填配裝規則。
+          若此天賦<b>不改變裝備的重量或可裝備性</b>，忽略這行即可。
+        </p>
+      )}
+
+      {mods.length === 0 ? (
+        <p className="text-xs text-text-dim py-2 text-center">
+          尚未填入（全庫 89 個天賦只有 18 個需要）
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {mods.map((m, i) => (
+            <LoadoutModItem
+              key={i}
+              mod={m}
+              index={i}
+              onChange={(updated) => { const next = [...mods]; next[i] = updated; onChange(next) }}
+              onRemove={() => onChange(mods.filter((_, idx) => idx !== i))}
             />
           ))}
         </div>
@@ -658,6 +885,13 @@ function TalentItem({
 
             <div className="space-y-3 min-w-0">
               <NdVariantsEditor variants={talent.ndVariants ?? []} zones={zones} onChange={(n) => upd('ndVariants', n)} />
+              {/* PLAN-052-N：排在 effects 之前 —— 它是「這個天賦改了什麼裝備」，
+                  而 effects 是「這個天賦給了什麼加成」，前者才是會擋住玩家配裝的那一種 */}
+              <LoadoutModsEditor
+                mods={talent.loadoutMods ?? []}
+                hintWords={loadoutModHintWords(talent)}
+                onChange={(n) => upd('loadoutMods', n.length ? n : undefined)}
+              />
               <EffectListEditor label="可計算效果 effects" effects={effects} onChange={(n) => upd('effects', n)} />
               <EffectListEditor
                 label="強化效果 enhancedEffects（選填）"

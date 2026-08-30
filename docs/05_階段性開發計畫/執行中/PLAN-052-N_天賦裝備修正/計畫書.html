@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-N 天賦裝備修正 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+.meta-value.pink   { color: var(--accent-pink); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 13px;
+}
+.data-table th {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--text-dim);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.data-table td {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  color: var(--text-secondary);
+}
+.data-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+pre.code {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 14px 0;
+}
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-052-N 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-052-N</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    天賦裝備修正<span style="-webkit-text-fill-color:var(--text-secondary);"> · 解除機種限制 · 負重減免 · 潛能等級</span>
+  </h1>
+  <p class="hero-sub">機師天賦會改寫「什麼裝得上」與「這把多重」，而模擬器今天一個字都沒讀 —— 維娜點不到任何一把電磁炮、瑪汀妮點不到修理背包，那正是她們天賦的全部賣點。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value cyan">PLAN-052-N</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-08-30</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">types/pilot.ts · loadoutRules · loadoutCode/codec · PilotAdmin · PilotTalentStrip</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value cyan">開發中 · Phase A 完成</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">052-B（規則層）· 052-C（分享碼）· 052-L（天賦條）皆已完成</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>來源</strong><br>
+    使用者於 2026-08-30 發現維娜〈罪業信條〉可讓重型機甲裝電磁炮、洛莎〈原型體〉「提升後」才減機槍重量，
+    並提問「未來這種情況可能還會發生，是否需要設計新的資料結構」。
+    評估過程與全量掃描結果見 <code>_local-notes/2026-08/2026-08-30_機師天賦影響配裝規則_資料結構提案.md</code>
+    （含可重跑的 <code>dump-all-talents.mjs</code>）。四項設計問題已於同日全數裁決。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：維娜與瑪汀妮被<b>錯誤封鎖</b> —— 這是站上現存的、看得見的錯</strong><br>
+    <code>canEquipWeapon()</code> 的 <code>MECH_RESTRICTION</code> 屬 <code>structural</code> 層級，
+    而 <code>PickerShell</code> 自 052-I 起把 structural 整批不列。於是：
+    <b>維娜在模擬器裡點不到任何一把電磁炮</b>（12/12 把是 <code>mechRestriction:'medium'</code>，她是重型執照）、
+    <b>瑪汀妮點不到修理背包</b>（14/14 個是 <code>assemblableArmorType:['Medium']</code>，她是輕型）。
+    這不是「少算了一點重量」，是站上對玩家說了一句<b>錯的否定句</b>，而且否定掉的正是那兩位機師的核心賣點。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：8 位機師的負重減免完全沒算</strong><br>
+    火箭 −130（羅斯瑪麗／哈達威／艾琳）、重機槍 −200（格蘭特）、機槍 −80（洛莎）、
+    霰彈槍 −125（里貝卡）、狙擊步槍 <b>−15%</b>（凱莉，全庫唯一的百分比）、
+    電磁炮 −360（維娜）、修理背包 −300（瑪汀妮）。
+    這些天賦的 <code>effects</code> / <code>enhancedEffects</code> / <code>buffIds</code> <b>全是空陣列</b>，
+    模擬器讀不到任何東西 ⇒ <code>OVERWEIGHT</code> 判定一律偏重，玩家實際帶得動的配裝會被判成裝不下。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：「提升後」目前只是一個 UI 局部狀態</strong><br>
+    <code>PilotTalentStrip</code> 的 <code>viewMax</code>（預設滿星）是元件內的 <code>useState</code>。
+    洛莎／艾琳／里貝卡三人的減重<b>只在提升後才有</b> ⇒ 一旦天賦會改重量，這個開關就不再是顯示偏好，
+    而是<b>配裝參數</b>。不升格的症狀是「畫面切回初始版、總重卻沒變」，
+    或匯出圖顯示初始天賦但總重用滿星算 —— 兩個數字在同一張圖上互相打臉。
+  </div>
+
+  <div class="warning-block">
+    <strong>方法論教訓：關鍵字掃描在這個資料集上不可靠</strong><br>
+    第一版盤點用關鍵字（負重／重量／額外裝備）掃，<b>漏掉了整批用「射程+1」「彈倉容量+2」表達的同類規則</b>。
+    官方文案對同一件事有多種說法（「負重降低」／「重量降低」／「負重-360」），
+    <b>下一個新機師會用第四種說法</b>。日後重做這類盤點一律用
+    <code>_local-notes/2026-08/2026-08-30_dump-all-talents.mjs</code> 全量傾印逐條讀。
+  </div>
+</section>
+
+<!-- 盤點結果 -->
+<section class="section">
+  <div class="section-label cyan">Survey</div>
+  <div class="section-title">全量盤點：89 個天賦逐條讀過的結果</div>
+
+  <div class="section-desc">A 類影響配裝合法性與重量（本計畫核心）；B 類形狀相同但只改顯示數值；C 類是另一種東西，明著劃在範圍外。</div>
+
+  <h3 style="font-size:15px;color:var(--accent-cyan);margin:20px 0 8px;">A 類 —— 改重量（9 筆）</h3>
+  <table class="data-table">
+    <tr><th>機師</th><th>執照</th><th>天賦</th><th>效果</th><th>何時生效</th></tr>
+    <tr><td>維娜</td><td>重型</td><td>罪業信條</td><td><b>解除電磁炮機種限制</b> ＋ 電磁炮負重 −360</td><td>初始</td></tr>
+    <tr><td>瑪汀妮</td><td>輕型</td><td>良藥苦機</td><td><b>解除修理背包機種限制</b> ＋ 修理背包負重 −300</td><td>初始</td></tr>
+    <tr><td>凱莉</td><td>輕型</td><td>白鸛</td><td>狙擊步槍負重 <b>−15%</b>（唯一百分比）</td><td>初始</td></tr>
+    <tr><td>羅斯瑪麗</td><td>中型</td><td>掌舵人</td><td>火箭負重 −130</td><td>初始</td></tr>
+    <tr><td>哈達威</td><td>中型</td><td>全量演算</td><td>火箭負重 −130</td><td>初始</td></tr>
+    <tr><td>格蘭特</td><td>中型</td><td>槍不能停</td><td>重機槍負重 −200</td><td>初始</td></tr>
+    <tr><td>洛莎</td><td>中型</td><td>原型體</td><td>機槍重量 −80</td><td><b>提升後</b></td></tr>
+    <tr><td>艾琳</td><td>中型</td><td>不息雷火</td><td>火箭負重 −130</td><td><b>提升後</b></td></tr>
+    <tr><td>里貝卡</td><td>輕型</td><td>神槍手</td><td>霰彈槍重量 −125</td><td><b>提升後</b></td></tr>
+  </table>
+
+  <h3 style="font-size:15px;color:var(--accent-cyan);margin:20px 0 8px;">B 類 —— 改其他裝備數值（9 筆，同一個資料形狀）</h3>
+  <table class="data-table">
+    <tr><th>機師</th><th>效果</th><th>軸</th></tr>
+    <tr><td>菲婭</td><td>電磁炮的彈倉容量 +2（提升後）</td><td>彈量</td></tr>
+    <tr><td>吉賽爾</td><td>浮游炮的彈倉容量 +1（提升後）</td><td>彈量</td></tr>
+    <tr><td>鄭樂萱</td><td>機槍射程 +1（提升後）</td><td>射程</td></tr>
+    <tr><td>尼爾</td><td>飛彈射程 +1（提升後）</td><td>射程</td></tr>
+    <tr><td>安</td><td>重機槍射程和攻擊範圍 +1（提升後・條件：雙手完好）</td><td>射程</td></tr>
+    <tr><td>瑪蒂爾達</td><td>重機槍射程 +1（條件：雙手完好）</td><td>射程</td></tr>
+    <tr><td>弗雷姬塔</td><td>機槍／霰彈槍／噴火器的[最佳射程]擴大 1 格（提升後）</td><td>射程</td></tr>
+    <tr><td>葉夫根尼</td><td>使輕型步槍可以攻擊相鄰 1 格（提升後 ＝ 改最小射程）</td><td>射程</td></tr>
+    <tr><td>阿德里安</td><td>盾牌耐久值 +70%（條件：裝配盾牌）</td><td>耐久</td></tr>
+  </table>
+
+  <div class="info-block">
+    <strong>B 類的存在就是「未來還會不會發生」的答案：會，而且已經發生 9 次了。</strong><br>
+    形狀與 A 類完全相同（作用對象 ＋ 屬性 ＋ 加算／乘算 ＋ 值 ＋ 生效門檻），差別只在「哪一個屬性」與「誰消費」。
+    因此結構一次做成通用的裝備數值修正，但<b>只有 <code>weight</code> 接進配裝規則層</b>，其餘先存著供顯示／未來傷害模擬用。
+  </div>
+
+  <div class="warning-block">
+    <strong>C 類 —— 「裝了什麼 → 觸發什麼」（12 筆以上，<b>不在本計畫範圍</b>）</strong><br>
+    卡夏「若裝備兩把機槍」、亞瑟／奈奧米「雙肩同時裝備導彈」、西爾維婭「裝配手盾時」、凱瑟琳「裝備長柄」、
+    阿列娜「同時裝備大盾和噴火器」、賽拉「裝備電磁炮時」、瑪阿特「裝備除強襲者背包外的任意背包」、
+    皮普「雙手均裝配格鬥武器」、莉莉「只裝配一種戰術武器」、弗雷姬塔／鄭樂萱「裝備兩把突擊武器／兩把機槍」……<br>
+    這些<b>不改任何裝備數值、也不改合法性</b>，只是「配裝滿足條件 ⇒ 某個戰鬥效果成立」，屬傷害模擬層，
+    既有 <code>SkillCondition</code> 已有雛形（<code>trigger</code> / <code>weaponType</code> / <code>weaponKind</code>）。
+    硬塞進本計畫的結構會把兩件不同的事綁在一起 —— <b>刻意排除</b>。
+  </div>
+
+  <div class="decision-block">
+    <strong>邊界事實：來源只有機師天賦</strong><br>
+    <code>modules</code>(241) / <code>components</code>(208) / <code>backpacks</code>(181) / <code>pilotSkills</code>(853) /
+    <code>neuralDriveAbilities</code>(440) / <code>buffs</code>(228) 全部 <b>0 筆</b>提到負重、重量或額外裝備
+    （<code>mechs</code> 的 3 筆命中全是 lore 文案）⇒ 新結構只需掛在 <code>PilotTalent</code> 上，不必做成跨集合機制。<br>
+    ⚠ 但這一條是<b>用關鍵字掃出來的</b>，而上面已證明關鍵字會漏 —— 目前當作「高度可能」而非硬結論。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label cyan">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：新開窄型別 <code>loadoutMods</code>，<b>不</b>塞進 <code>SkillEffect</code></strong><br>
+    <code>SkillEffect</code> 的語意是「<b>戰鬥期的數值加成</b>」（<code>scope</code> / <code>condition</code> 全是戰鬥詞彙），
+    而這批規則是「<b>建構期的裝備屬性改寫</b>」—— 消費端、值域、生命週期三者都不交集。<br>
+    混在一起的具體代價：<code>EquippedEffects</code> 那類「把所有 effects 攤平加總」的地方會開始顯示
+    「機槍重量 −80」這種<b>不屬於戰力彙總</b>的列，而要擋掉它就得在<b>每一個消費端各寫一次過濾</b>。<br>
+    另外兩個致命點：「解除限制」<b>沒有 value 可放</b>（只能塞 <code>value:0</code>）；
+    <code>stat</code> 是開放字串，<code>weight_machinegun</code> 打錯<b>不會有人知道</b>。
+    封閉聯集則能在新增一種 target 時<b>逼 tsc 補分支</b>，與 <code>REJECTION_CODES</code> 的既有風格一致。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：target 與 stat 分離，泛化到 5 個屬性 —— 但只有 <code>weight</code> 進規則層</strong><br>
+    若把屬性寫進鍵名（<code>weight_machinegun</code>），就要造
+    17 種 <code>WeaponKind</code> × 5 種屬性 × {flat,pct} 的組合鍵。拆成
+    <code>{ target, stat, mode, amount }</code> 之後，新增一個武器種類或一個屬性都<b>不必造任何新鍵</b>。<br>
+    B 類 9 筆先入庫但不接規則層：它們不影響合法性，接了只是把未驗證的數字送進計算。
+  </div>
+
+  <pre class="code">// src/types/pilot.ts（或新檔 types/loadoutMod.ts）
+
+/** 這條規則作用在哪些裝備上。封閉聯集 —— 新增一種，tsc 逼你在規則層補分支 */
+export type EquipTarget =
+  | { on: 'weaponKind';   kind: WeaponKind }      // '電磁炮' / '火箭' / '機槍'…
+  | { on: 'backpackType'; type: BackpackType }    // 'Heal'（修理背包）
+  | { on: 'weaponId';     id: string }            // 保留：未來若出現「僅某把武器」
+
+/** 可被天賦改寫的裝備屬性。**只有 weight 進配裝規則層**，其餘先存著供顯示／傷害模擬 */
+export type EquipStat = 'weight' | 'ammoCount' | 'maxRange' | 'minRange' | 'durability'
+
+/** 生效門檻：'base' ＝ 天賦一到手就有；'max' ＝ 天賦提升後才有 */
+export type TalentTier = 'base' | 'max'
+
+export type TalentLoadoutMod =
+  /** 裝備數值修正。amount 一律**帶號**（−130 / −0.15 / +2），mode 決定加算或乘算 */
+  | { kind: 'stat'; target: EquipTarget; stat: EquipStat; mode: 'flat' | 'pct'; amount: number; since: TalentTier }
+  /** 解除機種限制（維娜／瑪汀妮）。刻意不帶值 */
+  | { kind: 'allowEquip'; target: EquipTarget; since: TalentTier }
+
+export interface PilotTalent {
+  // …既有欄位…
+  /** 影響裝備合法性／數值的規則（全庫 18 位機師有）。未填＝這個天賦不改任何裝備 */
+  loadoutMods?: TalentLoadoutMod[]
+}</pre>
+
+  <div class="decision-block">
+    <strong>決策三：單一 <code>since</code> 欄位，<b>不</b>做 <code>mods</code> / <code>enhancedMods</code> 兩個陣列</strong><br>
+    比照既有 <code>effects</code> / <code>enhancedEffects</code> 的作法，會<b>逼編輯者把 base 的內容整份複製到 enhanced 陣列</b>
+    （因為提升後是「初始的一切 ＋ 新增子句」）。漏複製的症狀是<b>「天賦點滿之後反而變重」，而且不會有任何錯誤訊息</b>。<br>
+    <b>使用者裁決（2026-08-30）</b>：實測 0 筆「兩態數值不同」，且對遊戲設計意義不大 ⇒ 單欄位定案。
+    真的出現時再補一個選填 <code>maxAmount?: number</code> —— 那是加欄位，不是改結構。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：<code>loadoutWeight.ts</code> <b>完全不動</b></strong><br>
+    它「只吃 <code>{ weight }</code>、不認識機師」的設計是對的，改成在 <code>loadoutRules</code> 組
+    <code>LoadoutWeightSet</code> 時把武器 map 成 <code>{ weight: statOf(w,'weight') }</code> 即可。<br>
+    好處是 <code>loadoutWeight.test.ts</code> <b>不必為了測減重而生一個假機師</b>，
+    那支單測守的是「手部取較重組」這條不變式，不該被機師資料污染。<br>
+    ⚠ UI 要講「1100 → 740」，所以呼叫端要另外留一份原重（或給 <code>WeightBreakdown</code> 加 <code>reducedBy</code>）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：<b>不新增 RejectionCode</b> —— 豁免是「不觸發既有拒絕」，不是「一種新拒絕」</strong><br>
+    <code>canEquipWeapon()</code> 的 <code>restrictedTo()</code> 那一段加豁免、
+    <code>canEquipBackpack()</code> 的 <code>BACKPACK_ARMOR_TYPE</code> 同理。<br>
+    ⚠ 但<b>挑選器的 hint 文案要跟著</b>：「因機種限定隱藏 12」在維娜身上必須變成 0，否則玩家看到的是矛盾
+    —— 清單裡看得到電磁炮，底下卻寫著「隱藏 12 個機種限定」。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：存<b>潛能等級 0–5</b>，不存「天賦有沒有提升」的布林</strong><br>
+    使用者裁決（2026-08-30）：「提升」的真身是<b>潛能提升</b> —— 重複抽到同一機師累積的養成軸，
+    五階內容為：①初始 AP +1 ②駕駛等級→大師Ⅱ <b>③天賦能力加強</b> ④駕駛等級→大師Ⅲ ⑤初始 AP +1，
+    外加「提升後所有屬性提升 2%」。<br>
+    <b>五階裡有四階不是天賦。</b>布林<b>無法還原等級</b>，等哪天要算 AP 或屬性 %，
+    就得再加一個欄位並<b>遷移所有已流出的分享碼</b>。今天多存 3 個 bit，換的是那次遷移不必發生。
+  </div>
+
+  <div class="info-block">
+    <strong>佐證：站上既有資料早就是「滿潛快照」</strong>
+    <table class="data-table">
+      <tr><th>佐證</th><th>數字</th></tr>
+      <tr><td><code>ap.init − apBase.init</code></td><td><b>= 2 佔 54/89</b>（＝第 1、5 階那兩個「初始 AP +1」都吃到了）</td></tr>
+      <tr><td><code>masterLevel</code> 值域</td><td>大師Ⅲ 59／精通Ⅳ 15／熟練V 10／超適體Ⅲ 3／大師Ⅳ 2 —— <b>大師Ⅲ 正是第 4 階的產物</b></td></tr>
+      <tr><td>天賦正文</td><td><code>descriptionMax</code> 本來就是「提升後」那一段</td></tr>
+    </table>
+    這與「官方 API 天賦文本是滿晶片污染值」是<b>同一個現象的不同面向</b>：API 吐的是某個養成狀態的快照，站上照單全收。
+    因此「欄位不存在＝滿潛 5」與既有資料一致，不會引入第二套假設。
+  </div>
+
+  <pre class="code">export interface LoadoutDraft {
+  // …
+  /**
+   * 潛能等級 0–5（重複抽同一機師累積）。**欄位不存在＝滿潛 5**，與站上資料的滿潛快照一致。
+   *
+   * ⚠ 存等級而不是「天賦有沒有提升」的布林：潛能同時決定天賦提升、初始 AP、駕駛等級與屬性 %，
+   *   布林**無法還原**等級，等到要算 AP 或屬性時就得再加一個欄位並遷移所有已流出的分享碼。
+   */
+  potential?: number
+}</pre>
+
+  <div class="decision-block">
+    <strong>決策七：天賦加強<b>恆在第 3 階</b>，常數集中一處</strong><br>
+    <b>使用者裁決（2026-08-30）逐字</b>：「天賦加強絕對在第三階，這是遊戲目前為止沒有破例過的。」<br>
+    因此規則層寫死 <code>TALENT_BOOST_POTENTIAL = 3</code>，<b>不</b>為此開資料欄位
+    （依 0/5 定律，一個「每位機師都填 3」的欄位只會變成漂移的來源）。<br>
+    ⚠ 觀察到的雜訊已由使用者判定為資料問題：<code>ap.init − apBase.init</code> 分佈是
+    <code>{0:10, 1:18, 2:54, 5:7}</code>，使用者判斷「大概是資料填錯或是 A/B 機師，也可能是超適體，以後再處理」。
+    <b>不阻塞本計畫</b>；日後若真出現破例，改的是一個常數。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策八：明細印<b>原重</b>，減免說明掛在<b>總重</b>那一列 —— 與官方 UI 一致</strong><br>
+    使用者提供的維娜整備截圖是一次完整驗算：<br>
+    <code>巨像部件 945 ＋ 承諾之誓 390 ＋ 炬塔·改Ⅱ(1100−360)=740 ＝ 2075 ＝ 出力 2075</code><br>
+    （全庫唯一 <code>output=2075</code> 的重型機甲是巨像，部件總重正是 945，四項全部對上。）<br>
+    關鍵觀察：<b>官方在武器明細印的是原重 1100，扣減只反映在總重。</b>
+    站上照做 —— 武器明細維持 <code>1100</code>，總重列印 <code>2075（電磁炮 −360 · 罪業信條）</code>，
+    玩家兩邊對照時逐格吻合；反過來做會出現「站上寫 740、遊戲寫 1100」的困惑。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策九：★ 與金框<b>兩種視覺並存</b>（使用者裁決：做，可以試試看）</strong><br>
+    站上「強化」目前有兩義，必須分開：<br>
+    · <b>天賦提升</b>（潛能第 3 階）→ <code>★</code> 角標，機師自己的成長<br>
+    · <b>專武強化</b>（<code>enhancesTalentName</code>）→ 金框，外部裝備帶來的<br>
+    兩者<b>可以同時成立</b>（洛莎滿潛 ＋ 裝上專武），所以必須是兩種可疊加的視覺，不能共用一個。<br>
+    <b>順帶</b>：站上文案叫「滿星」、遊戲 UI 叫「（提升後）」。建議前台改用遊戲原文「提升」，
+    資料欄位名維持 <code>descriptionMax</code> 不動（改欄位名要動爬蟲、後台、三個頁面，換來的只是名字好聽）。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 專武沒有「只有該機師能裝」的限制</strong><br>
+    <code>Weapon.exclusiveFor</code> 的語意是「<b>這是誰的專屬武器</b>」（用於推薦與天賦強化判定），
+    <b>不是</b>裝備許可，站上模擬器也沒有擋。評估期間曾因誤讀此欄位而把截圖裡的機師判成零
+    （她拿的是零的盾牌），此處記一筆以免再犯。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label cyan">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>TalentLoadoutMod</code> 型別 ＋ <code>PilotTalent.loadoutMods</code> 欄位</li>
+      <li>PilotAdmin 天賦區的編輯 UI（結構化輸入，不是塞 JSON 字串）</li>
+      <li>A 類 9 筆資料填值 ＋ bump <code>pilots</code> 版本</li>
+      <li>新檔 <code>src/utils/talentLoadoutMods.ts</code>（純函式・可單測）</li>
+      <li><code>canEquipWeapon</code> / <code>canEquipBackpack</code> 的機種限制豁免 ＋ 挑選器 hint 修正</li>
+      <li>重量帳接線（在 <code>loadoutRules</code> 組 set 時 map，<code>loadoutWeight</code> 不動）</li>
+      <li><code>LoadoutDraft.potential</code> ＋ <code>reconcile()</code> ＋ codec <code>§TALENT</code> 追加段</li>
+      <li>潛能選擇器 UI ＋ <code>★</code> 角標 ＋ 總重列減免標示（含匯出圖）</li>
+      <li><b>選配</b>：B 類 9 筆入庫 ＋ 武器卡顯示（不接規則層）</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>C 類「裝了什麼 → 觸發什麼」</b>（12 筆以上）—— 屬傷害模擬層，用 <code>SkillCondition</code> 而非本結構</li>
+      <li><b>潛能的其他產物</b>（初始 AP ±、駕駛等級、所有屬性 +2%/階）—— 使用者裁決「以後再說，這一段有點複雜」。
+          站上目前存的是滿潛快照，缺的是「每一階各給什麼」這份資料；
+          <code>potential</code> 存等級而非布林，就是為了那天到來時不必遷移分享碼</li>
+      <li><b>多天賦機師的支援</b> —— 全庫 89/89 每人恰好 1 個天賦，先不預留</li>
+      <li><b>天賦加強階位逐機師不同</b> —— 使用者裁決恆為第 3 階，寫死常數</li>
+      <li>爬蟲自動解析天賦正文產生 <code>loadoutMods</code> —— 18 筆人工填即可，寫解析器的成本高於收益，
+          且官方文案措辭不穩定（見「方法論教訓」）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label cyan">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-052-N 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-052_配裝模擬器改版_總綱/計畫書.html">
+      <div class="doc-tag">Master</div>
+      <h4>◆ PLAN-052 總綱</h4>
+      <p>配裝模擬器改版的十二條總綱決策</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-N — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

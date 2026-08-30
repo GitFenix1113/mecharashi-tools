@@ -42,6 +42,19 @@ const 彌造者: Mech = {
 }
 
 const 輕型機: Mech = { ...彌造者, id: 'mech_light', name: '輕型機', armorType: ArmorType.LIGHT }
+/**
+ * 巨像（PLAN-052-N B-4 的 golden case 底盤）。全庫**唯一** output=2075 的重型機甲，
+ * Σ 四部位重量 945 —— 兩個數字都是 2026-08-30 直讀正式庫取得，用來對帳使用者的整備截圖。
+ */
+const 巨像: Mech = {
+  ...彌造者, id: 'mech_giant', name: '巨像', armorType: ArmorType.HEAVY, weight: 945, output: 2075,
+  parts: {
+    torso:    part({ weight: 300, output: 2075 }) as never,
+    leftArm:  part({ weight: 215 }) as never,
+    rightArm: part({ weight: 215 }) as never,
+    legs:     part({ weight: 215 }) as never,
+  },
+}
 const 重型機: Mech = { ...彌造者, id: 'mech_heavy', name: '重型機', armorType: ArmorType.HEAVY }
 
 /**
@@ -92,6 +105,18 @@ const weapon = (over: Partial<Weapon> & Pick<Weapon, 'id' | 'name' | 'weight' | 
 } as Weapon)
 
 const 群山之力 = weapon({ id: 'w_008', name: '群山之力', weight: 800, equipSlot: WeaponEquipSlot.DUAL_HAND })
+// PLAN-052-N B-4：使用者整備截圖裡的兩把（線上實測值）
+const 承諾之誓 = weapon({ id: 'weapon_133_承諾之誓', name: '承諾之誓', weight: 390, equipSlot: WeaponEquipSlot.SINGLE_HAND,
+  kind: WeaponKind.Shield, mechRestriction: MechRestriction.HEAVY_ONLY })
+const 炬塔改Ⅱ = weapon({ id: 'weapon_131_炬塔_改_', name: '炬塔·改Ⅱ', weight: 1100, equipSlot: WeaponEquipSlot.BACK,
+  type: WeaponType.Heavy, kind: WeaponKind.RailGun, mechRestriction: MechRestriction.MEDIUM_ONLY })
+const 單手機槍 = weapon({ id: 'w_mg', name: '單手機槍', weight: 420, equipSlot: WeaponEquipSlot.SINGLE_HAND,
+  type: WeaponType.Assault, kind: WeaponKind.MachineGun })
+/** 備用組測試用：夠重，讓備用組成為採計組 */
+const 重雙手武器 = weapon({ id: 'w_heavy2h', name: '重雙手武器', weight: 900, equipSlot: WeaponEquipSlot.DUAL_HAND })
+/** 豁免邊界的對照組：與炬塔同槽（背部）、同限制（medium-only），但**不是**電磁炮 */
+const 浮游炮_中甲限定 = weapon({ id: 'w_funnel', name: '中甲限定浮游炮', weight: 800, equipSlot: WeaponEquipSlot.BACK,
+  type: WeaponType.Heavy, kind: WeaponKind.Funnel, mechRestriction: MechRestriction.MEDIUM_ONLY })
 const 貝奧武夫 = weapon({ id: 'w_089', name: '貝奧武夫', weight: 850, equipSlot: WeaponEquipSlot.DUAL_HAND })
 const 藝術突襲 = weapon({ id: 'w_016', name: '藝術突襲', weight: 420, equipSlot: WeaponEquipSlot.SINGLE_HAND, type: WeaponType.Assault })
 const 夜魘     = weapon({ id: 'w_017', name: '夜魘',     weight: 500, equipSlot: WeaponEquipSlot.SINGLE_HAND, type: WeaponType.Assault })
@@ -140,6 +165,8 @@ const backpack = (over: Partial<Backpack> & Pick<Backpack, 'id' | 'name' | 'weig
 const 強襲者背包 = backpack({ id: '60101706', name: '強襲者背包', weight: 150, type: BackpackType.BACKUP_EQUIPMENT, skillIds: ['bpskill_強襲者驅動·增傷'] })
 const 出力背包Ⅲ  = backpack({ id: '60100104', name: '出力背包Ⅲ', weight: 150, type: BackpackType.POWERADD, skillIds: ['bpskill_出力增幅@3'] })
 const 輕型限定包 = backpack({ id: 'bp_light', name: '輕型限定包', weight: 100, assemblableArmorType: ['Light'] })
+/** 修理背包：全庫 14/14 個都是 Medium-only（2026-08-30 實測），瑪汀妮的天賦豁免它 */
+const 修理背包 = backpack({ id: 'bp_heal', name: '修理背包', weight: 900, type: BackpackType.HEAL, assemblableArmorType: ['Medium'] })
 
 const pilot = (over: Partial<Pilot> & Pick<Pilot, 'id' | 'name' | 'license'>): Pilot => ({
   stats: { melee: 0, assault: 0, shooting: 0, tactics: 0, defense: 0, engineering: 0 },
@@ -150,6 +177,34 @@ const pilot = (over: Partial<Pilot> & Pick<Pilot, 'id' | 'name' | 'license'>): P
 
 const 海莉絲 = pilot({ id: 'pilot_hailisi', name: '海莉絲', license: MechLicense.MEDIUM })
 const 重型機師 = pilot({ id: 'pilot_heavy', name: '重型機師', license: MechLicense.HEAVY })
+
+// ── PLAN-052-N：天賦改寫「什麼裝得上」與「這把多重」的兩位機師 ──────────────
+//
+// 數值逐字取自線上 pilots（A-3 於 2026-08-30 寫入的 11 條規則中的 4 條）。
+const talent = (name: string, loadoutMods: unknown[]) =>
+  [{ name, type: '被動技能', description: '', descriptionMax: '', icon: '', iconLocal: '', effects: [], buffIds: [], loadoutMods }] as never
+
+const 維娜 = pilot({
+  id: 'pilot_041_維娜', name: '維娜', license: MechLicense.HEAVY,
+  talents: talent('罪業信條', [
+    { kind: 'allowEquip', target: { on: 'weaponKind', kind: WeaponKind.RailGun }, since: 'base' },
+    { kind: 'stat', target: { on: 'weaponKind', kind: WeaponKind.RailGun }, stat: 'weight', mode: 'flat', amount: -360, since: 'base' },
+  ]),
+})
+const 瑪汀妮 = pilot({
+  id: 'pilot_martini', name: '瑪汀妮', license: MechLicense.LIGHT,
+  talents: talent('良藥苦機', [
+    { kind: 'allowEquip', target: { on: 'backpackType', type: BackpackType.HEAL }, since: 'base' },
+    { kind: 'stat', target: { on: 'backpackType', type: BackpackType.HEAL }, stat: 'weight', mode: 'flat', amount: -300, since: 'base' },
+  ]),
+})
+/** 洛莎的減重掛在 `since:'max'`（潛能第 3 階才有）—— 用來驗門檻，不是驗數值 */
+const 洛莎 = pilot({
+  id: 'pilot_luosha', name: '洛莎', license: MechLicense.MEDIUM,
+  talents: talent('原型體', [
+    { kind: 'stat', target: { on: 'weaponKind', kind: WeaponKind.MachineGun }, stat: 'weight', mode: 'flat', amount: -80, since: 'max' },
+  ]),
+})
 
 const form = (over: Partial<MechForm> & Pick<MechForm, 'id' | 'name' | 'restrict'>): MechForm => ({
   pilotId: 海莉絲.id, order: 0, description: '', independentLoadout: true, ...over,
@@ -1518,4 +1573,180 @@ test('identityMech：軀幹來源查無資料時退回基底，不留 null', () 
   )
   // reconcile 會清掉這種髒資料，但 buildContext 本身也不能讓抬頭與立繪整塊消失
   assert.equal(ctx.identityMech?.id, 彌造者.id)
+})
+
+// ─── PLAN-052-N：機師天賦改寫合法性與重量 ───────────────────────────────────
+//
+// ⭐ 這一組的第一個案例是**唯一有實機佐證的 golden case**：使用者 2026-08-30 提供的
+//    維娜整備截圖，四個數字全部對得上（截圖上顯示「重量/出力 2075/2075」）。
+//
+// ⚠ **走自己的世界，不加進共用 `WORLD`** —— 理由與上方 `UPGRADE_WORLD` 逐字相同：
+//   往共用世界丟三把武器，會讓「weaponChoices 濾掉 omitted」與「structuralCounts
+//   數得出因形態限定隱藏 N」這兩條**與天賦無關**的測試期望值跟著變。
+//   實測就是這樣先壞了一次才改成這樣寫的。
+
+const TALENT_WORLD = buildWorld({
+  pilots: [維娜, 瑪汀妮, 洛莎, 重型機師],
+  mechs: [巨像, 彌造者, 輕型機],
+  weapons: [承諾之誓, 炬塔改Ⅱ, 單手機槍, 熔火, 浮游炮_中甲限定, 重雙手武器],
+  backpacks: [修理背包, 強襲者背包],
+  forms: [],
+})
+
+/** 052-N 專用的 ctx 工廠（同 ctxOf，但走 TALENT_WORLD） */
+const talentCtx = (set: EquipSet, opts: { pilot: Pilot; mech: Mech }) =>
+  buildContext({ pilotId: opts.pilot.id, mechId: opts.mech.id, sets: { default: set } }, 'default', TALENT_WORLD)
+
+test('052-N golden：維娜 × 巨像 —— 945 ＋ 390 ＋ (1100−360) ＝ 2075 ＝ 出力', () => {
+  const ctx = talentCtx(
+    { mounts: [
+      { weaponId: 承諾之誓.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' },
+      { weaponId: 炬塔改Ⅱ.id, bank: 'main', slot: WeaponEquipSlot.BACK },
+    ] },
+    { pilot: 維娜, mech: 巨像 },
+  )
+  const b = loadoutBudget(ctx)
+  assert.equal(b.weight.chassis, 945, '巨像 Σ 四部位')
+  assert.equal(b.weight.hands, 390, '承諾之誓（大盾不受減重影響）')
+  assert.equal(b.weight.back, 740, '炬塔·改Ⅱ 1100 − 360')
+  assert.equal(b.weight.total, 2075)
+  assert.equal(b.output.total, 2075)
+  assert.equal(b.over, false, '剛好滿載，不可判成超重')
+  assert.equal(b.remaining, 0)
+})
+
+test('052-N：沒有天賦的機師拿同一套 —— 電磁炮回到原重 1100（總重 2435 ⇒ 超重）', () => {
+  const ctx = talentCtx(
+    { mounts: [
+      { weaponId: 承諾之誓.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' },
+      { weaponId: 炬塔改Ⅱ.id, bank: 'main', slot: WeaponEquipSlot.BACK },
+    ] },
+    { pilot: 重型機師, mech: 巨像 },
+  )
+  const b = loadoutBudget(ctx)
+  assert.equal(b.weight.back, 1100)
+  assert.equal(b.weight.total, 2435)
+  assert.equal(b.over, true, '減重是機師帶來的，換人就沒有')
+})
+
+test('052-N：維娜可以裝 medium-only 的電磁炮，一般重型機師不行', () => {
+  const back = { bank: 'main', slot: WeaponEquipSlot.BACK } as const
+  assert.equal(canEquipWeapon(talentCtx({ mounts: [] }, { pilot: 維娜, mech: 巨像 }), 炬塔改Ⅱ, back), null,
+    '天賦豁免機種限制 ⇒ 完全合法')
+  assert.equal(
+    canEquipWeapon(talentCtx({ mounts: [] }, { pilot: 重型機師, mech: 巨像 }), 炬塔改Ⅱ, back)?.code,
+    'MECH_RESTRICTION',
+    '沒有天賦的重型機師照樣被擋')
+})
+
+test('052-N：豁免不外溢 —— 同樣是 medium-only 的背部武器，非電磁炮就照擋', () => {
+  // ⚠ 對照組刻意也放**背槽**：熔火（medium-only 火箭）是肩掛，而重型機沒有肩槽，
+  //   拿它當對照會先撞 NO_SLOT ——「被擋」了但擋的是另一條規則，測不到豁免的邊界。
+  const back = { bank: 'main', slot: WeaponEquipSlot.BACK } as const
+  const r = canEquipWeapon(talentCtx({ mounts: [] }, { pilot: 維娜, mech: 巨像 }), 浮游炮_中甲限定, back)
+  assert.equal(r?.code, 'MECH_RESTRICTION', '天賦只解除電磁炮，同槽同限制的其他種類不受惠')
+})
+
+test('052-N：維娜的電磁炮會出現在挑選器清單裡（structural 不再摺疊掉它）', () => {
+  const back = { bank: 'main', slot: WeaponEquipSlot.BACK } as const
+  const ok = weaponChoices(talentCtx({ mounts: [] }, { pilot: 維娜, mech: 巨像 }), back)
+  assert.ok(ok.some((e) => e.item.id === 炬塔改Ⅱ.id && !e.rejection),
+    '這正是計畫要修的錯誤封鎖：維娜先前在模擬器裡點不到任何一把電磁炮')
+
+  const blocked = weaponChoices(talentCtx({ mounts: [] }, { pilot: 重型機師, mech: 巨像 }), back)
+  const entry = blocked.find((e) => e.item.id === 炬塔改Ⅱ.id)
+  assert.equal(entry?.rejection?.code, 'MECH_RESTRICTION')
+})
+
+test('052-N：瑪汀妮的修理背包 —— 輕型機也裝得上，且負重 900 → 600', () => {
+  const ctx = talentCtx({ mounts: [], backpackId: 修理背包.id }, { pilot: 瑪汀妮, mech: 輕型機 })
+  assert.equal(canEquipBackpack(talentCtx({ mounts: [] }, { pilot: 瑪汀妮, mech: 輕型機 }), 修理背包), null)
+  assert.equal(loadoutBudget(ctx).weight.back, 600)
+
+  const 一般輕型機師 = pilot({ id: 'p_l', name: '輕型機師', license: MechLicense.LIGHT })
+  const world = buildWorld({ pilots: [一般輕型機師], mechs: [輕型機], weapons: [], backpacks: [修理背包], forms: [] })
+  const plain = buildContext({ pilotId: 一般輕型機師.id, mechId: 輕型機.id, sets: { default: { mounts: [] } } }, 'default', world)
+  assert.equal(canEquipBackpack(plain, 修理背包)?.code, 'BACKPACK_ARMOR_TYPE', '沒有天賦就照 Medium-only 擋下')
+})
+
+test('052-N：挑選器 hover 預覽與實際裝上是同一個數字（BudgetHypothesis 要帶 id）', () => {
+  const ctx = talentCtx({ mounts: [] }, { pilot: 維娜, mech: 巨像 })
+  const back = { bank: 'main', slot: WeaponEquipSlot.BACK } as const
+
+  // 預覽：挑選器傳的 weight 是**原重** 1100，但帶了 weaponId ⇒ 應算成 740
+  const preview = loadoutBudget(ctx, { add: { ref: back, weight: 炬塔改Ⅱ.weight, weaponId: 炬塔改Ⅱ.id } })
+  const actual = loadoutBudget(talentCtx({ mounts: [{ weaponId: 炬塔改Ⅱ.id, bank: 'main', slot: WeaponEquipSlot.BACK }] },
+    { pilot: 維娜, mech: 巨像 }))
+  assert.equal(preview.weight.total, actual.weight.total,
+    '預覽與落地必須是同一支函式算出來的同一個數字')
+  assert.equal(preview.weight.total, 945 + 740)
+})
+
+test('052-N：since:max 的減重要等潛能第 3 階 —— Phase C 之前一律滿潛', () => {
+  const ctx = talentCtx({ mounts: [{ weaponId: 單手機槍.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }] },
+    { pilot: 洛莎, mech: 彌造者 })
+  // buildContext 目前不吃 potential ⇒ resolveTalentMods 走預設滿潛 ⇒ 減重生效
+  assert.equal(loadoutBudget(ctx).weight.hands, 340, '420 − 80')
+})
+
+test('052-N：摺疊列的「因機種限定隱藏 N」在維娜身上是 0（計畫書點名的矛盾）', () => {
+  const back = { bank: 'main', slot: WeaponEquipSlot.BACK } as const
+  const counts = (p: Pilot) =>
+    Object.fromEntries(structuralCounts(weaponChoices(talentCtx({ mounts: [] }, { pilot: p, mech: 巨像 }), back)))
+
+  // 沒有天賦：炬塔·改Ⅱ 與中甲限定浮游炮兩把都被機種 gate 擋下
+  assert.equal(counts(重型機師).MECH_RESTRICTION, 2)
+  // 維娜：電磁炮那把被豁免 ⇒ 只剩浮游炮。
+  // ⚠ 若這裡仍是 2，畫面會出現「清單裡看得到電磁炮、底下卻寫著隱藏 2 個機種限定」——
+  //   那正是玩家會來問客服的那一種矛盾。
+  assert.equal(counts(維娜).MECH_RESTRICTION, 1)
+})
+
+// ─── PLAN-052-N D-1：減重的「解釋」──────────────────────────────────────────
+
+test('052-N D-1：talentRelief 講得出減了多少、減在哪一件、來自哪個天賦', () => {
+  const b = loadoutBudget(talentCtx(
+    { mounts: [{ weaponId: 炬塔改Ⅱ.id, bank: 'main', slot: WeaponEquipSlot.BACK }] },
+    { pilot: 維娜, mech: 巨像 },
+  ))
+  assert.equal(b.talentRelief?.total, 360)
+  assert.deepEqual(b.talentRelief?.items, [{ name: '炬塔·改Ⅱ', reducedBy: 360, talentName: '罪業信條' }])
+})
+
+test('052-N D-1：沒有減重的機師 talentRelief 為 null（80/89 位機師的常態）', () => {
+  const b = loadoutBudget(talentCtx(
+    { mounts: [{ weaponId: 承諾之誓.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }] },
+    { pilot: 重型機師, mech: 巨像 },
+  ))
+  assert.equal(b.talentRelief, null, 'null ⇒ UI 整條不印，而不是印一個 0')
+})
+
+test('052-N D-1 ⚠ 沒被採計的備用組，其減重不可出現在解釋裡', () => {
+  // 洛莎主手拿機槍（420 → 340），備用組拿 900 的雙手武器 ⇒ 採計備用組。
+  // 此時總重裡**根本沒有那 80**，若解釋仍說「減了 80」，玩家把數字加一遍就對不上。
+  const ctx = talentCtx({
+    backpackId: 強襲者背包.id,
+    mounts: [
+      { weaponId: 單手機槍.id, bank: 'main', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' },
+      { weaponId: 重雙手武器.id, bank: 'backup', slot: WeaponEquipSlot.DUAL_HAND },
+    ],
+  }, { pilot: 洛莎, mech: 彌造者 })
+
+  const b = loadoutBudget(ctx)
+  assert.equal(b.weight.heavierBank, 'backup', '前提：備用組 900 > 主手 340')
+  assert.equal(b.weight.hands, 900)
+  assert.equal(b.talentRelief, null, '減重發生在沒被採計的那一組 ⇒ 不該解釋它')
+})
+
+test('052-N D-1：備用組**是**採計組時，它的減重要算進解釋', () => {
+  // 反過來：主手空著、備用組拿被減重的機槍 ⇒ 採計備用組，解釋要出現
+  const ctx = talentCtx({
+    backpackId: 強襲者背包.id,
+    mounts: [{ weaponId: 單手機槍.id, bank: 'backup', slot: WeaponEquipSlot.SINGLE_HAND, side: 'left' }],
+  }, { pilot: 洛莎, mech: 彌造者 })
+
+  const b = loadoutBudget(ctx)
+  assert.equal(b.weight.heavierBank, 'backup')
+  assert.equal(b.talentRelief?.total, 80)
+  assert.equal(b.talentRelief?.items[0].name, '單手機槍')
 })

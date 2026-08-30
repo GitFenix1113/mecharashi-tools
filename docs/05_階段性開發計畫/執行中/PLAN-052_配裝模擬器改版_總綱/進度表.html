@@ -175,11 +175,11 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">1</div>
+      <div class="summary-num" style="color:var(--text-dim)">2</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">13</div>
+      <div class="summary-num" style="color:var(--text-primary)">14</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">12 / 13</span>
+      <span style="color:var(--accent-purple);">12 / 14</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 92%"></div>
+      <div class="progress-bar-fill" style="width: 86%"></div>
     </div>
   </div>
 
@@ -1174,6 +1174,100 @@
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">052-N &nbsp; 天賦裝備修正</div>
+      <div class="task-group-meta">2026-08-30 建檔 · 五個 Phase（<b>A–D 完成 16／18，僅餘選配的 E</b>）</div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機師天賦改寫「什麼裝得上」與「這把多重」（18 工項，A–E 五個 Phase）</div>
+        <div class="task-desc">
+          <b>由使用者實機發現開出來的。</b> 維娜〈罪業信條〉可讓<b>重型</b>機甲裝
+          medium-only 的電磁炮、洛莎〈原型體〉<b>提升後</b>才減機槍重量 —— 而站上這 18 個天賦的
+          <code>effects</code> / <code>enhancedEffects</code> / <code>buffIds</code> <b>全是空陣列</b>，
+          模擬器一個字都沒讀。
+          <br><br>
+          <b>⚠ 最嚴重的不是算錯，是錯誤封鎖。</b> <code>MECH_RESTRICTION</code> 屬
+          <code>structural</code> 層級，而 <code>PickerShell</code> 自 052-I 起把 structural
+          <b>整批不列</b> ⇒ <b>維娜點不到任何一把電磁炮</b>（12/12 把 medium-only）、
+          <b>瑪汀妮點不到修理背包</b>（14/14 個 Medium-only）——
+          站上對玩家說了一句<b>錯的否定句</b>，否定掉的正是那兩位機師的核心賣點。
+          另 8 位機師的負重減免完全沒算 ⇒ <code>OVERWEIGHT</code> 一律偏重。
+          <br><br>
+          <b>方法論教訓已寫進計畫書</b>：第一版用關鍵字（負重／重量／額外裝備）掃描，
+          <b>漏掉整批同類規則</b> —— 官方對同一件事有多種說法，
+          改用全量傾印 89 個天賦逐條讀之後才看見另外 9 筆用「射程+1」「彈倉容量+2」
+          表達的裝備數值修改。<b>「未來還會不會發生」不是預測：已經發生 18 次了。</b>
+          <br><br>
+          <b>結構刻意不塞進 <code>SkillEffect</code></b>：那是<b>戰鬥期加成</b>的通道
+          （<code>scope</code>／<code>condition</code> 全是戰鬥詞彙），而這批是<b>建構期的裝備屬性改寫</b>。
+          混進去會讓「機槍重量 −80」出現在 <code>EquippedEffects</code> 的戰力彙總裡，
+          而「解除限制」<b>根本沒有 value 可放</b>。改開封閉聯集
+          <code>{target, stat, mode, amount, since}</code>，通用於 5 個屬性但
+          <b>只有 <code>weight</code> 接進規則層</b>。
+          <br><br>
+          <b>連帶把「天賦提升了沒有」升格成配裝參數</b>（今天是 <code>PilotTalentStrip</code>
+          的 <code>useState</code>）：三位機師的減重只在提升後才有，不升格就會出現
+          「切回初始版、總重卻沒變」。存的是<b>潛能等級 0–5 而非布林</b> ——
+          潛能五階裡<b>有四階不是天賦</b>（初始 AP ×2、駕駛等級 ×2），
+          布林無法還原等級，日後要算 AP 就得<b>遷移所有已流出的分享碼</b>。
+          站上資料早就是滿潛快照（<code>ap.init − apBase.init = 2</code> 佔 <b>54/89</b>、
+          <code>masterLevel</code> 的「大師Ⅲ」正是第 4 階的產物），
+          故「欄位不存在＝滿潛」不引入第二套假設。<b>codec 走 §TALENT 追加段，不 bump
+          <code>FMT_VERSION</code></b>（同 §NOTE／§SKILLS 前例）。
+          <br><br>
+          <b>唯一有實機佐證的 golden case</b>（使用者的維娜整備截圖）：
+          <code>巨像部件 945 ＋ 承諾之誓 390 ＋ 炬塔·改Ⅱ(1100−360)=740 ＝ 2075 ＝ 出力 2075</code>，
+          四項全對。同時證實<b>官方在武器明細印原重、扣減只反映在總重</b> ⇒
+          站上照做，兩邊才逐格對照得起來。
+          <br><br>
+          <b>✅ Phase A 完成（2026-08-30）</b>：型別 ＋ 後台編輯器 ＋ 漏填提示 ＋ 健檢腳本 ＋
+          <b>11 條規則寫入 9 位機師</b>並 bump <code>pilots</code>。
+          <b>爬蟲白名單同批補上</b>——<code>mergeTalentsArray()</code> 沒列到的欄位會被官方 fresh
+          物件靜默覆蓋，漏這一行的話下次補丁就把人工填的規則清空了。
+          健檢實測：關鍵字的「強訊號」（負重／重量／額外裝備）<b>恰好 9 筆＝要填的那 9 位，
+          零誤報零漏報</b>；❶ 漏填提示因誤報率 44% 改為<b>不計入離開碼</b>
+          （永遠紅的檢查等於沒有檢查），exit 1 只代表 ❷❸。
+          <br><br>
+          <b>✅ Phase B 完成（2026-08-30）—— 錯誤封鎖已解除。</b>
+          維娜點得到電磁炮、瑪汀妮點得到修理背包，兩人的總重也算對了。
+          ⭐ <b>使用者截圖的 golden case 四個數字全中</b>
+          （<code>945 ＋ 390 ＋ (1100−360) ＝ 2075 ＝ 出力</code>），
+          並以線上真資料複驗五位機師。全測試 <b>1191 綠</b>。
+          <b>計畫沒寫到、施作中補上的洞</b>：<code>BudgetHypothesis.add</code> 只帶
+          <code>weight</code>（原重）會讓 hover 預覽說 +1100、落地卻只加 740 ——
+          <b>052-B 檔頭那個 bug ③ 換一種形式重演</b>；改為可帶
+          <code>weaponId</code>／<code>backpackId</code>，由 <code>loadoutWeightSet()</code> 自己查。
+          <code>loadoutWeight.ts</code> 依決策四<b>一行未動</b>。
+          <br><br>
+          <b>✅ Phase C 完成（2026-08-30）</b>：潛能等級進 <code>LoadoutDraft</code>、
+          codec 追加 <code>§TALENT</code>（滿潛整段不寫 ⇒ <b>既有 46 條 codec 測試與
+          golden fixture 一條都沒被打破</b>）、天賦條的「滿星／初始」切換升格為 0–5 潛能選擇器。
+          ⭐ <b>瀏覽器實機驗收</b>：洛莎 × 機槍 420 在潛能 0/2 是 420、潛能 3/5 是 <b>340</b>
+          —— 門檻精準落在第 3 階；維娜（<code>base</code>）切到 0 潛仍是 740。
+          同時證實 B 的成果：維娜的背槽挑選器<b>列出全部 12 把電磁炮</b>，總重 945＋740＝1,685。
+          <b>⚠ 與 <code>ndLevels</code> 相反：換機師時不清潛能</b>——
+          它是與機師無關的純量，清掉會讓玩家沒動過的選擇自己跳回滿潛。
+          <br><br>
+          <b>✅ Phase D 完成（2026-08-30）—— 數字現在講得出理由。</b>
+          總重列印「天賦減重 −80（昏星繼光 −80 · 原型體）」、天賦縮圖掛 ★／☆ 角標
+          （<b>與專武的金框「強」是兩種視覺、擺兩個角</b>，兩者可同時成立）、
+          匯出圖補上減重列與「機師潛能 3 / 5」（<b>只在未滿潛時印</b>）。
+          <b>武器卡一律印原重</b> —— 與官方整備畫面逐格一致。
+          <b>施作中修掉一個自己造的 bug</b>：明細改由 <code>loadoutWeightSet()</code> 同一次走訪
+          產出（掛在 <code>WeightedItem.relief</code>，<code>loadoutWeight.ts</code> 不認識這個欄位），
+          但第一版組 <code>entries</code> 時只取了 <code>.weight</code>，<b>手部與背部的明細全被丟掉</b>；
+          單測抓到。另釘住一條不變式：<b>沒被採計的備用組，其減重不可出現在解釋裡</b>。
+        </div>
+        <div class="task-file">PLAN-052-N_天賦裝備修正/進度表.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
     </div>
   </div>
 

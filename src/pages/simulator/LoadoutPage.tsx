@@ -168,7 +168,9 @@ export default function LoadoutPage() {
     setPickerRaw(next)
     if (next) { setOpenRowKey(null); setOpenSkillIndex(null) }
   }, [])
-  const [hovered, setHovered] = useState<{ slot: SlotKey; weight: number; name: string; icon?: string } | null>(null)
+  // ⚠ `id` / `isBackpack` 是 PLAN-052-N 加的：天賦減重要查得到「這是什麼」才算得出來。
+  //   只留 weight 的話，維娜 hover 電磁炮會預覽成 +1100（原重）、裝上去卻只加 740。
+  const [hovered, setHovered] = useState<{ slot: SlotKey; weight: number; name: string; icon?: string; id?: string; isBackpack?: boolean } | null>(null)
   const [hoverSegment, setHoverSegment] = useState<string | null>(null)
 
   // ⚠ 用 `useState` + 一支綁住 world 的 `send()`，**不是** `useReducer` ——
@@ -523,7 +525,11 @@ export default function LoadoutPage() {
       : effectivePicker?.kind === 'backpack' ? ({ bank: 'main', slot: WeaponEquipSlot.BACK } as WeaponSlotRef)
       : null
     if (!ref) return null
-    return loadoutBudget(ctx, { add: { ref, weight: hovered.weight } })
+    return loadoutBudget(ctx, {
+      add: hovered.isBackpack
+        ? { ref, weight: hovered.weight, backpackId: hovered.id }
+        : { ref, weight: hovered.weight, weaponId: hovered.id },
+    })
   }, [hovered, ctx, effectivePicker])
 
   const showBanner = state.draft.pilotId ? hasIndependentLoadouts(state.draft.pilotId, data.forms) : false
@@ -1070,6 +1076,8 @@ export default function LoadoutPage() {
               ctx={ctx}
               skillMap={skillMap}
               loading={skillsLoading}
+              potential={state.draft.potential}
+              onPotentialChange={(potential) => send({ type: 'setPotential', potential })}
               onEquipWeapon={(ref, weaponId) => send({ type: 'equipWeapon', ref, weaponId })}
             />
             {ndPanel}
@@ -1106,6 +1114,8 @@ export default function LoadoutPage() {
               skillMap={skillMap}
               loading={skillsLoading}
               compact={bp === 'narrow'}
+              potential={state.draft.potential}
+              onPotentialChange={(potential) => send({ type: 'setPotential', potential })}
               onEquipWeapon={(ref, weaponId) => send({ type: 'equipWeapon', ref, weaponId })}
             />
           )}
@@ -1328,7 +1338,7 @@ export default function LoadoutPage() {
               blockedReason={blockedReason(ctx, effectivePicker.ref)}
               entries={weaponEntries}
               toRow={weaponRow}
-              remainingAfter={(w) => loadoutBudget(ctx, { add: { ref: mountRefFor(w, effectivePicker.ref), weight: w.weight } }).remaining}
+              remainingAfter={(w) => loadoutBudget(ctx, { add: { ref: mountRefFor(w, effectivePicker.ref), weight: w.weight, weaponId: w.id } }).remaining}
               replaceNote={(w) => replaceNote(ctx, effectivePicker.ref, w)}
               budgetLine={budgetLine}
               loading={loading}
@@ -1336,7 +1346,7 @@ export default function LoadoutPage() {
               useSheet={false}
               onPick={(w) => send({ type: 'equipWeapon', ref: mountRefFor(w, effectivePicker.ref), weaponId: w.id })}
               onResolve={resolve}
-              onHoverItem={(w) => setHovered(w ? { slot: slotKey(mountRefFor(w, effectivePicker.ref)), weight: w.weight, name: w.name, icon: w.icon } : null)}
+              onHoverItem={(w) => setHovered(w ? { slot: slotKey(mountRefFor(w, effectivePicker.ref)), weight: w.weight, name: w.name, icon: w.icon, id: w.id } : null)}
               onClose={closePicker}
             />
           )}
@@ -1355,7 +1365,7 @@ export default function LoadoutPage() {
               useSheet={false}
               onPick={(b) => send({ type: 'equipBackpack', backpackId: b.id })}
               onResolve={resolve}
-              onHoverItem={(b) => setHovered(b ? { slot: slotKey({ bank: 'main', slot: WeaponEquipSlot.BACK }), weight: b.weight, name: b.name, icon: b.icon } : null)}
+              onHoverItem={(b) => setHovered(b ? { slot: slotKey({ bank: 'main', slot: WeaponEquipSlot.BACK }), weight: b.weight, name: b.name, icon: b.icon, id: b.id, isBackpack: true } : null)}
               onClose={closePicker}
             />
           )}
@@ -1496,7 +1506,7 @@ export default function LoadoutPage() {
           blockedReason={blockedReason(ctx, effectivePicker.ref)}
           entries={weaponEntries}
           toRow={weaponRow}
-          remainingAfter={(w) => loadoutBudget(ctx, { add: { ref: mountRefFor(w, effectivePicker.ref), weight: w.weight } }).remaining}
+          remainingAfter={(w) => loadoutBudget(ctx, { add: { ref: mountRefFor(w, effectivePicker.ref), weight: w.weight, weaponId: w.id } }).remaining}
           replaceNote={(w) => replaceNote(ctx, effectivePicker.ref, w)}
           budgetLine={budgetLine}
           loading={loading}
@@ -1629,6 +1639,7 @@ export default function LoadoutPage() {
           name={state.draft.name}
           note={state.draft.note}
           skills={carriedSkillDocs}
+          potential={state.draft.potential}
           shareCode={exportShareCode}
           shareUrl={exportShareUrl}
           onDone={finishExport}

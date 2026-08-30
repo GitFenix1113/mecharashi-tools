@@ -151,6 +151,13 @@ export interface LoadoutExportCardProps {
    */
   ndLevels: Record<string, number>
   /**
+   * 潛能等級 0–5（PLAN-052-N D-3）。**未傳＝滿潛**（同 `LoadoutDraft.potential`）。
+   *
+   * ⚠ 只在**未滿潛**時印上圖：滿潛是預設值，每張圖都印「潛能 5」只是雜訊；
+   *   但少了它，同一套配裝在不同潛能下的兩張圖會看起來像其中一張算錯了。
+   */
+  potential?: number
+  /**
    * 模組給的算力加成（PLAN-052-M）。**沒有就傳 undefined，那一行整個不印。**
    * 有值時在算力段末尾補一句來源（強擊模組 LV.MAX ／ 觀星者單元）。
    */
@@ -206,7 +213,7 @@ export interface LoadoutExportCardProps {
 }
 
 export function LoadoutExportCard({
-  ctx, setCount, budget, ndLevels, ndBonus, ndAbilityMap, ndZones, name, note, skills, generatedAt, gameVersion,
+  ctx, setCount, budget, ndLevels, ndBonus, ndAbilityMap, ndZones, name, note, skills, potential, generatedAt, gameVersion,
   shareCode, shareUrl,
 }: LoadoutExportCardProps) {
   const { pilot, mech } = ctx
@@ -453,6 +460,36 @@ export function LoadoutExportCard({
         }}>
           手部取主手／備用<strong style={{ color: C.sub }}>較重者</strong>
           {`，${w.heavierBank === 'main' ? '備用組' : '主手組'} ${Math.min(w.mainHand, w.backupHand).toLocaleString()} 未計入`}
+        </div>
+      )}
+      {/* ⚠ 天賦減重同樣**必須寫在圖上**（PLAN-052-N D-3），而且理由比上一條更硬：
+          武器格印的是**原重**（1,100，與官方整備畫面一致），總重卻只算 740。
+          看圖的人自己加一遍就會發現對不上，而**這張圖上的數字是對的** ——
+          不印這一句，等於讓每一張維娜的配裝圖都自帶一個「本站算錯了」的證據。
+
+          ⚠ 一併印出**潛能等級**：洛莎／艾琳／里貝卡的減重只在第 3 階之後才有，
+          少了它，同一套配裝在不同潛能下的兩張圖看起來只是「其中一張算錯」。 */}
+      {budget.talentRelief && (
+        <div style={{
+          padding: '0 20px 9px', fontSize: 11, color: C.cyan, background: C.panel, flexShrink: 0,
+        }}>
+          天賦減重 <strong>−{budget.talentRelief.total.toLocaleString()}</strong>
+          <span style={{ color: C.dim }}>
+            {`（${budget.talentRelief.items.map((r) => `${r.name} −${r.reducedBy.toLocaleString()}`).join('、')}`}
+            {budget.talentRelief.items[0]?.talentName ? ` · ${budget.talentRelief.items[0].talentName}` : ''}
+            {`）　武器格印的是原重，減免只反映在總重 —— 與遊戲內整備畫面一致`}
+          </span>
+        </div>
+      )}
+
+      {/* 未滿潛時必須印：洛莎／艾琳／里貝卡的減重只在潛能第 3 階之後才有，
+          少了它，同一套配裝在不同潛能下的兩張圖看起來只是「其中一張算錯」。 */}
+      {potential !== undefined && potential < 5 && (
+        <div style={{
+          padding: '0 20px 9px', fontSize: 11, color: C.dim, background: C.panel, flexShrink: 0,
+        }}>
+          機師潛能 <strong style={{ color: C.sub }}>{potential} / 5</strong>
+          {potential < 3 ? '　天賦未加強（第 3 階解鎖）' : '　天賦已加強'}
         </div>
       )}
 

@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-N · 天賦裝備修正</h3>
+      <p>機師天賦會改寫「什麼裝得上」與「這把多重」，而模擬器<b>今天一個字都沒讀</b>——這 18 個天賦的 <code>effects</code> / <code>enhancedEffects</code> / <code>buffIds</code> 全是空陣列。最嚴重的不是算錯，是<b>錯誤封鎖</b>：<code>MECH_RESTRICTION</code> 屬 structural 層級而 <code>PickerShell</code> 把 structural 整批不列，於是<b>維娜點不到任何一把電磁炮</b>（12/12 把 medium-only，她重型）、<b>瑪汀妮點不到修理背包</b>（14/14 個 Medium-only，她輕型）——被否定掉的正是那兩位機師的核心賣點。另有 8 位機師的負重減免完全沒算（火箭 −130、重機槍 −200、狙擊 −15%…），<code>OVERWEIGHT</code> 因此一律偏重，玩家實際帶得動的配裝被判成裝不下。<br><b>第一版盤點用關鍵字掃描，漏掉了整批同類規則</b>——官方對同一件事有「負重降低／重量降低／負重-360」多種說法，改用全量傾印 89 個天賦逐條讀之後，才看見另外 9 筆用「射程+1」「彈倉容量+2」表達的裝備數值修改。<b>「未來還會不會發生」因此不是預測：已經發生 18 次了。</b>故結構做成通用的 <code>{target, stat, mode, amount, since}</code>，但<b>只有 weight 接進規則層</b>；<b>刻意不塞進 <code>SkillEffect</code></b>——那是戰鬥期加成的通道，混進去會讓「機槍重量 −80」出現在戰力彙總裡，而「解除限制」根本沒有 value 可放。<br>連帶把「天賦提升了沒有」從 <code>PilotTalentStrip</code> 的 <code>useState</code> 升格成配裝參數（三位機師的減重只在提升後才有，不升格就會出現「切回初始版、總重卻沒變」）。存的是<b>潛能等級 0–5 而非布林</b>：潛能五階裡有四階不是天賦（初始 AP ×2、駕駛等級 ×2），布林無法還原等級，日後要算 AP 就得遷移所有已流出的分享碼。<b>站上資料早就是滿潛快照</b>——<code>ap.init − apBase.init = 2</code> 佔 54/89、<code>masterLevel</code> 存的「大師Ⅲ」正是第 4 階的產物，故「欄位不存在＝滿潛」不引入第二套假設。<br>使用者的維娜整備截圖提供了唯一有實機佐證的 golden case：<code>巨像部件 945 ＋ 承諾之誓 390 ＋ 炬塔·改Ⅱ(1100−360)=740 ＝ 2075 ＝ 出力 2075</code>，四項全對；同時證實<b>官方在武器明細印原重、扣減只反映在總重</b>，站上照做才能兩邊逐格對照。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-N_天賦裝備修正/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-N_天賦裝備修正/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card red">
       <div class="card-icon">◆</div>
       <h3>PLAN-053 · 模擬器開放後護欄與觀察</h3>

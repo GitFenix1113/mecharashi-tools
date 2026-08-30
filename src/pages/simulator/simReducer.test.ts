@@ -1555,3 +1555,57 @@ test('isEmptyDraft：只選了機師也算「有東西」—— 那正是要按�
   const onlyPilot = run({ type: 'selectPilot', pilotId: 海莉絲.id })
   assert.equal(isEmptyDraft(onlyPilot.draft), false, '按鈕會 disabled ⇒ 選錯機師的人清不掉')
 })
+
+// ─── 潛能等級 potential（PLAN-052-N C-1）────────────────────────────────────
+
+const potDraft = (potential?: number): LoadoutDraft => ({
+  pilotId: 海莉絲.id, mechId: 彌造者.id, activeSetKey: 'default', sets: {},
+  ...(potential === undefined ? {} : { potential }),
+})
+
+test('potential：滿潛正規化成「欄位不存在」（絕大多數配裝因此不帶這一段）', () => {
+  const { draft } = reconcile(potDraft(5), WORLD)
+  assert.equal('potential' in draft, false)
+})
+
+test('potential：0–4 原封不動', () => {
+  for (const p of [0, 1, 2, 3, 4]) {
+    assert.equal(reconcile(potDraft(p), WORLD).draft.potential, p)
+  }
+})
+
+test('potential：超出範圍 clamp 進 0–5（外來草稿／手改 localStorage）', () => {
+  assert.equal('potential' in reconcile(potDraft(99), WORLD).draft, false, '超過上限 ⇒ 滿潛 ⇒ 欄位消失')
+  assert.equal(reconcile(potDraft(-3), WORLD).draft.potential, 0)
+  assert.equal(reconcile(potDraft(2.7), WORLD).draft.potential, 2, '小數截斷')
+  assert.equal('potential' in reconcile(potDraft(NaN), WORLD).draft, false, '非數字 ⇒ 退回預設')
+})
+
+test('potential ⚠ 換機師時**不清掉** —— 它是與機師無關的純量', () => {
+  // 對照 ndLevels：那個要清是因為分區名逐機師不同，潛能沒有這個問題。
+  // 清掉的話，玩家在 A 機師調成 2 潛、切到 B 再切回來就變回滿潛，而他從沒動過那個選擇。
+  const state: SimState = { ...INITIAL_SIM_STATE, draft: potDraft(2) }
+  const next = simReduce(state, { type: 'selectPilot', pilotId: 中型機師.id }, WORLD)
+  assert.equal(next.draft.potential, 2)
+})
+
+test('setPotential：同值不產生新 state（避免無謂重繪）', () => {
+  const state: SimState = { ...INITIAL_SIM_STATE, draft: potDraft(2) }
+  assert.equal(simReduce(state, { type: 'setPotential', potential: 2 }, WORLD), state)
+  // 未設定（＝滿潛）時派滿潛，也應該是同一個 state
+  const full: SimState = { ...INITIAL_SIM_STATE, draft: potDraft() }
+  assert.equal(simReduce(full, { type: 'setPotential', potential: 5 }, WORLD), full)
+})
+
+test('setPotential：改變時 draft 更新，且不動裝備', () => {
+  // ⚠ 用**沒有形態**的機師：海莉絲的 `equipSetKeys()` 不含 'default'，
+  //   那一頁會被 reconcile 掃掉，測到的就不是潛能而是形態分頁了
+  const withGear: LoadoutDraft = {
+    ...potDraft(), pilotId: 中型機師.id,
+    sets: { default: { mounts: [{ weaponId: 群山之力.id, bank: 'main', slot: WeaponEquipSlot.DUAL_HAND }] } },
+  }
+  const next = simReduce({ ...INITIAL_SIM_STATE, draft: withGear }, { type: 'setPotential', potential: 1 }, WORLD)
+  assert.equal(next.draft.potential, 1)
+  assert.deepEqual(next.draft.sets.default.mounts, withGear.sets.default.mounts, '潛能不動裝備')
+  assert.equal(next.notice, null, '不需要 toast —— 選擇器就在眼前')
+})

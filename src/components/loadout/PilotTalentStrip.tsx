@@ -12,6 +12,7 @@ import { RefText } from '../refs/RefText'
 import { DiffHighlight } from '../refs/DiffHighlight'
 import LoadoutIcon from '../icons/LoadoutIcon'
 import { HUD, HUD_PANEL } from './loadoutTheme'
+import { MAX_POTENTIAL, TALENT_BOOST_POTENTIAL } from '../../utils/talentLoadoutMods'
 
 // ─── 機師天賦條 · 專武強化（使用者要求 2026-08-27）──────────────────────────
 //
@@ -40,6 +41,16 @@ import { HUD, HUD_PANEL } from './loadoutTheme'
 // 拿初始正文當預設，等於對著一個沒人處在的狀態做規劃（洛莎[原型體]的追擊倍率
 // 0.2 → 0.25 就差在這裡）。切回初始的鍵仍然留著，因為新機師確實會有一段沒滿的時期。
 //
+// ── 為什麼「滿星／初始」不再是元件內的 state（PLAN-052-N C-3）────────────────
+// 天賦會改裝備重量之後（洛莎機槍 −80、艾琳火箭 −130、里貝卡霰彈槍 −125 都是「提升後」才有），
+// 這個開關就不再是顯示偏好，而是**配裝參數** —— 它得跟著分享碼與匯出圖一起走。
+// 於是它升格成 `LoadoutDraft.potential`（潛能 0–5，第 3 階解鎖天賦加強），
+// 本元件只負責顯示與派 action。**不升格的症狀**：切回初始版之後正文變了、總重卻沒變，
+// 或匯出圖印著初始天賦而總重是用滿星算的 —— 兩個數字在同一張圖上互相打臉。
+//
+// ⚠ 顯示的是「潛能」而不是「星」：那是遊戲裡的名字（潛能提升，0/5），
+//   五階中的第 3 階才是天賦加強。站上原本叫「滿星」是舊詞，逐步改掉。
+//
 // ⚠ 專武強化那一格的 diff base **仍然固定是 `talent.description`（初始天賦）**，
 //   不跟著上面這個切換跑：`enhancedTalentDescription` 是遊戲原文，實測它**不含滿星子句**
 //   （洛莎的「機槍的重量降低80」在強化正文裡不存在）。拿 `descriptionMax` 當基準去 diff，
@@ -59,6 +70,13 @@ interface Props {
    *   「一鍵裝滿」逐字同一條，UI 不自己挑格子。
    */
   onEquipWeapon?: (ref: WeaponSlotRef, weaponId: string) => void
+  /**
+   * 潛能等級 0–5（`LoadoutDraft.potential`，未設定＝滿潛）。
+   * 決定天賦正文顯示初始還是提升後，也決定 `since:'max'` 的減重生不生效。
+   */
+  potential?: number
+  /** 改變潛能。**未傳＝唯讀**（匯出圖等情境不畫選擇器，但仍照 `potential` 顯示正確的正文） */
+  onPotentialChange?: (potential: number) => void
 }
 
 interface Enhancement {
@@ -66,16 +84,14 @@ interface Enhancement {
   refs?: DescriptionRefs
 }
 
-export function PilotTalentStrip({ ctx, skillMap, loading, compact, onEquipWeapon }: Props) {
+export function PilotTalentStrip({ ctx, skillMap, loading, compact, onEquipWeapon, potential = MAX_POTENTIAL, onPotentialChange }: Props) {
   const pilot = ctx.pilot
   const [openName, setOpenName] = useState<string | null>(null)
   /**
-   * 正文顯示滿星版（`descriptionMax`）還是初始版。**預設滿星**，見檔頭。
-   *
-   * ⚠ 狀態放在**條**這一層、不是展開的那一格：玩家逐個點過四個天賦時，
-   *   切換偏好要跟著走；放在 `TalentDetail` 裡的話每換一個天賦就被重設回預設值。
+   * 正文顯示提升後（`descriptionMax`）還是初始版 —— **由潛能 derive，不是獨立狀態**（見檔頭）。
+   * 潛能未設定時預設滿潛，所以預設仍然是提升後。
    */
-  const [viewMax, setViewMax] = useState(true)
+  const viewMax = potential >= TALENT_BOOST_POTENTIAL
 
   /**
    * 這位機師的專武**全部變體**，依升級鏈由母到子（熠光 → 裁決者）。
@@ -161,6 +177,14 @@ export function PilotTalentStrip({ ctx, skillMap, loading, compact, onEquipWeapo
         </span>
       </div>
 
+      {onPotentialChange && (
+        <PotentialPicker
+          potential={potential}
+          hasLoadoutMods={talents.some((t) => (t.loadoutMods ?? []).length > 0)}
+          onChange={onPotentialChange}
+        />
+      )}
+
       {/* 一鍵裝上／換變體。**只在「真的還有位置裝得上」時出現** —— 出現卻按不動的按鈕
           比沒有按鈕更糟。沒有位置且沒裝過時改印一行原因（見下方 `EquipWeaponBar`）。 */}
       {onEquipWeapon && equipPlans.map((e) => (
@@ -182,6 +206,7 @@ export function PilotTalentStrip({ ctx, skillMap, loading, compact, onEquipWeapo
             // 兩者用同一個視覺會讓玩家以為加成已經生效
             enhanced={equipped && enhancements.has(t.name)}
             available={!equipped && enhancements.has(t.name)}
+            boosted={viewMax}
             active={openName === t.name}
             compact={compact}
             onClick={() => setOpenName((n) => (n === t.name ? null : t.name))}
@@ -197,7 +222,14 @@ export function PilotTalentStrip({ ctx, skillMap, loading, compact, onEquipWeapo
           weaponName={equippedVariant?.name}
           pending={!equipped && enhancements.has(open.name) ? exclusive?.name : undefined}
           viewMax={viewMax}
-          onToggleMax={() => setViewMax((v) => !v)}
+          // 快速切換：提升後 ⇄ 未提升。要精確指定第幾潛請用上方的 0–5 選擇器。
+          // ⚠ 切到「未提升」時給的是 `TALENT_BOOST_POTENTIAL - 1`（＝ 2）而不是 0：
+          //   玩家要看的是「天賦還沒加強的樣子」，不是「把潛能清成 0」——
+          //   那兩者今天對數字的影響相同，但潛能還連著 AP 與屬性（052-N 範圍外），
+          //   把它一路歸零等於替玩家做了一個他沒下過的決定。
+          onToggleMax={onPotentialChange
+            ? () => onPotentialChange(viewMax ? TALENT_BOOST_POTENTIAL - 1 : MAX_POTENTIAL)
+            : undefined}
         />
       )}
     </section>
@@ -362,16 +394,79 @@ function EquipWeaponBar({ plan, relation, enhances, onEquip }: {
   )
 }
 
+/**
+ * 潛能選擇器（PLAN-052-N C-3）。0–5 六格，**第 3 格是天賦加強的門檻**。
+ *
+ * ── 為什麼要給玩家調 ────────────────────────────────────────────────────────
+ * 站上其餘一切都採「滿級假設」（武器 LV.70、模組滿級、算力點滿），潛能卻不同：
+ * 它要**重複抽到同一位機師**才會漲，多數玩家不是滿潛。「我只有 1 潛，天賦還沒加強」
+ * 是配裝規劃時會真的問出來的問題 —— 而那個問題會改變總重（洛莎／艾琳／里貝卡）。
+ *
+ * ⚠ 門檻線畫在 3 之前而不是把 0–2 灰掉：0–2 是**合法且常見**的狀態，
+ *   灰掉會讀成「這些選不了」。
+ */
+function PotentialPicker({
+  potential, hasLoadoutMods, onChange,
+}: {
+  potential: number
+  /** 這位機師的天賦有沒有配裝規則 —— 沒有的話調潛能只改正文，不動數字 */
+  hasLoadoutMods: boolean
+  onChange: (potential: number) => void
+}) {
+  const levels = Array.from({ length: MAX_POTENTIAL + 1 }, (_, i) => i)
+  return (
+    <div className="flex items-center" style={{ gap: 6 }}>
+      <span className={`${HUD.label} text-text-dim shrink-0`} title="潛能提升：重複取得同一位機師可提升，共 5 階">
+        潛能
+      </span>
+      <div className="flex items-center" style={{ gap: 2 }}>
+        {levels.map((lv) => (
+          <span key={lv} className="flex items-center" style={{ gap: 2 }}>
+            {/* 門檻線：第 3 階解鎖「天賦能力加強」 */}
+            {lv === TALENT_BOOST_POTENTIAL && <span className="text-accent-cyan/40 text-[10px] leading-none">|</span>}
+            <button
+              type="button"
+              onClick={() => onChange(lv)}
+              title={lv >= TALENT_BOOST_POTENTIAL
+                ? `潛能 ${lv}：天賦已加強（第 ${TALENT_BOOST_POTENTIAL} 階解鎖）`
+                : `潛能 ${lv}：天賦尚未加強`}
+              className={`hud-cut-sm border w-5 h-5 text-[11px] leading-none transition-colors cursor-pointer ${
+                lv === potential
+                  ? (lv >= TALENT_BOOST_POTENTIAL
+                      ? 'text-accent-cyan border-accent-cyan/60 bg-accent-cyan/15'
+                      : 'text-text-primary border-border-accent bg-bg-card')
+                  : 'text-text-dim border-border-subtle hover:text-text-secondary hover:border-border-accent'
+              }`}
+            >
+              {lv}
+            </button>
+          </span>
+        ))}
+      </div>
+      <span className={`${HUD.body} text-text-dim ml-auto text-right shrink-0`}>
+        {potential >= TALENT_BOOST_POTENTIAL
+          ? (hasLoadoutMods ? '天賦已加強（含負重修正）' : '天賦已加強')
+          : (hasLoadoutMods ? '天賦未加強 · 負重修正未生效' : '天賦未加強')}
+      </span>
+    </div>
+  )
+}
+
 function TalentThumb({
-  talent, enhanced, available, active, compact, onClick,
+  talent, enhanced, available, boosted, active, compact, onClick,
 }: {
   talent: PilotTalent
   enhanced: boolean
   available: boolean
+  /** 潛能已達第 3 階（天賦能力加強）。與 `enhanced`（專武強化）**是兩件事，可同時成立** */
+  boosted: boolean
   active: boolean
   compact?: boolean
   onClick: () => void
 }) {
+  // ⚠ 只有真的有「提升後」正文的天賦才掛星：兩欄同字的天賦掛一顆星，
+  //   讀起來像「這個天賦有提升版可拿」，而它沒有。
+  const hasMax = !!talent.descriptionMax && talent.descriptionMax !== talent.description
   const ring = enhanced ? 'border-accent-yellow'
     : available ? 'border-accent-yellow/35 border-dashed'
     : active ? 'border-accent-orange'
@@ -392,6 +487,20 @@ function TalentThumb({
       {!compact && (
         <span className={`${HUD.body} truncate max-w-[7.5rem] ${enhanced ? 'text-accent-yellow' : 'text-text-secondary'}`}>
           {talent.name}
+        </span>
+      )}
+      {/* 潛能角標（PLAN-052-N D-2）。⚠ **與右上角的專武「強」是兩種視覺、擺兩個角**：
+          洛莎滿潛 ＋ 裝上專武時兩者同時成立，共用一個標記就講不清楚是哪一種強化。
+          ★ ＝ 機師自己的成長（潛能第 3 階）、金框／強 ＝ 外部裝備帶來的。 */}
+      {hasMax && (
+        <span
+          className={`absolute -left-1 -top-1 w-3.5 h-3.5 flex items-center justify-center rounded-full
+            text-[9px] leading-none ${boosted
+              ? 'bg-accent-cyan text-bg-dark font-bold'
+              : 'bg-bg-card text-text-dim border border-border-subtle'}`}
+          aria-label={boosted ? '天賦已提升（潛能 3 階）' : '天賦未提升'}
+        >
+          {boosted ? '★' : '☆'}
         </span>
       )}
       {/* 已強化的角標。`available`（可強化但沒裝）刻意**不掛角標**，只留虛線框 ——
@@ -419,7 +528,8 @@ function TalentDetail({
   pending?: string
   /** 正文取滿星版還是初始版（預設滿星，見檔頭） */
   viewMax: boolean
-  onToggleMax: () => void
+  /** 未傳＝唯讀（匯出圖）：仍照 `viewMax` 顯示正文，只是不畫切換鈕 */
+  onToggleMax?: () => void
 }) {
   /**
    * 這個天賦**有沒有**滿星版可切。
@@ -435,11 +545,11 @@ function TalentDetail({
       <div className="flex items-center" style={{ gap: 6 }}>
         <SkillIcon iconLocal={talent.iconLocal} name={talent.name} size="sm" />
         <span className={`${HUD.bodyStrong} text-text-primary`}>{talent.name}</span>
-        {hasMax && (
+        {hasMax && onToggleMax && (
           <button
             type="button"
             onClick={onToggleMax}
-            title="切換 滿星天賦 / 初始天賦（滿星為預設）"
+            title="切換 提升後天賦 / 初始天賦（潛能第 3 階解鎖）"
             className={`hud-cut-sm ml-auto shrink-0 border px-1.5 py-0.5 text-[11px] leading-none
               transition-colors cursor-pointer ${
               showMax
@@ -447,7 +557,7 @@ function TalentDetail({
                 : 'text-text-dim border-border-subtle hover:text-text-secondary hover:border-border-accent'
             }`}
           >
-            ⇌ {showMax ? '滿星' : '初始'}
+            ⇌ {showMax ? '提升後' : '初始'}
           </button>
         )}
       </div>
