@@ -35,9 +35,16 @@ import { HUD, HUD_PANEL } from './loadoutTheme'
 //   強化敘述新增的 [xxx] 只側錄在武器技能上，天賦自身的 refs 沒有 ——
 //   只用天賦 refs 的話那些引用會靜默降級成純文字。
 //
-// ⚠ 差異對比的 base 一律用 `talent.description`（**初始天賦**），不是 `descriptionMax`：
-//   模擬器沒有星等模型，挑一個玩家沒設定過的滿星基準去 diff，畫出來的差異
-//   會包含「滿星帶來的」與「專武帶來的」兩件事，而標題只寫了專武。
+// ── 為什麼正文預設顯示**滿星**（使用者要求 2026-08-30）───────────────────────
+// 「機師天賦部分請預設為『強化過的天賦』。」——會開配裝模擬器的人，天賦多半早就點滿了；
+// 拿初始正文當預設，等於對著一個沒人處在的狀態做規劃（洛莎[原型體]的追擊倍率
+// 0.2 → 0.25 就差在這裡）。切回初始的鍵仍然留著，因為新機師確實會有一段沒滿的時期。
+//
+// ⚠ 專武強化那一格的 diff base **仍然固定是 `talent.description`（初始天賦）**，
+//   不跟著上面這個切換跑：`enhancedTalentDescription` 是遊戲原文，實測它**不含滿星子句**
+//   （洛莎的「機槍的重量降低80」在強化正文裡不存在）。拿 `descriptionMax` 當基準去 diff，
+//   畫出來會說「專武把滿星子句拿掉了」——那是一句錯的陳述。所以切在滿星時，
+//   強化框的抬頭會補一句「對比初始天賦」，把基準講明白，而不是偷偷換掉它。
 
 interface Props {
   ctx: LoadoutContext
@@ -62,6 +69,13 @@ interface Enhancement {
 export function PilotTalentStrip({ ctx, skillMap, loading, compact, onEquipWeapon }: Props) {
   const pilot = ctx.pilot
   const [openName, setOpenName] = useState<string | null>(null)
+  /**
+   * 正文顯示滿星版（`descriptionMax`）還是初始版。**預設滿星**，見檔頭。
+   *
+   * ⚠ 狀態放在**條**這一層、不是展開的那一格：玩家逐個點過四個天賦時，
+   *   切換偏好要跟著走；放在 `TalentDetail` 裡的話每換一個天賦就被重設回預設值。
+   */
+  const [viewMax, setViewMax] = useState(true)
 
   /**
    * 這位機師的專武**全部變體**，依升級鏈由母到子（熠光 → 裁決者）。
@@ -182,6 +196,8 @@ export function PilotTalentStrip({ ctx, skillMap, loading, compact, onEquipWeapo
           // 強化框的抬頭印**裝著的那一把**（熠光／裁決者的強化正文未必相同）
           weaponName={equippedVariant?.name}
           pending={!equipped && enhancements.has(open.name) ? exclusive?.name : undefined}
+          viewMax={viewMax}
+          onToggleMax={() => setViewMax((v) => !v)}
         />
       )}
     </section>
@@ -393,7 +409,7 @@ function TalentThumb({
 }
 
 function TalentDetail({
-  talent, enhancement, weaponName, pending,
+  talent, enhancement, weaponName, pending, viewMax, onToggleMax,
 }: {
   talent: PilotTalent
   /** 有值 ＝ 專武已裝且它強化這個天賦 */
@@ -401,22 +417,57 @@ function TalentDetail({
   weaponName?: string
   /** 「裝上這把就會強化」——有值 ＝ 可強化但目前沒裝 */
   pending?: string
+  /** 正文取滿星版還是初始版（預設滿星，見檔頭） */
+  viewMax: boolean
+  onToggleMax: () => void
 }) {
+  /**
+   * 這個天賦**有沒有**滿星版可切。
+   *
+   * ⚠ 只有 `descriptionMax` 有值**且與初始不同**才算：實測有天賦兩欄同字，
+   *   那時畫一顆切了畫面完全不動的鍵，讀起來像壞掉。
+   */
+  const hasMax = !!talent.descriptionMax && talent.descriptionMax !== talent.description
+  const showMax = viewMax && hasMax
+
   return (
     <div className="hud-cut-sm border border-border-subtle bg-bg-dark px-2.5 py-2 space-y-1.5">
       <div className="flex items-center" style={{ gap: 6 }}>
         <SkillIcon iconLocal={talent.iconLocal} name={talent.name} size="sm" />
         <span className={`${HUD.bodyStrong} text-text-primary`}>{talent.name}</span>
+        {hasMax && (
+          <button
+            type="button"
+            onClick={onToggleMax}
+            title="切換 滿星天賦 / 初始天賦（滿星為預設）"
+            className={`hud-cut-sm ml-auto shrink-0 border px-1.5 py-0.5 text-[11px] leading-none
+              transition-colors cursor-pointer ${
+              showMax
+                ? 'text-accent-cyan border-accent-cyan/45 bg-accent-cyan/10'
+                : 'text-text-dim border-border-subtle hover:text-text-secondary hover:border-border-accent'
+            }`}
+          >
+            ⇌ {showMax ? '滿星' : '初始'}
+          </button>
+        )}
       </div>
 
       <p className={`${HUD.body} text-text-secondary`}>
-        <RefText text={talent.description} refs={talent.descriptionRefs} />
+        {/* 滿星時用 diff 而不是純文字：滿星幾乎都是「初始正文 ＋ 一段新子句」，
+            標出多出來的那一段，玩家才看得出點滿到底換到了什麼 */}
+        {showMax ? (
+          <DiffHighlight base={talent.description} enhanced={talent.descriptionMax} refs={talent.descriptionRefs} />
+        ) : (
+          <RefText text={talent.description} refs={talent.descriptionRefs} />
+        )}
       </p>
 
       {enhancement && (
         <div className="hud-cut-sm border border-accent-yellow/25 bg-accent-yellow/5 px-2 py-1.5">
           <span className={`${HUD.labelCjk} text-accent-yellow`}>
             ▶ 專武強化{weaponName ? ` · ${weaponName}` : ''}
+            {/* 上面顯示滿星、這裡卻拿初始當基準——不講明就會被讀成「專武把滿星子句砍了」 */}
+            {showMax && <span className="text-accent-yellow/60">（對比初始天賦）</span>}
           </span>
           <p className={`${HUD.body} text-text-secondary mt-1`}>
             {/* 兩份 refs 合併：強化敘述新增的 [xxx] 只側錄在武器技能上（見檔頭） */}
