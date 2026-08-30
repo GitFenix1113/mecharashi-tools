@@ -73,6 +73,61 @@ npm run build
 
 > **注意：** commit 和 push 是兩個動作。使用者說「幫我 commit」不等於要 push；說「幫我推上去」或「push」才執行第 3 步。
 
+### 新增頂層路由時：同步 Cloudflare Transform Rule 白名單
+
+**只要在 `src/App.tsx` 新增一個頂層路徑段（`/versions`、`/connectivity` 這種層級），就必須到 Cloudflare Dashboard 把它加進 SPA fallback 的白名單，否則該路由一上線就是 HTTP 404。**
+
+`npm run build` 與 `npm test` **都抓不到**這件事——它不是程式碼問題，而是一份只活在 CF Dashboard、不在版控裡的列舉式白名單。本機 dev 與 PR preview 也照樣正常，因為它們不經過那條規則。
+
+#### 為什麼會 404
+
+站台是 GitHub Pages 上的 SPA，origin 只有 `/index.html` 一個實體檔案。深層路徑靠 zone 的
+**Transform Rules → URL 改寫**（規則名 `SPA fallback to index.html`）在邊緣改寫成 `/index.html`。
+Free 方案不給用 `matches`（regex 需 Business），所以那條規則是**逐條列舉**路徑前綴的白名單——
+沒登記的路徑不會被改寫，直接落到 GitHub Pages → 404。
+
+漏掉不會整個壞掉（`public/404.html` 的重導 shim 會把真人救回來），所以**很容易看不出來**。
+但代價是：HTTP 狀態碼 404、多一次 `/?/` 中繼跳轉、搜尋引擎不收錄、社群貼連結展開抓到 404。
+
+#### 操作步驟
+
+1. Dashboard → mecharashi.wiki → **規則 → 概觀 → URL 改寫規則**
+   （不是「網頁規則 Page Rules」，那是舊版功能、與此無關）
+2. 編輯既有那條規則（**不要新建**，改寫規則之間的優先序會讓行為難以預測）
+3. 在「當傳入要求符合…」的白名單清單裡加一行：
+   ```
+   or starts_with(http.request.uri.path, "/你的新路徑")
+   ```
+   放在 `method eq "GET"` 的括號**內**，與其他 16 條並列；不要接在整條運算式尾巴
+   （那會跳過 GET 守衛，而且下一個人會照樣往後接）
+4. 部署後複驗：
+   ```bash
+   for p in /你的新路徑 /你的新路徑/子頁 /notarealpath; do
+     echo "$(curl -sS -o /dev/null -w '%{http_code}' https://mecharashi.wiki$p)  $p"; done
+   ```
+   新路徑應為 200，`/notarealpath` 應維持 404（打錯的網址不該被收錄）
+
+#### ⚠ 絕對不要動的部分
+
+規則尾端有一個 `and not (...)` 區塊，用 **UA 比對**把社群爬蟲
+（discordbot / facebookexternalhit / linebot / slackbot / twitterbot / telegrambot / applebot）
+從 `/pilots/` `/mechs/` `/weapons/` 的改寫中排除掉。
+
+它存在的理由：**Transform Rule 跑在 Workers Route 之前**。這三條路徑上掛著 PLAN-038 的社群預覽
+Worker，路徑一旦被改寫成 `/index.html`，Worker 的 route 就匹配不到，OG 圖與標題全部退回預設值。
+2026-08-22 首次部署就是這樣，Worker 收到零個事件。
+
+動過規則後務必補驗一次：
+```bash
+curl -sS -A "Discordbot/2.0" "https://mecharashi.wiki/pilots/pilot_049_%E6%B5%B7%E8%8E%89%E7%B5%B2" | grep -o 'og:image[^>]*'
+```
+應看到 `og/entities/pilots/海莉絲/half.jpg`，**不是** `og/default.jpg`。
+
+> **這條規則的由來：** PLAN-050 於 2026-08-19 建了 `/versions/*` 三條路由，白名單是 07-26 設的、
+> 沒人回頭補，於是版本情報的分享連結整整 11 天都回 404（真人看得到、但狀態碼與收錄全錯），
+> 直到 2026-08-30 才被發現。`App.tsx` 裡其實早有一段註解記下了這個陷阱
+> （PLAN-052-B 決定沿用 `/simulator` 就是為了不碰這條規則），但教訓沒有變成流程，所以還是漏了一次。
+
 ---
 
 ## 4. 暫時性計畫與分析：一律先存進 `_local-notes/`

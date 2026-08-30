@@ -43,10 +43,26 @@
 		{ "pattern": "www.mecharashi.wiki/weapons/*", "zone_name": "mecharashi.wiki" }
 	],
 	/**
-	 * 灰度期間刻意保留 workers.dev 網址當回退路徑（前端隨時可切回去）。
-	 * 待同源 /api 觀察穩定後改成 false，才算真正隱藏 origin。
+	 * PLAN-029 5-2：關閉 workers.dev，隱藏 origin 的最後一哩（2026-08-30）。
+	 *
+	 * 關掉的實質收益不只是「藏起來」，而是**堵掉一條限流旁路**：Rate Limiting
+	 * （/api per-IP 50 次／10 秒）是 zone 規則，只罩經過 mecharashi.wiki 的流量；
+	 * *.workers.dev 不在 zone 內，打那邊完全吃不到限流。Worker 自己的 antiScrapeBlock
+	 * 仍在，但它擋的兩件事（無 Origin 裸打、機房 ASN）都可偽造——住宅 IP 加一個假
+	 * Origin header 就能無上限抓。關掉之後爬蟲只剩 zone 這條路，兩層防護才真的疊起來。
+	 *
+	 * 灰度期（2026-07-26 → 08-30）刻意保留它當回退路徑，觀察逾一個月無異常。
+	 * 三個消費端在路線 B 當時就已預先切離，關閉不影響任何一個：
+	 *   · 正式站    deploy.yml  → same-origin
+	 *   · PR preview preview.yml → https://mecharashi.wiki
+	 *   · 本機 dev  .env.local  → https://mecharashi.wiki
+	 * 原始碼無任何硬寫的 workers.dev 網址（只剩註解）。
+	 *
+	 * 回退方式：本欄改回 true + wrangler deploy（數分鐘、可逆）。
+	 * ⚠ 不要指望 VITE_USE_WORKER=false 那個 kill-switch——Phase 3-2 把 Firestore 收成
+	 *   read:if isAdmin() 之後，「回退直連」對匿名訪客等同讀不到資料（見 workerData.ts）。
 	 */
-	"workers_dev": true
+	"workers_dev": false
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

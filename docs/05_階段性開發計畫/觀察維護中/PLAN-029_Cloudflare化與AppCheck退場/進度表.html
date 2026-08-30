@@ -177,7 +177,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">17</div>
+      <div class="summary-num" style="color:var(--accent-green)">18</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -185,7 +185,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">3</div>
+      <div class="summary-num" style="color:var(--text-dim)">2</div>
       <div class="summary-lbl">待開始／擱置</div>
     </div>
     <div class="summary-card">
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">17 / 21（未完成的 3 項中有 2 項為擱置）</span>
+      <span style="color:var(--accent-orange);">18 / 21（未完成的 3 項中有 2 項為擱置 —— 實際只剩 5-4 的中國回報）</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 81%"></div>
+      <div class="progress-bar-fill" style="width: 86%"></div>
     </div>
   </div>
 
@@ -215,6 +215,11 @@
     ② <strong>關閉 workers.dev</strong>（5-2）——觀察同源 /api 數日無異常後執行，那是目前唯一的回退路徑。<br>
     ③ <strong>確認 /images Cache Rule 生效</strong>——決定性證據是 <code>Age</code> 超過 14400 秒仍為 HIT（需等 4 小時以上觀察）。<br>
     另有兩項與計畫目標無關的技術債可隨時處理：前端 429 退避重試、workers/test 的 Hello World 樣板。三項觀察工作結束後即可依操作 B 歸檔至歷史記錄。
+    <br><br>
+    <strong style="color:var(--accent-green);">✅ 2026-08-30 複查：三項觀察已結案兩項，只剩 ①。</strong><br>
+    · <strong>② 已完成</strong>：wrangler.jsonc <code>workers_dev: false</code> 並部署（版本 <code>009cf6e1</code>）。灰度期實際觀察逾一個月（07-26 → 08-30），遠超原定的「數日」。詳見 5-2。<br>
+    · <strong>③ 已結案</strong>：<code>/images/cat_no_bg.png</code> 實測 <code>Age: 568862</code>（6.58 天）且 <code>cf-cache-status: HIT</code>，而 origin 仍只回 <code>Cache-Control: max-age=14400</code> —— <strong>Age 遠超 origin TTL 仍 HIT，即為 Cache Rule 覆寫生效的決定性證據</strong>。同時測 <code>/favicon.svg</code>（不在 /images/ 下）為 <code>Age: 0 · MISS</code>，證明規則作用域沒有外溢。<br>
+    · <strong>① 仍在等</strong>：前置（<code>/connectivity</code> 可被直接開啟）已於同日修好，見 5-4。公告可以發了。
   </div>
 
   <div class="phase-note">
@@ -498,7 +503,12 @@
         <div class="task-name">5-1 路線 B：/api 掛進 zone + 前端同源 + 邊緣 SPA 改寫 + 限流</div>
         <div class="task-desc">把資料端點納入 mecharashi.wiki zone，換取託管限流與同源；順帶用 Transform Rule 在邊緣做 SPA fallback，讓深層路徑不再回 404。（原「Worker origin 就近 HK」已無意義：Worker 本就在邊緣節點執行，就近議題僅剩 R2 圖片，已併入 Phase 4。）</div>
         <div class="task-file">✅ 已完成：① wrangler.jsonc 加 routes（apex + www 的 /api/*）並部署；② Worker antiScrapeBlock 新增接受 <code>Sec-Fetch-Site: same-origin</code>——同源 fetch 不送 Origin header，缺此段會讓全站資料 403（本階段最關鍵的一行）；③ workerData.ts 支援 <code>VITE_WORKER_API_BASE=same-origin</code>，deploy.yml 切換，preview／本機改指 https://mecharashi.wiki（為 workers.dev 關閉預留）；④ Transform Rule「SPA fallback to index.html」——因 Free 方案不給用 regex（<code>matches</code> 需 Business），改採<strong>白名單</strong>列舉 SPA 路由，反而更安全：/api、/docs、靜態資源天然不在名單內，不可能被誤改寫，且打錯的網址維持 404 不被搜尋引擎收錄；⑤ Rate Limiting：<code>/api/</code> per-IP，Free 期間僅 10 秒可選，門檻 50 次／10 秒。<br>
-        驗證：SPA 路由 8 條全 200（改寫前 404）、圖片／文件站／API 不受影響、瀏覽器僅 1 筆 document 請求（不再經 /?/ 中繼跳轉）、限流實測第 21 次起 429（門檻 20 時）且自動解除、調高後 35 次全通過。<strong>門檻取 50 的理由</strong>：實測冷啟動模擬器頁一次打 11 次 /api，門檻 20 僅 1.8 倍餘裕；而爬蟲抓完全部資料只需 12 次，任何 ≥12 的門檻都擋不住「單次全量抓取」，此規則真正價值在阻止反覆猛打，故放寬以消除誤傷真人的風險。</div>
+        驗證：SPA 路由 8 條全 200（改寫前 404）、圖片／文件站／API 不受影響、瀏覽器僅 1 筆 document 請求（不再經 /?/ 中繼跳轉）、限流實測第 21 次起 429（門檻 20 時）且自動解除、調高後 35 次全通過。<strong>門檻取 50 的理由</strong>：實測冷啟動模擬器頁一次打 11 次 /api，門檻 20 僅 1.8 倍餘裕；而爬蟲抓完全部資料只需 12 次，任何 ≥12 的門檻都擋不住「單次全量抓取」，此規則真正價值在阻止反覆猛打，故放寬以消除誤傷真人的風險。<br><br>
+        <strong style="color:var(--accent-orange);">⚠ 2026-08-30 後續訂正：白名單是列舉式的，會隨新路由腐化。</strong><br>
+        當初驗收寫的是「SPA 路由 8 條全 200」，但那份白名單<strong>只存在 CF Dashboard、不在版控</strong>，也沒有任何自動檢查會提醒它過期。PLAN-050 於 2026-08-19 建了 <code>/versions</code> 三條路由，白名單是 07-26 設的、沒人回頭補，於是<strong>版本情報的分享連結整整 11 天都回 HTTP 404</strong>（真人靠 public/404.html 的重導 shim 看得到內容，所以完全沒人察覺；但狀態碼、搜尋引擎收錄、社群貼連結展開全是錯的），直到 08-30 複查 PLAN-029 殘項時才被實測掃出來。<br>
+        <strong>已修</strong>：白名單補上 <code>/versions</code>（starts_with，含 <code>/versions/timeline/v3.1</code> 這類深連結）與 <code>/connectivity</code>，放在 <code>method eq "GET"</code> 守衛<strong>之內</strong>與其餘 16 條並列（不接在整條運算式尾巴——那會跳過 GET 守衛，且下一個人會照樣往後接）。全 33 條路由總掃後唯一非 200 的是 <code>/notarealpath</code>（404，符合設計意圖）。三個 SPA 路由的回應本體已不含重導 shim ＝ 單次 document 請求。<br>
+        <strong>⚠ 動這條規則時絕對不要碰尾端的 <code>and not (...)</code> 區塊</strong>：它用 UA 比對把社群爬蟲從 <code>/pilots/</code> <code>/mechs/</code> <code>/weapons/</code> 的改寫中排除，因為 <strong>Transform Rule 跑在 Workers Route 之前</strong>，路徑一旦被改寫成 /index.html，PLAN-038 的 OG Worker 就匹配不到（2026-08-22 首次部署即如此，Worker 零事件）。本次改動後已複驗 Discordbot 仍取得專屬 og:image。<br>
+        <strong>防再犯</strong>：已把「新增頂層路由時必須同步此白名單」寫成 CLAUDE.md 第 3 節的檢查項（含操作步驟、複驗指令與此處的禁區說明）。<code>npm run build</code> 與 <code>npm test</code> 都抓不到這類問題，本機 dev 與 PR preview 也不經過該規則——只能靠流程。</div>
       </div>
       <div class="task-assignee">開發者 + 使用者</div>
       <span class="status done">已完成</span>
@@ -507,9 +517,15 @@
       <div>
         <div class="task-name">5-2 關閉 workers.dev（隱藏 origin 最後一哩）</div>
         <div class="task-desc">wrangler.jsonc 的 <code>workers_dev</code> 改 false 並重新部署，讓 *.workers.dev 網址消失。刻意延後：它是目前唯一的回退路徑，待同源 /api 觀察數日無異常再關。前提是 preview／本機已改指 mecharashi.wiki（已完成）。</div>
+        <div class="task-file">✅ 已完成（2026-08-30，版本 <code>009cf6e1</code>）。灰度期實際觀察 07-26 → 08-30 共逾一個月無異常。<br>
+        <strong>動工前複核三個消費端，確認零依賴</strong>：deploy.yml → <code>same-origin</code>、preview.yml → <code>https://mecharashi.wiki</code>、.env.local → <code>https://mecharashi.wiki</code>；原始碼全域搜尋無任何硬寫的 workers.dev 網址（只剩註解）。三者都在路線 B 當時就預先切離了，這一步是當初鋪好的收尾。<br>
+        <strong>⚑ 真正的收益不是「藏起來」而是堵掉一條限流旁路</strong>——這點原本沒寫進計畫，補記於此：Rate Limiting（/api per-IP 50 次／10 秒）是 <strong>zone 規則</strong>，只罩經過 mecharashi.wiki 的流量；*.workers.dev 不在 zone 內，打那邊完全吃不到限流。Worker 自身的 antiScrapeBlock 仍在，但它擋的兩件事（無 Origin 裸打、機房 ASN）都可偽造。<strong>部署前實測證實了這條旁路</strong>：<code>curl -H "Origin: https://mecharashi.wiki" https://mecharashi-worker.….workers.dev/api/versions</code> → <strong>200</strong>，一個偽造的 header 就無上限取用。關閉後同一條指令回 <strong>404</strong>，爬蟲只剩 zone 這條路，兩層防護才真的疊起來。<br>
+        <strong>部署後驗證七項全過</strong>：workers.dev 404 ✔／同源 /api/versions 200 ✔／/api/data/forms 200 ✔／裸打 /api/data/pilots 403（反爬仍在）✔／跨源 <code>Origin: gitfenix1113.github.io</code>（PR preview 路徑）200 ✔／PLAN-038 社群預覽 Discordbot 取得專屬 og:title 與 og:image ✔／一般瀏覽器詳情頁 200 ✔。<br>
+        <strong>副作用</strong>：wrangler 提示 Preview URLs 隨之停用（版本預覽網址亦掛在 workers.dev 上）。刻意不加 <code>preview_urls: true</code> —— 那等於把 workers.dev 開一半，與本項目的相違。日後若真需要版本預覽再議。<br>
+        <strong>回退方式</strong>：本欄改回 true + <code>wrangler deploy</code>（數分鐘、可逆）。⚠ 不要指望 <code>VITE_USE_WORKER=false</code> 那個 kill-switch —— Phase 3-2 收緊規則後，「回退直連」對匿名訪客等同讀不到資料（理由已寫進 wrangler.jsonc 註解與 workerData.ts）。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -527,7 +543,8 @@
         <div class="task-name">5-4 連線診斷頁 + 中國實測回報</div>
         <div class="task-desc">請人「幫忙測測看」收到的通常是「還是有點慢」，無從比較。故做一頁自動量測並輸出可複製的報告，讓回報變成可比對的數據。</div>
         <div class="task-file">✅ 診斷頁已完成：<code>/connectivity</code>（src/pages/debug/ConnectivityPage.tsx）自動量測 Cloudflare 邊緣節點、/api/versions、36KB 資料傳輸、圖片（含 cf-cache-status）、自託管字體，並以 Google Fonts 作為「該被封鎖」的對照組。<strong>報告刻意移除 IP</strong>（/cdn-cgi/trace 會回傳 ip=），只保留節點代碼與國別，讓回報者敢貼到公開頻道。開發過程中修掉一個真實缺陷：診斷若寫死相對路徑 <code>/api/…</code>，在本機與 preview（皆為跨源設定）會打到站台本身而非 Worker，量到的數字毫無意義 → 改用 workerData 導出的 workerUrl()。<br>
-        ⏳ <strong>待辦</strong>：把 <code>/connectivity</code> 加進 SPA fallback 規則白名單；發布測試公告、收集 3～5 份涵蓋不同省份與電信商的回報。公告草稿與判讀指引見 _local-notes/中國用戶測試說明.md。</div>
+        ✅ <strong>2026-08-30：白名單已補</strong>——<code>/connectivity</code> 先前不在 SPA fallback 白名單內，直接開網址會落到 GitHub Pages 的 404（真人靠 public/404.html 的重導 shim 還是進得去，但多一次 <code>/?/</code> 中繼跳轉，成本正好落在要量測的那群人身上）。已加入並實測 200，且回應本體不再含重導 shim ＝ 單次 document 請求。<br>
+        ⏳ <strong>剩餘待辦</strong>：發布測試公告、收集 3～5 份涵蓋不同省份與電信商的回報。公告草稿與判讀指引見 _local-notes/中國用戶測試說明.md。前置已全部就緒，可以發了。</div>
       </div>
       <div class="task-assignee">開發者 + 使用者</div>
       <span class="status doing">進行中</span>
