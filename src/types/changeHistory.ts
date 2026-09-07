@@ -21,11 +21,15 @@ export type ChangeAction = 'create' | 'update' | 'delete' | 'restore'
  * PLAN-043 追加 backpack / backpackSkill（背包後台的刪除與新的背包技能庫）。
  * PLAN-041 追加 form（機師形態）：它有 12 處 inbound 引用（帕姆斯陣列 7 條、粒子爆發／
  * 虛粒子程式／嵐循環各 1、海莉絲天賦 1），不進這條 union ＝ 刪一筆形態靜默留下 12 條懸空引用。
+ * PLAN-042-A 追加 pilotLore（機師逸聞）：理由與前述各項**相反** —— 它沒有任何 inbound 引用，
+ * 進這條 union 是為了 **outbound**：那是全站唯一人工逐字輸入、重跑爬蟲也生不回來的長文，
+ * 寫壞一章而沒有稽核記錄＝永久失去。
  */
 export type ChangeTargetKind =
   | 'buff' | 'pilotSkill' | 'glossaryTerm'
   | 'backpack' | 'backpackSkill'
   | 'form'
+  | 'pilotLore'
 
 /** ChangeTargetKind → Firestore 集合名。級聯清除與還原都需要由 kind 反查集合。 */
 export const TARGET_COLLECTION: Record<ChangeTargetKind, string> = {
@@ -35,6 +39,7 @@ export const TARGET_COLLECTION: Record<ChangeTargetKind, string> = {
   backpack:      'backpacks',
   backpackSkill: 'backpackSkills',
   form:          'forms',
+  pilotLore:     'pilotLore',
 }
 
 /** 顯示用中文標籤（歷史檢視頁的篩選器與記錄列共用）。 */
@@ -45,6 +50,7 @@ export const TARGET_LABEL: Record<ChangeTargetKind, string> = {
   backpack:      '背包',
   backpackSkill: '背包技能',
   form:          '形態',
+  pilotLore:     '機師逸聞',
 }
 
 export const ACTION_LABEL: Record<ChangeAction, string> = {

@@ -59,7 +59,7 @@
       </thead>
       <tbody>
         <tr>
-          <td>遊戲資料<br><span style="color:var(--text-dim);font-size:12px;">pilots / mechs / weapons / backpacks / backpackSkills / components / modules / skills / pilotSkills / neuralDriveAbilities / glossaryTerms / forms / buffs / research / enemies / patchVersions / grayOps / meta</span></td>
+          <td>遊戲資料<br><span style="color:var(--text-dim);font-size:12px;">pilots / mechs / weapons / backpacks / backpackSkills / components / modules / skills / pilotSkills / neuralDriveAbilities / glossaryTerms / forms / pilotLore / buffs / research / enemies / patchVersions / grayOps / meta</span></td>
           <td><code>isAdmin()</code></td>
           <td><code>isAdmin()</code></td>
           <td>PLAN-029 Phase 3-2。原本是 <code>read: if true</code>，等於任何人都能直打 Firestore REST 白嫖／整包爬走。收緊後 client 直讀一律 permission-denied，前台改走 Worker <code>/api/data/:collection</code>（service account 本就繞過規則）；管理員後台仍以 client SDK 直讀，故後台零改動。<strong>這取代了退場的 App Check</strong>——票可以被繞，規則不行。</td>

@@ -15,7 +15,7 @@
 
 import type {
   Pilot, PilotSkillDoc, GameBuff, GlossaryTerm, NeuralDriveAbility,
-  Module, Weapon, Backpack, BackpackSkillDoc, Component, MechForm,
+  Module, Weapon, Backpack, BackpackSkillDoc, Component, MechForm, LoreDoc,
   DescriptionRefs, RefType, SkillEffect,
 } from '../types'
 import type { ChangeTargetKind, ReversePatch, RefAnchor } from '../types/changeHistory'
@@ -45,6 +45,10 @@ export const REF_TYPE_OF: Record<ChangeTargetKind, RefType | null> = {
   backpackSkill: null,
   // PLAN-041：形態**是**正文引用目標（帕姆斯陣列等 12 處寫 [突擊形態]），與 backpackSkill 相反。
   form:          'form',
+  // PLAN-042-A 決策：故事館全程不新增 RefType（common.ts 列出的五處窮舉消費端裡，
+  // RefPicker 的 REF_TYPE_OPTIONS 是手寫陣列、漏了不報錯）。沒有任何一段正文會寫
+  // [某某的逸聞] —— 它是被讀的終點，不是被指的目標。故只走 outbound（textUnits）。
+  pilotLore:     null,
 }
 
 /**
@@ -695,6 +699,31 @@ const COMPONENTS: CollectionSpec<Component> = {
   softSites: [],
 }
 
+const PILOT_LORE: CollectionSpec<LoreDoc> = {
+  coll: 'pilotLore',
+  nameOf: (d) => d.name ?? d.id,
+  buffIdSites: [],
+  // 逸聞正文以 <RefText> 渲染 → 章節的 [xxx] 是真的引用站點，刪 BUFF／技能／詞條時
+  // 必須掃得到，否則故事裡會留下永遠解析不出來的方括號。
+  //
+  // ⚠ 側錄表欄位名是 **bodyRefs** 不是 descriptionRefs（正文欄位叫 body）——
+  //   refsField 沒填的話 cascadePatch 會去清一個不存在的欄位，且**靜默不報錯**。
+  //
+  // commentary[].text 刻意不進來：LoreCommentary 沒有 refs 欄位（見 types/lore.ts），
+  // 沒有側錄表就沒有引用可掃，收進來只會產生一批永遠空手而回的站點。
+  textUnits: (d) => (d.chapters ?? []).map((ch, i) => ({
+    segments: ['chapters', i],
+    origin: `逸聞:${d.name ?? d.id} ${ch.label ?? `PART ${i + 1}`}·${ch.title}`,
+    texts: { body: ch.body },
+    refs: ch.bodyRefs,
+    refsField: 'bodyRefs',
+    // 索引不是穩定識別子（章節可重排、可插入），錨點用必填的 key
+    anchor: { by: 'name' as const, value: ch.key },
+  })),
+  scalarSites: [],
+  softSites: [],
+}
+
 /** 全站 spec registry。新增集合時在此補一筆——測試會斷言集合清單完整性。 */
 export const SPECS = {
   pilots: PILOTS,
@@ -708,6 +737,7 @@ export const SPECS = {
   backpacks: BACKPACKS,
   backpackSkills: BACKPACK_SKILLS,
   components: COMPONENTS,
+  pilotLore: PILOT_LORE,
 } as const
 
 export type ScanCollection = keyof typeof SPECS
@@ -745,6 +775,7 @@ export interface RefScanData {
   backpacks?: Backpack[]
   backpackSkills?: BackpackSkillDoc[]
   components?: Component[]
+  pilotLore?: LoreDoc[]
 }
 
 export interface RefHit {
@@ -954,6 +985,7 @@ const SPEC_COLL_OF: Record<ChangeTargetKind, ScanCollection> = {
   backpack: 'backpacks',
   backpackSkill: 'backpackSkills',
   form: 'forms',
+  pilotLore: 'pilotLore',
 }
 
 /** 從 data 反查目標自身的 name（nameSoftRef 比對用）。查不到回 undefined，不猜。 */

@@ -209,15 +209,15 @@
 
 
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">0</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">3</div><div class="summary-lbl">已完成</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">21</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">18</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">21</div><div class="summary-lbl">開發者任務</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-orange);">0 / 21</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 0%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-orange);">3 / 21</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 14%"></div></div>
   </div>
 
   <div class="impact-note">
@@ -241,16 +241,16 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; 共用型別 src/types/lore.ts<span class="badge badge-cyan" style="margin-left:8px;">兩館共用</span></div>
       <div class="task-group-meta">src/types/lore.ts · src/types/index.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">LoreChapter / LoreCommentary 型別</div>
-        <div class="task-desc">定義 <code>LoreChapter { key, label?, title, body, source?, commentary? }</code> 與 <code>LoreCommentary { speakerId, text }</code>。<b>key 必填</b>（總綱決策五：不可用陣列索引、也不可開選填鍵）。<code>subject</code> 若用 discriminated union，<b>要自己補 <code>assertNever</code></b>——repo 內沒有 exhaustive 檢查的既有慣例。</div>
+        <div class="task-desc">定義 <code>LoreChapter { key, label?, title, body, source?, commentary? }</code> 與 <code>LoreCommentary { speakerId, text }</code>。<b>key 必填</b>（總綱決策五：不可用陣列索引、也不可開選填鍵）。<code>subject</code> 若用 discriminated union，<b>要自己補 <code>assertNever</code></b>——repo 內沒有 exhaustive 檢查的既有慣例。<br><b>✅ 實作結果：不開 <code>subject</code>。</b>「屬於機師還是機甲」已由<u>它住在哪個集合</u>完整表達，再存一次就是第二個真相源，union 的成本會在零消費端的情況下先付掉。另加了 <code>bodyRefs?: DescriptionRefs</code>（C-3 的 <code>&lt;RefText&gt;</code> 需要側錄表，總綱草圖漏了）與 <code>LoreDoc.frontSource</code>。</div>
         <div class="task-file">src/types/lore.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -259,14 +259,14 @@
         <div class="task-file">src/types/index.ts · docs/02_技術文件/02_資料模型/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; pilotLore 集合與七處 CollectionKey 同步<span class="badge badge-cyan" style="margin-left:8px;">兩館共用</span></div>
       <div class="task-group-meta">src/lib/api/ · workers/src/index.ts · scripts/bump-data-version.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -275,41 +275,41 @@
         <div class="task-file">src/lib/api/pilotLore.ts · src/lib/firestoreApi.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">七處同步（漏一處就炸）</div>
-        <div class="task-desc"><code>collectionKeys.ts</code>、<code>workers/src/index.ts</code> 的 <code>ARRAY_COLLECTIONS</code>（<b>漏＝正式站 404、本機全綠</b>）、<code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>（<b>漏＝整條指令 exit(1)</b>）、<code>entityRefs</code> SPECS、測試 helper、<code>firestore.rules</code>、<code>GameDataContext</code> 的 state ＋ switch ＋ 型別。<br><b>先例警示：PLAN-043 就是漏掉 backpackSkills 炸在正式站。</b></div>
+        <div class="task-desc"><code>collectionKeys.ts</code>、<code>workers/src/index.ts</code> 的 <code>ARRAY_COLLECTIONS</code>（<b>漏＝正式站 404、本機全綠</b>）、<code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>（<b>漏＝整條指令 exit(1)</b>）、<code>entityRefs</code> SPECS、測試 helper、<code>firestore.rules</code>、<code>GameDataContext</code> 的 state ＋ switch ＋ 型別。<br><b>先例警示：PLAN-043 就是漏掉 backpackSkills 炸在正式站。</b><br><b>✅ 實作結果</b>：七處全數同步。順手把<u>唯一沒有自動檢查的那一處</u>補上守衛——<code>collectionKeys.test.ts</code> 新增兩條斷言（<code>GameDataContext</code> 的 <code>case</code> 與 <code>useState</code>），漏一支 <code>case</code> 的症狀原本是「該集合永遠是空陣列」、零錯誤零紅字。<code>npm test</code> 1208 綠。<br><b>⚠ 尚未部署</b>：<code>wrangler deploy</code> 與 <code>firebase deploy --only firestore:rules</code> 都不在 build/push 流程內，而本機 dev 的 <code>VITE_WORKER_API_BASE</code> 指向<u>正式</u> Worker。</div>
         <div class="task-file">src/lib/collectionKeys.ts · workers/src/index.ts · scripts/bump-data-version.mjs · firestore.rules</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">localStorage 豁免或體積上限</div>
-        <div class="task-desc">實測全集合快取展開後已達 4.2–4.5 MB，逼近 Chrome 約 5 MB 上限，而 <code>GameDataContext.tsx:41-47</code> 的 <code>writeCache</code> catch <b>是空的</b>——超限症狀是「每次都靜默重讀」、零錯誤訊息。<b>本集合跳過 localStorage 層，或設體積上限。</b></div>
+        <div class="task-desc">實測全集合快取展開後已達 4.2–4.5 MB，逼近 Chrome 約 5 MB 上限，而 <code>GameDataContext.tsx:41-47</code> 的 <code>writeCache</code> catch <b>是空的</b>——超限症狀是「每次都靜默重讀」、零錯誤訊息。<b>本集合跳過 localStorage 層，或設體積上限。</b><br><b>✅ 實作結果：走「跳過」，<u>不設</u>通用體積上限。</b>既有最大的 <code>pilots</code> 就有 2.09 MB，任何「合理」的上限不是誤傷它、就是高到形同虛設；名單（<code>NO_LOCAL_CACHE_KEYS</code>）是明示的編輯決策，上限則會靜默改變既有集合的行為。空 catch 同時改成 <code>console.warn</code>。</div>
         <div class="task-file">src/contexts/GameDataContext.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-3 &nbsp; 署名抽取草稿腳本</div>
       <div class="task-group-meta">scripts/temp_scripts/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">一次性 source 抽取 + 人工複核</div>
-        <div class="task-desc">以「位置 &gt; 60%、尾段 ≤ 30 字、不含句號」啟發式從 89 篇 lore 抽出 <code>source</code>。實測命中 30 / 誤判 0 / 漏抓 3（尾帶句號者）。<b>只當草稿，不在執行期即時 parse。</b>產出寫進 <code>pilotLore</code> 的扉頁章節。</div>
+        <div class="task-desc">以「位置 &gt; 60%、尾段 ≤ 30 字、不含句號」啟發式從 89 篇 lore 抽出 <code>source</code>。<b>只當草稿，不在執行期即時 parse。</b><br><b>✅ 實作結果（2026-08-31）</b>：切點是<b>最後一個署名記號</b>而非「最後一段」——實測署名與正文<u>同一段</u>（<code>…」——《週刊米赫瑪·文娛版》</code>），按段落切只命中 1 篇。改對之後：命中 <b>32</b> / 誤判 0 / 疑似漏抓 <b>2</b>（迪拉卡、凱莉，署名尾帶句號）。dry-run 把「有記號但被規則擋下」的 9 篇單獨列一段，人工只要看那一段就補得完。<br>產出落在 <code>pilotLore.frontSource</code>（<b>不是</b>扉頁章節）：扉頁正文仍是 <code>pilots.lore</code>，寫成章節就會複製出第二個真相源。<b>目前只跑了 dry-run，尚未 <code>--apply</code></b>——那一步要等人工複核草稿檔。</div>
         <div class="task-file">scripts/temp_scripts/extract-lore-source.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
