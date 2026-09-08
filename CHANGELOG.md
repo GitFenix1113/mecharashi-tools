@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-08-30
+## [Unreleased] - 2026-09-08
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **simulator**: PLAN-052-O 配裝圖回讀 —— 貼圖即載入配裝 (`9598a4f`)
 - **simulator**: PLAN-052-N A–D 機師天賦影響配裝 —— 解除機種限制、負重減免、潛能等級 (`ae908ae`)
 - **backpacks**: PLAN-043 Phase F 複合背包技能補完 —— 98 筆 skillIds derive 回填、合成單卡與出力加成改以技能為鍵 (`5fff84c`)
 - **simulator**: PLAN-052-L 匯出圖改版與技能配置 —— 十字版面、攜帶技能、方案備註、純文字摘要與兩顆清空鍵 (`6114bdb`)
