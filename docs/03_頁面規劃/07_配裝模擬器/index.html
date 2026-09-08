@@ -22,7 +22,7 @@
   <div class="hero-badge">◆ Page Design</div>
   <h1>配裝模擬器<span>LOADOUT PAGE · /simulator</span></h1>
   <p class="hero-sub">單頁槽位圖 ＋ 就地挑選器 ＋ 即時重量／出力（PLAN-052-B 改版）</p>
-  <div class="version-badge">PLAN-052-B／I 已上線 · 052-C 分享連結已上線 | 元件 052-D · 書架與雲端存檔 052-C／E · 形態分頁 052-F · 模組與混搭 052-G</div>
+  <div class="version-badge">PLAN-052-B／I 已上線 · 052-C 分享連結已上線 | 元件 052-D · 書架與雲端存檔 052-C／E · 形態分頁 052-F · 模組與混搭 052-G · 052-O 配裝圖回讀</div>
 </header>
 
 <main class="container">
@@ -117,6 +117,34 @@
         ⚠ <strong>兩個 toPng 通用地雷</strong>：① StrictMode 的 effect 雙呼叫會吃掉「已啟動」旗標
         （兩輪都沒拍成，而且只在 dev 出現）；② <strong>背景分頁不觸發 rAF</strong>，裸的雙層 rAF
         在「按下匯出後切分頁」時永遠不 resolve——站上既有的兩處匯出都有這個問題。
+      </p>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">🖼️</div>
+      <h3>從配裝圖回讀（052-O）</h3>
+      <p>
+        <strong>入口</strong>：「貼上分享碼或配裝圖」對話框收三種圖片來源——<strong>Ctrl+V 貼圖</strong>
+        （<code>paste</code> 監聽掛在 <code>window</code>，焦點不在輸入框也能貼；textarea 內的純文字貼上照舊不攔）、
+        <strong>拖放</strong>（落點是最外層 overlay，整個視窗都算）、<strong>選擇圖片</strong>（隱藏 <code>&lt;input type="file"&gt;</code>）。
+        讀到本站連結就<strong>把整串塞進 textarea</strong>，後面全走既有的預覽 → 套用流程，不長第二條套用路徑。<br>
+        <strong>三層讀取順序</strong>（<code>src/utils/loadoutCode/imageImport.ts</code>，前一層命中就不走下一層）：
+        ① PNG <code>tEXt</code> chunk（keyword <code>mecharashi-loadout</code>，匯出時由 <code>LoadoutExportRunner</code> 內嵌完整連結；
+        100% 精確、不受碼長上限，但<strong>只對原始 PNG 有效</strong>）→
+        ② 瀏覽器原生 <code>BarcodeDetector</code>（0 KB；⚠ 覆蓋率比想像中窄——Chrome 只在 macOS／ChromeOS／Android 暴露它，
+        <strong>Windows／Linux 的 Chrome 自 88 起連這個類別都沒有</strong>，Safari 藏在 feature flag 後預設關閉且 iOS 18 起壞掉、Firefox 沒有；
+        程式碼先查 <code>getSupportedFormats()</code> 含 <code>qr_code</code>，回空一律往下走）→
+        ③ <code>zxing-wasm</code>（1.1 MB 由本站自託管為 Vite 資產，<strong>丟圖時才 dynamic import</strong>；不走 jsDelivr）——
+        對本站主要客群（Windows PC 玩家）<strong>這才是正式路徑</strong>，原生偵測器只是 macOS／Android 上的加速。<br>
+        <strong>限制</strong>：碼太長匯出時本來就不畫 QR 的圖，其二手截圖<strong>無解</strong>（只剩原檔 <code>tEXt</code> 或手抄碼）；
+        <code>ecc L</code> 的二手壓縮門檻約<strong>每模組 1.9 實體像素</strong>（530 字元縮到 30% 就讀不到、1461 字元只有原圖可讀）；
+        需 WebAssembly；長邊 &gt; 4096 會先等比縮小；檔案上限 40 MB、像素上限 5,000 萬（解碼前只憑檔頭讀尺寸，擋尺寸炸彈）。
+        失敗分七類（<code>not-image</code>／<code>too-large</code>／<code>unreadable</code>／<code>no-qr</code>／<code>not-share-link</code>／<code>decoder-failed</code>／<code>drop-without-file</code>），
+        每一句都指向下一步能做什麼。<br>
+        <strong>零後端</strong>：圖片從頭到尾不離開瀏覽器——零 Storage、零 Firestore read、零 Worker 請求；
+        唯一的網路請求是第一次載入自託管的 wasm。<br>
+        <strong>內嵌資料走哪些管道保得住</strong>：Discord 附件原檔（<code>cdn.discordapp.com</code>）保留、媒體代理（<code>media.discordapp.net</code>）剝除——要「開啟原始檔」再存；
+        Telegram「以檔案傳送」保留、照片模式全失；Twitter／X 與 Threads 一律重新編碼、只能靠 QR；LINE 未證實，最保險是「以檔案傳送」。<br>
+        曾評估「把 QR 模組間距吸附整數實體像素」，<strong>評估後否決</strong>：zxing 與手機相機都不受非整數間距影響，吸附卻會讓模組縮小 15–22%、直接吃掉二手截圖的容忍度。
       </p>
     </div>
     <div class="card blue">

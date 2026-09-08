@@ -167,19 +167,19 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">12</div>
+      <div class="summary-num" style="color:var(--accent-green)">13</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">2</div>
+      <div class="summary-num" style="color:var(--text-dim)">1</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">14</div>
+      <div class="summary-num" style="color:var(--text-primary)">15</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">12 / 14</span>
+      <span style="color:var(--accent-purple);">13 / 15</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 86%"></div>
+      <div class="progress-bar-fill" style="width: 87%"></div>
     </div>
   </div>
 
@@ -1268,6 +1268,62 @@
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">052-O &nbsp; 配裝圖回讀</div>
+      <div class="task-group-meta">2026-09-08 建檔並完成 · 10 工項（<b>A–D 四個 Phase 全數完成，e2e 18／18，待歸檔</b>）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">圖片 → 分享碼 → 配裝：貼圖／拖放／選檔（10 工項，A–D 四個 Phase）</div>
+        <div class="task-desc">
+          <b>補的是 052-L E-2 留下的另一半。</b> 圖底的 QR 對手機成立、對 PC 從來沒有成立過——
+          圖與模擬器在同一個螢幕上，桌機沒有相機；圖底那串 base64url 是像素、不能選取，
+          <code>l</code>／<code>I</code>／<code>1</code> 與 <code>O</code>／<code>0</code> 在多數字型下同形，抄錯一個字整串解不開。
+          本計畫把「掃」搬進瀏覽器：既有的貼碼對話框收 <b>Ctrl+V 貼圖／拖放／選檔</b>，讀到連結就塞進 textarea，
+          後面全走既有的預覽 → 套用（<b>不長第二條套用路徑</b>）。<b>零後端</b>：圖片不離開瀏覽器，零 Storage、零 Firestore read、零 Worker 請求。
+          <br><br>
+          <b>三層讀取順序</b>（精確度遞減、成本遞增）：① PNG <code>tEXt</code> chunk（keyword <code>mecharashi-loadout</code>，
+          匯出時內嵌完整連結，100% 精確、不受碼長上限）→ ② 原生 <code>BarcodeDetector</code>（0 KB；
+          ⚠ 覆蓋率比想像中窄：Chrome 只在 macOS／ChromeOS／Android 暴露它，<b>Windows／Linux 的 Chrome 自 88 起連這個類別都沒有</b>，
+          Safari 藏在 feature flag 後預設關閉、Firefox 沒有——對本站主要客群它只是 macOS／Android 上的 0 KB 加速）→ ③ <code>zxing-wasm</code>
+          （1.1 MB <b>本站自託管</b>、丟圖時才 dynamic import；不走 jsDelivr，中國使用者連不到；<b>對 Windows PC 玩家這是正式路徑</b>）。
+          <code>tEXt</code> 剛好補上 QR 的兩個天生缺口——<b>長碼根本不畫 QR</b>（閘門不拆）、<b>二手壓縮下 <code>ecc L</code> 餘裕薄</b>——
+          代價是只對原檔有效，轉 JPEG／再截圖即失效，故<b>互補而非取代</b>。
+          <br><br>
+          <b>⚠ 解碼器選型是實測出來的，不要再換。</b> jsQR 對本站匯出圖（QR 方塊 420 實體 px、v21 以上每模組 3.07–3.85px 在 3／4 間交錯）
+          <b>從 1000 字元起全數失敗</b>；zxing-wasm 36／530／1461 字元全部解回（54／26／28 ms）、快 5–10 倍。
+          模擬二手截圖：36 字元縮 25%＋q40 OK、530 字元縮 40%＋q60 OK（1.89px/模組）、30% 失敗；1461 字元只有原圖可讀。
+          經驗門檻<b>每模組 ≥ 約 1.9 實體像素</b>，寫進了 <code>no-qr</code> 的失敗文案。
+          實驗腳本 <code>_local-notes/2026-09/2026-09-08_qr-sanity*.mts</code>。
+          <br><br>
+          <b>✅ Phase A 完成（2026-09-08）</b>：<code>pngText.ts</code>（絕不 throw；讀取每步驗界限、不信 chunk 宣告的長度）＋
+          <code>qrDecode.ts</code>（wasm 載入失敗<b>刻意 throw</b>——「載不到解碼器」與「圖裡沒有 QR」是兩句不同的話）＋
+          離線單測（<code>uqr</code> 光柵化與匯出圖同構、<code>sharp</code> 做退化版本、真 PNG 插入後 metadata 仍讀得出）。
+          <br><br>
+          <b>✅ Phase B 完成（2026-09-08）</b>：<code>imageImport.ts</code> 三層膠水（40 MB 上限、檔頭判定、<code>createImageBitmap</code> 與 <code>&lt;img&gt;</code> 後援、
+          長邊 4096 縮圖、多候選優先取 <code>readShareCode()</code> 認得的）＋ <code>PasteCodeDialog</code>
+          （全域 paste 讓焦點不在輸入框也能貼、overlay 拖放、選檔、<code>aria-live</code> 狀態列、<b>七類失敗各講一句話並指向下一步</b>）。
+          <br><br>
+          <b>✅ Phase C 完成（2026-09-08）</b>：<code>LoadoutExportRunner</code> 在 <code>toPng()</code> 後插 <code>tEXt</code>（失敗照存原圖——少一條還原路徑好過存不下來）。
+          原列的「QR 模組間距吸附整數實體像素」<b>評估後否決、不實作</b>：zxing 與手機相機的 ML Kit／Vision 都不受非整數間距影響，
+          吸附卻會讓模組縮小 15–22%（530 字元 4.72 → 4 px、v21 3.85 → 3 px），直接吃掉二手截圖的容忍度（門檻 ≈ 1.9 px／模組）；受益者只有已被淘汰的 jsQR。
+          <br><br>
+          <b>✅ Phase D 完成（2026-09-08）</b>：文件就位；Playwright e2e <b>18／18 通過</b>——以真實資料（葉夫根尼 ＋ 赫拉克勒斯）匯出接住下載（2000×4104、4.6 MB），
+          原始 PNG 走內嵌、去 metadata 的 PNG 與 50%＋q70／35%＋q55 的 JPEG 走 QR、無 QR 純色圖與別站 QR 各講對的話，
+          合成 paste／drop 與真實剪貼簿 Ctrl+V（輸入框內外兩種焦點）皆讀到連結。
+          ⚠ 匯出時頁面會用當前遊戲版本重新編碼，匯出圖上的碼與原碼 header 第 2 byte、checksum 不同，屬正常行為——驗收以匯出圖上的碼為基準。
+          build 產物：<code>zxing_reader-*.wasm</code> 1,093 kB（gzip 464 kB）、<code>qrDecode-*.js</code> 36 kB，主 bundle 只含 <code>import()</code> 呼叫點。
+          腳本 <code>_local-notes/2026-09/2026-09-08_e2e-image-import.mjs</code>（不進版控）。
+        </div>
+        <div class="task-file">PLAN-052-O_配裝圖回讀/進度表.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
     </div>
   </div>
 

@@ -16,6 +16,7 @@ import { SEG_LABEL, type SegKey } from './loadoutTheme'
 import { ExportRig, ExportRigLegend } from './export/ExportRig'
 import { C, EXPORT_PIXEL_RATIO, MONO, ORB, SEG_HEX } from './export/exportTheme'
 import { loadoutQr } from '../../utils/loadoutQr'
+import { insertPngText, dataUrlToBytes, LOADOUT_PNG_KEYWORD } from '../../utils/loadoutCode/pngText'
 import { usePatchVersions } from '../../hooks/usePatchVersions'
 import { SITE_DOMAIN, SITE_NAME, SITE_TITLE } from '../../lib/siteMeta'
 import { nextFrames } from '../../utils/nextFrames'
@@ -477,7 +478,7 @@ export function LoadoutExportCard({
           <span style={{ color: C.dim }}>
             {`（${budget.talentRelief.items.map((r) => `${r.name} −${r.reducedBy.toLocaleString()}`).join('、')}`}
             {budget.talentRelief.items[0]?.talentName ? ` · ${budget.talentRelief.items[0].talentName}` : ''}
-            {`）　武器格印的是原重，減免只反映在總重 —— 與遊戲內整備畫面一致`}
+            {`）\u3000武器格印的是原重，減免只反映在總重 —— 與遊戲內整備畫面一致`}
           </span>
         </div>
       )}
@@ -629,6 +630,13 @@ export function LoadoutExportCard({
 // ⚠ **白底 ＋ 靜區**：QR 的規格假設「暗模組在亮底上」，而這張圖的底是 `#0a0c10`。
 //   靜區已經算在 `size` 裡（`loadoutQr()` 的 `BORDER`），所以整塊直接鋪白即可，
 //   不要再加 padding —— 那會讓實際的每模組像素數與閘門算的不一致。
+//
+// ⚠ **不要把模組間距「吸附」成整數實體像素**（PLAN-052-O 評估後否決）：
+//   210 CSS px 的方塊除以模組數多半是非整數（v21 起每模組 3.07–3.85 實體像素），光柵化後
+//   模組寬在 3／4 px 之間交錯。jsQR 這類格網取樣型解碼器從 v21 起就讀不到，但**站上的回讀
+//   用 zxing、手機相機用 ML Kit／Vision，兩者都不受影響**；而把 `<svg>` 縮到整數間距要付出
+//   模組縮小 15–22%（530 字元常態碼 4.72 → 4 px、v21 3.85 → 3 px）的代價，直接吃掉二手截圖
+//   的容忍度（實測門檻每模組 ≈1.9 px）。受益者只有本站不用的解碼器 ⇒ 維持鋪滿方塊。
 //
 // ⚠ **`loadoutQr()` 回 `null` 時整塊不畫**（超長碼／畫出來會掃不動）。此時左邊的完整碼
 //   仍在，還原路徑沒有斷。⚠ 不要在這裡補一個「QR 太長，略」的說明框：
@@ -1292,12 +1300,42 @@ export function LoadoutExportRunner({ onDone, ...card }: RunnerProps) {
         const base = (card.name ?? card.ctx.identityMech?.name ?? card.ctx.mech?.name ?? 'loadout')
           .replace(BAD_FILENAME, '_')
         const suffix = card.ctx.form?.name ? `_${card.ctx.form.name.replace(BAD_FILENAME, '_')}` : ''
+
+        // ── 把分享連結內嵌進 PNG（PLAN-052-O）───────────────────────────────
+        // 圖上的 QR 有兩個天生缺口：① 長碼（號碼全滿＋多形態＋滿備註）會被 `loadoutQr()`
+        // 的閘門擋下、根本不畫；② 二手截圖被 Discord／LINE 壓過之後 `ecc: 'L'` 的容錯撐不住。
+        // 一個 `tEXt` chunk 兩個都補：不受碼長限制、不受畫質影響，站上的「貼上配裝圖」
+        // 會先讀它、讀到就不必碰 QR。
+        //
+        // 限制：**只對原始 PNG 檔有效**。轉成 JPEG、或再截一次圖，chunk 就沒了 ——
+        // 所以它與 QR 是互補而不是取代，兩條路徑都要留。
+        //
+        // ⚠ 嵌不進去就**照存原圖**：`insertPngText()` 對任何不對勁一律回 `null`、絕不 throw
+        //   （沒有 `shareUrl` 也走這條），少一條還原路徑好過一張存不下來的圖。
+        //   `dataUrlToBytes()` 連位元組都拆不出來時退回原本的 data URL 下載。
+        //
+        // ⚠ 改走 Blob ＋ `createObjectURL`：插完 chunk 的位元組再 base64 回 data URL 是白繞一圈
+        //   （2000×2400 的圖約 1–2 MB，多一份字串副本）。物件 URL 要自己 revoke，但**不能
+        //   在 `click()` 之後立刻收**——瀏覽器是非同步開始下載的，太早 revoke 會存到 0 byte
+        //   的檔而且沒有錯誤訊息；60 秒對「按下就開始下載」的情境綽綽有餘。
+        const bytes = dataUrlToBytes(dataUrl)
+        const stamped = bytes && card.shareUrl ? insertPngText(bytes, LOADOUT_PNG_KEYWORD, card.shareUrl) : null
+        const payload = stamped ?? bytes
+        // `as Uint8Array<ArrayBuffer>`：TS 5.7+ 的 `BlobPart` 只收 `ArrayBufferView<ArrayBuffer>`，
+        // 而 `Uint8Array` 預設泛型是 `ArrayBufferLike`（含 SharedArrayBuffer）。`pngText.ts` 的兩個
+        // 產出都是 `new Uint8Array(n)` 配一般 ArrayBuffer，斷言在執行期為真；不用 `.slice()` 是不想
+        // 為了型別多複製一份 1–2 MB。
+        const objectUrl = payload
+          ? URL.createObjectURL(new Blob([payload as Uint8Array<ArrayBuffer>], { type: 'image/png' }))
+          : null
+
         const a = document.createElement('a')
         a.download = `配裝_${base}${suffix}.png`
-        a.href = dataUrl
+        a.href = objectUrl ?? dataUrl
         document.body.appendChild(a)
         a.click()
         document.body.removeChild(a)
+        if (objectUrl) setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
         onDone(null)
       } catch (err) {
         console.error('[Loadout] export error:', err)
@@ -1306,7 +1344,7 @@ export function LoadoutExportRunner({ onDone, ...card }: RunnerProps) {
     }
     void run()
     return () => { alive = false }
-  }, [loading, onDone, card.name, card.ctx.identityMech?.name, card.ctx.mech?.name, card.ctx.form?.name])
+  }, [loading, onDone, card.name, card.ctx.identityMech?.name, card.ctx.mech?.name, card.ctx.form?.name, card.shareUrl])
 
   return (
     <div
