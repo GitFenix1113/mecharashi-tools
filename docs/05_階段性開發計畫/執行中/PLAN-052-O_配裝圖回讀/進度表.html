@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-052-O 配裝圖回讀 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 700; }
+.summary-lbl { font-size: 11px; color: var(--text-dim); letter-spacing: 2px; margin-top: 4px; }
+
+.progress-wrap { margin: 20px 0 28px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--text-dim); margin-bottom: 6px;
+}
+.progress-bar-bg {
+  height: 8px; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: 99px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+  border-radius: 99px;
+}
+
+.impact-note {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 14px 0;
+  overflow: hidden;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.task-group-title { font-weight: 700; font-size: 15px; color: var(--text-primary); }
+.task-group-meta  { font-size: 12px; color: var(--text-dim); margin-left: auto; }
+
+.task-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.task-row:last-child { border-bottom: none; }
+.task-row > div:first-child { flex: 1; min-width: 0; }
+.task-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.task-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
+.task-file {
+  font-family: ui-monospace, monospace; font-size: 11.5px;
+  color: var(--text-dim); margin-top: 6px;
+}
+.task-assignee {
+  font-size: 11px; color: var(--text-dim);
+  white-space: nowrap; padding-top: 2px;
+}
+
+.status {
+  font-size: 11px; padding: 3px 10px; border-radius: 99px;
+  white-space: nowrap; font-weight: 600;
+}
+.status.done    { background: rgba(34,197,94,0.12);  color: var(--accent-green); }
+.status.doing   { background: rgba(34,211,238,0.12); color: var(--accent-cyan); }
+.status.pending { background: rgba(255,255,255,0.06); color: var(--text-dim); }
+.status.blocked { background: rgba(239,68,68,0.12);  color: var(--accent-red); }
+
+.data-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+.data-table th { background: var(--bg-card); border: 1px solid var(--border); padding: 6px 10px; text-align: left; color: var(--text-dim); font-size: 11px; letter-spacing: 1px; }
+.data-table td { border: 1px solid var(--border); padding: 6px 10px; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-052-O 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-052-O</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);"> · 配裝圖回讀</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-09-08 · 同日完成（e2e 18／18），待歸檔</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label orange">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">10</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">10</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-orange);">10 / 10</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    PC 玩家拿到別人的配裝圖，Win+Shift+S 截下來、切回模擬器 <b>Ctrl+V</b>，站上自己從圖裡讀出分享連結、
+    走既有的預覽 → 套用；原始匯出圖靠 PNG 內嵌 <b>100% 精確、不受碼長上限</b>，二手截圖靠 QR。
+    圖片<b>從頭到尾不離開瀏覽器</b>：零上傳、零 Firestore read、零 Worker 請求。
+  </div>
+
+  <div class="impact-note" style="border-left-color:var(--accent-yellow);background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);">
+    <strong>施作順序：</strong>
+    <b>A → B</b> 是主線（做完就能從圖讀碼）；<b>C</b> 是匯出端的補強
+    （<code>tEXt</code> 內嵌補上「長碼不畫 QR」與「二手壓縮」兩個缺口；原列的整數間距吸附<b>評估後否決</b>，見 C-2），
+    <b>不做 C，A＋B 對舊圖照樣有效</b>。<b>D</b> 收尾——文件與 Playwright e2e（18／18）皆已完成，計畫待歸檔。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label orange">Phase A</div>
+  <div class="section-title">解碼核心 —— 兩支純函式，Node 測試裡跑得動</div>
+  <div class="section-desc">零 DOM、零 React。這一階做完，任何一段 bytes 進來都能問出「裡面有沒有本站的連結」，但還沒有人呼叫它。</div>
+
+  <div class="impact-note" style="border-left-color:var(--accent-green);background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);">
+    <strong>✅ 2026-09-08 完成（3／3）。</strong>
+    <b>解碼器選型在這一階定案</b>：jsQR 對本站匯出圖（QR 方塊 420 實體 px、v21 以上每模組 3.07–3.85px）
+    <b>從 1000 字元起全數失敗</b>；zxing-wasm 36／530／1461 字元全部解回（54／26／28 ms），
+    模擬二手截圖 36 字元縮 25%＋q40、530 字元縮 40%＋q60 仍 OK，經驗門檻<b>每模組 ≥ 約 1.9 實體像素</b>。
+    4000×3000 純雜訊 67 ms 回空陣列、同框兩個 QR 兩個都回。
+    實驗腳本 <code>_local-notes/2026-09/2026-09-08_qr-sanity*.mts</code>。
+    <br><br>
+    <b>⚠ 兩條在這一階釘死的不變式</b>：<code>insertPngText()</code> <b>絕不 throw</b>（它跑在匯出流程尾端，一個例外＝整張圖存不下來）；
+    <code>decodeQrTexts()</code> 在 wasm 載入失敗時<b>刻意 throw</b>（「載不到解碼器」與「圖裡沒有 QR」是兩句不同的話，吞成空陣列會把前者誤報成後者）。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; pngText.ts —— PNG tEXt 寫入／讀取</div>
+      <div class="task-group-meta">src/utils/loadoutCode/pngText.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>insertPngText</code> / <code>readPngText</code> / <code>crc32</code> / <code>isPng</code> / <code>dataUrlToBytes</code></div>
+        <div class="task-desc">
+          keyword <code>mecharashi-loadout</code>、值＝完整分享連結。IHDR 之後插入（讀取時走不到幾步就命中，不必掃過幾 MB 像素）。<br>
+          ⚠ <b>讀取要能吃任何位元組</b>：使用者丟進來的可能是 JPEG、WebP、截斷的檔、甚至不是圖片——每一步先驗界限再讀，
+          不能假設 chunk 宣告的長度是誠實的（宣告超長時回 <code>null</code>、不 throw）。<br>
+          ⚠ 只收 Latin-1、不做 <code>iTXt</code>；keyword 不合規（空、≥80 字、前後空白）或 text 含非 Latin-1／NUL 一律 <code>null</code>，
+          不偷偷改寫——規格外的 chunk 會讓某些看圖軟體判整張圖壞掉。<br>
+          ⚠ <b>改 keyword ＝ 升格式版本</b>：已流出的匯出圖會全部讀不到內嵌碼（退回走 QR）。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/pngText.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; qrDecode.ts —— zxing-wasm 封裝</div>
+      <div class="task-group-meta">src/utils/loadoutCode/qrDecode.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>configureQrDecoder(overrides)</code> ＋ <code>decodeQrTexts(frame): Promise&lt;string[]&gt;</code></div>
+        <div class="task-desc">
+          收 RGBA 像素圖，回每個 QR 的文字。<b>它不認識分享碼</b>——是不是本站連結由呼叫端拿 <code>readShareCode()</code> 判斷，
+          這樣切才能在沒有 DOM 的 Node 測試裡跑。<br>
+          <code>configureQrDecoder()</code> 只登記、不立刻載入（<code>fireImmediately: false</code>）；
+          瀏覽器傳 <code>locateFile</code>（指向 Vite 打包的自託管資產）、Node 傳 <code>wasmBinary</code>（直讀 node_modules）。<br>
+          ⚠ <b>要在第一次解碼前呼叫</b>，否則套件靜默走 jsDelivr——本機與台灣全部正常，只有牆內的人讀不到。<br>
+          ⚠ <code>jsQR</code> 已從 <code>package.json</code> 移除、<code>zxing-wasm</code> 加入 dependencies。<b>不要再換</b>。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/qrDecode.ts · package.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 單測（離線、node --test）</div>
+      <div class="task-group-meta">src/utils/loadoutCode/*.test.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>pngText.test.ts</code>：CRC 錨點、round trip、位置、壞輸入、真 PNG</div>
+        <div class="task-desc">
+          <code>crc32('IEND') === 0xae426082</code>（規格常數當錨點）；最小合法 PNG 插入 → 讀回；
+          插入位置在 IHDR 之後（第二個 chunk 是 <code>tEXt</code>）且 CRC 重算相符；
+          非 PNG（JPEG 檔頭、空陣列、隨機 bytes）讀寫皆 <code>null</code>；截斷 PNG 與宣告超長 chunk 不 throw；
+          keyword／text 不合規 → <code>null</code>；<code>dataUrlToBytes</code> base64／非 base64／壞字串。<br>
+          ⭐ <b>用 <code>sharp</code> 產一張真的 PNG，插入後 <code>sharp(out).metadata()</code> 仍讀得出寬高</b>——
+          證明檔案沒被寫壞，而不只是「我們自己讀得回來」。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/pngText.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>qrDecode.test.ts</code>：與匯出圖同構的光柵化 ＋ 退化版本 ＋ 健全性</div>
+        <div class="task-desc">
+          測試檔內用 <code>uqr</code> 的 <code>encode(url, { ecc:'L', border:4 })</code> 光柵化成 RGBA
+          （白底方塊 420px 放在 2000×2400 深色 <code>#0a0c10</code> 圖的右下角，最近鄰——與匯出圖同構）。<br>
+          驗 36／530／1461 字元碼原圖解回原字串；<code>sharp</code> 做縮放＋JPEG 的退化版本（36 字元 25%/q40 OK、530 字元 40%/q60 OK）；
+          純雜訊 4000×3000 回 <code>[]</code> 且 &lt; 2s；同框兩個 QR 兩個都回；0×0 與 data 長度不足回 <code>[]</code> 不 throw。<br>
+          用 <code>configureQrDecoder({ wasmBinary })</code> 餵本機 wasm，<b>不碰網路</b>。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/qrDecode.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label orange">Phase B</div>
+  <div class="section-title">對話框接線 —— 三個入口、三層順序、九句話</div>
+  <div class="section-desc">本階段做完，玩家就能貼圖。這是整個計畫的價值所在；C 做不做都不影響它對舊圖的效果。</div>
+
+  <div class="impact-note" style="border-left-color:var(--accent-green);background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);">
+    <strong>✅ 2026-09-08 完成（3／3）。</strong>
+    對話框<b>只做一件事</b>：把讀到的整串塞進 textarea，後面全走既有流程——預覽、套用覆蓋警示、
+    舊快取誤判防護、「資料還在載入不給套用」一行都不必重寫，也不會長出第二條套用路徑。
+    <br><br>
+    <b>⚠ 原生 <code>BarcodeDetector</code> 的覆蓋率比想像中窄</b>（2026-09-08 查證 Chromium 原始碼與 MDN BCD）：Chrome 只在 macOS／ChromeOS／Android 暴露它，
+    <b>Windows／Linux 的 Chrome 自 88 起連這個類別都沒有</b>（83–87 曾有類別但 <code>getSupportedFormats()</code> 回空）；macOS 13 在 Chrome 113 之前靜默失敗；
+    Safari 17 起藏在 feature flag「Shape Detection API」後預設關閉、iOS 18 起壞掉未修（WebKit bug 281848）；Firefox 完全沒有。
+    對本站主要客群（Windows PC 玩家）<b>zxing 就是正式路徑</b>，原生偵測器只是 macOS／Android 上的 0 KB 加速——
+    程式碼仍先查 <code>getSupportedFormats()</code> 含 <code>'qr_code'</code>，回空或丟例外一律往下走。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; imageImport.ts —— 三層讀取膠水層</div>
+      <div class="task-group-meta">src/utils/loadoutCode/imageImport.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>readLoadoutFromImage(file)</code>：PNG tEXt → 原生 BarcodeDetector → zxing-wasm</div>
+        <div class="task-desc">
+          ① <code>size &gt; 40 MB</code>、或檔頭尺寸 &gt; 5,000 萬像素（<code>imageDimensionsFromHeader()</code>，解碼前就擋尺寸炸彈）→ <code>too-large</code>；② <code>isPng</code> 則先 <code>readPngText</code>，有值直接回 <code>png-text</code>（<b>不做任何驗證</b>，是不是分享碼由對話框判斷）；
+          ③ <code>file.type</code> 或檔頭（PNG／JPEG／GIF／WebP）都對不上 → <code>not-image</code>；
+          ④ <code>createImageBitmap</code>（失敗後援 <code>&lt;img&gt;</code> decode），都失敗 → <code>unreadable</code>；長邊 &gt; 4096 等比縮到 4096；
+          ⑤ 原生 <code>BarcodeDetector</code>（<code>getSupportedFormats()</code> 含 <code>qr_code</code> 才用；Windows／Linux Chrome 沒有這個類別，直接跳 ⑥）；⑥ <code>await import('./qrDecode')</code>，第一次先 <code>configureQrDecoder({ locateFile })</code>
+          指向 <code>zxing-wasm/reader/zxing_reader.wasm?url</code>，丟例外 → <code>decoder-failed</code>；
+          ⑦ 多個候選時優先取 <code>readShareCode(t) !== null</code> 的那個，其餘放 <code>others</code>；空 → <code>no-qr</code>。<br>
+          ⚠ 所有 <code>ImageBitmap</code> 用完 <code>close()</code>——一張 2000×2400 的點陣是 19 MB，連丟幾張不關會累積。<br>
+          ⚠ <code>BarcodeDetector</code> 不在 lib.dom，檔內自己宣告最小介面，不裝型別套件。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/imageImport.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; PasteCodeDialog 擴充</div>
+      <div class="task-group-meta">src/components/loadout/PasteCodeDialog.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">全域 paste ＋ overlay 拖放 ＋ 選檔；<code>aria-live</code> 狀態列</div>
+        <div class="task-desc">
+          <b>貼</b>：<code>paste</code> 監聽掛 <code>window</code>（modal，卸載即移除）。有圖片檔 → <code>preventDefault</code> ＋ <code>handleImage</code>；
+          沒檔且 <code>e.target</code> 不是那個 textarea → 取 <code>getData('text')</code> 直接 <code>setRaw</code>（<b>焦點不在輸入框也能貼</b>）；textarea 內純文字貼上照舊不攔。<br>
+          <b>拖</b>：掛在最外層 overlay，整個視窗都是落點；<code>onDragLeave</code> 用 <code>relatedTarget</code> 判斷是否真的離開（否則每經過一個子元素就閃一次）；
+          拖進來的不是檔案 → <code>drop-without-file</code>（從網頁直接拖圖常常拖不到檔案本身）。<br>
+          <b>選</b>：隱藏 <code>&lt;input type="file" accept="image/*"&gt;</code>，<code>onChange</code> 後清 <code>value</code>（同一張圖可重選）。<br>
+          <code>handleImage</code>：<code>reqSeq</code> 擋競態、<code>alive</code> 擋卸載後 setState；ok 且 <code>readShareCode</code> 有值 → <code>setRaw(text)</code>；
+          否則 <code>not-share-link</code> 附開頭 40 字。textarea <code>onChange</code> 時 <code>imageState</code> 歸 idle。<br>
+          ⚠ <b>不用 effect 同步狀態</b>（react-hooks 7 擋 set-state-in-effect），事件處理裡直接 set。<br>
+          標題改「貼上分享碼或配裝圖」、placeholder 改「…配裝圖也可以直接貼」；九類文案見計畫書決策九。樣式沿用檔內既有 class，不引入新設計語彙。
+        </div>
+        <div class="task-file">src/components/loadout/PasteCodeDialog.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; imageImport.test.ts</div>
+      <div class="task-group-meta">src/utils/loadoutCode/imageImport.test.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">只測 <code>imageFromDataTransfer</code>（Node 24 有全域 <code>File</code>）</div>
+        <div class="task-desc">
+          <code>files</code> 優先、<code>items</code> 後援（<code>kind === 'file'</code> 且 <code>type</code> image/*）、非 image 檔忽略、<code>null</code> 回 <code>null</code>。<br>
+          <code>readLoadoutFromImage()</code> 依賴 <code>createImageBitmap</code>／canvas，<b>不進 Node 測試</b>——它的驗收在 D-2 的 Playwright。
+        </div>
+        <div class="task-file">src/utils/loadoutCode/imageImport.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label orange">Phase C</div>
+  <div class="section-title">匯出端 —— 讓之後的每一張圖都帶著還原路徑</div>
+  <div class="section-desc">tEXt 內嵌補上 QR 的兩個天生缺口，只影響本階段之後匯出的圖。原列的第二項「整數間距吸附」評估後否決，QR 的畫法不變。</div>
+
+  <div class="impact-note" style="border-left-color:var(--accent-green);background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);">
+    <strong>✅ 2026-09-08 完成（2／2：C-1 實作、C-2 評估後否決）。</strong>
+    匯出圖現在帶著分享連結的 <code>tEXt</code> chunk 出門：原檔丟回來 100% 精確、不受碼長上限——
+    <b>「碼太長沒畫 QR」的那種圖，從此也有一條不用手抄的路</b>。
+    整數間距吸附<b>不做</b>：本站的 zxing 與手機相機的 ML Kit／Vision 都不受非整數間距影響，
+    吸附卻會讓模組縮小 15–22%、直接吃掉二手截圖的容忍度——為一個本站不用的解碼器犧牲用得到的餘裕，是淨虧。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; LoadoutExportRunner —— tEXt 內嵌</div>
+      <div class="task-group-meta">src/components/loadout/LoadoutExportCard.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>toPng()</code> 之後、下載之前：<code>dataUrlToBytes</code> → <code>insertPngText</code> → <code>Blob</code> → <code>objectURL</code></div>
+        <div class="task-desc">
+          <code>insertPngText</code> 回 <code>null</code> 或 <code>card.shareUrl</code> 沒值時<b>照存原圖</b>——少一條還原路徑好過存不下來。
+          <code>bytes</code> 也拆不出來就退回原 dataUrl 下載。<code>URL.revokeObjectURL</code> 延遲 60 秒（下載對話框開著時撤掉會存出 0 byte）。<br>
+          註解要講清楚<b>為什麼要嵌</b>（補 QR 的兩個缺口：長碼不畫 QR、二手壓縮）與<b>它的限制</b>
+          （只對原檔有效，轉 JPEG／再截圖即失效，所以與 QR 互補而非取代）。
+        </div>
+        <div class="task-file">src/components/loadout/LoadoutExportCard.tsx（LoadoutExportRunner）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 整數間距吸附 —— 評估後否決（不實作）</div>
+      <div class="task-group-meta">src/utils/loadoutQr.ts · ShareQr（維持原樣）</div>
+      <span class="status done">已否決</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把每模組吸附到整數實體像素（方塊不動、只縮裡面的圖）——實作過一版後撤回</div>
+        <div class="task-desc">
+          <b>否決理由</b>：① 本站回讀用 zxing、手機相機用 ML Kit／Vision，兩者都<b>不受非整數間距影響</b>；
+          ② 吸附會讓模組縮小 15–22%（530 字元常態碼每模組 4.72 → 4 px、v21 的 3.85 → 3 px），
+          而二手截圖的實測門檻是每模組 ≈ 1.9 px——<b>直接吃掉二手截圖的容忍度</b>，那正是本計畫要補的情境；
+          ③ 受益者只有本站不用的格網取樣型解碼器（jsQR），而 jsQR 已因同一輪實驗被淘汰。<br>
+          程式碼已還原：<code>loadoutQr.ts</code> 沒有任何吸附欄位、<code>ShareQr</code> 仍鋪滿 210 CSS px 方塊。決策留在計畫書決策五，免得日後再走一次同樣的彎路。
+        </div>
+        <div class="task-file">src/utils/loadoutQr.ts · src/components/loadout/export/（皆未改動）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已否決</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label orange">Phase D</div>
+  <div class="section-title">文件與驗收</div>
+  <div class="section-desc">文件與 e2e 皆已完成。e2e 把「匯出 → 回讀 → 預覽」整條在真瀏覽器裡走一遍——<code>readLoadoutFromImage()</code> 依賴 canvas 與 wasm，Node 單測碰不到它。</div>
+
+  <div class="impact-note" style="border-left-color:var(--accent-green);background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);">
+    <strong>✅ 2026-09-08 完成（2／2）—— Playwright e2e 18／18 通過；同日另跑五視角對抗式審查，15 條回報 → 10 條修正、2 條記為取捨、3 條重複，修正後 e2e 重跑仍 18／18、單測 1245 綠（清單見計畫書「誠實面對的限制」末段）。</strong>
+    以真實資料（葉夫根尼 ＋ 赫拉克勒斯）按「匯出配裝圖」接住下載（2000×4104、4.6 MB）→ PNG 內嵌 <code>tEXt</code> 讀得回分享連結、<code>sharp</code> 仍認得它是 PNG →
+    六種輸入經 <code>&lt;input type="file"&gt;</code> 全部讀進 textarea 並顯示正確預覽：原始 PNG（走內嵌）、去 metadata 的 PNG（走 QR）、50%＋JPEG q70、35%＋JPEG q55；
+    無 QR 純色圖顯示「找不到」、別站 QR 顯示「不是本站的分享連結（內容開頭：…）」。
+    合成 <code>paste</code>／<code>drop</code> 事件各一次讀到連結；真實剪貼簿 Ctrl+V：焦點在輸入框外會代貼、焦點在輸入框內原生貼上不被攔且預覽正常。
+    <br><br>
+    <b>⚠ 驗收時的一個發現</b>：匯出時頁面會用<b>當前遊戲版本</b>重新編碼，所以匯出圖上的碼與貼進去的原碼 header 第 2 byte 不同、checksum 也不同——
+    這是正常行為，不是 bug；驗收要以<b>匯出圖上的碼</b>為基準，不能拿貼進去的原碼逐 byte 比對。
+    <br><br>
+    <b>build 產物</b>：<code>dist/assets/zxing_reader-*.wasm</code> 1,093 kB（gzip 464 kB）、<code>qrDecode-*.js</code> chunk 36 kB，主 bundle 只含 <code>import()</code> 呼叫點——決策三的自託管與「丟圖時才載」由產物證實。
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 文件</div>
+      <div class="task-group-meta">docs/ · src/data/siteChangelog/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">計畫書／進度表／總綱／頁面規劃 07／網站更新履歷</div>
+        <div class="task-desc">
+          本計畫書與進度表；052 總綱的實作範圍表與進度表各加一列；
+          <code>docs/03_頁面規劃/07_配裝模擬器/</code> 新增「從配裝圖回讀」段落；
+          <code>siteChangelog/2026-09.ts</code> 兩筆 feat（貼圖讀碼、PNG 內嵌分享連結）。
+        </div>
+        <div class="task-file">docs/05_階段性開發計畫/執行中/ · docs/03_頁面規劃/07_配裝模擬器/index.html · src/data/siteChangelog/2026-09.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; Playwright e2e 驗收</div>
+      <div class="task-group-meta">真瀏覽器 · 自託管 wasm · 18／18 通過</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">匯出 → 回讀整條走一遍；內嵌與 QR 兩層各命中、失敗分類各講對的話</div>
+        <div class="task-desc">
+          ① 真實資料（葉夫根尼 ＋ 赫拉克勒斯）按「匯出配裝圖」接住下載（2000×4104、4.6 MB），驗 PNG 內嵌讀得回連結、<code>sharp</code> 仍認得 PNG；<br>
+          ② 六種輸入走 <code>&lt;input type="file"&gt;</code>：原始 PNG（<code>png-text</code>）、去 metadata 的 PNG（<code>qr</code>）、50%＋JPEG q70、35%＋JPEG q55（皆走 QR）、
+          無 QR 純色圖（<code>no-qr</code>「找不到」）、別站 QR（<code>not-share-link</code> 附內容開頭）——全部讀進 textarea 且預覽正確；<br>
+          ③ 合成 <code>paste</code>／<code>drop</code> 事件各一次讀到連結；真實剪貼簿 Ctrl+V 兩種焦點位置：輸入框外代貼、輸入框內原生貼上不被攔且預覽正常。<br>
+          ⚠ 比對基準是<b>匯出圖上的碼</b>：頁面匯出時會用當前遊戲版本重新編碼，header 第 2 byte 與 checksum 會和貼進去的原碼不同，屬正常行為。<br>
+          ⚠ 腳本放 <code>_local-notes/</code>、<b>不進版控</b>；需 vite dev server 跑在 5173。
+        </div>
+        <div class="task-file">_local-notes/2026-09/2026-09-08_e2e-image-import.mjs（本機驗收腳本，不進版控；需 vite dev server 在 5173）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-052-O — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
