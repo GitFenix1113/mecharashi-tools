@@ -248,3 +248,142 @@ select option {
 .hud-cut-sm {
   clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
 }
+
+/* ── PLAN-042-A 機師故事館 ───────────────────────────────────────────────────
+ *
+ * 決策 (B)：只在 .lore-shell / .lore-chrome 覆寫 token；html.lore-mode 只設
+ * color-scheme 與 body 背景。8 個 createPortal 到 document.body 的浮層因此留在深色
+ * ——它們讀根層的原始 token，是「深底＋淺字」，可讀，只是與館內不一致。
+ * **不要**把 token 覆寫搬到 html：ReferenceContext.tsx:80 的浮窗底色是 inline 硬寫的
+ * rgb(15 18 25 / 0.97)（覆寫不掉）而內部文字走 text-text-primary token，
+ * token 一翻成紙色墨字就是深底＋深字、幾乎看不見。index.css:122-125 的 select option 同病。
+ * ReferenceContext.tsx 與 index.css:122-125 一個字都不要動。
+ *
+ * 決策 (H)：header 與 SignedOutBanner 都住在 .lore-shell **外面**（Layout.tsx:205 / :355），
+ * 所以色票宣告掛在 .lore-shell, .lore-chrome 兩個選擇器上。
+ *
+ * ⚠ 紙色色票另有三處**硬寫的同款顏色**，改色時必須一起改（它們在 token 作用域之外，
+ *   或必須是不透明值，換不成 var()）：
+ *     · .lore-shell select option   #fbf7ef / #2b2621
+ *     · html.lore-mode body         #efe7d8
+ *     · .lore-header                color-mix 的 #efe7d8 與 #2b2621
+ *   （.lore-art 與 .lore-veil 的 #0a0c10 **不在此列**：那是量測基準，刻意不隨紙色改。）
+ */
+.lore-shell,
+.lore-chrome {
+  --color-bg-dark:        #efe7d8;
+  --color-bg-card:        rgb(255 252 245 / 0.72);  /* 保留 ~0.72 alpha，否則既有 bg-bg-card/NN 會重一階 */
+  --color-bg-card-hover:  rgb(255 253 248 / 0.90);
+  --color-bg-tooltip:     rgb(252 248 240 / 0.97);
+  --color-text-primary:   #2b2621;
+  --color-text-secondary: #6b6259;
+  --color-text-dim:       #948a7e;
+  --color-border-subtle:  #e3dac8;
+  --color-border:         #d3c7b2;
+  --color-border-accent:  #bcae95;
+  /* accent 八色刻意不覆寫：它們是語意色（稀有度／職業），換掉徽章就讀不出等級 */
+  color-scheme: light;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-dark);
+}
+
+.lore-shell {
+  height: 100%;      /* ⚠ 不做 100vh 減法，見決策 (E) 與地雷 M-07 */
+  min-height: 0;
+  position: relative;
+}
+
+/* 防禦式覆寫：html.lore-mode 把 color-scheme 轉成 light 後，
+   index.css:122-125 那條硬寫 #12151c 的全域規則在紙色子樹裡會變成深底。
+   D-2 目前用 <button> 不用 <select>，這條是保險。 */
+.lore-shell select option { background-color: #fbf7ef; color: #2b2621; }
+
+/* 文件層捲軸與 body 背景圖由根元素決定，.lore-shell 管不到 */
+html.lore-mode { color-scheme: light; }
+html.lore-mode body { background-image: none; background-color: #efe7d8; }
+
+/* 全館唯一 scrollport */
+.lore-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+
+/* ⚠ height 用 calc(var(--lore-header-h) - 1px) + 1px 下框線
+   ⇒ --lore-header-h 的語意是「總佔位」，消費端（.lore-portrait-col）不必再各自減 1px。
+   必須排在 .lore-chrome 之後：兩者特異性相同（header 同時掛 lore-chrome 與 lore-header），
+   靠順序讓半透明底色贏。 */
+.lore-header {
+  height: calc(var(--lore-header-h, 2.5rem) - 1px);
+  background: color-mix(in oklab, #efe7d8 78%, transparent);
+  border-bottom: 1px solid color-mix(in oklab, #2b2621 12%, transparent);
+}
+
+/* D-3 桌機立繪欄。優先吃 LoreLayout 用 ResizeObserver 量到的實測值（決策 J）——
+   SignedOutBanner 出現／消失都會自動對齊；fallback 是純 CSS 的減法。
+   ⚠ 收在這裡而不是寫成 Tailwind arbitrary value：h-[calc(100vh - var(--x))] 只要有空格
+   就會被切成三個 class，Tailwind 產不出任何東西**且不報錯**，全 repo 也沒有前例可抄。 */
+.lore-portrait-col {
+  height: var(--lore-viewport-h, calc(100vh - var(--lore-header-h, 2.5rem)));
+}
+
+/* 進場「推門進館」：transition 一層可動畫的 opacity，**不是** CSS 自訂屬性
+   （未註冊的自訂屬性不可動畫，transition: --color-bg-dark 會直接跳變且不報錯） */
+/* 進場「推門進館」的遮罩：不透明 → 透明，由 CSS animation 驅動。
+   `forwards` 保證終態停在 opacity:0，元素在 LoreLayout 掛載時才建立、
+   館內切路由不卸載，所以動畫只播一次、不會每次換機師都重來。
+
+   為什麼用 animation 而不是「React state ＋ 雙層 rAF 後加 --lifted」：
+   後者要多一個 state 與一次重繪，而 animation 自帶 from 幀（雙層 rAF 原本就是
+   為了補這個）。兩者行為等價，這邊只是比較短。
+
+   ⚠ 別誤以為 animation 能繞過分頁節流：`document.hidden` 為 true 時
+   Chrome **不推進動畫時間軸**（2026-09-10 實測：animationPlayState 顯示 running、
+   opacity 仍是 1，停留 47 秒不變），rAF 版本同樣被暫停。這是背景分頁的正常行為，
+   分頁一可見就會正常播完——不是需要修的東西，也不要為它加保險。 */
+.lore-veil {
+  position: absolute; inset: 0; z-index: 30; pointer-events: none;
+  background-color: #0a0c10;
+  animation: lore-veil-lift 300ms ease-out forwards;
+}
+@keyframes lore-veil-lift {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* C-1 顯影 */
+.lore-art { position: relative; isolation: isolate; overflow: hidden;
+            /* ⚠ 固定中性底色的字面值，**不可**換成 bg-dark token（M-10）：
+               在 .lore-shell 內那顆 token 已是紙色，dodge 會直接飽和成純白。
+               這裡刻意不寫出那個 token 名，好讓 M-10 的 grep 保持零命中。 */
+            background-color: #0a0c10;
+            transition: background-color 300ms ease; }
+.lore-art--settled { background-color: transparent; }
+.lore-art__layer  { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.lore-art__sketch { filter: grayscale(1); }
+.lore-art__dodge  { filter: grayscale(1) invert(1) blur(var(--lore-art-blur, 6px))
+                            brightness(var(--lore-art-brightness, 1));
+                    mix-blend-mode: color-dodge; }
+.lore-art__color  { opacity: 0; will-change: opacity;
+                    transition: opacity var(--lore-art-dur, 900ms)
+                                cubic-bezier(0.22, 1, 0.36, 1) var(--lore-art-delay, 450ms); }
+.lore-art--revealed .lore-art__color { opacity: 1; }
+
+/* ⚠ mask 打在 .lore-art 這個 isolate 容器上，不是 base 層
+   （打在 base 層會讓該區沒有 backdrop 可混合，dodge 退化成 source-over 貼上一片淡灰幽靈）
+   ⚠ -webkit-mask-composite 的關鍵字與標準不同名（source-in vs intersect），兩條都要寫 */
+.lore-art--masked {
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 78%, transparent 100%),
+                      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0.35'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23n)'/%3E%3C/svg%3E");
+          mask-image: linear-gradient(to bottom, #000 0 78%, transparent 100%),
+                      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0.35'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23n)'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%, 96px 96px;
+          mask-size: 100% 100%, 96px 96px;
+  -webkit-mask-repeat: no-repeat, repeat;
+          mask-repeat: no-repeat, repeat;
+  -webkit-mask-composite: source-in;   /* WebKit 舊關鍵字 */
+          mask-composite: intersect;   /* Safari 15.4 才去前綴 */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lore-veil { animation: none; opacity: 0; }
+  .lore-art  { background-color: transparent; transition: none; }
+  .lore-art__sketch, .lore-art__dodge { display: none; }
+  .lore-art__color { transition: opacity 150ms linear 0ms; }
+}

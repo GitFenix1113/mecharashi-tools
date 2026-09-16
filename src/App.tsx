@@ -25,11 +25,19 @@ import ComponentsPage from './pages/components/ComponentsPage'
 import VersionsLayout from './pages/versions/VersionsLayout'
 import VersionQuickPage from './pages/versions/VersionQuickPage'
 import VersionGrayOpsPage from './pages/versions/VersionGrayOpsPage'
+// 機師故事館的外殼（PLAN-042-A）。它是 <Route element>，不在 Suspense 之內，
+// 因此**必須靜態 import**（比照 VersionsLayout）；它本身刻意零依賴，體積可忽略。
+import LoreLayout from './pages/lore/LoreLayout'
 import NotFoundPage from './pages/NotFoundPage'
 const WeaponDetailPage         = lazy(() => import('./pages/weapons/WeaponDetailPage'))
 // 時間線是最重的檢視（src/components/timeline/ 共 9 檔 1853 行）。路由化之前它無條件
 // 進首頁 bundle，現在只有真的走到 /versions/timeline 才載入（PLAN-050 A-5）。
 const VersionTimelinePage      = lazy(() => import('./pages/versions/VersionTimelinePage'))
+// 故事館三頁一律 lazy：館首頁要載 89 張縮圖的卡片牆、扉頁要載立繪三層合成，
+// 兩者對「從沒走進故事館的訪客」都是純負擔。從第一天就切出去，之後不必回頭補。
+const LoreHomePage             = lazy(() => import('./pages/lore/LoreHomePage'))
+const PilotLorePage            = lazy(() => import('./pages/lore/PilotLorePage'))
+const AdminLorePage            = lazy(() => import('./pages/admin/AdminLorePage'))
 const AdminVersionListPage     = lazy(() => import('./pages/admin/AdminVersionListPage'))
 const AdminVersionEditorPage   = lazy(() => import('./pages/admin/AdminVersionEditorPage'))
 const AdminHistoryPage         = lazy(() => import('./pages/admin/AdminHistoryPage'))
@@ -70,6 +78,22 @@ function App() {
               <Route path="timeline" element={<VersionTimelinePage />} />
               {/* 單一版本深連結：可分享、可開兩個分頁比較兩個版本 */}
               <Route path="timeline/:version" element={<VersionTimelinePage />} />
+            </Route>
+            {/* 機師故事館（PLAN-042-A）。LoreLayout 是共用外殼：它掛 html.lore-mode、
+                開全館唯一的 scrollport、負責跨路由捲頂，因此**三個子頁共用同一個 layout route**，
+                切換機師時外殼不卸載（進場遮罩不會每次重播）。
+                扉頁與章節頁刻意是同一個元件 PilotLorePage —— 版面骨架只寫一份，不會漂移。
+                參數一律命名 :id（analytics/track.ts 寫死讀 params.id，改名會讓機師熱度一筆不記，
+                而 routeKeys.test.ts 只斷言反方向、測試照樣全綠）。 */}
+            <Route path="lore" element={<LoreLayout />}>
+              <Route index element={<Suspense fallback={null}><LoreHomePage /></Suspense>} />
+              <Route path="pilots/:id" element={<Suspense fallback={null}><PilotLorePage /></Suspense>} />
+              <Route path="pilots/:id/:part" element={<Suspense fallback={null}><PilotLorePage /></Suspense>} />
+              {/* 館內的兜底轉址是**必要的**（地雷 M-28）：Layout 的 chromeMode 是純路徑推導，
+                  /lore/xyz 一律判成 immersive，但 React Router 不做部分匹配、會落到全站的
+                  path="*" NotFoundPage ⇒ 一頁深色 404 配紙色館頭，footer／subnav／手機 Tab Bar
+                  全被藏掉，使用者手上只剩「離館」。順帶解掉 /lore/pilots 這種裸路徑。 */}
+              <Route path="*" element={<Navigate to="/lore" replace />} />
             </Route>
             {/* 路徑保留 /simulator（PLAN-052-B E-2）：052-C 的分享碼要用它，
                 而且不碰 Cloudflare 的 Transform Rule——新開頂層路由等於新增一個只存在於
@@ -113,6 +137,13 @@ function App() {
             <Route
               path="admin/analytics"
               element={<AdminRoute><Suspense fallback={null}><AdminAnalyticsPage /></Suspense></AdminRoute>}
+            />
+            {/* 機師故事館編輯台（PLAN-042-A E-1）。ADMIN 即可用——它只寫 pilotLore。
+                AdminRoute 在外、Suspense 在內（與上面五條後台路由一致）：反過來的話
+                未授權者會先付一次 chunk 下載才被導走。 */}
+            <Route
+              path="admin/lore"
+              element={<AdminRoute><Suspense fallback={null}><AdminLorePage /></Suspense></AdminRoute>}
             />
             {/* catch-all：未匹配路徑顯示 404 引導頁（放最後，只在所有 route 都沒中時生效）。
                 置於 Layout 之下，故仍有導覽列可用；先前缺此條時只會渲染空白內容區。 */}

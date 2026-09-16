@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import type {
   Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component,
-  GlobalResearch, GameBuff, PilotSkillDoc, MechForm, NeuralDriveAbility,
+  GlobalResearch, GameBuff, PilotSkillDoc, MechForm, NeuralDriveAbility, LoreDoc,
 } from '../types'
 import { ModuleSlot } from '../types/enums'
 import { useGameData, EMPTY_GLOBAL_RESEARCH, type CollectionKey } from '../contexts/GameDataContext'
@@ -244,6 +244,30 @@ export function useFormsByPilot(pilotId: string | undefined): HookResult<MechFor
   const data = useMemo(
     () => (pilotId ? forms.filter((f) => f.pilotId === pilotId).sort((a, b) => a.order - b.order) : []),
     [pilotId, forms],
+  )
+  return { data, loading, error }
+}
+
+// ── 機師故事館（PLAN-042-A）───────────────────────────────────────────────────
+//
+// ⚠ 呼叫端契約：ensureLoaded 的 catch 只寫 errorMap、不把 key 加進 loadedKeys，
+//   抓取失敗時 loading 永遠是 true —— **所有呼叫端一律先判 error 再判 loading**。
+// ⚠ pilotLore 在 NO_LOCAL_CACHE_KEYS 內，每個新 session 會重打一次
+//   /api/data/pilotLore，這是刻意的，不要自建快取。
+
+export function usePilotLore(): HookResult<LoreDoc[]> {
+  const { pilotLore } = useGameData()
+  const { loading, error } = useCollections(['pilotLore'])
+  return { data: pilotLore, loading, error }
+}
+
+/** 單一機師的逸聞。查無 → null（多數機師沒有，這不是錯誤，不要當 error 渲染）。 */
+export function usePilotLoreDoc(pilotId: string | undefined): HookResult<LoreDoc | null> {
+  const { pilotLore } = useGameData()
+  const { loading, error } = useCollections(['pilotLore'])
+  const data = useMemo(
+    () => (pilotId ? (pilotLore.find((d) => d.id === pilotId) ?? null) : null),
+    [pilotId, pilotLore],
   )
   return { data, loading, error }
 }

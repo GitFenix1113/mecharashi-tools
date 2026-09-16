@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { planCascadeDelete, commitCascadeDelete, type CascadePlanResult } from '../../../lib/firestoreApi'
 import { TARGET_LABEL, type ChangeTargetKind } from '../../../types/changeHistory'
 import { useGameData, type CollectionKey } from '../../../contexts/GameDataContext'
@@ -415,7 +416,16 @@ export function AdminModal({
   onCancel: () => void
   children: React.ReactNode
 }) {
-  return (
+  // ⚠ **必須 portal 到 body，不可直接渲染在呼叫端底下。**
+  //   `position: fixed` 只有在「沒有任何祖先建立 containing block」時才相對視窗定位，
+  //   而 `backdrop-filter`／`filter`／`transform`／`perspective`／`contain` 都會建立一個。
+  //   `src/pages/admin/*` 六個子頁的外殼統一是
+  //   `max-w-4xl mx-auto px-4 py-8 bg-bg-dark/10 backdrop-blur-sm rounded-2xl` ——
+  //   於是 fixed 被困在那個 max-w-4xl 容器裡：遮罩只蓋住內容欄、彈窗跟著列表一起捲，
+  //   使用者看到的是「畫面變黑，但要滾動才找得到編輯區」。
+  //   `AdminPage` 的 14 顆 Tab 沒有 backdrop-blur 所以一直正常，這個坑只在子頁顯形。
+  //   2026-09-10 由 /admin/lore 暴露；/admin/history 的還原對話框其實也中招，只是很少開。
+  return createPortal(
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className={`bg-bg-card border border-border rounded-xl p-6 w-full ${maxWidth} max-h-[90vh] flex flex-col`}>
         {children}
@@ -437,7 +447,8 @@ export function AdminModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -468,7 +479,9 @@ export function ConfirmDeleteDialog({
   const frozenTexts = cascade.patches.filter((p) => p.op === 'textFreeze').length
   const blocked = blockers.length > 0
 
-  return (
+  // ⚠ 與 AdminModal 同理，必須 portal 到 body：祖先只要有 backdrop-filter／filter／
+  //   transform／perspective／contain，fixed 就會相對那個祖先而不是視窗定位。
+  return createPortal(
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="bg-bg-card border border-accent-red/40 rounded-xl p-6 w-full max-w-lg max-h-[90vh] flex flex-col">
         {/* 標題 */}
@@ -559,7 +572,8 @@ export function ConfirmDeleteDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

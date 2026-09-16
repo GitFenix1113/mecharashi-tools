@@ -132,7 +132,7 @@ export function PilotAvatarCard({
  * 用查表而不是字串替換 —— Tailwind v4 掃的是**原始碼裡出現過的完整類名**，
  * 執行期拼出來的 `bg-accent-green` 不會被產生（會靜默變成沒有底色的色條）。
  */
-const TONE_BAR: Record<string, string> = {
+export const TONE_BAR: Record<string, string> = {
   'text-accent-green': 'bg-accent-green',
   'text-accent-orange': 'bg-accent-orange',
   'text-accent-red': 'bg-accent-red',
@@ -141,7 +141,7 @@ const TONE_BAR: Record<string, string> = {
   'text-accent-cyan': 'bg-accent-cyan',
   'text-accent-yellow': 'bg-accent-yellow',
 }
-const toneBar = (tone: string) => TONE_BAR[tone] ?? 'bg-text-dim'
+export const toneBar = (tone: string) => TONE_BAR[tone] ?? 'bg-text-dim'
 
 // ─── 機甲橫向卡 ─────────────────────────────────────────────────────────────
 

@@ -88,6 +88,32 @@ const NAV_GROUPS = [versionGroup, catalogGroup, guidesGroup]
 // 首頁與配裝模擬器不屬於任何群組，自然不會長出這條列。
 const SUB_NAV_GROUPS: ContentNavItem[][] = [versionNavItems, catalogNavItems, contentNavItems]
 
+// 外殼形態三態（PLAN-042-A C-4）。原本是 isFullHeightPage 這個布林，
+// 故事館要的「連 header 都換掉」是第三種狀態，硬塞進布林會讓兩種需求互相污染。
+type ChromeMode = 'default' | 'viewport' | 'immersive'
+
+// 比對用 `=== to` 或 `to + '/'`：直接 startsWith('/lore') 會誤配未來的 /lorem，
+// 與下方 subNavItems 的比對法同一個理由。
+const isUnder = (pathname: string, to: string) =>
+  pathname === to || pathname.startsWith(`${to}/`)
+
+/**
+ * 外殼形態由網址推導（與舊 isFullHeightPage 同一個資料來源，布林升成三態）。
+ * - `default`   一般頁面：footer、底部佔位、分頁列、手機 Tab Bar 全上
+ * - `viewport`  版本情報三分頁：頁面自帶捲動容器，不掛 footer 與底部佔位
+ * - `immersive` 機師故事館：紙色細帶 header，導覽全收，只留館名／離館／字級
+ */
+function chromeModeFor(pathname: string): ChromeMode {
+  if (isUnder(pathname, '/lore')) return 'immersive'
+  if (pathname.startsWith('/versions')) return 'viewport'
+  return 'default'
+}
+
+// 故事館入口（PLAN-042-A）。刻意獨立於 NAV_GROUPS 三群之外：
+// SUB_NAV_GROUPS 與各 group 的 items 是**同一個陣列物件**（下方 pinned 靠參照相等），
+// 把它塞進任何一群都會讓 subNavItems 在 /lore 命中，館內長出圖鑑式分頁列、沉浸破功。
+const loreItem: ContentNavItem = { to: '/lore', label: '故事館', icon: 'lore' }
+
 const tabBarItems: ContentNavItem[] = [
   { to: '/', label: '首頁', icon: 'home' },
   { to: '/pilots', label: '機師', icon: 'pilot' },
@@ -103,7 +129,9 @@ const moreNavItemsHead = [
   ...versionNavItems,
   ...catalogNavItems.filter((item) => !tabBarPaths.has(item.to)),
 ]
-const moreNavItemsTail = contentNavItems
+// ⚠ 新建陣列而不是往 contentNavItems 本體 push：那個陣列物件同時是 guidesGroup.items
+//    與 SUB_NAV_GROUPS 的成員，改到它就等於把故事館塞進「攻略/工具/文件」那一群。
+const moreNavItemsTail = [...contentNavItems, loreItem]
 
 export default function Layout() {
   const [moreOpen, setMoreOpen] = useState(false)
@@ -133,12 +161,17 @@ export default function Layout() {
   // 版本情報三分頁是「視窗高度外殼」（.viewport-shell）：頁面自己撐滿可用高度並
   // 自帶捲動容器，再掛 footer 與底部佔位只會硬擠出一條文件捲軸。
   // 首頁在 2026-08-19 站長定案後不再放資料面板，已改回一般文件流，故不在此列。
-  const isFullHeightPage = location.pathname.startsWith('/versions')
+  // 機師故事館（/lore）再進一階：連 header 都換成紙色細帶，全部導覽附屬件收起（PLAN-042-A）。
+  const chromeMode = chromeModeFor(location.pathname)
+  const immersive = chromeMode === 'immersive'
+  const showPageChrome = chromeMode === 'default'
   // 比對用 `=== to` 或 `to + '/'`：直接 startsWith(to) 會讓 /modules 誤配到未來的
   // /modulesomething，也讓詳情頁（/pilots/xxx）正確落在圖鑑那一群。
-  const subNavItems = SUB_NAV_GROUPS.find((items) =>
-    items.some((i) => location.pathname === i.to || location.pathname.startsWith(`${i.to}/`))
-  )
+  const subNavItems = immersive
+    ? undefined
+    : SUB_NAV_GROUPS.find((items) =>
+        items.some((i) => location.pathname === i.to || location.pathname.startsWith(`${i.to}/`))
+      )
   const isMoreActive = moreNavItems.some((item) =>
     item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
   )
@@ -194,86 +227,45 @@ export default function Layout() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      // immersive 是**取代** min-h-screen 而不是附加：兩者並存時 min-height 會贏，
+      // main 就拿不到明確高度，.lore-shell 的 height:100% 解析成 auto、紙色只鋪到內容底部。
+      className={immersive ? 'h-screen overflow-hidden flex flex-col' : 'min-h-screen flex flex-col'}
       // .viewport-shell 用 100vh 減固定外框算高度，多出來的這條列必須讓它知道
-      style={{ '--subnav-h': subNavItems ? '2.25rem' : '0px' } as React.CSSProperties}
+      style={{
+        '--subnav-h': subNavItems ? '2.25rem' : '0px',
+        // 語意＝ header 的「總佔位」（含 1px 下框線），故事館的紙色細帶用它對齊
+        '--lore-header-h': immersive ? '2.5rem' : '0px',
+      } as React.CSSProperties}
     >
       {/* 本地模擬器環境標示（非模擬器模式不渲染任何東西） */}
       <EmulatorBadge />
 
       {/* Header */}
       <header
-        className="sticky top-0 z-50 bg-bg-dark/95 backdrop-blur border-b border-border"
-        onMouseEnter={cancelClose}
-        onMouseLeave={scheduleClose}
+        className={
+          immersive
+            ? 'lore-chrome lore-header sticky top-0 z-50 backdrop-blur'
+            : 'sticky top-0 z-50 bg-bg-dark/95 backdrop-blur border-b border-border'
+        }
+        onMouseEnter={immersive ? undefined : cancelClose}
+        onMouseLeave={immersive ? undefined : scheduleClose}
       >
-        <div className="max-w-7xl mx-auto px-4 h-12 flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2 no-underline shrink-0">
-            <span className="text-accent-orange font-bold text-xl tracking-wider font-[Orbitron,sans-serif]">
-              {SITE_NAME}
-            </span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-1 overflow-x-auto">
-            {navItems.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.to === '/'} className={topNavClass}>
-                {item.label}
-              </NavLink>
-            ))}
-            {[versionGroup, catalogGroup].map((group) => (
-              <NavGroupTrigger
-                key={group.key}
-                group={group}
-                isOpen={openGroup === group.key}
-                pinned={subNavItems === group.items}
-                onOpen={() => openNavGroup(group.key)}
-                onToggle={() => (openGroup === group.key ? closeNavGroup() : openNavGroup(group.key))}
-              />
-            ))}
-            {simulatorEntryVisible && (
-              <NavLink to={simulatorItem.to} className={topNavClass}>
-                {simulatorItem.label}
-              </NavLink>
-            )}
-            <NavGroupTrigger
-              group={guidesGroup}
-              isOpen={openGroup === guidesGroup.key}
-              pinned={subNavItems === guidesGroup.items}
-              onOpen={() => openNavGroup(guidesGroup.key)}
-              onToggle={() => (openGroup === guidesGroup.key ? closeNavGroup() : openNavGroup(guidesGroup.key))}
-            />
-            {(userProfile?.role === 'ADMIN' || userProfile?.role === 'OWNER') && (
-              <NavLink
-                to="/admin"
-                className={({ isActive }) =>
-                  `px-3 py-2 rounded-lg text-sm no-underline transition-colors whitespace-nowrap ${
-                    isActive
-                      ? 'bg-accent-purple/15 text-accent-purple'
-                      : 'text-accent-purple/70 hover:text-accent-purple hover:bg-accent-purple/10'
-                  }`
-                }
-              >
-                後台管理
-              </NavLink>
-            )}
-          </nav>
-
-          {/* User area */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* 友站：英文版 Wiki（桌機顯示） */}
-            <a
-              href={FRIEND_SITE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-text-secondary hover:text-accent-orange border border-border hover:border-accent-orange/40 rounded-lg transition-colors no-underline whitespace-nowrap"
-              title="Mecharashi Wiki（英文版友站）"
-            >
-              EN Wiki ↗
-            </a>
-
-            {/* Font size toggle */}
-            <div className="flex items-center bg-bg-card border border-border rounded-lg overflow-hidden">
+        {immersive ? (
+          /* 館內 header：只留館名、離館、字級三顆。
+             登入／頭像／EN Wiki 都不是閱讀動作，一鍵離館即可（決策 G）。
+             這段與下方預設 header 的字級區塊是**刻意的重複**——為此把預設 header
+             抽成元件只會把回歸面擴大到全站。 */
+          <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <Link to="/lore" className="no-underline text-text-primary font-bold tracking-wider whitespace-nowrap">
+                機師故事館
+              </Link>
+              <Link to="/pilots" className="no-underline text-xs text-text-secondary hover:text-text-primary whitespace-nowrap">
+                離館 ↗
+              </Link>
+            </div>
+            {/* 字級三顆：館內正文用 rem，就是為了吃這個設定 */}
+            <div className="flex items-center bg-bg-card border border-border rounded-lg overflow-hidden shrink-0">
               {(['sm', 'md', 'lg'] as const).map((size) => (
                 <button
                   key={size}
@@ -288,85 +280,183 @@ export default function Layout() {
                 </button>
               ))}
             </div>
+          </div>
+        ) : (
+          <div className="max-w-7xl mx-auto px-4 h-12 flex items-center justify-between gap-4">
+            <Link to="/" className="flex items-center gap-2 no-underline shrink-0">
+              <span className="text-accent-orange font-bold text-xl tracking-wider font-[Orbitron,sans-serif]">
+                {SITE_NAME}
+              </span>
+            </Link>
 
-            {/* Auth — loading 時用固定尺寸佔位，避免版面偏移 */}
-            {loading ? (
-              <div className="w-8 h-8 rounded-full bg-bg-card animate-pulse" />
-            ) : user ? (
-              <div className="flex items-center gap-2">
+            {/* Desktop Nav */}
+            <nav className="hidden lg:flex items-center gap-1 overflow-x-auto">
+              {navItems.map((item) => (
+                <NavLink key={item.to} to={item.to} end={item.to === '/'} className={topNavClass}>
+                  {item.label}
+                </NavLink>
+              ))}
+              {[versionGroup, catalogGroup].map((group) => (
+                <NavGroupTrigger
+                  key={group.key}
+                  group={group}
+                  isOpen={openGroup === group.key}
+                  pinned={subNavItems === group.items}
+                  onOpen={() => openNavGroup(group.key)}
+                  onToggle={() => (openGroup === group.key ? closeNavGroup() : openNavGroup(group.key))}
+                />
+              ))}
+              {simulatorEntryVisible && (
+                <NavLink to={simulatorItem.to} className={topNavClass}>
+                  {simulatorItem.label}
+                </NavLink>
+              )}
+              {/* 故事館：頂層平鋪，不進任何 NavGroup（理由見檔案上緣的宣告處註解） */}
+              <NavLink to={loreItem.to} className={topNavClass}>{loreItem.label}</NavLink>
+              <NavGroupTrigger
+                group={guidesGroup}
+                isOpen={openGroup === guidesGroup.key}
+                pinned={subNavItems === guidesGroup.items}
+                onOpen={() => openNavGroup(guidesGroup.key)}
+                onToggle={() => (openGroup === guidesGroup.key ? closeNavGroup() : openNavGroup(guidesGroup.key))}
+              />
+              {(userProfile?.role === 'ADMIN' || userProfile?.role === 'OWNER') && (
                 <NavLink
-                  to="/profile"
+                  to="/admin"
                   className={({ isActive }) =>
-                    `w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border transition-colors no-underline ${
+                    `px-3 py-2 rounded-lg text-sm no-underline transition-colors whitespace-nowrap ${
                       isActive
-                        ? 'bg-accent-orange text-white border-accent-orange'
-                        : 'bg-accent-orange/20 text-accent-orange border-accent-orange/40 hover:bg-accent-orange/30'
+                        ? 'bg-accent-purple/15 text-accent-purple'
+                        : 'text-accent-purple/70 hover:text-accent-purple hover:bg-accent-purple/10'
                     }`
                   }
-                  title={user.displayName ?? user.email ?? '個人中心'}
                 >
-                  {userProfile ? (
-                    <AvatarDisplay profile={userProfile} size="sm" />
-                  ) : (
-                    initial
-                  )}
+                  後台管理
                 </NavLink>
-                <button
-                  onClick={handleSignOut}
-                  className="hidden lg:block text-xs text-text-dim hover:text-text-secondary transition-colors cursor-pointer"
-                >
-                  登出
-                </button>
+              )}
+            </nav>
+
+            {/* User area */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* 友站：英文版 Wiki（桌機顯示） */}
+              <a
+                href={FRIEND_SITE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-text-secondary hover:text-accent-orange border border-border hover:border-accent-orange/40 rounded-lg transition-colors no-underline whitespace-nowrap"
+                title="Mecharashi Wiki（英文版友站）"
+              >
+                EN Wiki ↗
+              </a>
+
+              {/* Font size toggle */}
+              <div className="flex items-center bg-bg-card border border-border rounded-lg overflow-hidden">
+                {(['sm', 'md', 'lg'] as const).map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setFontSize(size)}
+                    className={`px-2 py-1 text-xs transition-colors cursor-pointer ${
+                      fontSize === size
+                        ? 'bg-accent-orange/20 text-accent-orange'
+                        : 'text-text-dim hover:text-text-secondary'
+                    }`}
+                  >
+                    {FONT_SIZE_LABELS[size]}
+                  </button>
+                ))}
               </div>
-            ) : (
-              <>
-                {/* Desktop: 完整按鈕 */}
-                <button
-                  onClick={openAuthModal}
-                  className="hidden lg:inline-flex px-3 py-1.5 text-xs bg-accent-orange/10 text-accent-orange border border-accent-orange/30 rounded-lg hover:bg-accent-orange/20 transition-colors cursor-pointer whitespace-nowrap"
-                >
-                  登入 / 註冊
-                </button>
-                {/* Mobile: 圖示按鈕，寬度固定不會跳動 */}
-                <button
-                  onClick={openAuthModal}
-                  className="lg:hidden w-8 h-8 rounded-full flex items-center justify-center bg-accent-orange/10 text-accent-orange border border-accent-orange/30 hover:bg-accent-orange/20 transition-colors cursor-pointer"
-                  aria-label="登入 / 註冊"
-                >
-                  <NavIcon name="key" className="w-4 h-4" />
-                </button>
-              </>
-            )}
+
+              {/* Auth — loading 時用固定尺寸佔位，避免版面偏移 */}
+              {loading ? (
+                <div className="w-8 h-8 rounded-full bg-bg-card animate-pulse" />
+              ) : user ? (
+                <div className="flex items-center gap-2">
+                  <NavLink
+                    to="/profile"
+                    className={({ isActive }) =>
+                      `w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border transition-colors no-underline ${
+                        isActive
+                          ? 'bg-accent-orange text-white border-accent-orange'
+                          : 'bg-accent-orange/20 text-accent-orange border-accent-orange/40 hover:bg-accent-orange/30'
+                      }`
+                    }
+                    title={user.displayName ?? user.email ?? '個人中心'}
+                  >
+                    {userProfile ? (
+                      <AvatarDisplay profile={userProfile} size="sm" />
+                    ) : (
+                      initial
+                    )}
+                  </NavLink>
+                  <button
+                    onClick={handleSignOut}
+                    className="hidden lg:block text-xs text-text-dim hover:text-text-secondary transition-colors cursor-pointer"
+                  >
+                    登出
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Desktop: 完整按鈕 */}
+                  <button
+                    onClick={openAuthModal}
+                    className="hidden lg:inline-flex px-3 py-1.5 text-xs bg-accent-orange/10 text-accent-orange border border-accent-orange/30 rounded-lg hover:bg-accent-orange/20 transition-colors cursor-pointer whitespace-nowrap"
+                  >
+                    登入 / 註冊
+                  </button>
+                  {/* Mobile: 圖示按鈕，寬度固定不會跳動 */}
+                  <button
+                    onClick={openAuthModal}
+                    className="lg:hidden w-8 h-8 rounded-full flex items-center justify-center bg-accent-orange/10 text-accent-orange border border-accent-orange/30 hover:bg-accent-orange/20 transition-colors cursor-pointer"
+                    aria-label="登入 / 註冊"
+                  >
+                    <NavIcon name="key" className="w-4 h-4" />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 群組內的常駐分頁列：人已經在這一群裡，換頁不必再 hover 展開條 */}
-        {subNavItems && <SubNavTabs items={subNavItems} />}
+        {!immersive && subNavItems && <SubNavTabs items={subNavItems} />}
 
-        {/* 群組展開條：absolute 掛在 header 下緣（含分頁列），header 高度不變 */}
-        <NavExpandBar
-          group={NAV_GROUPS.find((g) => g.key === openGroup) ?? null}
-          onClose={closeNavGroup}
-        />
+        {/* 群組展開條：absolute 掛在 header 下緣（含分頁列），header 高度不變。
+            ⚠ 館內必須整個不渲染，不能指望它「收到 null 會 return null」——它用 useState
+            記住最後一次開過的群組，先在圖鑑展開過再走進 /lore 會殘留一條空的橫條。 */}
+        {!immersive && (
+          <NavExpandBar
+            group={NAV_GROUPS.find((g) => g.key === openGroup) ?? null}
+            onClose={closeNavGroup}
+          />
+        )}
       </header>
 
       {/* 非預期登出橫幅（PLAN-045）。放在 header 與 main 之間、不進 main 的
-          overflow-hidden 容器——首頁的 snap 捲動會把它藏起來。 */}
-      <SignedOutBanner />
+          overflow-hidden 容器——首頁的 snap 捲動會把它藏起來。
+          館內要多包一層 .lore-chrome：它在 .lore-shell 之外，只覆寫 shell 的 token
+          會讓它的淺色字印在紙色上（約 1.1:1）。 */}
+      {immersive ? (
+        <div className="lore-chrome">
+          <SignedOutBanner />
+        </div>
+      ) : (
+        <SignedOutBanner />
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
+      <main className={immersive ? 'flex-1 min-h-0 overflow-hidden' : 'flex-1 overflow-hidden'}>
         <Outlet />
       </main>
 
-      {/* Footer — 版本情報三分頁自帶版面高度，不掛 footer */}
-      {!isFullHeightPage && <footer className="border-t border-border py-6 text-center text-text-dim text-sm">
+      {/* Footer — 版本情報三分頁與故事館自帶版面高度，不掛 footer */}
+      {showPageChrome && <footer className="border-t border-border py-6 text-center text-text-dim text-sm">
         <p>{SITE_TITLE}</p>
         <p className="mt-1">本站是氣吉敗壞的豹吉自己摸出來的，無營利，完全免費，與官方無關，但99%圖片資源都來源於官方WIKI</p>
       </footer>}
 
       {/* 手機底部 Tab Bar 佔位 — 防止 footer 被 fixed bar 遮住 */}
-      {!isFullHeightPage && (
+      {showPageChrome && (
         <div
           className="lg:hidden shrink-0"
           style={{ height: 'calc(3.5rem + env(safe-area-inset-bottom))' }}
@@ -375,7 +465,7 @@ export default function Layout() {
       )}
 
       {/* More Panel 背景遮罩 */}
-      {moreOpen && (
+      {!immersive && moreOpen && (
         <div
           className="lg:hidden fixed inset-0 z-40 bg-black/50"
           onClick={() => setMoreOpen(false)}
@@ -383,136 +473,142 @@ export default function Layout() {
       )}
 
       {/* More Panel（從底部 Tab Bar 上方滑出） */}
-      <div
-        className={`lg:hidden fixed inset-x-0 z-50 bg-bg-dark border-t border-border-accent rounded-t-2xl shadow-2xl transition-transform duration-300 ${
-          moreOpen ? 'translate-y-0' : 'translate-y-full pointer-events-none'
-        }`}
-        style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom))' }}
-        aria-hidden={!moreOpen}
-      >
-        {/* 拖曳把手 */}
-        <div className="flex justify-center pt-2 pb-1">
-          <div className="w-10 h-1 rounded-full bg-border-accent" />
-        </div>
-
-        {/* 導航格線 */}
-        <div className="grid grid-cols-3 gap-2 px-4 pb-2">
-          {moreNavItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              onClick={() => setMoreOpen(false)}
-              className={({ isActive }) =>
-                `flex flex-col items-center gap-1.5 py-3 rounded-xl text-center transition-colors no-underline ${
-                  isActive
-                    ? 'bg-accent-orange/10 text-accent-orange'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-card'
-                }`
-              }
-            >
-              <NavIcon name={item.icon} className="w-6 h-6" />
-              <span className="text-xs">{item.label}</span>
-            </NavLink>
-          ))}
-        </div>
-
-        {/* 友站：英文版 Wiki（手機版 More Panel） */}
-        <div className="border-t border-border px-4 py-2">
-          <a
-            href={FRIEND_SITE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setMoreOpen(false)}
-            className="flex items-center justify-center gap-2 w-full py-2 text-sm text-center rounded-lg transition-colors no-underline text-text-secondary hover:text-accent-orange hover:bg-bg-card"
-          >
-            <NavIcon name="globe" className="w-4 h-4" />
-            EN Wiki（英文版友站）↗
-          </a>
-        </div>
-
-        {/* Admin 入口（手機版 More Panel） */}
-        {(userProfile?.role === 'ADMIN' || userProfile?.role === 'OWNER') && (
-          <div className="border-t border-border px-4 py-2">
-            <NavLink
-              to="/admin"
-              onClick={() => setMoreOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center justify-center gap-2 w-full py-2 text-sm text-center rounded-lg transition-colors no-underline ${
-                  isActive
-                    ? 'bg-accent-purple/15 text-accent-purple'
-                    : 'text-accent-purple/70 hover:text-accent-purple hover:bg-accent-purple/10'
-                }`
-              }
-            >
-              <NavIcon name="admin" className="w-4 h-4" />
-              後台管理
-            </NavLink>
+      {!immersive && (
+        <div
+          className={`lg:hidden fixed inset-x-0 z-50 bg-bg-dark border-t border-border-accent rounded-t-2xl shadow-2xl transition-transform duration-300 ${
+            moreOpen ? 'translate-y-0' : 'translate-y-full pointer-events-none'
+          }`}
+          style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom))' }}
+          aria-hidden={!moreOpen}
+        >
+          {/* 拖曳把手 */}
+          <div className="flex justify-center pt-2 pb-1">
+            <div className="w-10 h-1 rounded-full bg-border-accent" />
           </div>
-        )}
 
-        {/* 登入/登出區 */}
-        <div className="border-t border-border px-4 py-3">
-          {!loading && (
-            user ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-text-secondary truncate flex-1">
-                  {user.displayName ?? user.email}
-                </span>
-                <button
-                  onClick={() => { setMoreOpen(false); handleSignOut() }}
-                  className="text-xs px-3 py-1.5 rounded-lg border border-border text-text-dim hover:text-text-secondary cursor-pointer"
-                >
-                  登出
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => { setMoreOpen(false); openAuthModal() }}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium bg-accent-orange/10 text-accent-orange border border-accent-orange/30 hover:bg-accent-orange/20 transition-colors cursor-pointer"
+          {/* 導航格線 */}
+          <div className="grid grid-cols-3 gap-2 px-4 pb-2">
+            {moreNavItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                onClick={() => setMoreOpen(false)}
+                className={({ isActive }) =>
+                  `flex flex-col items-center gap-1.5 py-3 rounded-xl text-center transition-colors no-underline ${
+                    isActive
+                      ? 'bg-accent-orange/10 text-accent-orange'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-bg-card'
+                  }`
+                }
               >
-                <NavIcon name="key" className="w-4 h-4" />
-                登入 / 註冊
-              </button>
-            )
-          )}
-        </div>
-      </div>
+                <NavIcon name={item.icon} className="w-6 h-6" />
+                <span className="text-xs">{item.label}</span>
+              </NavLink>
+            ))}
+          </div>
 
-      {/* 手機底部 Tab Bar */}
-      <nav
-        className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-bg-dark/95 backdrop-blur border-t border-border"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        <div className="flex items-stretch h-14">
-          {tabBarItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) =>
-                `flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors no-underline ${
-                  isActive ? 'text-accent-orange' : 'text-text-dim hover:text-text-primary'
-                }`
-              }
+          {/* 友站：英文版 Wiki（手機版 More Panel） */}
+          <div className="border-t border-border px-4 py-2">
+            <a
+              href={FRIEND_SITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMoreOpen(false)}
+              className="flex items-center justify-center gap-2 w-full py-2 text-sm text-center rounded-lg transition-colors no-underline text-text-secondary hover:text-accent-orange hover:bg-bg-card"
             >
-              <NavIcon name={item.icon} className="w-5 h-5" />
-              <span className="text-[10px] leading-none">{item.label}</span>
-            </NavLink>
-          ))}
+              <NavIcon name="globe" className="w-4 h-4" />
+              EN Wiki（英文版友站）↗
+            </a>
+          </div>
 
-          {/* 更多按鈕 */}
-          <button
-            onClick={() => setMoreOpen(!moreOpen)}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer ${
-              moreOpen || isMoreActive ? 'text-accent-orange' : 'text-text-dim hover:text-text-primary'
-            }`}
-          >
-            <NavIcon name="menu" className="w-5 h-5" />
-            <span className="text-[10px] leading-none">更多</span>
-          </button>
+          {/* Admin 入口（手機版 More Panel） */}
+          {(userProfile?.role === 'ADMIN' || userProfile?.role === 'OWNER') && (
+            <div className="border-t border-border px-4 py-2">
+              <NavLink
+                to="/admin"
+                onClick={() => setMoreOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center justify-center gap-2 w-full py-2 text-sm text-center rounded-lg transition-colors no-underline ${
+                    isActive
+                      ? 'bg-accent-purple/15 text-accent-purple'
+                      : 'text-accent-purple/70 hover:text-accent-purple hover:bg-accent-purple/10'
+                  }`
+                }
+              >
+                <NavIcon name="admin" className="w-4 h-4" />
+                後台管理
+              </NavLink>
+            </div>
+          )}
+
+          {/* 登入/登出區 */}
+          <div className="border-t border-border px-4 py-3">
+            {!loading && (
+              user ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-text-secondary truncate flex-1">
+                    {user.displayName ?? user.email}
+                  </span>
+                  <button
+                    onClick={() => { setMoreOpen(false); handleSignOut() }}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-border text-text-dim hover:text-text-secondary cursor-pointer"
+                  >
+                    登出
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setMoreOpen(false); openAuthModal() }}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium bg-accent-orange/10 text-accent-orange border border-accent-orange/30 hover:bg-accent-orange/20 transition-colors cursor-pointer"
+                >
+                  <NavIcon name="key" className="w-4 h-4" />
+                  登入 / 註冊
+                </button>
+              )
+            )}
+          </div>
         </div>
-      </nav>
+      )}
+
+      {/* 手機底部 Tab Bar。
+          ⚠ 這段原本完全沒有條件、也不受舊的 isFullHeightPage 控制：桌機因為 lg:hidden
+          永遠看不到它，館內沉浸破功只在 375px 才顯形。 */}
+      {!immersive && (
+        <nav
+          className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-bg-dark/95 backdrop-blur border-t border-border"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
+          <div className="flex items-stretch h-14">
+            {tabBarItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                className={({ isActive }) =>
+                  `flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors no-underline ${
+                    isActive ? 'text-accent-orange' : 'text-text-dim hover:text-text-primary'
+                  }`
+                }
+              >
+                <NavIcon name={item.icon} className="w-5 h-5" />
+                <span className="text-[10px] leading-none">{item.label}</span>
+              </NavLink>
+            ))}
+
+            {/* 更多按鈕 */}
+            <button
+              onClick={() => setMoreOpen(!moreOpen)}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer ${
+                moreOpen || isMoreActive ? 'text-accent-orange' : 'text-text-dim hover:text-text-primary'
+              }`}
+            >
+              <NavIcon name="menu" className="w-5 h-5" />
+              <span className="text-[10px] leading-none">更多</span>
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
   )
 }

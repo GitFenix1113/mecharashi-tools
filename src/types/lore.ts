@@ -51,7 +51,8 @@ export interface LoreChapter {
   label?: string
   /** 章節標題，如 '光環遍身' */
   title: string
-  /** 正文。支援 PLAN-019 的 [xxx] 引用標記，由 <RefText> 解析 */
+  /** 正文。支援 PLAN-019 的 [xxx] 引用標記，由 <LoreRichText> 解析（PLAN-042-A 決策 A：
+   *  渲染器與 RefText 分家、[xxx] 解析規則逐字相同——不要改回 RefText，那會把數字紅字帶進散文） */
   body: string
   /** 正文內 [xxx] → 實體引用側錄（PLAN-019 Layer 1）。欄位名沿用 `<正文欄位>Refs` 慣例 */
   bodyRefs?: DescriptionRefs

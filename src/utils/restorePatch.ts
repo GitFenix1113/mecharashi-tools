@@ -69,7 +69,9 @@ const sameValue = (a: unknown, b: unknown): boolean =>
     JSON.stringify(a) === JSON.stringify(b)
   )
 
-const ANCHOR_FIELD = { name: 'name', level: 'level', minSum: 'minSum' } as const
+// 錨點種類 → 元素身上的欄位名。新增一種錨點時 types/changeHistory 的 RefAnchor['by']
+// 與這裡必須同步：漏了這邊 TS 會擋（索引不存在），漏了那邊則是恆為 undefined 的靜默失效。
+const ANCHOR_FIELD = { name: 'name', level: 'level', minSum: 'minSum', key: 'key' } as const
 
 type Located = { segments: (string | number)[] } | { reason: RestoreSkipReason; detail: string }
 

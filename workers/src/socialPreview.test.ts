@@ -70,6 +70,64 @@ test('parseEntityPath：畸形輸入不會流進 Firestore 查詢', () => {
   assert.equal(parseEntityPath('/pilots/' + 'x'.repeat(300)), null)
 })
 
+// ── 機師故事館（PLAN-042-A）────────────────────────────────────────────────────
+//
+// 上面那條「三種詳情頁才吃」的 `/pilots/a/b → null` 是**故意留著**的回歸網：
+// 若有人為了讓故事館的三段／四段路徑一起命中而把圖鑑側的正則放寬成「選填第三段」，
+// 那條斷言會紅。看到它紅時要改的是這裡，不是那條斷言。
+
+test('parseEntityPath（故事館）：三段路徑不帶 part 鍵，四段才帶', () => {
+  // ⚠ 用 deepEqual 而非只看欄位：`part` 必須**整個鍵不存在**。
+  //   選填 capture group 未命中時 m[3] 執行期是 undefined，而 decodeURIComponent(undefined)
+  //   不丟錯、回傳字串 'undefined' —— 漏了防護就會靜默帶上一個假章節。
+  assert.deepEqual(parseEntityPath('/lore/pilots/pilot_049_海莉絲'), {
+    collection: 'pilots',
+    id: 'pilot_049_海莉絲',
+    lore: true,
+  })
+  assert.deepEqual(parseEntityPath('/lore/pilots/pilot_049_海莉絲/part-2'), {
+    collection: 'pilots',
+    id: 'pilot_049_海莉絲',
+    lore: true,
+    part: 'part-2',
+  })
+  // 尾斜線兩種形狀都要吃（分享出去的連結不一定帶）
+  assert.deepEqual(parseEntityPath('/lore/pilots/x/'), { collection: 'pilots', id: 'x', lore: true })
+  assert.deepEqual(parseEntityPath('/lore/pilots/x/part-1/'), {
+    collection: 'pilots',
+    id: 'x',
+    lore: true,
+    part: 'part-1',
+  })
+})
+
+test('parseEntityPath（故事館）：percent-encoded 中文 id 的四段路徑', () => {
+  const path = '/lore/pilots/' + encodeURIComponent('pilot_001_葉夫根尼') + '/part-3'
+  assert.deepEqual(parseEntityPath(path), {
+    collection: 'pilots',
+    id: 'pilot_001_葉夫根尼',
+    lore: true,
+    part: 'part-3',
+  })
+})
+
+test('parseEntityPath（故事館）：非故事館詳情頁的 /lore/* 一律放行', () => {
+  for (const p of [
+    '/lore', // 館首頁
+    '/lore/', // 尾斜線但沒有集合段
+    '/lore/pilots', // 缺 id
+    '/lore/pilots/', // 尾斜線但沒有 id
+    '/lore/pilots/x/part-1/extra', // 多一層
+    '/lore/mechs/x', // 故事館只有機師
+  ]) {
+    assert.equal(parseEntityPath(p), null, p)
+  }
+  // 畸形輸入的防護在 id 與 part 兩段都要生效
+  assert.equal(parseEntityPath('/lore/pilots/%E4%B8'), null)
+  assert.equal(parseEntityPath('/lore/pilots/x/%E4%B8'), null)
+  assert.equal(parseEntityPath('/lore/pilots/x/' + 'y'.repeat(300)), null)
+})
+
 test('buildOgMeta：webp 立繪要改指預先轉好的 JPEG（LINE 等預覽器不吃 webp）', () => {
   const pilot = buildOgMeta('pilots', { name: '曜', portrait: '/images/pilots/曜/half.webp' })
   assert.equal(
@@ -124,6 +182,44 @@ test('buildOgMeta：圖片欄位缺值一律 fallback 到預設圖，不可讓 o
 test('buildOgMeta：沒有 name 就不做卡片（退回站名卡）', () => {
   assert.equal(buildOgMeta('pilots', {}), null)
   assert.equal(buildOgMeta('mechs', { name: '   ' }), null)
+})
+
+test('buildOgMeta（故事館）：換 title 與 description，og:image 沿用同一張立繪', () => {
+  const doc = {
+    name: '葉夫根尼',
+    rarity: 'S',
+    class: '守護者',
+    faction: '灰燼之子',
+    lore: '灰燼之子的老兵，在冬季的廢墟裡撿回了自己的名字。',
+    portrait: '/images/pilots/葉夫根尼/half.webp',
+  }
+  const meta = buildOgMeta('pilots', doc, { lore: true })
+  assert.ok(meta)
+  assert.equal(meta.title, '葉夫根尼 的故事')
+  assert.match(meta.description, /灰燼之子的老兵/)
+  // 圖片與圖鑑側完全一致（不另開美術維護線）
+  assert.equal(meta.image, buildOgMeta('pilots', doc)?.image)
+
+  // lore 欄位是空的 → 退回可辨識的館名描述，不可讓 description 變空字串
+  const noLore = buildOgMeta('pilots', { name: '賽拉' }, { lore: true })
+  assert.equal(noLore?.title, '賽拉 的故事')
+  assert.equal(noLore?.description, '賽拉｜機師故事館')
+  assert.equal(noLore?.image, DEFAULT_OG_IMAGE)
+})
+
+test('buildOgMeta：不傳 opts（或 lore 為 false）時與既有輸出逐字一致', () => {
+  const doc = {
+    name: '葉夫根尼',
+    rarity: 'S',
+    class: '守護者',
+    faction: '灰燼之子',
+    lore: '這段文字只有故事館分支會用到',
+    portrait: '/images/pilots/葉夫根尼/half.webp',
+  }
+  assert.deepEqual(buildOgMeta('pilots', doc, {}), buildOgMeta('pilots', doc))
+  assert.deepEqual(buildOgMeta('pilots', doc, { lore: false }), buildOgMeta('pilots', doc))
+  // 回歸：圖鑑側的機師卡標題不得被 lore 分支影響
+  assert.equal(buildOgMeta('pilots', doc)?.title, '葉夫根尼 · S 守護者')
 })
 
 test('buildOgMeta：外部絕對網址原樣保留，描述會截斷', () => {

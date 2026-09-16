@@ -68,9 +68,15 @@ export const ACTION_LABEL: Record<ChangeAction, string> = {
  * 「先按 index 找、對不上則按 anchor 重新定位」——沒有錨點就只能靜默寫到錯的地方。
  *
  * 定義在 types 而非 utils，是因為它會被序列化進 changeHistory 快照，屬持久化契約。
+ *
+ * `by` 是**被錨定元素身上真的存在的欄位名**，不是隨便取的標籤：
+ * `restorePatch.ts` 的 `ANCHOR_FIELD` 把它映成欄位去比對 `el[field] === value`，
+ * 錨到不存在的欄位會恆為 `undefined`，連「索引仍正確」的捷徑都走不到，
+ * 每一筆都變成 `anchorMismatch`（PLAN-042-A 的 `pilotLore` 章節就踩過這個坑：
+ * `LoreChapter` 只有 `key` 沒有 `name`，故新增 `'key'`）。
  */
 export interface RefAnchor {
-  by: 'name' | 'level' | 'minSum'
+  by: 'name' | 'level' | 'minSum' | 'key'
   value: string | number
 }
 

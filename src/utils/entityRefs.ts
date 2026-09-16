@@ -703,7 +703,8 @@ const PILOT_LORE: CollectionSpec<LoreDoc> = {
   coll: 'pilotLore',
   nameOf: (d) => d.name ?? d.id,
   buffIdSites: [],
-  // 逸聞正文以 <RefText> 渲染 → 章節的 [xxx] 是真的引用站點，刪 BUFF／技能／詞條時
+  // 逸聞正文以 <LoreRichText> 渲染（PLAN-042-A 決策 A：與 RefText 分家，只砍掉數字紅字
+  // 與 <refId.attr>，[xxx] 的解析規則逐字相同）→ 章節的 [xxx] 是真的引用站點，刪 BUFF／技能／詞條時
   // 必須掃得到，否則故事裡會留下永遠解析不出來的方括號。
   //
   // ⚠ 側錄表欄位名是 **bodyRefs** 不是 descriptionRefs（正文欄位叫 body）——
@@ -717,8 +718,10 @@ const PILOT_LORE: CollectionSpec<LoreDoc> = {
     texts: { body: ch.body },
     refs: ch.bodyRefs,
     refsField: 'bodyRefs',
-    // 索引不是穩定識別子（章節可重排、可插入），錨點用必填的 key
-    anchor: { by: 'name' as const, value: ch.key },
+    // 索引不是穩定識別子（章節可重排、可插入），錨點用必填的 key。
+    // ⚠ by 必須是 'key'：LoreChapter 沒有 name 欄位，錨成 'name' 會讓 restorePatch 的
+    //   比對恆為 undefined，每一筆還原都是 anchorMismatch（且只在還原頁報一行 skipped）。
+    anchor: { by: 'key' as const, value: ch.key },
   })),
   scalarSites: [],
   softSites: [],
