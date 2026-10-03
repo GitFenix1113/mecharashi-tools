@@ -86,13 +86,37 @@ jobs:
           git push -q origin HEAD:gh-pages
           echo "✅ 已清除；接著 deploy 步驟照常發布本次 build"
 
+      # ── 清除退役滿寬限期的 assets／images（PLAN-054 D-4 ＋ 2026-10-04 舊 bundle 清理評估）──
+      # keep_files: true 的代價是 gh-pages 只疊加、不刪除：repo 刪掉的圖、每次部署換 hash 的舊 bundle
+      # 都永遠留在線上（2026-10 實測 assets 258 MB 只有 3 MB 在用、images 有 163 MB 孤兒）。
+      # 這一步用 ledger 記錄每個檔案「被新版取代的時間」，退役滿寬限期才刪：
+      #   assets 30 天（開著舊分頁的人還要得到舊 chunk；前台另有 vite:preloadError 自動重整）
+      #   images 14 天（DB 快照改寫成新路徑之前，舊圖還要撐著）
+      # ledger 寫進 dist/，跟著下面的部署一起上去；有要刪的才另外 commit。
+      # 第一次執行沒有 ledger → 全部從當天開始倒數，不刪任何東西。
+      - name: Prune retired assets/images on gh-pages
+        run: |
+          set -euo pipefail
+          git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1 || { echo "gh-pages 尚未存在，略過"; exit 0; }
+          [ -d /tmp/ghp ] || { git fetch --depth=1 origin gh-pages; git worktree add /tmp/ghp FETCH_HEAD; }
+          node scripts/prune-gh-pages.mjs --ghp /tmp/ghp --dist dist --dirs assets:30,images:14 \
+            --ledger-out dist/.prune-ledger.json --delete-list /tmp/prune.txt
+          count=$(grep -c . /tmp/prune.txt || true)
+          [ "$count" -gt 0 ] || { echo "✅ 沒有退役滿寬限期的檔案"; exit 0; }
+          cd /tmp/ghp
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          xargs -d '\n' -a /tmp/prune.txt git rm --quiet --
+          git commit -q -m "chore: 移除 gh-pages 上 $count 個退役滿寬限期的 assets／images 檔案"
+          git push -q origin HEAD:gh-pages
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
-          # 刻意保持 true：preview/ 下的 PR 預覽、以及舊的 assets/*.js（開著舊頁面的使用者
-          # 可能還會請求它們）都要留著。docs/ 的孤兒問題已由上一步處理。
+          # 刻意保持 true：preview/ 下的 PR 預覽要留著；舊的 assets/*.js 與退場的圖也不在這裡刪，
+          # 而是由上面兩步處理（docs/ 立即清、assets／images 退役滿寬限期才清）。
           keep_files: true
           # PLAN-029 Phase 1：自訂網域。每次部署把 CNAME 寫進 gh-pages，GitHub 靠它認 mecharashi.wiki。
           cname: mecharashi.wiki
