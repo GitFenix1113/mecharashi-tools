@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-C 故事館氛圍層 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* 共用 style.css 未定義 pink／red 變體（既有頁面多依賴其預設，故不動共用檔），此處僅為本頁補上 */
+.hero-badge.pink    { border-color: var(--accent-pink); color: var(--accent-pink); background: rgba(236,72,153,0.06); }
+.section-label.pink { color: var(--accent-pink); }
+.section-label.red  { color: var(--accent-red); }
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+.meta-value.pink   { color: var(--accent-pink); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-C 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge pink">◆ PLAN-042-C</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    故事館氛圍層<span style="-webkit-text-fill-color:var(--text-secondary);">顯影修正 · 官網素材 · 名字字體 · 粒子與背景</span>
+  </h1>
+  <p class="hero-sub">讓 042-A 寫好的線稿顯影真的被看見，並把官網 <code>#hero</code> 的四個特色——名字書法、粒子、背景、運鏡——以官方素材與純 CSS 移植進紙色展館。8 位招牌機師可與官網 1:1，其餘 82 位走字型子集＋濾鏡管線。B／C／D 三段兩館共用，042-B 直接沿用。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label pink">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value pink">PLAN-042-C</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-09-17</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">LoreArt / index.css / LoreLayout / 扉頁與館首頁 · public/images/lore/ · scripts（字型子集、官方變體索引）· Pilot.nameEn · PilotAdmin · docs</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID（Phase A 為 HIGH：既有功能實際上看不見）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value pink">開發完成 · 待驗收（2026-09-17）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-042-A Phase C–F（已 commit fb1a8f44）；官方素材使用前提：站長與官方之非營利不追究共識</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>本計畫的依據：</strong><code>_local-notes/2026-09/2026-09-16_機師故事館_美化工程盤點.html</code>（本機不進版控，圖已內嵌）。
+    含 Playwright 逐幀截圖（暖／冷快取顯影、進場、官網進場）、實機三種底色驗證、官網 hero 圖層解剖與 CSS 原文、官方素材清單。
+    同目錄的 <code>2026-09-16_filmstrip.mjs</code> / <code>2026-09-16_sketch-lab.mjs</code> / <code>2026-09-16_sketch-preview.mjs</code> 是本計畫的驗收工具。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：042-A 的顯影動畫「沒有如預期展現」，三個真因都在 <code>LoreArt.tsx</code> / <code>index.css</code></strong><br>
+    ① <strong>時間軸從元件掛載起算，不等圖片載入</strong>——彩圖的 <code>transition: opacity 900ms … 450ms</code> 在掛載後無條件開跑；
+    art.webp（平均 130KB）多半在這之後才到。實測把圖片延遲 900ms 模擬冷快取：<strong>線稿 0 幀</strong>，只看到空黑框→彩圖直接出現。暖快取也只露約 300ms。<br>
+    ② <strong>線稿被關在 <code>#0a0c10</code> 黑框裡</strong>——color-dodge 偽線稿在黑底上是「白色負片」，與計畫書 A-4「白紙黑線」相反；黑框本身在紙色館內就是一塊突兀的長方形，要 1.75 秒後才消失。
+    實機驗證容器改紙色後線稿照樣成立，<code>index.css</code> 註解 M-10「紙色會讓 dodge 飽和成純白」的顧慮不成立（人物內部的 backdrop 是灰階層本身，不是容器底色）。<br>
+    ③ <strong>只動 opacity，沒有任何運鏡</strong>——官網是 scale 1.2→1 ＋ 上移 ＋ 斜切擦入，彩圖到 40% 才出現並帶 1px 模糊收斂；我們的進場遮罩也只是 300ms 黑→透明，從深色全站點進來只像閃了一下。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：官網 hero 的四個特色，我們一個都沒有——但它們的技術本質都很便宜</strong><br>
+    官網 <code>#section3[data-anchor=hero]</code> 沒有 canvas、SVG、影片、JS 動畫庫，<strong>全部是 PNG 圖層＋CSS keyframes</strong>：
+    背景一張 bg.jpg（紙紋＋紅帶＋機甲線稿＋格線）、標題區塊一張 sl.png、粒子是兩張 1–2KB 點陣 PNG × 7 個 div × <code>fly/fly2</code> keyframes、
+    每位機師四層（手繪線稿／帶溶解邊彩圖／名字書法／資料），在 fullpage.js 把區段標成 <code>.active</code> 時播 <code>heroLine/heroColor/mechaData</code>，而圖早在頁面載入時就在快取裡。
+    <strong>名字不是 webfont，是每人一張 PNG</strong>；但八張名字層的字母造型一致，證明是同一套筆刷體字型，不是手寫。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：官網只做了 8 位機師的圖層</strong><br>
+    洛莎、虹、凱登、白月、葉夫根尼、艾琳、黛娜、梅利莎。其餘 82 位沒有名字書法、沒有手繪線稿、沒有溶解彩圖；
+    而 CDN 的 <code>character/*_Raw.png</code> 實測就是本站的 full.webp（1240×1080，alpha bbox 逐像素相同），36 位缺全身像的問題不會因素材鬆綁而解決。
+    <strong>全員一致仍要靠我們自己的字型子集＋濾鏡管線；官方素材是校準基準與招牌機師的加成。</strong>
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label pink">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：顯影時間軸改由圖片 decode 起算，等待期是紙色不是黑框</strong><br>
+    線稿層 <code>img.decode()</code>（失敗退 <code>onload</code>）resolve 後才加 <code>--revealed</code>；等待期容器維持紙色＋極淡佔位。
+    保險 timer 改成「decode 逾時 2s 直接淡入」，背景分頁 bail 的語意保留（rAF 不跑時仍要能收工）。
+    驗收數字：冷快取（art.webp 延遲 900ms）逐幀線稿幀 <strong>≥ 3</strong>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：線稿改「紙上鉛筆」，保守版換底色、進階版 multiply 群組</strong><br>
+    保守版：<code>.lore-art</code> 底色改館內紙色 token，<code>--settled</code> 不再需要底色過渡。
+    進階版：線稿兩層包成白底群組、群組 <code>mix-blend-mode: multiply</code>，只留鉛筆線沒有白色人形填充——
+    <strong>前提是 <code>.lore-portrait-col</code> 自己塗紙色</strong>（<code>position: sticky</code> 自成堆疊脈絡，否則會留下白框，實機已踩到）。
+    換底之後 C-1 在黑底量的高光門檻全部失效，至少抽零／戰部渡／卡米拉／虎王／凱登五位重看，<code>LORE_ART_TUNING</code> 可能可以把「零」的線稿打開。
+    官方 8 張手繪線稿極淡、線條稀疏，我們的濾鏡反而更清楚；<strong>只拿它當濾鏡濃度的校準目標，不混用</strong>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：運鏡照抄官網 keyframes，但 blur 與 clip-path 有效能上限</strong><br>
+    <code>heroLine</code>（1s：scale 1.2→1、translateY 3%→0、opacity 0→1、clip-path 平行四邊形→全幅）與
+    <code>heroColor</code>（1.05s：同運鏡；opacity 到 40% 才開始；blur 1px→0 於 40–70%）原樣搬進 <code>index.css</code>，線稿層與彩圖層各掛一段，
+    <code>--lore-art-delay</code> 改成 keyframe 百分比。blur 只做 1px 且只在 40–70% 區間；<code>clip-path</code> 動畫在 Chrome 不走 compositor，
+    863×1600 的圖要用 DevTools Performance 實測（CPU 4× 節流不低於 30fps），掉幀就退回只做 scale＋translate＋opacity。
+    <code>prefers-reduced-motion</code> 維持現有 150ms 淡入。名字／徽記／引文卡三段用 <code>mechaData</code>（scale 1.3→1 淡入）錯開 0／200／350ms 進場。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：官方素材直接自託管使用，邊界寫死</strong><br>
+    前提：站長與官方人員有非營利不追究的共識（2026-09-17）。可用：bg.jpg／bg-m.jpg、sl.png／sl-m.png、snow*.png、top8.jpg（KV）、bgm.mp3、
+    8 位的 line／color／name 三層、mecha 區八台四層（留給 042-B）。<br>
+    邊界：① <strong>一律自託管、轉 WebP、裁到內容 bbox</strong>，不熱連官方 CDN（PLAN-029 自託管慣例，且代理商網域可能改路徑）；
+    ② 素材夾內放 README 記來源 URL 與取得日期；③ 站上維持無廣告、無贊助連結的非營利前提；
+    ④ <strong>資料層 h0N-4 與手機合成圖不用</strong>——文字烘進圖會讓字級三顆按鈕、搜尋、可編輯性全部失效；
+    ⑤ <strong>字型授權屬字型公司</strong>，不在共識範圍：先用字型辨識工具比對八張名字層找原字型，授權不明就選免費可商用的相近筆刷體。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：名字字體三層方案——中文子集可行、英文草書要先有資料、書法 PNG 不做</strong><br>
+    <strong>a. 中文直書名</strong>：LXGW WenKai TC（SIL OFL 1.1，繁中字形完整）只子集機師名——88 個立繪資料夾名只有 <strong>127 個相異字</strong>，加 fullName 估不到 300 字，
+    woff2 約 40–80KB。名字是封閉集合，避開 042-A 計畫書擔心的「字集漂移」：只漂在新機師身上，而新機師進圖庫就會重跑 build。
+    管線比照 <code>generate-art-index.mjs</code> 做成 build 前置腳本，需新增 dev 依賴 <code>subset-font</code>（repo 目前沒有任何字型工具）；<code>font-display: swap</code>，fallback Noto Sans TC。<br>
+    <strong>b. 英文草書大字</strong>：資料裡沒有羅馬拼音（<code>fullName</code> 89 筆全是 CJK）→ 新增 <code>nameEn?: string</code>（型別＋PilotAdmin 一欄＋docs 同步），
+    8 位官方拼法已知（Rosa Diaz／Rainbow／Kaidan Newman／White Moon／Yevgeny Ivanovic Goman／Erin／Dana Yano／Melissa），其餘 82 位對照英文 Wiki 人工輸入，空值不渲染。
+    排版 <code>rotate(-72deg)</code>、字級 <code>clamp(120px,14vw,220px)</code>、<code>mix-blend-mode: soft-light</code> 壓在立繪柱右後方。<br>
+    <strong>c.</strong> 官網那種每人一張的書法 PNG＝美術產出，不做，也不用 AI 生成假書法。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：粒子與背景走「素材＋純 CSS」，不引入 canvas 或動畫庫</strong><br>
+    粒子：6 個 <code>div</code> 掛在 <code>.lore-shell</code>（<code>position: absolute</code>，不用官網的 <code>fixed</code>，免得蓋到 header），
+    <code>fly</code>／<code>fly2</code> 照抄參數、延遲 0／.5／.8／1.5／5／5.2s 錯開，<code>pointer-events: none</code>；<code>lg:</code> 以下不掛（官網手機版也沒有）；reduced-motion 整組 <code>display: none</code>。
+    背景：bg.webp 當 <code>.lore-shell</code> 背景（cover、object-position 對齊立繪柱），紙色 token 保留為 fallback；不再需要 CSS 重建紙紋／格線／紅帶。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：8 位招牌機師做成 <code>LoreArt</code> 的 <code>official</code> 變體，判定在渲染前</strong><br>
+    素材裁到 alpha bbox 後存 <code>public/images/pilots/&lt;名&gt;/official-{line,color,name}.webp</code>，<code>generate-art-index.mjs</code> 加 <code>PILOT_OFFICIAL_INDEX</code>（含 bbox 偏移，名字層才定位得回去）。
+    <code>hasOfficialArt()</code> 與 <code>hasPilotArt()</code> 同一種形狀：渲染前分流，不等圖載失敗才換構圖。名字層以絕對定位疊在彩圖上、跟 <code>mechaData</code> 節奏進場。
+    黛娜、梅利莎目前走 full.webp 半身 fallback，順帶升級為官方彩圖。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 驗收動畫別用內建瀏覽器截圖</strong><br>
+    桌面 App 內建瀏覽器的分頁一在背景，<code>document.hidden</code> 即為 true，Chrome 不推進 CSS animation／transition 的時間軸，截圖也是舊幀——
+    盤點時第一輪量測就因此誤判成「遮罩永遠不透明、彩圖永遠 0」。驗收一律用 Playwright headless（<code>2026-09-16_filmstrip.mjs</code>），或先確認分頁在前景。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label pink">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內（估 ≈ 12 人日，不含 nameEn 資料輸入）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>A 顯影修正</strong>（4 項，≈3 天）：decode 起算、拆黑框、運鏡、推門進場與 stagger</li>
+      <li><strong>B 官方素材切版</strong>（5 項，≈1.5 天）：素材自託管與 README、背景、標題區塊、粒子、KV banner</li>
+      <li><strong>C 招牌機師官方變體</strong>（3 項，≈1.5 天）：裁切轉檔與索引、<code>official</code> 變體、黛娜／梅利莎升級與 8 位驗收</li>
+      <li><strong>D 名字字體</strong>（5 項，≈2.5 天＋資料）：中文書法子集管線、套用、英文草書字型、<code>nameEn</code> 欄位、資料輸入（管理員長期）</li>
+      <li><strong>E 檔案感與聲音</strong>（2 項，≈1 天）：裝飾字（編號／版本／紅標／細線）、BGM 開關</li>
+      <li><strong>F 打磨</strong>（6 項，≈3.5 天）：牆、章節切換過場、換機師交叉淡出、手機、底緣溶解、hover 微視差（選做）</li>
+      <li><strong>G 驗收與文件</strong>（3 項）：逐幀驗收、reduced-motion 與 a11y、docs 同步</li>
+      <li>B／C／D 三段的產出<strong>兩館共用</strong>，042-B 機甲館直接沿用（mecha 區八台的四層已下載）</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>官方資料層 h0N-4 與手機合成圖（文字烘圖）——維持 HTML 文字</li>
+      <li>fullpage.js 式整頁滾動與滾輪換區（PLAN-050 拆舊輪播的教訓；館內只有一個 scrollport）</li>
+      <li>每人一張的書法 PNG、AI 生成書法、手繪線稿補製</li>
+      <li>頁面載入即抓全部機師圖層（官網 8 位 4.2MB 的做法）——本站 90 位且是低流量純欣賞，decode 起算就是為了在 lazy 前提下仍看得到線稿</li>
+      <li>逸聞內容輸入與 042-A 的部署前置（wrangler deploy、firestore rules、CF Transform Rule 白名單）——它們阻塞的是 042-A 的 push，不是本計畫</li>
+      <li>042-B 機甲館本體</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label pink">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-042-C 進度表</h4>
+      <p>各工作項目狀態追蹤（A–G 七段、28 項）</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042-A_機師故事館/計畫書.html">
+      <div class="doc-tag">Parent</div>
+      <h4>◆ PLAN-042-A 機師故事館</h4>
+      <p>本計畫修正與美化的對象；Phase C–F 已 commit（fb1a8f44）</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042_故事館_總綱/計畫書.html">
+      <div class="doc-tag">Master</div>
+      <h4>◆ PLAN-042 故事館總綱</h4>
+      <p>兩館共用架構決策與子計畫拆分</p>
+    </a>
+    <a class="doc-item" href="../../../03_頁面規劃/13_故事館/index.html">
+      <div class="doc-tag">Page Design</div>
+      <h4>🏛️ 機師故事館頁面規劃</h4>
+      <p>路由、外殼形態、三個檢視與編輯台；本計畫完工後補氛圍層章節</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-C — <a href="../index.html" style="color:var(--accent-pink);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

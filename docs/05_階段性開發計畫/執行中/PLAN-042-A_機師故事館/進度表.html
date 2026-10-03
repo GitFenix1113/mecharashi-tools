@@ -209,15 +209,15 @@
 
 
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">0</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">18</div><div class="summary-lbl">已完成</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">21</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">2</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">21</div><div class="summary-lbl">開發者任務</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-orange);">0 / 21</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 0%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-green);">18 / 21</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 86%"></div></div>
   </div>
 
   <div class="impact-note">
@@ -225,9 +225,150 @@
     章節以具名軸切換而不是無盡下捲、引文與署名排得像剪報；而查數值的人在圖鑑那邊完全不受影響。
   </div>
 
+  <div class="warn-block">
+    <strong style="color:var(--accent-yellow);">◆ 2026-10-03 狀態：雛形先合併回 main，入口收起</strong><br>
+    站長判斷雛形已成、但還不算完成 → 先合併回 main，不讓它卡住其他計畫（PLAN-054 要從 main 開分支）。做法比照模擬器內測的<b>「路由留著、入口收起」</b>
+    （<code>src/hooks/useLoreEntry.ts</code> 的 <code>LORE_INTERNAL_ONLY = true</code>）：導覽列與手機 More 面板只有 ADMIN／OWNER 看得到「故事館」；
+    機師詳情頁對一般訪客<b>退回完整逸聞</b>（D-4 改成「首句＋讀完整故事 ▸」，只藏連結的話訪客就讀不到全文）；
+    網站更新履歷裡介紹故事館的 6 筆條目標 <code>unreleased</code>，先不顯示。<br>
+    <b>公開時</b>：旗標改 <code>false</code>；拿掉那 6 筆的 <code>unreleased</code>、日期改成公開日；Cloudflare Transform Rule 白名單補 <code>/lore</code>（含 OG 用的 UA 排除區塊，見 F-1）。<br>
+    <b>main 第一次 push 之前</b>：先部署 Firestore rules（<code>npx firebase deploy --only firestore:rules</code>）與 Worker（<code>cd workers &amp;&amp; npx wrangler deploy</code>）——
+    pilotLore 已登記進後台引用掃描，規則沒上線會弄壞後台的刪除功能。
+  </div>
+
   <div class="info-block">
     標 <span class="badge badge-cyan">兩館共用</span> 的工作項，其產出由
     <a href="../PLAN-042-B_機甲故事館/進度表.html" style="color:var(--accent-yellow);">042-B</a> 直接引用，不重做。
+  </div>
+
+  <div class="warn-block">
+    <strong style="color:var(--accent-yellow);">◆ 2026-09-09 本輪裁決（實作前必讀）</strong><br>
+    以下五條是使用者當面拍板的範圍決定，<b>優先於本表下方各工作項的原始描述</b>。實作時若與下方描述衝突，以本區為準。
+    <table class="layer-table" style="margin-top:14px;">
+      <tr><th style="width:130px;">項目</th><th style="width:150px;">裁決</th><th>對實作的影響</th></tr>
+      <tr>
+        <td>H-2 缺立繪</td>
+        <td><b style="color:var(--accent-green);">找不到就用 FULL</b></td>
+        <td>不再另尋梅利莎／阿黛勒的圖源。<b>36 位走 <code>full.webp</code> fallback 成為常態路徑而非例外</b>——
+            因此 C-1 的「底部 mask」<b style="color:var(--accent-yellow);">從選做升為必做</b>：
+            <code>full.webp</code> 有 86/87 張的 alpha bbox 底邊硬切在 1080，不遮就是一條直角斷面。</td>
+      </tr>
+      <tr>
+        <td>H-1 逸聞內容</td>
+        <td><b style="color:var(--accent-green);">只做後台編輯能力</b></td>
+        <td>本計畫的交付物是 <b>E-1 的編輯台</b>，不含內容輸入本身。
+            89 位 × N PART 的長文由管理員日後自行填寫，不列入本計畫完工條件。</td>
+      </tr>
+      <tr>
+        <td>F-1 Transform Rule</td>
+        <td><b style="color:var(--accent-orange);">最後再補</b></td>
+        <td>Cloudflare Dashboard 的 SPA fallback 白名單例外<b>延後到部署前才處理</b>，不阻塞 Phase C/D/E。
+            ⚠ 但<b>上線前必補</b>，否則 <code>/lore/*</code> 在進 Worker 前就被改寫成 <code>/index.html</code>、
+            社群預覽 route 零命中（2026-08-22 已踩過一次）。</td>
+      </tr>
+      <tr>
+        <td>B-1／B-2 素材</td>
+        <td><b style="color:var(--accent-green);">已完成，勿重做</b></td>
+        <td>已由 PLAN-052-I C-1 兌現。<b style="color:var(--accent-red);">不要再寫一支轉檔腳本、不要產生 <code>lore.webp</code></b>——
+            既有產物是 <code>art.webp</code>（52 張／863×1600），derive 走
+            <code>src/utils/assets.ts</code> 的 <code>hasPilotArt()</code> ／ <code>pilotKeyArtPath()</code>。詳見 Phase B 各項。</td>
+      </tr>
+      <tr>
+        <td>A-3 署名抽取</td>
+        <td><b style="color:var(--accent-green);">✅ 已完成（34 筆）</b></td>
+        <td>2026-09-09 已 <code>--apply</code> 寫入 34 筆並 bump 版本。兩筆裁示：黑障 <code>——■■■■</code> <b>照登</b>；
+            尼爾補書名號成 <code>——《米赫瑪自然雜誌》</code>。詳見下方 A-3 工作項。</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="warn-block" style="border-left-color:var(--accent-red); background:rgba(239,68,68,0.06); border-color:rgba(239,68,68,0.22);">
+    <strong style="color:var(--accent-red);">🔴 2026-09-09 偵察發現：實作前必讀</strong><br>
+    8 路平行偵察 ＋ 完整性批判的產出。完整報告在
+    <code>_local-notes/2026-09/2026-09-09_PLAN-042A-偵察發現.md</code>（原始資料同目錄）。以下三項<b>會擋住實作</b>：
+
+    <table class="layer-table" style="margin-top:14px;">
+      <tr><th style="width:180px;">阻塞項</th><th>說明</th></tr>
+      <tr>
+        <td><b style="color:var(--accent-red);">① pilotLore 未部署<br>＝ 後台刪除功能已壞</b></td>
+        <td>Phase A 把 <code>pilotLore</code> 寫進 <code>entityRefs.ts:740</code> 的 SPECS，而
+            <code>ALL_SCAN_COLLECTIONS = Object.keys(SPECS)</code>（<code>:745</code>）<b>自動把它拉進兩條消費路徑</b>：<br>
+            · <code>cascadeDelete.ts:199-207</code> 的 <code>loadScanData</code> 用 <code>Promise.all</code> ＋ <code>getDocsFromServer</code> 掃全部 SPECS 集合，<b>任一失敗即整個 reject</b>
+              → 規則未部署 → pilotLore 預設拒絕（<b>連 ADMIN 也擋</b>，規則是伺服器端強制）
+              → <b style="color:var(--accent-red);">刪除任何 BUFF／技能／詞條／背包／背包技能／形態都會整個失敗</b>。<br>
+            · <code>useRefScanData.ts:21</code> 走 Worker → <b>實測 <code>/api/data/pilotLore</code> 回 404</b>
+              → 後台每個編輯面板的「影響 N 處引用」永久掛未掃描警示。<br>
+            <b>解法</b>：<code>cd workers &amp;&amp; npx wrangler deploy</code> ＋ <code>npx firebase deploy --only firestore:rules</code>。
+            兩條指令<b>都不在任何 CI 或 git hook 內</b>（全 repo 只有 <code>workers/package.json:6</code> 一條）。<br>
+            <b style="color:var(--accent-red);">⚠ 部署之前本分支不可 push；且 dev 打的是正式 Worker，不部署就驗收不了任何畫面。</b></td>
+      </tr>
+      <tr>
+        <td><b>② <code>usePilotLore()</code> 不存在</b></td>
+        <td><code>useFirestore.ts</code> 全檔 grep <code>usePilotLore</code> 與 <code>LoreDoc</code> 皆<b>零命中</b>，Phase D 第一行就沒有資料入口。<br>
+            補的時候<b>error 分支要放在 loading 之前</b>——<code>ensureLoaded</code> 的 catch 不把 key 加進 <code>loadedKeys</code>（只寫 <code>errorMap</code>），抓取失敗時 <code>loading</code> 永遠是 <code>true</code>。<br>
+            範本：<code>useFirestore.ts:226-249</code>（<code>useForms</code>／<code>useFormsByPilot</code>）。⚠ <code>useCollections</code> 的 <code>keys</code> 不在 deps 裡，必須傳常數字面量。</td>
+      </tr>
+      <tr>
+        <td><b>③ <code>position: sticky</code> 結構性失效</b></td>
+        <td><code>Layout.tsx:358</code> 的 <code>&lt;main className="flex-1 overflow-hidden"&gt;</code> 讓 sticky 沒有可用的 scrollport。
+            <b>C-2 常駐章節軸與 D-3 手機 sticky 立繪都預設它可用</b>。<br>
+            站上現有的 sticky HUD（LoadoutPage）<b>本來就是壞的</b>：正式站實測 scrollY 3000→3400 時 <code>rect.top</code> 由 -393px 變 -793px。<br>
+            <b>唯一已驗證的既有範本</b>：<code>src/pages/versions/VersionsLayout.tsx</code>
+            （<code>viewport-shell</code> ＋ <code>flex-1 min-h-0 overflow-y-auto overscroll-contain</code>）。
+            這個選擇會連鎖決定 immersive 的高度公式與正文能否自捲，<b>要先定它再寫 C-2／D-3</b>。</td>
+      </tr>
+    </table>
+
+    <b style="color:var(--accent-yellow);">🟡 另有 4 項須在寫第一行 JSX 前拍板</b>（詳見報告）：
+    <b>(A)</b> <code>RefText</code> 會把正文數字變紅粗體且無 prop 可關（<code>moduleStats.tsx:81-86</code>），
+    而 lore 實際 <b>0 篇含 <code>[xxx]</code></b>——傾向章節正文自己 tokenize；
+    <b>(B)</b> 紙色換膚 × portal 浮層的「硬底＋軟字」（<code>ReferenceContext.tsx:80</code> 與
+    <code>index.css:122-125</code> 會變成深底深字幾乎看不見）；
+    <b>(C)</b> C-1 的顯影門檻全量在<b>深色底</b>上，紙色下 dodge 會飽和成純白，須重量或讓 LoreArt 自帶中性底；
+    <b>(D)</b> D-2 館首頁列 <code>pilotLore</code>（實際 0 筆）還是 <code>pilots</code>、未建檔點進去看什麼、<code>/lore</code> 路由歸誰擁有。
+
+    <br><br><b style="color:var(--accent-cyan);">🔵 本表行號幾乎全數過期，定位請改用 grep</b>：
+    <code>Layout.tsx:121/:116</code> → 實際 <code>:136/:131</code>；
+    <code>PilotDetailPage.tsx:1484</code> → <code>:1253-1263</code>；
+    <code>PilotAdmin.tsx:1286</code> → <code>:1613-1615</code>；
+    <code>entityRefs.ts:296</code> → <code>:300</code>；
+    <code>AdminPage.tsx:155-156</code> → <code>:156-157</code>。
+    數字亦有漂移：C-1「54 張」實為 <b>52</b>、C-3「35 篇署名」實為 <b>34</b>、C-4「343 次」實為 <b>388</b>、D-2「89 檔」實為 <b>88</b>。
+
+    <br><br><b>其他高價值接縫</b>：路由參數<b>一律命名 <code>:id</code></b>（<code>track.ts:227</code> 寫死讀 <code>params.id</code>，
+    命名成 <code>:pilotId</code> 會讓熱度一筆不記而測試全綠）；
+    <code>Layout.tsx:483</code> 的手機 Tab Bar <b>完全沒有條件</b>、從不受 <code>isFullHeightPage</code> 控制（immersive 漏掉它，手機底部會有 56px 深色列）；
+    CF Transform Rule <b>要改兩處</b>（白名單＋UA 排除區塊，只做排除的話真人拿 HTTP 404——實測 <code>/lore</code> 現在就是 404）；
+    <code>AdminHistoryPage.tsx:27</code> 的 <code>TARGET_OPTIONS</code> 少了 <code>pilotLore</code> 等四個值；
+    進場底色過渡<b>不能</b> transition 未註冊的自訂屬性（會直接跳變且不報錯）。
+
+    <br><br><b style="color:var(--accent-orange);">⚠ Phase A 遺留缺陷（已寫進碼，需在 C/D/E 期間順手修）</b>
+    <table class="layer-table" style="margin-top:10px;">
+      <tr><th style="width:190px;">缺陷</th><th>說明與修法</th></tr>
+      <tr>
+        <td><b>① pilotLore 進 SPECS<br>連動兩條消費路徑</b></td>
+        <td>見本區塊開頭第 ① 項。解法是部署，不是改碼。</td>
+      </tr>
+      <tr>
+        <td><b>② 章節錨點 <code>by:'name'</code><br>配 <code>value: ch.key</code></b></td>
+        <td><code>entityRefs.ts:721</code> 寫的是 <code>anchor: { by: 'name' as const, value: ch.key }</code>——
+            意圖正確（註解寫明「索引不是穩定識別子，錨點用必填的 key」），但 <code>by</code> 挑錯了。<br>
+            <code>restorePatch.ts:72</code> 的 <code>ANCHOR_FIELD = { name: 'name', level: 'level', minSum: 'minSum' }</code>
+            <b>沒有 <code>key</code></b>，於是 <code>:95</code> 的 <code>field</code> 解析成 <code>'name'</code>、
+            <code>:96</code> 的 <code>matches()</code> 去比對 <code>el.name === ch.key</code>——
+            而 <code>LoreChapter</code> 只有 <code>key</code>／<code>label</code>／<code>title</code>／<code>body</code>，
+            <b>沒有 <code>name</code> 欄位</b>。<br>
+            <b style="color:var(--accent-red);">後果比「重排後失效」更廣</b>：<code>relocate()</code> 第一步
+            「index 仍正確」的快速路徑就過不了（<code>matches()</code> 恆為 false），
+            直接落到全陣列搜尋 → 找到 0 個 → <b>每一筆</b>反向修補單還原時都回 <code>anchorMismatch</code>，
+            <b>即使章節從未重排</b>。<br>
+            <b>修法（三處，缺一不可）</b>：<code>RefAnchor['by']</code> 的字面聯集加 <code>'key'</code>；
+            <code>restorePatch.ts:72</code> 的 <code>ANCHOR_FIELD</code> 加 <code>key: 'key'</code>；
+            <code>entityRefs.ts:721</code> 改成 <code>by: 'key'</code>。<br>
+            <b>現在還沒爆</b>是因為 pilotLore 目前只有 34 筆 <code>frontSource</code>、<code>chapters</code> 全空，
+            尚無任何章節站點。<b>E-1 編輯台一上線就會開始累積，屆時才發現就是一批修不回來的還原紀錄。</b></td>
+      </tr>
+    </table>
   </div>
 
 </section>
@@ -241,16 +382,16 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; 共用型別 src/types/lore.ts<span class="badge badge-cyan" style="margin-left:8px;">兩館共用</span></div>
       <div class="task-group-meta">src/types/lore.ts · src/types/index.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">LoreChapter / LoreCommentary 型別</div>
-        <div class="task-desc">定義 <code>LoreChapter { key, label?, title, body, source?, commentary? }</code> 與 <code>LoreCommentary { speakerId, text }</code>。<b>key 必填</b>（總綱決策五：不可用陣列索引、也不可開選填鍵）。<code>subject</code> 若用 discriminated union，<b>要自己補 <code>assertNever</code></b>——repo 內沒有 exhaustive 檢查的既有慣例。</div>
+        <div class="task-desc">定義 <code>LoreChapter { key, label?, title, body, source?, commentary? }</code> 與 <code>LoreCommentary { speakerId, text }</code>。<b>key 必填</b>（總綱決策五：不可用陣列索引、也不可開選填鍵）。<code>subject</code> 若用 discriminated union，<b>要自己補 <code>assertNever</code></b>——repo 內沒有 exhaustive 檢查的既有慣例。<br><b>✅ 實作結果：不開 <code>subject</code>。</b>「屬於機師還是機甲」已由<u>它住在哪個集合</u>完整表達，再存一次就是第二個真相源，union 的成本會在零消費端的情況下先付掉。另加了 <code>bodyRefs?: DescriptionRefs</code>（C-3 的 <code>&lt;RefText&gt;</code> 需要側錄表，總綱草圖漏了）與 <code>LoreDoc.frontSource</code>。</div>
         <div class="task-file">src/types/lore.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -259,14 +400,14 @@
         <div class="task-file">src/types/index.ts · docs/02_技術文件/02_資料模型/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; pilotLore 集合與七處 CollectionKey 同步<span class="badge badge-cyan" style="margin-left:8px;">兩館共用</span></div>
       <div class="task-group-meta">src/lib/api/ · workers/src/index.ts · scripts/bump-data-version.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -275,41 +416,49 @@
         <div class="task-file">src/lib/api/pilotLore.ts · src/lib/firestoreApi.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">七處同步（漏一處就炸）</div>
-        <div class="task-desc"><code>collectionKeys.ts</code>、<code>workers/src/index.ts</code> 的 <code>ARRAY_COLLECTIONS</code>（<b>漏＝正式站 404、本機全綠</b>）、<code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>（<b>漏＝整條指令 exit(1)</b>）、<code>entityRefs</code> SPECS、測試 helper、<code>firestore.rules</code>、<code>GameDataContext</code> 的 state ＋ switch ＋ 型別。<br><b>先例警示：PLAN-043 就是漏掉 backpackSkills 炸在正式站。</b></div>
+        <div class="task-desc"><code>collectionKeys.ts</code>、<code>workers/src/index.ts</code> 的 <code>ARRAY_COLLECTIONS</code>（<b>漏＝正式站 404、本機全綠</b>）、<code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>（<b>漏＝整條指令 exit(1)</b>）、<code>entityRefs</code> SPECS、測試 helper、<code>firestore.rules</code>、<code>GameDataContext</code> 的 state ＋ switch ＋ 型別。<br><b>先例警示：PLAN-043 就是漏掉 backpackSkills 炸在正式站。</b><br><b>✅ 實作結果</b>：七處全數同步。順手把<u>唯一沒有自動檢查的那一處</u>補上守衛——<code>collectionKeys.test.ts</code> 新增兩條斷言（<code>GameDataContext</code> 的 <code>case</code> 與 <code>useState</code>），漏一支 <code>case</code> 的症狀原本是「該集合永遠是空陣列」、零錯誤零紅字。<code>npm test</code> 1208 綠。<br><b>⚠ 尚未部署</b>：<code>wrangler deploy</code> 與 <code>firebase deploy --only firestore:rules</code> 都不在 build/push 流程內，而本機 dev 的 <code>VITE_WORKER_API_BASE</code> 指向<u>正式</u> Worker。</div>
         <div class="task-file">src/lib/collectionKeys.ts · workers/src/index.ts · scripts/bump-data-version.mjs · firestore.rules</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">localStorage 豁免或體積上限</div>
-        <div class="task-desc">實測全集合快取展開後已達 4.2–4.5 MB，逼近 Chrome 約 5 MB 上限，而 <code>GameDataContext.tsx:41-47</code> 的 <code>writeCache</code> catch <b>是空的</b>——超限症狀是「每次都靜默重讀」、零錯誤訊息。<b>本集合跳過 localStorage 層，或設體積上限。</b></div>
+        <div class="task-desc">實測全集合快取展開後已達 4.2–4.5 MB，逼近 Chrome 約 5 MB 上限，而 <code>GameDataContext.tsx:41-47</code> 的 <code>writeCache</code> catch <b>是空的</b>——超限症狀是「每次都靜默重讀」、零錯誤訊息。<b>本集合跳過 localStorage 層，或設體積上限。</b><br><b>✅ 實作結果：走「跳過」，<u>不設</u>通用體積上限。</b>既有最大的 <code>pilots</code> 就有 2.09 MB，任何「合理」的上限不是誤傷它、就是高到形同虛設；名單（<code>NO_LOCAL_CACHE_KEYS</code>）是明示的編輯決策，上限則會靜默改變既有集合的行為。空 catch 同時改成 <code>console.warn</code>。</div>
         <div class="task-file">src/contexts/GameDataContext.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-3 &nbsp; 署名抽取草稿腳本</div>
       <div class="task-group-meta">scripts/temp_scripts/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">一次性 source 抽取 + 人工複核</div>
-        <div class="task-desc">以「位置 &gt; 60%、尾段 ≤ 30 字、不含句號」啟發式從 89 篇 lore 抽出 <code>source</code>。實測命中 30 / 誤判 0 / 漏抓 3（尾帶句號者）。<b>只當草稿，不在執行期即時 parse。</b>產出寫進 <code>pilotLore</code> 的扉頁章節。</div>
+        <div class="task-desc">以「位置 &gt; 60%、尾段 ≤ 30 字、不含句號」啟發式從 89 篇 lore 抽出 <code>source</code>。<b>只當草稿，不在執行期即時 parse。</b><br><b>✅ 實作結果（2026-08-31）</b>：切點是<b>最後一個署名記號</b>而非「最後一段」——實測署名與正文<u>同一段</u>（<code>…」——《週刊米赫瑪·文娛版》</code>），按段落切只命中 1 篇。改對之後：命中 <b>32</b> / 誤判 0 / 疑似漏抓 <b>2</b>（迪拉卡、凱莉，署名尾帶句號）。dry-run 把「有記號但被規則擋下」的 9 篇單獨列一段，人工只要看那一段就補得完。<br>產出落在 <code>pilotLore.frontSource</code>（<b>不是</b>扉頁章節）：扉頁正文仍是 <code>pilots.lore</code>，寫成章節就會複製出第二個真相源。<br><b style="color:var(--accent-green)">✅ 2026-09-09 已 <code>--apply</code> 完成（34 筆）</b>：人工複核把命中從 32 補到 <b>34</b>——
+        補上原規則因「尾段帶句號」擋下的 2 筆真署名（迪拉卡 <code>——同盟軍防衛營脫口秀錄音節選。</code>、
+        凱莉 <code>——在收隊後因走神0.5秒而被訓斥的新兵如是說。</code>），
+        另 7 筆判定為<b>正文破折號誤判、不收</b>（繪梨沙、弗雷姬塔、薩普里婭、瑪汀妮、唐小葵、瑪麗、賽拉——
+        其中薩普里婭那條破折號是<u>引出對話</u>不是署名）。<br>
+        破折號正規化 2 筆（<code>一一</code> ／ <code>--</code> → <code>——</code>，皆為原文 OCR 誤植），最終 34/34 全為全形 <code>——</code> 開頭。<br>
+        <b>兩筆內容裁示（2026-09-09 使用者拍板）</b>：黑障 <code>——■■■■</code> <b>照登</b>（視為原文刻意遮蔽，是影子人物設定的一部分）；
+        尼爾補書名號成 <code>——《米赫瑪自然雜誌》</code>，與其他 4 筆刊物類署名統一體例。<br>
+        寫入走 <code>merge:true</code>（不覆蓋日後的 <code>chapters</code>），已 <code>bump-data-version.mjs pilotLore</code>。</div>
         <div class="task-file">scripts/temp_scripts/extract-lore-source.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -319,55 +468,70 @@
   <div class="section-title">素材管線</div>
 
 
-  <div class="section-desc">官方 888 MB 母檔 → 5.3 MB 站內素材。這階段做完，故事館的視覺主體就到位了。</div>
+  <div class="section-desc">官方 1.1 GB 母檔 → 6.7 MB 站內素材。這階段做完，故事館的視覺主體就到位了。<br>
+    <b style="color:var(--accent-green)">✅ 2026-09-09 複查：本階段四項實際上已由 PLAN-052-I C-1 兌現</b>，只是產出命名與本表原規劃不同（<code>art.webp</code> 而非 <code>lore.webp</code>、1600px 而非 1400px）。下方各項已改寫為實際狀態。</div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; 官方全身立繪批次轉檔</div>
       <div class="task-group-meta">scripts/ · public/images/pilots/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">轉檔腳本</div>
-        <div class="task-desc">來源 <code>Mecharashi素材/0814_追加機師/</code>（48）＋內層 <code>Mecharashi素材/</code>（6），排除 <code>Icon_*</code>。輸出 <b>高 1400px / WebP q88</b> → <code>public/images/pilots/&lt;名&gt;/lore.webp</code>。實測平均 100 KB／張、54 張約 5.3 MB。<br><b>⚠ 需異體字對照表</b>：卡米拉↔卡蜜拉、維若妮卡↔維羅妮卡、繪梨莎↔繪梨沙。<b>不可用模糊比對</b>。</div>
-        <div class="task-file">scripts/convert-lore-art.mjs</div>
+        <div class="task-desc">來源 <code>C:\Users\User\Pictures\鋼嵐\Mecharashi素材\</code>（<code>0814_追加機師/</code> 48 張＋內層 <code>Mecharashi素材/</code> 6 張，排除 <code>Icon_*</code>）。<br>
+        <b style="color:var(--accent-green)">✅ 實作結果</b>：腳本是 <code>scripts/import-source-art.mjs</code>（<b>不是</b>原規劃的 <code>convert-lore-art.mjs</code>），輸出 <b>長邊上限 1600px / WebP q82</b> → <code>public/images/pilots/&lt;名&gt;/<b>art.webp</b></code>（<b>不是</b> <code>lore.webp</code>）。實際 <b>52 張、6.7 MB</b>、平均 129 KB／張、直式全身約 863×1600。<br>
+        <b>⚠ 異體字對照已內建</b>：腳本的 <code>NAME_FIXES</code> 收了 7 筆（奈奥米→奈奧米、奥德莉→奧德莉、維若妮卡→維羅妮卡、繪梨莎→繪梨沙、羅斯瑪莉→羅斯瑪麗、塔納托斯→塔納託斯、芬里厄→芬裡厄）。目的地一律沿用<b>站上既有資料夾名</b>、不新建資料夾，找不到唯一對應就中止——<b>寧可漏也不要寫進錯的機體</b>。<br>
+        <b>素材 53 人名 → 產出 52 張</b>，差的 1 張是<b>維娜</b>：腳本以像素比對判定 <code>維娜.png</code> 與既有 <code>full.webp</code> 完全相同、且僅 1240×1080，<b>不是原稿</b>，故正確擋下。維娜歸入下方 36 位 fallback 名單。</div>
+        <div class="task-file">scripts/import-source-art.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">888 MB 母檔不進版控</div>
-        <div class="task-desc">只有轉檔後的 5.3 MB 進 <code>public/</code>；母檔留在來源資料夾或另存備份。腳本要能重跑。</div>
-        <div class="task-file">public/images/pilots/ · .gitignore</div>
+        <div class="task-name">母檔不進版控</div>
+        <div class="task-desc"><b style="color:var(--accent-green)">✅ 實作結果</b>：母檔 1.1 GB 留在 <code>C:\Users\User\Pictures\鋼嵐\Mecharashi素材\</code>（專案外，天然不進版控）；只有轉檔後的 <b>52 張 / 6.7 MB</b> 進 <code>public/images/pilots/</code>。<br>
+        腳本可重跑且<b>預設冪等</b>：已存在的 <code>art.webp</code> 自動略過，<code>--force</code> 才重轉；<code>--src</code> 可換素材來源，<code>--apply</code> 才實際寫檔（預設 dry-run）。<br>
+        另有兩道<b>自動守門</b>：與既有 <code>full.webp</code> 像素完全相同者判定為「非原稿」拒收；解析度低於 1600px 者維持原尺寸不放大。</div>
+        <div class="task-file">public/images/pilots/ · scripts/import-source-art.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; 三層立繪 derive 與單測</div>
       <div class="task-group-meta">src/utils/assets.ts · src/utils/assets.test.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">derive 規則收單一出口</div>
-        <div class="task-desc">解析順序 <code>lore.webp</code> → <code>full.webp</code> → <code>half.webp</code>，丟進既有 <code>imageCandidates</code> ＋ <code>FallbackImage</code>。<b>不開 <code>loreArt</code> 欄位</b>。<br><b>⚠ derive 是對檔名慣例的耦合</b>：<code>patch-image-paths.mjs</code> 日後改命名會靜默退回而不報錯，所以規則收在 <code>assets.ts</code> 單一出口並補單測。</div>
-        <div class="task-file">src/utils/assets.ts · src/utils/assets.test.ts</div>
+        <div class="task-desc"><b style="color:var(--accent-green)">✅ 實作結果</b>：規則已收在 <code>src/utils/assets.ts</code> 單一出口，四支函式分工如下——<br>
+        · <code>pilotArtDir(pilot)</code>　由 <code>pilot.portrait</code> 取出圖片資料夾名。<b>不能用 <code>pilot.name</code> 代替</b>（簡繁／譯名差異 7 筆）。<br>
+        · <code>pilotKeyArtPath(pilot)</code>　<code>/images/pilots/&lt;名&gt;/art.webp</code>，副檔名固定 <code>.webp</code>。<br>
+        · <code>pilotFullArtPath(pilot)</code>　由 <code>half.*</code> 換出 <code>full.*</code>，<b>保留原副檔名</b>（阿列娜是 <code>half.png</code>，88 個資料夾裡的唯一例外）。<br>
+        · <code>hasPilotArt(pilot)</code>　查 <code>PILOT_ART_INDEX</code>，<b>52/88 位有</b>。<br>
+        <b>⚠ <code>art.webp</code> 與 <code>full.webp</code> 是兩張不同構圖的圖，不是同一張的兩種尺寸</b>：<code>art</code> 863×1600 直式完整全身、<code>full</code> 1240×1080 橫式半身特寫（名為 full 其實只到大腿）。<b>版面必須在渲染前就用 <code>hasPilotArt()</code> 問清楚</b>，不能等 <code>FallbackImage</code> 載失敗才知道——構圖不同，等圖載完再換版面會讓卡片跳動一次。<br>
+        <b>不開 <code>loreArt</code> 欄位</b>（維持原決策）。單測 <code>src/utils/assets.test.ts</code> 已有 20 條。</div>
+        <div class="task-file">src/utils/assets.ts:139-205 · src/utils/assets.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">納入 image manifest</div>
-        <div class="task-desc"><code>generate-image-manifest.mjs</code> 掃出 <code>lore.webp</code> 的存在與否，讓「有沒有全身立繪」可被 derive，不落盤成欄位、也不建「立繪待補」清單。</div>
-        <div class="task-file">scripts/generate-image-manifest.mjs</div>
+        <div class="task-name">納入 art index</div>
+        <div class="task-desc"><b style="color:var(--accent-green)">✅ 實作結果</b>：走的是<b>獨立的 <code>scripts/generate-art-index.mjs</code></b>（不是 <code>generate-image-manifest.mjs</code>），在 build / predev 掃圖庫產出 <code>src/data/artIndex.ts</code> 的 <code>PILOT_ART_INDEX</code>（<code>ReadonlySet&lt;string&gt;</code>）。<br>
+        兩者分工：<code>image-manifest</code> 服務<b>後台 IconPicker</b>（挑圖用），<code>art-index</code> 服務<b>前台渲染前的版面判斷</b>（要同步、要能在 render 前問）。<br>
+        <b>⚠ <code>artIndex.ts</code> 自動產生、請勿手動編輯</b>；存的是<b>圖片資料夾名</b>不是機師名。查詢一律走 <code>hasPilotArt(pilot)</code>，不要自己拿名字比對。<br>
+        維持原決策：不落盤成欄位、也不建「立繪待補」清單。</div>
+        <div class="task-file">scripts/generate-art-index.mjs · src/data/artIndex.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -382,7 +546,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; LoreArt 顯影元件<span class="badge badge-cyan" style="margin-left:8px;">兩館共用</span></div>
       <div class="task-group-meta">src/components/lore/LoreArt.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -391,7 +555,7 @@
         <div class="task-file">src/components/lore/LoreArt.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -400,7 +564,7 @@
         <div class="task-file">src/components/lore/LoreArt.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -409,7 +573,7 @@
         <div class="task-file">src/components/lore/LoreArt.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -418,14 +582,14 @@
         <div class="task-file">src/components/lore/LoreArt.tsx · src/index.css</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; LoreChapterPager 章節導覽<span class="badge badge-cyan" style="margin-left:8px;">兩館共用</span></div>
       <div class="task-group-meta">src/components/lore/LoreChapterPager.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -434,7 +598,7 @@
         <div class="task-file">src/components/lore/LoreChapterPager.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -443,7 +607,7 @@
         <div class="task-file">src/components/lore/LoreChapterPager.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -452,14 +616,14 @@
         <div class="task-file">src/App.tsx · src/pages/lore/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; 章節正文與旁白渲染<span class="badge badge-cyan" style="margin-left:8px;">兩館共用</span></div>
       <div class="task-group-meta">src/components/lore/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -468,7 +632,7 @@
         <div class="task-file">src/components/lore/LoreChapterBody.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -477,14 +641,14 @@
         <div class="task-file">src/components/lore/LoreCommentaryRow.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-4 &nbsp; chromeMode 三態與紙色換膚<span class="badge badge-cyan" style="margin-left:8px;">兩館共用</span></div>
       <div class="task-group-meta">src/components/layout/Layout.tsx · src/index.css</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -493,7 +657,7 @@
         <div class="task-file">src/components/layout/Layout.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -502,7 +666,7 @@
         <div class="task-file">src/index.css · src/pages/lore/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -511,7 +675,7 @@
         <div class="task-file">src/pages/lore/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -526,7 +690,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 路由與導覽列入口</div>
       <div class="task-group-meta">src/App.tsx · src/components/layout/Layout.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -535,7 +699,7 @@
         <div class="task-file">src/App.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -544,14 +708,14 @@
         <div class="task-file">src/components/layout/Layout.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; 館首頁（機師牆）</div>
       <div class="task-group-meta">src/pages/lore/LoreHomePage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -560,7 +724,7 @@
         <div class="task-file">src/pages/lore/LoreHomePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -569,23 +733,24 @@
         <div class="task-file">src/pages/lore/LoreHomePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; 扉頁與章節頁</div>
       <div class="task-group-meta">src/pages/lore/PilotLorePage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">扉頁（檔案層）</div>
+        <div class="task-desc" style="color:var(--accent-cyan);margin-bottom:6px;"><b>ℹ 2026-09-10 驗收觀察：卡夏的出處會出現兩次，這是資料不是 bug。</b>　署名行（<code>frontSource</code>）與 <code>additionalInfo</code> 的「出版刊物」欄位指的是同一份《戰地旅行手冊：從前線到風景線》。全站 34 筆有 <code>frontSource</code> 的機師中<b>只有卡夏 1 位</b>有這個重疊，官方資料本來就這樣存。<code>stripTrailingSource()</code> 已正確把署名從正文剝離（實測剝掉 18 字），<b>不要為了「去重」去改程式或砍 additionalInfo 欄位</b>。</div>
         <div class="task-desc">立繪柱 ＋ 直書姓名 ＋ 三枚徽記（陣營／駕駛許可／天賦）＋ 引文卡 ＋ <code>additionalInfo</code> 自由鍵值列。<b>陣營徽記用「文字刻在圓環內」不要畫圖</b>（30 個值、18 個只有 1 人，畫圖是會增生的美術債）。<b>⚠ 有 3 位機師的天賦既無 icon 也無 iconLocal，徽記元件必須有無圖 fallback。</b></div>
         <div class="task-file">src/pages/lore/PilotLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -594,14 +759,14 @@
         <div class="task-file">src/pages/lore/PilotLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-4 &nbsp; 圖鑑詳情頁的 lore 區塊改導引</div>
       <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -610,7 +775,7 @@
         <div class="task-file">src/pages/pilots/PilotDetailPage.tsx:1484 · src/pages/user/admin/PilotAdmin.tsx:1286</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -625,16 +790,17 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; /admin/lore 獨立子頁</div>
       <div class="task-group-meta">src/pages/admin/AdminLorePage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">為什麼不開第 15 個 Tab</div>
+        <div class="task-desc" style="color:var(--accent-red);margin-bottom:6px;"><b>⚠ 2026-09-10 上線後即時修復：整頁全白</b>　<code>LoreDoc.chapters</code> 型別上是<b>必填</b>，但 Firestore <b>不強制 schema</b>——A-3 的 <code>--apply</code> 只寫了 <code>{ id, name, frontSource }</code>，34 筆文件全都<b>沒有 chapters 欄位</b>。本頁渲染列表統計時 <code>d.chapters.length</code> 直接 TypeError，錯誤冒泡出 Layout ⇒ <b>整頁全白、連 header 都沒有</b>（<code>AdminRoute</code> 外層無 error boundary、<code>Suspense fallback={null}</code> 也吃掉了提示）。前台兩處都有 <code>?.</code> 防禦所以沒事，後台四處都沒有。<br><b>三處都修了</b>：① 資料補回 <code>chapters: []</code>（34 筆）並 bump；② 本頁五處改走 <code>?.chapters?.</code> 防禦；③ 一次性腳本改成<b>只補缺的</b>（無條件寫 <code>chapters: []</code> 會在 merge 下靜默清空既有章節）。<br><b>通則</b>：凡是從 Firestore 讀回來的「型別必填」欄位，執行期都可能不存在——TS 一個字都不會擋。</div>
         <div class="task-desc">① <b>互動形狀不同構</b>：後台既有的殼是「列表 → AdminModal 彈窗 → 存檔」的 CRUD 形狀，故事編輯要的是章節側欄 ＋ 長文 textarea ＋ 即時預覽 ＋ 跨機甲/機師切換。② <b>權限要能切分</b>：未來若開給協作者，必須是一條能獨立授權的路由，Tab 做不到。<br><span style='color:var(--text-dim);'>註：<code>AdminPage.tsx:155-156</code> 那條「子頁而非 Tab」的先例講的是<u>資料模型</u>（changeHistory 不走 GameDataContext 預載入），不是 Tab 數量——之後專案還加過兩顆 Tab。不要引用那條當理由。</span></div>
         <div class="task-file">src/pages/admin/AdminLorePage.tsx · src/App.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -643,7 +809,7 @@
         <div class="task-file">src/pages/admin/AdminLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -652,7 +818,7 @@
         <div class="task-file">src/pages/admin/AdminLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -667,7 +833,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-1 &nbsp; Worker route 與 og 解析</div>
       <div class="task-group-meta">workers/wrangler.jsonc · workers/src/socialPreview.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -676,7 +842,7 @@
         <div class="task-file">workers/wrangler.jsonc</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -685,16 +851,27 @@
         <div class="task-file">workers/src/socialPreview.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">CF Transform Rule 例外</div>
+        <div class="task-desc" style="color:var(--accent-green);margin-bottom:6px;"><b>✅ 2026-09-10 已部署並複驗</b>
+        <b>要改兩處不是一處</b>——原文只寫了「排除」，但那只做一半：<br>
+        ① <b>白名單</b>加 <code>or starts_with(http.request.uri.path, "/lore")</code>（<b>無尾斜線</b>，
+        要涵蓋 <code>/lore</code> 館首頁本身，否則真人訪客拿 HTTP 404）；<br>
+        ② <b>UA 排除區塊</b>的路徑組加 <code>or starts_with(http.request.uri.path, "/lore/")</code>
+        （<b>有尾斜線</b>，只排除子路徑——館首頁沒有逐頁 OG，爬蟲抓它就該拿改寫後的預設卡）。<br>
+        尾斜線的差異與既有的 <code>/pilots</code> vs <code>/pilots/</code> 完全一致。<br>
+        <b>複驗結果</b>：<code>/lore</code> 200、<code>/lore/pilots/:id</code> 200、<code>/versions</code> 200（未破壞）、
+        <code>/notarealpath</code> 維持 404；Discordbot 抓 <code>/lore/pilots/pilot_027_卡夏</code> 得到
+        <code>og:title「卡夏 的故事｜米赫瑪超吉情豹站」</code> 與卡夏的 og:image；
+        既有的海莉絲機師頁 og:image 未受影響。</div>
         <div class="task-desc"><code>/lore/*</code> 必須被排除在 PLAN-029 的 SPA fallback Transform Rule 之外，否則進 Worker 前就被改寫成 <code>/index.html</code>、route 零命中。<b>這條規則只存在 CF Dashboard、不進版控——2026-08-22 首次部署就是這樣踩的。</b></div>
         <div class="task-file">Cloudflare Dashboard（不進版控）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -703,7 +880,7 @@
         <div class="task-file">scripts/generate-og-entity-images.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -718,16 +895,48 @@
     <div class="task-group-header">
       <div class="task-group-title">G-1 &nbsp; bundle 產物驗證</div>
       <div class="task-group-meta">dist/ · scripts/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">確認逸聞沒掉進主包</div>
-        <div class="task-desc">實測主 bundle <code>index-*.js</code> ＝ 1,131,628 B raw / <b>296,674 B gzip</b>；89 篇 lore ＝ 51,978 B raw → 26,280 B gzip（中文壓縮比 0.506）。外推 89 人 × 4 PART × 500 字 ≈ 534 KB raw → <b>約 270 KB gzip，幾乎讓主包翻倍</b>。<br><b>「放進 src/data/ 就會自動分塊」在本 repo 已被證偽</b>：<code>src/data/siteChangelog</code>（73 KB）被 <code>SiteChangelog.tsx</code> 靜態 import 而 HomePage 不在 lazy 名單，grep 實測 index chunk 內含 changelog 字串。<b>必須以實際 build 產物驗證，不能只靠推論。</b></div>
+        <div class="task-desc"><b style="color:var(--accent-red)">⚠ 2026-09-09 複驗：本項原記的基線已過期 20 萬 bytes</b>——
+        原文寫「1,131,628 B raw / 296,674 B gzip」，實際以 <code>git stash</code> 退回 HEAD 重跑 <code>npm run build</code> 量得
+        <b>1,333,781 B raw / 377,176 B gzip</b>。中間數個 PLAN 的累積，與故事館無關。<br>
+        <b>批次 1 施工後為 1,335,471 B raw / 377,388 B gzip，只長了 1,690 B raw / 212 B gzip</b>
+        （Layout 的 chromeMode ＋ 兩支 hook ＋ 紙色 CSS）。主包實測 <code>LoreArt</code> / <code>lore-shell</code> /
+        <code>loreText</code> 等字串<b>零命中</b>——元件尚未被 App.tsx 接線，全數被 tree-shake。<br>
+        89 篇 lore ＝ 51,978 B raw → 26,280 B gzip（中文壓縮比 0.506）。外推 89 人 × 4 PART × 500 字 ≈ 534 KB raw →
+        <b>約 270 KB gzip</b>。以修正後的基線重算：377 KB → 647 KB gzip，<b>+72%</b>
+        （原文「幾乎讓主包翻倍」是基於舊基線的說法，方向不變但幅度應修正）。<br><br><b style="color:var(--accent-green)">✅ 2026-09-09 施工後實測（主控端親跑 npm run build 並量測 dist 產物）</b><br>
+        <table class="layer-table" style="margin:10px 0;">
+          <tr><th style="width:150px;">階段</th><th style="width:130px;">主包 raw</th><th style="width:130px;">主包 gzip</th><th>增量</th></tr>
+          <tr><td>HEAD（施工前）</td><td>1,333,781 B</td><td>377,176 B</td><td>—</td></tr>
+          <tr><td>批次 1 後</td><td>1,335,471 B</td><td>377,388 B</td><td>+1,690 / <b>+212 B</b></td></tr>
+          <tr><td><b>批次 1+2+3 後</b></td><td><b>1,342,765 B</b></td><td><b>379,586 B</b></td><td>+8,984 / <b>+2,410 B</b></td></tr>
+        </table>
+        <b>三個 lore chunk 正確切出</b>：<code>LoreHomePage</code> 5,558 B、<code>PilotLorePage</code> 12,126 B、
+        <code>AdminLorePage</code> 13,386 B。<br>
+        <b>主包污染 grep 實測</b>：<code>LoreArt</code> / <code>loreText</code> / <code>LoreChapterPager</code> <b>皆 0 命中</b>。
+        <code>LoreHomePage</code> 與 <code>PilotLorePage</code> 各 2 次命中<b>不是內容洩漏</b>——
+        逐一檢查上下文，兩處都在 <code>__vite__mapDeps</code> 的 chunk 檔名字串與
+        <code>lazy(() =&gt; import('./LoreHomePage-*.js'))</code> 裡，正是分塊成功的證據。<br>
+        <b style="color:var(--accent-yellow)">⚠ <code>lore-shell</code> 與 <code>lore-scroll</code> 各 1 次命中是真的在主包</b>：
+        <code>LoreLayout</code> 走的是<b>靜態 import</b>（<code>App.tsx:30</code>）而非 <code>lazy()</code>。
+        理由是它掛 <code>html.lore-mode</code>、開全館唯一的 scrollport、負責跨路由捲頂，
+        <b>三個子頁共用同一個 layout route、切換機師時外殼不卸載</b>（進場遮罩才不會每次重播）；
+        改成 lazy 會讓進場多一次往返並閃一幀深色。
+        已複驗 <code>LoreLayout</code> <b>只 import react 與 react-router-dom、零資料 import</b>，
+        故逸聞內容一個字都沒進主包。<br>
+        <b style="color:var(--accent-orange)">⇒ G-2 的安全條件①要改寫</b>：原文「<code>/lore</code> 必須在 App.tsx lazy 名單」
+        照字面已不成立。真正要守的是「<b><code>/lore</code> 路由樹下不得靜態 import 任何 lore 資料</b>」——
+        <code>LoreLayout</code> 本體靜態載入是刻意的設計取捨，但日後若有人在它裡面 import 了
+        <code>src/data/lore/*</code>，靜態化的整包內容就會直接進主包<b>且沒有任何警告</b>。<br><br>
+        <b>「放進 src/data/ 就會自動分塊」在本 repo 已被證偽</b>：<code>src/data/siteChangelog</code>（73 KB）被 <code>SiteChangelog.tsx</code> 靜態 import 而 HomePage 不在 lazy 名單，grep 實測 index chunk 內含 changelog 字串。<b>必須以實際 build 產物驗證，不能只靠推論。</b></div>
         <div class="task-file">dist/assets/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
