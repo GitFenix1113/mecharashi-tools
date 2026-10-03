@@ -105,16 +105,23 @@ test('原稿立繪：portrait 空字串／缺欄位一律回 undefined', () => {
   assert.equal(pilotKeyArtPath(null), undefined)
 })
 
-test('資料夾名：取 pilots/ 後的那一段，不受檔名影響', () => {
+test('資料夾名：有 gameId 就是 gameId（PLAN-054 D-2），沒有才取 portrait 路徑 pilots/ 後的那一段', () => {
+  assert.equal(pilotArtDir({ gameId: '10103127', portrait: '/images/pilots/亞瑟/half.webp' }), '10103127')
   assert.equal(pilotArtDir({ portrait: '/images/pilots/羅斯瑪麗/half.webp' }), '羅斯瑪麗')
   assert.equal(pilotArtDir({ portrait: 'images/pilots/半人/full.webp' }), '半人')
   assert.equal(pilotArtDir({ portrait: '/images/weapons/foo.png' }), undefined)
 })
 
-test('有無原稿：查索引而不是查名字（52/88 位有）', () => {
-  // 亞瑟有原稿、曜沒有 —— 兩者都存在於圖庫，差別只在 art.webp
-  assert.equal(hasPilotArt({ portrait: '/images/pilots/亞瑟/half.webp' }), true)
-  assert.equal(hasPilotArt({ portrait: '/images/pilots/曜/half.webp' }), false)
+test('原稿立繪：資料夾改用 gameId（亞瑟 → pilots/10103127/art.webp）', () => {
+  assert.equal(pilotKeyArtPath({ gameId: '10103127', portrait: '/images/pilots/亞瑟/half.webp' }), '/images/pilots/10103127/art.webp')
+})
+
+test('有無原稿：查索引而不是查名字（索引的鍵是 gameId）', () => {
+  // 亞瑟有原稿、曜沒有 —— 差別只在 art.webp
+  assert.equal(hasPilotArt({ gameId: '10103127' }), true)
+  assert.equal(hasPilotArt({ gameId: '10103173' }), false)
+  // 名字資料夾已全數退場：只給舊 portrait 的話查不到（不會誤把名字當成鍵）
+  assert.equal(hasPilotArt({ portrait: '/images/pilots/亞瑟/half.webp' }), false)
   assert.equal(hasPilotArt({ portrait: '' }), false)
   assert.equal(hasPilotArt(null), false)
 })

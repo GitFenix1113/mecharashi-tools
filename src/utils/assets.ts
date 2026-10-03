@@ -235,19 +235,22 @@ export function pilotFullArtPath(
  * ⚠ 副檔名固定 `.webp`，不跟著 `portrait` 走：原稿是由 `scripts/import-source-art.mjs`
  *   統一輸出的，不存在 `full.*` 那種 `阿列娜/half.png` 的歷史例外。
  */
-export function pilotKeyArtPath(pilot: { portrait?: string } | null | undefined): string | undefined {
+export function pilotKeyArtPath(pilot: { portrait?: string; gameId?: string } | null | undefined): string | undefined {
   const dir = pilotArtDir(pilot)
   return dir ? `/images/pilots/${dir}/art.webp` : undefined
 }
 
 /**
- * 由 `pilot.portrait` 取出圖片資料夾名（`/images/pilots/<這一段>/half.webp`）。
+ * 機師**站上自製圖**（原稿 `art.webp`、官網圖層 `official-*`）所在的資料夾名：`/images/pilots/<這一段>/`。
  *
- * ⚠ **不能用 `pilot.name` 代替**：少數機師的資料夾名與顯示名有簡繁／譯名差異
- *   （素材端的「羅斯瑪莉」對到站上的「羅斯瑪麗」等 7 筆，見 import-source-art.mjs
- *   的 NAME_FIXES）。資料夾名才是 `portrait` 路徑實際指向的那一段。
+ * PLAN-054 D-2 起資料夾一律是**遊戲 ID**（`pilots/10103174/art.webp`），名字資料夾已全數退場——
+ * 名字會漂（卡米拉、洛莎審判、羅斯瑪麗……過去要靠對照表硬接），ID 不會。
+ * 沒有 gameId 的機師（索妮婭）才退回由 `portrait` 路徑取資料夾名的舊規則。
+ *
+ * ⚠ **不能用 `pilot.name` 代替**：那正是名字資料夾當初對不上的原因。
  */
-export function pilotArtDir(pilot: { portrait?: string } | null | undefined): string | undefined {
+export function pilotArtDir(pilot: { portrait?: string; gameId?: string } | null | undefined): string | undefined {
+  if (pilot?.gameId) return pilot.gameId
   const m = pilot?.portrait?.match(/(?:^|\/)pilots\/([^/]+)\/[^/]+$/)
   return m ? m[1] : undefined
 }
@@ -261,7 +264,7 @@ export function pilotArtDir(pilot: { portrait?: string } | null | undefined): st
  *
  * 索引由 `scripts/generate-art-index.mjs` 在 build/predev 掃圖庫產生。
  */
-export function hasPilotArt(pilot: { portrait?: string } | null | undefined): boolean {
+export function hasPilotArt(pilot: { portrait?: string; gameId?: string } | null | undefined): boolean {
   const dir = pilotArtDir(pilot)
   return !!dir && PILOT_ART_INDEX.has(dir)
 }
@@ -282,13 +285,13 @@ export interface PilotOfficialArt {
  * 與 `hasPilotArt()` 同一種用法：版面在**渲染前**就分流，不等圖載失敗才換構圖。
  * 優先序：官網圖層 → 原稿全身（art.webp）→ 半身（full.webp）。
  */
-export function hasOfficialArt(pilot: { portrait?: string } | null | undefined): boolean {
+export function hasOfficialArt(pilot: { portrait?: string; gameId?: string } | null | undefined): boolean {
   const dir = pilotArtDir(pilot)
   return !!dir && PILOT_OFFICIAL_INDEX.has(dir)
 }
 
 /** 官網 hero 圖層的三張路徑；沒有 → undefined。路徑不含 BASE_URL，呼叫端套 assetUrl()／imageCandidates()。 */
-export function pilotOfficialArt(pilot: { portrait?: string } | null | undefined): PilotOfficialArt | undefined {
+export function pilotOfficialArt(pilot: { portrait?: string; gameId?: string } | null | undefined): PilotOfficialArt | undefined {
   const dir = pilotArtDir(pilot)
   const geometry = dir ? PILOT_OFFICIAL_INDEX.get(dir) : undefined
   if (!dir || !geometry) return undefined

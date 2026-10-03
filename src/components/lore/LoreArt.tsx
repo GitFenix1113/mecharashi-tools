@@ -52,7 +52,7 @@ export interface LoreArtProps {
    * 'official' 官網 hero 圖層（PLAN-042-C C-2）：半身、下緣出血，object-fit: cover 靠頂
    */
   variant: 'tall' | 'wide' | 'official'
-  /** per-pilot 調參的查表鍵。機師傳 pilotArtDir(pilot)。未傳或查無 → 用預設。 */
+  /** per-pilot 調參的查表鍵。機師傳 pilotArtDir(pilot)（PLAN-054 起是遊戲 ID）。未傳或查無 → 用預設。 */
   artKey?: string
   /** 線稿來源。未傳 → 由 candidates[0] 經 SVG 濾鏡即時產生；傳入（官方手繪線稿）→ 直接顯示、不套濾鏡。 */
   sketchSrc?: string

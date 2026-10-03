@@ -94,7 +94,8 @@
 
   <div class="sub-h">圖片托管</div>
   <div class="tech-row">
-    <span class="tech-tag tertiary">Cloudinary</span>
+    <span class="tech-tag tertiary">Cloudinary（用戶頭像）</span>
+    <span class="tech-tag tertiary">public/images/game（遊戲官方原檔，PLAN-054）</span>
   </div>
 
   <div class="sub-h">其他工具</div>
@@ -277,7 +278,7 @@
     <tr><th>元件 / Hook</th><th>職責</th></tr>
     <tr>
       <td><code>PilotIcon</code></td>
-      <td>機師頭像（圓形裁切）。立繪是直式全身圖，以 <code>object-cover</code> + <code>object-top</code> 取上緣等同「只露頭」。來源依 <code>portraitUrl</code>（官方 CDN）→ <code>portrait</code>（本地）逐層退回，全數失敗才顯示 <code>fallback</code>。尺寸 <code>xs</code> / <code>sm</code> / <code>md</code></td>
+      <td>機師頭像（圓形裁切）。立繪是直式全身圖，以 <code>object-cover</code> + <code>object-top</code> 取上緣等同「只露頭」。來源依 本地官方原檔（<code>pilotGameArt</code>）→ <code>portrait</code>（舊本地檔）→ <code>portraitUrl</code>（官方 CDN）逐層退回（PLAN-054 起不再先打 CDN），全數失敗才顯示 <code>fallback</code>。尺寸 <code>xs</code> / <code>sm</code> / <code>md</code></td>
     </tr>
     <tr>
       <td><code>ExclusivePilotLink</code></td>
@@ -285,7 +286,36 @@
     </tr>
     <tr>
       <td><code>hooks/usePilotBriefMap</code></td>
-      <td>機師 ID → <code>PilotBrief</code>（<code>id</code> / <code>name</code> / <code>portrait</code> / <code>portraitUrl</code>）的輕量對照表，避免把整包 <code>Pilot</code> 拖進純顯示元件。<span style="opacity:.8;">※ 取代原本只回傳名稱的 <code>usePilotNameMap</code>。</span></td>
+      <td>機師 ID → <code>PilotBrief</code>（<code>id</code> / <code>name</code> / <code>portrait</code> / <code>portraitUrl</code> / <code>gameId</code> / <code>artKey</code>）的輕量對照表，避免把整包 <code>Pilot</code> 拖進純顯示元件。<span style="opacity:.8;">※ 取代原本只回傳名稱的 <code>usePilotNameMap</code>。</span></td>
+    </tr>
+  </table>
+
+  <div class="sub-h" style="margin-top:24px;">遊戲官方原檔（PLAN-054，2026-10-04）</div>
+  <table class="spec-table">
+    <tr><th>項目</th><th>說明</th></tr>
+    <tr>
+      <td><code>public/images/game/</code></td>
+      <td>客戶端擷取的官方原檔，WebP q82 原尺寸、<strong>檔名＝官方資產名逐字</strong>，放在<strong>遊戲 ID 資料夾</strong>：
+        <code>pilots/&lt;gameId&gt;/&lt;artKey&gt;_{half,head,Raw}.webp</code>＋機師卡 <code>Icon_item_&lt;gameId&gt;A.webp</code>；
+        <code>mechs/&lt;wap&gt;/Icon_mecha_wap&lt;wap&gt;.webp</code>（立繪）、<code>Icon_wap&lt;wap&gt;_1~4.webp</code>（軀幹／左臂／右臂／腿）、<code>_SN_Raw.webp</code>（全身大圖）。
+        只放讀取端會用到的種類（core 912 檔、約 41 MB）；造型、招募立繪等 extended 素材與 _reserve 不進 repo（repo 是公開的）。
+        站上自製圖（原稿 <code>art.webp</code>、官網圖層 <code>official-*</code>）同樣改放 <code>pilots/&lt;gameId&gt;/</code>，名字資料夾已全數退場。</td>
+    </tr>
+    <tr>
+      <td><code>data/gameArtIndex.ts</code></td>
+      <td>build／predev 由 <code>scripts/generate-art-index.mjs</code> 掃 <code>game/</code> 產生：每個 ID 有哪幾種圖、機師資料夾裡實際的立繪主鍵。版面在<strong>渲染前</strong>就知道有沒有圖，不必等載入失敗才換構圖。</td>
+    </tr>
+    <tr>
+      <td><code>utils/gameArt.ts</code> · <code>utils/assets.ts</code></td>
+      <td><code>pilotGameArt()</code>／<code>mechGameArt()</code> 依 ID 推官方原檔路徑（索引沒有、或 DB 的 artKey 與檔案不符就回 undefined）。
+        呼叫端一律用 <code>pilotPortraitCandidates</code>／<code>mechPortraitCandidates</code>／<code>mechPartCandidates</code> 等 helper，
+        候選順序「本地官方原檔 → 舊本地檔 → 官方 CDN」；守門測試 <code>portraitGuard.test.ts</code> 禁止把 <code>portrait</code>／部件 <code>icon</code> 直接當圖片來源。</td>
+    </tr>
+    <tr>
+      <td>匯入與守門腳本</td>
+      <td><code>scripts/import-game-assets.mjs</code>（v3 整批／新機師 <code>--id --art-key</code>／新機甲 <code>--wap</code>）、
+        共用命名規則 <code>scripts/lib/gameAssetKinds.mjs</code>（與 <code>gameArt.ts</code> 由測試交叉比對）、
+        圖片引用掃描器 <code>scripts/check-image-refs.mjs</code>（Firestore＋程式碼，含 <code>patchVersions</code>／<code>grayOps</code> 的路徑快照）。</td>
     </tr>
   </table>
 </section>
@@ -299,6 +329,9 @@
       <div class="card-icon">🚀</div>
       <h3>GitHub Pages</h3>
       <p>前端靜態資源部署至 GitHub Pages。推送 main 分支自動觸發 GitHub Actions 建置並部署。</p>
+      <p style="margin-top:0.75rem;font-size:0.85em;opacity:0.85;"><strong>退役檔清理（2026-10-04）：</strong>部署用 <code>keep_files: true</code>（保住 PR 預覽與舊分頁要的舊 chunk），gh-pages 因此只疊加不刪除。
+        <code>scripts/prune-gh-pages.mjs</code> 以 ledger 記錄每個檔案「被新版取代的時間」，<code>assets/</code> 退役滿 30 天、<code>images/</code> 滿 14 天才刪；
+        前台 <code>main.tsx</code> 的 <code>vite:preloadError</code> 在舊 chunk 已被清掉時自動重新整理一次。發布體積超過 800 MB 時 Actions 會標黃（GitHub Pages 上限 1 GB）。</p>
       <p style="margin-top:0.75rem;font-size:0.85em;opacity:0.85;"><strong>SPA 路由支援：</strong>由於 GitHub Pages 是靜態伺服器，直接訪問子路徑（如 <code>/modules</code>）會 404。解法：<code>public/404.html</code> 將路徑編碼至 query string 後跳轉回根目錄；<code>index.html</code> 在 React 載入前以 <code>history.replaceState</code> 還原正確路徑，使 React Router (<code>BrowserRouter</code>) 正常運作。</p>
     </div>
     <div class="card orange">

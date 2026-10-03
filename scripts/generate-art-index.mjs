@@ -61,11 +61,13 @@ function scan(dir, label, markers) {
     console.error(`❌ 找不到${label}圖庫：${dir}`)
     process.exit(1)
   }
+  // PLAN-054 D-2：機師資料夾全面改成遊戲 ID（純數字），名字就是實體的標記，不必再看裡面有沒有 half／full
+  const isEntity = (d) => /^\d+$/.test(d) || markers.some((f) => fs.existsSync(path.join(dir, d, f)))
   const dirs = fs
     .readdirSync(dir, { withFileTypes: true })
     .filter((e) => e.isDirectory())
     .map((e) => e.name)
-    .filter((d) => markers.some((f) => fs.existsSync(path.join(dir, d, f))))
+    .filter(isEntity)
   const withArt = dirs
     .filter((d) => fs.existsSync(path.join(dir, d, ART_FILE)))
     // localeCompare 讓 diff 穩定：readdir 的順序在不同檔案系統上不保證一致，
@@ -203,15 +205,14 @@ async function main() {
 // 重新產生：node scripts/generate-art-index.mjs（build / predev 會自動跑）
 
 /**
- * 有官方原稿全身立繪（\`/images/pilots/<名>/art.webp\`）的機師資料夾名。
+ * 有站上原稿全身立繪（\`/images/pilots/<gameId>/art.webp\`）的機師資料夾名＝遊戲 ID（PLAN-054 D-2 起）。
  *
  * 用途：\`art.webp\` 是直式全身（863×1600），既有的 \`full.webp\` 是橫式半身特寫
  * （1240×1080），兩者構圖不同、共用不了同一個框。版面要在**渲染前**就知道
  * 該用哪一套構圖，而不是等圖載完才知道 —— 後者會讓卡片在載入完成那一刻跳動。
  *
- * ⚠ 這裡存的是**圖片資料夾名**，也就是 \`pilot.portrait\` 路徑裡的那一段，
- *   不一定等於 \`pilot.name\`（少數機師的資料夾名與顯示名有簡繁／譯名差異）。
- *   查詢一律走 \`hasPilotArt(pilot)\`，不要自己用名字去比對。
+ * ⚠ 這裡存的是**圖片資料夾名**——PLAN-054 D-2 起一律是遊戲 ID（沒有 gameId 的才退回 \`portrait\` 路徑那一段）。
+ *   查詢一律走 \`hasPilotArt(pilot)\`（內部用 \`pilotArtDir()\`），不要自己用名字去比對。
  *
  */
 export const PILOT_ART_INDEX: ReadonlySet<string> = new Set([

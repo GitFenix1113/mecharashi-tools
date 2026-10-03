@@ -196,15 +196,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">19</div>
+      <div class="summary-num" style="color:var(--accent-green)">22</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">3</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">6</div>
+      <div class="summary-num" style="color:var(--text-dim)">1</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -216,10 +216,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">19 / 26</span>
+      <span style="color:var(--accent-orange);">22 / 26</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 73%"></div>
+      <div class="progress-bar-fill" style="width: 85%"></div>
     </div>
   </div>
 
@@ -697,7 +697,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 官方圖取代舊圖（v3.0 後的人工去背圖一併換掉）</div>
       <div class="task-group-meta">scripts/temp_scripts/prune-legacy-images.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -705,11 +705,12 @@
         <div class="task-desc">
           站長 2026-10-03 定案：不分同圖與否一律換官方。逐張像素比對只用來產出<b>「畫面會變」清單</b>（多半是 v3.0 後的人工去背圖），附切換前後截圖給站長看，不再當刪除閘門；
           沒有官方原檔的（索妮婭）不動。dry-run → 站長過目 → <code>--apply</code>。刪完機甲的名字資料夾會全空（<code>mech_badges</code>／<code>mech_models</code> 不是實體，不動）。
+          <br><b>✅ 2026-10-04 完成：</b><code>prune-legacy-images.mjs</code>：本機刪除 699 檔（機師 half／full 各 88、機甲 portrait 88／部件 352／art 83）、清 121 個空資料夾。像素比對（只算可見像素）列出「畫面會變」42 組，幾乎都是 v3.0 後人工去背的實體（淬鋒·凱登、曜、安、黑障、尼爾、吉賽爾；莫比烏斯X、棱鏡、星夜女神、奈芙蒂斯、尼德霍格），對照頁：<code>_local-notes/2026-10/2026-10-04_PLAN-054_D-1_舊圖退場_dry-run.html</code>。<b>線上</b>要等部署後由 D-4 的清理步驟在寬限期滿時刪（舊網址那時才 404）。⚠ 計畫原寫「刪檔前 (b) 須為 0」與「D-3 在刪檔之後」互相矛盾：(b) 多數是 DB 快照，D-3 才會歸零；因前台已優先讀官方原檔、快照有 gh-pages 寬限期撐著，改為本機先刪、線上順序「部署 → D-3 → 寬限期滿」。
         </div>
         <div class="task-file">scripts/temp_scripts/prune-legacy-images.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -717,7 +718,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; 站上自製圖搬 ID 資料夾（✅ 站長已確認）</div>
       <div class="task-group-meta">public/images/pilots</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -726,11 +727,12 @@
           <code>git mv</code> 剩下的 art.webp、<code>official-*</code>、殘留的 <code>half_alt</code>／<code>*_origin</code>。
           <code>pilotArtDir()</code> 改讀 gameId；artIndex 的鍵改 ID；<code>import-source-art.mjs</code> 的 <code>NAME_FIXES</code> 退場、目的地改 ID。
           故事館（042-C 官網圖層、原稿顯影）整套複驗。
+          <br><b>✅ 2026-10-04 完成：</b>55 個名字資料夾 → <code>pilots/&lt;gameId&gt;/</code>（git mv 79 檔：art 52、官網圖層 24、殘檔 3）；<code>pilotArtDir()</code> 改讀 gameId（無 gameId 才退回 portrait 路徑）；artIndex 的鍵改 ID；<code>import-source-art.mjs</code> 落點改 gameId、名稱對應改走 DB（<code>NAME_FIXES</code> 改名為「素材名 → 顯示名」的 <code>MATERIAL_NAME_FIXES</code>）、機甲不再匯入原稿；同圖判斷改只比可見像素（維娜的裁切素材照樣擋下）。故事館 91 頁複驗 0 個 404。
         </div>
         <div class="task-file">public/images/pilots/ · public/images/mechs/ · src/utils/assets.ts · scripts/generate-art-index.mjs · scripts/import-source-art.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -738,7 +740,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; DB 與快照路徑改寫</div>
       <div class="task-group-meta">scripts/temp_scripts/rewrite-image-paths.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
@@ -748,11 +750,12 @@
           指向不存在檔案的 <code>halfPortrait</code> 清除；沒有 game 圖的（索妮婭）不動；<code>portraitUrl</code> 保留。
           <b>連同路徑快照</b>：<code>patchVersions</code> 的 <code>iconUrls</code>（版本濃縮表）、<code>grayOps</code> 的 <code>icon</code>，以及 B-6 掃出來的其他副本。
           完成後重跑 B-6：(a) 壞路徑必須為 0。
+          <br><b>▶ 2026-10-04 進行中：</b><code>scripts/temp_scripts/rewrite-image-paths.mjs</code> 已寫好並 dry-run：190 份文件（pilots portrait／fullPortrait 170、mechs portrait／部件／halfPortrait 刪除 497、patchVersions iconUrls 83、grayOps 4 份共 55 筆），對不到新路徑的快照 0。<b>⛔ 尚未寫入</b>：DB 一改正式站舊前台就會去讀還沒上線的 /images/game/，必須等含 game/ 的前台部署後才 <code>--apply</code>（先備份），接著 <code>bump-data-version.mjs pilots mechs patchVersions grayOpsRoster</code>，再跑 <code>check-image-refs.mjs --fail-on=ab</code>。⚠ 計畫書原寫 bump <code>grayOps</code>，版本鍵其實是 <code>grayOpsRoster</code>。
         </div>
         <div class="task-file">scripts/temp_scripts/rewrite-image-paths.mjs · scripts/check-image-refs.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
 
@@ -760,7 +763,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-4 &nbsp; 部署與清快取（站長 2026-10-03 提醒）</div>
       <div class="task-group-meta">正式站 · Cloudflare</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
@@ -769,11 +772,12 @@
           D-3 的 bump 已讓前台 localStorage 與 Worker 邊緣快取失效；部署後到 Cloudflare 做 <b>Purge Everything</b>，避免已刪的舊圖還被邊緣送出。
           複驗：舊網址 404、新網址 200、CLAUDE.md 的 OG 補驗指令看到新路徑；重要頁的社群卡片用 FB 分享偵錯工具／LINE Page Poker 重抓。
           瀏覽器快取不需處理（新檔名）、本站沒有 Service Worker。每一步正式站操作前先跟站長確認。
+          <br><b>▶ 2026-10-04 進行中：</b><code>deploy.yml</code> 新增「Prune retired assets/images」：<code>scripts/prune-gh-pages.mjs</code> 以 ledger 記退役時間，images 寬限 14 天、assets 30 天（併入 10-04 舊 bundle 清理評估的建議），第一次執行只起算不刪；7 項規則測試＋以真實 gh-pages 樹模擬（47 天後清 3,626 檔）。前台 <code>vite:preloadError</code> 自動重整（實測 Vite 8 打包仍會發事件、只重整一次）。<b>⛔ 待站長</b>：push 部署、Worker 部署、Cloudflare Purge Everything、FB／LINE 卡片重抓；舊網址 404 的複驗要等寬限期滿。
         </div>
         <div class="task-file">Cloudflare Dashboard · CLAUDE.md（OG 補驗指令）</div>
       </div>
       <div class="task-assignee">開發者＋站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
 
@@ -781,16 +785,18 @@
     <div class="task-group-header">
       <div class="task-group-title">D-5 &nbsp; 新機師流程文件化</div>
       <div class="task-group-meta">skill · docs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">data-patch skill 補步驟；系統架構補 game/ 一節</div>
-        <div class="task-desc">後台建檔 → 填 gameId／artKey → 有新的客戶端擷取就 <code>import --id</code>、還沒有就在後台手動指定 portrait → bump（爬蟲已降為備用，不在流程內）；系統架構文件補 <code>public/images/game/</code>、gameArtIndex 與部署剪裁。</div>
+        <div class="task-desc">後台建檔 → 填 gameId／artKey → 有新的客戶端擷取就 <code>import --id</code>、還沒有就在後台手動指定 portrait → bump（爬蟲已降為備用，不在流程內）；系統架構文件補 <code>public/images/game/</code>、gameArtIndex 與部署剪裁。
+          <br><b>✅ 2026-10-04 完成：</b>data-patch skill 補「新機師／新機甲上架：圖片走遊戲 ID」流程（本機）；系統架構文件補 <code>public/images/game</code>、gameArtIndex、helper、匯入與掃描腳本、gh-pages 退役檔清理，並更新 PilotIcon 的候選順序。
+        </div>
         <div class="task-file">.claude/skills/data-patch/SKILL.md · docs/02_技術文件/01_架構設計/系統架構.html</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 

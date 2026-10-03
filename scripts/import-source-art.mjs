@@ -16,9 +16,10 @@
  *
  * ⚠ 原稿 PNG（總計約 1GB）**不進版控**，留在原始素材夾即可；本腳本只把壓過的 WebP 寫進 repo。
  *
- * 目的地資料夾一律沿用**站上既有的資料夾名**，不新建資料夾——
- * 那些名字是 Firestore 的 `portrait` 路徑在引用的，素材檔名與它有簡繁／譯名差異時以站上為準
- * （對照表見 NAME_FIXES）。找不到唯一對應就中止，寧可漏也不要寫進錯的機體。
+ * 目的地（PLAN-054 D-2 起）：**遊戲 ID 資料夾** `pilots/<gameId>/art.webp`。
+ * 素材檔名是中文名 → 先用 MATERIAL_NAME_FIXES 收掉簡繁／譯名差異 → 在 Firestore 找**顯示名完全相符**的機師 → 取它的 gameId。
+ * 找不到唯一對應、或那位沒有 gameId 就列進待處理，寧可漏也不要寫進錯的人。
+ * 機甲不再匯入原稿：官方全身大圖 `_SN_Raw`（2000×1080）已全面取代站上的 art.webp（91／92 台）。
  *
  * 使用方式：
  *   node scripts/import-source-art.mjs                       ← dry-run，只報告
@@ -34,6 +35,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
+import { createRequire } from 'node:module'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const IMAGES = path.join(ROOT, 'public', 'images')
@@ -51,12 +53,12 @@ const QUALITY = numArg('quality', 82)
 const OUT_NAME = strArg('name', 'art.webp')
 
 /**
- * 素材檔名 → 站上資料夾名。
+ * 素材檔名 → 站上**顯示名**（不再是資料夾名：PLAN-054 D-2 起資料夾是遊戲 ID）。
  * 多數是簡繁差異（奥/奧、托/託），少數是譯名不同（維若妮卡/維羅妮卡）。
  * 站上有幾個名字其實是簡轉繁轉壞的（芬裡厄 應為 芬里厄、葛裡高利 應為 葛里高利），
  * 但那是 Firestore 既有資料的問題，**不在這支腳本的守備範圍**——這裡只負責對上，不改名。
  */
-const NAME_FIXES = {
+const MATERIAL_NAME_FIXES = {
   奈奥米: '奈奧米',
   奥德莉: '奧德莉',
   維若妮卡: '維羅妮卡',
@@ -70,12 +72,19 @@ const NAME_FIXES = {
 const kb = (n) => `${(n / 1024).toFixed(0)} KB`
 const isDir = (p) => fs.existsSync(p) && fs.statSync(p).isDirectory()
 
-/** 站上既有的實體資料夾（唯一合法的目的地） */
-const listDirs = (kind) =>
-  fs.readdirSync(path.join(IMAGES, kind)).filter((d) => isDir(path.join(IMAGES, kind, d)))
-
-const PILOT_DIRS = listDirs('pilots')
-const MECH_DIRS = listDirs('mechs')
+/** 顯示名 → { gameId, artKey }（唯讀讀 Firestore；金鑰同 scripts/temp_scripts 的慣例） */
+async function loadPilotsByName() {
+  const require = createRequire(path.join(ROOT, 'package.json'))
+  const admin = require('firebase-admin')
+  for (const f of ['.env', '.env.migration']) {
+    const p = path.join(ROOT, f); if (!fs.existsSync(p)) continue
+    for (const l of fs.readFileSync(p, 'utf-8').split('\n')) { const i = l.indexOf('='); if (i > 0) { const k = l.slice(0, i).trim(), v = l.slice(i + 1).trim(); if (k && v && !k.startsWith('#')) process.env[k] = v } }
+  }
+  admin.initializeApp({ credential: admin.credential.cert(JSON.parse(fs.readFileSync(path.resolve(ROOT, process.env.GOOGLE_APPLICATION_CREDENTIALS), 'utf-8'))) })
+  const snap = await admin.firestore().collection('pilots').get()
+  return new Map(snap.docs.map((d) => [d.data().name, { gameId: d.data().gameId, artKey: d.data().artKey }]))
+}
+let PILOTS_BY_NAME = new Map()
 
 /** 遞迴收集素材 PNG/JPG，回傳絕對路徑 */
 function collect(dir, out = []) {
@@ -88,33 +97,44 @@ function collect(dir, out = []) {
 }
 
 /**
- * 由素材檔名解析出 { kind, dir }。
- * 步驟：去副檔名 → 去 `Icon_` 前綴（素材根目錄有幾張機甲圖帶這個前綴，內容與
- * 0824_機甲/ 下的同名檔逐位元組相同）→ 查 NAME_FIXES → 在 pilots / mechs 找完全相符。
- * 找不到或兩邊都中就回 `{ error }`，由呼叫端列進待處理清單而不是硬猜。
+ * 由素材檔名解析出 { kind, dir, artKey }。
+ * 步驟：去副檔名 → 去 `Icon_` 前綴 → 查 MATERIAL_NAME_FIXES → 在 Firestore 找顯示名完全相符的機師 → 取 gameId。
+ * 找不到、沒有 gameId 就回 `{ error }`，由呼叫端列進待處理清單而不是硬猜。
  */
 function resolve(file) {
   const raw = path.basename(file).replace(/\.(png|jpe?g)$/i, '').replace(/^Icon_/, '')
-  const name = NAME_FIXES[raw] ?? raw
-  const inPilots = PILOT_DIRS.includes(name)
-  const inMechs = MECH_DIRS.includes(name)
-  if (inPilots && inMechs) return { error: `「${name}」在 pilots 與 mechs 都有同名資料夾，無法判斷` }
-  if (inPilots) return { kind: 'pilots', dir: name, raw }
-  if (inMechs) return { kind: 'mechs', dir: name, raw }
-  return { error: `「${raw}」在站上找不到對應資料夾${raw !== name ? `（已試 ${name}）` : ''}` }
+  const name = MATERIAL_NAME_FIXES[raw] ?? raw
+  const p = PILOTS_BY_NAME.get(name)
+  if (!p) return { error: `「${raw}」在站上找不到同名機師${raw !== name ? `（已試 ${name}）` : ''}——機甲原稿已由官方 _SN_Raw 取代，不再匯入` }
+  if (!p.gameId) return { error: `「${name}」沒有 gameId（PLAN-054），請先在後台補上再匯入` }
+  return { kind: 'pilots', dir: p.gameId, artKey: p.artKey, raw }
 }
 
-/** 各類別「站上既有的最大張裁切圖」，用來判斷素材是不是根本沒帶新東西 */
-const REFERENCE = { pilots: 'full.webp', mechs: 'portrait.webp' }
+/** 站上既有的官方半身（＝舊的 full.webp），用來判斷素材是不是根本沒帶新東西 */
+const referenceOf = (r) => r.artKey ? `game/pilots/${r.dir}/${r.artKey}_Raw.webp` : undefined
 
-/** 產出的 buf 是否與同資料夾的參考圖像素完全相同 */
-async function isSameAs(refName, r, outMeta, buf) {
-  const ref = path.join(IMAGES, r.kind, r.dir, refName)
+/** 產出的 buf 是否與參考圖像素完全相同 */
+async function isSameAs(refRel, r, outMeta, buf) {
+  if (!refRel) return false
+  const ref = path.join(IMAGES, refRel)
   if (!fs.existsSync(ref)) return false
   const refMeta = await sharp(ref).metadata()
   if (refMeta.width !== outMeta.width || refMeta.height !== outMeta.height) return false
-  const [a, b] = await Promise.all([sharp(buf).raw().toBuffer(), sharp(ref).raw().toBuffer()])
-  return a.equals(b)
+  // 參考圖是官方原檔另外壓過的 WebP（PLAN-054），與素材重壓的結果不會逐位元組相同。
+  // 只比**看得見的像素**：全透明處底下的 RGB 是編碼器隨意留的值（實測維娜那張全圖平均差 45，
+  // 可見像素只差 2.8、alpha 只差 0.3——其實是同一張）。可見 RGB < 5 且 alpha < 2 就當同一張。
+  const raw = (x) => sharp(x).ensureAlpha().raw().toBuffer()
+  const [a, b] = await Promise.all([raw(buf), raw(ref)])
+  if (a.length !== b.length) return false
+  let rgb = 0, alpha = 0, visible = 0
+  for (let i = 0; i < a.length; i += 4) {
+    alpha += Math.abs(a[i + 3] - b[i + 3])
+    if (a[i + 3] > 16 || b[i + 3] > 16) {
+      rgb += (Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2])) / 3
+      visible++
+    }
+  }
+  return alpha / (a.length / 4) < 2 && (visible === 0 || rgb / visible < 5)
 }
 
 // ── 主流程 ───────────────────────────────────────────────────────────────────
@@ -124,6 +144,7 @@ async function main() {
     process.exit(1)
   }
 
+  PILOTS_BY_NAME = await loadPilotsByName()
   const files = collect(SRC)
   console.log(`素材來源：${SRC}　共 ${files.length} 個檔案`)
   console.log(`模式：${APPLY ? '實際寫入' : 'DRY-RUN（不寫檔）'}　長邊上限 ${MAX_EDGE}px　品質 ${QUALITY}　輸出 ${OUT_NAME}\n`)
@@ -164,8 +185,8 @@ async function main() {
     // 這批素材不是每一張都真的是原稿：機師「維娜」給的就是站上 full.webp 那張同尺寸的
     // 官方裁切圖，寫進去只是多一份 154KB 的重複。先比尺寸（便宜）再比像素（貴），
     // 相同就不寫檔 —— 否則每次重跑都會把它生回來。
-    if (await isSameAs(REFERENCE[r.kind], r, outMeta, buf)) {
-      redundant.push(`${key}　與既有 ${REFERENCE[r.kind]} 像素完全相同，這不是原稿`)
+    if (await isSameAs(referenceOf(r), r, outMeta, buf)) {
+      redundant.push(`${key}　與官方半身 ${referenceOf(r)} 是同一張圖，這不是原稿`)
       continue
     }
 
@@ -191,7 +212,7 @@ async function main() {
   if (unresolved.length) {
     console.log(`\n❌ 無法對應（${unresolved.length} 個，未處理）：`)
     for (const u of unresolved) console.log(`   ${u}`)
-    console.log('   請確認站上資料夾名，或補進本腳本的 NAME_FIXES。')
+    console.log('   請確認站上機師名，或補進本腳本的 MATERIAL_NAME_FIXES。')
   }
 
   if (!APPLY) console.log('\n以上為預覽。確認無誤後加上 --apply 實際寫入。')
