@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-09-08
+## [Unreleased] - 2026-10-03
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,9 @@
 
 ### ✨ 新功能
 
+- **images**: PLAN-054 Phase C — 讀取端改用官方原檔、官配互連、後台遊戲 ID 欄位 (`8bb3694`)
+- **lore**: PLAN-042-C 故事館氛圍層 — 官網 hero 圖層、線稿顯影修正、名字字體與 BGM（27／28） (`9032d39`)
+- **lore**: PLAN-042-A Phase C–F — 機師故事館前台、編輯台與 Worker 路由（18／21） (`fb1a8f4`)
 - **simulator**: PLAN-052-O 配裝圖回讀 —— 貼圖即載入配裝 (`9598a4f`)
 - **simulator**: PLAN-052-N A–D 機師天賦影響配裝 —— 解除機種限制、負重減免、潛能等級 (`ae908ae`)
 - **backpacks**: PLAN-043 Phase F 複合背包技能補完 —— 98 筆 skillIds derive 回填、合成單卡與出力加成改以技能為鍵 (`5fff84c`)
@@ -158,6 +161,7 @@
 
 ### 🐛 修復
 
+- **deploy**: gh-pages 退役檔依寬限期清理＋舊分頁自動重新整理 (`af584b1`)
 - **home**: 網站更新履歷正確呈現粗體與分段 (`d056133`)
 - **simulator**: 機師天賦預設顯示滿星版 —— 附滿星差異標示與 ⇌ 滿星／初始切換 (`dbed1c8`)
 - **simulator**: PLAN-052-L G-4／G-5 —— 別人專武的天賦強化不顯示、匯出圖明細帶補圖示 (`db62921`)
@@ -242,6 +246,9 @@
 
 ### 📚 文件
 
+- **plan**: PLAN-054 進度 22／26 — 本機 A～D 完成，待部署後做 D-3 與清快取 (`5cac2df`)
+- **plan**: PLAN-054 進度 2／26 — 0-1 合併回 main、A-5 舊 nameEn 補丁作廢 (`4cc81df`)
+- **plan**: PLAN-054 機師／機甲圖片 ID 化立案；CLAUDE.md 記錄爬蟲降為備用 (`cc4b207`)
 - **plan**: PLAN-053 Phase B/C 改用 2026-08-29 流量盤點的實測值 (`5f1c33d`)
 - **plan**: PLAN-053 A-5 裁決 —— exists() 加入，且與 A-3 綁成同一次出貨 (`6b3e0c2`)
 - **plan**: 建立 PLAN-053 模擬器開放後護欄與觀察 (`e8b63b8`)
@@ -342,6 +349,11 @@
 
 ### 🔧 維護
 
+- **images**: PLAN-054 Phase D — 舊圖退場、站上自製圖搬進遊戲 ID 資料夾 (`96d2405`)
+- **images**: PLAN-054 Phase B — 官方原檔匯入 public/images/game（core 912 檔） (`7f040cc`)
+- **data**: PLAN-054 Phase A — 遊戲 ID／立繪主鍵／官配欄位與回填 (`7966c76`)
+- **lore**: 故事館入口先收起，雛形合併回 main (`0324de1`)
+- **lore**: PLAN-042-A Phase A 完成 — 故事館資料層地基（3／21） (`071addf`)
 - **infra**: 關閉 workers.dev + 補 SPA fallback 白名單，並立防再犯檢查項 (`e4e5e15`)
 - **images**: 匯入官方原稿藝術大圖 —— 機師 52、機甲 83 張 art.webp (`8c8f437`)
 - **loadout**: PLAN-052-D Phase B 完成 — 元件的動作層與級聯（8／15） (`99c248a`)
