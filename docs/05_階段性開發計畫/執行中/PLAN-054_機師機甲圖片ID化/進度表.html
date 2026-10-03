@@ -199,11 +199,11 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">22</div>
+      <div class="summary-num" style="color:var(--accent-green)">24</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">3</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
@@ -219,10 +219,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">22 / 26</span>
+      <span style="color:var(--accent-orange);">24 / 26</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 85%"></div>
+      <div class="progress-bar-fill" style="width: 92%"></div>
     </div>
   </div>
 
@@ -629,7 +629,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-5 &nbsp; OG 社群預覽（刪檔前必須完成並部署）</div>
       <div class="task-group-meta">scripts · workers · CLAUDE.md</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -638,11 +638,12 @@
           Generator 改鏡射 <code>game/pilots/*/*_half.webp</code>、<code>game/mechs/*/Icon_mecha_wap*.webp</code>；Worker 以 doc 的 gameId／artKey 推路徑、portrait 後備，測試補維娜這類例外。
           wrangler 部署後用 CLAUDE.md 的 Discordbot curl 補驗，並把 CLAUDE.md 裡的預期路徑改成新路徑。
           <br><b>▶ 2026-10-04 進行中：</b>程式與測試完成：產圖腳本多鏡射 <code>game/pilots/*/*_half</code> 與 <code>game/mechs/*/Icon_mecha_wap*</code>（+182 張）；Worker 依 gameId／artKey 推官方 JPEG，<b>依序探測</b>「官方原檔 → 舊立繪 → 預設圖」，所以 Worker 與網站誰先部署都不會破圖；Worker 測試 17 項含維娜例外。CLAUDE.md 的 OG 補驗預期改成新路徑。<b>⛔ 部署未做</b>：2026-10-04 正式站部署被 Claude Code 自動權限擋下，等站長部署（wrangler deploy＋push）。
+          <br><b>✅ 2026-10-04 完成：</b>Worker 與網站已由站長 10-04 部署。OG 改以官方原檔 JPEG 為先，抽查葉夫根尼、都卜勒、維娜的 og:image 皆為 <code>og/entities/game/…</code>。海莉絲那張在 Pages 發布完成前被探測過、被 Cloudflare 快取成 404，Purge 後恢復（見 D-4）。
         </div>
         <div class="task-file">scripts/generate-og-entity-images.mjs · workers/src/socialPreview.ts (+ .test.ts) · CLAUDE.md</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -743,7 +744,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; DB 與快照路徑改寫</div>
       <div class="task-group-meta">scripts/temp_scripts/rewrite-image-paths.mjs</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -754,11 +755,12 @@
           <b>連同路徑快照</b>：<code>patchVersions</code> 的 <code>iconUrls</code>（版本濃縮表）、<code>grayOps</code> 的 <code>icon</code>，以及 B-6 掃出來的其他副本。
           完成後重跑 B-6：(a) 壞路徑必須為 0。
           <br><b>▶ 2026-10-04 進行中：</b><code>scripts/temp_scripts/rewrite-image-paths.mjs</code> 已寫好並 dry-run：190 份文件（pilots portrait／fullPortrait 170、mechs portrait／部件／halfPortrait 刪除 497、patchVersions iconUrls 83、grayOps 4 份共 55 筆），對不到新路徑的快照 0。<b>⛔ 尚未寫入</b>：DB 一改正式站舊前台就會去讀還沒上線的 /images/game/，必須等含 game/ 的前台部署後才 <code>--apply</code>（先備份），接著 <code>bump-data-version.mjs pilots mechs patchVersions grayOpsRoster</code>，再跑 <code>check-image-refs.mjs --fail-on=ab</code>。⚠ 計畫書原寫 bump <code>grayOps</code>，版本鍵其實是 <code>grayOpsRoster</code>。
+          <br><b>✅ 2026-10-04 完成：</b>站長 10-04 部署後執行 <code>--apply</code>＋bump <code>pilots mechs patchVersions grayOpsRoster</code>。<code>check-image-refs.mjs --fail-on=ab</code>：現役 (a) 0、(b) 0（註解裡 3 筆舉例路徑已改，掃描器也不再把程式註解當引用）。⚠ <b>教訓</b>：D-3 在 push 後、GitHub Pages 的「pages build and deployment」完成前就執行，那一兩分鐘內被請求的 game 網址被 Cloudflare 快取成 404（<code>/images/*</code> 的快取規則連 404 也快取，實測超過 3 分鐘仍 HIT）。以後切換路徑要等 Pages 發布<b>完成</b>，不是 push 完成。
         </div>
         <div class="task-file">scripts/temp_scripts/rewrite-image-paths.mjs · scripts/check-image-refs.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -776,6 +778,7 @@
           複驗：舊網址 404、新網址 200、CLAUDE.md 的 OG 補驗指令看到新路徑；重要頁的社群卡片用 FB 分享偵錯工具／LINE Page Poker 重抓。
           瀏覽器快取不需處理（新檔名）、本站沒有 Service Worker。每一步正式站操作前先跟站長確認。
           <br><b>▶ 2026-10-04 進行中：</b><code>deploy.yml</code> 新增「Prune retired assets/images」：<code>scripts/prune-gh-pages.mjs</code> 以 ledger 記退役時間，images 寬限 14 天、assets 30 天（併入 10-04 舊 bundle 清理評估的建議），第一次執行只起算不刪；7 項規則測試＋以真實 gh-pages 樹模擬（47 天後清 3,626 檔）。前台 <code>vite:preloadError</code> 自動重整（實測 Vite 8 打包仍會發事件、只重整一次）。<b>⛔ 待站長</b>：push 部署、Worker 部署、Cloudflare Purge Everything、FB／LINE 卡片重抓；舊網址 404 的複驗要等寬限期滿。
+          <br><b>▶ 2026-10-04 進行中：</b>已部署（10-04 18:53Z）。清理步驟第一次執行建立 ledger、未刪任何檔（assets 1,968 檔 256.7 MB、images 2,586 檔 204.1 MB 進入寬限）。官方原檔 182 張探測：180 張 200；2 張（加上 art、OG 共 5 個網址）是發布前被探測到、卡在快取的 404。<b>待站長</b>：Cloudflare <b>Purge Everything</b>（清掉快取的 404）；可考慮把 <code>/images/*</code> 規則的 404 邊緣 TTL 改短。之後：10-17 起舊圖自動從 gh-pages 清除、11-02 起舊 bundle 清除，屆時複驗舊網址 404 並重抓重要頁的社群卡片。
         </div>
         <div class="task-file">Cloudflare Dashboard · CLAUDE.md（OG 補驗指令）</div>
       </div>
