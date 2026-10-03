@@ -225,6 +225,17 @@
     章節以具名軸切換而不是無盡下捲、引文與署名排得像剪報；而查數值的人在圖鑑那邊完全不受影響。
   </div>
 
+  <div class="warn-block">
+    <strong style="color:var(--accent-yellow);">◆ 2026-10-03 狀態：雛形先合併回 main，入口收起</strong><br>
+    站長判斷雛形已成、但還不算完成 → 先合併回 main，不讓它卡住其他計畫（PLAN-054 要從 main 開分支）。做法比照模擬器內測的<b>「路由留著、入口收起」</b>
+    （<code>src/hooks/useLoreEntry.ts</code> 的 <code>LORE_INTERNAL_ONLY = true</code>）：導覽列與手機 More 面板只有 ADMIN／OWNER 看得到「故事館」；
+    機師詳情頁對一般訪客<b>退回完整逸聞</b>（D-4 改成「首句＋讀完整故事 ▸」，只藏連結的話訪客就讀不到全文）；
+    網站更新履歷裡介紹故事館的 6 筆條目標 <code>unreleased</code>，先不顯示。<br>
+    <b>公開時</b>：旗標改 <code>false</code>；拿掉那 6 筆的 <code>unreleased</code>、日期改成公開日；Cloudflare Transform Rule 白名單補 <code>/lore</code>（含 OG 用的 UA 排除區塊，見 F-1）。<br>
+    <b>main 第一次 push 之前</b>：先部署 Firestore rules（<code>npx firebase deploy --only firestore:rules</code>）與 Worker（<code>cd workers &amp;&amp; npx wrangler deploy</code>）——
+    pilotLore 已登記進後台引用掃描，規則沒上線會弄壞後台的刪除功能。
+  </div>
+
   <div class="info-block">
     標 <span class="badge badge-cyan">兩館共用</span> 的工作項，其產出由
     <a href="../PLAN-042-B_機甲故事館/進度表.html" style="color:var(--accent-yellow);">042-B</a> 直接引用，不重做。

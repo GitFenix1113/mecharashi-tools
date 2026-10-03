@@ -21,9 +21,14 @@ interface YearGroup {
   months: MonthGroup[]
 }
 
+// 入口還收著的功能先寫好條目、不顯示（ChangelogEntry.unreleased）；整月都沒有可顯示條目的月份一併略過
+const PUBLISHED: MonthGroup[] = SITE_CHANGELOG
+  .map(m => ({ month: m.month, entries: m.entries.filter(e => !e.unreleased) }))
+  .filter(m => m.entries.length > 0)
+
 // 展開檢視的分頁來源：年 → 月 兩層，皆依時間倒序（每月內 entries 亦倒序）
 const YEARS: YearGroup[] = (() => {
-  const months = [...SITE_CHANGELOG]
+  const months = [...PUBLISHED]
     .sort((a, b) => b.month.localeCompare(a.month))
     .map(m => ({
       month: m.month,
@@ -107,7 +112,7 @@ export default function SiteChangelog() {
   const [activeYear, setActiveYear] = useState(YEARS[0]?.year ?? '')
   const [activeMonth, setActiveMonth] = useState(YEARS[0]?.months[0]?.month ?? '')
 
-  const preview = SITE_CHANGELOG
+  const preview = PUBLISHED
     .flatMap(m => m.entries)
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, PREVIEW_COUNT)

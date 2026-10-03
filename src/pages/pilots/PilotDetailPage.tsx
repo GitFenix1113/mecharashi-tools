@@ -28,6 +28,7 @@ import { RefText } from '../../components/refs/RefText'
 import { SkillIcon } from '../../components/icons/SkillIcon'
 import { NdPowerBar } from '../../components/common/NdPowerBar'
 import { firstSentence } from '../../components/lore/loreText'
+import { useLoreEntryVisible } from '../../hooks/useLoreEntry'
 
 // ─── 神經驅動「全區算力選擇器」（PLAN-021 · 1-6）─────────────────────────────
 //
@@ -773,6 +774,8 @@ export default function PilotDetailPage() {
   const [exclusiveWeaponIdx, setExclusiveWeaponIdx] = useState(0)
   const exclusiveWeapon = exclusiveWeapons[exclusiveWeaponIdx] ?? null
   const isMobile = useIsMobile()
+  // 故事館收起入口期間（useLoreEntry.ts），一般訪客的「機師故事」退回全文顯示
+  const loreEntryVisible = useLoreEntryVisible()
 
   // ── 分頁狀態（PLAN-041 D-1）────────────────────────────────────────────────
   // 唯一來源是 URL 的 ?tab=，**不是 useState**。三個理由：
@@ -1264,13 +1267,19 @@ export default function PilotDetailPage() {
               ⚠ 本頁**不得**改去讀故事館集合（`useFirestore.ts` 裡那兩支對應的 hook）：
               那會讓任何人只要開一頁機師詳情就整包拉一次該集合，而它不落 localStorage、
               每個新 session 重付一次，且是全站成長最快的集合。
-              署名（`frontSource`）也住在那個集合裡，取它就得付上面那筆代價，故此處不顯示。 */}
-          <div className="px-5 py-5">
-            <p className="text-sm text-text-secondary leading-loose">{firstSentence(pilot.lore)}</p>
-            <Link to={`/lore/pilots/${pilot.id}`} className="mt-3 inline-block text-sm text-accent-orange no-underline hover:underline">
-              讀完整故事 ▸
-            </Link>
-          </div>
+              署名（`frontSource`）也住在那個集合裡，取它就得付上面那筆代價，故此處不顯示。
+              ⚠ 故事館收起入口期間（useLoreEntry.ts）一般訪客走不到故事館 → 退回 042-A 之前的全文顯示，
+                否則只剩首句、連結又被藏掉，等於把逸聞從站上拿走了。 */}
+          {loreEntryVisible ? (
+            <div className="px-5 py-5">
+              <p className="text-sm text-text-secondary leading-loose">{firstSentence(pilot.lore)}</p>
+              <Link to={`/lore/pilots/${pilot.id}`} className="mt-3 inline-block text-sm text-accent-orange no-underline hover:underline">
+                讀完整故事 ▸
+              </Link>
+            </div>
+          ) : (
+            <p className="px-5 py-5 text-sm text-text-secondary leading-loose whitespace-pre-line">{pilot.lore}</p>
+          )}
         </div>
       )}
     </div>

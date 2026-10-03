@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePageTracking } from '../../hooks/usePageTracking'
 import { useSimulatorEntryVisible } from '../../hooks/useSimulatorEntry'
+import { useLoreEntryVisible } from '../../hooks/useLoreEntry'
 import SignedOutBanner from './SignedOutBanner'
 import AvatarDisplay from '../profile/AvatarDisplay'
 import NavExpandBar, { NavGroupTrigger, type ContentNavItem, type NavGroup } from './NavExpandBar'
@@ -133,7 +134,8 @@ const moreNavItemsHead = [
 ]
 // ⚠ 新建陣列而不是往 contentNavItems 本體 push：那個陣列物件同時是 guidesGroup.items
 //    與 SUB_NAV_GROUPS 的成員，改到它就等於把故事館塞進「攻略/工具/文件」那一群。
-const moreNavItemsTail = [...contentNavItems, loreItem]
+//    故事館收起入口期間（useLoreEntry.ts）由元件內依權限決定要不要接上 loreItem。
+const moreNavItemsTail = [...contentNavItems]
 
 export default function Layout() {
   const [moreOpen, setMoreOpen] = useState(false)
@@ -147,12 +149,16 @@ export default function Layout() {
   const navigate = useNavigate()
   // 配裝模擬器內部測試期間，四處入口（桌面導覽／More 面板／個人頁／404 頁）一起收
   const simulatorEntryVisible = useSimulatorEntryVisible()
+  // 故事館收起入口期間（2026-10-03 起），導覽列與 More 面板一起收；路由照舊可直接進
+  const loreEntryVisible = useLoreEntryVisible()
   const moreNavItems = useMemo(
-    () =>
-      simulatorEntryVisible
-        ? [...moreNavItemsHead, simulatorItem, ...moreNavItemsTail]
-        : [...moreNavItemsHead, ...moreNavItemsTail],
-    [simulatorEntryVisible]
+    () => [
+      ...moreNavItemsHead,
+      ...(simulatorEntryVisible ? [simulatorItem] : []),
+      ...moreNavItemsTail,
+      ...(loreEntryVisible ? [loreItem] : []),
+    ],
+    [simulatorEntryVisible, loreEntryVisible]
   )
   const location = useLocation()
 
@@ -317,8 +323,10 @@ export default function Layout() {
                   {simulatorItem.label}
                 </NavLink>
               )}
-              {/* 故事館：頂層平鋪，不進任何 NavGroup（理由見檔案上緣的宣告處註解） */}
-              <NavLink to={loreItem.to} className={topNavClass}>{loreItem.label}</NavLink>
+              {/* 故事館：頂層平鋪，不進任何 NavGroup（理由見檔案上緣的宣告處註解）；收起入口期間只有 ADMIN／OWNER 看得到 */}
+              {loreEntryVisible && (
+                <NavLink to={loreItem.to} className={topNavClass}>{loreItem.label}</NavLink>
+              )}
               <NavGroupTrigger
                 group={guidesGroup}
                 isOpen={openGroup === guidesGroup.key}
