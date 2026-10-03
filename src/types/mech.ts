@@ -88,6 +88,20 @@ export interface MechPart {
 export interface Mech {
   id: string
   name: string
+  /**
+   * 遊戲 ID（PLAN-054）：wap 四碼，例如 '1011'——立繪 `Icon_mecha_wap1011`、
+   * 部件 `Icon_wap1011_1~4`（軀幹／左臂／右臂／腿）、全身大圖 `Icon_mecha_wap1011_SN_Raw`。
+   * 官方原檔資料夾 `public/images/game/mechs/<gameId>/` 以它命名。
+   * ⚠ 首碼 1／2／3 大致對應輕／中／重，但有例外——只當識別碼，不要拿來推導裝甲。
+   */
+  gameId?: string
+  /**
+   * 塗裝本體的文件 ID（PLAN-054）：這台其實是另一台的付費塗裝時才填。
+   * 今天只有凜騎士（wap3132）＝遊騎兵（wap3032）的塗裝。
+   */
+  skinOfId?: string
+  // ⚠ 官配刻意**不存在機甲側**（沒有 pairedPilotId）——用 `pairedPilotOf(mech.id, pilots)`
+  //   （src/utils/officialPairs.ts）由機師側的 `Pilot.pairedMechId` 推導。
   /** 裝甲類型。PLAN-052-A D-1 由 `string` 收成 enum（實測值域乾淨：中甲 36／輕型 27／重型 27）。 */
   armorType: ArmorType
   /**

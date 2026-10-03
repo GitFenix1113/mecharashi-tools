@@ -43,6 +43,8 @@
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>id</td><td>string</td><td>文件 ID。格式 <code>mech_&lt;3 位流水號&gt;_&lt;名稱 slug&gt;</code>（如 <code>mech_054_奔霄</code>）。爬蟲與後台新增皆以「既有最大號 +1」續號（後台走 <code>makeNumberedEntityId</code>），slug 規則同 <code>idSlug.ts</code>。<strong>全 89 筆皆帶號（001–089）、無缺號無重號</strong>——後台早期手建的 6 筆不帶號 ID（<code>mech_雪崩</code>／<code>mech_莫比烏斯X</code>…）已於 2026-08-18 遷移補號，舊文件留存於 <code>archiveIdMigration</code> 集合</td></tr>
       <tr><td>name</td><td>string</td><td>機甲名稱</td></tr>
+      <tr><td>gameId</td><td>string?</td><td>🆕 <strong>PLAN-054</strong>：wap 四碼（如 <code>1011</code>）；官方原檔資料夾 <code>game/mechs/&lt;gameId&gt;/</code>（<code>Icon_mecha_wap####</code>、部件 <code>Icon_wap####_1~4</code>、全身大圖 <code>_SN_Raw</code>）</td></tr>
+      <tr><td>skinOfId</td><td>string?</td><td>🆕 <strong>PLAN-054</strong>：塗裝本體的文件 ID（今天只有凜騎士 → 遊騎兵）</td></tr>
       <tr><td>rarity</td><td>ItemRarity</td><td>稀有度 Enum</td></tr>
       <tr><td>armorType</td><td>ArmorType</td><td>裝甲類型 Enum：輕型 / 中甲 / 重型</td></tr>
       <tr><td>firepower</td><td>number</td><td>整體火力值（軀幹滿級）</td></tr>
@@ -84,7 +86,10 @@
     <strong>⚠ 這三個欄位只有 id，沒有部位、也沒有等級。</strong>遊戲裡一顆天生模組的等級是四個部位各自貢獻的加總，
     而那張矩陣（90 台 × 4 部位 ≈ 1500 格）<strong>刻意不落盤</strong>、由 <code>src/utils/innateModules.ts</code> 的規則算出，
     例外才落在 <code>parts.{position}.innateModules</code>（PLAN-052-K）。
-    對帳腳本：<code>node scripts/check-part-module-drift.mjs</code>。
+    對帳腳本：<code>node scripts/check-part-module-drift.mjs</code>。<br><br>
+    <strong>🔗 官配（PLAN-054）</strong>
+    官配<strong>只存機師側</strong>（<code>pilots.pairedMechId</code>），機甲側沒有對應欄位，由 <code>pairedPilotOf(mech.id, pilots)</code> 推導；
+    pilots 本來就在前台版本快取內，不增加 read。塗裝關係存在機甲側的 <code>skinOfId</code>（凜騎士 → 遊騎兵）。
   </div>
 </section>
 

@@ -310,6 +310,32 @@ export interface Pilot {
    * ⚠ 與 debutVersion 同病：`scrape-pilots-v3.js --force` 的整筆覆寫會洗掉它（爬蟲 merge 隱患）。
    */
   nameEn?: string
+  /**
+   * 遊戲 ID（PLAN-054）：機師卡 `Icon_item_<gameId>A` 的編號，例如 '10103174'——只有可抽機師有。
+   * 官方原檔資料夾 `public/images/game/pilots/<gameId>/` 以它命名。
+   *
+   * ⚠ **不可拿來推導立繪主鍵**（那是 `artKey`，兩欄不互推）。例外 5 位：
+   *   維娜 10103144／`Pilot_13019A`、貝爾莎 10103145／`Pilot_13010A`、阿列娜 13037、
+   *   珂賽特 11021（3D 模型在 10103184）、瑪阿特 10103180（官方 API 記的 10103129 是她的造型卡）。
+   * ⚠ 字串不是數字：只拿來拼路徑、不做運算（'13037' 與 '10103123' 長度不同）。
+   *
+   * 未設定＝客戶端擷取裡沒有這位（今天只有索妮婭），讀取端照舊走 `portrait`／`portraitUrl`。
+   */
+  gameId?: string
+  /**
+   * 預設立繪主鍵（PLAN-054），與官方檔名逐字相同，例如 'Pilot_10103174A'；
+   * `_half`（340²）／`_head`（90²）／`_Raw`（1240×1080）接在它後面。
+   * 存完整鍵、程式裡不留「主鍵怎麼拼」的規則（例外見 `gameId`）。
+   */
+  artKey?: string
+  /**
+   * 官配機甲的文件 ID（PLAN-054），例如 'mech_014_戴亞斯'。
+   *
+   * **只存機師側**：機甲側一律由 `pairedPilotOf()`（src/utils/officialPairs.ts）推導。
+   * 兩邊都存就得兩邊同步，後台改一邊忘一邊會是靜默的不一致；推導則不會壞。
+   * 未設定＝沒有官配（賽文是官方贈送角色、索妮婭沒有資料），畫面上不顯示該列、不寫「無」。
+   */
+  pairedMechId?: string
   rarity: string
   class: string
   faction: string

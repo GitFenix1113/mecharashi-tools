@@ -38,7 +38,10 @@
       <tr><td>id</td><td>string</td><td>唯一識別碼</td></tr>
       <tr><td>name</td><td>string</td><td>機師顯示名稱</td></tr>
       <tr><td>fullName</td><td>string</td><td>機師全名（完整稱呼）</td></tr>
-      <tr><td>nameEn</td><td>string?</td><td>英文名（PLAN-042-C，選填）：故事館扉頁壓在立繪旁的毛筆草書，如 <code>Rosa Diaz</code>。官方資料沒有此欄，後台「個人資料」分頁人工輸入；空值＝不渲染。⚠ 爬蟲 <code>--force</code> 整筆覆寫會洗掉（與 debutVersion 同病）</td></tr>
+      <tr><td>nameEn</td><td>string?</td><td>英文名（PLAN-042-C，選填）：故事館扉頁壓在立繪旁的毛筆草書，如 <code>Rosa Diaz</code>。官方資料沒有此欄，後台「個人資料」分頁人工輸入；空值＝不渲染。⚠ 爬蟲 <code>--force</code> 整筆覆寫會洗掉（與 debutVersion 同病）<br><small style="color:var(--text-dim)">🆕 PLAN-054：90 位由 v3 定版對照一次回填（來源優先序：官網名字圖層＞遊戲招募全名＞3D 模型名；<strong>有全名就用全名</strong>，如肖妮 Shawnee Russell；虹＝Hong、白月＝Aynur Derya 為站長改寫）。v3 沒有全名來源的單名不自行音譯。</small></td></tr>
+      <tr><td>gameId</td><td>string?</td><td>🆕 PLAN-054：遊戲 ID ＝ 機師卡 <code>Icon_item_&lt;gameId&gt;A</code> 的編號（如 <code>10103174</code>），只有可抽機師有。官方原檔資料夾 <code>public/images/game/pilots/&lt;gameId&gt;/</code> 以它命名。<br><small style="color:var(--text-dim)"><strong>不可拿來推導 artKey（兩欄不互推）</strong>，例外 5 位：維娜 10103144／<code>Pilot_13019A</code>、貝爾莎 10103145／<code>Pilot_13010A</code>、阿列娜 13037、珂賽特 11021（3D 在 10103184）、瑪阿特 10103180（官方 API 的 10103129 是她的造型卡）。字串不是數字，只拼路徑不運算。未設定＝客戶端擷取沒有這位（索妮婭），讀取端照舊走 portrait／portraitUrl。</small></td></tr>
+      <tr><td>artKey</td><td>string?</td><td>🆕 PLAN-054：預設立繪主鍵，與官方檔名逐字相同（如 <code>Pilot_10103174A</code>）；<code>_half</code>（340²）／<code>_head</code>（90²）／<code>_Raw</code>（1240×1080）接在後面。存完整鍵、程式不留拼接規則</td></tr>
+      <tr><td>pairedMechId</td><td>string?</td><td>🆕 PLAN-054：官配機甲的文件 ID（如 <code>mech_014_戴亞斯</code>），61 位有值。<strong>只存機師側</strong>，機甲側一律由 <code>pairedPilotOf()</code>（<code>src/utils/officialPairs.ts</code>）推導——兩邊都存就得兩邊同步，改一邊忘一邊是靜默的不一致。未設定＝沒有官配，畫面不顯示該列<br><small style="color:var(--text-dim)">來源：v1.1 起每版 2 S 機師＋2 S 機甲同上線、「機師執照＝機甲裝甲」唯一配對 47 組，加開服 v1.0 站長指定 14 組。</small></td></tr>
       <tr><td>rarity</td><td>ItemRarity (Enum)</td><td>稀有度：S / A / B（機師不使用 EX）</td></tr>
       <tr><td>class</td><td>PilotClass (Enum)</td><td>職業：突擊手 / 狙擊手 / 戰術家 / 格鬥家 / 守護者 / 機械師 / 調構師</td></tr>
       <tr><td>faction</td><td>string</td><td>所屬陣營 / 勢力（詳情頁顯示為「勢力」，列表頁可搜尋）</td></tr>
@@ -104,7 +107,7 @@
       <tr><td>&nbsp;&nbsp;&nbsp;├ buffIds</td><td>string[]</td><td>嵌入舊格式：激活此層觸發的 Buff ID</td></tr>
       <tr><td>&nbsp;&nbsp;&nbsp;└ descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-023 N2-1：描述內 [xxx] 引用側錄；flip 後由 resolve 從能力庫帶入，使神驅描述的 [xxx] 可點擊</td></tr>
       <tr><td>lore</td><td>string</td><td>官方「機師檔案」正文，<strong>＝ API <code>detail.Introduction</code> 的鏡像</strong>（爬蟲每次補丁都會重寫）。<strong>不是 Markdown</strong>——前台一律以 <code>whitespace-pre-line</code> 純文字呈現。89/89 有值，其中 38% 為引文體、40% 結尾帶署名。<br><small style="color:var(--text-dim)">🆕 PLAN-042-A：故事館的<u>扉頁</u>渲染的就是這一欄，<strong>刻意不搬進 <a href="../04_Firebase/資料庫設計文件/pilotLore.html">pilotLore</a></strong>——圖鑑的 hover 浮窗與引用稽核（<code>entityRefs</code> 的「機師簡介」站點）都在用它，搬走等於浮窗變空白或製造兩個真相源。署名結構化後另存於 <code>pilotLore.frontSource</code>。</small></td></tr>
-      <tr><td>portrait</td><td>string</td><td>立繪圖片路徑 /images/pilots/{id}/full.webp（2026-08 起全面轉 WebP，原 PNG 已移除）</td></tr>
+      <tr><td>portrait</td><td>string</td><td>立繪圖片路徑 /images/pilots/{id}/full.webp（2026-08 起全面轉 WebP，原 PNG 已移除）<br><small style="color:var(--text-dim)">🆕 PLAN-054：讀取端改由 <code>gameId</code>／<code>artKey</code> 推官方原檔（<code>pilotGameArt()</code>），本欄降為後備；清舊檔階段會改寫成 game 路徑。</small></td></tr>
       <tr><td>portraitUrl</td><td>string?</td><td>立繪遠端 URL（官方 CDN 來源）；本地 portrait 缺圖時的後備來源</td></tr>
       <tr><td>manual</td><td>boolean?</td><td>🆕 PLAN-025：後台手動新增的機師（官方資料更新前自建）。<strong>true</strong> = 爬蟲補丁模式（scrape-pilots-v3.js）整筆跳過、不覆寫或刪除；純作後端防覆寫，前台不因此顯示標記。語意比照 PilotSkill.manual / PilotTalent.manual</td></tr>
     </table>
