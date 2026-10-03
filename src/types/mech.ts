@@ -96,8 +96,8 @@ export interface Mech {
    */
   gameId?: string
   /**
-   * 塗裝本體的文件 ID（PLAN-054）：這台其實是另一台的付費塗裝時才填。
-   * 今天只有凜騎士（wap3132）＝遊騎兵（wap3032）的塗裝。
+   * 塗裝本體的文件 ID（PLAN-054）：這台其實是另一台的付費塗裝時才填。目前沒有任何機甲有值。
+   * （2026-10-04 更正：v3 對照曾把凜騎士對到遊騎兵的塗裝 wap3132，站長確認凜騎士是新機甲、不是塗裝。）
    */
   skinOfId?: string
   // ⚠ 官配刻意**不存在機甲側**（沒有 pairedPilotId）——用 `pairedPilotOf(mech.id, pilots)`

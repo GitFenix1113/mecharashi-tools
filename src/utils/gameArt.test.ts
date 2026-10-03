@@ -42,12 +42,12 @@ test('機甲：立繪、全身大圖、部件 1~4 依序對到軀幹／左臂／
   assert.equal(mechGameArt(都卜勒, 'legs'), '/images/game/mechs/1011/Icon_wap1011_4.webp')
 })
 
-test('凜騎士沒有全身大圖 → sn 回 undefined（版面走小尺寸），其餘照常', () => {
-  const 凜騎士 = { gameId: '3132' }
-  assert.equal(mechGameArt(凜騎士, 'sn'), undefined)
-  assert.equal(mechGameArt(凜騎士, 'icon'), '/images/game/mechs/3132/Icon_mecha_wap3132.webp')
+test('沒有遊戲 ID（新機甲還沒擷取，例：凜騎士）或索引沒有這台 → 一律 undefined，交給舊欄位／佔位', () => {
   assert.equal(mechGameArt({}, 'icon'), undefined)
+  assert.equal(mechGameArt({}, 'sn'), undefined)
   assert.equal(mechGameArt({ gameId: '0000' }, 'icon'), undefined)
+  // wap3132 曾被誤對到凜騎士（2026-10-04 站長更正），素材已移出 core —— 索引裡不能再有它
+  assert.equal(mechGameArt({ gameId: '3132' }, 'icon'), undefined)
 })
 
 test('檔名規則：card 不吃 artKey、缺參數回 undefined', () => {

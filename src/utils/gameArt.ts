@@ -62,7 +62,7 @@ export function pilotGameArt(
   return `${GAME_ROOT}/pilots/${id}/${pilotGameFileName(kind, id, pilot?.artKey)}.webp`
 }
 
-/** 機甲的官方原檔路徑；這台沒有這種圖回 undefined（例：凜騎士沒有全身大圖 `sn`）。 */
+/** 機甲的官方原檔路徑；這台沒有這種圖（或根本沒有遊戲 ID）回 undefined。 */
 export function mechGameArt(mech: { gameId?: string } | null | undefined, kind: MechGameArtKind): string | undefined {
   const wap = mech?.gameId
   const entry = wap ? GAME_MECH_ART.get(wap) : undefined

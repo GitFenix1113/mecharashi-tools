@@ -533,6 +533,10 @@
     <ul>
       <li>索妮婭：此份擷取沒有她 → gameId／artKey／nameEn 都留空，讀取端照舊走 portrait／CDN；回填腳本略過並在報告列出。</li>
       <li>凜騎士沒有 <code>_SN_Raw</code>、藍色魔鳥有 2 張 <code>Icon_mecha</code>（索引取與 wap 同名者）。</li>
+      <li>⚠ <b>2026-10-04 更正（站長）：凜騎士是新機甲（v3.7），不是 wap3132，也不是遊騎兵的付費塗裝</b>——v3 的這一筆是推測、錯了。
+        已刪除 DB 的 <code>gameId</code>／<code>skinOfId</code>（其餘欄位與 10-03 備份相同，沒有遺失）並 bump；wap3132 的 core 5 檔移出 <code>public/images/game/</code>、
+        連同 extended 共 11 檔改放封存 <code>_reserve/unknown/wap3132</code>（素材名有 Ranger02，看來是遊騎兵的某款塗裝）；v3 檔裡的凜騎士也已改成「沒有 wap」。
+        本計畫書其餘提到「凜騎士＝塗裝」的段落是當時的判斷，保留原文作為紀錄。凜騎士的圖等有新的客戶端擷取或人工素材時再補。</li>
       <li>素材修正已含在 v3：洛莎 B 造型與 Rosa 大廳歸洛莎·審判、XR-Pluto 歸復仇女神、SaRiyaB＝薩普里婭 B 造型大廳道具——照 v3 匯入即可，不另判斷。</li>
       <li>陸版資料：簡中文字圖不用；名稱一律以站上繁中為準。</li>
     </ul>

@@ -346,7 +346,7 @@ function mechArtDir(mech: { portrait?: string } | null | undefined): string | un
  * 索引由 `scripts/generate-art-index.mjs` 在 build/predev 掃圖庫產生。
  */
 export function hasMechArt(mech: { portrait?: string; gameId?: string } | null | undefined): boolean {
-  // PLAN-054：判準改成「有沒有官方全身大圖」（91／92 台；凜騎士沒有 → 走小尺寸版面）。
+  // PLAN-054：判準改成「有沒有官方全身大圖」（有遊戲 ID 的 91 台都有；沒有遊戲 ID 的新機甲 → 走小尺寸版面）。
   // 舊的 art.webp 索引留作沒有遊戲 ID 時的後備，D 階段清掉舊圖後它自然變空。
   if (mechGameArt(mech, 'sn')) return true
   const dir = mechArtDir(mech)

@@ -13,7 +13,7 @@ const PILOTS = [
   ['10103144', 'Pilot_13019A'],   // 維娜：gameId 與 artKey 不同
   ['13037', 'Pilot_13037A'],      // 阿列娜：短碼
 ]
-const WAPS = ['1011', '3132', '2071']
+const WAPS = ['1011', '3032', '2071']
 
 test('機師檔名：腳本版與前台版一致，且分類回去得到原本的種類', () => {
   for (const [id, key] of PILOTS) {
