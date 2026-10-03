@@ -1,6 +1,6 @@
 import { MechPartPosition } from '../../types/enums'
 import type { ModuleSlotRef } from '../../types/slots'
-import { imageCandidates } from '../../utils/assets'
+import { mechPartCandidates } from '../../utils/assets'
 import { partLabel } from '../../utils/moduleSlots'
 import { interfaceState, moduleFamilyKey, type ModuleStack } from '../../utils/moduleRules'
 import type { LoadoutContext } from '../../utils/loadoutRules'
@@ -154,7 +154,7 @@ function PartCard({ ctx, stacks, position, active, roomy, onOpen }: {
     <>
       <span className="shrink-0 w-9 h-9 flex items-center justify-center">
         <FallbackImage
-          candidates={imageCandidates(part.icon)}
+          candidates={mechPartCandidates(ctx.world.mechs.get(sourceMechId), position, part)}
           alt=""
           loading="lazy"
           className="max-w-full max-h-full object-contain"

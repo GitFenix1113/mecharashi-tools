@@ -121,7 +121,8 @@ Worker，路徑一旦被改寫成 `/index.html`，Worker 的 route 就匹配不�
 ```bash
 curl -sS -A "Discordbot/2.0" "https://mecharashi.wiki/pilots/pilot_049_%E6%B5%B7%E8%8E%89%E7%B5%B2" | grep -o 'og:image[^>]*'
 ```
-應看到 `og/entities/pilots/海莉絲/half.jpg`，**不是** `og/default.jpg`。
+應看到 `og/entities/game/pilots/10103174/Pilot_10103174A_half.jpg`（PLAN-054 起 og:image 改用官方原檔；
+網站還沒部署新產圖時會退回舊的 `og/entities/pilots/海莉絲/half.jpg`，兩者都算正常），**不是** `og/default.jpg`。
 
 > **這條規則的由來：** PLAN-050 於 2026-08-19 建了 `/versions/*` 三條路由，白名單是 07-26 設的、
 > 沒人回頭補，於是版本情報的分享連結整整 11 天都回 404（真人看得到、但狀態碼與收錄全錯），

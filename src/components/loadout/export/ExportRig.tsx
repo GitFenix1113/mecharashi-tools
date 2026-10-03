@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { MechPartPosition } from '../../../types/enums'
-import { imageCandidates } from '../../../utils/assets'
+import { imageCandidates, mechPartCandidates, mechPortraitCandidates } from '../../../utils/assets'
 import { partLabel } from '../../../utils/moduleSlots'
 import { interfaceState, moduleFamilyKey } from '../../../utils/moduleRules'
 import type { LoadoutContext } from '../../../utils/loadoutRules'
@@ -191,7 +191,7 @@ export function ExportPartCard({ ctx, position, width, grow }: {
           「有一個我不認得的部位」（A-1 的既有裁決，一併沿用到這裡） */}
       <span style={{ width: 30, height: 30, flexShrink: 0 }}>
         <FallbackImage
-          candidates={imageCandidates(part.icon)}
+          candidates={mechPartCandidates(ctx.world.mechs.get(sourceMechId), position, part)}
           alt=""
           fallback={null}
           style={{ width: 30, height: 30, objectFit: 'contain', display: 'block' }}
@@ -247,7 +247,7 @@ export function ExportPartCard({ ctx, position, width, grow }: {
  */
 function MechVisual({ ctx }: { ctx: LoadoutContext }) {
   const mech = ctx.identityMech ?? ctx.mech
-  const candidates = imageCandidates(mech?.portrait)
+  const candidates = mechPortraitCandidates(mech)
   return (
     <div style={{
       position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',

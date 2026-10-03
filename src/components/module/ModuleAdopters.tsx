@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import type { MouseEvent } from 'react'
 import { FallbackImage } from '../common/FallbackImage'
 import { ModuleBoundPart } from './ModuleBoundPart'
-import { imageCandidates } from '../../utils/assets'
+import { mechPortraitCandidates } from '../../utils/assets'
 import type { ModuleAdopter } from '../../hooks/useModuleAdopters'
 
 /** 縮圖載不到時的退路：機甲名文字 chip。留白等於讓「誰在用」憑空消失，比改版前更糟。 */
@@ -49,7 +49,7 @@ export function ModuleAdopters({
           >
             {a.mech ? (
               <FallbackImage
-                candidates={imageCandidates(a.mech.portrait)}
+                candidates={mechPortraitCandidates(a.mech)}
                 alt={a.name}
                 className="w-9 h-9 rounded-lg object-cover bg-bg-dark border border-border hover:border-accent-cyan transition-colors"
                 fallback={chip}

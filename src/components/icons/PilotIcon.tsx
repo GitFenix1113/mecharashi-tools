@@ -1,7 +1,7 @@
 import type { MouseEventHandler, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { FallbackImage } from '../common/FallbackImage'
-import { imageCandidates } from '../../utils/assets'
+import { pilotPortraitCandidates } from '../../utils/assets'
 import type { PilotBrief } from '../../hooks/useFirestore'
 
 type PilotIconSize = 'xs' | 'sm' | 'md'
@@ -16,7 +16,7 @@ const DIM: Record<PilotIconSize, string> = {
  * 機師頭像（圓形裁切）。
  *
  * 立繪是直式全身圖，這裡用 object-cover + object-top 取上緣，等同於「只露頭」的頭像。
- * 圖片來源依 portraitUrl（官方 CDN）→ portrait（本地）逐層退回，全數失敗才顯示 fallback。
+ * 圖片來源依 本地官方原檔 → 舊本地檔 → 官方 CDN 逐層退回（PLAN-054 起不再先打 CDN），全數失敗才顯示 fallback。
  */
 export function PilotIcon({
   pilot,
@@ -29,7 +29,7 @@ export function PilotIcon({
   className?: string
   fallback?: ReactNode
 }) {
-  const candidates = imageCandidates(pilot.portraitUrl, pilot.portrait)
+  const candidates = pilotPortraitCandidates(pilot)
   if (candidates.length === 0) return <>{fallback ?? null}</>
 
   return (

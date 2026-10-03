@@ -12,6 +12,8 @@ import {
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { IconField, loadManifest } from '../../../components/admin/IconPicker'
 import { ArmamentMountEditor } from '../../../components/admin/ArmamentMountEditor'
+import { MechGameArtFields } from '../../../components/admin/GameArtFields'
+import { mechGameArt } from '../../../utils/gameArt'
 import { ModuleBoundPart } from '../../../components/module/ModuleBoundPart'
 import { updateMech, docExists } from '../../../lib/firestoreApi'
 import { makeNumberedEntityId, maxEntitySeq, stripNumberedIdPrefix } from '../../../utils/idSlug'
@@ -318,8 +320,11 @@ function MechEditPanel({
   const { userProfile } = useAuth()
   const isOwner = userProfile?.role === 'OWNER'
   const tabs = useMemo(() => mechEditTabs(isOwner), [isOwner])
-  // 本機甲的圖片資料夾（public/images/mechs/{機甲名}）；供 IconPicker 預設開啟與自動帶入使用。
-  const mechFolder = `mechs/${form.name}`
+  // 本機甲的圖片資料夾：有遊戲 ID 就開官方原檔資料夾（PLAN-054），否則照舊開名字資料夾。
+  const mechFolder = form.gameId ? `game/mechs/${form.gameId}` : `mechs/${form.name}`
+  // 塗裝本體下拉與官配機師（唯讀推導）要用（PLAN-054）
+  const gd = useGameData()
+  useEffect(() => { void gd.ensureLoaded(['mechs', 'pilots']) }, [gd])
 
   // 換一台機甲時把品質的「已帶入接口」提示清掉，否則會掛在別台身上讀成剛剛動過
   useEffect(() => { setForm({ ...mech }); setQualityNote(null) }, [mech])
@@ -387,9 +392,27 @@ function MechEditPanel({
     )
   }
 
-  // 依機甲名稱掃 public/images/mechs/{名稱}/，把標準檔名（torso/leftArm/rightArm/legs/portrait/half）
-  // 的圖片路徑一次補進四部件與立繪。找不到資料夾或某檔則略過該項。
+  // 有遊戲 ID：直接帶官方原檔（PLAN-054；有沒有圖看 build 產生的索引，不必等 manifest）。
+  // 沒有遊戲 ID：照舊依機甲名稱掃 public/images/mechs/{名稱}/ 的標準檔名
+  // （torso/leftArm/rightArm/legs/portrait/half）。找不到資料夾或某檔則略過該項。
   async function autoFillImages() {
+    if (form.gameId) {
+      const nextParts = { ...form.parts }
+      const filled: string[] = []
+      for (const pos of ['torso', 'leftArm', 'rightArm', 'legs'] as const) {
+        const icon = mechGameArt(form, pos)
+        if (icon) { nextParts[pos] = { ...(form.parts?.[pos] ?? makeDefaultPart(pos)), icon }; filled.push(PART_LABELS[pos]) }
+      }
+      const portrait = mechGameArt(form, 'icon')
+      if (!portrait && filled.length === 0) {
+        setAutoFillMsg({ ok: false, text: `遊戲 ID ${form.gameId} 還沒有官方原檔：先跑 node scripts/import-game-assets.mjs --wap=${form.gameId} --apply，再重跑 build／dev` })
+        return
+      }
+      // halfPortrait 是舊欄位（從來沒有官方半身圖），帶官方原檔時一併清掉，免得留一個 404 的路徑
+      setForm((f) => ({ ...f, parts: nextParts, portrait: portrait ?? f.portrait, halfPortrait: undefined }))
+      setAutoFillMsg({ ok: true, text: `已帶入官方原檔：${[...filled, portrait && '立繪'].filter(Boolean).join('、')}（game/mechs/${form.gameId}）` })
+      return
+    }
     const name = form.name.trim()
     if (!name) { setAutoFillMsg({ ok: false, text: '請先填寫機甲名稱' }); return }
     try {
@@ -661,6 +684,7 @@ function MechEditPanel({
             {/* 武器槽隱藏時不畫上分隔線，否則 ADMIN 看到的是一條沒有上文的孤立橫線 */}
             <div className={`${isOwner ? 'pt-4 border-t border-border/60 ' : ''}space-y-3`}>
               <p className="text-xs text-text-dim font-medium tracking-wider uppercase">外觀 appearance</p>
+              <MechGameArtFields form={form} set={set} mechs={gd.mechs} pilots={gd.pilots} />
               <IconField
                 label="立繪 portrait"
                 value={form.portrait}

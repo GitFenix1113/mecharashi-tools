@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom'
 import { useMechs } from '../../hooks/useFirestore'
 import { useViewMode } from '../../hooks/useViewMode'
-import { imageCandidates } from '../../utils/assets'
+import { mechPortraitCandidates } from '../../utils/assets'
 import { FallbackImage } from '../../components/common/FallbackImage'
 import { ViewModeToggle } from '../../components/common/ViewModeToggle'
 import { MechQualityBadge } from '../../components/badges/MechBadges'
@@ -20,14 +20,14 @@ const ARMOR_TYPES = ['輕型', '中甲', '重型']
 const DEFAULT_QUALITY = 'S'
 
 /**
- * 機甲縮圖候選：Firestore 的 portrait。
+ * 機甲縮圖候選：官方原檔 `Icon_mecha_wap<wap>`（PLAN-054）→ Firestore 的 portrait。
  * imageCandidates 會自動再展開 .webp 變體，所以資料若殘留舊的 .png 路徑也退得回來。
  *
  * 曾經還有第二順位「images/mechs/{名稱}.webp」的命名慣例，但那 62 個扁平檔與各機甲
  * 資料夾裡的 portrait.webp 位元組完全相同、且無任何一架真的靠它顯示，已整批刪除。
  */
-const mechImageCandidates = (mech: { name: string; portrait?: string }) =>
-  imageCandidates(mech.portrait)
+const mechImageCandidates = (mech: { name: string; portrait?: string; gameId?: string }) =>
+  mechPortraitCandidates(mech)
 
 const ARMOR_STYLES: Record<string, { text: string; border: string; bg: string }> = {
   輕型: { text: 'text-accent-cyan', border: 'border-accent-cyan/40', bg: 'bg-accent-cyan/10' },

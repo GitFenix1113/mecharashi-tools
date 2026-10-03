@@ -39,6 +39,9 @@ export interface PilotBrief {
   name: string
   portrait: string
   portraitUrl?: string
+  /** PLAN-054：官方原檔由遊戲 ID 定位（pilotGameArt），引用浮窗與頭像都要用到，缺了就只能退回舊圖 */
+  gameId?: string
+  artKey?: string
 }
 
 export function usePilotBriefMap(): HookResult<Record<string, PilotBrief>> {
@@ -46,7 +49,7 @@ export function usePilotBriefMap(): HookResult<Record<string, PilotBrief>> {
   const { loading, error } = useCollections(['pilots'])
   const data = useMemo(
     () => Object.fromEntries(
-      pilots.map((p) => [p.id, { id: p.id, name: p.name, portrait: p.portrait, portraitUrl: p.portraitUrl }]),
+      pilots.map((p) => [p.id, { id: p.id, name: p.name, portrait: p.portrait, portraitUrl: p.portraitUrl, gameId: p.gameId, artKey: p.artKey }]),
     ),
     [pilots],
   )

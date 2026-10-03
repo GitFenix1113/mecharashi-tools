@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { usePilot } from '../../hooks/useFirestore'
-import { assetUrl } from '../../utils/assets'
+import { assetUrl, pilotPortraitPath } from '../../utils/assets'
 import type { UserProfile } from '../../types'
 
 type AvatarProfile = Pick<UserProfile, 'displayName' | 'gameNickname' | 'avatarType' | 'avatarUrl' | 'avatarPilotId' | 'photoURL'>
@@ -50,9 +50,10 @@ export default function AvatarDisplay({ profile, size = 'md', className = '' }: 
     )
   }
 
-  if (!imgError && profile.avatarType === 'pilot' && pilot?.portrait) {
+  const pilotAvatar = pilotPortraitPath(pilot)
+  if (!imgError && profile.avatarType === 'pilot' && pilot && pilotAvatar) {
     return (
-      <img src={assetUrl(pilot.portrait)} alt={pilot.name}
+      <img src={assetUrl(pilotAvatar)} alt={pilot.name}
         className={`${base} border-2 border-border`}
         onError={onError} draggable={false} />
     )

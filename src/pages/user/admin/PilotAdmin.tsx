@@ -20,6 +20,8 @@ import { buildNdAbilityMap } from '../../../utils/neuralDriveAbilities'
 import { ndMinSumForLevel, ndZoneMaxLevel, expectedNdLevels, ndZoneOffRule } from '../../../utils/neuralDriveLevels'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
+import { PilotGameArtFields } from '../../../components/admin/GameArtFields'
+import { assetUrl, pilotPortraitPath } from '../../../utils/assets'
 import { PILOT_RARITY_CLASS, TRIGGER_DISPLAY, STAT_OPTIONS } from './constants'
 
 // ─── 新機師預設值工廠（PLAN-025）─────────────────────────────────────────────────
@@ -1477,7 +1479,8 @@ function PilotEditPanel({
 
   // PLAN-004：技能改由 pilotSkills 集合管理；機師文件僅存技能 ID 順序（引用）
   const gd = useGameData()
-  useEffect(() => { gd.ensureLoaded(['pilotSkills', 'neuralDriveAbilities']) }, [gd])
+  // mechs：官配機甲下拉（PLAN-054）
+  useEffect(() => { gd.ensureLoaded(['pilotSkills', 'neuralDriveAbilities', 'mechs']) }, [gd])
   const skillMap = useMemo(() => buildSkillMap(gd.pilotSkills), [gd.pilotSkills])
   // 舊版相容：若機師 skills 仍含內嵌物件（非 ID 字串）視為未遷移
   const legacyEmbedded = useMemo(() => (pilot.skills ?? []).some((s) => typeof s !== 'string'), [pilot])
@@ -1542,9 +1545,9 @@ function PilotEditPanel({
   return (
     <AdminModal saving={saving} error={error} onSave={handleSubmit} onCancel={onCancel}>
       <div className="flex items-start gap-3 mb-3 shrink-0">
-        {form.portrait && (
+        {pilotPortraitPath(form) && (
           <img
-            src={form.portrait}
+            src={assetUrl(pilotPortraitPath(form)!)}
             alt=""
             className="w-12 h-12 rounded-lg object-cover shrink-0"
             onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
@@ -1610,6 +1613,7 @@ function PilotEditPanel({
               </Field>
             </div>
             <IconField label="立繪路徑 portrait" value={form.portrait} onChange={(v) => update('portrait', v)} defaultFolder="pilots" />
+            <PilotGameArtFields form={form} update={update} pilots={gd.pilots} mechs={gd.mechs} />
           </div>
         )}
 
@@ -1847,9 +1851,9 @@ export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: str
             className="bg-bg-dark border border-border rounded-lg px-3 py-2.5 flex items-center gap-3 hover:border-border-accent transition-colors cursor-pointer"
             onClick={() => setEditing(pilot)}
           >
-            {pilot.portrait && (
+            {pilotPortraitPath(pilot) && (
               <img
-                src={pilot.portrait}
+                src={assetUrl(pilotPortraitPath(pilot)!)}
                 alt=""
                 className="w-10 h-10 rounded-lg object-cover shrink-0"
                 onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}

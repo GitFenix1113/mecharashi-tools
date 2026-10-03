@@ -4,7 +4,7 @@ import type { EntityRef, RefType, DescriptionRefs } from '../../types'
 import { useGameData, type CollectionKey } from '../../contexts/GameDataContext'
 import { useReference } from '../../contexts/ReferenceContext'
 import { STAT_LABELS } from '../../utils/moduleStats'
-import { imageCandidates } from '../../utils/assets'
+import { imageCandidates, mechPortraitCandidates, pilotPortraitCandidates } from '../../utils/assets'
 import { pickLevel } from '../../utils/ndOverrides'
 import { FallbackImage } from '../common/FallbackImage'
 import { RefText } from './RefText'
@@ -64,7 +64,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: p.name,
         subtitle: [p.rarity, p.class, p.faction].filter(Boolean).join(' · '),
-        images: imageCandidates(p.portraitUrl, p.portrait),
+        images: pilotPortraitCandidates(p),
         description: p.lore,
         route: `/pilots/${p.id}`,
       }
@@ -75,7 +75,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: m.name,
         subtitle: [m.armorType, m.quality].filter(Boolean).join(' · '),
-        images: imageCandidates(m.halfPortrait, m.portrait),
+        images: mechPortraitCandidates(m),
         description: m.lore,
         route: `/mechs/${m.id}`,
       }

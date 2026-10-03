@@ -6,7 +6,7 @@ import { MechPartPosition, WeaponEquipSlot } from '../../types/enums'
 import { MECH_PART_ORDER } from '../../utils/chassisStats'
 import { slotLabel } from '../../utils/mechSlots'
 import { rigColumnRefs } from '../../utils/rigLayout'
-import { imageCandidates } from '../../utils/assets'
+import { mechPortraitCandidates } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
 import {
   backpackHasCandidates, planWeaponUpgrade, slotExists, slotHasCandidates, slotOccupant,
@@ -675,7 +675,7 @@ const MechVisual = ({
           <FallbackImage
             // 立繪換人時要重新掛載，否則 FallbackImage 會沿用上一台已解析好的候選
             key={(ctx.identityMech ?? ctx.mech)!.id}
-            candidates={imageCandidates((ctx.identityMech ?? ctx.mech)!.portrait)}
+            candidates={mechPortraitCandidates(ctx.identityMech ?? ctx.mech)}
             alt={(ctx.identityMech ?? ctx.mech)!.name}
             loading="lazy"
             className="relative max-w-full max-h-full object-contain drop-shadow-[0_10px_22px_rgba(0,0,0,0.6)]"

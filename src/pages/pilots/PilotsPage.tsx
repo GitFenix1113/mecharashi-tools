@@ -1,6 +1,6 @@
 ﻿import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { assetUrl } from '../../utils/assets'
+import { assetUrl, pilotPortraitPath } from '../../utils/assets'
 import { usePilots, useWeapons } from '../../hooks/useFirestore'
 import { useViewMode } from '../../hooks/useViewMode'
 import { WeaponIcon } from '../../components/icons/WeaponIcon'
@@ -241,7 +241,7 @@ export default function PilotsPage() {
               >
                 <div className="relative aspect-square bg-bg-dark overflow-hidden">
                   <img
-                    src={assetUrl(pilot.portrait)}
+                    src={assetUrl(pilotPortraitPath(pilot) ?? '')}
                     alt={pilot.name}
                     loading="lazy"
                     className="w-full h-full object-cover object-top transition-transform group-hover:scale-105"
@@ -284,7 +284,7 @@ export default function PilotsPage() {
                 {/* Portrait */}
                 <div className={`relative ${PORTRAIT_ASPECT} bg-bg-dark overflow-hidden`}>
                   <img
-                    src={assetUrl(pilot.portrait)}
+                    src={assetUrl(pilotPortraitPath(pilot) ?? '')}
                     alt={pilot.name}
                     className="w-full h-full object-cover object-top transition-transform group-hover:scale-105"
                     onError={(e) => {

@@ -11,6 +11,7 @@ import { PartSlotCard }      from '../../../components/planner/PartSlotCard'
 import { SuperFactoryPanel } from '../../../components/planner/SuperFactoryPanel'
 import { PlanResult, type Weight } from '../../../components/planner/PlanResult'
 import { nextFrames } from '../../../utils/nextFrames'
+import { mechPartIconPath } from '../../../utils/assets'
 
 const ALL_SLOTS: MechPartPosition[] = ['torso', 'leftArm', 'rightArm', 'legs']
 
@@ -209,7 +210,7 @@ export default function RainbowMechPlannerPage() {
                 <PartSlotCard
                   key={part.slot}
                   slot={part.slot}
-                  partIcon={selectedMech.parts[part.slot]?.icon}
+                  partIcon={mechPartIconPath(selectedMech, part.slot)}
                   value={part}
                   onChange={(v) => updatePart(idx, v)}
                 />
@@ -245,10 +246,10 @@ export default function RainbowMechPlannerPage() {
               slotApproach={approaches}
               onApproachChange={updateApproach}
               partIcons={{
-                torso:    selectedMech.parts.torso?.icon,
-                leftArm:  selectedMech.parts.leftArm?.icon,
-                rightArm: selectedMech.parts.rightArm?.icon,
-                legs:     selectedMech.parts.legs?.icon,
+                torso:    mechPartIconPath(selectedMech, 'torso'),
+                leftArm:  mechPartIconPath(selectedMech, 'leftArm'),
+                rightArm: mechPartIconPath(selectedMech, 'rightArm'),
+                legs:     mechPartIconPath(selectedMech, 'legs'),
               }}
               weight={ARMOR_WEIGHT[selectedMech.armorType] ?? 'medium'}
             />

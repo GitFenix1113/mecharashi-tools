@@ -8,7 +8,7 @@ import type { PatchVersion, PatchHalf, VersionIconUrls, VersionEntityIds } from 
 import { formatEntityIdValue, parseEntityIdValue } from '../../data/patchVersions/entityRef'
 import { normalizeNotes } from '../../data/patchVersions/notes'
 import type { Pilot, Mech, Weapon, Backpack, RefType } from '../../types'
-import { resolveIconSrc, mechIconUrl } from '../../utils/assets'
+import { resolveIconSrc, mechIconUrl, pilotPortraitPath } from '../../utils/assets'
 import { invalidatePatchVersionsCache } from '../../hooks/usePatchVersions'
 import AdminHalfEditorPanel from '../../components/admin/AdminHalfEditorPanel'
 
@@ -256,8 +256,9 @@ export default function AdminVersionEditorPage() {
         const p = d.data() as Pilot
         if (!pSet.has(p.name)) continue
         pilotIds[p.name] = d.id
-        // 一律優先採用本地圖檔路徑（/images/...），無本地圖時才退回遠端 CDN
-        const url = p.portrait || p.portraitUrl
+        // 一律優先採用本地圖檔路徑（/images/...），無本地圖時才退回遠端 CDN。
+        // PLAN-054：本地以官方原檔（game/）為先——這個值會被存成快照，舊名字資料夾退場後不能還指向那裡。
+        const url = pilotPortraitPath(p) || p.portraitUrl
         if (url) pilots[p.name] = url
       }
 

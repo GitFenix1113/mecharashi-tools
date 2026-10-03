@@ -2,6 +2,8 @@
 //   而 node 的 ESM 解析不補副檔名。專案既有慣例同此（buffPool.ts、entityRefs.ts…）。
 import { MECH_ART_INDEX, PILOT_ART_INDEX, PILOT_OFFICIAL_INDEX } from '../data/artIndex.ts'
 import type { OfficialArtGeometry } from '../data/artIndex.ts'
+import { mechGameArt, pilotGameArt } from './gameArt.ts'
+import type { MechGameArtKind } from './gameArt.ts'
 
 /**
  * 刻意做成函式而非模組層級常數：`import.meta.env` 在 node --test 下不存在，
@@ -101,6 +103,60 @@ export function imageCandidates(...sources: (string | null | undefined)[]): stri
   return out
 }
 
+/**
+ * 機師**頭像**（340²）的候選鏈：本地官方原檔 → 舊本地檔 → 官方 CDN（PLAN-054）。
+ *
+ * 全站的機師頭像一律走這裡，順序不要在呼叫端各寫一份：過去 PilotIcon／引用浮窗是 CDN 第一順位，
+ * 每張頭像都先打一次第三方網域；有官方原檔之後主路徑就不必出站了。
+ */
+export function pilotPortraitCandidates(
+  pilot: { portrait?: string; portraitUrl?: string; gameId?: string; artKey?: string } | null | undefined,
+): string[] {
+  return imageCandidates(pilotGameArt(pilot, 'half'), pilot?.portrait, pilot?.portraitUrl)
+}
+
+/**
+ * 只吃得下**一個路徑**的地方（`<img src>`、選單 icon、寫進快照的值）用的機師頭像路徑：
+ * 官方原檔優先，沒有才用 DB 的 `portrait`。路徑不含 BASE_URL。
+ */
+export function pilotPortraitPath(
+  pilot: { portrait?: string; gameId?: string; artKey?: string } | null | undefined,
+): string | undefined {
+  return pilotGameArt(pilot, 'half') ?? (pilot?.portrait || undefined)
+}
+
+/** 機甲**立繪**（560×340）的候選鏈：本地官方原檔 → 舊本地檔（PLAN-054）。 */
+export function mechPortraitCandidates(mech: { portrait?: string; gameId?: string } | null | undefined): string[] {
+  return imageCandidates(mechGameArt(mech, 'icon'), mech?.portrait)
+}
+
+/** 只吃得下一個路徑的地方用的機甲立繪路徑（官方原檔優先）。 */
+export function mechPortraitPath(mech: { portrait?: string; gameId?: string } | null | undefined): string | undefined {
+  return mechGameArt(mech, 'icon') ?? (mech?.portrait || undefined)
+}
+
+/**
+ * 機甲**部件圖**（340²）的候選鏈：官方 `Icon_wap<wap>_1~4` → 部件自己記的 `icon`（PLAN-054）。
+ *
+ * ⚠ `mech` 要給**部件真正的來源機甲**，不是畫面上的主機甲：模擬器的混搭裡，
+ *   左臂可能來自另一台，圖也該是那一台的左臂。
+ */
+export function mechPartCandidates(
+  mech: { gameId?: string } | null | undefined,
+  position: Extract<MechGameArtKind, 'torso' | 'leftArm' | 'rightArm' | 'legs'>,
+  part?: { icon?: string } | null,
+): string[] {
+  return imageCandidates(mechGameArt(mech, position), part?.icon)
+}
+
+/** 只吃得下一個路徑的地方用的部件圖路徑（官方 `Icon_wap<wap>_1~4` 優先，沒有才用部件自己記的 `icon`）。 */
+export function mechPartIconPath(
+  mech: { gameId?: string; parts?: Partial<Record<'torso' | 'leftArm' | 'rightArm' | 'legs', { icon?: string } | undefined>> } | null | undefined,
+  position: 'torso' | 'leftArm' | 'rightArm' | 'legs',
+): string | undefined {
+  return mechGameArt(mech, position) ?? (mech?.parts?.[position]?.icon || undefined)
+}
+
 /** 官方素材 CDN（機甲部件圖 waparts/ 掛在這底下）。 */
 const MECH_CDN_BASE = 'https://media.zlongame.com/media/pictures/cn/community/img/gl/gameInfo'
 
@@ -112,7 +168,11 @@ const MECH_CDN_BASE = 'https://media.zlongame.com/media/pictures/cn/community/im
  *
  * 回傳 undefined = 兩個來源都沒有，呼叫端該讓該筆維持無圖（而不是硬湊一個會 404 的路徑）。
  */
-export function mechIconUrl(mech: { portrait?: string; parts?: { torso?: { mechaIcon?: string } } }): string | undefined {
+export function mechIconUrl(mech: { gameId?: string; portrait?: string; parts?: { torso?: { mechaIcon?: string } } }): string | undefined {
+  // PLAN-054：官方原檔第一順位。這支的回傳值會被寫進 patchVersions／grayOps 的快照，
+  // 舊名字資料夾的路徑一旦退場，快照就會變成破圖——新寫入的快照一律用 game 路徑。
+  const game = mechGameArt(mech, 'icon')
+  if (game) return game
   if (mech.portrait) return mech.portrait
   const mechaIcon = mech.parts?.torso?.mechaIcon
   return mechaIcon ? `${MECH_CDN_BASE}/waparts/${mechaIcon}.png` : undefined
@@ -152,7 +212,12 @@ export async function fetchData<T>(file: string): Promise<T> {
  *   在 `node --test` 下不存在（見本檔開頭 `base()` 的說明），包進來這條規則就測不了。
  *   呼叫端寫 `imageCandidates(pilotFullArtPath(pilot))`。
  */
-export function pilotFullArtPath(pilot: { portrait?: string } | null | undefined): string | undefined {
+export function pilotFullArtPath(
+  pilot: { portrait?: string; gameId?: string; artKey?: string } | null | undefined,
+): string | undefined {
+  // PLAN-054：官方原檔 `<artKey>_Raw`（1240×1080）就是 full.webp 的官方版本，有就用它
+  const game = pilotGameArt(pilot, 'raw')
+  if (game) return game
   const p = pilot?.portrait
   if (!p) return undefined
   const full = p.replace(/(^|\/)half(\.[a-z0-9]+)$/i, '$1full$2')
@@ -248,7 +313,10 @@ export function pilotOfficialArt(pilot: { portrait?: string } | null | undefined
  * ⚠ 只換最後一段檔名、**不沿用原副檔名**：`mech.portrait` 至今仍有 `.png` 的歷史值
  *   （爬蟲寫入端未跟上），而原稿一律是 `.webp`。
  */
-export function mechKeyArtPath(mech: { portrait?: string } | null | undefined): string | undefined {
+export function mechKeyArtPath(mech: { portrait?: string; gameId?: string } | null | undefined): string | undefined {
+  // PLAN-054：官方全身大圖 `_SN_Raw`（2000×1080，長寬比與 art.webp 同為 1.85）取代人工去背的 art.webp
+  const game = mechGameArt(mech, 'sn')
+  if (game) return game
   const p = mech?.portrait
   if (!p) return undefined
   const art = p.replace(/(^|\/)[^/]+$/, '$1art.webp')
@@ -274,7 +342,10 @@ function mechArtDir(mech: { portrait?: string } | null | undefined): string | un
  *
  * 索引由 `scripts/generate-art-index.mjs` 在 build/predev 掃圖庫產生。
  */
-export function hasMechArt(mech: { portrait?: string } | null | undefined): boolean {
+export function hasMechArt(mech: { portrait?: string; gameId?: string } | null | undefined): boolean {
+  // PLAN-054：判準改成「有沒有官方全身大圖」（91／92 台；凜騎士沒有 → 走小尺寸版面）。
+  // 舊的 art.webp 索引留作沒有遊戲 ID 時的後備，D 階段清掉舊圖後它自然變空。
+  if (mechGameArt(mech, 'sn')) return true
   const dir = mechArtDir(mech)
   return !!dir && MECH_ART_INDEX.has(dir)
 }

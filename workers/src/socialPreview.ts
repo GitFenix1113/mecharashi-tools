@@ -138,6 +138,11 @@ export interface OgMeta {
   title: string
   description: string
   image: string
+  /**
+   * `image` 探測不到時依序改試的候選（PLAN-054）。官方原檔的 JPEG 要等網站部署後才存在，
+   * Worker 先上線的那段時間就退回舊立繪，而不是直接掉到站名預設圖。
+   */
+  fallbackImages?: string[]
 }
 
 /** 產出 JPEG 立繪的鏡射根目錄，見 scripts/generate-og-entity-images.mjs。 */
@@ -182,6 +187,32 @@ function str(v: unknown): string {
   return typeof v === 'string' ? v.trim() : ''
 }
 
+/**
+ * 官方原檔的路徑（PLAN-054）：由 doc 的遊戲 ID 推，沒有就回 undefined。
+ *
+ * ⚠ 命名規則與 src/utils/gameArt.ts、scripts/lib/gameAssetKinds.mjs 是同一套（Worker 自成一包，不跨目錄 import）：
+ *   機師頭像 `/images/game/pilots/<gameId>/<artKey>_half.webp` —— **gameId 與 artKey 不互推**（維娜 10103144／Pilot_13019A）
+ *   機甲立繪 `/images/game/mechs/<wap>/Icon_mecha_wap<wap>.webp`
+ * 推出來的檔案萬一不存在（沒匯入、或網站還沒部署），handleSocialPreview 的探測會退到下一個候選。
+ */
+function gamePortrait(collection: OgCollection, doc: Record<string, unknown>): string | undefined {
+  const gameId = str(doc.gameId)
+  if (!gameId) return undefined
+  if (collection === 'pilots') {
+    const artKey = str(doc.artKey)
+    return artKey ? `/images/game/pilots/${gameId}/${artKey}_half.webp` : undefined
+  }
+  if (collection === 'mechs') return `/images/game/mechs/${gameId}/Icon_mecha_wap${gameId}.webp`
+  return undefined
+}
+
+/** 候選清單 → { image, fallbackImages }：第一個當主圖，其餘依序當探測失敗時的後備。 */
+function pickImages(...paths: unknown[]): Pick<OgMeta, 'image' | 'fallbackImages'> {
+  const list = paths.map(absoluteImage).filter((u, i, a): u is string => !!u && a.indexOf(u) === i)
+  if (!list.length) return { image: DEFAULT_OG_IMAGE }
+  return list.length > 1 ? { image: list[0], fallbackImages: list.slice(1) } : { image: list[0] }
+}
+
 /** 描述欄位截斷。社群卡片本來就只顯示兩三行，過長只是浪費頻寬。 */
 function truncate(s: string, max = 110): string {
   const t = s.replace(/\s+/g, ' ').trim()
@@ -192,8 +223,8 @@ function truncate(s: string, max = 110): string {
  * 依集合組出這個實體的卡片內容。
  *
  * 欄位來源全部是既有的實體欄位（計畫書決策二：不為分享卡片另開美術維護線）：
- *   pilots  → portrait（88/88 有值）
- *   mechs   → portrait ?? halfPortrait（portrait 僅 1 筆缺，halfPortrait 缺 32 筆故當備位）
+ *   pilots  → 官方原檔頭像（gameId＋artKey，PLAN-054）→ portrait
+ *   mechs   → 官方原檔立繪（gameId，PLAN-054）→ portrait → halfPortrait
  *   weapons → icon（178 筆中 6 筆缺）
  *
  * `opts.lore`（PLAN-042-A）：這張卡片是機師故事館的分享卡。只換 title 與 description，
@@ -213,7 +244,7 @@ export function buildOgMeta(
     return {
       title: `${name} 的故事`,
       description: truncate(str(doc.lore)) || `${name}｜機師故事館`,
-      image: absoluteImage(doc.portrait) ?? DEFAULT_OG_IMAGE,
+      ...pickImages(gamePortrait('pilots', doc), doc.portrait),
     }
   }
 
@@ -230,7 +261,7 @@ export function buildOgMeta(
     return {
       title: `${name}${rarity || cls ? ` · ${[rarity, cls].filter(Boolean).join(' ')}` : ''}`,
       description: truncate(parts.length ? `${parts.join('｜')}｜天賦、技能、神經驅動與數值一覽` : `${name} 的天賦、技能、神經驅動與數值一覽`),
-      image: absoluteImage(doc.portrait) ?? DEFAULT_OG_IMAGE,
+      ...pickImages(gamePortrait('pilots', doc), doc.portrait),
     }
   }
 
@@ -243,7 +274,7 @@ export function buildOgMeta(
     return {
       title: `${name}${quality ? ` · ${quality} 機甲` : ''}`,
       description: truncate(lore || `${fallbackDesc}｜部件、模組槽與數值一覽`),
-      image: absoluteImage(doc.portrait) ?? absoluteImage(doc.halfPortrait) ?? DEFAULT_OG_IMAGE,
+      ...pickImages(gamePortrait('mechs', doc), doc.portrait, doc.halfPortrait),
     }
   }
 

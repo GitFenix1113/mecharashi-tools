@@ -300,12 +300,14 @@ async function handleSocialPreview(
     // 資料層若哪天把 portrait 指到別的 webp 檔名，推導出來的路徑就會不存在 ——
     // 那是**靜默**失敗（卡片變破圖，沒有任何錯誤），所以這裡花一次 HEAD 確認。
     // 爬蟲請求量是每日幾十次量級，且 CF 邊緣快取會命中，成本可忽略。
-    if (isDerivedPreviewImage(meta.image)) {
-      const ok = await fetch(meta.image, { method: 'HEAD' })
-        .then(r => r.ok)
-        .catch(() => false)
-      if (!ok) meta.image = DEFAULT_OG_IMAGE
+    // PLAN-054：候選不只一張（官方原檔 JPEG → 舊立繪 JPEG），依序探測、第一張存在的勝出；
+    // 非推導路徑（外部網址、武器 png）不探測，直接採用。全滅才退回站名預設圖。
+    const exists = (u: string) => fetch(u, { method: 'HEAD' }).then(r => r.ok).catch(() => false)
+    let chosen = DEFAULT_OG_IMAGE
+    for (const u of [meta.image, ...(meta.fallbackImages ?? [])]) {
+      if (!isDerivedPreviewImage(u) || await exists(u)) { chosen = u; break }
     }
+    meta.image = chosen
 
     const res = await passthrough()
     const contentType = res.headers.get('content-type') ?? ''

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Mech } from '../../types'
 import type { MechPartPosition } from '../../types/enums'
-import { imageCandidates } from '../../utils/assets'
+import { mechPartCandidates } from '../../utils/assets'
 import { partLabel } from '../../utils/moduleSlots'
 import { partOf } from '../../utils/chassisStats'
 import { partChoices, type LoadoutContext } from '../../utils/loadoutRules'
@@ -138,7 +138,7 @@ function PartRow({ source, position, isBase, isCurrent, onSwap }: {
     >
       <span className="shrink-0 flex items-center justify-center" style={{ width: ICON, height: ICON }}>
         <FallbackImage
-          candidates={imageCandidates(part.icon)}
+          candidates={mechPartCandidates(source, position, part)}
           alt=""
           loading="lazy"
           className="max-w-full max-h-full object-contain"

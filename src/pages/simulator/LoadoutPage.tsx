@@ -45,6 +45,7 @@ import { ndPowerBonus, effectiveNdLevels } from '../../utils/ndPowerBonus'
 import { HUD, HUD_BTN, HUD_BTN_DANGER, HUD_INPUT, HUD_PANEL } from '../../components/loadout/loadoutTheme'
 import { CLASS_CONFIG } from '../../components/badges/PilotBadges'
 import { mechSlotCapacity } from '../../utils/mechSlots'
+import { mechPortraitPath, pilotPortraitPath } from '../../utils/assets'
 import { licenseAllows } from '../../utils/normalizeArmorType'
 import type { PickerFilterGroup } from '../../components/loadout/PickerShell'
 import { CascadeToast } from '../../components/loadout/CascadeToast'
@@ -1886,10 +1887,10 @@ function LoadoutNoteField({
   )
 }
 
-// ⚠ `icon` 給的是 `p.portrait`，也就是**頭像** `half.webp`（1240×1080 的全身像另有其路，
+// ⚠ `icon` 給的是**頭像**（官方 `<artKey>_half`，沒有才退回 `p.portrait`；1240×1080 的半身另有其路，
 //   見 `pilotFullArtPath()`）。頭像牆要的正是頭像。
 const pilotRow = (p: Pilot): PickerRowItem => ({
-  id: p.id, name: p.name, icon: p.portrait,
+  id: p.id, name: p.name, icon: pilotPortraitPath(p) ?? '',
   meta: `${p.class ?? ''} · ${p.license}`.replace(/^ · /, ''),
   // 職業色只取 `text-*` 那一段：CLASS_CONFIG 的值是「文字色 底色 框線」三件一組
   tone: CLASS_CONFIG[p.class]?.split(' ')[0],
@@ -1899,7 +1900,7 @@ const pilotRow = (p: Pilot): PickerRowItem => ({
 const mechRow = (m: Mech): PickerRowItem => {
   const cap = mechSlotCapacity(m)
   return {
-    id: m.id, name: m.name, icon: m.portrait,
+    id: m.id, name: m.name, icon: mechPortraitPath(m) ?? '',
     weight: m.weight,
     meta: `${m.armorType}${m.quality ? ` · ${m.quality}` : ''}`,
     tone: ARMOR_TONE[m.armorType],

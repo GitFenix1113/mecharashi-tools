@@ -6,8 +6,9 @@ import { useIsMobile } from '../../hooks/useIsMobile'
 import type { NeuralDrive, Weapon, PilotTalent, TalentNdVariant, DescriptionRefs } from '../../types'
 import { formatWeaponReq } from '../../types'
 type NdLevel = NeuralDrive['levels'][number]
-import { assetUrl } from '../../utils/assets'
-import { usePilot, usePilotExclusiveWeapons, useFormsByPilot } from '../../hooks/useFirestore'
+import { assetUrl, pilotPortraitPath } from '../../utils/assets'
+import { usePilot, usePilotExclusiveWeapons, useFormsByPilot, useMechs } from '../../hooks/useFirestore'
+import { RefChip } from '../../components/refs/RefChip'
 import { FormCard } from '../../components/cards/FormCard'
 import { RadarChart } from '../../components/charts/RadarChart'
 import { useGameData } from '../../contexts/GameDataContext'
@@ -797,6 +798,8 @@ export default function PilotDetailPage() {
   // PLAN-004：技能改由 pilotSkills 集合解析（過渡期亦相容嵌入舊格式）
   const gd = useGameData()
   useEffect(() => { gd.ensureLoaded(['pilotSkills', 'neuralDriveAbilities']) }, [gd])
+  // 官配機甲（PLAN-054）：只存機師側的 pairedMechId，這裡把它解成名稱與引用連結
+  const { data: allMechs } = useMechs()
 
   // PLAN-041：形態（僅調構師有；非調構師此陣列恆為空 → 不多付任何讀取以外的成本）
   const { data: forms } = useFormsByPilot(id)
@@ -969,7 +972,7 @@ export default function PilotDetailPage() {
         {/* 左欄: 肖像，固定 160px */}
         <div className="w-32 h-44 mx-auto bg-bg-card border border-border rounded-xl overflow-hidden lg:w-40 lg:h-52 lg:mx-0 lg:flex-shrink-0">
           <img
-            src={assetUrl(pilot.portrait)}
+            src={assetUrl(pilotPortraitPath(pilot) ?? '')}
             alt={pilot.name}
             className="w-full h-full object-cover object-top"
             onError={(e) => {
@@ -995,6 +998,18 @@ export default function PilotDetailPage() {
             <InfoRow label="駕照" value={pilot.license} />
             <InfoRow label="駕駛等級" value={pilot.masterLevel} />
             {pilot.debutVersion && <InfoRow label="登場版本" value={`v${pilot.debutVersion}`} />}
+            {(() => {
+              // 沒有官配就整列不出現（不寫「無」）：賽文是贈送角色、帕斯卡等聯動機甲本來就沒有
+              const paired = pilot.pairedMechId ? allMechs.find((m) => m.id === pilot.pairedMechId) : undefined
+              return paired ? (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-text-dim text-xs w-16 shrink-0">官配機甲</span>
+                  <span className="text-sm font-medium truncate">
+                    <RefChip inner={paired.name} entity={{ refType: 'mech', refId: paired.id }} />
+                  </span>
+                </div>
+              ) : null
+            })()}
             {pilot.profile?.gender && <InfoRow label="性別" value={pilot.profile.gender} />}
             {pilot.profile?.height && <InfoRow label="身高" value={pilot.profile.height} />}
             {pilot.profile?.bloodType && (

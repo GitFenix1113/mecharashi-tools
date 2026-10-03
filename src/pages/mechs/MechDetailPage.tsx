@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import type { MechPart } from '../../types'
-import { assetUrl, imageCandidates } from '../../utils/assets'
+import type { Mech, MechPart } from '../../types'
+import { mechPartCandidates, mechPortraitCandidates } from '../../utils/assets'
 import { FallbackImage } from '../../components/common/FallbackImage'
-import { useMechWithModules } from '../../hooks/useFirestore'
+import { useMechWithModules, useMechs, usePilots } from '../../hooks/useFirestore'
+import { RefChip } from '../../components/refs/RefChip'
+import { pairedPilotOf } from '../../utils/officialPairs'
 import { ModuleCard } from '../../components/module/ModuleCard'
 import { chassisFirepower, chassisWeight } from '../../utils/chassisStats'
 import { MechSlotPanel, MechPartsTable } from '../../components/mechs/MechSlotPanel'
@@ -88,7 +90,13 @@ function ModuleGroupLabel({ label, accent }: { label: string; accent: string }) 
   )
 }
 
-function PartCard({ part, name, expanded }: { part: MechPart; name: string; expanded: boolean }) {
+function PartCard({ mech, position, part, name, expanded }: {
+  mech: Mech
+  position: 'torso' | 'leftArm' | 'rightArm' | 'legs'
+  part: MechPart
+  name: string
+  expanded: boolean
+}) {
   const keyStats = PART_KEY_STATS[part.position] ?? PART_KEY_STATS_FALLBACK
   const rows = PART_STAT_KEYS.filter(
     ({ key }) => part[key] != null && (expanded || keyStats.includes(key))
@@ -96,14 +104,13 @@ function PartCard({ part, name, expanded }: { part: MechPart; name: string; expa
 
   return (
     <div className="bg-bg-dark border border-border rounded-xl p-2.5 flex flex-row gap-2.5 h-full">
-      {part.icon && (
-        <img
-          src={assetUrl(part.icon)}
-          alt={name}
-          className="w-9 h-9 rounded-lg bg-bg-card border border-border object-contain flex-shrink-0 self-start"
-          onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-        />
-      )}
+      {/* 官方部件圖 Icon_wap<wap>_1~4（PLAN-054）→ 部件自己記的 icon；全數失敗就不佔位 */}
+      <FallbackImage
+        candidates={mechPartCandidates(mech, position, part)}
+        alt={name}
+        className="w-9 h-9 rounded-lg bg-bg-card border border-border object-contain flex-shrink-0 self-start"
+        fallback={null}
+      />
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="mb-1">
           <p className="font-bold text-[13px] text-text-primary leading-tight truncate">{name}</p>
@@ -181,6 +188,11 @@ export default function MechDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data, loading } = useMechWithModules(id)
   const [partsExpanded, setPartsExpanded] = useState(loadPartsExpanded)
+  // 官配機師（由機師側推導）與塗裝本體（PLAN-054）。pilots 在版本快取內，不多花 Firestore read。
+  const { data: allPilots } = usePilots()
+  const { data: allMechs } = useMechs()
+  const pairedPilot = data ? pairedPilotOf(data.mech.id, allPilots) : undefined
+  const skinOf = data?.mech.skinOfId ? allMechs.find((m) => m.id === data.mech.skinOfId) : undefined
 
   const togglePartsExpanded = (v: boolean) => {
     setPartsExpanded(v)
@@ -223,7 +235,7 @@ export default function MechDetailPage() {
 
   const portrait = (
     <FallbackImage
-      candidates={imageCandidates(mech.portrait)}
+      candidates={mechPortraitCandidates(mech)}
       alt={mech.name}
       className="max-h-full w-full object-contain"
       fallback={<span className="text-xs text-text-dim">尚無立繪</span>}
@@ -250,6 +262,17 @@ export default function MechDetailPage() {
           {mech.debutVersion && (
             <span className="text-[11px] text-text-dim border border-border rounded px-2 py-0.5">
               登場 v{mech.debutVersion}
+            </span>
+          )}
+          {/* 官配機師與塗裝本體（PLAN-054）：官配由機師側推導、只存一邊；沒有就不出現 */}
+          {pairedPilot && (
+            <span className="text-[12px] text-text-dim">
+              官配 <RefChip inner={pairedPilot.name} entity={{ refType: 'pilot', refId: pairedPilot.id }} />
+            </span>
+          )}
+          {skinOf && (
+            <span className="text-[12px] text-text-dim">
+              <RefChip inner={skinOf.name} entity={{ refType: 'mech', refId: skinOf.id }} /> 的付費塗裝
             </span>
           )}
         </div>
@@ -296,24 +319,24 @@ export default function MechDetailPage() {
                     {portrait}
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
-                    {torso    && <PartCard part={torso}    name="軀幹" expanded={partsExpanded} />}
-                    {rightArm && <PartCard part={rightArm} name="右臂" expanded={partsExpanded} />}
-                    {leftArm  && <PartCard part={leftArm}  name="左臂" expanded={partsExpanded} />}
-                    {legs     && <PartCard part={legs}     name="腿部" expanded={partsExpanded} />}
+                    {torso    && <PartCard mech={mech} position="torso"    part={torso}    name="軀幹" expanded={partsExpanded} />}
+                    {rightArm && <PartCard mech={mech} position="rightArm" part={rightArm} name="右臂" expanded={partsExpanded} />}
+                    {leftArm  && <PartCard mech={mech} position="leftArm"  part={leftArm}  name="左臂" expanded={partsExpanded} />}
+                    {legs     && <PartCard mech={mech} position="legs"     part={legs}     name="腿部" expanded={partsExpanded} />}
                   </div>
                 </div>
                 {/* 桌面：十字形佈局，中央立繪為基準 */}
                 <div className="hidden lg:grid grid-cols-3 gap-2.5 items-stretch">
                   <div />
-                  {torso ? <PartCard part={torso} name="軀幹" expanded={partsExpanded} /> : <div />}
+                  {torso ? <PartCard mech={mech} position="torso" part={torso} name="軀幹" expanded={partsExpanded} /> : <div />}
                   <div />
-                  {rightArm ? <PartCard part={rightArm} name="右臂" expanded={partsExpanded} /> : <div />}
+                  {rightArm ? <PartCard mech={mech} position="rightArm" part={rightArm} name="右臂" expanded={partsExpanded} /> : <div />}
                   <div className="bg-bg-card border border-border rounded-xl flex items-center justify-center min-h-[200px] p-2">
                     {portrait}
                   </div>
-                  {leftArm ? <PartCard part={leftArm} name="左臂" expanded={partsExpanded} /> : <div />}
+                  {leftArm ? <PartCard mech={mech} position="leftArm" part={leftArm} name="左臂" expanded={partsExpanded} /> : <div />}
                   <div />
-                  {legs ? <PartCard part={legs} name="腿部" expanded={partsExpanded} /> : <div />}
+                  {legs ? <PartCard mech={mech} position="legs" part={legs} name="腿部" expanded={partsExpanded} /> : <div />}
                   <div />
                 </div>
               </>

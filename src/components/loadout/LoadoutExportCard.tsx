@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, type CSSProperties } from 'react'
 import { toPng } from 'html-to-image'
 import type { Component, NeuralDrive, NeuralDriveAbility, Pilot, PilotSkillDoc } from '../../types'
-import { hasMechArt, imageCandidates, pilotFullArtPath, mechKeyArtPath } from '../../utils/assets'
+import { hasMechArt, imageCandidates, pilotFullArtPath, mechKeyArtPath, mechPortraitCandidates } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
 import { moduleRows, slotComponents, wastedModuleStacks, weaponRows } from '../../utils/loadoutRows'
 import { ComponentsWType } from '../../types/enums'
@@ -251,7 +251,8 @@ export function LoadoutExportCard({
   //   兩套的差異與理由寫在 `HERO` 上。
   const mechIsCutout = hasMechArt(mech)
   const L = HERO[mechIsCutout ? 'cutout' : 'photo']
-  const mechArt = imageCandidates(mechKeyArtPath(mech), mech?.portrait)
+  // 全身大圖（官方 _SN_Raw，PLAN-054）→ 舊 art.webp → 立繪（官方 Icon_mecha → 舊 portrait）
+  const mechArt = [...imageCandidates(mechKeyArtPath(mech)), ...mechPortraitCandidates(mech)]
 
   const named = !!name
   const title = name ?? pilot?.name ?? '未命名配裝'

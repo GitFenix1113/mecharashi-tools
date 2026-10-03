@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { usePilots } from '../../hooks/useFirestore'
-import { assetUrl } from '../../utils/assets'
+import { assetUrl, pilotPortraitPath } from '../../utils/assets'
 import { setPilotAvatar } from '../../lib/profileApi'
 
 interface Props {
@@ -62,7 +62,7 @@ export default function PilotAvatarGallery({ uid, currentPilotId, onSuccess }: P
               }`}
             >
               <img
-                src={assetUrl(pilot.portrait)}
+                src={assetUrl(pilotPortraitPath(pilot) ?? '')}
                 alt={pilot.name}
                 className="w-12 h-12 rounded-full object-cover border border-border"
                 draggable={false}

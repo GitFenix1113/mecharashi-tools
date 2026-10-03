@@ -4,7 +4,7 @@ import { FallbackImage } from '../../components/common/FallbackImage'
 import { CLASS_CONFIG } from '../../components/badges/PilotBadges'
 import { toneBar } from '../../components/loadout/PickerVariants'
 import { usePilotLore, usePilots } from '../../hooks/useFirestore'
-import { assetUrl, imageCandidates } from '../../utils/assets'
+import { assetUrl, pilotPortraitCandidates } from '../../utils/assets'
 import type { Pilot } from '../../types'
 
 /**
@@ -271,12 +271,12 @@ function PilotCard({ pilot, chapters }: { pilot: Pilot; chapters: number }) {
       // 官網縮圖框的語彙（PLAN-042-C F-1）：黑底、hover 紅框 #b10000、微微上浮
       className="group relative block aspect-square overflow-hidden rounded-lg border-2 border-[#1a1614]/70 bg-[#0a0c10] no-underline transition-[border-color,transform] duration-200 hover:border-[#b10000] hover:-translate-y-0.5"
     >
-      {/* 縮圖**本地 half.webp 優先**（PLAN-042-C F-1），官方 CDN 只當退路：遠端 media.zlongame.com
+      {/* 縮圖**本地優先**（PLAN-042-C F-1；PLAN-054 起本地官方原檔排第一），官方 CDN 只當退路：遠端 media.zlongame.com
           在台灣線路上首屏會空一陣子（實測 5 秒後仍有 43 張 pending），本地檔走 Cloudflare 邊緣快取。
           代價是與 /pilots（遠端優先）不共用同一組 URL、瀏覽器快取不互通——88 張約 2.6MB，可接受。
           ⚠ 賽拉沒有 portrait 也沒有 portraitUrl ⇒ 候選為空 ⇒ 直接落到 fallback，卡片照樣在牆上。 */}
       <FallbackImage
-        candidates={imageCandidates(pilot.portrait, pilot.portraitUrl)}
+        candidates={pilotPortraitCandidates(pilot)}
         alt={pilot.name}
         loading="lazy"
         className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"

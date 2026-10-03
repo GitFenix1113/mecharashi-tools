@@ -9,6 +9,12 @@
  * 路徑鏡射原始結構，Worker 端據此推導（見 workers/src/socialPreview.ts 的 absoluteImage）：
  *
  *   /images/pilots/曜/half.webp  →  /images/og/entities/pilots/曜/half.jpg
+ *   /images/game/pilots/10103144/Pilot_13019A_half.webp
+ *                                →  /images/og/entities/game/pilots/10103144/Pilot_13019A_half.jpg
+ *
+ * PLAN-054 起 og:image 以**官方原檔**為先（Worker 由 doc 的 gameId／artKey 推路徑），
+ * 舊的名字資料夾來源仍保留——沒有遊戲 ID 的實體（索妮婭）只有那條路；
+ * 舊檔清掉之後那幾行自然收集不到東西，不必刪。
  *
  * ⚠ 產出物**不進版控**（.gitignore 已忽略），由 build/dev 前置每次重跑。
  *   因此新增機師／機甲不需要任何額外動作，也不會讓 repo 一直長大。
@@ -38,6 +44,10 @@ const FLATTEN_BG = { r: 10, g: 12, b: 16 }
  * 那些不會出現在 og:image 裡，轉了只是讓 build 變慢、dist 變大。
  */
 const SOURCES = [
+  // 官方原檔（PLAN-054）：機師頭像 <artKey>_half、機甲立繪 Icon_mecha_wap<wap>（不含部件與 SN 大圖）
+  { dir: 'game/pilots', depth: 1, match: name => name.endsWith('_half.webp') },
+  { dir: 'game/mechs', depth: 1, match: name => /^Icon_mecha_wap\d+\.webp$/.test(name) },
+  // 舊的名字資料夾（沒有遊戲 ID 的實體仍靠它）
   { dir: 'pilots', depth: 1, match: name => name === 'half.webp' },
   { dir: 'mechs', depth: 1, match: name => name === 'portrait.webp' },
   { dir: 'weapons', depth: 0, match: name => name.endsWith('.webp') },

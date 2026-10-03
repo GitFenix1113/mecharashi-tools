@@ -233,3 +233,46 @@ test('buildOgMeta：外部絕對網址原樣保留，描述會截斷', () => {
   assert.ok((long?.description.length ?? 0) <= 110)
   assert.match(long?.description ?? '', /…$/)
 })
+
+// ── PLAN-054：og:image 以官方原檔為先、舊立繪當後備 ─────────────────────────────
+
+test('buildOgMeta（pilots）：有 gameId／artKey 就用官方原檔頭像，舊 portrait 退成後備', () => {
+  // 維娜是例外：資料夾用 gameId（10103144）、檔名用 artKey（Pilot_13019A），兩者不互推
+  const meta = buildOgMeta('pilots', {
+    name: '維娜',
+    gameId: '10103144',
+    artKey: 'Pilot_13019A',
+    portrait: '/images/pilots/維娜/half.webp',
+  })
+  assert.ok(meta)
+  assert.equal(meta.image, 'https://mecharashi.wiki/images/og/entities/game/pilots/10103144/Pilot_13019A_half.jpg')
+  assert.equal(isDerivedPreviewImage(meta.image), true)
+  assert.deepEqual(meta.fallbackImages, [
+    'https://mecharashi.wiki/images/og/entities/pilots/' + encodeURIComponent('維娜') + '/half.jpg',
+  ])
+  // 故事館分享卡同一套
+  const lore = buildOgMeta('pilots', { name: '維娜', gameId: '10103144', artKey: 'Pilot_13019A' }, { lore: true })
+  assert.equal(lore?.image, meta.image)
+  assert.equal(lore?.fallbackImages, undefined)
+})
+
+test('buildOgMeta（pilots）：只有 gameId 沒有 artKey → 不硬拼（artKey 不由 gameId 推導），照舊用 portrait', () => {
+  const meta = buildOgMeta('pilots', { name: '維娜', gameId: '10103144', portrait: '/images/pilots/維娜/half.webp' })
+  assert.equal(meta?.image, 'https://mecharashi.wiki/images/og/entities/pilots/' + encodeURIComponent('維娜') + '/half.jpg')
+  assert.equal(meta?.fallbackImages, undefined)
+})
+
+test('buildOgMeta（mechs）：官方原檔立繪 → portrait → halfPortrait', () => {
+  const meta = buildOgMeta('mechs', {
+    name: '都卜勒',
+    gameId: '1011',
+    portrait: '/images/mechs/都卜勒/portrait.webp',
+    halfPortrait: '/images/mechs/都卜勒/half.png',
+  })
+  assert.ok(meta)
+  assert.equal(meta.image, 'https://mecharashi.wiki/images/og/entities/game/mechs/1011/Icon_mecha_wap1011.jpg')
+  assert.deepEqual(meta.fallbackImages, [
+    'https://mecharashi.wiki/images/og/entities/mechs/' + encodeURIComponent('都卜勒') + '/portrait.jpg',
+    'https://mecharashi.wiki/images/mechs/' + encodeURIComponent('都卜勒') + '/half.png',
+  ])
+})
