@@ -156,7 +156,7 @@ const PREVIEW_JPEG_ROOT = '/images/og/entities'
  * 站上的機師／機甲立繪 175/177 是 WebP，等於絕大多數卡片在 LINE 都沒有圖。
  *
  * build 前置的 scripts/generate-og-entity-images.mjs 會把這些立繪各轉一份 JPEG 到鏡射路徑：
- *   /images/pilots/曜/half.webp → /images/og/entities/pilots/曜/half.jpg
+ *   /images/game/pilots/10103173/Pilot_10103173A_half.webp → /images/og/entities/game/pilots/10103173/Pilot_10103173A_half.jpg
  *
  * ⚠ 這裡的推導規則與那支腳本的 SOURCES 是一組的，改一邊要改另一邊。
  *   萬一推導出來的檔案不存在，handleSocialPreview 會探測到並退回預設圖（不會留下破圖）。
@@ -178,7 +178,7 @@ function absoluteImage(path: unknown): string | null {
   const p = path.trim()
   if (p.startsWith('http://') || p.startsWith('https://')) return p
   const local = toPreviewSafeImage(p.startsWith('/') ? p : `/${p}`)
-  // 路徑含中文（/images/pilots/葉夫根尼/half.webp）→ 必須 encode 才是合法 URL。
+  // 路徑可能含中文（沒有遊戲 ID、還走名字資料夾的舊路徑）→ 必須 encode 才是合法 URL。
   // encodeURI 而非 encodeURIComponent：要保留斜線。
   return encodeURI(`${SITE_ORIGIN}${local}`)
 }

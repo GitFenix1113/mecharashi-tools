@@ -139,7 +139,10 @@ function scanText() {
     if (!exts.test(abs) || abs.endsWith(path.join('images', 'manifest.json'))) return
     const rel = path.relative(ROOT, abs).split(path.sep).join('/')
     if (rel === 'scripts/check-image-refs.mjs') return
+    const isCode = /\.(ts|tsx|mjs|js)$/.test(abs)
     fs.readFileSync(abs, 'utf-8').split('\n').forEach((line, i) => {
+      // 程式檔的註解行只是舉例（「/images/pilots/<名>/half.webp → …」），不是現役引用
+      if (isCode && /^\s*(\/\/|\*|\/\*)/.test(line)) return
       for (const m of line.matchAll(RE)) refs.push({ where: `${rel}:${i + 1}`, field: '', raw: m[0] })
     })
   }

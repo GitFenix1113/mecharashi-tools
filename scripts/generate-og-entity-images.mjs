@@ -8,7 +8,7 @@
  * 做法：把「會被當成 og:image 的那些立繪」各轉一份 JPEG 到 public/images/og/entities/，
  * 路徑鏡射原始結構，Worker 端據此推導（見 workers/src/socialPreview.ts 的 absoluteImage）：
  *
- *   /images/pilots/曜/half.webp  →  /images/og/entities/pilots/曜/half.jpg
+ *   /images/pilots/<名>/half.webp  →  /images/og/entities/pilots/<名>/half.jpg（舊名字資料夾，PLAN-054 後只剩沒有遊戲 ID 的實體會用到）
  *   /images/game/pilots/10103144/Pilot_13019A_half.webp
  *                                →  /images/og/entities/game/pilots/10103144/Pilot_13019A_half.jpg
  *
