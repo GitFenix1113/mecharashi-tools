@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-054 · 機師／機甲圖片 ID 化</h3>
+      <p>圖片主鍵從「站上中文名資料夾」換成遊戲 ID——已有 5 個資料夾跟顯示名對不上、頭像還是先打官方 CDN。以 v3 定版對照為唯一輸入：DB 補 gameId／artKey／英文名 90 位／官配 61 組；陸版擷取的官方原檔以<b>原檔名</b>匯入 <code>public/images/game/&lt;ID&gt;/</code>（站上沒有的進 <code>_reserve</code>）；讀取端改由 ID 推路徑（本地原檔 → 舊檔 → CDN），OG 一起切；最後像素比對刪掉與原檔同圖的舊檔、名字資料夾退場。新機師填 ID 就有圖。0／A／B／C／D 五段 26 項，約 7 人日；決策已於 2026-10-03 確認（官方圖一律取代、引用全面改寫、部署後清快取）。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-054_機師機甲圖片ID化/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-054_機師機甲圖片ID化/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card pink">
       <div class="card-icon">◆</div>
       <h3>PLAN-042-C · 故事館氛圍層</h3>

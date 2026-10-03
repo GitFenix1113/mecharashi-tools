@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-054 機師／機甲圖片 ID 化 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.impact-table td.num { text-align: right; font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+.impact-table tr.subtotal td { background: rgba(255,255,255,0.03); font-weight: 600; color: var(--text-primary); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+
+/* 表格在手機寬度改為容器內橫向捲動，不撐破整頁 */
+.table-scroll { overflow-x: auto; margin: 16px 0; }
+.table-scroll .impact-table { margin: 0; min-width: 520px; }
+
+.flow-figure {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 18px 10px;
+  margin: 16px 0 8px;
+}
+.flow-figure svg { width: 100%; height: auto; display: block; }
+.flow-caption { font-size: 12px; color: var(--text-dim); text-align: center; margin-top: 6px; }
+.decision-block ul, .warning-block ul, .info-block ul, .problem-block ul { margin: 8px 0 0 18px; line-height: 1.9; }
+.decision-block ol, .warning-block ol { margin: 8px 0 0 20px; line-height: 1.9; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-054 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-054</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    機師／機甲圖片 ID 化<span style="-webkit-text-fill-color:var(--text-secondary);"> · gameId · 官方檔名 · 官配</span>
+  </h1>
+  <p class="hero-sub">圖片的主鍵從「站上中文名資料夾」換成遊戲 ID：DB 補 gameId／artKey／英文名／官配，陸版擷取的官方原檔以原檔名匯入 <code>public/images/game/</code>，讀取端改由 ID 推路徑，最後清掉與原檔同圖的舊檔。新機師只要填 ID 就有圖。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-054</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-03</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">pilot／mech 型別與後台 · 匯入／回填腳本 · 約 20 個讀圖元件 · OG Worker · public/images/game/</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value orange">開工準備中（決策已於 2026-10-03 確認）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">v3 定版對照（已完成）· 042-A／042-C 收起入口後合併回 main</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>圖片的主鍵是「站上中文名」，而名字會漂</strong><br>
+    機師圖在 <code>pilots/&lt;名&gt;/half.webp</code>，<code>pilotArtDir()</code> 再從 <code>portrait</code> 路徑反推資料夾名。
+    實測已有 <b>5 個資料夾跟顯示名對不上</b>（卡米拉／洛莎審判／淬鋒凱登／裡貝卡，機甲芬裡厄），原稿匯入要靠
+    <code>import-source-art.mjs</code> 的 <code>NAME_FIXES</code> 7 筆對照硬接；塞拉、珂賽特與雪崩、美杜莎MK2、藍色魔鳥、凜騎士
+    至今<b>沒有本地圖資料夾</b>。新機師得手動建資料夾、放圖、填路徑。
+  </div>
+
+  <div class="problem-block">
+    <strong>圖從官方 CDN 來，而且 CDN 排第一順位</strong><br>
+    爬蟲從官方 CDN 下載裁切圖；<code>PilotIcon</code>、<code>EntityRefView</code> 的候選順序是 <code>portraitUrl</code>（官方 CDN）→ 本地，
+    每張頭像先打一次第三方網域。2026-09-25 的陸版客戶端全圖擷取已拿到原檔（含 90×90 小頭像、部件圖、2000×1080 機甲大圖），
+    但沒有管線把它接上站。
+  </div>
+
+  <div class="problem-block">
+    <strong>DB 沒有遊戲 ID；英文名與官配只存在筆記裡</strong><br>
+    機師卡編號（gameId）與立繪主鍵（artKey）在 5 位機師身上不相等、不能互推；<code>nameEn</code> 欄位 PLAN-042-C 開了但沒有資料
+    （D-5 列為管理員長期作業）；官配 61 組只存在對照檔與站長的記憶中。
+  </div>
+
+  <div class="problem-block">
+    <strong>v3.0 之後的立繪多是人工去背，品質不一致</strong><br>
+    官方來源跟不上之後，機師與機甲圖幾乎都是人員手動去背：解析度有落差、圖片置中一直沒有統一，版面只能逐張微調遷就。
+    站長 2026-10-03 定案：<b>有官方原檔的一律換成官方原檔</b>，不只換「剛好同圖」的那些（決策十一）。
+  </div>
+
+  <div class="info-block">
+    <strong>對照已定版（2026-10-03），本計畫不重新盤點、不重新核對</strong><br>
+    唯一輸入 <code>_local-notes/2026-10/2026-10-03_機師機甲圖片資源mapping_v3_final.json</code>（以下稱 v3）：
+    91 機師（90 位有 gameId／artKey／英文名；索妮婭此份資料沒有）、92 機甲（wap 編號；凜騎士＝遊騎兵付費塗裝）、
+    官配 61 組（v1.1 起同版「機師執照＝機甲裝甲」自動配對 47 組＋開服 v1.0 站長指定 14 組）、
+    每個實體的全部官方素材歸屬（機師 1,865 筆、機甲 2,849 筆）。站長已核對 v1（340 筆）與 v2（159 筆），無未解項目。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="flow-figure">
+    <svg viewBox="0 0 760 440" role="img" aria-label="資料流：v3 對照回填 DB、官方原檔匯入 public/images/game，兩者在讀取端 helper 匯流">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" style="fill:#9ca3af"></path>
+        </marker>
+      </defs>
+      <g style="font-family:inherit;">
+        <!-- 左：資料層 -->
+        <rect x="30" y="20" width="300" height="54" rx="10" style="fill:rgba(34,211,238,0.08);stroke:#22d3ee;"></rect>
+        <text x="180" y="43" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">v3 對照 JSON（定版・唯一真相）</text>
+        <text x="180" y="63" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">91 機師 · 92 機甲 · 官配 61 · 英文名 90</text>
+
+        <rect x="30" y="110" width="300" height="54" rx="10" style="fill:rgba(34,211,238,0.08);stroke:#22d3ee;"></rect>
+        <text x="180" y="133" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">backfill-game-ids.mjs</text>
+        <text x="180" y="153" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">dry-run → --apply → bump pilots mechs</text>
+
+        <rect x="30" y="200" width="300" height="54" rx="10" style="fill:rgba(34,211,238,0.08);stroke:#22d3ee;"></rect>
+        <text x="180" y="223" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">Firestore pilots／mechs</text>
+        <text x="180" y="243" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">＋gameId · artKey · nameEn · 官配 · 塗裝本體</text>
+
+        <!-- 右：圖檔 -->
+        <rect x="430" y="20" width="300" height="54" rx="10" style="fill:rgba(249,115,22,0.08);stroke:#f97316;"></rect>
+        <text x="580" y="43" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">陸版擷取 PNG ＋ 圖片索引.csv</text>
+        <text x="580" y="63" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">本機素材，不進 repo</text>
+
+        <rect x="430" y="110" width="300" height="54" rx="10" style="fill:rgba(249,115,22,0.08);stroke:#f97316;"></rect>
+        <text x="580" y="133" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">import-game-assets.mjs</text>
+        <text x="580" y="153" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">白名單 → WebP q82 原尺寸 → 官方檔名</text>
+
+        <rect x="430" y="200" width="300" height="54" rx="10" style="fill:rgba(249,115,22,0.08);stroke:#f97316;"></rect>
+        <text x="580" y="223" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">public/images/game/</text>
+        <text x="580" y="243" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">pilots/&lt;gameId&gt;/ · mechs/&lt;wap&gt;/ · _reserve/</text>
+
+        <rect x="430" y="290" width="300" height="54" rx="10" style="fill:rgba(249,115,22,0.08);stroke:#f97316;"></rect>
+        <text x="580" y="313" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">src/data/gameArtIndex.ts</text>
+        <text x="580" y="333" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">build／predev 掃 game/：渲染前就知道有沒有圖</text>
+
+        <!-- 匯流：讀取端 -->
+        <rect x="110" y="370" width="540" height="58" rx="10" style="fill:rgba(34,197,94,0.08);stroke:#22c55e;"></rect>
+        <text x="380" y="394" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">pilotGameArt() · mechGameArt()</text>
+        <text x="380" y="415" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">imageCandidates( 本地官方原檔 → 舊本地檔 → 官方 CDN ) ⇒ 元件 ＋ OG 卡片</text>
+
+        <!-- 箭頭 -->
+        <g style="stroke:#9ca3af;stroke-width:1.5;fill:none;">
+          <line x1="180" y1="74" x2="180" y2="108" marker-end="url(#ah)"></line>
+          <line x1="180" y1="164" x2="180" y2="198" marker-end="url(#ah)"></line>
+          <line x1="180" y1="254" x2="180" y2="368" marker-end="url(#ah)"></line>
+          <line x1="580" y1="74" x2="580" y2="108" marker-end="url(#ah)"></line>
+          <line x1="580" y1="164" x2="580" y2="198" marker-end="url(#ah)"></line>
+          <line x1="580" y1="254" x2="580" y2="288" marker-end="url(#ah)"></line>
+          <line x1="580" y1="344" x2="580" y2="368" marker-end="url(#ah)"></line>
+          <line x1="330" y1="56" x2="428" y2="128" marker-end="url(#ah)" style="stroke-dasharray:4 4;"></line>
+        </g>
+        <text x="392" y="84" text-anchor="middle" style="fill:#9ca3af;font-size:11px;">素材歸屬</text>
+        <text x="190" y="315" style="fill:#9ca3af;font-size:11px;">doc 帶 gameId／artKey</text>
+      </g>
+    </svg>
+    <div class="flow-caption">左線回填 DB、右線匯入檔案；兩線只在讀取端 helper 匯流，互不依賴執行順序以外的任何東西</div>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策一：v3 是唯一真相，<code>圖片索引.csv</code> 只是檔案定位器</strong>
+    <ul>
+      <li>v3 決定「誰是誰、哪張圖屬於誰」；v1／v2 與 10-01 盤點檔都不再讀。</li>
+      <li>CSV 只在兩處用：<code>_reserve</code>（v3 只列 ID，要靠命名規則找檔）與新實體模式（決策十）。它<b>不參與任何歸屬判斷</b>。</li>
+      <li>原始 PNG、CSV、擷取工具一律不進 repo；腳本以 <code>--src</code> 參數讀本機素材夾。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：資料層欄位——全部選填字串，gameId 與 artKey 不互推</strong>
+    <div class="table-scroll"><table class="impact-table">
+      <tr><th>集合</th><th>欄位</th><th>值例</th><th>筆數</th><th>說明</th></tr>
+      <tr><td>pilots</td><td><code>gameId</code></td><td><code>'10103174'</code></td><td class="num">90</td><td>機師卡 <code>Icon_item_&lt;gameId&gt;A</code> 的編號（只有可抽機師有）</td></tr>
+      <tr><td>pilots</td><td><code>artKey</code></td><td><code>'Pilot_10103174A'</code></td><td class="num">90</td><td>預設立繪主鍵，與官方檔名逐字相同（<code>_half</code>／<code>_head</code>／<code>_Raw</code> 接在後面）</td></tr>
+      <tr><td>pilots</td><td><code>nameEn</code></td><td><code>'Yevgeny Ivanovic Goman'</code></td><td class="num">90</td><td>既有欄位（PLAN-042-C D-4），本計畫一次回填</td></tr>
+      <tr><td>pilots</td><td><code>pairedMechId</code></td><td><code>'mech_014_戴亞斯'</code></td><td class="num">61</td><td>官配機甲的文件 ID</td></tr>
+      <tr><td>mechs</td><td><code>gameId</code></td><td><code>'1011'</code></td><td class="num">92</td><td>wap 四碼（<code>Icon_mecha_wap1011</code>）</td></tr>
+      <tr><td>mechs</td><td><code>skinOfId</code></td><td>遊騎兵的文件 ID</td><td class="num">1</td><td>塗裝本體（只有凜騎士）</td></tr>
+    </table></div>
+    <ul>
+      <li><b>字串不是數字</b>：<code>'13037'</code> 與 <code>'10103123'</code> 長度不同，只拿來拼路徑、不做運算。</li>
+      <li><b>兩欄不互推</b>：例外 5 位——維娜 10103144／<code>Pilot_13019A</code>、貝爾莎 10103145／<code>Pilot_13010A</code>、阿列娜 13037、珂賽特 11021、瑪阿特 10103180。
+        artKey 存完整鍵，程式裡不留「主鍵怎麼拼」的規則。</li>
+      <li><b>官配只存機師側</b>，機甲側由 <code>pairedPilotOf(mech, pilots)</code> 推導。v3 是 1:1 對稱（61／61 已驗）；兩邊都存就得兩邊同步，
+        後台改一邊忘一邊是<b>靜默的不一致</b>，推導則不會壞。機甲頁要讀 pilots 集合，但它在版本快取內，不增加 Firestore read。
+        ⚠ 交接檔原寫雙邊各一欄（<code>pairedPilotId</code>），這裡改為單邊 → ✅ 站長已確認（2026-10-03）。</li>
+      <li><b>不存「為什麼沒有官配」</b>：賽文（官方贈送）、帕斯卡／信仰之眼（聯動）、凜騎士（塗裝）、暮色之牙／開拓者（開服未指定）畫面上不顯示官配即可，原因留在 v3 與本計畫書。</li>
+      <li><b>不存官方 API ID</b>：它與 gameId 在 81 位相同，但瑪阿特的 API ID 其實是她的造型卡、另有 8 位沒有 API 資料——不是穩定的識別子。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：英文名「有全名就用全名」（站長 2026-10-03 補充）</strong>
+    <div class="table-scroll"><table class="impact-table">
+      <tr><th>機師</th><th>v3</th><th>回填值</th><th>全名來源（v3 素材清單內）</th></tr>
+      <tr><td>肖妮</td><td>Shawnee</td><td><b>Shawnee Russell</b></td><td>3D 模型 <code>Pilot_shawneerussell</code></td></tr>
+      <tr><td>西爾維婭</td><td>Sylvie</td><td><b>Sylvie Roussel</b></td><td>招募立繪 <code>Img_1_pilot_gacha_sylvieroussel1_Raw</code></td></tr>
+      <tr><td>梅利莎</td><td>Melissa</td><td><b>Melissa Hicks</b></td><td>3D 模型 <code>Pilot_MelissaHicks</code></td></tr>
+      <tr><td>賽文</td><td>Seven Favre</td><td>（不變）</td><td>v3 已是全名</td></tr>
+      <tr><td>艾琳</td><td>Erin</td><td>（不變）</td><td>3D 模型名是 Eileen Dizion——<b>名字本身就不同</b>，不是 Erin 的全名；站長已定採官網的 Erin</td></tr>
+    </table></div>
+    <ul>
+      <li>其餘 19 位單名（Naomi、Camilla、Erisa…）在 v3 沒有英文全名來源 → 維持單名，<b>不從中文全名自行音譯</b>（補值＝編造）。</li>
+      <li>實作：回填腳本內一張 3 筆、附來源的覆寫表；v3 檔本身不改。</li>
+      <li>故事館不會同頁出現兩種寫法：官網圖層 8 位（含虹、白月、艾琳、梅利莎）的扉頁只畫圖層、不渲染 nameEn
+        （<code>PilotLorePage</code> 的 <code>!official &amp;&amp; pilot.nameEn</code>），nameEn 目前也沒有其他渲染點 → 交接檔的這條 ⚠ 解除；日後若在詳情頁顯示 nameEn 再處理。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：檔案落點——一個實體一個 ID 資料夾，檔名＝官方資產名</strong>
+    <div class="code-block"><span class="nm">public/images/game/</span>
+  pilots/<span class="ty">&lt;gameId&gt;</span>/<span class="st">&lt;官方檔名&gt;</span>.webp   <span class="cm">pilots/10103144/Pilot_13019A_half.webp  ← 維娜：資料夾是 gameId、檔名照官方</span>
+  mechs/<span class="ty">&lt;wap&gt;</span>/<span class="st">&lt;官方檔名&gt;</span>.webp      <span class="cm">mechs/1011/Icon_wap1011_1.webp</span>
+  _reserve/npc/<span class="ty">&lt;id&gt;</span>/ · enemy-mech/<span class="ty">&lt;wap&gt;</span>/ · unknown/<span class="ty">&lt;key&gt;</span>/   <span class="cm">站上沒有的實體（NPC 116 · 敵方機甲 10 · 對不到的英文名鍵 4）</span>
+  README.md                            <span class="cm">來源、命名規則、怎麼重跑匯入</span></div>
+    <ul>
+      <li>資料夾名＝ID：後台選圖器照資料夾分組，重匯與清檔都以實體為單位。</li>
+      <li>檔名＝官方資產名逐字（含大小寫）＋<code>.webp</code>：拿官方檔名就 grep 得到，<b>不再需要任何對照表</b>。</li>
+      <li>sharp 轉 WebP q82、<b>原尺寸不縮</b>（最大 2000×1080）、保留透明；同名 Sprite／Texture2D 取 Texture2D；同名但 sha256 不同 → 中止回報，不猜。</li>
+      <li>Windows 不分大小寫、GitHub Pages 分：匯入前以小寫做碰撞檢查（白名單內實測 0 筆）。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：匯入白名單與體積（估值＝各組抽 14 張實轉 WebP 的壓縮比外推）</strong>
+    <div class="table-scroll"><table class="impact-table">
+      <tr><th>組</th><th>內容</th><th>檔數</th><th>估 WebP</th></tr>
+      <tr><td>機師 art</td><td>A 造型 <code>_Raw</code> 1240×1080／<code>_half</code> 340²／<code>_head</code> 90²</td><td class="num">270</td><td class="num">13.6 MB</td></tr>
+      <tr><td>機師 card</td><td>機師卡 <code>Icon_item_*A</code> 340²</td><td class="num">90</td><td class="num">1.9 MB</td></tr>
+      <tr><td>機甲 icon</td><td><code>Icon_mecha_wap*</code> 560×340（＝現在的 portrait）</td><td class="num">93</td><td class="num">4.2 MB</td></tr>
+      <tr><td>機甲 parts</td><td>部件 <code>Icon_wap*_1~4</code>（軀幹／左臂／右臂／腿）340²</td><td class="num">368</td><td class="num">6.9 MB</td></tr>
+      <tr><td>機甲 sn</td><td>全身大圖 <code>_SN_Raw</code> 2000×1080</td><td class="num">91</td><td class="num">13.1 MB</td></tr>
+      <tr class="subtotal"><td colspan="2">core（讀取端切換會用到）</td><td class="num">912</td><td class="num">≈ 40 MB</td></tr>
+      <tr><td>機師 skin＋skincard</td><td>B／C 造型立繪與造型卡</td><td class="num">151</td><td class="num">9.5 MB</td></tr>
+      <tr><td>機甲 skin＋skinicon</td><td>塗裝圖與塗裝圖示</td><td class="num">113</td><td class="num">9.7 MB</td></tr>
+      <tr><td>機師 gacha＋banner</td><td>招募立繪 1024²＋招募橫幅</td><td class="num">229</td><td class="num">18.9 MB</td></tr>
+      <tr><td>lobby</td><td>機師／機甲大廳場景</td><td class="num">311</td><td class="num">15.6 MB</td></tr>
+      <tr><td>機甲 card</td><td>機甲卡立繪 1024²</td><td class="num">147</td><td class="num">18.1 MB</td></tr>
+      <tr><td>機師 bg</td><td>造型背景</td><td class="num">1</td><td class="num">0.2 MB</td></tr>
+      <tr class="subtotal"><td colspan="2">extended（保存；目前沒有消費端）</td><td class="num">952</td><td class="num">≈ 72 MB</td></tr>
+      <tr><td>_reserve</td><td>NPC 立繪頭像、敵方機甲圖示／部件／大圖、對不到的英文名鍵</td><td class="num">dry-run 實測</td><td class="num">粗估 ~20 MB</td></tr>
+    </table></div>
+    <ul>
+      <li><b>不匯</b>：text（文字／字體 481）、model3d（3D 貼圖 2,023 張，PNG 6 GB）、battle（cut-in 字卡 70）、
+        fx／spine／gachaSeq（動態特效貼圖與序列幀 256，脫離動畫定義用不了；白名單一行可開）、技能 icon（另案）。</li>
+      <li>對照：現在 <code>public/images</code> 整包 51 MB；GitHub Pages 單站上限 1 GB。</li>
+      <li><b>部署＝讀取端真的用到的 kind</b>（建議）：repo 保存全部（博物館原則），但 extended 與 <code>_reserve</code> 在 build 後從 <code>dist/</code> 剪掉、
+        也不進後台選圖器的 <code>manifest.json</code>——沒有消費端的圖不上線，也就不會把台版未上線的造型／NPC 公開出去。
+        判斷「是不是 core」用與索引相同的命名規則（決策六），之後有功能要用某組，加進部署清單即可。✅ 站長已確認（2026-10-03）</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：渲染前索引 <code>gameArtIndex.ts</code>——只索引讀取端用得到的 kind</strong>
+    <ul>
+      <li>與 <code>hasPilotArt()</code> 同理：版面要在<b>渲染前</b>就知道這個 ID 有沒有某種圖，不能等圖載失敗才換構圖。</li>
+      <li>由 <code>generate-art-index.mjs</code> 在 build／predev 掃 <code>public/images/game/</code> 產生；每種 kind 一個 ID 的 <code>Set</code>
+        （機師 half／head／raw／card、機甲 icon／parts／sn），<b>不把 ~2,000 個檔名打進前台 bundle</b>。</li>
+      <li>kind 的命名規則（<code>&lt;artKey&gt;_half</code>、<code>Icon_item_&lt;gameId&gt;A</code>、<code>Icon_mecha_wap&lt;wap&gt;</code>、<code>Icon_wap&lt;wap&gt;_1~4</code>、<code>Icon_mecha_wap&lt;wap&gt;_SN_Raw</code>）
+        收在一個共用模組，索引、部署剪裁、匯入的新實體模式三處共用同一份。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：讀取端——helper 優先、舊路徑後備（漸進切換）</strong>
+    <ul>
+      <li>新增純函式（可 <code>node --test</code>）：<code>pilotGameArt(pilot, kind)</code>、<code>mechGameArt(mech, kind)</code> → 路徑，索引沒有就回 <code>undefined</code>。</li>
+      <li>呼叫端統一寫 <code>imageCandidates(pilotGameArt(p, 'half'), p.portrait, p.portraitUrl)</code>：<b>本地官方原檔 → 舊本地檔 → 官方 CDN</b>。
+        主路徑從此不再先打第三方網域。</li>
+    </ul>
+    <div class="table-scroll"><table class="impact-table">
+      <tr><th>現在</th><th>切換後</th><th>關係</th></tr>
+      <tr><td>機師 <code>half.webp</code> 340²</td><td><code>&lt;artKey&gt;_half</code> 340²</td><td><span class="badge-good">官方取代</span> 81／82 本來就同圖</td></tr>
+      <tr><td>機師 <code>full.webp</code> 1240×1080</td><td><code>&lt;artKey&gt;_Raw</code> 1240×1080</td><td><span class="badge-good">官方取代</span>（<code>pilotFullArtPath</code> 改推 <code>_Raw</code>）</td></tr>
+      <tr><td>—</td><td><code>&lt;artKey&gt;_head</code> 90²</td><td><span class="badge-med">新增</span> 頭部特寫、構圖與 half 不同；小尺寸頭像要不要換，C-7 截圖給站長看過再定</td></tr>
+      <tr><td>機甲 <code>portrait.webp</code> 560×340</td><td><code>Icon_mecha_wap&lt;wap&gt;</code></td><td><span class="badge-good">官方取代</span> 83／83 本來就同圖</td></tr>
+      <tr><td>機甲 <code>torso/leftArm/rightArm/legs</code></td><td><code>Icon_wap&lt;wap&gt;_1/2/3/4</code></td><td><span class="badge-good">官方取代</span>（D-1 列出畫面會變的）</td></tr>
+      <tr><td>機甲 <code>art.webp</code> 1600×864</td><td><code>_SN_Raw</code> 2000×1080（長寬比同為 1.85，版面直接通用）</td><td><span class="badge-good">官方取代</span> v3.0 後多為人工去背</td></tr>
+      <tr><td>機師 <code>art.webp</code>、官網圖層 <code>official-*</code></td><td>不變（遊戲檔裡沒有等價物）</td><td><span class="badge-low">不動</span>（D-2 只搬資料夾）</td></tr>
+    </table></div>
+    <ul>
+      <li>效益：塞拉、珂賽特與 4 台機甲第一次有本地圖；5 個對不上名字的資料夾從此不必對名字。</li>
+      <li>⚠ 切換期間舊檔不刪：候選鏈的第二順位就是舊檔，任何一處漏切都還有圖可退。刪檔排在 D，且前面有守門測試（C-7）。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策八：OG 社群預覽跟著切，而且要在刪檔之前</strong>
+    <ul>
+      <li><code>generate-og-entity-images.mjs</code> 現在鏡射 <code>pilots/*/half.webp</code>、<code>mechs/*/portrait.webp</code>——D 階段一刪，社群卡片就全退預設圖。
+        C 階段先改成鏡射 <code>game/pilots/*/*_half.webp</code>、<code>game/mechs/*/Icon_mecha_wap*.webp</code>。</li>
+      <li>Worker 的 <code>buildOgMeta</code> 由 doc 的 gameId／artKey 推 og:image，舊 <code>portrait</code> 當後備；既有的「推出來的 JPEG 不存在就退預設圖」探測保留。</li>
+      <li>Worker 要另外部署；<code>CLAUDE.md</code> 的 OG 補驗指令（現在預期 <code>og/entities/pilots/海莉絲/half.jpg</code>）要改成新路徑。
+        Transform Rule 不受影響——頁面路徑 <code>/pilots/</code>、<code>/mechs/</code> 都沒變。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策九：清舊檔——讀取端與 OG 都切完、驗收過，才刪</strong>
+    <ul>
+      <li>有官方原檔的舊圖<b>一律退場</b>（決策十一）：機師 half／full、機甲 portrait／部件四張／art.webp。
+        刪前的逐張像素比對不再當刪除閘門，改成產出<b>「畫面會變」清單</b>（多半是 v3.0 後的人工去背圖），附切換前後截圖給站長看。沒有官方原檔的（索妮婭）不動。</li>
+      <li>站上自製圖（機師 art.webp 52 位、官網圖層 8 位×3）<b>一併搬到 ID 資料夾</b>：
+        <code>pilots/&lt;名&gt;/</code> → <code>pilots/&lt;gameId&gt;/</code>。
+        <code>pilotArtDir()</code> 改讀 gameId，不再從 portrait 路徑反推；<code>NAME_FIXES</code> 退場；名字資料夾全數消失。✅ 站長 2026-10-03 確認</li>
+      <li>最後把 DB 的 <code>portrait</code>／<code>parts.*.icon</code> 改寫成 game 路徑、清掉指向不存在檔案的 <code>halfPortrait</code>（筆數以 dry-run 為準），
+        連同其他集合裡的<b>路徑快照</b>一起改（決策十二），不留任何指向已刪檔案的值。<code>portraitUrl</code>（官方 CDN）照留，當最後一道後備。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十：管線可重跑——新機師填 ID 就有圖；本計畫不碰爬蟲</strong>
+    <ul>
+      <li><code>import-game-assets.mjs</code> 兩種模式：
+        <code>--from=v3</code>（本計畫的整批匯入）；<code>--id=&lt;gameId&gt; --art-key=&lt;artKey&gt;</code>／<code>--wap=&lt;####&gt;</code>（新實體：core kind 依命名規則從 CSV 找，
+        英文名鍵類素材如招募／大廳仍需人工對照，不自動）。預設 dry-run、<code>--apply</code> 才寫、已存在跳過、<code>--force</code> 重轉。</li>
+      <li><b>爬蟲已降為備用</b>（站長 2026-10-03 定案，見 CLAUDE.md 6.5：官方 Wiki 更新太慢，遊戲資料改由後台人工建檔，只保留活動擷取）→ 本計畫<b>不改任何爬蟲</b>。
+        原本排的「爬蟲保留清單」與「爬蟲退出圖片業務」兩項取消；動用備用爬蟲前要注意的兩個隱患（整筆覆寫洗掉新欄位、圖片寫回中文名資料夾）已記在 CLAUDE.md。</li>
+      <li>新機師流程寫進 data-patch skill：後台建檔 → 填 gameId／artKey → 有新的客戶端擷取就跑 <code>import --id</code>，還沒有就照舊在後台手動指定 portrait → bump。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十一：有官方原檔的一律換官方（站長 2026-10-03）</strong>
+    <ul>
+      <li>v3.0 之後的機師／機甲圖多為人工去背，解析度與置中都不一致 → 機師 half／full、機甲 portrait／部件四張／art.webp <b>全部改用官方原檔</b>，不分「同圖」與否。</li>
+      <li>不在此列：機師 <code>art.webp</code>（863×1600 直式完整全身原稿，遊戲檔裡沒有等價物）、官網圖層 <code>official-*</code>（本來就是官方素材）、索妮婭（沒有官方檔）。</li>
+      <li><code>hasMechArt()</code> 的判準改成「有沒有 <code>_SN_Raw</code>」（91／92；凜騎士沒有 → 走小尺寸版面）。機甲名字資料夾在 D-1 之後就空了，不必搬。</li>
+      <li>官方圖構圖一致 → 過去為了遷就人工去背圖做的逐張微調（例如 <code>loreArtTuning.ts</code> 的 <code>LORE_ART_TUNING</code>、各處寫死的 <code>object-position</code>）在 C-7 一併檢查，能拿掉就拿掉。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十二：檔名一變，所有引用一起改——靠掃描器守門，不靠記憶（站長 2026-10-03 提醒）</strong>
+    <div class="table-scroll"><table class="impact-table">
+      <tr><th>圖片路徑住在哪</th><th>內容</th><th>處理</th></tr>
+      <tr><td>pilots</td><td><code>portrait</code>／<code>portraitUrl</code></td><td>D-3 改寫；portraitUrl 保留</td></tr>
+      <tr><td>mechs</td><td><code>portrait</code>／<code>halfPortrait</code>／<code>parts.*.icon</code></td><td>D-3 改寫</td></tr>
+      <tr><td>patchVersions</td><td><code>iconUrls</code>：版本濃縮表同步時<b>寫死的快照</b></td><td>D-3 改寫＋bump（走 Worker 邊緣快取，漏 bump 最長 24 小時看不到）</td></tr>
+      <tr><td>grayOps</td><td>灰燼行動名單各機甲的 <code>icon</code> 快照</td><td>D-3 改寫＋bump</td></tr>
+      <tr><td>程式與產生物</td><td><code>assets.ts</code> 推導規則、artIndex、OG 產圖來源、Worker、後台自動帶圖、<code>CLAUDE.md</code> 的 OG 驗證指令</td><td>C 階段改</td></tr>
+    </table></div>
+    <ul>
+      <li>唯讀掃描器 <code>scripts/check-image-refs.mjs</code>：掃 Firestore 全部集合＋<code>src</code>／<code>scripts</code>／<code>workers</code>／<code>docs</code> 的文字，列出
+        (a) 指向不存在檔案的本地路徑、(b) 指向即將刪除的舊路徑。<b>D-1 刪檔前 (b) 必須為 0；D-3 之後 (a) 必須為 0。</b></li>
+      <li>上表是目前已知的副本；<b>掃描器才是真相</b>——它會把沒人記得的副本一起抓出來。之後動到圖片的功能也能重跑。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十三：部署後清快取（站長 2026-10-03 提醒）</strong>
+    <div class="table-scroll"><table class="impact-table">
+      <tr><th>快取層</th><th>會不會吃到舊圖</th><th>做法</th></tr>
+      <tr><td>前台 localStorage（GameDataContext）</td><td>DB 路徑改寫後會</td><td>bump pilots／mechs</td></tr>
+      <tr><td>Worker 邊緣快取（patchVersions 等，max-age 一天）</td><td>會</td><td>bump patchVersions／grayOps（版本號就是 cache key）</td></tr>
+      <tr><td>Cloudflare 邊緣（靜態檔）</td><td>新檔名不會；已刪的舊檔可能還會被邊緣送出</td><td>部署後 <b>Purge Everything</b></td></tr>
+      <tr><td>瀏覽器 HTTP 快取</td><td>新檔名不會；同網址換內容的只有 <code>manifest.json</code>（後台用）</td><td>不需處理</td></tr>
+      <tr><td>Service Worker</td><td>本站沒有</td><td>—</td></tr>
+      <tr><td>社群預覽（Discord／FB／LINE）</td><td>og:image 網址會變，但平台按「頁面網址」快取卡片</td><td>重要頁用 FB 分享偵錯工具／LINE Page Poker 重抓；Discord 會自然更新</td></tr>
+    </table></div>
+    <ul>
+      <li>順序：C-5（OG）部署並驗收 → D 階段刪檔＋路徑改寫＋bump → 部署 → Purge → 複驗（舊網址 404、新網址 200、OG 補驗指令）。</li>
+      <li>部署、Purge、Worker 發佈都是正式站操作，每一步執行前跟站長確認。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界與已知例外</strong>
+    <ul>
+      <li>索妮婭：此份擷取沒有她 → gameId／artKey／nameEn 都留空，讀取端照舊走 portrait／CDN；回填腳本略過並在報告列出。</li>
+      <li>凜騎士沒有 <code>_SN_Raw</code>、藍色魔鳥有 2 張 <code>Icon_mecha</code>（索引取與 wap 同名者）。</li>
+      <li>素材修正已含在 v3：洛莎 B 造型與 Rosa 大廳歸洛莎·審判、XR-Pluto 歸復仇女神、SaRiyaB＝薩普里婭 B 造型大廳道具——照 v3 匯入即可，不另判斷。</li>
+      <li>陸版資料：簡中文字圖不用；名稱一律以站上繁中為準。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內（五段 26 項，估約 7 人日）：</strong>
+    <ul>
+      <li><b>0 前置</b>：042-A／042-C 收起入口後合併回 main、寫入前備份</li>
+      <li><b>A 資料層</b>：型別、docs 同步、後台欄位、v3 回填（含 3 筆全名覆寫）、接手 042-C D-5</li>
+      <li><b>B 匯入管線</b>：<code>import-game-assets.mjs</code>（v3 整批＋新實體模式）、<code>_reserve</code>、索引與 manifest、部署剪裁、實際匯入、圖片引用掃描器</li>
+      <li><b>C 讀取端切換</b>：helper＋測試、約 20 個呼叫端、OG Generator＋Worker、官配互連（機師↔機甲詳情頁、凜騎士標塗裝本體）、守門測試與全站驗收</li>
+      <li><b>D 清舊檔</b>：官方圖取代舊圖、站上自製圖搬 ID 資料夾、DB 與快照路徑改寫、部署與清快取、新機師流程文件化、收尾</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul>
+      <li>文字／字體類（cut-in 字卡、活動標題、<code>Img_Act_Banner_*</code>）、技能 icon（另案）、3D 模型貼圖</li>
+      <li>extended 組的前台功能（造型分頁、招募立繪、大廳場景展示）——本計畫只保存，不做畫面</li>
+      <li><code>_reserve</code> 的使用（例如故事館人物表 NPC 頭像）——日後要用時再升級為部署</li>
+      <li>重新盤點或重新核對對照；英文名在 v3 以外的新來源（不音譯、不另查）</li>
+      <li>台版客戶端解包（仍為 UnityCN 加密，見另案）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 待站長確認 -->
+<section class="section">
+  <div class="section-label green">Decisions</div>
+  <div class="section-title">站長決策（2026-10-03 已確認）</div>
+
+  <div class="decision-block">
+    <ol>
+      <li>✅ <b>官配只存機師側</b>（<code>pilots.pairedMechId</code>，機甲側推導）。</li>
+      <li>✅ <b>部署範圍</b>：core 全部署；extended 與 <code>_reserve</code> 進 repo（約 +92 MB 進 git 歷史）但不部署、不進 manifest。</li>
+      <li>✅ <b>站上自製圖一併搬 ID 資料夾</b>（D-2），名字資料夾與 <code>NAME_FIXES</code> 徹底退場、DB 路徑可以改寫。</li>
+      <li>✅ <b>開工順序</b>（站長改採另一做法）：PLAN-042-A（含 042-C）雛形已成但未完成 → <b>先收起入口、合併回 main</b>；
+        本計畫再從 main 開 <code>feat/plan-054-game-art-ids</code>，不做堆疊分支。</li>
+      <li>✅ <b>補充</b>：有官方原檔的一律換官方（決策十一）、檔名變更要連同所有引用一起改（決策十二）、部署後清快取（決策十三）、英文名有全名就用全名（決策三）、爬蟲降為備用（決策十）。</li>
+    </ol>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-054 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042-C_故事館氛圍層/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-042-C 故事館氛圍層</h4>
+      <p>nameEn 欄位與官網圖層的來源；其 D-5（nameEn 資料輸入）由本計畫 A-4 一次完成</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-038_社群連結預覽/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-038 社群連結預覽</h4>
+      <p>OG JPEG 鏡射與 Worker；本計畫 C-5 改它的圖源</p>
+    </a>
+  </div>
+  <p style="font-size:12px;color:var(--text-dim);margin-top:12px;">
+    本機參考（不進版控）：<code>_local-notes/2026-10/2026-10-03_圖片ID化_下個session交接.md</code>、
+    <code>…_機師機甲圖片對照_定版.html</code>（給人看的總表）、<code>…_機師機甲圖片資源mapping_v3_final.json</code>（唯一輸入）。
+  </p>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-054 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
