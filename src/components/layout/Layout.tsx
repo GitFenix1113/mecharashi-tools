@@ -11,6 +11,8 @@ import NavIcon from '../icons/NavIcon'
 import EmulatorBadge from './EmulatorBadge'
 import { VERSION_VIEWS } from '../versions/VersionViewTabs'
 import { SITE_NAME, SITE_TITLE } from '../../lib/siteMeta'
+// 故事館 header 的 BGM 開關（PLAN-042-C E-2）。很小，且 <audio preload="none"> 關著時不下載任何東西。
+import LoreBgmToggle from '../lore/LoreBgmToggle'
 
 // 友站：英文版 Mecharashi Wiki（對稱其站內指回本站的連結）
 const FRIEND_SITE_URL = 'https://mecharashi-wiki.cc/'
@@ -264,6 +266,9 @@ export default function Layout() {
                 離館 ↗
               </Link>
             </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {/* 背景音樂開關（PLAN-042-C E-2）：預設關、記偏好、離館即停 */}
+              <LoreBgmToggle />
             {/* 字級三顆：館內正文用 rem，就是為了吃這個設定 */}
             <div className="flex items-center bg-bg-card border border-border rounded-lg overflow-hidden shrink-0">
               {(['sm', 'md', 'lg'] as const).map((size) => (
@@ -279,6 +284,7 @@ export default function Layout() {
                   {FONT_SIZE_LABELS[size]}
                 </button>
               ))}
+            </div>
             </div>
           </div>
         ) : (

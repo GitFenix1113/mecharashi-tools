@@ -4,7 +4,7 @@ import { FallbackImage } from '../../components/common/FallbackImage'
 import { CLASS_CONFIG } from '../../components/badges/PilotBadges'
 import { toneBar } from '../../components/loadout/PickerVariants'
 import { usePilotLore, usePilots } from '../../hooks/useFirestore'
-import { imageCandidates } from '../../utils/assets'
+import { assetUrl, imageCandidates } from '../../utils/assets'
 import type { Pilot } from '../../types'
 
 /**
@@ -201,16 +201,35 @@ function buildGroups(pilots: Pilot[], sort: LoreSort): LoreGroup[] {
  */
 function PageFrame({ count, children }: { count?: number; children: React.ReactNode }) {
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <header className="mb-8">
-        <span className="font-[Orbitron,sans-serif] text-xs uppercase tracking-[3px] text-accent-orange">
-          Archive
-        </span>
-        <h1 className="mt-2 text-3xl font-bold">機師故事館</h1>
-        <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-          收錄機師的個人簡介與逸聞章節。
-          {count !== undefined && `共 ${count} 位機師。`}
-        </p>
+        {/* 官網素材切版（PLAN-042-C B-2／B-3／B-5）：左紅帶＋主視覺 KV＋「Pilots／操控指揮 機師出列」標題圖。
+            三塊都是 CSS 背景或 <img>，樣式在 index.css 的 .lore-home-hero；標題圖有 alt，KV 是純裝飾。 */}
+        <div className="lore-home-hero">
+          <div className="lore-home-hero__kv" aria-hidden="true" />
+          <div className="lore-home-hero__band" aria-hidden="true" />
+          <div className="lore-home-hero__fade" aria-hidden="true" />
+          <picture>
+            <source media="(max-width: 1023px)" srcSet={assetUrl('/images/lore/title-pilots-m.webp')} />
+            <img
+              className="lore-home-hero__title"
+              src={assetUrl('/images/lore/title-pilots.webp')}
+              alt="Pilots — 操控指揮 機師出列 · ULTIMATE PILOTS"
+              width={919}
+              height={547}
+            />
+          </picture>
+        </div>
+        <div className="mt-5 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span className="font-[Orbitron,sans-serif] text-xs uppercase tracking-[3px] text-accent-orange">
+            Archive
+          </span>
+          <h1 className="text-2xl font-bold sm:text-3xl">機師故事館</h1>
+          <p className="text-sm leading-relaxed text-text-secondary">
+            收錄機師的個人簡介與逸聞章節。
+            {count !== undefined && `共 ${count} 位機師。`}
+          </p>
+        </div>
       </header>
       {children}
     </div>
@@ -249,12 +268,15 @@ function PilotCard({ pilot, chapters }: { pilot: Pilot; chapters: number }) {
   return (
     <Link
       to={`/lore/pilots/${pilot.id}`}
-      className="group relative block aspect-square overflow-hidden rounded-lg border border-border bg-bg-dark no-underline transition-colors hover:border-border-accent"
+      // 官網縮圖框的語彙（PLAN-042-C F-1）：黑底、hover 紅框 #b10000、微微上浮
+      className="group relative block aspect-square overflow-hidden rounded-lg border-2 border-[#1a1614]/70 bg-[#0a0c10] no-underline transition-[border-color,transform] duration-200 hover:border-[#b10000] hover:-translate-y-0.5"
     >
-      {/* 縮圖與 /pilots 同一組 URL（`imageCandidates(portraitUrl, portrait)`），瀏覽器快取直接命中。
+      {/* 縮圖**本地 half.webp 優先**（PLAN-042-C F-1），官方 CDN 只當退路：遠端 media.zlongame.com
+          在台灣線路上首屏會空一陣子（實測 5 秒後仍有 43 張 pending），本地檔走 Cloudflare 邊緣快取。
+          代價是與 /pilots（遠端優先）不共用同一組 URL、瀏覽器快取不互通——88 張約 2.6MB，可接受。
           ⚠ 賽拉沒有 portrait 也沒有 portraitUrl ⇒ 候選為空 ⇒ 直接落到 fallback，卡片照樣在牆上。 */}
       <FallbackImage
-        candidates={imageCandidates(pilot.portraitUrl, pilot.portrait)}
+        candidates={imageCandidates(pilot.portrait, pilot.portraitUrl)}
         alt={pilot.name}
         loading="lazy"
         className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"

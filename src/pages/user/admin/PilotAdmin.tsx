@@ -1664,6 +1664,8 @@ function PilotEditPanel({
               <Field label="性別 gender"><input value={form.profile?.gender || ''} onChange={(e) => updateProfile('gender', e.target.value)} className="input-field" /></Field>
               <Field label="血型 bloodType"><input value={form.profile?.bloodType || ''} onChange={(e) => updateProfile('bloodType', e.target.value)} className="input-field" /></Field>
               <Field label="身高 height"><input value={form.profile?.height || ''} onChange={(e) => updateProfile('height', e.target.value)} className="input-field" /></Field>
+              {/* PLAN-042-C D-4：故事館扉頁的英文毛筆草書。官方資料沒有，人工輸入；留空就不渲染。 */}
+              <Field label="英文名 nameEn（故事館草書，選填）"><input value={form.nameEn || ''} onChange={(e) => update('nameEn', e.target.value)} className="input-field" placeholder="Rosa Diaz" /></Field>
             </div>
             {/* PLAN-042-A D-4：lore 由「基本資訊」搬來這裡——它是個人資料類的敘事文本，
                 跟隔壁的自訂欄位同一種東西，擺在職業／許可／版本那堆結構化欄位裡不合群。

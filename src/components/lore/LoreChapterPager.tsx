@@ -165,7 +165,7 @@ export default function LoreChapterPager({
                   className={`shrink-0 px-2.5 py-1 rounded-md border text-xs whitespace-nowrap
                               transition-colors cursor-pointer ${
                                 isActive
-                                  ? 'border-border-accent bg-bg-card text-text-primary'
+                                  ? 'border-border-accent bg-bg-card text-text-primary shadow-[inset_0_-2px_0_0_#b10000]'
                                   : 'border-transparent text-text-dim hover:text-text-primary hover:border-border/60'
                               }`}
                 >

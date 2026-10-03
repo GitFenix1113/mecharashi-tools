@@ -104,9 +104,22 @@
     · Cloudflare Transform Rule 白名單加 <code>/lore</code>（CLAUDE.md 規則 3），否則真人拿到 HTTP 404、社群預覽 route 零命中
   </div>
   <div class="info-block" style="margin-top:1rem;">
-    <strong>🔜 已知問題與後續：PLAN-042-C 故事館氛圍層</strong><br>
-    顯影動畫「看不見」有三個真因（時間軸從掛載起算不等圖片載入、線稿被關在黑框裡、只動 opacity 沒有運鏡），
-    以及官網特色（名字書法、粒子、背景）的移植，全部收在 PLAN-042-C。盤點報告：<code>_local-notes/2026-09/2026-09-16_機師故事館_美化工程盤點.html</code>（本機不進版控）。
+    <strong>✅ 氛圍層（PLAN-042-C，2026-09-17）</strong><br>
+    · <strong>顯影改寫</strong>：<code>LoreArt</code> 先 <code>decode()</code> 再開演（逾時 2s 放行），線稿改由 SVG 濾鏡 <code>#lore-sketch</code>（定義在 <code>LoreLayout</code>）在單一 <code>&lt;img&gt;</code> 內算出透明底墨線——黑框與 mix-blend-mode 一起消失；
+      兩層各掛官網移植的 keyframes（<code>lore-line-in</code>／<code>lore-color-in</code>：縮放 1.2→1、上移、斜切擦入、彩圖 40% 起帶 1px 模糊淡入）。換人時上一張彩圖留作 <code>lore-art__prev</code> 交叉淡出<br>
+    · <strong>進場</strong>：<code>.lore-veil</code> 改深色斜切擦開 520ms；扉頁三段 <code>.lore-enter</code>（名字層／職業名字徽記／引文卡）以 mechaData 節奏錯開 0／200／350ms<br>
+    · <strong>官方素材</strong>（非營利共識，全部自託管於 <code>public/images/lore/</code>，來源見 README）：紙面背景 bg-paper／bg-m 鋪整館；館首頁 hero＝紅帶（bg-band）＋KV（kv）＋標題圖（title-pilots）；粒子 snow01／02 × 6 個 div 的 <code>lore-fly</code>／<code>lore-fly2</code>（桌機限定）<br>
+    · <strong>8 位官方圖層</strong>（洛莎／虹／凱登／白月／葉夫根尼／艾琳／黛娜／梅利莎）：<code>official-{line,color,name}.webp</code> 由 <code>generate-art-index.mjs</code> 掃成 <code>PILOT_OFFICIAL_INDEX</code>，<code>LoreArt variant="official"</code> 用官方手繪線稿與半身彩圖、名字書法層疊在立繪上<br>
+    · <strong>名字字體</strong>：<code>npm run fonts:lore</code> 產出 LXGW WenKai TC 名字子集（350 字、106KB）與 Mr Dafoe 英文草書子集（11KB）；直書名與 h1 用楷書，<code>pilot.nameEn</code> 有值時以白色草書逆時針 72° 壓在立繪上（官方 8 位的草書已在名字層內、不重疊）<br>
+    · <strong>檔案感與 BGM</strong>：立繪柱左下 <code>PILOT FILE · NO.NNN／DEBUT · vX.Y</code>（JetBrains Mono）、名字下方紅標（身高或駕駛許可）；header 的 <code>LoreBgmToggle</code>（官網 BGM 96 秒節錄 96kbps，預設關、記偏好、離館即停）<br>
+    · <strong>打磨</strong>：牆卡片黑底紅框 hover、縮圖本地優先；換章 180ms 淡入上移、章節軸 active 紅底線；底緣溶解 mask 改三層合成（噪點只在溶解帶，不再蓋整張圖；tall 只溶最後 10%）；桌機滑鼠微視差（<code>useLoreParallax</code>，立繪 ±6px、名字層反向 ±3px）<br>
+    · <strong>reduced-motion</strong>：遮罩、進場、粒子、運鏡、視差、換章全部退化；線稿層 <code>display:none</code>、彩圖 150ms 純淡入
+  </div>
+  <div class="warning-block" style="margin-top:1rem;">
+    <strong>⚠ 042-C 驗收時要知道的事</strong><br>
+    · 動畫驗收用 <code>_local-notes/2026-09/2026-09-17_filmstrip-042c.mjs</code>／<code>2026-09-17_verify-042c-part2.mjs</code>（Playwright headless，需 dev server 5173）；<strong>內建瀏覽器分頁在背景時 Chrome 不推進 CSS 動畫</strong>，截圖會是舊幀<br>
+    · <code>nameEn</code> 正式資料尚未寫入：<code>scripts/temp_scripts/patch-pilot-name-en.mjs --apply</code> 寫 8 位官方拼法後 <code>node scripts/bump-data-version.mjs pilots</code>；其餘 82 位由後台「個人資料」分頁逐筆輸入<br>
+    · 字型授權：LXGW WenKai TC 與 Mr Dafoe 皆 SIL OFL；官網那套草書是商用字型，未使用
   </div>
 </section>
 

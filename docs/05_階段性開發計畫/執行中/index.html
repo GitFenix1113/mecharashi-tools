@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card pink">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-042-C · 故事館氛圍層</h3>
+      <p>042-A 寫好的線稿顯影<b>實際上看不見</b>：時間軸從元件掛載起算、不等 art.webp 載入，冷快取實測<b>線稿 0 幀</b>；線稿又被關在 <code>#0a0c10</code> 黑框裡成了白色負片（實機驗證換紙底照樣成立，M-10 的顧慮不成立）；整套只動 opacity，沒有官網的縮放／上移／斜切運鏡。<br>對照官網 <code>#hero</code> 解剖：沒有 canvas、SVG 或動畫庫，<b>全部是 PNG 圖層＋CSS keyframes</b>——背景一張 bg.jpg、粒子兩張 1–2KB 點陣圖 × 7 個 div、每位機師四層（手繪線稿／溶解彩圖／名字書法／資料），<b>名字是圖不是 webfont</b>，但八張字母造型一致證明是字型。站長與官方有非營利不追究的共識後，背景／標題／粒子從 CSS 重建變成直接切版；<b>官網只做了 8 位</b>（洛莎、虹、凱登、白月、葉夫根尼、艾琳、黛娜、梅利莎），這 8 位可 1:1，其餘 82 位靠 LXGW WenKai TC 名字子集（127＋ 字的封閉集合，不漂移）與濾鏡管線。A–G 七段 28 項約 12 人日，B／C／D 兩館共用。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-042-C_故事館氛圍層/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-042-C_故事館氛圍層/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card cyan">
       <div class="card-icon">◆</div>
       <h3>PLAN-052-N · 天賦裝備修正</h3>

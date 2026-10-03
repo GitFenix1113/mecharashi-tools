@@ -33,7 +33,8 @@ export default function LoreChapterBody({ chapter, index, className }: LoreChapt
   const paragraphs = splitParagraphs(chapter.body)
 
   return (
-    <article className={className}>
+    // lore-chapter-enter（PLAN-042-C F-2）：換章 180ms 淡入上移；呼叫端要以章節 key 重掛本元件才會觸發
+    <article className={`lore-chapter-enter ${className ?? ''}`}>
       <p className="text-xs font-semibold tracking-widest text-text-secondary">
         {chapter.label ?? `PART ${index + 1}`}
       </p>

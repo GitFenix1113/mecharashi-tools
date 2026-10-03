@@ -167,3 +167,23 @@ export const MECH_ART_INDEX: ReadonlySet<string> = new Set([
   '鱷龜',
   'XR',
 ])
+
+/** 官網 hero 圖層的尺寸：color／line 共用一個 bbox（w×h），name 是名字層自己的 bbox。 */
+export interface OfficialArtGeometry { w: number; h: number; nameW: number; nameH: number }
+
+/**
+ * 有官網 hero 圖層（`/images/pilots/<名>/official-{color,line,name}.webp`）的機師資料夾名
+ * （PLAN-042-C C-1）。官網只做了 8 位；其餘機師走濾鏡線稿。
+ *
+ * ⚠ 存的是**圖片資料夾名**，查詢一律走 `hasOfficialArt(pilot)` / `pilotOfficialArt(pilot)`。
+ */
+export const PILOT_OFFICIAL_INDEX: ReadonlyMap<string, OfficialArtGeometry> = new Map([
+  ['白月', { w: 718, h: 777, nameW: 689, nameH: 759 }],
+  ['艾琳', { w: 1019, h: 773, nameW: 666, nameH: 759 }],
+  ['洛莎', { w: 611, h: 810, nameW: 727, nameH: 759 }],
+  ['虹', { w: 538, h: 776, nameW: 654, nameH: 759 }],
+  ['梅利莎', { w: 1085, h: 828, nameW: 683, nameH: 759 }],
+  ['凱登', { w: 732, h: 788, nameW: 682, nameH: 759 }],
+  ['葉夫根尼', { w: 943, h: 800, nameW: 653, nameH: 847 }],
+  ['黛娜', { w: 602, h: 777, nameW: 692, nameH: 759 }],
+])

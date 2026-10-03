@@ -1,13 +1,15 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import LoreArt from '../../components/lore/LoreArt'
 import LoreChapterPager from '../../components/lore/LoreChapterPager'
 import LoreChapterBody from '../../components/lore/LoreChapterBody'
 import LoreSourceLine from '../../components/lore/LoreSourceLine'
+import { useLoreParallax } from '../../components/lore/useLoreParallax'
 import { splitParagraphs, isQuoteStyle, stripTrailingSource } from '../../components/lore/loreText'
 import { CLASS_CONFIG, LicenseBadge } from '../../components/badges/PilotBadges'
 import {
-  hasPilotArt, pilotArtDir, pilotKeyArtPath, pilotFullArtPath, imageCandidates, resolveIconSrc,
+  hasPilotArt, pilotArtDir, pilotKeyArtPath, pilotFullArtPath, pilotOfficialArt,
+  imageCandidates, resolveIconSrc, assetUrl,
 } from '../../utils/assets'
 import { usePilot, usePilotLoreDoc } from '../../hooks/useFirestore'
 
@@ -87,6 +89,11 @@ export default function PilotLorePage() {
     [navigate, id, part],
   )
 
+  // 立繪柱的滑鼠微視差（PLAN-042-C F-6）：hook 只寫 CSS 變數，位移量在 index.css；
+  // 桌機（pointer: fine）且非 reduced-motion 才掛。⚠ hook 要在下方的 early return 之前呼叫。
+  const portraitRef = useRef<HTMLDivElement>(null)
+  useLoreParallax(portraitRef, pilot?.id)
+
   // ① error → ② loading → ③ 查無（順序不可調換，見檔頭）
   if (error) {
     return (
@@ -122,12 +129,22 @@ export default function PilotLorePage() {
 
   // ⚠ 渲染前分流（見檔頭第 ③ 條）。路徑一律由 `portrait` 推導，
   //   **不可**拿顯示名去組資料夾名（地雷 M-15：素材端與站上有簡繁／譯名差異）。
+  // 立繪來源優先序（PLAN-042-C C-2）：官網 hero 圖層（8 位，含手繪線稿與名字書法層）→ 原稿全身 art.webp
+  // → 半身 full.webp。三者構圖不同，一樣在渲染前分流。
+  const official = pilotOfficialArt(pilot)
   const tall = hasPilotArt(pilot)
-  const artCandidates = imageCandidates(tall ? pilotKeyArtPath(pilot) : pilotFullArtPath(pilot))
+  const artCandidates = official
+    ? imageCandidates(official.color)
+    : imageCandidates(tall ? pilotKeyArtPath(pilot) : pilotFullArtPath(pilot))
 
   const classText = CLASS_CONFIG[pilot.class]?.split(' ')[0] ?? 'text-text-secondary'
   const talentIcon = talentIconSrc(pilot.talents[0])
   const talentName = pilot.talents[0]?.name ?? ''
+
+  // E-1 檔案感小字：流水號取自文件 id（pilot_003_洛莎 → 003）；紅標用身高（官網名字層上那顆是
+  // 166cm/45kg），沒有身高就用駕駛許可。官網 8 位的紅標已烘在官方名字層裡，不再疊一顆。
+  const serial = pilot.id.match(/^pilot_(\d+)/)?.[1] ?? '—'
+  const fileTag = pilot.profile.height?.trim() || pilot.license
 
   // 扉頁正文住 `pilots.lore`（不是 pilotLore）；署名若還黏在正文尾端就切掉，
   // 改由 <LoreSourceLine> 單獨排版。**不可用 endsWith 比對**（地雷 M-17）。
@@ -140,13 +157,17 @@ export default function PilotLorePage() {
   const portrait = (
     // ⚠ 不要再加 `relative`：`position: sticky` 本身就替 absolute 子孫建立定位脈絡，
     //   兩個 position 工具類同時掛在一個元素上，誰贏取決於 Tailwind 產出的順序。
-    <div className={`lore-portrait-col ${PORTRAIT_MOBILE_CAP} sticky top-0 self-start`}>
+    <div ref={portraitRef} className={`lore-portrait-col lore-parallax ${PORTRAIT_MOBILE_CAP} sticky top-0 self-start`}>
       {artCandidates.length > 0 ? (
         <LoreArt
-          variant={tall ? 'tall' : 'wide'}
+          variant={official ? 'official' : tall ? 'tall' : 'wide'}
           candidates={artCandidates}
+          sketchSrc={official ? assetUrl(official.line) : undefined}
           artKey={pilotArtDir(pilot)}
-          revealDelayMs={450}
+          revealDurationMs={1050}
+          // 底緣溶解（F-5）：wide 是既有的 22% 噪點 mask，tall 由 CSS 覆寫成只溶最後 10%；
+          // 官方變體的下緣本來就是出血裁切，不遮
+          bottomMask={!official}
           alt={pilot.name}
           className="w-full h-full"
         />
@@ -161,12 +182,59 @@ export default function PilotLorePage() {
       {/* 直書姓名壓在立繪右緣。pointer-events-none：它蓋在圖上，不該吃掉任何點擊。
           ⚠ `flex-col` 在 vertical-rl 下走的是 block 軸（水平、由右往左），
              兩段字因此並排成兩行直書；寫成 `flex`（row，走 inline 軸）會變成上下接續。 */}
-      <div className="absolute right-[8px] top-[16px] pointer-events-none [writing-mode:vertical-rl] flex flex-col gap-[6px]">
-        <span className="text-[22px] font-bold tracking-[0.2em] text-text-primary">{pilot.name}</span>
-        {pilot.fullName && pilot.fullName !== pilot.name && (
-          <span className="text-[12px] tracking-[0.15em] text-text-secondary">{pilot.fullName}</span>
-        )}
+      {/* 名字層與草書包在自己的 wrapper 裡做反向微視差（F-6）：動畫元素本身的 transform 被 fill-mode both 佔住 */}
+      <div className="lore-parallax-name absolute inset-0 pointer-events-none">
+      {/* 名字層照官網 mechaData 節奏進場（scale 1.3→1 淡入、延遲 200ms）；key 讓換人時重播。
+          官網 8 位用官方名字層（英文毛筆草書＋直書中文名＋紅標烘在同一張透明 PNG），
+          其餘機師用直書文字。 */}
+      {official ? (
+        <img
+          key={pilot.id}
+          className="lore-enter lore-enter--pop lore-enter--2 absolute right-[4px] top-[10px] pointer-events-none w-[62%] max-w-[380px] h-auto"
+          src={assetUrl(official.name)}
+          alt={pilot.fullName && pilot.fullName !== pilot.name ? `${pilot.name}（${pilot.fullName}）` : pilot.name}
+          width={official.geometry.nameW}
+          height={official.geometry.nameH}
+        />
+      ) : (
+        <div
+          key={pilot.id}
+          className="lore-enter lore-enter--pop lore-enter--2 absolute right-[8px] top-[16px] pointer-events-none [writing-mode:vertical-rl] flex flex-col gap-[6px]"
+        >
+          {/* 楷書子集（D-2）：字重 400 是字型只有 Regular，加粗會變成合成粗體 */}
+          <span className="lore-name-font text-[26px] tracking-[0.2em] text-text-primary">{pilot.name}</span>
+          {pilot.fullName && pilot.fullName !== pilot.name && (
+            <span className="lore-name-font text-[13px] tracking-[0.15em] text-text-secondary">{pilot.fullName}</span>
+          )}
+        </div>
+      )}
+
+      {/* 英文毛筆草書（D-3）：照官網名字層的擺法——白字、逆時針約 72°、從右上往左下劃過立繪。
+          只有非官方變體且有 nameEn 的機師才渲染（官方名字層已含草書）。
+          字級依名字長度縮：官網對長名（Yevgeny Ivanovic Goman）也是縮小處理。 */}
+      {!official && pilot.nameEn && (
+        <span
+          key={`${pilot.id}-en`}
+          aria-hidden="true"
+          className="lore-script-font lore-enter lore-enter--pop lore-enter--2 absolute right-[6%] top-[14%] pointer-events-none select-none whitespace-nowrap leading-none text-white/80 origin-top-right -rotate-[72deg]"
+          style={{ fontSize: `clamp(56px, ${Math.min(11, 96 / Math.max(6, pilot.nameEn.length)).toFixed(2)}vw, 120px)` }}
+        >
+          {pilot.nameEn}
+        </span>
+      )}
       </div>
+
+      {/* E-1 檔案感小字（桌機）：編號／登場版本，JetBrains Mono 小字＋細線，官網資料層的「566043-078」語彙 */}
+      <div className="lore-enter lore-enter--3 absolute left-[8px] bottom-[10px] hidden lg:flex flex-col gap-[3px] pointer-events-none font-[JetBrains_Mono,monospace] text-[10px] tracking-[0.18em] text-text-dim">
+        <span>PILOT FILE · NO.{serial}</span>
+        {pilot.debutVersion && <span>DEBUT · v{pilot.debutVersion}</span>}
+        <span aria-hidden="true" className="mt-1 h-px w-12 bg-border-accent" />
+      </div>
+      {!official && fileTag && (
+        <span className="lore-enter lore-enter--3 lore-file-tag absolute right-[10px] top-[150px] hidden lg:inline-block px-[6px] py-[2px] text-[10px] font-bold tracking-[0.12em] pointer-events-none">
+          {fileTag}
+        </span>
+      )}
     </div>
   )
 
@@ -175,12 +243,13 @@ export default function PilotLorePage() {
       {portrait}
 
       {/*
-        手機：正文在立繪下方、帶紙色底並拉高一層，捲動時像一張紙推過立繪。
-        桌機：它是 grid 的第二欄，與立繪不重疊，底色同色不影響。
+        手機：正文在立繪下方、帶半透明紙色底並拉高一層，捲動時像一張紙推過立繪。
+        桌機：它是 grid 的第二欄，與立繪不重疊，**底色透明**——館的背景是整張紙紋圖
+        （PLAN-042-C B-2），這一欄若塗不透明底會在紋理上壓出一塊平面矩形。
         ⚠ 這裡**不得**加 overflow（地雷 M-08），也不得加 @container
         （隱含 contain:layout 會讓 RefChip 的 fixed 浮層改對齊本容器而錯位）。
       */}
-      <div className="relative z-10 bg-bg-dark pt-6 lg:pt-10">
+      <div className="relative z-10 bg-bg-dark/90 lg:bg-transparent pt-6 lg:pt-10">
         {isChapterView ? (
           <>
             <Link
@@ -198,13 +267,17 @@ export default function PilotLorePage() {
               activeKey={chapters[activeIndex].key}
               onSelect={handleSelect}
             >
-              <LoreChapterBody chapter={chapters[activeIndex]} index={activeIndex} className="pt-6" />
+              {/* key＝章節 key：換章重掛，正文才會播 180ms 的進場（F-2） */}
+              <LoreChapterBody key={chapters[activeIndex].key} chapter={chapters[activeIndex]} index={activeIndex} className="pt-6" />
             </LoreChapterPager>
           </>
         ) : (
-          <article>
+          // key 讓換人時右欄整塊重掛，三段進場動畫（A-4）才會重播
+          <article key={pilot.id}>
+            {/* 第二段（200ms）：職業／名字／徽記 */}
+            <div className="lore-enter lore-enter--2">
             <p className={`text-xs font-semibold tracking-widest ${classText}`}>{pilot.class}</p>
-            <h1 className="mt-1 text-2xl font-bold text-text-primary sm:text-3xl">{pilot.name}</h1>
+            <h1 className="lore-name-font mt-1 text-3xl text-text-primary sm:text-4xl">{pilot.name}</h1>
 
             {/* 三枚徽記：陣營（文字刻在圓環內）／天賦／駕駛許可。
                 陣營刻意不畫圖示：30 個值、18 個只有 1 人，畫圖是會增生的美術債。
@@ -232,7 +305,10 @@ export default function PilotLorePage() {
 
               <LicenseBadge license={pilot.license} />
             </div>
+            </div>
 
+            {/* 第三段（350ms）：引文卡、鍵值列、章節入口 */}
+            <div className="lore-enter lore-enter--3">
             {/* 引文卡。逐段 <p> 自備換行，不依賴 whitespace-pre-line —— 引文段要換成
                 blockquote，整包 pre-line 會讓兩種排版無法混用。
                 字級用 rem 類別（text-base / text-lg），館內 header 的字級三顆按鈕才吃得到。 */}
@@ -284,6 +360,7 @@ export default function PilotLorePage() {
                 </span>
               </button>
             )}
+            </div>
           </article>
         )}
       </div>
