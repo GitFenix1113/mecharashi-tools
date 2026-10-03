@@ -196,7 +196,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">2</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -204,7 +204,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">26</div>
+      <div class="summary-num" style="color:var(--text-dim)">24</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -216,10 +216,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">0 / 26</span>
+      <span style="color:var(--accent-orange);">2 / 26</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 8%"></div>
     </div>
   </div>
 
@@ -240,7 +240,7 @@
     <div class="task-group-header">
       <div class="task-group-title">0-1 &nbsp; 042-A／042-C 收起入口、合併回 main（站長 2026-10-03 指示）</div>
       <div class="task-group-meta">git · src/hooks/useLoreEntry.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -252,11 +252,13 @@
           本計畫要改的 <code>pilot.ts</code>／<code>assets.ts</code>／<code>PilotAdmin.tsx</code>／<code>artIndex.ts</code> 都在 042-C 的未提交清單上，<code>nameEn</code> 也是它帶進來的，所以要先落地。
           ⚠ 合併後的 main 在<b>第一次 push 之前</b>要先部署 Firestore rules 與 Worker（pilotLore 已登記進後台引用掃描，規則沒上線會弄壞後台刪除功能）；
           <code>/lore</code> 的 Transform Rule 白名單可等故事館公開再加。
+        
+          <br><b>✅ 2026-10-03 完成：</b>commit <code>9032d39e</code>（042-C）、<code>0324de17</code>（入口收起）、<code>cc4b207b</code>（本計畫立案）→ 合併進 main <code>1d037222</code>（衝突只在執行中 index 與 2026-09 履歷，兩邊都保留；合併後 1272 測試全綠、build 通過）→ 開 <code>feat/plan-054-game-art-ids</code>。<b>main 尚未 push</b>：第一次 push 前要先部署 Firestore rules 與 Worker。
         </div>
         <div class="task-file">feat/plan-042a-pilot-lore → main → feat/plan-054-game-art-ids</div>
       </div>
       <div class="task-assignee">開發者（站長拍板）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -368,7 +370,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-5 &nbsp; 接手 PLAN-042-C D-5</div>
       <div class="task-group-meta">PLAN-042-C 進度表 · patch-pilot-name-en.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -376,11 +378,13 @@
         <div class="task-desc">
           <code>patch-pilot-name-en.mjs</code> 檔頭標註作廢、不要再跑（表內虹＝Rainbow、白月＝White Moon 已被站長定版推翻）；
           042-C 進度表的 D-5 與「兩件事等站長 ①」改註記：由 PLAN-054 A-4 一次回填 90 位。
+        
+          <br><b>✅ 2026-10-03 完成：</b><code>patch-pilot-name-en.mjs</code> 檔頭標註作廢並加執行即退出的守衛（該資料夾被 gitignore，僅本機）；042-C 進度表的 D-5 與「等站長 ①」改註記移交本計畫 A-4（隨 9032d39e 提交）。
         </div>
         <div class="task-file">scripts/temp_scripts/patch-pilot-name-en.mjs · docs/05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/進度表.html</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
