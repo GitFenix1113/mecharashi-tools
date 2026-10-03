@@ -196,7 +196,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">2</div>
+      <div class="summary-num" style="color:var(--accent-green)">12</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -204,7 +204,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">24</div>
+      <div class="summary-num" style="color:var(--text-dim)">14</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -216,10 +216,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">2 / 26</span>
+      <span style="color:var(--accent-orange);">12 / 26</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 8%"></div>
+      <div class="progress-bar-fill" style="width: 46%"></div>
     </div>
   </div>
 
@@ -266,16 +266,18 @@
     <div class="task-group-header">
       <div class="task-group-title">0-2 &nbsp; 寫入前備份</div>
       <div class="task-group-meta">scripts/temp_scripts/backup-firestore.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">備份 pilots／mechs</div>
-        <div class="task-desc">A-4（回填）與 D-3（路徑改寫）兩次寫入前各跑一次；備份檔路徑記進該任務的完成說明。</div>
+        <div class="task-desc">A-4（回填）與 D-3（路徑改寫）兩次寫入前各跑一次；備份檔路徑記進該任務的完成說明。
+          <br><b>✅ 2026-10-04 完成：</b>全庫唯讀備份 26 集合／3,318 筆 → <code>_local-notes/2026-10/2026-10-03_db-backup-1717</code>（A-4 寫入前）。D-3 寫入前再備份一次。
+        </div>
         <div class="task-file">scripts/temp_scripts/backup-firestore.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -290,7 +292,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; 型別與官配推導</div>
       <div class="task-group-meta">src/types/ · src/utils/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -298,11 +300,12 @@
         <div class="task-desc">
           全部選填字串；JSDoc 寫明「兩欄不互推」與例外 5 位（維娜／貝爾莎／阿列娜／珂賽特／瑪阿特）。
           <code>pairedPilotOf(mech, pilots)</code> 由機師側推導官配機師（站長已確認只存機師側）；測試含「兩位機師配到同一台」要被抓出來。
+          <br><b>✅ 2026-10-04 完成：</b>型別加 <code>gameId</code>／<code>artKey</code>／<code>pairedMechId</code>（Pilot）與 <code>gameId</code>／<code>skinOfId</code>（Mech），JSDoc 寫明不互推與例外 5 位；<code>src/utils/officialPairs.ts</code> 的 <code>pairedPilotOf()</code>（重複配對時取 ID 最小者、結果穩定）＋ <code>duplicatePairs()</code>，4 個測試。
         </div>
         <div class="task-file">src/types/pilot.ts · src/types/mech.ts · src/utils/officialPairs.ts (+ .test.ts)</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -310,16 +313,18 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; docs 同步（CLAUDE.md 規則 2）</div>
       <div class="task-group-meta">docs/02_技術文件/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">資料模型頁與 Firestore 集合文件補新欄位</div>
-        <div class="task-desc">欄位、值例、來源（v3 定版）、例外與「不互推」說明；與型別同一個 commit。</div>
+        <div class="task-desc">欄位、值例、來源（v3 定版）、例外與「不互推」說明；與型別同一個 commit。
+          <br><b>✅ 2026-10-04 完成：</b>資料模型 pilots／mechs 與 Firestore 集合文件 pilots／mechs 補欄位、例外與「只存機師側」說明；mechs 集合文件的關聯段補官配與塗裝。
+        </div>
         <div class="task-file">docs/02_技術文件/02_資料模型/pilots.html · mechs.html · docs/02_技術文件/04_Firebase/資料庫設計文件/pilots.html · mechs.html</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -348,7 +353,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-4 &nbsp; 回填腳本（v3 → Firestore）</div>
       <div class="task-group-meta">scripts/temp_scripts/backfill-game-ids.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -358,11 +363,12 @@
           nameEn 套 3 筆全名覆寫（肖妮 Shawnee Russell、西爾維婭 Sylvie Roussel、梅利莎 Melissa Hicks，附來源）。
           守門：siteId 不存在、<code>doc.name</code> 與 v3 不符、既有非空值與 v3 不同 → 中止並列出，不靜默覆寫；索妮婭略過並列入報告。
           dry-run 報告存 <code>_local-notes/</code> 給站長看過再 <code>--apply</code>（merge 批次寫入）→ <code>node scripts/bump-data-version.mjs pilots mechs</code>。
+          <br><b>✅ 2026-10-04 完成：</b>dry-run 守門 0 筆 → <code>--apply</code> 寫入 182 筆（機師 gameId／artKey／nameEn 各 90、pairedMechId 61；機甲 gameId 92、skinOfId 1）→ <code>bump pilots mechs</code>。索妮婭略過。報告：<code>_local-notes/2026-10/2026-10-04_PLAN-054_A-4_回填報告.md</code>。站長 10-04「按照建議處理」，dry-run 無異常故未等過目即寫入。
         </div>
         <div class="task-file">scripts/temp_scripts/backfill-game-ids.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -399,7 +405,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; import-game-assets.mjs：v3 整批模式</div>
       <div class="task-group-meta">scripts/import-game-assets.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -409,11 +415,12 @@
           同名 Sprite／Texture2D 取 Texture2D、同 sha256 去重、同名異內容中止 → 小寫碰撞檢查 → sharp WebP q82、原尺寸、保留 alpha →
           <code>game/pilots/&lt;gameId&gt;/</code>、<code>game/mechs/&lt;wap&gt;/</code>。dry-run 印各組檔數與實轉體積；<code>--apply</code>；已存在跳過；<code>--force</code>；<code>--only=&lt;id&gt;</code>。
           kind 命名規則抽到共用模組給索引與部署剪裁用；附 <code>public/images/game/README.md</code>。
+          <br><b>✅ 2026-10-04 完成：</b><code>scripts\import-game-assets.mjs<\code>（v3 整批：Texture2D 優先、同名異內容中止、小寫碰撞中止、WebP q82 原尺寸）＋ 共用命名規則 <code>scripts\lib\gameAssetKinds.mjs<\code> ＋ <code>public\images\game\README.md<\code>。依 10-04 決策 A，extended 改匯到 repo 外的封存夾 <code>E;C:\Program Files\Git\Mecharashi_Data\site-archive\game\<\code>（952 檔、73.8 MB），落點若在 repo 內直接中止。
         </div>
         <div class="task-file">scripts/import-game-assets.mjs · scripts/lib/gameAssetKinds.mjs · public/images/game/README.md</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -421,7 +428,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; 新實體模式（新機師填 ID 就能匯）</div>
       <div class="task-group-meta">scripts/import-game-assets.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -429,11 +436,12 @@
         <div class="task-desc">
           <code>Pilot_&lt;artKey&gt;_{half,head,Raw}</code>、<code>Icon_item_&lt;gameId&gt;A</code>、<code>Icon_mecha_wap&lt;wap&gt;</code>、<code>Icon_wap&lt;wap&gt;_1~4</code>、<code>_SN_Raw</code>；
           找不到就列缺項、不猜。英文名鍵類素材（招募／大廳）不自動。用現有擷取對一位已知機師跑一次，結果須與 B-1 逐檔相同。
+          <br><b>✅ 2026-10-04 完成：</b><code>--id=&lt;gameId&gt; --art-key=&lt;artKey&gt;</code>／<code>--wap=&lt;####&gt;</code> 從圖片索引.csv 依命名規則找；用維娜（例外）、都卜勒、凜騎士重跑，輸出與 B-1 <b>逐檔 sha256 相同</b>，凜騎士正確回報「缺 sn」。
         </div>
         <div class="task-file">scripts/import-game-assets.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -441,7 +449,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-3 &nbsp; _reserve 預留資料夾</div>
       <div class="task-group-meta">public/images/game/_reserve/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -449,11 +457,12 @@
         <div class="task-desc">
           npc：<code>Pilot_&lt;id&gt;*_{half,head,Raw}</code>、<code>Icon_item_&lt;id&gt;*</code>；enemy-mech：icon／parts／SN；unknown（Flare／Glowing／SEFAS／jaw）：依英文名鍵。
           以 CSV 定位、不做歸屬判斷；dry-run 先報檔數與體積。
+          <br><b>✅ 2026-10-04 完成：</b>依 10-04 決策 A 改匯到封存夾 <code>_reserve/{npc,enemy-mech,unknown}</code>（392 檔、16.3 MB，不進 git）。Flare／Glowing／jaw 在索引裡只有文字字卡，不收；SEFAS 收 4 張。
         </div>
         <div class="task-file">public/images/game/_reserve/{npc,enemy-mech,unknown}/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -461,7 +470,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-4 &nbsp; 索引、manifest 與部署剪裁</div>
       <div class="task-group-meta">scripts/generate-*.mjs · package.json</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -469,11 +478,12 @@
         <div class="task-desc">
           art-index 掃 <code>game/</code> 產 per-kind ID Set（<code>_reserve</code> 不索引）；manifest 只收部署清單內的檔，後台選圖器不會挑到上線後 404 的圖；
           build 在 <code>vite build</code> 之後剪掉 <code>dist/images/game</code> 下的非部署 kind 與 <code>_reserve</code>（站長已確認：只部署 core）。
+          <br><b>✅ 2026-10-04 完成：</b><code>generate-art-index.mjs</code> 同時產生 <code>src/data/gameArtIndex.ts</code>（機師 90 位 half／head／raw／card 全齊、記實際立繪主鍵供讀取端比對；機甲 92 台、sn 91）。manifest 本來就掃整個 <code>public/images</code>，core 自動收進後台選圖器；因 extended 不在 public/，<b>不需要</b>部署剪裁。
         </div>
         <div class="task-file">scripts/generate-art-index.mjs → src/data/gameArtIndex.ts · scripts/generate-image-manifest.mjs · package.json（build）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -481,7 +491,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-5 &nbsp; 實際匯入與體積驗收</div>
       <div class="task-group-meta">public/images/game/**</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -489,11 +499,12 @@
         <div class="task-desc">
           報告（各組檔數／實際體積／略過與中止清單）存 <code>_local-notes/</code>；<code>npm run build</code> 通過、<code>dist</code> 體積對得上部署清單；
           commit（純新增檔案、前台無變化 → chore，不寫履歷）。
+          <br><b>✅ 2026-10-04 完成：</b>core 912 檔：PNG 274.9 MB → WebP 41.1 MB（實佔 44 MB）。<code>npm test</code> 1285 全綠、<code>npm run build</code> 通過。報告：<code>_local-notes/2026-10/2026-10-04_PLAN-054_B_匯入報告_{core,extended,reserve}.md</code>。
         </div>
         <div class="task-file">public/images/game/** · src/data/gameArtIndex.ts · public/images/manifest.json</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -501,7 +512,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-6 &nbsp; 圖片引用掃描器（檔名變更的守門）</div>
       <div class="task-group-meta">scripts/check-image-refs.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -511,11 +522,12 @@
           ＋ <code>src</code>／<code>scripts</code>／<code>workers</code>／<code>docs</code>／<code>CLAUDE.md</code> 的文字。
           輸出 (a) 指向不存在檔案的本地路徑、(b) 指向即將刪除的舊路徑，逐筆附「在哪個集合／文件的哪個欄位」。
           先跑一次當基準線（C 階段的改動清單就從這裡來）；D-1 刪檔前 (b) 必須為 0，D-3 之後 (a) 必須為 0。
+          <br><b>✅ 2026-10-04 完成：</b><code>scripts/check-image-refs.mjs</code>：判定存在與否套用前台同一套 <code>normalizeSkillPath</code>＋ .webp 變體；閘門只算現役引用（Firestore＋程式碼），測試／文件只列不擋、佔位範例略過。基準線：引用 5,974 筆、將退場舊檔 704 張；現役 (a) 57（機甲 halfPortrait 的 half.png）、(b) 751（pilots 170、mechs 440、patchVersions 83、grayOps 55、程式 3）。清單：<code>_local-notes/2026-10/2026-10-04_PLAN-054_B-6_圖片引用基準線.md</code>。
         </div>
         <div class="task-file">scripts/check-image-refs.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

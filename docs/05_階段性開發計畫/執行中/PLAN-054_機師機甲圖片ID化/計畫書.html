@@ -403,6 +403,9 @@
       <li><b>部署＝讀取端真的用到的 kind</b>（建議）：repo 保存全部（博物館原則），但 extended 與 <code>_reserve</code> 在 build 後從 <code>dist/</code> 剪掉、
         也不進後台選圖器的 <code>manifest.json</code>——沒有消費端的圖不上線，也就不會把台版未上線的造型／NPC 公開出去。
         判斷「是不是 core」用與索引相同的命名規則（決策六），之後有功能要用某組，加進部署清單即可。✅ 站長已確認（2026-10-03）</li>
+      <li>🔄 <b>2026-10-04 改判（站長選 A）：extended 與 <code>_reserve</code> 不進 git</b>。開工前檢查發現 <b>repo 是公開的</b>——「只進 repo、不部署」擋不住劇透，任何人都能在 GitHub 上瀏覽或 clone，
+        而 git 歷史 push 之後實際上收不回來。改為匯到 <b>repo 外的封存夾</b>（<code>E:/Mecharashi_Data/site-archive/game/</code>，只是原始擷取的轉檔副本，隨時可從擷取重產），
+        匯入腳本對 extended／reserve 的落點若在 repo 內直接中止。附帶效果：<code>public/images/game/</code> 只有 core，<b>不需要</b>「build 後從 dist 剪掉」那一步，manifest 也不必排除。</li>
     </ul>
   </div>
 
@@ -516,6 +519,11 @@
     </table></div>
     <ul>
       <li>順序：C-5（OG）部署並驗收 → D 階段刪檔＋路徑改寫＋bump → 部署 → Purge → 複驗（舊網址 404、新網址 200、OG 補驗指令）。</li>
+      <li>🔄 <b>2026-10-04 補充：光刪 repo 的檔，線上的舊網址不會 404。</b><code>deploy.yml</code> 用 <code>keep_files: true</code> 只疊加、不刪除（既有清理步驟只管 <code>docs/</code>），
+        實測 gh-pages 上已有 1,657 張 repo 早就刪掉的孤兒圖（163.5 MB）；Purge 也沒用（origin 還在送）。
+        → 站長同意把清理擴到 <code>images/</code>（D-4）：用 ledger 記錄每個檔案「被新版取代的時間」，退役滿寬限期才從 gh-pages 刪。
+        已驗證安全：DB 裡 3,239 個「只剩 gh-pages 有」的扁平技能圖路徑，經前台 <code>normalizeSkillPath</code> 後全都指到 repo 內的檔案。
+        「舊網址 404」的驗收因此要等寬限期滿之後才做。</li>
       <li>部署、Purge、Worker 發佈都是正式站操作，每一步執行前跟站長確認。</li>
     </ul>
   </div>
@@ -567,10 +575,13 @@
   <div class="decision-block">
     <ol>
       <li>✅ <b>官配只存機師側</b>（<code>pilots.pairedMechId</code>，機甲側推導）。</li>
-      <li>✅ <b>部署範圍</b>：core 全部署；extended 與 <code>_reserve</code> 進 repo（約 +92 MB 進 git 歷史）但不部署、不進 manifest。</li>
+      <li>✅ <b>部署範圍</b>：core 全部署；<s>extended 與 <code>_reserve</code> 進 repo（約 +92 MB 進 git 歷史）但不部署、不進 manifest。</s>
+        <b>2026-10-04 改判：extended 與 <code>_reserve</code> 不進 git</b>（repo 是公開的），匯到 repo 外的封存夾（決策五）。</li>
       <li>✅ <b>站上自製圖一併搬 ID 資料夾</b>（D-2），名字資料夾與 <code>NAME_FIXES</code> 徹底退場、DB 路徑可以改寫。</li>
       <li>✅ <b>開工順序</b>（站長改採另一做法）：PLAN-042-A（含 042-C）雛形已成但未完成 → <b>先收起入口、合併回 main</b>；
-        本計畫再從 main 開 <code>feat/plan-054-game-art-ids</code>，不做堆疊分支。</li>
+        本計畫再從 main 開 <code>feat/plan-054-game-art-ids</code>，不做堆疊分支。
+        <b>2026-10-04 再改：不開分支，直接在 main 上做</b>（分支只有一個 docs commit，已快轉併回 main 並刪除）。</li>
+      <li>✅ <b>2026-10-04 追加</b>：gh-pages 的清理擴到 <code>images/</code>（決策十三補充）；正式站部署由 Claude 代跑。</li>
       <li>✅ <b>補充</b>：有官方原檔的一律換官方（決策十一）、檔名變更要連同所有引用一起改（決策十二）、部署後清快取（決策十三）、英文名有全名就用全名（決策三）、爬蟲降為備用（決策十）。</li>
     </ol>
   </div>

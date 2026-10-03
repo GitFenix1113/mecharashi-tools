@@ -100,7 +100,7 @@ export interface Weapon {
   name: string
   /** 武器背景故事文字（API: describe） */
   description?: string
-  /** 武器圖示本地路徑，如 /images/weapons/Icon_weapon_10001.png */
+  /** 武器圖示本地路徑，如 /images/weapons/Icon_weapon_10100201.png */
   icon?: string
   type:            string  // WeaponType：射擊 / 格鬥 / 突擊 / 戰術
   kind:            string  // 武器種類：機槍 / 狙擊步槍 / 刀劍…

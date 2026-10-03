@@ -35,8 +35,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
+import { GAME_DIR, PART_NO, classifyMechFile, classifyPilotFile } from './lib/gameAssetKinds.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const GAME_ROOT = path.join(ROOT, 'public', GAME_DIR)
+const GAME_OUT_FILE = path.join(ROOT, 'src', 'data', 'gameArtIndex.ts')
 const PILOTS_DIR = path.join(ROOT, 'public', 'images', 'pilots')
 const MECHS_DIR = path.join(ROOT, 'public', 'images', 'mechs')
 const OUT_FILE = path.join(ROOT, 'src', 'data', 'artIndex.ts')
@@ -96,6 +99,93 @@ async function scanOfficial(dir, dirs) {
     out.push({ d, w: c.width, h: c.height, nameW: n.width, nameH: n.height })
   }
   return out.sort((a, b) => a.d.localeCompare(b.d, 'zh-Hant'))
+}
+
+/**
+ * 官方原檔索引（PLAN-054 B-4）：掃 `public/images/game/`，每個 ID 記「有哪幾種圖」。
+ *
+ * 只記讀取端用得到的種類（機師 half／head／raw／card、機甲 icon／sn／部件 1~4），
+ * 不把近千個檔名打進前台 bundle——路徑由 `src/utils/gameArt.ts` 依命名規則拼。
+ * 機師另記資料夾裡實際的立繪主鍵：讀取端拿它跟 DB 的 `artKey` 比對，對不上就不給路徑（寧可退回舊圖也不給 404）。
+ * 同一個資料夾出現兩種立繪主鍵直接讓 build 失敗——那代表有人把造型圖放進了 core 資料夾。
+ */
+function scanGame() {
+  const listDirs = (d) => fs.existsSync(d)
+    ? fs.readdirSync(d, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort()
+    : []
+  const webps = (d) => fs.readdirSync(d).filter((f) => f.endsWith('.webp')).map((f) => f.slice(0, -5))
+  const pilots = []
+  for (const id of listDirs(path.join(GAME_ROOT, 'pilots'))) {
+    const e = { id, key: undefined, kinds: new Set() }
+    for (const name of webps(path.join(GAME_ROOT, 'pilots', id))) {
+      const c = classifyPilotFile(name, id)
+      if (!c) continue
+      if (c.key) {
+        if (e.key && e.key !== c.key) {
+          console.error(`❌ game/pilots/${id} 裡有兩種立繪主鍵：${e.key}／${c.key}（core 資料夾只放預設造型）`)
+          process.exit(1)
+        }
+        e.key = c.key
+      }
+      e.kinds.add(c.kind)
+    }
+    if (e.kinds.size) pilots.push(e)
+  }
+  const mechs = []
+  for (const wap of listDirs(path.join(GAME_ROOT, 'mechs'))) {
+    const e = { wap, kinds: new Set() }
+    for (const name of webps(path.join(GAME_ROOT, 'mechs', wap))) {
+      const c = classifyMechFile(name, wap)
+      if (c) e.kinds.add(c.kind)
+    }
+    if (e.kinds.size) mechs.push(e)
+  }
+  return { pilots, mechs }
+}
+
+function writeGameIndex({ pilots, mechs }) {
+  const flags = (kinds, list) => list.filter((k) => kinds.has(k)).map((k) => `${k}: true`).join(', ')
+  const pilotBody = pilots
+    .map((e) => `  ['${e.id}', { ${[e.key ? `key: '${e.key}'` : '', flags(e.kinds, ['half', 'head', 'raw', 'card'])].filter(Boolean).join(', ')} }],`)
+    .join('\n')
+  const mechBody = mechs
+    .map((e) => {
+      const parts = Object.keys(PART_NO).filter((k) => e.kinds.has(k)).map((k) => PART_NO[k]).join('')
+      return `  ['${e.wap}', { ${[flags(e.kinds, ['icon', 'sn']), `parts: '${parts}'`].filter(Boolean).join(', ')} }],`
+    })
+    .join('\n')
+  const out = `// ⚠ 本檔由 scripts/generate-art-index.mjs 自動產生，請勿手動編輯。
+// 重新產生：node scripts/generate-art-index.mjs（build / predev 會自動跑）
+
+/**
+ * 官方原檔（PLAN-054）：\`public/images/game/pilots/<gameId>/\` 裡有哪幾種圖。
+ *
+ * 版面要在**渲染前**就知道某個 ID 有沒有某種圖（與 \`PILOT_ART_INDEX\` 同理），
+ * 所以由 build 掃資料夾產生，而不是等圖載失敗才換構圖。
+ * \`key\` 是資料夾裡實際的立繪主鍵——讀取端會拿它跟 DB 的 \`artKey\` 比對。
+ * 查詢一律走 \`pilotGameArt()\`（src/utils/gameArt.ts），不要自己拼路徑。
+ */
+export interface GamePilotArt { key?: string; half?: true; head?: true; raw?: true; card?: true }
+export const GAME_PILOT_ART: ReadonlyMap<string, GamePilotArt> = new Map<string, GamePilotArt>([
+${pilotBody}
+])
+
+/**
+ * 官方原檔（PLAN-054）：\`public/images/game/mechs/<wap>/\` 裡有哪幾種圖。
+ * \`parts\` 是有圖的部件編號（1 軀幹／2 左臂／3 右臂／4 腿）。查詢一律走 \`mechGameArt()\`。
+ */
+export interface GameMechArt { icon?: true; sn?: true; parts: string }
+export const GAME_MECH_ART: ReadonlyMap<string, GameMechArt> = new Map<string, GameMechArt>([
+${mechBody}
+])
+`
+  fs.writeFileSync(GAME_OUT_FILE, out, 'utf-8')
+  const has = (list, k) => list.filter((e) => e.kinds.has(k)).length
+  console.log(
+    `✅ 官方原檔索引已產生：${path.relative(ROOT, GAME_OUT_FILE)}` +
+    `（機師 ${pilots.length} 位：half ${has(pilots, 'half')}／head ${has(pilots, 'head')}／raw ${has(pilots, 'raw')}／card ${has(pilots, 'card')}；` +
+    `機甲 ${mechs.length} 台：icon ${has(mechs, 'icon')}／sn ${has(mechs, 'sn')}）`,
+  )
 }
 
 async function main() {
@@ -170,6 +260,8 @@ ${officialBody}
     `機甲 ${mechsWithArt.length}/${mechDirs.length}，${pct(mechsWithArt.length, mechDirs.length)}%；` +
     `官網圖層 ${official.length} 位）`,
   )
+
+  writeGameIndex(scanGame())
 }
 
 await main()
