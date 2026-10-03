@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { resolveIconSrc } from '../../utils/assets'
 
 /**
@@ -126,7 +127,9 @@ export function IconPicker({
     return out
   }, [manifest, folder, search])
 
-  return (
+  // ⚠ 與 AdminModal 同理，必須 portal 到 body：祖先只要有 backdrop-filter／filter／
+  //   transform／perspective／contain，fixed 就會相對那個祖先而不是視窗定位。
+  return createPortal(
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4" onClick={onClose}>
       <div
         className="bg-bg-card border border-border rounded-xl p-5 w-full max-w-3xl max-h-[85vh] flex flex-col"
@@ -211,7 +214,8 @@ export function IconPicker({
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

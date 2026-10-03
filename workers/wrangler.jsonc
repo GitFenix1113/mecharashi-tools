@@ -34,13 +34,20 @@
 		 * 而 /api 與頁面共用同一個免費額度池（100k/日），等於把那顆單點的引信縮短 20 倍。
 		 *
 		 * 未來若 backpacks/modules/components 開了 :id 詳情頁，在這裡加一行即可。
+		 *
+		 * PLAN-042-A：機師故事館 /lore/pilots/:id[/:part] 的分享卡同樣需要邊緣改寫，
+		 * 故補上 /lore/*。**同樣不擴成整站 `/*`** —— 理由與上面那段完全一樣。
+		 * ⚠ 這條 route 只在 CF Transform Rule 的 UA 排除區塊也加上 `/lore/` 之後才會被喚醒
+		 *   （Transform Rules 跑在 Workers 之前，路徑先被改寫成 /index.html 就永遠匹配不到）。
 		 */
 		{ "pattern": "mecharashi.wiki/pilots/*", "zone_name": "mecharashi.wiki" },
 		{ "pattern": "mecharashi.wiki/mechs/*", "zone_name": "mecharashi.wiki" },
 		{ "pattern": "mecharashi.wiki/weapons/*", "zone_name": "mecharashi.wiki" },
 		{ "pattern": "www.mecharashi.wiki/pilots/*", "zone_name": "mecharashi.wiki" },
 		{ "pattern": "www.mecharashi.wiki/mechs/*", "zone_name": "mecharashi.wiki" },
-		{ "pattern": "www.mecharashi.wiki/weapons/*", "zone_name": "mecharashi.wiki" }
+		{ "pattern": "www.mecharashi.wiki/weapons/*", "zone_name": "mecharashi.wiki" },
+		{ "pattern": "mecharashi.wiki/lore/*", "zone_name": "mecharashi.wiki" },
+		{ "pattern": "www.mecharashi.wiki/lore/*", "zone_name": "mecharashi.wiki" }
 	],
 	/**
 	 * PLAN-029 5-2：關閉 workers.dev，隱藏 origin 的最後一哩（2026-08-30）。

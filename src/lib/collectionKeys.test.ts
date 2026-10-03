@@ -15,6 +15,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   ARRAY_COLLECTION_KEYS, SINGLETON_COLLECTION_KEYS, ALL_COLLECTION_KEYS,
+  NO_LOCAL_CACHE_KEYS, skipsLocalCache,
 } from './collectionKeys.ts'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
@@ -64,4 +65,44 @@ test('陣列型與 singleton 型集合不重疊，且合起來等於 ALL_COLLECT
   assert.deepEqual(overlap, [])
   assert.equal(ALL_COLLECTION_KEYS.length, ARRAY_COLLECTION_KEYS.length + SINGLETON_COLLECTION_KEYS.length)
   assert.equal(new Set(ALL_COLLECTION_KEYS).size, ALL_COLLECTION_KEYS.length, '不可有重複鍵')
+})
+
+// ── GameDataContext 的三處 switch（PLAN-042-A A-2 補強）───────────────────────
+//
+// 「七處同步」裡最後一處是 GameDataContext 的 state ＋ switch ＋ 型別，而它是**唯一
+// 沒有任何自動檢查**的一處：TypeScript 對 switch 不做窮舉強制（沒有 default 也照過），
+// 漏掉 applyData 的一支 case 的症狀是「該集合永遠是空陣列」——沒有錯誤、沒有紅字，
+// 只有一個看起來「還沒有資料」的頁面。
+//
+// 同樣走讀原始碼文字：這個檔案 import 進來就會拉 React 與 firebase，node --test 載不起來。
+
+const CONTEXT_SRC = read('src/contexts/GameDataContext.tsx')
+
+test('GameDataContext.applyData 對每個集合鍵都有 case（漏了 → 該集合永遠是空陣列、零錯誤）', () => {
+  const missing = ALL_COLLECTION_KEYS.filter((k) => !CONTEXT_SRC.includes(`case '${k}':`))
+  assert.deepEqual(missing, [], `GameDataContext 缺少 case：${missing.join('、')}`)
+})
+
+test('GameDataContext 為每個陣列型集合都持有 state（漏了 → context value 少一欄）', () => {
+  const missing = ARRAY_COLLECTION_KEYS.filter((k) => {
+    const setter = k.charAt(0).toUpperCase() + k.slice(1)
+    return !CONTEXT_SRC.includes(`set${setter}`)
+  })
+  assert.deepEqual(missing, [], `GameDataContext 缺少 useState：${missing.join('、')}`)
+})
+
+// ── localStorage 豁免名單（PLAN-042-A A-2）──────────────────────────────────
+
+test('NO_LOCAL_CACHE_KEYS 的每一項都是合法集合鍵（打錯字 → 名單靜默失效）', () => {
+  const bogus = NO_LOCAL_CACHE_KEYS.filter((k) => !ALL_COLLECTION_KEYS.includes(k))
+  assert.deepEqual(bogus, [], `不存在的集合鍵：${bogus.join('、')}`)
+})
+
+test('writeCache 真的有問過 skipsLocalCache（名單存在但沒接上 = 完全沒用）', () => {
+  assert.ok(
+    /function writeCache[\s\S]{0,400}skipsLocalCache\(/.test(CONTEXT_SRC),
+    'GameDataContext 的 writeCache 沒有呼叫 skipsLocalCache——豁免名單沒有生效',
+  )
+  assert.equal(skipsLocalCache('pilotLore'), true)
+  assert.equal(skipsLocalCache('pilots'), false)
 })

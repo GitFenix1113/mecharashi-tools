@@ -161,6 +161,22 @@ test('ENTITY_ROUTES 的樣板都真實存在於路由表', () => {
   }
 })
 
+test('故事館 URL 形狀：Worker 的 LORE_RE 與 ROUTE_PATTERNS 綁在一起（改一邊必須改另一邊）', () => {
+  // 為什麼要一條「讀原始碼字串」的絆線：/lore/pilots/:id[/:part] 這個形狀同時被
+  // App.tsx、routeKeys.ts、PilotLorePage 與 workers/src/socialPreview.ts 各寫一次，
+  // 而上面那條「ROUTE_PATTERNS 與 App.tsx 一致」只保護**前端檔內**一致。
+  // Worker 那條正則單獨漂掉不會有任何本機訊號——build、test、dev 全綠，
+  // 只有社群貼連結時 OG 圖悄悄退回 og/default.jpg（2026-08-22 踩過同款）。
+  const src = readFileSync(new URL('../../../workers/src/socialPreview.ts', import.meta.url), 'utf8')
+  assert.ok(
+    src.includes(String.raw`/^\/lore\/(pilots)\/([^/]+)(?:\/([^/]+))?\/?$/`),
+    'workers/src/socialPreview.ts 的 LORE_RE 與 ROUTE_PATTERNS 的 /lore/pilots/:id[/:part] 不一致',
+  )
+  for (const p of ['/lore', '/lore/pilots/:id', '/lore/pilots/:id/:part']) {
+    assert.ok(ROUTE_PATTERNS.includes(p), `ROUTE_PATTERNS 缺 ${p}`)
+  }
+})
+
 test('isSafeEntityId 放行中文 id、擋掉能逃出反引號的字元', () => {
   // 本專案的文件 ID 含中文（idSlug.ts 的 slugify 刻意保留 CJK），
   // 因此 Firestore 欄位路徑必須反引號包裹 —— 就必須確保 id 逃不出去。

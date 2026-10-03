@@ -38,6 +38,7 @@
       <tr><td>id</td><td>string</td><td>唯一識別碼</td></tr>
       <tr><td>name</td><td>string</td><td>機師顯示名稱</td></tr>
       <tr><td>fullName</td><td>string</td><td>機師全名（完整稱呼）</td></tr>
+      <tr><td>nameEn</td><td>string?</td><td>英文名（PLAN-042-C，選填）：故事館扉頁壓在立繪旁的毛筆草書，如 <code>Rosa Diaz</code>。官方資料沒有此欄，後台「個人資料」分頁人工輸入；空值＝不渲染。⚠ 爬蟲 <code>--force</code> 整筆覆寫會洗掉（與 debutVersion 同病）</td></tr>
       <tr><td>rarity</td><td>ItemRarity (Enum)</td><td>稀有度：S / A / B（機師不使用 EX）</td></tr>
       <tr><td>class</td><td>PilotClass (Enum)</td><td>職業：突擊手 / 狙擊手 / 戰術家 / 格鬥家 / 守護者 / 機械師 / 調構師</td></tr>
       <tr><td>faction</td><td>string</td><td>所屬陣營 / 勢力（詳情頁顯示為「勢力」，列表頁可搜尋）</td></tr>
@@ -102,7 +103,7 @@
       <tr><td>&nbsp;&nbsp;&nbsp;├ effects</td><td>SkillEffect[]</td><td>嵌入舊格式可量化效果（多為空；flip 後改由能力庫提供）</td></tr>
       <tr><td>&nbsp;&nbsp;&nbsp;├ buffIds</td><td>string[]</td><td>嵌入舊格式：激活此層觸發的 Buff ID</td></tr>
       <tr><td>&nbsp;&nbsp;&nbsp;└ descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-023 N2-1：描述內 [xxx] 引用側錄；flip 後由 resolve 從能力庫帶入，使神驅描述的 [xxx] 可點擊</td></tr>
-      <tr><td>lore</td><td>string</td><td>角色故事（Markdown 格式）</td></tr>
+      <tr><td>lore</td><td>string</td><td>官方「機師檔案」正文，<strong>＝ API <code>detail.Introduction</code> 的鏡像</strong>（爬蟲每次補丁都會重寫）。<strong>不是 Markdown</strong>——前台一律以 <code>whitespace-pre-line</code> 純文字呈現。89/89 有值，其中 38% 為引文體、40% 結尾帶署名。<br><small style="color:var(--text-dim)">🆕 PLAN-042-A：故事館的<u>扉頁</u>渲染的就是這一欄，<strong>刻意不搬進 <a href="../04_Firebase/資料庫設計文件/pilotLore.html">pilotLore</a></strong>——圖鑑的 hover 浮窗與引用稽核（<code>entityRefs</code> 的「機師簡介」站點）都在用它，搬走等於浮窗變空白或製造兩個真相源。署名結構化後另存於 <code>pilotLore.frontSource</code>。</small></td></tr>
       <tr><td>portrait</td><td>string</td><td>立繪圖片路徑 /images/pilots/{id}/full.webp（2026-08 起全面轉 WebP，原 PNG 已移除）</td></tr>
       <tr><td>portraitUrl</td><td>string?</td><td>立繪遠端 URL（官方 CDN 來源）；本地 portrait 缺圖時的後備來源</td></tr>
       <tr><td>manual</td><td>boolean?</td><td>🆕 PLAN-025：後台手動新增的機師（官方資料更新前自建）。<strong>true</strong> = 爬蟲補丁模式（scrape-pilots-v3.js）整筆跳過、不覆寫或刪除；純作後端防覆寫，前台不因此顯示標記。語意比照 PilotSkill.manual / PilotTalent.manual</td></tr>
@@ -118,6 +119,11 @@
       <div class="doc-tag">Collection</div>
       <h4>◆ neuralDriveAbilities</h4>
       <p>神經驅動能力庫（PLAN-023）；neuralDrive[].levels[] 以 abilityId 引用</p>
+    </a>
+    <a class="doc-item" href="../04_Firebase/資料庫設計文件/pilotLore.html">
+      <div class="doc-tag">Collection</div>
+      <h4>📖 pilotLore</h4>
+      <p>機師逸聞章節（PLAN-042-A 故事館）；文件 ID ＝ 機師 ID，扉頁正文仍讀 pilots.lore</p>
     </a>
     <a class="doc-item" href="pilotResearch.html">
       <div class="doc-tag">Collection</div>

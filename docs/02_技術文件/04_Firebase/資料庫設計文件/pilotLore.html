@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pilotLore — 機師逸聞 Schema — Firebase 資料庫設計 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../01_規劃書/米赫瑪超吉情豹站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../../index.html">技術文件</a>
+    <span>›</span>
+    <a href="Firebase資料庫設計文件.html">Firebase 資料庫設計</a>
+    <span>›</span>
+    <span class="current">pilotLore — 機師逸聞</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(234,179,8,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge" style="background:rgba(234,179,8,0.15);color:var(--accent-yellow);border-color:var(--accent-yellow);">◆ COLLECTION SCHEMA</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    pilotLore — 機師逸聞
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-042-A</span>
+  </h1>
+  <p class="hero-sub">故事館的章節層 · 100% 人工輸入（OCR 輔助）· 型別與 mechLore 共用、集合分家</p>
+  <div class="version-badge" style="background:var(--accent-yellow);color:#000;">PLAN-042-A — 2026-08-31</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow);">01 — 用途</div>
+  <div class="section-title">pilotLore Collection</div>
+
+  <div class="info-block">
+    <strong>📌 用途說明</strong><br>
+    官方遊戲內機師有<strong>兩個不同的頁面</strong>：「機師檔案」與「逸聞（PART 1..N）」。<br>
+    · <strong>機師檔案</strong>＝ <code>pilots.lore</code> ＋ <code>pilots.profile</code>，是官方 API
+      <code>detail.Introduction</code> 的鏡像，89/89 已有值 → <strong>留在 pilots</strong>。<br>
+    · <strong>逸聞</strong>＝每段數百字、有標題（「光環遍身」「定命恩垂」）的章節，
+      官方 API 完全沒有 → <strong>本集合</strong>，須以 OCR 輔助人工輸入。<br>
+    前台於故事館 <code>/lore/pilots/:id/:part</code> 渲染；圖鑑詳情頁不讀本集合。
+  </div>
+
+  <div class="decision-block">
+    <strong>✅ 接縫判準是「誰是權威來源」，不是「故事 vs 數值」（總綱決策二）</strong><br>
+    爬蟲寫的留 <code>pilots</code>；人寫的進 <code>pilotLore</code>。這條判準能回答 <code>lore</code>
+    這種「看起來像故事、其實是官方原文鏡像」的邊界案例——它不搬，因為圖鑑的 hover 浮窗
+    （<code>EntityRefView</code>）與引用稽核（<code>entityRefs</code> 的「機師簡介」站點）都還在用它，
+    搬走等於浮窗變空白，或製造兩個真相源。
+  </div>
+
+  <div class="sub-h">🗃️ pilotLore — 逸聞文件（LoreDoc）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td>文件 ID <strong>＝ 機師的文件 ID</strong>（<code>pilot_049_海莉絲</code>），比照 <code>pilotResearch</code> 慣例。故事與機師一對一，不另造 slug</td></tr>
+      <tr><td>name</td><td>string?</td><td>機師名快照（去正規化）。供 <code>saveWithHistory</code> 的 <code>targetName</code> 與後台列表使用，目標被刪後仍看得懂 log 在講誰</td></tr>
+      <tr><td>frontSource</td><td>string?</td><td><strong>扉頁署名</strong>：從 <code>pilots.lore</code> 尾端抽出的出處（如 <code>——《週刊米赫瑪·文娛版》</code>）。<br><small style="color:var(--text-dim)"><strong>⚠ 正文本身不複製到這裡。</strong>這一欄只存「原文的哪一段是署名」這個編輯決策。初值由一次性草稿腳本 <code>scripts/temp_scripts/extract-lore-source.mjs</code> 產出（實測命中 32 / 誤判 0 / 疑似漏抓 2）＋ 人工複核；<strong>不在執行期即時 parse</strong>。</small></td></tr>
+      <tr><td>chapters</td><td>LoreChapter[]</td><td>逸聞章節（PART 1..N）。<strong>不含扉頁</strong>——扉頁由渲染端從 <code>pilots.lore</code> derive</td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h">📖 LoreChapter — 一章</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>key</td><td>string</td><td><strong>必填穩定鍵</strong>，進網址（<code>/lore/pilots/:id/:part</code>）。由後台編輯器在新增章節當下自動產生</td></tr>
+      <tr><td>label</td><td>string?</td><td>章節標籤（<code>PART 1</code>）。未設定則由渲染端依索引生成</td></tr>
+      <tr><td>title</td><td>string</td><td>章節標題（<code>光環遍身</code>）</td></tr>
+      <tr><td>body</td><td>string</td><td>正文。支援 PLAN-019 的 <code>[xxx]</code> 標記，由 <code>&lt;RefText&gt;</code> 解析</td></tr>
+      <tr><td>bodyRefs</td><td>DescriptionRefs?</td><td>正文內 <code>[xxx]</code> → 實體引用側錄。<strong>欄位名是 <code>bodyRefs</code> 不是 <code>descriptionRefs</code></strong>（正文欄位叫 <code>body</code>）——<code>entityRefs</code> 的站點必須指定 <code>refsField: 'bodyRefs'</code>，否則級聯清除會去清一個不存在的欄位<strong>且靜默不報錯</strong></td></tr>
+      <tr><td>source</td><td>string?</td><td>本章的出處署名。前台右對齊小字 ＋ 分隔細線</td></tr>
+      <tr><td>commentary</td><td>LoreCommentary[]?</td><td>NPC 旁白列。<code>{ speakerId, text }</code>，<code>speakerId</code> 指向 <code>pilots</code> 文件 ID</td></tr>
+    </table>
+  </div>
+
+  <div class="warning-block" style="margin-top:14px;">
+    <strong>⚠ 刻意不開的欄位（理由同步寫在 <code>src/types/lore.ts</code> 的型別註解裡）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong><code>subject</code> / <code>kind</code> 之類的 discriminated union</strong>：「這份逸聞屬於機師還是機甲」
+        已由<u>它住在哪個集合</u>完整表達。再存一次就是第二個真相源，而 repo 內沒有 exhaustive 檢查的既有慣例
+        （要自己補 <code>assertNever</code>）——union 的成本會在零消費端的情況下先付掉。</li>
+      <li><strong><code>key?: string</code>（選填鍵 ＋ 索引 fallback）</strong>：加了 fallback 的選填鍵實務上沒人填，
+        上線跑的就是那個以索引為底的 fallback；而索引一旦被插章打亂，<u>所有已分享的連結會集體指向錯誤章節且不報錯</u>
+        （總綱決策五、PLAN-041 的「0/5 定律」）。</li>
+      <li><strong><code>LoreCommentary.textRefs</code></strong>：旁白是短句評註，全站今天沒有一段旁白需要 <code>[xxx]</code>。
+        要開的時候補一個選填欄位是零成本的。</li>
+      <li><strong>扉頁正文</strong>：住 <code>pilots.lore</code>，見上方決策二。</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow);">02 — 引用關係</div>
+  <div class="section-title">箭頭方向</div>
+
+  <div class="info-block">
+    <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.9;overflow-x:auto;">正文引用：  pilotLore ─(chapters[].bodyRefs)──→ buff / term / skill / form …
+旁白說話者：pilotLore ─(chapters[].commentary[].speakerId)──→ pilot
+文件歸屬：  pilotLore.id ═══════════════════→ pilot（同一個 ID）
+
+            ↑ 沒有任何東西指回 pilotLore</pre>
+    <strong>本集合只有 outbound，沒有 inbound。</strong>
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🚫 故事館全程不新增 <code>RefType</code></strong><br>
+    <code>src/types/common.ts</code> 的 <code>RefType</code> 註解逐字列出新增值要補的<strong>五處窮舉消費端</strong>，
+    其中 <code>RefPicker.REF_TYPE_OPTIONS</code> 是手寫陣列、<strong>漏了不報錯</strong>。
+    逸聞是被讀的終點、不是被指的目標——沒有任何一段正文會寫 <code>[某某的逸聞]</code>。<br>
+    對應到 <code>entityRefs.ts</code>：<code>REF_TYPE_OF['pilotLore'] = null</code>（明示的編輯決策，不是漏填），
+    <code>speakerId</code> 也只允許指向 <code>pilots</code>。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow);">03 — 維護</div>
+  <div class="section-title">資料維護</div>
+
+  <div class="info-block">
+    <strong>🛠️ 後台編輯</strong><br>
+    <code>/admin/lore</code> 獨立子頁（<strong>不是</strong>後台的第 15 顆 Tab）：互動形狀是「章節側欄 ＋ 長文 textarea
+    ＋ 即時預覽」，與既有「列表 → AdminModal → 存檔」的 CRUD 殼不同構；且未來若開給協作者，
+    必須是一條能獨立授權的路由。<br>
+    存檔走 <code>updatePilotLore()</code> → <code>saveWithHistory('pilotLore', …)</code>：自動寫入
+    <code>changeHistory</code> 並 <code>bumpDataVersion('pilotLore')</code>。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 為什麼寫入一定要掛 <code>saveWithHistory</code></strong><br>
+    本集合是全站<strong>唯一「人工逐字輸入、重跑爬蟲也生不回來」</strong>的資料。其餘集合寫壞了重抓官網即可，
+    這裡寫壞一章就是永久失去。<code>changeHistory</code> 的底層 helper 是集合無關設計，接上去的成本只有一行。<br>
+    對應地，<code>src/lib/api/pilotLore.ts</code> <strong>刻意沒有 <code>deletePilotLore</code></strong>：
+    本集合不是任何引用的目標、沒有級聯要跑，但「刪掉一整份人工長文」也不該是一顆按鈕——
+    要清空就把 <code>chapters</code> 存成 <code>[]</code>，那條路徑會留下 update 記錄。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>💾 不進 localStorage 快取層</strong><br>
+    列於 <code>src/lib/collectionKeys.ts</code> 的 <code>NO_LOCAL_CACHE_KEYS</code>。仍走記憶體快取與版本 gate，
+    差別只是「關掉分頁後重讀一次」。<br>
+    理由：全集合快取展開後已佔 <strong>4.2–4.5 MB</strong>（UTF-16 計，pilots 一個就 2.09 MB），逼近 Chrome 約 5 MB 上限；
+    而配額超限<strong>不會只讓最後那個集合寫失敗</strong>——<code>setItem</code> 一旦開始拋
+    <code>QuotaExceededError</code>，之後每個集合每次都重讀，全站快取效益一起賠掉。
+    逸聞是成長曲線最陡（89 人 × 4 PART × 500 字 ≈ 534 KB raw）而命中率最低（純欣賞、低流量）的那一個。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔒 安全規則</strong><br>
+    <code>match /pilotLore/{docId}</code>：<code>read</code> / <code>write</code> 皆 <code>isAdmin()</code>。
+    前台不直讀，改走 Cloudflare Worker 代理（<code>/api/data/pilotLore</code>，service account 代讀）。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 新增集合的七處同步（PLAN-043 曾為此炸在正式站）</strong><br>
+    <code>collectionKeys.ts</code>／<code>workers/src/index.ts</code> 的 <code>ARRAY_COLLECTIONS</code>（漏＝正式站 404、本機全綠）／
+    <code>scripts/bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>（漏＝整條指令 <code>exit(1)</code>）／
+    <code>entityRefs</code> 的 <code>SPECS</code>／測試 helper／<code>firestore.rules</code>／
+    <code>GameDataContext</code> 的 state ＋ switch ＋ 型別。<br>
+    其中<strong>五處</strong>已由 <code>src/lib/collectionKeys.test.ts</code> 斷言（PLAN-042-A 補上了
+    <code>GameDataContext</code> 的 switch 與 state 兩項——那原本是唯一沒有任何自動檢查的一處，
+    漏掉一支 <code>case</code> 的症狀是「該集合永遠是空陣列」，沒有錯誤、沒有紅字）。<br>
+    <code>wrangler deploy</code> 與 <code>firebase deploy --only firestore:rules</code>
+    <strong>都不在 <code>npm run build</code> / <code>git push</code> 的流程內</strong>，且本機 dev 的
+    <code>VITE_WORKER_API_BASE</code> 指向<u>正式</u> Worker ——「本機先開發、最後才部署」在這個架構下不成立。
+  </div>
+</section>
+
+</main>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-08-31 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

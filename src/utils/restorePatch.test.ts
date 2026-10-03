@@ -199,6 +199,52 @@ test('R6c: 巢狀路徑錨定最後一個數字索引（neuralDrive[].levels[] �
   assert.equal(nd[0].levels[0].abilityId, undefined)
 })
 
+test('R6d: pilotLore 章節以 key 錨定（章節沒有 name 欄位，用 name 錨永遠 anchorMismatch）', () => {
+  // LoreChapter 的欄位是 key/label/title/body/bodyRefs…，**沒有 name**。
+  // entityRefs 的 PILOT_LORE 因此必須錨 by:'key'——錨成 'name' 的話 el['name'] 恆為
+  // undefined，連「索引仍正確」的捷徑都走不到，每一筆逸聞修補單都會 anchorMismatch。
+  const loreDocs = (chapters: Record<string, unknown>[]): RestoreScanData =>
+    ({ pilotLore: [{ id: 'pilot_049_海莉絲', name: '海莉絲', chapters }] })
+
+  // 刪除當下引用掛在 chapters[1]（part-2）的 bodyRefs 上
+  const loreP = (over: Partial<ReversePatch> = {}) => patch({
+    coll: 'pilotLore', docId: 'pilot_049_海莉絲',
+    segments: ['chapters', 1, 'bodyRefs'], op: 'arrayRemove', value: 'buff_x',
+    anchor: { by: 'key', value: 'part-2' },
+    ...over,
+  })
+
+  // ① 章節被重排：part-2 搬到 index 0，仍要靠 key 重新定位到正確章節
+  const moved = buildRestorePlan([loreP()], loreDocs([
+    { key: 'part-2', title: '沉默', body: '…', bodyRefs: [] },            // 正確目標
+    { key: 'part-1', title: '啟程', body: '…', bodyRefs: ['buff_other'] }, // 無辜鄰居
+  ]))
+  assert.equal(moved.skipped.length, 0)
+  const chs = moved.mutations[0].set.chapters as { key: string; bodyRefs: string[] }[]
+  assert.deepEqual(chs[0].bodyRefs, ['buff_x'])
+  assert.deepEqual(chs[1].bodyRefs, ['buff_other'])
+
+  // ② index 仍正確 → 走捷徑，不進全陣列搜尋。
+  //    刻意放兩個同 key 的章節當探針：搜尋分支會判「同錨多個」→ anchorMismatch，
+  //    捷徑則直接命中 index 1。plan 成功即證明沒有進搜尋。
+  const shortcut = buildRestorePlan([loreP()], loreDocs([
+    { key: 'part-2', title: '同 key 的干擾項', body: '…', bodyRefs: [] },
+    { key: 'part-2', title: '本尊', body: '…', bodyRefs: [] },
+  ]))
+  assert.equal(shortcut.skipped.length, 0)
+  const dupChs = shortcut.mutations[0].set.chapters as { bodyRefs: string[] }[]
+  assert.deepEqual(dupChs[1].bodyRefs, ['buff_x'])
+  assert.deepEqual(dupChs[0].bodyRefs, [])
+
+  // ③ 迴歸樁：舊的 by:'name' 錨即使索引完全正確也必定 anchorMismatch（本次修的就是這個）
+  const legacy = buildRestorePlan([loreP({ anchor: { by: 'name', value: 'part-2' } })], loreDocs([
+    { key: 'part-1', title: '啟程', body: '…', bodyRefs: [] },
+    { key: 'part-2', title: '沉默', body: '…', bodyRefs: [] },
+  ]))
+  assert.equal(legacy.mutations.length, 0)
+  assert.equal(legacy.skipped[0].reason, 'anchorMismatch')
+})
+
 // ─── R7. 來源消失與舊格式防禦 ────────────────────────────────────────────────
 
 test('R7: 引用來源文件已不存在 → docMissing 跳過；其餘文件照常套用', () => {

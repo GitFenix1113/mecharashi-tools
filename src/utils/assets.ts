@@ -1,6 +1,7 @@
 // ⚠ 帶 `.ts` 副檔名：本檔要能被 `node --test` 直接載入（見下方 `base()` 的說明），
 //   而 node 的 ESM 解析不補副檔名。專案既有慣例同此（buffPool.ts、entityRefs.ts…）。
-import { MECH_ART_INDEX, PILOT_ART_INDEX } from '../data/artIndex.ts'
+import { MECH_ART_INDEX, PILOT_ART_INDEX, PILOT_OFFICIAL_INDEX } from '../data/artIndex.ts'
+import type { OfficialArtGeometry } from '../data/artIndex.ts'
 
 /**
  * 刻意做成函式而非模組層級常數：`import.meta.env` 在 node --test 下不存在，
@@ -198,6 +199,36 @@ export function pilotArtDir(pilot: { portrait?: string } | null | undefined): st
 export function hasPilotArt(pilot: { portrait?: string } | null | undefined): boolean {
   const dir = pilotArtDir(pilot)
   return !!dir && PILOT_ART_INDEX.has(dir)
+}
+
+/** 官網 hero 圖層三張的路徑與尺寸（PLAN-042-C C-1）。 */
+export interface PilotOfficialArt {
+  /** 手繪鉛筆線稿（透明底），與 color 裁同一個 bbox */
+  line: string
+  /** 半身彩圖，下緣出血、左下有烘進去的粒子溶解 */
+  color: string
+  /** 名字層：英文毛筆草書＋直書中文名＋紅色小標 */
+  name: string
+  geometry: OfficialArtGeometry
+}
+
+/**
+ * 這位機師**有沒有**官網 hero 圖層（`official-{color,line,name}.webp`）。8/88 位有。
+ * 與 `hasPilotArt()` 同一種用法：版面在**渲染前**就分流，不等圖載失敗才換構圖。
+ * 優先序：官網圖層 → 原稿全身（art.webp）→ 半身（full.webp）。
+ */
+export function hasOfficialArt(pilot: { portrait?: string } | null | undefined): boolean {
+  const dir = pilotArtDir(pilot)
+  return !!dir && PILOT_OFFICIAL_INDEX.has(dir)
+}
+
+/** 官網 hero 圖層的三張路徑；沒有 → undefined。路徑不含 BASE_URL，呼叫端套 assetUrl()／imageCandidates()。 */
+export function pilotOfficialArt(pilot: { portrait?: string } | null | undefined): PilotOfficialArt | undefined {
+  const dir = pilotArtDir(pilot)
+  const geometry = dir ? PILOT_OFFICIAL_INDEX.get(dir) : undefined
+  if (!dir || !geometry) return undefined
+  const base = `/images/pilots/${dir}/`
+  return { line: `${base}official-line.webp`, color: `${base}official-color.webp`, name: `${base}official-name.webp`, geometry }
 }
 
 /**

@@ -40,6 +40,30 @@
     U+2C60-2C7F, U+A720-A7FF;
 }
 
+/* ── 故事館名字字體（PLAN-042-C D-1／D-2）──────────────────────────────────
+   兩個都是**名字專用的子集**（scripts/generate-lore-fonts.mjs 產生，npm run fonts:lore）：
+   · LXGW WenKai TC（楷書，OFL）只含機師／機甲名字用到的字——名字是封閉集合，不會像正文那樣字集漂移；
+     新機師進圖庫或改名時重跑腳本、缺字會讓腳本失敗而不是靜默退回系統字。
+   · Mr Dafoe（筆刷草書，OFL）只含可列印 ASCII，給扉頁的英文名。
+   只有 .lore-name-font / .lore-script-font 兩個 class 會用到它們，館外一個位元組都不會下載。 */
+@font-face {
+  font-family: 'LXGW WenKai TC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/lore-names-tc.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Mr Dafoe';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/lore-script-latin.woff2') format('woff2');
+  unicode-range: U+0020-007E, U+2013-2014, U+2018-201D, U+2026, U+00B7;
+}
+.lore-name-font   { font-family: 'LXGW WenKai TC', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif; font-weight: 400; }
+.lore-script-font { font-family: 'Mr Dafoe', cursive; font-weight: 400; }
+
 @theme {
   --color-bg-dark: #0a0c10;
   --color-bg-card: rgb(18 21 28 / 0.65);
@@ -247,4 +271,295 @@ select option {
 }
 .hud-cut-sm {
   clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+/* ── PLAN-042-A 機師故事館 ───────────────────────────────────────────────────
+ *
+ * 決策 (B)：只在 .lore-shell / .lore-chrome 覆寫 token；html.lore-mode 只設
+ * color-scheme 與 body 背景。8 個 createPortal 到 document.body 的浮層因此留在深色
+ * ——它們讀根層的原始 token，是「深底＋淺字」，可讀，只是與館內不一致。
+ * **不要**把 token 覆寫搬到 html：ReferenceContext.tsx:80 的浮窗底色是 inline 硬寫的
+ * rgb(15 18 25 / 0.97)（覆寫不掉）而內部文字走 text-text-primary token，
+ * token 一翻成紙色墨字就是深底＋深字、幾乎看不見。index.css:122-125 的 select option 同病。
+ * ReferenceContext.tsx 與 index.css:122-125 一個字都不要動。
+ *
+ * 決策 (H)：header 與 SignedOutBanner 都住在 .lore-shell **外面**（Layout.tsx:205 / :355），
+ * 所以色票宣告掛在 .lore-shell, .lore-chrome 兩個選擇器上。
+ *
+ * ⚠ 紙色色票另有三處**硬寫的同款顏色**，改色時必須一起改（它們在 token 作用域之外，
+ *   或必須是不透明值，換不成 var()）：
+ *     · .lore-shell select option   #fbf7ef / #2b2621
+ *     · html.lore-mode body         #efe7d8
+ *     · .lore-header                color-mix 的 #efe7d8 與 #2b2621
+ *   （.lore-art 與 .lore-veil 的 #0a0c10 **不在此列**：那是量測基準，刻意不隨紙色改。）
+ */
+.lore-shell,
+.lore-chrome {
+  --color-bg-dark:        #efe7d8;
+  --color-bg-card:        rgb(255 252 245 / 0.72);  /* 保留 ~0.72 alpha，否則既有 bg-bg-card/NN 會重一階 */
+  --color-bg-card-hover:  rgb(255 253 248 / 0.90);
+  --color-bg-tooltip:     rgb(252 248 240 / 0.97);
+  --color-text-primary:   #2b2621;
+  --color-text-secondary: #6b6259;
+  --color-text-dim:       #948a7e;
+  --color-border-subtle:  #e3dac8;
+  --color-border:         #d3c7b2;
+  --color-border-accent:  #bcae95;
+  /* accent 八色刻意不覆寫：它們是語意色（稀有度／職業），換掉徽章就讀不出等級 */
+  color-scheme: light;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-dark);
+}
+
+.lore-shell {
+  height: 100%;      /* ⚠ 不做 100vh 減法，見決策 (E) 與地雷 M-07 */
+  min-height: 0;
+  position: relative;
+}
+
+/* 防禦式覆寫：html.lore-mode 把 color-scheme 轉成 light 後，
+   index.css:122-125 那條硬寫 #12151c 的全域規則在紙色子樹裡會變成深底。
+   D-2 目前用 <button> 不用 <select>，這條是保險。 */
+.lore-shell select option { background-color: #fbf7ef; color: #2b2621; }
+
+/* 文件層捲軸與 body 背景圖由根元素決定，.lore-shell 管不到 */
+html.lore-mode { color-scheme: light; }
+html.lore-mode body { background-image: none; background-color: #efe7d8; }
+
+/* 全館唯一 scrollport */
+.lore-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+
+/* ⚠ height 用 calc(var(--lore-header-h) - 1px) + 1px 下框線
+   ⇒ --lore-header-h 的語意是「總佔位」，消費端（.lore-portrait-col）不必再各自減 1px。
+   必須排在 .lore-chrome 之後：兩者特異性相同（header 同時掛 lore-chrome 與 lore-header），
+   靠順序讓半透明底色贏。 */
+.lore-header {
+  height: calc(var(--lore-header-h, 2.5rem) - 1px);
+  background: color-mix(in oklab, #efe7d8 78%, transparent);
+  border-bottom: 1px solid color-mix(in oklab, #2b2621 12%, transparent);
+}
+
+/* D-3 桌機立繪欄。優先吃 LoreLayout 用 ResizeObserver 量到的實測值（決策 J）——
+   SignedOutBanner 出現／消失都會自動對齊；fallback 是純 CSS 的減法。
+   ⚠ 收在這裡而不是寫成 Tailwind arbitrary value：h-[calc(100vh - var(--x))] 只要有空格
+   就會被切成三個 class，Tailwind 產不出任何東西**且不報錯**，全 repo 也沒有前例可抄。 */
+.lore-portrait-col {
+  height: var(--lore-viewport-h, calc(100vh - var(--lore-header-h, 2.5rem)));
+}
+
+/* ── 進場「推門進館」的遮罩（PLAN-042-C A-4 改寫）────────────────────────────
+   深色（全站底色）遮罩以斜切從左下往右上擦開，露出紙色館內。由 CSS animation 驅動、
+   `forwards` 停在終態；元素在 LoreLayout 掛載時才建立、館內切路由不卸載，
+   所以只播一次、不會每次換機師都重來。
+
+   ⚠ 別誤以為 animation 能繞過分頁節流：`document.hidden` 為 true 時 Chrome **不推進動畫時間軸**
+   （2026-09-10 實測），rAF 版本同樣被暫停。這是背景分頁的正常行為，分頁一可見就會正常播完——
+   不是需要修的東西，也不要為它加保險。 */
+.lore-veil {
+  position: absolute; inset: 0; z-index: 30; pointer-events: none;
+  background-color: #0a0c10;
+  animation: lore-veil-wipe 520ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes lore-veil-wipe {
+  from { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+  to   { clip-path: polygon(118% 0, 100% 0, 100% 100%, 145% 100%); }
+}
+
+/* ── 扉頁內容三段進場（A-4，照官網 mechaData：scale 1.3→1 淡入）──────────────
+   立繪柱的名字層 0ms、右欄的職業／名字／徽記 200ms、引文卡與鍵值列 350ms。
+   文字區塊縮放幅度收到 1.06——1.3 是給整張 1920 圖層用的，套在文字上像放大鏡。
+   換機師時由 PilotLorePage 以 key 重掛右欄，動畫才會重播。 */
+@keyframes lore-pop {
+  from { opacity: 0; transform: scale(1.3); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes lore-pop-soft {
+  from { opacity: 0; transform: translate3d(0, 10px, 0) scale(1.06); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+.lore-enter      { animation: lore-pop-soft 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.lore-enter--pop { animation-name: lore-pop; transform-origin: right top; }
+.lore-enter--2   { animation-delay: 200ms; }
+.lore-enter--3   { animation-delay: 350ms; }
+
+/* ── C-1 → 042-C A-1～A-3 顯影 ──────────────────────────────────────────────
+   兩層：線稿（透明底墨線）＋彩圖。容器**沒有底色**——042-A 的 #0a0c10 黑框是 color-dodge
+   要 backdrop 的產物，SVG 濾鏡（LoreLayout 的 #lore-sketch）把整條管線收在單一 <img> 內後
+   就不需要了。overflow hidden 是給 scale(1.2) 的出血裁切用的，與官網 .pages 同理。 */
+.lore-art { position: relative; overflow: hidden; }
+.lore-art__layer  { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+/* 官方變體：半身、下緣出血，靠頂 cover（C-2） */
+.lore-art--official .lore-art__layer { object-fit: cover; object-position: top center; }
+
+/* 線稿：沒有官方手繪稿時由彩圖經濾鏡即時算出。濾鏡只算一次（沒有任何 filter 動畫），
+   之後的縮放與擦入都是 transform / clip-path / opacity。 */
+.lore-art__sketch--filtered { filter: url(#lore-sketch); }
+
+/* 等圖片 decode 的空檔：極淡的 shimmer，讓「還沒好」與「壞掉」看得出差別 */
+.lore-art--loading::before {
+  content: ''; position: absolute; inset: 8% 14%; border-radius: 12px; pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, rgba(43, 38, 33, 0.06) 50%, transparent 70%);
+  background-size: 220% 100%;
+  animation: lore-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes lore-shimmer {
+  from { background-position: 120% 0; }
+  to   { background-position: -120% 0; }
+}
+
+/* 顯影前兩層都看不見；--revealed 後各跑一段 keyframes（照官網 heroLine / heroColor）。
+   fill-mode both：終態停住，settle 拆掉線稿層時彩圖不會閃。 */
+.lore-art__sketch, .lore-art__color { opacity: 0; will-change: transform, opacity; }
+.lore-art--revealed .lore-art__sketch {
+  animation: lore-line-in var(--lore-art-dur, 1050ms) cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.lore-art--revealed .lore-art__color {
+  animation: lore-color-in var(--lore-art-dur, 1050ms) cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+@keyframes lore-line-in {
+  0%   { transform: scale(1.2) translate3d(0, 3%, 0); opacity: 0;
+         clip-path: polygon(25% 0, 100% 0, 75% 100%, 0 100%); }
+  100% { transform: scale(1) translate3d(0, 0, 0); opacity: 1;
+         clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+}
+@keyframes lore-color-in {
+  0%   { transform: scale(1.2) translate3d(0, 3%, 0); opacity: 0;
+         clip-path: polygon(25% 0, 100% 0, 75% 100%, 0 100%); }
+  40%  { opacity: 0; filter: blur(1px); }
+  70%  { filter: blur(0); }
+  100% { transform: scale(1) translate3d(0, 0, 0); opacity: 1;
+         clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+}
+
+/* 換人交叉淡出（F-3）：上一張彩圖墊在最底層，新圖一開始顯影就 200ms 淡出；settle 時拆掉 */
+.lore-art__prev { opacity: 1; transition: opacity 200ms ease-out; }
+.lore-art--revealed .lore-art__prev { opacity: 0; }
+
+/* ── 底緣溶解 mask ────────────────────────────────────────────────────────
+   ⚠ mask 打在 .lore-art 容器上，不是單一層（打在單一層上線稿與彩圖的邊緣會對不齊）。
+   三層合成（CSS 列表第一個是最上層）：
+     S  實心到 78%（tall 90%）以下全透明        ── 上半部完整保留
+     F  78%（90%）起淡到 100%                  ── 溶解帶的漸層
+     N  feTurbulence 噪點（最底層）
+   composite：F ∩ N（intersect）→ 再 add S。結果：溶解帶以上 alpha＝1、溶解帶內＝噪點×漸層。
+   ⚠ 042-A 原本只有 gradient ∩ noise 兩層，噪點會蓋到**整張圖**（人物全身一層顆粒），042-C 改成三層。
+   ⚠ -webkit-mask-composite 的關鍵字與標準不同名（source-over／source-in vs add／intersect），兩條都要寫。 */
+.lore-art--masked {
+  --lore-mask-solid: 78%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 var(--lore-mask-solid), transparent var(--lore-mask-solid)),
+                      linear-gradient(to bottom, #000 var(--lore-mask-solid), transparent 100%),
+                      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0.35'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23n)'/%3E%3C/svg%3E");
+          mask-image: linear-gradient(to bottom, #000 0 var(--lore-mask-solid), transparent var(--lore-mask-solid)),
+                      linear-gradient(to bottom, #000 var(--lore-mask-solid), transparent 100%),
+                      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0.35'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23n)'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%, 100% 100%, 96px 96px;
+          mask-size: 100% 100%, 100% 100%, 96px 96px;
+  -webkit-mask-repeat: no-repeat, no-repeat, repeat;
+          mask-repeat: no-repeat, no-repeat, repeat;
+  -webkit-mask-composite: source-over, source-in;   /* WebKit 舊關鍵字 */
+          mask-composite: add, intersect;           /* Safari 15.4 才去前綴 */
+}
+/* F-5 直式全身像：只溶最後 10%——全身像的腳不該像沉進沙裡，只要一點顆粒把「圖的下緣」變成「紙的一部分」 */
+.lore-art--tall.lore-art--masked { --lore-mask-solid: 90%; }
+
+@keyframes lore-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lore-veil { animation: none; clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%); }
+  .lore-enter, .lore-enter--pop { animation: none; }
+  .lore-art--loading::before { animation: none; }
+  .lore-art__sketch { display: none; }
+  /* 名字換成 lore-fade-in：LoreArt 的 animationend 兩個名字都認 */
+  .lore-art--revealed .lore-art__color { animation: lore-fade-in 150ms linear both; }
+  .lore-art__prev { transition: none; }
+}
+
+/* ── PLAN-042-C B：官網素材切版 ───────────────────────────────────────────────
+   素材一律自託管在 public/images/lore/（來源與取得日期見該目錄 README），不熱連官方 CDN。
+   紙面（bg-paper：官網 bg.jpg 切掉左側紅帶後的區域）鋪整館；**紅帶只出現在館首頁的 hero 裡**——
+   壓在立繪或正文後面會吃掉線稿與文字的對比，官網也是把它放在標題區塊底下而不是人物底下。 */
+.lore-shell {
+  background-image: url('/images/lore/bg-paper.webp');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+}
+@media (max-width: 1023px) {
+  .lore-shell { background-image: url('/images/lore/bg-m.webp'); }
+}
+
+/* 館首頁 hero：左紅帶（含暗紅機甲線稿）＋ 官方主視覺 KV ＋ 官方標題區塊（Pilots／操控指揮 機師出列）。
+   紅帶元素本身含一段紙面，用 clip-path 切在紅色範圍內部，露出的斜邊是我們的多邊形而不是圖裡的邊。 */
+.lore-home-hero {
+  position: relative; overflow: hidden; border-radius: 14px;
+  height: clamp(200px, 30vw, 400px);
+  box-shadow: 0 12px 32px rgba(43, 38, 33, 0.18);
+}
+.lore-home-hero__kv   { position: absolute; inset: 0; background: url('/images/lore/kv.webp') center 30% / cover no-repeat; }
+.lore-home-hero__band { position: absolute; inset: 0; width: 46%;
+                        background: url('/images/lore/bg-band.webp') right center / cover no-repeat;
+                        clip-path: polygon(0 0, 40% 0, 62% 100%, 0 100%); }
+.lore-home-hero__fade { position: absolute; inset: 0;
+                        background: linear-gradient(to top, rgba(239, 231, 216, 0.92) 0%, rgba(239, 231, 216, 0) 36%); }
+.lore-home-hero__title { position: absolute; left: 3.5%; top: 50%; width: min(38%, 480px); transform: translateY(-50%);
+                         filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.28)); }
+@media (max-width: 1023px) {
+  .lore-home-hero { height: clamp(180px, 46vw, 300px); border-radius: 10px; }
+  .lore-home-hero__kv { background-image: url('/images/lore/kv-m.webp'); }
+  .lore-home-hero__band { width: 64%; }
+  .lore-home-hero__title { width: 56%; }
+}
+
+/* 粒子（B-4）：官網 .snow 的移植——6 個 div、兩張點陣圖、fly／fly2 由左下飄向右上，
+   週期 5–7 秒互不整除所以看不出循環。掛在 .lore-shell（absolute，不是官網的 fixed，免得蓋到 header）。
+   ⚠ 只在桌機：手機耗電且官網手機版也沒有；reduced-motion 整組關閉。 */
+.lore-snow { position: absolute; inset: 0; z-index: 20; overflow: hidden; pointer-events: none; }
+.lore-snow__p { position: absolute; opacity: 0; width: 204px; height: 138px;
+                background: url('/images/lore/snow01.png') center top / 100% auto no-repeat;
+                will-change: transform, opacity; }
+.lore-snow__p--big { width: 300px; height: 388px; background-image: url('/images/lore/snow02.png'); }
+.lore-snow__p--1 { top: 80%; left: 24%; animation: lore-fly2 6s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s infinite both; }
+.lore-snow__p--2 { top: 70%; left: 11%; animation: lore-fly  7s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0s   infinite both; }
+.lore-snow__p--3 { top: 70%; left: 14%; animation: lore-fly2 5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.8s infinite both; }
+.lore-snow__p--4 { top: 60%; left: 0;   animation: lore-fly  5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 1.5s infinite both; }
+.lore-snow__p--5 { top: 50%; left: 10%; animation: lore-fly2 7s cubic-bezier(0.25, 0.46, 0.45, 0.94) 5s   infinite both; }
+.lore-snow__p--6 { top: 50%; left: 10%; animation: lore-fly  6s cubic-bezier(0.25, 0.46, 0.45, 0.94) 5.2s infinite both; }
+@keyframes lore-fly {
+  0%   { opacity: 0.1; filter: brightness(1);   transform: translate3d(20%, 50%, 0); }
+  30%  { opacity: 1;   filter: brightness(1.5); }
+  90%  { opacity: 0;   filter: brightness(1);   transform: translate3d(350%, -80%, 0); }
+  100% { opacity: 0;                            transform: translate3d(350%, -80%, 0); }
+}
+@keyframes lore-fly2 {
+  0%   { opacity: 0.3; filter: brightness(1);   transform: translate3d(-50%, 60%, 0); }
+  10%  { opacity: 1;   filter: brightness(1.5); }
+  90%  { opacity: 0;   filter: brightness(1);   transform: translate3d(250%, -150%, 0); }
+  100% { opacity: 0;                            transform: translate3d(250%, -150%, 0); }
+}
+@media (max-width: 1023px), (prefers-reduced-motion: reduce) {
+  .lore-snow { display: none; }
+}
+
+/* ── PLAN-042-C E／F：檔案感、章節過場、底緣溶解、微視差 ────────────────────── */
+/* E-1 紅色小標（官網名字層上「166cm/45kg」那顆），官網紅 #b10000 */
+.lore-file-tag { background: #b10000; color: #fff; }
+
+/* F-2 章節切換：換章時正文 180ms 淡入上移；LoreChapterBody 以章節 key 重掛才會觸發 */
+.lore-chapter-enter { animation: lore-pop-soft 180ms ease-out both; }
+
+/* F-6 微視差：--lore-px / --lore-py 由 useLoreParallax 寫在立繪柱上（-1…1），位移只在這裡定義。
+   名字層放在自己的 wrapper 上做反向位移——動畫元素本身的 transform 被 fill-mode both 佔住了。 */
+.lore-parallax .lore-art {
+  transform: translate3d(calc(var(--lore-px, 0) * 6px), calc(var(--lore-py, 0) * 6px), 0);
+  transition: transform 160ms ease-out;
+}
+.lore-parallax .lore-parallax-name {
+  transform: translate3d(calc(var(--lore-px, 0) * -3px), calc(var(--lore-py, 0) * -3px), 0);
+  transition: transform 160ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lore-chapter-enter { animation: none; }
+  .lore-parallax .lore-art, .lore-parallax .lore-parallax-name { transform: none; transition: none; }
 }

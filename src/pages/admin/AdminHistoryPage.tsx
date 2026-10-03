@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import {
   getChangeHistoryPage,
@@ -24,7 +25,10 @@ import { LoadMoreButton } from '../user/admin/shared'
 
 const PAGE_SIZE = 30
 
-const TARGET_OPTIONS: (ChangeTargetKind | '')[] = ['', 'buff', 'pilotSkill', 'glossaryTerm']
+// ⚠ 這份清單是**手寫**的，不是從 TARGET_LABEL derive——漏一筆不會有任何編譯錯誤，
+//   症狀是「該集合的稽核記錄在篩選器裡根本選不到」。新增 ChangeTargetKind 時要回來補。
+const TARGET_OPTIONS: (ChangeTargetKind | '')[] =
+  ['', 'buff', 'pilotSkill', 'glossaryTerm', 'backpack', 'backpackSkill', 'form', 'pilotLore']
 const ACTION_OPTIONS: (ChangeAction | '')[] = ['', 'create', 'update', 'delete', 'restore']
 
 /** 操作類型色票：create 綠 / update 黃 / delete 紅 / restore 青 */
@@ -157,7 +161,9 @@ function RestoreDialog({
   onConfirm: () => void
   onClose: () => void
 }) {
-  return (
+  // ⚠ 同 AdminModal：本頁外殼有 backdrop-blur-sm，會替 fixed 建立 containing block，
+  //   不 portal 的話這個對話框會被困在內容欄裡、跟著列表捲（見 shared.tsx 的 AdminModal）。
+  return createPortal(
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="bg-bg-card border border-accent-cyan/40 rounded-xl p-6 w-full max-w-lg max-h-[90vh] flex flex-col">
         {flow.phase === 'loading' && (
@@ -264,7 +270,8 @@ function RestoreDialog({
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

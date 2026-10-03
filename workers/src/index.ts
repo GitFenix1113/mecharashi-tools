@@ -58,6 +58,8 @@ const ARRAY_COLLECTIONS = new Set<string>([
   'backpackSkills',
   // PLAN-041：機師形態
   'forms',
+  // PLAN-042-A：機師故事館逸聞
+  'pilotLore',
   // PLAN-029 Phase 3-1：原本前台仍直讀的兩個公開集合，一併代理以便 Phase 3-2 收緊。
   'pilotResearch', 'patchVersions',
 ])
@@ -120,13 +122,14 @@ export default {
     const url = new URL(request.url)
 
     // ── 頁面 HTML（PLAN-038 Phase B）────────────────────────────────────────
-    // wrangler.jsonc 的 route 讓 /pilots/* · /mechs/* · /weapons/* 也走進本 Worker。
+    // wrangler.jsonc 的 route 讓 /pilots/* · /mechs/* · /weapons/* · /lore/*（PLAN-042-A）
+    // 也走進本 Worker。
     // 這些請求**不是 API**，因此必須在反爬守門之前分流出去：守門要求 Origin／Referer／
     // Sec-Fetch-Site，而社群爬蟲三者都沒有 —— 沿用同一條路等於親手 403 掉要服務的對象。
     //
     // ⚠ 只有正式站主機名才做。workers.dev 上沒有這些 route，放進來只會白跑一趟。
     //
-    // ⚠⚠ 前提：這三條路徑必須被排除在 PLAN-029 的 SPA fallback Transform Rule 之外
+    // ⚠⚠ 前提：這幾條路徑必須被排除在 PLAN-029 的 SPA fallback Transform Rule 之外
     //     （或該規則對社群爬蟲 UA 不生效），否則路徑在進 Worker 之前就已被改寫成
     //     /index.html，route 根本匹配不到 —— 2026-08-22 首次部署就是這樣，Worker 零事件。
     if (!url.pathname.startsWith('/api/')) {
@@ -288,7 +291,9 @@ async function handleSocialPreview(
   try {
     const doc = await loadEntityDoc(target.collection, target.id, env, ctx)
     if (!doc) return passthrough() // 查無此實體（舊連結／改過 ID）
-    const meta = buildOgMeta(target.collection, doc)
+    // ⚠ `{ lore: target.lore }` 必須傳：故事館分享卡的「靜默失敗」是 Worker 一樣回 200、
+    //   一樣有 og:image，只有標題退回圖鑑文案 —— 不會有任何錯誤訊號。
+    const meta = buildOgMeta(target.collection, doc, { lore: target.lore })
     if (!meta) return passthrough()
 
     // 立繪的 JPEG 版本是 build 時產生的（見 socialPreview.ts 的 toPreviewSafeImage）。

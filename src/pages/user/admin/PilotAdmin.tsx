@@ -1610,9 +1610,6 @@ function PilotEditPanel({
               </Field>
             </div>
             <IconField label="立繪路徑 portrait" value={form.portrait} onChange={(v) => update('portrait', v)} defaultFolder="pilots" />
-            <Field label="故事 lore（Markdown）">
-              <textarea value={form.lore || ''} onChange={(e) => update('lore', e.target.value)} className="input-field min-h-[150px] resize-y" />
-            </Field>
           </div>
         )}
 
@@ -1667,7 +1664,16 @@ function PilotEditPanel({
               <Field label="性別 gender"><input value={form.profile?.gender || ''} onChange={(e) => updateProfile('gender', e.target.value)} className="input-field" /></Field>
               <Field label="血型 bloodType"><input value={form.profile?.bloodType || ''} onChange={(e) => updateProfile('bloodType', e.target.value)} className="input-field" /></Field>
               <Field label="身高 height"><input value={form.profile?.height || ''} onChange={(e) => updateProfile('height', e.target.value)} className="input-field" /></Field>
+              {/* PLAN-042-C D-4：故事館扉頁的英文毛筆草書。官方資料沒有，人工輸入；留空就不渲染。 */}
+              <Field label="英文名 nameEn（故事館草書，選填）"><input value={form.nameEn || ''} onChange={(e) => update('nameEn', e.target.value)} className="input-field" placeholder="Rosa Diaz" /></Field>
             </div>
+            {/* PLAN-042-A D-4：lore 由「基本資訊」搬來這裡——它是個人資料類的敘事文本，
+                跟隔壁的自訂欄位同一種東西，擺在職業／許可／版本那堆結構化欄位裡不合群。
+                標籤也一併改掉：前台只用 `whitespace-pre-line` 與 `splitParagraphs`
+                分段，從來沒有任何 Markdown 解析，原本的「（Markdown）」在說謊。 */}
+            <Field label="故事簡介 lore（純文字，換行即分段）">
+              <textarea value={form.lore || ''} onChange={(e) => update('lore', e.target.value)} className="input-field min-h-[150px] resize-y" />
+            </Field>
             <div className="pt-2 border-t border-border/60">
               <AdditionalInfoEditor
                 key={form.id}

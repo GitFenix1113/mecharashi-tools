@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-054 機師／機甲圖片 ID 化 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+
+.status-note {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 20px;
+  line-height: 1.8;
+}
+.status-note strong { color: var(--accent-yellow); }
+
+.task-file { overflow-wrap: anywhere; }
+
+/* 手機寬度：標頭換行、狀態徽章不被 overflow:hidden 裁掉；task-row 改單欄 */
+@media (max-width: 640px) {
+  .task-group-header { flex-wrap: wrap; }
+  .task-group-meta { flex-basis: 100%; order: 3; overflow-wrap: anywhere; }
+  .task-row { grid-template-columns: 1fr; gap: 8px; }
+  .task-assignee { text-align: left; }
+}
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-054 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-054</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">機師／機甲圖片 ID 化</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-03</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label orange">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="status-note">
+    <strong>決策已確認（2026-10-03）。</strong>官配只存機師側、只部署 core、站上自製圖搬 ID 資料夾；開工順序改為「042-A／042-C 收起入口後合併回 main，本計畫從 main 開分支」。
+    另加三條站長補充：有官方原檔的一律換官方、檔名變更要連同所有引用一起改、部署後清快取。<br>
+    唯一輸入：<code>_local-notes/2026-10/2026-10-03_機師機甲圖片資源mapping_v3_final.json</code>；不重新盤點、不重新核對。
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">26</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">26</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-orange);">0 / 26</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    圖片從此以遊戲 ID 定位——新機師填 gameId／artKey、跑一次匯入就有全套官方圖；主路徑不再先打官方 CDN、不再有名字對不上的資料夾；
+    DB 一次補齊英文名 90 位與官配 61 組。
+  </div>
+</section>
+
+<!-- Phase 0 -->
+<section class="section">
+  <div class="section-label orange">Phase 0</div>
+  <div class="section-title">開工前置</div>
+  <div class="section-desc">站長確認後的第一件事；這兩項沒做完不開 A。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">0-1 &nbsp; 042-A／042-C 收起入口、合併回 main（站長 2026-10-03 指示）</div>
+      <div class="task-group-meta">git · src/hooks/useLoreEntry.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">入口收起 → commit 042-C → 合併 main → 從 main 開 feat/plan-054-game-art-ids</div>
+        <div class="task-desc">
+          比照 <code>SIMULATOR_INTERNAL_ONLY</code> 的「路由留著、入口收起」：導覽列的「故事館」只有 ADMIN／OWNER 看得到；
+          機師詳情頁對一般訪客<b>退回顯示完整逸聞</b>（042-A 把它改成「首句＋讀完整故事 ▸」，只藏連結的話訪客就讀不到全文了）；
+          網站更新履歷裡介紹故事館的條目先不顯示。
+          本計畫要改的 <code>pilot.ts</code>／<code>assets.ts</code>／<code>PilotAdmin.tsx</code>／<code>artIndex.ts</code> 都在 042-C 的未提交清單上，<code>nameEn</code> 也是它帶進來的，所以要先落地。
+          ⚠ 合併後的 main 在<b>第一次 push 之前</b>要先部署 Firestore rules 與 Worker（pilotLore 已登記進後台引用掃描，規則沒上線會弄壞後台刪除功能）；
+          <code>/lore</code> 的 Transform Rule 白名單可等故事館公開再加。
+        </div>
+        <div class="task-file">feat/plan-042a-pilot-lore → main → feat/plan-054-game-art-ids</div>
+      </div>
+      <div class="task-assignee">開發者（站長拍板）</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">0-2 &nbsp; 寫入前備份</div>
+      <div class="task-group-meta">scripts/temp_scripts/backup-firestore.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">備份 pilots／mechs</div>
+        <div class="task-desc">A-4（回填）與 D-3（路徑改寫）兩次寫入前各跑一次；備份檔路徑記進該任務的完成說明。</div>
+        <div class="task-file">scripts/temp_scripts/backup-firestore.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label orange">Phase A</div>
+  <div class="section-title">資料層：欄位、後台、回填（≈ 1 天）</div>
+  <div class="section-desc">DB 補上 gameId／artKey／nameEn／官配；這一段做完，前台畫面不會有任何變化。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 型別與官配推導</div>
+      <div class="task-group-meta">src/types/ · src/utils/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Pilot ＋ gameId／artKey／pairedMechId；Mech ＋ gameId／skinOfId；pairedPilotOf()</div>
+        <div class="task-desc">
+          全部選填字串；JSDoc 寫明「兩欄不互推」與例外 5 位（維娜／貝爾莎／阿列娜／珂賽特／瑪阿特）。
+          <code>pairedPilotOf(mech, pilots)</code> 由機師側推導官配機師（站長已確認只存機師側）；測試含「兩位機師配到同一台」要被抓出來。
+        </div>
+        <div class="task-file">src/types/pilot.ts · src/types/mech.ts · src/utils/officialPairs.ts (+ .test.ts)</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; docs 同步（CLAUDE.md 規則 2）</div>
+      <div class="task-group-meta">docs/02_技術文件/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">資料模型頁與 Firestore 集合文件補新欄位</div>
+        <div class="task-desc">欄位、值例、來源（v3 定版）、例外與「不互推」說明；與型別同一個 commit。</div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/pilots.html · mechs.html · docs/02_技術文件/04_Firebase/資料庫設計文件/pilots.html · mechs.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 後台欄位</div>
+      <div class="task-group-meta">src/pages/user/admin/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">PilotAdmin：gameId／artKey＋預覽、官配機甲；MechAdmin：gameId、塗裝本體、官配唯讀</div>
+        <div class="task-desc">
+          PilotAdmin：gameId／artKey 輸入，旁邊即時預覽 <code>_half</code>（有沒有圖由 gameArtIndex 判斷，B-4 之前先顯示「尚未匯入」）；
+          官配機甲下拉（已被其他機師配走的標示出來）；nameEn 沿用既有欄位。
+          MechAdmin：gameId、塗裝本體下拉、官配機師唯讀顯示並連到該機師的後台。存檔走既有 update ＋ bumpDataVersion。
+        </div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx · src/pages/user/admin/MechAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 回填腳本（v3 → Firestore）</div>
+      <div class="task-group-meta">scripts/temp_scripts/backfill-game-ids.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">dry-run → 站長過目 → --apply → bump pilots mechs</div>
+        <div class="task-desc">
+          pilots：gameId／artKey／nameEn／pairedMechId；mechs：gameId／skinOfId。
+          nameEn 套 3 筆全名覆寫（肖妮 Shawnee Russell、西爾維婭 Sylvie Roussel、梅利莎 Melissa Hicks，附來源）。
+          守門：siteId 不存在、<code>doc.name</code> 與 v3 不符、既有非空值與 v3 不同 → 中止並列出，不靜默覆寫；索妮婭略過並列入報告。
+          dry-run 報告存 <code>_local-notes/</code> 給站長看過再 <code>--apply</code>（merge 批次寫入）→ <code>node scripts/bump-data-version.mjs pilots mechs</code>。
+        </div>
+        <div class="task-file">scripts/temp_scripts/backfill-game-ids.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; 接手 PLAN-042-C D-5</div>
+      <div class="task-group-meta">PLAN-042-C 進度表 · patch-pilot-name-en.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">舊 nameEn 補丁作廢，042-C 的資料尾巴改由本計畫完成</div>
+        <div class="task-desc">
+          <code>patch-pilot-name-en.mjs</code> 檔頭標註作廢、不要再跑（表內虹＝Rainbow、白月＝White Moon 已被站長定版推翻）；
+          042-C 進度表的 D-5 與「兩件事等站長 ①」改註記：由 PLAN-054 A-4 一次回填 90 位。
+        </div>
+        <div class="task-file">scripts/temp_scripts/patch-pilot-name-en.mjs · docs/05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/進度表.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label orange">Phase B</div>
+  <div class="section-title">匯入管線：官方原檔進 public/images/game/（≈ 1.5 天）</div>
+  <div class="section-desc">只新增檔案，前台仍讀舊圖；這一段做完畫面一樣沒有變化。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; import-game-assets.mjs：v3 整批模式</div>
+      <div class="task-group-meta">scripts/import-game-assets.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">白名單 → 去重／碰撞檢查 → WebP q82 原尺寸 → ID 資料夾＋官方檔名</div>
+        <div class="task-desc">
+          讀 v3 <code>assets[]</code>（<code>path</code> 相對 <code>--src</code>，預設 <code>E:/Mecharashi_Data/Data</code>）→ group 白名單（core＋extended，見計畫書決策五）→
+          同名 Sprite／Texture2D 取 Texture2D、同 sha256 去重、同名異內容中止 → 小寫碰撞檢查 → sharp WebP q82、原尺寸、保留 alpha →
+          <code>game/pilots/&lt;gameId&gt;/</code>、<code>game/mechs/&lt;wap&gt;/</code>。dry-run 印各組檔數與實轉體積；<code>--apply</code>；已存在跳過；<code>--force</code>；<code>--only=&lt;id&gt;</code>。
+          kind 命名規則抽到共用模組給索引與部署剪裁用；附 <code>public/images/game/README.md</code>。
+        </div>
+        <div class="task-file">scripts/import-game-assets.mjs · scripts/lib/gameAssetKinds.mjs · public/images/game/README.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 新實體模式（新機師填 ID 就能匯）</div>
+      <div class="task-group-meta">scripts/import-game-assets.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">--id=&lt;gameId&gt; --art-key=&lt;artKey&gt;／--wap=&lt;####&gt;：core kind 依命名規則從 CSV 找</div>
+        <div class="task-desc">
+          <code>Pilot_&lt;artKey&gt;_{half,head,Raw}</code>、<code>Icon_item_&lt;gameId&gt;A</code>、<code>Icon_mecha_wap&lt;wap&gt;</code>、<code>Icon_wap&lt;wap&gt;_1~4</code>、<code>_SN_Raw</code>；
+          找不到就列缺項、不猜。英文名鍵類素材（招募／大廳）不自動。用現有擷取對一位已知機師跑一次，結果須與 B-1 逐檔相同。
+        </div>
+        <div class="task-file">scripts/import-game-assets.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; _reserve 預留資料夾</div>
+      <div class="task-group-meta">public/images/game/_reserve/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">npc 116 ID · enemy-mech 10 台 · unknown 4 鍵</div>
+        <div class="task-desc">
+          npc：<code>Pilot_&lt;id&gt;*_{half,head,Raw}</code>、<code>Icon_item_&lt;id&gt;*</code>；enemy-mech：icon／parts／SN；unknown（Flare／Glowing／SEFAS／jaw）：依英文名鍵。
+          以 CSV 定位、不做歸屬判斷；dry-run 先報檔數與體積。
+        </div>
+        <div class="task-file">public/images/game/_reserve/{npc,enemy-mech,unknown}/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 索引、manifest 與部署剪裁</div>
+      <div class="task-group-meta">scripts/generate-*.mjs · package.json</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">gameArtIndex.ts＋manifest 收 game/＋build 後剪掉不部署的檔</div>
+        <div class="task-desc">
+          art-index 掃 <code>game/</code> 產 per-kind ID Set（<code>_reserve</code> 不索引）；manifest 只收部署清單內的檔，後台選圖器不會挑到上線後 404 的圖；
+          build 在 <code>vite build</code> 之後剪掉 <code>dist/images/game</code> 下的非部署 kind 與 <code>_reserve</code>（站長已確認：只部署 core）。
+        </div>
+        <div class="task-file">scripts/generate-art-index.mjs → src/data/gameArtIndex.ts · scripts/generate-image-manifest.mjs · package.json（build）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-5 &nbsp; 實際匯入與體積驗收</div>
+      <div class="task-group-meta">public/images/game/**</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">--apply → 報告 → build → commit</div>
+        <div class="task-desc">
+          報告（各組檔數／實際體積／略過與中止清單）存 <code>_local-notes/</code>；<code>npm run build</code> 通過、<code>dist</code> 體積對得上部署清單；
+          commit（純新增檔案、前台無變化 → chore，不寫履歷）。
+        </div>
+        <div class="task-file">public/images/game/** · src/data/gameArtIndex.ts · public/images/manifest.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-6 &nbsp; 圖片引用掃描器（檔名變更的守門）</div>
+      <div class="task-group-meta">scripts/check-image-refs.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">掃 Firestore 全部集合＋程式與文件，列出壞路徑與舊路徑</div>
+        <div class="task-desc">
+          唯讀。來源：Firestore 全部集合（已知會存路徑快照的有 <code>patchVersions.iconUrls</code>、<code>grayOps</code> 的 <code>icon</code>，其餘以掃描結果為準）
+          ＋ <code>src</code>／<code>scripts</code>／<code>workers</code>／<code>docs</code>／<code>CLAUDE.md</code> 的文字。
+          輸出 (a) 指向不存在檔案的本地路徑、(b) 指向即將刪除的舊路徑，逐筆附「在哪個集合／文件的哪個欄位」。
+          先跑一次當基準線（C 階段的改動清單就從這裡來）；D-1 刪檔前 (b) 必須為 0，D-3 之後 (a) 必須為 0。
+        </div>
+        <div class="task-file">scripts/check-image-refs.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label orange">Phase C</div>
+  <div class="section-title">讀取端切換（≈ 2.5 天）</div>
+  <div class="section-desc">候選順序一律「本地官方原檔 → 舊本地檔 → 官方 CDN」；舊檔此時還在，任何漏切都有圖可退。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; helper 與測試</div>
+      <div class="task-group-meta">src/utils/assets.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">pilotGameArt(pilot, kind)、mechGameArt(mech, kind)</div>
+        <div class="task-desc">
+          純函式（不碰 <code>import.meta.env</code>，可 <code>node --test</code>），索引沒有回 <code>undefined</code>。
+          測試：例外 5 位用 artKey 不用 gameId（維娜 → <code>game/pilots/10103144/Pilot_13019A_half.webp</code>）、索引缺 → undefined、
+          部件 1~4 對位（軀幹／左臂／右臂／腿）、無 gameId（索妮婭）→ undefined。<code>pilotFullArtPath</code> 改推 <code>_Raw</code>。
+        </div>
+        <div class="task-file">src/utils/assets.ts · src/utils/assets.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 引用索引帶 ID</div>
+      <div class="task-group-meta">src/hooks/useFirestore.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">slim pilot index 補 gameId／artKey</div>
+        <div class="task-desc">現在只帶 id／name／portrait／portraitUrl，引用浮窗與 hover 卡拿不到新路徑。</div>
+        <div class="task-file">src/hooks/useFirestore.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 機師呼叫端</div>
+      <div class="task-group-meta">≈ 11 處</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">頭像、全身、引用卡、頭貼、模擬器、故事館館首、後台預覽</div>
+        <div class="task-desc">
+          <code>PilotIcon</code> 與 <code>EntityRefView</code> 原本 CDN 第一順位，一併翻正。全身圖改 <code>_Raw</code>。
+          小尺寸頭像要不要改用 90² 的 <code>_head</code>（頭部特寫、構圖不同）等 C-7 截圖由站長決定。
+        </div>
+        <div class="task-file">PilotIcon · EntityRefView · PilotsPage · PilotDetailPage · AvatarDisplay · PilotAvatarGallery · LoadoutPage · LoreHomePage · PilotIdentityCard／LoadoutExportCard · AdminVersionEditorPage · PilotAdmin</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 機甲呼叫端</div>
+      <div class="task-group-meta">≈ 12 處</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">立繪、部件圖、大圖分流、縮圖 helper、後台自動帶圖</div>
+        <div class="task-desc">
+          portrait → <code>Icon_mecha_wap</code>；部件 → <code>Icon_wap_1~4</code>；大圖 art.webp → <code>_SN_Raw</code>（全部換，不只補洞；<code>hasMechArt()</code> 改判有沒有 SN，凜騎士走小尺寸版面）；
+          <code>mechIconUrl()</code>（版本編輯／灰燼行動）優先 game 圖；MechAdmin「自動帶圖」改掃 <code>game/mechs/&lt;wap&gt;/</code>。
+        </div>
+        <div class="task-file">MechsPage · MechDetailPage · ModuleAdopters · LoadoutRig · ExportRig · MechPartStrip · PartSourceList · RainbowMechPlannerPage · EntityRefView · utils/assets.ts（mechIconUrl） · LoadoutExportCard · MechAdmin</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-5 &nbsp; OG 社群預覽（刪檔前必須完成並部署）</div>
+      <div class="task-group-meta">scripts · workers · CLAUDE.md</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Generator 鏡射 game 圖；Worker 由 gameId／artKey 推 og:image</div>
+        <div class="task-desc">
+          Generator 改鏡射 <code>game/pilots/*/*_half.webp</code>、<code>game/mechs/*/Icon_mecha_wap*.webp</code>；Worker 以 doc 的 gameId／artKey 推路徑、portrait 後備，測試補維娜這類例外。
+          wrangler 部署後用 CLAUDE.md 的 Discordbot curl 補驗，並把 CLAUDE.md 裡的預期路徑改成新路徑。
+        </div>
+        <div class="task-file">scripts/generate-og-entity-images.mjs · workers/src/socialPreview.ts (+ .test.ts) · CLAUDE.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-6 &nbsp; 官配互連（使用者可見，寫履歷）</div>
+      <div class="task-group-meta">pages/pilots · pages/mechs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機師詳情「官配機甲」、機甲詳情「官配機師」、凜騎士標塗裝本體</div>
+        <div class="task-desc">
+          EntityRef 連結互通；凜騎士標「遊騎兵的付費塗裝」並連回遊騎兵；沒有官配的不顯示該列（不寫「無」）。
+        </div>
+        <div class="task-file">src/pages/pilots/PilotDetailPage.tsx · src/pages/mechs/MechDetailPage.tsx · src/data/siteChangelog/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-7 &nbsp; 守門測試與全站驗收</div>
+      <div class="task-group-meta">tests · Playwright · 站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">禁止 .portrait 直接當 img src；全頁 0 個 404、主路徑 0 個 CDN 請求</div>
+        <div class="task-desc">
+          守門測試：<code>.portrait</code> 不得直接進 <code>&lt;img src&gt;</code>（helper 與後台表單白名單除外），防 D 刪檔後破圖。
+          本機 <code>npx vite --port 5173</code> 吃正式資料＋Playwright 掃全部機師／機甲詳情、列表、模擬器、故事館：0 個 404、主路徑 0 個官方 CDN 請求；
+          切換前後截圖存 <code>_local-notes/</code> 給站長看（含 <code>_head</code> 小頭像的取捨）。
+          官方圖構圖一致 → 為人工去背圖做的逐張微調（<code>loreArtTuning.ts</code> 的 <code>LORE_ART_TUNING</code>、寫死的 <code>object-position</code>）逐一檢查，能拿掉就拿掉。
+        </div>
+        <div class="task-file">src/utils/*.test.ts · _local-notes/2026-10/</div>
+      </div>
+      <div class="task-assignee">開發者＋站長驗收</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label orange">Phase D</div>
+  <div class="section-title">清舊檔與收尾（≈ 1.5 天）</div>
+  <div class="section-desc">前提：C-5 已部署、C-7 通過、B-6 掃描器的舊路徑引用為 0。順序固定：刪檔 → 搬資料夾 → DB 與快照改寫 → 部署與清快取 → 文件。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 官方圖取代舊圖（v3.0 後的人工去背圖一併換掉）</div>
+      <div class="task-group-meta">scripts/temp_scripts/prune-legacy-images.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機師 half／full、機甲 portrait／部件四張／art.webp：有官方原檔的全部退場</div>
+        <div class="task-desc">
+          站長 2026-10-03 定案：不分同圖與否一律換官方。逐張像素比對只用來產出<b>「畫面會變」清單</b>（多半是 v3.0 後的人工去背圖），附切換前後截圖給站長看，不再當刪除閘門；
+          沒有官方原檔的（索妮婭）不動。dry-run → 站長過目 → <code>--apply</code>。刪完機甲的名字資料夾會全空（<code>mech_badges</code>／<code>mech_models</code> 不是實體，不動）。
+        </div>
+        <div class="task-file">scripts/temp_scripts/prune-legacy-images.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 站上自製圖搬 ID 資料夾（✅ 站長已確認）</div>
+      <div class="task-group-meta">public/images/pilots</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">pilots/&lt;名&gt;/ → pilots/&lt;gameId&gt;/；空掉的機甲名字資料夾移除</div>
+        <div class="task-desc">
+          <code>git mv</code> 剩下的 art.webp、<code>official-*</code>、殘留的 <code>half_alt</code>／<code>*_origin</code>。
+          <code>pilotArtDir()</code> 改讀 gameId；artIndex 的鍵改 ID；<code>import-source-art.mjs</code> 的 <code>NAME_FIXES</code> 退場、目的地改 ID。
+          故事館（042-C 官網圖層、原稿顯影）整套複驗。
+        </div>
+        <div class="task-file">public/images/pilots/ · public/images/mechs/ · src/utils/assets.ts · scripts/generate-art-index.mjs · scripts/import-source-art.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; DB 與快照路徑改寫</div>
+      <div class="task-group-meta">scripts/temp_scripts/rewrite-image-paths.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">備份 → dry-run → --apply → bump pilots mechs patchVersions grayOps</div>
+        <div class="task-desc">
+          <code>pilots.portrait</code> → game <code>_half</code>；<code>mechs.portrait</code> → <code>Icon_mecha</code>；<code>parts.*.icon</code> → <code>Icon_wap_1~4</code>；
+          指向不存在檔案的 <code>halfPortrait</code> 清除；沒有 game 圖的（索妮婭）不動；<code>portraitUrl</code> 保留。
+          <b>連同路徑快照</b>：<code>patchVersions</code> 的 <code>iconUrls</code>（版本濃縮表）、<code>grayOps</code> 的 <code>icon</code>，以及 B-6 掃出來的其他副本。
+          完成後重跑 B-6：(a) 壞路徑必須為 0。
+        </div>
+        <div class="task-file">scripts/temp_scripts/rewrite-image-paths.mjs · scripts/check-image-refs.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 部署與清快取（站長 2026-10-03 提醒）</div>
+      <div class="task-group-meta">正式站 · Cloudflare</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">push → Purge Everything → 複驗</div>
+        <div class="task-desc">
+          D-3 的 bump 已讓前台 localStorage 與 Worker 邊緣快取失效；部署後到 Cloudflare 做 <b>Purge Everything</b>，避免已刪的舊圖還被邊緣送出。
+          複驗：舊網址 404、新網址 200、CLAUDE.md 的 OG 補驗指令看到新路徑；重要頁的社群卡片用 FB 分享偵錯工具／LINE Page Poker 重抓。
+          瀏覽器快取不需處理（新檔名）、本站沒有 Service Worker。每一步正式站操作前先跟站長確認。
+        </div>
+        <div class="task-file">Cloudflare Dashboard · CLAUDE.md（OG 補驗指令）</div>
+      </div>
+      <div class="task-assignee">開發者＋站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-5 &nbsp; 新機師流程文件化</div>
+      <div class="task-group-meta">skill · docs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">data-patch skill 補步驟；系統架構補 game/ 一節</div>
+        <div class="task-desc">後台建檔 → 填 gameId／artKey → 有新的客戶端擷取就 <code>import --id</code>、還沒有就在後台手動指定 portrait → bump（爬蟲已降為備用，不在流程內）；系統架構文件補 <code>public/images/game/</code>、gameArtIndex 與部署剪裁。</div>
+        <div class="task-file">.claude/skills/data-patch/SKILL.md · docs/02_技術文件/01_架構設計/系統架構.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-6 &nbsp; 收尾與歸檔</div>
+      <div class="task-group-meta">—</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">移除已刪路徑的後備、更新交接與記憶、歸檔</div>
+        <div class="task-desc">呼叫端的候選鏈拿掉已不存在的舊路徑（<code>portraitUrl</code> 保留）；<code>npm run build</code>／<code>npm test</code> 綠燈；交接檔與記憶更新；本 PLAN 依 plan-manager 操作 B 歸檔。</div>
+        <div class="task-file">src/** · _local-notes/ · docs/05_階段性開發計畫/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-054 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

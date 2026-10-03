@@ -34,6 +34,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import sharp from 'sharp'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const PILOTS_DIR = path.join(ROOT, 'public', 'images', 'pilots')
@@ -70,12 +71,43 @@ function scan(dir, label, markers) {
   return [dirs, withArt]
 }
 
-function main() {
+/**
+ * 官網 hero 圖層（PLAN-042-C C-1）：`official-{color,line,name}.webp` 三張齊全的機師資料夾。
+ * 只有官網做過的 8 位有。這裡連尺寸一起記進索引 —— 版面要在渲染前知道名字層的長寬比才擺得出位置；
+ * color 與 line 裁的是同一個 bbox，尺寸必須相同（兩層要對得齊）。
+ * 三張不齊或尺寸不合直接讓 build 失敗，不要靜默降級成「少一層」。
+ */
+async function scanOfficial(dir, dirs) {
+  const out = []
+  for (const d of dirs) {
+    const p = (f) => path.join(dir, d, f)
+    if (!fs.existsSync(p('official-color.webp'))) continue
+    if (!fs.existsSync(p('official-line.webp')) || !fs.existsSync(p('official-name.webp'))) {
+      console.error(`❌ ${d} 的官方圖層不齊：official-color / official-line / official-name 三張都要有`)
+      process.exit(1)
+    }
+    const [c, l, n] = await Promise.all(
+      ['official-color.webp', 'official-line.webp', 'official-name.webp'].map((f) => sharp(p(f)).metadata()),
+    )
+    if (c.width !== l.width || c.height !== l.height) {
+      console.error(`❌ ${d} 的 official-color（${c.width}×${c.height}）與 official-line（${l.width}×${l.height}）尺寸不同，兩層對不齊`)
+      process.exit(1)
+    }
+    out.push({ d, w: c.width, h: c.height, nameW: n.width, nameH: n.height })
+  }
+  return out.sort((a, b) => a.d.localeCompare(b.d, 'zh-Hant'))
+}
+
+async function main() {
   const [dirs, withArt] = scan(PILOTS_DIR, '機師', ['full.webp', 'full.png', 'half.webp', 'half.png'])
   const [mechDirs, mechsWithArt] = scan(MECHS_DIR, '機甲', ['portrait.webp', 'portrait.png'])
+  const official = await scanOfficial(PILOTS_DIR, dirs)
 
   const body = withArt.map((n) => `  '${n}',`).join('\n')
   const mechBody = mechsWithArt.map((n) => `  '${n}',`).join('\n')
+  const officialBody = official
+    .map((o) => `  ['${o.d}', { w: ${o.w}, h: ${o.h}, nameW: ${o.nameW}, nameH: ${o.nameH} }],`)
+    .join('\n')
 
   const out = `// ⚠ 本檔由 scripts/generate-art-index.mjs 自動產生，請勿手動編輯。
 // 重新產生：node scripts/generate-art-index.mjs（build / predev 會自動跑）
@@ -113,6 +145,19 @@ ${body}
 export const MECH_ART_INDEX: ReadonlySet<string> = new Set([
 ${mechBody}
 ])
+
+/** 官網 hero 圖層的尺寸：color／line 共用一個 bbox（w×h），name 是名字層自己的 bbox。 */
+export interface OfficialArtGeometry { w: number; h: number; nameW: number; nameH: number }
+
+/**
+ * 有官網 hero 圖層（\`/images/pilots/<名>/official-{color,line,name}.webp\`）的機師資料夾名
+ * （PLAN-042-C C-1）。官網只做了 8 位；其餘機師走濾鏡線稿。
+ *
+ * ⚠ 存的是**圖片資料夾名**，查詢一律走 \`hasOfficialArt(pilot)\` / \`pilotOfficialArt(pilot)\`。
+ */
+export const PILOT_OFFICIAL_INDEX: ReadonlyMap<string, OfficialArtGeometry> = new Map([
+${officialBody}
+])
 `
 
   fs.mkdirSync(path.dirname(OUT_FILE), { recursive: true })
@@ -122,8 +167,9 @@ ${mechBody}
   console.log(
     `✅ 原稿索引已產生：${path.relative(ROOT, OUT_FILE)}` +
     `（機師 ${withArt.length}/${dirs.length}，${pct(withArt.length, dirs.length)}%；` +
-    `機甲 ${mechsWithArt.length}/${mechDirs.length}，${pct(mechsWithArt.length, mechDirs.length)}%）`,
+    `機甲 ${mechsWithArt.length}/${mechDirs.length}，${pct(mechsWithArt.length, mechDirs.length)}%；` +
+    `官網圖層 ${official.length} 位）`,
   )
 }
 
-main()
+await main()

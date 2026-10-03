@@ -18,7 +18,12 @@ export function useRefScanData(): { data: RefScanData; missingColls: string[] } 
   // 主動把九個掃描集合都載進來。不載的話「影響 N 處引用」只會是一個帶著免責聲明的
   // 低估值，而 BuffAdmin 的刪級守門更會因為掃不到而放行。這些集合是靜態資料、
   // 有 localStorage 版本 gate，後台一個 session 只付一次成本。
-  useEffect(() => { gd.ensureLoaded(ALL_SCAN_COLLECTIONS as CollectionKey[]) }, [gd])
+  // ⚠ 依賴必須是 ensureLoaded 而不是整個 gd：Provider 的 value 未 memo（每次 render 都是新物件），
+  //   而 ensureLoaded 的 catch 會把 key 從 fetchedRef 移除並 setErrorMap（必定 re-render）——
+  //   兩者相乘就是「抓取失敗 → 無限重抓」。pilotLore 進 SPECS 之後這條路徑真的會踩到。
+  //   ensureLoaded 本身是 useCallback 且依賴皆穩定，改依賴它行為等價、只移除迴圈。
+  const { ensureLoaded } = gd
+  useEffect(() => { void ensureLoaded(ALL_SCAN_COLLECTIONS as CollectionKey[]) }, [ensureLoaded])
 
   return useMemo(() => {
     const data: RefScanData = {}

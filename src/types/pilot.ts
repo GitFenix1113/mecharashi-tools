@@ -304,6 +304,12 @@ export interface Pilot {
   id: string
   name: string
   fullName: string
+  /**
+   * 英文名（PLAN-042-C D-4，選填）：故事館扉頁壓在立繪旁的毛筆草書用，例如 'Rosa Diaz'。
+   * 官方資料沒有這個欄位（fullName 全是中文），由後台人工輸入；空值＝不渲染草書層。
+   * ⚠ 與 debutVersion 同病：`scrape-pilots-v3.js --force` 的整筆覆寫會洗掉它（爬蟲 merge 隱患）。
+   */
+  nameEn?: string
   rarity: string
   class: string
   faction: string

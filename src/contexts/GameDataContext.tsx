@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react'
-import type { Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component, GlobalResearch, GrayOpsRoster, GameBuff, PilotSkillDoc, GlossaryTerm, NeuralDriveAbility, MechForm } from '../types'
+import type { Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component, GlobalResearch, GrayOpsRoster, GameBuff, PilotSkillDoc, GlossaryTerm, NeuralDriveAbility, MechForm, LoreDoc } from '../types'
 import {
   getPilots, getMechs, getModules, getWeapons, getBackpacks, getBackpackSkills, getComponents, getBuffs, getPilotSkills, getGlossaryTerms,
-  getNeuralDriveAbilities, getForms, getGlobalResearch, getGrayOpsRoster, getDataVersions, type DataVersions,
+  getNeuralDriveAbilities, getForms, getPilotLore, getGlobalResearch, getGrayOpsRoster, getDataVersions, type DataVersions,
 } from '../lib/firestoreApi'
 // PLAN-029 Phase 2-3：flag 開時，公開資料與版本改走 Cloudflare Worker 代理（可灰度／回退）
 import { WORKER_ENABLED, getWorkerDataVersions, fetchWorkerCollection } from '../lib/api/workerData'
-import { ALL_COLLECTION_KEYS, type CollectionKey } from '../lib/collectionKeys'
+import { ALL_COLLECTION_KEYS, skipsLocalCache, type CollectionKey } from '../lib/collectionKeys'
 
 export const EMPTY_GLOBAL_RESEARCH: GlobalResearch = {
   // PLAN-052-A D-2：三個欄位是 Array 不是 Record（型別原本說謊，線上資料一直是 Array）
@@ -40,11 +40,19 @@ function readCache<T>(key: string, version: string): T | undefined {
   }
 }
 
-function writeCache(key: string, version: string, data: unknown): void {
+function writeCache(key: CollectionKey, version: string, data: unknown): void {
   if (typeof localStorage === 'undefined') return
+  // PLAN-042-A A-2：名單內的集合不落 localStorage（見 collectionKeys.ts 的
+  // NO_LOCAL_CACHE_KEYS —— 配額一旦爆掉是**全站**每次重讀，不是只賠掉最後那個集合）
+  if (skipsLocalCache(key)) return
   try {
     localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ v: version, d: data }))
-  } catch { /* 配額超限等 → 略過快取，不影響功能 */ }
+  } catch (e) {
+    // 原本這裡是空的 catch。配額超限的症狀是「每次都靜默重讀」、零錯誤訊息，
+    // 於是快取整層失效可以無人察覺地持續數月。功能仍不受影響（照樣去抓），
+    // 但至少要留得下一行線索。
+    console.warn(`[GameData] localStorage 寫入失敗，${key} 本次不快取（下次仍會重讀）：`, e)
+  }
 }
 
 function removeCache(key: string): void {
@@ -76,6 +84,11 @@ export interface GameDataState {
   glossaryTerms:  GlossaryTerm[]
   /** PLAN-041 機師形態（調構師專屬；非調構師機師此陣列與他們無關） */
   forms:          MechForm[]
+  /**
+   * PLAN-042-A 機師逸聞。**不落 localStorage**（NO_LOCAL_CACHE_KEYS）——
+   * 換頁保留、關掉分頁後重讀一次，是刻意的取捨。
+   */
+  pilotLore:      LoreDoc[]
   globalResearch: GlobalResearch
   grayOpsRoster:  GrayOpsRoster | null
   loadedKeys:     ReadonlySet<CollectionKey>
@@ -113,6 +126,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
   const [neuralDriveAbilities, setNeuralDriveAbilities] = useState<NeuralDriveAbility[]>([])
   const [glossaryTerms,  setGlossaryTerms]  = useState<GlossaryTerm[]>([])
   const [forms,          setForms]          = useState<MechForm[]>([])
+  const [pilotLore,      setPilotLore]      = useState<LoreDoc[]>([])
   const [globalResearch, setGlobalResearch] = useState<GlobalResearch>(EMPTY_GLOBAL_RESEARCH)
   const [grayOpsRoster,  setGrayOpsRoster]  = useState<GrayOpsRoster | null>(null)
   const [loadedKeys,     setLoadedKeys]     = useState<Set<CollectionKey>>(new Set())
@@ -146,6 +160,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'neuralDriveAbilities': setNeuralDriveAbilities(data as NeuralDriveAbility[]); break
       case 'glossaryTerms':  setGlossaryTerms(data as GlossaryTerm[]); break
       case 'forms':          setForms(data as MechForm[]); break
+      case 'pilotLore':      setPilotLore(data as LoreDoc[]); break
       case 'globalResearch': setGlobalResearch(data as GlobalResearch); break
       case 'grayOpsRoster':  setGrayOpsRoster(data as GrayOpsRoster | null); break
     }
@@ -172,6 +187,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'neuralDriveAbilities': return getNeuralDriveAbilities()
       case 'glossaryTerms':  return getGlossaryTerms()
       case 'forms':          return getForms()
+      case 'pilotLore':      return getPilotLore()
       case 'globalResearch': return (await getGlobalResearch()) ?? EMPTY_GLOBAL_RESEARCH
       case 'grayOpsRoster':  return getGrayOpsRoster()
     }
@@ -254,6 +270,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'neuralDriveAbilities': setNeuralDriveAbilities(upsert); break
       case 'glossaryTerms': setGlossaryTerms(upsert); break
       case 'forms':         setForms(upsert);         break
+      case 'pilotLore':     setPilotLore(upsert);     break
       default: break // singleton / 無 id 集合不走此路徑
     }
   }, [])
@@ -286,6 +303,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'neuralDriveAbilities': setNeuralDriveAbilities(drop); break
       case 'glossaryTerms': setGlossaryTerms(drop); break
       case 'forms':         setForms(drop);         break
+      case 'pilotLore':     setPilotLore(drop);     break
       default: break // singleton / 無 id 集合不走此路徑
     }
   }, [])
@@ -302,7 +320,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
 
   return (
     <GameDataContext.Provider value={{
-      pilots, mechs, weapons, backpacks, backpackSkills, modules, components, buffs, pilotSkills, neuralDriveAbilities, glossaryTerms, forms,
+      pilots, mechs, weapons, backpacks, backpackSkills, modules, components, buffs, pilotSkills, neuralDriveAbilities, glossaryTerms, forms, pilotLore,
       globalResearch, grayOpsRoster,
       loadedKeys, errorMap, reloadTick,
       ensureLoaded, reload, patchCollectionItem, removeCollectionItem, patchSingleton,

@@ -42,7 +42,8 @@
     "migrate": "node scripts/migrate-to-firestore.mjs",
     "migrate:dry": "node scripts/migrate-to-firestore.mjs --dry-run",
     "emu:test-rules": "node scripts/test-emulator-rules.mjs",
-    "index:art": "node scripts/generate-art-index.mjs"
+    "index:art": "node scripts/generate-art-index.mjs",
+    "fonts:lore": "node scripts/generate-lore-fonts.mjs"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.19",
@@ -60,6 +61,7 @@
     "zxing-wasm": "^3.1.3"
   },
   "devDependencies": {
+    "@breezystack/lamejs": "^1.2.7",
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
@@ -68,9 +70,11 @@
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
+    "fontkit": "^2.0.4",
     "globals": "^17.6.0",
     "playwright": "^1.52.0",
     "sharp": "^0.35.3",
+    "subset-font": "^2.7.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12"

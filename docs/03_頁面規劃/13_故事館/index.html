@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>機師故事館規劃 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/米赫瑪超吉情豹站_規劃書.html">📋 概要總覽</a>
+    <span>›</span>
+    <a href="../index.html">頁面規劃</a>
+    <span>›</span>
+    <span class="current">機師故事館</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ Page Design</div>
+  <h1>機師故事館<span>LORE · /lore/*</span></h1>
+  <p class="hero-sub">獨立於圖鑑的紙色展館：館首頁機師牆 → 扉頁（檔案）→ 逸聞章節。查數值的人留在圖鑑，想讀故事的人走進來（PLAN-042-A）</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label">基本資訊</div>
+  <div class="section-title">頁面規格</div>
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/lore</code>（館首頁）｜<code>/lore/pilots/:id</code>（扉頁）｜<code>/lore/pilots/:id/:part</code>（章節頁）｜<code>/lore/*</code> 兜底轉址回 <code>/lore</code>｜<code>/admin/lore</code>（編輯台，<code>AdminRoute</code>）</td></tr>
+    <tr><th>開發階段</th><td>PLAN-042-A Phase C–F（2026-09-09 ～ 09-10）；氛圍層與顯影修正另立 <a href="../../05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/計畫書.html">PLAN-042-C</a></td></tr>
+    <tr><th>登入需求</th><td>前台不需要（公開）；編輯台 ADMIN 即可（只寫 <code>pilotLore</code>）</td></tr>
+    <tr><th>資料來源</th><td><code>pilots</code>（扉頁正文 <code>lore</code>、<code>profile.additionalInfo</code>、立繪路徑 derive）＋ <code>pilotLore</code>（章節、旁白、扉頁署名）。一律走 <code>useFirestore</code> 的 <code>usePilots</code> / <code>usePilot</code> / <code>usePilotLore</code> / <code>usePilotLoreDoc</code>；<strong><code>pilotLore</code> 讀不到時優雅降級成「只有扉頁」</strong>，不轉圈、不錯誤頁</td></tr>
+    <tr><th>導覽入口</th><td>桌機與手機 More 面板的「故事館」（刻意獨立於版本／圖鑑／攻略三群之外，避免 <code>SubNavTabs</code> 在館內命中）；圖鑑詳情頁 lore 區塊只留首句與署名，接「讀完整故事 ▸」</td></tr>
+    <tr><th>外殼形態</th><td><code>chromeMode = 'immersive'</code>：header 換成紙色細帶（館名／離館／字級三顆），footer、分頁列、手機 Tab Bar 全收；<code>html.lore-mode</code> 只設 <code>color-scheme</code> 與 body 背景，色票覆寫只在 <code>.lore-shell</code> / <code>.lore-chrome</code>（portal 浮層保持深色可讀）</td></tr>
+    <tr><th>參數命名</th><td>一律 <code>:id</code>——<code>analytics/track.ts</code> 寫死讀 <code>params.id</code>，改名會讓機師熱度一筆都不記</td></tr>
+  </table>
+</section>
+
+<section class="section">
+  <div class="section-label">版面設計</div>
+  <div class="section-title">三個檢視與編輯台</div>
+
+  <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">🧱</div>
+      <h3>館首頁 <code>/lore</code></h3>
+      <p>列 <code>pilots</code> 全員（90 格）而不是列 <code>pilotLore</code>——後者現階段是 34 份空殼，列它牆會少掉 55 位有扉頁可讀的機師。
+      依職業（<code>CLASS_CONFIG</code> 順序）或登場版本分組；卡片＝縮圖（與 <code>/pilots</code> 同一組 URL、瀏覽器快取直接命中）＋底部漸層＋職業色條；
+      有章節才出現「N 章」徽章。賽拉沒有圖片資料夾，牆上照樣留位、顯示「尚無立繪」。機甲分頁預留給 042-B。</p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">📄</div>
+      <h3>扉頁 <code>/lore/pilots/:id</code></h3>
+      <p>桌機 42／58 兩欄：左立繪柱（sticky，高度吃 <code>--lore-viewport-h</code> 實測值）、右卷宗。立繪在<strong>渲染前</strong>分流：
+      52 位有 <code>art.webp</code> 走直式全身（<code>hasPilotArt</code>），其餘退回 <code>full.webp</code> 半身並套底部噪點 mask（86/87 張底邊硬切）。
+      直書姓名壓立繪右緣；職業／名字／三枚徽記（陣營文字圓環、天賦圖示、駕駛許可）；引文體正文套 blockquote 語彙、署名右對齊細線；<code>additionalInfo</code> 鍵值列；章節入口。
+      手機改上下堆疊，立繪上方 sticky 38vh。</p>
+    </div>
+    <div class="card cyan">
+      <div class="card-icon">📖</div>
+      <h3>章節頁 <code>/lore/pilots/:id/:part</code></h3>
+      <p>與扉頁<strong>同一個元件</strong>，版面骨架只寫一份。常駐具名章節軸（sticky）＋◀▶＋頁碼；換章靠點按鈕／鍵盤左右／手機水平滑動三種明確意圖，<strong>絕不接滾輪</strong>（PLAN-050 拆舊輪播的教訓）。
+      扉頁→第一章 push、章節之間 replace。正文走 <code>LoreRichText</code>（只解析 <code>[xxx]</code>，不套數字高亮）、署名、NPC 旁白列（speaker 查不到只少頭像不消失）、「下一章」列。只有一章時整套底盤不掛。</p>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">🛠️</div>
+      <h3>編輯台 <code>/admin/lore</code></h3>
+      <p>章節新增／排序／改標題／獨立刪除；整篇貼上後切段成章（<strong>不做程式自動判斷</strong>，只提供輔助）；自動清掉 OCR 常見的軟換行與全形空白；列表加「章節數」欄。
+      寫入走 <code>saveWithHistory</code>，章節錨點用 <code>{ by: 'key' }</code>（<code>LoreChapter</code> 沒有 <code>name</code>，錨錯欄位每筆都會 <code>anchorMismatch</code>）。</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label">UI 草圖</div>
+  <div class="section-title">版面結構</div>
+  <div class="wireframe">
+    <div class="wf-icon">🏛️</div>
+    <p>紙色細帶 header（館名／離館／字級）<br>↓<br><code>.lore-shell</code>（進場遮罩 <code>.lore-veil</code> 300ms）<br>↓<br><code>.lore-scroll</code>＝全館<strong>唯一</strong> scrollport<br>↓<br>館首頁牆 ／ 扉頁（立繪柱 sticky ＋ 卷宗）／ 章節頁（章節軸 sticky ＋ 正文）</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label">設計備註</div>
+  <div class="section-title">開發注意事項</div>
+  <div class="info-block">
+    <strong>✅ 已實作（PLAN-042-A Phase C–F）</strong><br>
+    · <strong>唯一 scrollport</strong>：<code>Layout</code> 的 <code>&lt;main&gt;</code> 是 <code>overflow-hidden</code> 的假 scrollport，館內任何 <code>position: sticky</code> 都會失效；故 <code>LoreLayout</code> 自己開 <code>.lore-scroll</code>，高度沿 flex 鏈傳下來（不做 <code>calc(100vh - …)</code> 減法，<code>SignedOutBanner</code> 的高度算不到）。
+      <strong>館內元件不得再開第二層 <code>overflow-y</code></strong>，兩條垂直捲軸並存時外層永遠捲不動<br>
+    · <strong>跨路由捲頂</strong>由 <code>LoreLayout</code> 監聽 pathname 統一負責（它全程不卸載）；章節軸自動對位只對本列 <code>scrollTo</code>，不用 <code>scrollIntoView</code>（會順手捲掉外層）<br>
+    · <strong>守衛順序 error → loading → 內容</strong>：<code>GameDataContext</code> 抓取失敗時 <code>loading</code> 恆為 true，反過來寫永遠看不到錯誤分支<br>
+    · <strong>顯影元件 <code>LoreArt</code></strong>：灰階層＋反相模糊 color-dodge 層＝偽線稿，彩圖 opacity 淡入；只動 opacity 不動 filter；<code>LORE_ART_TUNING</code> 以圖片資料夾名為鍵（「零」關閉線稿）；reduced-motion 直接 <code>display:none</code> 線稿層<br>
+    · <strong>色票</strong>：紙色只覆寫 <code>.lore-shell</code> / <code>.lore-chrome</code>，accent 八色不覆寫（稀有度／職業語意色）；三處硬寫的同款顏色改色時要一起改（<code>index.css</code> 註解列出）<br>
+    · <strong>Worker</strong>：<code>/lore/*</code> route、<code>parseEntityPath</code> 以第二條正則吃四段路徑（不放寬圖鑑那條）、故事館 OG 卡換 title／description、og:image 沿用立繪
+  </div>
+  <div class="warning-block" style="margin-top:1rem;">
+    <strong>⚠ 上線前置（不在程式碼裡，build／test 抓不到）</strong><br>
+    · <code>cd workers &amp;&amp; npx wrangler deploy</code>（<code>/api/data/pilotLore</code> 由 404 轉 200、<code>/lore/*</code> route 生效）<br>
+    · <code>npx firebase deploy --only firestore:rules</code>（後台級聯刪除走 SDK 直連，未部署會整個失敗）<br>
+    · Cloudflare Transform Rule 白名單加 <code>/lore</code>（CLAUDE.md 規則 3），否則真人拿到 HTTP 404、社群預覽 route 零命中
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
+    <strong>✅ 氛圍層（PLAN-042-C，2026-09-17）</strong><br>
+    · <strong>顯影改寫</strong>：<code>LoreArt</code> 先 <code>decode()</code> 再開演（逾時 2s 放行），線稿改由 SVG 濾鏡 <code>#lore-sketch</code>（定義在 <code>LoreLayout</code>）在單一 <code>&lt;img&gt;</code> 內算出透明底墨線——黑框與 mix-blend-mode 一起消失；
+      兩層各掛官網移植的 keyframes（<code>lore-line-in</code>／<code>lore-color-in</code>：縮放 1.2→1、上移、斜切擦入、彩圖 40% 起帶 1px 模糊淡入）。換人時上一張彩圖留作 <code>lore-art__prev</code> 交叉淡出<br>
+    · <strong>進場</strong>：<code>.lore-veil</code> 改深色斜切擦開 520ms；扉頁三段 <code>.lore-enter</code>（名字層／職業名字徽記／引文卡）以 mechaData 節奏錯開 0／200／350ms<br>
+    · <strong>官方素材</strong>（非營利共識，全部自託管於 <code>public/images/lore/</code>，來源見 README）：紙面背景 bg-paper／bg-m 鋪整館；館首頁 hero＝紅帶（bg-band）＋KV（kv）＋標題圖（title-pilots）；粒子 snow01／02 × 6 個 div 的 <code>lore-fly</code>／<code>lore-fly2</code>（桌機限定）<br>
+    · <strong>8 位官方圖層</strong>（洛莎／虹／凱登／白月／葉夫根尼／艾琳／黛娜／梅利莎）：<code>official-{line,color,name}.webp</code> 由 <code>generate-art-index.mjs</code> 掃成 <code>PILOT_OFFICIAL_INDEX</code>，<code>LoreArt variant="official"</code> 用官方手繪線稿與半身彩圖、名字書法層疊在立繪上<br>
+    · <strong>名字字體</strong>：<code>npm run fonts:lore</code> 產出 LXGW WenKai TC 名字子集（350 字、106KB）與 Mr Dafoe 英文草書子集（11KB）；直書名與 h1 用楷書，<code>pilot.nameEn</code> 有值時以白色草書逆時針 72° 壓在立繪上（官方 8 位的草書已在名字層內、不重疊）<br>
+    · <strong>檔案感與 BGM</strong>：立繪柱左下 <code>PILOT FILE · NO.NNN／DEBUT · vX.Y</code>（JetBrains Mono）、名字下方紅標（身高或駕駛許可）；header 的 <code>LoreBgmToggle</code>（官網 BGM 96 秒節錄 96kbps，預設關、記偏好、離館即停）<br>
+    · <strong>打磨</strong>：牆卡片黑底紅框 hover、縮圖本地優先；換章 180ms 淡入上移、章節軸 active 紅底線；底緣溶解 mask 改三層合成（噪點只在溶解帶，不再蓋整張圖；tall 只溶最後 10%）；桌機滑鼠微視差（<code>useLoreParallax</code>，立繪 ±6px、名字層反向 ±3px）<br>
+    · <strong>reduced-motion</strong>：遮罩、進場、粒子、運鏡、視差、換章全部退化；線稿層 <code>display:none</code>、彩圖 150ms 純淡入
+  </div>
+  <div class="warning-block" style="margin-top:1rem;">
+    <strong>⚠ 042-C 驗收時要知道的事</strong><br>
+    · 動畫驗收用 <code>_local-notes/2026-09/2026-09-17_filmstrip-042c.mjs</code>／<code>2026-09-17_verify-042c-part2.mjs</code>（Playwright headless，需 dev server 5173）；<strong>內建瀏覽器分頁在背景時 Chrome 不推進 CSS 動畫</strong>，截圖會是舊幀<br>
+    · <code>nameEn</code> 正式資料尚未寫入：<code>scripts/temp_scripts/patch-pilot-name-en.mjs --apply</code> 寫 8 位官方拼法後 <code>node scripts/bump-data-version.mjs pilots</code>；其餘 82 位由後台「個人資料」分頁逐筆輸入<br>
+    · 字型授權：LXGW WenKai TC 與 Mr Dafoe 皆 SIL OFL；官網那套草書是商用字型，未使用
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 頁面規劃 · 機師故事館 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 頁面規劃</a>
+</footer>
+
+</body>
+</html>

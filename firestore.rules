@@ -82,6 +82,12 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if isAdmin();
     }
+    // PLAN-042-A 機師故事館：逸聞章節。全站唯一「人工逐字輸入、重跑爬蟲也生不回來」
+    // 的集合，寫入一律經 saveWithHistory 留稽核（見 lib/api/pilotLore.ts）。
+    match /pilotLore/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
     match /buffs/{docId} {
       allow read: if isAdmin();
       allow write: if isAdmin();

@@ -203,6 +203,20 @@ export default function AdminPage() {
           </div>
           <span className="text-accent-purple/50 ml-2 text-lg">›</span>
         </Link>
+        {/* 機師故事館（PLAN-042-A Phase E-1）：走子頁而不是第 15 顆 Tab——
+            互動形狀不同構（一份文件 N 章長文，每章各帶正文／署名／旁白／引用側錄），
+            且權限要能獨立授權給非工程的內容編輯。 */}
+        <Link
+          to="/admin/lore"
+          className="inline-flex items-center gap-3 px-5 py-3 bg-accent-cyan/10 border border-accent-cyan/30 rounded-xl hover:bg-accent-cyan/20 hover:border-accent-cyan/50 transition-colors no-underline"
+        >
+          <span className="text-accent-cyan text-xl">📖</span>
+          <div>
+            <div className="text-sm font-bold text-accent-cyan">機師故事館</div>
+            <div className="text-xs text-text-dim">機師逸聞章節與旁白（人工輸入）</div>
+          </div>
+          <span className="text-accent-cyan/50 ml-2 text-lg">›</span>
+        </Link>
         {/* 系統日誌僅 OWNER 可見：內含維護者的 UA、儲存用量等裝置指紋（PLAN-045）。
             隱藏入口只是避免其他 ADMIN 點進去吃權限錯誤，真正的防線是 firestore.rules。 */}
         {userProfile?.role === 'OWNER' && (

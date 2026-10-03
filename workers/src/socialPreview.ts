@@ -58,24 +58,79 @@ export function isSocialCrawler(userAgent: string | null): boolean {
   return CRAWLER_UA_MARKERS.some(m => ua.includes(m))
 }
 
+/** `parseEntityPath` 的解析結果。 */
+export interface EntityTarget {
+  collection: OgCollection
+  id: string
+  /**
+   * 來自機師故事館路徑（`/lore/pilots/…`，PLAN-042-A）。
+   *
+   * ⚠ **選填、且只有故事館分支才建這個鍵**：`socialPreview.test.ts` 有三處
+   *   `assert.deepEqual(parseEntityPath(…), { collection, id })`，而 `assert/strict`
+   *   的 deepEqual 比對自有可列舉鍵集合 —— 多一個 `lore` 鍵就失敗，
+   *   **連 `lore: undefined` 都失敗**。故回傳物件一律條件建構。
+   */
+  lore?: true
+  /** 章節 key（`/lore/pilots/:id/:part` 四段路徑才有）。 */
+  part?: string
+}
+
 /**
- * 解析詳情頁路徑 → { collection, id }；不是這三種詳情頁則回 null。
+ * ⚠ 刻意分成**兩條**正則，不要合併。
+ *
+ * 若把 `ENTITY_RE` 放寬成「選填第三段」來一併吃故事館路徑，圖鑑側的 `/pilots/a/b`
+ * 也會跟著命中 —— 而 `socialPreview.test.ts` 明確斷言它是 null（放寬之後任何
+ * `/pilots/x/y` 都會去 Firestore 查一次不存在的文件）。
+ *
+ * ⚠ `LORE_RE` 的字面值被 `src/lib/analytics/routeKeys.test.ts` 以字串比對綁住
+ *   （URL 形狀跨檔一致的絆線），改這一行必須同時改 `ROUTE_PATTERNS`。
+ */
+const LORE_RE = /^\/lore\/(pilots)\/([^/]+)(?:\/([^/]+))?\/?$/
+const ENTITY_RE = /^\/(pilots|mechs|weapons)\/([^/]+)\/?$/
+
+/**
+ * 文件 ID 的解碼與防護。畸形或不可能是文件 ID 的字串一律回 null，
+ * 避免把奇怪字串當成文件路徑丟去 Firestore（Firestore 文件 ID 本身就不允許斜線）。
+ */
+function decodeSegment(raw: string): string | null {
+  let s: string
+  try {
+    s = decodeURIComponent(raw)
+  } catch {
+    return null // 畸形的 percent-encoding：不是我們認得的 id，交給原始回應
+  }
+  if (s.length > 200 || /[/?#&\s]/.test(s)) return null
+  return s
+}
+
+/**
+ * 解析詳情頁路徑 → `EntityTarget`；不是詳情頁／故事館頁則回 null。
  *
  * URL 裡的 id 是 Firestore 文件 ID（如 `pilot_001_葉夫根尼`），含中文，
  * 在網址上是 percent-encoded，故必須 decode 後才能拿去查 Firestore。
  */
-export function parseEntityPath(pathname: string): { collection: OgCollection; id: string } | null {
-  const m = pathname.match(/^\/(pilots|mechs|weapons)\/([^/]+)\/?$/)
-  if (!m) return null
-  let id: string
-  try {
-    id = decodeURIComponent(m[2])
-  } catch {
-    return null // 畸形的 percent-encoding：不是我們認得的 id，交給原始回應
+export function parseEntityPath(pathname: string): EntityTarget | null {
+  const lore = pathname.match(LORE_RE)
+  if (lore) {
+    const id = decodeSegment(lore[2])
+    if (id === null) return null
+    // ⚠ 型別上 `lore[3]` 是 string（三份 tsconfig 都沒開 noUncheckedIndexedAccess），
+    //   但選填 capture group 未命中時執行期是 undefined —— 而 decodeURIComponent(undefined)
+    //   不丟錯、回傳字串 'undefined'，那會讓三段式路徑靜默帶上一個假 part。
+    const rawPart: string | undefined = lore[3]
+    let part: string | undefined
+    if (rawPart !== undefined) {
+      const decoded = decodeSegment(rawPart)
+      if (decoded === null) return null
+      part = decoded
+    }
+    return { collection: 'pilots', id, lore: true, ...(part !== undefined ? { part } : {}) }
   }
-  // 文件 ID 不可能含這些字元（Firestore 文件 ID 本身就不允許斜線）；
-  // 擋掉的同時也避免把奇怪字串當成文件路徑丟去 Firestore。
-  if (id.length > 200 || /[/?#&\s]/.test(id)) return null
+
+  const m = pathname.match(ENTITY_RE)
+  if (!m) return null
+  const id = decodeSegment(m[2])
+  if (id === null) return null
   return { collection: m[1] as OgCollection, id }
 }
 
@@ -140,10 +195,27 @@ function truncate(s: string, max = 110): string {
  *   pilots  → portrait（88/88 有值）
  *   mechs   → portrait ?? halfPortrait（portrait 僅 1 筆缺，halfPortrait 缺 32 筆故當備位）
  *   weapons → icon（178 筆中 6 筆缺）
+ *
+ * `opts.lore`（PLAN-042-A）：這張卡片是機師故事館的分享卡。只換 title 與 description，
+ * **og:image 沿用同一張 half.jpg** —— 故事館不另開一條美術維護線（計畫書決策二）。
+ * 刻意做成選填參數：既有呼叫點與既有測試一個字都不必改。
  */
-export function buildOgMeta(collection: OgCollection, doc: Record<string, unknown>): OgMeta | null {
+export function buildOgMeta(
+  collection: OgCollection,
+  doc: Record<string, unknown>,
+  opts?: { lore?: boolean },
+): OgMeta | null {
   const name = str(doc.name)
   if (!name) return null // 連名字都沒有就沒有做卡片的意義，退回站名卡
+
+  if (collection === 'pilots' && opts?.lore) {
+    // 章節不各自成卡：`part` 只是同一位機師故事的第幾段，分享出去的仍是「這位機師的故事」。
+    return {
+      title: `${name} 的故事`,
+      description: truncate(str(doc.lore)) || `${name}｜機師故事館`,
+      image: absoluteImage(doc.portrait) ?? DEFAULT_OG_IMAGE,
+    }
+  }
 
   if (collection === 'pilots') {
     const rarity = str(doc.rarity)

@@ -33,6 +33,24 @@
   <div class="card-grid">
     <div class="card orange">
       <div class="card-icon">◆</div>
+      <h3>PLAN-054 · 機師／機甲圖片 ID 化</h3>
+      <p>圖片主鍵從「站上中文名資料夾」換成遊戲 ID——已有 5 個資料夾跟顯示名對不上、頭像還是先打官方 CDN。以 v3 定版對照為唯一輸入：DB 補 gameId／artKey／英文名 90 位／官配 61 組；陸版擷取的官方原檔以<b>原檔名</b>匯入 <code>public/images/game/&lt;ID&gt;/</code>（站上沒有的進 <code>_reserve</code>）；讀取端改由 ID 推路徑（本地原檔 → 舊檔 → CDN），OG 一起切；最後像素比對刪掉與原檔同圖的舊檔、名字資料夾退場。新機師填 ID 就有圖。0／A／B／C／D 五段 26 項，約 7 人日；決策已於 2026-10-03 確認（官方圖一律取代、引用全面改寫、部署後清快取）。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-054_機師機甲圖片ID化/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-054_機師機甲圖片ID化/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card pink">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-042-C · 故事館氛圍層</h3>
+      <p>042-A 寫好的線稿顯影<b>實際上看不見</b>：時間軸從元件掛載起算、不等 art.webp 載入，冷快取實測<b>線稿 0 幀</b>；線稿又被關在 <code>#0a0c10</code> 黑框裡成了白色負片（實機驗證換紙底照樣成立，M-10 的顧慮不成立）；整套只動 opacity，沒有官網的縮放／上移／斜切運鏡。<br>對照官網 <code>#hero</code> 解剖：沒有 canvas、SVG 或動畫庫，<b>全部是 PNG 圖層＋CSS keyframes</b>——背景一張 bg.jpg、粒子兩張 1–2KB 點陣圖 × 7 個 div、每位機師四層（手繪線稿／溶解彩圖／名字書法／資料），<b>名字是圖不是 webfont</b>，但八張字母造型一致證明是字型。站長與官方有非營利不追究的共識後，背景／標題／粒子從 CSS 重建變成直接切版；<b>官網只做了 8 位</b>（洛莎、虹、凱登、白月、葉夫根尼、艾琳、黛娜、梅利莎），這 8 位可 1:1，其餘 82 位靠 LXGW WenKai TC 名字子集（127＋ 字的封閉集合，不漂移）與濾鏡管線。A–G 七段 28 項約 12 人日，B／C／D 兩館共用。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-042-C_故事館氛圍層/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-042-C_故事館氛圍層/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">◆</div>
       <h3>PLAN-052-O · 配裝圖回讀</h3>
       <p>玩家拿到別人的配裝圖——原始 PNG，或 Discord／LINE 上的二手截圖——<b>PC 上沒有任何還原路徑</b>：圖底那串 79 字元起跳的 base64url 是像素、不能選取，只能一個字一個字抄，而 <code>l</code>／<code>I</code>／<code>1</code> 與 <code>O</code>／<code>0</code> 在多數字型下同形，抄錯一個字整串解不開。052-L E-2 的 QR 對手機成立、對 PC 不成立——圖與模擬器在同一個螢幕上，拿手機對著螢幕掃再把連結傳回電腦是一段繞路。本計畫把「掃」搬進瀏覽器：在既有的貼碼對話框裡 <b>Ctrl+V 貼圖／拖放／選檔</b>，站上自己從圖裡讀出分享連結，後面全走既有的預覽 → 套用；<b>圖片從頭到尾不離開瀏覽器</b>，零 Storage、零 Firestore read、零 Worker 請求。<br><b>三層讀取順序</b>：① PNG <code>tEXt</code> chunk（匯出時內嵌完整連結，100% 精確、不受碼長上限——剛好補上 QR 的兩個天生缺口：長碼根本不畫 QR、二手壓縮下 <code>ecc L</code> 餘裕很薄；代價是只對原檔有效，轉 JPEG／再截圖即失效，故與 QR 互補而非取代）→ ② 瀏覽器原生 <code>BarcodeDetector</code>（0 KB；但覆蓋率比想像中窄——Chrome 只在 macOS／ChromeOS／Android 暴露它，<b>Windows／Linux 的 Chrome 自 88 起連這個類別都沒有</b>，Safari 預設關閉、Firefox 沒有；對本站主要客群它只是 macOS／Android 上的加速）→ ③ <code>zxing-wasm</code>（1.1 MB 由本站自託管、丟圖時才 dynamic import——不走 jsDelivr，中國使用者連不到，與字體自託管同理由；<b>對 Windows PC 玩家這才是正式路徑</b>）。<br><b>解碼器選型不是想當然</b>：純 JS 零依賴的 jsQR 看似首選，2026-09-08 實測本站匯出圖的 QR 方塊固定 420 實體 px、v21 以上每模組 3.07–3.85px 在 3／4 間交錯，<b>jsQR 從 1000 字元起全數失敗</b>；zxing-wasm 36／530／1461 字元全部解回且快 5–10 倍（22–41 ms），模擬二手截圖 530 字元縮 40%＋q60 仍 OK，經驗門檻<b>每模組 ≥ 約 1.9 實體像素</b>——這個數字寫進了失敗文案。順帶評估過「把 QR 模組間距吸附整數實體像素」，<b>評估後否決</b>：zxing 與手機相機都不受非整數間距影響，吸附卻會讓模組縮小 15–22%、直接吃掉二手截圖的容忍度，受益者只有已被淘汰的 jsQR。<br>失敗<b>分七類、各講一句不同的話</b>並指向下一步：載不到 wasm 與圖裡沒有 QR 是兩件事，吞成空陣列會讓離線的人被告知「請改貼完整碼」。誠實的限制：長碼不畫 QR 的圖其二手截圖無解、1461 字元最壞情況只有原圖可讀、需 WebAssembly、首次 1.1 MB。不做拍照鏡頭、不做批次、不做剪貼簿 API 讀取按鈕。<br><b>✅ 2026-09-08 完成、待歸檔</b>：Playwright e2e 18／18 通過——以真實資料匯出後，原始 PNG 走內嵌、去 metadata 與 JPEG 壓縮版走 QR、無 QR 與別站 QR 各講對的話，合成 paste／drop 與真實剪貼簿 Ctrl+V 皆讀到連結。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">

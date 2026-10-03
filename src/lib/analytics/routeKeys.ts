@@ -40,6 +40,11 @@ export const ROUTE_PATTERNS: readonly string[] = [
   '/versions/grayops',
   '/versions/timeline',
   '/versions/timeline/:version',
+  // 機師故事館（PLAN-042-A）。'/lore' 是真的有內容的館首頁（89 張卡片的牆），
+  // **不是**只做轉址的 index route —— 因此不進 UNTRACKED_EXACT，照常計數。
+  '/lore',
+  '/lore/pilots/:id',
+  '/lore/pilots/:id/:part',
   '/simulator',
   '/research',
   '/news',
@@ -58,6 +63,7 @@ export const ROUTE_PATTERNS: readonly string[] = [
   '/admin/system-log',
   '/admin/analytics',
   '/admin/announcements',
+  '/admin/lore',
   '*',
 ]
 
@@ -128,6 +134,11 @@ export const ROUTE_LABELS: Record<string, string> = {
   versions_grayops:      '灰燼行動',
   versions_timeline:     '版本時間線',
   versions_timeline_detail: '版本時間線（單一版本）',
+  // 故事館三頁。扉頁與章節頁是同一個元件，但 key 不同 —— 這正是要區分的：
+  // 「進來看一眼扉頁」與「真的翻進章節」是兩種完全不同的行為。
+  lore:                      '機師故事館',
+  lore_pilots_detail:        '機師故事（扉頁）',
+  lore_pilots_detail_detail: '機師故事（章節）',
   simulator:             '配裝模擬器',
   research:              '研究所',
   news:                  '最新消息',
@@ -152,6 +163,12 @@ export const ENTITY_ROUTES: Record<string, string> = {
   '/pilots/:id':  'pilots',
   '/mechs/:id':   'mechs',
   '/weapons/:id': 'weapons',
+  // 故事館的兩條路徑刻意**併進 'pilots' 同一個桶**，不另開 'lorePilots'：
+  // workers/src/collect.ts 的 ENTITY_TYPES 是 {pilots, mechs, weapons, modules} 白名單，
+  // 新類別會被已部署的 Worker **靜默丟棄**（PLAN-043 同款雙名單不同步陷阱）。
+  // 語意上也對：問的是「哪位機師被查」，從圖鑑進來還是從故事館進來都算一次。
+  '/lore/pilots/:id':       'pilots',
+  '/lore/pilots/:id/:part': 'pilots',
 }
 
 /**

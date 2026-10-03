@@ -218,9 +218,20 @@ barrel 檔 re-export `./api/` 下按集合拆分的模組。共用基礎在 [fir
 
 barrel 按領域拆檔（`pilot` / `mech` / `weapon` / `module` / `backpack` / `component` / `research` / `buff` / `common` / `grayOps` / `boss`）。**例外**：`enums.ts`、`mechUpgrade.ts` **不在** barrel 內，沿用各自獨立 import 路徑。修改型別 / enum 時依規則 2 同步 `docs/02_技術文件/`。
 
-### 6.5 資料管線：爬蟲 → Firestore
+### 6.5 資料來源：後台人工維護為主，爬蟲只保留活動擷取（2026-10-03 定案）
 
-`scripts/` 下 Playwright 爬蟲（`scrape-pilots-v3.js`、`scrape-mechs.js`、`scrape-weapons.js`…）抓官網 → migrate / patch 腳本寫入 Firestore。一次性腳本放 `scripts/temp_scripts/`。`generate-image-manifest.mjs`（build/dev 前置）掃 `public/images/` 產出可用圖片清單；`copy-docs.mjs` 依白名單把 `docs/` 複製進 `dist/`（route 為 `/documents`）。**官方 API 天賦文本是「滿晶片」污染值**，人工修正存 `PilotTalent.manual` 以防被補丁洗掉。
+**機師、機甲、武器、模組、元件、背包等遊戲資料不再靠爬蟲取得。** 官方 Wiki 更新速度慢到跟不上改版，等它就等於讓站上永遠落後；
+這些資料改由**後台各實體管理頁人工建檔／編輯**（`src/pages/user/admin/`），圖片改由遊戲客戶端擷取匯入（PLAN-054 `import-game-assets.mjs`）。
+
+- **唯一仍在運作的擷取是活動**：`scripts/scrape-tw-announcements.mjs`（台版官方公告 → `announcementDrafts`／`pendingActivities` staging → 後台 `/admin/announcements` 審核後合併進 `patchVersions`），
+  由 `.github/workflows/scrape-announcements.yml` 每週排程執行。改解析器的慣例見 PLAN-048。
+- **官網爬蟲保留作備用、不再維護**：`scrape-pilots-v3.js`、`scrape-mechs.js`、`scrape-weapons.js`、`scrape-modules.js`、`scrape-components.js`、`scrape-backpacks.js`、`scrape-skill-icons.mjs`
+  與 `package.json` 的 `scrape:*` 指令都**不刪**。但規劃功能、改型別、改資料流程時**不必再顧慮它們的相容性**，也不要主動提議用爬蟲補資料。
+- **真的要動用備用爬蟲時**，先知道它們已與現行資料脫節：`scrape-pilots-v3.js` 是整筆覆寫，`--force` 會洗掉 `nameEn`、`debutVersion`、`talent.buffIds`、`manual`
+  以及 PLAN-054 的 `gameId`／`artKey`／`pairedMechId` 等人工欄位；機師與機甲爬蟲會把圖片下載回中文名資料夾、把 `portrait` 寫回舊路徑（與 PLAN-054 的圖片 ID 化相衝）。
+  一律先備份（`scripts/temp_scripts/backup-firestore.mjs`）、先 dry-run。**官方 API 天賦文本是「滿晶片」污染值**，人工修正存在 `PilotTalent.manual`。
+- 其他腳本不受影響：一次性 migrate／patch 腳本照舊放 `scripts/temp_scripts/`；`generate-image-manifest.mjs`（build/dev 前置）掃 `public/images/` 產出可用圖片清單；
+  `copy-docs.mjs` 依白名單把 `docs/` 複製進 `dist/`（route 為 `/documents`）。
 
 ### 6.6 慣例
 
@@ -228,4 +239,4 @@ barrel 按領域拆檔（`pilot` / `mech` / `weapon` / `module` / `backpack` / `
 - `src/components/` **扁平層不放檔案**，新元件一律歸到子資料夾：跨領域重複的視覺元件依 UI 種類（`badges/` `icons/` `cards/` `common/`），只服務單一機制或頁面的依功能領域（`layout/` `auth/` `refs/` `module/` `planner/` `timeline/` `home/` `profile/` `admin/`）。分類表在 `docs/02_技術文件/01_架構設計/系統架構.html`。
 - Tailwind v4：用 CSS-first（`@theme` / `index.css`），**不要**寫 v3 的 `tailwind.config.js`。
 - Firestore 過濾優先 server-side `where`；靜態資料 `getDocs` 一次抓、需即時才 `onSnapshot`（注意免費額度 read 次數）。
-- 階段性開發走 PLAN 制（`docs/05_階段性開發計畫/`，由 `plan-manager` skill 管理）；遊戲改版更新資料走 `data-patch` skill。
+- 階段性開發走 PLAN 制（`docs/05_階段性開發計畫/`，由 `plan-manager` skill 管理）；遊戲改版的新資料走後台人工建檔（見 6.5），用腳本批次改資料時的備份／bump／對帳／漂移檢查流程走 `data-patch` skill。
