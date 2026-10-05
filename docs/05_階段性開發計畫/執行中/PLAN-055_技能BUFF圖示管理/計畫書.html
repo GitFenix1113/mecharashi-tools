@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-055 技能／BUFF 圖示管理 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+
+/* 表格在手機寬度改為容器內橫向捲動，不撐破整頁 */
+.table-scroll { overflow-x: auto; margin: 16px 0; }
+.table-scroll .impact-table { margin: 0; min-width: 520px; }
+
+.flow-figure {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 18px 10px;
+  margin: 16px 0 8px;
+}
+.flow-figure svg { width: 100%; height: auto; display: block; }
+.flow-caption { font-size: 12px; color: var(--text-dim); text-align: center; margin-top: 6px; }
+.decision-block ul, .warning-block ul, .info-block ul, .problem-block ul { margin: 8px 0 0 18px; line-height: 1.9; }
+.decision-block ol, .warning-block ol { margin: 8px 0 0 20px; line-height: 1.9; }
+
+/* 命名文法 */
+.gram { display: flex; flex-wrap: wrap; font-family: 'JetBrains Mono', monospace; font-size: 17px; margin: 12px 0 4px; }
+.gram span { padding: 8px 12px; border: 1px solid var(--border); margin-right: -1px; text-align: center; color: var(--text-primary); background: rgba(255,255,255,0.02); }
+.gram small { display: block; font-family: inherit; font-size: 11px; color: var(--text-dim); margin-top: 2px; font-family: 'Noto Sans TC', sans-serif; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-055 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-055</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    技能／BUFF 圖示管理<span style="-webkit-text-fill-color:var(--text-secondary);">扁平圖庫 · 選圖器改版 · DB 只存 key · BUFF 字形</span>
+  </h1>
+  <p class="hero-sub">官方把圖示的分類全寫在檔名裡，站上卻又按「用在哪」分了一次資料夾。結果同一張圖存了好幾份，選圖器又只能用數字檔名找。本計畫照官方的放法，建一個一張圖只存一份的圖庫，選圖器改成用形狀、色系、名字來找，DB 只存官方檔名。BUFF 第一次有圖示。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value purple">PLAN-055</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-05</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">匯入／索引腳本 · 後台選圖器與 9 個後台 · 約 15 個讀圖元件 · 8 個集合的圖示欄位 · public/images/game/icons/</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value purple">執行中（A／B 完成並部署 11／23）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-054 的匯入管線、引用掃描器、gh-pages ledger（皆已完成）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：選圖器只認數字檔名，圖示找不到</strong><br>
+    後台的 <code>IconPicker</code>（<code>src/components/admin/IconPicker.tsx</code>）只能先挑資料夾、再打檔名子字串。
+    但檔名是 <code>Icon_skill_passive_5227</code> 這種純數字，沒人記得住。「全部資料夾」模式要先打字，結果上限 500 筆，縮圖只有 48px。
+    也不能用技能名或機師名找，看不到「這張圖誰在用」。新角色建檔時，只能在上千張裡用肉眼找。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：同一張圖存了好幾份</strong><br>
+    站上按「用在哪」分資料夾：<code>skills/</code> 底下 6 個中文子夾、<code>modules/</code>、<code>components/</code>、<code>backpacks_skills/</code>，
+    另外 <code>pilot_forms/</code> 也有一份。這幾個夾共 1,674 個檔，實際只有 1,219 種圖。
+    其中 <b>391 個檔名跨資料夾重複</b>，用 cmp 比對全部位元組相同，有 5 張在四個資料夾裡都有。
+    根本原因是「用途」本來就是多對多：同一張被動圖可以同時是技能、模組、元件、背包技能和形態的圖，用資料夾表達用途一定會重複。
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：DB 寫法不一，還有副本</strong>（2026-10-03 正式站備份實測）
+    <ul>
+      <li>圖示值有 4 種寫法：裸 key、扁平路徑、子資料夾路徑、完整路徑。內嵌的 <code>WeaponSkill</code> 還存了官方 CDN 的遠端 URL。</li>
+      <li><code>pilotSkills</code> 同時存 <code>icon</code>（裸 key）和 <code>iconLocal</code>（路徑），其中 197 筆只有路徑。104 個 key 在 DB 裡被 2～5 種不同的資料夾路徑引用。</li>
+      <li>3,239 個扁平路徑要靠 <code>normalizeSkillPath()</code> 推回子資料夾才解析得到（<code>src/utils/assets.ts</code>）。</li>
+      <li><code>pilots.neuralDrive.levels[]</code> 裡嵌了 1,578 份 <code>skillIcon／iconLocal</code> 副本，其中 9 位手建機師共 115 份是空值。
+          不過 <code>PilotDetailPage.tsx:829</code> 早就改成優先讀 <code>neuralDriveAbilities</code> 字典，這些副本實際上沒人在用。</li>
+      <li>還有 37 個中文佔位 key（例如 <code>Icon_skill_passive_凱登01</code>）。10-01 盤點已經逐張目視，全部對到官方鍵名。</li>
+    </ul>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題四：BUFF 沒有圖示</strong><br>
+    型別已經預留欄位：<code>GameBuff.icon</code>、<code>BuffLevel.icon</code>（<code>src/types/buff.ts:94,104</code>）。但 233 筆裡沒有一筆有值，也沒有 BUFF 圖庫。
+    BuffAdmin 的選圖器預設開的是技能夾，各等級的 <code>BuffLevel.icon</code> 也沒有編輯欄位。
+    前台唯一預留的顯示點是引用浮窗（<code>EntityRefView.tsx:145</code>），但目前什麼都顯示不出來。
+  </div>
+
+  <div class="info-block">
+    <strong>其實官方有一套很整齊的分類，全部寫在檔名裡</strong>（陸版擷取＋正式站備份交叉驗證，2026-10-04）
+    <div class="gram">
+      <span>Icon_skill_<small>前綴</small></span><span>passive<small>種類 → 外框形狀</small></span><span>_</span><span>5<small>色系</small></span><span>3<small>批次／世代</small></span><span>02<small>流水號</small></span>
+    </div>
+    <ul>
+      <li><b>種類決定外框形狀</b>：<code>main</code> 主動▲、<code>order</code> 指令■、<code>passive</code> 被動●、<code>talent</code> 天賦◆；<code>pp</code> 是青綠色水滴，右下有 P。</li>
+      <li><b>首位數決定色系</b>：
+        <span class="dot" style="background:#e05a5a"></span>1 紅（攻擊）
+        <span class="dot" style="background:#4a90d9"></span>2 藍（防禦）
+        <span class="dot" style="background:#6aa84f"></span>3 綠（修理）
+        <span class="dot" style="background:#e0a43a"></span>4 金（暴擊／AP）
+        <span class="dot" style="background:#8e6bd6"></span>5 紫（機制）。
+        主色相吻合 802／806 張。括號裡的功能是對照技能描述歸納出來的，官方沒有文件。</li>
+      <li><b>9xxx 是聯動</b>：第 2～3 碼代表角色，95 虎王、96 戰部渡、97 零、98 真嗣、99 明日香。</li>
+      <li><b>流水號照建檔順序往後加</b>：天賦紫系從洛莎 5110（v1.0）一路排到貝爾莎 5163（v3.2），v3.3～3.4 的四位新機師是 5164～5167 連號。
+          所以<b>新角色的圖一定落在各序列的尾端</b>。</li>
+      <li>官方把技能、模組詞條（<code>Icon_entry_*</code>）、研發（<code>Icon_RnD_*</code>）全部放在<b>同一個資料夾</b> <code>uiicons/skilltype_abs</code>，只靠檔名區分。
+          BUFF 是另一套：127 個白色單色字形，打包成一張圖集（<code>bufftype_abs</code>），顏色是遊戲執行時才套上去的。</li>
+      <li>⚠ <b>圖示不等於技能</b>：同一張圖常被多個技能共用，例如 <code>main_1106</code> 同時是乘勝追擊、崩山、拘敵猛襲的圖。這和 PLAN-032 的實測結論一致，所以圖示只代表外觀，<b>不能拿來當主鍵或推導技能</b>。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label purple">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="flow-figure">
+    <svg viewBox="0 0 760 540" role="img" aria-label="資料流：擷取與站上舊圖取聯集匯入扁平圖庫，選圖器讀索引並寫回 key，讀取端以檔名解析新圖庫">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" style="fill:#9ca3af"></path>
+        </marker>
+      </defs>
+      <g style="font-family:inherit;">
+        <!-- 來源 -->
+        <rect x="30" y="20" width="300" height="54" rx="10" style="fill:rgba(249,115,22,0.08);stroke:#f97316;"></rect>
+        <text x="180" y="43" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">陸版擷取 ＋ 圖片索引.csv</text>
+        <text x="180" y="63" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">skilltype_abs 1,137 · bufftype_abs 127（不進 repo）</text>
+
+        <rect x="430" y="20" width="300" height="54" rx="10" style="fill:rgba(249,115,22,0.08);stroke:#f97316;"></rect>
+        <text x="580" y="43" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">站上舊資料夾</text>
+        <text x="580" y="63" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">擷取裡沒有的官方檔名 254（舊 CDN 版本）</text>
+
+        <!-- 匯入 -->
+        <rect x="180" y="110" width="400" height="54" rx="10" style="fill:rgba(168,85,247,0.08);stroke:#a855f7;"></rect>
+        <text x="380" y="133" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">import-game-assets.mjs --icons</text>
+        <text x="380" y="153" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">聯集 · 同名去重 · 差異報告 · WebP · 官方檔名</text>
+
+        <rect x="180" y="200" width="400" height="54" rx="10" style="fill:rgba(168,85,247,0.08);stroke:#a855f7;"></rect>
+        <text x="380" y="223" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">public/images/game/icons/</text>
+        <text x="380" y="243" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">skill/ · buff/ —— 扁平，一張圖一份</text>
+
+        <!-- 後台 -->
+        <rect x="70" y="290" width="260" height="54" rx="10" style="fill:rgba(34,211,238,0.08);stroke:#22d3ee;"></rect>
+        <text x="200" y="313" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">icons/index.json</text>
+        <text x="200" y="333" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">種類 · 色系 · 批次 · 流水（build 產生）</text>
+
+        <rect x="430" y="290" width="300" height="54" rx="10" style="fill:rgba(34,211,238,0.08);stroke:#22d3ee;"></rect>
+        <text x="580" y="313" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">GameIconPicker（後台）</text>
+        <text x="580" y="333" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">形狀×色系×未使用 · 搜名字 · 反查誰在用</text>
+
+        <rect x="430" y="380" width="300" height="54" rx="10" style="fill:rgba(34,211,238,0.08);stroke:#22d3ee;"></rect>
+        <text x="580" y="403" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">Firestore：只存裸 key</text>
+        <text x="580" y="423" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">icon: 'Icon_skill_passive_5227'</text>
+
+        <!-- 讀取端 -->
+        <rect x="110" y="470" width="540" height="58" rx="10" style="fill:rgba(34,197,94,0.08);stroke:#22c55e;"></rect>
+        <text x="380" y="494" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">gameIconCandidates(value)：檔名即 key</text>
+        <text x="380" y="515" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">新圖庫 → 原值（舊路徑）⇒ 全站讀圖元件；舊資料不必先改也有圖</text>
+
+        <g style="stroke:#9ca3af;stroke-width:1.5;fill:none;">
+          <line x1="230" y1="74" x2="300" y2="108" marker-end="url(#ah)"></line>
+          <line x1="530" y1="74" x2="460" y2="108" marker-end="url(#ah)"></line>
+          <line x1="380" y1="164" x2="380" y2="198" marker-end="url(#ah)"></line>
+          <line x1="280" y1="254" x2="220" y2="288" marker-end="url(#ah)"></line>
+          <line x1="330" y1="317" x2="428" y2="317" marker-end="url(#ah)"></line>
+          <line x1="580" y1="344" x2="580" y2="378" marker-end="url(#ah)"></line>
+          <line x1="580" y1="434" x2="540" y2="468" marker-end="url(#ah)"></line>
+          <polyline points="180,227 40,227 40,499 108,499" marker-end="url(#ah)" style="stroke-dasharray:4 4;"></polyline>
+        </g>
+        <text x="48" y="420" style="fill:#9ca3af;font-size:11px;">檔案</text>
+        <text x="384" y="309" text-anchor="middle" style="fill:#9ca3af;font-size:11px;">lazy</text>
+      </g>
+    </svg>
+    <div class="flow-caption">檔案線與資料線在讀取端匯流。讀取端以檔名解析，所以 DB 遷移（C）只是整理，不是有沒有圖的前提</div>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策一：官方檔名就是分類，圖庫扁平，一張圖只存一份</strong>
+    <ul>
+      <li>落點分兩個資料夾：
+        <ul>
+          <li><code>public/images/game/icons/skill/&lt;官方檔名&gt;.webp</code>：收官方 <code>skilltype_abs</code> 整夾，包含技能、模組詞條、研發、指揮官技能。</li>
+          <li><code>public/images/game/icons/buff/&lt;官方檔名&gt;.webp</code>：收 <code>Icon_buff_*</code>、<code>Icon_debuff_*</code>。</li>
+        </ul>
+        和 PLAN-054 的 <code>game/</code> 放在一起，匯入、索引、ledger 退場三套機制都直接沿用。</li>
+      <li><b>不再按用途分資料夾。</b>「這張圖誰在用」改由反查回答（決策五）。反查是從資料算出來的，比資料夾更精確，也不會跟資料脫節。</li>
+      <li><b>改判 PLAN-043 決策五</b>（背包技能圖獨立成 <code>skills/背包技能/</code>，當初「維護者明示接受重複，換取分得清來源」）。
+          實測那 19 張與被動夾的檔案位元組完全相同，獨立資料夾並沒有保存任何不同的東西，「分得清來源」改由反查提供。
+          站長 2026-10-05 立案時同意改採扁平圖庫的管理方式。</li>
+      <li>武器 <code>Icon_weapon_*</code> 和背包 <code>Icon_backpack_*</code> 不動：它們已經是一夾一份、官方檔名，沒有重複問題。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：來源取聯集，以官方擷取為準，舊圖不丟（博物館原則）</strong>
+    <div class="table-scroll"><table class="impact-table">
+      <tr><th>來源</th><th>數量</th><th>處理</th></tr>
+      <tr><td>陸版擷取 <code>skilltype_abs</code>（Texture2D）</td><td>1,137 個檔名</td><td>全收</td></tr>
+      <tr><td>陸版擷取 <code>bufftype_abs</code>（Sprite）</td><td>127</td><td>全收。同一張圖集裡另有 9 個職業小圖示，不在本計畫範圍</td></tr>
+      <tr><td>站上舊夾有、擷取裡沒有的官方檔名</td><td>254</td><td>全收，索引標 <code>legacy</code>。多半是官方 CDN 的舊版圖示，其中 26 個仍被 DB 引用</td></tr>
+      <tr><td>兩邊都有</td><td>925</td><td>918 張像素相同、4 張近似、3 張不同（<code>passive_1180／5302／5304</code>，站上那 3 張是 .webp）。以擷取為準，A-3 報告附前後對照給站長看</td></tr>
+      <tr><td>站上中文檔名</td><td>40</td><td>不收。DB 裡的 37 個中文 key 在 C-1 換成官方 key</td></tr>
+    </table></div>
+    <ul>
+      <li>同名且內容相同就去重。擷取內同名但 sha256 不同時，中止並回報，不猜（沿用 PLAN-054 決策四）。</li>
+      <li>格式用 WebP。圖示最大 128px、邊緣銳利，預設用 <b>lossless</b>；體積在 A-3 實測，預估全庫小於 5 MB。舊夾退場後，總量會比現在小。</li>
+      <li>Windows 不分大小寫、GitHub Pages 分大小寫，所以匯入前先以小寫做碰撞檢查。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>決策三：擷取裡有、站上沒有的 212 張要不要部署（✅ 2026-10-06 站長定案：全部上線）</strong>
+    <ul>
+      <li><b>建議全部部署。</b>選圖器就是它們的使用者：新角色建檔時最需要的，正是各序列尾端還沒用過的圖。
+          圖示是抽象符號，不含名字、立繪或文字，跟 PLAN-054 擋下的 NPC 立繪、造型不是同一個等級的劇透。</li>
+      <li><b>風險</b>：其中被動 53xx 有 25 張站上還沒用到，可能屬於台版尚未上線的角色。別人看得出「有新東西」，但看不出是誰。</li>
+      <li><b>替代方案</b>：只部署站上已經有的那些，其餘放 repo 外的封存夾，需要時用 <code>--key</code> 單張升級。代價是新角色上線時得先跑腳本，才選得到圖。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：讀取端以「檔名即 key」解析，舊路徑立刻對到新圖庫</strong>
+    <ul>
+      <li>新增 helper <code>gameIconCandidates(value)</code>。不管傳進來的是裸 key、扁平路徑、子夾路徑、完整路徑還是遠端 URL，都取檔名當 key：
+          第一候選是新圖庫路徑，第二候選是原值（經過 <code>normalizeSkillPath</code>）。交給 <code>FallbackImage</code> 逐張試。</li>
+      <li><b>效果</b>：讀取端一切換（A-6），全站圖示就改讀新圖庫，不必先改 DB。DB 遷移（C）因此只是整理，不影響有沒有圖。
+          刻意永久保留的爬蟲原始資料也不必改寫，靠檔名照樣解析得到：<code>weapons.skills[]</code> 的內嵌 <code>WeaponSkill</code>（PLAN-032）、<code>pilots.biometicComputer</code> 快照。</li>
+      <li><code>SkillIcon</code> 現在只吃單一路徑，載不到就直接顯示「?」。改成走候選鏈；全部失敗時仍顯示「?」方塊，維持整排文字對齊。</li>
+      <li>命名規則只寫一份：<code>scripts/lib/gameIconKinds.mjs</code> 給 Node 腳本用，<code>src/utils/gameIcons.ts</code> 給前台用，兩份由測試交叉比對（照 <code>gameAssetKinds</code> 的慣例）。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：選圖器改版：用官方文法篩、用名字找、最新的排前面</strong>
+    <ul>
+      <li>新元件 <code>GameIconPicker</code>／<code>GameIconField</code>（<code>src/components/admin/</code>）只負責圖示。舊 <code>IconPicker</code> 留給立繪、武器、背包、機甲這些其他圖。</li>
+      <li><b>篩選</b>：種類（形狀）× 色系 × 使用狀態（未使用／已使用）。<b>搜尋</b>：編號、技能名、持有者名稱。</li>
+      <li><b>預設依流水號倒序</b>：新角色的圖一定在序列尾端，所以會排在最前面。新版本建檔時，候選會從約 1,400 張縮到十幾張。</li>
+      <li><b>反查「誰在用」</b>：用純函式掃後台已經載入的遊戲資料（GameDataContext 快取），<b>不增加 Firestore 讀取</b>。滑鼠移到圖上時顯示「已被 N 處使用：○○・○○、模組・○○」。</li>
+      <li>同一張圖只出現一次；縮圖 80～96px，滑過放大到 128px。寫回的值是<b>裸 key</b>，不是路徑。</li>
+      <li><b>索引</b>：<code>public/images/game/icons/index.json</code> 在 build／predev 時產生，選圖器開啟時才 lazy fetch，不進前台 bundle。
+          前台顯示不需要它，因為 key 推路徑是確定的。<code>manifest.json</code> 排除 <code>game/icons/</code>，免得舊選圖器又多列一千多張。</li>
+      <li><b>色系的功能說明只是介面標籤</b>：放在一份常數裡，不寫進資料當分類欄位，因為官方沒有文件。</li>
+    </ul>
+    <div class="table-scroll"><table class="impact-table">
+      <tr><th>後台</th><th>開啟時預選</th><th>現況</th></tr>
+      <tr><td>SkillAdmin</td><td>依技能類型（主動→main、指令→order、被動→passive）</td><td>IconField，開 <code>skills</code>，寫 <code>iconLocal</code></td></tr>
+      <tr><td>PilotAdmin 天賦</td><td>talent</td><td>IconField，寫 <code>iconLocal</code></td></tr>
+      <tr><td>NeuralDriveAdmin</td><td>passive</td><td>IconField</td></tr>
+      <tr><td>ModuleAdmin</td><td>模組詞條＋passive</td><td>IconField，開 <code>modules</code></td></tr>
+      <tr><td>ComponentAdmin</td><td>passive＋研發</td><td><b>手打文字</b>，沒有選圖器</td></tr>
+      <tr><td>BackpackSkillAdmin（頂層＋各級）</td><td>passive</td><td>IconField，開 <code>skills/背包技能</code></td></tr>
+      <tr><td>WeaponAdmin 武器技能</td><td>main／order／passive</td><td>IconField</td></tr>
+      <tr><td>FormAdmin</td><td>passive</td><td>IconField，圖在 <code>pilot_forms/</code></td></tr>
+      <tr><td>BuffAdmin（頂層＋<b>補上</b>各級欄位）</td><td>BUFF 字形</td><td>IconField 開的是 <code>skills</code>；各級沒有欄位</td></tr>
+    </table></div>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：DB 只存裸 key</strong>
+    <div class="table-scroll"><table class="impact-table">
+      <tr><th>集合．欄位</th><th>現在</th><th>之後</th></tr>
+      <tr><td>pilotSkills</td><td><code>icon</code>（key，224 筆空）＋<code>iconLocal</code>（路徑）</td><td><code>icon</code>＝key，刪 <code>iconLocal</code></td></tr>
+      <tr><td>pilots.talents[]</td><td><code>icon</code>＋<code>iconLocal</code></td><td><code>icon</code>＝key</td></tr>
+      <tr><td>pilots.neuralDrive.levels[]</td><td><code>skillIcon</code>＋<code>iconLocal</code> 副本 1,578 份</td><td><b>刪除</b>，改由 <code>abilityId</code> 查 neuralDriveAbilities</td></tr>
+      <tr><td>neuralDriveAbilities</td><td><code>icon</code>＋<code>iconLocal</code></td><td><code>icon</code>＝key</td></tr>
+      <tr><td>components</td><td><code>icon</code>＋<code>iconLocal</code></td><td><code>icon</code>＝key（<code>outerFrameLocal</code> 不動，那不是技能圖）</td></tr>
+      <tr><td>modules</td><td><code>icon</code>＝完整路徑</td><td>key</td></tr>
+      <tr><td>backpackSkills（頂層＋levels[]）</td><td>路徑（一半指向 <code>背包技能/</code>、一半指向 <code>被動技能/</code>）</td><td>key</td></tr>
+      <tr><td>forms</td><td><code>/images/pilot_forms/…</code></td><td>key</td></tr>
+      <tr><td>buffs（＋levels[]）</td><td>空</td><td>key（D 階段寫入）</td></tr>
+      <tr><td>weapons.skills[] 內嵌、pilots.biometicComputer</td><td>遠端 URL／扁平路徑</td><td><b>不改</b>：爬蟲原始資料，靠決策四照樣有圖</td></tr>
+    </table></div>
+    <ul>
+      <li>37 個中文 key 換成官方 key，對照表用 10-01 盤點 §7.1（43 張已逐張目視，1 張改採次佳候選）。</li>
+      <li>流程走 <code>data-patch</code> skill：備份 → dry-run → <code>--apply</code> → 寫在腳本裡的 bump。型別變動依 CLAUDE.md 規則 2 同步 docs。</li>
+      <li>要記住的是 key 只代表外觀。技能之間的關聯仍然靠文件 ID 與名稱，不靠圖示（PLAN-032、PLAN-043 的結論）。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：BUFF 圖示用官方白色字形＋CSS 上色</strong>
+    <ul>
+      <li>官方的 127 個字形：
+        <ul>
+          <li>通用增益 8 個（<code>buff_attack／avoid／critical／defence／hit／link／move／recover</code>）。</li>
+          <li>通用減益 10 個（同一個字形加一道斜線，<code>debuff_*</code>）。</li>
+          <li>資源與屬性 1xxx、控制與異常 2xxx、修理 3xxx。</li>
+          <li><b>角色或機制專屬徽記 4001～4064</b>。</li>
+          <li>層數數字 5000～5009。</li>
+        </ul></li>
+      <li>新增 <code>&lt;BuffGlyph&gt;</code>：用 CSS <code>mask-image</code> 套字形，顏色走主題 token。極性由 <code>buffType</code> 推：statBoost 是增益、debuff 是減益、state 是狀態、resource 是資源。
+          一張字形可以同時服務增益和減益兩種顏色，和遊戲的做法相同。</li>
+      <li><b>233 筆要做一次對照</b>，因為官方沒有對照表：
+        <ol>
+          <li>腳本依 <code>buffType</code> 與描述關鍵字給建議（例如命中→hit、暴擊→critical）。</li>
+          <li>產出 <code>_local-notes/</code> 審核表。</li>
+          <li>站長確認後寫入。</li>
+        </ol>
+          角色專屬狀態從 4xxx 一對一指定。<b>拿不準的就留空</b>，補值等於編造（資料佔位慣例）。</li>
+      <li>層數數字 5000～5009 不用，層數改用 CSS 文字顯示。</li>
+      <li>顯示點：引用浮窗（<code>EntityRefView</code> 已預留 <code>lv?.icon || b.icon</code>）與 BuffAdmin 列表。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>決策八：沒有新擷取時，新角色的圖示怎麼辦（✅ 2026-10-06 站長定案：留空，沒有的圖就沒有）</strong>
+    <ul>
+      <li><b>有新擷取</b>：跑 <code>import-game-assets.mjs --icons</code>，只加新 key、既有的跳過，再更新索引。新圖會自然出現在選圖器「未使用・最新」的最前面。</li>
+      <li><b>沒有新擷取時，建議留空</b>：前台顯示「?」方塊，掃描器列出「缺圖示」清單，等下次擷取再補。這也符合資料佔位慣例：拿不到官方圖就不要自己生一個。
+          <b>不再做中文截圖佔位</b>，那 37 個中文 key 就是這樣來的。</li>
+      <li><b>替代方案</b>：允許暫代截圖，放在 <code>game/icons/interim/</code>，key 加 <code>Interim_</code> 前綴，由掃描器列管；拿到擷取後用以圖搜圖（B-4）換掉。</li>
+      <li>不主動動用 <code>scrape-skill-icons.mjs</code>，CLAUDE.md 6.5 已把它列為備用爬蟲。要動用時注意它會把圖寫回舊資料夾，這條會寫進 6.5 的隱患清單（E-3）。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策九：舊資料夾退場：讀取端先切、掃描器守門、ledger 寬限</strong>
+    <ul>
+      <li><b>退場對象</b>：
+        <ul>
+          <li><code>skills/</code> 的 6 個子夾（1,088 檔）。</li>
+          <li><code>modules/</code> 裡的 <code>Icon_skill_*／Icon_entry_*</code>（530）。</li>
+          <li><code>components/</code> 根目錄的 <code>Icon_*</code>（55；<code>OuterFrame/</code> 與 <code>Stage*_Boss/</code> 不動）。</li>
+          <li><code>backpacks_skills/</code>、<code>pilot_forms/</code>。</li>
+          <li><code>normalizeSkillPath()</code> 與 <code>SKILL_PREFIX_FOLDERS</code>。</li>
+        </ul></li>
+      <li><b>刪除條件</b>，依序：
+        <ol>
+          <li>讀取端切換完成，守門測試通過（A-7）。</li>
+          <li><code>check-image-refs.mjs</code> 回報的現役舊夾引用為 0。爬蟲原始快照靠檔名解析，列為允許。</li>
+          <li>刪除 repo 裡的檔案並部署。</li>
+          <li>ledger 寬限 14 天後，從 gh-pages 移除。</li>
+        </ol></li>
+      <li><b>快取</b>：新檔名不需要 Purge。DB 改寫後要 bump 該集合的版本。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label purple">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內（五段 23 項，估約 6 人日）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>A 圖庫與讀取端</b>（不改 DB）：命名規則模組、<code>--icons</code> 匯入模式、實際匯入、索引、讀取端 helper、約 15 個讀圖元件、守門測試與掃描器</li>
+      <li><b>B 選圖器改版</b>（只動後台）：<code>GameIconPicker</code>、反查純函式、接入 9 個後台並依情境預選、以圖搜圖（選配）</li>
+      <li><b>C 資料整理</b>（寫 DB）：遷移腳本（只存 key、37 個中文 key、ND 副本）、型別與 docs、套用並 bump、後台只寫 <code>icon</code></li>
+      <li><b>D BUFF 圖示</b>：<code>BuffGlyph</code>、233 筆對照（站長確認）、寫入、顯示點與 BuffAdmin 各級欄位</li>
+      <li><b>E 退場與收尾</b>：舊資料夾退場、部署並等寬限期複驗、流程寫進文件、歸檔</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>武器與背包本身的圖示（已是一夾一份、官方檔名）</li>
+      <li>技能描述裡的行內 BUFF 標籤加圖示（D 完成後可以另開）</li>
+      <li>職業、屬性、陣營圖示（10-01 盤點 §6.5／§6.8，另案）；指揮官技能頁</li>
+      <li>以「圖示編號」推導技能或作為關聯鍵（PLAN-032 已否決）</li>
+      <li>把色系功能寫成資料欄位</li>
+      <li>台版客戶端解包、新的爬蟲；改寫 <code>scrape-skill-icons.mjs</code></li>
+      <li>改寫刻意永久保留的爬蟲原始資料（內嵌 <code>WeaponSkill</code>、<code>biometicComputer</code>）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 風險 -->
+<section class="section">
+  <div class="section-label red">Risks</div>
+  <div class="section-title">風險與對策</div>
+  <div class="table-scroll"><table class="impact-table">
+    <tr><th>風險</th><th>等級</th><th>對策</th></tr>
+    <tr><td>某個讀圖元件漏切，舊夾一刪就破圖</td><td><span class="badge-high">高</span></td><td>A-7 守門測試（圖示欄位只准經過 helper，比照 <code>portraitGuard.test.ts</code>）＋ Playwright 全站掃描技能圖 4xx 為 0、舊夾請求為 0 ＋ ledger 寬限</td></tr>
+    <tr><td>配裝匯出圖（canvas）用的圖示來源沒跟著切</td><td><span class="badge-med">中</span></td><td><code>LoadoutExportCard</code> 列入 A-6，A-7 加一次匯出驗收</td></tr>
+    <tr><td>選圖器的寫回格式在讀取端準備好之前就上線</td><td><span class="badge-med">中</span></td><td>B 依賴 A-5／A-6：helper 先認得裸 key，選圖器才開始寫 key</td></tr>
+    <tr><td>陸版先行，未使用的圖示洩漏台版未上線內容</td><td><span class="badge-low">低</span></td><td>決策三待確認；圖示本身不含名字或立繪</td></tr>
+    <tr><td>BUFF 對照補錯，等於編造資料</td><td><span class="badge-med">中</span></td><td>腳本只給建議，站長確認後才寫；拿不準的留空</td></tr>
+    <tr><td>遷移後忘記 bump，使用者讀到舊快取</td><td><span class="badge-med">中</span></td><td>bump 寫在腳本結尾，不靠人記（data-patch 慣例）</td></tr>
+    <tr><td>型別改了，docs 資料模型沒同步</td><td><span class="badge-low">低</span></td><td>C-2 專項：pilots／neuralDriveAbilities／components／backpacks／weapons 資料模型頁＋ pilotSkills／components 資料庫設計文件</td></tr>
+  </table></div>
+</section>
+
+<!-- 實作紀錄 -->
+<section class="section">
+  <div class="section-label purple">Log</div>
+  <div class="section-title">實作紀錄（2026-10-05：A、B 完成）</div>
+
+  <div class="info-block">
+    <strong>決策二的細化：舊編號不另存，改用別名表</strong><br>
+    站上「擷取沒有的官方檔名」254 張，比對後發現其中 <b>172 張是官方重新編號前的舊編號</b>，畫面跟現行圖幾乎逐像素相同
+    （例：侵攻存的 <code>main_1043</code>＝現行 <code>main_1141</code>；舊編號也不遵守色系規則，例如紫框的 <code>order_1016</code>）。
+    為了守住「一張圖一份」，這 172 張不收進圖庫，改寫成別名表 <code>src/data/gameIconAliases.ts</code>（腳本用 <code>scripts/lib/gameIconMeta.json</code>），
+    讀取端 <code>gameIconPath()</code> 先換成現行編號再推路徑。真正獨有的 82 張才以 legacy 收進圖庫，選圖器預設收起。
+    <ul>
+      <li>判定門檻刻意保守：32×32 特徵距離 &lt; 6 才算同一張。實測 6～14 是「同設計重繪」、14 以上開始出現換色變體（紫框 vs 紅框），這些都照常保留，<b>不改變任何畫面</b>。</li>
+      <li>判定是匯入腳本跑的，別名表由 <code>import-game-assets.mjs --icons --apply</code> 自動產生，不要手改。</li>
+    </ul>
+  </div>
+
+  <div class="info-block">
+    <strong>神經驅動分區圖示也收進圖庫</strong><br>
+    <code>Icon_zoneskill_0001～0005</code>（α／β／γ…）住在 <code>itemchips_abs</code>、不在 <code>skilltype_abs</code>，但 <code>pilots.neuralDrive[].icon</code> 與 <code>biometicComputer</code> 有 1,190 處引用。
+    只多 5 個檔，一併匯入，掃描器的「圖庫找不到」因此歸零。
+  </div>
+
+  <div class="warning-block">
+    <strong>發現 4 筆「猜錯編號」的武器技能圖示（部署前要先修）</strong><br>
+    同名但畫面不同的 3 張，不是舊版官方圖，而是手建 HMG-29C、笑謊者時存成「猜的官方編號」的截圖：
+    <ul>
+      <li>鐵令將花 <code>passive_5302</code> → 實際是 <code>5314</code>（5302 在官方是淬鋒·凱登的圖）</li>
+      <li>盛開之心 <code>passive_1180</code> → 實際是 <code>1131</code></li>
+      <li>妙手毒方 <code>passive_5304</code> → 實際是 <code>5312</code></li>
+      <li>重點關照 <code>passive_1182</code> → 實際是 <code>1171</code>（1182 官方不存在，已由別名表兜住）</li>
+    </ul>
+    圖庫照官方編號存，所以新前台一上線，前三筆會顯示成別人的圖。修正腳本 <code>scripts/temp_scripts/fix-mislabeled-weapon-skill-icons.mjs</code> 只改 <code>icon</code>、保留 <code>iconLocal</code>
+    （舊前台只讀 iconLocal、那張圖本來就對），所以<b>先跑腳本、再部署</b>，新舊前台都不會出錯。
+    ✅ 2026-10-06 已寫入（寫入前備份 <code>_local-notes/2026-10/2026-10-05_db-backup-1559</code>），同一支腳本順帶補了「協同作戰1」的圖示。
+  </div>
+
+  <div class="decision-block">
+    <strong>B-4 以圖搜圖做了，而且準</strong><br>
+    特徵要先裁到不透明外框再切 12×12：截圖的留白不一（圖示佔畫布 65%～100%），不裁時用站上 40 張中文佔位截圖驗證只有 28／40 命中，裁了之後 <b>40／40 第一名命中</b>。
+    這讓決策八的「暫代圖」替代方案更沒必要：手上只有截圖時，貼進選圖器就能找到官方編號（前提是該張圖已在圖庫，也就是有新的客戶端擷取）。
+  </div>
+
+  <div class="info-block">
+    <strong>決策三：全部上線（站長 2026-10-06 定案）</strong><br>
+    擷取有、站上沒有的圖（技能類 217＋BUFF 127）已全部匯入 <code>public/images/game/icons/</code>，隨 A／B 一起部署。
+  </div>
+
+  <div class="info-block">
+    <strong>還缺圖示的資料（掃描器 (f)，交給選圖器補）</strong><br>
+    BUFF 233（D 階段）、神經驅動能力 45、技能 44、模組 11、背包技能 1、形態 2，以及阿列娜、曜、塞拉、珂賽特、索妮婭的天賦。
+    多半是 v3.5～3.7 的新內容。陸版擷取裡很可能有它們的圖，但沒有截圖可以比對就自動指定等於編造，所以不自動補；
+    選圖器的「未使用・最新在前」與以圖搜圖就是為這件事準備的。
+    2026-10-06 逐筆對過資料庫裡的官方 API 原始資料（biometicComputer、武器內嵌技能，516 個技能名）：只有「協同作戰1」對得到（已補），其餘交給維護者。
+    同系列推定（例：協同作戰2～4 都是 1003）不當依據——103 個神經驅動系列裡有 1 個（據守作戰）各級圖示不同。清單在 <code>_local-notes/2026-10/2026-10-05_PLAN-055_A-7_圖示引用基準線.md</code>。
+  </div>
+</section>
+
+<!-- 決策紀錄 -->
+<section class="section">
+  <div class="section-label purple">Decisions</div>
+  <div class="section-title">站長決策</div>
+  <div class="decision-block">
+    ✅ 2026-10-05 立案：採用「官方檔名扁平圖庫＋選圖器改版」的管理方式，連同改判 PLAN-043 決策五（決策一）。<br>
+    ✅ 2026-10-06 決策三：擷取裡有、站上沒有的圖<b>全部上線</b>。缺圖的資料由維護者用選圖器手動選；
+       只有從官方資料<b>明確知道</b>採用哪張時才由腳本代補（本次僅 神經驅動「協同作戰1」1 筆，依據官方 API 原始資料 biometicComputer）。<br>
+    ✅ 2026-10-06 決策八：<b>留空</b>——沒有官方圖就沒有圖，不做暫代截圖。<br>
+    ✅ 2026-10-06 同意寫入 4 筆猜錯編號的武器技能修正（已執行並 bump pilotSkills／neuralDriveAbilities）。
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label purple">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-055 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-054_機師機甲圖片ID化/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-054 機師機甲圖片 ID 化</h4>
+      <p>匯入管線、引用掃描器、gh-pages ledger 的來源；其範圍外列的「技能 icon（另案）」即本計畫</p>
+    </a>
+    <a class="doc-item" href="../../觀察維護中/PLAN-043_背包技能集合/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-043 背包技能集合</h4>
+      <p>決策五（背包技能圖獨立資料夾）由本計畫改判</p>
+    </a>
+  </div>
+  <p style="font-size:12px;color:var(--text-dim);margin-top:12px;">
+    本機參考（不進版控）：<code>_local-notes/2026-10/2026-10-04_技能BUFF圖示_官方命名規律與管理改善提案.html</code>（命名規律的證據、實際圖示矩陣、BUFF 字形一覽）、
+    <code>…/2026-10-01_遊戲原始素材盤點.html</code> §7.1（37 個中文 key 的官方對照）。
+  </p>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-055 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
