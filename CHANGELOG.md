@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-03
+## [Unreleased] - 2026-10-05
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **icons**: PLAN-055 A／B — 技能類圖示改由官方圖庫提供＋後台選圖器改版 (`6bf5d9f`)
 - **images**: PLAN-054 Phase C — 讀取端改用官方原檔、官配互連、後台遊戲 ID 欄位 (`8bb3694`)
 - **lore**: PLAN-042-C 故事館氛圍層 — 官網 hero 圖層、線稿顯影修正、名字字體與 BGM（27／28） (`9032d39`)
 - **lore**: PLAN-042-A Phase C–F — 機師故事館前台、編輯台與 Worker 路由（18／21） (`fb1a8f4`)
@@ -351,6 +352,7 @@
 
 ### 🔧 維護
 
+- **images**: PLAN-055 匯入官方圖示圖庫（技能類 1,224＋BUFF 127） (`26201d1`)
 - **images**: 圖片引用掃描器略過程式註解；OG 註解舉例改成官方原檔路徑 (`b075e52`)
 - **images**: PLAN-054 Phase D — 舊圖退場、站上自製圖搬進遊戲 ID 資料夾 (`96d2405`)
 - **images**: PLAN-054 Phase B — 官方原檔匯入 public/images/game（core 912 檔） (`7f040cc`)
