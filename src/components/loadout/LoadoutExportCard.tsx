@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, type CSSProperties } from 'react'
 import { toPng } from 'html-to-image'
 import type { Component, NeuralDrive, NeuralDriveAbility, Pilot, PilotSkillDoc } from '../../types'
 import { hasMechArt, imageCandidates, pilotFullArtPath, mechKeyArtPath, mechPortraitCandidates } from '../../utils/assets'
+import { gameIconCandidates } from '../../utils/gameIcons'
 import { FallbackImage } from '../common/FallbackImage'
 import { moduleRows, slotComponents, wastedModuleStacks, weaponRows } from '../../utils/loadoutRows'
 import { ComponentsWType } from '../../types/enums'
@@ -720,7 +721,7 @@ function ModuleBand({ ctx }: { ctx: LoadoutContext }) {
             <span style={{ width: 26, height: 26, flexShrink: 0, marginTop: 2 }}>
               {l.icon && (
                 <FallbackImage
-                  candidates={imageCandidates(l.icon)}
+                  candidates={gameIconCandidates(l.icon)}
                   alt=""
                   fallback={null}
                   // ⚠ 直接畫 `<img>` 而不是借用 `ModuleIcon`：那顆帶 Tailwind 類別
@@ -882,9 +883,9 @@ function SkillBand({ skills }: { skills: readonly PilotSkillDoc[] }) {
             display: 'flex', alignItems: 'center', gap: 8, minWidth: 0,
             padding: '6px 10px 6px 6px', background: C.panel, border: `1px solid ${C.lineStrong}`,
           }}>
-            {sk.iconLocal ? (
+            {(sk.icon || sk.iconLocal) ? (
               <FallbackImage
-                candidates={imageCandidates(sk.iconLocal)}
+                candidates={gameIconCandidates(sk.icon, sk.iconLocal)}
                 alt=""
                 // ⚠ 退化態走下面那顆方塊，不是 `null`：這一格塌掉會讓 chip 少半邊
                 fallback={<SkillTypeBox type={sk.type} />}
@@ -1060,9 +1061,9 @@ function ExportComponentIcon({ comp, size }: { comp: Component | null; size: num
           width: '100%', height: '100%', objectFit: 'contain',
         }}
       />
-      {comp.iconLocal && (
+      {(comp.icon || comp.iconLocal) && (
         <FallbackImage
-          candidates={imageCandidates(comp.iconLocal)}
+          candidates={gameIconCandidates(comp.icon, comp.iconLocal)}
           alt=""
           fallback={null}
           style={{

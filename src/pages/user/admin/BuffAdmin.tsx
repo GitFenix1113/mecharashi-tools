@@ -6,8 +6,7 @@ import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updateBuff, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
-import { IconField } from '../../../components/admin/IconPicker'
-import { resolveIconSrc } from '../../../utils/assets'
+import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { SkillEffectItem } from './PilotAdmin'
 import { checkBuffLevelName } from '../../../utils/ndOverrides'
@@ -358,11 +357,13 @@ function BuffEditPanel({
           </div>
         )}
 
-        <IconField
-          label="圖示 icon（選填）"
+        {/* PLAN-055：BUFF 圖示是官方的白色字形（前台上色）；各級欄位 BuffLevel.icon 於 D-4 補上 */}
+        <GameIconField
+          label="圖示（BUFF 字形，選填）"
           value={form.icon}
-          onChange={(v) => update('icon', v || undefined)}
-          defaultFolder="skills"
+          onChange={(k) => update('icon', k || undefined)}
+          library="buff"
+          placeholder="Icon_buff_4012"
         />
 
         <TermRefField
@@ -568,9 +569,7 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
             className="bg-bg-dark border border-accent-orange/20 rounded-lg px-3 py-2.5 flex items-center gap-3 hover:border-border-accent transition-colors cursor-pointer"
             onClick={() => setEditing(buff)}
           >
-            {buff.icon && (
-              <img src={resolveIconSrc(buff.icon)} alt="" className="w-8 h-8 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
-            )}
+            <IconThumb icon={buff.icon} className="w-8 h-8 rounded shrink-0 p-1 bg-bg-card" />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-sm text-text-primary truncate">

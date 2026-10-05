@@ -15,7 +15,7 @@ import {
   ACTIVATION_LABELS,
   FixedArmamentBadge,
 } from '../../components/badges/WeaponBadges'
-import { assetUrl } from '../../utils/assets'
+import { SkillIcon } from '../../components/icons/SkillIcon'
 import { isCompositeWeapon } from '../../utils/weaponUpgrade'
 import { naOr, isNaStat, isVariableStat, variableStatNote, VARIABLE_STAT_SHORT_NOTE } from '../../utils/weaponStats'
 import { WeaponType, WeaponKind } from '../../types/enums'
@@ -54,26 +54,6 @@ function Num({ children, className = '' }: { children: React.ReactNode; classNam
     <span className={`text-accent-red font-bold font-[JetBrains_Mono,monospace] ${className}`}>
       {children}
     </span>
-  )
-}
-
-function SkillIcon({ iconLocal, name, size = 'md' }: { iconLocal?: string; name: string; size?: 'sm' | 'md' }) {
-  const [err, setErr] = useState(false)
-  const cls = size === 'sm' ? 'w-7 h-7' : 'w-10 h-10'
-  if (err || !iconLocal) {
-    return (
-      <div className={`${cls} rounded-lg bg-bg-dark border border-border flex items-center justify-center text-text-dim text-xs flex-shrink-0`}>
-        技
-      </div>
-    )
-  }
-  return (
-    <img
-      src={assetUrl(iconLocal)}
-      alt={name}
-      className={`${cls} rounded-lg object-cover flex-shrink-0`}
-      onError={() => setErr(true)}
-    />
   )
 }
 
@@ -207,7 +187,7 @@ function WeaponTooltipContent({ weapon, pilotMap }: {
                 const actCls = ACTIVATION_CONFIG[sk.activation]?.className ?? 'text-text-dim bg-bg-dark border-border'
                 return (
                   <div key={i} className="flex flex-col items-center gap-1 w-16 rounded-lg p-1.5 cursor-default">
-                    <SkillIcon iconLocal={sk.iconLocal} name={sk.name} />
+                    <SkillIcon icon={sk.icon} iconLocal={sk.iconLocal} name={sk.name} placeholder="技" />
                     <div className="text-center w-full">
                       <div className="text-[11px] font-medium leading-tight line-clamp-2 break-all">{sk.name}</div>
                       <span className={`text-[10px] border rounded px-1 py-0.5 mt-0.5 inline-block ${actCls}`}>

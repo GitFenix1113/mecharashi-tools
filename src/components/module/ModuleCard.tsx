@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Module } from '../../types'
-import { imageCandidates } from '../../utils/assets'
+import { gameIconCandidates } from '../../utils/gameIcons'
 import { FallbackImage } from '../common/FallbackImage'
 import { RefText } from '../refs/RefText'
 import { ModuleSlotBadge, ModuleRarityBadge } from '../badges/ModuleBadges'
@@ -34,7 +34,7 @@ function ModuleIcon({ icon, name, size }: { icon?: string; name: string; size: s
   if (!icon) return <div className={box} />
   return (
     <FallbackImage
-      candidates={imageCandidates(icon)}
+      candidates={gameIconCandidates(icon)}
       alt={name}
       className={`${box} object-cover`}
       fallback={<div className={box} />}

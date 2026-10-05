@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import type { MechPartPosition } from '../../../types/enums'
 import { imageCandidates, mechPartCandidates, mechPortraitCandidates } from '../../../utils/assets'
+import { gameIconCandidates } from '../../../utils/gameIcons'
 import { partLabel } from '../../../utils/moduleSlots'
 import { interfaceState, moduleFamilyKey } from '../../../utils/moduleRules'
 import type { LoadoutContext } from '../../../utils/loadoutRules'
@@ -213,7 +214,7 @@ export function ExportPartCard({ ctx, position, width, grow }: {
             <span style={{ width: 22, height: 22, flexShrink: 0 }}>
               {mod?.icon && (
                 <FallbackImage
-                  candidates={imageCandidates(mod.icon)}
+                  candidates={gameIconCandidates(mod.icon)}
                   alt=""
                   fallback={null}
                   style={{ width: 22, height: 22, objectFit: 'contain', display: 'block' }}

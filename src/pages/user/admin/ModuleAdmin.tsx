@@ -14,7 +14,7 @@ import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { markKeywords, extractKeywords } from '../../../utils/refKey'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
-import { IconField } from '../../../components/admin/IconPicker'
+import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
 import { SLOT_OPTIONS, SLOT_LABEL, PART_OPTIONS, TRIGGER_LABEL, STAT_OPTIONS } from './constants'
 
 type ModuleFilters = {
@@ -616,7 +616,7 @@ function ModuleEditPanel({
               <Field label="名稱">
                 <input value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" />
               </Field>
-              <IconField label="圖示 icon" value={form.icon} onChange={(v) => update('icon', v || undefined)} defaultFolder="modules" />
+              <GameIconField label="圖示（官方檔名）" value={form.icon} onChange={(k) => update('icon', k || undefined)} presetKinds={['entry', 'passive']} />
               <Field label="效果描述（滿等效果）">
                 <p className="text-[12px] text-text-dim mb-1.5 leading-relaxed">
                   此處填<span className="text-accent-yellow">滿等（最高等級）</span>的效果描述，會直接顯示在前台模組卡片上；各等級的差異值另在「等級資料」分頁維護。
@@ -1127,9 +1127,7 @@ export default function ModuleAdmin({
             className="bg-bg-dark border border-border rounded-lg px-3 py-2.5 flex items-center gap-3 hover:border-border-accent transition-colors cursor-pointer"
             onClick={() => setEditing(mod)}
           >
-            {mod.icon && (
-              <img src={mod.icon} alt="" className="w-8 h-8 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
-            )}
+            <IconThumb icon={mod.icon} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-sm text-text-primary truncate">

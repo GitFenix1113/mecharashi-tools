@@ -399,6 +399,36 @@ export function useAllGameData(): HookResult<AllGameData | null> {
   return { data, loading, error }
 }
 
+// ── 後台選圖器：圖示「誰在用」反查（PLAN-055 B-2）────────────────────────────
+
+export interface IconUsageData {
+  pilots: Pilot[]
+  pilotSkills: PilotSkillDoc[]
+  neuralDriveAbilities: NeuralDriveAbility[]
+  modules: Module[]
+  components: Component[]
+  backpackSkills: BackpackSkillDoc[]
+  forms: MechForm[]
+  buffs: GameBuff[]
+  weapons: Weapon[]
+}
+
+/**
+ * 用到技能類圖示的集合全部載入（後台多半早就載過 → 走記憶體／localStorage 快取，0 次 Firestore read）。
+ * 只在選圖器**開啟時**才呼叫，前台一般頁面不會付這筆。
+ */
+const ICON_USAGE_KEYS: CollectionKey[] = ['pilots', 'pilotSkills', 'neuralDriveAbilities', 'modules', 'components', 'backpackSkills', 'forms', 'buffs', 'weapons']
+
+export function useIconUsageData(): HookResult<IconUsageData | null> {
+  const { pilots, pilotSkills, neuralDriveAbilities, modules, components, backpackSkills, forms, buffs, weapons } = useGameData()
+  const { loading, error } = useCollections(ICON_USAGE_KEYS)
+  const data = useMemo<IconUsageData | null>(() => {
+    if (loading) return null
+    return { pilots, pilotSkills, neuralDriveAbilities, modules, components, backpackSkills, forms, buffs, weapons }
+  }, [loading, pilots, pilotSkills, neuralDriveAbilities, modules, components, backpackSkills, forms, buffs, weapons])
+  return { data, loading, error }
+}
+
 // ── 便利重新整理 ─────────────────────────────────────────────────────────────
 
 export { EMPTY_GLOBAL_RESEARCH }

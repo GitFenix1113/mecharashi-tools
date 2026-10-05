@@ -9,8 +9,10 @@ import { splitParagraphs, isQuoteStyle, stripTrailingSource } from '../../compon
 import { CLASS_CONFIG, LicenseBadge } from '../../components/badges/PilotBadges'
 import {
   hasPilotArt, pilotArtDir, pilotKeyArtPath, pilotFullArtPath, pilotOfficialArt,
-  imageCandidates, resolveIconSrc, assetUrl,
+  imageCandidates, assetUrl,
 } from '../../utils/assets'
+import { gameIconCandidates } from '../../utils/gameIcons'
+import { FallbackImage } from '../../components/common/FallbackImage'
 import { usePilot, usePilotLoreDoc } from '../../hooks/useFirestore'
 
 /**
@@ -50,16 +52,14 @@ import { usePilot, usePilotLoreDoc } from '../../hooks/useFirestore'
 const PORTRAIT_MOBILE_CAP = 'max-h-[38vh] lg:max-h-none'
 
 /**
- * 天賦徽記的圖片來源。
+ * 天賦徽記的圖片候選（PLAN-055：從圖示圖庫取，`icon`／`iconLocal` 任一個能解析就有圖）。
  *
- * ⚠ **一律 `?.trim() || … || null`，不可用 `??` 或 `!== undefined`**（地雷 M-16）：
- *   `icon` / `iconLocal` 的型別是必填 `string`，但有 3 位機師兩者都是**空字串**，
- *   `??` 不會觸發 fallback、tsc 也不會抱怨，而空字串進 `<img src="">`
- *   在瀏覽器等同**重新載入當前頁面 URL**（Network 面板會看到對本頁的重複請求）。
+ * ⚠ 地雷 M-16：有 3 位機師的 `icon`／`iconLocal` 都是**空字串**，空字串進 `<img src="">`
+ *   在瀏覽器等同**重新載入當前頁面 URL**。`gameIconCandidates` 會先 trim、空值不產生候選，
+ *   回空陣列時呼叫端**不渲染 <img>**。
  */
-function talentIconSrc(talent: { icon?: string; iconLocal?: string } | undefined): string | null {
-  if (!talent) return null
-  return talent.iconLocal?.trim() || talent.icon?.trim() || null
+function talentIconCandidates(talent: { icon?: string; iconLocal?: string } | undefined): string[] {
+  return talent ? gameIconCandidates(talent.icon, talent.iconLocal) : []
 }
 
 export default function PilotLorePage() {
@@ -138,7 +138,7 @@ export default function PilotLorePage() {
     : imageCandidates(tall ? pilotKeyArtPath(pilot) : pilotFullArtPath(pilot))
 
   const classText = CLASS_CONFIG[pilot.class]?.split(' ')[0] ?? 'text-text-secondary'
-  const talentIcon = talentIconSrc(pilot.talents[0])
+  const talentIcons = talentIconCandidates(pilot.talents[0])
   const talentName = pilot.talents[0]?.name ?? ''
 
   // E-1 檔案感小字：流水號取自文件 id（pilot_003_洛莎 → 003）；紅標用身高（官網名字層上那顆是
@@ -288,11 +288,14 @@ export default function PilotLorePage() {
               </span>
 
               <span className="w-[68px] h-[68px] shrink-0 rounded-full border border-border-accent bg-bg-card flex items-center justify-center overflow-hidden">
-                {talentIcon ? (
-                  <img
-                    src={resolveIconSrc(talentIcon)}
+                {talentIcons.length ? (
+                  <FallbackImage
+                    candidates={talentIcons}
                     alt={talentName}
                     className="w-[52px] h-[52px] rounded-full object-cover"
+                    fallback={
+                      <span className="px-[4px] text-center text-[11px] leading-tight text-text-dim">{talentName || '—'}</span>
+                    }
                   />
                 ) : (
                   // 兩者都是空字串的 3 位機師走這條。**不渲染 <img>**，

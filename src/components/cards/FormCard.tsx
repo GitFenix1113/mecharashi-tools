@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import type { MechForm } from '../../types'
 import { useGameData } from '../../contexts/GameDataContext'
-import { resolveIconSrc } from '../../utils/assets'
+import { gameIconCandidates } from '../../utils/gameIcons'
+import { FallbackImage } from '../common/FallbackImage'
 import { RefText } from '../refs/RefText'
 import { RefChip } from '../refs/RefChip'
 import { slotKey } from '../../types/slots'
@@ -93,11 +94,10 @@ export function FormCard({ form }: { form: MechForm }) {
       {/* ── 標頭 ── */}
       <div className="flex items-center gap-2.5 mb-2.5">
         {form.icon && (
-          <img
-            src={resolveIconSrc(form.icon)}
+          <FallbackImage
+            candidates={gameIconCandidates(form.icon)}
             alt=""
             className="w-9 h-9 rounded object-contain bg-bg-card border border-border/60 shrink-0"
-            onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
           />
         )}
         <div className="min-w-0 flex-1">

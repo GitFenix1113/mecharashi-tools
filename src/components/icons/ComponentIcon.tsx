@@ -1,4 +1,6 @@
 import { assetUrl } from '../../utils/assets'
+import { gameIconCandidates } from '../../utils/gameIcons'
+import { FallbackImage } from '../common/FallbackImage'
 import type { Component } from '../../types'
 import { ComponentsWType } from '../../types/enums'
 
@@ -27,9 +29,10 @@ export function ComponentIcon({ comp, size = 48 }: Props) {
           height: '80%',
         }}
       />
-      {comp.iconLocal && (
-        <img
-          src={assetUrl(comp.iconLocal)}
+      {/* PLAN-055：技能圖從圖庫取（icon＝官方檔名 key；iconLocal 是舊路徑後備）。外框不是技能圖，維持原路徑 */}
+      {(comp.icon || comp.iconLocal) && (
+        <FallbackImage
+          candidates={gameIconCandidates(comp.icon, comp.iconLocal)}
           alt=""
           className="absolute object-contain"
           style={{
@@ -39,7 +42,6 @@ export function ComponentIcon({ comp, size = 48 }: Props) {
             width: '48%',
             height: '48%',
           }}
-          onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
         />
       )}
     </div>

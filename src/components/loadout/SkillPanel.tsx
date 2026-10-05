@@ -76,7 +76,7 @@ export function SkillPanel({
               換一個直接點清單就好，不必先卸下。 */}
           {current && (
             <div className={`${HUD_READONLY} rounded mt-3 p-2 flex items-center`} style={{ gap: 8 }}>
-              <SkillIcon iconLocal={current.iconLocal} name={current.name} size="sm" />
+              <SkillIcon icon={current.icon} iconLocal={current.iconLocal} name={current.name} size="sm" />
               <span className="flex flex-col min-w-0 grow">
                 <span className={`${HUD.bodyStrong} text-text-primary truncate`}>{current.name}</span>
                 <span className="text-[11px] text-text-dim">目前這一格</span>
@@ -114,7 +114,7 @@ export function SkillPanel({
                   }`}
                   style={{ gap: 8 }}
                 >
-                  <SkillIcon iconLocal={d.iconLocal} name={d.name} size="sm" />
+                  <SkillIcon icon={d.icon} iconLocal={d.iconLocal} name={d.name} size="sm" />
                   <span className="flex flex-col min-w-0 grow" style={{ gap: 2 }}>
                     <span className="flex items-baseline flex-wrap min-w-0" style={{ gap: 6 }}>
                       <span className={`${HUD.bodyStrong} text-text-primary truncate`}>{d.name}</span>

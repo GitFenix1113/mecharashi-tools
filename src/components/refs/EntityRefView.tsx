@@ -5,6 +5,7 @@ import { useGameData, type CollectionKey } from '../../contexts/GameDataContext'
 import { useReference } from '../../contexts/ReferenceContext'
 import { STAT_LABELS } from '../../utils/moduleStats'
 import { imageCandidates, mechPortraitCandidates, pilotPortraitCandidates } from '../../utils/assets'
+import { gameIconCandidates } from '../../utils/gameIcons'
 import { pickLevel } from '../../utils/ndOverrides'
 import { FallbackImage } from '../common/FallbackImage'
 import { RefText } from './RefText'
@@ -97,7 +98,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: mod.name,
         subtitle: [mod.slot, mod.rarity].filter(Boolean).join(' · '),
-        images: imageCandidates(mod.icon),
+        images: gameIconCandidates(mod.icon),
         description: mod.description,
         descriptionRefs: mod.descriptionRefs,
       }
@@ -117,7 +118,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: c.name,
         subtitle: c.rarity,
-        images: imageCandidates(c.iconLocal),
+        images: gameIconCandidates(c.icon, c.iconLocal),
         description: c.description,
       }
     }
@@ -146,7 +147,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: b.name,
         subtitle,
-        images: imageCandidates(icon, term?.icon),
+        images: gameIconCandidates(icon, term?.icon),
         description,
         descriptionRefs,
       }
@@ -158,7 +159,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
         title: s.name,
         subtitle: [s.type, s.ap ? `AP ${s.ap}` : '', s.cd ? `CD ${s.cd}` : '', s.pp ? `消耗 ${s.pp}PP` : '']
           .filter(Boolean).join(' · '),
-        images: imageCandidates(s.iconLocal, s.icon),
+        images: gameIconCandidates(s.icon, s.iconLocal),
         description: s.description,
         descriptionRefs: s.descriptionRefs,
       }
@@ -177,7 +178,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: t.name,
         subtitle: t.category,
-        images: imageCandidates(t.icon),
+        images: gameIconCandidates(t.icon),
         description: t.description,
         descriptionRefs: t.descriptionRefs,
       }
@@ -193,7 +194,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
         title: f.name,
         subtitle: [owner?.name, f.isSignature ? '天賦專屬形態' : '形態', restrictLabel]
           .filter(Boolean).join(' · '),
-        images: imageCandidates(f.icon),
+        images: gameIconCandidates(f.icon),
         description: f.description,
         descriptionRefs: f.descriptionRefs,
         // 形態沒有獨立詳情頁 → 帶 ?tab= 直接落在機師頁的形態分頁（見 REF_TO_ROUTE 註解）。
@@ -204,11 +205,10 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
     case 'neuralDrive': {
       const a = gd.neuralDriveAbilities.find(x => x.id === ref.refId)
       if (!a) return null
-      const ndIcon = a.iconLocal || a.icon
       return {
         title: a.name,
         subtitle: '神經驅動能力',
-        images: imageCandidates(ndIcon),
+        images: gameIconCandidates(a.icon, a.iconLocal),
         description: a.description,
         descriptionRefs: a.descriptionRefs,
       }

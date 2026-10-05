@@ -19,11 +19,11 @@ import { checkBuffLevelName } from '../../../utils/ndOverrides'
 import { sortLevelsAscending } from '../../../utils/buffLevelRefs'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
-import { IconField } from '../../../components/admin/IconPicker'
+import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
 import { SkillEffectItem } from './PilotAdmin'
 
-/** PLAN-043 E-1：背包技能圖示的獨立資料夾（與被動技能圖大量重複是刻意接受的） */
-const BACKPACK_SKILL_ICON_FOLDER = 'skills/背包技能'
+// PLAN-055：背包技能圖示改從扁平圖庫挑（PLAN-043 E-1 的獨立資料夾 skills/背包技能 改判退場——
+// 那 19 張與被動夾位元組相同，「分得清來源」改由選圖器的「被誰用」反查提供）
 
 type SkillFilters = { skillType: string; leveled: 'all' | 'leveled' | 'flat' }
 
@@ -138,11 +138,11 @@ function BackpackSkillLevelItem({
             onCompileText={(tf) => upd('description', tf(levelData.description ?? ''))}
           />
 
-          <IconField
-            label="該級圖示 icon（選填；不填沿用技能圖示）"
+          <GameIconField
+            label="該級圖示（選填；不填沿用技能圖示）"
             value={levelData.icon ?? ''}
-            onChange={(v) => upd('icon', v || undefined)}
-            defaultFolder={BACKPACK_SKILL_ICON_FOLDER}
+            onChange={(k) => upd('icon', k || undefined)}
+            presetKinds={['passive']}
           />
 
           <div>
@@ -254,11 +254,11 @@ function BackpackSkillEditPanel({
           </Field>
         </div>
 
-        <IconField
-          label="圖示 icon"
+        <GameIconField
+          label="圖示（官方檔名）"
           value={form.icon ?? ''}
-          onChange={(v) => update('icon', v)}
-          defaultFolder={BACKPACK_SKILL_ICON_FOLDER}
+          onChange={(k) => update('icon', k)}
+          presetKinds={['passive']}
         />
 
         <Field label={`效果說明 description${isLeveled ? '（階梯技能：各級可各自覆寫；此處填共通描述）' : ''}`}>
@@ -489,9 +489,7 @@ export default function BackpackSkillAdmin({ initialSearch = '' }: { initialSear
               className="bg-bg-dark border border-border rounded-lg px-3 py-2.5 flex items-center gap-3 hover:border-border-accent transition-colors cursor-pointer"
               onClick={() => setEditing(skill)}
             >
-              {skill.icon && (
-                <img src={skill.icon} alt="" className="w-8 h-8 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
-              )}
+              <IconThumb icon={skill.icon} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-sm text-text-primary truncate">

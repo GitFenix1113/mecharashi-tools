@@ -17,6 +17,8 @@ import { shareIdFloor } from '../../../utils/loadoutCode/shareIdRegistry'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
+import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
+import { iconKindsForSkillType } from '../../../utils/gameIcons'
 import { WEAPON_RARITY_CLASS, WEAPON_KIND_BY_TYPE, ALL_WEAPON_KINDS } from './constants'
 import { SkillEffectItem } from './PilotAdmin'
 
@@ -80,9 +82,7 @@ function WeaponSkillRefRow({
   return (
     <div className="flex items-center gap-2 bg-bg-dark border border-accent-cyan/30 rounded-lg px-2.5 py-2">
       <span className="text-[11px] px-1.5 py-0.5 rounded border border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan shrink-0">引用</span>
-      {doc?.iconLocal && (
-        <img src={doc.iconLocal} alt="" className="w-7 h-7 rounded shrink-0" onError={e => ((e.target as HTMLImageElement).style.display = 'none')} />
-      )}
+      <IconThumb icon={doc?.icon} iconLocal={doc?.iconLocal} className="w-7 h-7 rounded shrink-0" />
       <div className="flex-1 min-w-0 truncate">
         {/* 解析不到 = 斷鏈（技能被刪或 id 打錯）。必須顯眼，否則前台只會靜默少一塊技能 */}
         {doc
@@ -217,11 +217,12 @@ function WeaponSkillItem({
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <IconField
-              label="圖示路徑 iconLocal（本地）"
+            {/* PLAN-055：內嵌 WeaponSkill 是爬蟲原形（PLAN-032 刻意保留），沿用 iconLocal 欄位但改存官方檔名 key */}
+            <GameIconField
+              label="圖示（官方檔名）"
               value={skill.iconLocal}
-              onChange={(v) => onChange({ ...skill, iconLocal: v || undefined })}
-              defaultFolder="skills"
+              onChange={(k) => onChange({ ...skill, iconLocal: k || undefined })}
+              presetKinds={iconKindsForSkillType(skill.type)}
             />
             <Field label="圖示 URL icon（遠端，選填）">
               <input value={skill.icon ?? ''} onChange={(e) => onChange({ ...skill, icon: e.target.value || undefined })} className="input-field" placeholder="https://..." />

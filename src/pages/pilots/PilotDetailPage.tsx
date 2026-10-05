@@ -204,7 +204,7 @@ function TalentCard({
 
   return (
     <div className="flex gap-3 p-3 bg-bg-dark rounded-xl border border-border">
-      <SkillIcon iconLocal={talent.iconLocal} name={talent.name} />
+      <SkillIcon icon={talent.icon} iconLocal={talent.iconLocal} name={talent.name} />
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2 mb-1.5">
           <span className="font-bold text-base">{talent.name}</span>
@@ -389,7 +389,7 @@ function WeaponSkillContent({ sk, isEnhance }: { sk: WeaponSkillItem; isEnhance:
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-2">
-        <SkillIcon iconLocal={sk.iconLocal ?? ''} name={sk.name} size="sm" />
+        <SkillIcon icon={sk.icon} iconLocal={sk.iconLocal} name={sk.name} size="sm" />
         <span className="font-bold text-sm text-text-primary">{sk.name}</span>
         <span className="text-[13px] text-text-dim bg-bg-dark border border-border px-1.5 py-0.5 rounded">
           {ACTIVATION_LABEL[sk.activation] ?? sk.activation}
@@ -579,7 +579,7 @@ function ExclusiveWeaponPanel({ weapon, skills, loading, talentNames, stageCount
                     onMouseLeave={() => { if (!isMobile) setSkillHover(null) }}
                     onClick={() => { if (isMobile) setSkillSheet(sk) }}
                   >
-                    <SkillIcon iconLocal={sk.iconLocal ?? ''} name={sk.name} />
+                    <SkillIcon icon={sk.icon} iconLocal={sk.iconLocal} name={sk.name} />
                     <div className="text-center w-full">
                       <div className={`text-xs font-medium leading-tight line-clamp-2 break-all ${isEnhanceSkill(sk) ? 'text-accent-yellow' : ''}`}>
                         {sk.name}
@@ -716,7 +716,7 @@ function NeuralDriveZoneCard({ nd, zoneName, className, expanded, onLevelHover, 
               onMouseLeave={onLevelLeave}
               onClick={() => onLevelClick?.(lv)}
             >
-              <SkillIcon iconLocal={lv.iconLocal} name={lv.skillName} />
+              <SkillIcon icon={lv.skillIcon} iconLocal={lv.iconLocal} name={lv.skillName} />
               <div className="text-center w-full">
                 <div className="text-xs font-medium leading-tight line-clamp-2 break-all">{lv.skillName}</div>
                 <div className="text-[13px] text-text-dim leading-none mt-0.5">Lv.{lv.level}</div>
@@ -739,7 +739,7 @@ function NeuralDriveZoneCard({ nd, zoneName, className, expanded, onLevelHover, 
       <div className="divide-y divide-border">
         {nd.levels.map((lv) => (
           <div key={lv.level} className="flex gap-3 p-3 items-start">
-            <SkillIcon iconLocal={lv.iconLocal} name={lv.skillName} />
+            <SkillIcon icon={lv.skillIcon} iconLocal={lv.iconLocal} name={lv.skillName} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className="font-bold text-sm">{lv.skillName}</span>
@@ -1146,7 +1146,7 @@ export default function PilotDetailPage() {
             <div className="space-y-3">
               {regularSkills.map((sk, i) => (
                 <div key={i} className="flex gap-3 p-3 bg-bg-dark rounded-xl border border-border">
-                  <SkillIcon iconLocal={sk.iconLocal} name={sk.name} />
+                  <SkillIcon icon={sk.icon} iconLocal={sk.iconLocal} name={sk.name} />
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
                       <span className="font-bold text-base">{sk.name}</span>
@@ -1223,7 +1223,7 @@ export default function PilotDetailPage() {
                   <div className="space-y-2">
                     {classSkills.map((sk, i) => (
                       <div key={i} className="flex gap-3 p-3 bg-bg-dark rounded-xl border border-accent-green/20">
-                        <SkillIcon iconLocal={sk.iconLocal} name={sk.name} />
+                        <SkillIcon icon={sk.icon} iconLocal={sk.iconLocal} name={sk.name} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1.5">
                             <span className="font-bold text-base">{sk.name}</span>

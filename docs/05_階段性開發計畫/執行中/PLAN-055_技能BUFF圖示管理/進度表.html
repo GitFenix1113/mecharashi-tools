@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-055 技能／BUFF 圖示管理 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+.task-desc ul { margin: 4px 0 0 18px; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-055 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-055</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">技能／BUFF 圖示管理</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-05</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label purple">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">11</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">12</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">23</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-purple);">11 / 23</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 48%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    新角色建檔時，選圖器打開就是「同種類、未使用、最新」的十幾張圖，可以用機師名或技能名找，也看得到每張圖被誰用。
+    同一張圖只存一份，DB 只存官方檔名。BUFF 第一次有圖示。
+  </div>
+
+  <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);">
+    <strong style="color:var(--accent-yellow);">現況（2026-10-06）：</strong>A、B 完成並推送部署。部署前已先寫入 4 筆猜錯編號的武器技能修正＋補「協同作戰1」圖示（bump pilotSkills／neuralDriveAbilities）。<br>
+    <strong style="color:var(--accent-yellow);">站長定案：</strong>決策三＝擷取有的圖全部上線，缺圖由維護者用選圖器手動選（只有官方資料明確對得到才由腳本代補）；決策八＝留空，沒有官方圖就沒有圖。<br>
+    <strong style="color:var(--accent-yellow);">接下來：</strong>C 排在下次大版本建檔之前；D 可以穿插；E 等 C 跑完、寬限期過了再做。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label purple">Phase A</div>
+  <div class="section-title">圖庫與讀取端（不改 DB）</div>
+  <div class="section-desc">把官方圖示依原檔名匯入扁平圖庫，讓全站讀圖元件以「檔名即 key」改讀新圖庫。完成後畫面不變，但圖已經全部來自一張一份的新圖庫。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 命名規則共用模組</div>
+      <div class="task-group-meta">scripts/lib/ · src/utils/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">解析與路徑規則一份，Node 版與 TS 版交叉測試</div>
+        <div class="task-desc">
+          <code>parseIconKey(key)</code> 解析出 <code>{ family: skill|buff, kind: main|order|passive|talent|pp|entry|rnd|…, color: 1–5|9, batch, seq }</code>，
+          <code>gameIconPath(key)</code> 推出 <code>images/game/icons/&lt;family&gt;/&lt;key&gt;.webp</code>，<code>keyFromValue(value)</code> 從任何舊寫法（路徑、URL、帶副檔名）取出檔名。
+          另附 key 合法性檢查（官方字元集，拒收中文）。色系的功能說明放在一份常數 <code>ICON_COLOR_FAMILIES</code>，只供介面使用。
+          做法照 <code>gameAssetKinds.mjs</code> 與 <code>gameArt.ts</code> 的慣例：Node 腳本不能 import .ts，所以寫兩份，再用測試互相比對。
+        
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-05：<code>scripts/lib/gameIconKinds.mjs</code>＋<code>src/utils/gameIcons.ts</code>，交叉測試 5 項（含以圖搜圖特徵逐位元比對）。另加 <code>canonicalIconKey()</code>：舊編號經別名表換成現行編號（見 A-2）。</p>
+        </div>
+        <div class="task-file">scripts/lib/gameIconKinds.mjs · scripts/lib/gameIconKinds.test.mjs · src/utils/gameIcons.ts · src/utils/gameIcons.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 匯入腳本新增 --icons 模式</div>
+      <div class="task-group-meta">scripts/import-game-assets.mjs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">擷取 ∪ 站上舊夾 → 去重 → WebP → game/icons/{skill,buff}/</div>
+        <div class="task-desc">
+          <ul>
+            <li>從 <code>圖片索引.csv</code> 取 <code>uiicons/skilltype_abs</code>（Texture2D，1,137 個檔名）與 <code>bufftype_abs</code> 的 <code>Icon_buff_*／Icon_debuff_*</code>（Sprite，127）。</li>
+            <li>再掃站上舊夾（<code>skills/**</code>、<code>modules/</code>、<code>components/</code>、<code>backpacks_skills/</code>、<code>pilot_forms/</code>），補進擷取裡沒有的官方檔名（約 254 個），索引標 <code>legacy</code>。</li>
+            <li>中文檔名不收。同名同內容就去重；兩邊同名但像素不同時以擷取為準，寫進報告附前後對照（預期只有 <code>passive_1180／5302／5304</code> 三張）。</li>
+            <li>擷取內同名但 sha256 不同時中止，不猜。匯入前做小寫碰撞檢查。</li>
+            <li>WebP lossless，維持原尺寸。預設 dry-run，加 <code>--apply</code> 才寫；已存在就跳過，<code>--force</code> 重轉。之後有新擷取時，同一個指令只會補新的 key。</li>
+            <li>部署範圍依決策三：若改採替代方案，<code>--tier=core</code> 只收站上已有的檔名，其餘進封存夾。</li>
+          </ul>
+        
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-05：<code>--icons</code> 模式完成。比預期多出兩個發現：① 站上「擷取沒有的官方檔名」254 張裡，<b>172 張是官方重新編號前的舊編號</b>（畫面跟現行圖幾乎逐像素相同，例：侵攻 main_1043＝現行 main_1141）→ 不另存一份，改寫進別名表 <code>src/data/gameIconAliases.ts</code>（腳本用 <code>scripts/lib/gameIconMeta.json</code>），真正獨有的 82 張才以 legacy 收進圖庫。判定門檻刻意保守（32×32 特徵距離 &lt; 6）：同設計重繪、換色變體都照常保留，不改變任何畫面。② 神經驅動分區圖示 <code>Icon_zoneskill_0001～0005</code> 住在 <code>itemchips_abs</code>，資料裡有 1,190 處引用，一併收進來。</p>
+        </div>
+        <div class="task-file">scripts/import-game-assets.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 實際匯入與體積驗收</div>
+      <div class="task-group-meta">public/images/game/icons/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">dry-run 報告 → 站長看差異 → --apply</div>
+        <div class="task-desc">
+          報告內容：檔數、體積（預估小於 5 MB）、legacy 數量，以及像素不同的那幾張的前後對照。報告放在 <code>_local-notes/2026-10/</code>。
+          站長看過差異後才 <code>--apply</code>，接著跑 <code>npm run build</code> 確認通過。
+        
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-05：已匯入：技能類 1,224（擷取 1,137＋分區 5＋舊版 82）、BUFF 127，共 1,351 檔、9.9 MB（lossless 實測比 q82 還小）。<b>像素不同的 3 張不是舊版官方圖，而是站上當初猜錯編號的武器技能截圖</b>（HMG-29C 鐵令將花／盛開之心、笑謊者妙手毒方；另有重點關照猜成官方不存在的 1182，已由別名兜住）。以圖搜圖找到正解 5314／1131／5312／1171，修正腳本 <code>scripts/temp_scripts/fix-mislabeled-weapon-skill-icons.mjs</code> 2026-10-06 部署前已寫入（另補「協同作戰1」1 筆）。決策三站長定案「全部上線」。報告：<code>_local-notes/2026-10/2026-10-05_PLAN-055_A-3_匯入報告.md</code>。</p>
+        </div>
+        <div class="task-file">_local-notes/2026-10/…_PLAN-055_A-3_匯入報告.md</div>
+      </div>
+      <div class="task-assignee">開發者＋站長</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 圖示索引與 manifest</div>
+      <div class="task-group-meta">scripts/generate-icon-index.mjs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">build／predev 產生 icons/index.json；manifest 排除 game/icons/</div>
+        <div class="task-desc">
+          掃描 <code>game/icons/</code>，用 A-1 的規則解析每個檔名，產出 <code>{ key, family, kind, color, batch, seq, legacy }</code>。
+          這份索引只給選圖器 lazy fetch 用，不進前台 bundle。
+          <code>generate-image-manifest.mjs</code> 要排除 <code>game/icons/</code>，免得舊選圖器又多列一千多張。兩支腳本都接進 <code>package.json</code> 的 predev 與 build。
+        
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-05：<code>scripts/generate-icon-index.mjs</code> 產出 <code>index.json</code>（技能類 1,224、BUFF 127、舊版 82）與 B-4 用的 <code>features.bin</code>（570 KB，檔案清單沒變就不重算：第二次 0.08 秒）；已接進 predev／build，<code>manifest.json</code> 排除 <code>game/icons/</code>。</p>
+        </div>
+        <div class="task-file">scripts/generate-icon-index.mjs · scripts/generate-image-manifest.mjs · package.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; 讀取端 helper</div>
+      <div class="task-group-meta">src/utils/gameIcons.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">gameIconCandidates(value)：新圖庫 → 原值</div>
+        <div class="task-desc">
+          吃裸 key、扁平路徑、子夾路徑、完整路徑、遠端 URL 都行，一律取檔名當 key。
+          第一候選是新圖庫的 webp，第二候選是 <code>imageCandidates(原值)</code>（含 <code>normalizeSkillPath</code>）。
+          中文 key 只走第二候選，讓它在 C-1 之前照舊有圖。
+          測試要涵蓋 DB 實際出現過的每一種寫法（從 2026-10-03 備份各取樣本）。
+        
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-05：<code>gameIconSources()</code>／<code>gameIconCandidates()</code>，測試 10 項（含舊編號別名、中文佔位名只走舊路徑、遠端 URL 不當後備）。</p>
+        </div>
+        <div class="task-file">src/utils/gameIcons.ts · src/utils/gameIcons.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-6 &nbsp; 讀圖元件切換</div>
+      <div class="task-group-meta">約 15 個檔</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">所有技能類圖示一律經過 helper</div>
+        <div class="task-desc">
+          <ul>
+            <li><code>SkillIcon</code> 從「單一路徑、失敗顯示 ?」改成走候選鏈；全部失敗仍顯示「?」方塊。</li>
+            <li><code>ComponentIcon</code>、<code>ModuleIcon</code>、<code>WeaponSkillCard</code>、<code>EntityRefView</code>、<code>NdActiveAbilities</code>。</li>
+            <li>配裝相關：<code>CarriedSkillRow</code>、<code>LoadoutExportCard</code>（canvas 匯出）、<code>PilotTalentStrip</code>、<code>SkillPanel</code>、<code>WeaponSkillPanel</code>。</li>
+            <li>頁面：<code>BackpacksPage</code>、<code>WeaponsPage</code>、<code>PilotDetailPage</code>、<code>PilotLorePage</code>。</li>
+          </ul>
+          元件 props 從 <code>iconLocal</code> 改成接受 <code>icon ?? iconLocal</code>，過渡期兩個都吃。
+        
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-05：15 個讀圖點全部改走 helper；順手收掉 3 份各自複製的 SkillIcon（WeaponSkillCard、WeaponsPage、BackpacksPage），共用元件新增 <code>compact</code> 尺寸與「技」佔位字以維持原畫面。另外切了表上沒列到的 <code>FormCard</code>、<code>LockedFormCard</code>、<code>ModuleCard</code>、<code>ExportRig</code>。</p>
+        </div>
+        <div class="task-file">src/components/icons/ · src/components/cards/ · src/components/loadout/ · src/components/refs/ · src/components/common/ · src/pages/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-7 &nbsp; 守門測試、掃描器擴充、全站驗收</div>
+      <div class="task-group-meta">scripts/check-image-refs.mjs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">守門測試：圖示欄位不得繞過 helper 直接進 img src</div>
+        <div class="task-desc">比照 <code>portraitGuard.test.ts</code>，白名單只有 helper 與後台表單。
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-05：守門測試 <code>iconGuard.test.ts</code> 通過；掃描器基準線 (c) 圖庫找不到 <b>0</b>、(d) 仍寫舊路徑 3,244、(e) 中文 key 46、(f) 缺圖示 341（BUFF 233、神經驅動 45、技能 44、模組 11、新機師天賦 5…，清單在 <code>2026-10-05_PLAN-055_A-7_圖示引用基準線.md</code>）。Playwright 掃 292 頁（機師三個分頁、武器 184、故事館、列表）：圖庫請求 1,704 次、<b>技能類圖示 4xx 0</b>，仍走舊資料夾的 33 張全是中文 key（C-1 換）。<code>npm test</code> 1,323／1,323、build 通過。</p>
+        </div>
+        <div class="task-file">src/utils/iconGuard.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">掃描器認得 key 與新圖庫</div>
+        <div class="task-desc">
+          新增四類輸出：
+          <ul>
+            <li>(c) key 在圖庫裡找不到檔。</li>
+            <li>(d) 現役值指向舊技能夾。爬蟲原始快照靠檔名解析，列為允許。</li>
+            <li>(e) 中文 key。</li>
+            <li>(f) 該有圖示卻是空的（依決策八，作為「缺圖示」清單）。</li>
+          </ul>
+          先跑一次當基準線，C 階段的改動清單就從這裡來。
+        </div>
+        <div class="task-file">scripts/check-image-refs.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">全站驗收（Playwright）</div>
+        <div class="task-desc">
+          掃描全部機師與武器詳情頁、背包頁、模擬器、引用浮窗，要求：技能類圖示 4xx 為 0、對舊技能夾的請求為 0（中文 key 除外，C-1 前預期會有）、
+          配裝匯出圖上的圖示正常、截圖確認畫面跟切換前一樣。
+        </div>
+        <div class="task-file">_local-notes/2026-10/…_PLAN-055_A-7_e2e.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label purple">Phase B</div>
+  <div class="section-title">選圖器改版（只動後台）</div>
+  <div class="section-desc">「難找」的主因在這裡，CP 值最高。依賴 A-5／A-6：讀取端認得裸 key 之後，選圖器才開始寫 key。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; GameIconPicker／GameIconField</div>
+      <div class="task-group-meta">src/components/admin/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">形狀 × 色系 × 未使用 篩選、搜尋、流水號倒序、hover 放大</div>
+        <div class="task-desc">
+          <ul>
+            <li>分頁：技能類／BUFF 字形。</li>
+            <li>篩選 chip：種類（▲■●◆、pp、模組詞條、研發）、色系（1～5、聯動）、使用狀態（未使用／已使用）、隱藏 legacy。</li>
+            <li>搜尋框同時比對編號、技能名、持有者名稱（資料來自 B-2）。</li>
+            <li>預設依流水號倒序；縮圖 80～96px，hover 放大到 128px，並顯示 key 與「被誰用」。</li>
+            <li>寫回裸 key。<code>GameIconField</code> 是表單欄位版本，形式和現有的 <code>IconField</code> 一樣：預覽＋選取＋清除。</li>
+            <li>舊 <code>IconPicker</code> 保留給立繪、武器、背包、機甲。</li>
+          </ul>
+        
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-05：<code>src/components/admin/GameIconPicker.tsx</code>（另含列表縮圖 <code>IconThumb</code>）。實機驗收（臨時 harness 頁＋Playwright）：預選主動 127 張、搜「艾達」2 張、被動＋未使用 60 張，選取後寫回裸 key。</p>
+        </div>
+        <div class="task-file">src/components/admin/GameIconPicker.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 「誰在用」反查</div>
+      <div class="task-group-meta">src/utils/iconUsage.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">buildIconUsage(gameData) 純函式＋測試</div>
+        <div class="task-desc">
+          掃描以下欄位，產出 <code>Map&lt;key, {kind, id, name, owner?}[]&gt;</code>：
+          pilotSkills（並反查持有的機師與武器）、pilots.talents、neuralDriveAbilities、modules、components、backpackSkills（含各級）、forms、buffs（含各級）。
+          值用 A-1 的 <code>keyFromValue</code> 正規化，所以新舊寫法都算得到。
+          資料取自後台已載入的 GameDataContext 快取，<b>不另外讀 Firestore</b>。
+        
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-05：<code>src/utils/iconUsage.ts</code>＋測試 7 項；資料由新 hook <code>useIconUsageData()</code> 取自 GameDataContext 快取（選圖器開啟時才載）。</p>
+        </div>
+        <div class="task-file">src/utils/iconUsage.ts · src/utils/iconUsage.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 接入 9 個後台＋依情境預選</div>
+      <div class="task-group-meta">src/pages/user/admin/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">換成 GameIconField，寫入 icon（key）</div>
+        <div class="task-desc">
+          <ul>
+            <li>SkillAdmin：依技能類型預選。</li>
+            <li>PilotAdmin 天賦：talent。</li>
+            <li>NeuralDriveAdmin：passive。</li>
+            <li>ModuleAdmin：模組詞條＋passive。</li>
+            <li>ComponentAdmin：passive＋研發，原本是手打文字，第一次有選圖器。</li>
+            <li>BackpackSkillAdmin（頂層＋各級）：passive。</li>
+            <li>WeaponAdmin 武器技能：main／order／passive。</li>
+            <li>FormAdmin：passive。</li>
+            <li>BuffAdmin：BUFF 字形；各級 <code>BuffLevel.icon</code> 的欄位在 D-4 補上。</li>
+          </ul>
+          過渡期寫入 <code>icon</code> 時，同步把 <code>iconLocal</code> 清空，避免兩個欄位不一致。
+          使用者看不到這些改動（只在後台），不寫網站更新履歷。
+        
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-05：9 個後台全數換上 GameIconField，並把 8 處 <code>&lt;img src={x.iconLocal}&gt;</code> 列表縮圖換成 <code>IconThumb</code>（不然 C 階段清掉 iconLocal 後會整排消失）。元件後台原本兩個手打欄位合成一個選圖器。BUFF 各級欄位留給 D-4。</p>
+        </div>
+        <div class="task-file">SkillAdmin · PilotAdmin · NeuralDriveAdmin · ModuleAdmin · ComponentAdmin · BackpackSkillAdmin · WeaponAdmin · FormAdmin · BuffAdmin</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; （選配）以圖搜圖</div>
+      <div class="task-group-meta">GameIconPicker</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">貼上遊戲截圖 → 列出最像的 5 張</div>
+        <div class="task-desc">
+          在前端把截圖縮成 32×32 灰階，和圖庫算距離。10-01 盤點用同一招對中文佔位圖，43／43 正確。
+          這對應的正是「新角色上線、手上只有截圖」的情境，也能用來換掉決策八的暫代圖。
+          需要先有一份縮小版特徵檔，由 A-4 一併產生；全部在瀏覽器裡跑，零上傳。
+        
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-05：已完成（原列選配）。特徵先裁到不透明外框再切 12×12：用站上 40 張中文佔位截圖驗證，<b>40／40 第一名命中</b>（未裁外框時只有 28／40）。選圖器按「📷 以圖搜圖」後可 Ctrl+V／拖放／選檔，在目前分頁與種類篩選內列出最像的 12 張。驗證腳本 <code>_local-notes/2026-10/2026-10-05_PLAN-055_B-4_以圖搜圖驗證.mjs</code>。</p>
+        </div>
+        <div class="task-file">src/components/admin/GameIconPicker.tsx · scripts/generate-icon-index.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label purple">Phase C</div>
+  <div class="section-title">資料整理（寫 DB，走 data-patch）</div>
+  <div class="section-desc">讀取端已經用檔名解析，所以這一段是整理，不是有沒有圖的前提。目標是只存 key、沒有副本、沒有中文 key。建議排在下次大版本建檔之前。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 寫入前備份＋遷移腳本 dry-run</div>
+      <div class="task-group-meta">scripts/temp_scripts/migrate-icon-keys.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">只存 key、37 個中文 key、ND 副本、forms</div>
+        <div class="task-desc">
+          <ul>
+            <li>先用 <code>backup-firestore.mjs</code> 備份。</li>
+            <li>依計畫書決策六的表逐集合改寫：pilotSkills、pilots.talents、neuralDriveAbilities、components、modules、backpackSkills（含各級）、forms。</li>
+            <li><code>icon</code> 空、<code>iconLocal</code> 有值時，取檔名填進 <code>icon</code>，然後刪 <code>iconLocal</code>。</li>
+            <li>刪除 <code>pilots.neuralDrive.levels[].skillIcon／iconLocal</code>。刪之前確認全部讀取端都改由 <code>abilityId</code> 查字典：<code>PilotDetailPage.tsx:829</code> 已經這樣做，<code>utils/neuralDriveAbilities.ts</code>、模擬器也要逐一確認。</li>
+            <li>37 個中文 key 依 10-01 §7.1 對照換掉。</li>
+            <li>不碰內嵌的 <code>WeaponSkill</code> 與 <code>biometicComputer</code>。</li>
+          </ul>
+          報告逐筆列出「集合／文件／欄位：舊值 → 新值」。
+        </div>
+        <div class="task-file">scripts/temp_scripts/migrate-icon-keys.mjs · _local-notes/2026-10/…_PLAN-055_C-1_dry-run.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 型別與 docs 同步（CLAUDE.md 規則 2）</div>
+      <div class="task-group-meta">src/types/ · docs/02_技術文件/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">iconLocal 標 @deprecated → 遷移後移除；NeuralDriveLevel 移除副本欄位</div>
+        <div class="task-desc">
+          <ul>
+            <li>型別：<code>pilot.ts</code>（PilotSkill、PilotTalent、NeuralDriveAbility、NeuralDriveLevel）、<code>component.ts</code>、<code>module.ts</code>、<code>backpackSkill.ts</code>、<code>form.ts</code> 的註解改成「官方檔名 key」。</li>
+            <li>docs：資料模型頁 pilots、neuralDriveAbilities、components、backpacks、weapons、modules；資料庫設計文件 pilotSkills、components、backpackSkills、forms。</li>
+            <li>修掉 <code>weapon.ts:19</code> 已經過時的 <code>/images/weapons/skills/</code> 註解。</li>
+          </ul>
+        </div>
+        <div class="task-file">src/types/*.ts · docs/02_技術文件/02_資料模型/ · docs/02_技術文件/04_Firebase/資料庫設計文件/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; --apply ＋ bump ＋ 掃描器複驗</div>
+      <div class="task-group-meta">bump-data-version.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">寫入，bump 受影響的集合，掃描器 (d)(e) 歸零</div>
+        <div class="task-desc">
+          要 bump 的集合：pilotSkills、pilots、neuralDriveAbilities、components、modules、backpackSkills、forms。bump 寫在腳本結尾，不靠人記。
+          寫入後重跑掃描器：現役舊夾引用 (d) 為 0、中文 key (e) 為 0。
+          再跑一次 A-7 的 e2e，確認畫面不變。<code>check:share-ids</code> 對帳不受影響（圖示不是分享碼的一部分），照 data-patch 慣例仍要跑一次。
+        </div>
+        <div class="task-file">scripts/temp_scripts/migrate-icon-keys.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 後台與工具函式只寫 icon</div>
+      <div class="task-group-meta">src/pages/user/admin/ · src/utils/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">移除 iconLocal 的寫入與 ND 副本的產生</div>
+        <div class="task-desc">
+          <ul>
+            <li>SkillAdmin、PilotAdmin、NeuralDriveAdmin、ComponentAdmin、WeaponAdmin 的表單預設值與存檔不再出現 <code>iconLocal</code>。</li>
+            <li><code>utils/neuralDriveAbilities.ts</code> 不再從 levels 讀寫圖示副本。</li>
+            <li>讀取端 props 收斂成只吃 <code>icon</code>；但 helper 保留吃舊值的能力，因為爬蟲原始快照永遠是舊寫法。</li>
+          </ul>
+        </div>
+        <div class="task-file">src/pages/user/admin/*.tsx · src/utils/neuralDriveAbilities.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label purple">Phase D</div>
+  <div class="section-title">BUFF 圖示</div>
+  <div class="section-desc">官方的白色字形用 CSS 上色，233 筆 BUFF 做一次對照。補值不得編造：腳本只給建議，站長確認後才寫。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; BuffGlyph 元件</div>
+      <div class="task-group-meta">src/components/icons/BuffGlyph.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">mask-image ＋ 主題色 token，極性由 buffType 推</div>
+        <div class="task-desc">
+          statBoost → 增益、debuff → 減益、state → 狀態、resource → 資源，四色定義在 <code>index.css</code> 的 <code>@theme</code>（Tailwind v4 CSS-first）。
+          找不到字形時退回一顆中性小點，不顯示破圖。層數一律用 CSS 文字，不用官方的 5000～5009。
+        </div>
+        <div class="task-file">src/components/icons/BuffGlyph.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 對照建議與審核表</div>
+      <div class="task-group-meta">scripts/temp_scripts/suggest-buff-icons.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">腳本給建議 → _local-notes 審核表（附字形縮圖）→ 站長確認</div>
+        <div class="task-desc">
+          依 <code>buffType</code> 與描述關鍵字對到通用字形，例如命中→<code>buff_hit</code>、暴擊→<code>buff_critical</code>、迴避→<code>buff_avoid</code>、移動→<code>buff_move</code>、修理→<code>buff_recover</code>、無法移動→<code>debuff_nomove</code>。
+          角色或機制專屬狀態（state 18 筆，以及有名字的狀態）列為「需人工指定 4xxx」。每筆都附信心等級，拿不準的預設留空。
+        </div>
+        <div class="task-file">_local-notes/2026-10/…_PLAN-055_D-2_BUFF圖示對照審核.html</div>
+      </div>
+      <div class="task-assignee">開發者＋站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 寫入＋bump buffs</div>
+      <div class="task-group-meta">data-patch</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">依確認後的審核表寫入 buffs.icon（必要時寫 levels[].icon）</div>
+        <div class="task-desc">
+          流程：備份 → dry-run → <code>--apply</code> → bump buffs。buffs 是字典集合，照 data-patch skill 的字典集合流程走。
+        </div>
+        <div class="task-file">scripts/temp_scripts/apply-buff-icons.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 顯示點與 BuffAdmin</div>
+      <div class="task-group-meta">EntityRefView · BuffAdmin</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">引用浮窗與後台列表顯示 BuffGlyph；補上各級圖示欄位</div>
+        <div class="task-desc">
+          <code>EntityRefView.tsx:145</code> 原本預留的 <code>imageCandidates(icon, term?.icon)</code> 改用 <code>BuffGlyph</code>。
+          BuffAdmin 列表縮圖改用 <code>BuffGlyph</code>，並補上 <code>BuffLevel.icon</code> 的 <code>GameIconField</code>。
+          這是使用者看得到的改動，要寫網站更新履歷。
+        </div>
+        <div class="task-file">src/components/refs/EntityRefView.tsx · src/pages/user/admin/BuffAdmin.tsx · src/data/siteChangelog/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label purple">Phase E</div>
+  <div class="section-title">退場與收尾</div>
+  <div class="section-desc">讀取端切完、DB 整理完、掃描器歸零之後，才刪舊資料夾。線上的舊檔交給 PLAN-054 的 gh-pages ledger 依寬限期清掉。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 舊資料夾與 normalizeSkillPath 退場</div>
+      <div class="task-group-meta">public/images/ · src/utils/assets.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">掃描器 (d)=0 才刪；helper 的第二候選改成只留給爬蟲快照</div>
+        <div class="task-desc">
+          <ul>
+            <li>刪除：<code>skills/</code> 的 6 個子夾、<code>modules/</code> 的 <code>Icon_skill_*／Icon_entry_*</code>、<code>components/</code> 根目錄的 <code>Icon_*</code>、<code>backpacks_skills/</code>、<code>pilot_forms/</code>。</li>
+            <li>保留：<code>components/OuterFrame/</code> 與 <code>Stage*_Boss/</code>。</li>
+            <li>移除 <code>normalizeSkillPath</code> 與 <code>SKILL_PREFIX_FOLDERS</code>。爬蟲快照靠檔名解析，不需要它。</li>
+            <li>清掉舊 <code>IconPicker</code> 裡跟技能夾有關的 defaultFolder。</li>
+          </ul>
+          刪除前重跑 A-7 的 e2e。
+        </div>
+        <div class="task-file">public/images/{skills,modules,components,backpacks_skills,pilot_forms}/ · src/utils/assets.ts · src/components/admin/IconPicker.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 部署＋寬限期後複驗</div>
+      <div class="task-group-meta">正式站</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">push 前 build、部署、14 天後確認舊網址 404</div>
+        <div class="task-desc">
+          新檔名不需要 Purge。等 ledger 寬限 14 天後，抽樣確認舊夾網址為 404、新圖庫網址為 200。
+          部署這類正式站操作，每一步執行前先跟站長確認。
+        </div>
+        <div class="task-file">.github/workflows/deploy.yml（不改，只驗證）</div>
+      </div>
+      <div class="task-assignee">開發者＋站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; 流程文件化</div>
+      <div class="task-group-meta">.claude/skills/data-patch · CLAUDE.md · docs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新版本的圖示流程、爬蟲隱患、元件分類表</div>
+        <div class="task-desc">
+          <ul>
+            <li>data-patch skill 加一段「新版本圖示」：有擷取就跑 <code>--icons</code>，沒有就依決策八處理，最後重跑掃描器。</li>
+            <li>CLAUDE.md 6.5 的備用爬蟲隱患加一條：<code>scrape-skill-icons.mjs</code> 會把圖寫回舊資料夾。</li>
+            <li>系統架構文件的元件分類表補上 <code>GameIconPicker</code> 與 <code>BuffGlyph</code>。</li>
+            <li><code>public/images/game/README.md</code> 補上 icons 的說明。</li>
+          </ul>
+        </div>
+        <div class="task-file">.claude/skills/data-patch/SKILL.md · CLAUDE.md · docs/02_技術文件/01_架構設計/系統架構.html · public/images/game/README.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-4 &nbsp; 收尾與歸檔</div>
+      <div class="task-group-meta">plan-manager</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">更新進度、歸檔到歷史記錄</div>
+        <div class="task-desc">確認五段全部完成後，用 plan-manager 操作 B 歸檔，並同步 PLAN-043 計畫書的決策五，註記「已由 PLAN-055 改判」。</div>
+        <div class="task-file">docs/05_階段性開發計畫/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-055 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

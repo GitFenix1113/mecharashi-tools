@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card purple">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-055 · 技能／BUFF 圖示管理</h3>
+      <p>官方把圖示的分類全寫在檔名裡：<code>Icon_skill_&lt;種類&gt;_&lt;色系&gt;&lt;批次&gt;&lt;流水&gt;</code>，種類決定外框形狀，首位數決定色系（802／806 吻合），流水號照建檔順序遞增，所以新角色的圖一定在序列尾端。官方也把技能、模組詞條、研發圖示全放在同一個資料夾。站上卻按「用在哪」分了 5 個資料夾：1,674 個檔只有 1,219 種圖，391 個檔名跨夾重複。DB 有 4 種寫法、1,578 份神經驅動圖示副本、37 個中文佔位 key。選圖器只能挑資料夾、打數字檔名。BUFF 233 筆沒有一張圖。<br>本計畫照官方的放法，建立扁平圖庫 <code>game/icons/{skill,buff}/</code>，一張圖只存一份（擷取與站上舊圖取聯集）。讀取端以「檔名即 key」解析，舊路徑不必先改就對得到新圖庫。選圖器改成用形狀 × 色系 × 未使用來篩、用機師名或技能名來找，並顯示每張圖被誰用（0 額外 read），最新的排前面。DB 只存官方檔名。BUFF 用官方白色字形加 CSS 上色。A–E 五段 23 項，約 6 人日。A／B 不碰 DB，可以先做；改判 PLAN-043 決策五。<br><b>✅ 2026-10-06 A／B 完成並部署（11／23）</b>：圖庫 1,351 張（技能類 1,224＋BUFF 127，9.9 MB）；172 張舊編號改走別名表不另存；全站 292 頁實測技能類圖示 4xx 0；選圖器含以圖搜圖（40／40 命中）。4 筆猜錯編號的武器技能圖已修正。站長定案：擷取有的圖全部上線、缺圖留空交維護者手動選。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-055_技能BUFF圖示管理/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-055_技能BUFF圖示管理/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card orange">
       <div class="card-icon">◆</div>
       <h3>PLAN-054 · 機師／機甲圖片 ID 化</h3>

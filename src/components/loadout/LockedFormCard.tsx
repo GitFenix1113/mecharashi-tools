@@ -2,7 +2,8 @@ import type { MechForm } from '../../types'
 import { lockedMounts, loadoutBudget, type LoadoutContext } from '../../utils/loadoutRules'
 import { mountLabel } from '../../utils/mechSlots'
 import { slotKey } from '../../types/slots'
-import { resolveIconSrc } from '../../utils/assets'
+import { gameIconCandidates } from '../../utils/gameIcons'
+import { FallbackImage } from '../common/FallbackImage'
 import { WeaponIcon } from '../icons/WeaponIcon'
 import { RefText } from '../refs/RefText'
 import { HUD, HUD_READONLY, HUD_TAG, SEG_TEXT, slotSegKey } from './loadoutTheme'
@@ -66,11 +67,10 @@ export function LockedFormCard({ form, ctx }: Props) {
       {/* ── 標頭 ── */}
       <div className="flex items-center gap-2.5">
         {form.icon && (
-          <img
-            src={resolveIconSrc(form.icon)}
+          <FallbackImage
+            candidates={gameIconCandidates(form.icon)}
             alt=""
             className="w-9 h-9 rounded object-contain bg-bg-dark border border-border/60 shrink-0"
-            onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
           />
         )}
         <div className="min-w-0 flex-1">

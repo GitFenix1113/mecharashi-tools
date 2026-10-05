@@ -5,6 +5,9 @@ import {
   COMPONENT_WEAPON_TYPES,
 } from '../../../types/enums'
 import { assetUrl } from '../../../utils/assets'
+import { gameIconCandidates } from '../../../utils/gameIcons'
+import { FallbackImage } from '../../../components/common/FallbackImage'
+import { GameIconField } from '../../../components/admin/GameIconPicker'
 import { getBossImagePath } from '../../../data/bossDrops'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useServerPaged, LoadMoreButton, GRID_AUTO_FIELDS, DraftRestoreBar } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
@@ -384,14 +387,13 @@ function ComponentEditPanel({
           >全選</button>
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="技能圖示 key icon（如 Icon_skill_passive_5223）">
-            <input value={form.icon ?? ''} onChange={(e) => updateBase('icon', e.target.value || undefined)} className="input-field" placeholder="Icon_skill_passive_..." />
-          </Field>
-          <Field label="技能圖示路徑 iconLocal">
-            <input value={form.iconLocal ?? ''} onChange={(e) => updateBase('iconLocal', e.target.value || undefined)} className="input-field" placeholder="/images/components/..." />
-          </Field>
-        </div>
+        {/* PLAN-055：原本是兩個手打欄位（key＋路徑），改成選圖器；寫回 key 到 icon，同步清空舊路徑 iconLocal */}
+        <GameIconField
+          label="技能圖示（官方檔名）"
+          value={form.icon || form.iconLocal}
+          onChange={(k) => { updateBase('icon', k || undefined); updateBase('iconLocal', undefined) }}
+          presetKinds={['passive', 'rnd']}
+        />
 
         <Field label="外框圖路徑 outerFrameLocal（由 patch 腳本自動填入）">
           <input
@@ -413,7 +415,7 @@ function ComponentEditPanel({
         {(form.icon || form.iconLocal || form.outerFrameLocal) && (
           <ComponentIconPreview
             outerFrameSrc={assetUrl(form.outerFrameLocal ?? `/images/components/OuterFrame/statetype_${form.componentType}${form.componentsWType === ComponentsWType.W ? '_W' : ''}.png`)}
-            iconSrc={form.iconLocal ? assetUrl(form.iconLocal) : undefined}
+            iconSrc={gameIconCandidates(form.icon, form.iconLocal)[0]}
             hasOuterFrameLocal={!!form.outerFrameLocal}
           />
         )}
@@ -580,15 +582,12 @@ export default function ComponentAdmin({ initialSearch = '' }: { initialSearch?:
                   style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '80%', height: '80%' }}
                   onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
                 />
-                {comp.iconLocal && (
-                  <img
-                    src={assetUrl(comp.iconLocal)}
-                    alt=""
-                    className="absolute object-contain"
-                    style={{ top: '50%', left: '50%', transform: 'translate(-51%, -52%) rotate(16deg)', width: '48%', height: '48%' }}
-                    onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-                  />
-                )}
+                <FallbackImage
+                  candidates={gameIconCandidates(comp.icon, comp.iconLocal)}
+                  alt=""
+                  className="absolute object-contain"
+                  style={{ top: '50%', left: '50%', transform: 'translate(-51%, -52%) rotate(16deg)', width: '48%', height: '48%' }}
+                />
               </div>
 
               <div className="flex-1 min-w-0">

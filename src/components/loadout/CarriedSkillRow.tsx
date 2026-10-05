@@ -82,7 +82,7 @@ export function CarriedSkillRow({ pilot, skillMap, loading, carried, activeIndex
         >
           <span className="flex items-center min-w-0" style={{ gap: 6 }}>
             {doc
-              ? <SkillIcon iconLocal={doc.iconLocal} name={doc.name} size="sm" />
+              ? <SkillIcon icon={doc.icon} iconLocal={doc.iconLocal} name={doc.name} size="sm" />
               : (
                 // 空格用虛線方塊而不是實心「＋」：它與已裝那一格必須一眼分得出來，
                 // 而虛線在這一頁已經是「這裡還沒有東西」的既有語彙（槽位圖的空槽）

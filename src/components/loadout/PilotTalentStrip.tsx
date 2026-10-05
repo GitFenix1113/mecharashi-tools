@@ -483,7 +483,7 @@ function TalentThumb({
       }`}
       style={{ gap: 6, padding: '4px 8px 4px 4px' }}
     >
-      <SkillIcon iconLocal={talent.iconLocal} name={talent.name} size="sm" />
+      <SkillIcon icon={talent.icon} iconLocal={talent.iconLocal} name={talent.name} size="sm" />
       {!compact && (
         <span className={`${HUD.body} truncate max-w-[7.5rem] ${enhanced ? 'text-accent-yellow' : 'text-text-secondary'}`}>
           {talent.name}
@@ -543,7 +543,7 @@ function TalentDetail({
   return (
     <div className="hud-cut-sm border border-border-subtle bg-bg-dark px-2.5 py-2 space-y-1.5">
       <div className="flex items-center" style={{ gap: 6 }}>
-        <SkillIcon iconLocal={talent.iconLocal} name={talent.name} size="sm" />
+        <SkillIcon icon={talent.icon} iconLocal={talent.iconLocal} name={talent.name} size="sm" />
         <span className={`${HUD.bodyStrong} text-text-primary`}>{talent.name}</span>
         {hasMax && onToggleMax && (
           <button

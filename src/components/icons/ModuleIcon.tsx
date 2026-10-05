@@ -1,5 +1,5 @@
 import type { Module } from '../../types'
-import { imageCandidates } from '../../utils/assets'
+import { gameIconCandidates } from '../../utils/gameIcons'
 import { FallbackImage } from '../common/FallbackImage'
 
 // ─── 模組縮圖（PLAN-052-G C-8）──────────────────────────────────────────────
@@ -26,7 +26,7 @@ export function ModuleIcon({ mod, size = 34, className = '' }: {
   return (
     <span className={`shrink-0 ${className}`} style={box}>
       <FallbackImage
-        candidates={imageCandidates(mod.icon)}
+        candidates={gameIconCandidates(mod.icon)}
         alt=""
         loading="lazy"
         className="w-full h-full object-contain"

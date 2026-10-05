@@ -17,7 +17,7 @@ import { WeaponRarityBadge } from '../../components/badges/WeaponRarityBadge'
 import { WeaponIcon } from '../../components/icons/WeaponIcon'
 import { EQUIP_SLOT_LABELS } from '../../components/badges/WeaponBadges'
 import { resolveWeaponSkills, type ResolvedWeaponSkill } from '../../utils/weaponSkills'
-import { assetUrl, resolveIconSrc } from '../../utils/assets'
+import { SkillIcon } from '../../components/icons/SkillIcon'
 import { STAT_LABELS } from '../../utils/moduleStats'
 import { RefText } from '../../components/refs/RefText'
 import {
@@ -62,53 +62,6 @@ function Num({ children, className = '' }: { children: React.ReactNode; classNam
     <span className={`text-accent-red font-bold font-[JetBrains_Mono,monospace] ${className}`}>
       {children}
     </span>
-  )
-}
-
-/**
- * 背包側技能圖示（PLAN-031 陷阱：武器技能圖示走另一路徑，見下）。
- *
- * ⚠ PLAN-043 修正：原本是「取檔名 → 拼回 /images/skills/{filename}」。那個寫法會把
- * `/images/skills/背包技能/x.png` 的資料夾剝掉，接著 normalizeSkillPath 依 `passive`
- * 前綴把它推去「被動技能/」——結果不是 404 就是指到同名但不同來源的圖。
- * 改走 resolveIconSrc：它保留明確寫出的已知子資料夾，扁平舊路徑仍會依前綴推導。
- */
-function SkillIcon({ icon, name }: { icon?: string; name: string }) {
-  const [err, setErr] = useState(false)
-  if (err || !icon) {
-    return (
-      <div className="w-9 h-9 rounded-lg bg-bg-dark border border-border flex items-center justify-center text-text-dim text-xs flex-shrink-0">
-        技
-      </div>
-    )
-  }
-  return (
-    <img
-      src={resolveIconSrc(icon)}
-      alt={name}
-      className="w-9 h-9 rounded-lg object-cover flex-shrink-0"
-      onError={() => setErr(true)}
-    />
-  )
-}
-
-/** 武器技能圖示：iconLocal 已是 /images/weapons/skills/... 完整路徑，直接用（不可套背包側 SkillIcon）。 */
-function WeaponSkillMiniIcon({ iconLocal, name }: { iconLocal?: string; name: string }) {
-  const [err, setErr] = useState(false)
-  if (err || !iconLocal) {
-    return (
-      <div className="w-9 h-9 rounded-lg bg-bg-dark border border-border flex items-center justify-center text-text-dim text-xs flex-shrink-0">
-        技
-      </div>
-    )
-  }
-  return (
-    <img
-      src={assetUrl(iconLocal)}
-      alt={name}
-      className="w-9 h-9 rounded-lg object-cover flex-shrink-0"
-      onError={() => setErr(true)}
-    />
   )
 }
 
@@ -193,7 +146,7 @@ function BackpackTooltipContent({ bp, skills, prereqName, pinned = false }: {
         {skills.map((sk) => (
           <div key={sk.raw} className="bg-bg-dark rounded-lg overflow-hidden">
             <div className="px-2.5 py-1.5 border-b border-border flex items-center gap-2">
-              <SkillIcon icon={sk.icon} name={sk.name} />
+              <SkillIcon icon={sk.icon} name={sk.name} size="compact" placeholder="技" />
               <span className="text-[13px] font-bold text-text-primary">{sk.name}</span>
               <span className="text-[11px] text-text-dim ml-auto shrink-0">{sk.doc.skillType}</span>
             </div>
@@ -281,7 +234,7 @@ function WeaponProjectionContent({ w, skills, parentName, fusedBackpackName, onN
             <div className="flex flex-wrap gap-2 p-2.5">
               {skills.map((sk, i) => (
                 <div key={i} className="flex items-center gap-1.5">
-                  <WeaponSkillMiniIcon iconLocal={sk.iconLocal} name={sk.name} />
+                  <SkillIcon icon={sk.icon} iconLocal={sk.iconLocal} name={sk.name} size="compact" placeholder="技" />
                   <span className="text-[11px] text-text-secondary max-w-24 leading-tight">{sk.name}</span>
                 </div>
               ))}

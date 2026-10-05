@@ -8,7 +8,8 @@ import { updatePilotSkill, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix, idPrefixCasings } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
-import { IconField } from '../../../components/admin/IconPicker'
+import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
+import { iconKindsForSkillType } from '../../../utils/gameIcons'
 import { SkillEffectItem } from './PilotAdmin'
 
 type SkillFilters = { type: string; manual: 'all' | 'manual' | 'auto'; domain: 'all' | 'pilot' | 'weapon' }
@@ -124,11 +125,12 @@ function SkillEditPanel({
           </select>
         </Field>
 
-        <IconField
-          label="圖示 iconLocal（本地圖檔）"
-          value={form.iconLocal}
-          onChange={(v) => update('iconLocal', v)}
-          defaultFolder="skills"
+        {/* PLAN-055：寫回官方檔名 key 到 icon，同步清空舊路徑 iconLocal（兩欄不一致時以 icon 為準） */}
+        <GameIconField
+          label="圖示（官方檔名）"
+          value={form.icon || form.iconLocal}
+          onChange={(k) => { update('icon', k); update('iconLocal', '') }}
+          presetKinds={iconKindsForSkillType(form.type)}
         />
 
         {form.weapon && (
@@ -356,9 +358,7 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
               className="bg-bg-dark border border-border rounded-lg px-3 py-2.5 flex items-center gap-3 hover:border-border-accent transition-colors cursor-pointer"
               onClick={() => setEditing(skill)}
             >
-              {skill.iconLocal && (
-                <img src={skill.iconLocal} alt="" className="w-8 h-8 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
-              )}
+              <IconThumb icon={skill.icon} iconLocal={skill.iconLocal} className="w-8 h-8 rounded shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-sm text-text-primary truncate">

@@ -6,6 +6,15 @@
  *   node scripts/check-image-refs.mjs --report=<檔>   另寫一份完整清單（Markdown）
  *   node scripts/check-image-refs.mjs --fail-on=a     (a) 壞路徑 > 0 時 exit 1（D-3 之後的驗收）
  *   node scripts/check-image-refs.mjs --fail-on=b     (b) 舊路徑 > 0 時 exit 1（D-1 刪檔前的閘門）
+ *   node scripts/check-image-refs.mjs --fail-on=ce    PLAN-055：(c) 圖庫找不到的 key、(e) 中文 key > 0 時 exit 1
+ *
+ * PLAN-055（圖示圖庫）另外掃 Firestore 的**圖示值**——裸 key 不是路徑形狀，上面的 (a)(b) 抓不到：
+ *   (c) 圖庫找不到：值的檔名（經舊編號別名換算）在 public/images/game/icons/ 沒有檔
+ *   (d) 仍寫舊路徑：現役值還指向 skills／modules／components／backpacks_skills／pilot_forms 舊資料夾
+ *       （讀取端以檔名解析，現在照樣有圖；C 階段改成裸 key、E 階段舊夾才能刪）
+ *       爬蟲原始快照（weapons 的內嵌 WeaponSkill、pilots.biometicComputer）刻意不改寫，不算
+ *   (e) 中文佔位 key（Icon_skill_main_凱登01）
+ *   (f) 缺圖示：該有圖示的文件，icon 與 iconLocal 都是空的
  *
  * 來源：
  *   · Firestore 全部集合（唯讀）——略過 users、analytics*、changeHistory、systemLog：
@@ -28,6 +37,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 import { GAME_DIR, classifyMechFile, classifyPilotFile } from './lib/gameAssetKinds.mjs'
+import { iconPath, isLibraryKey, keyFromValue } from './lib/gameIconKinds.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const PUBLIC = path.join(ROOT, 'public')
@@ -124,10 +134,49 @@ async function scanFirestore() {
       const doc = d.data()
       if (col.id === 'pilots' || col.id === 'mechs') data[col.id].push({ id: d.id, ...doc })
       walk(doc, '', (field, raw) => refs.push({ where: `${col.id}/${d.id}`, field, raw }))
+      walkIcons(doc, '', col.id, d.id)
+      checkMissingIcon(col.id, d.id, doc)
     }
   }
   return data
 }
+
+// ── PLAN-055：圖示值（裸 key 也算）──────────────────────────────────────────────
+const ICON_META = (() => {
+  const p = path.join(ROOT, 'scripts/lib/gameIconMeta.json')
+  return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf-8')) : { aliases: {} }
+})()
+const iconRefs = []     // { where, field, raw, key }
+const missingIcons = [] // { where, name, field }
+/** 爬蟲原始快照：刻意永久保留原樣，不要求改寫（PLAN-032 內嵌 WeaponSkill、biometicComputer） */
+const RAW_SNAPSHOT = /^(?:skills\[\d+\]\.|biometicComputer\[)/
+function walkIcons(value, at, colId, docId) {
+  if (typeof value === 'string') {
+    const base = value.split(/[?#]/)[0].split('/').pop() ?? ''
+    if (!base.startsWith('Icon_')) return
+    const key = keyFromValue(value)
+    const chinese = /[^\x00-\x7F]/.test(key)
+    if (isLibraryKey(key) || chinese) iconRefs.push({ where: `${colId}/${docId}`, col: colId, field: at, raw: value, key, chinese })
+    return
+  }
+  if (Array.isArray(value)) { value.forEach((v, i) => walkIcons(v, `${at}[${i}]`, colId, docId)); return }
+  if (value && typeof value === 'object') for (const [k, v] of Object.entries(value)) walkIcons(v, at ? `${at}.${k}` : k, colId, docId)
+}
+/** 該有圖示的文件：icon 與 iconLocal 都空 → (f) */
+function checkMissingIcon(colId, docId, doc) {
+  const empty = (o) => !String(o?.icon ?? '').trim() && !String(o?.iconLocal ?? '').trim()
+  const push = (field, name) => missingIcons.push({ where: `${colId}/${docId}`, col: colId, field, name })
+  if (['pilotSkills', 'neuralDriveAbilities', 'components', 'modules', 'backpackSkills', 'forms', 'buffs'].includes(colId)) {
+    if (empty(doc)) push('icon', doc.name)
+  }
+  if (colId === 'pilots') (doc.talents ?? []).forEach((t, i) => { if (empty(t)) push(`talents[${i}]`, `${doc.name}・${t.name ?? '天賦'}`) })
+}
+const iconFileExists = (key) => {
+  const k = ICON_META.aliases?.[key] ?? key
+  const rel = iconPath(k)
+  return !!rel && fs.existsSync(path.join(PUBLIC, rel))
+}
+const OLD_ICON_DIR = /images\/(?:skills\/|modules\/Icon_(?:skill|entry)|components\/Icon_|backpacks_skills\/|pilot_forms\/)/
 
 function scanText() {
   const roots = ['src', 'scripts', 'workers/src', 'docs', 'CLAUDE.md']
@@ -187,8 +236,25 @@ for (const [g, s] of [...byWhere].filter(([, s]) => (s.a || s.b) && LIVE.has(s.s
   console.log(`  ${g.padEnd(40)} a=${s.a}  b=${s.b}`)
 }
 
+// ── PLAN-055 圖示 ──────────────────────────────────────────────────────────────
+const iconC = iconRefs.filter((r) => !r.chinese && !iconFileExists(r.key))
+const iconD = iconRefs.filter((r) => !r.chinese && OLD_ICON_DIR.test(r.raw) && !RAW_SNAPSHOT.test(r.field))
+const iconE = iconRefs.filter((r) => r.chinese)
+const missingByCol = missingIcons.reduce((m, r) => m.set(r.col, (m.get(r.col) ?? 0) + 1), new Map())
+console.log(`圖示值（PLAN-055）：${iconRefs.length} 筆　(c) 圖庫找不到 ${iconC.length}　(d) 仍寫舊路徑 ${iconD.length}　(e) 中文 key ${iconE.length}`)
+console.log(`  (f) 缺圖示 ${missingIcons.length} 份：${[...missingByCol].map(([c, n]) => `${c} ${n}`).join('、')}`)
+
 if (args.report) {
   const fmt = (r) => `- \`${r.where}\`${r.field ? ` \`${r.field}\`` : ''}：\`${r.raw}\`${r.why ? `（${r.why}）` : ''}`
+  const iconMd = [
+    '## PLAN-055 圖示值', '',
+    `- 圖示值 ${iconRefs.length} 筆（含裸 key）`,
+    `- (c) 圖庫找不到 ${iconC.length}　(d) 仍寫舊路徑 ${iconD.length}　(e) 中文 key ${iconE.length}　(f) 缺圖示 ${missingIcons.length}`, '',
+    '### (c) 圖庫找不到', '', ...iconC.map(fmt), '',
+    '### (e) 中文佔位 key', '', ...iconE.map(fmt), '',
+    '### (f) 缺圖示（icon 與 iconLocal 都空）', '', ...missingIcons.map((r) => `- \`${r.where}\` ${r.field}：${r.name ?? ''}`), '',
+    '<details><summary>(d) 仍寫舊路徑（C 階段改成裸 key）</summary>', '', ...iconD.map(fmt), '', '</details>', '',
+  ]
   const md = [
     '# 圖片引用掃描（PLAN-054 B-6）', '', `- 時間：${new Date().toISOString()}`,
     `- 引用 ${refs.length} 筆；即將退場的舊檔 ${legacy.size} 張`, `- (a) 壞路徑 ${broken.length} 筆；(b) 舊路徑 ${old.length} 筆`, '',
@@ -197,10 +263,12 @@ if (args.report) {
     '## (a) 壞路徑・現役', '', ...liveA.map(fmt), '', '## (b) 舊路徑・現役', '', ...liveB.map(fmt), '',
     '## 只列不擋（測試／文件）', '', ...broken.filter((r) => !LIVE.has(r.scope)).map((r) => fmt(r) + '　(a)'),
     ...old.filter((r) => !LIVE.has(r.scope)).map((r) => fmt(r) + '　(b)'), '',
+    ...iconMd,
   ].join('\n')
   fs.writeFileSync(path.resolve(String(args.report)), md)
   console.log(`📝 完整清單：${args.report}`)
 }
 const fail = String(args['fail-on'] ?? '')
 if ((fail.includes('a') && liveA.length) || (fail.includes('b') && liveB.length)) process.exit(1)
+if ((fail.includes('c') && iconC.length) || (fail.includes('e') && iconE.length)) process.exit(1)
 process.exit(0)

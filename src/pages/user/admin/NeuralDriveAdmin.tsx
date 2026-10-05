@@ -6,7 +6,7 @@ import { updateNeuralDriveAbility, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
-import { IconField } from '../../../components/admin/IconPicker'
+import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
 import { SkillEffectItem } from './PilotAdmin'
 import { parseBuffRef, formatBuffRef } from '../../../utils/buffRef'
 import { isSelfBuff, pickLevel } from '../../../utils/ndOverrides'
@@ -246,11 +246,12 @@ function NdAbilityEditPanel({
           <input value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" placeholder="如：協同作戰1" />
         </Field>
 
-        <IconField
-          label="圖示 iconLocal（本地圖檔）"
-          value={form.iconLocal}
-          onChange={(v) => update('iconLocal', v || undefined)}
-          defaultFolder="skills"
+        {/* PLAN-055：寫回官方檔名 key 到 icon，同步清空舊路徑 iconLocal */}
+        <GameIconField
+          label="圖示（官方檔名）"
+          value={form.icon || form.iconLocal}
+          onChange={(k) => { update('icon', k || undefined); update('iconLocal', undefined) }}
+          presetKinds={['passive']}
         />
 
         <Field label="效果說明 description">
@@ -480,9 +481,7 @@ export default function NeuralDriveAdmin({ initialSearch = '' }: { initialSearch
               className="bg-bg-dark border border-accent-purple/20 rounded-lg px-3 py-2.5 flex items-center gap-3 hover:border-border-accent transition-colors cursor-pointer"
               onClick={() => setEditing(a)}
             >
-              {a.iconLocal && (
-                <img src={a.iconLocal} alt="" className="w-8 h-8 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
-              )}
+              <IconThumb icon={a.icon} iconLocal={a.iconLocal} className="w-8 h-8 rounded shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-sm text-text-primary truncate">

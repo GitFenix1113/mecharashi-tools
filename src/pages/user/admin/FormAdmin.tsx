@@ -10,7 +10,7 @@ import { updateForm, docExists } from '../../../lib/firestoreApi'
 import { slugify, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
-import { IconField } from '../../../components/admin/IconPicker'
+import { GameIconField } from '../../../components/admin/GameIconPicker'
 import { ArmamentMountEditor } from '../../../components/admin/ArmamentMountEditor'
 
 // ─── 機師形態管理（PLAN-041 Phase B）──────────────────────────────────────────
@@ -304,10 +304,11 @@ function FormEditPanel({
           </label>
         </Field>
 
-        <IconField
-          label="形態圖示（選填）"
+        <GameIconField
+          label="形態圖示（官方檔名，選填）"
           value={form.icon}
-          onChange={(v) => update('icon', v || undefined)}
+          onChange={(k) => update('icon', k || undefined)}
+          presetKinds={['passive']}
         />
 
         <Field label="形態固有效果（照抄遊戲內形態卡正文。前台形態卡顯示的就是這段字）">

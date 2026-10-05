@@ -245,6 +245,7 @@ export function WeaponSkillStrip({ ctx, skillMap, loading }: Props) {
             {g.items.map((l) => (
               <span key={l.key} className="relative inline-flex">
                 <SkillIcon
+                  icon={l.sk.icon}
                   iconLocal={l.sk.iconLocal}
                   name={l.sk.name}
                   size="sm"
@@ -292,7 +293,7 @@ function SkillRow({ line }: { line: SkillLine }) {
   const { where, weaponName, exclusive, enhance, sk } = line
   return (
     <div className="flex items-start bg-bg-dark border border-border-subtle" style={{ gap: 8, padding: '6px 8px' }}>
-      <SkillIcon iconLocal={sk.iconLocal} name={sk.name} size="sm" />
+      <SkillIcon icon={sk.icon} iconLocal={sk.iconLocal} name={sk.name} size="sm" />
       <span className="flex flex-col min-w-0 grow" style={{ gap: 2 }}>
         <span className="flex items-baseline flex-wrap" style={{ gap: 6 }}>
           <span className={`${HUD.bodyStrong} text-text-primary`}>{sk.name}</span>
