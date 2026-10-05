@@ -172,11 +172,11 @@
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">12</div>
+      <div class="summary-num" style="color:var(--text-dim)">11</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -537,11 +537,15 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 寫入前備份＋遷移腳本 dry-run</div>
       <div class="task-group-meta">scripts/temp_scripts/migrate-icon-keys.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">只存 key、37 個中文 key、ND 副本、forms</div>
+        <p style="margin:2px 0 6px;color:var(--accent-cyan);font-size:12px;">⏩ 2026-10-06 先行完成「中文 key」這一項（站長同意）：40 處（技能 19、神經驅動 8、模組 8、天賦 4、背包技能 1）
+          的 <code>icon</code> 換成官方 key，依據是 10-01 逐張目視＋以圖搜圖 40／40 兩個獨立來源一致；<code>iconLocal</code> 照計畫留到 C-1 本體一起清。
+          腳本 <code>scripts/temp_scripts/replace-placeholder-icons.mjs</code>，bump pilotSkills／neuralDriveAbilities／modules／backpackSkills／pilots；
+          正式站實測淬鋒·凱登、安、尼爾頁與模組圖鑑 189 張圖示全部來自圖庫、中文截圖請求 0。武器圖示 3 處不在技能圖庫，另外處理。</p>
         <div class="task-desc">
           <ul>
             <li>先用 <code>backup-firestore.mjs</code> 備份。</li>
