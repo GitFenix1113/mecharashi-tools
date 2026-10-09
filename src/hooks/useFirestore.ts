@@ -3,7 +3,7 @@ import type {
   Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component,
   GlobalResearch, GameBuff, PilotSkillDoc, MechForm, NeuralDriveAbility, LoreDoc,
 } from '../types'
-import { ModuleSlot } from '../types/enums'
+import { mechModuleSet, type MechModuleSet } from '../utils/mechModules'
 import { useGameData, EMPTY_GLOBAL_RESEARCH, type CollectionKey } from '../contexts/GameDataContext'
 
 // ── 通用型別 ──────────────────────────────────────────────────────────────────
@@ -94,12 +94,8 @@ export function useMechNameMap(): HookResult<Record<string, string>> {
   return { data, loading, error }
 }
 
-export interface MechWithModules {
+export interface MechWithModules extends MechModuleSet {
   mech: Mech
-  mod4: Module | null
-  mod8: Module | null
-  fixedMods: Module[]
-  exclusiveMods: Module[]
 }
 
 export function useMechWithModules(id: string | undefined): HookResult<MechWithModules | null> {
@@ -110,22 +106,7 @@ export function useMechWithModules(id: string | undefined): HookResult<MechWithM
     if (!id) return null
     const mech = mechs.find((m) => m.id === id) ?? null
     if (!mech) return null
-    const find = (mid: string) => modules.find((m) => m.id === mid) ?? null
-    const exclusiveMods = modules.filter(
-      (m) => m.boundMechId === mech.id && m.slot === ModuleSlot.EXCLUSIVE,
-    )
-    const exclusiveIds = new Set(exclusiveMods.map((m) => m.id))
-    const mod4Candidate = mech.module4Id ? find(mech.module4Id) : null
-    const mod8Candidate = mech.module8Id ? find(mech.module8Id) : null
-    return {
-      mech,
-      mod4: mod4Candidate?.slot === ModuleSlot.SLOT_4 ? mod4Candidate : null,
-      mod8: mod8Candidate?.slot === ModuleSlot.SLOT_8 ? mod8Candidate : null,
-      fixedMods: (mech.moduleFixedIds ?? [])
-        .map(find)
-        .filter((m): m is Module => m !== null && m.slot === ModuleSlot.BUILT_IN && !exclusiveIds.has(m.id)),
-      exclusiveMods,
-    }
+    return { mech, ...mechModuleSet(mech, modules) }
   }, [id, mechs, modules])
 
   return { data, loading, error }

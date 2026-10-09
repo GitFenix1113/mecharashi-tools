@@ -3,6 +3,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { useLocation } from 'react-router-dom'
 import type { EntityRef } from '../types'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { BottomSheet } from '../components/common/BottomSheet'
@@ -55,16 +56,26 @@ function FloatingCard({ rect, width, interactive, containerRef, children }: {
   const innerRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ left: rect.left, top: rect.bottom + 6 })
 
+  // 內容高度會在掛載後才變（例：機甲卡的模組清單等 modules 載入），只在掛載時量一次會讓
+  // 卡片長出視窗底部 —— 以 ResizeObserver 跟著尺寸重新定位。
   useLayoutEffect(() => {
-    const h = innerRef.current?.offsetHeight ?? 0
-    const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))
-    let top = rect.bottom + 6
-    if (top + h > window.innerHeight - 8) {
-      const above = rect.top - h - 6
-      top = above >= 8 ? above : Math.max(8, window.innerHeight - h - 8)
+    const el = innerRef.current
+    if (!el) return
+    const place = () => {
+      const h = el.offsetHeight
+      const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))
+      let top = rect.bottom + 6
+      if (top + h > window.innerHeight - 8) {
+        const above = rect.top - h - 6
+        top = above >= 8 ? above : Math.max(8, window.innerHeight - h - 8)
+      }
+      setPos(p => (p.left === left && p.top === top ? p : { left, top }))
     }
-    setPos({ left, top })
-  }, [rect, width, children])
+    place()
+    const ro = new ResizeObserver(place)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [rect, width])
 
   return createPortal(
     <div
@@ -97,10 +108,22 @@ export function ReferenceProvider({ children }: { children: ReactNode }) {
   pinnedRef.current = pinned
   const hideTimer = useRef<number | undefined>(undefined)
   const pinnedCardEl = useRef<HTMLDivElement | null>(null)
+  /** hover 預覽的發起元素；它被拔出 DOM 時 mouseleave 不會來，要靠下面的 pointermove 補收 */
+  const previewAnchor = useRef<HTMLElement | null>(null)
+  /**
+   * 「游標還沒真的動過」——為 true 時不理會 hover。
+   *
+   * 浮窗收起或換頁的瞬間，游標底下會冒出另一個元素，瀏覽器會補發 mouseenter 給它（游標其實沒動）。
+   * 照單全收的後果（2026-10-09 回報）：版本速覽點背包 → 浮窗「查看完整詳情」，收窗那一刻底下剛好是
+   * 〈君權〉→ 補發的 hover 在舊頁開了預覽 → 接著換頁把〈君權〉整個拔掉，mouseleave 永遠不會來，
+   * 預覽就卡在武器頁上。瀏覽器的補發只有邊界事件、沒有 pointermove，所以拿 pointermove 當解除訊號。
+   */
+  const awaitingMove = useRef(false)
 
   const hoverRef = useCallback((ref: EntityRef, el: HTMLElement, nd?: NdBuffOverrides) => {
-    if (isMobile || pinnedRef.current) return
+    if (isMobile || pinnedRef.current || awaitingMove.current) return
     window.clearTimeout(hideTimer.current)
+    previewAnchor.current = el
     setPreview({ ref, rect: rectOf(el), nd })
   }, [isMobile])
 
@@ -124,8 +147,45 @@ export function ReferenceProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const close = useCallback(() => {
+    awaitingMove.current = true
     setPinned(null)
     setPreview(null)
+  }, [])
+
+  /**
+   * 換頁一律收掉兩種浮窗：它們掛在 <Routes> 外面，不會跟著舊頁一起卸載，
+   * 留著只會指向一個已經不存在的元素（瀏覽器上一頁、側鍵返回都會走到這裡）。
+   * 用 render 期間調整 state 而非 effect，換頁那一幀就不會畫出舊浮窗。
+   */
+  const { pathname } = useLocation()
+  const [shownPath, setShownPath] = useState(pathname)
+  if (shownPath !== pathname) {
+    setShownPath(pathname)
+    setPreview(null)
+    setPinned(null)
+  }
+  // 新頁面在靜止的游標底下長出來，同樣會收到補發的 mouseenter。
+  // 首次掛載不設：那會連使用者在這頁的第一次 hover 都吃掉（進入元素的邊界事件可能早於 pointermove）
+  const lastPath = useRef(pathname)
+  useLayoutEffect(() => {
+    if (lastPath.current === pathname) return
+    lastPath.current = pathname
+    awaitingMove.current = true
+  }, [pathname])
+
+  useEffect(() => {
+    const onMove = () => {
+      awaitingMove.current = false
+      // 錨點被拔掉（換頁、清單重繪）時不會有 mouseleave；一動滑鼠就收，不必等它
+      const anchor = previewAnchor.current
+      if (anchor && !anchor.isConnected) {
+        previewAnchor.current = null
+        window.clearTimeout(hideTimer.current)
+        setPreview(null)
+      }
+    }
+    document.addEventListener('pointermove', onMove, { passive: true })
+    return () => document.removeEventListener('pointermove', onMove)
   }, [])
 
   // ESC 關閉釘選浮窗 / sheet

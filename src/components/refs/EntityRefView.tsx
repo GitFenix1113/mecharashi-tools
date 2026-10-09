@@ -1,15 +1,18 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { EntityRef, RefType, DescriptionRefs } from '../../types'
+import type { EntityRef, RefType, DescriptionRefs, PilotTalent } from '../../types'
 import { useGameData, type CollectionKey } from '../../contexts/GameDataContext'
 import { useReference } from '../../contexts/ReferenceContext'
 import { STAT_LABELS } from '../../utils/moduleStats'
 import { imageCandidates, mechPortraitCandidates, pilotPortraitCandidates } from '../../utils/assets'
 import { gameIconCandidates } from '../../utils/gameIcons'
 import { pickLevel } from '../../utils/ndOverrides'
+import { mechModuleSet, type MechModuleSet } from '../../utils/mechModules'
 import { FallbackImage } from '../common/FallbackImage'
 import { RefText } from './RefText'
 import { RefScopeContext } from './RefChip'
+import { RefMechModules } from './RefMechModules'
+import { RefPilotTalents } from './RefPilotTalents'
 
 /**
  * PLAN-019 Layer 1 — 引用詳情卡片內容（被浮窗 / BottomSheet / hover 預覽共用）。
@@ -53,6 +56,10 @@ interface Resolved {
   images?: string[]
   description?: string
   descriptionRefs?: DescriptionRefs
+  /** 機甲專用：浮窗本文改列自帶模組（滿級），取代機體描述 */
+  mechModules?: MechModuleSet
+  /** 機師專用：浮窗本文改列天賦（最大強化），取代機師故事 */
+  pilotTalents?: PilotTalent[]
   route?: string
   pending?: boolean
 }
@@ -66,7 +73,8 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
         title: p.name,
         subtitle: [p.rarity, p.class, p.faction].filter(Boolean).join(' · '),
         images: pilotPortraitCandidates(p),
-        description: p.lore,
+        // 2026-10-09 站長決定：比照機甲卡，浮窗不放機師故事，改列天賦（見 RefPilotTalents）
+        pilotTalents: p.talents ?? [],
         route: `/pilots/${p.id}`,
       }
     }
@@ -77,7 +85,9 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
         title: m.name,
         subtitle: [m.armorType, m.quality].filter(Boolean).join(' · '),
         images: mechPortraitCandidates(m),
-        description: m.lore,
+        // 2026-10-09 站長決定：浮窗不放機體描述（故事），改列模組——引用機甲時想知道的是
+        // 「這台帶什麼」。modules 還沒載入時四組皆空，由 RefMechModules 顯示載入中。
+        mechModules: mechModuleSet(m, gd.modules),
         route: `/mechs/${m.id}`,
       }
     }
@@ -230,13 +240,17 @@ export function EntityRefView({ entityRef, interactive, showClose = false }: { e
   // PLAN-041：形態卡的副標要顯示所屬機師名（形態 doc 只存 pilotId）。機甲頁等引用來源
   // 不保證載過 pilots，漏了副標會少一截；pilots 有版本快取，一個 session 只付一次。
   const formNeedsPilot = entityRef.refType === 'form'
+  // 機甲卡本文是模組清單。modules 與其他集合同走版本快取：本機有快取就 0 請求，
+  // 沒有也只打一次 Worker（邊緣快取命中則 0 Firestore read）。
+  const mechNeedsModules = entityRef.refType === 'mech'
   useEffect(() => {
     const keys: CollectionKey[] = []
     if (collectionKey) keys.push(collectionKey)
     if (buffNeedsTerm) keys.push('glossaryTerms')
     if (formNeedsPilot) keys.push('pilots')
+    if (mechNeedsModules) keys.push('modules')
     if (keys.length) gd.ensureLoaded(keys)
-  }, [collectionKey, buffNeedsTerm, formNeedsPilot, gd])
+  }, [collectionKey, buffNeedsTerm, formNeedsPilot, mechNeedsModules, gd])
 
   const loading = collectionKey ? !gd.loadedKeys.has(collectionKey) : false
   const resolved = resolve(entityRef, gd)
@@ -297,6 +311,22 @@ export function EntityRefView({ entityRef, interactive, showClose = false }: { e
                   <RefText text={resolved.description} refs={resolved.descriptionRefs} />
                 </RefScopeContext.Provider>
               </p>
+            )}
+
+            {resolved.mechModules && (
+              <RefScopeContext.Provider value={{ inPopover: true }}>
+                <RefMechModules
+                  set={resolved.mechModules}
+                  loading={!gd.loadedKeys.has('modules')}
+                  clamp={!interactive}
+                />
+              </RefScopeContext.Provider>
+            )}
+
+            {resolved.pilotTalents && (
+              <RefScopeContext.Provider value={{ inPopover: true }}>
+                <RefPilotTalents talents={resolved.pilotTalents} clamp={!interactive} />
+              </RefScopeContext.Provider>
             )}
 
             {resolved.pending && (
