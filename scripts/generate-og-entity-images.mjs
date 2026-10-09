@@ -21,7 +21,7 @@
  *
  * ⚠ 來源清單（SOURCES）與 Worker 的推導規則是一組的，改一邊要改另一邊。
  *   實測資料層的檔名高度一致：pilots 87/88 是 half.webp、mechs 88/89 是 portrait.webp，
- *   weapons 則 170/178 本來就是 png（不需要轉）。
+ *   weapons 舊夾 170/178 本來就是 png（不需要轉）；PLAN-056 起分享卡片改用官方圖庫 game/icons/weapon 的 WebP，要轉。
  *
  * 用法：node scripts/generate-og-entity-images.mjs
  */
@@ -47,6 +47,8 @@ const SOURCES = [
   // 官方原檔（PLAN-054）：機師頭像 <artKey>_half、機甲立繪 Icon_mecha_wap<wap>（不含部件與 SN 大圖）
   { dir: 'game/pilots', depth: 1, match: name => name.endsWith('_half.webp') },
   { dir: 'game/mechs', depth: 1, match: name => /^Icon_mecha_wap\d+\.webp$/.test(name) },
+  // 官方武器圖示（PLAN-056）：分享卡片用 gameId 推 Icon_weapon_<gameId>.webp
+  { dir: 'game/icons/weapon', depth: 0, match: name => name.endsWith('.webp') },
   // 舊的名字資料夾（沒有遊戲 ID 的實體仍靠它）
   { dir: 'pilots', depth: 1, match: name => name === 'half.webp' },
   { dir: 'mechs', depth: 1, match: name => name === 'portrait.webp' },

@@ -351,7 +351,8 @@
       <li><b>改判 PLAN-043 決策五</b>（背包技能圖獨立成 <code>skills/背包技能/</code>，當初「維護者明示接受重複，換取分得清來源」）。
           實測那 19 張與被動夾的檔案位元組完全相同，獨立資料夾並沒有保存任何不同的東西，「分得清來源」改由反查提供。
           站長 2026-10-05 立案時同意改採扁平圖庫的管理方式。</li>
-      <li>武器 <code>Icon_weapon_*</code> 和背包 <code>Icon_backpack_*</code> 不動：它們已經是一夾一份、官方檔名，沒有重複問題。</li>
+      <li>武器 <code>Icon_weapon_*</code> 和背包 <code>Icon_backpack_*</code> 不動：它們已經是一夾一份、官方檔名，沒有重複問題。<br>
+        <small style="color:var(--accent-yellow)">⟶ 2026-10-09 由 <a href="../PLAN-056_武器背包圖示ID化/計畫書.html" style="color:var(--accent-yellow);">PLAN-056</a> 改判：「沒有重複」仍成立，但「未使用」清單、以圖搜圖、官方編號 gameId 都只有進圖庫才拿得到，所以武器、背包也收進 <code>game/icons/{weapon,backpack}/</code>。</small></li>
     </ul>
   </div>
 

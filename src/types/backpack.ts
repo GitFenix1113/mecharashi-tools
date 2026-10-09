@@ -19,7 +19,16 @@ export interface BackpackCraft {
 export interface Backpack {
   id: string
   name: string
-  /** 背包圖示 URL · https://media.zlongame.com/media/pictures/cn/community/img/gl/gameInfo/pack/Icon_backpack_{ID}.png */
+  /**
+   * 遊戲 ID（PLAN-056）：官方背包圖示 `Icon_backpack_<gameId>` 的編號，例如 '60100101'。
+   * 外觀編號、同類共用（出力背包 B／A／S 與其干擾／強化 S+ 共用 60100101），不是背包身分。
+   * 有 2 個官方檔名是 `Icon_BackPack_`（大寫），換算由 `equipIconKey()` 查表，讀取端一律走 `backpackIconCandidates()`。
+   */
+  gameId?: string
+  /**
+   * 自訂圖（非官方原檔）的路徑；只在沒有 gameId 時才會用到。
+   * PLAN-056 C-5 之前這裡還存著官方圖的舊路徑 `/images/backpacks/Icon_backpack_*.png`（過渡期後備）。
+   */
   icon?: string
   type: string            // BackpackType：'Heal' | 'Ammo' | 'Interference' | 'Invisible' | 'BackupEquipment' | 'MovePointAdd' | 'Flow'
   rarity: string          // WeaponRarity（與武器共用）：'SS' | 'S+' | 'S' | 'A' | 'B' · API quality: SSSR→SS / UR→S+ / SSR→S / SR→A / R→B

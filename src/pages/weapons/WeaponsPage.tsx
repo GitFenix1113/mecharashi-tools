@@ -112,7 +112,7 @@ function WeaponTooltipContent({ weapon, pilotMap }: {
     <>
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
-        <WeaponIcon icon={weapon.icon} name={weapon.name} size="lg" isExclusive={weapon.isExclusive} />
+        <WeaponIcon gameId={weapon.gameId} icon={weapon.icon} name={weapon.name} size="lg" isExclusive={weapon.isExclusive} />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-1">
             <div className="font-bold text-sm text-text-primary leading-tight">{weapon.name}</div>
@@ -536,7 +536,7 @@ export default function WeaponsPage() {
               >
                 {/* Top row: icon + name/rarity */}
                 <div className="flex items-start gap-2 mb-2">
-                  <WeaponIcon icon={w.icon} name={w.name} size="md" isExclusive={w.isExclusive} />
+                  <WeaponIcon gameId={w.gameId} icon={w.icon} name={w.name} size="md" isExclusive={w.isExclusive} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-1 mb-0.5">
                       <Link

@@ -171,7 +171,7 @@ export default function LoadoutPage() {
   }, [])
   // ⚠ `id` / `isBackpack` 是 PLAN-052-N 加的：天賦減重要查得到「這是什麼」才算得出來。
   //   只留 weight 的話，維娜 hover 電磁炮會預覽成 +1100（原重）、裝上去卻只加 740。
-  const [hovered, setHovered] = useState<{ slot: SlotKey; weight: number; name: string; icon?: string; id?: string; isBackpack?: boolean } | null>(null)
+  const [hovered, setHovered] = useState<{ slot: SlotKey; weight: number; name: string; gameId?: string; icon?: string; id?: string; isBackpack?: boolean } | null>(null)
   const [hoverSegment, setHoverSegment] = useState<string | null>(null)
 
   // ⚠ 用 `useState` + 一支綁住 world 的 `send()`，**不是** `useReducer` ——
@@ -1347,7 +1347,7 @@ export default function LoadoutPage() {
               useSheet={false}
               onPick={(w) => send({ type: 'equipWeapon', ref: mountRefFor(w, effectivePicker.ref), weaponId: w.id })}
               onResolve={resolve}
-              onHoverItem={(w) => setHovered(w ? { slot: slotKey(mountRefFor(w, effectivePicker.ref)), weight: w.weight, name: w.name, icon: w.icon, id: w.id } : null)}
+              onHoverItem={(w) => setHovered(w ? { slot: slotKey(mountRefFor(w, effectivePicker.ref)), weight: w.weight, name: w.name, gameId: w.gameId, icon: w.icon, id: w.id } : null)}
               onClose={closePicker}
             />
           )}
@@ -1366,7 +1366,7 @@ export default function LoadoutPage() {
               useSheet={false}
               onPick={(b) => send({ type: 'equipBackpack', backpackId: b.id })}
               onResolve={resolve}
-              onHoverItem={(b) => setHovered(b ? { slot: slotKey({ bank: 'main', slot: WeaponEquipSlot.BACK }), weight: b.weight, name: b.name, icon: b.icon, id: b.id, isBackpack: true } : null)}
+              onHoverItem={(b) => setHovered(b ? { slot: slotKey({ bank: 'main', slot: WeaponEquipSlot.BACK }), weight: b.weight, name: b.name, gameId: b.gameId, icon: b.icon, id: b.id, isBackpack: true } : null)}
               onClose={closePicker}
             />
           )}
@@ -2089,14 +2089,14 @@ function pilotSwapNote(ctx: ReturnType<typeof buildContext>, p: Pilot): string |
 }
 
 const weaponRow = (w: Weapon): PickerRowItem => ({
-  id: w.id, name: w.name, icon: w.icon, weight: w.weight, isExclusive: w.isExclusive,
+  id: w.id, name: w.name, gameId: w.gameId, icon: w.icon, weight: w.weight, isExclusive: w.isExclusive,
   meta: `${w.type} · ${w.kind} · ${w.rarity}`,
 })
 
 // ❌ 不可直接印 `b.type`：背包的 type 是**英文 enum**（'PowerAdd' / 'EMP' / 'Heal'…）——
 //    直接渲染會讓挑選器出現一排只有開發者看得懂的字。中文標籤共用圖鑑的那一份。
 const backpackRow = (b: Backpack): PickerRowItem => ({
-  id: b.id, name: b.name, icon: b.icon, weight: b.weight,
+  id: b.id, name: b.name, gameId: b.gameId, icon: b.icon, weight: b.weight, isBackpack: true,
   meta: `${BACKPACK_TYPE_CONFIG[b.type]?.label ?? b.type} · ${b.rarity}`,
 })
 

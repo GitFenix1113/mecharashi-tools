@@ -5,7 +5,7 @@
 // 確認都會先指到新圖庫、再退回原本的舊路徑——讀取端一切換，舊資料不必先改就有圖。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { gameIconSources, gameIconPath, isLibraryKey } from './gameIcons.ts'
+import { equipIconSources, gameIconSources, gameIconPath, isLibraryKey } from './gameIcons.ts'
 
 const LIB = (k: string) => `/images/game/icons/skill/${k}.webp`
 
@@ -64,8 +64,41 @@ test('空值、空字串、undefined 都沒有候選（呼叫端顯示佔位方�
   assert.deepEqual(gameIconSources(undefined, '', '  ', null), [])
 })
 
-test('武器、背包圖示不屬於圖庫（它們本來就一夾一份）', () => {
-  assert.equal(isLibraryKey('Icon_weapon_10100201'), false)
-  assert.equal(isLibraryKey('Icon_backpack_60100101'), false)
-  assert.deepEqual(gameIconSources('/images/weapons/Icon_weapon_10100201.png'), ['/images/weapons/Icon_weapon_10100201.png'])
+// ── PLAN-056：武器、背包 ─────────────────────────────────────────────────────────
+const W = (k: string) => `/images/game/icons/weapon/${k}.webp`
+const B = (k: string) => `/images/game/icons/backpack/${k}.webp`
+
+test('武器、背包自 PLAN-056 起收進圖庫', () => {
+  assert.equal(isLibraryKey('Icon_weapon_10100201'), true)
+  assert.equal(isLibraryKey('Icon_weapon_影虎嘯'), false)
+  assert.equal(gameIconPath('Icon_BackPack_60350101'), B('Icon_BackPack_60350101'))
+})
+
+test('武器：gameId 優先；舊 icon 原路徑排在「檔名對到的圖庫」之前', () => {
+  // 回填前：只有舊路徑 → 先吃原檔，再退到圖庫
+  assert.deepEqual(
+    equipIconSources('weapon', { icon: '/images/weapons/Icon_weapon_10100201.png' }),
+    ['/images/weapons/Icon_weapon_10100201.png', W('Icon_weapon_10100201')],
+  )
+  // 笑謊者：舊值存的是猜錯的 10200402（官方那張是灰色版）。回填 gameId 後正確的圖排第一
+  assert.deepEqual(
+    equipIconSources('weapon', { gameId: '10200501', icon: '/images/weapons/Icon_weapon_10200402.webp' }),
+    [W('Icon_weapon_10200501'), '/images/weapons/Icon_weapon_10200402.webp', W('Icon_weapon_10200402')],
+  )
+  // 中文佔位：只有原檔，沒有圖庫可退
+  assert.deepEqual(equipIconSources('weapon', { icon: '/images/weapons/Icon_weapon_影虎嘯.png' }), ['/images/weapons/Icon_weapon_影虎嘯.png'])
+  assert.deepEqual(equipIconSources('weapon', null), [])
+  assert.deepEqual(equipIconSources('weapon', { gameId: '', icon: '' }), [])
+})
+
+test('固定武裝：有給 side 時左右肩圖排第一，沒給就用 gameId', () => {
+  const w = { gameId: '90300101', sideGameIds: { left: '90300101', right: '90300102' } }
+  assert.deepEqual(equipIconSources('weapon', w, 'right'), [W('Icon_weapon_90300102'), W('Icon_weapon_90300101')])
+  assert.deepEqual(equipIconSources('weapon', w, 'left'), [W('Icon_weapon_90300101')])
+  assert.deepEqual(equipIconSources('weapon', w), [W('Icon_weapon_90300101')])
+})
+
+test('背包：gameId 經大小寫例外表換成官方檔名', () => {
+  assert.deepEqual(equipIconSources('backpack', { gameId: '60350101' }), [B('Icon_BackPack_60350101')])
+  assert.deepEqual(equipIconSources('backpack', { gameId: '60100101' }), [B('Icon_backpack_60100101')])
 })

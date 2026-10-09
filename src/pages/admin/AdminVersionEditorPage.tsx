@@ -9,6 +9,7 @@ import { formatEntityIdValue, parseEntityIdValue } from '../../data/patchVersion
 import { normalizeNotes } from '../../data/patchVersions/notes'
 import type { Pilot, Mech, Weapon, Backpack, RefType } from '../../types'
 import { resolveIconSrc, mechIconUrl, pilotPortraitPath } from '../../utils/assets'
+import { equipIconPath } from '../../utils/gameIcons'
 import { invalidatePatchVersionsCache } from '../../hooks/usePatchVersions'
 import AdminHalfEditorPanel from '../../components/admin/AdminHalfEditorPanel'
 
@@ -274,10 +275,11 @@ export default function AdminVersionEditorPage() {
       }
 
       // 武器先建 name → doc 索引：weapons 類別與「背包列的複合武器」共用同一份，不重掃。
-      const weaponByName = new Map<string, { id: string; icon?: string }>()
+      // 縮圖路徑走 equipIconPath（PLAN-056）：官方 gameId 優先 → 官方圖庫；沒有才用 icon（自訂圖／舊路徑）
+      const weaponByName = new Map<string, { id: string; iconPath?: string }>()
       for (const d of weaponSnap.docs) {
         const w = d.data() as Weapon
-        weaponByName.set(w.name, { id: d.id, icon: w.icon })
+        weaponByName.set(w.name, { id: d.id, iconPath: equipIconPath('weapon', w) })
       }
 
       const weapons: IconMap = {}
@@ -286,14 +288,13 @@ export default function AdminVersionEditorPage() {
         const w = weaponByName.get(name)
         if (!w) continue
         weaponIds[name] = w.id
-        const filename = w.icon?.split('/').pop()
-        if (filename) weapons[name] = `/images/weapons/${filename}`
+        if (w.iconPath) weapons[name] = w.iconPath
       }
 
-      const backpackByName = new Map<string, { id: string; icon?: string }>()
+      const backpackByName = new Map<string, { id: string; iconPath?: string }>()
       for (const d of backpackSnap.docs) {
         const b = d.data() as Backpack
-        backpackByName.set(b.name, { id: d.id, icon: b.icon })
+        backpackByName.set(b.name, { id: d.id, iconPath: equipIconPath('backpack', b) })
       }
 
       const backpacks: IconMap = {}
@@ -302,8 +303,7 @@ export default function AdminVersionEditorPage() {
         const b = backpackByName.get(name)
         if (b) {
           backpackIds[name] = b.id
-          const filename = b.icon?.split('/').pop()
-          if (filename) backpacks[name] = `/images/backpacks/${filename}`
+          if (b.iconPath) backpacks[name] = b.iconPath
           continue
         }
         // PLAN-031 複合武器：「特種背包製作」的產物（天燼審判／裁決者／糖衣毀滅者）在官方
@@ -313,8 +313,7 @@ export default function AdminVersionEditorPage() {
         const w = weaponByName.get(name)
         if (!w) continue
         backpackIds[name] = formatEntityIdValue(w.id, 'weapon', 'backpack')
-        const filename = w.icon?.split('/').pop()
-        if (filename) backpacks[name] = `/images/weapons/${filename}`
+        if (w.iconPath) backpacks[name] = w.iconPath
       }
 
       const fetchedIcons: Record<IconCategory, IconMap> = { pilots, mechs, weapons, backpacks }

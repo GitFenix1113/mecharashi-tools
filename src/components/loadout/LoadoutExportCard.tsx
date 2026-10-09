@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, type CSSProperties } from 'react'
 import { toPng } from 'html-to-image'
 import type { Component, NeuralDrive, NeuralDriveAbility, Pilot, PilotSkillDoc } from '../../types'
 import { hasMechArt, imageCandidates, pilotFullArtPath, mechKeyArtPath, mechPortraitCandidates } from '../../utils/assets'
-import { gameIconCandidates } from '../../utils/gameIcons'
+import { gameIconCandidates, weaponIconCandidates } from '../../utils/gameIcons'
 import { FallbackImage } from '../common/FallbackImage'
 import { moduleRows, slotComponents, wastedModuleStacks, weaponRows } from '../../utils/loadoutRows'
 import { ComponentsWType } from '../../types/enums'
@@ -937,7 +937,7 @@ function WeaponDetailBand({ ctx }: { ctx: LoadoutContext }) {
    *   —— 也就是最常與別把武器同框出現的那幾把。
    * ⚠ 但**整帶都沒有圖時不留**：那時留下的是一條沒有任何內容的空欄。
    */
-  const iconGutter = rows.some((r) => r.weapon?.icon)
+  const iconGutter = rows.some((r) => weaponIconCandidates(r.weapon).length > 0)
 
   return (
     <>
@@ -961,9 +961,9 @@ function WeaponDetailBand({ ctx }: { ctx: LoadoutContext }) {
                     中間，會被讀成「有一把我不認得的武器」，而實際上只是我們少一張圖。 */}
               {iconGutter && (
                 <span style={{ width: 30, height: 30, flexShrink: 0, marginTop: 1 }}>
-                  {r.weapon?.icon && (
+                  {weaponIconCandidates(r.weapon).length > 0 && (
                     <FallbackImage
-                      candidates={imageCandidates(r.weapon.icon)}
+                      candidates={weaponIconCandidates(r.weapon)}
                       alt=""
                       fallback={null}
                       style={{ width: 30, height: 30, objectFit: 'contain', display: 'block' }}

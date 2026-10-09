@@ -92,7 +92,7 @@ function WeaponChainLink({ weapon }: { weapon: Weapon }) {
       to={`/weapons/${weapon.id}`}
       className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bg-dark border border-border hover:border-accent-cyan transition-colors"
     >
-      <WeaponIcon icon={weapon.icon} name={weapon.name} size="sm" isExclusive={weapon.isExclusive} />
+      <WeaponIcon gameId={weapon.gameId} icon={weapon.icon} name={weapon.name} size="sm" isExclusive={weapon.isExclusive} />
       <span className="text-sm text-text-secondary">{weapon.name}</span>
       <WeaponRarityBadge rarity={weapon.rarity} />
     </Link>
@@ -221,7 +221,7 @@ export default function WeaponDetailPage() {
 
         <div className="bg-bg-card border border-border rounded-xl p-6">
           <div className="flex items-start gap-4">
-            <WeaponIcon icon={weapon.icon} name={weapon.name} size="lg" isExclusive={weapon.isExclusive} />
+            <WeaponIcon gameId={weapon.gameId} icon={weapon.icon} name={weapon.name} size="lg" isExclusive={weapon.isExclusive} />
             <div className="flex-1 min-w-0">
               <div className="flex items-start gap-3 flex-wrap mb-3">
                 <h1 className="text-2xl font-bold text-text-primary leading-tight">{weapon.name}</h1>
@@ -301,7 +301,7 @@ export default function WeaponDetailPage() {
               </>
             )}
             <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bg-dark border border-accent-cyan/50">
-              <WeaponIcon icon={weapon.icon} name={weapon.name} size="sm" isExclusive={weapon.isExclusive} />
+              <WeaponIcon gameId={weapon.gameId} icon={weapon.icon} name={weapon.name} size="sm" isExclusive={weapon.isExclusive} />
               <span className="text-sm font-bold text-text-primary">{weapon.name}</span>
             </span>
             {children.length > 0 && (

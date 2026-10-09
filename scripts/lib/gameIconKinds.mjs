@@ -10,29 +10,61 @@
  *   Icon_entry_<5 碼>       模組詞條
  *   Icon_RnD_<E|N|P>_<n>、Icon_skill_RnD_P_<n>   研發
  *   Icon_buff_<n>／Icon_buff_<英文>／Icon_debuff_<英文>   BUFF 白色字形（遊戲執行時才上色）
+ *   Icon_weapon_<種類3><系列3><變體2>[A][_字尾]       武器（PLAN-056）：種類 101 拳套…501 電磁炮；
+ *                                                     9xxxxxxx 機甲綁定的肩部、400x_* 敵方 BOSS 裝備
+ *   Icon_backpack_6<類型3><階2><流水2>                背包（PLAN-056）；有 2 個官方檔名是 Icon_BackPack_（大寫）
  *
- * 落點：public/images/game/icons/{skill,buff}/<官方檔名>.webp —— 扁平、一張圖一份。
+ * 落點：public/images/game/icons/{skill,buff,weapon,backpack}/<官方檔名>.webp —— 扁平、一張圖一份。
  *
  * ⚠ 圖示不等於技能：同一張圖常被多個技能共用（main_1106＝乘勝追擊／崩山／拘敵猛襲），
  *   key 只代表外觀，不能當主鍵或拿來推導技能（PLAN-032 結論）。
  * ⚠ 前台 src/utils/gameIcons.ts 有同一套規則的 TS 版（build 腳本要能在 Node 20 跑，不能 import .ts）。
  *   兩份由 scripts/lib/gameIconKinds.test.mjs 交叉比對——改一邊、另一邊的測試會掛。
  */
+import fs from 'node:fs'
 
 /** 相對 public/ 的根目錄 */
 export const ICON_DIR = 'images/game/icons'
 
-/** 屬於圖庫的官方前綴（武器 Icon_weapon_*、背包 Icon_backpack_* 不在此列：它們本來就一夾一份） */
-const LIBRARY_RE = /^Icon_(?:skill_|entry_|RnD_|commandskill_|zoneskill_|roguelike_|coopclimb_|buff_|debuff_)[A-Za-z0-9_]+$/
+/** 屬於圖庫的官方前綴（武器、背包自 PLAN-056 起也收進圖庫） */
+const LIBRARY_RE = /^Icon_(?:skill_|entry_|RnD_|commandskill_|zoneskill_|roguelike_|coopclimb_|buff_|debuff_|weapon_|backpack_|BackPack_)[A-Za-z0-9_]+$/
 
 /** 是不是圖庫裡的官方檔名（ASCII；中文佔位名一律 false） */
 export function isLibraryKey(key) {
   return typeof key === 'string' && LIBRARY_RE.test(key)
 }
 
-/** 圖庫子資料夾：BUFF 字形一夾，其餘（技能、模組詞條、研發…）一夾——照官方的分法 */
+/** 圖庫子資料夾：照官方客戶端的分法——BUFF 字形、武器、背包各一夾，其餘（技能、模組詞條、研發…）一夾 */
 export function iconFamily(key) {
-  return /^Icon_(?:de)?buff_/.test(key) ? 'buff' : 'skill'
+  if (/^Icon_(?:de)?buff_/.test(key)) return 'buff'
+  if (key.startsWith('Icon_weapon_')) return 'weapon'
+  if (/^Icon_backpack_/i.test(key)) return 'backpack'
+  return 'skill'
+}
+
+// ── 武器／背包的官方編號 gameId（PLAN-056）────────────────────────────────────────
+// gameId＝圖示檔名的編號部分（Icon_weapon_<gameId>）。它是「外觀編號」：EX／·改／·LW 與本體共用，不是武器身分。
+// 檔名大小寫的例外（Icon_BackPack_60350101）由匯入腳本寫進 equipIconKeyCase.json，這裡不寫死。
+
+const KEY_CASE_FILE = new URL('./equipIconKeyCase.json', import.meta.url)
+let keyCase = null
+function loadKeyCase() {
+  if (keyCase) return keyCase
+  keyCase = fs.existsSync(KEY_CASE_FILE) ? JSON.parse(fs.readFileSync(KEY_CASE_FILE, 'utf-8')).keyCase ?? {} : {}
+  return keyCase
+}
+
+/** gameId → 官方檔名（family：weapon｜backpack）；空值回 undefined */
+export function equipIconKey(family, gameId) {
+  const id = typeof gameId === 'string' ? gameId.trim() : ''
+  if (!id) return undefined
+  return loadKeyCase()[`${family}:${id}`] ?? `Icon_${family}_${id}`
+}
+
+/** 官方檔名 → gameId（大小寫不拘）；不是武器／背包檔名回 undefined */
+export function equipGameIdOf(key) {
+  const m = typeof key === 'string' ? key.match(/^Icon_(?:weapon|backpack)_(.+)$/i) : null
+  return m ? m[1] : undefined
 }
 
 /** 圖庫路徑（相對 public/）；不是圖庫 key 回 undefined */
@@ -88,9 +120,12 @@ export function iconFeature(data, w, h, dim = ICON_FEATURE_DIM) {
 const BUFF_SERIES = { 1: 'stat', 2: 'status', 3: 'repair', 4: 'unique', 5: 'stack', 9: 'misc' }
 
 /**
- * 解析官方檔名。回 { key, family, kind, color?, num? } 或 null（不是圖庫 key）。
+ * 解析官方檔名。回 { key, family, kind, category?, color?, num? } 或 null（不是圖庫 key）。
  *   kind   skill：main／order／passive／talent／pp／entry／rnd／command／refactoring／other
  *          buff ：generic（buff_attack 這類通用增益）／debuff／stat／status／repair／unique／stack／misc
+ *          weapon：series（主序列）／variant（字尾變體，如 _b 外型變化）／linked（9 開頭，機甲綁定肩部）／enemy（400x，敵方 BOSS）／other
+ *          backpack：backpack
+ *   category  武器：種類前綴 3 碼（'102'＝打樁機；linked 是 '902' 這類、enemy 是 '4001' 這類）；背包：類型 3 碼（'035'＝飛行）
  *   color  只有 main／order／passive／talent 有：首位數 1–5、9
  *   num    編號（排序用；流水號倒序＝最新在前）
  */
@@ -98,6 +133,18 @@ export function parseIconKey(key) {
   if (!isLibraryKey(key)) return null
   const family = iconFamily(key)
   let m
+  if (family === 'weapon') {
+    if ((m = key.match(/^Icon_weapon_(9\d{2})(\d{3})(\d{2})$/))) return { key, family, kind: 'linked', category: m[1], num: Number(m[1] + m[2] + m[3]) }
+    if ((m = key.match(/^Icon_weapon_(400\d)_/))) return { key, family, kind: 'enemy', category: m[1] }
+    if ((m = key.match(/^Icon_weapon_(\d{3})(\d{3})(\d{2})[A-Z]?(_[A-Za-z0-9_]+)?$/))) {
+      return { key, family, kind: m[4] ? 'variant' : 'series', category: m[1], num: Number(m[1] + m[2] + m[3]) }
+    }
+    return { key, family, kind: 'other' }
+  }
+  if (family === 'backpack') {
+    if ((m = key.match(/^Icon_backpack_6(\d{3})(\d{2})(\d{2})$/i))) return { key, family, kind: 'backpack', category: m[1], num: Number(`6${m[1]}${m[2]}${m[3]}`) }
+    return { key, family, kind: 'backpack' }
+  }
   if (family === 'buff') {
     if (key.startsWith('Icon_debuff_')) return { key, family, kind: 'debuff' }
     if ((m = key.match(/^Icon_buff_(\d)(\d{3})$/))) return { key, family, kind: BUFF_SERIES[m[1]] ?? 'misc', num: Number(m[1] + m[2]) }

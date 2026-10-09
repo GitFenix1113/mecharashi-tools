@@ -1,5 +1,6 @@
-import { Fragment, useState } from 'react'
-import { assetUrl } from '../../utils/assets'
+import { Fragment } from 'react'
+import { FallbackImage } from '../common/FallbackImage'
+import { backpackIconCandidates } from '../../utils/gameIcons'
 
 export const BACKPACK_TYPE_CONFIG: Record<string, { label: string; className: string }> = {
   Heal:            { label: '修理',    className: 'text-accent-green bg-accent-green/10 border-accent-green/30' },
@@ -80,16 +81,19 @@ const RARITY_ICON_STYLE: Record<string, RarityIconStyle> = {
   },
 }
 
-function resolveBackpackIcon(icon: string): { local: string; remote: string } {
-  const filename = icon.split('/').pop() ?? ''
-  return {
-    local: assetUrl(`/images/backpacks/${filename}`),
-    remote: icon,
-  }
-}
-
-export function BackpackIcon({ icon, name, rarity, size = 'md' }: { icon?: string; name: string; rarity?: string; size?: 'sm' | 'md' | 'lg' }) {
-  const [fallback, setFallback] = useState<'local' | 'remote' | 'failed'>('local')
+/**
+ * 背包圖示。候選鏈：gameId 圖庫 → icon（見 backpackIconCandidates，PLAN-056）；全部失敗顯示「背」。
+ * 舊版會把 icon 的檔名硬拼到 /images/backpacks/，再退官方 CDN——圖庫上線後兩者都不需要了。
+ */
+export function BackpackIcon({ gameId, icon, name, rarity, size = 'md' }: {
+  /** 官方圖示編號（PLAN-056）；有值就用官方圖 */
+  gameId?: string
+  /** 自訂圖，或 PLAN-056 C-5 之前的舊路徑 */
+  icon?: string
+  name: string
+  rarity?: string
+  size?: 'sm' | 'md' | 'lg'
+}) {
   const dim = size === 'lg' ? 'w-16 h-16' : size === 'md' ? 'w-10 h-10' : 'w-8 h-8'
   const rs = rarity ? (RARITY_ICON_STYLE[rarity] ?? null) : null
 
@@ -97,30 +101,27 @@ export function BackpackIcon({ icon, name, rarity, size = 'md' }: { icon?: strin
     ? { background: rs.background, boxShadow: rs.boxShadow }
     : undefined
 
-  if (!icon || fallback === 'failed') {
-    return (
-      <div
-        className={`${dim} rounded-lg flex items-center justify-center flex-shrink-0 ${!rs ? 'bg-bg-dark border border-border' : ''}`}
-        style={containerStyle}
-      >
-        <span className={`text-[13px] ${rs?.placeholder ?? 'text-text-dim'}`}>背</span>
-      </div>
-    )
-  }
-
-  const { local, remote } = resolveBackpackIcon(icon)
-  const src = fallback === 'local' ? local : remote
+  const placeholder = (
+    <div
+      className={`${dim} rounded-lg flex items-center justify-center flex-shrink-0 ${!rs ? 'bg-bg-dark border border-border' : ''}`}
+      style={containerStyle}
+    >
+      <span className={`text-[13px] ${rs?.placeholder ?? 'text-text-dim'}`}>背</span>
+    </div>
+  )
+  const candidates = backpackIconCandidates({ gameId, icon })
+  if (!candidates.length) return placeholder
 
   return (
     <div
       className={`${dim} rounded-lg overflow-hidden flex-shrink-0 ${!rs ? 'bg-bg-dark border border-border' : ''}`}
       style={containerStyle}
     >
-      <img
-        src={src}
+      <FallbackImage
+        candidates={candidates}
         alt={name}
         className="w-full h-full object-contain"
-        onError={() => setFallback((prev) => (prev === 'local' ? 'remote' : 'failed'))}
+        fallback={<span className={`w-full h-full flex items-center justify-center text-[13px] ${rs?.placeholder ?? 'text-text-dim'}`}>背</span>}
       />
     </div>
   )

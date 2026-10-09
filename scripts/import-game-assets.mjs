@@ -8,6 +8,7 @@
  *   node scripts/import-game-assets.mjs --id=10103174 --art-key=Pilot_10103174A 新機師：依命名規則從圖片索引.csv 找 core 四種圖
  *   node scripts/import-game-assets.mjs --wap=3062                              新機甲：立繪／部件 1~4／全身大圖
  *   node scripts/import-game-assets.mjs --icons                                 圖示圖庫（PLAN-055）：技能類＋BUFF 字形 → game/icons/
+ *   node scripts/import-game-assets.mjs --equip-icons                           武器／背包圖示（PLAN-056）→ game/icons/{weapon,backpack}/
  *
  * ── --icons（PLAN-055 A-2）────────────────────────────────────────────────
  *   來源取聯集：擷取的 uiicons/skilltype_abs（Texture2D）＋ bufftype_abs 的 Icon_buff_*／Icon_debuff_*（Sprite），
@@ -16,6 +17,13 @@
  *   兩邊都有的同名圖以擷取為準；像素不同的列進報告給站長看（不中止）。
  *   落點 public/images/game/icons/{skill,buff}/<官方檔名>.webp，WebP **lossless**（128px 平塗圖示實測比 q82 還小）；
  *   站上舊夾本來就是 .webp 的直接複製、不重壓。之後有新擷取時跑同一個指令，只會補新的 key。
+ *
+ * ── --equip-icons（PLAN-056 A-1）─────────────────────────────────────────
+ *   擷取的 uiicons/wapweapons_abs、wapbackpack_abs **整夾全收**（站長 2026-10-09：資料多只有好處——
+ *   含 400x 敵方 BOSS 裝備、9 開頭的機甲綁定肩部、_b 外型變化）。每個名稱有 340² 原圖（Texture2D）與去邊 Sprite 兩份，取前者。
+ *   WebP **q82**（不是 lossless：武器是 3D 渲染圖，lossless 會大好幾倍）。站上舊夾 weapons／backpacks 只拿來比對、不收：
+ *   中文佔位與猜錯的編號（20400502、10200402）不進圖庫，資料改指向正確的官方 gameId。
+ *   --apply 時另寫檔名大小寫例外表（src/data/equipIconKeyCase.ts ＋ scripts/lib/equipIconKeyCase.json）。
  * 共用旗標：--apply（真的寫檔；預設只報告）、--force（已存在也重轉）、--only=<gameId|wap>（v3 模式只做一個）、
  *           --src=<客戶端擷取的 Data 夾>（預設 E:/Mecharashi_Data/Data）、--archive=<封存夾>（預設 E:/Mecharashi_Data/site-archive）
  *
@@ -41,7 +49,7 @@ import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 import { GAME_DIR, MECH_KINDS, PILOT_KINDS, TIER_GROUPS, mechFileName, pilotFileName } from './lib/gameAssetKinds.mjs'
-import { iconFamily, isLibraryKey, keyFromValue } from './lib/gameIconKinds.mjs'
+import { equipGameIdOf, iconFamily, isLibraryKey, keyFromValue } from './lib/gameIconKinds.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
@@ -56,7 +64,7 @@ const CSV = path.join(SRC, '圖片索引.csv')
 const PUBLIC_GAME = path.join(ROOT, 'public', GAME_DIR)
 const APPLY = !!args.apply
 const FORCE = !!args.force
-const MODE = args.icons ? 'icons' : args.id ? 'pilot' : args.wap ? 'mech' : 'v3'
+const MODE = args.icons ? 'icons' : args['equip-icons'] ? 'equip' : args.id ? 'pilot' : args.wap ? 'mech' : 'v3'
 const TIER = MODE === 'v3' ? String(args.tier ?? 'core') : 'core'
 
 if (!['core', 'extended', 'reserve'].includes(TIER)) fail(`--tier 只能是 core／extended／reserve：${TIER}`)
@@ -163,6 +171,7 @@ function featureDistance(a, b) {
 /** 舊編號 → 現行編號的門檻：只收「幾乎逐像素相同」的；同設計重繪、換色變體都當成不同的圖保留 */
 const ALIAS_MAX_DISTANCE = 6
 const iconReport = { fromDump: 0, dumpOnly: [], legacy: [], diffs: [], nonKey: [], siteCopies: 0, aliases: {} }
+const equipReport = { weapon: [], backpack: [], siteOnly: [], diffs: [], same: 0, keyCase: {} }
 
 if (MODE === 'v3') {
   const v3 = JSON.parse(fs.readFileSync(V3, 'utf-8'))
@@ -282,6 +291,37 @@ if (MODE === 'v3') {
   }))
   iconReport.diffs.sort((a, b) => b.d - a.d)
   iconReport.both = both.length
+} else if (MODE === 'equip') {
+  const rows = loadCsv()
+  const fromDump = new Map()   // key → row
+  for (const [family, dir] of [['weapon', '/uiicons/wapweapons_abs/'], ['backpack', '/uiicons/wapbackpack_abs/']]) {
+    const pool = rows.filter((r) => r.asset?.includes(dir))
+    for (const name of new Set(pool.map((r) => r.name))) {
+      if (!isLibraryKey(name) || iconFamily(name) !== family) { notes.push(`擷取裡的 ${name} 不符合 ${family} 命名規則，略過`); continue }
+      const pick = pickRow(pool, name)
+      if (pick.conflict) { problems.push(`${name}：擷取內同名但內容不同 ${pick.conflict.join(' ／ ')}`); continue }
+      if (pick.row.w !== 340 || pick.row.h !== 340) notes.push(`${name}：Texture2D 不是 340²（${pick.row.w}×${pick.row.h}）`)
+      fromDump.set(name, pick.row)
+      addTask(pick.row.path, `icons/${family}`, name, '擷取', `equip-${family}`)
+      equipReport[family].push(name)
+      // 大小寫例外：gameId → 檔名的一般式是 Icon_<family>_<gameId>
+      const id = equipGameIdOf(name)
+      if (name !== `Icon_${family}_${id}`) equipReport.keyCase[`${family}:${id}`] = name
+    }
+  }
+  // 站上舊夾：只比對、不收（擷取是唯一來源）
+  for (const dir of ['weapons', 'backpacks']) {
+    const abs = path.join(ROOT, 'public/images', dir)
+    if (!fs.existsSync(abs)) continue
+    for (const file of fs.readdirSync(abs)) {
+      if (!/\.(png|webp)$/i.test(file)) continue
+      const key = keyFromValue(file)
+      if (!fromDump.has(key)) { equipReport.siteOnly.push(`${dir}/${file}`); continue }
+      const d = await pixelDiff(path.join(SRC, fromDump.get(key).path), path.join(abs, file))
+      if (d >= 6) equipReport.diffs.push({ key, d: Math.round(d * 10) / 10, site: `${dir}/${file}` })
+      else equipReport.same++
+    }
+  }
 } else {
   const rows = loadCsv()
   if (MODE === 'pilot') {
@@ -346,7 +386,7 @@ await Promise.all(Array.from({ length: 6 }, async () => { while (queue.length) a
 const MB = (b) => (b / 1048576).toFixed(1)
 const rowsOut = [...stat].sort().map(([g, s]) => `| ${g} | ${s.n} | ${s.skipped} | ${MB(s.srcBytes)} | ${MB(s.outBytes)} |`)
 const tot = [...stat.values()].reduce((a, s) => ({ n: a.n + s.n, skipped: a.skipped + s.skipped, srcBytes: a.srcBytes + s.srcBytes, outBytes: a.outBytes + s.outBytes }), { n: 0, skipped: 0, srcBytes: 0, outBytes: 0 })
-const title = MODE === 'v3' ? `v3 整批・${TIER}` : MODE === 'pilot' ? `新機師 ${args.id}` : MODE === 'icons' ? '圖示圖庫' : `新機甲 wap${args.wap}`
+const title = MODE === 'v3' ? `v3 整批・${TIER}` : MODE === 'pilot' ? `新機師 ${args.id}` : MODE === 'icons' ? '圖示圖庫' : MODE === 'equip' ? '武器／背包圖示' : `新機甲 wap${args.wap}`
 const iconSection = MODE !== 'icons' ? [] : [
   '## 圖示圖庫（PLAN-055）', '',
   `- 擷取：${iconReport.fromDump}（其中站上沒有的 ${iconReport.dumpOnly.length}，見計畫書決策三）`,
@@ -361,6 +401,35 @@ const iconSection = MODE !== 'icons' ? [] : [
   '<details><summary>舊編號別名</summary>', '',
   ...Object.entries(iconReport.aliases).sort().map(([a, b]) => `- \`${a}\` → \`${b}\``), '', '</details>', '',
 ]
+const code = (s) => '`' + s + '`'
+const equipSection = MODE !== 'equip' ? [] : [
+  '## 武器／背包圖示（PLAN-056）', '',
+  `- 擷取：武器 ${equipReport.weapon.length}、背包 ${equipReport.backpack.length}（整夾全收）`,
+  `- 站上舊夾與擷取同名且畫面相同（平均像素差 < 6）：${equipReport.same}`,
+  `- 站上同名但畫面不同：${equipReport.diffs.length}——站上那張是猜錯編號的圖，資料改指向正確的 gameId（PLAN-056 C-1）`,
+  ...equipReport.diffs.map((d) => `  - ${code(d.key)} 差 ${d.d}　站上：${code(d.site)}`),
+  `- 站上有、擷取沒有（中文佔位或猜錯的編號，不收）：${equipReport.siteOnly.length}`,
+  ...equipReport.siteOnly.map((f) => `  - ${code(f)}`),
+  `- 檔名大小寫例外：${Object.keys(equipReport.keyCase).length}`,
+  ...Object.entries(equipReport.keyCase).map(([k, v]) => `  - ${code(k)} → ${code(v)}`), '',
+]
+if (MODE === 'equip' && APPLY) {
+  const entries = Object.entries(equipReport.keyCase).sort(([a], [b]) => a.localeCompare(b))
+  const ts = [
+    '// ⚠ 自動產生，請勿手動編輯 —— node scripts/import-game-assets.mjs --equip-icons --apply（PLAN-056 A-1）',
+    '//',
+    '// 武器／背包官方檔名的大小寫例外：gameId → 檔名一般是 Icon_<family>_<gameId>，',
+    '// 但官方有幾個背包寫成 Icon_BackPack_（大寫）。圖庫照官方檔名逐字存，GitHub Pages 分大小寫，所以要查表。',
+    '',
+    'export const EQUIP_ICON_KEY_CASE: Record<string, string> = {',
+    ...entries.map(([k, v]) => `  '${k}': '${v}',`),
+    '}',
+    '',
+  ].join('\n')
+  fs.writeFileSync(path.join(ROOT, 'src/data/equipIconKeyCase.ts'), ts)
+  fs.writeFileSync(path.join(ROOT, 'scripts/lib/equipIconKeyCase.json'),
+    JSON.stringify({ generatedBy: 'scripts/import-game-assets.mjs --equip-icons --apply', keyCase: Object.fromEntries(entries) }, null, 1) + '\n')
+}
 if (MODE === 'icons' && APPLY) {
   // 別名表：前台 gameIconPath() 用它把舊編號解析到現行編號（DB 與爬蟲原始快照裡還有舊編號）
   const entries = Object.entries(iconReport.aliases).sort(([a], [b]) => a.localeCompare(b))
@@ -383,18 +452,24 @@ if (MODE === 'icons' && APPLY) {
   fs.writeFileSync(path.join(ROOT, 'scripts/lib/gameIconMeta.json'), JSON.stringify(meta, null, 1) + '\n')
 }
 const report = [
-  `# ${MODE === 'icons' ? 'PLAN-055' : 'PLAN-054'} 官方原檔匯入${APPLY ? '' : '（dry-run）'}：${title}`, '',
+  `# ${MODE === 'icons' ? 'PLAN-055' : MODE === 'equip' ? 'PLAN-056' : 'PLAN-054'} 官方原檔匯入${APPLY ? '' : '（dry-run）'}：${title}`, '',
   `- 時間：${new Date().toISOString()}`,
   `- 來源：${SRC}`,
   `- 落點：${destRoot}${TIER === 'core' ? '（進版控、部署）' : '（repo 外封存，不進 git、不部署）'}`,
   `- 檔數：${tot.n}（已存在略過 ${tot.skipped}）　來源 PNG ${MB(tot.srcBytes)} MB → WebP ${MB(tot.outBytes)} MB`, '',
   '| 組 | 檔數 | 已存在 | PNG MB | WebP MB |', '|---|---:|---:|---:|---:|', ...rowsOut, '',
   ...iconSection,
+  ...equipSection,
   ...(notes.length ? ['## 備註', '', ...notes.map((n) => `- ${n}`), ''] : []),
 ].join('\n')
 console.log(MODE === 'icons' ? report.split('<details>')[0] : report)
 if (MODE === 'icons') {
   const out = path.join(ROOT, `_local-notes/2026-10/2026-10-05_PLAN-055_A-3_匯入報告${APPLY ? '' : '_dry-run'}.md`)
+  fs.writeFileSync(out, report + '\n')
+  console.log(`📝 報告：${path.relative(ROOT, out)}`)
+}
+if (MODE === 'equip') {
+  const out = path.join(ROOT, `_local-notes/2026-10/2026-10-09_PLAN-056_A-1_匯入報告${APPLY ? '' : '_dry-run'}.md`)
   fs.writeFileSync(out, report + '\n')
   console.log(`📝 報告：${path.relative(ROOT, out)}`)
 }

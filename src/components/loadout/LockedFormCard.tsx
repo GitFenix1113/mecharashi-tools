@@ -107,7 +107,7 @@ export function LockedFormCard({ form, ctx }: Props) {
               key={slotKey(ref)}
               className={`${HUD_READONLY} rounded-lg flex items-center gap-2.5 px-2 py-1.5`}
             >
-              <WeaponIcon icon={w?.icon} name={w?.name ?? weaponId} size="sm" />
+              <WeaponIcon gameId={w?.gameId} sideGameIds={w?.sideGameIds} side={ref.side} icon={w?.icon} name={w?.name ?? weaponId} size="sm" />
               <div className="min-w-0 flex-1">
                 {w
                   ? <div className={`${HUD.bodyStrong} text-text-primary truncate`}>{w.name}</div>

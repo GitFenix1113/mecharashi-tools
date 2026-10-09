@@ -193,6 +193,8 @@ function str(v: unknown): string {
  * ⚠ 命名規則與 src/utils/gameArt.ts、scripts/lib/gameAssetKinds.mjs 是同一套（Worker 自成一包，不跨目錄 import）：
  *   機師頭像 `/images/game/pilots/<gameId>/<artKey>_half.webp` —— **gameId 與 artKey 不互推**（維娜 10103144／Pilot_13019A）
  *   機甲立繪 `/images/game/mechs/<wap>/Icon_mecha_wap<wap>.webp`
+ *   武器圖示 `/images/game/icons/weapon/Icon_weapon_<gameId>.webp`（PLAN-056；與 src/utils/gameIcons.ts 的 equipIconKey 同一套，
+ *            武器沒有檔名大小寫例外——有例外的只有 2 個背包，而背包沒有分享卡片）
  * 推出來的檔案萬一不存在（沒匯入、或網站還沒部署），handleSocialPreview 的探測會退到下一個候選。
  */
 function gamePortrait(collection: OgCollection, doc: Record<string, unknown>): string | undefined {
@@ -203,6 +205,7 @@ function gamePortrait(collection: OgCollection, doc: Record<string, unknown>): s
     return artKey ? `/images/game/pilots/${gameId}/${artKey}_half.webp` : undefined
   }
   if (collection === 'mechs') return `/images/game/mechs/${gameId}/Icon_mecha_wap${gameId}.webp`
+  if (collection === 'weapons') return `/images/game/icons/weapon/Icon_weapon_${gameId}.webp`
   return undefined
 }
 
@@ -225,7 +228,7 @@ function truncate(s: string, max = 110): string {
  * 欄位來源全部是既有的實體欄位（計畫書決策二：不為分享卡片另開美術維護線）：
  *   pilots  → 官方原檔頭像（gameId＋artKey，PLAN-054）→ portrait
  *   mechs   → 官方原檔立繪（gameId，PLAN-054）→ portrait → halfPortrait
- *   weapons → icon（178 筆中 6 筆缺）
+ *   weapons → 官方圖示（gameId，PLAN-056）→ icon（自訂圖／舊路徑）
  *
  * `opts.lore`（PLAN-042-A）：這張卡片是機師故事館的分享卡。只換 title 與 description，
  * **og:image 沿用同一張 half.jpg** —— 故事館不另開一條美術維護線（計畫書決策二）。
@@ -285,7 +288,8 @@ export function buildOgMeta(
   return {
     title: `${name}${rarity || type ? ` · ${[rarity, type].filter(Boolean).join(' ')}武器` : ''}`,
     description: truncate(desc || `${[rarity, type].filter(Boolean).join(' ')}武器｜數值、技能與改造一覽`),
-    image: absoluteImage(doc.icon) ?? DEFAULT_OG_IMAGE,
+    // gameId 推出來的是 WebP → 換成預先轉好的 JPEG；網站還沒部署那批 JPEG 時，探測失敗就退回 icon
+    ...pickImages(gamePortrait('weapons', doc), doc.icon),
   }
 }
 

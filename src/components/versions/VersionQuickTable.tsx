@@ -5,6 +5,7 @@ import { parseEntityIdValue } from '../../data/patchVersions/entityRef'
 import type { EntityRef, RefType } from '../../types'
 import { useReference } from '../../contexts/ReferenceContext'
 import { resolveIconSrc } from '../../utils/assets'
+import { gameIconPath, keyFromValue } from '../../utils/gameIcons'
 import { nextFrames } from '../../utils/nextFrames'
 
 // ── Data helpers ──────────────────────────────────────────────────────────────
@@ -131,19 +132,25 @@ function RefThumbnail({ name, lookup, isPredicted, variant = 'default', chip = t
   /** false：不套晶片外殼，由呼叫端自己包（武器＋機師要包成同一個晶片） */
   chip?: boolean
 }) {
-  const [broken, setBroken] = useState(false)
+  const [failed, setFailed] = useState(0)
   const { hoverRef, leaveRef, pinRef } = useReference()
 
   const imageUrl = lookup?.icons.get(name)
   const rawId    = lookup?.ids.get(name)
-  const showImage = !!imageUrl && !broken
+  // 快照存的是路徑。武器／背包的舊路徑（/images/weapons/…png）在 PLAN-056 舊檔退場後會 404，
+  // 檔名對得到官方圖庫就退過去——快照不必先改寫也有圖（同 PLAN-055「檔名即 key」）。
+  const sources = imageUrl
+    ? [...new Set([imageUrl, gameIconPath(keyFromValue(imageUrl))].filter((u): u is string => !!u).map(resolveIconSrc))]
+    : []
+  const src = sources[failed]
+  const showImage = !!src
 
   const inner = showImage ? (
     <img
-      src={resolveIconSrc(imageUrl)}
+      src={src}
       alt={name}
       className={`${THUMB_CLASS[variant]} group-hover:border-accent-orange transition-colors`}
-      onError={() => setBroken(true)}
+      onError={() => setFailed((n) => n + 1)}
     />
   ) : (
     <span className={chip

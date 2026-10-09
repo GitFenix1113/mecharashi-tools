@@ -30,6 +30,7 @@ import { MechPartPosition, WeaponEquipSlot } from '../types/enums.ts'
 import type { SlotCapacity, SlotSide, WeaponSlotRef } from '../types/slots.ts'
 import { slotKey } from '../types/slots.ts'
 import { slotLabel } from './mechSlots.ts'
+import { equipIconPath } from './gameIcons.ts'
 import { slotExists, slotOccupant, type LoadoutContext, type SlotOccupant } from './loadoutRules.ts'
 
 /**
@@ -69,7 +70,8 @@ export interface RigSlot {
   /** 裝備名；空槽與無槽為 null。武器資料斷鏈時退回 doc id，讓斷鏈看得見 */
   name: string | null
   /**
-   * 裝備圖示（武器／背包的 `icon`）。**沒有圖或空槽時為 null**。
+   * 裝備圖示路徑（未套 BASE_URL）。**沒有圖或空槽時為 null**。
+   * PLAN-056 起由 `equipIconPath()` 決定：官方 gameId 優先（固定武裝依左右肩取鏡像圖），沒有才用 `icon`。
    *
    * ⚠ 由本檔給而不是讓渲染端自己去 `world` 查一次（使用者回饋 2026-08-30：匯出圖漏了
    *   圖示）：這一格畫的是哪一件裝備，答案在 `slotAt()` 裡已經解過一次
@@ -178,7 +180,7 @@ function slotAt(ctx: LoadoutContext, ref: WeaponSlotRef): RigSlot {
       return {
         key, ref, label, slotType, state: 'weapon',
         name: occ.weapon?.name ?? occ.mount.weaponId,
-        icon: occ.weapon?.icon ?? null,
+        icon: equipIconPath('weapon', occ.weapon) ?? null,
         note: dual ? dualNote : null,
         // echo 那一格不印重量；查無武器（斷鏈）也沒有數字可印
         weight: dual === 'echo' ? null : occ.weapon?.weight ?? null,
@@ -188,7 +190,7 @@ function slotAt(ctx: LoadoutContext, ref: WeaponSlotRef): RigSlot {
       return {
         key, ref, label, slotType, state: 'fixed',
         name: occ.weapon?.name ?? occ.occupied.mount.weaponId,
-        icon: occ.weapon?.icon ?? null,
+        icon: equipIconPath('weapon', occ.weapon, ref.side) ?? null,
         note: dual ? `機甲固定武裝・${dualNote}` : '機甲固定武裝',
         // ⚠ 固定武裝的 weight 常態是 0（純封鎖型），那是真的 0 不是「沒有值」
         weight: dual === 'echo' ? null : occ.weapon?.weight ?? null,
@@ -199,7 +201,7 @@ function slotAt(ctx: LoadoutContext, ref: WeaponSlotRef): RigSlot {
       return {
         key, ref, label, slotType, state: 'formLocked',
         name: occ.weapon?.name ?? occ.weaponId,
-        icon: occ.weapon?.icon ?? null,
+        icon: equipIconPath('weapon', occ.weapon, ref.side) ?? null,
         note: dual ? `${lockName}・${dualNote}` : lockName,
         weight: dual === 'echo' ? null : occ.weapon?.weight ?? null,
         dual,
@@ -209,7 +211,7 @@ function slotAt(ctx: LoadoutContext, ref: WeaponSlotRef): RigSlot {
       return {
         key, ref, label, slotType, state: 'backpack',
         name: occ.backpack.name,
-        icon: occ.backpack.icon ?? null,
+        icon: equipIconPath('backpack', occ.backpack) ?? null,
         // 強襲者背包解鎖備用槽——那一列因此從「整排不存在」變成兩格，值得說一句
         note: ctx.capacity.backupHand > 0 ? '解鎖備用武器槽' : null,
         weight: occ.backpack.weight,

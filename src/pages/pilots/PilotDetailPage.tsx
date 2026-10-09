@@ -520,7 +520,7 @@ function ExclusiveWeaponPanel({ weapon, skills, loading, talentNames, stageCount
           onClick={() => { if (isMobile) setSheetOpen(true) }}
         >
           <div className="flex items-center gap-3">
-            <WeaponIcon icon={weapon.icon} name={weapon.name} size="md" isExclusive={weapon.isExclusive} />
+            <WeaponIcon gameId={weapon.gameId} icon={weapon.icon} name={weapon.name} size="md" isExclusive={weapon.isExclusive} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
                 <span className="font-bold text-text-primary leading-tight">{weapon.name}</span>

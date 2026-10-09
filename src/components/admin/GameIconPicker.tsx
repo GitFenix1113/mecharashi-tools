@@ -4,14 +4,19 @@ import { createPortal } from 'react-dom'
 import { assetUrl } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
 import {
-  ICON_COLOR_FAMILIES, ICON_KIND_LABELS, featureDistance, gameIconCandidates, gameIconPath, iconFeature, parseIconKey,
-  type IconFamily, type IconKind, type ParsedIconKey,
+  BACKPACK_ICON_CATEGORIES, ICON_COLOR_FAMILIES, ICON_KIND_LABELS, WEAPON_ICON_CATEGORIES,
+  equipGameIdOf, equipIconKey, featureDistance, gameIconCandidates, gameIconPath, iconFeature, parseIconKey,
+  type EquipIconFamily, type IconFamily, type IconKind, type ParsedIconKey,
 } from '../../utils/gameIcons'
 import { buildIconUsage, usageKey, usageSearchText, type IconUser } from '../../utils/iconUsage'
 import { useIconUsageData } from '../../hooks/useFirestore'
 
 /**
- * 後台圖示選圖器（PLAN-055 B-1）—— 只管技能類與 BUFF 圖示；立繪、武器、背包仍用舊的 IconPicker。
+ * 後台圖示選圖器（PLAN-055 B-1）—— 技能類、BUFF，以及 PLAN-056 起的武器、背包圖示；立繪仍用舊的 IconPicker。
+ *
+ * 武器／背包分頁（PLAN-056 B-1）：篩選換成「種類前綴（102＝打樁機）× 群組（主序列／變體／機甲綁定／敵方）」，
+ * 預設只開主序列——新專武落在既有系列的新變體，挑「未使用＋同種類」就只剩幾張。
+ * ⚠ 種類前綴只拿來縮小範圍、不擋選擇：碎狼牙、罪棘律典的官方檔名本身就是交叉的。
  *
  * 官方把分類寫在檔名裡（Icon_skill_<種類>_<色系><批次><流水>），所以這裡用**官方文法**篩：
  *   · 種類＝外框形狀（主動▲／指令■／被動●／天賦◆…）× 色系（首位數）× 使用狀態
@@ -26,10 +31,17 @@ import { useIconUsageData } from '../../hooks/useFirestore'
 interface IconIndex {
   skill: string[]
   buff: string[]
+  /** PLAN-056；舊版索引沒有這兩欄 */
+  weapon?: string[]
+  backpack?: string[]
   legacy: string[]
-  /** 以圖搜圖特徵（features.bin）：每張 dim×dim×3 bytes，順序＝[...skill, ...buff] */
+  /** 站長確認過的圖示註記（scripts/lib/equipIconNotes.json） */
+  notes?: Record<string, string>
+  /** 以圖搜圖特徵（features.bin）：每張 dim×dim×3 bytes，順序＝[...skill, ...buff, ...weapon, ...backpack] */
   features?: { dim: number; hash: string }
 }
+
+const listOf = (index: IconIndex | null, family: IconFamily): string[] => index?.[family] ?? []
 
 // ── 以圖搜圖（PLAN-055 B-4）────────────────────────────────────────────────────
 // 新角色上線、手上只有遊戲截圖時用：貼上截圖 → 跟圖庫每張圖的 12×12 特徵比距離 → 列出最像的幾張。
@@ -108,6 +120,13 @@ function loadIconIndex(): Promise<IconIndex> {
 const SKILL_KINDS: IconKind[] = ['main', 'order', 'passive', 'talent', 'pp', 'entry', 'rnd']
 const SKILL_OTHER_KINDS = new Set<IconKind>(['command', 'refactoring', 'other'])
 const BUFF_KINDS: IconKind[] = ['generic', 'debuff', 'stat', 'status', 'repair', 'unique', 'stack', 'misc']
+const WEAPON_KINDS: IconKind[] = ['series', 'variant', 'linked', 'enemy', 'other']
+const KINDS_OF: Partial<Record<IconFamily, IconKind[]>> = { skill: [...SKILL_KINDS, 'other'], buff: BUFF_KINDS, weapon: WEAPON_KINDS }
+const CATEGORIES_OF: Partial<Record<IconFamily, Record<string, string>>> = { weapon: WEAPON_ICON_CATEGORIES, backpack: BACKPACK_ICON_CATEGORIES }
+/** 武器分頁預設只開主序列（敵方 BOSS 裝備、塗裝版、機甲綁定肩部平常用不到） */
+const defaultKinds = (family: IconFamily): IconKind[] => (family === 'weapon' ? ['series'] : [])
+/** 格子上的短標籤 */
+const shortKey = (key: string) => key.replace(/^Icon_(?:skill_|weapon_|backpack_)?/i, '')
 type UseFilter = 'all' | 'unused' | 'used'
 const MAX_RESULTS = 900
 
@@ -146,6 +165,10 @@ function UsageList({ users }: { users: IconUser[] | undefined }) {
 
 function describe(p: ParsedIconKey | null): string {
   if (!p) return ''
+  if (p.family === 'weapon' || p.family === 'backpack') {
+    const cat = p.category ? CATEGORIES_OF[p.family]?.[p.category] : undefined
+    return p.family === 'backpack' ? (cat ? `背包・${cat}` : '背包') : [cat, ICON_KIND_LABELS[p.kind]].filter(Boolean).join('・')
+  }
   const kind = ICON_KIND_LABELS[p.kind]
   const color = p.color != null ? ICON_COLOR_FAMILIES.find((c) => c.color === p.color) : undefined
   return color ? `${kind}・${color.label}（${color.hint}）` : kind
@@ -153,20 +176,29 @@ function describe(p: ParsedIconKey | null): string {
 
 // ── 挑選器彈窗 ─────────────────────────────────────────────────────────────────
 export function GameIconPicker({
-  value, library = 'skill', presetKinds, onPick, onClose,
+  value, library = 'skill', presetKinds, presetCategories, onPick, onClose,
 }: {
   value?: string
-  /** 開哪個圖庫：技能類（含模組詞條、研發）或 BUFF 字形 */
+  /** 開哪個圖庫：技能類（含模組詞條、研發）、BUFF 字形、武器、背包 */
   library?: IconFamily
-  /** 開啟時預選的種類（例：編輯被動技能 → ['passive']）；不給＝全部 */
+  /** 開啟時預選的種類（例：編輯被動技能 → ['passive']）；不給＝該圖庫的預設（武器＝主序列，其餘全部） */
   presetKinds?: IconKind[]
+  /** 武器／背包：開啟時預選的種類前綴（例：編輯打樁機 → ['102']） */
+  presetCategories?: string[]
   onPick: (key: string) => void
   onClose: () => void
 }) {
   const [index, setIndex] = useState<IconIndex | null>(indexCache)
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<IconFamily>(library)
-  const [kinds, setKinds] = useState<Set<IconKind>>(() => new Set(presetKinds ?? []))
+  const [kinds, setKinds] = useState<Set<IconKind>>(() => {
+    if (presetKinds) return new Set(presetKinds)
+    // 目前的值不在預設群組裡（例：固定武裝用的是機甲綁定肩部）→ 一併打開，免得一開就看不到自己
+    const cur = parseIconKey(usageKey(value))
+    const base = defaultKinds(library)
+    return new Set(base.length && cur && cur.family === library && !base.includes(cur.kind) ? [...base, cur.kind] : base)
+  })
+  const [cats, setCats] = useState<Set<string>>(() => new Set(presetCategories ?? []))
   const [colors, setColors] = useState<Set<number>>(new Set())
   const [use, setUse] = useState<UseFilter>('all')
   const [showLegacy, setShowLegacy] = useState(false)
@@ -193,11 +225,14 @@ export function GameIconPicker({
   const legacy = useMemo(() => new Set(index?.legacy ?? []), [index])
   const parsed = useMemo(() => {
     const m = new Map<string, ParsedIconKey>()
-    for (const k of [...(index?.skill ?? []), ...(index?.buff ?? [])]) { const p = parseIconKey(k); if (p) m.set(k, p) }
+    for (const k of [...listOf(index, 'skill'), ...listOf(index, 'buff'), ...listOf(index, 'weapon'), ...listOf(index, 'backpack')]) {
+      const p = parseIconKey(k); if (p) m.set(k, p)
+    }
     return m
   }, [index])
+  const notes = useMemo(() => index?.notes ?? {}, [index])
 
-  const switchTab = (t: IconFamily) => { setTab(t); setKinds(new Set()); setColors(new Set()) }
+  const switchTab = (t: IconFamily) => { setTab(t); setKinds(new Set(defaultKinds(t))); setCats(new Set()); setColors(new Set()) }
   const toggle = <T,>(set: Set<T>, v: T, apply: (s: Set<T>) => void) => {
     const n = new Set(set); if (n.has(v)) n.delete(v); else n.add(v); apply(n)
   }
@@ -206,7 +241,7 @@ export function GameIconPicker({
     if (!index) return [] as string[]
     const q = search.trim().toLowerCase()
     const out: string[] = []
-    for (const key of index[tab]) {
+    for (const key of listOf(index, tab)) {
       const p = parsed.get(key)
       if (!p) continue
       if (!showLegacy && legacy.has(key) && key !== current) continue
@@ -214,17 +249,18 @@ export function GameIconPicker({
         const k = SKILL_OTHER_KINDS.has(p.kind) ? 'other' : p.kind
         if (!kinds.has(k as IconKind)) continue
       }
+      if (cats.size && !(p.category && cats.has(p.category))) continue
       if (colors.size && (p.color == null || !colors.has(p.color))) continue
       const used = usage.has(key)
       if (use === 'unused' && used) continue
       if (use === 'used' && !used) continue
-      if (q && !key.toLowerCase().includes(q) && !usageSearchText(usage.get(key)).includes(q)) continue
+      if (q && !key.toLowerCase().includes(q) && !usageSearchText(usage.get(key)).includes(q) && !(notes[key] ?? '').toLowerCase().includes(q)) continue
       out.push(key)
     }
     const num = (k: string) => parsed.get(k)?.num ?? -1
     out.sort((a, b) => (newestFirst ? num(b) - num(a) : num(a) - num(b)) || a.localeCompare(b))
     return out
-  }, [index, tab, parsed, legacy, showLegacy, current, kinds, colors, use, usage, search, newestFirst])
+  }, [index, tab, parsed, legacy, showLegacy, current, kinds, cats, colors, use, usage, search, newestFirst, notes])
 
   const shown = results.slice(0, MAX_RESULTS)
 
@@ -233,21 +269,23 @@ export function GameIconPicker({
     const m = new Map<string, number>()
     if (!index?.features) return m
     const per = index.features.dim * index.features.dim * 3
-    ;[...index.skill, ...index.buff].forEach((k, i) => m.set(k, i * per))
+    // 順序與 scripts/generate-icon-index.mjs 的 order 相同
+    ;[...listOf(index, 'skill'), ...listOf(index, 'buff'), ...listOf(index, 'weapon'), ...listOf(index, 'backpack')].forEach((k, i) => m.set(k, i * per))
     return m
   }, [index])
   const matches = useMemo(() => {
     if (!probe || !features || !index) return null
     const out: { key: string; d: number }[] = []
-    for (const key of index[tab]) {
+    for (const key of listOf(index, tab)) {
       const p = parsed.get(key)
       if (!p || (!showLegacy && legacy.has(key))) continue
       if (kinds.size && !kinds.has((SKILL_OTHER_KINDS.has(p.kind) ? 'other' : p.kind) as IconKind)) continue
+      if (cats.size && !(p.category && cats.has(p.category))) continue
       const off = featureOffset.get(key)
       if (off != null && off + probe.length <= features.length) out.push({ key, d: featureDistance(probe, features, off) })
     }
     return out.sort((a, b) => a.d - b.d).slice(0, 12)
-  }, [probe, features, index, tab, parsed, showLegacy, legacy, kinds, featureOffset])
+  }, [probe, features, index, tab, parsed, showLegacy, legacy, kinds, cats, featureOffset])
   const toggleImageMode = () => {
     setImageMode((v) => !v)
     if (!features) loadIconFeatures().then(setFeatures).catch((e) => setProbeError(e instanceof Error ? e.message : String(e)))
@@ -284,22 +322,34 @@ export function GameIconPicker({
               <div className="flex flex-wrap items-center gap-2">
                 <Chip on={tab === 'skill'} onClick={() => switchTab('skill')}>技能類（{index.skill.length - index.legacy.length}）</Chip>
                 <Chip on={tab === 'buff'} onClick={() => switchTab('buff')}>BUFF 字形（{index.buff.length}）</Chip>
+                {!!index.weapon?.length && <Chip on={tab === 'weapon'} onClick={() => switchTab('weapon')}>武器（{index.weapon.length}）</Chip>}
+                {!!index.backpack?.length && <Chip on={tab === 'backpack'} onClick={() => switchTab('backpack')}>背包（{index.backpack.length}）</Chip>}
                 <Chip on={imageMode} onClick={toggleImageMode} title="貼上遊戲截圖，找出最像的官方圖示">📷 以圖搜圖</Chip>
                 <input
                   autoFocus
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="搜尋編號、技能名、機師／武器名…"
+                  placeholder="搜尋編號、技能名、機師／武器名、註記…"
                   className="input-field text-sm flex-1 min-w-[200px]"
                 />
               </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] text-text-dim w-10 shrink-0">種類</span>
-                {(tab === 'skill' ? [...SKILL_KINDS, 'other' as IconKind] : BUFF_KINDS).map((k) => (
-                  <Chip key={k} on={kinds.has(k)} onClick={() => toggle(kinds, k, setKinds)}>{ICON_KIND_LABELS[k]}</Chip>
-                ))}
-              </div>
+              {KINDS_OF[tab] && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] text-text-dim w-10 shrink-0">{tab === 'weapon' ? '群組' : '種類'}</span>
+                  {KINDS_OF[tab]!.map((k) => (
+                    <Chip key={k} on={kinds.has(k)} onClick={() => toggle(kinds, k, setKinds)}>{ICON_KIND_LABELS[k]}</Chip>
+                  ))}
+                </div>
+              )}
+              {CATEGORIES_OF[tab] && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] text-text-dim w-10 shrink-0">種類</span>
+                  {Object.entries(CATEGORIES_OF[tab]!).map(([c, label]) => (
+                    <Chip key={c} on={cats.has(c)} onClick={() => toggle(cats, c, setCats)} title={`編號前綴 ${c}（只是線索，不擋選擇）`}>{label}</Chip>
+                  ))}
+                </div>
+              )}
               {colorFilterUseful && (
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-[11px] text-text-dim w-10 shrink-0">色系</span>
@@ -345,7 +395,7 @@ export function GameIconPicker({
                         className="shrink-0 flex flex-col items-center gap-0.5 p-1.5 rounded-lg border border-accent-cyan/40 hover:bg-bg-dark"
                       >
                         <img src={iconSrc(key)} alt="" className={`w-14 h-14 object-contain ${tab === 'buff' ? 'p-1.5 bg-bg-dark rounded' : ''}`} />
-                        <span className="text-[10px] text-text-dim">{key.replace(/^Icon_(skill_)?/, '')}</span>
+                        <span className="text-[10px] text-text-dim">{shortKey(key)}</span>
                         <span className="text-[10px] text-text-dim">差 {d.toFixed(1)}{usage.has(key) ? '・已用' : ''}</span>
                       </button>
                     ))}
@@ -376,12 +426,15 @@ export function GameIconPicker({
                           }`}
                         >
                           <img src={iconSrc(key)} alt="" loading="lazy" className={`w-16 h-16 object-contain ${tab === 'buff' ? 'p-2 bg-bg-dark rounded' : ''}`} />
-                          <span className="text-[10px] text-text-dim truncate max-w-full leading-tight">{key.replace(/^Icon_(skill_)?/, '')}</span>
+                          <span className="text-[10px] text-text-dim truncate max-w-full leading-tight">{shortKey(key)}</span>
                           {n > 0 && (
                             <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-bg-dark/90 border border-border text-[10px] leading-4 text-text-secondary">{n}</span>
                           )}
                           {legacy.has(key) && (
                             <span className="absolute top-1 left-1 px-1 rounded bg-bg-dark/90 border border-border text-[9px] leading-4 text-text-dim">舊</span>
+                          )}
+                          {notes[key] && (
+                            <span title={notes[key]} className="absolute top-1 left-1 px-1 rounded bg-bg-dark/90 border border-accent-yellow/40 text-[9px] leading-4 text-accent-yellow">註</span>
                           )}
                         </button>
                       )
@@ -398,6 +451,9 @@ export function GameIconPicker({
                     <p className="text-[11px] text-text-dim text-center mb-3">
                       {describe(parsed.get(focusKey) ?? null)}{legacy.has(focusKey) ? '・舊版' : ''}
                     </p>
+                    {notes[focusKey] && (
+                      <p className="text-[11px] text-accent-yellow leading-snug mb-3 border-l-2 border-accent-yellow/50 pl-2">{notes[focusKey]}</p>
+                    )}
                     <UsageList users={usage.get(focusKey)} />
                   </>
                 ) : (
@@ -500,6 +556,83 @@ export function GameIconField({
           library={library}
           presetKinds={presetKinds}
           onPick={(key) => onChange(key)}
+          onClose={() => setPicking(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── 武器／背包的官方編號欄位（PLAN-056 B-3）─────────────────────────────────────
+/**
+ * 寫回的是 **gameId**（'20300501'），不是檔名——檔名由 equipIconKey() 推（含 Icon_BackPack_ 大小寫例外）。
+ * 文字框直接打編號；按「選取圖示」開武器／背包分頁（預選同種類前綴、主序列）。
+ */
+export function EquipGameIdField({
+  label, family, gameId, onChange, presetCategories, hint,
+}: {
+  label: string
+  family: EquipIconFamily
+  gameId?: string
+  /** 清除時給空字串 */
+  onChange: (gameId: string) => void
+  presetCategories?: string[]
+  hint?: string
+}) {
+  const [picking, setPicking] = useState(false)
+  const id = gameId ?? ''
+  const key = equipIconKey(family, id)
+  const parsedKey = parseIconKey(key)
+  const candidates = gameIconCandidates(key)
+
+  return (
+    <div>
+      <label className="text-xs text-text-dim mb-1 block">{label}</label>
+      <div className="flex items-center gap-2">
+        <FallbackImage
+          candidates={candidates}
+          alt=""
+          className="w-10 h-10 rounded object-contain border border-border/50 bg-bg-dark shrink-0"
+          fallback={
+            <div className="w-10 h-10 rounded border border-dashed border-border/60 bg-bg-dark/50 shrink-0 flex items-center justify-center text-text-dim text-[10px]">
+              {id ? '?' : '無'}
+            </div>
+          }
+        />
+        <input
+          type="text"
+          value={id}
+          onChange={(e) => onChange(e.target.value.trim())}
+          placeholder={family === 'weapon' ? '20300501' : '60100101'}
+          className="input-field flex-1 text-sm font-mono"
+        />
+        <button
+          type="button"
+          onClick={() => setPicking(true)}
+          className="shrink-0 px-3 py-2 text-sm text-accent-cyan border border-accent-cyan/40 rounded-lg hover:bg-accent-cyan/10 transition-colors whitespace-nowrap"
+        >
+          選取圖示
+        </button>
+        {id && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="shrink-0 px-2 py-2 text-sm text-accent-red border border-accent-red/30 rounded-lg hover:bg-accent-red/10 transition-colors"
+          >
+            清除
+          </button>
+        )}
+      </div>
+      <p className="text-[11px] text-text-dim mt-1">
+        {id ? (parsedKey ? `${key}・${describe(parsedKey)}` : '⚠ 不是官方編號格式') : (hint ?? '官方圖示編號；留空＝沒有官方圖（可改填下方自訂圖）')}
+      </p>
+
+      {picking && (
+        <GameIconPicker
+          value={key}
+          library={family}
+          presetCategories={presetCategories}
+          onPick={(k) => onChange(equipGameIdOf(k) ?? '')}
           onClose={() => setPicking(false)}
         />
       )}

@@ -96,7 +96,7 @@ function BackpackTooltipContent({ bp, skills, prereqName, pinned = false }: {
         className={`flex items-start gap-3 mb-3 flex-shrink-0 ${pinned ? 'cursor-move select-none' : ''}`}
         title={pinned ? '拖曳標題可移動視窗' : undefined}
       >
-        <BackpackIcon icon={bp.icon} name={bp.name} rarity={bp.rarity} size="lg" />
+        <BackpackIcon gameId={bp.gameId} icon={bp.icon} name={bp.name} rarity={bp.rarity} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-1">
             <div className="font-bold text-sm text-text-primary leading-tight">{bp.name}</div>
@@ -197,7 +197,7 @@ function WeaponProjectionContent({ w, skills, parentName, fusedBackpackName, onN
   return (
     <>
       <div data-drag-handle className="flex items-start gap-3 mb-3 flex-shrink-0">
-        <WeaponIcon icon={w.icon} name={w.name} size="lg" isExclusive={w.isExclusive} />
+        <WeaponIcon gameId={w.gameId} icon={w.icon} name={w.name} size="lg" isExclusive={w.isExclusive} />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-1">
             <div className="font-bold text-sm text-text-primary leading-tight">{w.name}</div>
@@ -724,7 +724,7 @@ function BackpackCard({ bp, skills, pinned, onEnter, onLeave, onClick }: {
       onClick={(e) => { e.stopPropagation(); onClick(e.currentTarget) }}
     >
       <div className="flex items-start gap-2 mb-2">
-        <BackpackIcon icon={bp.icon} name={bp.name} rarity={bp.rarity} size="md" />
+        <BackpackIcon gameId={bp.gameId} icon={bp.icon} name={bp.name} rarity={bp.rarity} size="md" />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-1 mb-0.5">
             <span className="font-bold text-sm text-text-primary leading-tight line-clamp-2">{bp.name}</span>
@@ -778,7 +778,7 @@ function WeaponProjectionCard({ w, typeLabel, onEnter, onLeave, onClick }: {
       onClick={(e) => { e.stopPropagation(); onClick(e.currentTarget) }}
     >
       <div className="flex items-start gap-2 mb-2">
-        <WeaponIcon icon={w.icon} name={w.name} size="md" isExclusive={w.isExclusive} />
+        <WeaponIcon gameId={w.gameId} icon={w.icon} name={w.name} size="md" isExclusive={w.isExclusive} />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-1 mb-0.5">
             <span className="font-bold text-sm text-text-primary leading-tight line-clamp-2">{w.name}</span>

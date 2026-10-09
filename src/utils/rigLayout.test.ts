@@ -25,11 +25,16 @@ const weapon = (over: Partial<Weapon> & Pick<Weapon, 'id' | 'name' | 'weight' | 
   floatingMod: { planName: '', slots: 0, possibleEffects: [] }, skills: [], ...over,
 } as Weapon)
 
-// icon 有值是刻意的：匯出圖的每一格都要畫得出圖（實測 182 把武器 100% 有 icon）
-const 雙手劍 = weapon({ id: 'w_dual', name: '雙手劍', weight: 800, equipSlot: WeaponEquipSlot.DUAL_HAND, icon: 'Icon_weapon_dual.png' })
+// gameId 有值是刻意的：匯出圖的每一格都要畫得出圖（PLAN-056 起由官方編號推圖庫路徑）
+const 雙手劍 = weapon({ id: 'w_dual', name: '雙手劍', weight: 800, equipSlot: WeaponEquipSlot.DUAL_HAND, gameId: '10300601' })
+const 雙手劍圖 = '/images/game/icons/weapon/Icon_weapon_10300601.webp'
 const 單手刀 = weapon({ id: 'w_one', name: '單手刀', weight: 300, equipSlot: WeaponEquipSlot.SINGLE_HAND })
 /** 純封鎖型固定武裝：重量是**真的 0**，不是「沒有值」 */
-const 儲能艙 = weapon({ id: 'w_fix', name: '嵐質儲能艙', weight: 0, equipSlot: WeaponEquipSlot.SHOULDER, type: WeaponType.Special, componentLimit: 0 })
+const 儲能艙 = weapon({
+  id: 'w_fix', name: '嵐質儲能艙', weight: 0, equipSlot: WeaponEquipSlot.SHOULDER, type: WeaponType.Special, componentLimit: 0,
+  // 固定武裝左右肩是兩張鏡像圖（官方：左＝…01、右＝…02）
+  gameId: '90300101', sideGameIds: { left: '90300101', right: '90300102' },
+})
 
 const 中甲機: Mech = {
   id: 'mech_m', name: '中甲機', armorType: ArmorType.MEDIUM,
@@ -60,7 +65,7 @@ const 強襲者背包: Backpack = {
   id: 'bp_backup', name: '強襲者背包', type: BackpackType.BACKUP_EQUIPMENT, weight: 200,
 } as unknown as Backpack
 const 一般背包: Backpack = {
-  id: 'bp_plain', name: '一般背包', type: 'Normal', weight: 150, icon: 'Icon_backpack_plain.png',
+  id: 'bp_plain', name: '一般背包', type: 'Normal', weight: 150, gameId: '60100101',
 } as unknown as Backpack
 
 const 機師: Pilot = { id: 'p1', name: '阿中', license: MechLicense.MEDIUM } as Pilot
@@ -115,7 +120,7 @@ test('槽位帶得出裝備圖示 —— 匯出圖靠它才畫得出圖（2026-0
   }))
   const hands = rigSlots(blocks).filter((s) => s.label === '左手' || s.label === '右手')
   // 雙手武器兩格都要有圖：遊戲整備畫面也是兩隻手都畫同一把
-  assert.deepEqual(hands.map((s) => s.icon), [雙手劍.icon, 雙手劍.icon])
+  assert.deepEqual(hands.map((s) => s.icon), [雙手劍圖, 雙手劍圖])
   // 空槽沒有圖 —— 渲染端據此**不佔位**，補一個空框會被讀成「有一件我不認得的裝備」
   const 右肩 = rigSlots(blocks).find((s) => s.label === '右肩')
   assert.equal(右肩?.icon, null)
@@ -185,7 +190,7 @@ test('一般背包：不解鎖備用槽 → **不出說明列**（使用者裁�
   assert.equal(blocks.find((b) => b.kind === 'row' && b.slot.label === '備用槽'), undefined)
   const back = rigSlots(blocks).find((s) => s.label === '背部')
   assert.equal(back?.note, null)
-  assert.equal(back?.icon, 一般背包.icon ?? null, '背包也要帶圖示')
+  assert.equal(back?.icon, '/images/game/icons/backpack/Icon_backpack_60100101.webp', '背包也要帶圖示')
 })
 
 test('固定武裝：重量 0 要印得出來（那是真的 0，不是「沒有值」）', () => {
@@ -193,6 +198,7 @@ test('固定武裝：重量 0 要印得出來（那是真的 0，不是「沒有
   const 右肩 = rigSlots(blocks).find((s) => s.label === '右肩')
   assert.equal(右肩?.state, 'fixed')
   assert.equal(右肩?.name, '嵐質儲能艙')
+  assert.equal(右肩?.icon, '/images/game/icons/weapon/Icon_weapon_90300102.webp', '右肩用右肩的鏡像圖')
   assert.equal(右肩?.note, '機甲固定武裝')
   // ⚠ 0 與 null 不是同一件事：都印成「—」會讓玩家以為這一把也算進總重了
   assert.equal(右肩?.weight, 0)

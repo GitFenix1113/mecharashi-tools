@@ -1,10 +1,11 @@
-// 官方圖示的讀取端 helper —— PLAN-055
+// 官方圖示的讀取端 helper —— PLAN-055（技能類、BUFF）＋ PLAN-056（武器、背包）
 //
 // ── 一句話 ──────────────────────────────────────────────────────────────────
-// 技能、模組詞條、研發、BUFF 圖示全部住在扁平圖庫 `/images/game/icons/{skill,buff}/<官方檔名>.webp`，
+// 技能、模組詞條、研發、BUFF、武器、背包圖示全部住在扁平圖庫 `/images/game/icons/{skill,buff,weapon,backpack}/<官方檔名>.webp`，
 // 一張圖只存一份。讀取端一律寫：
 //
 //     <FallbackImage candidates={gameIconCandidates(skill.icon, skill.iconLocal)} … />
+//     <FallbackImage candidates={weaponIconCandidates(weapon, side)} … />     ← 武器／背包吃整個實體（gameId 優先）
 //
 // ── 檔名即 key ───────────────────────────────────────────────────────────────
 // DB 裡的圖示值有四種寫法（裸 key、扁平路徑、子資料夾路徑、完整路徑），內嵌 WeaponSkill 還有官方 CDN 的遠端 URL。
@@ -19,35 +20,44 @@
 
 import { imageCandidates } from './assets.ts'
 import { GAME_ICON_ALIASES } from '../data/gameIconAliases.ts'
+import { EQUIP_ICON_KEY_CASE } from '../data/equipIconKeyCase.ts'
 
 const ICON_ROOT = '/images/game/icons'
 
-export type IconFamily = 'skill' | 'buff'
+export type IconFamily = 'skill' | 'buff' | 'weapon' | 'backpack'
+export type EquipIconFamily = 'weapon' | 'backpack'
 export type SkillIconKind = 'main' | 'order' | 'passive' | 'talent' | 'pp' | 'entry' | 'rnd' | 'command' | 'refactoring' | 'other'
 export type BuffIconKind = 'generic' | 'debuff' | 'stat' | 'status' | 'repair' | 'unique' | 'stack' | 'misc'
-export type IconKind = SkillIconKind | BuffIconKind
+/** 武器（PLAN-056）：主序列／字尾變體（_b 外型變化）／機甲綁定肩部（9 開頭）／敵方 BOSS（400x）；背包只有一種 */
+export type EquipIconKind = 'series' | 'variant' | 'linked' | 'enemy' | 'backpack'
+export type IconKind = SkillIconKind | BuffIconKind | EquipIconKind
 
 export interface ParsedIconKey {
   key: string
   family: IconFamily
   kind: IconKind
+  /** 武器：種類前綴 3 碼（'102'＝打樁機；linked 是 '902'、enemy 是 '4001' 這類）；背包：類型 3 碼（'035'＝飛行） */
+  category?: string
   /** 只有 main／order／passive／talent：首位數 1–5、9（聯動） */
   color?: number
   /** 編號（排序用；流水號倒序＝最新在前） */
   num?: number
 }
 
-/** 屬於圖庫的官方前綴（武器 Icon_weapon_*、背包 Icon_backpack_* 不在此列：它們本來就一夾一份） */
-const LIBRARY_RE = /^Icon_(?:skill_|entry_|RnD_|commandskill_|zoneskill_|roguelike_|coopclimb_|buff_|debuff_)[A-Za-z0-9_]+$/
+/** 屬於圖庫的官方前綴（武器、背包自 PLAN-056 起也收進圖庫） */
+const LIBRARY_RE = /^Icon_(?:skill_|entry_|RnD_|commandskill_|zoneskill_|roguelike_|coopclimb_|buff_|debuff_|weapon_|backpack_|BackPack_)[A-Za-z0-9_]+$/
 
 /** 是不是圖庫裡的官方檔名（ASCII；中文佔位名一律 false） */
 export function isLibraryKey(key: string | null | undefined): key is string {
   return typeof key === 'string' && LIBRARY_RE.test(key)
 }
 
-/** 圖庫子資料夾：BUFF 字形一夾，其餘一夾——照官方的分法 */
+/** 圖庫子資料夾：照官方客戶端的分法——BUFF 字形、武器、背包各一夾，其餘（技能、模組詞條、研發…）一夾 */
 export function iconFamily(key: string): IconFamily {
-  return /^Icon_(?:de)?buff_/.test(key) ? 'buff' : 'skill'
+  if (/^Icon_(?:de)?buff_/.test(key)) return 'buff'
+  if (key.startsWith('Icon_weapon_')) return 'weapon'
+  if (/^Icon_backpack_/i.test(key)) return 'backpack'
+  return 'skill'
 }
 
 /**
@@ -85,6 +95,18 @@ export function parseIconKey(key: string | null | undefined): ParsedIconKey | nu
   if (!isLibraryKey(key)) return null
   const family = iconFamily(key)
   let m: RegExpMatchArray | null
+  if (family === 'weapon') {
+    if ((m = key.match(/^Icon_weapon_(9\d{2})(\d{3})(\d{2})$/))) return { key, family, kind: 'linked', category: m[1], num: Number(m[1] + m[2] + m[3]) }
+    if ((m = key.match(/^Icon_weapon_(400\d)_/))) return { key, family, kind: 'enemy', category: m[1] }
+    if ((m = key.match(/^Icon_weapon_(\d{3})(\d{3})(\d{2})[A-Z]?(_[A-Za-z0-9_]+)?$/))) {
+      return { key, family, kind: m[4] ? 'variant' : 'series', category: m[1], num: Number(m[1] + m[2] + m[3]) }
+    }
+    return { key, family, kind: 'other' }
+  }
+  if (family === 'backpack') {
+    if ((m = key.match(/^Icon_backpack_6(\d{3})(\d{2})(\d{2})$/i))) return { key, family, kind: 'backpack', category: m[1], num: Number(`6${m[1]}${m[2]}${m[3]}`) }
+    return { key, family, kind: 'backpack' }
+  }
   if (family === 'buff') {
     if (key.startsWith('Icon_debuff_')) return { key, family, kind: 'debuff' }
     if ((m = key.match(/^Icon_buff_(\d)(\d{3})$/))) return { key, family, kind: BUFF_SERIES[m[1]] ?? 'misc', num: Number(m[1] + m[2]) }
@@ -162,6 +184,75 @@ export function gameIconCandidates(...values: (string | null | undefined)[]): st
   return imageCandidates(...gameIconSources(...values))
 }
 
+// ── 武器／背包：官方編號 gameId（PLAN-056）───────────────────────────────────────
+//
+// gameId＝圖示檔名的編號部分（Icon_weapon_<gameId>），和機甲的 gameId 同一個來源（都取自官方圖示檔名）。
+// ⚠ 它是「外觀編號」，不是武器身分：EX／·改／·LW 與同一機師的二階專武都跟本體共用同一個號碼，不能當主鍵。
+// ⚠ 編號前綴（102＝打樁機）只是線索：碎狼牙（電鋸）是 50100602、罪棘律典（電磁炮）是 10600402，
+//   官方檔名本身就交叉了，圖的內容是對的。
+
+/** gameId → 官方檔名。檔名大小寫的例外（Icon_BackPack_60350101）查匯入腳本產生的對照表 */
+export function equipIconKey(family: EquipIconFamily, gameId: string | null | undefined): string | undefined {
+  const id = typeof gameId === 'string' ? gameId.trim() : ''
+  if (!id) return undefined
+  return EQUIP_ICON_KEY_CASE[`${family}:${id}`] ?? `Icon_${family}_${id}`
+}
+
+/** 官方檔名（或任何舊寫法的路徑）→ gameId；不是武器／背包檔名回 undefined */
+export function equipGameIdOf(value: string | null | undefined): string | undefined {
+  const m = keyFromValue(value)?.match(/^Icon_(?:weapon|backpack)_(.+)$/i)
+  return m ? m[1] : undefined
+}
+
+export type SlotSideLike = 'left' | 'right'
+
+/** 讀圖需要的武器欄位（型別寬鬆，讓快照、懸停預覽這類只帶部分欄位的物件也能傳） */
+export interface WeaponIconTarget {
+  gameId?: string | null
+  /** 固定武裝左右肩的鏡像圖（官方：左＝…01、右＝…02） */
+  sideGameIds?: { left?: string; right?: string } | null
+  /** 自訂圖（站長編輯過的非官方圖）或過渡期的舊路徑 */
+  icon?: string | null
+}
+
+/**
+ * 武器／背包圖示的候選路徑（未套 BASE_URL）。順序：
+ *   左右肩圖（有給 side 時）→ gameId 圖庫 → icon 原路徑 → icon 檔名對到的圖庫
+ *
+ * · gameId 有值就用官方圖；icon 只在沒有官方圖時才會被用到（自訂圖的用法）。
+ * · icon 的**原路徑排在圖庫之前**：過渡期（gameId 還沒回填）舊資料裡有猜錯的編號——
+ *   笑謊者存的是 10200402，那在官方是同造型的灰色版——先吃原檔才不會換成別人的圖。
+ *   舊檔退場後原路徑會 404，再退到圖庫。
+ */
+export function equipIconSources(family: EquipIconFamily, target: WeaponIconTarget | null | undefined, side?: SlotSideLike): string[] {
+  const out: string[] = []
+  const push = (u: string | undefined) => { if (u && !out.includes(u)) out.push(u) }
+  if (!target) return out
+  if (side) push(gameIconPath(equipIconKey(family, target.sideGameIds?.[side])))
+  push(gameIconPath(equipIconKey(family, target.gameId)))
+  const icon = target.icon?.trim()
+  if (icon) {
+    if (isLocalPath(icon)) push(icon)
+    push(gameIconPath(keyFromValue(icon)))
+  }
+  return out
+}
+
+/** 武器圖示：交給 <FallbackImage> 的候選清單（已套 BASE_URL）。side 只對固定武裝的左右肩有意義 */
+export function weaponIconCandidates(weapon: WeaponIconTarget | null | undefined, side?: SlotSideLike): string[] {
+  return imageCandidates(...equipIconSources('weapon', weapon, side))
+}
+
+/** 背包圖示：交給 <FallbackImage> 的候選清單（已套 BASE_URL） */
+export function backpackIconCandidates(backpack: Pick<WeaponIconTarget, 'gameId' | 'icon'> | null | undefined): string[] {
+  return imageCandidates(...equipIconSources('backpack', backpack))
+}
+
+/** 只吃得下**一個路徑**的地方（社群預覽、寫進快照的值）：第一個候選，未套 BASE_URL */
+export function equipIconPath(family: EquipIconFamily, target: WeaponIconTarget | null | undefined, side?: SlotSideLike): string | undefined {
+  return equipIconSources(family, target, side)[0]
+}
+
 // ── 介面標籤（只給後台選圖器用；不寫進資料）─────────────────────────────────────
 //
 // ⚠ 色系的「功能」是對照站上技能描述歸納出來的，官方沒有文件——當篩選標籤用，不當資料分類。
@@ -191,4 +282,30 @@ export const ICON_KIND_LABELS: Record<IconKind, string> = {
   entry: '模組詞條', rnd: '研發', command: '指揮官', refactoring: '重構', other: '其他',
   generic: '通用增益', debuff: '通用減益', stat: '屬性／資源', status: '控制／異常', repair: '修理',
   unique: '專屬徽記', stack: '層數', misc: '其他',
+  series: '主序列', variant: '字尾變體', linked: '機甲綁定肩部', enemy: '敵方 BOSS 裝備', backpack: '背包',
+}
+
+/**
+ * 武器圖示的種類前綴（PLAN-056 盤點歸納，官方沒有文件）。
+ * 與站上 weapon.kind 一一對應（資料庫 184 筆只有碎狼牙、罪棘律典兩筆不符——官方檔名交叉），
+ * 只拿來當選圖器的篩選標籤，不寫進資料。
+ */
+export const WEAPON_ICON_CATEGORIES: Record<string, string> = {
+  101: '拳套', 102: '打樁機', 103: '長柄', 104: '大盾', 105: '手盾', 106: '電鋸', 107: '刀劍',
+  201: '機槍', 203: '霰彈槍', 204: '重機槍', 205: '噴火器',
+  301: '輕型狙擊步槍', 302: '狙擊步槍',
+  401: '導彈', 402: '火箭', 403: '浮游炮', 404: '粒子莢艙',
+  501: '電磁炮',
+}
+
+/** weapon.kind（拳套…）→ 種類前綴；選圖器開啟時預選用 */
+export function weaponIconCategoryOf(kind: string | null | undefined): string | undefined {
+  const k = (kind ?? '').trim()
+  return Object.keys(WEAPON_ICON_CATEGORIES).find((c) => WEAPON_ICON_CATEGORIES[c] === k)
+}
+
+/** 背包圖示的類型 3 碼（同上，盤點歸納；120／130 是台版還沒有的類型） */
+export const BACKPACK_ICON_CATEGORIES: Record<string, string> = {
+  '010': '出力', '020': '干擾', '030': '誘導', '035': '飛行', '040': '修理', '050': '移動',
+  '060': '強化', '080': '雷達', '090': '隱形', '110': '彈藥', '120': '（未知 120）', '130': '（未知 130）', '140': '武器擴充',
 }

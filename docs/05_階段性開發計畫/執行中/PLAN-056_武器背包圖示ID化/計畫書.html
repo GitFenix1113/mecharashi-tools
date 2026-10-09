@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-056 武器／背包圖示 ID 化 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+
+/* 表格在手機寬度改為容器內橫向捲動，不撐破整頁 */
+.table-scroll { overflow-x: auto; margin: 16px 0; }
+.table-scroll .impact-table { margin: 0; min-width: 560px; }
+
+.flow-figure {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 18px 10px;
+  margin: 16px 0 8px;
+}
+.flow-figure svg { width: 100%; height: auto; display: block; }
+.flow-caption { font-size: 12px; color: var(--text-dim); text-align: center; margin-top: 6px; }
+.decision-block ul, .warning-block ul, .info-block ul, .problem-block ul { margin: 8px 0 0 18px; line-height: 1.9; }
+.decision-block ol, .warning-block ol { margin: 8px 0 0 20px; line-height: 1.9; }
+
+/* 命名文法 */
+.gram { display: flex; flex-wrap: wrap; font-family: 'JetBrains Mono', monospace; font-size: 17px; margin: 12px 0 4px; }
+.gram span { padding: 8px 12px; border: 1px solid var(--border); margin-right: -1px; text-align: center; color: var(--text-primary); background: rgba(255,255,255,0.02); }
+.gram small { display: block; font-family: inherit; font-size: 11px; color: var(--text-dim); margin-top: 2px; font-family: 'Noto Sans TC', sans-serif; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-056 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-056</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    武器／背包圖示 ID 化<span style="-webkit-text-fill-color:var(--text-secondary);">官方編號 gameId · 圖庫 · 選圖器 · WebP</span>
+  </h1>
+  <p class="hero-sub">武器和背包的圖示早就用官方檔名，但沒有官方 ID 欄位。有 5 筆鍵名是猜的或用中文佔位，12 把武器沒有圖（多半是固定武裝，而且左右肩是兩張鏡像圖），還有 66 張官方圖沒用到，管理者也看不到。本計畫比照機師、機甲，給武器和背包一個官方編號 <code>gameId</code>，把官方圖併進 PLAN-055 的扁平圖庫並轉成 WebP（體積 −83%），選圖器加上武器／背包分頁，讓管理者直接從「未使用」裡挑。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label green">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value green">PLAN-056</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-09</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">weapons／backpacks 型別與資料 · public/images/game/icons/{weapon,backpack}/ · GameIconPicker · WeaponAdmin／BackpackAdmin · 約 12 個讀圖元件 · 社群預覽 Worker</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">執行中（A／B 完成、C-1 已寫入正式站；待部署後做 C-5／D-3）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-055 A／B（圖庫、索引、選圖器、以圖搜圖、反查，已部署）· PLAN-054 匯入管線、ledger、OG JPEG 鏡射</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <p style="color:var(--text-secondary);font-size:14px;">
+    以下數字來自 2026-10-09 盤點：陸版客戶端擷取（<code>E:\Mecharashi_Data</code> 圖片索引）、正式站備份 <code>2026-10-05_db-backup-1559</code>、<code>public/images/{weapons,backpacks}</code> 三方逐張比對。
+    完整報告在 <code>_local-notes/2026-10/2026-10-09_武器背包圖示盤點/武器圖示全盤點.html</code>。
+  </p>
+
+  <div class="problem-block">
+    <strong>問題一：沒有官方 ID，而且有 5 筆鍵名是猜的</strong>
+    <ul>
+      <li>爬蟲時代下載的 96 張（2026-05-20，PLAN-003）鍵名來自官方 API。站上 101 張裡有 97 張與擷取逐像素一致。</li>
+      <li>之後手動建檔的 5 把出了問題：影虎嘯、斷湮、輝龍刀用中文佔位檔名；HMG-29C 的 <code>20400502</code>、笑謊者的 <code>10200402</code> 是猜的編號。
+          圖本身是對的，但官方檔名其實是 <code>20400501</code>、<code>10200501</code>。<code>10200402</code> 是同一造型的灰色版，不是笑謊者。</li>
+      <li>機師、機甲在 PLAN-054 已經有 <code>gameId</code>。武器、背包沒有，要跟擷取、公告或下一批新擷取對照，只能比名字或路徑字串。</li>
+    </ul>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：12 把武器沒有圖示，資料模型也放不下「左右肩兩張圖」</strong>
+    <ul>
+      <li>3 把機甲固定武裝：帕斯卡的衝擊炮、破曉者-01 的嵐質儲能艙、霸王的多功能彈倉。</li>
+      <li>5 把形態武裝：海莉絲虛粒子形態的耀星、隕星、千星，曜巡航形態的幽弧、夜燼。</li>
+      <li>4 把新專武：征伐、速射格林炮、誓殮、歸零協議。</li>
+      <li>固定武裝在遊戲裡左右肩是兩張鏡像圖。遊戲截圖比對結果：<b>左肩＝…01、右肩＝…02</b>（霸王、破曉者-01 兩台一致）。但 <code>Weapon.icon</code> 只有一格。</li>
+    </ul>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：管理者看不到哪些官方圖還沒用</strong>
+    <ul>
+      <li>官方武器圖 163 張、背包 24 張，站上只用了 97＋17 張。沒用到的 66 張武器圖裡，有新專武的圖、形態素材、機甲綁定的肩部。</li>
+      <li>後台的武器／背包還在用舊 <code>IconPicker</code>：只能挑資料夾、打檔名，看不到哪些沒用過、誰在用，也不能以圖搜圖。
+          PLAN-055 已經替技能類圖示做好整套選圖器，武器、背包沒有接上。</li>
+    </ul>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題四：PNG 太重</strong><br>
+    圖示只顯示 32–64px（<code>WeaponIcon</code> 為 <code>w-8</code>～<code>w-16</code>），檔案卻是 340² 的 PNG，平均約 100 KB。
+    武器 101 張共 9.93 MB、背包 17 張 1.95 MB；轉成 WebP（q82、原尺寸）後分別是 <b>1.66 MB</b>、<b>0.30 MB</b>。背包頁和模擬器的選單一次就列幾十把。
+  </div>
+
+  <div class="info-block">
+    <strong>官方武器圖示的命名文法</strong>（盤點歸納，官方沒有文件）
+    <div class="gram">
+      <span>Icon_weapon_<small>前綴</small></span><span>102<small>種類</small></span><span>004<small>系列</small></span><span>01<small>變體</small></span><span>_b<small>字尾（少見）</small></span>
+    </div>
+    <ul>
+      <li><b>種類前綴</b>：101 拳套、102 打樁機、103 長柄、104 大盾、105 手盾、106 電鋸、107 刀劍、201 機槍、203 霰彈槍、204 重機槍、205 噴火器、
+          301 輕型狙擊步槍、302 狙擊步槍、401 導彈、402 火箭、403 浮游炮、<b>404 粒子莢艙</b>、501 電磁炮。資料庫 184 筆裡只有 2 筆不符（見下方警示）。</li>
+      <li><b>系列</b>：001 通常是 B 級、002 是 A 級。S 級本體是變體 01，同系列的 02／03 多半是後來的 SS 專武。</li>
+      <li><b>非主序列</b>：<code>9xxxxxxx</code> 是機甲綁定的肩部，<code>400x_*</code> 是敵方 BOSS 裝備（含 <code>_NY</code>／<code>_dm</code>／<code>black</code> 塗裝版）。</li>
+      <li><b>背包</b>：<code>Icon_backpack_6</code>＋類型 3 碼（010 出力、020 干擾、030 誘導、035 飛行、040 修理、050 移動、060 強化、080 雷達、090 隱形、110 彈藥、140 武器擴充）＋階 2 碼（01 一般、02 SS）＋流水 2 碼。
+          有 2 個官方檔名是 <code>Icon_BackPack_</code>（大寫 P）。</li>
+      <li><b>同名兩份</b>：擷取裡每個名稱都有一張 340² 原圖和一張去邊的 Sprite。站上現有檔案是 340² 那張，匯入時也取它。</li>
+    </ul>
+  </div>
+
+  <div class="info-block">
+    <strong>66 張未用武器圖的性質</strong>（站長 2026-10-09 逐類確認）
+    <div class="table-scroll">
+    <table class="impact-table">
+      <tr><th>類別</th><th>張數</th><th>是什麼</th><th>本計畫怎麼處理</th></tr>
+      <tr><td>5 筆修正的正解</td><td>5</td><td><code>20300501</code> <code>10300601</code> <code>10700701</code> <code>20400501</code> <code>10200501</code></td><td>指定給影虎嘯、斷湮、輝龍刀、HMG-29C、笑謊者</td></tr>
+      <tr><td>機甲綁定的肩部</td><td>6＋1</td><td><code>9020010x</code> 帕斯卡、<code>9030010x</code> 破曉者-01、<code>9040010x</code> 霸王；<code>90100101</code> 未確認</td><td>指定給 3 把固定武裝（左右各一）</td></tr>
+      <tr><td>404</td><td>1</td><td>虛粒子形態的背部武裝</td><td>指定給千星</td></tr>
+      <tr><td><code>10700601</code>／<code>10700602</code></td><td>2</td><td>虛粒子形態的左右手</td><td>入庫；站長編輯後作為耀星／隕星的自訂圖</td></tr>
+      <tr><td><code>10700501_b</code></td><td>1</td><td>特定情況下的外型變化，不是實際存在的武器</td><td>入庫備用</td></tr>
+      <tr><td><code>10601301</code></td><td>1</td><td>空手（不裝武器）</td><td>入庫，用途待定（E-5）</td></tr>
+      <tr><td>既有系列的新變體</td><td>12</td><td>新專武</td><td>入庫，由管理者用選圖器挑</td></tr>
+      <tr><td>其他主序列新系列</td><td>8</td><td><code>10100101</code> 等，台版可能還沒有</td><td>入庫</td></tr>
+      <tr><td><code>2021_1</code></td><td>1</td><td>不明（外型像機槍）</td><td>入庫</td></tr>
+      <tr><td>400x</td><td>28</td><td>敵方 BOSS 裝備（15＋13 張塗裝版）</td><td>入庫（決策三），選圖器預設收起</td></tr>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="flow-figure">
+    <svg viewBox="0 0 760 470" role="img" aria-label="資料流：擷取匯入武器與背包圖庫，選圖器寫回 gameId，讀取端由 gameId 推路徑、自訂圖優先、舊路徑當後備">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" style="fill:#9ca3af"></path>
+        </marker>
+      </defs>
+      <g style="font-family:inherit;">
+        <rect x="30" y="20" width="320" height="54" rx="10" style="fill:rgba(249,115,22,0.08);stroke:#f97316;"></rect>
+        <text x="190" y="43" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">陸版擷取 ＋ 圖片索引.csv</text>
+        <text x="190" y="63" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">武器 163 · 背包 24（不進 repo）</text>
+
+        <rect x="410" y="20" width="320" height="54" rx="10" style="fill:rgba(249,115,22,0.08);stroke:#f97316;"></rect>
+        <text x="570" y="43" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">站長編輯的自訂圖</text>
+        <text x="570" y="63" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">耀星／隕星等 → public/images/weapons/</text>
+
+        <rect x="30" y="110" width="320" height="54" rx="10" style="fill:rgba(34,197,94,0.08);stroke:#22c55e;"></rect>
+        <text x="190" y="133" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">game/icons/weapon/ · backpack/</text>
+        <text x="190" y="153" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">官方檔名逐字 · WebP q82 · 一張一份</text>
+
+        <rect x="30" y="200" width="320" height="54" rx="10" style="fill:rgba(34,211,238,0.08);stroke:#22d3ee;"></rect>
+        <text x="190" y="223" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">icons/index.json ＋ 註記檔</text>
+        <text x="190" y="243" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">種類前綴 · 群組 · 以圖搜圖特徵</text>
+
+        <rect x="410" y="200" width="320" height="54" rx="10" style="fill:rgba(34,211,238,0.08);stroke:#22d3ee;"></rect>
+        <text x="570" y="223" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">GameIconPicker：武器／背包分頁</text>
+        <text x="570" y="243" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">未使用 · 種類 · 誰在用 · 以圖搜圖</text>
+
+        <rect x="410" y="290" width="320" height="54" rx="10" style="fill:rgba(34,211,238,0.08);stroke:#22d3ee;"></rect>
+        <text x="570" y="313" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">Firestore：gameId（＋自訂圖 icon）</text>
+        <text x="570" y="333" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">gameId: '20300501' · sideGameIds</text>
+
+        <rect x="110" y="390" width="540" height="58" rx="10" style="fill:rgba(34,197,94,0.08);stroke:#22c55e;"></rect>
+        <text x="380" y="414" text-anchor="middle" style="fill:#e6edf3;font-size:14px;font-weight:700;">weaponIconCandidates(w, side?)</text>
+        <text x="380" y="435" text-anchor="middle" style="fill:#9ca3af;font-size:11.5px;">左右肩圖 → gameId 圖庫 → icon（自訂圖／過渡期舊路徑）</text>
+
+        <g style="stroke:#9ca3af;stroke-width:1.5;fill:none;">
+          <line x1="190" y1="74" x2="190" y2="108" marker-end="url(#ah)"></line>
+          <line x1="190" y1="164" x2="190" y2="198" marker-end="url(#ah)"></line>
+          <line x1="350" y1="227" x2="408" y2="227" marker-end="url(#ah)"></line>
+          <line x1="570" y1="254" x2="570" y2="288" marker-end="url(#ah)"></line>
+          <line x1="570" y1="344" x2="520" y2="388" marker-end="url(#ah)"></line>
+          <polyline points="30,137 14,137 14,419 108,419" marker-end="url(#ah)" style="stroke-dasharray:4 4;"></polyline>
+          <polyline points="730,47 748,47 748,419 652,419" marker-end="url(#ah)" style="stroke-dasharray:4 4;"></polyline>
+        </g>
+        <text x="20" y="380" style="fill:#9ca3af;font-size:11px;">檔案</text>
+        <text x="706" y="380" style="fill:#9ca3af;font-size:11px;">檔案</text>
+        <text x="379" y="221" text-anchor="middle" style="fill:#9ca3af;font-size:11px;">lazy</text>
+      </g>
+    </svg>
+    <div class="flow-caption">和 PLAN-055 同一條管線，只多了兩個分頁。讀取端先切（A），DB 回填（C）只是整理，不是有沒有圖的前提</div>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策一：武器、背包加 <code>gameId</code>，存官方圖示編號</strong>
+    <ul>
+      <li>值是 <code>Icon_weapon_&lt;gameId&gt;</code>／<code>Icon_backpack_&lt;gameId&gt;</code> 的編號部分，例如 <code>'20300501'</code>、<code>'10700301A'</code>、<code>'60350101'</code>。
+          和機甲的 <code>gameId</code>（取自 <code>Icon_mecha_wap&lt;編號&gt;</code>）同一個來源，都是從官方圖示檔名取號。</li>
+      <li>⚠ <b>這是「外觀編號」，不是武器的身分</b>：EX、·改、·LW 和同一機師的二階專武，都跟本體共用同一個號碼（凱旋系 4 把共用 <code>10200301</code>）。
+          所以不能當主鍵，也不能拿來判斷「是不是同一把」。這和 PLAN-055「圖示不等於技能」是同一個原則。</li>
+      <li>大小寫例外（<code>Icon_BackPack_</code> 2 個）照官方檔名逐字存。gameId 換算檔名時，例外由匯入腳本產生的對照表處理，程式裡不寫死。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：圖庫併進 PLAN-055 的 <code>game/icons/</code>，轉 WebP</strong>
+    <ul>
+      <li>落點：<code>public/images/game/icons/weapon/</code>、<code>public/images/game/icons/backpack/</code>，官方檔名逐字。
+          索引、以圖搜圖、反查、ledger 退場都直接沿用 PLAN-055，選圖器只是多兩個分頁。</li>
+      <li><b>改判 PLAN-055 決策一的但書</b>（「武器、背包不動」）。當時不動的理由是它們沒有重複問題，這點仍然成立。
+          但現在需要「未使用」清單、以圖搜圖和官方編號，這三樣只有進圖庫才拿得到。</li>
+      <li>格式用 <b>WebP q82、原尺寸 340²</b>，不用 PLAN-055 的 lossless：技能圖示是邊緣銳利的符號，武器是 3D 渲染圖，用 lossless 體積會大好幾倍。
+          實測武器 −83%、背包 −85%。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：收錄範圍，官方圖全收（博物館原則）</strong>
+    <ul>
+      <li>武器 163 張、背包 24 張全部入庫，包括外型變化 <code>_b</code>、虛粒子形態左右手素材、空手圖、機甲綁定肩部。這些都是站長確認要「上傳備用」的。</li>
+      <li><b>400x 敵方 BOSS 裝備（28 張）也入庫</b>（✅ 2026-10-09 站長定案：「收，資料多只有好處」）：總共不到 1 MB，日後做 BOSS 頁時用得到。
+          選圖器在「主序列」以外的群組預設收起，平常不會干擾挑圖。</li>
+      <li>依據 PLAN-055 決策三的前例：圖示不含名字、立繪或文字，所以入庫「台版還沒有的武器圖」不算洩漏未上線內容。</li>
+      <li>非官方的觀察寫在 <b>註記檔</b>（沿用 <code>scripts/lib/gameIconMeta.json</code>），例如「<code>10601301</code> 空手」「<code>10700501_b</code> 外型變化」，選圖器上會顯示。
+          資料本身不加分類欄位，因為官方沒有文件。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：DB 以 <code>gameId</code> 為主，<code>icon</code> 只留給自訂圖；固定武裝加左右兩張圖</strong>（2026-10-09 實作時改成 gameId 優先，見下）
+    <div class="code-block"><span class="kw">interface</span> <span class="ty">Weapon</span> {
+  <span class="cm">/** 官方圖示編號（Icon_weapon_&lt;gameId&gt;）。外觀編號，EX／改 共用，不是武器身分 */</span>
+  gameId?: <span class="ty">string</span>
+  <span class="cm">/** 固定武裝左右肩的鏡像圖（官方：左＝…01、右＝…02）。有給 side 時優先用它 */</span>
+  sideGameIds?: { left?: <span class="ty">string</span>; right?: <span class="ty">string</span> }
+  <span class="cm">/** 自訂圖（站長編輯過、不是官方原檔）的路徑；只在沒有 gameId 時才會用到 */</span>
+  icon?: <span class="ty">string</span>
+}
+<span class="kw">interface</span> <span class="ty">Backpack</span> { gameId?: <span class="ty">string</span>; icon?: <span class="ty">string</span> }</div>
+    <ul>
+      <li><b>讀取順序</b>：左右肩圖（有 side 時）→ <code>gameId</code> 圖庫 → <code>icon</code> 原路徑 → <code>icon</code> 檔名對到的圖庫。
+          <b>gameId 有值就用官方圖，自訂圖只用在沒有官方圖的武器</b>（規劃時寫「自訂圖優先」；實作時改掉，因為過渡期 icon 還存著舊路徑，
+          分不出哪個是自訂圖、哪個是舊值。笑謊者的舊值 <code>10200402</code> 若排在 gameId 前面，就會顯示成灰色版）。</li>
+      <li><code>icon</code> 的原路徑排在「檔名對到的圖庫」之前，也是同一個理由：回填 gameId 之前，猜錯的編號要先吃原檔。舊檔退場後原路徑 404，自然退到圖庫。</li>
+      <li>C 階段回填完 <code>gameId</code> 後，官方圖的 <code>icon</code> 舊路徑全部清掉，<code>icon</code> 只剩自訂圖。
+          這樣兩個欄位不會各存一份同樣的東西、日後各改各的。</li>
+      <li>左右圖放在<b>武器</b>上，不放在機甲的 <code>MechPart.fixedArmament</code> 掛載點上：鏡像圖是武器本身的屬性，不會因為裝在哪台機甲而改變。
+          形態武裝的左右手本來就是兩把不同的武器（耀星在右、隕星在左），不需要這個欄位。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：選圖器沿用 <code>GameIconPicker</code>，加武器、背包分頁</strong>
+    <ul>
+      <li>篩選：<b>種類</b>（由前綴解析，例如 102 打樁機）× <b>群組</b>（主序列／機甲綁定肩部／敵方 BOSS／字尾變體）× <b>使用狀態</b>（未使用／已使用）。</li>
+      <li>預設只顯示主序列，依編號倒序排列。新專武會落在「既有系列的新變體」，所以挑「未使用＋同種類」就只剩幾張。</li>
+      <li>反查「誰在用」：純函式掃後台已載入的 weapons／backpacks（<code>gameId</code>、<code>sideGameIds</code>、<code>icon</code>），<b>不增加 Firestore 讀取</b>。</li>
+      <li>以圖搜圖沿用 PLAN-055 B-4：貼上遊戲截圖就排出最像的官方圖。這次補定風波、笑謊者就是用截圖比對完成的。</li>
+      <li><code>WeaponAdmin</code>／<code>BackpackAdmin</code>：官方圖改用 <code>GameIconField</code>，寫入 <code>gameId</code>。自訂圖保留舊 <code>IconField</code>，只開 <code>weapons/</code> 自製圖資料夾。
+          固定武裝顯示「左肩／右肩」兩格。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：自訂圖放 <code>public/images/weapons/</code></strong><br>
+    舊的官方 PNG 退場後，<code>weapons/</code> 只剩站長自己編輯的圖（目前預計只有耀星、隕星兩張）。
+    <code>game/</code> 底下只放官方原檔（PLAN-054 的規則），所以自製圖不能放進圖庫，也不能冒用官方檔名。
+    檔名用武器文件 ID 之類可讀的名字，由引用掃描器列管。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：社群預覽與舊圖退場沿用既有機制</strong>
+    <ul>
+      <li>Worker 的 <code>buildOgMeta('weapons')</code> 改成「gameId 推路徑 → icon」。圖庫是 WebP，連結預覽器多半不吃 WebP，
+          所以 <code>generate-og-entity-images.mjs</code> 的 SOURCES 要加上 <code>game/icons/weapon</code>，產出 JPEG 鏡射（透明背景已有 flatten 處理）。Worker 由站長部署。</li>
+      <li>退場順序同 PLAN-055 決策九：讀取端先切 → 守門測試通過 → <code>check-image-refs.mjs</code> 回報現役舊路徑引用為 0 → 刪除 repo 內舊 PNG 並部署 → gh-pages ledger 寬限 → Cloudflare Purge。</li>
+      <li><code>patchVersions</code>／<code>grayOps</code> 存有圖片路徑快照（PLAN-054 的教訓），C 階段要一起改寫。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界情況與已知例外</strong>
+    <ul>
+      <li><b>編號前綴不是鐵則</b>：碎狼牙（電鋸）用 <code>50100602</code>、罪棘律典（電磁炮）用 <code>10600402</code>。
+          放大比對後，前者是 Z15 電鋸的換色版，後者是草莓通心粉電磁炮的換色版。也就是<b>官方檔名本身交叉了</b>，站上的圖是對的，不要「修正」。
+          選圖器的種類篩選因此只能當縮小範圍用，不能拿來擋選擇。</li>
+      <li><b>SS 專武的圖示系列不一定跟父武器同系列</b>（42 筆中只有 15 筆相同），不能用 <code>upgrade.fromWeaponId</code> 推圖。</li>
+      <li><b>夜魘·改Ⅱ／Ⅲ 用的是馬克的 <code>20100301</code></b>，夜魘本體卻是 <code>20100401</code>。這來自當年的官方 API，可能是官方資料寫錯，也可能遊戲裡真是這樣，要截圖確認（E-3）。</li>
+      <li>沒有官方圖的武器<b>留空</b>（資料佔位慣例、PLAN-055 決策八）。前台顯示「武」字佔位，不再做中文截圖佔位。歸零協議在這批擷取裡找不到任何未用的火箭圖，可能就是這種情況。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 資料對照 -->
+<section class="section">
+  <div class="section-label green">Mapping</div>
+  <div class="section-title">資料對照表（C 階段寫入）</div>
+
+  <div class="table-scroll">
+  <table class="impact-table">
+    <tr><th>武器</th><th>現況</th><th>寫入</th><th>依據</th></tr>
+    <tr><td>影虎嘯</td><td>中文佔位</td><td><code>gameId: 20300501</code></td><td>10-01 目視＋10-09 並排確認 <span class="badge-good">確定</span></td></tr>
+    <tr><td>斷湮</td><td>中文佔位</td><td><code>gameId: 10300601</code></td><td>同上 <span class="badge-good">確定</span></td></tr>
+    <tr><td>輝龍刀</td><td>中文佔位</td><td><code>gameId: 10700701</code></td><td>同上 <span class="badge-good">確定</span></td></tr>
+    <tr><td>HMG-29C</td><td><code>20400502</code>（猜的）</td><td><code>gameId: 20400501</code></td><td>輪廓 IoU 1.00 <span class="badge-good">確定</span></td></tr>
+    <tr><td>笑謊者</td><td><code>10200402</code>（猜的）</td><td><code>gameId: 10200501</code></td><td>去除透明邊後都是 320×293，貼紙、條紋位置相同；<code>10200402</code> 是灰色版 <span class="badge-good">確定</span></td></tr>
+    <tr><td>衝擊炮（帕斯卡）</td><td>缺圖</td><td>建議 <code>gameId: 90200101</code>、左 <code>…01</code>／右 <code>…02</code></td><td>站長確認是帕斯卡的雙肩；左右依另外兩台推定。<b>站長在後台手動處理</b> <span class="badge-med">E-1</span></td></tr>
+    <tr><td>嵐質儲能艙（破曉者-01）</td><td>缺圖</td><td>建議 <code>gameId: 90300101</code>、左 <code>…01</code>／右 <code>…02</code></td><td>遊戲截圖比對（右肩對 02 相關係數 0.61）。<b>站長在後台手動處理</b> <span class="badge-med">E-1</span></td></tr>
+    <tr><td>多功能彈倉（霸王）</td><td>缺圖</td><td>建議 <code>gameId: 90400101</code>、左 <code>…01</code>／右 <code>…02</code></td><td>遊戲截圖比對（右肩對 02：0.45、左肩對 01：0.33）。<b>站長在後台手動處理</b> <span class="badge-med">E-1</span></td></tr>
+    <tr><td>千星</td><td>缺圖</td><td><code>gameId: 40400401</code></td><td>站長確認是虛粒子形態背部武裝 <span class="badge-good">確定</span></td></tr>
+    <tr><td>耀星／隕星</td><td>缺圖</td><td>自訂圖 <code>icon</code>（素材 <code>10700601</code>／<code>10700602</code>）</td><td>站長編輯圖片後指定 <span class="badge-med">C-3</span></td></tr>
+    <tr><td>征伐／速射格林炮／誓殮／歸零協議</td><td>缺圖</td><td>站長用選圖器挑</td><td>候選是同種類的「既有系列新變體」；歸零協議可能不在擷取裡 <span class="badge-med">C-4</span></td></tr>
+    <tr><td>幽弧／夜燼</td><td>缺圖、種類空白</td><td>—</td><td>先補種類 <span class="badge-low">E-2</span></td></tr>
+    <tr><td>其餘 167 把武器、185 個背包</td><td>官方路徑</td><td><code>gameId</code> 從 <code>icon</code> 檔名解析</td><td>與擷取逐像素一致 <span class="badge-good">確定</span></td></tr>
+  </table>
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label green">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul>
+      <li>匯入武器 163、背包 24 張官方圖到 <code>game/icons/{weapon,backpack}/</code>（WebP），命名規則、索引、註記檔、以圖搜圖特徵。</li>
+      <li>型別：<code>Weapon.gameId</code>／<code>sideGameIds</code>、<code>Backpack.gameId</code>，<code>icon</code> 改為自訂圖；同步 docs 資料模型頁。</li>
+      <li>讀取 helper 與約 12 個讀圖元件改走候選鏈；固定武裝依左右肩顯示鏡像圖。</li>
+      <li>選圖器加武器／背包分頁、反查；<code>WeaponAdmin</code>／<code>BackpackAdmin</code> 改用新欄位。</li>
+      <li>資料：回填 gameId、5 筆修正、固定武裝與千星、站長選的新專武；清掉官方圖的舊路徑；改寫 patchVersions／grayOps 快照；bump。</li>
+      <li>社群預覽 Worker 與 JPEG 鏡射；舊 PNG 退場。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul>
+      <li>武器技能圖示（<code>weapons.skills[]</code>、<code>pilotSkills</code>）：屬於 PLAN-055。</li>
+      <li>機甲部件、機師立繪：屬於 PLAN-054。</li>
+      <li>敵方 BOSS 頁：本計畫只把 400x 圖收進圖庫，不做頁面。</li>
+      <li>建檔台版還沒有的武器（例如 <code>10100101</code> 對應的 B 級拳套）：等台版上線再由後台人工建檔（CLAUDE.md 6.5）。</li>
+      <li>不動用備用爬蟲補資料（CLAUDE.md 6.5）。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label green">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-056 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-055_技能BUFF圖示管理/計畫書.html">
+      <div class="doc-tag">Plan</div>
+      <h4>◆ PLAN-055 技能／BUFF 圖示管理</h4>
+      <p>扁平圖庫、選圖器、以圖搜圖、檔名即 key（本計畫沿用並改判決策一的但書）</p>
+    </a>
+    <a class="doc-item" href="../PLAN-054_機師機甲圖片ID化/計畫書.html">
+      <div class="doc-tag">Plan</div>
+      <h4>◆ PLAN-054 機師／機甲圖片 ID 化</h4>
+      <p>gameId 的前例、匯入管線、ledger 退場、OG JPEG 鏡射</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-047_槽位與裝備限制模型/計畫書.html">
+      <div class="doc-tag">Plan</div>
+      <h4>◆ PLAN-047 槽位與裝備限制模型</h4>
+      <p>MechPart.fixedArmament、ArmamentMount 的 side</p>
+    </a>
+    <a class="doc-item" href="../PLAN-041_機師形態變化/計畫書.html">
+      <div class="doc-tag">Plan</div>
+      <h4>◆ PLAN-041 機師形態變化</h4>
+      <p>形態固定武裝（虛粒子、巡航）的 mounts</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/02_資料模型/weapons.html">
+      <div class="doc-tag">Model</div>
+      <h4>◆ weapons 資料模型</h4>
+      <p>A-4 要同步新增 gameId／sideGameIds</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-056 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

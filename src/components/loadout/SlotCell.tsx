@@ -1,5 +1,6 @@
 import type { Component } from '../../types'
 import { WeaponIcon } from '../icons/WeaponIcon'
+import { BackpackIcon } from '../badges/BackpackBadges'
 import { ComponentIcon } from '../icons/ComponentIcon'
 import { LoadoutIcon, type LoadoutIconName } from '../icons/LoadoutIcon'
 import { HUD, SEG_TEXT, type SegKey } from './loadoutTheme'
@@ -32,7 +33,10 @@ import { WeaponEquipSlot } from '../../types/enums'
 
 export interface SlotCellPreview {
   name: string
+  /** 官方圖示編號（PLAN-056）；背包預覽要搭配 isBackpack，否則會被當成武器編號 */
+  gameId?: string
   icon?: string
+  isBackpack?: boolean
   weight: number
   /** 換上去之後的餘量。負數 ＝ 換完會超重，整格要把這件事先講掉 */
   remainingAfter?: number
@@ -190,7 +194,9 @@ export function SlotCell({
     return (
       <div className={`${base} border-accent-orange bg-accent-orange/10`}>
         <IconBox compact={compact} dense={dense} tight={tight} roomy={roomy} tone="orange">
-          <WeaponIcon icon={preview.icon} name={preview.name} size="sm" />
+          {preview.isBackpack
+            ? <BackpackIcon gameId={preview.gameId} icon={preview.icon} name={preview.name} size="sm" />
+            : <WeaponIcon gameId={preview.gameId} icon={preview.icon} name={preview.name} size="sm" />}
         </IconBox>
         <div className="flex flex-col min-w-0 flex-1">
           {/* 標籤刻意只有四個字：190px 的節點放不下「換成這把會變成」，
@@ -282,7 +288,6 @@ export function SlotCell({
   // ── 已裝 ──
   const isBackpack = occupant.kind === 'backpack'
   const name = isBackpack ? occupant.backpack.name : (occupant.weapon?.name ?? occupant.mount.weaponId)
-  const icon = isBackpack ? occupant.backpack.icon : occupant.weapon?.icon
   const weight = isBackpack ? occupant.backpack.weight : (occupant.weapon?.weight ?? 0)
   /**
    * 雙手武器同時出現在左右兩格（比照遊戲整備畫面：「右手」「左手」印的是同一把）。
@@ -313,7 +318,9 @@ export function SlotCell({
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.() } }}
     >
       <IconBox compact={compact} dense={dense} tight={tight} roomy={roomy}>
-        <WeaponIcon icon={icon} name={name} size="sm" />
+        {isBackpack
+          ? <BackpackIcon gameId={occupant.backpack.gameId} icon={occupant.backpack.icon} name={name} size="sm" />
+          : <WeaponIcon gameId={occupant.weapon?.gameId} icon={occupant.weapon?.icon} name={name} size="sm" />}
       </IconBox>
       <div className="flex flex-col min-w-0 flex-1">
         <span className={`${HUD.labelCjk} text-text-dim truncate`}>

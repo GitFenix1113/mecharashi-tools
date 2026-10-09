@@ -4,7 +4,7 @@
 // 與 src/utils/gameIcons.ts（前台用）。這裡逐一比對兩份的解析與路徑——改了一邊沒改另一邊就會掛。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { ICON_DIR, ICON_FEATURE_DIM, iconFamily, iconFeature, iconPath, isLibraryKey, keyFromValue, parseIconKey } from './gameIconKinds.mjs'
+import { ICON_DIR, ICON_FEATURE_DIM, equipGameIdOf, equipIconKey, iconFamily, iconFeature, iconPath, isLibraryKey, keyFromValue, parseIconKey } from './gameIconKinds.mjs'
 import * as ts from '../../src/utils/gameIcons.ts'
 
 // 每一種官方前綴各取幾個真實檔名（2026-10-04 陸版擷取＋站上舊夾）
@@ -15,9 +15,13 @@ const KEYS = [
   'Icon_roguelike_uniticon_01', 'Icon_coopclimb_attack_001',
   'Icon_buff_1001', 'Icon_buff_1_002', 'Icon_buff_2014', 'Icon_buff_4012', 'Icon_buff_5007', 'Icon_buff_9001',
   'Icon_buff_attack', 'Icon_debuff_nomove',
+  // 武器、背包（PLAN-056，2026-10-09 陸版擷取）
+  'Icon_weapon_10100201', 'Icon_weapon_10700301A', 'Icon_weapon_10700501_b', 'Icon_weapon_90200101', 'Icon_weapon_4001_1_NY',
+  'Icon_weapon_4002_black_1', 'Icon_weapon_2021_1', 'Icon_weapon_40400401',
+  'Icon_backpack_60100101', 'Icon_BackPack_60350101',
 ]
 const NOT_KEYS = [
-  'Icon_skill_main_凱登01', 'Icon_skill_passive_威能者驅動', 'Icon_weapon_10100201', 'Icon_backpack_60100101',
+  'Icon_skill_main_凱登01', 'Icon_skill_passive_威能者驅動', 'Icon_weapon_影虎嘯', 'Icon_V_Cannon01', 'Icon_tank01',
   'Icon_pilotclass_001_l', 'Icon_entry', '', 'Pilot_10103174A_half',
 ]
 
@@ -34,6 +38,31 @@ test('路徑：腳本版（相對 public/）與前台版（含開頭斜線）指
     assert.equal(iconPath(k), undefined, k)
     assert.equal(ts.gameIconPath(k), undefined, k)
   }
+})
+
+test('武器、背包各一夾；官方文法：種類前綴、群組', () => {
+  assert.equal(iconFamily('Icon_weapon_10200401'), 'weapon')
+  assert.equal(iconFamily('Icon_BackPack_60350101'), 'backpack')
+  assert.equal(iconPath('Icon_BackPack_60350101'), `${ICON_DIR}/backpack/Icon_BackPack_60350101.webp`)
+  assert.deepEqual(parseIconKey('Icon_weapon_10200401'), { key: 'Icon_weapon_10200401', family: 'weapon', kind: 'series', category: '102', num: 10200401 })
+  assert.equal(parseIconKey('Icon_weapon_10700301A').kind, 'series')        // 斷鋼：字母字尾是本體
+  assert.equal(parseIconKey('Icon_weapon_10700501_b').kind, 'variant')      // 外型變化
+  assert.equal(parseIconKey('Icon_weapon_90300102').kind, 'linked')         // 破曉者-01 右肩
+  assert.equal(parseIconKey('Icon_weapon_90300102').category, '903')
+  assert.equal(parseIconKey('Icon_weapon_4002_black_2').kind, 'enemy')
+  assert.equal(parseIconKey('Icon_weapon_2021_1').kind, 'other')
+  assert.deepEqual(parseIconKey('Icon_BackPack_60350101'), { key: 'Icon_BackPack_60350101', family: 'backpack', kind: 'backpack', category: '035', num: 60350101 })
+})
+
+test('gameId ↔ 官方檔名：腳本版與前台版一致（含大小寫例外）', () => {
+  for (const [fam, id] of [['weapon', '20300501'], ['weapon', '10700301A'], ['backpack', '60100101'], ['backpack', '60350101'], ['backpack', '60500101']]) {
+    assert.equal(equipIconKey(fam, id), ts.equipIconKey(fam, id), `${fam}:${id}`)
+  }
+  assert.equal(equipIconKey('backpack', '60350101'), 'Icon_BackPack_60350101')
+  assert.equal(equipIconKey('weapon', ' 20300501 '), 'Icon_weapon_20300501')
+  assert.equal(equipIconKey('weapon', ''), undefined)
+  for (const k of ['Icon_weapon_10700301A', 'Icon_BackPack_60350101', 'Icon_skill_main_1106']) assert.equal(equipGameIdOf(k), ts.equipGameIdOf(k), k)
+  assert.equal(equipGameIdOf('Icon_BackPack_60350101'), '60350101')
 })
 
 test('BUFF 字形一夾、其餘一夾', () => {

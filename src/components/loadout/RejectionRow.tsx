@@ -1,4 +1,5 @@
 import { WeaponIcon } from '../icons/WeaponIcon'
+import { BackpackIcon } from '../badges/BackpackBadges'
 import type { Rejection } from '../../utils/loadoutRules'
 
 // ─── 挑選器的一列（PLAN-052-B C-1）───────────────────────────────────────────
@@ -18,7 +19,10 @@ import type { Rejection } from '../../utils/loadoutRules'
 export interface PickerRowItem {
   id: string
   name: string
+  /** 官方圖示編號（PLAN-056，武器／背包）；背包要搭配 isBackpack，否則會被當成武器編號 */
+  gameId?: string
   icon?: string
+  isBackpack?: boolean
   /** 重量。機師這種「沒有重量可言」的實體留空，不要填 0 —— 0 看起來像一個真的數值 */
   weight?: number
   /** 副標，如「戰術 · 電磁炮 · 背後」或「出力背包 · S」 */
@@ -68,7 +72,9 @@ export function RejectionRow({ item, rejection, remainingAfter, replaceNote, onP
       tabIndex={blocked ? undefined : 0}
       onKeyDown={(e) => { if (!blocked && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onPick() } }}
     >
-      <WeaponIcon icon={item.icon} name={item.name} size="sm" isExclusive={item.isExclusive} />
+      {item.isBackpack
+        ? <BackpackIcon gameId={item.gameId} icon={item.icon} name={item.name} size="sm" />
+        : <WeaponIcon gameId={item.gameId} icon={item.icon} name={item.name} size="sm" isExclusive={item.isExclusive} />}
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className={`text-[13px] truncate ${blocked ? 'text-text-secondary' : 'text-text-primary'}`}>

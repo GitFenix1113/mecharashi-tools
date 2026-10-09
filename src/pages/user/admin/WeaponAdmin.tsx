@@ -17,7 +17,9 @@ import { shareIdFloor } from '../../../utils/loadoutCode/shareIdRegistry'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
-import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
+import { EquipGameIdField, GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
+import { WeaponIcon } from '../../../components/icons/WeaponIcon'
+import { weaponIconCategoryOf } from '../../../utils/gameIcons'
 import { iconKindsForSkillType } from '../../../utils/gameIcons'
 import { WEAPON_RARITY_CLASS, WEAPON_KIND_BY_TYPE, ALL_WEAPON_KINDS } from './constants'
 import { SkillEffectItem } from './PilotAdmin'
@@ -378,9 +380,7 @@ function WeaponEditPanel({
   return (
     <AdminModal saving={saving} error={error} onSave={handleSubmit} onCancel={onCancel}>
       <div className="flex items-start gap-3 mb-3 shrink-0">
-        {form.icon && (
-          <img src={form.icon} alt="" className="w-10 h-10 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
-        )}
+        <WeaponIcon gameId={form.gameId} icon={form.icon} name={form.name} size="md" />
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-bold flex items-center gap-2">
             <span className="text-accent-purple">⚔</span> 編輯武器
@@ -437,8 +437,33 @@ function WeaponEditPanel({
                 <option value={MechRestriction.HEAVY_ONLY}>heavy — 僅重型機甲</option>
               </select>
             </Field>
+            {/* PLAN-056：官方圖示編號為主；自訂圖只在沒有官方圖時才會顯示 */}
+            <EquipGameIdField
+              label="官方圖示編號 gameId"
+              family="weapon"
+              gameId={form.gameId}
+              onChange={(v) => update('gameId', v || undefined)}
+              presetCategories={[weaponIconCategoryOf(form.kind)].filter((c): c is string => !!c)}
+            />
+            {form.isFixedArmament && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {(['left', 'right'] as const).map((side) => (
+                  <EquipGameIdField
+                    key={side}
+                    label={side === 'left' ? '左肩圖 sideGameIds.left' : '右肩圖 sideGameIds.right'}
+                    family="weapon"
+                    gameId={form.sideGameIds?.[side]}
+                    hint={side === 'left' ? '固定武裝的鏡像圖；官方慣例左肩＝…01' : '固定武裝的鏡像圖；官方慣例右肩＝…02'}
+                    onChange={(v) => {
+                      const next = { ...form.sideGameIds, [side]: v || undefined }
+                      update('sideGameIds', next.left || next.right ? next : undefined)
+                    }}
+                  />
+                ))}
+              </div>
+            )}
             <IconField
-              label="圖示路徑 icon（選填）"
+              label="自訂圖 icon（選填；只在沒有官方 gameId 時才會顯示）"
               value={form.icon}
               onChange={(v) => update('icon', v || undefined)}
               defaultFolder="weapons"
@@ -904,9 +929,7 @@ export default function WeaponAdmin({
               className="bg-bg-dark border border-border rounded-lg px-3 py-2.5 flex items-center gap-3 hover:border-border-accent transition-colors cursor-pointer"
               onClick={() => setEditing(w)}
             >
-              {w.icon && (
-                <img src={w.icon} alt="" className="w-8 h-8 rounded shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
-              )}
+              <WeaponIcon gameId={w.gameId} icon={w.icon} name={w.name} size="sm" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-sm text-text-primary truncate">

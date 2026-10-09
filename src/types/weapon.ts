@@ -100,7 +100,27 @@ export interface Weapon {
   name: string
   /** 武器背景故事文字（API: describe） */
   description?: string
-  /** 武器圖示本地路徑，如 /images/weapons/Icon_weapon_10100201.png */
+  /**
+   * 遊戲 ID（PLAN-056）：官方武器圖示 `Icon_weapon_<gameId>` 的編號，例如 '20300501'、'10700301A'。
+   * 和機甲的 gameId 同一個來源（取自官方圖示檔名）。圖庫 `public/images/game/icons/weapon/` 以它對檔。
+   *
+   * ⚠ **這是外觀編號，不是武器身分**：EX／·改／·LW 與同一機師的二階專武都跟本體共用同一個號碼
+   *   （凱旋系 4 把共用 10200301），不能當主鍵、也不能拿來判斷「是不是同一把」。
+   * ⚠ 編號前綴（102＝打樁機）只是線索：碎狼牙（電鋸）是 50100602、罪棘律典（電磁炮）是 10600402，
+   *   官方檔名本身交叉，圖是對的。
+   * 讀取端一律走 `weaponIconCandidates()`（src/utils/gameIcons.ts），不要自己拼路徑。
+   */
+  gameId?: string
+  /**
+   * 固定武裝左右肩的鏡像圖（PLAN-056）：官方慣例左肩＝…01、右肩＝…02（霸王、破曉者-01 遊戲截圖確認）。
+   * 掛載點有 side 時優先用它，否則用 gameId。只有 `isFixedArmament` 的肩部武裝需要；
+   * 形態武裝的左右手本來就是兩把不同的武器（耀星在右、隕星在左），不用這個欄位。
+   */
+  sideGameIds?: { left?: string; right?: string }
+  /**
+   * 自訂圖（PLAN-056）：站長編輯過、不是官方原檔的圖，放 `public/images/weapons/`。
+   * **只在沒有 gameId 時才會用到**（gameId 優先）。PLAN-056 C-5 之前這裡還存著官方圖的舊路徑（過渡期後備）。
+   */
   icon?: string
   type:            string  // WeaponType：射擊 / 格鬥 / 突擊 / 戰術
   kind:            string  // 武器種類：機槍 / 狙擊步槍 / 刀劍…

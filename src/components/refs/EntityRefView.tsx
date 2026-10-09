@@ -4,8 +4,8 @@ import type { EntityRef, RefType, DescriptionRefs, PilotTalent } from '../../typ
 import { useGameData, type CollectionKey } from '../../contexts/GameDataContext'
 import { useReference } from '../../contexts/ReferenceContext'
 import { STAT_LABELS } from '../../utils/moduleStats'
-import { imageCandidates, mechPortraitCandidates, pilotPortraitCandidates } from '../../utils/assets'
-import { gameIconCandidates } from '../../utils/gameIcons'
+import { mechPortraitCandidates, pilotPortraitCandidates } from '../../utils/assets'
+import { backpackIconCandidates, gameIconCandidates, weaponIconCandidates } from '../../utils/gameIcons'
 import { pickLevel } from '../../utils/ndOverrides'
 import { mechModuleSet, type MechModuleSet } from '../../utils/mechModules'
 import { FallbackImage } from '../common/FallbackImage'
@@ -97,7 +97,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: w.name,
         subtitle: [w.type, w.kind, w.rarity].filter(Boolean).join(' · '),
-        images: imageCandidates(w.icon),
+        images: weaponIconCandidates(w),
         description: w.description,
         route: `/weapons/${w.id}`,
       }
@@ -119,7 +119,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: b.name,
         subtitle: [b.type, b.rarity].filter(Boolean).join(' · '),
-        images: imageCandidates(b.icon),
+        images: backpackIconCandidates(b),
       }
     }
     case 'component': {

@@ -1,0 +1,7 @@
+{
+ "generatedBy": "scripts/import-game-assets.mjs --equip-icons --apply",
+ "keyCase": {
+  "backpack:60350101": "Icon_BackPack_60350101",
+  "backpack:60500101": "Icon_BackPack_60500101"
+ }
+}

@@ -7,6 +7,7 @@
  *   node scripts/check-image-refs.mjs --fail-on=a     (a) 壞路徑 > 0 時 exit 1（D-3 之後的驗收）
  *   node scripts/check-image-refs.mjs --fail-on=b     (b) 舊路徑 > 0 時 exit 1（D-1 刪檔前的閘門）
  *   node scripts/check-image-refs.mjs --fail-on=ce    PLAN-055：(c) 圖庫找不到的 key、(e) 中文 key > 0 時 exit 1
+ *   node scripts/check-image-refs.mjs --fail-on=gh    PLAN-056：(g) gameId 在圖庫找不到、(h) 仍寫官方舊路徑 > 0 時 exit 1（D-3 刪舊檔前的閘門）
  *
  * PLAN-055（圖示圖庫）另外掃 Firestore 的**圖示值**——裸 key 不是路徑形狀，上面的 (a)(b) 抓不到：
  *   (c) 圖庫找不到：值的檔名（經舊編號別名換算）在 public/images/game/icons/ 沒有檔
@@ -15,6 +16,13 @@
  *       爬蟲原始快照（weapons 的內嵌 WeaponSkill、pilots.biometicComputer）刻意不改寫，不算
  *   (e) 中文佔位 key（Icon_skill_main_凱登01）
  *   (f) 缺圖示：該有圖示的文件，icon 與 iconLocal 都是空的
+ *
+ * PLAN-056（武器／背包本身的圖示）另列，不混進 (c)(e)：
+ *   (g) gameId（含固定武裝 sideGameIds）換算出的官方檔名在 public/images/game/icons/{weapon,backpack}/ 沒有檔
+ *   (h) 仍寫舊路徑：現役值還指向 weapons／backpacks 舊夾裡檔名以 Icon_ 開頭的檔（官方 PNG 與中文佔位）——
+ *       含 weapons.icon、backpacks.icon 與 patchVersions.iconUrls 快照。站長編輯的自訂圖檔名**不以 Icon_ 開頭**，不算
+ *   (i) 缺圖：武器／背包既沒有 gameId 也沒有 icon
+ *   另附「圖庫裡沒有任何武器／背包在用的官方圖」清單——下次擷取後對照新武器用（gameId 的用途之一）
  *
  * 來源：
  *   · Firestore 全部集合（唯讀）——略過 users、analytics*、changeHistory、systemLog：
@@ -37,7 +45,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 import { GAME_DIR, classifyMechFile, classifyPilotFile } from './lib/gameAssetKinds.mjs'
-import { iconPath, isLibraryKey, keyFromValue } from './lib/gameIconKinds.mjs'
+import { equipIconKey, iconFamily, iconPath, isLibraryKey, keyFromValue } from './lib/gameIconKinds.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const PUBLIC = path.join(ROOT, 'public')
@@ -127,12 +135,12 @@ async function scanFirestore() {
   }
   admin.initializeApp({ credential: admin.credential.cert(JSON.parse(fs.readFileSync(path.resolve(ROOT, process.env.GOOGLE_APPLICATION_CREDENTIALS), 'utf-8'))) })
   const db = admin.firestore()
-  const data = { pilots: [], mechs: [] }
+  const data = { pilots: [], mechs: [], weapons: [], backpacks: [] }
   for (const col of await db.listCollections()) {
     if (SKIP_COLLECTIONS.has(col.id)) continue
     for (const d of (await col.get()).docs) {
       const doc = d.data()
-      if (col.id === 'pilots' || col.id === 'mechs') data[col.id].push({ id: d.id, ...doc })
+      if (col.id in data) data[col.id].push({ id: d.id, ...doc })
       walk(doc, '', (field, raw) => refs.push({ where: `${col.id}/${d.id}`, field, raw }))
       walkIcons(doc, '', col.id, d.id)
       checkMissingIcon(col.id, d.id, doc)
@@ -147,6 +155,8 @@ const ICON_META = (() => {
   return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf-8')) : { aliases: {} }
 })()
 const iconRefs = []     // { where, field, raw, key }
+const equipRefs = []    // PLAN-056：武器／背包圖示值 { where, col, field, raw, key }
+const EQUIP_KEY = /^Icon_(?:weapon|backpack)_/i
 const missingIcons = [] // { where, name, field }
 /** 爬蟲原始快照：刻意永久保留原樣，不要求改寫（PLAN-032 內嵌 WeaponSkill、biometicComputer） */
 const RAW_SNAPSHOT = /^(?:skills\[\d+\]\.|biometicComputer\[)/
@@ -155,6 +165,7 @@ function walkIcons(value, at, colId, docId) {
     const base = value.split(/[?#]/)[0].split('/').pop() ?? ''
     if (!base.startsWith('Icon_')) return
     const key = keyFromValue(value)
+    if (EQUIP_KEY.test(key)) { equipRefs.push({ where: `${colId}/${docId}`, col: colId, field: at, raw: value, key }); return }
     const chinese = /[^\x00-\x7F]/.test(key)
     if (isLibraryKey(key) || chinese) iconRefs.push({ where: `${colId}/${docId}`, col: colId, field: at, raw: value, key, chinese })
     return
@@ -244,6 +255,31 @@ const missingByCol = missingIcons.reduce((m, r) => m.set(r.col, (m.get(r.col) ??
 console.log(`圖示值（PLAN-055）：${iconRefs.length} 筆　(c) 圖庫找不到 ${iconC.length}　(d) 仍寫舊路徑 ${iconD.length}　(e) 中文 key ${iconE.length}`)
 console.log(`  (f) 缺圖示 ${missingIcons.length} 份：${[...missingByCol].map(([c, n]) => `${c} ${n}`).join('、')}`)
 
+// ── PLAN-056 武器／背包 ─────────────────────────────────────────────────────────
+const FAM = { weapons: 'weapon', backpacks: 'backpack' }
+const equipFile = (family, id) => { const k = equipIconKey(family, id); return k && fs.existsSync(path.join(PUBLIC, iconPath(k))) }
+const equipG = [], equipI = [], usedEquip = new Set()
+for (const col of ['weapons', 'backpacks']) {
+  for (const d of data[col]) {
+    const ids = [['gameId', d.gameId], ['sideGameIds.left', d.sideGameIds?.left], ['sideGameIds.right', d.sideGameIds?.right]].filter(([, v]) => v)
+    for (const [field, id] of ids) {
+      usedEquip.add(equipIconKey(FAM[col], id))
+      if (!equipFile(FAM[col], id)) equipG.push({ where: `${col}/${d.id}`, field, raw: id })
+    }
+    if (!ids.length && isLibraryKey(keyFromValue(d.icon))) usedEquip.add(keyFromValue(d.icon))
+    if (!ids.length && !String(d.icon ?? '').trim()) equipI.push({ where: `${col}/${d.id}`, col, name: d.name })
+  }
+}
+const equipH = equipRefs.filter((r) => /images\/(?:weapons|backpacks)\/Icon_/i.test(r.raw))
+const libraryEquip = ['weapon', 'backpack'].flatMap((f) => {
+  const dir = path.join(PUBLIC, 'images/game/icons', f)
+  return fs.existsSync(dir) ? fs.readdirSync(dir).filter((x) => x.endsWith('.webp')).map((x) => x.slice(0, -5)) : []
+})
+const unusedEquip = libraryEquip.filter((k) => !usedEquip.has(k))
+const hByCol = equipH.reduce((m, r) => m.set(r.col, (m.get(r.col) ?? 0) + 1), new Map())
+console.log(`武器／背包圖示（PLAN-056）：(g) gameId 圖庫找不到 ${equipG.length}　(h) 仍寫官方舊路徑 ${equipH.length}（${[...hByCol].map(([c, n]) => `${c} ${n}`).join('、') || '—'}）　(i) 缺圖 ${equipI.length}`)
+console.log(`  圖庫 ${libraryEquip.length} 張，沒有任何武器／背包在用 ${unusedEquip.length} 張（武器 ${unusedEquip.filter((k) => iconFamily(k) === 'weapon').length}、背包 ${unusedEquip.filter((k) => iconFamily(k) === 'backpack').length}）`)
+
 if (args.report) {
   const fmt = (r) => `- \`${r.where}\`${r.field ? ` \`${r.field}\`` : ''}：\`${r.raw}\`${r.why ? `（${r.why}）` : ''}`
   const iconMd = [
@@ -264,6 +300,12 @@ if (args.report) {
     '## 只列不擋（測試／文件）', '', ...broken.filter((r) => !LIVE.has(r.scope)).map((r) => fmt(r) + '　(a)'),
     ...old.filter((r) => !LIVE.has(r.scope)).map((r) => fmt(r) + '　(b)'), '',
     ...iconMd,
+    '## PLAN-056 武器／背包圖示', '',
+    `- (g) gameId 圖庫找不到 ${equipG.length}　(h) 仍寫官方舊路徑 ${equipH.length}　(i) 缺圖 ${equipI.length}　圖庫沒人用 ${unusedEquip.length}`, '',
+    '### (g) gameId 圖庫找不到', '', ...equipG.map(fmt), '',
+    '### (i) 缺圖（沒有 gameId 也沒有 icon）', '', ...equipI.map((r) => `- \`${r.where}\`：${r.name ?? ''}`), '',
+    '<details><summary>(h) 仍寫官方舊路徑（C-5 清掉、patchVersions 快照改寫）</summary>', '', ...equipH.map(fmt), '', '</details>', '',
+    '<details><summary>圖庫裡沒有任何武器／背包在用的官方圖</summary>', '', unusedEquip.sort().join('、'), '', '</details>', '',
   ].join('\n')
   fs.writeFileSync(path.resolve(String(args.report)), md)
   console.log(`📝 完整清單：${args.report}`)
@@ -271,4 +313,5 @@ if (args.report) {
 const fail = String(args['fail-on'] ?? '')
 if ((fail.includes('a') && liveA.length) || (fail.includes('b') && liveB.length)) process.exit(1)
 if ((fail.includes('c') && iconC.length) || (fail.includes('e') && iconE.length)) process.exit(1)
+if ((fail.includes('g') && equipG.length) || (fail.includes('h') && equipH.length)) process.exit(1)
 process.exit(0)

@@ -145,6 +145,19 @@ test('buildOgMeta：webp 立繪要改指預先轉好的 JPEG（LINE 等預覽器
   assert.equal(isDerivedPreviewImage(DEFAULT_OG_IMAGE), false)
 })
 
+test('buildOgMeta（weapons）：gameId 推官方圖示 → JPEG 鏡射，舊 icon 留作探測失敗時的後備（PLAN-056）', () => {
+  const meta = buildOgMeta('weapons', { name: '笑謊者', rarity: 'SS', type: '格鬥', gameId: '10200501', icon: '/images/weapons/Icon_weapon_10200402.webp' })
+  assert.equal(meta?.image, 'https://mecharashi.wiki/images/og/entities/game/icons/weapon/Icon_weapon_10200501.jpg')
+  assert.equal(isDerivedPreviewImage(meta.image), true)
+  // 舊 icon 是 webp → 也走鏡射；它只在官方圖的 JPEG 探測失敗時才用
+  assert.deepEqual(meta.fallbackImages, ['https://mecharashi.wiki/images/og/entities/weapons/Icon_weapon_10200402.jpg'])
+
+  // 沒有 gameId（缺圖或自訂圖）→ 只有 icon
+  const custom = buildOgMeta('weapons', { name: '耀星', icon: '/images/weapons/耀星.png' })
+  assert.equal(custom?.image, 'https://mecharashi.wiki/images/weapons/' + encodeURIComponent('耀星') + '.png')
+  assert.equal(custom?.fallbackImages, undefined)
+})
+
 test('buildOgMeta（pilots）：用 portrait，中文路徑要 encode 成絕對網址', () => {
   const meta = buildOgMeta('pilots', {
     name: '葉夫根尼',

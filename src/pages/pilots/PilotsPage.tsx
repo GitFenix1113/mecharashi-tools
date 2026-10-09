@@ -51,9 +51,9 @@ export default function PilotsPage() {
   )
 
   const exclusiveWeaponMap = useMemo(() => {
-    const map: Record<string, { name: string; icon?: string }> = {}
+    const map: Record<string, { name: string; gameId?: string; icon?: string }> = {}
     for (const w of weapons) {
-      if (w.isExclusive && w.exclusiveFor) map[w.exclusiveFor] = { name: w.name, icon: w.icon }
+      if (w.isExclusive && w.exclusiveFor) map[w.exclusiveFor] = { name: w.name, gameId: w.gameId, icon: w.icon }
     }
     return map
   }, [weapons])
@@ -321,6 +321,7 @@ export default function PilotsPage() {
                   {exclusiveWeaponMap[pilot.id] && (
                     <div className="flex-shrink-0 flex flex-col items-center gap-1 w-14">
                       <WeaponIcon
+                        gameId={exclusiveWeaponMap[pilot.id].gameId}
                         icon={exclusiveWeaponMap[pilot.id].icon}
                         name={exclusiveWeaponMap[pilot.id].name}
                         size="sm"

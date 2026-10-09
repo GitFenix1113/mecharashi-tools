@@ -11,6 +11,8 @@ import {
 } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { IconField } from '../../../components/admin/IconPicker'
+import { EquipGameIdField, IconThumb } from '../../../components/admin/GameIconPicker'
+import { BackpackIcon } from '../../../components/badges/BackpackBadges'
 import { BACKPACK_TYPE_CONFIG, ASSEMBLABLE_ARMOR_CONFIG } from '../../../components/badges/BackpackBadges'
 import { parseBackpackName } from '../../../utils/backpackClassify'
 import { parseBuffRef, formatBuffRef } from '../../../utils/buffRef'
@@ -105,9 +107,7 @@ function BackpackSkillPicker({
             const levels = doc?.levels ?? []
             return (
               <div key={`${raw}-${idx}`} className="flex items-center gap-2 bg-bg-dark border border-border rounded-lg px-2.5 py-2">
-                {doc?.icon && (
-                  <img src={doc.icon} alt="" className="w-7 h-7 rounded shrink-0" onError={e => ((e.target as HTMLImageElement).style.display = 'none')} />
-                )}
+                <IconThumb icon={doc?.icon} className="w-7 h-7 rounded shrink-0" />
                 <div className="flex-1 min-w-0 truncate">
                   {/* 解析不到 = 斷鏈（技能被刪或 id 打錯）。必須顯眼，否則前台只會靜默不顯示 */}
                   {doc ? (
@@ -280,8 +280,15 @@ function BackpackEditPanel({
           </Field>
         </div>
 
+        {/* PLAN-056：官方圖示編號為主；自訂圖只在沒有官方圖時才會顯示 */}
+        <EquipGameIdField
+          label="官方圖示編號 gameId"
+          family="backpack"
+          gameId={form.gameId}
+          onChange={v => update('gameId', v || undefined)}
+        />
         <IconField
-          label="圖示 icon"
+          label="自訂圖 icon（選填；只在沒有官方 gameId 時才會顯示）"
           value={form.icon ?? ''}
           onChange={v => update('icon', v || undefined)}
           defaultFolder="backpacks"
@@ -502,6 +509,7 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
             className="bg-bg-dark border border-border rounded-lg px-3 py-2.5 flex items-center gap-3 hover:border-border-accent transition-colors cursor-pointer"
             onClick={() => setEditing(bp)}
           >
+            <BackpackIcon gameId={bp.gameId} icon={bp.icon} name={bp.name} size="sm" />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-sm text-text-primary">

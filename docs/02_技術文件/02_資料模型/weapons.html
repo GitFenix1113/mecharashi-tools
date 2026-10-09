@@ -98,7 +98,7 @@
   <div class="hero-badge purple">◆ Data Model</div>
   <h1>weapons<span>武器資料 · WEAPON DATA</span></h1>
   <p class="hero-sub">武器屬性、射程型態、機甲限制、元件插槽、固定/浮動改裝、三種技能生效方式</p>
-  <div class="version-badge" style="background:var(--accent-purple);">UPDATED v2.3 · variableStats</div>
+  <div class="version-badge" style="background:var(--accent-purple);">UPDATED v2.4 · PLAN-056 gameId</div>
 </header>
 
 <main class="container">
@@ -107,6 +107,17 @@
 <section class="section">
   <div class="section-label purple">v2.0 更新（PLAN-003）</div>
   <div class="section-title">Schema 重構說明</div>
+
+  <div class="changed-block" style="border-left-color:var(--accent-green);background:rgba(34,197,94,0.04);">
+    <strong>PLAN-056 武器／背包圖示 ID 化</strong>（2026-10-09 實施）<br><br>
+    · <strong>新增 <code>gameId</code></strong>：官方武器圖示 <code>Icon_weapon_&lt;gameId&gt;</code> 的編號（例 <code>'20300501'</code>、<code>'10700301A'</code>），
+      圖庫 <code>public/images/game/icons/weapon/</code> 以它對檔。173 筆已回填（167 筆由 icon 檔名解析、6 筆逐張確認後指定）。<br>
+    · ⚠ <strong>外觀編號，不是武器身分</strong>：EX／·改／·LW 與同一機師的二階專武共用本體的號碼（凱旋系 4 把共用 10200301），不能當主鍵。
+      編號前綴（102＝打樁機）只是線索：碎狼牙（電鋸）50100602、罪棘律典（電磁炮）10600402 是官方檔名本身交叉，圖是對的。<br>
+    · <strong>新增 <code>sideGameIds</code></strong>：固定武裝左右肩的鏡像圖（官方慣例左＝…01、右＝…02）；掛載點有 side 時優先使用。<br>
+    · <strong><code>icon</code> 改為自訂圖</strong>：只在沒有 gameId 時才會顯示（gameId 優先）。過渡期仍存著官方圖的舊路徑，C-5 清除。<br>
+    · 讀取端一律走 <code>weaponIconCandidates(weapon, side?)</code>（<code>src/utils/gameIcons.ts</code>），不要自己拼路徑。
+  </div>
 
   <div class="changed-block">
     <strong>PLAN-003 武器資料模型優化</strong>（2026-05-18 實施）<br><br>
@@ -242,6 +253,9 @@
       <tr><td>id</td><td>string</td><td>唯一識別碼</td></tr>
       <tr><td>name</td><td>string</td><td>武器名稱（如 "昏星繼光"）</td></tr>
       <tr><td>description</td><td>string</td><td>武器背景故事文字（遊戲內裝備說明）<br><small style="color:var(--text-dim)">API: describe；腳本自動轉繁體後寫入；可為空字串</small></td></tr>
+      <tr><td>gameId</td><td>string?</td><td>官方圖示編號（PLAN-056）：<code>Icon_weapon_&lt;gameId&gt;</code>，例 <code>'20300501'</code><br><small style="color:var(--text-dim)">外觀編號，EX／改 共用，不是武器身分；圖庫 public/images/game/icons/weapon/。後台以選圖器挑選</small></td></tr>
+      <tr><td>sideGameIds</td><td>{ left?: string; right?: string }?</td><td>固定武裝左右肩的鏡像圖（PLAN-056）<br><small style="color:var(--text-dim)">官方慣例左＝…01、右＝…02；只有 isFixedArmament 的肩部武裝需要</small></td></tr>
+      <tr><td>icon</td><td>string?</td><td>自訂圖路徑（站長編輯的非官方圖，放 public/images/weapons/，檔名不以 Icon_ 開頭）<br><small style="color:var(--text-dim)">只在沒有 gameId 時顯示；PLAN-056 C-5 之前還存著官方圖的舊路徑</small></td></tr>
       <tr class="group-header"><td colspan="3">▎分類</td></tr>
       <tr><td>type</td><td>WeaponType (Enum)</td><td>武器類型（大分類）：射擊 / 格鬥 / 突擊 / 戰術 / <strong>特殊</strong><br><small style="color:var(--text-dim)">原欄位名 category；「特殊」為 PLAN-040 新增，僅固定武裝使用，<strong>不進元件的 allowedWeaponTypes</strong></small></td></tr>
       <tr><td>kind</td><td>WeaponKind (Enum)</td><td>武器種類（細分類）：機槍 / 狙擊步槍 / 刀劍…（共 19 種，見下方種類表）<br><small style="color:var(--text-dim)">原欄位名 type；PLAN-040 新增「粒子莢艙」（戰術）與「固定武裝」（特殊）</small></td></tr>
