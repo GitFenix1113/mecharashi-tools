@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-05
+## [Unreleased] - 2026-10-09
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **refs**: 機甲／機師引用浮窗改列模組與天賦＋修正換頁後預覽卡住 (`2c7e462`)
 - **icons**: PLAN-055 A／B — 技能類圖示改由官方圖庫提供＋後台選圖器改版 (`6bf5d9f`)
 - **images**: PLAN-054 Phase C — 讀取端改用官方原檔、官配互連、後台遊戲 ID 欄位 (`8bb3694`)
 - **lore**: PLAN-042-C 故事館氛圍層 — 官網 hero 圖層、線稿顯影修正、名字字體與 BGM（27／28） (`9032d39`)
