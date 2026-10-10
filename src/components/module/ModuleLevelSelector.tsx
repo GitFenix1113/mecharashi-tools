@@ -15,11 +15,17 @@ export function ModuleLevelSelector({
   maxLevel,
   onChange,
   className = '',
+  fill = false,
 }: {
   level: number
   maxLevel: number
   onChange: (level: number) => void
   className?: string
+  /**
+   * 觸控版的分段按鈕平均撐滿整列、不換行（機甲詳情頁，2026-10-10）。
+   * 不撐滿時 8 級模組在手機上會折成兩行（第 8 顆單獨掉下去），一張卡平白多出 50px。
+   */
+  fill?: boolean
 }) {
   const isMobile = useIsMobile()
 
@@ -30,12 +36,12 @@ export function ModuleLevelSelector({
 
   if (isMobile) {
     return (
-      <div className={`flex flex-wrap gap-1 ${className}`} onClick={stop}>
+      <div className={`flex ${fill ? 'flex-nowrap' : 'flex-wrap'} gap-1 ${className}`} onClick={stop}>
         {levels.map((lv) => (
           <button
             key={lv}
             onClick={(e) => { stop(e); onChange(lv) }}
-            className={`px-2 py-0.5 rounded border text-[13px] font-medium transition-colors cursor-pointer ${
+            className={`${fill ? 'flex-1 min-w-0 px-0' : 'px-2'} py-0.5 rounded border text-[13px] font-medium transition-colors cursor-pointer ${
               lv === level
                 ? 'bg-accent-orange/15 text-accent-orange border-accent-orange/40'
                 : 'bg-bg-dark text-text-dim border-border hover:text-text-secondary'

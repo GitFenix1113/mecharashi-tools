@@ -29,7 +29,8 @@ function formatBoundParts(boundPart?: string[] | string | null): string | null {
 /**
  * 綁定部位顯示。
  * variant='inline' → 圖鑑用的括號附註，接在採用機甲後面
- * variant='row'    → 機甲詳情頁用的「綁定部位：xxx」獨立一行
+ * variant='row'    → 「綁定部位：xxx」獨立一行
+ * variant='tag'    → 機甲詳情頁模組卡標題列裡的「綁定 xxx」（2026-10-10，省掉獨立的一行）
  */
 export function ModuleBoundPart({
   boundPart,
@@ -37,7 +38,7 @@ export function ModuleBoundPart({
   className = '',
 }: {
   boundPart?: string[] | string | null
-  variant?: 'inline' | 'row'
+  variant?: 'inline' | 'row' | 'tag'
   className?: string
 }) {
   const text = formatBoundParts(boundPart)
@@ -45,6 +46,14 @@ export function ModuleBoundPart({
 
   if (variant === 'inline') {
     return <span className={`ml-2 text-accent-purple ${className}`}>({text})</span>
+  }
+
+  if (variant === 'tag') {
+    return (
+      <span className={`text-[12px] text-text-dim whitespace-nowrap ${className}`}>
+        綁定 <span className="text-accent-purple font-medium">{text}</span>
+      </span>
+    )
   }
 
   return (
