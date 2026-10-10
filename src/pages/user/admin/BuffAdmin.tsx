@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { GameBuff, SkillEffect, BuffLevel } from '../../../types'
+import type { GameBuff, SkillEffect, BuffLevel, BuffIconTone } from '../../../types'
 import { BuffType } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, GRID_AUTO_FIELDS, useCascadeDelete, ConfirmDeleteDialog, DeleteButton, DraftRestoreBar } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updateBuff, docExists } from '../../../lib/firestoreApi'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
-import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
+import { GameIconField } from '../../../components/admin/GameIconPicker'
+import { BuffGlyph } from '../../../components/icons/BuffGlyph'
+import { BUFF_TONE_LABEL, buffIconTone } from '../../../utils/buffGlyph'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { SkillEffectItem } from './PilotAdmin'
 import { checkBuffLevelName } from '../../../utils/ndOverrides'
@@ -169,6 +171,14 @@ function BuffLevelItem({
               />
             </Field>
           </div>
+          {/* PLAN-055 D-4：該級專屬字形（少見；不填就沿用 BUFF 本身的，底色一律跟 BUFF 本身） */}
+          <GameIconField
+            label="該級字形（選填；不填沿用 BUFF 本身）"
+            value={levelData.icon}
+            onChange={(k) => upd('icon', k || undefined)}
+            library="buff"
+            placeholder="Icon_buff_4012"
+          />
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[12px] text-text-dim font-medium uppercase tracking-wider">該級效果 effects</span>
@@ -357,14 +367,38 @@ function BuffEditPanel({
           </div>
         )}
 
-        {/* PLAN-055：BUFF 圖示是官方的白色字形（前台上色）；各級欄位 BuffLevel.icon 於 D-4 補上 */}
-        <GameIconField
-          label="圖示（BUFF 字形，選填）"
-          value={form.icon}
-          onChange={(k) => update('icon', k || undefined)}
-          library="buff"
-          placeholder="Icon_buff_4012"
-        />
+        {/* PLAN-055 D-4：BUFF 圖示＝官方白色字形＋色塊底（藍增益／紅減益／紫特殊），照遊戲畫法 */}
+        <div className="rounded-lg border border-border/60 bg-bg-dark/40 p-3 space-y-2">
+          <div className="flex items-end gap-3 flex-wrap">
+            <div className="flex-1 min-w-[240px]">
+              <GameIconField
+                label="圖示（BUFF 字形，選填）"
+                value={form.icon}
+                onChange={(k) => update('icon', k || undefined)}
+                library="buff"
+                placeholder="Icon_buff_4012"
+              />
+            </div>
+            <Field label="底色">
+              <select
+                value={form.iconTone ?? ''}
+                onChange={(e) => update('iconTone', (e.target.value || undefined) as BuffIconTone | undefined)}
+                className="input-field"
+              >
+                <option value="">依類型（{BUFF_TONE_LABEL[buffIconTone({ buffType: form.buffType })]}）</option>
+                {(Object.keys(BUFF_TONE_LABEL) as BuffIconTone[]).map((k) => <option key={k} value={k}>覆寫：{BUFF_TONE_LABEL[k]}</option>)}
+              </select>
+            </Field>
+            <div className="flex flex-col items-center gap-1 pb-0.5">
+              <span className="text-[11px] text-text-dim">前台樣子</span>
+              <BuffGlyph buff={form} size="lg" />
+            </div>
+          </div>
+          <p className="text-[11px] text-text-dim leading-relaxed">
+            照遊戲裡那顆 BUFF 的樣子選：減益多半有自己的斜線版字形（<code>debuff_*</code>），不是同一張換紅色。
+            底色只有和遊戲不同時才覆寫（例：天賦專屬的增益在遊戲裡是紫色）——<b>不要為了顏色改上面的類型</b>，類型還決定神經驅動覆寫的敵我判斷。
+          </p>
+        </div>
 
         <TermRefField
           value={form.termRef}
@@ -454,12 +488,15 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
   const {
     items: filtered, loading, error, hasMore, search, setSearch,
     submitSearch, loadMore, upsert,
-  } = useClientPaged<GameBuff, Record<string, never>>({
+    filters, setFilter,
+  } = useClientPaged<GameBuff, { noIcon: boolean }>({
     source: gd.buffs,
     initialSearch,
-    initialFilters: {},
-    matchFilters: () => true,
+    initialFilters: { noIcon: false },
+    // PLAN-055 D-4：BUFF 圖示由維護者慢慢補——「只看沒圖示」就是待辦清單
+    matchFilters: (b, f) => !f.noIcon || !b.icon,
   })
+  const missingIcons = useMemo(() => gd.buffs.filter((b) => !b.icon).length, [gd.buffs])
 
   // 新建對話框先選分類，分類寫入 buffType 欄位、不進 ID（決策二：前綴統一 buff_）
   const [newBuffType, setNewBuffType] = useState<string>(BuffType.STATE)
@@ -514,6 +551,10 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
         >
           搜尋
         </button>
+        <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-secondary text-sm cursor-pointer select-none">
+          <input type="checkbox" checked={filters.noIcon} onChange={(e) => setFilter('noIcon', e.target.checked)} />
+          只看沒圖示（{missingIcons}）
+        </label>
       </div>
 
       {/* 計數 + 新增 */}
@@ -569,7 +610,7 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
             className="bg-bg-dark border border-accent-orange/20 rounded-lg px-3 py-2.5 flex items-center gap-3 hover:border-border-accent transition-colors cursor-pointer"
             onClick={() => setEditing(buff)}
           >
-            <IconThumb icon={buff.icon} className="w-8 h-8 rounded shrink-0 p-1 bg-bg-card" />
+            <span className="w-8 h-8 inline-flex items-center justify-center shrink-0"><BuffGlyph buff={buff} size="md" /></span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-sm text-text-primary truncate">

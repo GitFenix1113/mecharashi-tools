@@ -168,7 +168,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">15</div>
+      <div class="summary-num" style="color:var(--accent-green)">19</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -176,7 +176,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">8</div>
+      <div class="summary-num" style="color:var(--text-dim)">4</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -188,10 +188,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">15 / 23</span>
+      <span style="color:var(--accent-purple);">19 / 23</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 65%"></div>
+      <div class="progress-bar-fill" style="width: 83%"></div>
     </div>
   </div>
 
@@ -208,7 +208,9 @@
     <strong style="color:var(--accent-yellow);">2026-10-11：</strong>陸版第二次擷取（<code>一般圖片_ad7033d5…</code>）的新圖示 40 張已入庫（技能類 17、BUFF 字形 21、武器 2；commit <code>b3fbdd24</code>），
     趁舊資料夾還在時匯入，別名 172／legacy 82 與先前一致。之後的新擷取一律先跑 <code>scripts/diff-game-dump.mjs</code>，報告會列出該跑的匯入指令（E-3 併入這條流程）。
     站長決定先做完本計畫，再優化比對腳本。⚠ E-1 多了一條前置條件，見 E-1。<br>
-    <strong style="color:var(--accent-yellow);">C 階段完成（2026-10-11）：</strong>正式站 DB 只存官方檔名 key（1,856 份文件），型別與後台不再有 <code>iconLocal</code>、神經驅動不再存圖示副本；e2e 292 頁舊資料夾請求 0。接下來 D（BUFF 字形）與 E（舊資料夾退場）。
+    <strong style="color:var(--accent-yellow);">C 階段完成（2026-10-11）：</strong>正式站 DB 只存官方檔名 key（1,856 份文件），型別與後台不再有 <code>iconLocal</code>、神經驅動不再存圖示副本；e2e 292 頁舊資料夾請求 0。接下來 D（BUFF 字形）與 E（舊資料夾退場）。<br>
+    <strong style="color:var(--accent-yellow);">D 階段完成（2026-10-11，縮小範圍）：</strong>BUFF 第一次有圖示（色塊底＋白色字形，照遊戲畫法）；先寫入 35 筆通用／確認過的，
+    其餘約 198 筆由維護者在後台 BuffAdmin 慢慢補（站長：錦上添花、非核心）。剩 E。
   </div>
 </section>
 
@@ -665,7 +667,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; BuffGlyph 元件</div>
       <div class="task-group-meta">src/components/icons/BuffGlyph.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -673,11 +675,19 @@
         <div class="task-desc">
           statBoost → 增益、debuff → 減益、state → 狀態、resource → 資源，四色定義在 <code>index.css</code> 的 <code>@theme</code>（Tailwind v4 CSS-first）。
           找不到字形時退回一顆中性小點，不顯示破圖。層數一律用 CSS 文字，不用官方的 5000～5009。
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11，<b>依站長提供的戰鬥截圖改了設計</b>：
+          ① 遊戲是「<b>色塊底＋細米白框＋白色字形</b>」，不是把字形上色——字形本來就是白色透明底，直接疊 &lt;img&gt;，不用 mask。
+          ② 顏色是<b>三色</b>不是四色：藍＝增益 <code>#36589a</code>、紅＝減益 <code>#8d2923</code>、紫＝特殊（狀態／資源／天賦專屬）<code>#6d48a1</code>，取自截圖實測，定義在 <code>index.css</code> 的 <code>--color-buff-*</code>，不隨主題換色。
+          ③ 減益用<b>另一張</b>字形（多半帶斜線，例 <code>debuff_remove</code>），不是同一張換紅色。
+          ④ 層數（左上）與剩餘回合（右下）是戰鬥中的即時狀態，網站顯示的是定義，<b>不畫</b>。
+          底色預設由 <code>buffType</code> 推（<code>utils/buffGlyph.ts</code>，4 個測試），遊戲實際顏色不同時用新欄位 <code>GameBuff.iconTone</code> 單筆覆寫——
+          <b>不改 buffType</b>，因為它還決定神經驅動覆寫的敵我判斷（<code>isSelfBuff</code>）。docs 同步資料模型與資料庫設計的 skills_buffs。
+          元件尚未接到任何頁面（D-4 才接）。</p>
         </div>
         <div class="task-file">src/components/icons/BuffGlyph.tsx · src/index.css</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -685,7 +695,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; 對照建議與審核表</div>
       <div class="task-group-meta">scripts/temp_scripts/suggest-buff-icons.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -693,11 +703,19 @@
         <div class="task-desc">
           依 <code>buffType</code> 與描述關鍵字對到通用字形，例如命中→<code>buff_hit</code>、暴擊→<code>buff_critical</code>、迴避→<code>buff_avoid</code>、移動→<code>buff_move</code>、修理→<code>buff_recover</code>、無法移動→<code>debuff_nomove</code>。
           角色或機制專屬狀態（state 18 筆，以及有名字的狀態）列為「需人工指定 4xxx」。每筆都附信心等級，拿不準的預設留空。
+          <p style="margin-top:6px;color:var(--accent-cyan);">⏩ 2026-10-11 審核表已產出，<b>等站長審核</b>：<code>_local-notes/2026-10/2026-10-11_PLAN-055_D-2_BUFF圖示對照審核.html</code>。
+          233 筆＝高信心 19、中信心 14、需指定 200。截圖顯示<b>有名字的 BUFF 多半用專屬字形</b>（模型-憐愛＝傷害＋命中提升，用的是 1004 不是通用上箭頭），
+          所以只有「名稱就是通用效果」的才給主要建議，其餘預設留空、只列候選。可選字形 138 張（層數數字 5000～5009 不列）。
+          內建「貼截圖找字形」：先在截圖裡找色塊再比字形形狀（灰階＋cosine），實測 7 張有 6 張正解在前 3 名；被層數蓋住一角的那張失手，所以建議截說明框裡的大圖示。
+          結果存瀏覽器 localStorage（<code>plan055-d2:&lt;buffId&gt;</code>），另可匯出 JSON。</p>
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11 <b>縮小範圍收尾（站長決定）</b>：BUFF 太多、屬錦上添花，不做全量審核。
+          站長確認高／中信心 33 筆基本正確，另手動指定 2 筆（仇楔→4006、失穩→4001），匯出 <code>PLAN-055_D-2_BUFF圖示決定.json</code>。
+          <b>其餘約 198 筆留空，改由維護者在後台 BuffAdmin 慢慢補</b>（D-4 做了「只看沒圖示」篩選當待辦清單）。審核表仍可重開使用。</p>
         </div>
         <div class="task-file">_local-notes/2026-10/…_PLAN-055_D-2_BUFF圖示對照審核.html</div>
       </div>
       <div class="task-assignee">開發者＋站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -705,18 +723,21 @@
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; 寫入＋bump buffs</div>
       <div class="task-group-meta">data-patch</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">依確認後的審核表寫入 buffs.icon（必要時寫 levels[].icon）</div>
         <div class="task-desc">
           流程：備份 → dry-run → <code>--apply</code> → bump buffs。buffs 是字典集合，照 data-patch skill 的字典集合流程走。
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11：寫入正式站 <b>35 筆 buffs.icon</b>（原本 0 筆有圖示，純新增、0 衝突），bump buffs；重跑＝0 筆（冪等）。
+          只寫 icon／iconTone 兩欄，不碰 levels 與名稱。還原檔 <code>_local-notes/2026-10/2026-10-11_PLAN-055_D-3_還原檔.json</code>。
+          備份沿用同日 <code>2026-10-10_db-backup-2047</code>（之後 buffs 沒有其他變動）。</p>
         </div>
         <div class="task-file">scripts/temp_scripts/apply-buff-icons.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -724,7 +745,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-4 &nbsp; 顯示點與 BuffAdmin</div>
       <div class="task-group-meta">EntityRefView · BuffAdmin</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -733,11 +754,16 @@
           <code>EntityRefView.tsx:145</code> 原本預留的 <code>imageCandidates(icon, term?.icon)</code> 改用 <code>BuffGlyph</code>。
           BuffAdmin 列表縮圖改用 <code>BuffGlyph</code>，並補上 <code>BuffLevel.icon</code> 的 <code>GameIconField</code>。
           這是使用者看得到的改動，要寫網站更新履歷。
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11：引用浮窗的 BUFF 卡改畫 <code>BuffGlyph</code>（新增 xl 尺寸，56px 與其他實體圖示對齊）；沒有字形時退回詞條圖，都沒有就不畫、不留空框。
+          實測（本機 vite 吃正式資料）：瑪阿特技能裡的 [仇楔] 浮窗＝紅底、米白框、白色 4006。
+          BuffAdmin：列表縮圖改 <code>BuffGlyph</code>；編輯面板＝字形選圖器＋<b>底色覆寫下拉</b>（預設「依類型」）＋前台樣子預覽＋說明；
+          各級加「該級字形」欄位；搜尋列加「<b>只看沒圖示（N）</b>」篩選當補圖待辦清單。後台要登入，畫面未經實機截圖驗證（型別檢查通過）。
+          網站更新履歷已寫（feat）。</p>
         </div>
         <div class="task-file">src/components/refs/EntityRefView.tsx · src/pages/user/admin/BuffAdmin.tsx · src/data/siteChangelog/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

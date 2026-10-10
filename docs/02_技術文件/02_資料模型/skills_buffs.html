@@ -130,7 +130,8 @@
       <tr><td>id</td><td>string</td><td>✅ v1.0</td><td>唯一識別碼（如 "buff_過熱狀態"）</td></tr>
       <tr><td>name</td><td>string</td><td>✅ v1.0</td><td>Buff 名稱（如 "過熱狀態"）</td></tr>
       <tr><td>description</td><td>string</td><td>✅ v1.0</td><td>Buff 效果描述文字</td></tr>
-      <tr><td>icon</td><td>string?</td><td>✅ v1.0</td><td>圖示路徑（可留空）</td></tr>
+      <tr><td>icon</td><td>string?</td><td>✅ v1.0</td><td>官方 BUFF 字形 key（<code>Icon_buff_*</code>／<code>Icon_debuff_*</code>，白色單色；圖庫 <code>public/images/game/icons/buff/</code>）。前台以 <code>BuffGlyph</code> 畫成「色塊底＋白色字形」，與遊戲一致</td></tr>
+      <tr><td>iconTone</td><td>'buff' | 'debuff' | 'special'?</td><td>✅ PLAN-055</td><td>BUFF 圖示底色（PLAN-055 D）：<code>buff</code> 藍＝增益、<code>debuff</code> 紅＝減益、<code>special</code> 紫＝特殊（狀態／資源／天賦專屬）。<b>選填</b>：不填由 buffType 推（statBoost→藍、debuff／control→紅、state／resource→紫），只有遊戲實際顏色不同時才填<br><small style="color:var(--text-dim)">不要為了配顏色去改 buffType——它還決定神經驅動覆寫的敵我判斷（<code>isSelfBuff</code>）</small></td></tr>
       <tr><td>buffType</td><td>BuffType (Enum)</td><td>✅ PLAN-001</td><td>Buff 類型：statBoost / resource / state / debuff / control</td></tr>
       <tr><td>maxStack</td><td>number?</td><td>✅ PLAN-001</td><td>最大疊加層數；resource 類型用，省略表示不可疊加</td></tr>
       <tr><td>duration</td><td>number?</td><td>✅ PLAN-001</td><td>持續回合數；null = 持續到消耗 / 手動關閉</td></tr>
@@ -156,7 +157,7 @@
       <tr><td>duration</td><td>number?</td><td>該級持續回合數</td></tr>
       <tr><td>maxTriggers</td><td>number?</td><td>該級生效次數（效果可觸發 N 次後耗盡）</td></tr>
       <tr><td>effects</td><td>SkillEffect[]?</td><td>該級的數值效果（數值型各級的數值差異在此；結構型通常不填）</td></tr>
-      <tr><td>icon</td><td>string?</td><td>該級專屬圖示（選填；不填沿用 buff.icon）</td></tr>
+      <tr><td>icon</td><td>string?</td><td>該級專屬字形 key（選填；不填沿用 buff.icon；底色一律跟 buff 本身）</td></tr>
     </table>
   </div>
 

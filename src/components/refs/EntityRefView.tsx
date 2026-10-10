@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { EntityRef, RefType, DescriptionRefs, PilotTalent } from '../../types'
+import type { EntityRef, RefType, DescriptionRefs, PilotTalent, GameBuff, BuffLevel } from '../../types'
 import { useGameData, type CollectionKey } from '../../contexts/GameDataContext'
 import { useReference } from '../../contexts/ReferenceContext'
 import { STAT_LABELS } from '../../utils/moduleStats'
@@ -9,6 +9,8 @@ import { backpackIconCandidates, gameIconCandidates, weaponIconCandidates } from
 import { pickLevel } from '../../utils/ndOverrides'
 import { mechModuleSet, type MechModuleSet } from '../../utils/mechModules'
 import { FallbackImage } from '../common/FallbackImage'
+import { BuffGlyph } from '../icons/BuffGlyph'
+import { buffGlyphKey } from '../../utils/buffGlyph'
 import { RefText } from './RefText'
 import { RefScopeContext } from './RefChip'
 import { RefMechModules } from './RefMechModules'
@@ -54,6 +56,8 @@ interface Resolved {
   subtitle?: string
   /** 有序候選圖片路徑，載入失敗逐層退回（見 utils/assets 的 imageCandidates） */
   images?: string[]
+  /** BUFF 專用：照遊戲畫法的色塊＋白色字形（PLAN-055 D-4），有它就不畫 images */
+  buffGlyph?: { buff: GameBuff; level?: BuffLevel }
   description?: string
   descriptionRefs?: DescriptionRefs
   /** 機甲專用：浮窗本文改列自帶模組（滿級），取代機體描述 */
@@ -153,11 +157,13 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
         maxTriggers != null ? `生效 ${maxTriggers} 次` : '',
         term ? `源自詞條：${term.name}` : '',
       ].filter(Boolean).join(' · ')
-      const icon = lv?.icon || b.icon
+      // PLAN-055 D-4：有字形就畫成遊戲那樣的色塊；沒有字形才退回詞條的圖（都沒有就不畫，不留空框）
+      const hasGlyph = !!buffGlyphKey(b, lv)
       return {
         title: b.name,
         subtitle,
-        images: gameIconCandidates(icon, term?.icon),
+        buffGlyph: hasGlyph ? { buff: b, level: lv } : undefined,
+        images: hasGlyph ? undefined : gameIconCandidates(term?.icon),
         description,
         descriptionRefs,
       }
@@ -292,6 +298,7 @@ export function EntityRefView({ entityRef, interactive, showClose = false }: { e
         {resolved && (
           <div className="space-y-3">
             <div className="flex items-start gap-3">
+              {resolved.buffGlyph && <BuffGlyph buff={resolved.buffGlyph.buff} level={resolved.buffGlyph.level} size="xl" />}
               {!!resolved.images?.length && (
                 <FallbackImage
                   candidates={resolved.images}

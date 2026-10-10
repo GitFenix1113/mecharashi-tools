@@ -94,6 +94,9 @@ export interface BuffLevel {
   icon?:        string
 }
 
+/** BUFF 圖示底色：藍＝增益、紅＝減益、紫＝特殊（PLAN-055 D；對照遊戲 BUFF 列的三種色塊） */
+export type BuffIconTone = 'buff' | 'debuff' | 'special'
+
 /** buffs Collection 文件 */
 export interface GameBuff {
   id:          string
@@ -101,7 +104,14 @@ export interface GameBuff {
   description: string
   /** 描述內 [xxx] 引用側錄（PLAN-019 Layer 1）；buff 也可引用其他 buff */
   descriptionRefs?: DescriptionRefs
+  /** 官方 BUFF 字形 key（Icon_buff_*／Icon_debuff_*，白色單色；PLAN-055 D，圖庫 game/icons/buff/） */
   icon?:       string
+  /**
+   * 圖示底色（PLAN-055 D）。遊戲裡 BUFF 是「色塊底＋白色字形」：藍＝增益、紅＝減益、紫＝特殊（狀態／資源／天賦專屬）。
+   * **選填**：不填就由 buffType 推（utils/buffGlyph.ts 的 buffIconTone）；只有遊戲實際顏色和推出來的不同時才填。
+   * ⚠ 不要為了配顏色去改 buffType——它還決定神經驅動覆寫的敵我判斷（utils/ndOverrides.ts 的 isSelfBuff）。
+   */
+  iconTone?:   BuffIconTone
   buffType:    string
   maxStack?:   number
   duration?:   number
