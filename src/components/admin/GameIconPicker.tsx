@@ -569,7 +569,7 @@ export function GameIconField({
  * 文字框直接打編號；按「選取圖示」開武器／背包分頁（預選同種類前綴、主序列）。
  */
 export function EquipGameIdField({
-  label, family, gameId, onChange, presetCategories, hint,
+  label, family, gameId, onChange, presetCategories, hint, placeholder,
 }: {
   label: string
   family: EquipIconFamily
@@ -578,6 +578,8 @@ export function EquipGameIdField({
   onChange: (gameId: string) => void
   presetCategories?: string[]
   hint?: string
+  /** 輸入框的範例文字。⚠ 要寫成「例：…」——光寫一個編號，空欄位看起來就像已經填了值 */
+  placeholder?: string
 }) {
   const [picking, setPicking] = useState(false)
   const id = gameId ?? ''
@@ -603,7 +605,7 @@ export function EquipGameIdField({
           type="text"
           value={id}
           onChange={(e) => onChange(e.target.value.trim())}
-          placeholder={family === 'weapon' ? '20300501' : '60100101'}
+          placeholder={placeholder ?? (family === 'weapon' ? '例：20300501' : '例：60100101')}
           className="input-field flex-1 text-sm font-mono"
         />
         <button

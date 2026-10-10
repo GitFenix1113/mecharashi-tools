@@ -3,6 +3,9 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-10', type: 'fix', summary: '後台武器編輯：「左肩圖／右肩圖」欄位改成只在<b>機甲雙肩的固定武裝</b>出現，'
+      + '耀星、千星這類形態武裝不再出現這兩格；空欄位的範例文字改成「例：…」，不會再被誤看成已填的值。' },
+
     { date: '2026-10-09', type: 'perf', summary: '<b>武器與背包圖示</b>改用遊戲官方原圖的 WebP 版本，同樣的圖、檔案小約八成——'
       + '背包圖鑑、配裝模擬器挑選清單一次列出幾十件時載入明顯變快。' },
 

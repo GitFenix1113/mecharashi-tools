@@ -445,7 +445,9 @@ function WeaponEditPanel({
               onChange={(v) => update('gameId', v || undefined)}
               presetCategories={[weaponIconCategoryOf(form.kind)].filter((c): c is string => !!c)}
             />
-            {form.isFixedArmament && (
+            {/* 左右肩鏡像圖只給「機甲焊死在雙肩」的固定武裝（衝擊炮、嵐質儲能艙、多功能彈倉）。
+                形態武裝（耀星、隕星、千星…）也標了 isFixedArmament，但裝在手上或背上、沒有左右鏡像，不顯示 */}
+            {form.isFixedArmament && form.equipSlot === WeaponEquipSlot.SHOULDER && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {(['left', 'right'] as const).map((side) => (
                   <EquipGameIdField
@@ -453,7 +455,10 @@ function WeaponEditPanel({
                     label={side === 'left' ? '左肩圖 sideGameIds.left' : '右肩圖 sideGameIds.right'}
                     family="weapon"
                     gameId={form.sideGameIds?.[side]}
-                    hint={side === 'left' ? '固定武裝的鏡像圖；官方慣例左肩＝…01' : '固定武裝的鏡像圖；官方慣例右肩＝…02'}
+                    placeholder={side === 'left' ? '例：90300101（…01）' : '例：90300102（…02）'}
+                    hint={side === 'left'
+                      ? '機甲雙肩焊死的武裝，左肩顯示的鏡像圖（官方慣例 …01）。留空＝兩肩都用上方 gameId'
+                      : '機甲雙肩焊死的武裝，右肩顯示的鏡像圖（官方慣例 …02）。留空＝兩肩都用上方 gameId'}
                     onChange={(v) => {
                       const next = { ...form.sideGameIds, [side]: v || undefined }
                       update('sideGameIds', next.left || next.right ? next : undefined)
