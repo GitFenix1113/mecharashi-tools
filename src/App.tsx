@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { GameDataProvider } from './contexts/GameDataContext'
 import { ReferenceProvider } from './contexts/ReferenceContext'
 import Layout from './components/layout/Layout'
+import { ScrollManager } from './components/layout/ScrollManager'
 import AdminRoute from './components/auth/AdminRoute'
 import HomePage from './pages/home/HomePage'
 import PilotsPage from './pages/pilots/PilotsPage'
@@ -54,6 +55,8 @@ function App() {
     <AuthProvider>
       <GameDataProvider>
       <BrowserRouter basename={import.meta.env.BASE_URL}>
+        {/* 換頁捲動：進新頁回到頂端、上一頁回到原位（元件式路由用不了 <ScrollRestoration>，見元件檔頭） */}
+        <ScrollManager />
         <ReferenceProvider>
         <Routes>
           <Route path="/" element={<Layout />}>

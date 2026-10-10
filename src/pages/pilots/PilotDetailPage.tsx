@@ -1,6 +1,7 @@
 ﻿import { useState, useRef, useLayoutEffect, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
+import { BackToListLink } from '../../components/layout/BackToListLink'
 import { BottomSheet } from '../../components/common/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import type { NeuralDrive, Weapon, PilotTalent, TalentNdVariant, DescriptionRefs } from '../../types'
@@ -959,13 +960,13 @@ export default function PilotDetailPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 bg-bg-dark/10 backdrop-blur-sm rounded-2xl">
-      {/* Back */}
-      <Link
+      {/* Back：上一頁就是圖鑑時回到原本捲到的位置（BackToListLink）；捲到一半要返回則用常駐分頁列的「← 機師」 */}
+      <BackToListLink
         to="/pilots"
         className="inline-flex items-center gap-1 text-sm text-text-dim hover:text-text-primary no-underline mb-6 transition-colors"
       >
         ← 機師圖鑑
-      </Link>
+      </BackToListLink>
 
       {/* Hero Row: 3-col grid */}
       <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[160px_1fr_auto] lg:gap-12 mb-4 lg:items-start">

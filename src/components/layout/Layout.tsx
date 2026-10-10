@@ -433,7 +433,10 @@ export default function Layout() {
         )}
 
         {/* 群組內的常駐分頁列：人已經在這一群裡，換頁不必再 hover 展開條 */}
-        {!immersive && subNavItems && <SubNavTabs items={subNavItems} />}
+        {/* 詳情頁的返回鍵（← 機甲）只在圖鑑與攻略群開；版本情報的子路徑不是「清單 → 詳情」，見 SubNavTabs */}
+        {!immersive && subNavItems && (
+          <SubNavTabs items={subNavItems} backOnDetail={subNavItems !== versionNavItems} />
+        )}
 
         {/* 群組展開條：absolute 掛在 header 下緣（含分頁列），header 高度不變。
             ⚠ 館內必須整個不渲染，不能指望它「收到 null 會 return null」——它用 useState

@@ -1148,7 +1148,7 @@ export default function ModuleAdmin({
                   <span className="text-[13px] text-accent-green shrink-0">
                     {mod.dmg > 0 && `傷+${mod.dmg}%`}
                     {(mod.crit_rate ?? 0) > 0 && ` 暴+${mod.crit_rate}`}
-                    {mod.critDmg > 0 && ` 爆傷+${mod.critDmg}%`}
+                    {mod.critDmg > 0 && ` 暴傷+${mod.critDmg}%`}
                     {(mod.acc_rate ?? 0) > 0 && ` 命+${mod.acc_rate}`}
                     {(mod.firepower_rate ?? 0) > 0 && ` 火力+${mod.firepower_rate}%`}
                     {(mod.output_bonus ?? 0) > 0 && ` 出力+${mod.output_bonus}`}

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { BackToListLink } from '../../components/layout/BackToListLink'
 import {
   useWeapon, useWeapons, usePilotBriefMap, useBackpackNameMap, useWeaponSkillMap, useMechs, useForms,
 } from '../../hooks/useFirestore'
@@ -250,11 +251,11 @@ export default function WeaponDetailPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 bg-bg-dark/10 backdrop-blur-sm rounded-2xl space-y-6">
 
-      {/* Breadcrumb */}
+      {/* Breadcrumb：上一頁就是圖鑑時回到原本捲到的位置（BackToListLink） */}
       <div>
-        <Link to="/weapons" className="text-accent-cyan hover:underline text-sm">
+        <BackToListLink to="/weapons" className="text-accent-cyan hover:underline text-sm">
           ← 返回武器圖鑑
-        </Link>
+        </BackToListLink>
       </div>
 
       {/* ── B-1 Hero + B-5 Component Slots ──────────────────────────────────── */}

@@ -1,6 +1,9 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import NavIcon from '../icons/NavIcon'
 import type { ContentNavItem } from './NavExpandBar'
+import { BackToListLink } from './BackToListLink'
+
+const TAB_BASE = 'flex items-center gap-1.5 px-3 text-xs whitespace-nowrap no-underline border-b-2 -mb-px transition-colors'
 
 /**
  * 群組內的常駐分頁列：人已經在版本情報區（或圖鑑、攻略區）時，切換同群組的其他頁面
@@ -13,7 +16,19 @@ import type { ContentNavItem } from './NavExpandBar'
  * `.viewport-shell` 是 `100vh` 減掉固定外框算出來的，版本情報三個檢視都走那個外殼，
  * 這條列若沒被扣掉就會硬擠出一條文件捲軸。改高度時兩邊要一起改。
  */
-export default function SubNavTabs({ items }: { items: ContentNavItem[] }) {
+export default function SubNavTabs({ items, backOnDetail = false }: {
+  items: ContentNavItem[]
+  /**
+   * 人在某一格的**下一層**（`/mechs/xxx`）時，那一格變成「← 機甲」返回鍵（2026-10-11）。
+   * 這條列是 sticky 的，捲到詳情頁哪裡都按得到 —— 不必先捲回頂端找「← 機甲圖鑑」。
+   * 返回時若上一頁就是清單，會回到清單原本捲到的位置（BackToListLink）。
+   *
+   * ⚠ 版本情報群組不開：`/versions/timeline/3.6` 是同一個檢視選了某個版本，不是「清單 → 詳情」，
+   *   顯示「← 時間線」只會讓人以為按了會離開。
+   */
+  backOnDetail?: boolean
+}) {
+  const { pathname } = useLocation()
   return (
     <div className="h-9 shrink-0 border-b border-border bg-bg-dark/95">
       {/*
@@ -31,23 +46,36 @@ export default function SubNavTabs({ items }: { items: ContentNavItem[] }) {
                    overflow-x-auto overflow-y-hidden
                    [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {items.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              `flex items-center gap-1.5 px-3 text-xs whitespace-nowrap no-underline
-               border-b-2 -mb-px transition-colors ${
-                 isActive
-                   ? 'border-accent-orange text-text-primary'
-                   : 'border-transparent text-text-dim hover:text-text-primary'
-               }`
-            }
-          >
-            <NavIcon name={item.icon} className="w-3.5 h-3.5 shrink-0" />
-            {item.label}
-          </NavLink>
-        ))}
+        {items.map((item) =>
+          backOnDetail && pathname.startsWith(`${item.to}/`) ? (
+            <BackToListLink
+              key={item.to}
+              to={item.to}
+              aria-label={`返回${item.label}清單`}
+              title={`返回${item.label}清單`}
+              className={`${TAB_BASE} border-accent-orange text-text-primary hover:text-accent-orange`}
+            >
+              <span aria-hidden className="text-[13px] leading-none">←</span>
+              <NavIcon name={item.icon} className="w-3.5 h-3.5 shrink-0" />
+              {item.label}
+            </BackToListLink>
+          ) : (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `${TAB_BASE} ${
+                  isActive
+                    ? 'border-accent-orange text-text-primary'
+                    : 'border-transparent text-text-dim hover:text-text-primary'
+                }`
+              }
+            >
+              <NavIcon name={item.icon} className="w-3.5 h-3.5 shrink-0" />
+              {item.label}
+            </NavLink>
+          ),
+        )}
       </div>
     </div>
   )

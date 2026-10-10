@@ -37,7 +37,7 @@ const STAT_META: Record<StatKey, StatMeta> = {
   // ── 基礎屬性 ──
   dmg:                  { label: '傷害',     color: 'text-accent-orange', suffix: '%' },
   crit_rate:            { label: '暴擊',     color: 'text-accent-yellow', suffix: '%' },
-  critDmg:              { label: '爆傷',     color: 'text-accent-red',    suffix: '%' },
+  critDmg:              { label: '暴傷',     color: 'text-accent-red',    suffix: '%' },
   acc_rate:             { label: '命中',     color: 'text-accent-blue',   suffix: '%' },
   firepower_rate:       { label: '火力',     color: 'text-accent-green',  suffix: '%' },
   armor_rate:           { label: '護甲',     color: 'text-accent-cyan',   suffix: '%' },

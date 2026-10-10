@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { ensureHistoryKey } from './utils/historyKey'
 
 // 舊分頁的保險（2026-10-04，搭配 deploy.yml 的退役檔清理）：新版部署、舊 chunk 退役滿 30 天被清掉之後，
 // 開著舊分頁的人切到 lazy 頁面時動態 import 會 404 → 路由層沒有 error boundary，整頁會白掉。
@@ -18,6 +19,9 @@ window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault()   // 不讓 Vite 把錯誤往外拋 → React 不會先白掉一下
   window.location.reload()
 })
+
+// 換頁捲動的記錄以歷史項目的 key 為鍵；直接打開的第一頁沒有 key，要在路由建立前補上（見 ScrollManager）
+ensureHistoryKey()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

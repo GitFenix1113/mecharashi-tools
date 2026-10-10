@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { BackToListLink } from '../../components/layout/BackToListLink'
 import type { Mech, MechPart } from '../../types'
 import { mechPartCandidates, mechPortraitCandidates } from '../../utils/assets'
 import { FallbackImage } from '../../components/common/FallbackImage'
@@ -308,14 +309,15 @@ export default function MechDetailPage() {
               lg 以上兩組併回同一行 */}
           <div className="flex-1 min-w-0 flex flex-col gap-1.5 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-3">
             <div className="flex items-center gap-x-2.5 lg:gap-x-3 min-w-0">
-              <Link
+              {/* 上一頁就是圖鑑時回到原本捲到的位置（BackToListLink）；捲到一半要返回則用常駐分頁列的「← 機甲」 */}
+              <BackToListLink
                 to="/mechs"
                 aria-label="返回機甲圖鑑"
                 title="機甲圖鑑"
                 className="text-lg leading-none text-text-dim hover:text-text-primary no-underline transition-colors"
               >
                 ←
-              </Link>
+              </BackToListLink>
               <h1 className="text-xl sm:text-2xl xl:text-3xl font-black leading-tight truncate">{mech.name}</h1>
               <span className={`inline-block shrink-0 px-2 py-0.5 rounded text-xs font-bold border ${armorCls}`}>
                 {mech.armorType}
