@@ -5,15 +5,15 @@
   "shareIdMax": 2097151,
   "kinds": {
     "pilot": {
-      "maxAssigned": 89,
+      "maxAssigned": 91,
       "aliases": {}
     },
     "mech": {
-      "maxAssigned": 90,
+      "maxAssigned": 92,
       "aliases": {}
     },
     "weapon": {
-      "maxAssigned": 182,
+      "maxAssigned": 184,
       "aliases": {}
     },
     "component": {
@@ -925,7 +925,24 @@
         "skill_鳴鴉狩天": 1500849,
         "skill_鶴形": 1500850,
         "skill_鷹視": 1500851,
-        "skill_鼎新": 1500852
+        "skill_鼎新": 1500852,
+        "skill_傭兵節律": 1500853,
+        "skill_刻痕": 1500854,
+        "skill_勢若狂瀾": 1500855,
+        "skill_守隙": 1500856,
+        "skill_崩月": 1500857,
+        "skill_影落": 1500858,
+        "skill_戰術代償": 1500859,
+        "skill_振鋒鏈蝕": 1500860,
+        "skill_掠銘": 1500861,
+        "skill_浮沉": 1500862,
+        "skill_淬芒蕩輝": 1500863,
+        "skill_環鋸旋伐": 1500864,
+        "skill_礪勢迴鋒": 1500865,
+        "skill_迅藍疾襲": 1500866,
+        "skill_逐鴻": 1500867,
+        "skill_遊光": 1500868,
+        "skill_高空探測": 1500869
       }
     }
   }
