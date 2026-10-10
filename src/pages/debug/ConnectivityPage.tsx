@@ -21,7 +21,8 @@ interface Result {
   detail?: string
 }
 
-const IMG = '/images/backpacks/Icon_backpack_60100101.png'
+// PLAN-056 起武器／背包圖示改住官方圖庫（舊的 /images/backpacks/ 已退場）
+const IMG = '/images/game/icons/backpack/Icon_backpack_60100101.webp'
 const FONT = '/fonts/orbitron-latin.woff2'
 // 對照組：中國封鎖的 Google 網域。本站已不再依賴它，這裡只用來確認「封鎖確實存在」，
 // 好讓回報者的數據能佐證移除 Google Fonts 是對的。逾時 4 秒即放棄，不拖慢診斷。
