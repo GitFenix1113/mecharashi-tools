@@ -30,12 +30,17 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
 
 ## 匯入與重跑
 
+遊戲改版、跑完擷取工具之後，先跑 `node scripts/diff-game-dump.mjs`（最新 vs 前一次擷取的差異報告，附該跑的匯入指令）。
+新擷取用 `--src=latest`；不給 `--src` 時讀第一次擷取 `Data`（v3 整批只能用它）。
+
 ```bash
 node scripts/import-game-assets.mjs                                          # v3 整批（dry-run）
 node scripts/import-game-assets.mjs --apply                                  # 寫入
 node scripts/import-game-assets.mjs --id=<gameId> --art-key=<artKey> --apply # 新機師
 node scripts/import-game-assets.mjs --wap=<####> --apply                     # 新機甲
 node scripts/import-game-assets.mjs --equip-icons --apply                    # 武器／背包圖示（整夾；新擷取只補新的）
+node scripts/import-game-assets.mjs --src=latest --ui --apply                # 活動／招募／大廳等介面美術 → repo 外封存夾（不部署）
+node scripts/import-game-assets.mjs --promote=<ui/ 底下的路徑> --apply        # 封存夾挑好的 → 這裡的 ui/（上架＝公開，只挑台版已上線的）
 node scripts/generate-art-index.mjs                                          # 重產索引（build／predev 也會跑）
 node scripts/check-image-refs.mjs                                            # 掃描 DB 與程式碼裡的圖片路徑
 ```

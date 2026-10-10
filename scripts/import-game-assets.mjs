@@ -9,6 +9,25 @@
  *   node scripts/import-game-assets.mjs --wap=3062                              新機甲：立繪／部件 1~4／全身大圖
  *   node scripts/import-game-assets.mjs --icons                                 圖示圖庫（PLAN-055）：技能類＋BUFF 字形 → game/icons/
  *   node scripts/import-game-assets.mjs --equip-icons                           武器／背包圖示（PLAN-056）→ game/icons/{weapon,backpack}/
+ *   node scripts/import-game-assets.mjs --ui                                    介面美術（活動、招募、大廳…）→ 封存夾 game/ui/（repo 外）
+ *   node scripts/import-game-assets.mjs --promote=activity/uiactivity/ob6       封存夾裡挑好的介面美術 → public/images/game/ui/（上架、會公開）
+ *
+ * 新擷取先跑 `node scripts/diff-game-dump.mjs` 看這一版多了什麼，報告會列出該跑哪幾個模式。
+ *
+ * ── --ui（2026-10-11）───────────────────────────────────────────────────────
+ *   活動、招募、大廳、劇情背景、常駐玩法、造型的美術圖，照官方模組結構封存：
+ *     <archive>/game/ui/<用途>/<官方模組>/<子資料夾…>/<官方檔名>.webp
+ *   用途與「什麼算美術圖」的規則在 scripts/lib/gameUiModules.mjs（字典＋過濾）；系統介面零件與簡中文字圖不收。
+ *   **不進 git、不部署**（同 extended：陸版比台版快，進 repo 就等於公開還沒上線的活動）。之後要上站的，再挑出來放進 public/。
+ *   會一併產生 ui/README.md（每個模組是什麼、幾張）與 ui/_index.json（每張的官方路徑、尺寸、sha256、第一次出現在哪次擷取）。
+ *   改了字典的用途分類，重跑 --apply 會把既有檔搬到新的用途資料夾；字典不再收的檔只列出來、不刪。
+ *   WebP q82（同 core）。建議順序：先 --src=Data 再 --src=latest，兩次擷取的聯集都會留著（museum 原則）。
+ *
+ * ── --promote（2026-10-11）──────────────────────────────────────────────────
+ *   決定用途後，把封存夾裡挑好的圖「上架」：<archive>/game/ui/<路徑> → public/images/game/ui/<同一路徑>。
+ *   路徑相對封存夾的 ui/，可以是單一檔（.webp 可省略）或整個資料夾；多個用逗號隔開。
+ *   原樣複製（已經是 q82 WebP，不重壓）；已存在就跳過（--force 覆寫）。
+ *   ⚠ 上架＝部署後任何人都看得到：只挑台版已經上線的。之後 npm run dev／build 會把它們掃進後台圖片挑選器的 manifest。
  *
  * ── --icons（PLAN-055 A-2）────────────────────────────────────────────────
  *   來源取聯集：擷取的 uiicons/skilltype_abs（Texture2D）＋ bufftype_abs 的 Icon_buff_*／Icon_debuff_*（Sprite），
@@ -25,7 +44,9 @@
  *   中文佔位與猜錯的編號（20400502、10200402）不進圖庫，資料改指向正確的官方 gameId。
  *   --apply 時另寫檔名大小寫例外表（src/data/equipIconKeyCase.ts ＋ scripts/lib/equipIconKeyCase.json）。
  * 共用旗標：--apply（真的寫檔；預設只報告）、--force（已存在也重轉）、--only=<gameId|wap>（v3 模式只做一個）、
- *           --src=<客戶端擷取的 Data 夾>（預設 E:/Mecharashi_Data/Data）、--archive=<封存夾>（預設 E:/Mecharashi_Data/site-archive）
+ *           --src=<擷取>（預設 E:/Mecharashi_Data/Data；可給 latest、previous、擷取根目錄下的資料夾名或完整路徑。
+ *                        v3 模式一定要用 Data——v3 定版記的是那次擷取的檔案路徑）、
+ *           --archive=<封存夾>（預設 E:/Mecharashi_Data/site-archive）
  *
  * ── 落點 ──────────────────────────────────────────────────────────────────
  *   core      public/images/game/{pilots/<gameId>,mechs/<wap>}/<官方檔名>.webp   進版控、部署上線
@@ -49,7 +70,9 @@ import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 import { GAME_DIR, MECH_KINDS, PILOT_KINDS, TIER_GROUPS, mechFileName, pilotFileName } from './lib/gameAssetKinds.mjs'
-import { equipGameIdOf, iconFamily, isLibraryKey, keyFromValue } from './lib/gameIconKinds.mjs'
+import { EQUIP_POOLS, ICON_POOLS, equipGameIdOf, iconFamily, iconPoolIndex, isLibraryKey, keyFromValue } from './lib/gameIconKinds.mjs'
+import { PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, resolveDump } from './lib/gameDump.mjs'
+import { UI_GROUPS, uiArchivePath, uiModuleInfo } from './lib/gameUiModules.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
@@ -57,41 +80,39 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   if (!m) { console.error(`❌ 看不懂的參數：${a}`); process.exit(1) }
   return [m[1], m[2] ?? true]
 }))
-const SRC = path.resolve(String(args.src ?? 'E:/Mecharashi_Data/Data'))
+const MODE = args.promote ? 'promote' : args.icons ? 'icons' : args['equip-icons'] ? 'equip' : args.ui ? 'ui'
+  : args.id ? 'pilot' : args.wap ? 'mech' : 'v3'
+const TIER = MODE === 'v3' ? String(args.tier ?? 'core') : 'core'
+let SRC = ''   // --promote 讀的是封存夾、不讀擷取
+if (MODE !== 'promote') {
+  try { SRC = resolveDump(String(args.src ?? 'E:/Mecharashi_Data/Data')).dir } catch (e) { fail(`${e.message}（用 --src 指定）`) }
+}
+/** 擷取的識別碼＝資料夾名（Data／一般圖片_<版本碼>）；--ui 的 _index.json 用它記「第一次出現在哪次擷取」 */
+const DUMP_ID = path.basename(SRC)
 const ARCHIVE = path.resolve(String(args.archive ?? 'E:/Mecharashi_Data/site-archive'))
 const V3 = path.join(ROOT, '_local-notes/2026-10/2026-10-03_機師機甲圖片資源mapping_v3_final.json')
-const CSV = path.join(SRC, '圖片索引.csv')
 const PUBLIC_GAME = path.join(ROOT, 'public', GAME_DIR)
 const APPLY = !!args.apply
 const FORCE = !!args.force
-const MODE = args.icons ? 'icons' : args['equip-icons'] ? 'equip' : args.id ? 'pilot' : args.wap ? 'mech' : 'v3'
-const TIER = MODE === 'v3' ? String(args.tier ?? 'core') : 'core'
+/** 寫到 repo 外的封存夾（extended／reserve／--ui），其餘寫進 public/ */
+const TO_ARCHIVE = TIER !== 'core' || MODE === 'ui'
 
 if (!['core', 'extended', 'reserve'].includes(TIER)) fail(`--tier 只能是 core／extended／reserve：${TIER}`)
-if (TIER !== 'core' && isInside(ARCHIVE, ROOT)) {
-  fail(`--archive 在 repo 裡面（${ARCHIVE}）——extended／reserve 不能進 repo（站長 2026-10-04 定案 A）`)
+if (TO_ARCHIVE && isInside(ARCHIVE, ROOT)) {
+  fail(`--archive 在 repo 裡面（${ARCHIVE}）——extended／reserve／ui 不能進 repo（站長 2026-10-04 定案 A）`)
 }
-if (!fs.existsSync(SRC)) fail(`找不到客戶端擷取：${SRC}（用 --src 指定）`)
+if (MODE === 'v3' && DUMP_ID !== 'Data') fail(`v3 模式只能用 --src=Data（v3 定版記的是那次擷取的檔案路徑），收到 ${SRC}`)
 
 function fail(msg) { console.error(`❌ ${msg}`); process.exit(1) }
 function isInside(p, dir) { const r = path.relative(dir, p); return !!r && !r.startsWith('..') && !path.isAbsolute(r) || r === '' }
-const destRoot = TIER === 'core' ? PUBLIC_GAME : path.join(ARCHIVE, 'game')
+const destRoot = TO_ARCHIVE ? path.join(ARCHIVE, 'game') : PUBLIC_GAME
 
-// ── 圖片索引.csv（新實體模式與 reserve 才需要）──────────────────────────────────
+// ── 圖片索引.csv（新實體模式、圖示、reserve、ui 才需要）────────────────────────────
+// 新版擷取工具會替含逗號的欄位加引號，解析交給 scripts/lib/gameDump.mjs（RFC 4180）
 function loadCsv() {
-  if (!fs.existsSync(CSV)) fail(`找不到 ${CSV}`)
-  const text = fs.readFileSync(CSV, 'utf-8').replace(/^\uFEFF/, '')
-  const lines = text.split(/\r?\n/)
-  const head = lines.shift().split(',')
-  const col = (n) => { const i = head.indexOf(n); if (i < 0) fail(`圖片索引.csv 少了欄位 ${n}`); return i }
-  const [iType, iName, iW, iH, iPath, iSha, iAsset] = ['type', 'name', 'width', 'height', 'path', 'sha256', 'asset_path'].map(col)
-  const rows = []
-  for (const line of lines) {
-    if (!line) continue
-    const c = line.split(',')   // 索引欄位不含逗號（檔名與路徑都是 ASCII／中文分類名，無引號）
-    rows.push({ type: c[iType], name: c[iName], w: +c[iW], h: +c[iH], path: c[iPath], sha: c[iSha], asset: c[iAsset] })
-  }
-  return rows
+  try {
+    return loadDumpIndex(SRC).map((r) => ({ type: r.type, name: r.name, w: r.width, h: r.height, path: r.path, sha: r.sha256, asset: r.asset_path }))
+  } catch (e) { fail(e.message) }
 }
 
 /** 同名多筆：取 Texture2D；Texture2D 不只一筆時 sha256 必須相同，否則回 { conflict }。 */
@@ -135,14 +156,7 @@ function scanLegacyIcons() {
   return { byKey, nonKey }
 }
 const sha = (p) => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex')
-/** 兩張圖的平均像素差（0–255；64×64、透明處墊黑）——判斷「同名但畫面不同」 */
-async function pixelDiff(a, b) {
-  const raw = (p) => sharp(p).resize(64, 64, { fit: 'fill' }).flatten({ background: '#000' }).removeAlpha().raw().toBuffer()
-  const [x, y] = await Promise.all([raw(a), raw(b)])
-  let s = 0
-  for (let i = 0; i < x.length; i++) s += Math.abs(x[i] - y[i])
-  return s / x.length
-}
+// 「同名但畫面不同」的平均像素差 pixelDiff 與門檻 PIXEL_DIFF_SAME 在 scripts/lib/gameDump.mjs（diff-game-dump 共用）
 /**
  * 「是不是同一張圖」的特徵：32×32、透明處墊黑，灰階＋RGB 兩組（與 10-01 盤點對佔位圖的方法相同）。
  * 距離＝灰階平均差＋RGB 平均差。2026-10-05 實測：舊編號的官方圖對到現行編號時 < 6（同圖，只差渲染），
@@ -172,6 +186,8 @@ function featureDistance(a, b) {
 const ALIAS_MAX_DISTANCE = 6
 const iconReport = { fromDump: 0, dumpOnly: [], legacy: [], diffs: [], nonKey: [], siteCopies: 0, aliases: {} }
 const equipReport = { weapon: [], backpack: [], siteOnly: [], diffs: [], same: 0, keyCase: {} }
+const UI_ROOT = path.join(destRoot, 'ui')
+const uiReport = { rows: new Map(), conflicts: [], moves: [], notInDump: 0 }
 
 if (MODE === 'v3') {
   const v3 = JSON.parse(fs.readFileSync(V3, 'utf-8'))
@@ -225,14 +241,9 @@ if (MODE === 'v3') {
   }
 } else if (MODE === 'icons') {
   const rows = loadCsv()
-  // 擷取：技能類整夾（Texture2D）＋ BUFF 字形（只有 Sprite——它們住在一張圖集裡）
+  // 擷取：收哪些資料夾見 ICON_POOLS（技能類整夾＋BUFF 字形＋神經驅動分區圖示；diff-game-dump 共用同一份）
   const fromDump = new Map()   // key → row
-  const pools = [
-    rows.filter((r) => r.asset?.includes('/uiicons/skilltype_abs') && r.type === 'Texture2D'),
-    rows.filter((r) => r.asset?.includes('/uiicons/bufftype_abs') && r.type === 'Sprite' && /^Icon_(de)?buff_/.test(r.name)),
-    // 神經驅動分區圖示（α／β／γ…）：住在晶片圖集旁，但 pilots.neuralDrive[].icon 引用了 1,190 處
-    rows.filter((r) => r.asset?.includes('/uiicons/itemchips_abs') && r.type === 'Texture2D' && /^Icon_zoneskill_/.test(r.name)),
-  ]
+  const pools = ICON_POOLS.map((_, i) => rows.filter((r) => iconPoolIndex(r.asset, r.type, r.name) === i))
   for (const pool of pools) {
     const names = new Set(pool.map((r) => r.name))
     for (const name of names) {
@@ -280,7 +291,7 @@ if (MODE === 'v3') {
     while (q.length) {
       const key = q.shift()
       const d = await pixelDiff(path.join(SRC, fromDump.get(key).path), site.get(key)[0])
-      if (d < 6) continue
+      if (d < PIXEL_DIFF_SAME) continue
       // 站上這張其實是別的官方圖（猜錯編號）→ 找出它真正的編號，交給 DB 修正（PLAN-055 C）
       const nn = nearest(await iconFeature(site.get(key)[0]))
       iconReport.diffs.push({
@@ -294,7 +305,7 @@ if (MODE === 'v3') {
 } else if (MODE === 'equip') {
   const rows = loadCsv()
   const fromDump = new Map()   // key → row
-  for (const [family, dir] of [['weapon', '/uiicons/wapweapons_abs/'], ['backpack', '/uiicons/wapbackpack_abs/']]) {
+  for (const [family, dir] of EQUIP_POOLS) {
     const pool = rows.filter((r) => r.asset?.includes(dir))
     for (const name of new Set(pool.map((r) => r.name))) {
       if (!isLibraryKey(name) || iconFamily(name) !== family) { notes.push(`擷取裡的 ${name} 不符合 ${family} 命名規則，略過`); continue }
@@ -318,10 +329,64 @@ if (MODE === 'v3') {
       const key = keyFromValue(file)
       if (!fromDump.has(key)) { equipReport.siteOnly.push(`${dir}/${file}`); continue }
       const d = await pixelDiff(path.join(SRC, fromDump.get(key).path), path.join(abs, file))
-      if (d >= 6) equipReport.diffs.push({ key, d: Math.round(d * 10) / 10, site: `${dir}/${file}` })
+      if (d >= PIXEL_DIFF_SAME) equipReport.diffs.push({ key, d: Math.round(d * 10) / 10, site: `${dir}/${file}` })
       else equipReport.same++
     }
   }
+} else if (MODE === 'promote') {
+  // 上架：封存夾的介面美術 → public/images/game/ui/<同一個相對路徑>（不讀擷取，原樣複製）
+  const archiveUi = path.join(ARCHIVE, 'game', 'ui')
+  const walkWebp = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? walkWebp(path.join(dir, e.name)) : e.name.endsWith('.webp') ? [path.join(dir, e.name)] : [])
+  for (const raw of String(args.promote).split(',').map((s) => s.trim()).filter(Boolean)) {
+    const rel = raw.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').replace(/^ui\//, '')
+    const abs = path.resolve(archiveUi, rel)
+    if (abs === archiveUi || !isInside(abs, archiveUi)) { problems.push(`${raw}：要指到封存夾 ${archiveUi} 裡的某個檔或子資料夾`); continue }
+    const isDir = fs.existsSync(abs) && fs.statSync(abs).isDirectory()
+    const files = isDir ? walkWebp(abs) : [abs.endsWith('.webp') ? abs : `${abs}.webp`]
+    if (isDir && !files.length) notes.push(`${raw}：資料夾裡沒有 .webp`)
+    for (const f of files) {
+      if (!fs.existsSync(f)) { problems.push(`${raw}：封存夾裡沒有 ${path.relative(archiveUi, f)}`); continue }
+      const r = path.relative(archiveUi, f).split(path.sep).join('/')
+      addTask(null, `ui/${path.posix.dirname(r)}`, path.posix.basename(r, '.webp'), '上架', 'promote', f)
+    }
+  }
+  if (!tasks.length && !problems.length) problems.push('--promote 沒有挑到任何圖')
+} else if (MODE === 'ui') {
+  // 介面美術封存：落點與「什麼算美術圖」都由 uiArchivePath 決定（scripts/lib/gameUiModules.mjs）
+  const byDest = new Map()   // 相對 game/ 的路徑（不含副檔名）→ 擷取列
+  for (const r of loadCsv()) {
+    const rel = uiArchivePath({ name: r.name, width: r.w, height: r.h, asset_path: r.asset })
+    if (rel) (byDest.get(rel) ?? byDest.set(rel, []).get(rel)).push(r)
+  }
+  for (const [rel, rs] of byDest) {
+    const tex = rs.filter((r) => r.type === 'Texture2D')
+    const pool = tex.length ? tex : rs
+    // 同模組同名、內容不同（2026-10-11 兩次擷取都是 0 筆）：取面積大的，報告列出來
+    if (new Set(pool.map((r) => r.sha)).size > 1) uiReport.conflicts.push(rel)
+    const best = pool.reduce((a, b) => (b.w * b.h > a.w * a.h ? b : a))
+    addTask(best.path, path.posix.dirname(rel), best.name, '介面美術', `ui-${rel.split('/')[1]}`)
+    uiReport.rows.set(`${rel}.webp`, best)
+  }
+  // 字典改了用途 → 既有檔還在舊的用途資料夾：--apply 時搬過去（同一張圖，不重轉）
+  const tail = (abs) => path.relative(UI_ROOT, abs).split(path.sep).slice(1).join('/')   // 去掉用途那一層
+  const existing = new Map()
+  const walk = (dir) => {
+    if (!fs.existsSync(dir)) return
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name)
+      if (e.isDirectory()) walk(p)
+      else if (e.name.endsWith('.webp')) existing.set(tail(p), p)
+    }
+  }
+  walk(UI_ROOT)
+  const wanted = new Set(tasks.map((t) => tail(t.dest)))
+  for (const t of tasks) {
+    const old = existing.get(tail(t.dest))
+    if (old && old !== t.dest && !fs.existsSync(t.dest)) uiReport.moves.push([old, t.dest])
+  }
+  // 封存夾裡有、這次擷取沒有的：舊擷取才有的圖，或字典不再收的模組——博物館原則，不刪，只列數量
+  uiReport.notInDump = [...existing.keys()].filter((k) => !wanted.has(k)).length
 } else {
   const rows = loadCsv()
   if (MODE === 'pilot') {
@@ -364,14 +429,21 @@ if (problems.length) {
 const stat = new Map()   // group → { n, srcBytes, outBytes, skipped }
 const bump = (g, k, v) => { const s = stat.get(g) ?? { n: 0, srcBytes: 0, outBytes: 0, skipped: 0 }; s[k] += v; stat.set(g, s) }
 let done = 0
+// --ui：字典改了用途的既有檔先搬家（同一張圖，不重轉）；dry-run 時當成「已存在」計
+const movedFrom = new Map(uiReport.moves.map(([from, to]) => [to, from]))
+if (APPLY) {
+  for (const [from, to] of uiReport.moves) { fs.mkdirSync(path.dirname(to), { recursive: true }); fs.renameSync(from, to) }
+}
 async function run(t) {
   bump(t.group, 'n', 1)
   bump(t.group, 'srcBytes', fs.statSync(t.src).size)
-  if (fs.existsSync(t.dest) && !FORCE) { bump(t.group, 'skipped', 1); bump(t.group, 'outBytes', fs.statSync(t.dest).size); return }
-  // 圖示（PLAN-055）：128px 平塗圖 lossless 比 q82 還小；本來就是 .webp 的舊圖直接複製、不重壓
-  const buf = !t.group.startsWith('icon-') ? await sharp(t.src).webp({ quality: 82 }).toBuffer()
-    : t.src.endsWith('.webp') ? fs.readFileSync(t.src)
-    : await sharp(t.src).webp({ lossless: true, effort: 6 }).toBuffer()
+  const have = fs.existsSync(t.dest) ? t.dest : movedFrom.get(t.dest)
+  if (have && !FORCE) { bump(t.group, 'skipped', 1); bump(t.group, 'outBytes', fs.statSync(have).size); return }
+  // 圖示（PLAN-055）：128px 平塗圖 lossless 比 q82 還小；本來就是 .webp 的（站上舊圖、--promote 的封存檔）直接複製、不重壓
+  const isIcon = t.group.startsWith('icon-')
+  const buf = (isIcon || t.group === 'promote') && t.src.endsWith('.webp') ? fs.readFileSync(t.src)
+    : isIcon ? await sharp(t.src).webp({ lossless: true, effort: 6 }).toBuffer()
+    : await sharp(t.src).webp({ quality: 82 }).toBuffer()
   bump(t.group, 'outBytes', buf.length)
   if (APPLY) {
     fs.mkdirSync(path.dirname(t.dest), { recursive: true })
@@ -386,7 +458,8 @@ await Promise.all(Array.from({ length: 6 }, async () => { while (queue.length) a
 const MB = (b) => (b / 1048576).toFixed(1)
 const rowsOut = [...stat].sort().map(([g, s]) => `| ${g} | ${s.n} | ${s.skipped} | ${MB(s.srcBytes)} | ${MB(s.outBytes)} |`)
 const tot = [...stat.values()].reduce((a, s) => ({ n: a.n + s.n, skipped: a.skipped + s.skipped, srcBytes: a.srcBytes + s.srcBytes, outBytes: a.outBytes + s.outBytes }), { n: 0, skipped: 0, srcBytes: 0, outBytes: 0 })
-const title = MODE === 'v3' ? `v3 整批・${TIER}` : MODE === 'pilot' ? `新機師 ${args.id}` : MODE === 'icons' ? '圖示圖庫' : MODE === 'equip' ? '武器／背包圖示' : `新機甲 wap${args.wap}`
+const title = MODE === 'v3' ? `v3 整批・${TIER}` : MODE === 'pilot' ? `新機師 ${args.id}` : MODE === 'icons' ? '圖示圖庫'
+  : MODE === 'equip' ? '武器／背包圖示' : MODE === 'ui' ? '介面美術封存' : MODE === 'promote' ? '介面美術上架' : `新機甲 wap${args.wap}`
 const iconSection = MODE !== 'icons' ? [] : [
   '## 圖示圖庫（PLAN-055）', '',
   `- 擷取：${iconReport.fromDump}（其中站上沒有的 ${iconReport.dumpOnly.length}，見計畫書決策三）`,
@@ -451,31 +524,126 @@ if (MODE === 'icons' && APPLY) {
   const meta = { generatedBy: 'scripts/import-game-assets.mjs --icons --apply', aliases: Object.fromEntries(entries), legacy: [...iconReport.legacy].sort() }
   fs.writeFileSync(path.join(ROOT, 'scripts/lib/gameIconMeta.json'), JSON.stringify(meta, null, 1) + '\n')
 }
+const promoteSection = MODE !== 'promote' ? [] : [
+  '## 介面美術上架', '',
+  '⚠ **上架＝部署後任何人都看得到**。只挑台版已經上線的；陸版先行的活動、角色會劇透。', '',
+  ...tasks.map((t) => `- ${code(path.relative(PUBLIC_GAME, t.dest).split(path.sep).join('/'))}${fs.existsSync(t.dest) && !FORCE ? '（已在 public，跳過）' : ''}`), '',
+  '下一步：`npm run manifest:images`（或直接 `npm run dev`／`build`）讓後台圖片挑選器看到它們 → 在後台選圖 → 照規則 commit、push。', '',
+]
+const uiSection = MODE !== 'ui' ? [] : [
+  '## 介面美術封存', '',
+  `- 落點：${UI_ROOT}／<用途>／<官方模組>／<子資料夾…>／<官方檔名>.webp（用途與過濾規則：scripts/lib/gameUiModules.mjs）`,
+  `- 用途分佈：${[...stat].filter(([g]) => g.startsWith('ui-')).map(([g, s]) => `${UI_GROUPS[g.slice(3)]?.zh ?? g} ${s.n}`).join('、')}`,
+  `- 字典改了用途、要搬家的既有檔：${uiReport.moves.length}`,
+  `- 封存夾裡有、這次擷取沒有的：${uiReport.notInDump}（舊擷取才有的圖，或字典不再收的模組——不刪）`,
+  `- 同模組同名、內容不同（取面積大的）：${uiReport.conflicts.length}`, ...uiReport.conflicts.map((r) => `  - ${code(r)}`), '',
+]
 const report = [
-  `# ${MODE === 'icons' ? 'PLAN-055' : MODE === 'equip' ? 'PLAN-056' : 'PLAN-054'} 官方原檔匯入${APPLY ? '' : '（dry-run）'}：${title}`, '',
+  `# ${{ icons: 'PLAN-055 ', equip: 'PLAN-056 ', ui: '', promote: '' }[MODE] ?? 'PLAN-054 '}官方原檔匯入${APPLY ? '' : '（dry-run）'}：${title}`, '',
   `- 時間：${new Date().toISOString()}`,
-  `- 來源：${SRC}`,
-  `- 落點：${destRoot}${TIER === 'core' ? '（進版控、部署）' : '（repo 外封存，不進 git、不部署）'}`,
+  `- 來源：${MODE === 'promote' ? path.join(ARCHIVE, 'game', 'ui') : SRC}`,
+  `- 落點：${destRoot}${TO_ARCHIVE ? '（repo 外封存，不進 git、不部署）' : '（進版控、部署）'}`,
   `- 檔數：${tot.n}（已存在略過 ${tot.skipped}）　來源 PNG ${MB(tot.srcBytes)} MB → WebP ${MB(tot.outBytes)} MB`, '',
   '| 組 | 檔數 | 已存在 | PNG MB | WebP MB |', '|---|---:|---:|---:|---:|', ...rowsOut, '',
   ...iconSection,
   ...equipSection,
+  ...uiSection,
+  ...promoteSection,
   ...(notes.length ? ['## 備註', '', ...notes.map((n) => `- ${n}`), ''] : []),
 ].join('\n')
 console.log(MODE === 'icons' ? report.split('<details>')[0] : report)
-if (MODE === 'icons') {
-  const out = path.join(ROOT, `_local-notes/2026-10/2026-10-05_PLAN-055_A-3_匯入報告${APPLY ? '' : '_dry-run'}.md`)
+/** 報告檔：_local-notes/<YYYY-MM>/<YYYY-MM-DD>_<名稱>[_dry-run].md（同一天重跑會覆寫當天那份，不會蓋到別天的） */
+const REPORT_NAME = { icons: '圖示圖庫匯入報告', equip: '武器背包圖示匯入報告', ui: '介面美術封存報告', v3: `PLAN-054_匯入報告_${TIER}` }[MODE]
+if (REPORT_NAME) {
+  const day = localDate()
+  const out = path.join(ROOT, '_local-notes', day.slice(0, 7), `${day}_${REPORT_NAME}${APPLY ? '' : '_dry-run'}.md`)
+  fs.mkdirSync(path.dirname(out), { recursive: true })
   fs.writeFileSync(out, report + '\n')
   console.log(`📝 報告：${path.relative(ROOT, out)}`)
 }
-if (MODE === 'equip') {
-  const out = path.join(ROOT, `_local-notes/2026-10/2026-10-09_PLAN-056_A-1_匯入報告${APPLY ? '' : '_dry-run'}.md`)
-  fs.writeFileSync(out, report + '\n')
-  console.log(`📝 報告：${path.relative(ROOT, out)}`)
-}
-if (MODE === 'v3') {
-  const out = path.join(ROOT, `_local-notes/2026-10/2026-10-04_PLAN-054_B_匯入報告_${TIER}${APPLY ? '' : '_dry-run'}.md`)
-  fs.writeFileSync(out, report + '\n')
-  console.log(`📝 報告：${path.relative(ROOT, out)}`)
-}
+if (MODE === 'ui' && APPLY) writeUiIndex()
 if (!APPLY) console.log('（dry-run：沒有寫入。確認後加 --apply）')
+
+/**
+ * --ui --apply 之後：更新 ui/_index.json（每張圖的來歷，跨次擷取累積）並重產 ui/README.md（給人看的目錄）。
+ * _index.json 只增不減：舊擷取才有的圖照樣留著；firstSeen＝第一次封存它的那次擷取（之後對版本的線索）。
+ */
+function writeUiIndex() {
+  const indexFile = path.join(UI_ROOT, '_index.json')
+  const prev = fs.existsSync(indexFile) ? JSON.parse(fs.readFileSync(indexFile, 'utf-8')) : { dumps: {}, files: {} }
+  const files = { ...prev.files }
+  const rel = (abs) => path.relative(UI_ROOT, abs).split(path.sep).join('/')
+  for (const [from, to] of uiReport.moves) {   // 搬家的檔，紀錄跟著搬
+    if (files[rel(from)]) { files[rel(to)] = files[rel(from)]; delete files[rel(from)] }
+  }
+  for (const [key, r] of uiReport.rows) {
+    const file = key.split('/').slice(1).join('/')   // 去掉開頭的 ui/
+    if (files[file] && !FORCE) continue
+    files[file] = { asset: r.asset, w: r.w, h: r.h, sha256: r.sha, firstSeen: files[file]?.firstSeen ?? DUMP_ID }
+  }
+  const dumps = { ...prev.dumps, [DUMP_ID]: localDate(fs.statSync(path.join(SRC, '圖片索引.csv')).mtime) }
+  fs.writeFileSync(indexFile, JSON.stringify({
+    generatedBy: 'scripts/import-game-assets.mjs --ui --apply（repo：mecharashi-tools）', updatedAt: new Date().toISOString(),
+    note: 'files 的 key 是相對本資料夾的路徑；asset＝官方資源路徑；firstSeen＝第一次封存它的擷取（見 dumps）', dumps,
+    files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a.localeCompare(b))),
+  }, null, 1) + '\n')
+
+  // README：照實際檔案統計（含舊擷取才有的），用途與中文說明來自字典
+  const tree = new Map()   // group → module → { n, subs: Map<sub, n> }
+  for (const f of Object.keys(files)) {
+    if (!fs.existsSync(path.join(UI_ROOT, f))) continue
+    const [group, module, ...rest] = f.split('/')
+    const sub = rest.slice(0, -1).join('/') || '（模組根目錄）'
+    const g = tree.get(group) ?? tree.set(group, new Map()).get(group)
+    const m = g.get(module) ?? g.set(module, { n: 0, subs: new Map() }).get(module)
+    m.n++; m.subs.set(sub, (m.subs.get(sub) ?? 0) + 1)
+  }
+  const lines = [
+    '# 介面美術封存',
+    '',
+    '> ⚠ 自動產生，請勿手改——用途分類與中文說明改 `scripts/lib/gameUiModules.mjs` 的字典，再跑',
+    '> `node scripts/import-game-assets.mjs --src=<擷取> --ui --apply`（repo：mecharashi-tools）。',
+    '',
+    '遊戲客戶端（陸版）擷取的活動、招募、大廳、劇情背景等美術圖，轉成 WebP（q82、原尺寸、保留透明）。',
+    '**不進 git、不部署**：陸版比台版快，這裡有台版還沒上線的內容。後台看不到這裡的圖（後台只看得到網站送得出來的圖）。',
+    '',
+    '決定用途後再「上架」到 repo 的 `public/images/game/ui/`（同一個相對路徑），後台圖片挑選器就看得到：',
+    '',
+    '```bash',
+    'node scripts/import-game-assets.mjs --promote=activity/uiactivity/ob6          # 整個資料夾（dry-run）',
+    'node scripts/import-game-assets.mjs --promote=gacha/pilotgachaimg/Img_1_pilot_gacha_Erisa1_Raw --apply   # 單張',
+    '```',
+    '',
+    '⚠ 上架＝部署後任何人都看得到，只挑台版已經上線的。',
+    '',
+    '## 怎麼找',
+    '',
+    '```',
+    'ui/<用途>/<官方模組>/<子資料夾…>/<官方檔名>.webp',
+    '```',
+    '',
+    '- **用途**：我們加的分類（下表），由字典決定；字典改了，重跑 `--ui --apply` 會自動搬家。',
+    '- **官方模組**：客戶端資源路徑 `ui/uiimages/` 之後的第一段，去掉打包用的 `_abs`、`<模組>_atlas`／`_noatlas`。',
+    '- **子資料夾**照官方原樣。常見的 `obNN`＝陸版第 NN 版（例：`gacha/uigacha/pilotob16/`＝第 16 版的機師卡池）。',
+    '- **檔名**＝官方資源名逐字；`_Raw` 是官方給的大圖。',
+    '- `_index.json`：每張圖的官方路徑、尺寸、sha256、第一次出現在哪次擷取（`firstSeen`）。',
+    '- 只收「美術圖」：`_Raw`、長邊 ≥ 512、或檔名帶 banner；按鈕、遮罩、特效、圖集整張不收。系統介面零件與簡中文字圖不收。',
+    '',
+    `擷取紀錄：${Object.entries(dumps).map(([id, d]) => `\`${id}\`（${d}）`).join('、')}`,
+    '',
+  ]
+  for (const [group, info] of Object.entries(UI_GROUPS)) {
+    const g = tree.get(group)
+    if (!g) continue
+    const total = [...g.values()].reduce((s, m) => s + m.n, 0)
+    lines.push(`## ${group}/　${info.zh}（${total} 張）`, '', '| 官方模組 | 說明 | 張數 | 子資料夾 |', '|---|---|---:|---|')
+    for (const [module, m] of [...g].sort(([a], [b]) => a.localeCompare(b))) {
+      const subs = [...m.subs].sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true }))
+      const subText = subs.length > 12 ? `${subs.slice(0, 12).map(([s, n]) => `${s}（${n}）`).join('、')}…等 ${subs.length} 個` : subs.map(([s, n]) => `${s}（${n}）`).join('、')
+      lines.push(`| \`${module}\` | ${uiModuleInfo(module).zh || '（字典沒登記）'} | ${m.n} | ${subText} |`)
+    }
+    lines.push('')
+  }
+  fs.writeFileSync(path.join(UI_ROOT, 'README.md'), lines.join('\n'))
+  console.log(`📚 ${path.join(UI_ROOT, 'README.md')}、_index.json 已更新（共 ${Object.keys(files).length} 張）`)
+}

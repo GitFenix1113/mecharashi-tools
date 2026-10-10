@@ -34,6 +34,24 @@ export function isLibraryKey(key) {
   return typeof key === 'string' && LIBRARY_RE.test(key)
 }
 
+/**
+ * `import-game-assets.mjs --icons` 從擷取收哪些資料夾（PLAN-055 A-2）。diff-game-dump.mjs 也用它判斷
+ * 「圖庫沒有、但 --icons 也不會收」的圖示（例：肉鴿的 Icon_roguelike_* 住在 itemroguelike_abs，不在這裡）。
+ *   技能類整夾（Texture2D）＋ BUFF 字形（只有 Sprite——它們住在一張圖集裡）
+ *   ＋ 神經驅動分區圖示（住在晶片圖集旁，但 pilots.neuralDrive[].icon 引用了 1,190 處）
+ */
+export const ICON_POOLS = [
+  { dir: '/uiicons/skilltype_abs', type: 'Texture2D' },
+  { dir: '/uiicons/bufftype_abs', type: 'Sprite', name: /^Icon_(de)?buff_/ },
+  { dir: '/uiicons/itemchips_abs', type: 'Texture2D', name: /^Icon_zoneskill_/ },
+]
+/** 擷取的一列（官方資源路徑、型別、檔名）屬於哪個 --icons 來源；不收的回 -1 */
+export function iconPoolIndex(assetPath, type, name) {
+  return ICON_POOLS.findIndex((p) => !!assetPath?.includes(p.dir) && type === p.type && (!p.name || p.name.test(name)))
+}
+/** `--equip-icons` 整夾全收的兩個資料夾（PLAN-056 A-1） */
+export const EQUIP_POOLS = [['weapon', '/uiicons/wapweapons_abs/'], ['backpack', '/uiicons/wapbackpack_abs/']]
+
 /** 圖庫子資料夾：照官方客戶端的分法——BUFF 字形、武器、背包各一夾，其餘（技能、模組詞條、研發…）一夾 */
 export function iconFamily(key) {
   if (/^Icon_(?:de)?buff_/.test(key)) return 'buff'

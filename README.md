@@ -7,7 +7,7 @@
 ## 專案說明
 
 本專案為鋼嵐（Mecharashi）遊戲的輔助工具站，提供玩家各類實用工具與資料庫查詢功能。
-資料以爬蟲從官方來源蒐集後整理進 Firestore，前台透過版本控制的快取層讀取，並經由 Cloudflare Worker 代理對外提供。
+遊戲資料由管理後台人工建檔進 Firestore（圖片取自遊戲客戶端擷取的官方原檔），前台透過版本控制的快取層讀取，並經由 Cloudflare Worker 代理對外提供。
 
 主要功能區塊：
 
@@ -30,7 +30,7 @@
 | 後端 | Firebase Auth / Cloud Firestore / Storage |
 | API 代理 | Cloudflare Workers（`/api/*`，同源掛在 `mecharashi.wiki` zone） |
 | 部署 | GitHub Pages（自訂網域 + PR 預覽部署） |
-| 資料蒐集 | Playwright 爬蟲腳本 → migrate/patch 腳本 → Firestore |
+| 資料蒐集 | 後台人工建檔 → Firestore；圖片由客戶端擷取匯入；台版官方公告由每週 CI 擷取 |
 | 測試 | `node --test`（前端）、Vitest + `@cloudflare/vitest-pool-workers`（Worker）、Firebase Emulator（規則） |
 
 ## 架構重點
@@ -98,22 +98,16 @@ npm run docs:copy        # 依白名單把 docs/ 複製進 public/docs（route �
 npm run docs:stamp       # 為文件加上更新時間戳
 ```
 
-### 資料蒐集與寫入（需 Playwright）
+### 資料與圖片
+
+機師、機甲、武器等遊戲資料由後台（`/admin`）人工建檔；官網爬蟲已於 2026-10-11 退場。
 
 ```bash
-npm run scrape:v3           # 爬取機師（scrape-pilots-v3.js）
-npm run scrape:mechs        # 爬取機甲
-node scripts/scrape-weapons.js
-node scripts/scrape-modules.js
-node scripts/scrape-components.js
-node scripts/scrape-backpacks.js
-
-npm run migrate             # 將資料寫入 Firestore
-npm run migrate:dry         # 只預覽 diff，不寫入
-node scripts/bump-data-version.mjs <collection>   # 寫入後務必 bump
+node scripts/import-game-assets.mjs --id=<gameId> --art-key=<artKey>   # 新機師官方原檔（預設 dry-run，加 --apply 才寫）
+node scripts/import-game-assets.mjs --wap=<####>                        # 新機甲
+node scripts/check-image-refs.mjs                                       # 圖片引用掃描（壞路徑／舊路徑）
+node scripts/bump-data-version.mjs <collection>                         # 用腳本寫入資料後務必 bump
 ```
-
-> ⚠ `scrape-pilots-v3.js` 的 `--force` 會覆蓋人工欄位（`talent.buffIds` / `manual` / `debutVersion`），使用前先確認。
 
 ### Cloudflare Worker
 
@@ -148,8 +142,8 @@ mecharashi-tools/
 │   ├── docs/                   # 由 copy-docs.mjs 產生（勿手改）
 │   └── debug/                  # API 回應範例（開發用）
 │
-├── scripts/                    # 爬蟲、migrate/patch、emulator、建構前置腳本
-│   └── temp_scripts/           # 一次性腳本
+├── scripts/                    # 建構前置、圖片匯入、資料檢查、emulator、台版公告擷取
+│   └── temp_scripts/           # 一次性腳本（不進版控）
 │
 ├── tests/emulator/             # Firestore 規則測試
 │

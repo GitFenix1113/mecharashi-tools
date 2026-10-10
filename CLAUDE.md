@@ -219,19 +219,28 @@ barrel 檔 re-export `./api/` 下按集合拆分的模組。共用基礎在 [fir
 
 barrel 按領域拆檔（`pilot` / `mech` / `weapon` / `module` / `backpack` / `component` / `research` / `buff` / `common` / `grayOps` / `boss`）。**例外**：`enums.ts`、`mechUpgrade.ts` **不在** barrel 內，沿用各自獨立 import 路徑。修改型別 / enum 時依規則 2 同步 `docs/02_技術文件/`。
 
-### 6.5 資料來源：後台人工維護為主，爬蟲只保留活動擷取（2026-10-03 定案）
+### 6.5 資料來源：後台人工維護為主，爬蟲只保留活動擷取（2026-10-03 定案；官網爬蟲 2026-10-11 退場）
 
 **機師、機甲、武器、模組、元件、背包等遊戲資料不再靠爬蟲取得。** 官方 Wiki 更新速度慢到跟不上改版，等它就等於讓站上永遠落後；
 這些資料改由**後台各實體管理頁人工建檔／編輯**（`src/pages/user/admin/`），圖片改由遊戲客戶端擷取匯入（PLAN-054 `import-game-assets.mjs`）。
+遊戲改版、跑完擷取工具後，**先跑 `node scripts/diff-game-dump.mjs`**（最新 vs 前一次擷取的差異報告，輸出到 `_local-notes/`，附該跑的匯入指令）；
+活動／招募等介面美術用 `import-game-assets.mjs --ui` 封存到 repo 外（`site-archive/game/ui/`，不部署）。
 
 - **唯一仍在運作的擷取是活動**：`scripts/scrape-tw-announcements.mjs`（台版官方公告 → `announcementDrafts`／`pendingActivities` staging → 後台 `/admin/announcements` 審核後合併進 `patchVersions`），
   由 `.github/workflows/scrape-announcements.yml` 每週排程執行。改解析器的慣例見 PLAN-048。
-- **官網爬蟲保留作備用、不再維護**：`scrape-pilots-v3.js`、`scrape-mechs.js`、`scrape-weapons.js`、`scrape-modules.js`、`scrape-components.js`、`scrape-backpacks.js`、`scrape-skill-icons.mjs`
-  與 `package.json` 的 `scrape:*` 指令都**不刪**。但規劃功能、改型別、改資料流程時**不必再顧慮它們的相容性**，也不要主動提議用爬蟲補資料。
-- **真的要動用備用爬蟲時**，先知道它們已與現行資料脫節：`scrape-pilots-v3.js` 是整筆覆寫，`--force` 會洗掉 `nameEn`、`debutVersion`、`talent.buffIds`、`manual`
+- **官網爬蟲已退場（2026-10-11）**：`scrape-pilots-v3.js`、`scrape-mechs.js`、`scrape-weapons.js`、`scrape-modules.js`、`scrape-components.js`、`scrape-backpacks.js`、`scrape-skill-icons.mjs`
+  與 `package.json` 的 `scrape:*`／`migrate*` 指令都已移出 repo。原檔封存在 `E:\Mecharashi_Data\script-archive\2026-10-11\`（多數本來就被 `.gitignore` 擋著、git 裡沒有），
+  清單與理由見該夾的 `README.md`。**不要主動提議用爬蟲補資料，也不要把它們搬回來。**
+  文件與舊註解裡仍會提到這些檔名（PLAN 歷史、資料模型的來源說明）——那是歷史紀錄，不代表檔案還在。
+- **萬一真的要從封存夾拿回來用**，先知道它們已與現行資料脫節：`scrape-pilots-v3.js` 是整筆覆寫，`--force` 會洗掉 `nameEn`、`debutVersion`、`talent.buffIds`、`manual`
   以及 PLAN-054 的 `gameId`／`artKey`／`pairedMechId` 等人工欄位；機師與機甲爬蟲會把圖片下載回中文名資料夾、把 `portrait` 寫回舊路徑（與 PLAN-054 的圖片 ID 化相衝）。
   一律先備份（`scripts/temp_scripts/backup-firestore.mjs`）、先 dry-run。**官方 API 天賦文本是「滿晶片」污染值**，人工修正存在 `PilotTalent.manual`。
-- 其他腳本不受影響：一次性 migrate／patch 腳本照舊放 `scripts/temp_scripts/`；`generate-image-manifest.mjs`（build/dev 前置）掃 `public/images/` 產出可用圖片清單；
+- **一次性腳本**（migrate／patch／audit／probe…）放 `scripts/temp_scripts/`（整夾被 `.gitignore` 擋，只存在本機）。跑完、驗收完就清掉；
+  因為 git 救不回來，清的時候**搬到 `E:\Mecharashi_Data\script-archive\<日期>\` 封存，不要直接刪**。`temp_scripts/` 目前只留 5 支有人引用的：
+  `backup-firestore.mjs`（本節與 data-patch skill）、`enable-nd-buff-upgrades.mjs`（data-patch 的一次性腳本範本）、`repair-fffd-descriptions.mjs`（data-patch）、
+  `extract-lore-source.mjs`（`AdminLorePage`）、`fix-nd-minsum-typos.mjs`（`neuralDriveLevels.ts`）。
+- ⚠ **`scripts/bump-data-version.mjs` 與 `scripts/check-nd-minsum-drift.mjs` 也被 `.gitignore` 擋著（防線 C）**：換電腦或重新 clone 會不見，封存夾的 `_本機獨有的保留檔備份/` 有一份。
+- 其他現役腳本：`generate-image-manifest.mjs`（build/dev 前置）掃 `public/images/` 產出可用圖片清單；
   `copy-docs.mjs` 依白名單把 `docs/` 複製進 `dist/`（route 為 `/documents`）。
 
 ### 6.6 慣例
