@@ -199,7 +199,7 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value green">執行中（A／B 完成、C-1 已寫入正式站；待部署後做 C-5／D-3）</div>
+      <div class="meta-value green">執行中 18／24（A／B 完成、C-1 已寫入正式站、E 已答；待部署後做 C-5／D-3）</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">前置依賴</div>
@@ -441,7 +441,8 @@
           放大比對後，前者是 Z15 電鋸的換色版，後者是草莓通心粉電磁炮的換色版。也就是<b>官方檔名本身交叉了</b>，站上的圖是對的，不要「修正」。
           選圖器的種類篩選因此只能當縮小範圍用，不能拿來擋選擇。</li>
       <li><b>SS 專武的圖示系列不一定跟父武器同系列</b>（42 筆中只有 15 筆相同），不能用 <code>upgrade.fromWeaponId</code> 推圖。</li>
-      <li><b>夜魘·改Ⅱ／Ⅲ 用的是馬克的 <code>20100301</code></b>，夜魘本體卻是 <code>20100401</code>。這來自當年的官方 API，可能是官方資料寫錯，也可能遊戲裡真是這樣，要截圖確認（E-3）。</li>
+      <li><b>夜魘·改Ⅱ／Ⅲ 用的是馬克的 <code>20100301</code></b>，夜魘本體卻是 <code>20100401</code>——✅ 站長 2026-10-10 確認沒錯，有些武器本來就長一樣。
+          <b>v3.0 之後人工建檔的資料全部正確，往後不再檢查老武器的圖</b>；只有站上自行去背的圖可以換成官方原圖。</li>
       <li>沒有官方圖的武器<b>留空</b>（資料佔位慣例、PLAN-055 決策八）。前台顯示「武」字佔位，不再做中文截圖佔位。歸零協議在這批擷取裡找不到任何未用的火箭圖，可能就是這種情況。</li>
     </ul>
   </div>
@@ -466,7 +467,7 @@
     <tr><td>千星</td><td>缺圖</td><td><code>gameId: 40400401</code></td><td>站長確認是虛粒子形態背部武裝 <span class="badge-good">確定</span></td></tr>
     <tr><td>耀星／隕星</td><td>缺圖</td><td>自訂圖 <code>icon</code>（素材 <code>10700601</code>／<code>10700602</code>）</td><td>站長編輯圖片後指定 <span class="badge-med">C-3</span></td></tr>
     <tr><td>征伐／速射格林炮／誓殮／歸零協議</td><td>缺圖</td><td>站長用選圖器挑</td><td>候選是同種類的「既有系列新變體」；歸零協議可能不在擷取裡 <span class="badge-med">C-4</span></td></tr>
-    <tr><td>幽弧／夜燼</td><td>缺圖、種類空白</td><td>—</td><td>先補種類 <span class="badge-low">E-2</span></td></tr>
+    <tr><td>幽弧／夜燼</td><td>缺圖、種類空白</td><td>—</td><td>曜的形態武裝，種類空白維持現狀（站長 10-10）；圖示待站長 <span class="badge-low">E-2 ✓</span></td></tr>
     <tr><td>其餘 167 把武器、185 個背包</td><td>官方路徑</td><td><code>gameId</code> 從 <code>icon</code> 檔名解析</td><td>與擷取逐像素一致 <span class="badge-good">確定</span></td></tr>
   </table>
   </div>
