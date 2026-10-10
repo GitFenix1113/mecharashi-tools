@@ -1,11 +1,13 @@
 {
-  "_comment": "PLAN-052-A D-3 校驗腳本的負向測試 fixture。刻意造壞六類問題各至少一筆，跑 node scripts/validate-mech-slots.mjs --fixture=scripts/tests/mech-slots.bad.json 應該讓六類全部觸發並以離開碼 1 結束。⚠ 這份是假資料，不對應線上任何文件。",
+  "_comment": "PLAN-052-A D-3 校驗腳本的負向測試 fixture。刻意造壞七類問題各至少一筆（⑦ 另含一筆孤兒警告），跑 node scripts/validate-mech-slots.mjs --fixture=scripts/tests/mech-slots.bad.json 應該讓七類全部觸發並以離開碼 1 結束。⚠ 這份是假資料，不對應線上任何文件。",
 
   "weapons": [
     { "id": "w_shoulder", "name": "測試肩武", "equipSlot": "shoulder" },
     { "id": "w_hand",     "name": "測試單手", "equipSlot": "singleHand" },
     { "id": "w_dual",     "name": "測試雙手", "equipSlot": "dualHand" },
-    { "id": "w_back",     "name": "測試背武", "equipSlot": "back" }
+    { "id": "w_back",     "name": "測試背武", "equipSlot": "back" },
+    { "id": "w_fixed_共用", "name": "被兩台共用的固定武裝", "equipSlot": "shoulder", "isFixedArmament": true },
+    { "id": "w_fixed_孤兒", "name": "沒人掛載的固定武裝", "equipSlot": "shoulder", "isFixedArmament": true }
   ],
 
   "mechs": [
@@ -49,6 +51,28 @@
       "parts": {
         "torso":    { "position": "torso" },
         "leftArm":  { "position": "leftArm",  "fixedArmament": [{ "weaponId": "w_shoulder", "slot": "shoulder", "side": "left" }] },
+        "rightArm": { "position": "rightArm" },
+        "legs":     { "position": "legs" }
+      }
+    },
+    {
+      "id": "bad_05_一對一違規A",
+      "name": "一對一違規 A（與 B 共用同一把固定武裝；自身六類皆乾淨）",
+      "armorType": "中甲",
+      "parts": {
+        "torso":    { "position": "torso" },
+        "leftArm":  { "position": "leftArm",  "fixedArmament": [{ "weaponId": "w_fixed_共用", "slot": "shoulder", "side": "left" }] },
+        "rightArm": { "position": "rightArm", "fixedArmament": [{ "weaponId": "w_fixed_共用", "slot": "shoulder", "side": "right" }] },
+        "legs":     { "position": "legs" }
+      }
+    },
+    {
+      "id": "bad_05_一對一違規B",
+      "name": "一對一違規 B",
+      "armorType": "中甲",
+      "parts": {
+        "torso":    { "position": "torso" },
+        "leftArm":  { "position": "leftArm",  "fixedArmament": [{ "weaponId": "w_fixed_共用", "slot": "shoulder", "side": "left" }] },
         "rightArm": { "position": "rightArm" },
         "legs":     { "position": "legs" }
       }

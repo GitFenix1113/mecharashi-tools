@@ -164,6 +164,58 @@ export function lockedSlots(form: MechForm | null | undefined): FormSlotLock | n
   }
 }
 
+// ─── 反查：這把固定武裝焊在誰身上 ─────────────────────────────────────────────
+
+/**
+ * 某把固定武裝的一個宿主：一台機甲、或一個機師形態。
+ *
+ * `refs` 是這把武器在該宿主上佔的格子（帕斯卡的衝擊炮 ＝ 左肩＋右肩兩格）。
+ * ⚠ 形態若還停在 C-3 之前的 `weaponIds` 形狀，`refs` 是**空陣列** —— 不從 weaponIds 反推槽位，
+ *   理由同 `FormSlotLock.mounts`（千星在背部，猜一律填手部會把錯的事寫成肯定陳述）。
+ */
+export type FixedArmamentHost =
+  | { kind: 'mech'; id: string; name: string; refs: WeaponSlotRef[] }
+  | { kind: 'form'; id: string; name: string; pilotId: string; refs: WeaponSlotRef[] }
+
+/**
+ * 反查一把固定武裝的宿主（2026-10-10）。
+ *
+ * ── 為什麼是反查而不是在武器上存 `boundMechId` ─────────────────────────────
+ * 固定武裝與宿主是**一對一**（站長 2026-10-10：造型與故事設定都綁死單台，幾乎不可能共用），
+ * 所以「這把屬於誰」從宿主那側一定查得到。兩側都存只會漂移，與官配／登場版本「只存一邊、
+ * 另一邊推導」同一個原則。掛載關係留在宿主上還有兩個理由：
+ *   · 模擬器混搭部件時，固定武裝**跟著手臂走**（見 loadoutRules.ts 的 `occupied`），
+ *     存在武器上就得再記「哪一隻手臂」，繞一圈回到原點；
+ *   · 形態武裝（耀星／隕星／千星、幽弧／夜燼）本來就是宿主存掛載，兩邊同一套規則。
+ *
+ * 一對一由 `scripts/validate-mech-slots.mjs` 的 ⑦ 守著；這支照實回傳**全部**宿主，
+ * 不替呼叫端挑一個 —— 真的出現兩個時，畫面該把兩個都列出來，而不是靜默藏掉一個。
+ *
+ * 機甲側的格子走 `occupiedSlots()`（side 未填時由部件位置補），不另寫一份映射。
+ */
+export function fixedArmamentHosts(
+  weaponId: string,
+  mechs: readonly { id: string; name: string; parts?: Parameters<typeof occupiedSlots>[0] }[],
+  forms: readonly MechForm[],
+): FixedArmamentHost[] {
+  const out: FixedArmamentHost[] = []
+  for (const mech of mechs) {
+    const refs = [...occupiedSlots(mech.parts).values()]
+      .filter((o) => o.mount.weaponId === weaponId)
+      .map((o) => o.ref)
+    if (refs.length) out.push({ kind: 'mech', id: mech.id, name: mech.name, refs })
+  }
+  for (const form of forms) {
+    const lock = lockedSlots(form)
+    if (!lock?.weaponIds.includes(weaponId)) continue
+    const refs = (lock.mounts ?? [])
+      .filter((m) => m.weaponId === weaponId)
+      .map((m): WeaponSlotRef => (m.side ? { bank: 'main', slot: m.slot, side: m.side } : { bank: 'main', slot: m.slot }))
+    out.push({ kind: 'form', id: form.id, name: form.name, pilotId: form.pilotId, refs })
+  }
+  return out
+}
+
 // ─── 顯示標籤 ───────────────────────────────────────────────────────────────
 
 const SLOT_LABEL: Record<string, string> = {

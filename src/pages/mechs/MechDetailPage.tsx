@@ -9,7 +9,10 @@ import { RefChip } from '../../components/refs/RefChip'
 import { pairedPilotOf } from '../../utils/officialPairs'
 import { ModuleCard } from '../../components/module/ModuleCard'
 import { chassisFirepower, chassisWeight } from '../../utils/chassisStats'
-import { MechSlotPanel, MechPartsTable } from '../../components/mechs/MechSlotPanel'
+import { occupiedSlots } from '../../utils/mechSlots'
+import { slotKey } from '../../types/slots'
+import { WeaponEquipSlot } from '../../types/enums'
+import { ShoulderArmamentCard } from '../../components/mechs/ShoulderArmamentCard'
 
 const ARMOR_STYLES: Record<string, string> = {
   輕型: 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/40',
@@ -227,6 +230,12 @@ export default function MechDetailPage() {
   const legs     = mech.parts?.legs     && typeof mech.parts.legs     !== 'number' ? mech.parts.legs     as MechPart : null
   const hasParts = torso || leftArm || rightArm || legs
 
+  // 肩部固定武裝（帕斯卡衝擊炮／破曉者-01 嵐質儲能艙／霸王多功能彈倉）。
+  // 只取肩部兩格：今天沒有任何機甲把固定武裝焊在手部或背部，十字下排的兩個角落先空著。
+  const occupied = occupiedSlots(mech.parts)
+  const rightShoulder = occupied.get(slotKey({ bank: 'main', slot: WeaponEquipSlot.SHOULDER, side: 'right' }))
+  const leftShoulder  = occupied.get(slotKey({ bank: 'main', slot: WeaponEquipSlot.SHOULDER, side: 'left' }))
+
   // 火力／重量走 chassisStats 的單一實作（本頁原本自己 reduce 一次，與 MechsPage 讀頂層欄位
   // 的做法不一致 —— 同一台機甲在圖鑑顯示 1255、在詳情頁顯示 5020）
   const totalFirepower = chassisFirepower(mech.parts)
@@ -318,6 +327,13 @@ export default function MechDetailPage() {
                   <div className="bg-bg-card border border-border rounded-xl flex items-center justify-center h-40 p-2">
                     {portrait}
                   </div>
+                  {/* 手機沒有十字的角落可放 → 立繪下方一條「右肩｜左肩」（從正面看，與桌面版同向） */}
+                  {(rightShoulder || leftShoulder) && (
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {rightShoulder ? <ShoulderArmamentCard occupied={rightShoulder} /> : <div />}
+                      {leftShoulder  ? <ShoulderArmamentCard occupied={leftShoulder} />  : <div />}
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-2.5">
                     {torso    && <PartCard mech={mech} position="torso"    part={torso}    name="軀幹" expanded={partsExpanded} />}
                     {rightArm && <PartCard mech={mech} position="rightArm" part={rightArm} name="右臂" expanded={partsExpanded} />}
@@ -325,11 +341,12 @@ export default function MechDetailPage() {
                     {legs     && <PartCard mech={mech} position="legs"     part={legs}     name="腿部" expanded={partsExpanded} />}
                   </div>
                 </div>
-                {/* 桌面：十字形佈局，中央立繪為基準 */}
+                {/* 桌面：十字形佈局，中央立繪為基準。上排兩個角落是肩部：
+                    左上＝右肩、右上＝左肩（從正面看機體，肩膀在同側手臂正上方）；沒有固定武裝就空著 */}
                 <div className="hidden lg:grid grid-cols-3 gap-2.5 items-stretch">
-                  <div />
+                  {rightShoulder ? <ShoulderArmamentCard occupied={rightShoulder} /> : <div />}
                   {torso ? <PartCard mech={mech} position="torso" part={torso} name="軀幹" expanded={partsExpanded} /> : <div />}
-                  <div />
+                  {leftShoulder ? <ShoulderArmamentCard occupied={leftShoulder} /> : <div />}
                   {rightArm ? <PartCard mech={mech} position="rightArm" part={rightArm} name="右臂" expanded={partsExpanded} /> : <div />}
                   <div className="bg-bg-card border border-border rounded-xl flex items-center justify-center min-h-[200px] p-2">
                     {portrait}
@@ -339,20 +356,21 @@ export default function MechDetailPage() {
                   {legs ? <PartCard mech={mech} position="legs" part={legs} name="腿部" expanded={partsExpanded} /> : <div />}
                   <div />
                 </div>
+                {/* 原本掛在四部位表底下的口徑說明；那張表收起後搬到這裡，數字的口徑不能跟著消失 */}
+                <p className="text-[11px] text-text-dim mt-2.5 leading-relaxed">
+                  本站數值一律以<strong className="text-text-secondary">滿級／滿品質階</strong>計算；火力不含科技加成。
+                </p>
               </>
             ) : (
               <p className="text-sm text-text-dim">部件資料不可用</p>
             )}
           </div>
 
-          {/* PLAN-052-A E-1：槽位配置與四部位表。放在部件十字之後——
-              十字講的是「每個部位有多強」，這兩塊講的是「這台能裝什麼、數字從哪來」。 */}
-          {hasParts && (
-            <div className="space-y-3 mb-5">
-              <MechSlotPanel mech={mech} />
-              <MechPartsTable mech={mech} />
-            </div>
-          )}
+          {/* ⏸ 2026-10-10 站長決定收起「槽位配置」與「四部位表」（PLAN-052-A E-1 的兩個區塊），以後看情況再決定要不要用：
+              · 四部位表的重量／火力／接口，十字卡與頁首都已經有了；「來源」欄只在模擬器混搭部件時才有意義（那邊仍在用）
+              · 槽位配置裡唯一不重複的資訊是「哪幾格被固定武裝佔住」，已搬進十字上排的肩部卡（ShoulderArmamentCard）
+              要恢復：重新 import `MechSlotPanel` / `MechPartsTable`（src/components/mechs/MechSlotPanel.tsx），
+              在這裡放回 `<MechSlotPanel mech={mech} />` 與 `<MechPartsTable mech={mech} />` 即可，元件都還在。 */}
 
           {/* 機體描述留在左欄底部：右欄的模組才是進頁要先看到的東西 */}
           {mech.lore && (

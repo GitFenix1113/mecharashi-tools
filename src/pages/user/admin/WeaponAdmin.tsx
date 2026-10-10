@@ -19,6 +19,7 @@ import { RefPicker } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
 import { EquipGameIdField, GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
 import { WeaponIcon } from '../../../components/icons/WeaponIcon'
+import { FixedArmamentHostsField } from '../../../components/admin/FixedArmamentHostsField'
 import { weaponIconCategoryOf } from '../../../utils/gameIcons'
 import { iconKindsForSkillType } from '../../../utils/gameIcons'
 import { WEAPON_RARITY_CLASS, WEAPON_KIND_BY_TYPE, ALL_WEAPON_KINDS } from './constants'
@@ -408,7 +409,15 @@ function WeaponEditPanel({
                 </select>
               </Field>
               <Field label="武器種類 kind">
-                <select value={form.kind} onChange={(e) => update('kind', e.target.value)} className="input-field">
+                <select
+                  value={form.kind}
+                  onChange={(e) => {
+                    update('kind', e.target.value)
+                    // 選了「固定武裝」種類就順手勾上旗標（反向不自動取消：形態武裝的 kind 是一般種類，旗標卻是 true）
+                    if (e.target.value === WeaponKind.FixedArmament) update('isFixedArmament', true)
+                  }}
+                  className="input-field"
+                >
                   {currentKindOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </Field>
@@ -437,6 +446,22 @@ function WeaponEditPanel({
                 <option value={MechRestriction.HEAVY_ONLY}>heavy — 僅重型機甲</option>
               </select>
             </Field>
+            {/* 固定武裝（2026-10-10 補上勾選）。在這之前 isFixedArmament 只能靠腳本寫入 ——
+                後台新建的固定武裝會拿不到鎖頭徽章、左右肩圖欄位，也逃過 validate-mech-slots ⑦ 的一對一檢查。
+                ⚠ 取消勾選寫的是 false 而不是 undefined：stripUndefined 會把 undefined 整個濾掉，
+                  寫 undefined 等於「一旦勾了就再也取消不掉」（PLAN-040 決策六的坑）。 */}
+            <div className="p-3 bg-bg-dark rounded-lg border border-border/60 space-y-2">
+              <label className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!form.isFixedArmament}
+                  onChange={(e) => update('isFixedArmament', e.target.checked)}
+                  className="accent-accent-yellow w-4 h-4"
+                />
+                <span>isFixedArmament — 固定武裝（焊死在機甲或機師形態上、無法更換）</span>
+              </label>
+              {form.isFixedArmament && <FixedArmamentHostsField weaponId={form.id} />}
+            </div>
             {/* PLAN-056：官方圖示編號為主；自訂圖只在沒有官方圖時才會顯示 */}
             <EquipGameIdField
               label="官方圖示編號 gameId"

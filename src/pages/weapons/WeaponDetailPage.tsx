@@ -1,6 +1,10 @@
 import { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useWeapon, useWeapons, usePilotBriefMap, useBackpackNameMap, useWeaponSkillMap } from '../../hooks/useFirestore'
+import {
+  useWeapon, useWeapons, usePilotBriefMap, useBackpackNameMap, useWeaponSkillMap, useMechs, useForms,
+} from '../../hooks/useFirestore'
+import { RefChip } from '../../components/refs/RefChip'
+import { fixedArmamentHosts, slotLabel } from '../../utils/mechSlots'
 import { WeaponRarityBadge } from '../../components/badges/WeaponRarityBadge'
 import { WeaponIcon } from '../../components/icons/WeaponIcon'
 import { ExclusivePilotLink } from '../../components/icons/PilotIcon'
@@ -15,6 +19,43 @@ import { buildUpgradeIndex, deriveFusedSkillNames, isCompositeWeapon } from '../
 import { resolveWeaponSkills } from '../../utils/weaponSkills'
 import { naOr, isNaStat, isVariableStat, variableStatNote } from '../../utils/weaponStats'
 import type { Weapon } from '../../types'
+
+// ── 固定武裝的宿主（2026-10-10）──────────────────────────────────────────────
+//
+// 「這把焊在誰身上」從宿主反查（fixedArmamentHosts），武器文件本身不存擁有者 ——
+// 一對一的前提下兩邊都存只會漂移，理由見 src/utils/mechSlots.ts。
+// ⚠ 獨立成元件：mechs／forms 只在固定武裝（全站 8 把）的頁面才載入，其餘武器頁不碰。
+// ⚠ 查不到宿主時**不渲染**，不寫「未連結」—— 那是後台的待辦（武器管理會提醒），不是給訪客的資訊。
+
+function FixedArmamentHostLine({ weaponId }: { weaponId: string }) {
+  const { data: mechs } = useMechs()
+  const { data: forms } = useForms()
+  const pilotBrief = usePilotBriefMap().data
+  const hosts = useMemo(() => fixedArmamentHosts(weaponId, mechs, forms), [weaponId, mechs, forms])
+  if (!hosts.length) return null
+
+  return (
+    <div className="mt-3 space-y-1">
+      {hosts.map((h) => (
+        <div key={`${h.kind}:${h.id}`} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
+          <span className="text-accent-yellow font-bold">焊在</span>
+          {h.kind === 'mech' ? (
+            <RefChip inner={h.name} entity={{ refType: 'mech', refId: h.id }} />
+          ) : (
+            <span>
+              <RefChip inner={pilotBrief[h.pilotId]?.name ?? h.pilotId} entity={{ refType: 'pilot', refId: h.pilotId }} />
+              <span className="text-text-dim">・</span>
+              <RefChip inner={h.name} entity={{ refType: 'form', refId: h.id }} />
+            </span>
+          )}
+          {h.refs.length > 0 && (
+            <span className="text-text-secondary">{h.refs.map(slotLabel).join('、')}</span>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 // ── Labels & formatters ───────────────────────────────────────────────────────
 
@@ -249,6 +290,8 @@ export default function WeaponDetailPage() {
                   />
                 </div>
               )}
+
+              {weapon.isFixedArmament && <FixedArmamentHostLine weaponId={weapon.id} />}
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   mechSlotCapacity, loadoutSlotCapacity, backpackBackupHandSlots, enumerateSlots,
-  occupiedSlots, lockedSlots, BACKUP_HAND_SLOTS, BACKUP_EQUIPMENT_BACKPACK_ID,
+  occupiedSlots, lockedSlots, fixedArmamentHosts, BACKUP_HAND_SLOTS, BACKUP_EQUIPMENT_BACKPACK_ID,
 } from './mechSlots.ts'
 import { slotKey } from '../types/slots.ts'
 
@@ -168,4 +168,43 @@ test('兩支 derive 禁止合併：佔據型只擋幾格、全鎖型擋全部，
   assert.equal(occupiedSlots(破曉者).has('main:back' as never), false)   // 佔據型：背部仍可換
   // 全鎖型（形態資料）：鎖的是整套，型別上刻意不長成一份「幾格」的清單
   assert.equal(lockedSlots(虛粒子)?.weaponIds.length, 3)
+})
+
+// ─── 反查宿主 ─────────────────────────────────────────────────────────────
+
+const 帕斯卡機甲 = { id: 'mech_022_帕斯卡', name: '帕斯卡', parts: 帕斯卡 }
+const 美杜莎 = { id: 'mech_美杜莎MK2', name: '美杜莎MK2', parts: { torso: {}, leftArm: {}, rightArm: {}, legs: {} } as never }
+const 虛粒子升級後 = {
+  id: 'form_海莉絲_虛粒子', name: '虛粒子形態', pilotId: 'pilot_049_海莉絲',
+  restrict: { kind: 'fixedArmament', mounts: [
+    { weaponId: 'weapon_176_耀星', slot: 'singleHand', side: 'right' },
+    { weaponId: 'weapon_178_千星', slot: 'back' },
+  ] },
+} as never
+
+test('反查宿主：帕斯卡兩肩同一把衝擊炮 ＝ 一個宿主、兩格', () => {
+  const hosts = fixedArmamentHosts('weapon_衝擊炮', [美杜莎, 帕斯卡機甲], [])
+  assert.equal(hosts.length, 1)                        // 掛兩格不等於兩個宿主
+  assert.equal(hosts[0].kind, 'mech')
+  assert.equal(hosts[0].id, 'mech_022_帕斯卡')
+  assert.deepEqual(hosts[0].refs.map((r) => slotKey(r)), ['main:shoulder:left', 'main:shoulder:right'])
+})
+
+test('反查宿主：形態武裝帶出 pilotId 與格子；背部不帶 side', () => {
+  const [千星] = fixedArmamentHosts('weapon_178_千星', [], [虛粒子升級後])
+  assert.equal(千星.kind, 'form')
+  assert.equal(千星.kind === 'form' && 千星.pilotId, 'pilot_049_海莉絲')
+  assert.deepEqual(千星.refs.map((r) => slotKey(r)), ['main:back'])
+})
+
+test('反查宿主：形態停在舊 weaponIds 形狀 ⇒ 認得宿主、但 refs 為空（不反推槽位）', () => {
+  const hosts = fixedArmamentHosts('weapon_178_千星', [], [{ ...(虛粒子 as object), pilotId: 'p' } as never])
+  assert.equal(hosts.length, 1)
+  assert.deepEqual(hosts[0].refs, [])
+})
+
+test('反查宿主：沒人用的武器回空陣列；共用時照實列出全部（不替呼叫端挑一個）', () => {
+  assert.deepEqual(fixedArmamentHosts('weapon_沒人用', [帕斯卡機甲, 美杜莎], [虛粒子升級後]), [])
+  const 複製帕斯卡 = { ...帕斯卡機甲, id: 'mech_假的', name: '假的' }
+  assert.equal(fixedArmamentHosts('weapon_衝擊炮', [帕斯卡機甲, 複製帕斯卡], []).length, 2)
 })

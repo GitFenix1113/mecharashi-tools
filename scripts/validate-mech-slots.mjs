@@ -17,21 +17,28 @@
  *   唯讀（由所選武器的 equipSlot 自動帶入），人為輸入產生不了不一致；會觸發這裡的只剩
  *   「武器改了 equipSlot、但既有 mount 沒跟著改」與腳本直寫兩條路徑。
  *
- * ── 六類檢查 ──────────────────────────────────────────────────────────────
+ * ── 七類檢查 ──────────────────────────────────────────────────────────────
  *   ① 斷鏈       ：mount.weaponId 在 weapons 集合查無
  *   ② 槽位不符   ：mount.slot ≠ weapon.equipSlot（硬不變式）
  *   ③ side 誤用  ：side 只該出現在 singleHand / shoulder；dualHand / back 不得有
  *   ④ side 缺漏  ：singleHand / shoulder 必須有 side（否則兩格分不出來）
  *   ⑤ 重複佔用   ：同一個 (bank, slot, side) 在同一台機甲／形態出現兩次
  *   ⑥ 超出容量   ：佔用數超過 mechSlotCapacity()（肩槽只有中甲有 2 格）
+ *   ⑦ 一對一     ：每把 isFixedArmament 武器恰好一個宿主（一台機甲或一個形態）
+ *                  —— 2 個以上算錯誤；0 個（建了武器還沒連結）只列**警告**、不影響離開碼，
+ *                  否則「先建武器、再到機甲管理連結」這個正常的兩步驟中間會被判失敗。
+ *                  同一宿主掛兩格（帕斯卡雙肩）算一個宿主。
+ *                  一對一是站長 2026-10-10 的判斷（造型與故事設定綁死單台），站上因此
+ *                  不在武器上存擁有者、一律由宿主反查（src/utils/mechSlots.ts 的
+ *                  fixedArmamentHosts()）。這條檢查就是那個判斷的守門員。
  *
  *   node scripts/validate-mech-slots.mjs                    # 完整報告（讀正式庫）
  *   node scripts/validate-mech-slots.mjs --quiet            # 只輸出結論與問題（CI 用）
  *   node scripts/validate-mech-slots.mjs --fixture=x.json   # 改讀本機 JSON，不連 Firestore
  *
  * --fixture 格式：{ "weapons": [...], "mechs": [...], "forms": [...] }
- * 附 tests/mech-slots.bad.json：刻意造壞的六類問題各一筆。一個只會回報 PASS 的校驗器
- * 等於沒被驗證過，跑它應該讓六類檢查全部觸發並以離開碼 1 結束。
+ * 附 tests/mech-slots.bad.json：刻意造壞的七類問題各一筆（⑦ 另含一筆孤兒警告）。
+ * 一個只會回報 PASS 的校驗器等於沒被驗證過，跑它應該讓七類檢查全部觸發並以離開碼 1 結束。
  *
  * 離開碼：有任何問題 → 1（可直接串進 CI）；全部乾淨 → 0
  * ⚠ 唯讀：只用 .get()，不做任何寫入、不 bump 任何版本。
@@ -103,8 +110,16 @@ async function loadData() {
 const { weapons, mechs, forms } = await loadData()
 const weaponById = new Map(weapons.map((w) => [w.id, w]))
 
-const problems = { broken: [], slotMismatch: [], strayside: [], missingSide: [], duplicate: [], overCapacity: [] }
+const problems = { broken: [], slotMismatch: [], strayside: [], missingSide: [], duplicate: [], overCapacity: [], sharedHost: [] }
+const warnings = { orphan: [] }
 let mountCount = 0
+
+/** ⑦ 用：weaponId → 掛載它的宿主 id（機甲 id 或形態 id）。用 Set：帕斯卡雙肩只算一個宿主 */
+const hostsByWeapon = new Map()
+const addHost = (weaponId, hostId) => {
+  if (!hostsByWeapon.has(weaponId)) hostsByWeapon.set(weaponId, new Set())
+  hostsByWeapon.get(weaponId).add(hostId)
+}
 
 /**
  * 檢查一組 mount。
@@ -140,6 +155,7 @@ for (const mech of mechs) {
     const part = mech.parts?.[pos]
     if (!part || typeof part === 'number') continue
     checkMounts(`${mech.id}.${pos}`, part.fixedArmament, seen)
+    for (const m of part.fixedArmament ?? []) addHost(m.weaponId, mech.id)
   }
   // ⑥ 容量：同一台機甲各類槽的佔用數不得超過 mechSlotCapacity()
   const cap = capacityOf(mech.armorType)
@@ -168,6 +184,21 @@ for (const form of forms) {
     problems.broken.push(`${form.id}：restrict 殘留舊欄位 weaponIds（應已升級成 mounts，PLAN-052-A C-3）`)
   }
   checkMounts(form.id, form.restrict.mounts, new Map())
+  // 舊形狀的 weaponIds 也算宿主：殘留本身已由 ① 報出，這裡不讓它再額外製造一筆孤兒
+  for (const id of [...(form.restrict.mounts ?? []).map((m) => m.weaponId), ...(form.restrict.weaponIds ?? [])]) {
+    addHost(id, form.id)
+  }
+}
+
+// ── ⑦ 一對一 ────────────────────────────────────────────────────────────────
+for (const w of weapons) {
+  if (!w.isFixedArmament) continue
+  const hosts = [...(hostsByWeapon.get(w.id) ?? [])]
+  if (hosts.length === 0) {
+    warnings.orphan.push(`${w.id}（${w.name}）：標了 isFixedArmament，但沒有任何機甲或形態掛載它`)
+  } else if (hosts.length > 1) {
+    problems.sharedHost.push(`${w.id}（${w.name}）：同時焊在 ${hosts.join('、')}（固定武裝應為一對一）`)
+  }
 }
 
 // ── 報告 ────────────────────────────────────────────────────────────────────
@@ -178,6 +209,7 @@ const SECTIONS = [
   ['④ side 缺漏：singleHand / shoulder 必須有 side', problems.missingSide],
   ['⑤ 重複佔用：同一格被兩筆 mount 佔住', problems.duplicate],
   ['⑥ 超出容量：佔用數超過 mechSlotCapacity()', problems.overCapacity],
+  ['⑦ 一對一：一把固定武裝被兩個以上的宿主掛載', problems.sharedHost],
 ]
 const total = SECTIONS.reduce((n, [, list]) => n + list.length, 0)
 
@@ -191,5 +223,10 @@ for (const [title, list] of SECTIONS) {
   console.log(`✗ ${title}：${list.length} 筆`)
   list.forEach((x) => console.log(`    ${x}`))
 }
-console.log(total === 0 ? `\n✅ PASS — ${mountCount} 筆 mount 全數通過六類檢查` : `\n❌ FAIL — 共 ${total} 筆問題`)
+// 警告不計入離開碼（見檔頭 ⑦），但 --quiet 也照印：孤兒是「還沒做完的事」，該被看見
+if (warnings.orphan.length) {
+  console.log(`⚠ ⑦ 孤兒（警告，不影響結果）：${warnings.orphan.length} 筆`)
+  warnings.orphan.forEach((x) => console.log(`    ${x}`))
+}
+console.log(total === 0 ? `\n✅ PASS — ${mountCount} 筆 mount 全數通過七類檢查` : `\n❌ FAIL — 共 ${total} 筆問題`)
 process.exit(total === 0 ? 0 : 1)
