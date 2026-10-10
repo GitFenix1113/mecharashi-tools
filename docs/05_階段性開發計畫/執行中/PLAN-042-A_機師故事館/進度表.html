@@ -209,15 +209,15 @@
 
 
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">18</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">16</div><div class="summary-lbl">已完成</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">2</div><div class="summary-lbl">待開始</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">21</div><div class="summary-lbl">開發者任務</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">3</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">17 + 2</div><div class="summary-lbl">開發者任務 + 管理員作業</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-green);">18 / 21</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 86%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-green);">16 / 19</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 84%"></div></div>
   </div>
 
   <div class="impact-note">
@@ -231,9 +231,11 @@
     （<code>src/hooks/useLoreEntry.ts</code> 的 <code>LORE_INTERNAL_ONLY = true</code>）：導覽列與手機 More 面板只有 ADMIN／OWNER 看得到「故事館」；
     機師詳情頁對一般訪客<b>退回完整逸聞</b>（D-4 改成「首句＋讀完整故事 ▸」，只藏連結的話訪客就讀不到全文）；
     網站更新履歷裡介紹故事館的 6 筆條目標 <code>unreleased</code>，先不顯示。<br>
-    <b>公開時</b>：旗標改 <code>false</code>；拿掉那 6 筆的 <code>unreleased</code>、日期改成公開日；Cloudflare Transform Rule 白名單補 <code>/lore</code>（含 OG 用的 UA 排除區塊，見 F-1）。<br>
+    <b>公開時</b>：旗標改 <code>false</code>；拿掉那 6 筆的 <code>unreleased</code>、日期改成公開日。<span style="color:var(--text-dim)">（原寫「Cloudflare Transform Rule 白名單補 <code>/lore</code>」——<strong>不必再做</strong>：F-1 已於 2026-09-10 部署白名單與 UA 排除區塊，2026-10-11 複驗 <code>/lore</code>、<code>/lore/pilots/:id</code> 皆回 200。）</span><br>
     <b>main 第一次 push 之前</b>：先部署 Firestore rules（<code>npx firebase deploy --only firestore:rules</code>）與 Worker（<code>cd workers &amp;&amp; npx wrangler deploy</code>）——
     pilotLore 已登記進後台引用掃描，規則沒上線會弄壞後台的刪除功能。
+    <b style="color:var(--accent-green)">✅ 2026-10-04 已完成：站長已依序部署 Firestore rules 與 Worker 後 push（見 PLAN-054 進度表 D-4）。</b><br>
+    <b>2026-10-11 計數校正：</b>依實際任務列重算為 19 項（開發者 17＋管理員 2）——16 項完成、3 項待開始（G-2 選做、H-1、H-2）；原表頭的 18／21 與任務列對不上。
   </div>
 
   <div class="info-block">
@@ -988,8 +990,8 @@
     <div class="task-row">
       <div>
         <div class="task-name">優先補梅利莎、阿黛勒</div>
-        <div class="task-desc">缺 36 位中 S 級只有 9 位，其中 7 位是尚未進素材包的手建新機師（會隨素材包更新自然補上）。<b>真正需要另尋圖源的 S 級只有梅利莎、阿黛勒——補這 2 位就把 S 級覆蓋率推到 89%。</b>其餘 27 位是 A/B 級配角，低優先。</div>
-        <div class="task-file">public/images/pilots/<名>/lore.webp</div>
+        <div class="task-desc">缺 36 位中 S 級只有 9 位，其中 7 位是尚未進素材包的手建新機師（會隨素材包更新自然補上）。<b>真正需要另尋圖源的 S 級只有梅利莎、阿黛勒——補這 2 位就把 S 級覆蓋率推到 89%。</b>其餘 27 位是 A/B 級配角，低優先。<br><b>2026-10-11 補註：</b>PLAN-054 D-2 之後，站上自製的立繪已從名字資料夾搬到遊戲 ID 資料夾，實際位置是 <code>public/images/pilots/&lt;gameId&gt;/art.webp</code>（例：<code>pilots/10103101/art.webp</code>，目前 52 張）；B-1 的實作產物本來就是 <code>art.webp</code>，沒有 <code>lore.webp</code>。</div>
+        <div class="task-file">public/images/pilots/&lt;名&gt;/lore.webp</div>
       </div>
       <div class="task-assignee">管理員</div>
       <span class="status pending">待開始</span>

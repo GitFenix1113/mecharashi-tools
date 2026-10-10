@@ -398,7 +398,8 @@
   <div class="decision-block">
     <strong>決策五：選圖器改版：用官方文法篩、用名字找、最新的排前面</strong>
     <ul>
-      <li>新元件 <code>GameIconPicker</code>／<code>GameIconField</code>（<code>src/components/admin/</code>）只負責圖示。舊 <code>IconPicker</code> 留給立繪、武器、背包、機甲這些其他圖。</li>
+      <li>新元件 <code>GameIconPicker</code>／<code>GameIconField</code>（<code>src/components/admin/</code>）只負責圖示。舊 <code>IconPicker</code> 留給立繪、武器、背包、機甲這些其他圖。<br>
+        <small style="color:var(--accent-yellow)">⟶ 2026-10-09 由 <a href="../PLAN-056_武器背包圖示ID化/計畫書.html" style="color:var(--accent-yellow);">PLAN-056</a> 改判（d8e482e6）：武器、背包的官方圖示改走 <code>GameIconPicker</code>（寫 <code>gameId</code>）。舊 <code>IconPicker</code>（<code>IconField</code>）現在只留給機師立繪、機甲立繪／半身像／部件圖，以及武器、背包的「自訂圖 icon」欄位。</small></li>
       <li><b>篩選</b>：種類（形狀）× 色系 × 使用狀態（未使用／已使用）。<b>搜尋</b>：編號、技能名、持有者名稱。</li>
       <li><b>預設依流水號倒序</b>：新角色的圖一定在序列尾端，所以會排在最前面。新版本建檔時，候選會從約 1,400 張縮到十幾張。</li>
       <li><b>反查「誰在用」</b>：用純函式掃後台已經載入的遊戲資料（GameDataContext 快取），<b>不增加 Firestore 讀取</b>。滑鼠移到圖上時顯示「已被 N 處使用：○○・○○、模組・○○」。</li>

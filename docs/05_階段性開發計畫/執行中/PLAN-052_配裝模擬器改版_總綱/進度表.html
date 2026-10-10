@@ -198,7 +198,7 @@
     <strong>目標效果：</strong>
     把「只有兩個單值欄位」的配裝模型換成多槽・多形態・可分享的 Loadout v2。MVP（A＋B＋C，約 21–24 天）結束時，網友可以在七個槽位上配裝、看到與遊戲一致的重量／出力、存本機 10 套，並複製一串連結分享給別人 —— 完全公開、不需註冊。
   </div>
-  <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);"><strong style="color:var(--accent-yellow)">動工前提醒：</strong>PLAN-047 應同時標記為被本計畫取代並歸檔（見計畫書決策十一），否則會有兩份執行中的計畫同時聲稱擁有 <code>src/utils/mechSlots.ts</code>。</div>
+  <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);"><strong style="color:var(--accent-yellow)">動工前提醒（已處理）：</strong>PLAN-047 已標記為被本計畫取代，並歸檔至歷史記錄（見計畫書決策十一），<code>src/utils/mechSlots.ts</code> 只有本計畫一份計畫在管。</div>
 </section>
 
 
@@ -220,6 +220,7 @@
         <div class="task-desc">
           交付物含機甲詳情頁的「槽位配置 ＋ 四部位表」唯讀區塊與火力顯示修正，
           <b>不必等模擬器就能上線</b>——已於 2026-08-24 全數完成並歸檔。<br>
+          <b>2026-10-10 補註：</b>機甲詳情頁已收起「槽位配置」與「四部位表」兩個區塊（元件保留在 <code>src/components/mechs/MechSlotPanel.tsx</code>，<code>MechPartsTable</code> 仍供模擬器使用），固定武裝改在部件十字上以肩部卡呈現（<code>ShoulderArmamentCard</code>，26c67478）。<br>
           <b>動工前實測結果：<code>userBuilds</code>／<code>builds</code> 皆 0 筆</b>
           → <b>052-C／E 不需要任何遷移路徑</b>（052-E A-1 已於 2026-08-29 復驗，<code>builds</code> 仍是 0）。<br>
           ⚠ <b>原文把 <code>users</code> 也寫成 0 筆，那是量測假象</b> —— 父文件是空殼，<code>getDocs</code> 看不到；實際有 <b>42 個帳號</b>（profile 子文件）。遷移結論不受影響，但別拿它推論「站上沒有使用者」。<br>
@@ -1274,7 +1275,7 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">052-O &nbsp; 配裝圖回讀</div>
-      <div class="task-group-meta">2026-09-08 建檔並完成 · 10 工項（<b>A–D 四個 Phase 全數完成，e2e 18／18，待歸檔</b>）</div>
+      <div class="task-group-meta">2026-09-08 建檔並完成 · 10 工項（<b>A–D 四個 Phase 全數完成，e2e 18／18，2026-10-11 已歸檔</b>）</div>
       <span class="status done">已完成</span>
     </div>
     <div class="task-row">
@@ -1320,7 +1321,7 @@
           build 產物：<code>zxing_reader-*.wasm</code> 1,093 kB（gzip 464 kB）、<code>qrDecode-*.js</code> 36 kB，主 bundle 只含 <code>import()</code> 呼叫點。
           腳本 <code>_local-notes/2026-09/2026-09-08_e2e-image-import.mjs</code>（不進版控）。
         </div>
-        <div class="task-file">PLAN-052-O_配裝圖回讀/進度表.html</div>
+        <div class="task-file">歷史記錄/PLAN-052-O_配裝圖回讀/進度表.html</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status done">已完成</span>

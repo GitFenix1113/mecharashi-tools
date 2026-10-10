@@ -199,22 +199,24 @@
 
   <table class="spec-table">
     <tr><th>資料夾</th><th>職責</th><th>內容</th></tr>
-    <tr><td><code>layout/</code></td><td>全站外框</td><td><code>Layout</code>（導覽列 / 頁尾 / 版位）、<code>NavExpandBar</code>（群組的橫向展開條 ＋ 觸發鈕 <code>NavGroupTrigger</code>）、<code>SubNavTabs</code>（群組內的常駐分頁列）、<code>NavIcon</code>、<code>SignedOutBanner</code>、<code>EmulatorBadge</code>（模擬器環境標示）<br><span style="color:var(--text-dim);">※ 2026-08-20 起 <code>ContentNavDropdown</code>（floating-ui 垂直浮層）已刪除，見下方「導覽的兩層」。</span></td></tr>
+    <tr><td><code>layout/</code></td><td>全站外框</td><td><code>Layout</code>（導覽列 / 頁尾 / 版位）、<code>NavExpandBar</code>（群組的橫向展開條 ＋ 觸發鈕 <code>NavGroupTrigger</code>）、<code>SubNavTabs</code>（群組內的常駐分頁列；詳情頁時當前那一格變成「← 機甲」返回鍵，<code>backOnDetail</code>，版本情報群不開）、<code>ScrollManager</code>（全站換頁捲動，2026-10-11）、<code>BackToListLink</code>（返回清單連結，2026-10-11）、<code>NavIcon</code>、<code>SignedOutBanner</code>、<code>EmulatorBadge</code>（模擬器環境標示）<br><span style="color:var(--text-dim);">※ 2026-08-20 起 <code>ContentNavDropdown</code>（floating-ui 垂直浮層）已刪除，見下方「導覽的兩層」。</span></td></tr>
     <tr><td><code>auth/</code></td><td>登入與權限</td><td><code>AuthModal</code>（登入 / 註冊）、<code>AdminRoute</code>（<code>/admin/*</code> 的角色 gate）</td></tr>
     <tr><td><code>refs/</code></td><td>實體引用層（PLAN-019 / 034）</td><td><code>RefText</code>（正文 <code>[xxx]</code> → chip）、<code>RefChip</code>、<code>EntityRefView</code>（浮窗內容）、<code>RefBriefList</code>／<code>RefMechModules</code>／<code>RefPilotTalents</code>（浮窗本文：機甲列模組、機師列天賦）、<code>DiffHighlight</code>（專武強化差異）、<code>NdOverrideEmpty</code>（局部關閉算力覆寫）</td></tr>
     <tr><td><code>lore/</code></td><td>機師故事館（PLAN-042-A，042-B 機甲館共用）</td><td><code>LoreArt</code>（三層 color-dodge 線稿→彩圖顯影）、<code>LoreChapterPager</code>（常駐具名章節軸，不接滾輪）、<code>LoreChapterBody</code>、<code>LoreRichText</code>（只解析 <code>[xxx]</code>、不套數字高亮）、<code>LoreCommentaryRow</code>（NPC 旁白）、<code>LoreSourceLine</code>（署名）、<code>loreText.ts</code>（切段／引文體判定／署名剝離）、<code>LoreBgmToggle</code>（館內 BGM 開關，PLAN-042-C）、<code>useLoreParallax</code>（立繪柱微視差 hook）、<code>loreArtTuning.ts</code>（per-pilot 顯影退路表，從 LoreArt 拆出以保 fast refresh）</td></tr>
-    <tr><td><code>badges/</code></td><td>徽章 / 標籤</td><td><code>PilotBadges</code>、<code>MechBadges</code>、<code>WeaponBadges</code>、<code>WeaponRarityBadge</code>、<code>ModuleBadges</code>、<code>ComponentBadges</code>、<code>BackpackBadges</code></td></tr>
-    <tr><td><code>icons/</code></td><td>實體圖示</td><td><code>PilotIcon</code>、<code>WeaponIcon</code>、<code>ComponentIcon</code>、<code>NavIcon</code></td></tr>
+    <tr><td><code>badges/</code></td><td>徽章 / 標籤</td><td><code>PilotBadges</code>、<code>MechBadges</code>、<code>WeaponBadges</code>、<code>WeaponRarityBadge</code>、<code>ModuleBadges</code>、<code>ComponentBadges</code>、<code>BackpackBadges</code>、<code>InnateBadges</code>（天生模組「推導／人工覆寫」標記，PLAN-052-K）</td></tr>
+    <tr><td><code>icons/</code></td><td>實體圖示</td><td><code>PilotIcon</code>、<code>WeaponIcon</code>、<code>ComponentIcon</code>、<code>ModuleIcon</code>、<code>SkillIcon</code>、<code>LoadoutIcon</code>（配裝描邊圖示集）、<code>NavIcon</code></td></tr>
     <tr><td><code>cards/</code></td><td>領域卡片 / 浮卡</td><td><code>FormCard</code>（機師形態，PLAN-041）、<code>WeaponSkillCard</code>、<code>BossDropTooltip</code></td></tr>
-    <tr><td><code>common/</code></td><td>泛用 UI 基礎件</td><td><code>FallbackImage</code>（逐層退回的圖片）、<code>BottomSheet</code>（行動裝置浮層）、<code>ViewModeToggle</code>（卡片 / 列表切換）</td></tr>
+    <tr><td><code>common/</code></td><td>泛用 UI 基礎件</td><td><code>FallbackImage</code>（逐層退回的圖片）、<code>BottomSheet</code>（行動裝置浮層）、<code>ViewModeToggle</code>（卡片 / 列表切換）、<code>NdPowerBar</code>／<code>NdActiveAbilities</code>（神經驅動算力與主動能力）</td></tr>
     <tr><td><code>module/</code></td><td>模組元件家族</td><td>見下一節</td></tr>
+    <tr><td><code>mechs/</code></td><td>機甲詳情頁</td><td><code>ShoulderArmamentCard</code>（部件十字上排的肩部固定武裝卡，2026-10-10）、<code>MechSlotPanel</code>（<code>MechSlotPanel</code>／<code>MechPartsTable</code>；PLAN-052-A E-1）<br><span style="color:var(--text-dim);">※ 2026-10-10 起機甲詳情頁收起「槽位配置」與「四部位表」，元件保留以便恢復；<code>MechPartsTable</code> 仍給配裝模擬器用。</span></td></tr>
+    <tr><td><code>charts/</code></td><td>圖表</td><td><code>RadarChart</code>（機師六維雷達圖；機師詳情頁與配裝模擬器共用，PLAN-052-B）</td></tr>
     <tr><td><code>loadout/</code></td><td>配裝模擬器</td><td><code>LoadoutRig</code>（槽位圖）、<code>MechPartStrip</code>／<code>PartSourceList</code>（四部位與部件混搭）、<code>ModulePanel</code>／<code>ComponentPanel</code>／<code>WeaponComponentList</code>、<code>FormTabs</code>／<code>LockedFormCard</code>（形態分頁）、<code>PilotIdentityCard</code>／<code>PilotTalentStrip</code>、<code>EquippedStats</code>／<code>EquippedEffects</code>／<code>OutputBar</code>／<code>LoadoutSummary</code>、<code>WeaponSkillPanel</code>、<code>SlotCell</code>／<code>PickerShell</code>／<code>PickerVariants</code>、<code>RejectionRow</code>／<code>CascadeToast</code>／<code>ActionChevron</code>、<code>SkillPanel</code>／<code>CarriedSkillRow</code>（攜帶技能三格；PLAN-052-L D）、<code>LoadoutExportCard</code>（匯出圖）＋ <b><code>loadout/export/</code></b>（匯出圖專用子資料夾：<code>ExportRig</code>／<code>exportTheme</code> 等；<span style="color:var(--text-dim);">PLAN-052-L B-2 —— 匯出圖的每一個數字都是 px 字面值、不吃 <code>var()</code> 也不吃 Tailwind，與螢幕版元件混在同一層遲早會被互相參照</span>）、<code>PasteCodeDialog</code>（貼碼）、<b><code>ShelfDialog</code></b>（書架：本機／雲端兩個分頁 ＋ 訪客書架匯入；<span style="color:var(--text-dim);">PLAN-052-E C-1 由 <code>LocalShelfDialog</code> 改名 —— 一個叫 Local 的元件裡裝著雲端分頁是下一個人一定會看錯的地方</span>）、<code>loadoutTheme.ts</code>（共用樣式常數）<br><span style="color:var(--text-dim);">※ PLAN-052 A–L 建立；純邏輯不在這裡 —— 規則在 <code>utils/loadoutRules.ts</code>／<code>cloudBuildRules.ts</code>，代碼編解在 <code>utils/loadoutCode/</code>，存取在 <code>lib/localBuilds.ts</code>（本機）／<code>lib/buildsApi.ts</code>（雲端），失效三態在 <code>lib/buildStatus.ts</code>（兩者共用同一支）。<br>※ PLAN-052-L 另抽出四支純函式，<b>共同目的都是「同一件事不要寫兩份」</b>：<code>utils/rigLayout.ts</code>（槽位圖幾何——螢幕版與匯出圖各自渲染，但「畫面左欄＝機體右側」這類空間裁決只有這一份）、<code>utils/loadoutSummaryText.ts</code>（純文字摘要，與匯出圖同一批資料同一套規則）、<code>utils/carriedSkills.ts</code>（攜帶技能候選池）、<code>utils/ndPowerBonus.ts</code>（模組給的神經驅動算力加成）；QR 在 <code>utils/loadoutQr.ts</code>。</span></td></tr>
     <tr><td><code>planner/</code></td><td>科研規劃器</td><td><code>MechSelector</code>、<code>PartSlotCard</code>、<code>PlanResult</code>、<code>SuperFactoryPanel</code>、<code>Stepper</code>、<code>ModuleInput</code></td></tr>
     <tr><td><code>timeline/</code></td><td>版本時間軸</td><td><code>VersionTimeline</code>（網址 → 版本）、<code>VersionDetailView</code>（信箱式橫幅帶 ＋ 工具列）、<code>VersionRail</code>（常駐版本選擇列）、<code>VersionGanttPanel</code>（左右主從分割）、<code>ActivityBar</code> / <code>ActivityCard</code> / <code>ActivityCardFlow</code>、<code>GanttAxisOverlay</code>、<code>PatchInfoRow</code>（PLAN-048 刪除 <code>ActivityTimeline</code> / <code>CoreInfoPanel</code> / <code>VersionSidePanel</code> / <code>VersionDot</code>；PLAN-050 C-3 刪除 <code>VersionExpandedPanel</code> —— 橫幅搬到頂部色帶後，它負責的背景疊層沒有存在理由）</td></tr>
     <tr><td><code>home/</code></td><td>首頁區塊</td><td><code>SiteChangelog</code>、<code>SiteTeamSection</code>。<br><span style="color:var(--text-dim);">※ 2026-08-19 起首頁只剩站務履歷與維護團隊，資料面板整組退場（<code>HomeTabPanel</code> / <code>HomeHeroBar</code> 已刪除），版本檢視本體移入 <code>versions/</code>。</span></td></tr>
     <tr><td><code>versions/</code></td><td>版本情報三分頁（PLAN-050）</td><td><code>VersionViewTabs</code>（route 驅動的分頁列，<strong>2026-08-19 起不渲染，2026-08-20 起角色由 <code>layout/SubNavTabs</code> 接手且不要再加回來</strong> —— 頁內再放一條是同一組導覽出現兩次；其 <code>VERSION_VIEWS</code> 仍是三處導覽的<strong>單一來源</strong>：導覽列展開條、行動版 More 面板、首頁的入口按鈕，連 icon 與說明文字都取自同一份）、<code>VersionQuickTable</code>、<code>GrayOpsPanel</code>／<code>GrayOpsMechRow</code></td></tr>
     <tr><td><code>profile/</code></td><td>個人頁</td><td><code>AvatarDisplay</code>、<code>AvatarPicker</code>、<code>PilotAvatarGallery</code>、<code>ProfileEditForm</code>、<code>CloudBuildList</code>（雲端書架清單，PLAN-052-E）</td></tr>
-    <tr><td><code>admin/</code></td><td>後台專用</td><td><code>RefPicker</code>（引用挑選器）、<code>IconPicker</code>、<code>AdminHalfEditorPanel</code>、<code>AdminTimedActivityEditor</code>、<code>analytics/</code>（<code>StatCard</code>／<code>BarList</code>／<code>TrendChart</code>）</td></tr>
+    <tr><td><code>admin/</code></td><td>後台專用</td><td><code>RefPicker</code>（引用挑選器）、<code>IconPicker</code>、<code>GameIconPicker</code>（官方圖庫選圖器，PLAN-055／056）、<code>GameArtFields</code>（遊戲 ID／立繪主鍵／官配欄位，PLAN-054）、<code>ArmamentMountEditor</code>（固定武裝掛載編輯，MechAdmin 與 FormAdmin 共用）、<code>FixedArmamentHostsField</code>（武器管理的唯讀宿主區塊，2026-10-10；連結只在宿主那側編輯）、<code>AnnouncementReviewPanel</code>／<code>AnnouncementInsightsPanel</code>（台版公告審核，PLAN-048）、<code>AdminHalfEditorPanel</code>、<code>AdminTimedActivityEditor</code>、<code>analytics/</code>（<code>StatCard</code>／<code>BarList</code>／<code>TrendChart</code>）</td></tr>
   </table>
 
   <div class="info-block" style="margin-top:16px;">
@@ -236,6 +238,22 @@
     header：它的高度在動畫中浮動，要同步就得每幀餵值。
   </div>
 
+  <div class="info-block" style="margin-top:16px;">
+    <strong>◆ 換頁捲動與返回清單（2026-10-11）</strong><br>
+    站上是元件式路由（<code>&lt;BrowserRouter&gt;&lt;Routes&gt;</code>），React Router 的 <code>&lt;ScrollRestoration&gt;</code> 只支援 data router，
+    在這之前<strong>全站沒有任何換頁捲動處理</strong>：從圖鑑捲到一半點進詳情頁，詳情頁會直接開在同樣的高度。<br>
+    <code>layout/ScrollManager</code>（掛在 <code>App.tsx</code> 的 <code>BrowserRouter</code> 內）依 <code>utils/scrollPolicy.ts</code> 的決策表處理 <code>window</code> 捲動：
+    <strong>PUSH 且路徑變了 → 捲到頂端</strong>（有 #錨點就交給錨點）；<strong>上一頁／下一頁（POP）→ 還原離開時的位置</strong>；
+    只改 query（機師詳情頁的 <code>?tab=</code>、圖鑑篩選）或 REPLACE（時間線切換版本、故事館換章）→ 不動。<br>
+    · 位置以歷史項目的 <code>location.key</code> 為鍵，記在 sessionStorage（重新整理也回得去）；
+      <code>history.scrollRestoration</code> 改成 <code>manual</code>，等目標頁長高再捲（setTimeout 輪詢最多 1.5 秒，使用者自己捲動就放棄）。<br>
+    · 直接打開的第一頁原本沒有 key（React Router 給 <code>'default'</code>），由 <code>main.tsx</code> 的 <code>ensureHistoryKey()</code>（<code>utils/historyKey.ts</code>）在路由建立前補上。<br>
+    · <code>layout/BackToListLink</code>：上一個歷史項目就是那份清單時改用 <code>navigate(-1)</code>（回到清單原本的位置與篩選），否則開一份新的清單；
+      判斷靠 <code>utils/historyTrail.ts</code> 記下的「每個 <code>history.state.idx</code> 是哪個網址」（由 ScrollManager 每次換頁時寫入）。
+      <code>SubNavTabs</code> 的「← 機甲」與各詳情頁頁首的返回連結共用它。<br>
+    · 沉浸式版面（故事館、時間線）的 window 不捲，各自的捲動容器自己處理（故事館見 <code>LoreLayout</code> 的跨路由捲頂）。
+  </div>
+
   <div class="sub-h" style="margin-top:24px;">src/components/module/ 模組元件家族</div>
   <div class="info-block">
     模組卡在<strong>模組圖鑑</strong>與<strong>機甲詳情頁</strong>兩處呈現。PLAN-044 前兩頁各有一份實作（含逐字重複的等級浮窗機制與手寫數值展開），現已收斂為單一實作，以 <code>variant</code> 區分外觀。
@@ -245,15 +263,19 @@
     <tr><th>元件 / Hook</th><th>職責</th></tr>
     <tr>
       <td><code>module/ModuleCard</code></td>
-      <td>模組卡骨架。<code>variant="catalog"</code>（圖鑑：大圖示、含槽位標籤與來源）／<code>"detail"</code>（機甲詳情頁：小圖示、緊湊）。<strong>等級狀態放在卡片內部</strong>，各卡獨立、預設滿級</td>
+      <td>模組卡骨架。<code>variant="catalog"</code>（圖鑑：大圖示、含槽位標籤與來源）／<code>"detail"</code>（機甲詳情頁：小圖示、緊湊；標題列以 container query 切換——卡寬 ≥ 440px 時名稱、等級、「全部」同一行）／<code>"row"</code>（機甲詳情頁的副模組單行版：沒有滑桿與數值標籤，各等級由「全部」查看，2026-10-11）。<strong>等級狀態放在卡片內部</strong>，各卡獨立、預設滿級</td>
     </tr>
     <tr>
       <td><code>module/ModuleLevelSelector</code></td>
-      <td>等級切換。桌機為 <code>&lt;input type="range"&gt;</code> 並顯示 <code>Lv.N/M</code>；行動裝置改等級按鈕列（<code>useIsMobile</code> 分流）。只有一級或無等級資料時整個不渲染</td>
+      <td>等級切換。桌機為 <code>&lt;input type="range"&gt;</code> 並顯示 <code>Lv.N/M</code>；行動裝置改等級按鈕列（<code>useIsMobile</code> 分流；<code>fill</code> 時按鈕平均撐滿整列、不換行，給詳情頁用）。只有一級或無等級資料時整個不渲染</td>
     </tr>
     <tr>
       <td><code>module/ModuleStatTags</code></td>
       <td>數值標籤列，走 <code>STAT_LABELS</code> 產出。吃「一個帶數值欄位的物件」（<code>ModuleLevel</code> 或 <code>Module</code>），值為 0／未設定者不渲染，整組皆空時回傳 <code>null</code>。<code>variant: 'plain' | 'chip'</code></td>
+    </tr>
+    <tr>
+      <td><code>module/ModuleAllLevels</code></td>
+      <td>「全部」按鈕與各等級一覽（桌機浮窗、行動裝置 BottomSheet）。與滑桿互補：滑桿查單一等級，「全部」比較各級跳幅</td>
     </tr>
     <tr>
       <td><code>module/ModuleAdopters</code></td>
@@ -261,7 +283,7 @@
     </tr>
     <tr>
       <td><code>module/ModuleBoundPart</code></td>
-      <td>綁定部位顯示，內含唯一一份 <code>PART_LABELS</code>。<code>variant: 'inline' | 'row'</code>。保留 <code>Array.isArray</code> 防禦以相容殘留的純字串舊資料</td>
+      <td>綁定部位顯示，內含唯一一份 <code>PART_LABELS</code>。<code>variant: 'inline' | 'row' | 'tag'</code>（<code>tag</code>＝詳情頁模組卡標題列裡的「綁定 軀幹」）。保留 <code>Array.isArray</code> 防禦以相容殘留的純字串舊資料</td>
     </tr>
     <tr>
       <td><code>badges/ModuleBadges</code></td>

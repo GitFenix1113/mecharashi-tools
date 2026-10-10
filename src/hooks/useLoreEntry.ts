@@ -15,7 +15,8 @@ import { useAuth } from '../contexts/AuthContext'
  *
  * 收尾：故事館完成後把本旗標改為 `false` 即正式公開，並同步做三件事——
  *   ① 把 siteChangelog 裡 `unreleased: true` 的故事館條目拿掉旗標、日期改成公開日；
- *   ② Cloudflare Transform Rule 的 SPA fallback 白名單補上 `/lore`（CLAUDE.md 第 3 節）；
+ *   ② ~~Cloudflare Transform Rule 的 SPA fallback 白名單補上 `/lore`~~ —— 已完成：PLAN-042-A F-1 於
+ *      2026-09-10 部署（含 OG 用的 UA 排除區塊），2026-10-11 複驗 `/lore` 回 200，公開時不必再動；
  *   ③ 確定穩定後連同本檔與 `useLoreEntryVisible()` 的呼叫一起刪除。
  */
 export const LORE_INTERNAL_ONLY = true

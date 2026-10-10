@@ -108,6 +108,16 @@
   <div class="section-label purple">v2.0 更新（PLAN-003）</div>
   <div class="section-title">Schema 重構說明</div>
 
+  <div class="changed-block" style="border-left-color:var(--accent-orange);background:rgba(249,115,22,0.04);">
+    <strong>固定武裝的宿主規則</strong>（2026-10-10，無 schema 變動）<br><br>
+    · <strong>一對一</strong>：每把 <code>isFixedArmament</code> 武器恰好一個宿主（一台機甲或一個機師形態）。站長判斷：固定武裝的造型與故事設定都綁死單台，幾乎不可能共用。
+      由 <code>scripts/validate-mech-slots.mjs</code> 新增的 <strong>⑦</strong> 把關：2 個以上宿主＝錯誤、0 個（建了還沒連結）＝警告。<br>
+    · <strong>擁有者不存在武器上</strong>：「這把焊在誰身上」由 <code>fixedArmamentHosts()</code>（<code>src/utils/mechSlots.ts</code>）反查；
+      一對一的前提下兩邊都存只會漂移，且模擬器混搭部件時固定武裝要跟著手臂走，掛載關係必須留在部件上。<br>
+    · <strong>後台可勾選</strong>：武器管理「基本資訊」補上 <code>isFixedArmament</code> 勾選（選「固定武裝」種類會自動勾），勾了之後顯示唯讀的宿主區塊；
+      連結本身只在宿主那側編輯（機甲管理 → 部件／機師形態）。
+  </div>
+
   <div class="changed-block" style="border-left-color:var(--accent-green);background:rgba(34,197,94,0.04);">
     <strong>PLAN-056 武器／背包圖示 ID 化</strong>（2026-10-09 實施）<br><br>
     · <strong>新增 <code>gameId</code></strong>：官方武器圖示 <code>Icon_weapon_&lt;gameId&gt;</code> 的編號（例 <code>'20300501'</code>、<code>'10700301A'</code>），
@@ -216,7 +226,7 @@
   </div>
   <div class="note-block" style="border-left-color:var(--accent-orange);background:rgba(249,115,22,0.05);">
     <strong>「粒子莢艙」與「固定武裝」是 PLAN-040 新增的兩種 kind，性質與其他 17 種不同</strong><br>
-    兩者都只服務<strong>固定武裝</strong>（無法更換的武器，全庫已窮舉 6 種）：
+    兩者都只服務<strong>固定武裝</strong>（無法更換的武器，目前 8 把，見下方 <code>isFixedArmament</code>）：
     「固定武裝」對應衝擊炮／嵐質儲能艙／多功能彈倉（type 為<strong>特殊</strong>，雙肩），
     「粒子莢艙」對應千星（type 仍為<strong>戰術</strong>，背部）。<br>
     這些武器帶 <code>isFixedArmament: true</code>，<strong>不可被玩家配裝、不能裝元件</strong>，
@@ -278,8 +288,8 @@
       <tr><td>isExclusive</td><td>boolean</td><td>是否為專屬武器（SS 稀有度）</td></tr>
       <tr><td>exclusiveFor</td><td>string?</td><td>主要對應機師 ID（專武天賦加強對象）</td></tr>
       <tr class="group-header"><td colspan="3">▎固定武裝（PLAN-040）</td></tr>
-      <tr><td>isFixedArmament</td><td>boolean?</td><td><strong>無法更換的武器</strong>。已窮舉 6 種：衝擊炮（帕斯卡）／嵐質儲能艙（破曉者-01）／多功能彈倉（霸王）／耀星・隕星・千星（彌造者 · 海莉絲虛粒子形態）。<br><small style="color:var(--text-dim)">供 badge 渲染與圖鑑／模擬器過濾；<strong>不編碼「來源」也不編碼「佔哪個槽」</strong>，箭頭永遠是「來源 → 武器」。槽位歸屬見 PLAN-047。<br>⚠ 命名刻意避開 <code>fixedMod</code>（固定改裝）；<strong>不可</strong>複用 <code>isExclusive</code> / <code>exclusiveFor</code>——那是「可選裝的機師專武」，語意相反，且會被渲染成金框專武並破壞 <code>isExclusive ⇔ rarity === 'SS'</code> 的不變式。</small></td></tr>
-      <tr><td>manual</td><td>boolean?</td><td>手建文件保護旗標。官方 API / WIKI 無這六筆、100% 手動維護，補丁腳本應略過。<br><small style="color:var(--text-dim)">對照 mechs.html / pilots 的同名欄位</small></td></tr>
+      <tr><td>isFixedArmament</td><td>boolean?</td><td><strong>無法更換的武器</strong>。目前 8 把（2026-10-10）：機甲部件——衝擊炮（帕斯卡）／嵐質儲能艙（破曉者-01）／多功能彈倉（霸王）；機師形態——耀星・隕星・千星（海莉絲虛粒子形態）、幽弧・夜燼（曜巡航形態）。<br><small style="color:var(--text-dim)">供 badge 渲染、圖鑑／模擬器過濾，以及後台「宿主」區塊與 validate-mech-slots ⑦ 的範圍判定；<strong>不編碼「來源」也不編碼「佔哪個槽」</strong>，箭頭永遠是「來源 → 武器」。槽位歸屬見 PLAN-047。<br>與宿主<strong>一對一</strong>（validate-mech-slots ⑦）；擁有者<strong>不存在武器上</strong>，一律由 <code>fixedArmamentHosts()</code>（utils/mechSlots.ts）從 <code>mechs.parts.*.fixedArmament</code>／<code>forms.restrict.mounts</code> 反查。後台武器管理可直接勾選（2026-10-10 起；在那之前只能用腳本寫入）。<br>⚠ 命名刻意避開 <code>fixedMod</code>（固定改裝）；<strong>不可</strong>複用 <code>isExclusive</code> / <code>exclusiveFor</code>——那是「可選裝的機師專武」，語意相反，且會被渲染成金框專武並破壞 <code>isExclusive ⇔ rarity === 'SS'</code> 的不變式。</small></td></tr>
+      <tr><td>manual</td><td>boolean?</td><td>手建文件保護旗標。官方 API / WIKI 無這些資料、100% 手動維護，補丁腳本應略過。目前即上述 8 把固定武裝（2026-10-10 正式庫）。<br><small style="color:var(--text-dim)">對照 mechs.html / pilots 的同名欄位</small></td></tr>
       <tr><td>naStats</td><td>string[]?</td><td><strong>不適用</strong>的數值欄位 key 清單；渲染層對列入者一律顯示「—」，不顯示數字（DB 仍存 0）。<br><small style="color:var(--text-dim)"><strong>為什麼不直接填 0</strong>：<code>ammoCount === 0</code> 已被佔用為「無限彈藥 ∞」（172 筆中 129 筆靠此規則），填 0 會把「沒有彈藥」渲染成「無限彈藥」。旁證安全：全庫 <code>attack === 0</code> 與 <code>weight === 0</code> 皆 0 筆。<br>⚠ 只標「<strong>不適用</strong>」，不標「<strong>未知</strong>」——衝擊炮的 <code>ammoCount: 1</code> 與射程 3 是真值，<strong>不得</strong>列入。<br>定案值：衝擊炮 = <code>['attack','accuracy','critValue','weight','kindCoefficient']</code>；嵐質儲能艙／多功能彈倉 = 全部數值欄位；耀星／隕星／千星 = 不需要（改用下方的 <code>variableStats</code>）。</small></td></tr>
       <tr><td>variableStats</td><td>string[]?</td><td><strong>無固定值</strong>的數值欄位 key 清單：有數值，但由當下掛載情境決定，不是這把武器自己的屬性。渲染層對列入者<strong>整格不顯示</strong>，並在區塊末尾附一行說明。<br><small style="color:var(--text-dim)">⚠ <strong>與 <code>naStats</code> 是兩件事，不可合併</strong>：<code>naStats</code>「沒有這個數值」→ 顯示「—」；<code>variableStats</code>「有值但不固定」→ 收掉整格。併成一欄會讓「嵐質儲能艙沒有攻擊力」與「耀星的攻擊力不固定」變成同一句話。<br>⚠ <strong>DB 仍保留原觀測值</strong>（耀星 <code>attack: 757</code> 等），只在渲染層攔下——那是日後傷害模擬的樣本，洗成 0 就回不來了。<br>定案值：耀星／隕星／千星 = 除 <code>minRange</code>／<code>maxRange</code> 外的全部數值欄位（2026-08-13 維護者實測：三把是海莉絲虛粒子形態的形態武裝，數值繼承自機甲當下裝備的武器，連重量都不是自己的）。</small></td></tr>
       <tr class="group-header"><td colspan="3">▎元件插槽</td></tr>

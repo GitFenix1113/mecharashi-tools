@@ -416,7 +416,7 @@
           勾選 <code>isFixedArmament</code> 時才出現左右肩欄位。選了左肩 <code>…01</code>，右肩自動帶出同系列的 <code>…02</code>，但可以改。
           儲存後照既有流程 <code>bumpDataVersion</code>。
         
-          <br><b style="color:var(--accent-green)">✅ 2026-10-09：EquipGameIdField（寫 gameId）＋自訂圖 IconField；固定武裝出現左右肩兩格；背包後台列表加縮圖</b>
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09：EquipGameIdField（寫 gameId）＋自訂圖 IconField；固定武裝出現左右肩兩格；背包後台列表加縮圖</b><br><b style="color:var(--accent-green)">2026-10-10 補註：左右肩欄位改為只在 <code>isFixedArmament</code> 且裝備部位為肩部時出現，形態武裝（耀星、隕星、千星…）不顯示（4367eb09）；<code>isFixedArmament</code> 勾選框本身 10-10 才補進「基本資訊」分頁（26c67478），在此之前只能靠腳本寫入</b>
         </div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -605,7 +605,7 @@
           <code>weapons/</code> 只留自訂圖；<code>backpacks/</code> 整夾移除。<code>manifest.json</code> 會跟著少掉這些檔案，舊 IconPicker 也就不會再列出它們。
           要先等 <code>pages-build-deployment</code> 完成再清快取（Cloudflare 會快取 404）。
         
-          <br><b style="color:var(--accent-green)">2026-10-10：掃描器閘門 --fail-on=agh 通過後刪除 repo 內舊檔（weapons／ 101、backpacks／ 17），連線測試頁的探測圖改指圖庫。<b>待 push</b>；push 後 gh-pages 上的舊檔由 ledger 寬限 14 天自動清除。舊圖已無任何引用，不需 Purge</b>
+          <br><b style="color:var(--accent-green)">2026-10-10：掃描器閘門 --fail-on=agh 通過後刪除 repo 內舊檔（weapons／ 101、backpacks／ 17），連線測試頁的探測圖改指圖庫。<b>10-10 已 push 部署</b>；gh-pages 上的舊檔進入 ledger 寬限，約 10-24 自動清除，屆時抽查舊網址 404 即可結案。舊圖已無任何引用，不需 Purge</b>
         </div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -648,7 +648,7 @@
       <div>
         <div class="task-name">截一張帕斯卡的機甲整備畫面</div>
         <div class="task-desc">霸王、破曉者-01 都是左肩＝…01、右肩＝…02，推定帕斯卡相同，截圖確認即可。
-          <br><b style="color:var(--accent-green)">站長 10-09：固定武裝的左右肩由站長在後台手動處理（衝擊炮、嵐質儲能艙、多功能彈倉三把的 gameId 與左右肩都在 WeaponAdmin 的「基本」分頁）</b>
+          <br><b style="color:var(--accent-green)">站長 10-09：固定武裝的左右肩由站長在後台手動處理（衝擊炮、嵐質儲能艙、多功能彈倉三把的 gameId 與左右肩都在 WeaponAdmin 的「基本資訊」分頁：勾 <code>isFixedArmament</code> 且裝備部位為肩部時才出現左右肩兩格，見 B-3 補註）</b>
         </div>
       </div>
       <div class="task-assignee">站長</div>

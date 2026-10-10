@@ -53,6 +53,13 @@
   </div>
 
   <div class="changed-block">
+    <strong>🔄 v1.4 更新（PLAN-056）：官方圖示編號</strong>
+    新增 <code>gameId</code>（官方背包圖示 <code>Icon_backpack_&lt;gameId&gt;</code> 的編號，186 筆已回填）；
+    <code>icon</code> 改為自訂圖，只在沒有 gameId 時才會顯示。詳見
+    <a href="../../02_資料模型/backpacks.html" style="color:var(--accent-cyan);">02_資料模型 / backpacks.html</a>。
+  </div>
+
+  <div class="changed-block">
     <strong>🔄 v1.3 更新（PLAN-036）：特種背包前置關係</strong>
     新增 <code>craft.prereqBackpackId</code>（本次<strong>唯一落庫的新欄位</strong>）——記錄背包製作的「低一階前置主背包」。
     合成階層分類（PLAN-035）與能力循前置鏈（PLAN-037）皆為前端純函式 derive、<strong>不落庫、不 bump 版本</strong>。
@@ -64,6 +71,8 @@
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>id</td><td>string</td><td>文件 ID。既有 180 筆為官方 API 的數字 ID（API: ID）；<strong>後台新增者為 <code>backpack_&lt;名稱 slug&gt;</code></strong>（2026-08-10 起，站方定調新資料走站內命名規則、不再遷就官方編號）</td></tr>
       <tr><td>name</td><td>string</td><td>背包名稱</td></tr>
+      <tr><td>gameId</td><td>string?</td><td>🆕 PLAN-056：官方圖示 <code>Icon_backpack_&lt;gameId&gt;</code> 的編號（例 <code>'60100101'</code>）。<strong>外觀編號、同類共用</strong>，不是背包身分，不可當主鍵；186 筆已回填</td></tr>
+      <tr><td>icon</td><td>string?</td><td>自訂圖路徑；只在沒有 <code>gameId</code> 時才會顯示（PLAN-056 C-5 前仍存著舊官方圖的本地路徑）</td></tr>
       <tr><td>type</td><td>BackpackType</td><td>背包種類 Enum（API: BackpackMainType）：Heal / Ammo / Interference / Invisible / BackupEquipment / MovePointAdd / Flow / Radar / EMP / Enhance / PowerAdd</td></tr>
       <tr><td>rarity</td><td>WeaponRarity</td><td>稀有度 Enum（與武器共用）：SS / S+ / S / A / B（API: quality）</td></tr>
       <tr><td>weight</td><td>number</td><td>重量，佔機甲出力（API: weight 頂層欄位）</td></tr>

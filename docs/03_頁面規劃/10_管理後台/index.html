@@ -105,17 +105,19 @@
 
 <section class="section">
   <div class="section-label green">分頁總覽</div>
-  <div class="section-title">管理分頁（TAB_CONFIG · 12 分頁 + 版本管理）</div>
-  <div class="section-desc">AdminPage 以 tab 切換各集合的列表 / 編輯。多數分頁切入即整包預載入主資料、走前端片段搜尋（<code>useClientPaged</code>）；backpacks / components 資料量大，仍走伺服器端分頁查詢（<code>useServerPaged</code>，沿用搜尋閘門）。</div>
+  <div class="section-title">管理分頁（TAB_CONFIG · 14 分頁 + 版本管理）</div>
+  <div class="section-desc">AdminPage 以 tab 切換各集合的列表 / 編輯。多數分頁切入即整包預載入主資料、走前端片段搜尋（<code>useClientPaged</code>）；只剩 components 資料量大，仍走伺服器端分頁查詢（<code>useServerPaged</code>，沿用搜尋閘門）；backpacks 已於 PLAN-036 改回整包預載入。</div>
 
   <table class="spec-table">
     <tr><th>分頁（tab）</th><th>集合 / 路由</th><th>說明</th></tr>
     <tr><td><code>modules</code> 模組</td><td>modules（+mechs）</td><td>含各等級 levels 編輯、條件效果、enum 防呆</td></tr>
     <tr><td><code>mechs</code> 機甲</td><td>mechs（+modules）</td><td>部件數值、模組 ID 下拉（未對應警示）</td></tr>
     <tr><td><code>pilots</code> 機師</td><td>pilots</td><td>🆕 新增機師（PLAN-025，<code>pilot_&lt;名&gt;</code> ID + manual 防覆寫）/ 六維 / AP / 個人資料自訂欄位（additionalInfo）/ 天賦算力改寫（ndVariants）/ 神經驅動分區編輯器（分區選單 α·β·γ1·γ2、插槽晶片、各級門檻連結能力庫）</td></tr>
-    <tr><td><code>weapons</code> 武器</td><td>weapons（+pilots）</td><td>武器屬性、技能（含 descriptionRefs RefPicker）、改裝</td></tr>
+    <tr><td><code>weapons</code> 武器</td><td>weapons（+pilots、pilotSkills）</td><td>武器屬性、技能（含 descriptionRefs RefPicker）、改裝；官方圖示編號 <code>gameId</code>（PLAN-056）、固定武裝勾選與宿主區塊（2026-10-10）</td></tr>
     <tr><td><code>components</code> 元件</td><td>components（伺服器分頁）</td><td>觸 / 應元件編輯</td></tr>
-    <tr><td><code>backpacks</code> 背包</td><td>backpacks（伺服器分頁）</td><td>背包主技能與裝配限制</td></tr>
+    <tr><td><code>backpacks</code> 背包</td><td>backpacks（+backpackSkills，整包預載入）</td><td>背包主技能與裝配限制；官方圖示編號 <code>gameId</code>（PLAN-056）</td></tr>
+    <tr><td><code>backpackSkills</code> 背包技能</td><td>backpackSkills（+backpacks）</td><td>🆕 背包技能庫（PLAN-043）；背包以 <code>skillIds</code> 引用</td></tr>
+    <tr><td><code>forms</code> 機師形態</td><td>forms（+pilots、weapons、pilotSkills、buffs）</td><td>🆕 機師形態（PLAN-041）；固定武裝掛載（<code>restrict.mounts</code>）用 <code>ArmamentMountEditor</code></td></tr>
     <tr><td><code>glossary</code> 遊戲術語</td><td>glossaryTerms</td><td>🆕 詞條庫（PLAN-019-C）；refType:'term' 引用資料源</td></tr>
     <tr><td><code>skills</code> 機師技能</td><td>pilotSkills</td><td>🆕 技能庫（PLAN-004）；共用技能改一次全機師生效；<code>unitType</code> 可標「職業單元＝初始被動能力」（PLAN-025）</td></tr>
     <tr><td><code>neuralDrive</code> 神經驅動</td><td>neuralDriveAbilities（+pilots）</td><td>🆕 神經驅動能力庫（PLAN-023）；顯示「被幾位機師引用」反查</td></tr>
@@ -194,9 +196,9 @@
     <strong>⚠ 全域紅線：編輯彈窗內不可使用 Tailwind 容器查詢工具類</strong><br>
     容器查詢會套用 <code>container-type:inline-size</code>，而該值隱含 <code>contain:layout</code>——
     layout containment 會讓該元素成為 <code>position:fixed</code> 子孫的 containing block。
-    多個編輯器在彈窗內使用 <code>IconField</code>（<code>components/admin/IconPicker</code>），
-    它是 <code>fixed inset-0</code> 的全螢幕浮層，一旦祖先套上就會改對齊彈窗的框而非視窗、直接錯位。
-    <code>RefPicker</code> 同理。內部格線用上表的 <code>GRID_AUTO_FIELDS</code> /
+    任何 <code>position:fixed</code> 的浮層只要沒走 portal，一旦祖先套上就會改對齊彈窗的框而非視窗、直接錯位。
+    （<code>IconPicker</code>／<code>GameIconPicker</code> 的選圖浮層現已用 <code>createPortal</code> 掛到 body，不再受影響；
+    紅線仍維持，免得日後新加的浮層踩到。）內部格線用上表的 <code>GRID_AUTO_FIELDS</code> /
     <code>GRID_TWO_PANE</code> 達成同樣目的即可。
     <br><br>
     <span style="color:var(--text-dim)">註：產出的 CSS 裡可能仍看得到該 utility 的定義，那是 Tailwind
@@ -204,15 +206,27 @@
     public/）。判斷有沒有踩雷要看「元素上有沒有這個 class」，不是看 CSS 裡有沒有這條規則。</span>
   </div>
 
+  <div class="note-block" style="margin-top:16px;">
+    <strong>🖼️ 官方圖示選圖器（PLAN-055／056）</strong><br>
+    · 技能、天賦、神經驅動、BUFF、模組、元件、背包技能、形態的圖示欄位改用 <code>GameIconField</code>／<code>GameIconPicker</code>，
+      寫回的是官方圖庫的<strong>裸 key</strong>（<code>public/images/game/icons/</code>）。依官方檔名文法篩選：種類（外框形狀）× 色系 × 使用狀態，
+      預設流水號倒序——新版本建檔時「未使用＋最新」通常就剩十幾張。<br>
+    · 武器／背包用 <code>EquipGameIdField</code> 寫 <code>gameId</code>（依武器種類前綴預先篩選）；可只看還沒被使用的圖、看每張圖目前被哪些項目使用，
+      並可<strong>貼上遊戲截圖以圖搜圖</strong>（<code>features.bin</code>）。<br>
+    · 只有「機甲雙肩焊死的固定武裝」才出現左右肩圖 <code>sideGameIds.left／right</code>（官方慣例 …01／…02）；<code>icon</code> 降為選填的自訂圖，只在沒有官方圖時顯示。
+  </div>
+
   <table class="spec-table" style="margin-top:16px;">
     <tr><th>編輯器</th><th>彈窗分頁</th><th>備註</th></tr>
     <tr><td><code>PilotAdmin</code></td><td>6：基本資訊 / 屬性數值・AP / 個人資料 / 天賦 / 技能 / 神經驅動</td>
-        <td>個人資料未併入數值頁——含 <code>AdditionalInfoEditor</code>，高度隨自訂欄位數不定</td></tr>
+        <td>個人資料未併入數值頁——含 <code>AdditionalInfoEditor</code>，高度隨自訂欄位數不定。
+          基本資訊頁有 PLAN-054 的遊戲 ID 欄位（<code>PilotGameArtFields</code>：<code>gameId</code>／<code>artKey</code>／官配 <code>pairedMechId</code>；
+          官配是一對一，同一台機甲被兩位機師配到會警示）</td></tr>
     <tr><td><code>WeaponAdmin</code></td><td>4：基本資訊 / 戰鬥屬性・射程・插槽 / 改裝方案 / 武器技能</td>
         <td>改裝方案頁的固定／浮動改裝為雙欄。基本資訊頁有 <code>isFixedArmament</code> 勾選（2026-10-10 補上；選「固定武裝」種類會自動勾），
           勾了之後顯示唯讀的<strong>宿主</strong>區塊（焊在哪台機甲／哪個形態、哪幾格；沒連結時提醒到「機甲管理 → 部件」或「機師形態」設定）。
           連結本身<strong>只在宿主那側編輯</strong>，武器端不寫——固定武裝與宿主一對一，由 <code>validate-mech-slots.mjs</code> ⑦ 把關</td></tr>
-    <tr><td><code>MechAdmin</code></td><td>4：基本數值 / 部件 / 模組（能力）/ 武器槽・外觀</td><td>—</td></tr>
+    <tr><td><code>MechAdmin</code></td><td>4：基本數值 / 部件 / 模組（能力）/ 武器槽・外觀</td><td>「外觀」分頁有 PLAN-054 的遊戲 ID 欄位（<code>MechGameArtFields</code>：<code>gameId</code>／塗裝本體 <code>skinOfId</code>）；官配為唯讀，由機師側推導。部件分頁可編固定武裝（<code>fixedArmament</code>，<code>ArmamentMountEditor</code>）</td></tr>
     <tr><td><code>ModuleAdmin</code></td><td>5：基本資訊 / 基本屬性 / 武器增傷 / 等級資料 / 條件效果</td>
         <td>四個是大分頁、無可併對象；基本資訊頁為雙欄</td></tr>
     <tr><td><code>GlossaryAdmin</code> · <code>NeuralDriveAdmin</code> · <code>SkillAdmin</code></td>

@@ -32,12 +32,18 @@
   <table class="spec-table">
     <tr><th>路由</th><td><code>/lore</code>（館首頁）｜<code>/lore/pilots/:id</code>（扉頁）｜<code>/lore/pilots/:id/:part</code>（章節頁）｜<code>/lore/*</code> 兜底轉址回 <code>/lore</code>｜<code>/admin/lore</code>（編輯台，<code>AdminRoute</code>）</td></tr>
     <tr><th>開發階段</th><td>PLAN-042-A Phase C–F（2026-09-09 ～ 09-10）；氛圍層與顯影修正另立 <a href="../../05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/計畫書.html">PLAN-042-C</a></td></tr>
-    <tr><th>登入需求</th><td>前台不需要（公開）；編輯台 ADMIN 即可（只寫 <code>pilotLore</code>）</td></tr>
+    <tr><th>登入需求</th><td>前台不需要登入（⏸ 但入口收起中，見「導覽入口」）；編輯台 ADMIN 即可（只寫 <code>pilotLore</code>）</td></tr>
     <tr><th>資料來源</th><td><code>pilots</code>（扉頁正文 <code>lore</code>、<code>profile.additionalInfo</code>、立繪路徑 derive）＋ <code>pilotLore</code>（章節、旁白、扉頁署名）。一律走 <code>useFirestore</code> 的 <code>usePilots</code> / <code>usePilot</code> / <code>usePilotLore</code> / <code>usePilotLoreDoc</code>；<strong><code>pilotLore</code> 讀不到時優雅降級成「只有扉頁」</strong>，不轉圈、不錯誤頁</td></tr>
-    <tr><th>導覽入口</th><td>桌機與手機 More 面板的「故事館」（刻意獨立於版本／圖鑑／攻略三群之外，避免 <code>SubNavTabs</code> 在館內命中）；圖鑑詳情頁 lore 區塊只留首句與署名，接「讀完整故事 ▸」</td></tr>
+    <tr><th>導覽入口</th><td><strong>⏸ 2026-10-03 起入口收起</strong>（<code>LORE_INTERNAL_ONLY</code>，<code>src/hooks/useLoreEntry.ts</code>）：導覽列、手機 More 面板與機師詳情頁的「讀完整故事 ▸」只對 ADMIN／OWNER 顯示；<code>/lore/*</code> 路由不動，知道網址的人照樣進得去；一般訪客的機師詳情頁退回<strong>全文</strong>顯示（只藏連結會讓訪客連完整逸聞都讀不到）。<br>公開後：桌機與手機 More 面板的「故事館」（刻意獨立於版本／圖鑑／攻略三群之外，避免 <code>SubNavTabs</code> 在館內命中）；圖鑑詳情頁 lore 區塊只留首句，接「讀完整故事 ▸」</td></tr>
     <tr><th>外殼形態</th><td><code>chromeMode = 'immersive'</code>：header 換成紙色細帶（館名／離館／字級三顆），footer、分頁列、手機 Tab Bar 全收；<code>html.lore-mode</code> 只設 <code>color-scheme</code> 與 body 背景，色票覆寫只在 <code>.lore-shell</code> / <code>.lore-chrome</code>（portal 浮層保持深色可讀）</td></tr>
     <tr><th>參數命名</th><td>一律 <code>:id</code>——<code>analytics/track.ts</code> 寫死讀 <code>params.id</code>，改名會讓機師熱度一筆都不記</td></tr>
   </table>
+  <div class="warning-block" style="margin-top:1rem;">
+    <strong>⏸ 正式公開時要一起做的三件事</strong>（取自 <code>useLoreEntry.ts</code> 檔頭）<br>
+    ① 把 <code>siteChangelog</code> 裡 <code>unreleased: true</code> 的故事館條目拿掉旗標、日期改成公開日；<br>
+    ② <s>Cloudflare Transform Rule 的 SPA fallback 白名單補上 <code>/lore</code></s>——<strong>已完成</strong>：PLAN-042-A F-1 於 2026-09-10 部署（含 OG 用的 UA 排除區塊），2026-10-11 複驗 <code>/lore</code> 回 200，公開時不必再動；<br>
+    ③ 確定穩定後，連同 <code>LORE_INTERNAL_ONLY</code> 與所有 <code>useLoreEntryVisible()</code> 的呼叫一起刪除。
+  </div>
 </section>
 
 <section class="section">

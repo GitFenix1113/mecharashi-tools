@@ -195,6 +195,7 @@
     <strong>2026-10-04：</strong>站長指示直接在 main 上做；A／B／C／D 的程式與檔案都已在本機 main 完成（DB 已回填 gameId／artKey／英文名／官配）。
     <b>正式站部署（Firestore rules、Worker、push）被 Claude Code 自動權限擋下</b>，C-5、D-3、D-4 剩下的都是部署後才能做的步驟，
     順序與指令見 <code>_local-notes/2026-10/2026-10-04_PLAN-054_部署交接.md</code>。⚠ D-3 的 DB 路徑改寫一定要在部署之後。<br>
+    <strong>現況（2026-10-04 部署後）：</strong>站長已部署（Firestore rules → Worker → push），C-5、D-3 已完成；剩 D-4 的 Cloudflare Purge Everything 與 10-17／11-02 寬限期後複驗，以及 D-6 收尾歸檔。<br>
     <strong>2026-10-04 更正：</strong>凜騎士是新機甲、不是 wap3132 也不是塗裝（站長）。DB 已刪掉它的 gameId／skinOfId 並 bump，wap3132 的圖移出 core（封存到 _reserve）。
     下方 B-2、C-1、C-4、C-6 的說明裡提到「凜騎士＝塗裝／沒有 SN」的部分是當時的判斷，已不成立。
   </div>
@@ -258,7 +259,7 @@
           ⚠ 合併後的 main 在<b>第一次 push 之前</b>要先部署 Firestore rules 與 Worker（pilotLore 已登記進後台引用掃描，規則沒上線會弄壞後台刪除功能）；
           <code>/lore</code> 的 Transform Rule 白名單可等故事館公開再加。
         
-          <br><b>✅ 2026-10-03 完成：</b>commit <code>9032d39e</code>（042-C）、<code>0324de17</code>（入口收起）、<code>cc4b207b</code>（本計畫立案）→ 合併進 main <code>1d037222</code>（衝突只在執行中 index 與 2026-09 履歷，兩邊都保留；合併後 1272 測試全綠、build 通過）→ 開 <code>feat/plan-054-game-art-ids</code>。<b>main 尚未 push</b>：第一次 push 前要先部署 Firestore rules 與 Worker。
+          <br><b>✅ 2026-10-03 完成：</b>commit <code>9032d39e</code>（042-C）、<code>0324de17</code>（入口收起）、<code>cc4b207b</code>（本計畫立案）→ 合併進 main <code>1d037222</code>（衝突只在執行中 index 與 2026-09 履歷，兩邊都保留；合併後 1272 測試全綠、build 通過）→ 開 <code>feat/plan-054-game-art-ids</code>。<b>main 尚未 push</b>：第一次 push 前要先部署 Firestore rules 與 Worker。<b>（2026-10-04 補註：站長已依序部署 rules 與 Worker 後 push，見 D-4。）</b>
         </div>
         <div class="task-file">feat/plan-042a-pilot-lore → main → feat/plan-054-game-art-ids</div>
       </div>
@@ -640,7 +641,7 @@
           Generator 改鏡射 <code>game/pilots/*/*_half.webp</code>、<code>game/mechs/*/Icon_mecha_wap*.webp</code>；Worker 以 doc 的 gameId／artKey 推路徑、portrait 後備，測試補維娜這類例外。
           wrangler 部署後用 CLAUDE.md 的 Discordbot curl 補驗，並把 CLAUDE.md 裡的預期路徑改成新路徑。
           <br><b>▶ 2026-10-04 進行中：</b>程式與測試完成：產圖腳本多鏡射 <code>game/pilots/*/*_half</code> 與 <code>game/mechs/*/Icon_mecha_wap*</code>（+182 張）；Worker 依 gameId／artKey 推官方 JPEG，<b>依序探測</b>「官方原檔 → 舊立繪 → 預設圖」，所以 Worker 與網站誰先部署都不會破圖；Worker 測試 17 項含維娜例外。CLAUDE.md 的 OG 補驗預期改成新路徑。<b>⛔ 部署未做</b>：2026-10-04 正式站部署被 Claude Code 自動權限擋下，等站長部署（wrangler deploy＋push）。
-          <br><b>✅ 2026-10-04 完成：</b>Worker 與網站已由站長 10-04 部署。OG 改以官方原檔 JPEG 為先，抽查葉夫根尼、都卜勒、維娜的 og:image 皆為 <code>og/entities/game/…</code>。海莉絲那張在 Pages 發布完成前被探測過、被 Cloudflare 快取成 404，Purge 後恢復（見 D-4）。
+          <br><b>✅ 2026-10-04 完成：</b>Worker 與網站已由站長 10-04 部署。OG 改以官方原檔 JPEG 為先，抽查葉夫根尼、都卜勒、維娜的 og:image 皆為 <code>og/entities/game/…</code>。海莉絲那張在 Pages 發布完成前被探測過、被 Cloudflare 快取成 404，待 D-4 的 Purge Everything 後恢復。
         </div>
         <div class="task-file">scripts/generate-og-entity-images.mjs · workers/src/socialPreview.ts (+ .test.ts) · CLAUDE.md</div>
       </div>

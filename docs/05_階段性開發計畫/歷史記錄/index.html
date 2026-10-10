@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-052-O · 配裝圖回讀</h3>
+      <p>玩家拿到別人的配裝圖——原始 PNG，或 Discord／LINE 上的二手截圖——<b>PC 上沒有任何還原路徑</b>：圖底那串 79 字元起跳的 base64url 是像素、不能選取，只能一個字一個字抄，而 <code>l</code>／<code>I</code>／<code>1</code> 與 <code>O</code>／<code>0</code> 在多數字型下同形，抄錯一個字整串解不開。052-L E-2 的 QR 對手機成立、對 PC 不成立——圖與模擬器在同一個螢幕上，拿手機對著螢幕掃再把連結傳回電腦是一段繞路。本計畫把「掃」搬進瀏覽器：在既有的貼碼對話框裡 <b>Ctrl+V 貼圖／拖放／選檔</b>，站上自己從圖裡讀出分享連結，後面全走既有的預覽 → 套用；<b>圖片從頭到尾不離開瀏覽器</b>，零 Storage、零 Firestore read、零 Worker 請求。<br><b>三層讀取順序</b>：① PNG <code>tEXt</code> chunk（匯出時內嵌完整連結，100% 精確、不受碼長上限——剛好補上 QR 的兩個天生缺口：長碼根本不畫 QR、二手壓縮下 <code>ecc L</code> 餘裕很薄；代價是只對原檔有效，轉 JPEG／再截圖即失效，故與 QR 互補而非取代）→ ② 瀏覽器原生 <code>BarcodeDetector</code>（0 KB；但覆蓋率比想像中窄——Chrome 只在 macOS／ChromeOS／Android 暴露它，<b>Windows／Linux 的 Chrome 自 88 起連這個類別都沒有</b>，Safari 預設關閉、Firefox 沒有；對本站主要客群它只是 macOS／Android 上的加速）→ ③ <code>zxing-wasm</code>（1.1 MB 由本站自託管、丟圖時才 dynamic import——不走 jsDelivr，中國使用者連不到，與字體自託管同理由；<b>對 Windows PC 玩家這才是正式路徑</b>）。<br><b>解碼器選型不是想當然</b>：純 JS 零依賴的 jsQR 看似首選，2026-09-08 實測本站匯出圖的 QR 方塊固定 420 實體 px、v21 以上每模組 3.07–3.85px 在 3／4 間交錯，<b>jsQR 從 1000 字元起全數失敗</b>；zxing-wasm 36／530／1461 字元全部解回且快 5–10 倍（22–41 ms），模擬二手截圖 530 字元縮 40%＋q60 仍 OK，經驗門檻<b>每模組 ≥ 約 1.9 實體像素</b>——這個數字寫進了失敗文案。順帶評估過「把 QR 模組間距吸附整數實體像素」，<b>評估後否決</b>：zxing 與手機相機都不受非整數間距影響，吸附卻會讓模組縮小 15–22%、直接吃掉二手截圖的容忍度，受益者只有已被淘汰的 jsQR。<br>失敗<b>分七類、各講一句不同的話</b>並指向下一步：載不到 wasm 與圖裡沒有 QR 是兩件事，吞成空陣列會讓離線的人被告知「請改貼完整碼」。誠實的限制：長碼不畫 QR 的圖其二手截圖無解、1461 字元最壞情況只有原圖可讀、需 WebAssembly、首次 1.1 MB。不做拍照鏡頭、不做批次、不做剪貼簿 API 讀取按鈕。<br><b>✅ 2026-09-08 完成</b>：Playwright e2e 18／18 通過——以真實資料匯出後，原始 PNG 走內嵌、去 metadata 與 JPEG 壓縮版走 QR、無 QR 與別站 QR 各講對的話，合成 paste／drop 與真實剪貼簿 Ctrl+V 皆讀到連結。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-09-08 · 10 / 10 任務（2026-10-11 歸檔）</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-052-O_配裝圖回讀/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-052-O_配裝圖回讀/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card pink">
       <div class="card-icon">◆</div>
       <h3>PLAN-052-L · 匯出圖改版與技能配置</h3>
@@ -269,7 +279,8 @@
       37 位中型執照的機師看得到全部 90 台含駕駛不了的重型；
       ③ <code>fixedMod.maxLevel = 70</code> 的根因是 WeaponAdmin <b>新武器的預設值</b>就是 70，不是誰打錯。<br>
       前台交付機甲詳情頁的唯讀「槽位配置 ＋ 四部位表」——<b>沒有固定武裝時不渲染任何「無固定武裝」字樣</b>，
-      因為站上分不出「這台真的沒有」與「還沒有人建檔」。</p>
+      因為站上分不出「這台真的沒有」與「還沒有人建檔」。<br>
+      <b>2026-10-10 補註：</b>詳情頁已收起「槽位配置」「四部位表」兩區塊（元件保留於 <code>MechSlotPanel.tsx</code>，<code>MechPartsTable</code> 仍供模擬器使用），固定武裝改為部件十字上的肩部卡（26c67478）。</p>
       <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-08-24 · 28 / 28 任務</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-052-A_配裝地基與槽位模型/計畫書.html">→ 計畫書</a>
@@ -720,7 +731,7 @@
   米赫瑪超吉情豹站 · 階段性開發計畫 · 歷史記錄
 </footer>
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-11 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>
