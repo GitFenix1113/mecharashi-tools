@@ -175,7 +175,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">18</div>
+      <div class="summary-num" style="color:var(--accent-green)">20</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -183,7 +183,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">5</div>
+      <div class="summary-num" style="color:var(--text-dim)">3</div>
       <div class="summary-lbl">待開始／待部署</div>
     </div>
     <div class="summary-card">
@@ -199,10 +199,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">18 / 24</span>
+      <span style="color:var(--accent-green);">20 / 24</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 75%"></div>
+      <div class="progress-bar-fill" style="width: 83%"></div>
     </div>
   </div>
 
@@ -527,7 +527,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-5 &nbsp; 清掉舊路徑、改寫快照</div>
       <div class="task-group-meta">weapons · backpacks · patchVersions · grayOps</div>
-      <span class="status blocked">待部署</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -536,12 +536,12 @@
           先用 <code>check-image-refs.mjs</code>（D-2 擴充後）列出所有引用點再動手。<code>AdminVersionEditorPage</code> 用檔名對武器的那段邏輯，也要改成用 gameId。
           bump <code>weapons</code>、<code>backpacks</code>、<code>patchVersions</code>、<code>grayOps</code>，部署後清快取。
         
-          <br><b style="color:var(--accent-green)">⏸ 等新版前台部署：線上舊版只讀 icon，先清掉會壞圖。基準線 (h) 386 筆（weapons 172、backpacks 186、patchVersions 28）</b>
+          <br><b style="color:var(--accent-green)">✅ 2026-10-10（新版前台 b96c0c30 與 Worker 4109fb8e 部署後）：刪除 icon 舊路徑 358 筆（武器 172、背包 186）；版本情報快照 28 筆依名稱換成官方圖庫路徑（笑謊者→10200501、HMG-29C→20400501、3 張中文佔位→官方編號、天燼審判退到武器）；bump weapons／backpacks／patchVersions。寫前備份 2026-10-10_db-backup-1333；還原檔 _local-notes/2026-10/2026-10-10_PLAN-056_C-5.json。掃描器 (g) 0、(h) 0</b>
         </div>
         <div class="task-file">src/pages/admin/AdminVersionEditorPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">待部署</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -556,7 +556,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 社群預覽 Worker 與 JPEG 鏡射</div>
       <div class="task-group-meta">workers/src/socialPreview.ts · scripts/generate-og-entity-images.mjs</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -565,12 +565,12 @@
           用 <code>pickImages</code> 給後備鏈，這樣 Worker 比網站先上線時也不會掉到預設圖。順手更新「178 筆中 6 筆缺」這段過期註解。
           補單元測試。<b>Worker 由站長部署</b>，部署後用 Discordbot UA 複驗 og:image。
         
-          <br><b style="color:var(--accent-green)">程式完成、測試 18／18 通過；JPEG 鏡射 163 張由 build 產生。<b>待站長部署 Worker</b></b>
+          <br><b style="color:var(--accent-green)">✅ 2026-10-10 站長部署 Worker（版本 4109fb8e）。Discordbot 複驗：笑謊者 10200501、千星 40400401、影虎嘯 20300501、凱旋 10200301 皆為官方圖示 JPEG；耀星（無圖）退預設圖；海莉絲、帕斯卡不受影響</b>
         </div>
         <div class="task-file">workers/src/socialPreview.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -596,7 +596,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; 舊 PNG 退場</div>
       <div class="task-group-meta">public/images/weapons/*.png · public/images/backpacks/</div>
-      <span class="status blocked">待部署</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
@@ -605,11 +605,11 @@
           <code>weapons/</code> 只留自訂圖；<code>backpacks/</code> 整夾移除。<code>manifest.json</code> 會跟著少掉這些檔案，舊 IconPicker 也就不會再列出它們。
           要先等 <code>pages-build-deployment</code> 完成再清快取（Cloudflare 會快取 404）。
         
-          <br><b style="color:var(--accent-green)">⏸ 等 C-5</b>
+          <br><b style="color:var(--accent-green)">2026-10-10：掃描器閘門 --fail-on=agh 通過後刪除 repo 內舊檔（weapons／ 101、backpacks／ 17），連線測試頁的探測圖改指圖庫。<b>待 push</b>；push 後 gh-pages 上的舊檔由 ledger 寬限 14 天自動清除。舊圖已無任何引用，不需 Purge</b>
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">待部署</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
 
