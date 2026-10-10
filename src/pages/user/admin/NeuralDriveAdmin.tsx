@@ -29,7 +29,7 @@ function unlinkedCount(a: NeuralDriveAbility): number {
 
 // ─── 預設值工廠 ────────────────────────────────────────────────────────────────
 function makeDefaultNdAbility(id: string, name = ''): NeuralDriveAbility {
-  return { id, name, description: '', descriptionRefs: {}, icon: '', iconLocal: '', effects: [], buffIds: [] }
+  return { id, name, description: '', descriptionRefs: {}, icon: '', effects: [], buffIds: [] }
 }
 
 // ─── buffUpgrades 編輯器（PLAN-034 E-1）────────────────────────────────────────
@@ -246,11 +246,11 @@ function NdAbilityEditPanel({
           <input value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" placeholder="如：協同作戰1" />
         </Field>
 
-        {/* PLAN-055：寫回官方檔名 key 到 icon，同步清空舊路徑 iconLocal */}
+        {/* PLAN-055：只寫官方檔名 key 到 icon（C 階段起 DB 已沒有 iconLocal） */}
         <GameIconField
           label="圖示（官方檔名）"
-          value={form.icon || form.iconLocal}
-          onChange={(k) => { update('icon', k || undefined); update('iconLocal', undefined) }}
+          value={form.icon}
+          onChange={(k) => update('icon', k || undefined)}
           presetKinds={['passive']}
         />
 
@@ -481,7 +481,7 @@ export default function NeuralDriveAdmin({ initialSearch = '' }: { initialSearch
               className="bg-bg-dark border border-accent-purple/20 rounded-lg px-3 py-2.5 flex items-center gap-3 hover:border-border-accent transition-colors cursor-pointer"
               onClick={() => setEditing(a)}
             >
-              <IconThumb icon={a.icon} iconLocal={a.iconLocal} className="w-8 h-8 rounded shrink-0" />
+              <IconThumb icon={a.icon} className="w-8 h-8 rounded shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-sm text-text-primary truncate">

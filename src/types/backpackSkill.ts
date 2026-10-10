@@ -37,7 +37,7 @@ export interface BackpackSkillLevel {
   effects?: SkillEffect[]
   /** 該級賦予的 BUFF（元素格式同 buffIds，可含 `id@N` 指定級） */
   buffIds?: string[]
-  /** 該級專屬圖示（選填；不填沿用 skill.icon） */
+  /** 該級專屬圖示：官方圖示檔名 key（選填；不填沿用 skill.icon） */
   icon?: string
 }
 
@@ -54,7 +54,7 @@ export interface BackpackSkillDoc {
   description: string
   /** 描述內 [xxx] 引用側錄（PLAN-019 Layer 1） */
   descriptionRefs?: DescriptionRefs
-  /** 圖示路徑。慣例存 `/images/skills/背包技能/<檔名>`（PLAN-043 獨立圖庫資料夾） */
+  /** 官方圖示檔名 key（如 Icon_skill_passive_5223；PLAN-055 起 DB 只存 key，讀取端走 gameIconCandidates）。（PLAN-043 的「背包技能/」獨立資料夾已由 PLAN-055 改判為扁平圖庫） */
   icon?: string
   /** 結構化效果數值（管理員手填） */
   effects: SkillEffect[]

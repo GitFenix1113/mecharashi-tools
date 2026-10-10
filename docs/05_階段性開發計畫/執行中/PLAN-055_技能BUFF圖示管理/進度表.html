@@ -168,15 +168,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">11</div>
+      <div class="summary-num" style="color:var(--accent-green)">15</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">11</div>
+      <div class="summary-num" style="color:var(--text-dim)">8</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -188,10 +188,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">11 / 23</span>
+      <span style="color:var(--accent-purple);">15 / 23</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 48%"></div>
+      <div class="progress-bar-fill" style="width: 65%"></div>
     </div>
   </div>
 
@@ -204,7 +204,11 @@
   <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.2);">
     <strong style="color:var(--accent-yellow);">現況（2026-10-06）：</strong>A、B 完成並推送部署。部署前已先寫入 4 筆猜錯編號的武器技能修正＋補「協同作戰1」圖示（bump pilotSkills／neuralDriveAbilities）。<br>
     <strong style="color:var(--accent-yellow);">站長定案：</strong>決策三＝擷取有的圖全部上線，缺圖由維護者用選圖器手動選（只有官方資料明確對得到才由腳本代補）；決策八＝留空，沒有官方圖就沒有圖。<br>
-    <strong style="color:var(--accent-yellow);">接下來：</strong>C 排在下次大版本建檔之前；D 可以穿插；E 等 C 跑完、寬限期過了再做。
+    <strong style="color:var(--accent-yellow);">接下來：</strong>C 排在下次大版本建檔之前；D 可以穿插；E 等 C 跑完、寬限期過了再做。<br>
+    <strong style="color:var(--accent-yellow);">2026-10-11：</strong>陸版第二次擷取（<code>一般圖片_ad7033d5…</code>）的新圖示 40 張已入庫（技能類 17、BUFF 字形 21、武器 2；commit <code>b3fbdd24</code>），
+    趁舊資料夾還在時匯入，別名 172／legacy 82 與先前一致。之後的新擷取一律先跑 <code>scripts/diff-game-dump.mjs</code>，報告會列出該跑的匯入指令（E-3 併入這條流程）。
+    站長決定先做完本計畫，再優化比對腳本。⚠ E-1 多了一條前置條件，見 E-1。<br>
+    <strong style="color:var(--accent-yellow);">C 階段完成（2026-10-11）：</strong>正式站 DB 只存官方檔名 key（1,856 份文件），型別與後台不再有 <code>iconLocal</code>、神經驅動不再存圖示副本；e2e 292 頁舊資料夾請求 0。接下來 D（BUFF 字形）與 E（舊資料夾退場）。
   </div>
 </section>
 
@@ -537,7 +541,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 寫入前備份＋遷移腳本 dry-run</div>
       <div class="task-group-meta">scripts/temp_scripts/migrate-icon-keys.mjs</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -556,11 +560,17 @@
             <li>不碰內嵌的 <code>WeaponSkill</code> 與 <code>biometicComputer</code>。</li>
           </ul>
           報告逐筆列出「集合／文件／欄位：舊值 → 新值」。
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11：備份 <code>_local-notes/2026-10/2026-10-10_db-backup-2047</code>（26 集合／3,394 份）；
+          dry-run <b>1,856 份文件、2,178 處、例外 0</b>，集合 pilotSkills、neuralDriveAbilities、components、modules、forms、backpackSkills、pilots。
+          算出來的 key 全部是圖庫命名、且圖庫真的有檔（含別名換算）；<code>icon</code> 與 <code>iconLocal</code> 指向不同圖的 34 筆，全是 10-06 已改正 <code>icon</code>、舊 <code>iconLocal</code> 還沒清的，以 <code>icon</code> 為準。
+          ND 1,578 級全部有 <code>abilityId</code>、字典都在、副本與字典 0 筆不一致 → 刪副本畫面不變（索妮婭「刃染冰華1～4」字典本身沒有圖示，副本也是空的）。
+          舊編號別名順便換成現行編號 16 筆（技能 7、背包技能 3＋各級 6）。讀取端盤點：<code>PilotDetailPage.tsx:830</code> 的 <code>a.icon ?? lv.skillIcon</code> 退回值只會落在那 4 筆空值上。
+          報告：<code>_local-notes/2026-10/2026-10-11_PLAN-055_C-1_dry-run.md</code>；<code>--apply</code> 時另存還原檔、支援 <code>--rollback</code>。</p>
         </div>
         <div class="task-file">scripts/temp_scripts/migrate-icon-keys.mjs · _local-notes/2026-10/…_PLAN-055_C-1_dry-run.md</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -568,7 +578,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 型別與 docs 同步（CLAUDE.md 規則 2）</div>
       <div class="task-group-meta">src/types/ · docs/02_技術文件/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -579,6 +589,9 @@
             <li>docs：資料模型頁 pilots、neuralDriveAbilities、components、backpacks、weapons、modules；資料庫設計文件 pilotSkills、components、backpackSkills、forms。</li>
             <li>修掉 <code>weapon.ts:19</code> 已經過時的 <code>/images/weapons/skills/</code> 註解。</li>
           </ul>
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11（與 C-3 同日、C-3 寫入之後）：<b>直接移除</b>而不是先標 @deprecated——資料已經寫完，留著 deprecated 欄位只會讓新程式繼續讀它。
+          <code>PilotSkill</code>／<code>PilotSkillDoc</code>／<code>PilotTalent</code>／<code>NeuralDriveAbility</code>／<code>Component</code> 拿掉 <code>iconLocal</code>，<code>NeuralDriveLevel</code> 拿掉 <code>skillIcon</code>／<code>iconLocal</code>；
+          <code>WeaponSkill.iconLocal</code> 保留（內嵌爬蟲快照，PLAN-032）並改寫註解。docs 同步 10 份：資料模型 components／neuralDriveAbilities／pilots／weapons／modules／backpacks、資料庫設計 components／pilotSkills／backpackSkills／forms。</p>
         </div>
         <div class="task-file">src/types/*.ts · docs/02_技術文件/02_資料模型/ · docs/02_技術文件/04_Firebase/資料庫設計文件/</div>
       </div>
@@ -591,7 +604,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; --apply ＋ bump ＋ 掃描器複驗</div>
       <div class="task-group-meta">bump-data-version.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -600,11 +613,17 @@
           要 bump 的集合：pilotSkills、pilots、neuralDriveAbilities、components、modules、backpackSkills、forms。bump 寫在腳本結尾，不靠人記。
           寫入後重跑掃描器：現役舊夾引用 (d) 為 0、中文 key (e) 為 0。
           再跑一次 A-7 的 e2e，確認畫面不變。<code>check:share-ids</code> 對帳不受影響（圖示不是分享碼的一部分），照 data-patch 慣例仍要跑一次。
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11（站長同意由開發者代勞）：<code>--apply</code> 寫入正式站 <b>1,856 份文件、2,178 處</b>，bump 7 個集合；
+          還原檔 <code>_local-notes/2026-10/2026-10-11_PLAN-055_C-1_還原檔.json</code>（<code>--rollback=</code> 可改回）。重跑 dry-run＝0 處（冪等）。
+          掃描器：(c) 圖庫找不到 0、<b>(d) 仍寫舊路徑 0、(e) 中文 key 0</b>；(f) 缺圖示 246＝BUFF 233（D 階段）＋本來就沒有的 13（含索妮婭「刃染冰華1～4」）。
+          e2e（本機 vite 吃正式資料，C-2／C-4 的新程式）：292 頁、技能類圖示 1,797 個請求全部來自圖庫、<b>舊資料夾 0、4xx 0</b>（A-7 時還有中文佔位的舊夾請求）。
+          <code>check:share-ids</code>：沒有改指或消失；另有 6 筆新實體＋17 筆技能待發號，是後台近期新建檔的，與本次無關。
+          報告：<code>_local-notes/2026-10/2026-10-11_PLAN-055_C-1_套用報告.md</code>、<code>…_C-3_圖片引用掃描.md</code>、<code>…_C-3_e2e驗收報告.md</code>。</p>
         </div>
         <div class="task-file">scripts/temp_scripts/migrate-icon-keys.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -612,7 +631,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-4 &nbsp; 後台與工具函式只寫 icon</div>
       <div class="task-group-meta">src/pages/user/admin/ · src/utils/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -623,6 +642,10 @@
             <li><code>utils/neuralDriveAbilities.ts</code> 不再從 levels 讀寫圖示副本。</li>
             <li>讀取端 props 收斂成只吃 <code>icon</code>；但 helper 保留吃舊值的能力，因為爬蟲原始快照永遠是舊寫法。</li>
           </ul>
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11：型別一拿掉，<code>tsc</code> 點名 80 處，全部清掉（約 25 個檔）。SkillAdmin／PilotAdmin／NeuralDriveAdmin／ComponentAdmin 的預設值與存檔只寫 <code>icon</code>；
+          WeaponAdmin 只剩內嵌 WeaponSkill 的 <code>iconLocal</code>（爬蟲快照，刻意保留）。機師詳情頁的神經驅動改由 <code>abilityId</code> 查字典帶入圖示（頁內 <code>NeuralDriveView</code> 型別，DB 不存）。
+          <code>SkillIcon</code>／<code>IconThumb</code>／<code>gameIconCandidates</code> 照計畫保留吃舊值的能力，只有武器內嵌技能還會傳 <code>iconLocal</code>。
+          <code>iconUsage</code> 等 6 個測試檔的樣本改成遷移後的寫法；<code>npm test</code> 1,362／1,362、<code>tsc -b</code> 0、<code>npm run build</code> 通過。lint 的 15 個錯誤都是既有的（HEAD 同檔同樣存在），不是這次改出來的。</p>
         </div>
         <div class="task-file">src/pages/user/admin/*.tsx · src/utils/neuralDriveAbilities.ts</div>
       </div>
@@ -742,6 +765,11 @@
             <li>清掉舊 <code>IconPicker</code> 裡跟技能夾有關的 defaultFolder。</li>
           </ul>
           刪除前重跑 A-7 的 e2e。
+          <p style="margin-top:6px;color:var(--accent-orange);">⚠ 前置條件（2026-10-11 補）：<b>刪舊資料夾之前，先改 <code>import-game-assets.mjs --icons</code></b>。
+          它每次 <code>--apply</code> 都從舊資料夾重算別名表（<code>src/data/gameIconAliases.ts</code>，172 筆）與 legacy 清單（<code>scripts/lib/gameIconMeta.json</code>，82 筆）——
+          舊夾一刪，下一次有新擷取再匯入，兩份表會被<b>靜默清空</b>：前台解析不到舊編號、選圖器的 legacy 標記消失，build 與測試照樣全綠。
+          改法：以已存的 <code>gameIconMeta.json</code> 為準、只增不減（舊夾還在時新算出來的才合併進去）。
+          順手加一道守門：新擷取出現的官方 key 若剛好是某個別名的「舊編號」（讀取端會先套別名，新圖會被舊圖蓋掉），中止並回報。</p>
         </div>
         <div class="task-file">public/images/{skills,modules,components,backpacks_skills,pilot_forms}/ · src/utils/assets.ts · src/components/admin/IconPicker.tsx</div>
       </div>

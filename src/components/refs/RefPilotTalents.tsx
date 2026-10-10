@@ -24,7 +24,7 @@ export function RefPilotTalents({ talents, clamp }: {
       {talents.map((t, i) => (
         <RefBriefRow
           key={`${t.name}:${i}`}
-          icons={gameIconCandidates(t.icon, t.iconLocal)}
+          icons={gameIconCandidates(t.icon)}
           name={t.name}
           text={t.descriptionMax || t.description}
           // descriptionRefs 同時涵蓋 description 與 descriptionMax（見 PilotTalent 型別註解）

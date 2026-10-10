@@ -5,7 +5,8 @@ import type { NeuralDriveLevel, NeuralDriveAbility } from '../types'
  *
  * NeuralDriveLevel 在遷移過程中可能是兩種格式：
  *   - 新：填了 abilityId → 內容由 neuralDriveAbilities 集合提供（單一資料源）
- *   - 舊：嵌入 skillName / effect / skillIcon / effects / buffIds
+ *   - 舊：嵌入 skillName / effect / effects / buffIds（圖示副本 skillIcon／iconLocal 已於 PLAN-055 C 刪除，
+ *     嵌入格式沒有圖示——2026-10-11 起全部 1,578 級都有 abilityId，這條路只剩防呆）
  * 本工具把兩種都解析成一致的 NeuralDriveAbility 形狀，前端不需在意目前是哪種格式。
  * abilityId 查不到（尚未載入 / 資料不一致）→ 回退嵌入欄位，優雅降級不報錯。
  */
@@ -21,8 +22,6 @@ function embeddedToAbility(lv: NeuralDriveLevel): NeuralDriveAbility {
     id: lv.abilityId ?? '',
     name: lv.skillName,
     description: lv.effect,
-    icon: lv.skillIcon,
-    iconLocal: lv.iconLocal,
     effects: lv.effects ?? [],
     buffIds: lv.buffIds ?? [],
   }

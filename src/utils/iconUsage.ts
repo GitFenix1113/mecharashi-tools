@@ -66,7 +66,7 @@ export function buildIconUsage(src: IconUsageSource): Map<string, IconUser[]> {
   for (const p of src.pilots ?? []) {
     for (const s of p.skills ?? []) {
       if (typeof s === 'string') own(s, p.name)
-      else add([s.icon, s.iconLocal], { kind: '技能', id: p.id, name: s.name, owner: p.name })   // 內嵌未遷移者
+      else add([s.icon], { kind: '技能', id: p.id, name: s.name, owner: p.name })   // 內嵌未遷移者
     }
   }
   for (const w of src.weapons ?? []) {
@@ -76,23 +76,23 @@ export function buildIconUsage(src: IconUsageSource): Map<string, IconUser[]> {
     }
   }
   for (const s of src.pilotSkills ?? []) {
-    add([s.icon, s.iconLocal], { kind: '技能', id: s.id, name: s.name, owner: ownerLabel(skillOwners.get(s.id) ?? []) })
+    add([s.icon], { kind: '技能', id: s.id, name: s.name, owner: ownerLabel(skillOwners.get(s.id) ?? []) })
   }
 
   // 天賦與神經驅動（能力的持有者＝哪些機師的哪個分區用到它）
   const ndOwners = new Map<string, string[]>()
   for (const p of src.pilots ?? []) {
-    for (const t of p.talents ?? []) add([t.icon, t.iconLocal], { kind: '天賦', id: p.id, name: t.name, owner: p.name })
+    for (const t of p.talents ?? []) add([t.icon], { kind: '天賦', id: p.id, name: t.name, owner: p.name })
     for (const d of p.neuralDrive ?? []) {
       for (const lv of d.levels ?? []) if (lv.abilityId) ndOwners.set(lv.abilityId, [...(ndOwners.get(lv.abilityId) ?? []), p.name])
     }
   }
   for (const a of src.neuralDriveAbilities ?? []) {
-    add([a.icon, a.iconLocal], { kind: '神經驅動', id: a.id, name: a.name, owner: ownerLabel(ndOwners.get(a.id) ?? []) })
+    add([a.icon], { kind: '神經驅動', id: a.id, name: a.name, owner: ownerLabel(ndOwners.get(a.id) ?? []) })
   }
 
   for (const m of src.modules ?? []) add([m.icon], { kind: '模組', id: m.id, name: m.name })
-  for (const c of src.components ?? []) add([c.icon, c.iconLocal], { kind: '元件', id: c.id, name: c.name })
+  for (const c of src.components ?? []) add([c.icon], { kind: '元件', id: c.id, name: c.name })
   for (const b of src.backpackSkills ?? []) {
     add([b.icon, ...(b.levels ?? []).map((l) => l.icon)], { kind: '背包技能', id: b.id, name: b.name })
   }

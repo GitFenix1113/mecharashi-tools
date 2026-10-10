@@ -79,6 +79,7 @@ export interface MechForm {
   name: string
   /** 顯示順序。形態數不固定（海莉絲 4、新調構師可能 2）→ UI 一律 map，不寫死欄數 */
   order: number
+  /** 官方圖示檔名 key（如 Icon_skill_passive_5223；PLAN-055 起 DB 只存 key，讀取端走 gameIconCandidates） */
   icon?: string
   /** 官方形態卡固有正文，逐字。**這是形態效果的唯一真相源**（見下方「不設 effects」） */
   description: string

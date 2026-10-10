@@ -14,9 +14,12 @@ import type { SkillEffect } from './buff'
  */
 export interface WeaponSkill {
   name: string
-  /** 技能圖示遠端 URL（API 原始路徑） */
+  /** 爬蟲原始快照：技能圖示的官方 CDN 遠端 URL */
   icon?: string
-  /** 技能圖示本地路徑（如 /images/weapons/skills/Icon_skill_xxxxx.png）；前端縮圖顯示用 */
+  /**
+   * 爬蟲原始快照的本地圖示。PLAN-055 起後台改存官方圖示檔名 key（舊資料可能是路徑）。
+   * 內嵌 WeaponSkill 刻意永久保留原樣（PLAN-032），讀取端以檔名解析，不需要遷移。
+   */
   iconLocal?: string
   type: string
   /** 生效方式："carry" 攜帶即生效 / "equip" 裝備中生效 / "use" 僅使用時生效 */

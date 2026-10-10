@@ -29,8 +29,8 @@ export interface PilotSkill {
   description: string
   /** 描述內 [xxx] 引用側錄（PLAN-019 Layer 1） */
   descriptionRefs?: DescriptionRefs
+  /** 官方圖示檔名 key（如 Icon_skill_passive_5223；PLAN-055 起 DB 只存 key，讀取端走 gameIconCandidates）；空字串＝沒有圖示 */
   icon: string
-  iconLocal: string
   effects:  SkillEffect[]
   buffIds:  string[]
   /**
@@ -78,8 +78,8 @@ export interface PilotSkillDoc {
   description: string
   /** 描述內 [xxx] 引用側錄（PLAN-019 Layer 1） */
   descriptionRefs?: DescriptionRefs
+  /** 官方圖示檔名 key（如 Icon_skill_passive_5223；PLAN-055 起 DB 只存 key，讀取端走 gameIconCandidates）；空字串＝沒有圖示 */
   icon: string
-  iconLocal: string
   effects: SkillEffect[]
   buffIds: string[]
   /** 管理者手動新增的技能；爬蟲補丁模式不會覆寫或刪除。詳見 PilotSkill.manual */
@@ -212,8 +212,8 @@ export interface PilotTalent {
   descriptionMax: string
   /** 描述內 [xxx] 引用側錄（PLAN-019 Layer 1）；適用 description 與 descriptionMax */
   descriptionRefs?: DescriptionRefs
+  /** 官方圖示檔名 key（如 Icon_skill_passive_5223；PLAN-055 起 DB 只存 key，讀取端走 gameIconCandidates）；空字串＝沒有圖示 */
   icon: string
-  iconLocal: string
   effects:          SkillEffect[]
   enhancedEffects?: SkillEffect[]
   buffIds:          string[]
@@ -248,9 +248,8 @@ export interface NeuralDriveAbility {
   description: string
   /** 描述內 [xxx] 引用側錄（PLAN-019 Layer 1；本計畫 N2-1 接線 RefText） */
   descriptionRefs?: DescriptionRefs
-  /** 圖示（= NeuralDriveLevel.skillIcon / iconLocal） */
+  /** 官方圖示檔名 key（如 Icon_skill_passive_5223；PLAN-055 起 DB 只存 key，讀取端走 gameIconCandidates）。PLAN-055 C 起是神經驅動圖示的唯一來源（等級裡的 skillIcon／iconLocal 副本已刪） */
   icon?: string
-  iconLocal?: string
   /** 可計算效果（模擬器用；多數待後台 NeuralDriveAdmin 補填） */
   effects: SkillEffect[]
   /** 賦予的 buff（id 或 id@N，比照技能／天賦）。會進 buffPool。 */
@@ -285,8 +284,7 @@ export interface NeuralDriveLevel {
   abilityId?: string
   effect: string
   skillName: string
-  skillIcon: string
-  iconLocal: string
+  // 圖示不在這裡：PLAN-055 C 刪掉了 skillIcon／iconLocal 副本，一律由 abilityId 查 NeuralDriveAbility.icon
   effects: SkillEffect[]
   buffIds: string[]
   /** 描述內 [xxx] 引用側錄（PLAN-023 N2-1）；flip 後由 resolve 從 NeuralDriveAbility 帶入。 */

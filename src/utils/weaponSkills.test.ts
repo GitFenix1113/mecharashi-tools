@@ -15,8 +15,7 @@ const 凝神待發: PilotSkillDoc = {
   domain: 'weapon',
   description: '普通攻擊前，若沒有移動過，本次攻擊可以[瞄準]，每回合最多發動3次',
   descriptionRefs: { 瞄準: { refType: 'term', refId: 'term_瞄準' } },
-  icon: 'https://cdn/Icon_skill_passive_5186.png',
-  iconLocal: '/images/weapons/skills/Icon_skill_passive_5186.png',
+  icon: 'Icon_skill_passive_5186',
   effects: [],
   buffIds: ['buff_瞄準'],
 }
@@ -142,7 +141,7 @@ test('ResolvedWeaponSkill 涵蓋消費端需要的全部欄位（欄位漏了就
   )
   // 逐一對齊消費端實際讀的欄位（WeaponSkillCard / PilotDetailPage / WeaponsPage / BackpacksPage）
   for (const k of ['id', 'name', 'type', 'activation', 'description', 'descriptionRefs',
-                   'iconLocal', 'effects', 'buffIds', 'enhancesTalentName',
+                   'icon', 'effects', 'buffIds', 'enhancesTalentName',
                    'enhancedTalentDescription', 'origin'] as const) {
     assert.ok(sk[k] !== undefined, `ResolvedWeaponSkill 缺少 ${k}`)
   }

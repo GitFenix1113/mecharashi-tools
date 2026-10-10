@@ -609,7 +609,7 @@ test('Q3: 沒傳技能庫時，引用分支的 buff 靜默消失（刻意的失�
 test('Q3b: 傳了技能庫 → 引用分支的 buff 經 resolveWeaponSkills 進池', () => {
   const w = { id: 'w1', name: '魔笛', skills: [{ skillId: 'skill_凝神待發', activation: 'use' }] } as unknown as Weapon
   const lib = [{ id: 'skill_凝神待發', name: '凝神待發', type: '被動技能', domain: 'weapon',
-    description: 'x', icon: '', iconLocal: '', effects: [], buffIds: ['buff_瞄準'] }] as PilotSkillDoc[]
+    description: 'x', icon: '', effects: [], buffIds: ['buff_瞄準'] }] as PilotSkillDoc[]
   assert.deepEqual(buildBuffPool({ weapon: w, weaponSkills: lib }), [
     { buffId: 'buff_瞄準', level: undefined, origin: '武器技能:凝神待發' },
   ])
@@ -623,7 +623,7 @@ test('Q3c: 混格式武器的池內順序 = skills[] 宣告順序，且內嵌不
     { name: '起爆', type: '被動技能', activation: 'carry', description: 'x', effects: [], buffIds: ['buff_起爆'] },
   ] } as unknown as Weapon
   const lib = [{ id: 'skill_凝神待發', name: '凝神待發', type: '被動技能',
-    description: 'x', icon: '', iconLocal: '', effects: [], buffIds: ['buff_瞄準'] }] as PilotSkillDoc[]
+    description: 'x', icon: '', effects: [], buffIds: ['buff_瞄準'] }] as PilotSkillDoc[]
   assert.deepEqual(buildBuffPool({ weapon: w, weaponSkills: lib }), [
     { buffId: 'buff_瞄準', level: undefined, origin: '武器技能:凝神待發' },
     { buffId: 'buff_起爆', level: undefined, origin: '武器技能:起爆' },

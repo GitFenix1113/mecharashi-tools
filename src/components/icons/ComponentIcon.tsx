@@ -29,10 +29,10 @@ export function ComponentIcon({ comp, size = 48 }: Props) {
           height: '80%',
         }}
       />
-      {/* PLAN-055：技能圖從圖庫取（icon＝官方檔名 key；iconLocal 是舊路徑後備）。外框不是技能圖，維持原路徑 */}
-      {(comp.icon || comp.iconLocal) && (
+      {/* PLAN-055：技能圖從圖庫取（icon＝官方檔名 key；PLAN-055 C 起 DB 只存 key）。外框不是技能圖，維持原路徑 */}
+      {comp.icon && (
         <FallbackImage
-          candidates={gameIconCandidates(comp.icon, comp.iconLocal)}
+          candidates={gameIconCandidates(comp.icon)}
           alt=""
           className="absolute object-contain"
           style={{

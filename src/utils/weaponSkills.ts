@@ -80,7 +80,6 @@ function fromRef(ref: WeaponSkillRef, doc: PilotSkillDoc): ResolvedWeaponSkill {
     description: doc.description,
     descriptionRefs: doc.descriptionRefs,
     icon: doc.icon || undefined,
-    iconLocal: doc.iconLocal || undefined,
     effects: doc.effects ?? [],
     buffIds: doc.buffIds ?? [],
     enhancesTalentName: doc.enhancesTalentName,

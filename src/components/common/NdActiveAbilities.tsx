@@ -35,7 +35,6 @@ interface ActiveAbility {
   name: string
   description: string
   icon?: string
-  iconLocal?: string
   refs?: DescriptionRefs
 }
 
@@ -69,7 +68,6 @@ export function NdActiveAbilities({
           name: a.name,
           description: a.description ?? '',
           icon: a.icon,
-          iconLocal: a.iconLocal,
           refs: a.descriptionRefs ?? lvl.descriptionRefs,
         })
       }
@@ -127,7 +125,7 @@ export function NdActiveAbilities({
             } ${isMobile && !expanded ? 'cursor-pointer' : ''}`}
             style={{ gap: 8, padding: '2px 4px', marginInline: -4 }}
           >
-            <SkillIcon icon={a.icon} iconLocal={a.iconLocal} name={a.name} size="sm" />
+            <SkillIcon icon={a.icon} name={a.name} size="sm" />
             <div className="flex flex-col min-w-0 grow" style={{ gap: 2 }}>
               <div className="flex items-baseline" style={{ gap: 8 }}>
                 <span className="text-[13px] text-text-primary leading-snug min-w-0">{a.name}</span>
@@ -166,7 +164,7 @@ function AbilityBody({ ability }: { ability: ActiveAbility }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <SkillIcon icon={ability.icon} iconLocal={ability.iconLocal} name={ability.name} size="sm" />
+        <SkillIcon icon={ability.icon} name={ability.name} size="sm" />
         <span className="text-[14px] font-bold text-text-primary min-w-0">{ability.name}</span>
       </div>
       <p className="text-[11px] text-text-dim font-[JetBrains_Mono,monospace] tabular-nums">

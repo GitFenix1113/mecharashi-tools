@@ -58,7 +58,7 @@
       <tr><td>pilotId</td><td>string</td><td>所屬機師文件 ID（<code>pilots</code>）</td></tr>
       <tr><td>name</td><td>string</td><td>形態名稱。統一用「<strong>形</strong>態」不用「型」態（舊 pilotSkills 遺留文件的 id 是「型」態）</td></tr>
       <tr><td>order</td><td>number</td><td>顯示順序。形態數不固定 → UI 一律 <code>map</code>，不寫死欄數</td></tr>
-      <tr><td>icon</td><td>string?</td><td>選填圖示（後台以 IconField 從 <code>public/images</code> 挑選）</td></tr>
+      <tr><td>icon</td><td>string?</td><td>選填圖示：官方圖示檔名 key（後台以 GameIconField 從圖示圖庫挑選）<br><small style="color:var(--text-dim)">PLAN-055 C（2026-10-11）起 DB 只存官方檔名 key，讀取端以檔名解析（<code>gameIconCandidates</code>，圖庫 <code>public/images/game/icons/</code>）</small></td></tr>
       <tr><td>description</td><td>string</td><td><strong>形態固有效果</strong>，官方形態卡正文逐字。<strong>這是形態效果的唯一真相源</strong>（見下方「刻意不開的欄位」）</td></tr>
       <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>正文內 <code>[xxx]</code> → 實體引用側錄（PLAN-019 Layer 1）</td></tr>
       <tr><td>restrict</td><td>FormRestrict</td><td>裝備限制，<strong>discriminated union</strong>，見下表</td></tr>

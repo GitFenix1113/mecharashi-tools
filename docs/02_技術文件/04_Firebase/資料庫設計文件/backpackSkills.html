@@ -70,7 +70,7 @@
       <tr><td>skillType</td><td>string</td><td>技能類型（<code>enums.ts</code> 的 SkillType 字串）。實務上幾乎全為 <code>'被動技能'</code>，但保留欄位——遊戲內技能卡本身標有類型，不該由前端硬編</td></tr>
       <tr><td>description</td><td>string</td><td>效果說明。階梯技能時作為各級未填時的<strong>回退父層</strong></td></tr>
       <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>描述內 [xxx] 引用側錄（PLAN-019）。可引用 BUFF／詞條／機師技能</td></tr>
-      <tr><td>icon</td><td>string?</td><td>圖示路徑。慣例存 <code>/images/skills/背包技能/&lt;檔名&gt;</code>（PLAN-043 獨立圖庫資料夾）</td></tr>
+      <tr><td>icon</td><td>string?</td><td>官方圖示檔名 key（各級 <code>levels[].icon</code> 同）。PLAN-043 的「背包技能/」獨立資料夾已由 PLAN-055 改判為扁平圖庫<br><small style="color:var(--text-dim)">PLAN-055 C（2026-10-11）起 DB 只存官方檔名 key，讀取端以檔名解析（<code>gameIconCandidates</code>，圖庫 <code>public/images/game/icons/</code>）</small></td></tr>
       <tr><td>effects</td><td>SkillEffect[]</td><td>結構化效果數值（管理員手填），供模擬器計算</td></tr>
       <tr><td>buffIds</td><td>string[]</td><td>賦予的 BUFF → 引用 <code>buffs</code> collection。元素可含 <code>@N</code></td></tr>
       <tr><td>officialId</td><td>string?</td><td>官方 API 的數字技能 ID（如 <code>62304</code>），由 PLAN-043 遷移自 <code>Backpack.mainSkill.id</code>。<strong>純備查、無任何程式讀取</strong>——保留的理由是它是回連官方資料的唯一線索，而 Phase E 的 flip 會把 <code>mainSkill</code> 永久刪掉。新建技能不必填</td></tr>

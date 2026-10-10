@@ -23,7 +23,6 @@ function makeDefaultSkill(id: string, name = ''): PilotSkillDoc {
     description: '',
     descriptionRefs: {},
     icon: '',
-    iconLocal: '',
     effects: [],
     buffIds: [],
     manual: true,
@@ -125,11 +124,11 @@ function SkillEditPanel({
           </select>
         </Field>
 
-        {/* PLAN-055：寫回官方檔名 key 到 icon，同步清空舊路徑 iconLocal（兩欄不一致時以 icon 為準） */}
+        {/* PLAN-055：只寫官方檔名 key 到 icon（C 階段起 DB 已沒有 iconLocal） */}
         <GameIconField
           label="圖示（官方檔名）"
-          value={form.icon || form.iconLocal}
-          onChange={(k) => { update('icon', k); update('iconLocal', '') }}
+          value={form.icon}
+          onChange={(k) => update('icon', k)}
           presetKinds={iconKindsForSkillType(form.type)}
         />
 
@@ -358,7 +357,7 @@ export default function SkillAdmin({ initialSearch = '' }: { initialSearch?: str
               className="bg-bg-dark border border-border rounded-lg px-3 py-2.5 flex items-center gap-3 hover:border-border-accent transition-colors cursor-pointer"
               onClick={() => setEditing(skill)}
             >
-              <IconThumb icon={skill.icon} iconLocal={skill.iconLocal} className="w-8 h-8 rounded shrink-0" />
+              <IconThumb icon={skill.icon} className="w-8 h-8 rounded shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-sm text-text-primary truncate">

@@ -85,7 +85,7 @@ function WeaponSkillRefRow({
   return (
     <div className="flex items-center gap-2 bg-bg-dark border border-accent-cyan/30 rounded-lg px-2.5 py-2">
       <span className="text-[11px] px-1.5 py-0.5 rounded border border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan shrink-0">引用</span>
-      <IconThumb icon={doc?.icon} iconLocal={doc?.iconLocal} className="w-7 h-7 rounded shrink-0" />
+      <IconThumb icon={doc?.icon} className="w-7 h-7 rounded shrink-0" />
       <div className="flex-1 min-w-0 truncate">
         {/* 解析不到 = 斷鏈（技能被刪或 id 打錯）。必須顯眼，否則前台只會靜默少一塊技能 */}
         {doc

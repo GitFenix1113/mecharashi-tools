@@ -52,14 +52,14 @@ import { usePilot, usePilotLoreDoc } from '../../hooks/useFirestore'
 const PORTRAIT_MOBILE_CAP = 'max-h-[38vh] lg:max-h-none'
 
 /**
- * 天賦徽記的圖片候選（PLAN-055：從圖示圖庫取，`icon`／`iconLocal` 任一個能解析就有圖）。
+ * 天賦徽記的圖片候選（PLAN-055：從圖示圖庫取；C 階段起 DB 只存 `icon` 一個欄位）。
  *
- * ⚠ 地雷 M-16：有 3 位機師的 `icon`／`iconLocal` 都是**空字串**，空字串進 `<img src="">`
+ * ⚠ 地雷 M-16：有機師的 `icon` 是**空字串**，空字串進 `<img src="">`
  *   在瀏覽器等同**重新載入當前頁面 URL**。`gameIconCandidates` 會先 trim、空值不產生候選，
  *   回空陣列時呼叫端**不渲染 <img>**。
  */
-function talentIconCandidates(talent: { icon?: string; iconLocal?: string } | undefined): string[] {
-  return talent ? gameIconCandidates(talent.icon, talent.iconLocal) : []
+function talentIconCandidates(talent: { icon?: string } | undefined): string[] {
+  return talent ? gameIconCandidates(talent.icon) : []
 }
 
 export default function PilotLorePage() {

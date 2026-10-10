@@ -4,12 +4,13 @@ import assert from 'node:assert/strict'
 import { buildIconUsage, usageKey, usageSearchText } from './iconUsage.ts'
 import type { IconUsageSource } from './iconUsage.ts'
 
-// 最小樣本：只填反查會讀到的欄位（其餘欄位與反查無關，以型別斷言略過）
+// 最小樣本：只填反查會讀到的欄位（其餘欄位與反查無關，以型別斷言略過）。
+// 寫法照 PLAN-055 C 之後的 DB：技能類只存 icon（官方檔名 key）；模組／背包技能／形態仍留幾筆舊路徑，驗證讀取端照樣解析
 const src = {
   pilots: [
     {
       id: 'pilot_038_艾達', name: '艾達', skills: ['skill_崩穹斬'],
-      talents: [{ name: '凝勢', icon: 'Icon_skill_talent_1124', iconLocal: '/images/skills/Icon_skill_talent_1124.png' }],
+      talents: [{ name: '凝勢', icon: 'Icon_skill_talent_1124' }],
       neuralDrive: [{ name: 'α', levels: [{ level: 1, abilityId: 'nd_運動戰2' }] }],
     },
     { id: 'pilot_004_威廉', name: '威廉', skills: ['skill_崩穹斬'], talents: [], neuralDrive: [{ name: 'α', levels: [{ level: 1, abilityId: 'nd_運動戰2' }] }] },
@@ -19,11 +20,11 @@ const src = {
     { id: 'weapon_y', name: '舊武器', skills: [{ name: '內嵌技', icon: 'https://cdn.example/Icon_skill_passive_5010.png', iconLocal: '', type: '被動技能', activation: 'carry', description: '' }] },
   ],
   pilotSkills: [
-    { id: 'skill_崩穹斬', name: '崩穹斬', icon: '', iconLocal: '/images/skills/主動技能/Icon_skill_main_1106.png' },
-    { id: 'skill_侵攻', name: '侵攻', icon: '', iconLocal: '/images/skills/Icon_skill_main_1043.png' },   // 舊編號 → 1141
-    { id: 'SKILL_碎障强擊', name: '碎障强擊', icon: '', iconLocal: '/images/skills/主動技能/Icon_skill_main_凱登01.png' },
+    { id: 'skill_崩穹斬', name: '崩穹斬', icon: 'Icon_skill_main_1106' },
+    { id: 'skill_侵攻', name: '侵攻', icon: 'Icon_skill_main_1043' },   // 舊編號 → 1141（爬蟲快照等漏網的舊值仍要算對）
+    { id: 'SKILL_碎障强擊', name: '碎障强擊', icon: 'Icon_skill_main_凱登01' },
   ],
-  neuralDriveAbilities: [{ id: 'nd_運動戰2', name: '運動戰2', icon: 'Icon_skill_passive_5010', iconLocal: '/images/skills/Icon_skill_passive_5010.png' }],
+  neuralDriveAbilities: [{ id: 'nd_運動戰2', name: '運動戰2', icon: 'Icon_skill_passive_5010' }],
   modules: [{ id: 'mod_1001', name: '猛擊裝置', icon: '/images/modules/Icon_entry_10031.png' }],
   backpackSkills: [{ id: 'bp_1', name: '威能者驅動', icon: '/images/skills/背包技能/Icon_skill_passive_5155.png', levels: [{ level: 2, icon: '/images/skills/被動技能/Icon_skill_passive_5155.png' }] }],
   forms: [{ id: 'form_海莉絲_先鋒', name: '先鋒形態', pilotId: 'pilot_038_艾達', icon: '/images/pilot_forms/Icon_skill_passive_5288.png' }],

@@ -137,7 +137,7 @@ export interface Module {
   buffIds?: string[]
   /** ModuleRarity enum：'S' / 'A' */
   rarity: string
-  /** 本地圖示路徑 /images/modules/{iconKey}.png */
+  /** 官方圖示檔名 key（如 Icon_skill_passive_5223；PLAN-055 起 DB 只存 key，讀取端走 gameIconCandidates） */
   icon?: string
   /** 遊戲取得途徑（可複數）：ModuleSource enum 陣列（'商店'/'拆機甲'/'未知'） */
   source?: string[]

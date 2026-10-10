@@ -10,7 +10,7 @@ import { carriableSkills, keepCarriableSkills } from './carriedSkills.ts'
 
 const skill = (id: string, extra: Partial<PilotSkillDoc> = {}): PilotSkillDoc => ({
   id, name: id.replace(/^skill_/i, ''), type: '被動技能',
-  description: '', icon: '', iconLocal: '', effects: [], buffIds: [],
+  description: '', icon: '', effects: [], buffIds: [],
   ...extra,
 })
 

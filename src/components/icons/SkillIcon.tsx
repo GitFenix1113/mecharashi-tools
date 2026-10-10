@@ -8,7 +8,8 @@ import { gameIconCandidates } from '../../utils/gameIcons'
 // （`ComponentIcon` 是同一類，也在這個資料夾）。
 //
 // PLAN-055：圖片一律從扁平圖庫 `game/icons/` 取（`gameIconCandidates`：檔名即 key）。
-// `icon`（官方檔名 key）與 `iconLocal`（舊路徑）都給——任一個能解析就有圖，舊資料不必先改。
+// 一般只給 `icon`（官方檔名 key；PLAN-055 C 起 DB 只存它）。`iconLocal` 只留給武器內嵌 WeaponSkill
+// 這種爬蟲原始快照（PLAN-032 刻意保留舊寫法）——任一個能解析就有圖。
 //
 // ⚠ 載不出來時渲染一顆 `?` 佔位方塊，**不是 `null`**：這些圖示排在名稱左邊，
 //   少一顆會讓整排文字左右參差。與立繪相反 —— 那裡是整張不畫（`PilotIdentityCard`），

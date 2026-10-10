@@ -128,7 +128,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: c.name,
         subtitle: c.rarity,
-        images: gameIconCandidates(c.icon, c.iconLocal),
+        images: gameIconCandidates(c.icon),
         description: c.description,
       }
     }
@@ -169,7 +169,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
         title: s.name,
         subtitle: [s.type, s.ap ? `AP ${s.ap}` : '', s.cd ? `CD ${s.cd}` : '', s.pp ? `消耗 ${s.pp}PP` : '']
           .filter(Boolean).join(' · '),
-        images: gameIconCandidates(s.icon, s.iconLocal),
+        images: gameIconCandidates(s.icon),
         description: s.description,
         descriptionRefs: s.descriptionRefs,
       }
@@ -218,7 +218,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: a.name,
         subtitle: '神經驅動能力',
-        images: gameIconCandidates(a.icon, a.iconLocal),
+        images: gameIconCandidates(a.icon),
         description: a.description,
         descriptionRefs: a.descriptionRefs,
       }

@@ -25,12 +25,12 @@ const adaDrive: NeuralDrive = {
   icon: '',
   slots: [],
   levels: [
-    { level: 1, minSum: 1,  abilityId: 'nd_雙生星芒1', effect: '', skillName: '', skillIcon: '', iconLocal: '', effects: [], buffIds: [] },
-    { level: 2, minSum: 4,  abilityId: 'nd_x2',        effect: '', skillName: '', skillIcon: '', iconLocal: '', effects: [], buffIds: [] },
-    { level: 3, minSum: 7,  abilityId: 'nd_x3',        effect: '', skillName: '', skillIcon: '', iconLocal: '', effects: [], buffIds: [] },
-    { level: 4, minSum: 10, abilityId: 'nd_雙生星芒2', effect: '', skillName: '', skillIcon: '', iconLocal: '', effects: [], buffIds: [] },
-    { level: 5, minSum: 13, abilityId: 'nd_雙生星芒3', effect: '', skillName: '', skillIcon: '', iconLocal: '', effects: [], buffIds: [] },
-    { level: 6, minSum: 16, abilityId: 'nd_雙生星芒4', effect: '', skillName: '', skillIcon: '', iconLocal: '', effects: [], buffIds: [] },
+    { level: 1, minSum: 1,  abilityId: 'nd_雙生星芒1', effect: '', skillName: '', effects: [], buffIds: [] },
+    { level: 2, minSum: 4,  abilityId: 'nd_x2',        effect: '', skillName: '', effects: [], buffIds: [] },
+    { level: 3, minSum: 7,  abilityId: 'nd_x3',        effect: '', skillName: '', effects: [], buffIds: [] },
+    { level: 4, minSum: 10, abilityId: 'nd_雙生星芒2', effect: '', skillName: '', effects: [], buffIds: [] },
+    { level: 5, minSum: 13, abilityId: 'nd_雙生星芒3', effect: '', skillName: '', effects: [], buffIds: [] },
+    { level: 6, minSum: 16, abilityId: 'nd_雙生星芒4', effect: '', skillName: '', effects: [], buffIds: [] },
   ],
 }
 

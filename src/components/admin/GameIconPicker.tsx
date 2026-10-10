@@ -475,9 +475,8 @@ export function GameIconPicker({
 
 // ── 後台列表縮圖 ─────────────────────────────────────────────────────────────────
 /**
- * 後台列表的小縮圖：icon（官方 key）／iconLocal（舊路徑）任一個能解析就畫，都沒有就不佔位
- * （與原本 `onError → display:none` 的行為相同）。取代散在各後台的 `<img src={x.iconLocal}>`——
- * 那種寫法在 C 階段清掉 iconLocal 之後會整排消失。
+ * 後台列表的小縮圖：icon（官方 key）能解析就畫，都沒有就不佔位（與原本 `onError → display:none` 的行為相同）。
+ * iconLocal 只剩武器內嵌 WeaponSkill（爬蟲原始快照，PLAN-032 刻意保留）會傳——PLAN-055 C 起其他集合 DB 已沒有這個欄位。
  */
 export function IconThumb({ icon, iconLocal, className = 'w-8 h-8 rounded shrink-0' }: {
   icon?: string | null

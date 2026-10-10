@@ -36,7 +36,6 @@ function makeDefaultComponent(id: string, name = ''): Component {
     allowedWeaponTypes: [...COMPONENT_WEAPON_TYPES],
     rarity: ItemRarity.A,
     icon: undefined,
-    iconLocal: undefined,
     componentsWType: ComponentsWType.NORMAL,
     conditionType: ConditionType.ALWAYS,
     condition: '',
@@ -387,11 +386,11 @@ function ComponentEditPanel({
           >全選</button>
         </Field>
 
-        {/* PLAN-055：原本是兩個手打欄位（key＋路徑），改成選圖器；寫回 key 到 icon，同步清空舊路徑 iconLocal */}
+        {/* PLAN-055：原本是兩個手打欄位（key＋路徑），改成選圖器；只寫官方檔名 key 到 icon（C 階段起 DB 已沒有 iconLocal） */}
         <GameIconField
           label="技能圖示（官方檔名）"
-          value={form.icon || form.iconLocal}
-          onChange={(k) => { updateBase('icon', k || undefined); updateBase('iconLocal', undefined) }}
+          value={form.icon}
+          onChange={(k) => updateBase('icon', k || undefined)}
           presetKinds={['passive', 'rnd']}
         />
 
@@ -412,10 +411,10 @@ function ComponentEditPanel({
           onChange={(v) => updateBase('dropStages', v)}
         />
 
-        {(form.icon || form.iconLocal || form.outerFrameLocal) && (
+        {(form.icon || form.outerFrameLocal) && (
           <ComponentIconPreview
             outerFrameSrc={assetUrl(form.outerFrameLocal ?? `/images/components/OuterFrame/statetype_${form.componentType}${form.componentsWType === ComponentsWType.W ? '_W' : ''}.png`)}
-            iconSrc={gameIconCandidates(form.icon, form.iconLocal)[0]}
+            iconSrc={gameIconCandidates(form.icon)[0]}
             hasOuterFrameLocal={!!form.outerFrameLocal}
           />
         )}
@@ -583,7 +582,7 @@ export default function ComponentAdmin({ initialSearch = '' }: { initialSearch?:
                   onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
                 />
                 <FallbackImage
-                  candidates={gameIconCandidates(comp.icon, comp.iconLocal)}
+                  candidates={gameIconCandidates(comp.icon)}
                   alt=""
                   className="absolute object-contain"
                   style={{ top: '50%', left: '50%', transform: 'translate(-51%, -52%) rotate(16deg)', width: '48%', height: '48%' }}

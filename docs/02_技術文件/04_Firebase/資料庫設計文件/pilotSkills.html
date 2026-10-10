@@ -70,7 +70,7 @@
       <tr><td>weapon</td><td>WeaponRequirement | string?</td><td>限定武器需求；武器技能才有</td></tr>
       <tr><td>description</td><td>string</td><td>效果描述文字（遊戲原文，含 [xxx] 標記）</td></tr>
       <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>描述內 [xxx] → 實體引用側錄（PLAN-019 Layer 1）</td></tr>
-      <tr><td>icon / iconLocal</td><td>string</td><td>技能圖示（遠端 URL / 本地 /images/skills/…）</td></tr>
+      <tr><td>icon</td><td>string</td><td>官方技能圖示檔名 key（空字串＝沒有圖示；<code>iconLocal</code> 已於 PLAN-055 C 刪除）<br><small style="color:var(--text-dim)">PLAN-055 C（2026-10-11）起 DB 只存官方檔名 key，讀取端以檔名解析（<code>gameIconCandidates</code>，圖庫 <code>public/images/game/icons/</code>）</small></td></tr>
       <tr><td>effects</td><td>SkillEffect[]</td><td>可量化效果列表（空陣列 = 待填入）；計算器加總用</td></tr>
       <tr><td>buffIds</td><td>string[]</td><td>此技能賦予的 BUFF ID 列表 → 引用 buffs 集合（PLAN-019 Layer 2 賦予邊）</td></tr>
       <tr><td>manual</td><td>boolean?</td><td>後台手動新增（機師天生自帶、官網查無 / form-gated 條件技能）。爬蟲補丁模式不覆寫亦不刪除</td></tr>

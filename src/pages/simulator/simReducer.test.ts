@@ -89,7 +89,7 @@ const ND乙: Pilot = {
 
 const skillDoc = (id: string, over: Partial<PilotSkillDoc> = {}): PilotSkillDoc => ({
   id, name: id.replace(/^skill_/, ''), type: '被動技能',
-  description: '', icon: '', iconLocal: '', effects: [], buffIds: [], ...over,
+  description: '', icon: '', effects: [], buffIds: [], ...over,
 })
 
 const 職業單元 = skillDoc('skill_職業單元', { unitType: '6' })

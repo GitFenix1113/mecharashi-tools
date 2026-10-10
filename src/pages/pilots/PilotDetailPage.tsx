@@ -6,7 +6,9 @@ import { BottomSheet } from '../../components/common/BottomSheet'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import type { NeuralDrive, Weapon, PilotTalent, TalentNdVariant, DescriptionRefs } from '../../types'
 import { formatWeaponReq } from '../../types'
-type NdLevel = NeuralDrive['levels'][number]
+/** 顯示用的神經驅動等級：resolve 後由 abilityId 查字典帶入圖示（PLAN-055 C 起等級本身不存圖示副本） */
+type NdLevel = NeuralDrive['levels'][number] & { icon?: string }
+type NeuralDriveView = Omit<NeuralDrive, 'levels'> & { levels: NdLevel[] }
 import { assetUrl, pilotPortraitPath } from '../../utils/assets'
 import { usePilot, usePilotExclusiveWeapons, useFormsByPilot, useMechs } from '../../hooks/useFirestore'
 import { RefChip } from '../../components/refs/RefChip'
@@ -205,7 +207,7 @@ function TalentCard({
 
   return (
     <div className="flex gap-3 p-3 bg-bg-dark rounded-xl border border-border">
-      <SkillIcon icon={talent.icon} iconLocal={talent.iconLocal} name={talent.name} />
+      <SkillIcon icon={talent.icon} name={talent.name} />
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2 mb-1.5">
           <span className="font-bold text-base">{talent.name}</span>
@@ -682,7 +684,7 @@ function NdLevelTooltipPortal({ level, x, anchorTop }: { level: NdLevel; x: numb
 }
 
 function NeuralDriveZoneCard({ nd, zoneName, className, expanded, onLevelHover, onLevelLeave, onLevelClick }: {
-  nd: NeuralDrive | undefined
+  nd: NeuralDriveView | undefined
   zoneName: string
   className?: string
   expanded: boolean
@@ -717,7 +719,7 @@ function NeuralDriveZoneCard({ nd, zoneName, className, expanded, onLevelHover, 
               onMouseLeave={onLevelLeave}
               onClick={() => onLevelClick?.(lv)}
             >
-              <SkillIcon icon={lv.skillIcon} iconLocal={lv.iconLocal} name={lv.skillName} />
+              <SkillIcon icon={lv.icon} name={lv.skillName} />
               <div className="text-center w-full">
                 <div className="text-xs font-medium leading-tight line-clamp-2 break-all">{lv.skillName}</div>
                 <div className="text-[13px] text-text-dim leading-none mt-0.5">Lv.{lv.level}</div>
@@ -740,7 +742,7 @@ function NeuralDriveZoneCard({ nd, zoneName, className, expanded, onLevelHover, 
       <div className="divide-y divide-border">
         {nd.levels.map((lv) => (
           <div key={lv.level} className="flex gap-3 p-3 items-start">
-            <SkillIcon icon={lv.skillIcon} iconLocal={lv.iconLocal} name={lv.skillName} />
+            <SkillIcon icon={lv.icon} name={lv.skillName} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className="font-bold text-sm">{lv.skillName}</span>
@@ -821,13 +823,13 @@ export default function PilotDetailPage() {
   // PLAN-023 N1-5：神驅 level 改走 resolve（相容 abilityId 引用／嵌入舊格式）。
   // 目前 level 尚無 abilityId → 回退嵌入、輸出不變；N1-6 flip 後改吃能力庫（單一資料源）。
   const ndAbilityMap = useMemo(() => buildNdAbilityMap(gd.neuralDriveAbilities), [gd.neuralDriveAbilities])
-  const resolvedNeuralDrive = useMemo<NeuralDrive[] | undefined>(() => {
+  const resolvedNeuralDrive = useMemo<NeuralDriveView[] | undefined>(() => {
     if (!pilot?.neuralDrive) return pilot?.neuralDrive
     return pilot.neuralDrive.map(zone => ({
       ...zone,
       levels: zone.levels.map(lv => {
         const a = resolveNeuralDriveLevel(lv, ndAbilityMap)
-        return { ...lv, skillName: a.name, effect: a.description, skillIcon: a.icon ?? lv.skillIcon, iconLocal: a.iconLocal ?? lv.iconLocal, effects: a.effects, buffIds: a.buffIds, descriptionRefs: a.descriptionRefs ?? lv.descriptionRefs }
+        return { ...lv, skillName: a.name, effect: a.description, icon: a.icon, effects: a.effects, buffIds: a.buffIds, descriptionRefs: a.descriptionRefs ?? lv.descriptionRefs }
       }),
     }))
   }, [pilot?.neuralDrive, ndAbilityMap])
@@ -1147,7 +1149,7 @@ export default function PilotDetailPage() {
             <div className="space-y-3">
               {regularSkills.map((sk, i) => (
                 <div key={i} className="flex gap-3 p-3 bg-bg-dark rounded-xl border border-border">
-                  <SkillIcon icon={sk.icon} iconLocal={sk.iconLocal} name={sk.name} />
+                  <SkillIcon icon={sk.icon} name={sk.name} />
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
                       <span className="font-bold text-base">{sk.name}</span>
@@ -1224,7 +1226,7 @@ export default function PilotDetailPage() {
                   <div className="space-y-2">
                     {classSkills.map((sk, i) => (
                       <div key={i} className="flex gap-3 p-3 bg-bg-dark rounded-xl border border-accent-green/20">
-                        <SkillIcon icon={sk.icon} iconLocal={sk.iconLocal} name={sk.name} />
+                        <SkillIcon icon={sk.icon} name={sk.name} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1.5">
                             <span className="font-bold text-base">{sk.name}</span>

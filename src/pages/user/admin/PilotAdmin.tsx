@@ -507,7 +507,7 @@ function AssignedSkillRow({
         <button type="button" onClick={() => onMove(1)} disabled={index === count - 1}
           className="text-[11px] leading-none text-text-dim hover:text-text-primary disabled:opacity-20">▼</button>
       </div>
-      <IconThumb icon={skill?.icon} iconLocal={skill?.iconLocal} className="w-6 h-6 rounded shrink-0" />
+      <IconThumb icon={skill?.icon} className="w-6 h-6 rounded shrink-0" />
       <div className="flex-1 min-w-0">
         {skill ? (
           <div className="flex items-center gap-2 flex-wrap">
@@ -582,7 +582,7 @@ function SkillRefPicker({
                 onClick={() => onAdd(s.id)}
                 className="w-full text-left px-2.5 py-1.5 text-xs hover:bg-bg-card transition-colors flex items-center gap-2"
               >
-                <IconThumb icon={s.icon} iconLocal={s.iconLocal} className="w-5 h-5 rounded shrink-0" />
+                <IconThumb icon={s.icon} className="w-5 h-5 rounded shrink-0" />
                 <span className="flex-1 truncate text-text-secondary">{s.name || '（未命名）'}</span>
                 <span className="text-[11px] px-1 rounded bg-bg-card border border-border text-text-dim shrink-0">{s.type}</span>
                 <span className="text-text-dim font-mono text-[11px] truncate max-w-[40%]">{s.id}</span>
@@ -630,7 +630,7 @@ function PilotSkillRefsTab({
         <div className="space-y-1.5">
           {embeddedSkills.map((s, i) => (
             <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 bg-bg-dark/50">
-              <IconThumb icon={s.icon} iconLocal={s.iconLocal} className="w-6 h-6 rounded shrink-0" />
+              <IconThumb icon={s.icon} className="w-6 h-6 rounded shrink-0" />
               <span className="text-sm font-medium flex-1 truncate">{s.name || '（未命名技能）'}</span>
               <span className="text-[12px] px-1.5 py-0.5 rounded bg-bg-card border border-border text-text-dim shrink-0">{s.type}</span>
             </div>
@@ -813,7 +813,7 @@ function TalentItem({
     <div className="border border-border/60 rounded-lg bg-bg-dark/50">
       <div className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none" onClick={onToggle}>
         <span className="text-[13px] text-text-dim w-3 shrink-0">{expanded ? '▼' : '▶'}</span>
-        <IconThumb icon={talent.icon} iconLocal={talent.iconLocal} className="w-6 h-6 rounded shrink-0" />
+        <IconThumb icon={talent.icon} className="w-6 h-6 rounded shrink-0" />
         <span className="text-sm font-medium flex-1 truncate">{talent.name || '（未命名天賦）'}</span>
         {talent.manual && <span className="text-[11px] px-1.5 py-0.5 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange shrink-0">手動</span>}
         {(talent.ndVariants?.length ?? 0) > 0 && <span className="text-[12px] text-accent-pink shrink-0">算力階 {talent.ndVariants!.length}</span>}
@@ -837,7 +837,7 @@ function TalentItem({
                   <input value={talent.type} onChange={(e) => upd('type', e.target.value)} className="input-field" placeholder="如：核心 / 職業" />
                 </Field>
               </div>
-              <GameIconField label="圖示（官方檔名）" value={talent.icon || talent.iconLocal} onChange={(k) => onChange({ ...talent, icon: k, iconLocal: '' })} presetKinds={['talent']} />
+              <GameIconField label="圖示（官方檔名）" value={talent.icon} onChange={(k) => onChange({ ...talent, icon: k })} presetKinds={['talent']} />
               <Field label="效果說明 description">
                 <textarea
                   value={talent.description}
@@ -940,7 +940,7 @@ function PilotTalentsTab({
   function addTalent() {
     onChange([...talents, {
       name: '', type: '', description: '', descriptionMax: '', descriptionRefs: {},
-      icon: '', iconLocal: '', effects: [], buffIds: [],
+      icon: '', effects: [], buffIds: [],
     }])
     setExpandedIdx(talents.length)
   }
@@ -1019,7 +1019,7 @@ function NdAbilitySelect({
       >
         {selected ? (
           <>
-            <IconThumb icon={selected.icon} iconLocal={selected.iconLocal} className="w-5 h-5 rounded shrink-0" />
+            <IconThumb icon={selected.icon} className="w-5 h-5 rounded shrink-0" />
             <span className="flex-1 truncate text-text-secondary">{selected.name || '（未命名）'}</span>
             <span className="text-text-dim font-mono text-[11px] truncate max-w-[40%]">{selected.id}</span>
           </>
@@ -1050,7 +1050,7 @@ function NdAbilitySelect({
                 onClick={() => { onChange(a.id); setOpen(false) }}
                 className="w-full text-left px-2.5 py-1.5 text-xs hover:bg-bg-card transition-colors flex items-center gap-2"
               >
-                <IconThumb icon={a.icon} iconLocal={a.iconLocal} className="w-5 h-5 rounded shrink-0" />
+                <IconThumb icon={a.icon} className="w-5 h-5 rounded shrink-0" />
                 <span className="flex-1 truncate text-text-secondary">{a.name || '（未命名）'}</span>
                 <span className="text-text-dim font-mono text-[11px] truncate max-w-[40%]">{a.id}</span>
               </button>
@@ -1093,7 +1093,7 @@ function makeNdLevel(level: number): NeuralDriveLevel {
   // PLAN-023 新格式：只留 abilityId 引用；嵌入欄位給空值（type 要求 required）
   // minSum 依 neuralDriveLevels 規則帶入（1 起跳、每級 +3）。原本固定給 0，而 0 在
   // PLAN-034 覆寫層是**零門檻恆真**——新增等級後忘了改就會首屏即生效，且畫面無異常可辨。
-  return { level, minSum: ndMinSumForLevel(level) ?? 0, abilityId: '', effect: '', skillName: '', skillIcon: '', iconLocal: '', effects: [], buffIds: [] }
+  return { level, minSum: ndMinSumForLevel(level) ?? 0, abilityId: '', effect: '', skillName: '', effects: [], buffIds: [] }
 }
 
 function NdZoneCard({

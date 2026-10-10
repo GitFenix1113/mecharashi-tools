@@ -334,7 +334,7 @@
       <tr><td>&nbsp;├ name</td><td>string</td><td>技能名稱（如 "阔步"）<br><small style="color:var(--text-dim)">API: PassiveSkill[].name</small></td></tr>
       <tr><td>&nbsp;├ type</td><td>string</td><td>技能類型（被動技能/主動技能）</td></tr>
       <tr><td>&nbsp;├ icon</td><td>string?</td><td>技能圖示鍵名（如 <code>Icon_skill_passive_5161</code>）<br><small style="color:var(--text-dim)">API: PassiveSkill[].SkillIcon（或 .icon）；前端用此值組合圖示 URL</small></td></tr>
-      <tr><td>&nbsp;├ iconLocal</td><td>string?</td><td>技能圖示本地路徑（如 <code>/images/weapons/skills/Icon_skill_passive_5161.png</code>）<br><small style="color:var(--text-dim)">腳本下載後自動補填；前端縮圖顯示用</small></td></tr>
+      <tr><td>&nbsp;├ iconLocal</td><td>string?</td><td>本地技能圖示。內嵌 WeaponSkill 是爬蟲原始快照（PLAN-032 刻意保留原樣），舊資料是路徑；PLAN-055 起後台改存官方檔名 key<br><small style="color:var(--text-dim)">讀取端以檔名解析（<code>gameIconCandidates</code>），不需要遷移——這是全站唯一還保留 iconLocal 的地方</small></td></tr>
       <tr><td>&nbsp;├ activation</td><td>SkillActivation (Enum)</td><td>carry = 攜帶即生效 / equip = 裝備中生效 / use = 僅使用時生效<br><small style="color:var(--text-dim)">API 無此欄位；武器被動技能語義為攜帶即生效，腳本預設填 'carry'；管理員可手動改為 'equip' 或 'use'</small></td></tr>
       <tr><td>&nbsp;├ description</td><td>string</td><td>技能效果描述（遊戲原文，已清洗 rich text 標籤）<br><small style="color:var(--text-dim)">API: PassiveSkill[].SpecificEffects；原始值含 &lt;color=#...&gt;…&lt;/color&gt; 標籤，腳本以正規表示式清洗後寫入</small></td></tr>
       <tr><td>&nbsp;├ descriptionRefs</td><td>DescriptionRefs?</td><td>描述內 [xxx] → 實體引用側錄（PLAN-019 Layer 1）；後台 RefPicker 標註，前台 RefText 渲染為可點擊引用</td></tr>
@@ -419,7 +419,7 @@
       <tr>
         <td>skills[].icon</td>
         <td>PassiveSkill[].SkillIcon / .icon</td>
-        <td>鍵名格式，如 "Icon_skill_passive_5161"；iconLocal 由腳本下載後自動補填</td>
+        <td>鍵名格式，如 "Icon_skill_passive_5161"；讀取端以檔名解析，圖檔在圖示圖庫 public/images/game/icons/skill/（PLAN-055）</td>
       </tr>
       <tr>
         <td>skills[].buffIds</td>

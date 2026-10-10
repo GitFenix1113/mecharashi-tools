@@ -864,7 +864,7 @@ function NoteBand({ note }: { note: string | undefined }) {
 //   UI 也隱藏著（見 `LoadoutSkills.mod`）。把它算進分母，讀者會以為這張圖漏了一個。
 //   要有數字就只講**印出來的那幾個**。
 //
-// ⚠ 缺 iconLocal 的 14 筆（619 個被持有技能中）畫**實心底 ＋ 型別首字**，
+// ⚠ 沒有圖示的那幾筆（2026-08 是 619 個被持有技能中 14 筆；PLAN-055 C 之後只剩 icon 一個欄位）畫**實心底 ＋ 型別首字**，
 //   不要虛線空框：空框讀起來像「一個我不認得的東西」，而實際上只是我們少一張圖。
 //   ⚠ 這與模組帶（A-2）「缺圖就留白不畫框」刻意不同：那裡每一列都有部位標籤與名稱
 //     撐著版面，這裡的 chip 只有一顆圖示 ＋ 一個名字，留白會讓那顆 chip 塌掉半邊。
@@ -883,9 +883,9 @@ function SkillBand({ skills }: { skills: readonly PilotSkillDoc[] }) {
             display: 'flex', alignItems: 'center', gap: 8, minWidth: 0,
             padding: '6px 10px 6px 6px', background: C.panel, border: `1px solid ${C.lineStrong}`,
           }}>
-            {(sk.icon || sk.iconLocal) ? (
+            {sk.icon ? (
               <FallbackImage
-                candidates={gameIconCandidates(sk.icon, sk.iconLocal)}
+                candidates={gameIconCandidates(sk.icon)}
                 alt=""
                 // ⚠ 退化態走下面那顆方塊，不是 `null`：這一格塌掉會讓 chip 少半邊
                 fallback={<SkillTypeBox type={sk.type} />}
@@ -1061,9 +1061,9 @@ function ExportComponentIcon({ comp, size }: { comp: Component | null; size: num
           width: '100%', height: '100%', objectFit: 'contain',
         }}
       />
-      {(comp.icon || comp.iconLocal) && (
+      {comp.icon && (
         <FallbackImage
-          candidates={gameIconCandidates(comp.icon, comp.iconLocal)}
+          candidates={gameIconCandidates(comp.icon)}
           alt=""
           fallback={null}
           style={{

@@ -4,7 +4,7 @@
 // 技能、模組詞條、研發、BUFF、武器、背包圖示全部住在扁平圖庫 `/images/game/icons/{skill,buff,weapon,backpack}/<官方檔名>.webp`，
 // 一張圖只存一份。讀取端一律寫：
 //
-//     <FallbackImage candidates={gameIconCandidates(skill.icon, skill.iconLocal)} … />
+//     <FallbackImage candidates={gameIconCandidates(skill.icon)} … />                ← 爬蟲原始快照可多給第二個舊值
 //     <FallbackImage candidates={weaponIconCandidates(weapon, side)} … />     ← 武器／背包吃整個實體（gameId 優先）
 //
 // ── 檔名即 key ───────────────────────────────────────────────────────────────
