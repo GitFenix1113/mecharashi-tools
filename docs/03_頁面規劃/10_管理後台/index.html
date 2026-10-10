@@ -209,7 +209,9 @@
     <tr><td><code>PilotAdmin</code></td><td>6：基本資訊 / 屬性數值・AP / 個人資料 / 天賦 / 技能 / 神經驅動</td>
         <td>個人資料未併入數值頁——含 <code>AdditionalInfoEditor</code>，高度隨自訂欄位數不定</td></tr>
     <tr><td><code>WeaponAdmin</code></td><td>4：基本資訊 / 戰鬥屬性・射程・插槽 / 改裝方案 / 武器技能</td>
-        <td>改裝方案頁的固定／浮動改裝為雙欄</td></tr>
+        <td>改裝方案頁的固定／浮動改裝為雙欄。基本資訊頁有 <code>isFixedArmament</code> 勾選（2026-10-10 補上；選「固定武裝」種類會自動勾），
+          勾了之後顯示唯讀的<strong>宿主</strong>區塊（焊在哪台機甲／哪個形態、哪幾格；沒連結時提醒到「機甲管理 → 部件」或「機師形態」設定）。
+          連結本身<strong>只在宿主那側編輯</strong>，武器端不寫——固定武裝與宿主一對一，由 <code>validate-mech-slots.mjs</code> ⑦ 把關</td></tr>
     <tr><td><code>MechAdmin</code></td><td>4：基本數值 / 部件 / 模組（能力）/ 武器槽・外觀</td><td>—</td></tr>
     <tr><td><code>ModuleAdmin</code></td><td>5：基本資訊 / 基本屬性 / 武器增傷 / 等級資料 / 條件效果</td>
         <td>四個是大分頁、無可併對象；基本資訊頁為雙欄</td></tr>
