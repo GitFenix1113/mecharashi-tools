@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-056 武器／背包圖示 ID 化 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+  flex-wrap: wrap;
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+  word-break: break-all;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+.impact-note ul { margin: 6px 0 0 18px; line-height: 1.8; }
+
+@media (max-width: 640px) {
+  .task-row { grid-template-columns: 1fr; gap: 6px; }
+  .task-assignee { text-align: left; }
+}
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-056 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-056</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">武器／背包圖示 ID 化</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-09</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label green">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">18</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">5</div>
+      <div class="summary-lbl">待開始／待部署</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">17</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-yellow)">7</div>
+      <div class="summary-lbl">站長任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-green);">18 / 24</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 75%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    每把武器、每個背包都有官方編號可以對照；12 把缺圖的武器補上圖，或明確標示「官方沒有」；管理者在後台看得到哪些官方圖還沒用、誰在用，並能用截圖搜圖；圖示流量減少約 83%。
+    <ul>
+      <li><b>執行順序</b>：A、B 不碰 DB，可以先做並部署（同 PLAN-055）。C-3／C-4 要等 B 的選圖器。D-3 刪舊檔要等 A-6 守門與 C-5 清完舊路徑。</li>
+      <li><b>部署</b>：Firestore 寫入走 data-patch skill（備份 → dry-run → apply → bump）。Worker 由站長部署。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">圖庫與讀取端（不碰 DB）</div>
+  <div class="section-desc">把官方圖收進圖庫，讀取端改走候選鏈。切換後舊資料不必改也會顯示新圖庫。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 匯入官方武器／背包圖</div>
+      <div class="task-group-meta">scripts/import-game-assets.mjs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">wapweapons_abs 163＋wapbackpack_abs 24 → WebP 圖庫</div>
+        <div class="task-desc">
+          新增 <code>--weapon-icons</code> 模式（或併入 <code>--icons</code>）。每個名稱在擷取裡有兩份，取 340² 原圖，不取去邊的 Sprite。轉 WebP q82、原尺寸，官方檔名逐字存。
+          匯入前先用小寫檢查檔名碰撞（Windows 不分大小寫，GitHub Pages 分）。<code>Icon_BackPack_</code> 的大小寫例外寫進對照表。
+          先產生 dry-run 報告：站上 101＋17 張與擷取的像素差、新增張數、總體積。<b>400x 是否入庫看 E-5</b>（預設入庫）。
+        
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09：武器 163（2.8 MB）＋背包 24（0.5 MB），含 400x；大小寫例外 2 個。報告 _local-notes/2026-10/2026-10-09_PLAN-056_A-1_匯入報告.md。擷取夾裡另有 41 張非武器圖（車輛、砲台、召喚物，如 Icon_V_Cannon01、Icon_tank01）不符命名規則、未收</b>
+        </div>
+        <div class="task-file">public/images/game/icons/weapon/ · public/images/game/icons/backpack/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 命名規則：weapon／backpack 家族</div>
+      <div class="task-group-meta">scripts/lib/gameIconKinds.mjs · src/utils/gameIcons.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">LIBRARY_RE、iconFamily、parse 加武器與背包</div>
+        <div class="task-desc">
+          武器解析成「種類前綴、系列、變體、字尾、群組」，群組分為主序列、機甲綁定（9xx）、敵方（400x）、其他。背包解析成「類型、階、流水」。
+          gameId 和檔名互轉要經過大小寫例外表。Node 版和 TS 版照慣例由 <code>gameIconKinds.test.mjs</code> 交叉比對。
+          同步更新 <code>gameIcons.ts</code> 檔頭「武器、背包不在此列」的註解。
+        
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09：腳本版／前台版交叉測試 21 項通過</b>
+        </div>
+        <div class="task-file">scripts/lib/gameIconKinds.test.mjs · src/utils/gameIcons.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 索引、以圖搜圖特徵、註記檔</div>
+      <div class="task-group-meta">scripts/generate-icon-index.mjs · scripts/lib/gameIconMeta.json</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">index.json 加 weapon／backpack；features.bin 版本 +1；寫入站長確認的註記</div>
+        <div class="task-desc">
+          註記內容：<code>10601301</code> 空手（不裝武器）、<code>10700501_b</code> 特定情況的外型變化（不是實際武器）、<code>10700601</code>／<code>10700602</code> 虛粒子形態左右手素材、
+          <code>9020010x</code> 帕斯卡雙肩、<code>9030010x</code> 破曉者-01 雙肩、<code>9040010x</code> 霸王雙肩、400x 敵方 BOSS 裝備、碎狼牙與罪棘律典的官方檔名交叉。
+          這些只是介面標籤，不寫進資料當分類欄位。
+        
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09：index.json 加 weapon／backpack／notes；features.bin 649 KB；註記 15 則在 scripts/lib/equipIconNotes.json</b>
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 型別與資料模型文件</div>
+      <div class="task-group-meta">src/types/weapon.ts · src/types/backpack.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Weapon.gameId／sideGameIds、Backpack.gameId；icon 改為自訂圖</div>
+        <div class="task-desc">
+          註解寫清楚：gameId 是外觀編號、EX／改 共用、不是武器身分；sideGameIds 的官方慣例是左＝…01、右＝…02；icon 只放非官方的自訂圖。
+          順手修正 <code>backpack.ts</code> 過期的「官方 CDN URL」註解。依 CLAUDE.md 規則 2 同步 docs 資料模型頁。
+        
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09：weapons.html v2.4、backpacks.html v1.5</b>
+        </div>
+        <div class="task-file">docs/02_技術文件/02_資料模型/weapons.html · backpacks.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; 讀取 helper 與讀取端切換</div>
+      <div class="task-group-meta">src/utils/gameIcons.ts · src/components/icons/WeaponIcon.tsx · src/components/badges/BackpackBadges.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">weaponIconCandidates(w, side?)／backpackIconCandidates(b)</div>
+        <div class="task-desc">
+          候選順序：左右肩圖（有 side 時）→ 自訂圖 → gameId 圖庫 → 舊 icon（檔名若是官方鍵名就先對到圖庫，再退回原路徑）。
+          <code>WeaponIcon</code>／<code>BackpackIcon</code> 改用 <code>FallbackImage</code> 走候選鏈，全部失敗時仍顯示「武」「包」佔位。
+          呼叫點（約 12 處）改成傳整個實體而不是 <code>icon</code> 字串：SlotCell、LockedFormCard、RejectionRow、LoadoutExportCard、EntityRefView、VersionQuickTable、PilotsPage、PilotDetailPage、BackpacksPage、LoadoutPage。
+          SlotCell、LockedFormCard 要傳 side，固定武裝才會顯示鏡像圖。
+        
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09：實作時改成 gameId 優先、icon 原路徑先於圖庫（計畫書決策四）。另改了匯出圖 rigLayout、版本情報縮圖（快照路徑 404 時以檔名退到圖庫）、後台版本編輯的快照產生</b>
+        </div>
+        <div class="task-file">src/components/loadout/* · src/components/refs/EntityRefView.tsx · src/components/versions/VersionQuickTable.tsx · src/pages/{pilots,backpacks,simulator}/*</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-6 &nbsp; 守門：引用基準線與 e2e</div>
+      <div class="task-group-meta">_local-notes/（沿用 PLAN-055 A-7 的腳本）</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">切換前後每頁的武器／背包圖示數一致，4xx 為 0</div>
+        <div class="task-desc">
+          跑武器列表、背包頁、機師詳情（專武）、模擬器（含固定武裝機甲帕斯卡、破曉者-01、霸王，以及虛粒子形態）、版本情報。
+          確認圖片都改從 <code>game/icons/</code> 載入、舊夾請求數下降、沒有破圖。用 headless Playwright 對正式 Worker 資料做唯讀驗收。
+        
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09 本機（正式資料）：武器列表 36、背包圖鑑 31、機師詳細檢視 44、5 筆修正與千星的詳情頁、模擬器武器挑選 72／背包挑選 130、形態卡千星、版本情報 12，全部載入、4xx 0；背包沒有被當成武器編號</b>
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">後台選圖</div>
+  <div class="section-desc">讓管理者自己從「未使用」裡挑圖：新專武、新背包上線時不必再請開發者對照。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; GameIconPicker 加武器／背包分頁</div>
+      <div class="task-group-meta">src/components/admin/GameIconPicker.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">種類 × 群組 × 使用狀態；以圖搜圖；顯示註記</div>
+        <div class="task-desc">
+          預設只顯示主序列、依編號倒序。機甲綁定、敵方、字尾變體預設收起。縮圖 96px，滑過放大。
+          種類篩選只用來縮小範圍、不擋選擇（碎狼牙、罪棘律典的官方檔名就是交叉的）。寫回的值是 gameId。
+        
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09（後台要登入，畫面未實機截圖，型別與建置通過）</b>
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 反查「誰在用」擴充</div>
+      <div class="task-group-meta">src/utils/iconUsage.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">掃 weapons／backpacks 的 gameId、sideGameIds、icon</div>
+        <div class="task-desc">純函式，用後台已載入的 GameDataContext 快取，不增加 Firestore 讀取。滑鼠移到圖上時顯示「凱旋・凱旋EX・凱旋·改…」。
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09：與讀取端同規則——有 gameId 就只算官方圖</b>
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; WeaponAdmin／BackpackAdmin 欄位</div>
+      <div class="task-group-meta">src/pages/user/admin/WeaponAdmin.tsx · BackpackAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">官方圖 → GameIconField（gameId）；自訂圖 → IconField（weapons/）；固定武裝顯示左右肩兩格</div>
+        <div class="task-desc">
+          勾選 <code>isFixedArmament</code> 時才出現左右肩欄位。選了左肩 <code>…01</code>，右肩自動帶出同系列的 <code>…02</code>，但可以改。
+          儲存後照既有流程 <code>bumpDataVersion</code>。
+        
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09：EquipGameIdField（寫 gameId）＋自訂圖 IconField；固定武裝出現左右肩兩格；背包後台列表加縮圖</b>
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 相關文件改判註記</div>
+      <div class="task-group-meta">PLAN-055 計畫書 · public/images/game/README.md</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">PLAN-055 決策一「武器、背包不動」加註「由 PLAN-056 改判」；圖庫 README 加 weapon／backpack</div>
+        <div class="task-desc">保留原文、加改判註記，照 PLAN-055 改判 PLAN-043 決策五的寫法。
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09</b>
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label green">Phase C</div>
+  <div class="section-title">資料寫入（data-patch）</div>
+  <div class="section-desc">對照表見計畫書「資料對照表」。每一步都走備份 → dry-run → apply → bump。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 回填 gameId＋5 筆修正</div>
+      <div class="task-group-meta">scripts/temp_scripts/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">武器 167＋背包 185 從 icon 檔名解析；影虎嘯、斷湮、輝龍刀、HMG-29C、笑謊者改正</div>
+        <div class="task-desc">
+          5 筆：<code>20300501</code>、<code>10300601</code>、<code>10700701</code>、<code>20400501</code>、<code>10200501</code>。
+          dry-run 列出每筆「舊 icon → gameId」，有任何一筆解析不到官方鍵名就中止，不猜。bump <code>weapons</code>、<code>backpacks</code>。
+        
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09 已寫入正式站：武器 173（含 6 筆指定）＋背包 186，只新增 gameId、不動 icon；bump weapons／backpacks；寫前備份 2026-10-09_db-backup-1049；還原檔 _local-notes/2026-10/2026-10-09_PLAN-056_C-1_回填.json（--rollback）</b>
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 固定武裝與千星</div>
+      <div class="task-group-meta">weapons</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">衝擊炮 9020010x、嵐質儲能艙 9030010x、多功能彈倉 9040010x（左 01／右 02）；千星 40400401</div>
+        <div class="task-desc">帕斯卡的左右要等 E-1 確認；另外兩台已用遊戲截圖驗證，可以先寫。
+          <br><b style="color:var(--accent-green)">✅ 千星 40400401 已隨 C-1 寫入。固定武裝 3 把依站長指示改由站長在後台手動處理（移到 E-1）</b>
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 耀星／隕星自訂圖</div>
+      <div class="task-group-meta">public/images/weapons/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">站長編輯 10700601／10700602 後放進 weapons/，在後台指定 icon</div>
+        <div class="task-desc">A-1 入庫後，素材可以直接從圖庫取得。編輯後的圖不放進 <code>game/</code>，也不用官方檔名（計畫書決策六）。</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 新專武 4 把</div>
+      <div class="task-group-meta">後台 WeaponAdmin（B 完成後）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">征伐、速射格林炮、誓殮、歸零協議：用選圖器挑，或用截圖以圖搜圖</div>
+        <div class="task-desc">
+          候選：征伐 → 302 未用的 <code>30200304</code>、<code>30200403</code>；速射格林炮 → 201 未用 5 張＋<code>2021_1</code>；誓殮 → <code>10600501</code>。
+          歸零協議在擷取裡找不到未用的火箭圖，找不到就留空。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-5 &nbsp; 清掉舊路徑、改寫快照</div>
+      <div class="task-group-meta">weapons · backpacks · patchVersions · grayOps</div>
+      <span class="status blocked">待部署</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">官方圖的 icon 舊路徑刪除（只留自訂圖）；patchVersions／grayOps 裡的武器、背包圖片路徑快照改寫</div>
+        <div class="task-desc">
+          先用 <code>check-image-refs.mjs</code>（D-2 擴充後）列出所有引用點再動手。<code>AdminVersionEditorPage</code> 用檔名對武器的那段邏輯，也要改成用 gameId。
+          bump <code>weapons</code>、<code>backpacks</code>、<code>patchVersions</code>、<code>grayOps</code>，部署後清快取。
+        
+          <br><b style="color:var(--accent-green)">⏸ 等新版前台部署：線上舊版只讀 icon，先清掉會壞圖。基準線 (h) 386 筆（weapons 172、backpacks 186、patchVersions 28）</b>
+        </div>
+        <div class="task-file">src/pages/admin/AdminVersionEditorPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status blocked">待部署</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label green">Phase D</div>
+  <div class="section-title">社群預覽與舊圖退場</div>
+  <div class="section-desc">沿用 PLAN-054／055 的退場順序：讀取端先切、掃描器守門、ledger 寬限。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 社群預覽 Worker 與 JPEG 鏡射</div>
+      <div class="task-group-meta">workers/src/socialPreview.ts · scripts/generate-og-entity-images.mjs</div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">buildOgMeta('weapons')：自訂圖 → gameId 推路徑 → icon；SOURCES 加 game/icons/weapon</div>
+        <div class="task-desc">
+          用 <code>pickImages</code> 給後備鏈，這樣 Worker 比網站先上線時也不會掉到預設圖。順手更新「178 筆中 6 筆缺」這段過期註解。
+          補單元測試。<b>Worker 由站長部署</b>，部署後用 Discordbot UA 複驗 og:image。
+        
+          <br><b style="color:var(--accent-green)">程式完成、測試 18／18 通過；JPEG 鏡射 163 張由 build 產生。<b>待站長部署 Worker</b></b>
+        </div>
+        <div class="task-file">workers/src/socialPreview.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status doing">進行中</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 引用掃描器擴充</div>
+      <div class="task-group-meta">scripts/check-image-refs.mjs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">列出：舊 weapons/、backpacks/ 官方 PNG 的引用；gameId 在圖庫找不到；自訂圖不存在</div>
+        <div class="task-desc">另外輸出「圖庫裡沒人用的官方圖」清單，作為下次擷取後的對照依據（也就是 gameId 的用途之一）。
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09：新增 (g)(h)(i) 與 --fail-on=gh；基準線 (g) 0、(h) 386、(i) 11，圖庫沒人用 68 張（武器 61、背包 7）</b>
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 舊 PNG 退場</div>
+      <div class="task-group-meta">public/images/weapons/*.png · public/images/backpacks/</div>
+      <span class="status blocked">待部署</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">掃描器現役引用為 0 → 刪除 repo 內舊檔 → 部署 → ledger 寬限 → Cloudflare Purge</div>
+        <div class="task-desc">
+          <code>weapons/</code> 只留自訂圖；<code>backpacks/</code> 整夾移除。<code>manifest.json</code> 會跟著少掉這些檔案，舊 IconPicker 也就不會再列出它們。
+          要先等 <code>pages-build-deployment</code> 完成再清快取（Cloudflare 會快取 404）。
+        
+          <br><b style="color:var(--accent-green)">⏸ 等 C-5</b>
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status blocked">待部署</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 網站更新履歷</div>
+      <div class="task-group-meta">src/data/siteChangelog/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">使用者視角：武器／背包圖示改用官方原圖、載入更快；固定武裝與新武器補上圖示</div>
+        <div class="task-desc">依各階段 commit 分別寫入。
+          <br><b style="color:var(--accent-green)">✅ 2026-10-09 已寫入</b>
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label yellow">Phase E</div>
+  <div class="section-title">站長確認（遊戲內資料）</div>
+  <div class="section-desc">這些需要看遊戲或做判斷，不能從擷取推出來。一張截圖通常就能定案一項。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 帕斯卡的左右肩</div>
+      <div class="task-group-meta">影響 C-2</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">截一張帕斯卡的機甲整備畫面</div>
+        <div class="task-desc">霸王、破曉者-01 都是左肩＝…01、右肩＝…02，推定帕斯卡相同，截圖確認即可。
+          <br><b style="color:var(--accent-green)">站長 10-09：固定武裝的左右肩由站長在後台手動處理（衝擊炮、嵐質儲能艙、多功能彈倉三把的 gameId 與左右肩都在 WeaponAdmin 的「基本」分頁）</b>
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 幽弧／夜燼（曜・巡航形態）</div>
+      <div class="task-group-meta">weapons · forms</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補上種類，並確認遊戲內的圖示</div>
+        <div class="task-desc">資料庫裡種類是空白的，所以縮小不了候選範圍。有截圖的話可以用以圖搜圖找。
+          <br><b style="color:var(--accent-green)">✅ 2026-10-10 站長：這兩把是曜的形態武裝，種類空白維持現狀</b>
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; 夜魘·改Ⅱ／Ⅲ 的圖示</div>
+      <div class="task-group-meta">weapon_135 · weapon_155</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">遊戲內是不是馬克的圖（20100301）</div>
+        <div class="task-desc">這是當年官方 API 給的值。若遊戲內是夜魘的造型，候選是同系列沒用到的 <code>20100302</code>、<code>20100403</code>。
+          <br><b style="color:var(--accent-green)">✅ 2026-10-10 站長確認：就是馬克的圖，沒錯。有些武器本來就長一樣；v3.0 之後人工建檔的資料全部正確，往後不再檢查老武器的圖（只有站上自行去背的圖可以換成官方原圖）</b>
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-4 &nbsp; 台版是否已有 B 級拳套、拳套 SS</div>
+      <div class="task-group-meta">10100101 · 10100302／303</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">若已上線，就是資料庫漏建，要到後台補建</div>
+        <div class="task-desc">其他武器種類都有 B 級（系列 001），只有拳套沒有；萬仞系的 02／03 也沒有對應的 SS。
+          <br><b style="color:var(--accent-green)">✅ 2026-10-10 站長：台版目前沒有 SS 拳套；B 級拳套不處理</b>
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-5 &nbsp; 空手圖用途、400x 是否入庫</div>
+      <div class="task-group-meta">影響 A-1</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">10601301（空手）要用在哪裡；400x 敵方 BOSS 裝備 28 張要不要入庫</div>
+        <div class="task-desc">
+          空手圖可以當模擬器空槽、或沒裝武器形態的圖示，先入庫、用途另議。
+          400x 預設入庫（不到 1 MB，日後 BOSS 頁用得到，選圖器預設收起）。
+        
+          <br><b style="color:var(--accent-green)">400x 已定案入庫（10-09）；空手圖用途待定</b>
+        
+          <br><b style="color:var(--accent-green)">✅ 2026-10-10 站長：空手圖留存即可，暫時用不到</b>
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-056 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

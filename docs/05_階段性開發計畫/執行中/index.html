@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card green">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-056 · 武器／背包圖示 ID 化</h3>
+      <p>武器、背包的圖示早就用官方檔名，但沒有官方 ID 欄位。5 筆鍵名是猜的或用中文佔位（HMG-29C、笑謊者的編號其實是 <code>20400501</code>、<code>10200501</code>）。12 把武器沒有圖，多半是固定武裝，而且左右肩是兩張鏡像圖（左＝…01、右＝…02）。官方 66 張圖還沒用到，管理者也看不到。圖示是 340² PNG，一張約 100 KB。<br>本計畫比照機師、機甲加上 <code>gameId</code>（外觀編號，EX／改 共用），固定武裝加左右圖，<code>icon</code> 只留給站長編輯的自訂圖。官方圖 163＋24 張併入 PLAN-055 的圖庫 <code>game/icons/{weapon,backpack}/</code>，轉 WebP（−83%）。選圖器加武器／背包分頁：種類 × 群組 × 未使用、以圖搜圖、反查誰在用，新專武由管理者自己挑。A–E 五段 24 項（開發者 17、站長 7），A／B 不碰 DB，可以先做；改判 PLAN-055 決策一的但書。<br><b>2026-10-10 進度 18／24</b>：圖庫 187 張匯入、讀取端與後台選圖完成、正式站已回填 gameId 359 筆（只加欄位、不動 icon）。等部署後清舊路徑（C-5）與退場舊 PNG（D-3）；固定武裝左右肩、新專武 4 把等由站長處理。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-056_武器背包圖示ID化/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-056_武器背包圖示ID化/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-055 · 技能／BUFF 圖示管理</h3>
