@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-09
+## [Unreleased] - 2026-10-10
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **icons**: PLAN-056 — 武器／背包官方編號 gameId、圖庫讀取與後台選圖 (`d8e482e`)
 - **refs**: 機甲／機師引用浮窗改列模組與天賦＋修正換頁後預覽卡住 (`2c7e462`)
 - **icons**: PLAN-055 A／B — 技能類圖示改由官方圖庫提供＋後台選圖器改版 (`6bf5d9f`)
 - **images**: PLAN-054 Phase C — 讀取端改用官方原檔、官配互連、後台遊戲 ID 欄位 (`8bb3694`)
@@ -250,6 +251,7 @@
 
 ### 📚 文件
 
+- **plan**: PLAN-056 站長確認 E-2～E-5（18／24） (`d579787`)
 - **plan**: PLAN-054 進度 24／26 — 部署完成、D-3 已改寫，待 Purge 與寬限期後複驗 (`567014b`)
 - **plan**: PLAN-054 進度 22／26 — 本機 A～D 完成，待部署後做 D-3 與清快取 (`5cac2df`)
 - **plan**: PLAN-054 進度 2／26 — 0-1 合併回 main、A-5 舊 nameEn 補丁作廢 (`4cc81df`)
@@ -354,6 +356,7 @@
 
 ### 🔧 維護
 
+- **images**: PLAN-056 匯入官方武器／背包圖示（武器 163＋背包 24） (`e4f7959`)
 - **images**: PLAN-055 匯入官方圖示圖庫（技能類 1,224＋BUFF 127） (`26201d1`)
 - **images**: 圖片引用掃描器略過程式註解；OG 註解舉例改成官方原檔路徑 (`b075e52`)
 - **images**: PLAN-054 Phase D — 舊圖退場、站上自製圖搬進遊戲 ID 資料夾 (`96d2405`)
