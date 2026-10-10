@@ -20,6 +20,13 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
   index.json  features.bin   選圖器索引與以圖搜圖特徵（build 產生）
 ```
 
+- **技能類與 BUFF 圖示**（PLAN-055）：DB 只存官方檔名 key（`Icon_skill_passive_5004`，不帶路徑與副檔名），讀取端走
+  `gameIconCandidates()`（`src/utils/gameIcons.ts`）拿檔名來這裡找。檔名文法 `Icon_skill_<種類>_<色系><批次><流水>`：
+  種類＝外框形狀（main／order／passive／talent／pp），首位數＝色系（歸納、非官方定義，只當篩選器用）。
+  BUFF 是白色字形（減益另有帶斜線的 `Icon_debuff_*`），由 `BuffGlyph` 疊色塊底，底色不在圖裡。
+  舊編號＝現行圖的 172 個走別名表 `src/data/gameIconAliases.ts`（不另存檔）；擷取沒有、站上原有的 82 個標 legacy
+  （`scripts/lib/gameIconMeta.json`）。兩份都由 `--icons --apply` 產生、只增不減，勿手改。
+  舊的分用途資料夾（`images/skills/`、`modules/` 等）已於 PLAN-055 E-1 刪除。
 - **武器／背包的 gameId 是外觀編號**（PLAN-056）：EX／·改 與本體共用，不是武器身分。讀取端走 `weaponIconCandidates()`／`backpackIconCandidates()`（`src/utils/gameIcons.ts`）。
   官方圖庫刻意**全收**（含 400x 敵方 BOSS 裝備、9 開頭機甲綁定肩部、`_b` 外型變化）——圖示是抽象的道具圖，不算洩漏未上線內容（同 PLAN-055 決策三）。
   站長編輯過的非官方圖不放這裡，放 `public/images/weapons/`，檔名不以 `Icon_` 開頭。
@@ -38,6 +45,7 @@ node scripts/import-game-assets.mjs                                          # v
 node scripts/import-game-assets.mjs --apply                                  # 寫入
 node scripts/import-game-assets.mjs --id=<gameId> --art-key=<artKey> --apply # 新機師
 node scripts/import-game-assets.mjs --wap=<####> --apply                     # 新機甲
+node scripts/import-game-assets.mjs --src=latest --icons --apply             # 技能類／BUFF 圖示（只補新 key；別名與 legacy 只增不減）
 node scripts/import-game-assets.mjs --equip-icons --apply                    # 武器／背包圖示（整夾；新擷取只補新的）
 node scripts/import-game-assets.mjs --src=latest --ui --apply                # 活動／招募／大廳等介面美術 → repo 外封存夾（不部署）
 node scripts/import-game-assets.mjs --promote=<ui/ 底下的路徑> --apply        # 封存夾挑好的 → 這裡的 ui/（上架＝公開，只挑台版已上線的）
@@ -45,4 +53,7 @@ node scripts/generate-art-index.mjs                                          # �
 node scripts/check-image-refs.mjs                                            # 掃描 DB 與程式碼裡的圖片路徑
 ```
 
-原始擷取（PNG、圖片索引、擷取工具）在本機、不進 repo；命名規則在 `scripts/lib/gameAssetKinds.mjs`。
+新圖示要等 `pages-build-deployment` 發布完成才可以請求（含驗證用的 curl），否則 Cloudflare 會把 404 快取住、要 Purge。
+圖示的完整流程（指定給資料、留空原則、BUFF 底色）見 `.claude/skills/data-patch/SKILL.md`。
+
+原始擷取（PNG、圖片索引、擷取工具）在本機、不進 repo；命名規則在 `scripts/lib/gameAssetKinds.mjs`（圖示：`gameIconKinds.mjs`）。

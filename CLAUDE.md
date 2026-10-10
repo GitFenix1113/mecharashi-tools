@@ -225,6 +225,7 @@ barrel 按領域拆檔（`pilot` / `mech` / `weapon` / `module` / `backpack` / `
 這些資料改由**後台各實體管理頁人工建檔／編輯**（`src/pages/user/admin/`），圖片改由遊戲客戶端擷取匯入（PLAN-054 `import-game-assets.mjs`）。
 遊戲改版、跑完擷取工具後，**先跑 `node scripts/diff-game-dump.mjs`**（最新 vs 前一次擷取的差異報告，輸出到 `_local-notes/`，附該跑的匯入指令）；
 活動／招募等介面美術用 `import-game-assets.mjs --ui` 封存到 repo 外（`site-archive/game/ui/`，不部署）。
+技能／BUFF／武器／背包圖示走扁平圖庫 `public/images/game/icons/`，**DB 只存官方檔名 key**（PLAN-055／056），新版本的匯入與指定流程見 `data-patch` skill。
 
 - **唯一仍在運作的擷取是活動**：`scripts/scrape-tw-announcements.mjs`（台版官方公告 → `announcementDrafts`／`pendingActivities` staging → 後台 `/admin/announcements` 審核後合併進 `patchVersions`），
   由 `.github/workflows/scrape-announcements.yml` 每週排程執行。改解析器的慣例見 PLAN-048。
@@ -233,7 +234,8 @@ barrel 按領域拆檔（`pilot` / `mech` / `weapon` / `module` / `backpack` / `
   清單與理由見該夾的 `README.md`。**不要主動提議用爬蟲補資料，也不要把它們搬回來。**
   文件與舊註解裡仍會提到這些檔名（PLAN 歷史、資料模型的來源說明）——那是歷史紀錄，不代表檔案還在。
 - **萬一真的要從封存夾拿回來用**，先知道它們已與現行資料脫節：`scrape-pilots-v3.js` 是整筆覆寫，`--force` 會洗掉 `nameEn`、`debutVersion`、`talent.buffIds`、`manual`
-  以及 PLAN-054 的 `gameId`／`artKey`／`pairedMechId` 等人工欄位；機師與機甲爬蟲會把圖片下載回中文名資料夾、把 `portrait` 寫回舊路徑（與 PLAN-054 的圖片 ID 化相衝）。
+  以及 PLAN-054 的 `gameId`／`artKey`／`pairedMechId` 等人工欄位；機師與機甲爬蟲會把圖片下載回中文名資料夾、把 `portrait` 寫回舊路徑（與 PLAN-054 的圖片 ID 化相衝）；
+  `scrape-skill-icons.mjs` 與機師爬蟲還會把技能圖示下載回 PLAN-055 已刪除的 `public/images/skills/`、把 `iconLocal` 寫回舊路徑（現行是圖庫＋DB 只存 key）。
   一律先備份（`scripts/temp_scripts/backup-firestore.mjs`）、先 dry-run。**官方 API 天賦文本是「滿晶片」污染值**，人工修正存在 `PilotTalent.manual`。
 - **一次性腳本**（migrate／patch／audit／probe…）放 `scripts/temp_scripts/`（整夾被 `.gitignore` 擋，只存在本機）。跑完、驗收完就清掉；
   因為 git 救不回來，清的時候**搬到 `E:\Mecharashi_Data\script-archive\<日期>\` 封存，不要直接刪**。`temp_scripts/` 目前只留 5 支有人引用的：

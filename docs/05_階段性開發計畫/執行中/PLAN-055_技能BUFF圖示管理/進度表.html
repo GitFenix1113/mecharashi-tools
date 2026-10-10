@@ -188,10 +188,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">20 / 23</span>
+      <span style="color:var(--accent-purple);">21 / 23</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 87%"></div>
+      <div class="progress-bar-fill" style="width: 91%"></div>
     </div>
   </div>
 
@@ -815,7 +815,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-2 &nbsp; 部署＋寬限期後複驗</div>
       <div class="task-group-meta">正式站</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
@@ -823,11 +823,17 @@
         <div class="task-desc">
           新檔名不需要 Purge。等 ledger 寬限 14 天後，抽樣確認舊夾網址為 404、新圖庫網址為 200。
           部署這類正式站操作，每一步執行前先跟站長確認。
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11 部署（<code>3bb0a8e7</code>，站長同意 push）：pre-push build 通過、Pages 發布完成；線上 CSS 含 <code>--color-buff-*</code>、圖庫圖示 200，
+          正式站抽測海莉絲頁 31 張、模組頁 309 張破圖 0；舊夾 <code>.png</code> 仍 200（寬限中，正常）。
+          ledger 記錄的退役日是 10-11 → <b>10-25 到期</b>。⚠ 到期<b>不會自己刪</b>：<code>prune-gh-pages.mjs</code> 只在部署時執行，要等 10-25 之後的第一次部署（或手動 <code>gh workflow run deploy.yml</code>）；
+          之後抽查舊網址 404（加查詢字串繞過 Cloudflare 快取）即可結案，再做 E-4。</p>
+          <p style="margin-top:6px;color:var(--accent-orange);">⚠ 同日事故：Pages 發布完成前，開發者 curl 了 b3fbdd24 新增的 40 張圖示，404 被 Cloudflare 快取（沒有資料引用它們，只影響後台選圖器縮圖）。
+          Purge 清單：<code>_local-notes/2026-10/2026-10-11_CF_Purge清單_新圖示40張.txt</code>（待站長處理）；流程已寫進 data-patch skill。</p>
         </div>
         <div class="task-file">.github/workflows/deploy.yml（不改，只驗證）</div>
       </div>
       <div class="task-assignee">開發者＋站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
 
@@ -835,7 +841,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-3 &nbsp; 流程文件化</div>
       <div class="task-group-meta">.claude/skills/data-patch · CLAUDE.md · docs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -847,11 +853,14 @@
             <li>系統架構文件的元件分類表補上 <code>GameIconPicker</code> 與 <code>BuffGlyph</code>。</li>
             <li><code>public/images/game/README.md</code> 補上 icons 的說明。</li>
           </ul>
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11：data-patch skill 新增「新版本的圖示」一節（擷取→<code>--icons</code>／<code>--equip-icons</code>、守門擋下時怎麼判斷、決策三／八、BUFF 底色與 <code>iconTone</code>、掃描器收尾、<b>Pages 發布完成前不可請求新圖</b>）；
+          CLAUDE.md 6.5 補圖庫一句與 <code>scrape-skill-icons.mjs</code> 隱患（爬蟲已退場封存，只在拿回來用時相關）；系統架構元件表補 <code>BuffGlyph</code>（<code>GameIconPicker</code> 已在）；
+          <code>public/images/game/README.md</code> 補技能／BUFF 圖示說明、別名與 legacy、<code>--icons</code> 指令。</p>
         </div>
         <div class="task-file">.claude/skills/data-patch/SKILL.md · CLAUDE.md · docs/02_技術文件/01_架構設計/系統架構.html · public/images/game/README.md</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
