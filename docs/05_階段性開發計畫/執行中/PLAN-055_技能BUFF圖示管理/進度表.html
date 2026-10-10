@@ -434,7 +434,7 @@
             <li>搜尋框同時比對編號、技能名、持有者名稱（資料來自 B-2）。</li>
             <li>預設依流水號倒序；縮圖 80～96px，hover 放大到 128px，並顯示 key 與「被誰用」。</li>
             <li>寫回裸 key。<code>GameIconField</code> 是表單欄位版本，形式和現有的 <code>IconField</code> 一樣：預覽＋選取＋清除。</li>
-            <li>舊 <code>IconPicker</code> 保留給立繪、武器、背包、機甲。</li>
+            <li>舊 <code>IconPicker</code> 保留給立繪、武器、背包、機甲。<br><small style="color:var(--accent-yellow)">⟶ 2026-10-09 由 PLAN-056 改判（d8e482e6）：武器、背包的官方圖示改走 <code>GameIconPicker</code>；舊 <code>IconPicker</code> 現在只留給機師立繪、機甲立繪／半身像／部件圖，以及武器、背包的「自訂圖 icon」欄位。</small></li>
           </ul>
         
           <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-05：<code>src/components/admin/GameIconPicker.tsx</code>（另含列表縮圖 <code>IconThumb</code>）。實機驗收（臨時 harness 頁＋Playwright）：預選主動 127 張、搜「艾達」2 張、被動＋未使用 60 張，選取後寫回裸 key。</p>

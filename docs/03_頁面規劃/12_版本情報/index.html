@@ -107,7 +107,7 @@
       <code>--subnav-h</code> 由 <code>Layout</code> 依當前路由設成 <code>2.25rem</code>（有常駐分頁列）或 <code>0px</code>。
       <strong>改分頁列高度時兩邊要一起改</strong>，否則這三頁會多出一條文件捲軸。
       Layout 對 <code>/versions</code> 不渲染 footer 與底部佔位（比照首頁）<br>
-    · 分頁列元件：<code>src/components/layout/SubNavTabs.tsx</code>（header 下方常駐，全站群組共用）。
+    · 分頁列元件：<code>src/components/layout/SubNavTabs.tsx</code>（header 下方常駐，全站群組共用）。版本情報群組刻意<strong>不開</strong> <code>backOnDetail</code>——<code>/versions/timeline/3.6</code> 是同一個檢視選了某個版本，不是「清單 → 詳情」，顯示「← 時間線」只會讓人以為按了會離開。
       舊的頁內分頁列 <code>src/components/versions/VersionViewTabs.tsx</code> <strong>不渲染也不要加回來</strong>（見上）。
       其 <code>VERSION_VIEWS</code> 仍在使用 —— 首頁的入口連結由它產生，首頁自己不放任何版本資料，
       但要有地方讓人點進來<br>

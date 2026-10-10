@@ -123,6 +123,16 @@
     · ⚠ 預設是 <strong>19px</strong> 而非瀏覽器預設的 16px —— 所有 rem 與 Tailwind spacing 都是 1.19 倍，
       按 16px 心算的版面預算會低估約兩成
   </div>
+  <div class="info-block" style="margin-top:12px;">
+    <strong>✅ 換頁捲動與返回清單（2026-10-11）</strong><br>
+    · <strong>進新頁回到頂端</strong>：從圖鑑點進詳情頁、導覽列換頁等「路徑改變的前進」一律從最上方開始（在這之前會沿用上一頁的高度）。<br>
+    · <strong>上一頁回到原位</strong>：瀏覽器上一頁／下一頁會回到那一頁離開時的位置，重新整理也一樣。<br>
+    · <strong>不跳動的情況</strong>：只改網址參數（機師詳情頁的 <code>?tab=</code>、圖鑑篩選）與頁內狀態寫進網址（時間線切換版本、故事館換章）。<br>
+    · <strong>捲到一半返回清單</strong>：在圖鑑與攻略群的詳情頁，常駐分頁列上當前那一格變成「← 機甲」這樣的返回鍵（分頁列是 sticky，捲到哪都按得到）。
+      上一頁就是那份清單時等同按上一頁（回到清單原本的位置與篩選），否則開一份新的清單；各詳情頁頁首的返回連結也共用同一套。<br>
+    · 實作：<code>components/layout/ScrollManager.tsx</code>（決策表 <code>utils/scrollPolicy.ts</code>）、<code>BackToListLink.tsx</code>、<code>SubNavTabs</code> 的 <code>backOnDetail</code>，
+      細節見系統架構文件「換頁捲動與返回清單」。
+  </div>
 </section>
 
 </main>

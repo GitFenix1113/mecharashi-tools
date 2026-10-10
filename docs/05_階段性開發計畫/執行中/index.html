@@ -34,7 +34,7 @@
     <div class="card green">
       <div class="card-icon">◆</div>
       <h3>PLAN-056 · 武器／背包圖示 ID 化</h3>
-      <p>武器、背包的圖示早就用官方檔名，但沒有官方 ID 欄位。5 筆鍵名是猜的或用中文佔位（HMG-29C、笑謊者的編號其實是 <code>20400501</code>、<code>10200501</code>）。12 把武器沒有圖，多半是固定武裝，而且左右肩是兩張鏡像圖（左＝…01、右＝…02）。官方 66 張圖還沒用到，管理者也看不到。圖示是 340² PNG，一張約 100 KB。<br>本計畫比照機師、機甲加上 <code>gameId</code>（外觀編號，EX／改 共用），固定武裝加左右圖，<code>icon</code> 只留給站長編輯的自訂圖。官方圖 163＋24 張併入 PLAN-055 的圖庫 <code>game/icons/{weapon,backpack}/</code>，轉 WebP（−83%）。選圖器加武器／背包分頁：種類 × 群組 × 未使用、以圖搜圖、反查誰在用，新專武由管理者自己挑。A–E 五段 24 項（開發者 17、站長 7），A／B 不碰 DB，可以先做；改判 PLAN-055 決策一的但書。<br><b>2026-10-10 進度 20／24，已部署</b>：圖庫 187 張、讀取端與後台選圖、社群預覽 Worker 都已上線；正式站 gameId 回填 359 筆、舊路徑清除 358 筆、版本快照改寫 28 筆；舊 PNG 118 張自 repo 移除。剩下由站長處理：固定武裝左右肩、新專武 4 把、耀星／隕星自訂圖。</p>
+      <p>武器、背包的圖示早就用官方檔名，但沒有官方 ID 欄位。5 筆鍵名是猜的或用中文佔位（HMG-29C、笑謊者的編號其實是 <code>20400501</code>、<code>10200501</code>）。12 把武器沒有圖，多半是固定武裝，而且左右肩是兩張鏡像圖（左＝…01、右＝…02）。官方 66 張圖還沒用到，管理者也看不到。圖示是 340² PNG，一張約 100 KB。<br>本計畫比照機師、機甲加上 <code>gameId</code>（外觀編號，EX／改 共用），固定武裝加左右圖，<code>icon</code> 只留給站長編輯的自訂圖。官方圖 163＋24 張併入 PLAN-055 的圖庫 <code>game/icons/{weapon,backpack}/</code>，轉 WebP（−83%）。選圖器加武器／背包分頁：種類 × 群組 × 未使用、以圖搜圖、反查誰在用，新專武由管理者自己挑。A–E 五段 24 項（開發者 17、站長 7），A／B 不碰 DB，可以先做；改判 PLAN-055 決策一的但書。<br><b>2026-10-10 進度 20／24，已部署</b>：圖庫 187 張、讀取端與後台選圖、社群預覽 Worker 都已上線；正式站 gameId 回填 359 筆、舊路徑清除 358 筆、版本快照改寫 28 筆；舊 PNG 118 張自 repo 移除。剩下：D-3 舊檔已 push，等 gh-pages ledger 寬限期滿（約 10-24）自動清除；站長處理固定武裝左右肩、新專武 4 把、耀星／隕星自訂圖。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-056_武器背包圖示ID化/計畫書.html">→ 計畫書</a>
         <a class="card-link" href="PLAN-056_武器背包圖示ID化/進度表.html">→ 進度表</a>
@@ -52,7 +52,7 @@
     <div class="card orange">
       <div class="card-icon">◆</div>
       <h3>PLAN-054 · 機師／機甲圖片 ID 化</h3>
-      <p>圖片主鍵從「站上中文名資料夾」換成遊戲 ID——已有 5 個資料夾跟顯示名對不上、頭像還是先打官方 CDN。以 v3 定版對照為唯一輸入：DB 補 gameId／artKey／英文名 90 位／官配 61 組；陸版擷取的官方原檔以<b>原檔名</b>匯入 <code>public/images/game/&lt;ID&gt;/</code>（站上沒有的進 <code>_reserve</code>）；讀取端改由 ID 推路徑（本地原檔 → 舊檔 → CDN），OG 一起切；最後像素比對刪掉與原檔同圖的舊檔、名字資料夾退場。新機師填 ID 就有圖。0／A／B／C／D 五段 26 項，約 7 人日；決策已於 2026-10-03 確認（官方圖一律取代、引用全面改寫、部署後清快取）。</p>
+      <p>圖片主鍵從「站上中文名資料夾」換成遊戲 ID——已有 5 個資料夾跟顯示名對不上、頭像還是先打官方 CDN。以 v3 定版對照為唯一輸入：DB 補 gameId／artKey／英文名 90 位／官配 61 組；陸版擷取的官方原檔以<b>原檔名</b>匯入 <code>public/images/game/&lt;ID&gt;/</code>（站上沒有的進 <code>_reserve</code>）；讀取端改由 ID 推路徑（本地原檔 → 舊檔 → CDN），OG 一起切；最後像素比對刪掉與原檔同圖的舊檔、名字資料夾退場。新機師填 ID 就有圖。0／A／B／C／D 五段 26 項，約 7 人日；決策已於 2026-10-03 確認（官方圖一律取代、引用全面改寫、部署後清快取）。<br><b>2026-10-04 進度 24／26，已部署</b>：DB 回填 gameId／artKey／英文名／官配、官方原檔 core 912 檔上線、讀取端與 OG 改走遊戲 ID、DB 與版本快照路徑改寫完成。剩 Cloudflare Purge Everything 與 10-17／11-02 寬限期後複驗（D-4），以及收尾歸檔（D-6）。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-054_機師機甲圖片ID化/計畫書.html">→ 計畫書</a>
         <a class="card-link" href="PLAN-054_機師機甲圖片ID化/進度表.html">→ 進度表</a>
@@ -61,25 +61,16 @@
     <div class="card pink">
       <div class="card-icon">◆</div>
       <h3>PLAN-042-C · 故事館氛圍層</h3>
-      <p>042-A 寫好的線稿顯影<b>實際上看不見</b>：時間軸從元件掛載起算、不等 art.webp 載入，冷快取實測<b>線稿 0 幀</b>；線稿又被關在 <code>#0a0c10</code> 黑框裡成了白色負片（實機驗證換紙底照樣成立，M-10 的顧慮不成立）；整套只動 opacity，沒有官網的縮放／上移／斜切運鏡。<br>對照官網 <code>#hero</code> 解剖：沒有 canvas、SVG 或動畫庫，<b>全部是 PNG 圖層＋CSS keyframes</b>——背景一張 bg.jpg、粒子兩張 1–2KB 點陣圖 × 7 個 div、每位機師四層（手繪線稿／溶解彩圖／名字書法／資料），<b>名字是圖不是 webfont</b>，但八張字母造型一致證明是字型。站長與官方有非營利不追究的共識後，背景／標題／粒子從 CSS 重建變成直接切版；<b>官網只做了 8 位</b>（洛莎、虹、凱登、白月、葉夫根尼、艾琳、黛娜、梅利莎），這 8 位可 1:1，其餘 82 位靠 LXGW WenKai TC 名字子集（127＋ 字的封閉集合，不漂移）與濾鏡管線。A–G 七段 28 項約 12 人日，B／C／D 兩館共用。</p>
+      <p>042-A 寫好的線稿顯影<b>實際上看不見</b>：時間軸從元件掛載起算、不等 art.webp 載入，冷快取實測<b>線稿 0 幀</b>；線稿又被關在 <code>#0a0c10</code> 黑框裡成了白色負片（實機驗證換紙底照樣成立，M-10 的顧慮不成立）；整套只動 opacity，沒有官網的縮放／上移／斜切運鏡。<br>對照官網 <code>#hero</code> 解剖：沒有 canvas、SVG 或動畫庫，<b>全部是 PNG 圖層＋CSS keyframes</b>——背景一張 bg.jpg、粒子兩張 1–2KB 點陣圖 × 7 個 div、每位機師四層（手繪線稿／溶解彩圖／名字書法／資料），<b>名字是圖不是 webfont</b>，但八張字母造型一致證明是字型。站長與官方有非營利不追究的共識後，背景／標題／粒子從 CSS 重建變成直接切版；<b>官網只做了 8 位</b>（洛莎、虹、凱登、白月、葉夫根尼、艾琳、黛娜、梅利莎），這 8 位可 1:1，其餘 82 位靠 LXGW WenKai TC 名字子集（127＋ 字的封閉集合，不漂移）與濾鏡管線。A–G 七段 28 項約 12 人日，B／C／D 兩館共用。<br><b>✅ 2026-10-04 全部完成（28／28）</b>：開發項 09-17 落地，雛形 10-03 隨 042-A 合併回 main、入口收起中；D-5 英文名由 PLAN-054 A-4 回填。等故事館公開與站長驗收。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-042-C_故事館氛圍層/計畫書.html">→ 計畫書</a>
         <a class="card-link" href="PLAN-042-C_故事館氛圍層/進度表.html">→ 進度表</a>
       </div>
     </div>
-    <div class="card orange">
-      <div class="card-icon">◆</div>
-      <h3>PLAN-052-O · 配裝圖回讀</h3>
-      <p>玩家拿到別人的配裝圖——原始 PNG，或 Discord／LINE 上的二手截圖——<b>PC 上沒有任何還原路徑</b>：圖底那串 79 字元起跳的 base64url 是像素、不能選取，只能一個字一個字抄，而 <code>l</code>／<code>I</code>／<code>1</code> 與 <code>O</code>／<code>0</code> 在多數字型下同形，抄錯一個字整串解不開。052-L E-2 的 QR 對手機成立、對 PC 不成立——圖與模擬器在同一個螢幕上，拿手機對著螢幕掃再把連結傳回電腦是一段繞路。本計畫把「掃」搬進瀏覽器：在既有的貼碼對話框裡 <b>Ctrl+V 貼圖／拖放／選檔</b>，站上自己從圖裡讀出分享連結，後面全走既有的預覽 → 套用；<b>圖片從頭到尾不離開瀏覽器</b>，零 Storage、零 Firestore read、零 Worker 請求。<br><b>三層讀取順序</b>：① PNG <code>tEXt</code> chunk（匯出時內嵌完整連結，100% 精確、不受碼長上限——剛好補上 QR 的兩個天生缺口：長碼根本不畫 QR、二手壓縮下 <code>ecc L</code> 餘裕很薄；代價是只對原檔有效，轉 JPEG／再截圖即失效，故與 QR 互補而非取代）→ ② 瀏覽器原生 <code>BarcodeDetector</code>（0 KB；但覆蓋率比想像中窄——Chrome 只在 macOS／ChromeOS／Android 暴露它，<b>Windows／Linux 的 Chrome 自 88 起連這個類別都沒有</b>，Safari 預設關閉、Firefox 沒有；對本站主要客群它只是 macOS／Android 上的加速）→ ③ <code>zxing-wasm</code>（1.1 MB 由本站自託管、丟圖時才 dynamic import——不走 jsDelivr，中國使用者連不到，與字體自託管同理由；<b>對 Windows PC 玩家這才是正式路徑</b>）。<br><b>解碼器選型不是想當然</b>：純 JS 零依賴的 jsQR 看似首選，2026-09-08 實測本站匯出圖的 QR 方塊固定 420 實體 px、v21 以上每模組 3.07–3.85px 在 3／4 間交錯，<b>jsQR 從 1000 字元起全數失敗</b>；zxing-wasm 36／530／1461 字元全部解回且快 5–10 倍（22–41 ms），模擬二手截圖 530 字元縮 40%＋q60 仍 OK，經驗門檻<b>每模組 ≥ 約 1.9 實體像素</b>——這個數字寫進了失敗文案。順帶評估過「把 QR 模組間距吸附整數實體像素」，<b>評估後否決</b>：zxing 與手機相機都不受非整數間距影響，吸附卻會讓模組縮小 15–22%、直接吃掉二手截圖的容忍度，受益者只有已被淘汰的 jsQR。<br>失敗<b>分七類、各講一句不同的話</b>並指向下一步：載不到 wasm 與圖裡沒有 QR 是兩件事，吞成空陣列會讓離線的人被告知「請改貼完整碼」。誠實的限制：長碼不畫 QR 的圖其二手截圖無解、1461 字元最壞情況只有原圖可讀、需 WebAssembly、首次 1.1 MB。不做拍照鏡頭、不做批次、不做剪貼簿 API 讀取按鈕。<br><b>✅ 2026-09-08 完成、待歸檔</b>：Playwright e2e 18／18 通過——以真實資料匯出後，原始 PNG 走內嵌、去 metadata 與 JPEG 壓縮版走 QR、無 QR 與別站 QR 各講對的話，合成 paste／drop 與真實剪貼簿 Ctrl+V 皆讀到連結。</p>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <a class="card-link" href="PLAN-052-O_配裝圖回讀/計畫書.html">→ 計畫書</a>
-        <a class="card-link" href="PLAN-052-O_配裝圖回讀/進度表.html">→ 進度表</a>
-      </div>
-    </div>
     <div class="card cyan">
       <div class="card-icon">◆</div>
       <h3>PLAN-052-N · 天賦裝備修正</h3>
-      <p>機師天賦會改寫「什麼裝得上」與「這把多重」，而模擬器<b>今天一個字都沒讀</b>——這 18 個天賦的 <code>effects</code> / <code>enhancedEffects</code> / <code>buffIds</code> 全是空陣列。最嚴重的不是算錯，是<b>錯誤封鎖</b>：<code>MECH_RESTRICTION</code> 屬 structural 層級而 <code>PickerShell</code> 把 structural 整批不列，於是<b>維娜點不到任何一把電磁炮</b>（12/12 把 medium-only，她重型）、<b>瑪汀妮點不到修理背包</b>（14/14 個 Medium-only，她輕型）——被否定掉的正是那兩位機師的核心賣點。另有 8 位機師的負重減免完全沒算（火箭 −130、重機槍 −200、狙擊 −15%…），<code>OVERWEIGHT</code> 因此一律偏重，玩家實際帶得動的配裝被判成裝不下。<br><b>第一版盤點用關鍵字掃描，漏掉了整批同類規則</b>——官方對同一件事有「負重降低／重量降低／負重-360」多種說法，改用全量傾印 89 個天賦逐條讀之後，才看見另外 9 筆用「射程+1」「彈倉容量+2」表達的裝備數值修改。<b>「未來還會不會發生」因此不是預測：已經發生 18 次了。</b>故結構做成通用的 <code>{target, stat, mode, amount, since}</code>，但<b>只有 weight 接進規則層</b>；<b>刻意不塞進 <code>SkillEffect</code></b>——那是戰鬥期加成的通道，混進去會讓「機槍重量 −80」出現在戰力彙總裡，而「解除限制」根本沒有 value 可放。<br>連帶把「天賦提升了沒有」從 <code>PilotTalentStrip</code> 的 <code>useState</code> 升格成配裝參數（三位機師的減重只在提升後才有，不升格就會出現「切回初始版、總重卻沒變」）。存的是<b>潛能等級 0–5 而非布林</b>：潛能五階裡有四階不是天賦（初始 AP ×2、駕駛等級 ×2），布林無法還原等級，日後要算 AP 就得遷移所有已流出的分享碼。<b>站上資料早就是滿潛快照</b>——<code>ap.init − apBase.init = 2</code> 佔 54/89、<code>masterLevel</code> 存的「大師Ⅲ」正是第 4 階的產物，故「欄位不存在＝滿潛」不引入第二套假設。<br>使用者的維娜整備截圖提供了唯一有實機佐證的 golden case：<code>巨像部件 945 ＋ 承諾之誓 390 ＋ 炬塔·改Ⅱ(1100−360)=740 ＝ 2075 ＝ 出力 2075</code>，四項全對；同時證實<b>官方在武器明細印原重、扣減只反映在總重</b>，站上照做才能兩邊逐格對照。</p>
+      <p>機師天賦會改寫「什麼裝得上」與「這把多重」，而模擬器<b>今天一個字都沒讀</b>——這 18 個天賦的 <code>effects</code> / <code>enhancedEffects</code> / <code>buffIds</code> 全是空陣列。最嚴重的不是算錯，是<b>錯誤封鎖</b>：<code>MECH_RESTRICTION</code> 屬 structural 層級而 <code>PickerShell</code> 把 structural 整批不列，於是<b>維娜點不到任何一把電磁炮</b>（12/12 把 medium-only，她重型）、<b>瑪汀妮點不到修理背包</b>（14/14 個 Medium-only，她輕型）——被否定掉的正是那兩位機師的核心賣點。另有 8 位機師的負重減免完全沒算（火箭 −130、重機槍 −200、狙擊 −15%…），<code>OVERWEIGHT</code> 因此一律偏重，玩家實際帶得動的配裝被判成裝不下。<br><b>第一版盤點用關鍵字掃描，漏掉了整批同類規則</b>——官方對同一件事有「負重降低／重量降低／負重-360」多種說法，改用全量傾印 89 個天賦逐條讀之後，才看見另外 9 筆用「射程+1」「彈倉容量+2」表達的裝備數值修改。<b>「未來還會不會發生」因此不是預測：已經發生 18 次了。</b>故結構做成通用的 <code>{target, stat, mode, amount, since}</code>，但<b>只有 weight 接進規則層</b>；<b>刻意不塞進 <code>SkillEffect</code></b>——那是戰鬥期加成的通道，混進去會讓「機槍重量 −80」出現在戰力彙總裡，而「解除限制」根本沒有 value 可放。<br>連帶把「天賦提升了沒有」從 <code>PilotTalentStrip</code> 的 <code>useState</code> 升格成配裝參數（三位機師的減重只在提升後才有，不升格就會出現「切回初始版、總重卻沒變」）。存的是<b>潛能等級 0–5 而非布林</b>：潛能五階裡有四階不是天賦（初始 AP ×2、駕駛等級 ×2），布林無法還原等級，日後要算 AP 就得遷移所有已流出的分享碼。<b>站上資料早就是滿潛快照</b>——<code>ap.init − apBase.init = 2</code> 佔 54/89、<code>masterLevel</code> 存的「大師Ⅲ」正是第 4 階的產物，故「欄位不存在＝滿潛」不引入第二套假設。<br>使用者的維娜整備截圖提供了唯一有實機佐證的 golden case：<code>巨像部件 945 ＋ 承諾之誓 390 ＋ 炬塔·改Ⅱ(1100−360)=740 ＝ 2075 ＝ 出力 2075</code>，四項全對；同時證實<b>官方在武器明細印原重、扣減只反映在總重</b>，站上照做才能兩邊逐格對照。<br><b>2026-08-30 進度 16／18</b>：A–D 完成（解除機種限制、負重減免、潛能等級、解釋層），僅餘選配的 E。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-052-N_天賦裝備修正/計畫書.html">→ 計畫書</a>
         <a class="card-link" href="PLAN-052-N_天賦裝備修正/進度表.html">→ 進度表</a>
@@ -133,7 +124,7 @@
     <div class="card orange">
       <div class="card-icon">◆</div>
       <h3>PLAN-042-A · 機師故事館</h3>
-      <p>把 89 位機師的檔案與逸聞做成一座<b>紙色的沉浸式展館</b>：左卷宗右立繪、章節以具名軸切換、線稿顯影成彩圖。<b>本子計畫同時建立兩館共用的全部元件</b>，042-B 機甲館直接引用——因此先做機師館，兩館的共用成本一次付清。<span style="color:var(--text-dim);">（卡片文案由 AI 依計畫書 hero-sub 重建，原文於 2026-08-24 因誤操作遺失，可自行改寫）</span></p>
+      <p>把 89 位機師的檔案與逸聞做成一座<b>紙色的沉浸式展館</b>：左卷宗右立繪、章節以具名軸切換、線稿顯影成彩圖。<b>本子計畫同時建立兩館共用的全部元件</b>，042-B 機甲館直接引用——因此先做機師館，兩館的共用成本一次付清。<span style="color:var(--text-dim);">（卡片文案由 AI 依計畫書 hero-sub 重建，原文於 2026-08-24 因誤操作遺失，可自行改寫）</span><br><b>2026-10-03 進度 16／19</b>：前台、編輯台與 Worker 路由完成，雛形已合併回 main、入口收起中（<code>LORE_INTERNAL_ONLY</code>）；剩選做的 G-2 靜態化，以及管理員的逸聞輸入與缺立繪補齊。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-042-A_機師故事館/計畫書.html">→ 計畫書</a>
         <a class="card-link" href="PLAN-042-A_機師故事館/進度表.html">→ 進度表</a>
@@ -191,7 +182,7 @@
   米赫瑪超吉情豹站 · 階段性開發計畫 · 執行中
 </footer>
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-11 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

@@ -78,9 +78,9 @@
         ① <strong>框架圖（底層）</strong>：路徑優先取 <code>outerFrameLocal</code> 欄位（由 patch 腳本寫入），若空則自動推算 <code>/images/components/OuterFrame/statetype_{componentType}{_W}.png</code>。共四種：
         <code>statetype_Condition.png</code>、<code>statetype_Condition_W.png</code>、<code>statetype_Function.png</code>、<code>statetype_Function_W.png</code>，依 <strong>componentType × componentsWType</strong> 決定。
         框架圖佔容器 <strong>80%</strong>，置中顯示。<br>
-        ② <strong>技能圖示（上層）</strong>：取 <code>iconLocal</code> 欄位（擷取腳本下載後的本地路徑，如 <code>/images/components/Icon_skill_passive_5223.png</code>）。
+        ② <strong>技能圖示（上層）</strong>：PLAN-055 起由官方圖庫提供——<code>gameIconCandidates(comp.icon, comp.iconLocal)</code>，第一候選是 <code>/images/game/icons/skill/&lt;icon&gt;.webp</code>（<code>icon</code> 是圖庫的裸 key），<code>iconLocal</code>（舊的本地路徑）只是後備。
         圖示佔容器 <strong>48%</strong>，以 <code>translate(-51%, -52%) rotate(16deg)</code> 略微偏移並旋轉以貼合框架設計。<br>
-        技能圖示不存在時（<code>onError</code>）隱藏；框架圖固定存在，不需 fallback。
+        技能圖示所有候選都失敗時不渲染（<code>FallbackImage</code>）；框架圖固定存在，不需 fallback。
       </p>
     </div>
     <div class="card blue">
@@ -182,13 +182,13 @@
   <div class="section-title">實作注意事項</div>
 
   <div class="note-block">
-    <strong>元件圖示渲染（對應 AdminPage.tsx ComponentAdmin 實作）</strong><br>
+    <strong>元件圖示渲染（對應 <code>components/icons/ComponentIcon.tsx</code>）</strong><br>
     · 外框圖路徑：優先讀取 <code>comp.outerFrameLocal</code>（由 <code>patch-component-outerframe.mjs</code> 寫入）；若空白則自動推算：<br>
     &emsp;<code>/images/components/OuterFrame/statetype_{componentType}{_W}.png</code><br>
     &emsp;四種變體：<code>statetype_Condition.png</code> / <code>statetype_Condition_W.png</code> / <code>statetype_Function.png</code> / <code>statetype_Function_W.png</code><br>
-    · 技能圖示路徑：取 <code>comp.iconLocal</code>（完整本地路徑，如 <code>/images/components/Icon_skill_passive_5223.png</code>）。<code>icon</code> 欄位僅為 key，不直接用於 &lt;img src&gt;<br>
+    · 技能圖示路徑（PLAN-055 起）：<code>gameIconCandidates(comp.icon, comp.iconLocal)</code>——<code>icon</code> 是官方圖庫的 key、為主，對到 <code>/images/game/icons/skill/&lt;icon&gt;.webp</code>；<code>iconLocal</code> 只是舊路徑後備。後台改 <code>icon</code> 用官方選圖器（見管理後台頁）<br>
     · CSS 疊合：容器 <code>position: relative</code>；外框圖 <code>absolute</code>，<code>width/height: 80%</code>，<code>translate(-50%, -50%)</code> 置中；技能圖示 <code>absolute</code>，<code>width/height: 48%</code>，<code>translate(-51%, -52%) rotate(16deg)</code>（略微偏移旋轉以貼合框架外形）<br>
-    · 圖示不存在時（<code>onError</code>）設 <code>display:none</code>，避免破圖；外框圖固定存在，不需 fallback
+    · 技能圖示所有候選都失敗時由 <code>FallbackImage</code> 不渲染，避免破圖；外框圖固定存在，不需 fallback
   </div>
 
   <div class="note-block" style="margin-top:12px;">

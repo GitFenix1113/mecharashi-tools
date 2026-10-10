@@ -634,7 +634,7 @@
             <code>ResolvedChassis</code>／8 筆固定武裝落盤（含新建 幽弧・夜燼）／forms 型別升級／
             型別收緊批次（<code>ArmorType</code>・<code>MechLicense</code>・<code>PartInterface</code>）／資料修正</td>
         <td><span class="badge-med">7–8 天</span></td>
-        <td>機甲詳情頁多出「槽位配置 ＋ 固定武裝 ＋ 四部位表（含接口型別）」；火力顯示修正為真值</td>
+        <td>機甲詳情頁多出「槽位配置 ＋ 固定武裝 ＋ 四部位表（含接口型別）」；火力顯示修正為真值<br><small>2026-10-10 補註：詳情頁已收起「槽位配置」「四部位表」兩區塊（元件保留於 <code>MechSlotPanel.tsx</code>，<code>MechPartsTable</code> 仍供模擬器使用），固定武裝改為部件十字上的肩部卡（26c67478）。</small></td>
       </tr>
       <tr>
         <td><b>052-B</b><br>配裝模擬器主體</td>
@@ -683,7 +683,7 @@
       <tr>
         <td class="badge-low">052-O</td>
         <td>配裝圖回讀（貼圖／拖放／選檔 → 三層讀取：PNG <code>tEXt</code> 內嵌 → 原生 <code>BarcodeDetector</code>（僅 macOS／Android Chrome 有）→ 自託管 <code>zxing-wasm</code>（Windows 的正式路徑）；匯出端 <code>tEXt</code> 內嵌；QR 整數間距吸附評估後否決）</td>
-        <td>1–2 天</td><td>PC 玩家 Win+Shift+S 截下別人的配裝圖、切回模擬器 Ctrl+V 就載入；原檔 100% 精確、二手截圖走 QR；<b>圖片不離開瀏覽器</b><br><span style="color:var(--text-dim);font-size:12px;">2026-09-08 建檔並完成 · 10 工項 · A–D 四個 Phase · e2e 18／18 通過，待歸檔</span></td>
+        <td>1–2 天</td><td>PC 玩家 Win+Shift+S 截下別人的配裝圖、切回模擬器 Ctrl+V 就載入；原檔 100% 精確、二手截圖走 QR；<b>圖片不離開瀏覽器</b><br><span style="color:var(--text-dim);font-size:12px;">2026-09-08 建檔並完成 · 10 工項 · A–D 四個 Phase · e2e 18／18 通過，2026-10-11 已歸檔</span></td>
       </tr>
     </table>
     <b>MVP ＝ 052-A ＋ 052-B ＋ 052-C ≈ 21–24 個日曆天。</b>
