@@ -179,7 +179,7 @@ export function gameIconSources(...values: (string | null | undefined)[]): strin
   return out
 }
 
-/** 交給 <FallbackImage> 的候選清單（已套 BASE_URL；舊路徑會經過 normalizeSkillPath 並展開 .webp 變體）。 */
+/** 交給 <FallbackImage> 的候選清單（已套 BASE_URL，並展開 .webp 變體）。第一候選永遠是圖庫——PLAN-055 E-1 起舊技能資料夾已刪，原值只剩當保險。 */
 export function gameIconCandidates(...values: (string | null | undefined)[]): string[] {
   return imageCandidates(...gameIconSources(...values))
 }

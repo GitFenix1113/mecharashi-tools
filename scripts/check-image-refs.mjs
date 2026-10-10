@@ -34,10 +34,12 @@
  * 閘門（--fail-on）只算**現役引用**：Firestore 與正式程式碼。測試檔裡的假路徑、docs 裡的歷史紀錄
  * 照樣列在報告裡，但不擋——它們描述的是「當時的樣子」，改寫它們等於竄改歷史。
  *
- * ⚠ 判定「存不存在」要照**前台實際會請求的路徑**算，不是照資料字面：
- *   · 技能圖示走 normalizeSkillPath（src/utils/assets.ts）——DB 裡 3,239 個扁平路徑
- *     （/images/skills/Icon_skill_passive_5004.png）實際請求的是分類資料夾裡的檔案；
- *     不套用同一個正規化，這裡會誤報三千多筆。
+ * ⚠ 判定「存不存在」要照**前台實際會請求的圖**算，不是照資料字面：
+ *   · 圖示值（檔名是圖庫 key 的，含舊路徑）前台走 gameIconCandidates——**先取檔名去圖庫找**（含舊編號別名），
+ *     所以檔名在 public/images/game/icons/ 有檔就算解析得到。PLAN-055 E-1 刪掉舊資料夾之後，
+ *     爬蟲原始快照（pilots.biometicComputer[].skill.iconLocal 636 筆，前台只拿來對技能名）與手建武器的內嵌技能 8 筆
+ *     仍是 /images/skills/… 舊路徑；不照這條規則算，會誤報六百多筆壞路徑。
+ *     （E-1 之前這裡是 normalizeSkillPath 推回分類資料夾——前台已拿掉那層，這裡跟著拿掉。）
  *   · imageCandidates() 會在原樣之後補試 .webp 變體，所以 .png 指向的檔只要有 .webp 版就算存在。
  */
 import fs from 'node:fs'
@@ -52,32 +54,25 @@ const PUBLIC = path.join(ROOT, 'public')
 const args = Object.fromEntries(process.argv.slice(2).map((a) => { const m = a.match(/^--([^=]+)(?:=(.*))?$/); return m ? [m[1], m[2] ?? true] : [a, true] }))
 const SKIP_COLLECTIONS = new Set(['users', 'analyticsDaily', 'analyticsEntity', 'changeHistory', 'systemLog'])
 
-// ── 與前台相同的正規化（src/utils/assets.ts 的 resolveIconSrc → normalizeSkillPath）────────
-const SKILL_PREFIX_FOLDERS = [
-  ['Icon_skill_main', '主動技能'], ['Icon_skill_order', '指令技能'], ['Icon_skill_passive', '被動技能'],
-  ['Icon_skill_pp', 'pp技能'], ['Icon_skill_talent', '天賦技能'],
-]
-const SKILL_SUBFOLDERS = new Set([...SKILL_PREFIX_FOLDERS.map(([, f]) => f), '背包技能'])
-function normalizeSkillPath(p) {
-  const m = p.match(/(^|\/)images\/skills\/(.+)$/)
-  if (!m) return p
-  const parts = m[2].split('/'); const file = parts.pop() ?? ''
-  if (parts.length && SKILL_SUBFOLDERS.has(parts[parts.length - 1])) return p
-  const sub = SKILL_PREFIX_FOLDERS.find(([pre]) => file.startsWith(pre))?.[1]
-  return sub ? `${m[1]}images/skills/${sub}/${file}` : p
-}
-/** 字面路徑 → 前台實際請求的 public/ 相對路徑（不含開頭斜線）；不是本地圖片回 null */
+/** 字面路徑 → public/ 相對路徑（不含開頭斜線）；不是本地圖片回 null */
 function toPublicPath(raw) {
   if (/^https?:\/\//i.test(raw)) return null
   const i = raw.indexOf('images/')
   if (i < 0) return null
   let p = raw.slice(i)
   try { p = decodeURIComponent(p) } catch { /* 保留原樣 */ }
-  return normalizeSkillPath(p)
+  return p
 }
 const exists = (rel) => fs.existsSync(path.join(PUBLIC, rel))
-/** 照 imageCandidates() 的順序：原樣 → .webp 變體 */
-const resolvable = (rel) => exists(rel) || (/\.(png|jpe?g)$/i.test(rel) && exists(rel.replace(/\.(png|jpe?g)$/i, '.webp')))
+/**
+ * 照前台的候選順序：圖示檔名先去圖庫找（gameIconCandidates，含舊編號別名）→ 原樣 → .webp 變體（imageCandidates）。
+ * iconFileExists 定義在下方（const）；本函式只在全部定義完之後才被呼叫，不會撞到 TDZ。
+ */
+const resolvable = (rel) => {
+  const key = keyFromValue(rel)
+  if (isLibraryKey(key) && iconFileExists(key)) return true
+  return exists(rel) || (/.(png|jpe?g)$/i.test(rel) && exists(rel.replace(/.(png|jpe?g)$/i, '.webp')))
+}
 
 // ── 即將刪除的舊檔（PLAN-054 決策十一：有官方原檔的一律換官方）──────────────────────────
 // 由「實體在 game/ 有哪幾種圖」反推它在名字資料夾裡的哪幾張舊圖會退場：

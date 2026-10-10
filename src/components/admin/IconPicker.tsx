@@ -75,7 +75,7 @@ export function IconPicker({
         setManifest(m)
         setFolder((f) => {
           if (f === ALL || (f && m.folders[f])) return f
-          // defaultFolder 可能是「群組」（如 "skills" 對應 skills/被動技能…），退回第一個子資料夾
+          // defaultFolder 可能是「群組」（如 "pilots" 對應 pilots/<機師>…），退回第一個子資料夾
           if (f) {
             const sub = Object.keys(m.folders).filter((k) => k.startsWith(`${f}/`)).sort((a, b) => a.localeCompare(b, 'zh-Hant'))[0]
             if (sub) return sub
@@ -87,7 +87,7 @@ export function IconPicker({
     return () => { alive = false }
   }, [])
 
-  // 資料夾下拉選項：defaultFolder 群組（含其子資料夾，如 skills/被動技能）置頂、
+  // 資料夾下拉選項：defaultFolder 群組（含其子資料夾，如 pilots/<機師>）置頂、
   // 其次「全部」、再依字母排序
   const folderOptions = useMemo(() => {
     if (!manifest) return [] as string[]

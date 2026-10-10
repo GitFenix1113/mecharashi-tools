@@ -188,10 +188,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">19 / 23</span>
+      <span style="color:var(--accent-purple);">20 / 23</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 83%"></div>
+      <div class="progress-bar-fill" style="width: 87%"></div>
     </div>
   </div>
 
@@ -778,7 +778,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 舊資料夾與 normalizeSkillPath 退場</div>
       <div class="task-group-meta">public/images/ · src/utils/assets.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -796,11 +796,18 @@
           舊夾一刪，下一次有新擷取再匯入，兩份表會被<b>靜默清空</b>：前台解析不到舊編號、選圖器的 legacy 標記消失，build 與測試照樣全綠。
           改法：以已存的 <code>gameIconMeta.json</code> 為準、只增不減（舊夾還在時新算出來的才合併進去）。
           順手加一道守門：新擷取出現的官方 key 若剛好是某個別名的「舊編號」（讀取端會先套別名，新圖會被舊圖蓋掉），中止並回報。</p>
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11：<b>先修 <code>--icons</code></b>——別名表與 legacy 改成「已存 ∪ 本次」、只增不減，並加兩道守門（新擷取撞到別名舊編號；別名指向的現行編號既不在擷取也不在圖庫）。
+          刪除前 e2e（292 頁）：圖庫請求 1,794、舊資料夾 0、4xx 0；掃描器現役 (a)～(e) 全 0。
+          接著 <code>git rm</code> <b>1,678 個舊檔</b>（skills 1,088、modules 530、components 根目錄 55、pilot_forms 4、backpacks_skills 1），<code>OuterFrame／Stage*_Boss</code> 保留。
+          刪除後：掃描器 (a)～(e) 仍全 0；<code>--icons --apply</code> 重跑，別名 172／legacy 82 原封不動、產出檔零差異；test 1,358 全過、build 通過；抽測海莉絲頁與模組列表破圖 0。
+          前台與兩支掃描腳本（<code>check-image-refs.mjs</code>、<code>patch-image-paths.mjs --missing</code>）拿掉 <code>normalizeSkillPath</code>，改成「檔名在圖庫有檔就算解析得到」——
+          DB 裡刻意保留的爬蟲原始快照（<code>pilots.biometicComputer[].skill.iconLocal</code> 636 筆、手建武器內嵌技能 8 筆）照樣有圖。
+          <code>derive-composite-backpack-skills.mjs</code> 的種子技能 icon 改成裸 key；<code>IconPicker</code> 已沒有呼叫端傳技能夾，只更新註解範例。</p>
         </div>
         <div class="task-file">public/images/{skills,modules,components,backpacks_skills,pilot_forms}/ · src/utils/assets.ts · src/components/admin/IconPicker.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 

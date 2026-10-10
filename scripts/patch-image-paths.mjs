@@ -25,6 +25,7 @@ import readline from 'readline'
 import { fileURLToPath } from 'url'
 import { resolve } from 'path'
 import admin from 'firebase-admin'
+import { iconPath, isLibraryKey, keyFromValue } from './lib/gameIconKinds.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -108,27 +109,20 @@ function promptConfirm(question) {
 
 // ── 路徑處理 ─────────────────────────────────────────────────────────────────
 
-// ⚠ 必須與 src/utils/assets.ts 的 SKILL_PREFIX_FOLDERS / normalizeSkillPath 對齊。
-// 技能圖示實體放在 skills/<子資料夾>/，但 DB 內大量存的是扁平的 /images/skills/<檔名>，
-// 前台靠 normalizeSkillPath 在 runtime 推回子資料夾。本腳本若不照做，會把上千個
-// 其實正常的技能圖示誤判成「檔案不存在」。
-const SKILL_PREFIX_FOLDERS = [
-  ['Icon_skill_main', '主動技能'],
-  ['Icon_skill_order', '指令技能'],
-  ['Icon_skill_passive', '被動技能'],
-  ['Icon_skill_pp', 'pp技能'],
-  ['Icon_skill_talent', '天賦技能'],
-]
-
-function normalizeSkillPath(p) {
-  const m = p.match(/(^|\/)images\/skills\/(.+)$/)
-  if (!m) return p
-  const file = m[2].split('/').pop() ?? ''
-  const sub = SKILL_PREFIX_FOLDERS.find(([prefix]) => file.startsWith(prefix))?.[1]
-  return sub ? `${m[1]}images/skills/${sub}/${file}` : p
+// PLAN-055 E-1（2026-10-11）：舊技能資料夾已刪，這裡跟著前台拿掉 normalizeSkillPath。
+// 圖示值前台走 gameIconCandidates——**先取檔名去圖庫 game/icons/ 找**（含舊編號別名），
+// 所以 DB 裡殘留的舊路徑（爬蟲原始快照 pilots.biometicComputer[].skill.iconLocal 等）照樣有圖：
+//   · --missing 不能把它們算成破圖（resolvesViaLibrary）
+//   · 改指 .webp 也不會動它們——舊路徑的 .webp 在磁碟上不存在，rewrite 自然略過
+const ICON_META = JSON.parse(fs.readFileSync(resolve(ROOT, 'scripts/lib/gameIconMeta.json'), 'utf-8'))
+function resolvesViaLibrary(value) {
+  const key = keyFromValue(value)
+  if (!isLibraryKey(key)) return false
+  const rel = iconPath(ICON_META.aliases?.[key] ?? key)
+  return !!rel && fs.existsSync(resolve(PUBLIC_DIR, rel))
 }
 
-const diskPath = (webPath) => resolve(PUBLIC_DIR, normalizeSkillPath(webPath).replace(/^\//, ''))
+const diskPath = (webPath) => resolve(PUBLIC_DIR, webPath.replace(/^\//, ''))
 const toWebp = (p) => p.replace(/\.(png|jpe?g)$/i, '.webp')
 
 /**
@@ -156,7 +150,7 @@ function rewrite(value, trail, hits) {
 function scanMissing(value, trail, hits) {
   if (typeof value === 'string') {
     if (IMG_PATH_RE.test(value) || /^\/?images\/.+\.webp$/i.test(value)) {
-      if (!fs.existsSync(diskPath(value))) hits.push({ field: trail, from: value })
+      if (!fs.existsSync(diskPath(value)) && !resolvesViaLibrary(value)) hits.push({ field: trail, from: value })
     }
     return
   }

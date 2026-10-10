@@ -119,7 +119,7 @@ const EXCEPTIONS = [{
     skillType: '被動技能',
     // 與 bpskill_首攻強化@3 逐字相同，**只少了「對戰」二字**——這就是它存在的全部理由。
     description: '每回合第1次主動攻擊時，傷害提升7.5%，暴擊率提升5%；機甲軀幹耐久值提升10%',
-    icon: '/images/skills/被動技能/Icon_skill_passive_1011.png',
+    icon: 'Icon_skill_passive_1011',   // PLAN-055：DB 只存圖庫 key（舊資料夾已於 E-1 刪除）
     effects: [],
     buffIds: [],
     // officialId 不填：61191 是**複合技能**（戰術彈量增加Ⅱ·首攻）的 id，

@@ -36,6 +36,8 @@
  *   兩邊都有的同名圖以擷取為準；像素不同的列進報告給站長看（不中止）。
  *   落點 public/images/game/icons/{skill,buff}/<官方檔名>.webp，WebP **lossless**（128px 平塗圖示實測比 q82 還小）；
  *   站上舊夾本來就是 .webp 的直接複製、不重壓。之後有新擷取時跑同一個指令，只會補新的 key。
+ *   ⚠ PLAN-055 E-1（2026-10-11）已刪掉這些舊夾：之後「站上舊夾」那一側永遠是空的，舊編號別名與 legacy 清單
+ *   改以已存的 scripts/lib/gameIconMeta.json 為準、只增不減（見下方「以已存的為準」那段）。
  *
  * ── --equip-icons（PLAN-056 A-1）─────────────────────────────────────────
  *   擷取的 uiicons/wapweapons_abs、wapbackpack_abs **整夾全收**（站長 2026-10-09：資料多只有好處——
@@ -135,7 +137,7 @@ function addTask(srcRel, destDir, name, label, group, absSrc) {
   tasks.push({ src: absSrc ?? path.join(SRC, srcRel), dest: path.join(destRoot, destDir, `${name}.webp`), label, group, name })
 }
 
-// ── --icons 用：站上舊夾裡的圖示檔 ─────────────────────────────────────────────────
+// ── --icons 用：站上舊夾裡的圖示檔（PLAN-055 E-1 起已刪，掃到的是空集合；留著供從舊備份還原時用）──
 const LEGACY_ICON_DIRS = ['skills', 'modules', 'components', 'backpacks_skills', 'pilot_forms']
 /** 站上舊夾 → { byKey: Map<官方檔名, 絕對路徑[]>, nonKey: 相對路徑[] }；元件外框與關卡 BOSS 圖不是圖示，略過 */
 function scanLegacyIcons() {
@@ -187,6 +189,7 @@ const ALIAS_MAX_DISTANCE = 6
 const iconReport = { fromDump: 0, dumpOnly: [], legacy: [], diffs: [], nonKey: [], siteCopies: 0, aliases: {} }
 const equipReport = { weapon: [], backpack: [], siteOnly: [], diffs: [], same: 0, keyCase: {} }
 const UI_ROOT = path.join(destRoot, 'ui')
+const ICON_META_FILE = path.join(ROOT, 'scripts/lib/gameIconMeta.json')
 const uiReport = { rows: new Map(), conflicts: [], moves: [], notInDump: 0 }
 
 if (MODE === 'v3') {
@@ -302,6 +305,30 @@ if (MODE === 'v3') {
   }))
   iconReport.diffs.sort((a, b) => b.d - a.d)
   iconReport.both = both.length
+
+  // ── PLAN-055 E-1：別名表與 legacy 清單「以已存的為準、只增不減」──────────────────────
+  // 上面兩份是從站上舊資料夾（LEGACY_ICON_DIRS）重算的；舊夾在 E-1 刪掉之後，重算結果會是空的。
+  // 若照舊整份覆寫，下一次有新擷取跑 --apply，就會把別名（2026-10 時 172 筆）與 legacy（82 筆）**靜默清空**——
+  // 前台解析不到 DB／爬蟲快照裡的舊編號、選圖器的 legacy 標記消失，而 build 與測試照樣全綠。
+  const prevMeta = fs.existsSync(ICON_META_FILE) ? JSON.parse(fs.readFileSync(ICON_META_FILE, 'utf-8')) : { aliases: {}, legacy: [] }
+  const prevAliases = prevMeta.aliases ?? {}, prevLegacy = prevMeta.legacy ?? []
+  iconReport.aliasesNew = Object.keys(iconReport.aliases).filter((k) => !(k in prevAliases)).length
+  iconReport.aliases = { ...prevAliases, ...iconReport.aliases }
+  const legacyAll = new Set([...prevLegacy, ...iconReport.legacy])
+  // 新擷取裡出現了的 legacy key 就不再是 legacy（官方又用回來了）；圖庫那張還是舊版，報告提醒用 --force 換新
+  iconReport.becameCurrent = [...legacyAll].filter((k) => fromDump.has(k)).sort()
+  iconReport.legacyMerged = [...legacyAll].filter((k) => !fromDump.has(k)).sort()
+  iconReport.legacyNew = iconReport.legacyMerged.filter((k) => !prevLegacy.includes(k)).length
+  // 守門：讀取端（gameIconPath）**先套別名**——新擷取若出現某個別名的「舊編號」，那張新圖永遠顯示不出來
+  for (const [oldKey, cur] of Object.entries(iconReport.aliases)) {
+    if (fromDump.has(oldKey)) {
+      problems.push(`${oldKey}：新擷取出現了這個官方編號，但別名表把它導向 ${cur}——讀取端會先套別名，新圖會被蓋掉。` +
+        '請人工判斷：新圖若就是舊圖，維持別名並略過；若是不同的圖，從 scripts/lib/gameIconMeta.json 刪掉這筆別名再重跑')
+    }
+    if (!fromDump.has(cur) && !fs.existsSync(path.join(PUBLIC_GAME, 'icons', iconFamily(cur), `${cur}.webp`))) {
+      problems.push(`${oldKey} → ${cur}：別名指向的現行編號既不在擷取、也不在圖庫`)
+    }
+  }
 } else if (MODE === 'equip') {
   const rows = loadCsv()
   const fromDump = new Map()   // key → row
@@ -462,9 +489,12 @@ const title = MODE === 'v3' ? `v3 整批・${TIER}` : MODE === 'pilot' ? `新機
   : MODE === 'equip' ? '武器／背包圖示' : MODE === 'ui' ? '介面美術封存' : MODE === 'promote' ? '介面美術上架' : `新機甲 wap${args.wap}`
 const iconSection = MODE !== 'icons' ? [] : [
   '## 圖示圖庫（PLAN-055）', '',
-  `- 擷取：${iconReport.fromDump}（其中站上沒有的 ${iconReport.dumpOnly.length}，見計畫書決策三）`,
-  `- 站上舊圖（擷取沒有的官方檔名，索引標 legacy）：${iconReport.legacy.length}`,
-  `- 舊編號別名（跟擷取裡某張圖幾乎逐像素相同，不另存，寫進 src/data/gameIconAliases.ts）：${Object.keys(iconReport.aliases).length}`,
+  `- 擷取：${iconReport.fromDump}` + (iconReport.siteCopies
+    ? `（其中站上舊夾沒有的 ${iconReport.dumpOnly.length}，見計畫書決策三）`
+    : '（站上舊夾已於 PLAN-055 E-1 刪除；真正的新圖看上表「檔數－已存在」）'),
+  `- legacy（擷取沒有的官方檔名，索引標 legacy）：${iconReport.legacyMerged.length}（沿用已存 ${iconReport.legacyMerged.length - iconReport.legacyNew}、本次新增 ${iconReport.legacyNew}；這次從站上舊夾收到 ${iconReport.legacy.length} 張）`,
+  ...(iconReport.becameCurrent.length ? [`- ⚠ legacy 轉為現行（新擷取又出現了；圖庫那張是舊版，要換新請對這幾張加 --force）：${iconReport.becameCurrent.join('、')}`] : []),
+  `- 舊編號別名（跟擷取裡某張圖幾乎逐像素相同，不另存，寫進 src/data/gameIconAliases.ts）：${Object.keys(iconReport.aliases).length}（本次新增 ${iconReport.aliasesNew}；PLAN-055 E-1 起只增不減）`,
   `- 站上舊夾的圖示檔共 ${iconReport.siteCopies} 個（同一張圖散在多個資料夾的副本都算）；兩邊都有的 ${iconReport.both} 張以擷取為準`,
   `- 同名但畫面不同（平均像素差 ≥ 6）：${iconReport.diffs.length}——站上那張是猜錯編號的圖，資料要改指向「其實是」那張（PLAN-055 C）`,
   ...iconReport.diffs.map((d) => `  - \`${d.key}\` 差 ${d.d}　站上：\`${d.site}\`　其實是：${d.actual ? `\`${d.actual}\`` : '（擷取裡找不到）'}`),
@@ -521,7 +551,8 @@ if (MODE === 'icons' && APPLY) {
   ].join('\n')
   fs.writeFileSync(path.join(ROOT, 'src/data/gameIconAliases.ts'), ts)
   // 腳本用（Node 20 不能 import .ts）：別名＋哪些是「現行客戶端已沒有」的舊圖（索引標 legacy，選圖器預設收起）
-  const meta = { generatedBy: 'scripts/import-game-assets.mjs --icons --apply', aliases: Object.fromEntries(entries), legacy: [...iconReport.legacy].sort() }
+  // PLAN-055 E-1：別名與 legacy 都是「已存 ∪ 本次」——舊資料夾刪掉後本次重算是空的，不能整份覆寫
+  const meta = { generatedBy: 'scripts/import-game-assets.mjs --icons --apply', aliases: Object.fromEntries(entries), legacy: iconReport.legacyMerged }
   fs.writeFileSync(path.join(ROOT, 'scripts/lib/gameIconMeta.json'), JSON.stringify(meta, null, 1) + '\n')
 }
 const promoteSection = MODE !== 'promote' ? [] : [
