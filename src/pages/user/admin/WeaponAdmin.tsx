@@ -93,19 +93,15 @@ function WeaponSkillRefRow({
           : <span className="text-sm text-accent-red">⚠ 找不到此技能</span>}
         <span className="text-[11px] text-text-dim font-mono ml-2">{entry.skillId}</span>
       </div>
-      {/* 固定寬容器：`.input-field` 是 index.css 的無 layer 規則（width:100%），
-          會壓過 Tailwind 的 w-auto（見 BackpackSkillPicker 的同款註解）。 */}
-      <div className="w-44 shrink-0">
-        <select
-          value={entry.activation}
-          onChange={e => onChange({ ...entry, activation: e.target.value as WeaponSkillRef['activation'] })}
-          className="input-field py-1 text-xs"
-        >
-          <option value={SkillActivation.CARRY}>carry — 攜帶即生效</option>
-          <option value={SkillActivation.EQUIP}>equip — 裝備中生效</option>
-          <option value={SkillActivation.USE}>use — 僅使用時生效</option>
-        </select>
-      </div>
+      <select
+        value={entry.activation}
+        onChange={e => onChange({ ...entry, activation: e.target.value as WeaponSkillRef['activation'] })}
+        className="input-field w-44 shrink-0 py-1 text-xs"
+      >
+        <option value={SkillActivation.CARRY}>carry — 攜帶即生效</option>
+        <option value={SkillActivation.EQUIP}>equip — 裝備中生效</option>
+        <option value={SkillActivation.USE}>use — 僅使用時生效</option>
+      </select>
       <button
         onClick={onRemove}
         className="text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10 shrink-0"
@@ -690,7 +686,7 @@ function WeaponEditPanel({
                               <select
                                 value={eff.stat}
                                 onChange={(e) => { const next = [...form.floatingMod.possibleEffects]; next[idx] = { ...next[idx], stat: e.target.value }; updateFloatingMod('possibleEffects', next) }}
-                                className="input-field text-xs"
+                                className="input-field"
                               >
                                 <option value="attack">attack — 攻擊力</option>
                                 <option value="crit">crit — 暴擊值</option>
@@ -719,7 +715,7 @@ function WeaponEditPanel({
                             <input
                               value={eff.condition ?? ''}
                               onChange={(e) => { const next = [...form.floatingMod.possibleEffects]; next[idx] = { ...next[idx], condition: e.target.value || null }; updateFloatingMod('possibleEffects', next) }}
-                              className="input-field text-xs"
+                              className="input-field"
                               placeholder="留空 = null（無條件）"
                             />
                           </Field>

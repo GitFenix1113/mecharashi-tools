@@ -199,18 +199,27 @@ select option {
 }
 /* ──────────────────────────────────────────────────────────────────── */
 
-.input-field {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  background-color: var(--color-bg-dark);
-  border: 1px solid var(--color-border);
-  color: var(--color-text-primary);
-  font-size: 0.875rem;
-}
-.input-field:focus {
-  outline: none;
-  border-color: var(--color-accent-orange);
+/*
+ * 後台表單欄位。必須放在 @layer components 裡：Tailwind v4 的 utility 都在 @layer utilities，
+ * 而**未分層的 CSS 一律勝過任何分層的 CSS**（與選擇器權重無關）。這條規則曾寫在 layer 外，
+ * 於是 `input-field w-20 text-xs` 這類寫法的 w-* / p-* / text-* 全被蓋掉——
+ * 機甲天生模組覆寫列的模組下拉被同列的數字欄擠到只剩箭頭、故事館旁白的文字欄寬 31px 完全看不見。
+ * 放進 components 後，同一元素上的 utility 可以照常覆寫這裡的預設值。
+ */
+@layer components {
+  .input-field {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    background-color: var(--color-bg-dark);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: var(--color-accent-orange);
+  }
 }
 
 /* ── 橫向合成樹（左→右） ──────────────────────────────────────────── */

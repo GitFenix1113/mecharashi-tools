@@ -367,7 +367,7 @@ function KeyTools({
             value={suffix}
             onChange={(e) => setSuffix(e.target.value.replace(SUFFIX_FORBIDDEN, ''))}
             placeholder="留空＝不帶後綴"
-            // 不用 .input-field：它寫在 @layer 之外、優先權高於 utility，w-28 / text-[11px] 會被蓋掉、撐滿整列
+            // 與 TokenRow 的 buff 級數下拉同一組緊湊樣式（行內小控件，不用 .input-field 的表單尺寸）
             className="w-28 text-[11px] bg-bg-card border border-border rounded px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-accent-cyan"
           />
           <code className="text-text-secondary">]</code>

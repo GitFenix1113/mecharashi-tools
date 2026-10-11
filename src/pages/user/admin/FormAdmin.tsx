@@ -163,19 +163,16 @@ function IdListPicker({
           placeholder="搜尋名稱或 ID…"
           className="flex-1 px-2.5 py-1.5 rounded-lg bg-bg-dark border border-border text-text-primary text-xs focus:outline-none focus:border-accent-orange"
         />
-        <div className="w-56 shrink-0">
-          {/* 固定寬容器：`.input-field` 是無 layer 的 width:100% 規則，會壓過 Tailwind 的寬度 utility */}
-          <select
-            value=""
-            onChange={(e) => { if (e.target.value) onChange([...value, e.target.value]) }}
-            className="input-field py-1.5 text-xs"
-          >
-            <option value="">＋ 加入…（{options.length}）</option>
-            {options.map((c) => (
-              <option key={c.id} value={c.id}>{c.badge ? `${c.badge} ${c.name}` : c.name}</option>
-            ))}
-          </select>
-        </div>
+        <select
+          value=""
+          onChange={(e) => { if (e.target.value) onChange([...value, e.target.value]) }}
+          className="input-field w-56 shrink-0 py-1.5 text-xs"
+        >
+          <option value="">＋ 加入…（{options.length}）</option>
+          {options.map((c) => (
+            <option key={c.id} value={c.id}>{c.badge ? `${c.badge} ${c.name}` : c.name}</option>
+          ))}
+        </select>
       </div>
     </div>
   )

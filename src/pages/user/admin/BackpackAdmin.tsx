@@ -118,21 +118,16 @@ function BackpackSkillPicker({
                   <span className="text-[11px] text-text-dim font-mono ml-2">{raw}</span>
                 </div>
                 {levels.length > 0 && (
-                  // 固定寬容器：`.input-field` 是 index.css 的無 layer 規則（width:100%），
-                  // 會壓過 Tailwind 的 w-auto／w-36（utilities 在 layer 內優先度較低）。
-                  // 直接給 select 加寬度 class 無效——它會撐滿整列把名稱擠成 0 寬。
-                  <div className="w-36 shrink-0">
-                    <select
-                      value={level ?? ''}
-                      onChange={e => setLevel(idx, e.target.value ? Number(e.target.value) : undefined)}
-                      className="input-field py-1 text-xs"
-                    >
-                      <option value="">（不指定級）</option>
-                      {levels.map(lv => (
-                        <option key={lv.level} value={lv.level}>{lv.name || `Lv.${lv.level}`}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <select
+                    value={level ?? ''}
+                    onChange={e => setLevel(idx, e.target.value ? Number(e.target.value) : undefined)}
+                    className="input-field w-36 shrink-0 py-1 text-xs"
+                  >
+                    <option value="">（不指定級）</option>
+                    {levels.map(lv => (
+                      <option key={lv.level} value={lv.level}>{lv.name || `Lv.${lv.level}`}</option>
+                    ))}
+                  </select>
                 )}
                 <button
                   onClick={() => onChange(value.filter((_, i) => i !== idx))}

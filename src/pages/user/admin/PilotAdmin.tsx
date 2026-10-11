@@ -171,7 +171,7 @@ export function SkillEffectItem({
           <select
             value={effect.stat}
             onChange={(e) => onChange({ ...effect, stat: e.target.value })}
-            className="input-field text-xs"
+            className="input-field"
           >
             {STAT_OPTIONS.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
           </select>
@@ -409,7 +409,7 @@ function LoadoutModItem({
                 step={mod.mode === 'pct' ? 0.01 : 1}
                 value={mod.amount}
                 onChange={(e) => onChange({ ...mod, amount: Number(e.target.value) })}
-                className="input-field"
+                className="input-field text-xs"
               />
             </Field>
           </>
@@ -754,7 +754,7 @@ function NdVariantsEditor({
                 <textarea
                   value={v.description}
                   onChange={(e) => upd(idx, { description: e.target.value })}
-                  className="input-field min-h-[130px] resize-y text-xs leading-relaxed"
+                  className="input-field min-h-[130px] resize-y text-sm leading-relaxed"
                   placeholder="此算力階的完整天賦正文（[xxx] 用該階 buff 名，如 [凝勢III]）"
                 />
               </Field>
@@ -762,7 +762,7 @@ function NdVariantsEditor({
                 <textarea
                   value={v.descriptionMax ?? ''}
                   onChange={(e) => upd(idx, { descriptionMax: e.target.value || undefined })}
-                  className="input-field min-h-[130px] resize-y text-xs leading-relaxed"
+                  className="input-field min-h-[130px] resize-y text-sm leading-relaxed"
                   placeholder="滿星 × 此算力階的正文；未填時前台退回顯示初始版並提示待補"
                 />
               </Field>
@@ -852,7 +852,7 @@ function TalentItem({
                 <textarea
                   value={talent.description}
                   onChange={(e) => upd('description', e.target.value)}
-                  className="input-field min-h-[150px] resize-y text-xs leading-relaxed"
+                  className="input-field min-h-[150px] resize-y text-sm leading-relaxed"
                   placeholder="天賦效果文字描述（可含 [xxx] 引用其他實體）"
                 />
               </Field>
@@ -860,7 +860,7 @@ function TalentItem({
                 <textarea
                   value={talent.descriptionMax}
                   onChange={(e) => upd('descriptionMax', e.target.value)}
-                  className="input-field min-h-[150px] resize-y text-xs leading-relaxed"
+                  className="input-field min-h-[150px] resize-y text-sm leading-relaxed"
                   placeholder="滿級 / 強化後的效果說明"
                 />
               </Field>
