@@ -135,7 +135,7 @@ function BackpackSkillLevelItem({
             text={levelData.description ?? ''}
             value={levelData.descriptionRefs}
             onChange={(refs) => upd('descriptionRefs', refs)}
-            onCompileText={(tf) => upd('description', tf(levelData.description ?? ''))}
+            onCompileText={(tf, refs) => onChange({ ...levelData, description: tf(levelData.description ?? ''), ...(refs && { descriptionRefs: refs }) })}
           />
 
           <GameIconField
@@ -276,7 +276,7 @@ function BackpackSkillEditPanel({
           siblingTexts={(form.levels ?? []).map((lv) => lv.description)}
           value={form.descriptionRefs}
           onChange={(refs) => update('descriptionRefs', refs)}
-          onCompileText={(tf) => update('description', tf(form.description))}
+          onCompileText={(tf, refs) => { update('description', tf(form.description)); if (refs) update('descriptionRefs', refs) }}
         />
 
         {/* 可計算效果（非階梯技能用；階梯技能改由各級提供） */}

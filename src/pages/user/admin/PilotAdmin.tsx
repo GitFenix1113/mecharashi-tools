@@ -18,7 +18,7 @@ import { useGameData } from '../../../contexts/GameDataContext'
 import { buildSkillMap } from '../../../utils/pilotSkills'
 import { buildNdAbilityMap } from '../../../utils/neuralDriveAbilities'
 import { ndMinSumForLevel, ndZoneMaxLevel, expectedNdLevels, ndZoneOffRule } from '../../../utils/neuralDriveLevels'
-import { RefPicker } from '../../../components/admin/RefPicker'
+import { RefPicker, type RefTextSection } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
 import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
 import { PilotGameArtFields } from '../../../components/admin/GameArtFields'
@@ -53,6 +53,14 @@ function makeDefaultPilot(id: string, name = ''): Pilot {
 }
 
 type PilotFilters = { rarity: string; class: string }
+
+// 天賦正文兩段（description / descriptionMax）的 RefPicker 段落定義（PLAN-057）。
+// 標籤對齊前台天賦卡的「▶ 最大強化」；它對應遊戲潛能提升的「天賦能力加強」，**不是滿星**——
+// 後綴因此用「強化」。改這裡的 splitKey 只影響之後新拆出的 key，既有資料不會跟著變。
+const TALENT_TEXT_SECTIONS: RefTextSection[] = [
+  { label: '初始' },
+  { label: '最大強化', splitKey: '強化' },
+]
 
 // ─── 技能條件編輯器 ────────────────────────────────────────────────────────────
 function SkillConditionEditor({
@@ -761,11 +769,13 @@ function NdVariantsEditor({
               {/* 變體 refs 與天賦 descriptionRefs 合併解析：已在天賦層指派過的 token（如 [星爆]）此處可留空 */}
               <RefPicker
                 text={[v.description, v.descriptionMax]}
+                sections={TALENT_TEXT_SECTIONS}
                 value={v.descriptionRefs}
                 onChange={(refs) => upd(idx, { descriptionRefs: refs })}
-                onCompileText={(tf) => upd(idx, {
-                  description: tf(v.description),
-                  descriptionMax: v.descriptionMax ? tf(v.descriptionMax) : v.descriptionMax,
+                onCompileText={(tf, refs) => upd(idx, {
+                  description: tf(v.description, 0),
+                  descriptionMax: v.descriptionMax ? tf(v.descriptionMax, 1) : v.descriptionMax,
+                  ...(refs && { descriptionRefs: refs }),
                 })}
               />
               <div className="flex justify-end">
@@ -872,12 +882,14 @@ function TalentItem({
                 // 算力變體正文以 {...talent.refs, ...variant.refs} 合併顯示（PilotDetailPage），
                 // 變體獨有的 [xxx] 可能只登記在天賦這份，故納入判斷
                 siblingTexts={(talent.ndVariants ?? []).flatMap((v) => [v.description, v.descriptionMax])}
+                sections={TALENT_TEXT_SECTIONS}
                 value={talent.descriptionRefs}
                 onChange={(refs) => upd('descriptionRefs', refs)}
-                onCompileText={(tf) => onChange({
+                onCompileText={(tf, refs) => onChange({
                   ...talent,
-                  description: tf(talent.description),
-                  descriptionMax: talent.descriptionMax ? tf(talent.descriptionMax) : talent.descriptionMax,
+                  description: tf(talent.description, 0),
+                  descriptionMax: talent.descriptionMax ? tf(talent.descriptionMax, 1) : talent.descriptionMax,
+                  ...(refs && { descriptionRefs: refs }),
                 })}
               />
             </div>

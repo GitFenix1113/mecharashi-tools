@@ -262,7 +262,7 @@ function ChapterCard({
         text={chapter.body}
         value={chapter.bodyRefs}
         onChange={(refs) => onPatch({ bodyRefs: refs })}
-        onCompileText={(tf) => onPatch({ body: tf(chapter.body) })}
+        onCompileText={(tf, refs) => onPatch({ body: tf(chapter.body), ...(refs && { bodyRefs: refs }) })}
       />
 
       <Field label="出處署名 source（選填，如：——《週刊米赫瑪·文娛版》）">

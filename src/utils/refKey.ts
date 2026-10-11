@@ -207,15 +207,66 @@ export function rewriteOccurrence(
   occurrence: number,
   disambig: string,
 ): string {
-  const target = `[${keyword}]`
+  return renameKeyword(text, keyword, formatRefKey(keyword, disambig), occurrence)
+}
+
+// ─── 改 key（PLAN-057 引用編輯器直觀化）────────────────────────────────────────
+
+/**
+ * 把正文中的 `[from]` 改寫為 `[to]`。給 occurrence（1-based）時只改那一次出現，
+ * 否則全部改寫；找不到時原樣回傳。
+ *
+ * 與 rewriteOccurrence 的差別：目標是**完整 key**，而非「原 key + 後綴」——
+ * 改 `[鋒勢|buff_2]` 時要能改成 `[鋒勢|強化]` 或裸的 `[鋒勢]`，不能疊成 `鋒勢|buff_2|強化`。
+ * 同樣刻意用 indexOf / split，不組動態正則（理由見 rewriteOccurrence）。
+ */
+export function renameKeyword(text: string, from: string, to: string, occurrence?: number): string {
+  const target = `[${from}]`
+  const repl = `[${to}]`
+  if (occurrence === undefined) return text.split(target).join(repl)
   let n = 0
   let i = 0
   for (;;) {
     const at = text.indexOf(target, i)
     if (at === -1) return text
-    if (++n === occurrence) {
-      return text.slice(0, at) + `[${formatRefKey(keyword, disambig)}]` + text.slice(at + target.length)
-    }
+    if (++n === occurrence) return text.slice(0, at) + repl + text.slice(at + target.length)
     i = at + target.length
   }
+}
+
+/**
+ * 改 key 之後的引用表。回傳新物件，不改動輸入。
+ *
+ *  · **目標 key 已有設定 → 原封不動**：出現處是「併入」它，不該被來源的設定蓋掉
+ *  · 否則 carry 為 true → 帶上來源的設定（level 有給就覆寫）；false → 留白待指派
+ *  · **來源 key 改寫後已無任何出現處 → 移除**，否則它會變成一筆殘留引用
+ *
+ * carry 由呼叫端依語意決定：整個 key 改名 = 搬家（帶走）；只拆出一部分 = 通常是要改指別的
+ * 東西，留白讓「已指派 n / m」亮黃燈，比默默沿用一個可能錯的目標好。
+ */
+export function renameRefEntry<T extends { refId: string; level?: number }>(
+  refs: Record<string, T>,
+  from: string,
+  to: string,
+  opts: { carry: boolean; level?: number; fromStillUsed: boolean },
+): Record<string, T> {
+  const next = { ...refs }
+  const src = refs[from]
+  if (!(to in refs) && opts.carry && src) {
+    next[to] = opts.level === undefined ? { ...src } : { ...src, level: opts.level }
+  }
+  if (!opts.fromStillUsed) delete next[from]
+  return next
+}
+
+/**
+ * 階梯 BUFF 的「下一級」：比目前級高的最小一級；目前級未指定時視為最低級。
+ * 沒有更高級時回傳 undefined —— 呼叫端應沿用原級，而不是編一個不存在的等級。
+ * levels 可亂序（實測有 [2,3,5,4] 的資料，見 buffLevelRefs.sortLevelsAscending）。
+ */
+export function nextLevel(current: number | undefined, levels: number[]): number | undefined {
+  if (!levels.length) return undefined
+  const base = current ?? Math.min(...levels)
+  const higher = levels.filter((l) => l > base)
+  return higher.length ? Math.min(...higher) : undefined
 }

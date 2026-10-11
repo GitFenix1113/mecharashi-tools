@@ -15,7 +15,7 @@ import { updateWeapon, docExists } from '../../../lib/firestoreApi'
 import { makeNumberedEntityId, maxEntitySeq, stripNumberedIdPrefix } from '../../../utils/idSlug'
 import { shareIdFloor } from '../../../utils/loadoutCode/shareIdRegistry'
 import { useGameData } from '../../../contexts/GameDataContext'
-import { RefPicker } from '../../../components/admin/RefPicker'
+import { RefPicker, type RefTextSection } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
 import { EquipGameIdField, GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
 import { WeaponIcon } from '../../../components/icons/WeaponIcon'
@@ -167,6 +167,12 @@ function WeaponSkillRefAdder({
   )
 }
 
+// 武器技能正文與專武強化天賦正文共用一份 descriptionRefs（PLAN-057 段落定義）
+const WEAPON_SKILL_TEXT_SECTIONS: RefTextSection[] = [
+  { label: '技能描述' },
+  { label: '專武強化天賦', splitKey: '專武' },
+]
+
 // ─── 武器技能項目 ──────────────────────────────────────────────────────────────
 function WeaponSkillItem({
   skill,
@@ -262,14 +268,16 @@ function WeaponSkillItem({
           */}
           <RefPicker
             text={[skill.description, skill.enhancedTalentDescription]}
+            sections={WEAPON_SKILL_TEXT_SECTIONS}
             value={skill.descriptionRefs}
             onChange={(refs) => onChange({ ...skill, descriptionRefs: refs })}
-            onCompileText={(tf) => onChange({
+            onCompileText={(tf, refs) => onChange({
               ...skill,
-              description: tf(skill.description),
+              description: tf(skill.description, 0),
               enhancedTalentDescription: skill.enhancedTalentDescription
-                ? tf(skill.enhancedTalentDescription)
+                ? tf(skill.enhancedTalentDescription, 1)
                 : skill.enhancedTalentDescription,
+              ...(refs && { descriptionRefs: refs }),
             })}
           />
           {skill.enhancesTalentName && (

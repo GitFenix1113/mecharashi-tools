@@ -1,10 +1,14 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef, type ReactNode } from 'react'
 import type { EntityRef, RefType, DescriptionRefs } from '../../types'
 import { useGameData, type CollectionKey } from '../../contexts/GameDataContext'
 import { STAT_LABELS } from '../../utils/moduleStats'
 import { RefText } from '../refs/RefText'
 import { compileSugar, orderRefsByFirstMention, detectLeftoverSugar, NUM_ATTRS } from '../../utils/numRefs'
-import { splitRefKey, countKeywordOccurrences, rewriteOccurrence, findOrphanRefKeys } from '../../utils/refKey'
+import {
+  splitRefKey, formatRefKey, countKeywordOccurrences, findOrphanRefKeys,
+  renameKeyword, renameRefEntry, nextLevel,
+} from '../../utils/refKey'
+import { RefOccurrenceText, type OccurrenceSel } from './RefOccurrenceText'
 
 // PLAN-022 Phase C：語法糖速查（registry 驅動）。$n=可疊加層數、%n=持續回合，n=已指派 [xxx] 的首次出現序。
 const SIGIL_HINTS = Object.values(NUM_ATTRS)
@@ -59,21 +63,39 @@ interface Candidate { id: string; name: string }
 const extractTokens = (text: string): string[] => [...countKeywordOccurrences(text).keys()]
 
 /**
- * 同名重複的 token（PLAN-039 B-2）：同一個**完整 key** 在正文出現 ≥2 次。
- *
- * **逐段取最大值而非合計**：天賦的 description 與 descriptionMax 是同一段能力的兩個版本，
- * 合併後計數會把「出現 2 次」報成 4 次——而 4 次會誤觸發 B-3 的「≥3 次停用」規則，
- * 讓一鍵拆分在最需要它的案例上不可用。
- *
- * 已消歧完畢的 [駐陣] / [駐陣|skill] 各算 1，不會被報成重複。
+ * 多段正文面板的段落定義（PLAN-057）。與 RefPicker 的 `text` 陣列**逐索引對齊**。
  */
-function findDuplicateTokens(parts: string[]): { token: string; count: number }[] {
-  const max = new Map<string, number>()
-  for (const p of parts) {
-    for (const [k, n] of countKeywordOccurrences(p)) max.set(k, Math.max(max.get(k) ?? 0, n))
-  }
-  return [...max].filter(([, n]) => n >= 2).map(([token, count]) => ({ token, count }))
+export interface RefTextSection {
+  /** 段落名稱，如「初始」「最大強化」 */
+  label: string
+  /**
+   * 「依段落分開指派」產生的消歧後綴（PLAN-057 B）。有值才提供該段的一鍵分開按鈕。
+   * 用段落語意命名（強化 / 專武），**不要用序號**——理由見 refKey.ts 開頭。
+   */
+  splitKey?: string
 }
+
+/**
+ * key 色票（PLAN-057 A）。依 key 首次出現序循環取用；正文標註檢視與引用清單列用同一色，兩邊一眼對得上。
+ * 同顯示字的兩個 key（[鋒勢] / [鋒勢|強化]）因此落在不同色——這正是此檢視要讓人看見的東西。
+ * 必須是完整的字面 class 字串（Tailwind 只掃描字面值，不能用模板字串拼）。
+ */
+const KEY_COLORS = [
+  'border-accent-purple/50 bg-accent-purple/15 text-accent-purple',
+  'border-accent-cyan/50 bg-accent-cyan/15 text-accent-cyan',
+  'border-accent-orange/50 bg-accent-orange/15 text-accent-orange',
+  'border-accent-green/50 bg-accent-green/15 text-accent-green',
+  'border-accent-pink/50 bg-accent-pink/15 text-accent-pink',
+  'border-accent-yellow/50 bg-accent-yellow/15 text-accent-yellow',
+  'border-accent-blue/50 bg-accent-blue/15 text-accent-blue',
+  'border-accent-red/50 bg-accent-red/15 text-accent-red',
+] as const
+
+/** 改 key 的範圍。section / occurrence 皆省略＝全部出現處。 */
+interface RenameScope { section?: number; occurrence?: number }
+
+/** 消歧後綴不可含的字元：括號會破壞 token 邊界、'|' 會多切一刀、#$% 是語法糖 sigil、<> 是數值 token */
+const SUFFIX_FORBIDDEN = /[[\]|#$%<>\s]/g
 
 /** 依 refType 從 GameData 取候選實體（並懶載對應集合）。 */
 function useCandidates(refType: RefType | ''): Candidate[] {
@@ -106,15 +128,34 @@ function TokenRow({
   assigned,
   onAssign,
   onClear,
+  colorClass,
+  countsLabel,
+  selected,
+  onSelect,
+  children,
 }: {
   token: string
   assigned?: EntityRef
   onAssign: (ref: EntityRef) => void
   onClear: () => void
+  /** PLAN-057：與正文標註檢視同一色，兩邊對得上 */
+  colorClass: string
+  /** 出現位置摘要，如「初始 2 · 最大強化 0」 */
+  countsLabel?: string
+  selected: boolean
+  onSelect: () => void
+  /** 選取時展開的工具（改 key / 依段落分開指派） */
+  children?: ReactNode
 }) {
   const [open, setOpen]           = useState(false)
   const [pickerType, setPickerType] = useState<RefType | ''>(assigned?.refType ?? 'term')
   const [search, setSearch]       = useState('')
+
+  // 從正文點膠囊選到這一列時，把它捲進視野（清單可能在正文下方很遠）
+  const rowRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (selected) rowRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [selected])
 
   // PLAN-039：token 可能是帶消歧後綴的 key（'駐陣|skill'）。列標題顯示前台實際看到的字，
   // 後綴另掛徽章——兩列同名並排時，一眼看得出「這是同一個詞的第二種語意」。
@@ -147,15 +188,24 @@ function TokenRow({
   }, [candidates, search])
 
   return (
-    <div className="bg-bg-dark border border-border/60 rounded-lg px-3 py-2.5">
+    <div
+      ref={rowRef}
+      className={`bg-bg-dark border rounded-lg px-3 py-2.5 ${selected ? 'border-text-primary/40 ring-1 ring-text-primary/30' : 'border-border/60'}`}
+    >
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-semibold text-accent-purple text-sm">[{display}]</span>
+        <button
+          type="button"
+          onClick={onSelect}
+          className={`font-semibold text-sm px-1.5 rounded border cursor-pointer hover:brightness-125 ${colorClass} ${assigned ? '' : 'border-dashed'}`}
+          title="在正文中標出這筆引用的所有出現處"
+        >[{display}]</button>
         {disambig && (
           <span
-            className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-accent-orange/30 bg-accent-orange/10 text-accent-orange"
+            className="text-[10px] font-mono text-text-dim"
             title={`同名消歧鍵：此標記在資料中的 key 為「${token}」，前台顯示時會剝除後綴`}
-          >|{disambig}</span>
+          >key：{token}</span>
         )}
+        {countsLabel && <span className="text-[11px] text-text-dim">{countsLabel}</span>}
         <span className="text-text-dim text-xs">→</span>
         {assigned ? (
           <span className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded border border-accent-cyan/30 bg-accent-cyan/10 text-accent-cyan">
@@ -232,6 +282,135 @@ function TokenRow({
           </div>
         </div>
       )}
+
+      {selected && children}
+    </div>
+  )
+}
+
+// ── 改 key 工具（PLAN-057 A / B）──────────────────────────────────────────────
+// 取代 PLAN-039 的頂部「同名引用標記」面板。舊面板有三個問題：已消歧過的 key 仍被報成重複、
+// 預設後綴一律 skill、只能改「各段的第 N 處」——做不到「最大強化段整段換一個 key」。
+// 改成掛在被選取的那一筆引用底下：先選到詞，再決定要拆哪些出現處。
+function KeyTools({
+  token,
+  sel,
+  counts,
+  sections,
+  refs,
+  assigned,
+  buffLevels,
+  blocked,
+  isLive,
+  onRename,
+}: {
+  token: string
+  sel: OccurrenceSel
+  /** 各段的出現次數（與 sections 逐索引對齊） */
+  counts: number[]
+  sections: RefTextSection[]
+  refs: DescriptionRefs
+  assigned?: EntityRef
+  /** 已指派為階梯 buff 時的可用等級（B 的自動 +1 級用） */
+  buffLevels: number[]
+  /** 仍有未代入的語法糖：改 key 會改變 $n 的編號基準（PLAN-039 決策五） */
+  blocked: boolean
+  /** key 是否仍有正文在用；否＝殘留引用（改 key 併入時的規則不同，見 RefPicker.rename） */
+  isLive: (key: string) => boolean
+  onRename: (from: string, to: string, scope: RenameScope, opts: { carry: boolean; level?: number }) => void
+}) {
+  const { display, disambig } = splitRefKey(token)
+  const [suffix, setSuffix] = useState(disambig ?? '')
+  const target = formatRefKey(display, suffix)
+  const total = counts.reduce((a, b) => a + b, 0)
+  const multi = counts.length > 1
+  const targetExists = target !== token && !!refs[target]
+  const targetIsOrphan = targetExists && !isLive(target)
+
+  // B：依段落分開指派。只在「這段有、別段也有」時才有意義——只出現在單一段的 key 本來就是獨立的
+  const splits = sections.flatMap((sec, i) => {
+    if (!sec.splitKey || !counts[i] || total === counts[i]) return []
+    const to = formatRefKey(display, sec.splitKey)
+    if (to === token) return []
+    const bumped = assigned?.refType === 'buff' ? nextLevel(assigned.level, buffLevels) : undefined
+    return [{ i, label: sec.label, to, n: counts[i], bumped }]
+  })
+
+  const btn = 'px-2 py-0.5 rounded border text-[11px] disabled:opacity-40 disabled:cursor-not-allowed'
+
+  return (
+    <div className="mt-2.5 pt-2.5 border-t border-border/40 space-y-2.5 text-[11px]">
+      {splits.map(({ i, label, to, n, bumped }) => (
+        <div key={i} className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            disabled={blocked}
+            onClick={() => onRename(token, to, { section: i }, { carry: true, level: bumped })}
+            className={`${btn} border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan hover:bg-accent-cyan/20`}
+          >「{label}」段分開指派（{n} 處）</button>
+          <span className="text-text-dim">
+            → <code className="text-text-secondary">[{to}]</code>
+            {refs[to] && isLive(to)
+              ? '，併入既有設定'
+              : assigned
+                ? `，沿用目前目標${bumped !== undefined ? `、等級 Lv${assigned.level ?? '—'} → Lv${bumped}` : ''}`
+                : '，待指派'}
+          </span>
+        </div>
+      ))}
+
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-text-dim">改 key：</span>
+          <code className="text-text-secondary">[{display}|</code>
+          <input
+            value={suffix}
+            onChange={(e) => setSuffix(e.target.value.replace(SUFFIX_FORBIDDEN, ''))}
+            placeholder="留空＝不帶後綴"
+            // 不用 .input-field：它寫在 @layer 之外、優先權高於 utility，w-28 / text-[11px] 會被蓋掉、撐滿整列
+            className="w-28 text-[11px] bg-bg-card border border-border rounded px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-accent-cyan"
+          />
+          <code className="text-text-secondary">]</code>
+          {sel.section !== undefined && sel.occurrence !== undefined && total >= 2 && (
+            <button
+              type="button"
+              disabled={blocked || target === token}
+              onClick={() => onRename(token, target, { section: sel.section, occurrence: sel.occurrence }, { carry: false })}
+              className={`${btn} border-accent-orange/40 bg-accent-orange/10 text-accent-orange hover:bg-accent-orange/20`}
+              title="只改寫你在正文點到的那一處；新 key 留白待指派"
+            >只改這一處</button>
+          )}
+          {multi && sel.section !== undefined && counts[sel.section] > 0 && counts[sel.section] < total && (
+            <button
+              type="button"
+              disabled={blocked || target === token}
+              onClick={() => onRename(token, target, { section: sel.section }, { carry: false })}
+              className={`${btn} border-accent-orange/40 bg-accent-orange/10 text-accent-orange hover:bg-accent-orange/20`}
+              title="只改寫這一段的所有出現處；新 key 留白待指派"
+            >只改「{sections[sel.section]?.label}」段（{counts[sel.section]}）</button>
+          )}
+          <button
+            type="button"
+            disabled={blocked || target === token}
+            onClick={() => onRename(token, target, {}, { carry: true })}
+            className={`${btn} border-accent-orange/40 bg-accent-orange/10 text-accent-orange hover:bg-accent-orange/20`}
+            title="改寫所有出現處，目前的指派一併帶過去"
+          >全部改（{total}）</button>
+        </div>
+        <div className="text-text-dim leading-relaxed">
+          key 只供後台區分，前台一律顯示 <code>[{display}]</code>。
+          {targetIsOrphan ? (
+            <span className="text-accent-yellow">
+              {' '}<code>[{target}]</code> 目前是殘留引用：「全部改」會以這筆的設定取代它；只改部分出現處則沿用它的舊設定。
+            </span>
+          ) : targetExists ? (
+            <span className="text-accent-yellow"> <code>[{target}]</code> 已存在 → 會併入它、沿用它的設定。</span>
+          ) : ' 改成已存在的 key 會併入它、沿用它的設定。'}
+        </div>
+        {blocked && (
+          <div className="text-accent-yellow">← 請先代入下方的數值語法糖（改 key 會改變 $n 的編號基準）</div>
+        )}
+      </div>
     </div>
   )
 }
@@ -270,6 +449,7 @@ function OrphanRow({ token, entry, onClear }: {
 // ── RefPicker 主體 ─────────────────────────────────────────────────────────────
 export function RefPicker({
   text,
+  sections,
   siblingTexts,
   value,
   onChange,
@@ -278,12 +458,18 @@ export function RefPicker({
   /**
    * 正文。多欄位面板（天賦的 description + descriptionMax）**應傳陣列**：
    * join 後的單一字串無法分辨「同一個 [xxx] 在兩個版本各出現一次」與「在同一版本出現兩次」，
-   * 而這兩者對同名消歧的判定完全相反（PLAN-039 B-2）。傳字串 = 單段，既有行為不變。
-   * 陣列元素可為 undefined（選填欄位如 descriptionMax 直接傳即可），空值會被略過。
+   * 而改 key 的「只改這一段」必須知道每一處落在哪一段（PLAN-057）。傳字串 = 單段，既有行為不變。
+   * 陣列元素可為 undefined（選填欄位如 descriptionMax 直接傳即可）；**索引保持對齊**，
+   * 空段只是不顯示——transform 的 part 參數靠的就是這個索引。
    */
   text: string | (string | undefined)[]
   /**
-   * 共用同一份 `value`、但**不在本面板編輯**的正文。只用於孤兒偵測，不影響其他功能。
+   * 各段的名稱與「依段落分開指派」後綴（PLAN-057），與 `text` 逐索引對齊。
+   * 未傳時多段面板顯示「第 N 段」，且不提供一鍵分開。
+   */
+  sections?: RefTextSection[]
+  /**
+   * 共用同一份 `value`、但**不在本面板編輯**的正文。只用於孤兒偵測（含改 key 後判斷舊 key 是否還有人用）。
    *
    * 全站有兩種共用型態，漏傳就會把活引用誤報成殘留（而使用者一按清除就真的刪掉）：
    *   · 子項未填 refs 時回退父層 —— 模組 / BUFF / 背包技能的 `levels[].description`
@@ -298,22 +484,26 @@ export function RefPicker({
    * （如 description / descriptionMax）分別套用 —— 邏輯集中、消費端只接一行。
    * 未傳則相關按鈕不顯示（既有面板零回歸）。
    *
-   * 目前有兩個用途，共用同一條管道：
-   *   ① PLAN-022 Phase C：把編輯期語法糖 $n/%n 編譯成正式 token
-   *   ② PLAN-039 B-3：把同名 [xxx] 的指定一處改寫為帶消歧後綴的形式
+   *   · `part`：該正文在 `text` 陣列中的索引。多段消費端**必須逐段傳入**（`tf(descriptionMax, 1)`），
+   *     否則「只改這一段」會改到每一段；單段消費端可省略（視為 0）。
+   *   · `nextRefs`：改 key 會同時改正文與引用表（PLAN-057）。有值時**必須與正文在同一次更新寫入**——
+   *     天賦編輯器的 `upd` 是 `onChange({ ...talent, ... })` 的閉包，分兩次呼叫的話後一次會蓋掉前一次。
+   *
+   * 用途：① PLAN-022 Phase C 語法糖代入；② PLAN-057 改 key / 依段落分開指派。
    * 名稱沿用 compile 是歷史因素；它描述的是機制（交出 transform）而非特定用途。
    */
-  onCompileText?: (transform: (s: string) => string) => void
+  onCompileText?: (transform: (s: string, part?: number) => string, nextRefs?: DescriptionRefs) => void
 }) {
-  // 陣列 → 各段獨立（供同名計數）；字串 → 單段。joined 供 tokenize / 語法糖 / 預覽沿用既有邏輯。
+  // 陣列 → 各段（索引對齊、空段為 ''）；字串 → 單段。joined 供 tokenize / 語法糖 / 預覽沿用既有邏輯。
   const parts  = useMemo(
-    () => (Array.isArray(text) ? text.filter((s): s is string => !!s) : [text || '']),
+    () => (Array.isArray(text) ? text.map((s) => s ?? '') : [text || '']),
     [text],
   )
-  const joined = useMemo(() => parts.join('\n'), [parts])
+  const joined = useMemo(() => parts.filter(Boolean).join('\n'), [parts])
 
   const tokens = useMemo(() => extractTokens(joined), [joined])
   const refs = value ?? {}
+  const gd = useGameData()
 
   function assign(token: string, ref: EntityRef) {
     onChange({ ...refs, [token]: ref })
@@ -336,13 +526,48 @@ export function RefPicker({
   )
   const [previewing, setPreviewing] = useState(false)
 
-  // ── PLAN-039 B-2/B-3：同名引用消歧 ────────────────────────────────────────────
-  const duplicates = useMemo(() => findDuplicateTokens(parts), [parts])
-  // 各 token 的消歧鍵輸入。預設 skill —— 同名的兩種語意最常是「指令/技能」對「狀態/BUFF」，
-  // 而慣例是讓裸 key 留給 BUFF、帶後綴的那個標成 skill。
-  const [disambigInput, setDisambigInput] = useState<Record<string, string>>({})
-  // 拆分會改變 orderRefsByFirstMention 的編號基準 → 未代入的 $n 會指到錯誤的引用（決策五）
-  const splitBlocked = leftoverSugar.length > 0
+  // ── PLAN-057：標註檢視與改 key ────────────────────────────────────────────────
+  const secs: RefTextSection[] = parts.map((_, i) => sections?.[i] ?? { label: `第 ${i + 1} 段` })
+  const multi = parts.length > 1
+  const partCounts = useMemo(() => parts.map((p) => countKeywordOccurrences(p)), [parts])
+  const countsOf = (key: string) => partCounts.map((m) => m.get(key) ?? 0)
+  const colorIndex = useMemo(() => new Map(tokens.map((t, i) => [t, i])), [tokens])
+  const colorOf = (key: string) => KEY_COLORS[(colorIndex.get(key) ?? 0) % KEY_COLORS.length]
+  const [sel, setSel] = useState<OccurrenceSel | null>(null)
+  // 改 key / 清掉正文後，選取的 key 可能已不在正文裡 → 視同未選取
+  const activeSel = sel && tokens.includes(sel.key) ? sel : null
+  // 改 key 會改變 orderRefsByFirstMention 的編號基準 → 未代入的 $n 會指到錯誤的引用（PLAN-039 決策五）
+  const renameBlocked = leftoverSugar.length > 0
+
+  function countsLabel(key: string): string | undefined {
+    const c = countsOf(key)
+    if (multi) return secs.map((s, i) => (parts[i] ? `${s.label} ${c[i]}` : null)).filter(Boolean).join(' · ')
+    return c[0] > 1 ? `出現 ${c[0]} 次` : undefined
+  }
+
+  function levelsOf(ref?: EntityRef): number[] {
+    if (ref?.refType !== 'buff') return []
+    return (gd.buffs.find((b) => b.id === ref.refId)?.levels ?? []).map((l) => l.level)
+  }
+
+  /** key 是否仍有正文在用（本面板各段＋共用同一份引用表的姊妹正文）。否＝殘留引用。 */
+  const isLive = (key: string) =>
+    [...parts, ...(siblingTexts ?? [])].some((t) => !!t && t.includes(`[${key}]`))
+
+  function rename(from: string, to: string, scope: RenameScope, opts: { carry: boolean; level?: number }) {
+    if (!onCompileText || from === to) return
+    const tf = (s: string, part = 0) =>
+      scope.section === undefined || scope.section === part ? renameKeyword(s, from, to, scope.occurrence) : s
+    const after = parts.map((p, i) => tf(p, i))
+    const fromStillUsed = [...after, ...(siblingTexts ?? [])].some((t) => !!t && t.includes(`[${from}]`))
+    // 目標只是殘留引用時，「搬家」要以來源的設定取代它——殘留是死資料，來源才是維護者正在用的。
+    // 實際案例：珂賽特把 [鋒勢|buff_1]（Lv1）改回 [鋒勢]，而 [鋒勢] 是拆分前留下、沒設等級的殘留；
+    // 照「併入既有」的規則，Lv1 會被它默默蓋掉。只拆出一部分（carry=false）則沿用殘留——那通常是想找回舊設定。
+    const base = { ...refs }
+    if (opts.carry && to in base && !isLive(to)) delete base[to]
+    onCompileText(tf, renameRefEntry(base, from, to, { ...opts, fromStillUsed }))
+    setSel({ key: to, section: scope.section })
+  }
 
   // ── 孤兒引用：refs 有、正文沒有 ───────────────────────────────────────────────
   // siblingTexts 一併納入判斷（見 prop 說明）。join 成字串當 deps：呼叫端多半直接寫
@@ -368,69 +593,6 @@ export function RefPicker({
         )}
       </div>
 
-      {/* PLAN-039 B-2：同名重複偵測。是提示不是錯誤——同名同義是絕大多數情況的正確狀態 */}
-      {duplicates.length > 0 && (
-        <div className="rounded-lg border border-accent-orange/30 bg-accent-orange/5 px-3 py-2.5 space-y-2">
-          <div className="text-[12px] font-semibold text-accent-orange">🔀 同名引用標記</div>
-          <div className="text-[11px] text-text-dim leading-relaxed">
-            下列標記在同一段正文出現多次，目前<strong className="text-text-secondary">全部指向同一個實體</strong>。
-            各處語意相同時（多數情況）無需處理；語意不同時——例如一處是「可使用指令<code>[駐陣]</code>」＝技能、
-            另一處是「處於<code>[駐陣]</code>狀態」＝BUFF——替其中一處加上消歧鍵即可各自指派，
-            <strong className="text-text-secondary">前台顯示的文字不受影響</strong>。
-            <div className="mt-1">
-              分隔符固定為 <code className="text-accent-orange">|</code>；
-              <code>#</code> 會被當成數值語法糖而改壞正文，不可使用。
-            </div>
-          </div>
-          {duplicates.map(({ token, count }) => {
-            const dis = disambigInput[token] ?? 'skill'
-            const tooMany = count > 4                 // 按鈕會排不下；此時請直接編輯正文
-            return (
-              <div key={token} className="flex items-center gap-2 flex-wrap text-[11px] pt-1.5 border-t border-accent-orange/15">
-                <span className="font-semibold text-accent-purple">[{token}]</span>
-                <span className="text-text-dim">出現 {count} 次</span>
-                {onCompileText && !tooMany && (
-                  <>
-                    <input
-                      value={dis}
-                      onChange={(e) => setDisambigInput((prev) => ({
-                        // 方括號會破壞 token 邊界、'|' 會讓 key 出現第二個分隔符 → 直接濾掉
-                        ...prev, [token]: e.target.value.replace(/[[\]|]/g, ''),
-                      }))}
-                      placeholder="skill"
-                      className="input-field text-[11px] w-20 py-0.5"
-                      title="消歧鍵：會成為 key 的後綴（駐陣|skill），前台顯示時剝除"
-                    />
-                    {Array.from({ length: count }, (_, k) => (
-                      <button
-                        key={k}
-                        type="button"
-                        disabled={splitBlocked || !dis}
-                        onClick={() => onCompileText((s) => rewriteOccurrence(s, token, k + 1, dis))}
-                        className="px-2 py-0.5 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange hover:bg-accent-orange/20 disabled:opacity-40 disabled:cursor-not-allowed"
-                        title={`把第 ${k + 1} 處 [${token}] 改寫為 [${token}|${dis || 'skill'}]`}
-                      >標記第 {k + 1} 處</button>
-                    ))}
-                  </>
-                )}
-                {onCompileText && tooMany && (
-                  <span className="text-text-dim">出現次數過多，請直接在上方正文手動加上 <code>|{dis}</code> 後綴</span>
-                )}
-                {onCompileText && splitBlocked && !tooMany && (
-                  <span className="text-accent-yellow">← 請先代入下方的數值語法糖（拆分會改變 $n 的編號基準）</span>
-                )}
-                {onCompileText && parts.length > 1 && !tooMany && (
-                  <span className="text-text-dim w-full">
-                    此面板有 {parts.length} 段正文（如初始 / 滿星），改寫會同時套用到<strong className="text-text-secondary">各段的第 N 處</strong>；
-                    若兩段句子結構不同，請改為手動編輯。
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
-
       {/* 殘留引用：正文改字後留下的死 key。放在 tokens 判斷之外——正文的標記全被刪光時
           殘留反而最多，而那正是最需要看見它的時候。 */}
       {orphanKeys.length > 0 && (
@@ -439,13 +601,17 @@ export function RefPicker({
             🧹 殘留引用 {orphanKeys.length} 筆（正文中已無此標記）
           </div>
           <div className="text-[11px] text-text-dim leading-relaxed">
-            引用表的 key 就是括號內的字，所以<strong className="text-text-secondary">改動標記用字等於換一個 key</strong>
-            （如 <code>[機兵型態]</code> → <code>[機兵形態]</code>），舊那筆會留下來且不會出現在上面的清單裡。
-            殘留本身不影響前台顯示，但<strong className="text-text-secondary">刪除該實體時仍會被算成一處引用</strong>。
-            <div className="mt-1">
-              清除後需<strong className="text-text-secondary">按下儲存</strong>才會寫回資料庫。
-              若此標記其實用在別處共用同一份引用表的正文（如專武強化敘述、其他等級的文本），請勿清除。
-            </div>
+            清除後需<strong className="text-text-secondary">按下儲存</strong>才會寫回資料庫。
+            專武強化敘述、其他等級的文本若共用這份引用表，清除前先確認那邊沒有用到。
+            {/* PLAN-057 C：長說明收合——每次開面板都要讀完一整段，真正要做的決定反而被淹沒 */}
+            <details className="mt-1">
+              <summary className="cursor-pointer select-none hover:text-text-secondary">為什麼會有殘留？</summary>
+              <div className="mt-1">
+                引用表的 key 就是括號內的字，所以<strong className="text-text-secondary">改動標記用字等於換一個 key</strong>
+                （如 <code>[機兵型態]</code> → <code>[機兵形態]</code>），舊那筆會留下來且不會出現在下面的清單裡。
+                殘留本身不影響前台顯示，但<strong className="text-text-secondary">刪除該實體時仍會被算成一處引用</strong>。
+              </div>
+            </details>
           </div>
           {orphanKeys.map((key) => (
             <OrphanRow key={key} token={key} entry={refs[key]} onClear={() => clear(key)} />
@@ -459,6 +625,31 @@ export function RefPicker({
         </p>
       ) : (
         <>
+          {/* PLAN-057 A：標註檢視。正文原樣顯示，每個 [xxx] 換成與下方清單同色的膠囊 */}
+          <div className="rounded-lg border border-border/60 bg-bg-dark/40 px-3 py-2.5 space-y-2">
+            <div className="flex items-center justify-between gap-2 text-[11px] text-text-dim">
+              <span>點正文裡的詞即可編輯 · 同色＝同一筆引用 · 虛線＝未指派</span>
+              {activeSel && (
+                <button type="button" onClick={() => setSel(null)} className="hover:text-text-secondary">取消選取</button>
+              )}
+            </div>
+            {parts.map((p, i) => p && (
+              <div key={i}>
+                {multi && <div className="text-[11px] text-text-dim mb-0.5">{secs[i].label}</div>}
+                <p className="text-xs text-text-secondary leading-6 whitespace-pre-wrap">
+                  <RefOccurrenceText
+                    text={p}
+                    section={i}
+                    refs={refs}
+                    colorOf={colorOf}
+                    selected={activeSel}
+                    onSelect={setSel}
+                  />
+                </p>
+              </div>
+            ))}
+          </div>
+
           <div className="space-y-1.5">
             {tokens.map(token => (
               <TokenRow
@@ -467,7 +658,28 @@ export function RefPicker({
                 assigned={refs[token]}
                 onAssign={(ref) => assign(token, ref)}
                 onClear={() => clear(token)}
-              />
+                colorClass={colorOf(token)}
+                countsLabel={countsLabel(token)}
+                selected={activeSel?.key === token}
+                onSelect={() => setSel(activeSel?.key === token ? null : { key: token })}
+              >
+                {onCompileText && activeSel?.key === token && (
+                  <KeyTools
+                    // 換選另一處時重置後綴輸入
+                    key={`${token}:${activeSel.section}:${activeSel.occurrence}`}
+                    token={token}
+                    sel={activeSel}
+                    counts={countsOf(token)}
+                    sections={secs}
+                    refs={refs}
+                    assigned={refs[token]}
+                    buffLevels={levelsOf(refs[token])}
+                    blocked={renameBlocked}
+                    isLive={isLive}
+                    onRename={rename}
+                  />
+                )}
+              </TokenRow>
             ))}
           </div>
 

@@ -324,7 +324,7 @@ function FormEditPanel({
           text={form.description}
           value={form.descriptionRefs}
           onChange={(refs) => update('descriptionRefs', refs)}
-          onCompileText={(tf) => update('description', tf(form.description))}
+          onCompileText={(tf, refs) => { update('description', tf(form.description)); if (refs) update('descriptionRefs', refs) }}
         />
 
         {/* ── 裝備限制（discriminated union）───────────────────────────────── */}

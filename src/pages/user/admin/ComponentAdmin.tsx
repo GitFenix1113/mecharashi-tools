@@ -329,7 +329,7 @@ function ComponentEditPanel({
           text={form.description}
           value={form.descriptionRefs}
           onChange={(refs) => updateBase('descriptionRefs', refs)}
-          onCompileText={(tf) => updateBase('description', tf(form.description))}
+          onCompileText={(tf, refs) => { updateBase('description', tf(form.description)); if (refs) updateBase('descriptionRefs', refs) }}
         />
 
         {isCondition ? (

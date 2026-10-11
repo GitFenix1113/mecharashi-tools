@@ -331,7 +331,7 @@ function BuffEditPanel({
           siblingTexts={(form.levels ?? []).map((lv) => lv.description)}
           value={form.descriptionRefs}
           onChange={(refs) => update('descriptionRefs', refs)}
-          onCompileText={(tf) => update('description', tf(form.description))}
+          onCompileText={(tf, refs) => { update('description', tf(form.description)); if (refs) update('descriptionRefs', refs) }}
         />
 
         {!isLeveled ? (

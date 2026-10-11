@@ -267,7 +267,7 @@ function NdAbilityEditPanel({
           text={form.description}
           value={form.descriptionRefs}
           onChange={(refs) => update('descriptionRefs', refs)}
-          onCompileText={(tf) => update('description', tf(form.description))}
+          onCompileText={(tf, refs) => { update('description', tf(form.description)); if (refs) update('descriptionRefs', refs) }}
         />
 
         {/* 可計算效果 */}

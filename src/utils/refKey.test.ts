@@ -5,6 +5,7 @@ import assert from 'node:assert/strict'
 import {
   splitRefKey, displayKeyword, formatRefKey, DISAMBIG_SEP,
   countKeywordOccurrences, rewriteOccurrence, markKeywords, extractKeywords, findOrphanRefKeys,
+  renameKeyword, renameRefEntry, nextLevel,
 } from './refKey.ts'
 import { detectLeftoverSugar, compileSugar, orderRefsByFirstMention } from './numRefs.ts'
 
@@ -273,4 +274,65 @@ test('findOrphanRefKeys：空值輸入不炸、也不誤報', () => {
   assert.deepEqual(findOrphanRefKeys(['[追擊]'], undefined), [])
   assert.deepEqual(findOrphanRefKeys([undefined, ''], {}), [])
   assert.deepEqual(findOrphanRefKeys([undefined, ''], { 追擊: {} }), ['追擊'])
+})
+
+// ─── PLAN-057：改 key（renameKeyword / renameRefEntry / nextLevel）────────────────
+
+const 鋒勢初始 = '每移動1格獲得1層[鋒勢];使用主動技能消耗[鋒勢]突破後獲得[銳羽]'
+const 鋒勢強化 = '每移動1格獲得1層[鋒勢];使用主動技能消耗[鋒勢]突破;出擊時獲得5層[鋒勢],[鋒勢]上限+5'
+
+test('renameKeyword：不給 occurrence → 全部改寫，其他 key 不動', () => {
+  assert.equal(renameKeyword(鋒勢強化, '鋒勢', '鋒勢|強化'),
+    '每移動1格獲得1層[鋒勢|強化];使用主動技能消耗[鋒勢|強化]突破;出擊時獲得5層[鋒勢|強化],[鋒勢|強化]上限+5')
+  assert.equal(renameKeyword(鋒勢初始, '鋒勢', '鋒勢|強化').includes('[銳羽]'), true)
+})
+
+test('renameKeyword：目標是完整 key —— 可改掉既有後綴、也可改回裸 key，不會疊後綴', () => {
+  assert.equal(renameKeyword('[鋒勢|buff_2]與[鋒勢|buff_2]', '鋒勢|buff_2', '鋒勢|強化'), '[鋒勢|強化]與[鋒勢|強化]')
+  assert.equal(renameKeyword('[鋒勢|buff_1]', '鋒勢|buff_1', '鋒勢'), '[鋒勢]')
+})
+
+test('renameKeyword：給 occurrence → 只改那一次；超出次數原樣回傳', () => {
+  assert.equal(renameKeyword('得[A]後再[A]', 'A', 'A|skill', 2), '得[A]後再[A|skill]')
+  assert.equal(renameKeyword('只有[A]一次', 'A', 'A|skill', 2), '只有[A]一次')
+})
+
+test('renameKeyword：不誤傷前綴相同的其他 key（[駐陣] 不命中 [駐陣|skill]）', () => {
+  assert.equal(renameKeyword('[駐陣|skill]與[駐陣]', '駐陣', '駐陣|buff'), '[駐陣|skill]與[駐陣|buff]')
+  assert.equal(renameKeyword('[凝勢.強化]與[凝勢X強化]', '凝勢.強化', '凝勢.強化|buff'), '[凝勢.強化|buff]與[凝勢X強化]')
+})
+
+test('renameRefEntry：整段搬家（carry）→ 帶走設定、可覆寫 level；來源已無出現處就移除', () => {
+  const refs = { 鋒勢: { refId: 'buff_鋒勢', level: 1 }, 銳羽: { refId: 'buff_銳羽' } }
+  assert.deepEqual(
+    renameRefEntry(refs, '鋒勢', '鋒勢|強化', { carry: true, level: 2, fromStillUsed: true }),
+    { 鋒勢: { refId: 'buff_鋒勢', level: 1 }, 銳羽: { refId: 'buff_銳羽' }, '鋒勢|強化': { refId: 'buff_鋒勢', level: 2 } },
+  )
+  assert.deepEqual(
+    renameRefEntry(refs, '鋒勢', '鋒勢|強化', { carry: true, fromStillUsed: false }),
+    { 銳羽: { refId: 'buff_銳羽' }, '鋒勢|強化': { refId: 'buff_鋒勢', level: 1 } },
+  )
+})
+
+test('renameRefEntry：目標 key 已有設定 → 併入，不被來源覆蓋', () => {
+  const refs = { '鋒勢|buff_1': { refId: 'buff_鋒勢', level: 1 }, 鋒勢: { refId: 'buff_鋒勢' } }
+  assert.deepEqual(
+    renameRefEntry(refs, '鋒勢|buff_1', '鋒勢', { carry: true, fromStillUsed: false }),
+    { 鋒勢: { refId: 'buff_鋒勢' } },
+  )
+})
+
+test('renameRefEntry：只拆出一部分（carry=false）→ 新 key 留白待指派、來源保留', () => {
+  const refs = { 駐陣: { refId: 'buff_駐陣' } }
+  assert.deepEqual(renameRefEntry(refs, '駐陣', '駐陣|skill', { carry: false, fromStillUsed: true }), refs)
+  // 不改動輸入
+  assert.deepEqual(refs, { 駐陣: { refId: 'buff_駐陣' } })
+})
+
+test('nextLevel：取比目前高的最小一級；未指定＝最低級；沒有更高級回 undefined', () => {
+  assert.equal(nextLevel(1, [1, 2]), 2)
+  assert.equal(nextLevel(undefined, [1, 2]), 2)
+  assert.equal(nextLevel(2, [1, 2]), undefined)
+  assert.equal(nextLevel(3, [2, 3, 5, 4]), 4)        // 亂序 levels
+  assert.equal(nextLevel(1, []), undefined)          // 非階梯 buff
 })
