@@ -19,7 +19,9 @@ import { WeaponSkillCard } from '../../components/cards/WeaponSkillCard'
 import { buildUpgradeIndex, deriveFusedSkillNames, isCompositeWeapon } from '../../utils/weaponUpgrade'
 import { resolveWeaponSkills } from '../../utils/weaponSkills'
 import { naOr, isNaStat, isVariableStat, variableStatNote } from '../../utils/weaponStats'
-import type { Weapon } from '../../types'
+import { useReference } from '../../contexts/ReferenceContext'
+import { useIsMobile } from '../../hooks/useIsMobile'
+import type { EntityRef, Weapon } from '../../types'
 
 // ── 固定武裝的宿主（2026-10-10）──────────────────────────────────────────────
 //
@@ -132,16 +134,45 @@ function CompositeBadge() {
   )
 }
 
-/** 進階鏈上可點擊的武器 chip（連向該武器詳情頁）。 */
-function WeaponChainLink({ weapon }: { weapon: Weapon }) {
+/**
+ * 可點擊的武器 chip（進階鏈、同類專武共用）：連向該武器詳情頁，滑過時浮窗預覽技能（RefWeaponSkills）。
+ *
+ * ⚠ 與 RefChip 刻意不同：桌面「點擊＝前往」而不是釘選——它長得就是導航卡片，點了沒換頁反而像壞掉，
+ *   預覽已經由 hover 給了。手機沒有 hover，點擊改成開 BottomSheet（技能＋「查看完整詳情 →」），
+ *   否則手機上比不了技能、只能一把一把點進去再退出來。
+ */
+function WeaponHoverLink({ weapon, sub, hideRarity = false }: {
+  weapon: Weapon
+  /** 名稱下方的小字（同類專武放專屬機師名） */
+  sub?: string
+  /** 同類專武全是 SS，每顆都掛 SS 只是雜訊 */
+  hideRarity?: boolean
+}) {
+  const { hoverRef, leaveRef, pinRef } = useReference()
+  const isMobile = useIsMobile()
+  const ref: EntityRef = { refType: 'weapon', refId: weapon.id }
   return (
     <Link
       to={`/weapons/${weapon.id}`}
+      onMouseEnter={(e) => hoverRef(ref, e.currentTarget)}
+      onMouseLeave={leaveRef}
+      onClick={(e) => {
+        if (!isMobile) return
+        e.preventDefault()
+        pinRef(ref, e.currentTarget)
+      }}
       className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bg-dark border border-border hover:border-accent-cyan transition-colors"
     >
       <WeaponIcon gameId={weapon.gameId} icon={weapon.icon} name={weapon.name} size="sm" isExclusive={weapon.isExclusive} />
-      <span className="text-sm text-text-secondary">{weapon.name}</span>
-      <WeaponRarityBadge rarity={weapon.rarity} />
+      {sub ? (
+        <span className="flex flex-col leading-tight">
+          <span className="text-sm text-text-secondary">{weapon.name}</span>
+          <span className="text-[11px] text-text-dim">{sub}</span>
+        </span>
+      ) : (
+        <span className="text-sm text-text-secondary">{weapon.name}</span>
+      )}
+      {!hideRarity && <WeaponRarityBadge rarity={weapon.rarity} />}
     </Link>
   )
 }
@@ -203,6 +234,19 @@ export default function WeaponDetailPage() {
     () => (weapon ? (index.childrenOf.get(weapon.id) ?? []).map((cid) => byId.get(cid)).filter(Boolean) as Weapon[] : []),
     [weapon, index, byId],
   )
+
+  // ── 同類專武（2026-10-11）：專武常被混搭，看這把的人會想比較同種類的其他專武 ──────────
+  // 只在專武頁顯示（站長決定）；不列自己。從已載入的 weapons 篩，不多讀任何集合。
+  // 依文件 id 排序＝依建檔流水號（weapon_101_ < weapon_158_），也就是大致的登場順序
+  const sameKindExclusives = useMemo(
+    () => (weapon?.isExclusive
+      ? weapons
+          .filter((w) => w.isExclusive && w.kind === weapon.kind && w.id !== weapon.id)
+          .sort((a, b) => a.id.localeCompare(b.id))
+      : []),
+    [weapon, weapons],
+  )
+
   // PLAN-032：技能雙格式，一律先解析再用。技能庫載入中時 map 為空，引用格式會解析成 0 筆——
   // 故下方技能區的顯示 gate 接在 skills（解析後）而非 weapon.skills 上。
   // loading 一定要接進頁面 gate：只解構 data 的話，技能庫還沒到（或抓取失敗）時
@@ -227,7 +271,7 @@ export default function WeaponDetailPage() {
   if (loading || skillsLoading) {
     return (
       <LoadingSkeleton
-        split={!weapon || (weapon.skills?.length ?? 0) > 0 || !!weapon.fixedMod?.planName || !!weapon.floatingMod?.planName}
+        split={!weapon || (weapon.skills?.length ?? 0) > 0 || weapon.isExclusive || !!weapon.fixedMod?.planName || !!weapon.floatingMod?.planName}
       />
     )
   }
@@ -272,9 +316,9 @@ export default function WeaponDetailPage() {
   const visibleStats    = statCells.filter((c) => !isVariableStat(weapon, c.keys))
   const variableStatMsg = variableStatNote(statCells.filter((c) => isVariableStat(weapon, c.keys)).map((c) => c.label))
 
-  // 分欄條件：右欄（技能＋改裝）有內容才分。無技能武器（全站約一半，A/B/S 為主）內容本來就短，
+  // 分欄條件：右欄（技能＋同類專武＋改裝）有內容才分。無技能武器（全站約一半，A/B/S 為主）內容本來就短，
   // 分欄只會留下一整欄空白，故退回窄版單欄。⚠ LoadingSkeleton 的 split 要跟著這裡改。
-  const split = skills.length > 0 || hasFixedMod || hasFloatMod
+  const split = skills.length > 0 || sameKindExclusives.length > 0 || hasFixedMod || hasFloatMod
 
   return (
     <div className={`${split ? 'max-w-6xl' : 'max-w-3xl'} mx-auto px-4 py-12 bg-bg-dark/10 backdrop-blur-sm rounded-2xl`}>
@@ -379,7 +423,7 @@ export default function WeaponDetailPage() {
                   <div className="flex items-start gap-3">
                     <dt className="w-16 shrink-0 pt-1.5 text-xs text-text-dim">前置</dt>
                     <dd className="flex flex-wrap gap-2 min-w-0">
-                      <WeaponChainLink weapon={parent} />
+                      <WeaponHoverLink weapon={parent} />
                     </dd>
                   </div>
                 )}
@@ -388,7 +432,7 @@ export default function WeaponDetailPage() {
                     <dt className="w-16 shrink-0 pt-1.5 text-xs text-text-dim">可進階為</dt>
                     <dd className="flex flex-wrap gap-2 min-w-0">
                       {children.map((c) => (
-                        <WeaponChainLink key={c.id} weapon={c} />
+                        <WeaponHoverLink key={c.id} weapon={c} />
                       ))}
                     </dd>
                   </div>
@@ -418,6 +462,23 @@ export default function WeaponDetailPage() {
                           ? isCompositeWeapon(weapon) ? '融合技能' : '進階新增'
                           : undefined
                       }
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── 同類專武：滑過看技能、點擊前往（手機點擊開底部面板）────────────── */}
+            {sameKindExclusives.length > 0 && (
+              <div>
+                <SectionHeading>{`同類專武 · ${weapon.kind}`}</SectionHeading>
+                <div className="bg-bg-card border border-border rounded-xl p-4 flex flex-wrap gap-2">
+                  {sameKindExclusives.map((w) => (
+                    <WeaponHoverLink
+                      key={w.id}
+                      weapon={w}
+                      sub={w.exclusiveFor ? pilotMap[w.exclusiveFor]?.name : undefined}
+                      hideRarity
                     />
                   ))}
                 </div>

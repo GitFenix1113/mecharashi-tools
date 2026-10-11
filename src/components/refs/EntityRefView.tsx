@@ -15,6 +15,8 @@ import { RefText } from './RefText'
 import { RefScopeContext } from './RefChip'
 import { RefMechModules } from './RefMechModules'
 import { RefPilotTalents } from './RefPilotTalents'
+import { RefWeaponSkills } from './RefWeaponSkills'
+import { resolveWeaponSkills, type ResolvedWeaponSkill } from '../../utils/weaponSkills'
 
 /**
  * PLAN-019 Layer 1 — 引用詳情卡片內容（被浮窗 / BottomSheet / hover 預覽共用）。
@@ -64,6 +66,8 @@ interface Resolved {
   mechModules?: MechModuleSet
   /** 機師專用：浮窗本文改列天賦（最大強化），取代機師故事 */
   pilotTalents?: PilotTalent[]
+  /** 武器專用：浮窗本文改列武器技能，取代武器故事 */
+  weaponSkills?: { skills: ResolvedWeaponSkill[]; rarity: string }
   route?: string
   pending?: boolean
 }
@@ -98,11 +102,14 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
     case 'weapon': {
       const w = gd.weapons.find(x => x.id === ref.refId)
       if (!w) return null
+      // 2026-10-11 站長決定：比照機甲／機師卡，浮窗不放武器故事，改列技能（見 RefWeaponSkills）。
+      // 技能多為引用格式，要技能庫才解析得出來；pilotSkills 還沒到時解析成 0 筆，由 loading 擋住
+      const skillMap = new Map(gd.pilotSkills.map((s) => [s.id, s]))
       return {
         title: w.name,
         subtitle: [w.type, w.kind, w.rarity].filter(Boolean).join(' · '),
         images: weaponIconCandidates(w),
-        description: w.description,
+        weaponSkills: { skills: resolveWeaponSkills(w.skills, skillMap), rarity: w.rarity },
         route: `/weapons/${w.id}`,
       }
     }
@@ -249,14 +256,17 @@ export function EntityRefView({ entityRef, interactive, showClose = false }: { e
   // 機甲卡本文是模組清單。modules 與其他集合同走版本快取：本機有快取就 0 請求，
   // 沒有也只打一次 Worker（邊緣快取命中則 0 Firestore read）。
   const mechNeedsModules = entityRef.refType === 'mech'
+  // 武器卡本文是技能清單，技能定義住在技能庫（PLAN-032）。武器詳情頁本來就載過，其他頁同走版本快取
+  const weaponNeedsSkills = entityRef.refType === 'weapon'
   useEffect(() => {
     const keys: CollectionKey[] = []
     if (collectionKey) keys.push(collectionKey)
     if (buffNeedsTerm) keys.push('glossaryTerms')
     if (formNeedsPilot) keys.push('pilots')
     if (mechNeedsModules) keys.push('modules')
+    if (weaponNeedsSkills) keys.push('pilotSkills')
     if (keys.length) gd.ensureLoaded(keys)
-  }, [collectionKey, buffNeedsTerm, formNeedsPilot, mechNeedsModules, gd])
+  }, [collectionKey, buffNeedsTerm, formNeedsPilot, mechNeedsModules, weaponNeedsSkills, gd])
 
   const loading = collectionKey ? !gd.loadedKeys.has(collectionKey) : false
   const resolved = resolve(entityRef, gd)
@@ -333,6 +343,16 @@ export function EntityRefView({ entityRef, interactive, showClose = false }: { e
             {resolved.pilotTalents && (
               <RefScopeContext.Provider value={{ inPopover: true }}>
                 <RefPilotTalents talents={resolved.pilotTalents} clamp={!interactive} />
+              </RefScopeContext.Provider>
+            )}
+
+            {resolved.weaponSkills && (
+              <RefScopeContext.Provider value={{ inPopover: true }}>
+                <RefWeaponSkills
+                  skills={resolved.weaponSkills.skills}
+                  rarity={resolved.weaponSkills.rarity}
+                  loading={!gd.loadedKeys.has('pilotSkills')}
+                />
               </RefScopeContext.Provider>
             )}
 

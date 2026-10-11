@@ -4,7 +4,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
-import type { EntityRef } from '../types'
+import type { EntityRef, RefType } from '../types'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { BottomSheet } from '../components/common/BottomSheet'
 import { EntityRefView } from '../components/refs/EntityRefView'
@@ -44,6 +44,12 @@ const ReferenceContext = createContext<ReferenceContextValue | null>(null)
 
 const PREVIEW_W = 300
 const PINNED_W = 340
+/**
+ * 預覽寬度的例外。武器卡本文是 3～4 個技能**全文**（RefWeaponSkills 不截，因為「同類專武」的
+ * hover 就是拿來比技能的，而那裡的點擊是換頁、沒有釘選可退）。300px 時最長的糖衣毀滅者
+ * 本文約 730px 高；加寬到 360px 換行少兩成，1366×768 才放得下。
+ */
+const PREVIEW_W_BY_TYPE: Partial<Record<RefType, number>> = { weapon: 360 }
 
 // ── 桌面浮動卡片（定位） ───────────────────────────────────────────────────────
 function FloatingCard({ rect, width, interactive, containerRef, children }: {
@@ -87,7 +93,9 @@ function FloatingCard({ rect, width, interactive, containerRef, children }: {
       style={{ left: pos.left, top: pos.top, width }}
     >
       <div
-        className="border border-border-accent rounded-xl shadow-2xl max-h-[70vh] overflow-hidden backdrop-blur-md"
+        // 限高只給釘選卡（可捲）。hover 預覽 pointer-events-none 捲不動，限 70vh 只會把底部切掉、
+        // 看的人無從得知——預覽改為最多整個視窗高（上面的定位會把它整張收進視窗內）
+        className={`border border-border-accent rounded-xl shadow-2xl ${interactive ? 'max-h-[70vh]' : 'max-h-[calc(100vh-16px)]'} overflow-hidden backdrop-blur-md`}
         style={{ backgroundColor: 'rgb(15 18 25 / 0.97)' }}
       >
         {children}
@@ -224,7 +232,7 @@ export function ReferenceProvider({ children }: { children: ReactNode }) {
 
       {/* 桌面：hover 預覽（不可互動） */}
       {!isMobile && preview && !pinned && (
-        <FloatingCard rect={preview.rect} width={PREVIEW_W} interactive={false}>
+        <FloatingCard rect={preview.rect} width={PREVIEW_W_BY_TYPE[preview.ref.refType] ?? PREVIEW_W} interactive={false}>
           <NdOverrideContext.Provider value={preview.nd ?? EMPTY_ND_OVERRIDES}>
             <EntityRefView entityRef={preview.ref} interactive={false} />
           </NdOverrideContext.Provider>
