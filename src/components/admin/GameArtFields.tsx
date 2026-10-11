@@ -39,7 +39,7 @@ function Thumb({ src, label, wide }: { src: string | undefined; label: string; w
 
 /** 官方原檔的狀態文字：有／尚未匯入／主鍵對不上（最常見的打錯） */
 function pilotArtStatus(form: Pick<Pilot, 'gameId' | 'artKey'>): { ok: boolean; text: string } {
-  if (!form.gameId) return { ok: false, text: '未填 gameId：讀取端照舊走 portrait／portraitUrl' }
+  if (!form.gameId) return { ok: false, text: '未填 gameId：讀取端照舊走 portrait／portraitUrl（上方「選取官方立繪」可一次帶入）' }
   const entry = GAME_PILOT_ART.get(form.gameId)
   if (!entry) {
     return { ok: false, text: `尚未匯入：node scripts/import-game-assets.mjs --id=${form.gameId} --art-key=${form.artKey || '<artKey>'} --apply` }
@@ -60,17 +60,20 @@ export function PilotGameArtFields({ form, update, pilots, mechs }: {
   const takenBy = new Map<string, string>()
   for (const p of pilots) if (p.id !== form.id && p.pairedMechId) takenBy.set(p.pairedMechId, p.name)
   const conflicts = duplicatePairs(pilots.map((p) => (p.id === form.id ? { ...p, pairedMechId: form.pairedMechId } : p)))
+  // gameId 一人一組：選圖器照樣允許選別人的（修資料時需要），這裡把結果講明
+  const sameGameId = form.gameId ? pilots.filter((p) => p.id !== form.id && p.gameId === form.gameId) : []
   const kinds: [PilotGameArtKind, string][] = [['half', '頭像 half'], ['head', '頭部 head'], ['card', '機師卡 card']]
 
   return (
     <div className="mt-4 border-t border-border pt-3">
       <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">遊戲 ID 與官配（PLAN-054）</p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* ⚠ placeholder 要寫成「例：…」——光寫一個編號，空欄位看起來就像已經填了值 */}
         <Field label="遊戲 ID gameId（機師卡 Icon_item_<ID>A 的編號）">
-          <input value={form.gameId ?? ''} onChange={(e) => update('gameId', blank(e.target.value))} className="input-field" placeholder="10103174" />
+          <input value={form.gameId ?? ''} onChange={(e) => update('gameId', blank(e.target.value))} className="input-field" placeholder="例：10103174" />
         </Field>
         <Field label="立繪主鍵 artKey（與 gameId 不互推）">
-          <input value={form.artKey ?? ''} onChange={(e) => update('artKey', blank(e.target.value))} className="input-field" placeholder="Pilot_10103174A" />
+          <input value={form.artKey ?? ''} onChange={(e) => update('artKey', blank(e.target.value))} className="input-field" placeholder="例：Pilot_10103174A" />
         </Field>
         <Field label="官配機甲 pairedMechId">
           <select value={form.pairedMechId ?? ''} onChange={(e) => update('pairedMechId', e.target.value || undefined)} className="input-field">
@@ -87,6 +90,11 @@ export function PilotGameArtFields({ form, update, pilots, mechs }: {
         {kinds.map(([k, label]) => <Thumb key={k} src={pilotGameArt(form, k)} label={label} />)}
         <p className={`text-[12px] self-center ${status.ok ? 'text-accent-green' : 'text-accent-yellow'}`}>{status.text}</p>
       </div>
+      {sameGameId.length > 0 && (
+        <p className="text-[12px] text-accent-red mt-1">
+          ⚠ gameId {form.gameId} 已由 {sameGameId.map((p) => p.name).join('、')} 使用——一位機師一組官方原檔，請確認不是選錯了。
+        </p>
+      )}
       {form.pairedMechId && conflicts.has(form.pairedMechId) && (
         <p className="text-[12px] text-accent-red mt-1">
           ⚠ 官配是一對一：這台機甲同時被 {conflicts.get(form.pairedMechId)!.length} 位機師配到。存檔前請先把另一位改掉。
@@ -104,8 +112,10 @@ export function MechGameArtFields({ form, set, mechs, pilots }: {
 }) {
   const entry = form.gameId ? GAME_MECH_ART.get(form.gameId) : undefined
   const paired = pairedPilotOf(form.id, pilots)
+  // 遊戲 ID 一台一組（塗裝也有自己的 wap）：選圖器照樣允許選別台的（修資料時需要），這裡把結果講明
+  const sameGameId = form.gameId ? mechs.filter((m) => m.id !== form.id && m.gameId === form.gameId) : []
   const status = !form.gameId
-    ? '未填 gameId：讀取端照舊走 portrait 與部件 icon'
+    ? '未填 gameId：讀取端照舊走 portrait 與部件 icon（下方「選取官方立繪」可一次帶入）'
     : !entry
       ? `尚未匯入：node scripts/import-game-assets.mjs --wap=${form.gameId} --apply`
       : `官方原檔已就緒（部件 ${entry.parts.length}／4${entry.sn ? '' : '；沒有全身大圖，匯出圖走小尺寸版面'}）`
@@ -115,7 +125,7 @@ export function MechGameArtFields({ form, set, mechs, pilots }: {
       <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">遊戲 ID、塗裝與官配（PLAN-054）</p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Field label="遊戲 ID gameId（wap 四碼）">
-          <input value={form.gameId ?? ''} onChange={(e) => set('gameId', blank(e.target.value))} className="input-field" placeholder="1011" />
+          <input value={form.gameId ?? ''} onChange={(e) => set('gameId', blank(e.target.value))} className="input-field" placeholder="例：1011" />
         </Field>
         <Field label="塗裝本體 skinOfId（付費塗裝才填）">
           <select value={form.skinOfId ?? ''} onChange={(e) => set('skinOfId', e.target.value || undefined)} className="input-field">
@@ -138,6 +148,11 @@ export function MechGameArtFields({ form, set, mechs, pilots }: {
         <Thumb src={mechGameArt(form, 'legs')} label="腿部" />
         <p className={`text-[12px] self-center ${entry ? 'text-accent-green' : 'text-accent-yellow'}`}>{status}</p>
       </div>
+      {sameGameId.length > 0 && (
+        <p className="text-[12px] text-accent-red mt-1">
+          ⚠ 遊戲 ID {form.gameId} 已由 {sameGameId.map((m) => m.name).join('、')} 使用——一台機甲一組官方原檔，請確認不是選錯了。
+        </p>
+      )}
     </div>
   )
 }

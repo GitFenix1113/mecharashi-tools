@@ -5,7 +5,7 @@
 // 這幾位是刻意挑的：例外 5 位要證明「資料夾用 gameId、檔名用 artKey、兩者不互推」。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mechGameArt, mechGameFileName, pilotGameArt, pilotGameFileName } from './gameArt.ts'
+import { mechGameArt, mechGameFileName, mechGameIdFromPath, pilotGameArt, pilotGameFileName, pilotGameIdFromPath } from './gameArt.ts'
 
 const 維娜 = { gameId: '10103144', artKey: 'Pilot_13019A' }
 const 葉夫根尼 = { gameId: '10103123', artKey: 'Pilot_10103123A' }
@@ -54,4 +54,31 @@ test('檔名規則：card 不吃 artKey、缺參數回 undefined', () => {
   assert.equal(pilotGameFileName('card', '13037', undefined), 'Icon_item_13037A')
   assert.equal(pilotGameFileName('half', '13037', undefined), undefined)
   assert.equal(mechGameFileName('legs', undefined), undefined)
+})
+
+test('反推 ID：機師官方原檔夾與站上原稿夾都認，artKey 取資料夾實際主鍵（維娜不是 Pilot_10103144A）', () => {
+  assert.deepEqual(pilotGameIdFromPath('/images/game/pilots/10103123/Pilot_10103123A_half.webp'), 葉夫根尼)
+  assert.deepEqual(pilotGameIdFromPath('/images/game/pilots/10103144/Icon_item_10103144A.webp'), 維娜)
+  assert.deepEqual(pilotGameIdFromPath('/images/pilots/10103123/art.webp'), 葉夫根尼)
+  // BASE_URL／完整網址前綴不影響
+  assert.deepEqual(pilotGameIdFromPath('/mecharashi-tools/images/game/pilots/10103123/Pilot_10103123A_Raw.webp'), 葉夫根尼)
+})
+
+test('反推 ID：名字資料夾、索引沒有的數字、遠端網址、空值 → undefined（只寫圖片，不動 ID）', () => {
+  assert.equal(pilotGameIdFromPath('/images/pilots/索妮婭/half.webp'), undefined)
+  assert.equal(pilotGameIdFromPath('/images/game/pilots/99999999/Pilot_99999999A_half.webp'), undefined)
+  assert.equal(pilotGameIdFromPath('https://media.zlongame.com/media/pictures/cn/community/img/gl/gameInfo/characterHalf/Pilot_10103123A_half.png'), undefined)
+  assert.equal(pilotGameIdFromPath(''), undefined)
+  assert.equal(pilotGameIdFromPath(undefined), undefined)
+  // 機師路徑不會被當成機甲，反之亦然
+  assert.equal(mechGameIdFromPath('/images/game/pilots/10103123/Pilot_10103123A_half.webp'), undefined)
+  assert.equal(pilotGameIdFromPath('/images/game/mechs/1011/Icon_mecha_wap1011.webp'), undefined)
+})
+
+test('反推 ID：機甲立繪、全身大圖、部件都推得回 wap；舊名字夾與已移出 core 的 3132 推不出來', () => {
+  assert.equal(mechGameIdFromPath('/images/game/mechs/1011/Icon_mecha_wap1011.webp'), '1011')
+  assert.equal(mechGameIdFromPath('/images/game/mechs/1011/Icon_mecha_wap1011_SN_Raw.webp'), '1011')
+  assert.equal(mechGameIdFromPath('/images/game/mechs/1011/Icon_wap1011_3.webp'), '1011')
+  assert.equal(mechGameIdFromPath('/images/mechs/凜騎士/portrait.webp'), undefined)
+  assert.equal(mechGameIdFromPath('/images/game/mechs/3132/Icon_mecha_wap3132.webp'), undefined)
 })

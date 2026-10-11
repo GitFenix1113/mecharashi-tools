@@ -12,6 +12,9 @@ import { resolveIconSrc } from '../../utils/assets'
  * - IconPicker：彈窗本體（資料夾下拉 + 搜尋 + 縮圖網格）。
  * - IconField ：帶標籤的欄位（文字輸入 + 旁附預覽縮圖 + 開啟挑選器按鈕），
  *               各後台編輯面板直接使用。
+ *
+ * 機師／機甲立繪的主要入口已改為 GameArtPicker（依名稱／使用狀態挑官方原檔、連同遊戲 ID 寫回）；
+ * 這裡是「其他圖片」與部件圖的退路——呼叫端可用 IconField 的 onPick 從選到的路徑回推遊戲 ID。
  */
 
 export interface Manifest {
@@ -45,20 +48,26 @@ function toPath(folder: string, file: string): string {
 const ALL = '*' // 跨資料夾搜尋的特殊 folder key
 const MAX_RESULTS = 500
 
-function folderLabel(folder: string, count: number): string {
-  const name = folder === '.' ? '（根目錄）' : folder
-  return `${name}（${count}）`
+function folderLabel(folder: string, count: number, name?: string): string {
+  const base = folder === '.' ? '（根目錄）' : folder
+  return `${base}${name ? `・${name}` : ''}（${count}）`
 }
 
 // ── 挑選器彈窗 ─────────────────────────────────────────────────────────────────
 export function IconPicker({
   value,
   defaultFolder,
+  folderNames,
   onPick,
   onClose,
 }: {
   value?: string
   defaultFolder?: string
+  /**
+   * 資料夾 → 顯示名稱（例：`game/pilots/10103174` → 海莉絲）。PLAN-054 起圖片資料夾是數字遊戲 ID，
+   * 不加註看不出是誰；「全部資料夾」搜尋也會比對這個名稱。見 GameArtFields 的 artFolderNames()。
+   */
+  folderNames?: Record<string, string>
   onPick: (path: string) => void
   onClose: () => void
 }) {
@@ -108,8 +117,9 @@ export function IconPicker({
     if (folder === ALL) {
       if (!q) return out // 全部資料夾須先輸入關鍵字，避免一次塞 1800+ 張
       for (const [fld, files] of Object.entries(manifest.folders)) {
+        const nameHit = !!folderNames?.[fld]?.toLowerCase().includes(q)
         for (const file of files) {
-          if (file.toLowerCase().includes(q)) {
+          if (nameHit || file.toLowerCase().includes(q)) {
             out.push({ folder: fld, file })
             if (out.length >= MAX_RESULTS) return out
           }
@@ -125,7 +135,7 @@ export function IconPicker({
       }
     }
     return out
-  }, [manifest, folder, search])
+  }, [manifest, folder, search, folderNames])
 
   // ⚠ 與 AdminModal 同理，必須 portal 到 body：祖先只要有 backdrop-filter／filter／
   //   transform／perspective／contain，fixed 就會相對那個祖先而不是視窗定位。
@@ -156,12 +166,12 @@ export function IconPicker({
               <select
                 value={folder}
                 onChange={(e) => setFolder(e.target.value)}
-                className="input-field text-sm max-w-[260px]"
+                className="input-field text-sm max-w-[360px]"
               >
                 {folderOptions.map((f) =>
                   f === ALL
                     ? <option key={ALL} value={ALL}>（全部資料夾，需搜尋）</option>
-                    : <option key={f} value={f}>{folderLabel(f, manifest.folders[f].length)}</option>,
+                    : <option key={f} value={f}>{folderLabel(f, manifest.folders[f].length, folderNames?.[f])}</option>,
                 )}
               </select>
               <input
@@ -169,7 +179,7 @@ export function IconPicker({
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="搜尋檔名…"
+                placeholder={folderNames ? '搜尋檔名（全部資料夾時也比對名稱）…' : '搜尋檔名…'}
                 className="input-field text-sm flex-1 min-w-[160px]"
               />
             </div>
@@ -189,7 +199,7 @@ export function IconPicker({
                         key={path}
                         type="button"
                         onClick={() => { onPick(path); onClose() }}
-                        title={folder === ALL ? `${fld}/${file}` : file}
+                        title={folder === ALL ? `${fld}/${file}${folderNames?.[fld] ? `（${folderNames[fld]}）` : ''}` : file}
                         className={`group flex flex-col items-center gap-1 p-1.5 rounded-lg border transition-colors ${
                           active ? 'border-accent-orange bg-accent-orange/10' : 'border-border/50 hover:border-border-accent hover:bg-bg-dark'
                         }`}
@@ -225,15 +235,24 @@ export function IconField({
   value,
   onChange,
   defaultFolder,
+  folderNames,
+  onPick,
   placeholder = '/images/... 或貼上遠端 URL',
 }: {
   label: string
   value?: string
   onChange: (v: string) => void
   defaultFolder?: string
+  folderNames?: Record<string, string>
+  /**
+   * 從挑選器選圖後（onChange 之後）呼叫——手打不會觸發。
+   * 回傳字串就顯示在欄位下方（例：「已依圖片路徑帶入遊戲 ID 1011」），直到下次修改。
+   */
+  onPick?: (path: string) => string | undefined
   placeholder?: string
 }) {
   const [picking, setPicking] = useState(false)
+  const [note, setNote] = useState<string | null>(null)
   const val = value ?? ''
 
   return (
@@ -253,7 +272,7 @@ export function IconField({
         <input
           type="text"
           value={val}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => { onChange(e.target.value); setNote(null) }}
           placeholder={placeholder}
           className="input-field flex-1 text-sm"
         />
@@ -267,19 +286,21 @@ export function IconField({
         {val && (
           <button
             type="button"
-            onClick={() => onChange('')}
+            onClick={() => { onChange(''); setNote(null) }}
             className="shrink-0 px-2 py-2 text-sm text-accent-red border border-accent-red/30 rounded-lg hover:bg-accent-red/10 transition-colors"
           >
             清除
           </button>
         )}
       </div>
+      {note && <p className="text-[11px] text-accent-green mt-1">✓ {note}</p>}
 
       {picking && (
         <IconPicker
           value={val}
           defaultFolder={defaultFolder}
-          onPick={(path) => onChange(path)}
+          folderNames={folderNames}
+          onPick={(path) => { onChange(path); setNote(onPick?.(path) ?? null) }}
           onClose={() => setPicking(false)}
         />
       )}

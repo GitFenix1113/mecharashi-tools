@@ -13,7 +13,9 @@ import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { IconField, loadManifest } from '../../../components/admin/IconPicker'
 import { ArmamentMountEditor } from '../../../components/admin/ArmamentMountEditor'
 import { MechGameArtFields } from '../../../components/admin/GameArtFields'
-import { mechGameArt } from '../../../utils/gameArt'
+import { artFolderNames } from '../../../components/admin/artFolderNames'
+import { MechPortraitField } from '../../../components/admin/GameArtPicker'
+import { mechGameArt, mechGameIdFromPath } from '../../../utils/gameArt'
 import { ModuleBoundPart } from '../../../components/module/ModuleBoundPart'
 import { updateMech, docExists } from '../../../lib/firestoreApi'
 import { makeNumberedEntityId, maxEntitySeq, stripNumberedIdPrefix } from '../../../utils/idSlug'
@@ -325,6 +327,8 @@ function MechEditPanel({
   // 塗裝本體下拉與官配機師（唯讀推導）要用（PLAN-054）
   const gd = useGameData()
   useEffect(() => { void gd.ensureLoaded(['mechs', 'pilots']) }, [gd])
+  // 「選取圖片」資料夾下拉的名稱加註（數字 ID 資料夾 → 機甲／機師名）
+  const folderNames = useMemo(() => artFolderNames(gd.pilots, gd.mechs), [gd.pilots, gd.mechs])
 
   // 換一台機甲時把品質的「已帶入接口」提示清掉，否則會掛在別台身上讀成剛剛動過
   useEffect(() => { setForm({ ...mech }); setQualityNote(null) }, [mech])
@@ -390,6 +394,66 @@ function MechEditPanel({
         : want.torso === want.leftArm ? `已依 ${q} 品質規則把四部位接口帶成 ${want.torso}`
         : `已依 ${q} 品質規則帶入接口：軀幹/腿部 ${want.torso}、雙臂 ${want.leftArm}`,
     )
+  }
+
+  /**
+   * 「選取官方立繪」點選一組官方原檔：寫回遊戲 ID、立繪，並補部件圖。
+   * 部件只補**空的**或**原本就指向官方原檔夾**的——後者是上一組官方 ID 帶進來的，換 ID 就該跟著換；
+   * 站長手放的自訂圖（不在 game/mechs/ 底下）不蓋掉。halfPortrait 不動（舊欄位，從來沒有官方半身圖）。
+   */
+  function linkOfficialArt(wap: string): string {
+    const art = { gameId: wap }
+    const portrait = mechGameArt(art, 'icon')
+    const filled: string[] = []
+    const kept: string[] = []
+    const parts = { ...form.parts } as Mech['parts']
+    for (const pos of PART_ORDER) {
+      const icon = mechGameArt(art, pos)
+      if (!icon) continue
+      const cur = form.parts?.[pos]?.icon
+      if (!cur || cur.startsWith('/images/game/mechs/')) {
+        parts[pos] = { ...(form.parts?.[pos] ?? makeDefaultPart(pos)), icon }
+        if (cur !== icon) filled.push(PART_LABELS[pos])
+      } else kept.push(PART_LABELS[pos])
+    }
+    setForm((f) => ({ ...f, gameId: wap, portrait: portrait ?? f.portrait, parts }))
+    return [
+      `已連上遊戲 ID ${wap}${form.gameId && form.gameId !== wap ? `（原本是 ${form.gameId}）` : ''}`,
+      filled.length ? `部件圖帶入 ${filled.join('、')}` : '',
+      kept.length ? `${kept.join('、')}是自訂圖，保留不動` : '',
+    ].filter(Boolean).join('；')
+  }
+
+  /**
+   * 從「選取圖片」選到的路徑回推 wap（PLAN-054 資料夾即 ID）；推得出來且與目前不同才帶入，回傳提示。
+   * 換 ID 時，**原本指向舊 ID 官方資料夾**的立繪／部件圖跟著換到新 ID（它們是舊 ID 帶進來的，留著就是過期路徑）；
+   * 剛選的那張（`field`）與手放的自訂圖不動。推不出來 → 什麼都不做，只寫圖片。
+   */
+  function adoptGameIdFrom(path: string, field: 'portrait' | 'halfPortrait' | MechPart['position']): string | undefined {
+    const wap = mechGameIdFromPath(path)
+    const prev = form.gameId
+    if (!wap || wap === prev) return undefined
+    const oldDir = prev ? `/images/game/mechs/${prev}/` : undefined
+    const next = { gameId: wap }
+    const moved: string[] = []
+    if (oldDir && field !== 'portrait' && form.portrait?.startsWith(oldDir) && mechGameArt(next, 'icon')) moved.push('立繪')
+    for (const pos of PART_ORDER) {
+      if (oldDir && pos !== field && form.parts?.[pos]?.icon?.startsWith(oldDir) && mechGameArt(next, pos)) moved.push(PART_LABELS[pos])
+    }
+    setForm((f) => {
+      if (!oldDir) return { ...f, gameId: wap }
+      const parts = { ...f.parts } as Mech['parts']
+      for (const pos of PART_ORDER) {
+        const icon = mechGameArt(next, pos)
+        if (icon && pos !== field && f.parts?.[pos]?.icon?.startsWith(oldDir)) parts[pos] = { ...f.parts[pos], icon }
+      }
+      const portrait = field !== 'portrait' && f.portrait?.startsWith(oldDir) ? mechGameArt(next, 'icon') ?? f.portrait : f.portrait
+      return { ...f, gameId: wap, portrait, parts }
+    })
+    return [
+      `已依圖片路徑帶入遊戲 ID ${wap}${prev ? `（原本是 ${prev}）` : ''}`,
+      moved.length ? `原本指向 ${prev} 官方檔的${moved.join('、')}一併換成 ${wap}` : '',
+    ].filter(Boolean).join('；')
   }
 
   // 有遊戲 ID：直接帶官方原檔（PLAN-054；有沒有圖看 build 產生的索引，不必等 manifest）。
@@ -554,6 +618,8 @@ function MechEditPanel({
                 mech={form}
                 quality={form.quality ?? ''}
                 defaultFolder={mechFolder}
+                folderNames={folderNames}
+                onPickImage={(path) => adoptGameIdFrom(path, pos)}
                 weapons={weapons}
                 moduleById={moduleById}
                 moduleOptions={innateModuleOptions}
@@ -685,22 +751,26 @@ function MechEditPanel({
             <div className={`${isOwner ? 'pt-4 border-t border-border/60 ' : ''}space-y-3`}>
               <p className="text-xs text-text-dim font-medium tracking-wider uppercase">外觀 appearance</p>
               <MechGameArtFields form={form} set={set} mechs={gd.mechs} pilots={gd.pilots} />
-              <IconField
-                label="立繪 portrait"
-                value={form.portrait}
+              <MechPortraitField
+                form={form}
+                mechs={gd.mechs}
+                folderNames={folderNames}
                 defaultFolder={mechFolder}
-                placeholder="/images/mechs/{機甲名}/portrait.png"
-                onChange={(v) => set('portrait', v || undefined)}
+                onPortrait={(v) => set('portrait', v)}
+                onPickImage={(path) => adoptGameIdFrom(path, 'portrait')}
+                onLinkOfficial={linkOfficialArt}
               />
               <IconField
                 label="半身像 halfPortrait"
                 value={form.halfPortrait}
                 defaultFolder={mechFolder}
+                folderNames={folderNames}
+                onPick={(path) => adoptGameIdFrom(path, 'halfPortrait')}
                 placeholder="/images/mechs/{機甲名}/half.png"
                 onChange={(v) => set('halfPortrait', v || undefined)}
               />
               <p className="text-xs text-text-dim">
-                「選取圖片」預設開啟本機甲資料夾 <code>{mechFolder}</code>；也可到「部件」分頁按「自動帶入圖片」一次補齊。
+                「其他圖片」／「選取圖片」預設開啟本機甲資料夾 <code>{mechFolder}</code>，選到官方資料夾 <code>game/mechs/&lt;wap&gt;/</code> 裡的圖會順手帶入遊戲 ID。
                 圖片無官方來源者，須自行放入 <code>public/images/mechs/</code> 後重跑圖檔清單。
               </p>
             </div>
@@ -876,13 +946,16 @@ function InnateModulesField({ mech, position, moduleById, moduleOptions, onChang
 }
 
 // 依 position 顯示條件式欄位的部件編輯器。
-function PartEditor({ label, part, mech, quality, defaultFolder, weapons, moduleById, moduleOptions, onChange }: {
+function PartEditor({ label, part, mech, quality, defaultFolder, folderNames, onPickImage, weapons, moduleById, moduleOptions, onChange }: {
   label: string
   part: MechPart
   /** 整台機甲 —— 天生模組的推導要看 `quality` 與三個模組欄位，不只這一格（PLAN-052-K C-3） */
   mech: Mech
   quality: string
   defaultFolder: string
+  folderNames: Record<string, string>
+  /** 從挑選器選到部件圖後回推遊戲 ID（見 MechEditor.adoptGameIdFrom） */
+  onPickImage: (path: string) => string | undefined
   weapons: Weapon[]
   moduleById: Map<string, Module>
   moduleOptions: [Module[], Module[]]
@@ -959,6 +1032,8 @@ function PartEditor({ label, part, mech, quality, defaultFolder, weapons, module
         label={`部件圖片 icon（${part.position}）`}
         value={part.icon}
         defaultFolder={defaultFolder}
+        folderNames={folderNames}
+        onPick={onPickImage}
         placeholder={`/images/mechs/{機甲名}/${part.position}.png`}
         onChange={(v) => onChange({ ...part, icon: v || undefined })}
       />

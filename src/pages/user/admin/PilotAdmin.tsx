@@ -19,9 +19,9 @@ import { buildSkillMap } from '../../../utils/pilotSkills'
 import { buildNdAbilityMap } from '../../../utils/neuralDriveAbilities'
 import { ndMinSumForLevel, ndZoneMaxLevel, expectedNdLevels, ndZoneOffRule } from '../../../utils/neuralDriveLevels'
 import { RefPicker, type RefTextSection } from '../../../components/admin/RefPicker'
-import { IconField } from '../../../components/admin/IconPicker'
 import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
 import { PilotGameArtFields } from '../../../components/admin/GameArtFields'
+import { PilotPortraitField } from '../../../components/admin/GameArtPicker'
 import { assetUrl, pilotPortraitPath } from '../../../utils/assets'
 import { PILOT_RARITY_CLASS, TRIGGER_DISPLAY, STAT_OPTIONS } from './constants'
 
@@ -1621,7 +1621,7 @@ function PilotEditPanel({
                 </select>
               </Field>
             </div>
-            <IconField label="立繪路徑 portrait" value={form.portrait} onChange={(v) => update('portrait', v)} defaultFolder="pilots" />
+            <PilotPortraitField form={form} pilots={gd.pilots} onPatch={(patch) => setForm((f) => ({ ...f, ...patch }))} />
             <PilotGameArtFields form={form} update={update} pilots={gd.pilots} mechs={gd.mechs} />
           </div>
         )}

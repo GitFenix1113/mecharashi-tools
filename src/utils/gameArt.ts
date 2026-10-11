@@ -70,3 +70,27 @@ export function mechGameArt(mech: { gameId?: string } | null | undefined, kind: 
   const has = kind === 'icon' ? entry.icon : kind === 'sn' ? entry.sn : entry.parts.includes(String(GAME_PART_NO[kind]))
   return has ? `${GAME_ROOT}/mechs/${wap}/${mechGameFileName(kind, wap)}.webp` : undefined
 }
+
+// ── 反向：圖片路徑 → 官方 ID（後台選圖時順手帶入 gameId）──────────────────────────
+// PLAN-054 起圖片資料夾就是遊戲 ID，選到的路徑本身就寫著它屬於誰。
+// 只認**索引裡真的有**的 ID：舊的名字資料夾（pilots/<中文名>、mechs/<中文名>）與打錯的數字都推不出來 → undefined，
+// 呼叫端照樣只寫圖片、不動 ID。路徑可帶 BASE_URL 或完整網址前綴（只看 images/ 之後那段）。
+
+const PILOT_DIR_RE = /(?:^|\/)images\/(?:game\/)?pilots\/([^/]+)\/[^/]+$/
+const MECH_DIR_RE = /(?:^|\/)images\/game\/mechs\/([^/]+)\/[^/]+$/
+
+/**
+ * 機師圖片路徑 → `{ gameId, artKey }`。官方原檔夾（game/pilots/<id>/）與站上原稿夾（pilots/<id>/，PLAN-054 D-2 起也是 gameId）都認。
+ * artKey 取自索引裡資料夾實際的立繪主鍵——不從 gameId 拼，5 位例外（維娜等）才對得上。
+ */
+export function pilotGameIdFromPath(path: string | null | undefined): { gameId: string; artKey?: string } | undefined {
+  const id = path?.match(PILOT_DIR_RE)?.[1]
+  const entry = id ? GAME_PILOT_ART.get(id) : undefined
+  return id && entry ? { gameId: id, artKey: entry.key } : undefined
+}
+
+/** 機甲圖片路徑 → wap（只認官方原檔夾 game/mechs/<wap>/；舊的 mechs/<中文名>/ 推不出來）。 */
+export function mechGameIdFromPath(path: string | null | undefined): string | undefined {
+  const wap = path?.match(MECH_DIR_RE)?.[1]
+  return wap && GAME_MECH_ART.has(wap) ? wap : undefined
+}
