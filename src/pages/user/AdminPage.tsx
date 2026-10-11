@@ -20,7 +20,7 @@ import BuffAdmin from './admin/BuffAdmin'
 import SkillAdmin from './admin/SkillAdmin'
 import NeuralDriveAdmin from './admin/NeuralDriveAdmin'
 
-type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'components' | 'backpacks' | 'backpackSkills' | 'glossary' | 'skills' | 'neuralDrive' | 'buffs' | 'forms' | 'users' | 'grayops'
+type Tab = 'modules' | 'mechs' | 'pilots' | 'weapons' | 'weaponSkills' | 'components' | 'backpacks' | 'backpackSkills' | 'glossary' | 'skills' | 'neuralDrive' | 'buffs' | 'forms' | 'users' | 'grayops'
 
 // 各分頁的載入設定：
 //   keys       — 此分頁需要整包載入的集合（主資料 + 編輯面板下拉用的關聯集合）。
@@ -37,6 +37,8 @@ const TAB_CONFIG: Record<Tab, { keys: CollectionKey[]; searchable: boolean; self
   // PLAN-032：武器技能引用化後，技能編輯分頁要從技能庫挑 doc → 必須一併載入 pilotSkills。
   // 漏了不會報錯，症狀是「掛載挑選器候選 0 個」與「已掛的引用全顯示⚠找不到此技能」。
   weapons:    { keys: ['weapons', 'pilots', 'pilotSkills'], searchable: true, selfLoading: false, preload: true },
+  // 2026-10-11：武器技能＝技能庫鎖定 domain:'weapon' 的視圖；weapons 給「掛在哪幾把武器／⚠ 無武器掛載」反查用
+  weaponSkills: { keys: ['pilotSkills', 'weapons'], searchable: true, selfLoading: false, preload: true },
   components: { keys: [],                     searchable: true,  selfLoading: true,  preload: false },
   // mechs 是給「同步 Icon / 連結」查名稱用的（GrayOpsAdmin），漏了按鈕會停用
   grayops:    { keys: ['grayOpsRoster', 'mechs'], searchable: false, selfLoading: false, preload: false },
@@ -240,6 +242,7 @@ export default function AdminPage() {
         <TabButton active={tab === 'mechs'}      onClick={() => setTab('mechs')}>機甲管理</TabButton>
         <TabButton active={tab === 'pilots'}     onClick={() => setTab('pilots')}>機師管理</TabButton>
         <TabButton active={tab === 'weapons'}    onClick={() => setTab('weapons')}>武器管理</TabButton>
+        <TabButton active={tab === 'weaponSkills'} onClick={() => setTab('weaponSkills')}>武器技能</TabButton>
         <TabButton active={tab === 'components'} onClick={() => setTab('components')}>元件管理</TabButton>
         <TabButton active={tab === 'backpacks'}  onClick={() => setTab('backpacks')}>背包管理</TabButton>
         <TabButton active={tab === 'backpackSkills'} onClick={() => setTab('backpackSkills')}>背包技能</TabButton>
@@ -288,7 +291,9 @@ export default function AdminPage() {
         {showContent && tab === 'backpacks' && <BackpackAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'backpackSkills' && <BackpackSkillAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'glossary' && <GlossaryAdmin initialSearch={searchSeed} />}
-        {showContent && tab === 'skills' && <SkillAdmin initialSearch={searchSeed} />}
+        {/* 技能庫切成兩個分頁：同一個元件、不同 domain 與 key（篩選與搜尋狀態各自獨立） */}
+        {showContent && tab === 'skills' && <SkillAdmin key="skills" domain="pilot" initialSearch={searchSeed} />}
+        {showContent && tab === 'weaponSkills' && <SkillAdmin key="weaponSkills" domain="weapon" initialSearch={searchSeed} />}
         {showContent && tab === 'neuralDrive' && <NeuralDriveAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'buffs' && <BuffAdmin initialSearch={searchSeed} />}
         {showContent && tab === 'forms' && <FormAdmin initialSearch={searchSeed} />}

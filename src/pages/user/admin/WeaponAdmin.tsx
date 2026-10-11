@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { Weapon, Pilot, WeaponSkill, WeaponSkillRef, PilotSkillDoc } from '../../../types'
-import { isWeaponSkillRef } from '../../../utils/weaponSkills'
+import { isWeaponSkillRef, embeddedToSkillDoc, weaponSkillHolders } from '../../../utils/weaponSkills'
 import {
   WeaponType, WeaponKind, WeaponRarity, MechRestriction, WeaponEquipSlot,
-  RangeType, SkillType, SkillActivation,
+  RangeType, SkillActivation,
 } from '../../../types/enums'
 import {
   Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton,
@@ -11,19 +11,23 @@ import {
   DraftRestoreBar,
 } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
-import { updateWeapon, docExists } from '../../../lib/firestoreApi'
-import { makeNumberedEntityId, maxEntitySeq, stripNumberedIdPrefix } from '../../../utils/idSlug'
+import { updateWeapon, updatePilotSkill, docExists } from '../../../lib/firestoreApi'
+import {
+  makeNumberedEntityId, maxEntitySeq, stripNumberedIdPrefix,
+  makeEntityId, stripIdPrefix, findEntityClash,
+} from '../../../utils/idSlug'
 import { shareIdFloor } from '../../../utils/loadoutCode/shareIdRegistry'
 import { useGameData } from '../../../contexts/GameDataContext'
-import { RefPicker, type RefTextSection } from '../../../components/admin/RefPicker'
 import { IconField } from '../../../components/admin/IconPicker'
-import { EquipGameIdField, GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
+import { EquipGameIdField, IconThumb } from '../../../components/admin/GameIconPicker'
 import { WeaponIcon } from '../../../components/icons/WeaponIcon'
 import { FixedArmamentHostsField } from '../../../components/admin/FixedArmamentHostsField'
+import { WeaponUpgradeField } from '../../../components/admin/WeaponUpgradeField'
+import { normalizeWeaponUpgrade } from '../../../utils/weaponUpgrade'
 import { weaponIconCategoryOf } from '../../../utils/gameIcons'
-import { iconKindsForSkillType } from '../../../utils/gameIcons'
 import { WEAPON_RARITY_CLASS, WEAPON_KIND_BY_TYPE, ALL_WEAPON_KINDS } from './constants'
-import { SkillEffectItem } from './PilotAdmin'
+import { SkillEditPanel } from './SkillAdmin'
+import { makeDefaultSkill, findServerSkillClash } from './skillLibrary'
 
 type WeaponFilters = { rarity: string; type: string; exclusive: 'all' | 'yes' | 'no' }
 
@@ -71,20 +75,27 @@ const FIXED_MOD_MAX_LEVEL = 10
 // 與 BackpackSkillPicker（PLAN-043）同形制，但多一個 activation 選擇器：
 // 它是**掛載側**的欄位，同一個技能在不同武器上可以不同（實測 38 個技能有此變異），
 // 所以不能像背包那樣只掛一個 id 字串。
+//
+// ✎ 疊開技能庫的編輯面板（2026-10-11）：技能本體仍只有技能庫一份，這裡只是入口。
+// 被其他武器共用時要標出來——改這裡等於一起改它們。
 function WeaponSkillRefRow({
   entry,
   doc,
+  sharedWith,
   onChange,
+  onEdit,
   onRemove,
 }: {
   entry: WeaponSkillRef
   doc: PilotSkillDoc | undefined
+  /** 同樣掛著這個技能的其他武器名稱 */
+  sharedWith: string[]
   onChange: (updated: WeaponSkillRef) => void
+  onEdit: () => void
   onRemove: () => void
 }) {
   return (
     <div className="flex items-center gap-2 bg-bg-dark border border-accent-cyan/30 rounded-lg px-2.5 py-2">
-      <span className="text-[11px] px-1.5 py-0.5 rounded border border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan shrink-0">引用</span>
       <IconThumb icon={doc?.icon} className="w-7 h-7 rounded shrink-0" />
       <div className="flex-1 min-w-0 truncate">
         {/* 解析不到 = 斷鏈（技能被刪或 id 打錯）。必須顯眼，否則前台只會靜默少一塊技能 */}
@@ -92,7 +103,13 @@ function WeaponSkillRefRow({
           ? <span className="text-sm text-text-primary font-medium">{doc.name}</span>
           : <span className="text-sm text-accent-red">⚠ 找不到此技能</span>}
         <span className="text-[11px] text-text-dim font-mono ml-2">{entry.skillId}</span>
+        {sharedWith.length > 0 && (
+          <span className="text-[11px] text-accent-yellow ml-2" title={sharedWith.join('、')}>
+            與 {sharedWith.length} 把武器共用
+          </span>
+        )}
       </div>
+      {doc && <span className={`text-[13px] shrink-0 ${(doc.effects ?? []).length > 0 ? 'text-accent-cyan' : 'text-text-dim'}`}>效果 {(doc.effects ?? []).length}</span>}
       <select
         value={entry.activation}
         onChange={e => onChange({ ...entry, activation: e.target.value as WeaponSkillRef['activation'] })}
@@ -102,9 +119,17 @@ function WeaponSkillRefRow({
         <option value={SkillActivation.EQUIP}>equip — 裝備中生效</option>
         <option value={SkillActivation.USE}>use — 僅使用時生效</option>
       </select>
+      {doc && (
+        <button
+          onClick={onEdit}
+          className="text-[13px] px-1.5 py-0.5 text-accent-orange border border-accent-orange/30 rounded hover:bg-accent-orange/10 shrink-0"
+          title="編輯技能內容（寫入技能庫）"
+        >✎</button>
+      )}
       <button
         onClick={onRemove}
         className="text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10 shrink-0"
+        title="從這把武器卸下（技能庫裡的技能不會被刪）"
       >✕</button>
     </div>
   )
@@ -123,14 +148,15 @@ function WeaponSkillRefAdder({
   const [search, setSearch] = useState('')
   const [scope, setScope]   = useState<'weapon' | 'all'>('weapon')
 
-  const candidates = useMemo(() => {
+  const { candidates, total } = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return skills
+    const all = skills
       .filter(s => !attachedIds.has(s.id))
       .filter(s => scope === 'all' || s.domain === 'weapon')
       .filter(s => !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q))
       .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'))
-      .slice(0, 60)   // 技能庫 850+ 筆，不設上限會讓 select 卡住
+    // 技能庫 850+ 筆，不設上限會讓 select 卡住；標籤寫「前 N／共 M」，只寫 N 會被當成總數
+    return { candidates: all.slice(0, 60), total: all.length }
   }, [skills, attachedIds, search, scope])
 
   return (
@@ -154,7 +180,9 @@ function WeaponSkillRefAdder({
         onChange={e => { onAdd(e.target.value); setSearch('') }}
         className="input-field py-1 text-xs"
       >
-        <option value="">＋ 掛載技能庫技能（{candidates.length} 個候選）</option>
+        <option value="">
+          ＋ 掛載既有技能{total > candidates.length ? `（列出前 ${candidates.length}／共 ${total} 個，請用搜尋縮小）` : `（${total} 個）`}
+        </option>
         {candidates.map(s => (
           <option key={s.id} value={s.id}>{s.name} — {s.id}</option>
         ))}
@@ -163,170 +191,81 @@ function WeaponSkillRefAdder({
   )
 }
 
-// 武器技能正文與專武強化天賦正文共用一份 descriptionRefs（PLAN-057 段落定義）
-const WEAPON_SKILL_TEXT_SECTIONS: RefTextSection[] = [
-  { label: '技能描述' },
-  { label: '專武強化天賦', splitKey: '專武' },
-]
-
-// ─── 武器技能項目 ──────────────────────────────────────────────────────────────
-function WeaponSkillItem({
+// ─── 殘留的內嵌技能（舊格式）────────────────────────────────────────────────────
+// 2026-10-11 起後台不再能建立內嵌技能（它只存在單一武器上、技能管理搜不到、也無法共用）。
+// 這裡只剩「轉入技能庫」與移除兩個動作；轉入時疊開技能編輯面板讓維護者先確認內容再寫入。
+function LegacyWeaponSkillRow({
   skill,
-  index,
-  expanded,
-  onToggle,
-  onChange,
+  clashId,
+  busy,
+  onConvert,
+  onMountExisting,
+  onConvertSeparate,
   onRemove,
 }: {
   skill: WeaponSkill
-  index: number
-  expanded: boolean
-  onToggle: () => void
-  onChange: (updated: WeaponSkill) => void
+  /** 轉入時發現技能庫已有同名技能 → 該文件 id（提供「改掛這筆」） */
+  clashId?: string
+  busy: boolean
+  onConvert: () => void
+  onMountExisting: (skillId: string) => void
+  /** 同名不同效：ID 加武器名後綴另建一筆 */
+  onConvertSeparate: () => void
   onRemove: () => void
 }) {
-  const effects = skill.effects ?? []
-  const buffIds = skill.buffIds ?? []
-
-  const activationColor =
-    skill.activation === SkillActivation.CARRY ? 'text-accent-green border-accent-green/30 bg-accent-green/10' :
-    skill.activation === SkillActivation.EQUIP  ? 'text-accent-cyan border-accent-cyan/30 bg-accent-cyan/10' :
-                                                   'text-accent-orange border-accent-orange/30 bg-accent-orange/10'
-
   return (
-    <div className="border border-border/60 rounded-lg bg-bg-dark/50">
-      <div className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none" onClick={onToggle}>
-        <span className="text-[13px] text-text-dim w-3 shrink-0">{expanded ? '▼' : '▶'}</span>
+    <div className="border border-accent-yellow/40 rounded-lg bg-accent-yellow/5 px-2.5 py-2 space-y-1.5">
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] px-1.5 py-0.5 rounded border border-accent-yellow/50 text-accent-yellow shrink-0">舊格式</span>
         <span className="text-sm font-medium flex-1 truncate">
-          {skill.name || <span className="text-text-dim font-normal">（未命名）#{index + 1}</span>}
+          {skill.name || <span className="text-text-dim font-normal">（未命名）</span>}
         </span>
-        <span className={`text-[13px] px-1.5 py-0.5 rounded border shrink-0 ${activationColor}`}>{skill.activation}</span>
-        <span className={`text-[13px] shrink-0 ${effects.length > 0 ? 'text-accent-cyan' : 'text-text-dim'}`}>效果 {effects.length}</span>
+        <span className="text-[13px] text-text-dim shrink-0">{skill.activation}</span>
         <button
-          onClick={(e) => { e.stopPropagation(); onRemove() }}
+          onClick={onConvert}
+          disabled={busy}
+          className="text-[12px] px-2 py-0.5 text-accent-cyan border border-accent-cyan/40 rounded hover:bg-accent-cyan/10 shrink-0 disabled:opacity-50"
+        >{busy ? '檢查中…' : '轉入技能庫'}</button>
+        <button
+          onClick={onRemove}
           className="text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10 shrink-0"
         >✕</button>
       </div>
-
-      {expanded && (
-        <div className="px-3 pb-3 border-t border-border/40 pt-2.5 space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="技能名稱 name">
-              <input value={skill.name} onChange={(e) => onChange({ ...skill, name: e.target.value })} className="input-field" />
-            </Field>
-            <Field label="技能類型 type">
-              <select value={skill.type} onChange={(e) => onChange({ ...skill, type: e.target.value })} className="input-field">
-                <option value={SkillType.PASSIVE}>{SkillType.PASSIVE}</option>
-                <option value={SkillType.ACTIVE}>{SkillType.ACTIVE}</option>
-              </select>
-            </Field>
+      {skill.description && <p className="text-[12px] text-text-secondary truncate">{skill.description}</p>}
+      {clashId && (
+        <div className="text-[12px] text-accent-yellow space-y-1">
+          <p>技能庫已有同名技能 <span className="font-mono">{clashId}</span>。內容相同就直接改掛那筆；同名但效果不同才另建一筆。</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => onMountExisting(clashId)}
+              className="px-2 py-0.5 text-accent-cyan border border-accent-cyan/40 rounded hover:bg-accent-cyan/10"
+            >改掛既有的這筆</button>
+            <button
+              onClick={onConvertSeparate}
+              className="px-2 py-0.5 text-text-secondary border border-border rounded hover:bg-bg-card"
+            >內容不同，另建一筆（ID 加武器名後綴）</button>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {/* PLAN-055：內嵌 WeaponSkill 是爬蟲原形（PLAN-032 刻意保留），沿用 iconLocal 欄位但改存官方檔名 key */}
-            <GameIconField
-              label="圖示（官方檔名）"
-              value={skill.iconLocal}
-              onChange={(k) => onChange({ ...skill, iconLocal: k || undefined })}
-              presetKinds={iconKindsForSkillType(skill.type)}
-            />
-            <Field label="圖示 URL icon（遠端，選填）">
-              <input value={skill.icon ?? ''} onChange={(e) => onChange({ ...skill, icon: e.target.value || undefined })} className="input-field" placeholder="https://..." />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="生效方式 activation">
-              <select
-                value={skill.activation}
-                onChange={(e) => onChange({ ...skill, activation: e.target.value as WeaponSkill['activation'] })}
-                className="input-field"
-              >
-                <option value={SkillActivation.CARRY}>carry — 攜帶即生效</option>
-                <option value={SkillActivation.EQUIP}>equip — 裝備中生效</option>
-                <option value={SkillActivation.USE}>use — 僅使用時生效</option>
-              </select>
-            </Field>
-            <Field label="加強天賦 enhancesTalentName（選填）">
-              <input
-                value={skill.enhancesTalentName ?? ''}
-                onChange={(e) => onChange({ ...skill, enhancesTalentName: e.target.value || undefined })}
-                className="input-field"
-                placeholder="專武加強天賦名稱"
-              />
-            </Field>
-          </div>
-          <Field label="技能描述 description">
-            <textarea value={skill.description} onChange={(e) => onChange({ ...skill, description: e.target.value })} className="input-field min-h-[150px] resize-y" />
-          </Field>
-          {/*
-            PLAN-039：enhancedTalentDescription 原本沒接進來（PLAN-022 遺留缺口）——
-            它的 [xxx] 無法在此指派、語法糖也不會被代入，但 entityRefs 的 WEAPONS textUnits
-            確實會掃它。兩段一併傳入並同步套用 transform，與 PilotAdmin 的天賦一致。
-          */}
-          <RefPicker
-            text={[skill.description, skill.enhancedTalentDescription]}
-            sections={WEAPON_SKILL_TEXT_SECTIONS}
-            value={skill.descriptionRefs}
-            onChange={(refs) => onChange({ ...skill, descriptionRefs: refs })}
-            onCompileText={(tf, refs) => onChange({
-              ...skill,
-              description: tf(skill.description, 0),
-              enhancedTalentDescription: skill.enhancedTalentDescription
-                ? tf(skill.enhancedTalentDescription, 1)
-                : skill.enhancedTalentDescription,
-              ...(refs && { descriptionRefs: refs }),
-            })}
-          />
-          {skill.enhancesTalentName && (
-            <Field label="強化後天賦描述 enhancedTalentDescription（遊戲原文，用於差異對比）">
-              <textarea
-                value={skill.enhancedTalentDescription ?? ''}
-                onChange={(e) => onChange({ ...skill, enhancedTalentDescription: e.target.value || undefined })}
-                className="input-field min-h-[150px] resize-y"
-                placeholder="填入天賦被此專武強化後的完整描述文字（複製遊戲原文）"
-              />
-            </Field>
-          )}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">可計算效果 effects</span>
-              <button
-                onClick={() => onChange({ ...skill, effects: [...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }] })}
-                className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
-              >
-                + 新增效果
-              </button>
-            </div>
-            {effects.length === 0 ? (
-              <p className="text-xs text-text-dim py-2 text-center">尚未填入（計算器不計此技能）</p>
-            ) : (
-              <div className="space-y-2">
-                {effects.map((eff, effIdx) => (
-                  <SkillEffectItem
-                    key={effIdx}
-                    effect={eff}
-                    index={effIdx}
-                    onChange={(updated) => {
-                      const next = [...effects]; next[effIdx] = updated
-                      onChange({ ...skill, effects: next })
-                    }}
-                    onRemove={() => onChange({ ...skill, effects: effects.filter((_, i) => i !== effIdx) })}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-          <Field label="觸發 Buff ID buffIds（逗號分隔）">
-            <textarea
-              value={buffIds.join(', ')}
-              onChange={(e) => {
-                const ids = e.target.value.split(/[,\n]/).map((s) => s.trim()).filter(Boolean)
-                onChange({ ...skill, buffIds: ids })
-              }}
-              className="input-field min-h-[48px] resize-y font-mono text-xs"
-              placeholder="buff_001, buff_002"
-            />
-          </Field>
         </div>
+      )}
+    </div>
+  )
+}
+
+/** 疊開的技能編輯面板是做什麼用的：決定存檔後要不要順手掛到武器上 */
+type SkillEditSession =
+  | { mode: 'new'; doc: PilotSkillDoc }
+  | { mode: 'edit'; doc: PilotSkillDoc }
+  | { mode: 'convert'; doc: PilotSkillDoc; legacy: WeaponSkill }
+
+/** 疊開面板頂端的說明：寫到哪裡、什麼時候生效、會不會波及別把武器 */
+function SkillSessionNotice({ session, sharedWith }: { session: SkillEditSession; sharedWith: string[] }) {
+  return (
+    <div className="rounded-lg border border-accent-cyan/30 bg-accent-cyan/5 px-3 py-2 text-[12px] text-text-secondary space-y-1">
+      {session.mode === 'new' && <p>這個技能會存進<span className="text-accent-cyan">技能庫</span>（domain：武器技能）並掛到這把武器；武器本身仍要按「儲存變更」才會記住掛載。</p>}
+      {session.mode === 'convert' && <p>已把舊格式的內容帶進來（圖示換成官方檔名），確認無誤後存進<span className="text-accent-cyan">技能庫</span>，這把武器改成掛它；生效方式沿用原本的 <span className="font-mono">{session.legacy.activation}</span>。武器仍要按「儲存變更」。</p>}
+      {session.mode === 'edit' && <p>這裡改的是<span className="text-accent-cyan">技能庫</span>裡的技能本體，按儲存就直接寫入。</p>}
+      {sharedWith.length > 0 && (
+        <p className="text-accent-yellow">⚠ 此技能也掛在 {sharedWith.join('、')}，修改會一起生效。</p>
       )}
     </div>
   )
@@ -361,26 +300,132 @@ function WeaponEditPanel({
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState<string | null>(null)
   const [editTab, setEditTab]     = useState<WeaponEditTab>('basic')
-  const [expandedSkillIdx, setExpandedSkillIdx] = useState<number | null>(null)
 
   // PLAN-032 M4：技能庫（pilotSkills 集合＝全站技能字典，武器技能也住這裡）。
   // AdminPage 的 TAB_CONFIG 已預載 pilotSkills，這裡直接讀不必再 ensureLoaded。
   const gdPanel  = useGameData()
   const skillMap = useMemo(() => new Map(gdPanel.pilotSkills.map(s => [s.id, s])), [gdPanel.pilotSkills])
+  const holders  = useMemo(() => weaponSkillHolders(gdPanel.weapons), [gdPanel.weapons])
 
-  useEffect(() => { setForm({ ...weapon }); setEditTab('basic'); setExpandedSkillIdx(null) }, [weapon])
+  // ── 武器技能 × 技能庫整合（2026-10-11）──────────────────────────────────────
+  // 新增／編輯／轉入都疊開 SkillEditPanel，**存檔當下就寫進技能庫**；
+  // 掛載關係（skills[] 裡的 {skillId, activation}）則跟著武器的「儲存變更」走。
+  // 刻意不延後到武器存檔才寫技能：疊開的面板有自己的儲存鈕，按了卻沒寫進去會更難解釋。
+  // 代價是「建了技能卻沒存武器」會留下孤兒——「武器技能」分頁會標「⚠ 無武器掛載」，看得到。
+  const [skillSession, setSkillSession] = useState<SkillEditSession | null>(null)
+  const skillDraft = useDraftRestore<PilotSkillDoc>('pilotSkills')   // 疊開面板的草稿，存檔／取消時清掉
+  const [newSkillOpen, setNewSkillOpen]   = useState(false)
+  const [newSkillName, setNewSkillName]   = useState('')
+  const [newSkillError, setNewSkillError] = useState('')
+  const [newSkillClashId, setNewSkillClashId] = useState<string | null>(null)
+  const [legacyClash, setLegacyClash] = useState<{ legacy: WeaponSkill; clashId: string } | null>(null)
+  const [legacyBusy, setLegacyBusy]   = useState<WeaponSkill | null>(null)
+
+  useEffect(() => {
+    setForm({ ...weapon }); setEditTab('basic')
+    setSkillSession(null); setNewSkillOpen(false); setLegacyClash(null)
+  }, [weapon])
 
   function update<K extends keyof Weapon>(key: K, value: Weapon[K]) { setForm((f) => ({ ...f, [key]: value })) }
+
+  /** 撞名檢查（記憶體＋伺服器，大小寫前綴都查）。回傳既有文件 id；沒撞回 undefined */
+  async function findSkillClash(id: string, name: string): Promise<string | undefined> {
+    const clash = findEntityClash(gdPanel.pilotSkills, { getId: (s) => s.id, getName: (s) => s.name }, id, name)
+    return clash?.item.id ?? await findServerSkillClash(id)
+  }
+
+  async function confirmNewSkill() {
+    const name = stripIdPrefix('skill', newSkillName.trim())
+    const id = makeEntityId('skill', name)
+    if (!id) { setNewSkillError('名稱無法產生有效 ID，請改用其他名稱'); return }
+    const clashId = await findSkillClash(id, name)
+    if (clashId) {
+      setNewSkillClashId(clashId)
+      setNewSkillError(`技能庫已有同名技能（ID：${clashId}）`)
+      return
+    }
+    setNewSkillOpen(false); setNewSkillName(''); setNewSkillError(''); setNewSkillClashId(null)
+    setSkillSession({ mode: 'new', doc: makeDefaultSkill(id, name, 'weapon') })
+  }
+
+  /** 掛上一個技能庫技能（已掛過就不重複掛） */
+  function mountSkill(skillId: string, activation: WeaponSkillRef['activation'] = SkillActivation.CARRY as WeaponSkillRef['activation']) {
+    setForm((f) => (f.skills ?? []).some((e) => isWeaponSkillRef(e) && e.skillId === skillId)
+      ? f
+      : { ...f, skills: [...(f.skills ?? []), { skillId, activation }] })
+  }
+
+  /** 把某筆內嵌技能就地換成引用（保留原本的位置與 activation）。以物件參照找位置，不靠 index */
+  function replaceLegacy(legacy: WeaponSkill, skillId: string) {
+    setForm((f) => {
+      const skills = f.skills ?? []
+      // 同一個技能已經掛在別的位置 → 直接拿掉這筆舊的，避免掛兩次
+      if (skills.some((e) => isWeaponSkillRef(e) && e.skillId === skillId)) {
+        return { ...f, skills: skills.filter((e) => e !== legacy) }
+      }
+      return { ...f, skills: skills.map((e) => e === legacy ? { skillId, activation: legacy.activation } : e) }
+    })
+    setLegacyClash(null)
+  }
+
+  /**
+   * 轉入技能庫。撞名時預設不建（交給維護者選「改掛既有」或「另建一筆」）；
+   * `separate`＝同名不同效，ID 加武器名後綴另建（沿用技能庫「同名不同效加後綴」的慣例），名稱維持原樣。
+   */
+  async function startConvert(legacy: WeaponSkill, separate = false) {
+    const name = legacy.name.trim()
+    const id = makeEntityId('skill', separate ? `${name}_${form.name}` : name)
+    if (!id) { setError(`「${legacy.name}」無法產生有效 ID`); return }
+    setLegacyBusy(legacy); setLegacyClash(null)
+    try {
+      // 另建時名稱本來就會撞（刻意同名），只擋 ID
+      const clashId = separate
+        ? (gdPanel.pilotSkills.find((s) => s.id.toLowerCase() === id.toLowerCase())?.id ?? await findServerSkillClash(id))
+        : await findSkillClash(id, name)
+      if (clashId) {
+        if (separate) setError(`ID「${clashId}」也已存在，請到「武器技能」分頁手動處理`)
+        else setLegacyClash({ legacy, clashId })
+        return
+      }
+      setSkillSession({ mode: 'convert', doc: embeddedToSkillDoc(legacy, id), legacy })
+    } finally {
+      setLegacyBusy(null)
+    }
+  }
+
+  async function handleSkillSave(doc: PilotSkillDoc) {
+    const session = skillSession
+    const version = await updatePilotSkill(doc)
+    gdPanel.patchCollectionItem('pilotSkills', doc, version)
+    skillDraft.commit()
+    if (session?.mode === 'new') mountSkill(doc.id)
+    if (session?.mode === 'convert') replaceLegacy(session.legacy, doc.id)
+    setSkillSession(null)
+  }
   function updateFixedMod<K extends keyof Weapon['fixedMod']>(key: K, value: Weapon['fixedMod'][K]) { setForm((f) => ({ ...f, fixedMod: { ...f.fixedMod, [key]: value } })) }
   function updateFloatingMod<K extends keyof Weapon['floatingMod']>(key: K, value: Weapon['floatingMod'][K]) { setForm((f) => ({ ...f, floatingMod: { ...f.floatingMod, [key]: value } })) }
 
   async function handleSubmit() {
     setSaving(true); setError(null)
-    try { await onSave(form) }
+    // 類型與種類對不上就不讓存（空白＝佔位資料，照常放行，見資料佔位慣例）
+    if (form.kind && WEAPON_KIND_BY_TYPE[form.type] && !kindValid) {
+      setError(`武器種類「${form.kind}」不屬於類型「${form.type}」，請在基本資訊重選種類`)
+      setSaving(false)
+      return
+    }
+    // 製作關係：沒前置就整欄拿掉；非背後武器移除特種背包製作（規則見 normalizeWeaponUpgrade）
+    try { await onSave({ ...form, upgrade: normalizeWeaponUpgrade(form) }) }
     catch (e) { setError(e instanceof Error ? e.message : '儲存失敗，請重試'); setSaving(false) }
   }
 
   const currentKindOptions = WEAPON_KIND_BY_TYPE[form.type] ?? ALL_WEAPON_KINDS
+  // ⚠ <select> 的值不在選項裡時，瀏覽器會「顯示第一個選項」，state 卻原封不動——畫面與資料脫節。
+  //   2026-10-11 火馭·改Ⅲ：新建預設是「狙擊／狙擊步槍」，類型改成突擊後種類下拉顯示「霰彈槍」，
+  //   維護者以為選好了，實際存進去的是狙擊步槍。所以值不在選項時一律多一個 ⚠ 選項把真實值標出來。
+  const typeValid = (Object.values(WeaponType) as string[]).includes(form.type)
+  const kindValid = currentKindOptions.some((o) => o.value === form.kind)
+  const formSkills  = form.skills ?? []
+  const legacyCount = formSkills.filter((e) => !isWeaponSkillRef(e)).length
 
   return (
     <AdminModal saving={saving} error={error} onSave={handleSubmit} onCancel={onCancel}>
@@ -409,6 +454,7 @@ function WeaponEditPanel({
             <div className={`${GRID_AUTO_FIELDS} gap-3`}>
               <Field label="武器類型 type">
                 <select value={form.type} onChange={(e) => update('type', e.target.value)} className="input-field">
+                  {!typeValid && <option value={form.type} disabled>{form.type ? `⚠ ${form.type}（不在清單中）` : '— 請選擇類型 —'}</option>}
                   {Object.values(WeaponType).map((v) => <option key={v} value={v}>{v}</option>)}
                 </select>
               </Field>
@@ -422,6 +468,11 @@ function WeaponEditPanel({
                   }}
                   className="input-field"
                 >
+                  {!kindValid && (
+                    <option value={form.kind} disabled>
+                      {form.kind ? `⚠ ${form.kind}（不屬於「${form.type || '未選類型'}」，請重選）` : '— 請選擇種類 —'}
+                    </option>
+                  )}
                   {currentKindOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </Field>
@@ -502,6 +553,8 @@ function WeaponEditPanel({
               onChange={(v) => update('icon', v || undefined)}
               defaultFolder="weapons"
             />
+            {/* PLAN-031 的製作・進階關係（2026-10-11 補上編輯入口）。特種背包製作只開放背後武器 */}
+            <WeaponUpgradeField key={form.id} form={form} onChange={(u) => update('upgrade', u)} />
           </div>
         )}
 
@@ -734,77 +787,95 @@ function WeaponEditPanel({
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-text-dim font-medium uppercase tracking-wider">武器技能 skills</span>
               <button
-                onClick={() => {
-                  const next = [...(form.skills ?? []), {
-                    name: '', type: SkillType.PASSIVE,
-                    activation: SkillActivation.CARRY as WeaponSkill['activation'],
-                    description: '', effects: [], buffIds: [],
-                  }]
-                  update('skills', next)
-                  setExpandedSkillIdx(next.length - 1)
-                }}
-                className="text-xs text-text-dim hover:text-text-secondary transition-colors"
+                onClick={() => { setNewSkillOpen(true); setNewSkillName(''); setNewSkillError(''); setNewSkillClashId(null) }}
+                className="text-xs px-3 py-1.5 bg-accent-orange text-black font-bold rounded-lg hover:opacity-90 transition-opacity"
               >
-                + 新增內嵌技能（舊格式）
+                + 新增武器技能
               </button>
             </div>
 
-            {/* PLAN-032 M4：從技能庫挑一筆掛上來。
-                技能**本體**（名稱／正文／effects／buffIds）請至「技能」分頁維護——
-                那才是單一資料源，改一處全站生效。這裡只設定「這把武器怎麼用它」。 */}
+            {/* 新增＝在技能庫建一筆 domain:'weapon' 的技能並掛到這把武器（2026-10-11 取代「新增內嵌技能（舊格式）」） */}
+            <NewItemDialog
+              creating={newSkillOpen}
+              newId={newSkillName}
+              newIdError={newSkillError}
+              placeholder="技能名稱，如：故障鎖定"
+              hint={<>輸入技能名稱，建立後會存進<span className="text-accent-cyan">技能庫</span>（「武器技能」分頁看得到）並掛到這把武器</>}
+              onChangeId={(v) => { setNewSkillName(v); setNewSkillError(''); setNewSkillClashId(null) }}
+              onConfirm={() => { void confirmNewSkill() }}
+              onCancel={() => setNewSkillOpen(false)}
+              deriveMode
+              derivedId={makeEntityId('skill', newSkillName)}
+              extra={newSkillClashId && (
+                <button
+                  onClick={() => {
+                    mountSkill(newSkillClashId)
+                    setNewSkillOpen(false); setNewSkillName(''); setNewSkillError(''); setNewSkillClashId(null)
+                  }}
+                  className="text-xs px-2.5 py-1 text-accent-cyan border border-accent-cyan/40 rounded hover:bg-accent-cyan/10"
+                >
+                  直接掛載既有的「{skillMap.get(newSkillClashId)?.name ?? newSkillClashId}」
+                </button>
+              )}
+            />
+
+            {/* PLAN-032 M4：從技能庫挑既有的一筆掛上來（同一個技能可被多把武器共用，例如 S+ 系列的通用技能）。 */}
             <div className="border border-accent-cyan/40 rounded-lg p-3 bg-accent-cyan/5 space-y-2.5 mb-3">
               <span className="text-xs text-accent-cyan font-medium uppercase tracking-wider">
-                掛載技能庫技能（技能本體請至「技能」分頁維護）
+                掛載既有技能（技能庫）
               </span>
               <WeaponSkillRefAdder
                 skills={gdPanel.pilotSkills}
-                attachedIds={new Set((form.skills ?? []).filter(isWeaponSkillRef).map(e => e.skillId))}
+                attachedIds={new Set(formSkills.filter(isWeaponSkillRef).map(e => e.skillId))}
                 onAdd={(skillId) => {
                   if (!skillId) return
                   // 預設 carry：實測 S+ 一般武器 39/39 皆為 carry，是最常見的起點；
                   // SS 專武常為 use，掛上後在右側下拉改。
-                  update('skills', [...(form.skills ?? []), { skillId, activation: SkillActivation.CARRY as WeaponSkillRef['activation'] }])
+                  mountSkill(skillId)
                 }}
               />
               <p className="text-[11px] text-text-dim">
-                找不到要掛的技能？先到「技能」分頁新增（domain 選「武器技能」），再回來掛。
+                武器技能都存在技能庫，可在「武器技能」分頁統一搜尋與管理。按 ✎ 編輯會直接寫入技能庫；掛載與生效方式則要按「儲存變更」才會記住。
               </p>
             </div>
-            {(form.skills ?? []).length === 0 ? (
+
+            {legacyCount > 0 && (
+              <p className="text-[12px] text-accent-yellow mb-2">
+                ⚠ 這把武器還有 {legacyCount} 個舊格式技能：只存在這把武器上，技能管理搜不到、也無法共用。
+                請逐一按「轉入技能庫」，轉完記得儲存武器。
+              </p>
+            )}
+
+            {formSkills.length === 0 ? (
               <p className="text-xs text-text-dim py-4 text-center">無武器技能</p>
             ) : (
               <div className="space-y-2">
-                {(form.skills ?? []).map((skill, idx) => isWeaponSkillRef(skill) ? (
-                  // 引用格式：只編輯掛載側的 activation。技能本體在技能庫，
-                  // 刻意不在這裡給任何內容欄位——那會讓人以為改了只影響這把武器。
+                {formSkills.map((skill, idx) => isWeaponSkillRef(skill) ? (
                   <WeaponSkillRefRow
                     key={`ref-${skill.skillId}-${idx}`}
                     entry={skill}
                     doc={skillMap.get(skill.skillId)}
+                    sharedWith={(holders.get(skill.skillId) ?? []).filter((h) => h.weaponId !== form.id).map((h) => h.weaponName)}
                     onChange={(updated) => {
-                      const next = [...(form.skills ?? [])]; next[idx] = updated
+                      const next = [...formSkills]; next[idx] = updated
                       update('skills', next)
                     }}
-                    onRemove={() => {
-                      update('skills', (form.skills ?? []).filter((_, i) => i !== idx))
-                      if (expandedSkillIdx === idx) setExpandedSkillIdx(null)
+                    onEdit={() => {
+                      const doc = skillMap.get(skill.skillId)
+                      if (doc) setSkillSession({ mode: 'edit', doc })
                     }}
+                    onRemove={() => update('skills', formSkills.filter((_, i) => i !== idx))}
                   />
                 ) : (
-                  <WeaponSkillItem
-                    key={idx}
+                  <LegacyWeaponSkillRow
+                    key={`legacy-${idx}`}
                     skill={skill}
-                    index={idx}
-                    expanded={expandedSkillIdx === idx}
-                    onToggle={() => setExpandedSkillIdx(expandedSkillIdx === idx ? null : idx)}
-                    onChange={(updated) => {
-                      const next = [...(form.skills ?? [])]; next[idx] = updated
-                      update('skills', next)
-                    }}
-                    onRemove={() => {
-                      update('skills', (form.skills ?? []).filter((_, i) => i !== idx))
-                      if (expandedSkillIdx === idx) setExpandedSkillIdx(null)
-                    }}
+                    clashId={legacyClash?.legacy === skill ? legacyClash.clashId : undefined}
+                    busy={legacyBusy === skill}
+                    onConvert={() => { void startConvert(skill) }}
+                    onMountExisting={(skillId) => replaceLegacy(skill, skillId)}
+                    onConvertSeparate={() => { void startConvert(skill, true) }}
+                    onRemove={() => update('skills', formSkills.filter((_, i) => i !== idx))}
                   />
                 ))}
               </div>
@@ -812,6 +883,18 @@ function WeaponEditPanel({
           </div>
         )}
       </div>
+
+      {skillSession && (
+        <SkillEditPanel
+          skill={skillSession.doc}
+          onSave={handleSkillSave}
+          onCancel={() => { skillDraft.discard(); setSkillSession(null) }}
+          saveLabel={skillSession.mode === 'new' ? '建立並掛上' : skillSession.mode === 'convert' ? '轉入技能庫並改掛' : '儲存技能'}
+          notice={<SkillSessionNotice session={skillSession} sharedWith={
+            (holders.get(skillSession.doc.id) ?? []).filter((h) => h.weaponId !== form.id).map((h) => h.weaponName)
+          } />}
+        />
+      )}
     </AdminModal>
   )
 }

@@ -1,4 +1,4 @@
-import type { Weapon, Backpack } from '../types'
+import type { Weapon, WeaponUpgrade, Backpack } from '../types'
 
 /**
  * PLAN-031 武器製作關係層 — 進階圖 derive 工具。
@@ -39,6 +39,43 @@ export function buildUpgradeIndex(weapons: Weapon[]): UpgradeIndex {
     else childrenOf.set(from, [w.id])
   }
   return { parentOf, childrenOf }
+}
+
+/**
+ * 某武器的所有下游（子、孫…）。後台挑「前置武器」時排除它們，免得選出循環
+ * （A 的前置是 B、B 的前置又是 A → 詳情頁的進階鏈會無限繞）。
+ * 用 seen 防呆：資料裡萬一已經有環，這裡也不會跑不完。
+ */
+export function upgradeDescendants(index: UpgradeIndex, weaponId: string): Set<string> {
+  const out = new Set<string>()
+  const queue = [...(index.childrenOf.get(weaponId) ?? [])]
+  while (queue.length) {
+    const id = queue.shift()!
+    if (out.has(id) || id === weaponId) continue
+    out.add(id)
+    queue.push(...(index.childrenOf.get(id) ?? []))
+  }
+  return out
+}
+
+/**
+ * 存檔前整理 upgrade（後台武器編輯器，2026-10-11）：
+ *   · 沒選前置武器 → 整個欄位拿掉（fromWeaponId 是必填，不留半套物件）
+ *   · 「特種背包製作」只有**背後武器**可以設（複合武器＝武器融合背包進階，全站 3 把都在背後）；
+ *     改成其他部位時 station／fusedBackpackId 一併移除
+ *   · 沒勾特種背包製作 → fusedBackpackId 也不留（它只對複合武器有意義）
+ */
+export function normalizeWeaponUpgrade(w: Pick<Weapon, 'equipSlot' | 'upgrade'>): WeaponUpgrade | undefined {
+  const u = w.upgrade
+  if (!u?.fromWeaponId) return undefined
+  if (u.station === 'specialBackpack' && w.equipSlot === 'back') {
+    return {
+      fromWeaponId: u.fromWeaponId,
+      station: 'specialBackpack',
+      ...(u.fusedBackpackId && { fusedBackpackId: u.fusedBackpackId }),
+    }
+  }
+  return { fromWeaponId: u.fromWeaponId }
 }
 
 /**

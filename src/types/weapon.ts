@@ -6,11 +6,13 @@ import type { SkillEffect } from './buff'
 /**
  * 內嵌武器技能（舊格式）。
  *
- * ⚠ **刻意永久保留，不是待清死碼**（PLAN-032 決策四）。這點與 PLAN-004 機師版不同：
- * 那邊的 union 是「該收斂卻沒收斂」，這邊是**設計上不收斂**——
- * 官方 API 的 PassiveSkill 就是這個形狀，爬蟲抓到全新武器時仍會產出內嵌格式，
- * 由 scrape-weapons.js 的 normalize 步驟才轉成 WeaponSkillRef。
- * 看到「全站已無內嵌資料」就把它刪掉，下次改版爬蟲會直接爆掉。
+ * PLAN-032 決策四原本定為「刻意永久保留」：官方 API 的 PassiveSkill 就是這個形狀，
+ * 爬蟲抓到全新武器時會先產出內嵌格式，再由 scrape-weapons.js 的 normalize 轉成 WeaponSkillRef。
+ *
+ * 2026-10-11 兩個前提都沒了：武器爬蟲已退場（CLAUDE.md 6.5），後台武器編輯器也拿掉了
+ * 「新增內嵌技能」——新技能一律建進技能庫（domain:'weapon'），殘留的由編輯器「轉入技能庫」。
+ * **讀取端仍保留**（resolveWeaponSkills 雙格式），因為正式資料裡還可能有沒轉完的；
+ * 確認全站零筆內嵌後才能拿掉這個型別與 union，且要連同封存爬蟲的 normalize 一起考慮。
  */
 export interface WeaponSkill {
   name: string

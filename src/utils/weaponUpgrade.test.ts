@@ -4,7 +4,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  buildUpgradeIndex, deriveFusedSkillNames, isCompositeWeapon,
+  buildUpgradeIndex, deriveFusedSkillNames, isCompositeWeapon, upgradeDescendants, normalizeWeaponUpgrade,
   isSpecialBackpackCraft, projectedBackpackType, weaponArmorTypes,
 } from './weaponUpgrade.ts'
 import type { Weapon, Backpack } from '../types'
@@ -71,4 +71,43 @@ test('weaponArmorTypes：mechRestriction → 背包 armor key（none→[]）', (
   assert.deepEqual(weaponArmorTypes(w('b', undefined, 'light')), ['Light'])
   assert.deepEqual(weaponArmorTypes(w('c', undefined, 'heavy')), ['Heavy'])
   assert.deepEqual(weaponArmorTypes(w('d', undefined, 'none')), [])
+})
+
+// ── 後台編輯（2026-10-11）────────────────────────────────────────────────────
+test('upgradeDescendants：子孫全收、不含自己；資料有環也會停', () => {
+  const idx = buildUpgradeIndex([
+    w('A'), w('B', { fromWeaponId: 'A' }), w('C', { fromWeaponId: 'B' }), w('D', { fromWeaponId: 'A' }), w('X'),
+  ])
+  assert.deepEqual([...upgradeDescendants(idx, 'A')].sort(), ['B', 'C', 'D'])
+  assert.deepEqual([...upgradeDescendants(idx, 'C')], [])
+  const loop = buildUpgradeIndex([w('P', { fromWeaponId: 'Q' }), w('Q', { fromWeaponId: 'P' })])
+  assert.deepEqual([...upgradeDescendants(loop, 'P')], ['Q'])   // 不無限迴圈、也不把自己算進去
+})
+
+test('normalizeWeaponUpgrade：沒選前置 → 整欄拿掉', () => {
+  assert.equal(normalizeWeaponUpgrade({ equipSlot: 'back', upgrade: undefined }), undefined)
+  assert.equal(normalizeWeaponUpgrade({ equipSlot: 'back', upgrade: { fromWeaponId: '' } }), undefined)
+})
+
+test('normalizeWeaponUpgrade：背後武器保留特種背包製作與融合背包', () => {
+  assert.deepEqual(
+    normalizeWeaponUpgrade({ equipSlot: 'back', upgrade: { fromWeaponId: 'weapon_102_熠光', station: 'specialBackpack', fusedBackpackId: '60102405' } }),
+    { fromWeaponId: 'weapon_102_熠光', station: 'specialBackpack', fusedBackpackId: '60102405' },
+  )
+})
+
+test('normalizeWeaponUpgrade：非背後武器一律移除特種背包製作（只留前置）', () => {
+  for (const slot of ['singleHand', 'dualHand', 'shoulder']) {
+    assert.deepEqual(
+      normalizeWeaponUpgrade({ equipSlot: slot, upgrade: { fromWeaponId: 'A', station: 'specialBackpack', fusedBackpackId: '60102405' } }),
+      { fromWeaponId: 'A' },
+    )
+  }
+})
+
+test('normalizeWeaponUpgrade：沒勾特種背包製作時不留融合背包', () => {
+  assert.deepEqual(
+    normalizeWeaponUpgrade({ equipSlot: 'back', upgrade: { fromWeaponId: 'A', fusedBackpackId: '60102405' } }),
+    { fromWeaponId: 'A' },
+  )
 })

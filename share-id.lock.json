@@ -1,7 +1,7 @@
 {
   "fmt": 1,
   "note": "線上號碼的已核可快照，供 scripts/check-share-ids.mjs 對帳。前端不 import 這個檔；人工指派的別名在 src/utils/loadoutCode/shareIdRegistry.json。",
-  "updatedAt": "2026-10-10",
+  "updatedAt": "2026-10-11",
   "kinds": {
     "pilot": {
       "collection": "pilots",
@@ -384,7 +384,16 @@
         "181": "weapon_181_幽弧",
         "182": "weapon_182_夜燼",
         "183": "weapon_183_誓殮",
-        "184": "weapon_184_歸零協議"
+        "184": "weapon_184_歸零協議",
+        "185": "weapon_185_貝希摩斯改",
+        "186": "weapon_186_凱旋改",
+        "187": "weapon_187_斷鋼改",
+        "188": "weapon_188_火馭改",
+        "189": "weapon_189_群山之力改",
+        "190": "weapon_190_夜魘改",
+        "191": "weapon_191_赤狐改",
+        "192": "weapon_192_貝奧武夫改",
+        "193": "weapon_193_熔火改"
       },
       "unshareable": []
     },
@@ -1009,7 +1018,20 @@
     "pilotSkill": {
       "collection": "pilotSkills",
       "derived": {},
-      "unshareable": []
+      "unshareable": [
+        "skill_倚陣有道",
+        "skill_全局析構",
+        "skill_同步火力",
+        "skill_增設彈鏈",
+        "skill_彈械狂潮",
+        "skill_征途無疆",
+        "skill_戰韻",
+        "skill_故障鎖定",
+        "skill_斷末",
+        "skill_楔罪之刑",
+        "skill_無瑕陣地",
+        "skill_陷刃"
+      ]
     }
   }
 }

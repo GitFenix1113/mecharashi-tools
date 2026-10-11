@@ -2,7 +2,8 @@
 //
 // `Weapon.skills[]` 過渡期會同時存在兩種格式：
 //   · WeaponSkillRef  `{ skillId, activation }` — 已引用化，技能本體住在技能庫（pilotSkills 集合）
-//   · WeaponSkill     內嵌拷貝 — 爬蟲產出的原始形狀，**刻意永久保留**（見 types/weapon.ts）
+//   · WeaponSkill     內嵌拷貝 — 爬蟲產出的原始形狀（見 types/weapon.ts）。
+//     2026-10-11 起後台不再能建立此格式，殘留的由武器編輯器「轉入技能庫」（embeddedToSkillDoc）
 // 這層把兩者攤平成同一個 ResolvedWeaponSkill，前端不需在意目前是哪種。
 //
 // 純函式、無 React / Firestore 依賴，可單測（npm test）。
@@ -15,6 +16,8 @@
 import type {
   Weapon, WeaponSkill, WeaponSkillRef, PilotSkillDoc, DescriptionRefs, SkillEffect,
 } from '../types'
+import { SkillType } from '../types/enums.ts'
+import { isLibraryKey, keyFromValue } from './gameIcons.ts'
 
 /** 解析後的單一武器技能：技能庫的共用定義 + 這把武器的掛載資訊，呼叫端直接拿來渲染。 */
 export interface ResolvedWeaponSkill {
@@ -129,4 +132,59 @@ export function hasWeaponSkills(
   skillMap: Map<string, PilotSkillDoc>,
 ): boolean {
   return resolveWeaponSkills(skills, skillMap).length > 0
+}
+
+/**
+ * 內嵌 WeaponSkill → 技能庫 doc（後台武器編輯器「轉入技能庫」用，2026-10-11）。
+ *
+ * 只產出**定義側**欄位；activation 是掛載側的（見 WeaponSkillRef），
+ * 呼叫端換成 `{ skillId: id, activation: s.activation }` 時沿用原值。
+ *
+ * 圖示：內嵌格式的 iconLocal 多半還是 PLAN-055 前的舊路徑（`/images/skills/被動技能/Icon_skill_passive_5208.png`），
+ * 技能庫只存官方檔名 key，這裡取檔名；兩欄都不是圖庫 key 就留空，交給維護者在編輯面板補。
+ */
+export function embeddedToSkillDoc(s: WeaponSkill, id: string): PilotSkillDoc {
+  const icon = [s.iconLocal, s.icon].map(keyFromValue).find(isLibraryKey) ?? ''
+  const refs = s.descriptionRefs && Object.keys(s.descriptionRefs).length > 0 ? s.descriptionRefs : undefined
+  return {
+    id,
+    name: s.name.trim(),
+    type: s.type || SkillType.PASSIVE,
+    description: s.description ?? '',
+    ...(refs && { descriptionRefs: refs }),
+    icon,
+    effects: s.effects ?? [],
+    buffIds: s.buffIds ?? [],
+    manual: true,
+    domain: 'weapon',
+    ...(s.enhancesTalentName && { enhancesTalentName: s.enhancesTalentName }),
+    ...(s.enhancedTalentDescription && { enhancedTalentDescription: s.enhancedTalentDescription }),
+  }
+}
+
+/** 掛載某技能的一把武器（反查結果的一筆） */
+export interface WeaponSkillHolder {
+  weaponId: string
+  weaponName: string
+}
+
+/**
+ * 技能 id → 掛載它的武器（只算引用格式；內嵌拷貝沒有 skillId，本來就不屬於任何技能庫 doc）。
+ * 後台「武器技能」分頁標孤兒、武器編輯器標「另有 N 把武器共用」都吃這份。
+ */
+export function weaponSkillHolders(weapons: readonly Weapon[]): Map<string, WeaponSkillHolder[]> {
+  const out = new Map<string, WeaponSkillHolder[]>()
+  for (const w of weapons) {
+    if (!Array.isArray(w.skills)) continue
+    const seen = new Set<string>()
+    for (const entry of w.skills) {
+      if (!entry || !isWeaponSkillRef(entry) || seen.has(entry.skillId)) continue
+      seen.add(entry.skillId)
+      const list = out.get(entry.skillId)
+      const holder = { weaponId: w.id, weaponName: w.name }
+      if (list) list.push(holder)
+      else out.set(entry.skillId, [holder])
+    }
+  }
+  return out
 }

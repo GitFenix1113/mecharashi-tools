@@ -3,7 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Weapon, WeaponSkill, PilotSkillDoc } from '../types/index.ts'
-import { resolveWeaponSkills, hasWeaponSkills, isWeaponSkillRef } from './weaponSkills.ts'
+import { resolveWeaponSkills, hasWeaponSkills, isWeaponSkillRef, embeddedToSkillDoc, weaponSkillHolders } from './weaponSkills.ts'
 
 // ── 測試素材 ─────────────────────────────────────────────────────────────────
 // 取真實案例：凝神待發同時被 [赤狐·改 S+] carry 與 [魔笛 SS] use 持有，
@@ -148,4 +148,52 @@ test('ResolvedWeaponSkill 涵蓋消費端需要的全部欄位（欄位漏了就
   assert.equal(sk.enhancesTalentName, '悖想先驅')
   assert.equal(sk.enhancedTalentDescription, '強化後的天賦原文')
   assert.equal(sk.activation, 'equip')   // 掛載側，非 doc 的欄位
+})
+
+// ── 轉入技能庫（2026-10-11：後台不再建立內嵌格式）───────────────────────────────
+test('embeddedToSkillDoc：舊路徑圖示取檔名、標 domain:weapon + manual、不帶 activation', () => {
+  const doc = embeddedToSkillDoc({ ...embedded, name: ' 起爆 ' }, 'skill_起爆')
+  assert.equal(doc.id, 'skill_起爆')
+  assert.equal(doc.name, '起爆')                               // 前後空白收掉，與 makeEntityId 的推導一致
+  assert.equal(doc.icon, 'Icon_skill_passive_1115')            // 技能庫只存官方檔名 key（PLAN-055）
+  assert.equal(doc.domain, 'weapon')
+  assert.equal(doc.manual, true)
+  assert.deepEqual(doc.buffIds, ['buff_起爆'])
+  assert.ok(!('activation' in doc))                            // 掛載側欄位，不可混進定義
+  assert.ok(!('descriptionRefs' in doc))                       // 沒有引用就不寫空物件
+  assert.ok(!('enhancesTalentName' in doc))
+})
+
+test('embeddedToSkillDoc：iconLocal 不是圖庫 key 時退用遠端 URL 的檔名，兩者皆非則留空', () => {
+  const remote = embeddedToSkillDoc(
+    { ...embedded, iconLocal: undefined, icon: 'https://cdn.example/Icon_skill_passive_5208.png?v=2' }, 'skill_x')
+  assert.equal(remote.icon, 'Icon_skill_passive_5208')
+  const none = embeddedToSkillDoc({ ...embedded, iconLocal: '/images/skills/自訂圖.png', icon: undefined }, 'skill_x')
+  assert.equal(none.icon, '')
+})
+
+test('embeddedToSkillDoc：專武強化兩欄與 descriptionRefs 原樣帶過去（它們一起被消費）', () => {
+  const doc = embeddedToSkillDoc({
+    ...embedded,
+    descriptionRefs: { 火控延遲: { refType: 'buff', refId: 'buff_火控延遲' } },
+    enhancesTalentName: '悖想先驅',
+    enhancedTalentDescription: '強化後的天賦原文[火控延遲]',
+  }, 'skill_x')
+  assert.equal(doc.enhancesTalentName, '悖想先驅')
+  assert.equal(doc.enhancedTalentDescription, '強化後的天賦原文[火控延遲]')
+  assert.deepEqual(doc.descriptionRefs, { 火控延遲: { refType: 'buff', refId: 'buff_火控延遲' } })
+})
+
+test('weaponSkillHolders：只算引用格式、同武器重複掛只算一次', () => {
+  const ws = [
+    { id: 'w1', name: '赤狐·改', skills: [{ skillId: 'skill_凝神待發', activation: 'carry' }, embedded] },
+    { id: 'w2', name: '魔笛', skills: [
+      { skillId: 'skill_凝神待發', activation: 'use' },
+      { skillId: 'skill_凝神待發', activation: 'use' },
+    ] },
+    { id: 'w3', name: '無技能' },
+  ] as unknown as Weapon[]
+  const holders = weaponSkillHolders(ws)
+  assert.deepEqual(holders.get('skill_凝神待發')?.map((h) => h.weaponName), ['赤狐·改', '魔笛'])
+  assert.equal(holders.size, 1)                                // 內嵌的「起爆」沒有 skillId，不進反查
 })
