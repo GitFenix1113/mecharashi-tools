@@ -93,7 +93,7 @@ console.log(`新增 ${added.length}、sha 不同 ${candidates.length}（真的�
 
 // ── ④ 認出是什麼 ───────────────────────────────────────────────────────────────
 /** 站上 public/images/game/ 已有的檔（不含副檔名）與 ID 資料夾 */
-const site = { stems: new Set(), pilotIds: new Set(), waps: new Set(), artIds: new Set() }
+const site = { stems: new Set(), pilotIds: new Set(), waps: new Set(), artIds: new Set(), npcIds: new Set() }
 {
   const walk = (dir) => {
     if (!fs.existsSync(dir)) return
@@ -105,7 +105,16 @@ const site = { stems: new Set(), pilotIds: new Set(), waps: new Set(), artIds: n
   walk(SITE)
   for (const d of fs.existsSync(path.join(SITE, 'pilots')) ? fs.readdirSync(path.join(SITE, 'pilots')) : []) site.pilotIds.add(d)
   for (const d of fs.existsSync(path.join(SITE, 'mechs')) ? fs.readdirSync(path.join(SITE, 'mechs')) : []) site.waps.add(d)
-  for (const s of site.stems) { const m = s.match(/^Pilot_(\d+)/); if (m) site.artIds.add(m[1]) }
+  // artIds＝可抽機師的立繪號碼（只看 game/pilots/）；npcIds＝NPC 圖庫的號碼（2026-10-12 起上站）。
+  // 兩者要分開：NPC 圖庫的號碼若混進 artIds，NPC 轉正的新機師卡會被誤判成「既有機師的造型卡」
+  const numbersIn = (sub, out) => {
+    const dir = path.join(SITE, sub)
+    for (const d of fs.existsSync(dir) ? fs.readdirSync(dir) : []) {
+      for (const f of fs.readdirSync(path.join(dir, d))) { const m = f.match(/^Pilot_(\d+)/); if (m) out.add(m[1]) }
+    }
+  }
+  numbersIn('pilots', site.artIds)
+  numbersIn('npc', site.npcIds)
 }
 /** 英文名鍵 → 站上中文名（v3 定版；沒有這份檔就全部當成「對不到」） */
 const enName = new Map()
@@ -139,9 +148,14 @@ function classify(r) {
 function siteStatus(r, c) {
   if (c.kind === 'pilot') {
     if (site.stems.has(r.name)) return { text: '站上已有', fresh: false }
-    if (!c.id.startsWith('1010')) return { text: 'NPC／劇情頭像（非可抽）', fresh: false }
     if (site.pilotIds.has(c.id) || site.artIds.has(c.id)) return { text: c.part === 'card' ? '既有機師的造型卡' : '既有機師的新造型', fresh: true }
-    return { text: c.part === 'card' ? '新機師卡（gameId 候選）' : '新立繪（artKey 候選）', fresh: true }
+    if (c.part === 'card') {
+      return site.npcIds.has(c.id)
+        ? { text: '新機師卡：NPC 轉正（立繪已在 NPC 圖庫，後台可直接選）', fresh: true }
+        : { text: '新機師卡（gameId 候選）', fresh: true }
+    }
+    // 不屬於可抽機師的立繪一律進 NPC 圖庫（劇情 NPC、尚未上線的新角色都在這）
+    return { text: c.id.startsWith('1010') ? '新立繪（NPC 圖庫沒有；artKey 候選）' : '新 NPC 立繪（NPC 圖庫沒有）', fresh: true, npcArt: true }
   }
   if (c.kind === 'mech') {
     if (site.stems.has(r.name)) return { text: '站上已有', fresh: false }
@@ -178,6 +192,7 @@ const SRC = `--src=${NEW.id}`
 const newPilotCards = [...new Set(addedItems.filter((i) => i.kind === 'pilot' && i.part === 'card' && i.fresh && i.text.startsWith('新機師')).map((i) => i.id))]
 const newPilotArts = [...new Set(addedItems.filter((i) => i.kind === 'pilot' && i.part !== 'card' && i.fresh && i.text.startsWith('新立繪')).map((i) => i.name.replace(/_(half|head|Raw)$/, '')))]
 const newWaps = [...new Set(addedItems.filter((i) => i.kind === 'mech' && i.part !== 'skin' && i.text === '新機甲').map((i) => i.wap))]
+const newNpcArts = [...new Set(addedItems.filter((i) => i.kind === 'pilot' && i.npcArt).map((i) => i.name.replace(/_(half|head|Raw)$/, '')))]
 const freshIcons = addedItems.filter((i) => i.kind === 'icon' && i.fresh)
 const freshUi = addedItems.filter((i) => i.kind === 'ui' && i.art && UI_GROUPS[i.group].archive)
 const nextSteps = []
@@ -186,6 +201,12 @@ if (newPilotCards.length || newPilotArts.length) {
     title: '新機師（gameId 與 artKey 不互推，先確認誰是誰、台版上線了沒）',
     lines: [`機師卡編號（gameId 候選）：${newPilotCards.join('、') || '（無）'}`, `立繪主鍵（artKey 候選）：${newPilotArts.join('、') || '（無）'}`,
       ...newPilotCards.map((id) => `node scripts/import-game-assets.mjs ${SRC} --id=${id} --art-key=<確認後填，例 ${newPilotArts[0] ?? `Pilot_${id}A`}>`)],
+  })
+}
+if (newNpcArts.length) {
+  nextSteps.push({
+    title: `NPC 圖庫補新立繪 ${newNpcArts.length} 套（上站；NPC 轉正時管理員在後台「選取官方立繪」的 NPC 分組直接選）`,
+    lines: [newNpcArts.join('、'), `node scripts/import-game-assets.mjs ${SRC} --npc`],
   })
 }
 if (newWaps.length) nextSteps.push({ title: '新機甲（先確認台版上線了沒）', lines: newWaps.map((w) => `node scripts/import-game-assets.mjs ${SRC} --wap=${w}`) })

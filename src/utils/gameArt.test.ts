@@ -5,7 +5,7 @@
 // 這幾位是刻意挑的：例外 5 位要證明「資料夾用 gameId、檔名用 artKey、兩者不互推」。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mechGameArt, mechGameFileName, mechGameIdFromPath, pilotGameArt, pilotGameFileName, pilotGameIdFromPath } from './gameArt.ts'
+import { mechGameArt, mechGameFileName, mechGameIdFromPath, npcGameArt, pilotGameArt, pilotGameFileName, pilotGameIdFromPath } from './gameArt.ts'
 
 const 維娜 = { gameId: '10103144', artKey: 'Pilot_13019A' }
 const 葉夫根尼 = { gameId: '10103123', artKey: 'Pilot_10103123A' }
@@ -81,4 +81,30 @@ test('反推 ID：機甲立繪、全身大圖、部件都推得回 wap；舊名�
   assert.equal(mechGameIdFromPath('/images/game/mechs/1011/Icon_wap1011_3.webp'), '1011')
   assert.equal(mechGameIdFromPath('/images/mechs/凜騎士/portrait.webp'), undefined)
   assert.equal(mechGameIdFromPath('/images/game/mechs/3132/Icon_mecha_wap3132.webp'), undefined)
+})
+
+test('NPC 圖庫：沒有 gameId、artKey 指到 NPC 立繪 → 頭像／頭部／半身都有圖，機師卡沒有', () => {
+  const npc = { artKey: 'Pilot_13046B' }
+  assert.equal(pilotGameArt(npc, 'half'), '/images/game/npc/13046/Pilot_13046B_half.webp')
+  assert.equal(pilotGameArt(npc, 'head'), '/images/game/npc/13046/Pilot_13046B_head.webp')
+  assert.equal(pilotGameArt(npc, 'raw'), '/images/game/npc/13046/Pilot_13046B_Raw.webp')
+  assert.equal(pilotGameArt(npc, 'card'), undefined)
+  // 沒有字母造型碼的官方鍵照樣認得
+  assert.equal(npcGameArt('Pilot_101031200', 'half'), '/images/game/npc/101031200/Pilot_101031200_half.webp')
+})
+
+test('NPC 圖庫：有 gameId 但 artKey 指到 NPC 立繪 → 立繪走 NPC 圖庫，機師卡照樣走 gameId 資料夾', () => {
+  // 假想：維娜的卡號＋某張 NPC 立繪（例如官方之後換回 NPC 時期的造型）
+  const mixed = { gameId: '10103144', artKey: 'Pilot_13046A' }
+  assert.equal(pilotGameArt(mixed, 'half'), '/images/game/npc/13046/Pilot_13046A_half.webp')
+  assert.equal(pilotGameArt(mixed, 'card'), '/images/game/pilots/10103144/Icon_item_10103144A.webp')
+  // gameId 資料夾的主鍵對得上時優先用它，不會跑去 NPC 圖庫
+  assert.equal(pilotGameArt(維娜, 'half'), '/images/game/pilots/10103144/Pilot_13019A_half.webp')
+})
+
+test('NPC 圖庫：缺的種類回 undefined，交給下一個候選（Pilot_11023B 只有半身 Raw）', () => {
+  assert.equal(npcGameArt('Pilot_11023B', 'raw'), '/images/game/npc/11023/Pilot_11023B_Raw.webp')
+  assert.equal(npcGameArt('Pilot_11023B', 'half'), undefined)
+  assert.equal(npcGameArt('Pilot_99999999A', 'half'), undefined)
+  assert.equal(npcGameArt(undefined, 'half'), undefined)
 })

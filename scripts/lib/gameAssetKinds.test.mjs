@@ -5,7 +5,7 @@
 // 也順便驗證「反向分類」：每個拼出來的檔名分類回去都得到原本的種類。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { MECH_KINDS, PILOT_KINDS, classifyMechFile, classifyPilotFile, mechFileName, pilotFileName } from './gameAssetKinds.mjs'
+import { MECH_KINDS, PILOT_KINDS, classifyMechFile, classifyNpcFile, classifyPilotFile, mechFileName, npcDirOf, pilotFileName } from './gameAssetKinds.mjs'
 import { mechGameFileName, pilotGameFileName } from '../../src/utils/gameArt.ts'
 
 const PILOTS = [
@@ -41,4 +41,14 @@ test('不屬於讀取端的檔案分類為 null（例：藍色魔鳥多出來的
   assert.equal(classifyMechFile('Icon_mecha_wap2071_1', '2071'), null)
   assert.equal(classifyMechFile('Icon_wap1011_5', '1011'), null)
   assert.equal(classifyPilotFile('Img_1_pilot_gacha_banner_Ada', '10103123'), null)
+})
+
+test('NPC 圖庫：檔名分類與資料夾（號碼段），機師卡與 3D 貼圖不算', () => {
+  assert.deepEqual(classifyNpcFile('Pilot_13046B_Raw'), { kind: 'raw', key: 'Pilot_13046B' })
+  assert.deepEqual(classifyNpcFile('Pilot_101031200_half'), { kind: 'half', key: 'Pilot_101031200' })
+  assert.equal(classifyNpcFile('Icon_item_10103181A'), null)
+  assert.equal(classifyNpcFile('Pilot_Verna'), null)               // 3D 貼圖（pilot_pilotbNN_abs）
+  assert.equal(classifyNpcFile('T_Pilot_10103113A_Body_AG'), null)
+  assert.equal(npcDirOf('Pilot_13046B'), '13046')
+  assert.equal(npcDirOf('Pilot_101031200'), '101031200')
 })

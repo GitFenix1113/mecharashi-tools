@@ -14,12 +14,17 @@
 // 機師另外比對 DB 的 `artKey` 與資料夾裡實際的立繪主鍵：對不上（資料打錯）也回 undefined，
 // 寧可退回舊圖，也不給一個看起來合理、實際上不存在的路徑。
 //
+// ── NPC 圖庫（2026-10-12）─────────────────────────────────────────────────────
+// `game/npc/<dir>/` 放還沒對應到可抽機師的官方立繪（劇情 NPC、尚未上線的新角色）。
+// NPC 轉正的機師官方常沿用 NPC 時期那張立繪：DB 的 `artKey` 指過去，`pilotGameArt()` 在 gameId 資料夾找不到時
+// 就改查 NPC 圖庫——所以**不必等機師卡**（gameId）也有立繪；機師卡只有 gameId 資料夾才有。
+//
 // ⚠ 命名規則與 scripts/lib/gameAssetKinds.mjs 是同一套（build 腳本要能在 Node 20 跑，不能 import .ts），
 //   兩邊由 scripts/lib/gameAssetKinds.test.mjs 交叉比對。改一邊就要改另一邊。
 // ⚠ 路徑不含 BASE_URL，呼叫端套 imageCandidates()／assetUrl()——與 assets.ts 其他 helper 相同，
 //   這樣本檔不碰 import.meta.env、可以 node --test。
 
-import { GAME_MECH_ART, GAME_PILOT_ART } from '../data/gameArtIndex.ts'
+import { GAME_MECH_ART, GAME_NPC_ART, GAME_PILOT_ART } from '../data/gameArtIndex.ts'
 
 /** 機師的四種官方圖：頭像 340²／頭部特寫 90²／半身 1240×1080／機師卡 340² */
 export type PilotGameArtKind = 'half' | 'head' | 'raw' | 'card'
@@ -46,7 +51,11 @@ export function mechGameFileName(kind: MechGameArtKind, wap: string | undefined)
 }
 
 /**
- * 機師的官方原檔路徑；這位沒有這種圖（或 DB 的 artKey 與檔案對不上）回 undefined。
+ * 機師的官方原檔路徑；這位沒有這種圖（或 DB 的 artKey 哪裡都對不上）回 undefined。
+ *
+ * 查找順序：
+ *   ① gameId 資料夾（game/pilots/<gameId>/），artKey 要等於資料夾裡實際的立繪主鍵；機師卡只看這裡
+ *   ② NPC 圖庫（game/npc/），以 artKey 查——NPC 轉正、官方還沒出機師卡（或卡號還沒匯入）時走這條
  *
  * ⚠ `raw` 就是舊的 `full.webp`（1240×1080 橫式半身），`half` 就是舊的 `half.webp`——同一張圖的官方版本。
  *   `head`（90²）是**另一種構圖**（頭部特寫），不是 half 的縮圖。
@@ -56,10 +65,18 @@ export function pilotGameArt(
   kind: PilotGameArtKind,
 ): string | undefined {
   const id = pilot?.gameId
+  const key = pilot?.artKey
   const entry = id ? GAME_PILOT_ART.get(id) : undefined
-  if (!id || !entry?.[kind]) return undefined
-  if (kind !== 'card' && (!pilot?.artKey || pilot.artKey !== entry.key)) return undefined
-  return `${GAME_ROOT}/pilots/${id}/${pilotGameFileName(kind, id, pilot?.artKey)}.webp`
+  if (id && entry?.[kind] && (kind === 'card' || (key && key === entry.key))) {
+    return `${GAME_ROOT}/pilots/${id}/${pilotGameFileName(kind, id, key)}.webp`
+  }
+  return kind === 'card' ? undefined : npcGameArt(key, kind)
+}
+
+/** NPC 圖庫裡某套立繪的路徑；索引沒有這個立繪鍵（或這套缺這種圖）回 undefined。 */
+export function npcGameArt(artKey: string | null | undefined, kind: Exclude<PilotGameArtKind, 'card'>): string | undefined {
+  const npc = artKey ? GAME_NPC_ART.get(artKey) : undefined
+  return npc?.[kind] ? `${GAME_ROOT}/npc/${npc.dir}/${artKey}${PILOT_SUFFIX[kind]}.webp` : undefined
 }
 
 /** 機甲的官方原檔路徑；這台沒有這種圖（或根本沒有遊戲 ID）回 undefined。 */

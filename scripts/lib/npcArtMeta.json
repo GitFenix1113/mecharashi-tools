@@ -1,0 +1,79 @@
+{
+ "generatedBy": "scripts/import-game-assets.mjs --npc --apply（只增不減，勿手改；人工註記寫 npcArtNotes.json）",
+ "note": "en＝3D 模型資料夾的英文名（pilot/pilotbNN_abs/<號碼>/pilot_<英文>.png）；skinCard＝擷取裡有 Icon_pilotSkin_<號碼>*",
+ "dirs": {
+  "13046": {
+   "en": [
+    "idaa",
+    "idab"
+   ]
+  },
+  "10101113": {
+   "en": [
+    "camilla"
+   ]
+  },
+  "10102116": {
+   "en": [
+    "fieldadams"
+   ]
+  },
+  "10103104": {
+   "en": [
+    "shinsagara"
+   ]
+  },
+  "10103114": {
+   "en": [
+    "blairbluecher"
+   ]
+  },
+  "10103125": {
+   "en": [
+    "phoneix"
+   ]
+  },
+  "10103128": {
+   "en": [
+    "rookemun"
+   ]
+  },
+  "10103129": {
+   "en": [
+    "maatsharif"
+   ],
+   "skinCard": true
+  },
+  "10103132": {
+   "en": [
+    "hailismill"
+   ],
+   "skinCard": true
+  },
+  "10103142": {
+   "en": [
+    "vesper"
+   ]
+  },
+  "10103143": {
+   "en": [
+    "bertha"
+   ]
+  },
+  "10103147": {
+   "en": [
+    "sideon"
+   ]
+  },
+  "10103148": {
+   "en": [
+    "lorenzo"
+   ]
+  },
+  "10103156": {
+   "en": [
+    "leopold"
+   ]
+  }
+ }
+}

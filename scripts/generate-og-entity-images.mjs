@@ -13,7 +13,7 @@
  *                                →  /images/og/entities/game/pilots/10103144/Pilot_13019A_half.jpg
  *
  * PLAN-054 起 og:image 以**官方原檔**為先（Worker 由 doc 的 gameId／artKey 推路徑），
- * 舊的名字資料夾來源仍保留——沒有遊戲 ID 的實體（索妮婭）只有那條路；
+ * 舊的名字資料夾來源仍保留——沒有遊戲 ID 的實體（尚未匯入官方原檔的新角色）只有那條路；
  * 舊檔清掉之後那幾行自然收集不到東西，不必刪。
  *
  * ⚠ 產出物**不進版控**（.gitignore 已忽略），由 build/dev 前置每次重跑。
@@ -46,6 +46,8 @@ const FLATTEN_BG = { r: 10, g: 12, b: 16 }
 const SOURCES = [
   // 官方原檔（PLAN-054）：機師頭像 <artKey>_half、機甲立繪 Icon_mecha_wap<wap>（不含部件與 SN 大圖）
   { dir: 'game/pilots', depth: 1, match: name => name.endsWith('_half.webp') },
+  // NPC 圖庫（2026-10-12）：NPC 轉正、還沒有機師卡的機師，Worker 會退回 doc.portrait（指到這裡的 _half）
+  { dir: 'game/npc', depth: 1, match: name => name.endsWith('_half.webp') },
   { dir: 'game/mechs', depth: 1, match: name => /^Icon_mecha_wap\d+\.webp$/.test(name) },
   // 官方武器圖示（PLAN-056）：分享卡片用 gameId 推 Icon_weapon_<gameId>.webp
   { dir: 'game/icons/weapon', depth: 0, match: name => name.endsWith('.webp') },

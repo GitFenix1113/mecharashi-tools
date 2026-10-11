@@ -45,8 +45,8 @@
       <tr><td>name</td><td>string</td><td>顯示名稱</td></tr>
       <tr><td>fullName</td><td>string</td><td>完整全名</td></tr>
       <tr><td>nameEn</td><td>string?</td><td>英文名（PLAN-042-C，選填，人工輸入）；故事館草書層用，空值不渲染。PLAN-054 由 v3 定版對照一次回填 90 位（有全名就用全名）</td></tr>
-      <tr><td>gameId</td><td>string?</td><td>🆕 <strong>PLAN-054</strong>：機師卡 <code>Icon_item_&lt;gameId&gt;A</code> 編號（只有可抽機師有）；官方原檔資料夾 <code>game/pilots/&lt;gameId&gt;/</code>。<strong>與 artKey 不互推</strong>（例外 5 位：維娜、貝爾莎、阿列娜、珂賽特、瑪阿特）。索妮婭無值</td></tr>
-      <tr><td>artKey</td><td>string?</td><td>🆕 <strong>PLAN-054</strong>：預設立繪主鍵（如 <code>Pilot_10103174A</code>），與官方檔名逐字相同；<code>_half</code>／<code>_head</code>／<code>_Raw</code> 接在後面</td></tr>
+      <tr><td>gameId</td><td>string?</td><td>🆕 <strong>PLAN-054</strong>：機師卡 <code>Icon_item_&lt;gameId&gt;A</code> 編號（只有可抽機師有）；官方原檔資料夾 <code>game/pilots/&lt;gameId&gt;/</code>。<strong>與 artKey 不互推</strong>（例外 5 位：維娜、貝爾莎、阿列娜、珂賽特、瑪阿特）。未設定＝還沒有機師卡（NPC 轉正、官方還沒出卡也可能）</td></tr>
+      <tr><td>artKey</td><td>string?</td><td>🆕 <strong>PLAN-054</strong>：預設立繪主鍵（如 <code>Pilot_10103174A</code>），與官方檔名逐字相同；<code>_half</code>／<code>_head</code>／<code>_Raw</code> 接在後面。2026-10-12 起也可以指到 <strong>NPC 圖庫</strong> <code>game/npc/</code>（NPC 轉正、尚無機師卡時）</td></tr>
       <tr><td>pairedMechId</td><td>string?</td><td>🆕 <strong>PLAN-054</strong>：官配機甲的文件 ID（61 位有值）。<strong>只存機師側</strong>，機甲側由 <code>pairedPilotOf()</code> 推導</td></tr>
       <tr><td>rarity</td><td>ItemRarity</td><td>稀有度 Enum：S / A / B（機師不使用 EX）</td></tr>
       <tr><td>class</td><td>PilotClass</td><td>職業 Enum：突擊手 / 狙擊手 / 戰術家 / 格鬥家 / 守護者 / 機械師 / 調構師</td></tr>

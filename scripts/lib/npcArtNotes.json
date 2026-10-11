@@ -1,0 +1,9 @@
+{
+ "_說明": "NPC 圖庫（public/images/game/npc/）的人工註記。generate-art-index.mjs 會帶進 GAME_NPC_ART，後台「選取官方立繪」的 NPC 分組顯示在格子與預覽欄、也拿來搜尋。手動維護。owner＝這套立繪其實屬於哪位可抽機師（pilots 文件 ID）——通常是劇情換造型、或 NPC 時期的樣子；有 owner 的不算「未使用」。純 NPC 不必登記，英文名由 --npc 自動從 3D 模型資料夾抓（scripts/lib/npcArtMeta.json）。",
+ "notes": {
+  "Pilot_10101113A": { "owner": "pilot_017_卡米拉", "note": "卡蜜拉早期的樣子（3D 模型名 camilla）" },
+  "Pilot_10103129A": { "owner": "pilot_050_瑪阿特", "note": "瑪阿特劇情換造型之前的樣子；官方 API 曾把 10103129 當成她的卡號（2026-10-12 站長）" },
+  "Pilot_10103132A": { "owner": "pilot_049_海莉絲", "note": "海莉絲的另一套造型（有外觀卡 Icon_pilotSkin_10103132A，3D 模型名 hailismill）" },
+  "Pilot_10103143A": { "owner": "pilot_054_貝爾莎", "note": "貝爾莎（左右翻轉的同一張圖；3D 模型名 bertha）。她也是敵方轉可控（2026-10-12 站長）" }
+ }
+}

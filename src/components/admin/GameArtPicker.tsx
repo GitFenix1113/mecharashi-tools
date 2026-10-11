@@ -8,6 +8,9 @@
 //   · 「未使用」排最前：新角色匯入官方原檔後，它就是唯一一組沒人用的圖
 //   · 點一次就把**官方 ID 連同圖片**寫回（各欄位版各自決定寫哪些欄）
 //
+// 機師另有「NPC 立繪」分組（2026-10-12）：game/npc/ 裡還沒對應到可抽機師的官方立繪。NPC 轉正的機師官方常沿用
+// NPC 時期那張，點它只寫回 artKey＋portrait——gameId（機師卡號）等官方出卡後再填，前台照樣有圖（見 pilotGameArt）。
+//
 // 清單來源是 build 產生的 gameArtIndex（與前台同一份）：剛匯入、還沒重跑 build／dev 的圖不會出現——前台也還看不到它。
 // 客戶端擷取裡沒有的角色才走「其他圖片」：舊的 IconPicker，資料夾名旁附名稱；選到官方資料夾裡的圖照樣回推 ID。
 
@@ -15,18 +18,24 @@ import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import type { Mech, Pilot } from '../../types'
-import { GAME_MECH_ART, GAME_PILOT_ART } from '../../data/gameArtIndex'
+import { GAME_MECH_ART, GAME_NPC_ART, GAME_PILOT_ART } from '../../data/gameArtIndex'
 import { PILOT_ART_INDEX } from '../../data/artIndex'
-import { mechGameArt, pilotGameArt, pilotGameIdFromPath } from '../../utils/gameArt'
+import { mechGameArt, npcGameArt, pilotGameArt, pilotGameIdFromPath } from '../../utils/gameArt'
 import type { MechGameArtKind } from '../../utils/gameArt'
 import { assetUrl, resolveIconSrc } from '../../utils/assets'
 import { maxEntitySeq } from '../../utils/idSlug'
 import { IconPicker } from './IconPicker'
 import { artFolderNames } from './artFolderNames'
 
-/** 一組官方原檔（一個遊戲 ID 資料夾） */
+/** 一組官方原檔（一個遊戲 ID 資料夾，或 NPC 圖庫的一套立繪） */
 interface ArtCandidate {
   id: string
+  /** 分組（對到 GameArtPicker 的 groups）；不給＝第一組 */
+  group?: string
+  /** 格子第二行顯示的短編號；不給＝id */
+  label?: string
+  /** 同狀態時的排序（大的在前）；不給＝Number(id) */
+  order?: number
   /** 網格縮圖（已套 assetUrl） */
   thumb: string
   /** 側欄預覽：第一張放大，其餘排成一列 */
@@ -50,6 +59,10 @@ interface ArtEntry extends ArtCandidate {
 }
 
 type UseFilter = 'all' | 'unused' | 'used'
+type ArtGroup = { key: string; label: string; tag?: string; hint?: string }
+
+/** 候選屬於哪一組；沒標的歸第一組 */
+const groupKeyOf = (e: ArtCandidate, groups: ArtGroup[] | undefined) => e.group ?? groups?.[0]?.key ?? ''
 
 function Chip({ on, onClick, children, title }: { on: boolean; onClick: () => void; children: ReactNode; title?: string }) {
   return (
@@ -68,7 +81,7 @@ function Chip({ on, onClick, children, title }: { on: boolean; onClick: () => vo
 
 // ── 挑選器彈窗（通用）──────────────────────────────────────────────────────────
 function GameArtPicker({
-  noun, idPrefix, subtitle, candidates, usersOf, selfId, currentId, wide, importHint, footer, onPick, onClose,
+  noun, idPrefix, subtitle, candidates, groups, usersOf, selfId, currentId, wide, importHint, footer, onPick, onClose,
 }: {
   /** 「機師」／「機甲」 */
   noun: string
@@ -76,7 +89,9 @@ function GameArtPicker({
   idPrefix: 'pilot' | 'mech'
   subtitle: string
   candidates: ArtCandidate[]
-  /** 遊戲 ID → 使用它的**其他**實體 */
+  /** 來源分組（例：可抽機師／NPC 立繪）；只有一組時不顯示分組列 */
+  groups?: ArtGroup[]
+  /** 候選 id → 使用它的**其他**實體 */
   usersOf: ReadonlyMap<string, ArtUser[]>
   selfId: string
   currentId?: string
@@ -106,17 +121,23 @@ function GameArtPicker({
   const [newestFirst, setNewestFirst] = useState(true)
   const [search, setSearch] = useState('')
   const [focus, setFocus] = useState<string | null>(currentId ?? null)
+  const [groupFilter, setGroupFilter] = useState<string | null>(null)
+  const groupInfo = (e: ArtCandidate) => groups?.find((g) => g.key === groupKeyOf(e, groups))
 
   const results = useMemo(() => {
     const q = search.trim().toLowerCase()
     const out = entries.filter((e) => {
+      if (groupFilter && groupKeyOf(e, groups) !== groupFilter) return false
       if (use === 'unused' && !e.free) return false
       if (use === 'used' && e.free) return false
       return !q || e.haystack.includes(q)
     })
-    out.sort((a, b) => (newestFirst ? b.seq - a.seq : a.seq - b.seq) || Number(b.id) - Number(a.id))
+    // 使用狀態（未使用＝最新）→ 分組順序 → 編號
+    const order = (e: ArtCandidate) => e.order ?? Number(e.id)
+    const rank = (e: ArtCandidate) => Math.max(0, groups?.findIndex((g) => g.key === groupKeyOf(e, groups)) ?? 0)
+    out.sort((a, b) => (newestFirst ? b.seq - a.seq : a.seq - b.seq) || rank(a) - rank(b) || order(b) - order(a))
     return out
-  }, [entries, use, search, newestFirst])
+  }, [entries, use, search, newestFirst, groupFilter, groups])
 
   const focusEntry = entries.find((e) => e.id === focus) ?? null
   const pick = (id: string) => { onPick(id); onClose() }
@@ -138,6 +159,17 @@ function GameArtPicker({
           <button onClick={onClose} className="text-text-dim hover:text-text-primary text-lg leading-none">✕</button>
         </div>
 
+        {groups && groups.length > 1 && (
+          <div className="flex flex-wrap items-center gap-1.5 mb-2 shrink-0">
+            <span className="text-[11px] text-text-dim shrink-0">來源</span>
+            <Chip on={!groupFilter} onClick={() => setGroupFilter(null)}>全部來源</Chip>
+            {groups.map((g) => (
+              <Chip key={g.key} on={groupFilter === g.key} onClick={() => setGroupFilter(g.key)} title={g.hint}>
+                {g.label}（{entries.filter((e) => groupKeyOf(e, groups) === g.key).length}）
+              </Chip>
+            ))}
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-1.5 mb-3 shrink-0">
           <Chip on={use === 'all'} onClick={() => setUse('all')}>全部（{entries.length}）</Chip>
           <Chip on={use === 'unused'} onClick={() => setUse('unused')} title={`沒有任何其他${noun}在用——新匯入的就在這裡`}>
@@ -189,7 +221,12 @@ function GameArtPicker({
                       <span className={`text-[11px] truncate max-w-full leading-tight ${active ? 'text-accent-orange' : taken ? 'text-text-primary' : 'text-accent-yellow'}`}>
                         {active ? '目前' : taken ? e.users.map((u) => u.name).join('、') : '未使用'}
                       </span>
-                      <span className="text-[10px] text-text-dim font-mono leading-tight">{e.id}</span>
+                      <span className="text-[10px] text-text-dim font-mono leading-tight truncate max-w-full">{e.label ?? e.id}</span>
+                      {groupInfo(e)?.tag && (
+                        <span className="absolute top-1 left-1 px-1 rounded bg-bg-dark/90 border border-accent-purple/50 text-[9px] leading-4 text-accent-purple">
+                          {groupInfo(e)!.tag}
+                        </span>
+                      )}
                       {e.users.length > 1 && (
                         <span title="遊戲 ID 應該一筆一組" className="absolute top-1 right-1 px-1 rounded bg-bg-dark/90 border border-accent-red/50 text-[9px] leading-4 text-accent-red">
                           重複
@@ -239,7 +276,7 @@ function GameArtPicker({
                         ))}
                       </ul>
                       {focusEntry.id !== currentId && (
-                        <p className="mt-2 text-accent-yellow leading-snug">⚠ 套用後會和上面這{noun === '機甲' ? '台' : '位'}共用同一個遊戲 ID——只有修正資料時才該這樣做。</p>
+                        <p className="mt-2 text-accent-yellow leading-snug">⚠ 套用後會和上面這{noun === '機甲' ? '台' : '位'}共用同一組圖——只有修正資料、或刻意換成這套造型時才該這樣做。</p>
                       )}
                     </>
                   ) : focusEntry.id === currentId ? (
@@ -346,8 +383,43 @@ const PILOT_CANDIDATES: ArtCandidate[] = [...GAME_PILOT_ART]
   })
 
 /**
+ * NPC 圖庫（2026-10-12）。可抽機師 core 資料夾裡已經有的立繪鍵不列（NPC 轉正、用 --id 匯入 core 後兩邊都有一份）；
+ * 沒有頭像（half）的那幾套也不列——寫不出 portrait。
+ * 格子第二行顯示英文名（3D 模型資料夾，--npc 自動抓）：新機師公布英文名時，搜尋英文就找得到 NPC 時期的立繪。
+ * 人工註記的 owner（其實是哪位可抽機師的另一造型）在 PilotPortraitField 的 usersOf 裡當成使用者，不算「未使用」。
+ */
+const PILOT_CORE_KEYS = new Set([...GAME_PILOT_ART.values()].map((e) => e.key))
+const NPC_CANDIDATES: ArtCandidate[] = [...GAME_NPC_ART]
+  .filter(([key, e]) => e.half && !PILOT_CORE_KEYS.has(key))
+  .map(([key, e]) => {
+    const art = (kind: 'half' | 'head') => assetUrl(npcGameArt(key, kind) ?? '')
+    return {
+      id: key,
+      group: 'npc',
+      label: e.en ?? key.replace(/^Pilot_/, ''),
+      order: Number(e.dir),
+      thumb: art('half'),
+      previews: [{ src: art('half'), label: '頭像' }, ...(e.head ? [{ src: art('head'), label: '頭部' }] : [])],
+      facts: [
+        ['artKey', <span className="font-mono select-all">{key}</span>],
+        ...(e.en ? [['英文名', e.en] as [string, ReactNode]] : []),
+        ['位置', <span className="font-mono">game/npc/{e.dir}</span>],
+        ['機師卡', <span className="text-text-dim">無（NPC 立繪）</span>],
+        ...(e.note ? [['註記', <span className="text-accent-yellow">{e.note}</span>] as [string, ReactNode]] : []),
+      ],
+      search: [key, 'npc', e.dir, e.en, e.note].filter(Boolean).join(' '),
+    }
+  })
+const PILOT_GROUPS: ArtGroup[] = [
+  { key: 'pilot', label: '可抽機師' },
+  { key: 'npc', label: 'NPC 立繪', tag: 'NPC', hint: '還沒對應到可抽機師的官方立繪（劇情 NPC、尚未上線的新角色）——NPC 轉正的機師從這裡挑' },
+]
+const ALL_PILOT_CANDIDATES = [...PILOT_CANDIDATES, ...NPC_CANDIDATES]
+
+/**
  * 機師立繪欄位。
  * - 選取官方立繪：寫回 gameId、artKey（取自資料夾實際檔名——5 位例外也不必手打）、portrait（half 路徑，與既有機師同慣例）
+ *   NPC 立繪：只寫 artKey＋portrait，gameId 不動（機師卡號等官方出卡後再填）
  * - 其他圖片：寫回 portrait；路徑在官方／原稿的 gameId 資料夾裡就順手帶入 gameId＋artKey，推不出來只寫圖片
  */
 export function PilotPortraitField({ form, pilots, onPatch }: {
@@ -360,12 +432,26 @@ export function PilotPortraitField({ form, pilots, onPatch }: {
   const folderNames = useMemo(() => artFolderNames(pilots), [pilots])
   const usersOf = useMemo(() => {
     const m = new Map<string, ArtUser[]>()
+    const add = (k: string, p: Pilot) => m.set(k, [...(m.get(k) ?? []), { id: p.id, name: p.name, detail: [p.rarity, p.class].filter(Boolean).join('・'), search: p.fullName }])
     for (const p of pilots) {
-      if (p.id === form.id || !p.gameId) continue
-      m.set(p.gameId, [...(m.get(p.gameId) ?? []), { id: p.id, name: p.name, detail: [p.rarity, p.class].filter(Boolean).join('・'), search: p.fullName }])
+      if (p.id === form.id) continue
+      if (p.gameId) add(p.gameId, p)
+      // NPC 立繪以 artKey 認：gameId 資料夾的主鍵對不上、而 NPC 圖庫有這個鍵 → 這位用的是 NPC 立繪
+      if (p.artKey && GAME_NPC_ART.has(p.artKey) && GAME_PILOT_ART.get(p.gameId ?? '')?.key !== p.artKey) add(p.artKey, p)
+    }
+    // 人工註記：這套 NPC 立繪其實是某位可抽機師的另一造型（劇情換造型前的樣子等）→ 掛在他名下，不算未使用
+    const byId = new Map(pilots.map((p) => [p.id, p]))
+    for (const [key, e] of GAME_NPC_ART) {
+      const owner = e.owner ? byId.get(e.owner) : undefined
+      if (!owner || owner.id === form.id || m.get(key)?.some((u) => u.id === owner.id)) continue
+      m.set(key, [...(m.get(key) ?? []), { id: owner.id, name: `${owner.name}・另一造型`, detail: '人工註記', search: `${owner.name} ${owner.fullName ?? ''}` }])
     }
     return m
   }, [pilots, form.id])
+  // 目前連著哪一組：gameId 資料夾的主鍵對得上 → 那個 gameId；否則 artKey 在 NPC 圖庫 → 那套 NPC 立繪
+  const currentId = form.gameId && GAME_PILOT_ART.get(form.gameId)?.key === form.artKey ? form.gameId
+    : form.artKey && GAME_NPC_ART.has(form.artKey) ? form.artKey
+    : form.gameId
 
   const pickOther = (path: string) => {
     const inferred = pilotGameIdFromPath(path)
@@ -395,18 +481,25 @@ export function PilotPortraitField({ form, pilots, onPatch }: {
         <GameArtPicker
           noun="機師"
           idPrefix="pilot"
-          subtitle="官方原檔 game/pilots · 一次填入 gameId／artKey／portrait"
-          candidates={PILOT_CANDIDATES}
+          subtitle="官方原檔 game/pilots＋NPC 圖庫 game/npc · 寫回 gameId／artKey／portrait"
+          candidates={ALL_PILOT_CANDIDATES}
+          groups={PILOT_GROUPS}
           usersOf={usersOf}
           selfId={form.id}
-          currentId={form.gameId}
+          currentId={currentId}
           importHint={<>
-            新機師要先匯入官方原檔：<code>node scripts/import-game-assets.mjs --id=&lt;gameId&gt; --art-key=&lt;artKey&gt; --apply</code>，
+            新機師要先匯入官方原檔：<code>node scripts/import-game-assets.mjs --src=latest --id=&lt;卡號&gt; --art-key=Pilot_&lt;卡號&gt;A --apply</code>，
             重跑 build／dev 後才會出現在這裡。<br />
-            客戶端擷取裡還沒有的機師，請關掉這個視窗改用「其他圖片」或貼遠端網址。
+            NPC 轉正的機師（例：索妮婭）官方常沿用 NPC 時期的立繪——切到上方「NPC 立繪」分組找，點了就能用，不必等機師卡。<br />
+            客戶端擷取裡真的沒有的機師，請關掉這個視窗改用「其他圖片」或貼遠端網址。
           </>}
-          footer="點擊即套用：gameId、artKey（取自資料夾實際檔名）、portrait 三欄一起填"
+          footer="點擊即套用：可抽機師寫 gameId＋artKey（取自資料夾實際檔名）＋portrait；NPC 立繪寫 artKey＋portrait"
           onPick={(id) => {
+            if (GAME_NPC_ART.has(id) && !GAME_PILOT_ART.has(id)) {
+              onPatch({ artKey: id, portrait: npcGameArt(id, 'half') ?? form.portrait })
+              setNote(`已套用 NPC 立繪 ${id}${form.gameId ? '' : '；機師卡要等官方出卡後再填 gameId（卡號）'}`)
+              return
+            }
             const artKey = GAME_PILOT_ART.get(id)?.key
             onPatch({ gameId: id, artKey, portrait: pilotGameArt({ gameId: id, artKey }, 'half') ?? form.portrait })
             setNote(null)

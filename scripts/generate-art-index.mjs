@@ -35,7 +35,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
-import { GAME_DIR, PART_NO, classifyMechFile, classifyPilotFile } from './lib/gameAssetKinds.mjs'
+import { GAME_DIR, PART_NO, classifyMechFile, classifyNpcFile, classifyPilotFile } from './lib/gameAssetKinds.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const GAME_ROOT = path.join(ROOT, 'public', GAME_DIR)
@@ -142,10 +142,26 @@ function scanGame() {
     }
     if (e.kinds.size) mechs.push(e)
   }
-  return { pilots, mechs }
+  // NPC 圖庫（2026-10-12）：一個號碼資料夾可以有多套立繪（A／B…），索引以立繪鍵為單位，記它在哪個資料夾
+  const npcs = new Map()   // artKey → { key, dir, kinds }
+  for (const dir of listDirs(path.join(GAME_ROOT, 'npc'))) {
+    for (const name of webps(path.join(GAME_ROOT, 'npc', dir))) {
+      const c = classifyNpcFile(name)
+      if (!c) continue
+      const prev = npcs.get(c.key)
+      if (prev && prev.dir !== dir) {
+        console.error(`❌ NPC 立繪 ${c.key} 同時出現在 game/npc/${prev.dir} 與 game/npc/${dir}`)
+        process.exit(1)
+      }
+      const e = prev ?? { key: c.key, dir, kinds: new Set() }
+      e.kinds.add(c.kind)
+      npcs.set(c.key, e)
+    }
+  }
+  return { pilots, mechs, npcs: [...npcs.values()].sort((a, b) => a.key.localeCompare(b.key)) }
 }
 
-function writeGameIndex({ pilots, mechs }) {
+function writeGameIndex({ pilots, mechs, npcs }) {
   const flags = (kinds, list) => list.filter((k) => kinds.has(k)).map((k) => `${k}: true`).join(', ')
   const pilotBody = pilots
     .map((e) => `  ['${e.id}', { ${[e.key ? `key: '${e.key}'` : '', flags(e.kinds, ['half', 'head', 'raw', 'card'])].filter(Boolean).join(', ')} }],`)
@@ -154,6 +170,22 @@ function writeGameIndex({ pilots, mechs }) {
     .map((e) => {
       const parts = Object.keys(PART_NO).filter((k) => e.kinds.has(k)).map((k) => PART_NO[k]).join('')
       return `  ['${e.wap}', { ${[flags(e.kinds, ['icon', 'sn']), `parts: '${parts}'`].filter(Boolean).join(', ')} }],`
+    })
+    .join('\n')
+  // 英文名（--npc 自動抓，以號碼為單位）與人工註記（以立繪鍵為單位）一起帶進索引，給選圖器顯示與搜尋
+  const readJson = (f) => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf-8')) : {})
+  const npcMeta = readJson(path.join(ROOT, 'scripts/lib/npcArtMeta.json')).dirs ?? {}
+  const npcNotes = readJson(path.join(ROOT, 'scripts/lib/npcArtNotes.json')).notes ?? {}
+  for (const key of Object.keys(npcNotes)) {
+    if (!npcs.some((e) => e.key === key)) console.warn(`⚠ npcArtNotes.json 的 ${key} 不在 NPC 圖庫裡（打錯，或已經不在 game/npc/）`)
+  }
+  const q = (s) => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
+  const npcBody = npcs
+    .map((e) => {
+      const en = npcMeta[e.dir]?.en?.join('／')
+      const { owner, note } = npcNotes[e.key] ?? {}
+      const extra = [en && `en: ${q(en)}`, owner && `owner: ${q(owner)}`, note && `note: ${q(note)}`].filter(Boolean)
+      return `  ['${e.key}', { ${[`dir: '${e.dir}'`, flags(e.kinds, ['half', 'head', 'raw']), ...extra].filter(Boolean).join(', ')} }],`
     })
     .join('\n')
   const out = `// ⚠ 本檔由 scripts/generate-art-index.mjs 自動產生，請勿手動編輯。
@@ -180,13 +212,29 @@ export interface GameMechArt { icon?: true; sn?: true; parts: string }
 export const GAME_MECH_ART: ReadonlyMap<string, GameMechArt> = new Map<string, GameMechArt>([
 ${mechBody}
 ])
+
+/**
+ * NPC 圖庫（2026-10-12）：\`public/images/game/npc/<dir>/<立繪鍵>_{half,head,Raw}.webp\`。
+ *
+ * 還沒對應到可抽機師的官方立繪——劇情 NPC、尚未上線的新角色。以**立繪鍵**為 key：
+ * NPC 轉正的機師（官方常沿用 NPC 時期那張立繪）只要 DB 的 \`artKey\` 指到這裡，前台就有圖，不必等機師卡。
+ * 查詢一律走 \`pilotGameArt()\`／\`npcGameArt()\`（src/utils/gameArt.ts）。
+ *
+ * \`en\`＝3D 模型資料夾的英文名（scripts/lib/npcArtMeta.json，--npc 自動抓）；
+ * \`owner\`／\`note\`＝人工註記（scripts/lib/npcArtNotes.json）——owner 是這套立繪其實屬於哪位可抽機師（文件 ID），
+ * 例如劇情換造型前的樣子；選圖器據此不把它算成「未使用」。
+ */
+export interface GameNpcArt { dir: string; half?: true; head?: true; raw?: true; en?: string; owner?: string; note?: string }
+export const GAME_NPC_ART: ReadonlyMap<string, GameNpcArt> = new Map<string, GameNpcArt>([
+${npcBody}
+])
 `
   fs.writeFileSync(GAME_OUT_FILE, out, 'utf-8')
   const has = (list, k) => list.filter((e) => e.kinds.has(k)).length
   console.log(
     `✅ 官方原檔索引已產生：${path.relative(ROOT, GAME_OUT_FILE)}` +
     `（機師 ${pilots.length} 位：half ${has(pilots, 'half')}／head ${has(pilots, 'head')}／raw ${has(pilots, 'raw')}／card ${has(pilots, 'card')}；` +
-    `機甲 ${mechs.length} 台：icon ${has(mechs, 'icon')}／sn ${has(mechs, 'sn')}）`,
+    `機甲 ${mechs.length} 台：icon ${has(mechs, 'icon')}／sn ${has(mechs, 'sn')}；NPC 立繪 ${npcs.length} 套）`,
   )
 }
 

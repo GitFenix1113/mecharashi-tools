@@ -7,12 +7,25 @@
  *   node scripts/import-game-assets.mjs --tier=reserve                          站上沒有的實體（NPC／敵方機甲／對不到的英文名鍵）→ 封存夾
  *   node scripts/import-game-assets.mjs --id=10103174 --art-key=Pilot_10103174A 新機師：依命名規則從圖片索引.csv 找 core 四種圖
  *   node scripts/import-game-assets.mjs --wap=3062                              新機甲：立繪／部件 1~4／全身大圖
+ *   node scripts/import-game-assets.mjs --npc                                   NPC 圖庫：還沒對應到可抽機師的官方立繪 → game/npc/（上站）
  *   node scripts/import-game-assets.mjs --icons                                 圖示圖庫（PLAN-055）：技能類＋BUFF 字形 → game/icons/
  *   node scripts/import-game-assets.mjs --equip-icons                           武器／背包圖示（PLAN-056）→ game/icons/{weapon,backpack}/
  *   node scripts/import-game-assets.mjs --ui                                    介面美術（活動、招募、大廳…）→ 封存夾 game/ui/（repo 外）
  *   node scripts/import-game-assets.mjs --promote=activity/uiactivity/ob6       封存夾裡挑好的介面美術 → public/images/game/ui/（上架、會公開）
  *
  * 新擷取先跑 `node scripts/diff-game-dump.mjs` 看這一版多了什麼，報告會列出該跑哪幾個模式。
+ *
+ * ── --npc（2026-10-12）──────────────────────────────────────────────────────
+ *   擷取裡所有 `Pilot_<號碼><造型>_{half,head,Raw}`，**扣掉可抽機師**（game/pilots/ 裡的立繪鍵號碼，連同他們的外觀）
+ *   → public/images/game/npc/<號碼>/<官方檔名>.webp（q82，同 core）。劇情 NPC、尚未上線的新角色都在這裡。
+ *   用途：NPC 轉正的機師（維娜、索妮婭…）官方不一定出新立繪，沿用的是 NPC 時期那張——
+ *   管理員在後台「選取官方立繪」的 NPC 分組直接點，立繪鍵（artKey）指過去就好，不必等站長匯入、也不必等機師卡。
+ *   站長 2026-10-12 決定上站（取代 10-04「NPC 不進 repo」）：查資料的人不怕劇透，而官方之後還會有好幾位 NPC 轉正。
+ *   每次新擷取都跑一次（--src=latest），只會補新的；已存在的不重轉（--force 例外）。建議第一次先 --src=Data 再 --src=latest。
+ *   NPC 之後轉正、用 --id 匯入 core 時，NPC 圖庫那份會留著（DB 的 portrait 可能還指著它）；選圖器會自動去重。
+ *   --apply 時另寫 scripts/lib/npcArtMeta.json：每個號碼的英文名（3D 模型資料夾 pilot/pilotbNN_abs/<號碼>/pilot_<英文>.png）
+ *   與有沒有外觀卡（Icon_pilotSkin_<號碼>*），只增不減。選圖器拿英文名搜尋／顯示——新機師公布英文名就找得到 NPC 時期的立繪。
+ *   「這套其實是哪位可抽機師的另一造型」機器判斷不了，人工登記在 scripts/lib/npcArtNotes.json。
  *
  * ── --ui（2026-10-11）───────────────────────────────────────────────────────
  *   活動、招募、大廳、劇情背景、常駐玩法、造型的美術圖，照官方模組結構封存：
@@ -71,7 +84,7 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
-import { GAME_DIR, MECH_KINDS, PILOT_KINDS, TIER_GROUPS, mechFileName, pilotFileName } from './lib/gameAssetKinds.mjs'
+import { GAME_DIR, MECH_KINDS, NPC_ART_RE, PILOT_KINDS, TIER_GROUPS, classifyNpcFile, classifyPilotFile, mechFileName, npcDirOf, pilotFileName } from './lib/gameAssetKinds.mjs'
 import { EQUIP_POOLS, ICON_POOLS, equipGameIdOf, iconFamily, iconPoolIndex, isLibraryKey, keyFromValue } from './lib/gameIconKinds.mjs'
 import { PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, resolveDump } from './lib/gameDump.mjs'
 import { UI_GROUPS, uiArchivePath, uiModuleInfo } from './lib/gameUiModules.mjs'
@@ -83,7 +96,7 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   return [m[1], m[2] ?? true]
 }))
 const MODE = args.promote ? 'promote' : args.icons ? 'icons' : args['equip-icons'] ? 'equip' : args.ui ? 'ui'
-  : args.id ? 'pilot' : args.wap ? 'mech' : 'v3'
+  : args.npc ? 'npc' : args.id ? 'pilot' : args.wap ? 'mech' : 'v3'
 const TIER = MODE === 'v3' ? String(args.tier ?? 'core') : 'core'
 let SRC = ''   // --promote 讀的是封存夾、不讀擷取
 if (MODE !== 'promote') {
@@ -191,6 +204,8 @@ const equipReport = { weapon: [], backpack: [], siteOnly: [], diffs: [], same: 0
 const UI_ROOT = path.join(destRoot, 'ui')
 const ICON_META_FILE = path.join(ROOT, 'scripts/lib/gameIconMeta.json')
 const uiReport = { rows: new Map(), conflicts: [], moves: [], notInDump: 0 }
+const npcReport = { en: new Map(), skinCard: new Set() }
+const NPC_META_FILE = path.join(ROOT, 'scripts/lib/npcArtMeta.json')
 
 if (MODE === 'v3') {
   const v3 = JSON.parse(fs.readFileSync(V3, 'utf-8'))
@@ -414,6 +429,36 @@ if (MODE === 'v3') {
   }
   // 封存夾裡有、這次擷取沒有的：舊擷取才有的圖，或字典不再收的模組——博物館原則，不刪，只列數量
   uiReport.notInDump = [...existing.keys()].filter((k) => !wanted.has(k)).length
+} else if (MODE === 'npc') {
+  // 可抽機師的立繪鍵號碼（game/pilots/<gameId>/ 裡的 <artKey>_*）：他們的預設立繪與外觀都不算 NPC
+  const playable = new Set()
+  const pilotRoot = path.join(PUBLIC_GAME, 'pilots')
+  for (const id of fs.existsSync(pilotRoot) ? fs.readdirSync(pilotRoot) : []) {
+    for (const f of fs.readdirSync(path.join(pilotRoot, id))) {
+      const c = f.endsWith('.webp') && classifyPilotFile(f.slice(0, -5), id)
+      if (c?.key) playable.add(npcDirOf(c.key))
+    }
+  }
+  const rows = loadCsv()
+  const byName = new Map()
+  for (const r of rows) if (NPC_ART_RE.test(r.name)) (byName.get(r.name) ?? byName.set(r.name, []).get(r.name)).push(r)
+  // 英文名與外觀卡（寫進 npcArtMeta.json；見檔頭 --npc 段）
+  for (const r of rows) {
+    const m = r.asset?.match(/runtimeassets\/pilot\/pilotb\d+_abs\/(\d+)[a-z]?\/pilot_([a-z0-9]+)\.png$/)
+    if (m) (npcReport.en.get(m[1]) ?? npcReport.en.set(m[1], new Set()).get(m[1])).add(m[2])
+    const k = r.name.match(/^Icon_pilotSkin_(\d+)[A-Z]+$/)
+    if (k) npcReport.skinCard.add(k[1])
+  }
+  const skipped = new Set()
+  for (const [name, rs] of [...byName].sort(([a], [b]) => a.localeCompare(b))) {
+    const c = classifyNpcFile(name)
+    const dir = npcDirOf(c.key)
+    if (playable.has(dir)) { skipped.add(dir); continue }
+    const pick = pickRow(rs, name)
+    if (pick.conflict) { problems.push(`${name}：同名 Texture2D 內容不同 ${pick.conflict.join(' ／ ')}`); continue }
+    addTask(pick.row.path, `npc/${dir}`, name, `NPC ${dir}`, `npc-${c.kind}`)
+  }
+  notes.push(`可抽機師（含外觀）略過 ${skipped.size} 個號碼——他們在 game/pilots/`)
 } else {
   const rows = loadCsv()
   if (MODE === 'pilot') {
@@ -485,7 +530,7 @@ await Promise.all(Array.from({ length: 6 }, async () => { while (queue.length) a
 const MB = (b) => (b / 1048576).toFixed(1)
 const rowsOut = [...stat].sort().map(([g, s]) => `| ${g} | ${s.n} | ${s.skipped} | ${MB(s.srcBytes)} | ${MB(s.outBytes)} |`)
 const tot = [...stat.values()].reduce((a, s) => ({ n: a.n + s.n, skipped: a.skipped + s.skipped, srcBytes: a.srcBytes + s.srcBytes, outBytes: a.outBytes + s.outBytes }), { n: 0, skipped: 0, srcBytes: 0, outBytes: 0 })
-const title = MODE === 'v3' ? `v3 整批・${TIER}` : MODE === 'pilot' ? `新機師 ${args.id}` : MODE === 'icons' ? '圖示圖庫'
+const title = MODE === 'v3' ? `v3 整批・${TIER}` : MODE === 'pilot' ? `新機師 ${args.id}` : MODE === 'npc' ? 'NPC 圖庫' : MODE === 'icons' ? '圖示圖庫'
   : MODE === 'equip' ? '武器／背包圖示' : MODE === 'ui' ? '介面美術封存' : MODE === 'promote' ? '介面美術上架' : `新機甲 wap${args.wap}`
 const iconSection = MODE !== 'icons' ? [] : [
   '## 圖示圖庫（PLAN-055）', '',
@@ -584,7 +629,7 @@ const report = [
 ].join('\n')
 console.log(MODE === 'icons' ? report.split('<details>')[0] : report)
 /** 報告檔：_local-notes/<YYYY-MM>/<YYYY-MM-DD>_<名稱>[_dry-run].md（同一天重跑會覆寫當天那份，不會蓋到別天的） */
-const REPORT_NAME = { icons: '圖示圖庫匯入報告', equip: '武器背包圖示匯入報告', ui: '介面美術封存報告', v3: `PLAN-054_匯入報告_${TIER}` }[MODE]
+const REPORT_NAME = { icons: '圖示圖庫匯入報告', equip: '武器背包圖示匯入報告', ui: '介面美術封存報告', npc: 'NPC圖庫匯入報告', v3: `PLAN-054_匯入報告_${TIER}` }[MODE]
 if (REPORT_NAME) {
   const day = localDate()
   const out = path.join(ROOT, '_local-notes', day.slice(0, 7), `${day}_${REPORT_NAME}${APPLY ? '' : '_dry-run'}.md`)
@@ -593,7 +638,29 @@ if (REPORT_NAME) {
   console.log(`📝 報告：${path.relative(ROOT, out)}`)
 }
 if (MODE === 'ui' && APPLY) writeUiIndex()
+if (MODE === 'npc' && APPLY) writeNpcMeta()
 if (!APPLY) console.log('（dry-run：沒有寫入。確認後加 --apply）')
+
+/**
+ * --npc --apply 之後：npcArtMeta.json 記每個 NPC 號碼的英文名、有沒有外觀卡（跨次擷取累積、只增不減）。
+ * 只記這次有匯入任務的號碼（＝NPC 圖庫裡的號碼），可抽機師的號碼不記。
+ */
+function writeNpcMeta() {
+  const prev = fs.existsSync(NPC_META_FILE) ? JSON.parse(fs.readFileSync(NPC_META_FILE, 'utf-8')).dirs ?? {} : {}
+  const dirs = { ...prev }
+  for (const dir of new Set(tasks.map((t) => path.basename(path.dirname(t.dest))))) {
+    const en = [...new Set([...(prev[dir]?.en ?? []), ...(npcReport.en.get(dir) ?? [])])].sort()
+    const skinCard = !!prev[dir]?.skinCard || npcReport.skinCard.has(dir)
+    if (en.length || skinCard) dirs[dir] = { ...(en.length ? { en } : {}), ...(skinCard ? { skinCard } : {}) }
+  }
+  const sorted = Object.fromEntries(Object.entries(dirs).sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true })))
+  fs.writeFileSync(NPC_META_FILE, JSON.stringify({
+    generatedBy: 'scripts/import-game-assets.mjs --npc --apply（只增不減，勿手改；人工註記寫 npcArtNotes.json）',
+    note: 'en＝3D 模型資料夾的英文名（pilot/pilotbNN_abs/<號碼>/pilot_<英文>.png）；skinCard＝擷取裡有 Icon_pilotSkin_<號碼>*',
+    dirs: sorted,
+  }, null, 1) + '\n')
+  console.log(`📚 ${path.relative(ROOT, NPC_META_FILE)}：有英文名或外觀卡的號碼 ${Object.keys(sorted).length}`)
+}
 
 /**
  * --ui --apply 之後：更新 ui/_index.json（每張圖的來歷，跨次擷取累積）並重產 ui/README.md（給人看的目錄）。

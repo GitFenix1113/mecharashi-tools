@@ -8,6 +8,8 @@
  *         <artKey>_head      90²          頭部特寫（構圖與 half 不同）
  *         <artKey>_Raw       1240×1080    半身（＝站上舊的 full.webp）
  *         Icon_item_<gameId>A  340²       機師卡
+ *   NPC   public/images/game/npc/<號碼>/        （2026-10-12）還沒對應到可抽機師的官方立繪——劇情 NPC、尚未上線的新角色
+ *         <artKey>_half／_head／_Raw            同機師三種（沒有機師卡）；一個號碼可以有 A／B 多套
  *   機甲  public/images/game/mechs/<wap>/
  *         Icon_mecha_wap<wap>          560×340     立繪（＝站上舊的 portrait.webp）
  *         Icon_wap<wap>_1~4            340²        部件：軀幹／左臂／右臂／腿
@@ -55,6 +57,23 @@ export function classifyPilotFile(name, gameId) {
   const m = name.match(/^(.+)_(half|head|Raw)$/)
   if (!m) return null
   return { kind: m[2] === 'Raw' ? 'raw' : m[2], key: m[1] }
+}
+
+/** NPC 圖庫的立繪檔名 */
+export const NPC_ART_RE = /^Pilot_\d+[A-Z]{0,2}_(half|head|Raw)$/
+
+/** 反向：NPC 圖庫的一個檔名是哪一種圖（只有 half／head／raw，沒有機師卡）；不是立繪回 null。 */
+export function classifyNpcFile(name) {
+  if (!NPC_ART_RE.test(name)) return null
+  return classifyPilotFile(name, '')
+}
+
+/**
+ * NPC 立繪放哪個資料夾：立繪鍵的號碼段（`Pilot_13046B` → `13046`；`Pilot_101031200` → `101031200`）。
+ * 只給匯入端用——前台不拼路徑，資料夾記在 build 產生的索引裡（GAME_NPC_ART 的 dir）。
+ */
+export function npcDirOf(artKey) {
+  return artKey.match(/^Pilot_(\d+)/)?.[1]
 }
 
 /** 反向：機甲資料夾裡的一個檔名是哪一種圖；不是讀取端會用到的種類回 null。 */

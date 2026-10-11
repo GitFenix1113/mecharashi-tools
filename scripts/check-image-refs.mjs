@@ -80,7 +80,7 @@ const resolvable = (rel) => {
 //   機甲 icon → mechs/<名>/portrait.*；部件 n → torso/leftArm/rightArm/legs.*；sn → art.*
 // 名字資料夾由 DB 的 portrait 路徑取出（與 pilotArtDir／mechArtDir 同一條規則）。
 function gameKinds(kind, id) {
-  if (!id) return new Set()   // 沒有遊戲 ID（索妮婭）：沒有官方原檔可取代，舊圖不退場
+  if (!id) return new Set()   // 沒有遊戲 ID（尚未匯入官方原檔的新角色）：沒有官方原檔可取代，舊圖不退場
   const dir = path.join(PUBLIC, GAME_DIR, kind, id)
   if (!fs.existsSync(dir)) return new Set()
   const out = new Set()

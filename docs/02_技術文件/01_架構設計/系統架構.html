@@ -320,7 +320,8 @@
       <td>客戶端擷取的官方原檔，WebP q82 原尺寸、<strong>檔名＝官方資產名逐字</strong>，放在<strong>遊戲 ID 資料夾</strong>：
         <code>pilots/&lt;gameId&gt;/&lt;artKey&gt;_{half,head,Raw}.webp</code>＋機師卡 <code>Icon_item_&lt;gameId&gt;A.webp</code>；
         <code>mechs/&lt;wap&gt;/Icon_mecha_wap&lt;wap&gt;.webp</code>（立繪）、<code>Icon_wap&lt;wap&gt;_1~4.webp</code>（軀幹／左臂／右臂／腿）、<code>_SN_Raw.webp</code>（全身大圖）。
-        只放讀取端會用到的種類（core 912 檔、約 41 MB）；造型、招募立繪等 extended 素材與 _reserve 不進 repo（repo 是公開的）。
+        另有 <strong>NPC 圖庫</strong> <code>npc/&lt;號碼&gt;/&lt;artKey&gt;_{half,head,Raw}.webp</code>（2026-10-12，約 125 套、17 MB）：還沒對應到可抽機師的官方立繪，NPC 轉正時後台直接選，<code>import-game-assets.mjs --npc</code> 每次改版補新的。
+        造型、招募立繪等 extended 素材與其餘 _reserve 不進 repo，在 repo 外的封存夾。
         站上自製圖（原稿 <code>art.webp</code>、官網圖層 <code>official-*</code>）同樣改放 <code>pilots/&lt;gameId&gt;/</code>，名字資料夾已全數退場。</td>
     </tr>
     <tr>
@@ -330,6 +331,7 @@
     <tr>
       <td><code>utils/gameArt.ts</code> · <code>utils/assets.ts</code></td>
       <td><code>pilotGameArt()</code>／<code>mechGameArt()</code> 依 ID 推官方原檔路徑（索引沒有、或 DB 的 artKey 與檔案不符就回 undefined）。
+        機師在 gameId 資料夾對不上時，改以 <code>artKey</code> 查 NPC 圖庫（<code>npcGameArt()</code>）——沒有機師卡也有立繪。
         呼叫端一律用 <code>pilotPortraitCandidates</code>／<code>mechPortraitCandidates</code>／<code>mechPartCandidates</code> 等 helper，
         候選順序「本地官方原檔 → 舊本地檔 → 官方 CDN」；守門測試 <code>portraitGuard.test.ts</code> 禁止把 <code>portrait</code>／部件 <code>icon</code> 直接當圖片來源。</td>
     </tr>

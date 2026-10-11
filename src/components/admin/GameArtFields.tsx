@@ -9,7 +9,7 @@
 
 import { Link } from 'react-router-dom'
 import type { Mech, Pilot } from '../../types'
-import { GAME_MECH_ART, GAME_PILOT_ART } from '../../data/gameArtIndex'
+import { GAME_MECH_ART, GAME_NPC_ART, GAME_PILOT_ART } from '../../data/gameArtIndex'
 import { mechGameArt, pilotGameArt } from '../../utils/gameArt'
 import type { PilotGameArtKind } from '../../utils/gameArt'
 import { assetUrl } from '../../utils/assets'
@@ -37,16 +37,26 @@ function Thumb({ src, label, wide }: { src: string | undefined; label: string; w
   )
 }
 
-/** 官方原檔的狀態文字：有／尚未匯入／主鍵對不上（最常見的打錯） */
+/** 官方原檔的狀態文字：有／NPC 圖庫／尚未匯入／主鍵對不上（最常見的打錯） */
 function pilotArtStatus(form: Pick<Pilot, 'gameId' | 'artKey'>): { ok: boolean; text: string } {
+  // NPC 圖庫（2026-10-12）：立繪鍵指到 game/npc/ 也算有圖；機師卡要等 gameId 資料夾
+  const npc = !!form.artKey && GAME_NPC_ART.has(form.artKey)
+  const entry = form.gameId ? GAME_PILOT_ART.get(form.gameId) : undefined
+  if (entry && form.artKey === entry.key) return { ok: true, text: '官方原檔已就緒' }
+  if (npc) {
+    return {
+      ok: true,
+      text: !form.gameId ? '立繪用 NPC 圖庫；機師卡等官方出卡後再填 gameId（卡號）'
+        : entry ? '立繪用 NPC 圖庫、機師卡用 gameId 資料夾'
+        : `立繪用 NPC 圖庫；機師卡尚未匯入：node scripts/import-game-assets.mjs --src=latest --id=${form.gameId} --art-key=${form.artKey} --apply`,
+    }
+  }
   if (!form.gameId) return { ok: false, text: '未填 gameId：讀取端照舊走 portrait／portraitUrl（上方「選取官方立繪」可一次帶入）' }
-  const entry = GAME_PILOT_ART.get(form.gameId)
   if (!entry) {
     return { ok: false, text: `尚未匯入：node scripts/import-game-assets.mjs --id=${form.gameId} --art-key=${form.artKey || '<artKey>'} --apply` }
   }
   if (!form.artKey) return { ok: false, text: `資料夾裡的立繪主鍵是 ${entry.key}——artKey 還沒填` }
-  if (form.artKey !== entry.key) return { ok: false, text: `artKey 與資料夾裡的檔名不符（資料夾是 ${entry.key}）——前台會退回舊圖` }
-  return { ok: true, text: '官方原檔已就緒' }
+  return { ok: false, text: `artKey 與資料夾裡的檔名不符（資料夾是 ${entry.key}），NPC 圖庫也沒有這個鍵——前台會退回舊圖` }
 }
 
 export function PilotGameArtFields({ form, update, pilots, mechs }: {

@@ -200,7 +200,7 @@ export function pilotKeyArtPath(pilot: { portrait?: string; gameId?: string } | 
  *
  * PLAN-054 D-2 起資料夾一律是**遊戲 ID**（`pilots/10103174/art.webp`），名字資料夾已全數退場——
  * 名字會漂（卡米拉、洛莎審判、羅斯瑪麗……過去要靠對照表硬接），ID 不會。
- * 沒有 gameId 的機師（索妮婭）才退回由 `portrait` 路徑取資料夾名的舊規則。
+ * 沒有 gameId 的機師（新角色尚未匯入官方原檔時）才退回由 `portrait` 路徑取資料夾名的舊規則。
  *
  * ⚠ **不能用 `pilot.name` 代替**：那正是名字資料夾當初對不上的原因。
  */
