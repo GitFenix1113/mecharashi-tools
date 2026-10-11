@@ -7,6 +7,7 @@ import { resolveNumRefs, hasNumRef } from '../../utils/numRefs'
 import { useNdOverrides } from '../../contexts/NdOverrideContext'
 import { buildNumLevelOf } from '../../utils/ndOverrides'
 import { displayKeyword } from '../../utils/refKey'
+import { tokenizeForDiff } from '../../utils/diffTokens'
 
 function lcsMatched(a: string[], b: string[]): boolean[] {
   const m = a.length, n = b.length
@@ -38,10 +39,8 @@ export function DiffHighlight({ base, enhanced, refs }: { base: string; enhanced
   // 切換而變——關掉走 RefText 正確、開著走這裡就錯。四個呼叫點全在天賦卡內、全在覆寫子樹裡。
   const ov = useNdOverrides()
   const levelOf = useMemo(() => buildNumLevelOf(refs, ov), [refs, ov])
-  const tokenize = (s: string) =>
-    s.match(/\d+(?:\.\d+)?%?|[a-zA-Z]+|[一-鿿]+|[^\w\d一-鿿\s]|\s+/g) ?? []
-  const baseTokens = tokenize(resolveNumRefs(base, lookup, '?', levelOf))
-  const enhTokens  = tokenize(resolveNumRefs(enhanced, lookup, '?', levelOf))
+  const baseTokens = tokenizeForDiff(resolveNumRefs(base, lookup, '?', levelOf))
+  const enhTokens  = tokenizeForDiff(resolveNumRefs(enhanced, lookup, '?', levelOf))
   const matched    = lcsMatched(baseTokens, enhTokens)
 
   const out: ReactNode[] = []
