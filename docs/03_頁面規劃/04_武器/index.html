@@ -156,7 +156,18 @@
     <div class="card orange">
       <div class="card-icon">⚗️</div>
       <h3>製作 · 進階關係（PLAN-031）</h3>
-      <p>「前置／可進階為」進階鏈（2026-10-11 起直式兩行，本武器即本頁、不再畫成鏈中間的 chip）：由 <code>upgrade.fromWeaponId</code> 前端建正/反向索引（<code>buildUpgradeIndex</code>），覆蓋全站 42 條製作邊、皆可點擊互連。技能列表並標示「進階新增 / 融合技能」（母子武器技能名差集，即時計算）。<br>複合武器（<code>upgrade.station==='specialBackpack'</code>）額外顯示「特種背包製作」badge 與「融合自 ○○背包」（<code>fusedBackpackId</code> 查表；只在複合武器頁才載入 backpacks）。無 <code>upgrade</code> 值時整區不渲染。</p>
+      <p>「前置／可進階為」進階鏈（2026-10-11 起直式兩行，本武器即本頁、不再畫成鏈中間的 chip）：由 <code>upgrade.fromWeaponId</code> 前端建正/反向索引（<code>buildUpgradeIndex</code>），覆蓋全站 42 條製作邊、皆可點擊互連。技能列表並標示「進階新增 / 融合技能」（母子武器技能名差集，即時計算）。<br>複合武器（<code>upgrade.station==='specialBackpack'</code>）額外顯示「特種背包製作」badge 與「融合自 ○○背包」（<code>fusedBackpackId</code> 查表；只在複合武器頁才載入 backpacks）。無 <code>upgrade</code> 值時整區不渲染。<br>
+      鏈上的武器 chip 與「同類專武」共用 <code>WeaponHoverLink</code>：滑過預覽技能（2026-10-11）。</p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">🧩</div>
+      <h3>同類專武（2026-10-11）</h3>
+      <p>專武常被混搭，看 RA09 的人會想比較其他火箭專武。<strong>只在專武頁顯示</strong>，列出同種類（<code>kind</code>）的其他專武，不列自己；依文件 id（建檔流水號）排序。
+      chip 為武器圖示＋名稱＋專屬機師名（全是 SS，不掛稀有度）。從已載入的 weapons 篩，不多讀。<br>
+      互動：桌面 <strong>hover 浮窗只列技能</strong>（全文不截，<code>RefWeaponSkills</code>）、點擊前往該武器頁；手機點擊開 BottomSheet（技能＋「查看完整詳情 →」）——
+      與 <code>RefChip</code>「點擊＝釘選」刻意不同，因為 chip 長得是導航卡片。<br>
+      位置：右欄技能下方；手機排在技能之後、屬性之前。<br>
+      全站武器引用浮窗同步改為列技能、不再放武器故事（比照 2026-10-09 機甲列模組、機師列天賦）。hover 預覽捲不動，故預覽不設 70vh 限高、武器預覽寬 360px——最長的糖衣毀滅者（4 技 242 字）在 1366×768 完整顯示。</p>
     </div>
     <div class="card green">
       <div class="card-icon">🔗</div>
@@ -168,10 +179,10 @@
   <div class="sub-h" style="margin-top:24px;">版面（2026-10-11）</div>
   <table class="spec-table">
     <tr><th>原則</th><td>玩家最關心的是<strong>武器技能</strong>；元件插槽是次要資訊。桌面以「不捲動就看完」為目標（1080p 下 SS 武器整頁含頁尾一屏內）。</td></tr>
-    <tr><th>桌面 ≥ lg</th><td>容器 <code>max-w-6xl</code>，兩欄 <code>22rem | 1fr</code>：左欄 身分卡 → 基礎屬性（4×2 緊湊格＋元件一行）→ 製作・進階；右欄整欄給武器技能（改裝資訊有資料時接在下方）。<br>
+    <tr><th>桌面 ≥ lg</th><td>容器 <code>max-w-6xl</code>，兩欄 <code>22rem | 1fr</code>：左欄 身分卡 → 基礎屬性（4×2 緊湊格＋元件一行）→ 製作・進階；右欄整欄給武器技能 → 同類專武（專武頁）→ 改裝資訊（有資料時）。<br>
       左欄在視窗高 ≥ 900px 時 sticky；更矮的螢幕不固定，免得左欄比視窗高時把底部進階鏈卡在畫面外。<br>
       欄寬用 rem 不用 px：本站 root font-size 19px。</td></tr>
-    <tr><th>手機</th><td>單欄，順序 身分卡 → <strong>武器技能</strong> → 基礎屬性＋元件 → 製作・進階。左欄 wrapper 在手機是 <code>display: contents</code>，靠 <code>order</code> 把技能插到第二位，元件不必拆兩份。</td></tr>
+    <tr><th>手機</th><td>單欄，順序 身分卡 → <strong>武器技能</strong> → 同類專武 → 基礎屬性＋元件 → 製作・進階。左欄 wrapper 在手機是 <code>display: contents</code>，靠 <code>order</code> 把技能插到第二位，元件不必拆兩份。</td></tr>
     <tr><th>無技能武器</th><td>全站約一半（A/B/S 為主）。不分欄，退回 <code>max-w-3xl</code> 單欄——分欄只會留一整欄空白。骨架屏依原始 <code>skills</code> 筆數猜同一個分欄結果，避免載入完跳版。</td></tr>
   </table>
 </section>
