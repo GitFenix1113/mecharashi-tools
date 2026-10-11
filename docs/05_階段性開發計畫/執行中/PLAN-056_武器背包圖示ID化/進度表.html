@@ -199,10 +199,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-green);">20 / 24</span>
+      <span style="color:var(--accent-green);">23 / 24</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 83%"></div>
+      <div class="progress-bar-fill" style="width: 96%"></div>
     </div>
   </div>
 
@@ -492,15 +492,15 @@
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; 耀星／隕星自訂圖</div>
       <div class="task-group-meta">public/images/weapons/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">站長編輯 10700601／10700602 後放進 weapons/，在後台指定 icon</div>
-        <div class="task-desc">A-1 入庫後，素材可以直接從圖庫取得。編輯後的圖不放進 <code>game/</code>，也不用官方檔名（計畫書決策六）。</div>
+        <div class="task-desc">A-1 入庫後，素材可以直接從圖庫取得。編輯後的圖不放進 <code>game/</code>，也不用官方檔名（計畫書決策六）。<p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11 站長在後台完成：改用官方原圖，耀星 <code>gameId 10700601</code>、隕星 <code>10700602</code>（圖庫皆有檔），沒有另做自訂圖，<code>weapons/</code> 因此不必新增檔案。</p></div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -508,7 +508,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-4 &nbsp; 新專武 4 把</div>
       <div class="task-group-meta">後台 WeaponAdmin（B 完成後）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -516,10 +516,11 @@
         <div class="task-desc">
           候選：征伐 → 302 未用的 <code>30200304</code>、<code>30200403</code>；速射格林炮 → 201 未用 5 張＋<code>2021_1</code>；誓殮 → <code>10600501</code>。
           歸零協議在擷取裡找不到未用的火箭圖，找不到就留空。
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11 站長在後台完成：征伐 <code>30200304</code>、速射格林炮 <code>20100602</code>（圖庫皆有檔）。誓殮、歸零協議目前沒有圖示（留空，掃描器 (i) 會列出，與幽弧／夜燼同列）。</p>
         </div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -605,7 +606,7 @@
           <code>weapons/</code> 只留自訂圖；<code>backpacks/</code> 整夾移除。<code>manifest.json</code> 會跟著少掉這些檔案，舊 IconPicker 也就不會再列出它們。
           要先等 <code>pages-build-deployment</code> 完成再清快取（Cloudflare 會快取 404）。
         
-          <br><b style="color:var(--accent-green)">2026-10-10：掃描器閘門 --fail-on=agh 通過後刪除 repo 內舊檔（weapons／ 101、backpacks／ 17），連線測試頁的探測圖改指圖庫。<b>10-10 已 push 部署</b>；gh-pages 上的舊檔進入 ledger 寬限，約 10-24 自動清除，屆時抽查舊網址 404 即可結案。舊圖已無任何引用，不需 Purge</b>
+          <br><b style="color:var(--accent-green)">2026-10-10：掃描器閘門 --fail-on=agh 通過後刪除 repo 內舊檔（weapons／ 101、backpacks／ 17），連線測試頁的探測圖改指圖庫。<b>10-10 已 push 部署</b>；gh-pages 上的舊檔進入 ledger 寬限，10-24 到期。⚠ 到期<b>不會自己刪</b>：<code>prune-gh-pages.mjs</code> 只在部署時執行，要等 10-24 之後的第一次部署（或手動 <code>gh workflow run deploy.yml</code>）才會刪；之後抽查舊網址 404 即可結案（加查詢字串繞過 Cloudflare 快取）。舊圖已無任何引用，不需 Purge</b>
         </div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -642,17 +643,18 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 帕斯卡的左右肩</div>
       <div class="task-group-meta">影響 C-2</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">截一張帕斯卡的機甲整備畫面</div>
         <div class="task-desc">霸王、破曉者-01 都是左肩＝…01、右肩＝…02，推定帕斯卡相同，截圖確認即可。
           <br><b style="color:var(--accent-green)">站長 10-09：固定武裝的左右肩由站長在後台手動處理（衝擊炮、嵐質儲能艙、多功能彈倉三把的 gameId 與左右肩都在 WeaponAdmin 的「基本資訊」分頁：勾 <code>isFixedArmament</code> 且裝備部位為肩部時才出現左右肩兩格，見 B-3 補註）</b>
+          <p style="margin-top:6px;color:var(--accent-green);">✅ 2026-10-11 站長在後台完成：衝擊炮 <code>90200101／02</code>、嵐質儲能艙 <code>90300101／02</code>、多功能彈倉 <code>90400101／02</code>（左＝…01、右＝…02，與霸王、破曉者-01 同規律），圖庫皆有檔。</p>
         </div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
