@@ -586,22 +586,52 @@ test('回歸（tw_1780／tw_1862）：「起（常駐）」是常駐內容不是
   assert.equal(r.excluded, 1)
 })
 
-test('回歸（tw_1807／tw_1862）：巔峰擂台賽季不收錄 —— 先前會把上一行的「常駐海運新增…」誤當成名字', () => {
+test('回歸（tw_1807／tw_1862）：巔峰擂台賽季從時間行取名，不把上一行的「常駐海運新增…」誤當成名字', () => {
   const r = parseAnnouncement({
     title: '【版本前瞻】2026年08月20日搶先報',
     text: `新增內容
 4.【更新】常駐招募新增S級機師「唐小葵」、「哈達威」
 5.【更新】常駐海運新增S級重型機甲「奔囂」、「螢石」
 6.【更新】巔峰擂台第15賽季開啟 賽季：2026/08/20 05:00 - 2026/10/01 05:00 ；排位：2026/09/03 05:00 - 2026/09/28 05:00
+※本期段位獎勵包含專屬機甲徽記-硬碰硬
+※公共傭兵更新為貝爾莎
 本週推出內容
 活動中心
 【角雕轉盤】
 ➤活動時間：2026/08/20 05:00 - 2026/08/27 05:00`,
   })
-  assert.deepEqual(r.activities.map(a => a.extracted.name), ['角雕轉盤'])
-  assert.equal(r.excluded, 1, '要計入產出量分母，否則回歸偵測被自己的過濾規則污染')
+  assert.deepEqual(r.activities.map(a => a.extracted.name), ['巔峰擂台第15賽季', '角雕轉盤'])
+  const arena = r.activities[0]
+  assert.equal(arena.extracted.type, 'peakArena')
+  assert.equal(arena.extracted.weeks, 6, '檔期取「賽季」那段，不是「排位」')
+  assert.deepEqual(arena.flags, [], '週四開、整 6 週 → 零 flag')
+  assert.equal(arena.extracted.description, '排位：2026/09/03 05:00 - 2026/09/28 05:00\n本期段位獎勵包含專屬機甲徽記-硬碰硬',
+    '公共傭兵那行是另一條更新，不收進擂台說明')
+})
+
+test('回歸（tw_1694 忤逆行於今）：「活動說明」小標下的編號條列要收進說明，不被半形分號那行截斷', () => {
+  const r = parseAnnouncement({
+    title: '【版本前瞻】2026年05月28日搶先報',
+    text: `本週推出內容
+限時活動
+【忤逆行於今】
+➤活動時間：2026/05/28 05:00 - 2026/07/09 04:59
+活動說明
+1.活動期間可通過「劇情模式」及挑戰「昏星試煉」關卡獲取【彌造之源】;
+2.「劇情模式」可透由左右橫移與上下拖移來選定欲挑戰的關卡與故事。
+【超級工廠】
+➤活動時間：2026/05/28 5:00 - 2026/07/09 10:00
+活動說明:
+活動期間完成指定工廠任務即可獲得超級工廠提供的多種獎勵。`,
+  })
+  const [story, factory] = r.activities
+  assert.equal(story.extracted.name, '忤逆行於今')
+  assert.equal(story.extracted.description,
+    '1.活動期間可通過「劇情模式」及挑戰「昏星試煉」關卡獲取【彌造之源】;\n2.「劇情模式」可透由左右橫移與上下拖移來選定欲挑戰的關卡與故事。')
+  assert.equal(factory.extracted.name, '超級工廠', '下一個活動的標題照常認得')
+  assert.equal(factory.extracted.description, '活動期間完成指定工廠任務即可獲得超級工廠提供的多種獎勵。')
 })
 
 test('PARSER_VERSION 是整數（AnnouncementDraft.parserVersion 靠它挑重跑對象）', () => {
-  assert.ok(Number.isInteger(PARSER_VERSION) && PARSER_VERSION >= 8, '加了不收錄規則就要進版（v8：常駐／巔峰擂台）')
+  assert.ok(Number.isInteger(PARSER_VERSION) && PARSER_VERSION >= 9, '改規則就要進版（v9：巔峰擂台收錄、活動說明編號條列）')
 })

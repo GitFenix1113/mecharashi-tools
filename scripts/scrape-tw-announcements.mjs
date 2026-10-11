@@ -53,6 +53,7 @@ import {
 } from './lib/parseAnnouncement.mjs'
 import {
   inferOpenEndedDuration,
+  canAutoRelease,
   withInferred,
   toMergeableActivity,
   applyActivityToList,
@@ -398,9 +399,9 @@ async function main() {
         { versionId: a.target.targetVersion, half: a.target.targetHalf },
         versions,
       ) ?? undefined
-      // openEnded 是唯一的 flag、而且推得出來 → 跟零 flag 一樣可以直接放行。
-      // flag 照留：後台與收據都看得出這筆的週數是推的。
-      if (a.inferred && a.flags.length > 0 && a.flags.every(f => f === 'openEnded')) a.status = 'parsed'
+      // 只剩「規則知道原因」的 flag（推得出檔期的 openEnded、週六巡迴活動的非週四／非整週）
+      // → 跟零 flag 一樣可以直接放行。flag 照留：後台與收據都看得出這筆是推的／是例外。
+      if (canAutoRelease(a.flags, a.extracted.name, a.inferred)) a.status = 'parsed'
     }
 
     results.push({
@@ -431,6 +432,8 @@ async function main() {
       // 不收錄的數量要一路傳到 report —— 回歸偵測的分母靠它與我們的取捨脫鉤
       excluded: parsed.excluded ?? 0,
       supersede: Boolean(prev && prev.contentHash !== contentHash),
+      // 這篇以前處理過 → 它底下已有待審／收據，寫入前一定要先讀（見 ⑤ 的 prevActivities）
+      seenBefore: Boolean(prev),
     })
   }
 
@@ -458,6 +461,7 @@ async function main() {
   // ⑤ 寫入
   let written = 0
   let preserved = 0
+  let held = 0          // 已在人工佇列、這次解析變乾淨了也不升級的（見寫入處）
   const restaled = []   // 已處理、但重跑後解析結果變了 —— 正式資料可能要人工回頭改
   const orphaned = []   // 規則改過後不再產生的既有待審 —— 標 superseded，退出待審清單
   // 本次寫入（或 dry-run 時「本來會寫入」）的待審狀態。自動放行的預演靠它疊在
@@ -470,8 +474,12 @@ async function main() {
     batch.set(db.collection(DRAFTS).doc(r.id), stripUndefined(r.draft))
 
     // 既有待審活動：supersede 與「保護已處理狀態」都要用，一次查完免得查兩輪
+    // ⚠ 條件是「這篇以前處理過」，不只是 supersede／--reparse（2026-10-11 修正）。
+    // 解析器升版後，排程的**增量抓取**也會重跑內容沒變的舊公告（parserVersion 不同就不跳過），
+    // 先前那條路徑不讀既有文件 —— 已合併／已忽略的收據被整筆覆寫回待審，
+    // 自動放行再撞到自己合併過的那筆、全部變成「疑似重複」。保護收據的前提是先讀到它。
     const prevActivities = new Map()
-    if (r.supersede || REPARSE) {
+    if (r.supersede || REPARSE || r.seenBefore) {
       const old = await db.collection(PENDING).where('draftId', '==', r.id).get()
       old.forEach(d => prevActivities.set(d.id, d.data()))
     }
@@ -513,12 +521,22 @@ async function main() {
         continue
       }
 
+      // ⚠ 已經進過人工佇列的，重跑**不升級**成可放行（2026-10-11 教訓）。
+      // 解析器一升版，增量抓取就會重跑最近幾頁公告；若照新規則重算狀態，待確認裡那些
+      // 站長還沒看過的卡池會被改判成 parsed、當晚自動上首頁 —— 而站長留著它們正是因為
+      // 有擷取錯誤要逐筆說明。降級（parsed → needsReview）照常，升級只有人能做。
+      let status = a.status
+      if (status === 'parsed' && prevA && prevA.status !== 'parsed') {
+        status = 'needsReview'
+        held++
+      }
+
       const pendingDoc = stripUndefined({
         id: pendingId,
         draftId: r.id,
         source: 'tw',
         seq: a.seq,
-        status: a.status,
+        status,
         flags: a.flags,
         extracted: a.extracted,
         inferred: a.inferred,
@@ -559,6 +577,9 @@ async function main() {
   }
   if (preserved) {
     console.log(`   （保留 ${preserved} 筆已合併／已忽略的收據，未覆寫）`)
+  }
+  if (held) {
+    console.log(`   （${held} 筆已在待確認、這次解析可放行，但不自動升級 —— 留給人工）`)
   }
   if (orphaned.length) {
     const byName = {}

@@ -34,7 +34,7 @@
  * AnnouncementDraft.parserVersion 靠它挑出「該重跑的舊公告」，
  * 沒有它就只能全量重跑或憑印象。
  */
-export const PARSER_VERSION = 8
+export const PARSER_VERSION = 9
 
 const DAY_MS = 86_400_000
 
@@ -149,15 +149,12 @@ const EXCLUDED_TYPES = new Set(['topUpEvent'])
  *   不是限時活動，放進甘特只能永遠隱藏，等於每次都要有人按一次忽略。
  *   實例：迷星所向復刻（tw_1780）、往日無戰事復刻（tw_1862）。
  *   只擋「開放式 ＋ 常駐」—— 若哪天出現「…至 X/X，結束後轉為常駐」，那段限時期間仍是活動。
- * · **巔峰擂台賽季**：PvP 賽季與版本同步、每 6 週一季，歷來沒收進時間線；
- *   收了每個版本都多一條一模一樣的長條，對「這版有什麼」沒有資訊量。
  *
  * 與 EXCLUDED_TYPES 一樣擋在解析層、但計入 excluded（產出量統計的分母）。
+ * （v8 曾一併排除巔峰擂台賽季；v9 起站長改為收錄，見 RE_ARENA。）
  */
-function isExcludedEntry(timeLine, span, name) {
-  if (span.openEnded && /常駐/.test(timeLine)) return true
-  if (/巔峰擂台/.test(`${timeLine} ${name ?? ''}`)) return true
-  return false
+function isExcludedEntry(timeLine, span) {
+  return Boolean(span.openEnded && /常駐/.test(timeLine))
 }
 
 /**
@@ -175,6 +172,37 @@ const BOILERPLATE_NAMES = /^(特選招募|特選購置|招募一次|招募十次
  * 是會靜默流進正式資料的那種錯。
  */
 const RE_FIELD_LINE = /^[➤●▶※]?\s*活動(?:內容|說明|時間|方式|期間|規則)\s*[:：]?/
+
+/**
+ * 「活動說明」獨佔一行的小標。它底下常是**編號條列**的官方說明（大型劇情活動的標準寫法）：
+ *
+ *   【忤逆行於今】
+ *   ➤活動時間：2026/05/28 05:00 - 2025/07/09 04:59
+ *   活動說明
+ *   1.活動期間可通過「劇情模式」及挑戰「昏星試煉」關卡獲取【彌造之源】;   ← 半形分號
+ *   2.「劇情模式」可透由左右橫移與上下拖移來選定欲挑戰的關卡與故事。
+ *
+ * 先前這種活動的說明**整段抓不到**（tw_1694，站長 2026-10-11 指出）：第 1 行帶【】「」、
+ * 不到 40 字、句尾是半形「;」而不是全形「；」，於是被 isHeadingCandidate 當成下一個活動的
+ * 標題、區塊在這裡就截斷；就算沒截斷，下面的 `^\d+[、.]` 過濾也會把編號行全丟掉
+ * （那條原本是給抽獎規則條文用的）。
+ * 規則收窄成：**這個小標之後**的編號行既不是邊界、也照收進說明。
+ */
+const RE_EXPLAIN_HEAD = /^活動說明[:：]?$/
+const RE_NUMBERED = /^\d+[、.]/
+
+/**
+ * 巔峰擂台賽季：整個活動就寫在時間行這一行，上方沒有標題行。
+ *
+ *   新增內容
+ *   1.【更新】巔峰擂台第16賽季開啟 賽季：2026/10/01 05:00 - 2026/11/12 05:00 ；排位：2026/10/15 05:00 - 2026/11/09 05:00
+ *   ※本期段位獎勵包含外觀調用許可（…）與專屬機甲徽記-硬碰硬
+ *
+ * 往回找標題只會撿到上一條更新項目（tw_1807 撿到「5.【更新】常駐海運新增…」當名字），
+ * 所以認到這個句型就直接從時間行取名。檔期取第一段（賽季），排位那段寫進說明。
+ * 2026-10-11 站長決定收進時間線，型別 peakArena（顯示「巔峰擂台」）—— v8 一度是不收錄。
+ */
+const RE_ARENA = /巔峰擂台第\s*(\d+)\s*賽季/
 
 /** 整行即噪音，不進 unmatched */
 const NOISE_LINE = /^(回新聞列表|《鋼嵐後勤小組》|〈後勤支援小組〉|活動說明[:：]?|活動內容[:：]?|活動方式[:：]?|活動時間[:：]?|兵馬不動糧草先行.*|以下是來自於米赫瑪島.*|戰況瞬息萬變.*|詳情可見官網活動公告|其餘.*說明請見遊戲.*)$/
@@ -430,9 +458,12 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
     const sec = sectionAt[hit.line]
     const flags = []
 
+    // 巔峰擂台：名字就在時間行上，不往回找（見 RE_ARENA）
+    const arena = RE_ARENA.exec(lines[hit.line])
+
     // 反向搜尋名稱：不跨過上一個時間行，也不跨過段落標題
     let headIdx = -1
-    for (let i = hit.line - 1; i > prevTimeLine; i--) {
+    for (let i = hit.line - 1; !arena && i > prevTimeLine; i--) {
       if (sec && i <= sec.line) break
       if (!lines[i]) continue
       // 欄位行不是標題；一律吃掉往上找
@@ -448,7 +479,9 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
       break
     }
 
-    const heading = headIdx >= 0 ? parseHeadingLine(lines[headIdx]) : { name: undefined, entities: [] }
+    const heading = arena
+      ? { name: `巔峰擂台第${arena[1]}賽季`, entities: [], brackets: [] }
+      : headIdx >= 0 ? parseHeadingLine(lines[headIdx]) : { name: undefined, entities: [] }
     if (headIdx >= 0) {
       claimed[headIdx] = true
       // 標題行到時間行之間都屬於這個活動，一併認領，免得內文落進 unmatched
@@ -502,7 +535,9 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
     // （`【環島密令】「謀海魅影」賽季` 的 name 是「謀海魅影」，看名字永遠認不出戰令）
     const typeText = [heading.name, ...(heading.brackets ?? [])].filter(Boolean).join(' ')
     const byName = typeText ? NAME_KEYWORDS.find(([re]) => re.test(typeText)) : undefined
-    if (byName) {
+    if (arena) {
+      type = 'peakArena'
+    } else if (byName) {
       type = byName[1]
     } else if (kind === 'specificPilotBanner') {
       type = 'specificPilotBanner'
@@ -548,7 +583,11 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
     //     （下一個標題就在下一個時間行之前，只用時間行當界線必然越界）
     let blockEnd = seq + 1 < timeHits.length ? timeHits[seq + 1].line : lines.length
     const nextTimeLine = blockEnd
+    let explaining = false
     for (let i = hit.line + 1; i < blockEnd; i++) {
+      if (RE_EXPLAIN_HEAD.test(lines[i])) explaining = true
+      // 「活動說明」小標之後的編號條列是說明本體，不是下一個活動的標題（見 RE_EXPLAIN_HEAD）
+      if (explaining && RE_NUMBERED.test(lines[i])) continue
       // 「【X】補充說明」起頭的抽獎規則區塊（機率、保障次數、共用招募次數那些條文）。
       //
       // 它同時是邊界與噪音源：`blockEnd` 停在這一行，於是**它以下整段都沒有任何活動
@@ -593,11 +632,25 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
       }
     }
     const blockLines = []
+    let inExplain = false
     for (let i = hit.line + 1; i < blockEnd; i++) {
+      if (RE_EXPLAIN_HEAD.test(lines[i])) { inExplain = true; claimed[i] = true; continue }
       if (!lines[i] || NOISE_LINE.test(lines[i])) { claimed[i] = true; continue }
+      if (inExplain && RE_NUMBERED.test(lines[i])) { blockLines.push(lines[i]); claimed[i] = true; continue }
       if (/^\d+[、.]|^[※➤]|^可獲得|概率|保障|請見遊戲/.test(lines[i])) { claimed[i] = true; continue }
-      blockLines.push(lines[i])
+      // 小標與內文寫在同一行（「活動說明：活動期間，當週週六…」）—— 小標本身不是說明
+      blockLines.push(lines[i].replace(/^活動說明[:：]\s*/, ''))
       claimed[i] = true
+    }
+    // 巔峰擂台：時間行後半的「排位」檔期與緊接的段位獎勵註記（※…）才是說明。
+    // 只收跟擂台有關的 ※ 行 —— tw_1807 緊接著的是「※公共傭兵更新為貝爾莎」，那是另一條更新。
+    if (arena) {
+      const rank = /排位[:：]\s*([^；;]+)/.exec(lines[hit.line])
+      if (rank) blockLines.unshift(`排位：${rank[1].trim()}`)
+      for (let i = hit.line + 1; i < lines.length && /^※/.test(lines[i]); i++) {
+        if (/段位|擂台|賽季|排位/.test(lines[i])) blockLines.push(lines[i].replace(/^※\s*/, ''))
+        claimed[i] = true
+      }
     }
     const blockText = blockLines.join('\n')
     const description = blockText.slice(0, 400) || undefined
@@ -677,7 +730,7 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
 
     // 刻意不收錄的型別：到這裡為止該認領的行都已認領完（所以不會漏進 unmatched），
     // 只是不產出待審項目。seq 仍取自 timeHits 的索引，故其餘項目的文件 ID 不受影響。
-    if ((type && EXCLUDED_TYPES.has(type)) || isExcludedEntry(lines[hit.line], hit.span, heading.name)) {
+    if ((type && EXCLUDED_TYPES.has(type)) || isExcludedEntry(lines[hit.line], hit.span)) {
       excluded++
       continue
     }

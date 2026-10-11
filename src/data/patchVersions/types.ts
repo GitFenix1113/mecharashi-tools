@@ -30,6 +30,7 @@ export const KNOWN_ACTIVITY_TYPES = [
   'loginEvent',           // 限時簽到活動
   'battlePass',           // 版本戰令
   'topUpEvent',           // 指定方式儲值（公告實測第 2 高頻，共 109 次）
+  'peakArena',            // 巔峰擂台 PvP 賽季（2026-10-11 站長決定收錄，名稱如「巔峰擂台第16賽季」）
 ] as const
 
 export type KnownActivityType = typeof KNOWN_ACTIVITY_TYPES[number]

@@ -489,7 +489,7 @@
         <strong>PLAN-048 Phase 2 起改為選填</strong>：台版官方公告有 <strong>31%</strong> 只寫「10:00 起」、
         不寫結束時刻（實測 625 筆中 193 筆，幾乎都是卡池）。填一個「慣例上大概兩週」進來，
         就再也分不出哪些是官方寫的、哪些是系統猜的 —— 所以缺就留空。<br>
-        <strong>2026-10-11 起，卡池三類（特遣／海運／特選池）改為依慣例推估並填入</strong>，同時標
+        <strong>2026-10-11 起，卡池三類（特遣／海運／特選池）與週六巡迴活動（預熱衝刺）改為依慣例推估並填入</strong>，同時標
         <code>confidence: 'predicted'</code>、<code>note</code> 記下推估規則 ——「分不出來」的顧慮由虛線＋「推估」標籤兌現
         （規則見 <code>src/utils/announcementMerge.ts</code>）。其他型別仍維持缺就留空。<br>
         官方寫明的非整週檔期（如「預熱衝刺」週六開 37 天＝<code>5.29</code>）照存小數；卡片的「第 n/N 週」把 N 進位成整數。<br>
@@ -654,6 +654,7 @@
   <span class="st">'specificPilotBanner'</span>, <span class="st">'specificMechBanner'</span>,
   <span class="st">'limitedEvent'</span>, <span class="st">'loginEvent'</span>, <span class="st">'battlePass'</span>,
   <span class="st">'topUpEvent'</span>,   <span class="cm">// Phase 1 新增：指定方式儲值（公告實測第 2 高頻，109 次）</span>
+  <span class="st">'peakArena'</span>,    <span class="cm">// 2026-10-11 新增：巔峰擂台 PvP 賽季</span>
 ] <span class="kw">as const</span>
 
 <span class="kw">export type</span> <span class="ty">KnownActivityType</span> = <span class="kw">typeof</span> KNOWN_ACTIVITY_TYPES[<span class="ty">number</span>]
@@ -718,8 +719,12 @@
     </tr>
     <tr>
       <td class="field-name">battlePass</td>
-      <td><span class="color-dot" style="background:#6b7280;"></span>戰令 gray-500</td>
+      <td rowspan="2"><span class="color-dot" style="background:#6b7280;"></span>賽季族 gray-500</td>
       <td>長條</td><td>戰令</td><td>版本戰令（通常貫穿整個半版本，端點形狀暗示延續性）</td>
+    </tr>
+    <tr>
+      <td class="field-name">peakArena</td>
+      <td>菱形</td><td>巔峰擂台</td><td>巔峰擂台 PvP 賽季（2026-10-11 新增），名稱如「巔峰擂台第16賽季」；檔期取公告的「賽季」段，「排位」段寫進說明</td>
     </tr>
     <tr>
       <td class="field-name"><em>（未登錄）</em></td>

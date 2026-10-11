@@ -51,6 +51,41 @@ function priority(item: PendingActivity): number {
   return 4
 }
 
+// ── 依月份分組（2026-10-11 站長要求）──────────────────────────────────────────
+//
+// 待確認一度累積 49 筆、橫跨五個月，混成一長串時看不出「這週新進來的是哪幾筆」。
+// 依活動起始日的年月分組、新的月份在上；舊月份可收合（站長：舊版活動先暫停），
+// 收合狀態記在本機 —— 純個人瀏覽偏好，不必進資料庫。
+
+/** 分組鍵：起始日的年月（YYYY/MM）。抽不到日期的自成一組，排最後。 */
+const NO_DATE = '（無日期）'
+function monthOf(item: PendingActivity): string {
+  return item.extracted?.startDate?.slice(0, 7) ?? NO_DATE
+}
+function compareMonthDesc(a: string, b: string): number {
+  if (a === b) return 0
+  if (a === NO_DATE) return 1
+  if (b === NO_DATE) return -1
+  return b.localeCompare(a)
+}
+
+const COLLAPSED_KEY = 'mecharashi_admin_announcements_collapsed'
+function readCollapsed(): Set<string> | null {
+  try {
+    const raw = localStorage.getItem(COLLAPSED_KEY)
+    return raw ? new Set(JSON.parse(raw) as string[]) : null
+  } catch {
+    return null
+  }
+}
+function writeCollapsed(months: Set<string>) {
+  try {
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...months]))
+  } catch {
+    // 無痕模式／停用儲存：收合照樣有效，只是重整後不記得
+  }
+}
+
 export default function AdminAnnouncementsPage() {
   const [filterIdx, setFilterIdx] = useState(0)
   const [items, setItems] = useState<PendingActivity[]>([])
@@ -82,7 +117,8 @@ export default function AdminAnnouncementsPage() {
         return
       }
       const rows = await fetchPendingActivities(FILTERS[filterIdx].key)
-      rows.sort((a, b) => priority(a) - priority(b))
+      // 先分月（新的在上），月內再照「最需要人腦的置頂」；同權重維持 api 層的起始日新→舊
+      rows.sort((a, b) => compareMonthDesc(monthOf(a), monthOf(b)) || priority(a) - priority(b))
       setItems(rows)
       setSelectedId(prev => (prev && rows.some(r => r.id === prev) ? prev : rows[0]?.id ?? null))
     } catch (err) {
@@ -96,6 +132,32 @@ export default function AdminAnnouncementsPage() {
   useEffect(() => { void load() }, [load])
 
   const selected = useMemo(() => items.find(i => i.id === selectedId) ?? null, [items, selectedId])
+
+  /** [月份, 該月的筆] —— items 已依月份排好，這裡只切段 */
+  const groups = useMemo(() => {
+    const byMonth = new Map<string, PendingActivity[]>()
+    for (const it of items) {
+      const k = monthOf(it)
+      const g = byMonth.get(k)
+      if (g) g.push(it)
+      else byMonth.set(k, [it])
+    }
+    return [...byMonth.entries()]
+  }, [items])
+
+  // 收合的月份。null ＝ 從沒操作過 → 預設只展開最新的一個月。
+  // 操作過之後才記住整組；之後新出現的月份不在集合裡，所以會自動展開。
+  const [collapsed, setCollapsed] = useState<Set<string> | null>(readCollapsed)
+  const isCollapsed = (month: string) => (collapsed ? collapsed.has(month) : month !== groups[0]?.[0])
+  function toggleMonth(month: string) {
+    setCollapsed(prev => {
+      const next = new Set(prev ?? groups.slice(1).map(([m]) => m))
+      if (next.has(month)) next.delete(month)
+      else next.add(month)
+      writeCollapsed(next)
+      return next
+    })
+  }
 
   // 原文的 unmatched 存在 draft 上（excerpt 存在 pending 上），選到才載、載過就留著
   useEffect(() => {
@@ -291,39 +353,61 @@ export default function AdminAnnouncementsPage() {
               )}
             </div>
             <div className="max-h-[600px] overflow-auto overscroll-contain">
-              {items.map(it => (
-                <button
-                  key={it.id}
-                  type="button"
-                  onClick={() => setSelectedId(it.id)}
-                  className={`w-full text-left px-2.5 py-2 border-b border-border/60 transition-colors ${
-                    it.id === selectedId ? 'bg-accent-cyan/10' : 'hover:bg-bg-card'
-                  }`}
-                >
-                  <div className="text-[12.5px] text-text-primary truncate">
-                    {it.extracted?.name ?? <span className="text-accent-red">（無名稱）</span>}
+              {groups.map(([month, monthItems]) => {
+                const closed = isCollapsed(month)
+                const halves = [...new Set(monthItems.map(it =>
+                  it.targetVersion ? `${it.targetVersion} ${it.targetHalf === 'lower' ? '下' : '上'}半` : '版本未定'))]
+                return (
+                  <div key={month}>
+                    <button
+                      type="button"
+                      onClick={() => toggleMonth(month)}
+                      aria-expanded={!closed}
+                      className="sticky top-0 z-10 w-full flex items-center gap-1.5 px-2.5 py-1.5 border-b border-border bg-bg-tooltip text-left hover:text-text-primary transition-colors"
+                    >
+                      <span className="text-[10px] text-text-dim w-2.5">{closed ? '▶' : '▼'}</span>
+                      <span className="text-[12px] font-bold text-text-primary">
+                        {month === NO_DATE ? month : `${month.slice(0, 4)} 年 ${Number(month.slice(5))} 月`}
+                      </span>
+                      <span className="text-[11px] text-accent-cyan">{monthItems.length} 筆</span>
+                      <span className="ml-auto text-[10px] text-text-dim truncate">{halves.join('、')}</span>
+                    </button>
+                    {!closed && monthItems.map(it => (
+                      <button
+                        key={it.id}
+                        type="button"
+                        onClick={() => setSelectedId(it.id)}
+                        className={`w-full text-left px-2.5 py-2 border-b border-border/60 transition-colors ${
+                          it.id === selectedId ? 'bg-accent-cyan/10' : 'hover:bg-bg-card'
+                        }`}
+                      >
+                        <div className="text-[12.5px] text-text-primary truncate">
+                          {it.extracted?.name ?? <span className="text-accent-red">（無名稱）</span>}
+                        </div>
+                        <div className="text-[10.5px] text-text-dim mt-0.5">
+                          {it.extracted?.startDate ?? '（無日期）'}
+                          {it.targetVersion ? ` · ${it.targetVersion} ${it.targetHalf === 'lower' ? '下' : '上'}半` : ' · 版本未定'}
+                          {it.mergedInto?.actorUid === 'scheduler' && ' · 排程放行'}
+                        </div>
+                        {it.inferred && it.status !== 'merged' && (
+                          <div className="text-[10px] text-accent-purple mt-0.5 truncate" title={describeInferred(it.inferred)}>
+                            {describeInferred(it.inferred)}
+                          </div>
+                        )}
+                        {(it.flags?.length ?? 0) > 0 && (
+                          <div className="flex gap-1 flex-wrap mt-1">
+                            {it.flags.map(f => (
+                              <span key={f} className="px-1 py-px text-[9.5px] rounded bg-accent-yellow/15 text-accent-yellow border border-accent-yellow/30">
+                                {PENDING_FLAG_LABEL[f] ?? f}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </button>
+                    ))}
                   </div>
-                  <div className="text-[10.5px] text-text-dim mt-0.5">
-                    {it.extracted?.startDate ?? '（無日期）'}
-                    {it.targetVersion ? ` · ${it.targetVersion} ${it.targetHalf === 'lower' ? '下' : '上'}半` : ' · 版本未定'}
-                    {it.mergedInto?.actorUid === 'scheduler' && ' · 排程放行'}
-                  </div>
-                  {it.inferred && it.status !== 'merged' && (
-                    <div className="text-[10px] text-accent-purple mt-0.5 truncate" title={describeInferred(it.inferred)}>
-                      {describeInferred(it.inferred)}
-                    </div>
-                  )}
-                  {(it.flags?.length ?? 0) > 0 && (
-                    <div className="flex gap-1 flex-wrap mt-1">
-                      {it.flags.map(f => (
-                        <span key={f} className="px-1 py-px text-[9.5px] rounded bg-accent-yellow/15 text-accent-yellow border border-accent-yellow/30">
-                          {PENDING_FLAG_LABEL[f] ?? f}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </button>
-              ))}
+                )
+              })}
             </div>
           </div>
 

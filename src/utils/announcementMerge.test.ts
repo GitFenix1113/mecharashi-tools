@@ -3,11 +3,13 @@ import assert from 'node:assert/strict'
 import type { TimedActivity } from '../data/patchVersions/types'
 import {
   applyActivityToList,
+  canAutoRelease,
   inferOpenEndedDuration,
   toMergeableActivity,
   withInferred,
   DEFAULT_MISSING_WEEKS_NOTE,
   RERUN_BANNER_WEEKS,
+  SELECTION_POOL_WEEKS,
   type VersionLike,
 } from './announcementMerge.ts'
 
@@ -23,10 +25,10 @@ const VERSIONS: VersionLike[] = [
 const up = (versionId: string) => ({ versionId, half: 'upper' as const })
 const low = (versionId: string) => ({ versionId, half: 'lower' as const })
 
-test('特遣／海運：跑滿整個版本 —— 05/28 開的到 07/09（tw_1751「即將結束」佐證的 6 週）', () => {
+test('特遣／海運：慣例 2 週 —— 遊戲內 10/01 的角雕特遣「卡池結束於 2026/10/15」（站長截圖）', () => {
   for (const type of ['pilotMission', 'crossShipping']) {
-    const r = inferOpenEndedDuration({ type, startDate: '2026/05/28' }, up('v3.0'), VERSIONS)
-    assert.deepEqual(r, { weeks: 6, rule: 'selectionPool', until: '2026/07/09' })
+    const r = inferOpenEndedDuration({ type, startDate: '2026/10/01' }, up('v3.3'), VERSIONS)
+    assert.deepEqual(r, { weeks: SELECTION_POOL_WEEKS, rule: 'selectionPool', until: '2026/10/15' })
   }
 })
 
@@ -62,9 +64,30 @@ test('官方已寫明週數、非卡池型別、沒有目標版本 → 一律不
   assert.equal(inferOpenEndedDuration({ type: 'pilotMission', startDate: '2026/05/28' }, null, VERSIONS), null)
 })
 
-test('最後一個已知版本之後 → 推不出版本結束日，不推估（不拿慣例 3 週硬湊）', () => {
-  const r = inferOpenEndedDuration({ type: 'crossShipping', startDate: '2026/11/12' }, up('v3.4'), VERSIONS)
+test('最後一個已知版本之後 → 推不出版本結束日，版本新池不推估（不拿慣例 3 週硬湊）', () => {
+  const versions = [...VERSIONS, { id: 'v3.5', upper: { twDate: '2026/12/24', pilots: ['黑障'] } }]
+  const r = inferOpenEndedDuration({ type: 'specificPilotBanner', startDate: '2026/12/24', pilots: ['黑障'] }, up('v3.5'), versions)
   assert.equal(r, null)
+})
+
+test('週六巡迴活動（預熱衝刺）：開到下個版本前的週一 —— 與官方寫明的兩期同為 37 天', () => {
+  const r = inferOpenEndedDuration({ name: '預熱衝刺', type: 'limitedEvent', startDate: '2026/10/03' }, up('v3.3'), VERSIONS)
+  assert.deepEqual(r, { weeks: 5.29, rule: 'weekendEvent', until: '2026/11/09' })
+  const r2 = inferOpenEndedDuration({ name: '預熱衝刺', type: 'limitedEvent', startDate: '2026/08/22' }, up('v3.2'), VERSIONS)
+  assert.equal(r2?.until, '2026/09/28')
+  // 其他限時活動沒有穩定慣例，照舊交給人
+  assert.equal(inferOpenEndedDuration({ name: '迷星所向', type: 'limitedEvent', startDate: '2026/07/30' }, low('v3.1'), VERSIONS), null)
+})
+
+test('canAutoRelease：只容許規則知道原因的 flag', () => {
+  const inf = { weeks: 2, rule: 'rerunBanner' as const, until: '2026/10/01' }
+  assert.equal(canAutoRelease([], '火線重燃', null), true, '零 flag')
+  assert.equal(canAutoRelease(['openEnded'], '破陣驚鴻', inf), true, '推得出檔期的開放式卡池')
+  assert.equal(canAutoRelease(['openEnded'], '破陣驚鴻', null), false, '推不出檔期就交給人')
+  assert.equal(canAutoRelease(['nonWholeWeek', 'nonThursdayStart'], '預熱衝刺', null), true, '週六巡迴活動的常態')
+  assert.equal(canAutoRelease(['openEnded', 'nonThursdayStart'], '預熱衝刺', inf), true)
+  assert.equal(canAutoRelease(['nonThursdayStart'], '共慶二周年', null), false, '其他活動非週四開始仍要人看')
+  assert.equal(canAutoRelease(['missingName', 'unknownActivityType'], undefined, inf), false)
 })
 
 test('withInferred：補 weeks、標 predicted、note 寫明規則；官方已有 weeks 時絕不覆蓋', () => {
@@ -83,7 +106,7 @@ test('推估過的活動正規化後不隱藏 —— 有長度就該上首頁（
   const a = toMergeableActivity(withInferred({ name: '角雕特遣', type: 'pilotMission', startDate: '2026/10/01' }, inf))
   assert.ok(a)
   assert.equal(a.hidden, undefined)
-  assert.equal(a.weeks, 6)
+  assert.equal(a.weeks, 2)
   assert.equal(a.confidence, 'predicted')
 })
 

@@ -105,15 +105,16 @@ export function applyActivityToList(
 //
 // 台版卡池公告幾乎只寫「10:00 起」（實測 175 個【特選】池只有 2 個寫了結束時刻），
 // 原本的處理是「不猜、留給人工填」。結果是：2026-05 起累積 44 筆躺在待確認、沒有人填，
-// 每週還會再多 2～4 筆。站長在 2026-10-11 改為：**依慣例推估、標成「推估」、自動放行**。
+// 每週還會再多 2～4 筆。站長在 2026-10-11 改為：**依慣例推估、標成「推估」先上，錯了再手動改**。
 //
-// 規則與證據：
-//   · 角雕特遣／跨域海運 —— 跑滿整個版本（到下個版本開服）。
-//     2026/07/08 公告（tw_1751）「以下活動即將結束」列出 05/28 開的特遣與海運，正好 6 週。
+// 規則與證據（都是站長的遊戲知識＋遊戲內截圖，2026-10-11）：
+//   · 角雕特遣／跨域海運 —— 2 週。遊戲內：10/01 開的角雕特遣「卡池結束於 2026/10/15 10:00」。
+//     ⚠ 第一版曾寫成「跑滿整個版本」，依據是 tw_1751「即將結束」名單 —— 那份名單不足以推出長度，站長更正。
 //   · 版本新池（UP 的實體在該半版本的新增名單裡）—— 開到版本結束。
-//     同一份公告列出 05/28 的「星途無終」（海莉絲，v3.0 上半新機師），同樣 6 週。
-//   · 其餘【特選】池（復刻）—— 2 週。站長的遊戲知識；與先前手動填的 08/06 疾影成鋒相符，
-//     遊戲內畫面也顯示該池「結束於 2026/8/20」。
+//     遊戲內：10/01 的「希望再臨之時」（淬鋒·凱登）「卡池結束於 2026/11/12 10:00」＝ 6 週。
+//   · 其餘【特選】池（復刻）—— 2 週。與先前手動填的 08/06 疾影成鋒相符。
+//   · 預熱衝刺（週六開跑的巡迴活動）—— 開到下個版本前的週一 05:00。
+//     官方寫明起訖的兩期都是這樣（05/30→07/06、07/11→08/17，37 天）。
 //
 // 推估出來的值一律 confidence: 'predicted'（前台虛線＋「推估」標籤），讀者分得出
 // 「官方寫的」與「照慣例推的」—— 這正是當初不肯猜的理由，現在用顯示層兌現它。
@@ -122,8 +123,18 @@ export function applyActivityToList(
 
 /** 復刻【特選】池的慣例長度（2026-10-11 站長拍板） */
 export const RERUN_BANNER_WEEKS = 2
+/** 角雕特遣／跨域海運的慣例長度（2026-10-11 站長拍板，遊戲內截圖佐證） */
+export const SELECTION_POOL_WEEKS = 2
 
-export type DurationRule = 'selectionPool' | 'versionBanner' | 'rerunBanner'
+/**
+ * 週六開跑的巡迴活動（2026-10-11 站長：「預熱衝刺和火線重燃一樣是巡迴性活動，經常復刻，也加入」）。
+ *
+ * 對它們來說「非週四開始」「非整週」是**常態**而不是異常 —— 週六 05:00 開、開到下個版本前的
+ * 週一 05:00（37 天＝5.29 週）。這兩個 flag 因此不擋自動放行；只寫「起」的也照慣例推估。
+ */
+export const RECURRING_WEEKEND_EVENTS = ['預熱衝刺'] as const
+
+export type DurationRule = 'selectionPool' | 'versionBanner' | 'rerunBanner' | 'weekendEvent'
 
 export interface InferredDuration {
   weeks: number
@@ -185,10 +196,14 @@ function weeksBetween(start: Date, end: Date): number | null {
   return Math.max(1, Math.round(days / 7))
 }
 
+function isWeekendEvent(name: string | undefined): boolean {
+  return (RECURRING_WEEKEND_EVENTS as readonly string[]).includes((name ?? '').trim())
+}
+
 /**
  * 「只寫了起」的活動 → 依慣例推估的檔期。回傳 null ＝ 不適用或推不出來（維持人工確認）。
  *
- * 只處理卡池三類（特遣／海運、特選機師池、特選機甲池）；其他型別的開放式檔期
+ * 只處理卡池三類（特遣／海運、特選機師池、特選機甲池）與週六巡迴活動；其他型別的開放式檔期
  * 沒有足夠穩定的慣例，一律交給人。
  */
 export function inferOpenEndedDuration(
@@ -200,14 +215,11 @@ export function inferOpenEndedDuration(
   const start = parseYmd(a.startDate)
   if (!start) return null
 
-  const untilVersionEnd = (rule: DurationRule): InferredDuration | null => {
-    const end = nextVersionStart(start, versions)
-    if (!end) return null
-    const weeks = weeksBetween(start, end)
-    return weeks ? { weeks, rule, until: fmtYmd(end) } : null
-  }
+  const fixed = (weeks: number, rule: DurationRule): InferredDuration => ({
+    weeks, rule, until: fmtYmd(new Date(start.getTime() + weeks * 7 * DAY_MS)),
+  })
 
-  if (a.type === 'pilotMission' || a.type === 'crossShipping') return untilVersionEnd('selectionPool')
+  if (a.type === 'pilotMission' || a.type === 'crossShipping') return fixed(SELECTION_POOL_WEEKS, 'selectionPool')
 
   if (a.type === 'specificPilotBanner' || a.type === 'specificMechBanner') {
     const entities = (a.type === 'specificPilotBanner' ? a.pilots : a.mechs) ?? []
@@ -217,17 +229,53 @@ export function inferOpenEndedDuration(
     const fresh = new Set(
       ((a.type === 'specificPilotBanner' ? half?.pilots : half?.mechs) ?? []).map(normName),
     )
-    if (entities.some(e => fresh.has(normName(e)))) return untilVersionEnd('versionBanner')
-    const end = new Date(start.getTime() + RERUN_BANNER_WEEKS * 7 * DAY_MS)
-    return { weeks: RERUN_BANNER_WEEKS, rule: 'rerunBanner', until: fmtYmd(end) }
+    if (entities.some(e => fresh.has(normName(e)))) {
+      const end = nextVersionStart(start, versions)
+      const weeks = end ? weeksBetween(start, end) : null
+      return end && weeks ? { weeks, rule: 'versionBanner', until: fmtYmd(end) } : null
+    }
+    return fixed(RERUN_BANNER_WEEKS, 'rerunBanner')
+  }
+
+  if (isWeekendEvent(a.name)) {
+    // 下個版本開服（週四）前的週一 ＝ 開服日 − 3 天。週數照存小數（37 天 → 5.29），與官方寫明時一致
+    const next = nextVersionStart(start, versions)
+    if (!next) return null
+    const end = new Date(next.getTime() - 3 * DAY_MS)
+    const days = Math.round((end.getTime() - start.getTime()) / DAY_MS)
+    if (days <= 0) return null
+    return { weeks: Math.round((days / 7) * 100) / 100, rule: 'weekendEvent', until: fmtYmd(end) }
   }
   return null
 }
 
+/**
+ * 這筆能不能不經人工、由排程直接放行。
+ *
+ * 零 flag 當然可以；此外只容許「規則明確知道為什麼會這樣」的 flag：
+ *   · openEnded —— 只有在推估得出檔期時（inferred 存在）
+ *   · nonThursdayStart／nonWholeWeek —— 只有週六巡迴活動（它們本來就是這樣）
+ * 其餘 flag（缺名稱、未知型別、疑似重複…）一律交給人。
+ *
+ * ⚠ 這只回答「解析結果有沒有把握」。**已經進過人工佇列的項目不會因此被升級** ——
+ *   那條規則在抓取腳本（重跑時 needsReview 維持 needsReview），見 scrape-tw-announcements.mjs。
+ */
+export function canAutoRelease(
+  flags: readonly string[],
+  name: string | undefined,
+  inferred: InferredDuration | null | undefined,
+): boolean {
+  const tolerated = new Set<string>()
+  if (inferred) tolerated.add('openEnded')
+  if (isWeekendEvent(name)) { tolerated.add('nonThursdayStart'); tolerated.add('nonWholeWeek') }
+  return flags.every(f => tolerated.has(f))
+}
+
 const RULE_LABEL: Record<DurationRule, string> = {
-  selectionPool: '角雕特遣／跨域海運跑滿整個版本',
+  selectionPool: `角雕特遣／跨域海運慣例 ${SELECTION_POOL_WEEKS} 週`,
   versionBanner: '版本新池開到版本結束',
   rerunBanner: `復刻特選池慣例 ${RERUN_BANNER_WEEKS} 週`,
+  weekendEvent: '週六巡迴活動開到下個版本前的週一',
 }
 
 /** 後台顯示用的一句話，如「推估 2 週（復刻特選池慣例 2 週）」 */

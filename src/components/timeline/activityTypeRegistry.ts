@@ -97,8 +97,9 @@ const REGISTRY: Record<string, ActivityTone> = {
   // 簽到族（綠）
   loginEvent:          { ...LOGIN,  shape: 'circle',   label: '簽到' },
 
-  // 戰令（灰）—— 幾乎橫跨整版，用長條端點暗示「延續性」
+  // 賽季族（灰）—— 幾乎橫跨整版，用長條端點暗示「延續性」；戰令與擂台賽季靠形狀分
   battlePass:          { ...PASS,   shape: 'bar',      label: '戰令' },
+  peakArena:           { ...PASS,   shape: 'diamond',  label: '巔峰擂台' },
 }
 
 /** 復刻卡池的顯示名。型別不變，只換標籤 —— 見 activityTone 的說明。 */

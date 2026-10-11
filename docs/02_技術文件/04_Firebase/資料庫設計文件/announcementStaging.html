@@ -139,12 +139,13 @@
     週數留空的一律帶 <code>hidden</code> 與 <code>note</code> 進 <code>patchVersions</code>（上不了首頁）。<br>
     <strong>實際結果</strong>：2026-05 起累積 44 筆「無結束時刻」躺在待確認、沒有人填，每週還再多 2～4 筆
     （官方 175 個【特選】池只有 2 個寫了結束時刻）。<br>
-    <strong>現在的做法</strong>：卡池三類由抓取腳本依慣例推估，存進 <code>inferred</code>，合併時標
+    <strong>現在的做法</strong>：卡池三類與週六巡迴活動由抓取腳本依慣例推估，存進 <code>inferred</code>，合併時標
     <code>confidence: 'predicted'</code>（前台虛線＋「推估」標籤）並在 <code>note</code> 記下用了哪條規則 ——
     「分不出官方寫的與系統猜的」這個顧慮改由顯示層兌現，而不是靠「不填」。<br>
-    · 角雕特遣／跨域海運 → 到下個版本開服（2026/07/08 公告「即將結束」名單佐證 6 週）<br>
-    · 版本新池（UP 實體在該半版本新增名單）→ 到版本結束<br>
+    · 角雕特遣／跨域海運 → 2 週（站長；遊戲內 10/01 特遣「卡池結束於 2026/10/15」）<br>
+    · 版本新池（UP 實體在該半版本新增名單）→ 到版本結束（遊戲內 10/01 淬鋒·凱登池結束於 11/12＝6 週）<br>
     · 其餘【特選】復刻池 → 2 週（站長拍板）<br>
+    · 預熱衝刺（週六開跑的巡迴活動）→ 到下個版本前的週一（官方寫明的兩期皆 37 天）；它的「非週四／非整週」不擋自動放行<br>
     <strong>其他型別</strong>的開放式檔期沒有穩定慣例，仍維持週數留空、隱藏合併、由人補。
     細節見 <a href="../../02_資料模型/patchVersions.html">patchVersions 資料模型</a> 的
     <code>hidden</code> / <code>note</code> / <code>confidence</code> 與「前台顯示閘門」。
@@ -202,6 +203,8 @@
     的待審活動寫進 <code>patchVersions</code>，收據 <code>actorUid='scheduler'</code>、<code>actorName='排程自動放行'</code>。<br>
     · <strong>規則只有一份</strong>：正規化、衝突判定、推估都在 <code>src/utils/announcementMerge.ts</code>（純函式），
     後台逐筆／批次放行與排程（<code>scripts/lib/announcementMergeAdmin.mjs</code>，firebase-admin 版交易）共用。<br>
+    · <strong>只有第一次出現就乾淨的才自動放行</strong>：已經在人工佇列（needsReview 等）的項目，重跑時就算解析變乾淨也<strong>不升級</strong>成 parsed —— 升級只有人能做（2026-10-11 教訓：解析器升版會讓增量抓取重跑最近的公告）。<br>
+    · <strong>重跑一律先讀既有待審</strong>：只要這篇以前處理過（不只 <code>--reparse</code>／官方改稿），寫入前都先查它底下的文件，收據與人工佇列才保護得到。<br>
     · <strong>安全閥</strong>：同名同日已存在 → 不覆蓋、補 <code>duplicate</code> flag 退回待確認；
     本次有任何一篇 <code>contentSelectorMiss</code>（官網改版徵兆）→ 整批不放行；交易失敗 → 留在 <code>parsed</code>，下一輪再試。<br>
     · <strong>暫停</strong>：執行參數加 <code>--no-auto-merge</code>，可放行的會停在後台「可直接放行」分頁，「全部放行」按鈕仍可用。
