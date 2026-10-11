@@ -1,4 +1,6 @@
 ﻿import { useState, useMemo } from 'react'
+import { VersionFilter } from '../../components/common/VersionFilter'
+import { matchesVersionFilter } from '../../utils/versionFilter'
 import { Link } from 'react-router-dom'
 import { assetUrl, pilotPortraitPath } from '../../utils/assets'
 import { usePilots, useWeapons } from '../../hooks/useFirestore'
@@ -41,14 +43,9 @@ export default function PilotsPage() {
   const [sortMode, setSortMode] = useState<'versionDesc' | 'versionAsc'>('versionDesc')
   const [viewMode, setViewMode] = useViewMode('pilots')
 
-  // 登場版本篩選選項：只列出資料中實際出現過的版本（降序）；全空時整區隱藏
-  const versions = useMemo(
-    () =>
-      Array.from(new Set(pilots.map((p) => p.debutVersion).filter(Boolean) as string[])).sort(
-        (a, b) => parseFloat(b) - parseFloat(a),
-      ),
-    [pilots],
-  )
+  // 登場版本篩選（兩層：大版本 → 小版本，見 components/common/VersionFilter）。
+  // 只傳原始清單，去重、分組、排序由元件做；全空時元件自己隱藏
+  const debutVersions = useMemo(() => pilots.map((p) => p.debutVersion ?? ''), [pilots])
 
   const exclusiveWeaponMap = useMemo(() => {
     const map: Record<string, { name: string; gameId?: string; icon?: string }> = {}
@@ -65,7 +62,7 @@ export default function PilotsPage() {
       if (classFilter && p.class !== classFilter) return false
       if (licenseFilter && p.license !== licenseFilter) return false
       if (rarityFilter && p.rarity !== rarityFilter) return false
-      if (versionFilter && p.debutVersion !== versionFilter) return false
+      if (!matchesVersionFilter(p.debutVersion, versionFilter)) return false
       if (search) {
         const q = search.toLowerCase()
         return p.name.toLowerCase().includes(q) || p.faction.toLowerCase().includes(q)
@@ -180,22 +177,8 @@ export default function PilotsPage() {
           ))}
         </div>
 
-        {/* Debut Version Filter（僅在有資料時顯示） */}
-        {versions.length > 0 && (
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-text-dim mr-1">登場版本</span>
-            <button className={filterBtn(!versionFilter)} onClick={() => setVersionFilter('')}>全部</button>
-            {versions.map((v) => (
-              <button
-                key={v}
-                onClick={() => setVersionFilter(versionFilter === v ? '' : v)}
-                className={filterBtn(versionFilter === v)}
-              >
-                v{v}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* 登場版本：兩層篩選（全部／v3.x／v2.x／v1.x → 展開小版本）。全空時元件自己隱藏 */}
+        <VersionFilter versions={debutVersions} value={versionFilter} onChange={setVersionFilter} />
       </div>
 
       {/* Count + View toggle */}

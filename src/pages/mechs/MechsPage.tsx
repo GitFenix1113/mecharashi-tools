@@ -1,4 +1,6 @@
 ﻿import { useState, useMemo } from 'react'
+import { VersionFilter } from '../../components/common/VersionFilter'
+import { matchesVersionFilter } from '../../utils/versionFilter'
 import { Link } from 'react-router-dom'
 import { useMechs } from '../../hooks/useFirestore'
 import { useViewMode } from '../../hooks/useViewMode'
@@ -84,14 +86,9 @@ export default function MechsPage() {
   const [sortMode, setSortMode] = useState<'versionDesc' | 'versionAsc'>('versionDesc')
   const [viewMode, setViewMode] = useViewMode('mechs')
 
-  // 登場版本篩選選項：只列出資料中實際出現過的版本（降序）；全空時整區隱藏
-  const versions = useMemo(
-    () =>
-      Array.from(new Set(mechs.map((m) => m.debutVersion).filter(Boolean) as string[])).sort(
-        (a, b) => parseFloat(b) - parseFloat(a),
-      ),
-    [mechs],
-  )
+  // 登場版本篩選（兩層：大版本 → 小版本，見 components/common/VersionFilter）。
+  // 只傳原始清單，去重、分組、排序由元件做；全空時元件自己隱藏
+  const debutVersions = useMemo(() => mechs.map((m) => m.debutVersion ?? ''), [mechs])
 
   // 品質篩選選項：同樣只列資料中實際出現過的值，依 QUALITY_ORDER 排（S→A→B）。
   // 寫死 ['S','A','B'] 的話，日後真的出現 EX 級機甲就會篩不到它。
@@ -109,7 +106,7 @@ export default function MechsPage() {
     (m) =>
       (!armorFilter || m.armorType === armorFilter) &&
       (!qualityFilter || m.quality === qualityFilter) &&
-      (!versionFilter || m.debutVersion === versionFilter),
+      matchesVersionFilter(m.debutVersion, versionFilter),
   )
   const filtered = [...base].sort((a, b) => {
     // 主排序：登場版本（新→舊 或 舊→新）；無版本者永遠排最後
@@ -196,22 +193,8 @@ export default function MechsPage() {
           </div>
         )}
 
-        {/* Debut Version Filter（僅在有資料時顯示） */}
-        {versions.length > 0 && (
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-text-dim mr-1">登場版本</span>
-            <button className={filterBtn(!versionFilter)} onClick={() => setVersionFilter('')}>全部</button>
-            {versions.map((v) => (
-              <button
-                key={v}
-                onClick={() => setVersionFilter(versionFilter === v ? '' : v)}
-                className={filterBtn(versionFilter === v)}
-              >
-                v{v}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* 登場版本：兩層篩選（全部／v3.x／v2.x／v1.x → 展開小版本）。全空時元件自己隱藏 */}
+        <VersionFilter versions={debutVersions} value={versionFilter} onChange={setVersionFilter} />
       </div>
 
       {/* Count + View toggle */}
