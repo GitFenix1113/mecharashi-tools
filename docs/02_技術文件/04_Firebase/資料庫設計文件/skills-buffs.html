@@ -88,7 +88,7 @@
       <tr><td>name</td><td>string</td><td>BUFF 名稱（如 "護甲強化"、"增傷Lv3"）</td></tr>
       <tr><td>description</td><td>string</td><td>BUFF 效果文字描述</td></tr>
       <tr><td>icon</td><td>string?</td><td>官方 BUFF 字形 key（<code>Icon_buff_*</code>／<code>Icon_debuff_*</code>，白色單色；圖庫 <code>public/images/game/icons/buff/</code>）。前台以 <code>BuffGlyph</code> 畫成「色塊底＋白色字形」，與遊戲一致</td></tr>
-      <tr><td>iconTone</td><td>string?</td><td>BUFF 圖示底色（PLAN-055 D）：<code>buff</code> 藍＝增益、<code>debuff</code> 紅＝減益、<code>special</code> 紫＝特殊（狀態／資源／天賦專屬）。<b>選填</b>：不填由 buffType 推（statBoost→藍、debuff／control→紅、state／resource→紫），只有遊戲實際顏色不同時才填<br><small style="color:var(--text-dim)">不要為了配顏色去改 buffType——它還決定神經驅動覆寫的敵我判斷（<code>isSelfBuff</code>）</small></td></tr>
+      <tr><td>iconTone</td><td>string?</td><td>BUFF 圖示底色（PLAN-055 D）：<code>buff</code> 藍＝增益、<code>debuff</code> 紅＝減益、<code>special</code> 紫＝特殊（狀態／資源／天賦專屬）、<code>heal</code> 綠＝治療。<b>選填</b>：不填由 buffType 推（statBoost→藍、debuff／control→紅、state／resource→紫），只有遊戲實際顏色不同時才填；綠色沒有對應的 buffType，治療類一律要填<br><small style="color:var(--text-dim)">不要為了配顏色去改 buffType——它還決定神經驅動覆寫的敵我判斷（<code>isSelfBuff</code>）</small></td></tr>
       <tr><td colspan="3" style="color:var(--accent-orange);font-weight:700;">▎預留欄位（後續版本擴充）</td></tr>
       <tr><td>duration</td><td>number?</td><td>持續回合數（null = 永久）</td></tr>
       <tr><td>maxStack</td><td>number?</td><td>最大疊加層數（1 = 不可疊加）</td></tr>

@@ -3,7 +3,8 @@ import type { BuffIconTone, BuffLevel, GameBuff } from '../types'
 // ─── BUFF 圖示（PLAN-055 D）────────────────────────────────────────────────
 //
 // 遊戲裡的 BUFF 圖示是「色塊底＋細米白框＋白色字形」（2026-10-11 站長提供的戰鬥截圖）：
-//   藍＝增益、紅＝減益、紫＝特殊（狀態、資源、天賦專屬的機制 BUFF）。
+//   藍＝增益、紅＝減益、紫＝特殊（狀態、資源、天賦專屬的機制 BUFF）、綠＝治療。
+//   綠色沒有對應的 buffType，不從類型推，只走 iconTone 人工覆寫。
 // 字形本身是白色單色圖（官方 bufftype_abs 圖集，圖庫 game/icons/buff/）；減益用的是**另一張**字形
 // （多半帶一道斜線，例：Icon_debuff_remove），不是同一張換紅色。
 // 左上角的層數、右下角的剩餘回合是戰鬥中的即時狀態，網站顯示的是 BUFF 定義，所以不畫。
@@ -21,6 +22,7 @@ export const BUFF_TONE_LABEL: Record<BuffIconTone, string> = {
   buff: '增益（藍）',
   debuff: '減益（紅）',
   special: '特殊（紫）',
+  heal: '治療（綠）',
 }
 
 /**

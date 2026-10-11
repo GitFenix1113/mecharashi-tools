@@ -15,6 +15,11 @@ test('人工覆寫優先：遊戲裡天賦專屬的增益是紫色，buffType �
   assert.equal(buffIconTone({ buffType: 'statBoost', iconTone: 'special' }), 'special')
 })
 
+test('治療（綠）沒有對應的 buffType，只能覆寫', () => {
+  assert.equal(buffIconTone({ buffType: 'statBoost', iconTone: 'heal' }), 'heal')
+  assert.equal(buffIconTone({ buffType: 'state', iconTone: 'heal' }), 'heal')
+})
+
 test('未知 buffType 當特殊（紫）', () => {
   assert.equal(buffIconTone({ buffType: '' }), 'special')
   assert.equal(buffIconTone({ buffType: 'somethingNew' }), 'special')

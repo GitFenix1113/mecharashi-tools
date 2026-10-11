@@ -367,7 +367,7 @@ function BuffEditPanel({
           </div>
         )}
 
-        {/* PLAN-055 D-4：BUFF 圖示＝官方白色字形＋色塊底（藍增益／紅減益／紫特殊），照遊戲畫法 */}
+        {/* PLAN-055 D-4：BUFF 圖示＝官方白色字形＋色塊底（藍增益／紅減益／紫特殊／綠治療），照遊戲畫法 */}
         <div className="rounded-lg border border-border/60 bg-bg-dark/40 p-3 space-y-2">
           <div className="flex items-end gap-3 flex-wrap">
             <div className="flex-1 min-w-[240px]">
@@ -396,7 +396,7 @@ function BuffEditPanel({
           </div>
           <p className="text-[11px] text-text-dim leading-relaxed">
             照遊戲裡那顆 BUFF 的樣子選：減益多半有自己的斜線版字形（<code>debuff_*</code>），不是同一張換紅色。
-            底色只有和遊戲不同時才覆寫（例：天賦專屬的增益在遊戲裡是紫色）——<b>不要為了顏色改上面的類型</b>，類型還決定神經驅動覆寫的敵我判斷。
+            底色只有和遊戲不同時才覆寫（例：天賦專屬的增益在遊戲裡是紫色）；<b>治療類（綠）沒有對應的類型，一律要手動選</b>——<b>不要為了顏色改上面的類型</b>，類型還決定神經驅動覆寫的敵我判斷。
           </p>
         </div>
 

@@ -5,7 +5,7 @@ import { gameIconCandidates } from '../../utils/gameIcons'
 
 // ─── BUFF 圖示（PLAN-055 D-1）────────────────────────────────────────────────
 //
-// 照遊戲的畫法：**色塊底＋細米白框＋白色字形**（藍增益／紅減益／紫特殊，色值在 index.css 的 --color-buff-*）。
+// 照遊戲的畫法：**色塊底＋細米白框＋白色字形**（藍增益／紅減益／紫特殊／綠治療，色值在 index.css 的 --color-buff-*）。
 // 官方字形本來就是白色透明底，所以直接疊一張 <img>，不需要 CSS mask 上色。
 // 底色規則與字形選擇在 utils/buffGlyph.ts（純函式，有測試）。
 //
@@ -23,7 +23,7 @@ const SIZE = {
 } as const
 
 // Tailwind v4 要在原始碼裡看得到完整 class 名稱才會產生，所以用查表、不拼字串
-const TONE_BG = { buff: 'bg-buff-up', debuff: 'bg-buff-down', special: 'bg-buff-special' } as const
+const TONE_BG = { buff: 'bg-buff-up', debuff: 'bg-buff-down', special: 'bg-buff-special', heal: 'bg-buff-heal' } as const
 
 export function BuffGlyph({
   buff, level, size = 'md', className = '',

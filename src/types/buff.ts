@@ -94,8 +94,11 @@ export interface BuffLevel {
   icon?:        string
 }
 
-/** BUFF 圖示底色：藍＝增益、紅＝減益、紫＝特殊（PLAN-055 D；對照遊戲 BUFF 列的三種色塊） */
-export type BuffIconTone = 'buff' | 'debuff' | 'special'
+/**
+ * BUFF 圖示底色：藍＝增益、紅＝減益、紫＝特殊、綠＝治療（PLAN-055 D；對照遊戲 BUFF 列的色塊）。
+ * 綠色沒有對應的 buffType，只能由 iconTone 人工覆寫指定。
+ */
+export type BuffIconTone = 'buff' | 'debuff' | 'special' | 'heal'
 
 /** buffs Collection 文件 */
 export interface GameBuff {
@@ -107,8 +110,9 @@ export interface GameBuff {
   /** 官方 BUFF 字形 key（Icon_buff_*／Icon_debuff_*，白色單色；PLAN-055 D，圖庫 game/icons/buff/） */
   icon?:       string
   /**
-   * 圖示底色（PLAN-055 D）。遊戲裡 BUFF 是「色塊底＋白色字形」：藍＝增益、紅＝減益、紫＝特殊（狀態／資源／天賦專屬）。
+   * 圖示底色（PLAN-055 D）。遊戲裡 BUFF 是「色塊底＋白色字形」：藍＝增益、紅＝減益、紫＝特殊（狀態／資源／天賦專屬）、綠＝治療。
    * **選填**：不填就由 buffType 推（utils/buffGlyph.ts 的 buffIconTone）；只有遊戲實際顏色和推出來的不同時才填。
+   * 綠色推不出來（沒有治療類 buffType），治療類 BUFF 一律要在這裡填 'heal'。
    * ⚠ 不要為了配顏色去改 buffType——它還決定神經驅動覆寫的敵我判斷（utils/ndOverrides.ts 的 isSelfBuff）。
    */
   iconTone?:   BuffIconTone

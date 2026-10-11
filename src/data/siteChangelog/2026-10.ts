@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-11', type: 'feat', summary: 'BUFF 圖示新增<b>綠色底（治療類）</b>，對應遊戲裡修理、恢復類 BUFF 的顏色；後台 BUFF 編輯的「底色」可選「治療（綠）」。' },
+
     { date: '2026-10-11', type: 'feat', summary: '後台機師、機甲的立繪欄位新增<b>「選取官方立繪」</b>：依名稱挑圖、每組圖標出<b>被誰使用</b>、還沒人用的排最前，'
       + '點一下就連同<b>官方遊戲 ID</b>一起填好（機師含 artKey、機甲含四個部件圖），不必再從一長串數字資料夾裡猜是誰。'
       + '用原本的「選取圖片」挑到官方資料夾裡的圖也會自動帶入遊戲 ID；資料夾選單附上機師／機甲名稱，選到別人已在用的 ID 會提示重複。' },
