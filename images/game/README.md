@@ -42,11 +42,36 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
   `scripts/lib/npcArtNotes.json`（owner＝機師文件 ID），選圖器掛在他名下、不算未使用。英文名由 `--npc --apply` 從 3D 模型資料夾抓進
   `scripts/lib/npcArtMeta.json`，選圖器可用英文搜尋——新機師公布英文名時找 NPC 時期立繪最快的方法。
   站長 2026-10-12 決定上站（取代 10-04「NPC 不進 repo」）：查資料的人不怕劇透，官方之後還會有好幾位 NPC 轉正。
-- 這裡只放**讀取端會用到的種類（core）＋NPC 圖庫**。造型、招募立繪、大廳場景等 extended 素材與敵方機甲等其餘 _reserve **不進 repo**，在 repo 外的封存夾。
+- 這裡只放**讀取端會用到的種類（core）＋NPC 圖庫**。造型、招募立繪、大廳場景等 extended 素材、敵方機甲等其餘 _reserve，
+  以及站上用不到的其他圖示（道具、勳章、肉鴿…）**不進 repo**，在 repo 外的封存夾（`E:/Mecharashi_Data/site-archive/game/`）。
 
-## 匯入與重跑
+## 遊戲改版後的歸檔流程（照做就好，不需要 AI）
 
-遊戲改版、跑完擷取工具之後，先跑 `node scripts/diff-game-dump.mjs`（最新 vs 前一次擷取的差異報告，附該跑的匯入指令）。
+每一步都是複製貼上；要動腦的只有「誰是誰」，那是站長／管理者的判斷。
+
+1. **擷取**：跑擷取工具，結果會在 `E:/Mecharashi_Data/一般圖片_<版本碼>/`。
+2. **差異報告**：`node scripts/diff-game-dump.mjs`，打開它印出的 `_local-notes/<月>/<日>_遊戲擷取差異.html`。
+3. **照「下一步」逐條做**。每一步標 ✅ 已完成／⬜ 待做，附可以直接貼的指令：
+   先**不加** `--apply` 跑一次（dry-run，只報告、不寫任何東西），沒問題再加 `--apply` 重跑。
+   - 「上站」的步驟寫進這個資料夾（之後要 commit）：新機師卡、新機甲、NPC 立繪、技能／BUFF／武器／背包圖示
+   - 「封存」的步驟寫到 repo 外的 `E:/Mecharashi_Data/site-archive/game/`（不必 commit、不部署）：
+     介面美術（`ui/`）、其他圖示（`icons/`）、既有機師的新造型（`pilots/<gameId>/`）
+   - 只有新機師要人判斷：`--art-key` 填哪張立繪（gameId 與 artKey 不互推）。新機甲只放圖、不碰資料庫。
+4. **重跑差異報告**：每一步都應該是 ✅。報告是產生當下的快照，做完幾步就重跑一次。
+5. **收尾**（上站的步驟有做才需要；報告最後也有同一份清單）：
+   1. `npm run dev`，確認後台看得到新圖（「選取官方立繪」的「未使用」、圖示選圖器的「最新」）。dev／build 會自動重產索引。
+   2. `git status` 確認變動只在 `public/images/game/`、`src/data/`、`scripts/lib/` → `git add -A` →
+      `git commit -m "chore(images): <日期> 擷取的官方原檔匯入"`（chore 不必寫網站更新履歷）。
+   3. `npm run push`（會先 build，失敗就不會推上去）。
+   4. 等 GitHub Actions 的 `pages-build-deployment` 跑完。部署完成前若有人開過新圖的網址，Cloudflare 會把 404 快取住 →
+      到 Cloudflare 清快取（報告最後有網址清單）。
+   5. 管理者在後台把新機甲／新機師連上官方原檔：「選取官方立繪」裡新匯入的就在「未使用」。站上還沒有的新機甲先建檔再選。
+
+**什麼時候才需要找人改程式**：報告出現「⚠ 要人處理」（字典沒登記的新模組——不處理也已經封存在 `ui/_unsorted/`）、
+匯入時「守門命中、中止」（同名但內容不同、大小寫撞名），或官方改了命名規則。
+
+## 匯入指令一覽
+
 新擷取用 `--src=latest`；不給 `--src` 時讀第一次擷取 `Data`（v3 整批只能用它）。
 
 ```bash
@@ -58,6 +83,8 @@ node scripts/import-game-assets.mjs --src=latest --npc --apply               # N
 node scripts/import-game-assets.mjs --src=latest --icons --apply             # 技能類／BUFF 圖示（只補新 key；別名與 legacy 只增不減）
 node scripts/import-game-assets.mjs --equip-icons --apply                    # 武器／背包圖示（整夾；新擷取只補新的）
 node scripts/import-game-assets.mjs --src=latest --ui --apply                # 活動／招募／大廳等介面美術 → repo 外封存夾（不部署）
+node scripts/import-game-assets.mjs --src=latest --other-icons --apply       # 其他圖示（道具、勳章、肉鴿、車輛、塗裝小圖…）→ repo 外封存夾
+node scripts/import-game-assets.mjs --src=latest --skins --apply             # 既有機師的新造型 → repo 外封存夾 pilots/<gameId>/
 node scripts/import-game-assets.mjs --promote=<ui/ 底下的路徑> --apply        # 封存夾挑好的 → 這裡的 ui/（上架＝公開，只挑台版已上線的）
 node scripts/generate-art-index.mjs                                          # 重產索引（build／predev 也會跑）
 node scripts/check-image-refs.mjs                                            # 掃描 DB 與程式碼裡的圖片路徑
