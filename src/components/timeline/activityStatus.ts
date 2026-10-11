@@ -8,6 +8,10 @@ export interface ActivityStatus {
   start: Date
   /** 結束時刻，**exclusive**（＝活動最後一天的隔天 00:00），與全站既有慣例一致 */
   endExclusive: Date
+  /**
+   * 跨了幾個週次（整數）。官方寫明的非整週檔期（如「預熱衝刺」週六開、37 天＝5.29 週）
+   * 會無條件進位成 6 —— 卡片上寫「第 2/5.29 週」沒有意義，而且「末週」永遠判定不到。
+   */
   totalWeeks: number
   phase: 'upcoming' | 'ongoing' | 'ended'
   /** 進行到第幾週（1-based）；非進行中為 0 */
@@ -33,7 +37,10 @@ export interface ActivityStatus {
 export function activityStatus(act: VisibleActivity, now: Date = new Date()): ActivityStatus {
   const weeks = Math.max(act.weeks, 1)
   const start = parseDate(act.startDate)
-  const endExclusive = new Date(start.getTime() + weeks * 7 * DAY_MS)
+  // 天數取整：小數週是 spanToWeeks 四捨五入到 0.01 的結果（37 天 → 5.29 → 37.03 天），
+  // 不取整的話結束時刻會多出 40 分鐘的零頭
+  const endExclusive = new Date(start.getTime() + Math.round(weeks * 7) * DAY_MS)
+  const totalWeeks = Math.ceil(weeks - 1e-9)
 
   const today = new Date(now)
   today.setHours(0, 0, 0, 0)
@@ -45,7 +52,7 @@ export function activityStatus(act: VisibleActivity, now: Date = new Date()): Ac
     : 'ongoing'
 
   const elapsedDays = Math.floor((t - start.getTime()) / DAY_MS)
-  const totalDays = weeks * 7
+  const totalDays = Math.round(weeks * 7)
   const weekIndex = phase === 'ongoing' ? Math.floor(elapsedDays / 7) + 1 : 0
   const daysLeft = phase === 'ongoing'
     ? Math.ceil((endExclusive.getTime() - t) / DAY_MS)
@@ -54,11 +61,11 @@ export function activityStatus(act: VisibleActivity, now: Date = new Date()): Ac
   return {
     start,
     endExclusive,
-    totalWeeks: weeks,
+    totalWeeks,
     phase,
     weekIndex,
     daysLeft,
-    isFinalWeek: phase === 'ongoing' && weekIndex === weeks,
+    isFinalWeek: phase === 'ongoing' && weekIndex === totalWeeks,
     progress: phase === 'ended' ? 1 : Math.max(0, Math.min(1, elapsedDays / totalDays)),
   }
 }

@@ -13,12 +13,18 @@
  *   announcementDrafts   一則公告的原文草稿
  *   pendingActivities    解析出的待審活動，審核最小單位是「一個活動」
  *
- * ⚠ 本腳本**不寫 patchVersions，因此刻意不 bumpDataVersion**。
+ * ⑥ 自動放行（2026-10-11 起，站長拍板「可放行的就不用等管理員」）：
+ *   解析完把 status='parsed' 的待審活動直接寫進 patchVersions，收據記成「排程自動放行」。
+ *   parsed ＝ 零 flag，或唯一的 flag 是 openEnded、且檔期可依慣例推估的卡池
+ *   （規則見 src/utils/announcementMerge.ts，推估值一律標 predicted）。
+ *   其餘（缺名稱、未知型別、非週四、非整週、推不出版本…）照舊留在後台待確認。
+ *   · 目標半期已有同名同日的活動 → 不覆蓋，退回待確認並標「疑似重複」。
+ *   · 本次有任何一篇正文選擇器失效（官網改版徵兆）→ 整批不自動放行，等人看過。
+ *
+ * ⚠ 自動放行寫了 patchVersions，所以**有放行就 bump 一次**（bumpPatchVersions）。
  *   patchVersions 走 Worker 邊緣快取（以集合版本號當 cache key、max-age=86400），
- *   沒改它卻 bump 等於平白讓所有使用者重抓一次。真正的寫入與 bump 在合併那一步
- *   （後台 /admin/announcements → src/lib/api/announcementStaging.ts 的 mergeIntoVersion）。
- *   **若日後有人在這裡加上直接寫 patchVersions 的路徑，就必須一併 bump** ——
- *   否則資料寫進去了、前台看不到、硬重整也沒用，最長 24 小時。
+ *   不 bump 就是資料寫進去了、前台看不到、硬重整也沒用，最長 24 小時。
+ *   反過來，沒放行任何東西就**不要** bump —— 平白讓所有使用者重抓一次。
  *
  * 用法：
  *   node scripts/scrape-tw-announcements.mjs                  增量抓取（預設）
@@ -28,6 +34,9 @@
  *   node scripts/scrape-tw-announcements.mjs --from-archive   讀本地歸檔而非連線（離線驗證用）
  *   node scripts/scrape-tw-announcements.mjs --limit=5        只處理前 N 篇
  *   node scripts/scrape-tw-announcements.mjs --fail-on-warn   結構性異常時 exit 1（排程用）
+ *   node scripts/scrape-tw-announcements.mjs --no-auto-merge  只寫 staging，不自動放行（留給後台「全部放行」）
+ *
+ * ⚠ 本腳本 import src/ 底下的 .ts（放行規則與前台共用），需要 Node 22.18+ 的型別剝除。
  */
 
 import fs from 'node:fs'
@@ -42,6 +51,19 @@ import {
   decodeEntities,
   PARSER_VERSION,
 } from './lib/parseAnnouncement.mjs'
+import {
+  inferOpenEndedDuration,
+  withInferred,
+  toMergeableActivity,
+  applyActivityToList,
+  describeInferred,
+} from '../src/utils/announcementMerge.ts'
+import {
+  mergeIntoVersionAdmin,
+  bumpPatchVersions,
+  stripUndefined,
+  AUTO_ACTOR,
+} from './lib/announcementMergeAdmin.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -72,6 +94,7 @@ const FROM_ARCHIVE = args.includes('--from-archive')
 const BACKFILL = (args.find(a => a.startsWith('--backfill=')) || '').split('=')[1] || null
 const LIMIT = Number((args.find(a => a.startsWith('--limit=')) || '').split('=')[1]) || Infinity
 const FAIL_ON_WARN = args.includes('--fail-on-warn')
+const AUTO_MERGE = !args.includes('--no-auto-merge')
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
@@ -365,7 +388,19 @@ async function main() {
     for (const a of parsed.activities) {
       a.target = guessTarget(a.extracted.startDate, versions)
       // 推不出版本就別讓它自動放行 —— 合併時沒有目標版本可寫，等於一定要人工經手
-      if (!a.target.targetVersion) a.status = 'needsReview'
+      if (!a.target.targetVersion) { a.status = 'needsReview'; continue }
+
+      // 只寫了「起」的卡池：依慣例推估檔期（2026-10-11 站長拍板，規則在 announcementMerge.ts）。
+      // 推估結果存在 inferred，**不寫進 extracted** —— extracted 是解析器的原始產出，
+      // 混進去就分不出「公告寫的」與「規則推的」。合併時才疊上去並標 predicted。
+      a.inferred = inferOpenEndedDuration(
+        a.extracted,
+        { versionId: a.target.targetVersion, half: a.target.targetHalf },
+        versions,
+      ) ?? undefined
+      // openEnded 是唯一的 flag、而且推得出來 → 跟零 flag 一樣可以直接放行。
+      // flag 照留：後台與收據都看得出這筆的週數是推的。
+      if (a.inferred && a.flags.length > 0 && a.flags.every(f => f === 'openEnded')) a.status = 'parsed'
     }
 
     results.push({
@@ -411,10 +446,6 @@ async function main() {
     process.exitCode = 1
   }
 
-  if (results.length === 0) {
-    console.log('\n沒有需要寫入的變更。')
-    return
-  }
   // --from-archive --dry-run 是**離線**模式，根本沒有 db 可查，到此為止
   if (!db) {
     console.log('\n（離線預演：未連線 Firestore，僅驗證解析結果）')
@@ -429,6 +460,10 @@ async function main() {
   let preserved = 0
   const restaled = []   // 已處理、但重跑後解析結果變了 —— 正式資料可能要人工回頭改
   const orphaned = []   // 規則改過後不再產生的既有待審 —— 標 superseded，退出待審清單
+  // 本次寫入（或 dry-run 時「本來會寫入」）的待審狀態。自動放行的預演靠它疊在
+  // Firestore 現況上 —— dry-run 沒真的寫，只查 Firestore 會看不到這次新產生的那幾筆。
+  const staged = new Map()
+  if (results.length === 0) console.log('\n沒有需要寫入的變更。')
   for (const r of results) {
     const batch = db.batch()
     if (regressed) r.draft.warnings = [...new Set([...r.draft.warnings, 'yieldRegression'])]
@@ -446,6 +481,7 @@ async function main() {
       for (const [id, prevA] of prevActivities) {
         if (prevA.status !== 'merged' && prevA.status !== 'rejected') {
           batch.update(db.collection(PENDING).doc(id), { status: 'superseded' })
+          staged.set(id, { ...prevA, status: 'superseded' })
         }
       }
     }
@@ -477,7 +513,7 @@ async function main() {
         continue
       }
 
-      batch.set(db.collection(PENDING).doc(pendingId), stripUndefined({
+      const pendingDoc = stripUndefined({
         id: pendingId,
         draftId: r.id,
         source: 'tw',
@@ -485,6 +521,7 @@ async function main() {
         status: a.status,
         flags: a.flags,
         extracted: a.extracted,
+        inferred: a.inferred,
         excerpt: a.excerpt,
         excerptStart: a.excerptStart,
         rawTypeLabel: a.rawTypeLabel,
@@ -492,7 +529,9 @@ async function main() {
         // 重跑不該偽造「首次出現時間」——同 draft.fetchedAt 的處理
         createdAt: prevA?.createdAt ?? now,
         expireAt,
-      }))
+      })
+      batch.set(db.collection(PENDING).doc(pendingId), pendingDoc)
+      staged.set(pendingId, pendingDoc)
     }
     // 規則改過之後「不再產生」的既有待審 —— 例如多爾沙龍改判為儲值促銷（不收錄），
     // 它原本那筆 pendingActivity 不會被上面的迴圈碰到，就這樣孤零零留在待審清單裡，
@@ -504,17 +543,20 @@ async function main() {
       // 收據與已標記的不動 —— 同前面「已合併的保留收據」的原則
       if (['merged', 'rejected', 'superseded'].includes(prevA.status)) continue
       batch.update(db.collection(PENDING).doc(id), { status: 'superseded' })
+      staged.set(id, { ...prevA, status: 'superseded' })
       orphaned.push({ id, name: prevA.extracted?.name ?? '（無名）', type: prevA.extracted?.type ?? '—' })
     }
 
     if (!DRY_RUN) await batch.commit()
     written++
   }
-  console.log(
-    DRY_RUN
-      ? `\n（--dry-run：未寫入）將寫入 ${written} 篇草稿、${report.activities} 筆待審活動`
-      : `\n✔ 已寫入 ${written} 篇草稿、${report.activities} 筆待審活動`
-  )
+  if (written) {
+    console.log(
+      DRY_RUN
+        ? `\n（--dry-run：未寫入）將寫入 ${written} 篇草稿、${report.activities} 筆待審活動`
+        : `\n✔ 已寫入 ${written} 篇草稿、${report.activities} 筆待審活動`
+    )
+  }
   if (preserved) {
     console.log(`   （保留 ${preserved} 筆已合併／已忽略的收據，未覆寫）`)
   }
@@ -535,9 +577,23 @@ async function main() {
     }
   }
 
+  // ⑥ 自動放行。沒有新公告的那一週也要跑 —— 上一輪被跳過（選擇器失效、--no-auto-merge、
+  // 交易失敗）而留在 parsed 的，下一輪自然補上，不必有人記得去後台按。
+  let auto = null
+  if (AUTO_MERGE) {
+    auto = await autoMerge(db, { staged, versions, blocked: Boolean(report.warnings.contentSelectorMiss) })
+    if (auto.failed.length && FAIL_ON_WARN) {
+      console.error(`\n✗ 自動放行失敗 ${auto.failed.length} 筆`)
+      process.exitCode = 1
+    }
+  } else {
+    console.log('\n（--no-auto-merge：可放行的留在後台「可直接放行」分頁）')
+  }
+
   // ⚠ dry-run 絕不能寫這裡：RUN_META 是產出量監控的比較基準，
   // 一次預演就會把基準墊高，下次真跑的回歸偵測跟著失準（自己污染自己）。
-  if (DRY_RUN) return
+  // 沒有新公告的執行也不寫：announcements=0 會把基準洗成 0，下次的回歸偵測就失效了。
+  if (DRY_RUN || results.length === 0) return
   await db.doc(RUN_META).set({
     at: admin.firestore.FieldValue.serverTimestamp(),
     parserVersion: PARSER_VERSION,
@@ -546,31 +602,108 @@ async function main() {
     excluded: report.excluded,
     perAnnouncement: report.perAnnouncement,
     parsedPerAnnouncement: report.parsedPerAnnouncement,
+    autoMerged: auto?.merged.length ?? 0,
   }, { merge: true })
 }
 
-/** Firestore 不接受 undefined；遞迴清掉（同 firestoreCore.stripUndefined 的作用） */
-function stripUndefined(obj) {
-  if (Array.isArray(obj)) return obj.map(stripUndefined)
-  if (obj && typeof obj === 'object' && !(obj instanceof Date)) {
-    const out = {}
-    for (const [k, v] of Object.entries(obj)) {
-      if (v === undefined) continue
-      out[k] = stripUndefined(v)
-    }
-    return out
+/**
+ * ⑥ 把 status='parsed' 的待審活動寫進 patchVersions（2026-10-11 起）。
+ *
+ * 候選是 Firestore 上**所有** parsed，不只這次新產生的 —— 前幾輪被跳過的一併補上。
+ * dry-run 時把本次「本來會寫入」的狀態疊上去，並在記憶體裡模擬寫入，
+ * 預演才看得出「會放行哪些、哪些會撞到同名同日」。
+ *
+ * 序列執行：同一批多半落在同一個半期，並行的交易會互相撞版本、觸發大量重試。
+ */
+async function autoMerge(db, { staged, versions, blocked }) {
+  console.log('\n── 自動放行 ──')
+  if (blocked) {
+    // 正文選擇器失效＝官網改版的徵兆，此時解析結果再乾淨也不該直接上首頁
+    console.log('  ⚠ 本次有公告的正文選擇器失效（官網可能改版）—— 整批不自動放行，留在後台「可直接放行」')
+    return { merged: [], conflicts: [], failed: [] }
   }
-  return obj
+
+  const snap = await db.collection(PENDING).where('status', '==', 'parsed').get()
+  const byId = new Map(snap.docs.map(d => [d.id, d.data()]))
+  if (DRY_RUN) for (const [id, d] of staged) byId.set(id, d)
+  const cands = [...byId.entries()]
+    .filter(([, d]) => d.status === 'parsed')
+    .sort(([, a], [, b]) => (a.extracted?.startDate ?? '').localeCompare(b.extracted?.startDate ?? ''))
+
+  const FieldValue = admin.firestore.FieldValue
+  const merged = [], conflicts = [], failed = [], skipped = []
+  // dry-run 的模擬寫入：versionId → 該版本文件（拷貝），讓同批內的同名同日也測得出來
+  const sim = new Map(versions.map(v => [v.id, structuredClone(v)]))
+
+  for (const [id, d] of cands) {
+    const target = d.targetVersion ? { versionId: d.targetVersion, half: d.targetHalf ?? 'upper' } : null
+    // 疊合順序：解析結果 → 規則推估 → 人工編修。與後台「全部放行」相同
+    const activity = toMergeableActivity({ ...withInferred(d.extracted ?? {}, d.inferred), ...(d.reviewed ?? {}) })
+    const label = `${d.extracted?.name ?? id}（${d.extracted?.startDate ?? '?'}${d.inferred ? '，' + describeInferred(d.inferred) : ''}）`
+    if (!target || !activity) {
+      // parsed 卻缺目標版本或必要欄位 —— 理論上不會發生；交給人，而不是硬寫
+      skipped.push(label)
+      if (!DRY_RUN) await db.collection(PENDING).doc(id).update({ status: 'needsReview' })
+      continue
+    }
+    const where = `${target.versionId} ${target.half === 'upper' ? '上' : '下'}半`
+
+    if (DRY_RUN) {
+      const v = sim.get(target.versionId)
+      if (!v) { failed.push({ label, message: `找不到版本 ${target.versionId}` }); continue }
+      const applied = applyActivityToList(v[target.half]?.twActivities, activity)
+      if (!applied.ok) { conflicts.push(`${label} → ${where}`); continue }
+      v[target.half] = { ...(v[target.half] ?? {}), twActivities: applied.list }
+      merged.push(`${label} → ${where}`)
+      continue
+    }
+
+    try {
+      const res = await mergeIntoVersionAdmin(db, FieldValue, {
+        pendingId: id, activity, target, actor: AUTO_ACTOR, expectStatus: ['parsed'],
+      })
+      if (res.ok) {
+        merged.push(`${label} → ${where}`)
+      } else if (res.reason === 'conflict') {
+        // 不覆蓋：目標半期已有同名同日的活動，多半是有人先手動建了。退回待確認讓人決定
+        await db.collection(PENDING).doc(id).update({
+          status: 'needsReview',
+          flags: FieldValue.arrayUnion('duplicate'),
+        })
+        conflicts.push(`${label} → ${where}`)
+      }
+      // stale：交易途中有人在後台處理掉了，什麼都不必做
+    } catch (err) {
+      failed.push({ label, message: err instanceof Error ? err.message : String(err) })
+    }
+  }
+
+  if (merged.length && !DRY_RUN) await bumpPatchVersions(db, FieldValue)
+
+  const verb = DRY_RUN ? '將放行' : '已放行'
+  console.log(`  ${verb} ${merged.length} 筆${merged.length && !DRY_RUN ? '（已 bump patchVersions 資料版本）' : ''}`)
+  for (const m of merged) console.log(`    · ${m}`)
+  if (conflicts.length) {
+    console.log(`  ⚠ ${conflicts.length} 筆目標半期已有同名同日的活動 —— ${DRY_RUN ? '將' : '已'}退回待確認並標「疑似重複」：`)
+    for (const c of conflicts) console.log(`    · ${c}`)
+  }
+  if (skipped.length) console.log(`  ⚠ ${skipped.length} 筆缺目標版本或必要欄位，退回待確認：${skipped.join('、')}`)
+  if (failed.length) {
+    console.log(`  ✗ ${failed.length} 筆失敗（留在 parsed，下一輪會再試）：`)
+    for (const f of failed) console.log(`    · ${f.label}：${f.message}`)
+  }
+  return { merged, conflicts, failed }
 }
 
 function buildReport(results) {
   const flags = {}, warnings = {}
-  let activities = 0, clean = 0, noTarget = 0, excluded = 0
+  let activities = 0, clean = 0, inferred = 0, noTarget = 0, excluded = 0
   for (const r of results) {
     activities += r.activities.length
     excluded += r.excluded ?? 0
     for (const a of r.activities) {
       if (a.flags.length === 0) clean++
+      else if (a.status === 'parsed' && a.inferred) inferred++
       if (!a.target?.targetVersion) noTarget++
       for (const f of a.flags) flags[f] = (flags[f] ?? 0) + 1
     }
@@ -581,6 +714,8 @@ function buildReport(results) {
     activities,
     excluded,
     clean,
+    /** 只因「無結束時刻」被標、但檔期推估得出來而可放行的卡池 */
+    inferred,
     noTarget,
     /** 收錄量（顯示用） */
     perAnnouncement: results.length ? Number((activities / results.length).toFixed(2)) : 0,
@@ -638,10 +773,11 @@ function printReport(report, regressed, io) {
   console.log(`  抓取 ${io.fetched}／跳過 ${io.skipped}／失敗 ${io.failed}`)
   console.log(`  公告 ${report.announcements} 篇 → 活動 ${report.activities} 筆（${report.perAnnouncement}/篇）`)
   if (report.excluded) {
-    console.log(`  另有 ${report.excluded} 筆解析得出但不收錄（儲值促銷）—— 已計入回歸偵測的分母`)
+    console.log(`  另有 ${report.excluded} 筆解析得出但不收錄（儲值促銷、常駐、擂台賽季）—— 已計入回歸偵測的分母`)
   }
   if (report.activities) {
-    console.log(`  零 flag 可直接放行 ${report.clean}（${(100 * report.clean / report.activities).toFixed(0)}%）`)
+    const ready = report.clean + report.inferred
+    console.log(`  可直接放行 ${ready}（${(100 * ready / report.activities).toFixed(0)}%）＝ 零 flag ${report.clean} ＋ 卡池檔期推估 ${report.inferred}`)
     console.log(`  推不出目標版本 ${report.noTarget}（一律進 needsReview）`)
   }
   const f = Object.entries(report.flags).sort((a, b) => b[1] - a[1])

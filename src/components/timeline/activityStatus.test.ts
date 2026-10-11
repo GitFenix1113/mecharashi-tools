@@ -81,3 +81,12 @@ test('同一天不同時刻結果相同（now 被正規化到當日 00:00）', (
   assert.equal(a.phase, b.phase)
   assert.equal(a.daysLeft, b.daysLeft)
 })
+
+test('非整週檔期（預熱衝刺：週六開 37 天＝5.29 週）：週次進位成整數、末週判定得到、結束日不帶零頭', () => {
+  const act = { name: '預熱衝刺', startDate: '2026/10/03', weeks: 5.29, type: 'limitedEvent' }
+  const st = activityStatus(act, new Date(2026, 9, 10))
+  assert.equal(st.totalWeeks, 6, '第 2/5.29 週沒有意義')
+  assert.equal(st.endExclusive.getTime(), new Date(2026, 10, 9).getTime(), '11/09 00:00，不是 00:43')
+  assert.equal(activityStatus(act, new Date(2026, 10, 8)).isFinalWeek, true, '11/07～11/08 屬於第 6 週＝末週')
+  assert.equal(activityStatus(act, new Date(2026, 10, 9)).phase, 'ended')
+})

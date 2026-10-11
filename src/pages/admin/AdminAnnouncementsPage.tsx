@@ -16,6 +16,7 @@ import type { TimedActivity } from '../../data/patchVersions/types'
 import { usePatchVersions, invalidatePatchVersionsCache } from '../../hooks/usePatchVersions'
 import AnnouncementReviewPanel from '../../components/admin/AnnouncementReviewPanel'
 import AnnouncementInsightsPanel from '../../components/admin/AnnouncementInsightsPanel'
+import { describeInferred, withInferred } from '../../utils/announcementMerge'
 
 // ─── 台版公告審核工作檯（PLAN-048 任務 2-3）──────────────────────────────────
 //
@@ -24,6 +25,10 @@ import AnnouncementInsightsPanel from '../../components/admin/AnnouncementInsigh
 //
 // 預設只顯示 needsReview，且把「解析器沒把握」的排最前面 ——
 // 零 flag 的那 66% 本來就不需要人看，混在一起只會稀釋注意力。
+//
+// 2026-10-11 起「可直接放行」由每週排程自動寫進版本（scrape-tw-announcements.mjs 的 ⑥），
+// 這一頁平常只剩「待確認」需要人。那個分頁與「全部放行」按鈕留著當備援：
+// 排程跳過（選擇器失效、--no-auto-merge、交易失敗）的筆會停在那裡。
 
 const FILTERS: { key: PendingStatus[]; label: string }[] = [
   { key: ['needsReview'], label: '待確認' },
@@ -142,21 +147,18 @@ export default function AdminAnnouncementsPage() {
   }
 
   /**
-   * 批次放行：把目前清單中「零 flag、推得出目標版本、必要欄位齊全」的整批寫進去。
+   * 批次放行：把目前清單中「可直接放行、推得出目標版本、必要欄位齊全」的整批寫進去。
    *
-   * 為什麼只在「可直接放行」分頁出現：那一頁的定義就是解析器零 flag ——
-   * 系統對這些筆有把握，人要做的只是點頭。實測一次 30+ 筆，逐筆點三十幾次
-   * 才是這個工作檯真正的負擔，而不是哪一種活動要不要收。
-   *
-   * 仍然保留這一次點頭（不做全自動）：整條管線目前的安全上限是
-   * 「自動化最多讓後台多幾筆垃圾，錯的東西上不了首頁」，那道閘就是這顆按鈕。
+   * 2026-10-11 起這件事由每週排程自動做（站長：「可放行的就不用等管理員」），
+   * 這顆按鈕降為備援 —— 排程被跳過的筆（見檔頭）在這裡一次補上。
+   * 疊合順序與排程相同：解析結果 → 規則推估 → 人工編修。
    */
   const bulkTargets = useMemo(
     () =>
       items
         .filter(it => it.status === 'parsed' && it.targetVersion)
         .map(it => {
-          const activity = toMergeableActivity({ ...it.extracted, ...(it.reviewed ?? {}) })
+          const activity = toMergeableActivity({ ...withInferred(it.extracted ?? {}, it.inferred), ...(it.reviewed ?? {}) })
           if (!activity) return null
           return {
             pendingId: it.id,
@@ -222,7 +224,8 @@ export default function AdminAnnouncementsPage() {
         <div>
           <h1 className="text-[20px] font-bold text-text-primary">台版公告審核</h1>
           <p className="text-[12px] text-text-secondary mt-1">
-            由 <code>scripts/scrape-tw-announcements.mjs</code> 抓取解析，人工確認後合併進版本時間線。
+            由 <code>scripts/scrape-tw-announcements.mjs</code> 每週抓取解析；可直接放行的（含檔期可推估的卡池）由排程自動合併，
+            這裡處理剩下需要人看的。
           </p>
         </div>
         <Link to="/admin" className="text-[12px] text-accent-cyan hover:underline">← 返回後台</Link>
@@ -303,7 +306,13 @@ export default function AdminAnnouncementsPage() {
                   <div className="text-[10.5px] text-text-dim mt-0.5">
                     {it.extracted?.startDate ?? '（無日期）'}
                     {it.targetVersion ? ` · ${it.targetVersion} ${it.targetHalf === 'lower' ? '下' : '上'}半` : ' · 版本未定'}
+                    {it.mergedInto?.actorUid === 'scheduler' && ' · 排程放行'}
                   </div>
+                  {it.inferred && it.status !== 'merged' && (
+                    <div className="text-[10px] text-accent-purple mt-0.5 truncate" title={describeInferred(it.inferred)}>
+                      {describeInferred(it.inferred)}
+                    </div>
+                  )}
                   {(it.flags?.length ?? 0) > 0 && (
                     <div className="flex gap-1 flex-wrap mt-1">
                       {it.flags.map(f => (

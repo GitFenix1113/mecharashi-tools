@@ -24,7 +24,9 @@
  *
  * 4. **抽不到就留 undefined，絕不填預設值**。填了預設值就再也分不出
  *    「官方真的是這樣」與「我沒抽到」。開放式檔期（「10:00 起」，實測 191 筆）
- *    的 weeks 因此是缺的，由後台表單預填建議值 —— 建議值不進資料。
+ *    的 weeks 因此是缺的。卡池類的推估（2026-10-11 起）在抓取腳本做、存在
+ *    PendingActivity.inferred 而不是這裡的 extracted —— 推估需要版本資料，
+ *    而且混進解析結果就分不出「公告寫的」與「規則推的」（規則見 src/utils/announcementMerge.ts）。
  */
 
 /**
@@ -32,7 +34,7 @@
  * AnnouncementDraft.parserVersion 靠它挑出「該重跑的舊公告」，
  * 沒有它就只能全量重跑或憑印象。
  */
-export const PARSER_VERSION = 7
+export const PARSER_VERSION = 8
 
 const DAY_MS = 86_400_000
 
@@ -139,6 +141,24 @@ const GENERIC_HEAD = /^(?:賽季|活動|公告|開跑|開啟|上線|登場|來�
  * 的判斷會被自己的過濾規則污染 —— 少收 30% 不等於解析率掉了 30%。
  */
 const EXCLUDED_TYPES = new Set(['topUpEvent'])
+
+/**
+ * **解析得出來、但刻意不收錄**的單筆（不是整個型別）—— 2026-10-11 站長拍板。
+ *
+ * · **常駐**：時間行寫「起（常駐）」「起以常駐『擬合檔案』形式開放」。沒有結束的東西
+ *   不是限時活動，放進甘特只能永遠隱藏，等於每次都要有人按一次忽略。
+ *   實例：迷星所向復刻（tw_1780）、往日無戰事復刻（tw_1862）。
+ *   只擋「開放式 ＋ 常駐」—— 若哪天出現「…至 X/X，結束後轉為常駐」，那段限時期間仍是活動。
+ * · **巔峰擂台賽季**：PvP 賽季與版本同步、每 6 週一季，歷來沒收進時間線；
+ *   收了每個版本都多一條一模一樣的長條，對「這版有什麼」沒有資訊量。
+ *
+ * 與 EXCLUDED_TYPES 一樣擋在解析層、但計入 excluded（產出量統計的分母）。
+ */
+function isExcludedEntry(timeLine, span, name) {
+  if (span.openEnded && /常駐/.test(timeLine)) return true
+  if (/巔峰擂台/.test(`${timeLine} ${name ?? ''}`)) return true
+  return false
+}
 
 /**
  * 樣板 【】 名稱黑名單：這些是抽獎規則說明的小標，不是活動名。
@@ -657,7 +677,7 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
 
     // 刻意不收錄的型別：到這裡為止該認領的行都已認領完（所以不會漏進 unmatched），
     // 只是不產出待審項目。seq 仍取自 timeHits 的索引，故其餘項目的文件 ID 不受影響。
-    if (type && EXCLUDED_TYPES.has(type)) {
+    if ((type && EXCLUDED_TYPES.has(type)) || isExcludedEntry(lines[hit.line], hit.span, heading.name)) {
       excluded++
       continue
     }

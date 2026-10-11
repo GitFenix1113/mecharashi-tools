@@ -83,6 +83,10 @@ export function halfEndDate(
  * （遊戲內畫面可佐證：v3.1 下半的佐伊池顯示「卡池結束於 2026/8/20 10:00」，
  * 而 8/20 正是 v3.2 上半的開始日）。但官方偶爾會變動，所以維護者明確要求
  * **不自動填**——這個值只能顯示給人看、由人按下才寫入。
+ *
+ * 2026-10-11 更新：卡池三類（特遣／海運／特選池）改由 utils/announcementMerge.ts 的
+ * inferOpenEndedDuration 推估並自動放行（標 predicted）；這支只剩後台審核面板對
+ * 「推估規則不涵蓋的型別」顯示建議時使用，原本的「不自動填」對那些型別仍然成立。
  */
 export function suggestWeeksUntilHalfEnd(activityStart: string, halfEnd: Date | null): number | null {
   if (!activityStart || !halfEnd) return null

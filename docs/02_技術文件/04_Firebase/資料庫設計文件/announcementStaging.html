@@ -27,7 +27,7 @@
     <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-048 Phase 2</span>
   </h1>
   <p class="hero-sub">台版官方公告的抓取與審核暫存 · 審核最小單位是「一個活動」· 後台專用（前台完全不讀）· 原生 TTL 六個月</p>
-  <div class="version-badge" style="background:var(--accent-orange);color:#000;">PLAN-048 Phase 2 — 2026-08-16</div>
+  <div class="version-badge" style="background:var(--accent-orange);color:#000;">PLAN-048 Phase 2 — 2026-08-16 · 自動放行 2026-10-11</div>
 </header>
 
 <main class="container">
@@ -40,8 +40,8 @@
     <strong>📌 用途說明</strong><br>
     <code>scripts/scrape-tw-announcements.mjs</code> 抓台版官方公告（<code>ma.tentree-games.com</code>）、
     以 <code>scripts/lib/parseAnnouncement.mjs</code> 解析出活動檔期，先落在這兩個集合，
-    經 <code>/admin/announcements</code> 人工審核後才合併進 <code>patchVersions</code> 的
-    <code>upper/lower.twActivities</code>。<br>
+    再合併進 <code>patchVersions</code> 的 <code>upper/lower.twActivities</code>：
+    <strong>可直接放行的由同一支排程自動合併（2026-10-11 起）</strong>，其餘經 <code>/admin/announcements</code> 人工審核。<br>
     · <strong>announcementDrafts</strong>：一則公告的原文草稿（含 <code>rawText</code> 與解析統計）。<br>
     · <strong>pendingActivities</strong>：解析出的待審活動，<strong>一則公告 n 筆</strong>。<br>
     型別定義在 <code>src/types/announcementStaging.ts</code>（比照 <code>changeHistory.ts</code>，
@@ -93,10 +93,11 @@
       <tr><td>id</td><td>string</td><td>文件 ID＝<code>${draftId}_${seq}</code>，如 <code>tw_1799_0</code>。<strong>決定性 ID</strong> → 重新解析同一篇直接覆寫同一批，不會每跑一次多一份垃圾</td></tr>
       <tr><td>draftId</td><td>string</td><td>來源 announcementDrafts 文件 ID</td></tr>
       <tr><td>seq</td><td>number</td><td>該篇公告內的出現序（0-based），也是後台預設排序</td></tr>
-      <tr><td>status</td><td>PendingStatus</td><td><code>'parsed' | 'needsReview' | 'approved' | 'merged' | 'rejected' | 'superseded' | 'conflict'</code>。<strong><code>merged</code> / <code>rejected</code> 是收據</strong>——記的是「當時人工放行了什麼」，解析器重跑（<code>--reparse</code>）一律不覆寫這兩種，否則會被打回待審而重複合併。重跑後若解析結果與收據不同，腳本會列出清單提示正式資料可能要人工回頭改</td></tr>
-      <tr><td>flags</td><td>PendingFlag[]</td><td>有任何一個 flag → status 落在 <code>needsReview</code>。見下方 02</td></tr>
+      <tr><td>status</td><td>PendingStatus</td><td><code>'parsed' | 'needsReview' | 'approved' | 'merged' | 'rejected' | 'superseded' | 'conflict'</code>。<code>parsed</code>＝可直接放行（零 flag，或唯一的 flag 是 <code>openEnded</code> 且有 <code>inferred</code>），由排程自動合併，通常只停留一輪。<strong><code>merged</code> / <code>rejected</code> 是收據</strong>——記的是「當時放行了什麼」（人工或排程），解析器重跑（<code>--reparse</code>）一律不覆寫這兩種，否則會被打回待審而重複合併。重跑後若解析結果與收據不同，腳本會列出清單提示正式資料可能要人工回頭改</td></tr>
+      <tr><td>flags</td><td>PendingFlag[]</td><td>有任何一個 flag → status 落在 <code>needsReview</code>；唯一例外是只有 <code>openEnded</code> 而檔期推估得出來（見 <code>inferred</code>）。見下方 02</td></tr>
       <tr><td>extracted</td><td>Partial&lt;TimedActivity&gt;</td><td>解析器原始產出，<strong>人工永不修改</strong>（保持原樣供 diff）。抽不到的欄位留 <code>undefined</code>，<strong>絕不填預設值</strong></td></tr>
-      <tr><td>reviewed</td><td>Partial&lt;TimedActivity&gt;?</td><td>人工編修後版本。存在時以它為準寫入；兩份並存才做得出 diff</td></tr>
+      <tr><td>reviewed</td><td>Partial&lt;TimedActivity&gt;?</td><td>人工編修後版本。存在時以它為準寫入；兩份並存才做得出 diff。合併後回存「實際寫進去的版本」（含推估值）</td></tr>
+      <tr><td>inferred</td><td>InferredDuration?</td><td><code>{ weeks, rule, until }</code>。「只寫了起」的卡池依慣例推估的檔期（2026-10-11 起，規則在 <code>src/utils/announcementMerge.ts</code>）。<strong>刻意不寫進 extracted</strong>（那是解析器原始產出）；合併時以 <code>withInferred</code> 疊上，疊合順序固定為 extracted → inferred → reviewed。推不出來就不存在</td></tr>
       <tr><td>excerpt</td><td>string</td><td>原文片段（不是整篇）。後台左欄只載這段，免得每開一筆就傳 16 KB 全文</td></tr>
       <tr><td>excerptStart</td><td>number?</td><td>片段在 <code>rawText</code> 內的起始位移，供「看完整原文」捲到正確位置</td></tr>
       <tr><td>rawTypeLabel</td><td>string?</td><td>型別未命中 registry 時，從公告抄下的原始段落標題</td></tr>
@@ -128,20 +129,25 @@
       <tr><td><code>missingName</code></td><td>缺名稱</td><td>抽不到活動名。3 筆（0.5%）</td></tr>
       <tr><td><code>missingDate</code></td><td>缺日期</td><td>抽不到起始日。1 筆（0.2%）</td></tr>
       <tr><td><code>unmatchedText</code></td><td>有未認領原文</td><td>該活動所屬段落有未被規則認領的原文</td></tr>
-      <tr><td><code>duplicate</code></td><td>疑似重複</td><td>同版本半期內已有相同 anchor 的活動</td></tr>
+      <tr><td><code>duplicate</code></td><td>疑似重複</td><td>同版本半期內已有相同 anchor 的活動。排程自動放行撞到同名同日時補上此 flag 並退回 <code>needsReview</code>（不覆蓋）</td></tr>
     </table>
   </div>
 
   <div class="info-block" style="margin-top:12px;">
-    <strong>💡 為什麼 <code>openEnded</code> 不自動補一個「慣例 2 週」</strong><br>
-    填了預設值就再也分不出「官方真的是這樣」與「我沒抽到」。<br>
-    早期版本曾在後台表單<strong>預填</strong>建議值（2 週），已經拿掉 ——
-    預填值會在維護者沒細看時直接變成資料，而那正是這條界線要防的事。<br>
-    <strong>現在的做法</strong>：週數留空也能合併，但該筆會帶著 <code>hidden</code> 與 <code>note</code> 進入
-    <code>patchVersions</code>。<strong>事實先留住（不會卡在待審清單被遺忘），但上不了首頁。</strong>
-    之後在版本編輯頁補上長度、取消隱藏即上線，不需要重跑爬蟲或審核流程。
+    <strong>💡 <code>openEnded</code> 的處理（2026-10-11 改版）</strong><br>
+    原本的立場是「不補慣例值」—— 填了預設值就再也分不出「官方真的是這樣」與「我沒抽到」，
+    週數留空的一律帶 <code>hidden</code> 與 <code>note</code> 進 <code>patchVersions</code>（上不了首頁）。<br>
+    <strong>實際結果</strong>：2026-05 起累積 44 筆「無結束時刻」躺在待確認、沒有人填，每週還再多 2～4 筆
+    （官方 175 個【特選】池只有 2 個寫了結束時刻）。<br>
+    <strong>現在的做法</strong>：卡池三類由抓取腳本依慣例推估，存進 <code>inferred</code>，合併時標
+    <code>confidence: 'predicted'</code>（前台虛線＋「推估」標籤）並在 <code>note</code> 記下用了哪條規則 ——
+    「分不出官方寫的與系統猜的」這個顧慮改由顯示層兌現，而不是靠「不填」。<br>
+    · 角雕特遣／跨域海運 → 到下個版本開服（2026/07/08 公告「即將結束」名單佐證 6 週）<br>
+    · 版本新池（UP 實體在該半版本新增名單）→ 到版本結束<br>
+    · 其餘【特選】復刻池 → 2 週（站長拍板）<br>
+    <strong>其他型別</strong>的開放式檔期沒有穩定慣例，仍維持週數留空、隱藏合併、由人補。
     細節見 <a href="../../02_資料模型/patchVersions.html">patchVersions 資料模型</a> 的
-    <code>hidden</code> / <code>note</code> 兩欄與「前台顯示閘門」。
+    <code>hidden</code> / <code>note</code> / <code>confidence</code> 與「前台顯示閘門」。
   </div>
 </section>
 
@@ -186,8 +192,19 @@
     <code>patchVersions</code> 走 Cloudflare Worker 邊緣快取（<code>workers/src/index.ts</code> 以集合版本號當
     cache key、<code>max-age=86400</code>）。<strong>不 bump 就是「資料寫進去了、前台看不到、硬重整也沒用」，最長 24 小時</strong>
     —— 快取在邊緣不在瀏覽器。<br>
-    反過來說，<strong>抓取腳本刻意不 bump</strong>：它只寫這兩個 staging 集合，沒動 patchVersions，
-    平白 bump 等於讓所有使用者重抓一次。
+    抓取腳本的自動放行同樣適用：<strong>有放行才 bump、整批只 bump 一次</strong>；沒放行任何東西就不 bump
+    （平白 bump 等於讓所有使用者重抓一次）。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🤖 自動放行（2026-10-11 起，站長：「可放行的就不用等管理員」）</strong><br>
+    每週排程（<code>.github/workflows/scrape-announcements.yml</code>）寫完 staging 後，把所有 <code>status='parsed'</code>
+    的待審活動寫進 <code>patchVersions</code>，收據 <code>actorUid='scheduler'</code>、<code>actorName='排程自動放行'</code>。<br>
+    · <strong>規則只有一份</strong>：正規化、衝突判定、推估都在 <code>src/utils/announcementMerge.ts</code>（純函式），
+    後台逐筆／批次放行與排程（<code>scripts/lib/announcementMergeAdmin.mjs</code>，firebase-admin 版交易）共用。<br>
+    · <strong>安全閥</strong>：同名同日已存在 → 不覆蓋、補 <code>duplicate</code> flag 退回待確認；
+    本次有任何一篇 <code>contentSelectorMiss</code>（官網改版徵兆）→ 整批不放行；交易失敗 → 留在 <code>parsed</code>，下一輪再試。<br>
+    · <strong>暫停</strong>：執行參數加 <code>--no-auto-merge</code>，可放行的會停在後台「可直接放行」分頁，「全部放行」按鈕仍可用。
   </div>
 
   <div class="sub-h" style="margin-top:18px;">MergeReceipt</div>
@@ -198,7 +215,7 @@
       <tr><td>half</td><td>'upper' | 'lower'</td><td>寫進上半或下半</td></tr>
       <tr><td>field</td><td>'twActivities'</td><td>目前一律台服欄位（台版公告只餵台服）</td></tr>
       <tr><td>anchor</td><td>{ name, startDate }</td><td><strong>重定位錨點，不用 index</strong></td></tr>
-      <tr><td>at / actorUid / actorName</td><td>Timestamp / string / string</td><td>何時、由誰合併</td></tr>
+      <tr><td>at / actorUid / actorName</td><td>Timestamp / string / string</td><td>何時、由誰合併。人工＝Firebase uid；排程自動放行＝<code>'scheduler'</code>；一次性腳本＝<code>'script'</code></td></tr>
     </table>
   </div>
 </section>
@@ -218,7 +235,7 @@ match /pendingActivities/{docId} {
 
   <div class="info-block" style="margin-top:12px;">
     <strong>📌 為什麼不是 <code>write: if false</code></strong><br>
-    寫入者有二：爬蟲以 service account（Admin SDK）<strong>繞過規則</strong>；管理員在
+    寫入者有二：爬蟲以 service account（Admin SDK）<strong>繞過規則</strong>（含自動放行時寫 <code>patchVersions</code> 與 <code>meta/gameData</code>）；管理員在
     <code>/admin/announcements</code> 審核時以 client SDK 更新 <code>status</code> / <code>reviewed</code> / <code>mergedInto</code>。
     因此不能照 <a href="analytics.html">analytics</a> 那樣一律禁寫 client。
   </div>

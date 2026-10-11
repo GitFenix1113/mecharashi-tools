@@ -489,6 +489,10 @@
         <strong>PLAN-048 Phase 2 起改為選填</strong>：台版官方公告有 <strong>31%</strong> 只寫「10:00 起」、
         不寫結束時刻（實測 625 筆中 193 筆，幾乎都是卡池）。填一個「慣例上大概兩週」進來，
         就再也分不出哪些是官方寫的、哪些是系統猜的 —— 所以缺就留空。<br>
+        <strong>2026-10-11 起，卡池三類（特遣／海運／特選池）改為依慣例推估並填入</strong>，同時標
+        <code>confidence: 'predicted'</code>、<code>note</code> 記下推估規則 ——「分不出來」的顧慮由虛線＋「推估」標籤兌現
+        （規則見 <code>src/utils/announcementMerge.ts</code>）。其他型別仍維持缺就留空。<br>
+        官方寫明的非整週檔期（如「預熱衝刺」週六開 37 天＝<code>5.29</code>）照存小數；卡片的「第 n/N 週」把 N 進位成整數。<br>
         ⚠ <strong>不變式：缺 <code>weeks</code> 的活動必然 <code>hidden</code></strong>。
         甘特沒有長度就畫不出長條，而畫一條長度是猜的長條比不畫更糟。
       </td>
@@ -558,7 +562,8 @@
       <td>
         資料成熟度，未填視同 <code>confirmed</code>。<code>predicted</code> → 長條虛線邊框 + 卡片標「推估」。<br>
         這是回應「陸版官網常漏維護公告」<strong>唯一能在顯示層兌現</strong>的東西：缺的公告仍然缺，
-        但至少讀者分得出「查證過的」與「照慣例推的」。legacy shim 翻譯出來的活動一律標為 <code>predicted</code>。
+        但至少讀者分得出「查證過的」與「照慣例推的」。legacy shim 翻譯出來的活動一律標為 <code>predicted</code>；
+        台版公告只寫「起」、週數由規則推估的卡池（2026-10-11 起自動放行）也是 <code>predicted</code>。
       </td>
     </tr>
     <tr>

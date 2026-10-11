@@ -16,6 +16,7 @@ import {
   toMergeableActivity,
   type MergeTarget,
 } from '../../lib/api/announcementStaging'
+import { describeInferred, withInferred } from '../../utils/announcementMerge'
 
 // PLAN-048 任務 2-3：左原文右表單的審核工作檯
 //
@@ -28,10 +29,12 @@ const CUSTOM = '__custom__'
 /**
  * 週數留空時的預設備註。
  *
- * 先前這裡預填「建議 2 週」，已經拿掉 —— 預填值會在維護者沒細看時直接變成資料，
- * 而那正是「填了就再也分不出官方寫的與系統猜的」要防的事。
- * 現在的做法是：留空即可合併，但該筆自動隱藏、並要求寫下一句備註說明缺什麼。
+ * 留空即可合併，但該筆自動隱藏、並要求寫下一句備註說明缺什麼。
  * 半成品因此進得了正式資料（不會卡在待審清單被遺忘），卻上不了首頁。
+ *
+ * 2026-10-11 起，卡池三類（特遣／海運／特選池）的週數改由規則推估並預填（item.inferred），
+ * 同時勾上「推估」——「分不出官方寫的與系統猜的」這個顧慮改由 confidence: 'predicted'
+ * 在前台以虛線兌現，而不是靠「不填」。其他型別仍維持不預填。
  */
 // DEFAULT_NOTE 由 api 層提供（DEFAULT_MISSING_WEEKS_NOTE）—— 批次放行寫的是同一句
 
@@ -103,8 +106,9 @@ export default function AnnouncementReviewPanel({
   // 換一筆待審時的重置由呼叫端的 key={selected.id} 重新掛載達成 ——
   // 用 effect 同步 props→state 會多一次 render，且 versionId 那條還會在
   // defaultTarget 稍後才算出來時把使用者剛選的值蓋掉。
+  // 疊合順序與排程、批次放行相同：解析結果 → 規則推估 → 人工編修
   const [form, setForm] = useState<Partial<TimedActivity>>(
-    () => ({ ...item.extracted, ...(item.reviewed ?? {}) }),
+    () => ({ ...withInferred(item.extracted ?? {}, item.inferred), ...(item.reviewed ?? {}) }),
   )
   // null ＝ 使用者沒手動改過，跟著推算值走。
   // 覆寫的是「版本 + 半期」整組，不是只有版本 —— 半期同樣是推算出來的，
@@ -143,8 +147,8 @@ export default function AnnouncementReviewPanel({
    * 週數建議值：卡池公告只寫「⟨日期⟩ 起」，因為它跟著半版本結束。
    *
    * 只在**週數留空**時計算，而且只是顯示 —— 要按下才寫入。
-   * 維護者的要求原話是「沒寫時間的活動就給維護者去手填，以防官方有變動」，
-   * 所以這裡的分界是：系統可以算給你看，但不會替你決定。
+   * 卡池三類已由 item.inferred 預填（見檔頭），走到這裡的是推估規則不涵蓋的型別 ——
+   * 這些仍維持「系統可以算給你看，但不會替你決定」；按下套用時一併標成推估。
    *
    * 半版本結束日＝下一段的開始日（上半→下半、下半→下個版本的上半），
    * 推不出來時退回 `PatchHalf.weeks` → 慣例 3 週，與甘特週軸同一條規則
@@ -251,7 +255,7 @@ export default function AnnouncementReviewPanel({
               <div className="mt-1 flex items-start gap-1.5 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => patch({ weeks: suggestion.weeks })}
+                  onClick={() => patch({ weeks: suggestion.weeks, confidence: 'predicted' })}
                   className="px-1.5 py-0.5 text-[10px] rounded border bg-accent-cyan/10 text-accent-cyan border-accent-cyan/40 hover:bg-accent-cyan/20 transition-colors"
                 >
                   套用建議 {suggestion.weeks} 週
@@ -271,6 +275,23 @@ export default function AnnouncementReviewPanel({
             <label className="flex items-center gap-1.5 text-[11px] text-text-secondary">
               <input
                 type="checkbox"
+                checked={form.confidence === 'predicted'}
+                onChange={e => patch({ confidence: e.target.checked ? 'predicted' : 'confirmed' })}
+                className="accent-accent-purple"
+              />
+              <span className={form.confidence === 'predicted' ? 'text-accent-purple' : undefined}>
+                推估（前台以虛線＋「推估」標示；查到官方結束日後取消勾選）
+              </span>
+            </label>
+            {item.inferred && form.confidence === 'predicted' && (
+              <div className="text-[10.5px] text-accent-purple/90 leading-[1.6]">
+                {describeInferred(item.inferred)}。公告只寫「起」，這是依慣例推出來的。
+              </div>
+            )}
+
+            <label className="flex items-center gap-1.5 text-[11px] text-text-secondary">
+              <input
+                type="checkbox"
                 checked={willHide}
                 disabled={needsNote}
                 onChange={e => patch({ hidden: e.target.checked ? true : undefined })}
@@ -283,9 +304,9 @@ export default function AnnouncementReviewPanel({
 
             {needsNote && (
               <div className="text-[11px] text-accent-yellow bg-accent-yellow/10 border border-accent-yellow/30 rounded px-2 py-1.5">
-                ⚠ 這篇公告只寫「起」、沒有結束時刻，所以<strong>週數留空</strong>。
-                這筆會以隱藏狀態併入版本 —— 事實先留住，等查到實際檔期再補上長度並取消隱藏。
-                <strong>不會替你猜一個週數</strong>，猜了就再也分不出哪些是官方寫的。
+                ⚠ 這篇公告只寫「起」、沒有結束時刻，而且不在自動推估的範圍（只推特遣／海運／特選卡池），
+                所以<strong>週數留空</strong>。可按上方「套用建議」以推估值放行；留空則以隱藏狀態併入版本 ——
+                事實先留住，等查到實際檔期再補上長度並取消隱藏。
               </div>
             )}
 

@@ -18,6 +18,11 @@ import type {
 import { DRAFTS_COLLECTION, PENDING_COLLECTION } from '../../types/announcementStaging'
 import type { PatchVersion, TimedActivity } from '../../data/patchVersions/types'
 import { bumpDataVersion } from './versions'
+import { applyActivityToList } from '../../utils/announcementMerge'
+
+// 正規化與合併規則搬到 utils/announcementMerge.ts（排程也要用，必須是純函式）。
+// 這裡 re-export 讓既有 import 不必改路徑。
+export { DEFAULT_MISSING_WEEKS_NOTE, toMergeableActivity } from '../../utils/announcementMerge'
 
 // ─── 讀取 ────────────────────────────────────────────────────────────────────
 
@@ -68,14 +73,6 @@ function actor() {
   return { uid: u?.uid ?? '', name: u?.displayName || u?.email || '(未知)' }
 }
 
-/**
- * 穩定識別子。與 AdminTimedActivityEditor 的產生規則一致 ——
- * 甘特↔卡片連動與 React key 都靠它，純 index 在陣列重排後會讓選取狀態跳到別的活動身上。
- */
-function makeActivityId(): string {
-  return `act_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
-}
-
 /** 人工編修後的暫存（不改 extracted，兩份並存才做得出 diff） */
 export async function saveReviewed(id: string, reviewed: Partial<TimedActivity>): Promise<void> {
   const { uid, name } = actor()
@@ -108,51 +105,9 @@ export interface MergeTarget {
   half: 'upper' | 'lower'
 }
 
-/** 缺長度時填進 note 的預設待辦。單筆審核與批次放行共用同一句。 */
-export const DEFAULT_MISSING_WEEKS_NOTE = '官方公告只寫「起」、未寫結束時刻，待確認檔期長度'
-
-/**
- * 解析結果／表單 → 可寫入的 `TimedActivity`。回傳 `null` ＝ 必要欄位不齊，不該寫入。
- *
- * 抽出來是為了讓**逐筆放行與批次放行走同一份規則**。這個專案已經被
- * 「兩份同樣的規則遲早會漂開」咬過（見 defaultTarget 的註解），而這裡漂開的症狀
- * 特別難查：同一筆資料，用逐筆放行與用批次放行寫進去的內容不一樣。
- */
-export function toMergeableActivity(src: Partial<TimedActivity>): TimedActivity | null {
-  const name = src.name?.trim()
-  if (!name || !src.startDate || !src.type) return null
-
-  const a: TimedActivity = { ...src, name, startDate: src.startDate, type: src.type }
-
-  // 不變式：沒有長度就畫不出甘特長條 → 一律隱藏，並且要留下「為什麼藏起來」
-  const willHide = a.weeks === undefined || src.hidden === true
-  if (a.weeks === undefined) delete a.weeks
-  if (willHide) {
-    a.hidden = true
-    a.note = (src.note ?? '').trim() || DEFAULT_MISSING_WEEKS_NOTE
-  } else {
-    delete a.hidden
-  }
-
-  // 空字串不要寫進去，免得前台把 '' 當成「有值但空」
-  for (const k of ['description', 'sourceUrl', 'typeLabel', 'note', 'editorNote'] as const) {
-    if (!a[k]?.trim()) delete a[k]
-  }
-  if (!a.pilots?.length) delete a.pilots
-  if (!a.mechs?.length) delete a.mechs
-  if (!a.selection?.length) delete a.selection
-  if (!a.rewards?.length) delete a.rewards
-  return a
-}
-
 export type MergeResult =
   | { ok: true; receipt: MergeReceipt }
   | { ok: false; reason: 'conflict'; existing: TimedActivity }
-
-/** anchor 比對：名稱 + 起始日。陣列會重排，index 不是穩定識別子。 */
-function sameAnchor(a: TimedActivity, anchor: { name: string; startDate: string }): boolean {
-  return a.name === anchor.name && a.startDate === anchor.startDate
-}
 
 /**
  * 把一筆待審活動合併進 patchVersions，並讓所有 client 的快取失效。
@@ -193,29 +148,17 @@ export async function mergeIntoVersion(
     if (!pendingSnap.exists()) throw new Error('待審活動已不存在')
 
     const version = versionSnap.data() as PatchVersion
-    const half = version[target.half] ?? { cnDate: '' }
-    const list: TimedActivity[] = Array.isArray(half.twActivities) ? [...half.twActivities] : []
-
-    const dupIdx = list.findIndex(a => sameAnchor(a, anchor))
-    if (dupIdx >= 0 && !opts.overwrite) {
-      return { ok: false as const, reason: 'conflict' as const, existing: list[dupIdx] }
+    // 衝突判定、id 產生、「沒長度就隱藏」的不變式都在 applyActivityToList ——
+    // 排程的自動放行走同一個函式，兩邊寫進去的東西才會一樣。
+    const applied = applyActivityToList(version[target.half]?.twActivities, activity, opts)
+    if (!applied.ok) {
+      return { ok: false as const, reason: 'conflict' as const, existing: applied.existing }
     }
-
-    // 不變式：沒有長度就畫不出甘特長條 → 一律隱藏。
-    // 在寫入端強制，而不是信任呼叫端有記得帶 hidden —— 漏帶的後果是首頁多一條
-    // 長度是猜的長條，看起來完全正常卻是假資料。前台讀取口（activitiesOfHalf）
-    // 另有一道獨立防線，兩道都在。
-    const withId: TimedActivity = {
-      ...activity,
-      id: activity.id ?? makeActivityId(),
-      ...(activity.weeks === undefined ? { hidden: true } : {}),
-    }
-    if (dupIdx >= 0) list[dupIdx] = { ...withId, id: list[dupIdx].id ?? withId.id }
-    else list.push(withId)
+    const withId = applied.written
 
     // 只寫「該半期的 twActivities」這一條路徑，不整份覆寫版本文件 ——
     // 否則會把管理員在其他欄位的並行編輯一起回捲。
-    tx.update(versionRef, { [`${target.half}.twActivities`]: list })
+    tx.update(versionRef, { [`${target.half}.twActivities`]: applied.list })
 
     const receipt: MergeReceipt = {
       versionId: target.versionId,

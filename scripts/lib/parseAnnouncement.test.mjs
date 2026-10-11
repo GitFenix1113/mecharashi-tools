@@ -570,6 +570,38 @@ test('unmatched 只收有訊號的行，不收樣板', () => {
   assert.ok(s.unmatched.some(u => u.includes('全新玩法')), '沒被認領的 【】 段落要浮出來')
 })
 
+test('回歸（tw_1780／tw_1862）：「起（常駐）」是常駐內容不是限時活動 → 不收錄但計數', () => {
+  const r = parseAnnouncement({
+    title: '【版本前瞻】2026年07月30日搶先報',
+    text: `本週推出內容
+限時活動
+【迷星所向】
+➤活動時間：2026/07/30 05:00 起（常駐）
+迷星所向活動復刻將常駐外傳檔案，指揮官可在活動中獲取帕姆斯嵐粹。
+【預熱衝刺】
+➤活動時間：2026/07/30 05:00 - 2026/09/07 05:00
+活動說明：結束後轉為常駐也照樣是限時期間`,
+  })
+  assert.deepEqual(r.activities.map(a => a.extracted.name), ['預熱衝刺'], '有結束時刻的仍是活動，即使內文提到常駐')
+  assert.equal(r.excluded, 1)
+})
+
+test('回歸（tw_1807／tw_1862）：巔峰擂台賽季不收錄 —— 先前會把上一行的「常駐海運新增…」誤當成名字', () => {
+  const r = parseAnnouncement({
+    title: '【版本前瞻】2026年08月20日搶先報',
+    text: `新增內容
+4.【更新】常駐招募新增S級機師「唐小葵」、「哈達威」
+5.【更新】常駐海運新增S級重型機甲「奔囂」、「螢石」
+6.【更新】巔峰擂台第15賽季開啟 賽季：2026/08/20 05:00 - 2026/10/01 05:00 ；排位：2026/09/03 05:00 - 2026/09/28 05:00
+本週推出內容
+活動中心
+【角雕轉盤】
+➤活動時間：2026/08/20 05:00 - 2026/08/27 05:00`,
+  })
+  assert.deepEqual(r.activities.map(a => a.extracted.name), ['角雕轉盤'])
+  assert.equal(r.excluded, 1, '要計入產出量分母，否則回歸偵測被自己的過濾規則污染')
+})
+
 test('PARSER_VERSION 是整數（AnnouncementDraft.parserVersion 靠它挑重跑對象）', () => {
-  assert.ok(Number.isInteger(PARSER_VERSION) && PARSER_VERSION >= 2, '加了不收錄規則就要進版')
+  assert.ok(Number.isInteger(PARSER_VERSION) && PARSER_VERSION >= 8, '加了不收錄規則就要進版（v8：常駐／巔峰擂台）')
 })

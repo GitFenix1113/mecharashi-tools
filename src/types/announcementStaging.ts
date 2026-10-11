@@ -1,5 +1,6 @@
 import type { Timestamp } from 'firebase/firestore'
 import type { TimedActivity } from '../data/patchVersions/types'
+import type { InferredDuration } from '../utils/announcementMerge'
 
 // ─── 台版公告 staging（PLAN-048 Phase 2）────────────────────────────────────
 //
@@ -41,7 +42,9 @@ export type DraftStatus = 'raw' | 'parsed' | 'parseFailed' | 'triaged' | 'supers
  * 審核的最小單位是「一個活動」而非「一則公告」（計畫書決策七）——
  * 一則公告十個活動，看得懂九個就先放行九個，剩一個留在 buffer。
  *
- * parsed      解析乾淨，無 flag，可直接放行
+ * parsed      可直接放行：零 flag，或唯一的 flag 是 openEnded 且檔期推估得出來（見 inferred）。
+ *             2026-10-11 起由每週排程**自動放行**，正常情況下停留時間只有一輪排程；
+ *             會留在這個狀態的只剩被跳過的（選擇器失效、--no-auto-merge、交易失敗）。
  * needsReview 有 flag，需人工看一眼（後台預設只顯示這個狀態）
  * approved    人工已編修完、尚未寫進 patchVersions（合併失敗時的中繼狀態）
  * merged      已寫入某版本，mergedInto 存收據
@@ -74,7 +77,10 @@ export type PendingFlag =
   | 'missingDate'
   /** 抽不到活動名 —— extracted.name 會是 undefined */
   | 'missingName'
-  /** 同一版本半期內已有 anchor 相同的活動（可能是重複公告或續期） */
+  /**
+   * 同一版本半期內已有 anchor 相同的活動（可能是重複公告或續期）。
+   * 排程自動放行撞到同名同日時會補上這個 flag 並退回 needsReview —— 不覆蓋，由人決定。
+   */
   | 'duplicate'
 
 /** 後台顯示用的 flag 中文標籤。未登錄的 flag 直接顯示原字串。 */
@@ -205,6 +211,7 @@ export interface MergeReceipt {
   /** 重定位錨點，不用 index */
   anchor: { name: string; startDate: string }
   at: Timestamp | Date
+  /** 人工放行是 Firebase uid；排程自動放行固定為 'scheduler'（actorName「排程自動放行」） */
   actorUid: string
   actorName: string
 }
@@ -241,6 +248,16 @@ export interface PendingActivity {
    * 兩份並存才能在後台顯示「解析器猜什麼 / 我改成什麼」的 diff。
    */
   reviewed?: Partial<TimedActivity>
+
+  /**
+   * 「只寫了起」的卡池，依慣例推估出來的檔期（2026-10-11 起；規則在 utils/announcementMerge.ts）。
+   *
+   * 刻意**不寫進 extracted**：extracted 是解析器的原始產出，推估需要版本資料、
+   * 也不是公告寫的。合併時才以 `withInferred` 疊上去（補 weeks、標 predicted、note 記規則），
+   * 疊合順序固定為 extracted → inferred → reviewed。
+   * 由抓取腳本在寫入時算好；推不出來（非卡池、抓不到 UP 實體、沒有下個版本日期）就不存在。
+   */
+  inferred?: InferredDuration
 
   /**
    * 原文片段（不是整篇）。後台左欄只載這段，避免每開一筆就傳 16KB 全文。
