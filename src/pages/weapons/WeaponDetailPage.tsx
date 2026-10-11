@@ -90,11 +90,12 @@ function SectionHeading({ children }: { children: string }) {
   )
 }
 
+/** 緊湊格：左欄 22rem 內要排 4 欄（全站最長的值是命中 5,241 這種 5 字元），手機同樣 4 欄。 */
 function StatCell({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
-    <div className="bg-bg-dark rounded-lg p-3 text-center">
-      <div className="text-xs text-text-dim mb-1">{label}</div>
-      <div className="text-base font-bold text-accent-red font-[JetBrains_Mono,monospace] leading-tight">
+    <div className="bg-bg-dark rounded-lg px-1 py-2 text-center">
+      <div className="text-[11px] text-text-dim mb-0.5">{label}</div>
+      <div className="text-[15px] font-bold text-accent-red font-[JetBrains_Mono,monospace] leading-tight">
         {value}
       </div>
       {sub && <div className="text-[11px] text-text-dim mt-0.5">{sub}</div>}
@@ -102,17 +103,21 @@ function StatCell({ label, value, sub }: { label: string; value: React.ReactNode
   )
 }
 
-function SlotBoxes({ count, colorClass }: { count: number; colorClass: string }) {
-  if (count === 0) return <span className="text-text-dim text-sm font-[JetBrains_Mono,monospace]">0</span>
+/** 元件插槽的一格：標籤＋小方框。插槽數只有 0 或 3 兩種，方框本身就是數量，不另標 ×N。 */
+function SlotBoxes({ label, count, colorClass }: { label: string; count: number; colorClass: string }) {
   return (
-    <div className="flex gap-1.5 items-center">
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className={`w-5 h-5 rounded border-2 ${colorClass}`} />
-      ))}
-      <span className={`text-sm font-bold font-[JetBrains_Mono,monospace] ${colorClass.split(' ')[0]}`}>
-        ×{count}
-      </span>
-    </div>
+    <span className="inline-flex items-center gap-1.5">
+      <span className="text-text-secondary">{label}</span>
+      {count === 0 ? (
+        <span className="text-text-dim font-[JetBrains_Mono,monospace]">0</span>
+      ) : (
+        <span className="inline-flex gap-1">
+          {Array.from({ length: count }).map((_, i) => (
+            <span key={i} className={`w-3.5 h-3.5 rounded-sm border-2 ${colorClass}`} />
+          ))}
+        </span>
+      )}
+    </span>
   )
 }
 
@@ -159,13 +164,25 @@ function FusedBackpackNote({ backpackId }: { backpackId: string }) {
 
 // ── Loading skeleton ──────────────────────────────────────────────────────────
 
-function LoadingSkeleton() {
+/** split 要與頁面本體的分欄判斷一致，否則載入完會從窄版跳成寬版。 */
+function LoadingSkeleton({ split }: { split: boolean }) {
+  const block = 'bg-bg-card rounded-xl animate-pulse'
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12 bg-bg-dark/10 backdrop-blur-sm rounded-2xl space-y-5">
-      <div className="h-4 w-28 bg-bg-card rounded animate-pulse" />
-      <div className="h-36 bg-bg-card rounded-xl animate-pulse" />
-      <div className="h-28 bg-bg-card rounded-xl animate-pulse" />
-      <div className="h-40 bg-bg-card rounded-xl animate-pulse" />
+    <div className={`${split ? 'max-w-6xl' : 'max-w-3xl'} mx-auto px-4 py-12 bg-bg-dark/10 backdrop-blur-sm rounded-2xl`}>
+      <div className="h-4 w-28 bg-bg-card rounded animate-pulse mb-6" />
+      <div className={split ? 'flex flex-col gap-6 lg:grid lg:grid-cols-[22rem_minmax(0,1fr)]' : 'flex flex-col gap-6'}>
+        <div className="flex flex-col gap-4">
+          <div className={`h-36 ${block}`} />
+          <div className={`h-40 ${block}`} />
+        </div>
+        {split && (
+          <div className="flex flex-col gap-3">
+            <div className={`h-24 ${block}`} />
+            <div className={`h-36 ${block}`} />
+            <div className={`h-24 ${block}`} />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -206,7 +223,14 @@ export default function WeaponDetailPage() {
     )
   }, [weapon, parent, skills, skillMap])
 
-  if (loading || skillsLoading) return <LoadingSkeleton />
+  // 骨架屏的分欄猜測：技能庫還沒到時只看得到原始 skills 筆數，與本體用的解析後筆數只在引用全數失效時才會不同
+  if (loading || skillsLoading) {
+    return (
+      <LoadingSkeleton
+        split={!weapon || (weapon.skills?.length ?? 0) > 0 || !!weapon.fixedMod?.planName || !!weapon.floatingMod?.planName}
+      />
+    )
+  }
 
   if (error || !weapon) {
     return (
@@ -248,245 +272,244 @@ export default function WeaponDetailPage() {
   const visibleStats    = statCells.filter((c) => !isVariableStat(weapon, c.keys))
   const variableStatMsg = variableStatNote(statCells.filter((c) => isVariableStat(weapon, c.keys)).map((c) => c.label))
 
+  // 分欄條件：右欄（技能＋改裝）有內容才分。無技能武器（全站約一半，A/B/S 為主）內容本來就短，
+  // 分欄只會留下一整欄空白，故退回窄版單欄。⚠ LoadingSkeleton 的 split 要跟著這裡改。
+  const split = skills.length > 0 || hasFixedMod || hasFloatMod
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12 bg-bg-dark/10 backdrop-blur-sm rounded-2xl space-y-6">
+    <div className={`${split ? 'max-w-6xl' : 'max-w-3xl'} mx-auto px-4 py-12 bg-bg-dark/10 backdrop-blur-sm rounded-2xl`}>
 
       {/* Breadcrumb：上一頁就是圖鑑時回到原本捲到的位置（BackToListLink） */}
-      <div>
+      <div className="mb-6">
         <BackToListLink to="/weapons" className="text-accent-cyan hover:underline text-sm">
           ← 返回武器圖鑑
         </BackToListLink>
       </div>
 
-      {/* ── B-1 Hero + B-5 Component Slots ──────────────────────────────────── */}
-      <div className={hasSlots ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : ''}>
+      {/*
+        版面（2026-10-11）：桌面左欄放身分＋規格（sticky）、右欄整欄給武器技能；手機單欄、技能排第二。
+        左欄 wrapper 在手機是 display:contents——子項目直接成為外層 flex 的項目，才能用 order 把技能
+        插到身分卡與屬性之間，不必把左欄拆成兩份。lg 起恢復成一般 flex 欄，子項目 order 歸零回 DOM 順序。
+        sticky top-16：讓開 Layout 的 h-12 sticky header 再留 1rem。只在視窗高 ≥ 900px 才固定——
+        左欄最高約 730px（複合武器＋進階鏈），矮螢幕上左欄比視窗高時，sticky 會把底部的進階鏈
+        卡在畫面外、要捲到頁尾才放出來，不如不固定。
+        左欄寬用 rem 不用 px：本站 root font-size 是 19px，寫死 px 的欄寬裝 rem 尺寸的內文會擠到換行。
+      */}
+      <div className={split ? 'flex flex-col gap-6 lg:grid lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start' : 'flex flex-col gap-6'}>
 
-        <div className="bg-bg-card border border-border rounded-xl p-6">
-          <div className="flex items-start gap-4">
-            <WeaponIcon gameId={weapon.gameId} icon={weapon.icon} name={weapon.name} size="lg" isExclusive={weapon.isExclusive} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start gap-3 flex-wrap mb-3">
-                <h1 className="text-2xl font-bold text-text-primary leading-tight">{weapon.name}</h1>
-                <WeaponRarityBadge rarity={weapon.rarity} />
-              </div>
+        <div className={split ? 'contents lg:flex lg:flex-col lg:gap-4 lg:[@media(min-height:900px)]:sticky lg:[@media(min-height:900px)]:top-16' : 'contents'}>
 
-              <div className="flex flex-wrap gap-2">
-                <WeaponTypeBadge type={weapon.type} />
-                <span className="px-2 py-0.5 rounded text-[13px] border text-text-secondary bg-bg-dark border-border">
-                  {weapon.kind}
-                </span>
-                <WeaponEquipSlotBadge slot={weapon.equipSlot} />
-                <WeaponMechRestrictionBadge restriction={weapon.mechRestriction} />
-                {isCompositeWeapon(weapon) && <CompositeBadge />}
-                {weapon.isFixedArmament && <FixedArmamentBadge />}
-              </div>
-
-              {weapon.isExclusive && pilot && weapon.exclusiveFor && (
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="text-[13px] text-accent-yellow font-bold">⭐ 專屬武器</span>
-                  <ExclusivePilotLink
-                    pilotId={weapon.exclusiveFor}
-                    pilot={pilot}
-                    size="md"
-                  />
+          {/* ── B-1 Hero ─────────────────────────────────────────────────────── */}
+          <div className="order-1 lg:order-none bg-bg-card border border-border rounded-xl p-5">
+            <div className="flex items-start gap-4">
+              <WeaponIcon gameId={weapon.gameId} icon={weapon.icon} name={weapon.name} size="lg" isExclusive={weapon.isExclusive} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start gap-3 flex-wrap mb-3">
+                  <h1 className="text-2xl font-bold text-text-primary leading-tight">{weapon.name}</h1>
+                  <WeaponRarityBadge rarity={weapon.rarity} />
                 </div>
-              )}
 
-              {weapon.isFixedArmament && <FixedArmamentHostLine weaponId={weapon.id} />}
-            </div>
-          </div>
-        </div>
+                <div className="flex flex-wrap gap-2">
+                  <WeaponTypeBadge type={weapon.type} />
+                  <span className="px-2 py-0.5 rounded text-[13px] border text-text-secondary bg-bg-dark border-border">
+                    {weapon.kind}
+                  </span>
+                  <WeaponEquipSlotBadge slot={weapon.equipSlot} />
+                  <WeaponMechRestrictionBadge restriction={weapon.mechRestriction} />
+                  {isCompositeWeapon(weapon) && <CompositeBadge />}
+                  {weapon.isFixedArmament && <FixedArmamentBadge />}
+                </div>
 
-        {hasSlots && (
-          <div className="bg-bg-card border border-border rounded-xl p-5">
-            <SectionHeading>元件插槽</SectionHeading>
-            <div className="flex flex-wrap gap-8">
-
-              <div>
-                <div className="text-[13px] text-text-dim mb-2">觸發元件</div>
-                <SlotBoxes
-                  count={weapon.triggerSlots}
-                  colorClass="border-accent-orange text-accent-orange"
-                />
-              </div>
-
-              <div>
-                <div className="text-[13px] text-text-dim mb-2">應用元件</div>
-                <SlotBoxes
-                  count={weapon.effectSlots}
-                  colorClass="border-accent-cyan text-accent-cyan"
-                />
-              </div>
-
-              {weapon.componentLimit > 0 && (
-                <div className="border-l border-border pl-8">
-                  <div className="text-[13px] text-text-dim mb-2">元件上限</div>
-                  <div className="text-2xl font-bold text-accent-red font-[JetBrains_Mono,monospace]">
-                    {weapon.componentLimit}
+                {weapon.isExclusive && pilot && weapon.exclusiveFor && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="text-[13px] text-accent-yellow font-bold">⭐ 專屬武器</span>
+                    <ExclusivePilotLink
+                      pilotId={weapon.exclusiveFor}
+                      pilot={pilot}
+                      size="md"
+                    />
                   </div>
-                </div>
-              )}
+                )}
+
+                {weapon.isFixedArmament && <FixedArmamentHostLine weaponId={weapon.id} />}
+              </div>
             </div>
           </div>
-        )}
 
-      </div>
-
-      {/* ── B-1 進階鏈（PLAN-031）：前置 ← 本武器 → 可進階為 ──────────────────── */}
-      {(parent || children.length > 0) && (
-        <div className="bg-bg-card border border-border rounded-xl p-5">
-          <SectionHeading>製作 · 進階關係</SectionHeading>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            {parent && (
-              <>
-                <span className="text-xs text-text-dim">前置</span>
-                <WeaponChainLink weapon={parent} />
-                <span className="text-text-dim">→</span>
-              </>
-            )}
-            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bg-dark border border-accent-cyan/50">
-              <WeaponIcon gameId={weapon.gameId} icon={weapon.icon} name={weapon.name} size="sm" isExclusive={weapon.isExclusive} />
-              <span className="text-sm font-bold text-text-primary">{weapon.name}</span>
-            </span>
-            {children.length > 0 && (
-              <>
-                <span className="text-text-dim">→</span>
-                <span className="text-xs text-text-dim">可進階為</span>
-                {children.map((c) => (
-                  <WeaponChainLink key={c.id} weapon={c} />
+          {/* ── B-2 Stats ＋ B-5 Component Slots ─────────────────────────────── */}
+          {/* 元件插槽是次要資訊，併成屬性卡底部一行，不再獨立一張卡 */}
+          <div className="order-3 lg:order-none bg-bg-card border border-border rounded-xl p-5">
+            <SectionHeading>基礎屬性</SectionHeading>
+            {visibleStats.length > 0 && (
+              <div className="grid grid-cols-4 gap-1.5">
+                {visibleStats.map((c) => (
+                  <StatCell key={c.label} label={c.label} value={c.value} sub={c.sub} />
                 ))}
-              </>
+              </div>
+            )}
+            {/* 收掉的格子必須有交代，否則看起來像資料沒建完 */}
+            {variableStatMsg && (
+              <p className={`text-[13px] text-text-dim leading-relaxed ${visibleStats.length ? 'mt-3' : ''}`}>
+                {variableStatMsg}
+              </p>
+            )}
+
+            {hasSlots && (
+              <div className="mt-4 pt-3 border-t border-border flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px]">
+                <span className="text-text-dim">元件插槽</span>
+                <SlotBoxes label="觸發" count={weapon.triggerSlots} colorClass="border-accent-orange" />
+                <SlotBoxes label="應用" count={weapon.effectSlots} colorClass="border-accent-cyan" />
+                {weapon.componentLimit > 0 && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="text-text-secondary">上限</span>
+                    <span className="font-bold text-accent-red font-[JetBrains_Mono,monospace]">{weapon.componentLimit}</span>
+                  </span>
+                )}
+              </div>
             )}
           </div>
-          {isCompositeWeapon(weapon) && weapon.upgrade?.fusedBackpackId && (
-            <FusedBackpackNote backpackId={weapon.upgrade.fusedBackpackId} />
+
+          {/* ── B-1 進階鏈（PLAN-031）：前置／可進階為 ──────────────────────────── */}
+          {/* 直式兩行配合窄欄；「本武器」就是這一頁、身分卡已經寫了，不再畫成鏈中間那顆 chip */}
+          {(parent || children.length > 0) && (
+            <div className="order-4 lg:order-none bg-bg-card border border-border rounded-xl p-5">
+              <SectionHeading>製作 · 進階關係</SectionHeading>
+              <dl className="space-y-2">
+                {parent && (
+                  <div className="flex items-start gap-3">
+                    <dt className="w-16 shrink-0 pt-1.5 text-xs text-text-dim">前置</dt>
+                    <dd className="flex flex-wrap gap-2 min-w-0">
+                      <WeaponChainLink weapon={parent} />
+                    </dd>
+                  </div>
+                )}
+                {children.length > 0 && (
+                  <div className="flex items-start gap-3">
+                    <dt className="w-16 shrink-0 pt-1.5 text-xs text-text-dim">可進階為</dt>
+                    <dd className="flex flex-wrap gap-2 min-w-0">
+                      {children.map((c) => (
+                        <WeaponChainLink key={c.id} weapon={c} />
+                      ))}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+              {isCompositeWeapon(weapon) && weapon.upgrade?.fusedBackpackId && (
+                <FusedBackpackNote backpackId={weapon.upgrade.fusedBackpackId} />
+              )}
+            </div>
           )}
         </div>
-      )}
 
-      {/* ── B-2 Stats ────────────────────────────────────────────────────────── */}
-      <div className="bg-bg-card border border-border rounded-xl p-5">
-        <SectionHeading>基礎屬性</SectionHeading>
-        {visibleStats.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {visibleStats.map((c) => (
-              <StatCell key={c.label} label={c.label} value={c.value} sub={c.sub} />
-            ))}
-          </div>
-        )}
-        {/* 收掉的格子必須有交代，否則看起來像資料沒建完 */}
-        {variableStatMsg && (
-          <p className={`text-[13px] text-text-dim leading-relaxed ${visibleStats.length ? 'mt-3' : ''}`}>
-            {variableStatMsg}
-          </p>
-        )}
-      </div>
+        {split && (
+          <div className="order-2 lg:order-none min-w-0 space-y-6">
 
-      {/* ── B-3 Skills ───────────────────────────────────────────────────────── */}
-      {skills.length > 0 && (
-        <div>
-          <SectionHeading>武器技能</SectionHeading>
-          <div className="space-y-3">
-            {skills.map((skill, i) => (
-              <WeaponSkillCard
-                key={i}
-                skill={skill}
-                fusedLabel={
-                  fusedSkillNames.has(skill.name)
-                    ? isCompositeWeapon(weapon) ? '融合技能' : '進階新增'
-                    : undefined
-                }
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── B-4 Mods ─────────────────────────────────────────────────────────── */}
-      {(hasFixedMod || hasFloatMod) && (
-        <div>
-          <SectionHeading>改裝資訊</SectionHeading>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            {hasFixedMod && (
-              <div className="bg-bg-card border border-border rounded-xl p-4">
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span className="text-[11px] text-accent-orange font-bold tracking-widest uppercase font-[Orbitron,sans-serif]">
-                    固定改裝
-                  </span>
-                  <span className="text-sm font-bold text-text-primary">{weapon.fixedMod.planName}</span>
+            {/* ── B-3 Skills ─────────────────────────────────────────────────── */}
+            {skills.length > 0 && (
+              <div>
+                <SectionHeading>武器技能</SectionHeading>
+                <div className="space-y-3">
+                  {skills.map((skill, i) => (
+                    <WeaponSkillCard
+                      key={i}
+                      skill={skill}
+                      fusedLabel={
+                        fusedSkillNames.has(skill.name)
+                          ? isCompositeWeapon(weapon) ? '融合技能' : '進階新增'
+                          : undefined
+                      }
+                    />
+                  ))}
                 </div>
-                <div className="text-[13px] text-text-dim mb-3">
-                  可改等級上限{' '}
-                  <span className="text-accent-red font-bold font-[JetBrains_Mono,monospace]">
-                    {weapon.fixedMod.maxLevel}
-                  </span>
-                </div>
-                {weapon.fixedMod.effects.length > 0 && (
-                  <div className="space-y-2">
-                    {weapon.fixedMod.effects.map((e, i) => (
-                      <div key={i} className="flex items-center justify-between text-sm">
-                        <span className="text-text-secondary">{MOD_STAT_LABELS[e.stat] ?? e.stat}</span>
+              </div>
+            )}
+
+            {/* ── B-4 Mods ───────────────────────────────────────────────────── */}
+            {(hasFixedMod || hasFloatMod) && (
+              <div>
+                <SectionHeading>改裝資訊</SectionHeading>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  {hasFixedMod && (
+                    <div className="bg-bg-card border border-border rounded-xl p-4">
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <span className="text-[11px] text-accent-orange font-bold tracking-widest uppercase font-[Orbitron,sans-serif]">
+                          固定改裝
+                        </span>
+                        <span className="text-sm font-bold text-text-primary">{weapon.fixedMod.planName}</span>
+                      </div>
+                      <div className="text-[13px] text-text-dim mb-3">
+                        可改等級上限{' '}
                         <span className="text-accent-red font-bold font-[JetBrains_Mono,monospace]">
-                          +{e.value}
+                          {weapon.fixedMod.maxLevel}
                         </span>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                      {weapon.fixedMod.effects.length > 0 && (
+                        <div className="space-y-2">
+                          {weapon.fixedMod.effects.map((e, i) => (
+                            <div key={i} className="flex items-center justify-between text-sm">
+                              <span className="text-text-secondary">{MOD_STAT_LABELS[e.stat] ?? e.stat}</span>
+                              <span className="text-accent-red font-bold font-[JetBrains_Mono,monospace]">
+                                +{e.value}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-            {hasFloatMod && (
-              <div className="bg-bg-card border border-border rounded-xl p-4">
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span className="text-[11px] text-accent-cyan font-bold tracking-widest uppercase font-[Orbitron,sans-serif]">
-                    浮動改裝
-                  </span>
-                  <span className="text-sm font-bold text-text-primary">{weapon.floatingMod.planName}</span>
+                  {hasFloatMod && (
+                    <div className="bg-bg-card border border-border rounded-xl p-4">
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <span className="text-[11px] text-accent-cyan font-bold tracking-widest uppercase font-[Orbitron,sans-serif]">
+                          浮動改裝
+                        </span>
+                        <span className="text-sm font-bold text-text-primary">{weapon.floatingMod.planName}</span>
+                      </div>
+                      <div className="text-[13px] text-text-dim mb-3">
+                        可填{' '}
+                        <span className="text-accent-red font-bold font-[JetBrains_Mono,monospace]">
+                          {weapon.floatingMod.slots}
+                        </span>{' '}
+                        個效果
+                      </div>
+                      {weapon.floatingMod.possibleEffects.length > 0 && (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-[13px]">
+                            <thead>
+                              <tr className="text-text-dim border-b border-border">
+                                <th className="text-left pb-2 font-medium">效果</th>
+                                <th className="text-left pb-2 font-medium">條件</th>
+                                <th className="text-right pb-2 font-medium">數值範圍</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                              {weapon.floatingMod.possibleEffects.map((e, i) => (
+                                <tr key={i} className="hover:bg-bg-dark/50 transition-colors">
+                                  <td className="py-1.5 text-text-secondary">
+                                    {MOD_STAT_LABELS[e.stat] ?? e.stat}
+                                  </td>
+                                  <td className="py-1.5 text-text-dim">
+                                    {e.condition ?? '無條件'}
+                                  </td>
+                                  <td className="py-1.5 text-right font-bold text-accent-red font-[JetBrains_Mono,monospace]">
+                                    {e.min} ~ {e.max}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="text-[13px] text-text-dim mb-3">
-                  可填{' '}
-                  <span className="text-accent-red font-bold font-[JetBrains_Mono,monospace]">
-                    {weapon.floatingMod.slots}
-                  </span>{' '}
-                  個效果
-                </div>
-                {weapon.floatingMod.possibleEffects.length > 0 && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-[13px]">
-                      <thead>
-                        <tr className="text-text-dim border-b border-border">
-                          <th className="text-left pb-2 font-medium">效果</th>
-                          <th className="text-left pb-2 font-medium">條件</th>
-                          <th className="text-right pb-2 font-medium">數值範圍</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {weapon.floatingMod.possibleEffects.map((e, i) => (
-                          <tr key={i} className="hover:bg-bg-dark/50 transition-colors">
-                            <td className="py-1.5 text-text-secondary">
-                              {MOD_STAT_LABELS[e.stat] ?? e.stat}
-                            </td>
-                            <td className="py-1.5 text-text-dim">
-                              {e.condition ?? '無條件'}
-                            </td>
-                            <td className="py-1.5 text-right font-bold text-accent-red font-[JetBrains_Mono,monospace]">
-                              {e.min} ~ {e.max}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
               </div>
             )}
           </div>
-        </div>
-      )}
-
-
+        )}
+      </div>
     </div>
   )
 }
