@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-10
+## [Unreleased] - 2026-10-11
 
 ### ⚠ 重大變更
 
@@ -258,6 +258,7 @@
 
 ### 📚 文件
 
+- PLAN-055 E-3 圖示流程文件化；PLAN-056 站長後台項完成（23／24） (`6a8a608`)
 - 近期變更文件全面校對（PLAN-042／052／054／055／056＋本週改動）、PLAN-052-O 歸檔 (`87147ff`)
 - **plan**: PLAN-056 站長確認 E-2～E-5（18／24） (`d579787`)
 - **plan**: PLAN-054 進度 24／26 — 部署完成、D-3 已改寫，待 Purge 與寬限期後複驗 (`567014b`)
@@ -339,6 +340,7 @@
 
 ### 🎨 樣式
 
+- **weapons**: 武器詳情頁改為左右分欄，技能優先 (`bb8e6bd`)
 - **mechs**: 機甲詳情頁改為「一屏看完」版面，手機改成模組優先 (`a3e4ff3`)
 - **simulator**: 部件來源清單自己捲；分段控制改成看得出來可以按 (`cd6fcca`)
 - **simulator**: 部位卡與裝備欄在寬螢幕下高度對齊 (`e6901c5`)
