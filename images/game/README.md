@@ -9,6 +9,8 @@ pilots/<gameId>/      gameId ＝ 機師卡 Icon_item_<gameId>A 的編號（DB: p
   <artKey>_head.webp    90²          頭部特寫（構圖與 half 不同）
   <artKey>_Raw.webp     1240×1080    半身
   Icon_item_<gameId>A.webp  340²     機師卡
+npc/<號碼>/           NPC 圖庫（2026-10-12）：還沒對應到可抽機師的官方立繪——劇情 NPC、尚未上線的新角色
+  <artKey>_half／_head／_Raw.webp   同機師三種、沒有機師卡；一個號碼可有 A／B 多套（DB: pilots.artKey 指過來）
 mechs/<wap>/          wap ＝ 機甲四碼編號（DB: mechs.gameId）
   Icon_mecha_wap<wap>.webp          560×340     立繪
   Icon_wap<wap>_1~4.webp            340²        部件：軀幹／左臂／右臂／腿
@@ -33,7 +35,14 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
 
 - **gameId 與 artKey 不互推**（DB: `pilots.artKey`）：維娜的資料夾是 `10103144`、檔名是 `Pilot_13019A_*`，共 5 位例外，見 `src/types/pilot.ts`。
 - 讀取端一律走 `pilotGameArt()`／`mechGameArt()`（`src/utils/gameArt.ts`），不要自己拼路徑；有沒有某種圖由 build 產生的 `src/data/gameArtIndex.ts` 決定。
-- 這裡只放**讀取端會用到的種類（core）**。造型、招募立繪、大廳場景等 extended 素材與站上沒有的實體（_reserve）**不進 repo**——repo 是公開的，進來就等於公開還沒上線的內容。
+- **NPC 圖庫**（`npc/`，2026-10-12）：NPC 轉正的機師官方常沿用 NPC 時期那張立繪。`pilotGameArt()` 在 gameId 資料夾找不到時改以
+  `artKey` 查這裡，所以管理員在後台「選取官方立繪」的 NPC 分組點一下就有圖，不必等機師卡、也不必等站長匯入。
+  可抽機師（`pilots/` 裡的立繪號碼，連同他們的外觀）不收；轉正後用 `--id` 匯入 core，這裡那份留著（DB 的 portrait 可能還指著它），選圖器自動去重。
+  ⚠ 號碼不同的「可抽機師另一造型」排除不掉（瑪阿特劇情換造型前、貝爾莎左右翻轉版、海莉絲、卡蜜拉早期）：人工登記在
+  `scripts/lib/npcArtNotes.json`（owner＝機師文件 ID），選圖器掛在他名下、不算未使用。英文名由 `--npc --apply` 從 3D 模型資料夾抓進
+  `scripts/lib/npcArtMeta.json`，選圖器可用英文搜尋——新機師公布英文名時找 NPC 時期立繪最快的方法。
+  站長 2026-10-12 決定上站（取代 10-04「NPC 不進 repo」）：查資料的人不怕劇透，官方之後還會有好幾位 NPC 轉正。
+- 這裡只放**讀取端會用到的種類（core）＋NPC 圖庫**。造型、招募立繪、大廳場景等 extended 素材與敵方機甲等其餘 _reserve **不進 repo**，在 repo 外的封存夾。
 
 ## 匯入與重跑
 
@@ -45,6 +54,7 @@ node scripts/import-game-assets.mjs                                          # v
 node scripts/import-game-assets.mjs --apply                                  # 寫入
 node scripts/import-game-assets.mjs --id=<gameId> --art-key=<artKey> --apply # 新機師
 node scripts/import-game-assets.mjs --wap=<####> --apply                     # 新機甲
+node scripts/import-game-assets.mjs --src=latest --npc --apply               # NPC 圖庫（只補新的；第一次先 --src=Data）
 node scripts/import-game-assets.mjs --src=latest --icons --apply             # 技能類／BUFF 圖示（只補新 key；別名與 legacy 只增不減）
 node scripts/import-game-assets.mjs --equip-icons --apply                    # 武器／背包圖示（整夾；新擷取只補新的）
 node scripts/import-game-assets.mjs --src=latest --ui --apply                # 活動／招募／大廳等介面美術 → repo 外封存夾（不部署）
