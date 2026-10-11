@@ -32,7 +32,7 @@
 
   <table class="spec-table">
     <tr><th>路由</th><td><code>/admin</code></td></tr>
-    <tr><th>開發階段</th><td>持續擴充中（已涵蓋 12 個資料分頁 + 版本管理子頁）</td></tr>
+    <tr><th>開發階段</th><td>持續擴充中（已涵蓋 15 個分頁 + 版本管理等子頁）</td></tr>
     <tr><th>登入需求</th><td>需 Firebase Auth 且具 <code>ADMIN</code> / <code>OWNER</code> 角色；版本管理子頁由 <code>AdminRoute</code> gate。寫入受 Firestore Security Rules + App Check 保護</td></tr>
     <tr><th>資料來源</th><td>Firestore 直接讀寫，經 <code>GameDataContext</code> 版本快取載入；存檔後 <code>bumpDataVersion(key)</code> 使所有 client 該集合快取失效，編輯者自身以 patch 就地同步免重讀</td></tr>
   </table>
@@ -105,7 +105,7 @@
 
 <section class="section">
   <div class="section-label green">分頁總覽</div>
-  <div class="section-title">管理分頁（TAB_CONFIG · 14 分頁 + 版本管理）</div>
+  <div class="section-title">管理分頁（TAB_CONFIG · 15 分頁 + 版本管理）</div>
   <div class="section-desc">AdminPage 以 tab 切換各集合的列表 / 編輯。多數分頁切入即整包預載入主資料、走前端片段搜尋（<code>useClientPaged</code>）；只剩 components 資料量大，仍走伺服器端分頁查詢（<code>useServerPaged</code>，沿用搜尋閘門）；backpacks 已於 PLAN-036 改回整包預載入。</div>
 
   <table class="spec-table">
@@ -113,13 +113,14 @@
     <tr><td><code>modules</code> 模組</td><td>modules（+mechs）</td><td>含各等級 levels 編輯、條件效果、enum 防呆</td></tr>
     <tr><td><code>mechs</code> 機甲</td><td>mechs（+modules）</td><td>部件數值、模組 ID 下拉（未對應警示）</td></tr>
     <tr><td><code>pilots</code> 機師</td><td>pilots</td><td>🆕 新增機師（PLAN-025，<code>pilot_&lt;名&gt;</code> ID + manual 防覆寫）/ 六維 / AP / 個人資料自訂欄位（additionalInfo）/ 天賦算力改寫（ndVariants）/ 神經驅動分區編輯器（分區選單 α·β·γ1·γ2、插槽晶片、各級門檻連結能力庫）</td></tr>
-    <tr><td><code>weapons</code> 武器</td><td>weapons（+pilots、pilotSkills）</td><td>武器屬性、技能（含 descriptionRefs RefPicker）、改裝；官方圖示編號 <code>gameId</code>（PLAN-056）、固定武裝勾選與宿主區塊（2026-10-10）</td></tr>
+    <tr><td><code>weapons</code> 武器</td><td>weapons（+pilots、pilotSkills）</td><td>武器屬性、技能、改裝；官方圖示編號 <code>gameId</code>（PLAN-056）、固定武裝勾選與宿主區塊（2026-10-10）、<strong>製作・進階關係</strong>（前置武器；背後武器另可設特種背包製作＋融合背包，2026-10-11）。武器技能分頁可直接<strong>新增武器技能</strong>（寫進技能庫並掛上）、✎ 編輯已掛技能（寫入技能庫，共用時標出其他武器）、把殘留內嵌技能<strong>轉入技能庫</strong>；2026-10-11 起不再能建立內嵌（舊格式）技能</td></tr>
+    <tr><td><code>weaponSkills</code> 武器技能</td><td>pilotSkills（+weapons）</td><td>🆕 2026-10-11：技能庫鎖定 <code>domain:'weapon'</code> 的視圖（與「技能管理」同一個集合、同一個編輯面板），新建自動標武器領域；每列顯示掛在哪幾把武器，沒有武器掛載標「⚠ 無武器掛載」</td></tr>
     <tr><td><code>components</code> 元件</td><td>components（伺服器分頁）</td><td>觸 / 應元件編輯</td></tr>
     <tr><td><code>backpacks</code> 背包</td><td>backpacks（+backpackSkills，整包預載入）</td><td>背包主技能與裝配限制；官方圖示編號 <code>gameId</code>（PLAN-056）</td></tr>
     <tr><td><code>backpackSkills</code> 背包技能</td><td>backpackSkills（+backpacks）</td><td>🆕 背包技能庫（PLAN-043）；背包以 <code>skillIds</code> 引用</td></tr>
     <tr><td><code>forms</code> 機師形態</td><td>forms（+pilots、weapons、pilotSkills、buffs）</td><td>🆕 機師形態（PLAN-041）；固定武裝掛載（<code>restrict.mounts</code>）用 <code>ArmamentMountEditor</code></td></tr>
     <tr><td><code>glossary</code> 遊戲術語</td><td>glossaryTerms</td><td>🆕 詞條庫（PLAN-019-C）；refType:'term' 引用資料源</td></tr>
-    <tr><td><code>skills</code> 機師技能</td><td>pilotSkills</td><td>🆕 技能庫（PLAN-004）；共用技能改一次全機師生效；<code>unitType</code> 可標「職業單元＝初始被動能力」（PLAN-025）</td></tr>
+    <tr><td><code>skills</code> 技能管理</td><td>pilotSkills</td><td>🆕 技能庫（PLAN-004）；收錄機師與武器技能（<code>domain</code> 篩選，PLAN-032）；共用技能改一次全站生效；<code>unitType</code> 可標「職業單元＝初始被動能力」（PLAN-025，武器技能不顯示此欄）；專武強化兩欄（<code>enhancesTalentName</code>／<code>enhancedTalentDescription</code>）2026-10-11 起可編輯</td></tr>
     <tr><td><code>neuralDrive</code> 神經驅動</td><td>neuralDriveAbilities（+pilots）</td><td>🆕 神經驅動能力庫（PLAN-023）；顯示「被幾位機師引用」反查</td></tr>
     <tr><td><code>buffs</code> BUFF</td><td>buffs</td><td>🆕 BUFF 管理（PLAN-019-F）；階梯等級 levels、termRef、RefPicker 標 [xxx]（PLAN-024）</td></tr>
     <tr><td><code>users</code> 用戶</td><td>users（伺服器分頁）</td><td>用戶列表、角色（ADMIN/OWNER）授予</td></tr>
@@ -225,11 +226,11 @@
     <tr><td><code>WeaponAdmin</code></td><td>4：基本資訊 / 戰鬥屬性・射程・插槽 / 改裝方案 / 武器技能</td>
         <td>改裝方案頁的固定／浮動改裝為雙欄。基本資訊頁有 <code>isFixedArmament</code> 勾選（2026-10-10 補上；選「固定武裝」種類會自動勾），
           勾了之後顯示唯讀的<strong>宿主</strong>區塊（焊在哪台機甲／哪個形態、哪幾格；沒連結時提醒到「機甲管理 → 部件」或「機師形態」設定）。
-          連結本身<strong>只在宿主那側編輯</strong>，武器端不寫——固定武裝與宿主一對一，由 <code>validate-mech-slots.mjs</code> ⑦ 把關</td></tr>
+          連結本身<strong>只在宿主那側編輯</strong>，武器端不寫——固定武裝與宿主一對一，由 <code>validate-mech-slots.mjs</code> ⑦ 把關。<br>基本資訊頁底部是 <code>WeaponUpgradeField</code>（PLAN-031 的 <code>upgrade</code>，2026-10-11 補上入口）：只存前置、只有專屬武器顯示挑選器（非專屬已存的前置只標警告）、候選只列同種類（遊戲沒有跨種類製作）、「可進階為」唯讀反查；特種背包製作只對背後武器顯示，存檔前 <code>normalizeWeaponUpgrade</code> 統一整理</td></tr>
     <tr><td><code>MechAdmin</code></td><td>4：基本數值 / 部件 / 模組（能力）/ 武器槽・外觀</td><td>「外觀」分頁有 PLAN-054 的遊戲 ID 欄位（<code>MechGameArtFields</code>：<code>gameId</code>／塗裝本體 <code>skinOfId</code>）；官配為唯讀，由機師側推導。部件分頁可編固定武裝（<code>fixedArmament</code>，<code>ArmamentMountEditor</code>）</td></tr>
     <tr><td><code>ModuleAdmin</code></td><td>5：基本資訊 / 基本屬性 / 武器增傷 / 等級資料 / 條件效果</td>
         <td>四個是大分頁、無可併對象；基本資訊頁為雙欄</td></tr>
-    <tr><td><code>GlossaryAdmin</code> · <code>NeuralDriveAdmin</code> · <code>SkillAdmin</code></td>
+    <tr><td><code>GlossaryAdmin</code> · <code>NeuralDriveAdmin</code> · <code>SkillAdmin</code>（武器編輯器也會疊開它的 <code>SkillEditPanel</code>）</td>
         <td>無分頁</td>
         <td>顯式傳 <code>maxWidth="max-w-2xl"</code> 維持 672px 窄版——欄位數少，撐寬只會讓兩三個欄位漂在空白裡</td></tr>
     <tr><td><code>UserAdmin</code> · <code>GrayOpsAdmin</code></td><td>—</td>
