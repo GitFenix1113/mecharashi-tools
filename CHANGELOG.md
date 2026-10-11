@@ -379,6 +379,7 @@
 
 ### 🔧 維護
 
+- **images**: 匯入凜騎士／日蝕官方原檔；歸檔流程補 --other-icons、--skins，報告改成照抄清單 (`baff274`)
 - **icons**: PLAN-055 E-1 — 舊圖示資料夾與 normalizeSkillPath 退場 (`0f5fa32`)
 - **scripts**: 官網爬蟲退場與腳本清理；新增遊戲擷取比對工具 (`4d6567c`)
 - **images**: PLAN-056 D-3 — 舊武器／背包 PNG 退場（118 張） (`1452248`)
