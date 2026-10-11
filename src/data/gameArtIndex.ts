@@ -134,6 +134,7 @@ export const GAME_MECH_ART: ReadonlyMap<string, GameMechArt> = new Map<string, G
   ['1051', { icon: true, sn: true, parts: '1234' }],
   ['1052', { icon: true, sn: true, parts: '1234' }],
   ['1070', { icon: true, sn: true, parts: '1234' }],
+  ['1071', { icon: true, sn: true, parts: '1234' }],
   ['1301', { icon: true, sn: true, parts: '1234' }],
   ['1303', { icon: true, sn: true, parts: '1234' }],
   ['2003', { icon: true, sn: true, parts: '1234' }],
@@ -199,6 +200,7 @@ export const GAME_MECH_ART: ReadonlyMap<string, GameMechArt> = new Map<string, G
   ['3036', { icon: true, sn: true, parts: '1234' }],
   ['3037', { icon: true, sn: true, parts: '1234' }],
   ['3047', { icon: true, sn: true, parts: '1234' }],
+  ['3051', { icon: true, sn: true, parts: '1234' }],
   ['3301', { icon: true, sn: true, parts: '1234' }],
   ['3302', { icon: true, sn: true, parts: '1234' }],
 ])

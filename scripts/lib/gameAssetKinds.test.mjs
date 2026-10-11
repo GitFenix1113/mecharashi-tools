@@ -5,7 +5,10 @@
 // 也順便驗證「反向分類」：每個拼出來的檔名分類回去都得到原本的種類。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { MECH_KINDS, PILOT_KINDS, classifyMechFile, classifyNpcFile, classifyPilotFile, mechFileName, npcDirOf, pilotFileName } from './gameAssetKinds.mjs'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { MECH_KINDS, PILOT_KINDS, classifyMechFile, classifyNpcFile, classifyPilotFile, mechFileName, npcDirOf, pilotFileName, playableArtDirs } from './gameAssetKinds.mjs'
 import { mechGameFileName, pilotGameFileName } from '../../src/utils/gameArt.ts'
 
 const PILOTS = [
@@ -51,4 +54,21 @@ test('NPC 圖庫：檔名分類與資料夾（號碼段），機師卡與 3D 貼
   assert.equal(classifyNpcFile('T_Pilot_10103113A_Body_AG'), null)
   assert.equal(npcDirOf('Pilot_13046B'), '13046')
   assert.equal(npcDirOf('Pilot_101031200'), '101031200')
+})
+
+test('可抽機師的立繪號碼 → gameId（--npc 排除、--skins 落點）', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'playable-'))
+  try {
+    const put = (id, ...files) => {
+      fs.mkdirSync(path.join(root, id), { recursive: true })
+      for (const f of files) fs.writeFileSync(path.join(root, id, f), '')
+    }
+    put('10103144', 'Pilot_13019A_half.webp', 'Icon_item_10103144A.webp')   // 維娜：號碼與 gameId 不同
+    put('10103174', 'Pilot_10103174A_Raw.webp', 'Pilot_10103174A_head.webp', 'Icon_item_10103174A.webp')
+    put('10103999', 'Icon_item_10103999A.webp', 'notes.txt')                // 只有機師卡、沒有立繪 → 不算
+    assert.deepEqual(Object.fromEntries(playableArtDirs(root)), { 13019: '10103144', 10103174: '10103174' })
+    assert.deepEqual([...playableArtDirs(path.join(root, 'nope'))], [])
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
 })

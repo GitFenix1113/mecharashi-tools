@@ -15,6 +15,8 @@ import path from 'node:path'
 import sharp from 'sharp'
 
 export const DUMP_ROOT = 'E:/Mecharashi_Data'
+/** repo 外的封存夾（extended／reserve／--ui／--other-icons／--skins 的落點；不進 git、不部署） */
+export const ARCHIVE_ROOT = 'E:/Mecharashi_Data/site-archive'
 
 /**
  * 兩張圖的平均像素差（0–255；縮成 64×64、透明處墊黑）——判斷「同名但畫面不同」。

@@ -4,7 +4,7 @@
 // 與 src/utils/gameIcons.ts（前台用）。這裡逐一比對兩份的解析與路徑——改了一邊沒改另一邊就會掛。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { ICON_DIR, ICON_FEATURE_DIM, equipGameIdOf, equipIconKey, iconFamily, iconFeature, iconPath, isLibraryKey, keyFromValue, parseIconKey } from './gameIconKinds.mjs'
+import { ICON_DIR, ICON_FEATURE_DIM, equipGameIdOf, equipIconKey, iconFamily, iconFeature, iconHandledElsewhere, iconPath, isLibraryKey, keyFromValue, otherIconPaths, parseIconKey } from './gameIconKinds.mjs'
 import * as ts from '../../src/utils/gameIcons.ts'
 
 // 每一種官方前綴各取幾個真實檔名（2026-10-04 陸版擷取＋站上舊夾）
@@ -109,4 +109,34 @@ test('任何舊寫法都取得到檔名', () => {
     assert.equal(keyFromValue(v), k, String(v))
     assert.equal(ts.keyFromValue(v), k, String(v))
   }
+})
+
+test('其他圖示（--other-icons）：別的模式收的整個名字都不收，其餘照官方資料夾', () => {
+  const p = (folder, file) => `assets/gameproject/runtimeassets/ui/uiimages/uiicons/${folder}_abs/${file.toLowerCase()}.png`
+  const row = (folder, name, type = 'Texture2D') => ({ name, type, asset_path: p(folder, name) })
+  const rows = [
+    row('skilltype', 'Icon_skill_main_1106'),                 // --icons
+    row('bufftype', 'Icon_buff_1001', 'Sprite'),              // --icons（BUFF 字形只收 Sprite）
+    row('bufftype', 'Icon_buff_1001'),                        //   同名的 Texture2D 也跟著交給 --icons
+    row('bufftype', 'Icon_pilotclass_001_s', 'Sprite'),       // BUFF 資料夾裡的別種圖 → 收
+    row('wapweapons', 'Icon_weapon_10100201'),                // --equip-icons
+    row('wapweapons', 'Icon_Evacuation'),                     // 武器資料夾裡的關卡物件 → 收
+    row('mecha', 'Icon_mecha_wap1071'),                       // --wap
+    row('skynetwap', 'Icon_mecha_wap1071_SN_Raw'),            // --wap
+    row('wapparts', 'Icon_wap1071_2'),                        // --wap
+    row('mecha', 'Icon_mecha_Cannon02AG'),                    // 敵方車輛 → 收
+    row('itemtype', 'Icon_item_10103174A'),                   // 機師卡 → --id
+    row('itemtype', 'Icon_item_13038A'),                      // NPC 的卡（不是 8 碼 gameId）→ 收
+    row('itemtype', 'Icon_wap2049_S1'), row('itemtype', 'Icon_wap2049_S1', 'Sprite'),   // 塗裝小圖 → 收，同路徑兩筆
+    row('itemroguelike', 'Icon_roguelike_802481'),            // 圖庫命名但 --icons 不收 → 收
+    { name: 'Img_main_bg', type: 'Texture2D', asset_path: 'assets/gameproject/runtimeassets/ui/uiimages/uilobbymain_abs/img_main_bg.png' },
+  ]
+  const out = otherIconPaths(rows)
+  assert.deepEqual([...out.keys()].sort(), [
+    'icons/bufftype/Icon_pilotclass_001_s', 'icons/itemroguelike/Icon_roguelike_802481', 'icons/itemtype/Icon_item_13038A',
+    'icons/itemtype/Icon_wap2049_S1', 'icons/mecha/Icon_mecha_Cannon02AG', 'icons/wapweapons/Icon_Evacuation',
+  ])
+  assert.equal(out.get('icons/itemtype/Icon_wap2049_S1').length, 2)
+  assert.equal(iconHandledElsewhere(row('itemtype', 'Icon_item_10103174A')), true)
+  assert.equal(iconHandledElsewhere(row('itemtype', 'Icon_item_1071_1')), false)   // 機甲道具卡不是機師卡
 })

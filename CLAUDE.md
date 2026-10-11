@@ -224,7 +224,8 @@ barrel 按領域拆檔（`pilot` / `mech` / `weapon` / `module` / `backpack` / `
 **機師、機甲、武器、模組、元件、背包等遊戲資料不再靠爬蟲取得。** 官方 Wiki 更新速度慢到跟不上改版，等它就等於讓站上永遠落後；
 這些資料改由**後台各實體管理頁人工建檔／編輯**（`src/pages/user/admin/`），圖片改由遊戲客戶端擷取匯入（PLAN-054 `import-game-assets.mjs`）。
 遊戲改版、跑完擷取工具後，**先跑 `node scripts/diff-game-dump.mjs`**（最新 vs 前一次擷取的差異報告，輸出到 `_local-notes/`，附該跑的匯入指令）；
-活動／招募等介面美術用 `import-game-assets.mjs --ui` 封存到 repo 外（`site-archive/game/ui/`，不部署）。
+活動／招募等介面美術用 `import-game-assets.mjs --ui` 封存到 repo 外（`site-archive/game/ui/`，不部署；其他圖示 `--other-icons`、既有機師新造型 `--skins` 同理）。
+報告的「下一步」是標 ✅／⬜ 的照抄清單，**整套歸檔流程設計成站長不靠 AI 也能跑**（`public/images/game/README.md`），改腳本時別破壞這點。
 技能／BUFF／武器／背包圖示走扁平圖庫 `public/images/game/icons/`，**DB 只存官方檔名 key**（PLAN-055／056），新版本的匯入與指定流程見 `data-patch` skill。
 
 - **唯一仍在運作的擷取是活動**：`scripts/scrape-tw-announcements.mjs`（台版官方公告 → `announcementDrafts`／`pendingActivities` staging → 後台 `/admin/announcements` 審核後合併進 `patchVersions`），

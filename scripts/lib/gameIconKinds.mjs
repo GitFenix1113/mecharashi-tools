@@ -52,6 +52,67 @@ export function iconPoolIndex(assetPath, type, name) {
 /** `--equip-icons` 整夾全收的兩個資料夾（PLAN-056 A-1） */
 export const EQUIP_POOLS = [['weapon', '/uiicons/wapweapons_abs/'], ['backpack', '/uiicons/wapbackpack_abs/']]
 
+// ── 其他圖示（--other-icons，2026-10-12）──────────────────────────────────────
+/**
+ * 客戶端 ui/uiimages/uiicons/ 底下、其他匯入模式都不收的圖示 → repo 外封存夾 <archive>/game/icons/<官方資料夾>/。
+ * 「其他模式收的」：--icons（ICON_POOLS）、--equip-icons（EQUIP_POOLS 裡的圖庫命名檔）、機甲 core 三種與機師卡
+ * （--wap／--id／v3）。同名只要有一筆屬於它們，整個名字就交給它們，不在封存夾另存一份。
+ * 其餘一律收：道具、勳章、肉鴿、敵方車輛、塗裝色、機師外觀卡、機甲塗裝小圖……博物館原則，現在用不到不代表以後用不到。
+ * 資料夾＝官方資料夾名去掉 _abs（itemtype_abs → itemtype）。下面的中文只給封存夾的 README 看，沒登記的資料夾照樣收。
+ */
+export const OTHER_ICON_FOLDERS = {
+  itemtype: '道具：貨幣、材料、機甲卡、機師外觀卡、機甲塗裝小圖、頭像框',
+  itemroguelike: '肉鴿道具（圖庫命名，但 --icons 不收）',
+  unitedbattle: '聯合作戰',
+  honormedal: '榮譽勳章',
+  mecha: '敵方單位、建築、車輛的立繪（可抽機甲在 game/mechs/）',
+  vehicletype: '敵方單位、建築、車輛的頭像',
+  camptype: '陣營徽章',
+  frameicon: '頭像框',
+  pvpcollect: 'PVP 收藏',
+  paintingcolor: '塗裝色',
+  wapweapons: '武器資料夾裡不是圖庫命名的（關卡物件：建築、直升機…）',
+  itemchips: '晶片（分區圖示 Icon_zoneskill_ 在 --icons）',
+  occupationtype: '機師職業',
+  autochesspveicon: '自走棋',
+  propertytype: '屬性',
+  pvprating: 'PVP 段位',
+  rndicon: '研發（--icons 不收的部分）',
+  bufftype: 'BUFF 資料夾裡不是 BUFF 字形的（機師職業小圖）',
+  skynetwapbg: '天網機甲背景',
+  statetype: '狀態',
+  factory: '工廠徽章',
+  playercollect: '玩家收藏',
+  wapparts: '機甲部件（--wap 不收的部分）',
+  skynetwap: '機甲全身大圖（--wap 不收的部分）',
+}
+const UIICONS_RE = /\/ui\/uiimages\/uiicons\/([^/]+)\//
+/** 機甲 core 三種＋機師卡（Icon_item_<8 碼 gameId>A）：由 --wap／--id／v3 收 */
+const CORE_ENTITY_RE = /^(Icon_mecha_wap\d+(_SN_Raw)?|Icon_wap\d+_[1-4]|Icon_item_\d{8}A)$/
+
+/** 擷取的一列（name／type／asset_path）是不是屬於別的匯入模式 */
+export function iconHandledElsewhere(row) {
+  if (CORE_ENTITY_RE.test(row.name)) return true
+  if (iconPoolIndex(row.asset_path, row.type, row.name) >= 0) return true
+  return EQUIP_POOLS.some(([family, dir]) => !!row.asset_path?.includes(dir) && isLibraryKey(row.name) && iconFamily(row.name) === family)
+}
+
+/**
+ * 擷取的列（name／type／asset_path）→ Map<封存相對路徑 `icons/<資料夾>/<官方檔名>`（不含副檔名）, 列[]>。
+ * 同一路徑的多筆（Sprite＋Texture2D）交給呼叫端挑；同名只要有一筆屬於別的模式就整個不收。
+ */
+export function otherIconPaths(rows) {
+  const handled = new Set(rows.filter(iconHandledElsewhere).map((r) => r.name))
+  const out = new Map()
+  for (const r of rows) {
+    const m = r.asset_path?.match(UIICONS_RE)
+    if (!m || handled.has(r.name) || r.name.startsWith('sactx-')) continue
+    const rel = `icons/${m[1].replace(/_abs$/, '')}/${r.name}`
+    ;(out.get(rel) ?? out.set(rel, []).get(rel)).push(r)
+  }
+  return out
+}
+
 /** 圖庫子資料夾：照官方客戶端的分法——BUFF 字形、武器、背包各一夾，其餘（技能、模組詞條、研發…）一夾 */
 export function iconFamily(key) {
   if (/^Icon_(?:de)?buff_/.test(key)) return 'buff'

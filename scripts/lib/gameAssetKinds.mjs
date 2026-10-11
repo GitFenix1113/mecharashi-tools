@@ -21,6 +21,9 @@
  *   兩份由 scripts/lib/gameAssetKinds.test.mjs 交叉比對——改一邊、另一邊的測試會掛。
  */
 
+import fs from 'node:fs'
+import path from 'node:path'
+
 /** 相對 public/ 的根目錄 */
 export const GAME_DIR = 'images/game'
 
@@ -74,6 +77,23 @@ export function classifyNpcFile(name) {
  */
 export function npcDirOf(artKey) {
   return artKey.match(/^Pilot_(\d+)/)?.[1]
+}
+
+/**
+ * 可抽機師的立繪號碼 → gameId：掃 `public/images/game/pilots/<gameId>/` 裡的 `<artKey>_*`（號碼＝npcDirOf(artKey)）。
+ * 這些號碼的立繪（連同其他造型）都不算 NPC：預設造型在 core，其他造型由 `--skins` 封存到 repo 外的 pilots/<gameId>/。
+ * 同一個號碼出現在兩個 gameId 資料夾時取第一個（目前 0 筆）。
+ */
+export function playableArtDirs(pilotRoot) {
+  const out = new Map()
+  for (const id of fs.existsSync(pilotRoot) ? fs.readdirSync(pilotRoot).sort() : []) {
+    for (const f of fs.readdirSync(path.join(pilotRoot, id))) {
+      const c = f.endsWith('.webp') && classifyPilotFile(f.slice(0, -5), id)
+      const dir = c?.key && npcDirOf(c.key)
+      if (dir && !out.has(dir)) out.set(dir, id)
+    }
+  }
+  return out
 }
 
 /** 反向：機甲資料夾裡的一個檔名是哪一種圖；不是讀取端會用到的種類回 null。 */

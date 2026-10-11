@@ -11,6 +11,8 @@
  *   node scripts/import-game-assets.mjs --icons                                 圖示圖庫（PLAN-055）：技能類＋BUFF 字形 → game/icons/
  *   node scripts/import-game-assets.mjs --equip-icons                           武器／背包圖示（PLAN-056）→ game/icons/{weapon,backpack}/
  *   node scripts/import-game-assets.mjs --ui                                    介面美術（活動、招募、大廳…）→ 封存夾 game/ui/（repo 外）
+ *   node scripts/import-game-assets.mjs --other-icons                           其他圖示（道具、勳章、肉鴿、車輛…）→ 封存夾 game/icons/（repo 外）
+ *   node scripts/import-game-assets.mjs --skins                                 可抽機師的其他造型 → 封存夾 game/pilots/<gameId>/（repo 外）
  *   node scripts/import-game-assets.mjs --promote=activity/uiactivity/ob6       封存夾裡挑好的介面美術 → public/images/game/ui/（上架、會公開）
  *
  * 新擷取先跑 `node scripts/diff-game-dump.mjs` 看這一版多了什麼，報告會列出該跑哪幾個模式。
@@ -35,6 +37,18 @@
  *   會一併產生 ui/README.md（每個模組是什麼、幾張）與 ui/_index.json（每張的官方路徑、尺寸、sha256、第一次出現在哪次擷取）。
  *   改了字典的用途分類，重跑 --apply 會把既有檔搬到新的用途資料夾；字典不再收的檔只列出來、不刪。
  *   WebP q82（同 core）。建議順序：先 --src=Data 再 --src=latest，兩次擷取的聯集都會留著（museum 原則）。
+ *
+ * ── --other-icons（2026-10-12）────────────────────────────────────────────────
+ *   客戶端 uiicons/ 底下、其他模式都不收的圖示，照官方資料夾封存：<archive>/game/icons/<官方資料夾>/<官方檔名>.webp
+ *   （規則：scripts/lib/gameIconKinds.mjs 的 otherIconPaths——--icons、--equip-icons、機甲 core 與機師卡收的不重複存）。
+ *   道具、勳章、肉鴿、敵方車輛、塗裝色、機師外觀卡、機甲塗裝小圖……站上目前用不到，但博物館原則先留著。
+ *   **不進 git、不部署**；會一併產生 icons/README.md 與 icons/_index.json（同 --ui）。WebP q82。
+ *   建議順序同 --ui：先 --src=Data 再 --src=latest，兩次擷取的聯集都會留著。
+ *
+ * ── --skins（2026-10-12）──────────────────────────────────────────────────────
+ *   可抽機師（public/images/game/pilots/ 裡有的立繪號碼）的其他造型 `Pilot_<號碼><造型>_{half,head,Raw}`
+ *   → <archive>/game/pilots/<gameId>/（與 v3 extended 同一個位置）。站上讀取端只用預設造型，所以不進 repo。
+ *   不是可抽機師的號碼歸 --npc（上站），這裡不收。外觀卡 Icon_pilotSkin_* 在 --other-icons（icons/itemtype/）。
  *
  * ── --promote（2026-10-11）──────────────────────────────────────────────────
  *   決定用途後，把封存夾裡挑好的圖「上架」：<archive>/game/ui/<路徑> → public/images/game/ui/<同一路徑>。
@@ -84,9 +98,9 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
-import { GAME_DIR, MECH_KINDS, NPC_ART_RE, PILOT_KINDS, TIER_GROUPS, classifyNpcFile, classifyPilotFile, mechFileName, npcDirOf, pilotFileName } from './lib/gameAssetKinds.mjs'
-import { EQUIP_POOLS, ICON_POOLS, equipGameIdOf, iconFamily, iconPoolIndex, isLibraryKey, keyFromValue } from './lib/gameIconKinds.mjs'
-import { PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, resolveDump } from './lib/gameDump.mjs'
+import { GAME_DIR, MECH_KINDS, NPC_ART_RE, PILOT_KINDS, TIER_GROUPS, classifyNpcFile, mechFileName, npcDirOf, pilotFileName, playableArtDirs } from './lib/gameAssetKinds.mjs'
+import { EQUIP_POOLS, ICON_POOLS, OTHER_ICON_FOLDERS, equipGameIdOf, iconFamily, iconPoolIndex, isLibraryKey, keyFromValue, otherIconPaths } from './lib/gameIconKinds.mjs'
+import { ARCHIVE_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, resolveDump } from './lib/gameDump.mjs'
 import { UI_GROUPS, uiArchivePath, uiModuleInfo } from './lib/gameUiModules.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -96,25 +110,25 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   return [m[1], m[2] ?? true]
 }))
 const MODE = args.promote ? 'promote' : args.icons ? 'icons' : args['equip-icons'] ? 'equip' : args.ui ? 'ui'
-  : args.npc ? 'npc' : args.id ? 'pilot' : args.wap ? 'mech' : 'v3'
+  : args['other-icons'] ? 'other' : args.skins ? 'skins' : args.npc ? 'npc' : args.id ? 'pilot' : args.wap ? 'mech' : 'v3'
 const TIER = MODE === 'v3' ? String(args.tier ?? 'core') : 'core'
 let SRC = ''   // --promote 讀的是封存夾、不讀擷取
 if (MODE !== 'promote') {
   try { SRC = resolveDump(String(args.src ?? 'E:/Mecharashi_Data/Data')).dir } catch (e) { fail(`${e.message}（用 --src 指定）`) }
 }
-/** 擷取的識別碼＝資料夾名（Data／一般圖片_<版本碼>）；--ui 的 _index.json 用它記「第一次出現在哪次擷取」 */
+/** 擷取的識別碼＝資料夾名（Data／一般圖片_<版本碼>）；--ui／--other-icons 的 _index.json 用它記「第一次出現在哪次擷取」 */
 const DUMP_ID = path.basename(SRC)
-const ARCHIVE = path.resolve(String(args.archive ?? 'E:/Mecharashi_Data/site-archive'))
+const ARCHIVE = path.resolve(String(args.archive ?? ARCHIVE_ROOT))
 const V3 = path.join(ROOT, '_local-notes/2026-10/2026-10-03_機師機甲圖片資源mapping_v3_final.json')
 const PUBLIC_GAME = path.join(ROOT, 'public', GAME_DIR)
 const APPLY = !!args.apply
 const FORCE = !!args.force
-/** 寫到 repo 外的封存夾（extended／reserve／--ui），其餘寫進 public/ */
-const TO_ARCHIVE = TIER !== 'core' || MODE === 'ui'
+/** 寫到 repo 外的封存夾（extended／reserve／--ui／--other-icons／--skins），其餘寫進 public/ */
+const TO_ARCHIVE = TIER !== 'core' || ['ui', 'other', 'skins'].includes(MODE)
 
 if (!['core', 'extended', 'reserve'].includes(TIER)) fail(`--tier 只能是 core／extended／reserve：${TIER}`)
 if (TO_ARCHIVE && isInside(ARCHIVE, ROOT)) {
-  fail(`--archive 在 repo 裡面（${ARCHIVE}）——extended／reserve／ui 不能進 repo（站長 2026-10-04 定案 A）`)
+  fail(`--archive 在 repo 裡面（${ARCHIVE}）——extended／reserve／ui／其他圖示／造型不能進 repo（站長 2026-10-04 定案 A）`)
 }
 if (MODE === 'v3' && DUMP_ID !== 'Data') fail(`v3 模式只能用 --src=Data（v3 定版記的是那次擷取的檔案路徑），收到 ${SRC}`)
 
@@ -204,6 +218,9 @@ const equipReport = { weapon: [], backpack: [], siteOnly: [], diffs: [], same: 0
 const UI_ROOT = path.join(destRoot, 'ui')
 const ICON_META_FILE = path.join(ROOT, 'scripts/lib/gameIconMeta.json')
 const uiReport = { rows: new Map(), conflicts: [], moves: [], notInDump: 0 }
+const ICONS_ARCHIVE = path.join(destRoot, 'icons')
+const otherReport = { rows: new Map(), conflicts: [] }
+const skinReport = { fresh: new Set(), npcSkipped: 0 }
 const npcReport = { en: new Map(), skinCard: new Set() }
 const NPC_META_FILE = path.join(ROOT, 'scripts/lib/npcArtMeta.json')
 
@@ -429,16 +446,37 @@ if (MODE === 'v3') {
   }
   // 封存夾裡有、這次擷取沒有的：舊擷取才有的圖，或字典不再收的模組——博物館原則，不刪，只列數量
   uiReport.notInDump = [...existing.keys()].filter((k) => !wanted.has(k)).length
-} else if (MODE === 'npc') {
-  // 可抽機師的立繪鍵號碼（game/pilots/<gameId>/ 裡的 <artKey>_*）：他們的預設立繪與外觀都不算 NPC
-  const playable = new Set()
-  const pilotRoot = path.join(PUBLIC_GAME, 'pilots')
-  for (const id of fs.existsSync(pilotRoot) ? fs.readdirSync(pilotRoot) : []) {
-    for (const f of fs.readdirSync(path.join(pilotRoot, id))) {
-      const c = f.endsWith('.webp') && classifyPilotFile(f.slice(0, -5), id)
-      if (c?.key) playable.add(npcDirOf(c.key))
-    }
+} else if (MODE === 'other') {
+  // 其他圖示封存：哪些算「其他」由 otherIconPaths 決定（scripts/lib/gameIconKinds.mjs）
+  const rows = loadCsv()
+  for (const [rel, rs] of otherIconPaths(rows.map((r) => ({ ...r, asset_path: r.asset })))) {
+    const tex = rs.filter((r) => r.type === 'Texture2D')
+    const pool = tex.length ? tex : rs
+    // 同資料夾同名、內容不同：取面積大的，報告列出來（同 --ui）
+    if (new Set(pool.map((r) => r.sha)).size > 1) otherReport.conflicts.push(rel)
+    const best = pool.reduce((a, b) => (b.w * b.h > a.w * a.h ? b : a))
+    addTask(best.path, path.posix.dirname(rel), best.name, '其他圖示', `other-${rel.split('/')[1]}`)
+    otherReport.rows.set(`${rel}.webp`, best)
   }
+} else if (MODE === 'skins') {
+  // 可抽機師的其他造型：號碼在 game/pilots/ 裡、但這個檔名不在（預設造型已在 core）
+  const playable = playableArtDirs(path.join(PUBLIC_GAME, 'pilots'))
+  const rows = loadCsv()
+  const byName = new Map()
+  for (const r of rows) if (NPC_ART_RE.test(r.name)) (byName.get(r.name) ?? byName.set(r.name, []).get(r.name)).push(r)
+  for (const [name, rs] of [...byName].sort(([a], [b]) => a.localeCompare(b))) {
+    const gameId = playable.get(npcDirOf(classifyNpcFile(name).key))
+    if (!gameId) { skinReport.npcSkipped++; continue }
+    if (fs.existsSync(path.join(PUBLIC_GAME, 'pilots', gameId, `${name}.webp`))) continue   // 預設造型，core 已有
+    const pick = pickRow(rs, name)
+    if (pick.conflict) { problems.push(`${name}：同名 Texture2D 內容不同 ${pick.conflict.join(' ／ ')}`); continue }
+    addTask(pick.row.path, `pilots/${gameId}`, name, `機師 ${gameId} 造型`, `skin-${classifyNpcFile(name).kind}`)
+    if (!fs.existsSync(tasks.at(-1).dest)) skinReport.fresh.add(`${gameId}（${name.replace(/_(half|head|Raw)$/, '')}）`)
+  }
+  notes.push(`不是可抽機師的立繪 ${skinReport.npcSkipped} 個檔——歸 --npc（上站的 NPC 圖庫）`)
+} else if (MODE === 'npc') {
+  // 可抽機師的立繪鍵號碼（game/pilots/<gameId>/ 裡的 <artKey>_*）：他們的預設立繪與外觀都不算 NPC（外觀歸 --skins）
+  const playable = playableArtDirs(path.join(PUBLIC_GAME, 'pilots'))
   const rows = loadCsv()
   const byName = new Map()
   for (const r of rows) if (NPC_ART_RE.test(r.name)) (byName.get(r.name) ?? byName.set(r.name, []).get(r.name)).push(r)
@@ -531,7 +569,8 @@ const MB = (b) => (b / 1048576).toFixed(1)
 const rowsOut = [...stat].sort().map(([g, s]) => `| ${g} | ${s.n} | ${s.skipped} | ${MB(s.srcBytes)} | ${MB(s.outBytes)} |`)
 const tot = [...stat.values()].reduce((a, s) => ({ n: a.n + s.n, skipped: a.skipped + s.skipped, srcBytes: a.srcBytes + s.srcBytes, outBytes: a.outBytes + s.outBytes }), { n: 0, skipped: 0, srcBytes: 0, outBytes: 0 })
 const title = MODE === 'v3' ? `v3 整批・${TIER}` : MODE === 'pilot' ? `新機師 ${args.id}` : MODE === 'npc' ? 'NPC 圖庫' : MODE === 'icons' ? '圖示圖庫'
-  : MODE === 'equip' ? '武器／背包圖示' : MODE === 'ui' ? '介面美術封存' : MODE === 'promote' ? '介面美術上架' : `新機甲 wap${args.wap}`
+  : MODE === 'equip' ? '武器／背包圖示' : MODE === 'ui' ? '介面美術封存' : MODE === 'promote' ? '介面美術上架'
+    : MODE === 'other' ? '其他圖示封存' : MODE === 'skins' ? '機師造型封存' : `新機甲 wap${args.wap}`
 const iconSection = MODE !== 'icons' ? [] : [
   '## 圖示圖庫（PLAN-055）', '',
   `- 擷取：${iconReport.fromDump}` + (iconReport.siteCopies
@@ -614,8 +653,22 @@ const uiSection = MODE !== 'ui' ? [] : [
   `- 封存夾裡有、這次擷取沒有的：${uiReport.notInDump}（舊擷取才有的圖，或字典不再收的模組——不刪）`,
   `- 同模組同名、內容不同（取面積大的）：${uiReport.conflicts.length}`, ...uiReport.conflicts.map((r) => `  - ${code(r)}`), '',
 ]
+const otherSection = MODE !== 'other' ? [] : [
+  '## 其他圖示封存', '',
+  `- 落點：${ICONS_ARCHIVE}／<官方資料夾>／<官方檔名>.webp（哪些算「其他」：scripts/lib/gameIconKinds.mjs 的 otherIconPaths）`,
+  '- 資料夾分佈（檔數／已存在）：', '',
+  '| 官方資料夾 | 說明 | 檔數 | 已存在 |', '|---|---|---:|---:|',
+  ...[...stat].filter(([g]) => g.startsWith('other-')).sort(([, a], [, b]) => b.n - a.n)
+    .map(([g, s]) => `| \`${g.slice(6)}\` | ${OTHER_ICON_FOLDERS[g.slice(6)] ?? '（沒登記，照樣收）'} | ${s.n} | ${s.skipped} |`), '',
+  `- 同資料夾同名、內容不同（取面積大的）：${otherReport.conflicts.length}`, ...otherReport.conflicts.map((r) => `  - ${code(r)}`), '',
+]
+const skinSection = MODE !== 'skins' ? [] : [
+  '## 機師造型封存', '',
+  `- 落點：${path.join(destRoot, 'pilots')}／<gameId>／<官方檔名>.webp（與 v3 extended 同一個位置）`,
+  `- 封存夾還沒有的造型：${[...skinReport.fresh].sort().join('、') || '（無）'}`, '',
+]
 const report = [
-  `# ${{ icons: 'PLAN-055 ', equip: 'PLAN-056 ', ui: '', promote: '' }[MODE] ?? 'PLAN-054 '}官方原檔匯入${APPLY ? '' : '（dry-run）'}：${title}`, '',
+  `# ${{ icons: 'PLAN-055 ', equip: 'PLAN-056 ', ui: '', promote: '', other: '', skins: '' }[MODE] ?? 'PLAN-054 '}官方原檔匯入${APPLY ? '' : '（dry-run）'}：${title}`, '',
   `- 時間：${new Date().toISOString()}`,
   `- 來源：${MODE === 'promote' ? path.join(ARCHIVE, 'game', 'ui') : SRC}`,
   `- 落點：${destRoot}${TO_ARCHIVE ? '（repo 外封存，不進 git、不部署）' : '（進版控、部署）'}`,
@@ -624,12 +677,17 @@ const report = [
   ...iconSection,
   ...equipSection,
   ...uiSection,
+  ...otherSection,
+  ...skinSection,
   ...promoteSection,
   ...(notes.length ? ['## 備註', '', ...notes.map((n) => `- ${n}`), ''] : []),
 ].join('\n')
 console.log(MODE === 'icons' ? report.split('<details>')[0] : report)
 /** 報告檔：_local-notes/<YYYY-MM>/<YYYY-MM-DD>_<名稱>[_dry-run].md（同一天重跑會覆寫當天那份，不會蓋到別天的） */
-const REPORT_NAME = { icons: '圖示圖庫匯入報告', equip: '武器背包圖示匯入報告', ui: '介面美術封存報告', npc: 'NPC圖庫匯入報告', v3: `PLAN-054_匯入報告_${TIER}` }[MODE]
+const REPORT_NAME = {
+  icons: '圖示圖庫匯入報告', equip: '武器背包圖示匯入報告', ui: '介面美術封存報告', npc: 'NPC圖庫匯入報告',
+  other: '其他圖示封存報告', skins: '機師造型封存報告', v3: `PLAN-054_匯入報告_${TIER}`,
+}[MODE]
 if (REPORT_NAME) {
   const day = localDate()
   const out = path.join(ROOT, '_local-notes', day.slice(0, 7), `${day}_${REPORT_NAME}${APPLY ? '' : '_dry-run'}.md`)
@@ -638,6 +696,7 @@ if (REPORT_NAME) {
   console.log(`📝 報告：${path.relative(ROOT, out)}`)
 }
 if (MODE === 'ui' && APPLY) writeUiIndex()
+if (MODE === 'other' && APPLY) writeOtherIconIndex()
 if (MODE === 'npc' && APPLY) writeNpcMeta()
 if (!APPLY) console.log('（dry-run：沒有寫入。確認後加 --apply）')
 
@@ -663,28 +722,70 @@ function writeNpcMeta() {
 }
 
 /**
- * --ui --apply 之後：更新 ui/_index.json（每張圖的來歷，跨次擷取累積）並重產 ui/README.md（給人看的目錄）。
- * _index.json 只增不減：舊擷取才有的圖照樣留著；firstSeen＝第一次封存它的那次擷取（之後對版本的線索）。
+ * 封存夾的 _index.json（--ui、--other-icons 共用）：每張圖的來歷，跨次擷取累積。
+ * 只增不減：舊擷取才有的圖照樣留著；firstSeen＝第一次封存它的那次擷取（之後對版本的線索）。
+ * rows 的 key 是相對 game/ 的路徑（ui/…、icons/…），寫進索引時去掉第一層。回傳合併後的 { files, dumps } 給 README 用。
  */
-function writeUiIndex() {
-  const indexFile = path.join(UI_ROOT, '_index.json')
+function updateArchiveIndex(root, rows, moves, flag) {
+  const indexFile = path.join(root, '_index.json')
   const prev = fs.existsSync(indexFile) ? JSON.parse(fs.readFileSync(indexFile, 'utf-8')) : { dumps: {}, files: {} }
   const files = { ...prev.files }
-  const rel = (abs) => path.relative(UI_ROOT, abs).split(path.sep).join('/')
-  for (const [from, to] of uiReport.moves) {   // 搬家的檔，紀錄跟著搬
+  const rel = (abs) => path.relative(root, abs).split(path.sep).join('/')
+  for (const [from, to] of moves) {   // 搬家的檔，紀錄跟著搬
     if (files[rel(from)]) { files[rel(to)] = files[rel(from)]; delete files[rel(from)] }
   }
-  for (const [key, r] of uiReport.rows) {
-    const file = key.split('/').slice(1).join('/')   // 去掉開頭的 ui/
+  for (const [key, r] of rows) {
+    const file = key.split('/').slice(1).join('/')
     if (files[file] && !FORCE) continue
     files[file] = { asset: r.asset, w: r.w, h: r.h, sha256: r.sha, firstSeen: files[file]?.firstSeen ?? DUMP_ID }
   }
   const dumps = { ...prev.dumps, [DUMP_ID]: localDate(fs.statSync(path.join(SRC, '圖片索引.csv')).mtime) }
+  fs.mkdirSync(root, { recursive: true })
   fs.writeFileSync(indexFile, JSON.stringify({
-    generatedBy: 'scripts/import-game-assets.mjs --ui --apply（repo：mecharashi-tools）', updatedAt: new Date().toISOString(),
+    generatedBy: `scripts/import-game-assets.mjs ${flag} --apply（repo：mecharashi-tools）`, updatedAt: new Date().toISOString(),
     note: 'files 的 key 是相對本資料夾的路徑；asset＝官方資源路徑；firstSeen＝第一次封存它的擷取（見 dumps）', dumps,
     files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a.localeCompare(b))),
   }, null, 1) + '\n')
+  return { files, dumps }
+}
+
+/** --other-icons --apply 之後：更新 icons/_index.json 並重產 icons/README.md（給人看的目錄） */
+function writeOtherIconIndex() {
+  const { files, dumps } = updateArchiveIndex(ICONS_ARCHIVE, otherReport.rows, [], '--other-icons')
+  const count = new Map()
+  for (const f of Object.keys(files)) {
+    if (!fs.existsSync(path.join(ICONS_ARCHIVE, f))) continue
+    const folder = f.split('/')[0]
+    count.set(folder, (count.get(folder) ?? 0) + 1)
+  }
+  const lines = [
+    '# 其他圖示封存',
+    '',
+    '> ⚠ 自動產生，請勿手改——資料夾的中文說明改 `scripts/lib/gameIconKinds.mjs` 的 `OTHER_ICON_FOLDERS`，再跑',
+    '> `node scripts/import-game-assets.mjs --src=<擷取> --other-icons --apply`（repo：mecharashi-tools）。',
+    '',
+    '遊戲客戶端（陸版）`ui/uiimages/uiicons/` 底下、站上目前用不到的圖示，照官方資料夾原樣封存（WebP q82、原尺寸、保留透明）。',
+    '**不進 git、不部署**，後台也看不到。技能／BUFF／武器／背包圖示在 repo 的 `public/images/game/icons/`，',
+    '可抽機甲的立繪與部件在 `public/images/game/mechs/`，這裡不重複存。',
+    '',
+    '- 路徑：`icons/<官方資料夾>/<官方檔名>.webp`（官方資料夾名去掉 `_abs`）',
+    '- `_index.json`：每張圖的官方路徑、尺寸、sha256、第一次出現在哪次擷取（`firstSeen`）',
+    '',
+    `擷取紀錄：${Object.entries(dumps).map(([id, d]) => `\`${id}\`（${d}）`).join('、')}`,
+    '',
+    '| 官方資料夾 | 說明 | 張數 |', '|---|---|---:|',
+    ...[...count].sort(([, a], [, b]) => b - a).map(([folder, n]) => `| \`${folder}\` | ${OTHER_ICON_FOLDERS[folder] ?? '（沒登記）'} | ${n} |`),
+    '',
+  ]
+  fs.writeFileSync(path.join(ICONS_ARCHIVE, 'README.md'), lines.join('\n'))
+  console.log(`📚 ${path.join(ICONS_ARCHIVE, 'README.md')}、_index.json 已更新（共 ${Object.keys(files).length} 張）`)
+}
+
+/**
+ * --ui --apply 之後：更新 ui/_index.json（每張圖的來歷，跨次擷取累積）並重產 ui/README.md（給人看的目錄）。
+ */
+function writeUiIndex() {
+  const { files, dumps } = updateArchiveIndex(UI_ROOT, uiReport.rows, uiReport.moves, '--ui')
 
   // README：照實際檔案統計（含舊擷取才有的），用途與中文說明來自字典
   const tree = new Map()   // group → module → { n, subs: Map<sub, n> }

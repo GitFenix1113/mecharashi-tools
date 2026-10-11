@@ -5,7 +5,7 @@
  *   node scripts/diff-game-dump.mjs                          最新一次 vs 前一次擷取
  *   node scripts/diff-game-dump.mjs --old=Data --new=latest  指定兩次擷取（資料夾名或路徑）
  *   node scripts/diff-game-dump.mjs --no-thumbs              不產縮圖（快，報告只有檔名）
- *   共用：--root=<擷取根目錄>（預設 E:/Mecharashi_Data）
+ *   共用：--root=<擷取根目錄>（預設 E:/Mecharashi_Data）、--archive=<封存夾>（預設 E:/Mecharashi_Data/site-archive）
  *
  * 全程唯讀：不寫 public/、不碰 Firestore（0 read）、原始 PNG 不進 repo。真正寫檔的是 import-game-assets.mjs。
  * 產出 _local-notes/<YYYY-MM>/<YYYY-MM-DD>_遊戲擷取差異.html（縮圖內嵌，本機直接打開）＋ 同名 .json。
@@ -17,7 +17,9 @@
  *   ③ 濾假變更：sha256 不同時再做像素比對，平均差 ≥ 6 才算真的變了（圖集重新打包只會改位元組）。
  *   ④ 認出是什麼：命名規則（scripts/lib/gameAssetKinds、gameIconKinds、gameUiModules）＋ 對照 public/images/game/。
  *      英文名鍵對中文名用 v3 定版對照（_local-notes，有就用、沒有就只列英文）。
- *   ⑤ 報告：每組附「下一步」的匯入指令。誰是誰（gameId 與 artKey 不互推）一律由人確認，腳本不猜。
+ *   ⑤ 報告：「下一步」是一張可以照抄的清單——每一步附指令，並對照 public/ 與封存夾標出 ✅ 已完成／⬜ 待做；
+ *      最後附收尾（commit、push、清快取）。誰是誰（gameId 與 artKey 不互推）一律由人確認，腳本不猜。
+ *      報告是當下的快照：做完任何一步後重跑本腳本，狀態就會更新。整套流程不需要 AI，見 public/images/game/README.md。
  *
  * ⚠ 擷取來源是陸版，比台版快——報告裡的新東西不一定已經在台版上線。
  */
@@ -25,9 +27,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
-import { DUMP_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, preferTexture, resolveDump } from './lib/gameDump.mjs'
-import { EQUIP_POOLS, iconFamily, iconPoolIndex, isLibraryKey } from './lib/gameIconKinds.mjs'
-import { UI_GROUPS, isUiArt, uiLocation, uiModuleInfo } from './lib/gameUiModules.mjs'
+import { playableArtDirs } from './lib/gameAssetKinds.mjs'
+import { ARCHIVE_ROOT, DUMP_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, preferTexture, resolveDump } from './lib/gameDump.mjs'
+import { EQUIP_POOLS, iconFamily, iconPoolIndex, isLibraryKey, otherIconPaths } from './lib/gameIconKinds.mjs'
+import { UI_GROUPS, isUiArt, uiArchivePath, uiLocation, uiModuleInfo } from './lib/gameUiModules.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
@@ -36,6 +39,7 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   return [m[1], m[2] ?? true]
 }))
 const DUMPS = String(args.root ?? DUMP_ROOT)
+const ARCHIVE_GAME = path.join(path.resolve(String(args.archive ?? ARCHIVE_ROOT)), 'game')
 const THUMBS = !args['no-thumbs']
 const V3 = path.join(ROOT, '_local-notes/2026-10/2026-10-03_機師機甲圖片資源mapping_v3_final.json')
 const SITE = path.join(ROOT, 'public/images/game')
@@ -57,7 +61,11 @@ function byName(rows) {
   return m
 }
 const O = byName(loadDumpIndex(OLD.dir))
-const N = byName(loadDumpIndex(NEW.dir))
+const newRows = loadDumpIndex(NEW.dir)
+const N = byName(newRows)
+/** 名字 → --other-icons 的封存相對路徑（要看整份擷取才判斷得出「同名是不是被別的模式收了」；同名可在多個官方資料夾） */
+const otherRelsOf = new Map()
+for (const [rel, rs] of otherIconPaths(newRows)) (otherRelsOf.get(rs[0].name) ?? otherRelsOf.set(rs[0].name, []).get(rs[0].name)).push(rel)
 
 const added = [], candidates = [], removed = []
 for (const [name, rs] of N) {
@@ -116,6 +124,10 @@ const site = { stems: new Set(), pilotIds: new Set(), waps: new Set(), artIds: n
   numbersIn('pilots', site.artIds)
   numbersIn('npc', site.npcIds)
 }
+/** 可抽機師的立繪號碼 → gameId（--skins 的落點 pilots/<gameId>/） */
+const playable = playableArtDirs(path.join(SITE, 'pilots'))
+/** 封存夾裡有沒有這個相對路徑（不含副檔名） */
+const archived = (rel) => fs.existsSync(path.join(ARCHIVE_GAME, `${rel}.webp`))
 /** 英文名鍵 → 站上中文名（v3 定版；沒有這份檔就全部當成「對不到」） */
 const enName = new Map()
 if (fs.existsSync(V3)) {
@@ -167,19 +179,23 @@ function siteStatus(r, c) {
     return zh ? { text: `對應站上：${zh}`, fresh: false } : { text: '英文名對不到站上（新角色？）', fresh: true }
   }
   if (c.kind === 'icon') {
-    if (fs.existsSync(path.join(SITE, 'icons', c.family, `${r.name}.webp`))) return { text: '圖庫已有', fresh: false }
     // 匯入模式只收固定幾個資料夾（ICON_POOLS／EQUIP_POOLS）；不在裡面的照實講，別讓人以為跑 --icons 就會有
+    // importable 不看站上現況（匯入後重跑，「下一步」才能把它算成 ✅ 而不是整步消失）
     const equip = c.family === 'weapon' || c.family === 'backpack'
     const importable = equip ? EQUIP_POOLS.some(([, dir]) => r.asset_path?.includes(dir)) : iconPoolIndex(r.asset_path, r.type, r.name) >= 0
+    if (fs.existsSync(path.join(SITE, 'icons', c.family, `${r.name}.webp`))) return { text: '圖庫已有', fresh: false, importable }
     const dir = r.asset_path?.match(/uiicons\/([^/]+)/)?.[1] ?? '?'
-    return importable ? { text: '圖庫沒有', fresh: true, importable } : { text: `圖庫沒有（匯入模式不收 ${dir}）`, fresh: true, importable }
+    return importable ? { text: '圖庫沒有', fresh: true, importable } : { text: `圖庫沒有（${dir} 不上站，--other-icons 封存）`, fresh: true, importable }
   }
   return { text: '', fresh: true }
 }
 
 const item = (r, extra = {}) => {
   const c = classify(r)
-  return { name: r.name, type: r.type, w: r.width, h: r.height, path: r.path, asset: r.asset_path || '', ...c, ...siteStatus(r, c), ...extra }
+  // 封存落點（--ui／--other-icons），給「下一步」對照封存夾判斷做了沒
+  const uiRel = uiArchivePath(r) ?? undefined
+  const otherRels = otherRelsOf.get(r.name)
+  return { name: r.name, type: r.type, w: r.width, h: r.height, path: r.path, asset: r.asset_path || '', ...c, ...siteStatus(r, c), uiRel, otherRels, ...extra }
 }
 const addedItems = added.map((r) => item(r)).sort((a, b) => a.name.localeCompare(b.name))
 const changedItems = changed.map(({ was, now, d }) => item(now, { d, oldPath: was.path, oldW: was.width, oldH: was.height }))
@@ -187,43 +203,106 @@ const changedItems = changed.map(({ was, now, d }) => item(now, { d, oldPath: wa
 const removedItems = removed.map((r) => ({ name: r.name, type: r.type, w: r.width, h: r.height, path: r.path, ...classify(r) }))
   .sort((a, b) => a.name.localeCompare(b.name))
 
-// ── 下一步指令 ─────────────────────────────────────────────────────────────────
+// ── 下一步：照抄的清單 ─────────────────────────────────────────────────────────────
+// 每一步的「目標」只看這次擷取新增了什麼、不看站上現況；「做了沒」對照 public/ 與封存夾。
+// 所以做完一步重跑本腳本，那一步會變成 ✅（而不是從報告上消失，讓人分不清是做完了還是本來就不用做）。
 const SRC = `--src=${NEW.id}`
-const newPilotCards = [...new Set(addedItems.filter((i) => i.kind === 'pilot' && i.part === 'card' && i.fresh && i.text.startsWith('新機師')).map((i) => i.id))]
-const newPilotArts = [...new Set(addedItems.filter((i) => i.kind === 'pilot' && i.part !== 'card' && i.fresh && i.text.startsWith('新立繪')).map((i) => i.name.replace(/_(half|head|Raw)$/, '')))]
-const newWaps = [...new Set(addedItems.filter((i) => i.kind === 'mech' && i.part !== 'skin' && i.text === '新機甲').map((i) => i.wap))]
-const newNpcArts = [...new Set(addedItems.filter((i) => i.kind === 'pilot' && i.npcArt).map((i) => i.name.replace(/_(half|head|Raw)$/, '')))]
-const freshIcons = addedItems.filter((i) => i.kind === 'icon' && i.fresh)
-const freshUi = addedItems.filter((i) => i.kind === 'ui' && i.art && UI_GROUPS[i.group].archive)
+const DRY = '      # 先不加 --apply 看結果（dry-run），沒問題再加 --apply'
+const uniq = (xs) => [...new Set(xs)]
+const artName = (i) => i.name.replace(/_(half|head|Raw)$/, '')
+const pilotArts = addedItems.filter((i) => i.kind === 'pilot' && i.part !== 'card')
 const nextSteps = []
-if (newPilotCards.length || newPilotArts.length) {
-  nextSteps.push({
-    title: '新機師（gameId 與 artKey 不互推，先確認誰是誰、台版上線了沒）',
-    lines: [`機師卡編號（gameId 候選）：${newPilotCards.join('、') || '（無）'}`, `立繪主鍵（artKey 候選）：${newPilotArts.join('、') || '（無）'}`,
-      ...newPilotCards.map((id) => `node scripts/import-game-assets.mjs ${SRC} --id=${id} --art-key=<確認後填，例 ${newPilotArts[0] ?? `Pilot_${id}A`}>`)],
+/**
+ * kind：public＝上站（之後要 commit、push）／archive＝repo 外封存（不必 commit）／manual＝要人改東西
+ * targets：這一步負責的檔 { name, ok（目的地已有）, url（上站的才有，給清快取清單）}
+ */
+function step({ targets, lines, ...s }) {
+  const missing = targets.filter((t) => !t.ok)
+  nextSteps.push({ ...s, total: targets.length, todo: missing.length, missing: missing.map((t) => t.name),
+    urls: targets.map((t) => t.url).filter(Boolean), lines: lines.map((l) => (l.startsWith('node ') ? l + DRY : l)) })
+}
+
+// 新機師卡：Icon_item_<gameId>A（gameId 與 artKey 不互推——--art-key 由人確認後填）
+const cards = addedItems.filter((i) => i.kind === 'pilot' && i.part === 'card' && i.skin === 'A')
+if (cards.length) {
+  const artKeys = uniq(pilotArts.filter((i) => i.id.startsWith('1010') && !playable.has(i.id)).map(artName))
+  step({
+    kind: 'public', title: '新機師卡 → 上站（gameId 與 artKey 不互推：先確認誰是誰，--art-key 由人填）',
+    targets: cards.map((i) => ({ name: i.name, ok: site.stems.has(i.name), url: `images/game/pilots/${i.id}/${i.name}.webp` })),
+    lines: [`機師卡編號（gameId）：${cards.map((i) => i.id).join('、')}`,
+      `立繪主鍵（artKey 候選）：${artKeys.join('、') || '（擷取裡沒有新的；NPC 轉正的話立繪在 NPC 圖庫）'}`,
+      ...cards.filter((i) => !site.stems.has(i.name))
+        .map((i) => `node scripts/import-game-assets.mjs ${SRC} --id=${i.id} --art-key=<確認後填，例 ${artKeys[0] ?? `Pilot_${i.id}A`}>`)],
   })
 }
-if (newNpcArts.length) {
-  nextSteps.push({
-    title: `NPC 圖庫補新立繪 ${newNpcArts.length} 套（上站；NPC 轉正時管理員在後台「選取官方立繪」的 NPC 分組直接選）`,
-    lines: [newNpcArts.join('、'), `node scripts/import-game-assets.mjs ${SRC} --npc`],
+// 新機甲：立繪／部件／全身大圖。只放圖、不碰資料庫——哪台是哪台由管理者在後台「選取官方立繪」決定
+const mechCore = addedItems.filter((i) => i.kind === 'mech' && i.part !== 'skin')
+if (mechCore.length) {
+  step({
+    kind: 'public', title: '新機甲 → 上站（只放圖、不碰資料庫；哪台是哪台由管理者在後台「選取官方立繪」決定）',
+    targets: mechCore.map((i) => ({ name: i.name, ok: site.stems.has(i.name), url: `images/game/mechs/${i.wap}/${i.name}.webp` })),
+    lines: uniq(mechCore.filter((i) => !site.stems.has(i.name)).map((i) => i.wap)).map((w) => `node scripts/import-game-assets.mjs ${SRC} --wap=${w}`),
   })
 }
-if (newWaps.length) nextSteps.push({ title: '新機甲（先確認台版上線了沒）', lines: newWaps.map((w) => `node scripts/import-game-assets.mjs ${SRC} --wap=${w}`) })
-if (freshIcons.some((i) => (i.family === 'skill' || i.family === 'buff') && i.importable)) nextSteps.push({ title: '技能／BUFF 圖示（只會補新 key）', lines: [`node scripts/import-game-assets.mjs ${SRC} --icons`] })
-if (freshIcons.some((i) => (i.family === 'weapon' || i.family === 'backpack') && i.importable)) nextSteps.push({ title: '武器／背包圖示（只會補新 key）', lines: [`node scripts/import-game-assets.mjs ${SRC} --equip-icons`] })
-const notImportable = freshIcons.filter((i) => !i.importable)
-if (notImportable.length) {
-  nextSteps.push({ title: `圖庫命名但匯入模式不收的圖示 ${notImportable.length} 張（站上目前用不到；要用時再替 import-game-assets 加來源）`, lines: [notImportable.map((i) => i.name).join('、')] })
+// NPC 圖庫：不是可抽機師的立繪（劇情 NPC、尚未上線的新角色）
+const npcArts = pilotArts.filter((i) => !playable.has(i.id))
+if (npcArts.length) {
+  step({
+    kind: 'public', title: 'NPC 立繪 → 上站（NPC 轉正時，管理者在後台「選取官方立繪」的 NPC 分組直接選）',
+    targets: npcArts.map((i) => ({ name: i.name, ok: site.stems.has(i.name), url: `images/game/npc/${i.id}/${i.name}.webp` })),
+    lines: [uniq(npcArts.map(artName)).join('、'), `node scripts/import-game-assets.mjs ${SRC} --npc`],
+  })
 }
-const newSkins = [...new Set(addedItems.filter((i) => i.kind === 'pilot' && i.fresh && i.text.includes('造型')).map((i) => i.name.replace(/_(half|head|Raw)$/, '')))]
-if (newSkins.length) {
-  nextSteps.push({ title: '既有機師的新造型：讀取端只用預設造型，目前沒有匯入模式（extended 只吃 v3 定版），先記著', lines: [newSkins.join('、')] })
+// 圖示圖庫：只補新 key
+for (const [families, flag, title] of [
+  [['skill', 'buff'], '--icons', '技能／BUFF 圖示 → 上站（只補新 key）'],
+  [['weapon', 'backpack'], '--equip-icons', '武器／背包圖示 → 上站（只補新 key）'],
+]) {
+  const icons = addedItems.filter((i) => i.kind === 'icon' && i.importable && families.includes(i.family))
+  if (!icons.length) continue
+  step({
+    kind: 'public', title,
+    targets: icons.map((i) => ({ name: i.name, ok: fs.existsSync(path.join(SITE, 'icons', i.family, `${i.name}.webp`)), url: `images/game/icons/${i.family}/${i.name}.webp` })),
+    lines: [`node scripts/import-game-assets.mjs ${SRC} ${flag}`],
+  })
 }
-if (freshUi.length) nextSteps.push({ title: '活動、招募、大廳等介面美術 → repo 外封存夾（不進 git、不部署）', lines: [`node scripts/import-game-assets.mjs ${SRC} --ui`] })
-const unsorted = [...new Set(addedItems.filter((i) => i.kind === 'ui' && !i.known).map((i) => i.module))]
-if (unsorted.length) nextSteps.push({ title: '字典沒登記的新模組 → 先補 scripts/lib/gameUiModules.mjs 的 DICT', lines: unsorted })
-nextSteps.forEach((s) => s.lines.forEach((l, i, a) => { if (l.startsWith('node ')) a[i] = l + '                 # 先 dry-run，確認後加 --apply' }))
+// 可抽機師的其他造型 → 封存（站上只用預設造型）
+const skins = pilotArts.filter((i) => playable.has(i.id) && !site.stems.has(i.name))
+if (skins.length) {
+  step({
+    kind: 'archive', title: '既有機師的新造型 → repo 外封存（站上只用預設造型）',
+    targets: skins.map((i) => ({ name: i.name, ok: archived(`pilots/${playable.get(i.id)}/${i.name}`) })),
+    lines: [uniq(skins.map(artName)).join('、'), `node scripts/import-game-assets.mjs ${SRC} --skins`],
+  })
+}
+// 介面美術 → 封存（落點規則 uiArchivePath，與 --ui 同一份）
+const uiArts = addedItems.filter((i) => i.uiRel)
+if (uiArts.length) {
+  step({
+    kind: 'archive', title: '活動、招募、大廳、造型等介面美術 → repo 外封存',
+    targets: uiArts.map((i) => ({ name: i.name, ok: archived(i.uiRel) })),
+    lines: [`node scripts/import-game-assets.mjs ${SRC} --ui`],
+  })
+}
+// 其他圖示 → 封存（落點規則 otherIconPaths，與 --other-icons 同一份）
+const others = addedItems.filter((i) => i.otherRels)
+if (others.length) {
+  step({
+    kind: 'archive', title: '其他圖示（道具、勳章、肉鴿、車輛、塗裝小圖、外觀卡…）→ repo 外封存',
+    targets: others.map((i) => ({ name: i.name, ok: i.otherRels.every(archived) })),
+    lines: [`node scripts/import-game-assets.mjs ${SRC} --other-icons`],
+  })
+}
+// 字典沒登記的新模組：已經封存在 ui/_unsorted/，補字典只是讓它們歸到對的用途（補完重跑 --ui --apply 會自動搬家）
+const unsorted = uniq(addedItems.filter((i) => i.kind === 'ui' && !i.known).map((i) => i.module))
+if (unsorted.length) {
+  nextSteps.push({ kind: 'manual', title: '字典沒登記的新模組 → 補 scripts/lib/gameUiModules.mjs 的 DICT（不補也已封存在 ui/_unsorted/，補了只是歸類更清楚）',
+    total: unsorted.length, todo: unsorted.length, missing: [], urls: [], lines: unsorted })
+}
+const badge = (s) => s.kind === 'manual' ? '⚠ 要人處理' : !s.todo ? '✅ 已完成'
+  : s.todo === s.total ? `⬜ 待做（${s.total} 個檔）` : `◐ 做了一部分（還差 ${s.todo}／${s.total}）`
+/** 上站的新檔（部署前若有人開過網址，Cloudflare 會把 404 快取住，要清） */
+const publicUrls = nextSteps.filter((s) => s.kind === 'public').flatMap((s) => s.urls)
 
 // ── 縮圖 ───────────────────────────────────────────────────────────────────────
 async function thumb(file) {
@@ -307,6 +386,8 @@ details{margin:6px 0}summary{cursor:pointer;padding:4px 0}summary b{color:var(--
 background:repeating-conic-gradient(var(--chk) 0 25%,transparent 0 50%) 0 0/16px 16px}
 .th img{max-width:100%;max-height:110px;min-width:0}.th:has(.arrow) img{max-width:44%}.arrow{color:var(--muted)}.nothumb{color:var(--muted)}
 code{font-size:11.5px;word-break:break-all}small{color:var(--muted);font-size:11.5px}em{font-style:normal;font-size:12px;color:var(--accent)}
+ol.steps{padding-left:22px}ol.steps>li{margin:10px 0}ol.steps>li.done{color:var(--muted)}ol.steps pre{margin:6px 0}
+.tag{display:inline-block;font-size:11.5px;padding:0 6px;border:1px solid var(--line);border-radius:4px;color:var(--muted);margin-left:6px}
 </style></head><body><main>
 <h1>遊戲擷取差異　${esc(OLD.date)} → ${esc(NEW.date)}</h1>
 <p class="muted">舊：<code>${esc(OLD.id)}</code>　新：<code>${esc(NEW.id)}</code>　產生於 ${esc(new Date().toLocaleString('zh-TW'))}　・
@@ -314,7 +395,30 @@ code{font-size:11.5px;word-break:break-all}small{color:var(--muted);font-size:11
 <table><tr><th></th>${SECTIONS.map(([, t]) => `<th>${esc(t.split('：')[0].split('（')[0])}</th>`).join('')}</tr>
 ${['added', 'changed', 'removed'].map((k) => `<tr><td>${{ added: '新增', changed: '內容變更', removed: '消失' }[k]}</td>${SECTIONS.map(([s]) => `<td>${summary[k][s] || ''}</td>`).join('')}</tr>`).join('')}</table>
 <p class="muted">sha256 不同 ${candidates.length} 筆，像素比對後真的變了 ${changed.length} 筆（其餘是圖集重新打包）。</p>
-<h2>下一步</h2>${nextSteps.length ? nextSteps.map((s) => `<p><b>${esc(s.title)}</b></p><pre>${s.lines.map(esc).join('\n')}</pre>`).join('') : '<p class="muted">沒有需要匯入的。</p>'}
+<h2>下一步 <span class="count">（✅ ${nextSteps.filter((s) => s.kind !== 'manual' && !s.todo).length}／${nextSteps.length} 步）</span></h2>
+<p class="note">照順序做。每個指令先<b>不加</b> <code>--apply</code> 跑一次（dry-run，只報告、不寫任何東西），沒問題再加 <code>--apply</code> 重跑。
+這份報告是產生當下的快照：做完幾步後重跑 <code>node scripts/diff-game-dump.mjs</code>，狀態就會更新。
+「上站」的步驟做完要接下面的收尾；「封存」寫在 repo 外（<code>${esc(ARCHIVE_GAME)}</code>），不必 commit。</p>
+${nextSteps.length ? `<ol class="steps">${nextSteps.map((s) => {
+  const pre = `<pre>${s.lines.map(esc).join('\n')}</pre>`
+  const done = s.kind !== 'manual' && !s.todo
+  return `<li class="${done ? 'done' : ''}"><b>${esc(badge(s))}</b>　${esc(s.title)}<span class="tag">${{ public: '上站', archive: '封存', manual: '人工' }[s.kind]}</span>
+${done ? `<details><summary>指令</summary>${pre}</details>` : pre}</li>`
+}).join('\n')}</ol>` : '<p class="muted">沒有需要匯入的。</p>'}
+<h2>收尾（上站的步驟做完之後）</h2>
+<ol class="steps">
+<li><code>npm run dev</code> 開本機，確認後台看得到新圖：新機甲／新機師在「選取官方立繪」的「未使用」，新圖示在圖示選圖器的「最新」。dev／build 會自動重產圖片索引。</li>
+<li><code>git status</code> 確認變動只在 <code>public/images/game/</code>、<code>src/data/</code>、<code>scripts/lib/</code>，然後：
+<pre>git add -A
+git commit -m "chore(images): ${esc(NEW.date)} 擷取的官方原檔匯入"</pre>（chore 不必寫網站更新履歷）</li>
+<li><code>npm run push</code>：會先跑 build，失敗就不會推上去。</li>
+<li>到 GitHub 的 Actions 等 <code>pages-build-deployment</code> 跑完（幾分鐘）。部署完成前若有人開過新圖的網址，Cloudflare 會把 404 快取住 → 到 Cloudflare 清快取（網址清單在下面）。</li>
+<li>管理者在後台把新機甲／新機師連上官方原檔（誰是誰由管理者決定）。</li>
+<li>重跑 <code>node scripts/diff-game-dump.mjs</code>：每一步都應該是 ✅。</li>
+</ol>
+${publicUrls.length ? `<details><summary>上站的新檔網址 ${publicUrls.length} 個（清 Cloudflare 快取用；含先前已部署的，不確定哪些被開過就整批清，無害）</summary><pre>${publicUrls.map((u) => esc(`https://mecharashi.wiki/${u}`)).join('\n')}</pre></details>` : ''}
+<p class="muted">刻意不收的：簡中文字圖、按鈕／遮罩／特效零件、系統介面（規則見 <code>scripts/lib/gameUiModules.mjs</code>）。
+整套流程的說明：<code>public/images/game/README.md</code>。</p>
 <h2 style="border:0;margin-top:36px">新增</h2>
 ${SECTIONS.map(([k, t, keyOf]) => section(t, addedItems.filter((i) => i.kind === k), keyOf,
     { artOnly: k === 'ui', closed: k === 'text' || k === 'other' || k === 'iconOther' || (k === 'ui'),
@@ -343,5 +447,10 @@ for (const [k, t] of SECTIONS) {
   const all = addedItems.filter((i) => i.kind === k)
   if (all.length) console.log(`  ${t.split('：')[0].split('（')[0].padEnd(8, '　')} ${all.filter((i) => i.fresh).length} / ${all.length}`)
 }
-for (const s of nextSteps) console.log(`\n▶ ${s.title}\n${s.lines.map((l) => '  ' + l).join('\n')}`)
+console.log(`\n下一步（✅ ${nextSteps.filter((s) => s.kind !== 'manual' && !s.todo).length}／${nextSteps.length} 步）：`)
+for (const s of nextSteps) {
+  console.log(`\n${badge(s)}　${s.title}`)
+  if (s.kind === 'manual' || s.todo) console.log(s.lines.map((l) => '  ' + l).join('\n'))
+}
+if (publicUrls.length) console.log('\n上站的步驟做完 → 收尾見報告最後（npm run dev 確認 → commit → npm run push → 等部署，必要時清 Cloudflare 快取）')
 console.log(`\n📝 報告：${path.relative(ROOT, outBase)}.html（＋ .json）`)
