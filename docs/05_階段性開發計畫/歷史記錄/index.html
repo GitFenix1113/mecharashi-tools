@@ -31,6 +31,16 @@
   <div class="section-label green">Archive</div>
   <div class="section-title">已完成計畫</div>
   <div class="card-grid">
+    <div class="card yellow">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-057 · 引用編輯器直觀化</h3>
+      <p>後台引用挑選器（RefPicker）改成「在正文上點詞編輯」：每個 <code>[xxx]</code> 變成彩色膠囊，<b>同色＝同一筆引用</b>、右側標等級，引用清單列同色並列出「初始 N · 最大強化 M」。起因是珂賽特天賦的 [鋒勢]——初始指 Lv1、最大強化指 Lv2，資料模型做得到，但舊介面的清單與正文分開，看不出哪一處是哪一筆。<br>新增改 key（只改這一處／這一段／全部）與<b>「最大強化段分開指派」一鍵按鈕</b>（整段改 key、帶走指派、階梯 BUFF 有更高一級才 +1）；段落後綴用語意命名（強化／專武），刻意不叫「滿星」。改 key 同時改正文與引用表，因天賦編輯器的 upd 是閉包、分兩次寫會互蓋，<code>onCompileText</code> 擴充為 <code>(transform(s, part?), nextRefs?)</code> 並改接 14 個呼叫端。併入規則：目標 key 有正文在用就沿用目標，目標只是殘留則以來源取代（實測不這樣做 Lv1 會被沒設等級的殘留蓋掉）。移除 PLAN-039 會誤報的同名面板。順手修掉前台最大強化區塊因 <code>DiffHighlight</code> 切字漏 <code>_</code> 而整段退回純文字的 bug。<br><b>✅ 2026-10-11 完成</b>：1375 測試、emulator 實測三種操作；部署後站長用新工具整理珂賽特正式資料，前台初始 Lv1（最大疊加 15）／最大強化 Lv2（20）皆確認。衍生的 <code>.input-field</code> 優先權問題另案修正並已上線。</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">完成日期：2026-10-11 · 12 / 12 任務</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-057_引用編輯器直觀化/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-057_引用編輯器直觀化/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card orange">
       <div class="card-icon">◆</div>
       <h3>PLAN-052-O · 配裝圖回讀</h3>
