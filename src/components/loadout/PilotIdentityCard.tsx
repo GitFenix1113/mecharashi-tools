@@ -2,6 +2,8 @@ import type { Pilot } from '../../types'
 import { imageCandidates, pilotFullArtPath } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
 import { pilotClassMeta } from '../../data/pilotClasses'
+import { ClassIcon } from '../icons/ClassIcon'
+import { MechTypeIcon } from '../icons/MechTypeIcon'
 import { HUD, HUD_BTN, HUD_TAG } from './loadoutTheme'
 import LoadoutIcon from '../icons/LoadoutIcon'
 
@@ -90,9 +92,10 @@ export function PilotIdentityCard({
         <div className="flex flex-col gap-1.5 min-w-0">
           <h2 className={`${HUD.sectionTitle} text-text-primary truncate`}>{pilot.name}</h2>
           <div className="flex flex-wrap gap-1.5">
-            <Chip tone={tone}>{pilot.class}</Chip>
+            <Chip tone={tone}><ClassIcon pilotClass={pilot.class} decorative />{pilot.class}</Chip>
             <Chip tone="text-accent-orange">{pilot.rarity}</Chip>
-            <Chip>{pilot.license}執照</Chip>
+            {/* 駕照：中性色、短稱「駕照」（PLAN-059 決策十） */}
+            <Chip><MechTypeIcon type={pilot.license} decorative />{pilot.license}駕照</Chip>
           </div>
         </div>
 
@@ -125,7 +128,7 @@ export function PilotIdentityCard({
  */
 function Chip({ children, tone }: { children: React.ReactNode; tone?: string }) {
   return (
-    <span className={`${HUD_TAG} px-2 py-0.5 text-[12px] font-bold border-current/40 ${tone ?? 'text-text-secondary'}`}>
+    <span className={`${HUD_TAG} inline-flex items-center gap-1 px-2 py-0.5 text-[12px] font-bold border-current/40 ${tone ?? 'text-text-secondary'}`}>
       {children}
     </span>
   )

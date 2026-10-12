@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { BottomSheet } from '../common/BottomSheet'
 import { RejectionRow, type PickerRowItem } from './RejectionRow'
 import { type PickerEntry, type ResolutionAction } from '../../utils/loadoutRules'
@@ -25,7 +25,8 @@ export interface PickerFilterGroup<T> {
   key: string
   /** 「職業」「執照」「品質」 */
   label: string
-  options: readonly { value: string; label: string; tone?: string }[]
+  /** icon：晶片字前的小圖示（職業、駕照，PLAN-059）。顏色吃晶片的文字色 */
+  options: readonly { value: string; label: string; tone?: string; icon?: ReactNode }[]
   test: (item: T, value: string) => boolean
   /**
    * **子篩選**（使用者要求 2026-08-27）：這一組隸屬於另一組（值是那一組的 `key`），
@@ -296,6 +297,7 @@ function PickerBody<T extends { id: string }>({
                     key={o.value}
                     label={o.label}
                     tone={o.tone}
+                    icon={o.icon}
                     active={active[g.key] === o.value}
                     onClick={() => setChosen((c) => ({ ...c, [g.key]: active[g.key] === o.value ? '' : o.value }))}
                   />
@@ -365,23 +367,25 @@ function PickerBody<T extends { id: string }>({
 }
 
 function FilterChip({
-  label, active, tone, onClick,
+  label, active, tone, icon, onClick,
 }: {
   label: string
   active: boolean
   tone?: string
+  icon?: ReactNode
   onClick: () => void
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`hud-cut-sm px-2 py-0.5 text-[11px] border transition-colors cursor-pointer ${
+      className={`hud-cut-sm inline-flex items-center gap-1 px-2 py-0.5 text-[11px] border transition-colors cursor-pointer ${
         active
           ? 'border-accent-orange bg-accent-orange/15 text-accent-orange font-bold'
           : `border-border bg-bg-dark hover:border-border-accent ${tone ?? 'text-text-secondary'}`
       }`}
     >
+      {icon}
       {label}
     </button>
   )

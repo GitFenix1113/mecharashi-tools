@@ -26,19 +26,21 @@ export interface PilotClassMeta {
   bg: string
   /** 框線 */
   border: string
+  /** 較實的框線（圓章外圈：疊在立繪上要看得出職業色） */
+  borderStrong: string
   /** 實心色條（清單左緣、分組標題） */
   bar: string
 }
 
 export const PILOT_CLASSES: readonly PilotClassMeta[] = [
-  { name: PilotClass.FIGHTER,     en: 'Fighter',   enOfficial: true,  icon: '001', text: 'text-accent-red',    bg: 'bg-accent-red/10',    border: 'border-accent-red/40',    bar: 'bg-accent-red' },
-  { name: PilotClass.ASSAULT,     en: 'Raider',    enOfficial: true,  icon: '002', text: 'text-accent-orange', bg: 'bg-accent-orange/10', border: 'border-accent-orange/40', bar: 'bg-accent-orange' },
-  { name: PilotClass.SNIPER,      en: 'Sniper',    enOfficial: true,  icon: '003', text: 'text-accent-blue',   bg: 'bg-accent-blue/10',   border: 'border-accent-blue/40',   bar: 'bg-accent-blue' },
-  { name: PilotClass.TACTICIAN,   en: 'Tactician', enOfficial: true,  icon: '004', text: 'text-accent-purple', bg: 'bg-accent-purple/10', border: 'border-accent-purple/40', bar: 'bg-accent-purple' },
-  { name: PilotClass.GUARDIAN,    en: 'Guardian',  enOfficial: true,  icon: '006', text: 'text-accent-green',  bg: 'bg-accent-green/10',  border: 'border-accent-green/40',  bar: 'bg-accent-green' },
-  { name: PilotClass.ENGINEER,    en: 'Machinist', enOfficial: true,  icon: '005', text: 'text-accent-cyan',   bg: 'bg-accent-cyan/10',   border: 'border-accent-cyan/40',   bar: 'bg-accent-cyan' },
+  { name: PilotClass.FIGHTER,     en: 'Fighter',   enOfficial: true,  icon: '001', text: 'text-accent-red',    bg: 'bg-accent-red/10',    border: 'border-accent-red/40',    borderStrong: 'border-accent-red/70',       bar: 'bg-accent-red' },
+  { name: PilotClass.ASSAULT,     en: 'Raider',    enOfficial: true,  icon: '002', text: 'text-accent-orange', bg: 'bg-accent-orange/10', border: 'border-accent-orange/40', borderStrong: 'border-accent-orange/70', bar: 'bg-accent-orange' },
+  { name: PilotClass.SNIPER,      en: 'Sniper',    enOfficial: true,  icon: '003', text: 'text-accent-blue',   bg: 'bg-accent-blue/10',   border: 'border-accent-blue/40',   borderStrong: 'border-accent-blue/70',     bar: 'bg-accent-blue' },
+  { name: PilotClass.TACTICIAN,   en: 'Tactician', enOfficial: true,  icon: '004', text: 'text-accent-purple', bg: 'bg-accent-purple/10', border: 'border-accent-purple/40', borderStrong: 'border-accent-purple/70', bar: 'bg-accent-purple' },
+  { name: PilotClass.GUARDIAN,    en: 'Guardian',  enOfficial: true,  icon: '006', text: 'text-accent-green',  bg: 'bg-accent-green/10',  border: 'border-accent-green/40',  borderStrong: 'border-accent-green/70',   bar: 'bg-accent-green' },
+  { name: PilotClass.ENGINEER,    en: 'Machinist', enOfficial: true,  icon: '005', text: 'text-accent-cyan',   bg: 'bg-accent-cyan/10',   border: 'border-accent-cyan/40',   borderStrong: 'border-accent-cyan/70',     bar: 'bg-accent-cyan' },
   // 全球版尚未推出調構師（2026-10），Shifter 是 EN Wiki 作者的譯名；全球版上線後換成官方名、enOfficial 改 true
-  { name: PilotClass.CONSTRUCTOR, en: 'Shifter',   enOfficial: false, icon: '010', text: 'text-accent-yellow', bg: 'bg-accent-yellow/10', border: 'border-accent-yellow/40', bar: 'bg-accent-yellow' },
+  { name: PilotClass.CONSTRUCTOR, en: 'Shifter',   enOfficial: false, icon: '010', text: 'text-accent-yellow', bg: 'bg-accent-yellow/10', border: 'border-accent-yellow/40', borderStrong: 'border-accent-yellow/70', bar: 'bg-accent-yellow' },
 ]
 
 /** 職業名，遊戲內順序（篩選列、分組、後台下拉） */

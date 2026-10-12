@@ -45,6 +45,9 @@ import { ndPowerBonus, effectiveNdLevels } from '../../utils/ndPowerBonus'
 import { HUD, HUD_BTN, HUD_BTN_DANGER, HUD_INPUT, HUD_PANEL } from '../../components/loadout/loadoutTheme'
 import { PILOT_CLASS_NAMES, pilotClassMeta } from '../../data/pilotClasses'
 import { mechWeightClassOf, mechWeightShort } from '../../data/mechWeightClasses'
+import { ClassIcon } from '../../components/icons/ClassIcon'
+import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
+import { MechLicense } from '../../types/enums'
 import { mechSlotCapacity } from '../../utils/mechSlots'
 import { mechPortraitPath, pilotPortraitPath } from '../../utils/assets'
 import { licenseAllows } from '../../utils/normalizeArmorType'
@@ -995,7 +998,10 @@ export default function LoadoutPage() {
               <span className="flex items-center gap-1.5 min-w-0">
                 <PilotIcon pilot={ctx.pilot} size="xs" />
                 <span className="truncate">{ctx.pilot.name}</span>
-                <span className="text-[10px] text-text-dim shrink-0">{ctx.pilot.license}執照</span>
+                <span className="inline-flex items-center gap-0.5 text-[10px] text-text-dim shrink-0">
+                  <MechTypeIcon type={ctx.pilot.license} decorative />
+                  {ctx.pilot.license}駕照
+                </span>
               </span>
             ) : '選擇機師'}
           </HudCard>
@@ -1894,6 +1900,7 @@ const pilotRow = (p: Pilot): PickerRowItem => ({
   id: p.id, name: p.name, icon: pilotPortraitPath(p) ?? '',
   meta: `${p.class ?? ''} · ${p.license}`.replace(/^ · /, ''),
   tone: pilotClassMeta(p.class)?.text,
+  metaIcon: <ClassIcon pilotClass={p.class} size={11} decorative />,
   badge: p.rarity,
 })
 
@@ -1922,16 +1929,13 @@ const PILOT_FILTERS: readonly PickerFilterGroup<Pilot>[] = [
   {
     key: 'class', label: '職業',
     // 遊戲內篩選的順序（data/pilotClasses.ts）
-    options: PILOT_CLASS_NAMES.map((c) => ({ value: c, label: c, tone: pilotClassMeta(c)?.text })),
+    options: PILOT_CLASS_NAMES.map((c) => ({ value: c, label: c, tone: pilotClassMeta(c)?.text, icon: <ClassIcon pilotClass={c} size={12} decorative /> })),
     test: (p, v) => p.class === v,
   },
   {
-    key: 'license', label: '執照',
-    options: [
-      { value: '輕型', label: '輕型' },
-      { value: '中型', label: '中型' },
-      { value: '重型', label: '重型' },
-    ],
+    // 欄位短稱統一「駕照」（PLAN-059 決策十）；機師處的駕照圖示用中性色
+    key: 'license', label: '駕照',
+    options: Object.values(MechLicense).map((l) => ({ value: l, label: l, icon: <MechTypeIcon type={l} size={12} decorative /> })),
     test: (p, v) => p.license === v,
   },
   {

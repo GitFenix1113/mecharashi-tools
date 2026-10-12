@@ -103,7 +103,10 @@ export function PilotAvatarCard({
 
         <span className="absolute left-2 right-2 bottom-1.5 flex flex-col text-left">
           <span className="text-[13px] font-bold text-text-primary leading-tight truncate">{item.name}</span>
-          <span className={`text-[11px] leading-tight truncate ${tone}`}>{item.meta}</span>
+          <span className={`flex items-center gap-1 min-w-0 text-[11px] leading-tight ${tone}`}>
+            {item.metaIcon}
+            <span className="truncate">{item.meta}</span>
+          </span>
         </span>
       </button>
 

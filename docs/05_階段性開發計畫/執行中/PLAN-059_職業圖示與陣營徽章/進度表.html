@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">7</div>
+      <div class="summary-num" style="color:var(--accent-green)">12</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">19</div>
+      <div class="summary-num" style="color:var(--text-dim)">14</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度（開發者 24＋站長／管理者 2）</span>
-      <span style="color:var(--accent-cyan);">7 / 26</span>
+      <span style="color:var(--accent-cyan);">12 / 26</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 27%"></div>
+      <div class="progress-bar-fill" style="width: 46%"></div>
     </div>
   </div>
 
@@ -366,7 +366,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 圖鑑篩選列</div>
       <div class="task-group-meta">src/pages/pilots/PilotsPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -375,7 +375,7 @@
         <div class="task-file">src/pages/pilots/PilotsPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -383,7 +383,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 圖鑑卡片與緊湊檢視</div>
       <div class="task-group-meta">src/pages/pilots/PilotsPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -395,7 +395,7 @@
         <div class="task-file">src/pages/pilots/PilotsPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -403,7 +403,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; 機師詳情頁</div>
       <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -411,12 +411,12 @@
         <div class="task-desc">
           小字牌 → 30px 圖示＋職業名＋全球版英文副標（只有這裡顯示英文）；立繪右下職業圓章；
           背景 <code>_l</code> 圖放大、極低透明度當浮水印（不可擋到互動、不可造成水平捲動）；
-          「初始被動能力」（職業單元，unitType 6）標題旁放同一張職業圖示；資訊列的「駕照」改官方全名「駕駛許可：重型機甲」並加圖示（中性色，決策十）。
+          「初始被動能力」（職業單元，unitType 6）標題旁放同一張職業圖示；資訊列的「駕照」改官方全名「駕駛許可：重型機甲」並加圖示（中性色，決策十）。<br><b>實作</b>：值在 sm 以上印全名、手機印短名（375px 實測全名會被切掉）。
         </div>
         <div class="task-file">src/pages/pilots/PilotDetailPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -424,16 +424,16 @@
     <div class="task-group-header">
       <div class="task-group-title">C-4 &nbsp; 故事館</div>
       <div class="task-group-meta">LoreHomePage · PilotLorePage</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">首頁「依職業」分組標題與卡片副標加圖示、分組改遊戲內順序；扉頁職業眉標加圖示、駕照徽記改圖示</div>
-        <div class="task-desc">館內 token 被覆寫成紙色墨字——圖示靠 <code>currentColor</code> 自動跟著變，不另寫一套色。</div>
+        <div class="task-desc">館內 token 被覆寫成紙色墨字——圖示靠 <code>currentColor</code> 自動跟著變，不另寫一套色。<br><b>實作</b>：卡片副標的小圖示上職業色；扉頁駕照徽章原本是 <code>bg-black/50</code>（紙上幾乎看不見字），<code>LicenseBadge</code> 加 <code>surface="paper"</code> 改用紙色卡底。</div>
         <div class="task-file">src/pages/lore/LoreHomePage.tsx · src/pages/lore/PilotLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -441,16 +441,16 @@
     <div class="task-group-header">
       <div class="task-group-title">C-5 &nbsp; 配裝模擬器、引用浮窗、匯出圖卡</div>
       <div class="task-group-meta">PilotIdentityCard · LoadoutPage · EntityRefView · LoadoutExportCard</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">身分卡職業 chip、選機師的篩選列與頭像牆、hover 浮窗副標加圖示；匯出圖卡實測 html-to-image</div>
-        <div class="task-desc">html-to-image 不一定會內嵌 CSS mask 的外部圖：匯出圖卡改 <code>&lt;img&gt;</code> 白色原圖，或維持文字（實測後決定，結果記在本列）。</div>
+        <div class="task-desc"><b>實測結果</b>：html-to-image 1.11 會把 <code>mask-image</code> 的外部圖內嵌（對一顆職業圖示呼叫 <code>toPng</code>，輸出是字形形狀），所以匯出圖卡直接用同一套 <code>ClassIcon</code>／<code>MechTypeIcon</code>，不必改 <code>&lt;img&gt;</code>。<br>挑選器的篩選晶片加 <code>icon</code>、<code>PickerRowItem</code> 加 <code>metaIcon</code>（頭像牆副標）；模擬器的「執照」標籤與晶片改「駕照」。引用浮窗：機師副標改成「職業 · 品質 · 勢力」並帶職業圖示；<b>機甲副標的類型圖示也一併做了</b>（原屬 F-4）。</div>
         <div class="task-file">src/components/loadout/PilotIdentityCard.tsx · src/pages/simulator/LoadoutPage.tsx · src/components/refs/EntityRefView.tsx · src/components/loadout/LoadoutExportCard.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -660,7 +660,7 @@
     <div class="task-row">
       <div>
         <div class="task-name">機甲挑選器副標與篩選、頁首機甲類型標記、機師挑選器「執照」篩選；彩虹機甲規劃類型按鈕；hover 機甲副標</div>
-        <div class="task-desc"><code>ARMOR_TONE</code>（青紫橘）改讀單一來源、統一青綠紅；模擬器的「執照」篩選標籤與晶片改「駕照」短稱（決策十）。匯出圖卡同 C-5：html-to-image 不一定吃 mask，實測後決定。</div>
+        <div class="task-desc"><code>ARMOR_TONE</code>（青紫橘）改讀單一來源、統一青綠紅——<b>B-3 已完成</b>；「執照」標籤改「駕照」與 hover 機甲副標的圖示——<b>C-5 已完成</b>。剩機甲挑選器卡片、頁首類型標記、彩虹機甲規劃按鈕的圖示（<code>PickerRowItem.metaIcon</code> 已備好）。匯出圖卡同 C-5：html-to-image 不一定吃 mask，實測後決定。</div>
         <div class="task-file">src/pages/simulator/LoadoutPage.tsx · src/pages/guides/tools/RainbowMechPlannerPage.tsx · src/components/refs/EntityRefView.tsx · src/components/loadout/LoadoutExportCard.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>

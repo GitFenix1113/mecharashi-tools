@@ -18,7 +18,10 @@ import { RefMechModules } from './RefMechModules'
 import { RefPilotTalents } from './RefPilotTalents'
 import { RefWeaponSkills } from './RefWeaponSkills'
 import { resolveWeaponSkills, type ResolvedWeaponSkill } from '../../utils/weaponSkills'
-import { mechWeightShort } from '../../data/mechWeightClasses'
+import { mechWeightClassOf, mechWeightShort } from '../../data/mechWeightClasses'
+import { pilotClassMeta } from '../../data/pilotClasses'
+import { ClassIcon } from '../icons/ClassIcon'
+import { MechTypeIcon } from '../icons/MechTypeIcon'
 
 /**
  * PLAN-019 Layer 1 — 引用詳情卡片內容（被浮窗 / BottomSheet / hover 預覽共用）。
@@ -58,6 +61,8 @@ const BUFF_TYPE_LABEL: Record<string, string> = {
 interface Resolved {
   title: string
   subtitle?: string
+  /** 副標前的小圖示（機師的職業、機甲的類型，PLAN-059）。自帶顏色 */
+  subtitleIcon?: React.ReactNode
   /** 有序候選圖片路徑，載入失敗逐層退回（見 utils/assets 的 imageCandidates） */
   images?: string[]
   /** BUFF 專用：照遊戲畫法的色塊＋白色字形（PLAN-055 D-4），有它就不畫 images */
@@ -83,7 +88,9 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       if (!p) return null
       return {
         title: p.name,
-        subtitle: [p.rarity, p.class, p.faction].filter(Boolean).join(' · '),
+        // 職業排第一，緊貼它的圖示（PLAN-059 C-5）
+        subtitle: [p.class, p.rarity, p.faction].filter(Boolean).join(' · '),
+        subtitleIcon: <ClassIcon pilotClass={p.class} size={13} decorative className={pilotClassMeta(p.class)?.text} />,
         images: pilotPortraitCandidates(p),
         // 2026-10-09 站長決定：比照機甲卡，浮窗不放機師故事，改列天賦（見 RefPilotTalents）
         pilotTalents: p.talents ?? [],
@@ -96,6 +103,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: m.name,
         subtitle: [mechWeightShort(m.armorType), m.quality].filter(Boolean).join(' · '),
+        subtitleIcon: <MechTypeIcon type={m.armorType} size={13} decorative className={mechWeightClassOf(m.armorType)?.text} />,
         images: mechPortraitCandidates(m),
         // 2026-10-09 站長決定：浮窗不放機體描述（故事），改列模組——引用機甲時想知道的是
         // 「這台帶什麼」。modules 還沒載入時四組皆空，由 RefMechModules 顯示載入中。
@@ -322,7 +330,12 @@ export function EntityRefView({ entityRef, interactive, showClose = false }: { e
               )}
               <div className="min-w-0">
                 <h3 className="font-bold text-[15px] text-text-primary">{resolved.title}</h3>
-                {resolved.subtitle && <p className="text-[12px] text-text-secondary mt-0.5">{resolved.subtitle}</p>}
+                {resolved.subtitle && (
+                  <p className="flex items-center gap-1 text-[12px] text-text-secondary mt-0.5">
+                    {resolved.subtitleIcon}
+                    {resolved.subtitle}
+                  </p>
+                )}
               </div>
             </div>
 

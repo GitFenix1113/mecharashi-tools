@@ -22,6 +22,8 @@ import { usePatchVersions } from '../../hooks/usePatchVersions'
 import { SITE_DOMAIN, SITE_NAME, SITE_TITLE } from '../../lib/siteMeta'
 import { nextFrames } from '../../utils/nextFrames'
 import { mechWeightShort } from '../../data/mechWeightClasses'
+import { ClassIcon } from '../icons/ClassIcon'
+import { MechTypeIcon } from '../icons/MechTypeIcon'
 
 // ─── 匯出配裝長圖（PLAN-052-I E-2）──────────────────────────────────────────
 //
@@ -356,13 +358,17 @@ export function LoadoutExportCard({
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 2, flexWrap: 'wrap' }}>
             {named && <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: 1 }}>{pilot?.name ?? '未選機師'}</span>}
             {pilot?.class && (
+              // 圖示是 CSS mask（PLAN-059）：html-to-image 1.11 會把 mask-image 的外部圖內嵌，匯出圖裡照樣有
               <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
                 padding: '2px 10px', fontSize: 13, fontWeight: 700, color: C.yellow,
                 background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.5)',
-              }}>{pilot.class}</span>
+              }}><ClassIcon pilotClass={pilot.class} size={15} decorative />{pilot.class}</span>
             )}
             {pilot?.license && (
-              <span style={{ fontSize: 14, color: C.sub }}>{pilot.license}執照</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 14, color: C.sub }}>
+                <MechTypeIcon type={pilot.license} size={14} decorative />{pilot.license}駕照
+              </span>
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: C.sub, flexWrap: 'wrap' }}>

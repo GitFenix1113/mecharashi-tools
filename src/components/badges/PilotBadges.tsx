@@ -48,11 +48,16 @@ export function ClassBadge({ pilotClass, className = '' }: { pilotClass: string;
  * 駕照（＝機師開得動的機甲類型）。圖示＋短名；滑鼠提示用遊戲內全名「重型機甲」（決策十）。
  * ⚠ 刻意中性色：駕照的類型色（青綠紅）會和職業色撞（守護者綠＝中型綠…），機師處只用形狀分辨。
  */
-export function LicenseBadge({ license, className = '' }: { license: string; className?: string }) {
+export function LicenseBadge({ license, surface = 'dark', className = '' }: {
+  license: string
+  /** dark＝疊在暗色立繪或卡片上（半透明黑底）；paper＝故事館紙色主題（館內 token 已是紙底墨字，黑底會吃掉字） */
+  surface?: 'dark' | 'paper'
+  className?: string
+}) {
   return (
     <span
       title={mechWeightClassOf(license)?.full}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[13px] font-bold bg-black/50 text-text-secondary border border-border ${className}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[13px] font-bold text-text-secondary border border-border ${surface === 'paper' ? 'bg-bg-card' : 'bg-black/50'} ${className}`}
     >
       <MechTypeIcon type={license} decorative />
       {mechWeightShort(license)}

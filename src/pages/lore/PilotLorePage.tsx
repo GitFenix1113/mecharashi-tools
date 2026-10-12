@@ -8,6 +8,7 @@ import { useLoreParallax } from '../../components/lore/useLoreParallax'
 import { splitParagraphs, isQuoteStyle, stripTrailingSource } from '../../components/lore/loreText'
 import { LicenseBadge } from '../../components/badges/PilotBadges'
 import { pilotClassMeta } from '../../data/pilotClasses'
+import { ClassIcon } from '../../components/icons/ClassIcon'
 import {
   hasPilotArt, pilotArtDir, pilotKeyArtPath, pilotFullArtPath, pilotOfficialArt,
   imageCandidates, assetUrl,
@@ -277,7 +278,10 @@ export default function PilotLorePage() {
           <article key={pilot.id}>
             {/* 第二段（200ms）：職業／名字／徽記 */}
             <div className="lore-enter lore-enter--2">
-            <p className={`text-xs font-semibold tracking-widest ${classText}`}>{pilot.class}</p>
+            <p className={`flex items-center gap-1.5 text-xs font-semibold tracking-widest ${classText}`}>
+              <ClassIcon pilotClass={pilot.class} size={15} decorative />
+              {pilot.class}
+            </p>
             <h1 className="lore-name-font mt-1 text-3xl text-text-primary sm:text-4xl">{pilot.name}</h1>
 
             {/* 三枚徽記：陣營（文字刻在圓環內）／天賦／駕駛許可。
@@ -307,7 +311,8 @@ export default function PilotLorePage() {
                 )}
               </span>
 
-              <LicenseBadge license={pilot.license} />
+              {/* 紙色主題：原本的深色底在紙上幾乎看不見字（PLAN-059 C-4 修） */}
+              <LicenseBadge license={pilot.license} surface="paper" />
             </div>
             </div>
 

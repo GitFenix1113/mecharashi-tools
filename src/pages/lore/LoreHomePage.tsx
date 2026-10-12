@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FallbackImage } from '../../components/common/FallbackImage'
 import { PILOT_CLASS_NAMES, pilotClassMeta } from '../../data/pilotClasses'
+import { ClassIcon } from '../../components/icons/ClassIcon'
 import { toneBar } from '../../components/loadout/PickerVariants'
 import { usePilotLore, usePilots } from '../../hooks/useFirestore'
 import { assetUrl, pilotPortraitCandidates } from '../../utils/assets'
@@ -102,7 +103,11 @@ export default function LoreHomePage() {
         <section key={g.key} className="mb-8 last:mb-0">
           <h2 className="mb-3 flex items-center gap-2">
             <span aria-hidden className={`h-4 w-[3px] ${toneBar(g.tone)}`} />
-            <span className={`text-sm font-bold ${g.tone || 'text-text-secondary'}`}>{g.label}</span>
+            {/* 依職業分組時標題前放職業圖示（PLAN-059 C-4）；依版本分組時 key 不是職業，ClassIcon 什麼都不畫 */}
+            <span className={`inline-flex items-center gap-1.5 text-sm font-bold ${g.tone || 'text-text-secondary'}`}>
+              <ClassIcon pilotClass={g.key} size={16} decorative />
+              {g.label}
+            </span>
             <span className="text-xs text-text-dim">{g.items.length}</span>
           </h2>
 
@@ -299,7 +304,9 @@ function PilotCard({ pilot, chapters }: { pilot: Pilot; chapters: number }) {
 
       <span className="absolute bottom-1.5 left-2 right-2 flex flex-col text-left">
         <span className="truncate text-[13px] font-bold leading-tight text-white">{pilot.name}</span>
-        <span className="truncate text-[11px] leading-tight text-white/65">
+        <span className="flex items-center gap-1 truncate text-[11px] leading-tight text-white/65">
+          {/* 職業圖示上職業色；縮圖是暗底，色在白字旁仍讀得出來 */}
+          <ClassIcon pilotClass={pilot.class} size={12} decorative className={tone} />
           {pilot.class}
           {pilot.debutVersion && ` · v${pilot.debutVersion}`}
         </span>

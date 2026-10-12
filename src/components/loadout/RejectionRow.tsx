@@ -30,6 +30,8 @@ export interface PickerRowItem {
   isExclusive?: boolean
   /** 主色（Tailwind `text-*`）。頭像牆的職業色條與副標、機甲卡的裝甲類型都走它（PLAN-052-I C-2） */
   tone?: string
+  /** 副標前的小圖示（頭像牆的職業圖示、機甲卡的類型圖示，PLAN-059）。顏色吃 tone */
+  metaIcon?: React.ReactNode
   /** 右上角小徽章，目前只用於品質（S／A／B） */
   badge?: string
   /** 第二行細節，如機甲的「出力 2,740 · 手2 肩2 背1」 */

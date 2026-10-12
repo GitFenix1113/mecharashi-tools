@@ -9,8 +9,13 @@ import { WeaponIcon } from '../../components/icons/WeaponIcon'
 import { PilotRarityBadge } from '../../components/badges/PilotBadges'
 import { ViewModeToggle } from '../../components/common/ViewModeToggle'
 import { PILOT_CLASS_NAMES, pilotClassMeta } from '../../data/pilotClasses'
+import { mechWeightClassOf } from '../../data/mechWeightClasses'
+import { MechLicense } from '../../types/enums'
+import { ClassIcon } from '../../components/icons/ClassIcon'
+import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
 
-const LICENSES = ['重型', '中型', '輕型']
+/** 駕照篩選：遊戲內順序 輕→中→重（PLAN-059） */
+const LICENSES = Object.values(MechLicense)
 const RARITIES = ['EX', 'S', 'A', 'B']
 const RARITY_ORDER: Record<string, number> = { EX: 0, S: 1, A: 2, B: 3 }
 const RARITY_FILTER_STYLES: Record<string, { text: string; border: string; bg: string }> = {
@@ -117,12 +122,14 @@ export default function PilotsPage() {
               <button
                 key={c}
                 onClick={() => setClassFilter(active ? '' : c)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                // 這一列同時是全站「圖示 ↔ 職業」的圖例（PLAN-059 C-1）：未選取時圖示跟著字灰、選取時上職業色
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
                   active && s
                     ? `${s.bg} ${s.text} ${s.border}`
                     : 'bg-bg-card text-text-secondary border-border hover:border-border-accent hover:text-text-primary'
                 }`}
               >
+                <ClassIcon pilotClass={c} size={15} decorative />
                 {c}
               </button>
             )
@@ -160,8 +167,11 @@ export default function PilotsPage() {
             <button
               key={l}
               onClick={() => setLicenseFilter(licenseFilter === l ? '' : l)}
-              className={filterBtn(licenseFilter === l)}
+              title={mechWeightClassOf(l)?.full}
+              className={`inline-flex items-center gap-1.5 ${filterBtn(licenseFilter === l)}`}
             >
+              {/* 駕照在機師處用中性色（類型色會和職業色撞，PLAN-059 決策十） */}
+              <MechTypeIcon type={l} size={14} decorative />
               {l}
             </button>
           ))}
@@ -225,6 +235,11 @@ export default function PilotsPage() {
                   <span className="absolute bottom-1 left-1 scale-90 origin-bottom-left">
                     <PilotRarityBadge rarity={pilot.rarity} />
                   </span>
+                  {s && (
+                    <span className={`absolute bottom-1 right-1 w-6 h-6 rounded-full grid place-items-center bg-black/65 border ${s.borderStrong} ${s.text}`}>
+                      <ClassIcon pilotClass={pilot.class} size={14} />
+                    </span>
+                  )}
                 </div>
                 <div className="px-1.5 py-1.5 text-center">
                   <p className="text-xs font-bold text-text-primary truncate">{pilot.name}</p>
@@ -264,22 +279,25 @@ export default function PilotsPage() {
                       ;(e.target as HTMLImageElement).style.display = 'none'
                     }}
                   />
-                  {/* Class badge */}
-                  {s && (
-                    <span
-                      className={`absolute top-2 left-2 px-2 py-0.5 rounded text-[13px] font-bold border ${s.bg} ${s.text} ${s.border}`}
-                    >
-                      {pilot.class}
-                    </span>
-                  )}
-                  {/* License badge */}
-                  <span className="absolute top-2 right-2 px-2 py-0.5 rounded text-[13px] font-bold bg-black/50 text-text-secondary border border-border">
+                  {/* 駕照（中性色：類型色會和職業色撞，PLAN-059 決策十） */}
+                  <span
+                    title={mechWeightClassOf(pilot.license)?.full}
+                    className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[13px] font-bold bg-black/50 text-text-secondary border border-border"
+                  >
+                    <MechTypeIcon type={pilot.license} decorative />
                     {pilot.license}
                   </span>
                   {/* Rarity badge */}
                   <span className="absolute bottom-2 left-2">
                     <PilotRarityBadge rarity={pilot.rarity} />
                   </span>
+                  {/* 職業圓章：右下角，與遊戲內機師卡同一個位置（PLAN-059 C-2）。原本左上的職業字牌會蓋到臉，
+                      職業名改印在下方資訊列。半透明黑底＋職業色外圈，淺色立繪背景上也看得清楚 */}
+                  {s && (
+                    <span className={`absolute bottom-2 right-2 w-9 h-9 rounded-full grid place-items-center bg-black/60 backdrop-blur-[2px] border-[1.5px] ${s.borderStrong} ${s.text}`}>
+                      <ClassIcon pilotClass={pilot.class} size={20} />
+                    </span>
+                  )}
                 </div>
 
                 {/* Info */}
@@ -288,7 +306,11 @@ export default function PilotsPage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm text-text-primary truncate">{pilot.name}</p>
                     <p className="text-[12px] text-text-dim truncate mt-0.5">{pilot.faction}</p>
-                    <p className="text-[11px] text-text-dim mt-1">{pilot.masterLevel}</p>
+                    <p className="text-[11px] text-text-dim mt-1 truncate">
+                      {s && <span className={`${s.text} font-semibold`}>{pilot.class}</span>}
+                      {s && pilot.masterLevel && ' · '}
+                      {pilot.masterLevel}
+                    </p>
                   </div>
                   {/* Right: exclusive weapon */}
                   {exclusiveWeaponMap[pilot.id] && (

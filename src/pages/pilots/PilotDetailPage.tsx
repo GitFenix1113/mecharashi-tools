@@ -33,7 +33,10 @@ import { SkillIcon } from '../../components/icons/SkillIcon'
 import { NdPowerBar } from '../../components/common/NdPowerBar'
 import { firstSentence } from '../../components/lore/loreText'
 import { useLoreEntryVisible } from '../../hooks/useLoreEntry'
-import { pilotClassBadgeClass } from '../../data/pilotClasses'
+import { pilotClassBadgeClass, pilotClassMeta } from '../../data/pilotClasses'
+import { mechWeightClassOf } from '../../data/mechWeightClasses'
+import { ClassIcon } from '../../components/icons/ClassIcon'
+import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
 
 // ─── 神經驅動「全區算力選擇器」（PLAN-021 · 1-6）─────────────────────────────
 //
@@ -913,6 +916,7 @@ export default function PilotDetailPage() {
   }
 
   const classCls = pilotClassBadgeClass(pilot.class)
+  const classMeta = pilotClassMeta(pilot.class)
 
   // 從 Firestore 中已存的 biometicComputer 交叉比對 unitType（現有資料無 skill.unitType 時使用）
   type BiomUnit = { unitType: string; skill?: { name: string } }
@@ -961,10 +965,16 @@ export default function PilotDetailPage() {
         ← 機師圖鑑
       </BackToListLink>
 
-      {/* Hero Row: 3-col grid */}
-      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[160px_1fr_auto] lg:gap-12 mb-4 lg:items-start">
+      {/* Hero Row: 3-col grid。isolate：讓職業浮水印（-z-10）留在本區的內容後面，又不會沉到頁面底色下面 */}
+      <div className="relative isolate flex flex-col gap-6 lg:grid lg:grid-cols-[160px_1fr_auto] lg:gap-12 mb-4 lg:items-start">
+        {/* 職業浮水印（PLAN-059 C-3）：同一張 _l 圖放大、極淡，整頁有職業識別但不搶戲。只在桌面出現 */}
+        {classMeta && (
+          <span aria-hidden="true" className={`pointer-events-none absolute -z-10 right-72 -top-8 hidden lg:block opacity-[0.05] ${classMeta.text}`}>
+            <ClassIcon pilotClass={pilot.class} size={280} decorative />
+          </span>
+        )}
         {/* 左欄: 肖像，固定 160px */}
-        <div className="w-32 h-44 mx-auto bg-bg-card border border-border rounded-xl overflow-hidden lg:w-40 lg:h-52 lg:mx-0 lg:flex-shrink-0">
+        <div className="relative w-32 h-44 mx-auto bg-bg-card border border-border rounded-xl overflow-hidden lg:w-40 lg:h-52 lg:mx-0 lg:flex-shrink-0">
           <img
             src={assetUrl(pilotPortraitPath(pilot) ?? '')}
             alt={pilot.name}
@@ -973,23 +983,52 @@ export default function PilotDetailPage() {
               ;(e.target as HTMLImageElement).style.display = 'none'
             }}
           />
+          {/* 職業圓章：與圖鑑卡片同一個位置（右下） */}
+          {classMeta && (
+            <span className={`absolute bottom-2 right-2 w-10 h-10 rounded-full grid place-items-center bg-black/60 backdrop-blur-[2px] border-[1.5px] ${classMeta.borderStrong} ${classMeta.text}`}>
+              <ClassIcon pilotClass={pilot.class} size={22} />
+            </span>
+          )}
         </div>
 
         {/* 中欄: 資訊＋AP */}
         <div className="flex flex-col gap-3 min-w-0">
           <div>
-            <span
-              className={`inline-block px-2 py-0.5 rounded text-xs font-bold border mb-2 ${classCls}`}
-            >
-              {pilot.class}
-            </span>
+            {classMeta ? (
+              // 職業徽記：大圖示＋職業名＋全球版英文名（只有這裡顯示英文，PLAN-059 決策；調構師是暫用的非官方譯名）
+              <span className={`inline-flex items-center gap-2 mb-1.5 ${classMeta.text}`}>
+                <ClassIcon pilotClass={pilot.class} size={30} decorative />
+                <span className="text-base font-bold">{pilot.class}</span>
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-[0.22em] opacity-75 font-[Orbitron,sans-serif]"
+                  title={classMeta.enOfficial ? undefined : '全球版尚未推出這個職業，暫用 EN Wiki 的譯名'}
+                >
+                  {classMeta.en}
+                </span>
+              </span>
+            ) : (
+              <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold border mb-2 ${classCls}`}>
+                {pilot.class}
+              </span>
+            )}
             <h1 className="text-3xl font-black">{pilot.name}</h1>
             <p className="text-text-secondary text-sm mt-1">{pilot.fullName}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-sm">
             <InfoRow label="勢力" value={pilot.faction} />
-            <InfoRow label="駕照" value={pilot.license} />
+            {/* 詳情頁用遊戲內全名「駕駛許可：重型機甲」（PLAN-059 決策十）；機師處的駕照圖示用中性色 */}
+            <InfoRow
+              label="駕駛許可"
+              value={
+                <span className="inline-flex items-center gap-1.5" title={mechWeightClassOf(pilot.license)?.full}>
+                  <MechTypeIcon type={pilot.license} decorative className="text-text-secondary" />
+                  {/* 手機兩欄放不下全名（375px 實測會被切掉）→ 窄螢幕印短名，sm 以上才印全名 */}
+                  <span className="sm:hidden">{pilot.license}</span>
+                  <span className="hidden sm:inline">{mechWeightClassOf(pilot.license)?.full ?? pilot.license}</span>
+                </span>
+              }
+            />
             <InfoRow label="駕駛等級" value={pilot.masterLevel} />
             {pilot.debutVersion && <InfoRow label="登場版本" value={`v${pilot.debutVersion}`} />}
             {(() => {
@@ -1213,7 +1252,11 @@ export default function PilotDetailPage() {
               </div>
               {classSkills.length > 0 && (
                 <div>
-                  <div className="text-[13px] text-accent-green tracking-widest uppercase mb-2 font-[Orbitron,sans-serif]">初始被動能力</div>
+                  {/* 官方在生體電腦裡就是用職業圖示當「職業單元」的圖示——標題旁放同一張，講清楚這是職業給的 */}
+                  <div className="flex items-center gap-1.5 text-[13px] text-accent-green tracking-widest uppercase mb-2 font-[Orbitron,sans-serif]">
+                    <ClassIcon pilotClass={pilot.class} size={14} decorative />
+                    初始被動能力
+                  </div>
                   <div className="space-y-2">
                     {classSkills.map((sk, i) => (
                       <div key={i} className="flex gap-3 p-3 bg-bg-dark rounded-xl border border-accent-green/20">
@@ -1318,7 +1361,7 @@ function parseNdApBonus(neuralDrive: NeuralDrive[] | undefined): {
 
 // ─── Small helpers ────────────────────────────────────────────────────────────
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-baseline gap-2">
       <span className="text-text-dim text-xs w-16 shrink-0">{label}</span>
