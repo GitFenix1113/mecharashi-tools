@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-11
+## [Unreleased] - 2026-10-12
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **modules,buffs**: 描述欄位單一正本——各等級為正本、模組頂層自動鏡像 LV.MAX（PLAN-058） (`a15c8c8`)
 - **admin**: NPC 立繪圖庫上站，選取官方立繪新增 NPC 分組；補匯入索妮婭官方原檔 (`fe0ab79`)
 - **buffs**: BUFF 圖示新增治療類綠色底色 (`5864084`)
 - **admin**: 機師／機甲立繪改依名稱挑官方原檔，選圖時一併帶入遊戲 ID (`c3a1007`)
