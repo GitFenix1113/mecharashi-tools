@@ -10,6 +10,7 @@ import { ModuleBoundPart } from './ModuleBoundPart'
 import { ModuleLevelSelector } from './ModuleLevelSelector'
 import { ModuleAllLevelsButton } from './ModuleAllLevels'
 import { levelRefs } from './moduleRefs'
+import { ModuleUnlockTag } from './ModuleUnlockTag'
 
 type Variant = 'catalog' | 'detail' | 'row'
 
@@ -77,6 +78,7 @@ export function ModuleCard({
       <h3 className="font-bold text-sm text-text-primary">{mod.name}</h3>
       {mod.rarity && <ModuleRarityBadge rarity={mod.rarity} />}
       {isCatalog && <ModuleSlotBadge slot={mod.slot} />}
+      <ModuleUnlockTag unlock={mod.unlockCondition} />
     </div>
   )
 

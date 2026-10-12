@@ -126,8 +126,9 @@
       <tr><td>managedBy</td><td>ModuleDataSource (Enum)</td><td>後台資料維護標記："auto"（腳本自動擷取）/ "manual"（管理者手動新增）。<strong>與 source 語義不同，勿混用</strong></td></tr>
       <tr><td>moduleAddLevel</td><td>number</td><td>模組增加等級（配裝時，在插槽中增加模組等級計算用，配裝時會計算嵌入的模組總和；預設 1）</td></tr>
       <tr><td>slotLevelMultiplier</td><td>MechPartPosition[]?</td><td><strong>v2.4 新增</strong>。這顆模組讓哪些部位的<strong>插槽</strong>貢獻等級翻倍（<strong>不含天生貢獻</strong>）。今天只有破曉者-02 的兩顆〈匯流樞紐〉：<code>mod_破曉者-02_fixed_4</code> = <code>["torso"]</code>、<code>mod_破曉者-02_fixed_1</code> = <code>["legs"]</code>。同一部位被兩顆點到時連乘</td></tr>
-      <tr><td>unlockCondition</td><td>union?</td><td><strong>v2.4 新增</strong>。這顆模組的啟用條件，兩種形狀：<code>{ kind:'moduleAtMaxLevel', moduleId }</code>（該模組<strong>結算後等級</strong>達其 <code>levels.length</code> 才生效）／<code>{ kind:'pilotOnly', pilotIds }</code>（限定機師）。<strong>⚠ 不要把「效果內的條件」寫進來</strong>——影虎〈虎魄·無束〉L2 與輝龍龍威 L2 的「當[某人]駕駛整套[某機]時…」是效果的條件，模組本身照樣存在、照樣算等級</td></tr>
+      <tr><td>unlockCondition</td><td>union?</td><td><strong>v2.4 新增</strong>。🆕 PLAN-058：前台模組卡以標籤顯示（「限 X 駕駛時發動」「需〈Y〉達 LV.MAX」），正文<strong>不再</strong>另寫「※只有[X]能發動此模組※」。這顆模組的啟用條件，兩種形狀：<code>{ kind:'moduleAtMaxLevel', moduleId }</code>（該模組<strong>結算後等級</strong>達其 <code>levels.length</code> 才生效）／<code>{ kind:'pilotOnly', pilotIds }</code>（限定機師）。<strong>⚠ 不要把「效果內的條件」寫進來</strong>——影虎〈虎魄·無束〉L2 與輝龍龍威 L2 的「當[某人]駕駛整套[某機]時…」是效果的條件，模組本身照樣存在、照樣算等級</td></tr>
       <tr><td>output_bonus</td><td>number</td><td>機甲出力增加（預設 0）</td></tr>
+      <tr class="group-header"><td colspan="3">▎頂層數值與描述 —— 🆕 PLAN-058 起為 <code>levels[]</code> 最高等級（LV.MAX）的<strong>鏡像</strong>：後台存檔時由 <code>syncModuleTopFromMaxLevel()</code> 寫入，<strong>不可手動編輯</strong>；讀數值一律走 <code>levels[]</code>（PLAN-052-G）</td></tr>
       <tr><td>dmg</td><td>number</td><td>增傷加成 % — 最高等級值</td></tr>
       <tr><td>crit_rate</td><td>number</td><td>暴擊率加成 — 最高等級值</td></tr>
       <tr><td>critDmg</td><td>number</td><td>暴擊傷害加成 % — 最高等級值</td></tr>
@@ -162,8 +163,8 @@
       <tr class="group-header"><td colspan="3">▎特殊情境增傷（選填，預設 0）</td></tr>
       <tr><td>dmg_counter</td><td>number?</td><td>反擊增傷 %</td></tr>
       <tr><td>dmg_enemy_phase</td><td>number?</td><td>敵方階段增傷 %</td></tr>
-      <tr><td>description</td><td>string</td><td>最高等級的效果描述文字</td></tr>
-      <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-019 Layer 1：描述內 [xxx] → 實體引用側錄；前台 RefText 渲染為可點擊引用，未命中原樣顯示</td></tr>
+      <tr><td>description</td><td>string</td><td>LV.MAX 效果描述的<strong>鏡像</strong>（PLAN-058：存檔時自動寫入；正本在 <code>levels[].description</code>）。讀它的有：模組引用浮窗、形態卡反查（依換行切「一行一形態」）、圖鑑「搜能力」、後台列表。沒有 <code>levels[]</code> 的新建模組才以它暫存描述</td></tr>
+      <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-019 Layer 1：描述內 [xxx] → 實體引用側錄；前台 RefText 渲染為可點擊引用，未命中原樣顯示。<br>🆕 PLAN-058：實為各等級的<strong>共用引用表</strong>——<code>levels[i].descriptionRefs</code> 未填或為空物件時回退到這份（<code>levelRefs()</code>）；<strong>不鏡像</strong>。後台在此改 key／套語法糖時會改寫每一級的正文</td></tr>
       <tr><td>buffIds</td><td>string[]?</td><td>🆕 PLAN-019 Layer 2：此模組可賦予的 Buff ID 列表；模擬器以此建立反向索引（可用 buff = 當前配裝所有實體 buffIds[] 的聯集）</td></tr>
       <tr><td>rarity</td><td>ModuleRarity (Enum)</td><td>模組品質："S" / "A"（副模組繼承機甲品質；其他由管理者填寫）。<br>注意：模組使用獨立的 <code>ModuleRarity</code>，非通用的 <code>ItemRarity</code></td></tr>
       <tr><td>icon</td><td>string?</td><td>官方圖示檔名 key（模組詞條 <code>Icon_entry_*</code> 或技能類 <code>Icon_skill_*</code>）<br><small style="color:var(--text-dim)">PLAN-055 C（2026-10-11）起 DB 只存官方檔名 key，讀取端以檔名解析（<code>gameIconCandidates</code>，圖庫 <code>public/images/game/icons/</code>）</small></td></tr>
@@ -179,7 +180,7 @@
       <tr><td>&nbsp;└ resetOn</td><td>"attack" | "turn" | null</td><td>效果重置時機：<code>"attack"</code>（每次攻擊後重置，如連擊數）/ <code>"turn"</code>（回合結束）/ null（不重置）</td></tr>
       <tr class="group-header"><td colspan="3">▎各等級資料 levels[]（特性/8級/通用模組有；副模組為空陣列）</td></tr>
       <tr><td>&nbsp;├ level</td><td>number</td><td>等級上限（該筆資料的最高等級，如 4 代表此為 4 級時的數值）</td></tr>
-      <tr><td>&nbsp;├ description</td><td>string</td><td>該等級的效果描述文字（腳本自動從 API 擷取）</td></tr>
+      <tr><td>&nbsp;├ description</td><td>string</td><td>該等級的效果描述文字——🆕 PLAN-058：<strong>描述的唯一正本</strong>（模組卡、模擬器、匯出都讀它）；要改一個詞請用後台「套用到所有等級」，不要只改 LV.MAX</td></tr>
       <tr><td>&nbsp;├ descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-019 Layer 1：該等級描述內 [xxx] → 實體引用側錄；後台可逐等級指派，前台 RefText 未命中時回退父模組 descriptionRefs</td></tr>
       <tr><td>&nbsp;├ dmg</td><td>number</td><td>該等級增傷加成（預設 0）</td></tr>
       <tr><td>&nbsp;├ crit_rate</td><td>number</td><td>該等級暴擊率加成</td></tr>

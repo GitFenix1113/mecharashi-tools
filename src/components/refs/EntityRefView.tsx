@@ -7,6 +7,7 @@ import { STAT_LABELS } from '../../utils/moduleStats'
 import { mechPortraitCandidates, pilotPortraitCandidates } from '../../utils/assets'
 import { backpackIconCandidates, gameIconCandidates, weaponIconCandidates } from '../../utils/gameIcons'
 import { pickLevel } from '../../utils/ndOverrides'
+import { buffDescriptionView, type BuffLevelLine } from '../../utils/buffDescription'
 import { mechModuleSet, type MechModuleSet } from '../../utils/mechModules'
 import { FallbackImage } from '../common/FallbackImage'
 import { BuffGlyph } from '../icons/BuffGlyph'
@@ -62,6 +63,8 @@ interface Resolved {
   buffGlyph?: { buff: GameBuff; level?: BuffLevel }
   description?: string
   descriptionRefs?: DescriptionRefs
+  /** BUFF 專用：引用沒指定等級時列出的各級（PLAN-058）。頂層通用說明留空也不會是空白浮窗 */
+  buffLevelLines?: BuffLevelLine[]
   /** 機甲專用：浮窗本文改列自帶模組（滿級），取代機體描述 */
   mechModules?: MechModuleSet
   /** 機師專用：浮窗本文改列天賦（最大強化），取代機師故事 */
@@ -152,9 +155,8 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       const lv = pickLevel(b.levels, ref.level)
       // termRef：掛了詞條則以官方關鍵字說明為通用/補充顯示來源
       const term = b.termRef ? gd.glossaryTerms.find(t => t.id === b.termRef) : undefined
-      // 描述優先序：該級描述 > 詞條說明 > buff 自身描述
-      const description = lv?.description || term?.description || b.description
-      const descriptionRefs = lv?.description ? lv.descriptionRefs : (term ? term.descriptionRefs : b.descriptionRefs)
+      // 描述優先序（該級 > 詞條 > 通用說明，沒指定等級時另列各級）統一走 buffDescriptionView（PLAN-058）
+      const view = buffDescriptionView(b, ref.level, term)
       const maxStack = lv?.maxStack ?? b.maxStack
       const maxTriggers = lv?.maxTriggers ?? b.maxTriggers
       const subtitle = [
@@ -171,8 +173,9 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
         subtitle,
         buffGlyph: hasGlyph ? { buff: b, level: lv } : undefined,
         images: hasGlyph ? undefined : gameIconCandidates(term?.icon),
-        description,
-        descriptionRefs,
+        description: view.description,
+        descriptionRefs: view.descriptionRefs,
+        buffLevelLines: view.levelLines.length ? view.levelLines : undefined,
       }
     }
     case 'skill': {
@@ -328,6 +331,21 @@ export function EntityRefView({ entityRef, interactive, showClose = false }: { e
                   <RefText text={resolved.description} refs={resolved.descriptionRefs} />
                 </RefScopeContext.Provider>
               </p>
+            )}
+
+            {resolved.buffLevelLines && (
+              <RefScopeContext.Provider value={{ inPopover: true }}>
+                <dl className="space-y-1.5 text-sm text-text-secondary leading-relaxed">
+                  {resolved.buffLevelLines.map((l) => (
+                    <div key={l.level} className="flex gap-2">
+                      <dt className="shrink-0 text-[12px] font-bold font-[JetBrains_Mono,monospace] text-accent-orange pt-0.5">
+                        Lv{l.level}{l.name && <span className="ml-1 font-sans font-normal text-text-dim">{l.name}</span>}
+                      </dt>
+                      <dd className="min-w-0 whitespace-pre-wrap"><RefText text={l.description} refs={l.descriptionRefs} /></dd>
+                    </div>
+                  ))}
+                </dl>
+              </RefScopeContext.Provider>
             )}
 
             {resolved.mechModules && (

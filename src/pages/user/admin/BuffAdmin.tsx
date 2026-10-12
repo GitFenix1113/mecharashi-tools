@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { GameBuff, SkillEffect, BuffLevel, BuffIconTone } from '../../../types'
+import type { GameBuff, SkillEffect, BuffLevel, BuffIconTone, DescriptionRefs } from '../../../types'
 import { BuffType } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, GRID_AUTO_FIELDS, useCascadeDelete, ConfirmDeleteDialog, DeleteButton, DraftRestoreBar } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
@@ -14,6 +14,7 @@ import { SkillEffectItem } from './PilotAdmin'
 import { checkBuffLevelName } from '../../../utils/ndOverrides'
 import { findRemovedLevelsInUse, sortLevelsAscending } from '../../../utils/buffLevelRefs'
 import { useRefScanData } from '../../../hooks/useRefScanData'
+import { buffLevelRefs, generalTextHasNumber } from '../../../utils/buffDescription'
 
 // ─── BuffType 顯示對照 ──────────────────────────────────────────────────────────
 const BUFF_TYPE_OPTIONS: { value: string; label: string }[] = [
@@ -78,12 +79,18 @@ function TermRefField({
 function BuffLevelItem({
   levelData,
   buffName,
+  sharedRefs,
+  sharedTexts,
   onChange,
   onRemove,
 }: {
   levelData: BuffLevel
   /** 母 buff 名稱，供階名軟驗證比對前綴 */
   buffName: string
+  /** 頂層引用表：本級沒有自己的引用表時前台沿用它（PLAN-058，與模組一致） */
+  sharedRefs?: DescriptionRefs
+  /** 共用頂層引用表的其他正文（通用說明＋其他級），本級沿用時供孤兒偵測 */
+  sharedTexts: (string | undefined)[]
   onChange: (updated: BuffLevel) => void
   onRemove: () => void
 }) {
@@ -93,6 +100,10 @@ function BuffLevelItem({
   }
   const effects = levelData.effects ?? []
   const nameCheck = checkBuffLevelName(buffName, levelData.level, levelData.name)
+  // 沒有自己的引用表 → 顯示實際生效的那份（頂層）；一改動就寫成本級自己的一份（copy-on-write）
+  const ownRefs = levelData.descriptionRefs && Object.keys(levelData.descriptionRefs).length > 0
+    ? levelData.descriptionRefs : undefined
+  const effectiveRefs = buffLevelRefs({ descriptionRefs: sharedRefs }, levelData)
   return (
     <div className="border border-border/60 rounded-lg bg-bg-dark/50">
       <div className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none" onClick={() => setCollapsed(!collapsed)}>
@@ -142,9 +153,26 @@ function BuffLevelItem({
               </button>
             )}
           </div>
-          <Field label="該級描述 description（選填）">
-            <input type="text" value={levelData.description ?? ''} onChange={(e) => upd('description', e.target.value || undefined)} className="input-field" />
+          {/* PLAN-058：分級 BUFF 的各級描述是正本（前台浮窗、形態卡都讀它），所以和頂層一樣給 textarea＋引用 */}
+          <Field label="該級描述 description（正本：前台顯示的就是這段）">
+            <textarea
+              value={levelData.description ?? ''}
+              onChange={(e) => upd('description', e.target.value || undefined)}
+              className="input-field min-h-[80px] resize-y text-sm leading-relaxed"
+            />
           </Field>
+          <p className="text-[11px] text-text-dim leading-relaxed">
+            {ownRefs
+              ? '本級有自己的引用表。'
+              : '本級沿用頂層的共用引用表；在下方改動會為本級建立自己的一份（之後頂層的改動不再影響本級）。'}
+          </p>
+          <RefPicker
+            text={levelData.description ?? ''}
+            siblingTexts={ownRefs ? undefined : sharedTexts}
+            value={effectiveRefs}
+            onChange={(refs) => upd('descriptionRefs', refs)}
+            onCompileText={(tf, refs) => onChange({ ...levelData, description: tf(levelData.description ?? '') || undefined, ...(refs && { descriptionRefs: refs }) })}
+          />
           <div className={`${GRID_AUTO_FIELDS} gap-2`}>
             <Field label="最大疊加 maxStack（選填）">
               <input
@@ -246,6 +274,16 @@ function BuffEditPanel({
   ].filter(Boolean) as string[]
   const hasStaleTop = isLeveled && staleTop.length > 0
 
+  // PLAN-058：通用說明的軟警示（只提示、不擋存檔）
+  const generalText = (form.description ?? '').trim()
+  const copiedLevel = isLeveled && generalText
+    ? (form.levels ?? []).find((l) => (l.description ?? '').trim() === generalText)
+    : undefined
+  const generalWarning = !isLeveled || !generalText ? null
+    : copiedLevel ? `通用說明和 Lv${copiedLevel.level} 一字不差。這是一份會漂移的副本——留空即可，前台會自動列出各級。`
+    : generalTextHasNumber(generalText) ? '通用說明裡有數字。數字屬於各等級，寫在這裡遲早會和某一級對不上。'
+    : null
+
   async function handleSubmit() {
     setSaving(true); setError(null)
 
@@ -315,13 +353,24 @@ function BuffEditPanel({
           </Field>
         </div>
 
-        <Field label="說明 description">
+        {/* PLAN-058 決策四：有等級時頂層是「通用說明」——只在引用沒指定等級時顯示，選填、不寫數字。
+            留空時前台會改列各級，所以不必為了「不要空白」而把某一級抄上來（那會變成一份會漂移的副本）。 */}
+        <Field label={isLeveled ? '通用說明 description（選填；引用沒指定等級時顯示，請勿寫數字）' : '說明 description'}>
+          {isLeveled && (
+            <p className="text-[12px] text-text-dim mb-1.5 leading-relaxed">
+              各等級的描述在下方「階梯等級」逐級填寫，那才是前台顯示的正本。這裡只寫一句不分等級的總說明（例：「護甲值降低」），
+              <span className="text-accent-yellow">留空也可以</span>——前台會自動列出 Lv1／Lv2…。
+            </p>
+          )}
           <textarea
             value={form.description}
             onChange={(e) => update('description', e.target.value)}
-            className="input-field min-h-[150px] resize-y text-sm leading-relaxed"
-            placeholder="BUFF 效果說明（可含 [xxx] 引用其他實體，含其他 buff）"
+            className={`input-field resize-y text-sm leading-relaxed ${isLeveled ? 'min-h-[70px]' : 'min-h-[150px]'}`}
+            placeholder={isLeveled ? '（選填）不分等級的總說明' : 'BUFF 效果說明（可含 [xxx] 引用其他實體，含其他 buff）'}
           />
+          {generalWarning && (
+            <p className="text-[12px] text-accent-yellow mt-1 leading-relaxed">⚠ {generalWarning}</p>
+          )}
         </Field>
 
         {/* 說明內也能引用其他實體（含 buff 互引） */}
@@ -444,7 +493,13 @@ function BuffEditPanel({
           <div className="flex items-center justify-between mb-2">
             <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">階梯等級 levels（選填）</span>
             <button
-              onClick={() => update('levels', [...(form.levels ?? []), { level: (form.levels?.length ?? 0) + 1 }])}
+              // 新級號取「現有最大 +1」：levels 可能非連號（buff_迴避率提升＝[3,4]），length+1 會撞號。
+              // 描述預帶上一級——各級多半只差數字（PLAN-058）。
+              onClick={() => {
+                const levels = form.levels ?? []
+                const prev = levels.reduce<BuffLevel | undefined>((a, l) => (!a || l.level > a.level ? l : a), undefined)
+                update('levels', [...levels, { level: (prev?.level ?? 0) + 1, ...(prev?.description && { description: prev.description }) }])
+              }}
               className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
             >
               + 新增等級
@@ -465,6 +520,8 @@ function BuffEditPanel({
                     key={idx}
                     levelData={lv}
                     buffName={form.name}
+                    sharedRefs={form.descriptionRefs}
+                    sharedTexts={[form.description, ...(form.levels ?? []).filter((_, i) => i !== idx).map((l) => l.description)]}
                     onChange={(updated) => { const arr = [...(form.levels ?? [])]; arr[idx] = updated; update('levels', arr) }}
                     onRemove={() => update('levels', (form.levels ?? []).filter((_, i) => i !== idx))}
                   />

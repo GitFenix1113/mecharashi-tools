@@ -162,6 +162,71 @@ export function moduleStatsAt(mod: Pick<Module, 'levels'>, level: number): Modul
   return out
 }
 
+// ─── 頂層鏡像：頂層＝LV.MAX 的副本，只由程式寫入（PLAN-058 決策二）─────────────
+//
+// 頂層 `description` 與數值欄位是「還沒分等級」時代的遺留。分等級之後兩邊都能手動改、
+// 又沒有人規定誰是正本，於是修正只修到一邊（2026-10-13 實測：描述 5 筆、數值 17 筆不一致）。
+// 現在**各等級是唯一正本**，頂層在存檔時由這裡從 LV.MAX 複製。
+//
+// ⚠ 不刪頂層欄位：引用浮窗、形態卡反查、圖鑑搜尋、後台列表、entityRefs 掃描都讀它，
+//   而它們要的正好是「滿級那一句」。鏡像只改一個寫入點，讀取端零改動。
+// ⚠ `descriptionRefs` **不**鏡像：頂層那份是各等級未自填時回退的「共用引用表」（決策三）。
+
+/**
+ * 數值欄位的執行期清單。寫成 `Record<ModuleStatKey, true>` 是為了**編譯期窮盡檢查**：
+ * 官方新增武器種類、`ModuleLevel` 多一個欄位時，build 會指名缺哪個 key，
+ * 而不是鏡像時靜默漏掉那一欄。
+ */
+const STAT_KEY_SET: Record<ModuleStatKey, true> = {
+  dmg: true, crit_rate: true, critDmg: true, acc_rate: true, firepower_rate: true,
+  armor_rate: true, crit_resist_rate: true, output_bonus: true, dodge_rate: true,
+  durable_rate: true, dmg_resist_rate: true,
+  dmg_assault: true, dmg_melee: true, dmg_shooting: true, dmg_tactical: true,
+  dmg_blade: true, dmg_polearm: true, dmg_missile: true, dmg_rocket: true, dmg_shotgun: true,
+  dmg_machinegun: true, dmg_heavy_machinegun: true, dmg_railgun: true, dmg_funnel: true,
+  dmg_sniper_light: true, dmg_sniper: true, dmg_fist: true, dmg_pile: true, dmg_chainsaw: true,
+  dmg_flamethrower: true,
+  dmg_counter: true, dmg_enemy_phase: true,
+}
+export const MODULE_STAT_KEYS = Object.keys(STAT_KEY_SET) as ModuleStatKey[]
+
+/** `Module` 上的必填數值欄位：鏡像時 LV.MAX 沒有就補 0，不能刪（型別是 `number`）。 */
+const REQUIRED_TOP_STATS: ReadonlySet<ModuleStatKey> = new Set<ModuleStatKey>([
+  'dmg', 'crit_rate', 'critDmg', 'acc_rate', 'firepower_rate', 'armor_rate',
+  'crit_resist_rate', 'output_bonus', 'dodge_rate', 'durable_rate', 'dmg_resist_rate',
+])
+
+/**
+ * 最高的那一階。以 `level` **欄位**取最大，不靠陣列順序（理由同 `moduleLevelAt`）。
+ * 沒有 `levels[]` 回 `null`。
+ */
+export function moduleTopLevel(mod: Pick<Module, 'levels'>): ModuleLevel | null {
+  const levels = mod.levels ?? []
+  if (!levels.length) return null
+  return levels.reduce((a, b) => (b.level > a.level ? b : a))
+}
+
+/**
+ * 回傳頂層 `description` 與數值欄位已改寫成 LV.MAX 的**新物件**。
+ *
+ * 沒有 `levels[]` 時原樣回傳：新建中、還沒建等級的模組仍以頂層暫存描述。
+ * 選填數值欄位在 LV.MAX 沒有值時會被**移除**（不是寫 0）——頂層要是 LV.MAX 的逐欄副本，
+ * 多一欄 0 雖然不影響計算，卻會讓下一次稽核比對出假的不一致。
+ */
+export function syncModuleTopFromMaxLevel<T extends Module>(mod: T): T {
+  const top = moduleTopLevel(mod)
+  if (!top) return mod
+  const out = { ...mod, description: top.description ?? '' } as T
+  const rec = out as unknown as Record<string, unknown>
+  for (const key of MODULE_STAT_KEYS) {
+    const v = top[key]
+    if (typeof v === 'number') rec[key] = v
+    else if (REQUIRED_TOP_STATS.has(key)) rec[key] = 0
+    else delete rec[key]
+  }
+  return out
+}
+
 /**
  * Σ 同名欄位（計畫書決策八的加總規則）。
  *

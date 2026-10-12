@@ -16,6 +16,7 @@ import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
 import { SLOT_OPTIONS, SLOT_LABEL, PART_OPTIONS, TRIGGER_LABEL, STAT_OPTIONS } from './constants'
+import { moduleTopLevel, syncModuleTopFromMaxLevel } from '../../../utils/moduleRules'
 
 type ModuleFilters = {
   slot: string
@@ -73,7 +74,9 @@ function makeExclusiveModuleId(mechName: string, allModules: Module[]): string {
   return `mod_${seg}_fixed_${max + 1}`
 }
 
-export function moduleHasStats(m: Module): boolean {
+/** 有沒有任何加成。看 LV.MAX（PLAN-058：頂層只是它的鏡像，沒存過檔的舊資料頂層可能是錯的） */
+export function moduleHasStats(mod: Module): boolean {
+  const m = moduleTopLevel(mod) ?? mod
   return (
     m.dmg > 0 || m.critDmg > 0 || m.crit_rate > 0 || m.acc_rate > 0 ||
     m.firepower_rate > 0 || m.armor_rate > 0 || m.output_bonus > 0 ||
@@ -207,7 +210,7 @@ function ModuleLevelItem({
   index: number
   onChange: (updated: ModuleLevel) => void
   onRemove: () => void
-  /** 基本資訊分頁的頂層正文與引用（本級標記落後於頂層時據以提示補齊） */
+  /** LV.MAX 的正文與共用引用表（本級標記落後於 LV.MAX 時據以提示補齊；PLAN-058 前這裡是頂層正文） */
   topDescription?: string
   topRefs?: DescriptionRefs
 }) {
@@ -221,8 +224,8 @@ function ModuleLevelItem({
   }
 
   /**
-   * 前台 ModuleCard 顯示的是**這一級**的 description（頂層只是 refs 的退路），而 RefText
-   * 只認 `[xxx]`。頂層標好了、本級還是爬蟲原文時，前台就會把引用顯示成純文字——
+   * 前台 ModuleCard 顯示的是**這一級**的 description，而 RefText 只認 `[xxx]`。
+   * LV.MAX 標好了、本級還是爬蟲原文時，前台就會把引用顯示成純文字——
    * 沒有任何錯誤訊息，只有「本來該亮的字沒亮」。這塊提示就是為了讓它不再靜默。
    */
   const pending = useMemo(() => {
@@ -271,11 +274,11 @@ function ModuleLevelItem({
 
           {pending && (
             <div className="rounded-lg border border-accent-yellow/30 bg-accent-yellow/5 px-3 py-2.5 space-y-1.5">
-              <div className="text-[12px] font-semibold text-accent-yellow">⚠ 本級標記落後於「基本資訊」</div>
+              <div className="text-[12px] font-semibold text-accent-yellow">⚠ 本級標記落後於 LV.MAX</div>
               {pending.marked.size > 0 && (
                 <>
                   <div className="text-[11px] text-text-dim leading-relaxed">
-                    頂層已標成引用、本級正文仍是裸字：
+                    LV.MAX 已標成引用、本級正文仍是裸字：
                     <span className="text-text-secondary">
                       {[...pending.marked].map(([k, n]) => `[${k}]${n > 1 ? `×${n}` : ''}`).join('、')}
                     </span>
@@ -287,7 +290,7 @@ function ModuleLevelItem({
                       type="button"
                       onClick={applyTopMarks}
                       className="text-[12px] px-2.5 py-1 rounded border border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow hover:bg-accent-yellow/20"
-                    >從基本資訊套用標記（{[...pending.marked.values()].reduce((a, b) => a + b, 0)} 處）</button>
+                    >從 LV.MAX 套用標記（{[...pending.marked.values()].reduce((a, b) => a + b, 0)} 處）</button>
                     <span className="text-[11px] text-text-dim">
                       只加括號並帶入對應引用，既有指派不會被覆蓋
                     </span>
@@ -548,15 +551,72 @@ function UnlockConditionField({ value, boundMechId, onChange }: {
   )
 }
 
-type EditTab = 'basic' | 'stats' | 'weapon' | 'levels' | 'conditional'
+// PLAN-058：拿掉「基本屬性」「武器增傷」兩分頁。它們編的是頂層數值，而模擬器自 PLAN-052-G
+// 起就禁讀頂層（moduleRules.ts），2026-10-13 實測 17 筆和 LV.MAX 對不上——改了也沒有任何地方用。
+// 數值一律在「等級資料」各級填；頂層在存檔時由 syncModuleTopFromMaxLevel 鏡像。
+type EditTab = 'basic' | 'levels' | 'conditional'
 
 const EDIT_TABS: AdminEditTabDef<EditTab>[] = [
   { id: 'basic',       label: '基本資訊' },
-  { id: 'stats',       label: '基本屬性' },
-  { id: 'weapon',      label: '武器增傷' },
   { id: 'levels',      label: '等級資料' },
   { id: 'conditional', label: '條件效果' },
 ]
+
+/** 新增一級：描述預帶上一級（各級多半只差數字），數值歸零。沒有任何等級時沿用頂層暫存的描述。 */
+function makeNextLevel(form: Module): ModuleLevel {
+  const prev = moduleTopLevel(form)
+  return {
+    level: (prev?.level ?? 0) + 1,
+    description: prev ? prev.description : form.description,
+    dmg: 0, crit_rate: 0, critDmg: 0, acc_rate: 0,
+    firepower_rate: 0, armor_rate: 0, crit_resist_rate: 0,
+    output_bonus: 0, dodge_rate: 0, durable_rate: 0, dmg_resist_rate: 0,
+  }
+}
+
+/**
+ * 「套用到所有等級」的文字取代（PLAN-058）。
+ *
+ * 一個詞要在 4–8 個等級各改一次，於是過去的修正只改了頂層：燎原模組的 [燃燒地形]、
+ * 殘心芯片的 [百分比耐久扣除]，頂層補上了、各等級全缺，而模組卡顯示的正是各等級。
+ * 純字串取代、不用正規表示式——維護者要打的是遊戲裡的字，`[`、`.`、`(` 都是常見字元。
+ */
+function LevelsFindReplace({ levels, onApply }: { levels: ModuleLevel[]; onApply: (next: ModuleLevel[]) => void }) {
+  const [find, setFind] = useState('')
+  const [replace, setReplace] = useState('')
+  const hits = find ? levels.filter((l) => (l.description ?? '').includes(find)) : []
+  const count = find ? hits.reduce((n, l) => n + (l.description ?? '').split(find).length - 1, 0) : 0
+
+  function apply() {
+    if (!find || !count) return
+    onApply(levels.map((l) => ({ ...l, description: (l.description ?? '').split(find).join(replace) })))
+    setFind('')
+    setReplace('')
+  }
+
+  return (
+    <div className="rounded-lg border border-border/60 bg-bg-dark/40 px-3 py-2.5 mb-3 space-y-2">
+      <div className="text-[12px] font-semibold text-text-secondary">套用到所有等級（文字取代）</div>
+      <div className="flex flex-wrap items-center gap-2">
+        <input value={find} onChange={(e) => setFind(e.target.value)} placeholder="找：場上每有1格友方，" className="input-field flex-1 min-w-[160px]" />
+        <span className="text-text-dim">→</span>
+        <input value={replace} onChange={(e) => setReplace(e.target.value)} placeholder="換成：場上每有1格友方[燃燒地形]，" className="input-field flex-1 min-w-[160px]" />
+        <button
+          type="button"
+          onClick={apply}
+          disabled={!count}
+          className="text-[12px] px-2.5 py-1.5 rounded border border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan hover:bg-accent-cyan/20 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+        >取代 {count} 處</button>
+      </div>
+      <p className="text-[11px] text-text-dim leading-relaxed">
+        {find
+          ? (count ? `命中 Lv.${hits.map((l) => l.level).join('、Lv.')}。` : '沒有任何等級含有這段文字。')
+          : '一個詞要改進每一級時用這裡，不要只改 LV.MAX。'}
+        取代後新出現的 <code>[xxx]</code> 會沿用「基本資訊」的共用引用表（該級沒有自己的引用表時）。
+      </p>
+    </div>
+  )
+}
 
 function ModuleEditPanel({
   module: mod,
@@ -581,10 +641,28 @@ function ModuleEditPanel({
     setForm((f) => ({ ...f, [key]: value }))
   }
 
+  // PLAN-058：各等級是唯一正本，頂層描述／數值只是 LV.MAX 的鏡像
+  const topLevel = moduleTopLevel(form)
+  const derivedDescription = topLevel ? topLevel.description : form.description
+
   async function handleSubmit() {
     setSaving(true); setError(null)
-    try { await onSave(form) }
+    try { await onSave(syncModuleTopFromMaxLevel(form)) }
     catch (e) { setError(e instanceof Error ? e.message : '儲存失敗，請重試'); setSaving(false) }
+  }
+
+  /** 共用引用表的改 key／語法糖要改寫**每一級**：它們共用同一份引用表，只改一處會留下指空的舊 key */
+  function compileAllTexts(tf: (s: string) => string, refs?: DescriptionRefs) {
+    setForm((f) => {
+      const levels = f.levels ?? []
+      return {
+        ...f,
+        ...(levels.length
+          ? { levels: levels.map((lv) => ({ ...lv, description: tf(lv.description ?? '') })) }
+          : { description: tf(f.description) }),
+        ...(refs && { descriptionRefs: refs }),
+      }
+    })
   }
 
   return (
@@ -617,20 +695,41 @@ function ModuleEditPanel({
                 <input value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" />
               </Field>
               <GameIconField label="圖示（官方檔名）" value={form.icon} onChange={(k) => update('icon', k || undefined)} presetKinds={['entry', 'passive']} />
-              <Field label="效果描述（滿等效果）">
-                <p className="text-[12px] text-text-dim mb-1.5 leading-relaxed">
-                  此處填<span className="text-accent-yellow">滿等（最高等級）</span>的效果描述，會直接顯示在前台模組卡片上；各等級的差異值另在「等級資料」分頁維護。
-                </p>
-                <textarea value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field min-h-[180px] resize-y" />
-              </Field>
+              {topLevel ? (
+                <Field label={`效果描述（LV.MAX＝Lv.${topLevel.level}，唯讀）`}>
+                  <p className="text-[12px] text-text-dim mb-1.5 leading-relaxed">
+                    描述與數值一律在<span className="text-accent-yellow">「等級資料」各級</span>編輯；這裡顯示 LV.MAX 的內容，存檔時自動同步。
+                    要改一個詞，請在「等級資料」用<span className="text-accent-yellow">「套用到所有等級」</span>，不要只改 LV.MAX。
+                  </p>
+                  <div className="input-field min-h-[120px] whitespace-pre-wrap text-text-secondary bg-bg-dark/40 cursor-default">
+                    {derivedDescription || <span className="text-text-dim">（LV.MAX 尚未填描述）</span>}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditTab('levels')}
+                    className="mt-1.5 text-[12px] text-accent-cyan hover:text-accent-cyan/80"
+                  >→ 到「等級資料」編輯</button>
+                </Field>
+              ) : (
+                <Field label="效果描述（尚無等級，暫存於此）">
+                  <p className="text-[12px] text-text-dim mb-1.5 leading-relaxed">
+                    新增第一個等級時會帶入這段文字；之後描述一律在「等級資料」各級編輯。
+                  </p>
+                  <textarea value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field min-h-[180px] resize-y" />
+                </Field>
+              )}
+              <p className="text-[12px] text-text-dim leading-relaxed">
+                下方是<span className="text-accent-yellow">共用引用表</span>：各等級沒有自己的引用表時都沿用這一份；
+                在這裡改 key 或套用語法糖，會改寫<b>每一級</b>的正文。
+              </p>
               <RefPicker
-                text={form.description}
+                text={derivedDescription}
                 // 各等級未自填 refs 時前台回退到這份（moduleRefs.levelRefs），
                 // 故等級文本獨有的 [xxx] 不算殘留
                 siblingTexts={(form.levels ?? []).map((lv) => lv.description)}
                 value={form.descriptionRefs}
                 onChange={(refs) => update('descriptionRefs', refs)}
-                onCompileText={(tf, refs) => { update('description', tf(form.description)); if (refs) update('descriptionRefs', refs) }}
+                onCompileText={compileAllTexts}
               />
             </div>
 
@@ -778,100 +877,20 @@ function ModuleEditPanel({
           </div>
         )}
 
-        {editTab === 'stats' && (
-          <div className={`${GRID_AUTO_FIELDS} gap-3`}>
-            <Field label="增傷 (%)"><input type="number" value={form.dmg} onChange={(e) => update('dmg', Number(e.target.value))} className="input-field" /></Field>
-            <Field label="暴擊率"><input type="number" value={form.crit_rate ?? 0} onChange={(e) => update('crit_rate', Number(e.target.value))} className="input-field" /></Field>
-            <Field label="暴擊傷害 (%)"><input type="number" value={form.critDmg} onChange={(e) => update('critDmg', Number(e.target.value))} className="input-field" /></Field>
-            <Field label="命中率"><input type="number" value={form.acc_rate ?? 0} onChange={(e) => update('acc_rate', Number(e.target.value))} className="input-field" /></Field>
-            <Field label="火力提升 (%)"><input type="number" value={form.firepower_rate ?? 0} onChange={(e) => update('firepower_rate', Number(e.target.value))} className="input-field" /></Field>
-            <Field label="護甲提升 (%)"><input type="number" value={form.armor_rate ?? 0} onChange={(e) => update('armor_rate', Number(e.target.value))} className="input-field" /></Field>
-            <Field label="機甲出力增加"><input type="number" value={form.output_bonus ?? 0} onChange={(e) => update('output_bonus', Number(e.target.value))} className="input-field" /></Field>
-            <Field label="被暴擊率降低 (%)"><input type="number" value={form.crit_resist_rate ?? 0} onChange={(e) => update('crit_resist_rate', Number(e.target.value))} className="input-field" /></Field>
-            <Field label="回避率 (%)"><input type="number" value={form.dodge_rate ?? 0} onChange={(e) => update('dodge_rate', Number(e.target.value))} className="input-field" /></Field>
-            <Field label="耐久值提升 (%)"><input type="number" value={form.durable_rate ?? 0} onChange={(e) => update('durable_rate', Number(e.target.value))} className="input-field" /></Field>
-            <Field label="遭受傷害降低 (%)"><input type="number" value={form.dmg_resist_rate ?? 0} onChange={(e) => update('dmg_resist_rate', Number(e.target.value))} className="input-field" /></Field>
-          </div>
-        )}
-
-        {editTab === 'weapon' && (
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">大分類增傷 (%)</p>
-              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
-                <Field label="突擊武器增傷"><input type="number" value={form.dmg_assault ?? 0} onChange={(e) => update('dmg_assault', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="格鬥武器增傷"><input type="number" value={form.dmg_melee ?? 0} onChange={(e) => update('dmg_melee', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="射擊武器增傷"><input type="number" value={form.dmg_shooting ?? 0} onChange={(e) => update('dmg_shooting', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="戰術武器增傷"><input type="number" value={form.dmg_tactical ?? 0} onChange={(e) => update('dmg_tactical', Number(e.target.value))} className="input-field" /></Field>
-              </div>
-            </div>
-            <div className="pt-2 border-t border-border/60">
-              <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">突擊細分 (%)</p>
-              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
-                <Field label="機槍增傷"><input type="number" value={form.dmg_machinegun ?? 0} onChange={(e) => update('dmg_machinegun', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="重機槍增傷"><input type="number" value={form.dmg_heavy_machinegun ?? 0} onChange={(e) => update('dmg_heavy_machinegun', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="霰彈增傷"><input type="number" value={form.dmg_shotgun ?? 0} onChange={(e) => update('dmg_shotgun', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="噴火器增傷"><input type="number" value={form.dmg_flamethrower ?? 0} onChange={(e) => update('dmg_flamethrower', Number(e.target.value))} className="input-field" /></Field>
-              </div>
-            </div>
-            <div className="pt-2 border-t border-border/60">
-              <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">格鬥細分 (%)</p>
-              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
-                <Field label="刀劍增傷"><input type="number" value={form.dmg_blade ?? 0} onChange={(e) => update('dmg_blade', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="長柄增傷"><input type="number" value={form.dmg_polearm ?? 0} onChange={(e) => update('dmg_polearm', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="拳套增傷"><input type="number" value={form.dmg_fist ?? 0} onChange={(e) => update('dmg_fist', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="打樁機增傷"><input type="number" value={form.dmg_pile ?? 0} onChange={(e) => update('dmg_pile', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="電鋸增傷"><input type="number" value={form.dmg_chainsaw ?? 0} onChange={(e) => update('dmg_chainsaw', Number(e.target.value))} className="input-field" /></Field>
-              </div>
-            </div>
-            <div className="pt-2 border-t border-border/60">
-              <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">射擊細分 (%)</p>
-              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
-                <Field label="輕型狙擊步槍增傷"><input type="number" value={form.dmg_sniper_light ?? 0} onChange={(e) => update('dmg_sniper_light', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="狙擊步槍增傷"><input type="number" value={form.dmg_sniper ?? 0} onChange={(e) => update('dmg_sniper', Number(e.target.value))} className="input-field" /></Field>
-              </div>
-            </div>
-            <div className="pt-2 border-t border-border/60">
-              <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">戰術細分 (%)</p>
-              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
-                <Field label="導彈增傷"><input type="number" value={form.dmg_missile ?? 0} onChange={(e) => update('dmg_missile', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="火箭增傷"><input type="number" value={form.dmg_rocket ?? 0} onChange={(e) => update('dmg_rocket', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="電磁炮增傷"><input type="number" value={form.dmg_railgun ?? 0} onChange={(e) => update('dmg_railgun', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="浮游炮增傷"><input type="number" value={form.dmg_funnel ?? 0} onChange={(e) => update('dmg_funnel', Number(e.target.value))} className="input-field" /></Field>
-              </div>
-            </div>
-            <div className="pt-2 border-t border-border/60">
-              <p className="text-xs text-text-dim font-medium tracking-wider uppercase mb-2">其他觸發增傷 (%)</p>
-              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
-                <Field label="反擊增傷"><input type="number" value={form.dmg_counter ?? 0} onChange={(e) => update('dmg_counter', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="敵方階段增傷"><input type="number" value={form.dmg_enemy_phase ?? 0} onChange={(e) => update('dmg_enemy_phase', Number(e.target.value))} className="input-field" /></Field>
-              </div>
-            </div>
-          </div>
-        )}
-
         {editTab === 'levels' && (
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-text-dim font-medium tracking-wider uppercase">模組等級 levels</span>
               <button
-                onClick={() =>
-                  update('levels', [
-                    ...(form.levels ?? []),
-                    {
-                      level: (form.levels?.length ?? 0) + 1,
-                      description: '',
-                      dmg: 0, crit_rate: 0, critDmg: 0, acc_rate: 0,
-                      firepower_rate: 0, armor_rate: 0, crit_resist_rate: 0,
-                      output_bonus: 0, dodge_rate: 0, durable_rate: 0, dmg_resist_rate: 0,
-                    },
-                  ])
-                }
+                onClick={() => update('levels', [...(form.levels ?? []), makeNextLevel(form)])}
                 className="text-xs text-accent-cyan hover:text-accent-cyan/80 transition-colors"
               >
-                + 新增等級
+                + 新增等級（描述預帶上一級）
               </button>
             </div>
+            {(form.levels ?? []).length > 1 && (
+              <LevelsFindReplace levels={form.levels ?? []} onApply={(next) => update('levels', next)} />
+            )}
             {(form.levels ?? []).length === 0 ? (
               <p className="text-xs text-text-dim py-4 text-center">無等級資料</p>
             ) : (
@@ -887,7 +906,7 @@ function ModuleEditPanel({
                       update('levels', arr)
                     }}
                     onRemove={() => update('levels', (form.levels ?? []).filter((_, i) => i !== idx))}
-                    topDescription={form.description}
+                    topDescription={derivedDescription}
                     topRefs={form.descriptionRefs}
                   />
                 ))}
@@ -1144,18 +1163,21 @@ export default function ModuleAdmin({
                     {mod.source.join('・')}
                   </span>
                 )}
-                {moduleHasStats(mod) && (
-                  <span className="text-[13px] text-accent-green shrink-0">
-                    {mod.dmg > 0 && `傷+${mod.dmg}%`}
-                    {(mod.crit_rate ?? 0) > 0 && ` 暴+${mod.crit_rate}`}
-                    {mod.critDmg > 0 && ` 暴傷+${mod.critDmg}%`}
-                    {(mod.acc_rate ?? 0) > 0 && ` 命+${mod.acc_rate}`}
-                    {(mod.firepower_rate ?? 0) > 0 && ` 火力+${mod.firepower_rate}%`}
-                    {(mod.output_bonus ?? 0) > 0 && ` 出力+${mod.output_bonus}`}
-                  </span>
-                )}
+                {moduleHasStats(mod) && (() => {
+                  const s = moduleTopLevel(mod) ?? mod   // 看 LV.MAX，頂層只是鏡像（PLAN-058）
+                  return (
+                    <span className="text-[13px] text-accent-green shrink-0">
+                      {s.dmg > 0 && `傷+${s.dmg}%`}
+                      {(s.crit_rate ?? 0) > 0 && ` 暴+${s.crit_rate}`}
+                      {s.critDmg > 0 && ` 暴傷+${s.critDmg}%`}
+                      {(s.acc_rate ?? 0) > 0 && ` 命+${s.acc_rate}`}
+                      {(s.firepower_rate ?? 0) > 0 && ` 火力+${s.firepower_rate}%`}
+                      {(s.output_bonus ?? 0) > 0 && ` 出力+${s.output_bonus}`}
+                    </span>
+                  )
+                })()}
               </div>
-              <p className="text-xs text-text-dim truncate mt-0.5">{mod.description || '（無描述）'}</p>
+              <p className="text-xs text-text-dim truncate mt-0.5">{(moduleTopLevel(mod)?.description ?? mod.description) || '（無描述）'}</p>
             </div>
             <div className="text-right shrink-0 ml-2">
               {mod.boundMechId ? (

@@ -52,7 +52,7 @@
       <tr><td>source</td><td>ModuleSource</td><td>遊戲取得途徑 Enum：商店 / 拆機甲 / 未知</td></tr>
       <tr><td>managedBy</td><td>DataManaged</td><td>資料維護方式 Enum：SCRIPT / MANUAL</td></tr>
       <tr><td>output_bonus</td><td>number</td><td>機甲出力增加（預設 0）</td></tr>
-      <tr><td>dmg</td><td>number</td><td>增傷加成 %（最高等級）</td></tr>
+      <tr><td>dmg</td><td>number</td><td>增傷加成 %（LV.MAX 鏡像；PLAN-058 起存檔自動寫入，頂層所有數值欄位同此）</td></tr>
       <tr><td>crit_rate</td><td>number</td><td>暴擊率加成（最高等級）</td></tr>
       <tr><td>critDmg</td><td>number</td><td>暴擊傷害加成 %（最高等級）</td></tr>
       <tr><td>acc_rate</td><td>number</td><td>命中率加成（最高等級）</td></tr>
@@ -62,13 +62,13 @@
       <tr><td>dodge_rate</td><td>number</td><td>回避率 %（最高等級）</td></tr>
       <tr><td>durable_rate</td><td>number</td><td>耐久值提升 %（最高等級）</td></tr>
       <tr><td>dmg_resist_rate</td><td>number</td><td>遭受傷害降低 %（最高等級）</td></tr>
-      <tr><td>description</td><td>string</td><td>最高等級效果描述</td></tr>
+      <tr><td>description</td><td>string</td><td>LV.MAX 效果描述的鏡像（PLAN-058：存檔自動寫入，不可手改；正本在 levels[].description）</td></tr>
       <tr><td>rarity</td><td>ItemRarity</td><td>稀有度 Enum：S / A / B（模組不使用 EX）</td></tr>
       <tr><td>icon</td><td>string?</td><td>圖示路徑</td></tr>
       <tr><td>buffIds[]</td><td>string[]?</td><td>關聯 BUFF ID 列表 → 引用 buffs collection</td></tr>
       <tr><td colspan="3" style="color:var(--accent-blue);font-weight:700;">▎levels[]（特性/8級/通用模組有各等級資料；副模組為空陣列）</td></tr>
       <tr><td>&nbsp;├ level</td><td>number</td><td>等級上限（該筆資料的最高等級，如 4 代表此為 4 級時的數值）</td></tr>
-      <tr><td>&nbsp;├ description</td><td>string</td><td>該等級效果描述</td></tr>
+      <tr><td>&nbsp;├ description</td><td>string</td><td>該等級效果描述（PLAN-058：描述的唯一正本）</td></tr>
       <tr><td>&nbsp;├ dmg</td><td>number</td><td>該等級增傷加成（預設 0）</td></tr>
       <tr><td>&nbsp;├ crit_rate</td><td>number</td><td>該等級暴擊率加成</td></tr>
       <tr><td>&nbsp;├ critDmg</td><td>number</td><td>該等級暴擊傷害加成</td></tr>

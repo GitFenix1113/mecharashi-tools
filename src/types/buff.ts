@@ -80,8 +80,12 @@ export interface BuffLevel {
    * 推導在實測髒資料上必然失敗。
    */
   name?:        string
-  /** 該級描述（選填；可被滿星 / 算力變體引用） */
+  /**
+   * 該級描述——分級 BUFF 描述的**正本**（PLAN-058）。引用帶 level 時顯示該級，未帶時逐級列出；
+   * 頂層 `GameBuff.description` 此時只是選填的「通用說明」。
+   */
   description?: string
+  /** 未填或為空物件時回退頂層 `GameBuff.descriptionRefs`（`buffLevelRefs()`，與模組一致） */
   descriptionRefs?: DescriptionRefs
   /** 結構型各級不同（凝勢 5/7/7）；數值型通常不填 */
   maxStack?:    number
@@ -104,6 +108,7 @@ export type BuffIconTone = 'buff' | 'debuff' | 'special' | 'heal'
 export interface GameBuff {
   id:          string
   name:        string
+  /** 無等級：唯一描述。有等級：選填的「通用說明」，不寫數字，留空時前台改列各級（PLAN-058 決策四） */
   description: string
   /** 描述內 [xxx] 引用側錄（PLAN-019 Layer 1）；buff 也可引用其他 buff */
   descriptionRefs?: DescriptionRefs

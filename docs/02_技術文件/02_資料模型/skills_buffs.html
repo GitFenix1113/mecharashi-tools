@@ -129,7 +129,7 @@
       <tr><th>欄位</th><th>型別</th><th>狀態</th><th>說明</th></tr>
       <tr><td>id</td><td>string</td><td>✅ v1.0</td><td>唯一識別碼（如 "buff_過熱狀態"）</td></tr>
       <tr><td>name</td><td>string</td><td>✅ v1.0</td><td>Buff 名稱（如 "過熱狀態"）</td></tr>
-      <tr><td>description</td><td>string</td><td>✅ v1.0</td><td>Buff 效果描述文字</td></tr>
+      <tr><td>description</td><td>string</td><td>✅ v1.0</td><td>Buff 效果描述文字。🆕 PLAN-058：分級 buff 時是「<strong>通用說明</strong>」——選填、不寫數字，只在引用未指定等級（及形態卡）時顯示；留空時前台改列各級（<code>buffDescriptionView()</code>）</td></tr>
       <tr><td>icon</td><td>string?</td><td>✅ v1.0</td><td>官方 BUFF 字形 key（<code>Icon_buff_*</code>／<code>Icon_debuff_*</code>，白色單色；圖庫 <code>public/images/game/icons/buff/</code>）。前台以 <code>BuffGlyph</code> 畫成「色塊底＋白色字形」，與遊戲一致</td></tr>
       <tr><td>iconTone</td><td>'buff' | 'debuff' | 'special' | 'heal'?</td><td>✅ PLAN-055</td><td>BUFF 圖示底色（PLAN-055 D）：<code>buff</code> 藍＝增益、<code>debuff</code> 紅＝減益、<code>special</code> 紫＝特殊（狀態／資源／天賦專屬）、<code>heal</code> 綠＝治療。<b>選填</b>：不填由 buffType 推（statBoost→藍、debuff／control→紅、state／resource→紫），只有遊戲實際顏色不同時才填；綠色沒有對應的 buffType，治療類一律要填<br><small style="color:var(--text-dim)">不要為了配顏色去改 buffType——它還決定神經驅動覆寫的敵我判斷（<code>isSelfBuff</code>）</small></td></tr>
       <tr><td>buffType</td><td>BuffType (Enum)</td><td>✅ PLAN-001</td><td>Buff 類型：statBoost / resource / state / debuff / control</td></tr>
@@ -151,8 +151,8 @@
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>level</td><td>number</td><td>等級序號 1, 2, 3…（對應原羅馬尾碼 I / II / III）</td></tr>
       <tr><td><b>name</b></td><td>string?</td><td>🆕 <b>PLAN-034</b>：該級顯示名（如 <code>凝勢Ⅲ</code>）。實測 39 族階梯 buff，「第 N 級叫什麼」在系統中原本<strong>完全沒有落點</strong>——光把引用指到 lv3 也渲染不出「凝勢Ⅲ」。<br><small style="color:var(--text-dim)">遊戲裡沒有階名的家族（如貝爾莎的 <code>BUFF_幹勁</code>：官方沒有幹勁 I/II，而是直接在神經驅動給最大層數）<strong>填與 <code>buff.name</code> 相同的原字</strong>——這是「明示此級顯示為原名」的<strong>編輯決策</strong>，不是留空：字面不變，但浮窗與數值仍正確抬升，且是 opt-in 而非靜默漏填。<br>⚠ 刻意不做羅馬數字自動推導：現況資料已知損壞（<code>失穩ⅠⅠⅠ</code> / <code>護甲降低ⅠⅠ</code> 是重複 U+2160），且 <code>buff_虛粒子矩陣EX</code> 的 X 是羅馬字母，推導在實測髒資料上必然失敗。<br>後台 BuffAdmin 提供軟驗證（前綴須為 <code>buff.name</code>、尾綴須為<strong>全形</strong>羅馬字，不符時附 code point 與一鍵套用建議值）；<strong>只警示不擋存檔</strong>。</small></td></tr>
-      <tr><td>description</td><td>string?</td><td>該級描述（選填；可被滿星 / 算力變體引用）</td></tr>
-      <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>該級描述的 [xxx] 引用側錄（PLAN-019）</td></tr>
+      <tr><td>description</td><td>string?</td><td>該級描述——🆕 PLAN-058：分級 buff 描述的<strong>正本</strong>（引用帶 level 時顯示該級；未帶 level 時逐級列出）。後台為 textarea＋引用面板</td></tr>
+      <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>該級描述的 [xxx] 引用側錄（PLAN-019）。🆕 PLAN-058：未填或為空物件時<strong>回退頂層</strong> <code>descriptionRefs</code>（<code>buffLevelRefs()</code>，與模組 <code>levelRefs()</code> 一致；此前 BUFF 不回退）</td></tr>
       <tr><td>maxStack</td><td>number?</td><td>該級最大疊加層數（結構型各級不同，如凝勢 5 / 7 / 7；數值型通常不填）</td></tr>
       <tr><td>duration</td><td>number?</td><td>該級持續回合數</td></tr>
       <tr><td>maxTriggers</td><td>number?</td><td>該級生效次數（效果可觸發 N 次後耗盡）</td></tr>

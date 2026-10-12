@@ -7,6 +7,7 @@ import { RefText } from '../refs/RefText'
 import { RefChip } from '../refs/RefChip'
 import { slotKey } from '../../types/slots'
 import { mountLabel } from '../../utils/mechSlots'
+import { buffDescriptionView } from '../../utils/buffDescription'
 
 /**
  * 機師形態卡（PLAN-041 D-3）。
@@ -160,11 +161,21 @@ export function FormCard({ form }: { form: MechForm }) {
       {/* ── 第二層：形態增益 ── */}
       {grantedBuffs.length > 0 ? (
         <Layer title="形態增益" source="天賦滿星" accent="text-accent-purple">
-          {grantedBuffs.map((b) => (
-            <p key={b!.id}>
-              <RefText text={b!.description ?? ''} refs={b!.descriptionRefs} />
-            </p>
-          ))}
+          {grantedBuffs.map((b) => {
+            // 分級 BUFF 的通用說明可能留空，改列各級（PLAN-058，與引用浮窗同一套規則）
+            const view = buffDescriptionView(b!, undefined)
+            return (
+              <div key={b!.id}>
+                {view.description && <p><RefText text={view.description} refs={view.descriptionRefs} /></p>}
+                {view.levelLines.map((l) => (
+                  <p key={l.level}>
+                    <span className="text-text-dim mr-1">Lv{l.level}{l.name ? ` ${l.name}` : ''}</span>
+                    <RefText text={l.description} refs={l.descriptionRefs} />
+                  </p>
+                ))}
+              </div>
+            )
+          })}
         </Layer>
       ) : skillHits.length > 0 ? (
         <Layer title="形態增益" accent="text-accent-purple">

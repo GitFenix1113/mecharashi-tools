@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-058 描述欄位單一正本 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-058 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(234,179,8,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge yellow">◆ PLAN-058</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    描述欄位單一正本<span style="-webkit-text-fill-color:var(--text-secondary);">模組 · BUFF · levels[] 為正本 · 頂層鏡像</span>
+  </h1>
+  <p class="hero-sub">模組與 BUFF 的「頂層描述」和「各等級描述」是兩個都能手動編輯的位置，卻沒有規定誰是正本，前台又各讀各的。本計畫把各等級定為唯一正本：模組頂層改由程式在存檔時鏡像 LV.MAX，分級 BUFF 的頂層改為選填的「通用說明」。</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label yellow">Overview</div>
+  <div class="section-title">計畫概要</div>
+  <div class="plan-meta">
+    <div class="meta-item"><div class="meta-label">計畫編號</div><div class="meta-value yellow">PLAN-058</div></div>
+    <div class="meta-item"><div class="meta-label">建立日期</div><div class="meta-value">2026-10-13</div></div>
+    <div class="meta-item"><div class="meta-label">影響範圍</div><div class="meta-value purple">ModuleAdmin · BuffAdmin · EntityRefView · FormCard · ModuleCard · modules／buffs 資料</div></div>
+    <div class="meta-item"><div class="meta-label">優先級</div><div class="meta-value yellow">MID</div></div>
+    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value yellow">開發中</div></div>
+    <div class="meta-item"><div class="meta-label">前置依賴</div><div class="meta-value cyan">無（延續 PLAN-024 flat XOR leveled、PLAN-052-G 禁讀頂層數值）</div></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>同一句效果描述存了兩份，沒有人知道該改哪一份</strong><br>
+    模組的「效果描述（滿等效果）」是早期還沒分等級時的設計；後來加了 <code>levels[]</code>，兩邊並列成同等的可編輯欄位。
+    後台說明還寫錯了：<code>ModuleAdmin</code> 說頂層「會直接顯示在前台模組卡片上」，實際上模組卡顯示的是等級描述。
+    BUFF 的慣例又剛好相反——分級 BUFF 的頂層多半是空的。
+  </div>
+
+  <div class="problem-block">
+    <strong>前台各讀各的，修正只修到一邊</strong><br>
+    模組卡、模擬器讀等級描述；模組引用浮窗、形態卡反查、圖鑑「搜能力」讀頂層。等級描述沒有批次修改的工具，修一個詞要改 4–8 次，於是只改了頂層：
+    燎原模組頂層補了 <code>[燃燒地形]</code>，LV1–8 全缺；殘心芯片、迷光驅動器頂層補了 <code>[百分比耐久扣除]</code>，各等級都沒有——模組卡顯示的正是缺字版。
+  </div>
+
+  <div class="info-block">
+    <strong>2026-10-13 盤點（正式站唯讀）</strong>
+    <table class="impact-table">
+      <tr><th>對象</th><th>狀態</th><th>筆數</th></tr>
+      <tr><td>模組 247</td><td>頂層描述與 LV.MAX 逐字相同</td><td>239</td></tr>
+      <tr><td></td><td>只差空白／換行（頂層有排版，等級沒有）：攻堅模組、原點核心、帕姆斯陣列</td><td>3</td></tr>
+      <tr><td></td><td>內容不同：殘心芯片、迷光驅動器、燎原模組、警戒模組、觀星者單元</td><td>5</td></tr>
+      <tr><td></td><td>頂層<b>數值</b>與 LV.MAX 不符（模擬器早已禁讀，後台仍在編輯）</td><td>17</td></tr>
+      <tr><td>BUFF 237</td><td>無等級（不受影響）</td><td>196</td></tr>
+      <tr><td></td><td>分級、頂層空白 → 沒帶等級的引用顯示空白描述（鋒勢 ×11、傷害降低 ×1）</td><td>30</td></tr>
+      <tr><td></td><td>分級、頂層＝LV1 全文（等級化前遺留）：幹勁、情報、被命中概率提升</td><td>3</td></tr>
+      <tr><td></td><td>分級、頂層只有「[失穩]」（拿描述當詞條連結）</td><td>1</td></tr>
+    </table>
+    分析全文：<code>_local-notes/2026-10/2026-10-13_模組BUFF描述雙正本整理建議.html</code>（本機、不進版控）。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label yellow">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：各等級描述是唯一正本</strong><br>
+    人只編輯各等級。所有修正都落在等級上，頂層不再是第二個輸入口。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：模組頂層＝LV.MAX 的鏡像，由程式在存檔時寫入（不刪欄位）</strong><br>
+    頂層 <code>description</code> 與 32 個數值欄位在存檔時由 <code>syncModuleTopFromMaxLevel()</code> 從 LV.MAX 複製。
+    讀頂層的前台點（引用浮窗、形態卡、圖鑑搜尋、後台列表）、entityRefs 掃描、cascadeDelete 與型別都不必改。
+    代價是 DB 仍存一份副本，但沒有人能手動改它，因此不會再漂移。「基本屬性」「武器增傷」兩分頁拿掉。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：頂層 <code>descriptionRefs</code> 保留，改稱「共用引用表」</strong><br>
+    1,182 個模組等級段落中有 1,062 個沒有自己的引用表，靠頂層回退。它其實是各等級共用的引用表，不能拿掉。
+    共用引用表的「改 key／語法糖」改寫改成套用到<b>所有等級</b>（原本只改頂層，等級會殘留舊 key）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：分級 BUFF 的頂層＝「通用說明」（選填、不寫數字）</strong><br>
+    BUFF 的頂層和模組不同，它有自己的用途：未指定等級的引用與形態卡才顯示它，所以不做鏡像。
+    留空時前台改列各級（Lv1／Lv2…），30 筆空白不必人工補。後台依是否分級切換欄位標籤，並對「通用說明含數字」「與某一級完全相同」給軟警示。
+    等級引用表未自填時回退頂層，與模組、背包技能一致（原本 BUFF 不回退，和後台註解矛盾）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：「只有某機師能發動」由 <code>unlockCondition</code> 表達，不寫進正文</strong><br>
+    觀星者單元、帕姆斯陣列的「※只有[曜]／[海莉絲]能發動此模組※」從正文移除，模組卡改顯示 <code>unlockCondition</code> 標籤（復仇女神四顆「需〈迸發模組〉滿級」同時受惠）。
+  </div>
+
+  <div class="warning-block">
+    <strong>順序：先把頂層較正確的內容搬進各等級，再跑鏡像</strong><br>
+    鏡像會用 LV.MAX 蓋掉頂層。殘心、迷光、燎原三筆是頂層較正確；攻堅、原點核心、帕姆斯陣列、觀星者是頂層有排版。這些都必須先寫進等級，否則修正會被蓋掉。
+    形態卡用換行把模組正文切成「一行一形態」，帕姆斯陣列與觀星者的換行若沒搬進 LV.MAX，鏡像後形態卡會整段顯示。
+  </div>
+
+  <div class="info-block">
+    <strong>個案裁決（站長，2026-10-13，依遊戲內截圖）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>殘心芯片、迷光驅動器：所有等級都是 <code>[固定傷害][百分比耐久扣除]</code></li>
+      <li>燎原模組：所有等級都是「場上每有1格友方[燃燒地形]」</li>
+      <li>警戒模組：維持原樣（LV8 本來就正確）</li>
+      <li>觀星者單元：照建議——套用頂層排版、移除 ※ 行；「和／與」取「和」（LV1 與頂層一致）</li>
+      <li>BUFF：幹勁、情報、被命中概率提升清空頂層；失穩改 <code>termRef: term_失穩</code></li>
+      <li>掠食 LV1 無資料：未裁決，不動</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label yellow">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>模組後台：存檔鏡像、頂層描述唯讀預覽、共用引用表、拿掉頂層數值分頁、「套用到所有等級」文字取代、新增等級預帶上一級描述</li>
+      <li>BUFF：描述解析 helper（前台浮窗、形態卡共用）、後台欄位語意與等級描述 RefPicker</li>
+      <li>模組卡顯示 <code>unlockCondition</code></li>
+      <li>一次性資料修正與鏡像搬遷（備份 → dry-run → 寫入 → bump）</li>
+      <li>唯讀稽核腳本 <code>scripts/check-description-drift.mjs</code>（照抄清單式輸出，站長可自行跑）</li>
+      <li>資料模型與資料庫設計文件的欄位語意</li>
+    </ul>
+  </div>
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>刪除模組頂層欄位本身（鏡像後已無漂移風險，日後要刪只剩機械替換）</li>
+      <li>BUFF 等級的結構化數值（描述寫「可疊加3層」但 <code>maxStack</code> 空白之類）——另一筆技術債</li>
+      <li>背包技能的同型問題（未盤點）</li>
+      <li>模組名稱與遊戲不符（遊戲為「殘心晶片」，站上為「殘心芯片」）——留給站長決定</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label yellow">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-058 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-058 — <a href="../index.html" style="color:var(--accent-yellow);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

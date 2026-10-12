@@ -127,8 +127,16 @@ export interface Module {
   // 特殊情境增傷
   dmg_counter?: number
   dmg_enemy_phase?: number
+  /**
+   * LV.MAX 描述的**鏡像**（PLAN-058）：後台存檔時由 `syncModuleTopFromMaxLevel` 寫入，不可手改；
+   * 正本是 `levels[].description`。上方那排數值欄位同此（讀數值一律走 levels[]，PLAN-052-G）。
+   * 沒有 levels[] 的新建模組才以它暫存描述。
+   */
   description: string
-  /** 描述內 [xxx] 引用側錄（PLAN-019 Layer 1） */
+  /**
+   * 描述內 [xxx] 引用側錄（PLAN-019 Layer 1）。
+   * 實為各等級的**共用引用表**：`levels[i].descriptionRefs` 未填或為空時回退到這份（PLAN-058 決策三），不鏡像。
+   */
   descriptionRefs?: DescriptionRefs
   /**
    * 此模組可賦予的 buff ID 列表（PLAN-019 Layer 2）。
