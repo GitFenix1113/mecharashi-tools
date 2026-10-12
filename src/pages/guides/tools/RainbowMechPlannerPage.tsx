@@ -13,6 +13,7 @@ import { PlanResult, type Weight } from '../../../components/planner/PlanResult'
 import { nextFrames } from '../../../utils/nextFrames'
 import { mechPartIconPath } from '../../../utils/assets'
 import { MECH_WEIGHT_CLASSES } from '../../../data/mechWeightClasses'
+import { MechTypeIcon } from '../../../components/icons/MechTypeIcon'
 
 const ALL_SLOTS: MechPartPosition[] = ['torso', 'leftArm', 'rightArm', 'legs']
 
@@ -168,10 +169,11 @@ export default function RainbowMechPlannerPage() {
             <button
               key={value}
               onClick={() => handleArmorType(value)}
-              className={`px-3 py-1.5 rounded-lg text-[13px] font-bold border transition-colors cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold border transition-colors cursor-pointer ${
                 armorType === value ? color : 'text-text-dim border-border hover:border-border-accent'
               }`}
             >
+              <MechTypeIcon type={value} size={15} decorative />
               {label}
             </button>
           ))}

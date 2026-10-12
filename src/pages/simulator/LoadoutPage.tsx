@@ -1018,7 +1018,10 @@ export default function LoadoutPage() {
                     （使用者回報 2026-08-29：「左上的替換機甲沒有跟著變動」）。
                     這一格與那三處講的是同一件事「這是哪一台」，各自答一次就會不一致。 */}
                 <span className="truncate">{(ctx.identityMech ?? ctx.mech).name}</span>
-                <span className="text-[10px] text-text-dim shrink-0">{mechWeightShort(ctx.mech.armorType)}</span>
+                <span className="inline-flex items-center gap-0.5 text-[10px] text-text-dim shrink-0">
+                  <MechTypeIcon type={ctx.mech.armorType} decorative />
+                  {mechWeightShort(ctx.mech.armorType)}
+                </span>
                 {/* ⚠ **這顆卡片按下去換的是基底**，不是上面印的那台 —— 不講的話它會變成
                     「我按了帕斯卡，結果換掉的是整台」。面板抬頭寫「軀幹來源 · 基底 X」，
                     這裡欄位窄，只留後半段。 */}
@@ -1152,9 +1155,10 @@ export default function LoadoutPage() {
                     </span>
                     {/* ⚠ 裝甲徽章一律取**基底**：混搭不能跨裝甲類型（總綱決策七）⇒ 兩者必然相同，
                         而這一格回答的是「這套配裝屬於哪個裝甲級距」，那是基底的屬性。 */}
-                    <span className={`hud-cut-sm shrink-0 px-1.5 py-0.5 text-[11px] font-bold border border-current/40 bg-bg-dark/70 ${
+                    <span className={`hud-cut-sm inline-flex items-center gap-1 shrink-0 px-1.5 py-0.5 text-[11px] font-bold border border-current/40 bg-bg-dark/70 ${
                       mechWeightClassOf(ctx.mech.armorType)?.text ?? 'text-text-secondary'
                     }`}>
+                      <MechTypeIcon type={ctx.mech.armorType} decorative />
                       {mechWeightShort(ctx.mech.armorType)}
                     </span>
                     {/* ⚠ 兩者不同時**一定要把基底講出來**：右邊那顆「更換機甲」換的是基底，
@@ -1912,6 +1916,7 @@ const mechRow = (m: Mech): PickerRowItem => {
     meta: `${mechWeightShort(m.armorType)}${m.quality ? ` · ${m.quality}` : ''}`,
     // 機甲類型色（青／綠／紅）與機甲圖鑑、武器限定同一份（data/mechWeightClasses.ts，PLAN-059 決策十）
     tone: mechWeightClassOf(m.armorType)?.text,
+    metaIcon: <MechTypeIcon type={m.armorType} size={11} decorative />,
     // 槽位數是「這台裝得下什麼」的第一個答案，比品質更值得佔這一行
     sub: `出力 ${m.output.toLocaleString()} · 手${cap.singleHand}${cap.shoulder ? ` 肩${cap.shoulder}` : ''} 背${cap.back}`,
     // ⚠ 出力 0 ＝ 官方數值尚未公布的佔位機甲（如 mech_090_美杜莎MK2），**不是**壞資料。

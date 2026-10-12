@@ -15,6 +15,7 @@ import { slotKey } from '../../types/slots'
 import { WeaponEquipSlot } from '../../types/enums'
 import { ShoulderArmamentCard } from '../../components/mechs/ShoulderArmamentCard'
 import { mechWeightBadgeClass, mechWeightShort } from '../../data/mechWeightClasses'
+import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
 
 type NumericPartStatKey = 'durable' | 'firepower' | 'weight' | 'output' | 'antiRiot' | 'hit' | 'dodge' | 'move'
 
@@ -314,7 +315,13 @@ export default function MechDetailPage() {
                 ←
               </BackToListLink>
               <h1 className="text-xl sm:text-2xl xl:text-3xl font-black leading-tight truncate">{mech.name}</h1>
-              <span className={`inline-block shrink-0 px-2 py-0.5 rounded text-xs font-bold border ${armorCls}`}>
+              {/* 只換字牌、不加新列：頁首 2026-10-10 才為「一屏看完」改版過（PLAN-059 F-2）。
+                  滑過提示誰開得動它——駕照與機甲類型是同一套圖示 */}
+              <span
+                title={`${mechWeightShort(mech.armorType)}駕照的機師可駕駛`}
+                className={`inline-flex items-center gap-1 shrink-0 px-2 py-0.5 rounded text-xs font-bold border ${armorCls}`}
+              >
+                <MechTypeIcon type={mech.armorType} decorative />
                 {mechWeightShort(mech.armorType)}
               </span>
             </div>

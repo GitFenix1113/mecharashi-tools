@@ -190,7 +190,10 @@ export function MechPickerCard({
             </span>
           )}
         </div>
-        <div className={`text-[11px] truncate ${item.tone ?? 'text-text-dim'}`}>{item.meta}</div>
+        <div className={`flex items-center gap-1 min-w-0 text-[11px] ${item.tone ?? 'text-text-dim'}`}>
+          {item.metaIcon}
+          <span className="truncate">{item.meta}</span>
+        </div>
         {item.sub && <div className={`${HUD.num} text-[10px] text-text-dim truncate`}>{item.sub}</div>}
         {item.warning && <div className="text-[11px] text-accent-yellow/90 leading-snug">{item.warning}</div>}
 

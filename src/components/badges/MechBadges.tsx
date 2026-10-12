@@ -1,5 +1,5 @@
-import { mechWeightBadgeClass, mechWeightClassOf, mechWeightShort } from '../../data/mechWeightClasses'
-import { MechTypeIcon } from '../icons/MechTypeIcon'
+import { ALL_MECH_TYPES, mechWeightBadgeClass, mechWeightClassOf, mechWeightShort, restrictedMechTypes } from '../../data/mechWeightClasses'
+import { AllMechTypesIcon, MechTypeIcon } from '../icons/MechTypeIcon'
 
 /** 機甲類型徽章：圖示＋短名「中型」，滑鼠提示用全名（PLAN-059 決策十；色與字住在 data/mechWeightClasses.ts） */
 export function ArmorTypeBadge({ armorType, className = '' }: { armorType: string; className?: string }) {
@@ -11,6 +11,41 @@ export function ArmorTypeBadge({ armorType, className = '' }: { armorType: strin
       <MechTypeIcon type={armorType} decorative />
       {mechWeightShort(armorType)}
     </span>
+  )
+}
+
+/**
+ * 裝備的機甲類型限定（武器 mechRestriction、背包 assemblableArmorType 共用，PLAN-059 F-3）：圖示＋「中型限定」。
+ * 不限制（none、空陣列、三種都列）預設什麼都不畫——清單裡只有限定的才掛徽章；
+ * 詳情頁給 showAll，不限制時畫中性的「全機型」（官方三者合一圖示 004，決策十）。
+ */
+export function MechRestrictionBadge({ types, size = 'md', showAll = false, className = '' }: {
+  /** 任何寫法：'medium'、'Medium'、['Light', 'Medium', 'Heavy']… */
+  types: readonly (string | null | undefined)[]
+  size?: 'sm' | 'md'
+  showAll?: boolean
+  className?: string
+}) {
+  const list = restrictedMechTypes(types)
+  const box = size === 'sm' ? 'px-1.5 py-0.5 text-[11px]' : 'px-2 py-0.5 text-[13px]'
+  if (!list.length) {
+    if (!showAll) return null
+    return (
+      <span title={ALL_MECH_TYPES.full} className={`inline-flex items-center gap-1 rounded font-bold border text-text-secondary bg-bg-dark border-border ${box} ${className}`}>
+        <AllMechTypesIcon size="1.2em" decorative />
+        {ALL_MECH_TYPES.short}
+      </span>
+    )
+  }
+  return (
+    <>
+      {list.map((m) => (
+        <span key={m.armorType} title={`${m.full}限定`} className={`inline-flex items-center gap-1 rounded font-bold border ${m.text} ${m.bg} ${m.border} ${box} ${className}`}>
+          <MechTypeIcon type={m.armorType} decorative />
+          {list.length === 1 ? `${m.short}限定` : m.short}
+        </span>
+      ))}
+    </>
   )
 }
 

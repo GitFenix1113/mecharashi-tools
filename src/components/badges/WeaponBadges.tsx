@@ -1,4 +1,5 @@
 import { mechWeightClassOf } from '../../data/mechWeightClasses'
+import { MechRestrictionBadge } from './MechBadges'
 
 // ── Weapon Type ──────────────────────────────────────────────────────────────
 
@@ -79,14 +80,9 @@ export const MECH_RESTRICTION_LABELS: Record<string, string> = Object.fromEntrie
   Object.entries(MECH_RESTRICTION_CONFIG).map(([k, v]) => [k, v.label])
 )
 
-export function WeaponMechRestrictionBadge({ restriction, className = '' }: { restriction: string; className?: string }) {
-  const config = MECH_RESTRICTION_CONFIG[restriction]
-  if (!config) return null
-  return (
-    <span className={`px-2 py-0.5 rounded text-[13px] font-bold border ${config.className} ${className}`}>
-      {config.label}
-    </span>
-  )
+/** 武器的機甲限定：交給共用的 MechRestrictionBadge（PLAN-059 F-3）。showAll＝詳情頁，none 時畫「全機型」 */
+export function WeaponMechRestrictionBadge({ restriction, showAll = false, className = '' }: { restriction: string; showAll?: boolean; className?: string }) {
+  return <MechRestrictionBadge types={[restriction]} showAll={showAll} className={className} />
 }
 
 // ── Skill Activation ──────────────────────────────────────────────────────────

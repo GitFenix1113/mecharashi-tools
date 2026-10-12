@@ -31,13 +31,15 @@ export interface MechWeightClassMeta {
   text: string
   bg: string
   border: string
+  /** 較實的框線（圓章外圈：疊在立繪上要看得出類型色） */
+  borderStrong: string
   bar: string
 }
 
 export const MECH_WEIGHT_CLASSES: readonly MechWeightClassMeta[] = [
-  { armorType: ArmorType.LIGHT,  short: '輕型', full: '輕型機甲', icon: '001', text: 'text-accent-cyan',  bg: 'bg-accent-cyan/10',  border: 'border-accent-cyan/40',  bar: 'bg-accent-cyan' },
-  { armorType: ArmorType.MEDIUM, short: '中型', full: '中型機甲', icon: '002', text: 'text-accent-green', bg: 'bg-accent-green/10', border: 'border-accent-green/40', bar: 'bg-accent-green' },
-  { armorType: ArmorType.HEAVY,  short: '重型', full: '重型機甲', icon: '003', text: 'text-accent-red',   bg: 'bg-accent-red/10',   border: 'border-accent-red/40',   bar: 'bg-accent-red' },
+  { armorType: ArmorType.LIGHT,  short: '輕型', full: '輕型機甲', icon: '001', text: 'text-accent-cyan',  bg: 'bg-accent-cyan/10',  border: 'border-accent-cyan/40',  borderStrong: 'border-accent-cyan/70',   bar: 'bg-accent-cyan' },
+  { armorType: ArmorType.MEDIUM, short: '中型', full: '中型機甲', icon: '002', text: 'text-accent-green', bg: 'bg-accent-green/10', border: 'border-accent-green/40', borderStrong: 'border-accent-green/70', bar: 'bg-accent-green' },
+  { armorType: ArmorType.HEAVY,  short: '重型', full: '重型機甲', icon: '003', text: 'text-accent-red',   bg: 'bg-accent-red/10',   border: 'border-accent-red/40',   borderStrong: 'border-accent-red/70',     bar: 'bg-accent-red' },
 ]
 
 /**
@@ -57,6 +59,17 @@ export function mechWeightClassOf(raw: string | null | undefined): MechWeightCla
   const s = raw.trim()
   const armor = toArmorType(s) ?? fromAssemblableArmorType(s) ?? fromAssemblableArmorType(s.charAt(0).toUpperCase() + s.slice(1))
   return armor ? BY_ARMOR.get(armor) : undefined
+}
+
+/**
+ * 裝備可裝的機甲類型（背包 assemblableArmorType、武器 mechRestriction）→ 真正有限制的那幾種，固定輕→中→重排序。
+ * 空陣列、或三種都列（背包有 107 個標了輕＋中＋重）＝「不限制」→ 回 []：清單裡不限制的一律不顯示（決策十）。
+ * 武器的 none 認不得 → 也是 []。
+ */
+export function restrictedMechTypes(raw: readonly (string | null | undefined)[] | null | undefined): MechWeightClassMeta[] {
+  const set = new Set((raw ?? []).map(mechWeightClassOf))
+  const list = MECH_WEIGHT_CLASSES.filter((m) => set.has(m))
+  return list.length === MECH_WEIGHT_CLASSES.length ? [] : list
 }
 
 /** 顯示用短名；認不得就原樣（寧可顯示原字，不要空白） */

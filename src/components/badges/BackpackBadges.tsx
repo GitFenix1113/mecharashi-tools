@@ -1,7 +1,7 @@
-import { Fragment } from 'react'
 import { FallbackImage } from '../common/FallbackImage'
 import { backpackIconCandidates } from '../../utils/gameIcons'
 import { mechWeightClassOf } from '../../data/mechWeightClasses'
+import { MechRestrictionBadge } from './MechBadges'
 
 export const BACKPACK_TYPE_CONFIG: Record<string, { label: string; className: string }> = {
   Heal:            { label: '修理',    className: 'text-accent-green bg-accent-green/10 border-accent-green/30' },
@@ -38,24 +38,9 @@ export function BackpackTypeBadge({ type, className = '' }: { type: string; clas
   )
 }
 
+/** 背包可裝備的機甲類型：交給共用的 MechRestrictionBadge（PLAN-059 F-3）——三種都列＝不限制，不畫 */
 export function AssemblableArmorTypeBadge({ armorType, className = '' }: { armorType: string[]; className?: string }) {
-  if (!armorType || armorType.length === 0) return null
-  return (
-    <>
-      {armorType.map((type, i) => {
-        const config = ASSEMBLABLE_ARMOR_CONFIG[type]
-        if (!config) return null
-        return (
-          <Fragment key={type}>
-            {i > 0 && <span className="text-border/60 select-none text-[11px]">|</span>}
-            <span className={`px-1.5 py-0.5 rounded text-[11px] font-bold border ${config.className} ${className}`}>
-              {config.label}
-            </span>
-          </Fragment>
-        )
-      })}
-    </>
-  )
+  return <MechRestrictionBadge types={armorType} size="sm" className={className} />
 }
 
 type RarityIconStyle = { background: string; boxShadow: string; placeholder: string }

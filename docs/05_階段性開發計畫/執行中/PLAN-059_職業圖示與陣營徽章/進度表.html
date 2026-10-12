@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">12</div>
+      <div class="summary-num" style="color:var(--accent-green)">16</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">14</div>
+      <div class="summary-num" style="color:var(--text-dim)">10</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度（開發者 24＋站長／管理者 2）</span>
-      <span style="color:var(--accent-cyan);">12 / 26</span>
+      <span style="color:var(--accent-cyan);">16 / 26</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 46%"></div>
+      <div class="progress-bar-fill" style="width: 62%"></div>
     </div>
   </div>
 
@@ -601,7 +601,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-1 &nbsp; 機甲圖鑑</div>
       <div class="task-group-meta">src/pages/mechs/MechsPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -610,7 +610,7 @@
         <div class="task-file">src/pages/mechs/MechsPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -618,7 +618,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-2 &nbsp; 機甲詳情頁首</div>
       <div class="task-group-meta">src/pages/mechs/MechDetailPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -627,7 +627,7 @@
         <div class="task-file">src/pages/mechs/MechDetailPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -635,7 +635,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-3 &nbsp; 武器限定、背包可裝備</div>
       <div class="task-group-meta">WeaponBadges · BackpackBadges · WeaponsPage · BackpacksPage · 詳情頁</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -643,11 +643,11 @@
         <div class="task-desc">
           107 個背包標了「輕＋中＋重」三種都可裝，現在畫成三顆字牌，等於「沒限制」；武器不限制的 128 把什麼都不顯示——清單兩者一致改為不顯示。
           詳情頁「可裝備」寫「全機型」並用 <code>004</code>（決策十）。背包資料有一筆三種的順序是倒的（Heavy, Medium, Light），元件內固定排序即可，不改資料。
-        </div>
+        <br><b>實作</b>：新增共用的 <code>MechRestrictionBadge</code>（<code>MechBadges.tsx</code>），武器與背包的徽章都交給它；判斷「真正有沒有限制」走 <code>restrictedMechTypes()</code>（三種都列或空＝不限制，有測試）。背包頁篩選「無限制」改名「全機型」，而且把三種都列的 107 個也算進去（原本只算空陣列，實際上只篩得到武器）；背包浮窗「裝備限制」改「可裝備」。武器清單卡的「機甲限制：中型限定」仍是統計列的文字，不改徽章。</div>
         <div class="task-file">src/components/badges/WeaponBadges.tsx · src/components/badges/BackpackBadges.tsx · src/pages/backpacks/BackpacksPage.tsx · src/pages/weapons/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -655,7 +655,7 @@
     <div class="task-group-header">
       <div class="task-group-title">F-4 &nbsp; 模擬器、彩虹機甲規劃、引用浮窗、匯出圖卡</div>
       <div class="task-group-meta">LoadoutPage · RainbowMechPlannerPage · EntityRefView · LoadoutExportCard</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -664,7 +664,7 @@
         <div class="task-file">src/pages/simulator/LoadoutPage.tsx · src/pages/guides/tools/RainbowMechPlannerPage.tsx · src/components/refs/EntityRefView.tsx · src/components/loadout/LoadoutExportCard.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

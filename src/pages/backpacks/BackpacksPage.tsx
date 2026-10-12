@@ -14,6 +14,9 @@ import {
   BackpackIcon,
 } from '../../components/badges/BackpackBadges'
 import { WeaponRarityBadge } from '../../components/badges/WeaponRarityBadge'
+import { MechRestrictionBadge } from '../../components/badges/MechBadges'
+import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
+import { restrictedMechTypes } from '../../data/mechWeightClasses'
 import { WeaponIcon } from '../../components/icons/WeaponIcon'
 import { EQUIP_SLOT_LABELS } from '../../components/badges/WeaponBadges'
 import { resolveWeaponSkills, type ResolvedWeaponSkill } from '../../utils/weaponSkills'
@@ -82,13 +85,6 @@ function BackpackTooltipContent({ bp, skills, prereqName, pinned = false }: {
   prereqName?: string
   pinned?: boolean
 }) {
-  const armorLabel =
-    bp.assemblableArmorType.length === 0
-      ? '無限制'
-      : bp.assemblableArmorType
-          .map((t) => ASSEMBLABLE_ARMOR_CONFIG[t]?.label ?? t)
-          .join('、')
-
   return (
     <>
       <div
@@ -124,9 +120,10 @@ function BackpackTooltipContent({ bp, skills, prereqName, pinned = false }: {
               <Num className="text-[14px]">{bp.repairAmount}</Num>
             </div>
           )}
-          <div className="flex items-center gap-1.5 col-span-2">
-            <span className="text-[13px] text-text-dim">裝備限制</span>
-            <span className="text-[14px] text-text-secondary">{armorLabel}</span>
+          {/* 可裝備：限定的印「中型限定」、不限制（含三種都列）印「全機型」＋官方三者合一圖示（PLAN-059 決策十） */}
+          <div className="flex flex-wrap items-center gap-1.5 col-span-2">
+            <span className="text-[13px] text-text-dim">可裝備</span>
+            <MechRestrictionBadge types={bp.assemblableArmorType} size="sm" showAll />
           </div>
         </div>
 
@@ -437,7 +434,8 @@ export default function BackpacksPage() {
         if (abilityFilter && ability.variant !== abilityFilter) return false
       }
       const armor = itemArmor(it)
-      if (armorFilter === 'none' && armor.length > 0) return false
+      // 「全機型」＝沒有真正的限制：空陣列，或輕＋中＋重三種都列（107 個背包是後者，PLAN-059 F-3）
+      if (armorFilter === 'none' && restrictedMechTypes(armor).length > 0) return false
       if (armorFilter && armorFilter !== 'none' && !armor.includes(armorFilter)) return false
       if (search) {
         const q = search.toLowerCase()
@@ -628,10 +626,11 @@ export default function BackpacksPage() {
           <span className="text-xs text-text-dim mr-1 w-10 flex-shrink-0">裝備</span>
           <button className={filterBtn(!armorFilter)} onClick={() => setArmorFilter(null)}>全部</button>
           <button className={filterBtn(armorFilter === 'none')} onClick={() => setArmorFilter(armorFilter === 'none' ? null : 'none')}>
-            無限制
+            全機型
           </button>
           {Object.entries(ASSEMBLABLE_ARMOR_CONFIG).map(([key]) => (
-            <button key={key} className={armorFilterBtn(key)} onClick={() => setArmorFilter(armorFilter === key ? null : key)}>
+            <button key={key} className={`inline-flex items-center gap-1 ${armorFilterBtn(key)}`} onClick={() => setArmorFilter(armorFilter === key ? null : key)}>
+              <MechTypeIcon type={key} size={13} decorative />
               {ASSEMBLABLE_ARMOR_CONFIG[key].label}
             </button>
           ))}
@@ -732,7 +731,7 @@ function BackpackCard({ bp, skills, pinned, onEnter, onLeave, onClick }: {
           </div>
           <div className="flex flex-wrap items-center gap-1 mt-0.5">
             <BackpackTypeBadge type={bp.type} />
-            {bp.assemblableArmorType.length > 0 && (
+            {restrictedMechTypes(bp.assemblableArmorType).length > 0 && (
               <>
                 <span className="text-[11px] text-text-dim self-center leading-none select-none">|</span>
                 <AssemblableArmorTypeBadge armorType={bp.assemblableArmorType} />
@@ -786,7 +785,7 @@ function WeaponProjectionCard({ w, typeLabel, onEnter, onLeave, onClick }: {
           </div>
           <div className="flex flex-wrap items-center gap-1 mt-0.5">
             {typeLabel && <BackpackTypeBadge type={typeLabel} />}
-            {armor.length > 0 && (
+            {restrictedMechTypes(armor).length > 0 && (
               <>
                 <span className="text-[11px] text-text-dim self-center leading-none select-none">|</span>
                 <AssemblableArmorTypeBadge armorType={armor} />

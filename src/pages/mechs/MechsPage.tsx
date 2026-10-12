@@ -10,6 +10,7 @@ import { ViewModeToggle } from '../../components/common/ViewModeToggle'
 import { MechQualityBadge } from '../../components/badges/MechBadges'
 import { chassisFirepower } from '../../utils/chassisStats'
 import { MECH_WEIGHT_CLASSES, mechWeightClassOf } from '../../data/mechWeightClasses'
+import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
 
 /**
  * 品質篩選預設值。**預設只顯示 S 級**（63/89 台）。
@@ -146,7 +147,8 @@ export default function MechsPage() {
       {/* Filters */}
       <div className="bg-bg-card border border-border rounded-xl p-4 mb-6 flex flex-col gap-3">
         <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs text-text-dim mr-1">裝甲</span>
+          {/* 欄位名「類型」：原本的「裝甲」容易和裝甲數值混淆（PLAN-059 決策十） */}
+          <span className="text-xs text-text-dim mr-1">類型</span>
           <button className={filterBtn(!armorFilter)} onClick={() => setArmorFilter('')}>
             全部
           </button>
@@ -158,12 +160,14 @@ export default function MechsPage() {
               <button
                 key={a}
                 onClick={() => setArmorFilter(active ? '' : a)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                title={s.full}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
                   active && s
                     ? `${s.bg} ${s.text} ${s.border}`
                     : 'bg-bg-card text-text-secondary border-border hover:border-border-accent hover:text-text-primary'
                 }`}
               >
+                <MechTypeIcon type={a} size={15} decorative />
                 {s.short}
               </button>
             )
@@ -238,11 +242,10 @@ export default function MechsPage() {
                     loading="lazy"
                     className="w-full h-full object-contain object-center transition-transform group-hover:scale-105"
                   />
+                  {/* 類型小圓章：右下角，與機師圖鑑的職業圓章同一套語彙（PLAN-059 F-1） */}
                   {s && (
-                    <span
-                      className={`absolute top-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-bold border ${s.bg} ${s.text} ${s.border}`}
-                    >
-                      {s.short}
+                    <span className={`absolute bottom-1 right-1 w-6 h-6 rounded-full grid place-items-center bg-black/65 border ${s.borderStrong} ${s.text}`}>
+                      <MechTypeIcon type={mech.armorType} size={14} />
                     </span>
                   )}
                   {/* 品質標示：切到「品質：全部」時，沒有它就分不出哪台是 A/B 級 */}
@@ -279,11 +282,11 @@ export default function MechsPage() {
                     className="w-full h-full object-contain object-center transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-bg-card via-transparent to-transparent" />
+                  {/* 類型圓章：右下角、壓在底部漸層的暗部（PLAN-059 F-1）。原本左上的字牌常壓到機甲的頭或武器；
+                      兩本圖鑑共用「右下角＝主分類（機師是職業、機甲是類型）、右上角＝品質」的語彙 */}
                   {s && (
-                    <span
-                      className={`absolute top-2 left-2 px-2 py-0.5 rounded text-[13px] font-bold border ${s.bg} ${s.text} ${s.border}`}
-                    >
-                      {s.short}
+                    <span className={`absolute bottom-2 right-2 w-9 h-9 rounded-full grid place-items-center bg-black/60 backdrop-blur-[2px] border-[1.5px] ${s.borderStrong} ${s.text}`}>
+                      <MechTypeIcon type={mech.armorType} size={20} />
                     </span>
                   )}
                   {mech.quality && (
@@ -299,6 +302,13 @@ export default function MechsPage() {
                     <h3 className="font-bold text-base text-text-primary group-hover:text-accent-orange transition-colors">
                       {mech.name}
                     </h3>
+                    {/* 名稱下補一行類型小字：讀不懂圖示的人還是看得到字 */}
+                    {s && (
+                      <span className={`inline-flex items-center gap-1 mt-0.5 text-[12px] ${s.text}`}>
+                        <MechTypeIcon type={mech.armorType} decorative />
+                        {s.short}
+                      </span>
+                    )}
                   </div>
                   <div className="text-right text-xs text-text-dim">
                     <p>

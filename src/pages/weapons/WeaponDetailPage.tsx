@@ -359,7 +359,7 @@ export default function WeaponDetailPage() {
                     {weapon.kind}
                   </span>
                   <WeaponEquipSlotBadge slot={weapon.equipSlot} />
-                  <WeaponMechRestrictionBadge restriction={weapon.mechRestriction} />
+                  <WeaponMechRestrictionBadge restriction={weapon.mechRestriction} showAll />
                   {isCompositeWeapon(weapon) && <CompositeBadge />}
                   {weapon.isFixedArmament && <FixedArmamentBadge />}
                 </div>

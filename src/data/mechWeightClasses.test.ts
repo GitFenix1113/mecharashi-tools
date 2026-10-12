@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { ArmorType, MechLicense } from '../types/enums.ts'
 import { licenseAllows } from '../utils/normalizeArmorType.ts'
-import { ALL_MECH_TYPES, MECH_WEIGHT_CLASSES, mechWeightBadgeClass, mechWeightClassOf, mechWeightIconKey, mechWeightShort } from './mechWeightClasses.ts'
+import { ALL_MECH_TYPES, MECH_WEIGHT_CLASSES, mechWeightBadgeClass, mechWeightClassOf, mechWeightIconKey, mechWeightShort, restrictedMechTypes } from './mechWeightClasses.ts'
 
 const iconFile = (key: string) => new URL(`../../public/images/game/icons/license/${key}.webp`, import.meta.url)
 
@@ -47,6 +47,16 @@ test('圖示：001 輕、002 中、003 重的 _l／_s，與「全機型」004_l 
     }
   }
   assert.ok(fs.existsSync(iconFile(`Icon_wanzertype_${ALL_MECH_TYPES.icon}_l`)))
+})
+
+test('restrictedMechTypes：三種都列或空＝不限制；順序固定輕→中→重', () => {
+  assert.deepEqual(restrictedMechTypes(['Light', 'Medium', 'Heavy']), [])
+  assert.deepEqual(restrictedMechTypes(['Heavy', 'Medium', 'Light']), [])   // 資料有一筆是倒的
+  assert.deepEqual(restrictedMechTypes([]), [])
+  assert.deepEqual(restrictedMechTypes(undefined), [])
+  assert.deepEqual(restrictedMechTypes(['none']), [])                        // 武器不限制
+  assert.deepEqual(restrictedMechTypes(['medium']).map((m) => m.short), ['中型'])
+  assert.deepEqual(restrictedMechTypes(['Heavy', 'Light']).map((m) => m.short), ['輕型', '重型'])
 })
 
 test('配色統一青綠紅；認不得給中性樣式', () => {
