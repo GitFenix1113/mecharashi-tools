@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card yellow">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-058 · 描述欄位單一正本</h3>
+      <p>模組與 BUFF 的效果描述存了兩份（頂層＋各等級），都能手改、沒人規定誰是正本，前台又各讀各的，於是修正只修到一邊：燎原模組頂層補了 [燃燒地形]、8 個等級全缺，而模組卡顯示的正是等級。本計畫把<b>各等級定為唯一正本</b>：模組頂層描述與數值改由存檔時自動鏡像 LV.MAX（「基本屬性」「武器增傷」分頁拿掉、加「套用到所有等級」）；分級 BUFF 的頂層改為選填的「通用說明」，留空時前台改列各級（鋒勢 ×11 的空白浮窗消失）。<br><b>2026-10-13 進度 17／19</b>：個案修正與鏡像已寫入正式站（29 份，已 bump），稽核腳本 <code>check-description-drift.mjs</code> 鏡像落差 0；程式已 commit／push。剩後台實機驗收（站長）與封存一次性腳本。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-058_描述欄位單一正本/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-058_描述欄位單一正本/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card green">
       <div class="card-icon">◆</div>
       <h3>PLAN-056 · 武器／背包圖示 ID 化</h3>
