@@ -14,8 +14,13 @@
  *     "legacy": ["Icon_skill_main_1045", ...],  // 現行客戶端已沒有的舊版官方圖（選圖器預設收起）
  *     "weapon": ["Icon_weapon_10100101", ...],  // PLAN-056
  *     "backpack": ["Icon_BackPack_60350101", ...],
+ *     "class": ["Icon_pilotclass_001_l", ...],    // PLAN-059：職業、駕照、陣營徽章（給陣營徽章與形態圖示的選圖器）
+ *     "license": ["Icon_wanzertype_001_l", ...],
+ *     "camp": ["Icon_logo_0001_00", ...],
  *     "notes": { "Icon_weapon_10601301": "空手（不裝武器）", ... }   // 站長確認過的觀察（scripts/lib/equipIconNotes.json）
  *   }
+ *
+ * 以圖搜圖特徵（features.bin）只算 skill／buff／weapon／backpack 四族——職業與陣營徽章各只有幾十張，用看的就挑得到。
  *
  * legacy 清單無法從檔案本身推導（要跟客戶端擷取比對過才知道），由匯入腳本寫在 scripts/lib/gameIconMeta.json。
  *
@@ -54,6 +59,7 @@ const skill = list('skill')
 const buff = list('buff')
 const weapon = list('weapon')
 const backpack = list('backpack')
+const emblems = { class: list('class'), license: list('license'), camp: list('camp') }
 const meta = fs.existsSync(META) ? JSON.parse(fs.readFileSync(META, 'utf-8')) : { legacy: [] }
 const have = new Set(skill)
 const legacy = (meta.legacy ?? []).filter((k) => have.has(k))
@@ -84,5 +90,6 @@ const allKeys = new Set([...skill, ...buff, ...weapon, ...backpack])
 const notesRaw = fs.existsSync(NOTES) ? JSON.parse(fs.readFileSync(NOTES, 'utf-8')).notes ?? {} : {}
 const notes = Object.fromEntries(Object.entries(notesRaw).filter(([k]) => allKeys.has(k)))
 
-fs.writeFileSync(OUT, JSON.stringify({ skill, buff, weapon, backpack, legacy, notes, features: { dim: ICON_FEATURE_DIM, hash: orderHash } }))
-console.log(`✅ 圖示索引已產生：${path.relative(ROOT, OUT)}（技能類 ${skill.length}、BUFF ${buff.length}、武器 ${weapon.length}、背包 ${backpack.length}、舊版 ${legacy.length}、註記 ${Object.keys(notes).length}）`)
+fs.writeFileSync(OUT, JSON.stringify({ skill, buff, weapon, backpack, ...emblems, legacy, notes, features: { dim: ICON_FEATURE_DIM, hash: orderHash } }))
+console.log(`✅ 圖示索引已產生：${path.relative(ROOT, OUT)}（技能類 ${skill.length}、BUFF ${buff.length}、武器 ${weapon.length}、背包 ${backpack.length}、` +
+  `職業 ${emblems.class.length}、駕照 ${emblems.license.length}、陣營徽章 ${emblems.camp.length}、舊版 ${legacy.length}、註記 ${Object.keys(notes).length}）`)

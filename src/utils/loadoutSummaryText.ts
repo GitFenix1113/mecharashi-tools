@@ -36,6 +36,7 @@ import { defaultNdLevels, printedNdZones, zonePower } from './ndOverrides.ts'
 import type { NdPowerBonus } from './ndPowerBonus.ts'
 import { resolveNeuralDriveLevel } from './neuralDriveAbilities.ts'
 import { SITE_NAME } from '../lib/siteMeta.ts'
+import { mechWeightShort } from '../data/mechWeightClasses.ts'
 
 export interface LoadoutSummaryInput {
   ctx: LoadoutContext
@@ -110,7 +111,7 @@ export function loadoutSummaryText(input: LoadoutSummaryInput): string {
       ? `${mechName}（基底 ${ctx.mech.name}）`
       : mechName,
   )
-  if (ctx.mech?.armorType) idParts.push(ctx.mech.armorType)
+  if (ctx.mech?.armorType) idParts.push(mechWeightShort(ctx.mech.armorType))
   if (ctx.form?.name) idParts.push(ctx.form.name)
   out.push(idParts.join(' · '))
 

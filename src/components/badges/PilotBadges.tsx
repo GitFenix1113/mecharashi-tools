@@ -1,4 +1,8 @@
 import type { CSSProperties } from 'react'
+import { pilotClassBadgeClass } from '../../data/pilotClasses'
+import { mechWeightClassOf, mechWeightShort } from '../../data/mechWeightClasses'
+import { ClassIcon } from '../icons/ClassIcon'
+import { MechTypeIcon } from '../icons/MechTypeIcon'
 
 type RarityConfig = { className: string; style?: CSSProperties }
 
@@ -29,29 +33,29 @@ export function PilotRarityBadge({ rarity, className = '' }: { rarity: string; c
   )
 }
 
-export const CLASS_CONFIG: Record<string, string> = {
-  守護者: 'text-accent-green bg-accent-green/10 border-accent-green/40',
-  突擊手: 'text-accent-orange bg-accent-orange/10 border-accent-orange/40',
-  格鬥家: 'text-accent-red bg-accent-red/10 border-accent-red/40',
-  狙擊手: 'text-accent-blue bg-accent-blue/10 border-accent-blue/40',
-  戰術家: 'text-accent-purple bg-accent-purple/10 border-accent-purple/40',
-  機械師: 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/40',
-  調構師: 'text-accent-yellow bg-accent-yellow/10 border-accent-yellow/40',
-}
+// 職業的色與順序住在 src/data/pilotClasses.ts（PLAN-059 B-1，原本這裡的 CLASS_CONFIG 已併入）
 
 export function ClassBadge({ pilotClass, className = '' }: { pilotClass: string; className?: string }) {
-  const cls = CLASS_CONFIG[pilotClass] ?? 'text-text-secondary bg-bg-card border-border'
   return (
-    <span className={`px-2 py-0.5 rounded text-[13px] font-bold border ${cls} ${className}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[13px] font-bold border ${pilotClassBadgeClass(pilotClass)} ${className}`}>
+      <ClassIcon pilotClass={pilotClass} decorative />
       {pilotClass}
     </span>
   )
 }
 
+/**
+ * 駕照（＝機師開得動的機甲類型）。圖示＋短名；滑鼠提示用遊戲內全名「重型機甲」（決策十）。
+ * ⚠ 刻意中性色：駕照的類型色（青綠紅）會和職業色撞（守護者綠＝中型綠…），機師處只用形狀分辨。
+ */
 export function LicenseBadge({ license, className = '' }: { license: string; className?: string }) {
   return (
-    <span className={`px-2 py-0.5 rounded text-[13px] font-bold bg-black/50 text-text-secondary border border-border ${className}`}>
-      {license}
+    <span
+      title={mechWeightClassOf(license)?.full}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[13px] font-bold bg-black/50 text-text-secondary border border-border ${className}`}
+    >
+      <MechTypeIcon type={license} decorative />
+      {mechWeightShort(license)}
     </span>
   )
 }

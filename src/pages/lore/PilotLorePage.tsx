@@ -6,7 +6,8 @@ import LoreChapterBody from '../../components/lore/LoreChapterBody'
 import LoreSourceLine from '../../components/lore/LoreSourceLine'
 import { useLoreParallax } from '../../components/lore/useLoreParallax'
 import { splitParagraphs, isQuoteStyle, stripTrailingSource } from '../../components/lore/loreText'
-import { CLASS_CONFIG, LicenseBadge } from '../../components/badges/PilotBadges'
+import { LicenseBadge } from '../../components/badges/PilotBadges'
+import { pilotClassMeta } from '../../data/pilotClasses'
 import {
   hasPilotArt, pilotArtDir, pilotKeyArtPath, pilotFullArtPath, pilotOfficialArt,
   imageCandidates, assetUrl,
@@ -137,7 +138,7 @@ export default function PilotLorePage() {
     ? imageCandidates(official.color)
     : imageCandidates(tall ? pilotKeyArtPath(pilot) : pilotFullArtPath(pilot))
 
-  const classText = CLASS_CONFIG[pilot.class]?.split(' ')[0] ?? 'text-text-secondary'
+  const classText = pilotClassMeta(pilot.class)?.text ?? 'text-text-secondary'
   const talentIcons = talentIconCandidates(pilot.talents[0])
   const talentName = pilot.talents[0]?.name ?? ''
 

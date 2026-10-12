@@ -34,6 +34,10 @@ interface IconIndex {
   /** PLAN-056；舊版索引沒有這兩欄 */
   weapon?: string[]
   backpack?: string[]
+  /** PLAN-059；舊版索引沒有這三欄。不參與以圖搜圖（features.bin 只有上面四族） */
+  class?: string[]
+  license?: string[]
+  camp?: string[]
   legacy: string[]
   /** 站長確認過的圖示註記（scripts/lib/equipIconNotes.json） */
   notes?: Record<string, string>

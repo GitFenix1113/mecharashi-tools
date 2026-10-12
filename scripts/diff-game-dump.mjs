@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 import { playableArtDirs } from './lib/gameAssetKinds.mjs'
 import { ARCHIVE_ROOT, DUMP_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, preferTexture, resolveDump } from './lib/gameDump.mjs'
-import { EQUIP_POOLS, iconFamily, iconPoolIndex, isLibraryKey, otherIconPaths } from './lib/gameIconKinds.mjs'
+import { EQUIP_POOLS, emblemFamilyOf, iconFamily, iconPoolIndex, isLibraryKey, otherIconPaths } from './lib/gameIconKinds.mjs'
 import { UI_GROUPS, isUiArt, uiArchivePath, uiLocation, uiModuleInfo } from './lib/gameUiModules.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -179,11 +179,15 @@ function siteStatus(r, c) {
     return zh ? { text: `對應站上：${zh}`, fresh: false } : { text: '英文名對不到站上（新角色？）', fresh: true }
   }
   if (c.kind === 'icon') {
-    // 匯入模式只收固定幾個資料夾（ICON_POOLS／EQUIP_POOLS）；不在裡面的照實講，別讓人以為跑 --icons 就會有
+    // 匯入模式只收固定幾個資料夾（ICON_POOLS／EQUIP_POOLS／EMBLEM_POOLS）；不在裡面的照實講，別讓人以為跑 --icons 就會有
     // importable 不看站上現況（匯入後重跑，「下一步」才能把它算成 ✅ 而不是整步消失）
     const equip = c.family === 'weapon' || c.family === 'backpack'
-    const importable = equip ? EQUIP_POOLS.some(([, dir]) => r.asset_path?.includes(dir)) : iconPoolIndex(r.asset_path, r.type, r.name) >= 0
-    if (fs.existsSync(path.join(SITE, 'icons', c.family, `${r.name}.webp`))) return { text: '圖庫已有', fresh: false, importable }
+    const emblem = c.family === 'class' || c.family === 'license' || c.family === 'camp'
+    const importable = equip ? EQUIP_POOLS.some(([, dir]) => r.asset_path?.includes(dir))
+      : emblem ? emblemFamilyOf(r) === c.family
+        : iconPoolIndex(r.asset_path, r.type, r.name) >= 0
+    // 陣營徽章依資料夾認：factory 的同名廠商 logo 不能因為圖庫有同名檔就算「已有」（那是另一張圖）
+    if ((importable || !emblem) && fs.existsSync(path.join(SITE, 'icons', c.family, `${r.name}.webp`))) return { text: '圖庫已有', fresh: false, importable }
     const dir = r.asset_path?.match(/uiicons\/([^/]+)/)?.[1] ?? '?'
     return importable ? { text: '圖庫沒有', fresh: true, importable } : { text: `圖庫沒有（${dir} 不上站，--other-icons 封存）`, fresh: true, importable }
   }
@@ -257,6 +261,7 @@ if (npcArts.length) {
 for (const [families, flag, title] of [
   [['skill', 'buff'], '--icons', '技能／BUFF 圖示 → 上站（只補新 key）'],
   [['weapon', 'backpack'], '--equip-icons', '武器／背包圖示 → 上站（只補新 key）'],
+  [['class', 'license', 'camp'], '--emblems', '職業／駕照圖示、陣營徽章 → 上站（只補新的；新職業或新陣營出現時，前台的對照表要人補，見 PLAN-059）'],
 ]) {
   const icons = addedItems.filter((i) => i.kind === 'icon' && i.importable && families.includes(i.family))
   if (!icons.length) continue
@@ -332,7 +337,7 @@ const SECTIONS = [
   ['pilot', '機師：立繪、頭像、機師卡', (i) => `${i.id}${i.skin}`],
   ['mech', '機甲：立繪、部件、全身大圖、塗裝', (i) => `wap${i.wap}`],
   ['gacha', '招募立繪（依英文名鍵）', (i) => i.key],
-  ['icon', '圖示圖庫：技能／BUFF／武器／背包', (i) => i.family],
+  ['icon', '圖示圖庫：技能／BUFF／武器／背包／職業／駕照／陣營徽章', (i) => i.family],
   ['ui', '介面美術：活動、招募、大廳、劇情…（依用途 → 官方模組）', (i) => `${UI_GROUPS[i.group].zh}｜${i.module}${i.sub ? '/' + i.sub : ''}${i.zh ? '　' + i.zh : ''}`],
   ['iconOther', '其他圖示（道具、勳章、肉鴿…）', (i) => i.prefix],
   ['other', '其他', (i) => `類別 ${i.cat}`],

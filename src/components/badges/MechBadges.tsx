@@ -1,14 +1,15 @@
-export const ARMOR_CONFIG: Record<string, string> = {
-  輕型: 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/40',
-  中甲: 'text-accent-green bg-accent-green/10 border-accent-green/40',
-  重型: 'text-accent-red bg-accent-red/10 border-accent-red/40',
-}
+import { mechWeightBadgeClass, mechWeightClassOf, mechWeightShort } from '../../data/mechWeightClasses'
+import { MechTypeIcon } from '../icons/MechTypeIcon'
 
+/** 機甲類型徽章：圖示＋短名「中型」，滑鼠提示用全名（PLAN-059 決策十；色與字住在 data/mechWeightClasses.ts） */
 export function ArmorTypeBadge({ armorType, className = '' }: { armorType: string; className?: string }) {
-  const cls = ARMOR_CONFIG[armorType] ?? 'text-text-secondary bg-bg-card border-border'
   return (
-    <span className={`px-2 py-0.5 rounded text-[13px] font-bold border ${cls} ${className}`}>
-      {armorType}
+    <span
+      title={mechWeightClassOf(armorType)?.full}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[13px] font-bold border ${mechWeightBadgeClass(armorType)} ${className}`}
+    >
+      <MechTypeIcon type={armorType} decorative />
+      {mechWeightShort(armorType)}
     </span>
   )
 }
@@ -22,7 +23,7 @@ export function ArmorTypeBadge({ armorType, className = '' }: { armorType: strin
  * EX 目前無機甲使用，先列著讓值域完整。
  *
  * 不 export：目前只有下方的 badge 用得到它，而多一個非元件的 export 就多一條
- * react-refresh/only-export-components 的 lint 錯（ARMOR_CONFIG 已經有一條了）。
+ * react-refresh/only-export-components 的 lint 錯。
  */
 const MECH_QUALITY_CONFIG: Record<string, string> = {
   EX: 'text-accent-orange bg-accent-orange/10 border-accent-orange/50',

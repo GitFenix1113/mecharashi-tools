@@ -18,6 +18,7 @@ import { RefMechModules } from './RefMechModules'
 import { RefPilotTalents } from './RefPilotTalents'
 import { RefWeaponSkills } from './RefWeaponSkills'
 import { resolveWeaponSkills, type ResolvedWeaponSkill } from '../../utils/weaponSkills'
+import { mechWeightShort } from '../../data/mechWeightClasses'
 
 /**
  * PLAN-019 Layer 1 — 引用詳情卡片內容（被浮窗 / BottomSheet / hover 預覽共用）。
@@ -94,7 +95,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       if (!m) return null
       return {
         title: m.name,
-        subtitle: [m.armorType, m.quality].filter(Boolean).join(' · '),
+        subtitle: [mechWeightShort(m.armorType), m.quality].filter(Boolean).join(' · '),
         images: mechPortraitCandidates(m),
         // 2026-10-09 站長決定：浮窗不放機體描述（故事），改列模組——引用機甲時想知道的是
         // 「這台帶什麼」。modules 還沒載入時四組皆空，由 RefMechModules 顯示載入中。

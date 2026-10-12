@@ -1,10 +1,11 @@
 // ─── 機師 ────────────────────────────────────────────────────────────────────
 
+// 宣告順序＝遊戲內篩選畫面的順序（PLAN-059，後台下拉照這個排）；圖示、色、英文名在 src/data/pilotClasses.ts
 export const PilotClass = {
+  FIGHTER:   '格鬥家',
   ASSAULT:   '突擊手',
   SNIPER:    '狙擊手',
   TACTICIAN: '戰術家',
-  FIGHTER:   '格鬥家',
   GUARDIAN:  '守護者',
   ENGINEER:  '機械師',
   CONSTRUCTOR: '調構師',

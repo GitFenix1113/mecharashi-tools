@@ -4,7 +4,7 @@
 // 與 src/utils/gameIcons.ts（前台用）。這裡逐一比對兩份的解析與路徑——改了一邊沒改另一邊就會掛。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { ICON_DIR, ICON_FEATURE_DIM, equipGameIdOf, equipIconKey, iconFamily, iconFeature, iconHandledElsewhere, iconPath, isLibraryKey, keyFromValue, otherIconPaths, parseIconKey } from './gameIconKinds.mjs'
+import { ICON_DIR, ICON_FEATURE_DIM, emblemFamilyOf, equipGameIdOf, equipIconKey, iconFamily, iconFeature, iconHandledElsewhere, iconPath, isLibraryKey, keyFromValue, otherIconPaths, parseIconKey } from './gameIconKinds.mjs'
 import * as ts from '../../src/utils/gameIcons.ts'
 
 // 每一種官方前綴各取幾個真實檔名（2026-10-04 陸版擷取＋站上舊夾）
@@ -19,10 +19,13 @@ const KEYS = [
   'Icon_weapon_10100201', 'Icon_weapon_10700301A', 'Icon_weapon_10700501_b', 'Icon_weapon_90200101', 'Icon_weapon_4001_1_NY',
   'Icon_weapon_4002_black_1', 'Icon_weapon_2021_1', 'Icon_weapon_40400401',
   'Icon_backpack_60100101', 'Icon_BackPack_60350101',
+  // 職業、駕照、陣營徽章（PLAN-059，2026-10-11 陸版擷取）
+  'Icon_pilotclass_001_l', 'Icon_pilotclass_010_s', 'Icon_pilotclass_009_l', 'Icon_wanzertype_002_l', 'Icon_wanzertype_003_s',
+  'Icon_logo_0025_00', 'Icon_logo_0041_01',
 ]
 const NOT_KEYS = [
   'Icon_skill_main_凱登01', 'Icon_skill_passive_威能者驅動', 'Icon_weapon_影虎嘯', 'Icon_V_Cannon01', 'Icon_tank01',
-  'Icon_pilotclass_001_l', 'Icon_entry', '', 'Pilot_10103174A_half',
+  'Icon_pilotclass_', 'Icon_entry', '', 'Pilot_10103174A_half',
 ]
 
 test('解析：腳本版與前台版一致', () => {
@@ -63,6 +66,30 @@ test('gameId ↔ 官方檔名：腳本版與前台版一致（含大小寫例外
   assert.equal(equipIconKey('weapon', ''), undefined)
   for (const k of ['Icon_weapon_10700301A', 'Icon_BackPack_60350101', 'Icon_skill_main_1106']) assert.equal(equipGameIdOf(k), ts.equipGameIdOf(k), k)
   assert.equal(equipGameIdOf('Icon_BackPack_60350101'), '60350101')
+})
+
+test('職業、駕照、陣營徽章各一夾；尺寸與變體放在 category（PLAN-059）', () => {
+  assert.equal(iconFamily('Icon_pilotclass_006_l'), 'class')
+  assert.equal(iconFamily('Icon_wanzertype_001_s'), 'license')
+  assert.equal(iconFamily('Icon_logo_0017_01'), 'camp')
+  assert.equal(iconPath('Icon_pilotclass_006_l'), `${ICON_DIR}/class/Icon_pilotclass_006_l.webp`)
+  assert.equal(iconPath('Icon_logo_0017_01'), `${ICON_DIR}/camp/Icon_logo_0017_01.webp`)
+  assert.deepEqual(parseIconKey('Icon_pilotclass_010_s'), { key: 'Icon_pilotclass_010_s', family: 'class', kind: 'class', category: 's', num: 10 })
+  assert.deepEqual(parseIconKey('Icon_wanzertype_003_l'), { key: 'Icon_wanzertype_003_l', family: 'license', kind: 'license', category: 'l', num: 3 })
+  assert.deepEqual(parseIconKey('Icon_logo_0025_00'), { key: 'Icon_logo_0025_00', family: 'camp', kind: 'camp', category: '00', num: 25 })
+})
+
+test('--emblems：職業／駕照依檔名、陣營徽章依資料夾；簡中字的戰鬥用圖與 NVIDIA 不收', () => {
+  const ui = (folder, name) => `assets/gameproject/runtimeassets/ui/uiimages/${folder}/${name.toLowerCase()}.png`
+  const row = (folder, name) => ({ name, asset_path: ui(folder, name) })
+  assert.equal(emblemFamilyOf(row('uiicons/occupationtype_abs', 'Icon_pilotclass_001_l')), 'class')
+  assert.equal(emblemFamilyOf(row('uiicons/bufftype_abs/buftypeicon_atlas/pilotclass_batchoptimize', 'Icon_pilotclass_001_s')), 'class')
+  assert.equal(emblemFamilyOf(row('uiicons/occupationtype_abs', 'Icon_wanzertype_004_l')), 'license')
+  assert.equal(emblemFamilyOf(row('uicom_abs/uicommon_atlas', 'Icon_wanzertype_002_s')), 'license')       // _s 只在共用圖集
+  assert.equal(emblemFamilyOf(row('uiicons/camptype_abs', 'Icon_logo_0024_00')), 'camp')
+  assert.equal(emblemFamilyOf(row('uiicons/factory_abs', 'Icon_logo_0024_00')), undefined)               // 廠商 logo：同名不同圖
+  assert.equal(emblemFamilyOf(row('uiicons/camptype_abs', 'Icon_logo_0028_01')), undefined)              // NVIDIA
+  assert.equal(emblemFamilyOf({ name: 'Icon_wanzertype_001_l', asset_path: 'assets/gameproject/runtimeassets/ui/textimages/chinese/battle_abs/icon_wanzertype_001_l.png' }), undefined)
 })
 
 test('BUFF 字形一夾、其餘一夾', () => {
@@ -118,7 +145,11 @@ test('其他圖示（--other-icons）：別的模式收的整個名字都不收�
     row('skilltype', 'Icon_skill_main_1106'),                 // --icons
     row('bufftype', 'Icon_buff_1001', 'Sprite'),              // --icons（BUFF 字形只收 Sprite）
     row('bufftype', 'Icon_buff_1001'),                        //   同名的 Texture2D 也跟著交給 --icons
-    row('bufftype', 'Icon_pilotclass_001_s', 'Sprite'),       // BUFF 資料夾裡的別種圖 → 收
+    row('bufftype', 'Icon_pilotclass_001_s', 'Sprite'),       // 職業小圖的副本 → --emblems（PLAN-059 起）
+    row('occupationtype', 'Icon_pilotclass_001_s'),           // --emblems
+    row('camptype', 'Icon_logo_0024_00'),                     // --emblems
+    row('factory', 'Icon_logo_0024_00'),                      // 同名的廠商 logo（不同圖）→ 收
+    row('camptype', 'Icon_logo_0028_01'),                     // NVIDIA，--emblems 不收 → 收
     row('wapweapons', 'Icon_weapon_10100201'),                // --equip-icons
     row('wapweapons', 'Icon_Evacuation'),                     // 武器資料夾裡的關卡物件 → 收
     row('mecha', 'Icon_mecha_wap1071'),                       // --wap
@@ -133,7 +164,8 @@ test('其他圖示（--other-icons）：別的模式收的整個名字都不收�
   ]
   const out = otherIconPaths(rows)
   assert.deepEqual([...out.keys()].sort(), [
-    'icons/bufftype/Icon_pilotclass_001_s', 'icons/itemroguelike/Icon_roguelike_802481', 'icons/itemtype/Icon_item_13038A',
+    'icons/camptype/Icon_logo_0028_01', 'icons/factory/Icon_logo_0024_00',
+    'icons/itemroguelike/Icon_roguelike_802481', 'icons/itemtype/Icon_item_13038A',
     'icons/itemtype/Icon_wap2049_S1', 'icons/mecha/Icon_mecha_Cannon02AG', 'icons/wapweapons/Icon_Evacuation',
   ])
   assert.equal(out.get('icons/itemtype/Icon_wap2049_S1').length, 2)

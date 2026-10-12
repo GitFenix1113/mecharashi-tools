@@ -12,16 +12,16 @@ import { SuperFactoryPanel } from '../../../components/planner/SuperFactoryPanel
 import { PlanResult, type Weight } from '../../../components/planner/PlanResult'
 import { nextFrames } from '../../../utils/nextFrames'
 import { mechPartIconPath } from '../../../utils/assets'
+import { MECH_WEIGHT_CLASSES } from '../../../data/mechWeightClasses'
 
 const ALL_SLOTS: MechPartPosition[] = ['torso', 'leftArm', 'rightArm', 'legs']
 
 const ARMOR_WEIGHT: Record<string, Weight> = { '輕型': 'light', '中甲': 'medium', '重型': 'heavy' }
 
-const ARMOR_TYPES: { value: string; label: string; color: string }[] = [
-  { value: '輕型', label: '輕型', color: 'text-accent-cyan  border-accent-cyan/50  bg-accent-cyan/10'  },
-  { value: '中甲', label: '中型', color: 'text-accent-green border-accent-green/50 bg-accent-green/10' },
-  { value: '重型', label: '重型', color: 'text-accent-red   border-accent-red/50   bg-accent-red/10'   },
-]
+// value 是資料裡的 armorType（中甲），label 印短名（中型）；字與色來自 data/mechWeightClasses.ts（PLAN-059 決策十）
+const ARMOR_TYPES: { value: string; label: string; color: string }[] = MECH_WEIGHT_CLASSES.map((m) => ({
+  value: m.armorType, label: m.short, color: `${m.text} ${m.border} ${m.bg}`,
+}))
 
 const defaultParts = (): SlotInventory[] =>
   ALL_SLOTS.map(slot => ({ slot, gold1: 0, gold2: 0, gold3: 0, done: false }))

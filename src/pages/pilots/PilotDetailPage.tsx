@@ -33,6 +33,7 @@ import { SkillIcon } from '../../components/icons/SkillIcon'
 import { NdPowerBar } from '../../components/common/NdPowerBar'
 import { firstSentence } from '../../components/lore/loreText'
 import { useLoreEntryVisible } from '../../hooks/useLoreEntry'
+import { pilotClassBadgeClass } from '../../data/pilotClasses'
 
 // ─── 神經驅動「全區算力選擇器」（PLAN-021 · 1-6）─────────────────────────────
 //
@@ -761,16 +762,6 @@ function NeuralDriveZoneCard({ nd, zoneName, className, expanded, onLevelHover, 
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-const CLASS_STYLES: Record<string, string> = {
-  守護者: 'text-accent-green bg-accent-green/10 border-accent-green/40',
-  突擊手: 'text-accent-orange bg-accent-orange/10 border-accent-orange/40',
-  格鬥家: 'text-accent-red bg-accent-red/10 border-accent-red/40',
-  狙擊手: 'text-accent-blue bg-accent-blue/10 border-accent-blue/40',
-  戰術家: 'text-accent-purple bg-accent-purple/10 border-accent-purple/40',
-  機械師: 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/40',
-  調構師: 'text-accent-yellow bg-accent-yellow/10 border-accent-yellow/40',
-}
-
 export default function PilotDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: pilot, loading } = usePilot(id)
@@ -921,7 +912,7 @@ export default function PilotDetailPage() {
     )
   }
 
-  const classCls = CLASS_STYLES[pilot.class] ?? 'text-text-secondary bg-bg-card border-border'
+  const classCls = pilotClassBadgeClass(pilot.class)
 
   // 從 Firestore 中已存的 biometicComputer 交叉比對 unitType（現有資料無 skill.unitType 時使用）
   type BiomUnit = { unitType: string; skill?: { name: string } }

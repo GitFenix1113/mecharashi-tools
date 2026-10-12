@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card cyan">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-059 · 職業圖示與陣營徽章</h3>
+      <p>官方的職業圖示（<code>Icon_pilotclass</code>）與駕照圖示（<code>Icon_wanzertype</code>）早就在擷取裡，卻被當成用不到的圖封存在 repo 外；站上的職業與駕照全是文字字牌，圖鑑卡片三顆字牌擠在臉旁，職業色表還散落 3 份、順序也和遊戲不一致。本計畫把三族官方圖收進圖庫（職業 21、駕照 4、陣營 65 張），職業 → 圖示寫成程式裡的單一來源（不動 DB），用 CSS mask 沿用站上職業色，套到圖鑑、詳情、故事館、配裝模擬器；職業改官方編號序、詳情頁加全球版英文名（調構師暫用 Shifter）。駕照圖示同時就是機甲類型（輕／中／重）圖示，延伸到機甲圖鑑、武器限定、背包可裝備（10-13 追加，現有 5 種寫法、2 套配色，只統一畫面、不改資料值）。陣營徽章只給故事館：<code>pilotLore.factionLogos</code> 由管理者編輯故事時逐位挑（最多 2、同陣營建議一鍵套用），扉頁的文字圓環換成徽章印章。<br><b>2026-10-13 進度 7／26</b>：A（三族 93 張圖收進圖庫、<code>--emblems</code> 匯入模式）與 B（職業／機甲類型單一來源、<code>ClassIcon</code>／<code>MechTypeIcon</code>、職業改遊戲順序、「中甲／輕甲」顯示字全站改「中型／輕型」）完成，尚未 commit；機甲類型的顯示規則也已定案（畫面用短名「輕型／中型／重型」、取消輕甲／中甲）。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-059_職業圖示與陣營徽章/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-059_職業圖示與陣營徽章/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card yellow">
       <div class="card-icon">◆</div>
       <h3>PLAN-058 · 描述欄位單一正本</h3>

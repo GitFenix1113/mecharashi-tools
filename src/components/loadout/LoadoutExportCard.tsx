@@ -21,6 +21,7 @@ import { insertPngText, dataUrlToBytes, LOADOUT_PNG_KEYWORD } from '../../utils/
 import { usePatchVersions } from '../../hooks/usePatchVersions'
 import { SITE_DOMAIN, SITE_NAME, SITE_TITLE } from '../../lib/siteMeta'
 import { nextFrames } from '../../utils/nextFrames'
+import { mechWeightShort } from '../../data/mechWeightClasses'
 
 // ─── 匯出配裝長圖（PLAN-052-I E-2）──────────────────────────────────────────
 //
@@ -372,7 +373,7 @@ export function LoadoutExportCard({
             {ctx.identityMech && mech && ctx.identityMech.id !== mech.id && (
               <span style={{ color: C.sub }}>（基底 {mech.name}）</span>
             )}
-            {mech?.armorType && <><span style={{ color: C.lineStrong }}>/</span><span>{mech.armorType}</span></>}
+            {mech?.armorType && <><span style={{ color: C.lineStrong }}>/</span><span>{mechWeightShort(mech.armorType)}</span></>}
             {ctx.form?.name && <><span style={{ color: C.lineStrong }}>/</span><span style={{ color: C.yellow }}>{ctx.form.name}</span></>}
           </div>
         </div>

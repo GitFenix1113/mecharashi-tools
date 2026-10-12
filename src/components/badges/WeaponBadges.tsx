@@ -1,3 +1,5 @@
+import { mechWeightClassOf } from '../../data/mechWeightClasses'
+
 // ── Weapon Type ──────────────────────────────────────────────────────────────
 
 const WEAPON_TYPE_CONFIG: Record<string, string> = {
@@ -65,11 +67,13 @@ export function WeaponEquipSlotBadge({ slot, className = '' }: { slot: string; c
 
 // ── Mech Restriction ──────────────────────────────────────────────────────────
 
-const MECH_RESTRICTION_CONFIG: Record<string, { label: string; className: string }> = {
-  light:  { label: '輕型限定', className: 'text-accent-cyan  bg-accent-cyan/10  border-accent-cyan/30' },
-  medium: { label: '中型限定', className: 'text-accent-green bg-accent-green/10 border-accent-green/30' },
-  heavy:  { label: '重型限定', className: 'text-accent-red   bg-accent-red/10   border-accent-red/30' },
-}
+/** 武器的機甲限定（資料存 light／medium／heavy；none 不顯示）。字與色來自 data/mechWeightClasses.ts（PLAN-059 決策十） */
+const MECH_RESTRICTION_CONFIG: Record<string, { label: string; className: string }> = Object.fromEntries(
+  (['light', 'medium', 'heavy'] as const).map((k) => {
+    const m = mechWeightClassOf(k)!
+    return [k, { label: `${m.short}限定`, className: `${m.text} ${m.bg} ${m.border}` }]
+  }),
+)
 
 export const MECH_RESTRICTION_LABELS: Record<string, string> = Object.fromEntries(
   Object.entries(MECH_RESTRICTION_CONFIG).map(([k, v]) => [k, v.label])

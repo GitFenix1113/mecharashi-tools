@@ -1,8 +1,8 @@
-// 官方圖示的讀取端 helper —— PLAN-055（技能類、BUFF）＋ PLAN-056（武器、背包）
+// 官方圖示的讀取端 helper —— PLAN-055（技能類、BUFF）＋ PLAN-056（武器、背包）＋ PLAN-059（職業、駕照、陣營徽章）
 //
 // ── 一句話 ──────────────────────────────────────────────────────────────────
-// 技能、模組詞條、研發、BUFF、武器、背包圖示全部住在扁平圖庫 `/images/game/icons/{skill,buff,weapon,backpack}/<官方檔名>.webp`，
-// 一張圖只存一份。讀取端一律寫：
+// 技能、模組詞條、研發、BUFF、武器、背包、職業、駕照、陣營徽章圖示全部住在扁平圖庫
+// `/images/game/icons/{skill,buff,weapon,backpack,class,license,camp}/<官方檔名>.webp`，一張圖只存一份。讀取端一律寫：
 //
 //     <FallbackImage candidates={gameIconCandidates(skill.icon)} … />                ← 爬蟲原始快照可多給第二個舊值
 //     <FallbackImage candidates={weaponIconCandidates(weapon, side)} … />     ← 武器／背包吃整個實體（gameId 優先）
@@ -24,19 +24,26 @@ import { EQUIP_ICON_KEY_CASE } from '../data/equipIconKeyCase.ts'
 
 const ICON_ROOT = '/images/game/icons'
 
-export type IconFamily = 'skill' | 'buff' | 'weapon' | 'backpack'
+/** class＝機師職業、license＝駕駛許可（＝機甲類型）、camp＝陣營徽章（PLAN-059） */
+export type EmblemIconFamily = 'class' | 'license' | 'camp'
+export type IconFamily = 'skill' | 'buff' | 'weapon' | 'backpack' | EmblemIconFamily
 export type EquipIconFamily = 'weapon' | 'backpack'
 export type SkillIconKind = 'main' | 'order' | 'passive' | 'talent' | 'pp' | 'entry' | 'rnd' | 'command' | 'refactoring' | 'other'
 export type BuffIconKind = 'generic' | 'debuff' | 'stat' | 'status' | 'repair' | 'unique' | 'stack' | 'misc'
 /** 武器（PLAN-056）：主序列／字尾變體（_b 外型變化）／機甲綁定肩部（9 開頭）／敵方 BOSS（400x）；背包只有一種 */
 export type EquipIconKind = 'series' | 'variant' | 'linked' | 'enemy' | 'backpack'
-export type IconKind = SkillIconKind | BuffIconKind | EquipIconKind
+/** 職業／駕照／陣營徽章（PLAN-059）：kind 與 family 同名 */
+export type EmblemIconKind = EmblemIconFamily
+export type IconKind = SkillIconKind | BuffIconKind | EquipIconKind | EmblemIconKind
 
 export interface ParsedIconKey {
   key: string
   family: IconFamily
   kind: IconKind
-  /** 武器：種類前綴 3 碼（'102'＝打樁機；linked 是 '902'、enemy 是 '4001' 這類）；背包：類型 3 碼（'035'＝飛行） */
+  /**
+   * 武器：種類前綴 3 碼（'102'＝打樁機；linked 是 '902'、enemy 是 '4001' 這類）；背包：類型 3 碼（'035'＝飛行）
+   * 職業／駕照：尺寸 'l'（340²）／'s'（小圖）；陣營徽章：變體 '00'（白色單色）／'01'（彩色）
+   */
   category?: string
   /** 只有 main／order／passive／talent：首位數 1–5、9（聯動） */
   color?: number
@@ -44,19 +51,25 @@ export interface ParsedIconKey {
   num?: number
 }
 
-/** 屬於圖庫的官方前綴（武器、背包自 PLAN-056 起也收進圖庫） */
-const LIBRARY_RE = /^Icon_(?:skill_|entry_|RnD_|commandskill_|zoneskill_|roguelike_|coopclimb_|buff_|debuff_|weapon_|backpack_|BackPack_)[A-Za-z0-9_]+$/
+/** 屬於圖庫的官方前綴（武器、背包自 PLAN-056、職業／駕照／陣營徽章自 PLAN-059 起也收進圖庫） */
+const LIBRARY_RE = /^Icon_(?:skill_|entry_|RnD_|commandskill_|zoneskill_|roguelike_|coopclimb_|buff_|debuff_|weapon_|backpack_|BackPack_|pilotclass_|wanzertype_|logo_)[A-Za-z0-9_]+$/
 
 /** 是不是圖庫裡的官方檔名（ASCII；中文佔位名一律 false） */
 export function isLibraryKey(key: string | null | undefined): key is string {
   return typeof key === 'string' && LIBRARY_RE.test(key)
 }
 
-/** 圖庫子資料夾：照官方客戶端的分法——BUFF 字形、武器、背包各一夾，其餘（技能、模組詞條、研發…）一夾 */
+/**
+ * 圖庫子資料夾：照官方客戶端的分法——BUFF 字形、武器、背包、職業、駕照、陣營徽章各一夾，其餘（技能、模組詞條、研發…）一夾。
+ * ⚠ Icon_logo_ 一律當陣營徽章：擷取裡機甲廠商也有同名不同圖的 Icon_logo_0024~0027，圖庫只收陣營那份。
+ */
 export function iconFamily(key: string): IconFamily {
   if (/^Icon_(?:de)?buff_/.test(key)) return 'buff'
   if (key.startsWith('Icon_weapon_')) return 'weapon'
   if (/^Icon_backpack_/i.test(key)) return 'backpack'
+  if (key.startsWith('Icon_pilotclass_')) return 'class'
+  if (key.startsWith('Icon_wanzertype_')) return 'license'
+  if (key.startsWith('Icon_logo_')) return 'camp'
   return 'skill'
 }
 
@@ -106,6 +119,14 @@ export function parseIconKey(key: string | null | undefined): ParsedIconKey | nu
   if (family === 'backpack') {
     if ((m = key.match(/^Icon_backpack_6(\d{3})(\d{2})(\d{2})$/i))) return { key, family, kind: 'backpack', category: m[1], num: Number(`6${m[1]}${m[2]}${m[3]}`) }
     return { key, family, kind: 'backpack' }
+  }
+  if (family === 'class' || family === 'license') {
+    if ((m = key.match(/^Icon_(?:pilotclass|wanzertype)_(\d{3})_([ls])$/))) return { key, family, kind: family, category: m[2], num: Number(m[1]) }
+    return { key, family, kind: family }
+  }
+  if (family === 'camp') {
+    if ((m = key.match(/^Icon_logo_(\d{4})_(\d{2})$/))) return { key, family, kind: 'camp', category: m[2], num: Number(m[1]) }
+    return { key, family, kind: 'camp' }
   }
   if (family === 'buff') {
     if (key.startsWith('Icon_debuff_')) return { key, family, kind: 'debuff' }
@@ -283,6 +304,7 @@ export const ICON_KIND_LABELS: Record<IconKind, string> = {
   generic: '通用增益', debuff: '通用減益', stat: '屬性／資源', status: '控制／異常', repair: '修理',
   unique: '專屬徽記', stack: '層數', misc: '其他',
   series: '主序列', variant: '字尾變體', linked: '機甲綁定肩部', enemy: '敵方 BOSS 裝備', backpack: '背包',
+  class: '職業', license: '駕照', camp: '陣營徽章',
 }
 
 /**

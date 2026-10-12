@@ -17,8 +17,9 @@ import type { Backpack, Component, Mech, MechForm, Module, Pilot, PilotSkillDoc,
 import type { EquipSet, LoadoutMount } from '../types/loadout'
 import type { ModuleSlotRef, SlotCapacity, SlotKey, WeaponSlotRef } from '../types/slots.ts'
 import { slotKey, slotAcceptsSide } from '../types/slots.ts'
-import { ArmorType, COMPONENT_WEAPON_TYPES, MechLicense, MechRestriction, MechPartPosition, WeaponEquipSlot, WeaponKind } from '../types/enums.ts'
+import { ArmorType, COMPONENT_WEAPON_TYPES, MechRestriction, MechPartPosition, WeaponEquipSlot, WeaponKind } from '../types/enums.ts'
 import { fromAssemblableArmorType, licenseAllows, toArmorType } from './normalizeArmorType.ts'
+import { mechWeightShort } from '../data/mechWeightClasses.ts'
 import { resolveChassis, partOf, chassisWeight, type ResolvedChassis } from './chassisStats.ts'
 import { compareModuleBySlot, partLabel } from './moduleSlots.ts'
 import {
@@ -1622,7 +1623,7 @@ export function validateLoadout(ctx: LoadoutContext): LoadoutProblem[] {
   if (ctx.pilot && !licenseAllows(ctx.pilot.license, ctx.mech.armorType)) {
     problems.push({
       code: 'LICENSE',
-      reason: `${ctx.pilot.name}的${ctx.pilot.license}執照無法駕駛${ctx.mech.armorType}機甲`,
+      reason: `${ctx.pilot.name}的${mechWeightShort(ctx.pilot.license)}執照無法駕駛${mechWeightShort(ctx.mech.armorType)}機甲`,
     })
   }
   if (ctx.lock) return problems     // 全鎖形態：整套由資料 derive，玩家沒有可犯的錯
@@ -1812,11 +1813,11 @@ export function canSwapPart(
 
   // ① 同裝甲類型 —— 決策七的那一行
   if (source.armorType !== ctx.mech.armorType) {
-    // ⚠ 兩型都要寫出來。`ArmorType` 的值是 輕型／**中甲**／重型（官方命名本來就不齊），
-    //   只說「不相容」等於沒說 —— 玩家看不出來是自己這台的問題還是那台的問題。
+    // ⚠ 兩型都要寫出來，只說「不相容」等於沒說 —— 玩家看不出來是自己這台的問題還是那台的問題。
+    //   印的是短名（中型），不是資料值（中甲）：PLAN-059 決策十，全站畫面統一「輕型／中型／重型」。
     return reject(
       'PART_INCOMPATIBLE',
-      `不能跨裝甲類型混搭：${source.name}是${source.armorType}，這台是${ctx.mech.armorType}`,
+      `不能跨裝甲類型混搭：${source.name}是${mechWeightShort(source.armorType)}，這台是${mechWeightShort(ctx.mech.armorType)}`,
     )
   }
 
@@ -1928,13 +1929,6 @@ export function structuralCounts<T>(entries: readonly PickerEntry<T>[]): [Reject
 
 // ─── 機甲挑選器的過濾 ───────────────────────────────────────────────────────
 
-/** 裝甲類型 → 駕駛它所需的執照（一對一，不是「以上」）。用於「需要中型執照」這句話。 */
-const REQUIRED_LICENSE: Record<string, string> = {
-  [ArmorType.LIGHT]:  MechLicense.LIGHT,
-  [ArmorType.MEDIUM]: MechLicense.MEDIUM,
-  [ArmorType.HEAVY]:  MechLicense.HEAVY,
-}
-
 /**
  * 這位機師能不能駕駛這台機甲。
  *
@@ -1949,5 +1943,5 @@ const REQUIRED_LICENSE: Record<string, string> = {
 export function canSelectMech(pilot: Pilot | null, mech: Mech): Rejection | null {
   if (!pilot) return null
   if (licenseAllows(pilot.license, mech.armorType)) return null
-  return reject('LICENSE', `需要${REQUIRED_LICENSE[mech.armorType] ?? mech.armorType}執照`)
+  return reject('LICENSE', `需要${mechWeightShort(mech.armorType)}執照`)
 }

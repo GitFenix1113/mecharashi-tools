@@ -43,7 +43,8 @@ import { buildNdAbilityMap } from '../../utils/neuralDriveAbilities'
 import { defaultNdLevels, ndAffectZones } from '../../utils/ndOverrides'
 import { ndPowerBonus, effectiveNdLevels } from '../../utils/ndPowerBonus'
 import { HUD, HUD_BTN, HUD_BTN_DANGER, HUD_INPUT, HUD_PANEL } from '../../components/loadout/loadoutTheme'
-import { CLASS_CONFIG } from '../../components/badges/PilotBadges'
+import { PILOT_CLASS_NAMES, pilotClassMeta } from '../../data/pilotClasses'
+import { mechWeightClassOf, mechWeightShort } from '../../data/mechWeightClasses'
 import { mechSlotCapacity } from '../../utils/mechSlots'
 import { mechPortraitPath, pilotPortraitPath } from '../../utils/assets'
 import { licenseAllows } from '../../utils/normalizeArmorType'
@@ -1011,7 +1012,7 @@ export default function LoadoutPage() {
                     （使用者回報 2026-08-29：「左上的替換機甲沒有跟著變動」）。
                     這一格與那三處講的是同一件事「這是哪一台」，各自答一次就會不一致。 */}
                 <span className="truncate">{(ctx.identityMech ?? ctx.mech).name}</span>
-                <span className="text-[10px] text-text-dim shrink-0">{ctx.mech.armorType}</span>
+                <span className="text-[10px] text-text-dim shrink-0">{mechWeightShort(ctx.mech.armorType)}</span>
                 {/* ⚠ **這顆卡片按下去換的是基底**，不是上面印的那台 —— 不講的話它會變成
                     「我按了帕斯卡，結果換掉的是整台」。面板抬頭寫「軀幹來源 · 基底 X」，
                     這裡欄位窄，只留後半段。 */}
@@ -1146,9 +1147,9 @@ export default function LoadoutPage() {
                     {/* ⚠ 裝甲徽章一律取**基底**：混搭不能跨裝甲類型（總綱決策七）⇒ 兩者必然相同，
                         而這一格回答的是「這套配裝屬於哪個裝甲級距」，那是基底的屬性。 */}
                     <span className={`hud-cut-sm shrink-0 px-1.5 py-0.5 text-[11px] font-bold border border-current/40 bg-bg-dark/70 ${
-                      ARMOR_TONE[ctx.mech.armorType] ?? 'text-text-secondary'
+                      mechWeightClassOf(ctx.mech.armorType)?.text ?? 'text-text-secondary'
                     }`}>
-                      {ctx.mech.armorType}
+                      {mechWeightShort(ctx.mech.armorType)}
                     </span>
                     {/* ⚠ 兩者不同時**一定要把基底講出來**：右邊那顆「更換機甲」換的是基底，
                         不講的話它看起來像在換上面印的那台（＝軀幹來源）。 */}
@@ -1892,8 +1893,7 @@ function LoadoutNoteField({
 const pilotRow = (p: Pilot): PickerRowItem => ({
   id: p.id, name: p.name, icon: pilotPortraitPath(p) ?? '',
   meta: `${p.class ?? ''} · ${p.license}`.replace(/^ · /, ''),
-  // 職業色只取 `text-*` 那一段：CLASS_CONFIG 的值是「文字色 底色 框線」三件一組
-  tone: CLASS_CONFIG[p.class]?.split(' ')[0],
+  tone: pilotClassMeta(p.class)?.text,
   badge: p.rarity,
 })
 
@@ -1902,8 +1902,9 @@ const mechRow = (m: Mech): PickerRowItem => {
   return {
     id: m.id, name: m.name, icon: mechPortraitPath(m) ?? '',
     weight: m.weight,
-    meta: `${m.armorType}${m.quality ? ` · ${m.quality}` : ''}`,
-    tone: ARMOR_TONE[m.armorType],
+    meta: `${mechWeightShort(m.armorType)}${m.quality ? ` · ${m.quality}` : ''}`,
+    // 機甲類型色（青／綠／紅）與機甲圖鑑、武器限定同一份（data/mechWeightClasses.ts，PLAN-059 決策十）
+    tone: mechWeightClassOf(m.armorType)?.text,
     // 槽位數是「這台裝得下什麼」的第一個答案，比品質更值得佔這一行
     sub: `出力 ${m.output.toLocaleString()} · 手${cap.singleHand}${cap.shoulder ? ` 肩${cap.shoulder}` : ''} 背${cap.back}`,
     // ⚠ 出力 0 ＝ 官方數值尚未公布的佔位機甲（如 mech_090_美杜莎MK2），**不是**壞資料。
@@ -1912,24 +1913,16 @@ const mechRow = (m: Mech): PickerRowItem => {
   }
 }
 
-/** 裝甲類型的主色。與槽位圖的分段色無關，只是讓三種機甲在卡片上分得開。 */
-const ARMOR_TONE: Record<string, string> = {
-  輕型: 'text-accent-cyan',
-  中甲: 'text-accent-purple',
-  重型: 'text-accent-orange',
-}
-
 // ─── 挑選器的篩選晶片（PLAN-052-I C-2／C-3）──────────────────────────────────
 //
 // ⚠ `test` 一律比對**資料欄位**而不是 `row.meta` 的字串 —— 副標措辭改一個字就會
 //   讓字串比對靜默失效，而那種失效沒有任何錯誤訊息，只是篩出零筆。
 
-const PILOT_CLASSES = ['守護者', '突擊手', '格鬥家', '狙擊手', '戰術家', '機械師', '調構師'] as const
-
 const PILOT_FILTERS: readonly PickerFilterGroup<Pilot>[] = [
   {
     key: 'class', label: '職業',
-    options: PILOT_CLASSES.map((c) => ({ value: c, label: c, tone: CLASS_CONFIG[c]?.split(' ')[0] })),
+    // 遊戲內篩選的順序（data/pilotClasses.ts）
+    options: PILOT_CLASS_NAMES.map((c) => ({ value: c, label: c, tone: pilotClassMeta(c)?.text })),
     test: (p, v) => p.class === v,
   },
   {
@@ -1951,7 +1944,7 @@ const PILOT_FILTERS: readonly PickerFilterGroup<Pilot>[] = [
 // ─── 機甲挑選器的篩選與排序（使用者要求 2026-08-29）──────────────────────────
 //
 // ⚠ **只有品質這一組，刻意沒有「裝甲類型」。** 機師的執照本來就把裝甲類型限死成一種
-//   （中型執照 → 只有中甲），再給一排「輕型／中甲／重型」的晶片，其中兩顆按下去
+//   （中型執照 → 只有中型機甲），再給一排「輕型／中型／重型」的晶片，其中兩顆按下去
 //   必然是零筆 —— 那不是篩選，是把已經成立的限制再問一次。品質不同：S／A／B 在
 //   任何一種執照底下都同時存在（線上 S 64 / A 16 / B 10），三顆都篩得出東西。
 //   開不動的機甲仍由 `HiddenCountBar` 摺疊成一行計數，要看原因按一下就展開。
@@ -1972,8 +1965,8 @@ const MECH_QUALITY_ORDER: Record<string, number> = { EX: 0, S: 1, A: 2, B: 3 }
 const MECH_FILTERS: readonly PickerFilterGroup<Mech>[] = [
   {
     key: 'quality', label: '品質',
-    // 不給 tone：同一個對話框裡機甲名已經用 `ARMOR_TONE` 上了色（輕型青／中甲紫／
-    // 重型橘），品質晶片再上一組色會讓紫色同時代表「中甲」與「A 級」。
+    // 不給 tone：同一個對話框裡機甲名已經用類型色上了色（輕型青／中型綠／
+    // 重型紅），品質晶片再上一組色會讓同一個顏色同時代表兩件事。
     // 武器／背包的品質晶片也是無色的，這裡跟著它們走。
     options: Object.keys(MECH_QUALITY_ORDER).map((q) => ({ value: q, label: q })),
     test: (m, v) => m.quality === v,
@@ -2066,7 +2059,8 @@ const BACKPACK_FILTERS: readonly PickerFilterGroup<Backpack>[] = [
  */
 function pilotWallHint(ctx: ReturnType<typeof buildContext>): React.ReactNode {
   if (!ctx.mech) return null
-  const need = REQUIRED_LICENSE_LABEL[ctx.mech.armorType] ?? ctx.mech.armorType
+  // 機甲資料存「中甲」、駕照存「中型」——一律經 mechWeightShort 印成同一個短名（PLAN-059 決策十）
+  const need = mechWeightShort(ctx.mech.armorType)
   return (
     <>
       目前的機甲<strong className="text-text-primary">{ctx.mech.name}</strong>需要
@@ -2075,11 +2069,6 @@ function pilotWallHint(ctx: ReturnType<typeof buildContext>): React.ReactNode {
       仍然可以選，只是選了會一併換掉機甲（會跳出可復原的提示）。
     </>
   )
-}
-
-/** 裝甲類型 → 開得動它的執照名。兩套詞彙只差一個字（中甲 vs 中型），不可直接印。 */
-const REQUIRED_LICENSE_LABEL: Record<string, string> = {
-  輕型: '輕型', 中甲: '中型', 重型: '重型',
 }
 
 function pilotSwapNote(ctx: ReturnType<typeof buildContext>, p: Pilot): string | undefined {

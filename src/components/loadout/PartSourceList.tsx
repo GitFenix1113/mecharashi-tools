@@ -5,6 +5,7 @@ import { mechPartCandidates } from '../../utils/assets'
 import { partLabel } from '../../utils/moduleSlots'
 import { partOf } from '../../utils/chassisStats'
 import { partChoices, type LoadoutContext } from '../../utils/loadoutRules'
+import { mechWeightShort } from '../../data/mechWeightClasses'
 import { FallbackImage } from '../common/FallbackImage'
 import { ActionChevron } from './ActionChevron'
 import { HUD, HUD_ACTIONABLE, HUD_INPUT } from './loadoutTheme'
@@ -68,12 +69,12 @@ export function PartSourceList({ ctx, position, onSwap }: Props) {
   return (
     <div className="mt-2.5 border-t border-border pt-2.5">
       <p className={`${HUD.body} text-text-secondary`}>
-        每個部位可換成<strong className="text-text-primary">別台{ctx.mech.armorType}機甲</strong>的同位部件。
+        每個部位可換成<strong className="text-text-primary">別台{mechWeightShort(ctx.mech.armorType)}機甲</strong>的同位部件。
         重量與火力是<strong className="text-text-primary">四部位加總</strong>，出力只看軀幹。
       </p>
       {excluded > 0 && (
         <p className={`${HUD.body} text-text-dim mt-1`}>
-          清單只列同為{ctx.mech.armorType}的 {entries.length} 台；
+          清單只列同為{mechWeightShort(ctx.mech.armorType)}機甲的 {entries.length} 台；
           另外 {excluded} 台因<strong className="text-text-secondary">裝甲類型不符或官方數值未公布</strong>不列入。
         </p>
       )}

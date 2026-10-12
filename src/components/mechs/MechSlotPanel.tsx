@@ -100,7 +100,7 @@ export function MechSlotPanel({ mech }: { mech: Mech }) {
 
       {capacity.shoulder === 0 && (
         <p className="text-[11px] text-text-dim mt-2 leading-relaxed">
-          肩部槽位只有<strong className="text-text-secondary">中甲</strong>機甲才有。
+          肩部槽位只有<strong className="text-text-secondary">中型</strong>機甲才有。
         </p>
       )}
     </div>

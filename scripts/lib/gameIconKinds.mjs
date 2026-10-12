@@ -13,8 +13,11 @@
  *   Icon_weapon_<種類3><系列3><變體2>[A][_字尾]       武器（PLAN-056）：種類 101 拳套…501 電磁炮；
  *                                                     9xxxxxxx 機甲綁定的肩部、400x_* 敵方 BOSS 裝備
  *   Icon_backpack_6<類型3><階2><流水2>                背包（PLAN-056）；有 2 個官方檔名是 Icon_BackPack_（大寫）
+ *   Icon_pilotclass_<3 碼>_<l|s>                      機師職業（PLAN-059）：001 格鬥家…006 守護者、010 調構師；l 340²、s 72×80
+ *   Icon_wanzertype_<3 碼>_<l|s>                      駕駛許可＝機甲類型（PLAN-059）：001 輕型、002 中型、003 重型、004 三者合一
+ *   Icon_logo_<4 碼>_<00|01>                          陣營徽章（PLAN-059）：00 白色單色、01 彩色
  *
- * 落點：public/images/game/icons/{skill,buff,weapon,backpack}/<官方檔名>.webp —— 扁平、一張圖一份。
+ * 落點：public/images/game/icons/{skill,buff,weapon,backpack,class,license,camp}/<官方檔名>.webp —— 扁平、一張圖一份。
  *
  * ⚠ 圖示不等於技能：同一張圖常被多個技能共用（main_1106＝乘勝追擊／崩山／拘敵猛襲），
  *   key 只代表外觀，不能當主鍵或拿來推導技能（PLAN-032 結論）。
@@ -26,8 +29,8 @@ import fs from 'node:fs'
 /** 相對 public/ 的根目錄 */
 export const ICON_DIR = 'images/game/icons'
 
-/** 屬於圖庫的官方前綴（武器、背包自 PLAN-056 起也收進圖庫） */
-const LIBRARY_RE = /^Icon_(?:skill_|entry_|RnD_|commandskill_|zoneskill_|roguelike_|coopclimb_|buff_|debuff_|weapon_|backpack_|BackPack_)[A-Za-z0-9_]+$/
+/** 屬於圖庫的官方前綴（武器、背包自 PLAN-056、職業／駕照／陣營徽章自 PLAN-059 起也收進圖庫） */
+const LIBRARY_RE = /^Icon_(?:skill_|entry_|RnD_|commandskill_|zoneskill_|roguelike_|coopclimb_|buff_|debuff_|weapon_|backpack_|BackPack_|pilotclass_|wanzertype_|logo_)[A-Za-z0-9_]+$/
 
 /** 是不是圖庫裡的官方檔名（ASCII；中文佔位名一律 false） */
 export function isLibraryKey(key) {
@@ -52,11 +55,35 @@ export function iconPoolIndex(assetPath, type, name) {
 /** `--equip-icons` 整夾全收的兩個資料夾（PLAN-056 A-1） */
 export const EQUIP_POOLS = [['weapon', '/uiicons/wapweapons_abs/'], ['backpack', '/uiicons/wapbackpack_abs/']]
 
+/**
+ * `--emblems` 收哪些（PLAN-059 A-2）：
+ *   class    Icon_pilotclass_*  機師職業。_l／_s 都在 occupationtype_abs；bufftype 圖集裡另有同名的小圖副本
+ *   license  Icon_wanzertype_*  駕駛許可＝機甲類型。_l 在 occupationtype_abs，_s **只在** uicom_abs 的共用圖集（只有 Sprite）
+ *   camp     Icon_logo_*        陣營徽章，**只收 camptype_abs**
+ * class／license 依檔名認（同名的副本都是同一張圖，交給 pickRow 挑 Texture2D）。
+ * camp 要依資料夾認：factory_abs（機甲廠商 GeekX／SparkingPlug／InnoDrive…）有 Icon_logo_0024~0027，
+ * 與陣營徽章**同檔名、不同圖**——依檔名認會把廠商 logo 混進來。
+ * 範圍限 ui/uiimages/：ui/textimages/ 也有 Icon_wanzertype_*，那是烘了簡中字（輕型机甲）的戰鬥用圖，不收。
+ */
+export const EMBLEM_POOLS = [
+  { family: 'class', dir: '/ui/uiimages/', name: /^Icon_pilotclass_\d{3}_[ls]$/ },
+  { family: 'license', dir: '/ui/uiimages/', name: /^Icon_wanzertype_\d{3}_[ls]$/ },
+  { family: 'camp', dir: '/uiicons/camptype_abs/', name: /^Icon_logo_\d{4}_\d{2}$/ },
+]
+/** 站長 2026-10-13：NVIDIA 聯動的兩張不收（沒有機師屬於它，純第三方商標）——它們留在 --other-icons 的封存夾 */
+export const EMBLEM_EXCLUDE = /^Icon_logo_00(28|32)_/
+/** 擷取的一列（name／asset_path）屬於 --emblems 的哪一族；不收的回 undefined */
+export function emblemFamilyOf(row) {
+  if (EMBLEM_EXCLUDE.test(row.name)) return undefined
+  return EMBLEM_POOLS.find((p) => !!row.asset_path?.includes(p.dir) && p.name.test(row.name))?.family
+}
+
 // ── 其他圖示（--other-icons，2026-10-12）──────────────────────────────────────
 /**
  * 客戶端 ui/uiimages/uiicons/ 底下、其他匯入模式都不收的圖示 → repo 外封存夾 <archive>/game/icons/<官方資料夾>/。
- * 「其他模式收的」：--icons（ICON_POOLS）、--equip-icons（EQUIP_POOLS 裡的圖庫命名檔）、機甲 core 三種與機師卡
- * （--wap／--id／v3）。同名只要有一筆屬於它們，整個名字就交給它們，不在封存夾另存一份。
+ * 「其他模式收的」：--icons（ICON_POOLS）、--equip-icons（EQUIP_POOLS 裡的圖庫命名檔）、--emblems（EMBLEM_POOLS）、
+ * 機甲 core 三種與機師卡（--wap／--id／v3）。同名只要有一筆屬於它們，整個名字就交給它們，不在封存夾另存一份。
+ * 例外是陣營徽章：它依資料夾認，factory_abs 的同名廠商 logo 不是它收的，照樣封存。
  * 其餘一律收：道具、勳章、肉鴿、敵方車輛、塗裝色、機師外觀卡、機甲塗裝小圖……博物館原則，現在用不到不代表以後用不到。
  * 資料夾＝官方資料夾名去掉 _abs（itemtype_abs → itemtype）。下面的中文只給封存夾的 README 看，沒登記的資料夾照樣收。
  */
@@ -67,21 +94,21 @@ export const OTHER_ICON_FOLDERS = {
   honormedal: '榮譽勳章',
   mecha: '敵方單位、建築、車輛的立繪（可抽機甲在 game/mechs/）',
   vehicletype: '敵方單位、建築、車輛的頭像',
-  camptype: '陣營徽章',
+  camptype: '陣營徽章裡 --emblems 不收的（NVIDIA 聯動；PLAN-059 前的舊封存也在這）',
   frameicon: '頭像框',
   pvpcollect: 'PVP 收藏',
   paintingcolor: '塗裝色',
   wapweapons: '武器資料夾裡不是圖庫命名的（關卡物件：建築、直升機…）',
   itemchips: '晶片（分區圖示 Icon_zoneskill_ 在 --icons）',
-  occupationtype: '機師職業',
+  occupationtype: '機師職業、駕照（PLAN-059 起由 --emblems 上站，這裡是之前的舊封存）',
   autochesspveicon: '自走棋',
   propertytype: '屬性',
   pvprating: 'PVP 段位',
   rndicon: '研發（--icons 不收的部分）',
-  bufftype: 'BUFF 資料夾裡不是 BUFF 字形的（機師職業小圖）',
+  bufftype: 'BUFF 資料夾裡不是 BUFF 字形的（機師職業小圖的副本；PLAN-059 起由 --emblems 收，這裡是之前的舊封存）',
   skynetwapbg: '天網機甲背景',
   statetype: '狀態',
-  factory: '工廠徽章',
+  factory: '機甲廠商徽章（Icon_logo_0024~0027 與陣營徽章同檔名、不同圖）',
   playercollect: '玩家收藏',
   wapparts: '機甲部件（--wap 不收的部分）',
   skynetwap: '機甲全身大圖（--wap 不收的部分）',
@@ -94,30 +121,39 @@ const CORE_ENTITY_RE = /^(Icon_mecha_wap\d+(_SN_Raw)?|Icon_wap\d+_[1-4]|Icon_ite
 export function iconHandledElsewhere(row) {
   if (CORE_ENTITY_RE.test(row.name)) return true
   if (iconPoolIndex(row.asset_path, row.type, row.name) >= 0) return true
+  if (emblemFamilyOf(row)) return true
   return EQUIP_POOLS.some(([family, dir]) => !!row.asset_path?.includes(dir) && isLibraryKey(row.name) && iconFamily(row.name) === family)
 }
 
 /**
  * 擷取的列（name／type／asset_path）→ Map<封存相對路徑 `icons/<資料夾>/<官方檔名>`（不含副檔名）, 列[]>。
  * 同一路徑的多筆（Sprite＋Texture2D）交給呼叫端挑；同名只要有一筆屬於別的模式就整個不收。
+ * 陣營徽章例外：只排除 camptype 那一列本身，factory 的同名廠商 logo 照樣封存（見 EMBLEM_POOLS）。
  */
 export function otherIconPaths(rows) {
-  const handled = new Set(rows.filter(iconHandledElsewhere).map((r) => r.name))
+  const isCamp = (r) => emblemFamilyOf(r) === 'camp'
+  const handled = new Set(rows.filter((r) => iconHandledElsewhere(r) && !isCamp(r)).map((r) => r.name))
   const out = new Map()
   for (const r of rows) {
     const m = r.asset_path?.match(UIICONS_RE)
-    if (!m || handled.has(r.name) || r.name.startsWith('sactx-')) continue
+    if (!m || handled.has(r.name) || isCamp(r) || r.name.startsWith('sactx-')) continue
     const rel = `icons/${m[1].replace(/_abs$/, '')}/${r.name}`
     ;(out.get(rel) ?? out.set(rel, []).get(rel)).push(r)
   }
   return out
 }
 
-/** 圖庫子資料夾：照官方客戶端的分法——BUFF 字形、武器、背包各一夾，其餘（技能、模組詞條、研發…）一夾 */
+/**
+ * 圖庫子資料夾：照官方客戶端的分法——BUFF 字形、武器、背包、職業、駕照、陣營徽章各一夾，其餘（技能、模組詞條、研發…）一夾。
+ * ⚠ Icon_logo_ 一律當陣營徽章：圖庫只收 camptype 那份，factory 的同名廠商 logo 若日後要上站，得另立命名空間。
+ */
 export function iconFamily(key) {
   if (/^Icon_(?:de)?buff_/.test(key)) return 'buff'
   if (key.startsWith('Icon_weapon_')) return 'weapon'
   if (/^Icon_backpack_/i.test(key)) return 'backpack'
+  if (key.startsWith('Icon_pilotclass_')) return 'class'
+  if (key.startsWith('Icon_wanzertype_')) return 'license'
+  if (key.startsWith('Icon_logo_')) return 'camp'
   return 'skill'
 }
 
@@ -204,7 +240,9 @@ const BUFF_SERIES = { 1: 'stat', 2: 'status', 3: 'repair', 4: 'unique', 5: 'stac
  *          buff ：generic（buff_attack 這類通用增益）／debuff／stat／status／repair／unique／stack／misc
  *          weapon：series（主序列）／variant（字尾變體，如 _b 外型變化）／linked（9 開頭，機甲綁定肩部）／enemy（400x，敵方 BOSS）／other
  *          backpack：backpack
+ *          class／license／camp：與 family 同名（PLAN-059）
  *   category  武器：種類前綴 3 碼（'102'＝打樁機；linked 是 '902' 這類、enemy 是 '4001' 這類）；背包：類型 3 碼（'035'＝飛行）
+ *             職業／駕照：尺寸 'l'／'s'；陣營徽章：變體 '00'（白色單色）／'01'（彩色）
  *   color  只有 main／order／passive／talent 有：首位數 1–5、9
  *   num    編號（排序用；流水號倒序＝最新在前）
  */
@@ -223,6 +261,14 @@ export function parseIconKey(key) {
   if (family === 'backpack') {
     if ((m = key.match(/^Icon_backpack_6(\d{3})(\d{2})(\d{2})$/i))) return { key, family, kind: 'backpack', category: m[1], num: Number(`6${m[1]}${m[2]}${m[3]}`) }
     return { key, family, kind: 'backpack' }
+  }
+  if (family === 'class' || family === 'license') {
+    if ((m = key.match(/^Icon_(?:pilotclass|wanzertype)_(\d{3})_([ls])$/))) return { key, family, kind: family, category: m[2], num: Number(m[1]) }
+    return { key, family, kind: family }
+  }
+  if (family === 'camp') {
+    if ((m = key.match(/^Icon_logo_(\d{4})_(\d{2})$/))) return { key, family, kind: 'camp', category: m[2], num: Number(m[1]) }
+    return { key, family, kind: 'camp' }
   }
   if (family === 'buff') {
     if (key.startsWith('Icon_debuff_')) return { key, family, kind: 'debuff' }

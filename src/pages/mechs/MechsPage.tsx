@@ -9,8 +9,7 @@ import { FallbackImage } from '../../components/common/FallbackImage'
 import { ViewModeToggle } from '../../components/common/ViewModeToggle'
 import { MechQualityBadge } from '../../components/badges/MechBadges'
 import { chassisFirepower } from '../../utils/chassisStats'
-
-const ARMOR_TYPES = ['輕型', '中甲', '重型']
+import { MECH_WEIGHT_CLASSES, mechWeightClassOf } from '../../data/mechWeightClasses'
 
 /**
  * 品質篩選預設值。**預設只顯示 S 級**（63/89 台）。
@@ -30,12 +29,6 @@ const DEFAULT_QUALITY = 'S'
  */
 const mechImageCandidates = (mech: { name: string; portrait?: string; gameId?: string }) =>
   mechPortraitCandidates(mech)
-
-const ARMOR_STYLES: Record<string, { text: string; border: string; bg: string }> = {
-  輕型: { text: 'text-accent-cyan', border: 'border-accent-cyan/40', bg: 'bg-accent-cyan/10' },
-  中甲: { text: 'text-accent-green', border: 'border-accent-green/40', bg: 'bg-accent-green/10' },
-  重型: { text: 'text-accent-red', border: 'border-accent-red/40', bg: 'bg-accent-red/10' },
-}
 
 // 機甲品質階序（沿用機師品質階序），同時用於次要排序與篩選按鈕的排列順序。
 // 89 台目前全數有 quality（S 63 / A 16 / B 10）；fallback 99 保留給日後可能出現的新值，
@@ -157,8 +150,9 @@ export default function MechsPage() {
           <button className={filterBtn(!armorFilter)} onClick={() => setArmorFilter('')}>
             全部
           </button>
-          {ARMOR_TYPES.map((a) => {
-            const s = ARMOR_STYLES[a]
+          {/* 篩選值是資料裡的 armorType（中甲），按鈕上印短名（中型）——PLAN-059 決策十 */}
+          {MECH_WEIGHT_CLASSES.map((s) => {
+            const a = s.armorType
             const active = armorFilter === a
             return (
               <button
@@ -170,7 +164,7 @@ export default function MechsPage() {
                     : 'bg-bg-card text-text-secondary border-border hover:border-border-accent hover:text-text-primary'
                 }`}
               >
-                {a}
+                {s.short}
               </button>
             )
           })}
@@ -230,7 +224,7 @@ export default function MechsPage() {
         /* ── 緊湊檢視：機甲圖 + 名 ── */
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {filtered.map((mech) => {
-            const s = ARMOR_STYLES[mech.armorType]
+            const s = mechWeightClassOf(mech.armorType)
             return (
               <Link
                 key={mech.id}
@@ -248,7 +242,7 @@ export default function MechsPage() {
                     <span
                       className={`absolute top-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-bold border ${s.bg} ${s.text} ${s.border}`}
                     >
-                      {mech.armorType}
+                      {s.short}
                     </span>
                   )}
                   {/* 品質標示：切到「品質：全部」時，沒有它就分不出哪台是 A/B 級 */}
@@ -269,7 +263,7 @@ export default function MechsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((mech) => {
-            const s = ARMOR_STYLES[mech.armorType]
+            const s = mechWeightClassOf(mech.armorType)
             return (
               <Link
                 key={mech.id}
@@ -289,7 +283,7 @@ export default function MechsPage() {
                     <span
                       className={`absolute top-2 left-2 px-2 py-0.5 rounded text-[13px] font-bold border ${s.bg} ${s.text} ${s.border}`}
                     >
-                      {mech.armorType}
+                      {s.short}
                     </span>
                   )}
                   {mech.quality && (

@@ -1121,7 +1121,7 @@ test('052-G D：跨型的部件只可能從外來草稿進來，而它會被擋�
   const r = (s.notice?.removed ?? []).find((x) => x.kind === 'part')
   assert.match(r?.why ?? '', /跨裝甲類型/)
   assert.match(r?.why ?? '', /重型/)
-  assert.match(r?.why ?? '', /中甲/, '兩型都要講出來')
+  assert.match(r?.why ?? '', /中型/, '兩型都要講出來（畫面印短名，PLAN-059 決策十）')
 })
 
 test('052-G D：機甲被移除 ⇒ 四格全清，理由是「沒有機甲就沒有可以替換的部位」', () => {

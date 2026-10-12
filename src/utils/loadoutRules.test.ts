@@ -587,9 +587,9 @@ test('052-G D：canSwapPart —— 同型放行、跨型擋下並說得出是哪
   const r = canSwapPart(ctx, 重型機, MechPartPosition.TORSO)
   assert.equal(r?.code, 'PART_INCOMPATIBLE')
   assert.match(r!.reason, /重型/)
-  // ⚠ 是「中甲」不是「中型」—— ArmorType 的值是 輕型／中甲／重型（官方命名本來就不齊），
-  //   而 MechLicense 那邊是 輕型／中型／重型。兩套詞彙只差一個字，正是已知 bug #2 的成因。
-  assert.match(r!.reason, /中甲/, '兩型都要講出來，只說「不相容」等於沒說')
+  // 資料值是「中甲」，畫面印短名「中型」（PLAN-059 決策十）——比對仍走 normalizeArmorType，這裡只驗顯示
+  assert.match(r!.reason, /中型/, '兩型都要講出來，只說「不相容」等於沒說')
+  assert.doesNotMatch(r!.reason, /中甲/, '畫面不再出現資料值「中甲」')
 })
 
 test('052-G D：佔位機甲（四部位全 0）不可作為混搭來源', () => {

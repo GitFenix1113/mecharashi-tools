@@ -139,7 +139,7 @@ test('輕甲：無肩槽 → 整寬一列，不是左右兩個一樣的灰格', 
   const 肩 = blocks[0]
   assert.ok(肩.kind === 'row')
   assert.equal(肩.slot.state, 'absent')
-  assert.equal(肩.slot.note, '肩部槽位只有中甲機甲才有')
+  assert.equal(肩.slot.note, '肩部槽位只有中型機甲才有')
   // 兩欄裡因此**沒有**肩格，臂卡插點退到最上面
   assert.deepEqual(column(blocks, 'left'), ['part:rightArm', '右手'])
 })

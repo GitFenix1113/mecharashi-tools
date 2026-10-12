@@ -8,18 +8,8 @@ import { useViewMode } from '../../hooks/useViewMode'
 import { WeaponIcon } from '../../components/icons/WeaponIcon'
 import { PilotRarityBadge } from '../../components/badges/PilotBadges'
 import { ViewModeToggle } from '../../components/common/ViewModeToggle'
+import { PILOT_CLASS_NAMES, pilotClassMeta } from '../../data/pilotClasses'
 
-const CLASS_STYLES: Record<string, { text: string; border: string; bg: string }> = {
-  守護者: { text: 'text-accent-green', border: 'border-accent-green/40', bg: 'bg-accent-green/10' },
-  突擊手: { text: 'text-accent-orange', border: 'border-accent-orange/40', bg: 'bg-accent-orange/10' },
-  格鬥家: { text: 'text-accent-red', border: 'border-accent-red/40', bg: 'bg-accent-red/10' },
-  狙擊手: { text: 'text-accent-blue', border: 'border-accent-blue/40', bg: 'bg-accent-blue/10' },
-  戰術家: { text: 'text-accent-purple', border: 'border-accent-purple/40', bg: 'bg-accent-purple/10' },
-  機械師: { text: 'text-accent-cyan', border: 'border-accent-cyan/40', bg: 'bg-accent-cyan/10' },
-  調構師: { text: 'text-accent-yellow', border: 'border-accent-yellow/40', bg: 'bg-accent-yellow/10' },
-}
-
-const CLASSES = ['守護者', '突擊手', '格鬥家', '狙擊手', '戰術家', '機械師', '調構師']
 const LICENSES = ['重型', '中型', '輕型']
 const RARITIES = ['EX', 'S', 'A', 'B']
 const RARITY_ORDER: Record<string, number> = { EX: 0, S: 1, A: 2, B: 3 }
@@ -120,8 +110,8 @@ export default function PilotsPage() {
         <div className="flex flex-wrap gap-2 items-center">
           <span className="text-xs text-text-dim mr-1">職業</span>
           <button className={filterBtn(!classFilter)} onClick={() => setClassFilter('')}>全部</button>
-          {CLASSES.map((c) => {
-            const s = CLASS_STYLES[c]
+          {PILOT_CLASS_NAMES.map((c) => {
+            const s = pilotClassMeta(c)
             const active = classFilter === c
             return (
               <button
@@ -215,7 +205,7 @@ export default function PilotsPage() {
         /* ── 緊湊檢視：頭像 + 名 ── */
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
           {filtered.map((pilot) => {
-            const s = CLASS_STYLES[pilot.class]
+            const s = pilotClassMeta(pilot.class)
             return (
               <Link
                 key={pilot.id}
@@ -257,7 +247,7 @@ export default function PilotsPage() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {filtered.map((pilot) => {
-            const s = CLASS_STYLES[pilot.class]
+            const s = pilotClassMeta(pilot.class)
             return (
               <Link
                 key={pilot.id}

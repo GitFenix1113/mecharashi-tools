@@ -1,7 +1,7 @@
 import type { Pilot } from '../../types'
 import { imageCandidates, pilotFullArtPath } from '../../utils/assets'
 import { FallbackImage } from '../common/FallbackImage'
-import { CLASS_CONFIG } from '../badges/PilotBadges'
+import { pilotClassMeta } from '../../data/pilotClasses'
 import { HUD, HUD_BTN, HUD_TAG } from './loadoutTheme'
 import LoadoutIcon from '../icons/LoadoutIcon'
 
@@ -34,11 +34,6 @@ import LoadoutIcon from '../icons/LoadoutIcon'
 //   機師原稿改留給**機師故事館**那種有整頁高度可用、且以「看人物」為目的的頁面。
 //   查詢工具在 `utils/assets`（`hasPilotArt()` / `pilotKeyArtPath()`）已經備好，這裡只是不用。
 
-/** 職業色只取 `text-*` 那一段 —— CLASS_CONFIG 的值是「文字色 底色 框線」三件一組。 */
-function classText(pilotClass: string): string {
-  return CLASS_CONFIG[pilotClass]?.split(' ')[0] ?? 'text-text-secondary'
-}
-
 export function PilotIdentityCard({
   pilot, onChange, compact,
 }: {
@@ -68,7 +63,7 @@ export function PilotIdentityCard({
   }
 
   const art = imageCandidates(pilotFullArtPath(pilot))
-  const tone = classText(pilot.class)
+  const tone = pilotClassMeta(pilot.class)?.text ?? 'text-text-secondary'
 
   return (
     <section className={`hud-cut relative ${height} overflow-hidden border border-border-accent bg-bg-card`}>

@@ -437,7 +437,7 @@ export function LoadoutRig({
    *   由上而下的順序就是機體由上而下的解剖順序（肩 → 臂 → 手），
    *   而「手上這把武器」與「這條手臂的模組」從此貼在一起。
    * ⚠ 無肩槽（輕型機）時插點是 index 0 ＝ 這一欄的最上面。那時整張圖最上方另有一條
-   *   「肩部槽位只有中甲機甲才有」的整列，所以相對順序仍然是 肩區 → 臂 → 手。
+   *   「肩部槽位只有中型機甲才有」的整列，所以相對順序仍然是 肩區 → 臂 → 手。
    */
   const renderColumn = (refs: WeaponSlotRef[], arm: MechPartPosition) => {
     const cells: React.ReactNode[] = refs.map((ref) => (
@@ -500,7 +500,7 @@ export function LoadoutRig({
               occupant={null}
               // 實測 90/90 無例外：25 把肩部武器 100% 限中甲，
               // 有肩部固定武裝的三台宿主也全是中甲
-              absentReason="肩部槽位只有中甲機甲才有"
+              absentReason="肩部槽位只有中型機甲才有"
               compact={compact}
               dense={dense}
               tight={tight}

@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import { FallbackImage } from '../common/FallbackImage'
 import { backpackIconCandidates } from '../../utils/gameIcons'
+import { mechWeightClassOf } from '../../data/mechWeightClasses'
 
 export const BACKPACK_TYPE_CONFIG: Record<string, { label: string; className: string }> = {
   Heal:            { label: '修理',    className: 'text-accent-green bg-accent-green/10 border-accent-green/30' },
@@ -16,11 +17,16 @@ export const BACKPACK_TYPE_CONFIG: Record<string, { label: string; className: st
   PowerAdd:        { label: '出力',    className: 'text-accent-red bg-accent-red/10 border-accent-red/30' },
 }
 
-export const ASSEMBLABLE_ARMOR_CONFIG: Record<string, { label: string; className: string }> = {
-  Light:  { label: '輕甲', className: 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/40' },
-  Medium: { label: '中甲', className: 'text-accent-green bg-accent-green/10 border-accent-green/40' },
-  Heavy:  { label: '重甲', className: 'text-accent-red bg-accent-red/10 border-accent-red/40' },
-}
+/**
+ * 背包可裝備的機甲類型（資料存英文 Light／Medium／Heavy）。字與色來自 data/mechWeightClasses.ts（PLAN-059 決策十）：
+ * 顯示短名「輕型／中型／重型」——原本的「輕甲／中甲／重甲」不再使用。
+ */
+export const ASSEMBLABLE_ARMOR_CONFIG: Record<string, { label: string; className: string }> = Object.fromEntries(
+  (['Light', 'Medium', 'Heavy'] as const).map((k) => {
+    const m = mechWeightClassOf(k)!
+    return [k, { label: m.short, className: `${m.text} ${m.bg} ${m.border}` }]
+  }),
+)
 
 export function BackpackTypeBadge({ type, className = '' }: { type: string; className?: string }) {
   const config = BACKPACK_TYPE_CONFIG[type]

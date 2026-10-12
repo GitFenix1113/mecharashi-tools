@@ -20,6 +20,7 @@ import type { ModuleSlotRef, WeaponSlotRef } from '../../types/slots'
 import { MechPartPosition, WeaponEquipSlot } from '../../types/enums.ts'
 import { equipSetKeys, DEFAULT_EQUIP_SET_KEY } from '../../utils/forms.ts'
 import { licenseAllows } from '../../utils/normalizeArmorType.ts'
+import { mechWeightShort } from '../../data/mechWeightClasses.ts'
 import { slotLabel } from '../../utils/mechSlots.ts'
 import { partLabel } from '../../utils/moduleSlots.ts'
 import { MECH_PART_ORDER } from '../../utils/chassisStats.ts'
@@ -324,7 +325,7 @@ export function reconcile(draft: LoadoutDraft, world: LoadoutWorld): { draft: Lo
     removed.push({ kind: 'weapon', id: next.mechId, name: next.mechId, why: '機甲資料已不存在' })
     next = { ...next, mechId: undefined, sets: {} }
   } else if (pilot && mech && !licenseAllows(pilot.license, mech.armorType)) {
-    removed.push({ kind: 'weapon', id: mech.id, name: mech.name, why: `${pilot.license}執照無法駕駛${mech.armorType}機甲` })
+    removed.push({ kind: 'weapon', id: mech.id, name: mech.name, why: `${mechWeightShort(pilot.license)}執照無法駕駛${mechWeightShort(mech.armorType)}機甲` })
     next = { ...next, mechId: undefined, sets: {} }
   }
   if (!next.mechId && Object.keys(next.sets).length > 0) next = { ...next, sets: {} }

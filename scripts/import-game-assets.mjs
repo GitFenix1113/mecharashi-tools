@@ -10,6 +10,7 @@
  *   node scripts/import-game-assets.mjs --npc                                   NPC 圖庫：還沒對應到可抽機師的官方立繪 → game/npc/（上站）
  *   node scripts/import-game-assets.mjs --icons                                 圖示圖庫（PLAN-055）：技能類＋BUFF 字形 → game/icons/
  *   node scripts/import-game-assets.mjs --equip-icons                           武器／背包圖示（PLAN-056）→ game/icons/{weapon,backpack}/
+ *   node scripts/import-game-assets.mjs --emblems                               職業／駕照圖示、陣營徽章（PLAN-059）→ game/icons/{class,license,camp}/
  *   node scripts/import-game-assets.mjs --ui                                    介面美術（活動、招募、大廳…）→ 封存夾 game/ui/（repo 外）
  *   node scripts/import-game-assets.mjs --other-icons                           其他圖示（道具、勳章、肉鴿、車輛…）→ 封存夾 game/icons/（repo 外）
  *   node scripts/import-game-assets.mjs --skins                                 可抽機師的其他造型 → 封存夾 game/pilots/<gameId>/（repo 外）
@@ -72,6 +73,14 @@
  *   WebP **q82**（不是 lossless：武器是 3D 渲染圖，lossless 會大好幾倍）。站上舊夾 weapons／backpacks 只拿來比對、不收：
  *   中文佔位與猜錯的編號（20400502、10200402）不進圖庫，資料改指向正確的官方 gameId。
  *   --apply 時另寫檔名大小寫例外表（src/data/equipIconKeyCase.ts ＋ scripts/lib/equipIconKeyCase.json）。
+ *
+ * ── --emblems（PLAN-059 A-2）─────────────────────────────────────────────
+ *   收哪些見 scripts/lib/gameIconKinds.mjs 的 EMBLEM_POOLS：
+ *     class    Icon_pilotclass_*（機師職業，_l 340²／_s 72×80；官方備案的 007～012 一併收，011／012 是海莉絲的形態）
+ *     license  Icon_wanzertype_*（駕照＝機甲類型；_s 只在 uicom 共用圖集裡，只有 Sprite）
+ *     camp     Icon_logo_*（陣營徽章，只收 camptype_abs；NVIDIA 聯動兩張不收）
+ *   ⚠ factory_abs（機甲廠商）有同名、不同圖的 Icon_logo_0024～0027——依資料夾認，所以不會混進來；報告會列出這幾個同名。
+ *   職業／駕照是白色字形、前台用 CSS mask 上色 → WebP lossless（邊緣不糊）；陣營徽章是彩色圖 → q82。只補新的。
  * 共用旗標：--apply（真的寫檔；預設只報告）、--force（已存在也重轉）、--only=<gameId|wap>（v3 模式只做一個）、
  *           --src=<擷取>（預設 E:/Mecharashi_Data/Data；可給 latest、previous、擷取根目錄下的資料夾名或完整路徑。
  *                        v3 模式一定要用 Data——v3 定版記的是那次擷取的檔案路徑）、
@@ -99,7 +108,7 @@ import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 import { GAME_DIR, MECH_KINDS, NPC_ART_RE, PILOT_KINDS, TIER_GROUPS, classifyNpcFile, mechFileName, npcDirOf, pilotFileName, playableArtDirs } from './lib/gameAssetKinds.mjs'
-import { EQUIP_POOLS, ICON_POOLS, OTHER_ICON_FOLDERS, equipGameIdOf, iconFamily, iconPoolIndex, isLibraryKey, keyFromValue, otherIconPaths } from './lib/gameIconKinds.mjs'
+import { EMBLEM_EXCLUDE, EQUIP_POOLS, ICON_POOLS, OTHER_ICON_FOLDERS, emblemFamilyOf, equipGameIdOf, iconFamily, iconPoolIndex, isLibraryKey, keyFromValue, otherIconPaths } from './lib/gameIconKinds.mjs'
 import { ARCHIVE_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, resolveDump } from './lib/gameDump.mjs'
 import { UI_GROUPS, uiArchivePath, uiModuleInfo } from './lib/gameUiModules.mjs'
 
@@ -109,7 +118,7 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   if (!m) { console.error(`❌ 看不懂的參數：${a}`); process.exit(1) }
   return [m[1], m[2] ?? true]
 }))
-const MODE = args.promote ? 'promote' : args.icons ? 'icons' : args['equip-icons'] ? 'equip' : args.ui ? 'ui'
+const MODE = args.promote ? 'promote' : args.icons ? 'icons' : args['equip-icons'] ? 'equip' : args.emblems ? 'emblems' : args.ui ? 'ui'
   : args['other-icons'] ? 'other' : args.skins ? 'skins' : args.npc ? 'npc' : args.id ? 'pilot' : args.wap ? 'mech' : 'v3'
 const TIER = MODE === 'v3' ? String(args.tier ?? 'core') : 'core'
 let SRC = ''   // --promote 讀的是封存夾、不讀擷取
@@ -215,6 +224,7 @@ function featureDistance(a, b) {
 const ALIAS_MAX_DISTANCE = 6
 const iconReport = { fromDump: 0, dumpOnly: [], legacy: [], diffs: [], nonKey: [], siteCopies: 0, aliases: {} }
 const equipReport = { weapon: [], backpack: [], siteOnly: [], diffs: [], same: 0, keyCase: {} }
+const emblemReport = { class: [], license: [], camp: [], excluded: [], sameNameElsewhere: [] }
 const UI_ROOT = path.join(destRoot, 'ui')
 const ICON_META_FILE = path.join(ROOT, 'scripts/lib/gameIconMeta.json')
 const uiReport = { rows: new Map(), conflicts: [], moves: [], notInDump: 0 }
@@ -392,6 +402,31 @@ if (MODE === 'v3') {
       else equipReport.same++
     }
   }
+} else if (MODE === 'emblems') {
+  // 職業／駕照圖示、陣營徽章（PLAN-059）：收哪些由 emblemFamilyOf 決定（scripts/lib/gameIconKinds.mjs）
+  const rows = loadCsv()
+  const pools = new Map()   // family → 擷取列
+  for (const r of rows) {
+    const family = emblemFamilyOf({ name: r.name, asset_path: r.asset })
+    if (family) (pools.get(family) ?? pools.set(family, []).get(family)).push(r)
+  }
+  for (const family of ['class', 'license', 'camp']) {
+    const pool = pools.get(family) ?? []
+    for (const name of [...new Set(pool.map((r) => r.name))].sort()) {
+      const pick = pickRow(pool, name)
+      if (pick.conflict) { problems.push(`${name}：擷取內同名但內容不同 ${pick.conflict.join(' ／ ')}`); continue }
+      addTask(pick.row.path, `icons/${family}`, name, '擷取', `emblem-${family}`)
+      emblemReport[family].push(name)
+    }
+  }
+  const campNames = new Set(emblemReport.camp)
+  emblemReport.excluded = [...new Set(rows.filter((r) => EMBLEM_EXCLUDE.test(r.name) && r.asset?.includes('/camptype_abs/')).map((r) => r.name))].sort()
+  // 同檔名、在別的資料夾（目前是 factory_abs 的機甲廠商 logo）：不收，列出來讓人知道「同名不同圖」還在
+  emblemReport.sameNameElsewhere = [...new Set(rows.filter((r) => campNames.has(r.name) && !r.asset?.includes('/camptype_abs/'))
+    .map((r) => `${r.name}（${r.asset?.match(/uiicons\/([^/]+)/)?.[1] ?? r.asset}）`))].sort()
+  if (!emblemReport.class.length || !emblemReport.license.length || !emblemReport.camp.length) {
+    notes.push('有一族在擷取裡一張都沒找到——官方可能改了資料夾或命名，請看 scripts/lib/gameIconKinds.mjs 的 EMBLEM_POOLS')
+  }
 } else if (MODE === 'promote') {
   // 上架：封存夾的介面美術 → public/images/game/ui/<同一個相對路徑>（不讀擷取，原樣複製）
   const archiveUi = path.join(ARCHIVE, 'game', 'ui')
@@ -550,7 +585,8 @@ async function run(t) {
   const have = fs.existsSync(t.dest) ? t.dest : movedFrom.get(t.dest)
   if (have && !FORCE) { bump(t.group, 'skipped', 1); bump(t.group, 'outBytes', fs.statSync(have).size); return }
   // 圖示（PLAN-055）：128px 平塗圖 lossless 比 q82 還小；本來就是 .webp 的（站上舊圖、--promote 的封存檔）直接複製、不重壓
-  const isIcon = t.group.startsWith('icon-')
+  // 職業／駕照（PLAN-059）是白色字形、前台當 CSS mask 用：lossless 與 q82 一樣大，取邊緣不糊的 lossless
+  const isIcon = t.group.startsWith('icon-') || t.group === 'emblem-class' || t.group === 'emblem-license'
   const buf = (isIcon || t.group === 'promote') && t.src.endsWith('.webp') ? fs.readFileSync(t.src)
     : isIcon ? await sharp(t.src).webp({ lossless: true, effort: 6 }).toBuffer()
     : await sharp(t.src).webp({ quality: 82 }).toBuffer()
@@ -569,7 +605,7 @@ const MB = (b) => (b / 1048576).toFixed(1)
 const rowsOut = [...stat].sort().map(([g, s]) => `| ${g} | ${s.n} | ${s.skipped} | ${MB(s.srcBytes)} | ${MB(s.outBytes)} |`)
 const tot = [...stat.values()].reduce((a, s) => ({ n: a.n + s.n, skipped: a.skipped + s.skipped, srcBytes: a.srcBytes + s.srcBytes, outBytes: a.outBytes + s.outBytes }), { n: 0, skipped: 0, srcBytes: 0, outBytes: 0 })
 const title = MODE === 'v3' ? `v3 整批・${TIER}` : MODE === 'pilot' ? `新機師 ${args.id}` : MODE === 'npc' ? 'NPC 圖庫' : MODE === 'icons' ? '圖示圖庫'
-  : MODE === 'equip' ? '武器／背包圖示' : MODE === 'ui' ? '介面美術封存' : MODE === 'promote' ? '介面美術上架'
+  : MODE === 'equip' ? '武器／背包圖示' : MODE === 'emblems' ? '職業／駕照圖示、陣營徽章' : MODE === 'ui' ? '介面美術封存' : MODE === 'promote' ? '介面美術上架'
     : MODE === 'other' ? '其他圖示封存' : MODE === 'skins' ? '機師造型封存' : `新機甲 wap${args.wap}`
 const iconSection = MODE !== 'icons' ? [] : [
   '## 圖示圖庫（PLAN-055）', '',
@@ -599,6 +635,14 @@ const equipSection = MODE !== 'equip' ? [] : [
   ...equipReport.siteOnly.map((f) => `  - ${code(f)}`),
   `- 檔名大小寫例外：${Object.keys(equipReport.keyCase).length}`,
   ...Object.entries(equipReport.keyCase).map(([k, v]) => `  - ${code(k)} → ${code(v)}`), '',
+]
+const emblemSection = MODE !== 'emblems' ? [] : [
+  '## 職業／駕照圖示、陣營徽章（PLAN-059）', '',
+  `- 職業 ${emblemReport.class.length}：${emblemReport.class.map((n) => n.replace('Icon_pilotclass_', '')).join('、')}`,
+  `- 駕照 ${emblemReport.license.length}：${emblemReport.license.map((n) => n.replace('Icon_wanzertype_', '')).join('、')}`,
+  `- 陣營徽章 ${emblemReport.camp.length}（只收 camptype）`,
+  `- 刻意不收（站長 2026-10-13：NVIDIA 聯動，留在 --other-icons 的封存夾）：${emblemReport.excluded.join('、') || '（無）'}`,
+  `- 別的資料夾有同檔名的圖（不收；多半是機甲廠商 logo，與陣營徽章是不同的圖）：${emblemReport.sameNameElsewhere.join('、') || '（無）'}`, '',
 ]
 if (MODE === 'equip' && APPLY) {
   const entries = Object.entries(equipReport.keyCase).sort(([a], [b]) => a.localeCompare(b))
@@ -668,7 +712,7 @@ const skinSection = MODE !== 'skins' ? [] : [
   `- 封存夾還沒有的造型：${[...skinReport.fresh].sort().join('、') || '（無）'}`, '',
 ]
 const report = [
-  `# ${{ icons: 'PLAN-055 ', equip: 'PLAN-056 ', ui: '', promote: '', other: '', skins: '' }[MODE] ?? 'PLAN-054 '}官方原檔匯入${APPLY ? '' : '（dry-run）'}：${title}`, '',
+  `# ${{ icons: 'PLAN-055 ', equip: 'PLAN-056 ', emblems: 'PLAN-059 ', ui: '', promote: '', other: '', skins: '' }[MODE] ?? 'PLAN-054 '}官方原檔匯入${APPLY ? '' : '（dry-run）'}：${title}`, '',
   `- 時間：${new Date().toISOString()}`,
   `- 來源：${MODE === 'promote' ? path.join(ARCHIVE, 'game', 'ui') : SRC}`,
   `- 落點：${destRoot}${TO_ARCHIVE ? '（repo 外封存，不進 git、不部署）' : '（進版控、部署）'}`,
@@ -676,6 +720,7 @@ const report = [
   '| 組 | 檔數 | 已存在 | PNG MB | WebP MB |', '|---|---:|---:|---:|---:|', ...rowsOut, '',
   ...iconSection,
   ...equipSection,
+  ...emblemSection,
   ...uiSection,
   ...otherSection,
   ...skinSection,
@@ -685,7 +730,7 @@ const report = [
 console.log(MODE === 'icons' ? report.split('<details>')[0] : report)
 /** 報告檔：_local-notes/<YYYY-MM>/<YYYY-MM-DD>_<名稱>[_dry-run].md（同一天重跑會覆寫當天那份，不會蓋到別天的） */
 const REPORT_NAME = {
-  icons: '圖示圖庫匯入報告', equip: '武器背包圖示匯入報告', ui: '介面美術封存報告', npc: 'NPC圖庫匯入報告',
+  icons: '圖示圖庫匯入報告', equip: '武器背包圖示匯入報告', emblems: '職業駕照陣營圖示匯入報告', ui: '介面美術封存報告', npc: 'NPC圖庫匯入報告',
   other: '其他圖示封存報告', skins: '機師造型封存報告', v3: `PLAN-054_匯入報告_${TIER}`,
 }[MODE]
 if (REPORT_NAME) {

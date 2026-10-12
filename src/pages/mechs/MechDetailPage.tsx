@@ -14,12 +14,7 @@ import { occupiedSlots } from '../../utils/mechSlots'
 import { slotKey } from '../../types/slots'
 import { WeaponEquipSlot } from '../../types/enums'
 import { ShoulderArmamentCard } from '../../components/mechs/ShoulderArmamentCard'
-
-const ARMOR_STYLES: Record<string, string> = {
-  輕型: 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/40',
-  中甲: 'text-accent-green bg-accent-green/10 border-accent-green/40',
-  重型: 'text-accent-red bg-accent-red/10 border-accent-red/40',
-}
+import { mechWeightBadgeClass, mechWeightShort } from '../../data/mechWeightClasses'
 
 type NumericPartStatKey = 'durable' | 'firepower' | 'weight' | 'output' | 'antiRiot' | 'hit' | 'dodge' | 'move'
 
@@ -247,7 +242,7 @@ export default function MechDetailPage() {
   }
 
   const { mech, mod4, mod8, fixedMods, exclusiveMods } = data
-  const armorCls = ARMOR_STYLES[mech.armorType] ?? 'text-text-secondary bg-bg-card border-border'
+  const armorCls = mechWeightBadgeClass(mech.armorType)
 
   const torso    = mech.parts?.torso    && typeof mech.parts.torso    !== 'number' ? mech.parts.torso    as MechPart : null
   const leftArm  = mech.parts?.leftArm  && typeof mech.parts.leftArm  !== 'number' ? mech.parts.leftArm  as MechPart : null
@@ -320,7 +315,7 @@ export default function MechDetailPage() {
               </BackToListLink>
               <h1 className="text-xl sm:text-2xl xl:text-3xl font-black leading-tight truncate">{mech.name}</h1>
               <span className={`inline-block shrink-0 px-2 py-0.5 rounded text-xs font-bold border ${armorCls}`}>
-                {mech.armorType}
+                {mechWeightShort(mech.armorType)}
               </span>
             </div>
             {(mech.debutVersion || pairedPilot || skinOf) && (

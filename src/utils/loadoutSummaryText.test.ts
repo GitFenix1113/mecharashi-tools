@@ -124,7 +124,7 @@ const 基本 = { pilotId: 機師.id, mechId: 中甲機.id }
 
 test('未命名時把機師名升成主標，不印一行「未命名配裝」也不把機師名印兩次', () => {
   const text = summarize({ ...基本, sets: { default: { mounts: [] } } })
-  assert.match(text, /^【阿中】\n中甲機 · 中甲\n/)
+  assert.match(text, /^【阿中】\n中甲機 · 中型\n/)   // 機甲類型印短名（PLAN-059 決策十），不是資料值「中甲」
   assert.equal(text.includes('未命名配裝'), false)
   // 機師名只出現一次（主標那次）
   assert.equal(text.split('阿中').length - 1, 1)
@@ -132,7 +132,7 @@ test('未命名時把機師名升成主標，不印一行「未命名配裝」�
 
 test('有方案名時機師名降到第二行，與匯出圖同一套處置', () => {
   const text = summarize({ ...基本, sets: { default: { mounts: [] } } }, { name: '焰擊近戰特化' })
-  assert.match(text, /^【焰擊近戰特化】\n阿中 · 中甲機 · 中甲\n/)
+  assert.match(text, /^【焰擊近戰特化】\n阿中 · 中甲機 · 中型\n/)
 })
 
 test('超重要印超重、不是負數的「餘」', () => {
@@ -164,7 +164,7 @@ test('固定武裝與「這台沒有這一排」都要講出來（唯一在說�
   assert.match(fixed, /· 右肩：嵐質儲能艙（重 0｜機甲固定武裝）/)
 
   const light = summarize({ pilotId: 機師.id, mechId: 輕甲機.id, sets: { default: { mounts: [] } } })
-  assert.match(light, /· 肩部：無此槽位 —— 肩部槽位只有中甲機甲才有/)
+  assert.match(light, /· 肩部：無此槽位 —— 肩部槽位只有中型機甲才有/)
 })
 
 test('固定武裝的重量 0 照印數字，不印成「—」（那會被讀成沒算進總重）', () => {

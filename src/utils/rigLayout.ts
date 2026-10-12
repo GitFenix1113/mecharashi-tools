@@ -253,7 +253,7 @@ export function rigLayout(ctx: LoadoutContext): RigBlock[] {
   // ── 整排不存在：肩部（輕型／重型機甲）──
   //    實測 90/90 無例外：25 把肩部武器 100% 限中甲，有肩部固定武裝的三台宿主也全是中甲
   if (cap.shoulder <= 0) {
-    out.push({ kind: 'row', key: 'absent:shoulder', slot: absentSlot('absent:shoulder', '肩部', WeaponEquipSlot.SHOULDER, '肩部槽位只有中甲機甲才有') })
+    out.push({ kind: 'row', key: 'absent:shoulder', slot: absentSlot('absent:shoulder', '肩部', WeaponEquipSlot.SHOULDER, '肩部槽位只有中型機甲才有') })
   }
 
   if (hasParts) out.push({ kind: 'part', key: 'part:torso', position: MechPartPosition.TORSO })

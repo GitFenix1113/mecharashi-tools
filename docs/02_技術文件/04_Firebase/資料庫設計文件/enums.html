@@ -46,11 +46,11 @@
   <div class="section-label blue" style="margin-top:2rem;">機師</div>
   <div class="enum-grid">
     <div class="enum-card">
-      <div class="enum-name">PilotClass — 機師職業</div>
+      <div class="enum-name">PilotClass — 機師職業（遊戲內篩選順序，PLAN-059；圖示與色見 src/data/pilotClasses.ts）</div>
+      <div class="enum-item"><span class="enum-key">FIGHTER</span><span class="enum-val">格鬥家</span></div>
       <div class="enum-item"><span class="enum-key">ASSAULT</span><span class="enum-val">突擊手</span></div>
       <div class="enum-item"><span class="enum-key">SNIPER</span><span class="enum-val">狙擊手</span></div>
       <div class="enum-item"><span class="enum-key">TACTICIAN</span><span class="enum-val">戰術家</span></div>
-      <div class="enum-item"><span class="enum-key">FIGHTER</span><span class="enum-val">格鬥家</span></div>
       <div class="enum-item"><span class="enum-key">GUARDIAN</span><span class="enum-val">守護者</span></div>
       <div class="enum-item"><span class="enum-key">ENGINEER</span><span class="enum-val">機械師</span></div>
       <div class="enum-item"><span class="enum-key">CONSTRUCTOR</span><span class="enum-val">調構師</span></div>
@@ -88,6 +88,9 @@
         直接比對兩者會讓中甲靜默失配 —— 一律走 <code>licenseAllows()</code> /
         <code>toArmorType()</code>（<code>src/utils/normalizeArmorType.ts</code>）。
         <br>PLAN-052-A D-1 起 <code>Mech.armorType</code> 已由 <code>string</code> 收成本 enum。
+        <br>PLAN-059 起<strong>畫面上一律印短名「輕型／中型／重型」</strong>（全名「輕型機甲」給提示），
+        經 <code>src/data/mechWeightClasses.ts</code> 的 <code>mechWeightShort()</code>——值「中甲」只留在資料與比對裡。
+        駕照、機甲類型、背包可裝備、武器限定共用同一套官方圖示 <code>Icon_wanzertype_001～003</code>。
       </div>
     </div>
     <div class="enum-card">
@@ -391,10 +394,10 @@
   <div class="section-title">完整 Enum 定義範例</div>
   <div class="code-block"><span class="label">src/types/enums.ts</span><span class="comment">// as const 物件 + 同名 type pattern</span>
 <span class="keyword">export const</span> <span class="type">PilotClass</span> = {
+  FIGHTER:     <span class="string">'格鬥家'</span>,
   ASSAULT:     <span class="string">'突擊手'</span>,
   SNIPER:      <span class="string">'狙擊手'</span>,
   TACTICIAN:   <span class="string">'戰術家'</span>,
-  FIGHTER:     <span class="string">'格鬥家'</span>,
   GUARDIAN:    <span class="string">'守護者'</span>,
   ENGINEER:    <span class="string">'機械師'</span>,
   CONSTRUCTOR: <span class="string">'調構師'</span>,

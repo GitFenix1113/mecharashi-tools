@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FallbackImage } from '../../components/common/FallbackImage'
-import { CLASS_CONFIG } from '../../components/badges/PilotBadges'
+import { PILOT_CLASS_NAMES, pilotClassMeta } from '../../data/pilotClasses'
 import { toneBar } from '../../components/loadout/PickerVariants'
 import { usePilotLore, usePilots } from '../../hooks/useFirestore'
 import { assetUrl, pilotPortraitCandidates } from '../../utils/assets'
@@ -134,7 +134,6 @@ interface LoreGroup {
 
 const GRID = 'grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7'
 
-const CLASS_ORDER = Object.keys(CLASS_CONFIG)
 const UNCLASSIFIED = '其他'
 const UNVERSIONED = '未標註版本'
 
@@ -162,7 +161,7 @@ function buildGroups(pilots: Pilot[], sort: LoreSort): LoreGroup[] {
   const buckets = new Map<string, Pilot[]>()
   for (const p of pilots) {
     const key = sort === 'class'
-      ? (CLASS_CONFIG[p.class] ? p.class : UNCLASSIFIED)
+      ? (pilotClassMeta(p.class) ? p.class : UNCLASSIFIED)
       : (p.debutVersion || UNVERSIONED)
     const bucket = buckets.get(key)
     if (bucket) bucket.push(p)
@@ -170,8 +169,8 @@ function buildGroups(pilots: Pilot[], sort: LoreSort): LoreGroup[] {
   }
 
   const keys = sort === 'class'
-    // 職業依 CLASS_CONFIG 的宣告順序（＝全站徽章的順序），未知職業殿後
-    ? [...CLASS_ORDER, UNCLASSIFIED].filter((k) => buckets.has(k))
+    // 職業依遊戲內篩選的順序（data/pilotClasses.ts，全站共用），未知職業殿後
+    ? [...PILOT_CLASS_NAMES, UNCLASSIFIED].filter((k) => buckets.has(k))
     // 版本依數值遞減，未標註版本殿後
     : [...buckets.keys()].sort((a, b) => {
         if (a === UNVERSIONED) return 1
@@ -184,8 +183,7 @@ function buildGroups(pilots: Pilot[], sort: LoreSort): LoreGroup[] {
     return {
       key,
       label: sort === 'class' ? key : (key === UNVERSIONED ? key : `v${key}`),
-      // ⚠ CLASS_CONFIG 的值是「文字色 底色 框線」三件一組，不 split 會把底色與框線一起套上
-      tone: sort === 'class' ? (CLASS_CONFIG[key]?.split(' ')[0] ?? '') : '',
+      tone: sort === 'class' ? (pilotClassMeta(key)?.text ?? '') : '',
       items,
     }
   })
@@ -263,7 +261,7 @@ const sortBtn = (active: boolean) =>
  *   館內的 token 已被覆寫成紙色墨字（#2b2621），套上去就是深底配深字。
  */
 function PilotCard({ pilot, chapters }: { pilot: Pilot; chapters: number }) {
-  const tone = CLASS_CONFIG[pilot.class]?.split(' ')[0] ?? ''
+  const tone = pilotClassMeta(pilot.class)?.text ?? ''
 
   return (
     <Link

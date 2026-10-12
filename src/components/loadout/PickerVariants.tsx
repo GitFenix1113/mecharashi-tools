@@ -128,7 +128,7 @@ export function PilotAvatarCard({
 }
 
 /**
- * 職業色條：`CLASS_CONFIG` 給的是 `text-*`，色條要的是 `bg-*`。
+ * 色條：tone 給的是 `text-*`（職業色、機甲類型色），色條要的是 `bg-*`。
  * 用查表而不是字串替換 —— Tailwind v4 掃的是**原始碼裡出現過的完整類名**，
  * 執行期拼出來的 `bg-accent-green` 不會被產生（會靜默變成沒有底色的色條）。
  */
