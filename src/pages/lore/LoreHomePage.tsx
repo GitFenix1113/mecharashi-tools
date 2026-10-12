@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { FallbackImage } from '../../components/common/FallbackImage'
 import { PILOT_CLASS_NAMES, pilotClassMeta } from '../../data/pilotClasses'
 import { ClassIcon } from '../../components/icons/ClassIcon'
+import { FactionLogo } from '../../components/icons/FactionLogo'
+import { normalizeFactionLogos } from '../../utils/factionLogos'
 import { toneBar } from '../../components/loadout/PickerVariants'
 import { usePilotLore, usePilots } from '../../hooks/useFirestore'
 import { assetUrl, pilotPortraitCandidates } from '../../utils/assets'
@@ -37,6 +39,11 @@ export default function LoreHomePage() {
   //   `chapters?.` 的問號是防禦 Worker 回來的舊文件缺欄位（型別上它是必填）。
   const chapterCount = useMemo<Record<string, number>>(
     () => Object.fromEntries(loreDocs.map((d) => [d.id, d.chapters?.length ?? 0])),
+    [loreDocs],
+  )
+  // 陣營徽章（PLAN-059 D-4）：卡片左上角只放第一個。和章節數同一份 pilotLore，讀不到時一起消失
+  const firstLogo = useMemo<Record<string, string | undefined>>(
+    () => Object.fromEntries(loreDocs.map((d) => [d.id, normalizeFactionLogos(d.factionLogos)[0]])),
     [loreDocs],
   )
 
@@ -113,7 +120,7 @@ export default function LoreHomePage() {
 
           <div className={GRID}>
             {g.items.map((p) => (
-              <PilotCard key={p.id} pilot={p} chapters={chapterCount[p.id] ?? 0} />
+              <PilotCard key={p.id} pilot={p} chapters={chapterCount[p.id] ?? 0} logo={firstLogo[p.id]} />
             ))}
           </div>
         </section>
@@ -265,7 +272,7 @@ const sortBtn = (active: boolean) =>
  * ⚠ 名字壓在深色遮罩上，所以用固定的白字而不是 `text-text-primary`——
  *   館內的 token 已被覆寫成紙色墨字（#2b2621），套上去就是深底配深字。
  */
-function PilotCard({ pilot, chapters }: { pilot: Pilot; chapters: number }) {
+function PilotCard({ pilot, chapters, logo }: { pilot: Pilot; chapters: number; logo?: string }) {
   const tone = pilotClassMeta(pilot.class)?.text ?? ''
 
   return (
@@ -294,6 +301,13 @@ function PilotCard({ pilot, chapters }: { pilot: Pilot; chapters: number }) {
         className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,12,16,0.05)_38%,rgba(10,12,16,0.92))]"
       />
       <span aria-hidden className={`absolute left-0 top-0 h-full w-[3px] ${toneBar(tone)}`} />
+
+      {/* 陣營徽章角標（PLAN-059 D-4）：左上角、與右上的章節徽章分開。縮圖是暗底：單色版吃白色，彩色版原樣 */}
+      {logo && (
+        <span className="absolute left-2 top-1.5 text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          <FactionLogo logoKey={logo} size={24} label={pilot.faction} />
+        </span>
+      )}
 
       {/* 章節徽章只在真的有章節時出現。目前 pilotLore 全是空殼 ⇒ 一個都不會出現，這是正確現象。 */}
       {chapters > 0 && (

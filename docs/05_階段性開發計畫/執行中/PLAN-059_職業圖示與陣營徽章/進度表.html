@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">16</div>
+      <div class="summary-num" style="color:var(--accent-green)">20</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">10</div>
+      <div class="summary-num" style="color:var(--text-dim)">6</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度（開發者 24＋站長／管理者 2）</span>
-      <span style="color:var(--accent-cyan);">16 / 26</span>
+      <span style="color:var(--accent-cyan);">20 / 26</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 62%"></div>
+      <div class="progress-bar-fill" style="width: 77%"></div>
     </div>
   </div>
 
@@ -465,16 +465,16 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 型別與文件</div>
       <div class="task-group-meta">src/types/lore.ts · pilotLore.html</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">LoreDoc.factionLogos?: string[]（最多 2、官方檔名含變體）</div>
-        <div class="task-desc">型別註解寫清楚：只有故事館讀、為什麼不做陣營字典、<code>_00</code>／<code>_01</code> 的渲染差異。同步 Firebase 文件（規則 2）。rules 與 Worker 不必改（已確認）。</div>
+        <div class="task-desc">型別註解寫清楚：只有故事館讀、為什麼不做陣營字典、<code>_00</code>／<code>_01</code> 的渲染差異。同步 Firebase 文件（規則 2）。rules 與 Worker 不必改（已確認）。<br><b>實作</b>：純函式 <code>src/utils/factionLogos.ts</code>（合法檔名、<code>normalizeFactionLogos</code>、單色／彩色配對、同陣營建議，附測試）。存檔是 <code>setDoc</code> 整份覆寫，清空時存 <code>undefined</code> 欄位會真的移除。</div>
         <div class="task-file">src/types/lore.ts · docs/02_技術文件/04_Firebase/資料庫設計文件/pilotLore.html</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -482,7 +482,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; 後台陣營徽章選圖器</div>
       <div class="task-group-meta">src/pages/admin/AdminLorePage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -490,11 +490,11 @@
         <div class="task-desc">
           清單來自 A-4 索引的 <code>camp</code>，可依編號／英文字樣搜尋。「同陣營建議」＝其他 <code>faction</code> 文字相同的機師已選的徽章（從已載入的 pilotLore 推導，不另存）。
           存檔仍走 <code>saveWithHistory</code>。
-        </div>
+        <br><b>實作</b>：<code>FactionLogoPicker</code>；圖示索引的載入抽成 <code>components/admin/gameIconIndex.ts</code> 與 GameIconPicker 共用。點同編號的另一個變體＝替換；滿 2 個後擋下並提示。搜尋只比對編號（沒有官方的陣營名稱資料可搜）。因後台要登入，驗收是在 headless 頁面以動態載入單獨渲染元件完成的；實際存檔請站長在後台試一次。</div>
         <div class="task-file">src/pages/admin/AdminLorePage.tsx · src/components/admin/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -502,16 +502,16 @@
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; 扉頁徽記</div>
       <div class="task-group-meta">src/pages/lore/PilotLorePage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">陣營圓環：有徽章 → 徽章印章＋陣營名小字；沒選 → 維持文字圓環</div>
-        <div class="task-desc"><code>_00</code> 走 mask 吃墨色、<code>_01</code> 原樣；兩個徽章時並排。改掉「陣營刻意不畫圖示」那段已過時的註解。</div>
+        <div class="task-desc"><code>_00</code> 走 mask 吃墨色、<code>_01</code> 原樣；兩個徽章時並排。改掉「陣營刻意不畫圖示」那段已過時的註解。<br><b>實作</b>：陣營名改用 absolute 掛在圓環下方，不撐高這一列（天賦圓環、駕照徽章維持置中）。驗收時攔截 <code>/api/data/pilotLore</code> 臨時塞徽章（不寫 DB）：單色印章、雙徽章並排都正常。</div>
         <div class="task-file">src/pages/lore/PilotLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -519,7 +519,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-4 &nbsp; 館首頁卡片角標</div>
       <div class="task-group-meta">src/pages/lore/LoreHomePage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -528,7 +528,7 @@
         <div class="task-file">src/pages/lore/LoreHomePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 

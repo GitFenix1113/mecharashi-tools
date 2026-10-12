@@ -10,6 +10,7 @@ import {
 } from '../../utils/gameIcons'
 import { buildIconUsage, usageKey, usageSearchText, type IconUser } from '../../utils/iconUsage'
 import { useIconUsageData } from '../../hooks/useFirestore'
+import { loadIconIndex, peekIconIndex, type IconIndex } from './gameIconIndex'
 
 /**
  * 後台圖示選圖器（PLAN-055 B-1）—— 技能類、BUFF，以及 PLAN-056 起的武器、背包圖示；立繪仍用舊的 IconPicker。
@@ -28,22 +29,7 @@ import { useIconUsageData } from '../../hooks/useFirestore'
  * 索引 images/game/icons/index.json 由 scripts/generate-icon-index.mjs 在 build／predev 產生，開啟時才 lazy fetch。
  */
 
-interface IconIndex {
-  skill: string[]
-  buff: string[]
-  /** PLAN-056；舊版索引沒有這兩欄 */
-  weapon?: string[]
-  backpack?: string[]
-  /** PLAN-059；舊版索引沒有這三欄。不參與以圖搜圖（features.bin 只有上面四族） */
-  class?: string[]
-  license?: string[]
-  camp?: string[]
-  legacy: string[]
-  /** 站長確認過的圖示註記（scripts/lib/equipIconNotes.json） */
-  notes?: Record<string, string>
-  /** 以圖搜圖特徵（features.bin）：每張 dim×dim×3 bytes，順序＝[...skill, ...buff, ...weapon, ...backpack] */
-  features?: { dim: number; hash: string }
-}
+// IconIndex 與 loadIconIndex 住在 ./gameIconIndex.ts（PLAN-059 D-2 抽出，陣營徽章選圖器共用）
 
 const listOf = (index: IconIndex | null, family: IconFamily): string[] => index?.[family] ?? []
 
@@ -103,22 +89,6 @@ function ImageSearch({ onResult }: { onResult: (feature: Uint8Array | null, erro
       📷 <b>Ctrl+V 貼上</b>遊戲截圖、拖放或點這裡選檔——請裁到只剩一顆圖示（去背最準）。會在目前的分頁與種類篩選範圍內找最像的 12 張。
     </label>
   )
-}
-
-let indexCache: IconIndex | null = null
-let indexPromise: Promise<IconIndex> | null = null
-
-function loadIconIndex(): Promise<IconIndex> {
-  if (indexCache) return Promise.resolve(indexCache)
-  if (!indexPromise) {
-    // ?v=__BUILD_ID__：同 manifest.json——網址不變、內容每次匯圖都會變，換 query 才換得掉 CDN 快取
-    const url = `${import.meta.env.BASE_URL}images/game/icons/index.json?v=${__BUILD_ID__}`
-    indexPromise = fetch(url)
-      .then((r) => { if (!r.ok) throw new Error(`圖示索引載入失敗（${r.status}）`); return r.json() })
-      .then((m: IconIndex) => { indexCache = m; return m })
-      .catch((err) => { indexPromise = null; throw err })
-  }
-  return indexPromise
 }
 
 const SKILL_KINDS: IconKind[] = ['main', 'order', 'passive', 'talent', 'pp', 'entry', 'rnd']
@@ -192,7 +162,7 @@ export function GameIconPicker({
   onPick: (key: string) => void
   onClose: () => void
 }) {
-  const [index, setIndex] = useState<IconIndex | null>(indexCache)
+  const [index, setIndex] = useState<IconIndex | null>(peekIconIndex)
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<IconFamily>(library)
   const [kinds, setKinds] = useState<Set<IconKind>>(() => {

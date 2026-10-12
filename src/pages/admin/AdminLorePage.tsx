@@ -13,6 +13,8 @@ import { useDraftRestore, useDraftWrite } from '../../hooks/useDraftAutosave'
 import { RefPicker } from '../../components/admin/RefPicker'
 import { updatePilotLore } from '../../lib/firestoreApi'
 import { useGameData } from '../../contexts/GameDataContext'
+import { FactionLogoPicker } from '../../components/admin/FactionLogoPicker'
+import { factionLogoSuggestions, normalizeFactionLogos } from '../../utils/factionLogos'
 
 // ─── 機師故事館編輯台（PLAN-042-A Phase E-1）─────────────────────────────────
 //
@@ -296,8 +298,8 @@ interface LoreEditPanelProps {
 
 function LoreEditPanel({ doc, pilotName, onSave, onCancel }: LoreEditPanelProps) {
   // 旁白的說話者候選。列表層已 ensureLoaded(['pilots'])，這裡只是取用同一份記憶體資料，
-  // 不會額外觸發任何讀取。
-  const { pilots } = useGameData()
+  // 不會額外觸發任何讀取。pilotLore 同理（陣營徽章的「同陣營建議」要看別人選了什麼）。
+  const { pilots, pilotLore } = useGameData()
 
   // chapters 逐章淺拷貝：直接沿用 GameDataContext 的物件會讓「取消」之後
   // 記憶體快取裡已經是改過的內容（畫面正常、下次進頁才發現對不上）。
@@ -310,6 +312,13 @@ function LoreEditPanel({ doc, pilotName, onSave, onCancel }: LoreEditPanelProps)
   //   「打開編輯器那一刻的原始快照」——提示照樣跳，還原出來卻是舊的，比沒有草稿更糟。
   //   nameOf 是 inline 箭頭，hook 內部已用 ref 承接，不可進依賴陣列。
   useDraftWrite('pilotLore', form, (d) => d.name ?? d.id)
+
+  // 陣營徽章（PLAN-059 D-2）：同陣營文字的其他機師選了什麼 → 一鍵套用。從已載入的資料推導，不另存
+  const faction = pilots.find((p) => p.id === doc.id)?.faction
+  const logoSuggestions = useMemo(
+    () => factionLogoSuggestions(doc.id, faction, pilots, pilotLore),
+    [doc.id, faction, pilots, pilotLore],
+  )
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -383,6 +392,16 @@ function LoreEditPanel({ doc, pilotName, onSave, onCancel }: LoreEditPanelProps)
             onChange={(e) => setForm((f) => ({ ...f, frontSource: e.target.value || undefined }))}
             className="input-field text-sm"
             placeholder="——《週刊米赫瑪·文娛版》"
+          />
+        </Field>
+
+        {/* 陣營徽章：只在故事館顯示（扉頁徽記、館首頁卡片角標）。清空存 undefined——writeDoc 是整份覆寫，欄位會真的消失 */}
+        <Field label="陣營徽章 factionLogos（選填，最多 2 個；只在故事館顯示）">
+          <FactionLogoPicker
+            value={normalizeFactionLogos(form.factionLogos)}
+            faction={faction}
+            suggestions={logoSuggestions}
+            onChange={(next) => setForm((f) => ({ ...f, factionLogos: next.length ? next : undefined }))}
           />
         </Field>
 

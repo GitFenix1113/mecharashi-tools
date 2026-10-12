@@ -9,6 +9,8 @@ import { splitParagraphs, isQuoteStyle, stripTrailingSource } from '../../compon
 import { LicenseBadge } from '../../components/badges/PilotBadges'
 import { pilotClassMeta } from '../../data/pilotClasses'
 import { ClassIcon } from '../../components/icons/ClassIcon'
+import { FactionLogo } from '../../components/icons/FactionLogo'
+import { normalizeFactionLogos } from '../../utils/factionLogos'
 import {
   hasPilotArt, pilotArtDir, pilotKeyArtPath, pilotFullArtPath, pilotOfficialArt,
   imageCandidates, assetUrl,
@@ -151,6 +153,8 @@ export default function PilotLorePage() {
   // 扉頁正文住 `pilots.lore`（不是 pilotLore）；署名若還黏在正文尾端就切掉，
   // 改由 <LoreSourceLine> 單獨排版。**不可用 endsWith 比對**（地雷 M-17）。
   const frontParagraphs = splitParagraphs(stripTrailingSource(pilot.lore, lore?.frontSource))
+  // 陣營徽章（PLAN-059 D-3）：管理者在編輯台挑的，0～2 個；沒選就退回文字圓環
+  const factionLogos = normalizeFactionLogos(lore?.factionLogos)
   // profile / additionalInfo 都是**必填**欄位，判的是長度不是 undefined。
   // 鍵名是完全自由的中文字串（94 種、含 ▇▇／■■），只可當顯示文字與 React key。
   const info = Object.entries(pilot.profile.additionalInfo)
@@ -284,13 +288,29 @@ export default function PilotLorePage() {
             </p>
             <h1 className="lore-name-font mt-1 text-3xl text-text-primary sm:text-4xl">{pilot.name}</h1>
 
-            {/* 三枚徽記：陣營（文字刻在圓環內）／天賦／駕駛許可。
-                陣營刻意不畫圖示：30 個值、18 個只有 1 人，畫圖是會增生的美術債。
-                圓環直徑用 px（展示型尺寸），正文才用 rem。 */}
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <span className="w-[68px] h-[68px] shrink-0 rounded-full border border-border-accent flex items-center justify-center px-[6px] text-center text-[11px] leading-tight text-text-secondary">
-                {pilot.faction}
-              </span>
+            {/* 三枚徽記：陣營／天賦／駕駛許可。圓環直徑用 px（展示型尺寸），正文才用 rem。
+                陣營（PLAN-059 D-3）：有官方徽章就畫徽章、陣營名改成圓環下方的小字；沒選就維持文字刻在圓環內。
+                （原本「刻意不畫圖示」的理由是 30 個值、18 個只有 1 人，自己畫是會增生的美術債——
+                官方原檔解決了這件事，徽章由管理者在編輯台逐位挑。）
+                單色徽章吃 text-text-primary：館內 token 是墨色，在紙上像蓋上去的印章。
+                小字用 absolute 掛在圓環下方，不撐高這一列——天賦圓環與駕照徽章才能維持垂直置中。 */}
+            <div className={`mt-5 flex flex-wrap items-center gap-3 ${factionLogos.length ? 'mb-5' : ''}`}>
+              {factionLogos.length ? (
+                <span className="relative flex shrink-0 gap-1.5">
+                  {factionLogos.map((k) => (
+                    <span key={k} className="w-[68px] h-[68px] shrink-0 rounded-full border border-border-accent flex items-center justify-center text-text-primary">
+                      <FactionLogo logoKey={k} size={54} label={pilot.faction} />
+                    </span>
+                  ))}
+                  <span className="absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap text-[11px] leading-tight text-text-dim">
+                    {pilot.faction}
+                  </span>
+                </span>
+              ) : (
+                <span className="w-[68px] h-[68px] shrink-0 rounded-full border border-border-accent flex items-center justify-center px-[6px] text-center text-[11px] leading-tight text-text-secondary">
+                  {pilot.faction}
+                </span>
+              )}
 
               <span className="w-[68px] h-[68px] shrink-0 rounded-full border border-border-accent bg-bg-card flex items-center justify-center overflow-hidden">
                 {talentIcons.length ? (
