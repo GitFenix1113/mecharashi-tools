@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-12
+## [Unreleased] - 2026-10-13
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,11 @@
 
 ### ✨ 新功能
 
+- **admin,forms**: 形態圖示選擇器開放官方職業／形態圖示（PLAN-059 E-1） (`644e185`)
+- **lore**: 故事館陣營徽章——pilotLore.factionLogos、後台選圖器、扉頁徽記與館首頁角標（PLAN-059 D） (`d68ab40`)
+- **mechs,weapons,backpacks**: 機甲類型（輕／中／重）圖示套用到機甲圖鑑、武器、背包與模擬器（PLAN-059 F） (`394b412`)
+- **pilots,lore,simulator**: 機師職業／駕照圖示套用到圖鑑、詳情頁、故事館與模擬器（PLAN-059 C） (`c3e415b`)
+- **pilots,mechs**: 官方職業／駕照圖示上站，職業改遊戲順序、機甲類型統一顯示「輕型／中型／重型」（PLAN-059 A／B） (`2ec9876`)
 - **modules,buffs**: 描述欄位單一正本——各等級為正本、模組頂層自動鏡像 LV.MAX（PLAN-058） (`a15c8c8`)
 - **admin**: NPC 立繪圖庫上站，選取官方立繪新增 NPC 分組；補匯入索妮婭官方原檔 (`fe0ab79`)
 - **buffs**: BUFF 圖示新增治療類綠色底色 (`5864084`)
@@ -268,6 +273,7 @@
 
 ### 📚 文件
 
+- **plan-059**: 系統架構補上 PLAN-059 的圖示元件與圖庫說明，進度表 23／26 (`6d9ad2a`)
 - **plan**: PLAN-057 引用編輯器直觀化完成歸檔 (`c4ea53e`)
 - PLAN-055 E-3 圖示流程文件化；PLAN-056 站長後台項完成（23／24） (`6a8a608`)
 - 近期變更文件全面校對（PLAN-042／052／054／055／056＋本週改動）、PLAN-052-O 歸檔 (`87147ff`)
