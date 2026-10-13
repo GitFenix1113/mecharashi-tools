@@ -6,6 +6,8 @@ import LoreChapterBody from '../../lore/LoreChapterBody'
 import { defaultStageArt, loreSideOf, skinStageArt } from '../../lore/loreStageArt'
 import { publishedChapters } from '../../lore/loreText'
 import { pilotSkinCatalog } from '../../../utils/gameArt'
+import { emblemName, emblemsById } from '../../../utils/factionEmblems'
+import { useGameData } from '../../../contexts/GameDataContext'
 
 /**
  * 故事館編輯台的即時預覽（PLAN-042-E D-4）：**直接渲染前台的 LoreStage／LoreDossier／LoreChapterBody**，
@@ -37,6 +39,12 @@ export function LorePreview({ pilot, lore, skinKey, chapterKey }: LorePreviewPro
   const paneRef = useRef<HTMLDivElement>(null)
   const vpRef = useRef<HTMLDivElement>(null)
   const [box, setBox] = useState({ scale: 0.3, height: 400 })
+  // 徽章名稱：編輯台的選圖器已 ensureLoaded(['factionEmblems'])，這裡只取同一份記憶體資料
+  const { factionEmblems } = useGameData()
+  const logoLabel = useMemo(() => {
+    const byId = emblemsById(factionEmblems)
+    return (key: string) => emblemName(key, byId)
+  }, [factionEmblems])
 
   useLayoutEffect(() => {
     const pane = paneRef.current, vp = vpRef.current
@@ -92,7 +100,7 @@ export function LorePreview({ pilot, lore, skinKey, chapterKey }: LorePreviewPro
                 pilotName={pilot.name}
               />
             ) : (
-              <LoreDossier pilot={pilot} lore={lore} chapters={publishedChapters(chapters)} chapterHref={() => '#'} />
+              <LoreDossier pilot={pilot} lore={lore} chapters={publishedChapters(chapters)} chapterHref={() => '#'} logoLabel={logoLabel} />
             )}
           </main>
         </div>

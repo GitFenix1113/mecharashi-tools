@@ -10,6 +10,7 @@ import {
   LORE_GAP_LABEL, hasLoreGap, loreProgressOf, summarizeLoreProgress, type LoreGap, type LoreProgress,
 } from '../../utils/loreProgress'
 import { LoreEditPanel, LORE_DRAFT_KIND } from '../../components/admin/lore/LoreEditPanel'
+import { FactionEmblemsEditor } from '../../components/admin/lore/FactionEmblemsEditor'
 
 // ─── 機師故事館編輯台（PLAN-042-A Phase E-1；PLAN-042-E D 段改版）──────────────────
 //
@@ -23,6 +24,7 @@ import { LoreEditPanel, LORE_DRAFT_KIND } from '../../components/admin/lore/Lore
 //   ② 權限要能獨立授權——內容是人工逐字打進去的，未來可能開給非工程的編輯協作。
 //
 // 網址 `?pilot=<文件 ID>` 直接打開那一位的面板（機師管理的捷徑連到這裡）；開關面板都會同步網址。
+// `?view=emblems` 切到「陣營徽章」分頁（PLAN-042-F D-1），`&emblem=<4 碼>` 捲到那一顆（選圖器的「補名稱」連過來）。
 //
 // ⚠ `LoreDoc.chapters` 在型別上是**必填**（`chapters: LoreChapter[]`），但**執行期不保證存在**：
 //   Firestore 沒有 schema 強制，任何寫入路徑漏掉該欄位，讀回來就是 undefined 而 TS 完全不擋。
@@ -66,6 +68,14 @@ export default function AdminLorePage() {
 
   const [params, setParams] = useSearchParams()
   const editingId = params.get('pilot')
+  const view: 'pilots' | 'emblems' = params.get('view') === 'emblems' ? 'emblems' : 'pilots'
+  const setView = (v: 'pilots' | 'emblems') => setParams((prev) => {
+    const next = new URLSearchParams(prev)
+    if (v === 'emblems') next.set('view', 'emblems')
+    else next.delete('view')
+    next.delete('emblem')
+    return next
+  }, { replace: true })
   const openEditor = (id: string) => setParams((prev) => {
     const next = new URLSearchParams(prev)
     next.set('pilot', id)
@@ -144,7 +154,26 @@ export default function AdminLorePage() {
         </p>
       </div>
 
-      {error ? (
+      <div className="flex gap-1 mb-5 border-b border-border" role="tablist">
+        {([['pilots', '機師'], ['emblems', '陣營徽章']] as const).map(([v, label]) => (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={view === v}
+            onClick={() => setView(v)}
+            className={`px-4 py-2 -mb-px text-sm border-b-2 transition-colors ${
+              view === v ? 'border-accent-cyan text-accent-cyan' : 'border-transparent text-text-dim hover:text-text-secondary'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === 'emblems' ? (
+        <FactionEmblemsEditor focus={params.get('emblem')} />
+      ) : error ? (
         <div className="rounded-xl border border-accent-red/40 bg-accent-red/10 px-4 py-3">
           <p className="text-accent-red text-sm font-bold">⚠ 資料載入失敗</p>
           <p className="text-text-secondary text-xs mt-1 break-all">{error.message}</p>

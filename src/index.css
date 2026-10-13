@@ -747,6 +747,9 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
                   background: rgba(255, 252, 245, 0.55); font-size: 0.58rem; line-height: 1.25; color: var(--lore-ink-2); padding: 6px; overflow: hidden; position: relative; }
 .lore-emb__ring::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; border: 1px dashed rgba(188, 174, 149, 0.7); pointer-events: none; }
 .lore-emb__ring img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+/* 陣營徽章的彩色版（_01）是方形官方圖：上面那條是給天賦圖示的圓形裁切，套到徽章會把邊角裁掉（PLAN-042-F D-3）。
+   尺寸由元件的 inline style 決定，這裡只撤掉裁切 */
+.lore-emb__ring img.lore-emb__logo { border-radius: 0; object-fit: contain; }
 .lore-emb__cap { font-size: 0.58rem; color: var(--lore-ink-3); letter-spacing: 0.08em; text-align: center; white-space: nowrap; }
 
 /* 正文排版（D-3）：明體、行高 2.05、段首縮兩字；引文懸掛引號；開頭段首字放大 */

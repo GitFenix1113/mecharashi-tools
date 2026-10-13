@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>factionEmblems — 陣營徽章註記 Schema — Firebase 資料庫設計 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../01_規劃書/米赫瑪超吉情豹站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../../index.html">技術文件</a>
+    <span>›</span>
+    <a href="Firebase資料庫設計文件.html">Firebase 資料庫設計</a>
+    <span>›</span>
+    <span class="current">factionEmblems — 陣營徽章註記</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge" style="background:rgba(249,115,22,0.15);color:var(--accent-orange);border-color:var(--accent-orange);">◆ COLLECTION SCHEMA</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    factionEmblems — 陣營徽章註記
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-042-F</span>
+  </h1>
+  <p class="hero-sub">官方陣營徽章的名稱與圖上字樣 · 故事館編輯台維護 · 不被 [xxx] 引用、不進級聯掃描</p>
+  <div class="version-badge" style="background:var(--accent-orange);color:#000;">PLAN-042-F — 2026-10-14</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-orange);">01 — 用途</div>
+  <div class="section-title">factionEmblems Collection</div>
+
+  <div class="info-block">
+    <strong>📌 用途說明</strong><br>
+    替<strong>徽章本身</strong>做註記：這顆官方陣營徽章（<code>Icon_logo_&lt;4 碼&gt;_00／_01</code>，圖在 <code>public/images/game/icons/camp/</code>）叫什麼、圖上寫什麼字。<br>
+    · 故事館編輯台的選圖器顯示名稱、可用名稱／字樣搜尋，並依「對應的陣營文字」把建議排在最前面。<br>
+    · 故事館卷宗的徽章提示（title／aria）顯示徽章名稱；沒有名稱就退回機師的陣營文字。<br>
+    · <strong>不是「陣營 → 徽章」字典</strong>：每位機師的徽章仍由管理員逐位挑（<code>pilotLore.factionLogos</code>），
+      本集合不會自動替任何人選。PLAN-059 決策六原本完全不做對照，2026-10-14 由 PLAN-042-F 決策四修訂成這個形狀。<br>
+    · 清單以<strong>圖庫</strong>為準（<code>images/game/icons/index.json</code> 的 <code>camp</code>，37 個編號）：圖庫有、這裡沒有文件的編號＝「未命名」，照樣可選；
+      這裡有、圖庫沒有的文件會被忽略。
+  </div>
+
+  <div class="sub-h">🗃️ factionEmblems — 徽章註記（FactionEmblem）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td>文件 ID＝<strong>徽章編號 4 碼</strong>，如 <code>0025</code>。單色 <code>_00</code>／彩色 <code>_01</code> 兩個變體共用一份</td></tr>
+      <tr><td>name</td><td>string?</td><td>陣營名稱，如「晨星同盟防衛軍」。沒填＝未命名</td></tr>
+      <tr><td>inscription</td><td>string?</td><td>圖上字樣，如 <code>DAWNSTAR LEAGUE ARMORED FORCE · DEPARTMENT OF THE DEFENCE FORCE</code>；辨識與搜尋用</td></tr>
+      <tr><td>factions</td><td>string[]?</td><td>對應的陣營文字：機師 <code>pilots.faction</code> 的<strong>原字串</strong>（可多筆，完全比對、去頭尾空白）。<strong>只用來排序建議</strong>，不會寫入任何 pilotLore</td></tr>
+      <tr><td>note</td><td>string?</td><td>給管理員看的備註（例：看字樣推測、待確認）</td></tr>
+    </table>
+  </div>
+
+  <div class="info-block" style="margin-top:14px;">
+    <strong>🌱 初始資料（2026-10-14，決策五）</strong><br>
+    逐張看圖核對後預填 6 顆字樣能直接認出陣營的：0009 電鰻傭兵團（EELS）、0012 黑曜石集團（OBSIDIAN）、0025 晨星同盟防衛軍（DAWNSTAR）、
+    0031 盧諾家族（LUNO）、0033 NERV、0034 多瑙河公司（DONAU）。0021（字樣 Doll，站上有「多爾集團」「多爾遠洋集團」兩種寫法）、
+    0038（雲中塔圖樣，推測創界山）只寫備註、名稱留空。對應的陣營文字不預填。腳本 <code>scripts/temp_scripts/seed-faction-emblems.mjs</code>（不進版控）只補空欄位、重跑安全。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-orange);">02 — 刻意不做的連動</div>
+  <div class="section-title">不進 SPECS、不走 saveWithHistory</div>
+  <div class="warning-block">
+    <strong>⚠ 理由同步寫在 <code>src/lib/api/factionEmblems.ts</code> 檔頭</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>不登記進 <code>entityRefs</code> SPECS</strong>：註記不引用別人、也不被 EntityRef 引用，沒有級聯要跑。
+        一旦進 SPECS，級聯刪除與「影響 N 處引用」掃描會自動連帶讀這個集合——rules 晚一步部署的話，全站既有的刪除功能會一起 permission-denied（PLAN-042-A 踩過）。</li>
+      <li><strong>不走 <code>saveWithHistory</code></strong>：<code>ChangeTargetKind</code> 綁著 SPECS（<code>entityRefs</code> 的 <code>SPEC_COLL_OF</code> 是窮舉 Record），
+        要稽核記錄就得先進 SPECS。註記是幾個字的短文、寫壞重填即可，所以寫入就是 <code>writeDoc</code>＋<code>bumpDataVersion('factionEmblems')</code>，同 pilots／modules。</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-orange);">03 — 維護</div>
+  <div class="section-title">資料維護</div>
+
+  <div class="info-block">
+    <strong>🛠️ 後台編輯</strong><br>
+    後台 › 機師故事館編輯台 › 「陣營徽章」分頁（<code>/admin/lore?view=emblems</code>；<code>&amp;emblem=&lt;4 碼&gt;</code> 捲到那一顆，選圖器的「未命名・補名稱 ↗」連到這裡）。
+    每顆一列：名稱、圖上字樣、對應的陣營文字（標籤輸入，候選是現有的陣營寫法）、備註、使用中人數；可篩「未命名」「使用中」。
+    註記讀不到時<strong>不開放編輯</strong>（存檔是整份覆寫，不知道既有內容就存會洗掉別人填的字）。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔒 安全規則與讀取路徑</strong><br>
+    <code>match /factionEmblems/{docId}</code>：<code>read</code> / <code>write</code> 皆 <code>isAdmin()</code>。
+    前台經 Cloudflare Worker 代理（<code>/api/data/factionEmblems</code>）。前台只把它當滑鼠提示用：讀不到不擋頁面、不顯示錯誤。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 部署順序</strong><br>
+    <code>firestore.rules</code> → Worker（<code>ARRAY_COLLECTIONS</code>）→ 預填腳本＋bump → 網站。
+    rules 與 Worker 都不在 <code>npm run build</code> / <code>git push</code> 的流程內；漏 Worker 的症狀是正式站 <code>/api/data/factionEmblems</code> 404（本機全綠）。
+    三處硬性守衛由 <code>src/lib/collectionKeys.test.ts</code> 斷言（Worker、<code>KNOWN_KEYS</code>、rules）。
+  </div>
+</section>
+
+</main>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-10-14 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+
+</body>
+</html>

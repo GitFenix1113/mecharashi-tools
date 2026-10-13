@@ -60,6 +60,8 @@ const ARRAY_COLLECTIONS = new Set<string>([
   'forms',
   // PLAN-042-A：機師故事館逸聞
   'pilotLore',
+  // PLAN-042-F：陣營徽章註記（選圖器與卷宗的徽章名稱）
+  'factionEmblems',
   // PLAN-029 Phase 3-1：原本前台仍直讀的兩個公開集合，一併代理以便 Phase 3-2 收緊。
   'pilotResearch', 'patchVersions',
 ])

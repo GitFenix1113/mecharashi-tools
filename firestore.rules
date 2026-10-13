@@ -88,6 +88,11 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if isAdmin();
     }
+    // PLAN-042-F 陣營徽章註記：徽章的名稱與圖上字樣（文件 ID＝4 碼編號）。前台經 Worker 讀。
+    match /factionEmblems/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
     match /buffs/{docId} {
       allow read: if isAdmin();
       allow write: if isAdmin();

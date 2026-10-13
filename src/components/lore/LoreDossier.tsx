@@ -34,9 +34,14 @@ export interface LoreDossierProps {
   chapters: readonly LoreChapter[]
   /** 章節的網址（呼叫端帶上目前的 ?skin=） */
   chapterHref: (key: string) => string
+  /**
+   * 徽章的名稱（PLAN-042-F：factionEmblems 的註記）：滑鼠提示與讀屏用。
+   * 沒給、或這顆沒有名稱 → 退回機師的陣營文字（兩顆徽章時那是複合值，所以才需要各自的名稱）
+   */
+  logoLabel?: (logoKey: string) => string | undefined
 }
 
-export default function LoreDossier({ pilot, lore, status = 'ready', chapters, chapterHref }: LoreDossierProps) {
+export default function LoreDossier({ pilot, lore, status = 'ready', chapters, chapterHref, logoLabel }: LoreDossierProps) {
   const meta = pilotClassMeta(pilot.class)
   const tone = meta?.paper ?? 'var(--lore-ink-2)'
   const serial = pilot.id.match(/^pilot_(\d+)/)?.[1] ?? '—'
@@ -71,7 +76,9 @@ export default function LoreDossier({ pilot, lore, status = 'ready', chapters, c
           {/* 陣營：有官方徽章（PLAN-059 D-3，管理者逐位挑）就蓋徽章、小字寫陣營名；沒有就把陣營名刻在圓環裡 */}
           <div className="lore-emb">
             <div className="lore-emb__ring" style={logos.length ? { color: 'var(--lore-ink)' } : undefined}>
-              {logos.length ? logos.map((k) => <FactionLogo key={k} logoKey={k} size={logos.length > 1 ? 30 : 46} label={pilot.faction} />) : pilot.faction}
+              {logos.length ? logos.map((k) => (
+                <FactionLogo key={k} logoKey={k} size={logos.length > 1 ? 30 : 46} label={logoLabel?.(k) ?? pilot.faction} className="lore-emb__logo" />
+              )) : pilot.faction}
             </div>
             <span className="lore-emb__cap">{logos.length ? pilot.faction : '陣營'}</span>
           </div>

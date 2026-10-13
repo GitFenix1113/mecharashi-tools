@@ -18,6 +18,8 @@ export const ARRAY_COLLECTION_KEYS = [
   'forms',
   // PLAN-042-A：機師故事館逸聞章節
   'pilotLore',
+  // PLAN-042-F：陣營徽章註記（刻意不進 entityRefs SPECS，見 lib/api/factionEmblems.ts）
+  'factionEmblems',
 ] as const
 
 /** 單一文件（singleton）集合；Worker 代理與快取層都走另一條分支。 */

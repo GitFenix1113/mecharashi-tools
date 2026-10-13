@@ -108,6 +108,7 @@
       <p><strong>PLAN-042-E 起是「故事館編輯台」</strong>：一位機師的故事資料全部在這裡編（機師管理的「個人資料」分頁已移除）。
       列表列出 <code>pilots</code> 全員＋從資料推導的進度標籤；網址 <code>?pilot=&lt;id&gt;</code> 直接開該位的編輯面板（開關同步網址）。
       面板四個分頁：扉頁／人物檔案／逸聞章節／外觀，右欄是渲染真前台元件的即時預覽（細節見下方設計備註）。
+      頁首另有「機師｜陣營徽章」兩個檢視（PLAN-042-F）：<code>?view=emblems</code> 替官方徽章標名稱與圖上字樣。
       寫入走 <code>saveWithHistory</code>（整份覆寫、自動 bump 版本），章節錨點用 <code>{ by: 'key' }</code>（<code>LoreChapter</code> 沒有 <code>name</code>，錨錯欄位每筆都會 <code>anchorMismatch</code>）。沒有刪除路徑。</p>
     </div>
   </div>
@@ -141,6 +142,15 @@
     · <strong>存檔</strong>：仍是整份覆寫（<code>saveWithHistory</code>，自動 bump 版本）；草稿自動暫存的 kind 改為 <code>'pilotLore.v2'</code>，避免改版前的舊草稿還原後把搬遷進來的欄位洗掉。沒有刪除路徑<br>
     · <strong>Worker 分享卡</strong>：<code>/lore/pilots/*</code> 多讀一份 pilotLore，og:description ＝ <code>intro</code>（讀不到退回「某某｜機師故事館」）；title 與立繪仍取 pilots<br>
     · <strong>不在範圍內</strong>：機甲的 <code>mechs.lore</code>（MechDetailPage，同樣的問題，042-B 機甲故事館開工時處理）、後台上傳外觀圖、後台編輯 <code>npcArtNotes.json</code>、從故事館改預設外觀
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
+    <strong>✅ 陣營徽章註記（PLAN-042-F C／D，2026-10-14）</strong><br>
+    · <strong>「陣營徽章」檢視</strong>（<code>/admin/lore?view=emblems</code>；<code>&amp;emblem=&lt;4 碼&gt;</code> 直接跳到那一顆）：圖庫 37 個編號一顆一列，
+      欄位是名稱、圖上字樣、對應的陣營文字（標籤輸入，候選是現有的陣營寫法）、備註，另顯示使用中人數；篩選全部／未命名／使用中。
+      資料存 <code>factionEmblems</code>（文件 ID＝編號，見 Firebase 文件），讀不到時不開放編輯（存檔是整份覆寫）。<br>
+    · <strong>選圖器改版</strong>（扉頁分頁）：卡片的圖放大到 76px、標名稱與字樣，可用名稱／字樣／編號搜尋；排序「建議 → 已命名 → 未命名」，
+      建議＝徽章的對應陣營文字等於這位機師的陣營、或同陣營機師已選。<strong>只排序、不代選</strong>。未命名的卡片有「補名稱 ↗」，在新分頁開「陣營徽章」檢視（不會關掉正在編的面板）。<br>
+    · <strong>前台</strong>：卷宗徽章的滑鼠提示改用徽章名稱（沒有才退回機師陣營文字）；修正彩色版徽章被圓環裡給天賦圖示用的圓形裁切切掉邊角。
   </div>
   <div class="info-block" style="margin-top:1rem;">
     <strong>✅ 舞台＋卷宗（PLAN-042-D，2026-10-13）</strong><br>

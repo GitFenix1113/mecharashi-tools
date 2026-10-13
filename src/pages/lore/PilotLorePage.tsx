@@ -11,7 +11,8 @@ import { buildLoreGroups, readLoreSort, withLoreNames, writeLoreSort, type LoreS
 import { publishedChapters } from '../../components/lore/loreText'
 import { defaultStageArt, loreSideOf, preloadStageArt, skinStageArt, type StageArt } from '../../components/lore/loreStageArt'
 import { pilotSkins, type PilotSkinArt } from '../../utils/gameArt'
-import { usePilotLore, usePilots } from '../../hooks/useFirestore'
+import { useFactionEmblems, usePilotLore, usePilots } from '../../hooks/useFirestore'
+import { emblemName, emblemsById } from '../../utils/factionEmblems'
 import type { LoreDoc, Pilot } from '../../types'
 
 /**
@@ -81,6 +82,12 @@ export default function PilotLorePage() {
   // 只交給卷宗，不擋整頁：見檔頭第 ② 條
   const { data: loreDocs, loading: loreLoading, error: loreError } = usePilotLore()
   const loreById = useMemo(() => new Map(loreDocs.map((d) => [d.id, d])), [loreDocs])
+  // 徽章名稱（PLAN-042-F）只是滑鼠提示：讀不到就退回陣營文字，loading／error 都不看
+  const { data: emblems } = useFactionEmblems()
+  const logoLabel = useMemo(() => {
+    const byId = emblemsById(emblems)
+    return (key: string) => emblemName(key, byId)
+  }, [emblems])
 
   const rootRef = useRef<HTMLDivElement>(null)
   const switcherRef = useRef<LoreSwitcherHandle>(null)
@@ -414,6 +421,7 @@ export default function PilotLorePage() {
             status={loreError ? 'error' : loreLoading ? 'loading' : 'ready'}
             chapters={chapters}
             chapterHref={chapterHref}
+            logoLabel={logoLabel}
           />
         )}
       </main>

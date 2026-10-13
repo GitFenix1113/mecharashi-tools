@@ -167,15 +167,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">7</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">16</div>
+      <div class="summary-num" style="color:var(--text-dim)">8</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度（開發者任務）</span>
-      <span style="color:var(--accent-orange);">0 / 16</span>
+      <span style="color:var(--accent-orange);">7 / 16</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 44%"></div>
     </div>
   </div>
 
@@ -338,64 +338,64 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 型別與純函式</div>
       <div class="task-group-meta">src/types · src/utils/factionEmblems.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">FactionEmblem＋排序／搜尋／建議＋測試</div>
-        <div class="task-desc"><code>FactionEmblem { id, name?, inscription?, factions?: string[], note? }</code>。純函式：<code>emblemSearch</code>（名稱／字樣／編號）、<code>rankEmblems</code>（建議 → 已命名 → 未命名）、<code>emblemUsage</code>（從 pilotLore 算使用人數）。node --test。</div>
+        <div class="task-desc"><code>FactionEmblem { id, name?, inscription?, factions?: string[], note? }</code>。純函式：<code>emblemSearch</code>（名稱／字樣／編號）、<code>rankEmblems</code>（建議 → 已命名 → 未命名）、<code>emblemUsage</code>（從 pilotLore 算使用人數）。node --test。<br><span style="color:var(--text-secondary)">✅ 2026-10-14：<code>src/types/factionEmblem.ts</code>（barrel 加一行）＋<code>src/utils/factionEmblems.ts</code>：<code>emblemCatalog</code>／<code>emblemName</code>／<code>matchEmblem</code>／<code>suggestedEmblemNums</code>／<code>rankEmblems</code>／<code>emblemUsage</code>／<code>normalizeEmblem</code>／<code>factionValues</code>，測試 7 條。</span></div>
         <div class="task-file">src/types/* · src/utils/factionEmblems.ts（＋測試）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 集合連動</div>
       <div class="task-group-meta">多檔</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">collectionKeys／GameDataContext／Worker／bump／rules／api／測試 helper</div>
-        <div class="task-desc">PLAN-042-A 的七處清單照做（SPECS 除外）。<code>firestore.rules</code>：讀 <code>isAdmin()</code>、寫 admin；前台讀經 Worker <code>/api/data/factionEmblems</code>。</div>
+        <div class="task-desc">PLAN-042-A 的七處清單照做（SPECS 除外）。<code>firestore.rules</code>：讀 <code>isAdmin()</code>、寫 admin；前台讀經 Worker <code>/api/data/factionEmblems</code>。<br><span style="color:var(--text-secondary)">✅ 2026-10-14：<code>collectionKeys</code>、Worker <code>ARRAY_COLLECTIONS</code>、<code>bump-data-version.mjs</code>（本機檔，被 .gitignore 擋）、<code>firestore.rules</code>、<code>lib/api/factionEmblems.ts</code>＋barrel、<code>GameDataContext</code> 五處。<code>collectionKeys.test.ts</code> 9 條守衛全過。<b>沒有走 saveWithHistory</b>：<code>ChangeTargetKind</code> 綁著 SPECS（<code>SPEC_COLL_OF</code> 是窮舉 Record），要稽核記錄就得進 SPECS——改成 <code>writeDoc</code>＋bump，同 pilots／modules（理由寫在 api 檔頭）。</span></div>
         <div class="task-file">src/lib/collectionKeys.ts · src/contexts/GameDataContext.tsx · workers/src/index.ts · scripts/bump-data-version.mjs · firestore.rules · src/lib/api/factionEmblems.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; hook</div>
       <div class="task-group-meta">src/hooks/useFirestore.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">useFactionEmblems()</div>
-        <div class="task-desc">走版本 gate 快取；讀不到時回空陣列（選圖器退回只顯示編號，不擋編輯）。</div>
+        <div class="task-desc">走版本 gate 快取；讀不到時回空陣列（選圖器退回只顯示編號，不擋編輯）。<br><span style="color:var(--text-secondary)">✅ 2026-10-14：<code>useFactionEmblems()</code>；前台只當滑鼠提示，不看 loading／error。</span></div>
         <div class="task-file">src/hooks/useFirestore.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-4 &nbsp; 預填 6 筆</div>
       <div class="task-group-meta">scripts/temp_scripts/</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">data-patch 流程：備份 → dry-run → apply → bump factionEmblems</div>
-        <div class="task-desc">決策五的 6 筆（名稱＋字樣），0021／0038 只寫備註。<b>要在 C-2 的 rules 部署之後</b>（Admin SDK 不受 rules 限制，但驗收要靠前台讀得到）。</div>
+        <div class="task-desc">決策五的 6 筆（名稱＋字樣），0021／0038 只寫備註。<b>要在 C-2 的 rules 部署之後</b>（Admin SDK 不受 rules 限制，但驗收要靠前台讀得到）。<br><span style="color:var(--text-secondary)">🔧 2026-10-14：腳本已寫好（本機 <code>scripts/temp_scripts/seed-faction-emblems.mjs</code>，不進版控），字樣逐張看圖核對過；0021 圖上確實寫 <code>Doll</code>，字樣照填、名稱留空。只補空欄位、重跑安全。⬜ 待站長在 E-2 的 rules／Worker 部署後執行：dry-run → <code>--apply</code> → <code>node scripts/bump-data-version.mjs factionEmblems</code>。</span></div>
         <div class="task-file">scripts/temp_scripts/seed-faction-emblems.mjs</div>
       </div>
       <div class="task-assignee">開發者（本機）</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
 </section>
@@ -409,48 +409,48 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 「陣營徽章」分頁</div>
       <div class="task-group-meta">src/pages/admin/AdminLorePage.tsx · src/components/admin/lore/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">37 個編號，一列一個</div>
-        <div class="task-desc">列出圖庫 <code>camp</code> 的全部編號（單色／彩色並排），欄位：名稱、圖上字樣、對應的陣營文字（標籤輸入，datalist 給現有 31 種 <code>faction</code> 值）、備註、使用中人數；篩選「未命名」。存檔走 <code>saveWithHistory</code>（自動遞增版本）。</div>
+        <div class="task-desc">列出圖庫 <code>camp</code> 的全部編號（單色／彩色並排），欄位：名稱、圖上字樣、對應的陣營文字（標籤輸入，datalist 給現有 31 種 <code>faction</code> 值）、備註、使用中人數；篩選「未命名」。存檔走 <code>saveWithHistory</code>（自動遞增版本）。<br><span style="color:var(--text-secondary)">✅ 2026-10-14：<code>FactionEmblemsEditor.tsx</code>；編輯台頁首加「機師｜陣營徽章」切換（<code>?view=emblems</code>、<code>&amp;emblem=</code> 跳到該列——用直接跳不用 smooth：背景分頁不跑捲動動畫）。統計已命名／使用中／已選徽章的機師；存檔改走 <code>writeDoc</code>＋bump（見 C-2）。模擬器實測：搜尋「晨星」只剩 0025、加陣營文字存檔後 DB 正確。</span></div>
         <div class="task-file">src/components/admin/lore/FactionEmblemsEditor.tsx · AdminLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; 選圖器改版</div>
       <div class="task-group-meta">src/components/admin/FactionLogoPicker.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">88px、名稱、搜尋、排序</div>
-        <div class="task-desc">決策七。圖庫格線改成卡片（名稱＋字樣＋編號＋單色／彩色），同陣營建議沿用 <code>factionLogoSuggestions</code> 再加上對應文字命中；「未命名」卡片可直接連到 D-1 分頁補名稱。</div>
+        <div class="task-desc">決策七。圖庫格線改成卡片（名稱＋字樣＋編號＋單色／彩色），同陣營建議沿用 <code>factionLogoSuggestions</code> 再加上對應文字命中；「未命名」卡片可直接連到 D-1 分頁補名稱。<br><span style="color:var(--text-secondary)">✅ 2026-10-14：卡片 190px、圖 76px、名稱＋字樣＋編號；搜尋名稱／字樣／陣營文字／編號；建議卡青框＋「建議」。未命名卡片「補名稱 ↗」開新分頁（不關掉正在編的面板）。註記讀不到時照樣能選、只顯示編號。模擬器實測：提費斯（晨星同盟防衛軍）開選圖器，0025 排第一並標建議。</span></div>
         <div class="task-file">src/components/admin/FactionLogoPicker.tsx · src/utils/factionLogos.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; 卷宗徽章提示與裁圓 bug</div>
       <div class="task-group-meta">src/components/lore/LoreDossier.tsx · src/index.css</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">title 用徽章名稱、彩色版不再被裁圓</div>
-        <div class="task-desc"><code>FactionLogo</code> 的 <code>label</code> 改傳徽章名稱（沒有才用機師陣營文字）；<code>.lore-emb__ring img</code> 的 <code>object-fit:cover</code>／圓角只套單色版或改用 <code>contain</code>。館首頁卡片的 24px 徽章同步檢查。</div>
+        <div class="task-desc"><code>FactionLogo</code> 的 <code>label</code> 改傳徽章名稱（沒有才用機師陣營文字）；<code>.lore-emb__ring img</code> 的 <code>object-fit:cover</code>／圓角只套單色版或改用 <code>contain</code>。館首頁卡片的 24px 徽章同步檢查。<br><span style="color:var(--text-secondary)">✅ 2026-10-14：<code>LoreDossier</code> 加 <code>logoLabel</code>（前台頁與後台預覽都傳）；<code>.lore-emb__ring img.lore-emb__logo</code> 撤掉圓形裁切。模擬器實測：芙烈達的彩色 0009 圓角 0、contain、title「電鰻傭兵團」。館首頁卡片的徽章不在圓環內、沒有裁切問題，提示維持陣營文字（不為了提示多抓一個集合）。</span></div>
         <div class="task-file">src/components/lore/LoreDossier.tsx · src/pages/lore/LoreHomePage.tsx · src/index.css</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -464,16 +464,16 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 文件與更新履歷</div>
       <div class="task-group-meta">docs/02_技術文件 · docs/03_頁面規劃 · siteChangelog</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">新集合文件、資料模型、頁面規劃、PLAN-059 修訂註記</div>
-        <div class="task-desc"><code>04_Firebase/資料庫設計文件/factionEmblems.html</code>（新）與總覽、<code>pilotLore.html</code> 的 factionLogos 說明、<code>03_頁面規劃/13_故事館/</code>（鑑賞框、編輯台分頁）、PLAN-059 計畫書決策六加「2026-10-14 由 PLAN-042-F 修訂」。更新履歷：外觀可看大廳全景、徽章有名稱。</div>
+        <div class="task-desc"><code>04_Firebase/資料庫設計文件/factionEmblems.html</code>（新）與總覽、<code>pilotLore.html</code> 的 factionLogos 說明、<code>03_頁面規劃/13_故事館/</code>（鑑賞框、編輯台分頁）、PLAN-059 計畫書決策六加「2026-10-14 由 PLAN-042-F 修訂」。更新履歷：外觀可看大廳全景、徽章有名稱。<br><span style="color:var(--text-secondary)">✅ 2026-10-14：<code>04_Firebase/資料庫設計文件/factionEmblems.html</code>（新）與總覽兩處、<code>pilotLore.html</code> 的 factionLogos 修訂註記、<code>03_頁面規劃/13_故事館/</code>、PLAN-059 計畫書決策六修訂註記；更新履歷 2 筆。A／B 段的文件等那兩段做的時候再補。</span></div>
         <div class="task-file">docs/** · src/data/siteChangelog/2026-10.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">

@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import type {
   Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component,
-  GlobalResearch, GameBuff, PilotSkillDoc, MechForm, NeuralDriveAbility, LoreDoc,
+  GlobalResearch, GameBuff, PilotSkillDoc, MechForm, NeuralDriveAbility, LoreDoc, FactionEmblem,
 } from '../types'
 import { mechModuleSet, type MechModuleSet } from '../utils/mechModules'
 import { useGameData, EMPTY_GLOBAL_RESEARCH, type CollectionKey } from '../contexts/GameDataContext'
@@ -254,6 +254,17 @@ export function usePilotLoreDoc(pilotId: string | undefined): HookResult<LoreDoc
     [pilotId, pilotLore],
   )
   return { data, loading, error }
+}
+
+// ── 陣營徽章註記（PLAN-042-F）─────────────────────────────────────────────────
+//
+// 只是「讓徽章有名字」的輔助資料：讀不到時呼叫端照樣能畫徽章（退回編號／機師陣營文字），
+// **不要拿它的 loading 擋住頁面**。
+
+export function useFactionEmblems(): HookResult<FactionEmblem[]> {
+  const { factionEmblems } = useGameData()
+  const { loading, error } = useCollections(['factionEmblems'])
+  return { data: factionEmblems, loading, error }
 }
 
 // ── 元件 ──────────────────────────────────────────────────────────────────────
