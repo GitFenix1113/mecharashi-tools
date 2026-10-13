@@ -210,7 +210,7 @@
 
   <div class="summary-row">
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">6</div><div class="summary-lbl">共用決策已定</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">3</div><div class="summary-lbl">子計畫</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">5</div><div class="summary-lbl">子計畫</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">0</div><div class="summary-lbl">總綱層任務</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-yellow)">1</div><div class="summary-lbl">降級備案（EDITOR）</div></div>
   </div>
@@ -225,7 +225,8 @@
     <a href="../PLAN-042-A_機師故事館/進度表.html" style="color:var(--accent-orange);">→ 042-A 機師故事館</a> ·
     <a href="../PLAN-042-B_機甲故事館/進度表.html" style="color:var(--accent-yellow);">→ 042-B 機甲故事館</a> ·
     <a href="../PLAN-042-C_故事館氛圍層/進度表.html" style="color:var(--accent-pink);">→ 042-C 故事館氛圍層</a> ·
-    <a href="../PLAN-042-D_故事館改版_舞台與卷宗/進度表.html" style="color:var(--accent-pink);">→ 042-D 故事館改版：舞台與卷宗</a>
+    <a href="../PLAN-042-D_故事館改版_舞台與卷宗/進度表.html" style="color:var(--accent-pink);">→ 042-D 故事館改版：舞台與卷宗</a> ·
+    <a href="../PLAN-042-E_機師資料分家與故事館編輯台/進度表.html" style="color:var(--accent-purple);">→ 042-E 機師資料分家與故事館編輯台</a>
   </div>
 
 </section>
@@ -238,7 +239,7 @@
     <table class="layer-table">
       <tr><th>#</th><th>決策</th><th>定案</th><th>由誰實作</th></tr>
       <tr><td>一</td><td>內容分層</td><td>A 檔案層（已滿）／ B 章節層（全空）；B 才是主體</td><td>兩館各自</td></tr>
-      <tr><td>二</td><td>資料接縫判準</td><td><strong>誰是權威來源</strong>：爬蟲寫的留原集合，人寫的進 lore 集合</td><td>兩館各自</td></tr>
+      <tr><td>二</td><td>資料接縫判準</td><td><s>誰是權威來源：爬蟲寫的留原集合，人寫的進 lore 集合</s><br><strong>2026-10-13 修訂：與數值、機制有沒有關係</strong>（無關的歸 lore 集合，全名與陣營留原集合）</td><td><span class="badge badge-purple">042-E 實作（機師側）</span></td></tr>
       <tr><td>三</td><td>型別與集合</td><td><code>src/types/lore.ts</code> 共用；<code>pilotLore</code> / <code>mechLore</code> 分家</td><td><span class="badge badge-orange">042-A 建立</span></td></tr>
       <tr><td>四</td><td>導覽形態</td><td>章間離散、章內連續；具名章節軸；否決 scroll-snap</td><td><span class="badge badge-orange">042-A 建立</span></td></tr>
       <tr><td>五</td><td>章節鍵</td><td>PART 進網址；後台自動產生的<strong>必填</strong>穩定鍵</td><td><span class="badge badge-orange">042-A 建立</span></td></tr>

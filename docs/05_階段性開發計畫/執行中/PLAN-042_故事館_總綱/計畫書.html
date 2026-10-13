@@ -319,7 +319,7 @@
     <div class="meta-item"><div class="meta-label">建立日期</div><div class="meta-value ">2026-08-03（2026-08-23 升格總綱）</div></div>
     <div class="meta-item"><div class="meta-label">影響範圍</div><div class="meta-value purple">types/lore · pilotLore / mechLore 集合 · pages/lore · Layout chromeMode · Worker routes</div></div>
     <div class="meta-item"><div class="meta-label">優先級</div><div class="meta-value yellow">MID</div></div>
-    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value red">子計畫進行中 · 042-A 16／19、042-C 28／28、042-D 31／33 · <b>機師館 2026-10-13 對外開放</b> · 042-B 未開工</div></div>
+    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value red">子計畫進行中 · 042-A 16／19、042-C 28／28、042-D 31／33、042-E 0／25（2026-10-13 立案）· <b>機師館 2026-10-13 對外開放</b> · 042-B 未開工</div></div>
     <div class="meta-item"><div class="meta-label">定位</div><div class="meta-value cyan">Master Plan（大綱）</div></div>
   </div>
   <div class="info-block">
@@ -416,6 +416,13 @@
         （<code>scrape-pilots-v3.js:464-467, 483-489</code>）。搬走後兩份會慢慢漂移，<u>而且沒有任何機制會發現</u>。</li>
       <li>lore 集合承載<strong>所有編輯得動的展示文本</strong>：章節、旁白、署名結構化、<code>additionalInfo</code> 的顯示順序與白名單。</li>
     </ul>
+  </div>
+  <div class="warning-block">
+    <strong>⚠ 2026-10-13 修訂：決策二已由 <a href="../PLAN-042-E_機師資料分家與故事館編輯台/計畫書.html" style="color:var(--accent-purple);">PLAN-042-E</a> 的決策一取代。</strong><br>
+    上面兩條「不搬」的理由都已失效：圖鑑浮窗在 2026-10-09 改列天賦，不再讀 <code>lore</code>（<code>EntityRefView.tsx:95</code>）；官網爬蟲在 2026-10-11 退場，不會再有補丁重寫 <code>profile</code>。
+    所有資料都改由人工維護後，「誰是權威來源」已經分不出任何東西。新判準是站長定調的<strong>「與數值、機制有沒有關係」</strong>：
+    <code>lore</code>、<code>profile</code>、<code>nameEn</code> 搬進 <code>pilotLore</code>，圖鑑只讀 <code>pilots</code>；全名、陣營留在 pilots。
+    本決策保留原文作為歷史紀錄；機甲側（<code>mechs.lore</code>）等 042-B 動工時套用新判準。
   </div>
 
   <div class="decision-block">
@@ -538,6 +545,11 @@ export interface LoreChapter {
               造型（外觀）上站與切換。依據 <code>_local-notes/2026-10/2026-10-13_機師故事館_改版提案/</code> 的提案與可操作模擬頁。</td>
           <td><span class="badge badge-green">模擬頁已完成 · 正式站 92 位＋40 套造型</span></td>
           <td><span class="badge badge-purple">開發中（2026-10-13 立案）</span></td></tr>
+      <tr><td><a href="../PLAN-042-E_機師資料分家與故事館編輯台/計畫書.html" style="color:var(--accent-purple);"><strong>PLAN-042-E</strong><br>機師資料分家與故事館編輯台</a></td>
+          <td>圖鑑只留功能、個人資料全歸故事館：<code>lore</code>／<code>profile</code>／<code>nameEn</code> 搬進 <code>pilotLore</code>（取代決策二）；故事館編輯台擴充成扉頁／人物檔案／章節／外觀四分頁＋進度總覽＋預覽＋章節草稿；外觀的名稱、隱藏、順序改由後台管理。
+              依據 <code>_local-notes/2026-10/2026-10-13_機師資料分家_圖鑑與故事館評估.html</code>。</td>
+          <td><span class="badge badge-green">資料 92 位齊備 · 搬遷只複製、不需新建內容</span></td>
+          <td><span class="badge badge-purple">規劃中 0／25（2026-10-13 立案）</span></td></tr>
     </table>
   </div>
 
@@ -619,7 +631,8 @@ export interface LoreChapter {
     <a href="../PLAN-042-A_機師故事館/進度表.html" style="color:var(--accent-orange);">042-A 進度表</a> ·
     <a href="../PLAN-042-B_機甲故事館/進度表.html" style="color:var(--accent-yellow);">042-B 進度表</a> ·
     <a href="../PLAN-042-C_故事館氛圍層/進度表.html" style="color:var(--accent-pink);">042-C 進度表</a> ·
-    <a href="../PLAN-042-D_故事館改版_舞台與卷宗/進度表.html" style="color:var(--accent-pink);">042-D 進度表</a>
+    <a href="../PLAN-042-D_故事館改版_舞台與卷宗/進度表.html" style="color:var(--accent-pink);">042-D 進度表</a> ·
+    <a href="../PLAN-042-E_機師資料分家與故事館編輯台/進度表.html" style="color:var(--accent-purple);">042-E 進度表</a>
   </div>
   <div class="info-block">
     <strong>相關評估紀錄：</strong>拆分依據來自 <code>_local-notes/2026-08/2026-08-23_機師故事館_版面方案初評.html</code>（v3，本機不進版控）——
