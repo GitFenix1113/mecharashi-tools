@@ -404,26 +404,72 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
   .lore-shell { background-image: url('/images/lore/bg-m.webp'); }
 }
 
-/* 館首頁 hero：左紅帶（含暗紅機甲線稿）＋ 官方主視覺 KV ＋ 官方標題區塊（Pilots／操控指揮 機師出列）。
-   紅帶元素本身含一段紙面，用 clip-path 切在紅色範圍內部，露出的斜邊是我們的多邊形而不是圖裡的邊。 */
+/* 館首頁 hero（2026-10-14 改版）：紙面 ＋ 左紅帶 ＋ 官網立繪群像（loreHeroCast.ts 抽 4 位）＋ 自排標題。
+   提案與比較稿：_local-notes/2026-10/2026-10-14_故事館hero替代方案/。
+   字級用 cqw（hero 本身是 container）：標題要跟著紅帶的寬度走，而 hero 寬度不等於視窗寬度（max-w-6xl 置中）。 */
 .lore-home-hero {
   position: relative; overflow: hidden; border-radius: 14px;
   height: clamp(200px, 30vw, 400px);
+  container-type: inline-size;
+  background: #efe7d8 url('/images/lore/bg-paper.webp') center / cover no-repeat;
   box-shadow: 0 12px 32px rgba(43, 38, 33, 0.18);
 }
-.lore-home-hero__kv   { position: absolute; inset: 0; background: url('/images/lore/kv.webp') center 30% / cover no-repeat; }
-.lore-home-hero__band { position: absolute; inset: 0; width: 46%;
-                        background: url('/images/lore/bg-band.webp') right center / cover no-repeat;
-                        clip-path: polygon(0 0, 40% 0, 62% 100%, 0 100%); }
-.lore-home-hero__fade { position: absolute; inset: 0;
-                        background: linear-gradient(to top, rgba(239, 231, 216, 0.92) 0%, rgba(239, 231, 216, 0) 36%); }
-.lore-home-hero__title { position: absolute; left: 3.5%; top: 50%; width: min(38%, 480px); transform: translateY(-50%);
-                         filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.28)); }
+/* 紅帶：bg-band.webp 只有左上角是紅的（右下是一大塊紙面，斜邊還帶缺口）——原寬 46% 時標題有一半壓在紙面上。
+   改成自己塗底色、clip-path 決定斜邊，原圖只取左上全紅那一角放大當機甲線稿紋理（230%：顯示範圍落在原圖 x<270、y<160，全是紅的）。
+   ⚠ 調寬度或 background-size 時要確認顯示範圍沒有超出原圖的紅色區，否則紙面會從紋理裡透出來。 */
+.lore-home-hero__band {
+  position: absolute; inset: 0 auto 0 0; width: 62%;
+  background: url('/images/lore/bg-band.webp') 0 0 / 230% auto no-repeat, #8b2d27;
+  clip-path: polygon(0 0, 52% 0, 70% 100%, 0 100%);
+}
+/* 立繪：官網彩圖下緣烘了粒子溶解，往下出血 18% 讓人物切在大腿、溶解帶落在 hero 底邊附近。
+   ⚠ max-width:none 是必要的：preflight 的 img{max-width:100%} 會把寬圖壓扁。 */
+.lore-home-hero__cast { position: absolute; inset: 0; }
+.lore-home-hero__figure { position: absolute; bottom: -18%; width: auto; max-width: none; transform: translateX(-50%);
+                          opacity: 0; transition: opacity 0.6s ease-out; }
+.lore-home-hero__figure[data-loaded] { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .lore-home-hero__figure { transition: none; } }
+.lore-home-hero__figure[data-slot="0"] { left: 57%; height: 112%; z-index: 2; }
+.lore-home-hero__figure[data-slot="1"] { left: 69%; height: 120%; z-index: 4; }
+.lore-home-hero__figure[data-slot="2"] { left: 81%; height: 112%; z-index: 3; }
+.lore-home-hero__figure[data-slot="3"] { left: 93%; height: 106%; z-index: 1; }
+/* 標題：整塊落在紅帶裡。黃色手寫「Pilots」沿用官網標題圖的配色（招募標語本身不再使用） */
+.lore-home-hero__title { position: absolute; left: 4.5%; top: 50%; transform: translateY(-50%); z-index: 10; }
+.lore-home-hero__script {
+  display: block; font-size: clamp(40px, 5.8cqw, 64px); line-height: 0.8; color: #f6d32b;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); transform: rotate(-8deg); transform-origin: left bottom; margin: 0 0 2px -0.1em;
+}
+.lore-home-hero__eyebrow {
+  display: block; margin: 0.9em 0 0.5em; font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(9px, 1cqw, 11px); letter-spacing: 0.32em; color: rgba(255, 236, 214, 0.72);
+}
+.lore-home-hero__h1 {
+  margin: 0; font-family: 'Lore Kai', 'LXGW WenKai TC', 'Kaiti TC', 'BiauKai', 'DFKai-SB', serif; font-weight: 400;
+  font-size: clamp(34px, 5.1cqw, 56px); letter-spacing: 0.1em; line-height: 1.1; color: #fff;
+  text-shadow: 0 3px 14px rgba(40, 0, 0, 0.45);
+}
+.lore-home-hero__lead {
+  margin: 0.85em 0 0; font-family: 'Lore Serif', 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif;
+  font-size: clamp(12px, 1.27cqw, 14px); line-height: 1.8; color: rgba(255, 238, 222, 0.86);
+}
+.lore-home-hero__lead::after { content: ''; display: block; width: 56px; height: 2px; margin-top: 14px; background: #f6d32b; }
+/* 平板（≤1023px，hero 高度改 46vw、比例變方）：拿掉緊貼紅帶的 0 號，否則會壓到標題尾巴 */
 @media (max-width: 1023px) {
-  .lore-home-hero { height: clamp(180px, 46vw, 300px); border-radius: 10px; }
-  .lore-home-hero__kv { background-image: url('/images/lore/kv-m.webp'); }
-  .lore-home-hero__band { width: 64%; }
-  .lore-home-hero__title { width: 56%; }
+  .lore-home-hero { height: clamp(180px, 46vw, 300px); border-radius: 10px;
+                    background-image: url('/images/lore/bg-m.webp'); }
+  .lore-home-hero__figure[data-slot="0"] { display: none; }
+}
+/* 手機（<640px）：只留中前、右兩位往右靠；紅帶加寬讓兩行標題放得下 */
+@media (max-width: 639px) {
+  .lore-home-hero__band { width: 76%; clip-path: polygon(0 0, 66% 0, 76% 100%, 0 100%); }
+  .lore-home-hero__figure[data-slot="3"] { display: none; }
+  .lore-home-hero__figure[data-slot="1"] { left: 79%; height: 110%; }
+  .lore-home-hero__figure[data-slot="2"] { left: 96%; height: 102%; }
+  .lore-home-hero__script { font-size: clamp(30px, 9cqw, 52px); }
+  .lore-home-hero__eyebrow { font-size: clamp(8px, 2.1cqw, 11px); letter-spacing: 0.26em; margin: 0.6em 0 0.35em; }
+  .lore-home-hero__h1 { font-size: clamp(24px, 7cqw, 40px); }
+  .lore-home-hero__lead { font-size: clamp(11px, 3cqw, 13px); line-height: 1.6; margin-top: 0.5em; }
+  .lore-home-hero__lead::after { display: none; }
 }
 
 /* 粒子（B-4）：官網 .snow 的移植——6 個 div、兩張點陣圖、fly／fly2 由左下飄向右上，

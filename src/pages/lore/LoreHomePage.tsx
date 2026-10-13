@@ -7,10 +7,11 @@ import { FactionLogo } from '../../components/icons/FactionLogo'
 import { normalizeFactionLogos } from '../../utils/factionLogos'
 import { toneBar } from '../../components/loadout/PickerVariants'
 import { usePilotLore, usePilots } from '../../hooks/useFirestore'
-import { assetUrl, pilotPortraitCandidates } from '../../utils/assets'
+import { assetUrl, pilotOfficialArt, pilotPortraitCandidates } from '../../utils/assets'
 import type { Pilot } from '../../types'
 import { buildLoreGroups, readLoreSort, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
 import { publishedChapters } from '../../components/lore/loreText'
+import { pickHeroCast } from '../../components/lore/loreHeroCast'
 
 /**
  * 機師故事館的館首頁（PLAN-042-A D-2）。
@@ -165,34 +166,49 @@ function buildGroups(pilots: Pilot[], sort: LoreSort): LoreGroup[] {
  *   `.lore-scroll`，多開一層會讓兩條捲軸並存、館內的 sticky 相對錯誤的祖先定位。
  */
 function PageFrame({ count, children }: { count?: number; children: React.ReactNode }) {
+  // 每次進館抽一組。PageFrame 是三個分支共同的根元素，資料到的那一刻（骨架 → 內容）不會重掛，陣容不會當場換人。
+  const [cast] = useState(pickHeroCast)
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-      <header className="mb-8">
-        {/* 官網素材切版（PLAN-042-C B-2／B-3／B-5）：左紅帶＋主視覺 KV＋「Pilots／操控指揮 機師出列」標題圖。
-            三塊都是 CSS 背景或 <img>，樣式在 index.css 的 .lore-home-hero；標題圖有 alt，KV 是純裝飾。 */}
-        <div className="lore-home-hero">
-          <div className="lore-home-hero__kv" aria-hidden="true" />
-          <div className="lore-home-hero__band" aria-hidden="true" />
-          <div className="lore-home-hero__fade" aria-hidden="true" />
-          <picture>
-            <source media="(max-width: 1023px)" srcSet={assetUrl('/images/lore/title-pilots-m.webp')} />
-            <img
-              className="lore-home-hero__title"
-              src={assetUrl('/images/lore/title-pilots.webp')}
-              alt="Pilots — 操控指揮 機師出列 · ULTIMATE PILOTS"
-              width={919}
-              height={547}
-            />
-          </picture>
+      {/* 館首頁 hero（2026-10-14 改版）：紅帶＋官網立繪群像＋自排標題，就是官網首頁本來的構圖。
+          舊版是官網 KV（機甲主視覺）＋「操控指揮 機師出列」招募標語圖：冷色 3D 寫實跟紙面館格格不入、
+          主角是機甲，而且 hero 下面還有一列「機師故事館」，兩個標題打架 → 真正的 <h1> 移進 hero，那一列刪掉。
+          樣式在 index.css 的 .lore-home-hero；立繪是純裝飾（aria-hidden）。 */}
+      <header className="lore-home-hero mb-6 sm:mb-8">
+        <div className="lore-home-hero__band" aria-hidden="true" />
+        <div className="lore-home-hero__cast" aria-hidden="true">
+          {cast.map((dir, i) => {
+            const art = pilotOfficialArt({ gameId: dir })
+            if (!art) return null
+            return (
+              <img
+                key={dir}
+                className="lore-home-hero__figure"
+                data-slot={i}
+                src={assetUrl(art.color)}
+                alt=""
+                width={art.geometry.w}
+                height={art.geometry.h}
+                decoding="async"
+                // 1／2 號位每種寬度都看得到，是首屏最大的圖 → 提前；0／3 號位在手機上是 display:none，
+                // lazy 才不會白下載（沒有排版盒的 lazy 圖不會觸發載入）
+                loading={i === 1 || i === 2 ? 'eager' : 'lazy'}
+                fetchPriority={i === 1 || i === 2 ? 'high' : 'low'}
+                // 載完才淡入（CSS 的 [data-loaded]）：圖要等 React 渲染後才開始抓，直接顯示會在紙面上「啪」一聲冒出來。
+                // 用 data 屬性不用 className：React 不管這個屬性，PageFrame 重繪（骨架 → 內容）時不會被洗掉
+                onLoad={(e) => { e.currentTarget.dataset.loaded = '' }}
+              />
+            )
+          })}
         </div>
-        <div className="mt-5 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <span className="font-[Orbitron,sans-serif] text-xs uppercase tracking-[3px] text-accent-orange">
-            Archive
-          </span>
-          <h1 className="text-2xl font-bold sm:text-3xl">機師故事館</h1>
-          <p className="text-sm leading-relaxed text-text-secondary">
-            收錄機師的個人簡介與逸聞章節。
-            {count !== undefined && `共 ${count} 位機師。`}
+        <div className="lore-home-hero__title">
+          <span className="lore-script-font lore-home-hero__script" aria-hidden="true">Pilots</span>
+          <span className="lore-home-hero__eyebrow">ARCHIVE · 檔案館</span>
+          <h1 className="lore-home-hero__h1">機師故事館</h1>
+          <p className="lore-home-hero__lead">
+            收錄機師的個人簡介與逸聞章節
+            {count !== undefined && <><br />共 {count} 位機師</>}
           </p>
         </div>
       </header>
