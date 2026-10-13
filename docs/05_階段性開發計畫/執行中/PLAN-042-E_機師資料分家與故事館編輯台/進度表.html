@@ -174,14 +174,14 @@
   <div class="section-label purple">Progress</div>
   <div class="section-title">總進度</div>
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">19</div><div class="summary-lbl">已完成</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">3</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">3</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">21</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">2</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">2</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">25</div><div class="summary-lbl">開發者任務</div></div>
   </div>
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度（開發者任務）</span><span style="color:var(--accent-purple);">19 / 25</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 76%"></div></div>
+    <div class="progress-label"><span>整體完成度（開發者任務）</span><span style="color:var(--accent-purple);">21 / 25</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 84%"></div></div>
   </div>
   <div class="impact-note">
     <strong>目標效果：</strong>圖鑑變成純粹的數值與機制頁；一位機師的簡介、人物檔案、英文名、章節、徽章、外觀名稱，在故事館編輯台的同一個面板編完，而且邊編邊看到上線的樣子。
@@ -191,9 +191,9 @@
     D-3～D-5、E 段可以在之後分批上。G 段要等觀察一週後才做。
   </div>
   <div class="note-warn">
-    <strong>目前狀態（2026-10-13）：</strong>程式（A、C、D、E、G-3）都在分支 <code>claude/plan-042-e</code>，<b>尚未合併、尚未部署</b>（C 段＋D-1／D-2 要等資料先搬好才能上）。
-    B 段與 G-1 的一次性腳本已寫好、在雲端 session 交付（<code>scripts/temp_scripts/</code> 被 .gitignore 擋著）。接下來由站長本機執行：
-    B-1 備份 → B-2 dry-run 看報告 → <code>--apply</code> → <code>bump-data-version.mjs pilotLore</code> → B-3 對帳 → 凍結編輯 → F-1（Worker 先部署、再合併分支並 push）→ B-3 再對帳 → 解除凍結。
+    <strong>目前狀態（2026-10-14）：</strong>B-1／B-2 完成、B-3 第一次對帳差異 0；<b>🔒 編輯凍結中</b>（機師管理與故事館編輯台都不要存檔）。
+    分支 <code>claude/plan-042-e</code> 已在本機合併進 <code>main</code>、<b>尚未 push、尚未部署</b>。接下來由站長執行 F-1：
+    Worker 部署（<code>cd workers</code> → <code>npx wrangler deploy</code>）→ <code>npm run push</code> → 等 <code>pages-build-deployment</code> 完成 → B-3 再對帳 → 解除凍結。
   </div>
 </section>
 
@@ -265,33 +265,36 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; 搬遷前備份</div>
       <div class="task-group-meta">scripts/temp_scripts/backup-firestore.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">全集合備份</div>
-        <div class="task-desc">產出 <code>_local-notes/db-backup-&lt;時間&gt;/</code>，記下目錄名寫進本進度表，給 G-1 與萬一需要的還原用。<br><span style="color:var(--text-secondary)">⬜ 站長本機：<code>node scripts/temp_scripts/backup-firestore.mjs</code>，目錄名回填到這裡。</span></div>
-        <div class="task-file">_local-notes/db-backup-*</div>
+        <div class="task-desc">產出 <code>_local-notes/db-backup-&lt;時間&gt;/</code>，記下目錄名寫進本進度表，給 G-1 與萬一需要的還原用。<br><span style="color:var(--text-secondary)">✅ 2026-10-14：<code>_local-notes/db-backup-2026-10-13_1617</code>（26 集合／3,678 份；目錄名的時間是 UTC）。pilots 92、pilotLore 34。</span></div>
+        <div class="task-file">_local-notes/db-backup-2026-10-13_1617</div>
       </div>
       <div class="task-assignee">開發者（本機）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; 複製 pilots → pilotLore</div>
       <div class="task-group-meta">scripts/temp_scripts/copy-pilot-profile-to-lore.mjs</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">dry-run → apply → bump pilotLore</div>
         <div class="task-desc">每位機師寫入 <code>intro</code>（用 <code>stripTrailingSource</code> 切掉署名後的正文）、<code>nameEn</code>、<code>dossier</code>（extra 經 A-3 轉換），用 merge 寫入：既有 34 份保留章節、署名、徽章，新建 58 份（<code>chapters: []</code> 一定要帶，見 <code>AdminLorePage.tsx:26-32</code> 的白屏教訓）。
-          dry-run 印出每位的 diff，<strong>34 篇署名的切割結果另外列一張表給人工抽查</strong>。apply 後執行 <code>bump-data-version.mjs pilotLore</code>。<strong>從這一步開始凍結編輯。</strong><br><span style="color:var(--text-secondary)">🔧 腳本已寫好（雲端 session 交付，放進本機 <code>scripts/temp_scripts/</code>）：<code>copy-pilot-profile-to-lore.mjs</code>＋共用 <code>pilot-lore-migration-lib.mjs</code>，規則直接 import 站上的 <code>stripTrailingSource</code>／<code>fromAdditionalInfo</code>。<b>只有「切掉的那段＝登記的署名」才切</b>，對不上就保留原文並在切割表標 ⚠（模擬資料演練時發現啟發式會切到正文尾端的破折號）。既有 pilotLore 已有的值不覆寫（重跑安全）。<code>--backup=&lt;目錄&gt;</code> 可先拿備份演練。⬜ 待站長本機 dry-run → 看 <code>_local-notes/</code> 報告 → <code>--apply</code> → bump。</span></div>
+          dry-run 印出每位的 diff，<strong>34 篇署名的切割結果另外列一張表給人工抽查</strong>。apply 後執行 <code>bump-data-version.mjs pilotLore</code>。<strong>從這一步開始凍結編輯。</strong><br><span style="color:var(--text-secondary)">🔧 腳本已寫好（雲端 session 交付，放進本機 <code>scripts/temp_scripts/</code>）：<code>copy-pilot-profile-to-lore.mjs</code>＋共用 <code>pilot-lore-migration-lib.mjs</code>，規則直接 import 站上的 <code>stripTrailingSource</code>／<code>fromAdditionalInfo</code>。<b>只有「切掉的那段＝登記的署名」才切</b>，對不上就保留原文並在切割表標 ⚠（模擬資料演練時發現啟發式會切到正文尾端的破折號）。既有 pilotLore 已有的值不覆寫（重跑安全）。<code>--backup=&lt;目錄&gt;</code> 可先拿備份演練。<br>✅ 2026-10-14：寫入 92 份（新建 58、補欄位 34），衝突 0；<code>pilotLore</code> bump 到 <code>2026-10-13T16:20:23Z</code>。
+          署名切割 34 篇中 33 篇 ✅；<b>尼爾 ⚠ 沒切</b>（原文尾端是 <code>」--米赫瑪自然雜誌</code>，登記的署名是 <code>——《米赫瑪自然雜誌》</code>），上線後扉頁會重複一次署名，解除凍結後到編輯台把扉頁簡介尾端那段刪掉。
+          本機取用時修了兩處：<code>loadBackup</code> 改認 <code>backup-firestore.mjs</code> 的實際格式（<code>{ collection, …, docs: [] }</code>）、報告檔名改用本機日期＋<code>_local-notes</code> 命名慣例。
+          正式寫入前先用 B-1 備份演練（記憶體模擬 merge 後對帳差異 0、既有 34 份的章節與署名未被動到、重跑 0 筆要寫）。報告：<code>_local-notes/2026-10/2026-10-14_0019_B-2_搬遷dry-run.md</code>、<code>…_0020_B-2_搬遷寫入.md</code>。</span></div>
         <div class="task-file">scripts/temp_scripts/copy-pilot-profile-to-lore.mjs · scripts/bump-data-version.mjs</div>
       </div>
       <div class="task-assignee">開發者（本機）</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
@@ -303,7 +306,7 @@
     <div class="task-row">
       <div>
         <div class="task-name">92 位逐欄比對，差異必須為 0</div>
-        <div class="task-desc">pilots 舊值和 pilotLore 新值逐欄比對（署名切割的 34 篇改成比對「intro＋frontSource」能不能拼回原文）。B-2 後跑一次，F-1 網站部署後再跑一次，用來抓凍結期間的遺漏。G-1 刪欄位前也要再跑。<br><span style="color:var(--text-secondary)">🔧 腳本已寫好：<code>verify-pilot-lore-migration.mjs</code>，差異 0 時 exit 0。舊 map 裡空標籤、非字串的值（前台本來就顯示不出來）列為「提醒」不算差異。G-1 前再跑時，解除凍結後的正常編輯會顯示成差異——逐筆確認後 G-1 用 <code>--accept-diffs</code>。⬜ 待站長本機執行。</span></div>
+        <div class="task-desc">pilots 舊值和 pilotLore 新值逐欄比對（署名切割的 34 篇改成比對「intro＋frontSource」能不能拼回原文）。B-2 後跑一次，F-1 網站部署後再跑一次，用來抓凍結期間的遺漏。G-1 刪欄位前也要再跑。<br><span style="color:var(--text-secondary)">🔧 腳本已寫好：<code>verify-pilot-lore-migration.mjs</code>，差異 0 時 exit 0。舊 map 裡空標籤、非字串的值（前台本來就顯示不出來）列為「提醒」不算差異。G-1 前再跑時，解除凍結後的正常編輯會顯示成差異——逐筆確認後 G-1 用 <code>--accept-diffs</code>。<br>✅ 2026-10-14 第 ① 次（B-2 後）：92 位差異 0、提醒 0（<code>_local-notes/2026-10/2026-10-14_0020_B-3_搬遷對帳.md</code>）。⬜ 第 ② 次：F-1 網站部署完成後、解除凍結前。</span></div>
         <div class="task-file">scripts/temp_scripts/verify-pilot-lore-migration.mjs</div>
       </div>
       <div class="task-assignee">開發者（本機）</div>
