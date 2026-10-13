@@ -33,6 +33,8 @@ export type MechGameArtKind = 'icon' | 'sn' | 'torso' | 'leftArm' | 'rightArm' |
 
 const GAME_ROOT = '/images/game'
 const PILOT_SUFFIX = { half: '_half', head: '_head', raw: '_Raw' } as const
+/** 場景外觀的鑑賞版尾碼（衍生檔、不是官方檔名）：同一張 Raw 把官方暈邊收窄，故事館全身鑑賞用（scripts/lib/sceneArt.mjs） */
+export const SCENE_VIEW_SUFFIX = '_Raw_view'
 /** 官方部件編號：Icon_wap<wap>_1~4 ＝ 軀幹／左臂／右臂／腿 */
 export const GAME_PART_NO = { torso: 1, leftArm: 2, rightArm: 3, legs: 4 } as const
 
@@ -89,6 +91,8 @@ export interface PilotSkinArt {
   raw: string
   half?: string
   head?: string
+  /** 場景外觀的鑑賞版（官方暈邊收窄）；只有場景外觀、而且匯入時產了才有——沒有就鑑賞 raw */
+  view?: string
 }
 
 /**
@@ -114,6 +118,7 @@ export function pilotSkins(pilot: { id?: string; gameId?: string } | null | unde
       raw: file(base, s.key, 'raw'),
       half: s.half ? file(base, s.key, 'half') : undefined,
       head: s.head ? file(base, s.key, 'head') : undefined,
+      view: s.view ? `${base}/${s.key}${SCENE_VIEW_SUFFIX}.webp` : undefined,
     }))
 }
 

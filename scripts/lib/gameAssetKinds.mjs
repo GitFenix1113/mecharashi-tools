@@ -30,6 +30,11 @@ export const GAME_DIR = 'images/game'
 /** 機師的四種圖。值＝接在 artKey 後面的尾碼（card 不吃 artKey，見 pilotFileName） */
 export const PILOT_KINDS = /** @type {const} */ (['half', 'head', 'raw', 'card'])
 const PILOT_SUFFIX = { half: '_half', head: '_head', raw: '_Raw' }
+/**
+ * 場景外觀的鑑賞版：`<立繪鍵>_Raw_view.webp`，與該套外觀的 Raw 放在同一個資料夾（PLAN-042-D，見 scripts/lib/sceneArt.mjs）。
+ * **衍生檔、不是官方檔名**——classifyPilotFile／classifyNpcFile 刻意認不得它（回 null），索引另外查。
+ */
+export const SCENE_VIEW_SUFFIX = '_Raw_view'
 
 /** 機甲部件的編號：官方 Icon_wap<wap>_1~4 的順序是 軀幹／左臂／右臂／腿 */
 export const PART_NO = { torso: 1, leftArm: 2, rightArm: 3, legs: 4 }

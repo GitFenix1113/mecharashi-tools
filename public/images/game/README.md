@@ -10,6 +10,7 @@ pilots/<gameId>/      gameId ＝ 機師卡 Icon_item_<gameId>A 的編號（DB: p
   <artKey>_Raw.webp     1240×1080    半身
   Icon_item_<gameId>A.webp  340²     機師卡
   skins/<立繪鍵>_{Raw,half,head}.webp  造型（外觀，PLAN-042-D）：故事館的外觀切換讀這裡；索引 GAME_PILOT_SKINS
+  skins/<立繪鍵>_Raw_view.webp        場景外觀的鑑賞版（衍生檔、不是官方檔名）：官方暈邊收窄，故事館「全身立繪」用；匯入時自動產
 npc/<號碼>/           NPC 圖庫（2026-10-12）：還沒對應到可抽機師的官方立繪——劇情 NPC、尚未上線的新角色
   <artKey>_half／_head／_Raw.webp   同機師三種、沒有機師卡；一個號碼可有 A／B 多套（DB: pilots.artKey 指過來）
 mechs/<wap>/          wap ＝ 機甲四碼編號（DB: mechs.gameId）
@@ -56,6 +57,8 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
   寫在 `scripts/lib/pilotSkinMeta.json` 的 owner；名稱（name）、台版還沒推出先藏（hidden）也寫在那份，全部選填，不填顯示「外觀 N」。
   NPC 圖庫裡屬於某位機師、而且有外觀卡的（海莉絲 `10103132A`、瑪阿特 `10103129A`）build 時也會列進她們的外觀。
   帶背景的場景插畫（透明 < 25%）build 時自動判定，前台換構圖。
+  場景外觀匯入時會多產一張 `_Raw_view`（官方把四周暈成透明，但底下的畫面還在；alpha × 8 收窄成細邊）——舞台照用暈邊版融進紙面，
+  「全身立繪」改看這張。缺了 `npm run dev` 會出現 ⚠ 提示，照提示重跑 `--skins --apply` 就會補上（已存在的 Raw 不重轉）。
 - 這裡只放**讀取端會用到的種類（core）＋NPC 圖庫＋造型**。招募立繪、大廳場景等 extended 素材、敵方機甲等其餘 _reserve，
   以及站上用不到的其他圖示（道具、勳章、肉鴿…）**不進 repo**，在 repo 外的封存夾（`E:/Mecharashi_Data/site-archive/game/`）。
 

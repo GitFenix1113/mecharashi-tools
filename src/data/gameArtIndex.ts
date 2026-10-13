@@ -347,46 +347,47 @@ export const GAME_NPC_ART: ReadonlyMap<string, GameNpcArt> = new Map<string, Gam
 
 /**
  * 機師造型／外觀（PLAN-042-D F-2）：`public/images/game/pilots/<gameId>/skins/<立繪鍵>_{Raw,half,head}.webp`，以 **gameId** 為 key。
- * `scene`＝帶背景的場景插畫（前台換構圖）；`name`＝scripts/lib/pilotSkinMeta.json 的人工名稱（沒有就顯示「外觀 N」）。
+ * `scene`＝帶背景的場景插畫（前台換構圖）；`view`＝有鑑賞版 `<立繪鍵>_Raw_view.webp`（官方暈邊收窄，全身鑑賞用）；
+ * `name`＝scripts/lib/pilotSkinMeta.json 的人工名稱（沒有就顯示「外觀 N」）。
  * 查詢一律走 `pilotSkins()`（src/utils/gameArt.ts）。
  */
-export interface GamePilotSkin { key: string; half?: true; head?: true; raw?: true; scene?: true; name?: string }
+export interface GamePilotSkin { key: string; half?: true; head?: true; raw?: true; scene?: true; view?: true; name?: string }
 export const GAME_PILOT_SKINS: ReadonlyMap<string, readonly GamePilotSkin[]> = new Map<string, readonly GamePilotSkin[]>([
-  ['10103105', [{ key: 'Pilot_10103105B', half: true, head: true, raw: true, scene: true }]],
+  ['10103105', [{ key: 'Pilot_10103105B', half: true, head: true, raw: true, scene: true, view: true }]],
   ['10103107', [{ key: 'Pilot_10103107C', half: true, head: true, raw: true }]],
   ['10103109', [{ key: 'Pilot_10103109B', half: true, head: true, raw: true }]],
   ['10103110', [{ key: 'Pilot_10103110B', half: true, head: true, raw: true }]],
   ['10103111', [{ key: 'Pilot_10103111B', half: true, head: true, raw: true }]],
   ['10103112', [{ key: 'Pilot_10103112B', half: true, head: true, raw: true }]],
-  ['10103113', [{ key: 'Pilot_10103113B', half: true, head: true, raw: true, scene: true }]],
+  ['10103113', [{ key: 'Pilot_10103113B', half: true, head: true, raw: true, scene: true, view: true }]],
   ['10103115', [{ key: 'Pilot_10103115B', half: true, head: true, raw: true }]],
   ['10103118', [{ key: 'Pilot_10103118B', half: true, head: true, raw: true }]],
   ['10103120', [{ key: 'Pilot_10103120B', half: true, head: true, raw: true }]],
   ['10103122', [{ key: 'Pilot_10103122B', half: true, head: true, raw: true }]],
   ['10103124', [{ key: 'Pilot_10103124B', half: true, head: true, raw: true }]],
   ['10103126', [{ key: 'Pilot_10103126B', half: true, head: true, raw: true }]],
-  ['10103127', [{ key: 'Pilot_10103127B', half: true, head: true, raw: true, scene: true }]],
+  ['10103127', [{ key: 'Pilot_10103127B', half: true, head: true, raw: true, scene: true, view: true }]],
   ['10103134', [{ key: 'Pilot_10103134B', half: true, head: true, raw: true }, { key: 'Pilot_10103134C', half: true, head: true, raw: true }]],
   ['10103136', [{ key: 'Pilot_10103136B', half: true, head: true, raw: true }]],
   ['10103137', [{ key: 'Pilot_10103137B', half: true, head: true, raw: true }]],
-  ['10103138', [{ key: 'Pilot_10103138B', half: true, head: true, raw: true, scene: true }]],
-  ['10103139', [{ key: 'Pilot_10103139B', half: true, head: true, raw: true, scene: true }]],
+  ['10103138', [{ key: 'Pilot_10103138B', half: true, head: true, raw: true, scene: true, view: true }]],
+  ['10103139', [{ key: 'Pilot_10103139B', half: true, head: true, raw: true, scene: true, view: true }]],
   ['10103141', [{ key: 'Pilot_10103141B', half: true, head: true, raw: true }]],
-  ['10103144', [{ key: 'Pilot_13019B', half: true, head: true, raw: true, scene: true }]],
-  ['10103146', [{ key: 'Pilot_10103146B', half: true, head: true, raw: true, scene: true }]],
+  ['10103144', [{ key: 'Pilot_13019B', half: true, head: true, raw: true, scene: true, view: true }]],
+  ['10103146', [{ key: 'Pilot_10103146B', half: true, head: true, raw: true, scene: true, view: true }]],
   ['10103149', [{ key: 'Pilot_10103149AB', half: true, head: true, raw: true }, { key: 'Pilot_10103149B', half: true, head: true, raw: true }]],
   ['10103150', [{ key: 'Pilot_10103150AB', half: true, head: true, raw: true }, { key: 'Pilot_10103150B', half: true, head: true, raw: true }]],
   ['10103151', [{ key: 'Pilot_10103151AB', half: true, head: true, raw: true }]],
-  ['10103152', [{ key: 'Pilot_10103152B', half: true, head: true, raw: true, scene: true }]],
-  ['10103154', [{ key: 'Pilot_10103107B', half: true, head: true, raw: true }, { key: 'Pilot_10103154B', half: true, head: true, raw: true }, { key: 'Pilot_10103154C', half: true, head: true, raw: true, scene: true }]],
+  ['10103152', [{ key: 'Pilot_10103152B', half: true, head: true, raw: true, scene: true, view: true }]],
+  ['10103154', [{ key: 'Pilot_10103107B', half: true, head: true, raw: true }, { key: 'Pilot_10103154B', half: true, head: true, raw: true }, { key: 'Pilot_10103154C', half: true, head: true, raw: true, scene: true, view: true }]],
   ['10103157', [{ key: 'Pilot_10103157B', half: true, head: true, raw: true }]],
-  ['10103159', [{ key: 'Pilot_10103159B', half: true, head: true, raw: true, scene: true }]],
-  ['10103164', [{ key: 'Pilot_10103164B', half: true, head: true, raw: true, scene: true }]],
-  ['10103166', [{ key: 'Pilot_10103166B', half: true, head: true, raw: true, scene: true }]],
+  ['10103159', [{ key: 'Pilot_10103159B', half: true, head: true, raw: true, scene: true, view: true }]],
+  ['10103164', [{ key: 'Pilot_10103164B', half: true, head: true, raw: true, scene: true, view: true }]],
+  ['10103166', [{ key: 'Pilot_10103166B', half: true, head: true, raw: true, scene: true, view: true }]],
   ['10103171', [{ key: 'Pilot_10103171B', half: true, head: true, raw: true }]],
   ['10103173', [{ key: 'Pilot_10103173B', half: true, head: true, raw: true }]],
   ['10103179', [{ key: 'Pilot_10103179B', half: true, head: true, raw: true }]],
-  ['10103183', [{ key: 'Pilot_10103183B', half: true, head: true, raw: true, scene: true }]],
+  ['10103183', [{ key: 'Pilot_10103183B', half: true, head: true, raw: true, scene: true, view: true }]],
 ])
 
 /**

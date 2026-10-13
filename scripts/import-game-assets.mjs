@@ -56,6 +56,9 @@
  *   不是可抽機師的號碼歸 --npc（上站），這裡不收；NPC 圖庫裡屬於某位機師的外觀登記在 npcArtNotes.json（owner）。
  *   外觀卡 Icon_pilotSkin_* 在 --other-icons（icons/itemtype/），故事館不用（那是袋裝商品圖，縮圖用造型自己的 _head）。
  *   建議順序：先 --src=Data 再 --src=latest（兩次擷取的聯集都會留著）。
+ *   場景插畫外觀（Raw 透明 < 25%）會多產一張鑑賞版 `<立繪鍵>_Raw_view.webp`：官方暈邊收窄、看得到完整場景，
+ *   故事館全身鑑賞用（2026-10-13；規則與理由見 scripts/lib/sceneArt.mjs）。去背的造型不產。--npc 同樣適用。
+ *   既有外觀補鑑賞版：照上面的順序重跑一次 --apply 就好（Raw 已存在會跳過，只補缺的鑑賞版）。
  *
  * ── --promote（2026-10-11）──────────────────────────────────────────────────
  *   決定用途後，把封存夾裡挑好的圖「上架」：<archive>/game/ui/<路徑> → public/images/game/ui/<同一路徑>。
@@ -113,7 +116,8 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
-import { GAME_DIR, MECH_KINDS, NPC_ART_RE, PILOT_KINDS, TIER_GROUPS, classifyNpcFile, mechFileName, npcDirOf, pilotFileName, playableArtDirs } from './lib/gameAssetKinds.mjs'
+import { GAME_DIR, MECH_KINDS, NPC_ART_RE, PILOT_KINDS, SCENE_VIEW_SUFFIX, TIER_GROUPS, classifyNpcFile, mechFileName, npcDirOf, pilotFileName, playableArtDirs } from './lib/gameAssetKinds.mjs'
+import { sceneViewWebp } from './lib/sceneArt.mjs'
 import { EMBLEM_EXCLUDE, EQUIP_POOLS, ICON_POOLS, OTHER_ICON_FOLDERS, emblemFamilyOf, equipGameIdOf, iconFamily, iconPoolIndex, isLibraryKey, keyFromValue, otherIconPaths } from './lib/gameIconKinds.mjs'
 import { ARCHIVE_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, resolveDump } from './lib/gameDump.mjs'
 import { UI_GROUPS, uiArchivePath, uiModuleInfo } from './lib/gameUiModules.mjs'
@@ -177,6 +181,12 @@ const notes = []      // 報告用
 
 function addTask(srcRel, destDir, name, label, group, absSrc) {
   tasks.push({ src: absSrc ?? path.join(SRC, srcRel), dest: path.join(destRoot, destDir, `${name}.webp`), label, group, name })
+}
+/** 剛排進去的 Raw 若是場景插畫，旁邊多產一張鑑賞版（--skins／--npc；是不是場景要讀到圖才知道，轉檔時才判定） */
+function addSceneViewTask(key) {
+  const raw = tasks.at(-1)
+  const name = `${key}${SCENE_VIEW_SUFFIX}`
+  tasks.push({ ...raw, dest: path.join(path.dirname(raw.dest), `${name}.webp`), group: `${raw.group.split('-')[0]}-view`, name, view: true })
 }
 
 // ── --icons 用：站上舊夾裡的圖示檔（PLAN-055 E-1 起已刪，掃到的是空集合；留著供從舊備份還原時用）──
@@ -518,6 +528,7 @@ if (MODE === 'v3') {
     if (owner !== gameId) skinReport.moved.add(`${key} → ${owner}（pilotSkinMeta.json）`)
     addTask(pick.row.path, `pilots/${owner}/skins`, name, `機師 ${owner} 造型`, `skin-${classifyNpcFile(name).kind}`)
     if (!fs.existsSync(tasks.at(-1).dest)) skinReport.fresh.add(`${owner}（${key}）`)
+    if (classifyNpcFile(name).kind === 'raw') addSceneViewTask(key)
   }
   notes.push(`不是可抽機師的立繪 ${skinReport.npcSkipped} 個檔——歸 --npc（上站的 NPC 圖庫）`)
 } else if (MODE === 'npc') {
@@ -541,6 +552,7 @@ if (MODE === 'v3') {
     const pick = pickRow(rs, name)
     if (pick.conflict) { problems.push(`${name}：同名 Texture2D 內容不同 ${pick.conflict.join(' ／ ')}`); continue }
     addTask(pick.row.path, `npc/${dir}`, name, `NPC ${dir}`, `npc-${c.kind}`)
+    if (c.kind === 'raw') addSceneViewTask(c.key)
   }
   notes.push(`可抽機師（含外觀）略過 ${skipped.size} 個號碼——他們在 game/pilots/`)
 } else {
@@ -591,6 +603,9 @@ if (APPLY) {
   for (const [from, to] of uiReport.moves) { fs.mkdirSync(path.dirname(to), { recursive: true }); fs.renameSync(from, to) }
 }
 async function run(t) {
+  // 鑑賞版：去背的造型沒有被暈掉的背景可救，不產、也不計數（已存在的必定是場景，照一般規則跳過）
+  const view = t.view && (FORCE || !fs.existsSync(t.dest)) ? await sceneViewWebp(t.src) : undefined
+  if (view === null) return
   bump(t.group, 'n', 1)
   bump(t.group, 'srcBytes', fs.statSync(t.src).size)
   const have = fs.existsSync(t.dest) ? t.dest : movedFrom.get(t.dest)
@@ -598,7 +613,8 @@ async function run(t) {
   // 圖示（PLAN-055）：128px 平塗圖 lossless 比 q82 還小；本來就是 .webp 的（站上舊圖、--promote 的封存檔）直接複製、不重壓
   // 職業／駕照（PLAN-059）是白色字形、前台當 CSS mask 用：lossless 與 q82 一樣大，取邊緣不糊的 lossless
   const isIcon = t.group.startsWith('icon-') || t.group === 'emblem-class' || t.group === 'emblem-license'
-  const buf = (isIcon || t.group === 'promote') && t.src.endsWith('.webp') ? fs.readFileSync(t.src)
+  const buf = view ? view
+    : (isIcon || t.group === 'promote') && t.src.endsWith('.webp') ? fs.readFileSync(t.src)
     : isIcon ? await sharp(t.src).webp({ lossless: true, effort: 6 }).toBuffer()
     : await sharp(t.src).webp({ quality: 82 }).toBuffer()
   bump(t.group, 'outBytes', buf.length)
@@ -721,9 +737,11 @@ const skinSection = MODE !== 'skins' ? [] : [
   '## 機師造型（外觀）', '',
   `- 落點：${path.join(destRoot, 'pilots')}／<gameId>／skins／<官方檔名>.webp（上站；故事館的外觀切換讀這裡）`,
   `- 這次新增的造型：${[...skinReport.fresh].sort().join('、') || '（無）'}`,
-  `- 依 pilotSkinMeta.json 改放到別位機師的：${[...skinReport.moved].sort().join('、') || '（無）'}`, '',
+  `- 依 pilotSkinMeta.json 改放到別位機師的：${[...skinReport.moved].sort().join('、') || '（無）'}`,
+  `- 場景外觀的鑑賞版（${SCENE_VIEW_SUFFIX}，官方暈邊收窄、故事館全身鑑賞用）：見上表 skin-view 列（去背的造型不產、不計）`, '',
   '### 下一步（照抄）', '',
-  `- ${skinReport.fresh.size ? '⬜' : '✅'} 有新造型時：\`npm run dev\`（會重產 src/data/gameArtIndex.ts 的 GAME_PILOT_SKINS），到故事館該機師頁確認舞台左下的「外觀」列出現新頭像`,
+  `- ${skinReport.fresh.size ? '⬜' : '✅'} 有新造型時：\`npm run dev\`（會重產 src/data/gameArtIndex.ts 的 GAME_PILOT_SKINS），到故事館該機師頁確認舞台左下的「外觀」列出現新頭像；`
+    + '場景外觀再按「全身立繪」，應看到完整場景、只剩很細的柔邊（還是大片暈邊＝鑑賞版沒產到，dev 的終端機會有 ⚠ 提示）',
   '- ⬜ 造型名稱、台版還沒推出要先藏起來的：編輯 scripts/lib/pilotSkinMeta.json（name／hidden，選填），再跑一次 `npm run dev`',
   '- ⬜ 照規則 commit（public/images/game/pilots/*/skins/ 與 src/data/gameArtIndex.ts 一起）、push；部署完成後新圖若 404 要到 Cloudflare Purge', '',
 ]

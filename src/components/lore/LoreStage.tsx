@@ -59,7 +59,7 @@ export default function LoreStage({ pilot, art, tools }: LoreStageProps) {
 
   const serial = pilot.id.match(/^pilot_(\d+)/)?.[1] ?? ''
   const nameEn = pilot.nameEn?.trim()
-  // 簽名字級依名字長度縮：長名（Yevgeny Ivanovic Goman）照官網做法縮小
+  // 簽名字級依名字長度縮：長名（Yevgeny Ivanovic Goman）照官網做法縮小。給無單位數字（px 基準），CSS 再依舞台高度等比縮
   const sigSize = nameEn ? Math.round(Math.min(150, Math.max(70, 1400 / Math.max(6, nameEn.length)))) : 0
 
   return (
@@ -68,11 +68,6 @@ export default function LoreStage({ pilot, art, tools }: LoreStageProps) {
 
       <div className="lore-portrait">
         <div className="lore-portrait__inner">
-          {nameEn && (
-            <div className="lore-sig" aria-hidden="true" style={{ '--sig-size': `${sigSize}px` } as React.CSSProperties}>
-              {nameEn}
-            </div>
-          )}
           {layers.map((l) => (
             <div
               key={l.art.key}
@@ -98,6 +93,12 @@ export default function LoreStage({ pilot, art, tools }: LoreStageProps) {
             // 未建檔不留白（專案慣例）：不是把她藏起來
             <div className="lore-figure" data-variant="wide" style={{ display: 'grid', placeItems: 'center', width: '40vw', fontSize: '0.7rem', color: 'var(--lore-ink-3)' }}>
               立繪未建檔
+            </div>
+          )}
+          {/* 英文簽名疊在人物**前面**（官網的圖層順序；放後面會被立繪整條擋住）。配色與起筆位置見 index.css 的 .lore-sig */}
+          {nameEn && (
+            <div className="lore-sig" aria-hidden="true" style={{ '--sig': sigSize } as React.CSSProperties}>
+              {nameEn}
             </div>
           )}
         </div>

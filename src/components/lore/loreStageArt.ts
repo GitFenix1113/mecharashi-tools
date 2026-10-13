@@ -13,7 +13,8 @@ import type { Pilot } from '../../types'
  * 'tall'     站上原稿 art.webp（直式全身）：依高度放大 1.52 倍、靠頂取景（頭到大腿）；全身留給鑑賞模式
  * 'wide'     官方 Raw（1240×1080 橫式半身）：全高
  * 'official' 官網 hero 圖層（8 位）：彩圖＋手繪線稿＋名字層
- * 'scene'    帶背景的場景插畫外觀（四角官方已暈開）：置中略小、留紙邊
+ * 'scene'    帶背景的場景插畫外觀（四角官方已暈開）：置中略小、留紙邊。
+ *            舞台要的就是這個暈邊（融進紙面）；全身鑑賞改看鑑賞版 `_Raw_view`（暈邊收窄、看得到完整場景，scripts/lib/sceneArt.mjs）
  */
 export type StageVariant = 'tall' | 'wide' | 'official' | 'scene'
 
@@ -30,7 +31,7 @@ export interface StageArt {
   lineArt: boolean
   /** 官網名字層（只有官網 8 位的預設立繪有） */
   nameLayer?: string
-  /** 鑑賞模式的圖：有全身原稿就給全身 */
+  /** 鑑賞模式的圖：有全身原稿就給全身；場景外觀給鑑賞版（沒有暈邊） */
   full: string
 }
 
@@ -59,7 +60,7 @@ export function skinStageArt(pilot: StagePilot, skin: PilotSkinArt): StageArt {
     variant: skin.scene ? 'scene' : 'wide',
     color: url, line: url, filtered: true,
     lineArt: LORE_ART_TUNING[pilotArtDir(pilot) ?? '']?.lineArt !== false,
-    full: url,
+    full: skin.view ? assetUrl(skin.view) : url,
   }
 }
 

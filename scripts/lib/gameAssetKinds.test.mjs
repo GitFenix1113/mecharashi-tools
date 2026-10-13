@@ -8,8 +8,8 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { MECH_KINDS, PILOT_KINDS, classifyMechFile, classifyNpcFile, classifyPilotFile, mechFileName, npcDirOf, pilotFileName, playableArtDirs } from './gameAssetKinds.mjs'
-import { mechGameFileName, pilotGameFileName } from '../../src/utils/gameArt.ts'
+import { MECH_KINDS, PILOT_KINDS, SCENE_VIEW_SUFFIX, classifyMechFile, classifyNpcFile, classifyPilotFile, mechFileName, npcDirOf, pilotFileName, playableArtDirs } from './gameAssetKinds.mjs'
+import { SCENE_VIEW_SUFFIX as SCENE_VIEW_SUFFIX_TS, mechGameFileName, pilotGameFileName } from '../../src/utils/gameArt.ts'
 
 const PILOTS = [
   ['10103123', 'Pilot_10103123A'],
@@ -38,6 +38,12 @@ test('機甲檔名：腳本版與前台版一致，且分類回去得到原本�
       assert.equal(classifyMechFile(name, wap)?.kind, kind)
     }
   }
+})
+
+test('場景外觀的鑑賞版：兩份尾碼一致，而且不會被當成立繪（否則 skins／npc 掃描會多出一種圖）', () => {
+  assert.equal(SCENE_VIEW_SUFFIX, SCENE_VIEW_SUFFIX_TS)
+  assert.equal(classifyPilotFile(`Pilot_10103159B${SCENE_VIEW_SUFFIX}`, '10103159'), null)
+  assert.equal(classifyNpcFile(`Pilot_13046B${SCENE_VIEW_SUFFIX}`), null)
 })
 
 test('不屬於讀取端的檔案分類為 null（例：藍色魔鳥多出來的 Icon_mecha_wap2071_1）', () => {

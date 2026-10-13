@@ -116,9 +116,10 @@ test('造型（PLAN-042-D）：skins/ 子資料夾以 gameId 查、NPC 圖庫的
   assert.equal(camilla[0].key, 'Pilot_10103146B')
   assert.equal(camilla[0].scene, true)
   assert.equal(camilla[0].raw, '/images/game/pilots/10103146/skins/Pilot_10103146B_Raw.webp')
+  assert.equal(camilla[0].view, '/images/game/pilots/10103146/skins/Pilot_10103146B_Raw_view.webp')   // 場景外觀的鑑賞版
   assert.equal(camilla[0].label, '外觀 1')
   // 洛莎·審判：Pilot_10103107B 依 pilotSkinMeta.json 的 owner 放在她這裡
-  assert.ok(pilotSkins({ id: 'pilot_032_洛莎審判', gameId: '10103154' }).some((s) => s.key === 'Pilot_10103107B'))
+  assert.ok(pilotSkins({ id: 'pilot_032_洛莎審判', gameId: '10103154' }).some((s) => s.key === 'Pilot_10103107B' && !s.view))   // 去背的沒有鑑賞版
   assert.ok(!pilotSkins({ id: 'pilot_003_洛莎', gameId: '10103107' }).some((s) => s.key === 'Pilot_10103107B'))
   // 海莉絲：NPC 圖庫裡的那套（npcArtNotes owner＋外觀卡）
   const hailis = pilotSkins({ id: 'pilot_049_海莉絲', gameId: '10103174' })

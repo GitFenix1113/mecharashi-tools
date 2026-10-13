@@ -553,7 +553,7 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
 .lore-page[data-side="left"]  .lore-stage__serial { left: calc(var(--ox) + 1 * var(--u)); }
 .lore-page[data-side="right"] .lore-stage__serial { right: calc(var(--ox) + 1 * var(--u)); }
 
-/* 立繪群組：簽名（人物後面）＋人物。開場時整組置中，之後移到一側、往正文方向的漸隱帶同時打開 */
+/* 立繪群組：人物＋簽名（人物前面）。開場時整組置中，之後移到一側、往正文方向的漸隱帶同時打開 */
 .lore-portrait {
   position: absolute; inset: 0;
   transition: transform 950ms var(--lore-ease-io), -webkit-mask-position 950ms var(--lore-ease-io), mask-position 950ms var(--lore-ease-io), opacity 500ms ease;
@@ -628,7 +628,7 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
 .lore-figure.is-dressing .lore-figure__sketch { animation: lore-line-flash 900ms ease both; }
 @keyframes lore-dress-in { from { -webkit-mask-position: 0 100%; mask-position: 0 100%; } to { -webkit-mask-position: 0 0; mask-position: 0 0; } }
 
-/* 直書姓名（舞台外側上方；紙色光暈墊底，構圖撞到時仍讀得到）＋人物後面的英文簽名 */
+/* 直書姓名（舞台外側上方；紙色光暈墊底，構圖撞到時仍讀得到）＋人物前面的英文簽名 */
 .lore-vname {
   position: absolute; top: 3.5vh; writing-mode: vertical-rl; display: flex; flex-direction: column; gap: 8px;
   font-family: var(--lore-kai); color: var(--lore-ink); opacity: 0;
@@ -642,9 +642,15 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
 .lore-vname__mark { width: 10px; height: 10px; border: 1.5px solid var(--lore-ink); position: relative; margin-bottom: 4px; }
 .lore-vname__mark::after { content: ''; position: absolute; inset: 2px; background: var(--lore-ink); }
 .lore-vname__rule { width: 1px; height: 54px; background: var(--lore-ink); opacity: 0.55; }
+/* 英文簽名疊在人物前面（官網的圖層順序，2026-10-13 站長；放後面時整條被立繪擋住）：
+ *   配色取官網名字層實測值——純白約六成不透明＋邊緣一圈淡墨：落在人物上看得到、落在紙面上也還讀得出來。
+ *     原本的深墨 17% 疊到人物上像一道髒污。
+ *   從胸口高度起筆：5vh 起筆時，測的四位（阿黛勒、艾達、塞拉、尼爾）都劃過臉或瀏海。
+ *   字級跟舞台高度等比縮（860＝1600×900 的舞台高）：起筆下移後，矮視窗的長名字才不會整段沉進底部漸隱。 */
 .lore-sig {
-  position: absolute; top: 5vh; white-space: nowrap; line-height: 1;
-  font-family: 'Mr Dafoe', cursive; font-size: var(--sig-size, 120px); color: rgba(43, 38, 33, 0.17);
+  position: absolute; top: calc(var(--stage-h) * 0.31); white-space: nowrap; line-height: 1;
+  font-family: 'Mr Dafoe', cursive; font-size: min(calc(var(--sig, 120) * 1px), calc(var(--sig, 120) * var(--stage-h) / 860));
+  color: rgba(255, 255, 255, 0.62); text-shadow: 0 0 1px rgba(43, 38, 33, 0.45), 0 0 6px rgba(43, 38, 33, 0.12);
   transform-origin: 0 50%; rotate: 97deg; opacity: 0;
 }
 .lore-page[data-side="left"]  .lore-sig { left: calc(var(--cx) + 7 * var(--u)); }
@@ -977,7 +983,10 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
 .lore-viewer.is-zoom { cursor: zoom-out; }
 .lore-viewer.is-zoom > img { transform: scale(2.1); transition: transform 380ms var(--lore-ease-out), transform-origin 0s; }
 @keyframes lore-viewer-in { from { opacity: 0; transform: scale(0.94) translateY(12px); } to { opacity: 1; transform: none; } }
-.lore-viewer__cap { position: absolute; left: 24px; bottom: 20px; font-size: 12px; color: var(--lore-ink-2); letter-spacing: 0.1em; display: flex; gap: 14px; align-items: baseline; }
+/* 說明、外觀列、關閉鈕墊在圖上層：場景外觀的鑑賞版邊緣不透明，會蓋到它們（說明另加紙色光暈，壓在暗色畫面上也讀得到） */
+.lore-viewer__cap, .lore-viewer__skins, .lore-viewer__close { z-index: 1; }
+.lore-viewer__cap { position: absolute; left: 24px; bottom: 20px; font-size: 12px; color: var(--lore-ink-2); letter-spacing: 0.1em; display: flex; gap: 14px; align-items: baseline;
+                    text-shadow: 0 0 4px rgba(239, 231, 216, 0.95), 0 0 10px rgba(239, 231, 216, 0.85); }
 .lore-viewer__cap b { font-family: var(--lore-kai); font-size: 26px; letter-spacing: 0.2em; color: var(--lore-ink); font-weight: 400; }
 .lore-viewer__close { position: absolute; top: 14px; right: 16px; border: 1px solid var(--lore-line-3); background: rgba(251, 247, 239, 0.85); border-radius: 999px; padding: 6px 14px; font-size: 12px; cursor: pointer; color: var(--lore-ink); }
 .lore-viewer__skins { position: absolute; right: 24px; bottom: 18px; cursor: default; }
@@ -1001,8 +1010,7 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
   .lore-page[data-side] .lore-vname { left: auto; right: 14px; top: 14px; }
   .lore-vname__main { font-size: 26px; }
   .lore-vname__sub { font-size: 12px; }
-  .lore-sig { --sig-size: 76px !important; }
-  .lore-page[data-side] .lore-sig { left: 66vw; }
+  .lore-page[data-side] .lore-sig { left: 66vw; }   /* 字級不必另外覆寫：桌機規則依舞台高度（62svh）等比縮 */
   .lore-page[data-side] .lore-stage__serial { left: auto; right: -2vw; bottom: -2vh; font-size: 22vh; }
   .lore-page[data-side] .lore-filetag { display: none; }
   .lore-page[data-side] .lore-stage-tools { left: 12px; right: auto; top: 12px; bottom: auto; flex-direction: column; align-items: flex-start; gap: 8px; }
