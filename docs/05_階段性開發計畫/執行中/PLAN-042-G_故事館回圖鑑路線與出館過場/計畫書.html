@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-G 故事館回圖鑑路線與出館過場 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-G 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-042-G</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    故事館回圖鑑路線與出館過場<span style="-webkit-text-fill-color:var(--text-secondary);"> Exit to Codex · 落款鈐印 · 關門過場</span>
+  </h1>
+  <p class="hero-sub">圖鑑有「故事館 ▸」，故事館卻回不去。補上三個出口（離館跟著網址走、名字旁的朱印、切換列的「圖鑑 ↗」），並讓離館播一段與「推門進館」成對的「關門」過場。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label green">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value green">PLAN-042-G</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-14</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">館內 header · 卷宗標題區 · 切換列 · 全站 View Transition 樣式</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">開發完成 8／8 · 已推送、待正式站複驗</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-042-D（舞台與卷宗、切換列）· PLAN-042-E（圖鑑的「故事館 ▸」入口）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>只有單向：圖鑑 → 故事館</strong><br>
+    PLAN-042-E 在圖鑑詳情頁名字旁放了「故事館 ▸」，故事館裡卻沒有回這位機師圖鑑的路。館內唯一的出口是 header 的「離館 ↗」，落點是 <code>/pilots</code> 列表——得再找一次人。
+  </div>
+  <div class="problem-block">
+    <strong>分享連結、館首頁進來的人完全沒有路</strong><br>
+    只有從圖鑑進館的人能靠瀏覽器「上一頁」回去；而且館內換人用 <code>replace</code>，換過人之後「上一頁」回到的是<b>進館時那位</b>的圖鑑，不是正在看的這位。
+  </div>
+  <div class="problem-block">
+    <strong>出館是硬切</strong><br>
+    進館有「推門」（<code>.lore-veil</code> 深色斜切擦開，PLAN-042-C A-4），離館則是紙色瞬間換成深色站內，沒有對應的收尾。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一（站長 2026-10-14）：底線＋A 落款鈐印＋D 切換列按鈕，三個都做</strong><br>
+    提案比較了四個館內方案（A 落款鈐印、B 檔案分頁籤、C 卷末參見卡、D 切換列加一鈕）與一條共同底線，見 <code>_local-notes/2026-10/2026-10-14_故事館回圖鑑路線方案/</code>（可互動模擬稿）。
+    建議是底線＋A；站長加上 D：「這樣閱讀的時候也能隨時切換」——A 在標題區，閱讀模式看不到，D 的切換列在任何模式都在。B（分頁籤暗示同頁切換、預期落差大）與 C（要捲到最底）不做。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二（設計）：底線——「離館 ↗」跟著網址走</strong><br>
+    在 <code>/lore/pilots/:id</code>（含章節頁）時落點改為 <code>/pilots/:id</code>，館首頁維持 <code>/pilots</code>；標籤不變、只補滑鼠提示。
+    <code>Layout.tsx</code> 用 <code>useMatch('/lore/pilots/:id/*')</code> 取 id（元件式路由也能用；拿到的是解碼後的值，組網址時再 <code>encodeURIComponent</code>）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三（設計）：A 落款鈐印——名字旁一方「機師圖鑑」朱印</strong><br>
+    與圖鑑的「故事館 ▸」鏡像對稱（都在名字旁），朱紅 <code>#b10000</code> 與楷體都是館內現成的語彙。白文印（紅底白字）46px、印文<b>橫排兩行</b>「機師／圖鑑」——傳統印的右起直排會被讀成「圖機鑑師」；印下 <code>COMBAT DATA ↗</code> 小字（沿用徽章圈 caption 的樣式）。
+    印泥紋理是 <code>LoreLayout</code> 的 SVG 濾鏡 <code>#lore-stamp</code>（與 <code>#lore-sketch</code> 同處）。hover 時按壓（縮小、轉正）；完整開場的最後一拍播「蓋章」（只在 <code>is-reveal-full</code> 裡，換人、進出閱讀模式、開場被快轉都不重播）。
+    <code>LoreDossier</code> 也被後台預覽渲染，所以網址是選填 prop <code>codexHref</code>：預覽不傳＝不蓋印，管理者不會一點就被帶離編輯台。
+    手機收掉印下小字、印縮成 40px：五字名（淬鋒·凱登、洛莎·審判）連小字一起放不下，印會被擠到下一行（375px 實測）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四（設計）：D 切換列尾端「圖鑑 ↗」</strong><br>
+    名冊鈕之後隔一條細線、紅色膠囊鈕：紅色＝離館，與館內動作（名冊，墨色）分開。手機只留圖示（同名冊鈕）。
+    觸控「第一下只升起列」的既有規則照樣適用——<code>nav</code> 的 capture 階段會先攔下點擊，連結不會被觸發。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五（設計）：連結指向「顯示中的那位」</strong><br>
+    印與切換列按鈕用 <code>shown.id</code>，不用網址的 <code>id</code>：換人時網址先變、舞台與卷宗落後一拍（PLAN-042-D A-6），點下去應該去畫面上看到的那位。header 只知道網址，0.3 秒的差距可以接受。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六（站長 2026-10-14＋設計）：出館「關門」過場</strong><br>
+    View Transitions：舊畫面（館內）原地微暗，新畫面（深色站內）以進館遮罩<b>同一道斜邊</b>（上 118%／下 145%）從右側蓋回來，620ms。三個出口共用 <code>LoreExitLink</code>（就是 <code>&lt;Link&gt;</code>，href 照常；中鍵、修飾鍵、開新視窗交回瀏覽器）。
+    樣式只掛在 <code>html.lore-exiting</code> 底下，不寫裸的 <code>::view-transition-*</code>；不支援的瀏覽器與 reduced-motion 直接換頁。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 為什麼不能照教科書寫 <code>flushSync(() =&gt; navigate(to))</code></strong><br>
+    React Router v7 的 <code>&lt;BrowserRouter&gt;</code> 預設把路由的 setState 包在 <code>React.startTransition</code>（<code>useTransitions</code> 沒設＝開），transition 不吃 <code>flushSync</code>——
+    update callback 結束時 React 還沒換頁，瀏覽器拍到的「新畫面」仍是故事館，整段過場等於沒播。<code>&lt;Link viewTransition&gt;</code> 也只對 data router 有效。
+    因此 callback 改成等 <code>html.lore-mode</code> 消失（<code>LoreLayout</code> 卸載時拿掉它＝新頁面已 commit、body 也換回深色），用 MutationObserver 而不是 rAF（callback 期間瀏覽器暫停繪製），保險絲 1.5 秒。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label green">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>出館過場：<code>loreExit.ts</code>、<code>LoreExitLink.tsx</code>、<code>index.css</code> 的 <code>html.lore-exiting</code> 區塊</li>
+      <li>底線：<code>Layout.tsx</code> 的館內 header</li>
+      <li>落款鈐印：<code>LoreDossier</code> 的 <code>codexHref</code>、<code>LoreLayout</code> 的 <code>#lore-stamp</code>、CSS 與開場蓋章</li>
+      <li>切換列按鈕：<code>LoreSwitcher</code> 的 <code>codexHref</code>／<code>codexName</code>、CSS</li>
+      <li>頁面規劃文件與更新履歷</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>B 檔案分頁籤、C 卷末參見卡（C 等之後真的有第二條交叉連結——例如官配機甲——再議）</li>
+      <li>「從圖鑑進館、沒換過人就用上一頁回去」（保留圖鑑捲動位置）：要在圖鑑的「故事館 ▸」帶 state，且上一頁是非同步的 popstate、接不上過場；先不做</li>
+      <li>圖鑑端的進館過場（圖鑑 → 故事館已有推門）</li>
+      <li>機甲館（PLAN-042-B）：元件沿用，屆時把 <code>codexHref</code> 指到 <code>/mechs/:id</code> 即可</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label green">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-042-G 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042_故事館_總綱/計畫書.html">
+      <div class="doc-tag">Parent</div>
+      <h4>◆ PLAN-042 故事館總綱</h4>
+      <p>子計畫拆分與共用決策</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042-D_故事館改版_舞台與卷宗/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-042-D 舞台與卷宗</h4>
+      <p>卷宗標題區、切換列、換人過場</p>
+    </a>
+    <a class="doc-item" href="../../../03_頁面規劃/13_故事館/index.html">
+      <div class="doc-tag">Page</div>
+      <h4>◆ 故事館頁面規劃</h4>
+      <p>出口與過場的頁面規格</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-G — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
