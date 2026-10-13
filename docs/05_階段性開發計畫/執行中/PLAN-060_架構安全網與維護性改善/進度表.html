@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-060 架構安全網與維護性改善 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+.note-warn {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.note-warn strong { color: var(--accent-yellow); }
+/* 共用 style.css 沒有 red 的 hero-badge 與 section-label，本頁自帶 */
+.hero-badge.red   { border-color: var(--accent-red); color: var(--accent-red); background: rgba(239,68,68,0.06); }
+.section-label.red { color: var(--accent-red); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-060 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(239,68,68,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge red">◆ PLAN-060</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-red) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">架構安全網與維護性改善</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-13</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label red">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">40</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">40</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-red);">0 / 40</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>任何一次存檔要嘛完整成功（文件、版本號、歷史與改前快照一起寫入），要嘛明確失敗並告訴編輯者；每週有一份備份可以回溯；測試和部署後的冒煙檢查會自動擋下「本機全綠、正式站壞掉」；新增一個集合只要在登錄表加一行，漏了 tsc 就會報錯。
+  </div>
+  <div class="note-warn">
+    <strong>執行順序：</strong>A 段可以一次做完、一次 push。B-3 → B-4 → B-5 → B-6 有先後關係；B-4 動工前先請站長回覆計畫書的 Q1。
+    <strong>B-6 的 pilots／pilotLore 與整個 E 段，排在 PLAN-042-E 的 C／D 段部署之後</strong>（計畫書決策八）。
+    C-2、C-5 和 B-1 的站長步驟需要本機或 Firebase 主控台，雲端 session 做不了。
+    <strong>本計畫不含模擬器相關項目</strong>（站長 2026-10-13 指示）。
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase A ───────────────────────── -->
+<section class="section">
+  <div class="section-label red">Phase A</div>
+  <div class="section-title">A 安全網速修</div>
+  <div class="section-desc">全部是半天內可以完成的小改，彼此獨立。先做 A-1，後面每一步就有測試在背後撐著。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; CI 與 pre-push 跑測試、lint、Worker 型別檢查</div>
+      <div class="task-group-meta">.github/workflows · .githooks/pre-push · package.json</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">deploy／preview 加 test job，build 依賴它</div>
+        <div class="task-desc">Node 版本改成 ≥ 22.18（<code>node --test</code> 直接跑 .ts 需要 type stripping；2026-10-13 用 Node 22.22 實測 1401／1407 通過，失敗的 5 個都只是缺套件）。
+          新增 <code>.nvmrc</code>，workflow 用 <code>node-version-file</code> 讀它，<code>package.json</code> 補 <code>engines.node</code>。
+          test job 依序跑 <code>npm ci</code> → <code>npm test</code> → <code>npm run lint</code>，build job 設 <code>needs: test</code>。
+          先在本機確認 lint 是零錯誤；若現在就有錯，先修掉再接上，不要用 <code>continue-on-error</code> 帶過。</div>
+        <div class="task-file">.github/workflows/deploy.yml · .github/workflows/preview.yml · .nvmrc · package.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">pre-push 先跑 npm test 再 build</div>
+        <div class="task-desc">測試約 7 秒，放在 build 前面可以更快失敗。
+          <code>routeKeys.ts</code> 註解寫「pre-push hook 會擋下」，在這一步之前並不成立，完成後順手核對註解。CLAUDE.md 第 5 節的 hooks 說明一併更新。</div>
+        <div class="task-file">.githooks/pre-push · src/lib/analytics/routeKeys.ts · CLAUDE.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Worker 型別檢查，並清掉範本測試</div>
+        <div class="task-desc">Worker 不在根目錄 <code>tsc -b</code> 的範圍內，<code>wrangler deploy</code> 也不做型別檢查。
+          test job 加 <code>npm ci --prefix workers &amp;&amp; npx tsc -p workers --noEmit</code>。
+          <code>workers/test/index.spec.ts</code> 仍是 Hello World 範本：刪掉它與 vitest 設定，或改成真正的測試。<code>README.md:118</code> 叫人跑的指令也要一起修。</div>
+        <div class="task-file">workers/test/* · workers/vitest.config.mts · README.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 路由層 ErrorBoundary</div>
+      <div class="task-group-meta">src/components/common/RouteErrorBoundary.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">包住 Layout 與 LoreLayout 的 Outlet</div>
+        <div class="task-desc">寫一個 class 元件，<code>key</code> 綁 <code>location.pathname</code>，換頁時自動重置。
+          fallback 保留導覽列，顯示「這一頁出錯了」，附「重新整理」與「回首頁」。lazy chunk 載入失敗時沿用既有的 <code>vite:preloadError</code> 重整保護。
+          分別包住 <code>Layout.tsx:467</code> 與 <code>LoreLayout.tsx:170</code> 的 <code>&lt;Outlet/&gt;</code>。
+          <code>ModuleBoundPart.tsx:18</code>、<code>MechAdmin.tsx:735</code> 那兩段「本專案沒有 ErrorBoundary」的註解要改寫。</div>
+        <div class="task-file">src/components/common/RouteErrorBoundary.tsx · src/components/layout/Layout.tsx · src/pages/lore/LoreLayout.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">根外殼的 localStorage 包 try/catch</div>
+        <div class="task-desc"><code>Layout.tsx:146、189</code> 直接讀 localStorage；瀏覽器封鎖儲存時會在根外殼拋錯，連 ErrorBoundary 都接不住。</div>
+        <div class="task-file">src/components/layout/Layout.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 移除 public/debug</div>
+      <div class="task-group-meta">public/debug/*.json</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">取消追蹤，並清掉線上那份</div>
+        <div class="task-desc">4 個 API 傾印檔（約 92 KB）已在 <code>.gitignore:68</code>，卻仍被追蹤，沒有任何程式引用，而且會隨著 <code>public/</code> 被部署出去。
+          執行 <code>git rm -r --cached public/debug</code>。<strong>注意：</strong>gh-pages 是 <code>keep_files: true</code>，<code>prune-gh-pages</code> 只清 <code>assets</code> 與 <code>images</code>，
+          所以線上的 <code>/debug/*</code> 不會自動消失：要從 gh-pages 手動 <code>git rm</code>，或在 deploy.yml 的 prune 參數加上 <code>debug:0</code>。
+          完成後用 curl 確認 <code>/debug/api_calls.json</code> 回 404。</div>
+        <div class="task-file">public/debug/ · .github/workflows/deploy.yml</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 程式碼分割與首包瘦身</div>
+      <div class="task-group-meta">src/App.tsx · src/lib/firebase.ts · vite.config.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">靜態 import 的大頁改成 lazy</div>
+        <div class="task-desc"><code>AdminPage</code>（<code>App.tsx:24</code>，閉包約 33k 行，一般訪客用不到）、<code>LoadoutPage</code>、<code>PilotDetailPage</code>、<code>ResearchPage</code>、<code>NewsPage</code>。
+          每頁先查有沒有「必須靜態 import」的註解理由（例如 <code>LoreLayout</code> 那種）。
+          <code>LoadoutPage</code> 只改 <code>App.tsx</code> 的 import 方式，不碰模擬器內部。
+          用 <code>vite build</code> 比較前後的 chunk 大小，記在本列。</div>
+        <div class="task-file">src/App.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">刪掉從未使用的 Firebase Storage 初始化</div>
+        <div class="task-desc"><code>lib/firebase.ts:10、56、63</code> 在模組頂層呼叫 <code>getStorage()</code> 與 <code>connectStorageEmulator</code>。全站沒有任何地方用到 <code>storage</code>（上傳走 Cloudinary），而頂層副作用讓 tree-shaking 拿不掉它。
+          CLAUDE.md 第 6 節技術棧的「Storage」一併拿掉。</div>
+        <div class="task-file">src/lib/firebase.ts · CLAUDE.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">更新履歷、html-to-image 動態載入，並切出 vendor chunk</div>
+        <div class="task-desc">① <code>SiteChangelog.tsx</code> 改成 <code>import()</code> 載入 <code>src/data/siteChangelog</code>（約 180 KB）。
+          ② <code>VersionQuickTable.tsx:2</code> 的 <code>html-to-image</code> 改成點擊匯出時才 <code>await import</code>。
+          ③ <code>vite.config.ts</code> 加 <code>manualChunks</code>，把 firebase 與 react／react-router 各切成 vendor chunk，讓每天多次部署時這兩包能留在瀏覽器快取裡。</div>
+        <div class="task-file">src/components/home/SiteChangelog.tsx · src/components/versions/VersionQuickTable.tsx · vite.config.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; Context value 用 useMemo 包起來</div>
+      <div class="task-group-meta">src/contexts/*.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">ReferenceContext、GameDataContext、AuthContext</div>
+        <div class="task-desc"><code>ReferenceContext.tsx:224</code> 的 value 每次 render 都是新物件，hover 進出各觸發一次，導致 <code>PilotDetailPage</code>、<code>VersionQuickTable</code> 整頁重繪。
+          <code>GameDataContext.tsx:322</code> 同樣的問題已經引發過一次無限重抓（<code>useRefScanData.ts:22-25</code>）；<code>AuthContext.tsx:230</code> 也一樣。
+          ReferenceContext 可再把 actions 與狀態拆成兩個 context。用 React DevTools Profiler 確認 hover 速覽表時不再整頁重繪。</div>
+        <div class="task-file">src/contexts/ReferenceContext.tsx · GameDataContext.tsx · AuthContext.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-6 &nbsp; 後台輸入框與編輯狀態的 bug</div>
+      <div class="task-group-meta">src/components/admin/ListInput.tsx · PilotAdmin · shared.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">逗號分隔欄位打不出逗號（10 處）</div>
+        <div class="task-desc"><code>value={arr.join(', ')}</code> 搭配 <code>filter(Boolean)</code>，會把剛打的逗號立刻吃掉。
+          <code>AnnouncementReviewPanel.tsx:516-534</code> 已經寫好修正版 <code>ListInput</code>（自留一份字串、即時同步陣列），把它搬到 <code>components/admin/ListInput.tsx</code>，替換以下 10 處：
+          <code>PilotAdmin.tsx:914</code>、<code>SkillAdmin.tsx:230</code>、<code>NeuralDriveAdmin.tsx:303</code>、<code>BackpackSkillAdmin.tsx:177、314</code>、<code>GlossaryAdmin.tsx:81</code>、<code>AdminTimedActivityEditor.tsx:291、307、324、369</code>。
+          ID 類的清單（如 <code>buffIds</code>）把查不到的 ID 標紅。</div>
+        <div class="task-file">src/components/admin/ListInput.tsx · 上列 7 檔</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">PilotAdmin 的技能指派要進草稿</div>
+        <div class="task-desc"><code>assignedIds</code> 放在 <code>form</code> 之外（<code>PilotAdmin.tsx:1500-1503、1545、1711</code>），但草稿只監聽 <code>form</code>（<code>:1480</code>）。
+          結果是只調整技能順序不會產生草稿，還原草稿時技能變更也會遺失。把技能併進 <code>form</code>。
+          同一檔案 PLAN-042-E 的 D-1 也會改，動工前先看 042-E 的進度。</div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">有未存變更時，取消要先確認</div>
+        <div class="task-desc">「取消」緊貼在「儲存」旁邊（<code>shared.tsx:446</code>），按下去會直接丟掉表單和草稿。
+          <code>useDraftWrite</code> 本來就有基準快照，用它判斷 dirty 狀態，有變更才跳確認。B-7 的 <code>useEntityEditor</code> 會接手這段邏輯。</div>
+        <div class="task-file">src/pages/user/admin/shared.tsx · src/hooks/useDraftAutosave.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase B ───────────────────────── -->
+<section class="section">
+  <div class="section-label red">Phase B</div>
+  <div class="section-title">B 寫入安全網（核心）</div>
+  <div class="section-desc">一份登錄表加一個統一的存檔函式，一次修好「沒有歷史」「bump 會失敗」「新增集合要改 20 處」「會被舊分頁覆寫」這四件事。對應計畫書決策二～五。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 每週自動備份 Firestore</div>
+      <div class="task-group-meta">.github/workflows/backup-firestore.yml · scripts/backup-firestore.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">建立唯讀 SA 與 GitHub secret，並回覆 Q2</div>
+        <div class="task-desc">在 GCP 建一個只有 <code>roles/datastore.viewer</code> 的服務帳號，金鑰存成 repo secret <code>BACKUP_SA_KEY</code>。
+          不要沿用公告排程的 <code>SCRAPER_SA_KEY</code>：那把可以寫入。
+          回覆計畫書 Q2：如果 repo 是 public，artifact 任何人都能下載。</div>
+        <div class="task-file">GCP IAM · GitHub repo secrets</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">備份腳本進版控，加每週 workflow</div>
+        <div class="task-desc">以本機 <code>scripts/temp_scripts/backup-firestore.mjs</code> 為基礎（由站長提供，或依格式重寫），改放 <code>scripts/backup-firestore.mjs</code> 並納入版控。
+          集合清單從 <code>collectionKeys.ts</code> 推導，再加上 <code>meta</code>；依 Q2 決定是否排除 users／builds／systemLog／analytics／changeHistory。
+          workflow 每週一次，另開 <code>workflow_dispatch</code> 可手動觸發，用 <code>actions/upload-artifact</code> 保留 90 天。
+          還原步驟寫進 README 的維運段。之後 C-3、C-4 的離線一致性檢查也接在這條 workflow 後面跑（計畫書決策九）。</div>
+        <div class="task-file">scripts/backup-firestore.mjs · .github/workflows/backup-firestore.yml · README.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 腳本端共用 bump，被忽略的維運腳本進版控</div>
+      <div class="task-group-meta">scripts/lib/dataVersion.mjs · .gitignore</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">scripts/lib/dataVersion.mjs 加測試，取代各腳本手寫的 bump</div>
+        <div class="task-desc">以 Admin SDK 版的 <code>bumpDataVersion(db, key)</code> 寫入 <code>versions.&lt;key&gt;</code>（merge，ISO 時間戳，格式與 <code>src/lib/api/versions.ts</code> 相同），另提供一個 batch 版本。
+          測試釘死欄位路徑：<code>derive-composite…:247-252</code> 就是把版本寫到了頂層欄位，畫面印「已 bump」，快取卻沒失效。
+          目前手寫 bump 的有 5 處：<code>derive-composite-backpack-skills.mjs:253</code>、<code>patch-image-paths.mjs:238</code>、<code>patch-module-weapon-dmg-fields.mjs:153</code>、<code>patch-weapon-upgrade.mjs:159</code>、<code>lib/announcementMergeAdmin.mjs:99</code>。
+          <strong>建議先做 D-7</strong>：前 4 支歸檔後，這裡只剩 <code>announcementMergeAdmin.mjs</code> 要改。</div>
+        <div class="task-file">scripts/lib/dataVersion.mjs · scripts/lib/dataVersion.test.mjs · scripts/lib/announcementMergeAdmin.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">bump-data-version.mjs 與 check-nd-minsum-drift.mjs 進版控</div>
+        <div class="task-desc">依計畫書 Q3。被忽略的理由是「內含 appkey」，但同一把 key 早就出現在有進版控的腳本與 docs 裡。
+          <code>bump-data-version.mjs</code> 改寫成 <code>dataVersion.mjs</code> 的薄 CLI，刪除 <code>.gitignore:92、95</code>。
+          <strong>注意：</strong>git 把被忽略的本機檔視為可覆寫，pull 之前先備份本機版本，比對有沒有遺漏的功能。
+          <code>README.md:61、109</code> 從此不再是死指令。</div>
+        <div class="task-file">scripts/bump-data-version.mjs · scripts/check-nd-minsum-drift.mjs · .gitignore</div>
+      </div>
+      <div class="task-assignee">站長（本機）＋開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; ENTITY_REGISTRY</div>
+      <div class="task-group-meta">src/lib/entityRegistry.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">登錄表與 EntityKind 型別</div>
+        <div class="task-desc">依計畫書決策二：kind → 集合名、CollectionKey、歷史種類、標籤、fetch、空值、能否刪除，用 <code>as const satisfies Record&lt;EntityKind, EntitySpec&gt;</code>。
+          <code>collectionKeys.ts</code> 維持零依賴（Worker 漂移測試要讀它），登錄表 import 它。
+          登錄表把 grayOps 的「集合名 <code>grayOps</code>／key <code>grayOpsRoster</code>」分清楚，拆掉 <code>changeHistory.ts:190</code> 的地雷。</div>
+        <div class="task-file">src/lib/entityRegistry.ts · src/lib/entityRegistry.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">changeHistory 的對照表改由登錄表推導</div>
+        <div class="task-desc"><code>ChangeTargetKind</code> 補上 pilot、mech、weapon、module、component、backpack（修改）、neuralDriveAbility、grayOps、patchVersion。
+          <code>TARGET_COLLECTION</code>、<code>TARGET_LABEL</code>、<code>SPEC_COLL_OF</code>（與 <code>TARGET_COLLECTION</code> 重複）、<code>AdminHistoryPage.tsx:29</code> 的 <code>TARGET_OPTIONS</code> 都改查登錄表。
+          新增測試：每個有後台編輯器的集合，要嘛有歷史種類，要嘛列在註明理由的豁免清單上。
+          型別變動依 CLAUDE.md 規則 2，同步更新 <code>changeHistory.html</code>。</div>
+        <div class="task-file">src/types/changeHistory.ts · src/lib/api/changeHistory.ts · src/pages/admin/AdminHistoryPage.tsx · docs/.../changeHistory.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; saveEntity()：原子寫入、bump、歷史與改前快照</div>
+      <div class="task-group-meta">src/lib/api/saveEntity.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">單一 transaction 的存檔入口</div>
+        <div class="task-desc">依計畫書決策三，<strong>動工前先等站長回覆 Q1</strong>。
+          <code>runTransaction</code> 依序：讀現況 → 比對基準（B-5 的接點）→ 驗證（B-7 的接點）→ <code>tx.set</code> 文件（沿用 <code>stripUndefined</code>）→ <code>tx.set(meta/gameData, {versions: {[key]: v}}, {merge: true})</code> → <code>tx.set</code> changeHistory 新文件（含 <code>before</code>）。
+          任何一步失敗就拋錯，permission-denied 沿用 <code>reportWriteDenied</code> 的診斷。回傳版本號，供 <code>patchCollectionItem</code> 就地同步。</div>
+        <div class="task-file">src/lib/api/saveEntity.ts · src/lib/api/firestoreCore.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">changeHistory 加 before 欄位，歷史頁可檢視</div>
+        <div class="task-desc">型別加上 <code>before?: Record&lt;string, unknown&gt;</code>，TTL 沿用兩年。<code>AdminHistoryPage</code> 顯示改前與改後的欄位差異，只能檢視，不做一鍵還原。
+          同步更新 <code>changeHistory.html</code>。</div>
+        <div class="task-file">src/types/changeHistory.ts · src/pages/admin/AdminHistoryPage.tsx · docs/.../changeHistory.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">emulator 規則測試釘住這條路徑</div>
+        <div class="task-desc">歷史併進 transaction 之後，<code>changeHistory</code> 的 create 規則（<code>actorUid == request.auth.uid</code>）一旦出錯，所有存檔都會失敗。
+          在 <code>tests/emulator/suites</code> 補三個測試：admin 存檔成功、非 admin 被拒、<code>before</code> 欄位可寫入。
+          另外補 npm script <code>test:emu</code>；目前 9 個套件的執行方式只寫在檔案註解裡。</div>
+        <div class="task-file">tests/emulator/suites/* · package.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-5 &nbsp; 並行檢查與草稿基準</div>
+      <div class="task-group-meta">src/utils/docHash.ts · useDraftAutosave · draft.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">docHash：正規化後的穩定雜湊</div>
+        <div class="task-desc">依計畫書決策四：鍵排序、先 <code>stripUndefined</code>、<strong>Timestamp 統一轉 ISO</strong>（Worker 已經轉成字串，直連拿到的是物件）。
+          測試要涵蓋「同一份文件，Worker 形狀與 SDK 形狀算出同一個雜湊」。</div>
+        <div class="task-file">src/utils/docHash.ts · src/utils/docHash.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">編輯器記基準，存檔時比對；草稿記基準，還原時警示</div>
+        <div class="task-desc">開啟編輯時記下基準雜湊，交給 <code>saveEntity</code> 比對；不一致就顯示「這筆在你開啟後被改過」，列出差異欄位，並提供「重新載入這一筆」。
+          <code>StoredDraft</code>（<code>draft.ts:14-25</code>）加 <code>baseHash</code>；<code>useDraftRestore</code>（<code>useDraftAutosave.ts:117-125</code>）還原時若現況已不同就先警示。
+          舊草稿沒有 <code>baseHash</code>，一律當作「無法確認」並給出警示。</div>
+        <div class="task-file">src/hooks/useDraftAutosave.ts · src/lib/diag/draft.ts · src/lib/api/saveEntity.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-6 &nbsp; 所有編輯器改走 saveEntity</div>
+      <div class="task-group-meta">src/lib/api/* · src/pages/user/admin/* · src/pages/admin/*</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">第一批：與 PLAN-042-E 不衝突的 12 個集合</div>
+        <div class="task-desc">mechs、weapons、modules、components、backpacks、neuralDriveAbilities、grayOps，以及原本走 <code>saveWithHistory</code> 的 buffs、pilotSkills、glossary、forms、backpackSkills。
+          刪除各 <code>update*</code>、<code>saveWithHistory</code> 與 <code>.catch(() =&gt; '')</code>。</div>
+        <div class="task-file">src/lib/api/{mechs,weapons,modules,components,backpacks,neuralDriveAbilities,grayOps,buffs,skills,glossary,forms,backpackSkills}.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">版本編輯器不再直接 setDoc</div>
+        <div class="task-desc"><code>AdminVersionEditorPage.tsx:401</code> 改用 <code>saveEntity('patchVersions', …)</code>，版本表從此也有歷史。</div>
+        <div class="task-file">src/pages/admin/AdminVersionEditorPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">第二批：pilots、pilotLore（等 042-E 的 C／D 段部署之後）</div>
+        <div class="task-desc">依計畫書決策八。若 B-4 先完成，042-E 的編輯台改寫可以直接用 <code>saveEntity</code>，這一列就順勢完成。
+          <strong>驗收：</strong>在 <code>src/</code> 裡 grep <code>bumpDataVersion(</code>，只剩 <code>saveEntity</code>、<code>cascadeDelete</code>、<code>restore</code>；grep <code>.catch(() =&gt; '')</code> 為 0。</div>
+        <div class="task-file">src/lib/api/pilots.ts · src/lib/api/pilotLore.ts · PilotAdmin · AdminLorePage</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-7 &nbsp; useEntityEditor 與 validateX</div>
+      <div class="task-group-meta">src/components/admin/shared/useEntityEditor.ts · src/utils/validate/*</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">共用編輯外框（不做 schema 表單）</div>
+        <div class="task-desc">依計畫書決策五。負責編輯中狀態、草稿（<code>useDraftWrite</code>／<code>useDraftRestore</code>）、新增前檢查（含「資料已載入」，目前 12 份裡只有 3 份有）、存檔、取消確認、刪除（<code>useCascadeDelete</code>）。
+          取代 13 份 <code>handleSave</code> 與 12 份 <code>onCancel</code>。編輯器逐支換過去，不必一次全換。</div>
+        <div class="task-file">src/components/admin/shared/useEntityEditor.ts · 各 *Admin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每個實體一支 validateX 純函式</div>
+        <div class="task-desc">簽名為 <code>validateX(doc, ctx) → {errors, warnings}</code>，由 <code>saveEntity</code> 呼叫；腳本的 dry-run 也可以 import。
+          先收編既有的 4 個檢查（Pilot <code>minSum</code>、Weapon 種類／類型、Form <code>pilotId</code>、Buff 刪等級），再補「名稱不可清空」，以及引用 ID 查不到時給警告。</div>
+        <div class="task-file">src/utils/validate/*.ts · *.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">清掉 useClientPaged 的陷阱與錯誤提示文字</div>
+        <div class="task-desc"><code>upsert</code> 是空操作，卻有 10 個編輯器在呼叫；寫死的 <code>loading:false</code> 在 3 個檔案裡被註明是陷阱。兩者擇一修好或移除。
+          9 個整包載入的編輯器，搜尋框提示仍寫「搜尋名稱開頭（Enter 搜尋）」，那是伺服器分頁版的行為，要改掉。</div>
+        <div class="task-file">src/pages/user/admin/shared.tsx · 各 *Admin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-8 &nbsp; GameDataContext 改查登錄表</div>
+      <div class="task-group-meta">src/contexts/GameDataContext.tsx · src/hooks/useFirestore.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">拿掉 4 個 switch，state 改用 mapped type</div>
+        <div class="task-desc">第 150、177、260、293 行的 switch 改查 <code>ENTITY_REGISTRY</code>。<code>fetchCollectionData</code> 現在沒有 default，漏一個 case 會靜默回傳 <code>undefined</code>，改完後要能窮舉。
+          <code>patchCollectionItem(key, item)</code> 把 key 和 item 型別綁在一起，填錯 key 時 tsc 會報錯。</div>
+        <div class="task-file">src/contexts/GameDataContext.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">守門測試與 hook 的小地雷</div>
+        <div class="task-desc"><code>collectionKeys.test.ts:82</code> 的字串比對（4 個 switch 只寫 1 個也會通過）改成比對登錄表。
+          <code>entityRefs.test.ts:40-45</code> 改成和 <code>ARRAY_COLLECTION_KEYS</code> 比，不再用寫死的清單。
+          修正 <code>useFirestore.ts</code> 兩個 bug：<code>useCollections</code> 忽略 keys 變化（<code>:21-22</code>）、抓取出錯時 <code>loading</code> 永遠是 true（<code>:237</code>）。</div>
+        <div class="task-file">src/lib/collectionKeys.test.ts · src/utils/entityRefs.test.ts · src/hooks/useFirestore.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">更新「新增集合」的步驟說明</div>
+        <div class="task-desc">CLAUDE.md 6.3 與 <code>系統架構.html</code> 的「新增集合」步驟，改成：登錄表一行、api 模組、Worker <code>ARRAY_COLLECTIONS</code>、rules、entityRefs。漏掉前兩項時 tsc 會擋，漏掉後兩項時測試會擋。</div>
+        <div class="task-file">CLAUDE.md · docs/02_技術文件/01_架構設計/系統架構.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase C ───────────────────────── -->
+<section class="section">
+  <div class="section-label red">Phase C</div>
+  <div class="section-title">C 資料模型整理</div>
+  <div class="section-desc">在 B 段的安全網之上清理歷史包袱。凡是要改 Firestore 資料的步驟，一律照 data-patch 流程：備份 → dry-run → apply → bump → 對帳。型別或 enum 有變動時，依 CLAUDE.md 規則 2 同步資料模型文件。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 讀取邊界正規化</div>
+      <div class="task-group-meta">src/lib/api/normalize.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每個集合一支 normalizeX，在單一入口套用</div>
+        <div class="task-desc"><code>fetchCollection</code> 目前直接 <code>as T</code>（<code>firestoreCore.ts:25</code>）。在 GameDataContext 的取得路徑上套用 normalize，直連與 Worker 兩條路徑都會經過。
+          型別標為必填的陣列先補上預設值，之後逐步拿掉 91 處 <code>?? []</code>（至少拿掉已正規化欄位的那些）。
+          約 24 個 enum 欄位仍標成 <code>string</code>（例如 <code>weapon.ts:130-144</code>），改成對應的 <code>as const</code> enum 型別。</div>
+        <div class="task-file">src/lib/api/normalize.ts · src/contexts/GameDataContext.tsx · src/types/*.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 退掉三種雙格式過渡</div>
+      <div class="task-group-meta">pilot.ts · weapon.ts · scripts/temp_scripts/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">資料一次翻成引用格式，再刪掉 union</div>
+        <div class="task-desc"><code>Pilot.skills</code> 的 <code>string|PilotSkill</code>（<code>pilot.ts:363-367</code>）、<code>Weapon.skills</code>（<code>weapon.ts:170</code>）、<code>NeuralDriveLevel</code> 的 <code>abilityId</code> 與內嵌欄位並存（<code>pilot.ts:280-291</code>）。
+          當初保留它們的理由（爬蟲）已經消失。翻完之後刪掉雙分支的 resolver、<code>entityRefs.ts:132-141</code> 的 <code>SKIP_WHEN_*</code>，以及 <code>PilotSkill</code> 與 <code>PilotSkillDoc</code> 重複的 12 個欄位。
+          這一步會連帶改到模擬器的<strong>讀取端</strong>，但只是跟著型別收斂。</div>
+        <div class="task-file">src/types/pilot.ts · src/types/weapon.ts · src/utils/entityRefs.ts · scripts/temp_scripts/（一次性搬遷腳本）</div>
+      </div>
+      <div class="task-assignee">開發者（本機）</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 專屬模組雙存的一致性</div>
+      <div class="task-group-meta">MechAdmin · ModuleAdmin · utils/mechModules.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">後台雙向提示，加上離線對帳</div>
+        <div class="task-desc"><code>Module.boundMechId</code> 是前台詳情頁的依據（<code>mechModules.ts</code>），<code>Mech.moduleFixedIds</code> 是模擬器的依據（<code>MechAdmin.tsx:342-345</code>）。
+          以 <code>boundMechId</code> 為唯一真相：MechAdmin 若發現「綁定本機甲的專屬模組不在 <code>moduleFixedIds</code> 裡」（或反過來），就提示並提供一鍵同步；ModuleAdmin 設定 <code>boundMechId</code> 時，也詢問是否同步該機甲。
+          對帳規則接到 B-1 的備份 workflow。改由消費端推導屬於模擬器的範圍，記錄在案，不在本計畫處理。</div>
+        <div class="task-file">src/pages/user/admin/MechAdmin.tsx · ModuleAdmin.tsx · scripts/checks/exclusive-modules.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 名稱引用的 rename 掃描</div>
+      <div class="task-group-meta">saveEntity · scripts/checks/name-refs.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">改名時列出所有用到舊名稱的地方</div>
+        <div class="task-desc">B-4 有了 <code>before</code> 之後，<code>saveEntity</code> 能偵測名稱變更。偵測到時，掃描 patchVersions 的名稱陣列、<code>SkillCondition.hasBuff</code>（<code>buff.ts:43</code>）、<code>enhancesTalentName</code>（<code>pilot.ts:99</code>）、<code>TalentNdVariant.zone</code>，列出受影響的位置，並提供批次替換。
+          另外在備份 workflow 加一條離線檢查：patchVersions 裡解析不到實體的名稱。</div>
+        <div class="task-file">src/lib/api/saveEntity.ts · src/utils/nameRefs.ts · scripts/checks/name-refs.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-5 &nbsp; patchVersions 改存 id：評估與決策</div>
+      <div class="task-group-meta">src/data/patchVersions/types.ts · AdminVersionEditorPage · announcementMergeAdmin</div>
+      <span class="status pending">待決策（Q6）</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">列出影響面，交站長決定做不做</div>
+        <div class="task-desc">涉及的部分：名稱陣列改成 id 陣列；<code>weaponPilots</code> 按索引對齊的名稱改成配對；拿掉要逐版手動同步的 <code>iconUrls</code>／<code>entityIds</code>；
+          版本編輯器的挑選器；<strong>公告排程合併腳本寫入的是名稱</strong>，要改成解析出 id；Worker 的 <code>versions.ts</code>；版本頁的顯示。
+          工程量估計 L，決定要做的話另立子計畫 PLAN-060-B。</div>
+        <div class="task-file">_local-notes/（評估）</div>
+      </div>
+      <div class="task-assignee">開發者 → 站長決策</div>
+      <span class="status pending">待決策</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-6 &nbsp; 刪除過期的靜態 patchVersions 資料</div>
+      <div class="task-group-meta">src/data/patchVersions/ · src/hooks/usePatchVersions.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">初始狀態改為 loading，型別搬回 src/types</div>
+        <div class="task-desc">靜態的 <code>v*.ts</code> 停在 3.3，Firestore 已經到 3.7；靜態那份卻仍是首屏初始值與讀取失敗時的備援（<code>usePatchVersions.ts:94、102、119</code>）。
+          刪掉 <code>base.ts</code> 與 <code>v*.ts</code> 的資料，初始狀態改為 loading，讀取失敗改成明確的錯誤狀態。
+          <code>PatchVersion</code> 型別搬到 <code>src/types/patchVersion.ts</code>，先確認 7 個 <code>@deprecated</code> 欄位已經沒有讀取點再刪除。
+          純函式（<code>activityText</code>、<code>notes</code>、<code>entityRef</code>、<code>legacyActivities</code>）搬到 <code>src/utils/patchVersions/</code>。
+          <code>docs/.../patchVersions.html:144、160</code> 仍寫「計畫遷移到 Firestore」，一併更新。</div>
+        <div class="task-file">src/data/patchVersions/* · src/types/patchVersion.ts · src/hooks/usePatchVersions.ts · docs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-7 &nbsp; branded ID 型別</div>
+      <div class="task-group-meta">src/types/ids.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">外鍵欄位逐步改用 branded 型別</div>
+        <div class="task-desc">依計畫書決策六：不遷移資料，只加型別，例如 <code>PilotId</code>、<code>MechId</code>、<code>WeaponId</code>、<code>ModuleId</code>、<code>BuffId</code>、<code>SkillId</code>。
+          在 C-1 的 normalize 邊界轉型；25 個以上的裸 <code>string</code> 外鍵欄位逐步換過去，從 <code>pairedMechId</code>、<code>boundMechId</code>、<code>moduleFixedIds</code>、<code>buffIds</code> 開始。</div>
+        <div class="task-file">src/types/ids.ts · src/types/*.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-8 &nbsp; 快取層從 localStorage 改用 IndexedDB</div>
+      <div class="task-group-meta">src/contexts/GameDataContext.tsx · src/lib/collectionKeys.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">換儲存層，並搬移舊快取</div>
+        <div class="task-desc">已用 4.2–4.5 MB，上限約 5 MB；pilots 一個集合就 2.09 MB（<code>collectionKeys.ts:40</code>），故事館又是成長最快的集合。
+          改用 IndexedDB（<code>idb-keyval</code> 約 600 B，或自寫一層薄包裝）。第一次啟動時讀出舊的 <code>mecharashi_gd_*</code>，寫入後刪掉；無痕模式等情況退回只用記憶體。
+          完成後評估 <code>NO_LOCAL_CACHE_KEYS</code> 能否拿掉，並更新 <code>StorageDebugPage</code>。</div>
+        <div class="task-file">src/contexts/GameDataContext.tsx · src/lib/gameDataCache.ts · src/pages/debug/StorageDebugPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-9 &nbsp; 死碼、過時索引與文件漂移</div>
+      <div class="task-group-meta">src/lib/api/* · firestore.indexes.json · firestore.rules · docs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">清理</div>
+        <div class="task-desc">① 10 支沒有呼叫者的 getter：<code>getPilotsByClass</code>、<code>getAvailableModules</code>、<code>getModulesByMech</code>、<code>getPilot</code>、<code>getMech</code>、<code>getWeapon</code>、<code>getMechsByArmorType</code>、<code>getPilotLoreDoc</code>、<code>getPilotResearch</code>、<code>getAllPilotResearch</code>（刪前再 grep 一次）。
+          ② 過時索引 <code>weapons.category</code>、<code>components.slot</code>，部署 <code>firebase deploy --only firestore:indexes</code>。
+          ③ 孤兒規則 <code>/skills</code>、<code>/enemies</code>，部署 rules。
+          ④ types 反向依賴 lib／utils（<code>systemLog.ts:2-4</code>、<code>announcementStaging.ts:2-3</code>）。
+          ⑤ CLAUDE.md 6.4 寫 barrel 例外有 2 個，實際是 5 個。
+          ⑥ <code>pilots.html</code> 缺 <code>loadoutMods</code>、<code>ndVariants</code>、<code>enhancedEffects</code>。</div>
+        <div class="task-file">src/lib/api/* · firestore.indexes.json · firestore.rules · src/types/* · CLAUDE.md · docs/.../pilots.html</div>
+      </div>
+      <div class="task-assignee">開發者（部署：站長）</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase D ───────────────────────── -->
+<section class="section">
+  <div class="section-label red">Phase D</div>
+  <div class="section-title">D 維運與部署</div>
+  <div class="section-desc">讓「只活在站長電腦和 CF Dashboard 上」的知識進到 repo，並讓手動部署的目標至少有自動檢查。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 防線 C 的去處，以及寫死的 E:\ 路徑</div>
+      <div class="task-group-meta">.claude/skills/data-patch · scripts/lib/gameDump.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">data-patch skill 與爬蟲封存的去處（Q3）</div>
+        <div class="task-desc">CLAUDE.md 多處叫人照 data-patch skill 做，但它被 <code>.gitignore:96</code> 擋掉，雲端 session 和新 clone 都拿不到。
+          建議建一個私有 companion repo，收 skill、爬蟲封存、<code>temp_scripts</code> 封存，取代 <code>E:\Mecharashi_Data\script-archive\</code>；或者拿掉 skill 裡的敏感內容後取消忽略。</div>
+        <div class="task-file">.claude/skills/data-patch/ · .gitignore · 私有 repo</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">E:\ 改讀環境變數</div>
+        <div class="task-desc"><code>scripts/lib/gameDump.mjs:17、19</code> 的 <code>E:/</code> 預設路徑改讀 <code>MECHARASHI_DATA_DIR</code>，舊路徑留作預設值；補進 <code>.env.local.example</code>。CLAUDE.md 6.5 一併更新。</div>
+        <div class="task-file">scripts/lib/gameDump.mjs · .env.local.example · CLAUDE.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 部署後與每日的冒煙測試</div>
+      <div class="task-group-meta">.github/workflows/smoke.yml · scripts/smoke.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把 CLAUDE.md 第 3 節的手動檢查自動化</div>
+        <div class="task-desc">觸發時機：deploy 完成後（<code>workflow_run</code>），加上每日 cron。
+          路徑清單從 <code>ROUTE_PATTERNS</code>（<code>src/lib/analytics/routeKeys.ts</code>，已有測試和 <code>App.tsx</code> 對齊）推導，動態段用固定樣本（例如 <code>pilot_049_海莉絲</code>）。
+          每條都要回 200，<code>/notarealpath</code> 要回 404。再用 <code>Discordbot/2.0</code> UA 檢查 <code>/pilots/</code>、<code>/mechs/</code>、<code>/weapons/</code>、<code>/lore/</code> 的 og:image 不是 <code>og/default.jpg</code>。
+          這條測試能抓到 PLAN-050 那種「白名單漏登記、11 天沒人發現」的事故。</div>
+        <div class="task-file">.github/workflows/smoke.yml · scripts/smoke.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; Worker 自動部署</div>
+      <div class="task-group-meta">.github/workflows/deploy-worker.yml</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">建立 CF API token 與 secret</div>
+        <div class="task-desc">建一把只有 Workers 編輯權限的 API token，存成 <code>CLOUDFLARE_API_TOKEN</code>，連同 account id 一起設定為 repo secret。</div>
+        <div class="task-file">Cloudflare Dashboard · GitHub repo secrets</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">workers/** 有變動時自動部署</div>
+        <div class="task-desc">push 到 main 且路徑符合 <code>workers/**</code> 時觸發：<code>npm ci --prefix workers</code> → 型別檢查 → <code>node --test workers/src/**/*.test.ts</code> → <code>cloudflare/wrangler-action</code> 部署。
+          <strong>注意：</strong>這條 workflow 和網站部署是平行跑的。遇到「Worker 必須先上」的變更（例如 042-E 決策七），仍然要把 Worker 拆成較早的一次 push。
+          <code>workers/src/index.ts:49</code> 叫人去對照 <code>GameDataContext.tsx</code>，但清單已經搬到 <code>collectionKeys.ts</code>，順手修正這個過期指標。</div>
+        <div class="task-file">.github/workflows/deploy-worker.yml · workers/src/index.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; Transform Rule 存檔進 repo，修正 CLAUDE.md</div>
+      <div class="task-group-meta">infra/cloudflare/spa-fallback.expr · CLAUDE.md</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">規則運算式存檔，並加測試對齊路由</div>
+        <div class="task-desc">站長把 Dashboard 上 <code>SPA fallback to index.html</code> 的運算式原文複製成 <code>infra/cloudflare/spa-fallback.expr</code>（只存檔，沒有程式讀它）。
+          新增測試：<code>ROUTE_PATTERNS</code> 的每一個頂層段都要出現在這份檔案裡。新增路由時忘了改白名單，<code>npm test</code> 就會失敗；Dashboard 與存檔之間的落差則交給 D-2 的冒煙測試抓。</div>
+        <div class="task-file">infra/cloudflare/spa-fallback.expr · src/lib/analytics/spaFallback.test.ts</div>
+      </div>
+      <div class="task-assignee">站長＋開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">CLAUDE.md 第 3 節與實況對齊</div>
+        <div class="task-desc">白名單「16 條」改成實際數字（<code>App.tsx</code> 有 21 個頂層段）。UA 排除清單補上 <code>/lore/</code>（<code>wrangler.jsonc:40</code>），以 Dashboard 實際設定為準。
+          操作步驟補一句「改完同步更新 <code>spa-fallback.expr</code>」。</div>
+        <div class="task-file">CLAUDE.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-5 &nbsp; CHANGELOG 自動化（Q4）</div>
+      <div class="task-group-meta">scripts/update-changelog.js · .githooks/pre-push · scripts/push-with-changelog.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">至少加淺層 clone 防護；建議改成不 commit</div>
+        <div class="task-desc">腳本每次都用 <code>git log HEAD</code> 重新產生整段 [Unreleased]，repo 又沒有任何 tag。在淺層 clone 裡跑過一次就截掉 473 行（dc4b5bc，6b50105 才還原）。最近 50 個 commit 裡有 23 個是它的自動 commit。
+          <strong>最低限度：</strong><code>git rev-parse --is-shallow-repository</code> 為 true 時直接跳過，並打一個 baseline tag。
+          <strong>建議做法：</strong>停止 commit <code>CHANGELOG.md</code>，改在 CI 產生 release notes，同步修改 pre-push、<code>npm run push</code> 與 CLAUDE.md 第 1、5 節。</div>
+        <div class="task-file">scripts/update-changelog.js · .githooks/pre-push · scripts/push-with-changelog.mjs · CLAUDE.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-6 &nbsp; 改用 actions/deploy-pages：評估（Q5）</div>
+      <div class="task-group-meta">.github/workflows/deploy.yml · preview.yml</div>
+      <span class="status pending">待決策（Q5）</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">評估遷移步驟與 PR 預覽的新家</div>
+        <div class="task-desc">GitHub 回報 repo 346 MB；gh-pages 用 <code>keep_files: true</code>，prune 只做 <code>git rm</code>，舊 blob 會永久留在歷史裡。
+          改成 artifact 部署就不留 gh-pages 歷史，但 Pages 的來源要切到「GitHub Actions」，<code>preview/</code> 子資料夾的 PR 預覽會跟著失效，需要先找到新家（例如 Cloudflare Pages）。
+          要一併確認自訂網域、<code>404.html</code> shim、<code>prune-gh-pages</code> 的退場。產出步驟清單，交站長決定。</div>
+        <div class="task-file">_local-notes/（評估）</div>
+      </div>
+      <div class="task-assignee">開發者 → 站長決策</div>
+      <span class="status pending">待決策</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-7 &nbsp; 一次性腳本歸檔</div>
+      <div class="task-group-meta">scripts/archive/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">scripts/ 只留現役腳本</div>
+        <div class="task-desc">輸入檔已經不在、或功能已退場的腳本：<code>patch-weapon-upgrade.mjs</code>（讀被忽略的 <code>temp_scripts/plan031-upgrade-edges.json</code>）、<code>patch-module-weapon-dmg-fields.mjs</code>、<code>derive-composite-backpack-skills.mjs</code>（打已退場的官方 API）、<code>patch-image-paths.mjs</code>、<code>convert-images-to-webp.mjs</code>、<code>set-cors.mjs</code>。
+          每支搬之前先 grep 確認沒有引用。搬到 <code>scripts/archive/&lt;PLAN&gt;/</code> 並附 README，同時移除 npm script <code>images:webp</code>、<code>images:paths</code>。
+          建議排在 B-2 之前。</div>
+        <div class="task-file">scripts/* · scripts/archive/ · package.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-8 &nbsp; 依賴清理</div>
+      <div class="task-group-meta">package.json · workers/package.json</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">移除用不到的，調整放錯位置的</div>
+        <div class="task-desc">① 移除 <code>html2canvas</code>（實際只用 <code>html-to-image</code>），並修正過期註解 <code>MaskIcon.tsx:10</code>、<code>VersionQuickTable.tsx:409</code>。
+          ② <code>firebase-admin</code>、<code>opencc-js</code> 只有腳本在用，<code>@tailwindcss/vite</code>、<code>tailwindcss</code> 只在 build 時用，都移到 devDependencies。
+          ③ <code>playwright</code>、<code>@breezystack/lamejs</code> 視 Q8 決定是否移除。
+          ④ Worker 的 TypeScript <code>^5.5</code> 對齊根目錄的 <code>~6.0</code>。</div>
+        <div class="task-file">package.json · package-lock.json · workers/package.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase E ───────────────────────── -->
+<section class="section">
+  <div class="section-label red">Phase E</div>
+  <div class="section-title">E 故事館動畫與樣式</div>
+  <div class="section-desc">對應計畫書決策七。<strong>整段排在 PLAN-042-E 完成之後</strong>，避免兩邊同時改 <code>src/components/lore/*</code>。每項完成後，在桌機、手機與 reduced-motion 三種情境各走一次完整的開場、換章、進出閱讀模式與換外觀。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; loreMotion.ts：動畫時序的唯一來源</div>
+      <div class="task-group-meta">src/components/lore/loreMotion.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三套機制共用同一份時長與 easing</div>
+        <div class="task-desc">集中定義各段過場的時長、延遲與 easing。<code>.lore-page</code> 把它們寫成 CSS 變數，keyframes 改讀變數，<code>LoreSwitcher.tsx:197-260</code> 的 14 處 WAAPI 也改 import 同一份；WAAPI 目前寫死的 <code>cubic-bezier(.2,.8,.2,1)</code> 與 CSS 的 <code>--lore-ease-*</code> 是兩套值，要統一。
+          <code>PilotLorePage.tsx:130-133</code> 的 1050／1250／1600／3200、<code>:163</code>、<code>:179</code>，以及 <code>LoreStage.tsx:38</code> 的 <code>DRESS_MS</code>，改成等 <code>el.getAnimations()</code> 的 <code>finished</code>；只有在沒有動畫（reduced-motion）時才退回立即執行。</div>
+        <div class="task-file">src/components/lore/loreMotion.ts · LoreSwitcher.tsx · LoreStage.tsx · src/pages/lore/PilotLorePage.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 故事館 CSS 拆出 index.css，色票統一</div>
+      <div class="task-group-meta">src/pages/lore/lore.css · src/index.css</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">lore.css 跟著 lazy 頁面載入</div>
+        <div class="task-desc"><code>index.css</code> 第 298–1057 行約 780 行都屬於故事館，16 個 <code>@keyframes</code> 全是 <code>lore-*</code>。把它們搬到 <code>src/pages/lore/lore.css</code>，由 lazy 載入的故事館頁面 import。
+          <strong>注意：</strong><code>LoreLayout</code> 是靜態 import，它自己用到的少數 class 要留在全域，或由它自己 import 一份小 CSS，否則 lazy 頁面還沒載入前會閃一下沒有樣式的畫面。
+          評估要不要把規則放進 <code>@layer</code>：目前它們不在任何 layer 裡，Tailwind utility 蓋不過。</div>
+        <div class="task-file">src/pages/lore/lore.css · src/index.css · src/pages/lore/*.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">色票只留一套</div>
+        <div class="task-desc"><code>--lore-ink</code>／<code>-2</code>／<code>-3</code>、<code>--lore-line</code>／<code>-2</code>／<code>-3</code> 改成指向 <code>.lore-shell</code> 已覆寫的 <code>--color-*</code>。
+          約 45 處 rgba 字面值（<code>43,38,33</code> 出現 18 次、<code>251,247,239</code> 11 次、<code>239,231,216</code> 10 次）改用 <code>color-mix()</code>，<code>.lore-header</code> 已經是這樣寫。</div>
+        <div class="task-file">src/pages/lore/lore.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; 觸發 layout 的過場，以及 reduced-motion 的缺口</div>
+      <div class="task-group-meta">lore.css · PilotLorePage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">改用 transform／opacity，縮小樣式重算的範圍</div>
+        <div class="task-desc">① 進入閱讀模式時，<code>.lore-dossier</code> 的 width 與 margin-left 跑 800ms 過場（<code>index.css:689-693、783</code>），長篇正文每一幀都要重排；改成 FLIP（transform 位移）或淡出淡入。
+          ② <code>PilotLorePage.tsx:289</code> 每個捲動幀都把 <code>--sy</code> 寫到 <code>.lore-page</code> 根元素，整棵子樹都要重算樣式，但實際只有 <code>.lore-portrait__inner</code>（<code>:575</code>）用到它；改成只寫在那個元素上。
+          ③ 進度條的 width transition（<code>:790</code>）改用 <code>scaleX</code>。
+          ④ reduced-motion 的處理補上 <code>.lore-veil</code>，它在 <code>.lore-page</code> 外面，目前漏掉了。</div>
+        <div class="task-file">src/pages/lore/lore.css · src/pages/lore/PilotLorePage.tsx · src/components/lore/LoreDossier.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-4 &nbsp; 斷點統一，loreArtTuning 改成資料</div>
+      <div class="task-group-meta">LoreSwitcher.tsx · loreArtTuning.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">899px 與 1023px（Q7）</div>
+        <div class="task-desc">故事館的 899px 在 CSS 和 <code>LoreSwitcher.tsx:53</code> 各寫一次，全站用的是 1023／1024px。寬度 900–1023px 時，會拿到手機版底圖、卻是桌機版舞台。
+          若站長確認不是刻意的，就改用全站斷點；若是刻意的，也要收成一個常數並寫明理由。</div>
+        <div class="task-file">src/components/lore/LoreSwitcher.tsx · src/pages/lore/lore.css · src/hooks/useLayoutBreakpoint.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每位機師的站位調整搬進 pilotLore</div>
+        <div class="task-desc"><code>loreArtTuning.ts</code> 以 gameId 記錄每位機師的 <code>side</code>／<code>lineArt</code>，目前只有 3 筆，但會隨著 92 位機師慢慢增加，而每改一筆都要重新部署。
+          建議在 042-E 擴充 <code>LoreDoc</code> 時一起加這兩個欄位，讓編輯台可以直接改；如果 042-E 已經結案，就在這裡做。</div>
+        <div class="task-file">src/components/lore/loreArtTuning.ts · src/types/lore.ts · AdminLorePage</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-5 &nbsp; 捲動還原共用一支 hook</div>
+      <div class="task-group-meta">src/hooks/useScrollRestoration.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">ScrollManager 與 LoreLayout 共用</div>
+        <div class="task-desc"><code>ScrollManager</code> 在 2026-10-11 修過「背景分頁不跑 rAF」（改用 setTimeout，位置存 sessionStorage，以 <code>location.key</code> 為鍵）。
+          <code>LoreLayout.tsx:101-105</code> 仍用 rAF 輪詢，位置只存在記憶體，而且以 pathname 為鍵。抽出 <code>useScrollRestoration(containerRef)</code> 給兩邊共用。</div>
+        <div class="task-file">src/hooks/useScrollRestoration.ts · src/components/layout/ScrollManager.tsx · src/pages/lore/LoreLayout.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase F ───────────────────────── -->
+<section class="section">
+  <div class="section-label red">Phase F</div>
+  <div class="section-title">F 結構整理</div>
+  <div class="section-desc">低優先。F-1 跟著 B-7 一起做，避免同一批檔案改兩輪；F-2 只訂慣例，改到哪就搬到哪。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 後台資料夾歸位</div>
+      <div class="task-group-meta">src/pages/user/admin → src/pages/admin/catalog</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">搬家、修正反向依賴、統一權限閘門</div>
+        <div class="task-desc">① <code>pages/user/AdminPage.tsx</code> 與 <code>pages/user/admin/*</code> 搬到 <code>pages/admin/catalog/</code>。
+          ② <code>shared.tsx</code> 搬到 <code>components/admin/shared/</code>，修正 <code>components/admin</code> 反過來 import 頁面的問題（<code>WeaponUpgradeField.tsx:26-27</code>、<code>GameArtFields.tsx:17</code>）。
+          ③ 共用的 <code>SkillEffectItem</code> 從 1,905 行的 <code>PilotAdmin.tsx</code> 移出來。
+          ④ <code>/admin</code> 也包上 <code>AdminRoute</code>，拿掉 <code>AdminPage.tsx:114</code> 的頁內權限判斷。
+          ⑤ 分頁狀態（<code>AdminPage.tsx:74</code> 的 <code>useState('modules')</code>）改放到網址 <code>?tab=</code>，F5 不再跳回模組分頁，也可以直接連結到某個分頁。
+          完成後更新 <code>系統架構.html</code> 的資料夾分類表。</div>
+        <div class="task-file">src/pages/admin/catalog/* · src/components/admin/shared/* · src/App.tsx · docs/.../系統架構.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; utils 與 UI 元件的擺放慣例</div>
+      <div class="task-group-meta">docs/02_技術文件/01_架構設計/系統架構.html</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">寫成慣例，並做一個共用 Dialog</div>
+        <div class="task-desc">① <code>utils/</code> 目前平鋪 58 個模組。新檔一律放進領域子資料夾（<code>buff/</code>、<code>nd/</code>、<code>loadout/</code>、<code>admin/</code>、<code>nav/</code>）；功能的純函式放 <code>utils/&lt;領域&gt;</code>，不放 <code>components/&lt;功能&gt;/*.ts</code>；<code>lib</code> 放 I/O、<code>utils</code> 放純函式（<code>rainbowMechCalc</code>、<code>buildStatus</code>、<code>siteMeta</code> 改到時順手搬）。舊檔改到才搬，不要一次大搬（有 322 個 import 點）。
+          ② 新的 tooltip 一律用 <code>@floating-ui/react</code>；目前約有 7 處手寫的定位。
+          ③ 做一個共用的 <code>components/common/Dialog.tsx</code>（Escape 關閉、<code>role="dialog"</code>、焦點管理）；目前有 9 檔各自處理 Escape，只有 5 個加了 <code>role="dialog"</code>，舊的改到時再換。</div>
+        <div class="task-file">docs/.../系統架構.html · src/components/common/Dialog.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-3 &nbsp; dev 與 prod 的讀取路徑一致</div>
+      <div class="task-group-meta">src/lib/api/* · workers/src/*</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">拿掉 getter 的 orderBy，grayOps 組裝只留一份</div>
+        <div class="task-desc">直連時 <code>getPilots</code> 有 <code>orderBy('rarity')</code>（<code>pilots.ts:9</code>），Worker 的 <code>listCollection</code> 不排序（<code>firestoreRest.ts:63-87</code>），所以本機和正式站的陣列順序不同。把 orderBy 拿掉，排序交給消費端。
+          grayOps 的組裝邏輯寫了兩份（<code>grayOps.ts:9-22</code> 與 <code>workers/src/index.ts:424</code>），只留一份共用。</div>
+        <div class="task-file">src/lib/api/pilots.ts 等 · src/lib/api/grayOps.ts · workers/src/index.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-4 &nbsp; 更新履歷摘要長度檢查（Q9）</div>
+      <div class="task-group-meta">src/data/siteChangelog/siteChangelog.test.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新紀錄的摘要有長度上限</div>
+        <div class="task-desc"><code>2026-08.ts</code> 單檔 131 KB，有 101 筆摘要超過 500 字（最長 4,869 字），和 CLAUDE.md 規則 1 的「一行摘要」不符。
+          新增測試：2026-10-14 之後的紀錄，摘要長度不可超過 Q9 決定的上限；舊紀錄不追溯。A-4 已經把履歷移出首包，這一項只是防止它繼續膨脹。</div>
+        <div class="task-file">src/data/siteChangelog/siteChangelog.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-060 — <a href="../index.html" style="color:var(--accent-red);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
