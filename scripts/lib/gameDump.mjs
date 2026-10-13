@@ -15,7 +15,7 @@ import path from 'node:path'
 import sharp from 'sharp'
 
 export const DUMP_ROOT = 'E:/Mecharashi_Data'
-/** repo 外的封存夾（extended／reserve／--ui／--other-icons／--skins 的落點；不進 git、不部署） */
+/** repo 外的封存夾（extended／reserve／--ui／--other-icons 的落點；不進 git、不部署。--skins 自 PLAN-042-D 起上站、不在這裡） */
 export const ARCHIVE_ROOT = 'E:/Mecharashi_Data/site-archive'
 
 /**

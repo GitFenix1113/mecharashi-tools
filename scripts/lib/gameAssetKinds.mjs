@@ -23,6 +23,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 /** 相對 public/ 的根目錄 */
 export const GAME_DIR = 'images/game'
@@ -81,7 +82,7 @@ export function npcDirOf(artKey) {
 
 /**
  * 可抽機師的立繪號碼 → gameId：掃 `public/images/game/pilots/<gameId>/` 裡的 `<artKey>_*`（號碼＝npcDirOf(artKey)）。
- * 這些號碼的立繪（連同其他造型）都不算 NPC：預設造型在 core，其他造型由 `--skins` 封存到 repo 外的 pilots/<gameId>/。
+ * 這些號碼的立繪（連同其他造型）都不算 NPC：預設造型在 core，其他造型由 `--skins` 放進 pilots/<歸屬 gameId>/skins/（上站，見 skinOwnerOf）。
  * 同一個號碼出現在兩個 gameId 資料夾時取第一個（目前 0 筆）。
  */
 export function playableArtDirs(pilotRoot) {
@@ -94,6 +95,23 @@ export function playableArtDirs(pilotRoot) {
     }
   }
   return out
+}
+
+/** 造型（外觀）的人工註記（PLAN-042-D）：立繪鍵 → { owner, name, hidden, note }，全部選填；沒有這份檔回空物件 */
+export const PILOT_SKIN_META_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'pilotSkinMeta.json')
+export function loadPilotSkinMeta(file = PILOT_SKIN_META_FILE) {
+  return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf-8')).skins ?? {} : {}
+}
+
+/**
+ * 可抽機師某套造型的歸屬——`import-game-assets.mjs --skins` 決定落點、`diff-game-dump.mjs` 檢查做了沒，共用這一份。
+ *   gameId  檔名號碼所屬的機師（playableArtDirs）：他的 core 資料夾放預設造型
+ *   owner   造型實際放進誰的 pilots/<owner>/skins/：預設＝gameId，號碼對不上的看 pilotSkinMeta.json 的 owner
+ * 不是可抽機師的號碼回 undefined（歸 --npc）。
+ */
+export function skinOwnerOf(artKey, playable, skinMeta) {
+  const gameId = playable.get(npcDirOf(artKey))
+  return gameId ? { gameId, owner: skinMeta[artKey]?.owner ?? gameId } : undefined
 }
 
 /** 反向：機甲資料夾裡的一個檔名是哪一種圖；不是讀取端會用到的種類回 null。 */

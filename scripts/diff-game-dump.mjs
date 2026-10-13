@@ -27,7 +27,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
-import { playableArtDirs } from './lib/gameAssetKinds.mjs'
+import { loadPilotSkinMeta, playableArtDirs, skinOwnerOf } from './lib/gameAssetKinds.mjs'
 import { ARCHIVE_ROOT, DUMP_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, preferTexture, resolveDump } from './lib/gameDump.mjs'
 import { EQUIP_POOLS, emblemFamilyOf, iconFamily, iconPoolIndex, isLibraryKey, otherIconPaths } from './lib/gameIconKinds.mjs'
 import { UI_GROUPS, isUiArt, uiArchivePath, uiLocation, uiModuleInfo } from './lib/gameUiModules.mjs'
@@ -124,7 +124,7 @@ const site = { stems: new Set(), pilotIds: new Set(), waps: new Set(), artIds: n
   numbersIn('pilots', site.artIds)
   numbersIn('npc', site.npcIds)
 }
-/** 可抽機師的立繪號碼 → gameId（--skins 的落點 pilots/<gameId>/） */
+/** 可抽機師的立繪號碼 → gameId（--npc 排除的號碼；--skins 的歸屬見 skinOwnerOf） */
 const playable = playableArtDirs(path.join(SITE, 'pilots'))
 /** 封存夾裡有沒有這個相對路徑（不含副檔名） */
 const archived = (rel) => fs.existsSync(path.join(ARCHIVE_GAME, `${rel}.webp`))
@@ -271,13 +271,22 @@ for (const [families, flag, title] of [
     lines: [`node scripts/import-game-assets.mjs ${SRC} ${flag}`],
   })
 }
-// 可抽機師的其他造型 → 封存（站上只用預設造型）
-const skins = pilotArts.filter((i) => playable.has(i.id) && !site.stems.has(i.name))
+// 可抽機師的其他造型 → 上站（PLAN-042-D：故事館的「外觀」切換讀 pilots/<歸屬 gameId>/skins/）
+// 與 --skins 同一套判斷：號碼所屬機師的 core 資料夾已有這個檔＝預設造型、不算；歸屬走 skinOwnerOf（pilotSkinMeta.json 的 owner 優先）
+const skinMeta = loadPilotSkinMeta()
+const skins = pilotArts.flatMap((i) => {
+  const who = skinOwnerOf(artName(i), playable, skinMeta)
+  if (!who || fs.existsSync(path.join(SITE, 'pilots', who.gameId, `${i.name}.webp`))) return []
+  return [{ ...i, owner: who.owner, moved: who.owner !== who.gameId }]
+})
 if (skins.length) {
   step({
-    kind: 'archive', title: '既有機師的新造型 → repo 外封存（站上只用預設造型）',
-    targets: skins.map((i) => ({ name: i.name, ok: archived(`pilots/${playable.get(i.id)}/${i.name}`) })),
-    lines: [uniq(skins.map(artName)).join('、'), `node scripts/import-game-assets.mjs ${SRC} --skins`],
+    kind: 'public', title: '既有機師的新造型 → 上站（故事館的「外觀」切換讀這裡；造型名稱、台版還沒推出要先藏的，寫在 scripts/lib/pilotSkinMeta.json）',
+    targets: skins.map((i) => ({ name: i.name, ok: fs.existsSync(path.join(SITE, 'pilots', i.owner, 'skins', `${i.name}.webp`)),
+      url: `images/game/pilots/${i.owner}/skins/${i.name}.webp` })),
+    lines: [uniq(skins.map((i) => artName(i) + (i.moved ? `（放 ${i.owner}，依 pilotSkinMeta.json）` : ''))).join('、'),
+      `node scripts/import-game-assets.mjs ${SRC} --skins`,
+      '帶背景的場景造型會自動多一張 <立繪鍵>_Raw_view.webp 鑑賞版，不必另外處理'],
   })
 }
 // 介面美術 → 封存（落點規則 uiArchivePath，與 --ui 同一份）
@@ -412,7 +421,8 @@ ${done ? `<details><summary>指令</summary>${pre}</details>` : pre}</li>`
 }).join('\n')}</ol>` : '<p class="muted">沒有需要匯入的。</p>'}
 <h2>收尾（上站的步驟做完之後）</h2>
 <ol class="steps">
-<li><code>npm run dev</code> 開本機，確認後台看得到新圖：新機甲／新機師在「選取官方立繪」的「未使用」，新圖示在圖示選圖器的「最新」。dev／build 會自動重產圖片索引。</li>
+<li><code>npm run dev</code> 開本機，確認後台看得到新圖：新機甲／新機師在「選取官方立繪」的「未使用」，新圖示在圖示選圖器的「最新」，
+新造型在故事館該機師頁舞台左下的「外觀」。dev／build 會自動重產圖片索引。</li>
 <li><code>git status</code> 確認變動只在 <code>public/images/game/</code>、<code>src/data/</code>、<code>scripts/lib/</code>，然後：
 <pre>git add -A
 git commit -m "chore(images): ${esc(NEW.date)} 擷取的官方原檔匯入"</pre>（chore 不必寫網站更新履歷）</li>

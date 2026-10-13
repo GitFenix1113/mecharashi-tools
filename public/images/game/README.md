@@ -67,13 +67,14 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
 2. **差異報告**：`node scripts/diff-game-dump.mjs`，打開它印出的 `_local-notes/<月>/<日>_遊戲擷取差異.html`。
 3. **照「下一步」逐條做**。每一步標 ✅ 已完成／⬜ 待做，附可以直接貼的指令：
    先**不加** `--apply` 跑一次（dry-run，只報告、不寫任何東西），沒問題再加 `--apply` 重跑。
-   - 「上站」的步驟寫進這個資料夾（之後要 commit）：新機師卡、新機甲、NPC 立繪、技能／BUFF／武器／背包圖示、職業／駕照圖示與陣營徽章
+   - 「上站」的步驟寫進這個資料夾（之後要 commit）：新機師卡、新機甲、NPC 立繪、技能／BUFF／武器／背包圖示、職業／駕照圖示與陣營徽章、
+     既有機師的新造型（`pilots/<gameId>/skins/`，故事館的外觀）
    - 「封存」的步驟寫到 repo 外的 `E:/Mecharashi_Data/site-archive/game/`（不必 commit、不部署）：
-     介面美術（`ui/`）、其他圖示（`icons/`）、既有機師的新造型（`pilots/<gameId>/`）
+     介面美術（`ui/`）、其他圖示（`icons/`）
    - 只有新機師要人判斷：`--art-key` 填哪張立繪（gameId 與 artKey 不互推）。新機甲只放圖、不碰資料庫。
 4. **重跑差異報告**：每一步都應該是 ✅。報告是產生當下的快照，做完幾步就重跑一次。
 5. **收尾**（上站的步驟有做才需要；報告最後也有同一份清單）：
-   1. `npm run dev`，確認後台看得到新圖（「選取官方立繪」的「未使用」、圖示選圖器的「最新」）。dev／build 會自動重產索引。
+   1. `npm run dev`，確認後台看得到新圖（「選取官方立繪」的「未使用」、圖示選圖器的「最新」；新造型看故事館該機師頁的「外觀」）。dev／build 會自動重產索引。
    2. `git status` 確認變動只在 `public/images/game/`、`src/data/`、`scripts/lib/` → `git add -A` →
       `git commit -m "chore(images): <日期> 擷取的官方原檔匯入"`（chore 不必寫網站更新履歷）。
    3. `npm run push`（會先 build，失敗就不會推上去）。

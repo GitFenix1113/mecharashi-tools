@@ -113,7 +113,7 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
-import { GAME_DIR, MECH_KINDS, NPC_ART_RE, PILOT_KINDS, TIER_GROUPS, classifyNpcFile, mechFileName, npcDirOf, pilotFileName, playableArtDirs } from './lib/gameAssetKinds.mjs'
+import { GAME_DIR, MECH_KINDS, NPC_ART_RE, PILOT_KINDS, TIER_GROUPS, classifyNpcFile, loadPilotSkinMeta, mechFileName, npcDirOf, pilotFileName, playableArtDirs, skinOwnerOf } from './lib/gameAssetKinds.mjs'
 import { EMBLEM_EXCLUDE, EQUIP_POOLS, ICON_POOLS, OTHER_ICON_FOLDERS, emblemFamilyOf, equipGameIdOf, iconFamily, iconPoolIndex, isLibraryKey, keyFromValue, otherIconPaths } from './lib/gameIconKinds.mjs'
 import { ARCHIVE_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, resolveDump } from './lib/gameDump.mjs'
 import { UI_GROUPS, uiArchivePath, uiModuleInfo } from './lib/gameUiModules.mjs'
@@ -138,7 +138,7 @@ const V3 = path.join(ROOT, '_local-notes/2026-10/2026-10-03_機師機甲圖片�
 const PUBLIC_GAME = path.join(ROOT, 'public', GAME_DIR)
 const APPLY = !!args.apply
 const FORCE = !!args.force
-/** 寫到 repo 外的封存夾（extended／reserve／--ui／--other-icons／--skins），其餘寫進 public/ */
+/** 寫到 repo 外的封存夾（extended／reserve／--ui／--other-icons），其餘寫進 public/（--skins 自 PLAN-042-D 起上站） */
 const TO_ARCHIVE = TIER !== 'core' || ['ui', 'other'].includes(MODE)
 
 if (!['core', 'extended', 'reserve'].includes(TIER)) fail(`--tier 只能是 core／extended／reserve：${TIER}`)
@@ -237,7 +237,6 @@ const uiReport = { rows: new Map(), conflicts: [], moves: [], notInDump: 0 }
 const ICONS_ARCHIVE = path.join(destRoot, 'icons')
 const otherReport = { rows: new Map(), conflicts: [] }
 const skinReport = { fresh: new Set(), npcSkipped: 0, moved: new Set() }
-const SKIN_META_FILE = path.join(ROOT, 'scripts/lib/pilotSkinMeta.json')
 const npcReport = { en: new Map(), skinCard: new Set() }
 const NPC_META_FILE = path.join(ROOT, 'scripts/lib/npcArtMeta.json')
 
@@ -503,18 +502,18 @@ if (MODE === 'v3') {
 } else if (MODE === 'skins') {
   // 可抽機師的其他造型：號碼在 game/pilots/ 裡、但這個檔名不在（預設造型已在 core）→ pilots/<歸屬 gameId>/skins/
   const playable = playableArtDirs(path.join(PUBLIC_GAME, 'pilots'))
-  const skinMeta = fs.existsSync(SKIN_META_FILE) ? JSON.parse(fs.readFileSync(SKIN_META_FILE, 'utf-8')).skins ?? {} : {}
+  const skinMeta = loadPilotSkinMeta()
   const rows = loadCsv()
   const byName = new Map()
   for (const r of rows) if (NPC_ART_RE.test(r.name)) (byName.get(r.name) ?? byName.set(r.name, []).get(r.name)).push(r)
   for (const [name, rs] of [...byName].sort(([a], [b]) => a.localeCompare(b))) {
-    const gameId = playable.get(npcDirOf(classifyNpcFile(name).key))
-    if (!gameId) { skinReport.npcSkipped++; continue }
+    const key = classifyNpcFile(name).key
+    const who = skinOwnerOf(key, playable, skinMeta)   // 歸屬規則與 diff-game-dump.mjs 共用
+    if (!who) { skinReport.npcSkipped++; continue }
+    const { gameId, owner } = who
     if (fs.existsSync(path.join(PUBLIC_GAME, 'pilots', gameId, `${name}.webp`))) continue   // 預設造型，core 已有
     const pick = pickRow(rs, name)
     if (pick.conflict) { problems.push(`${name}：同名 Texture2D 內容不同 ${pick.conflict.join(' ／ ')}`); continue }
-    const key = classifyNpcFile(name).key
-    const owner = skinMeta[key]?.owner ?? gameId
     if (owner !== gameId) skinReport.moved.add(`${key} → ${owner}（pilotSkinMeta.json）`)
     addTask(pick.row.path, `pilots/${owner}/skins`, name, `機師 ${owner} 造型`, `skin-${classifyNpcFile(name).kind}`)
     if (!fs.existsSync(tasks.at(-1).dest)) skinReport.fresh.add(`${owner}（${key}）`)

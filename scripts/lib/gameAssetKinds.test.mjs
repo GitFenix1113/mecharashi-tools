@@ -8,7 +8,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { MECH_KINDS, PILOT_KINDS, classifyMechFile, classifyNpcFile, classifyPilotFile, mechFileName, npcDirOf, pilotFileName, playableArtDirs } from './gameAssetKinds.mjs'
+import { MECH_KINDS, PILOT_KINDS, classifyMechFile, classifyNpcFile, classifyPilotFile, loadPilotSkinMeta, mechFileName, npcDirOf, pilotFileName, playableArtDirs, skinOwnerOf } from './gameAssetKinds.mjs'
 import { mechGameFileName, pilotGameFileName } from '../../src/utils/gameArt.ts'
 
 const PILOTS = [
@@ -71,4 +71,19 @@ test('可抽機師的立繪號碼 → gameId（--npc 排除、--skins 落點）'
   } finally {
     fs.rmSync(root, { recursive: true, force: true })
   }
+})
+
+test('造型歸屬（--skins 落點與差異報告共用）：預設依檔名號碼，pilotSkinMeta.json 的 owner 優先', () => {
+  const playable = new Map([['10103107', '10103107'], ['10103154', '10103154'], ['13019', '10103144']])
+  const meta = { Pilot_10103107B: { owner: '10103154' } }
+  assert.deepEqual(skinOwnerOf('Pilot_10103154C', playable, meta), { gameId: '10103154', owner: '10103154' })
+  assert.deepEqual(skinOwnerOf('Pilot_13019B', playable, meta), { gameId: '10103144', owner: '10103144' })     // 維娜：號碼與 gameId 不同
+  assert.deepEqual(skinOwnerOf('Pilot_10103107B', playable, meta), { gameId: '10103107', owner: '10103154' })  // 定版判給洛莎·審判
+  assert.equal(skinOwnerOf('Pilot_13046B', playable, meta), undefined)                                          // 不是可抽機師 → 歸 --npc
+  // 真的那份註記檔：key 都是立繪鍵、owner 都是 gameId（數字字串）
+  for (const [key, m] of Object.entries(loadPilotSkinMeta())) {
+    assert.match(key, /^Pilot_\d+[A-Z]{1,2}$/)
+    if (m.owner !== undefined) assert.match(m.owner, /^\d+$/)
+  }
+  assert.deepEqual(loadPilotSkinMeta('/nope/pilotSkinMeta.json'), {})
 })
