@@ -226,6 +226,9 @@
   </div>
 
   <div class="warn-block">
+    <strong style="color:var(--accent-green);">◆ 2026-10-13 對外開放</strong>：站長宣布公開（PLAN-042-D「舞台＋卷宗」改版完成當天）。
+    <code>LORE_INTERNAL_ONLY</code> 改 <code>false</code>；未公開的履歷條目整併成一組開館條目、日期 2026-10-13（舊條目描述的是公開前的狀態，訪客沒看過）。
+    旗標與 <code>useLoreEntryVisible()</code> 等穩定一陣子再刪（useLoreEntry.ts 收尾 ③）。<br><br>
     <strong style="color:var(--accent-yellow);">◆ 2026-10-03 狀態：雛形先合併回 main，入口收起</strong><br>
     站長判斷雛形已成、但還不算完成 → 先合併回 main，不讓它卡住其他計畫（PLAN-054 要從 main 開分支）。做法比照模擬器內測的<b>「路由留著、入口收起」</b>
     （<code>src/hooks/useLoreEntry.ts</code> 的 <code>LORE_INTERNAL_ONLY = true</code>）：導覽列與手機 More 面板只有 ADMIN／OWNER 看得到「故事館」；
