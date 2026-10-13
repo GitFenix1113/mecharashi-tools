@@ -245,7 +245,7 @@
     <div class="task-row">
       <div>
         <div class="task-name">切換列 LoreDock</div>
-        <div class="task-desc">底部膠囊：橫捲頭像列（官方 head 圖、<code>loading="lazy"</code>）、目前這位置中、兩端漸隱、滾輪橫捲、滑過顯示名字（提示放在列外）、‹ ›、序號、「名冊」鈕。鍵盤 ← →（閱讀模式中改為換章）、手機封面左右滑、切換列上滑展開名冊。換人走 <code>navigate(…, { replace: true })</code>，上一頁直接回館首頁。</div>
+        <div class="task-desc">底部膠囊：橫捲頭像列（官方 head 圖、<code>loading="lazy"</code>）、目前這位置中、兩端漸隱、滾輪橫捲、滑過顯示名字（提示放在列外）、‹ ›、序號、「名冊」鈕。鍵盤 ← →（閱讀模式中改為換章）、手機封面左右滑、切換列上滑展開名冊。換人走 <code>navigate(…, { replace: true })</code>，上一頁直接回館首頁。<br><b>上線後（2026-10-13 站長回饋）</b>：平常半沉、只露上半截；滑鼠移上去／鍵盤焦點升起，觸控點一下先升起（不換人）、捲動或點列外收回。</div>
         <div class="task-file">src/components/lore/LoreDock.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -395,7 +395,7 @@
     <div class="task-row">
       <div>
         <div class="task-name">手機版</div>
-        <div class="task-desc">舞台是 62svh 封面（只有底緣溶解）、卷宗從下方推上來蓋住封面下緣；全身立繪／外觀鈕移到封面左上；切換列全寬貼底；名冊改 84svh 底部面板。</div>
+        <div class="task-desc">舞台是 62svh 封面（只有底緣溶解）、卷宗從下方推上來蓋住封面下緣；全身立繪／外觀鈕移到封面左上；切換列全寬貼底；名冊改 84svh 底部面板。<br><b>上線後修正（2026-10-13 iPhone 實測捲不到底）</b>：<code>.lore-scroll</code> 加 <code>isolation: isolate</code>（有 z-index 的定位層才會留在 iOS 的捲動容器裡）、外殼高度改 <code>100dvh</code>；粒子層搬進 <code>.lore-scroll</code> 保持原疊層。</div>
         <div class="task-file">src/index.css</div>
       </div>
       <div class="task-assignee">開發者</div>
