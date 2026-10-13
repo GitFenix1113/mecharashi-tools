@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-E 機師資料分家與故事館編輯台 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+.note-warn {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.note-warn strong { color: var(--accent-yellow); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-E 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-042-E</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">機師資料分家與故事館編輯台</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-13 · F-1 為站長部署，不計入開發者任務</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label purple">Progress</div>
+  <div class="section-title">總進度</div>
+  <div class="summary-row">
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">0</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">25</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">25</div><div class="summary-lbl">開發者任務</div></div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-label"><span>整體完成度（開發者任務）</span><span style="color:var(--accent-purple);">0 / 25</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 0%"></div></div>
+  </div>
+  <div class="impact-note">
+    <strong>目標效果：</strong>圖鑑變成純粹的數值與機制頁；一位機師的簡介、人物檔案、英文名、章節、徽章、外觀名稱，在故事館編輯台的同一個面板編完，而且邊編邊看到上線的樣子。
+  </div>
+  <div class="note-warn">
+    <strong>部署順序（決策七）：</strong>B-2 複製資料 → Worker 部署 → 網站 push。<strong>C 段、D-1、D-2 必須在同一次網站部署裡</strong>；從 B-2 到網站部署完成這段期間，凍結 PilotAdmin 與故事館編輯台的編輯。
+    D-3～D-5、E 段可以在之後分批上。G 段要等觀察一週後才做。
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase A ───────────────────────── -->
+<section class="section">
+  <div class="section-label purple">Phase A</div>
+  <div class="section-title">A 資料模型</div>
+  <div class="section-desc">先改型別，讓 <code>tsc</code> 把每一個讀取點都列出來，C 段就不容易漏。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 擴充 LoreDoc</div>
+      <div class="task-group-meta">src/types/lore.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 intro／nameEn／dossier／skins 與章節 draft</div>
+        <div class="task-desc">依計畫書決策三的型別。<code>dossier.extra</code> 是 <code>{label, value}[]</code>；<code>skins</code> 陣列順序＝顯示順序；<code>draft?: true</code>。
+          同時改寫型別註解：拿掉「扉頁正文不住這裡」那一段（<code>:68-73</code>），改寫成新判準（與數值、機制無關的都住這裡）。</div>
+        <div class="task-file">src/types/lore.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; Pilot 型別拿掉遷出欄位</div>
+      <div class="task-group-meta">src/types/pilot.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">刪除 lore／profile／nameEn</div>
+        <div class="task-desc">刪除 <code>Pilot.lore</code>、<code>Pilot.profile</code>、<code>Pilot.nameEn</code>（<code>:310、:352-357、:371</code>）。<code>fullPortrait</code> 本來就不在型別內，只需在 G-1 清 DB。
+          <code>RosterPilot</code>（<code>loreRoster.ts:17</code>）的 <code>Pick</code> 同步調整。</div>
+        <div class="task-file">src/types/pilot.ts · src/components/lore/loreRoster.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 人物檔案純函式＋測試</div>
+      <div class="task-group-meta">src/utils/loreDossier.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">dossierRows／同名檢查／舊格式轉換</div>
+        <div class="task-desc">① <code>dossierRows(doc, faction)</code>：取代 <code>LoreDossier.tsx:41-44</code> 的內嵌邏輯（固定三欄＋陣營＋extra，濾掉空值）；
+          ② <code>duplicateLabels(extra)</code>：編輯台存檔前擋下同名標籤；③ <code>fromAdditionalInfo(map)</code>：給 B-2 用，照現有順序轉成陣列。
+          <code>node --test</code> 涵蓋空值、<code>▇▇</code>／<code>■■時間</code> 這類鍵名、順序保留。</div>
+        <div class="task-file">src/utils/loreDossier.ts · src/utils/loreDossier.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase B ───────────────────────── -->
+<section class="section">
+  <div class="section-label purple">Phase B</div>
+  <div class="section-title">B 搬遷腳本</div>
+  <div class="section-desc">一次性腳本放 <code>scripts/temp_scripts/</code>（不進版控），流程照 <code>data-patch</code> skill：先備份、dry-run 看 diff、apply、bump。<strong>這一段只寫 pilotLore，不動 pilots。</strong></div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 搬遷前備份</div>
+      <div class="task-group-meta">scripts/temp_scripts/backup-firestore.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">全集合備份</div>
+        <div class="task-desc">產出 <code>_local-notes/db-backup-&lt;時間&gt;/</code>，記下目錄名寫進本進度表，給 G-1 與萬一需要的還原用。</div>
+        <div class="task-file">_local-notes/db-backup-*</div>
+      </div>
+      <div class="task-assignee">開發者（本機）</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 複製 pilots → pilotLore</div>
+      <div class="task-group-meta">scripts/temp_scripts/copy-pilot-profile-to-lore.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">dry-run → apply → bump pilotLore</div>
+        <div class="task-desc">每位機師寫入 <code>intro</code>（用 <code>stripTrailingSource</code> 切掉署名後的正文）、<code>nameEn</code>、<code>dossier</code>（extra 經 A-3 轉換），用 merge 寫入：既有 34 份保留章節、署名、徽章，新建 58 份（<code>chapters: []</code> 一定要帶，見 <code>AdminLorePage.tsx:26-32</code> 的白屏教訓）。
+          dry-run 印出每位的 diff，<strong>34 篇署名的切割結果另外列一張表給人工抽查</strong>。apply 後執行 <code>bump-data-version.mjs pilotLore</code>。<strong>從這一步開始凍結編輯。</strong></div>
+        <div class="task-file">scripts/temp_scripts/copy-pilot-profile-to-lore.mjs · scripts/bump-data-version.mjs</div>
+      </div>
+      <div class="task-assignee">開發者（本機）</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 對帳腳本</div>
+      <div class="task-group-meta">scripts/temp_scripts/verify-pilot-lore-migration.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">92 位逐欄比對，差異必須為 0</div>
+        <div class="task-desc">pilots 舊值和 pilotLore 新值逐欄比對（署名切割的 34 篇改成比對「intro＋frontSource」能不能拼回原文）。B-2 後跑一次，F-1 網站部署後再跑一次，用來抓凍結期間的遺漏。G-1 刪欄位前也要再跑。</div>
+        <div class="task-file">scripts/temp_scripts/verify-pilot-lore-migration.mjs</div>
+      </div>
+      <div class="task-assignee">開發者（本機）</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase C ───────────────────────── -->
+<section class="section">
+  <div class="section-label purple">Phase C</div>
+  <div class="section-title">C 讀取端切換</div>
+  <div class="section-desc">和 D-1、D-2 同一次部署。不寫「讀不到新欄位就退回 pilots」的退路（決策七）。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 故事館元件改讀 LoreDoc</div>
+      <div class="task-group-meta">src/components/lore/* · src/pages/lore/*</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">卷宗、舞台、名冊、切換器</div>
+        <div class="task-desc"><code>LoreDossier</code>（簡介改讀 <code>intro</code>、檔案改用 A-3 <code>dossierRows</code>、拿掉執行期 <code>stripTrailingSource</code>）、<code>LoreStage</code>（<code>nameEn</code> 草書，<code>:61</code>）、<code>LoreSwitcher</code>（<code>:388</code>）、
+          <code>loreRoster</code>（搜尋比對 nameEn，<code>:88</code>）。<code>PilotLorePage</code>／<code>LoreHomePage</code> 把 pilots 與 pilotLore 依 id 合併後傳下去。
+          pilotLore 讀不到時顯示「故事資料載入失敗」，<strong>不要讓人誤以為是空白資料</strong>（檢查 <code>PilotLorePage.tsx:24</code> 刻意不看 loading 的設計）。</div>
+        <div class="task-file">LoreDossier.tsx · LoreStage.tsx · LoreSwitcher.tsx · loreRoster.ts · PilotLorePage.tsx · LoreHomePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 圖鑑清理＋故事館入口連結</div>
+      <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">刪人物檔案列與故事卡，留一顆入口連結（Q2）</div>
+        <div class="task-desc">刪除標頭的性別／身高／血型／自訂欄位 InfoRow（<code>:1046-1054</code>）和頁尾「機師故事」卡（<code>:1309-1336</code>），
+          加入不帶文字內容的「故事館 ▸」連結到 <code>/lore/pilots/:id</code>（擺在標頭資訊格最後，或名字旁邊，實作時決定）。
+          刪除 <code>src/hooks/useLoreEntry.ts</code>，以及它在 <code>PilotDetailPage.tsx:776</code>、<code>Layout.tsx:153</code> 的呼叫（故事館導覽項目改成常駐）；<code>siteChangelog/types.ts:8</code> 的註解一併更新。
+          驗收：375px 手機版第一屏看得到 AP。</div>
+        <div class="task-file">PilotDetailPage.tsx · src/hooks/useLoreEntry.ts（刪） · Layout.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; entityRefs「機師簡介」站點搬家</div>
+      <div class="task-group-meta">src/utils/entityRefs.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">從 PILOTS 移到 PILOT_LORE</div>
+        <div class="task-desc">刪掉 PILOTS spec 的 <code>{ origin: '機師簡介', texts: { lore } }</code>（<code>:300</code>），在 PILOT_LORE（<code>:703</code>）的 textUnits 加一筆 <code>origin: '扉頁簡介'</code>、<code>texts: { intro }</code>。
+          目前 89 篇都沒有 <code>[xxx]</code>，這個站點是防止日後誤加。<code>entityRefs.test.ts</code> 補對應斷言。</div>
+        <div class="task-file">src/utils/entityRefs.ts · src/utils/entityRefs.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; Worker 分享卡改讀 pilotLore</div>
+      <div class="task-group-meta">workers/src/socialPreview.ts · index.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">/lore/pilots/* 的 description 取 pilotLore.intro</div>
+        <div class="task-desc"><code>buildOgMeta</code> 的故事館分支（<code>socialPreview.ts:245-249</code>）改吃 pilotLore 文件的 <code>intro</code>；<code>index.ts:294-296</code> 對 <code>lore: true</code> 的目標多讀一份 pilotLore 文件（標題、立繪仍取 pilots）。
+          <code>socialPreview.test.ts:200-233</code> 的 fixture 從 <code>doc.lore</code> 改成另傳的 lore 文件；「不傳 opts 時與既有輸出逐字一致」這條斷言保留。</div>
+        <div class="task-file">workers/src/socialPreview.ts · workers/src/index.ts · workers/src/socialPreview.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-5 &nbsp; 改寫過時註解</div>
+      <div class="task-group-meta">多檔</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">所有「扉頁正文住 pilots.lore」的說法</div>
+        <div class="task-desc"><code>lore.ts:68-73、:84、:99</code>、<code>AdminLorePage.tsx:387-389、:551</code>、<code>LoreDossier.tsx:18-20</code>、<code>LoreHomePage.tsx:17-19</code>、<code>PilotDetailPage.tsx:1317-1324</code>、<code>loreText.ts:121</code>。
+          最後用 <code>grep -rn "pilots.lore\|pilot.lore\|profile.additionalInfo" src workers</code> 確認只剩歷史說明。</div>
+        <div class="task-file">src/** · workers/src/**</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-6 &nbsp; 測試 fixture 更新</div>
+      <div class="task-group-meta">src/**/*.test.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把 lore／profile 從 pilots fixture 移走</div>
+        <div class="task-desc"><code>cascadePatch.test.ts:75、:452</code>（體積預算測試改用別的長欄位）、<code>restorePatch.test.ts:38</code>、<code>loreRoster.test.ts:40</code>。<code>npm test</code> 全綠、<code>npm run build</code> 成功。</div>
+        <div class="task-file">src/utils/cascadePatch.test.ts · src/utils/restorePatch.test.ts · src/components/lore/loreRoster.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase D ───────────────────────── -->
+<section class="section">
+  <div class="section-label purple">Phase D</div>
+  <div class="section-title">D 故事館編輯台</div>
+  <div class="section-desc">D-1、D-2 和 C 段同一次部署；D-3～D-5 可以之後分批上。寫入一律走 <code>saveWithHistory</code>（會自動遞增版本號，後台編輯不必手動 bump）。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 移除 PilotAdmin「個人資料」分頁</div>
+      <div class="task-group-meta">src/pages/user/admin/PilotAdmin.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">分頁、AdditionalInfoEditor、新建預設值</div>
+        <div class="task-desc">刪除 <code>editTab === 'profile'</code> 區塊（<code>:1670-1698</code>）與 <code>PILOT_EDIT_TABS</code> 的對應項目；<code>AdditionalInfoEditor</code>（<code>:1399</code>）搬到故事館編輯台並改成陣列版；
+          新建機師的空 <code>profile</code>（<code>:42</code>）拿掉。原分頁位置改放一行「人物檔案與故事已移到故事館編輯台 →」，連到 <code>/admin/lore?pilot=&lt;id&gt;</code>。</div>
+        <div class="task-file">src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 編輯台分頁化：扉頁／人物檔案／逸聞章節</div>
+      <div class="task-group-meta">src/pages/admin/AdminLorePage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新欄位編輯與 deep link</div>
+        <div class="task-desc"><strong>扉頁</strong>：英文名、扉頁簡介（共用 OCR 清理）、扉頁署名、陣營徽章（既有的 FactionLogoPicker）。
+          <strong>人物檔案</strong>：性別／身高／血型，加上自訂欄位列表（新增、刪除、上下排序、存檔前用 A-3 檢查同名）。
+          <strong>逸聞章節</strong>：既有的 OCR 區、章節、旁白。網址支援 <code>?pilot=&lt;id&gt;</code> 直接打開該位的面板。檔案拆到 <code>src/components/admin/lore/</code>，避免單檔過大。</div>
+        <div class="task-file">src/pages/admin/AdminLorePage.tsx · src/components/admin/lore/*</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 進度總覽</div>
+      <div class="task-group-meta">src/pages/admin/AdminLorePage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">列表欄位與篩選（全部從資料推導）</div>
+        <div class="task-desc">每位一列：簡介有無、檔案欄數、章節數（含草稿數）、外觀已命名／總數、徽章有無。
+          篩選鈕：缺簡介／缺檔案／有草稿章／外觀未命名／缺陣營徽章，取代現在的「已建檔／未建檔」（<code>:46-50</code>）。頂部顯示全站完成度統計。不新增任何狀態欄位（決策五）。</div>
+        <div class="task-file">src/pages/admin/AdminLorePage.tsx · src/utils/loreProgress.ts（＋測試）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 即時預覽</div>
+      <div class="task-group-meta">src/components/admin/lore/LorePreview.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">嵌入前台元件，餵表單狀態</div>
+        <div class="task-desc">直接用前台的 <code>LoreDossier</code>／<code>LoreStage</code>，傳入編輯中的表單，看到的就是上線的樣子。紙色主題由 <code>.lore-shell</code> 包住預覽區局部套用，不影響後台其他部分。
+          桌面版放在面板右欄，手機版放成一個分頁。</div>
+        <div class="task-file">src/components/admin/lore/LorePreview.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-5 &nbsp; 章節草稿旗標</div>
+      <div class="task-group-meta">AdminLorePage · PilotLorePage · LoreHomePage</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">編輯台開關＋前台過濾</div>
+        <div class="task-desc">章節卡加「草稿」開關。前台在單一位置過濾 <code>draft</code>（純函式 <code>publishedChapters()</code>），章節分頁、‹ › 換章、館首頁章節數都改用它；
+          草稿章的網址導回扉頁。Worker 分享卡不管草稿（資料外洩站長已接受，見決策五）。</div>
+        <div class="task-file">src/components/lore/loreText.ts 或新檔 · PilotLorePage.tsx · LoreHomePage.tsx · AdminLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase E ───────────────────────── -->
+<section class="section">
+  <div class="section-label purple">Phase E</div>
+  <div class="section-title">E 外觀管理</div>
+  <div class="section-desc">決策六：圖檔、owner 歸屬、檔案清單維持 build 時決定；名稱、隱藏、順序改由 <code>pilotLore.skins</code> 在執行期提供。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; pilotSkins() 合併 DB 設定</div>
+      <div class="task-group-meta">src/utils/gameArt.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">名稱、隱藏、順序＋測試</div>
+        <div class="task-desc"><code>pilotSkins(pilot, loreDoc?)</code>（<code>:100</code>）：先依 <code>skins</code> 陣列排序並套用名稱、濾掉 hidden，沒列在陣列裡的外觀依原索引順序接在後面並顯示「外觀 N」，DB 有設定但沒有圖的 key 直接忽略。
+          <code>PilotLorePage</code> 的外觀列與名冊外觀數（<code>:64、:87</code>）都改傳 lore 文件。<code>gameArt.test.ts</code> 補排序、隱藏、殘留 key 三種情況。</div>
+        <div class="task-file">src/utils/gameArt.ts · src/utils/gameArt.test.ts · src/pages/lore/PilotLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 編輯台「外觀」分頁</div>
+      <div class="task-group-meta">src/components/admin/lore/LoreSkinsEditor.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">縮圖格：命名、隱藏、排序</div>
+        <div class="task-desc">列出這位機師所有外觀（來源是 build 時的清單，<strong>不是</strong> DB），每格可以命名、切換隱藏、上下或拖曳排序；點縮圖用 D-4 的預覽看舞台構圖。
+          沒有外觀的機師顯示「目前沒有其他外觀（新增要跑 import-game-assets.mjs --skins）」。預設外觀不在這裡改（那是 <code>pilots.artKey</code>）。</div>
+        <div class="task-file">src/components/admin/lore/LoreSkinsEditor.tsx · AdminLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; build 腳本與 JSON 收斂</div>
+      <div class="task-group-meta">scripts/generate-art-index.mjs · import-game-assets.mjs · pilotSkinMeta.json</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">name／hidden 不再由 build 讀</div>
+        <div class="task-desc"><code>generate-art-index.mjs:173-175</code> 不再讀 name／hidden（hidden 的外觀照常進清單）；<code>gameArtIndex.ts</code> 的型別與註解（<code>:349-351</code>）同步。
+          <code>pilotSkinMeta.json</code> 的 <code>_說明</code> 改成只管 owner／note。<code>import-game-assets.mjs</code> 報告的「下一步」清單（<code>:727</code>）改成「⬜ 到後台 › 故事館編輯台 › 外觀，幫新外觀命名或隱藏」，維持「例行流程不靠 AI 也能跑」。
+          <code>public/images/game/README.md:56</code>（目前寫「名稱、hidden 也寫在那份」）一併改。</div>
+        <div class="task-file">scripts/generate-art-index.mjs · scripts/import-game-assets.mjs · scripts/lib/pilotSkinMeta.json · src/data/gameArtIndex.ts · public/images/game/README.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase F ───────────────────────── -->
+<section class="section">
+  <div class="section-label purple">Phase F</div>
+  <div class="section-title">F 部署與驗收</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 依序部署</div>
+      <div class="task-group-meta">Worker · GitHub Pages</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">B-2 之後：Worker 先上，再 push 網站</div>
+        <div class="task-desc">Worker 部署（C-4）→ <code>npm run push</code> → 等 <code>pages-build-deployment</code> 完成 → 執行 B-3 對帳 → 解除凍結。auto mode 擋得到正式站部署，所以由站長執行或授權。</div>
+        <div class="task-file">workers/ · main</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; 驗收</div>
+      <div class="task-group-meta">本機 vite · curl · Playwright</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">畫面、分享卡、測試</div>
+        <div class="task-desc">① 本機 <code>npx vite --port 5173</code> 吃正式資料，抽看有署名、沒有簡介（3 位）、自訂欄位 3 筆的機師各一位，以及有外觀的機師；圖鑑詳情頁沒有任何人物檔案，入口連結正常。
+          ② <code>curl -A "Discordbot/2.0"</code> 打 <code>/lore/pilots/…</code>，確認 <code>og:description</code> 是簡介而不是「某某｜機師故事館」；<code>/pilots/…</code> 的分享卡不變。
+          ③ 讓 <code>/api/data/pilotLore</code> 失敗時，故事館顯示載入失敗提示。④ <code>npm test</code>、<code>npm run lint</code>、<code>npm run build</code>。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-3 &nbsp; 文件同步與更新履歷</div>
+      <div class="task-group-meta">docs/02_技術文件 · docs/03_頁面規劃 · siteChangelog</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">資料模型、集合文件、頁面規劃</div>
+        <div class="task-desc">CLAUDE.md 規則 2：<code>02_資料模型/pilots.html</code>（拿掉 lore／profile／nameEn）、<code>04_Firebase/資料庫設計文件/pilots.html</code>、<code>pilotLore.html</code>（新欄位）、
+          <code>03_頁面規劃/13_故事館/</code>（編輯台、外觀管理）與機師詳情頁規劃。<code>src/data/siteChangelog/2026-10.ts</code>：機師詳情頁改成只顯示數值與機制、故事館後台可以編輯人物檔案與外觀名稱。</div>
+        <div class="task-file">docs/02_技術文件/** · docs/03_頁面規劃/** · src/data/siteChangelog/2026-10.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase G ───────────────────────── -->
+<section class="section">
+  <div class="section-label purple">Phase G</div>
+  <div class="section-title">G 收尾（F-1 後觀察一週）</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-1 &nbsp; 刪除 pilots 的舊欄位</div>
+      <div class="task-group-meta">scripts/temp_scripts/drop-migrated-pilot-fields.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">lore／profile／nameEn／fullPortrait</div>
+        <div class="task-desc">先備份、先跑 B-3 對帳（差異必須為 0），再用 <code>FieldValue.delete()</code> 刪除四個欄位（<code>fullPortrait</code> 依站長 Q4），dry-run 列出每位要刪的欄位後再 apply，最後 bump <code>pilots</code>。
+          pilots 整包預計從 1,174.8 KB 降到約 1,100 KB。</div>
+        <div class="task-file">scripts/temp_scripts/drop-migrated-pilot-fields.mjs · scripts/bump-data-version.mjs</div>
+      </div>
+      <div class="task-assignee">開發者（本機）</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-2 &nbsp; 封存一次性腳本</div>
+      <div class="task-group-meta">E:\Mecharashi_Data\script-archive\</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">搬遷腳本與 extract-lore-source.mjs</div>
+        <div class="task-desc">B-2、B-3、G-1 的腳本，以及已經沒用的 <code>extract-lore-source.mjs</code>，都搬到 <code>script-archive/&lt;日期&gt;/</code>（不直接刪，git 救不回來）。
+          CLAUDE.md 6.5 的 temp_scripts 保留清單從 5 支改成 4 支（<code>extract-lore-source.mjs</code> 原本因為 AdminLorePage 引用而保留，C-5 之後不再被引用）。</div>
+        <div class="task-file">scripts/temp_scripts/ · CLAUDE.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-3 &nbsp; 還原舊快照時排除已遷出欄位</div>
+      <div class="task-group-meta">src/utils/restorePatch.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">避免把 lore／profile 寫回 pilots</div>
+        <div class="task-desc">G-1 之前的 pilots 異動歷史快照仍含這些欄位，從後台還原時會被寫回去，變成沒有程式在讀的殘留資料。在還原流程對 pilots 排除 <code>lore／profile／nameEn／fullPortrait</code>，並補測試。
+          如果實作時發現還原只會寫 patch 不會寫整份文件、不會有這個問題，就記錄結論後標為完成。</div>
+        <div class="task-file">src/utils/restorePatch.ts · src/utils/restorePatch.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-E — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

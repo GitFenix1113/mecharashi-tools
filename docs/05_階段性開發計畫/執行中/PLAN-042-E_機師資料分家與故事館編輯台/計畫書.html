@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-E 機師資料分家與故事館編輯台 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.section-label.red  { color: var(--accent-red); }
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+  white-space: pre;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+.code-block .add { color: #7ee787; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.table-wrap { overflow-x: auto; }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-move   { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-E 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-042-E</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    機師資料分家與故事館編輯台<span style="-webkit-text-fill-color:var(--text-secondary);">圖鑑只留功能 · 人物檔案歸故事館 · 外觀管理</span>
+  </h1>
+  <p class="hero-sub">機師圖鑑只保留跟數值、機制有關的資料；簡介、人物檔案、英文名全部搬進 <code>pilotLore</code>。故事館編輯台擴充成一個地方就能編完一位機師的所有故事資料，外觀的名稱、隱藏、順序也改在後台管理。</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+  <div class="plan-meta">
+    <div class="meta-item"><div class="meta-label">計畫編號</div><div class="meta-value purple">PLAN-042-E</div></div>
+    <div class="meta-item"><div class="meta-label">建立日期</div><div class="meta-value">2026-10-13</div></div>
+    <div class="meta-item"><div class="meta-label">影響範圍</div><div class="meta-value purple">src/types/lore.ts · pilot.ts · src/components/lore/* · src/pages/lore/* · PilotDetailPage · PilotAdmin · AdminLorePage · entityRefs · utils/gameArt · workers/socialPreview · generate-art-index／import-game-assets · pilotSkinMeta.json · Firestore pilots／pilotLore · docs</div></div>
+    <div class="meta-item"><div class="meta-label">優先級</div><div class="meta-value yellow">MID（C 段與 D-1／D-2 必須同一次部署）</div></div>
+    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value purple">規劃中 0／25（2026-10-13 立案）</div></div>
+    <div class="meta-item"><div class="meta-label">前置依賴</div><div class="meta-value cyan">PLAN-042-A（pilotLore 集合、編輯台）· 042-D（外觀上站、<code>pilotSkins()</code>）· PLAN-059 D（陣營徽章）· 官網爬蟲退場（2026-10-11）</div></div>
+  </div>
+  <div class="info-block">
+    <strong>本計畫的依據：</strong><code>_local-notes/2026-10/2026-10-13_機師資料分家_圖鑑與故事館評估.html</code>（在 _local-notes，不進版控），
+    內含逐條勘誤、欄位歸屬總表、後台線框、外觀資料流與搬遷步驟。資料數字取自 <code>_local-notes/db-backup-2026-10-12_1847/</code>（機師 92 份、pilotLore 34 份）。
+    站長同日回覆評估的四個問題：<strong>Q1</strong> 全名、陣營留在 pilots（陣營日後會有遊戲機制作用）；<strong>Q2</strong> 圖鑑保留故事館入口連結；
+    <strong>Q3</strong> 故事編輯者角色先不做；<strong>Q4</strong> 孤兒欄位 <code>fullPortrait</code> 在收尾時刪除。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+  <div class="problem-block">
+    <strong>問題一：一位機師的故事資料分住兩處，編輯要跑兩個畫面</strong><br>
+    簡介、性別／身高／血型、自訂欄位、英文名在「機師管理 › 個人資料」分頁（<code>PilotAdmin.tsx:1670-1698</code>）；
+    章節、旁白、扉頁署名、陣營徽章在「故事館編輯台」（<code>/admin/lore</code>）。故事館的扉頁同時讀兩個集合，編輯台的預覽也因此做不出來。
+  </div>
+  <div class="problem-block">
+    <strong>問題二：圖鑑混入了非功能資訊</strong><br>
+    站長 2026-10-13 定調：機師圖鑑只做「功能性」，也就是數值、機制、天賦、技能。現在詳情頁標頭的資訊格最多 11 列，其中 6 列是人物檔案（<code>PilotDetailPage.tsx:1046-1054</code>），
+    頁尾另有一張「機師故事」卡（<code>:1309-1336</code>）。
+  </div>
+  <div class="problem-block">
+    <strong>問題三：總綱決策二的前提已經失效</strong><br>
+    決策二「誰是權威來源」不搬 <code>lore</code>／<code>profile</code> 的兩個理由：① 圖鑑浮窗讀 <code>pilots.lore</code>，但 <strong>2026-10-09 浮窗已改列天賦</strong>（<code>EntityRefView.tsx:95</code>）；
+    ② 爬蟲每次補丁會重寫，但 <strong>2026-10-11 官網爬蟲已退場</strong>。現在所有資料都是人寫的，「誰寫的」這條判準已經分不出任何東西。
+  </div>
+  <div class="problem-block">
+    <strong>問題四：外觀的名稱和隱藏只能改 JSON 再部署</strong><br>
+    042-D 讓 37 位、42 套外觀上站，名稱與隱藏設定放在 <code>scripts/lib/pilotSkinMeta.json</code>，由 <code>generate-art-index.mjs</code> 在 build 時讀取。
+    維護人員要幫外觀命名，就得改 repo 裡的檔案並等部署。目前這個 JSON 的 name／hidden <strong>一筆都沒填</strong>（唯一的一筆是 owner 歸屬），前台全部顯示「外觀 N」。
+  </div>
+  <div class="problem-block">
+    <strong>問題五：兩處資料形狀的遺留問題</strong><br>
+    ① 34 篇扉頁署名仍黏在 <code>pilots.lore</code> 正文尾端，每次渲染都靠 <code>stripTrailingSource</code> 切掉；
+    ② <code>additionalInfo</code> 是 map，Firestore 不保證鍵的順序。總綱決策二當初就把「additionalInfo 的顯示順序」列為 lore 集合要承擔的事，但一直沒有落地。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：新判準「與數值、機制有沒有關係」，取代總綱決策二</strong><br>
+    有關的留在 <code>pilots</code>，其餘全部歸 <code>pilotLore</code>。邊界案例依站長 Q1 裁決：<strong>全名 <code>fullName</code>、陣營 <code>faction</code> 留在 pilots</strong>。
+    全名是圖鑑標題；陣營現在用於圖鑑搜尋和卡片，日後還會有遊戲機制上的作用。
+  </div>
+  <div class="table-wrap">
+  <table class="impact-table">
+    <tr><th>欄位（pilots）</th><th>去向</th><th>填寫率</th><th>說明</th></tr>
+    <tr><td><code>lore</code></td><td><span class="badge-move">→ pilotLore.intro</span></td><td>89／92</td><td>51.0 KB。<strong>0 篇</strong>含 <code>[xxx]</code>。搬遷時把黏在尾端的署名切掉</td></tr>
+    <tr><td><code>profile.gender／height／bloodType</code></td><td><span class="badge-move">→ pilotLore.dossier</span></td><td>92／92</td><td>保留固定欄位：<code>LoreDossier</code> 拿身高當紅色標籤</td></tr>
+    <tr><td><code>profile.additionalInfo</code></td><td><span class="badge-move">→ pilotLore.dossier.extra</span></td><td>83／92</td><td>147 筆、103 種鍵名，每人最多 3 筆；改成有序陣列</td></tr>
+    <tr><td><code>nameEn</code></td><td><span class="badge-move">→ pilotLore.nameEn</span></td><td>90／92</td><td>只有故事館讀（扉頁草書、卷宗、名冊搜尋）</td></tr>
+    <tr><td><code>pilotSkinMeta.json</code> 的 name／hidden</td><td><span class="badge-move">→ pilotLore.skins</span></td><td>0 筆</td><td>沒有資料要搬；JSON 收斂成只管匯入用的 owner／note</td></tr>
+    <tr><td><code>fullPortrait</code></td><td><span class="badge-high">刪除</span></td><td>82／92</td><td>舊爬蟲的 <code>_Raw</code> 路徑，src／workers／scripts 都沒有讀取點（Q4）</td></tr>
+    <tr><td><code>name／fullName／faction</code></td><td><span class="badge-good">留</span></td><td>—</td><td>身分與分類，兩館共用（Q1）</td></tr>
+    <tr><td><code>class／license／rarity／masterLevel／debutVersion</code>、<code>gameId／artKey／portrait／pairedMechId</code>、數值類</td><td><span class="badge-good">留</span></td><td>—</td><td>功能性欄位。預設外觀＝<code>artKey</code>，圖鑑頭像也在用，所以不由故事館管</td></tr>
+  </table>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：單向依賴，圖鑑不跨進故事館</strong><br>
+    <strong>圖鑑只讀 <code>pilots</code></strong>；故事館讀 <code>pilotLore</code>，另外從 <code>pilots</code> 讀身分欄位（名字、全名、職業、陣營、立繪）。
+    這樣一來，故事館壞掉、資料還沒填，或日後又要收起入口，都不會影響圖鑑。
+    依站長 Q2，圖鑑保留一顆<strong>不帶任何文字內容</strong>的「故事館 ▸」入口連結，不必載入 pilotLore。92 位機師都有故事館頁，所以連結不會連到空頁。
+    故事館入口旗標 <code>useLoreEntry.ts</code>（<code>LORE_INTERNAL_ONLY=false</code>，原定穩定後刪除）在本計畫刪除：圖鑑已經沒有簡介可以退回顯示，這個旗標的退路也就不存在了。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：不新增集合，只擴充 <code>LoreDoc</code></strong><br>
+    <code>pilotLore</code> 的 CollectionKey、Worker 白名單、rules、entityRefs SPECS、changeHistory 都已接好，所以不會碰到「新增集合要連動九處」的陷阱。
+    搬遷後 pilotLore 整包約 6.8 KB → 70 KB（不含之後增加的章節），仍留在 <code>NO_LOCAL_CACHE_KEYS</code>（<code>collectionKeys.ts:54</code>）。
+    Worker 的邊緣快取 key 已帶版本號，額外的 Firestore 讀取可以忽略。
+  </div>
+  <div class="code-block"><span class="cm">// src/types/lore.ts</span>
+<span class="kw">export interface</span> <span class="ty">LoreDoc</span> {
+  id: <span class="ty">string</span>
+  name?: <span class="ty">string</span>
+<span class="add">  intro?: string                       // 扉頁簡介（原 pilots.lore），署名已切掉</span>
+  frontSource?: <span class="ty">string</span>
+<span class="add">  nameEn?: string                      // 原 pilots.nameEn</span>
+<span class="add">  dossier?: {                          // 原 pilots.profile</span>
+<span class="add">    gender?: string; height?: string; bloodType?: string</span>
+<span class="add">    extra?: { label: string; value: string }[]   // 原 additionalInfo，陣列順序＝顯示順序</span>
+<span class="add">  }</span>
+<span class="add">  skins?: { key: string; name?: string; hidden?: boolean }[]   // 外觀顯示設定，陣列順序＝顯示順序</span>
+  factionLogos?: <span class="ty">string</span>[]
+  chapters: <span class="ty">LoreChapter</span>[]
+}
+<span class="kw">export interface</span> <span class="ty">LoreChapter</span> {
+  <span class="cm">/* 既有欄位不變 */</span>
+<span class="add">  draft?: true                         // 前台不列出；資料仍會整包下載（站長：外洩無妨）</span>
+}</div>
+
+  <div class="decision-block">
+    <strong>決策四：搬家時順便修正資料形狀</strong><br>
+    ① 欄位名用 <code>intro</code>，不沿用 <code>lore</code>，避免和集合名、型別名混淆。
+    ② <code>additionalInfo</code> 改成 <code>{label, value}[]</code>，順序由編輯者決定，存檔時檢查同名標籤；搬遷時照備份裡的現有順序轉換。
+    ③ 34 篇署名在搬遷時一次切乾淨，執行期的 <code>stripTrailingSource</code> 就可以拿掉，不必每次渲染都重新猜一次。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：草稿只做章節層的 <code>draft</code> 旗標，進度由資料推導</strong><br>
+    站長裁決草稿外洩沒關係，所以不另開只有編輯者讀得到的集合。草稿章在前台不列出、章節網址導回扉頁，館首頁的章節數也不計入。
+    簡介和檔案都是短欄位，沒有「寫一半」的問題，不做草稿。
+    <strong>不存文件層的 status</strong>：後台進度總覽的「有沒有簡介、檔案幾欄、章節數、草稿數、外觀命名數」全部從資料推導。
+    這是 PLAN-041「0/5 定律」的教訓：選填的狀態欄位最後沒人會填。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：外觀分成靜態層和動態層</strong><br>
+    <strong>靜態層</strong>（build 時決定，仍走腳本＋部署）：圖檔本身、<code>owner</code> 歸屬（決定檔案放進哪位機師的資料夾）、檔案清單 <code>gameArtIndex.ts</code>，
+    以及 NPC 圖庫的歸屬 <code>npcArtNotes.json</code>。<br>
+    <strong>動態層</strong>（後台存檔就生效）：<code>pilotLore.skins</code> 的名稱、隱藏、順序，由 <code>pilotSkins()</code> 在執行期合併。
+    已經有圖、DB 卻沒有設定的外觀照舊顯示「外觀 N」；DB 有設定、圖卻不存在的 key 直接忽略。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：先複製、再切換、觀察後才刪，不寫雙讀退路</strong><br>
+    任何時間點，正在跑的程式都讀得到它要的資料：資料先複製到 pilotLore（舊程式不認得新欄位，所以不受影響）→ Worker 先部署 → 網站一次切換 → 觀察一週後才刪除 pilots 的舊欄位。
+    不寫「新欄位讀不到就退回舊欄位」的程式碼：那種退路實際上會一直留著，結果變成兩個資料來源。
+    <strong>C 段（讀取端）必須和 D-1（移除 PilotAdmin 個人資料分頁）、D-2（編輯台加欄位）同一次部署</strong>，否則在舊分頁改的內容會沒有地方去。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策八：故事編輯者角色先不做</strong><br>
+    站長 Q3。目前的維護人員都是 ADMIN，這和總綱「EDITOR 角色降級為備案」一致。
+    要做的時候，需要改 role 值、rules（pilotLore 和 changeHistory 的寫入）、AdminRoute，編輯台直讀 pilots 也得改走 Worker，再加一個指派角色的介面。屆時另立小計畫。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 已知地雷</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>舊 AdminLorePage 存檔是整份覆寫</strong>：從複製資料到網站部署完成之間，如果有人在舊後台存檔，剛搬進來的 intro／dossier 會被洗掉。這段期間要<strong>凍結編輯</strong>，F-2 的對帳腳本負責抓遺漏。</li>
+      <li><strong>Worker 分享卡會在沒有錯誤的情況下退化</strong>：<code>/lore/pilots/*</code> 的 description 現在讀 <code>pilots.lore</code>（<code>socialPreview.ts:249</code>）。沒改到的話，回應一樣是 200、一樣有 og:image，只有描述文字退回預設值。</li>
+      <li><strong>pilotLore 讀不到時，降級的結果變差</strong>：現在讀不到時扉頁仍有正文（來自 pilots），搬遷後只剩名字、職業、陣營。要明確顯示「故事資料載入失敗」，不能讓人以為是空白資料。</li>
+      <li><strong>還原舊歷史快照會把舊欄位帶回 pilots</strong>：G-1 之前的 pilots 快照仍含 lore／profile。G-3 處理。</li>
+      <li><strong><code>hidden</code> 的意思會變</strong>：以前代表不寫進 build 清單（打包檔裡完全沒有），改由 DB 控制後打包檔仍有路徑，只是前台不列出。依「劇透不是顧慮」可以接受。</li>
+      <li><strong>例行流程要能不靠 AI</strong>：<code>import-game-assets.mjs --skins</code> 報告的「下一步」清單（<code>:727</code>）現在寫著「編輯 pilotSkinMeta.json 的 name／hidden」，E-3 要改成指向後台的外觀分頁。</li>
+      <li>註解和文件裡多處寫著「扉頁正文住 pilots.lore」（<code>lore.ts:68-73</code>、<code>AdminLorePage.tsx:387-389／551</code>、<code>LoreDossier.tsx:18</code>、<code>LoreHomePage.tsx:17-19</code>、<code>PilotDetailPage.tsx:1317-1324</code>），C-5 要一起改寫，否則會誤導下一個人。</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+  <div class="decision-block">
+    <strong>在範圍內（25 項開發者任務＋1 項站長部署）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>A 資料模型</strong>（3 項）：擴充 LoreDoc、Pilot 型別拿掉遷出欄位、人物檔案純函式＋測試</li>
+      <li><strong>B 搬遷腳本</strong>（3 項）：備份、複製（dry-run → apply → bump）、對帳</li>
+      <li><strong>C 讀取端切換</strong>（6 項）：故事館元件、圖鑑清理＋入口連結、entityRefs 站點、Worker 分享卡、註解改寫、測試 fixture</li>
+      <li><strong>D 故事館編輯台</strong>（5 項）：移除 PilotAdmin 個人資料分頁、編輯台分頁化（扉頁／人物檔案／章節）、進度總覽、即時預覽、章節草稿旗標</li>
+      <li><strong>E 外觀管理</strong>（3 項）：<code>pilotSkins()</code> 合併 DB 設定、外觀分頁、build 腳本與 JSON 收斂</li>
+      <li><strong>F 部署與驗收</strong>（3 項，F-1 為站長）：部署順序、驗收、文件同步與更新履歷</li>
+      <li><strong>G 收尾</strong>（3 項）：刪除 pilots 舊欄位（含 <code>fullPortrait</code>）、封存一次性腳本、還原快照排除遷出欄位</li>
+    </ul>
+  </div>
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>機甲側的 <code>mechs.lore</code>（<code>MechDetailPage.tsx:429</code>）：同一種問題，等 042-B 機甲故事館動工時套用同一套判準</li>
+      <li>故事編輯者角色（決策八）</li>
+      <li>外觀圖檔上傳：圖檔放在 GitHub Pages，後台沒辦法新增檔案，仍走 <code>import-game-assets.mjs --skins</code> 再部署</li>
+      <li>NPC 圖庫歸屬（<code>npcArtNotes.json</code>）改到後台：後台選立繪的 NPC 分組也在用它，列為日後候選</li>
+      <li>由故事館切換預設外觀：預設外觀是 <code>pilots.artKey</code>，圖鑑頭像也在用，留在機師管理</li>
+      <li>042-D H 段的站長資料作業（造型名稱、台版白名單、逸聞 OCR 清理）：本計畫完成後改在後台外觀分頁做，不必再改 JSON</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label purple">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html"><div class="doc-tag">Progress</div><h4>◆ PLAN-042-E 進度表</h4><p>A–G 七段、26 項（開發 25＋站長部署 1）</p></a>
+    <a class="doc-item" href="../PLAN-042_故事館_總綱/計畫書.html"><div class="doc-tag">Master</div><h4>◆ PLAN-042 故事館總綱</h4><p>決策二由本計畫的決策一取代（2026-10-13 修訂）</p></a>
+    <a class="doc-item" href="../PLAN-042-A_機師故事館/計畫書.html"><div class="doc-tag">Parent</div><h4>◆ PLAN-042-A 機師故事館</h4><p>pilotLore 集合、編輯台 E-1、入口收起旗標</p></a>
+    <a class="doc-item" href="../PLAN-042-D_故事館改版_舞台與卷宗/計畫書.html"><div class="doc-tag">Predecessor</div><h4>◆ PLAN-042-D 舞台與卷宗</h4><p>外觀上站、<code>pilotSkinMeta.json</code>、卷宗 LoreDossier</p></a>
+    <a class="doc-item" href="../PLAN-059_職業圖示與陣營徽章/計畫書.html"><div class="doc-tag">Related</div><h4>◆ PLAN-059 職業圖示與陣營徽章</h4><p>pilotLore.factionLogos 與「同陣營建議」</p></a>
+    <a class="doc-item" href="../../../02_技術文件/04_Firebase/資料庫設計文件/pilotLore.html"><div class="doc-tag">Data Model</div><h4>🗄️ pilotLore 集合文件</h4><p>F-3 補 intro／nameEn／dossier／skins／draft</p></a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-E — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
