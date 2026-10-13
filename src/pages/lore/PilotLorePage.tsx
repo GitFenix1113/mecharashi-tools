@@ -12,7 +12,7 @@ import { publishedChapters } from '../../components/lore/loreText'
 import { defaultStageArt, loreSideOf, preloadStageArt, skinStageArt, type StageArt } from '../../components/lore/loreStageArt'
 import { pilotSkins, type PilotSkinArt } from '../../utils/gameArt'
 import { useFactionEmblems, usePilotLore, usePilots } from '../../hooks/useFirestore'
-import { emblemName, emblemsById } from '../../utils/factionEmblems'
+import { emblemTitle, emblemsById } from '../../utils/factionEmblems'
 import type { LoreDoc, Pilot } from '../../types'
 
 /**
@@ -86,7 +86,7 @@ export default function PilotLorePage() {
   const { data: emblems } = useFactionEmblems()
   const logoLabel = useMemo(() => {
     const byId = emblemsById(emblems)
-    return (key: string) => emblemName(key, byId)
+    return (key: string) => emblemTitle(key, byId)
   }, [emblems])
 
   const rootRef = useRef<HTMLDivElement>(null)

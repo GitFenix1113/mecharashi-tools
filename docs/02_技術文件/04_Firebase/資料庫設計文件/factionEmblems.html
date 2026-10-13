@@ -52,9 +52,10 @@
     <table class="data-table">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>id</td><td>string</td><td>文件 ID＝<strong>徽章編號 4 碼</strong>，如 <code>0025</code>。單色 <code>_00</code>／彩色 <code>_01</code> 兩個變體共用一份</td></tr>
-      <tr><td>name</td><td>string?</td><td>陣營名稱，如「晨星同盟防衛軍」。沒填＝未命名</td></tr>
-      <tr><td>inscription</td><td>string?</td><td>圖上字樣，如 <code>DAWNSTAR LEAGUE ARMORED FORCE · DEPARTMENT OF THE DEFENCE FORCE</code>；辨識與搜尋用</td></tr>
-      <tr><td>factions</td><td>string[]?</td><td>對應的陣營文字：機師 <code>pilots.faction</code> 的<strong>原字串</strong>（可多筆，完全比對、去頭尾空白）。<strong>只用來排序建議</strong>，不會寫入任何 pilotLore</td></tr>
+      <tr><td>name</td><td>string?</td><td>陣營中文名稱，如「晨星同盟防衛軍」。沒填＝未命名（只有英文名也算未命名）</td></tr>
+      <tr><td>nameEn</td><td>string?</td><td>陣營英文名稱，如 <code>DAWNSTAR LEAGUE ARMORED FORCE</code>（站長 2026-10-14：中英文都要留）。<strong>與 inscription 分開</strong>：圖上的字不一定就是名字（0025 多一行 DEPARTMENT OF THE DEFENCE FORCE；0039 圖上是 AP · TALOS DEFENSE FORCE、中文是「亞太戰區精神力機甲作戰部隊」）</td></tr>
+      <tr><td>inscription</td><td>string?</td><td>圖上字樣（原文照抄），如 <code>DAWNSTAR LEAGUE ARMORED FORCE · DEPARTMENT OF THE DEFENCE FORCE</code>；辨識、搜尋與佐證用</td></tr>
+      <tr><td>factions</td><td>string[]?</td><td>對應的陣營文字：機師 <code>pilots.faction</code> 的<strong>原字串</strong>（可多筆，完全比對、去頭尾空白）。<strong>只用來排序建議</strong>，不會寫入任何 pilotLore。<code>name</code> 和陣營文字一字不差時不必填（名稱本身也算比對對象）</td></tr>
       <tr><td>note</td><td>string?</td><td>給管理員看的備註（例：看字樣推測、待確認）</td></tr>
     </table>
   </div>
@@ -63,7 +64,10 @@
     <strong>🌱 初始資料（2026-10-14，決策五）</strong><br>
     逐張看圖核對後預填 6 顆字樣能直接認出陣營的：0009 電鰻傭兵團（EELS）、0012 黑曜石集團（OBSIDIAN）、0025 晨星同盟防衛軍（DAWNSTAR）、
     0031 盧諾家族（LUNO）、0033 NERV、0034 多瑙河公司（DONAU）。0021（字樣 Doll，站上有「多爾集團」「多爾遠洋集團」兩種寫法）、
-    0038（雲中塔圖樣，推測創界山）只寫備註、名稱留空。對應的陣營文字不預填。腳本 <code>scripts/temp_scripts/seed-faction-emblems.mjs</code>（不進版控）只補空欄位、重跑安全。
+    0038（雲中塔圖樣，推測創界山）只寫備註、名稱留空。對應的陣營文字不預填。腳本 <code>scripts/temp_scripts/seed-faction-emblems.mjs</code>（不進版控）只補空欄位、重跑安全。<br>
+    <strong>第二批（同日，站長確認）</strong>：0018 掠食者小隊（PREDATORS）、0020 自由米赫瑪（MILKHAMA ISLAND）、0021 多爾集團（Doll，不是多爾遠洋集團）、
+    0039 亞太戰區精神力機甲作戰部隊（鄭樂萱的官方陣營全名；站上 <code>pilots.faction</code> 是「亞太戰區」，所以 <code>factions</code> 補這一筆，機師資料不動）；
+    既有 6 顆回填英文名稱（取圖上字樣裡「就是名字」的那段）。腳本 <code>patch-faction-emblems-20261014b.mjs</code>。31 顆未命名的看圖線索整理在 <code>_local-notes/2026-10/2026-10-14_陣營徽章待確認/</code>。
   </div>
 </section>
 

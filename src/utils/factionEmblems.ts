@@ -30,11 +30,22 @@ export function emblemName(logoKey: string, byId: ReadonlyMap<string, FactionEmb
   return (num && byId.get(num)?.name?.trim()) || undefined
 }
 
+/**
+ * 滑鼠提示用的完整稱呼：「中文・英文」，只有其中一個就用那一個；兩個都沒有 → undefined。
+ * 只有英文的也顯示（有人填了英文、中文還在查，比什麼都不顯示好）。
+ */
+export function emblemTitle(logoKey: string, byId: ReadonlyMap<string, FactionEmblem>): string | undefined {
+  const num = logoNumber(logoKey)
+  const e = num ? byId.get(num) : undefined
+  const parts = [e?.name?.trim(), e?.nameEn?.trim()].filter(Boolean)
+  return parts.length ? parts.join('・') : undefined
+}
+
 export const isNamed = (entry: EmblemEntry): boolean => !!entry.emblem?.name?.trim()
 
 /**
  * 搜尋：純數字比對編號（'25' 命中 0025，同改版前的行為）；
- * 其餘比對名稱、圖上字樣、對應的陣營文字、備註（英文不分大小寫）。空字串＝全部。
+ * 其餘比對中英文名稱、圖上字樣、對應的陣營文字、備註（英文不分大小寫）。空字串＝全部。
  */
 export function matchEmblem(entry: EmblemEntry, query: string): boolean {
   const q = query.trim()
@@ -42,13 +53,13 @@ export function matchEmblem(entry: EmblemEntry, query: string): boolean {
   if (/^\d+$/.test(q)) return String(Number(entry.num)).includes(String(Number(q)))
   const needle = q.toLowerCase()
   const e = entry.emblem
-  const hay = [e?.name, e?.inscription, e?.note, ...(e?.factions ?? []), entry.num]
+  const hay = [e?.name, e?.nameEn, e?.inscription, e?.note, ...(e?.factions ?? []), entry.num]
   return hay.some((s) => !!s && s.toLowerCase().includes(needle))
 }
 
 /**
  * 這位機師的建議編號：
- *   ① 註記的「對應的陣營文字」與機師的 faction 完全相同（去頭尾空白）
+ *   ① 徽章的名稱、或「對應的陣營文字」與機師的 faction 完全相同（去頭尾空白）
  *   ② 同樣寫這個陣營文字的其他機師已經選了的（factionLogoSuggestions 的結果）
  * 只拿來排序，不會替任何人自動選。
  */
@@ -60,7 +71,10 @@ export function suggestedEmblemNums(
   const out = new Set<string>()
   const target = faction?.trim()
   if (target) {
-    for (const en of entries) if (en.emblem?.factions?.some((f) => f.trim() === target)) out.add(en.num)
+    for (const en of entries) {
+      const e = en.emblem
+      if (e?.name?.trim() === target || e?.factions?.some((f) => f.trim() === target)) out.add(en.num)
+    }
   }
   for (const s of suggestions) for (const k of s.logos) { const n = logoNumber(k); if (n) out.add(n) }
   return out
@@ -92,6 +106,7 @@ export function normalizeEmblem(e: FactionEmblem): FactionEmblem {
   return {
     id: e.id,
     ...(text(e.name) && { name: text(e.name) }),
+    ...(text(e.nameEn) && { nameEn: text(e.nameEn) }),
     ...(text(e.inscription) && { inscription: text(e.inscription) }),
     ...(factions.length && { factions }),
     ...(text(e.note) && { note: text(e.note) }),

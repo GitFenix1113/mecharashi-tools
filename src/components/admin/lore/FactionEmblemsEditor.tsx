@@ -79,7 +79,7 @@ export function FactionEmblemsEditor({ focus }: {
   return (
     <div>
       <p className="text-text-dim text-xs leading-relaxed mb-3">
-        替每顆官方徽章標上陣營名稱與圖上字樣，選圖器就會顯示名稱、可以用名稱搜尋。
+        替每顆官方徽章標上陣營的中英文名稱與圖上字樣，選圖器就會顯示名稱、可以用名稱搜尋。
         「對應的陣營文字」填機師資料裡的陣營寫法（例：晨星同盟、晨星同盟防衛軍），那些機師開選圖器時這顆會排在最前面——
         <b className="text-text-secondary">只是建議，不會替任何人自動選</b>。
       </p>
@@ -94,7 +94,7 @@ export function FactionEmblemsEditor({ focus }: {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="搜尋陣營名、圖上字樣、陣營文字或編號"
+          placeholder="搜尋中英文名稱、圖上字樣、陣營文字或編號"
           className="flex-1 min-w-[200px] px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm focus:outline-none focus:border-accent-orange"
         />
         <div className="flex gap-1">
@@ -209,6 +209,9 @@ function EmblemRow({ entry, users, focused, onSave }: {
         <div className="min-w-0">
           <div className="font-mono text-xs text-text-dim">{entry.num}</div>
           <div className={`text-sm font-bold truncate ${isNamed(entry) || form.name?.trim() ? 'text-text-primary' : 'text-text-dim'}`}>{title}</div>
+          {(form.nameEn?.trim() || entry.emblem?.nameEn) && (
+            <div className="text-[11px] text-text-secondary truncate" title={form.nameEn ?? entry.emblem?.nameEn}>{form.nameEn?.trim() || entry.emblem?.nameEn}</div>
+          )}
           <div className="text-[11px] text-text-dim" title={users.join('、')}>
             {users.length ? `使用中 ${users.length} 位` : '沒有人使用'}
           </div>
@@ -217,11 +220,15 @@ function EmblemRow({ entry, users, focused, onSave }: {
 
       <div className="flex-1 min-w-0 grid gap-2 sm:grid-cols-2">
         <label className="text-[11px] text-text-dim">
-          名稱
-          <input value={form.name ?? ''} onChange={(e) => patch({ name: e.target.value })} className="input-field text-sm mt-0.5" placeholder="陣營名稱" />
+          中文名稱
+          <input value={form.name ?? ''} onChange={(e) => patch({ name: e.target.value })} className="input-field text-sm mt-0.5" placeholder="陣營中文名稱" />
         </label>
         <label className="text-[11px] text-text-dim">
-          圖上字樣
+          英文名稱
+          <input value={form.nameEn ?? ''} onChange={(e) => patch({ nameEn: e.target.value })} className="input-field text-sm mt-0.5" placeholder="陣營英文名稱" />
+        </label>
+        <label className="text-[11px] text-text-dim sm:col-span-2">
+          圖上字樣（原文照抄；不一定等於英文名稱）
           <input value={form.inscription ?? ''} onChange={(e) => patch({ inscription: e.target.value })} className="input-field text-sm mt-0.5" placeholder="圖上看得到的字（沒有就留空）" />
         </label>
         <div className="text-[11px] text-text-dim sm:col-span-2">

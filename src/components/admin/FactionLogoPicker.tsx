@@ -6,7 +6,7 @@ import {
   FACTION_LOGO_MAX, isMonoLogo, logoNumber, type LogoSuggestion,
 } from '../../utils/factionLogos'
 import {
-  emblemCatalog, emblemName, emblemsById, isNamed, matchEmblem, rankEmblems, suggestedEmblemNums,
+  emblemCatalog, emblemName, emblemTitle, emblemsById, isNamed, matchEmblem, rankEmblems, suggestedEmblemNums,
 } from '../../utils/factionEmblems'
 
 // ─── 陣營徽章選圖器（PLAN-059 D-2；PLAN-042-F D-2 改版）─────────────────────────
@@ -130,7 +130,7 @@ export function FactionLogoPicker({
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="搜尋陣營名、圖上字樣或編號"
+          placeholder="搜尋中英文名稱、圖上字樣或編號"
           className="input-field text-sm w-64"
         />
         <span className="text-[11px] text-text-dim">
@@ -156,7 +156,7 @@ export function FactionLogoPicker({
                     key={k}
                     type="button"
                     onClick={() => toggle(k)}
-                    title={`${name ?? en.num}・${i === 0 ? '單色（扉頁上會是墨色）' : '彩色（原樣）'}`}
+                    title={`${emblemTitle(k, byId) ?? en.num}・${i === 0 ? '單色（扉頁上會是墨色）' : '彩色（原樣）'}`}
                     className={`w-[84px] h-[84px] grid place-items-center rounded-md border-2 transition-colors cursor-pointer ${
                       value.includes(k) ? 'border-[#c2410c] bg-[#c2410c]/10' : 'border-transparent hover:border-[#b9ab92]'
                     }`}
@@ -181,8 +181,11 @@ export function FactionLogoPicker({
                     未命名・補名稱 ↗
                   </a>
                 )}
+                {en.emblem?.nameEn && (
+                  <div className="text-[11px] text-[#6b6259] truncate" title={en.emblem.nameEn}>{en.emblem.nameEn}</div>
+                )}
                 <div className="font-mono text-[10.5px] text-[#948a7e] truncate" title={en.emblem?.inscription}>
-                  {en.num}{en.emblem?.inscription ? ` · ${en.emblem.inscription}` : ''}
+                  {en.num}{en.emblem?.inscription && en.emblem.inscription !== en.emblem.nameEn ? ` · ${en.emblem.inscription}` : ''}
                 </div>
                 {suggested.has(en.num) && <div className="text-[10.5px] text-[#0e7490]">建議</div>}
               </div>

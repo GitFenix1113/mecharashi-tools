@@ -6,7 +6,7 @@ import LoreChapterBody from '../../lore/LoreChapterBody'
 import { defaultStageArt, loreSideOf, skinStageArt } from '../../lore/loreStageArt'
 import { publishedChapters } from '../../lore/loreText'
 import { pilotSkinCatalog } from '../../../utils/gameArt'
-import { emblemName, emblemsById } from '../../../utils/factionEmblems'
+import { emblemTitle, emblemsById } from '../../../utils/factionEmblems'
 import { useGameData } from '../../../contexts/GameDataContext'
 
 /**
@@ -43,7 +43,7 @@ export function LorePreview({ pilot, lore, skinKey, chapterKey }: LorePreviewPro
   const { factionEmblems } = useGameData()
   const logoLabel = useMemo(() => {
     const byId = emblemsById(factionEmblems)
-    return (key: string) => emblemName(key, byId)
+    return (key: string) => emblemTitle(key, byId)
   }, [factionEmblems])
 
   useLayoutEffect(() => {

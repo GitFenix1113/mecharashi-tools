@@ -10,13 +10,20 @@
 export interface FactionEmblem {
   /** 徽章編號 4 碼，例 `'0025'`（＝ `Icon_logo_0025_00／_01`） */
   id: string
-  /** 陣營名稱，例「晨星同盟防衛軍」：選圖器卡片標題、卷宗的徽章提示 */
+  /** 陣營名稱（中文），例「晨星同盟防衛軍」：選圖器卡片標題、卷宗的徽章提示 */
   name?: string
-  /** 圖上字樣，例 `DAWNSTAR LEAGUE ARMORED FORCE`：辨識與搜尋用 */
+  /**
+   * 陣營英文名，例 `DAWNSTAR LEAGUE ARMORED FORCE`（站長 2026-10-14：中英文都要留）。
+   * 與 `inscription` 分開：圖上的字不一定就是名字（0025 還多一行 DEPARTMENT OF THE DEFENCE FORCE、
+   * 0039 圖上是 AP · TALOS DEFENSE FORCE、中文卻是「亞太戰區精神力機甲作戰部隊」）。
+   */
+  nameEn?: string
+  /** 圖上字樣（原文照抄）：辨識、搜尋與佐證用 */
   inscription?: string
   /**
-   * 對應的陣營文字：機師 `pilots.faction` 的**原字串**（可多筆），例 `['晨星同盟防衛軍', '晨星同盟']`。
+   * 對應的陣營文字：機師 `pilots.faction` 的**原字串**（可多筆），例 `['亞太戰區']`。
    * 只用來把這顆徽章排到選圖器的建議區——**不會**自動寫進任何機師的 pilotLore。
+   * 名稱本身和陣營文字一字不差時不必再填（`name` 也算比對對象）。
    */
   factions?: string[]
   /** 給管理員看的備註（例：看字樣猜的、待確認） */
