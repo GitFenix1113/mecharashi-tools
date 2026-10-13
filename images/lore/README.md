@@ -8,10 +8,11 @@
 |---|---|---|
 | `bg-paper.webp` 1300×1080 | `hero/bg.jpg` 切掉左側紅帶後的紙面（x 620–1920） | `.lore-shell` 整館背景（桌機） |
 | `bg-m.webp` 768×1400 | `hero/bg-m.jpg` | `.lore-shell` 背景（<1024px） |
-| `bg-band.webp` 620×1080 | `hero/bg.jpg` 左側紅帶（含暗紅機甲線稿） | 館首頁 hero 左側，`clip-path` 切出斜邊 |
-| `kv.webp` 1600×900／`kv-m.webp` 900×506 | `images/top8.jpg` 主視覺 | 館首頁 hero |
-| `title-pilots.webp` 919×547／`title-pilots-m.webp` 850×450 | `hero/sl.png`／`hero/sl-m.png` 的標題群（Pilots／操控指揮 機師出列／ULTIMATE PILOTS） | 館首頁 hero 標題 |
+| `bg-band.webp` 620×1080 | `hero/bg.jpg` 左側紅帶（含暗紅機甲線稿） | 館首頁 hero 紅帶的**紋理**：只取左上全紅的一角放大，底色與斜邊由 CSS 決定（原圖右下是紙面，不能直接加寬） |
 | `snow01.png` `snow02.png`（＋ `-w` 白點版） | `img/snow01.png` 等，原樣 | 粒子（`.lore-snow`，桌機限定） |
+
+> 2026-10-14 起館首頁 hero 不再用官網 KV（`top8.jpg` → `kv.webp`／`kv-m.webp`）與招募標語圖（`sl.png` → `title-pilots.webp`／`-m`），
+> 已自本目錄移除，改成紅帶＋8 位官方圖層的立繪群像＋自排標題；原始檔仍在 `_local-notes/2026-09/2026-09-16_故事館美化工程_素材/official/`。
 
 機師的官方圖層（8 位）在 `public/images/pilots/<名>/official-{line,color,name}.webp`，由
 `_local-notes/2026-09/2026-09-17_build-official-layers.mjs` 自 `hero/h01–h08` 的 -1／-2／-3 圖層裁出；
