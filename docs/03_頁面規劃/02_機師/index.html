@@ -69,7 +69,7 @@
   <table class="spec-table">
     <tr><th>路由</th><td><code>/pilots/:id</code></td></tr>
     <tr><th>開發階段</th><td>Phase 2（PLAN-021 / PLAN-022 / PLAN-023 持續強化）</td></tr>
-    <tr><th>資料來源</th><td>Firestore: pilots/{id} + pilotResearch/{id}；引用解析另載 pilotSkills / neuralDriveAbilities / buffs / glossaryTerms（皆走 GameDataContext 版本快取）</td></tr>
+    <tr><th>資料來源</th><td>Firestore: pilots/{id} + pilotResearch/{id}；引用解析另載 pilotSkills / neuralDriveAbilities / buffs / glossaryTerms（皆走 GameDataContext 版本快取）。<strong>不讀 pilotLore</strong>（PLAN-042-E 決策二：圖鑑只讀 pilots，單向依賴）</td></tr>
   </table>
 
   <div class="sub-h" style="margin-top:24px;">頁面區塊</div>
@@ -77,7 +77,9 @@
     <div class="card cyan">
       <div class="card-icon">🖼️</div>
       <h3>機師立繪 + 基本資料</h3>
-      <p>全身立繪、名稱、職業、稀有度、駕駛許可、駕駛等級。仿遊戲角色介紹介面。另有<strong>官配機甲</strong>一列（PLAN-054：機師的 <code>pairedMechId</code> → 機甲引用 chip；沒有官配時整列不出現）。</p>
+      <p>全身立繪、名稱、職業、稀有度、駕駛許可、駕駛等級。仿遊戲角色介紹介面。另有<strong>官配機甲</strong>一列（PLAN-054：機師的 <code>pairedMechId</code> → 機甲引用 chip；沒有官配時整列不出現）。<br>
+      名字旁有一顆小的「<strong>故事館 ▸</strong>」連結 chip，連到 <code>/lore/pilots/:id</code>（PLAN-042-E，站長 Q2）：<strong>只放連結、不帶任何故事內容</strong>——帶首句就得載入 pilotLore，圖鑑就跨進故事館了。每位機師都有故事館頁，不會連到空頁。<br>
+      <span style="color:var(--text-dim)">PLAN-042-E（2026-10-13）起圖鑑只做數值與機制：資訊格原本的性別／身高／血型／自訂欄位列、頁尾的「機師故事」卡（簡介首句＋「讀完整故事 ▸」）都已移除，人物檔案與簡介改在<a href="../13_故事館/index.html">機師故事館</a>呈現（資料搬到 <code>pilotLore</code>）。</span></p>
     </div>
     <div class="card blue">
       <div class="card-icon">📊</div>
@@ -107,11 +109,6 @@
       <div class="card-icon">🔬</div>
       <h3>個別科研配置</h3>
       <p>機師/機甲/武裝特質 I/II/III 欄位，互斥關係提示。（只讀展示，互動版在模擬器中）</p>
-    </div>
-    <div class="card yellow">
-      <div class="card-icon">📖</div>
-      <h3>角色故事</h3>
-      <p>2026-09 起改為<strong>導引</strong>：只留 <code>lore</code> 的首句，接「讀完整故事 ▸」通往故事館 <code>/lore/pilots/:id</code>（PLAN-042-A D-4）。全文與逸聞章節在<a href="../13_故事館/index.html">機師故事館</a>渲染；資料仍是同一份 <code>pilots.lore</code>。<br>⏸ 故事館收起入口期間（2026-10-03 起，<code>useLoreEntryVisible()</code>），一般訪客這一區<strong>退回全文顯示</strong>、不出現入館連結。</p>
     </div>
   </div>
 
@@ -200,7 +197,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-13 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>
