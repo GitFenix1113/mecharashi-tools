@@ -174,14 +174,14 @@
   <div class="section-label purple">Progress</div>
   <div class="section-title">總進度</div>
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">21</div><div class="summary-lbl">已完成</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">2</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">23</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">2</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">25</div><div class="summary-lbl">開發者任務</div></div>
   </div>
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度（開發者任務）</span><span style="color:var(--accent-purple);">21 / 25</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 84%"></div></div>
+    <div class="progress-label"><span>整體完成度（開發者任務）</span><span style="color:var(--accent-purple);">23 / 25</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 92%"></div></div>
   </div>
   <div class="impact-note">
     <strong>目標效果：</strong>圖鑑變成純粹的數值與機制頁；一位機師的簡介、人物檔案、英文名、章節、徽章、外觀名稱，在故事館編輯台的同一個面板編完，而且邊編邊看到上線的樣子。
@@ -191,9 +191,9 @@
     D-3～D-5、E 段可以在之後分批上。G 段要等觀察一週後才做。
   </div>
   <div class="note-warn">
-    <strong>目前狀態（2026-10-14）：</strong>B-1／B-2 完成、B-3 第一次對帳差異 0；<b>🔒 編輯凍結中</b>（機師管理與故事館編輯台都不要存檔）。
-    分支 <code>claude/plan-042-e</code> 已在本機合併進 <code>main</code>、<b>尚未 push、尚未部署</b>。接下來由站長執行 F-1：
-    Worker 部署（<code>cd workers</code> → <code>npx wrangler deploy</code>）→ <code>npm run push</code> → 等 <code>pages-build-deployment</code> 完成 → B-3 再對帳 → 解除凍結。
+    <strong>目前狀態（2026-10-14）：</strong><b>已部署上線</b>（Worker → 網站 <code>089b79dc</code>，pages-build-deployment 00:28 完成），B-3 第二次對帳差異 0、F-2 正式站驗收通過，<b>🔓 已解除凍結</b>。
+    剩 G 段：<b>觀察一週（約 2026-10-21 之後）</b>再做 G-1 刪 pilots 舊欄位（先備份、關掉所有後台分頁）→ G-2 封存腳本。
+    站長待辦：到編輯台把<b>尼爾</b>扉頁簡介尾端的 <code>--米赫瑪自然雜誌</code> 刪掉（B-2 沒切，現在署名顯示兩次）。
   </div>
 </section>
 
@@ -301,16 +301,16 @@
     <div class="task-group-header">
       <div class="task-group-title">B-3 &nbsp; 對帳腳本</div>
       <div class="task-group-meta">scripts/temp_scripts/verify-pilot-lore-migration.mjs</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">92 位逐欄比對，差異必須為 0</div>
-        <div class="task-desc">pilots 舊值和 pilotLore 新值逐欄比對（署名切割的 34 篇改成比對「intro＋frontSource」能不能拼回原文）。B-2 後跑一次，F-1 網站部署後再跑一次，用來抓凍結期間的遺漏。G-1 刪欄位前也要再跑。<br><span style="color:var(--text-secondary)">🔧 腳本已寫好：<code>verify-pilot-lore-migration.mjs</code>，差異 0 時 exit 0。舊 map 裡空標籤、非字串的值（前台本來就顯示不出來）列為「提醒」不算差異。G-1 前再跑時，解除凍結後的正常編輯會顯示成差異——逐筆確認後 G-1 用 <code>--accept-diffs</code>。<br>✅ 2026-10-14 第 ① 次（B-2 後）：92 位差異 0、提醒 0（<code>_local-notes/2026-10/2026-10-14_0020_B-3_搬遷對帳.md</code>）。⬜ 第 ② 次：F-1 網站部署完成後、解除凍結前。</span></div>
+        <div class="task-desc">pilots 舊值和 pilotLore 新值逐欄比對（署名切割的 34 篇改成比對「intro＋frontSource」能不能拼回原文）。B-2 後跑一次，F-1 網站部署後再跑一次，用來抓凍結期間的遺漏。G-1 刪欄位前也要再跑。<br><span style="color:var(--text-secondary)">🔧 腳本已寫好：<code>verify-pilot-lore-migration.mjs</code>，差異 0 時 exit 0。舊 map 裡空標籤、非字串的值（前台本來就顯示不出來）列為「提醒」不算差異。G-1 前再跑時，解除凍結後的正常編輯會顯示成差異——逐筆確認後 G-1 用 <code>--accept-diffs</code>。<br>✅ 2026-10-14 第 ① 次（B-2 後）：92 位差異 0、提醒 0（<code>_local-notes/2026-10/2026-10-14_0020_B-3_搬遷對帳.md</code>）。✅ 2026-10-14 第 ② 次（F-1 網站部署後、解除凍結前）：92 位差異 0（<code>…_0032_B-3_搬遷對帳.md</code>）。第 ③ 次在 G-1 前（<code>drop-migrated-pilot-fields.mjs</code> 會自己先對帳）。</span></div>
         <div class="task-file">scripts/temp_scripts/verify-pilot-lore-migration.mjs</div>
       </div>
       <div class="task-assignee">開發者（本機）</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -586,34 +586,37 @@
     <div class="task-group-header">
       <div class="task-group-title">F-1 &nbsp; 依序部署</div>
       <div class="task-group-meta">Worker · GitHub Pages</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">B-2 之後：Worker 先上，再 push 網站</div>
-        <div class="task-desc">Worker 部署（C-4）→ <code>npm run push</code> → 等 <code>pages-build-deployment</code> 完成 → 執行 B-3 對帳 → 解除凍結。auto mode 擋得到正式站部署，所以由站長執行或授權。</div>
+        <div class="task-desc">Worker 部署（C-4）→ <code>npm run push</code> → 等 <code>pages-build-deployment</code> 完成 → 執行 B-3 對帳 → 解除凍結。auto mode 擋得到正式站部署，所以由站長執行或授權。<br><span style="color:var(--text-secondary)">✅ 2026-10-14：站長部署 Worker → <code>npm run push</code>（合併 <code>089b79dc</code>；合併時與 main 的場景外觀鑑賞版 <code>e04e5b05</code> 在外觀 build 層衝突，保留 <code>view</code>、拿掉 name／hidden，<code>gameArtIndex.ts</code> 重產後資料與 main 逐字相同）→ pages-build-deployment 00:28 完成 → B-3 差異 0 → 解除凍結。</span></div>
         <div class="task-file">workers/ · main</div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">F-2 &nbsp; 驗收</div>
       <div class="task-group-meta">本機 vite · curl · Playwright</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">畫面、分享卡、測試</div>
         <div class="task-desc">① 本機 <code>npx vite --port 5173</code> 吃正式資料，抽看有署名、沒有簡介（3 位）、自訂欄位 3 筆的機師各一位，以及有外觀的機師；圖鑑詳情頁沒有任何人物檔案，入口連結正常。
           ② <code>curl -A "Discordbot/2.0"</code> 打 <code>/lore/pilots/…</code>，確認 <code>og:description</code> 是簡介而不是「某某｜機師故事館」；<code>/pilots/…</code> 的分享卡不變。
-          ③ 讓 <code>/api/data/pilotLore</code> 失敗時，故事館顯示載入失敗提示。④ <code>npm test</code>、<code>npm run lint</code>、<code>npm run build</code>。<br><span style="color:var(--text-secondary)">🔧 2026-10-13 雲端 session 用模擬資料＋Playwright 驗完（正式站被網路政策擋住）：扉頁簡介／署名／個人資料（含 ▇▇、順序）／英文名都讀 pilotLore、舊欄位一個字都沒出現；草稿章不在目錄、網址導回扉頁；pilotLore 回 500 時卷宗明講載入失敗；外觀依 DB 排序命名、隱藏的不列；圖鑑 375px 第一屏有 AP、沒有人物檔案；編輯台統計、篩選、<code>?pilot=</code>、同名標籤擋存檔、預覽（桌機／窄螢幕）。<code>npm test</code>／<code>npm run lint</code>（與 main 同為既有的 89 項）／<code>npm run build</code> 通過。⬜ 正式資料抽看與 <code>curl -A Discordbot</code> 分享卡，要等 F-1 部署後。</span></div>
+          ③ 讓 <code>/api/data/pilotLore</code> 失敗時，故事館顯示載入失敗提示。④ <code>npm test</code>、<code>npm run lint</code>、<code>npm run build</code>。<br><span style="color:var(--text-secondary)">🔧 2026-10-13 雲端 session 用模擬資料＋Playwright 驗完（正式站被網路政策擋住）：扉頁簡介／署名／個人資料（含 ▇▇、順序）／英文名都讀 pilotLore、舊欄位一個字都沒出現；草稿章不在目錄、網址導回扉頁；pilotLore 回 500 時卷宗明講載入失敗；外觀依 DB 排序命名、隱藏的不列；圖鑑 375px 第一屏有 AP、沒有人物檔案；編輯台統計、篩選、<code>?pilot=</code>、同名標籤擋存檔、預覽（桌機／窄螢幕）。<code>npm test</code>／<code>npm run lint</code>（與 main 同為既有的 89 項）／<code>npm run build</code> 通過。<br>✅ 2026-10-14 正式站（部署後）：② Discordbot 分享卡——海莉絲、迪拉卡的 <code>og:description</code> 是簡介；浩克伍德的描述<b>不含署名</b>（舊 Worker 讀 <code>pilots.lore</code> 會帶出「——黑曜石集團內部研究報告」，證明新 Worker 已上線）；沒有簡介的珂賽特退回「珂賽特｜機師故事館」；<code>/pilots/…</code> 卡片不變。
+          ① 故事館：迪拉卡署名只出現一次、英文名與自訂欄位（額外獎章）正常；摩根娜（原本沒有 pilotLore、這次新建）沒有簡介、個人資料含自訂 3 筆；海莉絲外觀列「預設／外觀 1」、無載入失敗；尼爾署名顯示兩次（B-2 預期中的 ⚠，待站長編輯台處理）。
+          圖鑑：摩根娜詳情頁名字旁有「故事館 ▸」→ <code>/lore/pilots/pilot_092_摩根娜</code>，標頭沒有性別／身高等列、頁尾沒有故事卡。
+          另確認舊 <code>pilotSkinMeta.json</code> 從未填過 name／hidden，改由 DB 管理沒有遺失任何設定。④ 合併後 <code>npm test</code> 1483 條、build 通過，lint 維持既有 89 項。</span></div>
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
