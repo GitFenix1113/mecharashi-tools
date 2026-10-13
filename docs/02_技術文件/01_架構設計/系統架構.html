@@ -203,8 +203,8 @@
     <tr><td><code>auth/</code></td><td>登入與權限</td><td><code>AuthModal</code>（登入 / 註冊）、<code>AdminRoute</code>（<code>/admin/*</code> 的角色 gate）</td></tr>
     <tr><td><code>refs/</code></td><td>實體引用層（PLAN-019 / 034）</td><td><code>RefText</code>（正文 <code>[xxx]</code> → chip）、<code>RefChip</code>、<code>EntityRefView</code>（浮窗內容）、<code>RefBriefList</code>／<code>RefMechModules</code>／<code>RefPilotTalents</code>／<code>RefWeaponSkills</code>（浮窗本文：機甲列模組、機師列天賦、武器列技能）、<code>DiffHighlight</code>（專武強化差異）、<code>NdOverrideEmpty</code>（局部關閉算力覆寫）</td></tr>
     <tr><td><code>lore/</code></td><td>機師故事館（PLAN-042-A，042-B 機甲館共用）</td><td><code>LoreArt</code>（三層 color-dodge 線稿→彩圖顯影）、<code>LoreChapterPager</code>（常駐具名章節軸，不接滾輪）、<code>LoreChapterBody</code>、<code>LoreRichText</code>（只解析 <code>[xxx]</code>、不套數字高亮）、<code>LoreCommentaryRow</code>（NPC 旁白）、<code>LoreSourceLine</code>（署名）、<code>loreText.ts</code>（切段／引文體判定／署名剝離）、<code>LoreBgmToggle</code>（館內 BGM 開關，PLAN-042-C）、<code>useLoreParallax</code>（立繪柱微視差 hook）、<code>loreArtTuning.ts</code>（per-pilot 顯影退路表，從 LoreArt 拆出以保 fast refresh）</td></tr>
-    <tr><td><code>badges/</code></td><td>徽章 / 標籤</td><td><code>PilotBadges</code>、<code>MechBadges</code>、<code>WeaponBadges</code>、<code>WeaponRarityBadge</code>、<code>ModuleBadges</code>、<code>ComponentBadges</code>、<code>BackpackBadges</code>、<code>InnateBadges</code>（天生模組「推導／人工覆寫」標記，PLAN-052-K）</td></tr>
-    <tr><td><code>icons/</code></td><td>實體圖示</td><td><code>PilotIcon</code>、<code>WeaponIcon</code>、<code>ComponentIcon</code>、<code>ModuleIcon</code>、<code>SkillIcon</code>、<code>LoadoutIcon</code>（配裝描邊圖示集）、<code>NavIcon</code>、<code>BuffGlyph</code>（BUFF 白色字形疊色塊底，PLAN-055 D）</td></tr>
+    <tr><td><code>badges/</code></td><td>徽章 / 標籤</td><td><code>PilotBadges</code>、<code>MechBadges</code>、<code>WeaponBadges</code>、<code>WeaponRarityBadge</code>、<code>ModuleBadges</code>、<code>ComponentBadges</code>、<code>BackpackBadges</code>、<code>InnateBadges</code>（天生模組「推導／人工覆寫」標記，PLAN-052-K）。<code>MechBadges</code> 的 <code>MechRestrictionBadge</code> 是武器限定與背包可裝備共用的「○型限定／全機型」徽章（PLAN-059）</td></tr>
+    <tr><td><code>icons/</code></td><td>實體圖示</td><td><code>PilotIcon</code>、<code>WeaponIcon</code>、<code>ComponentIcon</code>、<code>ModuleIcon</code>、<code>SkillIcon</code>、<code>LoadoutIcon</code>（配裝描邊圖示集）、<code>NavIcon</code>、<code>BuffGlyph</code>（BUFF 白色字形疊色塊底，PLAN-055 D）、<code>MaskIcon</code>（官方白色字形以 CSS mask 吃 currentColor，PLAN-059）、<code>ClassIcon</code>（機師職業）、<code>MechTypeIcon</code>（機甲類型＝駕照，輕／中／重）、<code>FactionLogo</code>（故事館陣營徽章）</td></tr>
     <tr><td><code>cards/</code></td><td>領域卡片 / 浮卡</td><td><code>FormCard</code>（機師形態，PLAN-041）、<code>WeaponSkillCard</code>、<code>BossDropTooltip</code></td></tr>
     <tr><td><code>common/</code></td><td>泛用 UI 基礎件</td><td><code>FallbackImage</code>（逐層退回的圖片）、<code>BottomSheet</code>（行動裝置浮層）、<code>ViewModeToggle</code>（卡片 / 列表切換）、<code>NdPowerBar</code>／<code>NdActiveAbilities</code>（神經驅動算力與主動能力）、<code>VersionFilter</code>（登場版本兩層篩選，機甲／機師圖鑑共用；邏輯在 <code>utils/versionFilter.ts</code>）</td></tr>
     <tr><td><code>module/</code></td><td>模組元件家族</td><td>見下一節</td></tr>
@@ -321,6 +321,9 @@
         <code>pilots/&lt;gameId&gt;/&lt;artKey&gt;_{half,head,Raw}.webp</code>＋機師卡 <code>Icon_item_&lt;gameId&gt;A.webp</code>；
         <code>mechs/&lt;wap&gt;/Icon_mecha_wap&lt;wap&gt;.webp</code>（立繪）、<code>Icon_wap&lt;wap&gt;_1~4.webp</code>（軀幹／左臂／右臂／腿）、<code>_SN_Raw.webp</code>（全身大圖）。
         另有 <strong>NPC 圖庫</strong> <code>npc/&lt;號碼&gt;/&lt;artKey&gt;_{half,head,Raw}.webp</code>（2026-10-12，約 125 套、17 MB）：還沒對應到可抽機師的官方立繪，NPC 轉正時後台直接選，<code>import-game-assets.mjs --npc</code> 每次改版補新的。
+        圖示圖庫 <code>icons/{skill,buff,weapon,backpack,class,license,camp}/</code> 扁平、檔名即 key（PLAN-055／056／059）：
+        <code>class/</code> 機師職業、<code>license/</code> 駕照＝機甲類型、<code>camp/</code> 陣營徽章；職業與機甲類型的對照住在
+        <code>src/data/pilotClasses.ts</code>、<code>src/data/mechWeightClasses.ts</code>（不進 DB）。
         造型、招募立繪等 extended 素材與其餘 _reserve 不進 repo，在 repo 外的封存夾。
         站上自製圖（原稿 <code>art.webp</code>、官網圖層 <code>official-*</code>）同樣改放 <code>pilots/&lt;gameId&gt;/</code>，名字資料夾已全數退場。</td>
     </tr>
