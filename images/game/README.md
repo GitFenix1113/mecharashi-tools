@@ -9,6 +9,7 @@ pilots/<gameId>/      gameId ＝ 機師卡 Icon_item_<gameId>A 的編號（DB: p
   <artKey>_head.webp    90²          頭部特寫（構圖與 half 不同）
   <artKey>_Raw.webp     1240×1080    半身
   Icon_item_<gameId>A.webp  340²     機師卡
+  skins/<立繪鍵>_{Raw,half,head}.webp  造型（外觀，PLAN-042-D）：故事館的外觀切換讀這裡；索引 GAME_PILOT_SKINS
 npc/<號碼>/           NPC 圖庫（2026-10-12）：還沒對應到可抽機師的官方立繪——劇情 NPC、尚未上線的新角色
   <artKey>_half／_head／_Raw.webp   同機師三種、沒有機師卡；一個號碼可有 A／B 多套（DB: pilots.artKey 指過來）
 mechs/<wap>/          wap ＝ 機甲四碼編號（DB: mechs.gameId）
@@ -50,7 +51,12 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
   `scripts/lib/npcArtNotes.json`（owner＝機師文件 ID），選圖器掛在他名下、不算未使用。英文名由 `--npc --apply` 從 3D 模型資料夾抓進
   `scripts/lib/npcArtMeta.json`，選圖器可用英文搜尋——新機師公布英文名時找 NPC 時期立繪最快的方法。
   站長 2026-10-12 決定上站（取代 10-04「NPC 不進 repo」）：查資料的人不怕劇透，官方之後還會有好幾位 NPC 轉正。
-- 這裡只放**讀取端會用到的種類（core）＋NPC 圖庫**。造型、招募立繪、大廳場景等 extended 素材、敵方機甲等其餘 _reserve，
+- **造型／外觀**（`pilots/<gameId>/skins/`，2026-10-13 PLAN-042-D）：站長決定造型必須上站（取代 10-12「不進 repo」）。
+  放子資料夾是因為 core 資料夾「一個 ID 只放一種立繪主鍵」。歸屬預設看檔名號碼，對不上的（例：`Pilot_10103107B` 判給洛莎·審判）
+  寫在 `scripts/lib/pilotSkinMeta.json` 的 owner；名稱（name）、台版還沒推出先藏（hidden）也寫在那份，全部選填，不填顯示「外觀 N」。
+  NPC 圖庫裡屬於某位機師、而且有外觀卡的（海莉絲 `10103132A`、瑪阿特 `10103129A`）build 時也會列進她們的外觀。
+  帶背景的場景插畫（透明 < 25%）build 時自動判定，前台換構圖。
+- 這裡只放**讀取端會用到的種類（core）＋NPC 圖庫＋造型**。招募立繪、大廳場景等 extended 素材、敵方機甲等其餘 _reserve，
   以及站上用不到的其他圖示（道具、勳章、肉鴿…）**不進 repo**，在 repo 外的封存夾（`E:/Mecharashi_Data/site-archive/game/`）。
 
 ## 遊戲改版後的歸檔流程（照做就好，不需要 AI）
@@ -93,7 +99,7 @@ node scripts/import-game-assets.mjs --equip-icons --apply                    # �
 node scripts/import-game-assets.mjs --src=latest --emblems --apply           # 職業／駕照圖示、陣營徽章（只補新的）
 node scripts/import-game-assets.mjs --src=latest --ui --apply                # 活動／招募／大廳等介面美術 → repo 外封存夾（不部署）
 node scripts/import-game-assets.mjs --src=latest --other-icons --apply       # 其他圖示（道具、勳章、肉鴿、車輛、塗裝小圖…）→ repo 外封存夾
-node scripts/import-game-assets.mjs --src=latest --skins --apply             # 既有機師的新造型 → repo 外封存夾 pilots/<gameId>/
+node scripts/import-game-assets.mjs --src=latest --skins --apply             # 既有機師的新造型（外觀）→ 這裡的 pilots/<gameId>/skins/（上站）
 node scripts/import-game-assets.mjs --promote=<ui/ 底下的路徑> --apply        # 封存夾挑好的 → 這裡的 ui/（上架＝公開，只挑台版已上線的）
 node scripts/generate-art-index.mjs                                          # 重產索引（build／predev 也會跑）
 node scripts/check-image-refs.mjs                                            # 掃描 DB 與程式碼裡的圖片路徑

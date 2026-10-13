@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-D 故事館改版：舞台與卷宗 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* 共用 style.css 未定義 pink 變體（既有頁面多依賴其預設，故不動共用檔），此處僅為本頁補上 */
+.hero-badge.pink    { border-color: var(--accent-pink); color: var(--accent-pink); background: rgba(236,72,153,0.06); }
+.section-label.pink { color: var(--accent-pink); }
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+.note-warn {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.note-warn strong { color: var(--accent-yellow); }
+.shared-tag { display:inline-block; margin-left:8px; padding:1px 7px; border-radius:4px; font-size:10px; font-weight:700; background: rgba(236,72,153,0.15); color: var(--accent-pink); border:1px solid rgba(236,72,153,0.3); vertical-align: 2px; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-D 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge pink">◆ PLAN-042-D</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">故事館改版：舞台與卷宗</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-13 · H 段為站長資料作業，不計入開發者任務</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label pink">Progress</div>
+  <div class="section-title">總進度</div>
+  <div class="summary-row">
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">31</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">2</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">33</div><div class="summary-lbl">開發者任務</div></div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-label"><span>整體完成度（開發者任務）</span><span style="color:var(--accent-pink);">31 / 33</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 94%"></div></div>
+  </div>
+  <div class="info-block" style="margin-bottom:12px">
+    <strong>2026-10-13 開發完成 31／33（未 commit）</strong>：A、B、C、D、F、G 全數完成，剩 E 段選配（預產線稿、簽名字型）；H 段是站長的資料作業。
+    驗證：<code>npm test</code> 1458／1458、本次改動檔案 ESLint 乾淨、<code>npm run build</code> 成功；Playwright headless（dev server 讀正式 Worker 資料）逐項實測——
+    開場時間軸、五種構圖、換人過場（0.3 秒退場→約 1.3 秒收尾）、名冊（<code>/</code>＋搜尋＋Enter）、外觀（含 <code>?skin=</code> 直接進站）、閱讀模式（← → 換章、Esc 回檔案）、
+    館首頁捲動還原（1800 → 返回後 1800）、手機版、reduced-motion、連續換人＋換外觀 30 輪 heap 穩定 35MB、無 console 錯誤。
+    尼爾等半身圖機師的正文欄由 293px 變成 749px。
+  </div>
+  <div class="impact-note">
+    <strong>目標效果：</strong>故事成為畫面主體、立繪成為有層次的舞台；換人一鍵、找人一個名冊、換外觀一排頭像——讓人「想看下去」。
+    實作以 <code>_local-notes/2026-10/2026-10-13_機師故事館_改版提案/index.html</code> 模擬頁為準。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label pink">Phase A</div>
+  <div class="section-title">A 切換順暢（含機師名冊）</div>
+  <div class="section-desc">回應「機師切換不順暢」：實測主因是詳情頁沒有切換入口、回館首頁捲動歸零。本段不動版面，可在現行設計上先上。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 館首頁捲動記憶</div>
+      <div class="task-group-meta">src/pages/lore/LoreLayout.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">館首頁捲動記憶</div>
+        <div class="task-desc">跨路由捲頂（決策 I）改為：<b>POP 回到 /lore 時還原</b>離開前的 scrollTop（以 pathname 為鍵存在記憶體），其餘路徑照舊捲頂。實測現況：捲到 900／1800／2600 → 返回後一律 0。</div>
+        <div class="task-file">src/pages/lore/LoreLayout.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 名冊順序與分組（純函式＋測試）</div>
+      <div class="task-group-meta">src/components/lore/loreRoster.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">名冊順序與分組（純函式＋測試）</div>
+        <div class="task-desc">依職業（遊戲內順序、組內新版本在前）／依登場版本（新版在前、組內依職業）；與館首頁 <code>buildGroups</code> 同一套排序，抽成共用純函式。搜尋比對中文名、全名、英文名、陣營、職業、版本。<code>node --test</code> 覆蓋排序與比對。</div>
+        <div class="task-file">src/components/lore/loreRoster.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 切換列 LoreDock</div>
+      <div class="task-group-meta">src/components/lore/LoreDock.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">切換列 LoreDock</div>
+        <div class="task-desc">底部膠囊：橫捲頭像列（官方 head 圖、<code>loading="lazy"</code>）、目前這位置中、兩端漸隱、滾輪橫捲、滑過顯示名字（提示放在列外）、‹ ›、序號、「名冊」鈕。鍵盤 ← →（閱讀模式中改為換章）、手機封面左右滑、切換列上滑展開名冊。換人走 <code>navigate(…, { replace: true })</code>，上一頁直接回館首頁。</div>
+        <div class="task-file">src/components/lore/LoreDock.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 機師名冊 LoreRoster</div>
+      <div class="task-group-meta">src/components/lore/LoreRoster.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機師名冊 LoreRoster</div>
+        <div class="task-desc">膠囊以 clip-path 長成面板；收合列上看得到的頭像 FLIP 飛進格子，其餘以目前這位為圓心漣漪浮現；選人時頭像飛回、面板縮回、舞台同時換人。搜尋（Enter 選第一位）、分組切換（版本模式組間橫排）、「有逸聞」「有外觀」篩選、章數紅標與 +N 外觀數、<code>/</code> 開啟並聚焦搜尋、Esc／點霧面收合。fixed 浮層自帶捲動容器（不違反 M-08）、<code>overscroll-behavior: contain</code>。</div>
+        <div class="task-file">src/components/lore/LoreRoster.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; 預載策略</div>
+      <div class="task-group-meta">src/components/lore/useLorePreload.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">預載策略</div>
+        <div class="task-desc">閒置時預載前後兩位的立繪並 <code>decode()</code>；切換列／名冊頭像 hover 時預載該位。換人時等 decode（已預載＝立即）再擦入，中間不留白。</div>
+        <div class="task-file">src/components/lore/useLorePreload.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-6 &nbsp; 換人精簡過場</div>
+      <div class="task-group-meta">src/pages/lore/PilotLorePage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">換人精簡過場</div>
+        <div class="task-desc">路由參數變了先播 0.3 秒退場（卡片反向錯開淡出、立繪往反方向滑出），再換成新機師：線稿閃現＋依方向擦入彩圖、卡片間隔 70ms 進場，全程約 0.9 秒。不重播完整開場（官網換人也只 fade）。以「顯示中的機師 ID」落後網址一拍實作，瀏覽器上一頁／下一頁同樣有過場。</div>
+        <div class="task-file">src/pages/lore/PilotLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label pink">Phase B</div>
+  <div class="section-title">B 版面重構：舞台＋卷宗</div>
+  <div class="section-desc">回應「版面以故事為重、保留看全身立繪」：立繪改成固定舞台，正文是一疊半透明紙卡從另一側蓋上來。同時修掉半身圖機師正文被擠到 293px 的系統性問題。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; LoreStage 舞台元件（取代 LoreArt 的立繪柱）</div>
+      <div class="task-group-meta">src/components/lore/LoreStage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">LoreStage 舞台元件（取代 LoreArt 的立繪柱）</div>
+        <div class="task-desc">四種構圖在渲染前決定：<code>tall</code>（art.webp 依高度放大 1.52 倍、靠頂取景頭到大腿）、<code>wide</code>（Raw 半身全高）、<code>official</code>（官網 8 位圖層＋名字層）、<code>scene</code>（場景插畫造型，置中略小）。往正文方向的漸隱遮罩（兩層 mask：橫向以 <code>mask-position</code> 動畫開啟＋底緣溶解）。保留 042-C 的 decode 起算、背景分頁保險、SVG 線稿濾鏡。</div>
+        <div class="task-file">src/components/lore/LoreStage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 單一 scrollport 下的疊層</div>
+      <div class="task-group-meta">src/pages/lore/PilotLorePage.tsx · src/index.css</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">單一 scrollport 下的疊層</div>
+        <div class="task-desc">舞台 <code>position: sticky; height: var(--lore-viewport-h)</code>＋負 margin-bottom，卷宗在同一個 <code>.lore-scroll</code> 裡疊上去（不開第二層 overflow，M-08）；卷宗外框 <code>pointer-events: none</code>、卡片 auto，舞台外側的按鈕點得到。</div>
+        <div class="task-file">src/pages/lore/PilotLorePage.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 卷宗卡片</div>
+      <div class="task-group-meta">src/components/lore/LoreDossier.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">卷宗卡片</div>
+        <div class="task-desc">標題區（▣ PILOT FILE 眉標、職業、楷體名、全名＋英文名、陣營／天賦／駕照三徽記）、扉頁卡、個人資料卡（紅標身高）、逸聞目錄卡（描邊章號＋首句預覽）；沒有章節時一句說明，不放空框。紙色 90% 卡片＋內框細線，蓋住立繪漸隱帶約 6–10vw。字級一律 rem（館內字級三鈕仍有效）。</div>
+        <div class="task-file">src/components/lore/LoreDossier.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 逐位立繪側邊設定</div>
+      <div class="task-group-meta">src/components/lore/loreArtTuning.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">逐位立繪側邊設定</div>
+        <div class="task-desc"><code>LORE_ART_TUNING</code> 加 <code>side?: 'left' | 'right'</code>（依人物朝向，讓角色看向正文）；預設左；官網 8 位固定左（名字層構圖是左側用的）。先帶入模擬頁調過的 6 位。</div>
+        <div class="task-file">src/components/lore/loreArtTuning.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-5 &nbsp; 全身立繪鑑賞模式</div>
+      <div class="task-group-meta">src/components/lore/LoreViewer.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">全身立繪鑑賞模式</div>
+        <div class="task-desc">舞台外側「全身立繪」鈕：全身原圖（art.webp，沒有就 Raw；選了外觀就看外觀）滿高置中，點擊放大 2.1 倍、滑鼠移動平移，Esc／關閉鈕收合。主圖規則只套 <code>&gt; img</code>（外觀鈕裡的小頭像曾被套到）。</div>
+        <div class="task-file">src/components/lore/LoreViewer.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-6 &nbsp; 手機版</div>
+      <div class="task-group-meta">src/index.css</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">手機版</div>
+        <div class="task-desc">舞台是 62svh 封面（只有底緣溶解）、卷宗從下方推上來蓋住封面下緣；全身立繪／外觀鈕移到封面左上；切換列全寬貼底；名冊改 84svh 底部面板。</div>
+        <div class="task-file">src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-7 &nbsp; 驗收：半身圖機師正文寬度</div>
+      <div class="task-group-meta">_local-notes 驗收腳本</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">驗收：半身圖機師正文寬度</div>
+        <div class="task-desc">1280／1440／1920 三種寬度、四種構圖、左右兩側，卷宗兩側邊距 ≥ 38px；尼爾、黑障、曜、露西亞、雷文正文寬度與全身圖機師一致（現況 293 vs 738px）。</div>
+        <div class="task-file">_local-notes 驗收腳本</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label pink">Phase C</div>
+  <div class="section-title">C 開場與層次動畫</div>
+  <div class="section-desc">回應「初始動畫完成後加入更多動畫：立繪往一側移、軼聞逐一進場、文字框蓋住部分立繪」。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 開場時間軸</div>
+      <div class="task-group-meta">src/components/lore/LoreStage.tsx · src/index.css</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">開場時間軸</div>
+        <div class="task-desc">置中顯影（沿用 042-C 線稿→上色 1050ms）→ 1250ms 立繪滑到一側、漸隱帶同時打開（950ms）→ 1600ms 卡片逐張從另一側進場（間隔 120ms、位移 80px）→ 切換列浮現。從館首頁或外部連結進入詳情頁才播完整版；館內換人一律走 A-6 精簡版。</div>
+        <div class="task-file">src/components/lore/LoreStage.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 快轉與無障礙</div>
+      <div class="task-group-meta">src/pages/lore/PilotLorePage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">快轉與無障礙</div>
+        <div class="task-desc">開場中任何滾輪／點擊／按鍵立刻快轉到終態；<code>prefers-reduced-motion</code> 直接終態；背景分頁不推進動畫時靠保險 timer 收工（042-C 的既有語意）。</div>
+        <div class="task-file">src/pages/lore/PilotLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 層次元素</div>
+      <div class="task-group-meta">src/components/lore/LoreStage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">層次元素</div>
+        <div class="task-desc">背景大號流水號（描邊、捲動視差）、英文簽名改為<b>墨色 17% 大字墊在人物後面</b>、順時針 97°（與官方 8 張一致；現行是逆時針 72°、白字在紙上看不見）、立繪隨捲動輕微視差（沿用 useLoreParallax 的 CSS 變數做法）。</div>
+        <div class="task-file">src/components/lore/LoreStage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 直書姓名改放舞台外側</div>
+      <div class="task-group-meta">src/components/lore/LoreStage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">直書姓名改放舞台外側</div>
+        <div class="task-desc">舞台外側上方，墊一層紙色光暈（構圖撞到時仍讀得到，如海莉絲的無人機）。官網 8 位預設立繪仍用官方名字層；換外觀後改用直書名＋簽名。</div>
+        <div class="task-file">src/components/lore/LoreStage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label pink">Phase D</div>
+  <div class="section-title">D 閱讀體驗</div>
+  <div class="section-desc">回應「故事館是來看故事的，美觀與設計感非常重要」。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 閱讀模式</div>
+      <div class="task-group-meta">src/pages/lore/PilotLorePage.tsx · LoreChapterPager.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">閱讀模式</div>
+        <div class="task-desc">進章節（<code>/lore/pilots/:id/:part</code>）時立繪往外退 7vw、彩圖淡出、<b>線稿當底紋</b>，稿紙置中佔約 60vw；章節軸改膠囊樣式 sticky；頂端紅色閱讀進度條；← → 換章（稿紙依方向滑出滑入）；章末「下一章」與「返回檔案」。</div>
+        <div class="task-file">src/pages/lore/PilotLorePage.tsx · LoreChapterPager.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 字型交付（自託管分片）</div>
+      <div class="task-group-meta">scripts/copy-lore-fonts.mjs · package.json</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">字型交付（自託管分片）</div>
+        <div class="task-desc"><code>@fontsource/noto-serif-tc</code>（內文明體）＋<code>@fontsource/lxgw-wenkai-tc</code>（引文、旁白、名字、首字）以 devDependency 安裝，build／predev 時只把需要的字重 woff2 分片複製到 <code>public/fonts/lore/</code>（不進 git）並產生 unicode-range @font-face；CSS 只在故事館的 lazy chunk 載入。中國可連（PLAN-029 自託管方針）。</div>
+        <div class="task-file">scripts/copy-lore-fonts.mjs · package.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 排版</div>
+      <div class="task-group-meta">src/components/lore/LoreProse.tsx · src/index.css</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">排版</div>
+        <div class="task-desc">內文明體、行高約 2.05、段首縮兩字、左右對齊；引文段<b>懸掛引號</b>（「 凸出行首、紅色）；非引文開頭段<b>首字放大</b>；署名前細線；稿紙描邊大章號、紅色 PART 標、短紅線。</div>
+        <div class="task-file">src/components/lore/LoreProse.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 旁白便條</div>
+      <div class="task-group-meta">src/components/lore/LoreCommentaryRow.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">旁白便條</div>
+        <div class="task-desc">頭像＋楷體文字的便條（膠帶、微傾），查無說話者時只少頭像與名字、整列不消失（M-14）。</div>
+        <div class="task-file">src/components/lore/LoreCommentaryRow.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-5 &nbsp; 渲染端保守正規化（純函式＋測試）</div>
+      <div class="task-group-meta">src/components/lore/loreText.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">渲染端保守正規化（純函式＋測試）</div>
+        <div class="task-desc">半形 <code>, ? ! ;</code> 轉全形；<b>只合併長行</b>（≥ 30 字、行尾不是句末標點）的 OCR 軟換行，避免把「6月21日」這種短行標題併進正文（模擬頁的寬鬆版有這個誤併）。資料清理完成後它應該是 no-op；函式之後也給編輯台貼上時用。</div>
+        <div class="task-file">src/components/lore/loreText.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label pink">Phase E</div>
+  <div class="section-title">E 選配</div>
+  <div class="section-desc">B–D 不依賴本段，可以之後再做。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 預產線稿</div>
+      <div class="task-group-meta">scripts/（Canny 管線原型在 _local-notes/2026-10/2026-10-11_官方線稿與簽名自產評估/）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">預產線稿</div>
+        <div class="task-desc">閱讀模式讓線稿被長時間看見，值得預產：約 15KB／位、47 位約 0.7MB，品質接近官方，也省掉大圖固定層的濾鏡成本。</div>
+        <div class="task-file">scripts/（Canny 管線原型在 _local-notes/2026-10/2026-10-11_官方線稿與簽名自產評估/）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 簽名字型辨識與替換</div>
+      <div class="task-group-meta">src/index.css</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">簽名字型辨識與替換</div>
+        <div class="task-desc">官方簽名是內建乾筆紋理的字型（NCC 0.969），辨識出來就只換 font-family；字型授權另計。</div>
+        <div class="task-file">src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label pink">Phase F</div>
+  <div class="section-title">F 外觀切換</div>
+  <div class="section-desc">站長 2026-10-13：造型<b>必須上站</b>；名稱、台版白名單、歸屬問題列為後續資料面處理，先讓網頁顯示。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 造型上站</div>
+      <div class="task-group-meta">scripts/import-game-assets.mjs · public/images/game/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">造型上站</div>
+        <div class="task-desc"><code>--skins</code> 落點由 repo 外封存夾改為 <code>public/images/game/pilots/&lt;gameId&gt;/skins/&lt;官方檔名&gt;.webp</code>（core 資料夾「只放預設造型」的不變式不動）。歸屬依 <code>scripts/lib/pilotSkinMeta.json</code> 的 owner 覆寫（先帶入 10-03 定版：<code>Pilot_10103107B</code> → 洛莎·審判）。報告附照抄清單；README 同步（例行流程不靠 AI）。</div>
+        <div class="task-file">scripts/import-game-assets.mjs · public/images/game/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; 造型索引</div>
+      <div class="task-group-meta">scripts/generate-art-index.mjs · src/data/gameArtIndex.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">造型索引</div>
+        <div class="task-desc">掃 <code>skins/</code> 子資料夾＋<code>npcArtNotes.json</code> 有 owner 且有外觀卡者（海莉絲 <code>10103132A</code>、瑪阿特 <code>10103129A</code>，圖已在 NPC 圖庫）→ <code>GAME_PILOT_SKINS</code>。build 時量透明度判 <code>scene</code>（&lt; 25%）。<code>pilotSkinMeta.json</code> 的 <code>name</code>／<code>hidden</code> 預留給資料面（不填照常顯示「外觀 N」）。DB 不加欄位。</div>
+        <div class="task-file">scripts/generate-art-index.mjs · src/data/gameArtIndex.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-3 &nbsp; 外觀列</div>
+      <div class="task-group-meta">src/components/lore/LoreSkinPicker.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">外觀列</div>
+        <div class="task-desc">舞台外側（全身立繪上方）與鑑賞模式右下各一排：預設＋各造型的官方 head 圖（外觀卡是袋裝商品圖，不用）。radiogroup、hover 顯示名稱並預載。網址 <code>?skin=&lt;key&gt;</code>（replace），同一次瀏覽換人再回來記得上次選的。</div>
+        <div class="task-file">src/components/lore/LoreSkinPicker.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-4 &nbsp; 換裝動畫</div>
+      <div class="task-group-meta">src/components/lore/LoreStage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">換裝動畫</div>
+        <div class="task-desc">只換舞台、正文不重進場：舊造型釘在原位淡出、新造型線稿閃現＋柔邊遮罩由上往下擦入（約 1 秒）；構圖變體改變時卷宗與漸隱帶一起平移。官方名字層只配預設立繪。</div>
+        <div class="task-file">src/components/lore/LoreStage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-5 &nbsp; 名冊整合</div>
+      <div class="task-group-meta">src/components/lore/LoreRoster.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">名冊整合</div>
+        <div class="task-desc">「有外觀」篩選與頭像右下 +N。</div>
+        <div class="task-file">src/components/lore/LoreRoster.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label pink">Phase G</div>
+  <div class="section-title">G 驗收與文件</div>
+  
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-1 &nbsp; Playwright 逐幀驗收＋壓力測試</div>
+      <div class="task-group-meta">_local-notes 驗收腳本</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Playwright 逐幀驗收＋壓力測試</div>
+        <div class="task-desc">開場、換人、名冊開合、換裝、閱讀模式逐幀（CDP 放慢 10 倍）；連續換人＋換外觀 40 次 heap 穩定、舞台只留一層。⚠ 不用隱藏的瀏覽器面板量時序（rAF 停、decode 等到逾時，會量到假的「固定 2 秒」）。</div>
+        <div class="task-file">_local-notes 驗收腳本</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-2 &nbsp; 無障礙</div>
+      <div class="task-group-meta">—</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">無障礙</div>
+        <div class="task-desc">名冊 dialog 焦點進出、外觀 radiogroup、切換列 aria-current、鍵盤操作完整、reduced-motion。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-3 &nbsp; 文件同步</div>
+      <div class="task-group-meta">docs/03_頁面規劃/13_故事館/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">文件同步</div>
+        <div class="task-desc">頁面規劃補「舞台＋卷宗」「名冊」「外觀」章節；資料模型不變（無 DB 欄位）。</div>
+        <div class="task-file">docs/03_頁面規劃/13_故事館/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-4 &nbsp; 更新履歷</div>
+      <div class="task-group-meta">src/data/siteChangelog/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">更新履歷</div>
+        <div class="task-desc">故事館仍在 <code>LORE_INTERNAL_ONLY</code>：條目標 unreleased，公開時一起改日期。</div>
+        <div class="task-file">src/data/siteChangelog/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label pink">Phase H</div>
+  <div class="section-title">H 資料面（後續，站長）</div>
+  <div class="section-desc">站長 2026-10-13：「資料面的問題後續再接著處理」。不阻塞 A–G。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">H-1 &nbsp; 造型名稱</div>
+      <div class="task-group-meta">scripts/lib/pilotSkinMeta.json</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">造型名稱</div>
+        <div class="task-desc">擷取裡沒有官方名稱；補 <code>name</code> 即顯示，不補顯示「外觀 N」。</div>
+        <div class="task-file">scripts/lib/pilotSkinMeta.json</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">H-2 &nbsp; 台版已上線白名單</div>
+      <div class="task-group-meta">scripts/lib/pilotSkinMeta.json</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">台版已上線白名單</div>
+        <div class="task-desc">素材來自陸版客戶端，可能含台版未推出的造型；以 <code>hidden</code> 標記不上站的。</div>
+        <div class="task-file">scripts/lib/pilotSkinMeta.json</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">H-3 &nbsp; 歸屬待確認</div>
+      <div class="task-group-meta">scripts/lib/pilotSkinMeta.json</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">歸屬待確認</div>
+        <div class="task-desc"><code>Pilot_10103107B</code>（10-03 定版判給洛莎·審判，與 <code>10103154B</code> 同設計，可能重複）；瑪阿特 <code>10103129A</code> 的稱呼；明日香／零／真嗣的 <code>AB</code> 是什麼；卡蜜拉早期（<code>10101113A</code>）與貝爾莎（<code>10103143A</code>，左右翻轉同圖）目前不列為外觀。</div>
+        <div class="task-file">scripts/lib/pilotSkinMeta.json</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">H-4 &nbsp; 逸聞資料清理</div>
+      <div class="task-group-meta">pilotLore</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">逸聞資料清理</div>
+        <div class="task-desc">卡蜜拉 4 章的 OCR 硬換行（20 處）與半形標點（50 個）；PART 1 旁白是測試字「1」。走 data-patch 流程（備份 → dry-run → bump）。</div>
+        <div class="task-file">pilotLore</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-D — <a href="../index.html" style="color:var(--accent-pink);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

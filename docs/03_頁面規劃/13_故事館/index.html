@@ -30,10 +30,10 @@
   <div class="section-label">基本資訊</div>
   <div class="section-title">頁面規格</div>
   <table class="spec-table">
-    <tr><th>路由</th><td><code>/lore</code>（館首頁）｜<code>/lore/pilots/:id</code>（扉頁）｜<code>/lore/pilots/:id/:part</code>（章節頁）｜<code>/lore/*</code> 兜底轉址回 <code>/lore</code>｜<code>/admin/lore</code>（編輯台，<code>AdminRoute</code>）</td></tr>
-    <tr><th>開發階段</th><td>PLAN-042-A Phase C–F（2026-09-09 ～ 09-10）；氛圍層與顯影修正另立 <a href="../../05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/計畫書.html">PLAN-042-C</a></td></tr>
+    <tr><th>路由</th><td><code>/lore</code>（館首頁）｜<code>/lore/pilots/:id</code>（扉頁）｜<code>/lore/pilots/:id/:part</code>（章節頁／閱讀模式）｜外觀放查詢字串 <code>?skin=&lt;立繪鍵&gt;</code>（PLAN-042-D）｜<code>/lore/*</code> 兜底轉址回 <code>/lore</code>｜<code>/admin/lore</code>（編輯台，<code>AdminRoute</code>）</td></tr>
+    <tr><th>開發階段</th><td>PLAN-042-A Phase C–F（2026-09-09 ～ 09-10）；氛圍層與顯影修正另立 <a href="../../05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/計畫書.html">PLAN-042-C</a>；2026-10-13 改版成「舞台＋卷宗」、加機師名冊與外觀切換：<a href="../../05_階段性開發計畫/執行中/PLAN-042-D_故事館改版_舞台與卷宗/計畫書.html">PLAN-042-D</a></td></tr>
     <tr><th>登入需求</th><td>前台不需要登入（⏸ 但入口收起中，見「導覽入口」）；編輯台 ADMIN 即可（只寫 <code>pilotLore</code>）</td></tr>
-    <tr><th>資料來源</th><td><code>pilots</code>（扉頁正文 <code>lore</code>、<code>profile.additionalInfo</code>、立繪路徑 derive）＋ <code>pilotLore</code>（章節、旁白、扉頁署名）。一律走 <code>useFirestore</code> 的 <code>usePilots</code> / <code>usePilot</code> / <code>usePilotLore</code> / <code>usePilotLoreDoc</code>；<strong><code>pilotLore</code> 讀不到時優雅降級成「只有扉頁」</strong>，不轉圈、不錯誤頁</td></tr>
+    <tr><th>資料來源</th><td><code>pilots</code>（扉頁正文 <code>lore</code>、<code>profile.additionalInfo</code>、立繪路徑 derive）＋ <code>pilotLore</code>（章節、旁白、扉頁署名）。一律走 <code>useFirestore</code> 的 <code>usePilots</code> / <code>usePilot</code> / <code>usePilotLore</code> / <code>usePilotLoreDoc</code>；<strong><code>pilotLore</code> 讀不到時優雅降級成「只有扉頁」</strong>，不轉圈、不錯誤頁。外觀（PLAN-042-D）不在 DB：圖在 <code>public/images/game/pilots/&lt;gameId&gt;/skins/</code>，build 產生 <code>GAME_PILOT_SKINS</code>，讀取走 <code>pilotSkins()</code>；名稱／隱藏／歸屬覆寫在 <code>scripts/lib/pilotSkinMeta.json</code>（選填）</td></tr>
     <tr><th>導覽入口</th><td><strong>⏸ 2026-10-03 起入口收起</strong>（<code>LORE_INTERNAL_ONLY</code>，<code>src/hooks/useLoreEntry.ts</code>）：導覽列、手機 More 面板與機師詳情頁的「讀完整故事 ▸」只對 ADMIN／OWNER 顯示；<code>/lore/*</code> 路由不動，知道網址的人照樣進得去；一般訪客的機師詳情頁退回<strong>全文</strong>顯示（只藏連結會讓訪客連完整逸聞都讀不到）。<br>公開後：桌機與手機 More 面板的「故事館」（刻意獨立於版本／圖鑑／攻略三群之外，避免 <code>SubNavTabs</code> 在館內命中）；圖鑑詳情頁 lore 區塊只留首句，接「讀完整故事 ▸」</td></tr>
     <tr><th>外殼形態</th><td><code>chromeMode = 'immersive'</code>：header 換成紙色細帶（館名／離館／字級三顆），footer、分頁列、手機 Tab Bar 全收；<code>html.lore-mode</code> 只設 <code>color-scheme</code> 與 body 背景，色票覆寫只在 <code>.lore-shell</code> / <code>.lore-chrome</code>（portal 浮層保持深色可讀）</td></tr>
     <tr><th>參數命名</th><td>一律 <code>:id</code>——<code>analytics/track.ts</code> 寫死讀 <code>params.id</code>，改名會讓機師熱度一筆都不記</td></tr>
@@ -61,7 +61,10 @@
     <div class="card yellow">
       <div class="card-icon">📄</div>
       <h3>扉頁 <code>/lore/pilots/:id</code></h3>
-      <p>桌機 42／58 兩欄：左立繪柱（sticky，高度吃 <code>--lore-viewport-h</code> 實測值）、右卷宗。立繪在<strong>渲染前</strong>分流：
+      <p><strong>PLAN-042-D 起改為「舞台＋卷宗」</strong>：立繪是固定在視窗的舞台（sticky 全高層＋負 margin，仍在唯一 scrollport 裡），往正文方向漸隱；
+      卷宗是一疊半透明紙卡（標題區、扉頁、個人資料、逸聞目錄）從另一側蓋上來、蓋住漸隱帶。構圖在渲染前分流成 <code>tall／wide／official／scene</code>（<code>loreStageArt.ts</code>），
+      立繪站哪側看 <code>LORE_ART_TUNING.side</code>。修掉了半身圖機師正文被擠到 293px 的問題。舞台外側有外觀列與「全身立繪」鑑賞模式。<br>
+      <span style="color:var(--text-dim)">（以下為 042-A 的舊版面，已被取代）</span>桌機 42／58 兩欄：左立繪柱（sticky，高度吃 <code>--lore-viewport-h</code> 實測值）、右卷宗。立繪在<strong>渲染前</strong>分流：
       52 位有 <code>art.webp</code> 走直式全身（<code>hasPilotArt</code>），其餘退回 <code>full.webp</code> 半身並套底部噪點 mask（86/87 張底邊硬切）。
       直書姓名壓立繪右緣；職業／名字／三枚徽記（陣營文字圓環、天賦圖示、駕駛許可）；引文體正文套 blockquote 語彙、署名右對齊細線；<code>additionalInfo</code> 鍵值列；章節入口。
       手機改上下堆疊，立繪上方 sticky 38vh。</p>
@@ -69,8 +72,23 @@
     <div class="card cyan">
       <div class="card-icon">📖</div>
       <h3>章節頁 <code>/lore/pilots/:id/:part</code></h3>
-      <p>與扉頁<strong>同一個元件</strong>，版面骨架只寫一份。常駐具名章節軸（sticky）＋◀▶＋頁碼；換章靠點按鈕／鍵盤左右／手機水平滑動三種明確意圖，<strong>絕不接滾輪</strong>（PLAN-050 拆舊輪播的教訓）。
+      <p><strong>PLAN-042-D：閱讀模式</strong>——立繪往外退、彩圖淡出、<strong>線稿當底紋</strong>，稿紙置中（描邊大章號、懸掛引號、首字放大、署名細線、旁白便條、頂端閱讀進度條）；
+      章節軸改膠囊樣式；← → 換章、Esc 回檔案。<br>
+      與扉頁<strong>同一個元件</strong>，版面骨架只寫一份。常駐具名章節軸（sticky）＋◀▶＋頁碼；換章靠點按鈕／鍵盤左右／手機水平滑動三種明確意圖，<strong>絕不接滾輪</strong>（PLAN-050 拆舊輪播的教訓）。
       扉頁→第一章 push、章節之間 replace。正文走 <code>LoreRichText</code>（只解析 <code>[xxx]</code>，不套數字高亮）、署名、NPC 旁白列（speaker 查不到只少頭像不消失）、「下一章」列。只有一章時整套底盤不掛。</p>
+    </div>
+    <div class="card pink">
+      <div class="card-icon">🧭</div>
+      <h3>切換列與機師名冊（PLAN-042-D）</h3>
+      <p>詳情頁底部膠囊：可橫捲的圓形頭像列（目前這位置中）、‹ ›、序號、「名冊」；← → 換人（閱讀模式中換章）、手機封面左右滑。
+      名冊從膠囊長出來、頭像 FLIP 飛進分組格子；搜尋（含英文名）、依職業／登場版本分組（與館首頁同一個排序，記在 sessionStorage）、有逸聞／有外觀篩選、<code>/</code> 開啟、Esc 收合。
+      換人網址用 replace；回館首頁時 <code>LoreLayout</code> 會還原牆面的捲動位置（POP）。換人過場 0.9 秒、不重播完整開場；完整開場只在進入詳情頁時播。</p>
+    </div>
+    <div class="card green">
+      <div class="card-icon">👗</div>
+      <h3>外觀切換（PLAN-042-D）</h3>
+      <p>36 位機師 40 套造型＋NPC 圖庫裡有外觀卡的 2 套（海莉絲、瑪阿特）。外觀列用造型自己的 <code>_head</code>（外觀卡是袋裝商品圖不用）；換外觀只換舞台、正文不重進場（新的那套由上往下擦入）；
+      場景插畫外觀走 <code>scene</code> 構圖。官網 8 位的官方名字層只配預設立繪，換外觀後改用直書名＋簽名。網址 <code>?skin=</code>，同一次瀏覽換人再回來會記得。</p>
     </div>
     <div class="card purple">
       <div class="card-icon">🛠️</div>
@@ -86,7 +104,7 @@
   <div class="section-title">版面結構</div>
   <div class="wireframe">
     <div class="wf-icon">🏛️</div>
-    <p>紙色細帶 header（館名／離館／字級）<br>↓<br><code>.lore-shell</code>（進場遮罩 <code>.lore-veil</code> 300ms）<br>↓<br><code>.lore-scroll</code>＝全館<strong>唯一</strong> scrollport<br>↓<br>館首頁牆 ／ 扉頁（立繪柱 sticky ＋ 卷宗）／ 章節頁（章節軸 sticky ＋ 正文）</p>
+    <p>紙色細帶 header（館名／離館／字級）<br>↓<br><code>.lore-shell</code>（進場遮罩 <code>.lore-veil</code>）<br>↓<br><code>.lore-scroll</code>＝全館<strong>唯一</strong> scrollport<br>↓<br>館首頁牆 ／ <code>.lore-page</code>：<code>.lore-stage-wrap</code>（sticky 全高舞台＋負 margin）＋ <code>.lore-dossier</code>（檔案卡片或閱讀稿紙）＋ fixed 的切換列／名冊／鑑賞模式</p>
   </div>
 </section>
 
@@ -94,6 +112,16 @@
   <div class="section-label">設計備註</div>
   <div class="section-title">開發注意事項</div>
   <div class="info-block">
+    <strong>✅ 舞台＋卷宗（PLAN-042-D，2026-10-13）</strong><br>
+    · <strong>元件</strong>：<code>LoreStage</code>（立繪層、簽名、直書名、流水號、檔案小字、工具）、<code>LoreDossier</code>（四張卡）、<code>LoreProse</code>（正文排版）、<code>LoreSwitcher</code>（切換列＋名冊）、<code>LoreSkinPicker</code>、<code>LoreViewer</code>；
+      042-A／042-C 的 <code>LoreArt</code>、<code>useLoreParallax</code>、<code>LoreSourceLine</code> 已移除<br>
+    · <strong>狀態全掛在 <code>.lore-page</code> 的 class</strong>（is-intro／is-reveal-full／is-reveal-quick／is-revealed／is-ready／is-quick／is-leaving／is-entering／is-intro-done／is-reading），CSS 在 <code>index.css</code> 的 PLAN-042-D 區塊；顯示中的機師落後網址一拍，換人才有退場／進場<br>
+    · <strong>開場</strong>：置中顯影 → 1250ms 立繪滑到一側＋漸隱帶打開 → 1600ms 卡片逐張進場；任何輸入快轉、reduced-motion 直接終態<br>
+    · <strong>字型</strong>：正文 Lore Serif（Noto Serif TC）、引文／旁白／名字 Lore Kai（LXGW WenKai TC），Fontsource 的 unicode-range woff2 分片由 <code>scripts/copy-lore-fonts.mjs</code> 在 build／predev 時複製到 <code>public/fonts/lore/</code>（不進 git），<code>LoreLayout</code> 進館才掛 <code>&lt;link&gt;</code><br>
+    · <strong>渲染端正規化</strong>：<code>readableParagraphs()</code> 只合併 ≥ 30 字的 OCR 斷行、中文語境半形標點轉全形；資料清理（PLAN-042-D H-4）後應為 no-op<br>
+    · <strong>Windows 大小寫</strong>：純資料模組叫 <code>loreStageArt.ts</code>，不可叫 <code>loreStage.ts</code>（會與 <code>LoreStage.tsx</code> 撞名，tsc TS1149）
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
     <strong>✅ 已實作（PLAN-042-A Phase C–F）</strong><br>
     · <strong>唯一 scrollport</strong>：<code>Layout</code> 的 <code>&lt;main&gt;</code> 是 <code>overflow-hidden</code> 的假 scrollport，館內任何 <code>position: sticky</code> 都會失效；故 <code>LoreLayout</code> 自己開 <code>.lore-scroll</code>，高度沿 flex 鏈傳下來（不做 <code>calc(100vh - …)</code> 減法，<code>SignedOutBanner</code> 的高度算不到）。
       <strong>館內元件不得再開第二層 <code>overflow-y</code></strong>，兩條垂直捲軸並存時外層永遠捲不動<br>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-D 故事館改版：舞台與卷宗 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* 共用 style.css 未定義 pink／red 變體（既有頁面多依賴其預設，故不動共用檔），此處僅為本頁補上 */
+.hero-badge.pink    { border-color: var(--accent-pink); color: var(--accent-pink); background: rgba(236,72,153,0.06); }
+.section-label.pink { color: var(--accent-pink); }
+.section-label.red  { color: var(--accent-red); }
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+.meta-value.pink   { color: var(--accent-pink); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-D 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge pink">◆ PLAN-042-D</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    故事館改版：舞台與卷宗<span style="-webkit-text-fill-color:var(--text-secondary);">舞台 · 卷宗 · 名冊 · 外觀 · 閱讀模式</span>
+  </h1>
+  <p class="hero-sub">立繪改成固定在視窗的舞台、正文是一疊半透明紙卡從另一側蓋上來；開場後立繪移位、故事逐張進場；可展開的機師名冊讓換人順暢；有造型的機師可以換外觀。照 2026-10-13 的可操作模擬頁實作。</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label pink">Overview</div>
+  <div class="section-title">計畫概要</div>
+  <div class="plan-meta">
+    <div class="meta-item"><div class="meta-label">計畫編號</div><div class="meta-value pink">PLAN-042-D</div></div>
+    <div class="meta-item"><div class="meta-label">建立日期</div><div class="meta-value">2026-10-13</div></div>
+    <div class="meta-item"><div class="meta-label">影響範圍</div><div class="meta-value purple">src/pages/lore/* · src/components/lore/*（LoreStage／LoreDossier／LoreDock／LoreRoster／LoreViewer／LoreSkinPicker）· index.css · LoreLayout · import-game-assets／generate-art-index · public/images/game/pilots/*/skins/ · 字型分片 · docs</div></div>
+    <div class="meta-item"><div class="meta-label">優先級</div><div class="meta-value yellow">MID（A 段 HIGH：換人不順是站長直接回報的痛點）</div></div>
+    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value pink">開發完成 31／33（2026-10-13，未 commit）· 剩 E 選配；H 為站長資料作業</div></div>
+    <div class="meta-item"><div class="meta-label">前置依賴</div><div class="meta-value cyan">PLAN-042-A／042-C（已合併 main，入口收起中）· PLAN-054 圖片 ID 化 · PLAN-059 職業圖示與陣營徽章</div></div>
+  </div>
+  <div class="info-block">
+    <strong>本計畫的依據：</strong><code>_local-notes/2026-10/2026-10-13_機師故事館_改版提案/提案.html</code>（含現況實測、版面圖、時間軸圖、截圖）與可操作模擬頁 <code>_local-notes/2026-10/2026-10-13_機師故事館_改版提案/index.html</code>
+    （正式站 92 位資料＋36 位 40 套造型；經 <code>.claude/launch.json</code> 的 <code>local-notes</code> 伺服器開啟）。兩者都在 _local-notes、不進版控。
+    <strong>實作以模擬頁為準</strong>：動畫時序、尺寸、構圖參數都在它的 CSS 變數裡，可以直接對照。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景（站長 2026-10-13 回饋＋實測）</div>
+  <div class="problem-block">
+    <strong>問題一：版面分配以立繪為主，故事被擠到旁邊</strong><br>
+    立繪柱固定佔 <code>42fr</code>。只有 1240×1080 半身圖的機師（約 36 位：尼爾、黑障、曜、露西亞、雷文…），半身圖的寬高比把欄位撐開：
+    實測 1440 寬時<strong>立繪欄 980px、正文欄只剩 293px（每行 7–8 字）</strong>，全身圖機師是 535／738px——這是系統性問題。
+  </div>
+  <div class="problem-block">
+    <strong>問題二：開場顯影之後畫面就靜止了</strong><br>
+    042-C 的線稿→上色顯影成立，但之後沒有下一段；右欄只在 200／350ms 淡入，與立繪沒有空間關係（並排、不重疊），缺少層次。
+  </div>
+  <div class="problem-block">
+    <strong>問題三：讀故事的體驗</strong><br>
+    內文黑體；引文整段左框線；彩色立繪在閱讀時一直和正文搶注意力；卡蜜拉的章節有 OCR 硬換行（「本質是什／麼。」斷成兩段）與半形標點。
+  </div>
+  <div class="problem-block">
+    <strong>問題四：機師切換不順暢</strong><br>
+    ① 詳情頁<strong>沒有任何切換入口</strong>，換一位＝回館首頁→找→點；② <strong>回館首頁時捲動位置一律歸零</strong>（LoreLayout ③ 對 POP 也 <code>scrollTo(0)</code>，實測 900／1800／2600 → 0）；
+    ③ 每次進入都重播完整開場；④ 沒有預載。
+  </div>
+  <div class="problem-block">
+    <strong>問題五：造型（外觀）沒有上站</strong><br>
+    可抽機師的其他造型由 <code>--skins</code> 封存在 repo 外（站上只用預設立繪）。站長決定：<strong>必須上站</strong>。上站後是 <strong>37 位、42 套</strong>（skins 資料夾 35 位 40 套＋NPC 圖庫裡有外觀卡的海莉絲、瑪阿特各 1 套）。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label pink">Design</div>
+  <div class="section-title">設計決策</div>
+  <div class="decision-block">
+    <strong>決策一：舞台＋卷宗</strong><br>
+    立繪不再佔欄位，改成固定在視窗的舞台（館內唯一 scrollport 下用 sticky 全高層＋負 margin 實作），依構圖在渲染前分流成 <code>tall／wide／official／scene</code>。
+    舞台往正文方向漸隱（24vw 遮罩帶），卷宗卡片從漸隱帶中段開始、蓋住立繪約 6–10vw，形成層次。全身立繪改成按鈕開啟的鑑賞模式。
+  </div>
+  <div class="decision-block">
+    <strong>決策二：開場只在進入時播，館內換人走精簡過場</strong><br>
+    完整開場（置中顯影 → 移位 → 卡片逐張進場）約 2.9 秒、任何輸入都能快轉；館內換人一律 0.9 秒精簡過場（不重播顯影）；換外觀只換舞台。三種動畫的語意分開：進館／換人／換衣服。
+  </div>
+  <div class="decision-block">
+    <strong>決策三：切換列可以展開成名冊</strong><br>
+    同樣是圓形頭像：膠囊長成面板、頭像從列上飛進格子；名冊順序＝館首頁排序＝‹ › 與 ← → 的順序。換人的網址用 replace，上一頁直接回館首頁（並還原捲動位置）。
+  </div>
+  <div class="decision-block">
+    <strong>決策四：閱讀模式讓線稿有了位置</strong><br>
+    進章節時彩色立繪退成線稿底紋，正文佔畫面主體。042-C 的線稿原本只在顯影前 0.5 秒可見；這也讓 E-1「預產線稿」從「效益有限」變成值得做（選配）。
+  </div>
+  <div class="decision-block">
+    <strong>決策五：造型上站但 DB 不加欄位</strong><br>
+    造型放 <code>public/images/game/pilots/&lt;gameId&gt;/skins/</code>（core 資料夾「只放預設造型」的不變式不動），索引由 build 產生（比照 <code>gameArtIndex.ts</code>）。
+    名稱、台版白名單、歸屬修正都放在 <code>scripts/lib/pilotSkinMeta.json</code>（選填）——資料面之後補，不填也照常顯示。
+    量透明度分兩種（以 skins 資料夾 40 套計）：去背 27 套（沿用 wide）、場景插畫 13 套（官方四角已暈開 → <code>scene</code> 構圖，暈邊直接融進紙面）。外觀卡 <code>Icon_pilotSkin_*</code> 是袋裝商品圖，縮圖改用造型自己的 <code>_head</code>。
+  </div>
+  <div class="decision-block">
+    <strong>決策六：字型自託管分片，只在故事館載入</strong><br>
+    內文 Noto Serif TC、引文／旁白／名字 LXGW WenKai TC，取 Fontsource 的 unicode-range woff2 分片，build 時從 node_modules 複製（不進 git），瀏覽器只下載用到的字。
+    不用 Google Fonts（中國連不上，與 PLAN-029 衝突）；不做依內容子集（逸聞會持續增加，漏跑時新字會混用別的字型）。
+  </div>
+  <div class="warning-block">
+    <strong>⚠ 沿用的地雷</strong>：館內唯一 scrollport（M-08，不開第二層 overflow-y）；不加 <code>@container</code>（RefChip 的 fixed 浮層會錯位）；
+    Tailwind arbitrary calc 不可有空格（M-27，複雜的 calc 一律寫在 index.css）；空字串不進 <code>&lt;img src&gt;</code>（M-16）；
+    時序驗收用 Playwright headless，不用隱藏的瀏覽器面板。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label pink">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+  <div class="decision-block">
+    <strong>在範圍內（開發 33 項，估 ≈ 12–13 人日；E 段選配約 1.5 人日）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>A 切換順暢（含機師名冊）</strong>（6 項）：館首頁捲動記憶、名冊順序與分組（純函式＋測試）、切換列 LoreDock、機師名冊 LoreRoster、預載策略、換人精簡過場</li>
+      <li><strong>B 版面重構：舞台＋卷宗</strong>（7 項）：LoreStage 舞台元件（取代 LoreArt 的立繪柱）、單一 scrollport 下的疊層、卷宗卡片、逐位立繪側邊設定、全身立繪鑑賞模式、手機版、驗收：半身圖機師正文寬度</li>
+      <li><strong>C 開場與層次動畫</strong>（4 項）：開場時間軸、快轉與無障礙、層次元素、直書姓名改放舞台外側</li>
+      <li><strong>D 閱讀體驗</strong>（5 項）：閱讀模式、字型交付（自託管分片）、排版、旁白便條、渲染端保守正規化（純函式＋測試）</li>
+      <li><strong>E 選配</strong>（2 項）：預產線稿、簽名字型辨識與替換</li>
+      <li><strong>F 外觀切換</strong>（5 項）：造型上站、造型索引、外觀列、換裝動畫、名冊整合</li>
+      <li><strong>G 驗收與文件</strong>（4 項）：Playwright 逐幀驗收＋壓力測試、無障礙、文件同步、更新履歷</li>
+      <li><strong>H 資料面（後續，站長）</strong>（4 項）：造型名稱、台版已上線白名單、歸屬待確認、逸聞資料清理</li>
+    </ul>
+  </div>
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>H 段資料面（站長後續）：造型名稱、台版白名單、歸屬問題、逸聞 OCR 清理——不阻塞開發，資料到位即生效</li>
+      <li>故事館公開（<code>LORE_INTERNAL_ONLY</code> 旗標仍由 042-A 管理）</li>
+      <li>042-B 機甲館（舞台＋卷宗的元件之後可直接沿用）</li>
+      <li>整頁滾動、滾輪換章／換人（館內只有一個 scrollport；PLAN-050 拆舊輪播的教訓）</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label pink">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html"><div class="doc-tag">Progress</div><h4>◆ PLAN-042-D 進度表</h4><p>A–H 八段、37 項（開發 33＋站長資料作業 4）</p></a>
+    <a class="doc-item" href="../PLAN-042-C_故事館氛圍層/計畫書.html"><div class="doc-tag">Predecessor</div><h4>◆ PLAN-042-C 故事館氛圍層</h4><p>顯影時間軸、官網素材、名字字型——本計畫沿用並往後接</p></a>
+    <a class="doc-item" href="../PLAN-042-A_機師故事館/計畫書.html"><div class="doc-tag">Parent</div><h4>◆ PLAN-042-A 機師故事館</h4><p>路由、資料模型、入口收起旗標</p></a>
+    <a class="doc-item" href="../PLAN-042_故事館_總綱/計畫書.html"><div class="doc-tag">Master</div><h4>◆ PLAN-042 故事館總綱</h4><p>兩館共用架構決策與子計畫拆分</p></a>
+    <a class="doc-item" href="../../../03_頁面規劃/13_故事館/index.html"><div class="doc-tag">Page Design</div><h4>🏛️ 機師故事館頁面規劃</h4><p>G-3 補「舞台＋卷宗」「名冊」「外觀」章節</p></a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-D — <a href="../index.html" style="color:var(--accent-pink);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
