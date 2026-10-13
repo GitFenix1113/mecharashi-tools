@@ -70,6 +70,9 @@ public/debug/
 # 文件頁靜態文件（由 scripts/copy-docs.mjs 從 docs/ 複製產生）
 public/docs/
 
+# 故事館正文字型分片（由 scripts/copy-lore-fonts.mjs 從 node_modules 的 Fontsource 複製產生，PLAN-042-D D-2）
+public/fonts/lore/
+
 # Temp scripts
 scripts/temp_scripts/
 

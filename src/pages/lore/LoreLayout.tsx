@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation, useNavigationType } from 'react-router-dom'
 
 /**
  * 機師故事館的共用外殼（PLAN-042-A C-4 / D-1）。
@@ -19,8 +19,12 @@ import { Outlet, useLocation } from 'react-router-dom'
  */
 export default function LoreLayout() {
   const { pathname } = useLocation()
+  const navType = useNavigationType()
   const shellRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  /** 每個路徑最後的捲動位置（③ 的 POP 還原用）；只活在這次進館，離館就丟 */
+  const positions = useRef(new Map<string, number>())
+  const pathRef = useRef(pathname)
 
   // ① 根元素旗標：文件層的捲軸配色與 body 背景圖只有 <html> 管得到，
   //    .lore-shell 搆不著。掛在這一層而不是每個子頁各掛一次 ——
@@ -33,21 +37,70 @@ export default function LoreLayout() {
     return () => html.classList.remove('lore-mode')
   }, [])
 
+  // ①-b 故事館正文字型（PLAN-042-D D-2）：Lore Serif／Lore Kai 的 unicode-range 分片，build 時由
+  //    scripts/copy-lore-fonts.mjs 放進 public/fonts/lore/。進館才掛 <link>——館外一個位元組都不下載；
+  //    離館不拿掉（已經載過的拿掉也省不了什麼，再進館還要重抓）。檔案不存在時只是退回系統字型，不會壞。
+  useEffect(() => {
+    const id = 'lore-fonts-css'
+    if (document.getElementById(id)) return
+    const link = document.createElement('link')
+    link.id = id
+    link.rel = 'stylesheet'
+    link.href = `${import.meta.env.BASE_URL}fonts/lore/lore-fonts.css`
+    document.head.appendChild(link)
+  }, [])
+
   // ② 進場「推門進館」**完全交給 CSS**（`.lore-veil` 的 lore-veil-wipe animation：深色遮罩
   //    以斜切從左下往右上擦開，PLAN-042-C A-4），所以這裡沒有 state、也沒有 requestAnimationFrame。
   //    animation 自帶 from 幀，不需要雙層 rAF。
   //    ⚠ 不是為了繞過分頁節流——`document.hidden` 時 Chrome 連 animation 的時間軸都不推進
   //    （2026-09-10 實測），rAF 版本同樣被暫停。那是背景分頁的正常行為，不必處理。
 
-  // ③ 跨路由捲頂（決策 (I)）。館首頁→扉頁、扉頁→章節、章節之間、扉頁→館首頁四條路徑都要重置。
+  // ③ 跨路由捲頂（決策 (I)）。館首頁→扉頁、扉頁→章節、章節之間、換人都要重置。
   //    LoreLayout 全程不卸載，`.lore-scroll` 的 scrollTop 不會自己歸零 ——
-  //    89 位機師的牆捲到底再點進去，扉頁會直接開在中段（立繪柱是 sticky，
-  //    看起來更像壞掉而不是捲過頭）。全站沒有既有的捲頂機制可依賴。
+  //    89 位機師的牆捲到底再點進去，扉頁會直接開在中段。全站沒有既有的捲頂機制可依賴。
+  //    **例外：按上一頁（POP）回到看過的路徑，還原離開時的位置**（PLAN-042-D A-1）。
+  //    舊版一律捲頂，從扉頁按上一頁回牆面時位置歸零（實測 900／1800／2600 → 0），89 位要重新捲一次。
+  //    位置靠 scroll 事件持續記（rAF 節流），**不是**換頁當下才讀：那時新頁面已經渲染，
+  //    內容變短的話 scrollTop 早就被瀏覽器夾掉了。
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0 })
-  }, [pathname])
+    const el = scrollRef.current
+    if (!el) return
+    let raf = 0
+    const onScroll = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        positions.current.set(pathRef.current, el.scrollTop)
+      })
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      el.removeEventListener('scroll', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [])
+  useEffect(() => {
+    pathRef.current = pathname
+    const el = scrollRef.current
+    if (!el) return
+    const saved = navType === 'POP' ? positions.current.get(pathname) : undefined
+    if (!saved) {
+      el.scrollTo({ top: 0 })
+      return
+    }
+    // 牆面要等 lazy chunk 與資料：撐得起那個高度才捲，最多等約 1.5 秒（之後照樣捲到能到的最低處）
+    let raf = 0
+    let tries = 0
+    const attempt = () => {
+      if (el.scrollHeight - el.clientHeight >= saved || tries++ > 90) el.scrollTo({ top: saved })
+      else raf = requestAnimationFrame(attempt)
+    }
+    attempt()
+    return () => cancelAnimationFrame(raf)
+  }, [pathname, navType])
 
-  // ④ 把 scrollport 的實測高度寫成 --lore-viewport-h（決策 (J)），供 .lore-portrait-col 取用。
+  // ④ 把 scrollport 的實測高度寫成 --lore-viewport-h（決策 (J)），供故事館頁面的舞台高度（.lore-page 的 --stage-h）取用。
   //    量實際的可視高度而不是減法，`SignedOutBanner` 出現／消失時立繪欄會自動跟上。
   //    CSS 端已備有純減法的 fallback，環境不支援 ResizeObserver 時退回那條。
   useEffect(() => {
@@ -65,8 +118,8 @@ export default function LoreLayout() {
     <div className="lore-shell flex flex-col" ref={shellRef}>
       <div className="lore-veil" aria-hidden="true" />
       {/*
-        LoreArt 的線稿濾鏡（PLAN-042-C A-2）。一份定義、全館共用，`.lore-art__sketch--filtered`
-        以 `filter: url(#lore-sketch)` 引用。放在 layout 而不是每個 LoreArt 各帶一份：
+        舞台線稿濾鏡（PLAN-042-C A-2；PLAN-042-D 起由 LoreStage 的 `.lore-figure__sketch.is-filtered` 引用）。
+        一份定義、全館共用，以 `filter: url(#lore-sketch)` 引用。放在 layout 而不是每套立繪各帶一份：
         同一個 id 重複出現時瀏覽器只認第一個，兩份不同步會讓調參「改了沒反應」。
 
         管線（與 042-A 的三層 CSS 版同一套數學，只是收進一張圖裡，並把「白」轉成「透明」）：

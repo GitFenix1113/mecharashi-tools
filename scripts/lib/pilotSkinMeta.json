@@ -1,0 +1,9 @@
+{
+  "_說明": "機師造型（外觀）的人工註記（PLAN-042-D F-1／F-2）。手動維護、全部選填——不填照常顯示「外觀 N」。key＝官方立繪鍵（Pilot_<號碼><造型>）。owner＝這套造型實際屬於哪位機師的 gameId（只在檔名號碼對不上時才要寫；import-game-assets.mjs --skins 依它決定放進哪個 pilots/<gameId>/skins/）。name＝造型名稱（顯示用）。hidden＝true 時不列進索引（例如台版尚未推出）。note＝給人看的備註。NPC 圖庫裡屬於可抽機師的造型登記在 npcArtNotes.json（owner 是文件 ID），不在這裡。",
+  "skins": {
+    "Pilot_10103107B": {
+      "owner": "10103154",
+      "note": "2026-10-03 定版判給洛莎·審判（黑色護目鏡，與 Pilot_10103154B 同設計，可能重複）——PLAN-042-D H-3 待站長確認"
+    }
+  }
+}

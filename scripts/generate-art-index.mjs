@@ -111,11 +111,13 @@ async function scanOfficial(dir, dirs) {
  * 機師另記資料夾裡實際的立繪主鍵：讀取端拿它跟 DB 的 `artKey` 比對，對不上就不給路徑（寧可退回舊圖也不給 404）。
  * 同一個資料夾出現兩種立繪主鍵直接讓 build 失敗——那代表有人把造型圖放進了 core 資料夾。
  */
+const listDirs = (d) => fs.existsSync(d)
+  ? fs.readdirSync(d, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort()
+  : []
+const webps = (d) => fs.readdirSync(d).filter((f) => f.endsWith('.webp')).map((f) => f.slice(0, -5))
+const readJson = (f) => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf-8')) : {})
+
 function scanGame() {
-  const listDirs = (d) => fs.existsSync(d)
-    ? fs.readdirSync(d, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort()
-    : []
-  const webps = (d) => fs.readdirSync(d).filter((f) => f.endsWith('.webp')).map((f) => f.slice(0, -5))
   const pilots = []
   for (const id of listDirs(path.join(GAME_ROOT, 'pilots'))) {
     const e = { id, key: undefined, kinds: new Set() }
@@ -161,7 +163,66 @@ function scanGame() {
   return { pilots, mechs, npcs: [...npcs.values()].sort((a, b) => a.key.localeCompare(b.key)) }
 }
 
-function writeGameIndex({ pilots, mechs, npcs }) {
+/**
+ * 機師造型／外觀（PLAN-042-D F-2）。兩個來源：
+ *   ① `game/pilots/<gameId>/skins/<立繪鍵>_{Raw,half,head}.webp`——`import-game-assets.mjs --skins` 放的。
+ *      放在子資料夾而不是 core 資料夾：core「只放預設造型」是 scanGame 的守門條件（一個 ID 一種立繪主鍵）。
+ *   ② NPC 圖庫裡 `npcArtNotes.json` 標了 owner、而且擷取裡有外觀卡（`npcArtMeta.json` 的 skinCard）的立繪——
+ *      圖本來就在站上（海莉絲 10103132A、瑪阿特 10103129A）。沒有外觀卡的（卡蜜拉早期、貝爾莎翻轉圖）不算外觀。
+ * `scene`＝連背景一起畫的場景插畫（Raw 透明像素 < 25%）：前台要換一種構圖，在渲染前就要知道，所以 build 時量好。
+ * `scripts/lib/pilotSkinMeta.json`：name（顯示名稱）／hidden（不列）——資料面之後補，全部選填。
+ */
+const SKIN_META_FILE = path.join(ROOT, 'scripts/lib/pilotSkinMeta.json')
+const SCENE_MAX_TRANSPARENT = 0.25
+async function transparentRatio(file) {
+  const { data, info } = await sharp(file).ensureAlpha().extractChannel(3).raw().toBuffer({ resolveWithObject: true })
+  let n = 0
+  for (let i = 0; i < data.length; i++) if (data[i] < 8) n++
+  return n / (info.width * info.height)
+}
+async function scanSkins(npcs) {
+  const meta = readJson(SKIN_META_FILE).skins ?? {}
+  const entryOf = async (key, kinds, file) => {
+    const m = meta[key] ?? {}
+    if (m.hidden) return null
+    const scene = file ? (await transparentRatio(file)) < SCENE_MAX_TRANSPARENT : false
+    return { key, kinds, scene, name: m.name }
+  }
+  const byGameId = []
+  const pilotRoot = path.join(GAME_ROOT, 'pilots')
+  for (const id of listDirs(pilotRoot)) {
+    const dir = path.join(pilotRoot, id, 'skins')
+    if (!fs.existsSync(dir)) continue
+    const keys = new Map()
+    for (const name of webps(dir)) {
+      const c = classifyPilotFile(name, id)
+      if (!c?.key) continue
+      if (!keys.has(c.key)) keys.set(c.key, new Set())
+      keys.get(c.key).add(c.kind)
+    }
+    const skins = []
+    for (const [key, kinds] of [...keys].sort(([a], [b]) => a.localeCompare(b))) {
+      if (!kinds.has('raw')) { console.warn(`⚠ 造型 ${key}（${id}/skins）沒有 _Raw，略過`); continue }
+      const e = await entryOf(key, kinds, path.join(dir, `${key}_Raw.webp`))
+      if (e) skins.push(e)
+    }
+    if (skins.length) byGameId.push({ id, skins })
+  }
+  const notes = readJson(path.join(ROOT, 'scripts/lib/npcArtNotes.json')).notes ?? {}
+  const npcMeta = readJson(path.join(ROOT, 'scripts/lib/npcArtMeta.json')).dirs ?? {}
+  const byPilot = new Map()
+  for (const e of npcs) {
+    const owner = notes[e.key]?.owner
+    if (!owner || !npcMeta[e.dir]?.skinCard || !e.kinds.has('raw')) continue
+    const s = await entryOf(e.key, e.kinds, path.join(GAME_ROOT, 'npc', e.dir, `${e.key}_Raw.webp`))
+    if (!s) continue
+    if (!byPilot.has(owner)) byPilot.set(owner, [])
+    byPilot.get(owner).push({ ...s, dir: e.dir })
+  }
+  return { byGameId, byPilot: [...byPilot].sort(([a], [b]) => a.localeCompare(b)) }
+}
+
+function writeGameIndex({ pilots, mechs, npcs }, skins) {
   const flags = (kinds, list) => list.filter((k) => kinds.has(k)).map((k) => `${k}: true`).join(', ')
   const pilotBody = pilots
     .map((e) => `  ['${e.id}', { ${[e.key ? `key: '${e.key}'` : '', flags(e.kinds, ['half', 'head', 'raw', 'card'])].filter(Boolean).join(', ')} }],`)
@@ -180,6 +241,9 @@ function writeGameIndex({ pilots, mechs, npcs }) {
     if (!npcs.some((e) => e.key === key)) console.warn(`⚠ npcArtNotes.json 的 ${key} 不在 NPC 圖庫裡（打錯，或已經不在 game/npc/）`)
   }
   const q = (s) => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
+  const skinBody = (rows) => rows
+    .map(([k, list]) => `  [${q(k)}, [${list.map((e) => `{ ${[`key: '${e.key}'`, e.dir && `dir: '${e.dir}'`, flags(e.kinds, ['half', 'head', 'raw']), e.scene && 'scene: true', e.name && `name: ${q(e.name)}`].filter(Boolean).join(', ')} }`).join(', ')}]],`)
+    .join('\n')
   const npcBody = npcs
     .map((e) => {
       const en = npcMeta[e.dir]?.en?.join('／')
@@ -228,13 +292,32 @@ export interface GameNpcArt { dir: string; half?: true; head?: true; raw?: true;
 export const GAME_NPC_ART: ReadonlyMap<string, GameNpcArt> = new Map<string, GameNpcArt>([
 ${npcBody}
 ])
+
+/**
+ * 機師造型／外觀（PLAN-042-D F-2）：\`public/images/game/pilots/<gameId>/skins/<立繪鍵>_{Raw,half,head}.webp\`，以 **gameId** 為 key。
+ * \`scene\`＝帶背景的場景插畫（前台換構圖）；\`name\`＝scripts/lib/pilotSkinMeta.json 的人工名稱（沒有就顯示「外觀 N」）。
+ * 查詢一律走 \`pilotSkins()\`（src/utils/gameArt.ts）。
+ */
+export interface GamePilotSkin { key: string; half?: true; head?: true; raw?: true; scene?: true; name?: string }
+export const GAME_PILOT_SKINS: ReadonlyMap<string, readonly GamePilotSkin[]> = new Map<string, readonly GamePilotSkin[]>([
+${skinBody(skins.byGameId.map((e) => [e.id, e.skins]))}
+])
+
+/**
+ * NPC 圖庫裡屬於可抽機師的外觀（npcArtNotes.json 有 owner、擷取有外觀卡），以**機師文件 ID** 為 key、\`dir\` 是 NPC 圖庫資料夾。
+ */
+export interface GameNpcSkin extends GamePilotSkin { dir: string }
+export const GAME_PILOT_NPC_SKINS: ReadonlyMap<string, readonly GameNpcSkin[]> = new Map<string, readonly GameNpcSkin[]>([
+${skinBody(skins.byPilot)}
+])
 `
   fs.writeFileSync(GAME_OUT_FILE, out, 'utf-8')
   const has = (list, k) => list.filter((e) => e.kinds.has(k)).length
   console.log(
     `✅ 官方原檔索引已產生：${path.relative(ROOT, GAME_OUT_FILE)}` +
     `（機師 ${pilots.length} 位：half ${has(pilots, 'half')}／head ${has(pilots, 'head')}／raw ${has(pilots, 'raw')}／card ${has(pilots, 'card')}；` +
-    `機甲 ${mechs.length} 台：icon ${has(mechs, 'icon')}／sn ${has(mechs, 'sn')}；NPC 立繪 ${npcs.length} 套）`,
+    `機甲 ${mechs.length} 台：icon ${has(mechs, 'icon')}／sn ${has(mechs, 'sn')}；NPC 立繪 ${npcs.length} 套；` +
+    `造型 ${skins.byGameId.reduce((n, e) => n + e.skins.length, 0)} 套／${skins.byGameId.length} 位＋NPC 圖庫 ${skins.byPilot.reduce((n, [, l]) => n + l.length, 0)} 套）`,
   )
 }
 
@@ -310,7 +393,8 @@ ${officialBody}
     `官網圖層 ${official.length} 位）`,
   )
 
-  writeGameIndex(scanGame())
+  const game = scanGame()
+  writeGameIndex(game, await scanSkins(game.npcs))
 }
 
 await main()

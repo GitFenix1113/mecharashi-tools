@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FallbackImage } from '../../components/common/FallbackImage'
-import { PILOT_CLASS_NAMES, pilotClassMeta } from '../../data/pilotClasses'
+import { pilotClassMeta } from '../../data/pilotClasses'
 import { ClassIcon } from '../../components/icons/ClassIcon'
 import { FactionLogo } from '../../components/icons/FactionLogo'
 import { normalizeFactionLogos } from '../../utils/factionLogos'
@@ -9,6 +9,7 @@ import { toneBar } from '../../components/loadout/PickerVariants'
 import { usePilotLore, usePilots } from '../../hooks/useFirestore'
 import { assetUrl, pilotPortraitCandidates } from '../../utils/assets'
 import type { Pilot } from '../../types'
+import { buildLoreGroups, readLoreSort, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
 
 /**
  * 機師故事館的館首頁（PLAN-042-A D-2）。
@@ -32,7 +33,9 @@ export default function LoreHomePage() {
   const { data: loreDocs, error: loreError } = usePilotLore()
 
   const [tab, setTab] = useState<LoreTab>('pilots')
-  const [sort, setSort] = useState<LoreSort>('class')
+  // 排序是「名冊順序」（PLAN-042-D A-2）：詳情頁的切換列、名冊、‹ › 都照這個走，所以記在 sessionStorage
+  const [sort, setSortState] = useState<LoreSort>(readLoreSort)
+  const setSort = (s: LoreSort) => { setSortState(s); writeLoreSort(s) }
 
   // ⚠ 泛型要自己標：`Object.fromEntries` 對 `(string | number)[]` 這種非 tuple 的 entry
   //   會落到回傳 any 的那條多載，不標就是把 any 一路傳進 <PilotCard>。
@@ -131,9 +134,6 @@ export default function LoreHomePage() {
 
 // ─── 型別與常數 ──────────────────────────────────────────────────────────────
 
-/** 分組維度。`faction` 刻意不列入選項：89 人散在 30 個值、18 個只有 1 人，
- *  還含未正規化的重複與複合值，分出來的牆會是一堆單人區塊。`class` 是均勻的 7 類。 */
-type LoreSort = 'class' | 'debut'
 type LoreTab = 'pilots' | 'mechs'
 
 interface LoreGroup {
@@ -146,59 +146,14 @@ interface LoreGroup {
 
 const GRID = 'grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7'
 
-const UNCLASSIFIED = '其他'
-const UNVERSIONED = '未標註版本'
+// ─── 分組 ────────────────────────────────────────────────────────────────────
 
-// ─── 分組與排序 ──────────────────────────────────────────────────────────────
-
-/** `debutVersion` 轉可比較的數字；未填 → null（一律排最後，不當成 0）。 */
-function versionValue(v: string | undefined): number | null {
-  if (!v) return null
-  const n = parseFloat(v)
-  return Number.isNaN(n) ? null : n
-}
-
-/** 同一區塊內的次序：新版本在前，未標註版本殿後，最後以 id 穩定收尾。 */
-function byDebutDesc(a: Pilot, b: Pilot): number {
-  const va = versionValue(a.debutVersion)
-  const vb = versionValue(b.debutVersion)
-  if (va === null && vb === null) return a.id.localeCompare(b.id)
-  if (va === null) return 1
-  if (vb === null) return -1
-  if (va !== vb) return vb - va
-  return a.id.localeCompare(b.id)
-}
-
+/** 分組與排序本身在 loreRoster.ts（與詳情頁的名冊共用）；這裡只補上牆面用的色類名。 */
 function buildGroups(pilots: Pilot[], sort: LoreSort): LoreGroup[] {
-  const buckets = new Map<string, Pilot[]>()
-  for (const p of pilots) {
-    const key = sort === 'class'
-      ? (pilotClassMeta(p.class) ? p.class : UNCLASSIFIED)
-      : (p.debutVersion || UNVERSIONED)
-    const bucket = buckets.get(key)
-    if (bucket) bucket.push(p)
-    else buckets.set(key, [p])
-  }
-
-  const keys = sort === 'class'
-    // 職業依遊戲內篩選的順序（data/pilotClasses.ts，全站共用），未知職業殿後
-    ? [...PILOT_CLASS_NAMES, UNCLASSIFIED].filter((k) => buckets.has(k))
-    // 版本依數值遞減，未標註版本殿後
-    : [...buckets.keys()].sort((a, b) => {
-        if (a === UNVERSIONED) return 1
-        if (b === UNVERSIONED) return -1
-        return (versionValue(b) ?? 0) - (versionValue(a) ?? 0)
-      })
-
-  return keys.map((key) => {
-    const items = [...(buckets.get(key) ?? [])].sort(byDebutDesc)
-    return {
-      key,
-      label: sort === 'class' ? key : (key === UNVERSIONED ? key : `v${key}`),
-      tone: sort === 'class' ? (pilotClassMeta(key)?.text ?? '') : '',
-      items,
-    }
-  })
+  return buildLoreGroups(pilots, sort).map((g) => ({
+    ...g,
+    tone: sort === 'class' ? (pilotClassMeta(g.key)?.text ?? '') : '',
+  }))
 }
 
 // ─── 版面外殼 ────────────────────────────────────────────────────────────────

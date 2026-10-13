@@ -24,7 +24,7 @@
 // ⚠ 路徑不含 BASE_URL，呼叫端套 imageCandidates()／assetUrl()——與 assets.ts 其他 helper 相同，
 //   這樣本檔不碰 import.meta.env、可以 node --test。
 
-import { GAME_MECH_ART, GAME_NPC_ART, GAME_PILOT_ART } from '../data/gameArtIndex.ts'
+import { GAME_MECH_ART, GAME_NPC_ART, GAME_PILOT_ART, GAME_PILOT_NPC_SKINS, GAME_PILOT_SKINS } from '../data/gameArtIndex.ts'
 
 /** 機師的四種官方圖：頭像 340²／頭部特寫 90²／半身 1240×1080／機師卡 340² */
 export type PilotGameArtKind = 'half' | 'head' | 'raw' | 'card'
@@ -77,6 +77,44 @@ export function pilotGameArt(
 export function npcGameArt(artKey: string | null | undefined, kind: Exclude<PilotGameArtKind, 'card'>): string | undefined {
   const npc = artKey ? GAME_NPC_ART.get(artKey) : undefined
   return npc?.[kind] ? `${GAME_ROOT}/npc/${npc.dir}/${artKey}${PILOT_SUFFIX[kind]}.webp` : undefined
+}
+
+/** 一套造型（外觀）的路徑與屬性。`scene`＝帶背景的場景插畫（故事館換一種構圖）。 */
+export interface PilotSkinArt {
+  /** 官方立繪鍵（`Pilot_10103146B`），也是網址 `?skin=` 的值 */
+  key: string
+  /** 顯示名稱：scripts/lib/pilotSkinMeta.json 有填就用，沒有就「外觀 N」（N 從 1 起、依索引順序） */
+  label: string
+  scene: boolean
+  raw: string
+  half?: string
+  head?: string
+}
+
+/**
+ * 機師的造型／外觀（PLAN-042-D F-2）。兩個來源依序串起來：
+ *   ① `game/pilots/<gameId>/skins/`（`--skins` 匯入，以 gameId 查）
+ *   ② NPC 圖庫裡屬於這位的外觀（npcArtNotes.json 的 owner＝文件 ID、且有外觀卡；以文件 ID 查）
+ * 沒有就回空陣列（多數機師沒有外觀，這不是錯誤）。預設造型**不在**清單裡——呼叫端自己放在第一個。
+ */
+export function pilotSkins(pilot: { id?: string; gameId?: string } | null | undefined): PilotSkinArt[] {
+  const own = (pilot?.gameId ? GAME_PILOT_SKINS.get(pilot.gameId) : undefined) ?? []
+  const npc = (pilot?.id ? GAME_PILOT_NPC_SKINS.get(pilot.id) : undefined) ?? []
+  const file = (base: string, key: string, kind: keyof typeof PILOT_SUFFIX) => `${base}/${key}${PILOT_SUFFIX[kind]}.webp`
+  const list = [
+    ...own.map((s) => ({ s, base: `${GAME_ROOT}/pilots/${pilot!.gameId}/skins` })),
+    ...npc.map((s) => ({ s, base: `${GAME_ROOT}/npc/${s.dir}` })),
+  ]
+  return list
+    .filter(({ s }) => s.raw)
+    .map(({ s, base }, i) => ({
+      key: s.key,
+      label: s.name ?? `外觀 ${i + 1}`,
+      scene: !!s.scene,
+      raw: file(base, s.key, 'raw'),
+      half: s.half ? file(base, s.key, 'half') : undefined,
+      head: s.head ? file(base, s.key, 'head') : undefined,
+    }))
 }
 
 /** 機甲的官方原檔路徑；這台沒有這種圖（或根本沒有遊戲 ID）回 undefined。 */

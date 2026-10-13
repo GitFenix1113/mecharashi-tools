@@ -1,117 +1,332 @@
-import { useCallback, useRef } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import LoreArt from '../../components/lore/LoreArt'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import LoreStage from '../../components/lore/LoreStage'
+import LoreDossier from '../../components/lore/LoreDossier'
 import LoreChapterPager from '../../components/lore/LoreChapterPager'
 import LoreChapterBody from '../../components/lore/LoreChapterBody'
-import LoreSourceLine from '../../components/lore/LoreSourceLine'
-import { useLoreParallax } from '../../components/lore/useLoreParallax'
-import { splitParagraphs, isQuoteStyle, stripTrailingSource } from '../../components/lore/loreText'
-import { LicenseBadge } from '../../components/badges/PilotBadges'
-import { pilotClassMeta } from '../../data/pilotClasses'
-import { ClassIcon } from '../../components/icons/ClassIcon'
-import { FactionLogo } from '../../components/icons/FactionLogo'
-import { normalizeFactionLogos } from '../../utils/factionLogos'
-import {
-  hasPilotArt, pilotArtDir, pilotKeyArtPath, pilotFullArtPath, pilotOfficialArt,
-  imageCandidates, assetUrl,
-} from '../../utils/assets'
-import { gameIconCandidates } from '../../utils/gameIcons'
-import { FallbackImage } from '../../components/common/FallbackImage'
-import { usePilot, usePilotLoreDoc } from '../../hooks/useFirestore'
+import LoreSkinPicker from '../../components/lore/LoreSkinPicker'
+import LoreViewer from '../../components/lore/LoreViewer'
+import LoreSwitcher, { type LoreSwitcherHandle } from '../../components/lore/LoreSwitcher'
+import { buildLoreGroups, readLoreSort, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
+import { defaultStageArt, loreSideOf, preloadStageArt, skinStageArt, type StageArt } from '../../components/lore/loreStageArt'
+import { pilotSkins, type PilotSkinArt } from '../../utils/gameArt'
+import { usePilotLore, usePilots } from '../../hooks/useFirestore'
+import type { Pilot } from '../../types'
 
 /**
- * 機師故事館的扉頁與章節頁（PLAN-042-A / D-3）。
+ * 機師故事館的扉頁與章節頁（PLAN-042-A D-3；PLAN-042-D 改版成「舞台＋卷宗」）。
  *
- * `/lore/pilots/:id` 是扉頁，`/lore/pilots/:id/:part` 是章節頁 —— **同一個元件**。
- * 兩者共用同一份資料與同一套版面骨架，拆成兩個元件只會讓「立繪柱與扉頁排版」
- * 在兩邊各長一份、然後慢慢漂移。
+ * `/lore/pilots/:id` 是檔案（扉頁），`/lore/pilots/:id/:part` 是閱讀模式 —— **同一個元件**、同一棵樹：
+ * 換章、換人、進出閱讀模式都不會卸載舞台，動畫才接得起來。外觀放在 `?skin=<立繪鍵>`。
  *
  * ── 三件事必須照著做，錯了都不會有錯誤訊息 ──────────────────────────────
+ * ① **守衛順序是 error → loading → 內容**（地雷 M-04）：抓取失敗時 loading 恆為 true。
+ * ② **不取 `usePilotLore` 的 loading**：pilotLore 讀不到時要優雅降級成「只有扉頁」，不是轉圈。
+ * ③ **構圖在渲染前決定**（loreStage.ts）：直式全身／橫式半身／官網圖層／場景插畫的取景不同，等圖載完再換會跳。
  *
- * ① **守衛順序是 error → loading → 內容**（地雷 M-04）。
- *    `GameDataContext` 的 catch 只寫 errorMap、不把 key 加進 loadedKeys，
- *    而 `loading = !keys.every(k => loadedKeys.has(k))` ⇒ **抓取失敗時 loading 恆為 true**。
- *    把 `if (loading)` 排在前面，error 分支就永遠到不了，畫面只會一直轉圈。
+ * ── 換人的過場（A-6）──────────────────────────────────────────────────────
+ * 「顯示中的機師」（state.shownId）**落後網址一拍**：網址先變，舊的那位播 0.3 秒退場、同時預載新的那位的立繪，
+ * decode 完才換成新的、播精簡進場（線稿閃一下＋依方向擦入、卡片間隔 70ms）。瀏覽器上一頁／下一頁也走同一條。
+ * 完整開場（置中顯影 → 移到一側 → 卡片逐張進場）只在**進入詳情頁**時播一次：從館首頁或外部連結進來時元件是新掛載的。
  *
- * ② **不取 `usePilotLoreDoc` 的 loading**。`/api/data/pilotLore` 在部署完成前回 404，
- *    那是上線初期的**主路徑**不是邊界情況。章節讀不到時要優雅降級成「只有扉頁」
- *    （扉頁正文來自 `pilots.lore`，本來就不住 pilotLore），而不是轉圈或錯誤頁。
- *
- * ③ **立繪分流在渲染前決定**（`hasPilotArt`），不可等圖載失敗才換構圖 ——
- *    直式全身（863×1600）與橫式半身（1240×1080）的版面不同，
- *    等圖載完再換會讓整根立繪柱在那一刻跳動一次。
- *
- * ⚠ 館內唯一的 scrollport 是 `LoreLayout` 的 `.lore-scroll`，本頁**不得**開任何
- *   `overflow-y-auto`（地雷 M-08）：兩條垂直捲軸並存時外層永遠捲不動，
- *   而立繪柱與章節軸的 sticky 會相對錯誤的 scrollport，症狀是「有時黏有時不黏」。
- *
- * ⚠ 立繪柱高度吃 `.lore-portrait-col`（C-4a 提供）而不是 Tailwind 的 arbitrary calc：
- *   `h-[calc(100vh - var(--x))]` 只要有空格就會被切成三個 class，Tailwind 產不出
- *   任何東西**且不報錯**（地雷 M-27）。
+ * ⚠ 館內唯一的 scrollport 是 LoreLayout 的 `.lore-scroll`（M-08），本頁不開任何 overflow-y；
+ *   舞台是 sticky 全高層＋負 margin，卷宗在同一個 scrollport 裡疊上去。
  */
 
-/** 立繪柱在手機上的高度上限。用 max-height 而不是 height —— `.lore-portrait-col`
- *  是無層級（unlayered）規則，特異性上贏過 Tailwind 的任何 `h-*`，改不動它的 height；
- *  max-height 是另一個屬性，夾得住。桌機用 `lg:max-h-none` 放開。 */
-const PORTRAIT_MOBILE_CAP = 'max-h-[38vh] lg:max-h-none'
+// ── 過場狀態 ────────────────────────────────────────────────────────────────
 
-/**
- * 天賦徽記的圖片候選（PLAN-055：從圖示圖庫取；C 階段起 DB 只存 `icon` 一個欄位）。
- *
- * ⚠ 地雷 M-16：有機師的 `icon` 是**空字串**，空字串進 `<img src="">`
- *   在瀏覽器等同**重新載入當前頁面 URL**。`gameIconCandidates` 會先 trim、空值不產生候選，
- *   回空陣列時呼叫端**不渲染 <img>**。
- */
-function talentIconCandidates(talent: { icon?: string } | undefined): string[] {
-  return talent ? gameIconCandidates(talent.icon) : []
+interface Phase {
+  /** 顯示中的機師（落後網址一拍） */
+  shownId: string | undefined
+  intro: boolean
+  revealFull: boolean
+  revealQuick: boolean
+  revealed: boolean
+  ready: boolean
+  quick: boolean
+  leaving: boolean
+  entering: boolean
+  introDone: boolean
+  dir: 1 | -1
+}
+const FINISHED: Partial<Phase> = { intro: false, revealFull: false, revealed: true, ready: true, introDone: true }
+const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+
+/** 同一個分頁裡，每位機師最後選的外觀（換人再回來還記得） */
+const rememberedSkins = new Map<string, string>()
+const skinQs = (pid: string) => {
+  const k = rememberedSkins.get(pid)
+  return k ? `?skin=${encodeURIComponent(k)}` : ''
+}
+
+function stageArtFor(pilot: Pilot, skinKey: string): { art: StageArt | null; skins: PilotSkinArt[]; skin: PilotSkinArt | null } {
+  const skins = pilotSkins(pilot)
+  const skin = skinKey ? skins.find((s) => s.key === skinKey) ?? null : null
+  return { art: skin ? skinStageArt(pilot, skin) : defaultStageArt(pilot), skins, skin }
 }
 
 export default function PilotLorePage() {
   const { id, part } = useParams<{ id: string; part?: string }>()
+  const [search, setSearch] = useSearchParams()
   const navigate = useNavigate()
-  const { data: pilot, loading, error } = usePilot(id)
+  const { data: pilots, loading, error } = usePilots()
   // ⚠ 刻意不解構 loading：見檔頭第 ② 條。
-  const { data: lore } = usePilotLoreDoc(id)
+  const { data: loreDocs } = usePilotLore()
 
-  // 全部是 render 期純衍生值。**不得**用 useState + useEffect 同步網址與章節：
-  // 那會多一幀「舊章節」，而且重整時第一幀永遠是第一章。
-  const chapters = lore?.chapters ?? []
+  const rootRef = useRef<HTMLDivElement>(null)
+  const switcherRef = useRef<LoreSwitcherHandle>(null)
+  const progressRef = useRef<HTMLDivElement>(null)
+
+  // ── 名冊順序（＝館首頁的排序；A-2）─────────────────────────────────────────
+  const [sort, setSortState] = useState<LoreSort>(readLoreSort)
+  const setSort = useCallback((s: LoreSort) => { setSortState(s); writeLoreSort(s) }, [])
+  const groups = useMemo(() => buildLoreGroups(pilots, sort), [pilots, sort])
+  const order = useMemo(() => groups.flatMap((g) => g.items), [groups])
+  const chapterCounts = useMemo(() => new Map(loreDocs.map((d) => [d.id, d.chapters?.length ?? 0])), [loreDocs])
+  const skinCounts = useMemo(() => new Map(pilots.map((p) => [p.id, pilotSkins(p).length])), [pilots])
+  const chapterCount = useCallback((pid: string) => chapterCounts.get(pid) ?? 0, [chapterCounts])
+  const skinCount = useCallback((p: Pilot) => skinCounts.get(p.id) ?? 0, [skinCounts])
+
+  // ── 外觀：網址是正本；顯示中的那位若還不是網址那位（退場中），用記住的 ───────────────
+  const skinParam = search.get('skin') ?? ''
+  useEffect(() => {
+    if (!id) return
+    if (skinParam) rememberedSkins.set(id, skinParam)
+    else rememberedSkins.delete(id)
+  }, [id, skinParam])
+
+  // ── 過場狀態機 ───────────────────────────────────────────────────────────
+  const [t, setT] = useReducer((s: Phase, patch: Partial<Phase>) => ({ ...s, ...patch }), undefined, (): Phase => ({
+    shownId: id, intro: !part, revealFull: false, revealQuick: false, revealed: !!part, ready: !!part, quick: false,
+    leaving: false, entering: false, introDone: !!part, dir: 1,
+  }))
+  const timers = useRef<number[]>([])
+  const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = [] }
+  useEffect(() => () => clearTimers(), [])
+
+  const shown = useMemo(() => pilots.find((p) => p.id === t.shownId) ?? null, [pilots, t.shownId])
+  const shownSkinKey = t.shownId === id ? skinParam : (t.shownId ? rememberedSkins.get(t.shownId) ?? '' : '')
+  const { art, skins, skin } = useMemo(
+    () => (shown ? stageArtFor(shown, shownSkinKey) : { art: null, skins: [], skin: null }),
+    [shown, shownSkinKey],
+  )
+  // 給只在特定時機跑的 effect 讀「現在的」值（render 期間不寫 ref：react-hooks/refs）
+  const artRef = useRef(art)
+  useLayoutEffect(() => { artRef.current = art })
+
+  // 開場（C-1）：資料到了、立繪 decode 完才開演；之後照模擬頁的時間軸推進
+  const introPending = useRef(!part)
+  const hasShown = !!shown
+  useEffect(() => {
+    if (!hasShown || !introPending.current) return
+    introPending.current = false
+    let cancelled = false
+    preloadStageArt(artRef.current).then(() => {
+      if (cancelled) return
+      if (reduced()) { setT(FINISHED); return }
+      setT({ revealFull: true })
+      const at = (ms: number, patch: Partial<Phase>) => timers.current.push(window.setTimeout(() => setT(patch), ms))
+      at(1050, { revealed: true })
+      at(1250, { intro: false })            // 立繪滑到一側、漸隱帶打開（950ms）
+      at(1600, { ready: true })             // 卷宗逐張進場（間隔 120ms）
+      at(3200, { introDone: true, revealFull: false })
+    })
+    return () => { cancelled = true }
+  }, [hasShown])
+
+  // 開場中任何操作都快轉（C-2）：不讓常客被 3 秒動畫綁住
+  useEffect(() => {
+    if (t.introDone || !t.revealFull) return
+    const ff = () => { clearTimers(); setT(FINISHED) }
+    const evs = ['wheel', 'pointerdown', 'keydown', 'touchstart'] as const
+    evs.forEach((e) => window.addEventListener(e, ff, { passive: true, capture: true }))
+    return () => evs.forEach((e) => window.removeEventListener(e, ff, { capture: true }))
+  }, [t.introDone, t.revealFull])
+
+  // 換人（A-6）：網址變了 → 舊的退場、預載新的 → 換上新的、精簡進場
+  const pendingDir = useRef<1 | -1 | null>(null)
+  const orderRef = useRef(order)
+  useLayoutEffect(() => { orderRef.current = order })
+  useEffect(() => {
+    if (!id || id === t.shownId) return
+    const target = pilots.find((p) => p.id === id)
+    if (!target) { setT({ shownId: id }); return }   // 查無 → 交給「找不到機師」
+    clearTimers()
+    introPending.current = false
+    const idxOf = (pid?: string) => orderRef.current.findIndex((p) => p.id === pid)
+    const dir = pendingDir.current ?? (idxOf(id) >= idxOf(t.shownId) ? 1 : -1)
+    pendingDir.current = null
+    setT({ ...FINISHED, leaving: true, dir })
+    let cancelled = false
+    const next = stageArtFor(target, rememberedSkins.get(id) ?? '').art
+    Promise.all([preloadStageArt(next), sleep(reduced() ? 0 : 300)]).then(() => {
+      if (cancelled) return
+      setT({ shownId: id, leaving: false, entering: true, quick: true, revealQuick: false, revealFull: false, revealed: false })
+    })
+    return () => { cancelled = true }
+  }, [id, t.shownId, pilots])
+
+  // 進場起點的樣式先生效（強制 reflow），再拿掉 is-entering——卡片與立繪才會從起點補間過來
+  useLayoutEffect(() => {
+    if (!t.entering) return
+    void rootRef.current?.offsetWidth
+    setT({ entering: false, revealQuick: !reduced(), revealed: true })
+  }, [t.entering])
+  // 精簡顯影跑完就拿掉 class：不然之後換外觀插進來的新圖層會被它搶走動畫
+  useEffect(() => {
+    if (!t.revealQuick) return
+    const timer = window.setTimeout(() => setT({ revealQuick: false }), 900)
+    return () => clearTimeout(timer)
+  }, [t.revealQuick])
+
+  // 閒置時預載前後兩位（A-5）
+  useEffect(() => {
+    if (!t.ready || t.leaving || !id) return
+    const i = order.findIndex((p) => p.id === id)
+    if (i < 0) return
+    const timer = window.setTimeout(() => {
+      for (const p of [order[(i + 1) % order.length], order[(i - 1 + order.length) % order.length]]) {
+        void preloadStageArt(stageArtFor(p, rememberedSkins.get(p.id) ?? '').art)
+      }
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [t.ready, t.leaving, id, order])
+
+  // ── 換人／換章／換外觀（寫網址）────────────────────────────────────────────
+  const selectPilot = useCallback((pid: string, dir: 1 | -1) => {
+    if (pid === id) return
+    pendingDir.current = dir
+    // replace：換一百位按上一頁也只要一下就回館首頁（LoreLayout 會還原牆面的捲動位置）
+    navigate(`/lore/pilots/${encodeURIComponent(pid)}${skinQs(pid)}`, { replace: true })
+  }, [id, navigate])
+  const stepPilot = useCallback((delta: 1 | -1) => {
+    const i = order.findIndex((p) => p.id === id)
+    if (i < 0 || order.length < 2) return
+    selectPilot(order[(i + delta + order.length) % order.length].id, delta)
+  }, [order, id, selectPilot])
+
+  const [chapterDir, setChapterDir] = useState(0)
+  const lore = useMemo(() => loreDocs.find((d) => d.id === t.shownId) ?? null, [loreDocs, t.shownId])
+  const chapters = useMemo(() => lore?.chapters ?? [], [lore])
   const paramIndex = part ? chapters.findIndex((c) => c.key === part) : -1
   const activeIndex = paramIndex >= 0 ? paramIndex : 0
-  const isChapterView = Boolean(part) && chapters.length > 0
+  const isReading = Boolean(part) && chapters.length > 0 && t.shownId === id
+  const qs = skinParam ? `?skin=${encodeURIComponent(skinParam)}` : ''
+  const fileHref = `/lore/pilots/${encodeURIComponent(id ?? '')}${qs}`
+  const chapterHref = useCallback((key: string) => `/lore/pilots/${encodeURIComponent(id ?? '')}/${encodeURIComponent(key)}${qs}`, [id, qs])
 
-  /**
-   * 換章。扉頁→第一章用 push（回上一頁要能退回扉頁），章節之間用 replace
-   * （否則讀完 8 章後按上一頁要按 8 次才離得開）。
-   */
-  const handleSelect = useCallback(
-    (key: string) => {
-      navigate(`/lore/pilots/${encodeURIComponent(id!)}/${encodeURIComponent(key)}`, {
-        replace: Boolean(part),
+  /** 換章：扉頁 → 章節用 push（上一頁回扉頁）；章節之間用 replace（讀完 8 章不必按 8 次上一頁）。 */
+  const selectChapter = useCallback((key: string, index: number) => {
+    setChapterDir(part ? Math.sign(index - activeIndex) : 0)
+    navigate(chapterHref(key), { replace: Boolean(part) })
+  }, [part, activeIndex, chapterHref, navigate])
+
+  const pickSkin = useCallback((key: string) => {
+    if (!shown || key === (skin?.key ?? '')) return
+    const target = key ? skins.find((s) => s.key === key) : null
+    // 先 decode 再換：換裝動畫一開始新圖就要在
+    const url = target ? skinStageArt(shown, target) : defaultStageArt(shown)
+    void preloadStageArt(url).then(() => {
+      setSearch((prev) => {
+        const nextParams = new URLSearchParams(prev)
+        if (key) nextParams.set('skin', key)
+        else nextParams.delete('skin')
+        return nextParams
+      }, { replace: true })
+    })
+  }, [shown, skin, skins, setSearch])
+
+  // ── 鑑賞模式、名冊開關 ───────────────────────────────────────────────────
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [rosterOpen, setRosterOpen] = useState(false)
+  // 換人時鑑賞模式一併收起（看的是上一位的圖）
+  const [viewerFor, setViewerFor] = useState(t.shownId)
+  if (viewerFor !== t.shownId) {
+    setViewerFor(t.shownId)
+    if (viewerOpen) setViewerOpen(false)
+  }
+
+  // ── 鍵盤（← → 依模式分流、/ 名冊、Esc）──────────────────────────────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey) return
+      const target = e.target as HTMLElement | null
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
+      if (rosterOpen) return   // 名冊自己處理 Esc；開著時 ← → 不換人
+      if (e.key === 'Escape') {
+        if (viewerOpen) { setViewerOpen(false); return }
+        if (isReading) navigate(fileHref)
+        return
+      }
+      if (viewerOpen) return
+      if (e.key === '/') { e.preventDefault(); switcherRef.current?.open(true); return }
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+      const d = e.key === 'ArrowRight' ? 1 : -1
+      e.preventDefault()
+      if (isReading) {
+        const n = activeIndex + d
+        if (n >= 0 && n < chapters.length) selectChapter(chapters[n].key, n)
+      } else {
+        stepPilot(d)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [rosterOpen, viewerOpen, isReading, activeIndex, chapters, selectChapter, stepPilot, navigate, fileHref])
+
+  // ── 捲動：立繪輕微視差（--sy）＋閱讀進度條 ─────────────────────────────────
+  // ⚠ 這裡要知道館內唯一的 scrollport 在哪：從根元素往上找 .lore-scroll（LoreLayout 提供）
+  useEffect(() => {
+    const root = rootRef.current
+    const scroller = root?.closest<HTMLElement>('.lore-scroll')
+    if (!root || !scroller) return
+    let raf = 0
+    const onScroll = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        root.style.setProperty('--sy', String(scroller.scrollTop))
+        const bar = progressRef.current
+        if (bar) {
+          const max = scroller.scrollHeight - scroller.clientHeight
+          bar.style.width = `${max > 0 ? (scroller.scrollTop / max) * 100 : 0}%`
+        }
       })
-    },
-    [navigate, id, part],
-  )
+    }
+    onScroll()
+    scroller.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      scroller.removeEventListener('scroll', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [hasShown, isReading])
 
-  // 立繪柱的滑鼠微視差（PLAN-042-C F-6）：hook 只寫 CSS 變數，位移量在 index.css；
-  // 桌機（pointer: fine）且非 reduced-motion 才掛。⚠ hook 要在下方的 early return 之前呼叫。
-  const portraitRef = useRef<HTMLDivElement>(null)
-  useLoreParallax(portraitRef, pilot?.id)
+  // ── 手機：在封面上左右滑換人（閱讀模式裡左右滑是換章，交給 LoreChapterPager）──────
+  const touch = useRef<{ x: number; y: number } | null>(null)
+  const onTouchStart = (e: React.TouchEvent) => {
+    const p = e.touches[0]
+    const stage = rootRef.current?.querySelector('.lore-stage')?.getBoundingClientRect()
+    touch.current = p && stage && p.clientY < stage.bottom && !isReading ? { x: p.clientX, y: p.clientY } : null
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touch.current
+    touch.current = null
+    const p = e.changedTouches[0]
+    if (!start || !p) return
+    const dx = p.clientX - start.x, dy = p.clientY - start.y
+    if (Math.abs(dx) > 56 && Math.abs(dx) > Math.abs(dy) * 1.6) stepPilot(dx < 0 ? 1 : -1)
+  }
 
   // ① error → ② loading → ③ 查無（順序不可調換，見檔頭）
   if (error) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-12">
-        <div className="bg-accent-red/10 border border-accent-red/30 rounded-xl px-4 py-3 text-sm text-accent-red">
-          資料載入失敗：{error.message}
-        </div>
-        <Link to="/lore" className="mt-4 inline-block text-sm text-accent-orange no-underline">
-          ← 回故事館
-        </Link>
+        <div className="bg-accent-red/10 border border-accent-red/30 rounded-xl px-4 py-3 text-sm text-accent-red">資料載入失敗：{error.message}</div>
+        <Link to="/lore" className="mt-4 inline-block text-sm text-accent-orange no-underline">← 回故事館</Link>
       </div>
     )
   }
-
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-12">
@@ -119,280 +334,92 @@ export default function PilotLorePage() {
       </div>
     )
   }
-
-  if (!pilot) {
+  if (!shown) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-12 text-center text-text-dim">
         <p>找不到機師資料</p>
-        <Link to="/lore" className="text-accent-orange no-underline text-sm mt-4 inline-block">
-          ← 回故事館
-        </Link>
+        <Link to="/lore" className="text-accent-orange no-underline text-sm mt-4 inline-block">← 回故事館</Link>
       </div>
     )
   }
 
-  // ⚠ 渲染前分流（見檔頭第 ③ 條）。路徑一律由 `portrait` 推導，
-  //   **不可**拿顯示名去組資料夾名（地雷 M-15：素材端與站上有簡繁／譯名差異）。
-  // 立繪來源優先序（PLAN-042-C C-2）：官網 hero 圖層（8 位，含手繪線稿與名字書法層）→ 原稿全身 art.webp
-  // → 半身 full.webp。三者構圖不同，一樣在渲染前分流。
-  const official = pilotOfficialArt(pilot)
-  const tall = hasPilotArt(pilot)
-  const artCandidates = official
-    ? imageCandidates(official.color)
-    : imageCandidates(tall ? pilotKeyArtPath(pilot) : pilotFullArtPath(pilot))
+  const cls = [
+    'lore-page',
+    t.intro && 'is-intro', t.revealFull && 'is-reveal-full', t.revealQuick && 'is-reveal-quick', t.revealed && 'is-revealed',
+    t.ready && 'is-ready', t.quick && 'is-quick', t.leaving && 'is-leaving', t.entering && 'is-entering',
+    t.introDone && 'is-intro-done', isReading && 'is-reading',
+  ].filter(Boolean).join(' ')
 
-  const classText = pilotClassMeta(pilot.class)?.text ?? 'text-text-secondary'
-  const talentIcons = talentIconCandidates(pilot.talents[0])
-  const talentName = pilot.talents[0]?.name ?? ''
-
-  // E-1 檔案感小字：流水號取自文件 id（pilot_003_洛莎 → 003）；紅標用身高（官網名字層上那顆是
-  // 166cm/45kg），沒有身高就用駕駛許可。官網 8 位的紅標已烘在官方名字層裡，不再疊一顆。
-  const serial = pilot.id.match(/^pilot_(\d+)/)?.[1] ?? '—'
-  const fileTag = pilot.profile.height?.trim() || pilot.license
-
-  // 扉頁正文住 `pilots.lore`（不是 pilotLore）；署名若還黏在正文尾端就切掉，
-  // 改由 <LoreSourceLine> 單獨排版。**不可用 endsWith 比對**（地雷 M-17）。
-  const frontParagraphs = splitParagraphs(stripTrailingSource(pilot.lore, lore?.frontSource))
-  // 陣營徽章（PLAN-059 D-3）：管理者在編輯台挑的，0～2 個；沒選就退回文字圓環
-  const factionLogos = normalizeFactionLogos(lore?.factionLogos)
-  // profile / additionalInfo 都是**必填**欄位，判的是長度不是 undefined。
-  // 鍵名是完全自由的中文字串（94 種、含 ▇▇／■■），只可當顯示文字與 React key。
-  const info = Object.entries(pilot.profile.additionalInfo)
-
-  /** 立繪柱。扉頁與章節頁共用同一棵子樹，換路由時 LoreArt 不會重播顯影。 */
-  const portrait = (
-    // ⚠ 不要再加 `relative`：`position: sticky` 本身就替 absolute 子孫建立定位脈絡，
-    //   兩個 position 工具類同時掛在一個元素上，誰贏取決於 Tailwind 產出的順序。
-    <div ref={portraitRef} className={`lore-portrait-col lore-parallax ${PORTRAIT_MOBILE_CAP} sticky top-0 self-start`}>
-      {artCandidates.length > 0 ? (
-        <LoreArt
-          variant={official ? 'official' : tall ? 'tall' : 'wide'}
-          candidates={artCandidates}
-          sketchSrc={official ? assetUrl(official.line) : undefined}
-          artKey={pilotArtDir(pilot)}
-          revealDurationMs={1050}
-          // 底緣溶解（F-5）：wide 是既有的 22% 噪點 mask，tall 由 CSS 覆寫成只溶最後 10%；
-          // 官方變體的下緣本來就是出血裁切，不遮
-          bottomMask={!official}
-          alt={pilot.name}
-          className="w-full h-full"
-        />
-      ) : (
-        // 賽拉：portrait 是空字串、沒有圖片資料夾。照專案「未建檔不留白」慣例給佔位，
-        // 不是把她整個藏起來。
-        <div className="w-full h-full flex items-center justify-center rounded-xl border border-border-subtle bg-bg-card text-xs text-text-dim">
-          立繪未建檔
-        </div>
+  const tools = (
+    <>
+      <LoreSkinPicker pilot={shown} skins={skins} current={skin?.key ?? ''} onPick={pickSkin} />
+      {art && (
+        <button type="button" className="lore-pill" onClick={() => setViewerOpen(true)}>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M6 2H2v4M10 2h4v4M6 14H2v-4M10 14h4v-4" /></svg>
+          全身立繪
+        </button>
       )}
-
-      {/* 直書姓名壓在立繪右緣。pointer-events-none：它蓋在圖上，不該吃掉任何點擊。
-          ⚠ `flex-col` 在 vertical-rl 下走的是 block 軸（水平、由右往左），
-             兩段字因此並排成兩行直書；寫成 `flex`（row，走 inline 軸）會變成上下接續。 */}
-      {/* 名字層與草書包在自己的 wrapper 裡做反向微視差（F-6）：動畫元素本身的 transform 被 fill-mode both 佔住 */}
-      <div className="lore-parallax-name absolute inset-0 pointer-events-none">
-      {/* 名字層照官網 mechaData 節奏進場（scale 1.3→1 淡入、延遲 200ms）；key 讓換人時重播。
-          官網 8 位用官方名字層（英文毛筆草書＋直書中文名＋紅標烘在同一張透明 PNG），
-          其餘機師用直書文字。 */}
-      {official ? (
-        <img
-          key={pilot.id}
-          className="lore-enter lore-enter--pop lore-enter--2 absolute right-[4px] top-[10px] pointer-events-none w-[62%] max-w-[380px] h-auto"
-          src={assetUrl(official.name)}
-          alt={pilot.fullName && pilot.fullName !== pilot.name ? `${pilot.name}（${pilot.fullName}）` : pilot.name}
-          width={official.geometry.nameW}
-          height={official.geometry.nameH}
-        />
-      ) : (
-        <div
-          key={pilot.id}
-          className="lore-enter lore-enter--pop lore-enter--2 absolute right-[8px] top-[16px] pointer-events-none [writing-mode:vertical-rl] flex flex-col gap-[6px]"
-        >
-          {/* 楷書子集（D-2）：字重 400 是字型只有 Regular，加粗會變成合成粗體 */}
-          <span className="lore-name-font text-[26px] tracking-[0.2em] text-text-primary">{pilot.name}</span>
-          {pilot.fullName && pilot.fullName !== pilot.name && (
-            <span className="lore-name-font text-[13px] tracking-[0.15em] text-text-secondary">{pilot.fullName}</span>
-          )}
-        </div>
-      )}
-
-      {/* 英文毛筆草書（D-3）：照官網名字層的擺法——白字、逆時針約 72°、從右上往左下劃過立繪。
-          只有非官方變體且有 nameEn 的機師才渲染（官方名字層已含草書）。
-          字級依名字長度縮：官網對長名（Yevgeny Ivanovic Goman）也是縮小處理。 */}
-      {!official && pilot.nameEn && (
-        <span
-          key={`${pilot.id}-en`}
-          aria-hidden="true"
-          className="lore-script-font lore-enter lore-enter--pop lore-enter--2 absolute right-[6%] top-[14%] pointer-events-none select-none whitespace-nowrap leading-none text-white/80 origin-top-right -rotate-[72deg]"
-          style={{ fontSize: `clamp(56px, ${Math.min(11, 96 / Math.max(6, pilot.nameEn.length)).toFixed(2)}vw, 120px)` }}
-        >
-          {pilot.nameEn}
-        </span>
-      )}
-      </div>
-
-      {/* E-1 檔案感小字（桌機）：編號／登場版本，JetBrains Mono 小字＋細線，官網資料層的「566043-078」語彙 */}
-      <div className="lore-enter lore-enter--3 absolute left-[8px] bottom-[10px] hidden lg:flex flex-col gap-[3px] pointer-events-none font-[JetBrains_Mono,monospace] text-[10px] tracking-[0.18em] text-text-dim">
-        <span>PILOT FILE · NO.{serial}</span>
-        {pilot.debutVersion && <span>DEBUT · v{pilot.debutVersion}</span>}
-        <span aria-hidden="true" className="mt-1 h-px w-12 bg-border-accent" />
-      </div>
-      {!official && fileTag && (
-        <span className="lore-enter lore-enter--3 lore-file-tag absolute right-[10px] top-[150px] hidden lg:inline-block px-[6px] py-[2px] text-[10px] font-bold tracking-[0.12em] pointer-events-none">
-          {fileTag}
-        </span>
-      )}
-    </div>
+    </>
   )
 
   return (
-    <div className="max-w-6xl mx-auto px-4 pb-16 lg:grid lg:grid-cols-[42fr_58fr] lg:gap-8 lg:px-6">
-      {portrait}
-
-      {/*
-        手機：正文在立繪下方、帶半透明紙色底並拉高一層，捲動時像一張紙推過立繪。
-        桌機：它是 grid 的第二欄，與立繪不重疊，**底色透明**——館的背景是整張紙紋圖
-        （PLAN-042-C B-2），這一欄若塗不透明底會在紋理上壓出一塊平面矩形。
-        ⚠ 這裡**不得**加 overflow（地雷 M-08），也不得加 @container
-        （隱含 contain:layout 會讓 RefChip 的 fixed 浮層改對齊本容器而錯位）。
-      */}
-      <div className="relative z-10 bg-bg-dark/90 lg:bg-transparent pt-6 lg:pt-10">
-        {isChapterView ? (
-          <>
-            <Link
-              to={`/lore/pilots/${encodeURIComponent(id!)}`}
-              className="inline-block mb-4 text-xs text-text-secondary no-underline hover:text-text-primary"
-            >
-              {`‹ ${pilot.name} · 扉頁`}
-            </Link>
-
-            {/* ⚠ LoreChapterBody 只吃具名 props，**不得** {...chapters[activeIndex]}：
-                React 19 會把 spread 進來的 `key` 摘走當元素 key，元件內部拿不到，
-                而且展開的物件沒有 index ⇒ eyebrow 的 `PART N` fallback 做不出來。 */}
-            <LoreChapterPager
-              chapters={chapters}
-              activeKey={chapters[activeIndex].key}
-              onSelect={handleSelect}
-            >
-              {/* key＝章節 key：換章重掛，正文才會播 180ms 的進場（F-2） */}
-              <LoreChapterBody key={chapters[activeIndex].key} chapter={chapters[activeIndex]} index={activeIndex} className="pt-6" />
-            </LoreChapterPager>
-          </>
-        ) : (
-          // key 讓換人時右欄整塊重掛，三段進場動畫（A-4）才會重播
-          <article key={pilot.id}>
-            {/* 第二段（200ms）：職業／名字／徽記 */}
-            <div className="lore-enter lore-enter--2">
-            <p className={`flex items-center gap-1.5 text-xs font-semibold tracking-widest ${classText}`}>
-              <ClassIcon pilotClass={pilot.class} size={15} decorative />
-              {pilot.class}
-            </p>
-            <h1 className="lore-name-font mt-1 text-3xl text-text-primary sm:text-4xl">{pilot.name}</h1>
-
-            {/* 三枚徽記：陣營／天賦／駕駛許可。圓環直徑用 px（展示型尺寸），正文才用 rem。
-                陣營（PLAN-059 D-3）：有官方徽章就畫徽章、陣營名改成圓環下方的小字；沒選就維持文字刻在圓環內。
-                （原本「刻意不畫圖示」的理由是 30 個值、18 個只有 1 人，自己畫是會增生的美術債——
-                官方原檔解決了這件事，徽章由管理者在編輯台逐位挑。）
-                單色徽章吃 text-text-primary：館內 token 是墨色，在紙上像蓋上去的印章。
-                小字用 absolute 掛在圓環下方，不撐高這一列——天賦圓環與駕照徽章才能維持垂直置中。 */}
-            <div className={`mt-5 flex flex-wrap items-center gap-3 ${factionLogos.length ? 'mb-5' : ''}`}>
-              {factionLogos.length ? (
-                <span className="relative flex shrink-0 gap-1.5">
-                  {factionLogos.map((k) => (
-                    <span key={k} className="w-[68px] h-[68px] shrink-0 rounded-full border border-border-accent flex items-center justify-center text-text-primary">
-                      <FactionLogo logoKey={k} size={54} label={pilot.faction} />
-                    </span>
-                  ))}
-                  <span className="absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap text-[11px] leading-tight text-text-dim">
-                    {pilot.faction}
-                  </span>
-                </span>
-              ) : (
-                <span className="w-[68px] h-[68px] shrink-0 rounded-full border border-border-accent flex items-center justify-center px-[6px] text-center text-[11px] leading-tight text-text-secondary">
-                  {pilot.faction}
-                </span>
-              )}
-
-              <span className="w-[68px] h-[68px] shrink-0 rounded-full border border-border-accent bg-bg-card flex items-center justify-center overflow-hidden">
-                {talentIcons.length ? (
-                  <FallbackImage
-                    candidates={talentIcons}
-                    alt={talentName}
-                    className="w-[52px] h-[52px] rounded-full object-cover"
-                    fallback={
-                      <span className="px-[4px] text-center text-[11px] leading-tight text-text-dim">{talentName || '—'}</span>
-                    }
-                  />
-                ) : (
-                  // 兩者都是空字串的 3 位機師走這條。**不渲染 <img>**，
-                  // 空 src 會讓瀏覽器重新請求本頁 URL（地雷 M-16）。
-                  <span className="px-[4px] text-center text-[11px] leading-tight text-text-dim">
-                    {talentName || '—'}
-                  </span>
-                )}
-              </span>
-
-              {/* 紙色主題：原本的深色底在紙上幾乎看不見字（PLAN-059 C-4 修） */}
-              <LicenseBadge license={pilot.license} surface="paper" />
-            </div>
-            </div>
-
-            {/* 第三段（350ms）：引文卡、鍵值列、章節入口 */}
-            <div className="lore-enter lore-enter--3">
-            {/* 引文卡。逐段 <p> 自備換行，不依賴 whitespace-pre-line —— 引文段要換成
-                blockquote，整包 pre-line 會讓兩種排版無法混用。
-                字級用 rem 類別（text-base / text-lg），館內 header 的字級三顆按鈕才吃得到。 */}
-            {frontParagraphs.length > 0 && (
-              <div className="mt-8 rounded-xl border border-border-subtle bg-bg-card px-5 py-6 sm:px-7">
-                <div className="space-y-4 text-base leading-loose text-text-primary sm:text-lg">
-                  {frontParagraphs.map((p, i) =>
-                    isQuoteStyle(p) ? (
-                      <blockquote
-                        key={i}
-                        className="border-l-2 border-border-accent pl-4 tracking-wide text-text-secondary"
-                      >
-                        {p}
-                      </blockquote>
-                    ) : (
-                      <p key={i}>{p}</p>
-                    ),
-                  )}
-                </div>
-                <LoreSourceLine source={lore?.frontSource} />
-              </div>
-            )}
-
-            {info.length > 0 && (
-              <dl className="mt-8 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
-                {info.map(([k, v]) => (
-                  <div key={k} className="flex gap-3 border-b border-border-subtle py-1.5 text-sm">
-                    <dt className="shrink-0 text-text-dim">{k}</dt>
-                    <dd className="min-w-0 text-text-secondary">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-
-            {/* 章節入口。pilotLore 讀不到（或這位機師還沒有章節）時整塊不出現 ——
-                這是上線初期的常態，不是錯誤狀態，不要在這裡放「載入失敗」。
-                標籤 fallback 與章節軸／eyebrow 三處一致（契約 §2.8）。 */}
-            {chapters.length > 0 && (
-              <button
-                type="button"
-                onClick={() => handleSelect(chapters[0].key)}
-                className="mt-8 w-full text-left px-4 py-3 rounded-lg border border-border/60
-                           text-text-secondary transition-colors cursor-pointer
-                           hover:text-text-primary hover:border-border-accent hover:bg-bg-card"
-              >
-                <span className="block text-xs text-text-dim">共 {chapters.length} 章</span>
-                <span className="block mt-0.5 text-sm">
-                  {`閱讀 ${chapters[0].label ?? 'PART 1'} ▸`}
-                </span>
-              </button>
-            )}
-            </div>
-          </article>
-        )}
+    <div
+      ref={rootRef}
+      className={cls}
+      data-side={loreSideOf(shown)}
+      data-variant={art?.variant ?? 'wide'}
+      data-dir={t.dir}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      <div className="lore-stage-wrap">
+        <LoreStage pilot={shown} art={art} tools={tools} />
       </div>
+
+      <main className="lore-dossier">
+        {isReading ? (
+          <LoreChapterPager chapters={chapters} activeKey={chapters[activeIndex].key} onSelect={selectChapter} backHref={fileHref}>
+            {/* key＝章節 key：換章重掛，稿紙的進場動畫才會重播。⚠ 不得 {...chapter} spread（見 LoreChapterBody 檔頭） */}
+            <LoreChapterBody
+              key={chapters[activeIndex].key}
+              chapter={chapters[activeIndex]}
+              index={activeIndex}
+              prev={chapters[activeIndex - 1]}
+              next={chapters[activeIndex + 1]}
+              onSelect={selectChapter}
+              backHref={fileHref}
+              pilotName={shown.name}
+              dir={chapterDir}
+            />
+          </LoreChapterPager>
+        ) : (
+          <LoreDossier pilot={shown} lore={lore} chapters={chapters} chapterHref={chapterHref} />
+        )}
+      </main>
+
+      {isReading && <div ref={progressRef} className="lore-progress" aria-hidden="true" />}
+
+      {order.length > 1 && id && (
+        <LoreSwitcher
+          ref={switcherRef}
+          groups={groups}
+          order={order}
+          currentId={id}
+          sort={sort}
+          onSortChange={setSort}
+          chapterCount={chapterCount}
+          skinCount={skinCount}
+          onSelect={selectPilot}
+          onOpenChange={setRosterOpen}
+          onHover={(p) => { void preloadStageArt(stageArtFor(p, rememberedSkins.get(p.id) ?? '').art) }}
+        />
+      )}
+
+      {viewerOpen && art && (
+        <LoreViewer src={art.full} name={shown.name} onClose={() => setViewerOpen(false)}>
+          <LoreSkinPicker pilot={shown} skins={skins} current={skin?.key ?? ''} onPick={pickSkin} className="lore-skins" />
+        </LoreViewer>
+      )}
     </div>
   )
 }

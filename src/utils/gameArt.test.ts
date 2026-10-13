@@ -5,7 +5,7 @@
 // 這幾位是刻意挑的：例外 5 位要證明「資料夾用 gameId、檔名用 artKey、兩者不互推」。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mechGameArt, mechGameFileName, mechGameIdFromPath, npcGameArt, pilotGameArt, pilotGameFileName, pilotGameIdFromPath } from './gameArt.ts'
+import { mechGameArt, mechGameFileName, mechGameIdFromPath, npcGameArt, pilotGameArt, pilotGameFileName, pilotGameIdFromPath, pilotSkins } from './gameArt.ts'
 
 const 維娜 = { gameId: '10103144', artKey: 'Pilot_13019A' }
 const 葉夫根尼 = { gameId: '10103123', artKey: 'Pilot_10103123A' }
@@ -107,4 +107,23 @@ test('NPC 圖庫：缺的種類回 undefined，交給下一個候選（Pilot_110
   assert.equal(npcGameArt('Pilot_11023B', 'half'), undefined)
   assert.equal(npcGameArt('Pilot_99999999A', 'half'), undefined)
   assert.equal(npcGameArt(undefined, 'half'), undefined)
+})
+
+test('造型（PLAN-042-D）：skins/ 子資料夾以 gameId 查、NPC 圖庫的外觀以文件 ID 查，串成一份', () => {
+  // 卡蜜拉：一套場景插畫
+  const camilla = pilotSkins({ id: 'pilot_017_卡米拉', gameId: '10103146' })
+  assert.equal(camilla.length, 1)
+  assert.equal(camilla[0].key, 'Pilot_10103146B')
+  assert.equal(camilla[0].scene, true)
+  assert.equal(camilla[0].raw, '/images/game/pilots/10103146/skins/Pilot_10103146B_Raw.webp')
+  assert.equal(camilla[0].label, '外觀 1')
+  // 洛莎·審判：Pilot_10103107B 依 pilotSkinMeta.json 的 owner 放在她這裡
+  assert.ok(pilotSkins({ id: 'pilot_032_洛莎審判', gameId: '10103154' }).some((s) => s.key === 'Pilot_10103107B'))
+  assert.ok(!pilotSkins({ id: 'pilot_003_洛莎', gameId: '10103107' }).some((s) => s.key === 'Pilot_10103107B'))
+  // 海莉絲：NPC 圖庫裡的那套（npcArtNotes owner＋外觀卡）
+  const hailis = pilotSkins({ id: 'pilot_049_海莉絲', gameId: '10103174' })
+  assert.ok(hailis.some((s) => s.key === 'Pilot_10103132A' && s.raw.startsWith('/images/game/npc/10103132/')))
+  // 沒有外觀、沒有 ID → 空陣列
+  assert.deepEqual(pilotSkins({ id: 'pilot_076_凱登', gameId: '10103101' }), [])
+  assert.deepEqual(pilotSkins(undefined), [])
 })

@@ -65,7 +65,7 @@ const SOURCE_MARKS = /(——|一一|--|──|–)/g
 const MAX_SOURCE_TAIL = 40
 
 /**
- * 若正文尾端就是署名，切掉它（署名改由 `<LoreSourceLine>` 單獨排版）。
+ * 若正文尾端就是署名，切掉它（署名改由 `.lore-source` 單獨排版）。
  *
  * ⚠ **不可用 `text.endsWith(source)`**：34 筆中有 2 筆（尼爾、黑障）正文裡是 `--` / `一一`，
  *   而 `source` 已正規化成 `——` ⇒ `endsWith` 為 false、`replace()` 原樣回傳，
@@ -87,4 +87,55 @@ export function stripTrailingSource(text: string | undefined, source: string | u
   if (cut <= 0) return text
   if (text.length - cut > MAX_SOURCE_TAIL) return text
   return text.slice(0, cut).trimEnd()
+}
+
+// ── PLAN-042-D D-5：渲染端保守正規化 ─────────────────────────────────────────
+//
+// 逸聞章節多半是 OCR 貼進來的：固定寬度的硬換行（「本質是什／麼。」被切成兩段）與半形標點。
+// **正解是資料端清理**（PLAN-042-D H-4，站長之後走 data-patch），清完之後這裡應該是 no-op；
+// 在那之前渲染端先做「不會誤傷」的那一半——所以規則刻意保守：
+//   · 只合併**長行**（≥ SOFT_WRAP_MIN 字）且行尾不是句末標點的換行。OCR 斷行的位置是排版寬度（實測 38 字上下），
+//     短行多半是刻意的（日記的「6月21日」、署名），寬鬆版會把它們併進正文（模擬頁實際發生過）。
+//   · 半形 `, ? ! ; :` 只在**前後有中文**時轉全形——「12,520」「Mk.II」這種不能動。
+// 編輯台之後貼上時也可以用同一組函式（H-4 清理時順手接上）。
+
+/** OCR 斷行的最短長度。實測卡蜜拉 4 章的斷行落在 37–40 字；正常段落的「短行」都在 20 字以內。 */
+const SOFT_WRAP_MIN = 30
+/** 行尾是這些字元就視為「句子結束」，不合併 */
+const LINE_END = /[。！？」』…：）)】～—!?．.]$/
+const CJK = '\u3400-\u9fff\u3000-\u303f\uff00-\uffef'
+const HALF_TO_FULL: Record<string, string> = { ',': '，', '?': '？', '!': '！', ';': '；', ':': '：' }
+// 前後的空白一併吃掉（OCR 常在標點兩側多一格）：全形標點本身就帶留白
+const PUNCT_AFTER_CJK = new RegExp(`(?<=[${CJK}])\\s*([,?!;:])\\s*`, 'g')
+const PUNCT_BEFORE_CJK = new RegExp(`\\s*([,?!;:])\\s*(?=[${CJK}])`, 'g')
+
+/** 半形標點在中文語境轉全形；英數之間的（12,520、Mk.II）不動。 */
+export function fullwidthLorePunctuation(text: string): string {
+  return text
+    .replace(PUNCT_AFTER_CJK, (_, p: string) => HALF_TO_FULL[p] ?? p)
+    .replace(PUNCT_BEFORE_CJK, (_, p: string) => HALF_TO_FULL[p] ?? p)
+}
+
+/**
+ * 閱讀用的段落：`splitParagraphs` ＋ 長行 OCR 斷行合併 ＋ 中文語境半形標點轉全形。
+ * 扉頁（pilots.lore，官方 API 的完整段落）跑這個也是 no-op——它們的每一段都以句末標點結尾。
+ */
+export function readableParagraphs(text: string | undefined): string[] {
+  const out: string[] = []
+  for (const line of splitParagraphs(text)) {
+    const prev = out[out.length - 1]
+    if (prev !== undefined && prev.length >= SOFT_WRAP_MIN && !LINE_END.test(prev)) out[out.length - 1] = prev + line
+    else out.push(line)
+  }
+  return out.map(fullwidthLorePunctuation)
+}
+
+/**
+ * 署名開頭的破折號統一成 `——`（OCR 常把它認成「一一」「--」）。只換開頭那一組記號，
+ * 不碰後面的字——「一一一份調任申請書」是「一一」＋「一份…」，第三個「一」是正文。
+ */
+export function normalizeLoreSource(source: string | undefined): string {
+  const s = source?.trim() ?? ''
+  if (!s) return ''
+  return s.replace(/^(——|一一|--|──|–)\s*/, '——')
 }

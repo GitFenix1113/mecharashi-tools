@@ -13,7 +13,7 @@
  *   node scripts/import-game-assets.mjs --emblems                               職業／駕照圖示、陣營徽章（PLAN-059）→ game/icons/{class,license,camp}/
  *   node scripts/import-game-assets.mjs --ui                                    介面美術（活動、招募、大廳…）→ 封存夾 game/ui/（repo 外）
  *   node scripts/import-game-assets.mjs --other-icons                           其他圖示（道具、勳章、肉鴿、車輛…）→ 封存夾 game/icons/（repo 外）
- *   node scripts/import-game-assets.mjs --skins                                 可抽機師的其他造型 → 封存夾 game/pilots/<gameId>/（repo 外）
+ *   node scripts/import-game-assets.mjs --skins                                 可抽機師的其他造型（外觀）→ game/pilots/<gameId>/skins/（上站，PLAN-042-D）
  *   node scripts/import-game-assets.mjs --promote=activity/uiactivity/ob6       封存夾裡挑好的介面美術 → public/images/game/ui/（上架、會公開）
  *
  * 新擷取先跑 `node scripts/diff-game-dump.mjs` 看這一版多了什麼，報告會列出該跑哪幾個模式。
@@ -46,10 +46,16 @@
  *   **不進 git、不部署**；會一併產生 icons/README.md 與 icons/_index.json（同 --ui）。WebP q82。
  *   建議順序同 --ui：先 --src=Data 再 --src=latest，兩次擷取的聯集都會留著。
  *
- * ── --skins（2026-10-12）──────────────────────────────────────────────────────
+ * ── --skins（2026-10-12；2026-10-13 PLAN-042-D 改為上站）─────────────────────────
  *   可抽機師（public/images/game/pilots/ 裡有的立繪號碼）的其他造型 `Pilot_<號碼><造型>_{half,head,Raw}`
- *   → <archive>/game/pilots/<gameId>/（與 v3 extended 同一個位置）。站上讀取端只用預設造型，所以不進 repo。
- *   不是可抽機師的號碼歸 --npc（上站），這裡不收。外觀卡 Icon_pilotSkin_* 在 --other-icons（icons/itemtype/）。
+ *   → public/images/game/pilots/<gameId>/skins/<官方檔名>.webp（q82）。故事館的「外觀」切換讀這裡（build 產生 GAME_PILOT_SKINS）。
+ *   站長 2026-10-13 決定造型必須上站（取代 10-12「站上只用預設造型，不進 repo」）。
+ *   放子資料夾不放 core：core 資料夾「一個 ID 只放一種立繪主鍵」是 generate-art-index.mjs 的守門條件。
+ *   歸屬：預設依檔名號碼；號碼對不上的（例：Pilot_10103107B 定版判給洛莎·審判）寫在 scripts/lib/pilotSkinMeta.json 的 owner。
+ *   名稱（name）、不上站（hidden）也寫在那份——全部選填，資料面之後補。
+ *   不是可抽機師的號碼歸 --npc（上站），這裡不收；NPC 圖庫裡屬於某位機師的外觀登記在 npcArtNotes.json（owner）。
+ *   外觀卡 Icon_pilotSkin_* 在 --other-icons（icons/itemtype/），故事館不用（那是袋裝商品圖，縮圖用造型自己的 _head）。
+ *   建議順序：先 --src=Data 再 --src=latest（兩次擷取的聯集都會留著）。
  *
  * ── --promote（2026-10-11）──────────────────────────────────────────────────
  *   決定用途後，把封存夾裡挑好的圖「上架」：<archive>/game/ui/<路徑> → public/images/game/ui/<同一路徑>。
@@ -133,11 +139,11 @@ const PUBLIC_GAME = path.join(ROOT, 'public', GAME_DIR)
 const APPLY = !!args.apply
 const FORCE = !!args.force
 /** 寫到 repo 外的封存夾（extended／reserve／--ui／--other-icons／--skins），其餘寫進 public/ */
-const TO_ARCHIVE = TIER !== 'core' || ['ui', 'other', 'skins'].includes(MODE)
+const TO_ARCHIVE = TIER !== 'core' || ['ui', 'other'].includes(MODE)
 
 if (!['core', 'extended', 'reserve'].includes(TIER)) fail(`--tier 只能是 core／extended／reserve：${TIER}`)
 if (TO_ARCHIVE && isInside(ARCHIVE, ROOT)) {
-  fail(`--archive 在 repo 裡面（${ARCHIVE}）——extended／reserve／ui／其他圖示／造型不能進 repo（站長 2026-10-04 定案 A）`)
+  fail(`--archive 在 repo 裡面（${ARCHIVE}）——extended／reserve／ui／其他圖示不能進 repo（站長 2026-10-04 定案 A）`)
 }
 if (MODE === 'v3' && DUMP_ID !== 'Data') fail(`v3 模式只能用 --src=Data（v3 定版記的是那次擷取的檔案路徑），收到 ${SRC}`)
 
@@ -230,7 +236,8 @@ const ICON_META_FILE = path.join(ROOT, 'scripts/lib/gameIconMeta.json')
 const uiReport = { rows: new Map(), conflicts: [], moves: [], notInDump: 0 }
 const ICONS_ARCHIVE = path.join(destRoot, 'icons')
 const otherReport = { rows: new Map(), conflicts: [] }
-const skinReport = { fresh: new Set(), npcSkipped: 0 }
+const skinReport = { fresh: new Set(), npcSkipped: 0, moved: new Set() }
+const SKIN_META_FILE = path.join(ROOT, 'scripts/lib/pilotSkinMeta.json')
 const npcReport = { en: new Map(), skinCard: new Set() }
 const NPC_META_FILE = path.join(ROOT, 'scripts/lib/npcArtMeta.json')
 
@@ -494,8 +501,9 @@ if (MODE === 'v3') {
     otherReport.rows.set(`${rel}.webp`, best)
   }
 } else if (MODE === 'skins') {
-  // 可抽機師的其他造型：號碼在 game/pilots/ 裡、但這個檔名不在（預設造型已在 core）
+  // 可抽機師的其他造型：號碼在 game/pilots/ 裡、但這個檔名不在（預設造型已在 core）→ pilots/<歸屬 gameId>/skins/
   const playable = playableArtDirs(path.join(PUBLIC_GAME, 'pilots'))
+  const skinMeta = fs.existsSync(SKIN_META_FILE) ? JSON.parse(fs.readFileSync(SKIN_META_FILE, 'utf-8')).skins ?? {} : {}
   const rows = loadCsv()
   const byName = new Map()
   for (const r of rows) if (NPC_ART_RE.test(r.name)) (byName.get(r.name) ?? byName.set(r.name, []).get(r.name)).push(r)
@@ -505,8 +513,11 @@ if (MODE === 'v3') {
     if (fs.existsSync(path.join(PUBLIC_GAME, 'pilots', gameId, `${name}.webp`))) continue   // 預設造型，core 已有
     const pick = pickRow(rs, name)
     if (pick.conflict) { problems.push(`${name}：同名 Texture2D 內容不同 ${pick.conflict.join(' ／ ')}`); continue }
-    addTask(pick.row.path, `pilots/${gameId}`, name, `機師 ${gameId} 造型`, `skin-${classifyNpcFile(name).kind}`)
-    if (!fs.existsSync(tasks.at(-1).dest)) skinReport.fresh.add(`${gameId}（${name.replace(/_(half|head|Raw)$/, '')}）`)
+    const key = classifyNpcFile(name).key
+    const owner = skinMeta[key]?.owner ?? gameId
+    if (owner !== gameId) skinReport.moved.add(`${key} → ${owner}（pilotSkinMeta.json）`)
+    addTask(pick.row.path, `pilots/${owner}/skins`, name, `機師 ${owner} 造型`, `skin-${classifyNpcFile(name).kind}`)
+    if (!fs.existsSync(tasks.at(-1).dest)) skinReport.fresh.add(`${owner}（${key}）`)
   }
   notes.push(`不是可抽機師的立繪 ${skinReport.npcSkipped} 個檔——歸 --npc（上站的 NPC 圖庫）`)
 } else if (MODE === 'npc') {
@@ -606,7 +617,7 @@ const rowsOut = [...stat].sort().map(([g, s]) => `| ${g} | ${s.n} | ${s.skipped}
 const tot = [...stat.values()].reduce((a, s) => ({ n: a.n + s.n, skipped: a.skipped + s.skipped, srcBytes: a.srcBytes + s.srcBytes, outBytes: a.outBytes + s.outBytes }), { n: 0, skipped: 0, srcBytes: 0, outBytes: 0 })
 const title = MODE === 'v3' ? `v3 整批・${TIER}` : MODE === 'pilot' ? `新機師 ${args.id}` : MODE === 'npc' ? 'NPC 圖庫' : MODE === 'icons' ? '圖示圖庫'
   : MODE === 'equip' ? '武器／背包圖示' : MODE === 'emblems' ? '職業／駕照圖示、陣營徽章' : MODE === 'ui' ? '介面美術封存' : MODE === 'promote' ? '介面美術上架'
-    : MODE === 'other' ? '其他圖示封存' : MODE === 'skins' ? '機師造型封存' : `新機甲 wap${args.wap}`
+    : MODE === 'other' ? '其他圖示封存' : MODE === 'skins' ? '機師造型（外觀）匯入' : `新機甲 wap${args.wap}`
 const iconSection = MODE !== 'icons' ? [] : [
   '## 圖示圖庫（PLAN-055）', '',
   `- 擷取：${iconReport.fromDump}` + (iconReport.siteCopies
@@ -707,9 +718,14 @@ const otherSection = MODE !== 'other' ? [] : [
   `- 同資料夾同名、內容不同（取面積大的）：${otherReport.conflicts.length}`, ...otherReport.conflicts.map((r) => `  - ${code(r)}`), '',
 ]
 const skinSection = MODE !== 'skins' ? [] : [
-  '## 機師造型封存', '',
-  `- 落點：${path.join(destRoot, 'pilots')}／<gameId>／<官方檔名>.webp（與 v3 extended 同一個位置）`,
-  `- 封存夾還沒有的造型：${[...skinReport.fresh].sort().join('、') || '（無）'}`, '',
+  '## 機師造型（外觀）', '',
+  `- 落點：${path.join(destRoot, 'pilots')}／<gameId>／skins／<官方檔名>.webp（上站；故事館的外觀切換讀這裡）`,
+  `- 這次新增的造型：${[...skinReport.fresh].sort().join('、') || '（無）'}`,
+  `- 依 pilotSkinMeta.json 改放到別位機師的：${[...skinReport.moved].sort().join('、') || '（無）'}`, '',
+  '### 下一步（照抄）', '',
+  `- ${skinReport.fresh.size ? '⬜' : '✅'} 有新造型時：\`npm run dev\`（會重產 src/data/gameArtIndex.ts 的 GAME_PILOT_SKINS），到故事館該機師頁確認舞台左下的「外觀」列出現新頭像`,
+  '- ⬜ 造型名稱、台版還沒推出要先藏起來的：編輯 scripts/lib/pilotSkinMeta.json（name／hidden，選填），再跑一次 `npm run dev`',
+  '- ⬜ 照規則 commit（public/images/game/pilots/*/skins/ 與 src/data/gameArtIndex.ts 一起）、push；部署完成後新圖若 404 要到 Cloudflare Purge', '',
 ]
 const report = [
   `# ${{ icons: 'PLAN-055 ', equip: 'PLAN-056 ', emblems: 'PLAN-059 ', ui: '', promote: '', other: '', skins: '' }[MODE] ?? 'PLAN-054 '}官方原檔匯入${APPLY ? '' : '（dry-run）'}：${title}`, '',
@@ -731,7 +747,7 @@ console.log(MODE === 'icons' ? report.split('<details>')[0] : report)
 /** 報告檔：_local-notes/<YYYY-MM>/<YYYY-MM-DD>_<名稱>[_dry-run].md（同一天重跑會覆寫當天那份，不會蓋到別天的） */
 const REPORT_NAME = {
   icons: '圖示圖庫匯入報告', equip: '武器背包圖示匯入報告', emblems: '職業駕照陣營圖示匯入報告', ui: '介面美術封存報告', npc: 'NPC圖庫匯入報告',
-  other: '其他圖示封存報告', skins: '機師造型封存報告', v3: `PLAN-054_匯入報告_${TIER}`,
+  other: '其他圖示封存報告', skins: '機師造型匯入報告', v3: `PLAN-054_匯入報告_${TIER}`,
 }[MODE]
 if (REPORT_NAME) {
   const day = localDate()

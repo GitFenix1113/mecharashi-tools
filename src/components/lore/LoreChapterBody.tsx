@@ -1,68 +1,68 @@
+import { Link } from 'react-router-dom'
 import type { LoreChapter } from '../../types'
-import { LoreRichText } from './LoreRichText'
-import LoreSourceLine from './LoreSourceLine'
+import LoreProse from './LoreProse'
 import LoreCommentaryRow from './LoreCommentaryRow'
-import { splitParagraphs, isQuoteStyle } from './loreText'
+import { normalizeLoreSource, readableParagraphs } from './loreText'
 
 export interface LoreChapterBodyProps {
   /** 整個章節物件。⚠ **呼叫端禁止 JSX spread**（見下方元件註解） */
   chapter: LoreChapter
-  /** 0-based 陣列索引，只用來產生 eyebrow 的 `PART ${index + 1}` fallback */
+  /** 0-based 陣列索引，只用來產生 `PART ${index + 1}` fallback 與描邊大章號 */
   index: number
-  className?: string
+  /** 上一章／下一章（沒有就 undefined）。點了交給 onSelect（章節之間用 replace） */
+  prev?: LoreChapter
+  next?: LoreChapter
+  onSelect: (key: string, index: number) => void
+  /** 讀完最後一章時「返回檔案」的網址 */
+  backHref: string
+  pilotName: string
+  /** 換章方向（1＝往後、-1＝往前、0＝從檔案進來）：決定稿紙從哪邊滑進來 */
+  dir?: number
 }
 
 /**
- * 章節正文（PLAN-042-A C-3）。
+ * 章節稿紙（PLAN-042-A C-3；PLAN-042-D D-1／D-3 改版）。
  *
- * **呼叫端唯一合法寫法**：
- * ```tsx
- * <LoreChapterBody chapter={chapters[activeIndex]} index={activeIndex} />
- * ```
+ * **呼叫端唯一合法寫法**：`<LoreChapterBody key={chapter.key} chapter={chapters[i]} index={i} … />`
  *
- * ⚠ **不可寫成 `{...chapters[activeIndex]}`**，兩個原因都不會編譯失敗：
- *  1. `LoreChapter.key` 是必填欄位，React 19 會把 spread 進 JSX 的 `key` 摘走當元素 key
- *     （只在 console 留一行警告）⇒ 元件內部永遠拿不到 `chapter.key`。
- *  2. 展開的物件裡沒有 `index` ⇒ eyebrow 做不出 `PART ${i + 1}` fallback ⇒
- *     章節軸顯示「PART 2」而正文 eyebrow 空白。
+ * ⚠ **不可寫成 `{...chapters[activeIndex]}`**：`LoreChapter.key` 是必填欄位，React 19 會把 spread 進 JSX 的
+ *   `key` 摘走當元素 key，元件內部永遠拿不到；展開的物件也沒有 index，`PART N` fallback 做不出來。
+ * 以章節 key 重掛本元件，稿紙進場動畫才會重播。
  *
- * eyebrow 的 fallback 字串 `PART ${index + 1}` 與 LoreChapterPager 的章節軸、
- * entityRefs.ts 的 origin 字串共三處必須一致（契約 §2.8）。
+ * `PART ${index + 1}` 的 fallback 與 LoreChapterPager、entityRefs.ts 的 origin 字串共三處必須一致（契約 §2.8）。
  */
-export default function LoreChapterBody({ chapter, index, className }: LoreChapterBodyProps) {
-  const paragraphs = splitParagraphs(chapter.body)
+export default function LoreChapterBody({ chapter, index, prev, next, onSelect, backHref, pilotName, dir = 0 }: LoreChapterBodyProps) {
+  const paragraphs = readableParagraphs(chapter.body)
+  const source = normalizeLoreSource(chapter.source)
+  const label = (c: LoreChapter, i: number) => c.label ?? `PART ${i + 1}`
 
   return (
-    // lore-chapter-enter（PLAN-042-C F-2）：換章 180ms 淡入上移；呼叫端要以章節 key 重掛本元件才會觸發
-    <article className={`lore-chapter-enter ${className ?? ''}`}>
-      <p className="text-xs font-semibold tracking-widest text-text-secondary">
-        {chapter.label ?? `PART ${index + 1}`}
-      </p>
-      <h2 className="mt-1 text-xl font-bold text-text-primary sm:text-2xl">{chapter.title}</h2>
-
-      {/*
-        逐段 <p> 自備換行，**不依賴 whitespace-pre-line**（引文段要換成 blockquote，
-        整包 pre-line 會讓兩種排版無法混用）。
-        字級一律用 rem 類別（text-base / text-lg）而非 text-[Npx]——館內 header 保留了
-        字級三顆按鈕，正文必須跟著使用者的設定縮放。
-      */}
-      <div className="mt-6 space-y-4 text-base leading-loose text-text-primary sm:text-lg">
-        {paragraphs.map((p, i) =>
-          isQuoteStyle(p) ? (
-            // 引文體不做 drop cap：以「開頭，首字放大只會放大到引號本身。
-            <blockquote key={i} className="border-l-2 border-border-accent pl-4 tracking-wide text-text-secondary">
-              <LoreRichText text={p} refs={chapter.bodyRefs} />
-            </blockquote>
+    <article className="lore-sheet">
+      <div className={`lore-sheet-body${dir > 0 ? ' from-r' : dir < 0 ? ' from-l' : ''}`}>
+        <span className="lore-sheet__num" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+        <p className="lore-sheet__part">{label(chapter, index)}</p>
+        <h2 className="lore-sheet__title">{chapter.title}</h2>
+        <div className="lore-sheet__rule" aria-hidden="true" />
+        <LoreProse paragraphs={paragraphs} refs={chapter.bodyRefs} lead />
+        {source && <p className="lore-source">{source}</p>}
+        <LoreCommentaryRow items={chapter.commentary} />
+        <nav className="lore-chnav" aria-label="上一章／下一章">
+          {prev && (
+            <a href="#" className="is-prev" onClick={(e) => { e.preventDefault(); onSelect(prev.key, index - 1) }}>
+              <small>‹ 上一章</small><span>{label(prev, index - 1)}・{prev.title}</span>
+            </a>
+          )}
+          {next ? (
+            <a href="#" className="is-next" onClick={(e) => { e.preventDefault(); onSelect(next.key, index + 1) }}>
+              <small>下一章 ›</small><span>{label(next, index + 1)}・{next.title}</span>
+            </a>
           ) : (
-            <p key={i}>
-              <LoreRichText text={p} refs={chapter.bodyRefs} />
-            </p>
-          ),
-        )}
+            <Link to={backHref} className="is-next">
+              <small>讀完了</small><span>返回 {pilotName} 的檔案</span>
+            </Link>
+          )}
+        </nav>
       </div>
-
-      <LoreSourceLine source={chapter.source} />
-      <LoreCommentaryRow items={chapter.commentary} />
     </article>
   )
 }

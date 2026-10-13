@@ -30,17 +30,22 @@ export interface PilotClassMeta {
   borderStrong: string
   /** 實心色條（清單左緣、分組標題） */
   bar: string
+  /**
+   * 紙色館內（故事館）用的職業色——CSS 色值，不是類名。accent 八色是給深色底調的，
+   * 放在 #efe7d8 紙上太亮、字讀不清楚，這裡是同色相深一階的版本（PLAN-042-D）。
+   */
+  paper: string
 }
 
 export const PILOT_CLASSES: readonly PilotClassMeta[] = [
-  { name: PilotClass.FIGHTER,     en: 'Fighter',   enOfficial: true,  icon: '001', text: 'text-accent-red',    bg: 'bg-accent-red/10',    border: 'border-accent-red/40',    borderStrong: 'border-accent-red/70',       bar: 'bg-accent-red' },
-  { name: PilotClass.ASSAULT,     en: 'Raider',    enOfficial: true,  icon: '002', text: 'text-accent-orange', bg: 'bg-accent-orange/10', border: 'border-accent-orange/40', borderStrong: 'border-accent-orange/70', bar: 'bg-accent-orange' },
-  { name: PilotClass.SNIPER,      en: 'Sniper',    enOfficial: true,  icon: '003', text: 'text-accent-blue',   bg: 'bg-accent-blue/10',   border: 'border-accent-blue/40',   borderStrong: 'border-accent-blue/70',     bar: 'bg-accent-blue' },
-  { name: PilotClass.TACTICIAN,   en: 'Tactician', enOfficial: true,  icon: '004', text: 'text-accent-purple', bg: 'bg-accent-purple/10', border: 'border-accent-purple/40', borderStrong: 'border-accent-purple/70', bar: 'bg-accent-purple' },
-  { name: PilotClass.GUARDIAN,    en: 'Guardian',  enOfficial: true,  icon: '006', text: 'text-accent-green',  bg: 'bg-accent-green/10',  border: 'border-accent-green/40',  borderStrong: 'border-accent-green/70',   bar: 'bg-accent-green' },
-  { name: PilotClass.ENGINEER,    en: 'Machinist', enOfficial: true,  icon: '005', text: 'text-accent-cyan',   bg: 'bg-accent-cyan/10',   border: 'border-accent-cyan/40',   borderStrong: 'border-accent-cyan/70',     bar: 'bg-accent-cyan' },
+  { name: PilotClass.FIGHTER,     en: 'Fighter',   enOfficial: true,  icon: '001', text: 'text-accent-red',    bg: 'bg-accent-red/10',    border: 'border-accent-red/40',    borderStrong: 'border-accent-red/70',       bar: 'bg-accent-red', paper: '#b42318' },
+  { name: PilotClass.ASSAULT,     en: 'Raider',    enOfficial: true,  icon: '002', text: 'text-accent-orange', bg: 'bg-accent-orange/10', border: 'border-accent-orange/40', borderStrong: 'border-accent-orange/70', bar: 'bg-accent-orange', paper: '#c2560c' },
+  { name: PilotClass.SNIPER,      en: 'Sniper',    enOfficial: true,  icon: '003', text: 'text-accent-blue',   bg: 'bg-accent-blue/10',   border: 'border-accent-blue/40',   borderStrong: 'border-accent-blue/70',     bar: 'bg-accent-blue', paper: '#1d5fc4' },
+  { name: PilotClass.TACTICIAN,   en: 'Tactician', enOfficial: true,  icon: '004', text: 'text-accent-purple', bg: 'bg-accent-purple/10', border: 'border-accent-purple/40', borderStrong: 'border-accent-purple/70', bar: 'bg-accent-purple', paper: '#7e3fc0' },
+  { name: PilotClass.GUARDIAN,    en: 'Guardian',  enOfficial: true,  icon: '006', text: 'text-accent-green',  bg: 'bg-accent-green/10',  border: 'border-accent-green/40',  borderStrong: 'border-accent-green/70',   bar: 'bg-accent-green', paper: '#1f8a4c' },
+  { name: PilotClass.ENGINEER,    en: 'Machinist', enOfficial: true,  icon: '005', text: 'text-accent-cyan',   bg: 'bg-accent-cyan/10',   border: 'border-accent-cyan/40',   borderStrong: 'border-accent-cyan/70',     bar: 'bg-accent-cyan', paper: '#0e7f93' },
   // 全球版尚未推出調構師（2026-10），Shifter 是 EN Wiki 作者的譯名；全球版上線後換成官方名、enOfficial 改 true
-  { name: PilotClass.CONSTRUCTOR, en: 'Shifter',   enOfficial: false, icon: '010', text: 'text-accent-yellow', bg: 'bg-accent-yellow/10', border: 'border-accent-yellow/40', borderStrong: 'border-accent-yellow/70', bar: 'bg-accent-yellow' },
+  { name: PilotClass.CONSTRUCTOR, en: 'Shifter',   enOfficial: false, icon: '010', text: 'text-accent-yellow', bg: 'bg-accent-yellow/10', border: 'border-accent-yellow/40', borderStrong: 'border-accent-yellow/70', bar: 'bg-accent-yellow', paper: '#a77b06' },
 ]
 
 /** 職業名，遊戲內順序（篩選列、分組、後台下拉） */
