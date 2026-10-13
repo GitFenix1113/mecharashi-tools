@@ -196,7 +196,7 @@
 
   <div class="impact-note">
     <strong>目標效果：</strong>
-    外觀按「全身立繪」看到的是遊戲大廳那張完整場景；管理員在選圖器上一眼看得出每顆徽章是哪個陣營，也能在後台自己補名稱。
+    有大廳的外觀在「全身立繪」可以切到遊戲大廳那張完整場景（預設仍是靜態立繪）；管理員在選圖器上一眼看得出每顆徽章是哪個陣營，也能在後台自己補名稱。
   </div>
   <div style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.2);border-radius:10px;padding:14px 18px;font-size:13px;color:var(--text-secondary);margin:16px 0 28px;">
     <strong style="color:var(--accent-yellow);">兩條線互不依賴：</strong>A／B（大廳全景）只動靜態圖與前台，可以先上；C／D（徽章）有新集合，部署順序 rules → Worker → 網站。E-2、H-1 為站長任務，不計入開發者任務。
@@ -277,7 +277,7 @@
 <!-- Phase B -->
 <section class="section">
   <div class="section-label orange">Phase B</div>
-  <div class="section-title">B 鑑賞框：大廳全景｜立繪</div>
+  <div class="section-title">B 鑑賞框：立繪｜大廳全景</div>
   <div class="section-desc">決策二。只動故事館前台，後台預覽（PLAN-042-E D-4）沿用同一個元件。</div>
   <div class="task-group">
     <div class="task-group-header">
@@ -303,8 +303,8 @@
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">預設全景、可切回立繪、尺寸上限</div>
-        <div class="task-desc">有 <code>lobby</code> 時上方出現「大廳全景｜立繪」切換、預設全景；全景模式限制最大顯示尺寸（暫定原寸 1.5 倍）、點擊放大上限原寸 2 倍或停用；手機版版面；Esc 與既有鍵盤操作不變。</div>
+        <div class="task-name">預設立繪、可切到大廳全景、尺寸上限</div>
+        <div class="task-desc">有 <code>lobby</code> 時上方出現「立繪｜大廳全景」切換、<b>預設立繪</b>（站長 10-14：靜態立繪優先）；全景模式限制最大顯示尺寸（暫定原寸 1.5 倍）、點擊放大上限原寸 2 倍或停用；手機版版面；Esc 與既有鍵盤操作不變。</div>
         <div class="task-file">src/components/lore/LoreViewer.tsx · src/index.css</div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -320,7 +320,7 @@
     <div class="task-row">
       <div>
         <div class="task-name">傳入 lobby、切換外觀時重設模式</div>
-        <div class="task-desc">換外觀時回到「有全景就全景」的預設；確認後台編輯台預覽沒有受影響。</div>
+        <div class="task-desc">換外觀時回到預設的立繪；確認後台編輯台預覽沒有受影響。</div>
         <div class="task-file">src/pages/lore/PilotLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -512,16 +512,16 @@
     <div class="task-group-header">
       <div class="task-group-title">H-1 &nbsp; 洛莎大廳歸屬（站長確認）</div>
       <div class="task-group-meta">Pilot_10103154B ／ 10103107B</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">Rosa 那張大廳是不是審判外觀 B</div>
-        <div class="task-desc">研究判 <code>Pilot_10103154B</code>（預覽戴眼罩、外觀卡是 154B）；疑點是道具 Stone 放在 <code>10103154a</code> 夾。與 PLAN-042-D H-3（10103107B 是否與 154B 重複）一起確認。</div>
+        <div class="task-desc">研究判 <code>Pilot_10103154B</code>（預覽戴眼罩、外觀卡是 154B）；疑點是道具 Stone 放在 <code>10103154a</code> 夾。與 PLAN-042-D H-3（10103107B 是否與 154B 重複）一起確認。<br><span style="color:var(--text-secondary)">✅ 2026-10-14 站長確認：屬於審判外觀 B。154B＝預設 154A 加眼罩（像素差 0.7），預覽與外觀卡都戴眼罩；Stone 道具放在 a 夾是因為 a／b 共用骨架。另確認 10103107B（審判服裝的另一張插畫，與 154B 像素差 44.7，不是重複）與 10103107C（洛莎睡衣）都是外觀——雖然擷取裡沒有它們的外觀卡（兩個編號只有 154B、154C 兩張）。</span></div>
         <div class="task-file">scripts/lib/pilotSkinMeta.json</div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
