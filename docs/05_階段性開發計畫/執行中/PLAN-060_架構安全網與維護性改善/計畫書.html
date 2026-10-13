@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-060 架構安全網與維護性改善 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.table-wrap { overflow-x: auto; }
+/* 共用 style.css 沒有 red／yellow 的 hero-badge 與 section-label，本頁自帶 */
+.hero-badge.red      { border-color: var(--accent-red); color: var(--accent-red); background: rgba(239,68,68,0.06); }
+.section-label.red    { color: var(--accent-red); }
+.section-label.yellow { color: var(--accent-yellow); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-060 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(239,68,68,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge red">◆ PLAN-060</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-red) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    架構安全網與維護性改善<span style="-webkit-text-fill-color:var(--text-secondary);"> — CI 測試 · 原子寫入 · 變更歷史 · 備份 · 實體登錄表 · 故事館動畫</span>
+  </h1>
+  <p class="hero-sub">爬蟲 10-11 退場後，Firestore 成了人工資料唯一的一份。很多防線是在「壞了可以重跑爬蟲」的前提下設計的，這個前提已經不成立。本計畫補上寫入、測試、備份、部署這幾層安全網，收斂「新增一個集合要改 20 處」的散落結構，並整理故事館的動畫架構。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label red">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value red">PLAN-060</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-13</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">.github/workflows · .githooks · src/lib/api/* · GameDataContext · collectionKeys · 後台各 *Admin 編輯器 · src/types · src/data/patchVersions · App.tsx · Layout／LoreLayout · index.css · src/components/lore/* · src/pages/lore/* · scripts/* · workers · package.json · CLAUDE.md · docs</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH（A、B 段）／ MID（C、D 段）／ LOW（E、F 段）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value red">規劃中 0／40（2026-10-13 立案）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">無硬性依賴。與 PLAN-042-E 有檔案重疊（PilotAdmin、AdminLorePage、故事館元件），排程見決策八</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>本計畫的依據：</strong><code>_local-notes/2026-10-13-專案架構審查.md</code>（在 _local-notes，不進版控）。
+    該審查分五個面向進行：資料模型與 Firestore 層、模擬器、後台、靜態資料與建置流程、UI／路由／動畫。Critical 與 High 項目都已回到程式碼抽驗過。
+    <strong>站長 2026-10-13 指示：模擬器相關問題先不列入本計畫</strong>（見「不在範圍內」）。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>問題一：人工維護的核心資料沒有安全網</strong><br>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>變更歷史只接了一半。</strong>只有 6 個集合走 <code>saveWithHistory</code>（buffs、pilotSkills、glossary、forms、backpackSkills、pilotLore）。
+        pilots、mechs、weapons、modules、components、backpacks、neuralDriveAbilities、grayOps 只做 <code>writeDoc</code> 加 bump，<strong>沒有任何歷史</strong>（例：<code>src/lib/api/pilots.ts:17-21</code>）。
+        <code>AdminVersionEditorPage.tsx:401</code> 甚至直接呼叫 <code>setDoc</code>。</li>
+      <li><strong>當初不接的理由已經失效。</strong><code>pilotLore.ts:26-28</code> 寫的理由是「其餘集合重跑爬蟲就有」，但爬蟲已經退場。PLAN-030 的「其餘 8 個集合各補一行即可接上」也一直沒有補。</li>
+      <li><strong>有歷史也無法還原。</strong>有接歷史的集合只存 <code>changedFields</code>，沒有改前內容（<code>changeHistory.ts:192-200</code>）。</li>
+      <li><strong>整份覆寫、沒有並行檢查。</strong><code>firestoreCore.ts:63</code> 的 <code>setDoc</code> 不帶 merge，版本號每個 session 也只讀一次。
+        早上就開著的後台分頁一存檔，會把下午用腳本批次修好的內容蓋回去。草稿還原（<code>useDraftAutosave.ts:117-125</code>）不記錄基準版本，被級聯清掉的引用會在還原舊草稿後被寫回去。</li>
+      <li><strong>沒有自動備份。</strong><code>backup-firestore.mjs</code> 只在本機，而且被 gitignore；<code>.github/workflows</code> 裡沒有任何排程匯出。</li>
+    </ul>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題二：版本 bump 不是原子操作，失敗會被吞掉；腳本端各自重寫</strong><br>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>src/lib/api/*</code> 有 12 處 <code>bumpDataVersion(...).catch(() =&gt; '')</code>，都是先寫文件、再另外 bump。
+        Worker 的邊緣快取以版本號當 key，所以 bump 一旦失敗，<strong>所有訪客都會一直看到舊資料</strong>，編輯者這邊卻沒有任何提示。</li>
+      <li><code>cascadeDelete.ts</code> 和 <code>restore.ts</code> 已經把 bump 併進同一個 batch。正確寫法早就存在，只是一般存檔沒有用它。</li>
+      <li>腳本端有 5 份各自手寫的 bump，其中 <code>derive-composite-backpack-skills.mjs:247-252</code> 記錄自己<strong>寫錯過</strong>：版本寫到頂層欄位，畫面印出「已 bump」，快取卻完全沒失效。</li>
+      <li>唯一正式的 <code>scripts/bump-data-version.mjs</code> 被 <code>.gitignore:92</code> 擋掉，<code>README.md:61,109</code> 卻還在教人跑它。</li>
+    </ul>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題三：守門測試寫得很好，卻沒有任何自動流程會跑</strong><br>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>deploy.yml</code>、<code>preview.yml</code>、<code>.githooks/pre-push</code> 都只跑 <code>npm run build</code>。</li>
+      <li>專防 PLAN-043 那種正式站 404 的 <code>collectionKeys.test.ts</code>、路由登記的 <code>routeKeys.test.ts</code>、分享碼 codec 的 golden fixture，都只在有人手動跑 <code>npm test</code> 時才有用。</li>
+      <li><code>routeKeys.ts</code> 的註解寫「pre-push hook 會擋下」，但這件事並不成立。</li>
+      <li>部署環境是 Node 20，跑不了 <code>node --test "src/**/*.test.ts"</code>。repo 也沒有 <code>engines</code> 或 <code>.nvmrc</code>。</li>
+      <li>2026-10-13 在 Node 22.22、沒有 <code>node_modules</code> 的環境實測：1401／1407 通過，失敗的 5 個都只是缺套件（<code>sharp</code> 等），1 個 skip。</li>
+    </ul>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題四：新增一個集合要改約 20 處，存檔流程在 13 個編輯器裡各抄一份</strong><br>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>GameDataContext.tsx</code> 單一檔就有 9 處要改，其中包括 4 個 <code>switch</code>（第 150、177、260、293 行）。</li>
+      <li><code>collectionKeys.test.ts:82</code> 只檢查整個檔案裡有沒有出現 <code>case 'k':</code>，4 個 switch 只寫了 1 個也會通過。</li>
+      <li>後台的存檔、取消、新增前檢查各手抄了 12–13 次。新增前檢查只有 3 份會確認「資料已載入完成」。</li>
+      <li><strong>潛在地雷：</strong><code>saveWithHistory</code> 用 Firestore 集合名去 bump（<code>changeHistory.ts:190</code>），但 bump 需要的是 CollectionKey。
+        目前兩者剛好同名；接上 grayOps（集合 <code>grayOps</code>、key <code>grayOpsRoster</code>）時，就會靜默 bump 到錯的 key。</li>
+    </ul>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題五：全站沒有 ErrorBoundary，首包也帶著用不到的程式碼</strong><br>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>任何一筆格式異常的文件都可能讓整站白屏、導覽列消失。全站只有兩段註解提到這件事（<code>ModuleBoundPart.tsx:18</code>、<code>MechAdmin.tsx:735</code>）。</li>
+      <li><code>App.tsx</code> 仍然靜態 import <code>AdminPage</code>（14 個分頁，閉包約 33k 行）、<code>LoadoutPage</code>、<code>PilotDetailPage</code>，首包約佔全部原始碼的 83%。</li>
+      <li><code>lib/firebase.ts:56</code> 在模組頂層初始化了從未使用的 Storage。</li>
+      <li>約 180 KB 的更新履歷透過 HomePage 打進首包。</li>
+    </ul>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題六：資料模型的歷史包袱</strong><br>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>同一個關係在兩邊各存一份。</strong><code>Module.boundMechId</code> 與 <code>Mech.moduleFixedIds</code> 分別在兩個後台頁維護，沒有任何東西負責同步。</li>
+      <li><strong>用顯示名稱當引用。</strong>patchVersions 的 pilots／mechs／weapons／backpacks 都是名稱陣列；另有 <code>hasBuff</code>、<code>enhancesTalentName</code>。</li>
+      <li><strong>讀取時沒有正規化。</strong><code>fetchCollection</code> 直接 <code>as T</code>，程式裡因此寫了 91 處 <code>?? []</code>。</li>
+      <li><strong>三種雙格式過渡至今還在。</strong><code>Pilot.skills</code> 是 <code>string|PilotSkill</code>、<code>Weapon.skills</code>、<code>NeuralDriveLevel</code> 的引用與內嵌並存，而當初保留它們的理由（爬蟲）已經消失。</li>
+      <li><strong>patchVersions 有兩份來源。</strong>靜態 TS 停在 3.3，Firestore 已經到 3.7，靜態那份卻仍是首屏初始值與讀取失敗時的備援。</li>
+      <li><strong>localStorage 快接近上限。</strong>已用 4.2–4.5 MB，上限約 5 MB。</li>
+    </ul>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題七：關鍵維運知識只存在站長電腦和 CF Dashboard 上</strong><br>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>被 gitignore 的關鍵工具：<code>bump-data-version.mjs</code>、<code>check-nd-minsum-drift.mjs</code>、<code>.claude/skills/data-patch/</code>、<code>backup-firestore.mjs</code>。換電腦或雲端 session 都拿不到。</li>
+      <li>封存路徑寫死在 <code>E:\</code>（<code>scripts/lib/gameDump.mjs:17,19</code>）。</li>
+      <li>Worker、<code>firestore.rules</code>、Transform Rule 白名單都靠手動部署。白名單已漏過兩次（PLAN-043、PLAN-050）。</li>
+      <li>CLAUDE.md 說白名單「16 條」，<code>App.tsx</code> 實際有 21 個頂層路徑段。<code>wrangler.jsonc:40</code> 說 <code>/lore/</code> 也要排除社群爬蟲 UA，CLAUDE.md 卻沒寫。</li>
+      <li><code>public/debug/*.json</code> 被 gitignore 卻仍在追蹤，會部署到正式站。</li>
+      <li>CHANGELOG 自動化在淺層 clone 裡截斷過整份檔案（dc4b5bc），最近 50 個 commit 裡有 23 個是它的自動 commit。</li>
+    </ul>
+  </div>
+
+  <div class="problem-block">
+    <strong>問題八：故事館的動畫時序分散在三套機制，靠手動對齊數字</strong><br>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>三套機制：CSS keyframes 加狀態 class；JS 計時器（<code>PilotLorePage.tsx:130-133</code> 的 1050／1250／1600／3200、<code>LoreStage.tsx:38</code> 的 <code>DRESS_MS=1000</code>）；<code>LoreSwitcher.tsx:197-260</code> 的 14 處 WAAPI。</li>
+      <li>數字之間有隱性綁定：JS 的 1000 必須等於 CSS 的「170ms 延遲加 820ms」。只要調了其中一邊，動畫就會被腰斬或閃一下，而且不會有任何錯誤訊息。</li>
+      <li>故事館 CSS 佔全域 <code>index.css</code> 的 74%（約 780／1057 行），每一頁都要下載；色票重複兩套，另有約 45 處寫死的 rgba。</li>
+      <li>卷宗的 width／margin 過場、每個捲動幀寫進根元素的 <code>--sy</code>，都會觸發 layout 或整棵樹的樣式重算。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label red">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：分段原則是「先止血、再收斂結構、最後整理」</strong><br>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>A 段</strong>全部是半天內可完成的小改，彼此獨立，可以一次 push。</li>
+      <li><strong>B 段</strong>是本計畫的核心：一份登錄表加一個統一存檔函式，一次修好問題一、二、四。</li>
+      <li><strong>C、D 段</strong>在 B 段之後依序處理資料模型與維運。</li>
+      <li><strong>E、F 段</strong>屬於整理，排程上配合其他計畫，不急。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：<code>ENTITY_REGISTRY</code> 是「集合」這個概念的唯一登錄處</strong><br>
+    新檔 <code>src/lib/entityRegistry.ts</code> 以 kind 為鍵，登記 Firestore 集合名、CollectionKey、歷史種類、顯示標籤、fetch 函式、空值，以及能否刪除。
+    <code>GameDataContext</code> 的 4 個 switch、changeHistory 的 3 張對照表、<code>AdminHistoryPage</code> 的 <code>TARGET_OPTIONS</code>、<code>saveEntity</code>，全部改成查這張表。
+    型別用 mapped type 從登錄表推導，漏登記時由 tsc 報錯，不再依賴字串比對的測試。<br>
+    <code>collectionKeys.ts</code> 維持零依賴，因為 Worker 的漂移測試要讀它；登錄表再 import 它，不取代它。
+  </div>
+  <div class="code-block"><span class="cm">// src/lib/entityRegistry.ts（示意）</span>
+<span class="kw">export const</span> <span class="nm">ENTITY_REGISTRY</span> = {
+  pilots:  { collection: <span class="st">'pilots'</span>,  key: <span class="st">'pilots'</span>,        history: <span class="st">'pilot'</span>,  label: <span class="st">'機師'</span>, fetch: getPilots,  deletable: <span class="kw">true</span>  },
+  grayOps: { collection: <span class="st">'grayOps'</span>, key: <span class="st">'grayOpsRoster'</span>, history: <span class="st">'grayOps'</span>, label: <span class="st">'灰域行動'</span>, fetch: getGrayOps, deletable: <span class="kw">false</span> },
+  <span class="cm">// …每個集合一行；漏登記 → tsc 錯誤</span>
+} <span class="kw">as const satisfies</span> <span class="ty">Record</span>&lt;<span class="ty">EntityKind</span>, <span class="ty">EntitySpec</span>&gt;</div>
+
+  <div class="decision-block">
+    <strong>決策三：<code>saveEntity()</code> 是後台唯一的存檔入口，用一個 transaction 包住四件事</strong>
+    <ol style="margin:8px 0 0 20px;line-height:1.9;">
+      <li>讀現況，與編輯器開啟時的基準比對；不一致就拋出 <code>ConcurrentEditError</code>，並列出被別人改過的欄位。</li>
+      <li>寫入文件，沿用 <code>stripUndefined</code> 與寫入被拒的診斷。</li>
+      <li>在同一個 transaction 裡寫 <code>meta/gameData.versions.&lt;key&gt;</code>。bump 不再是另一個請求，也不再 <code>.catch(() =&gt; '')</code>。</li>
+      <li>寫入 changeHistory，<strong>帶上改前快照 <code>before</code></strong>。</li>
+    </ol>
+    任何一步失敗就整筆失敗，並把錯誤顯示給編輯者。12 個 <code>update*</code> 和 <code>saveWithHistory</code> 都收斂到這裡。
+    腳本端（Admin SDK）另建 <code>scripts/lib/dataVersion.mjs</code>，5 份手寫的 bump 都改用它。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 決策三推翻 PLAN-030 決策十，需要站長確認（Q1）</strong><br>
+    PLAN-030 決策十規定「log 寫入失敗絕不可擋住主操作」，當時的前提是資料可以重新產生。現在核心資料只有一份，「存進去了、卻沒有紀錄也救不回來」比「這次存不進去」更糟。
+    <strong>建議：</strong>歷史寫入併進 transaction，<strong>沒有歷史就不准存</strong>。<br>
+    代價是 changeHistory 的規則（<code>actorUid == request.auth.uid</code>）出問題時，所有存檔都會失敗。B-4 要先用 emulator 測試釘住這條規則。
+    改前快照的大小依現況估計：單筆機師文件約 10 KB 上下，遠低於 Firestore 1 MB 的文件上限；TTL 沿用兩年。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：並行檢查的基準用「正規化後的內容雜湊」，不新增 updatedAt 欄位</strong><br>
+    編輯器開啟時，對它拿到的文件算一次雜湊（穩定排序鍵，並先做 <code>stripUndefined</code>）。存檔時在 transaction 裡對伺服器現況算同樣的雜湊，兩者不同就擋下。
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>這個做法同時涵蓋兩種情境：<strong>別的分頁改過</strong>，以及<strong>自己讀到的是過期快取</strong>。</li>
+      <li>不加 <code>updatedAt</code>：既有文件都沒有這個欄位，腳本也不會記得寫，這是 PLAN-041 的「0/5 定律」。</li>
+      <li>草稿（<code>StoredDraft</code>）也記下基準雜湊。還原草稿時若現況已經不同，就先警示，不再直接覆蓋。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 雜湊的正規化陷阱</strong><br>
+    Worker 會把 Firestore Timestamp 轉成 ISO 字串（<code>workers/src/firestoreRest.ts:33</code>），直連則拿到 Timestamp 物件。雜湊前必須把兩者統一成同一種表示，否則經過 Worker 讀到的文件永遠會被判定為「別人改過」。
+    另外 <code>getPilots</code> 有 <code>orderBy</code>、Worker 不排序，這只影響陣列順序，不影響單筆文件，但 F-3 會一併統一。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：後台只抽「外框」，不做依 schema 自動產生表單的通用 CRUD</strong><br>
+    後台大部分程式碼是各實體專屬的子編輯器：天賦算力變體、神驅分區、模組等級引用表、武器製作鏈。通用表單只會到處開例外。
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>useEntityEditor(kind)</code> 只負責編輯中狀態、草稿、新增前檢查（含「資料已載入」）、存檔、取消確認與刪除。</li>
+      <li>驗證寫成每個實體一支 <code>validateX(doc, ctx) → {errors, warnings}</code> 純函式，由 <code>saveEntity</code> 呼叫，腳本的 dry-run 也能共用。</li>
+      <li>不在 <code>firestore.rules</code> 裡做欄位驗證：只有 admin 能寫，維護成本遠高於收益。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：ID 不遷移，改用 branded 型別擋住新的錯誤</strong><br>
+    技能 id 大小寫兩制並存、模組有 6 種形狀、背包與元件新舊兩制。全面遷移會牽動分享碼、引用與快取，成本遠大於收益。
+    改為 <code>type PilotId = string &amp; { readonly __brand: 'pilot' }</code> 這類型別，讓 tsc 抓「把 mechId 塞進 pilotId 欄位」的錯誤。舊資料不動。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：故事館動畫的時序只有一份來源</strong><br>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>新增 <code>src/components/lore/loreMotion.ts</code>，定義每段過場的時長、延遲與 easing。</li>
+      <li>由 <code>.lore-page</code> 根元素把它們寫成 CSS 變數，keyframes 讀變數，WAAPI 也 import 同一份。</li>
+      <li>過場收尾改成等 <code>el.getAnimations()</code> 的 <code>finished</code>，不再用 setTimeout 猜時間；只在沒有動畫（reduced-motion）時退回立即執行。</li>
+      <li>故事館 CSS 拆成 <code>src/pages/lore/lore.css</code>，由 lazy 載入的故事館頁面 import，不再每一頁都下載。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策八：與 PLAN-042-E 的排程</strong><br>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>A 段、B-1～B-5、C、D 段</strong>和 042-E 不衝突，可以隨時做。</li>
+      <li><strong>B-6 遷移 pilots 與 pilotLore 編輯器</strong>：042-E 正在改 <code>PilotAdmin</code> 的個人資料分頁和故事館編輯台，所以排在 042-E 的 C／D 段部署之後。
+        如果 B-4 先完成，042-E 的編輯台改寫可以直接用 <code>saveEntity</code>。</li>
+      <li><strong>E 段</strong>（故事館動畫與樣式）排在 042-E 完成之後，避免兩邊同時改 <code>src/components/lore/*</code>。</li>
+      <li><code>loreArtTuning.ts</code> 搬進 pilotLore 的提議，建議直接併入 042-E 的 <code>LoreDoc</code> 擴充（E-4）。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策九：漂移檢查搭上備份的便車</strong><br>
+    B-1 的每週備份 workflow 已經握有唯讀 SA 和全集合 JSON，可以接著離線執行各種一致性檢查，不必再各自連 Firestore：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>專屬模組雙存（C-3）</li>
+      <li>名稱引用斷鏈（C-4）</li>
+      <li>既有的 <code>check-*-drift</code> 系列</li>
+    </ul>
+    有問題就讓 workflow 失敗，並用 GitHub 的失敗通知提醒站長。
+  </div>
+</section>
+
+<!-- 待站長決策 -->
+<section class="section">
+  <div class="section-label yellow">Decisions</div>
+  <div class="section-title">待站長決策</div>
+  <div class="table-wrap">
+  <table class="impact-table">
+    <tr><th>#</th><th>問題</th><th>建議</th><th>影響任務</th></tr>
+    <tr><td>Q1</td><td>歷史寫入要不要併進 transaction（推翻 PLAN-030 決策十）？</td><td>要。沒有歷史就不准存（見決策三）</td><td>B-4</td></tr>
+    <tr><td>Q2</td><td>備份存在哪裡？若 repo 是 public，workflow artifact 任何人都能下載</td><td>只備份前台本來就公開可讀的遊戲資料集合，不含 users／builds／systemLog／analytics／changeHistory；或推到私有 repo</td><td>B-1</td></tr>
+    <tr><td>Q3</td><td>「防線 C」（data-patch skill、drift 腳本、爬蟲封存）要取消忽略，還是搬到私有 companion repo？</td><td>bump 與 drift 腳本取消忽略（appkey 早已公開在其他檔案）；skill 與封存搬到私有 repo，取代 <code>E:\</code></td><td>B-2、D-1</td></tr>
+    <tr><td>Q4</td><td>CHANGELOG.md 要繼續 commit 嗎？</td><td>停止 commit，改在 CI 產生 release notes；至少要加淺層 clone 防護</td><td>D-5</td></tr>
+    <tr><td>Q5</td><td>主站改用 <code>actions/deploy-pages</code>（artifact 部署，不留 gh-pages 歷史）？</td><td>做，但 PR 預覽要先找到新家（例如 Cloudflare Pages），否則會一起壞掉</td><td>D-6</td></tr>
+    <tr><td>Q6</td><td>patchVersions 從名稱改存 id 要不要做？</td><td>先做 rename 掃描（C-4）；遷移（C-5）工程量 L，可另立子計畫</td><td>C-5</td></tr>
+    <tr><td>Q7</td><td>故事館斷點 899px 與全站 1023px 不同，是刻意的嗎？</td><td>如果不是，就統一成全站斷點</td><td>E-4</td></tr>
+    <tr><td>Q8</td><td><code>playwright</code>、<code>@breezystack/lamejs</code> 是否有本機腳本在用？</td><td>沒有就移除</td><td>D-8</td></tr>
+    <tr><td>Q9</td><td>更新履歷摘要的長度上限？</td><td>新紀錄 ≤ 120 字；既有紀錄不追溯</td><td>F-4</td></tr>
+  </table>
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label red">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>A 安全網速修</strong>：CI 跑測試、ErrorBoundary、<code>public/debug</code>、程式碼分割、Context memo、後台輸入框 bug</li>
+      <li><strong>B 寫入安全網</strong>：每週備份、共用的 bump 工具、<code>ENTITY_REGISTRY</code>、<code>saveEntity</code>（原子寫入＋歷史＋改前快照）、並行檢查、編輯器遷移、<code>useEntityEditor</code>＋驗證、GameDataContext 改查登錄表</li>
+      <li><strong>C 資料模型</strong>：讀取邊界正規化、退掉雙格式、專屬模組一致性、名稱引用掃描與遷移評估、刪除靜態 patchVersions、branded id、localStorage 改用 IndexedDB、死碼與文件漂移</li>
+      <li><strong>D 維運與部署</strong>：防線 C 與 <code>E:\</code>、部署後冒煙測試、Worker 自動部署、CF 規則存檔與 CLAUDE.md 修正、CHANGELOG、deploy-pages 評估、腳本歸檔、依賴清理</li>
+      <li><strong>E 故事館動畫與樣式</strong>：<code>loreMotion.ts</code>、<code>lore.css</code> 拆分與色票、觸發 layout 的過場、斷點、捲動還原</li>
+      <li><strong>F 結構整理</strong>：後台資料夾、utils／UI 慣例、dev／prod 讀取路徑一致、更新履歷長度檢查</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>模擬器相關問題（站長 2026-10-13 指示先不列入，另案處理）：</strong>
+        <ul style="margin:4px 0 0 16px;">
+          <li>分享碼會靜默丟掉後台新建的背包、元件、模組、技能：<code>encodeLoadout</code> 不回報，<code>unshareable</code> 清單也沒有 UI 使用。<strong>審查評為 Critical</strong>，建議盡快另立計畫。</li>
+          <li>網址上的 <code>?b=</code> 永遠不會被清掉，F5 會把編輯洗回原樣。</li>
+          <li><code>LoadoutPage</code> 的接線層：規則在 tsx 裡重算，<code>replaceNote</code> 已和 reducer 分歧；分享 kind 清單手抄三份；右欄 4 個 useState；「空集合等於未載入」只是慣例。</li>
+          <li>模擬器沒有 <code>NdOverrideContext</code> Provider，天賦的 BUFF 階可能和詳情頁不同。</li>
+          <li>雲端書架的「搬移」不是原子操作；<code>check:share-ids</code> 接進 CI。</li>
+        </ul>
+        本計畫只會因為型別或資料收斂（C-1、C-2）連帶改到模擬器的<strong>讀取端</strong>；A-4 也只改 <code>App.tsx</code> 對 <code>LoadoutPage</code> 的 import 方式，不碰模擬器內部。</li>
+      <li>大規模 ID 遷移（決策六）。</li>
+      <li>依 schema 自動產生表單的通用後台框架（決策五）。</li>
+      <li>只為了行數拆檔：<code>loadoutRules</code>、<code>LoadoutExportCard</code>、<code>simReducer</code> 內容內聚，而且三到四成是註解。</li>
+      <li>一次大搬 <code>utils/</code>：只訂慣例，改到哪就搬到哪（F-2）。</li>
+      <li>從變更歷史一鍵還原到某個版本：B 段只負責把改前快照存下來、能在歷史頁檢視；還原 UI 之後再評估。</li>
+      <li>EDITOR 角色、在 rules 裡做欄位驗證。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label red">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-060 進度表</h4>
+      <p>A–F 六段、40 項（其中 6 項含站長步驟）</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-030_資料變更歷史/計畫書.html">
+      <div class="doc-tag">Predecessor</div>
+      <h4>◆ PLAN-030 資料變更歷史</h4>
+      <p>changeHistory、級聯刪除；決策十由本計畫決策三修訂（待 Q1）</p>
+    </a>
+    <a class="doc-item" href="../../觀察維護中/PLAN-043_背包技能集合/計畫書.html">
+      <div class="doc-tag">Lesson</div>
+      <h4>◆ PLAN-043 背包技能集合</h4>
+      <p>新增集合漏改 Worker 白名單導致正式站 404 的前例</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-045_登出診斷與系統日誌/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-045 登出診斷與系統日誌</h4>
+      <p>寫入被拒診斷、後台草稿自動暫存</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042-E_機師資料分家與故事館編輯台/計畫書.html">
+      <div class="doc-tag">Overlap</div>
+      <h4>◆ PLAN-042-E 機師資料分家</h4>
+      <p>PilotAdmin、編輯台、故事館元件重疊；排程見決策八</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/01_架構設計/系統架構.html">
+      <div class="doc-tag">Architecture</div>
+      <h4>🏗️ 系統架構</h4>
+      <p>B、F 段完成後更新資料夾分類與寫入流程</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/04_Firebase/資料庫設計文件/changeHistory.html">
+      <div class="doc-tag">Data Model</div>
+      <h4>🗄️ changeHistory 集合文件</h4>
+      <p>B-4 補上 <code>before</code> 快照與新增的 target 種類</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-060 — <a href="../index.html" style="color:var(--accent-red);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

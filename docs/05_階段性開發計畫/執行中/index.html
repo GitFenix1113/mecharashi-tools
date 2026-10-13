@@ -31,6 +31,17 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card red">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-060 · 架構安全網與維護性改善</h3>
+      <p>2026-10-13 專案架構審查的改進項目（模擬器相關另案處理）。爬蟲退場後 Firestore 成了人工資料唯一的一份，但 8 個核心集合存檔不記歷史、整份覆寫不做並行檢查、版本 bump 失敗被吞、沒有自動備份；90 多個測試檔也沒有任何自動流程會跑。
+        A 段速修（CI 跑測試、ErrorBoundary、程式碼分割、後台輸入框 bug）；B 段核心是 <code>ENTITY_REGISTRY</code> 加 <code>saveEntity()</code>，一個 transaction 寫文件、版本號、歷史與改前快照，新增集合從改 20 處變成登錄表一行；
+        C 段整理資料模型（正規化、退掉雙格式、名稱引用）；D 段補維運與部署檢查；E 段把故事館動畫時序收成單一來源；F 段整理資料夾。<br><b>2026-10-13 立案，0／40。</b></p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-060_架構安全網與維護性改善/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-060_架構安全網與維護性改善/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-042-E · 機師資料分家與故事館編輯台</h3>
