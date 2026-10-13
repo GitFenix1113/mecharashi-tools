@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-059 職業圖示與陣營徽章 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-059 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-059</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    職業圖示與陣營徽章<span style="-webkit-text-fill-color:var(--text-secondary);">Icon_pilotclass · Icon_wanzertype · Icon_logo</span>
+  </h1>
+  <p class="hero-sub">把官方的職業圖示、機甲類型（駕照）圖示收進圖庫，取代全站的職業、駕照與機甲類型文字字牌；陣營徽章只給機師故事館用，由管理者在編輯故事時逐位挑選。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value cyan">PLAN-059</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-13</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">圖庫・機師／機甲圖鑑・武器・背包・故事館・配裝模擬器・後台故事／形態編輯</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value cyan">實作中（A／B 完成，2026-10-13）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-055／056 圖庫架構・PLAN-042-A 故事館・PLAN-041 形態（forms.icon）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>視覺提案（改前／改後對照，圖為實際官方原檔）：</strong><code>_local-notes/2026-10/2026-10-13_職業圖示與陣營徽章導入提案.html</code>（本機、不進版控）。
+    本計畫書是定案版；兩者不一致時以本計畫書為準。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>職業與駕照只有文字字牌</strong><br>
+    圖鑑卡片的立繪上疊了三顆字牌（左上職業、右上駕照、左下品質），擠在臉附近；詳情頁、故事館、配裝模擬器也都只有文字。
+    官方的職業圖示（<code>Icon_pilotclass_*</code>）與駕照圖示（<code>Icon_wanzertype_*</code>）其實已經在擷取裡，
+    但被 <code>--other-icons</code> 當成「站上用不到」封存在 repo 外（<code>site-archive/game/icons/occupationtype/</code>）。
+  </div>
+
+  <div class="problem-block">
+    <strong>職業的樣式來源散落各處、順序與遊戲不一致</strong><br>
+    職業色表 3 份（<code>PilotBadges</code> 的 <code>CLASS_CONFIG</code>、<code>PilotsPage</code> 與 <code>PilotDetailPage</code> 各一份 <code>CLASS_STYLES</code>）、
+    職業清單 2 份（<code>PilotsPage.CLASSES</code>、<code>LoadoutPage.PILOT_CLASSES</code>），另有 6 處用 <code>.split(' ')[0]</code> 從三件一組的字串拆出文字色。
+    站上順序是守護者打頭；遊戲內篩選的順序是格鬥家、突擊手、狙擊手、戰術家、守護者、機械師、調構師（站長截圖）。
+  </div>
+
+  <div class="problem-block">
+    <strong>機甲類型：同一個概念，5 種寫法、2 套配色</strong>（2026-10-13 追加）<br>
+    機甲 <code>armorType</code> 存「輕型／<b>中甲</b>／重型」、機師 <code>license</code> 存「輕型／<b>中型</b>／重型」、背包 <code>assemblableArmorType</code> 存 <code>Light/Medium/Heavy</code> 卻顯示成「輕甲／中甲／重甲」、
+    武器 <code>mechRestriction</code> 存 <code>light/medium/heavy/none</code> 顯示「○型限定」。比對早已統一走 <code>normalizeArmorType.ts</code>，但<b>畫面</b>沒有：
+    色表散在 7 處，其中配裝模擬器的 <code>ARMOR_TONE</code> 用青／紫／橘，其餘 6 處是青／綠／紅；機師的駕照則是無色。
+  </div>
+
+  <div class="problem-block">
+    <strong>故事館的陣營圓環塞文字</strong><br>
+    扉頁「三枚徽記」的陣營那一枚是把文字刻在 68px 圓環裡，長名字會擠成三行。程式註解寫著
+    「陣營刻意不畫圖示：30 個值、18 個只有 1 人，畫圖是會增生的美術債」——官方陣營徽章（<code>Icon_logo_*</code>，67 張）已經在擷取裡，這個理由不再成立。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label cyan">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：職業對照（站長口述＋官方資料驗證）</strong><br>
+    證據：<code>pilots.biometicComputer[0].icon</code>（生體電腦的「職業單元」）用的就是這組圖，82 位有此資料的機師<b>全數</b>與 <code>class</code> 一致；<code>010</code> 只出現在海莉絲。
+    英文名用<b>全球版正式名稱</b>（站長提供）；調構師全球版尚未推出，暫用 EN Wiki 作者的譯名 <b>Shifter</b>，全球版上線後替換。
+    <table class="impact-table">
+      <tr><th>官方編號</th><th>職業</th><th>全球版英文</th><th>站上色（沿用）</th></tr>
+      <tr><td><code>001</code></td><td>格鬥家</td><td>Fighter</td><td>red</td></tr>
+      <tr><td><code>002</code></td><td>突擊手</td><td>Raider</td><td>orange</td></tr>
+      <tr><td><code>003</code></td><td>狙擊手</td><td>Sniper</td><td>blue</td></tr>
+      <tr><td><code>004</code></td><td>戰術家</td><td>Tactician</td><td>purple</td></tr>
+      <tr><td><code>005</code></td><td>機械師</td><td>Machinist</td><td>cyan</td></tr>
+      <tr><td><code>006</code></td><td>守護者（盾牌）</td><td>Guardian</td><td>green</td></tr>
+      <tr><td><code>010</code></td><td>調構師</td><td>Shifter <span class="badge-med">非官方</span></td><td>yellow</td></tr>
+    </table>
+    其餘 <code>007／008／009／011／012</code> <b>一併匯入</b>：<code>011</code>＝海莉絲「先鋒形態」、<code>012</code>＝「虛粒子形態」（站長從遊戲內的形態輪盤認出，輪盤另兩格是 002 突擊、004 戰術）；
+    其他可能是未來的新職業或新形態（如曜）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：職業 → 圖示寫在程式，不動 DB</strong><br>
+    職業是 enum、圖示由職業唯一決定、官方資料零例外——寫成單一來源 <code>src/data/pilotClasses.ts</code>（官方編號序、中英文名、圖示 key、色），
+    不在 <code>pilots</code> 加欄位、不 bump、不需要後台。<code>PilotClass</code> 的<b>值</b>不變（DB 存的是中文值），只把宣告順序改成<b>遊戲內篩選的順序</b>：格鬥家、突擊手、狙擊手、戰術家、守護者、機械師、調構師（站長截圖；科研的 <code>RESEARCH_PILOT_CLASSES</code> 也是這個順序）。注意它和圖示編號不同（005 機械師、006 守護者），以遊戲畫面為準；後台下拉跟著變。
+    3 份色表、2 份職業清單、6 處拆字串全部改讀這份。
+  </div>
+
+  <div class="warning-block">
+    <strong>Tailwind v4 的地雷：</strong>Tailwind 只產生<b>原始碼裡逐字出現過</b>的類名，執行期拼出來的 <code>bg-accent-${c}</code> 會靜默失效
+    （<code>PickerVariants.TONE_BAR</code> 就是為此存在的反查表）。所以單一來源要把每個職業的 <code>text-*</code>／<code>bg-*</code>／<code>border-*</code>／色條類名<b>逐字寫完整</b>，不可組字串。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：一張白圖、七種顏色——CSS mask 上職業色（站長定案：上色）</strong><br>
+    官方圖是白色透明底。<code>ClassIcon</code> 用 <code>mask-image</code> ＋ <code>background: currentColor</code>，圖示吃父層文字色：站上沿用既有職業色、故事館紙色主題自動變墨色，
+    不必存彩色版本。尺寸：<code>_s</code>（72×80，線條乾淨）給 ≤24px、<code>_l</code>（340²，有刮痕質感）給 ≥32px，元件依 size 自動選。
+  </div>
+
+  <div class="warning-block">
+    <strong>配裝匯出圖卡例外：</strong>匯出走 html-to-image（DOM 轉成 SVG 再畫成 PNG），<b>CSS mask 的外部圖不一定會被內嵌</b>。<code>LoadoutExportCard</code> 改用 <code>&lt;img&gt;</code> 白色原圖或維持文字，實作時實測決定。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：駕照圖示（站長確認）</strong><br>
+    <code>Icon_wanzertype_001</code>＝輕型（L）、<code>002</code>＝中型（M）、<code>003</code>＝重型（H）。
+    <code>004</code>（三者合體）推測是遊戲介紹用，目前沒有全機型機師 → <b>匯入但不使用</b>。駕照字牌改「圖示＋字」，同一套 mask 上色。<br>
+    10-13 追加：同一套圖示延伸到機甲類型、武器限定、背包可裝備 → 決策九、決策十。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：陣營徽章只在故事館，存在 <code>pilotLore.factionLogos</code></strong><br>
+    <code>LoreDoc</code> 新增選填 <code>factionLogos?: string[]</code>，<b>最多 2 個</b>（目前最多的複合值就是兩個陣營，如「獵豹物流、電鰻傭兵團」），存官方檔名<b>含變體</b>（如 <code>Icon_logo_0025_00</code>）。
+    只有故事館讀；不碰 <code>pilots</code>、不上圖鑑。館首頁本來就載入 <code>pilotLore</code>（算章節數），加徽章不多讀任何集合。
+    Firestore rules 對 <code>pilotLore</code> 不驗欄位、Worker 整包代理不遮欄位 → 兩者都不必改。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：不做「陣營 → 徽章」字典，改逐位挑選＋同陣營建議</strong><br>
+    <code>pilots.faction</code> 是自由文字（31 種寫法，含「北陸聯合·聯合安全總署」這種複合值），做字典等於替站長決定誰跟誰算同一個陣營。
+    改成編輯機師故事時逐位挑選（站長指定的入口），選圖器提示「同樣寫『晨星同盟防衛軍』的其他機師已選：…」一鍵套用——維護量接近字典，判斷權留在管理者手上。
+    <b>不預填</b>：沒有官方資料能把陣營文字對到徽章編號，看字樣猜的不寫進 DB。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：徽章的兩種變體，一個欄位兩種底色都對</strong><br>
+    <code>_00</code> 是白色單色 → 用同一套 mask 吃 <code>currentColor</code>：紙色扉頁上是墨色（像蓋上去的印章）、暗底縮圖上是白色。
+    <code>_01</code> 是彩色 → 原樣顯示。選圖器的預覽鋪在紙色底上＝前台實際效果（白字彩色版如 HORIZON 在紙上看不清，選的當下就看得出來）。
+    沒選徽章的機師維持現在的文字圓環，不會出現破圖或空圈。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策八：併入 PLAN-055 的扁平圖庫，新增三族</strong><br>
+    <code>public/images/game/icons/class/</code>（職業 21 張）、<code>license/</code>（駕照 7 張：<code>_l</code> 4 張＋只在共用圖集裡的 <code>_s</code> 3 張）、<code>camp/</code>（陣營 65 張＝67 張扣掉 NVIDIA 聯動的 <code>0028_01</code>、<code>0032_01</code>，站長定案不收）。
+    <code>LIBRARY_RE</code> 加 <code>pilotclass_|wanzertype_|logo_</code>、<code>iconFamily()</code> 加三族（<code>scripts/lib/gameIconKinds.mjs</code> 與 <code>src/utils/gameIcons.ts</code> 兩版同步、測試交叉比對）。
+    好處：<code>gameIconCandidates()</code> 直接解析這些 key，<b><code>forms.icon</code> 不改型別就能存 <code>Icon_pilotclass_011_s</code></b>（形態輪盤的圖示）。
+    匯入走新模式 <code>import-game-assets.mjs --emblems</code>（dry-run → <code>--apply</code>），維持「站長不靠 AI 也能跑」。
+  </div>
+
+  <div class="warning-block">
+    <strong>同檔名、不同圖：</strong>擷取的 <code>factory/</code>（機甲廠商 GeekX／SparkingPlug／InnoDrive…）也有 <code>Icon_logo_0024~0027</code>，與陣營徽章<b>檔名相同、內容不同</b>（sha256 皆不同）。
+    <code>--emblems</code> 只吃 <code>camptype</code>；同名異圖一律守門中止。日後若要收廠商 logo，key 必須另立命名空間，不能共用 <code>Icon_logo_</code> → <code>camp/</code> 的解析。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策九：機甲類型（輕／中／重）一個概念、一套圖示（2026-10-13 追加）</strong><br>
+    <code>normalizeArmorType.ts</code> 寫明「執照是這位機師的機種」——輕型執照只能開輕型機甲，一對一。所以駕照圖示 <code>wanzertype_001～003</code> 同時就是機甲類型圖示：
+    看到同一個形狀，就知道哪位機師開哪台機甲、哪件裝備能裝在哪台上。
+    新增單一來源 <code>src/data/mechWeightClasses.ts</code>（圖示 key、顏色、顯示字）與元件 <code>MechTypeIcon</code>，吃上述 5 種寫法，一律先過 <code>normalizeArmorType.ts</code> 再查表；
+    <b>資料值不動</b>，只統一畫面。套用處：機甲圖鑑（篩選、卡片、緊湊）、機甲詳情頁首、武器限定、背包可裝備、背包頁篩選、配裝模擬器、彩虹機甲規劃、引用浮窗。
+    機甲卡片的類型改成<b>右下角圓章</b>，與機師卡的職業圓章同一個位置——兩本圖鑑共用「右下角＝主分類、右上角＝品質」的語彙。
+    清單裡「不限制」一律不顯示（107 個「輕＋中＋重」背包與 128 把 none 武器一致），只有限定的才掛徽章。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十：機甲類型的顯示規則（2026-10-13 站長定案）</strong>
+    <ol style="margin:8px 0 0 18px;line-height:1.9;">
+      <li><b>取消「輕甲／中甲／重甲」</b>。畫面上用短名「輕型／中型／重型」；遊戲內的全名「輕型機甲／中型機甲／重型機甲」放在詳情頁資訊列、滑鼠提示與 <code>aria-label</code>（站長授權評估：全名在手機篩選列會換成兩行、同排徽章多佔約 26px，而旁邊已有 L／M／H 圖示，「機甲」兩字是重複資訊）。</li>
+      <li><b>欄位名套同一條規則</b>：短稱統一「駕照」（「執照」併入；篩選列、模擬器晶片），全名「駕駛許可」（官方用詞）用在機師詳情頁資訊列與提示；機甲篩選列的「裝甲」改「類型」（避免和裝甲數值混淆）。模擬器說明句的文案不在此列。</li>
+      <li><b>配色統一青／綠／紅</b>（輕／中／重），模擬器 <code>ARMOR_TONE</code> 的青／紫／橘改掉。</li>
+      <li><b>機師處中性色</b>：駕照圖示不上類型色，避免和職業色撞（守護者綠＝中型綠、機械師青＝輕型青、格鬥家紅＝重型紅）；機甲與裝備處才上色。</li>
+      <li><b><code>004</code> 用於裝備詳情頁的「可裝備：全機型」</b>；清單裡不限制的一律不顯示。機師處仍不用。</li>
+    </ol>
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label cyan">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>A 素材與圖庫：三族匯入（<code>--emblems</code>）、key 解析、<code>--other-icons</code> 排除、差異報告「下一步」、README、選圖器索引</li>
+      <li>B 單一來源：<code>pilotClasses.ts</code>＋<code>ClassIcon</code>、<code>mechWeightClasses.ts</code>＋<code>MechTypeIcon</code>、收斂重複色表與清單、職業改成遊戲內順序</li>
+      <li>C 套用：圖鑑清單（篩選列／卡片右下圓章／緊湊檢視）、詳情頁（職業徽記＋英文副標、立繪圓章、浮水印、初始被動能力標題）、故事館、配裝模擬器、引用浮窗</li>
+      <li>D 陣營徽章：型別、後台故事編輯器選圖器、扉頁徽記、館首頁卡片角標、文件同步</li>
+      <li>E 形態圖示：形態後台的選圖器開放職業圖示分頁（<code>forms.icon</code> 已是官方檔名欄位）</li>
+      <li>F 機甲類型套用（10-13 追加）：機甲圖鑑、機甲詳情頁首、武器限定、背包可裝備、模擬器、彩虹機甲規劃、引用浮窗</li>
+      <li>G 驗證與上線</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>圖鑑頁顯示陣營徽章（站長指定只在故事館；圖鑑頁也不載入 <code>pilotLore</code>）</li>
+      <li>故事館首頁「依陣營」分組——等多數機師選好徽章再議（用徽章編號分組可繞過文字未正規化的問題）</li>
+      <li>機甲廠商 logo（<code>factory/</code>）</li>
+      <li>NVIDIA 聯動 logo 兩張</li>
+      <li>代填資料：陣營徽章與形態圖示由站長／管理者在後台挑，開發端不預填</li>
+      <li>科研頁的 <code>RESEARCH_PILOT_CLASSES</code>（6 職業、科研加成用，語意不同，不併入）</li>
+      <li>機甲類型的<b>資料值</b>正規化（「中甲」改「中型」等）——比對已由 <code>normalizeArmorType.ts</code> 處理；該檔的設計前提就是「用轉換層、不改資料」（「中型」是官方科研頁與駕照的用詞）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label cyan">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-059 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-055_技能BUFF圖示管理/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-055 技能／BUFF 圖示管理</h4>
+      <p>扁平圖庫、DB 只存官方檔名 key 的架構來源</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042-A_機師故事館/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-042-A 機師故事館</h4>
+      <p>pilotLore 集合、扉頁三枚徽記</p>
+    </a>
+    <a class="doc-item" href="../PLAN-041_機師形態變化/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-041 機師形態變化</h4>
+      <p>forms 集合與 forms.icon</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-059 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

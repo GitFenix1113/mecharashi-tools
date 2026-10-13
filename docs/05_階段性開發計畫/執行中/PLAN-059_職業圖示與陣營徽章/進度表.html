@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-059 職業圖示與陣營徽章 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-059 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-059</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">職業圖示與陣營徽章</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-13</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">23</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">3</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">24</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度（開發者 24＋站長／管理者 2）</span>
+      <span style="color:var(--accent-cyan);">23 / 26</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 88%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    機師與機甲兩本圖鑑、詳情頁、武器／背包、故事館、配裝模擬器的職業與機甲類型（駕照）都換成官方圖示，兩本圖鑑共用「右下角圓章＝主分類」的語彙，立繪不再被字牌蓋住；
+    故事館扉頁的陣營圓環換成官方徽章印章，由管理者在編輯故事時挑選。A／B 不碰 DB、可以先做。F（機甲類型）為 10-13 追加，顯示規則見計畫書決策十。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">素材與圖庫</div>
+  <div class="section-desc">三族官方圖收進 PLAN-055 的扁平圖庫，key 直接可解析；匯入流程維持站長不靠 AI 也能跑。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 圖庫 key 解析擴充</div>
+      <div class="task-group-meta">gameIconKinds.mjs · gameIcons.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">LIBRARY_RE／iconFamily 新增 class、license、camp 三族</div>
+        <div class="task-desc">
+          <code>Icon_pilotclass_*</code> → <code>class/</code>、<code>Icon_wanzertype_*</code> → <code>license/</code>、<code>Icon_logo_*</code> → <code>camp/</code>。
+          Node 版與 TS 版同步，既有交叉比對測試補三族案例（<code>gameIconKinds.test.mjs</code> 裡把 <code>Icon_pilotclass_001_s</code> 當「BUFF 資料夾裡的別種圖」的那幾列要一起改）。
+          完成後 <code>gameIconCandidates()</code> 直接吃這三族的 key。
+        </div>
+        <div class="task-file">scripts/lib/gameIconKinds.mjs · src/utils/gameIcons.ts · scripts/lib/gameIconKinds.test.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 匯入模式 --emblems</div>
+      <div class="task-group-meta">scripts/import-game-assets.mjs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">職業 21 張＋駕照 7 張＋陣營 65 張 → public/images/game/icons/{class,license,camp}/（2026-10-13 已匯入，共 1.8 MB）</div>
+        <div class="task-desc">
+          dry-run 先報告、<code>--apply</code> 才寫；WebP q82、原尺寸、保留透明（同既有圖庫）。
+          守門：陣營<b>只吃 <code>camptype</code></b>（<code>factory/</code> 的 <code>Icon_logo_0024~0027</code> 同名異圖）、排除 NVIDIA <code>0028_01</code>／<code>0032_01</code>、同名不同內容一律中止。
+          職業圖示全收（含 007／008／009／011／012）、駕照 004 照收。<br><b>實作時發現</b>：駕照的小圖 <code>_s</code> 只在 <code>uicom_abs</code> 的共用圖集裡（只有 Sprite，001～003），也一併收——小尺寸徽章用它比縮小 <code>_l</code> 清楚；<code>ui/textimages/</code> 另有一組烘了簡中字（輕型机甲）的戰鬥用圖，不收。職業／駕照用 lossless（當 mask 用、邊緣不糊），陣營徽章 q82。報告：<code>_local-notes/2026-10/2026-10-13_職業駕照陣營圖示匯入報告.md</code>。<code>check-image-refs</code> 確認 <code>pilots.biometicComputer</code> 裡 82 筆職業圖示引用現在都對得到圖庫。
+        </div>
+        <div class="task-file">scripts/import-game-assets.mjs · public/images/game/icons/class|license|camp/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 例行流程接上</div>
+      <div class="task-group-meta">--other-icons · diff-game-dump · README</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">--other-icons 不再重複封存這三類；差異報告遇到新圖時在「下一步」列出 --emblems</div>
+        <div class="task-desc">
+          差異報告的「下一步」照抄清單格式（✅／⬜＋可直接貼的指令）。README 的目錄說明與「匯入指令一覽」各補一行。
+        </div>
+        <div class="task-file">scripts/lib/gameIconKinds.mjs · scripts/diff-game-dump.mjs · public/images/game/README.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 選圖器索引</div>
+      <div class="task-group-meta">scripts/generate-icon-index.mjs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">index.json 加 class／license／camp 清單</div>
+        <div class="task-desc">給 D-2 陣營徽章選圖器與 E-1 形態選圖器用；前台顯示不需要索引（key → 路徑是確定的）。</div>
+        <div class="task-file">scripts/generate-icon-index.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label cyan">Phase B</div>
+  <div class="section-title">職業單一來源與圖示元件</div>
+  <div class="section-desc">職業 → 圖示是固定對照，寫在程式；收斂散落的色表與清單。不改 DB、不改 enum 的值。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; pilotClasses.ts ＋ ClassIcon</div>
+      <div class="task-group-meta">src/data/pilotClasses.ts · src/components/icons/ClassIcon.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">單一來源：遊戲內順序、中文名、全球版英文名、圖示 key、色類名</div>
+        <div class="task-desc">
+          英文：Fighter／Raider／Sniper／Tactician／Machinist／Guardian；調構師暫用 Shifter（EN Wiki 譯名，註明非官方、全球版上線後替換）。
+          色類名逐字寫完整（<code>text-*</code>／<code>bg-*</code>／<code>border-*</code>／色條），不組字串——Tailwind v4 只產生原始碼裡出現過的類名。
+          <code>ClassIcon</code>：CSS mask ＋ <code>currentColor</code>，依尺寸自動選 <code>_s</code>／<code>_l</code>，帶 <code>aria-label</code>。
+        </div>
+        <div class="task-file">src/data/pilotClasses.ts · src/components/icons/ClassIcon.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 收斂重複定義、改遊戲內順序</div>
+      <div class="task-group-meta">PilotBadges · PilotsPage · PilotDetailPage · LoadoutPage · enums.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">3 份色表、2 份職業清單、6 處 .split(' ')[0] 改讀單一來源；ClassBadge 改圖示＋字</div>
+        <div class="task-desc">
+          <code>PilotClass</code> 宣告順序改遊戲內篩選順序：格鬥家、突擊手、狙擊手、戰術家、守護者、機械師、調構師（值不變，後台下拉跟著變；與圖示編號 005／006 相反，以遊戲畫面為準），同步 <code>enums.html</code>。
+          <code>PickerVariants.TONE_BAR</code> 保留（它是通用的「文字色 → 色條」反查，模擬器的機甲類型色也走它），只更新註解。<code>RESEARCH_PILOT_CLASSES</code>（科研用）不動。<br>結果：<code>CLASS_CONFIG</code> 與兩份 <code>CLASS_STYLES</code> 刪除，6 處拆字串改讀 <code>pilotClassMeta()</code>；本機確認圖鑑篩選列、故事館分組都是遊戲順序。
+        </div>
+        <div class="task-file">src/components/badges/PilotBadges.tsx · src/types/enums.ts · docs/02_技術文件/04_Firebase/資料庫設計文件/enums.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 機甲類型單一來源 ＋ MechTypeIcon</div>
+      <div class="task-group-meta">src/data/mechWeightClasses.ts · src/components/icons/MechTypeIcon.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">一份定義、一個元件，同時給駕照、機甲類型、武器限定、背包可裝備用（決策九）</div>
+        <div class="task-desc">
+          001 輕型／002 中型／003 重型；<code>004</code> 只用於裝備詳情頁「全機型」（決策十）。元件吃 5 種寫法（<code>輕型/中甲/重型</code>、<code>中型</code>、<code>Light/Medium/Heavy</code>、<code>light/medium/heavy</code>），
+          一律先過 <code>normalizeArmorType.ts</code> 轉成 <code>ArmorType</code> 再查表；認不得的值退回純文字。<b>資料值不動。</b>
+          <code>LicenseBadge</code> 改用它（機師處中性色，決策十）。7 處色表（<code>MechBadges</code>、<code>MechsPage</code>、<code>MechDetailPage</code>、<code>BackpackBadges</code>、<code>WeaponBadges</code>、<code>LoadoutPage.ARMOR_TONE</code>、彩虹機甲規劃）改讀這份；
+          顯示字：畫面短名「輕型／中型／重型」、全名「輕型機甲」給提示與 <code>aria-label</code>；配色統一青綠紅（決策十）。輕甲／中甲／重甲這組顯示字刪除。色類名同樣逐字寫完整。<br><b>實作時一併改的</b>：模擬器的拒絕理由與提示句（「中型執照無法駕駛重型機甲」「不能跨裝甲類型混搭：…是中型」「需要中型執照」）、複製配裝文字、「肩部槽位只有中型機甲才有」、引用浮窗副標、匯出圖卡——原本都直接印資料值「中甲」。相關測試的預期字串同步改。<br>⚠ 留給 C-4：故事館扉頁的駕照徽章是「<code>bg-black/50</code> 底＋紙色主題的墨色字」，在紙上對比很差（改版前就這樣）。
+        </div>
+        <div class="task-file">src/data/mechWeightClasses.ts · src/components/icons/MechTypeIcon.tsx · src/components/badges/PilotBadges.tsx · MechBadges.tsx · BackpackBadges.tsx · WeaponBadges.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label cyan">Phase C</div>
+  <div class="section-title">套用職業／駕照圖示</div>
+  <div class="section-desc">版面依視覺提案；每項都要過桌機與 375px 手機寬度。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 圖鑑篩選列</div>
+      <div class="task-group-meta">src/pages/pilots/PilotsPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">職業按鈕改「圖示＋字」、遊戲內順序；駕照按鈕加圖示（中性色）</div>
+        <div class="task-desc">未選取時圖示灰、選取時上職業色。這一列同時是全站「圖示 ↔ 職業」的圖例。</div>
+        <div class="task-file">src/pages/pilots/PilotsPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 圖鑑卡片與緊湊檢視</div>
+      <div class="task-group-meta">src/pages/pilots/PilotsPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">立繪左上職業字牌 → 右下職業圓章（同遊戲機師卡位置）；職業名降到資訊列</div>
+        <div class="task-desc">
+          圓章：半透明黑底＋職業色細框＋職業色圖示，淺色立繪背景上也要清楚。資訊列第三行「職業名（職業色）· 駕駛等級」。
+          右上駕照字牌改圖示＋字。緊湊檢視頭像右下角加小圓章。
+        </div>
+        <div class="task-file">src/pages/pilots/PilotsPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 機師詳情頁</div>
+      <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">職業徽記、立繪圓章、浮水印、初始被動能力標題、駕照</div>
+        <div class="task-desc">
+          小字牌 → 30px 圖示＋職業名＋全球版英文副標（只有這裡顯示英文）；立繪右下職業圓章；
+          背景 <code>_l</code> 圖放大、極低透明度當浮水印（不可擋到互動、不可造成水平捲動）；
+          「初始被動能力」（職業單元，unitType 6）標題旁放同一張職業圖示；資訊列的「駕照」改官方全名「駕駛許可：重型機甲」並加圖示（中性色，決策十）。<br><b>實作</b>：值在 sm 以上印全名、手機印短名（375px 實測全名會被切掉）。
+        </div>
+        <div class="task-file">src/pages/pilots/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 故事館</div>
+      <div class="task-group-meta">LoreHomePage · PilotLorePage</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">首頁「依職業」分組標題與卡片副標加圖示、分組改遊戲內順序；扉頁職業眉標加圖示、駕照徽記改圖示</div>
+        <div class="task-desc">館內 token 被覆寫成紙色墨字——圖示靠 <code>currentColor</code> 自動跟著變，不另寫一套色。<br><b>實作</b>：卡片副標的小圖示上職業色；扉頁駕照徽章原本是 <code>bg-black/50</code>（紙上幾乎看不見字），<code>LicenseBadge</code> 加 <code>surface="paper"</code> 改用紙色卡底。</div>
+        <div class="task-file">src/pages/lore/LoreHomePage.tsx · src/pages/lore/PilotLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-5 &nbsp; 配裝模擬器、引用浮窗、匯出圖卡</div>
+      <div class="task-group-meta">PilotIdentityCard · LoadoutPage · EntityRefView · LoadoutExportCard</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">身分卡職業 chip、選機師的篩選列與頭像牆、hover 浮窗副標加圖示；匯出圖卡實測 html-to-image</div>
+        <div class="task-desc"><b>實測結果</b>：html-to-image 1.11 會把 <code>mask-image</code> 的外部圖內嵌（對一顆職業圖示呼叫 <code>toPng</code>，輸出是字形形狀），所以匯出圖卡直接用同一套 <code>ClassIcon</code>／<code>MechTypeIcon</code>，不必改 <code>&lt;img&gt;</code>。<br>挑選器的篩選晶片加 <code>icon</code>、<code>PickerRowItem</code> 加 <code>metaIcon</code>（頭像牆副標）；模擬器的「執照」標籤與晶片改「駕照」。引用浮窗：機師副標改成「職業 · 品質 · 勢力」並帶職業圖示；<b>機甲副標的類型圖示也一併做了</b>（原屬 F-4）。</div>
+        <div class="task-file">src/components/loadout/PilotIdentityCard.tsx · src/pages/simulator/LoadoutPage.tsx · src/components/refs/EntityRefView.tsx · src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label cyan">Phase D</div>
+  <div class="section-title">陣營徽章（只在故事館）</div>
+  <div class="section-desc">pilotLore 新增選填欄位；管理者在編輯機師故事時逐位挑選。開發端不預填。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 型別與文件</div>
+      <div class="task-group-meta">src/types/lore.ts · pilotLore.html</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">LoreDoc.factionLogos?: string[]（最多 2、官方檔名含變體）</div>
+        <div class="task-desc">型別註解寫清楚：只有故事館讀、為什麼不做陣營字典、<code>_00</code>／<code>_01</code> 的渲染差異。同步 Firebase 文件（規則 2）。rules 與 Worker 不必改（已確認）。<br><b>實作</b>：純函式 <code>src/utils/factionLogos.ts</code>（合法檔名、<code>normalizeFactionLogos</code>、單色／彩色配對、同陣營建議，附測試）。存檔是 <code>setDoc</code> 整份覆寫，清空時存 <code>undefined</code> 欄位會真的移除。</div>
+        <div class="task-file">src/types/lore.ts · docs/02_技術文件/04_Firebase/資料庫設計文件/pilotLore.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 後台陣營徽章選圖器</div>
+      <div class="task-group-meta">src/pages/admin/AdminLorePage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">LoreEditPanel 加欄位：紙色預覽、單色／彩色成對顯示、最多 2、同陣營建議一鍵套用</div>
+        <div class="task-desc">
+          清單來自 A-4 索引的 <code>camp</code>，可依編號／英文字樣搜尋。「同陣營建議」＝其他 <code>faction</code> 文字相同的機師已選的徽章（從已載入的 pilotLore 推導，不另存）。
+          存檔仍走 <code>saveWithHistory</code>。
+        <br><b>實作</b>：<code>FactionLogoPicker</code>；圖示索引的載入抽成 <code>components/admin/gameIconIndex.ts</code> 與 GameIconPicker 共用。點同編號的另一個變體＝替換；滿 2 個後擋下並提示。搜尋只比對編號（沒有官方的陣營名稱資料可搜）。因後台要登入，驗收是在 headless 頁面以動態載入單獨渲染元件完成的；實際存檔請站長在後台試一次。</div>
+        <div class="task-file">src/pages/admin/AdminLorePage.tsx · src/components/admin/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 扉頁徽記</div>
+      <div class="task-group-meta">src/pages/lore/PilotLorePage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">陣營圓環：有徽章 → 徽章印章＋陣營名小字；沒選 → 維持文字圓環</div>
+        <div class="task-desc"><code>_00</code> 走 mask 吃墨色、<code>_01</code> 原樣；兩個徽章時並排。改掉「陣營刻意不畫圖示」那段已過時的註解。<br><b>實作</b>：陣營名改用 absolute 掛在圓環下方，不撐高這一列（天賦圓環、駕照徽章維持置中）。驗收時攔截 <code>/api/data/pilotLore</code> 臨時塞徽章（不寫 DB）：單色印章、雙徽章並排都正常。</div>
+        <div class="task-file">src/pages/lore/PilotLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 館首頁卡片角標</div>
+      <div class="task-group-meta">src/pages/lore/LoreHomePage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">縮圖左上角小徽章（暗底，<code>_00</code> 自動變白）</div>
+        <div class="task-desc">不得與右上的「N 章」徽章打架；pilotLore 讀不到時整個不出現（與章節徽章同一套降級）。</div>
+        <div class="task-file">src/pages/lore/LoreHomePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-5 &nbsp; 逐位挑選陣營徽章</div>
+      <div class="task-group-meta">後台 /admin 故事館</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">站長／管理者在編輯機師故事時挑徽章</div>
+        <div class="task-desc">資料作業，可長期進行；不阻塞開發收束。徽章與陣營的對應由管理者判斷（沒有官方資料可推導）。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">站長／管理者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label cyan">Phase E</div>
+  <div class="section-title">形態圖示</div>
+  <div class="section-desc">遊戲內調構師的形態輪盤用的就是職業圖示（海莉絲：先鋒 011、虛粒子 012、突擊 002、戰術 004）。<code>forms.icon</code> 已是官方檔名欄位，A-1 後即可存這組 key。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 形態後台選圖器開放職業圖示</div>
+      <div class="task-group-meta">GameIconPicker · FormAdmin</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">GameIconPicker 加「職業」分頁；形態卡片確認職業圖示的顯示（白圖要上色或墊底）</div>
+        <div class="task-desc">同步 <code>forms.html</code> 的 <code>icon</code> 欄位說明（可存技能圖示或職業圖示 key）。<br><b>實作</b>：<code>GameIconPicker</code>／<code>GameIconField</code> 加 <code>allowClass</code>，只有形態編輯開；目前的值是職業圖示時直接開在這一頁（不被「被動」預選擋掉）；白色字形墊暗底；不參與以圖搜圖。形態卡片（圖鑑與模擬器）顯示職業圖示時補內距。驗收以獨立渲染元件完成（帶入 <code>011_s</code> 開在正確分頁並選中）。</div>
+        <div class="task-file">src/components/admin/GameIconPicker.tsx · src/components/cards/FormCard.tsx · docs/02_技術文件/04_Firebase/資料庫設計文件/forms.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 海莉絲形態圖示</div>
+      <div class="task-group-meta">後台 /admin 形態</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">站長決定海莉絲四個形態是否改用職業圖示，並在後台選定</div>
+        <div class="task-desc">目前的 <code>forms.icon</code> 是技能類圖示；要不要換成輪盤上的職業圖示是站長的判斷，開發端不代改。曜的形態圖示待官方資料出現再補。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label cyan">Phase F</div>
+  <div class="section-title">套用機甲類型圖示（2026-10-13 追加）</div>
+  <div class="section-desc">同一套輕／中／重圖示用到機甲圖鑑、武器、背包與模擬器。依賴 B-3；顯示字與配色依計畫書決策十。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 機甲圖鑑</div>
+      <div class="task-group-meta">src/pages/mechs/MechsPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">篩選列圖示＋字、欄位名「裝甲」改「類型」；卡片左上類型字牌 → 右下類型圓章（與機師卡職業圓章同位置）；名稱下補一行類型小字；緊湊檢視小圓章</div>
+        <div class="task-desc">右上品質不動。機甲立繪是橫幅透明圖，圓章放在底部漸層暗部、不擋機體。</div>
+        <div class="task-file">src/pages/mechs/MechsPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; 機甲詳情頁首</div>
+      <div class="task-group-meta">src/pages/mechs/MechDetailPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">類型字牌改圖示＋字，滑過提示「○型執照的機師可駕駛」</div>
+        <div class="task-desc">只換字牌、不加新列——頁首 2026-10-10 才為「一屏看完」改版過。</div>
+        <div class="task-file">src/pages/mechs/MechDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-3 &nbsp; 武器限定、背包可裝備</div>
+      <div class="task-group-meta">WeaponBadges · BackpackBadges · WeaponsPage · BackpacksPage · 詳情頁</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">「○型限定」統一一種徽章（圖示＋字）；清單裡不限制的一律不顯示；背包頁「裝備」篩選加圖示</div>
+        <div class="task-desc">
+          107 個背包標了「輕＋中＋重」三種都可裝，現在畫成三顆字牌，等於「沒限制」；武器不限制的 128 把什麼都不顯示——清單兩者一致改為不顯示。
+          詳情頁「可裝備」寫「全機型」並用 <code>004</code>（決策十）。背包資料有一筆三種的順序是倒的（Heavy, Medium, Light），元件內固定排序即可，不改資料。
+        <br><b>實作</b>：新增共用的 <code>MechRestrictionBadge</code>（<code>MechBadges.tsx</code>），武器與背包的徽章都交給它；判斷「真正有沒有限制」走 <code>restrictedMechTypes()</code>（三種都列或空＝不限制，有測試）。背包頁篩選「無限制」改名「全機型」，而且把三種都列的 107 個也算進去（原本只算空陣列，實際上只篩得到武器）；背包浮窗「裝備限制」改「可裝備」。武器清單卡的「機甲限制：中型限定」仍是統計列的文字，不改徽章。</div>
+        <div class="task-file">src/components/badges/WeaponBadges.tsx · src/components/badges/BackpackBadges.tsx · src/pages/backpacks/BackpacksPage.tsx · src/pages/weapons/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-4 &nbsp; 模擬器、彩虹機甲規劃、引用浮窗、匯出圖卡</div>
+      <div class="task-group-meta">LoadoutPage · RainbowMechPlannerPage · EntityRefView · LoadoutExportCard</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機甲挑選器副標與篩選、頁首機甲類型標記、機師挑選器「執照」篩選；彩虹機甲規劃類型按鈕；hover 機甲副標</div>
+        <div class="task-desc"><code>ARMOR_TONE</code>（青紫橘）改讀單一來源、統一青綠紅——<b>B-3 已完成</b>；「執照」標籤改「駕照」與 hover 機甲副標的圖示——<b>C-5 已完成</b>。剩機甲挑選器卡片、頁首類型標記、彩虹機甲規劃按鈕的圖示（<code>PickerRowItem.metaIcon</code> 已備好）。匯出圖卡同 C-5：html-to-image 不一定吃 mask，實測後決定。</div>
+        <div class="task-file">src/pages/simulator/LoadoutPage.tsx · src/pages/guides/tools/RainbowMechPlannerPage.tsx · src/components/refs/EntityRefView.tsx · src/components/loadout/LoadoutExportCard.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase G -->
+<section class="section">
+  <div class="section-label cyan">Phase G</div>
+  <div class="section-title">驗證與上線</div>
+  <div class="section-desc">push 前 build 把關；新圖要等部署完成才開網址。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-1 &nbsp; 測試與截圖驗收</div>
+      <div class="task-group-meta">npm test · npm run build · 本機 vite</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">npm test／npm run build 全綠；本機 vite 吃正式資料截圖</div>
+        <div class="task-desc">機師與機甲圖鑑（卡片／緊湊／篩選）、兩種詳情頁、武器／背包頁、故事館首頁與扉頁（紙色）、配裝模擬器；桌機與 375px 手機，確認無水平捲動。<br><b>實作</b>：每個階段收尾都跑過 <code>npm test</code>（1448）、<code>npm run build</code>，並以 headless 瀏覽器在 1280／390px 截圖驗收（無水平捲動、無主控台錯誤）。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-2 &nbsp; 文件與網站更新履歷</div>
+      <div class="task-group-meta">docs · src/data/siteChangelog/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">系統架構文件 icons/ 元件列補 ClassIcon；圖庫目錄說明；commit 前寫履歷</div>
+        <div class="task-desc">履歷以使用者視角，例：「機師圖鑑與故事館改用官方職業／駕照圖示」「機甲圖鑑、武器與背包改用官方機甲類型圖示」「故事館扉頁新增陣營徽章」。<br><b>實作</b>：系統架構文件的 <code>icons/</code>、<code>badges/</code> 列與圖庫說明已補；履歷每個 commit 都已寫（故事館相關標 unreleased）。</div>
+        <div class="task-file">docs/02_技術文件/01_架構設計/系統架構.html · src/data/siteChangelog/2026-10.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-3 &nbsp; 部署後抽查</div>
+      <div class="task-group-meta">pages-build-deployment · Cloudflare</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">等 pages-build-deployment 完成再請求新圖；抽查三族各一張 200</div>
+        <div class="task-desc">部署完成前被請求的新圖會被 Cloudflare 快取成 404，需 Purge。不新增頂層路由 → 不必動 CF 白名單。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-059 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

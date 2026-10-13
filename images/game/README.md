@@ -19,6 +19,9 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
   skill/  buff/       技能類、BUFF 字形
   weapon/             Icon_weapon_<gameId>.webp    340²（DB: weapons.gameId、sideGameIds）
   backpack/           Icon_backpack_<gameId>.webp  340²（DB: backpacks.gameId；2 個官方檔名是 Icon_BackPack_）
+  class/              Icon_pilotclass_<3 碼>_<l|s>.webp   機師職業（PLAN-059；不進 DB，對照寫在 src/data/pilotClasses.ts）
+  license/            Icon_wanzertype_<3 碼>_<l|s>.webp   駕照＝機甲類型（PLAN-059；對照寫在 src/data/mechWeightClasses.ts）
+  camp/               Icon_logo_<4 碼>_<00|01>.webp       陣營徽章（PLAN-059；DB: pilotLore.factionLogos）
   index.json  features.bin   選圖器索引與以圖搜圖特徵（build 產生）
 ```
 
@@ -32,6 +35,11 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
 - **武器／背包的 gameId 是外觀編號**（PLAN-056）：EX／·改 與本體共用，不是武器身分。讀取端走 `weaponIconCandidates()`／`backpackIconCandidates()`（`src/utils/gameIcons.ts`）。
   官方圖庫刻意**全收**（含 400x 敵方 BOSS 裝備、9 開頭機甲綁定肩部、`_b` 外型變化）——圖示是抽象的道具圖，不算洩漏未上線內容（同 PLAN-055 決策三）。
   站長編輯過的非官方圖不放這裡，放 `public/images/weapons/`，檔名不以 `Icon_` 開頭。
+- **職業／駕照圖示、陣營徽章**（PLAN-059）：職業與駕照是白色字形，前台用 CSS mask 吃文字色（站上職業色、故事館墨色），
+  所以存白色原圖就好。職業 007～012 是官方備案（011／012 是海莉絲的先鋒／虛粒子形態），也收。
+  陣營徽章只收客戶端 `camptype` 資料夾；`factory`（機甲廠商）有同檔名、**不同圖**的 `Icon_logo_0024～0027`，不收、別混用。
+  NVIDIA 聯動的兩張（`0028_01`、`0032_01`）站長決定不收。
+  **新職業或新駕照上線時**：`--emblems` 只負責把圖放進來，`src/data/pilotClasses.ts`／`mechWeightClasses.ts` 的對照要人補（哪個編號是哪個職業）。
 
 - **gameId 與 artKey 不互推**（DB: `pilots.artKey`）：維娜的資料夾是 `10103144`、檔名是 `Pilot_13019A_*`，共 5 位例外，見 `src/types/pilot.ts`。
 - 讀取端一律走 `pilotGameArt()`／`mechGameArt()`（`src/utils/gameArt.ts`），不要自己拼路徑；有沒有某種圖由 build 產生的 `src/data/gameArtIndex.ts` 決定。
@@ -53,7 +61,7 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
 2. **差異報告**：`node scripts/diff-game-dump.mjs`，打開它印出的 `_local-notes/<月>/<日>_遊戲擷取差異.html`。
 3. **照「下一步」逐條做**。每一步標 ✅ 已完成／⬜ 待做，附可以直接貼的指令：
    先**不加** `--apply` 跑一次（dry-run，只報告、不寫任何東西），沒問題再加 `--apply` 重跑。
-   - 「上站」的步驟寫進這個資料夾（之後要 commit）：新機師卡、新機甲、NPC 立繪、技能／BUFF／武器／背包圖示
+   - 「上站」的步驟寫進這個資料夾（之後要 commit）：新機師卡、新機甲、NPC 立繪、技能／BUFF／武器／背包圖示、職業／駕照圖示與陣營徽章
    - 「封存」的步驟寫到 repo 外的 `E:/Mecharashi_Data/site-archive/game/`（不必 commit、不部署）：
      介面美術（`ui/`）、其他圖示（`icons/`）、既有機師的新造型（`pilots/<gameId>/`）
    - 只有新機師要人判斷：`--art-key` 填哪張立繪（gameId 與 artKey 不互推）。新機甲只放圖、不碰資料庫。
@@ -82,6 +90,7 @@ node scripts/import-game-assets.mjs --wap=<####> --apply                     # �
 node scripts/import-game-assets.mjs --src=latest --npc --apply               # NPC 圖庫（只補新的；第一次先 --src=Data）
 node scripts/import-game-assets.mjs --src=latest --icons --apply             # 技能類／BUFF 圖示（只補新 key；別名與 legacy 只增不減）
 node scripts/import-game-assets.mjs --equip-icons --apply                    # 武器／背包圖示（整夾；新擷取只補新的）
+node scripts/import-game-assets.mjs --src=latest --emblems --apply           # 職業／駕照圖示、陣營徽章（只補新的）
 node scripts/import-game-assets.mjs --src=latest --ui --apply                # 活動／招募／大廳等介面美術 → repo 外封存夾（不部署）
 node scripts/import-game-assets.mjs --src=latest --other-icons --apply       # 其他圖示（道具、勳章、肉鴿、車輛、塗裝小圖…）→ repo 外封存夾
 node scripts/import-game-assets.mjs --src=latest --skins --apply             # 既有機師的新造型 → repo 外封存夾 pilots/<gameId>/
