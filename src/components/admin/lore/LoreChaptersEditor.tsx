@@ -1,8 +1,12 @@
-import { useState } from 'react'
-import type { LoreChapter, LoreCommentary, Pilot } from '../../../types'
+import { useId, useMemo, useState } from 'react'
+import type { LoreChapter, LoreCommentary, LoreCustomSpeaker, Pilot } from '../../../types'
 import { Field } from '../../../pages/user/admin/shared'
+import { useGameData } from '../../../contexts/GameDataContext'
+import { assetUrl } from '../../../utils/assets'
+import { npcGameArt } from '../../../utils/gameArt'
 import { RefPicker } from '../RefPicker'
-import { cleanOcr, makeChapterKey, mergeSoftWraps, moveItem } from './loreEditText'
+import { NpcSpeakerArtPicker } from '../GameArtPicker'
+import { cleanOcr, customSpeakerPresets, makeChapterKey, mergeSoftWraps, moveItem } from './loreEditText'
 import { ICON_BTN } from './LoreDossierEditor'
 import { SMALL_BTN } from './LoreFrontEditor'
 
@@ -25,6 +29,9 @@ export function LoreChaptersEditor({
 }) {
   const [ocr, setOcr] = useState('')
   const patch = (i: number, p: Partial<LoreChapter>) => onChange(chapters.map((c, n) => (n === i ? { ...c, ...p } : c)))
+  // 自訂說話者的名稱建議：全館已存檔的＋這份表單裡剛打的（同一份文件會算兩次，只影響排序、不影響結果）
+  const { pilotLore } = useGameData()
+  const speakerPresets = useMemo(() => customSpeakerPresets([...pilotLore, { chapters }]), [pilotLore, chapters])
   const add = (body = '') => onChange([...chapters, { key: makeChapterKey(chapters), title: '', body }])
 
   return (
@@ -62,6 +69,7 @@ export function LoreChaptersEditor({
           index={i}
           total={chapters.length}
           pilots={pilots}
+          speakerPresets={speakerPresets}
           previewing={previewKey === ch.key}
           onPatch={(p) => patch(i, p)}
           onMove={(dir) => onChange(moveItem(chapters, i, dir))}
@@ -87,12 +95,13 @@ export function LoreChaptersEditor({
 
 // ─── 單章編輯卡 ────────────────────────────────────────────────────────────────
 function ChapterCard({
-  chapter, index, total, pilots, previewing, onPatch, onMove, onRemove, onPreview,
+  chapter, index, total, pilots, speakerPresets, previewing, onPatch, onMove, onRemove, onPreview,
 }: {
   chapter: LoreChapter
   index: number
   total: number
   pilots: Pilot[]
+  speakerPresets: LoreCustomSpeaker[]
   previewing: boolean
   onPatch: (patch: Partial<LoreChapter>) => void
   onMove: (dir: -1 | 1) => void
@@ -180,6 +189,7 @@ function ChapterCard({
         <CommentaryEditor
           items={chapter.commentary ?? []}
           pilots={pilots}
+          presets={speakerPresets}
           onChange={(next) => onPatch({ commentary: next.length > 0 ? next : undefined })}
         />
       </Field>
@@ -188,39 +198,103 @@ function ChapterCard({
 }
 
 // ─── 旁白列編輯（LoreCommentary）──────────────────────────────────────────────
-// speakerId 指向 pilots 文件 ID（總綱決策三：故事館不新增 RefType，只准指 pilots）。
-// 用 select 而不是自由輸入：手打 ID 幾乎必然打錯，而查不到的 speakerId 在前台
-// 只會靜默少一顆頭像，資料層沒有任何機制會發現。
+// 說話者二選一：
+//   - 機師：speakerId 指向 pilots 文件 ID（總綱決策三：故事館不新增 RefType，只准指 pilots）。
+//     用 select 而不是自由輸入：手打 ID 幾乎必然打錯，而查不到的 speakerId 在前台
+//     只會靜默少一顆頭像，資料層沒有任何機制會發現。
+//   - 自訂（2026-10-14）：說話的不是機師（遊戲裡的「匿名使用者」、劇情 NPC）→ 名稱手打、頭像從 NPC 圖庫挑。
+//     切換時清掉另一邊，資料上不會兩者並存（types/lore.ts）。
+const CUSTOM_SPEAKER = '__custom__'
+
 function CommentaryEditor({
-  items, pilots, onChange,
+  items, pilots, presets, onChange,
 }: {
   items: LoreCommentary[]
   pilots: Pilot[]
+  /** 全館用過的自訂說話者（名稱建議＋同名自動帶頭像） */
+  presets: LoreCustomSpeaker[]
   onChange: (next: LoreCommentary[]) => void
 }) {
+  const listId = useId()
+  const [picking, setPicking] = useState<number | null>(null)
   const update = (i: number, patch: Partial<LoreCommentary>) => onChange(items.map((c, n) => (n === i ? { ...c, ...patch } : c)))
+  const updateSpeaker = (i: number, patch: Partial<LoreCustomSpeaker>) =>
+    onChange(items.map((c, n) => (n === i ? { ...c, speaker: { name: '', ...c.speaker, ...patch } } : c)))
+
+  // 名稱打到跟既有的自訂說話者同名、而這列還沒有頭像 → 順手帶入那位的頭像（同一位 NPC 不必每次重挑）
+  const typeName = (i: number, name: string) => {
+    const art = items[i].speaker?.art || presets.find((p) => p.name === name.trim())?.art
+    updateSpeaker(i, { name, ...(art && { art }) })
+  }
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
+      <datalist id={listId}>
+        {presets.map((p) => <option key={p.name} value={p.name} />)}
+      </datalist>
       {items.map((c, i) => {
         const known = pilots.some((p) => p.id === c.speakerId)
+        const sp = c.speaker
+        const art = sp?.art ? npcGameArt(sp.art, 'half') : undefined
         return (
-          <div key={i} className="flex gap-2 items-start">
-            <select value={c.speakerId} onChange={(e) => update(i, { speakerId: e.target.value })} className="input-field w-44 shrink-0 text-sm">
-              <option value="">（未指定說話者）</option>
-              {/* 查無此 ID 時仍保留原值，避免下拉把資料靜默改成空字串 */}
-              {!known && c.speakerId && <option value={c.speakerId}>⚠ {c.speakerId}</option>}
-              {pilots.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-            <input value={c.text} onChange={(e) => update(i, { text: e.target.value })} className="input-field flex-1 text-sm" placeholder="旁白內容" />
-            <button
-              type="button"
-              onClick={() => onChange(items.filter((_, n) => n !== i))}
-              className="px-2 py-1.5 rounded-lg border border-border text-text-dim text-xs hover:text-accent-red hover:border-accent-red/40 transition-colors shrink-0"
-              title="移除這一列旁白"
-            >
-              ✕
-            </button>
+          <div key={i} className="space-y-1.5">
+            <div className="flex gap-2 items-start">
+              <select
+                value={sp ? CUSTOM_SPEAKER : c.speakerId}
+                onChange={(e) => {
+                  const v = e.target.value
+                  if (v === CUSTOM_SPEAKER) update(i, { speakerId: '', speaker: { name: '' } })
+                  else update(i, { speakerId: v, speaker: undefined })
+                }}
+                className="input-field w-44 shrink-0 text-sm"
+              >
+                <option value="">（未指定說話者）</option>
+                {/* 標籤要塞得進 w-44：「（非機師）」寫在下方的說明列 */}
+                <option value={CUSTOM_SPEAKER}>✎ 自訂說話者</option>
+                {/* 查無此 ID 時仍保留原值，避免下拉把資料靜默改成空字串 */}
+                {!sp && !known && c.speakerId && <option value={c.speakerId}>⚠ {c.speakerId}</option>}
+                {pilots.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              <input value={c.text} onChange={(e) => update(i, { text: e.target.value })} className="input-field flex-1 text-sm" placeholder="旁白內容" />
+              <button
+                type="button"
+                onClick={() => onChange(items.filter((_, n) => n !== i))}
+                className="px-2 py-1.5 rounded-lg border border-border text-text-dim text-xs hover:text-accent-red hover:border-accent-red/40 transition-colors shrink-0"
+                title="移除這一列旁白"
+              >
+                ✕
+              </button>
+            </div>
+
+            {sp && (
+              <div className="flex gap-2 items-center flex-wrap pl-3 border-l-2 border-accent-cyan/30">
+                <button
+                  type="button"
+                  onClick={() => setPicking(i)}
+                  title={sp.art ? `頭像：${sp.art}（點擊更換）` : '從 NPC 圖庫挑頭像'}
+                  className="w-9 h-9 rounded-full overflow-hidden border border-border bg-bg-dark shrink-0 flex items-center justify-center text-[10px] text-text-dim hover:border-border-accent transition-colors"
+                >
+                  {art ? <img src={assetUrl(art)} alt="" className="w-full h-full object-cover" />
+                    : sp.art ? <span className="text-accent-yellow">⚠</span>
+                    : '頭像'}
+                </button>
+                <input
+                  value={sp.name}
+                  onChange={(e) => typeName(i, e.target.value)}
+                  list={listId}
+                  className={`input-field w-44 text-sm ${sp.name.trim() ? '' : '!border-accent-yellow/50'}`}
+                  placeholder="說話者名稱，如：匿名使用者"
+                />
+                {sp.art && (
+                  <button type="button" onClick={() => updateSpeaker(i, { art: undefined })} className={ICON_BTN} title="不顯示頭像">
+                    清除頭像
+                  </button>
+                )}
+                <span className="text-[11px] text-text-dim">
+                  {sp.art && !art ? `⚠ NPC 圖庫找不到 ${sp.art}，前台不會顯示頭像` : '非機師的說話者：名稱照遊戲畫面逐字填；頭像點左邊圓圈從 NPC 圖庫挑（可不選）'}
+                </span>
+              </div>
+            )}
           </div>
         )
       })}
@@ -231,6 +305,14 @@ function CommentaryEditor({
       >
         ＋ 新增旁白
       </button>
+      {picking !== null && items[picking] && (
+        <NpcSpeakerArtPicker
+          current={items[picking].speaker?.art}
+          pilots={pilots}
+          onPick={(key) => updateSpeaker(picking, { art: key })}
+          onClose={() => setPicking(null)}
+        />
+      )}
     </div>
   )
 }

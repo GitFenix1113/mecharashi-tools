@@ -81,7 +81,7 @@ function Chip({ on, onClick, children, title }: { on: boolean; onClick: () => vo
 
 // ── 挑選器彈窗（通用）──────────────────────────────────────────────────────────
 function GameArtPicker({
-  noun, idPrefix, subtitle, candidates, groups, usersOf, selfId, currentId, wide, importHint, footer, onPick, onClose,
+  noun, idPrefix, subtitle, candidates, groups, usersOf, selfId, currentId, wide, importHint, footer, takenNote, onPick, onClose,
 }: {
   /** 「機師」／「機甲」 */
   noun: string
@@ -100,6 +100,8 @@ function GameArtPicker({
   /** 「未使用」為空時的匯入說明 */
   importHint: ReactNode
   footer: string
+  /** 側欄「使用中」底下的提醒；不給＝「套用後會共用同一組圖」的警告（實體立繪欄位用） */
+  takenNote?: ReactNode
   onPick: (id: string) => void
   onClose: () => void
 }) {
@@ -276,7 +278,9 @@ function GameArtPicker({
                         ))}
                       </ul>
                       {focusEntry.id !== currentId && (
-                        <p className="mt-2 text-accent-yellow leading-snug">⚠ 套用後會和上面這{noun === '機甲' ? '台' : '位'}共用同一組圖——只有修正資料、或刻意換成這套造型時才該這樣做。</p>
+                        <p className="mt-2 text-accent-yellow leading-snug">
+                          {takenNote ?? `⚠ 套用後會和上面這${noun === '機甲' ? '台' : '位'}共用同一組圖——只有修正資料、或刻意換成這套造型時才該這樣做。`}
+                        </p>
                       )}
                     </>
                   ) : focusEntry.id === currentId ? (
@@ -417,6 +421,29 @@ const PILOT_GROUPS: ArtGroup[] = [
 const ALL_PILOT_CANDIDATES = [...PILOT_CANDIDATES, ...NPC_CANDIDATES]
 
 /**
+ * 每組機師立繪（gameId 資料夾、或 NPC 立繪鍵）→ 使用它的機師；`excludeId` 是正在編輯的那位（不算使用者）。
+ * 機師立繪欄位與旁白頭像選圖器共用。
+ */
+function pilotArtUsers(pilots: readonly Pilot[], excludeId: string): Map<string, ArtUser[]> {
+  const m = new Map<string, ArtUser[]>()
+  const add = (k: string, p: Pilot) => m.set(k, [...(m.get(k) ?? []), { id: p.id, name: p.name, detail: [p.rarity, p.class].filter(Boolean).join('・'), search: p.fullName }])
+  for (const p of pilots) {
+    if (p.id === excludeId) continue
+    if (p.gameId) add(p.gameId, p)
+    // NPC 立繪以 artKey 認：gameId 資料夾的主鍵對不上、而 NPC 圖庫有這個鍵 → 這位用的是 NPC 立繪
+    if (p.artKey && GAME_NPC_ART.has(p.artKey) && GAME_PILOT_ART.get(p.gameId ?? '')?.key !== p.artKey) add(p.artKey, p)
+  }
+  // 人工註記：這套 NPC 立繪其實是某位可抽機師的另一造型（劇情換造型前的樣子等）→ 掛在他名下，不算未使用
+  const byId = new Map(pilots.map((p) => [p.id, p]))
+  for (const [key, e] of GAME_NPC_ART) {
+    const owner = e.owner ? byId.get(e.owner) : undefined
+    if (!owner || owner.id === excludeId || m.get(key)?.some((u) => u.id === owner.id)) continue
+    m.set(key, [...(m.get(key) ?? []), { id: owner.id, name: `${owner.name}・另一造型`, detail: '人工註記', search: `${owner.name} ${owner.fullName ?? ''}` }])
+  }
+  return m
+}
+
+/**
  * 機師立繪欄位。
  * - 選取官方立繪：寫回 gameId、artKey（取自資料夾實際檔名——5 位例外也不必手打）、portrait（half 路徑，與既有機師同慣例）
  *   NPC 立繪：只寫 artKey＋portrait，gameId 不動（機師卡號等官方出卡後再填）
@@ -430,24 +457,7 @@ export function PilotPortraitField({ form, pilots, onPatch }: {
   const [picking, setPicking] = useState<'official' | 'other' | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const folderNames = useMemo(() => artFolderNames(pilots), [pilots])
-  const usersOf = useMemo(() => {
-    const m = new Map<string, ArtUser[]>()
-    const add = (k: string, p: Pilot) => m.set(k, [...(m.get(k) ?? []), { id: p.id, name: p.name, detail: [p.rarity, p.class].filter(Boolean).join('・'), search: p.fullName }])
-    for (const p of pilots) {
-      if (p.id === form.id) continue
-      if (p.gameId) add(p.gameId, p)
-      // NPC 立繪以 artKey 認：gameId 資料夾的主鍵對不上、而 NPC 圖庫有這個鍵 → 這位用的是 NPC 立繪
-      if (p.artKey && GAME_NPC_ART.has(p.artKey) && GAME_PILOT_ART.get(p.gameId ?? '')?.key !== p.artKey) add(p.artKey, p)
-    }
-    // 人工註記：這套 NPC 立繪其實是某位可抽機師的另一造型（劇情換造型前的樣子等）→ 掛在他名下，不算未使用
-    const byId = new Map(pilots.map((p) => [p.id, p]))
-    for (const [key, e] of GAME_NPC_ART) {
-      const owner = e.owner ? byId.get(e.owner) : undefined
-      if (!owner || owner.id === form.id || m.get(key)?.some((u) => u.id === owner.id)) continue
-      m.set(key, [...(m.get(key) ?? []), { id: owner.id, name: `${owner.name}・另一造型`, detail: '人工註記', search: `${owner.name} ${owner.fullName ?? ''}` }])
-    }
-    return m
-  }, [pilots, form.id])
+  const usersOf = useMemo(() => pilotArtUsers(pilots, form.id), [pilots, form.id])
   // 目前連著哪一組：gameId 資料夾的主鍵對得上 → 那個 gameId；否則 artKey 在 NPC 圖庫 → 那套 NPC 立繪
   const currentId = form.gameId && GAME_PILOT_ART.get(form.gameId)?.key === form.artKey ? form.gameId
     : form.artKey && GAME_NPC_ART.has(form.artKey) ? form.artKey
@@ -517,6 +527,38 @@ export function PilotPortraitField({ form, pilots, onPatch }: {
         />
       )}
     </>
+  )
+}
+
+// ── 故事館旁白：自訂說話者的頭像（2026-10-14）────────────────────────────────────
+
+/**
+ * 旁白「自訂說話者」的頭像選圖器：只列 NPC 圖庫——說話的是可抽機師就該選機師本人，不走這裡。
+ * 開窗預設停在「未使用」：沒有機師連著的那幾套正是通用頭像（匿名使用者 `Pilot_99999`、士兵、兜帽人…）。
+ * 寫回的是**立繪鍵**（DB 只存鍵），不動任何機師資料。
+ */
+export function NpcSpeakerArtPicker({ current, pilots, onPick, onClose }: {
+  current?: string
+  pilots: readonly Pilot[]
+  onPick: (artKey: string) => void
+  onClose: () => void
+}) {
+  const usersOf = useMemo(() => pilotArtUsers(pilots, ''), [pilots])
+  return (
+    <GameArtPicker
+      noun="機師"
+      idPrefix="pilot"
+      subtitle="NPC 圖庫 game/npc · 寫回旁白說話者的頭像"
+      candidates={NPC_CANDIDATES}
+      usersOf={usersOf}
+      selfId=""
+      currentId={current}
+      importHint={<>NPC 圖庫的匯入步驟見 <code>public/images/game/README.md</code>（<code>--npc</code>）。</>}
+      footer="點擊即套用：只寫回立繪鍵（如 Pilot_99999），不動任何機師資料"
+      takenNote="這套立繪已經是上面這位機師的。說話的如果就是他本人，請把說話者改選機師——名字與頭像會跟著機師資料走。"
+      onPick={onPick}
+      onClose={onClose}
+    />
   )
 }
 

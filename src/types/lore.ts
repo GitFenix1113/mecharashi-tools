@@ -18,10 +18,32 @@
 import type { DescriptionRefs } from './common'
 
 /**
- * NPC 旁白列：某位機師對這一章的評註。
+ * 自訂說話者（2026-10-14）：說這句旁白的不是任何一位機師——遊戲裡的「匿名使用者」、劇情 NPC 這類。
  *
- * speakerId 指向 `pilots` 文件 ID（總綱決策三：不開新 RefType，只准指 pilots）。
- * 查不到時渲染端必須降級為「只顯示 text」而不是整列消失——旁白的內容本身有價值，
+ * 名稱是**純文字快照**、頭像只存 NPC 圖庫的立繪鍵，兩者都不是引用：
+ * 總綱決策三「不開新 RefType、speakerId 只准指 pilots」照舊成立，這裡沒有任何東西指向另一份文件。
+ * 同一位 NPC 在多篇故事裡重複出現時，靠後台的名稱建議（`customSpeakerPresets()`）維持寫法一致，
+ * 不另開「NPC 說話者」集合——今天只有零星幾句，集合會是 0/5 定律說的那種空殼。
+ */
+export interface LoreCustomSpeaker {
+  /** 顯示名稱，如「匿名使用者」。照遊戲畫面逐字填 */
+  name: string
+  /**
+   * 頭像：NPC 圖庫（`public/images/game/npc/`）的官方立繪鍵，如 `Pilot_99999`（匿名使用者的聲波圖）。
+   * DB 只存鍵、不存路徑（同 PLAN-055 圖示慣例），讀取端走 `npcGameArt()`。空＝不顯示頭像。
+   */
+  art?: string
+}
+
+/**
+ * NPC 旁白列：某位機師（或自訂說話者）對這一章的評註。
+ *
+ * 說話者二選一：
+ *   - **機師**：speakerId 指向 `pilots` 文件 ID（總綱決策三：不開新 RefType，只准指 pilots）。
+ *   - **自訂**：有 `speaker` 物件就是自訂說話者，此時 speakerId 是空字串、渲染端不讀。
+ *     後台切換模式時會清掉另一邊，不會兩者並存。
+ *
+ * 查不到說話者時渲染端必須降級為「只顯示 text」而不是整列消失——旁白的內容本身有價值，
  * 說話者頭像沒有就沒有。
  *
  * ⚠ 刻意**不開** textRefs：旁白是短句評註，全站今天沒有任何一段旁白需要 [xxx]。
@@ -29,8 +51,10 @@ import type { DescriptionRefs } from './common'
  *   投機性選填欄位（每一個都是空的）。
  */
 export interface LoreCommentary {
-  /** pilots 文件 ID */
+  /** pilots 文件 ID；自訂說話者時為空字串 */
   speakerId: string
+  /** 自訂說話者（非機師）。有值時優先於 speakerId */
+  speaker?: LoreCustomSpeaker
   text: string
 }
 

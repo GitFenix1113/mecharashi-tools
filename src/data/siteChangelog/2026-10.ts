@@ -3,6 +3,9 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-14', type: 'feat', summary: '故事館逸聞的<b>旁白便條</b>可以由<b>非機師</b>發言：遊戲裡「匿名使用者」這類說話者，'
+      + '會照遊戲畫面顯示名稱與頭像（維護人員在編輯台手動輸入名稱、從 NPC 圖庫挑頭像）。' },
+
     { date: '2026-10-14', type: 'feat', summary: '陣營徽章多了<b>英文名稱</b>：故事館機師檔案的徽章提示同時顯示中英文（例：晨星同盟防衛軍・DAWNSTAR LEAGUE ARMORED FORCE）。' },
 
     { date: '2026-10-14', type: 'style', summary: '<b>機師故事館首頁</b>換上新橫幅：官網紅帶配上<b>機師立繪群像</b>（每次進館隨機換一組），'

@@ -120,10 +120,36 @@
       <tr><td>body</td><td>string</td><td>正文。支援 PLAN-019 的 <code>[xxx]</code> 標記，由 <code>&lt;LoreRichText&gt;</code> 解析（PLAN-042-A 決策 A：與 <code>&lt;RefText&gt;</code> 分家、<code>[xxx]</code> 解析規則逐字相同，但<strong>不套數字紅字高亮、不解析 <code>&lt;refId.attr&gt;</code></strong>——不要改回 RefText，那會把散文裡的數字全變紅色粗體）</td></tr>
       <tr><td>bodyRefs</td><td>DescriptionRefs?</td><td>正文內 <code>[xxx]</code> → 實體引用側錄。<strong>欄位名是 <code>bodyRefs</code> 不是 <code>descriptionRefs</code></strong>（正文欄位叫 <code>body</code>）——<code>entityRefs</code> 的站點必須指定 <code>refsField: 'bodyRefs'</code>，否則級聯清除會去清一個不存在的欄位<strong>且靜默不報錯</strong></td></tr>
       <tr><td>source</td><td>string?</td><td>本章的出處署名。前台右對齊小字 ＋ 分隔細線</td></tr>
-      <tr><td>commentary</td><td>LoreCommentary[]?</td><td>NPC 旁白列。<code>{ speakerId, text }</code>，<code>speakerId</code> 指向 <code>pilots</code> 文件 ID</td></tr>
+      <tr><td>commentary</td><td>LoreCommentary[]?</td><td>NPC 旁白列，結構見下方 <code>LoreCommentary</code>。說話者是機師（<code>speakerId</code>）或 🆕 自訂說話者（<code>speaker</code>）二選一</td></tr>
       <tr><td>draft</td><td>true?</td><td>🆕 PLAN-042-E <strong>草稿章</strong>（決策五）：前台不列出、章節網址導回扉頁、館首頁與名冊的章節數不計入。值只有 <code>true</code>，取消草稿就是拿掉欄位。
         <br><small style="color:var(--text-dim)">前台<strong>唯一的過濾點</strong>是 <code>publishedChapters()</code>（<code>src/components/lore/loreText.ts</code>），不要各自寫 <code>.filter</code>——漏一處就是「目錄看不到、網址卻點得進去」。
         ⚠ 只防「沒寫完的章被讀者看到」，<strong>不是保密</strong>：資料仍整包下載（站長：外洩無妨），所以不另開只有編輯者讀得到的集合。編輯台章節卡的「預覽」仍看得到草稿章。</small></td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h">💬 LoreCommentary — 旁白一列（chapters[].commentary[]）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>speakerId</td><td>string</td><td><code>pilots</code> 文件 ID（總綱決策三：只准指 pilots）。未指定說話者、或使用自訂說話者時為空字串</td></tr>
+      <tr><td>speaker</td><td>LoreCustomSpeaker?</td><td>🆕 2026-10-14 <strong>自訂說話者</strong>：說話的不是任何一位機師（遊戲裡的「匿名使用者」、劇情 NPC）。
+        <strong>有這個物件就是自訂模式，渲染端不讀 <code>speakerId</code></strong>；後台切換模式時會清掉另一邊，資料上不會並存</td></tr>
+      <tr><td>text</td><td>string</td><td>旁白內容。純文字，不經 <code>&lt;LoreRichText&gt;</code>（刻意沒有 refs 欄位）</td></tr>
+      <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);">說話者查不到（機師被刪、自訂說話者沒填）時前台<strong>只少頭像與名字，便條不可消失</strong>（地雷 M-14）。
+        前台與預覽共用 <code>src/components/lore/LoreCommentaryRow.tsx</code>。</td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h">🎭 LoreCustomSpeaker — 自訂說話者（commentary[].speaker）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>name</td><td>string</td><td>顯示名稱，照遊戲畫面逐字填（例：<code>匿名使用者</code>）。存檔時 trim；名稱與頭像都空 → 存檔時拿掉整個 <code>speaker</code>（<code>normalizeCommentary()</code>）</td></tr>
+      <tr><td>art</td><td>string?</td><td>頭像：<strong>NPC 圖庫</strong>（<code>public/images/game/npc/</code>）的官方立繪鍵，例 <code>Pilot_99999</code>（匿名使用者的聲波圖）。
+        DB 只存鍵、不存路徑（同 PLAN-055 圖示慣例），讀取端走 <code>npcGameArt(art, 'half')</code>。空＝不顯示頭像；鍵在圖庫找不到也只是不顯示</td></tr>
+      <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);"><strong>不是引用</strong>：名稱是純文字快照、頭像是圖檔鍵，沒有任何東西指向另一份文件——總綱決策三「不開新 RefType」照舊成立。
+        同一位 NPC 在多篇故事裡重複出現時，後台的名稱建議（<code>customSpeakerPresets()</code>，掃全館已用過的自訂說話者）維持寫法一致、同名自動帶入頭像；
+        <strong>不另開「NPC 說話者」集合</strong>——今天只有零星幾句，集合會是 0/5 定律說的空殼。頭像選圖器只列 NPC 圖庫：說話的是可抽機師就該選機師本人。</td></tr>
     </table>
   </div>
 
@@ -152,6 +178,7 @@
   <div class="info-block">
     <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.9;overflow-x:auto;">正文引用：  pilotLore ─(chapters[].bodyRefs)──→ buff / term / skill / form …
 旁白說話者：pilotLore ─(chapters[].commentary[].speakerId)──→ pilot
+            （自訂說話者 commentary[].speaker 不指向任何文件：名稱是文字、art 是 NPC 圖庫的圖檔鍵）
 文件歸屬：  pilotLore.id ═══════════════════→ pilot（同一個 ID）
 
             ↑ 沒有任何東西指回 pilotLore</pre>

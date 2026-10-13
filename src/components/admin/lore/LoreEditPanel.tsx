@@ -10,6 +10,7 @@ import { pilotSkinCatalog } from '../../../utils/gameArt'
 import { LoreFrontEditor } from './LoreFrontEditor'
 import { LoreDossierEditor } from './LoreDossierEditor'
 import { LoreChaptersEditor } from './LoreChaptersEditor'
+import { normalizeCommentary } from './loreEditText'
 import { LoreSkinsEditor } from './LoreSkinsEditor'
 import { LorePreview } from './LorePreview'
 
@@ -47,7 +48,10 @@ export function LoreEditPanel({
   // 逐層複製：直接沿用 GameDataContext 的物件會讓「取消」之後記憶體快取裡已經是改過的內容
   const [form, setForm] = useState<LoreDoc>(() => ({
     ...doc,
-    chapters: (doc.chapters ?? []).map((c) => ({ ...c, commentary: c.commentary?.map((x) => ({ ...x })) })),
+    chapters: (doc.chapters ?? []).map((c) => ({
+      ...c,
+      commentary: c.commentary?.map((x) => ({ ...x, ...(x.speaker && { speaker: { ...x.speaker } }) })),
+    })),
     ...(doc.dossier && { dossier: { ...doc.dossier, extra: doc.dossier.extra?.map((f) => ({ ...f })) } }),
     ...(doc.skins && { skins: doc.skins.map((s) => ({ ...s })) }),
   }))
@@ -100,6 +104,7 @@ export function LoreEditPanel({
         intro: form.intro?.trim() || undefined,
         frontSource: form.frontSource?.trim() || undefined,
         dossier: normalizeDossier(form.dossier),
+        chapters: form.chapters.map((ch) => ({ ...ch, commentary: normalizeCommentary(ch.commentary) })),
         // 名稱在存檔時才 trim（打字中 trim 會把正要打的空白吃掉）
         skins: form.skins?.length
           ? form.skins.map((s) => ({ key: s.key, ...(s.name?.trim() && { name: s.name.trim() }), ...(s.hidden && { hidden: true as const }) }))

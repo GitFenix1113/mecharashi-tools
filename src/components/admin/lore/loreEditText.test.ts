@@ -3,7 +3,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { cleanOcr, makeChapterKey, mergeSoftWraps, moveItem } from './loreEditText.ts'
+import { cleanOcr, customSpeakerPresets, makeChapterKey, mergeSoftWraps, moveItem, normalizeCommentary } from './loreEditText.ts'
 
 test('makeChapterKey：從章數＋1 起跳，跳過已用號碼（不撿回刪掉的舊號碼）', () => {
   assert.equal(makeChapterKey([]), 'part-1')
@@ -26,4 +26,34 @@ test('moveItem：互換、越界原樣回傳', () => {
   const list = ['a', 'b']
   assert.equal(moveItem(list, 0, -1), list)
   assert.equal(moveItem(list, 1, 1), list)
+})
+
+test('customSpeakerPresets：同名合併（trim 後比對）、頭像取第一個有填的、常用的排前面', () => {
+  const ch = (...commentary: { speakerId: string; speaker?: { name: string; art?: string }; text: string }[]) => ({ key: 'part-1', title: '', body: '', commentary })
+  const docs = [
+    { chapters: [ch({ speakerId: '', speaker: { name: '匿名使用者' }, text: 'a' }, { speakerId: 'pilot_001', text: '機師不算' })] },
+    { chapters: [ch({ speakerId: '', speaker: { name: ' 匿名使用者 ', art: 'Pilot_99999' }, text: 'b' }, { speakerId: '', speaker: { name: '士兵' }, text: 'c' })] },
+    { chapters: [ch({ speakerId: '', speaker: { name: '  ' }, text: '空名不算' })] },
+    {},
+  ]
+  assert.deepEqual(customSpeakerPresets(docs), [{ name: '匿名使用者', art: 'Pilot_99999' }, { name: '士兵' }])
+})
+
+test('normalizeCommentary：名稱 trim、名稱與頭像都空就拿掉 speaker、機師列原樣', () => {
+  assert.equal(normalizeCommentary(undefined), undefined)
+  assert.equal(normalizeCommentary([]), undefined)
+  assert.deepEqual(
+    normalizeCommentary([
+      { speakerId: '', speaker: { name: ' 匿名使用者 ', art: 'Pilot_99999' }, text: '卑劣的騙子。' },
+      { speakerId: '', speaker: { name: '  ' }, text: '只剩文字' },
+      { speakerId: '', speaker: { name: '', art: 'Pilot_19990A' }, text: '只有頭像' },
+      { speakerId: 'pilot_001', text: '機師' },
+    ]),
+    [
+      { speakerId: '', speaker: { name: '匿名使用者', art: 'Pilot_99999' }, text: '卑劣的騙子。' },
+      { speakerId: '', text: '只剩文字' },
+      { speakerId: '', speaker: { name: '', art: 'Pilot_19990A' }, text: '只有頭像' },
+      { speakerId: 'pilot_001', text: '機師' },
+    ],
+  )
 })

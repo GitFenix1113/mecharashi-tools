@@ -2,7 +2,7 @@
 //
 // 本檔**只放純函式**（不 import React）：`node --test` 直接載入 loreEditText.test.ts。
 
-import type { LoreChapter } from '../../../types'
+import type { LoreChapter, LoreCommentary, LoreCustomSpeaker } from '../../../types'
 
 /**
  * 新增章節時自動產生穩定 key。**建立後不可變更**——網址（`/lore/pilots/:id/:part`）
@@ -70,4 +70,42 @@ export function moveItem<T>(list: readonly T[], i: number, dir: -1 | 1): T[] {
   const next = [...list]
   ;[next[i], next[j]] = [next[j], next[i]]
   return next
+}
+
+/**
+ * 自訂說話者的名稱建議（後台旁白列的 datalist）：掃所有故事館文件裡已經用過的自訂說話者。
+ *
+ * 用途是**維持寫法一致**——同一位「匿名使用者」在三篇故事裡寫成三種名字，前台就是三個人。
+ * 同名合併、頭像取第一個有填的；常用的排前面。不另開 NPC 說話者集合（見 types/lore.ts 的 LoreCustomSpeaker）。
+ */
+export function customSpeakerPresets(docs: readonly { chapters?: readonly LoreChapter[] }[]): LoreCustomSpeaker[] {
+  const seen = new Map<string, { art?: string; n: number }>()
+  for (const d of docs) {
+    for (const ch of d.chapters ?? []) {
+      for (const c of ch.commentary ?? []) {
+        const name = c.speaker?.name.trim()
+        if (!name) continue
+        const e = seen.get(name) ?? { n: 0 }
+        e.n++
+        if (!e.art && c.speaker?.art) e.art = c.speaker.art
+        seen.set(name, e)
+      }
+    }
+  }
+  return [...seen]
+    .sort(([a, x], [b, y]) => y.n - x.n || a.localeCompare(b, 'zh-Hant'))
+    .map(([name, e]) => ({ name, ...(e.art && { art: e.art }) }))
+}
+
+/**
+ * 存檔前整理旁白：自訂說話者的名稱 trim；名稱與頭像都空 → 拿掉 speaker（等同「未指定說話者」，不留空殼）。
+ * 打字中不 trim（會吃掉正要打的空白），所以集中在存檔這一步——與外觀名稱同慣例。
+ */
+export function normalizeCommentary(items: readonly LoreCommentary[] | undefined): LoreCommentary[] | undefined {
+  if (!items?.length) return undefined
+  return items.map(({ speaker, ...c }) => {
+    const name = speaker?.name.trim() ?? ''
+    if (!speaker || (!name && !speaker.art)) return c
+    return { ...c, speakerId: '', speaker: { name, ...(speaker.art && { art: speaker.art }) } }
+  })
 }
