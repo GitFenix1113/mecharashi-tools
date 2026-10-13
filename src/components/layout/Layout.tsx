@@ -237,7 +237,8 @@ export default function Layout() {
     <div
       // immersive 是**取代** min-h-screen 而不是附加：兩者並存時 min-height 會贏，
       // main 就拿不到明確高度，.lore-shell 的 height:100% 解析成 auto、紙色只鋪到內容底部。
-      className={immersive ? 'h-screen overflow-hidden flex flex-col' : 'min-h-screen flex flex-col'}
+      // 高度是 .lore-viewport（100dvh）而不是 h-screen：iOS 的 100vh 比可見區高，理由見 index.css。
+      className={immersive ? 'lore-viewport overflow-hidden flex flex-col' : 'min-h-screen flex flex-col'}
       // .viewport-shell 用 100vh 減固定外框算高度，多出來的這條列必須讓它知道
       style={{
         '--subnav-h': subNavItems ? '2.25rem' : '0px',

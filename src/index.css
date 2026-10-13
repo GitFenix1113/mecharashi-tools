@@ -348,8 +348,19 @@ select option {
 html.lore-mode { color-scheme: light; }
 html.lore-mode body { background-image: none; background-color: #efe7d8; }
 
-/* 全館唯一 scrollport */
-.lore-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+/* 館內外殼的視窗高度（Layout.tsx 的 immersive 根元素）。
+   ⚠ 不能用 100vh：iOS 的 vh 是「工具列收起」時的大視窗，工具列展開時比可見區高一截——
+   文件本身因此多出一小段可捲範圍，.lore-scroll 的底部壓在瀏覽器工具列底下。dvh 跟著實際可見高度走。
+   不寫 100vh 後備：Tailwind v4 的目標瀏覽器（Safari 16.4+）都支援 dvh，寫了也會被建置的壓縮拿掉。 */
+.lore-viewport { height: 100dvh; }
+
+/* 全館唯一 scrollport。
+   ⚠ isolation 不可拿掉（iOS 觸控捲動）：捲動容器若不是 stacking context，裡面有 z-index 的定位層
+   （.lore-stage-wrap 的 sticky、.lore-dossier）在 iOS 會被合成到捲動容器的 UIView 外面，
+   手指按在它們上面推的是整份文件，.lore-scroll 一動也不動（WebKit bug 195845 那一類）。
+   Chromium 的手機模擬抓不到，2026-10-13 上線當天 iPhone 實測才發現。
+   副作用：館內 z-index 從此只在 .lore-scroll 裡比大小，所以粒子 .lore-snow 也搬進來了（LoreLayout）。 */
+.lore-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; isolation: isolate; }
 
 /* ⚠ height 用 calc(var(--lore-header-h) - 1px) + 1px 下框線
    ⇒ --lore-header-h 的語意是「總佔位」，消費端（.lore-page 的 --stage-h fallback）不必再各自減 1px。
@@ -416,9 +427,14 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
 }
 
 /* 粒子（B-4）：官網 .snow 的移植——6 個 div、兩張點陣圖、fly／fly2 由左下飄向右上，
-   週期 5–7 秒互不整除所以看不出循環。掛在 .lore-shell（absolute，不是官網的 fixed，免得蓋到 header）。
+   週期 5–7 秒互不整除所以看不出循環。
+   放在 .lore-scroll 的第一個子元素、sticky 全高（LoreLayout 量的 --lore-viewport-h），負 margin 抵掉自身高度、
+   不佔版面；不用官網的 fixed，免得蓋到 header。疊層：舞台 1、卷宗 5 之上，切換列 50 以下。
    ⚠ 只在桌機：手機耗電且官網手機版也沒有；reduced-motion 整組關閉。 */
-.lore-snow { position: absolute; inset: 0; z-index: 20; overflow: hidden; pointer-events: none; }
+.lore-snow {
+  position: sticky; top: 0; z-index: 20; overflow: hidden; pointer-events: none;
+  height: var(--lore-viewport-h, 100vh); margin-bottom: calc(-1 * var(--lore-viewport-h, 100vh));
+}
 .lore-snow__p { position: absolute; opacity: 0; width: 204px; height: 138px;
                 background: url('/images/lore/snow01.png') center top / 100% auto no-repeat;
                 will-change: transform, opacity; }
@@ -838,15 +854,32 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
 
 /* ── 切換列（收合）＋名冊（展開）──────────────────────────────────────────── */
 .lore-dock {
-  position: fixed; left: 50%; bottom: 18px; translate: -50% 0; z-index: 50;
+  --dock-gap: 18px;
+  /* 半隱藏（站長 2026-10-13）：平常整條沉下去、只露出上半截（頭像的臉還認得出來）。
+     升起：滑鼠移上去（:hover）、鍵盤焦點（:focus-visible）、觸控點一下（.is-raised，LoreSwitcher 管）。
+     translateY 的 % 是列自己的高度，所以「沉一半」不必知道列有多高。 */
+  --dock-peek: calc(50% + var(--dock-gap));
+  position: fixed; left: 50%; bottom: var(--dock-gap); translate: -50% 0; z-index: 50;
   display: flex; align-items: center; gap: 2px; padding: 5px 6px;
   background: rgba(251, 247, 239, 0.92); backdrop-filter: blur(8px);
   border: 1px solid var(--lore-line); border-radius: 999px;
   box-shadow: 0 18px 36px -22px rgba(43, 38, 33, 0.6);
-  opacity: 0; transform: translateY(16px); transition: opacity 500ms ease 700ms, transform 600ms var(--lore-ease-out) 700ms;
+  opacity: 0; transform: translateY(calc(var(--dock-peek) + 16px)); transition: opacity 500ms ease 700ms, transform 600ms var(--lore-ease-out) 700ms;
 }
-.lore-page.is-ready .lore-dock { opacity: 1; transform: none; }
-.lore-page.is-intro-done .lore-dock { transition: opacity 200ms ease, transform 300ms var(--lore-ease-out); }
+.lore-page.is-ready .lore-dock { opacity: 1; transform: translateY(var(--dock-peek)); }
+/* 列與視窗底緣之間那一段也算列的範圍：游標停在半沉時露出的最下緣，列升起後游標會落在列的下方——
+   沒有這塊，列就會「升起 → 失去 hover → 沉下 → 又碰到」來回抖 */
+.lore-dock::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: calc(var(--dock-gap) + 2px); }
+/* 收回前停一拍：滑鼠擦過列緣、從頭像移向名冊鈕途中滑出去一下，列不會跟著上下抖 */
+.lore-page.is-intro-done .lore-dock { transition: opacity 200ms ease, transform 320ms var(--lore-ease-out) 280ms; }
+/* 三條分開寫：:has() 不支援的瀏覽器會整條規則作廢，不能拖累 .is-raised */
+.lore-page.is-ready .lore-dock.is-raised { transform: none; transition: opacity 200ms ease, transform 300ms var(--lore-ease-out); }
+.lore-page.is-ready .lore-dock:has(:focus-visible) { transform: none; transition: opacity 200ms ease, transform 300ms var(--lore-ease-out); }
+/* any-hover 而不是 hover：iPad 接觸控板時主要輸入仍是觸控，但游標移上去也該升起；純觸控手機兩者都是 none，
+   不然 iOS 點一下就黏住的 :hover 會讓列在捲動時一直升著 */
+@media (any-hover: hover) {
+  .lore-page.is-ready .lore-dock:hover { transform: none; transition: opacity 200ms ease, transform 300ms var(--lore-ease-out); }
+}
 .lore-dock.is-hidden { opacity: 0 !important; pointer-events: none; transition: opacity 90ms ease !important; }
 .lore-dock__arrow { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 0; background: transparent; cursor: pointer; font-size: 18px; color: var(--lore-ink-2); display: grid; place-items: center; }
 .lore-dock__arrow:hover { background: rgba(43, 38, 33, 0.07); color: var(--lore-ink); }
@@ -997,7 +1030,7 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
   .lore-rail { top: 6px; }
   .lore-rail__chip span { display: none; }
   .lore-note { max-width: 100%; }
-  .lore-dock { left: 8px; right: 8px; bottom: 8px; translate: none; border-radius: 16px; }
+  .lore-dock { --dock-gap: 8px; left: 8px; right: 8px; translate: none; border-radius: 16px; }
   .lore-dock__strip { flex: 1; max-width: none; padding: 6px 16px; }
   .lore-dock__count { display: none; }
   .lore-dock__open { padding: 0 10px; }

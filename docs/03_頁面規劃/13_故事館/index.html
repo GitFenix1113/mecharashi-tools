@@ -81,6 +81,7 @@
       <div class="card-icon">🧭</div>
       <h3>切換列與機師名冊（PLAN-042-D）</h3>
       <p>詳情頁底部膠囊：可橫捲的圓形頭像列（目前這位置中）、‹ ›、序號、「名冊」；← → 換人（閱讀模式中換章）、手機封面左右滑。
+      <strong>平常半沉在視窗底緣、只露出上半截</strong>（2026-10-13 站長回饋：減少版面佔用）：滑鼠移上去或鍵盤焦點時升起；觸控點一下先升起（這一下不換人），捲動館內或點列外再收回。
       名冊從膠囊長出來、頭像 FLIP 飛進分組格子；搜尋（含英文名）、依職業／登場版本分組（與館首頁同一個排序，記在 sessionStorage）、有逸聞／有外觀篩選、<code>/</code> 開啟、Esc 收合。
       換人網址用 replace；回館首頁時 <code>LoreLayout</code> 會還原牆面的捲動位置（POP）。換人過場 0.9 秒、不重播完整開場；完整開場只在進入詳情頁時播。</p>
     </div>
@@ -125,6 +126,7 @@
     <strong>✅ 已實作（PLAN-042-A Phase C–F）</strong><br>
     · <strong>唯一 scrollport</strong>：<code>Layout</code> 的 <code>&lt;main&gt;</code> 是 <code>overflow-hidden</code> 的假 scrollport，館內任何 <code>position: sticky</code> 都會失效；故 <code>LoreLayout</code> 自己開 <code>.lore-scroll</code>，高度沿 flex 鏈傳下來（不做 <code>calc(100vh - …)</code> 減法，<code>SignedOutBanner</code> 的高度算不到）。
       <strong>館內元件不得再開第二層 <code>overflow-y</code></strong>，兩條垂直捲軸並存時外層永遠捲不動<br>
+    · <strong>iOS 觸控捲動的兩個前提</strong>（2026-10-13 上線當天 iPhone 實測「往下拉不到底」）：① <code>.lore-scroll</code> 必須自成 stacking context（<code>isolation: isolate</code>），否則舞台、卷宗這些有 z-index 的定位層在 iOS 會被合成到捲動容器外面，手指推的是整份文件；② 外殼高度用 <code>100dvh</code>（<code>.lore-viewport</code>），iOS 的 <code>100vh</code> 比可見區高一截。進場粒子 <code>.lore-snow</code> 因①搬進 <code>.lore-scroll</code>（sticky 全高、不佔版面），疊層維持在卷宗之上、切換列之下。Chromium 的手機模擬抓不到這兩件事<br>
     · <strong>跨路由捲頂</strong>由 <code>LoreLayout</code> 監聽 pathname 統一負責（它全程不卸載）；章節軸自動對位只對本列 <code>scrollTo</code>，不用 <code>scrollIntoView</code>（會順手捲掉外層）<br>
     · <strong>守衛順序 error → loading → 內容</strong>：<code>GameDataContext</code> 抓取失敗時 <code>loading</code> 恆為 true，反過來寫永遠看不到錯誤分支<br>
     · <strong>顯影元件 <code>LoreArt</code></strong>：灰階層＋反相模糊 color-dodge 層＝偽線稿，彩圖 opacity 淡入；只動 opacity 不動 filter；<code>LORE_ART_TUNING</code> 以圖片資料夾名為鍵（「零」關閉線稿）；reduced-motion 直接 <code>display:none</code> 線稿層<br>

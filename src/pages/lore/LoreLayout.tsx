@@ -12,10 +12,16 @@ import { Outlet, useLocation, useNavigationType } from 'react-router-dom'
  * `Layout.tsx` 的 `<main>` 是 `flex-1 overflow-hidden`，館內任何 `position: sticky`
  * 都會相對「最近的可捲祖先」定位，而那個祖先在 overflow:hidden 之下根本不捲 ——
  * 章節軸會變成「有時黏有時不黏」。因此高度沿著 flex 一路傳下來
- * （`h-screen` → `main flex-1 min-h-0` → `.lore-shell height:100%` → `.lore-scroll flex-1`），
+ * （`.lore-viewport`（100dvh）→ `main flex-1 min-h-0` → `.lore-shell height:100%` → `.lore-scroll flex-1`），
  * 由 `.lore-scroll` 當**全館唯一的** scrollport。館內元件不得再開第二層 overflow-y。
  * 這條 flex 鏈是決策 (E)：不做 `calc(100vh - …)` 減法，因為 `SignedOutBanner`
  * 的高度不可預測，任何減法都算不到它。
+ *
+ * ⚠ 手機觸控捲動的兩個前提（2026-10-13 上線當天 iPhone 實測「往下拉不到底」）——拿掉任一個都會壞，而桌機與 Chromium 手機模擬都看不出來：
+ *   ① `.lore-scroll` 自成 stacking context（index.css 的 isolation）：否則館內有 z-index 的定位層
+ *     （舞台、卷宗）在 iOS 會被合成到捲動容器的外面，手指按在它們上面推的是整份文件、不是 .lore-scroll。
+ *   ② 外殼高度用 dvh（Layout.tsx 的 .lore-viewport）：iOS 的 100vh 比工具列展開時的可見區高一截，
+ *     文件因此多出一小段可捲範圍——①失效時手指就是推動這一段，看起來像「捲了一點就卡住」。
  */
 export default function LoreLayout() {
   const { pathname } = useLocation()
@@ -147,17 +153,19 @@ export default function LoreLayout() {
           </filter>
         </defs>
       </svg>
-      {/* 粒子（PLAN-042-C B-4）：純 CSS，桌機限定、reduced-motion 關閉，樣式在 index.css。
-          放在 scrollport 外面：它是掛在整館視窗上的一層，不隨內容捲動（官網是 fixed）。 */}
-      <div className="lore-snow" aria-hidden="true">
-        <span className="lore-snow__p lore-snow__p--1" />
-        <span className="lore-snow__p lore-snow__p--big lore-snow__p--2" />
-        <span className="lore-snow__p lore-snow__p--3" />
-        <span className="lore-snow__p lore-snow__p--big lore-snow__p--4" />
-        <span className="lore-snow__p lore-snow__p--5" />
-        <span className="lore-snow__p lore-snow__p--big lore-snow__p--6" />
-      </div>
       <div className="lore-scroll" ref={scrollRef}>
+        {/* 粒子（PLAN-042-C B-4）：純 CSS，桌機限定、reduced-motion 關閉，樣式在 index.css。
+            它是掛在整館視窗上的一層、不隨內容捲動（官網是 fixed），所以是 sticky 全高、不佔版面高度。
+            ⚠ 放在 scrollport **裡面**是為了疊層：.lore-scroll 自成 stacking context（iOS 觸控捲動，見 index.css），
+              粒子留在外面的話 z-index 20 會一口氣蓋過館內所有浮層（切換列、名冊、鑑賞模式）。 */}
+        <div className="lore-snow" aria-hidden="true">
+          <span className="lore-snow__p lore-snow__p--1" />
+          <span className="lore-snow__p lore-snow__p--big lore-snow__p--2" />
+          <span className="lore-snow__p lore-snow__p--3" />
+          <span className="lore-snow__p lore-snow__p--big lore-snow__p--4" />
+          <span className="lore-snow__p lore-snow__p--5" />
+          <span className="lore-snow__p lore-snow__p--big lore-snow__p--6" />
+        </div>
         <Suspense fallback={null}>
           <Outlet />
         </Suspense>

@@ -11,6 +11,8 @@ import type { Pilot } from '../../types'
  * 機師切換列＋機師名冊（PLAN-042-D A-3／A-4／F-5）。
  *
  * 收合時是底部一條膠囊：可橫捲的圓形頭像列（目前這位置中、兩端漸隱、滾輪直接橫捲、滑過顯示名字）、‹ ›、序號、「名冊」。
+ * 膠囊平常半沉在視窗底緣、只露出上半截（站長 2026-10-13）：滑鼠移上去／鍵盤焦點由 CSS 升起，
+ * 觸控沒有 hover，點一下半露的列先升起（這一下不觸發按鈕），捲動館內或點列外再收回。
  * 點「名冊」（或按 /、手機在列上往上滑）整條膠囊長成名冊面板：
  *   ① 面板從膠囊的形狀長出來（clip-path 補間），
  *   ② 列上看得到的那幾顆頭像 FLIP 飛進名冊裡各自的格子，
@@ -97,6 +99,10 @@ export default function LoreSwitcher({
   const [q, setQ] = useState('')
   const [onlyCh, setOnlyCh] = useState(false)
   const [onlySkin, setOnlySkin] = useState(false)
+  /** 觸控把半沉的列點起來了（滑鼠與鍵盤走 CSS，不經過這裡） */
+  const [raised, setRaised] = useState(false)
+  /** 這一下點擊只是把列升起來，不交給底下的按鈕（想看清楚是誰，不該先換了人） */
+  const swallowTap = useRef(false)
 
   const idx = Math.max(0, order.findIndex((p) => p.id === currentId))
   const totalCh = useMemo(() => order.filter((p) => chapterCount(p.id) > 0).length, [order, chapterCount])
@@ -135,12 +141,15 @@ export default function LoreSwitcher({
     const tip = tipRef.current
     if (!tip) return
     const r = el.getBoundingClientRect()
+    // 列可能正從半沉的位置升起來（游標一進來就開始升）：扣掉列目前還沉著的距離，提示才會對準升起後的頭像
+    const dock = dockRef.current
+    const sunk = dock ? new DOMMatrixReadOnly(getComputedStyle(dock).transform).m42 : 0
     tip.replaceChildren(document.createTextNode(p.name))
     const small = document.createElement('small')
     small.textContent = `${p.class}${p.debutVersion ? ` · v${p.debutVersion}` : ''}`
     tip.appendChild(small)
     tip.style.left = `${r.left + r.width / 2}px`
-    tip.style.top = `${r.top - 36}px`
+    tip.style.top = `${r.top - sunk - 36}px`
     tip.classList.add('is-on')
     onHover?.(p)
   }
@@ -279,6 +288,22 @@ export default function LoreSwitcher({
   // 手機：在切換列上往上滑 → 展開
   const touchY = useRef<number | null>(null)
 
+  // 觸控升起的列：捲動館內、或點到列以外的地方就收回去。名冊開著時不收——
+  // 收合名冊時頭像要飛回列上，列若同時在往下沉，飛行的終點會對不上。
+  useEffect(() => {
+    if (!raised || open) return
+    const dock = dockRef.current
+    const scroller = dock?.closest<HTMLElement>('.lore-scroll')
+    const lower = () => setRaised(false)
+    const onPointerDown = (e: PointerEvent) => { if (!dock?.contains(e.target as Node)) lower() }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    scroller?.addEventListener('scroll', lower, { passive: true })
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true)
+      scroller?.removeEventListener('scroll', lower)
+    }
+  }, [raised, open])
+
   const query = q.trim().toLowerCase()
   const compact = sort === 'debut' || !!query || onlyCh || onlySkin
   const shownGroups = groups
@@ -290,8 +315,22 @@ export default function LoreSwitcher({
     <>
       <nav
         ref={dockRef}
-        className={`lore-dock${open ? ' is-hidden' : ''}`}
+        className={`lore-dock${open ? ' is-hidden' : ''}${raised ? ' is-raised' : ''}`}
         aria-label="切換機師"
+        onPointerDown={(e) => {
+          swallowTap.current = e.pointerType !== 'mouse' && !raised
+          if (swallowTap.current) setRaised(true)
+        }}
+        // 手勢被瀏覽器接去捲動（橫捲頭像、上滑開名冊）就不會有 click：旗標不能留到下一次
+        onPointerCancel={() => { swallowTap.current = false }}
+        onClickCapture={(e) => {
+          // detail 0＝鍵盤觸發的 click（Enter／空白鍵），一律放行
+          const swallow = swallowTap.current && e.detail > 0
+          swallowTap.current = false
+          if (!swallow) return
+          e.preventDefault()
+          e.stopPropagation()
+        }}
         onTouchStart={(e) => { touchY.current = e.touches[0]?.clientY ?? null }}
         onTouchEnd={(e) => {
           const t = e.changedTouches[0]
