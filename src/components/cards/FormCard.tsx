@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { MechForm } from '../../types'
 import { useGameData } from '../../contexts/GameDataContext'
-import { gameIconCandidates } from '../../utils/gameIcons'
+import { gameIconCandidates, iconFamily } from '../../utils/gameIcons'
 import { FallbackImage } from '../common/FallbackImage'
 import { RefText } from '../refs/RefText'
 import { RefChip } from '../refs/RefChip'
@@ -98,7 +98,8 @@ export function FormCard({ form }: { form: MechForm }) {
           <FallbackImage
             candidates={gameIconCandidates(form.icon)}
             alt=""
-            className="w-9 h-9 rounded object-contain bg-bg-card border border-border/60 shrink-0"
+            // 形態輪盤的職業圖示是白色字形（PLAN-059 E-1）：墊一點內距，別貼著框
+            className={`w-9 h-9 rounded object-contain bg-bg-card border border-border/60 shrink-0 ${iconFamily(form.icon) === 'class' ? 'p-1' : ''}`}
           />
         )}
         <div className="min-w-0 flex-1">

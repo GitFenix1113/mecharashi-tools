@@ -301,11 +301,14 @@ function FormEditPanel({
           </label>
         </Field>
 
+        {/* PLAN-059 E-1：官方形態輪盤用的是職業圖示（海莉絲：先鋒 011、虛粒子 012、突擊 002、戰術 004），
+            選圖器多開「職業／形態」分頁；要不要從技能圖示換過去是站長的決定 */}
         <GameIconField
-          label="形態圖示（官方檔名，選填）"
+          label="形態圖示（官方檔名，選填；技能圖示或「職業／形態」分頁的形態輪盤圖示）"
           value={form.icon}
           onChange={(k) => update('icon', k || undefined)}
           presetKinds={['passive']}
+          allowClass
         />
 
         <Field label="形態固有效果（照抄遊戲內形態卡正文。前台形態卡顯示的就是這段字）">

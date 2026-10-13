@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">20</div>
+      <div class="summary-num" style="color:var(--accent-green)">21</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">6</div>
+      <div class="summary-num" style="color:var(--text-dim)">5</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度（開發者 24＋站長／管理者 2）</span>
-      <span style="color:var(--accent-cyan);">20 / 26</span>
+      <span style="color:var(--accent-cyan);">21 / 26</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 77%"></div>
+      <div class="progress-bar-fill" style="width: 81%"></div>
     </div>
   </div>
 
@@ -560,16 +560,16 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 形態後台選圖器開放職業圖示</div>
       <div class="task-group-meta">GameIconPicker · FormAdmin</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">GameIconPicker 加「職業」分頁；形態卡片確認職業圖示的顯示（白圖要上色或墊底）</div>
-        <div class="task-desc">同步 <code>forms.html</code> 的 <code>icon</code> 欄位說明（可存技能圖示或職業圖示 key）。</div>
+        <div class="task-desc">同步 <code>forms.html</code> 的 <code>icon</code> 欄位說明（可存技能圖示或職業圖示 key）。<br><b>實作</b>：<code>GameIconPicker</code>／<code>GameIconField</code> 加 <code>allowClass</code>，只有形態編輯開；目前的值是職業圖示時直接開在這一頁（不被「被動」預選擋掉）；白色字形墊暗底；不參與以圖搜圖。形態卡片（圖鑑與模擬器）顯示職業圖示時補內距。驗收以獨立渲染元件完成（帶入 <code>011_s</code> 開在正確分頁並選中）。</div>
         <div class="task-file">src/components/admin/GameIconPicker.tsx · src/components/cards/FormCard.tsx · docs/02_技術文件/04_Firebase/資料庫設計文件/forms.html</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 

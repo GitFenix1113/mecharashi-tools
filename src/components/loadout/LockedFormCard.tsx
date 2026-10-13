@@ -2,7 +2,7 @@ import type { MechForm } from '../../types'
 import { lockedMounts, loadoutBudget, type LoadoutContext } from '../../utils/loadoutRules'
 import { mountLabel } from '../../utils/mechSlots'
 import { slotKey } from '../../types/slots'
-import { gameIconCandidates } from '../../utils/gameIcons'
+import { gameIconCandidates, iconFamily } from '../../utils/gameIcons'
 import { FallbackImage } from '../common/FallbackImage'
 import { WeaponIcon } from '../icons/WeaponIcon'
 import { RefText } from '../refs/RefText'
@@ -70,7 +70,7 @@ export function LockedFormCard({ form, ctx }: Props) {
           <FallbackImage
             candidates={gameIconCandidates(form.icon)}
             alt=""
-            className="w-9 h-9 rounded object-contain bg-bg-dark border border-border/60 shrink-0"
+            className={`w-9 h-9 rounded object-contain bg-bg-dark border border-border/60 shrink-0 ${iconFamily(form.icon) === 'class' ? 'p-1' : ''}`}
           />
         )}
         <div className="min-w-0 flex-1">

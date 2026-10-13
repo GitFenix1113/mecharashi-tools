@@ -100,7 +100,7 @@ const CATEGORIES_OF: Partial<Record<IconFamily, Record<string, string>>> = { wea
 /** 武器分頁預設只開主序列（敵方 BOSS 裝備、塗裝版、機甲綁定肩部平常用不到） */
 const defaultKinds = (family: IconFamily): IconKind[] => (family === 'weapon' ? ['series'] : [])
 /** 格子上的短標籤 */
-const shortKey = (key: string) => key.replace(/^Icon_(?:skill_|weapon_|backpack_)?/i, '')
+const shortKey = (key: string) => key.replace(/^Icon_(?:skill_|weapon_|backpack_|pilotclass_|wanzertype_|logo_)?/i, '')
 type UseFilter = 'all' | 'unused' | 'used'
 const MAX_RESULTS = 900
 
@@ -150,11 +150,16 @@ function describe(p: ParsedIconKey | null): string {
 
 // ── 挑選器彈窗 ─────────────────────────────────────────────────────────────────
 export function GameIconPicker({
-  value, library = 'skill', presetKinds, presetCategories, onPick, onClose,
+  value, library = 'skill', presetKinds, presetCategories, allowClass = false, onPick, onClose,
 }: {
   value?: string
   /** 開哪個圖庫：技能類（含模組詞條、研發）、BUFF 字形、武器、背包 */
   library?: IconFamily
+  /**
+   * 多開一個「職業／形態」分頁（PLAN-059 E-1）：官方的形態輪盤用的是職業圖示（海莉絲：先鋒 011、虛粒子 012、突擊 002、戰術 004）。
+   * 只給形態編輯用——技能、BUFF 的選圖器不該出現職業圖示。目前的值是職業圖示時會直接開在這一頁
+   */
+  allowClass?: boolean
   /** 開啟時預選的種類（例：編輯被動技能 → ['passive']）；不給＝該圖庫的預設（武器＝主序列，其餘全部） */
   presetKinds?: IconKind[]
   /** 武器／背包：開啟時預選的種類前綴（例：編輯打樁機 → ['102']） */
@@ -164,8 +169,10 @@ export function GameIconPicker({
 }) {
   const [index, setIndex] = useState<IconIndex | null>(peekIconIndex)
   const [error, setError] = useState<string | null>(null)
-  const [tab, setTab] = useState<IconFamily>(library)
+  const startTab: IconFamily = allowClass && parseIconKey(usageKey(value))?.family === 'class' ? 'class' : library
+  const [tab, setTab] = useState<IconFamily>(startTab)
   const [kinds, setKinds] = useState<Set<IconKind>>(() => {
+    if (startTab === 'class') return new Set()
     if (presetKinds) return new Set(presetKinds)
     // 目前的值不在預設群組裡（例：固定武裝用的是機甲綁定肩部）→ 一併打開，免得一開就看不到自己
     const cur = parseIconKey(usageKey(value))
@@ -199,7 +206,7 @@ export function GameIconPicker({
   const legacy = useMemo(() => new Set(index?.legacy ?? []), [index])
   const parsed = useMemo(() => {
     const m = new Map<string, ParsedIconKey>()
-    for (const k of [...listOf(index, 'skill'), ...listOf(index, 'buff'), ...listOf(index, 'weapon'), ...listOf(index, 'backpack')]) {
+    for (const k of [...listOf(index, 'skill'), ...listOf(index, 'buff'), ...listOf(index, 'weapon'), ...listOf(index, 'backpack'), ...listOf(index, 'class')]) {
       const p = parseIconKey(k); if (p) m.set(k, p)
     }
     return m
@@ -298,6 +305,11 @@ export function GameIconPicker({
                 <Chip on={tab === 'buff'} onClick={() => switchTab('buff')}>BUFF 字形（{index.buff.length}）</Chip>
                 {!!index.weapon?.length && <Chip on={tab === 'weapon'} onClick={() => switchTab('weapon')}>武器（{index.weapon.length}）</Chip>}
                 {!!index.backpack?.length && <Chip on={tab === 'backpack'} onClick={() => switchTab('backpack')}>背包（{index.backpack.length}）</Chip>}
+                {allowClass && !!index.class?.length && (
+                  <Chip on={tab === 'class'} onClick={() => switchTab('class')} title="官方形態輪盤用的是職業圖示（不參與以圖搜圖）">
+                    職業／形態（{index.class.length}）
+                  </Chip>
+                )}
                 <Chip on={imageMode} onClick={toggleImageMode} title="貼上遊戲截圖，找出最像的官方圖示">📷 以圖搜圖</Chip>
                 <input
                   autoFocus
@@ -368,7 +380,7 @@ export function GameIconPicker({
                         onFocus={() => setFocus(key)}
                         className="shrink-0 flex flex-col items-center gap-0.5 p-1.5 rounded-lg border border-accent-cyan/40 hover:bg-bg-dark"
                       >
-                        <img src={iconSrc(key)} alt="" className={`w-14 h-14 object-contain ${tab === 'buff' ? 'p-1.5 bg-bg-dark rounded' : ''}`} />
+                        <img src={iconSrc(key)} alt="" className={`w-14 h-14 object-contain ${tab === 'buff' || tab === 'class' ? 'p-1.5 bg-bg-dark rounded' : ''}`} />
                         <span className="text-[10px] text-text-dim">{shortKey(key)}</span>
                         <span className="text-[10px] text-text-dim">差 {d.toFixed(1)}{usage.has(key) ? '・已用' : ''}</span>
                       </button>
@@ -399,7 +411,7 @@ export function GameIconPicker({
                             active ? 'border-accent-orange bg-accent-orange/10' : 'border-border/50 hover:border-border-accent hover:bg-bg-dark'
                           }`}
                         >
-                          <img src={iconSrc(key)} alt="" loading="lazy" className={`w-16 h-16 object-contain ${tab === 'buff' ? 'p-2 bg-bg-dark rounded' : ''}`} />
+                          <img src={iconSrc(key)} alt="" loading="lazy" className={`w-16 h-16 object-contain ${tab === 'buff' || tab === 'class' ? 'p-2 bg-bg-dark rounded' : ''}`} />
                           <span className="text-[10px] text-text-dim truncate max-w-full leading-tight">{shortKey(key)}</span>
                           {n > 0 && (
                             <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-bg-dark/90 border border-border text-[10px] leading-4 text-text-secondary">{n}</span>
@@ -464,7 +476,7 @@ export function IconThumb({ icon, iconLocal, className = 'w-8 h-8 rounded shrink
 
 // ── 表單欄位版（預覽＋文字輸入＋選取＋清除）──────────────────────────────────────
 export function GameIconField({
-  label, value, onChange, library = 'skill', presetKinds, placeholder = 'Icon_skill_passive_5227',
+  label, value, onChange, library = 'skill', presetKinds, allowClass = false, placeholder = 'Icon_skill_passive_5227',
 }: {
   label: string
   value?: string
@@ -472,6 +484,8 @@ export function GameIconField({
   onChange: (key: string) => void
   library?: IconFamily
   presetKinds?: IconKind[]
+  /** 見 GameIconPicker 的 allowClass（只給形態編輯） */
+  allowClass?: boolean
   placeholder?: string
 }) {
   const [picking, setPicking] = useState(false)
@@ -486,7 +500,7 @@ export function GameIconField({
         <FallbackImage
           candidates={candidates}
           alt=""
-          className={`w-10 h-10 rounded object-contain border border-border/50 bg-bg-dark shrink-0 ${library === 'buff' ? 'p-1' : ''}`}
+          className={`w-10 h-10 rounded object-contain border border-border/50 bg-bg-dark shrink-0 ${library === 'buff' || parsedKey?.family === 'class' ? 'p-1' : ''}`}
           fallback={
             <div className="w-10 h-10 rounded border border-dashed border-border/60 bg-bg-dark/50 shrink-0 flex items-center justify-center text-text-dim text-[10px]">
               {val ? '?' : '無'}
@@ -528,6 +542,7 @@ export function GameIconField({
           value={val}
           library={library}
           presetKinds={presetKinds}
+          allowClass={allowClass}
           onPick={(key) => onChange(key)}
           onClose={() => setPicking(false)}
         />
