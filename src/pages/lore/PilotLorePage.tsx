@@ -372,6 +372,10 @@ export default function PilotLorePage() {
     t.introDone && 'is-intro-done', isReading && 'is-reading',
   ].filter(Boolean).join(' ')
 
+  // 回圖鑑（PLAN-042-G）：指向「顯示中的那位」而不是網址的 id——換人時網址先變、舞台與卷宗落後一拍，
+  // 點下去應該去畫面上看到的那位
+  const codexHref = `/pilots/${encodeURIComponent(shown.id)}`
+
   const tools = (
     <>
       <LoreSkinPicker pilot={shown} skins={skins} current={skin?.key ?? ''} onPick={pickSkin} />
@@ -422,6 +426,7 @@ export default function PilotLorePage() {
             chapters={chapters}
             chapterHref={chapterHref}
             logoLabel={logoLabel}
+            codexHref={codexHref}
           />
         )}
       </main>
@@ -440,6 +445,8 @@ export default function PilotLorePage() {
           skinCount={skinCount}
           onSelect={selectPilot}
           onOpenChange={setRosterOpen}
+          codexHref={codexHref}
+          codexName={shown.name}
           onHover={(p) => { void preloadStageArt(stageArtFor(p, rememberedSkins.get(p.id) ?? '', loreById.get(p.id)).art) }}
         />
       )}

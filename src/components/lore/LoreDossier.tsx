@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import LoreProse from './LoreProse'
+import LoreExitLink from './LoreExitLink'
 import { firstSentence, normalizeLoreSource, readableParagraphs } from './loreText'
 import { ClassIcon } from '../icons/ClassIcon'
 import { FactionLogo } from '../icons/FactionLogo'
@@ -24,6 +25,7 @@ import type { LoreChapter, LoreDoc, Pilot } from '../../types'
  * ⚠ 自訂欄位的標籤是完全自由的中文字串（含 ▇▇），只當顯示文字；React key 用索引（標籤不保證唯一，編輯台存檔前才擋同名）。
  * ⚠ 天賦圖示有空字串的（M-16）：gameIconCandidates 不產生空候選，沒有候選就不渲染 <img>。
  * ⚠ 後台預覽（D-4）也直接渲染本元件：不要在這裡讀 hook 或網址，所有資料都從 props 來。
+ *   落款鈐印（PLAN-042-G）因此是選填的 `codexHref`：預覽不傳＝不出現，管理者在編輯台不會一點就被帶離。
  */
 export interface LoreDossierProps {
   pilot: Pilot
@@ -39,9 +41,14 @@ export interface LoreDossierProps {
    * 沒給、或這顆沒有名稱 → 退回機師的陣營文字（兩顆徽章時那是複合值，所以才需要各自的名稱）
    */
   logoLabel?: (logoKey: string) => string | undefined
+  /**
+   * 這位機師的圖鑑網址（PLAN-042-G B-2）：名字旁蓋一方「機師圖鑑」朱印，點了離館過去。
+   * 圖鑑那邊的「故事館 ▸」也在名字旁——兩館的入口鏡像對稱。沒給（後台預覽）就不蓋印。
+   */
+  codexHref?: string
 }
 
-export default function LoreDossier({ pilot, lore, status = 'ready', chapters, chapterHref, logoLabel }: LoreDossierProps) {
+export default function LoreDossier({ pilot, lore, status = 'ready', chapters, chapterHref, logoLabel, codexHref }: LoreDossierProps) {
   const meta = pilotClassMeta(pilot.class)
   const tone = meta?.paper ?? 'var(--lore-ink-2)'
   const serial = pilot.id.match(/^pilot_(\d+)/)?.[1] ?? '—'
@@ -67,7 +74,21 @@ export default function LoreDossier({ pilot, lore, status = 'ready', chapters, c
           {pilot.class}
           {meta && <span className="en">{meta.en}</span>}
         </div>
-        <h1 className="lore-tb__name">{pilot.name}</h1>
+        <div className="lore-tb__namerow">
+          <h1 className="lore-tb__name">{pilot.name}</h1>
+          {codexHref && (
+            // 印文橫排兩行（機師／圖鑑）：傳統印的右起直排會被讀成「圖機鑑師」，導覽元素要一眼讀對
+            <LoreExitLink
+              to={codexHref}
+              className="lore-seal"
+              title={`離館，查看${pilot.name}的機師圖鑑（天賦・技能・神經驅動）`}
+              aria-label={`查看${pilot.name}的機師圖鑑`}
+            >
+              <span className="lore-seal__stamp" aria-hidden="true"><span className="lore-seal__txt">機師圖鑑</span></span>
+              <span className="lore-seal__cap" aria-hidden="true">COMBAT DATA ↗</span>
+            </LoreExitLink>
+          )}
+        </div>
         <div className="lore-tb__sub">
           {pilot.fullName && pilot.fullName !== pilot.name && <span>{pilot.fullName}</span>}
           {nameEn && <span className="en">{nameEn}</span>}

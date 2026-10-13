@@ -151,6 +151,17 @@ export default function LoreLayout() {
             <feComposite in="ink" in2="inkA2" operator="in" result="inked" />
             <feComposite in="inked" in2="SourceGraphic" operator="in" />
           </filter>
+          {/*
+            印泥紋理（PLAN-042-G B-2，卷宗的落款鈐印 .lore-seal__stamp 引用）：雜訊吃掉少量邊緣與內部、再輕微擾動，
+            讓紅色方塊像蓋上去的、不像按鈕。alpha＝2.75 − 3×雜訊 R：大部分不透明、只在雜訊高處出現斑駁；
+            斑太多調 2.75（越大越實），顆粒大小調 baseFrequency。
+          */}
+          <filter id="lore-stamp" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves={2} seed={7} result="n" />
+            <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3 0 0 0 2.75" result="m" />
+            <feComposite in="SourceGraphic" in2="m" operator="in" result="eroded" />
+            <feDisplacementMap in="eroded" in2="n" scale={1.3} xChannelSelector="R" yChannelSelector="G" />
+          </filter>
         </defs>
       </svg>
       <div className="lore-scroll" ref={scrollRef}>

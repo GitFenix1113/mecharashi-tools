@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-G 故事館回圖鑑路線與出館過場 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-G 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-042-G</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">故事館回圖鑑路線與出館過場</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-14 · C-3 為站長任務，不計入開發者任務</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label green">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">8</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度（開發者任務）</span>
+      <span style="color:var(--accent-green);">8 / 8</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    在故事館任何地方都回得去這位機師的圖鑑：檔案頁名字旁的朱印、讀到一半時切換列的「圖鑑 ↗」、header 的「離館」也直接落在這位身上；離館時深色站內沿著進館那道斜邊「關門」蓋回來。
+  </div>
+  <div style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.2);border-radius:10px;padding:14px 18px;font-size:13px;color:var(--text-secondary);margin:16px 0 28px;">
+    <strong style="color:var(--accent-yellow);">只動前台程式與樣式：</strong>沒有資料、集合、rules、Worker 的變動，也沒有新頂層路由（不涉及 Cloudflare 白名單）；部署＝一般的 <code>npm run push</code>。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">A 出館過場</div>
+  <div class="section-desc">決策六。三個出口共用同一個連結元件。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 過場函式與離館連結</div>
+      <div class="task-group-meta">src/components/lore/loreExit.ts · LoreExitLink.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">startViewTransition＋等 html.lore-mode 消失</div>
+        <div class="task-desc"><code>exitLore(navigate, to)</code>：掛 <code>html.lore-exiting</code> → <code>startViewTransition</code>，callback 裡 navigate 後以 MutationObserver 等 <code>html.lore-mode</code> 被拿掉（保險絲 1.5 秒）→ <code>finished</code> 後拿掉 class；不支援或 reduced-motion 直接換頁。
+        <code>LoreExitLink</code>＝<code>&lt;Link&gt;</code>，只有一般左鍵改走過場（已被攔下、中鍵、修飾鍵、<code>target</code> 皆放行）。<br>
+        <span style="color:var(--text-secondary)">✅ 2026-10-14：<code>flushSync</code> 版本不可行——<code>BrowserRouter</code> 預設以 <code>startTransition</code> 更新路由（見計畫書警示區塊）。</span></div>
+        <div class="task-file">src/components/lore/loreExit.ts · src/components/lore/LoreExitLink.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 「關門」樣式</div>
+      <div class="task-group-meta">src/index.css</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">html.lore-exiting::view-transition-old／new(root)</div>
+        <div class="task-desc">新畫面 <code>lore-exit-shut</code>：<code>polygon(118% 0,100% 0,100% 100%,145% 100%)</code> → <code>polygon(-45% 0,…,-18% 100%)</code>（與 <code>lore-veil-wipe</code> 同一道斜邊），舊畫面 <code>lore-exit-dim</code> 微暗；620ms。覆寫 animation 一併蓋掉 UA 預設的 plus-lighter 混色。</div>
+        <div class="task-file">src/index.css（.lore-veil 之後）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">B 三個出口</div>
+  <div class="section-desc">決策一～五。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 底線：「離館 ↗」跟著網址走</div>
+      <div class="task-group-meta">src/components/layout/Layout.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">useMatch('/lore/pilots/:id/*') → /pilots/:id</div>
+        <div class="task-desc">館首頁維持 <code>/pilots</code>；標籤不變，title「離館，回到這位機師的圖鑑」／「離館，回到機師圖鑑」。改用 <code>LoreExitLink</code>，離館也播關門過場。</div>
+        <div class="task-file">src/components/layout/Layout.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; A 落款鈐印</div>
+      <div class="task-group-meta">LoreDossier.tsx · LoreLayout.tsx · index.css</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">名字旁「機師圖鑑」朱印＋印泥紋理＋開場蓋章</div>
+        <div class="task-desc"><code>LoreDossier</code> 選填 <code>codexHref</code>（後台預覽不傳＝不蓋印）；標題區名字包進 <code>.lore-tb__namerow</code>。<code>#lore-stamp</code> 濾鏡放 <code>LoreLayout</code>。
+        開場蓋章只掛在 <code>.is-reveal-full.is-ready</code>（750ms 延遲、420ms）。手機：印 40px、收掉小字。</div>
+        <div class="task-file">src/components/lore/LoreDossier.tsx · src/pages/lore/LoreLayout.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; D 切換列「圖鑑 ↗」</div>
+      <div class="task-group-meta">LoreSwitcher.tsx · index.css</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">名冊鈕之後的紅色膠囊鈕</div>
+        <div class="task-desc">新增 prop <code>codexHref</code>／<code>codexName</code>；細線分隔、紅色＝離館；手機只留圖示。觸控第一下只升起列的攔截照常生效。</div>
+        <div class="task-file">src/components/lore/LoreSwitcher.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 頁面串接</div>
+      <div class="task-group-meta">src/pages/lore/PilotLorePage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">codexHref 用 shown.id</div>
+        <div class="task-desc">同一個網址傳給卷宗與切換列；指向顯示中的那位（決策五）。</div>
+        <div class="task-file">src/pages/lore/PilotLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label green">Phase C</div>
+  <div class="section-title">C 文件、驗收與部署</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 文件與更新履歷</div>
+      <div class="task-group-meta">docs/03_頁面規劃/13_故事館 · 總綱 · siteChangelog</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">頁面規劃、總綱子計畫表、更新履歷</div>
+        <div class="task-desc">✅ 頁面規劃（外殼形態、扉頁、切換列、元件清單）與 PLAN-042 總綱的子計畫連結已補。✅ 更新履歷 2 筆（feat：三個回圖鑑出口；style：關門過場），隨 commit 補上。</div>
+        <div class="task-file">docs/03_頁面規劃/13_故事館/index.html · PLAN-042_故事館_總綱 · src/data/siteChangelog/2026-10.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 本機驗收</div>
+      <div class="task-group-meta">vite dev（正式站資料）· chrome-devtools</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">桌機／手機、閱讀模式、過場中途截圖</div>
+        <div class="task-desc">✅ 2026-10-14：海莉絲扉頁三個出口都指向 <code>/pilots/pilot_049_海莉絲</code>、館首頁的離館仍是 <code>/pilots</code>；卡米拉章節頁（閱讀模式）切換列「圖鑑 ↗」與 header 都指向卡米拉；
+        過場拉長到 10 秒中途截圖：左半是故事館、右半深色圖鑑沿斜邊蓋過來（新畫面確實拍到圖鑑），結束後 <code>html</code> 的 class 清乾淨；開場蓋章約 2.5 秒開始、3.7 秒結束；手機 375px 淬鋒·凱登（五字名）印與名字同一行。
+        <code>npm test</code> 1496 過、<code>npm run build</code> 過；<code>eslint</code> 只剩 <code>Layout.tsx</code> 既有的 set-state-in-effect（HEAD 就有，非本計畫引入）。<br>
+        <span style="color:var(--text-secondary)">註：Claude 桌面版內建瀏覽器窗格隱藏時不繪製，View Transition 會停在半途直到下一幀——不是 bug，驗收改用 chrome-devtools 的獨立 Chrome。</span></div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 部署與正式站複驗</div>
+      <div class="task-group-meta">GitHub Pages</div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">npm run push → 正式站點三個出口</div>
+        <div class="task-desc">只動前台，<code>npm run push</code> 即可。部署後在正式站點一次印章、切換列、header，確認關門過場與落點；iPhone Safari（18 起支援 View Transitions）看一眼。<br><span style="color:var(--text-secondary)">🔧 2026-10-14 站長指示 commit 並推送（<code>npm run push</code>）；⬜ 待 pages-build-deployment 完成後在正式站複驗。</span></div>
+        <div class="task-file">main</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status doing">進行中</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-G — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

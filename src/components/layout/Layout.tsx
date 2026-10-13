@@ -1,4 +1,4 @@
-import { Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { Outlet, Link, NavLink, useNavigate, useLocation, useMatch } from 'react-router-dom'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePageTracking } from '../../hooks/usePageTracking'
@@ -13,6 +13,8 @@ import { VERSION_VIEWS } from '../versions/VersionViewTabs'
 import { SITE_NAME, SITE_TITLE } from '../../lib/siteMeta'
 // 故事館 header 的 BGM 開關（PLAN-042-C E-2）。很小，且 <audio preload="none"> 關著時不下載任何東西。
 import LoreBgmToggle from '../lore/LoreBgmToggle'
+// 「離館」走出館過場（PLAN-042-G）。同樣很小：一個 <Link> 包裝＋一支不帶依賴的過場函式。
+import LoreExitLink from '../lore/LoreExitLink'
 
 // 友站：英文版 Mecharashi Wiki（對稱其站內指回本站的連結）
 const FRIEND_SITE_URL = 'https://mecharashi-wiki.cc/'
@@ -167,6 +169,11 @@ export default function Layout() {
   // 機師故事館（/lore）再進一階：連 header 都換成紙色細帶，全部導覽附屬件收起（PLAN-042-A）。
   const chromeMode = chromeModeFor(location.pathname)
   const immersive = chromeMode === 'immersive'
+  // 「離館」跟著網址走（PLAN-042-G B-1）：在某位機師的檔案／章節裡，落點是這位的圖鑑；館首頁才回列表。
+  // useMatch 拿到的 id 已解碼，組網址要再編回去。
+  const lorePilotMatch = useMatch('/lore/pilots/:id/*')
+  const lorePilotId = lorePilotMatch?.params.id
+  const loreExitTo = lorePilotId ? `/pilots/${encodeURIComponent(lorePilotId)}` : '/pilots'
   const showPageChrome = chromeMode === 'default'
   // 比對用 `=== to` 或 `to + '/'`：直接 startsWith(to) 會讓 /modules 誤配到未來的
   // /modulesomething，也讓詳情頁（/pilots/xxx）正確落在圖鑑那一群。
@@ -264,9 +271,13 @@ export default function Layout() {
               <Link to="/lore" className="no-underline text-text-primary font-bold tracking-wider whitespace-nowrap">
                 機師故事館
               </Link>
-              <Link to="/pilots" className="no-underline text-xs text-text-secondary hover:text-text-primary whitespace-nowrap">
+              <LoreExitLink
+                to={loreExitTo}
+                title={lorePilotId ? '離館，回到這位機師的圖鑑' : '離館，回到機師圖鑑'}
+                className="no-underline text-xs text-text-secondary hover:text-text-primary whitespace-nowrap"
+              >
                 離館 ↗
-              </Link>
+              </LoreExitLink>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {/* 背景音樂開關（PLAN-042-C E-2）：預設關、記偏好、離館即停 */}

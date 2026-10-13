@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { Ref } from 'react'
 import { FallbackImage } from '../common/FallbackImage'
+import LoreExitLink from './LoreExitLink'
 import { ClassIcon } from '../icons/ClassIcon'
 import { pilotClassMeta } from '../../data/pilotClasses'
 import { matchesLoreQuery, type LoreGroup, type LorePilot, type LoreSort } from './loreRoster'
@@ -9,7 +10,8 @@ import { pilotHeadCandidates } from './loreStageArt'
 /**
  * 機師切換列＋機師名冊（PLAN-042-D A-3／A-4／F-5）。
  *
- * 收合時是底部一條膠囊：可橫捲的圓形頭像列（目前這位置中、兩端漸隱、滾輪直接橫捲、滑過顯示名字）、‹ ›、序號、「名冊」。
+ * 收合時是底部一條膠囊：可橫捲的圓形頭像列（目前這位置中、兩端漸隱、滾輪直接橫捲、滑過顯示名字）、‹ ›、序號、「名冊」、
+ * 列尾紅色的「圖鑑 ↗」（離館去這位的圖鑑，PLAN-042-G）。
  * 膠囊平常半沉在視窗底緣、只露出上半截（站長 2026-10-13）：滑鼠移上去／鍵盤焦點由 CSS 升起，
  * 觸控沒有 hover，點一下半露的列先升起（這一下不觸發按鈕），捲動館內或點列外再收回。
  * 點「名冊」（或按 /、手機在列上往上滑）整條膠囊長成名冊面板：
@@ -46,6 +48,13 @@ export interface LoreSwitcherProps {
   onSelect: (id: string, dir: 1 | -1) => void
   onOpenChange?: (open: boolean) => void
   onHover?: (p: LorePilot) => void
+  /**
+   * 顯示中這位的圖鑑網址＋名字（PLAN-042-G B-3）：列尾一顆紅色「圖鑑 ↗」。
+   * 卷宗的落款鈐印在閱讀模式看不到，這顆是「讀到一半也能隨時去查數值」的入口。
+   * 紅色＝離館（名冊鈕是館內的墨色），兩種動作在列上分得開。
+   */
+  codexHref?: string
+  codexName?: string
 }
 
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -79,7 +88,7 @@ function highlight(name: string, q: string) {
 }
 
 export default function LoreSwitcher({
-  ref, groups, order, currentId, sort, onSortChange, chapterCount, skinCount, onSelect, onOpenChange, onHover,
+  ref, groups, order, currentId, sort, onSortChange, chapterCount, skinCount, onSelect, onOpenChange, onHover, codexHref, codexName,
 }: LoreSwitcherProps) {
   const dockRef = useRef<HTMLElement>(null)
   const stripRef = useRef<HTMLDivElement>(null)
@@ -365,6 +374,23 @@ export default function LoreSwitcher({
           </svg>
           <span>名冊</span><kbd>/</kbd>
         </button>
+        {codexHref && (
+          <>
+            <span className="lore-dock__sep" aria-hidden="true" />
+            {/* 觸控第一下只升起列：nav 的 onClickCapture 會先攔下（preventDefault＋stopPropagation），連結不會被觸發 */}
+            <LoreExitLink
+              to={codexHref}
+              className="lore-dock__codex"
+              title={`離館，查看${codexName ?? '這位機師'}的機師圖鑑`}
+              aria-label={`查看${codexName ?? '這位機師'}的機師圖鑑`}
+            >
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
+                <path d="M2 3.2c2.2-.8 4.2-.6 6 .8v9.6c-1.8-1.4-3.8-1.6-6-.8zM14 3.2c-2.2-.8-4.2-.6-6 .8v9.6c1.8-1.4 3.8-1.6 6-.8z" />
+              </svg>
+              <span>圖鑑 ↗</span>
+            </LoreExitLink>
+          </>
+        )}
       </nav>
       <div ref={tipRef} className="lore-tip" aria-hidden="true" />
 

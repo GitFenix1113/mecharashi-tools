@@ -390,6 +390,19 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
   to   { clip-path: polygon(118% 0, 100% 0, 100% 100%, 145% 100%); }
 }
 
+/* ── 出館「關門」（PLAN-042-G A-1）：推門進館的反向 ─────────────────────────────
+   View Transitions：舊畫面（館內）原地微暗，新畫面（深色的站內）以進館遮罩的**同一道斜邊**（上 118%／下 145%，
+   斜率 27%）從右側蓋回來，終點整條斜邊移出左緣。由 loreExit.ts 在過場期間掛上 html.lore-exiting——
+   只限定在這個 class 底下，站上日後別處用 View Transitions 不會被套到。
+   覆寫 animation 也一併蓋掉 UA 預設的 plus-lighter 混色（它是寫在預設動畫裡的），新舊重疊處才不會發白；mix-blend-mode 再寫死一次保險。 */
+html.lore-exiting::view-transition-old(root) { animation: lore-exit-dim 620ms ease both; mix-blend-mode: normal; }
+html.lore-exiting::view-transition-new(root) { animation: lore-exit-shut 620ms cubic-bezier(0.5, 0, 0.2, 1) both; mix-blend-mode: normal; }
+@keyframes lore-exit-shut {
+  from { clip-path: polygon(118% 0, 100% 0, 100% 100%, 145% 100%); }
+  to   { clip-path: polygon(-45% 0, 100% 0, 100% 100%, -18% 100%); }
+}
+@keyframes lore-exit-dim { to { filter: brightness(0.82); } }
+
 /* ── PLAN-042-C B：官網素材切版 ───────────────────────────────────────────────
    素材一律自託管在 public/images/lore/（來源與取得日期見該目錄 README），不熱連官方 CDN。
    紙面（bg-paper：官網 bg.jpg 切掉左側紅帶後的區域）鋪整館；**紅帶只出現在館首頁的 hero 裡**——
@@ -784,9 +797,33 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
 }
 .lore-tb__class { display: inline-flex; align-items: center; gap: 8px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.32em; color: var(--tone); }
 .lore-tb__class .en { font-family: 'Orbitron', sans-serif; font-size: 0.53rem; letter-spacing: 0.3em; color: var(--lore-ink-3); font-weight: 600; }
-.lore-tb__name { margin: 8px 0 2px; font-family: var(--lore-kai); font-weight: 400; font-size: clamp(44px, 4.6vw, 68px); line-height: 1.08; letter-spacing: 0.06em; color: var(--lore-ink); }
+.lore-tb__namerow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; margin: 8px 0 2px; }
+.lore-tb__name { margin: 0; min-width: 0; font-family: var(--lore-kai); font-weight: 400; font-size: clamp(44px, 4.6vw, 68px); line-height: 1.08; letter-spacing: 0.06em; color: var(--lore-ink); }
 .lore-tb__sub { font-size: 0.74rem; color: var(--lore-ink-2); letter-spacing: 0.12em; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
 .lore-tb__sub .en { font-family: var(--lore-serif); font-style: italic; letter-spacing: 0.04em; color: var(--lore-ink-3); }
+/* 落款鈐印（PLAN-042-G B-2）：名字旁一方朱印，點了離館去這位的圖鑑。圖鑑那邊的「故事館 ▸」也在名字旁，兩館鏡像對稱。
+   提案與比較稿：_local-notes/2026-10/2026-10-14_故事館回圖鑑路線方案/。
+   印的幾何用 px（它是一張「圖」，不跟字級三鈕縮放）；下方小字用 rem，與徽章圈的 caption 同一套。
+   印泥紋理是 LoreLayout 的 #lore-stamp 濾鏡——文字也一起被吃掉一點，才像真的蓋上去。 */
+.lore-seal { flex: none; display: inline-flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px; margin-top: 4px; border-radius: 4px; color: inherit; text-decoration: none; }
+.lore-seal__stamp {
+  width: 46px; height: 46px; display: grid; place-items: center; border-radius: 4px; rotate: -5deg;
+  background: var(--lore-red); color: #fbf3ea; filter: url(#lore-stamp);
+  transition: scale 160ms var(--lore-ease-out), rotate 260ms var(--lore-ease-out);
+}
+.lore-seal__txt { font-family: var(--lore-kai); font-size: 17px; line-height: 1.04; inline-size: 2.08em; block-size: 2.08em; text-align: center; letter-spacing: 0; }
+.lore-seal__cap { font-family: 'JetBrains Mono', monospace; font-size: 0.5rem; letter-spacing: 0.16em; color: var(--lore-ink-3); white-space: nowrap; transition: color 160ms; }
+.lore-seal:hover .lore-seal__stamp { scale: 0.9; rotate: -1deg; }
+.lore-seal:hover .lore-seal__cap { color: var(--lore-red); }
+.lore-seal:focus-visible { outline: 2px solid var(--lore-red); outline-offset: 2px; }
+/* 開場最後一拍「蓋章」：只在完整開場（is-reveal-full，3.2 秒後拿掉）裡播——換人、進出閱讀模式、開場被快轉都不重播。
+   結束幀＝靜態樣式，class 拿掉時不會跳 */
+@keyframes lore-stamp-in {
+  0%   { opacity: 0; scale: 1.7; rotate: -14deg; }
+  60%  { opacity: 1; scale: 0.92; rotate: -4deg; }
+  100% { opacity: 1; scale: 1; rotate: -5deg; }
+}
+.lore-page.is-reveal-full.is-ready .lore-seal__stamp { animation: lore-stamp-in 420ms cubic-bezier(0.3, 1.4, 0.5, 1) 750ms both; }
 .lore-emblems { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: flex-start; }
 .lore-emb { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 76px; }
 .lore-emb__ring { width: 68px; height: 68px; border-radius: 50%; border: 1px solid var(--lore-line-3); display: flex; align-items: center; justify-content: center; gap: 2px; text-align: center;
@@ -960,6 +997,16 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
 .lore-dock__open:hover { color: var(--lore-red); border-color: rgba(177, 0, 0, 0.35); background: rgba(177, 0, 0, 0.05); }
 .lore-dock__open svg { width: 15px; height: 15px; }
 .lore-dock__open kbd { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 400; border: 1px solid var(--lore-line); border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; color: var(--lore-ink-3); }
+/* 列尾「圖鑑 ↗」（PLAN-042-G B-3）：紅色＝離館，與館內動作（名冊，墨色）分開；隔一條細線 */
+.lore-dock__sep { flex: none; width: 1px; height: 20px; background: var(--lore-line); margin: 0 4px 0 6px; }
+.lore-dock__codex {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px 0 10px;
+  border: 1px solid rgba(177, 0, 0, 0.3); border-radius: 999px; background: rgba(255, 252, 245, 0.8); text-decoration: none;
+  font-size: 12.5px; font-weight: 700; letter-spacing: 0.12em; color: var(--lore-red); white-space: nowrap; transition: border-color 160ms, background 160ms;
+}
+.lore-dock__codex:hover { background: rgba(177, 0, 0, 0.06); border-color: rgba(177, 0, 0, 0.55); }
+.lore-dock__codex:focus-visible { outline: 2px solid var(--lore-red); outline-offset: 2px; }
+.lore-dock__codex svg { width: 15px; height: 15px; }
 /* 懸停名字：放在列外面（列本身是 overflow 捲動容器，裡面的提示會被裁掉） */
 .lore-tip { position: fixed; z-index: 51; translate: -50% 0; white-space: nowrap; pointer-events: none;
             font-size: 12px; font-weight: 700; letter-spacing: 0.1em; background: var(--lore-ink); color: var(--lore-sheet-solid); padding: 3px 9px; border-radius: 4px;
@@ -1074,6 +1121,13 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
   .lore-titleblock { margin: 0 -12px -26px; padding: 30px 30px 46px; background: linear-gradient(to bottom, rgba(239, 231, 216, 0), rgba(239, 231, 216, 0.94) 34%); }
   .lore-titleblock::before { display: none; }
   .lore-tb__name { font-size: 42px; }
+  /* 手機收掉印下小字、印縮一號：五字名（淬鋒·凱登、洛莎·審判）連小字一起放不下，印會被擠到下一行（375px 實測）。
+     印文本身寫著「機師圖鑑」，小字只是補充 */
+  .lore-tb__namerow { gap: 4px 14px; }
+  .lore-seal { padding: 2px; margin-top: 2px; }
+  .lore-seal__stamp { width: 40px; height: 40px; }
+  .lore-seal__txt { font-size: 15px; }
+  .lore-seal__cap { display: none; }
   .lore-card { padding: 24px 20px 22px; }
   .lore-prose { font-size: 0.87rem; line-height: 2; }
   .lore-kv { grid-template-columns: 1fr; }
@@ -1092,6 +1146,9 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
   .lore-dock__count { display: none; }
   .lore-dock__open { padding: 0 10px; }
   .lore-dock__open span, .lore-dock__open kbd { display: none; }
+  .lore-dock__sep { margin: 0 2px; }
+  .lore-dock__codex { padding: 0 10px; }
+  .lore-dock__codex span { display: none; }
   .lore-roster { left: 0; right: 0; bottom: 0; translate: none; width: auto; height: 84svh; border-radius: 20px 20px 0 0; border-bottom: 0; }
   .lore-roster__head { padding: 10px 14px 10px; }
   .lore-roster__head::before { content: ''; position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; translate: -50% 0; border-radius: 4px; background: var(--lore-line); }

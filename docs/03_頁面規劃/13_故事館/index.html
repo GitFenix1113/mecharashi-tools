@@ -31,7 +31,7 @@
   <div class="section-title">頁面規格</div>
   <table class="spec-table">
     <tr><th>路由</th><td><code>/lore</code>（館首頁）｜<code>/lore/pilots/:id</code>（扉頁）｜<code>/lore/pilots/:id/:part</code>（章節頁／閱讀模式）｜外觀放查詢字串 <code>?skin=&lt;立繪鍵&gt;</code>（PLAN-042-D）｜<code>/lore/*</code> 兜底轉址回 <code>/lore</code>｜<code>/admin/lore</code>（編輯台，<code>AdminRoute</code>）</td></tr>
-    <tr><th>開發階段</th><td>PLAN-042-A Phase C–F（2026-09-09 ～ 09-10）；氛圍層與顯影修正另立 <a href="../../05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/計畫書.html">PLAN-042-C</a>；2026-10-13 改版成「舞台＋卷宗」、加機師名冊與外觀切換：<a href="../../05_階段性開發計畫/執行中/PLAN-042-D_故事館改版_舞台與卷宗/計畫書.html">PLAN-042-D</a>；同日機師資料分家、編輯台改版：<a href="../../05_階段性開發計畫/執行中/PLAN-042-E_機師資料分家與故事館編輯台/計畫書.html">PLAN-042-E</a></td></tr>
+    <tr><th>開發階段</th><td>PLAN-042-A Phase C–F（2026-09-09 ～ 09-10）；氛圍層與顯影修正另立 <a href="../../05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/計畫書.html">PLAN-042-C</a>；2026-10-13 改版成「舞台＋卷宗」、加機師名冊與外觀切換：<a href="../../05_階段性開發計畫/執行中/PLAN-042-D_故事館改版_舞台與卷宗/計畫書.html">PLAN-042-D</a>；同日機師資料分家、編輯台改版：<a href="../../05_階段性開發計畫/執行中/PLAN-042-E_機師資料分家與故事館編輯台/計畫書.html">PLAN-042-E</a>；2026-10-14 回圖鑑的出口與出館過場：<a href="../../05_階段性開發計畫/執行中/PLAN-042-G_故事館回圖鑑路線與出館過場/計畫書.html">PLAN-042-G</a></td></tr>
     <tr><th>登入需求</th><td>前台不需要登入；編輯台 ADMIN 即可（只寫 <code>pilotLore</code>；EDITOR 角色先不做，PLAN-042-E 決策八）</td></tr>
     <tr><th>資料來源</th><td><strong>PLAN-042-E 起依 id 合併兩個集合</strong>（判準：與數值、機制有關的留 <code>pilots</code>，其餘歸 <code>pilotLore</code>）：<br>
       · <code>pilots</code>：身分欄位——名字、全名、職業、陣營、駕駛許可、天賦（徽記）、登場版本、立繪（<code>gameId</code>／<code>artKey</code>）<br>
@@ -40,6 +40,9 @@
       外觀分兩層（PLAN-042-E 決策六）：<strong>靜態層</strong>＝圖檔（<code>public/images/game/pilots/&lt;gameId&gt;/skins/</code>）與 build 產生的 <code>GAME_PILOT_SKINS</code>；<strong>動態層</strong>＝ <code>pilotLore.skins</code> 的名稱／隱藏／順序，執行期由 <code>pilotSkins(pilot, loreDoc)</code> 合併（沒設定的照原索引接在後面、顯示「外觀 N」）。<code>scripts/lib/pilotSkinMeta.json</code> 只剩匯入用的歸屬 <code>owner</code></td></tr>
     <tr><th>導覽入口</th><td><strong>✅ 2026-10-13 對外開放、常駐</strong>：桌機導覽列與手機 More 面板的「故事館」對所有人顯示；機師詳情頁名字旁有「故事館 ▸」連結（PLAN-042-E，<strong>不帶任何故事內容、不載入 pilotLore</strong>——圖鑑不跨進故事館）。入口旗標 <code>useLoreEntry.ts</code>（<code>LORE_INTERNAL_ONLY</code>）已於 PLAN-042-E 刪除：圖鑑已沒有簡介可退回顯示，旗標的退路也就不存在了。<br><span style="color:var(--text-dim)">（歷史：2026-10-03 ～ 10-13 入口收起期間，導覽列、手機 More 面板與機師詳情頁的「讀完整故事 ▸」只對 ADMIN／OWNER 顯示；<code>/lore/*</code> 路由不動，知道網址的人照樣進得去；一般訪客的機師詳情頁退回簡介<strong>全文</strong>顯示。）</span><br>入口設計：桌機與手機 More 面板的「故事館」（刻意獨立於版本／圖鑑／攻略三群之外，避免 <code>SubNavTabs</code> 在館內命中）</td></tr>
     <tr><th>外殼形態</th><td><code>chromeMode = 'immersive'</code>：header 換成紙色細帶（館名／離館／字級三顆），footer、分頁列、手機 Tab Bar 全收；<code>html.lore-mode</code> 只設 <code>color-scheme</code> 與 body 背景，色票覆寫只在 <code>.lore-shell</code> / <code>.lore-chrome</code>（portal 浮層保持深色可讀）</td></tr>
+    <tr><th>出口與出館過場</th><td><strong>PLAN-042-G</strong>：回圖鑑有三個出口——header「離館 ↗」跟著網址走（<code>/lore/pilots/:id</code> 含章節頁 → <code>/pilots/:id</code>，館首頁 → <code>/pilots</code>）、卷宗名字旁的「機師圖鑑」朱印、切換列尾端紅色「圖鑑 ↗」（閱讀模式也在）。
+      三者共用 <code>LoreExitLink</code>（普通 <code>&lt;Link&gt;</code>，只有一般左鍵改走過場），離館以 View Transitions 播「關門」：深色站內沿進館遮罩同一道斜邊從右側蓋回來（<code>html.lore-exiting</code> 底下的 <code>::view-transition-*</code>）。
+      <code>BrowserRouter</code> 以 <code>startTransition</code> 更新路由，<code>flushSync</code> 逼不出同步換頁，所以 update callback 等 <code>html.lore-mode</code> 消失才結束（<code>loreExit.ts</code>）。</td></tr>
     <tr><th>參數命名</th><td>一律 <code>:id</code>——<code>analytics/track.ts</code> 寫死讀 <code>params.id</code>，改名會讓機師熱度一筆都不記</td></tr>
   </table>
   <div class="warning-block" style="margin-top:1rem;">
@@ -72,6 +75,8 @@
       <strong>PLAN-042-E 起卷宗的資料來源</strong>：標題區的身分欄位（名字、全名、職業、陣營、執照、天賦）讀 pilots；英文名、扉頁簡介＋署名、個人資料、徽章、逸聞目錄全部讀 pilotLore。
       簡介在搬遷時已切掉署名，渲染端不再跑 <code>stripTrailingSource</code>；個人資料列由 <code>dossierRows()</code> 組出（性別→身高→血型→陣營→自訂欄位，順序＝編輯台排的順序）。
       pilotLore 載入中／失敗時，扉頁卡改顯示「檔案調閱中」／「故事資料載入失敗」＋重新整理鈕，個人資料與逸聞卡不出現。<br>
+      <strong>落款鈐印（PLAN-042-G）</strong>：名字旁一方白文朱印「機師／圖鑑」（橫排兩行，傳統右起直排會被讀成「圖機鑑師」）＋印下 <code>COMBAT DATA ↗</code>，點了離館去這位的圖鑑——與圖鑑名字旁的「故事館 ▸」鏡像對稱。
+      印泥紋理是 <code>LoreLayout</code> 的 <code>#lore-stamp</code> 濾鏡；完整開場最後一拍「蓋章」。網址是 <code>LoreDossier</code> 的選填 <code>codexHref</code>，後台預覽不傳＝不蓋印。手機印 40px、不顯示小字（五字名放不下）。<br>
       <span style="color:var(--text-dim)">（以下為 042-A 的舊版面，已被取代）</span>桌機 42／58 兩欄：左立繪柱（sticky，高度吃 <code>--lore-viewport-h</code> 實測值）、右卷宗。立繪在<strong>渲染前</strong>分流：
       52 位有 <code>art.webp</code> 走直式全身（<code>hasPilotArt</code>），其餘退回 <code>full.webp</code> 半身並套底部噪點 mask（86/87 張底邊硬切）。
       直書姓名壓立繪右緣；職業／名字／三枚徽記（陣營文字圓環、天賦圖示、駕駛許可）；引文體正文套 blockquote 語彙、署名右對齊細線；<code>additionalInfo</code> 鍵值列；章節入口。
@@ -89,7 +94,7 @@
     <div class="card pink">
       <div class="card-icon">🧭</div>
       <h3>切換列與機師名冊（PLAN-042-D）</h3>
-      <p>詳情頁底部膠囊：可橫捲的圓形頭像列（目前這位置中）、‹ ›、序號、「名冊」；← → 換人（閱讀模式中換章）、手機封面左右滑。
+      <p>詳情頁底部膠囊：可橫捲的圓形頭像列（目前這位置中）、‹ ›、序號、「名冊」、尾端紅色「圖鑑 ↗」（PLAN-042-G：離館去顯示中這位的圖鑑，閱讀模式也在；手機只留圖示）；← → 換人（閱讀模式中換章）、手機封面左右滑。
       <strong>平常半沉在視窗底緣、只露出上半截</strong>（2026-10-13 站長回饋：減少版面佔用）：滑鼠移上去或鍵盤焦點時升起；觸控點一下先升起（這一下不換人），捲動館內或點列外再收回。
       名冊從膠囊長出來、頭像 FLIP 飛進分組格子；搜尋（含英文名——PLAN-042-E 起取自 pilotLore，由 <code>withLoreNames()</code> 依 id 併進名冊成員）、依職業／登場版本分組（與館首頁同一個排序，記在 sessionStorage）、有逸聞／有外觀篩選、<code>/</code> 開啟、Esc 收合。
       換人網址用 replace；回館首頁時 <code>LoreLayout</code> 會還原牆面的捲動位置（POP）。換人過場 0.9 秒、不重播完整開場；完整開場只在進入詳情頁時播。</p>
@@ -154,7 +159,7 @@
   </div>
   <div class="info-block" style="margin-top:1rem;">
     <strong>✅ 舞台＋卷宗（PLAN-042-D，2026-10-13）</strong><br>
-    · <strong>元件</strong>：<code>LoreStage</code>（立繪層、簽名、直書名、流水號、檔案小字、工具）、<code>LoreDossier</code>（四張卡）、<code>LoreProse</code>（正文排版）、<code>LoreSwitcher</code>（切換列＋名冊）、<code>LoreSkinPicker</code>、<code>LoreViewer</code>；
+    · <strong>元件</strong>：<code>LoreStage</code>（立繪層、簽名、直書名、流水號、檔案小字、工具）、<code>LoreDossier</code>（四張卡）、<code>LoreProse</code>（正文排版）、<code>LoreSwitcher</code>（切換列＋名冊）、<code>LoreSkinPicker</code>、<code>LoreViewer</code>、<code>LoreExitLink</code>（離館連結＋出館過場，header 也用）；
       042-A／042-C 的 <code>LoreArt</code>、<code>useLoreParallax</code>、<code>LoreSourceLine</code> 已移除<br>
     · <strong>狀態全掛在 <code>.lore-page</code> 的 class</strong>（is-intro／is-reveal-full／is-reveal-quick／is-revealed／is-ready／is-quick／is-leaving／is-entering／is-intro-done／is-reading），CSS 在 <code>index.css</code> 的 PLAN-042-D 區塊；顯示中的機師落後網址一拍，換人才有退場／進場<br>
     · <strong>開場</strong>：置中顯影 → 1250ms 立繪滑到一側＋漸隱帶打開 → 1600ms 卡片逐張進場；任何輸入快轉、reduced-motion 直接終態<br>
