@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-F 故事館大廳全景與陣營徽章管理 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-F 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-042-F</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">故事館大廳全景與陣營徽章管理</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-14 · E-2、H-1 為站長任務，不計入開發者任務</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label orange">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">16</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">16</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度（開發者任務）</span>
+      <span style="color:var(--accent-orange);">0 / 16</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    外觀按「全身立繪」看到的是遊戲大廳那張完整場景；管理員在選圖器上一眼看得出每顆徽章是哪個陣營，也能在後台自己補名稱。
+  </div>
+  <div style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.2);border-radius:10px;padding:14px 18px;font-size:13px;color:var(--text-secondary);margin:16px 0 28px;">
+    <strong style="color:var(--accent-yellow);">兩條線互不依賴：</strong>A／B（大廳全景）只動靜態圖與前台，可以先上；C／D（徽章）有新集合，部署順序 rules → Worker → 網站。E-2、H-1 為站長任務，不計入開發者任務。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label orange">Phase A</div>
+  <div class="section-title">A 大廳全景素材（build 層）</div>
+  <div class="section-desc">把造型預覽圖收成 <code>&lt;artKey&gt;_lobby.webp</code> 並進索引。流程維持「站長不靠 AI 也能跑」：報告的「下一步」照抄清單要同步。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 外觀 → 預覽圖對照表</div>
+      <div class="task-group-meta">scripts/lib/pilotSkinMeta.json</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">27 筆 lobby 欄（含兩處人工修正）</div>
+        <div class="task-desc">每筆 <code>lobby</code>＝預覽圖官方檔名。奧菲利亞 → <code>Pilot_10103134C</code>、<code>RosaDiaz</code> → <code>Pilot_10103154C</code>；洛莎那張（<code>Img_main_Rosa…</code>）暫判 <code>Pilot_10103154B</code>（中高信心，見 H-1）。<code>_說明</code> 補上 lobby 欄。對照依據：英文名鍵＋外觀卡 <code>Icon_pilotSkin_&lt;artKey&gt;</code>＋目視比對（10-14 研究的對照圖）。</div>
+        <div class="task-file">scripts/lib/pilotSkinMeta.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; --skins 匯入大廳全景</div>
+      <div class="task-group-meta">scripts/import-game-assets.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">從擷取索引找預覽圖 → _lobby.webp（q82）</div>
+        <div class="task-desc">依 A-1 對照表在擷取 CSV 找預覽圖、轉 WebP 存到 <code>pilots/&lt;gameId&gt;/skins/&lt;artKey&gt;_lobby.webp</code>；dry-run 列出 27 套、找不到的標 ⚠。<code>gameAssetKinds.mjs</code> 加 <code>LOBBY_SUFFIX</code>（衍生檔名、classify 認不得，同 <code>SCENE_VIEW_SUFFIX</code>）。報告「下一步」加一行：新外觀若有大廳，補 A-1 對照表。</div>
+        <div class="task-file">scripts/import-game-assets.mjs · scripts/lib/gameAssetKinds.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 索引旗標</div>
+      <div class="task-group-meta">scripts/generate-art-index.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">GamePilotSkin 加 lobby</div>
+        <div class="task-desc">掃到 <code>&lt;artKey&gt;_lobby.webp</code> 就標 <code>lobby: true</code>；型別與產出註解同步。沒有大廳的外觀不警告（官方本來就沒有）。</div>
+        <div class="task-file">scripts/generate-art-index.mjs · src/data/gameArtIndex.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; 匯入 27 張並重產索引</div>
+      <div class="task-group-meta">public/images/game/pilots/*/skins/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">本機 --apply</div>
+        <div class="task-desc"><code>node scripts/import-game-assets.mjs --skins --apply</code>（只新增 <code>_lobby</code>，既有外觀不重寫），確認 27 張、約 2.9 MB，重產 <code>gameArtIndex.ts</code>。</div>
+        <div class="task-file">public/images/game/pilots/*/skins/*_lobby.webp</div>
+      </div>
+      <div class="task-assignee">開發者（本機）</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label orange">Phase B</div>
+  <div class="section-title">B 鑑賞框：大廳全景｜立繪</div>
+  <div class="section-desc">決策二。只動故事館前台，後台預覽（PLAN-042-E D-4）沿用同一個元件。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 路徑 helper</div>
+      <div class="task-group-meta">src/utils/gameArt.ts · src/components/lore/loreStageArt.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">PilotSkinArt.lobby、StageArt.lobby＋測試</div>
+        <div class="task-desc"><code>pilotSkinCatalog()</code> 帶出 <code>lobby</code> 路徑；<code>skinStageArt()</code> 傳給 <code>StageArt</code>。預設造型沒有大廳（官方的大廳都屬於外觀）。<code>gameArt.test.ts</code> 補「有／沒有 lobby」。</div>
+        <div class="task-file">src/utils/gameArt.ts · src/components/lore/loreStageArt.ts · src/utils/gameArt.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 鑑賞框切換</div>
+      <div class="task-group-meta">src/components/lore/LoreViewer.tsx · src/index.css</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">預設全景、可切回立繪、尺寸上限</div>
+        <div class="task-desc">有 <code>lobby</code> 時上方出現「大廳全景｜立繪」切換、預設全景；全景模式限制最大顯示尺寸（暫定原寸 1.5 倍）、點擊放大上限原寸 2 倍或停用；手機版版面；Esc 與既有鍵盤操作不變。</div>
+        <div class="task-file">src/components/lore/LoreViewer.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 頁面串接</div>
+      <div class="task-group-meta">src/pages/lore/PilotLorePage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">傳入 lobby、切換外觀時重設模式</div>
+        <div class="task-desc">換外觀時回到「有全景就全景」的預設；確認後台編輯台預覽沒有受影響。</div>
+        <div class="task-file">src/pages/lore/PilotLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label orange">Phase C</div>
+  <div class="section-title">C 徽章資料層（factionEmblems）</div>
+  <div class="section-desc">決策四～六。<b>不進 entityRefs SPECS</b>，其餘連動一處都不能漏（漏 Worker 那處＝正式站 404、本機全綠）。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 型別與純函式</div>
+      <div class="task-group-meta">src/types · src/utils/factionEmblems.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">FactionEmblem＋排序／搜尋／建議＋測試</div>
+        <div class="task-desc"><code>FactionEmblem { id, name?, inscription?, factions?: string[], note? }</code>。純函式：<code>emblemSearch</code>（名稱／字樣／編號）、<code>rankEmblems</code>（建議 → 已命名 → 未命名）、<code>emblemUsage</code>（從 pilotLore 算使用人數）。node --test。</div>
+        <div class="task-file">src/types/* · src/utils/factionEmblems.ts（＋測試）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 集合連動</div>
+      <div class="task-group-meta">多檔</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">collectionKeys／GameDataContext／Worker／bump／rules／api／測試 helper</div>
+        <div class="task-desc">PLAN-042-A 的七處清單照做（SPECS 除外）。<code>firestore.rules</code>：讀 <code>isAdmin()</code>、寫 admin；前台讀經 Worker <code>/api/data/factionEmblems</code>。</div>
+        <div class="task-file">src/lib/collectionKeys.ts · src/contexts/GameDataContext.tsx · workers/src/index.ts · scripts/bump-data-version.mjs · firestore.rules · src/lib/api/factionEmblems.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; hook</div>
+      <div class="task-group-meta">src/hooks/useFirestore.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">useFactionEmblems()</div>
+        <div class="task-desc">走版本 gate 快取；讀不到時回空陣列（選圖器退回只顯示編號，不擋編輯）。</div>
+        <div class="task-file">src/hooks/useFirestore.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 預填 6 筆</div>
+      <div class="task-group-meta">scripts/temp_scripts/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">data-patch 流程：備份 → dry-run → apply → bump factionEmblems</div>
+        <div class="task-desc">決策五的 6 筆（名稱＋字樣），0021／0038 只寫備註。<b>要在 C-2 的 rules 部署之後</b>（Admin SDK 不受 rules 限制，但驗收要靠前台讀得到）。</div>
+        <div class="task-file">scripts/temp_scripts/seed-faction-emblems.mjs</div>
+      </div>
+      <div class="task-assignee">開發者（本機）</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label orange">Phase D</div>
+  <div class="section-title">D 編輯台與前台</div>
+  <div class="section-desc">決策四、七。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 「陣營徽章」分頁</div>
+      <div class="task-group-meta">src/pages/admin/AdminLorePage.tsx · src/components/admin/lore/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">37 個編號，一列一個</div>
+        <div class="task-desc">列出圖庫 <code>camp</code> 的全部編號（單色／彩色並排），欄位：名稱、圖上字樣、對應的陣營文字（標籤輸入，datalist 給現有 31 種 <code>faction</code> 值）、備註、使用中人數；篩選「未命名」。存檔走 <code>saveWithHistory</code>（自動遞增版本）。</div>
+        <div class="task-file">src/components/admin/lore/FactionEmblemsEditor.tsx · AdminLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 選圖器改版</div>
+      <div class="task-group-meta">src/components/admin/FactionLogoPicker.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">88px、名稱、搜尋、排序</div>
+        <div class="task-desc">決策七。圖庫格線改成卡片（名稱＋字樣＋編號＋單色／彩色），同陣營建議沿用 <code>factionLogoSuggestions</code> 再加上對應文字命中；「未命名」卡片可直接連到 D-1 分頁補名稱。</div>
+        <div class="task-file">src/components/admin/FactionLogoPicker.tsx · src/utils/factionLogos.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 卷宗徽章提示與裁圓 bug</div>
+      <div class="task-group-meta">src/components/lore/LoreDossier.tsx · src/index.css</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">title 用徽章名稱、彩色版不再被裁圓</div>
+        <div class="task-desc"><code>FactionLogo</code> 的 <code>label</code> 改傳徽章名稱（沒有才用機師陣營文字）；<code>.lore-emb__ring img</code> 的 <code>object-fit:cover</code>／圓角只套單色版或改用 <code>contain</code>。館首頁卡片的 24px 徽章同步檢查。</div>
+        <div class="task-file">src/components/lore/LoreDossier.tsx · src/pages/lore/LoreHomePage.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label orange">Phase E</div>
+  <div class="section-title">E 文件、部署與驗收</div>
+  <div class="section-desc">部署順序：rules → Worker → 網站；27 張新圖等 pages-build-deployment 完成後才請求（Cloudflare 會快取 404）。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 文件與更新履歷</div>
+      <div class="task-group-meta">docs/02_技術文件 · docs/03_頁面規劃 · siteChangelog</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新集合文件、資料模型、頁面規劃、PLAN-059 修訂註記</div>
+        <div class="task-desc"><code>04_Firebase/資料庫設計文件/factionEmblems.html</code>（新）與總覽、<code>pilotLore.html</code> 的 factionLogos 說明、<code>03_頁面規劃/13_故事館/</code>（鑑賞框、編輯台分頁）、PLAN-059 計畫書決策六加「2026-10-14 由 PLAN-042-F 修訂」。更新履歷：外觀可看大廳全景、徽章有名稱。</div>
+        <div class="task-file">docs/** · src/data/siteChangelog/2026-10.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 部署</div>
+      <div class="task-group-meta">Firebase rules · Worker · GitHub Pages</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">rules → Worker → 預填 → push</div>
+        <div class="task-desc"><code>npx firebase deploy --only firestore:rules</code> → <code>cd workers; npx wrangler deploy</code> → C-4 預填 → <code>npm run push</code>。auto mode 擋正式站部署，由站長執行。</div>
+        <div class="task-file">firestore.rules · workers/ · main</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; 驗收</div>
+      <div class="task-group-meta">curl · 正式站</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">API、全景、編輯台</div>
+        <div class="task-desc"><code>/api/data/factionEmblems</code> 回 200；27 套外觀的鑑賞框預設全景、可切回；13 套維持原樣；選圖器顯示 6 個名稱、可搜「黑曜石」；卷宗彩色徽章不再被裁圓。<code>npm test</code>／<code>lint</code>／<code>build</code>。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">H-1 &nbsp; 洛莎大廳歸屬（站長確認）</div>
+      <div class="task-group-meta">Pilot_10103154B ／ 10103107B</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Rosa 那張大廳是不是審判外觀 B</div>
+        <div class="task-desc">研究判 <code>Pilot_10103154B</code>（預覽戴眼罩、外觀卡是 154B）；疑點是道具 Stone 放在 <code>10103154a</code> 夾。與 PLAN-042-D H-3（10103107B 是否與 154B 重複）一起確認。</div>
+        <div class="task-file">scripts/lib/pilotSkinMeta.json</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-F — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
