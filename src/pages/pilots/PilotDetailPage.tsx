@@ -31,8 +31,6 @@ import { DiffHighlight } from '../../components/refs/DiffHighlight'
 import { RefText } from '../../components/refs/RefText'
 import { SkillIcon } from '../../components/icons/SkillIcon'
 import { NdPowerBar } from '../../components/common/NdPowerBar'
-import { firstSentence } from '../../components/lore/loreText'
-import { useLoreEntryVisible } from '../../hooks/useLoreEntry'
 import { pilotClassBadgeClass, pilotClassMeta } from '../../data/pilotClasses'
 import { mechWeightClassOf } from '../../data/mechWeightClasses'
 import { ClassIcon } from '../../components/icons/ClassIcon'
@@ -772,8 +770,6 @@ export default function PilotDetailPage() {
   const [exclusiveWeaponIdx, setExclusiveWeaponIdx] = useState(0)
   const exclusiveWeapon = exclusiveWeapons[exclusiveWeaponIdx] ?? null
   const isMobile = useIsMobile()
-  // 故事館收起入口期間（useLoreEntry.ts），一般訪客的「機師故事」退回全文顯示
-  const loreEntryVisible = useLoreEntryVisible()
 
   // ── 分頁狀態（PLAN-041 D-1）────────────────────────────────────────────────
   // 唯一來源是 URL 的 ?tab=，**不是 useState**。三個理由：
@@ -1011,7 +1007,18 @@ export default function PilotDetailPage() {
                 {pilot.class}
               </span>
             )}
-            <h1 className="text-3xl font-black">{pilot.name}</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-3xl font-black">{pilot.name}</h1>
+              {/* 故事館入口（PLAN-042-E 決策二、站長 Q2）：圖鑑只做數值與機制，簡介、個人資料都在故事館。
+                  ⚠ 只放連結、**不帶任何故事內容**：帶首句就得載入 pilotLore，圖鑑就跨進故事館了（單向依賴）。
+                  每位機師都有故事館頁（館首頁列的是 pilots），所以不會連到空頁。 */}
+              <Link
+                to={`/lore/pilots/${pilot.id}`}
+                className="rounded-md border border-accent-orange/40 px-2 py-0.5 text-xs font-bold text-accent-orange no-underline transition-colors hover:bg-accent-orange/10"
+              >
+                故事館 ▸
+              </Link>
+            </div>
             <p className="text-text-secondary text-sm mt-1">{pilot.fullName}</p>
           </div>
 
@@ -1043,15 +1050,6 @@ export default function PilotDetailPage() {
                 </div>
               ) : null
             })()}
-            {pilot.profile?.gender && <InfoRow label="性別" value={pilot.profile.gender} />}
-            {pilot.profile?.height && <InfoRow label="身高" value={pilot.profile.height} />}
-            {pilot.profile?.bloodType && (
-              <InfoRow label="血型" value={pilot.profile.bloodType} />
-            )}
-            {pilot.profile?.additionalInfo &&
-              Object.entries(pilot.profile.additionalInfo).map(([k, v]) => (
-                <InfoRow key={k} label={k} value={v} />
-              ))}
           </div>
 
           {/* AP */}
@@ -1306,34 +1304,6 @@ export default function PilotDetailPage() {
         </NdOverrideContext.Provider>
       </div>
 
-      {/* Pilot Lore */}
-      {pilot.lore && (
-        <div className="mt-6 bg-bg-card border border-border rounded-xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-border bg-accent-orange/5">
-            <span className="text-xs text-accent-orange tracking-[3px] uppercase font-[Orbitron,sans-serif]">
-              機師故事
-            </span>
-          </div>
-          {/* PLAN-042-A D-4：圖鑑這裡只留「首句 ＋ 入館連結」，全文改到故事館讀。
-              lore 維持單一真相（仍是 `pilots.lore` 這一份），故事館也讀同一個欄位當扉頁正文。
-              ⚠ 本頁**不得**改去讀故事館集合（`useFirestore.ts` 裡那兩支對應的 hook）：
-              那會讓任何人只要開一頁機師詳情就整包拉一次該集合，而它不落 localStorage、
-              每個新 session 重付一次，且是全站成長最快的集合。
-              署名（`frontSource`）也住在那個集合裡，取它就得付上面那筆代價，故此處不顯示。
-              ⚠ 故事館收起入口期間（useLoreEntry.ts）一般訪客走不到故事館 → 退回 042-A 之前的全文顯示，
-                否則只剩首句、連結又被藏掉，等於把逸聞從站上拿走了。 */}
-          {loreEntryVisible ? (
-            <div className="px-5 py-5">
-              <p className="text-sm text-text-secondary leading-loose">{firstSentence(pilot.lore)}</p>
-              <Link to={`/lore/pilots/${pilot.id}`} className="mt-3 inline-block text-sm text-accent-orange no-underline hover:underline">
-                讀完整故事 ▸
-              </Link>
-            </div>
-          ) : (
-            <p className="px-5 py-5 text-sm text-text-secondary leading-loose whitespace-pre-line">{pilot.lore}</p>
-          )}
-        </div>
-      )}
     </div>
   )
 }

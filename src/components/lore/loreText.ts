@@ -4,6 +4,19 @@
 // 理由與 `assets.ts:1-8` 同——`node --test` 直接載入本檔跑 `loreText.test.ts`，
 // 模組層級取 `import.meta.env` 會讓整個檔案一 import 就拋 TypeError。
 
+import type { LoreChapter } from '../../types'
+
+/**
+ * 前台看得到的章節（PLAN-042-E D-5）：濾掉草稿章，順序不變。
+ *
+ * **前台唯一的過濾點**——章節目錄、‹ › 換章、章節網址解析、館首頁與名冊的章節數全部走這裡，
+ * 不要各自寫 `.filter((c) => !c.draft)`：漏一處就是「目錄看不到、網址卻點得進去」或「卡片寫 3 章、點進去只有 2 章」。
+ * `undefined`（Worker 回來的舊文件缺欄位）→ 空陣列。
+ */
+export function publishedChapters(chapters: readonly LoreChapter[] | undefined): LoreChapter[] {
+  return (chapters ?? []).filter((c) => !c.draft)
+}
+
 /**
  * 逐段切分正文。
  *
@@ -67,6 +80,10 @@ const MAX_SOURCE_TAIL = 40
 /**
  * 若正文尾端就是署名，切掉它（署名改由 `.lore-source` 單獨排版）。
  *
+ * PLAN-042-E 起**不在渲染路徑上**：搬遷（B-2）時已用它把署名從 `pilotLore.intro` 切乾淨，
+ * 前台直接讀乾淨的簡介，不必每次渲染都重猜一次。留著是給搬遷與對帳腳本（B-2／B-3）用，
+ * G-2 封存腳本之後就沒有呼叫端了，屆時連同測試一起刪。
+ *
  * ⚠ **不可用 `text.endsWith(source)`**：34 筆中有 2 筆（尼爾、黑障）正文裡是 `--` / `一一`，
  *   而 `source` 已正規化成 `——` ⇒ `endsWith` 為 false、`replace()` 原樣回傳，
  *   症狀只是「這兩位的扉頁把署名重複印了一次」，不丟錯也沒有 console 訊息（地雷 M-17）。
@@ -118,7 +135,7 @@ export function fullwidthLorePunctuation(text: string): string {
 
 /**
  * 閱讀用的段落：`splitParagraphs` ＋ 長行 OCR 斷行合併 ＋ 中文語境半形標點轉全形。
- * 扉頁（pilots.lore，官方 API 的完整段落）跑這個也是 no-op——它們的每一段都以句末標點結尾。
+ * 扉頁簡介（pilotLore.intro，原官方 API 的完整段落）跑這個也是 no-op——它們的每一段都以句末標點結尾。
  */
 export function readableParagraphs(text: string | undefined): string[] {
   const out: string[] = []

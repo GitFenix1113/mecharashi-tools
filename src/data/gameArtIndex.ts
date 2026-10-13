@@ -347,10 +347,10 @@ export const GAME_NPC_ART: ReadonlyMap<string, GameNpcArt> = new Map<string, Gam
 
 /**
  * 機師造型／外觀（PLAN-042-D F-2）：`public/images/game/pilots/<gameId>/skins/<立繪鍵>_{Raw,half,head}.webp`，以 **gameId** 為 key。
- * `scene`＝帶背景的場景插畫（前台換構圖）；`name`＝scripts/lib/pilotSkinMeta.json 的人工名稱（沒有就顯示「外觀 N」）。
- * 查詢一律走 `pilotSkins()`（src/utils/gameArt.ts）。
+ * `scene`＝帶背景的場景插畫（前台換構圖）。名稱、隱藏、順序不在這裡：住 pilotLore.skins，由後台設定（PLAN-042-E）。
+ * 查詢一律走 `pilotSkins()`（前台，合併 DB 設定）／`pilotSkinCatalog()`（後台外觀分頁），都在 src/utils/gameArt.ts。
  */
-export interface GamePilotSkin { key: string; half?: true; head?: true; raw?: true; scene?: true; name?: string }
+export interface GamePilotSkin { key: string; half?: true; head?: true; raw?: true; scene?: true }
 export const GAME_PILOT_SKINS: ReadonlyMap<string, readonly GamePilotSkin[]> = new Map<string, readonly GamePilotSkin[]>([
   ['10103105', [{ key: 'Pilot_10103105B', half: true, head: true, raw: true, scene: true }]],
   ['10103107', [{ key: 'Pilot_10103107C', half: true, head: true, raw: true }]],

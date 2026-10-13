@@ -3,9 +3,8 @@ import type { Ref } from 'react'
 import { FallbackImage } from '../common/FallbackImage'
 import { ClassIcon } from '../icons/ClassIcon'
 import { pilotClassMeta } from '../../data/pilotClasses'
-import { matchesLoreQuery, type LoreGroup, type LoreSort } from './loreRoster'
+import { matchesLoreQuery, type LoreGroup, type LorePilot, type LoreSort } from './loreRoster'
 import { pilotHeadCandidates } from './loreStageArt'
-import type { Pilot } from '../../types'
 
 /**
  * 機師切換列＋機師名冊（PLAN-042-D A-3／A-4／F-5）。
@@ -33,20 +32,20 @@ export interface LoreSwitcherHandle {
 
 export interface LoreSwitcherProps {
   ref?: Ref<LoreSwitcherHandle>
-  /** 名冊分組（＝館首頁的排序） */
-  groups: readonly LoreGroup<Pilot>[]
+  /** 名冊分組（＝館首頁的排序）。成員帶 pilotLore 的英文名（withLoreNames），搜尋與 title 要用 */
+  groups: readonly LoreGroup<LorePilot>[]
   /** 攤平的名冊順序：切換列、‹ › 照它走 */
-  order: readonly Pilot[]
+  order: readonly LorePilot[]
   currentId: string
   sort: LoreSort
   onSortChange: (sort: LoreSort) => void
   /** 各機師的章節數、外觀數（名冊的紅標與 +N、篩選用） */
   chapterCount: (id: string) => number
-  skinCount: (p: Pilot) => number
+  skinCount: (p: LorePilot) => number
   /** 換人；dir＝在名冊順序上往後（1）或往前（-1） */
   onSelect: (id: string, dir: 1 | -1) => void
   onOpenChange?: (open: boolean) => void
-  onHover?: (p: Pilot) => void
+  onHover?: (p: LorePilot) => void
 }
 
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -137,7 +136,7 @@ export default function LoreSwitcher({
     return () => strip.removeEventListener('wheel', onWheel)
   }, [])
 
-  const showTip = (el: HTMLElement, p: Pilot) => {
+  const showTip = (el: HTMLElement, p: LorePilot) => {
     const tip = tipRef.current
     if (!tip) return
     const r = el.getBoundingClientRect()

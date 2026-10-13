@@ -297,7 +297,7 @@ const PILOTS: CollectionSpec<Pilot> = {
           refs: lv.descriptionRefs,
           anchor: { by: 'level', value: lv.level },
         })))
-    out.push({ segments: [], origin: '機師簡介', texts: { lore: p.lore } })
+    // 簡介（原「機師簡介」站點）PLAN-042-E 搬到 PILOT_LORE 的「扉頁簡介」——pilots 已沒有敘事文本
     return out
   },
 
@@ -712,17 +712,23 @@ const PILOT_LORE: CollectionSpec<LoreDoc> = {
   //
   // commentary[].text 刻意不進來：LoreCommentary 沒有 refs 欄位（見 types/lore.ts），
   // 沒有側錄表就沒有引用可掃，收進來只會產生一批永遠空手而回的站點。
-  textUnits: (d) => (d.chapters ?? []).map((ch, i) => ({
-    segments: ['chapters', i],
-    origin: `逸聞:${d.name ?? d.id} ${ch.label ?? `PART ${i + 1}`}·${ch.title}`,
-    texts: { body: ch.body },
-    refs: ch.bodyRefs,
-    refsField: 'bodyRefs',
-    // 索引不是穩定識別子（章節可重排、可插入），錨點用必填的 key。
-    // ⚠ by 必須是 'key'：LoreChapter 沒有 name 欄位，錨成 'name' 會讓 restorePatch 的
-    //   比對恆為 undefined，每一筆還原都是 anchorMismatch（且只在還原頁報一行 skipped）。
-    anchor: { by: 'key' as const, value: ch.key },
-  })),
+  //
+  // 扉頁簡介 intro（PLAN-042-E，原 pilots 的「機師簡介」站點）：今天 89 篇都沒有 token，
+  // 這個站點是防日後誤加——漏掃的話刪 BUFF 後簡介裡會留下永遠解析不出來的 <id.attr>。沒有側錄表（refs）。
+  textUnits: (d) => [
+    { segments: [], origin: '扉頁簡介', texts: { intro: d.intro } },
+    ...(d.chapters ?? []).map((ch, i) => ({
+      segments: ['chapters', i],
+      origin: `逸聞:${d.name ?? d.id} ${ch.label ?? `PART ${i + 1}`}·${ch.title}`,
+      texts: { body: ch.body },
+      refs: ch.bodyRefs,
+      refsField: 'bodyRefs',
+      // 索引不是穩定識別子（章節可重排、可插入），錨點用必填的 key。
+      // ⚠ by 必須是 'key'：LoreChapter 沒有 name 欄位，錨成 'name' 會讓 restorePatch 的
+      //   比對恆為 undefined，每一筆還原都是 anchorMismatch（且只在還原頁報一行 skipped）。
+      anchor: { by: 'key' as const, value: ch.key },
+    })),
+  ],
   scalarSites: [],
   softSites: [],
 }

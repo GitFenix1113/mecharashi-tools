@@ -1055,3 +1055,13 @@ html.lore-mode body { background-image: none; background-color: #efe7d8; }
     animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; transition-delay: 0ms !important;
   }
 }
+
+/* ── PLAN-042-E D-4：故事館編輯台的即時預覽（components/admin/lore/LorePreview.tsx）───────────
+ * 虛擬視窗寬 100vw、整個 scale() 成欄寬：前台版面的 calc 全部照真的視窗算，縮小後就是等比縮圖。
+ * 本區塊必須排在 .lore-shell（height:100%、position:relative）之後才蓋得過它。 */
+.lore-preview { position: relative; overflow: hidden; border-radius: 10px; border: 1px solid var(--color-border); background: #efe7d8; }
+.lore-preview__vp { position: absolute; top: 0; left: 0; width: 100vw; height: auto; min-height: 0; transform-origin: 0 0; }
+.lore-preview .lore-page { min-height: var(--stage-h); }
+/* 前台的舞台是 sticky 全高層；預覽裡貼在頂端就好（sticky 會黏到後台的捲動容器上，縮放後位置對不上） */
+.lore-preview .lore-stage-wrap { position: absolute; top: 0; left: 0; right: 0; margin-bottom: 0; }
+.lore-preview .lore-dossier { padding-bottom: 7vh; }

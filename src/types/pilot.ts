@@ -298,16 +298,17 @@ export interface NeuralDrive {
   levels: NeuralDriveLevel[]
 }
 
+/**
+ * 機師（圖鑑）。**只放與數值、機制有關的欄位**＋兩館共用的身分欄位（名字、全名、職業、陣營、立繪）。
+ *
+ * PLAN-042-E（2026-10-13）：簡介 `lore`、人物檔案 `profile`、英文名 `nameEn` 已搬到 `pilotLore`
+ * （`LoreDoc.intro`／`dossier`／`nameEn`，見 types/lore.ts）。圖鑑不讀故事館集合（單向依賴）。
+ * DB 裡的舊欄位在 G-1 刪除前仍會隨文件讀回來，但沒有任何程式讀它們——**不要加回型別**。
+ */
 export interface Pilot {
   id: string
   name: string
   fullName: string
-  /**
-   * 英文名（PLAN-042-C D-4，選填）：故事館扉頁壓在立繪旁的毛筆草書用，例如 'Rosa Diaz'。
-   * 官方資料沒有這個欄位（fullName 全是中文），由後台人工輸入；空值＝不渲染草書層。
-   * ⚠ 與 debutVersion 同病：`scrape-pilots-v3.js --force` 的整筆覆寫會洗掉它（爬蟲 merge 隱患）。
-   */
-  nameEn?: string
   /**
    * 遊戲 ID（PLAN-054）：機師卡 `Icon_item_<gameId>A` 的編號，例如 '10103174'——只有可抽機師有。
    * 官方原檔資料夾 `public/images/game/pilots/<gameId>/` 以它命名。
@@ -349,12 +350,6 @@ export interface Pilot {
   masterLevel: string
   /** 登場版本：機師首次實裝的遊戲版本號（對應 patchVersions，如 '3.3'）；未設定＝尚未回填 */
   debutVersion?: string
-  profile: {
-    gender: string
-    bloodType: string
-    height: string
-    additionalInfo: Record<string, string>
-  }
   stats: PilotStats
   statsBase: Record<string, number>
   ap: { init: number; max: number; recovery: number }
@@ -368,7 +363,6 @@ export interface Pilot {
   neuralDrive: NeuralDrive[]
   portrait: string
   portraitUrl?: string
-  lore?: string
   attack?: number
   defense?: number
   /**

@@ -7,11 +7,12 @@ import LoreChapterBody from '../../components/lore/LoreChapterBody'
 import LoreSkinPicker from '../../components/lore/LoreSkinPicker'
 import LoreViewer from '../../components/lore/LoreViewer'
 import LoreSwitcher, { type LoreSwitcherHandle } from '../../components/lore/LoreSwitcher'
-import { buildLoreGroups, readLoreSort, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
+import { buildLoreGroups, readLoreSort, withLoreNames, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
+import { publishedChapters } from '../../components/lore/loreText'
 import { defaultStageArt, loreSideOf, preloadStageArt, skinStageArt, type StageArt } from '../../components/lore/loreStageArt'
 import { pilotSkins, type PilotSkinArt } from '../../utils/gameArt'
 import { usePilotLore, usePilots } from '../../hooks/useFirestore'
-import type { Pilot } from '../../types'
+import type { LoreDoc, Pilot } from '../../types'
 
 /**
  * 機師故事館的扉頁與章節頁（PLAN-042-A D-3；PLAN-042-D 改版成「舞台＋卷宗」）。
@@ -21,8 +22,13 @@ import type { Pilot } from '../../types'
  *
  * ── 三件事必須照著做，錯了都不會有錯誤訊息 ──────────────────────────────
  * ① **守衛順序是 error → loading → 內容**（地雷 M-04）：抓取失敗時 loading 恆為 true。
- * ② **不取 `usePilotLore` 的 loading**：pilotLore 讀不到時要優雅降級成「只有扉頁」，不是轉圈。
+ * ② **pilotLore 不擋整頁**：整頁只等 pilots（舞台、名冊、換人都只要身分欄位）。pilotLore 的 error／loading
+ *   只交給卷宗（LoreDossier 的 status）——PLAN-042-E 起簡介與個人資料也住 pilotLore，讀不到時卷宗要明講
+ *   「載入失敗」，不能退化成看起來像空白資料的扉頁；同樣先判 error 再判 loading（失敗時 loading 恆為 true）。
  * ③ **構圖在渲染前決定**（loreStage.ts）：直式全身／橫式半身／官網圖層／場景插畫的取景不同，等圖載完再換會跳。
+ *
+ * 草稿章（LoreChapter.draft）一律經 `publishedChapters()` 濾掉：目錄、‹ ›、章節網址都看不到，
+ * 草稿章（或打錯）的章節網址導回扉頁。
  *
  * ── 換人的過場（A-6）──────────────────────────────────────────────────────
  * 「顯示中的機師」（state.shownId）**落後網址一拍**：網址先變，舊的那位播 0.3 秒退場、同時預載新的那位的立繪，
@@ -60,8 +66,9 @@ const skinQs = (pid: string) => {
   return k ? `?skin=${encodeURIComponent(k)}` : ''
 }
 
-function stageArtFor(pilot: Pilot, skinKey: string): { art: StageArt | null; skins: PilotSkinArt[]; skin: PilotSkinArt | null } {
-  const skins = pilotSkins(pilot)
+/** 外觀的名稱、隱藏、順序在 pilotLore（PLAN-042-E E-1）；lore 讀不到時照圖檔層原樣列 */
+function stageArtFor(pilot: Pilot, skinKey: string, lore: LoreDoc | undefined): { art: StageArt | null; skins: PilotSkinArt[]; skin: PilotSkinArt | null } {
+  const skins = pilotSkins(pilot, lore)
   const skin = skinKey ? skins.find((s) => s.key === skinKey) ?? null : null
   return { art: skin ? skinStageArt(pilot, skin) : defaultStageArt(pilot), skins, skin }
 }
@@ -71,8 +78,9 @@ export default function PilotLorePage() {
   const [search, setSearch] = useSearchParams()
   const navigate = useNavigate()
   const { data: pilots, loading, error } = usePilots()
-  // ⚠ 刻意不解構 loading：見檔頭第 ② 條。
-  const { data: loreDocs } = usePilotLore()
+  // 只交給卷宗，不擋整頁：見檔頭第 ② 條
+  const { data: loreDocs, loading: loreLoading, error: loreError } = usePilotLore()
+  const loreById = useMemo(() => new Map(loreDocs.map((d) => [d.id, d])), [loreDocs])
 
   const rootRef = useRef<HTMLDivElement>(null)
   const switcherRef = useRef<LoreSwitcherHandle>(null)
@@ -81,10 +89,11 @@ export default function PilotLorePage() {
   // ── 名冊順序（＝館首頁的排序；A-2）─────────────────────────────────────────
   const [sort, setSortState] = useState<LoreSort>(readLoreSort)
   const setSort = useCallback((s: LoreSort) => { setSortState(s); writeLoreSort(s) }, [])
-  const groups = useMemo(() => buildLoreGroups(pilots, sort), [pilots, sort])
+  // 名冊成員帶 pilotLore 的英文名（搜尋、title 要用；PLAN-042-E 起它不在 pilots 上）
+  const groups = useMemo(() => buildLoreGroups(withLoreNames(pilots, loreDocs), sort), [pilots, loreDocs, sort])
   const order = useMemo(() => groups.flatMap((g) => g.items), [groups])
-  const chapterCounts = useMemo(() => new Map(loreDocs.map((d) => [d.id, d.chapters?.length ?? 0])), [loreDocs])
-  const skinCounts = useMemo(() => new Map(pilots.map((p) => [p.id, pilotSkins(p).length])), [pilots])
+  const chapterCounts = useMemo(() => new Map(loreDocs.map((d) => [d.id, publishedChapters(d.chapters).length])), [loreDocs])
+  const skinCounts = useMemo(() => new Map(pilots.map((p) => [p.id, pilotSkins(p, loreById.get(p.id)).length])), [pilots, loreById])
   const chapterCount = useCallback((pid: string) => chapterCounts.get(pid) ?? 0, [chapterCounts])
   const skinCount = useCallback((p: Pilot) => skinCounts.get(p.id) ?? 0, [skinCounts])
 
@@ -107,9 +116,10 @@ export default function PilotLorePage() {
 
   const shown = useMemo(() => pilots.find((p) => p.id === t.shownId) ?? null, [pilots, t.shownId])
   const shownSkinKey = t.shownId === id ? skinParam : (t.shownId ? rememberedSkins.get(t.shownId) ?? '' : '')
+  const lore = t.shownId ? loreById.get(t.shownId) : undefined
   const { art, skins, skin } = useMemo(
-    () => (shown ? stageArtFor(shown, shownSkinKey) : { art: null, skins: [], skin: null }),
-    [shown, shownSkinKey],
+    () => (shown ? stageArtFor(shown, shownSkinKey, lore) : { art: null, skins: [], skin: null }),
+    [shown, shownSkinKey, lore],
   )
   // 給只在特定時機跑的 effect 讀「現在的」值（render 期間不寫 ref：react-hooks/refs）
   const artRef = useRef(art)
@@ -147,7 +157,8 @@ export default function PilotLorePage() {
   // 換人（A-6）：網址變了 → 舊的退場、預載新的 → 換上新的、精簡進場
   const pendingDir = useRef<1 | -1 | null>(null)
   const orderRef = useRef(order)
-  useLayoutEffect(() => { orderRef.current = order })
+  const loreByIdRef = useRef(loreById)
+  useLayoutEffect(() => { orderRef.current = order; loreByIdRef.current = loreById })
   useEffect(() => {
     if (!id || id === t.shownId) return
     const target = pilots.find((p) => p.id === id)
@@ -159,7 +170,7 @@ export default function PilotLorePage() {
     pendingDir.current = null
     setT({ ...FINISHED, leaving: true, dir })
     let cancelled = false
-    const next = stageArtFor(target, rememberedSkins.get(id) ?? '').art
+    const next = stageArtFor(target, rememberedSkins.get(id) ?? '', loreByIdRef.current.get(id)).art
     Promise.all([preloadStageArt(next), sleep(reduced() ? 0 : 300)]).then(() => {
       if (cancelled) return
       setT({ shownId: id, leaving: false, entering: true, quick: true, revealQuick: false, revealFull: false, revealed: false })
@@ -187,11 +198,11 @@ export default function PilotLorePage() {
     if (i < 0) return
     const timer = window.setTimeout(() => {
       for (const p of [order[(i + 1) % order.length], order[(i - 1 + order.length) % order.length]]) {
-        void preloadStageArt(stageArtFor(p, rememberedSkins.get(p.id) ?? '').art)
+        void preloadStageArt(stageArtFor(p, rememberedSkins.get(p.id) ?? '', loreById.get(p.id)).art)
       }
     }, 600)
     return () => clearTimeout(timer)
-  }, [t.ready, t.leaving, id, order])
+  }, [t.ready, t.leaving, id, order, loreById])
 
   // ── 換人／換章／換外觀（寫網址）────────────────────────────────────────────
   const selectPilot = useCallback((pid: string, dir: 1 | -1) => {
@@ -207,13 +218,17 @@ export default function PilotLorePage() {
   }, [order, id, selectPilot])
 
   const [chapterDir, setChapterDir] = useState(0)
-  const lore = useMemo(() => loreDocs.find((d) => d.id === t.shownId) ?? null, [loreDocs, t.shownId])
-  const chapters = useMemo(() => lore?.chapters ?? [], [lore])
+  const chapters = useMemo(() => publishedChapters(lore?.chapters), [lore])
   const paramIndex = part ? chapters.findIndex((c) => c.key === part) : -1
   const activeIndex = paramIndex >= 0 ? paramIndex : 0
-  const isReading = Boolean(part) && chapters.length > 0 && t.shownId === id
+  const isReading = paramIndex >= 0 && t.shownId === id
   const qs = skinParam ? `?skin=${encodeURIComponent(skinParam)}` : ''
   const fileHref = `/lore/pilots/${encodeURIComponent(id ?? '')}${qs}`
+  // 草稿章、已移除或打錯的章節網址 → 導回扉頁（D-5）。等 pilotLore 有結果再判：載入中 chapters 一定是空的
+  const loreSettled = !!loreError || !loreLoading
+  useEffect(() => {
+    if (part && loreSettled && t.shownId === id && paramIndex < 0) navigate(fileHref, { replace: true })
+  }, [part, loreSettled, t.shownId, id, paramIndex, fileHref, navigate])
   const chapterHref = useCallback((key: string) => `/lore/pilots/${encodeURIComponent(id ?? '')}/${encodeURIComponent(key)}${qs}`, [id, qs])
 
   /** 換章：扉頁 → 章節用 push（上一頁回扉頁）；章節之間用 replace（讀完 8 章不必按 8 次上一頁）。 */
@@ -373,7 +388,7 @@ export default function PilotLorePage() {
       onTouchEnd={onTouchEnd}
     >
       <div className="lore-stage-wrap">
-        <LoreStage pilot={shown} art={art} tools={tools} />
+        <LoreStage pilot={shown} art={art} nameEn={lore?.nameEn} tools={tools} />
       </div>
 
       <main className="lore-dossier">
@@ -393,7 +408,13 @@ export default function PilotLorePage() {
             />
           </LoreChapterPager>
         ) : (
-          <LoreDossier pilot={shown} lore={lore} chapters={chapters} chapterHref={chapterHref} />
+          <LoreDossier
+            pilot={shown}
+            lore={lore ?? null}
+            status={loreError ? 'error' : loreLoading ? 'loading' : 'ready'}
+            chapters={chapters}
+            chapterHref={chapterHref}
+          />
         )}
       </main>
 
@@ -411,7 +432,7 @@ export default function PilotLorePage() {
           skinCount={skinCount}
           onSelect={selectPilot}
           onOpenChange={setRosterOpen}
-          onHover={(p) => { void preloadStageArt(stageArtFor(p, rememberedSkins.get(p.id) ?? '').art) }}
+          onHover={(p) => { void preloadStageArt(stageArtFor(p, rememberedSkins.get(p.id) ?? '', loreById.get(p.id)).art) }}
         />
       )}
 

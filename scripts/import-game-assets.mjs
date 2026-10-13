@@ -52,7 +52,7 @@
  *   站長 2026-10-13 決定造型必須上站（取代 10-12「站上只用預設造型，不進 repo」）。
  *   放子資料夾不放 core：core 資料夾「一個 ID 只放一種立繪主鍵」是 generate-art-index.mjs 的守門條件。
  *   歸屬：預設依檔名號碼；號碼對不上的（例：Pilot_10103107B 定版判給洛莎·審判）寫在 scripts/lib/pilotSkinMeta.json 的 owner。
- *   名稱（name）、不上站（hidden）也寫在那份——全部選填，資料面之後補。
+ *   名稱、隱藏、順序 PLAN-042-E 起改在後台設定（故事館編輯台 › 外觀，存在 pilotLore.skins，存檔就生效、不必部署）。
  *   不是可抽機師的號碼歸 --npc（上站），這裡不收；NPC 圖庫裡屬於某位機師的外觀登記在 npcArtNotes.json（owner）。
  *   外觀卡 Icon_pilotSkin_* 在 --other-icons（icons/itemtype/），故事館不用（那是袋裝商品圖，縮圖用造型自己的 _head）。
  *   建議順序：先 --src=Data 再 --src=latest（兩次擷取的聯集都會留著）。
@@ -724,8 +724,8 @@ const skinSection = MODE !== 'skins' ? [] : [
   `- 依 pilotSkinMeta.json 改放到別位機師的：${[...skinReport.moved].sort().join('、') || '（無）'}`, '',
   '### 下一步（照抄）', '',
   `- ${skinReport.fresh.size ? '⬜' : '✅'} 有新造型時：\`npm run dev\`（會重產 src/data/gameArtIndex.ts 的 GAME_PILOT_SKINS），到故事館該機師頁確認舞台左下的「外觀」列出現新頭像`,
-  '- ⬜ 造型名稱、台版還沒推出要先藏起來的：編輯 scripts/lib/pilotSkinMeta.json（name／hidden，選填），再跑一次 `npm run dev`',
-  '- ⬜ 照規則 commit（public/images/game/pilots/*/skins/ 與 src/data/gameArtIndex.ts 一起）、push；部署完成後新圖若 404 要到 Cloudflare Purge', '',
+  '- ⬜ 照規則 commit（public/images/game/pilots/*/skins/ 與 src/data/gameArtIndex.ts 一起）、push；部署完成後新圖若 404 要到 Cloudflare Purge',
+  '- ⬜ 部署完成後到後台 › 故事館編輯台 › 該機師 › 外觀，幫新外觀命名、排順序，台版還沒推出的勾「隱藏」（存檔就生效，選填；不填顯示「外觀 N」）', '',
 ]
 const report = [
   `# ${{ icons: 'PLAN-055 ', equip: 'PLAN-056 ', emblems: 'PLAN-059 ', ui: '', promote: '', other: '', skins: '' }[MODE] ?? 'PLAN-054 '}官方原檔匯入${APPLY ? '' : '（dry-run）'}：${title}`, '',

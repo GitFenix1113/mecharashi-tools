@@ -291,9 +291,17 @@ async function handleSocialPreview(
   try {
     const doc = await loadEntityDoc(target.collection, target.id, env, ctx)
     if (!doc) return passthrough() // 查無此實體（舊連結／改過 ID）
+    // 故事館的分享卡：簡介住 pilotLore（PLAN-042-E），多讀一份同 ID 的文件。標題、立繪仍取 pilots。
+    // 讀失敗不擋卡片——描述退回「某某｜機師故事館」，總比整張退回站名卡好。
+    const loreDoc = target.lore
+      ? await loadEntityDoc('pilotLore', target.id, env, ctx).catch((e) => {
+          console.warn('[og] pilotLore 讀取失敗，故事館卡片的描述退回預設值:', e)
+          return null
+        })
+      : null
     // ⚠ `{ lore: target.lore }` 必須傳：故事館分享卡的「靜默失敗」是 Worker 一樣回 200、
-    //   一樣有 og:image，只有標題退回圖鑑文案 —— 不會有任何錯誤訊號。
-    const meta = buildOgMeta(target.collection, doc, { lore: target.lore })
+    //   一樣有 og:image，只有標題退回圖鑑文案 —— 不會有任何錯誤訊號。loreDoc 漏傳同理（描述退回預設值）。
+    const meta = buildOgMeta(target.collection, doc, { lore: target.lore, loreDoc })
     if (!meta) return passthrough()
 
     // 立繪的 JPEG 版本是 build 時產生的（見 socialPreview.ts 的 toPreviewSafeImage）。
@@ -332,7 +340,7 @@ async function handleSocialPreview(
  * 舊卡片內容自然失效，與 /api/data 的做法同源。
  */
 async function loadEntityDoc(
-  collection: OgCollection,
+  collection: OgCollection | 'pilotLore',
   id: string,
   env: Env,
   ctx: ExecutionContext,

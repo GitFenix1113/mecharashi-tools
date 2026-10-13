@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import LoreProse from './LoreProse'
-import { firstSentence, normalizeLoreSource, readableParagraphs, stripTrailingSource } from './loreText'
+import { firstSentence, normalizeLoreSource, readableParagraphs } from './loreText'
 import { ClassIcon } from '../icons/ClassIcon'
 import { FactionLogo } from '../icons/FactionLogo'
 import { MechTypeIcon } from '../icons/MechTypeIcon'
@@ -9,40 +9,45 @@ import { pilotClassMeta } from '../../data/pilotClasses'
 import { mechWeightShort } from '../../data/mechWeightClasses'
 import { normalizeFactionLogos } from '../../utils/factionLogos'
 import { gameIconCandidates } from '../../utils/gameIcons'
+import { dossierRows } from '../../utils/loreDossier'
 import type { LoreChapter, LoreDoc, Pilot } from '../../types'
 
 /**
  * 卷宗（PLAN-042-D B-3）：檔案模式的四張卡——標題區、扉頁、個人資料、逸聞目錄。
  * 每張是一個 `.lore-panel`，`--i` 決定開場／換人時的進場順序（CSS 錯開 120ms／70ms）。
  *
- * ⚠ 扉頁正文住 `pilots.lore`（不是 pilotLore，總綱決策二）；署名若還黏在正文尾端就切掉，
- *   改由 `.lore-source` 單獨排版。不可用 endsWith（地雷 M-17，見 stripTrailingSource）。
- * ⚠ profile.additionalInfo 的鍵名是完全自由的中文字串（含 ▇▇），只當顯示文字與 React key。
+ * 資料來源（PLAN-042-E）：標題區的身分欄位（名字、全名、職業、陣營、執照、天賦）讀 pilots；
+ * 英文名、扉頁簡介與署名、個人資料、徽章、章節全部讀 pilotLore。簡介在搬遷時已切掉署名，這裡不再猜。
+ *
+ * ⚠ pilotLore 讀不到時**明講載入失敗**（`status="error"`）：搬遷後扉頁正文也住 pilotLore，
+ *   不講的話讀者看到的是「只有名字、逸聞尚在整理」，會以為這位機師本來就沒有故事。
+ * ⚠ 自訂欄位的標籤是完全自由的中文字串（含 ▇▇），只當顯示文字；React key 用索引（標籤不保證唯一，編輯台存檔前才擋同名）。
  * ⚠ 天賦圖示有空字串的（M-16）：gameIconCandidates 不產生空候選，沒有候選就不渲染 <img>。
+ * ⚠ 後台預覽（D-4）也直接渲染本元件：不要在這裡讀 hook 或網址，所有資料都從 props 來。
  */
 export interface LoreDossierProps {
   pilot: Pilot
   lore: LoreDoc | null
+  /** pilotLore 的狀態。loading＝故事區塊顯示調閱中；error＝顯示載入失敗。預設 ready */
+  status?: 'ready' | 'loading' | 'error'
+  /** 前台看得到的章節（已濾掉草稿，見 publishedChapters） */
   chapters: readonly LoreChapter[]
   /** 章節的網址（呼叫端帶上目前的 ?skin=） */
   chapterHref: (key: string) => string
 }
 
-export default function LoreDossier({ pilot, lore, chapters, chapterHref }: LoreDossierProps) {
+export default function LoreDossier({ pilot, lore, status = 'ready', chapters, chapterHref }: LoreDossierProps) {
   const meta = pilotClassMeta(pilot.class)
   const tone = meta?.paper ?? 'var(--lore-ink-2)'
   const serial = pilot.id.match(/^pilot_(\d+)/)?.[1] ?? '—'
   const talent = pilot.talents[0]
   const talentIcons = talent ? gameIconCandidates(talent.icon) : []
   const logos = normalizeFactionLogos(lore?.factionLogos)
-  const intro = readableParagraphs(stripTrailingSource(pilot.lore, lore?.frontSource))
+  const nameEn = lore?.nameEn?.trim()
+  const intro = readableParagraphs(lore?.intro)
   const source = normalizeLoreSource(lore?.frontSource)
-  const profile = pilot.profile
-  const rows: [string, string][] = [
-    ['性別', profile.gender], ['身高', profile.height], ['血型', profile.bloodType], ['陣營', pilot.faction],
-    ...Object.entries(profile.additionalInfo),
-  ].filter((r): r is [string, string] => typeof r[1] === 'string' && r[1].trim() !== '')
-  const height = profile.height?.trim()
+  const rows = dossierRows(lore, pilot.faction)
+  const height = lore?.dossier?.height?.trim()
   const redTag = height && height !== '不详' && height !== '不詳' ? height : mechWeightShort(pilot.license)
 
   return (
@@ -60,7 +65,7 @@ export default function LoreDossier({ pilot, lore, chapters, chapterHref }: Lore
         <h1 className="lore-tb__name">{pilot.name}</h1>
         <div className="lore-tb__sub">
           {pilot.fullName && pilot.fullName !== pilot.name && <span>{pilot.fullName}</span>}
-          {pilot.nameEn && <span className="en">{pilot.nameEn}</span>}
+          {nameEn && <span className="en">{nameEn}</span>}
         </div>
         <div className="lore-emblems">
           {/* 陣營：有官方徽章（PLAN-059 D-3，管理者逐位挑）就蓋徽章、小字寫陣營名；沒有就把陣營名刻在圓環裡 */}
@@ -87,54 +92,74 @@ export default function LoreDossier({ pilot, lore, chapters, chapterHref }: Lore
         </div>
       </section>
 
-      {intro.length > 0 && (
+      {status !== 'ready' ? (
         <section className="lore-panel lore-card" style={{ '--i': 1 } as React.CSSProperties}>
           <p className="lore-eyebrow"><span className="lore-eyebrow__sq" /><b>扉頁</b>DOSSIER EXTRACT</p>
-          <LoreProse paragraphs={intro} lead />
-          {source && <p className="lore-source">{source}</p>}
+          {status === 'loading' ? (
+            <p className="lore-empty-note">檔案<em>調閱中</em>……</p>
+          ) : (
+            <>
+              <p className="lore-empty-note">
+                故事資料<em>載入失敗</em>：簡介、個人資料與逸聞暫時讀不到——不是這份檔案沒有內容。請稍後重新整理。
+              </p>
+              <button type="button" className="lore-pill" style={{ marginTop: '0.75rem' }} onClick={() => window.location.reload()}>
+                重新整理
+              </button>
+            </>
+          )}
         </section>
-      )}
+      ) : (
+        <>
+          {intro.length > 0 && (
+            <section className="lore-panel lore-card" style={{ '--i': 1 } as React.CSSProperties}>
+              <p className="lore-eyebrow"><span className="lore-eyebrow__sq" /><b>扉頁</b>DOSSIER EXTRACT</p>
+              <LoreProse paragraphs={intro} lead />
+              {source && <p className="lore-source">{source}</p>}
+            </section>
+          )}
 
-      {rows.length > 0 && (
-        <section className="lore-panel lore-card" style={{ '--i': 2 } as React.CSSProperties}>
-          {redTag && <span className="lore-redtag">{redTag}</span>}
-          <p className="lore-eyebrow"><span className="lore-eyebrow__sq" /><b>個人資料</b>PROFILE</p>
-          <dl className="lore-kv">
-            {rows.map(([k, v]) => (
-              <div key={k} className={v.length > 14 ? 'is-wide' : undefined}>
-                <dt>{k}</dt>
-                <dd>{v}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
+          {rows.length > 0 && (
+            <section className="lore-panel lore-card" style={{ '--i': 2 } as React.CSSProperties}>
+              {redTag && <span className="lore-redtag">{redTag}</span>}
+              <p className="lore-eyebrow"><span className="lore-eyebrow__sq" /><b>個人資料</b>PROFILE</p>
+              <dl className="lore-kv">
+                {rows.map(([k, v], i) => (
+                  <div key={i} className={v.length > 14 ? 'is-wide' : undefined}>
+                    <dt>{k}</dt>
+                    <dd>{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
 
-      <section className="lore-panel lore-card" style={{ '--i': 3 } as React.CSSProperties}>
-        <p className="lore-eyebrow">
-          <span className="lore-eyebrow__sq" /><b>逸聞</b>ANECDOTES{chapters.length ? ` · ${chapters.length} PARTS` : ''}
-        </p>
-        {chapters.length ? (
-          <ol className="lore-toc">
-            {chapters.map((c, i) => (
-              <li key={c.key}>
-                {/* 扉頁 → 章節用 push（上一頁要能退回扉頁）；章節之間的切換在 LoreChapterPager 用 replace */}
-                <Link to={chapterHref(c.key)}>
-                  <span className="lore-toc__num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="lore-toc__t">
-                    {c.title}
-                    <small>{firstSentence(readableParagraphs(c.body).join('').replace(/^[「『]/, ''))}</small>
-                  </span>
-                  <span className="lore-toc__go" aria-hidden="true">→</span>
-                </Link>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          // 多數機師還沒有章節——這是常態不是錯誤，不放空框也不放「載入失敗」
-          <p className="lore-empty-note">這份檔案的逸聞章節<em>尚在整理</em>。官方逸聞收錄後，會依 PART 順序出現在這裡。</p>
-        )}
-      </section>
+          <section className="lore-panel lore-card" style={{ '--i': 3 } as React.CSSProperties}>
+            <p className="lore-eyebrow">
+              <span className="lore-eyebrow__sq" /><b>逸聞</b>ANECDOTES{chapters.length ? ` · ${chapters.length} PARTS` : ''}
+            </p>
+            {chapters.length ? (
+              <ol className="lore-toc">
+                {chapters.map((c, i) => (
+                  <li key={c.key}>
+                    {/* 扉頁 → 章節用 push（上一頁要能退回扉頁）；章節之間的切換在 LoreChapterPager 用 replace */}
+                    <Link to={chapterHref(c.key)}>
+                      <span className="lore-toc__num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                      <span className="lore-toc__t">
+                        {c.title}
+                        <small>{firstSentence(readableParagraphs(c.body).join('').replace(/^[「『]/, ''))}</small>
+                      </span>
+                      <span className="lore-toc__go" aria-hidden="true">→</span>
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              // 多數機師還沒有章節——這是常態不是錯誤，不放空框也不放「載入失敗」
+              <p className="lore-empty-note">這份檔案的逸聞章節<em>尚在整理</em>。官方逸聞收錄後，會依 PART 順序出現在這裡。</p>
+            )}
+          </section>
+        </>
+      )}
     </>
   )
 }

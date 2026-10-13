@@ -24,10 +24,10 @@
   <div class="hero-badge" style="background:rgba(234,179,8,0.15);color:var(--accent-yellow);border-color:var(--accent-yellow);">◆ COLLECTION SCHEMA</div>
   <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
     pilotLore — 機師逸聞
-    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-042-A</span>
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-042-A／042-E</span>
   </h1>
-  <p class="hero-sub">故事館的章節層 · 100% 人工輸入（OCR 輔助）· 型別與 mechLore 共用、集合分家</p>
-  <div class="version-badge" style="background:var(--accent-yellow);color:#000;">PLAN-042-A — 2026-08-31</div>
+  <p class="hero-sub">故事館的全部非數值資料：扉頁簡介、人物檔案、英文名、外觀設定、逸聞章節 · 100% 人工輸入（OCR 輔助）· 型別與 mechLore 共用、集合分家</p>
+  <div class="version-badge" style="background:var(--accent-yellow);color:#000;">PLAN-042-A — 2026-08-31 · 042-E 資料分家 2026-10-13</div>
 </header>
 
 <main class="container">
@@ -38,31 +38,75 @@
 
   <div class="info-block">
     <strong>📌 用途說明</strong><br>
-    官方遊戲內機師有<strong>兩個不同的頁面</strong>：「機師檔案」與「逸聞（PART 1..N）」。<br>
-    · <strong>機師檔案</strong>＝ <code>pilots.lore</code> ＋ <code>pilots.profile</code>，是官方 API
-      <code>detail.Introduction</code> 的鏡像，89/89 已有值 → <strong>留在 pilots</strong>。<br>
-    · <strong>逸聞</strong>＝每段數百字、有標題（「光環遍身」「定命恩垂」）的章節，
-      官方 API 完全沒有 → <strong>本集合</strong>，須以 OCR 輔助人工輸入。<br>
-    前台於故事館 <code>/lore/pilots/:id/:part</code> 渲染；圖鑑詳情頁不讀本集合。
+    官方遊戲內機師有<strong>兩個不同的頁面</strong>：「機師檔案」與「逸聞（PART 1..N）」。PLAN-042-E（2026-10-13）起<strong>兩者都住本集合</strong>：<br>
+    · <strong>機師檔案</strong>＝扉頁簡介 <code>intro</code>（原 <code>pilots.lore</code>，官方 API <code>detail.Introduction</code> 的鏡像）
+      ＋ 署名 <code>frontSource</code> ＋ 英文名 <code>nameEn</code>（原 <code>pilots.nameEn</code>）
+      ＋ 人物檔案 <code>dossier</code>（原 <code>pilots.profile</code>）＋ 陣營徽章 <code>factionLogos</code>。<br>
+    · <strong>逸聞</strong>＝每段數百字、有標題（「光環遍身」「定命恩垂」）的章節 <code>chapters</code>，
+      官方 API 完全沒有，須以 OCR 輔助人工輸入。<br>
+    · <strong>外觀顯示設定</strong>＝ <code>skins</code>（名稱、隱藏、順序）；圖檔本身仍是 build 時決定的靜態層。<br>
+    前台於故事館 <code>/lore/pilots/:id</code>（扉頁＋卷宗）與 <code>/lore/pilots/:id/:part</code>（章節）渲染；<strong>圖鑑詳情頁不讀本集合</strong>。
   </div>
 
   <div class="decision-block">
-    <strong>✅ 接縫判準是「誰是權威來源」，不是「故事 vs 數值」（總綱決策二）</strong><br>
-    爬蟲寫的留 <code>pilots</code>；人寫的進 <code>pilotLore</code>。這條判準能回答 <code>lore</code>
-    這種「看起來像故事、其實是官方原文鏡像」的邊界案例——它不搬，因為圖鑑的 hover 浮窗
-    （<code>EntityRefView</code>）與引用稽核（<code>entityRefs</code> 的「機師簡介」站點）都還在用它，
-    搬走等於浮窗變空白，或製造兩個真相源。
+    <strong>✅ 接縫判準是「與數值、機制有沒有關係」（PLAN-042-E 決策一，取代總綱決策二）</strong><br>
+    有關的留 <code>pilots</code>（圖鑑讀），其餘全部進 <code>pilotLore</code>（故事館讀）。邊界依站長 Q1 裁決：
+    <code>name</code>／<code>fullName</code>／<code>faction</code> 以及 <code>class</code>、<code>license</code>、<code>rarity</code>、<code>masterLevel</code>、<code>debutVersion</code>、
+    <code>gameId</code>、<code>artKey</code>、<code>portrait</code>、<code>pairedMechId</code>、數值類<strong>留在 pilots</strong>——它們是兩館共用的身分欄位，陣營日後還會有機制作用；預設外觀＝<code>pilots.artKey</code>，圖鑑頭像也在用，所以不歸故事館管。<br>
+    <strong>依賴是單向的（決策二）</strong>：圖鑑只讀 <code>pilots</code>；故事館讀 <code>pilotLore</code> ＋ <code>pilots</code> 的身分欄位。
+    故事館壞掉、資料還沒填，都不影響圖鑑——機師詳情頁只留一顆不帶任何故事內容的「故事館 ▸」連結，不載入本集合。<br>
+    <small style="color:var(--text-dim)">（歷史）042-A 時的判準是「誰是權威來源」：爬蟲寫的留 <code>pilots</code>、人寫的進 <code>pilotLore</code>，所以 <code>lore</code>／<code>profile</code> 當時不搬——
+    圖鑑 hover 浮窗（<code>EntityRefView</code>）與引用稽核（<code>entityRefs</code> 的「機師簡介」站點）都還在讀它。
+    這兩個前提先後失效：浮窗 2026-10-09 改列天賦、官網爬蟲 2026-10-11 退場，所有資料都成了人寫的，這條判準已分不出任何東西。</small>
   </div>
 
-  <div class="sub-h">🗃️ pilotLore — 逸聞文件（LoreDoc）</div>
+  <div class="sub-h">🗃️ pilotLore — 故事館文件（LoreDoc）</div>
   <div class="data-table-wrap">
     <table class="data-table">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>id</td><td>string</td><td>文件 ID <strong>＝ 機師的文件 ID</strong>（<code>pilot_049_海莉絲</code>），比照 <code>pilotResearch</code> 慣例。故事與機師一對一，不另造 slug</td></tr>
       <tr><td>name</td><td>string?</td><td>機師名快照（去正規化）。供 <code>saveWithHistory</code> 的 <code>targetName</code> 與後台列表使用，目標被刪後仍看得懂 log 在講誰</td></tr>
-      <tr><td>frontSource</td><td>string?</td><td><strong>扉頁署名</strong>：從 <code>pilots.lore</code> 尾端抽出的出處（如 <code>——《週刊米赫瑪·文娛版》</code>）。<br><small style="color:var(--text-dim)"><strong>⚠ 正文本身不複製到這裡。</strong>這一欄只存「原文的哪一段是署名」這個編輯決策。初值由一次性草稿腳本 <code>scripts/temp_scripts/extract-lore-source.mjs</code> 產出（實測命中 32 / 誤判 0 / 疑似漏抓 2）＋ 人工複核；<strong>不在執行期即時 parse</strong>。</small></td></tr>
-      <tr><td>factionLogos</td><td>string[]?</td><td><strong>陣營徽章</strong>（PLAN-059 D，2026-10-13）：官方檔名、<strong>含變體</strong>，最多 2 個，例 <code>["Icon_logo_0025_00"]</code>。圖在 <code>public/images/game/icons/camp/</code>。<code>_00</code>＝白色單色（前台以 CSS mask 上色：紙色扉頁是墨色、暗底縮圖是白色），<code>_01</code>＝彩色（原樣）。只有故事館讀（扉頁徽記、館首頁卡片角標）；後台在「機師故事館」編輯台挑選。<br><small style="color:var(--text-dim)"><strong>⚠ 刻意不做「陣營 → 徽章」字典</strong>：<code>pilots.faction</code> 是自由文字（31 種寫法、含複合值），改為逐位挑選＋「同陣營文字的其他機師已選」一鍵套用。沒有官方資料能對到徽章編號，開發端不預填。讀寫一律經 <code>src/utils/factionLogos.ts</code> 的 <code>normalizeFactionLogos()</code>（只留合法檔名、去重、最多 2 個）；清空時欄位直接移除（<code>writeDoc</code> 是整份覆寫）。</small></td></tr>
-      <tr><td>chapters</td><td>LoreChapter[]</td><td>逸聞章節（PART 1..N）。<strong>不含扉頁</strong>——扉頁由渲染端從 <code>pilots.lore</code> derive</td></tr>
+      <tr><td>intro</td><td>string?</td><td>🆕 PLAN-042-E <strong>扉頁簡介</strong>（原 <code>pilots.lore</code>，搬遷 B-2 搬來）。純文字、換行即分段，前台走 <code>readableParagraphs()</code> 排版。
+        <br><small style="color:var(--text-dim)">欄位名刻意不叫 <code>lore</code>，避免和集合名、型別名混在一起（決策四）。<strong>署名不在這裡</strong>：搬遷時已從正文尾端切掉、改存 <code>frontSource</code>，所以渲染端<strong>不再跑 <code>stripTrailingSource</code></strong>（那支函式只留給搬遷／對帳腳本用）。
+        entityRefs 由 <code>PILOT_LORE</code> 的文字單元 origin「扉頁簡介」、<code>texts: { intro }</code> 掃描（沒有側錄表）。Worker 的故事館分享卡 og:description 也取這一欄。</small></td></tr>
+      <tr><td>frontSource</td><td>string?</td><td><strong>扉頁署名</strong>（如 <code>——《週刊米赫瑪·文娛版》</code>），與 <code>intro</code> 成對：前台右對齊小字、與正文分開排版。
+        <br><small style="color:var(--text-dim)">（歷史）042-A 時正文還住 <code>pilots.lore</code>，本欄只存「原文尾端哪一段是署名」的編輯決策；初值由一次性草稿腳本 <code>scripts/temp_scripts/extract-lore-source.mjs</code> 產出（實測命中 32 / 誤判 0 / 疑似漏抓 2）＋ 人工複核，89 篇中 34 篇帶署名。042-E 搬遷時把這 34 篇的署名從正文切乾淨，從此兩欄各管各的、執行期不再猜。</small></td></tr>
+      <tr><td>nameEn</td><td>string?</td><td>🆕 PLAN-042-E <strong>英文名</strong>（原 <code>pilots.nameEn</code>，PLAN-042-C D-4 起人工輸入，搬遷時 90 位有值）：扉頁壓在立繪旁的毛筆草書、卷宗副標、名冊搜尋（<code>withLoreNames()</code> 依 id 併進名冊成員）。官方資料沒有此欄；空值＝不渲染草書層</td></tr>
+      <tr><td>dossier</td><td>LoreDossierInfo?</td><td>🆕 PLAN-042-E <strong>人物檔案</strong>（原 <code>pilots.profile</code>），結構見下方子表。沒有就不出現卷宗的「個人資料」卡。
+        <br><small style="color:var(--text-dim)">顯示順序固定為 性別 → 身高 → 血型 → 陣營（取自 <code>pilots.faction</code>）→ <code>extra</code>，空值一律濾掉，由 <code>dossierRows()</code>（<code>src/utils/loreDossier.ts</code>）統一組出。卷宗的紅色標籤取身高（不詳時退回駕駛許可）。</small></td></tr>
+      <tr><td>skins</td><td>LoreSkinSetting[]?</td><td>🆕 PLAN-042-E <strong>外觀顯示設定</strong>（決策六的動態層）：名稱、隱藏、順序，<strong>陣列順序＝顯示順序</strong>，後台存檔即生效、不必部署。結構見下方子表。
+        <br><small style="color:var(--text-dim)">執行期由 <code>pilotSkins(pilot, loreDoc)</code>（<code>src/utils/gameArt.ts</code>）與 build 清單合併：依陣列排序、套名稱、濾掉 hidden；沒列在陣列裡的外觀依原索引接在後面、顯示「外觀 N」（N＝build 清單原索引，穩定不變）；DB 有、圖卻不存在的 key 直接忽略；同一個 key 列兩次只認第一筆。後台外觀分頁用 <code>pilotSkinCatalog(pilot)</code> 列出 build 清單（含隱藏的）。
+        預設外觀＝<code>pilots.artKey</code>，不在本欄管。</small></td></tr>
+      <tr><td>factionLogos</td><td>string[]?</td><td><strong>陣營徽章</strong>（PLAN-059 D，2026-10-13）：官方檔名、<strong>含變體</strong>，最多 2 個，例 <code>["Icon_logo_0025_00"]</code>。圖在 <code>public/images/game/icons/camp/</code>。<code>_00</code>＝白色單色（前台以 CSS mask 上色：紙色扉頁是墨色、暗底縮圖是白色），<code>_01</code>＝彩色（原樣）。只有故事館讀（扉頁徽記、館首頁卡片角標）；後台在故事館編輯台的「扉頁」分頁挑選。<br><small style="color:var(--text-dim)"><strong>⚠ 刻意不做「陣營 → 徽章」字典</strong>：<code>pilots.faction</code> 是自由文字（31 種寫法、含複合值），改為逐位挑選＋「同陣營文字的其他機師已選」一鍵套用。沒有官方資料能對到徽章編號，開發端不預填。讀寫一律經 <code>src/utils/factionLogos.ts</code> 的 <code>normalizeFactionLogos()</code>（只留合法檔名、去重、最多 2 個）；清空時欄位直接移除（<code>writeDoc</code> 是整份覆寫）。</small></td></tr>
+      <tr><td>chapters</td><td>LoreChapter[]</td><td>逸聞章節（PART 1..N）。<strong>不含扉頁</strong>——扉頁是上面的 <code>intro</code>／<code>frontSource</code>。草稿章見 <code>LoreChapter.draft</code>。
+        <br><small style="color:var(--text-dim)">型別上必填，但執行期不保證存在（Firestore 沒有 schema 強制），讀取端一律 <code>?.chapters</code> 防禦。</small></td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h">🗂️ LoreDossierInfo — 人物檔案（dossier）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>gender</td><td>string?</td><td>性別（原 <code>profile.gender</code>）</td></tr>
+      <tr><td>height</td><td>string?</td><td>身高（原 <code>profile.height</code>）。卷宗拿它當紅色標籤，所以保留固定欄位、編輯台也排在最前面</td></tr>
+      <tr><td>bloodType</td><td>string?</td><td>血型（原 <code>profile.bloodType</code>）</td></tr>
+      <tr><td>extra</td><td>LoreDossierField[]?</td><td>自訂欄位（原 <code>profile.additionalInfo</code>）。<strong>有序陣列，陣列順序＝顯示順序</strong>——舊的 map 在 Firestore 不保證鍵序（決策四）；搬遷時照備份裡的現有順序轉換。</td></tr>
+      <tr><td>&nbsp;├ label</td><td>string</td><td>標籤，前台直接當顯示文字。完全自由的中文字串（含 <code>▇▇</code>、<code>■■時間</code> 這類鍵名）；<strong>同一份檔案內不可重複</strong></td></tr>
+      <tr><td>&nbsp;└ value</td><td>string</td><td>內容</td></tr>
+      <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);">存檔前檢查（<code>src/utils/loreDossier.ts</code>）：<code>duplicateLabels()</code> 擋同名標籤（前台會撞 key、讀者也分不出哪列才對）、<code>unlabeledRows()</code> 擋「有內容卻沒有標籤」的列；<code>normalizeDossier()</code> 只整理空白（trim、丟掉空欄與全空的列，整份都空就不留 <code>dossier</code> 欄位），不排序、不去重。前台卷宗用索引當 React key、標籤只當顯示文字</td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h">👗 LoreSkinSetting — 外觀顯示設定（skins[]）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>key</td><td>string</td><td>官方立繪鍵（如 <code>Pilot_10103146B</code>），＝網址 <code>?skin=</code> 的值。必須對得到 build 清單（<code>src/data/gameArtIndex.ts</code>）裡這位機師的外觀，否則合併時忽略</td></tr>
+      <tr><td>name</td><td>string?</td><td>顯示名稱；空＝「外觀 N」</td></tr>
+      <tr><td>hidden</td><td>true?</td><td>前台不列出（例：台版還沒推出）。值只有 <code>true</code>，取消隱藏就是拿掉欄位。
+        <br><small style="color:var(--text-dim)">⚠ 意思與舊的 <code>scripts/lib/pilotSkinMeta.json</code> 不同：以前是「不寫進 build 清單」（打包檔裡完全沒有），現在圖仍在打包檔裡、只是不列——依「劇透不是顧慮」可以接受。</small></td></tr>
+      <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);"><strong>靜態層 vs 動態層（決策六）</strong>：圖檔本身、歸屬哪位機師（<code>owner</code>）、清單有哪些 key（<code>gameArtIndex.ts</code>）、NPC 圖庫歸屬（<code>npcArtNotes.json</code>）仍是 build 時決定（腳本＋部署）；
+        <code>pilotSkinMeta.json</code> 只剩匯入用的 <code>owner</code>／<code>note</code>（<code>import-game-assets.mjs --skins</code> 讀），<code>generate-art-index.mjs</code> 不再讀 name／hidden，<code>GamePilotSkin</code> 也拿掉了 <code>name</code>。只有名稱、隱藏、順序住本欄</td></tr>
     </table>
   </div>
 
@@ -73,10 +117,13 @@
       <tr><td>key</td><td>string</td><td><strong>必填穩定鍵</strong>，進網址（<code>/lore/pilots/:id/:part</code>）。由後台編輯器在新增章節當下自動產生</td></tr>
       <tr><td>label</td><td>string?</td><td>章節標籤（<code>PART 1</code>）。未設定則由渲染端依索引生成</td></tr>
       <tr><td>title</td><td>string</td><td>章節標題（<code>光環遍身</code>）</td></tr>
-      <tr><td>body</td><td>string</td><td>正文。支援 PLAN-019 的 <code>[xxx]</code> 標記，由 <code>&lt;RefText&gt;</code> 解析</td></tr>
+      <tr><td>body</td><td>string</td><td>正文。支援 PLAN-019 的 <code>[xxx]</code> 標記，由 <code>&lt;LoreRichText&gt;</code> 解析（PLAN-042-A 決策 A：與 <code>&lt;RefText&gt;</code> 分家、<code>[xxx]</code> 解析規則逐字相同，但<strong>不套數字紅字高亮、不解析 <code>&lt;refId.attr&gt;</code></strong>——不要改回 RefText，那會把散文裡的數字全變紅色粗體）</td></tr>
       <tr><td>bodyRefs</td><td>DescriptionRefs?</td><td>正文內 <code>[xxx]</code> → 實體引用側錄。<strong>欄位名是 <code>bodyRefs</code> 不是 <code>descriptionRefs</code></strong>（正文欄位叫 <code>body</code>）——<code>entityRefs</code> 的站點必須指定 <code>refsField: 'bodyRefs'</code>，否則級聯清除會去清一個不存在的欄位<strong>且靜默不報錯</strong></td></tr>
       <tr><td>source</td><td>string?</td><td>本章的出處署名。前台右對齊小字 ＋ 分隔細線</td></tr>
       <tr><td>commentary</td><td>LoreCommentary[]?</td><td>NPC 旁白列。<code>{ speakerId, text }</code>，<code>speakerId</code> 指向 <code>pilots</code> 文件 ID</td></tr>
+      <tr><td>draft</td><td>true?</td><td>🆕 PLAN-042-E <strong>草稿章</strong>（決策五）：前台不列出、章節網址導回扉頁、館首頁與名冊的章節數不計入。值只有 <code>true</code>，取消草稿就是拿掉欄位。
+        <br><small style="color:var(--text-dim)">前台<strong>唯一的過濾點</strong>是 <code>publishedChapters()</code>（<code>src/components/lore/loreText.ts</code>），不要各自寫 <code>.filter</code>——漏一處就是「目錄看不到、網址卻點得進去」。
+        ⚠ 只防「沒寫完的章被讀者看到」，<strong>不是保密</strong>：資料仍整包下載（站長：外洩無妨），所以不另開只有編輯者讀得到的集合。編輯台章節卡的「預覽」仍看得到草稿章。</small></td></tr>
     </table>
   </div>
 
@@ -91,7 +138,9 @@
         （總綱決策五、PLAN-041 的「0/5 定律」）。</li>
       <li><strong><code>LoreCommentary.textRefs</code></strong>：旁白是短句評註，全站今天沒有一段旁白需要 <code>[xxx]</code>。
         要開的時候補一個選填欄位是零成本的。</li>
-      <li><strong>扉頁正文</strong>：住 <code>pilots.lore</code>，見上方決策二。</li>
+      <li><strong>文件層的 <code>status</code>／進度欄位</strong>（PLAN-042-E 決策五）：「有沒有簡介、檔案幾欄、章節數、草稿數、外觀命名數、有沒有徽章」
+        全部從資料推導（<code>src/utils/loreProgress.ts</code>），後台進度總覽就是這樣算的。理由同 <code>key</code> 那一條的「0/5 定律」——選填的狀態欄位最後沒人會填，填了也會跟資料本身漂移。</li>
+      <li><s><strong>扉頁正文</strong>：住 <code>pilots.lore</code></s>——（歷史）042-A 的決定，PLAN-042-E 已搬進本集合的 <code>intro</code>，見上方決策一。</li>
     </ul>
   </div>
 </section>
@@ -106,7 +155,9 @@
 文件歸屬：  pilotLore.id ═══════════════════→ pilot（同一個 ID）
 
             ↑ 沒有任何東西指回 pilotLore</pre>
-    <strong>本集合只有 outbound，沒有 inbound。</strong>
+    <strong>本集合只有 outbound，沒有 inbound。</strong><br>
+    <span style="color:var(--text-dim);">PLAN-042-E：<code>entityRefs</code> 的 <code>PILOT_LORE</code> 多了一個文字單元——origin「扉頁簡介」、<code>texts: { intro }</code>（承接原本 <code>PILOTS</code> 的「機師簡介」站點 <code>texts: { lore }</code>，該站點已移除）。
+    簡介今天 0 篇含 <code>[xxx]</code>／<code>&lt;id.attr&gt;</code>、也沒有側錄表；這個站點是防日後誤加——漏掃的話刪 BUFF 後簡介裡會留下解析不出來的 token。</span>
   </div>
 
   <div class="info-block" style="margin-top:12px;">
@@ -124,21 +175,32 @@
   <div class="section-title">資料維護</div>
 
   <div class="info-block">
-    <strong>🛠️ 後台編輯</strong><br>
-    <code>/admin/lore</code> 獨立子頁（<strong>不是</strong>後台的第 15 顆 Tab）：互動形狀是「章節側欄 ＋ 長文 textarea
-    ＋ 即時預覽」，與既有「列表 → AdminModal → 存檔」的 CRUD 殼不同構；且未來若開給協作者，
-    必須是一條能獨立授權的路由。<br>
-    存檔走 <code>updatePilotLore()</code> → <code>saveWithHistory('pilotLore', …)</code>：自動寫入
-    <code>changeHistory</code> 並 <code>bumpDataVersion('pilotLore')</code>。
+    <strong>🛠️ 後台編輯：故事館編輯台 <code>/admin/lore</code>（PLAN-042-E 改版）</strong><br>
+    一位機師的故事資料<strong>全部在這裡編</strong>：扉頁（英文名、簡介、署名、陣營徽章）／人物檔案／逸聞章節／外觀，右欄即時預覽。
+    機師管理（<code>PilotAdmin</code>）的「個人資料」分頁已移除，面板標題下留一條連到 <code>/admin/lore?pilot=&lt;id&gt;</code> 的捷徑。<br>
+    獨立子頁（<strong>不是</strong>後台的第 15 顆 Tab）：一份文件 N 章長文的互動形狀與既有「列表 → AdminModal → 存檔」的 CRUD 殼不同構；且未來若開給協作者，
+    必須是一條能獨立授權的路由（目前仍是 ADMIN 即可，EDITOR 角色先不做——決策八）。<br>
+    存檔走 <code>updatePilotLore()</code> → <code>saveWithHistory('pilotLore', …)</code>：<strong>整份覆寫</strong>，自動寫入
+    <code>changeHistory</code> 並 <code>bumpDataVersion('pilotLore')</code>。草稿自動暫存的 kind 自 042-E 起改為 <code>'pilotLore.v2'</code>——
+    改版前的草稿沒有 <code>intro</code>／<code>dossier</code>／<code>nameEn</code>／<code>skins</code>，還原後一存檔就會把搬遷進來的資料整份洗掉。
   </div>
 
   <div class="warning-block" style="margin-top:12px;">
     <strong>⚠ 為什麼寫入一定要掛 <code>saveWithHistory</code></strong><br>
-    本集合是全站<strong>唯一「人工逐字輸入、重跑爬蟲也生不回來」</strong>的資料。其餘集合寫壞了重抓官網即可，
-    這裡寫壞一章就是永久失去。<code>changeHistory</code> 的底層 helper 是集合無關設計，接上去的成本只有一行。<br>
+    本集合是全站<strong>人工逐字輸入的長文集中處</strong>：寫壞一章、或一次整份覆寫漏帶欄位，就是永久失去
+    （官網爬蟲 2026-10-11 退場後，沒有任何來源能重抓回來）。<code>changeHistory</code> 的底層 helper 是集合無關設計，接上去的成本只有一行。<br>
     對應地，<code>src/lib/api/pilotLore.ts</code> <strong>刻意沒有 <code>deletePilotLore</code></strong>：
     本集合不是任何引用的目標、沒有級聯要跑，但「刪掉一整份人工長文」也不該是一顆按鈕——
-    要清空就把 <code>chapters</code> 存成 <code>[]</code>，那條路徑會留下 update 記錄。
+    要清空就把內容逐項清掉後存檔，那條路徑會留下 update 記錄，前一版內容也還在 <code>changeHistory</code> 裡。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>👀 誰讀本集合</strong><br>
+    · <strong>故事館前台</strong>：<code>PilotLorePage</code>／<code>LoreHomePage</code> 依 id 合併 <code>pilots</code> ＋ <code>pilotLore</code>。整頁只等 pilots；
+      pilotLore 的 loading／error 交給卷宗（<code>LoreDossier</code> 的 <code>status</code>）——讀不到時明講「故事資料載入失敗」，不退化成看起來像空白資料的扉頁。館首頁讀不到時只少章節數與徽章角標。<br>
+    · <strong>Cloudflare Worker 分享卡</strong>：<code>/lore/pilots/*</code> 多讀一份同 ID 的 pilotLore 文件，og:description ＝ <code>intro</code>（讀不到退回「某某｜機師故事館」）；title 與 og:image 仍取 pilots。<br>
+    · <strong>故事館編輯台</strong>：列表進度總覽、編輯面板與預覽。<br>
+    · <strong>圖鑑（<code>/pilots/:id</code>）不讀</strong>——單向依賴（決策二）。
   </div>
 
   <div class="info-block" style="margin-top:12px;">
@@ -148,7 +210,9 @@
     理由：全集合快取展開後已佔 <strong>4.2–4.5 MB</strong>（UTF-16 計，pilots 一個就 2.09 MB），逼近 Chrome 約 5 MB 上限；
     而配額超限<strong>不會只讓最後那個集合寫失敗</strong>——<code>setItem</code> 一旦開始拋
     <code>QuotaExceededError</code>，之後每個集合每次都重讀，全站快取效益一起賠掉。
-    逸聞是成長曲線最陡（89 人 × 4 PART × 500 字 ≈ 534 KB raw）而命中率最低（純欣賞、低流量）的那一個。
+    逸聞是成長曲線最陡（89 人 × 4 PART × 500 字 ≈ 534 KB raw）而命中率最低（純欣賞、低流量）的那一個。<br>
+    PLAN-042-E 搬遷後整包由約 6.8 KB 長到約 70 KB（不含之後增加的章節），<strong>仍留在 <code>NO_LOCAL_CACHE_KEYS</code></strong>；
+    Worker 的邊緣快取 key 帶版本號，故事館多讀這一份的 Firestore 成本可以忽略。
   </div>
 
   <div class="info-block" style="margin-top:12px;">
@@ -168,14 +232,16 @@
     漏掉一支 <code>case</code> 的症狀是「該集合永遠是空陣列」，沒有錯誤、沒有紅字）。<br>
     <code>wrangler deploy</code> 與 <code>firebase deploy --only firestore:rules</code>
     <strong>都不在 <code>npm run build</code> / <code>git push</code> 的流程內</strong>，且本機 dev 的
-    <code>VITE_WORKER_API_BASE</code> 指向<u>正式</u> Worker ——「本機先開發、最後才部署」在這個架構下不成立。
+    <code>VITE_WORKER_API_BASE</code> 指向<u>正式</u> Worker ——「本機先開發、最後才部署」在這個架構下不成立。<br>
+    PLAN-042-E <strong>沒有新增集合</strong>（決策三：只擴充 <code>LoreDoc</code>），所以上述七處都不必動——<code>CollectionKey</code>、Worker 白名單、rules、
+    <code>entityRefs</code> 的 <code>SPECS</code>、<code>changeHistory</code> 全部沿用。
   </div>
 </section>
 
 </main>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-08-31 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-13 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

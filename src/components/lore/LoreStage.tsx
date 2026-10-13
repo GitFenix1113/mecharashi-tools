@@ -23,6 +23,8 @@ export interface LoreStageProps {
   pilot: Pilot
   /** null＝這位任何立繪都沒有 */
   art: StageArt | null
+  /** 英文名（pilotLore.nameEn，PLAN-042-E）：立繪旁的毛筆草書。空＝不渲染草書層 */
+  nameEn?: string
   /** 外觀列＋全身立繪鈕（由頁面組好傳進來，放在舞台外側） */
   tools?: ReactNode
 }
@@ -37,7 +39,7 @@ interface Layer {
 /** 換裝動畫的總長（index.css 的 lore-dress-in 170ms 延遲＋820ms） */
 const DRESS_MS = 1000
 
-export default function LoreStage({ pilot, art, tools }: LoreStageProps) {
+export default function LoreStage({ pilot, art, nameEn: nameEnProp, tools }: LoreStageProps) {
   const [layers, setLayers] = useState<Layer[]>(() => (art ? [{ art, pilotId: pilot.id, leaving: false, dressing: false }] : []))
   const top = layers[layers.length - 1]
   if (art && (!top || top.art.key !== art.key)) {
@@ -58,7 +60,7 @@ export default function LoreStage({ pilot, art, tools }: LoreStageProps) {
   }, [busy, layers])
 
   const serial = pilot.id.match(/^pilot_(\d+)/)?.[1] ?? ''
-  const nameEn = pilot.nameEn?.trim()
+  const nameEn = nameEnProp?.trim()
   // 簽名字級依名字長度縮：長名（Yevgeny Ivanovic Goman）照官網做法縮小
   const sigSize = nameEn ? Math.round(Math.min(150, Math.max(70, 1400 / Math.max(6, nameEn.length)))) : 0
 

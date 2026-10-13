@@ -10,15 +10,15 @@ import { usePilotLore, usePilots } from '../../hooks/useFirestore'
 import { assetUrl, pilotPortraitCandidates } from '../../utils/assets'
 import type { Pilot } from '../../types'
 import { buildLoreGroups, readLoreSort, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
+import { publishedChapters } from '../../components/lore/loreText'
 
 /**
  * 機師故事館的館首頁（PLAN-042-A D-2）。
  *
  * ── 為什麼列 `pilots` 而不是 `pilotLore`（決策 D）──
- * `pilotLore` 只承載「編輯得動的展示文本」（章節、旁白、扉頁署名），而扉頁正文住在
- * `pilots.lore`。改列 `pilotLore` 等於把牆縮成「已經有人手動建過檔的那幾位」——
- * 現階段是 34 份 `chapters: []` 的空殼，其中 0 位有章節，牆上會少掉 55 位有扉頁可讀的機師。
- * 故本頁一律列滿 89 位，未建檔者點進去看到的是扉頁（那本來就是官方簡介，不是空白頁）。
+ * 牆是「名冊」：名字、職業、版本、立繪都是 pilots 的身分欄位，pilotLore 只拿來疊章節數與陣營徽章。
+ * 讀不到 pilotLore 時牆照樣完整（只少了角標）；改列 pilotLore 則等於把牆的完整性綁在故事資料上。
+ * PLAN-042-E 搬遷時每位機師都建了一份 pilotLore（簡介、個人資料），所以點進去不會是空頁。
  *
  * ⚠ **89 張卡片、88 張縮圖是正確現象。** `public/images/pilots/` 只有 88 個資料夾——
  *   賽拉的 `portrait` 是空字串、沒有圖片資料夾。她要照樣出現在牆上、縮圖走
@@ -28,8 +28,8 @@ import { buildLoreGroups, readLoreSort, writeLoreSort, type LoreSort } from '../
 export default function LoreHomePage() {
   const { data: pilots, loading, error } = usePilots()
   // ⚠ 刻意不取 usePilotLore 的 loading：ensureLoaded 的 catch 只寫 errorMap、不把 key 加進
-  //   loadedKeys ⇒ 抓取失敗時它的 loading 永遠是 true。`/api/data/pilotLore` 在部署前就是 404，
-  //   gate 在它身上會讓整面牆永遠轉圈。章節徽章消失是可接受的降級，牆不見不是。
+  //   loadedKeys ⇒ 抓取失敗時它的 loading 永遠是 true，gate 在它身上會讓整面牆永遠轉圈。
+  //   章節徽章消失是可接受的降級，牆不見不是。
   const { data: loreDocs, error: loreError } = usePilotLore()
 
   const [tab, setTab] = useState<LoreTab>('pilots')
@@ -39,9 +39,9 @@ export default function LoreHomePage() {
 
   // ⚠ 泛型要自己標：`Object.fromEntries` 對 `(string | number)[]` 這種非 tuple 的 entry
   //   會落到回傳 any 的那條多載，不標就是把 any 一路傳進 <PilotCard>。
-  //   `chapters?.` 的問號是防禦 Worker 回來的舊文件缺欄位（型別上它是必填）。
+  //   草稿章不計入（publishedChapters，PLAN-042-E D-5）；它也兼顧 Worker 回來的舊文件缺 chapters 欄位。
   const chapterCount = useMemo<Record<string, number>>(
-    () => Object.fromEntries(loreDocs.map((d) => [d.id, d.chapters?.length ?? 0])),
+    () => Object.fromEntries(loreDocs.map((d) => [d.id, publishedChapters(d.chapters).length])),
     [loreDocs],
   )
   // 陣營徽章（PLAN-059 D-4）：卡片左上角只放第一個。和章節數同一份 pilotLore，讀不到時一起消失
@@ -104,7 +104,7 @@ export default function LoreHomePage() {
         )}
       </div>
 
-      {/* loreError 不是致命：只讓章節徽章消失，牆照常渲染（部署前的主路徑就是這條）。 */}
+      {/* loreError 不是致命：只讓章節徽章與陣營角標消失，牆照常渲染。 */}
       {loreError && (
         <p className="mb-4 text-xs text-text-dim">章節索引暫時讀不到，卡片上的章節數先不顯示。</p>
       )}
@@ -264,7 +264,7 @@ function PilotCard({ pilot, chapters, logo }: { pilot: Pilot; chapters: number; 
         </span>
       )}
 
-      {/* 章節徽章只在真的有章節時出現。目前 pilotLore 全是空殼 ⇒ 一個都不會出現，這是正確現象。 */}
+      {/* 章節徽章只在真的有（非草稿的）章節時出現。多數機師還沒有章節 ⇒ 沒有角標是正確現象。 */}
       {chapters > 0 && (
         <span className="absolute right-1.5 top-1.5 rounded bg-accent-orange px-1.5 py-0.5 text-[10px] font-bold text-bg-dark">
           {chapters} 章

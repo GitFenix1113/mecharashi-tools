@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, TalentNdVariant, SkillEffect, SkillCondition, NeuralDrive, NeuralDriveLevel, NeuralDriveAbility, TalentLoadoutMod, EquipTarget, EquipStat, TalentTier } from '../../../types'
 import { formatWeaponReq } from '../../../types'
 import { ItemRarity, PilotClass, MechLicense, WeaponType, WeaponKind, BackpackType } from '../../../types/enums'
@@ -26,7 +27,8 @@ import { assetUrl, pilotPortraitPath } from '../../../utils/assets'
 import { PILOT_RARITY_CLASS, TRIGGER_DISPLAY, STAT_OPTIONS } from './constants'
 
 // ─── 新機師預設值工廠（PLAN-025）─────────────────────────────────────────────────
-// 手建機師沒有官方爬蟲來源：statsBase / additionalInfo 給空物件，apBase 複製 ap。
+// 手建機師沒有官方爬蟲來源：statsBase 給空物件，apBase 複製 ap。
+// 人物檔案、簡介、英文名不在這裡（PLAN-042-E：住 pilotLore，第一次在故事館編輯台存檔時才建文件）。
 // manual:true 讓爬蟲補丁整筆跳過（防日後官方同名機師覆寫人工資料）。
 function makeDefaultPilot(id: string, name = ''): Pilot {
   const ap = { init: 0, max: 0, recovery: 0 }
@@ -39,7 +41,6 @@ function makeDefaultPilot(id: string, name = ''): Pilot {
     faction: '',
     license: MechLicense.MEDIUM,
     masterLevel: '',
-    profile: { gender: '', bloodType: '', height: '', additionalInfo: {} },
     stats: { melee: 0, assault: 0, shooting: 0, tactics: 0, defense: 0, engineering: 0 },
     statsBase: {},
     ap,
@@ -1393,75 +1394,16 @@ function PilotNeuralDriveTab({
   )
 }
 
-// ─── 個人資料自訂欄位編輯器（additionalInfo 任意鍵值）──────────────────────────
-// 機師個人資料偏「說故事」、欄位不固定：以自訂鍵值列呈現，前台依 key 當標籤直接渲染。
-// 自帶本地 pairs 狀態使打字穩定；父層以 key={pilot.id} 強制換機師時重置。
-function AdditionalInfoEditor({
-  value,
-  onChange,
-}: {
-  value: Record<string, string>
-  onChange: (v: Record<string, string>) => void
-}) {
-  const [pairs, setPairs] = useState<{ k: string; v: string }[]>(
-    () => Object.entries(value ?? {}).map(([k, v]) => ({ k, v })),
-  )
-
-  function sync(next: { k: string; v: string }[]) {
-    setPairs(next)
-    const obj: Record<string, string> = {}
-    for (const { k, v } of next) { const key = k.trim(); if (key) obj[key] = v }
-    onChange(obj)
-  }
-  const updK = (i: number, k: string) => sync(pairs.map((p, pi) => (pi === i ? { ...p, k } : p)))
-  const updV = (i: number, v: string) => sync(pairs.map((p, pi) => (pi === i ? { ...p, v } : p)))
-  const add    = () => sync([...pairs, { k: '', v: '' }])
-  const remove = (i: number) => sync(pairs.filter((_, pi) => pi !== i))
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">自訂欄位 additionalInfo</span>
-        <button type="button" onClick={add} className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors">+ 新增欄位</button>
-      </div>
-      {pairs.length === 0 ? (
-        <p className="text-xs text-text-dim py-1">尚無自訂欄位。欄位名（左）會直接當作前台顯示的標籤，值（右）為內容。</p>
-      ) : (
-        <div className="space-y-1.5">
-          {pairs.map((p, i) => (
-            <div key={i} className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] items-center gap-2">
-              <input
-                value={p.k}
-                onChange={(e) => updK(i, e.target.value)}
-                className="input-field text-xs"
-                placeholder="欄位名，如：出身"
-              />
-              <input
-                value={p.v}
-                onChange={(e) => updV(i, e.target.value)}
-                className="input-field text-xs"
-                placeholder="內容"
-              />
-              <button type="button" onClick={() => remove(i)}
-                className="shrink-0 text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10">✕</button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ─── 機師編輯面板 ──────────────────────────────────────────────────────────────
 // PLAN-033 C-1：原 stats（六維 + 素質）與 ap（3 欄 + 唯讀參考）在 Phase B 後合計
-// 僅約 4 排，併為單一 'stats' 分頁。profile 因含 AdditionalInfoEditor（高度隨自訂
-// 欄位數不定）維持獨立，避免把不可預測的長度塞進數值頁。
-type PilotEditTab = 'basic' | 'stats' | 'profile' | 'talents' | 'skills' | 'neuralDrive'
+// 僅約 4 排，併為單一 'stats' 分頁。
+// PLAN-042-E D-1：「個人資料」分頁（性別／身高／血型、自訂欄位、英文名、故事簡介）整個搬到故事館編輯台——
+// 機師管理只編與數值、機制有關的欄位。面板標題下方留一條連到 /admin/lore?pilot=<id> 的捷徑。
+type PilotEditTab = 'basic' | 'stats' | 'talents' | 'skills' | 'neuralDrive'
 
 const PILOT_EDIT_TABS: AdminEditTabDef<PilotEditTab>[] = [
   { id: 'basic',       label: '基本資訊' },
   { id: 'stats',       label: '屬性數值・AP' },
-  { id: 'profile',     label: '個人資料' },
   { id: 'talents',     label: '天賦' },
   { id: 'skills',      label: '技能' },
   { id: 'neuralDrive', label: '神經驅動' },
@@ -1505,7 +1447,6 @@ function PilotEditPanel({
   function update<K extends keyof Pilot>(key: K, value: Pilot[K]) { setForm((f) => ({ ...f, [key]: value })) }
   function updateStats(key: keyof Pilot['stats'], value: number) { setForm((f) => ({ ...f, stats: { ...f.stats, [key]: value } })) }
   function updateAp(key: 'init' | 'max' | 'recovery', value: number) { setForm((f) => ({ ...f, ap: { ...f.ap, [key]: value } })) }
-  function updateProfile(key: 'gender' | 'bloodType' | 'height', value: string) { setForm((f) => ({ ...f, profile: { ...f.profile, [key]: value } })) }
 
   /**
    * PLAN-034 E-3：擋下「掛了帶 buffUpgrades 的能力，但該級 minSum 仍是 0」。
@@ -1570,6 +1511,15 @@ function PilotEditPanel({
           <p className="text-[14px] text-text-dim mt-0.5">
             技能 {skillCount}（效果於「技能管理」分頁編輯）· 天賦 {form.talents?.length ?? 0}（可編輯）· 神經驅動 {form.neuralDrive?.length ?? 0} 分區（可編輯）
           </p>
+          {/* PLAN-042-E D-1：原「個人資料」分頁的位置。新建機師還沒存檔前沒有 id 可連，不顯示 */}
+          {pilot.id && (
+            <Link
+              to={`/admin/lore?pilot=${encodeURIComponent(pilot.id)}`}
+              className="mt-1 inline-block text-[13px] text-accent-cyan no-underline hover:underline"
+            >
+              人物檔案、簡介與英文名已移到故事館編輯台 →
+            </Link>
+          )}
         </div>
       </div>
 
@@ -1663,36 +1613,6 @@ function PilotEditPanel({
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        )}
-
-        {editTab === 'profile' && (
-          <div className="space-y-3">
-            <p className="text-[13px] text-text-dim">
-              個人資料偏「說故事」、欄位不固定。常用三欄（性別 / 血型 / 身高）留空即不顯示；
-              其餘一律用下方<strong>自訂欄位</strong>自由增減，欄位名即為前台顯示標籤。
-            </p>
-            <div className={`${GRID_AUTO_FIELDS} gap-3`}>
-              <Field label="性別 gender"><input value={form.profile?.gender || ''} onChange={(e) => updateProfile('gender', e.target.value)} className="input-field" /></Field>
-              <Field label="血型 bloodType"><input value={form.profile?.bloodType || ''} onChange={(e) => updateProfile('bloodType', e.target.value)} className="input-field" /></Field>
-              <Field label="身高 height"><input value={form.profile?.height || ''} onChange={(e) => updateProfile('height', e.target.value)} className="input-field" /></Field>
-              {/* PLAN-042-C D-4：故事館扉頁的英文毛筆草書。官方資料沒有，人工輸入；留空就不渲染。 */}
-              <Field label="英文名 nameEn（故事館草書，選填）"><input value={form.nameEn || ''} onChange={(e) => update('nameEn', e.target.value)} className="input-field" placeholder="Rosa Diaz" /></Field>
-            </div>
-            {/* PLAN-042-A D-4：lore 由「基本資訊」搬來這裡——它是個人資料類的敘事文本，
-                跟隔壁的自訂欄位同一種東西，擺在職業／許可／版本那堆結構化欄位裡不合群。
-                標籤也一併改掉：前台只用 `whitespace-pre-line` 與 `splitParagraphs`
-                分段，從來沒有任何 Markdown 解析，原本的「（Markdown）」在說謊。 */}
-            <Field label="故事簡介 lore（純文字，換行即分段）">
-              <textarea value={form.lore || ''} onChange={(e) => update('lore', e.target.value)} className="input-field min-h-[150px] resize-y" />
-            </Field>
-            <div className="pt-2 border-t border-border/60">
-              <AdditionalInfoEditor
-                key={form.id}
-                value={form.profile?.additionalInfo ?? {}}
-                onChange={(info) => setForm((f) => ({ ...f, profile: { ...f.profile, additionalInfo: info } }))}
-              />
             </div>
           </div>
         )}

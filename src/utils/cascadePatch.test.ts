@@ -72,7 +72,7 @@ test('M2: 不改動輸入資料（copy-on-write）', () => {
 
 test('M3: 未被觸及的頂層欄位不進 set（避免整份文件覆寫）', () => {
   const data = pilotData({
-    name: '測試', lore: '簡介', rarity: 'SSR',
+    name: '測試', faction: '北陸聯合', rarity: 'SSR',
     talents: [{ name: 'A', buffIds: ['buff_x'] }],
     neuralDrive: [{ name: 'ND', levels: [{ level: 1, buffIds: ['buff_other'] }] }],
   })
@@ -449,7 +449,7 @@ test('V4: 快照過大時擋下（單文件 1 MiB 上限）', () => {
   assert.deepEqual(checkCascadeSafety(fakePlan(), small), [])
 
   // 中文 1 字 3 bytes，故 UTF-8 長度必須實測而非用 .length
-  const huge = { doc: { lore: '鋼'.repeat(SNAPSHOT_SIZE_BUDGET_BYTES / 3) }, patches: [] }
+  const huge = { doc: { description: '鋼'.repeat(SNAPSHOT_SIZE_BUDGET_BYTES / 3) }, patches: [] }
   const blockers = checkCascadeSafety(fakePlan(), huge)
   assert.equal(blockers.length, 1)
   assert.equal(blockers[0].kind, 'snapshotSize')

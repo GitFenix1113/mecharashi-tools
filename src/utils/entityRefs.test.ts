@@ -646,3 +646,20 @@ test('Q5: 刪 buff 時，引用分支的武器不再被掃出正文/軟引用站
   assert.deepEqual(r.hits, [])        // 正文與 buffIds 都在技能庫 doc 上，由 pilotSkills spec 負責
   assert.deepEqual(r.softWarnings, [])
 })
+
+// ─── PLAN-042-E C-3：「機師簡介」站點從 pilots 搬到 pilotLore 的「扉頁簡介」────────────
+
+test('扉頁簡介：pilotLore.intro 的 token 掃得到（path＝intro），pilots 的舊 lore 欄位不再掃', () => {
+  const lore = { id: 'pilot_049_海莉絲', name: '海莉絲', intro: '疊<buff_凝勢.lv3.maxStack>層', chapters: [] }
+  const r = findReferences('buff', 'buff_凝勢', scanData({ pilotLore: [lore] as never }))
+  assert.equal(r.hits.length, 1)
+  assert.equal(r.hits[0].coll, 'pilotLore')
+  assert.equal(r.hits[0].path, 'intro')
+  assert.equal(r.hits[0].origin, '扉頁簡介')
+  assert.equal(r.hits[0].op, 'textFreeze')
+
+  // DB 在 G-1 之前仍留著 pilots.lore，但已沒有任何程式讀它——掃到等於替一個死欄位產 patch
+  const stale = asPilot({ name: '海莉絲', lore: '疊<buff_凝勢.lv3.maxStack>層' })
+  const r2 = findReferences('buff', 'buff_凝勢', scanData({ pilots: [{ ...stale, id: 'pilot_049_海莉絲' } as never] }))
+  assert.equal(r2.hits.length, 0)
+})

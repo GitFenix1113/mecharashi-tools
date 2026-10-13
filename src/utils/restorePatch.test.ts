@@ -35,12 +35,12 @@ const pilotDocs = (doc: object): RestoreScanData =>
 test('R1: arrayRemove 重加 —— 值缺席則補回，只寫回被動到的頂層欄位', () => {
   const plan = buildRestorePlan(
     [patch({ segments: ['talents', 0, 'buffIds'], op: 'arrayRemove', value: 'buff_x@3' })],
-    pilotDocs({ name: '測試', lore: '簡介', talents: [{ name: 'A', buffIds: ['buff_y'] }] }),
+    pilotDocs({ name: '測試', faction: '北陸聯合', talents: [{ name: 'A', buffIds: ['buff_y'] }] }),
   )
   assert.equal(plan.skipped.length, 0)
   assert.equal(plan.applied.length, 1)
   assert.equal(plan.mutations.length, 1)
-  assert.deepEqual(Object.keys(plan.mutations[0].set), ['talents'])   // lore 不進 set
+  assert.deepEqual(Object.keys(plan.mutations[0].set), ['talents'])   // faction 不進 set
   assert.deepEqual(
     (plan.mutations[0].set.talents as { buffIds: string[] }[])[0].buffIds,
     ['buff_y', 'buff_x@3'],

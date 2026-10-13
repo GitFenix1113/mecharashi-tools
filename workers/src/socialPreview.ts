@@ -233,11 +233,16 @@ function truncate(s: string, max = 110): string {
  * `opts.lore`（PLAN-042-A）：這張卡片是機師故事館的分享卡。只換 title 與 description，
  * **og:image 沿用同一張 half.jpg** —— 故事館不另開一條美術維護線（計畫書決策二）。
  * 刻意做成選填參數：既有呼叫點與既有測試一個字都不必改。
+ *
+ * `opts.loreDoc`（PLAN-042-E）：同一位機師的 `pilotLore` 文件。故事館卡片的 description 取它的 `intro`
+ * （簡介 2026-10 從 pilots.lore 搬過去了）；標題與立繪仍取 `doc`（pilots 的身分欄位）。
+ * 沒有這份文件（讀不到、還沒建）→ 退回「某某｜機師故事館」。
+ * ⚠ 這裡沒讀到的話**不會有任何錯誤訊號**：回應一樣是 200、一樣有 og:image，只有描述文字退回預設值。
  */
 export function buildOgMeta(
   collection: OgCollection,
   doc: Record<string, unknown>,
-  opts?: { lore?: boolean },
+  opts?: { lore?: boolean; loreDoc?: Record<string, unknown> | null },
 ): OgMeta | null {
   const name = str(doc.name)
   if (!name) return null // 連名字都沒有就沒有做卡片的意義，退回站名卡
@@ -246,7 +251,7 @@ export function buildOgMeta(
     // 章節不各自成卡：`part` 只是同一位機師故事的第幾段，分享出去的仍是「這位機師的故事」。
     return {
       title: `${name} 的故事`,
-      description: truncate(str(doc.lore)) || `${name}｜機師故事館`,
+      description: truncate(str(opts.loreDoc?.intro)) || `${name}｜機師故事館`,
       ...pickImages(gamePortrait('pilots', doc), doc.portrait),
     }
   }
