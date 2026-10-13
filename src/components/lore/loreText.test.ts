@@ -4,7 +4,7 @@
 //   ERR_MODULE_NOT_FOUND（全站測試檔慣例同此）。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { splitParagraphs, isQuoteStyle, firstSentence, stripTrailingSource, readableParagraphs, fullwidthLorePunctuation, normalizeLoreSource } from './loreText.ts'
+import { splitParagraphs, isQuoteStyle, firstSentence, stripTrailingSource, readableParagraphs, fullwidthLorePunctuation, normalizeLoreSource, publishedChapters } from './loreText.ts'
 
 // ── splitParagraphs ──────────────────────────────────────────────────────────
 
@@ -138,4 +138,14 @@ test('normalizeLoreSource：只換開頭的破折號記號，不吃掉正文的�
   assert.equal(normalizeLoreSource('——《週刊米赫瑪·文娛版》'), '——《週刊米赫瑪·文娛版》')
   assert.equal(normalizeLoreSource('  '), '')
   assert.equal(normalizeLoreSource(undefined), '')
+})
+
+// ── publishedChapters（PLAN-042-E D-5）──────────────────────────────────────
+
+test('publishedChapters：濾掉草稿章、順序不變；undefined → 空陣列', () => {
+  const ch = (key: string, draft?: true) => ({ key, title: key, body: '', ...(draft && { draft }) })
+  const list = [ch('part-1'), ch('part-2', true), ch('part-3')]
+  assert.deepEqual(publishedChapters(list).map((c) => c.key), ['part-1', 'part-3'])
+  assert.deepEqual(publishedChapters([ch('part-1', true)]), [])
+  assert.deepEqual(publishedChapters(undefined), [])
 })

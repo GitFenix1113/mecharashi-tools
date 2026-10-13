@@ -197,27 +197,34 @@ test('buildOgMeta：沒有 name 就不做卡片（退回站名卡）', () => {
   assert.equal(buildOgMeta('mechs', { name: '   ' }), null)
 })
 
-test('buildOgMeta（故事館）：換 title 與 description，og:image 沿用同一張立繪', () => {
+test('buildOgMeta（故事館）：換 title 與 description（取 pilotLore.intro），og:image 沿用同一張立繪', () => {
   const doc = {
     name: '葉夫根尼',
     rarity: 'S',
     class: '守護者',
     faction: '灰燼之子',
-    lore: '灰燼之子的老兵，在冬季的廢墟裡撿回了自己的名字。',
     portrait: '/images/pilots/葉夫根尼/half.webp',
   }
-  const meta = buildOgMeta('pilots', doc, { lore: true })
+  // PLAN-042-E：簡介住 pilotLore，由 index.ts 另讀一份同 ID 的文件傳進來
+  const loreDoc = { intro: '灰燼之子的老兵，\n在冬季的廢墟裡撿回了自己的名字。', chapters: [] }
+  const meta = buildOgMeta('pilots', doc, { lore: true, loreDoc })
   assert.ok(meta)
   assert.equal(meta.title, '葉夫根尼 的故事')
-  assert.match(meta.description, /灰燼之子的老兵/)
+  assert.equal(meta.description, '灰燼之子的老兵， 在冬季的廢墟裡撿回了自己的名字。')
   // 圖片與圖鑑側完全一致（不另開美術維護線）
   assert.equal(meta.image, buildOgMeta('pilots', doc)?.image)
 
-  // lore 欄位是空的 → 退回可辨識的館名描述，不可讓 description 變空字串
+  // 沒有 pilotLore 文件、或 intro 是空的 → 退回可辨識的館名描述，不可讓 description 變空字串
   const noLore = buildOgMeta('pilots', { name: '賽拉' }, { lore: true })
   assert.equal(noLore?.title, '賽拉 的故事')
   assert.equal(noLore?.description, '賽拉｜機師故事館')
   assert.equal(noLore?.image, DEFAULT_OG_IMAGE)
+  assert.equal(buildOgMeta('pilots', { name: '賽拉' }, { lore: true, loreDoc: { intro: '  ' } })?.description, '賽拉｜機師故事館')
+  assert.equal(buildOgMeta('pilots', { name: '賽拉' }, { lore: true, loreDoc: null })?.description, '賽拉｜機師故事館')
+
+  // G-1 之前 pilots 文件仍帶著舊的 lore 欄位：故事館卡片**不得**再讀它（否則搬遷後的編輯不會反映到分享卡）
+  const stale = buildOgMeta('pilots', { name: '賽拉', lore: '舊欄位的簡介' }, { lore: true })
+  assert.equal(stale?.description, '賽拉｜機師故事館')
 })
 
 test('buildOgMeta：不傳 opts（或 lore 為 false）時與既有輸出逐字一致', () => {
@@ -226,11 +233,12 @@ test('buildOgMeta：不傳 opts（或 lore 為 false）時與既有輸出逐字�
     rarity: 'S',
     class: '守護者',
     faction: '灰燼之子',
-    lore: '這段文字只有故事館分支會用到',
     portrait: '/images/pilots/葉夫根尼/half.webp',
   }
+  const loreDoc = { intro: '這段文字只有故事館分支會用到' }
   assert.deepEqual(buildOgMeta('pilots', doc, {}), buildOgMeta('pilots', doc))
   assert.deepEqual(buildOgMeta('pilots', doc, { lore: false }), buildOgMeta('pilots', doc))
+  assert.deepEqual(buildOgMeta('pilots', doc, { lore: false, loreDoc }), buildOgMeta('pilots', doc))
   // 回歸：圖鑑側的機師卡標題不得被 lore 分支影響
   assert.equal(buildOgMeta('pilots', doc)?.title, '葉夫根尼 · S 守護者')
 })

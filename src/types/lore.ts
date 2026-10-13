@@ -60,17 +60,70 @@ export interface LoreChapter {
   source?: string
   /** NPC 旁白列 */
   commentary?: LoreCommentary[]
+  /**
+   * 草稿章（PLAN-042-E 決策五）：前台不列出、章節網址導回扉頁、館首頁章節數不計入。
+   * 前台一律經 `publishedChapters()`（components/lore/loreText.ts）過濾，不要各自寫 `.filter`。
+   *
+   * ⚠ 只防「沒寫完的章被讀者看到」，**不是保密**：資料仍整包下載（站長：外洩無妨），
+   *   所以不另開只有編輯者讀得到的集合。值只有 `true`——取消草稿就是拿掉欄位，不存 `false`。
+   */
+  draft?: true
+}
+
+/** 人物檔案的一列自訂欄位（原 `pilots.profile.additionalInfo` 的一個鍵）。 */
+export interface LoreDossierField {
+  /** 標籤，前台直接當顯示文字。完全自由的中文字串（含 ▇▇、■■時間 這類鍵名），同一份檔案內不可重複 */
+  label: string
+  value: string
+}
+
+/**
+ * 人物檔案（PLAN-042-E，原 `pilots.profile`）。
+ *
+ * 性別／身高／血型保留固定欄位：卷宗拿身高當紅色標籤（LoreDossier），編輯台也固定排在最前面。
+ * 其餘一律進 `extra`。顯示順序固定三欄 → 陣營（取自 pilots）→ extra，由 `dossierRows()` 統一組出。
+ */
+export interface LoreDossierInfo {
+  gender?: string
+  height?: string
+  bloodType?: string
+  /**
+   * 自訂欄位，**陣列順序＝顯示順序**（決策四：原本的 map 不保證鍵序）。
+   * 存檔前用 `duplicateLabels()` 擋同名標籤——同名兩列在前台會撞 React key、而且讀者分不出哪個才對。
+   */
+  extra?: LoreDossierField[]
+}
+
+/**
+ * 一套外觀的顯示設定（PLAN-042-E 決策六的「動態層」）。
+ *
+ * 圖檔本身、歸屬哪位機師、清單有哪些 key 都是 build 時決定的（gameArtIndex.ts）；
+ * 這裡只管名稱、隱藏、順序，後台存檔就生效。合併規則見 `pilotSkins()`（utils/gameArt.ts）：
+ * 沒列在這裡的外觀照舊接在後面、顯示「外觀 N」；列了但圖不存在的 key 直接忽略。
+ */
+export interface LoreSkinSetting {
+  /** 官方立繪鍵（`Pilot_10103146B`），＝網址 `?skin=` 的值 */
+  key: string
+  /** 顯示名稱；空＝「外觀 N」 */
+  name?: string
+  /**
+   * 前台不列出（例：台版還沒推出）。
+   * ⚠ 意思與舊的 pilotSkinMeta.json 不同：以前是「不寫進 build 清單」，現在圖仍在打包檔裡，只是不列——
+   *   依「劇透不是顧慮」可以接受（計畫書地雷）。值只有 `true`。
+   */
+  hidden?: true
 }
 
 /**
  * 故事館文件（`pilotLore` / `mechLore` 共用）。文件 ID ＝ 對應實體的文件 ID。
  *
- * ⚠ **扉頁正文不住這裡。** `/lore/pilots/:id` 的扉頁渲染的是 `pilots.lore`
- *   （官方 `detail.Introduction` 的鏡像、爬蟲每次補丁都會重寫），依總綱決策二
- *   「誰是權威來源」判準留在 pilots。把它複製進本集合就是兩個真相源，而且
- *   圖鑑的 hover 浮窗（EntityRefView）與引用稽核（entityRefs 的「機師簡介」站點）
- *   仍會讀 pilots 那一份，兩邊漂移不會有任何機制發現。
- *   本集合只承載「編輯得動的展示文本」：章節、旁白，以及扉頁那段正文的**署名**。
+ * ── 什麼住這裡（PLAN-042-E 決策一，取代總綱決策二）──────────────────────────
+ * 判準是「**與數值、機制有沒有關係**」：有關的留在 pilots（圖鑑讀），其餘全部住這裡（故事館讀）。
+ * 所以簡介、人物檔案、英文名、外觀名稱都在本集合；全名、陣營、職業、立繪留在 pilots（兩館共用的身分欄位）。
+ * 總綱原本的「誰是權威來源」判準已經分不出任何東西：官網爬蟲 2026-10-11 退場，所有資料都是人寫的。
+ *
+ * 依賴是**單向**的（決策二）：故事館讀 pilots 的身分欄位，圖鑑不讀本集合。
+ * 故事館壞掉、資料還沒填，都不會影響圖鑑。
  */
 export interface LoreDoc {
   /** ＝ pilots / mechs 的文件 ID */
@@ -81,14 +134,25 @@ export interface LoreDoc {
    */
   name?: string
   /**
-   * 扉頁署名：從 `pilots.lore` 尾端抽出的出處（實測 89 篇中 35 篇帶署名）。
-   *
-   * **正文本身不複製**（見上方型別註解）——這裡只存「原文的哪一段是署名」的編輯決策，
-   * 由 A-3 的一次性草稿腳本產出初值 ＋ 人工複核。
-   * 不在執行期即時 parse：啟發式命中 30／誤判 0／漏抓 3，把它放進渲染路徑等於
-   * 讓 3 篇永遠排錯、而且每次渲染都重跑一次同樣的猜測。
+   * 扉頁簡介（原 `pilots.lore`，PLAN-042-E B-2 搬來）。純文字、換行即分段。
+   * 欄位名刻意不叫 `lore`：會和集合名、型別名混在一起（決策四）。
+   * 署名**不在這裡**：搬遷時已從尾端切掉、改存 `frontSource`，所以執行期不必再猜。
+   */
+  intro?: string
+  /**
+   * 扉頁署名，例 `——《週刊米赫瑪·文娛版》`。右對齊小字、與正文分開排版。
+   * 初值是 042-A 從 `pilots.lore` 尾端抽出的（89 篇中 34 篇帶署名）＋人工複核。
    */
   frontSource?: string
+  /**
+   * 英文名（原 `pilots.nameEn`）：扉頁壓在立繪旁的毛筆草書、卷宗副標、名冊搜尋。
+   * 官方資料沒有這個欄位，人工輸入；空值＝不渲染草書層。
+   */
+  nameEn?: string
+  /** 人物檔案（原 `pilots.profile`）。沒有就不出現個人資料卡 */
+  dossier?: LoreDossierInfo
+  /** 外觀的名稱、隱藏、順序（PLAN-042-E E 段）。**陣列順序＝顯示順序** */
+  skins?: LoreSkinSetting[]
   /**
    * 陣營徽章（PLAN-059 D）：官方檔名、**含變體**，最多 2 個，例 `['Icon_logo_0025_00']`。
    * 圖在 `public/images/game/icons/camp/`；讀寫一律經 `utils/factionLogos.ts`。
@@ -103,6 +167,6 @@ export interface LoreDoc {
    * ⚠ 沒有官方資料能把陣營文字對到徽章編號 → 開發端不預填；看字樣猜的不寫進 DB。
    */
   factionLogos?: string[]
-  /** 逸聞章節（PART 1..N）。**不含扉頁**——扉頁由渲染端從 pilots 那一份 derive */
+  /** 逸聞章節（PART 1..N）。**不含扉頁**——扉頁是上面的 intro／frontSource。草稿章見 `LoreChapter.draft` */
   chapters: LoreChapter[]
 }

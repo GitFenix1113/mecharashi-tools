@@ -5,7 +5,7 @@
 // 這幾位是刻意挑的：例外 5 位要證明「資料夾用 gameId、檔名用 artKey、兩者不互推」。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mechGameArt, mechGameFileName, mechGameIdFromPath, npcGameArt, pilotGameArt, pilotGameFileName, pilotGameIdFromPath, pilotSkins } from './gameArt.ts'
+import { mechGameArt, mechGameFileName, mechGameIdFromPath, npcGameArt, pilotGameArt, pilotGameFileName, pilotGameIdFromPath, pilotSkinCatalog, pilotSkins } from './gameArt.ts'
 
 const 維娜 = { gameId: '10103144', artKey: 'Pilot_13019A' }
 const 葉夫根尼 = { gameId: '10103123', artKey: 'Pilot_10103123A' }
@@ -118,7 +118,7 @@ test('造型（PLAN-042-D）：skins/ 子資料夾以 gameId 查、NPC 圖庫的
   assert.equal(camilla[0].raw, '/images/game/pilots/10103146/skins/Pilot_10103146B_Raw.webp')
   assert.equal(camilla[0].view, '/images/game/pilots/10103146/skins/Pilot_10103146B_Raw_view.webp')   // 場景外觀的鑑賞版
   assert.equal(camilla[0].label, '外觀 1')
-  // 洛莎·審判：Pilot_10103107B 依 pilotSkinMeta.json 的 owner 放在她這裡
+  // 洛莎·審判：Pilot_10103107B 依 pilotSkinMeta.json 的 owner 放在她這裡（owner 仍是 build 時決定的靜態層）
   assert.ok(pilotSkins({ id: 'pilot_032_洛莎審判', gameId: '10103154' }).some((s) => s.key === 'Pilot_10103107B' && !s.view))   // 去背的沒有鑑賞版
   assert.ok(!pilotSkins({ id: 'pilot_003_洛莎', gameId: '10103107' }).some((s) => s.key === 'Pilot_10103107B'))
   // 海莉絲：NPC 圖庫裡的那套（npcArtNotes owner＋外觀卡）
@@ -127,4 +127,41 @@ test('造型（PLAN-042-D）：skins/ 子資料夾以 gameId 查、NPC 圖庫的
   // 沒有外觀、沒有 ID → 空陣列
   assert.deepEqual(pilotSkins({ id: 'pilot_076_凱登', gameId: '10103101' }), [])
   assert.deepEqual(pilotSkins(undefined), [])
+})
+
+// ── PLAN-042-E E-1：pilotLore.skins 的名稱、隱藏、順序 ─────────────────────────
+// 洛莎·審判（10103154）有三套：Pilot_10103107B／Pilot_10103154B／Pilot_10103154C（build 清單的原索引順序）
+const ROSA_J = { id: 'pilot_032_洛莎審判', gameId: '10103154' }
+
+test('外觀設定：依 skins 陣列排序並套用名稱，沒列到的依原索引接在後面、顯示「外觀 N」', () => {
+  const list = pilotSkins(ROSA_J, { skins: [{ key: 'Pilot_10103154C', name: ' 審判之夜 ' }, { key: 'Pilot_10103107B' }] })
+  assert.deepEqual(list.map((s) => s.key), ['Pilot_10103154C', 'Pilot_10103107B', 'Pilot_10103154B'])
+  assert.deepEqual(list.map((s) => s.label), ['審判之夜', '外觀 1', '外觀 2'])
+  // 「外觀 N」的 N 是原索引，不隨排序變動
+  assert.deepEqual(list.map((s) => s.defaultLabel), ['外觀 3', '外觀 1', '外觀 2'])
+})
+
+test('外觀設定：hidden 的不列；空名稱當沒填', () => {
+  const list = pilotSkins(ROSA_J, { skins: [{ key: 'Pilot_10103107B', hidden: true }, { key: 'Pilot_10103154B', name: '   ' }] })
+  assert.deepEqual(list.map((s) => s.key), ['Pilot_10103154B', 'Pilot_10103154C'])
+  assert.deepEqual(list.map((s) => s.label), ['外觀 2', '外觀 3'])
+})
+
+test('外觀設定：沒有圖的殘留 key 忽略、重複 key 只認第一筆；沒有設定 ＝ 圖檔層原樣', () => {
+  const list = pilotSkins(ROSA_J, { skins: [
+    { key: 'Pilot_99999999Z', name: '已經不存在的外觀' },
+    { key: 'Pilot_10103154B', name: '第一筆' },
+    { key: 'Pilot_10103154B', name: '第二筆', hidden: true },
+  ] })
+  assert.deepEqual(list.map((s) => s.key), ['Pilot_10103154B', 'Pilot_10103107B', 'Pilot_10103154C'])
+  assert.equal(list[0].label, '第一筆')
+  assert.deepEqual(pilotSkins(ROSA_J, null), pilotSkinCatalog(ROSA_J))
+  assert.deepEqual(pilotSkins(ROSA_J, { skins: [] }), pilotSkinCatalog(ROSA_J))
+  // 沒有外觀的機師，DB 設定再多也是空
+  assert.deepEqual(pilotSkins({ id: 'pilot_076_凱登', gameId: '10103101' }, { skins: [{ key: 'Pilot_10103154B' }] }), [])
+})
+
+test('pilotSkinCatalog：含 DB 隱藏的外觀（後台外觀分頁要列全部）', () => {
+  assert.equal(pilotSkinCatalog(ROSA_J).length, 3)
+  assert.ok(pilotSkinCatalog(ROSA_J).every((s) => s.label === s.defaultLabel))
 })

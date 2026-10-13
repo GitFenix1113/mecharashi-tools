@@ -31,18 +31,22 @@
   <div class="section-title">頁面規格</div>
   <table class="spec-table">
     <tr><th>路由</th><td><code>/lore</code>（館首頁）｜<code>/lore/pilots/:id</code>（扉頁）｜<code>/lore/pilots/:id/:part</code>（章節頁／閱讀模式）｜外觀放查詢字串 <code>?skin=&lt;立繪鍵&gt;</code>（PLAN-042-D）｜<code>/lore/*</code> 兜底轉址回 <code>/lore</code>｜<code>/admin/lore</code>（編輯台，<code>AdminRoute</code>）</td></tr>
-    <tr><th>開發階段</th><td>PLAN-042-A Phase C–F（2026-09-09 ～ 09-10）；氛圍層與顯影修正另立 <a href="../../05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/計畫書.html">PLAN-042-C</a>；2026-10-13 改版成「舞台＋卷宗」、加機師名冊與外觀切換：<a href="../../05_階段性開發計畫/執行中/PLAN-042-D_故事館改版_舞台與卷宗/計畫書.html">PLAN-042-D</a></td></tr>
-    <tr><th>登入需求</th><td>前台不需要登入；編輯台 ADMIN 即可（只寫 <code>pilotLore</code>）</td></tr>
-    <tr><th>資料來源</th><td><code>pilots</code>（扉頁正文 <code>lore</code>、<code>profile.additionalInfo</code>、立繪路徑 derive）＋ <code>pilotLore</code>（章節、旁白、扉頁署名）。一律走 <code>useFirestore</code> 的 <code>usePilots</code> / <code>usePilot</code> / <code>usePilotLore</code> / <code>usePilotLoreDoc</code>；<strong><code>pilotLore</code> 讀不到時優雅降級成「只有扉頁」</strong>，不轉圈、不錯誤頁。外觀（PLAN-042-D）不在 DB：圖在 <code>public/images/game/pilots/&lt;gameId&gt;/skins/</code>，build 產生 <code>GAME_PILOT_SKINS</code>，讀取走 <code>pilotSkins()</code>；名稱／隱藏／歸屬覆寫在 <code>scripts/lib/pilotSkinMeta.json</code>（選填）</td></tr>
-    <tr><th>導覽入口</th><td><strong>✅ 2026-10-13 對外開放</strong>（<code>LORE_INTERNAL_ONLY = false</code>）：桌機導覽列與手機 More 面板的「故事館」、圖鑑詳情頁的「讀完整故事 ▸」對所有人顯示。<br><span style="color:var(--text-dim)">（2026-10-03 ～ 10-13 入口收起期間的作法：</span>導覽列、手機 More 面板與機師詳情頁的「讀完整故事 ▸」只對 ADMIN／OWNER 顯示；<code>/lore/*</code> 路由不動，知道網址的人照樣進得去；一般訪客的機師詳情頁退回<strong>全文</strong>顯示（只藏連結會讓訪客連完整逸聞都讀不到）。<span style="color:var(--text-dim)">）</span><br>入口設計：桌機與手機 More 面板的「故事館」（刻意獨立於版本／圖鑑／攻略三群之外，避免 <code>SubNavTabs</code> 在館內命中）；圖鑑詳情頁 lore 區塊只留首句，接「讀完整故事 ▸」</td></tr>
+    <tr><th>開發階段</th><td>PLAN-042-A Phase C–F（2026-09-09 ～ 09-10）；氛圍層與顯影修正另立 <a href="../../05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/計畫書.html">PLAN-042-C</a>；2026-10-13 改版成「舞台＋卷宗」、加機師名冊與外觀切換：<a href="../../05_階段性開發計畫/執行中/PLAN-042-D_故事館改版_舞台與卷宗/計畫書.html">PLAN-042-D</a>；同日機師資料分家、編輯台改版：<a href="../../05_階段性開發計畫/執行中/PLAN-042-E_機師資料分家與故事館編輯台/計畫書.html">PLAN-042-E</a></td></tr>
+    <tr><th>登入需求</th><td>前台不需要登入；編輯台 ADMIN 即可（只寫 <code>pilotLore</code>；EDITOR 角色先不做，PLAN-042-E 決策八）</td></tr>
+    <tr><th>資料來源</th><td><strong>PLAN-042-E 起依 id 合併兩個集合</strong>（判準：與數值、機制有關的留 <code>pilots</code>，其餘歸 <code>pilotLore</code>）：<br>
+      · <code>pilots</code>：身分欄位——名字、全名、職業、陣營、駕駛許可、天賦（徽記）、登場版本、立繪（<code>gameId</code>／<code>artKey</code>）<br>
+      · <code>pilotLore</code>：扉頁簡介 <code>intro</code>＋署名 <code>frontSource</code>、英文名 <code>nameEn</code>、人物檔案 <code>dossier</code>、陣營徽章、外觀設定 <code>skins</code>、章節與旁白<br>
+      一律走 <code>useFirestore</code> 的 <code>usePilots</code> / <code>usePilotLore</code>。<strong>整頁只等 <code>pilots</code></strong>（舞台、名冊、換人只要身分欄位）；<code>pilotLore</code> 的 loading／error 交給卷宗：載入中顯示「檔案<em>調閱中</em>」，讀不到顯示「故事資料載入失敗……不是這份檔案沒有內容」＋「重新整理」鈕——簡介與人物檔案也住 pilotLore 之後，不能再降級成看起來像空白資料的扉頁。<br>
+      外觀分兩層（PLAN-042-E 決策六）：<strong>靜態層</strong>＝圖檔（<code>public/images/game/pilots/&lt;gameId&gt;/skins/</code>）與 build 產生的 <code>GAME_PILOT_SKINS</code>；<strong>動態層</strong>＝ <code>pilotLore.skins</code> 的名稱／隱藏／順序，執行期由 <code>pilotSkins(pilot, loreDoc)</code> 合併（沒設定的照原索引接在後面、顯示「外觀 N」）。<code>scripts/lib/pilotSkinMeta.json</code> 只剩匯入用的歸屬 <code>owner</code></td></tr>
+    <tr><th>導覽入口</th><td><strong>✅ 2026-10-13 對外開放、常駐</strong>：桌機導覽列與手機 More 面板的「故事館」對所有人顯示；機師詳情頁名字旁有「故事館 ▸」連結（PLAN-042-E，<strong>不帶任何故事內容、不載入 pilotLore</strong>——圖鑑不跨進故事館）。入口旗標 <code>useLoreEntry.ts</code>（<code>LORE_INTERNAL_ONLY</code>）已於 PLAN-042-E 刪除：圖鑑已沒有簡介可退回顯示，旗標的退路也就不存在了。<br><span style="color:var(--text-dim)">（歷史：2026-10-03 ～ 10-13 入口收起期間，導覽列、手機 More 面板與機師詳情頁的「讀完整故事 ▸」只對 ADMIN／OWNER 顯示；<code>/lore/*</code> 路由不動，知道網址的人照樣進得去；一般訪客的機師詳情頁退回簡介<strong>全文</strong>顯示。）</span><br>入口設計：桌機與手機 More 面板的「故事館」（刻意獨立於版本／圖鑑／攻略三群之外，避免 <code>SubNavTabs</code> 在館內命中）</td></tr>
     <tr><th>外殼形態</th><td><code>chromeMode = 'immersive'</code>：header 換成紙色細帶（館名／離館／字級三顆），footer、分頁列、手機 Tab Bar 全收；<code>html.lore-mode</code> 只設 <code>color-scheme</code> 與 body 背景，色票覆寫只在 <code>.lore-shell</code> / <code>.lore-chrome</code>（portal 浮層保持深色可讀）</td></tr>
     <tr><th>參數命名</th><td>一律 <code>:id</code>——<code>analytics/track.ts</code> 寫死讀 <code>params.id</code>，改名會讓機師熱度一筆都不記</td></tr>
   </table>
   <div class="warning-block" style="margin-top:1rem;">
-    <strong>正式公開的三件事</strong>（取自 <code>useLoreEntry.ts</code> 檔頭；2026-10-13 公開）<br>
+    <strong>正式公開的三件事</strong>（原列於 <code>useLoreEntry.ts</code> 檔頭，該檔已刪；2026-10-13 公開）——<strong>三件皆已完成</strong><br>
     ① <strong>已完成</strong>：<code>unreleased</code> 條目整併成一組開館條目、日期 2026-10-13；<br>
     ② <s>Cloudflare Transform Rule 的 SPA fallback 白名單補上 <code>/lore</code></s>——<strong>已完成</strong>：PLAN-042-A F-1 於 2026-09-10 部署（含 OG 用的 UA 排除區塊），2026-10-11 複驗 <code>/lore</code> 回 200，公開時不必再動；<br>
-    ③ <strong>待辦</strong>：確定穩定後，連同 <code>LORE_INTERNAL_ONLY</code> 與所有 <code>useLoreEntryVisible()</code> 的呼叫一起刪除。
+    ③ <strong>已完成</strong>：<code>LORE_INTERNAL_ONLY</code> 與所有 <code>useLoreEntryVisible()</code> 的呼叫已隨 PLAN-042-E 一起刪除（<code>Layout</code> 的故事館導覽項目改為常駐）。
   </div>
 </section>
 
@@ -54,9 +58,10 @@
     <div class="card orange">
       <div class="card-icon">🧱</div>
       <h3>館首頁 <code>/lore</code></h3>
-      <p>列 <code>pilots</code> 全員（90 格）而不是列 <code>pilotLore</code>——後者現階段是 34 份空殼，列它牆會少掉 55 位有扉頁可讀的機師。
+      <p>列 <code>pilots</code> 全員而不是列 <code>pilotLore</code>——牆是「名冊」：名字、職業、版本、立繪都是 pilots 的身分欄位，pilotLore 只拿來疊章節數與陣營徽章角標；
+      讀不到 pilotLore 時牆照樣完整（只少了角標）。PLAN-042-E 搬遷時每位機師都建了一份 pilotLore，點進去不會是空頁。
       依職業（<code>CLASS_CONFIG</code> 順序）或登場版本分組；卡片＝縮圖（與 <code>/pilots</code> 同一組 URL、瀏覽器快取直接命中）＋底部漸層＋職業色條；
-      有章節才出現「N 章」徽章。賽拉沒有圖片資料夾，牆上照樣留位、顯示「尚無立繪」。機甲分頁預留給 042-B。</p>
+      有（非草稿的）章節才出現「N 章」徽章，章數經 <code>publishedChapters()</code> 計算、草稿章不計入。賽拉沒有圖片資料夾，牆上照樣留位、顯示「尚無立繪」。機甲分頁預留給 042-B。</p>
     </div>
     <div class="card yellow">
       <div class="card-icon">📄</div>
@@ -64,6 +69,9 @@
       <p><strong>PLAN-042-D 起改為「舞台＋卷宗」</strong>：立繪是固定在視窗的舞台（sticky 全高層＋負 margin，仍在唯一 scrollport 裡），往正文方向漸隱；
       卷宗是一疊半透明紙卡（標題區、扉頁、個人資料、逸聞目錄）從另一側蓋上來、蓋住漸隱帶。構圖在渲染前分流成 <code>tall／wide／official／scene</code>（<code>loreStageArt.ts</code>），
       立繪站哪側看 <code>LORE_ART_TUNING.side</code>。修掉了半身圖機師正文被擠到 293px 的問題。舞台外側有外觀列與「全身立繪」鑑賞模式。<br>
+      <strong>PLAN-042-E 起卷宗的資料來源</strong>：標題區的身分欄位（名字、全名、職業、陣營、執照、天賦）讀 pilots；英文名、扉頁簡介＋署名、個人資料、徽章、逸聞目錄全部讀 pilotLore。
+      簡介在搬遷時已切掉署名，渲染端不再跑 <code>stripTrailingSource</code>；個人資料列由 <code>dossierRows()</code> 組出（性別→身高→血型→陣營→自訂欄位，順序＝編輯台排的順序）。
+      pilotLore 載入中／失敗時，扉頁卡改顯示「檔案調閱中」／「故事資料載入失敗」＋重新整理鈕，個人資料與逸聞卡不出現。<br>
       <span style="color:var(--text-dim)">（以下為 042-A 的舊版面，已被取代）</span>桌機 42／58 兩欄：左立繪柱（sticky，高度吃 <code>--lore-viewport-h</code> 實測值）、右卷宗。立繪在<strong>渲染前</strong>分流：
       52 位有 <code>art.webp</code> 走直式全身（<code>hasPilotArt</code>），其餘退回 <code>full.webp</code> 半身並套底部噪點 mask（86/87 張底邊硬切）。
       直書姓名壓立繪右緣；職業／名字／三枚徽記（陣營文字圓環、天賦圖示、駕駛許可）；引文體正文套 blockquote 語彙、署名右對齊細線；<code>additionalInfo</code> 鍵值列；章節入口。
@@ -75,27 +83,32 @@
       <p><strong>PLAN-042-D：閱讀模式</strong>——立繪往外退、彩圖淡出、<strong>線稿當底紋</strong>，稿紙置中（描邊大章號、懸掛引號、首字放大、署名細線、旁白便條、頂端閱讀進度條）；
       章節軸改膠囊樣式；← → 換章、Esc 回檔案。<br>
       與扉頁<strong>同一個元件</strong>，版面骨架只寫一份。常駐具名章節軸（sticky）＋◀▶＋頁碼；換章靠點按鈕／鍵盤左右／手機水平滑動三種明確意圖，<strong>絕不接滾輪</strong>（PLAN-050 拆舊輪播的教訓）。
-      扉頁→第一章 push、章節之間 replace。正文走 <code>LoreRichText</code>（只解析 <code>[xxx]</code>，不套數字高亮）、署名、NPC 旁白列（speaker 查不到只少頭像不消失）、「下一章」列。只有一章時整套底盤不掛。</p>
+      扉頁→第一章 push、章節之間 replace。正文走 <code>LoreRichText</code>（只解析 <code>[xxx]</code>，不套數字高亮）、署名、NPC 旁白列（speaker 查不到只少頭像不消失）、「下一章」列。只有一章時整套底盤不掛。<br>
+      <strong>草稿章（PLAN-042-E）</strong>：<code>LoreChapter.draft</code> 為 true 的章不進目錄、章節軸與 ‹ ›；草稿章或打錯／已移除的章節網址等 pilotLore 有結果後 <code>replace</code> 導回扉頁。前台唯一的過濾點是 <code>publishedChapters()</code>。</p>
     </div>
     <div class="card pink">
       <div class="card-icon">🧭</div>
       <h3>切換列與機師名冊（PLAN-042-D）</h3>
       <p>詳情頁底部膠囊：可橫捲的圓形頭像列（目前這位置中）、‹ ›、序號、「名冊」；← → 換人（閱讀模式中換章）、手機封面左右滑。
       <strong>平常半沉在視窗底緣、只露出上半截</strong>（2026-10-13 站長回饋：減少版面佔用）：滑鼠移上去或鍵盤焦點時升起；觸控點一下先升起（這一下不換人），捲動館內或點列外再收回。
-      名冊從膠囊長出來、頭像 FLIP 飛進分組格子；搜尋（含英文名）、依職業／登場版本分組（與館首頁同一個排序，記在 sessionStorage）、有逸聞／有外觀篩選、<code>/</code> 開啟、Esc 收合。
+      名冊從膠囊長出來、頭像 FLIP 飛進分組格子；搜尋（含英文名——PLAN-042-E 起取自 pilotLore，由 <code>withLoreNames()</code> 依 id 併進名冊成員）、依職業／登場版本分組（與館首頁同一個排序，記在 sessionStorage）、有逸聞／有外觀篩選、<code>/</code> 開啟、Esc 收合。
       換人網址用 replace；回館首頁時 <code>LoreLayout</code> 會還原牆面的捲動位置（POP）。換人過場 0.9 秒、不重播完整開場；完整開場只在進入詳情頁時播。</p>
     </div>
     <div class="card green">
       <div class="card-icon">👗</div>
       <h3>外觀切換（PLAN-042-D）</h3>
       <p>36 位機師 40 套造型＋NPC 圖庫裡有外觀卡的 2 套（海莉絲、瑪阿特）。外觀列用造型自己的 <code>_head</code>（外觀卡是袋裝商品圖不用）；換外觀只換舞台、正文不重進場（新的那套由上往下擦入）；
-      場景插畫外觀走 <code>scene</code> 構圖。官網 8 位的官方名字層只配預設立繪，換外觀後改用直書名＋簽名。網址 <code>?skin=</code>，同一次瀏覽換人再回來會記得。</p>
+      場景插畫外觀走 <code>scene</code> 構圖。官網 8 位的官方名字層只配預設立繪，換外觀後改用直書名＋簽名。網址 <code>?skin=</code>，同一次瀏覽換人再回來會記得。<br>
+      <strong>名稱、隱藏、順序來自 DB（PLAN-042-E）</strong>：讀 <code>pilotLore.skins</code>，後台存檔即生效、不必部署；沒設定的外觀照原索引接在後面、顯示「外觀 N」（N＝build 清單原索引，不隨排序或隱藏變動）。
+      「隱藏」只是不列出，圖仍在打包檔裡。pilotLore 讀不到時照圖檔層原樣列。預設外觀＝<code>pilots.artKey</code>，不由故事館管。</p>
     </div>
     <div class="card purple">
       <div class="card-icon">🛠️</div>
       <h3>編輯台 <code>/admin/lore</code></h3>
-      <p>章節新增／排序／改標題／獨立刪除；整篇貼上後切段成章（<strong>不做程式自動判斷</strong>，只提供輔助）；自動清掉 OCR 常見的軟換行與全形空白；列表加「章節數」欄。
-      寫入走 <code>saveWithHistory</code>，章節錨點用 <code>{ by: 'key' }</code>（<code>LoreChapter</code> 沒有 <code>name</code>，錨錯欄位每筆都會 <code>anchorMismatch</code>）。</p>
+      <p><strong>PLAN-042-E 起是「故事館編輯台」</strong>：一位機師的故事資料全部在這裡編（機師管理的「個人資料」分頁已移除）。
+      列表列出 <code>pilots</code> 全員＋從資料推導的進度標籤；網址 <code>?pilot=&lt;id&gt;</code> 直接開該位的編輯面板（開關同步網址）。
+      面板四個分頁：扉頁／人物檔案／逸聞章節／外觀，右欄是渲染真前台元件的即時預覽（細節見下方設計備註）。
+      寫入走 <code>saveWithHistory</code>（整份覆寫、自動 bump 版本），章節錨點用 <code>{ by: 'key' }</code>（<code>LoreChapter</code> 沒有 <code>name</code>，錨錯欄位每筆都會 <code>anchorMismatch</code>）。沒有刪除路徑。</p>
     </div>
   </div>
 </section>
@@ -113,6 +126,23 @@
   <div class="section-label">設計備註</div>
   <div class="section-title">開發注意事項</div>
   <div class="info-block">
+    <strong>✅ 資料分家與故事館編輯台（PLAN-042-E，2026-10-13）</strong><br>
+    · <strong>單向依賴</strong>：圖鑑只讀 <code>pilots</code>，故事館讀 <code>pilotLore</code> ＋ pilots 的身分欄位。<code>pilots.lore</code>／<code>profile</code>／<code>nameEn</code> 已搬到 <code>pilotLore.intro</code>／<code>dossier</code>／<code>nameEn</code>（DB 舊欄位 G-1 刪除），前台不寫「新欄位讀不到就退回舊欄位」的雙讀退路（決策七）<br>
+    · <strong>編輯台列表</strong>：列 <code>pilots</code> 全員（每位都要能點進去建檔），每列是從資料推導的進度標籤——簡介有無、檔案 N 欄、N 章（含草稿數）、外觀 已命名/總數（隱藏的也算處理過）、徽章有無。
+      頁首統計：簡介 x/N、人物檔案、有逸聞（附總章數與草稿數）、外觀已命名（以「套」計）、陣營徽章。篩選鈕：全部／缺簡介／缺檔案／有草稿章／外觀未命名／缺陣營徽章。
+      全部由 <code>src/utils/loreProgress.ts</code> 推導，<strong>不存任何狀態欄位</strong>（決策五、PLAN-041「0/5 定律」）<br>
+    · <strong>深連結</strong>：<code>/admin/lore?pilot=&lt;id&gt;</code> 直接開該位的面板，開關面板以 replace 同步網址；機師管理面板標題下的「人物檔案、簡介與英文名已移到故事館編輯台 →」就連到這裡<br>
+    · <strong>面板分頁</strong>（<code>src/components/admin/lore/</code>）：
+      ① <strong>扉頁</strong>——英文名、扉頁簡介（附「清理（OCR）」「合併軟換行」兩顆按鈕，按下才套用）、扉頁署名、陣營徽章；
+      ② <strong>人物檔案</strong>——性別／身高／血型＋有序自訂欄位（▲▼✕），同名標籤、有內容沒標籤的列存檔前擋下；
+      ③ <strong>逸聞章節</strong>——OCR 貼上區、章節卡（「草稿」勾選、「預覽」切到該章的閱讀模式）；
+      ④ <strong>外觀</strong>——縮圖格：名稱、隱藏、◀▶ 排序、點縮圖在預覽看該套。預設外觀是 <code>pilots.artKey</code>，這裡不能改；沒有其他外觀時顯示「目前沒有其他外觀（新增要跑 <code>import-game-assets.mjs --skins</code>）」<br>
+    · <strong>即時預覽（D-4）</strong>：右欄直接渲染前台的 <code>LoreStage</code>／<code>LoreDossier</code>／<code>LoreChapterBody</code>，吃未存檔的表單。前台版面以 <code>100vw</code>／<code>100vh</code> 計算，所以渲染一個全視窗寬的虛擬頁面再整個 <code>scale()</code> 成欄寬＝目前視窗寬度下前台的等比縮圖；包在 <code>.lore-shell</code> 紙色主題裡、整塊 <code>inert</code>（只看不點），不放任何 fixed 浮層。窄螢幕（&lt; 1024px）預覽改成一個分頁<br>
+    · <strong>存檔</strong>：仍是整份覆寫（<code>saveWithHistory</code>，自動 bump 版本）；草稿自動暫存的 kind 改為 <code>'pilotLore.v2'</code>，避免改版前的舊草稿還原後把搬遷進來的欄位洗掉。沒有刪除路徑<br>
+    · <strong>Worker 分享卡</strong>：<code>/lore/pilots/*</code> 多讀一份 pilotLore，og:description ＝ <code>intro</code>（讀不到退回「某某｜機師故事館」）；title 與立繪仍取 pilots<br>
+    · <strong>不在範圍內</strong>：機甲的 <code>mechs.lore</code>（MechDetailPage，同樣的問題，042-B 機甲故事館開工時處理）、後台上傳外觀圖、後台編輯 <code>npcArtNotes.json</code>、從故事館改預設外觀
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
     <strong>✅ 舞台＋卷宗（PLAN-042-D，2026-10-13）</strong><br>
     · <strong>元件</strong>：<code>LoreStage</code>（立繪層、簽名、直書名、流水號、檔案小字、工具）、<code>LoreDossier</code>（四張卡）、<code>LoreProse</code>（正文排版）、<code>LoreSwitcher</code>（切換列＋名冊）、<code>LoreSkinPicker</code>、<code>LoreViewer</code>；
       042-A／042-C 的 <code>LoreArt</code>、<code>useLoreParallax</code>、<code>LoreSourceLine</code> 已移除<br>
@@ -146,7 +176,7 @@
     · <strong>進場</strong>：<code>.lore-veil</code> 改深色斜切擦開 520ms；扉頁三段 <code>.lore-enter</code>（名字層／職業名字徽記／引文卡）以 mechaData 節奏錯開 0／200／350ms<br>
     · <strong>官方素材</strong>（非營利共識，全部自託管於 <code>public/images/lore/</code>，來源見 README）：紙面背景 bg-paper／bg-m 鋪整館；館首頁 hero＝紅帶（bg-band）＋KV（kv）＋標題圖（title-pilots）；粒子 snow01／02 × 6 個 div 的 <code>lore-fly</code>／<code>lore-fly2</code>（桌機限定）<br>
     · <strong>8 位官方圖層</strong>（洛莎／虹／凱登／白月／葉夫根尼／艾琳／黛娜／梅利莎）：<code>official-{line,color,name}.webp</code> 由 <code>generate-art-index.mjs</code> 掃成 <code>PILOT_OFFICIAL_INDEX</code>，<code>LoreArt variant="official"</code> 用官方手繪線稿與半身彩圖、名字書法層疊在立繪上<br>
-    · <strong>名字字體</strong>：<code>npm run fonts:lore</code> 產出 LXGW WenKai TC 名字子集（350 字、106KB）與 Mr Dafoe 英文草書子集（11KB）；直書名與 h1 用楷書，<code>pilot.nameEn</code> 有值時以白色草書逆時針 72° 壓在立繪上（官方 8 位的草書已在名字層內、不重疊）<br>
+    · <strong>名字字體</strong>：<code>npm run fonts:lore</code> 產出 LXGW WenKai TC 名字子集（350 字、106KB）與 Mr Dafoe 英文草書子集（11KB）；直書名與 h1 用楷書，英文名（當時是 <code>pilot.nameEn</code>，PLAN-042-E 起改讀 <code>pilotLore.nameEn</code>）有值時以白色草書逆時針 72° 壓在立繪上（官方 8 位的草書已在名字層內、不重疊）<br>
     · <strong>檔案感與 BGM</strong>：立繪柱左下 <code>PILOT FILE · NO.NNN／DEBUT · vX.Y</code>（JetBrains Mono）、名字下方紅標（身高或駕駛許可）；header 的 <code>LoreBgmToggle</code>（官網 BGM 96 秒節錄 96kbps，預設關、記偏好、離館即停）<br>
     · <strong>打磨</strong>：牆卡片黑底紅框 hover、縮圖本地優先；換章 180ms 淡入上移、章節軸 active 紅底線；底緣溶解 mask 改三層合成（噪點只在溶解帶，不再蓋整張圖；tall 只溶最後 10%）；桌機滑鼠微視差（<code>useLoreParallax</code>，立繪 ±6px、名字層反向 ±3px）<br>
     · <strong>reduced-motion</strong>：遮罩、進場、粒子、運鏡、視差、換章全部退化；線稿層 <code>display:none</code>、彩圖 150ms 純淡入
@@ -154,7 +184,7 @@
   <div class="warning-block" style="margin-top:1rem;">
     <strong>⚠ 042-C 驗收時要知道的事</strong><br>
     · 動畫驗收用 <code>_local-notes/2026-09/2026-09-17_filmstrip-042c.mjs</code>／<code>2026-09-17_verify-042c-part2.mjs</code>（Playwright headless，需 dev server 5173）；<strong>內建瀏覽器分頁在背景時 Chrome 不推進 CSS 動畫</strong>，截圖會是舊幀<br>
-    · <code>nameEn</code> 正式資料尚未寫入：<code>scripts/temp_scripts/patch-pilot-name-en.mjs --apply</code> 寫 8 位官方拼法後 <code>node scripts/bump-data-version.mjs pilots</code>；其餘 82 位由後台「個人資料」分頁逐筆輸入<br>
+    · <s><code>nameEn</code> 正式資料尚未寫入</s>（歷史）：之後在後台陸續補到 90 位，PLAN-042-E 再整批搬到 <code>pilotLore.nameEn</code>；機師管理的「個人資料」分頁已移除，新增或修改改在故事館編輯台的「扉頁」分頁<br>
     · 字型授權：LXGW WenKai TC 與 Mr Dafoe 皆 SIL OFL；官網那套草書是商用字型，未使用
   </div>
 </section>

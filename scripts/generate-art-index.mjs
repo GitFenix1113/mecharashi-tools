@@ -172,20 +172,19 @@ function scanGame() {
  *      圖本來就在站上（海莉絲 10103132A、瑪阿特 10103129A）。沒有外觀卡的（卡蜜拉早期、貝爾莎翻轉圖）不算外觀。
  * `scene`＝連背景一起畫的場景插畫（Raw 透明像素 < 25%，規則在 scripts/lib/sceneArt.mjs）：前台要換一種構圖，在渲染前就要知道，所以 build 時量好。
  * `view`＝場景外觀旁邊有鑑賞版 `<立繪鍵>_Raw_view.webp`（官方暈邊收窄，故事館全身鑑賞用；import-game-assets.mjs 產的）。
- * `scripts/lib/pilotSkinMeta.json`：name（顯示名稱）／hidden（不列）——資料面之後補，全部選填。
+ *
+ * 名稱、隱藏、順序**不在這裡**（PLAN-042-E 決策六）：它們住 pilotLore.skins、由後台設定、執行期由 pilotSkins() 合併。
+ * 本腳本只管靜態層——有哪些圖、屬於誰。後台設成隱藏的外觀照常進清單（前台不列而已）。
+ * `scripts/lib/pilotSkinMeta.json` 的 owner（歸屬）是 import-game-assets.mjs 在匯入時讀的，這裡不讀。
  */
-const SKIN_META_FILE = path.join(ROOT, 'scripts/lib/pilotSkinMeta.json')
 async function scanSkins(npcs) {
-  const meta = readJson(SKIN_META_FILE).skins ?? {}
   const entryOf = async (key, kinds, file, importFlag) => {
-    const m = meta[key] ?? {}
-    if (m.hidden) return null
     const scene = file ? (await transparentRatio(file)) < SCENE_MAX_TRANSPARENT : false
     const view = scene && fs.existsSync(path.join(path.dirname(file), `${key}${SCENE_VIEW_SUFFIX}.webp`))
     if (scene && !view) {
       console.warn(`⚠ 場景外觀 ${key} 沒有鑑賞版 ${key}${SCENE_VIEW_SUFFIX}.webp——全身鑑賞會看到官方暈邊；跑 node scripts/import-game-assets.mjs ${importFlag} --apply 補上`)
     }
-    return { key, kinds, scene, view, name: m.name }
+    return { key, kinds, scene, view }
   }
   const byGameId = []
   const pilotRoot = path.join(GAME_ROOT, 'pilots')
@@ -241,7 +240,7 @@ function writeGameIndex({ pilots, mechs, npcs }, skins) {
   }
   const q = (s) => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
   const skinBody = (rows) => rows
-    .map(([k, list]) => `  [${q(k)}, [${list.map((e) => `{ ${[`key: '${e.key}'`, e.dir && `dir: '${e.dir}'`, flags(e.kinds, ['half', 'head', 'raw']), e.scene && 'scene: true', e.view && 'view: true', e.name && `name: ${q(e.name)}`].filter(Boolean).join(', ')} }`).join(', ')}]],`)
+    .map(([k, list]) => `  [${q(k)}, [${list.map((e) => `{ ${[`key: '${e.key}'`, e.dir && `dir: '${e.dir}'`, flags(e.kinds, ['half', 'head', 'raw']), e.scene && 'scene: true', e.view && 'view: true'].filter(Boolean).join(', ')} }`).join(', ')}]],`)
     .join('\n')
   const npcBody = npcs
     .map((e) => {
@@ -294,11 +293,11 @@ ${npcBody}
 
 /**
  * 機師造型／外觀（PLAN-042-D F-2）：\`public/images/game/pilots/<gameId>/skins/<立繪鍵>_{Raw,half,head}.webp\`，以 **gameId** 為 key。
- * \`scene\`＝帶背景的場景插畫（前台換構圖）；\`view\`＝有鑑賞版 \`<立繪鍵>_Raw_view.webp\`（官方暈邊收窄，全身鑑賞用）；
- * \`name\`＝scripts/lib/pilotSkinMeta.json 的人工名稱（沒有就顯示「外觀 N」）。
- * 查詢一律走 \`pilotSkins()\`（src/utils/gameArt.ts）。
+ * \`scene\`＝帶背景的場景插畫（前台換構圖）；\`view\`＝有鑑賞版 \`<立繪鍵>_Raw_view.webp\`（官方暈邊收窄，全身鑑賞用）。
+ * 名稱、隱藏、順序不在這裡：住 pilotLore.skins，由後台設定（PLAN-042-E）。
+ * 查詢一律走 \`pilotSkins()\`（前台，合併 DB 設定）／\`pilotSkinCatalog()\`（後台外觀分頁），都在 src/utils/gameArt.ts。
  */
-export interface GamePilotSkin { key: string; half?: true; head?: true; raw?: true; scene?: true; view?: true; name?: string }
+export interface GamePilotSkin { key: string; half?: true; head?: true; raw?: true; scene?: true; view?: true }
 export const GAME_PILOT_SKINS: ReadonlyMap<string, readonly GamePilotSkin[]> = new Map<string, readonly GamePilotSkin[]>([
 ${skinBody(skins.byGameId.map((e) => [e.id, e.skins]))}
 ])

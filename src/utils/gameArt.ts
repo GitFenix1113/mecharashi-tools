@@ -25,6 +25,7 @@
 //   這樣本檔不碰 import.meta.env、可以 node --test。
 
 import { GAME_MECH_ART, GAME_NPC_ART, GAME_PILOT_ART, GAME_PILOT_NPC_SKINS, GAME_PILOT_SKINS } from '../data/gameArtIndex.ts'
+import type { LoreDoc } from '../types'
 
 /** 機師的四種官方圖：頭像 340²／頭部特寫 90²／半身 1240×1080／機師卡 340² */
 export type PilotGameArtKind = 'half' | 'head' | 'raw' | 'card'
@@ -85,8 +86,10 @@ export function npcGameArt(artKey: string | null | undefined, kind: Exclude<Pilo
 export interface PilotSkinArt {
   /** 官方立繪鍵（`Pilot_10103146B`），也是網址 `?skin=` 的值 */
   key: string
-  /** 顯示名稱：scripts/lib/pilotSkinMeta.json 有填就用，沒有就「外觀 N」（N 從 1 起、依索引順序） */
+  /** 顯示名稱：pilotLore.skins 有填就用，沒有就 `defaultLabel` */
   label: string
+  /** 「外觀 N」：N 是這套在 build 清單裡的原索引（從 1 起）。不隨 DB 的排序或隱藏變動，後台與前台講的是同一套 */
+  defaultLabel: string
   scene: boolean
   raw: string
   half?: string
@@ -96,12 +99,14 @@ export interface PilotSkinArt {
 }
 
 /**
- * 機師的造型／外觀（PLAN-042-D F-2）。兩個來源依序串起來：
+ * 機師的外觀清單——**圖檔層**（PLAN-042-E 決策六的靜態層：build 時決定，不看 DB）。兩個來源依序串起來：
  *   ① `game/pilots/<gameId>/skins/`（`--skins` 匯入，以 gameId 查）
  *   ② NPC 圖庫裡屬於這位的外觀（npcArtNotes.json 的 owner＝文件 ID、且有外觀卡；以文件 ID 查）
  * 沒有就回空陣列（多數機師沒有外觀，這不是錯誤）。預設造型**不在**清單裡——呼叫端自己放在第一個。
+ *
+ * 前台要用 `pilotSkins()`（套上名稱、隱藏、順序）；只有後台的外觀分頁直接列這份（含隱藏的）。
  */
-export function pilotSkins(pilot: { id?: string; gameId?: string } | null | undefined): PilotSkinArt[] {
+export function pilotSkinCatalog(pilot: { id?: string; gameId?: string } | null | undefined): PilotSkinArt[] {
   const own = (pilot?.gameId ? GAME_PILOT_SKINS.get(pilot.gameId) : undefined) ?? []
   const npc = (pilot?.id ? GAME_PILOT_NPC_SKINS.get(pilot.id) : undefined) ?? []
   const file = (base: string, key: string, kind: keyof typeof PILOT_SUFFIX) => `${base}/${key}${PILOT_SUFFIX[kind]}.webp`
@@ -113,13 +118,45 @@ export function pilotSkins(pilot: { id?: string; gameId?: string } | null | unde
     .filter(({ s }) => s.raw)
     .map(({ s, base }, i) => ({
       key: s.key,
-      label: s.name ?? `外觀 ${i + 1}`,
+      label: `外觀 ${i + 1}`,
+      defaultLabel: `外觀 ${i + 1}`,
       scene: !!s.scene,
       raw: file(base, s.key, 'raw'),
       half: s.half ? file(base, s.key, 'half') : undefined,
       head: s.head ? file(base, s.key, 'head') : undefined,
       view: s.view ? `${base}/${s.key}${SCENE_VIEW_SUFFIX}.webp` : undefined,
     }))
+}
+
+/**
+ * 前台看到的外觀（PLAN-042-D F-2；PLAN-042-E E-1 起名稱、隱藏、順序由 `pilotLore.skins` 在執行期提供）。
+ *
+ * 合併規則（決策六）：
+ *   · 依 `skins` 陣列的順序排、套用名稱、濾掉 hidden
+ *   · 沒列在陣列裡的外觀依原索引順序**接在後面**、顯示「外觀 N」——匯入新外觀後還沒人命名，照樣上站
+ *   · 陣列裡有、圖卻不存在的 key 直接忽略（圖被移走、或打錯字）；同一個 key 列兩次只認第一筆
+ * `lore` 沒傳（pilotLore 讀不到）＝沒有任何設定：全部照原索引、全部「外觀 N」、沒有東西被藏。
+ */
+export function pilotSkins(
+  pilot: { id?: string; gameId?: string } | null | undefined,
+  lore?: Pick<LoreDoc, 'skins'> | null,
+): PilotSkinArt[] {
+  const catalog = pilotSkinCatalog(pilot)
+  const settings = lore?.skins ?? []
+  if (!settings.length || !catalog.length) return catalog
+  const byKey = new Map(catalog.map((s) => [s.key, s]))
+  const placed = new Set<string>()
+  const out: PilotSkinArt[] = []
+  for (const st of settings) {
+    const s = st?.key ? byKey.get(st.key) : undefined
+    if (!s || placed.has(s.key)) continue
+    placed.add(s.key)
+    if (st.hidden) continue
+    const name = st.name?.trim()
+    out.push(name ? { ...s, label: name } : s)
+  }
+  for (const s of catalog) if (!placed.has(s.key)) out.push(s)
+  return out
 }
 
 /** 機甲的官方原檔路徑；這台沒有這種圖（或根本沒有遊戲 ID）回 undefined。 */

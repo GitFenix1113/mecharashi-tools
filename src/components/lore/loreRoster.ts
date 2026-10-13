@@ -5,7 +5,7 @@
 // `node --test` 直接載入本檔跑 loreRoster.test.ts。
 
 import { PILOT_CLASS_NAMES, pilotClassMeta } from '../../data/pilotClasses.ts'
-import type { Pilot } from '../../types'
+import type { LoreDoc, Pilot } from '../../types'
 
 /**
  * 分組維度。`faction` 刻意不列入選項：89 人散在 30 個值、18 個只有 1 人，
@@ -13,8 +13,25 @@ import type { Pilot } from '../../types'
  */
 export type LoreSort = 'class' | 'debut'
 
-/** 名冊與分組只需要這幾個欄位（測試不必湊整個 Pilot） */
-export type RosterPilot = Pick<Pilot, 'id' | 'name' | 'class' | 'debutVersion' | 'fullName' | 'nameEn' | 'faction'>
+/** 名冊與分組只需要這幾個欄位（測試不必湊整個 Pilot）。英文名來自 pilotLore，見 `withLoreNames` */
+export type RosterPilot = Pick<Pilot, 'id' | 'name' | 'class' | 'debutVersion' | 'fullName' | 'faction'> & { nameEn?: string }
+
+/**
+ * 故事館視角的機師：pilots 文件＋pilotLore 的英文名。
+ *
+ * PLAN-042-E 起英文名住 pilotLore（與數值、機制無關），但名冊搜尋與頭像 title 都要用它——
+ * 頁面在這裡依 id 併一次再往下傳，元件不必各自去查 pilotLore。
+ * pilotLore 讀不到時英文名就是空的（搜尋比不到英文名而已，不影響換人）。
+ */
+export type LorePilot = Pilot & { nameEn?: string }
+
+export function withLoreNames(pilots: readonly Pilot[], lore: readonly Pick<LoreDoc, 'id' | 'nameEn'>[]): LorePilot[] {
+  const names = new Map(lore.map((d) => [d.id, d.nameEn?.trim()]))
+  return pilots.map((p) => {
+    const nameEn = names.get(p.id)
+    return nameEn ? { ...p, nameEn } : p
+  })
+}
 
 export interface LoreGroup<T> {
   /** 職業名或版本字串（含兩個收容組） */

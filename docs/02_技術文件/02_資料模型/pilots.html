@@ -38,18 +38,12 @@
       <tr><td>id</td><td>string</td><td>唯一識別碼</td></tr>
       <tr><td>name</td><td>string</td><td>機師顯示名稱</td></tr>
       <tr><td>fullName</td><td>string</td><td>機師全名（完整稱呼）</td></tr>
-      <tr><td>nameEn</td><td>string?</td><td>英文名（PLAN-042-C，選填）：故事館扉頁壓在立繪旁的毛筆草書，如 <code>Rosa Diaz</code>。官方資料沒有此欄，後台「個人資料」分頁人工輸入；空值＝不渲染。⚠ 爬蟲 <code>--force</code> 整筆覆寫會洗掉（與 debutVersion 同病）<br><small style="color:var(--text-dim)">🆕 PLAN-054：90 位由 v3 定版對照一次回填（來源優先序：官網名字圖層＞遊戲招募全名＞3D 模型名；<strong>有全名就用全名</strong>，如肖妮 Shawnee Russell；虹＝Hong、白月＝Aynur Derya 為站長改寫）。v3 沒有全名來源的單名不自行音譯。</small></td></tr>
       <tr><td>gameId</td><td>string?</td><td>🆕 PLAN-054：遊戲 ID ＝ 機師卡 <code>Icon_item_&lt;gameId&gt;A</code> 的編號（如 <code>10103174</code>），只有可抽機師有。官方原檔資料夾 <code>public/images/game/pilots/&lt;gameId&gt;/</code> 以它命名。<br><small style="color:var(--text-dim)"><strong>不可拿來推導 artKey（兩欄不互推）</strong>，例外 5 位：維娜 10103144／<code>Pilot_13019A</code>、貝爾莎 10103145／<code>Pilot_13010A</code>、阿列娜 13037、珂賽特 11021（3D 在 10103184）、瑪阿特 10103180（官方 API 的 10103129 是她的造型卡）。字串不是數字，只拼路徑不運算。未設定＝還沒有機師卡（新角色尚未匯入，或 NPC 轉正、官方還沒出卡）；立繪不受影響，<code>artKey</code> 指到 NPC 圖庫照樣有圖。</small></td></tr>
       <tr><td>artKey</td><td>string?</td><td>🆕 PLAN-054：預設立繪主鍵，與官方檔名逐字相同（如 <code>Pilot_10103174A</code>）；<code>_half</code>（340²）／<code>_head</code>（90²）／<code>_Raw</code>（1240×1080）接在後面。存完整鍵、程式不留拼接規則<br><small style="color:var(--text-dim)">🆕 2026-10-12：找圖順序先 gameId 資料夾、再 <strong>NPC 圖庫</strong> <code>game/npc/&lt;號碼&gt;/</code>——NPC 轉正的機師（官方沿用 NPC 時期立繪）在後台「選取官方立繪」的 NPC 分組點一下就寫入，不必等機師卡。</small></td></tr>
       <tr><td>pairedMechId</td><td>string?</td><td>🆕 PLAN-054：官配機甲的文件 ID（如 <code>mech_014_戴亞斯</code>），61 位有值。<strong>只存機師側</strong>，機甲側一律由 <code>pairedPilotOf()</code>（<code>src/utils/officialPairs.ts</code>）推導——兩邊都存就得兩邊同步，改一邊忘一邊是靜默的不一致。未設定＝沒有官配，畫面不顯示該列<br><small style="color:var(--text-dim)">來源：v1.1 起每版 2 S 機師＋2 S 機甲同上線、「機師執照＝機甲裝甲」唯一配對 47 組，加開服 v1.0 站長指定 14 組。</small></td></tr>
       <tr><td>rarity</td><td>ItemRarity (Enum)</td><td>稀有度：S / A / B（機師不使用 EX）</td></tr>
       <tr><td>class</td><td>PilotClass (Enum)</td><td>職業：突擊手 / 狙擊手 / 戰術家 / 格鬥家 / 守護者 / 機械師 / 調構師</td></tr>
-      <tr><td>faction</td><td>string</td><td>所屬陣營 / 勢力（詳情頁顯示為「勢力」，列表頁可搜尋）</td></tr>
-      <tr class="group-header"><td colspan="3">▎個人檔案 profile</td></tr>
-      <tr><td>&nbsp;├ gender</td><td>string</td><td>性別</td></tr>
-      <tr><td>&nbsp;├ bloodType</td><td>string</td><td>血型</td></tr>
-      <tr><td>&nbsp;├ height</td><td>string</td><td>身高</td></tr>
-      <tr><td>&nbsp;└ additionalInfo</td><td>Record&lt;string, string&gt;</td><td>其他補充欄位（鍵值對，如生日、所屬部隊等）</td></tr>
+      <tr><td>faction</td><td>string</td><td>所屬陣營 / 勢力（詳情頁顯示為「勢力」，列表頁可搜尋）<br><small style="color:var(--text-dim)">PLAN-042-E 站長 Q1：陣營日後會有機制作用，<strong>留在 pilots</strong>；故事館卷宗的「陣營」列也讀這一欄（與 <code>name</code>／<code>fullName</code> 同屬兩館共用的身分欄位）。</small></td></tr>
       <tr class="group-header"><td colspan="3">▎六維屬性 stats</td></tr>
       <tr><td>&nbsp;├ melee</td><td>number</td><td>格鬥</td></tr>
       <tr><td>&nbsp;├ assault</td><td>number</td><td>突擊</td></tr>
@@ -106,10 +100,18 @@
       <tr><td>&nbsp;&nbsp;&nbsp;├ effects</td><td>SkillEffect[]</td><td>嵌入舊格式可量化效果（多為空；flip 後改由能力庫提供）</td></tr>
       <tr><td>&nbsp;&nbsp;&nbsp;├ buffIds</td><td>string[]</td><td>嵌入舊格式：激活此層觸發的 Buff ID</td></tr>
       <tr><td>&nbsp;&nbsp;&nbsp;└ descriptionRefs</td><td>DescriptionRefs?</td><td>🆕 PLAN-023 N2-1：描述內 [xxx] 引用側錄；flip 後由 resolve 從能力庫帶入，使神驅描述的 [xxx] 可點擊</td></tr>
-      <tr><td>lore</td><td>string</td><td>官方「機師檔案」正文，<strong>＝ API <code>detail.Introduction</code> 的鏡像</strong>（爬蟲每次補丁都會重寫）。<strong>不是 Markdown</strong>——前台一律以 <code>whitespace-pre-line</code> 純文字呈現。89/89 有值，其中 38% 為引文體、40% 結尾帶署名。<br><small style="color:var(--text-dim)">🆕 PLAN-042-A：故事館的<u>扉頁</u>渲染的就是這一欄，<strong>刻意不搬進 <a href="../04_Firebase/資料庫設計文件/pilotLore.html">pilotLore</a></strong>——圖鑑的 hover 浮窗與引用稽核（<code>entityRefs</code> 的「機師簡介」站點）都在用它，搬走等於浮窗變空白或製造兩個真相源。署名結構化後另存於 <code>pilotLore.frontSource</code>。</small></td></tr>
       <tr><td>portrait</td><td>string</td><td>立繪圖片路徑 /images/pilots/{id}/full.webp（2026-08 起全面轉 WebP，原 PNG 已移除）<br><small style="color:var(--text-dim)">🆕 PLAN-054：讀取端改由 <code>gameId</code>／<code>artKey</code> 推官方原檔（<code>pilotGameArt()</code>），本欄降為後備；清舊檔階段會改寫成 game 路徑。</small></td></tr>
       <tr><td>portraitUrl</td><td>string?</td><td>立繪遠端 URL（官方 CDN 來源）；本地 portrait 缺圖時的後備來源</td></tr>
       <tr><td>manual</td><td>boolean?</td><td>🆕 PLAN-025：後台手動新增的機師（官方資料更新前自建）。<strong>true</strong> = 爬蟲補丁模式（scrape-pilots-v3.js）整筆跳過、不覆寫或刪除；純作後端防覆寫，前台不因此顯示標記。語意比照 PilotSkill.manual / PilotTalent.manual</td></tr>
+      <tr class="group-header"><td colspan="3">▎已遷出 / 待刪的舊欄位（PLAN-042-E，2026-10-13）— 已不在 <code>Pilot</code> 型別內</td></tr>
+      <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);padding:4px 14px;"><strong>新判準（PLAN-042-E 決策一，取代總綱決策二「誰是權威來源」）：與數值、機制有關的欄位留在 pilots，其餘全部歸 <a href="../04_Firebase/資料庫設計文件/pilotLore.html" style="color:var(--accent-cyan)">pilotLore</a>。</strong>
+        依賴是單向的：<strong>圖鑑只讀 pilots</strong>；故事館讀 pilotLore ＋ pilots 的身分欄位（<code>name</code>／<code>fullName</code>／<code>faction</code>／<code>class</code>／立繪…）。
+        下列欄位在 G-1（部署後觀察一週）由一次性腳本從 DB 刪除；在那之前仍會隨文件讀回來，但 src／workers <strong>沒有任何讀取點——不要加回型別</strong>。
+        G-3 已確認快照還原不會把它們帶回來：pilots 不是變更歷史的目標種類（沒有刪除快照），還原只寫回修補單動到的頂層欄位。真正要注意的是 G-1 執行時還開著的機師管理分頁——記憶體裡仍有舊欄位，存檔（整份覆寫）會寫回去。</td></tr>
+      <tr><td><s>lore</s></td><td>string</td><td>→ <code>pilotLore.intro</code>（扉頁簡介）。原為官方 API <code>detail.Introduction</code> 的鏡像、純文字；搬遷 B-2 時把黏在尾端的署名切掉，改存 <code>pilotLore.frontSource</code>。原「機師簡介」entityRefs 站點一併移到 pilotLore 的「扉頁簡介」</td></tr>
+      <tr><td><s>profile</s></td><td>{ gender, bloodType, height, additionalInfo }</td><td>→ <code>pilotLore.dossier</code>（人物檔案）。性別／身高／血型照搬；<code>additionalInfo</code>（map，Firestore 不保證鍵序）改為有序陣列 <code>dossier.extra: { label, value }[]</code></td></tr>
+      <tr><td><s>nameEn</s></td><td>string?</td><td>→ <code>pilotLore.nameEn</code>（故事館草書、卷宗副標、名冊搜尋）。現有 90 位的英文名（PLAN-042-C D-4 起人工輸入）隨搬遷一起過去</td></tr>
+      <tr><td><s>fullPortrait</s></td><td>string?</td><td><strong>孤兒欄位</strong>：舊爬蟲寫入的 <code>_Raw</code> 路徑，型別裡沒有、src／workers／scripts 都沒有讀取點；不搬，G-1 一起刪（站長 Q4）</td></tr>
     </table>
   </div>
 </section>
@@ -126,7 +128,7 @@
     <a class="doc-item" href="../04_Firebase/資料庫設計文件/pilotLore.html">
       <div class="doc-tag">Collection</div>
       <h4>📖 pilotLore</h4>
-      <p>機師逸聞章節（PLAN-042-A 故事館）；文件 ID ＝ 機師 ID，扉頁正文仍讀 pilots.lore</p>
+      <p>故事館資料（PLAN-042-A／042-E）：扉頁簡介、人物檔案、英文名、外觀設定、逸聞章節；文件 ID ＝ 機師 ID</p>
     </a>
     <a class="doc-item" href="pilotResearch.html">
       <div class="doc-tag">Collection</div>
@@ -153,7 +155,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-13 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

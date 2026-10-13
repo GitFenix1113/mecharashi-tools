@@ -234,8 +234,8 @@ barrel 按領域拆檔（`pilot` / `mech` / `weapon` / `module` / `backpack` / `
   與 `package.json` 的 `scrape:*`／`migrate*` 指令都已移出 repo。原檔封存在 `E:\Mecharashi_Data\script-archive\2026-10-11\`（多數本來就被 `.gitignore` 擋著、git 裡沒有），
   清單與理由見該夾的 `README.md`。**不要主動提議用爬蟲補資料，也不要把它們搬回來。**
   文件與舊註解裡仍會提到這些檔名（PLAN 歷史、資料模型的來源說明）——那是歷史紀錄，不代表檔案還在。
-- **萬一真的要從封存夾拿回來用**，先知道它們已與現行資料脫節：`scrape-pilots-v3.js` 是整筆覆寫，`--force` 會洗掉 `nameEn`、`debutVersion`、`talent.buffIds`、`manual`
-  以及 PLAN-054 的 `gameId`／`artKey`／`pairedMechId` 等人工欄位；機師與機甲爬蟲會把圖片下載回中文名資料夾、把 `portrait` 寫回舊路徑（與 PLAN-054 的圖片 ID 化相衝）；
+- **萬一真的要從封存夾拿回來用**，先知道它們已與現行資料脫節：`scrape-pilots-v3.js` 是整筆覆寫，`--force` 會洗掉 `debutVersion`、`talent.buffIds`、`manual`
+  以及 PLAN-054 的 `gameId`／`artKey`／`pairedMechId` 等人工欄位，還會把 PLAN-042-E 已搬到 `pilotLore` 的 `lore`／`profile` 寫回 pilots（沒有程式讀它們，只是殘留）；機師與機甲爬蟲會把圖片下載回中文名資料夾、把 `portrait` 寫回舊路徑（與 PLAN-054 的圖片 ID 化相衝）；
   `scrape-skill-icons.mjs` 與機師爬蟲還會把技能圖示下載回 PLAN-055 已刪除的 `public/images/skills/`、把 `iconLocal` 寫回舊路徑（現行是圖庫＋DB 只存 key）。
   一律先備份（`scripts/temp_scripts/backup-firestore.mjs`）、先 dry-run。**官方 API 天賦文本是「滿晶片」污染值**，人工修正存在 `PilotTalent.manual`。
 - **一次性腳本**（migrate／patch／audit／probe…）放 `scripts/temp_scripts/`（整夾被 `.gitignore` 擋，只存在本機）。跑完、驗收完就清掉；

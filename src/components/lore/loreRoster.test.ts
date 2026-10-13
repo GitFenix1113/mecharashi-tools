@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { buildLoreGroups, byDebutDesc, loreOrder, matchesLoreQuery, UNCLASSIFIED, UNVERSIONED, type RosterPilot } from './loreRoster.ts'
+import { buildLoreGroups, byDebutDesc, loreOrder, matchesLoreQuery, UNCLASSIFIED, UNVERSIONED, withLoreNames, type RosterPilot } from './loreRoster.ts'
+import type { Pilot } from '../../types'
 
 const P = (id: string, cls: string, debutVersion?: string, extra: Partial<RosterPilot> = {}): RosterPilot =>
   ({ id, name: id, class: cls as RosterPilot['class'], debutVersion, fullName: '', faction: '', ...extra })
@@ -45,4 +46,16 @@ test('搜尋：英文名、全名、陣營、版本都比得到，不分大小�
   assert.ok(matchesLoreQuery(rosa, 'v1.0'))
   assert.ok(matchesLoreQuery(rosa, '  '))
   assert.ok(!matchesLoreQuery(rosa, '尼爾'))
+})
+
+test('withLoreNames：英文名從 pilotLore 依 id 併進來（PLAN-042-E）；沒有就不加欄位、順序不變', () => {
+  const ps = [P('pilot_003_洛莎', '突擊手'), P('pilot_001', '守護者')] as unknown as Pilot[]
+  const out = withLoreNames(ps, [{ id: 'pilot_003_洛莎', nameEn: ' Rosa Diaz ' }, { id: 'pilot_001', nameEn: '' }, { id: 'pilot_x', nameEn: 'Ghost' }])
+  assert.deepEqual(out.map((p) => p.id), ['pilot_003_洛莎', 'pilot_001'])
+  assert.equal(out[0].nameEn, 'Rosa Diaz')
+  assert.ok(!('nameEn' in out[1]))
+  assert.equal(out[1], ps[1])   // 沒有英文名的那位原物件直接沿用
+  assert.ok(matchesLoreQuery(out[0], 'rosa'))
+  // pilotLore 讀不到（空陣列）→ 原樣回傳
+  assert.deepEqual(withLoreNames(ps, []), ps)
 })
