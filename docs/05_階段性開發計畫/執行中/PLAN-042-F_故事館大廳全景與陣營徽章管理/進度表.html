@@ -391,7 +391,7 @@
     <div class="task-row">
       <div>
         <div class="task-name">data-patch 流程：備份 → dry-run → apply → bump factionEmblems</div>
-        <div class="task-desc">決策五的 6 筆（名稱＋字樣），0021／0038 只寫備註。<b>要在 C-2 的 rules 部署之後</b>（Admin SDK 不受 rules 限制，但驗收要靠前台讀得到）。<br><span style="color:var(--text-secondary)">🔧 2026-10-14：腳本已寫好（本機 <code>scripts/temp_scripts/seed-faction-emblems.mjs</code>，不進版控），字樣逐張看圖核對過；0021 圖上確實寫 <code>Doll</code>，字樣照填、名稱留空。只補空欄位、重跑安全。✅ 2026-10-14 站長執行完畢：正式站 <code>/api/data/factionEmblems</code> 回 8 筆（6 筆有名稱，0021／0038 只有字樣或備註），<code>versions.factionEmblems</code>＝<code>2026-10-13T17:41:49Z</code>。</span></div>
+        <div class="task-desc">決策五的 6 筆（名稱＋字樣），0021／0038 只寫備註。<b>要在 C-2 的 rules 部署之後</b>（Admin SDK 不受 rules 限制，但驗收要靠前台讀得到）。<br><span style="color:var(--text-secondary)">🔧 2026-10-14：腳本已寫好（本機 <code>scripts/temp_scripts/seed-faction-emblems.mjs</code>，不進版控），字樣逐張看圖核對過；0021 圖上確實寫 <code>Doll</code>，字樣照填、名稱留空。只補空欄位、重跑安全。✅ 2026-10-14 站長執行完畢：正式站 <code>/api/data/factionEmblems</code> 回 8 筆（6 筆有名稱，0021／0038 只有字樣或備註），<code>versions.factionEmblems</code>＝<code>2026-10-13T17:41:49Z</code>。</span><br><span style="color:var(--text-secondary)">🔧 2026-10-14 第二批（站長確認）：0018 掠食者小隊、0020 自由米赫瑪、0021 多爾集團、0039 亞太戰區精神力機甲作戰部隊（對應文字「亞太戰區」）＋既有 6 顆回填英文名稱 → <code>patch-faction-emblems-20261014b.mjs</code>（本機）。⬜ 待站長在新版網站上線後執行 dry-run → <code>--apply</code> → bump。另把 31 顆未命名的看圖線索整理在 <code>_local-notes/2026-10/2026-10-14_陣營徽章待確認/</code>。</span></div>
         <div class="task-file">scripts/temp_scripts/seed-faction-emblems.mjs</div>
       </div>
       <div class="task-assignee">開發者（本機）</div>
@@ -414,7 +414,7 @@
     <div class="task-row">
       <div>
         <div class="task-name">37 個編號，一列一個</div>
-        <div class="task-desc">列出圖庫 <code>camp</code> 的全部編號（單色／彩色並排），欄位：名稱、圖上字樣、對應的陣營文字（標籤輸入，datalist 給現有 31 種 <code>faction</code> 值）、備註、使用中人數；篩選「未命名」。存檔走 <code>saveWithHistory</code>（自動遞增版本）。<br><span style="color:var(--text-secondary)">✅ 2026-10-14：<code>FactionEmblemsEditor.tsx</code>；編輯台頁首加「機師｜陣營徽章」切換（<code>?view=emblems</code>、<code>&amp;emblem=</code> 跳到該列——用直接跳不用 smooth：背景分頁不跑捲動動畫）。統計已命名／使用中／已選徽章的機師；存檔改走 <code>writeDoc</code>＋bump（見 C-2）。模擬器實測：搜尋「晨星」只剩 0025、加陣營文字存檔後 DB 正確。</span></div>
+        <div class="task-desc">列出圖庫 <code>camp</code> 的全部編號（單色／彩色並排），欄位：名稱、圖上字樣、對應的陣營文字（標籤輸入，datalist 給現有 31 種 <code>faction</code> 值）、備註、使用中人數；篩選「未命名」。存檔走 <code>saveWithHistory</code>（自動遞增版本）。<br><span style="color:var(--text-secondary)">✅ 2026-10-14：<code>FactionEmblemsEditor.tsx</code>；編輯台頁首加「機師｜陣營徽章」切換（<code>?view=emblems</code>、<code>&amp;emblem=</code> 跳到該列——用直接跳不用 smooth：背景分頁不跑捲動動畫）。統計已命名／使用中／已選徽章的機師；存檔改走 <code>writeDoc</code>＋bump（見 C-2）。模擬器實測：搜尋「晨星」只剩 0025、加陣營文字存檔後 DB 正確。</span><br><span style="color:var(--text-secondary)">✅ 2026-10-14 追加（站長：中英文都要留）：新增 <code>nameEn</code> 英文名稱欄，與「圖上字樣」分開；選圖器卡片多一行英文名、卷宗徽章提示改成「中文・英文」（<code>emblemTitle</code>）；徽章名稱與機師陣營文字一字不差也算建議（不必再填對應文字）。</span></div>
         <div class="task-file">src/components/admin/lore/FactionEmblemsEditor.tsx · AdminLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
