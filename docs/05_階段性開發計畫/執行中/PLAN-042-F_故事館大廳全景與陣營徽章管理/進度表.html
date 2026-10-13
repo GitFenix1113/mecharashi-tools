@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">7</div>
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">8</div>
+      <div class="summary-num" style="color:var(--text-dim)">7</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度（開發者任務）</span>
-      <span style="color:var(--accent-orange);">7 / 16</span>
+      <span style="color:var(--accent-orange);">8 / 16</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 44%"></div>
+      <div class="progress-bar-fill" style="width: 50%"></div>
     </div>
   </div>
 
@@ -386,16 +386,16 @@
     <div class="task-group-header">
       <div class="task-group-title">C-4 &nbsp; 預填 6 筆</div>
       <div class="task-group-meta">scripts/temp_scripts/</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">data-patch 流程：備份 → dry-run → apply → bump factionEmblems</div>
-        <div class="task-desc">決策五的 6 筆（名稱＋字樣），0021／0038 只寫備註。<b>要在 C-2 的 rules 部署之後</b>（Admin SDK 不受 rules 限制，但驗收要靠前台讀得到）。<br><span style="color:var(--text-secondary)">🔧 2026-10-14：腳本已寫好（本機 <code>scripts/temp_scripts/seed-faction-emblems.mjs</code>，不進版控），字樣逐張看圖核對過；0021 圖上確實寫 <code>Doll</code>，字樣照填、名稱留空。只補空欄位、重跑安全。⬜ 待站長在 E-2 的 rules／Worker 部署後執行：dry-run → <code>--apply</code> → <code>node scripts/bump-data-version.mjs factionEmblems</code>。</span></div>
+        <div class="task-desc">決策五的 6 筆（名稱＋字樣），0021／0038 只寫備註。<b>要在 C-2 的 rules 部署之後</b>（Admin SDK 不受 rules 限制，但驗收要靠前台讀得到）。<br><span style="color:var(--text-secondary)">🔧 2026-10-14：腳本已寫好（本機 <code>scripts/temp_scripts/seed-faction-emblems.mjs</code>，不進版控），字樣逐張看圖核對過；0021 圖上確實寫 <code>Doll</code>，字樣照填、名稱留空。只補空欄位、重跑安全。✅ 2026-10-14 站長執行完畢：正式站 <code>/api/data/factionEmblems</code> 回 8 筆（6 筆有名稱，0021／0038 只有字樣或備註），<code>versions.factionEmblems</code>＝<code>2026-10-13T17:41:49Z</code>。</span></div>
         <div class="task-file">scripts/temp_scripts/seed-faction-emblems.mjs</div>
       </div>
       <div class="task-assignee">開發者（本機）</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -480,32 +480,32 @@
     <div class="task-group-header">
       <div class="task-group-title">E-2 &nbsp; 部署</div>
       <div class="task-group-meta">Firebase rules · Worker · GitHub Pages</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">rules → Worker → 預填 → push</div>
-        <div class="task-desc"><code>npx firebase deploy --only firestore:rules</code> → <code>cd workers; npx wrangler deploy</code> → C-4 預填 → <code>npm run push</code>。auto mode 擋正式站部署，由站長執行。</div>
+        <div class="task-desc"><code>npx firebase deploy --only firestore:rules</code> → <code>cd workers; npx wrangler deploy</code> → C-4 預填 → <code>npm run push</code>。auto mode 擋正式站部署，由站長執行。<br><span style="color:var(--text-secondary)">✅ 2026-10-14 站長部署：rules → Worker → 預填＋bump → <code>npm run push</code>（<code>44fb226a</code>／<code>f15e2656</code>），pages-build-deployment 完成。</span></div>
         <div class="task-file">firestore.rules · workers/ · main</div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">E-3 &nbsp; 驗收</div>
       <div class="task-group-meta">curl · 正式站</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">API、全景、編輯台</div>
-        <div class="task-desc"><code>/api/data/factionEmblems</code> 回 200；27 套外觀的鑑賞框預設全景、可切回；13 套維持原樣；選圖器顯示 6 個名稱、可搜「黑曜石」；卷宗彩色徽章不再被裁圓。<code>npm test</code>／<code>lint</code>／<code>build</code>。</div>
+        <div class="task-desc"><code>/api/data/factionEmblems</code> 回 200；27 套外觀的鑑賞框預設全景、可切回；13 套維持原樣；選圖器顯示 6 個名稱、可搜「黑曜石」；卷宗彩色徽章不再被裁圓。<code>npm test</code>／<code>lint</code>／<code>build</code>。<br><span style="color:var(--text-secondary)">🔧 2026-10-14（徽章部分）：正式站 <code>/api/data/factionEmblems</code> 200、資料正確；新版前台已上線（首頁更新履歷有兩筆）；故事館機師頁會讀 <code>factionEmblems</code>（200）且沒有錯誤。後台「陣營徽章」分頁與選圖器在本機模擬器完整實測過（見 D-1～D-3），正式站需要管理員登入，⬜ 待站長看一眼。大廳全景的驗收等 A／B 段。</span></div>
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
   <div class="task-group">
