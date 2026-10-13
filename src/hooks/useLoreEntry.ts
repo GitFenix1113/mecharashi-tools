@@ -19,7 +19,8 @@ import { useAuth } from '../contexts/AuthContext'
  *      2026-09-10 部署（含 OG 用的 UA 排除區塊），2026-10-11 複驗 `/lore` 回 200，公開時不必再動；
  *   ③ 確定穩定後連同本檔與 `useLoreEntryVisible()` 的呼叫一起刪除。
  */
-export const LORE_INTERNAL_ONLY = true
+// 2026-10-13 站長宣布對外開放（PLAN-042-D 改版完成當天）。①② 已做；③ 等穩定一陣子再刪。
+export const LORE_INTERNAL_ONLY = false
 
 /**
  * 故事館入口是否要顯示。內部期間只有 ADMIN／OWNER 看得到——與模擬器內測期間同一套角色判斷，
