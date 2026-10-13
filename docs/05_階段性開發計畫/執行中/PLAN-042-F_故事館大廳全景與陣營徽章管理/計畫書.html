@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-F 故事館大廳全景與陣營徽章管理 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-F 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-042-F</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    故事館大廳全景與陣營徽章管理<span style="-webkit-text-fill-color:var(--text-secondary);"> Lobby View · Faction Emblems · 編輯台</span>
+  </h1>
+  <p class="hero-sub">外觀的「全身立繪」改看官方大廳全景（造型預覽圖）；陣營徽章有了名稱、字樣與後台管理，選圖器放大、看得懂。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-042-F</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-14</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">故事館鑑賞框 · 外觀匯入與索引 · 故事館編輯台 · 新集合 factionEmblems</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value orange">開發中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-042-E（已部署）· PLAN-059（徽章圖庫）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>陣營徽章選圖器看不懂</strong><br>
+    編輯台的選圖器（<code>FactionLogoPicker.tsx</code>）每格圖只有 40px、底下只標 4 碼編號，也只能搜編號。全站與 DB 都沒有「徽章 → 陣營名」的資料——PLAN-059 決策六刻意不做陣營字典——唯一的線索是 10-01 素材盤點時看字樣猜的 8 筆（在 <code>_local-notes</code>）。
+    管理員看一眼也記不住哪顆是哪個陣營；截至 10-13 備份，92 位沒有任何一位選過徽章（PLAN-059 D-5 待開始），正是補上名稱的時機。
+  </div>
+
+  <div class="problem-block">
+    <strong>外觀的「全身立繪」看不到完整畫面</strong><br>
+    站上外觀是官方卡面 <code>Raw</code>（1240×1080）：13 套場景外觀四周有官方暈邊（鑑賞版 <code>_Raw_view</code> 只是收窄），其餘去背的造型會被畫布裁掉（卡夏的吊床，腳在右緣被切）。
+    遊戲大廳是執行時疊出來的——背景半幅 1024²×2、Spine 角色、前景道具，擺位在 Unity prefab 裡、沒有被擷取——<b>擷取裡沒有單張 1920 寬的桌布</b>。
+    唯一完整單張是造型預覽圖 <code>Img_main_(Skin_)?&lt;英文名&gt;(_08)?_Raw</code>（1056×594，<code>ui_uiimages_uiskindisplay_abs.b</code>），構圖與大廳一致：<b>40 套外觀中 27 套有</b>（13 套場景外觀全有），合計約 2.9 MB。
+  </div>
+
+  <div class="problem-block">
+    <strong>小 bug：彩色徽章在卷宗被裁成圓形</strong><br>
+    <code>src/index.css:749</code> 的 <code>.lore-emb__ring img { border-radius:50%; object-fit:cover }</code> 權重高過 Tailwind 的 <code>.object-contain</code>，彩色版 <code>_01</code> 的 <code>&lt;img&gt;</code> 被裁圓。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一（站長 2026-10-14）：大廳全景先用官方造型預覽圖</strong><br>
+    1056×594、27 套、約 2.9 MB，立刻可做。高解析版（背景半幅＋Spine 第 0 格＋道具逐套合成到 1920 寬）併入 Spine 計畫，等授權有結果後<b>替換同一個檔位</b>（<code>_lobby</code>），前台不必再改。
+    卡面去背與否是官方逐套決定的（卡夏去背、阿黛勒帶背景），資料看不出規則。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二（站長 2026-10-14，同日修訂）：鑑賞框預設立繪、可切到大廳全景</strong><br>
+    站長原則：<b>靜態立繪優先，大廳全景只是補充</b>（最初選「預設全景」，補充說明後改判）。有大廳全景的外觀，鑑賞框上方出現「立繪｜大廳全景」切換、預設立繪；沒有的 13 套維持原樣。
+    起因是阿黛勒這類場景外觀的官方卡面連背景一起畫、站上沒有去背的靜態立繪——真正的解法是 Spine 骨架渲染的去背全身圖（13 套場景外觀都有，卡在 Spine Editor 授權，見 Spine 計畫），大廳全景是過渡。
+    1056 寬在 1080p 螢幕已放大約 1.65 倍，全景模式要限制最大顯示尺寸（暫定原寸 1.5 倍、實作時目測調整），點擊放大改為上限原寸 2 倍或停用。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三（設計）：檔名、對照表、部署層級</strong><br>
+    預覽圖存 <code>pilots/&lt;gameId&gt;/skins/&lt;artKey&gt;_lobby.webp</code>——衍生檔名，與 <code>_Raw_view</code> 同一套處理（<code>classifyPilotFile</code> 刻意認不得、索引另查）。
+    外觀 → 預覽圖沒有官方設定表，寫在 <code>scripts/lib/pilotSkinMeta.json</code> 的 <code>lobby</code> 欄（值＝預覽圖官方檔名），<code>--skins</code> 讀取。只看英文名會錯兩處：
+    奧菲利亞的大廳屬於 <code>Pilot_10103134C</code>（不是 B）；<code>RosaDiaz</code> 屬於 <code>Pilot_10103154C</code>（洛莎·審判外觀 C，不是 10103107 洛莎）；
+    <code>Img_main_Skin_Rosa_08</code> 屬於 <code>Pilot_10103154B</code>（站長 10-14 確認：預覽戴眼罩，154B＝預設 154A 加眼罩、像素差 0.7）。
+    部署：這 27 張升級為上站（依 10-12「劇透不是顧慮」）；NPC 圖庫的 2 套外觀沒有預覽圖。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四（站長 2026-10-14，修訂 PLAN-059 決策六）：替「徽章本身」做註記，不替陣營文字做字典</strong><br>
+    每個編號存：<b>名稱</b>、<b>圖上字樣</b>、選填<b>對應的陣營文字</b>（機師 <code>faction</code> 的原字串，可多筆）、備註。
+    對應的陣營文字<b>只用來把建議排到最前面</b>；每位機師的徽章仍由管理員逐位點選，不自動寫入 <code>pilotLore</code>。
+    決策六擔心的是「替站長決定誰跟誰算同一個陣營」——註記由管理員在後台維護，判斷權仍在管理者手上，只是讓選圖器看得懂。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五（站長 2026-10-14）：預填 6 筆字樣可辨識的</strong><br>
+    0012 黑曜石集團（OBSIDIAN）、0009 電鰻傭兵團（EELS）、0031 盧諾家族（LUNO）、0033 NERV、0034 多瑙河公司（DONAU）、0025 晨星同盟防衛軍（DAWNSTAR LEAGUE ARMORED FORCE）。
+    0021（多爾集團？D 字）、0038（創界山？雲中塔）名稱留空、只寫進備註當線索。對應的陣營文字不預填。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六（設計）：新集合 factionEmblems，不進引用掃描</strong><br>
+    文件 ID＝4 碼編號（<code>0025</code>），單色／彩色兩個變體共用一份註記。<b>不登記進 <code>entityRefs</code> SPECS</b>（註記不引用別人、也不被 EntityRef 引用）→ 不連動級聯刪除與引用掃描，規則晚部署也不會弄壞既有的刪除功能。
+    其餘連動照 PLAN-042-A 清單：<code>collectionKeys</code>、<code>GameDataContext</code>、Worker <code>ARRAY_COLLECTIONS</code>、<code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>、<code>firestore.rules</code>（讀 <code>isAdmin()</code>、前台走 Worker）、api 模組＋barrel、測試 helper。
+    部署順序：rules → Worker → 網站。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七（設計）：選圖器與前台</strong><br>
+    選圖器：圖 88px、卡片標名稱與字樣、單色／彩色兩顆按鈕；可用名稱／字樣／編號搜尋；排序為「建議（對應文字命中，或同陣營機師已選）→ 已命名 → 未命名」，未命名卡片標「未命名」、照樣可選。
+    卷宗前台的徽章提示（title／aria）改用徽章名稱，沒有名稱才退回機師陣營文字；順手修裁圓 bug。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>27 套大廳全景：對照表、<code>--skins</code> 匯入 <code>_lobby</code>、索引旗標、鑑賞框切換</li>
+      <li><code>factionEmblems</code> 集合與連動、6 筆預填（data-patch 流程）</li>
+      <li>故事館編輯台「陣營徽章」分頁、選圖器改版、卷宗徽章提示與裁圓 bug</li>
+      <li>文件（新集合、資料模型、頁面規劃、PLAN-059 決策六修訂註記）與更新履歷</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>高解析大廳合成（併入 Spine 計畫，等授權）</li>
+      <li>正規化 <code>pilots.faction</code>／正式的陣營集合（日後陣營有機制作用時另議）</li>
+      <li>館首頁「依陣營」分組（PLAN-059 提案的後續，等多數機師選好徽章）</li>
+      <li>沒有預覽圖的 13 套外觀（官方沒有）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-042-F 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-059_職業圖示與陣營徽章/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-059 職業圖示與陣營徽章</h4>
+      <p>徽章圖庫與決策六（本計畫修訂）</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042-E_機師資料分家與故事館編輯台/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-042-E 故事館編輯台</h4>
+      <p>編輯台分頁與外觀管理</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-F — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

@@ -31,6 +31,15 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card orange">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-042-F · 故事館大廳全景與陣營徽章管理</h3>
+      <p>外觀的「全身立繪」改看官方大廳全景（造型預覽圖 1056×594，27／40 套），鑑賞框預設立繪、可切到全景（站長：靜態立繪優先）；陣營徽章新增 <code>factionEmblems</code> 集合（名稱、圖上字樣、對應的陣營文字），故事館編輯台加「陣營徽章」分頁、選圖器放大並標名稱。修訂 PLAN-059 決策六：註記徽章本身、仍逐位挑選。<br><b>2026-10-14 立案；同日 7／16</b>：陣營徽章（C／D 段）程式完成、模擬器實測通過，待站長部署 rules → Worker → 預填 → push；大廳全景（A／B 段）未開工（站長：靜態立繪優先，全景只是補充）。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-042-F_故事館大廳全景與陣營徽章管理/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-042-F_故事館大廳全景與陣營徽章管理/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card red">
       <div class="card-icon">◆</div>
       <h3>PLAN-060 · 架構安全網與維護性改善</h3>
@@ -48,7 +57,7 @@
       <p>站長 2026-10-13 定調：機師圖鑑只做<b>功能性</b>（數值、機制、天賦、技能），個人資料全部歸故事館。總綱決策二「誰是權威來源」的兩個前提（浮窗讀簡介、爬蟲會覆寫）已在 10-09／10-11 失效，改用新判準「與數值、機制有沒有關係」。
         <code>lore</code>、<code>profile</code>（性別／身高／血型／自訂欄位）、<code>nameEn</code> 搬進既有的 <code>pilotLore</code>（不新增集合），圖鑑只留一顆入口連結；全名、陣營留在 pilots（陣營日後有機制作用）。
         故事館編輯台擴充成扉頁／人物檔案／逸聞章節／外觀四個分頁，加上進度總覽、即時預覽、章節草稿旗標；外觀的名稱、隱藏、順序改由後台管理（圖檔仍走匯入腳本）。
-        搬遷採「先複製 → Worker 先上 → 網站一次切換 → 觀察一週後刪舊欄位（含孤兒 <code>fullPortrait</code>）」，不寫雙讀退路。故事編輯者角色先不做。<br><b>2026-10-13 立案；同日開發 19／25</b>：A 資料模型、C 讀取端切換、D 故事館編輯台（分頁化、進度總覽、即時預覽、草稿章）、E 外觀管理、F-3 文件、G-3 完成，程式在分支 <code>claude/plan-042-e</code>（未部署）。B 段搬遷與 G-1 的一次性腳本已寫好；F-1 部署與 G 段收尾待站長。<br><b>2026-10-14 進度 21／25</b>：B-1 備份、B-2 搬遷寫入 92 份完成，B-3 第一次對帳差異 0；分支已在本機合併進 main，編輯凍結中，等 F-1 部署。</p>
+        搬遷採「先複製 → Worker 先上 → 網站一次切換 → 觀察一週後刪舊欄位（含孤兒 <code>fullPortrait</code>）」，不寫雙讀退路。故事編輯者角色先不做。<br><b>2026-10-13 立案；同日開發 19／25</b>：A 資料模型、C 讀取端切換、D 故事館編輯台（分頁化、進度總覽、即時預覽、草稿章）、E 外觀管理、F-3 文件、G-3 完成，程式在分支 <code>claude/plan-042-e</code>（未部署）。B 段搬遷與 G-1 的一次性腳本已寫好；F-1 部署與 G 段收尾待站長。<br><b>2026-10-14 已部署上線，進度 23／25</b>：B 段搬遷 92 份（對帳兩次差異 0）、F-1 部署、F-2 正式站驗收完成，已解除凍結；剩 G-1 刪 pilots 舊欄位與 G-2 封存腳本，觀察一週（約 10-21 之後）再做。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-042-E_機師資料分家與故事館編輯台/計畫書.html">→ 計畫書</a>
         <a class="card-link" href="PLAN-042-E_機師資料分家與故事館編輯台/進度表.html">→ 進度表</a>
