@@ -20,6 +20,7 @@ import { buildUpgradeIndex, deriveFusedSkillNames, isCompositeWeapon } from '../
 import { resolveWeaponSkills } from '../../utils/weaponSkills'
 import { naOr, isNaStat, isVariableStat, variableStatNote } from '../../utils/weaponStats'
 import { useReference } from '../../contexts/ReferenceContext'
+import { usePageTitle } from '../../contexts/PageTitleContext'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import type { EntityRef, Weapon } from '../../types'
 
@@ -223,6 +224,7 @@ function LoadingSkeleton({ split }: { split: boolean }) {
 export default function WeaponDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: weapon, loading, error } = useWeapon(id)
+  usePageTitle(weapon ? `${weapon.name} 武器資料` : null)
   const { data: weapons } = useWeapons()
   const { data: pilotMap } = usePilotBriefMap()
 

@@ -9,21 +9,36 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { SITE_NAME, SITE_NAME_EN, SITE_TITLE, SITE_ORIGIN, SITE_DOMAIN } from './siteMeta.ts'
+import { SITE_NAME, SITE_NAME_EN, SITE_TITLE, SITE_ORIGIN, SITE_DOMAIN, SITE_SEARCH_NAME, SITE_DOC_TITLE } from './siteMeta.ts'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8')
 
 test('index.html 的標題與 og:* 站名與 SITE_NAME 一致', () => {
   const html = read('index.html')
-  assert.ok(html.includes(`<title>${SITE_TITLE}</title>`), `index.html 的 <title> 不是「${SITE_TITLE}」`)
+  assert.ok(html.includes(`<title>${SITE_DOC_TITLE}</title>`), `index.html 的 <title> 不是「${SITE_DOC_TITLE}」`)
   assert.ok(
     html.includes(`property="og:site_name" content="${SITE_NAME}"`),
     `index.html 的 og:site_name 不是「${SITE_NAME}」`,
   )
-  for (const tag of ['og:title', 'twitter:title']) {
-    assert.ok(html.includes(`content="${SITE_TITLE}"`), `index.html 的 ${tag} 不是「${SITE_TITLE}」`)
+  // 逐標籤比對屬性名：舊寫法只找 content="…"，任何一個標籤對了就整組通過
+  for (const [attr, tag] of [['property', 'og:title'], ['name', 'twitter:title']]) {
+    assert.ok(
+      html.includes(`${attr}="${tag}" content="${SITE_DOC_TITLE}"`),
+      `index.html 的 ${tag} 不是「${SITE_DOC_TITLE}」`,
+    )
   }
+})
+
+test('index.html 的 WebSite 結構化資料與站名一致（PLAN-061）', () => {
+  const html = read('index.html')
+  const m = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)
+  assert.ok(m, 'index.html 缺少 application/ld+json 區塊')
+  const data = JSON.parse(m[1]) as { '@type': string; name: string; alternateName: string[]; url: string }
+  assert.equal(data['@type'], 'WebSite')
+  assert.equal(data.name, SITE_NAME)
+  assert.deepEqual(data.alternateName, [SITE_SEARCH_NAME, SITE_NAME_EN])
+  assert.equal(data.url, `${SITE_ORIGIN}/`)
 })
 
 test('Worker 的 SITE_NAME／SITE_ORIGIN 與前端一致（漏改 → 分享卡片印舊站名）', () => {
@@ -60,7 +75,8 @@ test('src/ 內不得再出現硬編站名（新檔案要 import siteMeta）', ()
   assert.deepEqual(offenders, [], `這些檔案硬編了站名，請改 import { SITE_NAME } from 'src/lib/siteMeta'：${offenders.join('、')}`)
 })
 
-test('SITE_TITLE 與 SITE_DOMAIN 由零件組出，不另外手寫', () => {
+test('SITE_TITLE、SITE_DOC_TITLE 與 SITE_DOMAIN 由零件組出，不另外手寫', () => {
   assert.equal(SITE_TITLE, `${SITE_NAME} — ${SITE_NAME_EN}`)
+  assert.equal(SITE_DOC_TITLE, `${SITE_SEARCH_NAME}｜${SITE_NAME}`)
   assert.equal(SITE_DOMAIN, 'mecharashi.wiki')
 })

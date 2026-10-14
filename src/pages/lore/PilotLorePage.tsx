@@ -14,6 +14,7 @@ import { pilotSkins, type PilotSkinArt } from '../../utils/gameArt'
 import { useFactionEmblems, usePilotLore, usePilots } from '../../hooks/useFirestore'
 import { emblemTitle, emblemsById } from '../../utils/factionEmblems'
 import type { LoreDoc, Pilot } from '../../types'
+import { usePageTitle } from '../../contexts/PageTitleContext'
 
 /**
  * 機師故事館的扉頁與章節頁（PLAN-042-A D-3；PLAN-042-D 改版成「舞台＋卷宗」）。
@@ -79,6 +80,9 @@ export default function PilotLorePage() {
   const [search, setSearch] = useSearchParams()
   const navigate = useNavigate()
   const { data: pilots, loading, error } = usePilots()
+  // 分頁標題跟網址走（PLAN-061），不跟過場中的 shown：退場動畫期間網址已經是下一位
+  const titleName = pilots.find((p) => p.id === id)?.name
+  usePageTitle(titleName ? `${titleName} 機師故事` : null)
   // 只交給卷宗，不擋整頁：見檔頭第 ② 條
   const { data: loreDocs, loading: loreLoading, error: loreError } = usePilotLore()
   const loreById = useMemo(() => new Map(loreDocs.map((d) => [d.id, d])), [loreDocs])

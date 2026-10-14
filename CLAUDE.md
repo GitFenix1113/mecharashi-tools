@@ -79,6 +79,9 @@ npm run build
 
 `npm run build` 與 `npm test` **都抓不到**這件事——它不是程式碼問題，而是一份只活在 CF Dashboard、不在版控裡的列舉式白名單。本機 dev 與 PR preview 也照樣正常，因為它們不經過那條規則。
 
+新增路由（不限頂層）時，`npm test` 還會要求在 [src/lib/seo.ts](src/lib/seo.ts) 做兩個決定：`PAGE_TITLES` 給它頁名、
+`SITEMAP_STATIC_PATHS` 或 `SITEMAP_EXCLUDED` 決定進不進 sitemap（PLAN-061）。這兩項測試會擋，不必另外記。
+
 #### 為什麼會 404
 
 站台是 GitHub Pages 上的 SPA，origin 只有 `/index.html` 一個實體檔案。深層路徑靠 zone 的
@@ -195,6 +198,7 @@ npm run preview    # 預覽 production build
 - **[AuthContext](src/contexts/AuthContext.tsx)**：Firebase Auth 登入狀態 + 角色（`AdminRoute` 用來 gate `/admin/*` 路由）。
 - **[GameDataContext](src/contexts/GameDataContext.tsx)**：**全站遊戲資料的單一快取層**，見 6.2。
 - **[ReferenceContext](src/contexts/ReferenceContext.tsx)**：實體引用（`EntityRef`）的 hover 浮窗 / 釘選 / 手機 BottomSheet 互動（PLAN-019 數值引用層）。
+- **[PageTitleContext](src/contexts/PageTitleContext.tsx)**（Router 內層，包住 `<Routes>`）：分頁標題。路由預設頁名查 [src/lib/seo.ts](src/lib/seo.ts) 的 `PAGE_TITLES`，詳情頁資料到了再以 `usePageTitle()` 換成實體名稱（PLAN-061）。
 
 ### 6.2 遊戲資料載入：版本 gate 的三層快取（最重要的架構）
 

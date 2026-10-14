@@ -137,7 +137,7 @@
     <tr><td><code>src/pages/</code></td><td>各路由頁面元件（MechsPage、ModulesPage 等）</td></tr>
     <tr><td><code>src/components/</code></td><td>跨頁面共用的 UI 元件，<strong>一律歸類到子資料夾、扁平層不放檔案</strong>（見下方分類表）</td></tr>
     <tr><td><code>src/hooks/</code></td><td>Firestore 資料讀取與跨頁共用的 React Hooks（<code>useFirestore.ts</code>、<code>useModuleAdopters.ts</code>、<code>useIsMobile.ts</code> 等）</td></tr>
-    <tr><td><code>src/contexts/</code></td><td>三層 Provider：<code>AuthContext</code>（登入與角色）、<code>GameDataContext</code>（遊戲資料快取層）、<code>ReferenceContext</code>（實體引用互動）</td></tr>
+    <tr><td><code>src/contexts/</code></td><td>三層 Provider：<code>AuthContext</code>（登入與角色）、<code>GameDataContext</code>（遊戲資料快取層）、<code>ReferenceContext</code>（實體引用互動）；另有 Router 內層的 <code>PageTitleContext</code>（分頁標題：路由預設頁名＋詳情頁以 <code>usePageTitle</code> 覆寫，PLAN-061）</td></tr>
     <tr><td><code>src/lib/</code></td><td>Firebase 初始化與底層 API 呼叫（firestoreApi.ts）</td></tr>
     <tr><td><code>src/types/</code></td><td>TypeScript 型別定義（index.ts）與 Enum 常數（enums.ts）</td></tr>
     <tr><td><code>src/utils/</code></td><td>跨頁面共用的純函式與常數（見下方說明）</td></tr>

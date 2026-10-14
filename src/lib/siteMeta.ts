@@ -17,8 +17,22 @@ export const SITE_NAME = '米赫瑪超吉情豹站'
 /** 英文站名。⚠ 是 Milkhama 不是 Milhama —— 舊名拼字錯過一次。 */
 export const SITE_NAME_EN = 'Milkhama PawInfo Station'
 
-/** 完整標題（中文 — 英文）。頁尾、分頁標題、分享圖浮水印用這個。 */
+/** 完整標題（中文 — 英文）。頁尾、分享圖浮水印用這個。 */
 export const SITE_TITLE = `${SITE_NAME} — ${SITE_NAME_EN}`
+
+/**
+ * 給搜尋引擎看的描述名（PLAN-061）。
+ *
+ * 站名本身不含遊戲名，搜尋「鋼嵐」「Mecharashi」時，搜尋引擎在標題裡找不到這兩個詞。
+ * 品牌名不改，改在 `<title>` 前面加上這一段。
+ */
+export const SITE_SEARCH_NAME = '鋼嵐 Mecharashi 資料站'
+
+/**
+ * 瀏覽器分頁與搜尋結果的標題（`<title>`／og:title，PLAN-061）。關鍵字在前、品牌在後。
+ * 各頁的標題是「頁名｜這一串」，由 src/lib/seo.ts 的 formatDocTitle 組出。
+ */
+export const SITE_DOC_TITLE = `${SITE_SEARCH_NAME}｜${SITE_NAME}`
 
 /** 正式站 origin。⚠ 與 Worker 的 `SITE_ORIGIN` 是同一個值，測試綁住。 */
 export const SITE_ORIGIN = 'https://mecharashi.wiki'

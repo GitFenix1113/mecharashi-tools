@@ -16,6 +16,7 @@ import { WeaponEquipSlot } from '../../types/enums'
 import { ShoulderArmamentCard } from '../../components/mechs/ShoulderArmamentCard'
 import { mechWeightBadgeClass, mechWeightShort } from '../../data/mechWeightClasses'
 import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
+import { usePageTitle } from '../../contexts/PageTitleContext'
 
 type NumericPartStatKey = 'durable' | 'firepower' | 'weight' | 'output' | 'antiRiot' | 'hit' | 'dodge' | 'move'
 
@@ -206,6 +207,7 @@ function DensityToggle({ expanded, onChange }: { expanded: boolean; onChange: (v
 export default function MechDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data, loading } = useMechWithModules(id)
+  usePageTitle(data ? `${data.mech.name} 機甲資料` : null)
   const [partsExpanded, setPartsExpanded] = useState(loadPartsExpanded)
   // 手機的機體描述展開狀態。記「展開的是哪一台」而不是布林：從引用浮窗跳到另一台機甲時
   // 元件不會重掛，布林會把上一台的展開狀態帶過去

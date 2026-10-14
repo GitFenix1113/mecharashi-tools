@@ -21,7 +21,10 @@
     <!-- public/ 於 build 後攤平到站台根目錄，故路徑不含 /public 前綴（原為 /public/images/…，正式站 404）。 -->
     <link rel="icon" type="image/png" href="/images/cat_no_bg.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>米赫瑪超吉情豹站 — Milkhama PawInfo Station</title>
+    <!-- 標題關鍵字在前、品牌在後（PLAN-061）：站名不含遊戲名，搜尋「鋼嵐」「Mecharashi」時
+         搜尋引擎在標題裡找不到這兩個詞。各頁的標題由 PageTitleProvider 換成「頁名｜這一串」。
+         與 src/lib/siteMeta.ts 的 SITE_DOC_TITLE 由 siteMeta.test.ts 綁住。 -->
+    <title>鋼嵐 Mecharashi 資料站｜米赫瑪超吉情豹站</title>
     <meta
       name="description"
       content="鋼嵐 Mecharashi 繁中資料站：機師、機甲、武器、模組完整資料查詢，配裝模擬與版本情報。非官方，完全免費。"
@@ -41,7 +44,7 @@
     <meta property="og:site_name" content="米赫瑪超吉情豹站" />
     <meta property="og:locale" content="zh_TW" />
     <meta property="og:url" content="https://mecharashi.wiki/" />
-    <meta property="og:title" content="米赫瑪超吉情豹站 — Milkhama PawInfo Station" />
+    <meta property="og:title" content="鋼嵐 Mecharashi 資料站｜米赫瑪超吉情豹站" />
     <meta
       property="og:description"
       content="鋼嵐 Mecharashi 繁中資料站：機師、機甲、武器、模組完整資料查詢，配裝模擬與版本情報。非官方，完全免費。"
@@ -53,12 +56,23 @@
 
     <!-- twitter:image 刻意與 og:image 共用同一張，不另外備圖。 -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="米赫瑪超吉情豹站 — Milkhama PawInfo Station" />
+    <meta name="twitter:title" content="鋼嵐 Mecharashi 資料站｜米赫瑪超吉情豹站" />
     <meta
       name="twitter:description"
       content="鋼嵐 Mecharashi 繁中資料站：機師、機甲、武器、模組完整資料查詢，配裝模擬與版本情報。非官方，完全免費。"
     />
     <meta name="twitter:image" content="https://mecharashi.wiki/images/og/default.jpg" />
+    <!-- 搜尋結果上方顯示的「網站名稱」（PLAN-061）。Google 從首頁的 WebSite 結構化資料讀站名，
+         alternateName 讓它知道這幾個名字指的是同一個站。name 與 SITE_NAME 由 siteMeta.test.ts 綁住。 -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "米赫瑪超吉情豹站",
+        "alternateName": ["鋼嵐 Mecharashi 資料站", "Milkhama PawInfo Station"],
+        "url": "https://mecharashi.wiki/"
+      }
+    </script>
     <!-- 字體已改為自託管（見 src/index.css 檔首）：原本這裡是 fonts.googleapis.com 的
          render-blocking stylesheet，在中國被封鎖 → 訪客得等連線逾時才開始渲染。
          現在公開頁面對 Google 網域零依賴，全部資源皆由自有網域供應。 -->

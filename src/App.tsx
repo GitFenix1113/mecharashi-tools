@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { GameDataProvider } from './contexts/GameDataContext'
 import { ReferenceProvider } from './contexts/ReferenceContext'
+import { PageTitleProvider } from './contexts/PageTitleContext'
 import Layout from './components/layout/Layout'
 import { ScrollManager } from './components/layout/ScrollManager'
 import AdminRoute from './components/auth/AdminRoute'
@@ -58,6 +59,8 @@ function App() {
         {/* 換頁捲動：進新頁回到頂端、上一頁回到原位（元件式路由用不了 <ScrollRestoration>，見元件檔頭） */}
         <ScrollManager />
         <ReferenceProvider>
+        {/* 分頁標題（PLAN-061）：依路由給預設頁名，詳情頁再以 usePageTitle 換成實體名稱 */}
+        <PageTitleProvider>
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<HomePage />} />
@@ -153,6 +156,7 @@ function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
+        </PageTitleProvider>
         </ReferenceProvider>
       </BrowserRouter>
       </GameDataProvider>

@@ -35,6 +35,7 @@ import { pilotClassBadgeClass, pilotClassMeta } from '../../data/pilotClasses'
 import { mechWeightClassOf } from '../../data/mechWeightClasses'
 import { ClassIcon } from '../../components/icons/ClassIcon'
 import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
+import { usePageTitle } from '../../contexts/PageTitleContext'
 
 // ─── 神經驅動「全區算力選擇器」（PLAN-021 · 1-6）─────────────────────────────
 //
@@ -766,6 +767,7 @@ function NeuralDriveZoneCard({ nd, zoneName, className, expanded, onLevelHover, 
 export default function PilotDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: pilot, loading } = usePilot(id)
+  usePageTitle(pilot ? `${pilot.name} 機師資料` : null)
   const { data: exclusiveWeapons, loading: exclusiveWeaponLoading } = usePilotExclusiveWeapons(id)
   const [exclusiveWeaponIdx, setExclusiveWeaponIdx] = useState(0)
   const exclusiveWeapon = exclusiveWeapons[exclusiveWeaponIdx] ?? null
