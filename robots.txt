@@ -1,0 +1,15 @@
+# 米赫瑪超吉情豹站 — 搜尋引擎爬蟲規則（PLAN-061）
+#
+# 只擋「沒有公開內容」的路徑：後台、登入後的個人頁、診斷工具，以及 PR 預覽站
+# （/preview/<branch>/ 是正式站的複本，被收錄會和正式頁面搶排名）。
+# Disallow 只是不爬，不會把頁面藏起來；真正的權限控管仍在 AdminRoute 與 Firestore 規則。
+# sitemap.xml 由 vite.config.ts 在 build 時依 src/lib/seo.ts 產生。
+
+User-agent: *
+Disallow: /admin
+Disallow: /profile
+Disallow: /debug/
+Disallow: /connectivity
+Disallow: /preview/
+
+Sitemap: https://mecharashi.wiki/sitemap.xml

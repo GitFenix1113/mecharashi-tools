@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-061 搜尋引擎可見度 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-061 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-061</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">搜尋引擎可見度</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-14</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">10</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">6</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">16</div>
+      <div class="summary-lbl">總任務（含站長）</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-cyan);">10 / 16</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 62.5%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    搜尋「鋼嵐 資料站」「鋼嵐 ＋ 機師名」這類關鍵字時找得到本站，而且點進去的是對應的那一頁；搜尋結果與瀏覽器分頁一眼就分得出是哪一頁。
+  </div>
+  <div class="impact-note">
+    <strong>目前狀態（2026-10-14）：</strong>A 段程式與文件已完成並推送。剩 B 段站長的上線後設定，與 C 段 4–8 週後的成效檢查。
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase A ───────────────────────── -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">A 程式與文件</div>
+  <div class="section-desc">2026-10-14 一次完成並推送。npm test 1503 通過、npm run build 通過，並以 Playwright 實測各頁標題。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 站台標題</div>
+      <div class="task-group-meta">src/lib/siteMeta.ts · index.html</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增 SITE_SEARCH_NAME／SITE_DOC_TITLE，換掉 &lt;title&gt;、og:title、twitter:title</div>
+        <div class="task-desc">標題改為「鋼嵐 Mecharashi 資料站｜米赫瑪超吉情豹站」。<code>SITE_TITLE</code>（頁尾、配裝分享圖浮水印）與 og:site_name 不動。</div>
+        <div class="task-file">src/lib/siteMeta.ts · index.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">siteMeta.test.ts 綁住新標題</div>
+        <div class="task-desc"><code>index.html</code> 的三個標題逐標籤比對（舊測試只找 <code>content="…"</code>，任一標籤對了就整組通過）。</div>
+        <div class="task-file">src/lib/siteMeta.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 每頁獨立標題</div>
+      <div class="task-group-meta">src/lib/seo.ts · src/contexts/PageTitleContext.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">PAGE_TITLES 與 PageTitleProvider</div>
+        <div class="task-desc">依命中的路由樣板（<code>ROUTE_PATTERNS</code> ＋ <code>matchRoutes</code>）給預設頁名；Provider 包住 <code>&lt;Routes&gt;</code>，統一寫 <code>document.title</code>。</div>
+        <div class="task-file">src/lib/seo.ts · src/contexts/PageTitleContext.tsx · src/App.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">四個詳情頁以 usePageTitle 換成實體名稱</div>
+        <div class="task-desc">「海莉絲 機師資料」「○○ 機甲資料」「○○ 武器資料」「海莉絲 機師故事」。故事館跟網址走，不跟過場中的 <code>shown</code>。</div>
+        <div class="task-file">src/pages/pilots/PilotDetailPage.tsx · src/pages/mechs/MechDetailPage.tsx · src/pages/weapons/WeaponDetailPage.tsx · src/pages/lore/PilotLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">瀏覽器實測</div>
+        <div class="task-desc">以模擬的 Worker 回應跑正式 build：直接進入、站內點連結換頁、機師 → 另一位機師、詳情 → 列表 → 故事館 → 首頁，標題全部正確；文件中始終只有一個 <code>&lt;title&gt;</code>，無頁面錯誤。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; robots.txt 與 sitemap.xml</div>
+      <div class="task-group-meta">public/robots.txt · vite.config.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">public/robots.txt</div>
+        <div class="task-desc">擋 <code>/admin</code>、<code>/profile</code>、<code>/debug/</code>、<code>/connectivity</code>、<code>/preview/</code>，並指向正式站 sitemap。不擋 <code>/docs/</code>（計畫書決策三）。</div>
+        <div class="task-file">public/robots.txt</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">build 時產生 sitemap.xml</div>
+        <div class="task-desc">vite plugin 依 <code>SITEMAP_STATIC_PATHS</code> 輸出 16 個固定頁；PR 預覽 build 不產（已實測）。</div>
+        <div class="task-file">vite.config.ts · src/lib/seo.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; WebSite 結構化資料</div>
+      <div class="task-group-meta">index.html</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">首頁加 application/ld+json</div>
+        <div class="task-desc"><code>name</code>＝米赫瑪超吉情豹站，<code>alternateName</code>＝鋼嵐 Mecharashi 資料站、Milkhama PawInfo Station。由 siteMeta.test.ts 綁住。</div>
+        <div class="task-file">index.html · src/lib/siteMeta.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-5 &nbsp; 覆蓋測試與文件同步</div>
+      <div class="task-group-meta">src/lib/seo.test.ts · CLAUDE.md · docs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">seo.test.ts</div>
+        <div class="task-desc">每條路由都要有頁名、都要決定進不進 sitemap；每個標題都含「鋼嵐」與「Mecharashi」；sitemap 網址逐段編碼；sitemap 的頁不能被 robots.txt 擋掉。</div>
+        <div class="task-file">src/lib/seo.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">CLAUDE.md、系統架構、網站更新履歷</div>
+        <div class="task-desc">CLAUDE.md 6.1 補 PageTitleContext、第 3 節補「新增路由時測試會要求決定頁名與 sitemap」；系統架構的 contexts 說明；更新履歷 2026-10。</div>
+        <div class="task-file">CLAUDE.md · docs/02_技術文件/01_架構設計/系統架構.html · src/data/siteChangelog/2026-10.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase B ───────────────────────── -->
+<section class="section">
+  <div class="section-label cyan">Phase B</div>
+  <div class="section-title">B 上線後設定（站長）</div>
+  <div class="section-desc">雲端 session 碰不到 Cloudflare 與 Google 帳號，以下由站長在部署完成後操作。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 部署後複驗</div>
+      <div class="task-group-meta">正式站</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">robots.txt、sitemap.xml 與 sitemap 裡的 16 頁都回 200</div>
+        <div class="task-desc">執行：<code>for p in /robots.txt /sitemap.xml /pilots /mechs /weapons /backpacks /modules /components /versions/quick /versions/grayops /versions/timeline /lore /news /guides /tools /tools/rainbow-planner /guides/component-drops; do echo "$(curl -sS -o /dev/null -w '%{http_code}' https://mecharashi.wiki$p)  $p"; done</code><br>全部應為 200。若有 404，代表該路徑不在 CF Transform Rule 的 SPA 白名單（CLAUDE.md 第 3 節），補進去，或把它從 <code>SITEMAP_STATIC_PATHS</code> 移到 <code>SITEMAP_EXCLUDED</code>。</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; Google Search Console</div>
+      <div class="task-group-meta">search.google.com/search-console</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增「網域」資源 mecharashi.wiki</div>
+        <div class="task-desc">選「網域」類型（涵蓋 www 與所有路徑）；驗證方式選 Cloudflare 自動驗證，或手動在 Cloudflare DNS 加 TXT 記錄。</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">提交 sitemap</div>
+        <div class="task-desc">「索引 → Sitemap」填 <code>https://mecharashi.wiki/sitemap.xml</code>。</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">用「網址審查」看詳情頁的渲染結果</div>
+        <div class="task-desc">貼一個機師詳情頁網址 → 「測試線上網址」→「查看已測試的網頁」→ 螢幕截圖與 HTML。<b>重點：截圖裡有沒有機師資料、HTML 的 &lt;title&gt; 是不是「海莉絲 機師資料｜…」</b>。是空白頁的話回報，啟動計畫書的「預先渲染」選項。看完可按「要求建立索引」。</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; Bing Webmaster Tools</div>
+      <div class="task-group-meta">bing.com/webmasters</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">從 Search Console 匯入網站</div>
+        <div class="task-desc">登入後選「從 Google Search Console 匯入」，免另外驗證，sitemap 會一起帶過去。Yahoo 奇摩搜尋的結果大致來自 Bing。</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Phase C ───────────────────────── -->
+<section class="section">
+  <div class="section-label cyan">Phase C</div>
+  <div class="section-title">C 觀察</div>
+  <div class="section-desc">收錄需要時間，4–8 週後再看成效，依結果決定計畫書的後續選項。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 成效檢查</div>
+      <div class="task-group-meta">Search Console 成效報表</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">4–8 週後檢查收錄與搜尋成效</div>
+        <div class="task-desc">「網頁」報表：詳情頁有沒有被收錄（「已檢索，尚未建立索引」偏多 → 考慮預先渲染或把詳情頁列進 sitemap）。「成效」報表：「鋼嵐」「Mecharashi」「鋼嵐 ＋ 機師名」的曝光與平均排名。結果記在本進度表後再決定歸檔或開後續計畫。</div>
+      </div>
+      <div class="task-assignee">站長＋開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-061 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

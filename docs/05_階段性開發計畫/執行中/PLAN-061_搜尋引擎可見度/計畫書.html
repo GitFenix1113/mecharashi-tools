@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-061 搜尋引擎可見度 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-061 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-061</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    搜尋引擎可見度<span style="-webkit-text-fill-color:var(--text-secondary);"> SEO · 網頁標題 · sitemap</span>
+  </h1>
+  <p class="hero-sub">搜尋「鋼嵐」「Mecharashi」時不容易找到本站。站名維持「米赫瑪超吉情豹站」，把遊戲名放進網頁標題的最前面，替每一頁加上自己的標題，並補上 robots.txt、sitemap.xml 與網站名稱的結構化資料。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value cyan">PLAN-061</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-14</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">index.html · siteMeta / seo · PageTitleContext · 四個詳情頁 · robots.txt · vite.config</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value cyan">開發完成，待站長設定 Search Console</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">無</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>一、網頁標題裡沒有遊戲名</strong><br>
+    原本的 <code>&lt;title&gt;</code> 是「米赫瑪超吉情豹站 — Milkhama PawInfo Station」，沒有「鋼嵐」也沒有「Mecharashi」。
+    在網頁本身能控制的項目裡，標題對排名影響最大；「鋼嵐 Mecharashi 繁中資料站」只寫在 meta description，而 Google 已說明 description 不計入排名。
+  </div>
+  <div class="problem-block">
+    <strong>二、全站只有一個標題</strong><br>
+    <code>src/</code> 裡沒有任何地方依頁面設定標題，幾十個機師頁、機甲頁在搜尋結果與瀏覽器分頁裡長得一模一樣。
+    資料站最有機會拿下的「鋼嵐 ＋ 機師名」這類搜尋，因此對不上任何一頁。
+  </div>
+  <div class="problem-block">
+    <strong>三、沒有 robots.txt 與 sitemap.xml</strong><br>
+    <code>public/</code> 底下兩個都沒有。後台、PR 預覽站（<code>/preview/&lt;branch&gt;/</code>，正式站的複本）也沒有擋，預覽站被收錄會和正式頁面搶排名。
+  </div>
+  <div class="info-block">
+    <strong>未在本計畫處理：頁面全部在瀏覽器端產生</strong><br>
+    原始 HTML 只有空的 <code>&lt;div id="root"&gt;</code>，內容要等 JS 從 Worker 抓資料。Google 會執行 JS，但排程較晚；Bing（Yahoo 奇摩搜尋的結果大致來自 Bing）處理 JS 較弱。
+    是否真的影響收錄，要等 Search Console 的「網址審查」看 Googlebot 渲染出來的畫面才知道（進度表 B-2），再決定要不要做預先渲染（見下方「後續選項」）。
+  </div>
+  <div class="warning-block">
+    <strong>期望值</strong><br>
+    只搜「鋼嵐」兩個字時，第一頁幾乎一定是官網、App Store／Google Play、巴哈姆特、維基百科與 YouTube，同好站叫什麼名字都很難擠進去。
+    本計畫的目標是長尾搜尋：「鋼嵐 資料站」「鋼嵐 配裝」「鋼嵐 ＋ 機師／機甲名」。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label cyan">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：站名不改，標題加上遊戲名（站長 2026-10-14 指定）</strong><br>
+    網頁標題定為「<b>鋼嵐 Mecharashi 資料站｜米赫瑪超吉情豹站</b>」：關鍵字在前、品牌在後。品牌 2026-08 才正名過，不必再動。
+    <code>src/lib/siteMeta.ts</code> 新增 <code>SITE_SEARCH_NAME</code>（鋼嵐 Mecharashi 資料站）與 <code>SITE_DOC_TITLE</code>（完整標題）；
+    <code>SITE_TITLE</code>（頁尾、配裝分享圖浮水印）維持原樣。<code>og:title</code>／<code>twitter:title</code> 一起換成新標題，讓不認識站名的人從分享卡片也看得出是鋼嵐的資料站。
+    Worker 的逐頁分享卡片（PLAN-038「海莉絲｜米赫瑪超吉情豹站」）不動。
+  </div>
+  <div class="decision-block">
+    <strong>決策二：每頁標題 =「頁名｜站台標題」</strong><br>
+    例：「機師圖鑑｜鋼嵐 Mecharashi 資料站｜米赫瑪超吉情豹站」「海莉絲 機師資料｜鋼嵐 Mecharashi 資料站｜米赫瑪超吉情豹站」。標題太長時 Google 會截掉尾端，被截的是品牌，關鍵字都在前面。
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>路由預設頁名</b>：<code>src/lib/seo.ts</code> 的 <code>PAGE_TITLES</code>，以路由樣板為鍵，沿用 <code>analytics/routeKeys.ts</code> 的 <code>ROUTE_PATTERNS</code>（已由測試與 <code>App.tsx</code> 綁住）。新增頁面不必接線。</li>
+      <li><b>詳情頁覆寫</b>：<code>src/contexts/PageTitleContext.tsx</code> 的 <code>usePageTitle()</code>。機師／機甲／武器詳情頁與故事館機師頁，資料到了以後換成「名稱 ＋ 類別」。</li>
+      <li>覆寫記錄自己屬於哪個 pathname：換頁時就算舊頁的 cleanup 還沒跑，也不會把上一頁的名字套到新頁。</li>
+    </ul>
+  </div>
+  <div class="warning-block">
+    <strong>為什麼不用 React 19 的 &lt;title&gt; 元素</strong><br>
+    React 19 會接管 <code>index.html</code> 原有的 <code>&lt;title&gt;</code>，元件卸載時把那個元素整個移除（已對照 react-dom 原始碼確認）。
+    換到沒有宣告標題的頁面，文件就沒有標題了。所以改用一個 Provider 統一寫 <code>document.title</code>。
+  </div>
+  <div class="decision-block">
+    <strong>決策三：robots.txt 只擋沒有公開內容的路徑</strong><br>
+    擋 <code>/admin</code>、<code>/profile</code>、<code>/debug/</code>、<code>/connectivity</code>、<code>/preview/</code>。
+    <b>不擋</b> <code>/docs/</code>：白名單複製出去的文件含遊戲機制說明，對玩家有用。Disallow 只是不爬，真正的權限仍在 <code>AdminRoute</code> 與 Firestore 規則。
+  </div>
+  <div class="decision-block">
+    <strong>決策四：sitemap.xml 在 build 時產生，只收 16 個固定頁</strong><br>
+    <code>vite.config.ts</code> 的 plugin 依 <code>seo.ts</code> 的 <code>SITEMAP_STATIC_PATHS</code> 產出 <code>dist/sitemap.xml</code>；PR 預覽（base 不是根路徑）不產。
+    詳情頁不列：列表頁都是 <code>&lt;a href&gt;</code> 連結，搜尋引擎會順著爬到。
+    要把詳情頁直接列進來，得在 build 時讀到實體清單，但 <code>/api/*</code> 有反爬守門（要求 Origin／Referer），Firestore 公開集合也已收成 <code>read: if isAdmin()</code>，build 讀不到——
+    只能改由 Worker 在邊緣補上，那需要另外部署 Worker，先看 Search Console 的收錄狀況再決定。
+  </div>
+  <div class="decision-block">
+    <strong>決策五：首頁加 WebSite 結構化資料</strong><br>
+    Google 從首頁的 <code>WebSite</code> 結構化資料讀「網站名稱」（顯示在搜尋結果標題上方）。
+    <code>name</code> 用品牌「米赫瑪超吉情豹站」，<code>alternateName</code> 列「鋼嵐 Mecharashi 資料站」與英文名，讓搜尋引擎知道它們指的是同一個站。
+  </div>
+  <div class="decision-block">
+    <strong>決策六：用測試把「忘了做」變成紅燈</strong><br>
+    <code>src/lib/seo.test.ts</code>：每條路由都要有頁名、都要決定進不進 sitemap（<code>SITEMAP_STATIC_PATHS</code> 或寫理由進 <code>SITEMAP_EXCLUDED</code>）、每一頁的標題都要含「鋼嵐」與「Mecharashi」、sitemap 裡的頁不能被 robots.txt 擋掉。
+    <code>src/lib/siteMeta.test.ts</code>：<code>index.html</code> 的標題、og:title、twitter:title 與 JSON-LD 和 <code>siteMeta.ts</code> 一致（順手修正舊測試只找 <code>content="…"</code>、任一標籤對了就整組通過的漏洞）。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label cyan">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>網頁標題、og:title、twitter:title 改為「鋼嵐 Mecharashi 資料站｜米赫瑪超吉情豹站」</li>
+      <li>每頁獨立標題（路由預設＋四個詳情頁的實體名稱）</li>
+      <li><code>public/robots.txt</code>、build 產出的 <code>sitemap.xml</code></li>
+      <li>首頁 WebSite 結構化資料</li>
+      <li>站長的上線後設定：Search Console、Bing Webmaster Tools、提交 sitemap（進度表 B 段）</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內（後續選項，看 Search Console 的結果再決定）：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>預先渲染（SSG／prerender）</b>：若「網址審查」顯示 Googlebot 渲染出來的是空白頁，或詳情頁長期「已檢索，尚未建立索引」，再評估在 build 時把公開頁輸出成靜態 HTML。工程量大，而且資料只能從 Worker 讀。</li>
+      <li><b>詳情頁列入 sitemap</b>：由 Worker 接 <code>/sitemap.xml</code>，取 origin 的靜態版再補上 pilots／mechs／weapons 的網址（以資料版本號當邊緣快取鍵）。需要 <code>wrangler deploy</code>。</li>
+      <li><b>每頁 meta description、canonical</b>：Google 多半自己改寫摘要，效益低；網址也沒有明顯的重複版本，先不做。</li>
+      <li><b>站外連結</b>：巴哈姆特哈啦板、FB 社團、Discord 的連結對排名影響很大，這是站長的社群經營，不是程式工作。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label cyan">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-061 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-038_社群連結預覽/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-038 社群連結預覽</h4>
+      <p>og:* 靜態標籤與 Worker 逐頁分享卡片；當時把 SEO 列為範圍外</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-061 — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
