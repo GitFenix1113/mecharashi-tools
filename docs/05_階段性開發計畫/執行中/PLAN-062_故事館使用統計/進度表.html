@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">4</div>
+      <div class="summary-num" style="color:var(--accent-green)">8</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">9</div>
+      <div class="summary-num" style="color:var(--text-dim)">5</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">4 / 13</span>
+      <span style="color:var(--accent-purple);">8 / 13</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 30.8%"></div>
+      <div class="progress-bar-fill" style="width: 61.5%"></div>
     </div>
   </div>
 
@@ -200,7 +200,7 @@
     「熱門機師」回到只算圖鑑，繼續作為補資料優先序的依據。
   </div>
   <div class="impact-note">
-    <strong>目前狀態（2026-10-15）：</strong>立案；Phase A 完成（3／3）；Phase B 的程式（B-1）完成並推送，<b>等站長部署 Worker（B-2）</b>。部署完成前不要合併 Phase C。
+    <strong>目前狀態（2026-10-15）：</strong>立案；Phase A 完成（3／3）；Phase B 完成（Worker 於 2026-10-15 部署，版本 <code>c19b8287</code>）；Phase C 程式完成並推送（C-1～C-3），<b>合併進 main 後由站長複驗（C-4）</b>。Worker 已部署，Phase C 隨時可以合併。
     <b>部署順序提醒</b>：Phase B 的 Worker 要由站長手動部署，且必須早於 Phase C 合併進 main（計畫書決策四）。
   </div>
 </section>
@@ -305,15 +305,15 @@
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; 部署 Worker</div>
       <div class="task-group-meta">cd workers &amp;&amp; npm run deploy</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">站長在本機以 wrangler 部署</div>
-        <div class="task-desc">Worker 不在 CI 裡。部署完成後回報日期，Phase C 才能合併進 main。</div>
+        <div class="task-desc">Worker 不在 CI 裡。部署完成後回報日期，Phase C 才能合併進 main。<br>✅ 2026-10-15 站長部署完成：<code>Current Version ID: c19b8287-e55c-42f8-a21e-0e6dbe186928</code>，10 條 route 照舊。</div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -328,7 +328,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; entityHits()：一條路由可以記進多個類別</div>
       <div class="task-group-meta">src/lib/analytics/routeKeys.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -340,7 +340,7 @@
         <div class="task-file">src/lib/analytics/routeKeys.ts · routeKeys.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -348,7 +348,7 @@
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 埋點與去重上限</div>
       <div class="task-group-meta">src/lib/analytics/track.ts · session.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -357,7 +357,7 @@
         <div class="task-file">src/lib/analytics/track.ts · src/lib/analytics/session.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -365,16 +365,16 @@
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; 型別、Schema 文件、切換月註記</div>
       <div class="task-group-meta">src/types/analytics.ts · analytics.html</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">AnalyticsEntityMonth 加 lorePilots?／loreParts?；資料庫文件補欄位與切換日</div>
-        <div class="task-desc">依 CLAUDE.md 規則 2 同步 <code>analytics.html</code>。儀表板的熱門機師只在切換當月加一行註記。</div>
+        <div class="task-desc">依 CLAUDE.md 規則 2 同步 <code>analytics.html</code>。儀表板的熱門機師只在切換當月加一行註記。<br>✅ 2026-10-15：切換月份寫在 <code>loreStats.ts</code> 的 <code>LORE_SPLIT_MONTH = '2026-10'</code>；<b>若 Phase C 跨到 11 月才合併上線，要改成 2026-11</b>。<br>驗收：以 production build（假 Firebase 設定、<code>/api</code> 全部攔在本機）實際走一趟扉頁 → PART 1 → PART 2 → PART 1 → 扉頁 → 圖鑑 → 館首頁，攔下 <code>sendBeacon</code> 的 payload：<code>lorePilots</code> 該機師 1、<code>loreParts</code> part-1／part-2 各 1（重訪不重計）、<code>pilots</code> 1（只來自圖鑑）。另加兩條絆線測試：ENTITY_ROUTES 的樣板必須帶 <code>:id</code>／<code>:part</code>；用到的類別必須都在 Worker 的 <code>ENTITY_TYPES</code> 裡（拿掉 loreParts 時確實會紅）。</div>
         <div class="task-file">src/types/analytics.ts · docs/02_技術文件/04_Firebase/資料庫設計文件/analytics.html</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 

@@ -45,6 +45,13 @@ export interface AnalyticsEntityMonth {
   mechs?: Record<string, number>
   weapons?: Record<string, number>
   modules?: Record<string, number>
+  /**
+   * 故事館裡被打開的機師（PLAN-062；扉頁與章節都算，同一次造訪內同一位只算一次）。
+   * 拆開之前（2026-10 前段以前）故事館是併在 pilots 裡的。
+   */
+  lorePilots?: Record<string, number>
+  /** 故事館章節，key 為 `${pilotId}--${partKey}`（routeKeys.ts 的 loreChapterId）。 */
+  loreParts?: Record<string, number>
 }
 
 export type EntityKind = 'pilots' | 'mechs' | 'weapons'

@@ -16,8 +16,11 @@ import {
   ENTITY_ROUTES,
   ROUTE_LABELS,
   ROUTE_PATTERNS,
+  entityHits,
   isSafeEntityId,
   isTracked,
+  loreChapterId,
+  splitLoreChapterId,
   toPageKey,
 } from './routeKeys.ts'
 
@@ -159,6 +162,61 @@ test('ENTITY_ROUTES 的樣板都真實存在於路由表', () => {
       `ENTITY_ROUTES 指向不存在的路由樣板：${pattern}`,
     )
   }
+})
+
+test('ENTITY_ROUTES 的樣板確實帶著 entityHits 寫死讀取的參數（:id，記章節的還要 :part）', () => {
+  // entityHits 讀 params.id／params.part。App.tsx 若把參數改名（例如 :pilotId），
+  // ROUTE_PATTERNS 與 ENTITY_ROUTES 跟著改了樣板、上面幾條測試照樣全綠，
+  // 但 entityHits 從此一筆都不記 —— 這條把那種靜默失效變成紅燈。
+  for (const [pattern, types] of Object.entries(ENTITY_ROUTES)) {
+    const params = pattern.split('/').filter((seg) => seg.startsWith(':'))
+    assert.ok(params.includes(':id'), `${pattern} 沒有 :id 參數`)
+    if (types.includes('loreParts')) assert.ok(params.includes(':part'), `${pattern} 記 loreParts 卻沒有 :part 參數`)
+  }
+})
+
+test('ENTITY_ROUTES 用到的類別都在 Worker 的 ENTITY_TYPES 裡（前後端兩份列舉綁在一起）', () => {
+  // Worker 不認得的類別會被 parseCollectBody 靜默丟掉，本機 build、test、dev 全綠（PLAN-043 同款）。
+  // 這條只保證**程式碼**一致；Worker 仍要先手動部署，前端才能上線（PLAN-062 決策四）。
+  const src = readFileSync(new URL('../../../workers/src/collect.ts', import.meta.url), 'utf8')
+  const m = src.match(/const ENTITY_TYPES = new Set\(\[([^\]]*)\]\)/)
+  assert.ok(m, '在 workers/src/collect.ts 找不到 ENTITY_TYPES 的定義（改了寫法就要一併更新這條測試）')
+  const workerTypes = new Set([...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]))
+  for (const types of Object.values(ENTITY_ROUTES)) {
+    for (const t of types) assert.ok(workerTypes.has(t), `Worker 的 ENTITY_TYPES 沒有「${t}」，這個類別的資料會被靜默丟掉`)
+  }
+})
+
+test('entityHits：圖鑑與故事館分開記（PLAN-062），故事館不再進 pilots', () => {
+  assert.deepEqual(entityHits('/pilots/:id', { id: 'pilot_049_海莉絲' }), [
+    { type: 'pilots', id: 'pilot_049_海莉絲' },
+  ])
+  assert.deepEqual(entityHits('/lore/pilots/:id', { id: 'pilot_049_海莉絲' }), [
+    { type: 'lorePilots', id: 'pilot_049_海莉絲' },
+  ])
+  assert.deepEqual(entityHits('/lore/pilots/:id/:part', { id: 'pilot_049_海莉絲', part: 'part-2' }), [
+    { type: 'lorePilots', id: 'pilot_049_海莉絲' },
+    { type: 'loreParts', id: 'pilot_049_海莉絲--part-2' },
+  ])
+})
+
+test('entityHits：沒有 id、不在名單上的樣板、不安全的 id 一律不記', () => {
+  assert.deepEqual(entityHits('/research', {}), [])
+  assert.deepEqual(entityHits('/pilots/:id', {}), [])
+  assert.deepEqual(entityHits('/pilots/:id', { id: 'a`b' }), [])
+  // 章節 key 被手打成逃逸字元時，只丟章節、機師照記（扉頁那一筆本身是合法的）
+  assert.deepEqual(entityHits('/lore/pilots/:id/:part', { id: 'x', part: 'a.b' }), [{ type: 'lorePilots', id: 'x' }])
+  assert.deepEqual(entityHits('/lore/pilots/:id/:part', { id: 'x' }), [{ type: 'lorePilots', id: 'x' }])
+})
+
+test('loreChapterId／splitLoreChapterId 互為反函式，拆解取最後一個 --', () => {
+  assert.equal(loreChapterId('pilot_049_海莉絲', 'part-2'), 'pilot_049_海莉絲--part-2')
+  assert.deepEqual(splitLoreChapterId('pilot_049_海莉絲--part-2'), { pilotId: 'pilot_049_海莉絲', partKey: 'part-2' })
+  // 機師 id 自己含 -- 時，仍以最後一個為準（章節 key 是 part-N，不含 --）
+  assert.deepEqual(splitLoreChapterId('a--b--part-1'), { pilotId: 'a--b', partKey: 'part-1' })
+  assert.equal(splitLoreChapterId('part-1'), null)
+  assert.equal(splitLoreChapterId('--part-1'), null)
+  assert.equal(splitLoreChapterId('pilot--'), null)
 })
 
 test('故事館 URL 形狀：Worker 的 LORE_RE 與 ROUTE_PATTERNS 綁在一起（改一邊必須改另一邊）', () => {

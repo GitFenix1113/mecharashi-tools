@@ -155,20 +155,75 @@ export const ROUTE_LABELS: Record<string, string> = {
 }
 
 /**
- * 詳情頁樣板 → entity 類別。用來把「哪一個機師／機甲被查」記進 analyticsEntity。
+ * 詳情頁樣板 → 要記進 analyticsEntity 的統計類別（可以不只一個）。
+ * 用來把「哪一個機師／機甲被查」「哪位機師的故事、哪一章被讀」記進月文件。
  *
- * 只列**高基數且值得排行**的四類。研究所、模擬器那種沒有 :id 的頁面不在此列。
+ * 只列**高基數且值得排行**的頁面。研究所、模擬器那種沒有 :id 的頁面不在此列。
+ *
+ * ⚠ 這裡出現的類別必須都在 workers/src/collect.ts 的 ENTITY_TYPES 裡，而且**Worker 要先部署**：
+ *   Worker 不認得的類別會被靜默丟棄、統計又不回溯（PLAN-043 同款雙名單不同步陷阱）。
+ *
+ * 故事館自 PLAN-062 Phase C（2026-10）起與圖鑑**分開統計**（站長裁決）：
+ *   · lorePilots — 哪位機師的故事被打開（扉頁與章節都算，同一次造訪內同一位只算一次）
+ *   · loreParts  — 哪一章被讀，id 為 `${pilotId}--${partKey}`（見 loreChapterId）
+ * 在那之前兩條故事館路徑是併進 'pilots' 的——當時 Worker 只認 {pilots, mechs, weapons, modules}，
+ * 開新類別會被已部署的 Worker 丟掉。拆開之後「熱門機師」回到只算圖鑑，
+ * 符合它「決定資料要優先補誰」的用途：讀逸聞的人並不需要圖鑑的資料。
  */
-export const ENTITY_ROUTES: Record<string, string> = {
-  '/pilots/:id':  'pilots',
-  '/mechs/:id':   'mechs',
-  '/weapons/:id': 'weapons',
-  // 故事館的兩條路徑刻意**併進 'pilots' 同一個桶**，不另開 'lorePilots'：
-  // workers/src/collect.ts 的 ENTITY_TYPES 是 {pilots, mechs, weapons, modules} 白名單，
-  // 新類別會被已部署的 Worker **靜默丟棄**（PLAN-043 同款雙名單不同步陷阱）。
-  // 語意上也對：問的是「哪位機師被查」，從圖鑑進來還是從故事館進來都算一次。
-  '/lore/pilots/:id':       'pilots',
-  '/lore/pilots/:id/:part': 'pilots',
+export const ENTITY_ROUTES: Record<string, readonly string[]> = {
+  '/pilots/:id':  ['pilots'],
+  '/mechs/:id':   ['mechs'],
+  '/weapons/:id': ['weapons'],
+  '/lore/pilots/:id':       ['lorePilots'],
+  '/lore/pilots/:id/:part': ['lorePilots', 'loreParts'],
+}
+
+/**
+ * 故事館章節 id 的分隔符。
+ *
+ * 章節 key 由後台 makeChapterKey 產生，格式固定為 `part-N`（只有單一 `-`），
+ * 所以拆解時取**最後一個** `--` 就不會被機師 id 裡可能出現的 `--` 誤導。
+ * `-` 在 isSafeEntityId 的白名單內，組出來的 id 仍可安全放進反引號欄位路徑。
+ */
+export const LORE_PART_SEP = '--'
+
+/** 組出故事館章節的統計 id，例：`pilot_049_海莉絲--part-2`。 */
+export function loreChapterId(pilotId: string, partKey: string): string {
+  return `${pilotId}${LORE_PART_SEP}${partKey}`
+}
+
+/** loreChapterId 的反函式。格式不符時回 null。 */
+export function splitLoreChapterId(chapterId: string): { pilotId: string; partKey: string } | null {
+  const i = chapterId.lastIndexOf(LORE_PART_SEP)
+  if (i <= 0) return null
+  const partKey = chapterId.slice(i + LORE_PART_SEP.length)
+  return partKey ? { pilotId: chapterId.slice(0, i), partKey } : null
+}
+
+export interface EntityHit {
+  type: string
+  id: string
+}
+
+/**
+ * 一次頁面瀏覽要記進哪些統計類別。不安全的 id（逃得出反引號的）一律丟掉。
+ *
+ * 路由參數名寫死讀 `id` 與 `part`：App.tsx 若把它們改名，這裡會一筆都不記、而且不報錯，
+ * 所以 routeKeys.test.ts 另有一條斷言 ENTITY_ROUTES 的樣板確實帶著這兩個參數。
+ *
+ * @param pattern 命中的**路由樣板**（如 `/lore/pilots/:id/:part`），不是實際網址
+ * @param params  路由參數
+ */
+export function entityHits(pattern: string, params: Record<string, string | undefined>): EntityHit[] {
+  const types = ENTITY_ROUTES[pattern]
+  const id = params.id
+  if (!types || !id) return []
+  const hits: EntityHit[] = []
+  for (const type of types) {
+    const entityId = type === 'loreParts' ? (params.part ? loreChapterId(id, params.part) : '') : id
+    if (isSafeEntityId(entityId)) hits.push({ type, id: entityId })
+  }
+  return hits
 }
 
 /**

@@ -36,6 +36,15 @@ export const LORE_PAGE_KEYS: ReadonlySet<string> = new Set(Object.values(LORE_RO
  */
 export const LORE_OPEN_DATE = '2026-10-13'
 
+/**
+ * 故事館與圖鑑開始分開統計的月份（PLAN-062 Phase C 前端上線的那個月）。
+ *
+ * 這個月的 analyticsEntity.pilots 前段含故事館讀者、後段不含，事後也無從拆分，
+ * 所以儀表板只在這個月的熱門機師上加一行註記。
+ * ⚠ 若 Phase C 跨月才合併上線，這裡要改成實際上線的月份。
+ */
+export const LORE_SPLIT_MONTH = '2026-10'
+
 /** 只留正式開放後的日子。日期字串為 YYYY-MM-DD，可直接字典序比較。 */
 export function sinceLoreOpen<T extends { date: string }>(days: readonly T[]): T[] {
   return days.filter((d) => d.date >= LORE_OPEN_DATE)

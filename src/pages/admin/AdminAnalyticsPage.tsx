@@ -10,7 +10,7 @@ import {
   toRanking,
 } from '../../lib/firestoreApi'
 import { ROUTE_LABELS } from '../../lib/analytics/routeKeys'
-import { LORE_PAGE_KEYS } from '../../lib/analytics/loreStats'
+import { LORE_PAGE_KEYS, LORE_SPLIT_MONTH } from '../../lib/analytics/loreStats'
 import {
   AUTH_LABEL,
   DEVICE_LABEL,
@@ -312,7 +312,11 @@ export default function AdminAnalyticsPage() {
 
           <Section
             title={`熱門${ENTITY_KIND_LABEL[entityKind]} TOP 20`}
-            hint={`本月（${currentMonth()}）累計，同一次造訪內同一個實體只算一次。這份排行的用途是決定「資料要優先補誰」。`}
+            hint={`本月（${currentMonth()}）累計，同一次造訪內同一個實體只算一次。這份排行的用途是決定「資料要優先補誰」。${
+              entityKind === 'pilots' && currentMonth() === LORE_SPLIT_MONTH
+                ? '⚠ 本月中途起故事館的瀏覽改為另外統計，切換前的數字仍含故事館讀者。'
+                : ''
+            }`}
           >
             <div className="flex items-center gap-2 mb-3">
               {(Object.keys(ENTITY_KIND_LABEL) as EntityKind[]).map((k) => (
