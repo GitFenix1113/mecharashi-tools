@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-14
+## [Unreleased] - 2026-10-15
 
 ### ⚠ 重大變更
 
@@ -189,6 +189,7 @@
 
 ### 🐛 修復
 
+- **lore**: 逸聞正文支援行內署名，一章多出處各自署名 (`eabca2b`)
 - **lore**: 全身鑑賞的場景外觀不再暈邊、英文簽名移到立繪前方 (`e04e5b0`)
 - **lore**: 修正 iPhone 捲不到底，切換列改半隱藏 (`8458ac3`)
 - **refs**: 天賦「最大強化」區塊的消歧引用退回純文字 (`c50274d`)
