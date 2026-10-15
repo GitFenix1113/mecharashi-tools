@@ -195,7 +195,7 @@
   <div class="info-block">
     <strong>現況：故事館其實有被計數，只是看不出來</strong><br>
     故事館的三條路由早已登記在 <code>src/lib/analytics/routeKeys.ts</code> 的 <code>ROUTE_PATTERNS</code>／<code>ROUTE_LABELS</code>，
-    並且依 PLAN-042 總綱決策六掛在 <code>Layout</code> 之下，因此自 2026-09-10 上線起，<code>analyticsDaily.byRoute</code>
+    並且依 PLAN-042 總綱決策六掛在 <code>Layout</code> 之下，因此自 2026-09-10 程式上線起（入口收到 2026-10-13 才正式開放），<code>analyticsDaily.byRoute</code>
     就一直有 <code>lore</code>、<code>lore_pilots_detail</code>、<code>lore_pilots_detail_detail</code> 三個 key。
     它們目前和其他頁面混在儀表板的「頁面熱度」清單裡。
   </div>
@@ -266,7 +266,7 @@
 
   <div class="decision-block">
     <strong>決策五：Phase A 先做，只用既有的 <code>byRoute</code></strong><br>
-    進館漏斗（館首頁 → 扉頁 → 章節）不需要任何新埋點，資料可回溯到 2026-09-10 故事館上線，做完馬上能看。
+    進館漏斗（館首頁 → 扉頁 → 章節）不需要任何新埋點，資料自 2026-10-13 正式開放起就有，做完馬上能看。漏斗只計開放後的日子：之前入口收著，只有零星的直接連結瀏覽，混進來會稀釋「佔全站有效瀏覽」。
     UPV 是「同一次造訪內同一個 key 只算一次」，三個 UPV 本身就是「有幾次造訪走到這一步」；pv 則依頁面換個說法：
     扉頁的 pv 含切換機師，章節的 pv 含翻頁。「頁面熱度」裡的故事館三列保留（才看得出它在全站的份量），但不再顯示會被誤讀成折返的灰字。
   </div>

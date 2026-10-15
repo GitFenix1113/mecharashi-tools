@@ -10,6 +10,7 @@ import {
   toRanking,
 } from '../../lib/firestoreApi'
 import { ROUTE_LABELS } from '../../lib/analytics/routeKeys'
+import { LORE_PAGE_KEYS } from '../../lib/analytics/loreStats'
 import {
   AUTH_LABEL,
   DEVICE_LABEL,
@@ -22,6 +23,7 @@ import {
 import { StatCard } from '../../components/admin/analytics/StatCard'
 import { BarList, type BarItem } from '../../components/admin/analytics/BarList'
 import { TrendChart, type TrendPoint } from '../../components/admin/analytics/TrendChart'
+import { LoreSection } from '../../components/admin/analytics/LoreSection'
 
 // ─── 使用統計儀表板（PLAN-046 Phase B）───────────────────────────────────────
 //
@@ -144,7 +146,9 @@ export default function AdminAnalyticsPage() {
         // 所以理論上可能出現未登記的 key。讓它以「看得懂的雜訊」出現，而不是被吞掉。
         label: ROUTE_LABELS[key] ?? key,
         value: v.upv,
-        sub: v.pv > v.upv ? `／${v.pv}` : undefined,
+        // 故事館三頁的原始次數是翻頁與切換機師，不是折返（PLAN-062）——
+        // 留在這裡會被本區的圖說讀成「資訊沒一次給足」，改由下方故事館區塊顯示並解釋。
+        sub: v.pv > v.upv && !LORE_PAGE_KEYS.has(key) ? `／${v.pv}` : undefined,
       }))
   }, [cleanDays])
 
@@ -268,9 +272,16 @@ export default function AdminAnalyticsPage() {
 
           <Section
             title="頁面熱度"
-            hint="數字為有效瀏覽；後方灰字是含來回點擊的原始次數。兩者差距越大，代表該頁被反覆折返查看——通常是「資訊沒一次給足」的訊號。"
+            hint="數字為有效瀏覽；後方灰字是含來回點擊的原始次數。兩者差距越大，代表該頁被反覆折返查看——通常是「資訊沒一次給足」的訊號。故事館三頁的原始次數意思不同，改在下方「機師故事館」區塊顯示。"
           >
             <BarList items={routeItems} accent="cyan" empty="這段期間沒有任何頁面被瀏覽" />
+          </Section>
+
+          <Section
+            title="機師故事館"
+            hint="數字為有效瀏覽，也就是有幾次造訪走到這一步。灰字是原始次數：扉頁含切換機師、章節含翻頁——在故事館，灰字越大代表讀得越多，不是折返。"
+          >
+            <LoreSection days={cleanDays} />
           </Section>
 
           <div className="grid md:grid-cols-2 gap-4">

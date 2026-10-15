@@ -167,11 +167,11 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">3</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">3</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">0 / 13</span>
+      <span style="color:var(--accent-purple);">3 / 13</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 23.1%"></div>
     </div>
   </div>
 
@@ -200,7 +200,7 @@
     「熱門機師」回到只算圖鑑，繼續作為補資料優先序的依據。
   </div>
   <div class="impact-note">
-    <strong>目前狀態（2026-10-15）：</strong>立案，Phase A 開發中。
+    <strong>目前狀態（2026-10-15）：</strong>立案；Phase A 完成（3／3），已推送到功能分支。下一步 Phase B。
     <b>部署順序提醒</b>：Phase B 的 Worker 要由站長手動部署，且必須早於 Phase C 合併進 main（計畫書決策四）。
   </div>
 </section>
@@ -209,13 +209,13 @@
 <section class="section">
   <div class="section-label purple">Phase A</div>
   <div class="section-title">儀表板：進館漏斗（只用既有資料）</div>
-  <div class="section-desc">不動埋點、不動 Worker。用 <code>byRoute</code> 既有的三個故事館 key 算出漏斗，資料可回溯到 2026-09-10 故事館上線。</div>
+  <div class="section-desc">不動埋點、不動 Worker。用 <code>byRoute</code> 既有的三個故事館 key 算出漏斗，資料自故事館 2026-10-13 正式開放起就有（程式 09-10 已上線，但入口收著，之前只有零星直接連結的瀏覽）。</div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; 漏斗計算純函式</div>
       <div class="task-group-meta">src/lib/analytics/loreStats.ts</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -228,7 +228,7 @@
         <div class="task-file">src/lib/analytics/loreStats.ts · loreStats.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -236,19 +236,19 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; 「機師故事館」區塊</div>
       <div class="task-group-meta">src/components/admin/analytics/LoreSection.tsx</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">在「頁面熱度」下方插入故事館區塊；頁面熱度的故事館列不顯示灰字 pv</div>
         <div class="task-desc">
           漏斗沿用既有的 <code>BarList</code>（固定順序、不排序），比例用 <code>StatCard</code>。說明文字註明深連結會讓比例略高、
-          故事館 2026-09-10 才上線。頁面熱度裡的故事館三列保留，但灰字 pv 在這三頁的意思是翻頁／切換機師而非折返，改到故事館區塊顯示。
+          只計 2026-10-13 正式開放後的日子（之前入口收著，混進來會稀釋佔比）。頁面熱度裡的故事館三列保留，但灰字 pv 在這三頁的意思是翻頁／切換機師而非折返，改到故事館區塊顯示。<br>✅ 2026-10-15：故事館區塊只計 <code>LORE_OPEN_DATE</code>（2026-10-13 正式開放）之後的日子，區間被截短時顯示「只計開放後 N 天」。以假資料目視驗收四種狀態（截短、全在開放後、開放後沒人進館、區間全在開放前），桌機 1100px 與手機 390px 皆無水平捲動，數字與手算一致。
         </div>
         <div class="task-file">src/components/admin/analytics/LoreSection.tsx · src/pages/admin/AdminAnalyticsPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -256,7 +256,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-3 &nbsp; 文件與更新履歷</div>
       <div class="task-group-meta">docs/03_頁面規劃/10_管理後台 · siteChangelog</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -265,7 +265,7 @@
         <div class="task-file">docs/03_頁面規劃/10_管理後台/index.html · src/data/siteChangelog/2026-10.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
