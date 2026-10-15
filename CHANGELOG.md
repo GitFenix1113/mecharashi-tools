@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **analytics**: 故事館與圖鑑分開統計，新增章節統計（PLAN-062 Phase C） (`30330e4`)
 - **analytics**: 使用統計新增故事館進館漏斗（PLAN-062 Phase A） (`bed7915`)
 - **seo**: 網頁標題加上鋼嵐 Mecharashi、每頁獨立標題與 sitemap (`ebdb801`)
 - **lore**: 故事館加三個回圖鑑出口與出館「關門」過場 (`bc20ec0`)
