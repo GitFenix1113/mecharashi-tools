@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **analytics**: 熱門排行加「故事」分頁、章節留存與本月／上月切換（PLAN-062 Phase D） (`51ec4d0`)
 - **analytics**: 故事館與圖鑑分開統計，新增章節統計（PLAN-062 Phase C） (`30330e4`)
 - **analytics**: 使用統計新增故事館進館漏斗（PLAN-062 Phase A） (`bed7915`)
 - **seo**: 網頁標題加上鋼嵐 Mecharashi、每頁獨立標題與 sitemap (`ebdb801`)
