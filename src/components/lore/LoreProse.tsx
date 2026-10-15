@@ -1,10 +1,11 @@
 import { LoreRichText } from './LoreRichText'
-import { isQuoteStyle } from './loreText'
+import { inlineSource, isQuoteStyle } from './loreText'
 import type { DescriptionRefs } from '../../types'
 
 /**
  * 故事館正文（PLAN-042-D D-3）：明體、段首縮兩字；引文段**懸掛引號**（「 凸出行首、紅色），
  * 非引文的開頭段**首字放大**（`lead`）。扉頁與章節共用。
+ * `——` 開頭的獨立行是行內署名（`inlineSource()`），排成與章末署名同款的 `.lore-source`。
  *
  * 逐段 <p>，不依賴 whitespace-pre-line（042-A 的理由：引文段與一般段要能混排）。
  * 段落請先過 `readableParagraphs()`（OCR 斷行合併、半形標點）。
@@ -19,6 +20,8 @@ export default function LoreProse({ paragraphs, refs, lead = false }: {
   return (
     <div className="lore-prose">
       {paragraphs.map((p, i) => {
+        const source = inlineSource(p)
+        if (source !== null) return <p key={i} className="lore-source">{source}</p>
         if (isQuoteStyle(p)) {
           const head = p.trimStart()
           return (

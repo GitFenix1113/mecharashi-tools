@@ -119,7 +119,8 @@
       <tr><td>title</td><td>string</td><td>章節標題（<code>光環遍身</code>）</td></tr>
       <tr><td>body</td><td>string</td><td>正文。支援 PLAN-019 的 <code>[xxx]</code> 標記，由 <code>&lt;LoreRichText&gt;</code> 解析（PLAN-042-A 決策 A：與 <code>&lt;RefText&gt;</code> 分家、<code>[xxx]</code> 解析規則逐字相同，但<strong>不套數字紅字高亮、不解析 <code>&lt;refId.attr&gt;</code></strong>——不要改回 RefText，那會把散文裡的數字全變紅色粗體）</td></tr>
       <tr><td>bodyRefs</td><td>DescriptionRefs?</td><td>正文內 <code>[xxx]</code> → 實體引用側錄。<strong>欄位名是 <code>bodyRefs</code> 不是 <code>descriptionRefs</code></strong>（正文欄位叫 <code>body</code>）——<code>entityRefs</code> 的站點必須指定 <code>refsField: 'bodyRefs'</code>，否則級聯清除會去清一個不存在的欄位<strong>且靜默不報錯</strong></td></tr>
-      <tr><td>source</td><td>string?</td><td>本章的出處署名。前台右對齊小字 ＋ 分隔細線</td></tr>
+      <tr><td>source</td><td>string?</td><td>本章的出處署名。前台右對齊小字 ＋ 分隔細線
+        <br><small style="color:var(--text-dim)">🆕（2026-10-15）一章引了多份資料、各有出處時（淬鋒·凱登 PART 2），本欄放<strong>最後一份</strong>；中間各份寫在 <code>body</code> 裡、<strong>另起一行以 <code>——</code> 開頭</strong>（行內署名），前台排成同款署名。不加欄位：判定在 <code>inlineSource()</code>（<code>components/lore/loreText.ts</code>），只認 <code>——</code>、破折號後 ≤40 字且不含 <code>。！？</code>，以免把破折號起頭的正文句子當成署名</small></td></tr>
       <tr><td>commentary</td><td>LoreCommentary[]?</td><td>NPC 旁白列，結構見下方 <code>LoreCommentary</code>。說話者是機師（<code>speakerId</code>）或 🆕 自訂說話者（<code>speaker</code>）二選一</td></tr>
       <tr><td>draft</td><td>true?</td><td>🆕 PLAN-042-E <strong>草稿章</strong>（決策五）：前台不列出、章節網址導回扉頁、館首頁與名冊的章節數不計入。值只有 <code>true</code>，取消草稿就是拿掉欄位。
         <br><small style="color:var(--text-dim)">前台<strong>唯一的過濾點</strong>是 <code>publishedChapters()</code>（<code>src/components/lore/loreText.ts</code>），不要各自寫 <code>.filter</code>——漏一處就是「目錄看不到、網址卻點得進去」。

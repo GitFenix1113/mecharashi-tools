@@ -183,6 +183,9 @@ function ChapterCard({
           className="input-field text-sm"
           placeholder="——《週刊米赫瑪·文娛版》"
         />
+        <p className="text-xs text-text-dim leading-relaxed mt-1">
+          一章引了多份資料、各有出處時，這裡填最後一份；中間那份的出處在正文裡另起一行、以「——」開頭（例：——維斯珀爾內部通訊），前台會排成同款署名。
+        </p>
       </Field>
 
       <Field label="旁白 commentary（選填）">

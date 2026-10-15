@@ -845,6 +845,9 @@ html.lore-exiting::view-transition-new(root) { animation: lore-exit-shut 620ms c
 .lore-prose p.is-lead::first-letter { float: left; font-family: var(--lore-kai); font-size: 3.4em; line-height: 1; margin: 0.06em 0.14em 0 0; color: var(--lore-red); }
 .lore-source { margin-top: 22px; display: flex; align-items: center; gap: 12px; justify-content: flex-end; font-size: 0.68rem; color: var(--lore-ink-2); letter-spacing: 0.08em; font-family: var(--lore-serif); }
 .lore-source::before { content: ''; flex: 0 1 120px; height: 1px; background: var(--lore-line-3); }
+/* 行內署名（正文裡 —— 開頭的獨立行，loreText.inlineSource）：貼近它署名的上一段，與下一段拉開 */
+.lore-prose p.lore-source { text-indent: 0; margin: -0.35rem 0 1.7rem; }
+.lore-prose p.lore-source:last-child { margin-bottom: 0; }
 
 /* 個人資料 */
 .lore-kv { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; margin: 0; }

@@ -80,7 +80,11 @@ export interface LoreChapter {
   body: string
   /** 正文內 [xxx] → 實體引用側錄（PLAN-019 Layer 1）。欄位名沿用 `<正文欄位>Refs` 慣例 */
   bodyRefs?: DescriptionRefs
-  /** 出處署名，如 '——《週刊米赫瑪·文娛版》'。右對齊小字 ＋ 分隔細線 */
+  /**
+   * 出處署名，如 '——《週刊米赫瑪·文娛版》'。右對齊小字 ＋ 分隔細線。
+   * 一章引了多份資料時，這裡放**最後一份**的出處；中間各份寫在 body 裡、另起一行以 `——` 開頭
+   * （行內署名，`inlineSource()`，components/lore/loreText.ts）。
+   */
   source?: string
   /** NPC 旁白列 */
   commentary?: LoreCommentary[]

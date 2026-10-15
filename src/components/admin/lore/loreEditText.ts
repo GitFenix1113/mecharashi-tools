@@ -3,6 +3,7 @@
 // 本檔**只放純函式**（不 import React）：`node --test` 直接載入 loreEditText.test.ts。
 
 import type { LoreChapter, LoreCommentary, LoreCustomSpeaker } from '../../../types'
+import { inlineSource } from '../../lore/loreText.ts'
 
 /**
  * 新增章節時自動產生穩定 key。**建立後不可變更**——網址（`/lore/pilots/:id/:part`）
@@ -48,13 +49,14 @@ const HARD_LINE_END = /[。」』！？…：]$/
  *
  * **刻意做成明示按鈕而不是自動套用**：遊戲內文本有大量以「——」「…」結尾的短行、
  * 以及刻意的單行分句，接錯了要逐字改回來，比不接更費工。由編輯看過再按。
- * 空行（段落分界）一律保留。
+ * 空行（段落分界）與行內署名（`——` 開頭的獨立行，見 `inlineSource()`）一律保留。
  */
 export function mergeSoftWraps(text: string): string {
   const out: string[] = []
   for (const line of text.split('\n')) {
     const prev = out[out.length - 1]
-    if (prev !== undefined && prev !== '' && line !== '' && !HARD_LINE_END.test(prev)) {
+    if (prev !== undefined && prev !== '' && line !== '' && !HARD_LINE_END.test(prev)
+      && inlineSource(prev) === null && inlineSource(line) === null) {
       out[out.length - 1] = prev + line
     } else {
       out.push(line)

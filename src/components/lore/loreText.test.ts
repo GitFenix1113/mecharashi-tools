@@ -4,7 +4,7 @@
 //   ERR_MODULE_NOT_FOUND（全站測試檔慣例同此）。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { splitParagraphs, isQuoteStyle, firstSentence, stripTrailingSource, readableParagraphs, fullwidthLorePunctuation, normalizeLoreSource, publishedChapters } from './loreText.ts'
+import { splitParagraphs, isQuoteStyle, firstSentence, stripTrailingSource, readableParagraphs, fullwidthLorePunctuation, normalizeLoreSource, publishedChapters, inlineSource } from './loreText.ts'
 
 // ── splitParagraphs ──────────────────────────────────────────────────────────
 
@@ -121,6 +121,35 @@ test('readableParagraphs：長行 OCR 斷行合併、短行（日記日期）不
 test('readableParagraphs：每段以句末標點結尾的扉頁原樣通過', () => {
   const lore = '「傭兵出身，有多項不良前科，紀律意識薄弱，協同作戰能力有待觀察。\n洞察力優異，善於分析敵人的戰鬥習慣先發制人。有指揮小規模戰鬥的經驗，具備領導才能。」'
   assert.deepEqual(readableParagraphs(lore), splitParagraphs(lore))
+})
+
+// ── 行內署名（2026-10-15）───────────────────────────────────────────────────
+
+test('inlineSource：—— 開頭的短行是署名，回傳去掉破折號的文字', () => {
+  assert.equal(inlineSource('——維斯珀爾內部通訊'), '維斯珀爾內部通訊')
+  assert.equal(inlineSource('  —— 《沃爾特·紐曼相關恢復資料第13255條》 '), '《沃爾特·紐曼相關恢復資料第13255條》')
+  assert.equal(inlineSource('——「地下蒸汽」機修師的日記'), '「地下蒸汽」機修師的日記') // 引號不是句末標點
+})
+
+test('inlineSource：以破折號起頭的正文句子、過長、空尾、OCR 記號都不算', () => {
+  assert.equal(inlineSource('——就在這時，警報響了。'), null) // 含句末標點 → 正文
+  assert.equal(inlineSource(`——${'長'.repeat(41)}`), null) // 超過 MAX_SOURCE_TAIL
+  assert.equal(inlineSource('——'), null)
+  assert.equal(inlineSource('一一列舉'), null) // OCR 的 一一 不認：這是正常中文
+  assert.equal(inlineSource('他停頓了很久——久到雪都停了'), null) // 破折號不在行首
+  assert.equal(inlineSource('「能拿到解除限制的『遺產』都是你的功勞。」——維斯珀爾內部通訊'), null) // 黏在引文尾：不拆
+})
+
+test('readableParagraphs：行內署名自成一段（淬鋒·凱登 PART 2 的兩出處結構）', () => {
+  // 第一段刻意做成「長行、行尾非句末標點」——沒有署名判定時會被當 OCR 軟換行併掉
+  const q1 = `「${'甲'.repeat(40)}`
+  const body = `${q1}\n——維斯珀爾內部通訊\n「${'乙'.repeat(40)}。」`
+  assert.deepEqual(readableParagraphs(body), [q1, '——維斯珀爾內部通訊', `「${'乙'.repeat(40)}。」`])
+})
+
+test('readableParagraphs：≥30 字、以 》 結尾的署名也不把下一行吃進來', () => {
+  const src = `——《${'資'.repeat(30)}》`
+  assert.deepEqual(readableParagraphs(`「前段。」\n${src}\n「後段。」`), ['「前段。」', src, '「後段。」'])
 })
 
 test('fullwidthLorePunctuation：只轉中文語境的半形標點，數字與英文不動', () => {

@@ -20,6 +20,13 @@ test('mergeSoftWraps：非句末的行尾接回下一行；空行與句末標點
   assert.equal(mergeSoftWraps('本質是什\n麼。\n\n她說：\n「走吧」'), '本質是什麼。\n\n她說：\n「走吧」')
 })
 
+test('mergeSoftWraps：行內署名（—— 開頭的獨立行）不併上、也不吃下一行', () => {
+  const text = '「我們再做決\n定。」\n——維斯珀爾內部通訊\n「在完善彌造者的過程中」'
+  assert.equal(mergeSoftWraps(text), '「我們再做決定。」\n——維斯珀爾內部通訊\n「在完善彌造者的過程中」')
+  // 上一行沒有句末標點時，署名也不能被併上去
+  assert.equal(mergeSoftWraps('沒有句號的一行\n——某某日誌'), '沒有句號的一行\n——某某日誌')
+})
+
 test('moveItem：互換、越界原樣回傳', () => {
   assert.deepEqual(moveItem(['a', 'b', 'c'], 0, 1), ['b', 'a', 'c'])
   assert.deepEqual(moveItem(['a', 'b', 'c'], 2, -1), ['a', 'c', 'b'])

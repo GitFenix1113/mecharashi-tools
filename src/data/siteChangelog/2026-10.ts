@@ -3,6 +3,9 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-15', type: 'fix', summary: '故事館逸聞一章引用<b>多份資料</b>時（例：淬鋒·凱登 PART 2 的維斯珀爾內部通訊＋海莉絲研究日誌），'
+      + '每段引文都會在自己下方顯示<b>出處署名</b>，不再把兩段併成一段、讓章末署名看起來像整章的出處。' },
+
     { date: '2026-10-14', type: 'feat', summary: '網頁標題改為「<b>鋼嵐 Mecharashi 資料站｜米赫瑪超吉情豹站</b>」，用遊戲名稱搜尋時比較容易找到本站；'
       + '每一頁也有了自己的標題（例：「海莉絲 機師資料」「機甲圖鑑」），瀏覽器分頁與搜尋結果一眼就分得出是哪一頁。' },
 

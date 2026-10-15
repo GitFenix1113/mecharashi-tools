@@ -141,10 +141,32 @@ export function readableParagraphs(text: string | undefined): string[] {
   const out: string[] = []
   for (const line of splitParagraphs(text)) {
     const prev = out[out.length - 1]
-    if (prev !== undefined && prev.length >= SOFT_WRAP_MIN && !LINE_END.test(prev)) out[out.length - 1] = prev + line
+    // 行內署名永遠自成一段：不併進上一段，也不讓下一行併進來（署名常以 》 結尾，不在 LINE_END 裡）
+    const softWrap = prev !== undefined && prev.length >= SOFT_WRAP_MIN && !LINE_END.test(prev)
+      && inlineSource(prev) === null && inlineSource(line) === null
+    if (softWrap) out[out.length - 1] = prev + line
     else out.push(line)
   }
   return out.map(fullwidthLorePunctuation)
+}
+
+/**
+ * 行內署名（2026-10-15）：一章引了兩份以上的資料、各有出處時（淬鋒·凱登 PART 2：維斯珀爾內部通訊＋海莉絲研究日誌），
+ * **中間那份**的出處在正文裡另起一行、以 `——` 開頭，前台比照章末署名排版（`.lore-source`）。
+ * 最後一份照舊寫在 `LoreChapter.source`——章末署名的位置與既有各章一致。
+ *
+ * 判定刻意從嚴，免得把以破折號起頭的正文句子（「——就在這時，警報響了。」）排成署名：
+ *   · 只認 `——`。OCR 的 `一一` 不認：「一一列舉」是正常中文，而這一行是編輯親手打的、不是 OCR 貼上的
+ *   · 破折號之後 1～`MAX_SOURCE_TAIL` 字，且不含句末標點 `。！？`
+ *
+ * 是署名 → 回傳去掉破折號的署名文字（與 `source` 欄位同寫法，橫線由 CSS 畫）；不是 → `null`。
+ */
+export function inlineSource(line: string): string | null {
+  const m = /^\s*——\s*(.+?)\s*$/.exec(line)
+  if (!m) return null
+  const tail = m[1]
+  if (tail.length > MAX_SOURCE_TAIL || SENTENCE_END.test(tail)) return null
+  return tail
 }
 
 /**
