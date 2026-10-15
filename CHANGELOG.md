@@ -186,6 +186,8 @@
 - **mech**: 爬蟲 v3 — 圖片改分資料夾、修正部件圖 URL、機體詳情頁駕駛艙排版 (`42b4d7f`)
 - v1.5 Phase 3 — 模組圖鑑 + 配裝模擬器 + html2canvas 匯出 (`a7fff68`)
 - v1.4 模組系統 — Module 資料結構、爬蟲與管理介面 (`89ac717`)
+- 新增機體/飛行員詳情頁與完整資料 (`f0d43a3`)
+- 初始化專案架構與開發進度表 (`77359ff`)
 
 ### 🐛 修復
 
@@ -408,6 +410,7 @@
 
 ### 🔧 維護
 
+- **scripts**: push 前偵測淺層 clone，歷史不完整就中止，不再默默截斷舊紀錄 (`7a21c77`)
 - **lint**: 忽略 .claude/（worktree 副本會讓 ESLint 找到兩個 tsconfig 根目錄而全面解析失敗） (`f15e265`)
 - 圖片 manifest 補上場景外觀的鑑賞版 (`3cd69ce`)
 - **images**: 匯入凜騎士／日蝕官方原檔；歸檔流程補 --other-icons、--skins，報告改成照抄清單 (`baff274`)
@@ -542,6 +545,8 @@
 - 重新觸發 preview 部署 (`af8e9fc`)
 - 同步 workflow 設定，防止 gh-pages 競爭條件 (`4ede30e`)
 - add preview deployment workflow and dynamic base path (`954413a`)
+- trigger GitHub Pages deployment (`996a35e`)
+- 新增 GitHub Pages 自動部署工作流程 (`c172247`)
 
 ### 其他
 
@@ -550,6 +555,7 @@
 - @ style: 更新莫比烏斯X的機甲部件圖示 (`846da9d`)
 - 更新元件定義 (`4155274`)
 - **components**: 新增武器外框和稀有度字體外框渲染效果 (`01017a8`)
+- 初始化鋼嵐工具站專案結構 (`270f491`)
 
 ---
 ## [0.1.0] - 2026-05-14
