@@ -4,6 +4,12 @@
  * 自動將 git log 中尚未記錄的 commit 更新至 CHANGELOG.md 的 [Unreleased] 區塊。
  * 僅抓取「最後一個 tag 之後」的 commit；若無 tag，則抓取全部。
  * 自動略過 "chore: update CHANGELOG" 類的 commit，避免循環。
+ *
+ * ⚠ [Unreleased] 區塊是「每次從 git log 整段重建」而不是增量追加（repo 目前沒有 tag，
+ * 等於每次都讀全部歷史）。所以 git log 少看到幾筆，CHANGELOG.md 就少幾筆。
+ * 雲端 session 是淺層 clone（約 50 筆歷史），因此被截斷過兩次：dc4b5bc 砍掉 473 行、
+ * 4ec19c7 砍掉 497 行（16cf01b 還原）。下面兩道防線都是為了這件事，失敗時一律 exit 1、不寫檔，
+ * 讓 pre-push hook / npm run push 中止推送。
  */
 
 import { execSync } from 'child_process';
@@ -11,8 +17,38 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 
 const CHANGELOG_PATH = 'CHANGELOG.md';
 
+// 防線 2：新檔比舊檔少超過這麼多行就視為截斷。正常情況只會變長；
+// 會變短的只有「已記錄的 commit 後來被 rebase/amend 掉」，一筆一行，不會一次少到這個量。
+const MAX_LOST_LINES = 20;
+
 function run(cmd) {
   return execSync(cmd, { encoding: 'utf8' }).trim();
+}
+
+function abort(lines) {
+  console.error(['', ...lines, ''].join('\n'));
+  process.exit(1);
+}
+
+// 防線 1：淺層 clone 的 git log 不完整，直接拒絕執行。
+// 不自動 git fetch --unshallow：那是一次看不見大小的下載，放在 hook 裡默默跑不妥。
+function assertNotShallow() {
+  let shallow = 'false';
+  try {
+    shallow = run('git rev-parse --is-shallow-repository');
+  } catch {
+    // git < 2.15 沒有這個選項；交給防線 2 把關
+  }
+  if (shallow === 'true') {
+    abort([
+      '❌  這是淺層 clone（git 歷史不完整），已中止更新 CHANGELOG.md。',
+      '    update-changelog.js 會用 git log 重建整段 [Unreleased]，',
+      '    歷史不完整就會把看不到的舊紀錄全部刪掉。',
+      '',
+      '    請先補齊歷史再重新 push：',
+      '        git fetch --unshallow origin',
+    ]);
+  }
 }
 
 // 取得待記錄的 commit 清單
@@ -116,6 +152,8 @@ function formatCommits(commits) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
+assertNotShallow();
+
 const commits = getNewCommits();
 const today = new Date().toISOString().split('T')[0];
 
@@ -156,7 +194,22 @@ if (unreleasedIdx !== -1) {
   }
 }
 
-writeFileSync(CHANGELOG_PATH, parts.join(''), 'utf8');
+const nextContent = parts.join('');
+
+const countLines = (s) => s.split('\n').length;
+const lostLines = countLines(content) - countLines(nextContent);
+if (lostLines > MAX_LOST_LINES) {
+  abort([
+    `❌  新的 CHANGELOG.md 會比現在少 ${lostLines} 行（${countLines(content)} → ${countLines(nextContent)}），`,
+    '    看起來是 git log 讀到的歷史不完整，已中止、未寫入。',
+    '',
+    '    可能原因：',
+    '      - 淺層 clone / 部分歷史：git fetch --unshallow origin',
+    '      - 新打了 tag 但沒先把 [Unreleased] 改名成該版本區塊',
+  ]);
+}
+
+writeFileSync(CHANGELOG_PATH, nextContent, 'utf8');
 console.log(
   `✅  CHANGELOG.md 已更新（${commits.length} 筆 commit，${today}）`
 );

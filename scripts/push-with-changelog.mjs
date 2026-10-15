@@ -23,7 +23,13 @@ const git = (...args) => run('git', args).trim()
 const passthrough = process.argv.slice(2)
 
 console.log('🔄  更新 CHANGELOG.md ...')
-run('node', ['scripts/update-changelog.js'], { stdio: 'inherit' })
+try {
+  run('node', ['scripts/update-changelog.js'], { stdio: 'inherit' })
+} catch (e) {
+  // 腳本自己已印出原因（例如淺層 clone 拒絕執行），這裡只負責不推、
+  // 也不再補一段 stack trace 把那段說明擠到畫面外。
+  process.exit(e.status ?? 1)
+}
 
 if (git('status', '--porcelain', 'CHANGELOG.md')) {
   // commit 訊息沿用 hook 的格式：帶上本次要推的第一筆 commit 摘要，

@@ -184,11 +184,11 @@
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">40</div>
+      <div class="summary-num" style="color:var(--text-dim)">39</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -993,18 +993,22 @@
     <div class="task-group-header">
       <div class="task-group-title">D-5 &nbsp; CHANGELOG 自動化（Q4）</div>
       <div class="task-group-meta">scripts/update-changelog.js · .githooks/pre-push · scripts/push-with-changelog.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">至少加淺層 clone 防護；建議改成不 commit</div>
         <div class="task-desc">腳本每次都用 <code>git log HEAD</code> 重新產生整段 [Unreleased]，repo 又沒有任何 tag。在淺層 clone 裡跑過一次就截掉 473 行（dc4b5bc，6b50105 才還原）。最近 50 個 commit 裡有 23 個是它的自動 commit。
           <strong>最低限度：</strong><code>git rev-parse --is-shallow-repository</code> 為 true 時直接跳過，並打一個 baseline tag。
-          <strong>建議做法：</strong>停止 commit <code>CHANGELOG.md</code>，改在 CI 產生 release notes，同步修改 pre-push、<code>npm run push</code> 與 CLAUDE.md 第 1、5 節。</div>
+          <strong>建議做法：</strong>停止 commit <code>CHANGELOG.md</code>，改在 CI 產生 release notes，同步修改 pre-push、<code>npm run push</code> 與 CLAUDE.md 第 1、5 節。<br><span style="color:var(--text-secondary)">🔧 2026-10-15 淺層 clone 防護已上（4ec19c7 又截掉 497 行、16cf01b 才還原，是第二次）：<code>update-changelog.js</code> 遇到 <code>--is-shallow-repository</code> 為 true 就 <strong>exit 1、不寫檔</strong>，訊息指示 <code>git fetch --unshallow origin</code>；
+          另加第二道：新檔比舊檔少超過 20 行就中止（舊版 git 偵測不到淺層、或打了 tag 卻沒把 [Unreleased] 改名時都會擋）。<code>npm run push</code> 失敗時不再噴 stack trace。
+          與原「最低限度」的差別：選<strong>中止</strong>而不是跳過——跳過會讓 push 照走、CHANGELOG 默默沒更新，中止才逼人補齊歷史。
+          另外最舊的 5 筆（<code>270f491</code>…<code>f0d43a3</code>）在雲端與站長本機之間反覆增刪（7693262／25848da／f714772／3fe1fca），疑似站長本機的 clone 也是淺層、缺最早 5 個 commit；若是，新防護會擋下本機 push，照訊息跑一次 <code>git fetch --unshallow origin</code> 即可。
+          <strong>未做：</strong>baseline tag（打了之後 [Unreleased] 只剩 tag 之後的 commit，要先把現有區塊改名成版本區塊，否則第二道防線會擋）、建議做法的「停止 commit」。</span></div>
         <div class="task-file">scripts/update-changelog.js · .githooks/pre-push · scripts/push-with-changelog.mjs · CLAUDE.md</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
 
