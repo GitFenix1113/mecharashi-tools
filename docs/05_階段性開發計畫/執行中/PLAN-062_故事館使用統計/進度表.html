@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">3</div>
+      <div class="summary-num" style="color:var(--accent-green)">4</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">10</div>
+      <div class="summary-num" style="color:var(--text-dim)">9</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -187,10 +187,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-purple);">3 / 13</span>
+      <span style="color:var(--accent-purple);">4 / 13</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 23.1%"></div>
+      <div class="progress-bar-fill" style="width: 30.8%"></div>
     </div>
   </div>
 
@@ -200,7 +200,7 @@
     「熱門機師」回到只算圖鑑，繼續作為補資料優先序的依據。
   </div>
   <div class="impact-note">
-    <strong>目前狀態（2026-10-15）：</strong>立案；Phase A 完成（3／3），已推送到功能分支。下一步 Phase B。
+    <strong>目前狀態（2026-10-15）：</strong>立案；Phase A 完成（3／3）；Phase B 的程式（B-1）完成並推送，<b>等站長部署 Worker（B-2）</b>。部署完成前不要合併 Phase C。
     <b>部署順序提醒</b>：Phase B 的 Worker 要由站長手動部署，且必須早於 Phase C 合併進 main（計畫書決策四）。
   </div>
 </section>
@@ -280,7 +280,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; ENTITY_TYPES 加入 lorePilots／loreParts</div>
       <div class="task-group-meta">workers/src/collect.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -288,12 +288,16 @@
         <div class="task-desc">
           目前 <code>workers/test</code> 只有範本的 Hello World，這道「匿名輸入 ↔ service account 寫入」的牆沒有任何測試。
           補測試：新類別被接受、未知類別仍被丟掉、含 <code>--</code> 的章節 id 通過 <code>isSafeEntityId</code>。
-          若環境裝不起 Worker 的測試工具，就跳過並在此註記。
+          若環境裝不起 Worker 的測試工具，就跳過並在此註記。<br>
+          ✅ 2026-10-15：測試照 <code>socialPreview.test.ts</code> 的慣例寫成 <code>node:test</code>（<code>workers/src/collect.test.ts</code>，由根目錄 <code>npm test</code> 執行），6 個測試通過；
+          把 <code>ENTITY_TYPES</code> 改回舊值時其中 4 個會失敗，確認它擋得住回歸。<code>wrangler deploy --dry-run</code> 打包正常（36 KiB）。<br>
+          附帶發現（未處理、不在本計畫範圍）：<code>workers/test/index.spec.ts</code> 仍是 wrangler 範本的 Hello World，兩個測試一直是失敗的；
+          只帶 entities、不帶頁面的手造 payload 會把 <code>writes</code> 計數寫進 analyticsEntity 而不是 analyticsDaily，繞過熔斷器的持久化計數（真實前端不會送這種形狀）。
         </div>
-        <div class="task-file">workers/src/collect.ts · workers/test/</div>
+        <div class="task-file">workers/src/collect.ts · workers/src/collect.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 

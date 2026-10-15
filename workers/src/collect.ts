@@ -40,8 +40,18 @@ const KEY_RE = /^[a-z][a-z0-9_]{0,39}$/
 
 const LANGS = new Set(['zh_tw', 'zh_cn', 'zh_other', 'en', 'ja', 'ko', 'other'])
 const AUTHS = new Set(['guest', 'user'])
-/** 允許的 entity 類別。這是**閉集合**（不隨頁面增減），故列舉不會有腐化問題。 */
-const ENTITY_TYPES = new Set(['pilots', 'mechs', 'weapons', 'modules'])
+/**
+ * 允許的 entity 類別。這是**閉集合**（不隨頁面增減），故列舉不會有腐化問題。
+ *
+ * 但它仍是前後端各一份的列舉：前端開始送新類別之前，**這裡必須先部署**，
+ * 否則新類別會在 parseCollectBody 被靜默丟掉、統計又不回溯（PLAN-062 決策四）。
+ *
+ * · lorePilots — 故事館裡哪位機師的故事被打開（PLAN-062；與圖鑑的 pilots 分開統計）
+ * · loreParts  — 故事館的章節，id 為 `${pilotId}--${partKey}`（如 `pilot_049_海莉絲--part-2`）。
+ *               扁平成一層而不用巢狀 map，是為了讓下方 buildWrites 組欄位路徑的程式完全不必改；
+ *               `-` 本來就在 isSafeEntityId 的字元白名單內。
+ */
+const ENTITY_TYPES = new Set(['pilots', 'mechs', 'weapons', 'modules', 'lorePilots', 'loreParts'])
 
 const MAX_BODY_BYTES = 8 * 1024
 const MAX_ROUTES = 50
