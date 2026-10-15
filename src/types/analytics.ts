@@ -45,14 +45,23 @@ export interface AnalyticsEntityMonth {
   mechs?: Record<string, number>
   weapons?: Record<string, number>
   modules?: Record<string, number>
+  /**
+   * 故事館裡被打開的機師（PLAN-062；扉頁與章節都算，同一次造訪內同一位只算一次）。
+   * 拆開之前（2026-10 前段以前）故事館是併在 pilots 裡的。
+   */
+  lorePilots?: Record<string, number>
+  /** 故事館章節，key 為 `${pilotId}--${partKey}`（routeKeys.ts 的 loreChapterId）。 */
+  loreParts?: Record<string, number>
 }
 
-export type EntityKind = 'pilots' | 'mechs' | 'weapons'
+/** 後台「熱門排行」的分頁。lorePilots＝故事館裡被打開的機師（PLAN-062），與圖鑑的 pilots 分開統計。 */
+export type EntityKind = 'pilots' | 'mechs' | 'weapons' | 'lorePilots'
 
 export const ENTITY_KIND_LABEL: Record<EntityKind, string> = {
   pilots: '機師',
   mechs: '機甲',
   weapons: '武器',
+  lorePilots: '故事',
 }
 
 /** 語言分桶的顯示名。與 track.ts 的 langBucket 產出一一對應。 */

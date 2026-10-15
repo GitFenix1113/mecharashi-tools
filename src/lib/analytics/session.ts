@@ -25,8 +25,15 @@
 
 export const IDLE_MS = 10 * 60 * 1000 // 10 分鐘（Q2 裁決；GA4 慣例是 30，本站取較短）
 
-/** 單一 session 內最多記住幾個已回報頁面。有上限才不會無限成長吃掉配額。 */
-export const REPORTED_MAX = 50
+/**
+ * 單一 session 內最多記住幾個已回報的 key。有上限才不會無限成長吃掉配額。
+ *
+ * 頁面 key 與實體 key（`pilots:xxx`、`loreParts:xxx--part-2`…）共用這一份清單。
+ * 原本是 50；PLAN-062 讓故事館每一章各佔一個 key 之後，一口氣讀 10 位機師、每位 3 章
+ * 就會逼近 50，超過之後的新章節會**少算**（見 markReported）。150 個短字串的
+ * localStorage 成本可以忽略。
+ */
+export const REPORTED_MAX = 150
 
 /** 日界線時區偏移（UTC+8）。固定值、無日光節約，故不需要 Intl。 */
 const TZ_OFFSET_MS = 8 * 60 * 60 * 1000
@@ -60,6 +67,17 @@ export interface TouchResult {
  */
 export function dayKey(now: number): string {
   return new Date(now + TZ_OFFSET_MS).toISOString().slice(0, 10)
+}
+
+/**
+ * 月份字串（YYYY-MM）往前／往後推幾個月。純字串運算，不經過 Date，所以沒有時區與月底天數的問題。
+ *
+ * 給後台「本月／上月」切換用（PLAN-062）：analyticsEntity 是一月一份文件，文件 ID 就是月份字串。
+ */
+export function shiftMonth(month: string, delta: number): string {
+  const [y, m] = month.split('-').map(Number)
+  const total = y * 12 + (m - 1) + delta
+  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, '0')}`
 }
 
 /** 產生識別碼。crypto.randomUUID 在所有目標瀏覽器皆可用；退路只為極舊環境與測試。 */
@@ -116,7 +134,7 @@ export function nextState(
  *
  * 回 false 代表本 session 內已經看過這一頁 —— 站長要的去重就落在這一行。
  * 達到上限後不再新增（極端瀏覽行為不該把 localStorage 撐爆），
- * 代價是超過 50 頁之後的新頁面會被重複計 UPV；真實 session 遠達不到這個量級。
+ * 代價是超過上限之後的新頁面**一律回 false、不再計入 UPV**（是少算，不是重複計）。
  */
 export function markReported(state: AnalyticsState, pageKey: string): boolean {
   if (state.reported.includes(pageKey)) return false

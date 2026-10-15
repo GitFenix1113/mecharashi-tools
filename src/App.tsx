@@ -89,8 +89,8 @@ function App() {
                 開全館唯一的 scrollport、負責跨路由捲頂，因此**三個子頁共用同一個 layout route**，
                 切換機師時外殼不卸載（進場遮罩不會每次重播）。
                 扉頁與章節頁刻意是同一個元件 PilotLorePage —— 版面骨架只寫一份，不會漂移。
-                參數一律命名 :id（analytics/track.ts 寫死讀 params.id，改名會讓機師熱度一筆不記，
-                而 routeKeys.test.ts 只斷言反方向、測試照樣全綠）。 */}
+                參數一律命名 :id 與 :part（analytics/routeKeys.ts 的 entityHits 寫死讀 params.id／params.part，
+                改名會讓故事館熱度與章節統計一筆不記；routeKeys.test.ts 有一條斷言會擋下，PLAN-062）。 */}
             <Route path="lore" element={<LoreLayout />}>
               <Route index element={<Suspense fallback={null}><LoreHomePage /></Suspense>} />
               <Route path="pilots/:id" element={<Suspense fallback={null}><PilotLorePage /></Suspense>} />

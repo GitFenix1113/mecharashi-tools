@@ -20,7 +20,7 @@ import {
   touchActivity,
   IDLE_MS,
 } from './session'
-import { ENTITY_ROUTES, isSafeEntityId, isTracked, toPageKey } from './routeKeys'
+import { entityHits, isTracked, toPageKey } from './routeKeys'
 
 const COLLECT_PATH = '/api/collect'
 const OPTOUT_KEY = 'analytics_optout'
@@ -223,14 +223,13 @@ export function trackPageView(pattern: string, params: Record<string, string | u
   const isFirstThisSession = markReported(state, key)
   if (isFirstThisSession) slot.upv += 1 // ← 站長要的去重就落在這一行
 
-  // entity 熱度：同一 session 內同一個機師也只算一次，與 UPV 同一套去重語意。
-  const entityType = ENTITY_ROUTES[pattern]
-  const entityId = params.id
-  if (entityType && entityId && isSafeEntityId(entityId)) {
-    const entityKey = `${entityType}:${entityId}`
-    if (markReported(state, entityKey)) {
-      const bucket = (buffer.entities[entityType] ??= {})
-      bucket[entityId] = (bucket[entityId] ?? 0) + 1
+  // entity 熱度：同一 session 內同一個實體只算一次，與 UPV 同一套去重語意。
+  // 一次瀏覽可能記進多個類別（故事館章節＝lorePilots＋loreParts）；去重 key 帶著類別，
+  // 所以從扉頁翻進章節時 lorePilots 不會重複計，而圖鑑與故事館的同一位機師各算各的。
+  for (const { type, id } of entityHits(pattern, params)) {
+    if (markReported(state, `${type}:${id}`)) {
+      const bucket = (buffer.entities[type] ??= {})
+      bucket[id] = (bucket[id] ?? 0) + 1
     }
   }
 
