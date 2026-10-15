@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-062 故事館使用統計 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">觀察維護中</a>
+    <span>›</span>
+    <span class="current">PLAN-062 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-062</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    故事館使用統計<span style="-webkit-text-fill-color:var(--text-secondary);">Lore Analytics · 進館漏斗 · 章節留存</span>
+  </h1>
+  <p class="hero-sub">後台使用統計（PLAN-046）設計時故事館還不存在。故事館的路由雖然有被計數，但只混在「頁面熱度」裡；看不出是哪位機師的故事被讀，也看不出讀到第幾章。本計畫把故事館拉成獨立的區塊與統計類別。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value purple">PLAN-062</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-15</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">後台使用統計 · 前端埋點 · Cloudflare Worker</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value purple">觀察維護中（2026-10-15 開發收束）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-046（統計管線）· PLAN-042-A（故事館路由）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="info-block">
+    <strong>現況：故事館其實有被計數，只是看不出來</strong><br>
+    故事館的三條路由早已登記在 <code>src/lib/analytics/routeKeys.ts</code> 的 <code>ROUTE_PATTERNS</code>／<code>ROUTE_LABELS</code>，
+    並且依 PLAN-042 總綱決策六掛在 <code>Layout</code> 之下，因此自 2026-09-10 程式上線起（入口收到 2026-10-13 才正式開放），<code>analyticsDaily.byRoute</code>
+    就一直有 <code>lore</code>、<code>lore_pilots_detail</code>、<code>lore_pilots_detail_detail</code> 三個 key。
+    它們目前和其他頁面混在儀表板的「頁面熱度」清單裡。
+  </div>
+
+  <div class="problem-block">
+    <strong>缺口一：看不出是哪位機師的故事被讀</strong><br>
+    <code>ENTITY_ROUTES</code> 刻意把 <code>/lore/pilots/:id</code> 與 <code>/lore/pilots/:id/:part</code> 併進 <code>pilots</code> 類別，
+    和圖鑑詳情頁混在一起。副作用是「熱門機師 TOP 20」也被灌進了故事館的讀者，而這份排行的用途是「決定資料要優先補誰」：
+    讀逸聞的人並不需要圖鑑的資料。
+  </div>
+
+  <div class="problem-block">
+    <strong>缺口二：看不出哪個 PART 有人讀到</strong><br>
+    PLAN-042 總綱決策五把 PART 放進網址，列出的理由之一就是「PLAN-046 的『哪個 PART 有人讀到』統計」。
+    但 <code>toPageKey</code> 會把 <code>:part</code> 折成 <code>detail</code>，所以 part 的值從來沒被記錄過，這個承諾一直沒有兌現。
+  </div>
+
+  <div class="problem-block">
+    <strong>缺口三：折返率的解讀套在故事館會誤導</strong><br>
+    章節翻頁、切換機師都會換網址，每次都讓 pv +1，所以故事館兩個詳情頁的 pv／upv 一定偏高。
+    儀表板「頁面熱度」的說明寫「差距越大＝資訊沒一次給足」，套在故事館正好相反：翻得多代表有人在讀。
+    （與 PLAN-046 觀察期記下、尚未查明的 <code>versions_timeline_detail</code> 折返率 9.24 同類，但那一頁不在本計畫範圍。）
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label purple">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：故事館與圖鑑分開統計，不再併入 <code>pilots</code>（站長 2026-10-15 裁決）</strong><br>
+    新增 <code>lorePilots</code> 類別後，<code>/lore/*</code> 只記進故事館自己的類別。這推翻了 <code>routeKeys.ts</code> 原本
+    「從圖鑑進來還是從故事館進來都算一次」的合併理由：當初合併是因為已部署的 Worker 會靜默丟掉新類別（PLAN-043 雙名單陷阱），
+    不是因為兩者語意相同。只要照決策四的順序先部署 Worker，這個限制就不存在了。
+    「熱門機師」因此回到純圖鑑的語意，符合它「決定資料補誰」的用途。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：沿用既有的 entity 管線，不開新集合</strong><br>
+    新類別寫進同一份 <code>analyticsEntity/{YYYY-MM}</code> 月文件。同一次 flush 本來就會寫這份文件，只是多幾個欄位，所以：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>寫入次數不變</b>，熔斷預算（日 50,000）不受影響。</li>
+      <li><code>firestore.rules</code> 不用改（同一個集合）。</li>
+      <li>Worker 只改一行：<code>workers/src/collect.ts</code> 的 <code>ENTITY_TYPES</code> 加入 <code>'lorePilots'</code>、<code>'loreParts'</code>。
+        這是閉集合（統計類別不隨頁面增減），與 PLAN-046 決策八「Worker 不放頁面白名單」不衝突。</li>
+      <li>去重沿用 <code>markReported</code>：同一次造訪內，同一位機師、同一章各只算一次。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：章節 id 用 <code>${pilotId}--${partKey}</code> 扁平化，不用巢狀 map</strong><br>
+    例：<code>pilot_049_海莉絲--part-2</code>。Worker 的欄位路徑只組一層 <code>type.`id`</code>；改成巢狀
+    （<code>loreParts.`pilot`.`part`</code>）要改 payload 格式與組欄位路徑的程式，等於擴大 PLAN-046 鐵律②的審查範圍。
+    扁平化則完全不動那段程式，只動閉集合。
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>-</code> 本來就在 <code>isSafeEntityId</code> 的字元白名單內（前端與 Worker 各一份，都是格式規則不是名單），欄位路徑的安全性不變。</li>
+      <li>章節 key 由 <code>makeChapterKey</code> 產生，格式固定為 <code>part-N</code>，不含 <code>--</code>；拆解時取<b>最後一個</b> <code>--</code>。</li>
+      <li>長度上限 60 字元：機師 id 約 15 字元，加上 <code>--part-NN</code> 綽綽有餘。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：部署順序 — Worker（Phase B）一定要早於前端（Phase C）合併進 main</strong><br>
+    Worker 不在 CI 裡，要站長手動 <code>cd workers &amp;&amp; npm run deploy</code>。順序反過來的話，新類別會被舊 Worker 靜默丟掉，
+    統計又不會回溯，那段資料就補不回來。Phase B 單獨上線是安全的：舊前端不會送新類別，行為完全不變。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：Phase A 先做，只用既有的 <code>byRoute</code></strong><br>
+    進館漏斗（館首頁 → 扉頁 → 章節）不需要任何新埋點，資料自 2026-10-13 正式開放起就有，做完馬上能看。漏斗只計開放後的日子：之前入口收著，只有零星的直接連結瀏覽，混進來會稀釋「佔全站有效瀏覽」。
+    UPV 是「同一次造訪內同一個 key 只算一次」，三個 UPV 本身就是「有幾次造訪走到這一步」；pv 則依頁面換個說法：
+    扉頁的 pv 含切換機師，章節的 pv 含翻頁。「頁面熱度」裡的故事館三列保留（才看得出它在全站的份量），但不再顯示會被誤讀成折返的灰字。
+  </div>
+
+  <div class="warning-block">
+    <strong>漏斗的已知限制：深連結</strong><br>
+    分享出去的章節連結會直接跳進閱讀模式、略過館首頁與扉頁，所以「扉頁 → 章節」的比例不是嚴格的子集合，理論上可能超過 100%。
+    儀表板照實顯示，並在說明裡註明。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：章節留存用真實章節清單過濾，按需載入</strong><br>
+    要知道一位機師總共幾章、章名是什麼，得讀 <code>pilotLore</code>。它是 <code>NO_LOCAL_CACHE_KEYS</code>（不進 localStorage），
+    每次載入約 89 次讀取，所以做成按一下才載入，不拖累儀表板的開頁成本。
+    不在真實章節清單裡的 key（已刪除的章節、手打錯的網址在轉址前被記到的一次）不顯示：這類雜訊不在記錄端擋，
+    因為 <code>track.ts</code> 刻意不依賴 React、拿不到故事資料。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：實體排行加「本月／上月」切換（站長 2026-10-15 要求）</strong><br>
+    entity 文件是月粒度，月初資料很少，排行幾乎沒有參考價值。切換同時套用到既有的熱門機師／機甲／武器與新的熱門故事、章節留存。
+    多讀一份月文件＝多 1 次讀取，並沿用 API 層 5 分鐘的記憶體快取。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策八：<code>REPORTED_MAX</code> 從 50 調到 150</strong><br>
+    頁面 key、實體 key、章節 key 共用這個上限。一口氣讀 10 位機師、每位 3 章就會逼近 50，超過之後的新章節會<b>少算</b>
+    （<code>markReported</code> 回傳 false 就不計）。<code>session.ts</code> 原註解寫「會被重複計 UPV」，與實際行為相反，一併修正。
+    150 個短字串的 localStorage 成本可以忽略。
+  </div>
+
+  <div class="warning-block">
+    <strong>切換當月的「熱門機師」會一半含故事館、一半不含</strong><br>
+    Phase C 上線那個月的 <code>pilots</code> 類別，上線前含故事館讀者、上線後不含。儀表板只在那個月的熱門機師上加一行註記，
+    不做資料修補（統計不回溯，也無從拆分）。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label purple">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <table class="impact-table">
+    <tr><th>Phase</th><th>內容</th><th>依賴</th></tr>
+    <tr><td>A</td><td>儀表板新增「機師故事館」區塊（進館漏斗，用既有 byRoute）；頁面熱度的故事館列不顯示灰字 pv</td><td>無</td></tr>
+    <tr><td>B</td><td>Worker <code>ENTITY_TYPES</code> 加 <code>lorePilots</code>／<code>loreParts</code>；站長手動部署</td><td>無</td></tr>
+    <tr><td>C</td><td>前端改成分開記錄：故事館不再進 <code>pilots</code>、新增章節 id；<code>REPORTED_MAX</code> 150；型別與資料庫文件</td><td><b>B 已部署</b>才能合併進 main</td></tr>
+    <tr><td>D</td><td>儀表板：熱門故事 TOP 20、章節留存（按需載入）、本月／上月切換</td><td>可先寫，C 上線後才有數字</td></tr>
+  </table>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>閱讀時長／停留時間</b>：需要另一種彙總方式（總秒數加分桶），SPA 的背景分頁也很容易把數字灌高。先用章節留存回答「有沒有讀下去」。</li>
+      <li><b>機甲故事館</b>：PLAN-042-B 上線時比照新增 <code>loreMechs</code> 類別，章節 id 格式沿用決策三。</li>
+      <li><b><code>/lore/*</code> 兜底轉址被記成 <code>notfound</code></b>：館內打錯的網址在轉回 <code>/lore</code> 前會命中全站的 <code>*</code>，記一次 404。只污染 404 那一列，不影響故事館的數字。</li>
+      <li><b><code>versions_timeline_detail</code> 折返率偏高</b>：屬 PLAN-046 觀察期的待查項。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label purple">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-062 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../../觀察維護中/PLAN-046_網站使用統計/計畫書.html">
+      <div class="doc-tag">Plan</div>
+      <h4>◆ PLAN-046 網站使用統計</h4>
+      <p>埋點、去重、Worker 寫入管線與儀表板的原始設計</p>
+    </a>
+    <a class="doc-item" href="../../執行中/PLAN-042_故事館_總綱/計畫書.html">
+      <div class="doc-tag">Plan</div>
+      <h4>◆ PLAN-042 故事館總綱</h4>
+      <p>決策五（PART 進網址）、決策六（留在 Layout 之下）</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/04_Firebase/資料庫設計文件/analytics.html">
+      <div class="doc-tag">Schema</div>
+      <h4>◆ analyticsDaily / analyticsEntity</h4>
+      <p>使用統計的 Firestore Schema</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-062 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 觀察維護中</a>
+</footer>
+
+</body>
+</html>
