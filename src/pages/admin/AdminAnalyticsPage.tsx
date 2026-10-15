@@ -11,6 +11,7 @@ import {
 } from '../../lib/firestoreApi'
 import { ROUTE_LABELS } from '../../lib/analytics/routeKeys'
 import { LORE_PAGE_KEYS, LORE_SPLIT_MONTH } from '../../lib/analytics/loreStats'
+import { shiftMonth } from '../../lib/analytics/session'
 import {
   AUTH_LABEL,
   DEVICE_LABEL,
@@ -24,6 +25,7 @@ import { StatCard } from '../../components/admin/analytics/StatCard'
 import { BarList, type BarItem } from '../../components/admin/analytics/BarList'
 import { TrendChart, type TrendPoint } from '../../components/admin/analytics/TrendChart'
 import { LoreSection } from '../../components/admin/analytics/LoreSection'
+import { LoreRetention } from '../../components/admin/analytics/LoreRetention'
 
 // ─── 使用統計儀表板（PLAN-046 Phase B）───────────────────────────────────────
 //
@@ -35,6 +37,8 @@ import { LoreSection } from '../../components/admin/analytics/LoreSection'
 
 type Range = 7 | 30 | 90
 type Metric = 'upv' | 'sessions' | 'visitors'
+/** 熱門排行看哪個月：0＝本月、1＝上月（PLAN-062 D-3）。月初本月資料很少，排行幾乎沒有參考價值。 */
+type MonthOffset = 0 | 1
 
 const RANGE_OPTIONS: Range[] = [7, 30, 90]
 
@@ -80,6 +84,8 @@ export default function AdminAnalyticsPage() {
   const [days, setDays] = useState<AnalyticsDaily[]>([])
   const [entity, setEntity] = useState<AnalyticsEntityMonth | null>(null)
   const [entityKind, setEntityKind] = useState<EntityKind>('pilots')
+  const [monthOffset, setMonthOffset] = useState<MonthOffset>(0)
+  const entityMonth = shiftMonth(currentMonth(), -monthOffset)
   const [metric, setMetric] = useState<Metric>('upv')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -93,11 +99,10 @@ export default function AdminAnalyticsPage() {
     // 切換區間時舊資料**刻意留在畫面上**直到新資料回來：閃一下空白再填回去，
     // 比多等 200ms 更難讀。加上 5 分鐘快取，第二次之後幾乎是瞬間。
     let cancelled = false
-    Promise.all([getDailyRange(range), getEntityMonth(currentMonth())])
-      .then(([d, e]) => {
+    getDailyRange(range)
+      .then((d) => {
         if (cancelled) return
         setDays(d)
-        setEntity(e)
         setError(null)
       })
       .catch((err: unknown) => {
@@ -111,6 +116,22 @@ export default function AdminAnalyticsPage() {
       })
     return () => { cancelled = true }
   }, [range, reloadKey])
+
+  // 月排行另一條查詢：它跟著「本月／上月」走，不跟著 7／30／90 天的區間走。
+  // 綁在一起的話切區間會白讀一次月文件，切月份也會白讀一整段日文件。
+  useEffect(() => {
+    let cancelled = false
+    getEntityMonth(entityMonth)
+      .then((e) => {
+        if (!cancelled) setEntity(e)
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return
+        console.error('[AdminAnalyticsPage] 月排行查詢失敗:', err)
+        setError(err instanceof Error ? err.message : '查詢月排行失敗')
+      })
+    return () => { cancelled = true }
+  }, [entityMonth, reloadKey])
 
   const truncated = useMemo(() => days.filter((d) => !!d.truncatedAt), [days])
 
@@ -279,7 +300,7 @@ export default function AdminAnalyticsPage() {
 
           <Section
             title="機師故事館"
-            hint="數字為有效瀏覽，也就是有幾次造訪走到這一步。灰字是原始次數：扉頁含切換機師、章節含翻頁——在故事館，灰字越大代表讀得越多，不是折返。"
+            hint="數字為有效瀏覽，也就是有幾次造訪走到這一步。灰字是原始次數：扉頁含切換機師、章節含翻頁——在故事館，灰字越大代表讀得越多，不是折返。哪位機師的故事最多人讀、讀到第幾章，見下方熱門排行的「故事」分頁（以月累計）。"
           >
             <LoreSection days={cleanDays} />
           </Section>
@@ -312,13 +333,17 @@ export default function AdminAnalyticsPage() {
 
           <Section
             title={`熱門${ENTITY_KIND_LABEL[entityKind]} TOP 20`}
-            hint={`本月（${currentMonth()}）累計，同一次造訪內同一個實體只算一次。這份排行的用途是決定「資料要優先補誰」。${
-              entityKind === 'pilots' && currentMonth() === LORE_SPLIT_MONTH
-                ? '⚠ 本月中途起故事館的瀏覽改為另外統計，切換前的數字仍含故事館讀者。'
+            hint={`${monthOffset === 0 ? '本月' : '上月'}（${entityMonth}）累計，同一次造訪內同一個實體只算一次。${
+              entityKind === 'lorePilots'
+                ? '故事館裡被打開的機師（扉頁與章節都算），與圖鑑的熱門機師分開統計；2026-10 起才有這項資料。'
+                : '這份排行的用途是決定「資料要優先補誰」。'
+            }${
+              entityKind === 'pilots' && entityMonth === LORE_SPLIT_MONTH
+                ? '⚠ 這個月中途起故事館的瀏覽改為另外統計（見「故事」分頁），切換前的數字仍含故事館讀者。'
                 : ''
             }`}
           >
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
               {(Object.keys(ENTITY_KIND_LABEL) as EntityKind[]).map((k) => (
                 <button
                   key={k}
@@ -332,8 +357,38 @@ export default function AdminAnalyticsPage() {
                   {ENTITY_KIND_LABEL[k]}
                 </button>
               ))}
+              <div className="ml-auto flex items-center gap-1">
+                {([0, 1] as MonthOffset[]).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setMonthOffset(m)}
+                    title={shiftMonth(currentMonth(), -m)}
+                    className={`px-2.5 py-0.5 rounded text-[11px] border transition-colors ${
+                      monthOffset === m
+                        ? 'bg-accent-cyan/15 text-accent-cyan border-accent-cyan/40'
+                        : 'bg-bg-dark text-text-dim border-border hover:text-text-secondary'
+                    }`}
+                  >
+                    {m === 0 ? '本月' : '上月'}
+                  </button>
+                ))}
+              </div>
             </div>
-            <BarList items={entityItems} accent="purple" empty="本月還沒有詳情頁被瀏覽" />
+            <BarList
+              items={entityItems}
+              accent="purple"
+              empty={
+                entityKind === 'lorePilots'
+                  ? '這個月還沒有故事館的閱讀紀錄'
+                  : `${monthOffset === 0 ? '本月' : '上月'}還沒有詳情頁被瀏覽`
+              }
+            />
+            {entityKind === 'lorePilots' && (
+              <div className="mt-5 pt-4 border-t border-border">
+                <h3 className="text-xs font-bold text-text-primary mb-2">章節留存</h3>
+                <LoreRetention entity={entity} />
+              </div>
+            )}
           </Section>
 
           <Caveats />

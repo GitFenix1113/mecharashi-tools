@@ -69,6 +69,17 @@ export function dayKey(now: number): string {
   return new Date(now + TZ_OFFSET_MS).toISOString().slice(0, 10)
 }
 
+/**
+ * 月份字串（YYYY-MM）往前／往後推幾個月。純字串運算，不經過 Date，所以沒有時區與月底天數的問題。
+ *
+ * 給後台「本月／上月」切換用（PLAN-062）：analyticsEntity 是一月一份文件，文件 ID 就是月份字串。
+ */
+export function shiftMonth(month: string, delta: number): string {
+  const [y, m] = month.split('-').map(Number)
+  const total = y * 12 + (m - 1) + delta
+  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, '0')}`
+}
+
 /** 產生識別碼。crypto.randomUUID 在所有目標瀏覽器皆可用；退路只為極舊環境與測試。 */
 function newId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {

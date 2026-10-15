@@ -8,7 +8,7 @@
 //   每次都讓 pv +1。所以 pv／upv 在這裡代表「讀得多」，不是頁面熱度圖說的「折返」——
 //   這也是儀表板把故事館三列的灰字 pv 從頁面熱度拿掉、改在故事館區塊解釋的原因。
 
-import { toPageKey } from './routeKeys.ts'
+import { splitLoreChapterId, toPageKey } from './routeKeys.ts'
 
 /**
  * 故事館三頁的統計 key。
@@ -106,4 +106,94 @@ export function loreFunnel(routes: Record<string, RouteTotals>): LoreFunnel {
     filesPerVisit: ratio(file.pv, file.upv),
     chaptersPerVisit: ratio(chapter.pv, chapter.upv),
   }
+}
+
+// ── 章節留存（PLAN-062 Phase D）──────────────────────────────────────────────
+//
+// 資料來源是 analyticsEntity/{YYYY-MM} 的兩個類別：
+//   · lorePilots — 每位機師的故事被打開幾次（扉頁與章節都算；同一次造訪內同一位只算一次）
+//   · loreParts  — 每一章被讀幾次（key 為 `${pilotId}--${partKey}`）
+// 章節的清單、順序、標題則來自 pilotLore。統計端拿不到故事資料（track.ts 刻意不依賴 React），
+// 所以「這一章存不存在」只能在這裡對照：已刪除的章節、手打錯的網址在轉址前被記到的那一次，
+// 都因為對不到真實章節而自然不顯示。
+
+/** 章節留存的最低門檻：打開次數少於此值的機師不列出——2 個人裡 1 個讀完＝50% 沒有參考價值。 */
+export const RETENTION_MIN_OPENS = 3
+
+/** 留存計算需要的故事資料。chapters 必須**已經過 publishedChapters() 過濾**：草稿章讀者看不到。 */
+export interface RetentionDoc {
+  id: string
+  name?: string
+  chapters: ReadonlyArray<{ key: string; label?: string; title: string }>
+}
+
+export interface RetentionChapter {
+  key: string
+  /** 顯示用章節標籤；未設定時與前台同規則，依（已發布章節的）順序產生 `PART n` */
+  label: string
+  title: string
+  readers: number
+  /** readers ÷ 打開次數。同一次造訪讀了某章就一定也記了該機師，所以不會超過 1。 */
+  rate: number | null
+}
+
+export interface RetentionRow {
+  pilotId: string
+  name: string
+  opens: number
+  chapters: RetentionChapter[]
+}
+
+export interface RetentionResult {
+  /** 依打開次數由多到少 */
+  rows: RetentionRow[]
+  /** 有已發布章節、但打開次數未達門檻而沒列出的機師數 */
+  belowMin: number
+}
+
+/**
+ * 算出每位機師「打開 → PART 1 → … → PART n」各有多少讀者。
+ *
+ * 沒有已發布章節的機師不列（沒有留存可言）；統計裡有、故事資料裡已經沒有的機師也不列。
+ */
+export function chapterRetention(
+  lorePilots: Record<string, number> | undefined,
+  loreParts: Record<string, number> | undefined,
+  docs: readonly RetentionDoc[],
+  minOpens: number = RETENTION_MIN_OPENS,
+): RetentionResult {
+  const readersByPilot = new Map<string, Map<string, number>>()
+  for (const [chapterId, n] of Object.entries(loreParts ?? {})) {
+    const parsed = splitLoreChapterId(chapterId)
+    if (!parsed || typeof n !== 'number') continue
+    let m = readersByPilot.get(parsed.pilotId)
+    if (!m) readersByPilot.set(parsed.pilotId, (m = new Map()))
+    m.set(parsed.partKey, (m.get(parsed.partKey) ?? 0) + n)
+  }
+
+  const docById = new Map(docs.map((d) => [d.id, d]))
+  const candidates = Object.entries(lorePilots ?? {})
+    .filter(([id, n]) => typeof n === 'number' && n > 0 && (docById.get(id)?.chapters.length ?? 0) > 0)
+    .sort((a, b) => b[1] - a[1])
+
+  const rows: RetentionRow[] = []
+  let belowMin = 0
+  for (const [pilotId, opens] of candidates) {
+    if (opens < minOpens) {
+      belowMin++
+      continue
+    }
+    const doc = docById.get(pilotId)!
+    const read = readersByPilot.get(pilotId)
+    rows.push({
+      pilotId,
+      name: doc.name || pilotId,
+      opens,
+      chapters: doc.chapters.map((c, i) => {
+        const readers = read?.get(c.key) ?? 0
+        return { key: c.key, label: c.label ?? `PART ${i + 1}`, title: c.title, readers, rate: ratio(readers, opens) }
+      }),
+    })
+  }
+  return { rows, belowMin }
 }

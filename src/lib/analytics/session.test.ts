@@ -13,6 +13,7 @@ import {
   IDLE_MS,
   REPORTED_MAX,
   dayKey,
+  shiftMonth,
   markReported,
   nextState,
   type AnalyticsState,
@@ -113,4 +114,12 @@ test('dayKey 以台北時間切日（UTC+8），與 Worker 端的文件日期一
   assert.equal(dayKey(Date.UTC(2026, 7, 8, 16, 0, 0)), '2026-08-09')
   // 兩端若不一致，台灣早上 7 點的瀏覽會被前端當新的一天、卻寫進昨天的文件
   assert.equal(dayKey(Date.UTC(2026, 7, 8, 23, 0, 0)), '2026-08-09')
+})
+
+test('shiftMonth：跨年、往前往後都正確（後台「上月」切換用）', () => {
+  assert.equal(shiftMonth('2026-10', -1), '2026-09')
+  assert.equal(shiftMonth('2026-01', -1), '2025-12')
+  assert.equal(shiftMonth('2026-12', 1), '2027-01')
+  assert.equal(shiftMonth('2026-10', 0), '2026-10')
+  assert.equal(shiftMonth('2026-03', -14), '2025-01')
 })
