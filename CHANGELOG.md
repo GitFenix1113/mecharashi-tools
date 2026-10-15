@@ -12,6 +12,9 @@
 
 ### ✨ 新功能
 
+- **analytics**: 熱門排行加「故事」分頁、章節留存與本月／上月切換（PLAN-062 Phase D） (`51ec4d0`)
+- **analytics**: 故事館與圖鑑分開統計，新增章節統計（PLAN-062 Phase C） (`30330e4`)
+- **analytics**: 使用統計新增故事館進館漏斗（PLAN-062 Phase A） (`bed7915`)
 - **seo**: 網頁標題加上鋼嵐 Mecharashi、每頁獨立標題與 sitemap (`ebdb801`)
 - **lore**: 故事館加三個回圖鑑出口與出館「關門」過場 (`bc20ec0`)
 - **lore**: 故事館旁白可設定非機師的自訂說話者 (`3559319`)
@@ -286,6 +289,7 @@
 
 ### 📚 文件
 
+- **plan**: 立案 PLAN-062 故事館使用統計 (`b1f3863`)
 - **plan-042-f**: 陣營徽章第二批與英文名稱回填完成 (`664a7c0`)
 - **plan-042-f**: 陣營徽章部署上線，進度表 8／16 (`f9bb7f3`)
 - **plan-042-f**: 鑑賞框改為預設立繪、H-1 洛莎大廳確認歸審判外觀 B (`5502ee8`)
@@ -411,6 +415,7 @@
 ### 🔧 維護
 
 - **scripts**: push 前偵測淺層 clone，歷史不完整就中止，不再默默截斷舊紀錄 (`7a21c77`)
+- **analytics**: Worker 接受故事館統計類別 lorePilots／loreParts（PLAN-062 Phase B） (`eee18b8`)
 - **lint**: 忽略 .claude/（worktree 副本會讓 ESLint 找到兩個 tsconfig 根目錄而全面解析失敗） (`f15e265`)
 - 圖片 manifest 補上場景外觀的鑑賞版 (`3cd69ce`)
 - **images**: 匯入凜騎士／日蝕官方原檔；歸檔流程補 --other-icons、--skins，報告改成照抄清單 (`baff274`)
