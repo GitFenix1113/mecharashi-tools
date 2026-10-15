@@ -412,6 +412,7 @@
 
 ### 🔧 維護
 
+- **analytics**: Worker 接受故事館統計類別 lorePilots／loreParts（PLAN-062 Phase B） (`eee18b8`)
 - **lint**: 忽略 .claude/（worktree 副本會讓 ESLint 找到兩個 tsconfig 根目錄而全面解析失敗） (`f15e265`)
 - 圖片 manifest 補上場景外觀的鑑賞版 (`3cd69ce`)
 - **images**: 匯入凜騎士／日蝕官方原檔；歸檔流程補 --other-icons、--skins，報告改成照抄清單 (`baff274`)
