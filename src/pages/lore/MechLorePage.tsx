@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import LoreStage from '../../components/lore/LoreStage'
-import MechDossier, { type MechLineageItem } from '../../components/lore/MechDossier'
+import MechDossier, { CARD_LABEL, type MechLineageItem } from '../../components/lore/MechDossier'
 import LoreChapterPager from '../../components/lore/LoreChapterPager'
 import LoreChapterBody from '../../components/lore/LoreChapterBody'
 import LoreSkinPicker from '../../components/lore/LoreSkinPicker'
@@ -12,11 +12,12 @@ import { mechSubject } from '../../components/lore/loreSubject'
 import { buildMechGroups } from '../../components/lore/mechRoster'
 import { readLoreSort, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
 import { publishedChapters } from '../../components/lore/loreText'
-import { mechStageArt, preloadImages, preloadStageArt, type StageArt } from '../../components/lore/loreStageArt'
-import type { PilotSkinArt } from '../../utils/gameArt'
+import { mechSkinStageArt, mechStageArt, preloadImages, preloadStageArt, type StageArt } from '../../components/lore/loreStageArt'
+import { makerStageArt, mechCardArt, mechSkins, type PilotSkinArt } from '../../utils/gameArt'
+import { assetUrl } from '../../utils/assets'
 import { pairedPilotOf } from '../../utils/officialPairs'
 import { useMechLore, useMechMakers, useMechs, usePilots } from '../../hooks/useFirestore'
-import type { Mech, MechRelationKind } from '../../types'
+import type { Mech, MechLoreDoc, MechRelationKind } from '../../types'
 import { usePageTitle } from '../../contexts/PageTitleContext'
 import { useLoreHall } from './useLoreHall'
 
@@ -30,17 +31,22 @@ import { useLoreHall } from './useLoreHall'
  * ② mechLore 不擋整頁：整頁只等 mechs；mechLore 的 error／loading 交給卷宗（MechDossier 的 status）。
  * ③ 廠商（mechMakers）只是名稱與徽章：讀不到就顯示「廠商未載」、名冊歸到未載那組，不擋頁面。
  *
- * 塗裝（mechLore.skins）要等 F-1 塗裝圖上站才有，現在每台都只有預設主視覺（外觀列不出現）。
+ * 塗裝（F-1）：圖在 game/mechs/<wap>/skins/、名稱／隱藏／順序在 mechLore.skins（mechSkins() 合併）；35 台有、其餘沒有塗裝列。
+ * 鑑賞（D-4）：主視覺／塗裝／四分件／招募插畫，背景可切廠商舞台或紙色（招募插畫本身不透明，不給切）。
  */
 
-/** 同一個分頁裡，每台最後選的塗裝（F-1 之後才用得到；與機師廳分開記） */
+/** 同一個分頁裡，每台最後選的塗裝（與機師廳分開記） */
 const rememberedSkins = new Map<string, string>()
+/** 鑑賞背景的偏好（同一個分頁內記住；預設廠商舞台＝遊戲內機甲圖鑑的樣子） */
+let viewerBgPref: 'stage' | 'paper' = 'stage'
 
 interface MechStage { art: StageArt | null; skins: PilotSkinArt[]; skin: PilotSkinArt | null }
 const NO_SKINS: PilotSkinArt[] = []
-/** 機甲的舞台。塗裝 F-1 前一律是預設主視覺 */
-function stageArtFor(mech: Mech): MechStage {
-  return { art: mechStageArt(mech), skins: NO_SKINS, skin: null }
+/** 機甲的舞台：預設主視覺，或網址 `?skin=` 指到的那套塗裝（對不到＝預設） */
+function stageArtFor(mech: Mech, skinKey: string, lore: MechLoreDoc | undefined): MechStage {
+  const skins = mechSkins(mech, lore)
+  const skin = skinKey ? skins.find((s) => s.key === skinKey) ?? null : null
+  return { art: skin ? mechSkinStageArt(mech, skin) : mechStageArt(mech), skins, skin }
 }
 
 const SORT_LABELS: Record<LoreSort, string> = { class: '廠商', debut: '登場版本' }
@@ -80,7 +86,8 @@ export default function MechLorePage() {
   const rosterOrder = useMemo(() => rosterGroups.flatMap((g) => g.items), [rosterGroups])
   const chapterCounts = useMemo(() => new Map(loreDocs.map((d) => [d.id, publishedChapters(d.chapters).length])), [loreDocs])
   const chapterCount = useCallback((mid: string) => chapterCounts.get(mid) ?? 0, [chapterCounts])
-  const skinCount = useCallback(() => 0, [])
+  const skinCounts = useMemo(() => new Map(mechs.map((m) => [m.id, mechSkins(m, loreById.get(m.id)).length])), [mechs, loreById])
+  const skinCount = useCallback((m: { id: string }) => skinCounts.get(m.id) ?? 0, [skinCounts])
 
   // 系譜的反查：別台的 relations 連到這台（人工連好的資料，不是文字比對；決策 B-10）
   const incoming = useMemo(() => {
@@ -96,7 +103,7 @@ export default function MechLorePage() {
   }, [loreDocs])
 
   // ── 展廳狀態機（C-3）────────────────────────────────────────────────────────
-  const stageOf = useCallback((m: Mech) => stageArtFor(m), [])
+  const stageOf = useCallback((m: Mech, skinKey: string) => stageArtFor(m, skinKey, loreById.get(m.id)), [loreById])
   const chaptersOf = useCallback((mid: string) => publishedChapters(loreById.get(mid)?.chapters), [loreById])
   const {
     id, shown, stage, phase, rootRef, switcherRef, progressRef, className, dir, onTouchStart, onTouchEnd,
@@ -137,8 +144,10 @@ export default function MechLorePage() {
   }, [shown, lore, mechs, loreById, incoming])
   const pilot = useMemo(() => (shown ? pairedPilotOf(shown.id, pilots) ?? null : null), [shown, pilots])
 
-  // ── 鑑賞：主視覺或某一張分件。分件從卷宗那格縮圖飛出去、飛回來 ─────────────────────
+  // ── 鑑賞：主視覺（或選中的塗裝）、某一張分件、招募插畫。後兩者從卷宗那格縮圖飛出去、飛回來 ─────────
   const [part, setPart] = useState<{ src: string; label: string; el: HTMLElement } | null>(null)
+  const [viewerBg, setViewerBgState] = useState(viewerBgPref)
+  const setViewerBg = useCallback((v: 'stage' | 'paper') => { viewerBgPref = v; setViewerBgState(v) }, [])
   const openPart = useCallback((src: string, el: HTMLElement, label: string) => {
     setPart({ src, label, el })
     openViewer()
@@ -173,10 +182,17 @@ export default function MechLorePage() {
 
   // 回圖鑑：指向「顯示中的那台」（換台時網址先變、畫面落後一拍）
   const codexHref = `/mechs/${encodeURIComponent(shown.id)}`
+  const cardUrl = mechCardArt(shown)
+  const cardSrc = cardUrl ? assetUrl(cardUrl) : undefined
+  const stageBgUrl = makerStageArt(maker)
+  const stageBg = stageBgUrl ? assetUrl(stageBgUrl) : undefined
+  // 招募插畫是整張場景（不透明）：背景切了也看不到，不給切
+  const viewingCard = part?.label === CARD_LABEL
+  const skins = stage?.skins ?? NO_SKINS
 
   const tools = (
     <>
-      <LoreSkinPicker subject={shownSubject} skins={stage?.skins ?? NO_SKINS} current={stage?.skin?.key ?? ''} onPick={pickSkin} />
+      <LoreSkinPicker subject={shownSubject} skins={skins} current={stage?.skin?.key ?? ''} onPick={pickSkin} noun="塗裝" />
       {art && (
         <button
           type="button"
@@ -197,7 +213,8 @@ export default function MechLorePage() {
       ref={rootRef}
       className={className}
       data-side="left"
-      data-variant={art?.variant ?? 'sn'}
+      // 卷宗的位置一律照主視覺（sn）：塗裝（mskin）的幾何在 .lore-figure 自己身上，換塗裝時卷宗不跟著跳
+      data-variant="sn"
       data-dir={dir}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
@@ -236,6 +253,7 @@ export default function MechLorePage() {
             pilotHref={(pid) => `/lore/pilots/${encodeURIComponent(pid)}`}
             codexHref={codexHref}
             onOpenPart={openPart}
+            cardSrc={cardSrc}
           />
         )}
       </main>
@@ -263,7 +281,7 @@ export default function MechLorePage() {
           unit="台"
           onHover={(s) => {
             const m = mechs.find((x) => x.id === s.id)
-            if (m) void preloadStageArt(stageArtFor(m).art)
+            if (m) void preloadStageArt(stageArtFor(m, rememberedSkins.get(m.id) ?? '', loreById.get(m.id)).art)
           }}
         />
       )}
@@ -271,12 +289,29 @@ export default function MechLorePage() {
       {viewer !== 'closed' && art && (
         <LoreViewer
           src={part?.src ?? art.full}
-          name={part ? `${shown.name}・${part.label}` : shown.name}
+          name={part ? `${shown.name}・${part.label}` : stage?.skin ? `${shown.name}・${stage.skin.label}` : shown.name}
+          label="鑑賞"
+          backdrop={!viewingCard && viewerBg === 'stage' ? stageBg : undefined}
           onClose={closeViewer}
           originRect={part ? partRect : stageArtRect}
           closing={viewer === 'closing'}
           onClosed={() => { onViewerClosed(); setPart(null) }}
-        />
+        >
+          {((stageBg && !viewingCard) || (!part && skins.length > 0)) && (
+            <div className="lore-viewer__tools">
+              {stageBg && !viewingCard && (
+                <div className="lore-skins lore-bgtoggle" role="radiogroup" aria-label="背景">
+                  <span className="lore-skins__lbl">背景</span>
+                  {([['stage', '廠商舞台'], ['paper', '紙色']] as const).map(([v, t]) => (
+                    <button key={v} type="button" role="radio" aria-checked={viewerBg === v} className="lore-bgopt" onClick={() => setViewerBg(v)}>{t}</button>
+                  ))}
+                </div>
+              )}
+              {/* 塗裝只在看主視覺時能換（看分件或招募插畫時，換了也看不到） */}
+              {!part && <LoreSkinPicker subject={shownSubject} skins={skins} current={stage?.skin?.key ?? ''} onPick={pickSkin} noun="塗裝" />}
+            </div>
+          )}
+        </LoreViewer>
       )}
     </div>
   )

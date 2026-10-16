@@ -37,6 +37,7 @@ import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 import { GAME_DIR, PART_NO, SCENE_VIEW_SUFFIX, classifyMechFile, classifyNpcFile, classifyPilotFile } from './lib/gameAssetKinds.mjs'
 import { SCENE_MAX_TRANSPARENT, transparentRatio } from './lib/sceneArt.mjs'
+import { MAKER_STAGE_DIR, MAKER_STAGE_RE, MECH_CARD_DIR, MECH_SKIN_DIR, SKIN_THUMB_SUFFIX, mechSkinFile, parseMechSkin } from './lib/mechLoreAssets.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const GAME_ROOT = path.join(ROOT, 'public', GAME_DIR)
@@ -220,7 +221,43 @@ async function scanSkins(npcs) {
   return { byGameId, byPilot: [...byPilot].sort(([a], [b]) => a.localeCompare(b)) }
 }
 
-function writeGameIndex({ pilots, mechs, npcs }, skins) {
+/**
+ * 機甲故事館素材（PLAN-042-B F）：塗裝、招募插畫、廠商舞台。由 `import-game-assets.mjs --mech-lore` 放進來，規則在 scripts/lib/mechLoreAssets.mjs。
+ * 塗裝沒有 _thumb 縮圖只警告（塗裝列那顆按鈕會是空的），招募插畫一台不該有兩張（對照表一台只指一組卡池鍵）。
+ */
+function scanMechLore() {
+  const skins = []   // [wap, [{ code, thumb }]]
+  const cards = []   // [wap, 卡池鍵]
+  for (const wap of listDirs(path.join(GAME_ROOT, 'mechs'))) {
+    const sdir = path.join(GAME_ROOT, 'mechs', wap, MECH_SKIN_DIR)
+    if (fs.existsSync(sdir)) {
+      const names = new Set(webps(sdir))
+      const list = []
+      for (const name of [...names].sort()) {
+        const sk = parseMechSkin(name)
+        if (!sk || sk.raw || sk.wap !== wap) continue
+        const thumb = names.has(`${mechSkinFile(wap, sk.code)}${SKIN_THUMB_SUFFIX}`)
+        if (!thumb) console.warn(`⚠ 塗裝 ${name}（mechs/${wap}/skins）沒有縮圖——跑 node scripts/import-game-assets.mjs --mech-lore --apply 補上`)
+        list.push({ code: sk.code, thumb })
+      }
+      if (list.length) skins.push([wap, list])
+    }
+    const cdir = path.join(GAME_ROOT, 'mechs', wap, MECH_CARD_DIR)
+    if (fs.existsSync(cdir)) {
+      const keys = webps(cdir).filter((n) => n.startsWith('mechcard_illustration_')).map((n) => n.slice('mechcard_illustration_'.length))
+      if (keys.length > 1) {
+        console.error(`❌ mechs/${wap}/card 有 ${keys.length} 張招募插畫（${keys.join('／')}）——一台只放一組，刪掉不用的那張`)
+        process.exit(1)
+      }
+      if (keys.length) cards.push([wap, keys[0]])
+    }
+  }
+  const sdir = path.join(GAME_ROOT, MAKER_STAGE_DIR)
+  const stages = fs.existsSync(sdir) ? webps(sdir).map((n) => MAKER_STAGE_RE.exec(n)?.[1]).filter(Boolean).sort() : []
+  return { skins, cards, stages }
+}
+
+function writeGameIndex({ pilots, mechs, npcs }, skins, mechLore) {
   const flags = (kinds, list) => list.filter((k) => kinds.has(k)).map((k) => `${k}: true`).join(', ')
   const pilotBody = pilots
     .map((e) => `  ['${e.id}', { ${[e.key ? `key: '${e.key}'` : '', flags(e.kinds, ['half', 'head', 'raw', 'card'])].filter(Boolean).join(', ')} }],`)
@@ -309,6 +346,30 @@ export interface GameNpcSkin extends GamePilotSkin { dir: string }
 export const GAME_PILOT_NPC_SKINS: ReadonlyMap<string, readonly GameNpcSkin[]> = new Map<string, readonly GameNpcSkin[]>([
 ${skinBody(skins.byPilot)}
 ])
+
+/**
+ * 機甲塗裝（PLAN-042-B F-1）：\`public/images/game/mechs/<wap>/skins/Img_Skin_wap<wap>_<code>.webp\`（1600×1500 去背）
+ * ＋ \`…_thumb.webp\`（96px 縮圖，塗裝列的按鈕），以 **wap** 為 key、值是塗裝代碼。
+ * 名稱、隱藏、順序不在這裡：住 mechLore.skins（故事館編輯台）。查詢走 \`mechSkins()\`（src/utils/gameArt.ts）。
+ */
+export interface GameMechSkin { code: string; thumb?: true }
+export const GAME_MECH_SKINS: ReadonlyMap<string, readonly GameMechSkin[]> = new Map<string, readonly GameMechSkin[]>([
+${mechLore.skins.map(([w, list]) => `  ['${w}', [${list.map((e) => `{ code: '${e.code}'${e.thumb ? ', thumb: true' : ''} }`).join(', ')}]],`).join('\n')}
+])
+
+/**
+ * 機甲招募插畫（PLAN-042-B F-2）：wap → 卡池鍵；圖在 \`mechs/<wap>/card/mechcard_illustration_<卡池鍵>.webp\`（2600×1080）。
+ * 哪台用哪組卡池是 scripts/lib/mechGachaCards.json 的人工對照。查詢走 \`mechCardArt()\`。
+ */
+export const GAME_MECH_CARDS: ReadonlyMap<string, string> = new Map<string, string>([
+${mechLore.cards.map(([w, k]) => `  ['${w}', ${q(k)}],`).join('\n')}
+])
+
+/**
+ * 廠商舞台（PLAN-042-B F-2）：\`makers/Skynet_Wap_BG_<key>_Raw.webp\`（2048×1024，遊戲內機甲圖鑑的背景）有哪些 key。
+ * key 就是 mechMakers 的文件 ID（或它的 stage 欄位）。查詢走 \`makerStageArt()\`。
+ */
+export const GAME_MAKER_STAGES: ReadonlySet<string> = new Set<string>([${mechLore.stages.map(q).join(', ')}])
 `
   fs.writeFileSync(GAME_OUT_FILE, out, 'utf-8')
   const has = (list, k) => list.filter((e) => e.kinds.has(k)).length
@@ -316,7 +377,8 @@ ${skinBody(skins.byPilot)}
     `✅ 官方原檔索引已產生：${path.relative(ROOT, GAME_OUT_FILE)}` +
     `（機師 ${pilots.length} 位：half ${has(pilots, 'half')}／head ${has(pilots, 'head')}／raw ${has(pilots, 'raw')}／card ${has(pilots, 'card')}；` +
     `機甲 ${mechs.length} 台：icon ${has(mechs, 'icon')}／sn ${has(mechs, 'sn')}；NPC 立繪 ${npcs.length} 套；` +
-    `造型 ${skins.byGameId.reduce((n, e) => n + e.skins.length, 0)} 套／${skins.byGameId.length} 位＋NPC 圖庫 ${skins.byPilot.reduce((n, [, l]) => n + l.length, 0)} 套）`,
+    `造型 ${skins.byGameId.reduce((n, e) => n + e.skins.length, 0)} 套／${skins.byGameId.length} 位＋NPC 圖庫 ${skins.byPilot.reduce((n, [, l]) => n + l.length, 0)} 套；` +
+    `機甲塗裝 ${mechLore.skins.reduce((n, [, l]) => n + l.length, 0)} 套／${mechLore.skins.length} 台、招募插畫 ${mechLore.cards.length} 台、廠商舞台 ${mechLore.stages.length} 家）`,
   )
 }
 
@@ -393,7 +455,7 @@ ${officialBody}
   )
 
   const game = scanGame()
-  writeGameIndex(game, await scanSkins(game.npcs))
+  writeGameIndex(game, await scanSkins(game.npcs), scanMechLore())
 }
 
 await main()

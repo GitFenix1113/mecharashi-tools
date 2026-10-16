@@ -3,6 +3,9 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-17', type: 'feat', summary: '機甲故事館加入官方素材：<b>35 台機甲的塗裝</b>可以在舞台上切換、卷宗最後多一張<b>「卡池」招募插畫</b>（點開看全景）、'
+      + '鑑賞時背景可切<b>廠商舞台</b>或紙色；故事館首頁的機甲分頁頁首換成招募插畫。' },
+
     { date: '2026-10-17', type: 'feat', summary: '故事館首頁的<b>「機甲」分頁</b>開放（網址 /lore/mechs）：93 台機甲一面牆，可依<b>廠商</b>或<b>登場版本</b>排列，'
       + '卡片標出類型、版本與章節數；頁首換成兩台機甲主視覺。' },
 

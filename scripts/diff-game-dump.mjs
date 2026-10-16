@@ -31,6 +31,7 @@ import { playableArtDirs } from './lib/gameAssetKinds.mjs'
 import { ARCHIVE_ROOT, DUMP_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, preferTexture, resolveDump } from './lib/gameDump.mjs'
 import { EQUIP_POOLS, emblemFamilyOf, iconFamily, iconPoolIndex, isLibraryKey, otherIconPaths } from './lib/gameIconKinds.mjs'
 import { UI_GROUPS, isUiArt, uiArchivePath, uiLocation, uiModuleInfo } from './lib/gameUiModules.mjs'
+import { MAKER_STAGE_RE, mechCardFile, parseCardTile, parseMechSkin } from './lib/mechLoreAssets.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
@@ -247,6 +248,36 @@ if (mechCore.length) {
     targets: mechCore.map((i) => ({ name: i.name, ok: site.stems.has(i.name), url: `images/game/mechs/${i.wap}/${i.name}.webp` })),
     lines: uniq(mechCore.filter((i) => !site.stems.has(i.name)).map((i) => i.wap)).map((w) => `node scripts/import-game-assets.mjs ${SRC} --wap=${w}`),
   })
+}
+// 機甲故事館素材：塗裝、招募插畫、廠商舞台（PLAN-042-B F；命名規則在 scripts/lib/mechLoreAssets.mjs）。
+// 招募插畫的切片檔名只有卡池英文鍵、沒有 wap ⇒ 哪台用哪組靠 scripts/lib/mechGachaCards.json；對不到的列出來給人判斷，
+// 不算進待辦（雙機池、常駐池、自選池永遠對不到，算進去這一步就永遠是 ⬜）
+{
+  const cardMapFile = path.join(ROOT, 'scripts/lib/mechGachaCards.json')
+  const cardMap = fs.existsSync(cardMapFile) ? JSON.parse(fs.readFileSync(cardMapFile, 'utf8')).cards ?? {} : {}
+  const wapOfCard = new Map(Object.entries(cardMap).map(([w, k]) => [k, w]))
+  const targets = new Map()
+  const unmapped = new Set()
+  for (const i of addedItems) {
+    const sk = parseMechSkin(i.name)
+    if (sk && !sk.raw && site.waps.has(sk.wap)) targets.set(i.name, { name: i.name, ok: site.stems.has(i.name), url: `images/game/mechs/${sk.wap}/skins/${i.name}.webp` })
+    if (MAKER_STAGE_RE.test(i.name)) targets.set(i.name, { name: i.name, ok: site.stems.has(i.name), url: `images/game/makers/${i.name}.webp` })
+    const t = parseCardTile(i.name)
+    if (t && t.n <= 2 && Number(i.w) === 1024) {
+      const wap = wapOfCard.get(t.key)
+      if (!wap) { unmapped.add(t.key); continue }
+      const out = mechCardFile(t.key)
+      targets.set(out, { name: out, ok: site.stems.has(out), url: `images/game/mechs/${wap}/card/${out}.webp` })
+    }
+  }
+  if (targets.size || unmapped.size) {
+    step({
+      kind: 'public', title: '機甲塗裝、招募插畫、廠商舞台 → 上站（機甲故事館）',
+      targets: [...targets.values()],
+      lines: [`node scripts/import-game-assets.mjs ${SRC} --mech-lore`,
+        ...(unmapped.size ? [`對不到機甲的卡池鍵：${[...unmapped].sort().join('、')}——新機甲的專屬卡池就在 scripts/lib/mechGachaCards.json 補一行 "<wap>": "<卡池鍵>" 再跑上面那行；雙機池、常駐池、自選池不必補`] : [])],
+    })
+  }
 }
 // NPC 圖庫：不是可抽機師的立繪（劇情 NPC、尚未上線的新角色）
 const npcArts = pilotArts.filter((i) => !playable.has(i.id))

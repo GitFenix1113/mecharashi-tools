@@ -31,31 +31,14 @@ export function pickHeroCast(rand: () => number = Math.random): string[] {
 }
 
 /**
- * 機甲廳 hero 的陣容（PLAN-042-B E-1）：從有主視覺（`_SN_Raw`）的機甲裡抽 2 台，0 號後排、1 號前排。
+ * 機甲廳 hero（PLAN-042-B F-2）：從有招募插畫的機甲裡抽一台（決策 B-5：招募插畫只在卷宗附件與館首頁 hero 出現）。
+ * 池子是 build 時的靜態索引（GAME_MECH_CARDS），匯入只收站上有的機甲，所以不必等 mechs 資料就能抽、圖可以馬上開始抓。
+ * 池子是空的回 undefined（hero 只剩紅帶與標題）。
  *
- * 池子由頁面給（站上真的有的機甲 ∩ 有主視覺），不從圖片索引拿：索引裡有已匯入、還沒建檔的機甲，
- * 讓牆上找不到的機甲站在 hero 上很怪。池子不足 2 台就回傳全部（0 台＝hero 只剩紅帶與標題）。
- *
- * ⚠ 這是過渡陣容：計畫書的 hero 是招募插畫或廠商舞台輪播，那兩種素材要等 F-2 上站。
+ * （E-1 的過渡版是兩台主視覺 _SN_Raw 並排，F-2 招募插畫上站後換掉。）
  */
-export const MECH_HERO_SLOTS = 2
-
-export function pickMechHeroCast<T>(pool: readonly T[], rand: () => number = Math.random): T[] {
-  return shuffle([...pool], rand).slice(0, MECH_HERO_SLOTS)
-}
-
-/**
- * 可重現的亂數（mulberry32）。機甲廳的池子要等資料到了才有：頁面在進館時抽一次種子，
- * 池子從空變滿的那一刻用同一顆種子抽，之後重繪不會換陣容。
- */
-export function seededRandom(seed: number): () => number {
-  let a = Math.floor(seed * 0x100000000) | 0
-  return () => {
-    a = (a + 0x6d2b79f5) | 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
+export function pickMechHeroCard<T>(pool: readonly T[], rand: () => number = Math.random): T | undefined {
+  return pool.length ? pool[Math.floor(rand() * pool.length)] : undefined
 }
 
 function shuffle<T>(arr: T[], rand: () => number): T[] {

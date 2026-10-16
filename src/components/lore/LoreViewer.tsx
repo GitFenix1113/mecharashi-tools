@@ -28,6 +28,10 @@ export interface LoreViewerProps {
   closing?: boolean
   /** 飛回去的動畫播完（或不必播） */
   onClosed?: () => void
+  /** 背景圖（已套 BASE_URL）。沒給＝紙色；機甲廳給廠商舞台（PLAN-042-B D-4） */
+  backdrop?: string
+  /** 圖名，接在名字後面給讀屏與 alt（預設「全身立繪」） */
+  label?: string
 }
 
 const OPEN_MS = 680
@@ -61,7 +65,7 @@ function flipTransform(from: DOMRect, to: DOMRect): string {
   return `translate(${dx}px, ${dy}px) scale(${s})`
 }
 
-export default function LoreViewer({ src, name, onClose, children, originRect, closing = false, onClosed }: LoreViewerProps) {
+export default function LoreViewer({ src, name, onClose, children, originRect, closing = false, onClosed, backdrop, label = '全身立繪' }: LoreViewerProps) {
   const [zoom, setZoom] = useState(false)
   const imgRef = useRef<HTMLImageElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -142,10 +146,11 @@ export default function LoreViewer({ src, name, onClose, children, originRect, c
 
   return (
     <div
-      className={`lore-viewer${zoom ? ' is-zoom' : ''}${closing ? ' is-closing' : ''}`}
+      className={`lore-viewer${zoom ? ' is-zoom' : ''}${closing ? ' is-closing' : ''}${backdrop ? ' has-backdrop' : ''}`}
+      style={backdrop ? ({ '--viewer-bg': `url("${backdrop}")` } as React.CSSProperties) : undefined}
       role="dialog"
       aria-modal="true"
-      aria-label={`${name} 全身立繪`}
+      aria-label={`${name} ${label}`}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('.lore-viewer__skins, .lore-viewer__close')) return
         if (!zoom) origin(e.clientX, e.clientY)
@@ -153,7 +158,7 @@ export default function LoreViewer({ src, name, onClose, children, originRect, c
       }}
       onMouseMove={(e) => { if (zoom) origin(e.clientX, e.clientY) }}
     >
-      <img key={src} ref={imgRef} src={src} alt={`${name} 全身立繪`} decoding="async" data-flip={src === flipSrc ? '' : undefined} />
+      <img key={src} ref={imgRef} src={src} alt={`${name} ${label}`} decoding="async" data-flip={src === flipSrc ? '' : undefined} />
       <div className="lore-viewer__cap"><b>{name}</b><span>點一下放大，移動滑鼠檢視細節 · Esc 關閉</span></div>
       {children && <div className="lore-viewer__skins">{children}</div>}
       <button ref={closeRef} type="button" className="lore-viewer__close" onClick={onClose}>關閉 ✕</button>

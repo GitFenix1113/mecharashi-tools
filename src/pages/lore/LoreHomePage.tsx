@@ -10,12 +10,13 @@ import { normalizeFactionLogos } from '../../utils/factionLogos'
 import { toneBar } from '../../components/loadout/PickerVariants'
 import { useMechLore, useMechMakers, useMechs, usePilotLore, usePilots } from '../../hooks/useFirestore'
 import { assetUrl, mechPortraitCandidates, pilotOfficialArt, pilotPortraitCandidates } from '../../utils/assets'
-import { mechGameArt } from '../../utils/gameArt'
+import { mechCardArt } from '../../utils/gameArt'
+import { GAME_MECH_CARDS } from '../../data/gameArtIndex'
 import type { Mech, MechMaker, Pilot } from '../../types'
 import { buildLoreGroups, readLoreSort, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
 import { buildMechGroups } from '../../components/lore/mechRoster'
 import { publishedChapters } from '../../components/lore/loreText'
-import { pickHeroCast, pickMechHeroCast, seededRandom } from '../../components/lore/loreHeroCast'
+import { pickHeroCast, pickMechHeroCard } from '../../components/lore/loreHeroCast'
 
 /**
  * 故事館的館首頁：機師廳（`/lore`，PLAN-042-A D-2）與機甲廳（`/lore/mechs`，PLAN-042-B E-1）。
@@ -128,8 +129,7 @@ function MechHall() {
     [mechs, sort, loreById, makers],
   )
   const settled = sort === 'debut' || ((!loreLoading || !!loreError) && (!makersLoading || !!makersError))
-  const heroPool = useMemo(() => mechs.filter((m) => mechGameArt(m, 'sn')), [mechs])
-  const hero = <MechHero count={loading || error ? undefined : mechs.length} pool={heroPool} />
+  const hero = <MechHero count={loading || error ? undefined : mechs.length} />
 
   if (error) return <PageFrame hero={hero}><LoadError message={error.message} /></PageFrame>
   if (loading || !settled) return <PageFrame hero={hero}><WallSkeleton cell="aspect-[28/17]" grid={MECH_GRID} /></PageFrame>
@@ -353,37 +353,32 @@ function PilotHero({ count }: { count?: number }) {
 }
 
 /**
- * 機甲廳 hero（PLAN-042-B E-1）：同一套紅帶與標題，人物換成兩台官方主視覺（`_SN_Raw`，2000×1080 去背）。
+ * 機甲廳 hero（PLAN-042-B F-2）：同一套紅帶與標題，紅帶右側鋪一張招募插畫（2600×1080，卡池主視覺）。
+ * 決策 B-5：招募插畫不上展廳舞台（搶主題），只在卷宗附件與這裡出現——「館首頁 hero 才讓它炫」。
  *
- * ⚠ 過渡版：計畫書的 hero 是招募插畫（2600×1080）或廠商舞台輪播，兩者都要等 F-2 素材上站。
- *   主視覺每台約 150 KB、只載 2 張；手機只顯示前排那台（後排 display:none ＋ lazy，不白下載）。
- *
- * 陣容要等 mechs 到了才抽得出來（池子＝站上有、又有主視覺的機甲）。種子在進館時抽一次，
- * 池子從空變滿那一刻用同一顆種子抽，之後的重繪拿到同一組，不會當場換台。
+ * 每次進館抽一張（池子是 build 時的靜態索引 GAME_MECH_CARDS，不必等 mechs：圖可以跟資料同時開始抓）。
+ * 一張約 200 KB；紅帶壓在插畫左緣上（index.css 的 .lore-home-hero--mechs）。
  */
-function MechHero({ count, pool }: { count?: number; pool: readonly Mech[] }) {
-  const [seed] = useState(Math.random)
-  const cast = useMemo(() => pickMechHeroCast(pool, seededRandom(seed)), [pool, seed])
+function MechHero({ count }: { count?: number }) {
+  const [wap] = useState(() => pickMechHeroCard([...GAME_MECH_CARDS.keys()]))
+  const card = wap ? mechCardArt({ gameId: wap }) : undefined
 
   return (
     <header className="lore-home-hero lore-home-hero--mechs mb-6 sm:mb-8">
       <div className="lore-home-hero__band" aria-hidden="true" />
       <div className="lore-home-hero__cast" aria-hidden="true">
-        {cast.map((m, i) => (
+        {card && (
           <img
-            key={m.id}
-            className="lore-home-hero__mech"
-            data-slot={i}
-            src={assetUrl(mechGameArt(m, 'sn')!)}
+            className="lore-home-hero__card"
+            src={assetUrl(card)}
             alt=""
-            width={2000}
+            width={2600}
             height={1080}
             decoding="async"
-            loading={i === 1 ? 'eager' : 'lazy'}
-            fetchPriority={i === 1 ? 'high' : 'low'}
+            fetchPriority="high"
             onLoad={(e) => { e.currentTarget.dataset.loaded = '' }}
           />
-        ))}
+        )}
       </div>
       <div className="lore-home-hero__title">
         <span className="lore-script-font lore-home-hero__script" aria-hidden="true">Mecha</span>

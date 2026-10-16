@@ -159,6 +159,13 @@
     · <strong>前台</strong>：卷宗徽章的滑鼠提示改用徽章名稱（沒有才退回機師陣營文字）；修正彩色版徽章被圓環裡給天賦圖示用的圓形裁切切掉邊角。
   </div>
   <div class="info-block" style="margin-top:1rem;">
+    <strong>✅ 機甲廳的官方素材（PLAN-042-B Phase F，2026-10-17）</strong><br>
+    · <strong>塗裝</strong>（38 套／35 台，<code>game/mechs/&lt;wap&gt;/skins/</code>）：舞台左下多一列「塗裝」（縮圖由塗裝圖裁出），網址 <code>?skin=&lt;代碼&gt;</code>。名稱／隱藏／順序住 <code>mechLore.skins</code>（<code>mechSkins()</code> 合併，未設定顯示「塗裝 N」）。塗裝圖取景比主視覺緊、常切在畫布邊 ⇒ 舞台構圖 <code>mskin</code>：依高度、四邊羽化；尺寸照主視覺的留白比例校正，換塗裝時機體大小與卷宗位置都不跳（<code>.lore-page</code> 固定 <code>data-variant="sn"</code>）<br>
+    · <strong>招募插畫</strong>（61 台，<code>card/</code>，2600×1080）：不上舞台（決策 B-5），只當卷宗最後的「卡池」卡，點開飛出全景；以及機甲館首頁 hero（每次進館抽一張）<br>
+    · <strong>鑑賞背景</strong>（D-4）：主視覺／塗裝／四分件可切「廠商舞台」（<code>game/makers/</code>，預設、同分頁記住）或紙色；招募插畫本身不透明，不給切。手機上切換鈕與塗裝列移到左上<br>
+    · <strong>匯入</strong>：<code>import-game-assets.mjs --mech-lore</code>（規則 <code>scripts/lib/mechLoreAssets.mjs</code>，照抄流程見 <code>public/images/game/README.md</code>）。招募插畫的卡池鍵→wap 是人工對照（<code>scripts/lib/mechGachaCards.json</code>），新卡池鍵會出現在差異報告的「下一步」
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
     <strong>✅ 機甲廳館首頁（PLAN-042-B E-1，2026-10-17）</strong><br>
     · <strong>路由</strong>：<code>/lore/mechs</code>（取代原本裸路徑被兜底轉回 <code>/lore</code>），header 館名「機甲故事館」、館名連回 <code>/lore/mechs</code>、離館回 <code>/mechs</code>；進 sitemap，頁鍵 <code>lore_mechs</code><br>
     · <strong>機甲牆</strong>：列 <code>mechs</code> 全員（理由同機師牆），依廠商（<code>mechMakers.order</code>，未載殿後）或登場版本分組，與展廳名冊共用 <code>mechRoster.ts</code> 與同一個排序偏好；組頭放廠商徽章＋英文名（與中文同名時不重複）。

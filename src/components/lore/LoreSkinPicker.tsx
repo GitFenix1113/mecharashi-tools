@@ -17,15 +17,17 @@ export interface LoreSkinPickerProps {
   current: string
   onPick: (key: string) => void
   className?: string
+  /** 這一列叫什麼：機師廳「外觀」、機甲廳「塗裝」（PLAN-042-B F-1）。預設名稱「外觀 N」／「塗裝 N」的前綴同字，顯示時拿掉 */
+  noun?: string
 }
 
-export default function LoreSkinPicker({ subject, skins, current, onPick, className }: LoreSkinPickerProps) {
+export default function LoreSkinPicker({ subject, skins, current, onPick, className, noun = '外觀' }: LoreSkinPickerProps) {
   if (!skins.length) return null
   const cur = skins.find((s) => s.key === current)
   return (
-    <div className={className ?? 'lore-skins'} role="radiogroup" aria-label="外觀">
+    <div className={className ?? 'lore-skins'} role="radiogroup" aria-label={noun}>
       <span className="lore-skins__lbl">
-        外觀<b>{cur ? cur.label.replace(/^外觀 /, '') : '預設'}</b>
+        {noun}<b>{cur ? (cur.label.startsWith(`${noun} `) ? cur.label.slice(noun.length + 1) : cur.label) : '預設'}</b>
       </span>
       <button
         type="button"

@@ -208,15 +208,15 @@
   <div class="section-title">總進度</div>
 
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">21</div><div class="summary-lbl">已完成</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">1</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">16</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">24</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">14</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">38</div><div class="summary-lbl">任務（不含長期資料）</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">21 / 38</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 55%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">24 / 38</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 63%"></div></div>
   </div>
 
   <div class="impact-note">
@@ -549,17 +549,18 @@
     <div class="task-group-header">
       <div class="task-group-title">D-4 &nbsp; 鑑賞模式</div>
       <div class="task-group-meta">LoreViewer</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">三種圖面 × 兩種背景</div>
         <div class="task-desc">主視覺／四分件／招募插畫 × 廠商舞台／紙色；不暈邊；沿用 <code>LoreViewer</code> 的 FLIP 轉場（四分件從構造卡縮圖飛出／飛回）。招募插畫比例 2600×1080。⚠ 手機上卷宗橫向退開會撐寬版面（模擬頁改成往下退）。
-          <br><span style="color:var(--accent-cyan);">◐ 2026-10-17</span> 主視覺與四分件（從構造卡縮圖飛出／飛回）已可鑑賞；<b>招募插畫</b>與<b>廠商舞台／紙色兩種背景</b>等 F-2 素材上站。</div>
+          <br><span style="color:var(--accent-cyan);">◐ 2026-10-17</span> 主視覺與四分件（從構造卡縮圖飛出／飛回）已可鑑賞；<b>招募插畫</b>與<b>廠商舞台／紙色兩種背景</b>等 F-2 素材上站。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> F-2 上站後補齊：招募插畫從卷宗「卡池」卡飛出全景；鑑賞背景「廠商舞台／紙色」切換（預設廠商舞台、同分頁記住；招募插畫不透明，不給切）；鑑賞內也能換塗裝。<code>LoreViewer</code> 多 <code>backdrop</code>／<code>label</code> 兩個選填參數，機師廳不受影響（回歸 19／19 零差異）。手機上切換鈕移到左上，避開換行的圖名。</div>
         <div class="task-file">src/components/lore/LoreViewer.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
@@ -645,33 +646,35 @@
     <div class="task-group-header">
       <div class="task-group-title">F-1 &nbsp; 塗裝</div>
       <div class="task-group-meta">scripts/import-game-assets.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">34 台 38 張</div>
-        <div class="task-desc"><code>import-game-assets.mjs</code> 加機甲塗裝上站模式、<code>GAME_MECH_SKINS</code> 索引；色票用 <code>Img_custom_wap*</code>（<code>Icon_wap*_S*</code> 是油漆箱商品圖，別當縮圖）。塗裝名稱存 <code>mechLore.skins</code>。</div>
+        <div class="task-desc"><code>import-game-assets.mjs</code> 加機甲塗裝上站模式、<code>GAME_MECH_SKINS</code> 索引；色票用 <code>Img_custom_wap*</code>（<code>Icon_wap*_S*</code> 是油漆箱商品圖，別當縮圖）。塗裝名稱存 <code>mechLore.skins</code>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>import-game-assets.mjs --mech-lore</code>（規則在 <code>scripts/lib/mechLoreAssets.mjs</code>）：<b>38 套／35 台</b>（Data 37＋最新擷取的奧德修斯 S1；1014 的轉盤 <code>_Raw</code> 與一般版逐像素相同，不重收），索引 <code>GAME_MECH_SKINS</code>、前台 <code>mechSkins()</code> 合併 <code>mechLore.skins</code>。<br>⚠ <b>與計畫不同</b>：色票 <code>Img_custom_wap*</code> 沒用——37 套只有 34 張、編號還錯位（2003 塗裝 S71／色票 S2），而且是貼花條不是塗裝的樣子；塗裝列縮圖改由塗裝圖裁出（96px <code>_thumb</code>）。舞台用新構圖 <code>mskin</code>（塗裝圖取景緊、常切在畫布邊：依高度、四邊羽化，尺寸照主視覺留白比例校正，換塗裝時卷宗不跳）。名稱／隱藏要等 G-1 編輯台。</div>
         <div class="task-file">scripts/import-game-assets.mjs · public/images/game/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">F-2 &nbsp; 廠商舞台與招募插畫</div>
       <div class="task-group-meta">public/images/game/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">12＋60 張</div>
         <div class="task-desc">廠商舞台 <code>Skynet_Wap_BG_*_Raw</code> 12 張；招募插畫由兩片 1024² 切片拼成 2600×1080 比例（60 張，雙機池用上半兩片）。切片原檔與大廳預覽不上。
-          <br><span style="color:var(--text-dim);">↳ 上站後把館首頁 hero（<code>MechHero</code>）從兩台主視覺換成招募插畫（E-1 留的過渡版）。</span></div>
+          <br><span style="color:var(--text-dim);">↳ 上站後把館首頁 hero（<code>MechHero</code>）從兩台主視覺換成招募插畫（E-1 留的過渡版）。</span>
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 廠商舞台 <b>12 張</b>（<code>game/makers/</code>，<code>makerStageArt()</code>）；招募插畫 <b>61 台</b>（Data 60＋日蝕 Eclipse），兩片拉回 1300×1080 拼成 2600×1080（q80，約 200 KB）。卡池鍵→wap 的人工對照 <code>scripts/lib/mechGachaCards.json</code>：報告與差異報告列出對不到的鍵（最新擷取多一個 <b>Nivequus</b>，待站長判斷）。館首頁 hero 換成招募插畫（每次進館抽一張，靜態索引不必等資料）。差異報告新增「機甲塗裝、招募插畫、廠商舞台 → 上站」一步，README 照抄流程同步。合計 149 檔、24.3 MB。</div>
         <div class="task-file">scripts/import-game-assets.mjs · public/images/game/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

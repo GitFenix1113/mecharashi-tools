@@ -14,7 +14,7 @@ import type { LoreChapter, Mech, MechLoreDoc, MechMaker, MechRelationKind, Pilot
 
 /**
  * 機甲廳的卷宗（PLAN-042-B D-3）。卡片順序照站長 10-16 認可的模擬頁（決策 B-6）：
- *   標題區 → 技術檔案 → 逸聞目錄 → 構造（諸元＋四分件） → 系譜 → 搭乘者 →（卡池附件：F 段招募插畫上站後才有）
+ *   標題區 → 技術檔案 → 逸聞目錄 → 構造（諸元＋四分件） → 系譜 → 搭乘者 → 卡池（招募插畫附件，F-2）
  * 卡片樣式沿用機師卷宗（.lore-panel／.lore-card／.lore-eyebrow…），只有四分件、系譜、搭乘者是機甲專屬。
  * 不加進 LoreDossier（決策 B-12）：兩館內容不同，硬塞分支只會讓兩邊都難改。
  *
@@ -48,9 +48,17 @@ export interface MechDossierProps {
   pilotHref?: (pilotId: string) => string
   /** 圖鑑網址：名字旁蓋「機甲圖鑑」朱印。沒給（預覽）就不蓋 */
   codexHref?: string
-  /** 點四分件放大（鑑賞模式）；沒給就只顯示不放大 */
+  /** 點四分件放大（鑑賞模式）；沒給就只顯示不放大。招募插畫也走這裡（label＝CARD_LABEL） */
   onOpenPart?: (src: string, el: HTMLElement, label: string) => void
+  /**
+   * 招募插畫（2600×1080，已套 BASE_URL）。決策 B-5：不上舞台、只當卷宗最後的附件，點開才是全景。
+   * 沒開過專屬卡池的機甲沒有（這張卡就不出現）
+   */
+  cardSrc?: string
 }
+
+/** 招募插畫在鑑賞模式裡的名字；頁面拿它分辨「現在看的是不透明的插畫」 */
+export const CARD_LABEL = '招募插畫'
 
 /** 四分件：從正面看，右臂在畫面左邊（站長 10-16） */
 const PARTS: { kind: MechGameArtKind; label: string; en: string }[] = [
@@ -72,7 +80,7 @@ const KIND_LABEL: Record<MechRelationKind | 'mention', [string, string]> = {
 const KIND_CLASS: Record<MechRelationKind | 'mention', string> = { base: 'k-base', variant: 'k-base', rival: 'k-rival', series: 'k-series', mention: 'k-mention' }
 
 export default function MechDossier({
-  mech, lore, maker, status = 'ready', chapters, chapterHref, lineage, lineageHref, pilot, pilotHref, codexHref, onOpenPart,
+  mech, lore, maker, status = 'ready', chapters, chapterHref, lineage, lineageHref, pilot, pilotHref, codexHref, onOpenPart, cardSrc,
 }: MechDossierProps) {
   const serial = mech.id.match(/^mech_(\d+)/)?.[1] ?? '—'
   const weight = mechWeightClassOf(mech.armorType)
@@ -277,6 +285,23 @@ export default function MechDossier({
               <span className="lore-pilotcard__name"><small>官配機師</small><b>{pilot.name}</b></span>
             </div>
           )}
+        </section>
+      )}
+
+      {cardSrc && (
+        <section className="lore-panel lore-card" style={nextI()}>
+          <p className="lore-eyebrow"><span className="lore-eyebrow__sq" /><b>卡池</b>GACHA ART</p>
+          <button
+            type="button"
+            className="lore-gacha"
+            disabled={!onOpenPart}
+            aria-label={`放大${CARD_LABEL}`}
+            onClick={(e) => onOpenPart?.(cardSrc, e.currentTarget.querySelector('img') ?? e.currentTarget, CARD_LABEL)}
+          >
+            {/* 卷宗最後一張、首屏看不到：lazy。一張約 200 KB */}
+            <img src={cardSrc} alt="" loading="lazy" decoding="async" />
+            <span className="lore-gacha__cap">{CARD_LABEL}<small>點一下看全景</small></span>
+          </button>
         </section>
       )}
     </>

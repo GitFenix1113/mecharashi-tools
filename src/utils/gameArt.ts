@@ -24,8 +24,8 @@
 // ⚠ 路徑不含 BASE_URL，呼叫端套 imageCandidates()／assetUrl()——與 assets.ts 其他 helper 相同，
 //   這樣本檔不碰 import.meta.env、可以 node --test。
 
-import { GAME_MECH_ART, GAME_NPC_ART, GAME_PILOT_ART, GAME_PILOT_NPC_SKINS, GAME_PILOT_SKINS } from '../data/gameArtIndex.ts'
-import type { LoreDoc } from '../types'
+import { GAME_MAKER_STAGES, GAME_MECH_ART, GAME_MECH_CARDS, GAME_MECH_SKINS, GAME_NPC_ART, GAME_PILOT_ART, GAME_PILOT_NPC_SKINS, GAME_PILOT_SKINS } from '../data/gameArtIndex.ts'
+import type { LoreDocBase, LoreSkinSetting } from '../types'
 
 /** 機師的四種官方圖：頭像 340²／頭部特寫 90²／半身 1240×1080／機師卡 340² */
 export type PilotGameArtKind = 'half' | 'head' | 'raw' | 'card'
@@ -139,10 +139,14 @@ export function pilotSkinCatalog(pilot: { id?: string; gameId?: string } | null 
  */
 export function pilotSkins(
   pilot: { id?: string; gameId?: string } | null | undefined,
-  lore?: Pick<LoreDoc, 'skins'> | null,
+  lore?: Pick<LoreDocBase, 'skins'> | null,
 ): PilotSkinArt[] {
-  const catalog = pilotSkinCatalog(pilot)
-  const settings = lore?.skins ?? []
+  return applySkinSettings(pilotSkinCatalog(pilot), lore?.skins)
+}
+
+/** 圖檔層的清單套上故事館的名稱、隱藏、順序（兩館共用；規則見 pilotSkins 的說明） */
+function applySkinSettings(catalog: PilotSkinArt[], skins: readonly LoreSkinSetting[] | undefined): PilotSkinArt[] {
+  const settings = skins ?? []
   if (!settings.length || !catalog.length) return catalog
   const byKey = new Map(catalog.map((s) => [s.key, s]))
   const placed = new Set<string>()
@@ -157,6 +161,45 @@ export function pilotSkins(
   }
   for (const s of catalog) if (!placed.has(s.key)) out.push(s)
   return out
+}
+
+// ── 機甲故事館素材（PLAN-042-B F；規則與落點見 scripts/lib/mechLoreAssets.mjs）────────────────
+
+/**
+ * 機甲塗裝的清單——圖檔層（build 時決定）。形狀沿用 `PilotSkinArt`：外觀列與舞台是兩館共用的元件，
+ * `key`＝塗裝代碼（`S1`、`02`，也是網址 `?skin=` 的值）、`head`＝96px 縮圖、`raw`＝1600×1500 去背的整張塗裝圖。
+ * 前台用 `mechSkins()`（套上 mechLore.skins 的名稱、隱藏、順序）；這份給後台塗裝分頁列全部。
+ */
+export function mechSkinCatalog(mech: { gameId?: string } | null | undefined): PilotSkinArt[] {
+  const wap = mech?.gameId
+  const list = (wap ? GAME_MECH_SKINS.get(wap) : undefined) ?? []
+  const base = `${GAME_ROOT}/mechs/${wap}/skins`
+  return list.map((s, i) => ({
+    key: s.code,
+    label: `塗裝 ${i + 1}`,
+    defaultLabel: `塗裝 ${i + 1}`,
+    scene: false,
+    raw: `${base}/Img_Skin_wap${wap}_${s.code}.webp`,
+    head: s.thumb ? `${base}/Img_Skin_wap${wap}_${s.code}_thumb.webp` : undefined,
+  }))
+}
+
+/** 前台看到的塗裝：合併規則同 `pilotSkins()`（陣列順序、名稱、hidden；沒列到的接在後面顯示「塗裝 N」） */
+export function mechSkins(mech: { gameId?: string } | null | undefined, lore?: Pick<LoreDocBase, 'skins'> | null): PilotSkinArt[] {
+  return applySkinSettings(mechSkinCatalog(mech), lore?.skins)
+}
+
+/** 機甲的招募插畫（2600×1080 卡池主視覺）；沒開過專屬卡池的機甲回 undefined（多數不是錯誤） */
+export function mechCardArt(mech: { gameId?: string } | null | undefined): string | undefined {
+  const wap = mech?.gameId
+  const key = wap ? GAME_MECH_CARDS.get(wap) : undefined
+  return key ? `${GAME_ROOT}/mechs/${wap}/card/mechcard_illustration_${key}.webp` : undefined
+}
+
+/** 廠商舞台（2048×1024）：`stage` 欄位優先、否則用文件 ID；站上沒有那張圖回 undefined */
+export function makerStageArt(maker: { id: string; stage?: string } | null | undefined): string | undefined {
+  const key = maker ? maker.stage?.trim() || maker.id : undefined
+  return key && GAME_MAKER_STAGES.has(key) ? `${GAME_ROOT}/makers/Skynet_Wap_BG_${key}_Raw.webp` : undefined
 }
 
 /** 機甲的官方原檔路徑；這台沒有這種圖（或根本沒有遊戲 ID）回 undefined。 */

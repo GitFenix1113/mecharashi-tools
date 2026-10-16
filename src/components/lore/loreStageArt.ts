@@ -17,8 +17,10 @@ import type { Pilot } from '../../types'
  *            舞台要的就是這個暈邊（融進紙面）；全身鑑賞改看鑑賞版 `_Raw_view`（暈邊收窄、看得到完整場景，scripts/lib/sceneArt.mjs）
  * 'sn'       機甲主視覺 `Icon_mecha_wap####_SN_Raw`（2000×1080 去背橫式，PLAN-042-B 決策 B-5）：
  *            依寬度定尺寸、站在舞台下緣（機體重心 x 0.44–0.61，87／93 台置中）
+ * 'mskin'    機甲塗裝 `Img_Skin_wap####_<代碼>`（1600×1500 去背，PLAN-042-B F-1）：取景比主視覺緊、姿勢不同、常切在畫布邊
+ *            ⇒ 不能套 sn 的幾何。依高度定尺寸、站在舞台下緣，四邊羽化把切邊融進紙面
  */
-export type StageVariant = 'tall' | 'wide' | 'official' | 'scene' | 'sn'
+export type StageVariant = 'tall' | 'wide' | 'official' | 'scene' | 'sn' | 'mskin'
 
 export interface StageArt {
   /** 這一套立繪的識別：換外觀時用它判斷「是不是同一套」 */
@@ -75,6 +77,12 @@ export function mechStageArt(mech: { id: string; gameId?: string }): StageArt | 
   if (!sn) return null
   const url = assetUrl(sn)
   return { key: `${mech.id}|sn`, variant: 'sn', color: url, line: url, filtered: true, lineArt: true, full: url }
+}
+
+/** 選了某套塗裝時的舞台（PLAN-042-B F-1）。線稿同主視覺，由彩圖經機甲專用的濾鏡算出；鑑賞看整張塗裝圖。 */
+export function mechSkinStageArt(mech: { id: string }, skin: PilotSkinArt): StageArt {
+  const url = assetUrl(skin.raw)
+  return { key: `${mech.id}|${skin.key}`, variant: 'mskin', color: url, line: url, filtered: true, lineArt: true, full: url }
 }
 
 /** 立繪站哪一側。官網 8 位一律左（名字層的構圖）；其餘看 LORE_ART_TUNING，沒寫＝左。 */

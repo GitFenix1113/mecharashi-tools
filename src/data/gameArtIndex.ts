@@ -398,3 +398,121 @@ export const GAME_PILOT_NPC_SKINS: ReadonlyMap<string, readonly GameNpcSkin[]> =
   ['pilot_049_海莉絲', [{ key: 'Pilot_10103132A', dir: '10103132', half: true, head: true, raw: true }]],
   ['pilot_050_瑪阿特', [{ key: 'Pilot_10103129A', dir: '10103129', half: true, head: true, raw: true }]],
 ])
+
+/**
+ * 機甲塗裝（PLAN-042-B F-1）：`public/images/game/mechs/<wap>/skins/Img_Skin_wap<wap>_<code>.webp`（1600×1500 去背）
+ * ＋ `…_thumb.webp`（96px 縮圖，塗裝列的按鈕），以 **wap** 為 key、值是塗裝代碼。
+ * 名稱、隱藏、順序不在這裡：住 mechLore.skins（故事館編輯台）。查詢走 `mechSkins()`（src/utils/gameArt.ts）。
+ */
+export interface GameMechSkin { code: string; thumb?: true }
+export const GAME_MECH_SKINS: ReadonlyMap<string, readonly GameMechSkin[]> = new Map<string, readonly GameMechSkin[]>([
+  ['1011', [{ code: 'S1', thumb: true }]],
+  ['1014', [{ code: '02', thumb: true }, { code: 'S1', thumb: true }]],
+  ['1017', [{ code: '01', thumb: true }]],
+  ['1018', [{ code: 'S1', thumb: true }]],
+  ['1027', [{ code: 'S1', thumb: true }]],
+  ['1028', [{ code: 'S1', thumb: true }]],
+  ['1035', [{ code: 'S1', thumb: true }]],
+  ['1036', [{ code: 'S1', thumb: true }]],
+  ['1040', [{ code: 'S1', thumb: true }]],
+  ['1051', [{ code: 'S1', thumb: true }]],
+  ['2003', [{ code: '01', thumb: true }, { code: 'S71', thumb: true }]],
+  ['2013', [{ code: '01', thumb: true }, { code: '02', thumb: true }]],
+  ['2014', [{ code: '01', thumb: true }]],
+  ['2017', [{ code: '01', thumb: true }]],
+  ['2018', [{ code: 'S1', thumb: true }]],
+  ['2022', [{ code: '01', thumb: true }]],
+  ['2027', [{ code: '01', thumb: true }]],
+  ['2042', [{ code: 'S1', thumb: true }]],
+  ['2047', [{ code: 'S1', thumb: true }]],
+  ['2049', [{ code: 'S1', thumb: true }]],
+  ['2050', [{ code: 'S1', thumb: true }]],
+  ['2052', [{ code: 'S1', thumb: true }]],
+  ['2054', [{ code: 'S1', thumb: true }]],
+  ['2056', [{ code: 'S1', thumb: true }]],
+  ['2057', [{ code: 'S1', thumb: true }]],
+  ['3005', [{ code: 'S1', thumb: true }]],
+  ['3006', [{ code: '01', thumb: true }]],
+  ['3007', [{ code: '02', thumb: true }]],
+  ['3015', [{ code: 'S1', thumb: true }]],
+  ['3017', [{ code: 'S1', thumb: true }]],
+  ['3020', [{ code: 'S1', thumb: true }]],
+  ['3027', [{ code: 'S1', thumb: true }]],
+  ['3028', [{ code: 'S1', thumb: true }]],
+  ['3032', [{ code: 'S1', thumb: true }]],
+  ['3037', [{ code: 'S1', thumb: true }]],
+])
+
+/**
+ * 機甲招募插畫（PLAN-042-B F-2）：wap → 卡池鍵；圖在 `mechs/<wap>/card/mechcard_illustration_<卡池鍵>.webp`（2600×1080）。
+ * 哪台用哪組卡池是 scripts/lib/mechGachaCards.json 的人工對照。查詢走 `mechCardArt()`。
+ */
+export const GAME_MECH_CARDS: ReadonlyMap<string, string> = new Map<string, string>([
+  ['1011', 'Dopplesoldner'],
+  ['1012', 'Rex'],
+  ['1014', 'Glasya'],
+  ['1017', 'Twilightfang'],
+  ['1018', 'Dreadtalon'],
+  ['1027', 'Ouroboros'],
+  ['1028', 'Hasteraze'],
+  ['1034', 'Prometheus'],
+  ['1035', 'Hela'],
+  ['1036', 'Mirage'],
+  ['1038', 'Hector'],
+  ['1040', 'TengShe'],
+  ['1051', 'Huanshu'],
+  ['1052', 'MobiuX'],
+  ['1070', 'Asteria'],
+  ['1301', 'REV-02'],
+  ['1303', 'Jyakomaru'],
+  ['2003', 'xr'],
+  ['2013', 'Blazer'],
+  ['2014', 'Wolverine'],
+  ['2017', 'Malthus'],
+  ['2018', 'XR-Pluto'],
+  ['2019', 'Aurora'],
+  ['2022', 'Bluebird'],
+  ['2027', 'Arcus'],
+  ['2040', 'Nephthys'],
+  ['2042', 'Ignite'],
+  ['2043', 'BaWang'],
+  ['2047', 'Aglow'],
+  ['2049', 'Odysseus'],
+  ['2050', 'Mithrill'],
+  ['2052', 'Arbiter'],
+  ['2053', 'Gladiator'],
+  ['2054', 'Fenrisulfr'],
+  ['2055', 'Snowyowl'],
+  ['2056', 'Monarch'],
+  ['2057', 'Nightglow'],
+  ['2060', 'Demiurge'],
+  ['2061', 'Fluorite'],
+  ['2062', 'Prisma'],
+  ['2070', 'MedusaMKII'],
+  ['2071', 'BlueAnonymousBird'],
+  ['2302', 'Shadowrabbit'],
+  ['3005', 'Tyrannosaurus'],
+  ['3006', 'Heracles'],
+  ['3007', 'Gillesrais'],
+  ['3010', 'Martyr'],
+  ['3011', 'Dias'],
+  ['3014', 'Euclase'],
+  ['3017', 'Kong'],
+  ['3019', 'Thanatos'],
+  ['3020', 'ShadowWarrior'],
+  ['3027', 'Colossus'],
+  ['3028', 'Alicorn'],
+  ['3032', 'Ranger'],
+  ['3034', 'Avalanche'],
+  ['3037', 'Portents'],
+  ['3047', 'Nidhogg'],
+  ['3051', 'Eclipse'],
+  ['3301', 'REV-00'],
+  ['3302', 'Ryuoumaru'],
+])
+
+/**
+ * 廠商舞台（PLAN-042-B F-2）：`makers/Skynet_Wap_BG_<key>_Raw.webp`（2048×1024，遊戲內機甲圖鑑的背景）有哪些 key。
+ * key 就是 mechMakers 的文件 ID（或它的 stage 欄位）。查詢走 `makerStageArt()`。
+ */
+export const GAME_MAKER_STAGES: ReadonlySet<string> = new Set<string>(['AP', 'AnHalt', 'DONAU', 'Doll', 'Horizon', 'KATANA', 'Kamadar', 'Laniakea', 'Obsidian', 'SEED', 'TARKBORG', 'UKB'])

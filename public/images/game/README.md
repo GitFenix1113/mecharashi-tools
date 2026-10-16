@@ -17,6 +17,11 @@ mechs/<wap>/          wap ＝ 機甲四碼編號（DB: mechs.gameId）
   Icon_mecha_wap<wap>.webp          560×340     立繪
   Icon_wap<wap>_1~4.webp            340²        部件：軀幹／左臂／右臂／腿
   Icon_mecha_wap<wap>_SN_Raw.webp   2000×1080   全身大圖
+  skins/Img_Skin_wap<wap>_<代碼>.webp        1600×1500  塗裝（PLAN-042-B F-1）：故事館的塗裝切換讀這裡；索引 GAME_MECH_SKINS
+  skins/Img_Skin_wap<wap>_<代碼>_thumb.webp  96²        塗裝列的縮圖（衍生檔：裁掉透明邊取中段）；匯入時自動產
+  card/mechcard_illustration_<卡池鍵>.webp   2600×1080  招募插畫（F-2，衍生檔：兩片 1024² 切片拼回卡池比例）；索引 GAME_MECH_CARDS
+makers/               廠商舞台（PLAN-042-B F-2）
+  Skynet_Wap_BG_<key>_Raw.webp      2048×1024   遊戲內機甲圖鑑的背景；<key>＝mechMakers 的文件 ID；索引 GAME_MAKER_STAGES
 icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一份、官方檔名就是 key
   skill/  buff/       技能類、BUFF 字形
   weapon/             Icon_weapon_<gameId>.webp    340²（DB: weapons.gameId、sideGameIds）
@@ -60,7 +65,13 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
   帶背景的場景插畫（透明 < 25%）build 時自動判定，前台換構圖。
   場景外觀匯入時會多產一張 `_Raw_view`（官方把四周暈成透明，但底下的畫面還在；alpha × 8 收窄成細邊）——舞台照用暈邊版融進紙面，
   「全身立繪」改看這張。缺了 `npm run dev` 會出現 ⚠ 提示，照提示重跑 `--skins --apply` 就會補上（已存在的 Raw 不重轉）。
-- 這裡只放**讀取端會用到的種類（core）＋NPC 圖庫＋造型**。招募立繪、大廳場景等 extended 素材、敵方機甲等其餘 _reserve，
+- **機甲故事館素材**（`mechs/<wap>/{skins,card}/`、`makers/`，2026-10-17 PLAN-042-B F）：站長 10-16 決定上站（Q5）。
+  命名規則在 `scripts/lib/mechLoreAssets.mjs`。塗裝的名稱、順序、隱藏住 mechLore.skins（故事館編輯台，G-1 做好之前顯示「塗裝 N」）。
+  轉盤活動的 `Img_Skin_wap*_Raw` 與一般版逐像素相同，不重複收；色票 `Img_custom_wap*` 對不齊塗裝（張數、編號都不合），不用。
+  **招募插畫要人對照**：切片檔名只有卡池英文鍵（`Dopplesoldner`）、沒有 wap ⇒ 哪台用哪組寫在 `scripts/lib/mechGachaCards.json`。
+  新機甲有專屬卡池時，差異報告與 `--mech-lore` 的報告都會列出「對不到機甲的卡池鍵」，在那張表補一行 `"<wap>": "<卡池鍵>"` 再跑一次；
+  雙機池（GlaDre、MalAgl）、常駐池（light／medium／heavy／featured）、自選池（SelectTactician、SEFAS、Suit）不是單台的插畫，不必補。
+- 這裡只放**讀取端會用到的種類（core）＋NPC 圖庫＋造型＋機甲故事館素材**。招募立繪、大廳場景等 extended 素材、敵方機甲等其餘 _reserve，
   以及站上用不到的其他圖示（道具、勳章、肉鴿…）**不進 repo**，在 repo 外的封存夾（`E:/Mecharashi_Data/site-archive/game/`）。
 
 ## 遊戲改版後的歸檔流程（照做就好，不需要 AI）
@@ -71,10 +82,11 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
 2. **差異報告**：`node scripts/diff-game-dump.mjs`，打開它印出的 `_local-notes/<月>/<日>_遊戲擷取差異.html`。
 3. **照「下一步」逐條做**。每一步標 ✅ 已完成／⬜ 待做，附可以直接貼的指令：
    先**不加** `--apply` 跑一次（dry-run，只報告、不寫任何東西），沒問題再加 `--apply` 重跑。
-   - 「上站」的步驟寫進這個資料夾（之後要 commit）：新機師卡、新機甲、NPC 立繪、技能／BUFF／武器／背包圖示、職業／駕照圖示與陣營徽章
+   - 「上站」的步驟寫進這個資料夾（之後要 commit）：新機師卡、新機甲、NPC 立繪、技能／BUFF／武器／背包圖示、職業／駕照圖示與陣營徽章、
+     機甲塗裝／招募插畫／廠商舞台
    - 「封存」的步驟寫到 repo 外的 `E:/Mecharashi_Data/site-archive/game/`（不必 commit、不部署）：
      介面美術（`ui/`）、其他圖示（`icons/`）、既有機師的新造型（`pilots/<gameId>/`）
-   - 只有新機師要人判斷：`--art-key` 填哪張立繪（gameId 與 artKey 不互推）。新機甲只放圖、不碰資料庫。
+   - 只有兩件事要人判斷：新機師的 `--art-key` 填哪張立繪（gameId 與 artKey 不互推）；新卡池鍵是哪台機甲（`scripts/lib/mechGachaCards.json`）。新機甲只放圖、不碰資料庫。
 4. **重跑差異報告**：每一步都應該是 ✅。報告是產生當下的快照，做完幾步就重跑一次。
 5. **收尾**（上站的步驟有做才需要；報告最後也有同一份清單）：
    1. `npm run dev`，確認後台看得到新圖（「選取官方立繪」的「未使用」、圖示選圖器的「最新」）。dev／build 會自動重產索引。
@@ -104,6 +116,7 @@ node scripts/import-game-assets.mjs --src=latest --emblems --apply           # �
 node scripts/import-game-assets.mjs --src=latest --ui --apply                # 活動／招募／大廳等介面美術 → repo 外封存夾（不部署）
 node scripts/import-game-assets.mjs --src=latest --other-icons --apply       # 其他圖示（道具、勳章、肉鴿、車輛、塗裝小圖…）→ repo 外封存夾
 node scripts/import-game-assets.mjs --src=latest --skins --apply             # 既有機師的新造型（外觀）→ 這裡的 pilots/<gameId>/skins/（上站）
+node scripts/import-game-assets.mjs --src=latest --mech-lore --apply         # 機甲塗裝、招募插畫、廠商舞台 → 這裡的 mechs/<wap>/{skins,card}/、makers/（上站；第一次先 --src=Data）
 node scripts/import-game-assets.mjs --promote=<ui/ 底下的路徑> --apply        # 封存夾挑好的 → 這裡的 ui/（上架＝公開，只挑台版已上線的）
 node scripts/generate-art-index.mjs                                          # 重產索引（build／predev 也會跑）
 node scripts/check-image-refs.mjs                                            # 掃描 DB 與程式碼裡的圖片路徑
