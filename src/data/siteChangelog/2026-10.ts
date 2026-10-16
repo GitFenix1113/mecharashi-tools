@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-16', type: 'style', summary: '故事館正文引文開頭的<b>引號</b>改回和正文同色、同字體，不再是紅字；只保留往行首凸出的排法，開頭一律不放大、不上色。' },
+
     { date: '2026-10-16', type: 'feat', summary: '開始建置<b>機甲故事館</b>：先備好機甲的故事資料（介紹、型號、廠商、系譜、逸聞章節）與<b>機甲廠商</b>資料，'
       + '變更歷史（管理員限定）的篩選器也多了「機甲逸聞」。展廳頁面還在製作中，目前前台看不到變化。' },
 

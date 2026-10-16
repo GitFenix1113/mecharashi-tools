@@ -851,12 +851,13 @@ html.lore-exiting::view-transition-new(root) { animation: lore-exit-shut 620ms c
 .lore-emb__ring img.lore-emb__logo { border-radius: 0; object-fit: contain; }
 .lore-emb__cap { font-size: 0.58rem; color: var(--lore-ink-3); letter-spacing: 0.08em; text-align: center; white-space: nowrap; }
 
-/* 正文排版（D-3）：明體、行高 2.05、段首縮兩字；引文懸掛引號；開頭段首字放大 */
+/* 正文排版（D-3）：明體、行高 2.05、段首縮兩字；引文懸掛引號。
+   開頭字一律不放大、不上色（2026-10-16 站長「維持樸素」）：懸掛引號只凸出行首，字色字體跟正文相同 */
 .lore-prose { font-family: var(--lore-serif); font-size: 0.92rem; line-height: 2.05; letter-spacing: 0.035em; color: var(--lore-ink); text-align: justify; text-justify: inter-character; }
 .lore-prose p { margin: 0 0 1.05em; text-indent: 2em; }
 .lore-prose p:last-child { margin-bottom: 0; }
 .lore-prose p.is-quote { text-indent: 0; padding-left: 1em; }
-.lore-prose p.is-quote .lore-hang { display: inline-block; width: 1em; margin-left: -1em; color: var(--lore-red); font-family: var(--lore-kai); }
+.lore-prose p.is-quote .lore-hang { display: inline-block; width: 1em; margin-left: -1em; }
 .lore-source { margin-top: 22px; display: flex; align-items: center; gap: 12px; justify-content: flex-end; font-size: 0.68rem; color: var(--lore-ink-2); letter-spacing: 0.08em; font-family: var(--lore-serif); }
 .lore-source::before { content: ''; flex: 0 1 120px; height: 1px; background: var(--lore-line-3); }
 /* 行內署名（正文裡 —— 開頭的獨立行，loreText.inlineSource）：貼近它署名的上一段，與下一段拉開 */
