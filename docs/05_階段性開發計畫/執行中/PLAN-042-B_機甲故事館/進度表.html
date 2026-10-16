@@ -208,15 +208,15 @@
   <div class="section-title">總進度</div>
 
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">6</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">8</div><div class="summary-lbl">已完成</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">32</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">30</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">38</div><div class="summary-lbl">任務（不含長期資料）</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">6 / 38</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 16%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">8 / 38</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 21%"></div></div>
   </div>
 
   <div class="impact-note">
@@ -361,32 +361,39 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; 草稿腳本</div>
       <div class="task-group-meta">scripts/temp_scripts/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">從 92 篇介紹整理出欄位</div>
-        <div class="task-desc"><code>modelNo</code>（首行型號，預期 90／92 命中）、<code>maker</code>（前綴對照表＋文中廠商名一致才填，約 78 台自動、15 台待判）、<code>relations</code> 候選（36 條，<code>kind</code> 留空）、<code>nameEn</code>（v3 mapping，排除聯動與雙機池鍵 GlaDre／MalAgl／Nvidia／ROG，「有全名用全名」）、<code>intro</code> 去型號行；<b>台版譯文 49 台逐台對照表</b>（Q6）；<code>mechMakers</code> 12 筆 seed。</div>
+        <div class="task-desc"><code>modelNo</code>（首行型號，預期 90／92 命中）、<code>maker</code>（前綴對照表＋文中廠商名一致才填，約 78 台自動、15 台待判）、<code>relations</code> 候選（36 條，<code>kind</code> 留空）、<code>nameEn</code>（v3 mapping，排除聯動與雙機池鍵 GlaDre／MalAgl／Nvidia／ROG，「有全名用全名」）、<code>intro</code> 去型號行；<b>台版譯文 49 台逐台對照表</b>（Q6）；<code>mechMakers</code> 12 筆 seed。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-16 完成。</span>實數：型號 90、廠商自動 78／待判 15、系譜候選 36、英文名草稿 59。
+          <b>台版介紹譯本實為 47 台</b>：雷克斯、破曉者-02 在台版公告裡是另一篇內容不同的背景長文（不是介紹的譯本，可能是逸聞素材，列在草稿的 <code>twOthers</code>）。
+          複核頁 <code>review.html</code> 草稿資料內嵌、縮圖放旁邊（App 內建瀏覽器開本機檔是 data: 快照，讀不到旁邊的檔、也不能 localStorage）；
+          完整功能走 local-notes 伺服器（<code>http://127.0.0.1:8765/…</code>）。<code>--apply</code>／<code>--rollback</code>／bump 已在隔離模擬器演練過。</div>
         <div class="task-file">scripts/temp_scripts/draft-mech-lore.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; 站長複核</div>
       <div class="task-group-meta">草稿 JSON</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">勾選與修正</div>
-        <div class="task-desc">型號、待判的廠商、系譜種類、台版／陸版逐台選擇、英文名。</div>
+        <div class="task-desc">型號、待判的廠商、系譜種類、台版／陸版逐台選擇、英文名。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-16 站長複核 93／93。</span>結果：UKB＝聯合設計局、AP＝亞太戰區（霸王）；廠商只剩日蝕未指定；系譜收錄 30 條（原型 10、同系列 6、競品 3、僅提及 11；
+          赫克托爾→奧德修斯、莫比烏斯X→復仇女神／XR 三條原選「改型」，對過原文後改「原型」）；英文名 92 台；台版譯文 47 台。
+          定稿 <code>_local-notes/2026-10/2026-10-16_機甲故事館_草稿/reviewed.json</code>，寫入預覽通過。</div>
         <div class="task-file">_local-notes/（草稿 JSON）</div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
