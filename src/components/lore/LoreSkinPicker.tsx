@@ -1,8 +1,8 @@
 import { FallbackImage } from '../common/FallbackImage'
 import { assetUrl } from '../../utils/assets'
 import type { PilotSkinArt } from '../../utils/gameArt'
-import { pilotHeadCandidates, preloadImages } from './loreStageArt'
-import type { Pilot } from '../../types'
+import { preloadImages } from './loreStageArt'
+import type { LoreSubject } from './loreSubject'
 
 /**
  * 外觀列（PLAN-042-D F-3）：預設＋各套造型，用各自的官方頭像（`_head`）。
@@ -10,7 +10,8 @@ import type { Pilot } from '../../types'
  * 舞台外側與鑑賞模式各放一份（同一個元件）。滑過就預載那套的大圖，點下去幾乎不必等。
  */
 export interface LoreSkinPickerProps {
-  pilot: Pilot
+  /** 「預設」那顆用這位的頭像 */
+  subject: Pick<LoreSubject, 'heads'>
   skins: readonly PilotSkinArt[]
   /** 目前選的外觀 key；'' ＝預設 */
   current: string
@@ -18,7 +19,7 @@ export interface LoreSkinPickerProps {
   className?: string
 }
 
-export default function LoreSkinPicker({ pilot, skins, current, onPick, className }: LoreSkinPickerProps) {
+export default function LoreSkinPicker({ subject, skins, current, onPick, className }: LoreSkinPickerProps) {
   if (!skins.length) return null
   const cur = skins.find((s) => s.key === current)
   return (
@@ -35,7 +36,7 @@ export default function LoreSkinPicker({ pilot, skins, current, onPick, classNam
         title="預設"
         onClick={() => onPick('')}
       >
-        <FallbackImage candidates={pilotHeadCandidates(pilot)} alt="" fallback={null} />
+        <FallbackImage candidates={subject.heads()} alt="" fallback={null} />
       </button>
       {skins.map((s) => (
         <button

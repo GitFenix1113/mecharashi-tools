@@ -208,15 +208,15 @@
   <div class="section-title">總進度</div>
 
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">8</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">12</div><div class="summary-lbl">已完成</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">30</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">26</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">38</div><div class="summary-lbl">任務（不含長期資料）</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">8 / 38</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 21%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">12 / 38</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 32%"></div></div>
   </div>
 
   <div class="impact-note">
@@ -422,64 +422,69 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; LoreSubject 轉接層</div>
       <div class="task-group-meta">src/components/lore/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">pilotSubject()／mechSubject()</div>
         <div class="task-desc"><code>kind</code>、id、名稱、英文名、序號、<code>stamp</code>（機甲＝型號；機師＝undefined 走簽名）、舞台圖、頭像、外觀、圖鑑連結。</div>
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>loreSubject.ts</code>＋8 個單元測試（每個字串與泛化前元件的算法一致）。頭像候選做成函式 <code>heads()</code>，轉接層才能 node --test。
         <div class="task-file">src/components/lore/loreSubject.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 元件改吃 subject</div>
       <div class="task-group-meta">LoreStage · LoreSwitcher · LoreSkinPicker · loreRoster · loreStageArt</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">形狀通用的元件</div>
         <div class="task-desc">內容不同的不硬塞：<code>LoreDossier</code> 不加機甲分支，機甲另做 <code>MechDossier</code>（D-3）。</div>
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> LoreStage／LoreSkinPicker／LoreSwitcher 改吃 subject；名冊組的色調與組頭圖示改由頁面帶（<code>LoreRosterGroup</code>），介面文字的「機師」走 <code>noun</code>。排序選項（職業／登場版本）的一般化留給 D-5。
         <div class="task-file">src/components/lore/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; useLoreHall()</div>
       <div class="task-group-meta">src/pages/lore/PilotLorePage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">抽出開場／換人／外觀／鍵盤狀態機</div>
         <div class="task-desc">兩館各一支薄頁面。</div>
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>useLoreHall(&#123; basePath, entities, order, stageOf, chaptersOf, chaptersSettled, rememberedSkins &#125;)</code>；PilotLorePage 約 500 → 230 行，JSX 不動。
         <div class="task-file">src/pages/lore/useLoreHall.ts · src/pages/lore/PilotLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-4 &nbsp; 機師館逐幀回歸</div>
       <div class="task-group-meta">Playwright</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">泛化前後比對</div>
         <div class="task-desc"><code>2026-09-16_filmstrip.mjs</code> 比對開場與換人；鍵盤、<code>?skin=</code>、名冊 FLIP、鑑賞轉場列入驗收清單。<b>量時序一律 headless</b>。</div>
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 改寫成 19 情境的自動比對（正規化 DOM＋截圖＋class 時間軸），Worker API 錄 HAR 回放凍結資料；原始碼另開 worktree（3ee91e44）重拍基準。
+          結果 <b>19／19 DOM 全同</b>、像素 ≤ 0.07%（雜訊下限 0.13%）、class 順序全同。沒涵蓋：手機左右滑、瀏覽器上一頁／下一頁、編輯台預覽。工具與紀錄在 <code>_local-notes/2026-10/2026-10-16_故事館泛化回歸/</code>。
         <div class="task-file">_local-notes（驗收腳本）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

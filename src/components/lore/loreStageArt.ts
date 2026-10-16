@@ -4,9 +4,9 @@
 // 四種的取景與尺寸都不同，等圖載完才換構圖，整個舞台會在那一刻跳一次。
 // 所以這裡只看 build 產生的索引（hasPilotArt／pilotOfficialArt／GAME_PILOT_SKINS），不等圖。
 
-import { assetUrl, hasPilotArt, imageCandidates, pilotArtDir, pilotFullArtPath, pilotKeyArtPath, pilotOfficialArt } from '../../utils/assets'
-import { pilotGameArt, type PilotSkinArt } from '../../utils/gameArt'
-import { LORE_ART_TUNING } from './loreArtTuning'
+import { assetUrl, hasPilotArt, imageCandidates, pilotArtDir, pilotFullArtPath, pilotKeyArtPath, pilotOfficialArt } from '../../utils/assets.ts'
+import { pilotGameArt, type PilotSkinArt } from '../../utils/gameArt.ts'
+import { LORE_ART_TUNING } from './loreArtTuning.ts'
 import type { Pilot } from '../../types'
 
 /**

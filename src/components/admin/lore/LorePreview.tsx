@@ -4,6 +4,7 @@ import LoreStage from '../../lore/LoreStage'
 import LoreDossier from '../../lore/LoreDossier'
 import LoreChapterBody from '../../lore/LoreChapterBody'
 import { defaultStageArt, loreSideOf, skinStageArt } from '../../lore/loreStageArt'
+import { pilotSubject } from '../../lore/loreSubject'
 import { publishedChapters } from '../../lore/loreText'
 import { pilotSkinCatalog } from '../../../utils/gameArt'
 import { emblemTitle, emblemsById } from '../../../utils/factionEmblems'
@@ -85,7 +86,7 @@ export function LorePreview({ pilot, lore, skinKey, chapterKey }: LorePreviewPro
       >
         <div className={cls} data-side={loreSideOf(pilot)} data-variant={art?.variant ?? 'wide'} data-dir="1">
           <div className="lore-stage-wrap">
-            <LoreStage pilot={pilot} art={art} nameEn={lore.nameEn} />
+            <LoreStage subject={pilotSubject({ ...pilot, nameEn: lore.nameEn })} art={art} />
           </div>
           <main className="lore-dossier">
             {reading ? (

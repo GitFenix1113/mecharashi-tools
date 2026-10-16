@@ -158,6 +158,17 @@
     · <strong>前台</strong>：卷宗徽章的滑鼠提示改用徽章名稱（沒有才退回機師陣營文字）；修正彩色版徽章被圓環裡給天賦圖示用的圓形裁切切掉邊角。
   </div>
   <div class="info-block" style="margin-top:1rem;">
+    <strong>✅ 兩館共用的元件層（PLAN-042-B Phase C，2026-10-17）</strong><br>
+    · <strong>轉接層</strong>：<code>components/lore/loreSubject.ts</code> 的 <code>LoreSubject</code>（種類、id、名稱、全名、英文名、序號、檔案標籤、登場版本、型號鋼印、頭像候選、名冊提示／title／色調、搜尋欄位、圖鑑連結）。
+      <code>LoreStage</code>／<code>LoreSkinPicker</code>／<code>LoreSwitcher</code> 只吃它；機師由 <code>pilotSubject()</code>、機甲由 <code>mechSubject()</code> 轉接。
+      頭像候選是函式（<code>heads()</code>）：<code>imageCandidates()</code> 讀 <code>import.meta.env</code>，延遲到元件呼叫才算，轉接層才能 <code>node --test</code><br>
+    · <strong>名冊</strong>：成員是 <code>LoreSubject</code>；組的色調與組頭圖示由頁面帶（機師依職業、機甲日後依廠商），介面文字的「機師」走 <code>noun</code><br>
+    · <strong>狀態機</strong>：<code>pages/lore/useLoreHall.ts</code>（開場、換人過場、快轉、外觀記憶與 <code>?skin=</code>、章節與草稿章導回、鑑賞模式、名冊開關、鍵盤、捲動視差與進度條、手機滑動、閒置預載）。
+      不認得 Pilot：立繪由頁面的 <code>stageOf(實體, 外觀鍵)</code>、章節由 <code>chaptersOf(id)</code> 給，網址前綴 <code>basePath</code>。<code>PilotLorePage</code> 只剩資料與畫面<br>
+    · <strong>零回歸的驗證</strong>：泛化前後各拍 19 個情境（開場、換人、名冊、外觀、鑑賞、章節、館首頁、減少動態、手機），比對正規化 DOM、截圖、<code>.lore-page</code> class 時間軸；
+      Worker API 錄成 HAR 回放（資料凍結）。結果 19／19 DOM 全同。工具在 <code>_local-notes/2026-10/2026-10-16_故事館泛化回歸/</code>（不進版控），之後改共用元件都該重跑
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
     <strong>✅ 舞台＋卷宗（PLAN-042-D，2026-10-13）</strong><br>
     · <strong>元件</strong>：<code>LoreStage</code>（立繪層、簽名、直書名、流水號、檔案小字、工具）、<code>LoreDossier</code>（四張卡）、<code>LoreProse</code>（正文排版）、<code>LoreSwitcher</code>（切換列＋名冊）、<code>LoreSkinPicker</code>、<code>LoreViewer</code>、<code>LoreExitLink</code>（離館連結＋出館過場，header 也用）；
       042-A／042-C 的 <code>LoreArt</code>、<code>useLoreParallax</code>、<code>LoreSourceLine</code> 已移除<br>

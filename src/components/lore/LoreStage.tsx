@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { StageArt } from './loreStageArt'
-import type { Pilot } from '../../types'
+import type { LoreSubject } from './loreSubject'
 
 /**
  * 故事館的舞台（PLAN-042-D B-1／C-3／C-4／F-4）：固定在視窗裡的立繪層，正文卷宗從另一側蓋上來。
@@ -14,24 +14,23 @@ import type { Pilot } from '../../types'
  * 舊的那套留在原位淡出、新的那套由上往下「穿上」（`is-dressing`），約 1 秒後只留新的。
  * 每套立繪的幾何吃**自己的** `data-variant`，不吃 `.lore-page` 的：換外觀常會換構圖（全身 → 場景插畫），
  * 若舊的那套也跟著頁面的變體重算位置，它會在淡出前先跳一下。
- * 換人（pilot.id 變了）不疊層，直接換——那是頁面層的退場／進場過場在處理。
+ * 換人（subject.id 變了）不疊層，直接換——那是頁面層的退場／進場過場在處理。
  *
  * 狀態用「render 期間依 prop 調整」（React 官方模式，站上先例：FallbackImage／舊 LoreArt），
  * 不用 effect 歸零：effect 會讓上一套多活一幀。
  */
 export interface LoreStageProps {
-  pilot: Pilot
+  /** 這位／這台（PLAN-042-B C-1）。`subject.nameEn` 是立繪旁的毛筆草書（PLAN-042-E），空＝不渲染草書層 */
+  subject: LoreSubject
   /** null＝這位任何立繪都沒有 */
   art: StageArt | null
-  /** 英文名（pilotLore.nameEn，PLAN-042-E）：立繪旁的毛筆草書。空＝不渲染草書層 */
-  nameEn?: string
   /** 外觀列＋全身立繪鈕（由頁面組好傳進來，放在舞台外側） */
   tools?: ReactNode
 }
 
 interface Layer {
   art: StageArt
-  pilotId: string
+  subjectId: string
   leaving: boolean
   dressing: boolean
 }
@@ -39,14 +38,14 @@ interface Layer {
 /** 換裝動畫的總長（index.css 的 lore-dress-in 170ms 延遲＋820ms） */
 const DRESS_MS = 1000
 
-export default function LoreStage({ pilot, art, nameEn: nameEnProp, tools }: LoreStageProps) {
-  const [layers, setLayers] = useState<Layer[]>(() => (art ? [{ art, pilotId: pilot.id, leaving: false, dressing: false }] : []))
+export default function LoreStage({ subject, art, tools }: LoreStageProps) {
+  const [layers, setLayers] = useState<Layer[]>(() => (art ? [{ art, subjectId: subject.id, leaving: false, dressing: false }] : []))
   const top = layers[layers.length - 1]
   if (art && (!top || top.art.key !== art.key)) {
-    const samePilot = top?.pilotId === pilot.id
-    setLayers(samePilot
-      ? [...layers.filter((l) => !l.leaving).map((l) => ({ ...l, leaving: true, dressing: false })), { art, pilotId: pilot.id, leaving: false, dressing: true }]
-      : [{ art, pilotId: pilot.id, leaving: false, dressing: false }])
+    const sameSubject = top?.subjectId === subject.id
+    setLayers(sameSubject
+      ? [...layers.filter((l) => !l.leaving).map((l) => ({ ...l, leaving: true, dressing: false })), { art, subjectId: subject.id, leaving: false, dressing: true }]
+      : [{ art, subjectId: subject.id, leaving: false, dressing: false }])
   } else if (!art && layers.length) {
     setLayers([])
   }
@@ -59,8 +58,8 @@ export default function LoreStage({ pilot, art, nameEn: nameEnProp, tools }: Lor
     return () => clearTimeout(t)
   }, [busy, layers])
 
-  const serial = pilot.id.match(/^pilot_(\d+)/)?.[1] ?? ''
-  const nameEn = nameEnProp?.trim()
+  const serial = subject.serial
+  const nameEn = subject.nameEn?.trim()
   // 簽名字級依名字長度縮：長名（Yevgeny Ivanovic Goman）照官網做法縮小。給無單位數字（px 基準），CSS 再依舞台高度等比縮
   const sigSize = nameEn ? Math.round(Math.min(150, Math.max(70, 1400 / Math.max(6, nameEn.length)))) : 0
 
@@ -85,7 +84,7 @@ export default function LoreStage({ pilot, art, nameEn: nameEnProp, tools }: Lor
                   decoding="async"
                 />
               )}
-              <img className="lore-figure__color" src={l.art.color} alt={pilot.name} decoding="async" />
+              <img className="lore-figure__color" src={l.art.color} alt={subject.name} decoding="async" />
               {l.art.nameLayer && (
                 <img className="lore-figure__name" src={l.art.nameLayer} alt="" aria-hidden="true" decoding="async" />
               )}
@@ -110,13 +109,13 @@ export default function LoreStage({ pilot, art, nameEn: nameEnProp, tools }: Lor
       <div className="lore-vname" aria-hidden="true">
         <span className="lore-vname__mark" />
         <span className="lore-vname__rule" />
-        <span className="lore-vname__main">{pilot.name}</span>
-        {pilot.fullName && pilot.fullName !== pilot.name && <span className="lore-vname__sub">{pilot.fullName}</span>}
+        <span className="lore-vname__main">{subject.name}</span>
+        {subject.fullName && <span className="lore-vname__sub">{subject.fullName}</span>}
       </div>
 
       <div className="lore-filetag" aria-hidden="true">
-        <span>PILOT FILE · NO.{serial || '—'}</span>
-        {pilot.debutVersion && <span>DEBUT · v{pilot.debutVersion}</span>}
+        <span>{subject.fileLabel} · NO.{serial || '—'}</span>
+        {subject.debutVersion && <span>DEBUT · v{subject.debutVersion}</span>}
       </div>
 
       {tools && <div className="lore-stage-tools">{tools}</div>}

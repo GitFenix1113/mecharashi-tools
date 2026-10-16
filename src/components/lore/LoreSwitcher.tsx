@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import type { Ref } from 'react'
+import type { ReactNode, Ref } from 'react'
 import { FallbackImage } from '../common/FallbackImage'
 import LoreExitLink from './LoreExitLink'
-import { ClassIcon } from '../icons/ClassIcon'
-import { pilotClassMeta } from '../../data/pilotClasses'
-import { matchesLoreQuery, type LoreGroup, type LorePilot, type LoreSort } from './loreRoster'
-import { pilotHeadCandidates } from './loreStageArt'
+import type { LoreSort } from './loreRoster'
+import { matchesSubjectQuery, type LoreSubject } from './loreSubject'
 
 /**
- * 機師切換列＋機師名冊（PLAN-042-D A-3／A-4／F-5）。
+ * 切換列＋名冊（PLAN-042-D A-3／A-4／F-5；042-B 起兩館共用）。
  *
  * 收合時是底部一條膠囊：可橫捲的圓形頭像列（目前這位置中、兩端漸隱、滾輪直接橫捲、滑過顯示名字）、‹ ›、序號、「名冊」、
  * 列尾紅色的「圖鑑 ↗」（離館去這位的圖鑑，PLAN-042-G）。
@@ -26,7 +24,20 @@ import { pilotHeadCandidates } from './loreStageArt'
  * ⚠ 名冊是 fixed 浮層、自己有捲動容器：不違反「館內唯一 scrollport」（M-08 講的是館內正文的垂直捲動），
  *   並以 `overscroll-behavior: contain` 防止捲到底時帶動後面的頁面。
  * ⚠ 飛行中的頭像是複製一顆放在 fixed 圖層（.lore-fly）：放在面板裡會被 clip-path 與捲動容器裁掉。
+ *
+ * 兩館共用（PLAN-042-B C-2）：成員是 LoreSubject，分組的色調與組頭圖示由頁面決定（機師依職業、機甲依廠商），
+ * 本元件不認得 Pilot／Mech。字面上的「機師」走 `noun`。
  */
+export interface LoreRosterGroup {
+  key: string
+  label: string
+  /** 組的色調（CSS 值）；沒給＝中性墨色 */
+  tone?: string
+  /** 組頭標題前的圖示（機師依職業分組時是職業圖示） */
+  icon?: ReactNode
+  items: LoreSubject[]
+}
+
 export interface LoreSwitcherHandle {
   open: (focusSearch?: boolean) => void
   close: () => void
@@ -34,20 +45,24 @@ export interface LoreSwitcherHandle {
 
 export interface LoreSwitcherProps {
   ref?: Ref<LoreSwitcherHandle>
-  /** 名冊分組（＝館首頁的排序）。成員帶 pilotLore 的英文名（withLoreNames），搜尋與 title 要用 */
-  groups: readonly LoreGroup<LorePilot>[]
+  /** 名冊分組（＝館首頁的排序）。成員的英文名來自故事館集合，搜尋與 title 要用 */
+  groups: readonly LoreRosterGroup[]
   /** 攤平的名冊順序：切換列、‹ › 照它走 */
-  order: readonly LorePilot[]
+  order: readonly LoreSubject[]
   currentId: string
   sort: LoreSort
   onSortChange: (sort: LoreSort) => void
-  /** 各機師的章節數、外觀數（名冊的紅標與 +N、篩選用） */
+  /** 各位的章節數、外觀數（名冊的紅標與 +N、篩選用） */
   chapterCount: (id: string) => number
-  skinCount: (p: LorePilot) => number
+  skinCount: (p: LoreSubject) => number
   /** 換人；dir＝在名冊順序上往後（1）或往前（-1） */
   onSelect: (id: string, dir: 1 | -1) => void
   onOpenChange?: (open: boolean) => void
-  onHover?: (p: LorePilot) => void
+  onHover?: (p: LoreSubject) => void
+  /** 介面文字裡的名詞：「切換機師」「機師名冊」「機師圖鑑」…。預設「機師」 */
+  noun?: string
+  /** 名冊搜尋框的提示字 */
+  searchPlaceholder?: string
   /**
    * 顯示中這位的圖鑑網址＋名字（PLAN-042-G B-3）：列尾一顆紅色「圖鑑 ↗」。
    * 卷宗的落款鈐印在閱讀模式看不到，這顆是「讀到一半也能隨時去查數值」的入口。
@@ -89,6 +104,7 @@ function highlight(name: string, q: string) {
 
 export default function LoreSwitcher({
   ref, groups, order, currentId, sort, onSortChange, chapterCount, skinCount, onSelect, onOpenChange, onHover, codexHref, codexName,
+  noun = '機師', searchPlaceholder = '搜尋名字、英文名、陣營、版本…',
 }: LoreSwitcherProps) {
   const dockRef = useRef<HTMLElement>(null)
   const stripRef = useRef<HTMLDivElement>(null)
@@ -145,7 +161,7 @@ export default function LoreSwitcher({
     return () => strip.removeEventListener('wheel', onWheel)
   }, [])
 
-  const showTip = (el: HTMLElement, p: LorePilot) => {
+  const showTip = (el: HTMLElement, p: LoreSubject) => {
     const tip = tipRef.current
     if (!tip) return
     const r = el.getBoundingClientRect()
@@ -154,7 +170,7 @@ export default function LoreSwitcher({
     const sunk = dock ? new DOMMatrixReadOnly(getComputedStyle(dock).transform).m42 : 0
     tip.replaceChildren(document.createTextNode(p.name))
     const small = document.createElement('small')
-    small.textContent = `${p.class}${p.debutVersion ? ` · v${p.debutVersion}` : ''}`
+    small.textContent = p.meta
     tip.appendChild(small)
     tip.style.left = `${r.left + r.width / 2}px`
     tip.style.top = `${r.top - sunk - 36}px`
@@ -315,7 +331,7 @@ export default function LoreSwitcher({
   const query = q.trim().toLowerCase()
   const compact = sort === 'debut' || !!query || onlyCh || onlySkin
   const shownGroups = groups
-    .map((g) => ({ ...g, items: g.items.filter((p) => matchesLoreQuery(p, q) && (!onlyCh || chapterCount(p.id) > 0) && (!onlySkin || skinCount(p) > 0)) }))
+    .map((g) => ({ ...g, items: g.items.filter((p) => matchesSubjectQuery(p, q) && (!onlyCh || chapterCount(p.id) > 0) && (!onlySkin || skinCount(p) > 0)) }))
     .filter((g) => g.items.length)
   const shownCount = shownGroups.reduce((n, g) => n + g.items.length, 0)
 
@@ -324,7 +340,7 @@ export default function LoreSwitcher({
       <nav
         ref={dockRef}
         className={`lore-dock${open ? ' is-hidden' : ''}${raised ? ' is-raised' : ''}`}
-        aria-label="切換機師"
+        aria-label={`切換${noun}`}
         onPointerDown={(e) => {
           swallowTap.current = e.pointerType !== 'mouse' && !raised
           if (swallowTap.current) setRaised(true)
@@ -360,7 +376,7 @@ export default function LoreSwitcher({
               onPointerEnter={(e) => showTip(e.currentTarget, p)}
               onClick={() => { if (p.id !== currentId) onSelect(p.id, i > idx ? 1 : -1) }}
             >
-              <FallbackImage candidates={pilotHeadCandidates(p)} alt="" loading="lazy" decoding="async" fallback={null} />
+              <FallbackImage candidates={p.heads()} alt="" loading="lazy" decoding="async" fallback={null} />
             </button>
           ))}
         </div>
@@ -368,7 +384,7 @@ export default function LoreSwitcher({
           onClick={() => onSelect(order[(idx + 1) % order.length].id, 1)}>›</button>
         <span className="lore-dock__count">{String(idx + 1).padStart(2, '0')} / {order.length}</span>
         <button ref={openBtnRef} type="button" className="lore-dock__open" aria-expanded={open} aria-controls="lore-roster"
-          title="展開機師名冊（/）" onClick={() => openRoster()}>
+          title={`展開${noun}名冊（/）`} onClick={() => openRoster()}>
           <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             {[3.2, 8, 12.8].flatMap((y) => [3.2, 8, 12.8].map((x) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.9" />))}
           </svg>
@@ -381,8 +397,8 @@ export default function LoreSwitcher({
             <LoreExitLink
               to={codexHref}
               className="lore-dock__codex"
-              title={`離館，查看${codexName ?? '這位機師'}的機師圖鑑`}
-              aria-label={`查看${codexName ?? '這位機師'}的機師圖鑑`}
+              title={`離館，查看${codexName ?? `這位${noun}`}的${noun}圖鑑`}
+              aria-label={`查看${codexName ?? `這位${noun}`}的${noun}圖鑑`}
             >
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
                 <path d="M2 3.2c2.2-.8 4.2-.6 6 .8v9.6c-1.8-1.4-3.8-1.6-6-.8zM14 3.2c-2.2-.8-4.2-.6-6 .8v9.6c1.8-1.4 3.8-1.6 6-.8z" />
@@ -397,10 +413,10 @@ export default function LoreSwitcher({
       {open && (
         <>
           <div ref={scrimRef} className="lore-scrim" onClick={() => closeRoster()} />
-          <div ref={rosterRef} id="lore-roster" className="lore-roster" role="dialog" aria-modal="true" aria-label="機師名冊">
+          <div ref={rosterRef} id="lore-roster" className="lore-roster" role="dialog" aria-modal="true" aria-label={`${noun}名冊`}>
             <div className="lore-roster__head">
               <div className="lore-roster__title">
-                機師名冊 <small>{shownCount === order.length ? `${order.length} 位` : `${shownCount} / ${order.length} 位`}</small>
+                {noun}名冊 <small>{shownCount === order.length ? `${order.length} 位` : `${shownCount} / ${order.length} 位`}</small>
               </div>
               <label className="lore-roster__search">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.6" /><path d="M10.4 10.4 14 14" /></svg>
@@ -408,10 +424,10 @@ export default function LoreSwitcher({
                   ref={searchRef}
                   type="search"
                   value={q}
-                  placeholder="搜尋名字、英文名、陣營、版本…"
+                  placeholder={searchPlaceholder}
                   autoComplete="off"
                   spellCheck={false}
-                  aria-label="搜尋機師"
+                  aria-label={`搜尋${noun}`}
                   onChange={(e) => setQ(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key !== 'Enter') return
@@ -430,13 +446,13 @@ export default function LoreSwitcher({
               <button type="button" className="lore-roster__close" onClick={() => closeRoster()}>收合 ⌄</button>
             </div>
             <div ref={bodyRef} className={`lore-roster__body${compact ? ' is-compact' : ''}`}>
-              {shownGroups.length === 0 && <p className="lore-rg__empty">找不到符合「{q.trim()}」的機師</p>}
+              {shownGroups.length === 0 && <p className="lore-rg__empty">找不到符合「{q.trim()}」的{noun}</p>}
               {shownGroups.map((g) => {
-                const tone = sort === 'class' ? (pilotClassMeta(g.key)?.paper ?? 'var(--lore-ink-2)') : 'var(--lore-ink-2)'
+                const tone = g.tone ?? 'var(--lore-ink-2)'
                 return (
                   <section key={g.key} className="lore-rg" style={{ '--tone': tone } as React.CSSProperties}>
                     <h3 className="lore-rg__h">
-                      {sort === 'class' && <ClassIcon pilotClass={g.key} size={18} decorative />}
+                      {g.icon}
                       {g.label}<small>{g.items.length}</small>
                     </h3>
                     <div className="lore-rg__grid">
@@ -449,13 +465,13 @@ export default function LoreSwitcher({
                             className="lore-ra"
                             data-id={p.id}
                             aria-current={p.id === currentId ? 'true' : undefined}
-                            title={[p.fullName || p.name, p.nameEn, p.class, p.debutVersion && `v${p.debutVersion}`].filter(Boolean).join(' · ')}
-                            style={{ '--tone': pilotClassMeta(p.class)?.paper ?? 'var(--lore-ink-2)' } as React.CSSProperties}
+                            title={p.rosterTitle}
+                            style={{ '--tone': p.tone } as React.CSSProperties}
                             onPointerEnter={() => onHover?.(p)}
                             onClick={() => closeRoster(p.id)}
                           >
                             <span className="lore-ra__img">
-                              <FallbackImage candidates={pilotHeadCandidates(p)} alt="" loading="lazy" decoding="async" fallback={null} />
+                              <FallbackImage candidates={p.heads()} alt="" loading="lazy" decoding="async" fallback={null} />
                             </span>
                             <span className="lore-ra__name">{highlight(p.name, query)}</span>
                             {ch > 0 && <span className="lore-ra__badge" title={`${ch} 章逸聞`}>{ch}</span>}
