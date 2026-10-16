@@ -4,7 +4,7 @@
 //   ERR_MODULE_NOT_FOUND（全站測試檔慣例同此）。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { splitParagraphs, isQuoteStyle, firstSentence, stripTrailingSource, readableParagraphs, fullwidthLorePunctuation, normalizeLoreSource, publishedChapters, inlineSource, quoteDropCap, sectionStarts } from './loreText.ts'
+import { splitParagraphs, isQuoteStyle, firstSentence, stripTrailingSource, readableParagraphs, fullwidthLorePunctuation, normalizeLoreSource, publishedChapters, inlineSource } from './loreText.ts'
 
 // ── splitParagraphs ──────────────────────────────────────────────────────────
 
@@ -40,34 +40,6 @@ test('isQuoteStyle：一般敘述與空值為 false', () => {
   assert.equal(isQuoteStyle('他說：「別回頭。」'), false) // 引號不在段首 → 不套 blockquote
   assert.equal(isQuoteStyle(undefined), false)
   assert.equal(isQuoteStyle(''), false)
-})
-
-// ── quoteDropCap（2026-10-16）───────────────────────────────────────────────
-
-test('quoteDropCap：引號後的第一個字放大，引號與其餘正文分開回傳', () => {
-  assert.deepEqual(quoteDropCap('「米爾薩斯一戰已經過去了。」'), { open: '「', cap: '米', rest: '爾薩斯一戰已經過去了。」' })
-  assert.deepEqual(quoteDropCap('  『那一天』'), { open: '『', cap: '那', rest: '一天』' })
-  assert.deepEqual(quoteDropCap('「12月的雪」'), { open: '「', cap: '1', rest: '2月的雪」' })
-})
-
-test('quoteDropCap：引號後不是文字（⋯⋯、『、[ 引用標記）或不是引文段 → null', () => {
-  assert.equal(quoteDropCap('「⋯⋯我回來了。」'), null)
-  assert.equal(quoteDropCap('「『雙重引號』的開頭」'), null)
-  assert.equal(quoteDropCap('「[艾達]說過的話」'), null) // 不可把 [xxx] 拆開
-  assert.equal(quoteDropCap('「'), null)
-  assert.equal(quoteDropCap('那年冬天，米赫瑪下了第一場雪。'), null) // 一般段落走 CSS ::first-letter
-})
-
-test('quoteDropCap：擴充區漢字（代理對）不會被切成兩半', () => {
-  assert.deepEqual(quoteDropCap('「𠀋字開頭」'), { open: '「', cap: '𠀋', rest: '字開頭」' })
-})
-
-test('sectionStarts：第一段＋每行行內署名之後的第一段；署名行本身不算', () => {
-  // 淬鋒·凱登 PART 2 的兩出處結構（再多一段一般敘述）
-  assert.deepEqual(sectionStarts(['「第一份。」', '——維斯珀爾內部通訊', '「第二份。」', '第二份的下一段。']), [true, false, true, false])
-  assert.deepEqual(sectionStarts(['一般段落開頭。', '第二段。']), [true, false])
-  assert.deepEqual(sectionStarts(['——開頭就是署名', '正文。']), [false, true])
-  assert.deepEqual(sectionStarts([]), [])
 })
 
 // ── firstSentence ────────────────────────────────────────────────────────────

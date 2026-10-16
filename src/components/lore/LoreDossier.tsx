@@ -141,7 +141,7 @@ export default function LoreDossier({ pilot, lore, status = 'ready', chapters, c
           {intro.length > 0 && (
             <section className="lore-panel lore-card" style={{ '--i': 1 } as React.CSSProperties}>
               <p className="lore-eyebrow"><span className="lore-eyebrow__sq" /><b>扉頁</b>DOSSIER EXTRACT</p>
-              <LoreProse paragraphs={intro} lead />
+              <LoreProse paragraphs={intro} />
               {source && <p className="lore-source">{source}</p>}
             </section>
           )}

@@ -857,16 +857,6 @@ html.lore-exiting::view-transition-new(root) { animation: lore-exit-shut 620ms c
 .lore-prose p:last-child { margin-bottom: 0; }
 .lore-prose p.is-quote { text-indent: 0; padding-left: 1em; }
 .lore-prose p.is-quote .lore-hang { display: inline-block; width: 1em; margin-left: -1em; color: var(--lore-red); font-family: var(--lore-kai); }
-.lore-prose p.is-lead { text-indent: 0; }
-.lore-prose p.is-lead::first-letter,
-.lore-prose p.has-drop .lore-drop { float: left; font-family: var(--lore-kai); font-size: 3.4em; line-height: 1; margin: 0.06em 0.14em 0 0; color: var(--lore-red); }
-/* 引文開頭段的首字放大（loreText.quoteDropCap）：懸掛引號改絕對定位——留在行內的話，
-   後面的 float 會被排到行首，引號反而被擠到放大字的右邊 */
-.lore-prose p.is-quote.has-drop { position: relative; }
-/* 開頭段只有一行時，放大字（約兩行高）會漏進下一段、把下一段首行擠歪 → 段落自己包住 float */
-.lore-prose p.is-lead,
-.lore-prose p.has-drop { display: flow-root; }
-.lore-prose p.has-drop .lore-hang { position: absolute; left: 0; top: 0; margin-left: 0; }
 .lore-source { margin-top: 22px; display: flex; align-items: center; gap: 12px; justify-content: flex-end; font-size: 0.68rem; color: var(--lore-ink-2); letter-spacing: 0.08em; font-family: var(--lore-serif); }
 .lore-source::before { content: ''; flex: 0 1 120px; height: 1px; background: var(--lore-line-3); }
 /* 行內署名（正文裡 —— 開頭的獨立行，loreText.inlineSource）：貼近它署名的上一段，與下一段拉開 */

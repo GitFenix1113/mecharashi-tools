@@ -43,8 +43,6 @@ export default function LoreChapterBody({ chapter, index, prev, next, onSelect, 
         <p className="lore-sheet__part">{label(chapter, index)}</p>
         <h2 className="lore-sheet__title">{chapter.title}</h2>
         <div className="lore-sheet__rule" aria-hidden="true" />
-        {/* 不放大首字（2026-10-16 站長）：逸聞常以「⋯⋯、「『 這類標點起頭，放大規則的例外比效果多。
-            引文段的紅色懸掛引號照舊，就是章節開頭的紅色記號 */}
         <LoreProse paragraphs={paragraphs} refs={chapter.bodyRefs} />
         {source && <p className="lore-source">{source}</p>}
         <LoreCommentaryRow items={chapter.commentary} />

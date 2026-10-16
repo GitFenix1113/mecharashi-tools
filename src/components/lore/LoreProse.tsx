@@ -1,25 +1,22 @@
 import { LoreRichText } from './LoreRichText'
-import { inlineSource, isQuoteStyle, quoteDropCap, sectionStarts } from './loreText'
+import { inlineSource, isQuoteStyle } from './loreText'
 import type { DescriptionRefs } from '../../types'
 
 /**
- * 故事館正文（PLAN-042-D D-3）：明體、段首縮兩字；引文段**懸掛引號**（「 凸出行首、紅色），
- * 開頭段**首字放大**（`lead`）——引文開頭段放大的是引號後的第一個字（`quoteDropCap()`）；
- * 有行內署名時，每份的開頭段都放大（`sectionStarts()`）。扉頁與章節共用本元件，
- * 但 `lead` 目前只有扉頁開：逸聞章節 2026-10-16 拿掉了（標點起頭的變化太多，見 LoreChapterBody）。
+ * 故事館正文（PLAN-042-D D-3）：明體、段首縮兩字；引文段**懸掛引號**（「 凸出行首、紅色）。扉頁與章節共用。
  * `——` 開頭的獨立行是行內署名（`inlineSource()`），排成與章末署名同款的 `.lore-source`。
+ *
+ * ⚠ 不做首字放大（2026-10-16 站長定案「維持樸素」）：做過一輪，逸聞與簡介常以「⋯⋯、「『 這類標點起頭、
+ *   又有多出處，放大規則的例外比效果多。開頭的紅色記號由懸掛引號擔任。
  *
  * 逐段 <p>，不依賴 whitespace-pre-line（042-A 的理由：引文段與一般段要能混排）。
  * 段落請先過 `readableParagraphs()`（OCR 斷行合併、半形標點）。
  * 有 refs 才走 LoreRichText（[xxx] 引用）；它刻意不套數字紅字（042-A 決策 A）。
  */
-export default function LoreProse({ paragraphs, refs, lead = false }: {
+export default function LoreProse({ paragraphs, refs }: {
   paragraphs: readonly string[]
   refs?: DescriptionRefs
-  /** 每份引文的開頭段首字放大 */
-  lead?: boolean
 }) {
-  const starts = lead ? sectionStarts(paragraphs) : []
   return (
     <div className="lore-prose">
       {paragraphs.map((p, i) => {
@@ -27,16 +24,6 @@ export default function LoreProse({ paragraphs, refs, lead = false }: {
         if (source !== null) return <p key={i} className="lore-source">{source}</p>
         if (isQuoteStyle(p)) {
           const head = p.trimStart()
-          const drop = starts[i] ? quoteDropCap(head) : null
-          if (drop) {
-            return (
-              <p key={i} className="is-quote has-drop">
-                <span className="lore-hang" aria-hidden="false">{drop.open}</span>
-                <span className="lore-drop">{drop.cap}</span>
-                <LoreRichText text={drop.rest} refs={refs} />
-              </p>
-            )
-          }
           return (
             <p key={i} className="is-quote">
               <span className="lore-hang" aria-hidden="false">{head[0]}</span>
@@ -45,7 +32,7 @@ export default function LoreProse({ paragraphs, refs, lead = false }: {
           )
         }
         return (
-          <p key={i} className={starts[i] ? 'is-lead' : undefined}>
+          <p key={i}>
             <LoreRichText text={p} refs={refs} />
           </p>
         )
