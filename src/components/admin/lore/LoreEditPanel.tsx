@@ -10,7 +10,7 @@ import { pilotSkinCatalog } from '../../../utils/gameArt'
 import { LoreFrontEditor } from './LoreFrontEditor'
 import { LoreDossierEditor } from './LoreDossierEditor'
 import { LoreChaptersEditor } from './LoreChaptersEditor'
-import { normalizeCommentary } from './loreEditText'
+import { normalizeCommentary, sectionIssues, type LoreSectionCache } from './loreEditText'
 import { LoreSkinsEditor } from './LoreSkinsEditor'
 import { LorePreview } from './LorePreview'
 
@@ -63,6 +63,8 @@ export function LoreEditPanel({
   const [error, setError] = useState<string | null>(null)
   const [previewSkin, setPreviewSkin] = useState('')
   const [previewChapter, setPreviewChapter] = useState<string | undefined>(undefined)
+  // 引文段卡片的編輯狀態（見 LoreChaptersEditor）。不進草稿：草稿存的是表單，表單裡已是序列化好的 body／source
+  const [sectionCache, setSectionCache] = useState<Record<string, LoreSectionCache>>({})
 
   const patch = (p: Partial<LoreDoc>) => setForm((f) => ({ ...f, ...p }))
   const logoSuggestions = useMemo(
@@ -91,6 +93,13 @@ export function LoreEditPanel({
         dup.length ? `人物檔案的自訂欄位有同名標籤：${dup.join('、')}` : '',
         unlabeled.length ? `人物檔案第 ${unlabeled.join('、')} 列有內容但沒有標籤` : '',
       ].filter(Boolean).join('；'))
+      return
+    }
+    // 中間卡片的署名前台認不出來 → 會被當成正文印出來
+    const badSources = sectionIssues(form.chapters, sectionCache)
+    if (badSources.length) {
+      setTab('chapters')
+      setError(`逸聞章節的署名要先改好：${badSources.join('；')}`)
       return
     }
     setSaving(true)
@@ -129,6 +138,8 @@ export function LoreEditPanel({
           onChange={(chapters) => patch({ chapters })}
           previewKey={previewChapter}
           onPreview={(key) => { setPreviewChapter(key); if (key && narrow) setTab('preview') }}
+          sectionCache={sectionCache}
+          onSectionCache={(key, entry) => setSectionCache((m) => ({ ...m, [key]: entry }))}
         />
       )}
       {activeTab === 'skins' && (

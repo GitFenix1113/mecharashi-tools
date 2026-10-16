@@ -84,6 +84,7 @@ export interface LoreChapter {
    * 出處署名，如 '——《週刊米赫瑪·文娛版》'。右對齊小字 ＋ 分隔細線。
    * 一章引了多份資料時，這裡放**最後一份**的出處；中間各份寫在 body 裡、另起一行以 `——` 開頭
    * （行內署名，`inlineSource()`，components/lore/loreText.ts）。
+   * 編輯台把這兩處合成「引文段卡片」，每張一個署名欄，存檔時才序列化回來（`joinSections()`，admin/lore/loreEditText.ts）。
    */
   source?: string
   /** NPC 旁白列 */

@@ -6,7 +6,10 @@ import { assetUrl } from '../../../utils/assets'
 import { npcGameArt } from '../../../utils/gameArt'
 import { RefPicker } from '../RefPicker'
 import { NpcSpeakerArtPicker } from '../GameArtPicker'
-import { cleanOcr, customSpeakerPresets, makeChapterKey, mergeSoftWraps, moveItem } from './loreEditText'
+import {
+  chapterSections, cleanOcr, customSpeakerPresets, joinSections, makeChapterKey, mergeSoftWraps, middleSourceIssue, moveItem,
+  type LoreSectionCache, type LoreSectionDraft,
+} from './loreEditText'
 import { ICON_BTN } from './LoreDossierEditor'
 import { SMALL_BTN } from './LoreFrontEditor'
 
@@ -18,7 +21,7 @@ import { SMALL_BTN } from './LoreFrontEditor'
  *   把多章 join 成一段餵進去會讓同名 token 的重複判定完全失準。
  */
 export function LoreChaptersEditor({
-  chapters, pilots, onChange, previewKey, onPreview,
+  chapters, pilots, onChange, previewKey, onPreview, sectionCache, onSectionCache,
 }: {
   chapters: LoreChapter[]
   pilots: Pilot[]
@@ -26,9 +29,21 @@ export function LoreChaptersEditor({
   /** 預覽中的章節（右欄／預覽分頁顯示閱讀模式）；undefined＝預覽扉頁 */
   previewKey?: string
   onPreview: (key: string | undefined) => void
+  /**
+   * 引文段卡片的編輯狀態，以章節 key 索引。放在面板層：切到別的分頁時本元件會卸載，存檔檢查也要讀得到。
+   * 沒編過的章節不在表裡，現場從 body＋source 切（`chapterSections`）。
+   */
+  sectionCache: Record<string, LoreSectionCache>
+  onSectionCache: (key: string, entry: LoreSectionCache) => void
 }) {
   const [ocr, setOcr] = useState('')
   const patch = (i: number, p: Partial<LoreChapter>) => onChange(chapters.map((c, n) => (n === i ? { ...c, ...p } : c)))
+  // 卡片一改就序列化回 body／source 寫進表單（預覽與存檔都只看表單），卡片本身的狀態另記在快取
+  const setSections = (i: number, sections: LoreSectionDraft[]) => {
+    const joined = joinSections(sections)
+    onSectionCache(chapters[i].key, { ...joined, sections })
+    patch(i, joined)
+  }
   // 自訂說話者的名稱建議：全館已存檔的＋這份表單裡剛打的（同一份文件會算兩次，只影響排序、不影響結果）
   const { pilotLore } = useGameData()
   const speakerPresets = useMemo(() => customSpeakerPresets([...pilotLore, { chapters }]), [pilotLore, chapters])
@@ -66,6 +81,8 @@ export function LoreChaptersEditor({
         <ChapterCard
           key={ch.key}
           chapter={ch}
+          sections={chapterSections(ch, sectionCache[ch.key])}
+          onSections={(next) => setSections(i, next)}
           index={i}
           total={chapters.length}
           pilots={pilots}
@@ -95,9 +112,11 @@ export function LoreChaptersEditor({
 
 // ─── 單章編輯卡 ────────────────────────────────────────────────────────────────
 function ChapterCard({
-  chapter, index, total, pilots, speakerPresets, previewing, onPatch, onMove, onRemove, onPreview,
+  chapter, sections, onSections, index, total, pilots, speakerPresets, previewing, onPatch, onMove, onRemove, onPreview,
 }: {
   chapter: LoreChapter
+  sections: LoreSectionDraft[]
+  onSections: (next: LoreSectionDraft[]) => void
   index: number
   total: number
   pilots: Pilot[]
@@ -159,34 +178,18 @@ function ChapterCard({
         </Field>
       </div>
 
-      <Field label="正文 body（可含 [xxx] 引用標記）">
-        <textarea
-          value={chapter.body}
-          onChange={(e) => onPatch({ body: e.target.value })}
-          className="input-field min-h-[220px] resize-y text-sm leading-relaxed"
-          placeholder="貼上或輸入本章正文。空行分段。"
-        />
+      <Field label="正文與署名（正文可含 [xxx] 引用標記）">
+        <SectionsEditor sections={sections} onChange={onSections} />
       </Field>
 
-      {/* ⚠ 側錄寫回 chapters[i].bodyRefs（entityRefs 寫死 refsField:'bodyRefs'）。 */}
+      {/* ⚠ 側錄寫回 chapters[i].bodyRefs（entityRefs 寫死 refsField:'bodyRefs'）。
+          吃序列化後的整份 body：引用表整章共用、不分卡片。編譯會改寫 body → 卡片快取自動作廢、從新的 body 重新切。 */}
       <RefPicker
         text={chapter.body}
         value={chapter.bodyRefs}
         onChange={(refs) => onPatch({ bodyRefs: refs })}
         onCompileText={(tf, refs) => onPatch({ body: tf(chapter.body), ...(refs && { bodyRefs: refs }) })}
       />
-
-      <Field label="出處署名 source（選填，如：——《週刊米赫瑪·文娛版》）">
-        <input
-          value={chapter.source ?? ''}
-          onChange={(e) => onPatch({ source: e.target.value || undefined })}
-          className="input-field text-sm"
-          placeholder="——《週刊米赫瑪·文娛版》"
-        />
-        <p className="text-xs text-text-dim leading-relaxed mt-1">
-          一章引了多份資料、各有出處時，這裡填最後一份；中間那份的出處在正文裡另起一行、以「——」開頭（例：——維斯珀爾內部通訊），前台會排成同款署名。
-        </p>
-      </Field>
 
       <Field label="旁白 commentary（選填）">
         <CommentaryEditor
@@ -196,6 +199,70 @@ function ChapterCard({
           onChange={(next) => onPatch({ commentary: next.length > 0 ? next : undefined })}
         />
       </Field>
+    </div>
+  )
+}
+
+// ─── 引文段卡片（2026-10-15）────────────────────────────────────────────────────
+// 一章引了多份資料、各有出處時，每份一張卡片、各自一個署名欄。資料格式不變（loreEditText 的 splitSections／joinSections）。
+// 只有一張時不顯示卡片框與 ▲▼✕：絕大多數章節長這樣，看起來就是以前的「正文＋署名」。
+function SectionsEditor({ sections, onChange }: { sections: LoreSectionDraft[]; onChange: (next: LoreSectionDraft[]) => void }) {
+  const multi = sections.length > 1
+  const last = sections.length - 1
+  const set = (j: number, p: Partial<LoreSectionDraft>) => onChange(sections.map((s, n) => (n === j ? { ...s, ...p } : s)))
+
+  return (
+    <div className="space-y-2">
+      {sections.map((s, j) => {
+        const issue = j < last ? middleSourceIssue(s.source) : null
+        const willMerge = j < last && !s.source.trim()
+        return (
+          // 以索引當 key：卡片沒有穩定識別子（同人物檔案的自訂欄位）
+          <div key={j} className={multi ? 'border border-border rounded-lg p-2 space-y-1.5' : 'space-y-1.5'}>
+            {multi && (
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] text-text-dim">引文段 {j + 1}</span>
+                <div className="ml-auto flex gap-1">
+                  <button type="button" onClick={() => onChange(moveItem(sections, j, -1))} disabled={j === 0} className={ICON_BTN} title="上移">▲</button>
+                  <button type="button" onClick={() => onChange(moveItem(sections, j, 1))} disabled={j === last} className={ICON_BTN} title="下移">▼</button>
+                  <button
+                    type="button"
+                    onClick={() => onChange(sections.filter((_, n) => n !== j))}
+                    className={`${ICON_BTN} hover:!text-accent-red hover:!border-accent-red/40`}
+                    title="移除這一段（連同正文與署名）"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
+            <textarea
+              value={s.body}
+              onChange={(e) => set(j, { body: e.target.value })}
+              className={`input-field resize-y text-sm leading-relaxed ${multi ? 'min-h-[140px]' : 'min-h-[220px]'}`}
+              placeholder="貼上或輸入正文。換行即分段。"
+            />
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-dim shrink-0">署名</span>
+              <input
+                value={s.source}
+                onChange={(e) => set(j, { source: e.target.value })}
+                className={`input-field text-sm ${issue ? '!border-accent-red/60' : ''}`}
+                placeholder={j < last ? '這一段的出處，如：維斯珀爾內部通訊' : '選填，如：海莉絲研究日誌'}
+              />
+            </div>
+            {issue && <p className="text-xs text-accent-red">{issue}。存檔前要先改好。</p>}
+            {willMerge && <p className="text-xs text-text-dim">沒有署名的話，存檔後這段會併入下一段（前台的段落照樣分開）。</p>}
+          </div>
+        )
+      })}
+      <button
+        type="button"
+        onClick={() => onChange([...sections, { body: '', source: '' }])}
+        className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+      >
+        ＋ 新增引文段（這一章引了另一份資料、各有出處時）
+      </button>
     </div>
   )
 }

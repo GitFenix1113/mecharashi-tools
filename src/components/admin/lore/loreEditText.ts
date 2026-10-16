@@ -65,6 +65,95 @@ export function mergeSoftWraps(text: string): string {
   return out.join('\n')
 }
 
+// ── 引文段卡片（2026-10-15）──────────────────────────────────────────────────
+//
+// 一章引了多份資料、各有出處時（淬鋒·凱登 PART 2），編輯台把正文切成「引文段」卡片，每張各自一個署名欄。
+// **資料格式不變**：卡片只存在編輯台，存檔時序列化回 `body`＋`source`——
+//   中間各段 → 正文後接一行 `——署名`（前台的行內署名，`inlineSource()`），最後一段的署名 → `source`。
+// 不改成 `sections[]` 欄位的評估見 _local-notes/2026-10/2026-10-15_故事館一章多出處資料結構評估.md；
+// 將來真的要轉，`splitSections()` 就是搬遷函式。
+
+/** 編輯台的一張引文段卡片。署名不含開頭的破折號（橫線由前台 CSS 畫）。 */
+export interface LoreSectionDraft {
+  body: string
+  source: string
+}
+
+/** 署名開頭使用者順手打的破折號。不含 OCR 的 `一一`：「一一列舉」是正常中文。 */
+const SOURCE_DASH = /^(——|──|--)\s*/
+
+const cleanSource = (s: string) => s.trim().replace(SOURCE_DASH, '').trim()
+
+/**
+ * `body`＋`source` → 引文段卡片。切點是行內署名行；最後一張的署名＝`source`。
+ * 沒有行內署名的章節（絕大多數）切出來就是一張卡片。
+ */
+export function splitSections(body: string, source: string | undefined): LoreSectionDraft[] {
+  const out: LoreSectionDraft[] = []
+  let lines: string[] = []
+  for (const line of body.replace(/\r\n?/g, '\n').split('\n')) {
+    const s = inlineSource(line)
+    if (s === null) { lines.push(line); continue }
+    out.push({ body: lines.join('\n').trim(), source: s })
+    lines = []
+  }
+  out.push({ body: lines.join('\n').trim(), source: cleanSource(source ?? '') })
+  return out
+}
+
+/**
+ * 引文段卡片 → `body`＋`source`（`splitSections` 的反函式）。
+ *
+ * 中間的卡片**沒有署名**時直接接下一段：沒有署名的分界在資料裡不存在，重新開啟會併成一張——
+ * 前台的段落照樣分開，看起來一模一樣，所以不擋存檔，只在卡片上提示。
+ */
+export function joinSections(sections: readonly LoreSectionDraft[]): { body: string; source: string | undefined } {
+  const parts: string[] = []
+  sections.forEach((s, i) => {
+    if (s.body.trim()) parts.push(s.body.trim())
+    const src = cleanSource(s.source)
+    if (i < sections.length - 1 && src) parts.push(`——${src}`)
+  })
+  return { body: parts.join('\n'), source: cleanSource(sections[sections.length - 1]?.source ?? '') || undefined }
+}
+
+/**
+ * 中間卡片的署名能不能被前台認成行內署名。不行的話前台會把那一行當正文印出來，存檔前要擋。
+ * 空署名不算問題（見 `joinSections`）。最後一張的署名存進 `source` 欄位，不受這條限制。
+ */
+export function middleSourceIssue(source: string): string | null {
+  const src = cleanSource(source)
+  if (!src || inlineSource(`——${src}`) !== null) return null
+  return '前台認不出這個署名（限 40 字內、不能有「。！？」），會被當成正文顯示'
+}
+
+/** 卡片的編輯狀態快取：連同它序列化出來的 body／source 一起記，用來判斷還能不能沿用。 */
+export interface LoreSectionCache {
+  body: string
+  source: string | undefined
+  sections: LoreSectionDraft[]
+}
+
+/**
+ * 某一章目前該顯示的卡片。快取只在「它序列化出來的結果仍等於章節現值」時沿用——
+ * 正文被別的地方改掉（RefPicker 編譯、刪章後同一個 key 被新章撿走）就自動作廢、重新從資料切。
+ * 需要快取是因為打字中的狀態不一定能從資料還原（新增的空卡片、署名清空到一半）。
+ */
+export function chapterSections(chapter: Pick<LoreChapter, 'body' | 'source'>, cache: LoreSectionCache | undefined): LoreSectionDraft[] {
+  if (cache && cache.body === chapter.body && (cache.source ?? '') === (chapter.source ?? '')) return cache.sections
+  return splitSections(chapter.body, chapter.source)
+}
+
+/** 存檔前檢查：所有章節中間卡片的署名問題，回傳「PART 2 引文段 1：…」清單。 */
+export function sectionIssues(chapters: readonly LoreChapter[], cache: Readonly<Record<string, LoreSectionCache>>): string[] {
+  return chapters.flatMap((ch, i) =>
+    chapterSections(ch, cache[ch.key]).slice(0, -1).flatMap((s, j) => {
+      const issue = middleSourceIssue(s.source)
+      return issue ? [`${ch.label ?? `PART ${i + 1}`} 引文段 ${j + 1}：${issue}`] : []
+    }),
+  )
+}
+
 /** 陣列內 i 與 i+dir 互換；越界原樣回傳（同一個參照）。編輯台的 ▲▼ 共用。 */
 export function moveItem<T>(list: readonly T[], i: number, dir: -1 | 1): T[] {
   const j = i + dir
