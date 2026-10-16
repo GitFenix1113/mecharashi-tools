@@ -204,16 +204,23 @@ function DensityToggle({ expanded, onChange }: { expanded: boolean; onChange: (v
   )
 }
 
+/** 機甲故事館入口（PLAN-042-B H-4）：頁首名字旁（桌機）／第二列（手機）各一顆，className 決定哪一顆顯示 */
+function LoreLink({ id, className }: { id: string; className: string }) {
+  return (
+    <Link
+      to={`/lore/mechs/${encodeURIComponent(id)}`}
+      className={`${className} shrink-0 rounded-md border border-accent-orange/40 px-2 py-0.5 text-xs font-bold text-accent-orange no-underline transition-colors hover:bg-accent-orange/10`}
+    >
+      故事館 ▸
+    </Link>
+  )
+}
+
 export default function MechDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data, loading } = useMechWithModules(id)
   usePageTitle(data ? `${data.mech.name} 機甲資料` : null)
   const [partsExpanded, setPartsExpanded] = useState(loadPartsExpanded)
-  // 手機的機體描述展開狀態。記「展開的是哪一台」而不是布林：從引用浮窗跳到另一台機甲時
-  // 元件不會重掛，布林會把上一台的展開狀態帶過去
-  const [loreOpenFor, setLoreOpenFor] = useState<string | null>(null)
-  const loreOpen = loreOpenFor === id
-  const setLoreOpen = (f: (open: boolean) => boolean) => setLoreOpenFor(f(loreOpen) ? (id ?? null) : null)
   // 官配機師（由機師側推導）與塗裝本體（PLAN-054）。pilots 在版本快取內，不多花 Firestore read。
   const { data: allPilots } = usePilots()
   const { data: allMechs } = useMechs()
@@ -290,10 +297,6 @@ export default function MechDetailPage() {
     },
   ]
 
-  // 機體描述在手機上預設收成 3 行（2026-10-10）。短到 3 行放得下的就不出「展開」鈕 ——
-  // 手機每行約 22 字（text-sm、375px），66 字或 3 個換行以內視為放得下
-  const loreLong = !!mech.lore && (mech.lore.length > 66 || mech.lore.split('\n').length > 3)
-
   return (
     // 2026-10-10「一屏看完」改版：上方留白 py-8 → py-4，返回連結併進名稱橫幅（省一整行）
     <div className="max-w-6xl xl:max-w-[1520px] mx-auto px-4 py-4 bg-bg-dark/10 backdrop-blur-sm rounded-2xl">
@@ -326,9 +329,14 @@ export default function MechDetailPage() {
                 <MechTypeIcon type={mech.armorType} decorative />
                 {mechWeightShort(mech.armorType)}
               </span>
+              {/* 故事館入口（PLAN-042-B 決策 B-7，比照機師圖鑑 042-E）：圖鑑只做數值與機制，介紹、系譜、塗裝都在機甲故事館。
+                  ⚠ 只放連結、**不帶任何故事內容**：帶首句就得載入 mechLore，圖鑑就跨進故事館了（單向依賴）。
+                  每台機甲都有故事館頁（館首頁列的是 mechs），所以不會連到空頁。
+                  手機放到第二列（下面那顆）：第一列還有右邊的立繪縮圖，放這裡會把名字擠成「格·」 */}
+              <LoreLink id={mech.id} className="max-lg:hidden" />
             </div>
-            {(mech.debutVersion || pairedPilot || skinOf) && (
-              <div className="flex flex-wrap items-center gap-x-2.5 lg:gap-x-3 gap-y-1">
+            <div className="flex flex-wrap items-center gap-x-2.5 lg:gap-x-3 gap-y-1">
+                <LoreLink id={mech.id} className="lg:hidden" />
                 {mech.debutVersion && (
                   <span className="text-[11px] text-text-dim border border-border rounded px-2 py-0.5">
                     登場 v{mech.debutVersion}
@@ -345,8 +353,7 @@ export default function MechDetailPage() {
                     <RefChip inner={skinOf.name} entity={{ refType: 'mech', refId: skinOf.id }} /> 的付費塗裝
                   </span>
                 )}
-              </div>
-            )}
+            </div>
           </div>
           {/* 手機／平板：立繪縮圖（桌面的十字中央已經有立繪）。用 px 而不是 w-20：
               站上的字級切換會放大 rem，w-20 在「中」字級是 95px，會把名稱列擠到換行 */}
@@ -367,7 +374,7 @@ export default function MechDetailPage() {
           （2026-10-10）—— 改版前手機要捲過立繪、部件與約 500px 的機體描述，特性模組才出現在第 1499px */}
       <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[minmax(0,46fr)_minmax(0,54fr)] xl:gap-6 xl:items-start">
 
-        {/* 左欄：部件資訊 + 機體描述 */}
+        {/* 左欄：部件資訊（機體描述 PLAN-042-B H-4 搬進機甲故事館，頁首名字旁的「故事館 ▸」） */}
         <div className="space-y-5 max-lg:order-last">
           <div>
             <SectionLabel
@@ -426,25 +433,6 @@ export default function MechDetailPage() {
               要恢復：重新 import `MechSlotPanel` / `MechPartsTable`（src/components/mechs/MechSlotPanel.tsx），
               在這裡放回 `<MechSlotPanel mech={mech} />` 與 `<MechPartsTable mech={mech} />` 即可，元件都還在。 */}
 
-          {/* 機體描述留在左欄底部：右欄的模組才是進頁要先看到的東西。
-              手機預設收成 3 行（站長 2026-10-10：只收手機 —— 桌面它在左欄最底下，不擋任何東西） */}
-          {mech.lore && (
-            <div className="bg-bg-card border border-border rounded-xl p-4">
-              <SectionLabel>機體描述</SectionLabel>
-              <p className={`text-sm text-text-secondary leading-relaxed whitespace-pre-line ${loreLong && !loreOpen ? 'max-lg:line-clamp-3' : ''}`}>
-                {mech.lore}
-              </p>
-              {loreLong && (
-                <button
-                  type="button"
-                  onClick={() => setLoreOpen((v) => !v)}
-                  className="lg:hidden mt-1.5 text-[12px] text-accent-orange hover:underline cursor-pointer"
-                >
-                  {loreOpen ? '收合 ▴' : '展開全文 ▾'}
-                </button>
-              )}
-            </div>
-          )}
         </div>
 
         {/* 右欄：機甲模組。@container —— 要不要雙欄取決於這一欄自己的寬度，不是視窗寬度。

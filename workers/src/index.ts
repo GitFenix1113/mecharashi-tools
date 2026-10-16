@@ -295,11 +295,12 @@ async function handleSocialPreview(
   try {
     const doc = await loadEntityDoc(target.collection, target.id, env, ctx)
     if (!doc) return passthrough() // 查無此實體（舊連結／改過 ID）
-    // 故事館的分享卡：簡介住 pilotLore（PLAN-042-E），多讀一份同 ID 的文件。標題、立繪仍取 pilots。
-    // 讀失敗不擋卡片——描述退回「某某｜機師故事館」，總比整張退回站名卡好。
+    // 故事館的分享卡：簡介住 pilotLore／mechLore（PLAN-042-E／042-B），多讀一份同 ID 的文件。標題、立繪仍取實體集合。
+    // 讀失敗不擋卡片——描述退回「某某｜機師（機甲）故事館」，總比整張退回站名卡好。
+    const loreColl = target.collection === 'mechs' ? 'mechLore' : 'pilotLore'
     const loreDoc = target.lore
-      ? await loadEntityDoc('pilotLore', target.id, env, ctx).catch((e) => {
-          console.warn('[og] pilotLore 讀取失敗，故事館卡片的描述退回預設值:', e)
+      ? await loadEntityDoc(loreColl, target.id, env, ctx).catch((e) => {
+          console.warn(`[og] ${loreColl} 讀取失敗，故事館卡片的描述退回預設值:`, e)
           return null
         })
       : null
@@ -344,7 +345,7 @@ async function handleSocialPreview(
  * 舊卡片內容自然失效，與 /api/data 的做法同源。
  */
 async function loadEntityDoc(
-  collection: OgCollection | 'pilotLore',
+  collection: OgCollection | 'pilotLore' | 'mechLore',
   id: string,
   env: Env,
   ctx: ExecutionContext,

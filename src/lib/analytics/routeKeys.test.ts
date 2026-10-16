@@ -227,10 +227,10 @@ test('故事館 URL 形狀：Worker 的 LORE_RE 與 ROUTE_PATTERNS 綁在一起�
   // 只有社群貼連結時 OG 圖悄悄退回 og/default.jpg（2026-08-22 踩過同款）。
   const src = readFileSync(new URL('../../../workers/src/socialPreview.ts', import.meta.url), 'utf8')
   assert.ok(
-    src.includes(String.raw`/^\/lore\/(pilots)\/([^/]+)(?:\/([^/]+))?\/?$/`),
-    'workers/src/socialPreview.ts 的 LORE_RE 與 ROUTE_PATTERNS 的 /lore/pilots/:id[/:part] 不一致',
+    src.includes(String.raw`/^\/lore\/(pilots|mechs)\/([^/]+)(?:\/([^/]+))?\/?$/`),
+    'workers/src/socialPreview.ts 的 LORE_RE 與 ROUTE_PATTERNS 的 /lore/(pilots|mechs)/:id[/:part] 不一致',
   )
-  for (const p of ['/lore', '/lore/pilots/:id', '/lore/pilots/:id/:part']) {
+  for (const p of ['/lore', '/lore/pilots/:id', '/lore/pilots/:id/:part', '/lore/mechs', '/lore/mechs/:id', '/lore/mechs/:id/:part']) {
     assert.ok(ROUTE_PATTERNS.includes(p), `ROUTE_PATTERNS 缺 ${p}`)
   }
 })

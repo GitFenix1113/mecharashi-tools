@@ -594,10 +594,8 @@ function MechEditPanel({
                 )}
               </select>
             </Field>
-            <Field label="介紹文本 lore（舊欄位：只剩機甲圖鑑的機體描述與分享卡在讀；機甲故事館讀的是故事館編輯台的介紹。PLAN-042-B H-7 會刪除）">
-              <textarea className="input-field min-h-[120px]" value={form.lore ?? ''} placeholder="機甲背景 / 故事敘述"
-                onChange={(e) => set('lore', e.target.value || undefined)} />
-            </Field>
+            {/* 介紹文本（mechs.lore）PLAN-042-B H-4 拿掉了：介紹搬到 mechLore.intro，在故事館編輯台編（標題下的捷徑）。
+                舊欄位的值還在文件上（表單整份帶著、存檔照樣寫回），H-7 觀察期後才刪 */}
           </>
         )}
 

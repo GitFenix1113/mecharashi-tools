@@ -50,18 +50,24 @@ export interface AnalyticsEntityMonth {
    * 拆開之前（2026-10 前段以前）故事館是併在 pilots 裡的。
    */
   lorePilots?: Record<string, number>
-  /** 故事館章節，key 為 `${pilotId}--${partKey}`（routeKeys.ts 的 loreChapterId）。 */
+  /** 機甲故事館裡被打開的機甲（PLAN-042-B；扉頁與章節都算，與圖鑑的 mechs 分開統計） */
+  loreMechs?: Record<string, number>
+  /** 故事館章節，key 為 `${文件 ID}--${partKey}`（routeKeys.ts 的 loreChapterId）；兩館共用，pilot_／mech_ 前綴分得出來。 */
   loreParts?: Record<string, number>
 }
 
-/** 後台「熱門排行」的分頁。lorePilots＝故事館裡被打開的機師（PLAN-062），與圖鑑的 pilots 分開統計。 */
-export type EntityKind = 'pilots' | 'mechs' | 'weapons' | 'lorePilots'
+/**
+ * 後台「熱門排行」的分頁。lorePilots／loreMechs＝故事館裡被打開的機師／機甲（PLAN-062／PLAN-042-B），
+ * 與圖鑑的 pilots／mechs 分開統計。
+ */
+export type EntityKind = 'pilots' | 'mechs' | 'weapons' | 'lorePilots' | 'loreMechs'
 
 export const ENTITY_KIND_LABEL: Record<EntityKind, string> = {
   pilots: '機師',
   mechs: '機甲',
   weapons: '武器',
-  lorePilots: '故事',
+  lorePilots: '機師故事',
+  loreMechs: '機甲故事',
 }
 
 /** 語言分桶的顯示名。與 track.ts 的 langBucket 產出一一對應。 */

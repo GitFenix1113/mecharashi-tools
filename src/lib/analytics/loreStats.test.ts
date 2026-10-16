@@ -6,11 +6,13 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  LORE_HALL_KEYS,
   LORE_OPEN_DATE,
   LORE_PAGE_KEYS,
   LORE_ROUTE_KEYS,
   chapterRetention,
   loreFunnel,
+  loreShare,
   sinceLoreOpen,
   type RetentionDoc,
 } from './loreStats.ts'
@@ -125,10 +127,52 @@ test('chapterRetention：未達門檻的機師計入 belowMin；沒有章節或�
     {},
     [doc('a', 'A', ['part-1']), doc('b', 'B', ['part-1']), doc('c', 'C', ['part-1']), doc('empty', 'E', [])],
   )
-  assert.deepEqual(rows.map((r) => r.pilotId), ['a', 'c'], '依打開次數由多到少')
+  assert.deepEqual(rows.map((r) => r.id), ['a', 'c'], '依打開次數由多到少')
   assert.equal(belowMin, 1)
 })
 
 test('chapterRetention：月文件還沒有故事館類別時回空結果，不拋錯', () => {
   assert.deepEqual(chapterRetention(undefined, undefined, [doc('a', 'A', ['part-1'])]), { rows: [], belowMin: 0 })
+})
+
+// ── 分廳（PLAN-042-B H-2）──────────────────────────────────────────────────────
+
+test('LORE_HALL_KEYS：機甲廳三頁由樣板推導；LORE_PAGE_KEYS 是兩館六頁', () => {
+  assert.deepEqual(LORE_HALL_KEYS.mechs, { home: 'lore_mechs', file: 'lore_mechs_detail', chapter: 'lore_mechs_detail_detail' })
+  assert.equal(LORE_PAGE_KEYS.size, 6)
+  for (const key of LORE_PAGE_KEYS) assert.ok(ROUTE_LABELS[key], `${key} 沒有頁名`)
+})
+
+test('loreFunnel(…, mechs)：只算機甲廳三頁；佔比的分母是全站', () => {
+  const routes = {
+    lore: { pv: 10, upv: 8 },
+    lore_mechs: { pv: 6, upv: 4 },
+    lore_mechs_detail: { pv: 9, upv: 3 },
+    lore_mechs_detail_detail: { pv: 2, upv: 1 },
+    pilots: { pv: 100, upv: 84 },
+  }
+  const f = loreFunnel(routes, 'mechs')
+  assert.deepEqual([f.home.upv, f.file.upv, f.chapter.upv], [4, 3, 1])
+  assert.equal(f.share, 8 / 100)
+  assert.equal(f.fileToChapter, 1 / 3)
+  assert.equal(f.filesPerVisit, 3)
+  // 機師廳照舊只算自己的三頁
+  assert.equal(loreFunnel(routes).home.upv, 8)
+})
+
+test('loreShare：兩館六頁合計 ÷ 全站；全站為 0 回 null', () => {
+  assert.equal(loreShare({}), null)
+  assert.equal(loreShare({ lore: { pv: 1, upv: 1 }, lore_mechs_detail: { pv: 1, upv: 1 }, mechs: { pv: 8, upv: 8 } }), 2 / 10)
+})
+
+test('chapterRetention：機甲廳吃 loreMechs＋mechLore；loreParts 裡機師的章節對不到、不算', () => {
+  const docs: RetentionDoc[] = [{ id: 'mech_002_格萊楊', name: '格萊楊', chapters: [{ key: 'part-1', title: '一' }] }]
+  const { rows } = chapterRetention(
+    { mech_002_格萊楊: 4 },
+    { 'mech_002_格萊楊--part-1': 2, 'pilot_003_洛莎--part-1': 9 },
+    docs,
+  )
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0].id, 'mech_002_格萊楊')
+  assert.equal(rows[0].chapters[0].rate, 0.5)
 })

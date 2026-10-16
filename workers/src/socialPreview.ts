@@ -63,7 +63,7 @@ export interface EntityTarget {
   collection: OgCollection
   id: string
   /**
-   * 來自機師故事館路徑（`/lore/pilots/…`，PLAN-042-A）。
+   * 來自故事館路徑（`/lore/pilots/…` PLAN-042-A；`/lore/mechs/…` PLAN-042-B H-3）。
    *
    * ⚠ **選填、且只有故事館分支才建這個鍵**：`socialPreview.test.ts` 有三處
    *   `assert.deepEqual(parseEntityPath(…), { collection, id })`，而 `assert/strict`
@@ -71,7 +71,7 @@ export interface EntityTarget {
    *   **連 `lore: undefined` 都失敗**。故回傳物件一律條件建構。
    */
   lore?: true
-  /** 章節 key（`/lore/pilots/:id/:part` 四段路徑才有）。 */
+  /** 章節 key（`/lore/<pilots|mechs>/:id/:part` 四段路徑才有）。 */
   part?: string
 }
 
@@ -84,8 +84,9 @@ export interface EntityTarget {
  *
  * ⚠ `LORE_RE` 的字面值被 `src/lib/analytics/routeKeys.test.ts` 以字串比對綁住
  *   （URL 形狀跨檔一致的絆線），改這一行必須同時改 `ROUTE_PATTERNS`。
+ *   館首頁（`/lore`、`/lore/mechs`）不命中：沒有 id，吃站名預設卡。
  */
-const LORE_RE = /^\/lore\/(pilots)\/([^/]+)(?:\/([^/]+))?\/?$/
+const LORE_RE = /^\/lore\/(pilots|mechs)\/([^/]+)(?:\/([^/]+))?\/?$/
 const ENTITY_RE = /^\/(pilots|mechs|weapons)\/([^/]+)\/?$/
 
 /**
@@ -124,7 +125,7 @@ export function parseEntityPath(pathname: string): EntityTarget | null {
       if (decoded === null) return null
       part = decoded
     }
-    return { collection: 'pilots', id, lore: true, ...(part !== undefined ? { part } : {}) }
+    return { collection: lore[1] as 'pilots' | 'mechs', id, lore: true, ...(part !== undefined ? { part } : {}) }
   }
 
   const m = pathname.match(ENTITY_RE)
@@ -209,6 +210,15 @@ function gamePortrait(collection: OgCollection, doc: Record<string, unknown>): s
   return undefined
 }
 
+/**
+ * 機甲主視覺 `Icon_mecha_wap<wap>_SN_Raw`（2000×1080 去背，機甲故事館舞台那張；PLAN-042-B H-3）。
+ * 只有故事館卡片用：圖鑑卡片維持立繪（與既有卡片一致）。JPEG 由 generate-og-entity-images.mjs 縮到 1200 寬轉出。
+ */
+function gameMechKeyArt(doc: Record<string, unknown>): string | undefined {
+  const gameId = str(doc.gameId)
+  return gameId ? `/images/game/mechs/${gameId}/Icon_mecha_wap${gameId}_SN_Raw.webp` : undefined
+}
+
 /** 候選清單 → { image, fallbackImages }：第一個當主圖，其餘依序當探測失敗時的後備。 */
 function pickImages(...paths: unknown[]): Pick<OgMeta, 'image' | 'fallbackImages'> {
   const list = paths.map(absoluteImage).filter((u, i, a): u is string => !!u && a.indexOf(u) === i)
@@ -238,6 +248,9 @@ function truncate(s: string, max = 110): string {
  * （簡介 2026-10 從 pilots.lore 搬過去了）；標題與立繪仍取 `doc`（pilots 的身分欄位）。
  * 沒有這份文件（讀不到、還沒建）→ 退回「某某｜機師故事館」。
  * ⚠ 這裡沒讀到的話**不會有任何錯誤訊號**：回應一樣是 200、一樣有 og:image，只有描述文字退回預設值。
+ *
+ * 機甲故事館（PLAN-042-B H-3）：`opts.loreDoc` 是 `mechLore`，描述取 `intro`；圖用主視覺（`_SN_Raw`），
+ * 退路是圖鑑那張立繪。機甲**圖鑑**卡的描述仍讀 `doc.lore`——H-7 刪掉那個欄位後退回預設文案，屬預期。
  */
 export function buildOgMeta(
   collection: OgCollection,
@@ -246,6 +259,14 @@ export function buildOgMeta(
 ): OgMeta | null {
   const name = str(doc.name)
   if (!name) return null // 連名字都沒有就沒有做卡片的意義，退回站名卡
+
+  if (collection === 'mechs' && opts?.lore) {
+    return {
+      title: `${name} 的故事`,
+      description: truncate(str(opts.loreDoc?.intro)) || `${name}｜機甲故事館`,
+      ...pickImages(gameMechKeyArt(doc), gamePortrait('mechs', doc), doc.portrait),
+    }
+  }
 
   if (collection === 'pilots' && opts?.lore) {
     // 章節不各自成卡：`part` 只是同一位機師故事的第幾段，分享出去的仍是「這位機師的故事」。

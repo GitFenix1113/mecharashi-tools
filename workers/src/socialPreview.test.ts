@@ -13,6 +13,7 @@ import {
   buildOgMeta,
   isDerivedPreviewImage,
   DEFAULT_OG_IMAGE,
+  SITE_ORIGIN,
 } from './socialPreview.ts'
 
 test('isSocialCrawler：認得社群爬蟲', () => {
@@ -118,7 +119,9 @@ test('parseEntityPath（故事館）：非故事館詳情頁的 /lore/* 一律�
     '/lore/pilots', // 缺 id
     '/lore/pilots/', // 尾斜線但沒有 id
     '/lore/pilots/x/part-1/extra', // 多一層
-    '/lore/mechs/x', // 故事館只有機師
+    '/lore/mechs', // 機甲廳館首頁（PLAN-042-B）：沒有 id
+    '/lore/mechs/', // 尾斜線但沒有 id
+    '/lore/weapons/x', // 故事館只有機師與機甲
   ]) {
     assert.equal(parseEntityPath(p), null, p)
   }
@@ -296,4 +299,35 @@ test('buildOgMeta（mechs）：官方原檔立繪 → portrait → halfPortrait'
     'https://mecharashi.wiki/images/og/entities/mechs/' + encodeURIComponent('都卜勒') + '/portrait.jpg',
     'https://mecharashi.wiki/images/mechs/' + encodeURIComponent('都卜勒') + '/half.png',
   ])
+})
+
+// ── 機甲故事館（PLAN-042-B H-3）────────────────────────────────────────────────
+
+test('parseEntityPath（機甲故事館）：/lore/mechs/:id[/:part] 帶 lore 旗標、集合是 mechs', () => {
+  assert.deepEqual(parseEntityPath('/lore/mechs/' + encodeURIComponent('mech_002_格萊楊')), {
+    collection: 'mechs',
+    id: 'mech_002_格萊楊',
+    lore: true,
+  })
+  assert.deepEqual(parseEntityPath('/lore/mechs/mech_002/part-2/'), { collection: 'mechs', id: 'mech_002', lore: true, part: 'part-2' })
+  // 圖鑑側照舊沒有 lore 鍵（deepEqual 比對自有鍵集合）
+  assert.deepEqual(parseEntityPath('/mechs/mech_002'), { collection: 'mechs', id: 'mech_002' })
+})
+
+test('buildOgMeta（機甲故事館）：描述取 mechLore.intro，圖用主視覺 SN_Raw、退路是立繪', () => {
+  const doc = { name: '格萊楊', quality: 'S', gameId: '1014', lore: '圖鑑舊欄位的介紹' }
+  const meta = buildOgMeta('mechs', doc, { lore: true, loreDoc: { intro: '由多爾工業開發的輕型格鬥機兵。', chapters: [] } })
+  assert.ok(meta)
+  assert.equal(meta.title, '格萊楊 的故事')
+  assert.equal(meta.description, '由多爾工業開發的輕型格鬥機兵。')
+  assert.equal(meta.image, `${SITE_ORIGIN}/images/og/entities/game/mechs/1014/Icon_mecha_wap1014_SN_Raw.jpg`)
+  assert.deepEqual(meta.fallbackImages, [`${SITE_ORIGIN}/images/og/entities/game/mechs/1014/Icon_mecha_wap1014.jpg`])
+  // 沒有 mechLore（或 intro 空）→ 館名描述；**不讀** mechs.lore（故事館的介紹以 mechLore 為準）
+  assert.equal(buildOgMeta('mechs', doc, { lore: true })?.description, '格萊楊｜機甲故事館')
+  assert.equal(buildOgMeta('mechs', doc, { lore: true, loreDoc: { intro: ' ' } })?.description, '格萊楊｜機甲故事館')
+  // 圖鑑卡片不受影響：仍是立繪＋舊欄位描述
+  const codex = buildOgMeta('mechs', doc)
+  assert.equal(codex?.title, '格萊楊 · S 機甲')
+  assert.equal(codex?.description, '圖鑑舊欄位的介紹')
+  assert.equal(codex?.image, `${SITE_ORIGIN}/images/og/entities/game/mechs/1014/Icon_mecha_wap1014.jpg`)
 })

@@ -208,15 +208,15 @@
   <div class="section-title">總進度</div>
 
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">26</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">29</div><div class="summary-lbl">已完成</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">12</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">9</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">38</div><div class="summary-lbl">任務（不含長期資料）</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">26 / 38</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 68%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">29 / 38</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 76%"></div></div>
   </div>
 
   <div class="impact-note">
@@ -744,50 +744,53 @@
     <div class="task-group-header">
       <div class="task-group-title">H-2 &nbsp; 統計</div>
       <div class="task-group-meta">src/lib/analytics/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">loreMechs</div>
         <div class="task-desc"><code>ROUTE_PATTERNS</code>／<code>ENTITY_ROUTES</code> 加 <code>loreMechs</code>，<code>loreStats</code> 漏斗分廳；Worker <code>ENTITY_TYPES</code> 先部署（A-4）。
           <br><span style="color:var(--accent-cyan);">◐ 2026-10-17</span> 路由與 <code>loreMechs</code> 已在 D-1 登記；剩 <code>loreStats</code> 漏斗分廳。
-          <br><span style="color:var(--text-dim);">↳ 館首頁 <code>/lore/mechs</code>（頁鍵 <code>lore_mechs</code>）E-1 已登記；漏斗分廳時記得它是機甲廳的入口。</span></div>
+          <br><span style="color:var(--text-dim);">↳ 館首頁 <code>/lore/mechs</code>（頁鍵 <code>lore_mechs</code>）E-1 已登記；漏斗分廳時記得它是機甲廳的入口。</span>
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>loreStats.ts</code> 分廳：<code>LORE_HALL_KEYS</code>（兩館各三頁，由樣板推導）、<code>loreFunnel(routes, hall)</code>、兩館合計 <code>loreShare()</code>；<code>chapterRetention</code> 改成兩館共用（列欄位 <code>pilotId</code>→<code>id</code>），＋4 個測試。儀表板「故事館」區塊兩館漏斗並排；熱門排行加「機甲故事」（<code>loreMechs</code>）與機甲章節留存。Worker 的 <code>loreMechs</code> 收集 A-4 就部署了，不必再動。</div>
         <div class="task-file">src/lib/analytics/ · workers/src/collect.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">H-3 &nbsp; 社群分享卡</div>
       <div class="task-group-meta">workers/src/socialPreview.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">LORE_RE 認 mechs</div>
-        <div class="task-desc"><code>LORE_RE</code> 改 <code>(pilots|mechs)</code>（字面值被 <code>routeKeys.test.ts</code> 綁住、<code>socialPreview.test.ts</code> 的 null 斷言要改）；卡片「X 的故事」、描述取 <code>mechLore.intro</code>、圖用 SN_Raw。機甲<b>圖鑑</b>卡的描述目前讀 <code>doc.lore</code>，刪欄位後會退回預設文案（「部件、模組槽與數值一覽」），屬預期。wrangler route 已是 <code>/lore/*</code>，不必改。</div>
+        <div class="task-desc"><code>LORE_RE</code> 改 <code>(pilots|mechs)</code>（字面值被 <code>routeKeys.test.ts</code> 綁住、<code>socialPreview.test.ts</code> 的 null 斷言要改）；卡片「X 的故事」、描述取 <code>mechLore.intro</code>、圖用 SN_Raw。機甲<b>圖鑑</b>卡的描述目前讀 <code>doc.lore</code>，刪欄位後會退回預設文案（「部件、模組槽與數值一覽」），屬預期。wrangler route 已是 <code>/lore/*</code>，不必改。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>LORE_RE</code> 改 <code>(pilots|mechs)</code>（routeKeys.test 的絆線同步、改成連 <code>/lore/mechs</code> 系列一起釘）；機甲故事卡「某某 的故事」、描述取 <code>mechLore.intro</code>、圖用主視覺 <code>_SN_Raw</code>（退路立繪）；<code>index.ts</code> 依集合讀 <code>pilotLore</code>／<code>mechLore</code>。<code>generate-og-entity-images.mjs</code> 加主視覺（縮到 1200 寬，93 張約 3.7 MB，build 時產生、不進版控）。Worker 測試＋2。<b>要重新部署 Worker</b>（H-5）。</div>
         <div class="task-file">workers/src/socialPreview.ts · workers/src/index.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">H-4 &nbsp; 機甲圖鑑入口</div>
       <div class="task-group-meta">src/pages/mechs/MechDetailPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">機體描述 → 故事館入口（Q2）</div>
-        <div class="task-desc">整塊換成不帶文字的「故事館 ▸」入口（比照 <code>PilotDetailPage</code>）；<code>MechAdmin</code> 拿掉介紹欄。</div>
+        <div class="task-desc">整塊換成不帶文字的「故事館 ▸」入口（比照 <code>PilotDetailPage</code>）；<code>MechAdmin</code> 拿掉介紹欄。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>MechDetailPage</code>：名字旁「故事館 ▸」（手機放第二列，第一列有立繪縮圖、會把名字擠成「格·」），「機體描述」區塊與手機展開狀態移除；<code>MechAdmin</code> 拿掉介紹欄（值還在文件上、存檔照樣寫回，H-7 才刪）。</div>
         <div class="task-file">src/pages/mechs/MechDetailPage.tsx · src/pages/user/admin/MechAdmin.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
@@ -799,7 +802,8 @@
     <div class="task-row">
       <div>
         <div class="task-name">照順序上線</div>
-        <div class="task-desc">rules → Worker → B-3 搬遷 → bump → push；<b>先請所有管理者關掉／重新整理後台分頁</b>（10-14 舊分頁覆寫事件）。部署後正式站驗收。</div>
+        <div class="task-desc">rules → Worker → B-3 搬遷 → bump → push；<b>先請所有管理者關掉／重新整理後台分頁</b>（10-14 舊分頁覆寫事件）。部署後正式站驗收。
+          <br><span style="color:var(--accent-cyan);">☐ 2026-10-17 清單</span> 完整步驟見 <code>_local-notes/2026-10/2026-10-17_機甲故事館_上線清單.md</code>。rules 自 A-4 沒改、不必重部署；<b>Worker 要重部署</b>（H-3）；B-3 寫入已完成。順序：請管理者關掉後台舊分頁 → <code>wrangler deploy</code> → <code>npm run push</code> → 等 pages-build-deployment 完成才開新圖網址 → curl 驗 200 與 OG。<b>push 就等於對外開放機甲館</b>（分館連結、座機卡、圖鑑入口三條入口）。</div>
         <div class="task-file">firebase deploy · wrangler deploy · npm run push</div>
       </div>
       <div class="task-assignee">站長</div>
@@ -815,7 +819,8 @@
     <div class="task-row">
       <div>
         <div class="task-name">章節開始有 [xxx] 引用時才登記 MECH_LORE</div>
-        <div class="task-desc">一登記就連動級聯刪除與引用掃描；<b>rules 必須先部署</b>，否則全站後台刪除會 permission-denied。</div>
+        <div class="task-desc">一登記就連動級聯刪除與引用掃描；<b>rules 必須先部署</b>，否則全站後台刪除會 permission-denied。
+          <br><span style="color:var(--accent-cyan);">☐ 2026-10-17 清單</span> 觸發條件：機甲章節正文第一次出現 <code>[xxx]</code> 引用。屆時 <code>entityRefs.ts</code> 加 <code>MECH_LORE</code> spec（照 <code>PILOT_LORE</code>：intro＋chapters[].body、<code>refsField: 'bodyRefs'</code>、錨點 <code>{ by: 'key' }</code>）、登記進 SPECS、<code>SPEC_COLL_OF.mechLore</code> 改回 <code>'mechLore'</code>；rules 已在 A-4 部署（可寫），不會弄壞既有刪除。</div>
         <div class="task-file">src/utils/entityRefs.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -831,7 +836,8 @@
     <div class="task-row">
       <div>
         <div class="task-name">觀察期後刪 mechs.lore</div>
-        <div class="task-desc">觀察一週無誤再刪；腳本封存到 <code>E:\Mecharashi_Data\script-archive\&lt;日期&gt;\</code>；docs 同步移除欄位說明。</div>
+        <div class="task-desc">觀察一週無誤再刪；腳本封存到 <code>E:\Mecharashi_Data\script-archive\&lt;日期&gt;\</code>；docs 同步移除欄位說明。
+          <br><span style="color:var(--accent-cyan);">☐ 2026-10-17 清單</span> H-5 上線滿一週、確認故事館與圖鑑都正常後：備份 → 一次性腳本 <code>FieldValue.delete()</code> 拿掉 93 份 <code>mechs.lore</code>（dry-run 先核對每台 <code>mechLore.intro</code> 都在）→ bump mechs → 型別刪 <code>Mech.lore</code>（<code>src/types/mech.ts:142</code>）、MechAdmin 註解、Worker 圖鑑卡改讀預設文案並更新測試 → 腳本封存。</div>
         <div class="task-file">scripts/temp_scripts/ · docs/02_技術文件/</div>
       </div>
       <div class="task-assignee">開發者</div>

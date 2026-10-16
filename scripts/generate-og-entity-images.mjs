@@ -49,6 +49,9 @@ const SOURCES = [
   // NPC 圖庫（2026-10-12）：NPC 轉正、還沒有機師卡的機師，Worker 會退回 doc.portrait（指到這裡的 _half）
   { dir: 'game/npc', depth: 1, match: name => name.endsWith('_half.webp') },
   { dir: 'game/mechs', depth: 1, match: name => /^Icon_mecha_wap\d+\.webp$/.test(name) },
+  // 機甲主視覺（PLAN-042-B H-3）：機甲故事館的分享卡用它。原圖 2000×1080，縮到 1200 寬（社群卡片的建議尺寸、
+  // 比例 1.85 接近 1.91:1）——不縮的話 93 張每次部署多十幾 MB，卡片也看不出差別
+  { dir: 'game/mechs', depth: 1, match: name => /^Icon_mecha_wap\d+_SN_Raw\.webp$/.test(name), width: 1200 },
   // 官方武器圖示（PLAN-056）：分享卡片用 gameId 推 Icon_weapon_<gameId>.webp
   { dir: 'game/icons/weapon', depth: 0, match: name => name.endsWith('.webp') },
   // 舊的名字資料夾（沒有遊戲 ID 的實體仍靠它）
@@ -57,8 +60,8 @@ const SOURCES = [
   { dir: 'weapons', depth: 0, match: name => name.endsWith('.webp') },
 ]
 
-/** 收集 dir 下第 depth 層（0 = 直接放在 dir 底下）符合 match 的檔案，回相對 IMAGES 的路徑。 */
-function collect({ dir, depth, match }) {
+/** 收集 dir 下第 depth 層（0 = 直接放在 dir 底下）符合 match 的檔案，回 { rel（相對 IMAGES 的路徑）, width（選填的縮圖寬）}。 */
+function collect({ dir, depth, match, width }) {
   const base = path.join(IMAGES, dir)
   if (!fs.existsSync(base)) return []
   const out = []
@@ -68,7 +71,7 @@ function collect({ dir, depth, match }) {
       if (ent.isDirectory()) {
         if (level < depth) walk(full, level + 1)
       } else if (level === depth && match(ent.name)) {
-        out.push(path.relative(IMAGES, full))
+        out.push({ rel: path.relative(IMAGES, full), width })
       }
     }
   }
@@ -76,7 +79,7 @@ function collect({ dir, depth, match }) {
   return out
 }
 
-async function convert(rel) {
+async function convert({ rel, width }) {
   const src = path.join(IMAGES, rel)
   const dest = path.join(OUT_ROOT, rel).replace(/\.webp$/i, '.jpg')
 
@@ -86,7 +89,9 @@ async function convert(rel) {
   }
 
   fs.mkdirSync(path.dirname(dest), { recursive: true })
-  const info = await sharp(src)
+  const img = sharp(src)
+  if (width) img.resize({ width, withoutEnlargement: true })
+  const info = await img
     .flatten({ background: FLATTEN_BG })
     .jpeg({ quality: 82, mozjpeg: true })
     .toFile(dest)
@@ -103,14 +108,14 @@ async function main() {
   let made = 0
   let skipped = 0
   let bytes = 0
-  for (const rel of files) {
+  for (const file of files) {
     try {
-      const r = await convert(rel)
+      const r = await convert(file)
       r.skipped ? skipped++ : made++
       bytes += r.bytes
     } catch (e) {
       // 單張失敗不該中斷 build：那張的 og:image 會 404，卡片退回預設圖而已。
-      console.warn(`[og-entities] 轉檔失敗（略過）：${rel} — ${e.message}`)
+      console.warn(`[og-entities] 轉檔失敗（略過）：${file.rel} — ${e.message}`)
     }
   }
 

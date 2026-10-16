@@ -293,14 +293,14 @@ export default function AdminAnalyticsPage() {
 
           <Section
             title="頁面熱度"
-            hint="數字為有效瀏覽；後方灰字是含來回點擊的原始次數。兩者差距越大，代表該頁被反覆折返查看——通常是「資訊沒一次給足」的訊號。故事館三頁的原始次數意思不同，改在下方「機師故事館」區塊顯示。"
+            hint="數字為有效瀏覽；後方灰字是含來回點擊的原始次數。兩者差距越大，代表該頁被反覆折返查看——通常是「資訊沒一次給足」的訊號。故事館各頁的原始次數意思不同，改在下方「故事館」區塊顯示。"
           >
             <BarList items={routeItems} accent="cyan" empty="這段期間沒有任何頁面被瀏覽" />
           </Section>
 
           <Section
-            title="機師故事館"
-            hint="數字為有效瀏覽，也就是有幾次造訪走到這一步。灰字是原始次數：扉頁含切換機師、章節含翻頁——在故事館，灰字越大代表讀得越多，不是折返。哪位機師的故事最多人讀、讀到第幾章，見下方熱門排行的「故事」分頁（以月累計）。"
+            title="故事館"
+            hint="數字為有效瀏覽，也就是有幾次造訪走到這一步；機師廳與機甲廳分開算（兩館的館首頁會互相跳）。灰字是原始次數：扉頁含切換、章節含翻頁——在故事館，灰字越大代表讀得越多，不是折返。哪個故事最多人讀、讀到第幾章，見下方熱門排行的「機師故事」「機甲故事」分頁（以月累計）。"
           >
             <LoreSection days={cleanDays} />
           </Section>
@@ -336,10 +336,12 @@ export default function AdminAnalyticsPage() {
             hint={`${monthOffset === 0 ? '本月' : '上月'}（${entityMonth}）累計，同一次造訪內同一個實體只算一次。${
               entityKind === 'lorePilots'
                 ? '故事館裡被打開的機師（扉頁與章節都算），與圖鑑的熱門機師分開統計；2026-10 起才有這項資料。'
-                : '這份排行的用途是決定「資料要優先補誰」。'
+                : entityKind === 'loreMechs'
+                  ? '機甲故事館裡被打開的機甲（扉頁與章節都算），與圖鑑的熱門機甲分開統計；機甲故事館上線後才有這項資料。'
+                  : '這份排行的用途是決定「資料要優先補誰」。'
             }${
               entityKind === 'pilots' && entityMonth === LORE_SPLIT_MONTH
-                ? '⚠ 這個月中途起故事館的瀏覽改為另外統計（見「故事」分頁），切換前的數字仍含故事館讀者。'
+                ? '⚠ 這個月中途起故事館的瀏覽改為另外統計（見「機師故事」分頁），切換前的數字仍含故事館讀者。'
                 : ''
             }`}
           >
@@ -378,15 +380,16 @@ export default function AdminAnalyticsPage() {
               items={entityItems}
               accent="purple"
               empty={
-                entityKind === 'lorePilots'
+                entityKind === 'lorePilots' || entityKind === 'loreMechs'
                   ? '這個月還沒有故事館的閱讀紀錄'
                   : `${monthOffset === 0 ? '本月' : '上月'}還沒有詳情頁被瀏覽`
               }
             />
-            {entityKind === 'lorePilots' && (
+            {(entityKind === 'lorePilots' || entityKind === 'loreMechs') && (
               <div className="mt-5 pt-4 border-t border-border">
                 <h3 className="text-xs font-bold text-text-primary mb-2">章節留存</h3>
-                <LoreRetention entity={entity} />
+                {/* key：切換兩館時重掛，「載入」狀態不沿用到另一館 */}
+                <LoreRetention key={entityKind} entity={entity} hall={entityKind === 'loreMechs' ? 'mechs' : 'pilots'} />
               </div>
             )}
           </Section>

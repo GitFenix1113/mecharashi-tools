@@ -10,23 +10,38 @@
 
 import { splitLoreChapterId, toPageKey } from './routeKeys.ts'
 
+/** 故事館的兩館（PLAN-042-B H-2）：機師廳、機甲廳 */
+export type LoreHall = 'pilots' | 'mechs'
+
 /**
- * 故事館三頁的統計 key。
+ * 每一館三頁的統計 key（館首頁 → 扉頁 → 章節）。
  *
  * 由 toPageKey 從路由樣板推導、不手寫字串：樣板若改名，key 會跟著變，
  * 這裡不會悄悄指向一個再也不會有資料的舊 key（routeKeys.test.ts 釘住樣板與 App.tsx 一致）。
  */
-export const LORE_ROUTE_KEYS = {
-  /** 館首頁（卡片牆） */
-  home: toPageKey('/lore'),
-  /** 機師扉頁（檔案） */
-  file: toPageKey('/lore/pilots/:id'),
-  /** 章節（閱讀模式） */
-  chapter: toPageKey('/lore/pilots/:id/:part'),
+export const LORE_HALL_KEYS = {
+  pilots: {
+    /** 館首頁（機師牆） */
+    home: toPageKey('/lore'),
+    /** 機師扉頁（檔案） */
+    file: toPageKey('/lore/pilots/:id'),
+    /** 章節（閱讀模式） */
+    chapter: toPageKey('/lore/pilots/:id/:part'),
+  },
+  mechs: {
+    home: toPageKey('/lore/mechs'),
+    file: toPageKey('/lore/mechs/:id'),
+    chapter: toPageKey('/lore/mechs/:id/:part'),
+  },
 } as const
 
-/** 故事館三頁的 key 集合。頁面熱度用它判斷哪幾列不顯示「折返」灰字。 */
-export const LORE_PAGE_KEYS: ReadonlySet<string> = new Set(Object.values(LORE_ROUTE_KEYS))
+/** 機師廳三頁（PLAN-042-B 之前只有這一館，保留舊名） */
+export const LORE_ROUTE_KEYS = LORE_HALL_KEYS.pilots
+
+/** 兩館六頁的 key 集合。頁面熱度用它判斷哪幾列不顯示「折返」灰字。 */
+export const LORE_PAGE_KEYS: ReadonlySet<string> = new Set(
+  Object.values(LORE_HALL_KEYS).flatMap((h) => Object.values(h)),
+)
 
 /**
  * 故事館正式開放日（siteChangelog 2026-10-13「機師故事館正式開放」）。
@@ -59,7 +74,7 @@ export interface LoreFunnel {
   home: RouteTotals
   file: RouteTotals
   chapter: RouteTotals
-  /** 故事館三頁 UPV 合計 ÷ 全站 UPV。全站為 0 時為 null。 */
+  /** 這一館三頁 UPV 合計 ÷ 全站 UPV。全站為 0 時為 null。 */
   share: number | null
   /**
    * 章節 UPV ÷ 扉頁 UPV：打開機師的造訪中，有多少翻進了章節。
@@ -82,42 +97,57 @@ function ratio(a: number, b: number): number | null {
 }
 
 /**
- * 從多天加總後的 byRoute（`sumRoutes` 的產出）算出故事館的進館漏斗。
+ * 從多天加總後的 byRoute（`sumRoutes` 的產出）算出某一館的進館漏斗。
  *
  * UPV 是「同一次造訪內同一個 key 只算一次」，所以三段的 UPV 本身就是
  * 「有幾次造訪走到這一步」：館首頁 → 扉頁 → 章節。
+ *
+ * ⚠ 兩館的館首頁會互相跳（分館連結），所以「機甲廳的館首頁」有一部分是從機師廳點過去的；
+ *   各館的漏斗只說明「進了這一館的人走到哪一步」，不是兩條獨立的入口。
  */
-export function loreFunnel(routes: Record<string, RouteTotals>): LoreFunnel {
+export function loreFunnel(routes: Record<string, RouteTotals>, hall: LoreHall = 'pilots'): LoreFunnel {
+  const keys = LORE_HALL_KEYS[hall]
   const pick = (key: string): RouteTotals => routes[key] ?? ZERO
-  const home = pick(LORE_ROUTE_KEYS.home)
-  const file = pick(LORE_ROUTE_KEYS.file)
-  const chapter = pick(LORE_ROUTE_KEYS.chapter)
+  const home = pick(keys.home)
+  const file = pick(keys.file)
+  const chapter = pick(keys.chapter)
 
-  let totalUpv = 0
-  for (const v of Object.values(routes)) totalUpv += v.upv
   const loreUpv = home.upv + file.upv + chapter.upv
 
   return {
     home,
     file,
     chapter,
-    share: ratio(loreUpv, totalUpv),
+    share: ratio(loreUpv, totalUpvOf(routes)),
     fileToChapter: ratio(chapter.upv, file.upv),
     filesPerVisit: ratio(file.pv, file.upv),
     chaptersPerVisit: ratio(chapter.pv, chapter.upv),
   }
 }
 
-// ── 章節留存（PLAN-062 Phase D）──────────────────────────────────────────────
+function totalUpvOf(routes: Record<string, RouteTotals>): number {
+  let total = 0
+  for (const v of Object.values(routes)) total += v.upv
+  return total
+}
+
+/** 兩館六頁 UPV 合計 ÷ 全站 UPV（「故事館佔全站有效瀏覽」）。全站為 0 時為 null。 */
+export function loreShare(routes: Record<string, RouteTotals>): number | null {
+  let lore = 0
+  for (const k of LORE_PAGE_KEYS) lore += routes[k]?.upv ?? 0
+  return ratio(lore, totalUpvOf(routes))
+}
+
+// ── 章節留存（PLAN-062 Phase D；PLAN-042-B H-2 起兩館共用）──────────────────────────
 //
 // 資料來源是 analyticsEntity/{YYYY-MM} 的兩個類別：
-//   · lorePilots — 每位機師的故事被打開幾次（扉頁與章節都算；同一次造訪內同一位只算一次）
-//   · loreParts  — 每一章被讀幾次（key 為 `${pilotId}--${partKey}`）
-// 章節的清單、順序、標題則來自 pilotLore。統計端拿不到故事資料（track.ts 刻意不依賴 React），
+//   · lorePilots／loreMechs — 每位機師／每台機甲的故事被打開幾次（扉頁與章節都算；同一次造訪內同一個只算一次）
+//   · loreParts  — 每一章被讀幾次（key 為 `${文件 ID}--${partKey}`；兩館共用，文件 ID 的 pilot_／mech_ 前綴分得出來）
+// 章節的清單、順序、標題則來自 pilotLore／mechLore。統計端拿不到故事資料（track.ts 刻意不依賴 React），
 // 所以「這一章存不存在」只能在這裡對照：已刪除的章節、手打錯的網址在轉址前被記到的那一次，
 // 都因為對不到真實章節而自然不顯示。
 
-/** 章節留存的最低門檻：打開次數少於此值的機師不列出——2 個人裡 1 個讀完＝50% 沒有參考價值。 */
+/** 章節留存的最低門檻：打開次數少於此值的不列出——2 個人裡 1 個讀完＝50% 沒有參考價值。 */
 export const RETENTION_MIN_OPENS = 3
 
 /** 留存計算需要的故事資料。chapters 必須**已經過 publishedChapters() 過濾**：草稿章讀者看不到。 */
@@ -138,7 +168,8 @@ export interface RetentionChapter {
 }
 
 export interface RetentionRow {
-  pilotId: string
+  /** 機師或機甲的文件 ID */
+  id: string
   name: string
   opens: number
   chapters: RetentionChapter[]
@@ -147,17 +178,19 @@ export interface RetentionRow {
 export interface RetentionResult {
   /** 依打開次數由多到少 */
   rows: RetentionRow[]
-  /** 有已發布章節、但打開次數未達門檻而沒列出的機師數 */
+  /** 有已發布章節、但打開次數未達門檻而沒列出的數量 */
   belowMin: number
 }
 
 /**
- * 算出每位機師「打開 → PART 1 → … → PART n」各有多少讀者。
+ * 算出每位機師（或每台機甲）「打開 → PART 1 → … → PART n」各有多少讀者。
  *
- * 沒有已發布章節的機師不列（沒有留存可言）；統計裡有、故事資料裡已經沒有的機師也不列。
+ * 沒有已發布章節的不列（沒有留存可言）；統計裡有、故事資料裡已經沒有的也不列。
+ * 兩館共用：`opensById` 給 lorePilots 或 loreMechs、`docs` 給對應的故事集合；
+ * loreParts 兩館混在一起，對不到 docs 的章節自然不算。
  */
 export function chapterRetention(
-  lorePilots: Record<string, number> | undefined,
+  opensById: Record<string, number> | undefined,
   loreParts: Record<string, number> | undefined,
   docs: readonly RetentionDoc[],
   minOpens: number = RETENTION_MIN_OPENS,
@@ -172,22 +205,22 @@ export function chapterRetention(
   }
 
   const docById = new Map(docs.map((d) => [d.id, d]))
-  const candidates = Object.entries(lorePilots ?? {})
+  const candidates = Object.entries(opensById ?? {})
     .filter(([id, n]) => typeof n === 'number' && n > 0 && (docById.get(id)?.chapters.length ?? 0) > 0)
     .sort((a, b) => b[1] - a[1])
 
   const rows: RetentionRow[] = []
   let belowMin = 0
-  for (const [pilotId, opens] of candidates) {
+  for (const [id, opens] of candidates) {
     if (opens < minOpens) {
       belowMin++
       continue
     }
-    const doc = docById.get(pilotId)!
-    const read = readersByPilot.get(pilotId)
+    const doc = docById.get(id)!
+    const read = readersByPilot.get(id)
     rows.push({
-      pilotId,
-      name: doc.name || pilotId,
+      id,
+      name: doc.name || id,
       opens,
       chapters: doc.chapters.map((c, i) => {
         const readers = read?.get(c.key) ?? 0
