@@ -9,7 +9,7 @@ import LoreViewer from '../../components/lore/LoreViewer'
 import LoreSwitcher, { type LoreSwitcherHandle } from '../../components/lore/LoreSwitcher'
 import { buildLoreGroups, readLoreSort, withLoreNames, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
 import { publishedChapters } from '../../components/lore/loreText'
-import { defaultStageArt, loreSideOf, preloadStageArt, skinStageArt, type StageArt } from '../../components/lore/loreStageArt'
+import { defaultStageArt, loreSideOf, preloadImages, preloadStageArt, skinStageArt, type StageArt } from '../../components/lore/loreStageArt'
 import { pilotSkins, type PilotSkinArt } from '../../utils/gameArt'
 import { useFactionEmblems, usePilotLore, usePilots } from '../../hooks/useFirestore'
 import { emblemTitle, emblemsById } from '../../utils/factionEmblems'
@@ -264,14 +264,19 @@ export default function PilotLorePage() {
   }, [shown, skin, skins, setSearch])
 
   // ── 鑑賞模式、名冊開關 ───────────────────────────────────────────────────
-  const [viewerOpen, setViewerOpen] = useState(false)
+  // 鑑賞模式三段（2026-10-16）：closing 期間 LoreViewer 還掛著，播完飛回舞台的動畫才卸載
+  const [viewer, setViewer] = useState<'closed' | 'open' | 'closing'>('closed')
+  const viewerOpen = viewer !== 'closed'
+  const closeViewer = useCallback(() => setViewer((v) => (v === 'open' ? 'closing' : v)), [])
   const [rosterOpen, setRosterOpen] = useState(false)
-  // 換人時鑑賞模式一併收起（看的是上一位的圖）
+  // 換人時鑑賞模式一併收起（看的是上一位的圖）——直接關、不播飛回去：舞台上已經是下一位了
   const [viewerFor, setViewerFor] = useState(t.shownId)
   if (viewerFor !== t.shownId) {
     setViewerFor(t.shownId)
-    if (viewerOpen) setViewerOpen(false)
+    if (viewerOpen) setViewer('closed')
   }
+  // 舞台上那張立繪的位置：鑑賞圖從這裡飛出去、飛回來（換外觀疊層中取上面那套）
+  const stageArtRect = () => rootRef.current?.querySelector('.lore-figure:not(.is-leaving) .lore-figure__color')?.getBoundingClientRect() ?? null
 
   // ── 鍵盤（← → 依模式分流、/ 名冊、Esc）──────────────────────────────────
   useEffect(() => {
@@ -281,7 +286,7 @@ export default function PilotLorePage() {
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
       if (rosterOpen) return   // 名冊自己處理 Esc；開著時 ← → 不換人
       if (e.key === 'Escape') {
-        if (viewerOpen) { setViewerOpen(false); return }
+        if (viewerOpen) { closeViewer(); return }
         if (isReading) navigate(fileHref)
         return
       }
@@ -299,7 +304,7 @@ export default function PilotLorePage() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [rosterOpen, viewerOpen, isReading, activeIndex, chapters, selectChapter, stepPilot, navigate, fileHref])
+  }, [rosterOpen, viewerOpen, closeViewer, isReading, activeIndex, chapters, selectChapter, stepPilot, navigate, fileHref])
 
   // ── 捲動：立繪輕微視差（--sy）＋閱讀進度條 ─────────────────────────────────
   // ⚠ 這裡要知道館內唯一的 scrollport 在哪：從根元素往上找 .lore-scroll（LoreLayout 提供）
@@ -374,6 +379,7 @@ export default function PilotLorePage() {
     t.intro && 'is-intro', t.revealFull && 'is-reveal-full', t.revealQuick && 'is-reveal-quick', t.revealed && 'is-revealed',
     t.ready && 'is-ready', t.quick && 'is-quick', t.leaving && 'is-leaving', t.entering && 'is-entering',
     t.introDone && 'is-intro-done', isReading && 'is-reading',
+    viewer === 'open' && 'is-viewing', viewer === 'closing' && 'is-unviewing',
   ].filter(Boolean).join(' ')
 
   // 回圖鑑（PLAN-042-G）：指向「顯示中的那位」而不是網址的 id——換人時網址先變、舞台與卷宗落後一拍，
@@ -384,7 +390,14 @@ export default function PilotLorePage() {
     <>
       <LoreSkinPicker pilot={shown} skins={skins} current={skin?.key ?? ''} onPick={pickSkin} />
       {art && (
-        <button type="button" className="lore-pill" onClick={() => setViewerOpen(true)}>
+        // 指到就先載鑑賞圖：官網 8 位與場景外觀的鑑賞圖跟舞台不是同一張，載完才能從舞台飛出去
+        <button
+          type="button"
+          className="lore-pill"
+          onPointerEnter={() => { void preloadImages([art.full]) }}
+          onFocus={() => { void preloadImages([art.full]) }}
+          onClick={() => setViewer('open')}
+        >
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M6 2H2v4M10 2h4v4M6 14H2v-4M10 14h4v-4" /></svg>
           全身立繪
         </button>
@@ -456,7 +469,14 @@ export default function PilotLorePage() {
       )}
 
       {viewerOpen && art && (
-        <LoreViewer src={art.full} name={shown.name} onClose={() => setViewerOpen(false)}>
+        <LoreViewer
+          src={art.full}
+          name={shown.name}
+          onClose={closeViewer}
+          originRect={stageArtRect}
+          closing={viewer === 'closing'}
+          onClosed={() => setViewer('closed')}
+        >
           <LoreSkinPicker pilot={shown} skins={skins} current={skin?.key ?? ''} onPick={pickSkin} className="lore-skins" />
         </LoreViewer>
       )}

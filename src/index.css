@@ -772,6 +772,22 @@ html.lore-exiting::view-transition-new(root) { animation: lore-exit-shut 620ms c
 .lore-page.is-leaving .lore-portrait { opacity: 0; transform: translate3d(calc(var(--dir, 1) * -4vw), 0, 0); transition: transform 340ms ease-in, opacity 300ms ease-in; }
 .lore-page.is-leaving .lore-stage__serial { opacity: 0; }
 
+/* 全身立繪鑑賞的進出場（2026-10-16）：開啟時（is-viewing）卷宗往外側退開、舞台上的字與工具淡掉，
+   立繪由 LoreViewer 從舞台原位飛到中央（FLIP），舞台這張同時淡出讓位。
+   關閉時（is-unviewing）反向：卷宗照 is-ready 的過渡滑回來、直書名重播 lore-pop；舞台立繪等鑑賞圖快落地才淡入，
+   兩張在同一個位置交棒，不會同時出現兩個人。 */
+.lore-page.is-ready.is-viewing .lore-panel {
+  opacity: 0; transform: translate3d(calc(var(--from) * 140px), 0, 0); pointer-events: none;
+  transition: transform 420ms ease-in calc((3 - var(--i)) * 40ms), opacity 320ms ease-in calc((3 - var(--i)) * 40ms);
+}
+/* 交棒時序要跟 LoreViewer 的 OPEN_FADE_MS／CLOSE_FADE_DELAY_MS 對齊：
+   開啟——鑑賞圖先在上面淡到全不透明（110ms），舞台這張才在底下消失；兩張同時半透明的話人會先暗一下。
+   關閉——舞台這張先在底下淡回來（250–400ms），鑑賞圖 400ms 起才淡掉。 */
+.lore-page.is-viewing .lore-portrait { opacity: 0; transition: opacity 60ms linear 100ms; }
+.lore-page.is-unviewing .lore-portrait { transition: opacity 150ms ease 250ms; }
+.lore-page.is-viewing .lore-vname { animation: lore-fade-out 200ms ease both; }
+.lore-page.is-ready.is-viewing :is(.lore-filetag, .lore-stage__serial, .lore-stage-tools > *) { opacity: 0; transition: opacity 200ms ease; pointer-events: none; }
+
 .lore-card {
   position: relative; background: var(--lore-sheet); border: 1px solid var(--lore-line); border-radius: 3px;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 22px 44px -26px rgba(43, 38, 33, 0.35), 0 2px 6px -2px rgba(43, 38, 33, 0.08);
@@ -1084,14 +1100,24 @@ html.lore-exiting::view-transition-new(root) { animation: lore-exit-shut 620ms c
 .lore-fly img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* ── 全身立繪鑑賞（B-5）─────────────────────────────────────────────────── */
-.lore-viewer { position: fixed; inset: var(--lore-header-h, 2.5rem) 0 0 0; z-index: 55; display: grid; place-items: center; overflow: hidden;
-               background: rgba(239, 231, 216, 0.96) url('/images/lore/bg-paper.webp') center / cover; cursor: zoom-in; animation: lore-fade-in 260ms ease both; color: var(--lore-ink); }
-.lore-viewer > img { height: calc((100vh - var(--lore-header-h, 2.5rem)) * 0.94); width: auto; max-width: 96vw; object-fit: contain; transition: transform 380ms var(--lore-ease-out); animation: lore-viewer-in 520ms var(--lore-ease-out) both; }
+/* 紙色底放在 ::before 自己淡入淡出：淡在容器上的話，連 LoreViewer 從舞台飛過來的立繪也會一起被淡掉 */
+.lore-viewer { position: fixed; inset: var(--lore-header-h, 2.5rem) 0 0 0; z-index: 55; display: grid; place-items: center; overflow: hidden; cursor: zoom-in; color: var(--lore-ink); }
+.lore-viewer::before { content: ''; position: absolute; inset: 0; background: rgba(239, 231, 216, 0.96) url('/images/lore/bg-paper.webp') center / cover;
+                       animation: lore-fade-in 420ms ease 140ms both; }
+.lore-viewer.is-closing { pointer-events: none; }
+.lore-viewer.is-closing::before { animation: lore-fade-out 320ms ease both; }
+/* ⚠ 進場動畫只能 backwards：寫 both 的話動畫結束後會一直壓著 transform: none，下面 .is-zoom 的放大永遠生效不了 */
+.lore-viewer > img { position: relative; height: calc((100vh - var(--lore-header-h, 2.5rem)) * 0.94); width: auto; max-width: 96vw; object-fit: contain; transition: transform 380ms var(--lore-ease-out); animation: lore-viewer-in 520ms var(--lore-ease-out) backwards; }
+/* 從舞台飛過來的那張由 LoreViewer 的 FLIP 負責進場，不再疊這段縮放淡入（換外觀後的新圖照舊用它） */
+.lore-viewer > img[data-flip] { animation: none; }
 .lore-viewer.is-zoom { cursor: zoom-out; }
 .lore-viewer.is-zoom > img { transform: scale(2.1); transition: transform 380ms var(--lore-ease-out), transform-origin 0s; }
 @keyframes lore-viewer-in { from { opacity: 0; transform: scale(0.94) translateY(12px); } to { opacity: 1; transform: none; } }
-/* 說明、外觀列、關閉鈕墊在圖上層：場景外觀的鑑賞版邊緣不透明，會蓋到它們（說明另加紙色光暈，壓在暗色畫面上也讀得到） */
-.lore-viewer__cap, .lore-viewer__skins, .lore-viewer__close { z-index: 1; }
+@keyframes lore-fade-out { to { opacity: 0; } }
+/* 說明、外觀列、關閉鈕墊在圖上層：場景外觀的鑑賞版邊緣不透明，會蓋到它們（說明另加紙色光暈，壓在暗色畫面上也讀得到）。
+   等立繪飛到定位才浮現，關閉時先收 */
+.lore-viewer__cap, .lore-viewer__skins, .lore-viewer__close { z-index: 1; animation: lore-fade-in 320ms ease 420ms both; }
+.lore-viewer.is-closing :is(.lore-viewer__cap, .lore-viewer__skins, .lore-viewer__close) { animation: lore-fade-out 160ms ease both; }
 .lore-viewer__cap { position: absolute; left: 24px; bottom: 20px; font-size: 12px; color: var(--lore-ink-2); letter-spacing: 0.1em; display: flex; gap: 14px; align-items: baseline;
                     text-shadow: 0 0 4px rgba(239, 231, 216, 0.95), 0 0 10px rgba(239, 231, 216, 0.85); }
 .lore-viewer__cap b { font-family: var(--lore-kai); font-size: 26px; letter-spacing: 0.2em; color: var(--lore-ink); font-weight: 400; }
