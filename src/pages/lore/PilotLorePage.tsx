@@ -14,7 +14,7 @@ import { buildLoreGroups, readLoreSort, withLoreNames, writeLoreSort, type LoreS
 import { publishedChapters } from '../../components/lore/loreText'
 import { defaultStageArt, loreSideOf, preloadImages, preloadStageArt, skinStageArt, type StageArt } from '../../components/lore/loreStageArt'
 import { pilotSkins, type PilotSkinArt } from '../../utils/gameArt'
-import { useFactionEmblems, usePilotLore, usePilots } from '../../hooks/useFirestore'
+import { useFactionEmblems, useMechLore, useMechs, usePilotLore, usePilots } from '../../hooks/useFirestore'
 import { emblemTitle, emblemsById } from '../../utils/factionEmblems'
 import type { LoreDoc, Pilot } from '../../types'
 import { usePageTitle } from '../../contexts/PageTitleContext'
@@ -66,6 +66,9 @@ export default function PilotLorePage() {
     const byId = emblemsById(emblems)
     return (key: string) => emblemTitle(key, byId)
   }, [emblems])
+  // 座機卡（PLAN-042-B D-7）：機甲與型號讀不到只少一張卡，不看 loading／error
+  const { data: mechs } = useMechs()
+  const { data: mechLoreDocs } = useMechLore()
 
   // ── 名冊順序（＝館首頁的排序；A-2）─────────────────────────────────────────
   const [sort, setSortState] = useState<LoreSort>(readLoreSort)
@@ -110,6 +113,15 @@ export default function PilotLorePage() {
   const skin = stage?.skin ?? null
   // 舞台與外觀列吃的「這位」：英文名來自 pilotLore（PLAN-042-E），與名冊的 withLoreNames 同源
   const shownSubject = useMemo(() => (shown ? pilotSubject({ ...shown, nameEn: lore?.nameEn }) : null), [shown, lore])
+  const pairedMech = useMemo(() => {
+    const mech = shown?.pairedMechId ? mechs.find((m) => m.id === shown.pairedMechId) : undefined
+    if (!mech) return null
+    return {
+      mech,
+      modelNo: mechLoreDocs.find((d) => d.id === mech.id)?.modelNo,
+      href: `/lore/mechs/${encodeURIComponent(mech.id)}`,
+    }
+  }, [shown, mechs, mechLoreDocs])
 
   // ① error → ② loading → ③ 查無（順序不可調換，見檔頭）
   if (error) {
@@ -198,6 +210,7 @@ export default function PilotLorePage() {
             chapterHref={chapterHref}
             logoLabel={logoLabel}
             codexHref={codexHref}
+            pairedMech={pairedMech}
           />
         )}
       </main>

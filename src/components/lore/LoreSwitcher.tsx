@@ -63,6 +63,12 @@ export interface LoreSwitcherProps {
   noun?: string
   /** 名冊搜尋框的提示字 */
   searchPlaceholder?: string
+  /** 分組按鈕的文字（機師廳＝職業／登場版本；機甲廳的 'class' 是廠商） */
+  sortLabels?: Record<LoreSort, string>
+  /** 「有外觀」「另有 N 套外觀」的用詞（機甲廳＝塗裝） */
+  skinNoun?: string
+  /** 名冊人數的單位（機師＝位、機甲＝台） */
+  unit?: string
   /**
    * 顯示中這位的圖鑑網址＋名字（PLAN-042-G B-3）：列尾一顆紅色「圖鑑 ↗」。
    * 卷宗的落款鈐印在閱讀模式看不到，這顆是「讀到一半也能隨時去查數值」的入口。
@@ -71,6 +77,8 @@ export interface LoreSwitcherProps {
   codexHref?: string
   codexName?: string
 }
+
+const DEFAULT_SORT_LABELS: Record<LoreSort, string> = { class: '職業', debut: '登場版本' }
 
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
 const isMobile = () => typeof matchMedia === 'function' && matchMedia('(max-width: 899px)').matches
@@ -104,7 +112,7 @@ function highlight(name: string, q: string) {
 
 export default function LoreSwitcher({
   ref, groups, order, currentId, sort, onSortChange, chapterCount, skinCount, onSelect, onOpenChange, onHover, codexHref, codexName,
-  noun = '機師', searchPlaceholder = '搜尋名字、英文名、陣營、版本…',
+  noun = '機師', searchPlaceholder = '搜尋名字、英文名、陣營、版本…', sortLabels = DEFAULT_SORT_LABELS, skinNoun = '外觀', unit = '位',
 }: LoreSwitcherProps) {
   const dockRef = useRef<HTMLElement>(null)
   const stripRef = useRef<HTMLDivElement>(null)
@@ -416,7 +424,7 @@ export default function LoreSwitcher({
           <div ref={rosterRef} id="lore-roster" className="lore-roster" role="dialog" aria-modal="true" aria-label={`${noun}名冊`}>
             <div className="lore-roster__head">
               <div className="lore-roster__title">
-                {noun}名冊 <small>{shownCount === order.length ? `${order.length} 位` : `${shownCount} / ${order.length} 位`}</small>
+                {noun}名冊 <small>{shownCount === order.length ? `${order.length} ${unit}` : `${shownCount} / ${order.length} ${unit}`}</small>
               </div>
               <label className="lore-roster__search">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.6" /><path d="M10.4 10.4 14 14" /></svg>
@@ -438,11 +446,11 @@ export default function LoreSwitcher({
               </label>
               <span className="lore-seg">
                 <span className="lore-seg__lbl">分組</span>
-                <button type="button" aria-pressed={sort === 'class'} onClick={() => onSortChange('class')}>職業</button>
-                <button type="button" aria-pressed={sort === 'debut'} onClick={() => onSortChange('debut')}>登場版本</button>
+                <button type="button" aria-pressed={sort === 'class'} onClick={() => onSortChange('class')}>{sortLabels.class}</button>
+                <button type="button" aria-pressed={sort === 'debut'} onClick={() => onSortChange('debut')}>{sortLabels.debut}</button>
               </span>
               <button type="button" className="lore-chipbtn" aria-pressed={onlyCh} onClick={() => setOnlyCh((v) => !v)}>有逸聞 {totalCh}</button>
-              <button type="button" className="lore-chipbtn" aria-pressed={onlySkin} onClick={() => setOnlySkin((v) => !v)}>有外觀 {totalSkin}</button>
+              <button type="button" className="lore-chipbtn" aria-pressed={onlySkin} onClick={() => setOnlySkin((v) => !v)}>有{skinNoun} {totalSkin}</button>
               <button type="button" className="lore-roster__close" onClick={() => closeRoster()}>收合 ⌄</button>
             </div>
             <div ref={bodyRef} className={`lore-roster__body${compact ? ' is-compact' : ''}`}>
@@ -475,7 +483,7 @@ export default function LoreSwitcher({
                             </span>
                             <span className="lore-ra__name">{highlight(p.name, query)}</span>
                             {ch > 0 && <span className="lore-ra__badge" title={`${ch} 章逸聞`}>{ch}</span>}
-                            {sk > 0 && <span className="lore-ra__skins" title={`另有 ${sk} 套外觀`}>+{sk}</span>}
+                            {sk > 0 && <span className="lore-ra__skins" title={`另有 ${sk} 套${skinNoun}`}>+{sk}</span>}
                           </button>
                         )
                       })}

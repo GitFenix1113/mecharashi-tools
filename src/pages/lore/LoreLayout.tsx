@@ -23,6 +23,32 @@ import { Outlet, useLocation, useNavigationType } from 'react-router-dom'
  *   ② 外殼高度用 dvh（Layout.tsx 的 .lore-viewport）：iOS 的 100vh 比工具列展開時的可見區高一截，
  *     文件因此多出一小段可捲範圍——①失效時手指就是推動這一段，看起來像「捲了一點就卡住」。
  */
+/**
+ * 機甲主視覺的線稿濃淡（PLAN-042-B B-2）。量法：每台拍「只有線稿」與「只有彩圖」，機體範圍內線稿平均加了多少墨色
+ * （_local-notes/2026-10/2026-10-16_故事館泛化回歸/ 的 sketch-ink 紀錄）。目標是與機師的中位數相當。
+ */
+const SN_SKETCH_SLOPE = 1.0
+
+/** 線稿濾鏡：管線見 LoreLayout 裡的註解；兩館只差 ⑤ 的 slope（濃淡） */
+function SketchFilter({ id, slope }: { id: string; slope: number }) {
+  return (
+    <filter id={id} colorInterpolationFilters="sRGB" x="-5%" y="-5%" width="110%" height="110%">
+      <feColorMatrix in="SourceGraphic" type="saturate" values="0" result="gray" />
+      <feColorMatrix in="gray" type="matrix" values="-1 0 0 0 1  0 -1 0 0 1  0 0 -1 0 1  0 0 0 1 0" result="inv" />
+      <feGaussianBlur in="inv" stdDeviation="6" result="blur" />
+      <feBlend in="blur" in2="gray" mode="color-dodge" result="dodge" />
+      <feColorMatrix in="dodge" type="matrix" values="-1 0 0 0 1  0 -1 0 0 1  0 0 -1 0 1  0 0 0 1 0" result="dodgeInv" />
+      <feColorMatrix in="dodgeInv" type="luminanceToAlpha" result="inkA" />
+      <feComponentTransfer in="inkA" result="inkA2">
+        <feFuncA type="linear" slope={slope} />
+      </feComponentTransfer>
+      <feFlood floodColor="#2b2621" result="ink" />
+      <feComposite in="ink" in2="inkA2" operator="in" result="inked" />
+      <feComposite in="inked" in2="SourceGraphic" operator="in" />
+    </filter>
+  )
+}
+
 export default function LoreLayout() {
   const { pathname } = useLocation()
   const navType = useNavigationType()
@@ -134,23 +160,13 @@ export default function LoreLayout() {
           → ⑥ 上墨色 #2b2621 → ⑦ 裁回原圖輪廓（模糊外溢的光暈全部裁掉，紙上不留幽靈）
         color-interpolation-filters="sRGB"：CSS filter 是在 sRGB 算的，預設的 linearRGB 會讓模糊與 dodge 變味。
         線稿太淡／太重只調 ⑤ 的 slope，其餘參數是量測基準。
+        機甲主視覺另有一份 #lore-sketch-sn（只有 slope 不同），由 index.css 的 .lore-figure[data-variant="sn"] 引用。
       */}
       <svg width="0" height="0" aria-hidden="true" focusable="false" style={{ position: 'absolute' }}>
         <defs>
-          <filter id="lore-sketch" colorInterpolationFilters="sRGB" x="-5%" y="-5%" width="110%" height="110%">
-            <feColorMatrix in="SourceGraphic" type="saturate" values="0" result="gray" />
-            <feColorMatrix in="gray" type="matrix" values="-1 0 0 0 1  0 -1 0 0 1  0 0 -1 0 1  0 0 0 1 0" result="inv" />
-            <feGaussianBlur in="inv" stdDeviation="6" result="blur" />
-            <feBlend in="blur" in2="gray" mode="color-dodge" result="dodge" />
-            <feColorMatrix in="dodge" type="matrix" values="-1 0 0 0 1  0 -1 0 0 1  0 0 -1 0 1  0 0 0 1 0" result="dodgeInv" />
-            <feColorMatrix in="dodgeInv" type="luminanceToAlpha" result="inkA" />
-            <feComponentTransfer in="inkA" result="inkA2">
-              <feFuncA type="linear" slope="1.6" />
-            </feComponentTransfer>
-            <feFlood floodColor="#2b2621" result="ink" />
-            <feComposite in="ink" in2="inkA2" operator="in" result="inked" />
-            <feComposite in="inked" in2="SourceGraphic" operator="in" />
-          </filter>
+          <SketchFilter id="lore-sketch" slope={1.6} />
+          {/* 機甲主視覺（PLAN-042-B B-2）：金屬裝甲的邊緣多，同樣的 slope 墨色是機師的 1.57 倍（93 台實測），單獨調淡 */}
+          <SketchFilter id="lore-sketch-sn" slope={SN_SKETCH_SLOPE} />
           {/*
             印泥紋理（PLAN-042-G B-2，卷宗的落款鈐印 .lore-seal__stamp 引用）：雜訊吃掉少量邊緣與內部、再輕微擾動，
             讓紅色方塊像蓋上去的、不像按鈕。alpha＝2.75 − 3×雜訊 R：大部分不透明、只在雜訊高處出現斑駁；

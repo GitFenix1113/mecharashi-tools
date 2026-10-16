@@ -10,8 +10,10 @@ import { pilotClassMeta } from '../../data/pilotClasses'
 import { mechWeightShort } from '../../data/mechWeightClasses'
 import { normalizeFactionLogos } from '../../utils/factionLogos'
 import { gameIconCandidates } from '../../utils/gameIcons'
+import { mechPortraitCandidates } from '../../utils/assets'
+import { mechWeightClassOf } from '../../data/mechWeightClasses'
 import { dossierRows } from '../../utils/loreDossier'
-import type { LoreChapter, LoreDoc, Pilot } from '../../types'
+import type { LoreChapter, LoreDoc, Mech, Pilot } from '../../types'
 
 /**
  * 卷宗（PLAN-042-D B-3）：檔案模式的四張卡——標題區、扉頁、個人資料、逸聞目錄。
@@ -46,9 +48,14 @@ export interface LoreDossierProps {
    * 圖鑑那邊的「故事館 ▸」也在名字旁——兩館的入口鏡像對稱。沒給（後台預覽）就不蓋印。
    */
   codexHref?: string
+  /**
+   * 官配機甲（PLAN-042-B D-7）：卷宗最後一張「座機」卡，跨廳連到機甲故事館。沒給（沒有官配、或後台預覽）就不出現。
+   * 型號來自 mechLore（讀不到就不顯示型號，卡片照樣出現）
+   */
+  pairedMech?: { mech: Mech; modelNo?: string; href: string } | null
 }
 
-export default function LoreDossier({ pilot, lore, status = 'ready', chapters, chapterHref, logoLabel, codexHref }: LoreDossierProps) {
+export default function LoreDossier({ pilot, lore, status = 'ready', chapters, chapterHref, logoLabel, codexHref, pairedMech }: LoreDossierProps) {
   const meta = pilotClassMeta(pilot.class)
   const tone = meta?.paper ?? 'var(--lore-ink-2)'
   const serial = pilot.id.match(/^pilot_(\d+)/)?.[1] ?? '—'
@@ -85,7 +92,7 @@ export default function LoreDossier({ pilot, lore, status = 'ready', chapters, c
               aria-label={`查看${pilot.name}的機師圖鑑`}
             >
               <span className="lore-seal__stamp" aria-hidden="true"><span className="lore-seal__txt">機師圖鑑</span></span>
-              <span className="lore-seal__cap" aria-hidden="true">COMBAT DATA ↗</span>
+              <span className="lore-seal__cap" aria-hidden="true">查看圖鑑 ↗</span>
             </LoreExitLink>
           )}
         </div>
@@ -187,6 +194,21 @@ export default function LoreDossier({ pilot, lore, status = 'ready', chapters, c
             )}
           </section>
         </>
+      )}
+
+      {pairedMech && (
+        <section className="lore-panel lore-card" style={{ '--i': 4 } as React.CSSProperties}>
+          <p className="lore-eyebrow"><span className="lore-eyebrow__sq" /><b>座機</b>OFFICIAL MECHA</p>
+          <Link className="lore-mechcard" to={pairedMech.href}>
+            <FallbackImage candidates={mechPortraitCandidates(pairedMech.mech)} alt="" loading="lazy" decoding="async" fallback={<span className="lore-mechcard__ph" />} />
+            <span className="lore-mechcard__name">
+              <small>官配機甲{pairedMech.modelNo ? ` · ${pairedMech.modelNo}` : ''}</small>
+              <b>{pairedMech.mech.name}</b>
+              <em>{mechWeightClassOf(pairedMech.mech.armorType)?.full ?? pairedMech.mech.armorType}</em>
+            </span>
+            <span className="lore-mechcard__go">進入機甲故事館 →</span>
+          </Link>
+        </section>
       )}
     </>
   )

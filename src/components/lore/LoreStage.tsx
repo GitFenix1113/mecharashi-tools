@@ -18,6 +18,9 @@ import type { LoreSubject } from './loreSubject'
  *
  * 狀態用「render 期間依 prop 調整」（React 官方模式，站上先例：FallbackImage／舊 LoreArt），
  * 不用 effect 歸零：effect 會讓上一套多活一幀。
+ *
+ * 機甲（PLAN-042-B 決策 B-5）：`subject.stamp`（型號）有值時蓋**型號鋼印**、不畫英文簽名——
+ * 每台都有型號（90／93），英文名不是每台都有。機師沒有 stamp，畫面與泛化前一字不差。
  */
 export interface LoreStageProps {
   /** 這位／這台（PLAN-042-B C-1）。`subject.nameEn` 是立繪旁的毛筆草書（PLAN-042-E），空＝不渲染草書層 */
@@ -97,7 +100,7 @@ export default function LoreStage({ subject, art, tools }: LoreStageProps) {
             </div>
           )}
           {/* 英文簽名疊在人物**前面**（官網的圖層順序；放後面會被立繪整條擋住）。配色與起筆位置見 index.css 的 .lore-sig */}
-          {nameEn && (
+          {nameEn && !subject.stamp && (
             <div className="lore-sig" aria-hidden="true" style={{ '--sig': sigSize } as React.CSSProperties}>
               {nameEn}
             </div>
@@ -112,6 +115,16 @@ export default function LoreStage({ subject, art, tools }: LoreStageProps) {
         <span className="lore-vname__main">{subject.name}</span>
         {subject.fullName && <span className="lore-vname__sub">{subject.fullName}</span>}
       </div>
+
+      {subject.stamp && (
+        // 型號鋼印：站在直書名旁、不跟立繪一起視差（它是檔案上的戳記，不是畫面裡的東西）
+        <div className="lore-stamp" aria-hidden="true">
+          <span className="lore-stamp__box">{subject.stamp}</span>
+          {(subject.makerName || nameEn) && (
+            <span className="lore-stamp__sub">{subject.makerName && <b>{subject.makerName}</b>}{nameEn}</span>
+          )}
+        </div>
+      )}
 
       <div className="lore-filetag" aria-hidden="true">
         <span>{subject.fileLabel} · NO.{serial || '—'}</span>

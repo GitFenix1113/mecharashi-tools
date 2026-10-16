@@ -208,15 +208,15 @@
   <div class="section-title">總進度</div>
 
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">12</div><div class="summary-lbl">已完成</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">26</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">19</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">1</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">18</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">38</div><div class="summary-lbl">任務（不含長期資料）</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">12 / 38</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 32%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">19 / 38</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 50%"></div></div>
   </div>
 
   <div class="impact-note">
@@ -497,112 +497,119 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1 &nbsp; 路由與頁面</div>
       <div class="task-group-meta">src/App.tsx · src/pages/lore/MechLorePage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">/lore/mechs/:id(/:part)</div>
-        <div class="task-desc">參數名必須是 <code>:id</code>／<code>:part</code>（routeKeys 寫死）。<code>seo.ts</code> 的 <code>PAGE_TITLES</code> 補兩條、詳情頁比照機師進 <code>SITEMAP_EXCLUDED</code>（<code>npm test</code> 會擋）、<code>usePageTitle(`${name} 機甲故事`)</code>。<code>/lore</code> 前綴已在 CF 白名單，不必動 Dashboard。</div>
+        <div class="task-desc">參數名必須是 <code>:id</code>／<code>:part</code>（routeKeys 寫死）。<code>seo.ts</code> 的 <code>PAGE_TITLES</code> 補兩條、詳情頁比照機師進 <code>SITEMAP_EXCLUDED</code>（<code>npm test</code> 會擋）、<code>usePageTitle(`${name} 機甲故事`)</code>。<code>/lore</code> 前綴已在 CF 白名單，不必動 Dashboard。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>MechLorePage</code>（狀態機走 useLoreHall）、<code>App.tsx</code> 兩條路由、<code>seo.ts</code> 頁名與 sitemap 排除、<code>routeKeys.ts</code> 的路由＋<code>loreMechs</code>＋中文標籤（H-2 的路由部分提前）。</div>
         <div class="task-file">src/App.tsx · src/lib/seo.ts · src/pages/lore/MechLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; 舞台</div>
       <div class="task-group-meta">LoreStage（mech 變體）</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">主視覺＋型號鋼印＋線稿調參</div>
-        <div class="task-desc">紙色舞台放 <code>Icon_mecha_wap####_SN_Raw</code>；型號鋼印取代簽名；<code>#lore-sketch</code> 以 93 台重量參數與失效門檻（B-2，深色裝甲墨色偏重）。</div>
+        <div class="task-desc">紙色舞台放 <code>Icon_mecha_wap####_SN_Raw</code>；型號鋼印取代簽名；<code>#lore-sketch</code> 以 93 台重量參數與失效門檻（B-2，深色裝甲墨色偏重）。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>sn</code> 變體（依寬度定尺寸、站在舞台下緣；手機放大到約 1.24 倍螢幕寬）＋型號鋼印 <code>.lore-stamp</code>（取代簽名，閱讀時收起）。線稿量 93 台：同一個濾鏡在機甲上墨色是機師的 1.57 倍 → 機甲專用 <code>#lore-sketch-sn</code>（slope 1.0），分布與機師重合，<b>不需要失效門檻</b>。</div>
         <div class="task-file">src/components/lore/LoreStage.tsx · src/index.css</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-3 &nbsp; MechDossier</div>
       <div class="task-group-meta">src/components/lore/MechDossier.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">卷宗七張卡</div>
-        <div class="task-desc">標題（名稱、英文名、型號、廠商、圖鑑入口）→ 技術檔案 → 逸聞目錄 → 構造（四分件，右臂在畫面左）→ 系譜 → 搭乘者（連機師廳）→ 卡池（招募插畫附件）。圖鑑朱印移到名字旁＋常駐「查看圖鑑 ↗」，<b>機師廳的朱印一起改</b>。廠商未填顯示「廠商未載」。</div>
+        <div class="task-desc">標題（名稱、英文名、型號、廠商、圖鑑入口）→ 技術檔案 → 逸聞目錄 → 構造（四分件，右臂在畫面左）→ 系譜 → 搭乘者（連機師廳）→ 卡池（招募插畫附件）。圖鑑朱印移到名字旁＋常駐「查看圖鑑 ↗」，<b>機師廳的朱印一起改</b>。廠商未填顯示「廠商未載」。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 標題區→技術檔案→逸聞→構造（諸元＋四分件）→系譜（含反查：別台連到這台）→搭乘者。<b>卡池附件</b>等 F-2 招募插畫上站才畫。兩館朱印小字改「查看圖鑑 ↗」（手機照舊收起）。</div>
         <div class="task-file">src/components/lore/MechDossier.tsx · src/components/lore/LoreDossier.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-4 &nbsp; 鑑賞模式</div>
       <div class="task-group-meta">LoreViewer</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">三種圖面 × 兩種背景</div>
-        <div class="task-desc">主視覺／四分件／招募插畫 × 廠商舞台／紙色；不暈邊；沿用 <code>LoreViewer</code> 的 FLIP 轉場（四分件從構造卡縮圖飛出／飛回）。招募插畫比例 2600×1080。⚠ 手機上卷宗橫向退開會撐寬版面（模擬頁改成往下退）。</div>
+        <div class="task-desc">主視覺／四分件／招募插畫 × 廠商舞台／紙色；不暈邊；沿用 <code>LoreViewer</code> 的 FLIP 轉場（四分件從構造卡縮圖飛出／飛回）。招募插畫比例 2600×1080。⚠ 手機上卷宗橫向退開會撐寬版面（模擬頁改成往下退）。
+          <br><span style="color:var(--accent-cyan);">◐ 2026-10-17</span> 主視覺與四分件（從構造卡縮圖飛出／飛回）已可鑑賞；<b>招募插畫</b>與<b>廠商舞台／紙色兩種背景</b>等 F-2 素材上站。</div>
         <div class="task-file">src/components/lore/LoreViewer.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-5 &nbsp; 名冊依廠商分組</div>
       <div class="task-group-meta">loreRoster</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">組頭用廠商舞台</div>
-        <div class="task-desc">依 <code>mechMakers.order</code> 排序；未指定廠商的另成一組。</div>
+        <div class="task-desc">依 <code>mechMakers.order</code> 排序；未指定廠商的另成一組。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>mechRoster.ts</code>（依 <code>mechMakers.order</code>，未載殿後；登場版本分組沿用）＋測試；組頭目前放<b>廠商徽章</b>，廠商舞台背景等 F-2。切換列「職業」換成「廠商」、單位「台」、「外觀」換成「塗裝」。</div>
         <div class="task-file">src/components/lore/loreRoster.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-6 &nbsp; 章節閱讀</div>
       <div class="task-group-meta">LoreChapterPager</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">沿用機師的章節頁</div>
-        <div class="task-desc"><code>/lore/mechs/:id/:part</code>；有章節才出現目錄卡；章節不放首字放大（同機師廳 10-16 的改動）。</div>
+        <div class="task-desc"><code>/lore/mechs/:id/:part</code>；有章節才出現目錄卡；章節不放首字放大（同機師廳 10-16 的改動）。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 以攔截 API 注入的測試章節實測（不寫 DB）：目錄、→／←、最後一章不越界、Esc 回扉頁、草稿章網址導回、名冊「有逸聞」與章數紅標、閱讀時鋼印收起，桌機＋手機 22 項全過。</div>
         <div class="task-file">src/pages/lore/MechLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">D-7 &nbsp; 機師廳座機卡</div>
       <div class="task-group-meta">src/pages/lore/PilotLorePage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">機師 → 官配機甲</div>
-        <div class="task-desc"><code>LoreDossier</code> 加座機卡，<code>PilotLorePage</code> 多載 mechs；依 <code>pilots.pairedMechId</code>。</div>
+        <div class="task-desc"><code>LoreDossier</code> 加座機卡，<code>PilotLorePage</code> 多載 mechs；依 <code>pilots.pairedMechId</code>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>LoreDossier</code> 的 <code>pairedMech</code>：卷宗最後一張「座機」卡（主視覺縮圖、型號、類型），跨廳到機甲故事館；PilotLorePage 多讀 mechs 與 mechLore（約 24 KB gzip，不擋頁面）。</div>
         <div class="task-file">src/components/lore/LoreDossier.tsx · src/pages/lore/PilotLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -712,16 +719,17 @@
     <div class="task-group-header">
       <div class="task-group-title">H-1 &nbsp; Layout 與 SEO</div>
       <div class="task-group-meta">src/components/layout/Layout.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">館名與離館落點</div>
-        <div class="task-desc">header 依路徑顯示「機師故事館／機甲故事館」；離館多比對 <code>/lore/mechs/:id/*</code> → <code>/mechs/:id</code>。</div>
+        <div class="task-desc">header 依路徑顯示「機師故事館／機甲故事館」；離館多比對 <code>/lore/mechs/:id/*</code> → <code>/mechs/:id</code>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>Layout.tsx</code> 館名依路徑顯示「機師故事館／機甲故事館」，離館在機甲頁回 <code>/mechs/:id</code>。</div>
         <div class="task-file">src/components/layout/Layout.tsx · src/components/lore/loreExit.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
@@ -733,7 +741,8 @@
     <div class="task-row">
       <div>
         <div class="task-name">loreMechs</div>
-        <div class="task-desc"><code>ROUTE_PATTERNS</code>／<code>ENTITY_ROUTES</code> 加 <code>loreMechs</code>，<code>loreStats</code> 漏斗分廳；Worker <code>ENTITY_TYPES</code> 先部署（A-4）。</div>
+        <div class="task-desc"><code>ROUTE_PATTERNS</code>／<code>ENTITY_ROUTES</code> 加 <code>loreMechs</code>，<code>loreStats</code> 漏斗分廳；Worker <code>ENTITY_TYPES</code> 先部署（A-4）。
+          <br><span style="color:var(--accent-cyan);">◐ 2026-10-17</span> 路由與 <code>loreMechs</code> 已在 D-1 登記；剩 <code>loreStats</code> 漏斗分廳。</div>
         <div class="task-file">src/lib/analytics/ · workers/src/collect.ts</div>
       </div>
       <div class="task-assignee">開發者</div>

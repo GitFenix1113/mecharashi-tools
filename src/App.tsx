@@ -39,6 +39,7 @@ const VersionTimelinePage      = lazy(() => import('./pages/versions/VersionTime
 // 兩者對「從沒走進故事館的訪客」都是純負擔。從第一天就切出去，之後不必回頭補。
 const LoreHomePage             = lazy(() => import('./pages/lore/LoreHomePage'))
 const PilotLorePage            = lazy(() => import('./pages/lore/PilotLorePage'))
+const MechLorePage             = lazy(() => import('./pages/lore/MechLorePage'))
 const AdminLorePage            = lazy(() => import('./pages/admin/AdminLorePage'))
 const AdminVersionListPage     = lazy(() => import('./pages/admin/AdminVersionListPage'))
 const AdminVersionEditorPage   = lazy(() => import('./pages/admin/AdminVersionEditorPage'))
@@ -95,6 +96,9 @@ function App() {
               <Route index element={<Suspense fallback={null}><LoreHomePage /></Suspense>} />
               <Route path="pilots/:id" element={<Suspense fallback={null}><PilotLorePage /></Suspense>} />
               <Route path="pilots/:id/:part" element={<Suspense fallback={null}><PilotLorePage /></Suspense>} />
+              {/* 機甲故事館（PLAN-042-B）：同一個 layout route，/lore 前綴已在 CF 白名單，不必動 Dashboard */}
+              <Route path="mechs/:id" element={<Suspense fallback={null}><MechLorePage /></Suspense>} />
+              <Route path="mechs/:id/:part" element={<Suspense fallback={null}><MechLorePage /></Suspense>} />
               {/* 館內的兜底轉址是**必要的**（地雷 M-28）：Layout 的 chromeMode 是純路徑推導，
                   /lore/xyz 一律判成 immersive，但 React Router 不做部分匹配、會落到全站的
                   path="*" NotFoundPage ⇒ 一頁深色 404 配紙色館頭，footer／subnav／手機 Tab Bar

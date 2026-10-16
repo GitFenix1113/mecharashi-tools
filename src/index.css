@@ -828,9 +828,12 @@ html.lore-exiting::view-transition-new(root) { animation: lore-exit-shut 620ms c
   transition: scale 160ms var(--lore-ease-out), rotate 260ms var(--lore-ease-out);
 }
 .lore-seal__txt { font-family: var(--lore-kai); font-size: 17px; line-height: 1.04; inline-size: 2.08em; block-size: 2.08em; text-align: center; letter-spacing: 0; }
-.lore-seal__cap { font-family: 'JetBrains Mono', monospace; font-size: 0.5rem; letter-spacing: 0.16em; color: var(--lore-ink-3); white-space: nowrap; transition: color 160ms; }
+.lore-seal__cap {
+  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.14em; color: var(--lore-red); white-space: nowrap;
+  border-bottom: 1px solid transparent; transition: border-color 160ms;
+}
 .lore-seal:hover .lore-seal__stamp { scale: 0.9; rotate: -1deg; }
-.lore-seal:hover .lore-seal__cap { color: var(--lore-red); }
+.lore-seal:hover .lore-seal__cap { border-bottom-color: currentColor; }
 .lore-seal:focus-visible { outline: 2px solid var(--lore-red); outline-offset: 2px; }
 /* 開場最後一拍「蓋章」：只在完整開場（is-reveal-full，3.2 秒後拿掉）裡播——換人、進出閱讀模式、開場被快轉都不重播。
    結束幀＝靜態樣式，class 拿掉時不會跳 */
@@ -1196,6 +1199,115 @@ html.lore-exiting::view-transition-new(root) { animation: lore-exit-shut 620ms c
   .lore-page *, .lore-page *::before, .lore-page *::after {
     animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; transition-delay: 0ms !important;
   }
+}
+
+/* ── PLAN-042-B：機甲故事館（MechLorePage／MechDossier；與機師廳共用 .lore-page 的狀態 class）──────────
+ * 參數取自站長 10-16 認可的模擬頁（_local-notes/2026-10/2026-10-16_機甲故事館_規劃/）。
+ * 主視覺 2000×1080：依寬度定尺寸、站在舞台下緣（寬螢幕不撐爆、矮螢幕不切掉），卷宗退到 54u。 */
+.lore-page[data-variant="sn"] { --cxu: 28; --fadeu: 19; --dxu: 54; }
+.lore-figure[data-variant="sn"] {
+  --fcxu: 28; top: auto; bottom: 8vh;
+  height: min(calc(var(--stage-h) * 0.8), calc(66 * var(--u) / 1.852));
+}
+/* 線稿用機甲專用的濃淡（LoreLayout 的 #lore-sketch-sn）：同樣的濾鏡在金屬裝甲上墨色太重 */
+.lore-figure[data-variant="sn"] .lore-figure__sketch.is-filtered { filter: url(#lore-sketch-sn); }
+
+/* 型號鋼印（取代機師廳的英文簽名，決策 B-5）：站在直書名旁，開場顯影後「蓋下去」 */
+.lore-stamp { position: absolute; top: 5.5vh; display: flex; flex-direction: column; gap: 10px; opacity: 0; }
+.lore-page[data-side="left"]  .lore-stamp { left: calc(var(--ox) + 11.5 * var(--u)); align-items: flex-start; }
+.lore-page[data-side="right"] .lore-stamp { right: calc(var(--ox) + 11.5 * var(--u)); align-items: flex-end; }
+.lore-stamp__box {
+  display: inline-block; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: clamp(30px, 3.3vw, 54px); line-height: 1.05; letter-spacing: 0.04em;
+  color: var(--lore-red); border: 3.5px solid var(--lore-red); border-radius: 4px; padding: 4px 14px 2px; rotate: -3.5deg;
+  filter: url(#lore-stamp); mix-blend-mode: multiply; white-space: nowrap; max-width: 40vw; overflow: hidden; text-overflow: ellipsis;
+}
+.lore-stamp__sub { font-family: 'Orbitron', sans-serif; font-size: 0.58rem; letter-spacing: 0.32em; color: var(--lore-ink-2); text-transform: uppercase; padding-left: 4px; }
+.lore-stamp__sub b { font-family: var(--lore-serif); font-weight: 700; letter-spacing: 0.2em; color: var(--lore-ink); margin-right: 10px; }
+/* 「蓋下去」：從大而淡壓到定位，最後微微回彈。
+   ⚠ 不可叫 lore-stamp-in：那是機師廳朱印的開場蓋章（同名 keyframes 後定義的會蓋掉前面的，而且播完的停格一樣、回歸截圖抓不到） */
+@keyframes lore-modelstamp-in { 0% { opacity: 0; transform: scale(1.9); } 55% { opacity: 1; transform: scale(0.96); } 100% { opacity: 1; transform: scale(1); } }
+.lore-page.is-revealed .lore-stamp { opacity: 1; }
+.lore-page.is-revealed .lore-stamp__box { animation: lore-modelstamp-in 520ms cubic-bezier(0.3, 1.4, 0.5, 1) 260ms both; }
+.lore-page.is-revealed .lore-stamp__sub { animation: lore-fade-in 500ms ease 620ms both; }
+.lore-page.is-leaving .lore-stamp { opacity: 0; transition: opacity 200ms ease; }
+/* 鑑賞時淡掉、關閉後重新蓋一次（拿掉 animation 再加回來就會重播） */
+.lore-page.is-viewing .lore-stamp { animation: lore-fade-out 200ms ease both; }
+.lore-page.is-viewing :is(.lore-stamp__box, .lore-stamp__sub) { animation: none; }
+/* 閱讀時收掉：長型號（影子兔的 AWT）會跟章節軸疊在一起 */
+.lore-page.is-reading .lore-stamp { opacity: 0; transition: opacity 300ms ease; }
+
+/* 卷宗：標題列的型號、諸元表的等寬欄、品質圈 */
+.lore-tb__sub .model { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.06em; color: var(--lore-ink); }
+.lore-kv dd.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.71rem; }
+.lore-emb__q { font-family: var(--lore-serif); font-weight: 900; font-size: 1.47rem; color: var(--lore-ink); }
+
+/* 構造：四分件（從正面看，右臂在畫面左）。點一下放大＝鑑賞模式，從這格飛出去 */
+.lore-parts { margin-top: 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.lore-part {
+  border: 1px solid var(--lore-line-2); background: rgba(255, 252, 245, 0.55); border-radius: 3px; padding: 8px 6px 7px; cursor: zoom-in;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; color: inherit;
+  transition: border-color 160ms, transform 220ms var(--lore-ease-out);
+}
+.lore-part:disabled { cursor: default; }
+.lore-part:not(:disabled):hover { border-color: var(--lore-ink-2); transform: translateY(-2px); }
+.lore-part img { width: 100%; aspect-ratio: 1; object-fit: contain; }
+.lore-part span { font-size: 0.6rem; letter-spacing: 0.2em; color: var(--lore-ink-2); }
+.lore-part small { font-family: 'JetBrains Mono', monospace; font-size: 0.45rem; letter-spacing: 0.2em; color: var(--lore-ink-3); }
+
+/* 系譜：自己連出去的＋別台連到這台的（人工連好的資料，決策 B-10） */
+.lore-rel { list-style: none; margin: 0; padding: 0; }
+.lore-rel li + li { border-top: 1px solid var(--lore-line-2); }
+.lore-rel a {
+  display: grid; grid-template-columns: 84px 1fr 20px; grid-template-rows: auto auto; column-gap: 14px; row-gap: 3px; align-items: center;
+  padding: 12px 4px; color: inherit; text-decoration: none; transition: transform 220ms var(--lore-ease-out), background 200ms;
+}
+.lore-rel a:hover { transform: translateX(calc(var(--from) * 6px)); background: rgba(177, 0, 0, 0.035); }
+.lore-rel a > img, .lore-rel__ph { grid-row: 1 / 3; width: 84px; height: 51px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px var(--lore-line-2); background: #e8e1d3; }
+.lore-rel__t { min-width: 0; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-family: var(--lore-serif); font-size: 0.9rem; font-weight: 600; letter-spacing: 0.06em; }
+.lore-rel__t small { font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 0.6rem; color: var(--lore-ink-3); letter-spacing: 0.04em; }
+.lore-rel__k { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.14em; padding: 1px 6px; border-radius: 3px; border: 1px solid; }
+.lore-rel__k.k-base    { color: #1d5fc4; border-color: #1d5fc455; }
+.lore-rel__k.k-rival   { color: var(--lore-red); border-color: #b1000055; }
+.lore-rel__k.k-series  { color: #1f8a4c; border-color: #1f8a4c55; }
+.lore-rel__k.k-mention { color: var(--lore-ink-3); border-color: var(--lore-line-3); }
+.lore-rel__q { grid-column: 2; font-size: 0.66rem; color: var(--lore-ink-3); letter-spacing: 0.02em; line-height: 1.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.lore-rel__go { grid-column: 3; grid-row: 1 / 3; color: var(--lore-ink-3); font-size: 0.95rem; }
+.lore-rel a:hover .lore-rel__go { color: var(--lore-red); }
+
+/* 搭乘者：跨廳到機師故事館 */
+.lore-pilotcard { display: grid; grid-template-columns: 76px 1fr auto; gap: 18px; align-items: center; text-decoration: none; color: inherit; padding: 4px; border-radius: 4px; transition: background 200ms; }
+a.lore-pilotcard:hover { background: rgba(177, 0, 0, 0.035); }
+.lore-pilotcard > img, .lore-pilotcard > span:first-child { width: 76px; height: 76px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--lore-sheet-solid), 0 0 0 3px var(--lore-line-3); background: #e8e1d3; }
+.lore-pilotcard__name small { display: block; font-size: 0.58rem; letter-spacing: 0.2em; color: var(--lore-ink-3); }
+.lore-pilotcard__name b { display: block; margin-top: 2px; font-family: var(--lore-kai); font-weight: 400; font-size: 1.58rem; letter-spacing: 0.14em; }
+.lore-pilotcard__go { font-size: 0.66rem; color: var(--lore-ink-2); letter-spacing: 0.1em; white-space: nowrap; }
+a.lore-pilotcard:hover .lore-pilotcard__go { color: var(--lore-red); }
+
+/* 機師廳的「座機」卡（D-7）：跨廳到機甲故事館 */
+.lore-mechcard { display: grid; grid-template-columns: 120px 1fr auto; gap: 18px; align-items: center; text-decoration: none; color: inherit; padding: 4px; border-radius: 4px; transition: background 200ms; }
+.lore-mechcard:hover { background: rgba(177, 0, 0, 0.035); }
+.lore-mechcard > img, .lore-mechcard__ph { width: 120px; height: 73px; object-fit: contain; border-radius: 2px; background: rgba(255, 252, 245, 0.55); box-shadow: 0 0 0 1px var(--lore-line-2); }
+.lore-mechcard__name small { display: block; font-size: 0.58rem; letter-spacing: 0.2em; color: var(--lore-ink-3); }
+.lore-mechcard__name b { display: block; margin-top: 2px; font-family: var(--lore-kai); font-weight: 400; font-size: 1.58rem; letter-spacing: 0.14em; }
+.lore-mechcard__name em { display: block; font-style: normal; font-size: 0.6rem; letter-spacing: 0.16em; color: var(--lore-ink-2); }
+.lore-mechcard__go { font-size: 0.66rem; color: var(--lore-ink-2); letter-spacing: 0.1em; white-space: nowrap; }
+.lore-mechcard:hover .lore-mechcard__go { color: var(--lore-red); }
+
+@media (max-width: 899px) {
+  .lore-mechcard { grid-template-columns: 96px 1fr; gap: 12px; }
+  .lore-mechcard > img, .lore-mechcard__ph { width: 96px; height: 58px; }
+  .lore-mechcard__go { display: none; }
+  /* 主視覺是橫幅：手機上照寬度會只剩一條，放大到約 1.24 倍螢幕寬（兩側略出框），站在舞台下緣 */
+  .lore-figure[data-variant="sn"] { bottom: 7svh; height: min(calc(var(--stage-h) * 0.66), calc(124vw / 1.852)); }
+  /* 鋼印搬到左上（「鑑賞」鈕下方）：底部會疊在機體腳邊，上方正好空著 */
+  .lore-page[data-side] .lore-stamp { left: 12px; right: auto; top: 58px; bottom: auto; align-items: flex-start; }
+  .lore-stamp__box { font-size: 26px; max-width: 70vw; }
+  .lore-parts { grid-template-columns: repeat(2, 1fr); }
+  .lore-rel a { grid-template-columns: 64px 1fr 16px; column-gap: 10px; }
+  .lore-rel a > img, .lore-rel__ph { width: 64px; height: 39px; }
+  .lore-pilotcard { grid-template-columns: 60px 1fr; }
+  .lore-pilotcard > img, .lore-pilotcard > span:first-child { width: 60px; height: 60px; }
+  .lore-pilotcard__go { display: none; }
 }
 
 /* ── PLAN-042-E D-4：故事館編輯台的即時預覽（components/admin/lore/LorePreview.tsx）───────────

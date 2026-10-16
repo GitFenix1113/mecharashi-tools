@@ -5,7 +5,7 @@
 // 所以這裡只看 build 產生的索引（hasPilotArt／pilotOfficialArt／GAME_PILOT_SKINS），不等圖。
 
 import { assetUrl, hasPilotArt, imageCandidates, pilotArtDir, pilotFullArtPath, pilotKeyArtPath, pilotOfficialArt } from '../../utils/assets.ts'
-import { pilotGameArt, type PilotSkinArt } from '../../utils/gameArt.ts'
+import { mechGameArt, pilotGameArt, type PilotSkinArt } from '../../utils/gameArt.ts'
 import { LORE_ART_TUNING } from './loreArtTuning.ts'
 import type { Pilot } from '../../types'
 
@@ -15,8 +15,10 @@ import type { Pilot } from '../../types'
  * 'official' 官網 hero 圖層（8 位）：彩圖＋手繪線稿＋名字層
  * 'scene'    帶背景的場景插畫外觀（四角官方已暈開）：置中略小、留紙邊。
  *            舞台要的就是這個暈邊（融進紙面）；全身鑑賞改看鑑賞版 `_Raw_view`（暈邊收窄、看得到完整場景，scripts/lib/sceneArt.mjs）
+ * 'sn'       機甲主視覺 `Icon_mecha_wap####_SN_Raw`（2000×1080 去背橫式，PLAN-042-B 決策 B-5）：
+ *            依寬度定尺寸、站在舞台下緣（機體重心 x 0.44–0.61，87／93 台置中）
  */
-export type StageVariant = 'tall' | 'wide' | 'official' | 'scene'
+export type StageVariant = 'tall' | 'wide' | 'official' | 'scene' | 'sn'
 
 export interface StageArt {
   /** 這一套立繪的識別：換外觀時用它判斷「是不是同一套」 */
@@ -62,6 +64,17 @@ export function skinStageArt(pilot: StagePilot, skin: PilotSkinArt): StageArt {
     lineArt: LORE_ART_TUNING[pilotArtDir(pilot) ?? '']?.lineArt !== false,
     full: skin.view ? assetUrl(skin.view) : url,
   }
+}
+
+/**
+ * 機甲的預設主視覺（PLAN-042-B D-2）。線稿一律由彩圖經 #lore-sketch 濾鏡算出（決策 B-2：金屬機體像鉛筆素描、可以用）。
+ * 鑑賞看同一張：主視覺本身就是完整去背圖。沒有官方原檔（理論上不該發生）回 null，舞台顯示「立繪未建檔」。
+ */
+export function mechStageArt(mech: { id: string; gameId?: string }): StageArt | null {
+  const sn = mechGameArt(mech, 'sn')
+  if (!sn) return null
+  const url = assetUrl(sn)
+  return { key: `${mech.id}|sn`, variant: 'sn', color: url, line: url, filtered: true, lineArt: true, full: url }
 }
 
 /** 立繪站哪一側。官網 8 位一律左（名字層的構圖）；其餘看 LORE_ART_TUNING，沒寫＝左。 */

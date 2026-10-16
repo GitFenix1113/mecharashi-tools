@@ -45,6 +45,9 @@ export const ROUTE_PATTERNS: readonly string[] = [
   '/lore',
   '/lore/pilots/:id',
   '/lore/pilots/:id/:part',
+  // 機甲故事館（PLAN-042-B）
+  '/lore/mechs/:id',
+  '/lore/mechs/:id/:part',
   '/simulator',
   '/research',
   '/news',
@@ -139,6 +142,8 @@ export const ROUTE_LABELS: Record<string, string> = {
   lore:                      '機師故事館',
   lore_pilots_detail:        '機師故事（扉頁）',
   lore_pilots_detail_detail: '機師故事（章節）',
+  lore_mechs_detail:         '機甲故事（扉頁）',
+  lore_mechs_detail_detail:  '機甲故事（章節）',
   simulator:             '配裝模擬器',
   research:              '研究所',
   news:                  '最新消息',
@@ -166,6 +171,7 @@ export const ROUTE_LABELS: Record<string, string> = {
  * 故事館自 PLAN-062 Phase C（2026-10）起與圖鑑**分開統計**（站長裁決）：
  *   · lorePilots — 哪位機師的故事被打開（扉頁與章節都算，同一次造訪內同一位只算一次）
  *   · loreParts  — 哪一章被讀，id 為 `${pilotId}--${partKey}`（見 loreChapterId）
+ *   · loreMechs  — 哪台機甲的故事被打開（PLAN-042-B）。機甲的章節也記在 loreParts：文件 ID 的 pilot_／mech_ 前綴分得出兩館
  * 在那之前兩條故事館路徑是併進 'pilots' 的——當時 Worker 只認 {pilots, mechs, weapons, modules}，
  * 開新類別會被已部署的 Worker 丟掉。拆開之後「熱門機師」回到只算圖鑑，
  * 符合它「決定資料要優先補誰」的用途：讀逸聞的人並不需要圖鑑的資料。
@@ -176,6 +182,8 @@ export const ENTITY_ROUTES: Record<string, readonly string[]> = {
   '/weapons/:id': ['weapons'],
   '/lore/pilots/:id':       ['lorePilots'],
   '/lore/pilots/:id/:part': ['lorePilots', 'loreParts'],
+  '/lore/mechs/:id':        ['loreMechs'],
+  '/lore/mechs/:id/:part':  ['loreMechs', 'loreParts'],
 }
 
 /**

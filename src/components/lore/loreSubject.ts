@@ -12,6 +12,7 @@
 //   延遲到元件呼叫時才算，本檔才能單元測試。
 
 import { pilotClassMeta } from '../../data/pilotClasses.ts'
+import { mechWeightClassOf } from '../../data/mechWeightClasses.ts'
 import { mechPortraitCandidates } from '../../utils/assets.ts'
 import { pilotHeadCandidates } from './loreStageArt.ts'
 import type { Mech, MechLoreDoc, MechMaker, Pilot } from '../../types'
@@ -29,11 +30,13 @@ export interface LoreSubject {
   nameEn?: string
   /** 舞台角落的大序號與檔案標籤，從文件 ID 的流水號切出（`pilot_003` → `003`） */
   serial: string
-  /** 檔案標籤的前綴：`PILOT FILE`／`MECH FILE` */
+  /** 檔案標籤的前綴：`PILOT FILE`／`MECHA FILE`（遊戲裡寫 MECHA） */
   fileLabel: string
   debutVersion?: string
   /** 型號鋼印（機甲，決策 B-5）：取代機師的英文簽名。機師為 undefined */
   stamp?: string
+  /** 鋼印下方的廠商名（機甲；廠商未知時不給，鋼印下只留英文名） */
+  makerName?: string
   /** 圓形頭像的候選（切換列、名冊、外觀列的「預設」）。函式：見檔頭 */
   heads: () => string[]
   /** 切換列滑鼠提示的第二行，例「突擊手 · v1.0」 */
@@ -77,18 +80,22 @@ export const MAKER_UNKNOWN = '廠商未載'
 
 /** 機甲 → 故事館主角。廠商傳進來是因為 mechLore 只存廠商 ID（mechMakers 的文件 ID）。 */
 export function mechSubject(m: Mech, lore?: MechLoreDoc | null, maker?: MechMaker | null): LoreSubject {
-  const makerName = maker?.name?.trim() || MAKER_UNKNOWN
+  const knownMaker = maker?.name?.trim() || undefined
+  const makerName = knownMaker || MAKER_UNKNOWN
   const nameEn = lore?.nameEn?.trim() || undefined
   const modelNo = lore?.modelNo?.trim() || undefined
   return {
     kind: 'mech',
     id: m.id,
     name: m.name,
+    // 直書名下的小字：機甲沒有全名，放完整類型（「輕型機甲」）
+    fullName: mechWeightClassOf(m.armorType)?.full,
     nameEn,
     serial: serialOf(m.id, 'mech'),
-    fileLabel: 'MECH FILE',
+    fileLabel: 'MECHA FILE',
     debutVersion: m.debutVersion || undefined,
     stamp: modelNo,
+    makerName: knownMaker,
     heads: () => mechPortraitCandidates(m),
     meta: [makerName, m.armorType, vTag(m.debutVersion)].filter(Boolean).join(' · '),
     rosterTitle: [m.name, modelNo, nameEn, makerName, m.armorType, vTag(m.debutVersion)].filter(Boolean).join(' · '),

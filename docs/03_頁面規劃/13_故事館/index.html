@@ -158,6 +158,18 @@
     · <strong>前台</strong>：卷宗徽章的滑鼠提示改用徽章名稱（沒有才退回機師陣營文字）；修正彩色版徽章被圓環裡給天賦圖示用的圓形裁切切掉邊角。
   </div>
   <div class="info-block" style="margin-top:1rem;">
+    <strong>✅ 機甲廳（PLAN-042-B Phase D，2026-10-17）</strong><br>
+    · <strong>路由</strong>：<code>/lore/mechs/:id</code>（檔案）、<code>/lore/mechs/:id/:part</code>（章節），同一個元件 <code>MechLorePage</code>；與機師廳共用 LoreLayout、<code>useLoreHall</code>、LoreStage／LoreSwitcher／LoreViewer／LoreChapterPager。
+      header 館名依路徑換成「機甲故事館」，離館回 <code>/mechs/:id</code><br>
+    · <strong>舞台</strong>：官方主視覺 <code>Icon_mecha_wap####_SN_Raw</code>（<code>data-variant="sn"</code>：依寬度定尺寸、站在舞台下緣），英文簽名換成<strong>型號鋼印</strong>（<code>.lore-stamp</code>，閱讀時收起）。
+      線稿走機甲專用的 <code>#lore-sketch-sn</code>（slope 1.0）：同一個濾鏡在金屬裝甲上墨色是機師的 1.57 倍，93 台量過、調到與機師分布重合，沒有一台要關線稿<br>
+    · <strong>卷宗</strong>（<code>MechDossier</code>）：標題區（類型、型號、英文名、廠商徽章、品質、「機甲圖鑑」朱印）→ 技術檔案（介紹＋譯本署名）→ 逸聞目錄 → 構造（諸元＋四分件，點了放大）→ 系譜（mechLore.relations ＋反查別台連到這台，一律人工連）→ 搭乘者（官配機師，跨廳）。
+      卡池附件（招募插畫）等 F 段素材上站<br>
+    · <strong>名冊</strong>：依廠商（<code>mechMakers.order</code>，未載殿後）或登場版本分組，組頭放廠商徽章；與機師廳共用同一個排序偏好（'class' 在機甲廳＝廠商）<br>
+    · <strong>機師廳的連帶改動</strong>：卷宗最後多「座機」卡（官配機甲、型號），兩館朱印下的小字改「查看圖鑑 ↗」（手機照舊收起）<br>
+    · <strong>統計</strong>：<code>routeKeys.ts</code> 登記兩條路由與 <code>loreMechs</code>；章節沿用 <code>loreParts</code>（文件 ID 的 pilot_／mech_ 前綴分得出兩館）
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
     <strong>✅ 兩館共用的元件層（PLAN-042-B Phase C，2026-10-17）</strong><br>
     · <strong>轉接層</strong>：<code>components/lore/loreSubject.ts</code> 的 <code>LoreSubject</code>（種類、id、名稱、全名、英文名、序號、檔案標籤、登場版本、型號鋼印、頭像候選、名冊提示／title／色調、搜尋欄位、圖鑑連結）。
       <code>LoreStage</code>／<code>LoreSkinPicker</code>／<code>LoreSwitcher</code> 只吃它；機師由 <code>pilotSubject()</code>、機甲由 <code>mechSubject()</code> 轉接。

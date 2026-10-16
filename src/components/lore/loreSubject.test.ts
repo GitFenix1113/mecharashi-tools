@@ -50,12 +50,14 @@ test('pilotSubject 的搜尋欄位與 matchesLoreQuery 相同：英文名、陣�
 
 test('mechSubject：型號鋼印、序號、檔案標籤、廠商名', () => {
   const lore = { id: 'mech_002_格萊楊', chapters: [], modelNo: 'DD-117', nameEn: 'Glasya' } as MechLoreDoc
-  const maker = { id: 'Doll', name: '多爾集團' } as MechMaker
+  const maker = { id: 'Doll', name: '多爾集團', nameEn: 'DOLL' } as MechMaker
   const s = mechSubject(mech({ debutVersion: '1.0' }), lore, maker)
   assert.equal(s.kind, 'mech')
   assert.equal(s.serial, '002')
-  assert.equal(s.fileLabel, 'MECH FILE')
+  assert.equal(s.fileLabel, 'MECHA FILE')
   assert.equal(s.stamp, 'DD-117')
+  assert.equal(s.makerName, '多爾集團')
+  assert.equal(s.fullName, '輕型機甲', '直書名下的小字放完整類型')
   assert.equal(s.nameEn, 'Glasya')
   assert.equal(s.meta, '多爾集團 · 輕型 · v1.0')
   assert.equal(s.codexHref, '/mechs/mech_002_%E6%A0%BC%E8%90%8A%E6%A5%8A')
@@ -65,6 +67,7 @@ test('mechSubject：型號鋼印、序號、檔案標籤、廠商名', () => {
 test('mechSubject：沒有故事資料、沒有廠商也能畫（廠商顯示「廠商未載」，不留白）', () => {
   const s = mechSubject(mech({}), null, null)
   assert.equal(s.stamp, undefined)
+  assert.equal(s.makerName, undefined, '廠商未知時鋼印下不寫「廠商未載」')
   assert.equal(s.nameEn, undefined)
   assert.equal(s.meta, `${MAKER_UNKNOWN} · 輕型`)
   assert.ok(!matchesSubjectQuery(s, MAKER_UNKNOWN), '「廠商未載」只是顯示用，不該被搜到')
