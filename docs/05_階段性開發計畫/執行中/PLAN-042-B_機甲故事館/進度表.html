@@ -208,15 +208,15 @@
   <div class="section-title">總進度</div>
 
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">24</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">26</div><div class="summary-lbl">已完成</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">14</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">12</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">38</div><div class="summary-lbl">任務（不含長期資料）</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">24 / 38</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 63%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">26 / 38</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 68%"></div></div>
   </div>
 
   <div class="impact-note">
@@ -687,32 +687,34 @@
     <div class="task-group-header">
       <div class="task-group-title">G-1 &nbsp; 機甲分頁</div>
       <div class="task-group-meta">src/pages/admin/AdminLorePage.tsx · src/components/admin/lore/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">扉頁／技術檔案／系譜／塗裝／章節／預覽</div>
-        <div class="task-desc">AdminLorePage 頂層加「機甲」；扉頁（型號、廠商下拉、英文名、介紹、來源）、技術檔案、系譜（機甲選擇器＋關係種類）、塗裝命名、章節（沿用 <code>LoreChaptersEditor</code> 與 OCR 貼上）、預覽；完成度欄位改機甲版。</div>
+        <div class="task-desc">AdminLorePage 頂層加「機甲」；扉頁（型號、廠商下拉、英文名、介紹、來源）、技術檔案、系譜（機甲選擇器＋關係種類）、塗裝命名、章節（沿用 <code>LoreChaptersEditor</code> 與 OCR 貼上）、預覽；完成度欄位改機甲版。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>AdminLorePage</code> 分頁改成「機師／機甲／陣營徽章／機甲廠商」（<code>?view=mechs&amp;mech=&lt;id&gt;</code>）。列表 <code>MechLoreAdmin</code>（完成度統計＋「缺介紹／缺型號／缺廠商／有草稿章／塗裝未命名」篩選，可用型號搜尋；<code>mechLoreProgress.ts</code>＋測試）；面板 <code>MechLoreEditPanel</code>：扉頁（型號、廠商下拉＋依型號前綴建議、英文名、系列、介紹＋OCR、來源）／技術檔案（與人物檔案共用 <code>LoreFieldRowsEditor</code>）／系譜（<code>MechLineageEditor</code>：關係種類整句寫出方向——原型＝「這台是由它衍生出來的」，別台連過來的唯讀列出、兩邊各寫一條時提示）／塗裝（<code>LoreSkinsEditor</code> 改吃清單、兩館共用）／逸聞章節；右欄 <code>MechLorePreview</code>（與機師預覽共用 <code>LorePreviewFrame</code>）。系譜組裝抽成 <code>mechLineage.ts</code>＋測試，展廳頁同用（格萊楊的系譜卡新舊一致）。存檔前擋：技術檔案同名／缺標籤、系譜沒選機甲／同一台兩次、章節署名。機甲管理面板加捷徑，舊 <code>mechs.lore</code> 欄位標註「只剩圖鑑在讀、H-7 刪」。</div>
         <div class="task-file">src/components/admin/lore/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">G-2 &nbsp; 機甲廠商分頁</div>
       <div class="task-group-meta">src/components/admin/lore/MechMakersEditor.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">mechMakers 的增修（Q3）</div>
-        <div class="task-desc">中英文名、徽章（<code>FactionLogoPicker</code>）、舞台背景、型號前綴、排序、備註；可新增廠商。比照 <code>FactionEmblemsEditor</code>。</div>
+        <div class="task-desc">中英文名、徽章（<code>FactionLogoPicker</code>）、舞台背景、型號前綴、排序、備註；可新增廠商。比照 <code>FactionEmblemsEditor</code>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>MechMakersEditor</code>：一家一列各自存檔（writeDoc＋bump，不走 saveWithHistory）——中英文名、徽章（<code>FactionLogoPicker</code>，選第二顆＝替換）、舞台背景（沿用別家，附縮圖）、型號前綴、排序、備註、使用台數；可新增廠商（ID 英文開頭、不分大小寫查重；建立後不能改）。<b>沒有刪除</b>（被引用中的廠商刪掉會整組掉進「廠商未載」，不用的往後排）。<br>實測：免登入把 AdminLorePage 掛進 MemoryRouter（擋下所有 Firestore 寫入請求），15 項全過、0 錯誤。</div>
         <div class="task-file">src/components/admin/lore/MechMakersEditor.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

@@ -7,6 +7,7 @@ import { useGameData } from '../../../contexts/GameDataContext'
 import { factionLogoSuggestions } from '../../../utils/factionLogos'
 import { duplicateLabels, normalizeDossier, unlabeledRows } from '../../../utils/loreDossier'
 import { pilotSkinCatalog } from '../../../utils/gameArt'
+import { pilotPortraitPath } from '../../../utils/assets'
 import { LoreFrontEditor } from './LoreFrontEditor'
 import { LoreDossierEditor } from './LoreDossierEditor'
 import { LoreChaptersEditor } from './LoreChaptersEditor'
@@ -71,7 +72,8 @@ export function LoreEditPanel({
     () => factionLogoSuggestions(doc.id, pilot?.faction, pilots, pilotLore),
     [doc.id, pilot?.faction, pilots, pilotLore],
   )
-  const skinCount = useMemo(() => pilotSkinCatalog(pilot).length, [pilot])
+  const skinCatalog = useMemo(() => pilotSkinCatalog(pilot), [pilot])
+  const skinCount = skinCatalog.length
 
   const tabs: AdminEditTabDef<LoreTab>[] = [
     { id: 'front', label: '扉頁' },
@@ -144,7 +146,10 @@ export function LoreEditPanel({
       )}
       {activeTab === 'skins' && (
         <LoreSkinsEditor
-          pilot={pilot}
+          catalog={skinCatalog}
+          defaultSrc={pilotPortraitPath(pilot)}
+          defaultSub="機師管理的立繪（artKey）"
+          importHint="import-game-assets.mjs --skins"
           value={form.skins}
           onChange={(skins) => patch({ skins })}
           previewKey={previewSkin}

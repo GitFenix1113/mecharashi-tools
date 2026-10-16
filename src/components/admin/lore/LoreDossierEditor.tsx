@@ -19,13 +19,7 @@ export function LoreDossierEditor({
   onChange: (next: LoreDossierInfo) => void
 }) {
   const d = value ?? {}
-  const extra = d.extra ?? []
-  const dup = new Set(duplicateLabels(extra))
-  const unlabeled = new Set(unlabeledRows(extra))
-
   const setFixed = (k: 'gender' | 'height' | 'bloodType', v: string) => onChange({ ...d, [k]: v || undefined })
-  const setExtra = (next: LoreDossierField[]) => onChange({ ...d, extra: next.length ? next : undefined })
-  const patchRow = (i: number, patch: Partial<LoreDossierField>) => setExtra(extra.map((f, n) => (n === i ? { ...f, ...patch } : f)))
 
   return (
     <div className="space-y-4">
@@ -41,14 +35,48 @@ export function LoreDossierEditor({
       </div>
 
       <div className="pt-3 border-t border-border/60">
+        <LoreFieldRowsEditor
+          value={d.extra}
+          onChange={(extra) => onChange({ ...d, extra })}
+          title="自訂欄位（標籤即前台顯示文字，順序＝顯示順序）"
+          emptyHint="尚無自訂欄位。例如：生日、出身、喜好。"
+          labelPlaceholder="標籤，如：生日"
+        />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * 「標籤：內容」的有序列（人物檔案的自訂欄位、機甲的技術檔案共用，PLAN-042-B G-1）。
+ * 同名標籤、有內容沒標籤的列在這裡標紅；真正擋存檔的是各自的編輯面板（duplicateLabels／unlabeledRows）。
+ * 清空時回 undefined：writeDoc 是整份覆寫，欄位會真的從文件上消失。
+ */
+export function LoreFieldRowsEditor({
+  value, onChange, title, emptyHint, labelPlaceholder,
+}: {
+  value: LoreDossierField[] | undefined
+  onChange: (next: LoreDossierField[] | undefined) => void
+  title: string
+  emptyHint: string
+  labelPlaceholder: string
+}) {
+  const extra = value ?? []
+  const dup = new Set(duplicateLabels(extra))
+  const unlabeled = new Set(unlabeledRows(extra))
+  const setExtra = (next: LoreDossierField[]) => onChange(next.length ? next : undefined)
+  const patchRow = (i: number, patch: Partial<LoreDossierField>) => setExtra(extra.map((f, n) => (n === i ? { ...f, ...patch } : f)))
+
+  return (
+    <>
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[13px] text-text-dim font-medium">自訂欄位（標籤即前台顯示文字，順序＝顯示順序）</span>
+          <span className="text-[13px] text-text-dim font-medium">{title}</span>
           <button type="button" onClick={() => setExtra([...extra, { label: '', value: '' }])} className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors">
             ＋ 新增欄位
           </button>
         </div>
         {extra.length === 0 ? (
-          <p className="text-xs text-text-dim py-1">尚無自訂欄位。例如：生日、出身、喜好。</p>
+          <p className="text-xs text-text-dim py-1">{emptyHint}</p>
         ) : (
           <div className="space-y-1.5">
             {extra.map((f, i) => {
@@ -60,7 +88,7 @@ export function LoreDossierEditor({
                     value={f.label}
                     onChange={(e) => patchRow(i, { label: e.target.value })}
                     className={`input-field text-xs ${bad ? '!border-accent-red/60' : ''}`}
-                    placeholder="標籤，如：生日"
+                    placeholder={labelPlaceholder}
                     title={dup.has(f.label.trim()) ? '與其他列同名' : unlabeled.has(i + 1) ? '有內容卻沒有標籤' : undefined}
                   />
                   <input value={f.value} onChange={(e) => patchRow(i, { value: e.target.value })} className="input-field text-xs" placeholder="內容" />
@@ -81,8 +109,7 @@ export function LoreDossierEditor({
             存檔前要先改好。
           </p>
         )}
-      </div>
-    </div>
+    </>
   )
 }
 

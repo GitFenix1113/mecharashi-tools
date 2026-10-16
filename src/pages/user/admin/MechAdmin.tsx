@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import type { Mech, Module, MechPart, Weapon, InnateModuleEntry } from '../../../types'
 import { ModuleSlot, ArmorType, PartInterface, MechPartPosition } from '../../../types/enums'
 import { expectedInterface, expectedInterfaces, isInterfaceOffRule } from '../../../utils/mechInterface'
@@ -538,6 +539,15 @@ function MechEditPanel({
           <span className="text-[11px] px-1.5 py-0.5 rounded border border-accent-orange/40 text-accent-orange shrink-0">手動建立</span>
         )}
       </h3>
+      {/* PLAN-042-B G-1：故事資料在故事館編輯台。新建機甲還沒存檔前沒有 id 可連，不顯示 */}
+      {form.id && (
+        <Link
+          to={`/admin/lore?view=mechs&mech=${encodeURIComponent(form.id)}`}
+          className="-mt-2 mb-2 inline-block text-[13px] text-accent-cyan no-underline hover:underline shrink-0"
+        >
+          型號、廠商、介紹、系譜、塗裝名稱與逸聞在故事館編輯台 →
+        </Link>
+      )}
 
       <AdminEditTabs tabs={tabs} active={tab} onChange={setTab} />
 
@@ -584,7 +594,7 @@ function MechEditPanel({
                 )}
               </select>
             </Field>
-            <Field label="介紹文本 lore">
+            <Field label="介紹文本 lore（舊欄位：只剩機甲圖鑑的機體描述與分享卡在讀；機甲故事館讀的是故事館編輯台的介紹。PLAN-042-B H-7 會刪除）">
               <textarea className="input-field min-h-[120px]" value={form.lore ?? ''} placeholder="機甲背景 / 故事敘述"
                 onChange={(e) => set('lore', e.target.value || undefined)} />
             </Field>

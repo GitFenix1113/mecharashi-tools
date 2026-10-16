@@ -11,6 +11,9 @@ import { mechGameArt, type MechGameArtKind } from '../../utils/gameArt'
 import { assetUrl, mechPortraitCandidates } from '../../utils/assets'
 import { pilotHeadCandidates } from './loreStageArt'
 import type { LoreChapter, Mech, MechLoreDoc, MechMaker, MechRelationKind, Pilot } from '../../types'
+import type { MechLineageItem } from './mechLineage'
+
+export type { MechLineageItem }
 
 /**
  * 機甲廳的卷宗（PLAN-042-B D-3）。卡片順序照站長 10-16 認可的模擬頁（決策 B-6）：
@@ -21,15 +24,6 @@ import type { LoreChapter, Mech, MechLoreDoc, MechMaker, MechRelationKind, Pilot
  * ⚠ 不在這裡讀 hook 或網址（同 LoreDossier）：後台預覽日後也要能直接渲染。
  * ⚠ 系譜一律人工連（決策 B-10）：這裡只畫 mechLore.relations 與「別台連到這台」的反查，**不做任何文字比對**。
  */
-
-/** 系譜的一條：方向 0＝這台自己連出去的、1＝別台連到這台（反查） */
-export interface MechLineageItem {
-  mech: Mech
-  modelNo?: string
-  kind?: MechRelationKind
-  dir: 0 | 1
-  note?: string
-}
 
 export interface MechDossierProps {
   mech: Mech

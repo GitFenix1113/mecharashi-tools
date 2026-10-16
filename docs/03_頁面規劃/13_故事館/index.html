@@ -32,7 +32,7 @@
   <table class="spec-table">
     <tr><th>路由</th><td><code>/lore</code>（館首頁）｜<code>/lore/mechs</code>（機甲廳館首頁，PLAN-042-B）｜<code>/lore/pilots/:id</code>（扉頁）｜<code>/lore/pilots/:id/:part</code>（章節頁／閱讀模式）｜外觀放查詢字串 <code>?skin=&lt;立繪鍵&gt;</code>（PLAN-042-D）｜<code>/lore/*</code> 兜底轉址回 <code>/lore</code>｜<code>/admin/lore</code>（編輯台，<code>AdminRoute</code>）</td></tr>
     <tr><th>開發階段</th><td>PLAN-042-A Phase C–F（2026-09-09 ～ 09-10）；氛圍層與顯影修正另立 <a href="../../05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/計畫書.html">PLAN-042-C</a>；2026-10-13 改版成「舞台＋卷宗」、加機師名冊與外觀切換：<a href="../../05_階段性開發計畫/執行中/PLAN-042-D_故事館改版_舞台與卷宗/計畫書.html">PLAN-042-D</a>；同日機師資料分家、編輯台改版：<a href="../../05_階段性開發計畫/執行中/PLAN-042-E_機師資料分家與故事館編輯台/計畫書.html">PLAN-042-E</a>；2026-10-14 回圖鑑的出口與出館過場：<a href="../../05_階段性開發計畫/執行中/PLAN-042-G_故事館回圖鑑路線與出館過場/計畫書.html">PLAN-042-G</a></td></tr>
-    <tr><th>登入需求</th><td>前台不需要登入；編輯台 ADMIN 即可（只寫 <code>pilotLore</code>；EDITOR 角色先不做，PLAN-042-E 決策八）</td></tr>
+    <tr><th>登入需求</th><td>前台不需要登入；編輯台 ADMIN 即可（寫 <code>pilotLore</code>／<code>mechLore</code>／<code>mechMakers</code>；EDITOR 角色先不做，PLAN-042-E 決策八）</td></tr>
     <tr><th>資料來源</th><td><strong>PLAN-042-E 起依 id 合併兩個集合</strong>（判準：與數值、機制有關的留 <code>pilots</code>，其餘歸 <code>pilotLore</code>）：<br>
       · <code>pilots</code>：身分欄位——名字、全名、職業、陣營、駕駛許可、天賦（徽記）、登場版本、立繪（<code>gameId</code>／<code>artKey</code>）<br>
       · <code>pilotLore</code>：扉頁簡介 <code>intro</code>＋署名 <code>frontSource</code>、英文名 <code>nameEn</code>、人物檔案 <code>dossier</code>、陣營徽章、外觀設定 <code>skins</code>、章節與旁白<br>
@@ -114,7 +114,9 @@
       <p><strong>PLAN-042-E 起是「故事館編輯台」</strong>：一位機師的故事資料全部在這裡編（機師管理的「個人資料」分頁已移除）。
       列表列出 <code>pilots</code> 全員＋從資料推導的進度標籤；網址 <code>?pilot=&lt;id&gt;</code> 直接開該位的編輯面板（開關同步網址）。
       面板四個分頁：扉頁／人物檔案／逸聞章節／外觀，右欄是渲染真前台元件的即時預覽（細節見下方設計備註）。
-      頁首另有「機師｜陣營徽章」兩個檢視（PLAN-042-F）：<code>?view=emblems</code> 替官方徽章標名稱與圖上字樣。
+      頁首的檢視：機師｜機甲｜陣營徽章｜機甲廠商。<code>?view=emblems</code> 替官方徽章標名稱與圖上字樣（PLAN-042-F）；
+      <code>?view=mechs&amp;mech=&lt;id&gt;</code> 是機甲的編輯面板（PLAN-042-B G-1：扉頁／技術檔案／系譜／塗裝／逸聞章節＋即時預覽，結構同機師版、塗裝與章節分頁是同一個元件）；
+      <code>?view=makers</code> 管 <code>mechMakers</code>（G-2：一家一列各自存檔、可新增、不能刪）。
       寫入走 <code>saveWithHistory</code>（整份覆寫、自動 bump 版本），章節錨點用 <code>{ by: 'key' }</code>（<code>LoreChapter</code> 沒有 <code>name</code>，錨錯欄位每筆都會 <code>anchorMismatch</code>）。沒有刪除路徑。</p>
     </div>
   </div>

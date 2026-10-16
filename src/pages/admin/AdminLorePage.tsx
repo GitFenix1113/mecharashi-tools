@@ -11,8 +11,10 @@ import {
 } from '../../utils/loreProgress'
 import { LoreEditPanel, LORE_DRAFT_KIND } from '../../components/admin/lore/LoreEditPanel'
 import { FactionEmblemsEditor } from '../../components/admin/lore/FactionEmblemsEditor'
+import { MechLoreAdmin } from '../../components/admin/lore/MechLoreAdmin'
+import { MechMakersEditor } from '../../components/admin/lore/MechMakersEditor'
 
-// ─── 機師故事館編輯台（PLAN-042-A Phase E-1；PLAN-042-E D 段改版）──────────────────
+// ─── 故事館編輯台（PLAN-042-A Phase E-1；PLAN-042-E D 段改版；PLAN-042-B G 段加機甲）────────────
 //
 // 一位機師的故事資料**全部在這裡編**：扉頁（英文名、簡介、署名、陣營徽章）、人物檔案、逸聞章節、外觀。
 // PLAN-042-E 之前簡介與人物檔案在「機師管理 › 個人資料」，那個分頁已移除（圖鑑只管數值與機制）。
@@ -25,6 +27,8 @@ import { FactionEmblemsEditor } from '../../components/admin/lore/FactionEmblems
 //
 // 網址 `?pilot=<文件 ID>` 直接打開那一位的面板（機師管理的捷徑連到這裡）；開關面板都會同步網址。
 // `?view=emblems` 切到「陣營徽章」分頁（PLAN-042-F D-1），`&emblem=<4 碼>` 捲到那一顆（選圖器的「補名稱」連過來）。
+// `?view=mechs` 切到「機甲」分頁、`&mech=<文件 ID>` 打開那一台（PLAN-042-B G-1，列表與面板在 MechLoreAdmin）；
+// `?view=makers` 切到「機甲廠商」分頁（G-2）。
 //
 // ⚠ `LoreDoc.chapters` 在型別上是**必填**（`chapters: LoreChapter[]`），但**執行期不保證存在**：
 //   Firestore 沒有 schema 強制，任何寫入路徑漏掉該欄位，讀回來就是 undefined 而 TS 完全不擋。
@@ -68,12 +72,13 @@ export default function AdminLorePage() {
 
   const [params, setParams] = useSearchParams()
   const editingId = params.get('pilot')
-  const view: 'pilots' | 'emblems' = params.get('view') === 'emblems' ? 'emblems' : 'pilots'
-  const setView = (v: 'pilots' | 'emblems') => setParams((prev) => {
+  const view: LoreView = VIEWS.some(([v]) => v === params.get('view')) ? params.get('view') as LoreView : 'pilots'
+  const setView = (v: LoreView) => setParams((prev) => {
     const next = new URLSearchParams(prev)
-    if (v === 'emblems') next.set('view', 'emblems')
-    else next.delete('view')
-    next.delete('emblem')
+    if (v === 'pilots') next.delete('view')
+    else next.set('view', v)
+    // 換分頁就關掉別的分頁開著的面板與定位
+    for (const k of ['emblem', 'pilot', 'mech']) next.delete(k)
     return next
   }, { replace: true })
   const openEditor = (id: string) => setParams((prev) => {
@@ -140,22 +145,24 @@ export default function AdminLorePage() {
       <div className="flex items-center gap-2 text-xs text-text-dim mb-4">
         <Link to="/admin" className="hover:text-text-secondary transition-colors no-underline">後台管理</Link>
         <span>›</span>
-        <span className="text-accent-cyan">機師故事館</span>
+        <span className="text-accent-cyan">故事館</span>
       </div>
 
       {/* 頁首 */}
       <div className="mb-6">
         <div className="text-[10px] font-[Orbitron,sans-serif] tracking-[3px] text-accent-cyan uppercase mb-1">
-          Admin · Pilot Lore
+          Admin · Lore
         </div>
-        <h1 className="text-2xl font-bold text-text-primary">機師故事館編輯台</h1>
+        <h1 className="text-2xl font-bold text-text-primary">故事館編輯台</h1>
         <p className="text-text-dim text-sm mt-1">
-          一位機師的英文名、簡介、人物檔案、逸聞章節、陣營徽章與外觀名稱都在這裡編。名字、全名、職業、陣營在「機師管理」。
+          {view === 'mechs' || view === 'makers'
+            ? '一台機甲的型號、廠商、介紹、技術檔案、系譜、塗裝名稱與逸聞章節都在這裡編。名字、類型、品質、登場版本在「機甲管理」。'
+            : '一位機師的英文名、簡介、人物檔案、逸聞章節、陣營徽章與外觀名稱都在這裡編。名字、全名、職業、陣營在「機師管理」。'}
         </p>
       </div>
 
       <div className="flex gap-1 mb-5 border-b border-border" role="tablist">
-        {([['pilots', '機師'], ['emblems', '陣營徽章']] as const).map(([v, label]) => (
+        {VIEWS.map(([v, label]) => (
           <button
             key={v}
             type="button"
@@ -173,6 +180,10 @@ export default function AdminLorePage() {
 
       {view === 'emblems' ? (
         <FactionEmblemsEditor focus={params.get('emblem')} />
+      ) : view === 'mechs' ? (
+        <MechLoreAdmin />
+      ) : view === 'makers' ? (
+        <MechMakersEditor />
       ) : error ? (
         <div className="rounded-xl border border-accent-red/40 bg-accent-red/10 px-4 py-3">
           <p className="text-accent-red text-sm font-bold">⚠ 資料載入失敗</p>
@@ -273,7 +284,7 @@ export default function AdminLorePage() {
         </>
       )}
 
-      {editingDoc && (
+      {view === 'pilots' && editingDoc && (
         <LoreEditPanel
           // 換人、或在同一位身上改成還原草稿 → 整個 remount，useState 的 initializer 自然重跑
           key={`${editingDoc.id}:${restored?.id === editingDoc.id ? 'draft' : 'db'}`}
@@ -286,6 +297,9 @@ export default function AdminLorePage() {
     </div>
   )
 }
+
+type LoreView = 'pilots' | 'mechs' | 'emblems' | 'makers'
+const VIEWS: readonly (readonly [LoreView, string])[] = [['pilots', '機師'], ['mechs', '機甲'], ['emblems', '陣營徽章'], ['makers', '機甲廠商']]
 
 function Stat({ label, value, total, note }: { label: string; value: number; total: number; note?: string }) {
   return (

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { LoreDoc, Pilot } from '../../../types'
 import LoreStage from '../../lore/LoreStage'
 import LoreDossier from '../../lore/LoreDossier'
@@ -37,33 +37,12 @@ export interface LorePreviewProps {
 }
 
 export function LorePreview({ pilot, lore, skinKey, chapterKey }: LorePreviewProps) {
-  const paneRef = useRef<HTMLDivElement>(null)
-  const vpRef = useRef<HTMLDivElement>(null)
-  const [box, setBox] = useState({ scale: 0.3, height: 400 })
   // 徽章名稱：編輯台的選圖器已 ensureLoaded(['factionEmblems'])，這裡只取同一份記憶體資料
   const { factionEmblems } = useGameData()
   const logoLabel = useMemo(() => {
     const byId = emblemsById(factionEmblems)
     return (key: string) => emblemTitle(key, byId)
   }, [factionEmblems])
-
-  useLayoutEffect(() => {
-    const pane = paneRef.current, vp = vpRef.current
-    if (!pane || !vp) return
-    const measure = () => {
-      const scale = pane.clientWidth / Math.max(1, window.innerWidth)
-      setBox((b) => {
-        const height = Math.ceil(vp.offsetHeight * scale)
-        return b.scale === scale && b.height === height ? b : { scale, height }
-      })
-    }
-    // 不必先同步量一次：ResizeObserver 在 observe 當下就會回呼一次（排版後、繪製前）
-    const ro = new ResizeObserver(measure)
-    ro.observe(pane)
-    ro.observe(vp)
-    window.addEventListener('resize', measure)
-    return () => { ro.disconnect(); window.removeEventListener('resize', measure) }
-  }, [])
 
   // 外觀：與前台同一份清單（含隱藏的——編輯者可能正要決定藏不藏）；找不到就退回預設外觀
   const art = useMemo(() => {
@@ -77,13 +56,7 @@ export function LorePreview({ pilot, lore, skinKey, chapterKey }: LorePreviewPro
   const cls = ['lore-page', 'is-revealed', 'is-ready', 'is-intro-done', reading && 'is-reading'].filter(Boolean).join(' ')
 
   return (
-    <div ref={paneRef} className="lore-preview" style={{ height: box.height }}>
-      <div
-        ref={vpRef}
-        className="lore-shell lore-preview__vp"
-        style={{ transform: `scale(${box.scale})` }}
-        inert
-      >
+    <LorePreviewFrame>
         <div className={cls} data-side={loreSideOf(pilot)} data-variant={art?.variant ?? 'wide'} data-dir="1">
           <div className="lore-stage-wrap">
             <LoreStage subject={pilotSubject({ ...pilot, nameEn: lore.nameEn })} art={art} />
@@ -105,6 +78,46 @@ export function LorePreview({ pilot, lore, skinKey, chapterKey }: LorePreviewPro
             )}
           </main>
         </div>
+    </LorePreviewFrame>
+  )
+}
+
+/**
+ * 縮小的整個視窗（理由見檔頭）：渲染一個寬 100vw 的虛擬視窗，再整個 scale() 成欄寬。
+ * children 是 `.lore-page` 那一層；機師與機甲（MechLorePreview，PLAN-042-B G-1）的預覽共用。
+ */
+export function LorePreviewFrame({ children }: { children: ReactNode }) {
+  const paneRef = useRef<HTMLDivElement>(null)
+  const vpRef = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState({ scale: 0.3, height: 400 })
+
+  useLayoutEffect(() => {
+    const pane = paneRef.current, vp = vpRef.current
+    if (!pane || !vp) return
+    const measure = () => {
+      const scale = pane.clientWidth / Math.max(1, window.innerWidth)
+      setBox((b) => {
+        const height = Math.ceil(vp.offsetHeight * scale)
+        return b.scale === scale && b.height === height ? b : { scale, height }
+      })
+    }
+    // 不必先同步量一次：ResizeObserver 在 observe 當下就會回呼一次（排版後、繪製前）
+    const ro = new ResizeObserver(measure)
+    ro.observe(pane)
+    ro.observe(vp)
+    window.addEventListener('resize', measure)
+    return () => { ro.disconnect(); window.removeEventListener('resize', measure) }
+  }, [])
+
+  return (
+    <div ref={paneRef} className="lore-preview" style={{ height: box.height }}>
+      <div
+        ref={vpRef}
+        className="lore-shell lore-preview__vp"
+        style={{ transform: `scale(${box.scale})` }}
+        inert
+      >
+        {children}
       </div>
     </div>
   )

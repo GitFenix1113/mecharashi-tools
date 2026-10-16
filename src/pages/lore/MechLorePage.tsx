@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import LoreStage from '../../components/lore/LoreStage'
-import MechDossier, { CARD_LABEL, type MechLineageItem } from '../../components/lore/MechDossier'
+import MechDossier, { CARD_LABEL } from '../../components/lore/MechDossier'
+import { buildMechLineage } from '../../components/lore/mechLineage'
 import LoreChapterPager from '../../components/lore/LoreChapterPager'
 import LoreChapterBody from '../../components/lore/LoreChapterBody'
 import LoreSkinPicker from '../../components/lore/LoreSkinPicker'
@@ -17,7 +18,7 @@ import { makerStageArt, mechCardArt, mechSkins, type PilotSkinArt } from '../../
 import { assetUrl } from '../../utils/assets'
 import { pairedPilotOf } from '../../utils/officialPairs'
 import { useMechLore, useMechMakers, useMechs, usePilots } from '../../hooks/useFirestore'
-import type { Mech, MechLoreDoc, MechRelationKind } from '../../types'
+import type { Mech, MechLoreDoc } from '../../types'
 import { usePageTitle } from '../../contexts/PageTitleContext'
 import { useLoreHall } from './useLoreHall'
 
@@ -89,19 +90,6 @@ export default function MechLorePage() {
   const skinCounts = useMemo(() => new Map(mechs.map((m) => [m.id, mechSkins(m, loreById.get(m.id)).length])), [mechs, loreById])
   const skinCount = useCallback((m: { id: string }) => skinCounts.get(m.id) ?? 0, [skinCounts])
 
-  // 系譜的反查：別台的 relations 連到這台（人工連好的資料，不是文字比對；決策 B-10）
-  const incoming = useMemo(() => {
-    const map = new Map<string, { from: string; kind?: MechRelationKind; note?: string }[]>()
-    for (const d of loreDocs) {
-      for (const r of d.relations ?? []) {
-        const list = map.get(r.mechId) ?? []
-        list.push({ from: d.id, kind: r.kind, note: r.note })
-        map.set(r.mechId, list)
-      }
-    }
-    return map
-  }, [loreDocs])
-
   // ── 展廳狀態機（C-3）────────────────────────────────────────────────────────
   const stageOf = useCallback((m: Mech, skinKey: string) => stageArtFor(m, skinKey, loreById.get(m.id)), [loreById])
   const chaptersOf = useCallback((mid: string) => publishedChapters(loreById.get(mid)?.chapters), [loreById])
@@ -123,25 +111,11 @@ export default function MechLorePage() {
   const art = stage?.art ?? null
   const shownSubject = useMemo(() => (shown ? mechSubject(shown, lore, maker) : null), [shown, lore, maker])
 
-  const lineage = useMemo<MechLineageItem[]>(() => {
-    if (!shown) return []
-    const byId = new Map(mechs.map((m) => [m.id, m]))
-    const out: MechLineageItem[] = []
-    const seen = new Set<string>()
-    for (const r of lore?.relations ?? []) {
-      const m = byId.get(r.mechId)
-      if (!m || seen.has(m.id)) continue   // 指向已刪掉的機甲：略過那一條
-      seen.add(m.id)
-      out.push({ mech: m, modelNo: loreById.get(m.id)?.modelNo, kind: r.kind, dir: 0, note: r.note })
-    }
-    for (const r of incoming.get(shown.id) ?? []) {
-      const m = byId.get(r.from)
-      if (!m || seen.has(m.id)) continue
-      seen.add(m.id)
-      out.push({ mech: m, modelNo: loreById.get(m.id)?.modelNo, kind: r.kind, dir: 1, note: r.note })
-    }
-    return out
-  }, [shown, lore, mechs, loreById, incoming])
+  // 系譜：自己連出去的＋別台連到這台的反查（人工連好的資料，不是文字比對；決策 B-10）
+  const lineage = useMemo(
+    () => (shown ? buildMechLineage(shown.id, lore?.relations, mechs, loreDocs) : []),
+    [shown, lore, mechs, loreDocs],
+  )
   const pilot = useMemo(() => (shown ? pairedPilotOf(shown.id, pilots) ?? null : null), [shown, pilots])
 
   // ── 鑑賞：主視覺（或選中的塗裝）、某一張分件、招募插畫。後兩者從卷宗那格縮圖飛出去、飛回來 ─────────
