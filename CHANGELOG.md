@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-15
+## [Unreleased] - 2026-10-16
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **lore**: 編輯台正文改成引文段卡片，每段各自署名 (`8a48234`)
 - **analytics**: 熱門排行加「故事」分頁、章節留存與本月／上月切換（PLAN-062 Phase D） (`51ec4d0`)
 - **analytics**: 故事館與圖鑑分開統計，新增章節統計（PLAN-062 Phase C） (`30330e4`)
 - **analytics**: 使用統計新增故事館進館漏斗（PLAN-062 Phase A） (`bed7915`)
@@ -189,8 +190,6 @@
 - **mech**: 爬蟲 v3 — 圖片改分資料夾、修正部件圖 URL、機體詳情頁駕駛艙排版 (`42b4d7f`)
 - v1.5 Phase 3 — 模組圖鑑 + 配裝模擬器 + html2canvas 匯出 (`a7fff68`)
 - v1.4 模組系統 — Module 資料結構、爬蟲與管理介面 (`89ac717`)
-- 新增機體/飛行員詳情頁與完整資料 (`f0d43a3`)
-- 初始化專案架構與開發進度表 (`77359ff`)
 
 ### 🐛 修復
 
@@ -551,8 +550,6 @@
 - 重新觸發 preview 部署 (`af8e9fc`)
 - 同步 workflow 設定，防止 gh-pages 競爭條件 (`4ede30e`)
 - add preview deployment workflow and dynamic base path (`954413a`)
-- trigger GitHub Pages deployment (`996a35e`)
-- 新增 GitHub Pages 自動部署工作流程 (`c172247`)
 
 ### 其他
 
@@ -561,7 +558,6 @@
 - @ style: 更新莫比烏斯X的機甲部件圖示 (`846da9d`)
 - 更新元件定義 (`4155274`)
 - **components**: 新增武器外框和稀有度字體外框渲染效果 (`01017a8`)
-- 初始化鋼嵐工具站專案結構 (`270f491`)
 
 ---
 ## [0.1.0] - 2026-05-14
