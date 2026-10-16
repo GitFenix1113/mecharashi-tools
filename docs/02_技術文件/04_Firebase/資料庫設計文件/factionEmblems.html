@@ -79,8 +79,9 @@
     <ul style="margin:8px 0 0 16px;line-height:1.9;">
       <li><strong>不登記進 <code>entityRefs</code> SPECS</strong>：註記不引用別人、也不被 EntityRef 引用，沒有級聯要跑。
         一旦進 SPECS，級聯刪除與「影響 N 處引用」掃描會自動連帶讀這個集合——rules 晚一步部署的話，全站既有的刪除功能會一起 permission-denied（PLAN-042-A 踩過）。</li>
-      <li><strong>不走 <code>saveWithHistory</code></strong>：<code>ChangeTargetKind</code> 綁著 SPECS（<code>entityRefs</code> 的 <code>SPEC_COLL_OF</code> 是窮舉 Record），
-        要稽核記錄就得先進 SPECS。註記是幾個字的短文、寫壞重填即可，所以寫入就是 <code>writeDoc</code>＋<code>bumpDataVersion('factionEmblems')</code>，同 pilots／modules。</li>
+      <li><strong>不走 <code>saveWithHistory</code></strong>：註記是幾個字的短文、寫壞重填即可，所以寫入就是 <code>writeDoc</code>＋<code>bumpDataVersion('factionEmblems')</code>，同 pilots／modules。
+        <br><small style="color:var(--text-dim)">（2026-10-16 修訂）原本還有一條理由：<code>ChangeTargetKind</code> 綁著 SPECS（<code>entityRefs</code> 的 <code>SPEC_COLL_OF</code> 是窮舉 Record），要稽核記錄就得先進 SPECS。
+        PLAN-042-B 讓 <code>SPEC_COLL_OF</code> 可以填 <code>null</code>（給 mechLore 用），這條已不成立；真要稽核記錄時，加 kind＋填 null 就好，不必進 SPECS。</small></li>
     </ul>
   </div>
 </section>

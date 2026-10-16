@@ -77,11 +77,13 @@ test('sitemap 網址是絕對網址，中文逐段編碼、XML 特殊字元跳�
 test('robots.txt 指向 sitemap，且擋掉後台與 PR 預覽', () => {
   const robots = readFileSync(new URL('../../public/robots.txt', import.meta.url), 'utf8')
   assert.ok(robots.includes(`Sitemap: ${SITE_ORIGIN}/sitemap.xml`), 'robots.txt 沒有指向正式站的 sitemap')
+  // 切行要認 CRLF：Windows 上 core.autocrlf=true 會把 checkout 出來的 robots.txt 轉成 CRLF
+  const lines = robots.split(/\r?\n/)
   for (const p of ['/admin', '/profile', '/preview/']) {
-    assert.ok(robots.split('\n').includes(`Disallow: ${p}`), `robots.txt 沒有擋 ${p}`)
+    assert.ok(lines.includes(`Disallow: ${p}`), `robots.txt 沒有擋 ${p}`)
   }
   // sitemap 裡的頁面不能被 robots.txt 擋掉，否則 Search Console 會回報衝突
-  const disallowed = robots.split('\n').filter((l) => l.startsWith('Disallow: ')).map((l) => l.slice('Disallow: '.length))
+  const disallowed = lines.filter((l) => l.startsWith('Disallow: ')).map((l) => l.slice('Disallow: '.length))
   const conflicts = SITEMAP_STATIC_PATHS.filter((p) => disallowed.some((d) => d && p.startsWith(d)))
   assert.deepEqual(conflicts, [], `這些 sitemap 頁面被 robots.txt 擋掉了：${conflicts.join(', ')}`)
 })

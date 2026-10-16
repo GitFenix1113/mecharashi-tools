@@ -20,6 +20,8 @@ export const ARRAY_COLLECTION_KEYS = [
   'pilotLore',
   // PLAN-042-F：陣營徽章註記（刻意不進 entityRefs SPECS，見 lib/api/factionEmblems.ts）
   'factionEmblems',
+  // PLAN-042-B：機甲故事館（mechLore 暫不進 SPECS、等 H-6；mechMakers 刻意不進，同 factionEmblems）
+  'mechLore', 'mechMakers',
 ] as const
 
 /** 單一文件（singleton）集合；Worker 代理與快取層都走另一條分支。 */
@@ -52,8 +54,11 @@ export const ALL_COLLECTION_KEYS: CollectionKey[] = [
  * ⚠ 刻意**不設**通用體積上限：既有最大的 pilots 就有 2.09 MB，任何「合理」的上限
  *   不是誤傷它、就是高到形同虛設。名單是明示的編輯決策，上限則會靜默改變既有集合的行為。
  *   配額真的爆掉時，改由 GameDataContext 的 writeCache 出一行 console 警告（不再靜默）。
+ *
+ * mechLore（PLAN-042-B）理由相同：92 台介紹約 20 KB 起跳，之後逐台加 PART 章節，成長曲線與 pilotLore 一樣陡。
+ * mechMakers 只有十幾筆短欄位，照常落 localStorage。
  */
-export const NO_LOCAL_CACHE_KEYS: readonly CollectionKey[] = ['pilotLore']
+export const NO_LOCAL_CACHE_KEYS: readonly CollectionKey[] = ['pilotLore', 'mechLore']
 
 /** 該集合是否跳過 localStorage 層。 */
 export const skipsLocalCache = (key: CollectionKey): boolean =>

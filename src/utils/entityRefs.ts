@@ -49,6 +49,8 @@ export const REF_TYPE_OF: Record<ChangeTargetKind, RefType | null> = {
   // RefPicker 的 REF_TYPE_OPTIONS 是手寫陣列、漏了不報錯）。沒有任何一段正文會寫
   // [某某的逸聞] —— 它是被讀的終點，不是被指的目標。故只走 outbound（textUnits）。
   pilotLore:     null,
+  // PLAN-042-B：理由同 pilotLore。
+  mechLore:      null,
 }
 
 /**
@@ -986,8 +988,14 @@ export function findReferences(
   return { hits, hardRefs, softWarnings, byColl, scannedColls, missingColls, writeCount: hits.length + 1 }
 }
 
-/** ChangeTargetKind → 其自身所在集合（自我排除用）。 */
-const SPEC_COLL_OF: Record<ChangeTargetKind, ScanCollection> = {
+/**
+ * ChangeTargetKind → 其自身所在集合（自我排除用）。
+ *
+ * `null` ＝ 這個 kind 有稽核記錄（saveWithHistory）但**還沒進 SPECS**：它不被掃，也就沒有自己可排除。
+ * 與 REF_TYPE_OF 的 null 一樣是明示的編輯決策——值域是總的，漏填會編譯失敗。
+ * 登記進 SPECS 時要回來把 null 改成集合名（mechLore：PLAN-042-B H-6）。
+ */
+const SPEC_COLL_OF: Record<ChangeTargetKind, ScanCollection | null> = {
   buff: 'buffs',
   pilotSkill: 'pilotSkills',
   glossaryTerm: 'glossaryTerms',
@@ -995,11 +1003,14 @@ const SPEC_COLL_OF: Record<ChangeTargetKind, ScanCollection> = {
   backpackSkill: 'backpackSkills',
   form: 'forms',
   pilotLore: 'pilotLore',
+  // PLAN-042-B：先不登記 SPECS——一登記就連動級聯刪除的全集合掃描，rules 沒部署前會弄壞全站後台刪除
+  mechLore: null,
 }
 
 /** 從 data 反查目標自身的 name（nameSoftRef 比對用）。查不到回 undefined，不猜。 */
 function findSelfName(kind: ChangeTargetKind, id: string, data: RefScanData): string | undefined {
   const coll = SPEC_COLL_OF[kind]
+  if (!coll) return undefined
   const docs = data[coll] as { id: string; name?: string }[] | undefined
   return docs?.find((d) => d.id === id)?.name
 }

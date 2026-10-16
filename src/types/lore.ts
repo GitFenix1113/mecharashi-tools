@@ -1,7 +1,9 @@
 // ─── 故事館 lore（PLAN-042 總綱決策三）─────────────────────────────────────────
 //
 // **型別共用（本檔），集合分家（pilotLore / mechLore）。**
-// 型別在兩館之間完全同構（speakerId → pilots 對機甲與機師都成立），但集合不可合一：
+// 章節、旁白、外觀設定在兩館之間完全同構（speakerId → pilots 對機甲與機師都成立）；
+// 文件本身拆成共同底座 `LoreDocBase` ＋ 兩館擴充（PLAN-042-B 決策 B-3）——
+// 人物檔案、陣營徽章只屬於機師，型號、廠商、系譜只屬於機甲。但集合不可合一：
 // 版本 gate 是集合級（lib/api/versions.ts）、Worker 也只有整包端點（無單文件路由）。
 // 合一的後果是「改一台機甲的 PART 2 → 機師故事館的快取一起失效」
 // 「看一位機師的故事 → 連 90 台機甲的逸聞一起下載」。
@@ -131,7 +133,7 @@ export interface LoreDossierInfo {
  * 沒列在這裡的外觀照舊接在後面、顯示「外觀 N」；列了但圖不存在的 key 直接忽略。
  */
 export interface LoreSkinSetting {
-  /** 官方立繪鍵（`Pilot_10103146B`），＝網址 `?skin=` 的值 */
+  /** 官方圖檔鍵，＝網址 `?skin=` 的值。機師＝立繪鍵（`Pilot_10103146B`）；機甲＝塗裝鍵（`Img_Skin_wap*`） */
   key: string
   /** 顯示名稱；空＝「外觀 N」 */
   name?: string
@@ -144,17 +146,18 @@ export interface LoreSkinSetting {
 }
 
 /**
- * 故事館文件（`pilotLore` / `mechLore` 共用）。文件 ID ＝ 對應實體的文件 ID。
+ * 故事館文件的共同底座（`pilotLore` / `mechLore` 都有的欄位，PLAN-042-B 決策 B-3）。
+ * 文件 ID ＝ 對應實體（pilots / mechs）的文件 ID。
  *
  * ── 什麼住這裡（PLAN-042-E 決策一，取代總綱決策二）──────────────────────────
- * 判準是「**與數值、機制有沒有關係**」：有關的留在 pilots（圖鑑讀），其餘全部住這裡（故事館讀）。
- * 所以簡介、人物檔案、英文名、外觀名稱都在本集合；全名、陣營、職業、立繪留在 pilots（兩館共用的身分欄位）。
+ * 判準是「**與數值、機制有沒有關係**」：有關的留在 pilots／mechs（圖鑑讀），其餘全部住這裡（故事館讀）。
+ * 所以簡介、英文名、外觀名稱都在本集合；全名、陣營、職業、立繪、品質留在實體集合（兩館共用的身分欄位）。
  * 總綱原本的「誰是權威來源」判準已經分不出任何東西：官網爬蟲 2026-10-11 退場，所有資料都是人寫的。
  *
- * 依賴是**單向**的（決策二）：故事館讀 pilots 的身分欄位，圖鑑不讀本集合。
+ * 依賴是**單向**的（決策二）：故事館讀實體集合的身分欄位，圖鑑不讀本集合。
  * 故事館壞掉、資料還沒填，都不會影響圖鑑。
  */
-export interface LoreDoc {
+export interface LoreDocBase {
   /** ＝ pilots / mechs 的文件 ID */
   id: string
   /**
@@ -163,25 +166,33 @@ export interface LoreDoc {
    */
   name?: string
   /**
-   * 扉頁簡介（原 `pilots.lore`，PLAN-042-E B-2 搬來）。純文字、換行即分段。
-   * 欄位名刻意不叫 `lore`：會和集合名、型別名混在一起（決策四）。
+   * 扉頁簡介。純文字、換行即分段。
+   * 機師：原 `pilots.lore`（PLAN-042-E B-2 搬來）；機甲：原 `mechs.lore`（PLAN-042-B Q2，首行型號已切到 `modelNo`）。
+   * 欄位名刻意不叫 `lore`：會和集合名、型別名混在一起（042-E 決策四）。
    * 署名**不在這裡**：搬遷時已從尾端切掉、改存 `frontSource`，所以執行期不必再猜。
    */
   intro?: string
   /**
    * 扉頁署名，例 `——《週刊米赫瑪·文娛版》`。右對齊小字、與正文分開排版。
-   * 初值是 042-A 從 `pilots.lore` 尾端抽出的（89 篇中 34 篇帶署名）＋人工複核。
+   * 機師的初值是 042-A 從 `pilots.lore` 尾端抽出的（89 篇中 34 篇帶署名）＋人工複核；
+   * 機甲則記介紹文的譯本來源（台版公告譯文 vs 陸版原文，042-B 決策 B-9）。
    */
   frontSource?: string
   /**
-   * 英文名（原 `pilots.nameEn`）：扉頁壓在立繪旁的毛筆草書、卷宗副標、名冊搜尋。
-   * 官方資料沒有這個欄位，人工輸入；空值＝不渲染草書層。
+   * 英文名（機師原 `pilots.nameEn`）。機師：扉頁壓在立繪旁的毛筆草書、卷宗副標；機甲：卷宗標題副標。兩館都進名冊搜尋。
+   * 官方資料沒有這個欄位，人工輸入（「有全名就用全名」）；空值＝不渲染。
    */
   nameEn?: string
+  /** 外觀（機師）／塗裝（機甲）的名稱、隱藏、順序（PLAN-042-E E 段）。**陣列順序＝顯示順序** */
+  skins?: LoreSkinSetting[]
+  /** 逸聞章節（PART 1..N）。**不含扉頁**——扉頁是上面的 intro／frontSource。草稿章見 `LoreChapter.draft` */
+  chapters: LoreChapter[]
+}
+
+/** 機師故事館文件（`pilotLore` 集合）。 */
+export interface PilotLoreDoc extends LoreDocBase {
   /** 人物檔案（原 `pilots.profile`）。沒有就不出現個人資料卡 */
   dossier?: LoreDossierInfo
-  /** 外觀的名稱、隱藏、順序（PLAN-042-E E 段）。**陣列順序＝顯示順序** */
-  skins?: LoreSkinSetting[]
   /**
    * 陣營徽章（PLAN-059 D）：官方檔名、**含變體**，最多 2 個，例 `['Icon_logo_0025_00']`。
    * 圖在 `public/images/game/icons/camp/`；讀寫一律經 `utils/factionLogos.ts`。
@@ -196,6 +207,62 @@ export interface LoreDoc {
    * ⚠ 沒有官方資料能把陣營文字對到徽章編號 → 開發端不預填；看字樣猜的不寫進 DB。
    */
   factionLogos?: string[]
-  /** 逸聞章節（PART 1..N）。**不含扉頁**——扉頁是上面的 intro／frontSource。草稿章見 `LoreChapter.draft` */
-  chapters: LoreChapter[]
+}
+
+/**
+ * 機師版的舊名。042-B 拆底座之前只有這一種故事館文件，既有呼叫端（約 50 處）沿用、不必改。
+ * 新寫的程式碼若要同時處理兩館，吃 `LoreDocBase`；只處理機師的照舊用這個或 `PilotLoreDoc`。
+ */
+export type LoreDoc = PilotLoreDoc
+
+/**
+ * 系譜關係的種類（PLAN-042-B 決策 B-10），一律**從本文件的角度**讀：「`mechId` 是這台的 ___」。
+ *   `base`    原型——這台衍生自它
+ *   `variant` 改型——它是這台的改型
+ *   `rival`   競品
+ *   `series`  同系列
+ */
+export type MechRelationKind = 'base' | 'variant' | 'rival' | 'series'
+
+/**
+ * 系譜的一條（PLAN-042-B 決策 B-10）。**一律人工連**——總綱明文「交叉連結自動生成不做」，
+ * 渲染路徑不做任何文字比對；介紹文裡的互提只在一次性草稿腳本當候選。
+ *
+ * 單向存：A 寫了「B 是原型」不會自動在 B 寫「A 是改型」。
+ */
+export interface MechRelation {
+  /** mechs 文件 ID */
+  mechId: string
+  /** 空＝僅提及（草稿腳本抓到、還沒人判種類；模擬頁實測 36 條裡有 20 條只能判到這一步） */
+  kind?: MechRelationKind
+  /** 補充說明，例「同一套骨架、換裝重型裝甲」 */
+  note?: string
+}
+
+/**
+ * 機甲故事館文件（`mechLore` 集合，PLAN-042-B）。
+ *
+ * 官配機師**不存**：沿用 `pairedPilotOf()` 從 `pilots.pairedMechId` 反查（決策 B-7）。
+ * armorType、quality、debutVersion、gameId 與數值有關或是識別鍵，留在 mechs，故事館唯讀引用。
+ */
+export interface MechLoreDoc extends LoreDocBase {
+  /**
+   * 型號，例 `DD-117`、`OS-07X`：卷宗標題與舞台上的型號鋼印（取代機師的英文簽名，決策 B-5）。
+   * 初值由草稿腳本從介紹文首行切出（92 篇中 90 篇首行即型號）＋人工複核。
+   */
+  modelNo?: string
+  /**
+   * 廠商：`mechMakers` 的文件 ID（＝官方舞台背景鍵，如 `Doll`、`UKB`，決策 B-8）。
+   * 空或對不到文件＝前台顯示「廠商未載」，不留白。
+   */
+  maker?: string
+  /** 系列，例「破曉者」「KX 系列」。選填 */
+  series?: string
+  /**
+   * 非數值諸元（量產狀態、搭載核心…），**陣列順序＝顯示順序**。
+   * 形狀與機師人物檔案的自訂欄位相同，存檔前一樣要擋同名標籤。
+   */
+  specs?: LoreDossierField[]
+  /** 系譜。**陣列順序＝顯示順序** */
+  relations?: MechRelation[]
 }

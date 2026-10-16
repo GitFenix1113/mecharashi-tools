@@ -30,6 +30,9 @@ export type ChangeTargetKind =
   | 'backpack' | 'backpackSkill'
   | 'form'
   | 'pilotLore'
+  // PLAN-042-B：機甲逸聞，理由同 pilotLore。但它**還沒進 entityRefs SPECS**（章節開始有 [xxx] 引用才登記，
+  // 042-B H-6），所以 entityRefs 的 SPEC_COLL_OF 對它是 null。
+  | 'mechLore'
 
 /** ChangeTargetKind → Firestore 集合名。級聯清除與還原都需要由 kind 反查集合。 */
 export const TARGET_COLLECTION: Record<ChangeTargetKind, string> = {
@@ -40,6 +43,7 @@ export const TARGET_COLLECTION: Record<ChangeTargetKind, string> = {
   backpackSkill: 'backpackSkills',
   form:          'forms',
   pilotLore:     'pilotLore',
+  mechLore:      'mechLore',
 }
 
 /** 顯示用中文標籤（歷史檢視頁的篩選器與記錄列共用）。 */
@@ -51,6 +55,7 @@ export const TARGET_LABEL: Record<ChangeTargetKind, string> = {
   backpackSkill: '背包技能',
   form:          '形態',
   pilotLore:     '機師逸聞',
+  mechLore:      '機甲逸聞',
 }
 
 export const ACTION_LABEL: Record<ChangeAction, string> = {

@@ -28,7 +28,7 @@ const PAGE_SIZE = 30
 // ⚠ 這份清單是**手寫**的，不是從 TARGET_LABEL derive——漏一筆不會有任何編譯錯誤，
 //   症狀是「該集合的稽核記錄在篩選器裡根本選不到」。新增 ChangeTargetKind 時要回來補。
 const TARGET_OPTIONS: (ChangeTargetKind | '')[] =
-  ['', 'buff', 'pilotSkill', 'glossaryTerm', 'backpack', 'backpackSkill', 'form', 'pilotLore']
+  ['', 'buff', 'pilotSkill', 'glossaryTerm', 'backpack', 'backpackSkill', 'form', 'pilotLore', 'mechLore']
 const ACTION_OPTIONS: (ChangeAction | '')[] = ['', 'create', 'update', 'delete', 'restore']
 
 /** 操作類型色票：create 綠 / update 黃 / delete 紅 / restore 青 */

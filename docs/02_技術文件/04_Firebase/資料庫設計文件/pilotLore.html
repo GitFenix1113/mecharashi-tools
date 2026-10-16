@@ -60,7 +60,13 @@
     這兩個前提先後失效：浮窗 2026-10-09 改列天賦、官網爬蟲 2026-10-11 退場，所有資料都成了人寫的，這條判準已分不出任何東西。</small>
   </div>
 
-  <div class="sub-h">🗃️ pilotLore — 故事館文件（LoreDoc）</div>
+  <div class="sub-h">🗃️ pilotLore — 故事館文件（PilotLoreDoc，舊名 LoreDoc）</div>
+  <div class="info-block" style="margin-bottom:12px;">
+    <strong>🧱 型別拆成共同底座（PLAN-042-B 決策 B-3，2026-10-16）</strong><br>
+    <code>LoreDocBase</code>＝兩館都有的欄位（<code>id</code>／<code>name</code>／<code>intro</code>／<code>frontSource</code>／<code>nameEn</code>／<code>skins</code>／<code>chapters</code>）；
+    <code>PilotLoreDoc</code> 再加 <code>dossier</code>、<code>factionLogos</code>，<a href="mechLore.html" style="color:var(--accent-orange);">mechLore</a> 的 <code>MechLoreDoc</code> 則加型號、廠商、系譜。
+    <code>LoreDoc</code> 保留成 <code>PilotLoreDoc</code> 的別名，既有呼叫端不必改。集合仍然分家，理由見總綱決策三。
+  </div>
   <div class="data-table-wrap">
     <table class="data-table">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>

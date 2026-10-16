@@ -50,8 +50,11 @@ const AUTHS = new Set(['guest', 'user'])
  * · loreParts  — 故事館的章節，id 為 `${pilotId}--${partKey}`（如 `pilot_049_海莉絲--part-2`）。
  *               扁平成一層而不用巢狀 map，是為了讓下方 buildWrites 組欄位路徑的程式完全不必改；
  *               `-` 本來就在 isSafeEntityId 的字元白名單內。
+ *               機甲廳的章節也記在這裡（`mech_001_都卜勒--part-1`）：文件 ID 的 `pilot_`／`mech_` 前綴已分得出兩館。
+ * · loreMechs  — 故事館裡哪台機甲的故事被打開（PLAN-042-B；與圖鑑的 mechs 分開統計）。
+ *               比前端 ENTITY_ROUTES 先加、先部署（上面那條規則）。
  */
-const ENTITY_TYPES = new Set(['pilots', 'mechs', 'weapons', 'modules', 'lorePilots', 'loreParts'])
+const ENTITY_TYPES = new Set(['pilots', 'mechs', 'weapons', 'modules', 'lorePilots', 'loreParts', 'loreMechs'])
 
 const MAX_BODY_BYTES = 8 * 1024
 const MAX_ROUTES = 50

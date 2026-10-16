@@ -6,8 +6,9 @@
 //   · 註記不引用別人、也不被任何 [xxx] 引用——沒有級聯要跑。
 //   · 一旦進 SPECS，級聯刪除與「影響 N 處引用」掃描會自動連帶讀這個集合；
 //     rules 晚一步部署的話，全站既有的刪除功能會一起 permission-denied（PLAN-042-A 踩過）。
-//   · saveWithHistory 的 ChangeTargetKind 綁著 SPECS（entityRefs 的 SPEC_COLL_OF 是窮舉 Record），
-//     要稽核記錄就得先進 SPECS。註記是幾個字的短文、寫壞了重填即可，不值得拉這條連動。
+//   · 不走 saveWithHistory：註記是幾個字的短文、寫壞了重填即可。
+//     （原本還有「ChangeTargetKind 綁著 SPECS」這條理由；PLAN-042-B 讓 entityRefs 的 SPEC_COLL_OF
+//      可以填 null 之後已不成立——真要稽核記錄，加 kind＋填 null 就好，不必進 SPECS。）
 //   所以寫入就是 writeDoc＋bump，同 pilots／modules。
 
 import type { FactionEmblem } from '../../types'

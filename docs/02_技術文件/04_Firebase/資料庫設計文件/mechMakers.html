@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mechMakers — 機甲廠商 Schema — Firebase 資料庫設計 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../01_規劃書/米赫瑪超吉情豹站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../../index.html">技術文件</a>
+    <span>›</span>
+    <a href="Firebase資料庫設計文件.html">Firebase 資料庫設計</a>
+    <span>›</span>
+    <span class="current">mechMakers — 機甲廠商</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge" style="background:rgba(249,115,22,0.15);color:var(--accent-orange);border-color:var(--accent-orange);">◆ COLLECTION SCHEMA</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    mechMakers — 機甲廠商
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-042-B</span>
+  </h1>
+  <p class="hero-sub">機甲故事館的廠商：名稱、徽章、舞台背景、型號前綴 · 故事館編輯台維護 · 不被 [xxx] 引用、不進級聯掃描</p>
+  <div class="version-badge" style="background:var(--accent-orange);color:#000;">PLAN-042-B — 2026-10-16（集合已建、資料待 B-3 寫入）</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-orange);">01 — 用途</div>
+  <div class="section-title">mechMakers Collection</div>
+
+  <div class="info-block">
+    <strong>📌 用途說明</strong>（決策 B-8，站長 10-16 Q3）<br>
+    · 機甲故事館的名冊<strong>依廠商分組</strong>（組頭用廠商舞台）、卷宗標題列出廠商、鑑賞模式用廠商舞台當背景。<br>
+    · 每台機甲在 <a href="mechLore.html" style="color:var(--accent-orange);">mechLore</a><code>.maker</code> 存本集合的文件 ID。<br>
+    · 遊戲目前<strong>沒有任何廠商相關的機制或加成</strong>，所以住故事館、不住 mechs；但站長要能在後台編輯、日後隨改版新增，
+      因此是集合而不是提案裡的靜態表 <code>mechMakers.ts</code>。做法比照 <a href="factionEmblems.html" style="color:var(--accent-orange);">factionEmblems</a>。<br>
+    · 不違反 042-F「不做陣營字典」：陣營會隨劇情變，機甲的出廠廠商不會變。
+  </div>
+
+  <div class="sub-h">🗃️ mechMakers — 機甲廠商（MechMaker）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td>文件 ID＝<strong>官方舞台背景鍵</strong>，如 <code>Doll</code>（＝ <code>Skynet_Wap_BG_Doll_Raw</code>）。官方 12 家：
+        <code>AP</code> <code>AnHalt</code> <code>DONAU</code> <code>Doll</code> <code>Horizon</code> <code>KATANA</code> <code>Kamadar</code> <code>Laniakea</code> <code>Obsidian</code> <code>SEED</code> <code>TARKBORG</code> <code>UKB</code></td></tr>
+      <tr><td>name</td><td>string?</td><td>中文名，如「多爾」。空＝前台顯示「廠商未載」（UKB 目前就是）</td></tr>
+      <tr><td>nameEn</td><td>string?</td><td>英文名</td></tr>
+      <tr><td>logo</td><td>string?</td><td>徽章：官方檔名、<strong>含變體</strong>，如 <code>Icon_logo_0021_00</code>。圖在 <code>public/images/game/icons/camp/</code>，選圖沿用 <code>FactionLogoPicker</code>；<code>_00</code> 單色／<code>_01</code> 彩色的顯示規則同 <code>pilotLore.factionLogos</code>。11 家的徽章已在圖庫裡，UKB 未認出</td></tr>
+      <tr><td>stage</td><td>string?</td><td>舞台背景鍵。<strong>空＝用 <code>id</code></strong>（官方 12 家都是這樣）；只有後台手動新增、ID 不是官方背景鍵的廠商才需要填</td></tr>
+      <tr><td>modelPrefixes</td><td>string[]?</td><td>型號前綴，如 <code>["DD"]</code>、<code>["KX","KXM"]</code>。<strong>只給草稿腳本與編輯台做建議，不做自動指派</strong>——前綴對不上廠商的例外約 15 台（REV／NED／聯動機甲等）</td></tr>
+      <tr><td>order</td><td>number?</td><td>名冊分組的排序，小的在前；空＝排在有值的後面</td></tr>
+      <tr><td>note</td><td>string?</td><td>給管理員看的備註</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-orange);">02 — 刻意不做的連動</div>
+  <div class="section-title">不進 SPECS、不走 saveWithHistory</div>
+  <div class="warning-block">
+    <strong>⚠ 理由同步寫在 <code>src/lib/api/mechMakers.ts</code> 檔頭（同 factionEmblems）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>不登記進 <code>entityRefs</code> SPECS</strong>：廠商不引用別人、也不被 EntityRef 引用，沒有級聯要跑。
+        一旦進 SPECS，級聯刪除與「影響 N 處引用」掃描會自動連帶讀這個集合——rules 晚一步部署的話，全站既有的刪除功能會一起 permission-denied。</li>
+      <li><strong>不走 <code>saveWithHistory</code></strong>：都是幾個字的短欄位，寫壞重填即可，所以寫入就是 <code>writeDoc</code>＋<code>bumpDataVersion('mechMakers')</code>。</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-orange);">03 — 維護</div>
+  <div class="section-title">資料維護</div>
+
+  <div class="info-block">
+    <strong>🌱 初始資料與新增</strong><br>
+    12 筆由 042-B 的草稿腳本 seed（站長複核後 <code>--apply</code>）。之後在故事館編輯台的「機甲廠商」分頁（042-B G-2）增修。
+    新廠商會隨改版出現：<code>diff-game-dump.mjs</code> 會報出新的 <code>Skynet_Wap_BG_*</code>，照報告在後台新增一筆即可，不需要 AI。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔒 安全規則與讀取路徑</strong><br>
+    <code>match /mechMakers/{docId}</code>：<code>read</code> / <code>write</code> 皆 <code>isAdmin()</code>。
+    前台經 Cloudflare Worker 代理（<code>/api/data/mechMakers</code>）。讀不到時前台照樣能畫（廠商顯示「廠商未載」、名冊不分組），不擋頁面。
+    只有十幾筆短欄位，照常落 localStorage。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 部署順序</strong><br>
+    <code>firestore.rules</code> → Worker（<code>ARRAY_COLLECTIONS</code>）→ seed＋bump → 網站。三處硬性守衛由 <code>src/lib/collectionKeys.test.ts</code> 斷言（Worker、<code>KNOWN_KEYS</code>、rules）。
+  </div>
+</section>
+
+</main>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-10-16 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+
+</body>
+</html>

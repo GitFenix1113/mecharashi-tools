@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 import type {
   Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component,
   GlobalResearch, GameBuff, PilotSkillDoc, MechForm, NeuralDriveAbility, LoreDoc, FactionEmblem,
+  MechLoreDoc, MechMaker,
 } from '../types'
 import { mechModuleSet, type MechModuleSet } from '../utils/mechModules'
 import { useGameData, EMPTY_GLOBAL_RESEARCH, type CollectionKey } from '../contexts/GameDataContext'
@@ -265,6 +266,37 @@ export function useFactionEmblems(): HookResult<FactionEmblem[]> {
   const { factionEmblems } = useGameData()
   const { loading, error } = useCollections(['factionEmblems'])
   return { data: factionEmblems, loading, error }
+}
+
+// ── 機甲故事館（PLAN-042-B）───────────────────────────────────────────────────
+//
+// 契約同機師故事館：先判 error 再判 loading；mechLore 也在 NO_LOCAL_CACHE_KEYS 內。
+
+export function useMechLore(): HookResult<MechLoreDoc[]> {
+  const { mechLore } = useGameData()
+  const { loading, error } = useCollections(['mechLore'])
+  return { data: mechLore, loading, error }
+}
+
+/** 單一機甲的逸聞。查無 → null（還沒建檔，不是錯誤）。 */
+export function useMechLoreDoc(mechId: string | undefined): HookResult<MechLoreDoc | null> {
+  const { mechLore } = useGameData()
+  const { loading, error } = useCollections(['mechLore'])
+  const data = useMemo(
+    () => (mechId ? (mechLore.find((d) => d.id === mechId) ?? null) : null),
+    [mechId, mechLore],
+  )
+  return { data, loading, error }
+}
+
+/**
+ * 機甲廠商。讀不到時前台照樣能畫（廠商顯示「廠商未載」、名冊不分組），
+ * **不要拿它的 loading 擋住頁面**——同陣營徽章註記。
+ */
+export function useMechMakers(): HookResult<MechMaker[]> {
+  const { mechMakers } = useGameData()
+  const { loading, error } = useCollections(['mechMakers'])
+  return { data: mechMakers, loading, error }
 }
 
 // ── 元件 ──────────────────────────────────────────────────────────────────────

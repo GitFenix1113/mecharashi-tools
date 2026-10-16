@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mechLore — 機甲逸聞 Schema — Firebase 資料庫設計 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../01_規劃書/米赫瑪超吉情豹站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../../index.html">技術文件</a>
+    <span>›</span>
+    <a href="Firebase資料庫設計文件.html">Firebase 資料庫設計</a>
+    <span>›</span>
+    <span class="current">mechLore — 機甲逸聞</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(234,179,8,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge" style="background:rgba(234,179,8,0.15);color:var(--accent-yellow);border-color:var(--accent-yellow);">◆ COLLECTION SCHEMA</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    mechLore — 機甲逸聞
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-042-B</span>
+  </h1>
+  <p class="hero-sub">機甲故事館的全部非數值資料：介紹、型號、廠商、系譜、非數值諸元、塗裝設定、逸聞章節 · 型別底座與 pilotLore 共用、集合分家</p>
+  <div class="version-badge" style="background:var(--accent-yellow);color:#000;">PLAN-042-B — 2026-10-16（集合已建、資料待 B-3 寫入）</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow);">01 — 用途</div>
+  <div class="section-title">mechLore Collection</div>
+
+  <div class="info-block">
+    <strong>📌 用途說明</strong><br>
+    官方遊戲內機甲圖鑑有<strong>介紹</strong>與依解析等級解鎖的<strong>逸聞（PART 1..N）</strong>（站長 10-16 確認，Q1），兩者都住本集合：<br>
+    · <strong>扉頁</strong>＝介紹 <code>intro</code>（原 <code>mechs.lore</code>，首行型號切到 <code>modelNo</code>）＋ 譯本來源 <code>frontSource</code> ＋ 英文名 <code>nameEn</code>。<br>
+    · <strong>兵器型錄</strong>＝型號 <code>modelNo</code>、廠商 <code>maker</code>、系列 <code>series</code>、非數值諸元 <code>specs</code>、系譜 <code>relations</code>。<br>
+    · <strong>逸聞</strong>＝章節 <code>chapters</code>，與機師故事館同一套 <code>LoreChapter</code>。<br>
+    · <strong>塗裝顯示設定</strong>＝ <code>skins</code>（名稱、隱藏、順序），站長：塗裝名稱要能編輯。<br>
+    前台於故事館 <code>/lore/mechs/:id</code>（扉頁＋卷宗）與 <code>/lore/mechs/:id/:part</code>（章節）渲染；<strong>圖鑑詳情頁不讀本集合</strong>（042-B H-4 起圖鑑只留一顆入口）。
+  </div>
+
+  <div class="decision-block">
+    <strong>✅ 欄位放哪：套 042-E 判準「與數值、機制有沒有關係」（決策 B-7）</strong><br>
+    <code>armorType</code>、<code>quality</code>、<code>debutVersion</code>、<code>gameId</code> 與數值有關或是識別鍵，<strong>留在 mechs</strong>，故事館唯讀引用。
+    官配機師<strong>不存</strong>：沿用 <code>pairedPilotOf()</code> 從 <code>pilots.pairedMechId</code> 反查。
+    廠商歸故事館——遊戲目前沒有任何廠商相關的加成（站長 10-16 確認，取代舊決策 B-4「廠商留 mechs」）。<br>
+    <strong>依賴是單向的</strong>：故事館讀 <code>mechs</code> 的身分欄位，圖鑑不讀本集合。
+  </div>
+
+  <div class="sub-h">🗃️ mechLore — 機甲故事館文件（MechLoreDoc）</div>
+  <div class="info-block" style="margin-bottom:12px;">
+    <strong>🧱 型別＝ <code>LoreDocBase</code> ＋ 機甲擴充</strong>（決策 B-3）<br>
+    下表前半是與 <a href="pilotLore.html" style="color:var(--accent-orange);">pilotLore</a> 共用的底座欄位（意義相同，只列機甲側的差異）；後半是機甲專屬欄位。
+    「這份逸聞屬於機師還是機甲」由<strong>住在哪個集合</strong>表達，型別上沒有 <code>kind</code> 欄位（總綱決策三）。
+  </div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);"><strong>共同底座（LoreDocBase）</strong></td></tr>
+      <tr><td>id</td><td>string</td><td>文件 ID <strong>＝ 機甲的文件 ID</strong>（<code>mech_001_都卜勒</code>）。故事與機甲一對一，不另造 slug</td></tr>
+      <tr><td>name</td><td>string?</td><td>機甲名快照（去正規化），供 <code>saveWithHistory</code> 的 <code>targetName</code> 與後台列表使用</td></tr>
+      <tr><td>intro</td><td>string?</td><td><strong>介紹</strong>（原 <code>mechs.lore</code>，Q2）。純文字、換行即分段。首行型號已切到 <code>modelNo</code>。
+        <br><small style="color:var(--text-dim)">有台版公告譯文的 49 台改用台版（用「機甲」），其餘 43 台照陸版原文（簡轉繁、用「機兵」），<strong>不自行改字</strong>（決策 B-9）。
+        <code>mechs.lore</code> 在 B-3 只「複製」過來，H-7 觀察一週後才刪。</small></td></tr>
+      <tr><td>frontSource</td><td>string?</td><td>介紹的譯本來源（台版公告譯文／陸版原文），前台右對齊小字</td></tr>
+      <tr><td>nameEn</td><td>string?</td><td>英文名：卷宗標題副標、名冊搜尋。初值取 v3 mapping 的 <code>mechEnKeys</code>（62／92），排除聯動與雙機池鍵（GlaDre／MalAgl／Nvidia／ROG），「有全名就用全名」</td></tr>
+      <tr><td>skins</td><td>LoreSkinSetting[]?</td><td><strong>塗裝顯示設定</strong>：<code>key</code> 為塗裝圖檔鍵（<code>Img_Skin_wap*</code>，34 台 38 張），名稱、隱藏、順序同機師外觀。圖檔上站見 042-B F-1</td></tr>
+      <tr><td>chapters</td><td>LoreChapter[]</td><td>逸聞章節（PART 1..N），結構與 pilotLore 完全相同（必填穩定鍵 <code>key</code>、<code>bodyRefs</code>、<code>draft</code>…）。型別上必填，讀取端一律 <code>?.chapters</code> 防禦</td></tr>
+      <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);"><strong>機甲專屬</strong></td></tr>
+      <tr><td>modelNo</td><td>string?</td><td><strong>型號</strong>，如 <code>DD-117</code>、<code>OS-07X</code>：卷宗標題與舞台上的型號鋼印（取代機師的英文簽名，決策 B-5）。初值由草稿腳本從介紹首行切出（92 篇中 90 篇首行即型號）＋人工複核</td></tr>
+      <tr><td>maker</td><td>string?</td><td><strong>廠商</strong>：<a href="mechMakers.html" style="color:var(--accent-orange);">mechMakers</a> 的文件 ID（＝官方舞台背景鍵，如 <code>Doll</code>）。空或對不到文件＝前台顯示「廠商未載」，不留白。
+        <br><small style="color:var(--text-dim)">型號前綴可對到 12 家，約 78 台可自動建議、約 15 台（REV／NED／聯動等）人工判；前綴只做建議、不自動指派。</small></td></tr>
+      <tr><td>series</td><td>string?</td><td>系列，如「破曉者」「KX 系列」</td></tr>
+      <tr><td>specs</td><td>LoreDossierField[]?</td><td><strong>非數值諸元</strong>（量產狀態、搭載核心…），<strong>陣列順序＝顯示順序</strong>。形狀與機師人物檔案的 <code>extra</code> 相同（<code>label</code>／<code>value</code>），存檔前一樣擋同名標籤</td></tr>
+      <tr><td>relations</td><td>MechRelation[]?</td><td><strong>系譜</strong>，<strong>陣列順序＝顯示順序</strong>，結構見下方子表</td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h">🧬 MechRelation — 系譜一條（relations[]）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>mechId</td><td>string</td><td><code>mechs</code> 文件 ID</td></tr>
+      <tr><td>kind</td><td>MechRelationKind?</td><td>一律<strong>從本文件的角度</strong>讀「<code>mechId</code> 是這台的 ___」：
+        <code>base</code> 原型（這台衍生自它）／<code>variant</code> 改型／<code>rival</code> 競品／<code>series</code> 同系列。<strong>空＝僅提及</strong>（草稿抓到、還沒人判種類）</td></tr>
+      <tr><td>note</td><td>string?</td><td>補充說明</td></tr>
+      <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);"><strong>一律人工連</strong>（決策 B-10，總綱「交叉連結自動生成不做」）：介紹文裡 36 處互提只在一次性草稿腳本當候選，名稱 ≤2 字或常用詞（原點、尖兵、XR）標警告；
+        渲染路徑不做任何文字比對。<strong>單向存</strong>：A 寫了「B 是原型」不會自動在 B 寫「A 是改型」。</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow);">02 — 引用關係</div>
+  <div class="section-title">箭頭方向</div>
+
+  <div class="info-block">
+    <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.9;overflow-x:auto;">正文引用：  mechLore ─(chapters[].bodyRefs)──→ buff / term / skill / form …
+旁白說話者：mechLore ─(chapters[].commentary[].speakerId)──→ pilot
+系譜：      mechLore ─(relations[].mechId)──→ mech
+廠商：      mechLore ─(maker)──→ mechMakers
+文件歸屬：  mechLore.id ═══════════════════→ mech（同一個 ID）
+
+            ↑ 沒有任何東西指回 mechLore</pre>
+    <strong>本集合只有 outbound，沒有 inbound。</strong>故事館全程不新增 <code>RefType</code>（<code>REF_TYPE_OF['mechLore'] = null</code>），理由同 pilotLore。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 還沒登記 <code>entityRefs</code> SPECS（042-B H-6）</strong><br>
+    章節正文開始出現 <code>[xxx]</code> 引用時才登記 <code>MECH_LORE</code>。一登記就連動級聯刪除與「影響 N 處引用」的<strong>全集合掃描</strong>：
+    rules 晚一步部署的話，全站既有的後台刪除會 permission-denied（PLAN-042-A 踩過）。<br>
+    在那之前 <code>entityRefs.ts</code> 的 <code>SPEC_COLL_OF['mechLore']</code> 是 <code>null</code>（042-B 起這張表允許 null＝「有稽核記錄、但不被掃」），
+    所以 <code>saveWithHistory('mechLore', …)</code> 照樣能寫稽核記錄。登記時要回來把 null 改成 <code>'mechLore'</code>。<br>
+    <small style="color:var(--text-dim)">系譜的 <code>mechId</code> 與廠商的 <code>maker</code> 指向 mechs／mechMakers，但不會有級聯刪除替本集合清掉懸空的指向——前台（042-B D-3）查不到對象時要略過那一條，廠商則退回「廠商未載」。</small>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label" style="color:var(--accent-yellow);">03 — 維護</div>
+  <div class="section-title">資料維護</div>
+
+  <div class="info-block">
+    <strong>🌱 初始資料（042-B Phase B）</strong><br>
+    一次性草稿腳本 <code>scripts/temp_scripts/draft-mech-lore.mjs</code>（不進版控）從 92 篇介紹整理出 <code>modelNo</code>、<code>maker</code> 建議、<code>relations</code> 候選、<code>nameEn</code>、台版譯文對照，
+    產出草稿 JSON → 站長複核 → <code>--apply</code> 寫入並 bump。編輯台（042-B G-1）完成前，資料只由這支腳本寫入。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🛠️ 寫入路徑</strong><br>
+    <code>updateMechLore()</code> → <code>saveWithHistory('mechLore', …)</code>：<strong>整份覆寫</strong>，自動寫入 <code>changeHistory</code>（篩選器標籤「機甲逸聞」）並 <code>bumpDataVersion('mechLore')</code>。
+    <code>src/lib/api/mechLore.ts</code> <strong>刻意沒有 <code>deleteMechLore</code></strong>，理由同 pilotLore。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>💾 不進 localStorage 快取層</strong><br>
+    列於 <code>src/lib/collectionKeys.ts</code> 的 <code>NO_LOCAL_CACHE_KEYS</code>，理由同 pilotLore：92 台介紹約 20 KB 起跳、之後逐台加 PART 章節，
+    成長曲線陡而命中率低（純欣賞、低流量）。仍走記憶體快取與版本 gate。
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>🔒 安全規則與讀取路徑</strong><br>
+    <code>match /mechLore/{docId}</code>：<code>read</code> / <code>write</code> 皆 <code>isAdmin()</code>。
+    前台不直讀，走 Cloudflare Worker 代理（<code>/api/data/mechLore</code>）。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 部署順序</strong><br>
+    <code>firestore.rules</code> → Worker（<code>ARRAY_COLLECTIONS</code>、統計的 <code>ENTITY_TYPES</code> 加 <code>loreMechs</code>）→ B-3 寫入＋bump → 網站。
+    rules 與 Worker 都不在 <code>npm run build</code> / <code>git push</code> 的流程內；漏 Worker 的症狀是正式站 <code>/api/data/mechLore</code> 404（本機全綠）。
+    集合清單的同步由 <code>src/lib/collectionKeys.test.ts</code> 斷言（Worker、<code>KNOWN_KEYS</code>、rules、<code>GameDataContext</code>）。
+  </div>
+</section>
+
+</main>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-10-16 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+</body>
+</html>

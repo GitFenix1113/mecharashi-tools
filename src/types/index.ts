@@ -12,8 +12,9 @@ export * from './weapon'      // 武器：Weapon / WeaponSkill / *ModEffect
 export * from './backpack'    // 背包：Backpack
 export * from './backpackSkill' // 背包技能：BackpackSkillDoc / BackpackSkillLevel（PLAN-043）
 export * from './form'        // 機師形態：MechForm / FormRestrict（PLAN-041）
-export * from './lore'        // 故事館：LoreDoc / LoreChapter / LoreCommentary（PLAN-042，兩館共用）
+export * from './lore'        // 故事館：LoreDocBase / PilotLoreDoc(=LoreDoc) / MechLoreDoc / LoreChapter（PLAN-042，兩館共用）
 export * from './factionEmblem' // 陣營徽章註記：FactionEmblem（PLAN-042-F）
+export * from './mechMaker'   // 機甲廠商：MechMaker（PLAN-042-B）
 export * from './slots'       // 槽位模型：ArmamentMount / SlotBank / WeaponSlotRef / SlotKey / SlotCapacity（PLAN-052-A）
 export * from './loadout'     // 配裝草稿：LoadoutDraft / EquipSet / LoadoutMount / MountSetup（PLAN-052-B）
 export * from './component'   // 元件：Component / Condition|FunctionComponent …

@@ -93,6 +93,17 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if isAdmin();
     }
+    // PLAN-042-B 機甲故事館：介紹、型號、廠商、系譜與逸聞章節。理由同 pilotLore，
+    // 寫入一律經 saveWithHistory 留稽核（見 lib/api/mechLore.ts）。
+    match /mechLore/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+    // PLAN-042-B 機甲廠商（文件 ID＝官方舞台背景鍵，如 Doll）。前台經 Worker 讀。
+    match /mechMakers/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
     match /buffs/{docId} {
       allow read: if isAdmin();
       allow write: if isAdmin();

@@ -128,6 +128,8 @@ test('D0: REF_TYPE_OF 映射正確（pilotSkill→skill、glossaryTerm→term、
     form: 'form',
     // PLAN-042-A：逸聞是被讀的終點、不是被指的目標（故事館全程不新增 RefType）
     pilotLore: null,
+    // PLAN-042-B：同上
+    mechLore: null,
   })
 })
 

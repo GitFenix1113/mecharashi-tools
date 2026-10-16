@@ -208,15 +208,15 @@
   <div class="section-title">總進度</div>
 
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">2</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">6</div><div class="summary-lbl">已完成</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">36</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">32</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">38</div><div class="summary-lbl">任務（不含長期資料）</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">2 / 38</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 5%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">6 / 38</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 16%"></div></div>
   </div>
 
   <div class="impact-note">
@@ -286,7 +286,7 @@
     <div class="task-group-header">
       <div class="task-group-title">A-1 &nbsp; 型別</div>
       <div class="task-group-meta">src/types/lore.ts · src/types/mechMaker.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -295,30 +295,33 @@
         <div class="task-file">src/types/lore.ts · src/types/mechMaker.ts · docs/02_技術文件/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; mechLore 集合連動</div>
       <div class="task-group-meta">九處連動</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">集合與快取層</div>
-        <div class="task-desc"><code>collectionKeys.ts</code>（比照 <code>pilotLore</code> 決定要不要落 localStorage）、<code>GameDataContext</code>、hooks、<code>lib/api/mechLore.ts</code>＋barrel、<code>ChangeTargetKind</code>、測試 helper。寫入掛 <code>saveWithHistory</code>。<b>先不登記 entityRefs SPECS</b>（見 H-6）。</div>
+        <div class="task-desc"><code>collectionKeys.ts</code>（比照 <code>pilotLore</code> 決定要不要落 localStorage）、<code>GameDataContext</code>、hooks、<code>lib/api/mechLore.ts</code>＋barrel、<code>ChangeTargetKind</code>、測試 helper。寫入掛 <code>saveWithHistory</code>。<b>先不登記 entityRefs SPECS</b>（見 H-6）。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-16 完成。</span>實作時發現 <code>ChangeTargetKind</code> 經 <code>entityRefs</code> 的 <code>SPEC_COLL_OF</code>（窮舉 Record）綁住 SPECS——
+          改成允許 <code>null</code>（＝有稽核記錄、但不被掃），<code>mechLore</code> 填 null；<b>H-6 登記時要回來改成 <code>'mechLore'</code></b>。
+          歷史頁篩選器標籤「機甲逸聞」；<code>mechLore</code> 進 <code>NO_LOCAL_CACHE_KEYS</code>，<code>mechMakers</code> 照常快取。</div>
         <div class="task-file">src/lib/collectionKeys.ts · src/contexts/GameDataContext.tsx · src/hooks/useFirestore.ts · src/lib/api/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-3 &nbsp; mechMakers 集合連動</div>
       <div class="task-group-meta">範本＝factionEmblems</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -327,23 +330,25 @@
         <div class="task-file">src/lib/api/mechMakers.ts · src/lib/collectionKeys.ts · src/contexts/GameDataContext.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">A-4 &nbsp; rules・Worker・bump 腳本</div>
       <div class="task-group-meta">firestore.rules · workers/src/index.ts · scripts/bump-data-version.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">兩個集合的讀寫規則與邊緣快取</div>
-        <div class="task-desc"><code>firestore.rules</code> 兩條 match；Worker <code>ARRAY_COLLECTIONS</code> 加兩個集合、<code>collect.ts</code> 的 <code>ENTITY_TYPES</code> 加 <code>loreMechs</code>（<code>routeKeys.test.ts</code> 會比對前後端列舉）；<code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>（⚠ 本機獨有檔，被 .gitignore 擋）。</div>
+        <div class="task-desc"><code>firestore.rules</code> 兩條 match；Worker <code>ARRAY_COLLECTIONS</code> 加兩個集合、<code>collect.ts</code> 的 <code>ENTITY_TYPES</code> 加 <code>loreMechs</code>（<code>routeKeys.test.ts</code> 會比對前後端列舉）；<code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>（⚠ 本機獨有檔，被 .gitignore 擋）。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-16 程式端完成。</span><b>rules 與 Worker 尚未部署</b>（站長執行；兩者都是純新增，可比 H-5 提前）。
+          封存夾 <code>script-archive/2026-10-11/_本機獨有的保留檔備份/</code> 裡的 bump 腳本本來就舊了（連 <code>factionEmblems</code> 都沒有），沒有跟著改。</div>
         <div class="task-file">firestore.rules · workers/src/index.ts · workers/src/collect.ts · scripts/bump-data-version.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
