@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { HERO_SLOTS, isWideOfficialArt, pickHeroCast } from './loreHeroCast.ts'
+import { HERO_SLOTS, isWideOfficialArt, MECH_HERO_SLOTS, pickHeroCast, pickMechHeroCast } from './loreHeroCast.ts'
 import { PILOT_OFFICIAL_INDEX } from '../../data/artIndex.ts'
 
 /** 可重現的亂數（mulberry32），讓 500 組抽樣每次跑都一樣 */
@@ -36,4 +36,19 @@ test('8 位都抽得到（3 號位要給寬圖機會）', () => {
   const seen = new Set<string>()
   for (let i = 0; i < 500; i++) pickHeroCast(rand).forEach((d) => seen.add(d))
   assert.equal(seen.size, PILOT_OFFICIAL_INDEX.size)
+})
+
+test('機甲廳：抽 2 台、不重複、只從池子裡抽；池子不足時回傳全部', () => {
+  const rand = seeded(3)
+  const pool = Array.from({ length: 30 }, (_, i) => `mech_${i}`)
+  const seen = new Set<string>()
+  for (let i = 0; i < 500; i++) {
+    const cast = pickMechHeroCast(pool, rand)
+    assert.equal(cast.length, MECH_HERO_SLOTS)
+    assert.equal(new Set(cast).size, MECH_HERO_SLOTS)
+    for (const m of cast) { assert.ok(pool.includes(m), m); seen.add(m) }
+  }
+  assert.equal(seen.size, pool.length, '每台都要有機會上 hero')
+  assert.deepEqual(pickMechHeroCast(['a'], rand), ['a'])
+  assert.deepEqual(pickMechHeroCast([], rand), [])
 })

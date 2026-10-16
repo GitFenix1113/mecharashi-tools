@@ -2,41 +2,50 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FallbackImage } from '../../components/common/FallbackImage'
 import { pilotClassMeta } from '../../data/pilotClasses'
+import { mechWeightClassOf } from '../../data/mechWeightClasses'
 import { ClassIcon } from '../../components/icons/ClassIcon'
 import { FactionLogo } from '../../components/icons/FactionLogo'
+import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
 import { normalizeFactionLogos } from '../../utils/factionLogos'
 import { toneBar } from '../../components/loadout/PickerVariants'
-import { usePilotLore, usePilots } from '../../hooks/useFirestore'
-import { assetUrl, pilotOfficialArt, pilotPortraitCandidates } from '../../utils/assets'
-import type { Pilot } from '../../types'
+import { useMechLore, useMechMakers, useMechs, usePilotLore, usePilots } from '../../hooks/useFirestore'
+import { assetUrl, mechPortraitCandidates, pilotOfficialArt, pilotPortraitCandidates } from '../../utils/assets'
+import { mechGameArt } from '../../utils/gameArt'
+import type { Mech, MechMaker, Pilot } from '../../types'
 import { buildLoreGroups, readLoreSort, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
+import { buildMechGroups } from '../../components/lore/mechRoster'
 import { publishedChapters } from '../../components/lore/loreText'
-import { pickHeroCast } from '../../components/lore/loreHeroCast'
+import { pickHeroCast, pickMechHeroCast, seededRandom } from '../../components/lore/loreHeroCast'
 
 /**
- * 機師故事館的館首頁（PLAN-042-A D-2）。
+ * 故事館的館首頁：機師廳（`/lore`，PLAN-042-A D-2）與機甲廳（`/lore/mechs`，PLAN-042-B E-1）。
  *
- * ── 為什麼列 `pilots` 而不是 `pilotLore`（決策 D）──
- * 牆是「名冊」：名字、職業、版本、立繪都是 pilots 的身分欄位，pilotLore 只拿來疊章節數與陣營徽章。
- * 讀不到 pilotLore 時牆照樣完整（只少了角標）；改列 pilotLore 則等於把牆的完整性綁在故事資料上。
- * PLAN-042-E 搬遷時每位機師都建了一份 pilotLore（簡介、個人資料），所以點進去不會是空頁。
+ * 兩館各是一條路由、不是頁內分頁：網址可以分享、可以被收錄，header 的館名也跟著網址走。
+ * 兩條路由掛同一個元件，`hall` 決定畫哪一館；兩館的資料 hook 分在 PilotHall／MechHall 裡，
+ * 進機師廳不會順便抓 mechs。
+ *
+ * ── 為什麼列 `pilots`／`mechs` 而不是 `pilotLore`／`mechLore`（決策 D）──
+ * 牆是「名冊」：名字、類別、版本、立繪都是實體本身的身分欄位，故事集合只拿來疊章節數與徽章。
+ * 讀不到故事集合時牆照樣完整（只少了角標）；改列故事集合則等於把牆的完整性綁在故事資料上。
  *
  * ⚠ **89 張卡片、88 張縮圖是正確現象。** `public/images/pilots/` 只有 88 個資料夾——
  *   賽拉的 `portrait` 是空字串、沒有圖片資料夾。她要照樣出現在牆上、縮圖走
  *   `FallbackImage` 的佔位（比照全站「未建檔不留白」慣例）。
  *   **不要加過濾把她藏起來**，那才是真的 bug。
  */
-export default function LoreHomePage() {
+export default function LoreHomePage({ hall = 'pilots' }: { hall?: LoreHall }) {
+  return hall === 'mechs' ? <MechHall /> : <PilotHall />
+}
+
+// ─── 機師廳 ──────────────────────────────────────────────────────────────────
+
+function PilotHall() {
   const { data: pilots, loading, error } = usePilots()
   // ⚠ 刻意不取 usePilotLore 的 loading：ensureLoaded 的 catch 只寫 errorMap、不把 key 加進
   //   loadedKeys ⇒ 抓取失敗時它的 loading 永遠是 true，gate 在它身上會讓整面牆永遠轉圈。
   //   章節徽章消失是可接受的降級，牆不見不是。
   const { data: loreDocs, error: loreError } = usePilotLore()
-
-  const [tab, setTab] = useState<LoreTab>('pilots')
-  // 排序是「名冊順序」（PLAN-042-D A-2）：詳情頁的切換列、名冊、‹ › 都照這個走，所以記在 sessionStorage
-  const [sort, setSortState] = useState<LoreSort>(readLoreSort)
-  const setSort = (s: LoreSort) => { setSortState(s); writeLoreSort(s) }
+  const [sort, setSort] = useLoreSortPref()
 
   // ⚠ 泛型要自己標：`Object.fromEntries` 對 `(string | number)[]` 這種非 tuple 的 entry
   //   會落到回傳 any 的那條多載，不標就是把 any 一路傳進 <PilotCard>。
@@ -52,58 +61,17 @@ export default function LoreHomePage() {
   )
 
   const groups = useMemo(() => buildGroups(pilots, sort), [pilots, sort])
+  const hero = <PilotHero count={loading || error ? undefined : pilots.length} />
 
   // ── 守衛順序一律 error → loading → 內容（地雷 M-04）──
   // 反過來寫的話，抓取失敗時 loading 恆為 true，`if (loading)` 先命中 ⇒ 永遠看不到錯誤分支：
   // 畫面一直轉圈、沒有紅字、沒有 console error。
-  if (error) {
-    return (
-      <PageFrame>
-        <div className="rounded-xl border border-accent-red/30 bg-accent-red/10 px-4 py-3 text-sm text-accent-red">
-          資料載入失敗：{error.message}
-        </div>
-      </PageFrame>
-    )
-  }
-
-  if (loading) {
-    return (
-      <PageFrame>
-        <div className={GRID}>
-          {Array.from({ length: 14 }).map((_, i) => (
-            <div key={i} className="aspect-square animate-pulse rounded-lg border border-border bg-bg-card" />
-          ))}
-        </div>
-      </PageFrame>
-    )
-  }
+  if (error) return <PageFrame hero={hero}><LoadError message={error.message} /></PageFrame>
+  if (loading) return <PageFrame hero={hero}><WallSkeleton cell="aspect-square" grid={GRID} /></PageFrame>
 
   return (
-    <PageFrame count={pilots.length}>
-      {/* ── 分頁：機師｜機甲 ──
-          機甲館（042-B）接上時只換這一頁的內容，不動本檔以外的任何檔案。 */}
-      <div className="mb-5 flex flex-wrap items-center gap-2">
-        <button type="button" className={tabBtn(tab === 'pilots')} onClick={() => setTab('pilots')}>
-          機師
-        </button>
-        <button type="button" className={`${tabBtn(false)} cursor-not-allowed opacity-50`} disabled>
-          機甲 · 籌備中
-        </button>
-
-        {tab === 'pilots' && (
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs text-text-dim">排序</span>
-            {/* ⚠ 用 <button> 不用 <select>：紙色館內的 option 是由系統繪製的，
-                色票覆寫不到（index.css 另有一條防禦式覆寫兜底，但不該依賴它）。 */}
-            <button type="button" className={sortBtn(sort === 'class')} onClick={() => setSort('class')}>
-              依職業
-            </button>
-            <button type="button" className={sortBtn(sort === 'debut')} onClick={() => setSort('debut')}>
-              依登場版本
-            </button>
-          </div>
-        )}
-      </div>
+    <PageFrame hero={hero}>
+      <HallTabs hall="pilots" sort={sort} onSort={setSort} sortLabels={PILOT_SORT_LABELS} />
 
       {/* loreError 不是致命：只讓章節徽章與陣營角標消失，牆照常渲染。 */}
       {loreError && (
@@ -133,9 +101,85 @@ export default function LoreHomePage() {
   )
 }
 
+// ─── 機甲廳（PLAN-042-B E-1）────────────────────────────────────────────────
+
+/**
+ * 結構照抄機師廳，差在三處：
+ * ① 分組是「廠商／登場版本」（mechRoster.ts，與展廳名冊同一套），組頭放廠商徽章。
+ * ② 廠商住在 mechLore.maker、名稱與徽章住在 mechMakers ⇒ 依廠商分組要等**這兩份都落定**才畫牆，
+ *    否則先整面歸「廠商未載」、資料到了再重排，牆會跳一次。「落定」＝讀到或讀失敗（失敗時 loading 恆為 true，
+ *    理由同機師廳的 usePilotLore）；讀失敗就照樣畫，全部歸未載那組，不擋牆。
+ * ③ 卡片是 560×340 的橫幅立繪（官方 `Icon_mecha_wap####`，左緣已淡出），色條是輕／中／重的類型色。
+ */
+function MechHall() {
+  const { data: mechs, loading, error } = useMechs()
+  const { data: loreDocs, loading: loreLoading, error: loreError } = useMechLore()
+  const { data: makers, loading: makersLoading, error: makersError } = useMechMakers()
+  const [sort, setSort] = useLoreSortPref()
+
+  const loreById = useMemo(() => new Map(loreDocs.map((d) => [d.id, d])), [loreDocs])
+  const makerById = useMemo(() => new Map(makers.map((m) => [m.id, m])), [makers])
+  const chapterCount = useMemo<Record<string, number>>(
+    () => Object.fromEntries(loreDocs.map((d) => [d.id, publishedChapters(d.chapters).length])),
+    [loreDocs],
+  )
+  const groups = useMemo(
+    () => buildMechGroups(mechs, sort, (m) => loreById.get(m.id)?.maker, makers),
+    [mechs, sort, loreById, makers],
+  )
+  const settled = sort === 'debut' || ((!loreLoading || !!loreError) && (!makersLoading || !!makersError))
+  const heroPool = useMemo(() => mechs.filter((m) => mechGameArt(m, 'sn')), [mechs])
+  const hero = <MechHero count={loading || error ? undefined : mechs.length} pool={heroPool} />
+
+  if (error) return <PageFrame hero={hero}><LoadError message={error.message} /></PageFrame>
+  if (loading || !settled) return <PageFrame hero={hero}><WallSkeleton cell="aspect-[28/17]" grid={MECH_GRID} /></PageFrame>
+
+  return (
+    <PageFrame hero={hero}>
+      <HallTabs hall="mechs" sort={sort} onSort={setSort} sortLabels={MECH_SORT_LABELS} />
+
+      {loreError && (
+        <p className="mb-4 text-xs text-text-dim">機甲故事索引暫時讀不到：廠商分組、廠商徽章與章節數先不顯示。</p>
+      )}
+
+      {groups.map((g) => (
+        <section key={g.key} className="mb-8 last:mb-0">
+          <h2 className="mb-3 flex items-center gap-2">
+            <span aria-hidden className={`h-4 w-[3px] ${toneBar('')}`} />
+            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-text-secondary">
+              {g.maker?.logo && <FactionLogo logoKey={g.maker.logo} size={18} />}
+              {g.label}
+              {/* 英文名與中文名相同（KATANA）就不重複 */}
+              {g.maker?.nameEn && g.maker.nameEn.toLowerCase() !== g.label.toLowerCase() && (
+                <span className="font-mono text-[10px] font-normal tracking-[0.18em] text-text-dim">{g.maker.nameEn}</span>
+              )}
+            </span>
+            <span className="text-xs text-text-dim">{g.items.length}</span>
+          </h2>
+
+          <div className={MECH_GRID}>
+            {g.items.map((m) => {
+              // 依廠商分組時組頭已經有徽章，卡片再標一次只是重複；依登場版本時才在卡上標廠商
+              const makerId = sort === 'debut' ? loreById.get(m.id)?.maker : undefined
+              return (
+                <MechCard
+                  key={m.id}
+                  mech={m}
+                  chapters={chapterCount[m.id] ?? 0}
+                  maker={makerId ? makerById.get(makerId) : undefined}
+                />
+              )
+            })}
+          </div>
+        </section>
+      ))}
+    </PageFrame>
+  )
+}
+
 // ─── 型別與常數 ──────────────────────────────────────────────────────────────
 
-type LoreTab = 'pilots' | 'mechs'
+type LoreHall = 'pilots' | 'mechs'
 
 interface LoreGroup {
   key: string
@@ -146,6 +190,20 @@ interface LoreGroup {
 }
 
 const GRID = 'grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7'
+/** 機甲卡是橫幅（28:17），一列放的比機師少 */
+const MECH_GRID = 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+
+const PILOT_SORT_LABELS: Record<LoreSort, string> = { class: '依職業', debut: '依登場版本' }
+const MECH_SORT_LABELS: Record<LoreSort, string> = { class: '依廠商', debut: '依登場版本' }
+
+/**
+ * 排序是「名冊順序」（PLAN-042-D A-2）：詳情頁的切換列、名冊、‹ › 都照這個走，所以記在 sessionStorage。
+ * 兩館共用同一個值：'class' 在機甲廳就是廠商（mechRoster.ts）。
+ */
+function useLoreSortPref(): [LoreSort, (s: LoreSort) => void] {
+  const [sort, setSortState] = useState<LoreSort>(readLoreSort)
+  return [sort, (s) => { setSortState(s); writeLoreSort(s) }]
+}
 
 // ─── 分組 ────────────────────────────────────────────────────────────────────
 
@@ -162,63 +220,73 @@ function buildGroups(pilots: Pilot[], sort: LoreSort): LoreGroup[] {
 /**
  * 三個回傳分支共用的外框（錯誤卡／骨架／內容）。
  *
+ * hero 由各館傳進來、放在同一個位置：資料到的那一刻（骨架 → 內容）hero 不會重掛，陣容不會當場換人。
+ *
  * ⚠ 本頁不得開任何 `overflow-y-auto`：全館唯一的 scrollport 是 `LoreLayout` 的
  *   `.lore-scroll`，多開一層會讓兩條捲軸並存、館內的 sticky 相對錯誤的祖先定位。
  */
-function PageFrame({ count, children }: { count?: number; children: React.ReactNode }) {
-  // 每次進館抽一組。PageFrame 是三個分支共同的根元素，資料到的那一刻（骨架 → 內容）不會重掛，陣容不會當場換人。
-  const [cast] = useState(pickHeroCast)
-
+function PageFrame({ hero, children }: { hero: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-      {/* 館首頁 hero（2026-10-14 改版）：紅帶＋官網立繪群像＋自排標題，就是官網首頁本來的構圖。
-          舊版是官網 KV（機甲主視覺）＋「操控指揮 機師出列」招募標語圖：冷色 3D 寫實跟紙面館格格不入、
-          主角是機甲，而且 hero 下面還有一列「機師故事館」，兩個標題打架 → 真正的 <h1> 移進 hero，那一列刪掉。
-          樣式在 index.css 的 .lore-home-hero；立繪是純裝飾（aria-hidden）。 */}
-      <header className="lore-home-hero mb-6 sm:mb-8">
-        <div className="lore-home-hero__band" aria-hidden="true" />
-        <div className="lore-home-hero__cast" aria-hidden="true">
-          {cast.map((dir, i) => {
-            const art = pilotOfficialArt({ gameId: dir })
-            if (!art) return null
-            return (
-              <img
-                key={dir}
-                className="lore-home-hero__figure"
-                data-slot={i}
-                src={assetUrl(art.color)}
-                alt=""
-                width={art.geometry.w}
-                height={art.geometry.h}
-                decoding="async"
-                // 1／2 號位每種寬度都看得到，是首屏最大的圖 → 提前；0／3 號位在手機上是 display:none，
-                // lazy 才不會白下載（沒有排版盒的 lazy 圖不會觸發載入）
-                loading={i === 1 || i === 2 ? 'eager' : 'lazy'}
-                fetchPriority={i === 1 || i === 2 ? 'high' : 'low'}
-                // 載完才淡入（CSS 的 [data-loaded]）：圖要等 React 渲染後才開始抓，直接顯示會在紙面上「啪」一聲冒出來。
-                // 用 data 屬性不用 className：React 不管這個屬性，PageFrame 重繪（骨架 → 內容）時不會被洗掉
-                onLoad={(e) => { e.currentTarget.dataset.loaded = '' }}
-              />
-            )
-          })}
-        </div>
-        <div className="lore-home-hero__title">
-          <span className="lore-script-font lore-home-hero__script" aria-hidden="true">Pilots</span>
-          <span className="lore-home-hero__eyebrow">ARCHIVE · 檔案館</span>
-          <h1 className="lore-home-hero__h1">機師故事館</h1>
-          <p className="lore-home-hero__lead">
-            收錄機師的個人簡介與逸聞章節
-            {count !== undefined && <><br />共 {count} 位機師</>}
-          </p>
-        </div>
-      </header>
+      {hero}
       {children}
     </div>
   )
 }
 
+function LoadError({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-accent-red/30 bg-accent-red/10 px-4 py-3 text-sm text-accent-red">
+      資料載入失敗：{message}
+    </div>
+  )
+}
+
+function WallSkeleton({ cell, grid }: { cell: string; grid: string }) {
+  return (
+    <div className={grid}>
+      {Array.from({ length: 14 }).map((_, i) => (
+        <div key={i} className={`${cell} animate-pulse rounded-lg border border-border bg-bg-card`} />
+      ))}
+    </div>
+  )
+}
+
+/**
+ * 分館列＋排序。分館是兩條路由（`/lore`、`/lore/mechs`），所以用連結不用按鈕。
+ *
+ * ⚠ 排序用 <button> 不用 <select>：紙色館內的 option 是由系統繪製的，
+ *   色票覆寫不到（index.css 另有一條防禦式覆寫兜底，但不該依賴它）。
+ */
+function HallTabs({ hall, sort, onSort, sortLabels }: {
+  hall: LoreHall
+  sort: LoreSort
+  onSort: (s: LoreSort) => void
+  sortLabels: Record<LoreSort, string>
+}) {
+  return (
+    <div className="mb-5 flex flex-wrap items-center gap-2">
+      <Link to="/lore" className={tabBtn(hall === 'pilots')} aria-current={hall === 'pilots' ? 'page' : undefined}>
+        機師
+      </Link>
+      <Link to="/lore/mechs" className={tabBtn(hall === 'mechs')} aria-current={hall === 'mechs' ? 'page' : undefined}>
+        機甲
+      </Link>
+
+      <div className="ml-auto flex items-center gap-2">
+        <span className="text-xs text-text-dim">排序</span>
+        {(['class', 'debut'] as const).map((s) => (
+          <button key={s} type="button" className={sortBtn(sort === s)} onClick={() => onSort(s)}>
+            {sortLabels[s]}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const tabBtn = (active: boolean) =>
-  `rounded-lg border px-3.5 py-1.5 text-sm font-bold transition-colors ${
+  `rounded-lg border px-3.5 py-1.5 text-sm font-bold no-underline transition-colors ${
     active
       ? 'border-accent-orange/40 bg-accent-orange/15 text-accent-orange'
       : 'border-border bg-bg-card text-text-secondary hover:border-border-accent hover:text-text-primary cursor-pointer'
@@ -230,6 +298,105 @@ const sortBtn = (active: boolean) =>
       ? 'border-accent-orange/40 bg-accent-orange/15 text-accent-orange'
       : 'border-border bg-bg-card text-text-secondary hover:border-border-accent hover:text-text-primary'
   }`
+
+// ─── hero ────────────────────────────────────────────────────────────────────
+
+/**
+ * 機師廳 hero（2026-10-14 改版）：紅帶＋官網立繪群像＋自排標題，就是官網首頁本來的構圖。
+ * 舊版是官網 KV（機甲主視覺）＋「操控指揮 機師出列」招募標語圖：冷色 3D 寫實跟紙面館格格不入、
+ * 主角是機甲，而且 hero 下面還有一列「機師故事館」，兩個標題打架 → 真正的 <h1> 移進 hero，那一列刪掉。
+ * 樣式在 index.css 的 .lore-home-hero；立繪是純裝飾（aria-hidden）。
+ */
+function PilotHero({ count }: { count?: number }) {
+  // 每次進館抽一組
+  const [cast] = useState(pickHeroCast)
+
+  return (
+    <header className="lore-home-hero mb-6 sm:mb-8">
+      <div className="lore-home-hero__band" aria-hidden="true" />
+      <div className="lore-home-hero__cast" aria-hidden="true">
+        {cast.map((dir, i) => {
+          const art = pilotOfficialArt({ gameId: dir })
+          if (!art) return null
+          return (
+            <img
+              key={dir}
+              className="lore-home-hero__figure"
+              data-slot={i}
+              src={assetUrl(art.color)}
+              alt=""
+              width={art.geometry.w}
+              height={art.geometry.h}
+              decoding="async"
+              // 1／2 號位每種寬度都看得到，是首屏最大的圖 → 提前；0／3 號位在手機上是 display:none，
+              // lazy 才不會白下載（沒有排版盒的 lazy 圖不會觸發載入）
+              loading={i === 1 || i === 2 ? 'eager' : 'lazy'}
+              fetchPriority={i === 1 || i === 2 ? 'high' : 'low'}
+              // 載完才淡入（CSS 的 [data-loaded]）：圖要等 React 渲染後才開始抓，直接顯示會在紙面上「啪」一聲冒出來。
+              // 用 data 屬性不用 className：React 不管這個屬性，重繪（骨架 → 內容）時不會被洗掉
+              onLoad={(e) => { e.currentTarget.dataset.loaded = '' }}
+            />
+          )
+        })}
+      </div>
+      <div className="lore-home-hero__title">
+        <span className="lore-script-font lore-home-hero__script" aria-hidden="true">Pilots</span>
+        <span className="lore-home-hero__eyebrow">ARCHIVE · 檔案館</span>
+        <h1 className="lore-home-hero__h1">機師故事館</h1>
+        <p className="lore-home-hero__lead">
+          收錄機師的個人簡介與逸聞章節
+          {count !== undefined && <><br />共 {count} 位機師</>}
+        </p>
+      </div>
+    </header>
+  )
+}
+
+/**
+ * 機甲廳 hero（PLAN-042-B E-1）：同一套紅帶與標題，人物換成兩台官方主視覺（`_SN_Raw`，2000×1080 去背）。
+ *
+ * ⚠ 過渡版：計畫書的 hero 是招募插畫（2600×1080）或廠商舞台輪播，兩者都要等 F-2 素材上站。
+ *   主視覺每台約 150 KB、只載 2 張；手機只顯示前排那台（後排 display:none ＋ lazy，不白下載）。
+ *
+ * 陣容要等 mechs 到了才抽得出來（池子＝站上有、又有主視覺的機甲）。種子在進館時抽一次，
+ * 池子從空變滿那一刻用同一顆種子抽，之後的重繪拿到同一組，不會當場換台。
+ */
+function MechHero({ count, pool }: { count?: number; pool: readonly Mech[] }) {
+  const [seed] = useState(Math.random)
+  const cast = useMemo(() => pickMechHeroCast(pool, seededRandom(seed)), [pool, seed])
+
+  return (
+    <header className="lore-home-hero lore-home-hero--mechs mb-6 sm:mb-8">
+      <div className="lore-home-hero__band" aria-hidden="true" />
+      <div className="lore-home-hero__cast" aria-hidden="true">
+        {cast.map((m, i) => (
+          <img
+            key={m.id}
+            className="lore-home-hero__mech"
+            data-slot={i}
+            src={assetUrl(mechGameArt(m, 'sn')!)}
+            alt=""
+            width={2000}
+            height={1080}
+            decoding="async"
+            loading={i === 1 ? 'eager' : 'lazy'}
+            fetchPriority={i === 1 ? 'high' : 'low'}
+            onLoad={(e) => { e.currentTarget.dataset.loaded = '' }}
+          />
+        ))}
+      </div>
+      <div className="lore-home-hero__title">
+        <span className="lore-script-font lore-home-hero__script" aria-hidden="true">Mecha</span>
+        <span className="lore-home-hero__eyebrow">ARCHIVE · 檔案館</span>
+        <h1 className="lore-home-hero__h1">機甲故事館</h1>
+        <p className="lore-home-hero__lead">
+          收錄機甲的技術檔案與逸聞章節
+          {count !== undefined && <><br />共 {count} 台機甲</>}
+        </p>
+      </div>
+    </header>
+  )
+}
 
 // ─── 卡片 ────────────────────────────────────────────────────────────────────
 
@@ -281,11 +448,7 @@ function PilotCard({ pilot, chapters, logo }: { pilot: Pilot; chapters: number; 
       )}
 
       {/* 章節徽章只在真的有（非草稿的）章節時出現。多數機師還沒有章節 ⇒ 沒有角標是正確現象。 */}
-      {chapters > 0 && (
-        <span className="absolute right-1.5 top-1.5 rounded bg-accent-orange px-1.5 py-0.5 text-[10px] font-bold text-bg-dark">
-          {chapters} 章
-        </span>
-      )}
+      {chapters > 0 && <ChapterBadge n={chapters} />}
 
       <span className="absolute bottom-1.5 left-2 right-2 flex flex-col text-left">
         <span className="truncate text-[13px] font-bold leading-tight text-white">{pilot.name}</span>
@@ -297,5 +460,65 @@ function PilotCard({ pilot, chapters, logo }: { pilot: Pilot; chapters: number; 
         </span>
       </span>
     </Link>
+  )
+}
+
+/**
+ * 機甲卡：與機師卡同一套卡框語彙（黑底、hover 紅框、底部漸層、左色條、左上徽章、右上章節數）。
+ *
+ * 縮圖是官方 `Icon_mecha_wap####`（560×340，去背、左緣已淡出）：卡片比例 28:17 剛好裝下、不裁切。
+ * 93 張約 5 MB，一定要 lazy。左上是**廠商**徽章（機師卡是陣營），只在依登場版本排序時給——
+ * 依廠商分組時組頭就是廠商。廠商讀不到就不放，不留空框。
+ */
+function MechCard({ mech, chapters, maker }: { mech: Mech; chapters: number; maker?: MechMaker }) {
+  const wc = mechWeightClassOf(mech.armorType)
+
+  return (
+    <Link
+      to={`/lore/mechs/${mech.id}`}
+      className="group relative block aspect-[28/17] overflow-hidden rounded-lg border-2 border-[#1a1614]/70 bg-[#0a0c10] no-underline transition-[border-color,transform] duration-200 hover:border-[#b10000] hover:-translate-y-0.5"
+    >
+      <FallbackImage
+        candidates={mechPortraitCandidates(mech)}
+        alt={mech.name}
+        loading="lazy"
+        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        fallback={
+          <span className="absolute inset-0 flex items-center justify-center text-[11px] text-text-dim">
+            尚無立繪
+          </span>
+        }
+      />
+      <span
+        aria-hidden
+        className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,12,16,0)_45%,rgba(10,12,16,0.9))]"
+      />
+      <span aria-hidden className={`absolute left-0 top-0 h-full w-[3px] ${wc?.bar ?? toneBar('')}`} />
+
+      {maker?.logo && (
+        <span className="absolute left-2 top-1.5 text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          <FactionLogo logoKey={maker.logo} size={22} label={maker.name || maker.id} />
+        </span>
+      )}
+
+      {chapters > 0 && <ChapterBadge n={chapters} />}
+
+      <span className="absolute bottom-1.5 left-2 right-2 flex flex-col text-left">
+        <span className="truncate text-[13px] font-bold leading-tight text-white">{mech.name}</span>
+        <span className="flex items-center gap-1 truncate text-[11px] leading-tight text-white/65">
+          <MechTypeIcon type={mech.armorType} size={12} decorative className={wc?.text ?? ''} />
+          {wc?.short ?? mech.armorType}
+          {mech.debutVersion && ` · v${mech.debutVersion}`}
+        </span>
+      </span>
+    </Link>
+  )
+}
+
+function ChapterBadge({ n }: { n: number }) {
+  return (
+    <span className="absolute right-1.5 top-1.5 rounded bg-accent-orange px-1.5 py-0.5 text-[10px] font-bold text-bg-dark">
+      {n} 章
+    </span>
   )
 }

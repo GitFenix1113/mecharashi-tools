@@ -208,15 +208,15 @@
   <div class="section-title">總進度</div>
 
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">19</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">21</div><div class="summary-lbl">已完成</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">1</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">18</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">16</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">38</div><div class="summary-lbl">任務（不含長期資料）</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">19 / 38</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 50%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">21 / 38</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 55%"></div></div>
   </div>
 
   <div class="impact-note">
@@ -400,16 +400,17 @@
     <div class="task-group-header">
       <div class="task-group-title">B-3 &nbsp; 寫入</div>
       <div class="task-group-meta">mechLore · mechMakers</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">--apply＋bump</div>
-        <div class="task-desc">先 <code>backup-firestore.mjs</code> 備份、先 dry-run。寫正式 DB 會被 auto mode 擋，由站長執行。這一步只「複製」介紹到 <code>mechLore</code>，<code>mechs.lore</code> 留到 H-7 才刪。</div>
+        <div class="task-desc">先 <code>backup-firestore.mjs</code> 備份、先 dry-run。寫正式 DB 會被 auto mode 擋，由站長執行。這一步只「複製」介紹到 <code>mechLore</code>，<code>mechs.lore</code> 留到 H-7 才刪。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 站長已執行（前台經正式 Worker 實測：92 台讀得到廠商、館首頁分出 11 家有機甲的廠商＋未載 1 台）。</div>
         <div class="task-file">scripts/temp_scripts/</div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -621,16 +622,17 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 機甲分頁</div>
       <div class="task-group-meta">src/pages/lore/LoreHomePage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">機甲牆與 hero</div>
-        <div class="task-desc">啟用「機甲」分頁；hero 用廠商舞台輪播或招募插畫（招募插畫只在這裡和全景鑑賞出現）。</div>
+        <div class="task-desc">啟用「機甲」分頁；hero 用廠商舞台輪播或招募插畫（招募插畫只在這裡和全景鑑賞出現）。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 分館改成兩條路由：<code>/lore</code>（機師）與 <code>/lore/mechs</code>（機甲）同一個元件、<code>hall</code> 決定畫哪一館；header 館名、離館（館首頁回 <code>/mechs</code>）、<code>seo.ts</code>（進 sitemap）、<code>routeKeys.ts</code> 一併登記。機甲牆依廠商／登場版本分組（與展廳名冊同一份 <code>mechRoster.ts</code>），卡片用 560×340 立繪、類型色條、章節數；廠商徽章只在依版本排序時上卡（依廠商時組頭就是）。依廠商分組要等 mechLore 與 mechMakers 落定才畫牆，避免先整面「廠商未載」再重排。<br>hero 是<b>過渡版</b>：兩台官方主視覺（93 台量過機體外框再定站位，手機只留前排）；換成招募插畫屬 F-2。<br>順手修掉 <code>LoreLayout</code> 的捲動記錄競態：新頁面 commit 時比牆短、瀏覽器夾小 scrollTop 的那一下被記到上一頁（經分館連結進機甲廳 → 展廳 → 上一頁，1500 回到 957），<code>pathRef</code> 改在 layout effect 換。</div>
         <div class="task-file">src/pages/lore/LoreHomePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -664,7 +666,8 @@
     <div class="task-row">
       <div>
         <div class="task-name">12＋60 張</div>
-        <div class="task-desc">廠商舞台 <code>Skynet_Wap_BG_*_Raw</code> 12 張；招募插畫由兩片 1024² 切片拼成 2600×1080 比例（60 張，雙機池用上半兩片）。切片原檔與大廳預覽不上。</div>
+        <div class="task-desc">廠商舞台 <code>Skynet_Wap_BG_*_Raw</code> 12 張；招募插畫由兩片 1024² 切片拼成 2600×1080 比例（60 張，雙機池用上半兩片）。切片原檔與大廳預覽不上。
+          <br><span style="color:var(--text-dim);">↳ 上站後把館首頁 hero（<code>MechHero</code>）從兩台主視覺換成招募插畫（E-1 留的過渡版）。</span></div>
         <div class="task-file">scripts/import-game-assets.mjs · public/images/game/</div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -742,7 +745,8 @@
       <div>
         <div class="task-name">loreMechs</div>
         <div class="task-desc"><code>ROUTE_PATTERNS</code>／<code>ENTITY_ROUTES</code> 加 <code>loreMechs</code>，<code>loreStats</code> 漏斗分廳；Worker <code>ENTITY_TYPES</code> 先部署（A-4）。
-          <br><span style="color:var(--accent-cyan);">◐ 2026-10-17</span> 路由與 <code>loreMechs</code> 已在 D-1 登記；剩 <code>loreStats</code> 漏斗分廳。</div>
+          <br><span style="color:var(--accent-cyan);">◐ 2026-10-17</span> 路由與 <code>loreMechs</code> 已在 D-1 登記；剩 <code>loreStats</code> 漏斗分廳。
+          <br><span style="color:var(--text-dim);">↳ 館首頁 <code>/lore/mechs</code>（頁鍵 <code>lore_mechs</code>）E-1 已登記；漏斗分廳時記得它是機甲廳的入口。</span></div>
         <div class="task-file">src/lib/analytics/ · workers/src/collect.ts</div>
       </div>
       <div class="task-assignee">開發者</div>

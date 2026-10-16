@@ -45,7 +45,8 @@ export const ROUTE_PATTERNS: readonly string[] = [
   '/lore',
   '/lore/pilots/:id',
   '/lore/pilots/:id/:part',
-  // 機甲故事館（PLAN-042-B）
+  // 機甲故事館（PLAN-042-B）。'/lore/mechs' 同 '/lore'，是有內容的館首頁
+  '/lore/mechs',
   '/lore/mechs/:id',
   '/lore/mechs/:id/:part',
   '/simulator',
@@ -142,6 +143,7 @@ export const ROUTE_LABELS: Record<string, string> = {
   lore:                      '機師故事館',
   lore_pilots_detail:        '機師故事（扉頁）',
   lore_pilots_detail_detail: '機師故事（章節）',
+  lore_mechs:                '機甲故事館',
   lore_mechs_detail:         '機甲故事（扉頁）',
   lore_mechs_detail_detail:  '機甲故事（章節）',
   simulator:             '配裝模擬器',

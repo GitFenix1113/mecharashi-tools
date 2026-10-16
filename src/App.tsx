@@ -96,7 +96,9 @@ function App() {
               <Route index element={<Suspense fallback={null}><LoreHomePage /></Suspense>} />
               <Route path="pilots/:id" element={<Suspense fallback={null}><PilotLorePage /></Suspense>} />
               <Route path="pilots/:id/:part" element={<Suspense fallback={null}><PilotLorePage /></Suspense>} />
-              {/* 機甲故事館（PLAN-042-B）：同一個 layout route，/lore 前綴已在 CF 白名單，不必動 Dashboard */}
+              {/* 機甲故事館（PLAN-042-B）：同一個 layout route，/lore 前綴已在 CF 白名單，不必動 Dashboard。
+                  館首頁 /lore/mechs 與機師廳 /lore 是同一個元件（E-1），hall 決定畫哪一館 */}
+              <Route path="mechs" element={<Suspense fallback={null}><LoreHomePage hall="mechs" /></Suspense>} />
               <Route path="mechs/:id" element={<Suspense fallback={null}><MechLorePage /></Suspense>} />
               <Route path="mechs/:id/:part" element={<Suspense fallback={null}><MechLorePage /></Suspense>} />
               {/* 館內的兜底轉址是**必要的**（地雷 M-28）：Layout 的 chromeMode 是純路徑推導，

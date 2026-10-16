@@ -151,7 +151,7 @@ export default function MechLorePage() {
     return (
       <div className="max-w-3xl mx-auto px-4 py-12">
         <div className="bg-accent-red/10 border border-accent-red/30 rounded-xl px-4 py-3 text-sm text-accent-red">資料載入失敗：{error.message}</div>
-        <Link to="/lore" className="mt-4 inline-block text-sm text-accent-orange no-underline">← 回故事館</Link>
+        <Link to="/lore/mechs" className="mt-4 inline-block text-sm text-accent-orange no-underline">← 回故事館</Link>
       </div>
     )
   }
@@ -166,7 +166,7 @@ export default function MechLorePage() {
     return (
       <div className="max-w-6xl mx-auto px-4 py-12 text-center text-text-dim">
         <p>找不到機甲資料</p>
-        <Link to="/lore" className="text-accent-orange no-underline text-sm mt-4 inline-block">← 回故事館</Link>
+        <Link to="/lore/mechs" className="text-accent-orange no-underline text-sm mt-4 inline-block">← 回故事館</Link>
       </div>
     )
   }

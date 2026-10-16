@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useRef } from 'react'
 import { Outlet, useLocation, useNavigationType } from 'react-router-dom'
 
 /**
@@ -112,8 +112,12 @@ export default function LoreLayout() {
       if (raf) cancelAnimationFrame(raf)
     }
   }, [])
+  // pathRef 在 commit 當下就換（layout effect），不能等 useEffect：新頁面比舊頁面短時，瀏覽器在 commit 後
+  // 第一個 frame 就把 scrollTop 夾小並發 scroll 事件；那時 useEffect 可能還沒跑（paint 之後才跑），
+  // 夾小的值會被記到**上一頁**的路徑上，按上一頁就回不到原位。展廳頁是 lazy chunk、導覽走 transition，
+  // commit 晚於 pushState，最容易中（2026-10-17 實測：經分館連結進機甲廳 → 進展廳 → 上一頁，1500 回到 957）。
+  useLayoutEffect(() => { pathRef.current = pathname }, [pathname])
   useEffect(() => {
-    pathRef.current = pathname
     const el = scrollRef.current
     if (!el) return
     const saved = navType === 'POP' ? positions.current.get(pathname) : undefined

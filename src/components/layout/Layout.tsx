@@ -174,11 +174,16 @@ export default function Layout() {
   // useMatch 拿到的 id 已解碼，組網址要再編回去。
   const lorePilotMatch = useMatch('/lore/pilots/:id/*')
   const loreMechMatch = useMatch('/lore/mechs/:id/*')
+  // 機甲廳的館首頁（E-1）：館名與落點同展廳，只是落到機甲圖鑑的列表
+  const loreMechHome = useMatch('/lore/mechs')
+  const inMechHall = !!(loreMechMatch || loreMechHome)
   const lorePilotId = lorePilotMatch?.params.id
   const loreMechId = loreMechMatch?.params.id
   const loreExitTo = lorePilotId ? `/pilots/${encodeURIComponent(lorePilotId)}`
-    : loreMechId ? `/mechs/${encodeURIComponent(loreMechId)}` : '/pilots'
-  const loreExitTitle = lorePilotId ? '離館，回到這位機師的圖鑑' : loreMechId ? '離館，回到這台機甲的圖鑑' : '離館，回到機師圖鑑'
+    : loreMechId ? `/mechs/${encodeURIComponent(loreMechId)}`
+    : inMechHall ? '/mechs' : '/pilots'
+  const loreExitTitle = lorePilotId ? '離館，回到這位機師的圖鑑' : loreMechId ? '離館，回到這台機甲的圖鑑'
+    : inMechHall ? '離館，回到機甲圖鑑' : '離館，回到機師圖鑑'
   const showPageChrome = chromeMode === 'default'
   // 比對用 `=== to` 或 `to + '/'`：直接 startsWith(to) 會讓 /modules 誤配到未來的
   // /modulesomething，也讓詳情頁（/pilots/xxx）正確落在圖鑑那一群。
@@ -273,8 +278,8 @@ export default function Layout() {
              抽成元件只會把回歸面擴大到全站。 */
           <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
-              <Link to="/lore" className="no-underline text-text-primary font-bold tracking-wider whitespace-nowrap">
-                {loreMechMatch ? '機甲故事館' : '機師故事館'}
+              <Link to={inMechHall ? '/lore/mechs' : '/lore'} className="no-underline text-text-primary font-bold tracking-wider whitespace-nowrap">
+                {inMechHall ? '機甲故事館' : '機師故事館'}
               </Link>
               <LoreExitLink
                 to={loreExitTo}
