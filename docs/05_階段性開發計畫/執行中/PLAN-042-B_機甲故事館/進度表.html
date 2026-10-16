@@ -198,7 +198,7 @@
   <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
     進度表<span style="-webkit-text-fill-color:var(--text-secondary);">機甲故事館</span>
   </h1>
-  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-23 · 標 <span class="badge badge-cyan">引用 042-A</span> 者不重做元件</p>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-08-23 · <span style="color:var(--accent-yellow);">2026-10-16 依改寫後的計畫書重建</span>（原 Phase M／N／O／P 已被取代）</p>
 </header>
 
 <main class="container">
@@ -207,98 +207,92 @@
   <div class="section-label yellow">Progress</div>
   <div class="section-title">總進度</div>
 
-
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">0</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">2</div><div class="summary-lbl">已完成</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">9</div><div class="summary-lbl">待開始</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">9</div><div class="summary-lbl">開發者任務</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">36</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">38</div><div class="summary-lbl">任務（不含長期資料）</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">0 / 9</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 0%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-yellow);">2 / 38</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 5%"></div></div>
   </div>
 
   <div class="impact-note">
-    <strong>目標效果：</strong>機甲也有自己的展間，與機師館共用同一套節奏與視覺語言，
-    使用者在館內從機師走到機甲不會有斷裂感。
+    <strong>目標效果：</strong>機甲有自己的展廳——紙色舞台上的官方主視覺、型號鋼印、依廠商分組的名冊、分 PART 的逸聞，和機師廳互相連通；
+    本體上線後，招募插畫的全景鑑賞再加上和遊戲一樣的卡池動態。
   </div>
 
-  <div class="warn-block">
-    <strong>阻塞於 <a href="../PLAN-042-A_機師故事館/進度表.html" style="color:var(--accent-orange);">PLAN-042-A</a> 的 Phase C。</strong>
-    共用元件（<code>LoreArt</code>／<code>LoreChapterPager</code>／章節與旁白渲染／<code>chromeMode</code>／紙色換膚）
-    全部由 042-A 建立，本計畫只引用不重做。<br>
-    <strong>但 Phase M（素材）不受阻塞，可以並行開始</strong>——90 張出圖是本計畫的長尾，越早開工越好。
+  <div class="note-warn">
+    <strong>最小可上線路徑</strong>：0＋A＋B＋C＋D＋H（約 12.5 人日）。E 館首頁、F 素材上站、G 編輯台可在 D 之後任意順序補上；I 選配、J 卡池動態另計。
+    C 段不碰 DB，可與 A／B 並行。
   </div>
 
+  <table class="layer-table">
+    <tr><th>階段</th><th>人日</th><th>階段</th><th>人日</th></tr>
+    <tr><td>0 決策</td><td>0.5</td><td>F 素材上站</td><td>1.5</td></tr>
+    <tr><td>A 資料層</td><td>2</td><td>G 編輯台</td><td>3</td></tr>
+    <tr><td>B 草稿</td><td>1</td><td>H 串接</td><td>2</td></tr>
+    <tr><td>C 泛化</td><td>2.5</td><td>I 選配</td><td>1</td></tr>
+    <tr><td>D 展廳頁</td><td>4.5</td><td>J 卡池動態</td><td>4–5.5</td></tr>
+    <tr><td>E 館首頁</td><td>1</td><td><b>0–H 合計</b></td><td><b>18</b></td></tr>
+  </table>
 </section>
 <section class="section">
-  <div class="section-label yellow">Phase M</div>
-  <div class="section-title">素材工程（可與 042-A 並行）</div>
+  <div class="section-label yellow">Phase 0</div>
+  <div class="section-title">決策</div>
 
-
-  <div class="section-desc">本計畫最大的一筆成本，也是它排在機師之後的唯一原因。不阻塞，建議最早開工。</div>
+  <div class="section-desc">站長回答提案的 Q1–Q7，改寫本計畫。</div>
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">M-1 &nbsp; 機甲全身立繪出圖</div>
-      <div class="task-group-meta">public/images/mechs/<名>/lore-art.webp</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-title">0-1 &nbsp; 站長拍板 Q1–Q7</div>
+      <div class="task-group-meta">_local-notes/…/規劃.html §11・§18</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">規格與比例確認</div>
-        <div class="task-desc">長邊上限 1400px、四周約 5% 安全邊距、WebP、去背。<b>比例必須落在約 0.5–0.65 直幅</b>，對齊 042-A 實測的機師立繪中位 0.58 與官網 hero 的 0.55。<br><b>⚠ 出圖前先確認比例</b>——若做成別的比例，042-A 建立的立繪柱就得改成參數化，那是橫跨兩館的重構。</div>
-        <div class="task-file">public/images/mechs/&lt;名&gt;/lore-art.webp</div>
+        <div class="task-name">Q1–Q7 全部答完</div>
+        <div class="task-desc">Q1 機甲有分 PART 的逸聞；Q2 介紹搬故事館；Q3 廠商歸故事館且要能在後台編輯；Q4 紙色；Q5 塗裝／舞台／招募插畫上站、大廳預覽不上；Q6 台版譯文；Q7 改寫 042-B、卡池動態併入。</div>
+        <div class="task-file">規劃.html §11、§18</div>
       </div>
-      <div class="task-assignee">管理員</div>
-      <span class="status pending">待開始</span>
-    </div>
-    <div class="task-row">
-      <div>
-        <div class="task-name">90 台逐台出圖</div>
-        <div class="task-desc">現有 <code>portrait.webp</code> 只有 560×340 半身裁切，放大會糊，<b>不能當來源</b>。需另尋圖源或人工製作。這是長期作業，故事館首頁對缺圖者顯示「立繪待補」。</div>
-        <div class="task-file">public/images/mechs/</div>
-      </div>
-      <div class="task-assignee">管理員</div>
-      <span class="status pending">待開始</span>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">M-2 &nbsp; 偽線稿濾鏡以機甲素材重新調參</div>
-      <div class="task-group-meta">src/components/lore/LoreArt.tsx</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-title">0-2 &nbsp; 改寫計畫書與進度表</div>
+      <div class="task-group-meta">PLAN-042-B</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">重測，不可假設沿用人像參數</div>
-        <div class="task-desc">042-A 已測完人像（54 張，只有零觸發 &gt;35% 門檻）。<b>機體的金屬高光、硬邊輪廓與人像完全不同，參數與失效門檻都要重測</b>。沿用 042-A 建立的逐張旗標機制，量測腳本可直接複用。<br><span style='color:var(--text-dim);'>原 PLAN-042 說「已在官網彩圖上實測通過」——那是對<u>官網的圖</u>測的，不等於對<u>我們的機甲立繪</u>成立（我們的還沒畫）。</span></div>
-        <div class="task-file">src/components/lore/LoreArt.tsx</div>
+        <div class="task-name">保留編號改寫</div>
+        <div class="task-desc">舊決策 B-1（直幅比例）、B-4（廠商留 mechs）標「已被取代」，Phase M 素材工程取消；補上 B-5～B-14。</div>
+        <div class="task-file">計畫書.html · 進度表.html</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
-
 </section>
 <section class="section">
-  <div class="section-label yellow">Phase N</div>
-  <div class="section-title">資料模型</div>
+  <div class="section-label yellow">Phase A</div>
+  <div class="section-title">資料層</div>
 
-
-  <div class="section-desc">型別共用 042-A，集合分家。</div>
+  <div class="section-desc">型別拆分與兩個新集合。<b>rules 與 Worker 要比網站先部署</b>。</div>
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">N-1 &nbsp; Mech.manufacturer 欄位</div>
-      <div class="task-group-meta">src/types/mech.ts · MechAdmin · docs</div>
+      <div class="task-group-title">A-1 &nbsp; 型別</div>
+      <div class="task-group-meta">src/types/lore.ts · src/types/mechMaker.ts</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">型別、後台與 docs 同步</div>
-        <div class="task-desc">新增 <code>manufacturer?: string</code>。MechAdmin 加編輯欄位；依 CLAUDE.md 規則 2 同步 <code>docs/02_技術文件/02_資料模型/</code> 機甲資料模型頁。官方 API 未提供，人工填入。<br><b>⚠ 0/5 定律</b>：新加的選填欄位很可能長期低填充。後台機甲列表加「廠商」欄讓缺口可見，扉頁未填者顯示「廠商未載」而非留白。</div>
-        <div class="task-file">src/types/mech.ts · src/pages/user/admin/MechAdmin.tsx · docs/02_技術文件/02_資料模型/</div>
+        <div class="task-name">LoreDocBase 拆底座</div>
+        <div class="task-desc"><code>LoreDocBase</code>＋<code>PilotLoreDoc</code>（<code>LoreDoc</code> 保留成別名，呼叫端零改動）＋<code>MechLoreDoc</code>／<code>MechRelation</code>；<code>MechMaker</code> 比照 <code>factionEmblem.ts</code>。依 CLAUDE.md 規則 2 同步 <code>docs/02_技術文件/02_資料模型/</code>。</div>
+        <div class="task-file">src/types/lore.ts · src/types/mechMaker.ts · docs/02_技術文件/</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status pending">待開始</span>
@@ -306,39 +300,69 @@
   </div>
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">N-2 &nbsp; mechLore 集合</div>
-      <div class="task-group-meta">src/lib/api/mechLore.ts · 七處同步</div>
+      <div class="task-group-title">A-2 &nbsp; mechLore 集合連動</div>
+      <div class="task-group-meta">九處連動</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">集合與七處 CollectionKey 同步</div>
-        <div class="task-desc">型別直接 import 042-A 的 <code>src/types/lore.ts</code>，<b>不要另立一套</b>。七處同步清單同 042-A 的 A-2（<code>collectionKeys.ts</code>／Worker <code>ARRAY_COLLECTIONS</code>／<code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>／entityRefs SPECS／測試 helper／<code>firestore.rules</code>／<code>GameDataContext</code>）。寫入掛 <code>saveWithHistory</code>。</div>
-        <div class="task-file">src/lib/api/mechLore.ts · src/lib/collectionKeys.ts · workers/src/index.ts</div>
+        <div class="task-name">集合與快取層</div>
+        <div class="task-desc"><code>collectionKeys.ts</code>（比照 <code>pilotLore</code> 決定要不要落 localStorage）、<code>GameDataContext</code>、hooks、<code>lib/api/mechLore.ts</code>＋barrel、<code>ChangeTargetKind</code>、測試 helper。寫入掛 <code>saveWithHistory</code>。<b>先不登記 entityRefs SPECS</b>（見 H-6）。</div>
+        <div class="task-file">src/lib/collectionKeys.ts · src/contexts/GameDataContext.tsx · src/hooks/useFirestore.ts · src/lib/api/</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status pending">待開始</span>
     </div>
   </div>
-
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; mechMakers 集合連動</div>
+      <div class="task-group-meta">範本＝factionEmblems</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">照 factionEmblems 的檔案清單走一遍</div>
+        <div class="task-desc">文件 ID＝官方舞台背景鍵（<code>Doll</code>／<code>UKB</code>…）。<b>不進 SPECS、不走 saveWithHistory</b>，寫入就是 <code>writeDoc</code>＋bump（理由同 <code>lib/api/factionEmblems.ts</code> 開頭註解）。</div>
+        <div class="task-file">src/lib/api/mechMakers.ts · src/lib/collectionKeys.ts · src/contexts/GameDataContext.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; rules・Worker・bump 腳本</div>
+      <div class="task-group-meta">firestore.rules · workers/src/index.ts · scripts/bump-data-version.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">兩個集合的讀寫規則與邊緣快取</div>
+        <div class="task-desc"><code>firestore.rules</code> 兩條 match；Worker <code>ARRAY_COLLECTIONS</code> 加兩個集合、<code>collect.ts</code> 的 <code>ENTITY_TYPES</code> 加 <code>loreMechs</code>（<code>routeKeys.test.ts</code> 會比對前後端列舉）；<code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>（⚠ 本機獨有檔，被 .gitignore 擋）。</div>
+        <div class="task-file">firestore.rules · workers/src/index.ts · workers/src/collect.ts · scripts/bump-data-version.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
 </section>
 <section class="section">
-  <div class="section-label yellow">Phase O</div>
-  <div class="section-title">機甲側頁面與編輯</div>
+  <div class="section-label yellow">Phase B</div>
+  <div class="section-title">一次性草稿腳本</div>
 
-
-  <div class="section-desc">元件全部引用 042-A，本階段只做機甲的接線。</div>
+  <div class="section-desc">比照 <code>extract-lore-source.mjs</code>：跑一次 → 人工複核草稿 JSON → <code>--apply</code>。「漏抓由人補很便宜，誤判由人抓很貴」。</div>
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">O-1 &nbsp; 機甲故事頁<span class="badge badge-cyan" style="margin-left:8px;">引用 042-A</span></div>
-      <div class="task-group-meta">src/pages/lore/MechLorePage.tsx</div>
+      <div class="task-group-title">B-1 &nbsp; 草稿腳本</div>
+      <div class="task-group-meta">scripts/temp_scripts/</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">路由與版面</div>
-        <div class="task-desc"><code>/lore/mechs/:id</code>（扉頁）與 <code>/lore/mechs/:id/:part</code>（章節）。版面直接引用 042-A 的立繪柱與 <code>LoreChapterPager</code>。扉頁的資訊錨點是「類型 / 製造廠商 / 登場版本」（機甲沒有 <code>additionalInfo</code> 這種自由鍵值）。</div>
-        <div class="task-file">src/pages/lore/MechLorePage.tsx · src/App.tsx</div>
+        <div class="task-name">從 92 篇介紹整理出欄位</div>
+        <div class="task-desc"><code>modelNo</code>（首行型號，預期 90／92 命中）、<code>maker</code>（前綴對照表＋文中廠商名一致才填，約 78 台自動、15 台待判）、<code>relations</code> 候選（36 條，<code>kind</code> 留空）、<code>nameEn</code>（v3 mapping，排除聯動與雙機池鍵 GlaDre／MalAgl／Nvidia／ROG，「有全名用全名」）、<code>intro</code> 去型號行；<b>台版譯文 49 台逐台對照表</b>（Q6）；<code>mechMakers</code> 12 筆 seed。</div>
+        <div class="task-file">scripts/temp_scripts/draft-mech-lore.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status pending">待開始</span>
@@ -346,31 +370,262 @@
   </div>
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">O-2 &nbsp; 館首頁的機甲分頁<span class="badge badge-cyan" style="margin-left:8px;">引用 042-A</span></div>
+      <div class="task-group-title">B-2 &nbsp; 站長複核</div>
+      <div class="task-group-meta">草稿 JSON</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">勾選與修正</div>
+        <div class="task-desc">型號、待判的廠商、系譜種類、台版／陸版逐台選擇、英文名。</div>
+        <div class="task-file">_local-notes/（草稿 JSON）</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 寫入</div>
+      <div class="task-group-meta">mechLore · mechMakers</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">--apply＋bump</div>
+        <div class="task-desc">先 <code>backup-firestore.mjs</code> 備份、先 dry-run。寫正式 DB 會被 auto mode 擋，由站長執行。這一步只「複製」介紹到 <code>mechLore</code>，<code>mechs.lore</code> 留到 H-7 才刪。</div>
+        <div class="task-file">scripts/temp_scripts/</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label yellow">Phase C</div>
+  <div class="section-title">元件泛化</div>
+
+  <div class="section-desc">最大的工程風險：機師館零回歸。可與 A／B 並行（不碰 DB）。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; LoreSubject 轉接層</div>
+      <div class="task-group-meta">src/components/lore/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">pilotSubject()／mechSubject()</div>
+        <div class="task-desc"><code>kind</code>、id、名稱、英文名、序號、<code>stamp</code>（機甲＝型號；機師＝undefined 走簽名）、舞台圖、頭像、外觀、圖鑑連結。</div>
+        <div class="task-file">src/components/lore/loreSubject.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 元件改吃 subject</div>
+      <div class="task-group-meta">LoreStage · LoreSwitcher · LoreSkinPicker · loreRoster · loreStageArt</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">形狀通用的元件</div>
+        <div class="task-desc">內容不同的不硬塞：<code>LoreDossier</code> 不加機甲分支，機甲另做 <code>MechDossier</code>（D-3）。</div>
+        <div class="task-file">src/components/lore/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; useLoreHall()</div>
+      <div class="task-group-meta">src/pages/lore/PilotLorePage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">抽出開場／換人／外觀／鍵盤狀態機</div>
+        <div class="task-desc">兩館各一支薄頁面。</div>
+        <div class="task-file">src/pages/lore/useLoreHall.ts · src/pages/lore/PilotLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 機師館逐幀回歸</div>
+      <div class="task-group-meta">Playwright</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">泛化前後比對</div>
+        <div class="task-desc"><code>2026-09-16_filmstrip.mjs</code> 比對開場與換人；鍵盤、<code>?skin=</code>、名冊 FLIP、鑑賞轉場列入驗收清單。<b>量時序一律 headless</b>。</div>
+        <div class="task-file">_local-notes（驗收腳本）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label yellow">Phase D</div>
+  <div class="section-title">展廳頁</div>
+
+  <div class="section-desc">依模擬頁（站長 10-16 認可）實作。依賴 A、C。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 路由與頁面</div>
+      <div class="task-group-meta">src/App.tsx · src/pages/lore/MechLorePage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">/lore/mechs/:id(/:part)</div>
+        <div class="task-desc">參數名必須是 <code>:id</code>／<code>:part</code>（routeKeys 寫死）。<code>seo.ts</code> 的 <code>PAGE_TITLES</code> 補兩條、詳情頁比照機師進 <code>SITEMAP_EXCLUDED</code>（<code>npm test</code> 會擋）、<code>usePageTitle(`${name} 機甲故事`)</code>。<code>/lore</code> 前綴已在 CF 白名單，不必動 Dashboard。</div>
+        <div class="task-file">src/App.tsx · src/lib/seo.ts · src/pages/lore/MechLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 舞台</div>
+      <div class="task-group-meta">LoreStage（mech 變體）</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">主視覺＋型號鋼印＋線稿調參</div>
+        <div class="task-desc">紙色舞台放 <code>Icon_mecha_wap####_SN_Raw</code>；型號鋼印取代簽名；<code>#lore-sketch</code> 以 93 台重量參數與失效門檻（B-2，深色裝甲墨色偏重）。</div>
+        <div class="task-file">src/components/lore/LoreStage.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; MechDossier</div>
+      <div class="task-group-meta">src/components/lore/MechDossier.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">卷宗七張卡</div>
+        <div class="task-desc">標題（名稱、英文名、型號、廠商、圖鑑入口）→ 技術檔案 → 逸聞目錄 → 構造（四分件，右臂在畫面左）→ 系譜 → 搭乘者（連機師廳）→ 卡池（招募插畫附件）。圖鑑朱印移到名字旁＋常駐「查看圖鑑 ↗」，<b>機師廳的朱印一起改</b>。廠商未填顯示「廠商未載」。</div>
+        <div class="task-file">src/components/lore/MechDossier.tsx · src/components/lore/LoreDossier.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 鑑賞模式</div>
+      <div class="task-group-meta">LoreViewer</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">三種圖面 × 兩種背景</div>
+        <div class="task-desc">主視覺／四分件／招募插畫 × 廠商舞台／紙色；不暈邊；沿用 <code>LoreViewer</code> 的 FLIP 轉場（四分件從構造卡縮圖飛出／飛回）。招募插畫比例 2600×1080。⚠ 手機上卷宗橫向退開會撐寬版面（模擬頁改成往下退）。</div>
+        <div class="task-file">src/components/lore/LoreViewer.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-5 &nbsp; 名冊依廠商分組</div>
+      <div class="task-group-meta">loreRoster</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">組頭用廠商舞台</div>
+        <div class="task-desc">依 <code>mechMakers.order</code> 排序；未指定廠商的另成一組。</div>
+        <div class="task-file">src/components/lore/loreRoster.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-6 &nbsp; 章節閱讀</div>
+      <div class="task-group-meta">LoreChapterPager</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">沿用機師的章節頁</div>
+        <div class="task-desc"><code>/lore/mechs/:id/:part</code>；有章節才出現目錄卡；章節不放首字放大（同機師廳 10-16 的改動）。</div>
+        <div class="task-file">src/pages/lore/MechLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-7 &nbsp; 機師廳座機卡</div>
+      <div class="task-group-meta">src/pages/lore/PilotLorePage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機師 → 官配機甲</div>
+        <div class="task-desc"><code>LoreDossier</code> 加座機卡，<code>PilotLorePage</code> 多載 mechs；依 <code>pilots.pairedMechId</code>。</div>
+        <div class="task-file">src/components/lore/LoreDossier.tsx · src/pages/lore/PilotLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label yellow">Phase E</div>
+  <div class="section-title">館首頁</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 機甲分頁</div>
       <div class="task-group-meta">src/pages/lore/LoreHomePage.tsx</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">機甲牆</div>
-        <div class="task-desc">042-A 已把館首頁做成「機甲｜機師」兩個分頁，本項只補機甲那一頁。縮圖用既有 <code>portrait.webp</code>。缺 <code>lore-art</code> 者以半透明卡標示「立繪待補」。</div>
+        <div class="task-name">機甲牆與 hero</div>
+        <div class="task-desc">啟用「機甲」分頁；hero 用廠商舞台輪播或招募插畫（招募插畫只在這裡和全景鑑賞出現）。</div>
         <div class="task-file">src/pages/lore/LoreHomePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status pending">待開始</span>
     </div>
   </div>
+</section>
+<section class="section">
+  <div class="section-label yellow">Phase F</div>
+  <div class="section-title">素材上站</div>
+
+  <div class="section-desc">Q5：約 16 MB。⚠ CF 會快取 404：部署完成前別先請求新圖。</div>
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">O-3 &nbsp; 編輯台加機甲 tab<span class="badge badge-cyan" style="margin-left:8px;">引用 042-A</span></div>
-      <div class="task-group-meta">src/pages/admin/AdminLorePage.tsx</div>
+      <div class="task-group-title">F-1 &nbsp; 塗裝</div>
+      <div class="task-group-meta">scripts/import-game-assets.mjs</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">接上 mechLore</div>
-        <div class="task-desc">編輯台本體由 042-A 建立（含章節 CRUD、必填 key 自動生成、OCR 貼上輔助）。本項只在實體選單加機甲來源、接上 <code>mechLore</code> 的讀寫。</div>
-        <div class="task-file">src/pages/admin/AdminLorePage.tsx</div>
+        <div class="task-name">34 台 38 張</div>
+        <div class="task-desc"><code>import-game-assets.mjs</code> 加機甲塗裝上站模式、<code>GAME_MECH_SKINS</code> 索引；色票用 <code>Img_custom_wap*</code>（<code>Icon_wap*_S*</code> 是油漆箱商品圖，別當縮圖）。塗裝名稱存 <code>mechLore.skins</code>。</div>
+        <div class="task-file">scripts/import-game-assets.mjs · public/images/game/</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status pending">待開始</span>
@@ -378,15 +633,37 @@
   </div>
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">O-4 &nbsp; MechDetailPage lore 區塊改導引</div>
-      <div class="task-group-meta">src/pages/mechs/MechDetailPage.tsx</div>
+      <div class="task-group-title">F-2 &nbsp; 廠商舞台與招募插畫</div>
+      <div class="task-group-meta">public/images/game/</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">首句 ＋ 入館</div>
-        <div class="task-desc">同 042-A 的 D-4 做法：不能整段刪（<code>EntityRefView.tsx:79</code> 的 hover 浮窗在用 <code>m.lore</code>），也不能兩邊都完整顯示。改成「首句 ＋ 閱讀完整故事 ▸」。<br><b>⚠ lore 區塊在 <code>:317</code> 不是原 PLAN-042 寫的 <code>:548</code></b>（過期指涉）。寫入端 <code>MechAdmin.tsx:425</code> 也要一起看。<br><span style='color:var(--text-dim);'>註：機甲 lore 實測引文體 0 篇、署名 0 篇，不需要 042-A 那套引文卡與署名細線排版。</span></div>
-        <div class="task-file">src/pages/mechs/MechDetailPage.tsx:317 · src/pages/user/admin/MechAdmin.tsx:425</div>
+        <div class="task-name">12＋60 張</div>
+        <div class="task-desc">廠商舞台 <code>Skynet_Wap_BG_*_Raw</code> 12 張；招募插畫由兩片 1024² 切片拼成 2600×1080 比例（60 張，雙機池用上半兩片）。切片原檔與大廳預覽不上。</div>
+        <div class="task-file">scripts/import-game-assets.mjs · public/images/game/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label yellow">Phase G</div>
+  <div class="section-title">編輯台</div>
+
+  <div class="section-desc">編輯台沒好之前，資料由 B 的草稿腳本寫入。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-1 &nbsp; 機甲分頁</div>
+      <div class="task-group-meta">src/pages/admin/AdminLorePage.tsx · src/components/admin/lore/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">扉頁／技術檔案／系譜／塗裝／章節／預覽</div>
+        <div class="task-desc">AdminLorePage 頂層加「機甲」；扉頁（型號、廠商下拉、英文名、介紹、來源）、技術檔案、系譜（機甲選擇器＋關係種類）、塗裝命名、章節（沿用 <code>LoreChaptersEditor</code> 與 OCR 貼上）、預覽；完成度欄位改機甲版。</div>
+        <div class="task-file">src/components/admin/lore/</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status pending">待開始</span>
@@ -394,38 +671,247 @@
   </div>
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">O-5 &nbsp; Worker 路徑涵蓋<span class="badge badge-cyan" style="margin-left:8px;">引用 042-A</span></div>
+      <div class="task-group-title">G-2 &nbsp; 機甲廠商分頁</div>
+      <div class="task-group-meta">src/components/admin/lore/MechMakersEditor.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">mechMakers 的增修（Q3）</div>
+        <div class="task-desc">中英文名、徽章（<code>FactionLogoPicker</code>）、舞台背景、型號前綴、排序、備註；可新增廠商。比照 <code>FactionEmblemsEditor</code>。</div>
+        <div class="task-file">src/components/admin/lore/MechMakersEditor.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label yellow">Phase H</div>
+  <div class="section-title">串接與上線</div>
+
+  <div class="section-desc">部署順序：rules → Worker → 搬遷 → bump → push。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">H-1 &nbsp; Layout 與 SEO</div>
+      <div class="task-group-meta">src/components/layout/Layout.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">館名與離館落點</div>
+        <div class="task-desc">header 依路徑顯示「機師故事館／機甲故事館」；離館多比對 <code>/lore/mechs/:id/*</code> → <code>/mechs/:id</code>。</div>
+        <div class="task-file">src/components/layout/Layout.tsx · src/components/lore/loreExit.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">H-2 &nbsp; 統計</div>
+      <div class="task-group-meta">src/lib/analytics/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">loreMechs</div>
+        <div class="task-desc"><code>ROUTE_PATTERNS</code>／<code>ENTITY_ROUTES</code> 加 <code>loreMechs</code>，<code>loreStats</code> 漏斗分廳；Worker <code>ENTITY_TYPES</code> 先部署（A-4）。</div>
+        <div class="task-file">src/lib/analytics/ · workers/src/collect.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">H-3 &nbsp; 社群分享卡</div>
       <div class="task-group-meta">workers/src/socialPreview.ts</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">parseEntityPath 加機甲路徑</div>
-        <div class="task-desc">042-A 已把正則放寬到四段並加了 <code>/lore/*</code> route 與 CF Transform Rule 例外。本項只確認 <code>/lore/mechs/:id/:part</code> 命中、og 卡面素材（機甲用既有 og JPEG）正確。</div>
-        <div class="task-file">workers/src/socialPreview.ts</div>
+        <div class="task-name">LORE_RE 認 mechs</div>
+        <div class="task-desc"><code>LORE_RE</code> 改 <code>(pilots|mechs)</code>（字面值被 <code>routeKeys.test.ts</code> 綁住、<code>socialPreview.test.ts</code> 的 null 斷言要改）；卡片「X 的故事」、描述取 <code>mechLore.intro</code>、圖用 SN_Raw。機甲<b>圖鑑</b>卡的描述目前讀 <code>doc.lore</code>，刪欄位後會退回預設文案（「部件、模組槽與數值一覽」），屬預期。wrangler route 已是 <code>/lore/*</code>，不必改。</div>
+        <div class="task-file">workers/src/socialPreview.ts · workers/src/index.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status pending">待開始</span>
     </div>
   </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">H-4 &nbsp; 機甲圖鑑入口</div>
+      <div class="task-group-meta">src/pages/mechs/MechDetailPage.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機體描述 → 故事館入口（Q2）</div>
+        <div class="task-desc">整塊換成不帶文字的「故事館 ▸」入口（比照 <code>PilotDetailPage</code>）；<code>MechAdmin</code> 拿掉介紹欄。</div>
+        <div class="task-file">src/pages/mechs/MechDetailPage.tsx · src/pages/user/admin/MechAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">H-5 &nbsp; 部署與讀取端切換</div>
+      <div class="task-group-meta">站長執行部署</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">照順序上線</div>
+        <div class="task-desc">rules → Worker → B-3 搬遷 → bump → push；<b>先請所有管理者關掉／重新整理後台分頁</b>（10-14 舊分頁覆寫事件）。部署後正式站驗收。</div>
+        <div class="task-file">firebase deploy · wrangler deploy · npm run push</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">H-6 &nbsp; entityRefs SPECS</div>
+      <div class="task-group-meta">src/utils/entityRefs.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">章節開始有 [xxx] 引用時才登記 MECH_LORE</div>
+        <div class="task-desc">一登記就連動級聯刪除與引用掃描；<b>rules 必須先部署</b>，否則全站後台刪除會 permission-denied。</div>
+        <div class="task-file">src/utils/entityRefs.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">H-7 &nbsp; 刪舊欄位</div>
+      <div class="task-group-meta">mechs.lore</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">觀察期後刪 mechs.lore</div>
+        <div class="task-desc">觀察一週無誤再刪；腳本封存到 <code>E:\Mecharashi_Data\script-archive\&lt;日期&gt;\</code>；docs 同步移除欄位說明。</div>
+        <div class="task-file">scripts/temp_scripts/ · docs/02_技術文件/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label yellow">Phase I</div>
+  <div class="section-title">選配</div>
 
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">I-1 &nbsp; 官網 official 變體</div>
+      <div class="task-group-meta">官網 #mecha</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">8 台官方圖層</div>
+        <div class="task-desc">m02–m08 要補下載。</div>
+        <div class="task-file">public/images/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">I-2 &nbsp; 跨廳過場打磨</div>
+      <div class="task-group-meta">src/components/lore/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機師 ↔ 機甲</div>
+        <div class="task-desc">搭乘者卡／座機卡的跨廳過場。</div>
+        <div class="task-file">src/components/lore/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label yellow">Phase J</div>
+  <div class="section-title">卡池動態（本體上線後）</div>
+
+  <div class="section-desc">站長 10-16 看過芬里厄試作判定「很像」。只在招募插畫全景鑑賞裡播，不上舞台。試作：<code>_local-notes/…/fenrir-proto/</code>。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">J-1 &nbsp; 第一批：38 台不需 Flow1 的單機卡池</div>
+      <div class="task-group-meta">約 3–4 人日</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">補照規格的粒子功能＋批次匯出</div>
+        <div class="task-desc">序列幀動畫（UVModule，48 台用到）、Box／Circle 發射形狀、Unlit／Additive shader、別的封包裡的材質；73 個 prefab 批次匯出並瘦身（芬里厄原始 typetree 912 KB → 幾十 KB）。匯出腳本在 <code>_local-notes/…/scripts/</code>。</div>
+        <div class="task-file">scripts/（匯出）· src/components/lore/gacha/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">上站整合</div>
+        <div class="task-desc">全景鑑賞內播放；開啟才載入 WebGL、手機降級、<code>prefers-reduced-motion</code> 不播；每台貼圖約 300 KB，依 F 段同一套上站流程。動工時順便查 <code>ui_prefabs_wapgachaskin_abs.b</code> 是否為桌布專用版。</div>
+        <div class="task-file">src/components/lore/LoreViewer.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">抽樣校準</div>
+        <div class="task-desc">站長開遊戲配合，抽約 10 台並排比（同芬里厄：連拍、逐區比「每格變化量」與平均色）。</div>
+        <div class="task-file">_local-notes（比對工具）</div>
+      </div>
+      <div class="task-assignee">站長＋開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">J-2 &nbsp; 第二批：19 台 Flow1</div>
+      <div class="task-group-meta">約 1–1.5 人日</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">第二支流動 shader</div>
+        <div class="task-desc">照參數名推回近似寫法、逐台對遊戲畫面校。巨像／戴亞斯／恐爪（拖尾、Animator）維持靜態。</div>
+        <div class="task-file">src/components/lore/gacha/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
 </section>
 <section class="section">
   <div class="section-label yellow">Phase P</div>
   <div class="section-title">長期資料作業</div>
 
-
-  <div class="section-desc">非開發任務。開發收束後轉入「觀察維護中」追蹤。</div>
+  <div class="section-desc">非開發任務，開發收束後轉入「觀察維護中」追蹤。</div>
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">P-1 &nbsp; 機甲逸聞內容輸入</div>
-      <div class="task-group-meta">mechLore 集合</div>
+      <div class="task-group-title">P-1 &nbsp; 機甲逸聞章節輸入</div>
+      <div class="task-group-meta">mechLore.chapters</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">逐台輸入</div>
-        <div class="task-desc">90 台 × N PART，OCR 輔助。後台列表的「章節數」欄可視化缺口。</div>
+        <div class="task-name">逐台輸入 PART</div>
+        <div class="task-desc">遊戲內依解析等級解鎖，OCR 輔助；編輯台完成度欄位可視化缺口。</div>
         <div class="task-file">mechLore 集合（後台作業）</div>
       </div>
       <div class="task-assignee">管理員</div>
@@ -434,24 +920,21 @@
   </div>
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">P-2 &nbsp; 廠商欄位補齊</div>
-      <div class="task-group-meta">mechs 集合</div>
+      <div class="task-group-title">P-2 &nbsp; 廠商與系譜補齊</div>
+      <div class="task-group-meta">mechMakers · mechLore</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">90 台廠商人工填入</div>
-        <div class="task-desc">官方 API 未提供。後台機甲列表的「廠商」欄可視化缺口。</div>
-        <div class="task-file">mechs 集合（後台作業）</div>
+        <div class="task-name">UKB 名稱與徽章、待判的廠商、系譜種類</div>
+        <div class="task-desc">在編輯台補；新廠商依 <code>diff-game-dump.mjs</code> 的報告新增。</div>
+        <div class="task-file">mechMakers／mechLore（後台作業）</div>
       </div>
       <div class="task-assignee">管理員</div>
       <span class="status pending">待開始</span>
     </div>
   </div>
-
 </section>
-
-
 </main>
 
 <footer class="footer">

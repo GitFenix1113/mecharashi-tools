@@ -303,9 +303,10 @@
 <header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(234,179,8,0.13) 0%, transparent 60%), var(--bg-dark);">
   <div class="hero-badge yellow">◆ PLAN-042-B</div>
   <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-    機甲故事館<span style="-webkit-text-fill-color:var(--text-secondary);">Mech Lore · 章節逸聞 · 立繪顯影</span>
+    機甲故事館<span style="-webkit-text-fill-color:var(--text-secondary);">Mech Lore · 兵器型錄 · 廠商舞台 · 卡池動態</span>
   </h1>
-  <p class="hero-sub">把 90 台機甲的逸聞接進 042-A 建立的故事館底盤。元件與版面全部沿用，本計畫只做機甲專屬的三件事：立繪素材工程（90 張人工出圖，最大成本）、<code>manufacturer</code> 欄位、<code>mechLore</code> 集合與機甲側頁面。</p>
+  <p class="hero-sub">把 93 台機甲接進機師故事館的底盤，做成「看兵器型錄」的展廳：官方去背主視覺放在紙色舞台上，型號鋼印取代簽名，卷宗依序是技術檔案、逸聞、構造、系譜、搭乘者、卡池，名冊依 12 家廠商分組。<br>
+  <span style="color:var(--accent-yellow);">2026-10-16 改寫：</span>原版最大的成本「90 張人工出圖」已被 PLAN-054 的官方原檔（93／93）取代。本版依 10-16 提案、可操作模擬頁與站長 Q1–Q7 的定案重寫，卡池動態併入為本體上線後的 Phase J。</p>
 </header>
 
 <main class="container">
@@ -316,140 +317,297 @@
 
   <div class="plan-meta">
     <div class="meta-item"><div class="meta-label">計畫編號</div><div class="meta-value yellow">PLAN-042-B</div></div>
-    <div class="meta-item"><div class="meta-label">建立日期</div><div class="meta-value ">2026-08-03（2026-08-23 拆出）</div></div>
-    <div class="meta-item"><div class="meta-label">影響範圍</div><div class="meta-value purple">types/mech · mechLore 集合 · pages/lore（機甲側）· MechAdmin · public/images/mechs</div></div>
-    <div class="meta-item"><div class="meta-label">優先級</div><div class="meta-value yellow">LOW</div></div>
-    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value purple">阻塞於 042-A</div></div>
-    <div class="meta-item"><div class="meta-label">前置依賴</div><div class="meta-value cyan">PLAN-042-A（共用元件）</div></div>
-    <div class="meta-item"><div class="meta-label">角色</div><div class="meta-value cyan">共用元件的使用者</div></div>
+    <div class="meta-item"><div class="meta-label">建立日期</div><div class="meta-value ">2026-08-03（08-23 拆出、10-16 改寫）</div></div>
+    <div class="meta-item"><div class="meta-label">影響範圍</div><div class="meta-value purple">types/lore · mechLore／mechMakers 集合 · components/lore 泛化 · pages/lore（機甲側）· 故事館編輯台 · Worker · MechDetailPage</div></div>
+    <div class="meta-item"><div class="meta-label">優先級</div><div class="meta-value yellow">MID</div></div>
+    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value cyan">規劃定案 · 待開工</div></div>
+    <div class="meta-item"><div class="meta-label">前置依賴</div><div class="meta-value cyan">042-A／C／D／E（皆已上線）· PLAN-054 圖片 ID 化</div></div>
+    <div class="meta-item"><div class="meta-label">估工</div><div class="meta-value orange">完整 18 · 最小可上線 12.5 · J 另 4–5.5 人日</div></div>
   </div>
+
   <div class="info-block">
-    <strong>一句話：</strong>把 90 台機甲的逸聞接進
-    <a href="../PLAN-042-A_機師故事館/計畫書.html" style="color:var(--accent-orange);">042-A</a> 建立的故事館底盤。
-    <strong>元件、路由、chrome、換膚、章節導覽全部沿用，本計畫只做機甲專屬的三件事</strong>：
-    立繪素材工程、<code>manufacturer</code> 欄位、<code>mechLore</code> 集合與機甲側頁面。
+    <strong>一句話：</strong>機師廳是「讀人物卷宗」，機甲廳是「看兵器型錄」。機甲文字少（介紹中位數 157 字），但視覺素材多：橫幅主視覺、4 張分件、34 台塗裝、12 家廠商舞台、60 張招募插畫。所以版面要<strong>以圖帶字</strong>，不是把機師館換皮。<br>
+    工作重心是三件事：<strong>把故事館元件從「綁死機師」泛化</strong>、<strong>把機甲的敘事資料（型號／廠商／系譜）整理出來</strong>、<strong>為橫式素材設計展廳</strong>。
+  </div>
+
+  <div class="info-block">
+    <strong>依據</strong>：<code>_local-notes/2026-10/2026-10-16_機甲故事館_規劃/</code>（本機，不進版控）——<code>規劃.html</code> §01–§18（盤點、三輪回饋、封包逆向、試作、定案）、
+    <code>index.html</code> 可操作模擬頁（93 台，站長 10-16 認可「大致 OK」）、<code>fenrir-proto/</code> 芬里厄動態試作（站長 10-16：和遊戲很像）。
   </div>
 
   <div class="warn-block">
-    <strong>為什麼排在機師之後</strong><br>
-    機師的立繪 53/89 已由官方素材包到位、轉檔即用；<strong>機甲的 <code>lore-art</code> 實查 0 檔</strong>，
-    <code>portrait.webp</code> 只有 <strong>560×340</strong>（半身裁切），放大到全高面板會嚴重糊化 ——
-    需要 90 張人工出圖，這是本計畫最大的一筆成本，也是它被排在後面的唯一原因。<br>
-    共用元件由 042-A 先驗證完，本計畫接上時風險大幅降低。
+    <strong>本次改寫推翻了原版哪些前提</strong>
+    <table class="layer-table">
+      <tr><th>原版（2026-08-23）</th><th>現況（2026-10-16）</th><th>處置</th></tr>
+      <tr><td>B-1 立繪 0.5–0.65 直幅</td><td>PLAN-054 之後 93／93 台都有官方去背 <code>Icon_mecha_wap####_SN_Raw</code>（2000×1080 橫式）</td><td><span class="badge badge-red">已被取代</span> 見 B-5</td></tr>
+      <tr><td>B-2 線稿濾鏡重調參</td><td>模擬頁實測：<code>#lore-sketch</code> 原樣套在金屬機體上像鉛筆素描、可用；深色裝甲墨色偏重</td><td><span class="badge badge-green">保留</span> 在 D-2 調參</td></tr>
+      <tr><td>B-3 mechLore 與 pilotLore 分家</td><td>仍成立（版本 gate 是集合級）</td><td><span class="badge badge-green">保留</span></td></tr>
+      <tr><td>B-4 manufacturer 留 mechs</td><td>042-E 判準改為「與數值、機制有沒有關係」；站長確認遊戲沒有廠商機制，且要能在後台編輯廠商</td><td><span class="badge badge-red">已被取代</span> 見 B-8</td></tr>
+      <tr><td>Phase M 90 張人工出圖</td><td>官方原檔已到位</td><td><span class="badge badge-red">取消</span></td></tr>
+      <tr><td>「機甲沒有 PART 章節」</td><td>遊戲內機甲圖鑑有分 PART 的逸聞（依解析等級解鎖）</td><td>章節層納入範圍（B-11）</td></tr>
+    </table>
   </div>
-
 </section>
+
 <section class="section">
   <div class="section-label red">Problem</div>
   <div class="section-title">問題背景</div>
 
-
   <div class="problem-block">
-    <strong>問題一：逸聞被當成「附註」而非「內容」</strong><br>
-    <code>Mech.lore</code> 目前只是 <code>MechDetailPage.tsx:317</code> 的一段 <code>&lt;p&gt;</code>，
-    整段長文擠在數值表格之後，沒有章節、沒有節奏。官方遊戲內的逸聞是分 PART 1 / PART 2 章節、
-    並穿插 NPC（如娜塔莉亞）頭像旁白的敘事體驗。
+    <strong>問題一：機甲介紹只是圖鑑末端的一段文字</strong><br>
+    <code>mechs.lore</code> 在 <code>MechDetailPage</code> 的「機體描述」是一段 <code>&lt;p&gt;</code>，手機版收成 3 行。92／93 台有內容、87–391 字、中位 157；
+    其中 90 篇的首行就是官方型號（<code>OS-07X 都卜勒</code>），文中互相點名其他機甲 36 處。
   </div>
-
   <div class="problem-block">
-    <strong>問題二：沒有能撐起版面的大立繪</strong><br>
-    <code>public/images/mechs/&lt;名&gt;/portrait.webp</code> 是<strong>半身裁切圖（約 560×340）</strong>，只夠當列表縮圖。
-    <code>Mech.halfPortrait</code> 也是同樣性質。故事館需要<strong>全身立繪</strong>這個新素材層級，
-    而它<strong>目前一張都沒有</strong>。
+    <strong>問題二：遊戲裡的機甲逸聞，站上一篇都沒有</strong><br>
+    遊戲內機甲圖鑑有「逸聞」，分 PART、依解析等級解鎖（影子兔 PART 1 影子部隊／PART 2 無盡的篩選；破曉者-02 至少到 PART 4）。站上 PART 章節 0 篇。
   </div>
-
   <div class="problem-block">
-    <strong>問題三：製造商欄位全站不存在</strong><br>
-    官網右上角的「類型 / 製造廠商」是立繪面板的重要資訊錨點，但 <code>src/types/mech.ts</code> 與
-    <code>scripts/scrape-mechs.js</code> 皆<strong>無任何廠商欄位</strong>（grep 全站 manufacturer / 廠商 / 製造 均無結果）。
-    機甲可展示的敘事型 metadata 幾乎只有廠商，這個欄位必須補上。<br>
-    <span style="color:var(--accent-yellow);">對照：機師有 <code>additionalInfo</code> 81/89、94 種自由鍵名，
-    以及 34 篇引文體 / 35 篇署名——機甲這邊一項都沒有（實測機甲 lore 引文體 0 篇、署名 0 篇）。
-    機甲館的敘事密度天生低於機師館，版面要有心理準備。</span>
+    <strong>問題三：故事館元件綁死機師</strong><br>
+    <code>LoreStage</code>／<code>LoreDossier</code>／<code>LoreSwitcher</code>／<code>LoreSkinPicker</code>／<code>loreRoster</code>／<code>loreStageArt</code> 都直接吃 <code>Pilot</code>；
+    <code>PilotLorePage</code> 的開場、換人、外觀、鍵盤狀態機寫在頁面裡。照抄一套 <code>Mech*</code> 的話，042-C／D／G 每一輪改版都要改兩次。
   </div>
-
+  <div class="problem-block">
+    <strong>問題四：沒有廠商資料，但遊戲裡有完整的廠商體系</strong><br>
+    型號前綴幾乎一對一對應 12 家廠商；遊戲有 12 張廠商舞台 <code>Skynet_Wap_BG_*_Raw</code>（站長確認＝遊戲內機甲圖鑑的背景），11 家的徽章已在 <code>icons/camp/</code>。站上沒有任何欄位記錄廠商。
+  </div>
 </section>
+
 <section class="section">
   <div class="section-label yellow">Design</div>
   <div class="section-title">設計決策</div>
 
-
   <div class="decision-block">
-    <strong>決策 B-1：立繪素材規格</strong><br>
-    <code>public/images/mechs/&lt;名&gt;/lore-art.webp</code>，長邊上限 1400px、四周留約 5% 安全邊距、WebP。<br>
-    比例對齊 042-A 的實測值：機師官方全身立繪比例中位 <strong>0.58</strong>，官網 hero 是 <strong>0.55</strong>。
-    <strong>機甲出圖時採同一個級距（約 0.5–0.65 直幅）</strong>，兩館的立繪柱才能共用同一套版面而不必參數化。
-    <div class="warn-block" style="margin-top:10px">
-      <strong>⚠ 這是本計畫的關鍵前提。</strong>若機甲立繪最後做成別的比例，042-A 建立的立繪柱就得改成參數化，
-      那是一次橫跨兩館的重構。<strong>出圖前先確認比例。</strong>
-    </div>
+    <strong>B-1 <span class="badge badge-red">已被取代</span> 立繪素材規格</strong><br>
+    <span style="color:var(--text-dim);">原文：<code>lore-art.webp</code> 0.5–0.65 直幅、人工出圖 90 張。PLAN-054 之後改用官方橫式原檔，見 B-5。</span>
+  </div>
+  <div class="decision-block">
+    <strong>B-2 <span class="badge badge-green">保留</span> 偽線稿濾鏡以機甲素材重新調參</strong><br>
+    模擬頁已實測：<code>#lore-sketch</code> 原樣套在金屬機體上像鉛筆素描、可以用，但深色裝甲的墨色偏重。參數與失效門檻在 D-2 用 93 台主視覺重量一次。
+  </div>
+  <div class="decision-block">
+    <strong>B-3 <span class="badge badge-green">保留</span> <code>mechLore</code> 集合，與 <code>pilotLore</code> 分家；型別拆成共同底座</strong><br>
+    版本 gate 是集合級，合一會讓「改一台機甲的 PART 2」連帶清掉機師故事館的快取。現行 <code>LoreDoc</code> 拆成 <code>LoreDocBase</code>＋兩館擴充，
+    <code>LoreDoc</code> 保留成機師版的別名，既有呼叫端零改動（型別見下方「資料模型」）。
+  </div>
+  <div class="decision-block">
+    <strong>B-4 <span class="badge badge-red">已被取代</span> <code>Mech.manufacturer</code> 留在 mechs</strong><br>
+    <span style="color:var(--text-dim);">原文依「誰是權威來源」判準把廠商留在 mechs。042-E 之後判準改為「與數值、機制有沒有關係」；站長 10-16 確認遊戲目前沒有任何廠商相關的加成，見 B-8。</span>
   </div>
 
   <div class="decision-block">
-    <strong>決策 B-2：偽線稿濾鏡必須用機甲素材重新調參，不可假設沿用</strong><br>
-    042-A 已驗證 color-dodge 偽線稿在<strong>人像</strong>上的表現（54 張實測，只有零觸發 &gt;35% 高光門檻）。
-    但機體的材質、金屬高光、硬邊輪廓與人像完全不同 —— <strong>參數與失效門檻都要重測</strong>。<br>
-    <span style="color:var(--text-dim);">原 PLAN-042 說「已在官網彩圖上實測通過」，那是對<u>官網的機甲圖</u>測的，
-    不等於對<u>我們的機甲立繪</u>成立（我們的還沒畫）。素材出來後補一次量測。</span>
+    <strong>B-5 定位與素材：兵器型錄，主舞台紙色（Q4）</strong>
+    <ul>
+      <li><strong>主視覺</strong>：PLAN-054 的官方去背 <code>Icon_mecha_wap####_SN_Raw</code>（2000×1080）。機體重心 x 0.44–0.61，87 台置中。</li>
+      <li><strong>舞台</strong>：平常閱讀和機師廳一樣用紙色。廠商舞台只用在鑑賞模式、名冊組頭、館首頁 hero。遊戲共用的機庫大廳場景<strong>不採用</strong>（站長：不好看）。</li>
+      <li><strong>型號鋼印</strong>取代機師的英文簽名。</li>
+      <li><strong>鑑賞模式</strong>：主視覺／四分件／招募插畫，三種圖面 × 兩種背景（廠商舞台／紙色）。點開時不做邊緣暈開，秀完整的圖。
+        四分件 <code>Icon_wap####_1~4</code>（軀幹／左臂／右臂／腿）的左右照遊戲圖鑑「從正面看」排：<strong>右臂在畫面左邊</strong>。分件姿勢和主視覺不同，不能拼回去。</li>
+      <li><strong>招募插畫</strong>（卡池主視覺）不上舞台，避免搶主題：只當卷宗最後的附件，點開才是全景；館首頁 hero 才讓它炫。
+        真實比例是 <strong>2600×1080</strong>（卡池 prefab 裡兩片 RawImage 各 1300×1080）。</li>
+    </ul>
   </div>
 
   <div class="decision-block">
-    <strong>決策 B-3：<code>mechLore</code> 集合，與 <code>pilotLore</code> 分家</strong><br>
-    型別完全共用 042-A 的 <code>src/types/lore.ts</code>，<strong>但集合分開</strong>——
-    版本 gate 是集合級、Worker 只有整包端點，合一會導致「改一台機甲的 PART 2 → 機師故事館快取一起失效」。<br>
-    <code>LoreCommentary.speakerId</code> 指向 pilots，對機甲同樣成立（官方旁白就是娜塔莉亞這類機師）。
+    <strong>B-6 卷宗的卡片順序</strong><br>
+    標題（名稱、英文名、型號鋼印、廠商、圖鑑入口）→ <strong>技術檔案</strong>（介紹、非數值諸元）→ <strong>逸聞</strong>（章節目錄）→ <strong>構造</strong>（四分件）→ <strong>系譜</strong> →
+    <strong>搭乘者</strong>（官配機師，連到機師廳）→ <strong>卡池</strong>（招募插畫附件）。<br>
+    圖鑑入口要看得出能點：朱印放在名字旁＋常駐「查看圖鑑 ↗」文字。<span style="color:var(--text-dim);">機師廳的朱印也有同樣問題，D-3 順手一起改。</span>
   </div>
 
   <div class="decision-block">
-    <strong>決策 B-4：<code>Mech.manufacturer</code> 留在 mechs，不進 mechLore</strong><br>
-    依總綱決策二的「誰是權威來源」判準：廠商是機甲的客觀屬性、圖鑑側也會用，
-    <strong>與 <code>lore</code> 同層、留在 <code>mechs</code></strong>。只有章節與旁白進 <code>mechLore</code>。<br>
-    <span style="color:var(--text-dim);">官方 API 未提供廠商資料，本期以後台人工填入（爬蟲自動抓取不在範圍內）。</span>
-    <div class="warn-block" style="margin-top:10px">
-      <strong>⚠ 0/5 定律</strong>：<code>manufacturer</code> 是新加的<u>選填欄位</u>，本專案的既有經驗是
-      「新開的集合會被填滿，新加的選填欄位不會」。緩解：後台機甲列表加「廠商」欄讓缺口可見，
-      並在故事館扉頁把未填者顯示為「廠商未載」而非留白。
-    </div>
+    <strong>B-7 欄位放哪：套 042-E 判準「與數值、機制有沒有關係」</strong>
+    <table class="layer-table">
+      <tr><th>欄位</th><th>和數值／機制有關？</th><th>放哪</th></tr>
+      <tr><td>介紹文（現 <code>mechs.lore</code>）</td><td>無</td><td>搬到 <code>mechLore.intro</code>，首行型號切成 <code>modelNo</code>（Q2）</td></tr>
+      <tr><td>型號、廠商、系列、系譜、英文名、非數值諸元、塗裝顯示設定、章節</td><td>無</td><td><code>mechLore</code></td></tr>
+      <tr><td>官配機師</td><td>—</td><td>不存；沿用 <code>pairedPilotOf()</code> 從 <code>pilots.pairedMechId</code> 反查</td></tr>
+      <tr><td><code>armorType</code>、<code>quality</code>、<code>debutVersion</code>、<code>gameId</code></td><td>有（或是識別鍵）</td><td>留 <code>mechs</code>，故事館唯讀引用</td></tr>
+    </table>
+    機甲圖鑑比照 042-E 機師圖鑑：「機體描述」整塊換成一顆<strong>不帶文字</strong>的故事館入口。
   </div>
 
+  <div class="decision-block">
+    <strong>B-8 廠商：<code>mechMakers</code> 集合＋編輯台分頁（Q3）</strong><br>
+    站長 10-16：廠商歸故事館；遊戲目前沒有廠商相關的加成、也沒有消息；<strong>但要有能編輯廠商的後台</strong>，以後也許會新增。
+    因此提案裡的靜態表 <code>mechMakers.ts</code> 改成集合，做法比照 042-F 的陣營徽章註記 <code>factionEmblems</code>：
+    <ul>
+      <li>文件 ID＝官方舞台背景鍵（<code>Doll</code>、<code>Laniakea</code>、<code>UKB</code>…），與 <code>Skynet_Wap_BG_&lt;key&gt;_Raw</code> 一致；每台機甲在 <code>mechLore.maker</code> 存這個 ID。</li>
+      <li>欄位：中文名、英文名、徽章（沿用 <code>FactionLogoPicker</code> 選 <code>Icon_logo_*</code>）、舞台背景鍵、型號前綴（草稿腳本與編輯台建議用）、排序、備註。</li>
+      <li><strong>不登記 entityRefs SPECS、不走 saveWithHistory</strong>，理由同 <code>factionEmblems</code>：不引用別人、也不被 <code>[xxx]</code> 引用；進 SPECS 會連動級聯刪除與 rules 部署順序。</li>
+      <li>新廠商會隨改版出現：<code>diff-game-dump.mjs</code> 會報出新的 <code>Skynet_Wap_BG_*</code>，站長照報告在後台新增一筆即可，不需要 AI。</li>
+      <li>UKB 的中文名與徽章由站長之後在後台填；前台未填時顯示「廠商未載」，不留白。</li>
+    </ul>
+    <span style="color:var(--text-dim);">不違反 042-F「不做陣營字典」：陣營會隨劇情變，機甲的出廠廠商不會變。</span>
+  </div>
+
+  <div class="decision-block">
+    <strong>B-9 介紹文用台版譯文（Q6）</strong><br>
+    現有介紹是陸版 API 簡轉繁（用詞「機兵」）；台版公告有 49 台的「機體故事」，是同一段文字的台版官方譯本（用「機甲」）。
+    <strong>有台版譯本的 49 台改用台版</strong>，其餘 43 台照陸版原文保留，<strong>不自行改字</strong>（總綱：lore 是官方原文的鏡像）。來源記在 <code>frontSource</code>。草稿腳本產出逐台對照表給站長勾。
+  </div>
+
+  <div class="decision-block">
+    <strong>B-10 系譜一律人工連</strong><br>
+    總綱明文「交叉連結自動生成不做」。介紹文裡 36 處互提只當<strong>一次性草稿候選</strong>，<code>kind</code>（衍生自／競品／同系列／改型）留空由人填，
+    名稱 ≤2 字或常用詞（原點、尖兵、XR）標警告；渲染路徑不做任何文字比對。模擬頁實測 36 條裡有 20 條只能判「提及」。
+  </div>
+
+  <div class="decision-block">
+    <strong>B-11 章節層（Q1）</strong><br>
+    <code>mechLore.chapters</code>＝現有 <code>LoreChapter</code>，PART 鍵沿用總綱「後台自動產生的必填穩定鍵」；輸入沿用機師的 OCR 貼上流程。
+    章節正文出現 <code>[xxx]</code> 引用時才登記 entityRefs SPECS 的 <code>MECH_LORE</code>——<strong>一登記就連動級聯刪除，rules 必須先部署</strong>，否則全站既有的後台刪除會 permission-denied（042-A 踩過）。
+  </div>
+
+  <div class="decision-block">
+    <strong>B-12 先泛化、再加機甲：<code>LoreSubject</code> 轉接層</strong><br>
+    形狀通用的元件改吃 <code>LoreSubject</code>（<code>pilotSubject()</code>／<code>mechSubject()</code> 轉接），<code>PilotLorePage</code> 的開場／換人／外觀／鍵盤狀態機抽成 <code>useLoreHall()</code>，兩館各一支薄頁面；
+    內容不同的另做（<code>MechDossier</code> 重用卡片樣式，<code>LoreDossier</code> 不硬塞機甲分支）。<br>
+    <strong>最大的工程風險是機師館回歸</strong>：泛化前後各跑一次 Playwright 逐幀（<code>2026-09-16_filmstrip.mjs</code>）比對開場與換人；鍵盤、<code>?skin=</code>、名冊 FLIP 列入驗收。量時序一律 headless（隱藏的瀏覽器面板會量到固定 2 秒的假象）。
+  </div>
+
+  <div class="decision-block">
+    <strong>B-13 兩館互通</strong><br>
+    機甲卷宗的「搭乘者」卡連到機師廳；機師卷宗加「座機」卡連回機甲廳（站長定案）。64 台有官配機師。
+  </div>
+
+  <div class="decision-block">
+    <strong>B-14 卡池動態：本體上線後的 Phase J（Q7）</strong>
+    <ul>
+      <li><strong>不是 Spine。</strong>73 個機甲卡池 prefab（<code>WapGacha&lt;En&gt;PoolItemPrefab</code>）＝背景插畫兩片＋Coffee <code>UIParticle</code> 包 Unity 粒子系統（共 1,176 個）＋自訂流動 shader 圖層。粒子參數讀得到，shader 只有編譯版、要照參數名推回近似的寫法。</li>
+      <li><strong>做法</strong>：匯出 prefab 參數 → 站上用 WebGL2 重現。芬里厄試作已和站長的遊戲視窗並排校準（眼部流動、刃口光暈對上），<strong>站長 10-16 判定「很像」</strong>。</li>
+      <li><strong>只在招募插畫的全景鑑賞裡播</strong>（依 B-5，不上舞台）；開啟才載入 WebGL、手機降級、<code>prefers-reduced-motion</code> 不播。</li>
+      <li><strong>範圍</strong>：J-1 先做 38 台不需要第二支 shader（Flow1）的單機卡池 → J-2 再做 19 台需要 Flow1 的。巨像／戴亞斯／恐爪（拖尾、Animator）維持靜態；自選／精選／套裝／常駐／雙機池這類不屬於單一台機甲的卡池不做。</li>
+      <li><strong>特效跟著卡池走，不是跟著桌布走</strong>：站長推測只有能買桌布的機甲才有動態；查證結果是站上 60 台有卡池特效，其中 27 台沒有大廳桌布也一樣有（粒子系統中位 17 個）。
+        封包另有 <code>ui_prefabs_wapgachaskin_abs.b</code>，可能是桌布專用版，J 動工時再查。</li>
+    </ul>
+  </div>
 </section>
+
+<section class="section">
+  <div class="section-label purple">Data Model</div>
+  <div class="section-title">資料模型</div>
+
+  <div class="code-block"><span class="cm">// src/types/lore.ts（B-3：拆共同底座，LoreDoc 保留成機師版別名）</span>
+<span class="kw">interface</span> <span class="ty">LoreDocBase</span> {
+  id: <span class="ty">string</span>; name?: <span class="ty">string</span>
+  intro?: <span class="ty">string</span>; frontSource?: <span class="ty">string</span>; nameEn?: <span class="ty">string</span>
+  skins?: <span class="ty">LoreSkinSetting</span>[]          <span class="cm">// 機甲＝塗裝的名稱／隱藏／順序（站長：塗裝名稱要能編輯）</span>
+  chapters: <span class="ty">LoreChapter</span>[]
+}
+<span class="kw">interface</span> <span class="ty">PilotLoreDoc</span> <span class="kw">extends</span> <span class="ty">LoreDocBase</span> { dossier?: <span class="ty">LoreDossierInfo</span>; factionLogos?: <span class="ty">string</span>[] }
+<span class="kw">type</span> <span class="ty">LoreDoc</span> = <span class="ty">PilotLoreDoc</span>               <span class="cm">// 既有呼叫端零改動</span>
+<span class="kw">interface</span> <span class="ty">MechLoreDoc</span> <span class="kw">extends</span> <span class="ty">LoreDocBase</span> {
+  modelNo?: <span class="ty">string</span>                  <span class="cm">// 'DD-117'：從介紹首行切出、人工複核</span>
+  maker?: <span class="ty">string</span>                    <span class="cm">// mechMakers 的文件 ID（B-8）</span>
+  series?: <span class="ty">string</span>                   <span class="cm">// 選填，例「破曉者」「KX 系列」</span>
+  specs?: <span class="ty">LoreDossierField</span>[]        <span class="cm">// 非數值諸元：量產狀態、搭載核心…</span>
+  relations?: <span class="ty">MechRelation</span>[]       <span class="cm">// 系譜，人工維護（B-10）</span>
+}
+<span class="kw">interface</span> <span class="ty">MechRelation</span> {
+  mechId: <span class="ty">string</span>
+  kind?: <span class="st">'base'</span> | <span class="st">'rival'</span> | <span class="st">'series'</span> | <span class="st">'variant'</span>   <span class="cm">// 衍生自／競品／同系列／改型；空＝僅提及</span>
+  note?: <span class="ty">string</span>
+}
+
+<span class="cm">// src/types/mechMaker.ts（B-8：比照 factionEmblem.ts）</span>
+<span class="kw">interface</span> <span class="ty">MechMaker</span> {
+  id: <span class="ty">string</span>                         <span class="cm">// 官方舞台背景鍵 'Doll'＝Skynet_Wap_BG_Doll_Raw</span>
+  name?: <span class="ty">string</span>; nameEn?: <span class="ty">string</span>
+  logo?: <span class="ty">string</span>                      <span class="cm">// Icon_logo_* 圖庫鍵（FactionLogoPicker）</span>
+  stage?: <span class="ty">string</span>                     <span class="cm">// 舞台背景圖庫鍵；預設＝依 id 推得</span>
+  modelPrefixes?: <span class="ty">string</span>[]           <span class="cm">// 'DD'、'KX'…：草稿腳本與編輯台的建議用，不做自動指派</span>
+  order?: <span class="ty">number</span>; note?: <span class="ty">string</span>
+}</div>
+
+  <div class="warn-block">
+    <strong>兩個新集合的連動</strong>（記憶「新增集合的九處連動」）：<code>collectionKeys.ts</code>（含要不要像 <code>pilotLore</code> 一樣不落 localStorage）、<code>GameDataContext</code>、hooks、API 模組＋barrel、
+    Worker <code>ARRAY_COLLECTIONS</code>、<code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>（⚠ 被 .gitignore 擋的本機獨有檔）、<code>firestore.rules</code>、測試 helper；<code>mechLore</code> 另有 <code>ChangeTargetKind</code>。<br>
+    <code>mechMakers</code> 的範本就是 <code>factionEmblems</code>（同樣不進 SPECS），照它的檔案清單走一遍。依 CLAUDE.md 規則 2 同步 <code>docs/02_技術文件/</code> 的資料模型頁與 Firebase 集合文件。
+  </div>
+</section>
+
 <section class="section">
   <div class="section-label green">Scope</div>
   <div class="section-title">實作範圍</div>
 
-
   <div class="info-block">
     <strong>在範圍內</strong>
     <ul>
-      <li>機甲全身立繪素材規格、出圖流程與匯入（90 張）</li>
-      <li>偽線稿濾鏡以機甲素材重新調參與逐張旗標</li>
-      <li><code>Mech.manufacturer</code> 欄位 ＋ MechAdmin 編輯 ＋ docs 同步</li>
-      <li><code>mechLore</code> 集合與七處 CollectionKey 同步</li>
-      <li><code>/lore/mechs/:id(/:part)</code> 頁面、館首頁的「機甲」分頁</li>
-      <li><code>/admin/lore</code> 加機甲 tab（編輯台本體由 042-A 建立）</li>
-      <li><code>MechDetailPage</code> 的 lore 區塊改「首句 ＋ 入館」導引</li>
-      <li>Worker <code>parseEntityPath</code> 涵蓋 <code>/lore/mechs/*</code></li>
+      <li>型別拆分、<code>mechLore</code>／<code>mechMakers</code> 集合與連動、rules、Worker</li>
+      <li>一次性草稿腳本：型號、廠商、系譜候選、英文名、台版譯文對照（站長複核後 <code>--apply</code>）</li>
+      <li>故事館元件泛化（<code>LoreSubject</code>、<code>useLoreHall()</code>）＋機師館逐幀回歸</li>
+      <li><code>/lore/mechs/:id(/:part)</code> 展廳頁、<code>MechDossier</code>、鑑賞模式、依廠商分組的名冊、章節閱讀、機師廳座機卡</li>
+      <li>館首頁「機甲」分頁與 hero</li>
+      <li>素材上站：塗裝 38 張、廠商舞台 12 張、招募插畫 60 張（約 16 MB）（Q5）</li>
+      <li>故事館編輯台：機甲分頁＋「機甲廠商」分頁</li>
+      <li>串接：header／離館、SEO、統計、OG Worker、機甲圖鑑入口、搬遷與刪舊欄位</li>
+      <li>Phase J 卡池動態（本體上線後）</li>
     </ul>
   </div>
 
   <div class="problem-block">
-    <strong>不在範圍內（全部由 042-A 提供）</strong>
+    <strong>不在範圍內</strong>
     <ul>
-      <li><code>src/types/lore.ts</code> 型別、<code>LoreArt</code> 元件、<code>LoreChapterPager</code>、章節與旁白渲染元件</li>
-      <li><code>Layout</code> 的 <code>chromeMode</code> 三態、<code>.lore-shell</code> 紙色換膚、進場過渡</li>
-      <li><code>/lore</code> 路由骨架、導覽列入口、Worker <code>/lore/*</code> route 與 CF Transform Rule 例外</li>
-      <li>靜態化解析層與 bundle 驗證機制</li>
+      <li>大廳外觀預覽 <code>Img_main_Skin_*</code>（1056×594，解析度低、又是招募插畫的同一張畫）、招募插畫的原始切片（上站的是拼好的 60 張）</li>
+      <li>遊戲共用機庫大廳場景 <code>Img_main_hanger_*</code>（站長：不好看）</li>
+      <li>卡池名字字卡 <code>mechcard_name_*</code>（簡中字圖，不適合台版站）</li>
+      <li>機甲卡池以外的卡池動態、拖尾／Animator 那 3 台的動態</li>
+      <li>兩館都不做：玩家標籤與評分、陣營／世界觀條目、官方 lore 原文插 <code>[xxx]</code>、交叉連結自動生成（詳見<a href="../PLAN-042_故事館_總綱/計畫書.html" style="color:var(--accent-red);">總綱</a>）</li>
     </ul>
   </div>
 
-  <div class="problem-block">
-    <strong>兩館都不做</strong>：玩家標籤與評分、陣營／世界觀條目、官方 lore 原文插 <code>[xxx]</code>、
-    交叉連結自動生成、官網 fullpage.js 全屏換頁。詳見
-    <a href="../PLAN-042_故事館_總綱/計畫書.html" style="color:var(--accent-red);">總綱</a>。
+  <div class="info-block">
+    <strong>路由與 CF</strong>：路由在 <code>/lore/mechs/*</code> 底下，<strong>CF Transform Rule 白名單不必改</strong>（<code>/lore</code> 前綴 09-10 已上線）；
+    <code>workers/wrangler.jsonc</code> 的 route 已是 <code>/lore/*</code>、UA 排除也涵蓋 <code>/lore/</code>。要改的只有 <code>socialPreview.ts</code> 的 <code>LORE_RE</code>（目前只認 <code>pilots</code>，且被 <code>routeKeys.test.ts</code> 以字串綁住）。
   </div>
-
 </section>
 
+<section class="section">
+  <div class="section-label orange">Estimate</div>
+  <div class="section-title">階段與估工</div>
+
+  <table class="layer-table">
+    <tr><th>階段</th><th>內容</th><th>人日</th></tr>
+    <tr><td>0 決策</td><td>站長回答 Q1–Q7、改寫計畫書與進度表（10-16 完成）</td><td>0.5</td></tr>
+    <tr><td>A 資料層</td><td>型別拆分、<code>mechLore</code>／<code>mechMakers</code> 連動、rules、Worker、docs 同步</td><td>2</td></tr>
+    <tr><td>B 草稿</td><td>一次性草稿腳本＋站長複核＋<code>--apply</code>＋bump</td><td>1</td></tr>
+    <tr><td>C 泛化</td><td><code>LoreSubject</code>、<code>useLoreHall()</code>、元件改吃 subject；機師館逐幀回歸（可與 A／B 並行）</td><td>2.5</td></tr>
+    <tr><td>D 展廳頁</td><td>MechLorePage、舞台與型號鋼印、MechDossier、鑑賞模式、名冊、章節閱讀、機師廳座機卡</td><td>4.5</td></tr>
+    <tr><td>E 館首頁</td><td>「機甲」分頁、機甲牆、hero</td><td>1</td></tr>
+    <tr><td>F 素材上站</td><td>塗裝、廠商舞台、招募插畫</td><td>1.5</td></tr>
+    <tr><td>G 編輯台</td><td>機甲分頁（扉頁／技術檔案／系譜／塗裝／章節／預覽）＋機甲廠商分頁</td><td>3</td></tr>
+    <tr><td>H 串接</td><td>header／離館、SEO、統計、OG、圖鑑入口、搬遷、SPECS、刪舊欄位</td><td>2</td></tr>
+    <tr><td>I 選配</td><td>官網 #mecha 8 台 official 變體（m02–m08 要補下載）、跨廳過場打磨</td><td>1</td></tr>
+    <tr><td>J 卡池動態</td><td>J-1 38 台（約 3–4）→ J-2 19 台 Flow1（約 1–1.5），本體上線後</td><td>4–5.5</td></tr>
+  </table>
+  <p style="color:var(--text-secondary);font-size:14px;">
+    <strong>完整版 0–H 約 18 人日；最小可上線</strong> 0＋A＋B＋C＋D＋H ≈ <strong>12.5 人日</strong>——先上「紙色舞台＋卷宗＋名冊＋章節＋座機」，
+    塗裝、館首頁 hero、編輯台機甲分頁後補（編輯台沒好之前，資料由草稿腳本寫入）。I、J 另計。
+  </p>
+</section>
+
+<section class="section">
+  <div class="section-label red">Risk</div>
+  <div class="section-title">部署順序與風險</div>
+
+  <div class="warn-block">
+    <strong>部署順序</strong>：rules → Worker（含 <code>loreMechs</code> 統計類別；PLAN-062 決策四要求 Worker 先上）→ 搬遷腳本（先複製）→ bump → push。
+    寫正式 DB 會被 auto mode 擋，<code>--apply</code> 與 <code>firebase deploy</code> 交給站長執行。
+  </div>
+  <div class="warn-block">
+    <strong>舊分頁整份覆寫</strong>：搬遷與刪 <code>mechs.lore</code> 前，要請所有管理者關掉／重新整理後台分頁（10-14 克洛伊 <code>pilotLore</code> 被舊分頁洗掉的事件；<code>saveWithHistory</code> 沒有衝突檢查）。
+  </div>
+  <div class="warn-block">
+    <strong>CF 會快取 404</strong>：新素材（塗裝、舞台、招募插畫）在 <code>pages-build-deployment</code> 完成前被請求就會卡 404，要等部署完成再切 DB 路徑，必要時 Purge。
+  </div>
+  <div class="warn-block">
+    <strong>機師館回歸</strong>：C 段泛化最容易在機師館留下看不見的時序回歸，逐幀比對是驗收的必要條件，不是選做。
+  </div>
+  <div class="warn-block">
+    <strong>0/5 定律</strong>：<code>maker</code>、<code>relations</code>、<code>specs</code> 都是選填。緩解：草稿腳本先填大半（廠商約 78 台自動）、編輯台完成度欄位把缺口顯示出來、前台未填顯示「廠商未載」而不是留白。
+  </div>
+</section>
 
 </main>
 
