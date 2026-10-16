@@ -63,6 +63,14 @@ export function quoteDropCap(text: string): { open: string; cap: string; rest: s
   return { open, cap, rest: rest.join('') }
 }
 
+/**
+ * 每份引文的開頭段（2026-10-16）：第一段，以及每一行行內署名之後的第一段——首字放大就落在這些段落。
+ * 一章引了兩份資料（淬鋒·凱登 PART 2），第二份的開頭也該像新的一篇那樣起頭。署名行本身不算。
+ */
+export function sectionStarts(paragraphs: readonly string[]): boolean[] {
+  return paragraphs.map((p, i) => inlineSource(p) === null && (i === 0 || inlineSource(paragraphs[i - 1]) !== null))
+}
+
 /** 句末標點。中文正文實測只用得到這三個，不納入 ASCII 句點（會被小數點誤判）。 */
 const SENTENCE_END = /[。！？]/
 /** 句末標點後面若緊跟收尾引號／括號，一併帶走，免得切出「…話說完了。」少一個 `」`。 */

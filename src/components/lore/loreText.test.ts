@@ -4,7 +4,7 @@
 //   ERR_MODULE_NOT_FOUND（全站測試檔慣例同此）。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { splitParagraphs, isQuoteStyle, firstSentence, stripTrailingSource, readableParagraphs, fullwidthLorePunctuation, normalizeLoreSource, publishedChapters, inlineSource, quoteDropCap } from './loreText.ts'
+import { splitParagraphs, isQuoteStyle, firstSentence, stripTrailingSource, readableParagraphs, fullwidthLorePunctuation, normalizeLoreSource, publishedChapters, inlineSource, quoteDropCap, sectionStarts } from './loreText.ts'
 
 // ── splitParagraphs ──────────────────────────────────────────────────────────
 
@@ -60,6 +60,14 @@ test('quoteDropCap：引號後不是文字（⋯⋯、『、[ 引用標記）或
 
 test('quoteDropCap：擴充區漢字（代理對）不會被切成兩半', () => {
   assert.deepEqual(quoteDropCap('「𠀋字開頭」'), { open: '「', cap: '𠀋', rest: '字開頭」' })
+})
+
+test('sectionStarts：第一段＋每行行內署名之後的第一段；署名行本身不算', () => {
+  // 淬鋒·凱登 PART 2 的兩出處結構（再多一段一般敘述）
+  assert.deepEqual(sectionStarts(['「第一份。」', '——維斯珀爾內部通訊', '「第二份。」', '第二份的下一段。']), [true, false, true, false])
+  assert.deepEqual(sectionStarts(['一般段落開頭。', '第二段。']), [true, false])
+  assert.deepEqual(sectionStarts(['——開頭就是署名', '正文。']), [false, true])
+  assert.deepEqual(sectionStarts([]), [])
 })
 
 // ── firstSentence ────────────────────────────────────────────────────────────

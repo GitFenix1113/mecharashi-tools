@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-16', type: 'fix', summary: '故事館逸聞一章引用<b>多份資料</b>時，每一份的開頭都會把<b>第一個字放大成紅字</b>，不再只有第一份有。' },
+
     { date: '2026-10-16', type: 'fix', summary: '故事館的開頭段落以引號「開頭時（超過一半的章節與簡介），也會像其他段落一樣把<b>第一個字放大成紅字</b>，'
       + '引號照舊懸掛在行外；開頭段只有一行時，放大的字也不會再擠歪下一段。' },
 

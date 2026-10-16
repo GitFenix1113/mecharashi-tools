@@ -1,10 +1,11 @@
 import { LoreRichText } from './LoreRichText'
-import { inlineSource, isQuoteStyle, quoteDropCap } from './loreText'
+import { inlineSource, isQuoteStyle, quoteDropCap, sectionStarts } from './loreText'
 import type { DescriptionRefs } from '../../types'
 
 /**
  * 故事館正文（PLAN-042-D D-3）：明體、段首縮兩字；引文段**懸掛引號**（「 凸出行首、紅色），
- * 開頭段**首字放大**（`lead`）——引文開頭段放大的是引號後的第一個字（`quoteDropCap()`）。扉頁與章節共用。
+ * 開頭段**首字放大**（`lead`）——引文開頭段放大的是引號後的第一個字（`quoteDropCap()`）；
+ * 一章引了多份資料時，每份的開頭段都放大（`sectionStarts()`）。扉頁與章節共用。
  * `——` 開頭的獨立行是行內署名（`inlineSource()`），排成與章末署名同款的 `.lore-source`。
  *
  * 逐段 <p>，不依賴 whitespace-pre-line（042-A 的理由：引文段與一般段要能混排）。
@@ -14,9 +15,10 @@ import type { DescriptionRefs } from '../../types'
 export default function LoreProse({ paragraphs, refs, lead = false }: {
   paragraphs: readonly string[]
   refs?: DescriptionRefs
-  /** 第一段（非引文時）首字放大 */
+  /** 每份引文的開頭段首字放大 */
   lead?: boolean
 }) {
+  const starts = lead ? sectionStarts(paragraphs) : []
   return (
     <div className="lore-prose">
       {paragraphs.map((p, i) => {
@@ -24,7 +26,7 @@ export default function LoreProse({ paragraphs, refs, lead = false }: {
         if (source !== null) return <p key={i} className="lore-source">{source}</p>
         if (isQuoteStyle(p)) {
           const head = p.trimStart()
-          const drop = lead && i === 0 ? quoteDropCap(head) : null
+          const drop = starts[i] ? quoteDropCap(head) : null
           if (drop) {
             return (
               <p key={i} className="is-quote has-drop">
@@ -42,7 +44,7 @@ export default function LoreProse({ paragraphs, refs, lead = false }: {
           )
         }
         return (
-          <p key={i} className={lead && i === 0 ? 'is-lead' : undefined}>
+          <p key={i} className={starts[i] ? 'is-lead' : undefined}>
             <LoreRichText text={p} refs={refs} />
           </p>
         )
