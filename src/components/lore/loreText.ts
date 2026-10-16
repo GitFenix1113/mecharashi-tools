@@ -46,6 +46,23 @@ export function isQuoteStyle(text: string | undefined): boolean {
   return QUOTE_OPENERS.includes(head)
 }
 
+/**
+ * 引文開頭段的首字放大（2026-10-16）：起首引號照舊懸掛，放大的是**引號後的第一個字**。
+ *
+ * 一般段落用 CSS `::first-letter` 就夠了，引文段不行：引號包在懸掛用的 inline-block 裡，
+ * `::first-letter` 拿不到後面的字（實測 116 章裡 67 章、89 篇扉頁裡 34 篇以引號開頭，首字放大全部消失）。
+ *
+ * 引號後緊接的不是文字或數字（`「⋯⋯`、`「『`）→ `null`，維持只有懸掛引號：
+ * 把標點一起放大太重，只放大標點後的字又會被 float 排到標點前面。
+ * 用 `Array.from` 切字，擴充區漢字（代理對）不會被切成兩半。
+ */
+export function quoteDropCap(text: string): { open: string; cap: string; rest: string } | null {
+  if (!isQuoteStyle(text)) return null
+  const [open, cap, ...rest] = Array.from(text.trimStart())
+  if (!cap || !/[\p{L}\p{N}]/u.test(cap)) return null
+  return { open, cap, rest: rest.join('') }
+}
+
 /** 句末標點。中文正文實測只用得到這三個，不納入 ASCII 句點（會被小數點誤判）。 */
 const SENTENCE_END = /[。！？]/
 /** 句末標點後面若緊跟收尾引號／括號，一併帶走，免得切出「…話說完了。」少一個 `」`。 */
