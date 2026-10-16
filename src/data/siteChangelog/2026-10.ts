@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-16', type: 'style', summary: '故事館<b>逸聞章節</b>不再把第一個字放大成紅字，改由引文開頭的紅色引號起頭，版面更一致；機師檔案頁的簡介照舊保留放大首字。' },
+
     { date: '2026-10-16', type: 'style', summary: '故事館的<b>全身立繪</b>改成有轉場：打開時故事欄往旁邊退開，立繪從原本的位置飛到畫面中央放大成全身；關閉時再飛回原位。' },
 
     { date: '2026-10-16', type: 'fix', summary: '故事館全身立繪「<b>點一下放大</b>」恢復正常：之前點了沒有反應。' },

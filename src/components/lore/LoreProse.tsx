@@ -5,7 +5,8 @@ import type { DescriptionRefs } from '../../types'
 /**
  * 故事館正文（PLAN-042-D D-3）：明體、段首縮兩字；引文段**懸掛引號**（「 凸出行首、紅色），
  * 開頭段**首字放大**（`lead`）——引文開頭段放大的是引號後的第一個字（`quoteDropCap()`）；
- * 一章引了多份資料時，每份的開頭段都放大（`sectionStarts()`）。扉頁與章節共用。
+ * 有行內署名時，每份的開頭段都放大（`sectionStarts()`）。扉頁與章節共用本元件，
+ * 但 `lead` 目前只有扉頁開：逸聞章節 2026-10-16 拿掉了（標點起頭的變化太多，見 LoreChapterBody）。
  * `——` 開頭的獨立行是行內署名（`inlineSource()`），排成與章末署名同款的 `.lore-source`。
  *
  * 逐段 <p>，不依賴 whitespace-pre-line（042-A 的理由：引文段與一般段要能混排）。
