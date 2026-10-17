@@ -72,7 +72,7 @@ function PilotHall() {
 
   return (
     <PageFrame hero={hero}>
-      <HallTabs hall="pilots" sort={sort} onSort={setSort} sortLabels={PILOT_SORT_LABELS} />
+      <SortBar sort={sort} onSort={setSort} sortLabels={PILOT_SORT_LABELS} />
 
       {/* loreError 不是致命：只讓章節徽章與陣營角標消失，牆照常渲染。 */}
       {loreError && (
@@ -139,7 +139,7 @@ function MechHall() {
 
   return (
     <PageFrame hero={hero}>
-      <HallTabs hall="mechs" sort={sort} onSort={setSort} sortLabels={MECH_SORT_LABELS} />
+      <SortBar sort={sort} onSort={setSort} sortLabels={MECH_SORT_LABELS} />
 
       {loreError && (
         <p className="mb-4 text-xs text-text-dim">機甲故事索引暫時讀不到：廠商分組、廠商徽章與章節數先不顯示。</p>
@@ -261,26 +261,19 @@ function WallSkeleton({ cell, grid }: { cell: string; grid: string }) {
 }
 
 /**
- * 分館列＋排序。分館是兩條路由（`/lore`、`/lore/mechs`），所以用連結不用按鈕。
+ * 排序列。換館（機師｜機甲）不在這裡：2026-10-17 起兩館比照資料圖鑑分開，
+ * 主導覽是「故事館 ▾」下拉、館內換館在紙色細帶的館名旁（Layout.tsx）。
  *
  * ⚠ 排序用 <button> 不用 <select>：紙色館內的 option 是由系統繪製的，
  *   色票覆寫不到（index.css 另有一條防禦式覆寫兜底，但不該依賴它）。
  */
-function HallTabs({ hall, sort, onSort, sortLabels }: {
-  hall: LoreHall
+function SortBar({ sort, onSort, sortLabels }: {
   sort: LoreSort
   onSort: (s: LoreSort) => void
   sortLabels: Record<LoreSort, string>
 }) {
   return (
     <div className="mb-5 flex flex-wrap items-center gap-2">
-      <Link to="/lore" className={tabBtn(hall === 'pilots')} aria-current={hall === 'pilots' ? 'page' : undefined}>
-        機師
-      </Link>
-      <Link to="/lore/mechs" className={tabBtn(hall === 'mechs')} aria-current={hall === 'mechs' ? 'page' : undefined}>
-        機甲
-      </Link>
-
       <div className="ml-auto flex items-center gap-2">
         <span className="text-xs text-text-dim">排序</span>
         {LORE_SORTS.map((s) => (
@@ -292,13 +285,6 @@ function HallTabs({ hall, sort, onSort, sortLabels }: {
     </div>
   )
 }
-
-const tabBtn = (active: boolean) =>
-  `rounded-lg border px-3.5 py-1.5 text-sm font-bold no-underline transition-colors ${
-    active
-      ? 'border-accent-orange/40 bg-accent-orange/15 text-accent-orange'
-      : 'border-border bg-bg-card text-text-secondary hover:border-border-accent hover:text-text-primary cursor-pointer'
-  }`
 
 const sortBtn = (active: boolean) =>
   `rounded-lg border px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
