@@ -417,8 +417,9 @@ html.lore-exiting::view-transition-new(root) { animation: lore-exit-shut 620ms c
   .lore-shell { background-image: url('/images/lore/bg-m.webp'); }
 }
 
-/* 館首頁 hero（2026-10-14 改版）：紙面 ＋ 左紅帶 ＋ 官網立繪群像（loreHeroCast.ts 抽 4 位）＋ 自排標題。
-   提案與比較稿：_local-notes/2026-10/2026-10-14_故事館hero替代方案/。
+/* 館首頁 hero（兩館共用，LoreHomePage 的 HallHero）：紙面 ＋ 左紅帶 ＋ 招募插畫（loreHeroCast.ts 每次抽一張）＋ 自排標題。
+   2026-10-14 機師廳是官網立繪群像（提案與比較稿：_local-notes/2026-10/2026-10-14_故事館hero替代方案/），
+   2026-10-18 比照機甲廳（PLAN-042-B F-2）換成招募插畫。
    字級用 cqw（hero 本身是 container）：標題要跟著紅帶的寬度走，而 hero 寬度不等於視窗寬度（max-w-6xl 置中）。 */
 .lore-home-hero {
   position: relative; overflow: hidden; border-radius: 14px;
@@ -431,21 +432,11 @@ html.lore-exiting::view-transition-new(root) { animation: lore-exit-shut 620ms c
    改成自己塗底色、clip-path 決定斜邊，原圖只取左上全紅那一角放大當機甲線稿紋理（230%：顯示範圍落在原圖 x<270、y<160，全是紅的）。
    ⚠ 調寬度或 background-size 時要確認顯示範圍沒有超出原圖的紅色區，否則紙面會從紋理裡透出來。 */
 .lore-home-hero__band {
-  position: absolute; inset: 0 auto 0 0; width: 62%;
+  position: absolute; inset: 0 auto 0 0; z-index: 1; width: 62%;
   background: url('/images/lore/bg-band.webp') 0 0 / 230% auto no-repeat, #8b2d27;
   clip-path: polygon(0 0, 52% 0, 70% 100%, 0 100%);
 }
-/* 立繪：官網彩圖下緣烘了粒子溶解，往下出血 18% 讓人物切在大腿、溶解帶落在 hero 底邊附近。
-   ⚠ max-width:none 是必要的：preflight 的 img{max-width:100%} 會把寬圖壓扁。 */
 .lore-home-hero__cast { position: absolute; inset: 0; }
-.lore-home-hero__figure { position: absolute; bottom: -18%; width: auto; max-width: none; transform: translateX(-50%);
-                          opacity: 0; transition: opacity 0.6s ease-out; }
-.lore-home-hero__figure[data-loaded] { opacity: 1; }
-@media (prefers-reduced-motion: reduce) { .lore-home-hero__figure { transition: none; } }
-.lore-home-hero__figure[data-slot="0"] { left: 57%; height: 112%; z-index: 2; }
-.lore-home-hero__figure[data-slot="1"] { left: 69%; height: 120%; z-index: 4; }
-.lore-home-hero__figure[data-slot="2"] { left: 81%; height: 112%; z-index: 3; }
-.lore-home-hero__figure[data-slot="3"] { left: 93%; height: 106%; z-index: 1; }
 /* 標題：整塊落在紅帶裡。黃色手寫「Pilots」沿用官網標題圖的配色（招募標語本身不再使用） */
 .lore-home-hero__title { position: absolute; left: 4.5%; top: 50%; transform: translateY(-50%); z-index: 10; }
 .lore-home-hero__script {
@@ -466,27 +457,22 @@ html.lore-exiting::view-transition-new(root) { animation: lore-exit-shut 620ms c
   font-size: clamp(12px, 1.27cqw, 14px); line-height: 1.8; color: rgba(255, 238, 222, 0.86);
 }
 .lore-home-hero__lead::after { content: ''; display: block; width: 56px; height: 2px; margin-top: 14px; background: #f6d32b; }
-/* 機甲廳 hero（PLAN-042-B F-2）：招募插畫 2600×1080 鋪在紅帶右側，紅帶壓在它左緣上（z-index）。
-   插畫的機體多在畫面中央 ⇒ 圖框從 22% 開始、機體落在 hero 的 60% 附近，不會被紅帶的斜邊吃掉。
-   （E-1 的過渡版是兩台主視覺 _SN_Raw 並排，已換掉。） */
-.lore-home-hero--mechs .lore-home-hero__band { z-index: 1; }
+/* 招募插畫 2600×1080 鋪在紅帶右側，紅帶壓在它左緣上（band 的 z-index）。
+   兩館插畫的主角（機體／人物）都在畫面中央 ⇒ 圖框從 22% 開始、主角落在 hero 的 60% 附近，不會被紅帶的斜邊吃掉。
+   ⚠ max-width:none 是必要的：preflight 的 img{max-width:100%} 會跟 width:78% 打架。 */
 .lore-home-hero__card { position: absolute; top: 0; left: 22%; width: 78%; height: 100%; max-width: none; object-fit: cover; object-position: 50% 40%;
                         opacity: 0; transition: opacity 0.6s ease-out; }
 .lore-home-hero__card[data-loaded] { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .lore-home-hero__card { transition: none; } }
-/* 平板（≤1023px，hero 高度改 46vw、比例變方）：拿掉緊貼紅帶的 0 號，否則會壓到標題尾巴 */
+/* 平板（≤1023px）：hero 高度改 46vw、比例變方 */
 @media (max-width: 1023px) {
   .lore-home-hero { height: clamp(180px, 46vw, 300px); border-radius: 10px;
                     background-image: url('/images/lore/bg-m.webp'); }
-  .lore-home-hero__figure[data-slot="0"] { display: none; }
 }
-/* 手機（<640px）：只留中前、右兩位往右靠；紅帶加寬讓兩行標題放得下 */
+/* 手機（<640px）：紅帶加寬讓兩行標題放得下 */
 @media (max-width: 639px) {
   .lore-home-hero__band { width: 76%; clip-path: polygon(0 0, 66% 0, 76% 100%, 0 100%); }
-  .lore-home-hero__figure[data-slot="3"] { display: none; }
-  .lore-home-hero__figure[data-slot="1"] { left: 79%; height: 110%; }
-  .lore-home-hero__figure[data-slot="2"] { left: 96%; height: 102%; }
-  /* 機甲：紅帶加寬到 76%，插畫框跟著往右縮，機體才不會被兩行標題蓋住 */
+  /* 紅帶加寬到 76%，插畫框跟著往右縮，主角才不會被兩行標題蓋住 */
   .lore-home-hero__card { left: 40%; width: 60%; }
   .lore-home-hero__script { font-size: clamp(30px, 9cqw, 52px); }
   .lore-home-hero__eyebrow { font-size: clamp(8px, 2.1cqw, 11px); letter-spacing: 0.26em; margin: 0.6em 0 0.35em; }

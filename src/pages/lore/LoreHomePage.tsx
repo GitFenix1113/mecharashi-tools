@@ -9,14 +9,14 @@ import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
 import { normalizeFactionLogos } from '../../utils/factionLogos'
 import { toneBar } from '../../components/loadout/PickerVariants'
 import { useMechLore, useMechMakers, useMechs, usePilotLore, usePilots } from '../../hooks/useFirestore'
-import { assetUrl, mechPortraitCandidates, pilotOfficialArt, pilotPortraitCandidates } from '../../utils/assets'
-import { mechCardArt } from '../../utils/gameArt'
+import { assetUrl, mechPortraitCandidates, pilotPortraitCandidates } from '../../utils/assets'
+import { mechCardArt, pilotCardArt } from '../../utils/gameArt'
 import { GAME_MECH_CARDS } from '../../data/gameArtIndex'
 import type { Mech, MechMaker, Pilot } from '../../types'
 import { buildLoreGroups, LORE_SORTS, readLoreSort, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
 import { buildMechGroups } from '../../components/lore/mechRoster'
 import { publishedChapters } from '../../components/lore/loreText'
-import { pickHeroCast, pickMechHeroCard } from '../../components/lore/loreHeroCast'
+import { PILOT_HERO_POOL, pickHeroCard } from '../../components/lore/loreHeroCast'
 
 /**
  * 故事館的館首頁：機師廳（`/lore`，PLAN-042-A D-2）與機甲廳（`/lore/mechs`，PLAN-042-B E-1）。
@@ -296,69 +296,24 @@ const sortBtn = (active: boolean) =>
 // ─── hero ────────────────────────────────────────────────────────────────────
 
 /**
- * 機師廳 hero（2026-10-14 改版）：紅帶＋官網立繪群像＋自排標題，就是官網首頁本來的構圖。
- * 舊版是官網 KV（機甲主視覺）＋「操控指揮 機師出列」招募標語圖：冷色 3D 寫實跟紙面館格格不入、
- * 主角是機甲，而且 hero 下面還有一列「機師故事館」，兩個標題打架 → 真正的 <h1> 移進 hero，那一列刪掉。
- * 樣式在 index.css 的 .lore-home-hero；立繪是純裝飾（aria-hidden）。
+ * 兩館共用的 hero：紅帶＋招募插畫（2600×1080 卡池主視覺）＋自排標題，就是官網首頁本來的構圖。
+ * 插畫鋪在紅帶右側、紅帶壓在它左緣上（index.css 的 .lore-home-hero__card）；每次進館抽一張（loreHeroCast.ts）。
+ * 一張約 200 KB，純裝飾（aria-hidden）。
+ *
+ * 沿革：機師廳最早是官網 KV＋「操控指揮 機師出列」招募標語圖（冷色 3D 寫實跟紙面館格格不入、主角是機甲、
+ * 而且和下面一列「機師故事館」雙標題 → 真正的 <h1> 移進 hero）；2026-10-14 換成官網立繪群像（8 位抽 4 位），
+ * 2026-10-18 比照機甲廳（PLAN-042-B F-2）換成招募插畫，兩館的 hero 從此同一套。
  */
-function PilotHero({ count }: { count?: number }) {
-  // 每次進館抽一組
-  const [cast] = useState(pickHeroCast)
-
+function HallHero({ script, title, lead, card }: {
+  /** 紅帶上的黃色手寫字 */
+  script: string
+  title: string
+  lead: React.ReactNode
+  /** 插畫路徑；池子是空的就只剩紅帶與標題 */
+  card?: string
+}) {
   return (
     <header className="lore-home-hero mb-6 sm:mb-8">
-      <div className="lore-home-hero__band" aria-hidden="true" />
-      <div className="lore-home-hero__cast" aria-hidden="true">
-        {cast.map((dir, i) => {
-          const art = pilotOfficialArt({ gameId: dir })
-          if (!art) return null
-          return (
-            <img
-              key={dir}
-              className="lore-home-hero__figure"
-              data-slot={i}
-              src={assetUrl(art.color)}
-              alt=""
-              width={art.geometry.w}
-              height={art.geometry.h}
-              decoding="async"
-              // 1／2 號位每種寬度都看得到，是首屏最大的圖 → 提前；0／3 號位在手機上是 display:none，
-              // lazy 才不會白下載（沒有排版盒的 lazy 圖不會觸發載入）
-              loading={i === 1 || i === 2 ? 'eager' : 'lazy'}
-              fetchPriority={i === 1 || i === 2 ? 'high' : 'low'}
-              // 載完才淡入（CSS 的 [data-loaded]）：圖要等 React 渲染後才開始抓，直接顯示會在紙面上「啪」一聲冒出來。
-              // 用 data 屬性不用 className：React 不管這個屬性，重繪（骨架 → 內容）時不會被洗掉
-              onLoad={(e) => { e.currentTarget.dataset.loaded = '' }}
-            />
-          )
-        })}
-      </div>
-      <div className="lore-home-hero__title">
-        <span className="lore-script-font lore-home-hero__script" aria-hidden="true">Pilots</span>
-        <span className="lore-home-hero__eyebrow">ARCHIVE · 檔案館</span>
-        <h1 className="lore-home-hero__h1">機師故事館</h1>
-        <p className="lore-home-hero__lead">
-          收錄機師的個人簡介與逸聞章節
-          {count !== undefined && <><br />共 {count} 位機師</>}
-        </p>
-      </div>
-    </header>
-  )
-}
-
-/**
- * 機甲廳 hero（PLAN-042-B F-2）：同一套紅帶與標題，紅帶右側鋪一張招募插畫（2600×1080，卡池主視覺）。
- * 決策 B-5：招募插畫不上展廳舞台（搶主題），只在卷宗附件與這裡出現——「館首頁 hero 才讓它炫」。
- *
- * 每次進館抽一張（池子是 build 時的靜態索引 GAME_MECH_CARDS，不必等 mechs：圖可以跟資料同時開始抓）。
- * 一張約 200 KB；紅帶壓在插畫左緣上（index.css 的 .lore-home-hero--mechs）。
- */
-function MechHero({ count }: { count?: number }) {
-  const [wap] = useState(() => pickMechHeroCard([...GAME_MECH_CARDS.keys()]))
-  const card = wap ? mechCardArt({ gameId: wap }) : undefined
-
-  return (
-    <header className="lore-home-hero lore-home-hero--mechs mb-6 sm:mb-8">
       <div className="lore-home-hero__band" aria-hidden="true" />
       <div className="lore-home-hero__cast" aria-hidden="true">
         {card && (
@@ -370,20 +325,43 @@ function MechHero({ count }: { count?: number }) {
             height={1080}
             decoding="async"
             fetchPriority="high"
+            // 載完才淡入（CSS 的 [data-loaded]）：圖要等 React 渲染後才開始抓，直接顯示會在紙面上「啪」一聲冒出來。
+            // 用 data 屬性不用 className：React 不管這個屬性，重繪（骨架 → 內容）時不會被洗掉
             onLoad={(e) => { e.currentTarget.dataset.loaded = '' }}
           />
         )}
       </div>
       <div className="lore-home-hero__title">
-        <span className="lore-script-font lore-home-hero__script" aria-hidden="true">Mecha</span>
+        <span className="lore-script-font lore-home-hero__script" aria-hidden="true">{script}</span>
         <span className="lore-home-hero__eyebrow">ARCHIVE · 檔案館</span>
-        <h1 className="lore-home-hero__h1">機甲故事館</h1>
-        <p className="lore-home-hero__lead">
-          收錄機甲的技術檔案與逸聞章節
-          {count !== undefined && <><br />共 {count} 台機甲</>}
-        </p>
+        <h1 className="lore-home-hero__h1">{title}</h1>
+        <p className="lore-home-hero__lead">{lead}</p>
       </div>
     </header>
+  )
+}
+
+function PilotHero({ count }: { count?: number }) {
+  const [gameId] = useState(() => pickHeroCard(PILOT_HERO_POOL))
+  return (
+    <HallHero
+      script="Pilots"
+      title="機師故事館"
+      lead={<>收錄機師的個人簡介與逸聞章節{count !== undefined && <><br />共 {count} 位機師</>}</>}
+      card={gameId ? pilotCardArt({ gameId }) : undefined}
+    />
+  )
+}
+
+function MechHero({ count }: { count?: number }) {
+  const [wap] = useState(() => pickHeroCard([...GAME_MECH_CARDS.keys()]))
+  return (
+    <HallHero
+      script="Mecha"
+      title="機甲故事館"
+      lead={<>收錄機甲的技術檔案與逸聞章節{count !== undefined && <><br />共 {count} 台機甲</>}</>}
+      card={wap ? mechCardArt({ gameId: wap }) : undefined}
+    />
   )
 }
 

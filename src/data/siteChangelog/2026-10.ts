@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-18', type: 'style', summary: '<b>機師故事館首頁</b>的橫幅改成和機甲故事館一樣：每次進館<b>隨機換一張機師招募插畫</b>（取代原本的立繪群像）。' },
+
     { date: '2026-10-18', type: 'fix', summary: '修正故事館<b>招募插畫左右邊緣的破圖</b>（黑條與雜色橫紋，戰部渡右緣最明顯）：'
       + '機師 62 張、機甲 61 張全數重新產生，邊緣改為原畫延伸。' },
 
