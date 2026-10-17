@@ -942,9 +942,22 @@
           （刀光 −46°／+153°、煙流 −121°～−128°／+45°），舊 builder 不看自己的旋轉、引擎一直畫成水平矩形。builder 改輸出選填的 <code>rot</code>（變換後 x 軸在畫布上的角度，含祖先；不轉的不輸出），
           引擎把四角對中心轉過去、UV 跟著走；繞 x／y 軸轉、鏡像、非均勻縮放疊旋轉的歪斜報 ⚠（只有 3027 巨像）。
           這兩台的 JSON 只多了 <code>rot</code>（去掉後逐位元相同），其餘 21 台不變；疊圖與前後對照在 <code>_local-notes/2026-10/2026-10-17_卡池動態_祖先位移/流動圖層旋轉/</code>。
-          <br><b>還沒做</b>（剩 37 台）：Flow1 20 台、Box 18、其他 shader 12、流動材質當粒子 7、startDelay 7、Image 掛 <code>UIFx_Alpha</code> 3、拖尾 2、Circle 1、流動圖層傾斜 1（3027）、RotationBySpeed 1；
-          只差一種的 14 台：Box 4（1052、2040、2043、2053）、Flow1 4（1028、1035、2027、2055）、startDelay 2（2056、3032）、
-          拖尾 1（1018）、流動材質當粒子 1（1038）、其他 shader 1（3010 的 <code>UI_General</code>）、Image 掛 <code>UIFx_Alpha</code> 1（2013）。<b>下一步最划算的是 Box 形狀</b>（解開 4 台、另外共卡 18 台）。</div>
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>方塊（Box）發射形狀</b>：照 UnityCsReference 查證（不是猜的）——「Emit from」不是另一個欄位，而是 type 本身：
+          5＝Volume（Box）、15＝Shell、16＝Edge，<code>boxThickness</code> 只在 Shell／Edge 有作用；方塊大小就是形狀的 <code>scale</code>（以原點為中心，編輯器 gizmo 也是 size＝scale）；
+          方向是形狀的 +z（手冊：沿發射器的 forward），跟著形狀旋轉、不吃 scale。所以 type 5 不必多輸出欄位，builder 的支援清單加 5，Sim 加一個方塊分支（只在 type 5 才多抽亂數）＋4 條測試。
+          60 台的 22 個方塊全是 5、<code>boxThickness</code> 全 0；Shell／Edge 照舊報 ⚠。順帶把每種形狀都有、引擎沒做的 Spherize Direction／Randomize Position／Align To Direction／形狀貼圖改成開著就報 ⚠（60 台都沒用到）。
+          60 台 <code>--dry-run</code> 前後只差 Box ⚠ 消失（18 台）；已上站 23 台的 JSON 重產去 CR 後 sha1 全同。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>速度模組補檢查</b>：做方塊時發現 builder 的 VelocityModule 只讀線性的 x／y／z，<b>orbital（繞軸轉）、offset（轉動中心）、radial、speedModifier 從沒檢查、默默忽略</b>。
+          已上站 23 台都沒用到；方塊解開的 1052 莫比烏斯X、2040 奈芙蒂斯、2043 霸王，灰燼 <code>Particle_Ash_01</code> 開了 <code>orbitalZ＝1</code>（2053 獵鬥士的是 0）。
+          照「有 ⚠ 就不上站」，builder 改成這幾項非 0（speedModifier 非 1）就報 ⚠，這 3 台繼續卡著。
+          orbital 沒實作是因為<b>單位沒有依據</b>：Unity 手冊、Scripting API、UnityCsReference（<code>VelocityModuleUI.cs</code> 沒有 Rad2Deg 換算、<code>ParticleSystemModules.bindings.cs</code> 只寫「around the x-axis」）都沒寫是 rad/s 還是 °/s，也找不到可信的實測。
+          若是 rad/s，灰燼在畫面上的飛行距離約剩 80%（模擬：死亡點高度中位數 1062→859 px）——看得出來，不能猜。要解開需要站長在遊戲裡開這 3 台的卡池畫面，拿實機截圖比對（同芬里厄的校準）。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>Flow1</b>（第二支流動 shader，見 J-2）：Box 之後當時剩 37 台，Flow1 卡 21 台、只差 Flow1 的 8 台，這次解開其中 7 台；做法與驗收見 J-2。
+          <br><b>還沒做</b>（61 台剩 30 台）：速度模組 orbital 等 17、startDelay 7、流動材質當粒子 7、Flow1 粒子用到單張貼圖以外的設定 5（2018、2049、2062、3007、3047）、Image 掛 <code>UIFx_Alpha</code> 3、其他 shader 3、拖尾 2、
+          TweenAlpha 1（1035）、Flow1 圖層夾在兩組粒子之間 1（1051）、Circle 1、流動圖層傾斜 1（3027）、RotationBySpeed 1；
+          只差一種的 14 台：<b>orbital 7</b>（1036、1052、1303、2040、2043、3020、3028——1303、3020 是 Flow1 解開後只剩灰燼的 <code>orbitalZ</code>，1036、3028 的 Flow1 粒子也解開了）、startDelay 4（2056、3032、3037、3051）、
+          TweenAlpha 1（1035）、流動材質當粒子 1（2057）、Image 掛 <code>UIFx_Alpha</code> 1（2013）。
+          <b>下一步最划算的是 orbital</b>（解開 7 台），但卡在單位沒有依據（見上），要站長拿遊戲畫面比對。</div>
         <div class="task-file">scripts/export-gacha-prefab.py · scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -977,7 +990,16 @@
           <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>祖先的變換解開 6 台</b>（見上一列）：1017 暮色之牙、1034 盜火者、2003 XR、2047 光暉、2050 銀閃、2052 裁決者——共 <b>23 台</b>。
           60 台重新匯出＋<code>--dry-run</code>；已上站 17 台重產內容不變。新增 6 個 JSON（11.1–39.4 KB）＋1 張貼圖（<code>Common_Stone_1</code>，12 KB；其餘 27 張共用既有的）。
           驗收：<code>npm test</code> 1585 過、<code>npm run build</code> 過；production build＋<code>vite preview</code> headless Chromium（swiftshader）23 台逐台點卷宗卡池卡，23／23 <code>.lore-viewer__live.is-ready</code>、貼圖全 200、console 零錯誤。
-          scissor 另做對照：攔截裁決者的資料把所有系統裁在左半，右半逐格變化 0.000（原資料 2.6）。截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_祖先位移/</code>。</div>
+          scissor 另做對照：攔截裁決者的資料把所有系統裁在左半，右半逐格變化 0.000（原資料 2.6）。截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_祖先位移/</code>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>方塊形狀解開 1 台</b>（見上一列）：2053 獵鬥士——共 <b>24 台</b>。同樣只差方塊的 1052、2040、2043 被新補的 orbital ⚠ 擋下（見上一列）。
+          新增 1 個 JSON（30.4 KB）＋2 張貼圖（<code>PilotGacha_Eva00_Flower_1</code>、<code>Eva00_Glow_1</code>，共 118 KB）。
+          驗收：<code>npm test</code> 過、<code>npm run build</code> 過；production build＋<code>vite preview</code> headless Chromium（swiftshader），2053 與芬里厄對照 <code>.lore-viewer__live.is-ready</code>、貼圖請求數＝JSON 貼圖數且全 200、console 零錯誤。
+          方塊的發射範圍與灰燼軌跡疊在插畫上（<code>疊圖_2053_方塊.jpg</code>）：方塊斜躺在左下的爆炸裡，灰燼往左上飄。截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_Box形狀/</code>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>Flow1 解開 7 台</b>（見 J-2）：1028 疾嘯、2027 日弩、2055 雪鴞、2060 彌造者、2061 螢石、2070 美杜莎MK2、3014 藍柱石——共 <b>31 台</b>。
+          已上站 24 台重產去 CR 後 sha1 全同。新增 7 個 JSON（17.8–28.8 KB）＋17 張貼圖。
+          驗收：<code>npm test</code>、<code>npm run build</code>、<code>npm run lint</code> 過；production build＋<code>vite preview</code> headless Chromium（swiftshader），7 台＋芬里厄 8／8 <code>.lore-viewer__live.is-ready</code>、貼圖請求數＝JSON 貼圖數且全 200、console 零錯誤。
+          1028、2027、2055、2061 另做「只有背景／背景＋流動圖層」對照（固定亂數、假時鐘）：圖層都落在插畫上對應的光束、槍焰、煙塵上，2055 鏡像的兩層方向與插畫一致，捲動與溶解隔 0.5 秒有在動。
+          截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_Flow1/</code>。</div>
         <div class="task-file">src/components/lore/gacha/ · src/components/lore/LoreViewer.tsx · src/pages/lore/MechLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -997,16 +1019,26 @@
     <div class="task-group-header">
       <div class="task-group-title">J-2 &nbsp; 第二批：19 台 Flow1</div>
       <div class="task-group-meta">約 1–1.5 人日</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">第二支流動 shader</div>
-        <div class="task-desc">照參數名推回近似寫法、逐台對遊戲畫面校。巨像／戴亞斯／恐爪（拖尾、Animator）維持靜態。</div>
-        <div class="task-file">src/components/lore/gacha/</div>
+        <div class="task-desc">照參數名推回近似寫法、逐台對遊戲畫面校。巨像／戴亞斯／恐爪（拖尾、Animator）維持靜態。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b><code>UI/Flow1</code> 照反組譯實作</b>（不是照參數名推的）：用系統的 <code>D3DCompiler_47</code> 反組譯 <code>shader_abs.b</code> 的 D3D11 編譯碼，逐行追出公式。
+          跟 <code>UI_CommonFlow</code> 同一個 ASE 範本，但不能共用：擾動是往 D <b>內插</b>不是相加、貼圖全部預設 white、<code>_VRepeatSwitch</code> 預設 1、主貼圖叫 <code>_MainTex1</code> 且沒有 tiling、
+          <code>_MainTex</code> 是另外乘上去的顏色貼圖（RawImage 掛的圖會變成它）、遮罩與溶解乘四個通道、<code>_MainValue</code> 也乘 alpha。
+          引擎新增 <code>FS_FLOW1</code>（圖層照公式全做，含溶解與兩張遮罩；第二張主貼圖與粒子 Custom Data 61 台都沒用到，報 ⚠）、粒子掛 Flow1 時取單張貼圖並讓強度也乘 alpha（<code>strengthAlpha</code>）；
+          uniform 打包與繪製分段抽成純函式 <code>gachaFxFlow1.ts</code>＋5 條測試。
+          做的時候另外發現 builder 原本沒看到、會播錯的三件事，一起處理：<b>繪製順序</b>（Flow1 圖層有 5 台在 UIParticle 之前、3 台是透明混色——輸出 <code>under</code> 先畫；已上站的圖層都在之後，不受影響）、
+          <b>流動圖層的自身鏡像</b>（2055 雪鴞 localScale.x＝−1：負寬度＋旋轉先去掉鏡像再量）、<b>Tween 元件</b>（1035 海拉的 <code>TweenAlpha</code> 是 1.5 秒循環的閃爍，語意只能照 NGUI 慣例推、遊戲是 IL2CPP 沒有原始碼——對遊戲畫面確認前不實作，改報 ⚠，1035 先不上）。
+          解開 7 台（見 J-1「上站整合」）。<b>還沒做</b>：1035（TweenAlpha）、1051（圖層夾在兩組粒子之間）、粒子用到單張貼圖以外設定的 5 台（2018 取 R 通道、2049 TO／擾動、2062／3047 遮罩 2、3007 擾動），
+          以及 1303、3020（Flow1 已解開，只剩 orbital）。公式、41 個材質的盤點與工具在 <code>_local-notes/2026-10/2026-10-17_卡池動態_Flow1/</code>。
+          ⚠ 沒有對遊戲畫面校過（2055 的溶解是第一次照公式做，<code>UI_CommonFlow</code> 那條在 10-16 校準時刻意關掉），併入「抽樣校準」。</div>
+        <div class="task-file">src/components/lore/gacha/ · scripts/build-gacha-fx.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
 </section>
