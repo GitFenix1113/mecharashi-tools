@@ -17,6 +17,8 @@ import { ShoulderArmamentCard } from '../../components/mechs/ShoulderArmamentCar
 import { mechWeightBadgeClass, mechWeightShort } from '../../data/mechWeightClasses'
 import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
 import { usePageTitle } from '../../contexts/PageTitleContext'
+import { usePatchVersions } from '../../hooks/usePatchVersions'
+import GachaBanner from '../../components/gacha/GachaBanner'
 
 type NumericPartStatKey = 'durable' | 'firepower' | 'weight' | 'output' | 'antiRiot' | 'hit' | 'dodge' | 'move'
 
@@ -226,6 +228,8 @@ export default function MechDetailPage() {
   const { data: allMechs } = useMechs()
   const pairedPilot = data ? pairedPilotOf(data.mech.id, allPilots) : undefined
   const skinOf = data?.mech.skinOfId ? allMechs.find((m) => m.id === data.mech.skinOfId) : undefined
+  // 卡池橫條的檔期（PLAN-063）：每個 session 一次 Worker 請求、與首頁共用快取（逛過首頁就是 0 次）
+  const { data: patchVersions, loading: patchVersionsLoading } = usePatchVersions()
 
   const togglePartsExpanded = (v: boolean) => {
     setPartsExpanded(v)
@@ -368,6 +372,11 @@ export default function MechDetailPage() {
           {stats.map((s) => <CompactStat key={s.label} label={s.label} value={s.value} sub={s.sub} />)}
         </div>
       </div>
+
+      {/* 卡池橫條（PLAN-063，站長 10-17 選定頁首下方）：招募插畫＋池名＋狀態，點開看全景與卡池動態。
+          代價是桌機多約 136px、把 10-10「一屏看完」吃回一截——站長看過原型後接受。
+          ⚠ 不讀 mechLore（PLAN-042-B 決策 B-7）：池名取版本活動名；沒插畫也沒紀錄的機甲整塊不出現 */}
+      <GachaBanner mech={mech} versions={patchVersions} statusReady={!patchVersionsLoading} className="mb-4" />
 
       {/* 主體：xl 以上左右分欄——左邊部件（寬而扁）、右邊模組（窄而長），模組因此不必等部件捲完才出現。
           xl 以下疊成單欄：lg～xl 維持「部件 → 模組」；**lg 以下（手機／平板）改成「模組 → 部件」**

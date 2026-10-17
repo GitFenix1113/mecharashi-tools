@@ -100,6 +100,12 @@ export interface Mech {
    * （2026-10-04 更正：v3 對照曾把凜騎士對到遊騎兵的塗裝 wap3132，站長確認凜騎士是新機甲、不是塗裝。）
    */
   skinOfId?: string
+  /**
+   * 招募插畫在機甲圖鑑「卡池橫條」收合時的垂直焦點（PLAN-063 決策 5）：0＝頂、100＝底，＝CSS object-position 的 y；
+   * 未填＝30（`CARD_FOCUS_DEFAULT`）。寬橫條只露出約 20% 的畫面高度，每張構圖不同，由後台機甲管理的滑桿調。
+   * 放在 mechs 而不是 mechLore：圖鑑本來就載入 mechs（0 額外讀取），且圖鑑不讀 mechLore（PLAN-042-B 決策 B-7）。
+   */
+  cardFocus?: number
   // ⚠ 官配刻意**不存在機甲側**（沒有 pairedPilotId）——用 `pairedPilotOf(mech.id, pilots)`
   //   （src/utils/officialPairs.ts）由機師側的 `Pilot.pairedMechId` 推導。
   /** 裝甲類型。PLAN-052-A D-1 由 `string` 收成 enum（實測值域乾淨：中甲 36／輕型 27／重型 27）。 */

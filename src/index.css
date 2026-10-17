@@ -1360,3 +1360,98 @@ a.lore-pilotcard:hover .lore-pilotcard__go { color: var(--lore-red); }
 /* 前台的舞台是 sticky 全高層；預覽裡貼在頂端就好（sticky 會黏到後台的捲動容器上，縮放後位置對不上） */
 .lore-preview .lore-stage-wrap { position: absolute; top: 0; left: 0; right: 0; margin-bottom: 0; }
 .lore-preview .lore-dossier { padding-bottom: 7vh; }
+
+/* ── PLAN-063：機甲圖鑑卡池橫條（components/gacha/GachaBanner.tsx）與全景鑑賞（KeyArtViewer.tsx）────────────
+ * 橫條：招募插畫 object-fit: cover＋垂直焦點（Mech.cardFocus），左側暗化漸層上放池名與狀態。
+ * 鑑賞：.kav-pan（手機直向拖曳）> .kav-zoom（桌機放大）> .kav-frame（開場／收回的 WAAPI 動畫），三種位移各佔一層。 */
+.gacha-wrap { position: relative; }
+.gacha-banner { position: relative; display: block; width: 100%; height: clamp(100px, 28vw, 120px); padding: 0; overflow: hidden; text-align: left;
+  border: 1px solid var(--color-border); border-radius: 12px; background: #0a0c10; cursor: zoom-in; transition: border-color 0.25s; }
+.gacha-banner:hover, .gacha-banner:focus-visible { border-color: rgb(255 107 43 / 0.55); }
+.gacha-banner:focus-visible { outline: 2px solid var(--color-accent-orange); outline-offset: 2px; }
+.gacha-banner > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+.gacha-banner:hover > img { transform: scale(1.035); }
+.gacha-banner__shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(8 10 14 / 0.9) 0%, rgb(8 10 14 / 0.55) 34%, rgb(8 10 14 / 0) 64%); }
+.gacha-banner__t { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 4px; max-width: calc(100% - 32px); }
+.gacha-banner__t > small { font-size: 10px; letter-spacing: 3px; color: var(--color-accent-orange); font-family: Orbitron, sans-serif; }
+.gacha-banner__t > b { font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #fff; text-shadow: 0 1px 8px #000; line-height: 1.25; }
+.gacha-banner__row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.gacha-banner__row > i { font-style: normal; font-size: 11px; color: var(--color-text-secondary); text-shadow: 0 1px 4px #000; }
+.gacha-banner__hint { position: absolute; right: 12px; bottom: 10px; font-size: 11px; color: var(--color-text-primary); background: rgb(10 12 16 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.14); padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.gacha-banner__live { position: absolute; bottom: 12px; right: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent-orange); animation: gacha-pulse 1.8s infinite; display: none; }
+/* 時間線深連結：橫條上疊在右上角（與 button 同層，連結不能放進 button 裡）；鑑賞標題與文字行裡是行內 */
+.gacha-tl { flex-shrink: 0; font-size: 11px; line-height: 1.5; color: var(--color-text-secondary); text-decoration: none; white-space: nowrap;
+  padding: 2px 9px; border: 1px solid rgb(255 255 255 / 0.14); border-radius: 999px; background: rgb(10 12 16 / 0.72); transition: color 0.2s, border-color 0.2s; }
+.gacha-tl:hover, .gacha-tl:focus-visible { color: var(--color-accent-orange); border-color: rgb(255 107 43 / 0.55); }
+.gacha-wrap > .gacha-tl { position: absolute; top: 8px; right: 8px; z-index: 1; }
+@keyframes gacha-pulse { 0% { box-shadow: 0 0 0 0 rgb(255 107 43 / 0.6); } 70%, 100% { box-shadow: 0 0 0 8px rgb(255 107 43 / 0); } }
+@media (max-width: 640px) {
+  .gacha-banner__t { left: 12px; }
+  .gacha-banner__t > b { font-size: 16px; }
+  .gacha-banner__hint, .gacha-banner__row > i { display: none; }
+  .gacha-banner__live { display: block; }
+  .gacha-banner__shade { background: linear-gradient(90deg, rgb(8 10 14 / 0.9) 0%, rgb(8 10 14 / 0.6) 55%, rgb(8 10 14 / 0.1) 100%); }
+}
+
+/* 狀態標籤：開放中＝綠、即將開放／新機甲＝黃、已結束＝灰；推估一律虛線框 */
+.gacha-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; font-size: 12px; line-height: 1.4; padding: 3px 9px; border-radius: 6px;
+  background: rgb(10 12 16 / 0.78); border: 1px solid var(--color-border-accent); color: var(--color-text-primary); }
+.gacha-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gacha-chip > b { flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 0 5px; border-radius: 3px; }
+.gacha-chip > i { flex-shrink: 0; font-style: normal; font-size: 10px; padding: 0 4px; border-radius: 3px; border: 1px solid rgb(168 85 247 / 0.5); color: #c4a5f5; }
+.gacha-chip.k-ongoing { border-color: rgb(34 197 94 / 0.55); }
+.gacha-chip.k-ongoing > b { background: var(--color-accent-green); color: #052e14; }
+.gacha-chip.k-upcoming > b, .gacha-chip.k-debut > b { background: var(--color-accent-yellow); color: #3a2a02; }
+.gacha-chip.k-past { color: var(--color-text-secondary); }
+.gacha-chip.k-past > b { background: #374151; color: #d1d5db; }
+.gacha-chip.k-none { color: var(--color-text-dim); }
+.gacha-chip.is-pred { border-style: dashed; }
+.gacha-chip.is-loading { color: var(--color-text-dim); }
+
+/* 後台預覽（components/admin/CardFocusField.tsx）：鎖在前台的實際比例，裁切才會一樣 */
+.gacha-preview--desktop .gacha-banner { height: auto; aspect-ratio: 1408 / 120; }
+.gacha-preview--desktop :is(.gacha-banner__t, .gacha-banner__hint, .gacha-banner__shade), .gacha-preview--desktop > .gacha-tl { display: none; }
+.gacha-preview--mobile { width: 358px; max-width: 100%; }
+.gacha-preview--mobile .gacha-banner { height: auto; aspect-ratio: 358 / 109; }
+
+/* 沒插畫但有紀錄：一行文字 */
+.gacha-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-bg-card); font-size: 13px; }
+.gacha-line__lbl { font-size: 11px; letter-spacing: 2px; color: var(--color-accent-orange); }
+.gacha-line > small { font-size: 11px; color: var(--color-text-dim); }
+
+/* 全景鑑賞 */
+.kav { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; place-content: center; overflow: hidden; cursor: zoom-out; color: var(--color-text-primary); }
+.kav__bg { position: absolute; inset: 0; background: rgb(5 7 10 / 0.94); animation: kav-in 0.4s ease both; }
+.kav.is-closing { pointer-events: none; }
+.kav.is-closing .kav__bg { animation: kav-out 0.42s ease both; }
+.kav-pan, .kav-zoom { position: relative; }
+.kav-zoom { transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1); }
+.kav-zoom.is-zoom { transform: scale(2.1); transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1), transform-origin 0s; }
+.kav-frame { position: relative; width: min(96vw, calc(84vh * 65 / 27)); aspect-ratio: 65 / 27; transform-origin: 0 0; cursor: zoom-in; will-change: transform, clip-path; }
+.kav.is-zoomed .kav-frame { cursor: zoom-out; }
+.kav.is-fill .kav-frame { width: auto; height: min(64svh, 560px); cursor: grab; touch-action: none; }
+.kav-frame > img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; -webkit-user-drag: none; }
+.kav-frame > .lore-viewer__live { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 0.7s ease; }
+.kav-frame > .lore-viewer__live.is-ready { opacity: 1; }
+.kav__cap { position: absolute; left: 24px; bottom: 20px; right: 24px; display: flex; gap: 8px 14px; align-items: center; flex-wrap: wrap; cursor: default; animation: kav-in 0.3s ease 0.45s both; }
+.kav__cap > b { font-size: 22px; font-weight: 900; letter-spacing: 3px; }
+.kav__tools { position: absolute; top: 14px; right: 16px; display: flex; gap: 10px; align-items: center; cursor: default; animation: kav-in 0.3s ease 0.45s both; }
+.kav__hint { position: absolute; left: 0; right: 0; top: 18px; margin: 0; text-align: center; font-size: 11px; letter-spacing: 1px; color: var(--color-text-dim); pointer-events: none; animation: kav-in 0.3s ease 0.6s both; }
+.kav.is-closing :is(.kav__cap, .kav__tools, .kav__hint) { animation: kav-out 0.15s ease both; }
+.kav-seg { display: inline-flex; border: 1px solid var(--color-border-accent); border-radius: 999px; overflow: hidden; }
+.kav-seg > button { padding: 5px 12px; font-size: 12px; color: var(--color-text-secondary); background: transparent; border: 0; cursor: pointer; }
+.kav-seg > button[aria-checked='true'] { background: var(--color-accent-orange); color: #1a0a02; font-weight: 700; }
+.kav-close { border: 1px solid var(--color-border-accent); background: rgb(10 12 16 / 0.8); border-radius: 999px; padding: 5px 14px; font-size: 12px; color: var(--color-text-primary); cursor: pointer; }
+.kav-close:hover { border-color: var(--color-accent-orange); }
+@keyframes kav-in { from { opacity: 0; } }
+@keyframes kav-out { to { opacity: 0; } }
+@media (max-width: 640px) {
+  .kav__cap { left: 16px; right: 16px; bottom: 16px; }
+  .kav__cap > b { font-size: 17px; letter-spacing: 2px; }
+  .kav__hint { top: auto; bottom: 80px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gacha-banner > img, .kav-zoom { transition: none; }
+  .gacha-banner__live { animation: none; }
+}

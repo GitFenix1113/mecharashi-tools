@@ -16,6 +16,7 @@ import { ArmamentMountEditor } from '../../../components/admin/ArmamentMountEdit
 import { MechGameArtFields } from '../../../components/admin/GameArtFields'
 import { artFolderNames } from '../../../components/admin/artFolderNames'
 import { MechPortraitField } from '../../../components/admin/GameArtPicker'
+import { CardFocusField } from '../../../components/admin/CardFocusField'
 import { mechGameArt, mechGameIdFromPath } from '../../../utils/gameArt'
 import { ModuleBoundPart } from '../../../components/module/ModuleBoundPart'
 import { updateMech, docExists } from '../../../lib/firestoreApi'
@@ -781,6 +782,10 @@ function MechEditPanel({
                 「其他圖片」／「選取圖片」預設開啟本機甲資料夾 <code>{mechFolder}</code>，選到官方資料夾 <code>game/mechs/&lt;wap&gt;/</code> 裡的圖會順手帶入遊戲 ID。
                 圖片無官方來源者，須自行放入 <code>public/images/mechs/</code> 後重跑圖檔清單。
               </p>
+              {/* PLAN-063 C-1：機甲圖鑑卡池橫條的收合焦點 */}
+              <div className="pt-3 border-t border-border/60">
+                <CardFocusField form={form} onChange={(v) => set('cardFocus', v)} />
+              </div>
             </div>
           </div>
         )}
