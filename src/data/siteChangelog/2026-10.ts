@@ -3,6 +3,9 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-17', type: 'feat', summary: '機甲故事館再加 <b>6 台會動的招募插畫</b>：暮色之牙、盜火者、XR、光暉、銀閃、裁決者——卷宗最後的「卡池」點開全景就會播放卡池特效，'
+      + '目前共 23 台。' },
+
     { date: '2026-10-17', type: 'feat', summary: '機甲故事館再加 <b>3 台會動的招募插畫</b>：藍色魔鳥、赫拉克勒斯、塔納託斯——卷宗最後的「卡池」點開全景就會播放卡池特效，'
       + '目前共 17 台。' },
 

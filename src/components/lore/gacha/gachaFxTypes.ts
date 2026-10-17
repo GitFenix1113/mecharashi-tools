@@ -8,6 +8,12 @@ export type Vec3 = [number, number, number]
 export type Quat = [number, number, number, number]
 export type RGBA = [number, number, number, number]
 
+/**
+ * 裁切矩形 [x0, y0, x1, y1]（畫布座標）：遊戲裡祖先的 RectMask2D 把粒子／圖層裁在這裡面。
+ * 只有切進遊戲畫面（根節點 2500×1080）的邊才有值，其餘邊在畫布邊上；省略＝不裁。見 build-gacha-fx.mjs 的 clipOf
+ */
+export type FxClip = [number, number, number, number]
+
 /** Hermite 曲線的關鍵影格：[time, value, inSlope, outSlope]；斜率 null＝無限大（階梯） */
 export type CurveKey = [number, number, number | null, number | null]
 
@@ -64,13 +70,15 @@ export interface FxUV {
 /** 一個粒子系統（Unity ParticleSystem＋ParticleSystemRenderer 的子集） */
 export interface FxSystem {
   name: string
-  /** 畫布座標（anchoredPosition） */
+  /** 畫布座標（累積了祖先的位移、旋轉、縮放；祖先都沒有變換時＝自己的 anchoredPosition） */
   pos: [number, number]
+  /** 累積了祖先的旋轉 */
   rot: Quat
   /** scalingMode＝Local 時的 localScale；其他模式 [1,1,1] */
   scale: Vec3
   /** sortingOrder：小的先畫 */
   order: number
+  clip?: FxClip
   /** mode 0＝billboard、1＝沿速度拉伸；maxSize＝佔畫布高度的比例上限 */
   render: { mode: number; lengthScale: number; velocityScale: number; maxSize: number }
   /**
@@ -140,9 +148,11 @@ export interface FxFlowMask {
  */
 export interface FxFlow {
   name: string
+  /** 矩形中心（畫布座標，累積了祖先的變換） */
   pos: [number, number]
-  /** 畫布像素（sizeDelta × localScale） */
+  /** 畫布像素（矩形大小 × localScale × 祖先的縮放） */
   size: [number, number]
+  clip?: FxClip
   /** Image 顏色 × 材質 _Color */
   color: RGBA
   mainTex: string

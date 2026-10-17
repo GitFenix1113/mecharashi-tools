@@ -6,6 +6,7 @@
 //
 // 透明混色和疊加不同，畫的先後會影響結果：系統之間照 sortingOrder、同值照 prefab 階層（＝資料順序），流動圖層在所有粒子之後。
 // 這個順序是芬里厄（全疊加、順序無關）時期定的，混用透明的機甲上站前要對遊戲畫面確認。
+// 系統與圖層帶 clip 的（遊戲裡祖先的 RectMask2D）用 scissor 裁成那個矩形，例：2052 裁決者的風只在左半邊。
 //
 // ── 和遊戲校準過的定值（10-16 芬里厄試作，站長判定「很像」）────────────────────────
 // 流動 shader 只有編譯版，公式照參數名推回。照字面套「噪聲溶解＋擾動 −0.3」會整塊閃（每格變化量 7.9，遊戲 1.5），
@@ -18,7 +19,7 @@
 // 但校準值是對遊戲畫面調的，沒重新對過畫面前不動。反組譯檔：_local-notes/2026-10/2026-10-17_卡池動態_流動圖層預設貼圖/。
 
 import { evalMinMax, evalMinMaxGradient, makePerlin, ParticleSim, uvFrame, uvRect } from './gachaFxSim'
-import type { FxFlow, FxTO, GachaFxData } from './gachaFxTypes'
+import type { FxClip, FxFlow, FxTO, GachaFxData } from './gachaFxTypes'
 
 const FLOW_DISTURB_K = 0.1
 const FLOW_GAIN = 0.85
@@ -194,8 +195,19 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     }))),
   ])
 
+  /** 裁切矩形（畫布座標）→ scissor（畫面緩衝像素，原點左下，和畫布的 y 朝上同向）；沒有就關掉 */
+  function scissor(c: FxClip | undefined) {
+    if (!c) { gl.disable(gl.SCISSOR_TEST); return }
+    const kx = canvas.width / W, ky = canvas.height / H
+    const x0 = Math.floor((c[0] + W / 2) * kx), y0 = Math.floor((c[1] + H / 2) * ky)
+    const x1 = Math.ceil((c[2] + W / 2) * kx), y1 = Math.ceil((c[3] + H / 2) * ky)
+    gl.enable(gl.SCISSOR_TEST)
+    gl.scissor(x0, y0, Math.max(0, x1 - x0), Math.max(0, y1 - y0))
+  }
+
   function drawParticles(sim: ParticleSim, tex: WebGLTexture) {
     const S = sim.sys, C = S.colorOverLife, Z = S.sizeOverLife, UV = S.uv
+    scissor(S.clip)
     gl.uniform1i(uPt.uTex, 0)
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, tex)
@@ -231,6 +243,7 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
   }
 
   function drawFlow(f: FxFlow, main: WebGLTexture, dst: WebGLTexture, mask: WebGLTexture, time: number) {
+    scissor(f.clip)
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, main); gl.uniform1i(uFl.uMain, 0)
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, dst); gl.uniform1i(uFl.uDst, 1)
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, mask); gl.uniform1i(uFl.uMask, 2)
@@ -290,6 +303,7 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     gl.useProgram(P_FLOW)
     gl.uniform4f(uFl.uView, ...view)
     for (const { f, main, dst, mask } of flowTex) drawFlow(f, main, dst, mask, time)
+    gl.disable(gl.SCISSOR_TEST)   // 下一格的 clear 要清整個畫面
 
     if (first) { first = false; opts.onFirstFrame?.() }
     raf = requestAnimationFrame(frame)

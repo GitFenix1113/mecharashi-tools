@@ -930,9 +930,17 @@
           判斷不看 renderer 的 <code>m_Enabled</code>（UIParticle 代畫，已上站各台幾乎都是關的）；sub-emitter 的目標靠父系統觸發、不靠自己的 emission，
           但匯出檔沒有元件 pid 對不出是誰，所以 prefab 裡有開著的 <code>SubModule</code> 就一律不略過（60 台盤點：一個都沒有）。60 台共略過 37 個系統（35 台），已上站 14 台的 JSON 重產內容不變。
           0 ⚠ 從 14 台變 <b>17 台</b>（＋2071、3006、3019），其他 shader 卡住的台數 24 → 12，3010 只剩 <code>UI_General</code> 一項。
-          <br><b>還沒做</b>（剩 43 台）：Flow1 20 台、祖先位移 18、Box 18、其他 shader 12、流動材質當粒子 7、startDelay 7、Image 掛 <code>UIFx_Alpha</code> 3、拖尾 2、Circle 1、RotationBySpeed 1；
-          只差一種的 17 台：祖先位移 6（1017、1034、2003、2047、2050、2052）、Flow1 3（1028、1035、2027）、Box 2（2043、2053）、startDelay 2（2056、3032）、
-          拖尾 1（1018）、流動材質當粒子 1（1038）、其他 shader 1（3010 的 <code>UI_General</code>）、Image 掛 <code>UIFx_Alpha</code> 1（2013）。</div>
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>祖先的變換</b>：builder 改成照 Unity 的 RectTransform 算每個節點在畫布上的變換——
+          localPosition＝父矩形裡錨點的參考點（anchorMin～Max 依 pivot 內插）＋<code>anchoredPosition</code>（RectTransform 的 <code>m_LocalPosition</code> 只有 z 有值），
+          再一路乘上祖先的位移、旋轉、縮放，粒子的 <code>pos</code>／<code>rot</code>、流動圖層的 <code>pos</code>／<code>size</code> 都輸出累積後的值（欄位不變，引擎不必改）。
+          根節點的大小照 <code>LayoutElement</code> 的 preferred（60 台都是 2500×1080，有的 sizeDelta 是 0）；祖先縮放離 1 不到 0.1% 當 1（編輯器殘值，螣蛇的 1.00026，差不到 0.3 px）。
+          順帶補 <b>RectMask2D 裁切</b>：60 台有 28 台的粒子在 RectMask2D 底下，多半就是根節點大小——只有切進根節點矩形（遊戲畫面）的邊才裁，
+          輸出選填的 <code>clip</code>、引擎用 scissor（目前只有 2052 裁決者的 <code>Particle_Wind</code> 裁在左半邊）；站上插畫左右多露的 50 px 照沒遮罩的台處理，免得切出直線。
+          已上站 17 台的 JSON 重產內容逐位元相同。0 ⚠ 從 17 台變 <b>23 台</b>（＋1017、1034、2003、2047、2050、2052）；落點疊在插畫上檢查合理
+          （銀閃的 <code>Particle_Glow1</code> 從胸口移到頭部發光處、XR 的光移到槍口電光、光暉的煙移到槍口），疊圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_祖先位移/</code>。
+          <br><b>還沒做</b>（剩 37 台）：Flow1 20 台、Box 18、其他 shader 12、流動材質當粒子 7、startDelay 7、Image 掛 <code>UIFx_Alpha</code> 3、拖尾 2、Circle 1、流動圖層的祖先旋轉 1（3027）、RotationBySpeed 1；
+          只差一種的 14 台：Box 4（1052、2040、2043、2053）、Flow1 4（1028、1035、2027、2055）、startDelay 2（2056、3032）、
+          拖尾 1（1018）、流動材質當粒子 1（1038）、其他 shader 1（3010 的 <code>UI_General</code>）、Image 掛 <code>UIFx_Alpha</code> 1（2013）。<b>下一步最划算的是 Box 形狀</b>（解開 4 台、另外共卡 18 台）。</div>
         <div class="task-file">scripts/export-gacha-prefab.py · scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -961,7 +969,11 @@
           <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>最便宜的一步做完、再上 3 台</b>：2071 藍色魔鳥、3006 赫拉克勒斯、3019 塔納託斯（builder 略過不發射的系統，見上一列）——共 <b>17 台</b>。
           60 台重新匯出（與上一批逐位元組相同）＋<code>--dry-run</code>；已上站 14 台重產內容不變。新增 3 個 JSON（10.8–22.8 KB）＋4 張貼圖（88 KB，<code>game/fx/</code> 合計 1.2 MB）。
           驗收：<code>npm test</code> 1585 過、<code>npm run build</code> 過；production build＋<code>vite preview</code> headless Chromium（swiftshader）17 台逐台點卷宗卡池卡，17／17 <code>.lore-viewer__live.is-ready</code>、貼圖全 200、console 零錯誤；
-          截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_不發射系統略過/</code>。⚠ 這 3 台也混用透明與疊加混色（各 1–2 個透明系統），併入「抽樣校準」。</div>
+          截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_不發射系統略過/</code>。⚠ 這 3 台也混用透明與疊加混色（各 1–2 個透明系統），併入「抽樣校準」。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>祖先的變換解開 6 台</b>（見上一列）：1017 暮色之牙、1034 盜火者、2003 XR、2047 光暉、2050 銀閃、2052 裁決者——共 <b>23 台</b>。
+          60 台重新匯出＋<code>--dry-run</code>；已上站 17 台重產內容不變。新增 6 個 JSON（11.1–39.4 KB）＋1 張貼圖（<code>Common_Stone_1</code>，12 KB；其餘 27 張共用既有的）。
+          驗收：<code>npm test</code> 1585 過、<code>npm run build</code> 過；production build＋<code>vite preview</code> headless Chromium（swiftshader）23 台逐台點卷宗卡池卡，23／23 <code>.lore-viewer__live.is-ready</code>、貼圖全 200、console 零錯誤。
+          scissor 另做對照：攔截裁決者的資料把所有系統裁在左半，右半逐格變化 0.000（原資料 2.6）。截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_祖先位移/</code>。</div>
         <div class="task-file">src/components/lore/gacha/ · src/components/lore/LoreViewer.tsx · src/pages/lore/MechLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>

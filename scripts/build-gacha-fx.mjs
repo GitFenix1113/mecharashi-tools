@@ -29,14 +29,15 @@
  *
  * ── 引擎不支援的東西會印出 ⚠ ──────────────────────────────────────────────
  * 試作只實作了芬里厄用到的功能（UIFx_Alpha／UI_CommonFlow、球／圓錐形狀、拉伸 billboard…），10-17 補了透明混色（_Dst3＝10）、
- * 序列幀（UVModule 的 Grid 模式、依壽命／依 fps），以及流動圖層照 shader 規格的選填貼圖、主貼圖 tiling／旋轉／捲動與遮罩（見 UI_CommonFlow 的規格）。
+ * 序列幀（UVModule 的 Grid 模式、依壽命／依 fps）、流動圖層照 shader 規格的選填貼圖、主貼圖 tiling／旋轉／捲動與遮罩（見 UI_CommonFlow 的規格），
+ * 以及祖先的位移／旋轉／縮放、錨點與 RectMask2D 裁切（見「版面」）。
  * 下一台若用到拖尾、Flow1、序列幀的其他模式等，這裡會列出來——那是 J-1／J-2 要補的引擎功能，不要硬上。
- * 10-17 對 60 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run）：0 ⚠ 有 17 台＝2054、1011、1012、2017、2019、2022、3005、3017
+ * 10-17 對 60 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run）：0 ⚠ 有 23 台＝2054、1011、1012、2017、2019、2022、3005、3017
  * （以上透明混色就解開）＋1014、2042、2302（序列幀解開）＋1027、1040、1301（流動圖層缺擾動貼圖、遮罩、捲動解開）
- * ＋2071、3006、3019（不發射的系統略過就解開，見 isSilent；60 台共略過 37 個）。
- * 剩下 43 台卡最多的是 Flow1 20、祖先位移 18、Box 18、其他 shader 12、流動材質當粒子 7、startDelay 7；
- * 只差一種的 17 台：祖先位移 6、Flow1 3、Box 2、startDelay 2、拖尾／流動材質當粒子／其他 shader（3010 的 UI_General）／Image 用 UIFx_Alpha 各 1。
- * 逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態_不發射系統略過/（更早的版本在同月的「批次上站」「流動圖層預設貼圖」「序列幀」夾）。
+ * ＋2071、3006、3019（不發射的系統略過就解開，見 isSilent；60 台共略過 37 個）＋1017、1034、2003、2047、2050、2052（累積祖先的變換解開）。
+ * 剩下 37 台卡最多的是 Flow1 20、Box 18、其他 shader 12、流動材質當粒子 7、startDelay 7；
+ * 只差一種的 14 台：Box 4、Flow1 4、startDelay 2、拖尾／流動材質當粒子／其他 shader（3010 的 UI_General）／Image 用 UIFx_Alpha 各 1。
+ * 逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態_祖先位移/（更早的版本在同月的「不發射系統略過」「批次上站」「流動圖層預設貼圖」「序列幀」夾）。
  * 「·」開頭的是提示不是 ⚠（例：官方沒指定材質、或 emission 關又沒有 burst 的粒子會略過），照常可以上站。
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -63,7 +64,6 @@ const note = (msg) => notes.push(msg)
 // ── 數值 ──────────────────────────────────────────────────────────────────
 const num = (x) => (typeof x === 'number' && Number.isFinite(x) ? Number(x.toPrecision(6)) : 0)
 const vec3 = (v) => [num(v?.x), num(v?.y), num(v?.z)]
-const quat = (q) => [num(q?.x), num(q?.y), num(q?.z), num(q?.w ?? 1)]
 const rgba = (c) => [num(c?.r), num(c?.g), num(c?.b), num(c?.a)]
 
 /** 斜率無限大（Unity 的階梯關鍵影格）存成 null：JSON 存不了 Infinity */
@@ -105,20 +105,115 @@ const nodes = D.nodes
 const ancestors = (n) => { const out = []; for (let p = n.parent; p != null; p = nodes[p].parent) out.push(nodes[p]); return out }
 /** 自己與所有祖先都 active 才會畫 */
 const isActive = (n) => n.active !== false && ancestors(n).every((a) => a.active !== false)
+
+// ── 版面：錨點、pivot 與祖先的變換（10-17 J-1 補）──────────────────────────────
 /**
- * 節點的位置。RectTransform 用 anchoredPosition；有些台的粒子節點掛的是一般 Transform（Rex、Ranger 的 Particle_MainGlow 等），
- * 沒有錨點欄位，改用 localPosition——錨點置中時兩者是同一個值（RectTransform 本來就是 Transform）。
+ * 每個節點在畫布上的變換（3×3 線性部分 M＋位移 t；畫布座標＝prefab 根節點的座標系，原點在正中央、y 朝上）與矩形大小。
+ *   RectTransform：localPosition.xy＝父矩形裡錨點的參考點（anchorMin～anchorMax 依自己的 pivot 內插）＋anchoredPosition，
+ *     z 在 m_LocalPosition（它的 xy 序列化成 0，不能拿來用）；矩形大小＝父矩形×(anchorMax−anchorMin)＋sizeDelta。
+ *   一般 Transform（Rex、Ranger 的 Particle_MainGlow 等）沒有錨點：直接用 m_LocalPosition，大小當 0。
+ * 再一路乘上祖先的位移、旋轉、縮放。根節點自己的變換不算；它的大小照 LayoutElement 的 preferred（60 台都是 2500×1080，
+ * 遊戲裡由版面配置撐開，有的台 sizeDelta 是 0），只影響拉伸錨點的子孫（例：撐滿的 RectMask2D）。
+ * 祖先的縮放離 1 不到 0.1% 當成 1：那是編輯器拖出來的殘值（1040 螣蛇的 1.00026／0.9999），位置差不到 0.3 px，
+ * 照算的話已上站的 JSON 會白白跟著跳。
+ * 10-17 前引擎假設祖先都在畫布中央、沒有變換（位置＝自己的 anchoredPosition），有祖先位移的 18 台因此都報 ⚠。
  */
-const anchored = (r) => r.m_AnchoredPosition ?? r.m_LocalPosition ?? { x: 0, y: 0 }
-/** 引擎假設：粒子與流動圖層的位置＝自己的 anchoredPosition（祖先都在畫布中央、沒有位移旋轉）。不成立就提醒 */
-function checkAncestors(n) {
-  for (const a of ancestors(n).slice(0, -1)) {   // 最上層是 prefab 根節點，不算
-    const r = a.rect
-    if (!r) continue
-    const moved = Math.abs(anchored(r).x) > 0.01 || Math.abs(anchored(r).y) > 0.01
-    const rotated = Math.abs(r.m_LocalRotation.z) > 1e-4 || Math.abs(r.m_LocalRotation.x) > 1e-4 || Math.abs(r.m_LocalRotation.y) > 1e-4
-    if (moved || rotated) warn(`${n.name}：祖先 ${a.name} 有位移或旋轉，引擎目前忽略祖先的變換，位置會偏`)
+const CANVAS = [2600, 1080]
+const Q_ID = [0, 0, 0, 1]
+const M_ID = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+const qArr = (q) => (q ? [q.x, q.y, q.z, q.w ?? 1] : Q_ID)
+/** 四元數乘法 a·b（先 b 再 a）；a 是單位四元數時結果逐位元等於 b */
+const qMul = (a, b) => [
+  a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
+  a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
+  a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3],
+  a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2],
+]
+const qMat = ([x, y, z, w]) => [
+  [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+  [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+  [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+]
+const mMul = (A, B) => A.map((row) => [0, 1, 2].map((j) => row[0] * B[0][j] + row[1] * B[1][j] + row[2] * B[2][j]))
+const mApply = (A, v) => A.map((row) => row[0] * v[0] + row[1] * v[1] + row[2] * v[2])
+const near1 = (s) => (Math.abs(s - 1) < 1e-3 ? 1 : s)
+/** 有沒有旋轉（x／y／z 任一分量；試作的門檻） */
+const isRotated = (q) => Math.abs(q[0]) > 1e-4 || Math.abs(q[1]) > 1e-4 || Math.abs(q[2]) > 1e-4
+
+/**
+ * RectMask2D：遊戲裡 UIParticle 與 Image 都是 MaskableGraphic，會被祖先的 RectMask2D 裁成矩形（同一個節點上的不算，照 Unity 的
+ * MaskUtilities；巢狀的取交集；矩形取四角的外接框，Unity 也是這樣）。10-17 盤點 60 台有 28 台的粒子在 RectMask2D 底下，
+ * 多半就是根節點那麼大（2500×1080）：只有切進根節點矩形（＝遊戲畫面）的那幾邊才裁，輸出 clip、引擎用 scissor
+ * （例：2052 裁決者的 Particle_Wind 只在左半邊的遮罩裡）。站上的插畫是 2600 寬，左右各多露出 50 px 遊戲看不到的部分，
+ * 那裡照沒有遮罩的台處理、不裁——照字面裁在 ±1250 會在插畫上切出一條直線（2071、3005 就是這種）。
+ * softness（邊緣羽化）與 padding 60 台都沒用到：softness 報 ⚠、padding 照算。
+ */
+const ROOT_LE = (nodes[0].mb ?? []).find((m) => m.script === 'LayoutElement')?.fields
+const layout = []
+for (const [i, n] of nodes.entries()) {
+  const r = n.rect
+  if (n.parent == null) {
+    const sd = r?.m_SizeDelta ?? { x: 0, y: 0 }
+    layout[i] = {
+      M: M_ID, t: [0, 0, 0], q: Q_ID, pivot: [r?.m_Pivot?.x ?? 0.5, r?.m_Pivot?.y ?? 0.5],
+      size: [ROOT_LE?.m_PreferredWidth > 0 ? ROOT_LE.m_PreferredWidth : sd.x, ROOT_LE?.m_PreferredHeight > 0 ? ROOT_LE.m_PreferredHeight : sd.y],
+      clipKids: null,
+    }
+    continue
   }
+  const P = layout[n.parent]
+  let lp, size, pivot
+  if (r?.m_AnchorMin) {
+    const x0 = -P.pivot[0] * P.size[0], y0 = -P.pivot[1] * P.size[1]
+    const ax0 = x0 + P.size[0] * r.m_AnchorMin.x, ax1 = x0 + P.size[0] * r.m_AnchorMax.x
+    const ay0 = y0 + P.size[1] * r.m_AnchorMin.y, ay1 = y0 + P.size[1] * r.m_AnchorMax.y
+    pivot = [r.m_Pivot.x, r.m_Pivot.y]
+    size = [ax1 - ax0 + r.m_SizeDelta.x, ay1 - ay0 + r.m_SizeDelta.y]
+    lp = [ax0 + (ax1 - ax0) * pivot[0] + r.m_AnchoredPosition.x, ay0 + (ay1 - ay0) * pivot[1] + r.m_AnchoredPosition.y, r.m_LocalPosition?.z ?? 0]
+  } else {
+    const p = r?.m_LocalPosition ?? { x: 0, y: 0, z: 0 }
+    lp = [p.x, p.y, p.z]
+    size = [0, 0]
+    pivot = [0.5, 0.5]
+  }
+  const q = qArr(r?.m_LocalRotation), s = r?.m_LocalScale ?? { x: 1, y: 1, z: 1 }
+  const sc = [near1(s.x), near1(s.y), near1(s.z)]
+  const M = mMul(P.M, qMat(q).map((row) => row.map((v, j) => v * sc[j])))
+  const t = mApply(P.M, lp).map((v, k) => v + P.t[k])
+  const L = { M, t, q: qMul(P.q, q), size, pivot, parent: P, clip: P.clipKids, clipKids: P.clipKids }
+  const rm = (n.mb ?? []).find((m) => m.script === 'RectMask2D' && m.fields?.m_Enabled !== 0)
+  if (rm) {
+    const pad = rm.fields.m_Padding ?? { x: 0, y: 0, z: 0, w: 0 }
+    const x0 = -pivot[0] * size[0] + pad.x, x1 = (1 - pivot[0]) * size[0] - pad.z
+    const y0 = -pivot[1] * size[1] + pad.y, y1 = (1 - pivot[1]) * size[1] - pad.w
+    const cs = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([x, y]) => mApply(M, [x, y, 0]).map((v, k) => v + t[k]))
+    const box = [Math.min(...cs.map((c) => c[0])), Math.min(...cs.map((c) => c[1])), Math.max(...cs.map((c) => c[0])), Math.max(...cs.map((c) => c[1]))]
+    const prev = P.clipKids
+    L.clipKids = {
+      box: prev ? [Math.max(box[0], prev.box[0]), Math.max(box[1], prev.box[1]), Math.min(box[2], prev.box[2]), Math.min(box[3], prev.box[3])] : box,
+      masks: [...(prev?.masks ?? []), n.name],
+      soft: !!(prev?.soft || rm.fields.m_Softness?.x || rm.fields.m_Softness?.y),
+    }
+  }
+  layout[i] = L
+}
+
+/**
+ * 遮罩的裁切範圍 [x0, y0, x1, y1]（畫布座標）。沒切進根節點矩形的邊（容許半個像素）放到畫布邊上＝那邊不裁；
+ * 四邊都沒切到就不輸出 clip，引擎不必 scissor。
+ */
+const clipped = new Map()
+function clipOf(at, owner) {
+  const c = at.clip
+  if (!c) return null
+  const RW = layout[0].size[0] / 2, RH = layout[0].size[1] / 2, W = CANVAS[0] / 2, H = CANVAS[1] / 2, e = 0.5
+  const [x0, y0, x1, y1] = c.box
+  const box = [x0 > -RW + e ? x0 : -W, y0 > -RH + e ? y0 : -H, x1 < RW - e ? x1 : W, y1 < RH - e ? y1 : H]
+  if (box[0] === -W && box[1] === -H && box[2] === W && box[3] === H) return null
+  if (c.soft) warn(`${owner}：遮罩 ${c.masks.join('／')}（RectMask2D）有 softness 羽化，引擎裁成硬邊`)
+  const key = c.masks.join('／')
+  clipped.set(key, { box, n: (clipped.get(key)?.n ?? 0) + 1 })
+  return box.map(num)
 }
 
 // ── 材質與貼圖 ────────────────────────────────────────────────────────────
@@ -217,7 +312,7 @@ const SUPPORTED_SHAPES = new Set([0, 4, 8])
 
 /**
  * 不發射的系統：emission 關、又沒有 burst（各台的 Particle_All／FU／Centre 容器、Glow06 的 Particle 外框常見）。
- * 遊戲裡一顆粒子都不會出，比照「官方沒指定材質」略過——它的 shader、主貼圖、形狀、祖先位移都不必報 ⚠。
+ * 遊戲裡一顆粒子都不會出，比照「官方沒指定材質」略過——它的 shader、主貼圖、形狀都不必報 ⚠。
  * 不能看 renderer 的 m_Enabled：UI 粒子由 UIParticle 代畫，已上站各台的 renderer 幾乎都是 m_Enabled:false。
  * 例外是 sub-emitter 的目標（由父系統觸發，不靠自己的 emission）：匯出檔的節點沒有元件 pid，對不出 subEmitters[].emitter
  * 指的是誰，所以整個 prefab 有開著的 SubModule 就一律不略過（10-17 盤點 60 台：一個都沒有）。
@@ -225,23 +320,25 @@ const SUPPORTED_SHAPES = new Set([0, 4, 8])
 const hasSubEmitters = nodes.some((n) => n.ps?.SubModule?.enabled && (n.ps.SubModule.subEmitters ?? []).length)
 const isSilent = (p) => !hasSubEmitters && !p.EmissionModule?.enabled && !((p.EmissionModule?.m_BurstCount ?? 0) > 0)
 
-function particleSystem(n) {
+function particleSystem(n, at) {
   const p = n.ps, r = n.rect, psr = n.psr
   if (isSilent(p)) { note(`${n.name}：emission 關、沒有 burst，不發射粒子，略過`); return null }
   for (const [k, v] of Object.entries(p)) if (v && typeof v === 'object' && v.enabled && k.endsWith('Module') && !SUPPORTED_MODULES.has(k)) warn(`${n.name}：${k} 開著，引擎不支援（會被忽略）`)
   if (psr.m_RenderMode !== 0 && psr.m_RenderMode !== 1) warn(`${n.name}：渲染模式 ${psr.m_RenderMode} 引擎不支援（只有 billboard 0／拉伸 1）`)
   if (num(p.startDelay?.scalar) !== 0 || p.startDelay?.minMaxState) warn(`${n.name}：有 startDelay，引擎忽略`)
-  checkAncestors(n)
   const I = p.InitialModule, E = p.EmissionModule, S = p.ShapeModule
   const material = particleMaterial(psr.materials?.[0], n.name)
   if (!material) return null
+  const clip = clipOf(at, n.name)
   const sys = {
     name: n.name,
-    pos: [num(anchored(r).x), num(anchored(r).y)],
-    rot: quat(r.m_LocalRotation),
-    // scalingMode 1＝Local：粒子跟著自己的 localScale 縮放；其他模式試作當 1
+    // 位置與旋轉都是累積了祖先之後的（見「版面」）；祖先都沒有變換時＝自己的 anchoredPosition／localRotation，逐位元相同
+    pos: [num(at.t[0]), num(at.t[1])],
+    rot: at.q.map(num),
+    // scalingMode 1＝Local：粒子只跟著自己的 localScale 縮放（祖先的縮放只影響位置，Unity 也是）；其他模式試作當 1
     scale: p.scalingMode === 1 ? vec3(r.m_LocalScale) : [1, 1, 1],
     order: psr.m_SortingOrder || 0,
+    ...(clip ? { clip } : {}),
     render: { mode: psr.m_RenderMode, lengthScale: num(psr.m_LengthScale), velocityScale: num(psr.m_VelocityScale), maxSize: num(psr.m_MaxParticleSize) },
     material,
     duration: num(p.lengthInSec),
@@ -291,10 +388,16 @@ function particleSystem(n) {
  * 溶解貼圖刻意不輸出：10-16 對遊戲畫面校準時，照字面套「噪聲溶解」會整塊閃（每格變化量 7.9 對遊戲 1.5），
  * 關掉溶解才對得上（1.6）。引擎的流動 shader 因此沒有溶解這一段，見 gachaFxEngine.ts。
  */
-function flowLayer(n, img) {
+function flowLayer(n, img, at) {
   const m = D.materials[img.material], f = m.floats, owner = `${n.name}：材質 ${img.material}`
-  checkAncestors(n)
   const r = n.rect, c = img.fields.m_Color, mc = m.colors._Color ?? [1, 1, 1, 1]
+  // 矩形：中心＝pivot 換到正中央再過變換；大小＝矩形×自己的縮放×祖先累積的縮放。引擎畫不轉的矩形，祖先有旋轉或鏡像就報 ⚠
+  const s = r.m_LocalScale, Mp = at.parent.M
+  const k = [Math.hypot(Mp[0][0], Mp[1][0], Mp[2][0]), Math.hypot(Mp[0][1], Mp[1][1], Mp[2][1])]
+  const center = mApply(at.M, [(0.5 - at.pivot[0]) * at.size[0], (0.5 - at.pivot[1]) * at.size[1], 0]).map((v, i) => v + at.t[i])
+  if (isRotated(at.parent.q)) warn(`${owner}：祖先有旋轉，引擎畫成不轉的矩形`)
+  if (Mp[0][0] * Mp[1][1] - Mp[0][1] * Mp[1][0] < 0) warn(`${owner}：祖先有負縮放（鏡像），引擎不翻轉貼圖`)
+  const clip = clipOf(at, n.name)
   for (const k of ['_MainTex1TO', '_dIsturbTexTO', '_DisturbFlow']) if (!m.colors[k]) warn(`${owner} 缺 ${k}`)
   // 流動圖層引擎只畫疊加（10-17 盤點 60 台的 UI_CommonFlow 圖層 _Dst 全是 1；沒存時 shader 預設是 10＝透明）
   if ((f._Dst ?? 10) !== 1) warn(`${owner} 的混色 SrcAlpha／${f._Dst ?? '10（預設）'}，流動圖層引擎只畫疊加`)
@@ -317,8 +420,9 @@ function flowLayer(n, img) {
   if (maskTex && D.textures[maskTex]?.wrap && D.textures[maskTex].wrap[0] !== D.textures[maskTex].wrap[1]) warn(`${owner} 的 _Mask1 兩軸 wrap 不同，引擎取 U 的`)
   return {
     name: n.name,
-    pos: [num(r.m_AnchoredPosition.x), num(r.m_AnchoredPosition.y)],
-    size: [num(r.m_SizeDelta.x * r.m_LocalScale.x), num(r.m_SizeDelta.y * r.m_LocalScale.y)],
+    pos: [num(center[0]), num(center[1])],
+    size: [num(at.size[0] * s.x * k[0]), num(at.size[1] * s.y * k[1])],
+    ...(clip ? { clip } : {}),
     color: [num(c.r * mc[0]), num(c.g * mc[1]), num(c.b * mc[2]), num(c.a * mc[3])],
     mainTex,
     ...(disturbTex ? { disturbTex: useTex(disturbTex, `${owner} 的 _DisturbTex`) } : {}),
@@ -351,18 +455,18 @@ function flowLayer(n, img) {
 }
 
 const systems = [], flows = []
-for (const n of nodes) {
+for (const [i, n] of nodes.entries()) {
   if (!isActive(n)) continue
-  if (n.ps) { const s = particleSystem(n); if (s) systems.push(s); continue }
+  if (n.ps) { const s = particleSystem(n, layout[i]); if (s) systems.push(s); continue }
   for (const mb of n.mb ?? []) {
     if (!mb.material) continue
     const shader = D.materials[mb.material]?.shader
-    if (mb.script === 'Image' && shader === SHADER_FLOW) flows.push(flowLayer(n, mb))
+    if (mb.script === 'Image' && shader === SHADER_FLOW) flows.push(flowLayer(n, mb, layout[i]))
     else if (shader) warn(`${n.name}：${mb.script} 用了材質 ${mb.material}（${shader}），引擎不畫`)
   }
 }
 
-const out = { v: 1, prefab: D.prefab, canvas: [2600, 1080], unit: 100, systems, flows }
+const out = { v: 1, prefab: D.prefab, canvas: CANVAS, unit: 100, systems, flows }
 const json = JSON.stringify(out)
 
 // ── 輸出 ──────────────────────────────────────────────────────────────────
@@ -372,6 +476,7 @@ const missing = [...usedTex].filter((t) => !existsSync(join(srcDir, D.textures[t
 for (const t of missing) warn(`貼圖檔 ${t} 不在 ${srcDir}`)
 
 console.log(`${D.prefab} → ${wap}.json：${systems.length} 個粒子系統、${flows.length} 個流動圖層、${usedTex.size} 張貼圖，${(json.length / 1024).toFixed(1)} KB`)
+for (const [masks, { box, n }] of clipped) note(`遮罩 ${masks}（RectMask2D）把 ${n} 個系統／圖層裁在 x ${box[0].toFixed(1)}～${box[2].toFixed(1)}、y ${box[1].toFixed(1)}～${box[3].toFixed(1)}`)
 for (const n of notes) console.log(`  · ${n}`)
 for (const w of warnings) console.log(`  ⚠ ${w}`)
 if (dryRun) { console.log('（--dry-run：不寫檔）'); process.exit(0) }
