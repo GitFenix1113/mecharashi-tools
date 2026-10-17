@@ -940,7 +940,18 @@
           <code>gachaFxEngine</code>（WebGL2，校準值寫死：不溶解、擾動 ×0.1、亮度 ×0.85）、<code>gachaFxRegistry</code>（<code>import.meta.glob</code>：有 JSON 就有動態，新增一台不必改程式）、<code>GachaFxLive</code>。
           <code>LoreViewer</code> 新增 <code>live</code> 疊層：開場飛行落地才掛、關閉即卸載；canvas 套主圖同一套尺寸規則，放大一起放大。背景直接用 F 段的招募插畫（與試作拼圖逐像素平均差 3／255），不另外上傳。
           鑑賞工具列加「卡池 動態／靜態」，卷宗卡池卡提示改「點一下看動態全景」；減少動態或省流量預設靜態。驗收：headless 與試作頁分區比對平均色差 ≤3、每格變化量相當；引擎與資料各自延遲載入（gzip 5.6＋4.4 KB）。
-          手機降級目前只有解析度上限（DPR ≤2），沒有另做簡化版。<code>wapgachaskin</code> 還沒查。<b>剩</b>：其他台逐台加資料——匯出已解卡（上一列），目前能直接上的只有都卜勒，其餘要等引擎補功能。</div>
+          手機降級目前只有解析度上限（DPR ≤2），沒有另做簡化版。<code>wapgachaskin</code> 還沒查。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>第一批 0 ⚠ 全數上站：芬里厄之外再加 13 台</b>——1011 都卜勒、1012 雷克斯、1014 格萊楊、1027 銜尾蛇、1040 螣蛇、1301 破曉者-02、2017 馬爾薩斯、2019 朝陽、2022 青鳥、2042 伊格尼特、2302 影子兔、3005 恐頜、3017 金剛。
+          60 台重新匯出＋<code>--dry-run</code>，0 ⚠ 仍是這 14 台（兩次匯出逐位元組相同；被略過的元件只有巨像的 Animator，這 14 台都沒有）；<code>2054.json</code> 重產內容不變。
+          新增 13 個 JSON（12.6–25.0 KB）＋29 張貼圖（<code>game/fx/</code> 合計 1.1 MB，共用的煙霧、火花只放一份）。
+          驗收：<code>npm test</code> 1585 過（gachaFxSim 每台跑 10 秒無 NaN、貼圖都在）、<code>npm run build</code> 過；production build＋<code>vite preview</code>（埠 4173，Worker 白名單內）用 headless Chromium（swiftshader）逐台開 <code>/lore/mechs/&lt;id&gt;</code> 點卷宗卡池卡，
+          14／14 出現 <code>.lore-viewer__live.is-ready</code>、貼圖請求數＝JSON 貼圖數且全 200、console 零錯誤；截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_批次上站/</code>（破曉者-02 左緣的暗線是插畫本身，靜態也有）。
+          ⚠ 9 台混用透明與疊加混色（1012、1014、1027、1040、1301、2017、2019、2022、2302），繪製順序沿用芬里厄時期的規則、還沒對遊戲畫面看過——併入下一列「抽樣校準」。
+          <br><b>剩 46 台</b>（逐台清單同一個 <code>_local-notes</code> 夾）。缺的引擎功能與卡住台數（一台可能卡多種）：
+          其他 shader 24（多半是 <code>BlackJackShader/Unlit</code> 的容器節點，主貼圖空）、Flow1 20、祖先位移 18、Box 形狀 18、startDelay 7、流動材質當粒子 7、Image 掛 <code>UIFx_Alpha</code> 3、拖尾 2、Circle 形狀 1、RotationBySpeed 1。
+          只差一種的 12 台：祖先位移 3（1017、2003、2047）、Box 2（2043、2053）、其他 shader 4（2071、3006、3010、3019）、Flow1 1（2027）、startDelay 1（3032）、Image 掛 <code>UIFx_Alpha</code> 1（2013）。
+          <b>最便宜的一步</b>：2071、3006、3019 卡的只是一個 emission 關著、沒有 burst 的 <code>Particle_All</code>（不發射任何粒子），builder 比照「沒指定材質」略過就 0 ⚠（3010 也會少到只剩 <code>UI_General</code> 一項）。
+          注意別拿 renderer 的 <code>m_Enabled</code> 判斷：UI 粒子由 UIParticle 代畫，已上站各台的 renderer 幾乎都是關的。</div>
         <div class="task-file">src/components/lore/gacha/ · src/components/lore/LoreViewer.tsx · src/pages/lore/MechLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
