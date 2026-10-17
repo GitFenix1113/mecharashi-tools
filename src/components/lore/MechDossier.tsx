@@ -17,7 +17,7 @@ export type { MechLineageItem }
 
 /**
  * 機甲廳的卷宗（PLAN-042-B D-3）。卡片順序照站長 10-16 認可的模擬頁（決策 B-6）：
- *   標題區 → 技術檔案 → 逸聞目錄 → 構造（諸元＋四分件） → 系譜 → 搭乘者 → 卡池（招募插畫附件，F-2）
+ *   標題區 → 技術檔案 → 逸聞目錄 → 構造（諸元＋四分件；四分件 10-17 先收起，見 SHOW_PARTS） → 系譜 → 搭乘者 → 卡池（招募插畫附件，F-2）
  * 卡片樣式沿用機師卷宗（.lore-panel／.lore-card／.lore-eyebrow…），只有四分件、系譜、搭乘者是機甲專屬。
  * 不加進 LoreDossier（決策 B-12）：兩館內容不同，硬塞分支只會讓兩邊都難改。
  *
@@ -56,6 +56,12 @@ export interface MechDossierProps {
 /** 招募插畫在鑑賞模式裡的名字；頁面拿它分辨「現在看的是不透明的插畫」 */
 export const CARD_LABEL = '招募插畫'
 
+/**
+ * 四分件先收起來（站長 10-17）：部件圖解析度不夠，放大很難看。
+ * 程式與樣式（.lore-parts）都留著，日後有高解析度來源再把這個開關打開。
+ */
+const SHOW_PARTS = false
+
 /** 四分件：從正面看，右臂在畫面左邊（站長 10-16） */
 const PARTS: { kind: MechGameArtKind; label: string; en: string }[] = [
   { kind: 'rightArm', label: '右臂', en: 'RIGHT ARM' },
@@ -87,7 +93,7 @@ export default function MechDossier({
   const intro = readableParagraphs(lore?.intro)
   const source = normalizeLoreSource(lore?.frontSource)
   const series = lore?.series?.trim()
-  const parts = PARTS.map((p) => ({ ...p, src: mechGameArt(mech, p.kind) })).filter((p) => p.src)
+  const parts = SHOW_PARTS ? PARTS.map((p) => ({ ...p, src: mechGameArt(mech, p.kind) })).filter((p) => p.src) : []
   let i = 0
   const nextI = () => ({ '--i': i++ } as React.CSSProperties)
 

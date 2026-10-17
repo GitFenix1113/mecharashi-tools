@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-17', type: 'style', summary: '機甲故事館卷宗的「構造」卡先收起<b>四分件</b>（右臂／軀幹／左臂／腿部）圖格：部件圖解析度不足、放大不好看，暫時只留諸元表。' },
+
     { date: '2026-10-17', type: 'feat', summary: '故事館比照資料圖鑑<b>分成機師、機甲兩館</b>：導覽列的「故事館 ▾」直接選要進哪一館；'
       + '館內頂端的館名旁可隨時換館，館首頁只留排序。' },
 
