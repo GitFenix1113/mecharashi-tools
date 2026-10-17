@@ -965,9 +965,19 @@ async function skinThumb(src) {
 /**
  * 招募插畫：兩片 1024² 拉回卡池 prefab 的 1300×1080，左右拼成 2600×1080（不透明，丟掉 alpha）。
  * overlays（機師對照表的 layers）：去背的角色照 rect [left, top, width, height] 拉伸疊上，超出畫面的部分裁掉。
+ *
+ * ⚠ 切片的 alpha 要在縮放「之前」、用另一條 pipeline 丟掉：sharp 的運算順序是固定的，同一條寫 .resize().removeAlpha()
+ *   照樣是帶著 alpha 縮放（預乘再還原）。切片外緣約 76 欄是淡出到 alpha≈0 的暈邊（遊戲裡落在畫面外），預乘再還原會把那裡
+ *   量化成黑塊與雜色橫條——2026-10-17 戰部渡右緣 25px 破圖就是這個，其實 123 張都有（多數只 4–5px 看不太出來）。
+ *   丟掉 alpha 留下的是畫好的完整 RGB，最外幾欄是 Unity 的邊緣延伸（橫向拖影），比黑塊自然；
+ *   照 alpha 疊黑底（flatten）則會現出壓縮造成的階梯狀暈邊，也不用。
  */
 async function composeCard(a, b, overlays = []) {
-  const half = await Promise.all([a, b].map((f) => sharp(f).resize(CARD_W / 2, CARD_H, { fit: 'fill' }).removeAlpha().png().toBuffer()))
+  const half = await Promise.all([a, b].map(async (f) => {
+    const { data, info } = await sharp(f).removeAlpha().raw().toBuffer({ resolveWithObject: true })
+    return sharp(data, { raw: { width: info.width, height: info.height, channels: info.channels } })
+      .resize(CARD_W / 2, CARD_H, { fit: 'fill' }).png().toBuffer()
+  }))
   const layers = []
   for (const { src, rect } of overlays) {
     const [left, top, w, h] = rect.map((v) => Math.round(v))
