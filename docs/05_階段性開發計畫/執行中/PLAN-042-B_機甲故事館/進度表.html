@@ -209,8 +209,8 @@
 
   <div class="summary-row">
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">29</div><div class="summary-lbl">已完成</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">1</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">8</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">2</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">7</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">38</div><div class="summary-lbl">任務（不含長期資料）</div></div>
   </div>
 
@@ -898,11 +898,39 @@
         <div class="task-name">補照規格的粒子功能＋批次匯出</div>
         <div class="task-desc">序列幀動畫（UVModule，48 台用到）、Box／Circle 發射形狀、Unlit／Additive shader、別的封包裡的材質；73 個 prefab 批次匯出並瘦身（芬里厄原始 typetree 912 KB → 幾十 KB）。匯出腳本在 <code>_local-notes/…/scripts/</code>。
           <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 瘦身那一半先做了：<code>scripts/build-gacha-fx.mjs</code> 吃「data.json＋tex/」格式的匯出，輸出 <code>src/data/gachaFx/&lt;wap&gt;.json</code>（芬里厄 912 KB → 22.5 KB）與扁平貼圖庫 <code>public/images/game/fx/</code>，
-          遇到引擎不支援的模組／shader／形狀會列 ⚠（新功能先補引擎，不要硬上）。<b>還沒做</b>：UnityPy 端的批次匯出（芬里厄那份 <code>data.json</code> 的匯出腳本沒留在 <code>_local-notes</code>）與上面列的引擎新功能。</div>
-        <div class="task-file">scripts/（匯出）· scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>
+          遇到引擎不支援的模組／shader／形狀會列 ⚠（新功能先補引擎，不要硬上）。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 匯出端重寫：<code>scripts/export-gacha-prefab.py</code>（UnityPy 1.25.3；封包路徑與金鑰從擷取工具 <code>settings.json</code> 讀、不落地；
+          載入 prefab 封包＋manifest 相依的遞移閉包，別包材質與貼圖都解得到；卡池鍵→wap 用 <code>mechGachaCards.json</code>；<code>--list</code>／<code>--wap</code>／<code>--all</code>／<code>--prefab</code>）。
+          驗收：芬里厄重匯出的 <code>data.json</code> 與 10-16 版逐位元組相同、<code>2054.json</code> 與站上相同；<b>都卜勒（1011）0 ⚠</b>，產出與預覽頁在
+          <code>_local-notes/2026-10/2026-10-17_卡池動態匯出_都卜勒試作/</code>（未寫進站上，待站長決定）。60 台批次試跑：0 ⚠ 只有芬里厄、都卜勒；
+          卡最多的是<b>透明混色（<code>_Dst3=10</code>）49 台</b>、UVModule 43、Flow1 20、祖先位移 18、Box 18。
+          順手修 <code>build-gacha-fx.mjs</code>：一般 Transform 的粒子節點不再當掉（改讀 <code>m_LocalPosition</code>）；混色檢查改看 shader 真正用的 <code>_Dst3</code>／<code>_Dst</code>（原本看的 <code>_SrcBlend</code> 不是這兩個 shader 的屬性）。
+          <br><b>照抄流程</b>（PowerShell、repo 根目錄；venv 第一次要先建，指令在 <code>export-gacha-prefab.py</code> 檔頭）：
+          <code>E:\Mecharashi_Data\unitypy-venv\Scripts\python.exe scripts\export-gacha-prefab.py --wap 1011 --out E:\Mecharashi_Data\gacha-export</code>
+          → <code>node scripts/build-gacha-fx.mjs E:\Mecharashi_Data\gacha-export\1011 --wap 1011 --dry-run</code>（有 ⚠ 就停）→ 拿掉 <code>--dry-run</code> 寫入 → commit／push。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>透明混色</b>：材質 <code>_Dst3=10</code>（Unity 的 OneMinusSrcAlpha）時 builder 輸出 <code>material.blend: 'alpha'</code>（疊加不輸出，<code>2054.json</code> 不變），
+          引擎每個粒子系統依它切 <code>blendFunc</code>、畫流動圖層前切回疊加；官方沒指定材質的粒子改成略過（「·」提示，不算 ⚠）。
+          0 ⚠ 從 2 台變 <b>8 台</b>（2054、1011、1012 Rex、2017 Malthus、2019 Aurora、2022 Bluebird、3005、3017），都還沒上站；Rex 的黑煙改前疊加看不見、改後出現（對照圖在同一個 <code>_local-notes</code> 夾）。
+          ⚠ 透明混色會讓繪製順序有影響（目前系統照 sortingOrder＋階層、流動圖層最後畫，芬里厄時期定的），混用的機甲上站前要對遊戲畫面看一次。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>序列幀（UVModule）</b>：支援 Grid 模式的整張／單列（固定列、隨機列）、依壽命（frameOverTime×cycles）／依 fps，加上 startFrame；
+          builder 輸出 <code>uv</code>（關掉的不輸出，<code>2054.json</code> 不變），Sprites 模式、依速度、翻轉、依網格索引選列仍報 ⚠（60 台開著的 102 個都沒用到）。
+          引擎依粒子年齡算格號（<code>gachaFxSim.ts</code> 的 <code>uvFrame</code>／<code>uvRect</code>，有測試）、組四邊形時換成那一格的 UV。
+          夜兔（2302）2×8 閃電序列實測播放方向正確（由短變長再淡出）、碎石每顆一格（改前每顆都是整張 2×2）；截圖與預覽頁在 <code>_local-notes/2026-10/2026-10-17_卡池動態_序列幀/</code>。
+          0 ⚠ 從 8 台變 <b>11 台</b>（＋1014 Glasya、2042 Ignite、2302 Shadowrabbit），都還沒上站。原本估 14 台：1027、1040、1301 的序列幀也解開了，
+          但它們的流動圖層材質沒有擾動貼圖 <code>_DisturbTex</code>，引擎會載入失敗、整台播不出來——builder 以前沒報（空貼圖名直接放行），這次補了 ⚠。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>流動圖層照 shader 規格補齊</b>：用系統的 <code>D3DCompiler_47</code> 反組譯 <code>UI_CommonFlow</code> 的 D3D11 編譯碼，拿到確切公式與屬性預設值——
+          <code>_DisturbTex</code> 預設 <b>black</b>（擾動＝<code>(2r−1)×_DisturbValue</code>，缺貼圖是常數偏移、不是 0），<code>_Mask1</code> 是真的遮罩（預設 white）。
+          builder 缺擾動貼圖不再報 ⚠、改輸出選填欄位；引擎缺貼圖綁 1×1 的 Unity 預設色，並照原樣補上主貼圖 tiling、<code>_MainTexRotate</code>、時間捲動 <code>_Tex1Flow</code>、遮罩
+          （1027、1301 都用到，不補畫面會錯）；匯出多存貼圖 wrap（捲動的貼圖是 Repeat）。校準值（擾動 ×0.1 只推 U、不溶解、亮度 ×0.85）沒動。
+          <code>2054.json</code> 不變、芬里厄流動圖層改前改後逐像素相同。0 ⚠ 從 11 台變 <b>14 台</b>（＋1027 Ouroboros、1040 TengShe、1301 REV-02），都還沒上站；
+          1040 的溶解值比芬里厄高、1027 有一條素材本來就有的橫邊，上站前對遊戲畫面看一次。粒子誤用帶遮罩／捲動的流動材質（7 台）改報 ⚠。
+          反組譯檔、預覽頁、對照圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_流動圖層預設貼圖/</code>。
+          <br><b>還沒做</b>：Flow1 20 台、祖先位移 18、Box 18、其他 shader 21（多半連主貼圖都空）、流動材質當粒子 7、startDelay 7；
+          只差一種的：祖先位移 3（1017、2003、2047）、Box 2（2043、2053）。</div>
+        <div class="task-file">scripts/export-gacha-prefab.py · scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
@@ -912,7 +940,7 @@
           <code>gachaFxEngine</code>（WebGL2，校準值寫死：不溶解、擾動 ×0.1、亮度 ×0.85）、<code>gachaFxRegistry</code>（<code>import.meta.glob</code>：有 JSON 就有動態，新增一台不必改程式）、<code>GachaFxLive</code>。
           <code>LoreViewer</code> 新增 <code>live</code> 疊層：開場飛行落地才掛、關閉即卸載；canvas 套主圖同一套尺寸規則，放大一起放大。背景直接用 F 段的招募插畫（與試作拼圖逐像素平均差 3／255），不另外上傳。
           鑑賞工具列加「卡池 動態／靜態」，卷宗卡池卡提示改「點一下看動態全景」；減少動態或省流量預設靜態。驗收：headless 與試作頁分區比對平均色差 ≤3、每格變化量相當；引擎與資料各自延遲載入（gzip 5.6＋4.4 KB）。
-          手機降級目前只有解析度上限（DPR ≤2），沒有另做簡化版。<code>wapgachaskin</code> 還沒查。<b>剩</b>：其他台逐台加資料（卡在上一列的匯出）。</div>
+          手機降級目前只有解析度上限（DPR ≤2），沒有另做簡化版。<code>wapgachaskin</code> 還沒查。<b>剩</b>：其他台逐台加資料——匯出已解卡（上一列），目前能直接上的只有都卜勒，其餘要等引擎補功能。</div>
         <div class="task-file">src/components/lore/gacha/ · src/components/lore/LoreViewer.tsx · src/pages/lore/MechLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
