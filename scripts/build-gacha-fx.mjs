@@ -31,12 +31,13 @@
  * 試作只實作了芬里厄用到的功能（UIFx_Alpha／UI_CommonFlow、球／圓錐形狀、拉伸 billboard…），10-17 補了透明混色（_Dst3＝10）、
  * 序列幀（UVModule 的 Grid 模式、依壽命／依 fps），以及流動圖層照 shader 規格的選填貼圖、主貼圖 tiling／旋轉／捲動與遮罩（見 UI_CommonFlow 的規格）。
  * 下一台若用到拖尾、Flow1、序列幀的其他模式等，這裡會列出來——那是 J-1／J-2 要補的引擎功能，不要硬上。
- * 10-17 對 60 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run）：0 ⚠ 有 14 台＝2054、1011、1012、2017、2019、2022、3005、3017
- * （以上透明混色就解開）＋1014、2042、2302（序列幀解開）＋1027、1040、1301（流動圖層缺擾動貼圖、遮罩、捲動解開）。
- * 剩下卡最多台的是 Flow1 20、祖先位移 18、Box 18、其他 shader 21（多半連主貼圖都空）、流動材質當粒子 7、startDelay 7；
- * 只差一種的：祖先位移 3、Box 2、Flow1／其他 shader／startDelay 各 1。
- * 逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態_流動圖層預設貼圖/（更早的版本在同月的「都卜勒試作」「序列幀」夾）。
- * 「·」開頭的是提示不是 ⚠（例：官方沒指定材質的粒子會略過），照常可以上站。
+ * 10-17 對 60 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run）：0 ⚠ 有 17 台＝2054、1011、1012、2017、2019、2022、3005、3017
+ * （以上透明混色就解開）＋1014、2042、2302（序列幀解開）＋1027、1040、1301（流動圖層缺擾動貼圖、遮罩、捲動解開）
+ * ＋2071、3006、3019（不發射的系統略過就解開，見 isSilent；60 台共略過 37 個）。
+ * 剩下 43 台卡最多的是 Flow1 20、祖先位移 18、Box 18、其他 shader 12、流動材質當粒子 7、startDelay 7；
+ * 只差一種的 17 台：祖先位移 6、Flow1 3、Box 2、startDelay 2、拖尾／流動材質當粒子／其他 shader（3010 的 UI_General）／Image 用 UIFx_Alpha 各 1。
+ * 逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態_不發射系統略過/（更早的版本在同月的「批次上站」「流動圖層預設貼圖」「序列幀」夾）。
+ * 「·」開頭的是提示不是 ⚠（例：官方沒指定材質、或 emission 關又沒有 burst 的粒子會略過），照常可以上站。
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -214,8 +215,19 @@ const SUPPORTED_MODULES = new Set(['InitialModule', 'ShapeModule', 'EmissionModu
 /** 0 球、4 圓錐、8 圓錐體積 */
 const SUPPORTED_SHAPES = new Set([0, 4, 8])
 
+/**
+ * 不發射的系統：emission 關、又沒有 burst（各台的 Particle_All／FU／Centre 容器、Glow06 的 Particle 外框常見）。
+ * 遊戲裡一顆粒子都不會出，比照「官方沒指定材質」略過——它的 shader、主貼圖、形狀、祖先位移都不必報 ⚠。
+ * 不能看 renderer 的 m_Enabled：UI 粒子由 UIParticle 代畫，已上站各台的 renderer 幾乎都是 m_Enabled:false。
+ * 例外是 sub-emitter 的目標（由父系統觸發，不靠自己的 emission）：匯出檔的節點沒有元件 pid，對不出 subEmitters[].emitter
+ * 指的是誰，所以整個 prefab 有開著的 SubModule 就一律不略過（10-17 盤點 60 台：一個都沒有）。
+ */
+const hasSubEmitters = nodes.some((n) => n.ps?.SubModule?.enabled && (n.ps.SubModule.subEmitters ?? []).length)
+const isSilent = (p) => !hasSubEmitters && !p.EmissionModule?.enabled && !((p.EmissionModule?.m_BurstCount ?? 0) > 0)
+
 function particleSystem(n) {
   const p = n.ps, r = n.rect, psr = n.psr
+  if (isSilent(p)) { note(`${n.name}：emission 關、沒有 burst，不發射粒子，略過`); return null }
   for (const [k, v] of Object.entries(p)) if (v && typeof v === 'object' && v.enabled && k.endsWith('Module') && !SUPPORTED_MODULES.has(k)) warn(`${n.name}：${k} 開著，引擎不支援（會被忽略）`)
   if (psr.m_RenderMode !== 0 && psr.m_RenderMode !== 1) warn(`${n.name}：渲染模式 ${psr.m_RenderMode} 引擎不支援（只有 billboard 0／拉伸 1）`)
   if (num(p.startDelay?.scalar) !== 0 || p.startDelay?.minMaxState) warn(`${n.name}：有 startDelay，引擎忽略`)
