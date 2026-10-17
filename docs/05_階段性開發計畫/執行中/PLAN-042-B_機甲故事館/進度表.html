@@ -918,8 +918,15 @@
           夜兔（2302）2×8 閃電序列實測播放方向正確（由短變長再淡出）、碎石每顆一格（改前每顆都是整張 2×2）；截圖與預覽頁在 <code>_local-notes/2026-10/2026-10-17_卡池動態_序列幀/</code>。
           0 ⚠ 從 8 台變 <b>11 台</b>（＋1014 Glasya、2042 Ignite、2302 Shadowrabbit），都還沒上站。原本估 14 台：1027、1040、1301 的序列幀也解開了，
           但它們的流動圖層材質沒有擾動貼圖 <code>_DisturbTex</code>，引擎會載入失敗、整台播不出來——builder 以前沒報（空貼圖名直接放行），這次補了 ⚠。
-          <br><b>還沒做</b>：流動圖層缺 <code>_DisturbTex</code>（1027、1040、1301、3027；擾動值多半是 0，引擎可略過擾動，補了就 11 → 14）、
-          Flow1 20 台、祖先位移 18、Box 18、其他 shader 18（多半連主貼圖都空）。</div>
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>流動圖層照 shader 規格補齊</b>：用系統的 <code>D3DCompiler_47</code> 反組譯 <code>UI_CommonFlow</code> 的 D3D11 編譯碼，拿到確切公式與屬性預設值——
+          <code>_DisturbTex</code> 預設 <b>black</b>（擾動＝<code>(2r−1)×_DisturbValue</code>，缺貼圖是常數偏移、不是 0），<code>_Mask1</code> 是真的遮罩（預設 white）。
+          builder 缺擾動貼圖不再報 ⚠、改輸出選填欄位；引擎缺貼圖綁 1×1 的 Unity 預設色，並照原樣補上主貼圖 tiling、<code>_MainTexRotate</code>、時間捲動 <code>_Tex1Flow</code>、遮罩
+          （1027、1301 都用到，不補畫面會錯）；匯出多存貼圖 wrap（捲動的貼圖是 Repeat）。校準值（擾動 ×0.1 只推 U、不溶解、亮度 ×0.85）沒動。
+          <code>2054.json</code> 不變、芬里厄流動圖層改前改後逐像素相同。0 ⚠ 從 11 台變 <b>14 台</b>（＋1027 Ouroboros、1040 TengShe、1301 REV-02），都還沒上站；
+          1040 的溶解值比芬里厄高、1027 有一條素材本來就有的橫邊，上站前對遊戲畫面看一次。粒子誤用帶遮罩／捲動的流動材質（7 台）改報 ⚠。
+          反組譯檔、預覽頁、對照圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_流動圖層預設貼圖/</code>。
+          <br><b>還沒做</b>：Flow1 20 台、祖先位移 18、Box 18、其他 shader 21（多半連主貼圖都空）、流動材質當粒子 7、startDelay 7；
+          只差一種的：祖先位移 3（1017、2003、2047）、Box 2（2043、2053）。</div>
         <div class="task-file">scripts/export-gacha-prefab.py · scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>
       </div>
       <div class="task-assignee">開發者</div>

@@ -31,7 +31,8 @@ r"""
          ／ps（ParticleSystem typetree 原樣）／psr（Renderer typetree＋materials 材質名）／mb（MonoBehaviour：script、fields、
          Image／RawImage 另有 material／texture 名）／canvasGroup。其他元件（Animator、TrailRenderer…）不輸出，會在畫面上列出。
   materials  材質名 → shader（完整名）／tex（屬性 → 貼圖名＋scale＋offset）／floats／colors（[r,g,b,a]）。
-  textures   貼圖名 → file（tex/<官方貼圖名>.png）／w／h。
+  textures   貼圖名 → file（tex/<官方貼圖名>.png）／w／h／wrap（[U, V]，Unity TextureWrapMode：0 Repeat、1 Clamp、2 Mirror…）。
+             wrap 是 10-17 J-1 加的（流動圖層的主貼圖捲動要知道會不會重複）；除此之外與 10-16 試作逐位元組相同。
   貼圖：從封包解碼；最新擷取（E:/Mecharashi_Data 底下最新的 圖片索引.csv）裡有同一張、像素也一樣時，直接沿用擷取的 PNG
   ——位元組才會和站上 public/images/game/fx/ 既有的共用貼圖一致，重跑不會冒出一堆「內容沒變的圖片變更」。
 
@@ -198,11 +199,13 @@ def export_one(folder, key):
         if name in textures:
             return name
         fn = f'tex/{name}.png'
+        ts = d.m_TextureSettings
+        wrap = [ts.m_WrapU, ts.m_WrapV]   # 0 Repeat、1 Clamp（取樣器的重複方式，shader 沒夾的座標靠它）
         try:
             img = d.image
         except Exception as e:  # 解碼器缺（極少數格式）→ 至少留尺寸
             notes.append(f'貼圖 {name} 解碼失敗：{str(e)[:60]}')
-            textures[name] = {'file': None, 'w': d.m_Width, 'h': d.m_Height}
+            textures[name] = {'file': None, 'w': d.m_Width, 'h': d.m_Height, 'wrap': wrap}
             return name
         row = DUMP_IDX.get((Path(obj.assets_file.parent.name or '').name, str(obj.path_id))) if DUMP else None
         reuse = False
@@ -218,7 +221,7 @@ def export_one(folder, key):
         else:
             img.save(out / fn)
             src_count['封包解碼'] += 1
-        textures[name] = {'file': fn, 'w': img.width, 'h': img.height}
+        textures[name] = {'file': fn, 'w': img.width, 'h': img.height, 'wrap': wrap}
         return name
 
     def export_mat(obj):

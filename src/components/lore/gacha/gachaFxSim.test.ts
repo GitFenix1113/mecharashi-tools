@@ -114,7 +114,9 @@ test('站上每一台的卡池動態：跑 10 秒不出現 NaN、貼圖都在 pu
   assert.ok(list.length >= 1, '至少有芬里厄（2054）')
   for (const [file, data] of list) {
     assert.equal(data.v, 1, file)
-    const tex = new Set([...data.systems.map((s) => s.material.tex), ...data.flows.flatMap((f) => [f.mainTex, f.disturbTex])])
+    // 流動圖層的擾動圖、遮罩是選填（沒有＝引擎綁 shader 預設的純色）
+    const flowTex = data.flows.flatMap((f) => [f.mainTex, f.disturbTex, f.mask?.tex]).filter((t): t is string => !!t)
+    const tex = new Set([...data.systems.map((s) => s.material.tex), ...flowTex])
     for (const t of tex) assert.ok(fs.existsSync(texFile(t)), `${file}：缺貼圖 ${t}.png`)
     for (const def of data.systems) {
       const s = new ParticleSim(def, seeded(7))

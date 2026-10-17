@@ -109,7 +109,35 @@ export interface FxSystem {
   uv?: FxUV
 }
 
-/** 流動圖層（Image＋UI_CommonFlow）：擾動貼圖捲動推移主貼圖的 UV，疊加在最上層 */
+/** tiling.xy＋offset.zw */
+export type FxTO = [number, number, number, number]
+
+/**
+ * 流動圖層的遮罩（UI_CommonFlow 的 _Mask1）：貼圖 r×a 經 softness 的 smoothstep 乘進 alpha。
+ * UV＝(uv×st.xy＋st.zw) 以 0.5 為中心旋轉 rotate →（disturbed 時加擾動）→ to 以 0.5 為中心的位移＋tiling。
+ */
+export interface FxFlowMask {
+  tex: string
+  /** 貼圖槽的 tiling／offset（材質 m_TexEnvs，TRANSFORM_TEX），在旋轉之前 */
+  st: FxTO
+  /** _MaskTex1TO，在旋轉之後 */
+  to: FxTO
+  /** 弧度（_Mask1Rotate） */
+  rotate: number
+  /** _Mask1Softness（0–0.49） */
+  softness: number
+  /** _Mask1Revert2：遮罩反轉 */
+  revert: boolean
+  /** _MaskModeSwitch：遮罩也吃擾動 */
+  disturbed: boolean
+  /** 貼圖 wrap＝Repeat（否則夾邊） */
+  repeat: boolean
+}
+
+/**
+ * 流動圖層（Image＋UI_CommonFlow）：擾動貼圖捲動推移主貼圖的 UV，疊加在最上層。
+ * mainST 之後的欄位是 10-17 照 shader 補的，預設值就省略（芬里厄的 JSON 因此不變）。
+ */
 export interface FxFlow {
   name: string
   pos: [number, number]
@@ -118,15 +146,26 @@ export interface FxFlow {
   /** Image 顏色 × 材質 _Color */
   color: RGBA
   mainTex: string
-  disturbTex: string
+  /** 省略＝材質沒指定，用 shader 預設的 black（擾動是常數偏移，不是 0） */
+  disturbTex?: string
   mainValue: number
   disturbValue: number
   /** 主貼圖縱向重複（_VRepeatSwitch） */
   vRepeat: boolean
   disturbFlow: [number, number]
-  /** tiling.xy＋offset.zw */
-  mainTO: [number, number, number, number]
-  disturbTO: [number, number, number, number]
+  /** 以 0.5 為中心的 tiling＋位移（_MainTex1TO），在擾動與捲動之後 */
+  mainTO: FxTO
+  disturbTO: FxTO
+  /** 主貼圖槽的 tiling／offset（材質 m_TexEnvs，TRANSFORM_TEX），在旋轉之前；省略＝[1,1,0,0] */
+  mainST?: FxTO
+  /** 主貼圖旋轉（弧度，_MainTexRotate；擾動圖的 UV 也跟著轉）；省略＝0 */
+  mainRotate?: number
+  /** 主貼圖隨時間捲動（_Tex1Flow，每秒 UV）；省略＝不捲動 */
+  mainFlow?: [number, number]
+  /** 主貼圖橫向重複（貼圖 wrapU＝Repeat）；省略＝夾邊 */
+  mainRepeatU?: true
+  /** 省略＝材質沒指定 _Mask1，用 shader 預設的 white（不遮） */
+  mask?: FxFlowMask
 }
 
 export interface GachaFxData {
