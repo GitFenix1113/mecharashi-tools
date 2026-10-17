@@ -4,10 +4,19 @@
  *
  *   node scripts/build-gacha-fx.mjs <匯出資料夾> --wap 2054 [--dry-run]
  *
- * 輸入（<匯出資料夾>）：
+ * ── 新增一台的完整流程（站長照抄；第一次要先建 venv，見 scripts/export-gacha-prefab.py 檔頭）──────────
+ *   ① 匯出（從陸版封包直接讀，約 5 秒）：
+ *        E:\Mecharashi_Data\unitypy-venv\Scripts\python.exe scripts\export-gacha-prefab.py --wap 1011 --out E:\Mecharashi_Data\gacha-export
+ *      → E:\Mecharashi_Data\gacha-export\1011\（data.json＋tex\）。不知道哪台有卡池：同一支加 --list。
+ *   ② 試跑：node scripts/build-gacha-fx.mjs E:\Mecharashi_Data\gacha-export\1011 --wap 1011 --dry-run
+ *      有 ⚠ 就停在這裡——那台要等引擎補功能（J-1／J-2），不要硬上。
+ *   ③ 寫入：同一行拿掉 --dry-run → src/data/gachaFx/1011.json＋public/images/game/fx/；npm run dev 開那台的招募插畫全景看動態。
+ *   ④ commit（feat，記得 src/data/siteChangelog/）→ npm run push。新貼圖要等 pages-build-deployment 跑完才開網址（CF 會快取 404）。
+ *
+ * 輸入（<匯出資料夾>＝export-gacha-prefab.py 的產出，格式同 10-16 芬里厄試作）：
  *   data.json   卡池 prefab 的唯讀匯出：{ prefab, nodes[], materials{}, textures{} }（UnityPy typetree，原樣）
- *   tex/        prefab 用到的特效貼圖（官方檔名 .png）
- *   芬里厄的匯出在 _local-notes/2026-10/2026-10-16_機甲故事館_規劃/fenrir-proto/（10-16 試作用的那份）。
+ *   tex/        prefab 用到的貼圖（官方檔名 .png，含兩片招募插畫切片——這裡用不到）
+ *   芬里厄 10-16 那份在 _local-notes/2026-10/2026-10-16_機甲故事館_規劃/fenrir-proto/；10-17 用匯出腳本重匯，data.json 逐位元組相同。
  *
  * 輸出：
  *   src/data/gachaFx/<wap>.json        瘦身後的粒子／流動圖層參數（912 KB → 約 40 KB）
@@ -21,6 +30,8 @@
  * ── 引擎不支援的東西會印出 ⚠ ──────────────────────────────────────────────
  * 試作只實作了芬里厄用到的功能（UIFx_Alpha／UI_CommonFlow、球／圓錐形狀、拉伸 billboard…）。
  * 下一台若用到序列幀（UVModule）、拖尾、Flow1 等，這裡會列出來——那是 J-1／J-2 要補的引擎功能，不要硬上。
+ * 10-17 對 60 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run）：0 ⚠ 的只有芬里厄、都卜勒（1011）；
+ * 最常見的是「祖先有位移」「UVModule」「一般透明混色（_Dst3＝10）」「Flow1」「Box 形狀」。逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態匯出_都卜勒試作/。
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -85,12 +96,17 @@ const nodes = D.nodes
 const ancestors = (n) => { const out = []; for (let p = n.parent; p != null; p = nodes[p].parent) out.push(nodes[p]); return out }
 /** 自己與所有祖先都 active 才會畫 */
 const isActive = (n) => n.active !== false && ancestors(n).every((a) => a.active !== false)
+/**
+ * 節點的位置。RectTransform 用 anchoredPosition；有些台的粒子節點掛的是一般 Transform（Rex、Ranger 的 Particle_MainGlow 等），
+ * 沒有錨點欄位，改用 localPosition——錨點置中時兩者是同一個值（RectTransform 本來就是 Transform）。
+ */
+const anchored = (r) => r.m_AnchoredPosition ?? r.m_LocalPosition ?? { x: 0, y: 0 }
 /** 引擎假設：粒子與流動圖層的位置＝自己的 anchoredPosition（祖先都在畫布中央、沒有位移旋轉）。不成立就提醒 */
 function checkAncestors(n) {
   for (const a of ancestors(n).slice(0, -1)) {   // 最上層是 prefab 根節點，不算
     const r = a.rect
     if (!r) continue
-    const moved = Math.abs(r.m_AnchoredPosition.x) > 0.01 || Math.abs(r.m_AnchoredPosition.y) > 0.01
+    const moved = Math.abs(anchored(r).x) > 0.01 || Math.abs(anchored(r).y) > 0.01
     const rotated = Math.abs(r.m_LocalRotation.z) > 1e-4 || Math.abs(r.m_LocalRotation.x) > 1e-4 || Math.abs(r.m_LocalRotation.y) > 1e-4
     if (moved || rotated) warn(`${n.name}：祖先 ${a.name} 有位移或旋轉，引擎目前忽略祖先的變換，位置會偏`)
   }
@@ -113,7 +129,11 @@ function particleMaterial(name, owner) {
   if (!m) { warn(`${owner}：找不到材質 ${name}`); return null }
   if (m.shader !== SHADER_PARTICLE && m.shader !== SHADER_FLOW) warn(`${owner}：材質 ${name} 的 shader ${m.shader} 引擎不支援`)
   const isFlow = m.shader === SHADER_FLOW
-  if (m.floats._SrcBlend !== 1 || m.floats._DstBlend !== 0) warn(`${owner}：材質 ${name} 的混色 ${m.floats._SrcBlend}/${m.floats._DstBlend} 不是預設，引擎一律疊加（SrcAlpha＋One）`)
+  // 混色看 shader 的 Blend 狀態（shader_abs.b，10-17 查證）：UIFx_Alpha＝Blend SrcAlpha [_Dst3]、UI_CommonFlow＝Blend SrcAlpha [_Dst]，
+  // 預設 1＝One（疊加）、10＝OneMinusSrcAlpha（一般透明）。_SrcBlend／_DstBlend 不是這兩個 shader 的屬性（換 shader 前的殘值），不能拿來判斷；
+  // 材質沒存的屬性＝shader 預設值（稀疏材質，例：Rex 的 Glow_01）。
+  const dst = isFlow ? m.floats._Dst : m.floats._Dst3
+  if ((dst ?? 1) !== 1) warn(`${owner}：材質 ${name} 的混色是 SrcAlpha／${dst}（10＝一般透明混色），引擎一律疊加（SrcAlpha＋One），會偏亮`)
   const tex = (m.tex._Tex ?? m.tex._MainTex)?.tex
   return {
     tex: useTex(tex),
@@ -139,7 +159,7 @@ function particleSystem(n) {
   if (!material) return null
   const sys = {
     name: n.name,
-    pos: [num(r.m_AnchoredPosition.x), num(r.m_AnchoredPosition.y)],
+    pos: [num(anchored(r).x), num(anchored(r).y)],
     rot: quat(r.m_LocalRotation),
     // scalingMode 1＝Local：粒子跟著自己的 localScale 縮放；其他模式試作當 1
     scale: p.scalingMode === 1 ? vec3(r.m_LocalScale) : [1, 1, 1],

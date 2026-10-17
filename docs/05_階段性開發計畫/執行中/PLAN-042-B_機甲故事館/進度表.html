@@ -209,8 +209,8 @@
 
   <div class="summary-row">
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">29</div><div class="summary-lbl">已完成</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">1</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">8</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">2</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">7</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">38</div><div class="summary-lbl">任務（不含長期資料）</div></div>
   </div>
 
@@ -898,11 +898,21 @@
         <div class="task-name">補照規格的粒子功能＋批次匯出</div>
         <div class="task-desc">序列幀動畫（UVModule，48 台用到）、Box／Circle 發射形狀、Unlit／Additive shader、別的封包裡的材質；73 個 prefab 批次匯出並瘦身（芬里厄原始 typetree 912 KB → 幾十 KB）。匯出腳本在 <code>_local-notes/…/scripts/</code>。
           <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 瘦身那一半先做了：<code>scripts/build-gacha-fx.mjs</code> 吃「data.json＋tex/」格式的匯出，輸出 <code>src/data/gachaFx/&lt;wap&gt;.json</code>（芬里厄 912 KB → 22.5 KB）與扁平貼圖庫 <code>public/images/game/fx/</code>，
-          遇到引擎不支援的模組／shader／形狀會列 ⚠（新功能先補引擎，不要硬上）。<b>還沒做</b>：UnityPy 端的批次匯出（芬里厄那份 <code>data.json</code> 的匯出腳本沒留在 <code>_local-notes</code>）與上面列的引擎新功能。</div>
-        <div class="task-file">scripts/（匯出）· scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>
+          遇到引擎不支援的模組／shader／形狀會列 ⚠（新功能先補引擎，不要硬上）。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 匯出端重寫：<code>scripts/export-gacha-prefab.py</code>（UnityPy 1.25.3；封包路徑與金鑰從擷取工具 <code>settings.json</code> 讀、不落地；
+          載入 prefab 封包＋manifest 相依的遞移閉包，別包材質與貼圖都解得到；卡池鍵→wap 用 <code>mechGachaCards.json</code>；<code>--list</code>／<code>--wap</code>／<code>--all</code>／<code>--prefab</code>）。
+          驗收：芬里厄重匯出的 <code>data.json</code> 與 10-16 版逐位元組相同、<code>2054.json</code> 與站上相同；<b>都卜勒（1011）0 ⚠</b>，產出與預覽頁在
+          <code>_local-notes/2026-10/2026-10-17_卡池動態匯出_都卜勒試作/</code>（未寫進站上，待站長決定）。60 台批次試跑：0 ⚠ 只有芬里厄、都卜勒；
+          卡最多的是<b>透明混色（<code>_Dst3=10</code>）49 台</b>、UVModule 43、Flow1 20、祖先位移 18、Box 18。
+          順手修 <code>build-gacha-fx.mjs</code>：一般 Transform 的粒子節點不再當掉（改讀 <code>m_LocalPosition</code>）；混色檢查改看 shader 真正用的 <code>_Dst3</code>／<code>_Dst</code>（原本看的 <code>_SrcBlend</code> 不是這兩個 shader 的屬性）。
+          <br><b>照抄流程</b>（PowerShell、repo 根目錄；venv 第一次要先建，指令在 <code>export-gacha-prefab.py</code> 檔頭）：
+          <code>E:\Mecharashi_Data\unitypy-venv\Scripts\python.exe scripts\export-gacha-prefab.py --wap 1011 --out E:\Mecharashi_Data\gacha-export</code>
+          → <code>node scripts/build-gacha-fx.mjs E:\Mecharashi_Data\gacha-export\1011 --wap 1011 --dry-run</code>（有 ⚠ 就停）→ 拿掉 <code>--dry-run</code> 寫入 → commit／push。
+          <b>還沒做</b>：上面列的引擎新功能（建議先做透明混色，解鎖台數最多）。</div>
+        <div class="task-file">scripts/export-gacha-prefab.py · scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
@@ -912,7 +922,7 @@
           <code>gachaFxEngine</code>（WebGL2，校準值寫死：不溶解、擾動 ×0.1、亮度 ×0.85）、<code>gachaFxRegistry</code>（<code>import.meta.glob</code>：有 JSON 就有動態，新增一台不必改程式）、<code>GachaFxLive</code>。
           <code>LoreViewer</code> 新增 <code>live</code> 疊層：開場飛行落地才掛、關閉即卸載；canvas 套主圖同一套尺寸規則，放大一起放大。背景直接用 F 段的招募插畫（與試作拼圖逐像素平均差 3／255），不另外上傳。
           鑑賞工具列加「卡池 動態／靜態」，卷宗卡池卡提示改「點一下看動態全景」；減少動態或省流量預設靜態。驗收：headless 與試作頁分區比對平均色差 ≤3、每格變化量相當；引擎與資料各自延遲載入（gzip 5.6＋4.4 KB）。
-          手機降級目前只有解析度上限（DPR ≤2），沒有另做簡化版。<code>wapgachaskin</code> 還沒查。<b>剩</b>：其他台逐台加資料（卡在上一列的匯出）。</div>
+          手機降級目前只有解析度上限（DPR ≤2），沒有另做簡化版。<code>wapgachaskin</code> 還沒查。<b>剩</b>：其他台逐台加資料——匯出已解卡（上一列），目前能直接上的只有都卜勒，其餘要等引擎補功能。</div>
         <div class="task-file">src/components/lore/gacha/ · src/components/lore/LoreViewer.tsx · src/pages/lore/MechLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
