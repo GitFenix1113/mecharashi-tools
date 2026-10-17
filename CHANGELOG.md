@@ -434,6 +434,10 @@
 
 ### 🔧 維護
 
+- **lore**: 卡池動態流動圖層照 shader 規格補預設貼圖、遮罩與捲動（PLAN-042-B J-1） (`b0ffc17`)
+- **lore**: 卡池動態支援序列幀 UVModule（PLAN-042-B J-1） (`ab4bfc5`)
+- **lore**: 卡池動態支援透明混色、略過空材質（PLAN-042-B J-1） (`62046f9`)
+- **scripts**: 卡池 prefab 匯出腳本＋build-gacha-fx 兩個修正（PLAN-042-B J-1） (`c77bfdc`)
 - **scripts**: push 前偵測淺層 clone，歷史不完整就中止，不再默默截斷舊紀錄 (`7a21c77`)
 - **analytics**: Worker 接受故事館統計類別 lorePilots／loreParts（PLAN-062 Phase B） (`eee18b8`)
 - **lint**: 忽略 .claude/（worktree 副本會讓 ESLint 找到兩個 tsconfig 根目錄而全面解析失敗） (`f15e265`)
