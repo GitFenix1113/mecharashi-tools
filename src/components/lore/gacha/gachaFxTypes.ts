@@ -50,8 +50,11 @@ export interface FxSystem {
   order: number
   /** mode 0＝billboard、1＝沿速度拉伸；maxSize＝佔畫布高度的比例上限 */
   render: { mode: number; lengthScale: number; velocityScale: number; maxSize: number }
-  /** 貼圖（官方檔名，public/images/game/fx/）、顏色強度、主貼圖旋轉（弧度） */
-  material: { tex: string; strength: number; texRotate: number }
+  /**
+   * 貼圖（官方檔名，public/images/game/fx/）、顏色強度、主貼圖旋轉（弧度）。
+   * blend：'alpha'＝一般透明（Unity 材質 _Dst3＝10 → SrcAlpha, OneMinusSrcAlpha）；省略＝疊加（SrcAlpha, One）
+   */
+  material: { tex: string; strength: number; texRotate: number; blend?: 'alpha' }
   duration: number
   looping: boolean
   prewarm: boolean

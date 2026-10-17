@@ -1,7 +1,11 @@
 // 機甲卡池動態（PLAN-042-B Phase J）：WebGL2 播放器。只在招募插畫的全景鑑賞裡用，由 GachaFxLive 動態載入。
 //
-// 畫面＝招募插畫（背景，不混色）＋粒子系統（Unity 的 UIFx_Alpha：SrcAlpha＋One 疊加）＋流動圖層（UI_CommonFlow 的重寫）。
+// 畫面＝招募插畫（背景，不混色）＋粒子系統（Unity 的 UIFx_Alpha：Blend SrcAlpha [_Dst3]，預設疊加、材質可指定一般透明）
+// ＋流動圖層（UI_CommonFlow 的重寫，一律疊加）。
 // 粒子模擬在 gachaFxSim.ts；這裡只管 GL 狀態、貼圖與每格把粒子組成四邊形。
+//
+// 透明混色和疊加不同，畫的先後會影響結果：系統之間照 sortingOrder、同值照 prefab 階層（＝資料順序），流動圖層在所有粒子之後。
+// 這個順序是芬里厄（全疊加、順序無關）時期定的，混用透明的機甲上站前要對遊戲畫面確認。
 //
 // ── 和遊戲校準過的定值（10-16 芬里厄試作，站長判定「很像」）────────────────────────
 // 流動 shader 只有編譯版，公式照參數名推回。照字面套「噪聲溶解＋擾動 −0.3」會整塊閃（每格變化量 7.9，遊戲 1.5），
@@ -159,6 +163,8 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     gl.bindTexture(gl.TEXTURE_2D, tex)
     gl.uniform1f(uPt.uStr, S.material.strength)
     gl.uniform1f(uPt.uRot, S.material.texRotate)
+    // Unity 只換目的因子（[_Dst3]），片段輸出兩種模式相同；canvas 是 alpha:false，畫面緩衝的 alpha 不影響頁面合成
+    gl.blendFunc(gl.SRC_ALPHA, S.material.blend === 'alpha' ? gl.ONE_MINUS_SRC_ALPHA : gl.ONE)
     const maxPx = (S.render.maxSize || 1) * H
     for (const q of sim.parts) {
       const a = q.age / q.life
@@ -224,11 +230,11 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     flush()
 
     gl.enable(gl.BLEND)
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE)
     gl.useProgram(P_PT)
     gl.uniform4f(uPt.uView, ...view)
-    for (const { sim, tex } of drawList) drawParticles(sim, tex)
+    for (const { sim, tex } of drawList) drawParticles(sim, tex)   // 每個系統自己設混色
 
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE)   // 流動圖層一律疊加；最後一個粒子系統可能把混色留在透明
     gl.useProgram(P_FLOW)
     gl.uniform4f(uFl.uView, ...view)
     for (const { f, main, dst } of flowTex) drawFlow(f, main, dst, time)

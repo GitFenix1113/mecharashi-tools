@@ -908,7 +908,11 @@
           <br><b>照抄流程</b>（PowerShell、repo 根目錄；venv 第一次要先建，指令在 <code>export-gacha-prefab.py</code> 檔頭）：
           <code>E:\Mecharashi_Data\unitypy-venv\Scripts\python.exe scripts\export-gacha-prefab.py --wap 1011 --out E:\Mecharashi_Data\gacha-export</code>
           → <code>node scripts/build-gacha-fx.mjs E:\Mecharashi_Data\gacha-export\1011 --wap 1011 --dry-run</code>（有 ⚠ 就停）→ 拿掉 <code>--dry-run</code> 寫入 → commit／push。
-          <b>還沒做</b>：上面列的引擎新功能（建議先做透明混色，解鎖台數最多）。</div>
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>透明混色</b>：材質 <code>_Dst3=10</code>（Unity 的 OneMinusSrcAlpha）時 builder 輸出 <code>material.blend: 'alpha'</code>（疊加不輸出，<code>2054.json</code> 不變），
+          引擎每個粒子系統依它切 <code>blendFunc</code>、畫流動圖層前切回疊加；官方沒指定材質的粒子改成略過（「·」提示，不算 ⚠）。
+          0 ⚠ 從 2 台變 <b>8 台</b>（2054、1011、1012 Rex、2017 Malthus、2019 Aurora、2022 Bluebird、3005、3017），都還沒上站；Rex 的黑煙改前疊加看不見、改後出現（對照圖在同一個 <code>_local-notes</code> 夾）。
+          ⚠ 透明混色會讓繪製順序有影響（目前系統照 sortingOrder＋階層、流動圖層最後畫，芬里厄時期定的），混用的機甲上站前要對遊戲畫面看一次。
+          <br><b>還沒做</b>：其餘引擎新功能。下一個建議 UVModule（43 台用到，單補就 8 → 14 台；再加其他 shader 19、Flow1 26）。</div>
         <div class="task-file">scripts/export-gacha-prefab.py · scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>
       </div>
       <div class="task-assignee">開發者</div>

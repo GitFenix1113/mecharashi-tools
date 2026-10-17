@@ -28,10 +28,11 @@
  * 曲線只留 time／value／inSlope／outSlope；MinMaxCurve／MinMaxGradient 只留該模式用得到的那幾個；數字取 6 位有效數字。
  *
  * ── 引擎不支援的東西會印出 ⚠ ──────────────────────────────────────────────
- * 試作只實作了芬里厄用到的功能（UIFx_Alpha／UI_CommonFlow、球／圓錐形狀、拉伸 billboard…）。
+ * 試作只實作了芬里厄用到的功能（UIFx_Alpha／UI_CommonFlow、球／圓錐形狀、拉伸 billboard…），10-17 補了透明混色（_Dst3＝10）。
  * 下一台若用到序列幀（UVModule）、拖尾、Flow1 等，這裡會列出來——那是 J-1／J-2 要補的引擎功能，不要硬上。
- * 10-17 對 60 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run）：0 ⚠ 的只有芬里厄、都卜勒（1011）；
- * 最常見的是「祖先有位移」「UVModule」「一般透明混色（_Dst3＝10）」「Flow1」「Box 形狀」。逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態匯出_都卜勒試作/。
+ * 10-17 對 60 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run）：0 ⚠ 的 8 台＝2054、1011、1012、2017、2019、2022、3005、3017；
+ * 卡最多台的是 UVModule 43、Flow1 20、祖先位移 18、Box 18、其他 shader 18（單補 UVModule → 14 台）。逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態匯出_都卜勒試作/。
+ * 「·」開頭的是提示不是 ⚠（例：官方沒指定材質的粒子會略過），照常可以上站。
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -50,6 +51,9 @@ if (!srcDir || !args.includes('--wap') || !/^\d+$/.test(wap ?? '')) {
 const D = JSON.parse(readFileSync(join(srcDir, 'data.json'), 'utf8'))
 const warnings = []
 const warn = (msg) => warnings.push(msg)
+/** 不影響畫面、只是讓人知道的事（例：略過官方沒指定材質的粒子）：印成「·」，不算 ⚠ */
+const notes = []
+const note = (msg) => notes.push(msg)
 
 // ── 數值 ──────────────────────────────────────────────────────────────────
 const num = (x) => (typeof x === 'number' && Number.isFinite(x) ? Number(x.toPrecision(6)) : 0)
@@ -125,20 +129,25 @@ const useTex = (name) => {
 
 /** 粒子材質：UIFx_Alpha 直接用；UI_CommonFlow 當粒子材質時只取主貼圖、亮度與旋轉（試作的做法，芬里厄的日蝕光環） */
 function particleMaterial(name, owner) {
+  // 官方沒指定材質（各台的 Particle_SSR／Particle_All 常見，匯出存 null）：遊戲裡也畫不出東西，直接略過
+  if (name == null) { note(`${owner}：官方沒指定材質，略過`); return null }
   const m = D.materials[name]
   if (!m) { warn(`${owner}：找不到材質 ${name}`); return null }
   if (m.shader !== SHADER_PARTICLE && m.shader !== SHADER_FLOW) warn(`${owner}：材質 ${name} 的 shader ${m.shader} 引擎不支援`)
   const isFlow = m.shader === SHADER_FLOW
   // 混色看 shader 的 Blend 狀態（shader_abs.b，10-17 查證）：UIFx_Alpha＝Blend SrcAlpha [_Dst3]、UI_CommonFlow＝Blend SrcAlpha [_Dst]，
-  // 預設 1＝One（疊加）、10＝OneMinusSrcAlpha（一般透明）。_SrcBlend／_DstBlend 不是這兩個 shader 的屬性（換 shader 前的殘值），不能拿來判斷；
-  // 材質沒存的屬性＝shader 預設值（稀疏材質，例：Rex 的 Glow_01）。
-  const dst = isFlow ? m.floats._Dst : m.floats._Dst3
-  if ((dst ?? 1) !== 1) warn(`${owner}：材質 ${name} 的混色是 SrcAlpha／${dst}（10＝一般透明混色），引擎一律疊加（SrcAlpha＋One），會偏亮`)
+  // 值是 Unity 的 BlendMode：1＝One（疊加，預設）、10＝OneMinusSrcAlpha（一般透明）。_SrcBlend／_DstBlend 不是這兩個 shader 的屬性
+  // （換 shader 前的殘值），不能拿來判斷；材質沒存的屬性＝shader 預設值（稀疏材質，例：Rex 的 Glow_01）。
+  // 透明的材質多半是碎石、煙霧、花瓣：貼圖 RGB 近白、形狀在 alpha，疊加會變成發光的白斑。
+  const dst = (isFlow ? m.floats._Dst : m.floats._Dst3) ?? 1
+  if (dst !== 1 && dst !== 10) warn(`${owner}：材質 ${name} 的混色 SrcAlpha／${dst} 引擎不支援（只有 1＝疊加、10＝透明），當成疊加`)
   const tex = (m.tex._Tex ?? m.tex._MainTex)?.tex
   return {
     tex: useTex(tex),
     strength: num(isFlow ? (m.floats._MainValue ?? 1) : (m.floats._Color_Str ?? 1)),
     texRotate: num(isFlow ? ((m.floats._MainTexRotate || 0) * Math.PI) / 180 : 0),
+    // 疊加是預設、不輸出（既有的 JSON 不變）
+    ...(dst === 10 ? { blend: 'alpha' } : {}),
   }
 }
 
@@ -217,6 +226,8 @@ function flowLayer(n, img) {
   checkAncestors(n)
   const r = n.rect, c = img.fields.m_Color, mc = m.colors._Color ?? [1, 1, 1, 1]
   for (const k of ['_MainTex1TO', '_dIsturbTexTO', '_DisturbFlow']) if (!m.colors[k]) warn(`${n.name}：材質 ${img.material} 缺 ${k}`)
+  // 流動圖層引擎只畫疊加（10-17 盤點 60 台的 UI_CommonFlow 圖層 _Dst 全是 1）
+  if ((m.floats._Dst ?? 1) !== 1) warn(`${n.name}：材質 ${img.material} 的混色 SrcAlpha／${m.floats._Dst}，流動圖層引擎只畫疊加`)
   return {
     name: n.name,
     pos: [num(r.m_AnchoredPosition.x), num(r.m_AnchoredPosition.y)],
@@ -255,6 +266,7 @@ const missing = [...usedTex].filter((t) => !existsSync(join(srcDir, D.textures[t
 for (const t of missing) warn(`貼圖檔 ${t} 不在 ${srcDir}`)
 
 console.log(`${D.prefab} → ${wap}.json：${systems.length} 個粒子系統、${flows.length} 個流動圖層、${usedTex.size} 張貼圖，${(json.length / 1024).toFixed(1)} KB`)
+for (const n of notes) console.log(`  · ${n}`)
 for (const w of warnings) console.log(`  ⚠ ${w}`)
 if (dryRun) { console.log('（--dry-run：不寫檔）'); process.exit(0) }
 
