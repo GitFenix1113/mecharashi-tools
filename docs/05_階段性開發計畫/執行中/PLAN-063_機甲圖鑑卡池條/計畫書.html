@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-063 機甲圖鑑卡池條 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-063 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-063</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    機甲圖鑑卡池條<span style="-webkit-text-fill-color:var(--text-secondary);"> Key Art Banner · 卡池狀態 · 展開動態</span>
+  </h1>
+  <p class="hero-sub">機甲圖鑑頁首下方加一條卡池橫條：招募插畫裁成帶狀，左側是池名與狀態（開放中剩幾天／新機甲預計台版登場／上次開放）；點一下從橫條長成整張全景並播放卡池動態。之後回填台版歷史卡池，讓「上次開放、開過幾次」有內容。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-063</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-17</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">機甲圖鑑詳情頁、components/gacha、mechs.cardFocus、機甲後台、patchVersions 歷史回填</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value orange">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-042-B Phase J（卡池動態）、PLAN-048（公告管線）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>玩家最常問的三件事，圖鑑一件都答不了</strong><br>
+    「這台現在抽得到嗎？」「抽到哪天？」「什麼時候會再來？」——檔期在版本時間線的甘特圖裡，要先知道是哪個版本才找得到；
+    招募插畫與卡池動態只在機甲故事館卷宗的最後一張。查機甲的人最先打開的是圖鑑，而圖鑑上什麼都沒有。
+  </div>
+
+  <div class="info-block">
+    <strong>素材已經齊了（2026-10-17 實測）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>招募插畫 <b>61／93 台</b>（<code>GAME_MECH_CARDS</code>）；沒有的 32 台多為 A 級、沒開過專屬卡池，不是缺漏。</li>
+      <li>卡池動態 <b>23 台</b>（<code>src/data/gachaFx/*.json</code>，PLAN-042-B Phase J），lazy 載入、不點開 0 byte。</li>
+      <li>狀態推導全部現成：<code>activityStatus()</code>（開放中／剩幾天）、<code>gachaTitleSuggestions()</code>（機甲 → 卡池活動）、<code>bannerIsRerun()</code>（復刻判定）。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>但卡池紀錄幾乎是空的</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>patchVersions 只有 <b>3 筆</b>台版機甲池（赫克托爾 08/06、莫比烏斯X 10/01、君權 10/15 推估），陸版 <b>0 筆</b>。</li>
+      <li>半版本新增名單有 20 台、搭配台版日期 → 「新機甲預計台版登場」現在就推得出來。</li>
+      <li>台版公告封存（2024-03～2026-08）有 <b>54 台、93 次</b>卡池提及 → 歷史可以回填，但只有公告日，結束日要另外推。</li>
+    </ul>
+    所以本計畫分兩段：先用現有資料把橫條做出來（插畫 61 台、狀態 3＋20 台），再回填歷史讓「已結束」那一格有內容。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策 1：擺法＝頁首下方橫條，狀態與插畫在同一條（站長 10-17 選定）</strong><br>
+    站長看過三種擺法的原型（頁首橫條／右欄卡片／頁首縮圖，真插畫＋真動態＋真檔期）後選定橫條。
+    取捨：桌機多出約 136px，壓縮 2026-10-10「一屏看完」改版的成果——站長接受。
+    原型與截圖：<code>_local-notes/2026-10/2026-10-17_機甲圖鑑卡池條_原型/</code>（本機，不進版控）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策 2：修正 PLAN-042-B 決策 B-5（插畫不只是故事館的附件）</strong><br>
+    B-5 原定招募插畫「不上舞台、只當卷宗最後的附件」。圖鑑改為也引用，但定位不同：
+    圖鑑裡的插畫是<b>卡池資訊的視覺</b>（讓人認出這個池），故事館裡的是<b>典藏品</b>。
+    同一個檔案、不複製資料；故事館卷宗那張卡不動。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策 3：維持 B-7 單向依賴——圖鑑不讀 mechLore</strong><br>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>池名取自 patchVersions 的活動名，<b>不用</b> <code>mechLore.gachaTitle</code>；沒有活動紀錄時標題退回「招募插畫」。</li>
+      <li>插畫用 <code>mechCardArt(mech)</code>（靜態索引＋gameId）；動態用 gachaFx 登錄表（lazy）。兩者都不碰 Firestore。</li>
+      <li>patchVersions 走既有的 <code>usePatchVersions()</code>：每個 session 一次 Worker 請求、與首頁共用快取；沒逛過首頁的人才多這一次。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策 4：狀態只看台服，優先序與文案</strong>
+    <table class="impact-table">
+      <tr><th>順位</th><th>狀態</th><th>文案（例）</th><th>來源</th></tr>
+      <tr><td>1</td><td>開放中</td><td>開放中・剩 26 天（至 11/11）；結束日是推估時寫「預計至 10/28」＋虛線框</td><td>活動 startDate＋weeks、confidence</td></tr>
+      <tr><td>2</td><td>即將開放</td><td>10/29 開放・2 週</td><td>同上</td></tr>
+      <tr><td>3</td><td>新機甲</td><td>預計 10/22 台版登場（5 天後・推估）；副行「陸版 2026/05/14 已登場・v3.3 下半」</td><td>半版本 mechs＋twDate／twIsPredicted＋cnDate</td></tr>
+      <tr><td>4</td><td>已結束</td><td>最近一次 2026/08/06・共 2 次</td><td>過去的台版機甲池活動</td></tr>
+      <tr><td>5</td><td>（無紀錄）</td><td>尚無卡池紀錄（有插畫才出現）</td><td>—</td></tr>
+    </table>
+    全部由既有欄位推導（「凡是能算的，就不要問維護者」），<b>不新增任何狀態欄位</b>。凡是推估一律標「推估」。
+    活動要過前台顯示閘門（<code>isVisibleActivity</code>：有 weeks、未 hidden），甘特看不到的這裡也不顯示。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策 5：收合焦點存在 <code>mechs.cardFocus</code>（0–100，垂直 object-position）</strong><br>
+    寬橫條只露出約 20% 的畫面高度，每張構圖不同——原型實測莫比烏斯X 要 15%、芬里厄要 40%，同一個值對不準。
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>放在 <b>mechs</b>：圖鑑本來就載入，0 額外讀取。</li>
+      <li>不放 mechLore（違反決策 3）；不放靜態檔（站長要能在後台自己調，不靠 AI）。</li>
+      <li>後台機甲管理加一格滑桿，旁邊用前台同一個元件即時預覽。沒填用預設 30%——多數看起來還行，只調怪的那幾台。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策 6：新元件 KeyArtViewer——從橫條的裁切位置長成整張</strong><br>
+    收合時的圖是 <code>object-fit: cover</code> 裁出來的一條；展開時用 transform＋clip-path 從那一條的位置與裁切範圍長成整張（原型驗證起訖點誤差 ≤1px），收回反向。
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>落地後才掛 <code>GachaFxLive</code>、關閉一開始就卸載（沿用 LoreViewer 的規則）；有動態的機甲提供「動態／靜態」切換。</li>
+      <li>暗色背景（圖鑑主題）；放大平移、Esc、焦點移交、捲動鎖、reduced-motion 直接開關。</li>
+      <li><b>手機直向</b>：原型顯示橫圖在直螢幕只佔中間一條，改為填滿高度、左右拖曳平移。</li>
+      <li>不改 LoreViewer：它的等高 FLIP 與紙色舞台是故事館專屬，硬加分支兩邊都難改（同 B-12 的理由）。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策 7：卡池共用元件搬到 <code>components/gacha/</code></strong><br>
+    <code>components/lore/gacha/</code>（引擎、模擬、型別、登錄表、GachaFxLive）改由圖鑑與故事館共用，搬出 lore 目錄，
+    圖鑑才不必 import 故事館的資料夾。橫條（GachaBanner）與 KeyArtViewer 也放這裡。純搬移＋改 import，測試跟著走。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策 8：沒有插畫的機甲</strong><br>
+    有卡池紀錄 → 只顯示一行文字狀態；沒有紀錄 → 整塊不出現（不留空殼）。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策 9：名稱比對只在寫入端正規化</strong><br>
+    活動的 <code>mechs</code> 存的是中文名。公告與資料庫已知有用字差異（塔納托斯／塔納託斯、光輝／光暉、巨象／巨像、奥德修斯／奧德修斯、吉雨萊斯／吉爾萊斯）。
+    回填時在寫入端換成資料庫用字；前台只做 trim 後的精確比對，<b>不做模糊比對</b>——比錯比沒比到更糟。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策 10：不做復刻預測</strong><br>
+    陸版機甲池 0 筆、復刻沒有規律可循。唯一誠實的推估是「新機甲預計台版登場」（半版本日期）。
+    陸版池資料累積起來後，「陸版已復刻 → 台版約晚 N 週」可以另案評估。
+  </div>
+
+  <div class="warning-block">
+    <strong>決策 11：歷史回填走審核，不直接寫 patchVersions</strong><br>
+    封存公告解析成待審活動送後台 <code>/admin/announcements</code>，由站長逐筆放行；不替站長清佇列。
+    ⚠ 2024–2025 年的活動要掛在 v2.x 的半版本上，而那些半版本目前是<b>空白佔位</b>（沒有台版日期）。
+    回填前要先調查怎麼補半版本日期（Phase D 第一步），調查結果由站長拍板後才動資料。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>卡池共用元件搬家（<code>components/lore/gacha/</code> → <code>components/gacha/</code>）</li>
+      <li>狀態推導純函式＋node 測試</li>
+      <li>GachaBanner（收合橫條）、KeyArtViewer（展開鑑賞）、機甲圖鑑詳情頁接線</li>
+      <li><code>Mech.cardFocus</code> 型別、後台滑桿與預覽、資料模型文件同步</li>
+      <li>台版歷史卡池回填：調查 → 補半版本日期 → 解析送審（Phase D）</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>復刻預測、陸版卡池檔期（決策 10）</li>
+      <li>機師圖鑑的角色池橫條（做完這台可比照，另案）</li>
+      <li>跨域海運自選名單（<code>crossShipping.selection</code>）當作狀態來源——也是「怎麼拿到這台」，但語意不同，另案</li>
+      <li>故事館卷宗的卡池卡（不動）</li>
+      <li>窄版縮圖衍生檔：先在 B-4 量 LCP，確定變慢才另做</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-063 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042-B_機甲故事館/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-042-B 機甲故事館</h4>
+      <p>招募插畫、卡池動態（Phase J）、決策 B-5／B-7 的出處</p>
+    </a>
+    <a class="doc-item" href="../../歷史記錄/PLAN-048_時間線甘特圖改版/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-048 時間線甘特圖改版</h4>
+      <p>活動資料模型、顯示閘門、公告解析與審核管線</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-063 — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
