@@ -2,6 +2,7 @@
  "說明": "機師故事館的招募插畫與卡池動態：每位機師用哪一組卡池（PLAN-042-A Phase J）。卡池鍵＝卡池 prefab PilotGacha<卡池鍵>ItemPrefab 的 <卡池鍵>（英文名），檔名裡沒有 gameId，所以靠這張表人工對照。",
  "切片": "招募插畫是兩片 1024² 切片，預設檔名 Img_1_pilot_gacha_<卡池鍵>1_Raw／…2_Raw（比對不分大小寫）；檔名不照這個規則的寫在 tiles（例：明日香要用第 3／4 片、葉夫根尼是 Img_1_pilot_Yevgeny_001／002_Raw）。",
  "怎麼補": "新機師開卡池時，node scripts/import-game-assets.mjs --src=latest --pilot-lore 的報告會列出「對不到機師的卡池切片」；確認是哪位後在 cards 加一行 \"<gameId>\": \"<卡池鍵>\"（切片命名不同再補 tiles），再跑一次 --apply。雙人池（EileenSylvie、HonSyl、插畫 EilLor）、常駐／自選／兌換池（Permanent、Select*、PilotExchange、Predictive）不是單人插畫，不必填。",
+ "疊層": "少數卡池的背景切片是挖空的（中間只剩殘影或一條邊、甚至留著畫師浮水印），角色是另一張 RawImage 疊在上面——只拼兩片會看到空場景。這種寫在 layers：<卡池鍵> → [{ tile 切片名, node prefab 節點名, rect [left, top, width, height] }]，rect 是 2600×1080 插畫上的像素（左上原點），由卡池 prefab 匯出（export-gacha-prefab.py --kind pilot）的 RectTransform 沿父節點累算而來；匯入時照 rect 拉伸疊上、超出畫面的部分裁掉，順序照陣列。只收角色本體（含頭飾這類角色的一部分），不收特效層（流光、序列幀、遮罩）與名字字樣。2026-10-17 對照站上 62 張插畫與各自的 prefab：把角色另放一層的有 11 位，只有這 4 位背景是空的；其餘 7 位（Cassha、AdaDiaz、HailisMill、LexuanZheng…）背景本來就畫了角色、疊上去一模一樣，不必寫。新機師的插畫若中間是空的就是這種，照同樣方式補。",
  "來源": "2026-10-17 由卡池 prefab 72 個（ui_prefabs_pilotgacha_abs.b）與 v3 對照表（_local-notes/2026-10/2026-10-03_機師機甲圖片資源mapping_v3_final.json）交叉整理；Diracca1＝迪拉卡（3D 資料夾 10103121 的 pilot_diraccadavies）、SonyaVolokova＝索妮婭、MorganaSlyce＝摩根娜（機師卡 Icon_item_13038A，站上還沒有 pilots/13038 資料夾）。",
  "cards": {
   "10102102": "Shawnee",
@@ -96,6 +97,21 @@
   "AyanamiRei": [
    "Img_1_pilot_AyanamiRei1_Raw",
    "Img_1_pilot_AyanamiRei2_Raw"
+  ]
+ },
+ "layers": {
+  "VillarsHardaway": [
+   { "tile": "Img_1_pilot_gacha_Hardaway3_Raw", "node": "Con_Effect/Spine", "rect": [802.66, 41.66, 1262.67, 1037.73] }
+  ],
+  "ZoeySteele": [
+   { "tile": "Img_1_pilot_gacha_ZoeySteele3_Raw", "node": "Con_Effect/Img_03", "rect": [795.33, -168.67, 1323.34, 1323.34] }
+  ],
+  "MartiniMoretti": [
+   { "tile": "Img_1_pilot_gacha_MartiniMoretti3_Raw", "node": "Con_Effect/Spine", "rect": [926.81, 29.24, 894.78, 1050.76] }
+  ],
+  "IkusabeWataru": [
+   { "tile": "Img_1_pilot_gacha_IkusabeWataru3_Raw", "node": "Con_Effect/Img_Spine", "rect": [1119.65, 24.97, 656.17, 1055.27] },
+   { "tile": "Img_1_pilot_gacha_IkusabeWataru5_Raw", "node": "Con_Effect/Img_Pin", "rect": [1364.62, 114.39, 196.05, 116.03] }
   ]
  }
 }

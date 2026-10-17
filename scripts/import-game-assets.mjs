@@ -80,6 +80,7 @@
  *               → pilots/<gameId>/card/pilot_gacha_<卡池鍵>.webp。
  *               哪位用哪組照 scripts/lib/pilotGachaCards.json（人工對照；切片比對不分大小寫，命名不照規則的寫在它的 tiles）；
  *               報告列出「對不到機師的卡池切片」，新機師就在那張表補一行。雙人池、常駐／自選池不是單人的插畫，不必補。
+ *               背景挖空、角色另放一層的卡池（佐伊、哈達威、瑪汀妮、戰部渡）照那張表的 layers 把角色疊回去（說明見它的「疊層」）。
  *   切片原檔與橫幅 banner_／標題字 title_ 不上站。站長 2026-10-17 決定上站（比照機甲）。只補新的（--force 例外）。
  *
  * ── --promote（2026-10-11）──────────────────────────────────────────────────
@@ -596,13 +597,18 @@ if (MODE === 'v3') {
   const map = fs.existsSync(PILOT_CARD_MAP_FILE) ? JSON.parse(fs.readFileSync(PILOT_CARD_MAP_FILE, 'utf-8')) : {}
   const cardMap = map.cards ?? {}
   // 切片只認 1024² 的 Texture2D；名稱比對不分大小寫（官方有 natalia1／Natalia 這種）
-  const byLower = new Map()
+  // 疊層（對照表的 layers）是去背的角色，尺寸不一（656×1056、992×816…）：只收 layers 點名的，不限尺寸
+  const layerMap = map.layers ?? {}
+  const layerNames = new Set(Object.values(layerMap).flat().map((l) => l.tile.toLowerCase()))
+  const byLower = new Map(), layerByLower = new Map()
   for (const r of loadCsv()) {
-    if (r.type !== 'Texture2D' || Number(r.w) !== 1024 || Number(r.h) !== 1024 || !/^Img_1_pilot_/.test(r.name)) continue
+    if (r.type !== 'Texture2D' || !/^Img_1_pilot_/.test(r.name)) continue
     const k = r.name.toLowerCase()
-    const prev = byLower.get(k)
+    const idx = Number(r.w) === 1024 && Number(r.h) === 1024 ? byLower : layerNames.has(k) ? layerByLower : null
+    if (!idx) continue
+    const prev = idx.get(k)
     if (prev && prev.sha !== r.sha) problems.push(`招募插畫切片 ${r.name} 有兩張內容不同的圖：${prev.path} ／ ${r.path}`)
-    else byLower.set(k, r)
+    else idx.set(k, r)
   }
   const used = new Set()
   for (const [gameId, key] of Object.entries(cardMap).sort(([a], [b]) => a.localeCompare(b))) {
@@ -611,13 +617,16 @@ if (MODE === 'v3') {
     if (!sitePilots.has(gameId)) { pilotLoreReport.offsite.push(`${gameId}（${key}）`); continue }
     const name = pilotCardFile(key)
     const dest = path.join(destRoot, 'pilots', gameId, PILOT_CARD_DIR, `${name}.webp`)
+    const layers = layerMap[key] ?? []
     const rows = tileNames.map((n) => byLower.get(n.toLowerCase()))
-    if (rows.some((r) => !r)) {   // 這次擷取沒有這組（只在新版擷取才有，或改名了）；已匯入的照樣留著
-      if (!fs.existsSync(dest)) pilotLoreReport.missing.push(`${gameId}（${key}：${tileNames.join('／')}）`)
+    const layerRows = layers.map((l) => byLower.get(l.tile.toLowerCase()) ?? layerByLower.get(l.tile.toLowerCase()))
+    if ([...rows, ...layerRows].some((r) => !r)) {   // 這次擷取沒有這組（只在新版擷取才有，或改名了）；已匯入的照樣留著
+      if (!fs.existsSync(dest)) pilotLoreReport.missing.push(`${gameId}（${key}：${[...tileNames, ...layers.map((l) => l.tile)].join('／')}）`)
       continue
     }
     const [a, b] = rows.map((r) => path.join(SRC, r.path))
-    tasks.push({ src: a, srcs: [a, b], dest, label: `機師 ${gameId} 招募插畫`, group: 'pilot-card', name, make: () => composeCard(a, b) })
+    const overlays = layers.map((l, i) => ({ src: path.join(SRC, layerRows[i].path), rect: l.rect }))
+    tasks.push({ src: a, srcs: [a, b, ...overlays.map((o) => o.src)], dest, label: `機師 ${gameId} 招募插畫`, group: 'pilot-card', name, make: () => composeCard(a, b, overlays) })
     if (!fs.existsSync(dest)) pilotLoreReport.fresh.push(`${gameId}（${key}）`)
   }
   // 對不到機師的一般命名切片：第 1、2 片都在、又沒被對照表用到的卡池鍵
@@ -898,7 +907,7 @@ const pilotLoreSection = MODE !== 'pilotlore' ? [] : [
   `- 對照表指到站上沒有的機師（gameId 資料夾還沒建：先用 --id 匯入機師卡與立繪）：${listOr(pilotLoreReport.offsite)}`,
   `- 站上沒有招募插畫的機師：${pilotLoreReport.noCard} 位（沒開過專屬卡池的機師本來就沒有，正常）`, '',
   '### 下一步（照抄）', '',
-  `- ${pilotLoreReport.fresh.length ? '⬜' : '✅'} 有新增時：\`npm run dev\`（重產 src/data/gameArtIndex.ts 的 GAME_PILOT_CARDS），到機師故事館該位的頁面確認卷宗最後有「卡池」卡、點開是全景`,
+  `- ${pilotLoreReport.fresh.length ? '⬜' : '✅'} 有新增時：\`npm run dev\`（重產 src/data/gameArtIndex.ts 的 GAME_PILOT_CARDS），到機師故事館該位的頁面確認卷宗最後有「卡池」卡、點開是全景，而且**中間有角色**（只剩空場景、殘影或浮水印＝角色在 prefab 另一層，照 scripts/lib/pilotGachaCards.json 的「疊層」補 layers、加 --force 重跑）`,
   '- ⬜ 照規則 commit（public/images/game/pilots/*/card/、src/data/gameArtIndex.ts、scripts/lib/pilotGachaCards.json 一起）、push',
   '- ⬜ 部署完成（gh run list --workflow pages-build-deployment 顯示 completed）**之前**別打開新圖的網址——Cloudflare 會把 404 快取住；萬一中了要 Purge',
   '- ⬜ 部署後到後台 › 故事館編輯台 › 該機師 › 扉頁，填卡池名稱（有公告建議就按一下；選填，空＝顯示「卡池」）', '',
@@ -953,11 +962,23 @@ async function skinThumb(src) {
   return img.resize(SKIN_THUMB_SIZE, SKIN_THUMB_SIZE, { fit: 'cover', position: 'centre' }).webp({ quality: 82 }).toBuffer()
 }
 
-/** 招募插畫：兩片 1024² 拉回卡池 prefab 的 1300×1080，左右拼成 2600×1080（不透明，丟掉 alpha） */
-async function composeCard(a, b) {
+/**
+ * 招募插畫：兩片 1024² 拉回卡池 prefab 的 1300×1080，左右拼成 2600×1080（不透明，丟掉 alpha）。
+ * overlays（機師對照表的 layers）：去背的角色照 rect [left, top, width, height] 拉伸疊上，超出畫面的部分裁掉。
+ */
+async function composeCard(a, b, overlays = []) {
   const half = await Promise.all([a, b].map((f) => sharp(f).resize(CARD_W / 2, CARD_H, { fit: 'fill' }).removeAlpha().png().toBuffer()))
+  const layers = []
+  for (const { src, rect } of overlays) {
+    const [left, top, w, h] = rect.map((v) => Math.round(v))
+    const x0 = Math.max(0, left), y0 = Math.max(0, top), x1 = Math.min(CARD_W, left + w), y1 = Math.min(CARD_H, top + h)
+    if (x1 <= x0 || y1 <= y0) continue
+    const full = await sharp(src).ensureAlpha().resize(w, h, { fit: 'fill' }).png().toBuffer()
+    const input = await sharp(full).extract({ left: x0 - left, top: y0 - top, width: x1 - x0, height: y1 - y0 }).png().toBuffer()
+    layers.push({ input, left: x0, top: y0 })
+  }
   return sharp({ create: { width: CARD_W, height: CARD_H, channels: 3, background: '#000' } })
-    .composite([{ input: half[0], left: 0, top: 0 }, { input: half[1], left: CARD_W / 2, top: 0 }])
+    .composite([{ input: half[0], left: 0, top: 0 }, { input: half[1], left: CARD_W / 2, top: 0 }, ...layers])
     .webp({ quality: 80 }).toBuffer()
 }
 

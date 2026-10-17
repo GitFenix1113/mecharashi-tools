@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-17', type: 'fix', summary: '修正<b>佐伊、哈達威、瑪汀妮、戰部渡</b>的招募插畫只剩背景、中間看不到角色（只有殘影或浮水印）的問題。' },
+
     { date: '2026-10-17', type: 'feat', summary: '機甲故事館再加 <b>4 台會動的招募插畫</b>：君權、遊騎兵、惡兆、日蝕——'
       + '晚一兩秒才亮起、彼此錯開的光點也照遊戲的節奏播出來；卷宗最後的「卡池」點開全景就會播放，目前共 35 台。' },
 
