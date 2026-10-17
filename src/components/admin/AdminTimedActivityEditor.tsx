@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { TimedActivity, ActivityTypeId } from '../../data/patchVersions/types'
+import { useMechs, usePilots } from '../../hooks/useFirestore'
 import {
   ACTIVITY_TYPE_OPTIONS,
   isKnownActivityType,
@@ -11,6 +12,20 @@ import {
 const CUSTOM = '__custom__'
 
 const WEEKDAY_ZH = ['日', '一', '二', '三', '四', '五', '六']
+
+/**
+ * 這幾種活動「一定要」關聯實體，空著也開格（PLAN-063，2026-10-18）：
+ * 機甲圖鑑的卡池橫條靠 `mechs` 認出「這期是哪台的池」，卡池漏填就等於圖鑑上沒有這期。
+ * 特遣／海運不在此列——它們的名單是 `selection`（見下方行3 的說明）。
+ */
+const NEEDS_PILOTS = new Set<string>(['specificPilotBanner', 'battlePass'])
+const NEEDS_MECHS = new Set<string>(['specificMechBanner', 'battlePass'])
+
+/** 「、」分隔的名單裡，資料庫找不到的名字（前台一律精確比對，打錯字就對不上） */
+function unknownNames(list: string[] | undefined, known: ReadonlySet<string>): string[] {
+  if (!known.size) return []   // 名單還沒載入：不要誤報
+  return (list ?? []).filter((n) => !known.has(n))
+}
 
 export function toInputDate(d: string) { return d.replace(/\//g, '-') }
 export function fromInputDate(d: string) { return d.replace(/-/g, '/') }
@@ -67,6 +82,12 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
    * 與 makeActivityId 註解裡記的是同一個坑。舊資料沒有 id，只好退回 index。
    */
   const keyOf = (act: TimedActivity, idx: number) => act.id ?? `idx_${idx}`
+
+  // 名稱檢查用（後台本來就載入 pilots／mechs，走版本快取，不多花 read）
+  const { data: allMechs } = useMechs()
+  const { data: allPilots } = usePilots()
+  const mechNames = useMemo(() => new Set(allMechs.map((m) => m.name)), [allMechs])
+  const pilotNames = useMemo(() => new Set(allPilots.map((p) => p.name)), [allPilots])
 
   function toggle(key: string) {
     setExpanded(prev => {
@@ -281,10 +302,12 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
                 而 specificPilotBanner 的 UP 機師（解析器本來就會填）原本在這個編輯器裡
                 **看不到也改不了** —— 因為舊條件只認 pilotMission。現在有值就看得到。
 
-                代價是「卡池漏填 pilots」時沒有空格可以補。那要靠審核面板填（它一律有格），
-                或日後在這裡按型別開格；先不做，因為空格會邀請人往錯的欄位填。
+                2026-10-18（PLAN-063）補上「按型別開格」：卡池與戰令空著也開格（NEEDS_PILOTS／NEEDS_MECHS）。
+                原本「卡池漏填 pilots／mechs 時沒有空格可以補」，機甲圖鑑的卡池橫條因此認不出那期。
+                特遣／海運仍然不開——空格會邀請人往錯的欄位填，這個顧慮對它們依然成立。
+                另外列出資料庫找不到的名字：前台一律精確比對，打錯字（塔納托斯／塔納託斯）就靜默對不上。
               */}
-              {(act.pilots?.length ?? 0) > 0 && (
+              {((act.pilots?.length ?? 0) > 0 || NEEDS_PILOTS.has(act.type)) && (
                 <div className="mt-2 ml-6">
                   <input
                     type="text"
@@ -294,13 +317,14 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
                         pilots: e.target.value.split(/[、,，]+/).map(s => s.trim()).filter(Boolean),
                       })
                     }
-                    placeholder="UP／關聯機師，以「、」分隔（如：哈達威、科林）"
+                    placeholder={act.type === 'battlePass' ? '戰令獎勵機師，以「、」分隔（沒有就留空）' : 'UP／關聯機師，以「、」分隔（如：哈達威、科林）'}
                     className="w-full bg-bg-card border border-border rounded px-2 py-1 text-[11px] text-text-primary placeholder-text-dim outline-none focus:border-accent-purple/50"
                   />
+                  <UnknownNames names={unknownNames(act.pilots, pilotNames)} noun="機師" />
                 </div>
               )}
 
-              {(act.mechs?.length ?? 0) > 0 && (
+              {((act.mechs?.length ?? 0) > 0 || NEEDS_MECHS.has(act.type)) && (
                 <div className="mt-2 ml-6">
                   <input
                     type="text"
@@ -310,9 +334,10 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
                         mechs: e.target.value.split(/[、,，]+/).map(s => s.trim()).filter(Boolean),
                       })
                     }
-                    placeholder="UP／關聯機甲，以「、」分隔（如：螢石、赫克托爾）"
+                    placeholder={act.type === 'battlePass' ? '戰令獎勵機甲，以「、」分隔（沒有就留空）' : 'UP／關聯機甲，以「、」分隔（如：螢石、赫克托爾）——機甲圖鑑的卡池橫條靠這格認池'}
                     className="w-full bg-bg-card border border-border rounded px-2 py-1 text-[11px] text-text-primary placeholder-text-dim outline-none focus:border-accent-purple/50"
                   />
+                  <UnknownNames names={unknownNames(act.mechs, mechNames)} noun="機甲" />
                 </div>
               )}
 
@@ -331,6 +356,7 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
                       : '這期可選的機甲，以「、」分隔（如：影武者、螣蛇、影子兔）'}
                     className="w-full bg-bg-card border border-border rounded px-2 py-1 text-[11px] text-text-primary placeholder-text-dim outline-none focus:border-accent-purple/50"
                   />
+                  <UnknownNames names={unknownNames(act.selection, act.type === 'pilotMission' ? pilotNames : mechNames)} noun={act.type === 'pilotMission' ? '機師' : '機甲'} />
                   <p className="mt-0.5 text-[10px] text-text-dim">
                     名單寫在官方公告「活動內容」的括號裡。填在這裡而不是半版本層級的
                     「選配池」——同一半版本可能同時開兩個自選池（如復刻＋一般），
@@ -457,5 +483,15 @@ export default function AdminTimedActivityEditor({ label, activities, onChange }
         })}
       </div>
     </div>
+  )
+}
+
+/** 名單裡資料庫找不到的名字（黃字提醒，不擋存檔：新角色可能還沒建檔） */
+function UnknownNames({ names, noun }: { names: string[]; noun: string }) {
+  if (!names.length) return null
+  return (
+    <p className="mt-0.5 text-[10px] text-accent-yellow">
+      資料庫找不到這幾個{noun}：{names.join('、')}——前台用名稱精確比對，打錯字會對不上（還沒建檔的新{noun}可以先不管）
+    </p>
   )
 }
