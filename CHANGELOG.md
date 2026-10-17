@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-16
+## [Unreleased] - 2026-10-17
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,11 @@
 
 ### ✨ 新功能
 
+- **lore**: 機甲故事館串接——統計分廳、分享卡、機甲圖鑑入口（PLAN-042-B H-2～H-4） (`624d54c`)
+- **admin**: 故事館編輯台加「機甲」與「機甲廠商」分頁（PLAN-042-B Phase G） (`1aa78aa`)
+- **lore**: 機甲故事館素材上站——塗裝、招募插畫、廠商舞台（PLAN-042-B Phase F） (`696224c`)
+- **lore**: 機甲故事館館首頁——/lore/mechs 機甲牆與 hero（PLAN-042-B Phase E） (`1f66f71`)
+- **lore**: 機甲故事館展廳頁——MechLorePage／MechDossier、型號鋼印、依廠商分組名冊、機師廳座機卡（PLAN-042-B Phase D） (`657eaed`)
 - **lore**: 機甲故事館資料層——型別拆底座、mechLore／mechMakers 集合（PLAN-042-B Phase A） (`ffd9427`)
 - **lore**: 編輯台正文改成引文段卡片，每段各自署名 (`8a48234`)
 - **analytics**: 熱門排行加「故事」分頁、章節留存與本月／上月切換（PLAN-062 Phase D） (`51ec4d0`)
@@ -274,6 +279,7 @@
 
 ### ♻️ 重構
 
+- **lore**: 故事館元件泛化成兩館共用——LoreSubject 轉接層與 useLoreHall（PLAN-042-B Phase C） (`26c17ec`)
 - **icons**: PLAN-055 C — 圖示欄位只存官方檔名 key (`6e4e2bd`)
 - **docs**: 規劃書改為網站概要總覽，文件重新分級 (`1cea5f5`)
 - src/components 依功能分類收容，扁平層清空 (`6e03cf7`)
@@ -291,6 +297,7 @@
 
 ### 📚 文件
 
+- **plan**: PLAN-042-B 進度表標 B-1／B-2 完成（8／38） (`c5fc539`)
 - **plan**: 改寫 PLAN-042-B 機甲故事館，依 Q1–Q7 定案重建計畫書與進度表 (`8059a28`)
 - **plan**: PLAN-062 站長複驗通過，轉入觀察維護中 (`b31ecfa`)
 - **plan**: 立案 PLAN-062 故事館使用統計 (`b1f3863`)
