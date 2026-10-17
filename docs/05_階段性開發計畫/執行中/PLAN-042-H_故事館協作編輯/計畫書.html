@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-H 故事館協作編輯 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-H 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-042-H</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    故事館協作編輯<span style="-webkit-text-fill-color:var(--text-secondary);"> LORE_EDITOR · 欄位級授權 · 首頁協作者頭像</span>
+  </h1>
+  <p class="hero-sub">啟用總綱裡降級為備案的 EDITOR 角色：新增 <code>LORE_EDITOR</code>，只能進故事館編輯台、只能寫故事館四個集合，碰不到遊戲數值；首頁維護團隊多一列「故事館協作編輯」放上這些人的頭像。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label cyan">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value cyan">PLAN-042-H</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-17</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">firestore.rules · Worker /api/site-team · 角色型別 · 路由守衛 · 導覽列 · 用戶管理 · 首頁團隊區塊</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">開發完成、模擬器驗證過 · 待部署 rules／Worker／前台</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-042-E（故事館編輯台）· PLAN-042-B G 段（機甲分頁）· PLAN-051（首頁維護團隊 ＋ /api/site-team）</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>站長決定開放協作（2026-10-17）</strong><br>
+    PLAN-042 總綱在 2026-08-23 把「EDITOR 角色與協作編輯台」降級為備案——當時判斷內容輸入不是瓶頸、單人維護不需要協作台，並註明「日後若真要找人協作，另開子計畫」。
+    兩館都已對外開放之後，站長決定找人一起編故事內容，備案轉正。
+  </div>
+  <div class="problem-block">
+    <strong>現行權限只有「全有或全無」</strong><br>
+    故事館編輯台掛在 <code>AdminRoute</code> 底下，規則層四個故事館集合都是 <code>isAdmin()</code>。要讓人編故事，唯一的辦法是給 ADMIN——那等於把機師數值、武器、模組、公告審核、使用統計全部交出去。
+  </div>
+  <div class="problem-block">
+    <strong>存檔不只寫一份文件</strong><br>
+    <code>saveWithHistory</code>（2026-10-17 起故事館改走 <code>saveWithRevision</code>，碰的地方相同、多了交易）一次存檔會碰四個地方：直讀 pre-image、寫本體、<code>meta/gameData</code> bump 版本號、<code>changeHistory</code> 記一筆。只放行本體的話，協作者的存檔會「本體寫進去、版本號沒 bump」——其他人讀到的永遠是舊快取，而且沒有人會發現（bump 失敗是 <code>.catch(() =&gt; '')</code> 吞掉的）。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label cyan">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：角色名 <code>LORE_EDITOR</code>，不是總綱原稿的 <code>EDITOR</code></strong><br>
+    名字寫明範圍。日後若有攻略、公告之類的協作者，各自一個角色，不會出現「EDITOR 到底能編什麼」的歧義。
+    <code>UserRole</code> 排序 GUEST → USER → LORE_EDITOR → ADMIN → OWNER；新增 <code>ProfileRole = Exclude&lt;UserRole, 'GUEST'&gt;</code> 取代散在各處的 <code>'USER' | 'ADMIN' | 'OWNER'</code> 字面聯集。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：授權範圍＝編輯台的四個分頁，且不能刪</strong><br>
+    <code>pilotLore</code>／<code>mechLore</code>／<code>factionEmblems</code>／<code>mechMakers</code> 開 <code>read, create, update: if canEditLore()</code>，<code>delete</code> 留 <code>isAdmin()</code>。
+    編輯台本來就沒有刪除路徑（<code>lib/api/pilotLore.ts</code> 檔尾），這條把「協作者用 client SDK 直接刪一整份人工長文」也一併關掉。
+    read 要開是因為存檔前要直讀現況（<code>saveWithRevision</code> 的交易比對版本號、編輯面板開啟時的提早提示）；編輯台的列表本身走 Worker，不靠這條。遊戲資料一律維持 <code>isAdmin()</code>。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：附帶寫入用欄位級授權鎖死</strong><br>
+    <code>meta/gameData</code>：只開 update、只開這一份文件，<code>isLoreVersionBump()</code> 用兩層 <code>affectedKeys().hasOnly()</code>——頂層只准 <code>versions</code>／<code>updatedAt</code>，<code>versions</code> 裡只准故事館四個鍵。
+    否則協作者能 bump 任意集合，等於能讓全站所有訪客重抓整包資料。<br>
+    <code>changeHistory</code>：create 加一條分支，<code>target in ['pilotLore','mechLore']</code>（徽章與廠商是 writeDoc＋bump、不留稽核），<code>actorUid == auth.uid</code> 的防冒名照舊；讀取仍只給管理者。<br>
+    <code>systemLog</code>：create 由 <code>isAdmin()</code> 放寬到 <code>canEditLore()</code>——協作者正是最可能撞上「存檔被拒」的人，沒有這條，那份診斷證據只會永遠卡在他們的 localStorage。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：路由留在 <code>/admin/lore</code>，不開 <code>/lore-editor</code></strong><br>
+    總綱原稿要另開一條協作者路由；但新的頂層路徑要補 Cloudflare Transform Rule 白名單（CLAUDE.md §3），漏掉就是 HTTP 404。
+    改成 <code>AdminRoute</code> 多一個 <code>lore</code> prop 放行 LORE_EDITOR；協作者進 <code>/admin</code> 直接導向 <code>/admin/lore</code>，導覽列的紫色入口對他顯示「故事館編輯台」。編輯台麵包屑對非管理者不給「後台管理」連結。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：角色判斷收進 <code>src/utils/userRole.ts</code></strong><br>
+    <code>isAdminRole()</code>（後台全區）與 <code>canEditLore()</code>（編輯台）。本計畫碰到的地方（<code>AdminRoute</code>、<code>Layout</code>、<code>AdminPage</code>、<code>AdminLorePage</code>）改用 helper；
+    沒碰到的既有手寫判斷（<code>useSimulatorEntry</code>、<code>MechAdmin</code> 的 OWNER 判斷）語意本來就是「管理者」，不順手改。helper 與 rules 的角色清單要一起改，兩邊互相註記。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：用戶管理改下拉選單，不提供指派 OWNER</strong><br>
+    原本是「升為 ADMIN／降為 USER」切換鈕，多一個角色就裝不下。選項＝一般用戶／故事館協作編輯／管理者（<code>ASSIGNABLE_ROLES</code>）；OWNER 的移轉不該是選單裡的一個選項（rules 允許，UI 不提供）。LORE_EDITOR 徽章用 cyan，與編輯台同色。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：首頁團隊區塊多一列，Worker 快取鍵換 v2</strong><br>
+    「攻略作者/資料彙整者」下面加「故事館協作編輯：」，頭像列允許換行（人數可能比上面兩列多）。
+    名單來源 <code>/api/site-team</code> 的角色清單加 LORE_EDITOR（前端直連回退的 <code>SITE_TEAM_ROLES</code> 同步）；
+    快取鍵由 <code>site-team</code> 換成 <code>site-team-v2</code>，否則部署後最多一小時內讀到的仍是舊名單，驗收時會誤以為部署失敗。
+  </div>
+
+  <div class="info-block">
+    <strong>順帶的既有行為（不需要改）</strong><br>
+    使用統計（<code>lib/analytics/track.ts</code>）只記 USER 與未登入，協作者和管理者一樣被當成維護者排除在外——這是想要的結果。
+  </div>
+</section>
+
+<!-- 風險 -->
+<section class="section">
+  <div class="section-label yellow">Risk</div>
+  <div class="section-title">已知風險（不在本計畫處理）</div>
+
+  <div class="info-block">
+    <strong>✅ 2026-10-17 已處理（本計畫的後續，獨立一筆改動）：存檔衝突檢查＋update 留前一版快照</strong><br>
+    故事館兩館改走 <code>saveWithRevision()</code>：文件內帶版本號 <code>rev</code>（表單整份複製，所以它就是「從第幾版改起」），存檔時在交易內與現況比對，
+    不一致就擋下、面板出現「這份在你開啟之後被別人存過」與「載入最新版」，不再靜默覆寫；開面板與切回分頁時也先直讀一次現況、提早提示。
+    update／restore 的 <code>changeHistory</code> 記錄帶<strong>被覆寫的前一版整份</strong>，與文件同一個交易原子寫入；管理者可在 <code>/admin/history</code>「還原成這一版」。
+    沒有採用原建議的 <code>updateTime</code>：面板內容來自快取，舊內容配上「開面板當下」讀到的新時間戳會照樣蓋掉別人——基準必須跟著內容走（草稿還原也擋得住）。
+    設計與取捨見 <code>docs/02_技術文件/04_Firebase/資料庫設計文件/changeHistory.html</code> 06。下面原文保留作為紀錄。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 多人同時編同一份文件會整份覆寫</strong>（已處理，見上）<br>
+    <code>saveWithHistory</code> 是整份覆寫、沒有衝突檢查；<code>changeHistory</code> 的 update 也不存前一版快照（PLAN-030 決策五）。
+    2026-10-14 已發生過一次：舊分頁存檔洗掉了克洛伊 <code>pilotLore</code> 的三個欄位。單人維護時這是「自己跟自己的舊分頁」，開放協作後變成「兩個人同時開同一位」——後存的人會靜默蓋掉先存的人，且<strong>無法從稽核記錄還原</strong>。
+    建議另立案：存檔前比對文件 <code>updateTime</code>（不一致就擋下並提示重新整理），並讓 lore 兩類的 update 留前一版快照。在那之前，靠分工（每人負責不同機師／機甲）與定期備份（<code>backup-firestore.mjs</code>）。
+  </div>
+
+  <div class="warning-block">
+    <strong>⚠ 模擬器模式下協作者的編輯台會載入失敗（預期行為）</strong><br>
+    編輯台的列表要讀 <code>pilots</code>／<code>mechs</code>，正式站走 Worker；<code>.env.emulator</code> 關了 Worker（<code>VITE_USE_WORKER=false</code>），直連 Firestore 時協作者讀不到遊戲資料。
+    要在本機驗協作者的完整存檔流程，用「讀取走正式 Worker、寫入落模擬器」的混合模式（做法見進度表 D-2）。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label cyan">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>角色：<code>src/types/enums.ts</code>、<code>src/types/user.ts</code>、<code>src/utils/userRole.ts</code>（＋測試）</li>
+      <li>規則：<code>firestore.rules</code>（<code>canEditLore</code>／<code>isLoreVersionBump</code>、四集合、meta、changeHistory、systemLog）與 <code>scripts/test-emulator-rules.mjs</code></li>
+      <li>前端入口：<code>AdminRoute</code>、<code>App.tsx</code>、<code>AdminPage</code>、<code>AdminLorePage</code>、<code>Layout</code>、<code>UserAdmin</code></li>
+      <li>首頁：<code>SiteTeamSection</code>、<code>useSiteTeam</code>、<code>userApi</code> 的 <code>SITE_TEAM_ROLES</code>；Worker <code>/api/site-team</code></li>
+      <li>文件：Firestore 設計文件（enums／users／security-rules／四集合／changeHistory／systemLog）、頁面規劃（首頁／管理後台／故事館）、總綱、更新履歷</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>存檔衝突檢查與 update 快照（見上方風險，建議另立案）</li>
+      <li>協作者看自己的編輯歷史（<code>/admin/history</code> 仍只給管理者）</li>
+      <li>故事館內的協作者署名（館內「本篇由誰整理」之類的 credit）——首頁那一列先上，館內要不要掛等有協作者再議</li>
+      <li>邀請流程：被授權的人要先自己登入一次（profile 才會存在），再由 OWNER 在用戶管理改角色</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label cyan">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-042-H 進度表</h4>
+      <p>各工作項目狀態追蹤與部署順序</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042_故事館_總綱/計畫書.html">
+      <div class="doc-tag">Parent</div>
+      <h4>◆ PLAN-042 故事館總綱</h4>
+      <p>原「EDITOR 角色與協作編輯台」備案</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042-E_機師資料分家與故事館編輯台/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-042-E 故事館編輯台</h4>
+      <p>本計畫開放給協作者的那一頁</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/04_Firebase/資料庫設計文件/security-rules.html">
+      <div class="doc-tag">Rules</div>
+      <h4>◆ 安全規則總覽</h4>
+      <p>canEditLore 與各集合授權</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-H — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

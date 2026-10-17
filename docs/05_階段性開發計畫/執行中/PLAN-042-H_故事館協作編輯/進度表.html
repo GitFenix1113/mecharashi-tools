@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-H 故事館協作編輯 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-H 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-042-H</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">故事館協作編輯</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-17 · D-3／D-4／D-6 為站長任務，不計入開發者任務</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">12</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">12</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度（開發者任務）</span>
+      <span style="color:var(--accent-green);">12 / 12</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    站長在「用戶管理」把某人設為「故事館協作編輯」，他登入後導覽列多一顆「故事館編輯台」，能編機師／機甲的故事、陣營徽章與機甲廠商，但進不了後台其他頁、規則層也寫不了任何遊戲資料；首頁維護團隊多一列放上他的頭像。
+  </div>
+  <div style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.2);border-radius:10px;padding:14px 18px;font-size:13px;color:var(--text-secondary);margin:16px 0 28px;">
+    <strong style="color:var(--accent-yellow);">部署三件，順序：</strong>
+    ① <code>firestore.rules</code>（D-3）與前台推送（D-5）——兩者都要在<b>指派第一位協作者之前</b>到位，彼此先後不拘（沒有人是 LORE_EDITOR 時兩邊都沒有作用）；
+    ② Worker（D-4，首頁名單）；③ 最後才在用戶管理指派角色（D-6）。
+    rules 晚到的話協作者看得到編輯台、但每次存檔都 permission-denied。沒有新頂層路由，不涉及 Cloudflare 白名單。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">A 角色與權限</div>
+  <div class="section-desc">決策一～三、五。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 角色常數、型別與判斷 helper</div>
+      <div class="task-group-meta">src/types · src/utils/userRole.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">UserRole 加 LORE_EDITOR、ProfileRole、isAdminRole／canEditLore</div>
+        <div class="task-desc"><code>UserProfile.role</code> 改用 <code>ProfileRole</code>；<code>updateUserRole</code> 的參數同步。<code>userRole.ts</code> 另有 <code>ROLE_LABEL</code>、<code>ASSIGNABLE_ROLES</code>（不含 OWNER）。<code>userRole.test.ts</code> 3 項。</div>
+        <div class="task-file">src/types/enums.ts · src/types/user.ts · src/lib/userApi.ts · src/utils/userRole.ts · src/utils/userRole.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; firestore.rules</div>
+      <div class="task-group-meta">firestore.rules</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">canEditLore()／isLoreVersionBump()，四集合、meta、changeHistory、systemLog</div>
+        <div class="task-desc">四個故事館集合 <code>read, create, update: if canEditLore()</code>、<code>delete: if isAdmin()</code>；<code>meta/gameData</code> 多一條 update（兩層 <code>hasOnly</code>）；<code>changeHistory</code> create 多一條限 lore 兩類 target 的分支；<code>systemLog</code> create 放寬到 <code>canEditLore()</code>。遊戲資料與 users 的規則不動。</div>
+        <div class="task-file">firestore.rules</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 規則測試</div>
+      <div class="task-group-meta">scripts/test-emulator-rules.mjs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">loreEditorSuite：26 項，每條放行都配一條相鄰的被擋</div>
+        <div class="task-desc">四集合讀寫／不可刪（管理者可刪對照）、遊戲資料讀寫皆擋、changeHistory 只能寫 lore 兩類且不可冒名不可讀、bump 只准四個鍵（管理者 bump pilots 對照）、meta 其他文件與全域欄位擋、自己提權擋、改暱稱放行、systemLog 本人放行。<br>
+        <span style="color:var(--text-secondary)">✅ 2026-10-17：<code>npm run emu:seed</code> → <code>npm run emu:test-rules</code> 全套 <b>50 項通過、0 失敗</b>（含既有 changeHistory 與雲端書架兩套）。</span></div>
+        <div class="task-file">scripts/test-emulator-rules.mjs（帳號 dev-lore@local.test，角色由 Bearer owner 佈置）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label cyan">Phase B</div>
+  <div class="section-title">B 前端入口</div>
+  <div class="section-desc">決策四、六。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 路由守衛與 /admin 導向</div>
+      <div class="task-group-meta">AdminRoute · App.tsx · AdminPage · AdminLorePage</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">AdminRoute lore prop；/admin → /admin/lore；麵包屑</div>
+        <div class="task-desc"><code>/admin/lore</code> 改 <code>&lt;AdminRoute lore&gt;</code>；LORE_EDITOR 進 <code>/admin</code> 以 <code>&lt;Navigate replace&gt;</code> 送到編輯台；編輯台麵包屑對非管理者顯示「故事館協作」純文字，不給會被導走的「後台管理」連結。</div>
+        <div class="task-file">src/components/auth/AdminRoute.tsx · src/App.tsx · src/pages/user/AdminPage.tsx · src/pages/admin/AdminLorePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 導覽列入口</div>
+      <div class="task-group-meta">src/components/layout/Layout.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">backstageEntry：管理者「後台管理」、協作者「故事館編輯台」</div>
+        <div class="task-desc">桌面導覽與手機 More 面板共用同一個物件，同一顆紫色按鈕只換目的地與字。</div>
+        <div class="task-file">src/components/layout/Layout.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 用戶管理角色選單</div>
+      <div class="task-group-meta">src/pages/user/admin/UserAdmin.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">切換鈕 → 下拉選單（一般用戶／故事館協作編輯／管理者）</div>
+        <div class="task-desc">自己與 OWNER 不顯示選單；徽章配色表 <code>ROLE_BADGE</code>（LORE_EDITOR＝cyan），hover 顯示中文角色名。</div>
+        <div class="task-file">src/pages/user/admin/UserAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label cyan">Phase C</div>
+  <div class="section-title">C 首頁協作者頭像</div>
+  <div class="section-desc">決策七。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 首頁「故事館協作編輯」一列</div>
+      <div class="task-group-meta">SiteTeamSection · useSiteTeam · userApi</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">loreEditors 分組＋頭像列（可換行）</div>
+        <div class="task-desc"><code>useSiteTeam</code> 改成一次分三組（<code>owners</code>／<code>admins</code>／<code>loreEditors</code>）；三組都空才整塊不顯示。直連回退的查詢改用 <code>SITE_TEAM_ROLES</code>。</div>
+        <div class="task-file">src/components/home/SiteTeamSection.tsx · src/hooks/useSiteTeam.ts · src/lib/userApi.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; Worker /api/site-team</div>
+      <div class="task-group-meta">workers/src/index.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">SITE_TEAM_ROLES 加 LORE_EDITOR、排序、快取鍵 site-team-v2</div>
+        <div class="task-desc"><code>ROLE_ORDER</code> 由 <code>SITE_TEAM_ROLES</code> 推導（OWNER → ADMIN → LORE_EDITOR，同角色依名稱）。欄位白名單 <code>SITE_TEAM_FIELDS</code> 不變。Worker 型別檢查通過。</div>
+        <div class="task-file">workers/src/index.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label cyan">Phase D</div>
+  <div class="section-title">D 文件、驗收與部署</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 文件與更新履歷</div>
+      <div class="task-group-meta">docs/02_技術文件 · docs/03_頁面規劃 · 總綱 · siteChangelog</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Firestore 設計文件、頁面規劃、總綱備案轉正、更新履歷</div>
+        <div class="task-desc">enums／users／security-rules／pilotLore／mechLore／factionEmblems／mechMakers／changeHistory／systemLog；頁面規劃：首頁、管理後台、故事館；PLAN-042 總綱的備案區塊註記已由本計畫啟用；更新履歷 1 筆。</div>
+        <div class="task-file">docs/02_技術文件/04_Firebase/資料庫設計文件/ · docs/03_頁面規劃/ · PLAN-042_故事館_總綱 · src/data/siteChangelog/2026-10.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 本機驗收</div>
+      <div class="task-group-meta">模擬器 ＋ 混合模式</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">首頁一列、協作者入口與導向、實際存檔一筆、用戶管理改角色</div>
+        <div class="task-desc">✅ 2026-10-17：
+        ① 模擬器模式（OWNER 登入）首頁出現「故事館協作編輯：」一列與測試帳號頭像。
+        ② 以 dev-lore 登入：導覽列（桌面／手機）顯示「故事館編輯台」、進 <code>/admin</code> 被導到 <code>/admin/lore</code>、麵包屑為「故事館協作 › 故事館」。
+        ③ <b>混合模式</b>（<code>vite --mode emulator</code> ＋ 環境變數 <code>VITE_USE_WORKER=true</code>、<code>VITE_WORKER_API_BASE=https://mecharashi.wiki</code>，port 5173 在 Worker CORS 白名單內；讀取走正式 Worker、寫入落模擬器）：協作者開葉夫根尼按「儲存變更」成功，模擬器裡確認 <code>pilotLore</code> 文件、署名 dev-lore 的 <code>changeHistory</code>、<code>versions.pilotLore</code> 版本號三筆都落地。
+        ④ OWNER 在用戶管理把測試帳號 LORE_EDITOR → USER → LORE_EDITOR，無錯誤。
+        <code>npm test</code> 1603 過、<code>tsc -b</code> 與 Worker <code>tsc --noEmit</code> 過。</div>
+        <div class="task-file">.claude/launch.json 的 vite-emu-worker（本機設定，不進版控）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 部署 firestore.rules</div>
+      <div class="task-group-meta">Firebase</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">firebase deploy --only firestore:rules</div>
+        <div class="task-desc">Claude 的 auto mode 擋 <code>firebase deploy</code>，由站長執行。要在 D-6 指派角色之前完成。</div>
+        <div class="task-file">firestore.rules</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; Worker 重部署</div>
+      <div class="task-group-meta">Cloudflare Workers</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">cd workers → npx wrangler deploy</div>
+        <div class="task-desc">首頁名單才會納入 LORE_EDITOR。快取鍵已換 v2，部署後立刻生效、不必等一小時。</div>
+        <div class="task-file">workers/src/index.ts</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-5 &nbsp; 前台推送</div>
+      <div class="task-group-meta">GitHub Pages</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">commit → npm run push</div>
+        <div class="task-desc">✅ 2026-10-17 站長指示合併、commit、push（<code>npm run push</code>）。前台上線不代表協作者能存檔——要等 D-3 的 rules 部署。</div>
+        <div class="task-file">main</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-6 &nbsp; 指派第一位協作者並在正式站複驗</div>
+      <div class="task-group-meta">後台 › 用戶管理</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">請對方先登入一次 → 用戶管理選「故事館協作編輯」→ 對方存一筆</div>
+        <div class="task-desc">profile 要先存在才改得到角色。複驗：對方重新整理後導覽列出現「故事館編輯台」；存一筆後到 <code>/admin/history</code> 看到他署名的記錄；首頁出現他的頭像。
+        存檔被拒時先查 <code>/admin/system-log</code>（協作者的寫入被拒現在會上報）。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label cyan">Phase E</div>
+  <div class="section-title">E 後續：存檔衝突檢查</div>
+  <div class="section-desc">計畫書「已知風險」的第一條，立案當天另開 session 處理、與本計畫同次推送。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; saveWithRevision：版本號比對＋前一版快照＋寫回</div>
+      <div class="task-group-meta">changeHistory.ts · docRevision.ts · 編輯面板 · AdminHistoryPage</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">兩人同編同一份時後存者被擋；update 記錄帶前一版、管理者可「還原成這一版」</div>
+        <div class="task-desc">pilotLore／mechLore 文件帶 <code>rev</code>，存檔在交易內比對（不一致拋 <code>SaveConflictError</code>、什麼都不寫），log 與文件同一個交易原子寫入；面板開啟／切回分頁時直讀現況、提早顯示「載入最新版」橫條。
+        基準跟著內容走而不是用 <code>updateTime</code>（舊快取配新時間戳會照樣覆寫）。設計見 <code>changeHistory.html</code> 06。<br>
+        <span style="color:var(--text-secondary)">✅ 2026-10-17：<code>npm test</code> 1610 過、<code>npm run build</code> 過、<code>emu:test-rules</code> 55 項過（新增 5 項存檔交易）；另一個 session 兩分頁實測 27 項過。
+        ⚠ 用腳本（Admin SDK）改這兩個集合時要順手把 <code>rev</code> +1。</span></div>
+        <div class="task-file">src/lib/api/changeHistory.ts · src/utils/docRevision.ts · src/hooks/useLatestRevision.ts · src/components/admin/lore/ · src/lib/api/restore.ts · src/pages/admin/AdminHistoryPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-H — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

@@ -33,9 +33,24 @@
   <table class="spec-table">
     <tr><th>路由</th><td><code>/admin</code></td></tr>
     <tr><th>開發階段</th><td>持續擴充中（已涵蓋 15 個分頁 + 版本管理等子頁）</td></tr>
-    <tr><th>登入需求</th><td>需 Firebase Auth 且具 <code>ADMIN</code> / <code>OWNER</code> 角色；版本管理子頁由 <code>AdminRoute</code> gate。寫入受 Firestore Security Rules + App Check 保護</td></tr>
+    <tr><th>登入需求</th><td>需 Firebase Auth 且具 <code>ADMIN</code> / <code>OWNER</code> 角色；版本管理等子頁由 <code>AdminRoute</code> gate。<strong>例外</strong>：故事館協作編輯 <code>LORE_EDITOR</code>（PLAN-042-H）只能進 <code>/admin/lore</code>，見下方「角色與可進入頁面」。寫入受 Firestore Security Rules 保護（App Check 已退場）</td></tr>
     <tr><th>資料來源</th><td>Firestore 直接讀寫，經 <code>GameDataContext</code> 版本快取載入；存檔後 <code>bumpDataVersion(key)</code> 使所有 client 該集合快取失效，編輯者自身以 patch 就地同步免重讀</td></tr>
   </table>
+
+  <div class="sub-h" style="margin-top:16px;">角色與可進入頁面（PLAN-042-H，2026-10-17）</div>
+  <table class="spec-table">
+    <tr><th>角色</th><th>可進入</th><th>導覽列入口</th><th>說明</th></tr>
+    <tr><td><code>OWNER</code></td><td><code>/admin</code> 全部分頁與子頁，含 <code>/admin/system-log</code></td><td>「後台管理」→ <code>/admin</code></td><td>唯一能改別人角色的人（rules <code>isOwnerRole()</code>）</td></tr>
+    <tr><td><code>ADMIN</code></td><td><code>/admin</code> 與子頁（系統日誌除外）、<code>/admin/lore</code></td><td>「後台管理」→ <code>/admin</code></td><td>遊戲資料、故事館皆可寫</td></tr>
+    <tr><td><code>LORE_EDITOR</code></td><td><strong>只有 <code>/admin/lore</code></strong>（<code>AdminRoute lore</code> 放行）</td><td>「故事館編輯台」→ <code>/admin/lore</code></td><td>進 <code>/admin</code> 會被直接導向 <code>/admin/lore</code>（不顯示「無存取權限」）；其他後台子頁的 <code>AdminRoute</code> 一律導回首頁。編輯台麵包屑對非管理者不顯示「後台管理」連結。資料面只寫得進故事館四個集合、不能刪除</td></tr>
+    <tr><td><code>USER</code></td><td>—</td><td>不顯示</td><td>進 <code>/admin</code> 看到「無存取權限」</td></tr>
+  </table>
+  <div class="info-block" style="margin-top:12px;">
+    <strong>📌 路由刻意留在 <code>/admin</code> 底下</strong>：不另開 <code>/lore-editor</code> 這類頂層路徑——新的頂層路徑要補 Cloudflare Transform Rule 白名單（CLAUDE.md §3），留在 <code>/admin</code> 下就不必動。
+    角色判斷收在 <code>src/utils/userRole.ts</code>：<code>isAdminRole()</code>（ADMIN／OWNER，後台全區）與 <code>canEditLore()</code>（再加 LORE_EDITOR，故事館編輯台）；
+    這些都只是 UI 層的門，真正的防線是 <code>firestore.rules</code> 的 <code>isAdmin()</code>／<code>canEditLore()</code>，兩邊角色清單要一起改。
+    協作編輯與管理者一樣<strong>不計入使用統計</strong>（只追蹤未登入與 <code>USER</code>）。
+  </div>
 
   <div class="note-block" style="margin-top:16px;">
     <strong>✅ 目前已實作（Firestore 模式）</strong>
@@ -93,7 +108,7 @@
     <div class="card purple">
       <div class="card-icon">👥</div>
       <h3>用戶管理</h3>
-      <p>查看用戶列表，授予/撤銷管理員 custom claim。（只讀為主）</p>
+      <p>查看用戶列表，以下拉選單指派角色（一般用戶／故事館協作編輯／管理者）。角色存在 <code>users/{uid}/profile/main</code> 的 <code>role</code>（不是 custom claim），只有 OWNER 改得動別人的角色。</p>
     </div>
   </div>
 
@@ -123,13 +138,14 @@
     <tr><td><code>skills</code> 技能管理</td><td>pilotSkills</td><td>🆕 技能庫（PLAN-004）；收錄機師與武器技能（<code>domain</code> 篩選，PLAN-032）；共用技能改一次全站生效；<code>unitType</code> 可標「職業單元＝初始被動能力」（PLAN-025，武器技能不顯示此欄）；專武強化兩欄（<code>enhancesTalentName</code>／<code>enhancedTalentDescription</code>）2026-10-11 起可編輯</td></tr>
     <tr><td><code>neuralDrive</code> 神經驅動</td><td>neuralDriveAbilities（+pilots）</td><td>🆕 神經驅動能力庫（PLAN-023）；顯示「被幾位機師引用」反查</td></tr>
     <tr><td><code>buffs</code> BUFF</td><td>buffs</td><td>🆕 BUFF 管理（PLAN-019-F）；階梯等級 levels、termRef、RefPicker 標 [xxx]（PLAN-024）</td></tr>
-    <tr><td><code>users</code> 用戶</td><td>users（伺服器分頁）</td><td>用戶列表、角色（ADMIN/OWNER）授予</td></tr>
+    <tr><td><code>users</code> 用戶</td><td>users（伺服器分頁）</td><td>用戶列表、角色指派。PLAN-042-H 起由「升為 ADMIN／降為 USER」切換鈕改為<strong>下拉選單</strong>：一般用戶／故事館協作編輯／管理者（<code>ASSIGNABLE_ROLES</code>；UI 不提供指派 OWNER，自己與 OWNER 那列不顯示選單）。角色徽章 OWNER 琥珀、ADMIN 橘、<code>LORE_EDITOR</code> <strong>cyan</strong>（同編輯台色）、USER 灰。寫入 <code>updateUserRole(uid, role)</code>，規則只放行 OWNER（<code>isOwnerRole()</code>）</td></tr>
     <tr><td><code>grayops</code> 灰燼行動</td><td>grayOpsRoster（+mechs）</td><td>灰燼行動名簿（公司 → 機甲列表）；🆕 每筆可存 <code>icon</code> / <code>mechId</code> 快照，「同步 Icon / 連結」由 mechs 依名稱補齊，首頁名單即以縮圖顯示並可點開引用浮窗</td></tr>
     <tr><td>版本管理</td><td>/admin/versions · /admin/versions/:versionId</td><td>🆕 PatchVersion 時間線編輯（AdminRoute gate，lazy 載入）</td></tr>
-    <tr><td>變更歷史</td><td>/admin/history</td><td>資料異動稽核 log（PLAN-030）；append-only、含刪除快照可還原。2026-09 補齊類型篩選：背包、背包技能、機師形態、機師逸聞</td></tr>
+    <tr><td>變更歷史</td><td>/admin/history</td><td>資料異動稽核 log（PLAN-030）；append-only、含刪除快照可還原。2026-09 補齊類型篩選：背包、背包技能、機師形態、機師逸聞。
+      2026-10-17 起機師／機甲逸聞的「修改」記錄帶前一版整份，展開後可「↺ 還原成這一版」（版本號照常 +1、被蓋掉的現況存進新的還原記錄）</td></tr>
     <tr><td>故事館編輯台</td><td>/admin/lore（<code>?pilot=&lt;id&gt;</code> 直接開該位；<code>?view=mechs&amp;mech=&lt;id&gt;</code> 開機甲、<code>?view=makers</code> 機甲廠商，PLAN-042-B G）</td><td>🆕 <code>pilotLore</code> 編輯（PLAN-042-A E-1；PLAN-042-E 改版）：一位機師的故事資料全部在這裡編。列表列出全部機師＋從資料推導的進度標籤與頁首統計，可依「缺簡介／缺檔案／有草稿章／外觀未命名／缺陣營徽章」篩選；
       編輯面板四個分頁——扉頁（英文名、簡介、署名、陣營徽章）／人物檔案（固定三欄＋有序自訂欄位）／逸聞章節（OCR 貼上區、草稿勾選、單章預覽）／外觀（名稱、隱藏、排序），右欄是渲染前台元件的即時預覽（窄螢幕改為分頁）。
-      <strong>ADMIN 即可用</strong>——它只寫 <code>pilotLore</code>；寫入走 <code>saveWithHistory</code>（整份覆寫），章節錨點 <code>by: 'key'</code>；沒有刪除路徑</td></tr>
+      <strong>ADMIN 即可用</strong>——它只寫故事館的集合；PLAN-042-H 起另外放行<strong>故事館協作編輯 <code>LORE_EDITOR</code></strong>（<code>AdminRoute lore</code>），頂部四個分頁（機師／機甲／陣營徽章／機甲廠商）皆可編、但不能刪除；寫入走 <code>saveWithHistory</code>（整份覆寫），章節錨點 <code>by: 'key'</code>；沒有刪除路徑</td></tr>
     <tr><td>系統日誌</td><td>/admin/system-log</td><td>登出／寫入被拒的診斷記錄（PLAN-045）；<strong>僅 OWNER</strong>（含裝置指紋）</td></tr>
     <tr><td>使用統計</td><td>/admin/analytics</td><td>🆕 匿名彙總統計儀表板（PLAN-046）：頁面熱度、語言／國家分布、熱門機師／機甲／武器／故事 TOP 20（可切換本月／上月）；「機師故事館」區塊（PLAN-062）看進館漏斗：館首頁 → 扉頁 → 章節，只算 2026-10-13 正式開放後的日子；熱門排行的「故事」分頁另有<strong>章節留存</strong>（每位機師各章讀者佔打開的比例，按了才載入故事資料）。故事館自 2026-10 起與圖鑑的熱門機師分開統計。<strong>ADMIN 即可看</strong>——不含個人行為資料，敏感度低於系統日誌</td></tr>
   </table>
@@ -272,7 +288,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-10-13 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-17 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

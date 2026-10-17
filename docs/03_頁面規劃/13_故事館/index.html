@@ -30,9 +30,9 @@
   <div class="section-label">基本資訊</div>
   <div class="section-title">頁面規格</div>
   <table class="spec-table">
-    <tr><th>路由</th><td><code>/lore</code>（館首頁）｜<code>/lore/mechs</code>（機甲廳館首頁，PLAN-042-B）｜<code>/lore/pilots/:id</code>（扉頁）｜<code>/lore/pilots/:id/:part</code>（章節頁／閱讀模式）｜外觀放查詢字串 <code>?skin=&lt;立繪鍵&gt;</code>（PLAN-042-D）｜<code>/lore/*</code> 兜底轉址回 <code>/lore</code>｜<code>/admin/lore</code>（編輯台，<code>AdminRoute</code>）</td></tr>
+    <tr><th>路由</th><td><code>/lore</code>（館首頁）｜<code>/lore/mechs</code>（機甲廳館首頁，PLAN-042-B）｜<code>/lore/pilots/:id</code>（扉頁）｜<code>/lore/pilots/:id/:part</code>（章節頁／閱讀模式）｜外觀放查詢字串 <code>?skin=&lt;立繪鍵&gt;</code>（PLAN-042-D）｜<code>/lore/*</code> 兜底轉址回 <code>/lore</code>｜<code>/admin/lore</code>（編輯台，<code>AdminRoute lore</code>：管理者＋故事館協作編輯）</td></tr>
     <tr><th>開發階段</th><td>PLAN-042-A Phase C–F（2026-09-09 ～ 09-10）；氛圍層與顯影修正另立 <a href="../../05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/計畫書.html">PLAN-042-C</a>；2026-10-13 改版成「舞台＋卷宗」、加機師名冊與外觀切換：<a href="../../05_階段性開發計畫/執行中/PLAN-042-D_故事館改版_舞台與卷宗/計畫書.html">PLAN-042-D</a>；同日機師資料分家、編輯台改版：<a href="../../05_階段性開發計畫/執行中/PLAN-042-E_機師資料分家與故事館編輯台/計畫書.html">PLAN-042-E</a>；2026-10-14 回圖鑑的出口與出館過場：<a href="../../05_階段性開發計畫/執行中/PLAN-042-G_故事館回圖鑑路線與出館過場/計畫書.html">PLAN-042-G</a></td></tr>
-    <tr><th>登入需求</th><td>前台不需要登入；編輯台 ADMIN 即可（寫 <code>pilotLore</code>／<code>mechLore</code>／<code>mechMakers</code>；EDITOR 角色先不做，PLAN-042-E 決策八）</td></tr>
+    <tr><th>登入需求</th><td>前台不需要登入；編輯台 ADMIN／OWNER 即可（寫 <code>pilotLore</code>／<code>mechLore</code>／<code>factionEmblems</code>／<code>mechMakers</code>）。PLAN-042-E 決策八當時「EDITOR 角色先不做」，<strong>2026-10-17 由 PLAN-042-H 補上故事館協作編輯 <code>LORE_EDITOR</code></strong>：只能進編輯台、只能寫這四個集合、不能刪除</td></tr>
     <tr><th>資料來源</th><td><strong>PLAN-042-E 起依 id 合併兩個集合</strong>（判準：與數值、機制有關的留 <code>pilots</code>，其餘歸 <code>pilotLore</code>）：<br>
       · <code>pilots</code>：身分欄位——名字、全名、職業、陣營、駕駛許可、天賦（徽記）、登場版本、立繪（<code>gameId</code>／<code>artKey</code>）<br>
       · <code>pilotLore</code>：扉頁簡介 <code>intro</code>＋署名 <code>frontSource</code>、英文名 <code>nameEn</code>、人物檔案 <code>dossier</code>、陣營徽章、外觀設定 <code>skins</code>、章節與旁白<br>
@@ -119,7 +119,8 @@
       頁首的檢視：機師｜機甲｜陣營徽章｜機甲廠商。<code>?view=emblems</code> 替官方徽章標名稱與圖上字樣（PLAN-042-F）；
       <code>?view=mechs&amp;mech=&lt;id&gt;</code> 是機甲的編輯面板（PLAN-042-B G-1：扉頁／技術檔案／系譜／塗裝／逸聞章節＋即時預覽，結構同機師版、塗裝與章節分頁是同一個元件）；
       <code>?view=makers</code> 管 <code>mechMakers</code>（G-2：一家一列各自存檔、可新增、不能刪）。
-      寫入走 <code>saveWithHistory</code>（整份覆寫、自動 bump 版本），章節錨點用 <code>{ by: 'key' }</code>（<code>LoreChapter</code> 沒有 <code>name</code>，錨錯欄位每筆都會 <code>anchorMismatch</code>）。沒有刪除路徑。</p>
+      寫入走 <code>saveWithHistory</code>（整份覆寫、自動 bump 版本），章節錨點用 <code>{ by: 'key' }</code>（<code>LoreChapter</code> 沒有 <code>name</code>，錨錯欄位每筆都會 <code>anchorMismatch</code>）。沒有刪除路徑。
+      <strong>PLAN-042-H 起故事館協作編輯（<code>LORE_EDITOR</code>）也能用</strong>，四個檢視皆可編、不能刪除（見下方設計備註）。</p>
     </div>
   </div>
 </section>
@@ -152,6 +153,19 @@
     · <strong>存檔</strong>：仍是整份覆寫（<code>saveWithHistory</code>，自動 bump 版本）；草稿自動暫存的 kind 改為 <code>'pilotLore.v2'</code>，避免改版前的舊草稿還原後把搬遷進來的欄位洗掉。沒有刪除路徑<br>
     · <strong>Worker 分享卡</strong>：<code>/lore/pilots/*</code> 多讀一份 pilotLore，og:description ＝ <code>intro</code>（讀不到退回「某某｜機師故事館」）；title 與立繪仍取 pilots<br>
     · <strong>不在範圍內</strong>：機甲的 <code>mechs.lore</code>（MechDetailPage，同樣的問題，042-B 機甲故事館開工時處理）、後台上傳外觀圖、後台編輯 <code>npcArtNotes.json</code>、從故事館改預設外觀
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
+    <strong>✅ 故事館協作編輯（PLAN-042-H，2026-10-17）</strong><br>
+    · <strong>新角色 <code>LORE_EDITOR</code></strong>：由 OWNER 在後台「用戶管理」的下拉選單指派。編輯台頂部四個檢視（機師／機甲／陣營徽章／機甲廠商）<strong>皆可編</strong>，
+      對應的 <code>pilotLore</code>／<code>mechLore</code>／<code>factionEmblems</code>／<code>mechMakers</code> 規則開 <code>read, create, update: if canEditLore()</code>；
+      <strong>不能刪除</strong>（<code>delete: if isAdmin()</code>，編輯台本來也沒有刪除路徑）。遊戲資料（pilots、mechs…）一律碰不到<br>
+    · <strong>存檔的附帶寫入</strong>：機師／機甲兩館走 <code>saveWithRevision</code>（2026-10-17 前是 <code>saveWithHistory</code>），協作編輯也會留自己的 <code>changeHistory</code>（規則限 target 為 <code>pilotLore</code>／<code>mechLore</code>，讀取仍只給管理者）；
+      四個集合存檔後的 <code>bumpDataVersion</code> 由 <code>meta/gameData</code> 的 <code>isLoreVersionBump()</code> 放行——只能動這四個集合的版本號<br>
+    · <strong>入口</strong>：導覽列對協作編輯顯示「故事館編輯台」（直達 <code>/admin/lore</code>，管理者仍是「後台管理」）；進 <code>/admin</code> 會被導向 <code>/admin/lore</code>；
+      編輯台麵包屑對非管理者不顯示「後台管理」連結。路由刻意留在 <code>/admin</code> 底下、不開新頂層路徑（免改 Cloudflare 白名單）<br>
+    · <strong>存檔衝突檢查（2026-10-17）</strong>：兩人同時編同一位時，面板頂端出現黃色橫條「這份在你開啟之後被別人存過」（開面板、切回分頁、按儲存三個時機都會比對），
+      存檔被擋、按「載入最新版」換成伺服器現況再改；<strong>沒有「仍要覆寫」</strong>。每次修改的稽核記錄帶前一版整份，管理者在變更歷史可「還原成這一版」<br>
+    · <strong>首頁</strong>：維護團隊多一列「故事館協作編輯：」顯示其頭像（Worker <code>/api/site-team</code> 納入 <code>LORE_EDITOR</code>）
   </div>
   <div class="info-block" style="margin-top:1rem;">
     <strong>✅ 陣營徽章註記（PLAN-042-F C／D，2026-10-14）</strong><br>

@@ -555,6 +555,10 @@ export interface LoreChapter {
               依據 <code>_local-notes/2026-10/2026-10-14_故事館回圖鑑路線方案/</code>。</td>
           <td><span class="badge badge-green">只動前台 · 無資料作業</span></td>
           <td><span class="badge badge-green">開發 8／8 · 已推送（2026-10-14）</span></td></tr>
+      <tr><td><a href="../PLAN-042-H_故事館協作編輯/計畫書.html" style="color:var(--accent-cyan);"><strong>PLAN-042-H</strong><br>故事館協作編輯</a></td>
+          <td>本總綱「EDITOR 角色與協作編輯台」備案轉正：新角色 <code>LORE_EDITOR</code> 只能進故事館編輯台、只能寫故事館四個集合；首頁維護團隊多一列協作者頭像。</td>
+          <td><span class="badge badge-green">無資料作業 · 部署 rules＋Worker</span></td>
+          <td><span class="badge badge-green">開發 11／11 · 已推送（2026-10-17）</span></td></tr>
     </table>
   </div>
 
@@ -583,7 +587,10 @@ export interface LoreChapter {
     2026-08-23 確認<strong>內容輸入不是瓶頸</strong>（機師約三週才出一位新的，且有 OCR 工具輔助），
     單人維護不需要協作台。<strong>整段降級為備案</strong>，省下：三處 UserRole 聯集（<code>enums.ts:309</code> / <code>user.ts:17</code> / <code>userApi.ts:71</code>）、
     <code>firestore.rules</code> 欄位級授權、<code>changeHistory</code> 與 <code>meta</code> 放行、<code>EditorRoute</code>、docs 權限文件同步。<br>
-    <strong>這是本次拆分最大的一筆工時節省。</strong>日後若真要找人協作，另開 042-C。
+    <strong>這是本次拆分最大的一筆工時節省。</strong>日後若真要找人協作，另開 042-C。<br>
+    <strong style="color:var(--accent-cyan);">→ 2026-10-17 站長決定開放協作，備案由 <a href="../PLAN-042-H_故事館協作編輯/計畫書.html">PLAN-042-H</a> 啟用</strong>
+    （042-C 這個字母後來給了氛圍層）：角色改名 <code>LORE_EDITOR</code>、路由沿用 <code>/admin/lore</code> 不開 <code>/lore-editor</code>，
+    授權照這裡的附帶好處走集合級 <code>canEditLore()</code>，只有 <code>meta/gameData</code> 的版本號 bump 用到欄位級 <code>hasOnly()</code>。
     <br><span style="color:var(--text-dim);">附帶好處：故事另開集合後，欄位級授權本來就可以換成一行
     <code>match /pilotLore/{docId} { allow write: if isEditor() }</code>，少一個 Firestore rules 地雷面。</span>
   </div>
@@ -639,7 +646,8 @@ export interface LoreChapter {
     <a href="../PLAN-042-D_故事館改版_舞台與卷宗/進度表.html" style="color:var(--accent-pink);">042-D 進度表</a> ·
     <a href="../PLAN-042-E_機師資料分家與故事館編輯台/進度表.html" style="color:var(--accent-purple);">042-E 進度表</a> ·
     <a href="../PLAN-042-F_故事館大廳全景與陣營徽章管理/進度表.html" style="color:var(--accent-orange);">042-F 進度表</a> ·
-    <a href="../PLAN-042-G_故事館回圖鑑路線與出館過場/進度表.html" style="color:var(--accent-green);">042-G 進度表</a>
+    <a href="../PLAN-042-G_故事館回圖鑑路線與出館過場/進度表.html" style="color:var(--accent-green);">042-G 進度表</a> ·
+    <a href="../PLAN-042-H_故事館協作編輯/進度表.html" style="color:var(--accent-cyan);">042-H 進度表</a>
   </div>
   <div class="info-block">
     <strong>相關評估紀錄：</strong>拆分依據來自 <code>_local-notes/2026-08/2026-08-23_機師故事館_版面方案初評.html</code>（v3，本機不進版控）——
