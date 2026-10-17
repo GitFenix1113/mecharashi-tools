@@ -167,11 +167,11 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">14</div>
+      <div class="summary-num" style="color:var(--accent-green)">15</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
@@ -187,16 +187,16 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">14 / 19</span>
+      <span style="color:var(--accent-orange);">15 / 19</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 74%"></div>
+      <div class="progress-bar-fill" style="width: 79%"></div>
     </div>
   </div>
 
   <div class="impact-note">
     <strong>目標效果：</strong>
-    查機甲的人在圖鑑第一眼就知道「現在抽不抽得到、抽到哪天、上次什麼時候」，並能點開看招募插畫與卡池動態。（待開始 4 項含延後的 A-1）<br>2026-10-18 在分支 <code>claude/plan-063-gacha-banner</code> 完成 14／19（機甲 f583ea52、時間線編輯器 32576cbf、機師 2ce442a3；未合併、未推送）；剩站長的 C-2（調焦點）、D-3（放行待審的 15 筆＋補 1 筆）、E-1（試用後合併或退回），以及延後的 A-1；D-4 由另一個 session 在自己的分支完成。
+    查機甲的人在圖鑑第一眼就知道「現在抽不抽得到、抽到哪天、上次什麼時候」，並能點開看招募插畫與卡池動態。（待開始 4 項含延後的 A-1）<br>2026-10-18 在分支 <code>claude/plan-063-gacha-banner</code> 完成後<b>合併回 main 並推送</b>（15／19）；剩站長的 C-2（調焦點）、D-3（放行待審的 15 筆＋補 1 筆）、E-2（正式站抽查），以及延後的 A-1；D-4 由另一個 session 在自己的分支完成（未合併）。
   </div>
 </section>
 
@@ -617,13 +617,13 @@
 <section class="section">
   <div class="section-label orange">Phase E</div>
   <div class="section-title">上線</div>
-  <div class="section-desc">本分支是試做：站長看過再決定合併或退回。沒有新路由，不必動 Cloudflare 白名單與 sitemap。</div>
+  <div class="section-desc">10-18 已合併回 main 並推送。沒有新路由，不必動 Cloudflare 白名單與 sitemap。</div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 履歷與推送</div>
       <div class="task-group-meta">src/data/siteChangelog/</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -640,12 +640,12 @@
       <div>
         <div class="task-name">合併與推送</div>
         <div class="task-desc">
-          站長試用後決定：合併回 main（npm run build 把關後 push），或刪分支退回。
+          10-18 站長看過 dev 環境後決定合併：main 快轉到分支（8a98e617）、pre-push 跑 npm run build 把關後推送。
         </div>
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
