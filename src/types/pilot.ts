@@ -341,6 +341,11 @@ export interface Pilot {
    * 未設定＝沒有官配（例：賽文是官方贈送角色），畫面上不顯示該列、不寫「無」。
    */
   pairedMechId?: string
+  /**
+   * 招募插畫在機師圖鑑「卡池橫條」收合時的垂直焦點（PLAN-063 決策 5，與 Mech.cardFocus 同一套）：0＝頂、100＝底；
+   * 未填＝30。由後台機師管理的滑桿調。放在 pilots 而不是 pilotLore：圖鑑本來就載入 pilots、且圖鑑不讀 pilotLore（PLAN-042-E 決策二）。
+   */
+  cardFocus?: number
   rarity: string
   class: string
   faction: string

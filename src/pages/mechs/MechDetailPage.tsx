@@ -376,7 +376,7 @@ export default function MechDetailPage() {
       {/* 卡池橫條（PLAN-063，站長 10-17 選定頁首下方）：招募插畫＋池名＋狀態，點開看全景與卡池動態。
           代價是桌機多約 136px、把 10-10「一屏看完」吃回一截——站長看過原型後接受。
           ⚠ 不讀 mechLore（PLAN-042-B 決策 B-7）：池名取版本活動名；沒插畫也沒紀錄的機甲整塊不出現 */}
-      <GachaBanner mech={mech} versions={patchVersions} statusReady={!patchVersionsLoading} className="mb-4" />
+      <GachaBanner kind="mech" subject={mech} versions={patchVersions} statusReady={!patchVersionsLoading} className="mb-4" />
 
       {/* 主體：xl 以上左右分欄——左邊部件（寬而扁）、右邊模組（窄而長），模組因此不必等部件捲完才出現。
           xl 以下疊成單欄：lg～xl 維持「部件 → 模組」；**lg 以下（手機／平板）改成「模組 → 部件」**

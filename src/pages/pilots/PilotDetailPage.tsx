@@ -36,6 +36,8 @@ import { mechWeightClassOf } from '../../data/mechWeightClasses'
 import { ClassIcon } from '../../components/icons/ClassIcon'
 import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
 import { usePageTitle } from '../../contexts/PageTitleContext'
+import { usePatchVersions } from '../../hooks/usePatchVersions'
+import GachaBanner from '../../components/gacha/GachaBanner'
 
 // ─── 神經驅動「全區算力選擇器」（PLAN-021 · 1-6）─────────────────────────────
 //
@@ -795,6 +797,8 @@ export default function PilotDetailPage() {
   useEffect(() => { gd.ensureLoaded(['pilotSkills', 'neuralDriveAbilities']) }, [gd])
   // 官配機甲（PLAN-054）：只存機師側的 pairedMechId，這裡把它解成名稱與引用連結
   const { data: allMechs } = useMechs()
+  // 卡池橫條的檔期（PLAN-063）：每個 session 一次 Worker 請求、與首頁共用快取（逛過首頁就是 0 次）
+  const { data: patchVersions, loading: patchVersionsLoading } = usePatchVersions()
 
   // PLAN-041：形態（僅調構師有；非調構師此陣列恆為空 → 不多付任何讀取以外的成本）
   const { data: forms } = useFormsByPilot(id)
@@ -964,7 +968,7 @@ export default function PilotDetailPage() {
       </BackToListLink>
 
       {/* Hero Row: 3-col grid。isolate：讓職業浮水印（-z-10）留在本區的內容後面，又不會沉到頁面底色下面 */}
-      <div className="relative isolate flex flex-col gap-6 lg:grid lg:grid-cols-[160px_1fr_auto] lg:gap-12 mb-4 lg:items-start">
+      <div className="relative isolate flex flex-col gap-6 lg:grid lg:grid-cols-[160px_1fr_auto] lg:gap-x-12 lg:gap-y-6 mb-4 lg:items-start">
         {/* 職業浮水印（PLAN-059 C-3）：同一張 _l 圖放大、極淡，整頁有職業識別但不搶戲。只在桌面出現 */}
         {classMeta && (
           <span aria-hidden="true" className={`pointer-events-none absolute -z-10 right-72 -top-8 hidden lg:block opacity-[0.05] ${classMeta.text}`}>
@@ -1074,10 +1078,16 @@ export default function PilotDetailPage() {
         </div>
 
         {/* 右欄: 縮小版雷達圖 */}
-        <div className="w-full max-w-xs mx-auto lg:w-64 lg:mx-0 lg:flex-shrink-0">
+        <div className="w-full max-w-xs mx-auto lg:w-64 lg:mx-0 lg:flex-shrink-0 max-lg:order-2">
           <SectionLabel>六維屬性</SectionLabel>
           <RadarChart stats={pilot.stats} />
         </div>
+
+        {/* 卡池橫條（PLAN-063，比照機甲圖鑑）：招募插畫＋池名＋狀態，點開看全景與卡池動態。
+            放在 hero 裡面：桌機是跨三欄的第二列（＝hero 正下方）；手機的 hero 是直排，雷達圖 order-2 讓橫條排在 AP 後、雷達圖前，
+            否則它會被擠到約 1160px 以下（首屏之外）。order 只在手機用：格線排版時 order 會改變自動擺放的順序。
+            ⚠ 不讀 pilotLore（PLAN-042-E 決策二）：池名取版本活動名；沒插畫也沒紀錄的機師整塊不出現 */}
+        <GachaBanner kind="pilot" subject={pilot} versions={patchVersions} statusReady={!patchVersionsLoading} className="lg:col-span-3 max-lg:order-1" />
       </div>
 
       {/* Skills / Talents / Neural Drive Tabs */}

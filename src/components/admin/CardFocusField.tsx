@@ -1,23 +1,27 @@
-import type { Mech } from '../../types'
-import { mechCardArt } from '../../utils/gameArt'
+import { mechCardArt, pilotCardArt } from '../../utils/gameArt'
 import { usePatchVersions } from '../../hooks/usePatchVersions'
 import GachaBanner from '../gacha/GachaBanner'
 import { CARD_FOCUS_DEFAULT, clampCardFocus } from '../gacha/cardFocus'
+import type { GachaSubjectKind } from '../gacha/gachaBannerStatus'
 
 /**
- * 機甲後台：卡池橫條的收合焦點（PLAN-063 C-1，欄位 Mech.cardFocus）。
+ * 機甲／機師後台：卡池橫條的收合焦點（PLAN-063 C-1，欄位 Mech.cardFocus／Pilot.cardFocus）。
  *
  * 預覽直接用前台的 GachaBanner——同一個元件、同一套 CSS，所見即所得。只換外框比例：
  * 前台橫條的高度固定、寬度跟著視窗走，而後台的編輯框比前台窄得多；cover 裁切時框越窄、露出的高度越多，
  * 照後台寬度預覽會比前台寬鬆、調出來的焦點在前台就切歪了。所以兩個預覽各自鎖在前台的實際比例
  * （桌機約 1408×120、手機約 358×110），在任何寬度下看到的裁切都和前台一樣。桌機那條太扁、放不下文字，只看裁切。
  */
-export function CardFocusField({ form, onChange }: { form: Mech; onChange: (v: number | undefined) => void }) {
+export function CardFocusField({ kind, form, onChange }: {
+  kind: GachaSubjectKind
+  form: { name: string; gameId?: string; cardFocus?: number }
+  onChange: (v: number | undefined) => void
+}) {
   const { data: versions, loading } = usePatchVersions()
-  if (!mechCardArt(form)) {
+  if (!(kind === 'mech' ? mechCardArt(form) : pilotCardArt(form))) {
     return (
       <p className="text-xs text-text-dim">
-        卡池橫條焦點：這台沒有招募插畫（多半是沒開過專屬卡池），不需要調。
+        卡池橫條焦點：{kind === 'mech' ? '這台' : '這位'}沒有招募插畫（多半是沒開過專屬卡池），不需要調。
       </p>
     )
   }
@@ -48,9 +52,9 @@ export function CardFocusField({ form, onChange }: { form: Mech; onChange: (v: n
       </p>
       <div className="space-y-1.5">
         <p className="text-[11px] text-text-dim">桌機（約 1408×120）</p>
-        <GachaBanner mech={form} versions={versions} statusReady={!loading} className="gacha-preview gacha-preview--desktop" />
+        <GachaBanner kind={kind} subject={form} versions={versions} statusReady={!loading} className="gacha-preview gacha-preview--desktop" />
         <p className="text-[11px] text-text-dim">手機（約 358×110）</p>
-        <GachaBanner mech={form} versions={versions} statusReady={!loading} className="gacha-preview gacha-preview--mobile" />
+        <GachaBanner kind={kind} subject={form} versions={versions} statusReady={!loading} className="gacha-preview gacha-preview--mobile" />
       </div>
     </div>
   )

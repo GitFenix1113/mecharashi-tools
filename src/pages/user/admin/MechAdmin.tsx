@@ -784,7 +784,7 @@ function MechEditPanel({
               </p>
               {/* PLAN-063 C-1：機甲圖鑑卡池橫條的收合焦點 */}
               <div className="pt-3 border-t border-border/60">
-                <CardFocusField form={form} onChange={(v) => set('cardFocus', v)} />
+                <CardFocusField kind="mech" form={form} onChange={(v) => set('cardFocus', v)} />
               </div>
             </div>
           </div>
