@@ -286,7 +286,8 @@ export default function MechDossier({
 
       {cardSrc && (
         <section className="lore-panel lore-card" style={nextI()}>
-          <p className="lore-eyebrow"><span className="lore-eyebrow__sq" /><b>卡池</b>GACHA ART</p>
+          {/* 標題是這台的卡池名稱（mechLore.gachaTitle，例「可能性的彼端」），沒填退回「卡池」；英文一律 KEY ART（宣傳主視覺的通稱） */}
+          <p className="lore-eyebrow"><span className="lore-eyebrow__sq" /><b>{lore?.gachaTitle?.trim() || '卡池'}</b>KEY ART</p>
           <button
             type="button"
             className="lore-gacha"

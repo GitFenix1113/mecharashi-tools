@@ -5,7 +5,9 @@ import { useDraftWrite } from '../../../hooks/useDraftAutosave'
 import { useLayoutBreakpoint } from '../../../hooks/useLayoutBreakpoint'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { duplicateLabels, unlabeledRows } from '../../../utils/loreDossier'
-import { mechGameArt, mechSkinCatalog } from '../../../utils/gameArt'
+import { mechCardArt, mechGameArt, mechSkinCatalog } from '../../../utils/gameArt'
+import { usePatchVersions } from '../../../hooks/usePatchVersions'
+import { gachaTitleSuggestions } from '../../lore/mechGachaTitle'
 import { mechWeightClassOf } from '../../../data/mechWeightClasses'
 import { byMakerOrder } from '../../lore/mechRoster'
 import { LoreFieldRowsEditor } from './LoreDossierEditor'
@@ -24,7 +26,7 @@ type MechTab = 'front' | 'specs' | 'lineage' | 'skins' | 'chapters' | 'preview'
 
 /**
  * 故事館編輯台「機甲」的編輯面板（PLAN-042-B G-1）：一台機甲的故事資料在同一個面板編完——
- * 扉頁（型號、廠商、英文名、系列、介紹、來源）／技術檔案（非數值諸元）／系譜／塗裝／逸聞章節，右欄即時預覽。
+ * 扉頁（型號、廠商、英文名、系列、卡池名稱、介紹、來源）／技術檔案（非數值諸元）／系譜／塗裝／逸聞章節，右欄即時預覽。
  * 結構照機師版 LoreEditPanel；章節與塗裝分頁是同一個元件。
  *
  * 名字、類型、品質、登場版本是圖鑑與故事館共用的身分欄位（與數值有關，決策 B-7），在「機甲管理」編。
@@ -120,6 +122,7 @@ export function MechLoreEditPanel({
         maker: form.maker || undefined,
         nameEn: form.nameEn?.trim() || undefined,
         series: form.series?.trim() || undefined,
+        gachaTitle: form.gachaTitle?.trim() || undefined,
         intro: form.intro?.trim() || undefined,
         frontSource: form.frontSource?.trim() || undefined,
         specs,
@@ -238,7 +241,7 @@ function normalizeSpecs(specs: LoreDossierField[] | undefined): LoreDossierField
 }
 
 /**
- * 「扉頁」分頁：型號、廠商、英文名、系列、介紹、來源。
+ * 「扉頁」分頁：型號、廠商、英文名、系列、卡池名稱、介紹、來源。
  * 清空一律存 undefined：writeDoc 是整份覆寫，欄位會真的從文件上消失。
  */
 function MechFrontEditor({
@@ -257,6 +260,10 @@ function MechFrontEditor({
     ? makers.find((m) => m.modelPrefixes?.some((p) => p.trim().toUpperCase() === prefix))
     : undefined
   const weight = mechWeightClassOf(mech?.armorType)
+  // 卡池名稱的建議：公告管線解析到的機甲卡池（版本活動 specificMechBanner）。讀不到版本資料就只是沒有建議
+  const { data: versions } = usePatchVersions()
+  const gachaHints = useMemo(() => gachaTitleSuggestions(mech?.name, versions), [mech?.name, versions])
+  const hasCard = !!mechCardArt(mech)
 
   return (
     <div className="space-y-4">
@@ -307,6 +314,25 @@ function MechFrontEditor({
             onChange={(e) => onChange({ series: e.target.value || undefined })}
             className="input-field text-sm"
           />
+        </Field>
+        <Field label="卡池名稱 gachaTitle（卷宗最後招募插畫卡的標題；空＝顯示「卡池」）">
+          <input
+            value={form.gachaTitle ?? ''}
+            onChange={(e) => onChange({ gachaTitle: e.target.value || undefined })}
+            className="input-field text-sm"
+            placeholder="可能性的彼端"
+          />
+          {gachaHints.filter((h) => h.title !== form.gachaTitle?.trim()).map((h) => (
+            <button
+              key={`${h.server}|${h.title}`}
+              type="button"
+              onClick={() => onChange({ gachaTitle: h.title })}
+              className="mt-1 mr-3 text-[11px] text-accent-cyan hover:underline"
+            >
+              {h.server === 'tw' ? '台服' : '陸服'}公告 {h.date}「{h.title}」——用這個
+            </button>
+          ))}
+          {!hasCard && <p className="mt-1 text-[11px] text-text-dim">這台站上沒有招募插畫，卷宗不會出現卡池卡（填了也看不到）。</p>}
         </Field>
       </div>
 

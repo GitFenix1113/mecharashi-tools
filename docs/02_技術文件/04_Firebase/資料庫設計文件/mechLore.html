@@ -80,6 +80,10 @@
       <tr><td>series</td><td>string?</td><td>系列，如「破曉者」「KX 系列」</td></tr>
       <tr><td>specs</td><td>LoreDossierField[]?</td><td><strong>非數值諸元</strong>（量產狀態、搭載核心…），<strong>陣列順序＝顯示順序</strong>。形狀與機師人物檔案的 <code>extra</code> 相同（<code>label</code>／<code>value</code>），存檔前一樣擋同名標籤</td></tr>
       <tr><td>relations</td><td>MechRelation[]?</td><td><strong>系譜</strong>，<strong>陣列順序＝顯示順序</strong>，結構見下方子表</td></tr>
+      <tr><td>gachaTitle</td><td>string?</td><td><strong>卡池名稱</strong>，如「可能性的彼端」（莫比烏斯X）：卷宗最後招募插畫卡的標題（英文固定 KEY ART）與鑑賞時的圖名；空＝顯示「卡池」。
+        台版公告「【特選】&lt;卡池名&gt; – S級…機甲「&lt;機甲&gt;」」那一段，照錄不改字。
+        <br><small style="color:var(--text-dim)">初值由一次性腳本 <code>scripts/temp_scripts/fill-mech-gacha-titles.mjs</code>（不進版控）從公告封存（2024-03～2026-08）＋公告草稿帶入：有公告可查的 54 台，只填空欄位；
+        之後的新卡池由後台扉頁從版本活動（<code>specificMechBanner</code>）帶出建議，一鍵採用。</small></td></tr>
     </table>
   </div>
 
