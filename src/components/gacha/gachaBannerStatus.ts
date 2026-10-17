@@ -2,10 +2,10 @@
 //
 // 資料一律取自站內的活動時間線（patchVersions，站長 10-18：「卡池資料參考站內的活動時間線即可」），
 // 全部從既有欄位推導，**不新增任何狀態欄位**（同 activityStatus 的原則：凡是能算的，就不要問維護者）：
-//   · 開放中／即將開放／已結束 ← 台服活動的 startDate＋weeks，三種「拿得到」的活動（依此順序取一個）：
+//   · 開放中／即將開放／已結束 ← 台服活動的 startDate＋weeks，兩種卡池（依此順序取一個）：
 //       專屬卡池（機甲池 specificMechBanner／角色池 specificPilotBanner）
 //       ＞ 自選池（跨域海運 crossShipping／角雕特遣 pilotMission，看 selection 自選名單）
-//       ＞ 戰令 battlePass（mechs／pilots 列的獎勵）
+//     **戰令不算**（站長 10-18：「他是當前的戰令（環島密令），這不算卡池」）——戰令獎勵是取得途徑、不是卡池，橫條只講卡池。
 //   · 新機甲／新機師預計台版登場 ← 半版本新增名單（half.mechs／half.pilots）＋ twDate／twIsPredicted
 // 只看台服：站上的檔期以台版為主，陸版卡池目前一筆都沒記（決策 10：也不拿陸版推復刻）。
 //
@@ -22,20 +22,20 @@ import { DAY_MS, parseDate } from '../timeline/ganttGeometry.ts'
 
 export type GachaSubjectKind = 'mech' | 'pilot'
 export type GachaBannerKind = 'ongoing' | 'upcoming' | 'debut' | 'past' | 'none'
-/** 拿得到的活動種類：專屬卡池＞自選池＞戰令 */
-export type GachaBannerSource = 'banner' | 'select' | 'pass'
+/** 卡池種類：專屬卡池＞自選池（戰令不算卡池，見檔頭） */
+export type GachaBannerSource = 'banner' | 'select'
 
 /** 兩種實體各自看哪些欄位、怎麼稱呼。名單欄位依種類挑（同 bannerIsRerun 的教訓：不讓呼叫端傳，免得比錯欄位） */
 const SUBJECT = {
   mech: {
     banner: 'specificMechBanner', select: 'crossShipping',
     names: (a: TimedActivity) => a.mechs, halfNew: (h: PatchHalf) => h.mechs, halfSelect: (h: PatchHalf) => h.mechSelection,
-    sourceName: { banner: '機甲池', select: '跨域海運', pass: '戰令' }, newLabel: '新機甲',
+    sourceName: { banner: '機甲池', select: '跨域海運' }, newLabel: '新機甲',
   },
   pilot: {
     banner: 'specificPilotBanner', select: 'pilotMission',
     names: (a: TimedActivity) => a.pilots, halfNew: (h: PatchHalf) => h.pilots, halfSelect: (h: PatchHalf) => h.pilotSelection,
-    sourceName: { banner: '角色池', select: '角雕特遣', pass: '戰令' }, newLabel: '新機師',
+    sourceName: { banner: '角色池', select: '角雕特遣' }, newLabel: '新機師',
   },
 } as const
 
@@ -61,7 +61,7 @@ export interface GachaBannerStatus {
   kind: GachaBannerKind
   /**
    * 池名：插畫屬於那期**專屬卡池**，所以只取專屬卡池的活動名（開放中那期 ＞ 最近開過的 ＞ 即將開放的）；
-   * 自選池、戰令不當標題（它們的種類寫在狀態列）。沒有任何專屬卡池紀錄就 undefined，畫面退回「招募插畫」。
+   * 自選池不當標題（它的種類寫在狀態列）。沒有任何專屬卡池紀錄就 undefined，畫面退回「招募插畫」。
    */
   title?: string
   /** 開放中、即將開放的那一期 */
@@ -74,7 +74,7 @@ export interface GachaBannerStatus {
   timelineVersion?: string
 }
 
-const SOURCE_RANK: Record<GachaBannerSource, number> = { banner: 0, select: 1, pass: 2 }
+const SOURCE_RANK: Record<GachaBannerSource, number> = { banner: 0, select: 1 }
 
 const sameName = (names: readonly string[] | undefined, name: string) => !!names?.some((n) => n.trim() === name)
 
@@ -84,11 +84,10 @@ function today(now: Date): Date {
   return t
 }
 
-/** 這個活動算不算「拿得到這台／這位」、算哪一種。自選池沒填 selection 時退回半版本舊欄位（與時間線 VersionGanttPanel 的 selectionOf 一致） */
+/** 這個活動是不是這台／這位的卡池、算哪一種。自選池沒填 selection 時退回半版本舊欄位（與時間線 VersionGanttPanel 的 selectionOf 一致） */
 function sourceOf(kind: GachaSubjectKind, act: TimedActivity, half: PatchHalf, name: string): GachaBannerSource | null {
   const s = SUBJECT[kind]
   if (act.type === s.banner) return sameName(s.names(act), name) ? 'banner' : null
-  if (act.type === 'battlePass') return sameName(s.names(act), name) ? 'pass' : null
   if (act.type === s.select) {
     const list = act.selection?.length ? act.selection : s.halfSelect(half)
     return sameName(list, name) ? 'select' : null
@@ -96,7 +95,7 @@ function sourceOf(kind: GachaSubjectKind, act: TimedActivity, half: PatchHalf, n
   return null
 }
 
-/** 這台／這位在台服、拿得到它的所有活動（只取通過顯示閘門的，時間線看不到的這裡也不算），舊到新 */
+/** 這台／這位在台服的所有卡池（只取通過顯示閘門的，時間線看不到的這裡也不算），舊到新 */
 export function gachaBannerRuns(kind: GachaSubjectKind, subjectName: string | undefined, versions: readonly PatchVersion[], now: Date = new Date()): GachaBannerRun[] {
   const name = subjectName?.trim()
   if (!name) return []
@@ -157,7 +156,7 @@ function poolTitle(runs: readonly GachaBannerRun[]): string | undefined {
 
 /**
  * 狀態優先序：開放中 ＞ 即將開放 ＞ 台版預計登場 ＞ 已結束 ＞ 無紀錄。
- * 同時有好幾期開放中（例：卡池與自選池重疊）取種類較前的（專屬卡池＞自選池＞戰令），同種取較晚開的；即將開放取最早的那期。
+ * 同時有好幾期開放中（例：卡池與自選池重疊）取專屬卡池，同種取較晚開的；即將開放取最早的那期。
  */
 export function gachaBannerStatus(kind: GachaSubjectKind, subjectName: string | undefined, versions: readonly PatchVersion[], now: Date = new Date()): GachaBannerStatus {
   const name = subjectName?.trim() ?? ''
@@ -179,7 +178,7 @@ export function gachaBannerStatus(kind: GachaSubjectKind, subjectName: string | 
 
 export interface GachaBannerText {
   kind: GachaBannerKind
-  /** 狀態標籤：開放中／可自選／戰令中／即將開放／新機甲（新機師）／已結束；無紀錄為空字串 */
+  /** 狀態標籤：開放中／可自選／即將開放／新機甲（新機師）／已結束；無紀錄為空字串 */
   label: string
   text: string
   /** 第二行的補充（活動種類、推估說明、陸版登場日）；沒有就不帶這個鍵 */
@@ -196,13 +195,11 @@ export const ymd = (d: Date) => `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${p
 const shortDate = (d: Date, now: Date) => (d.getFullYear() === now.getFullYear() ? md(d) : ymd(d))
 const HALF_LABEL = { upper: '上半', lower: '下半' } as const
 /** 開放中的標籤依種類（顏色同為開放中的綠） */
-const ONGOING_LABEL: Record<GachaBannerSource, string> = { banner: '開放中', select: '可自選', pass: '戰令中' }
+const ONGOING_LABEL: Record<GachaBannerSource, string> = { banner: '開放中', select: '可自選' }
 
-/** 不是專屬卡池的那期要說是什麼活動（標題是池名，不會寫出來）：「跨域海運・自選」「角雕特遣・自選」「戰令「銳魄灼心」」 */
+/** 自選池那期要說是哪一種（標題是池名，不會寫出來）：「跨域海運・自選」「角雕特遣・自選」 */
 function sourceNote(kind: GachaSubjectKind, r: GachaBannerRun): string | undefined {
-  if (r.source === 'select') return `${SUBJECT[kind].sourceName.select}・自選`
-  if (r.source === 'pass') return `戰令「${r.name}」`
-  return undefined
+  return r.source === 'select' ? `${SUBJECT[kind].sourceName.select}・自選` : undefined
 }
 
 /** 已結束各種類的次數：「機甲池 2 次・跨域海運 1 次」（照種類順序） */

@@ -235,7 +235,7 @@
       <div>
         <div class="task-name">mechBannerStatus／mechBannerText</div>
         <div class="task-desc">
-          資料取自時間線（決策 12）：台服的機甲池（mechs）、跨域海運（selection，退回 half.mechSelection）、戰令（mechs），加上半版本新增名單的台版預計登場。優先序：開放中（機甲池＞海運＞戰令）＞即將開放＞新機甲＞已結束＞無紀錄；標題只用機甲池的池名；附時間線深連結的版本。比對與 <code>lore/mechGachaTitle.ts</code> 相近但沒共用：那支檔案同時有機師卡池在改，先各自一份。
+          資料取自時間線（決策 12）：台服的機甲池（mechs）、跨域海運（selection，退回 half.mechSelection），加上半版本新增名單的台版預計登場；戰令不算卡池（站長 10-18 更正，已移除）。優先序：開放中（機甲池＞海運）＞即將開放＞新機甲＞已結束＞無紀錄；標題只用機甲池的池名；附時間線深連結的版本。比對與 <code>lore/mechGachaTitle.ts</code> 相近但沒共用：那支檔案同時有機師卡池在改，先各自一份。
         </div>
         <div class="task-file">src/components/gacha/mechBannerStatus.ts</div>
       </div>
@@ -246,7 +246,7 @@
       <div>
         <div class="task-name">node 測試 13 項</div>
         <div class="task-desc">
-          五種狀態、推估結束日、復刻、優先序、顯示閘門（hidden／無 weeks／別台／機師池／陸服）、海運自選名單與舊欄位退回、戰令、已結束依種類計數、標題維持池名、名稱空白。
+          五種狀態、推估結束日、復刻、優先序、顯示閘門（hidden／無 weeks／別台／機師池／陸服）、海運自選名單與舊欄位退回、戰令不算卡池、已結束依種類計數、標題維持池名、名稱空白。
         </div>
         <div class="task-file">src/components/gacha/mechBannerStatus.test.ts</div>
       </div>
@@ -370,7 +370,7 @@
       <div>
         <div class="task-name">桌機／手機實拍</div>
         <div class="task-desc">
-          Playwright GPU 模式：開放中（莫比烏斯X）、開放中＋推估＋復刻（君權）、新機甲 4 天後（奈芙蒂斯）、新機甲遠期（藍色魔鳥）、戰令（芬里厄）、機甲池＋海運（赫克托爾）、無插畫（強電場）；展開→動態就緒→放大／拖曳→Esc 收回→焦點歸還、捲動鎖解除；console 0 錯誤。
+          Playwright GPU 模式：開放中（莫比烏斯X）、開放中＋推估＋復刻（君權）、新機甲 4 天後（奈芙蒂斯）、新機甲遠期（藍色魔鳥）、芬里厄（只有戰令紀錄→「尚無卡池紀錄」）、機甲池＋海運（赫克托爾）、無插畫（強電場）；展開→動態就緒→放大／拖曳→Esc 收回→焦點歸還、捲動鎖解除；console 0 錯誤。
         </div>
         <div class="task-file">_local-notes/2026-10/2026-10-18_PLAN-063_驗收/</div>
       </div>
@@ -535,7 +535,7 @@
       <div>
         <div class="task-name">mechBannerStatus → gachaBannerStatus（kind）</div>
         <div class="task-desc">
-          機師看角色池 specificPilotBanner（pilots）＞角雕特遣 pilotMission（selection，退回 half.pilotSelection）＞戰令（pilots），新機師看 half.pilots；稱呼換成角色池／角雕特遣／新機師。測試 17 項（新增 4 項機師）。
+          機師看角色池 specificPilotBanner（pilots）＞角雕特遣 pilotMission（selection，退回 half.pilotSelection），新機師看 half.pilots；稱呼換成角色池／角雕特遣／新機師；戰令不算卡池。測試 17 項（新增 4 項機師）。
         </div>
         <div class="task-file">src/components/gacha/gachaBannerStatus.ts、.test.ts</div>
       </div>
@@ -603,7 +603,7 @@
       <div>
         <div class="task-name">實拍</div>
         <div class="task-desc">
-          奧德莉（開放中＋推估＋復刻）、淬鋒·凱登（6 週池）、佐伊（角色池＋角雕特遣）、維娜（特遣＋戰令、有動態）、安（新機師 4 天後、有動態）、真嗣（無插畫→不出現）；桌機／手機、展開→動態→Esc→焦點歸還，console 0 錯誤。
+          奧德莉（開放中＋推估＋復刻）、淬鋒·凱登（6 週池）、佐伊（角色池＋角雕特遣）、維娜（角雕特遣、有動態）、安（新機師 4 天後、有動態）、真嗣（無插畫→不出現）；桌機／手機、展開→動態→Esc→焦點歸還，console 0 錯誤。
         </div>
         <div class="task-file">_local-notes/2026-10/2026-10-18_PLAN-063_驗收/</div>
       </div>

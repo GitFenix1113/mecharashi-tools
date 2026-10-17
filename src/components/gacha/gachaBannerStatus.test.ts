@@ -89,15 +89,14 @@ test('跨域海運：看這一期的自選名單（selection），沒填時退�
   assert.equal(gachaBannerStatus('mech', '巨像', v, NOW).kind, 'none')
 })
 
-test('戰令：mechs 列的獎勵機甲；與機甲池同時開放時機甲池優先', () => {
+test('戰令不算卡池（站長 10-18）：戰令獎勵的機甲不出現在橫條，同期的機甲池照常', () => {
   const pass = act('謀海魅影', ['盜火者', '巨像'], '2026/10/08', 6, { type: 'battlePass' })
-  const p = gachaBannerText('mech', gachaBannerStatus('mech', '巨像', [ver('3.3', half([pass]))], NOW), NOW)
-  assert.equal(p.label, '戰令中')
-  assert.equal(p.sub, '戰令「謀海魅影」')
+  assert.equal(gachaBannerStatus('mech', '巨像', [ver('3.3', half([pass]))], NOW).kind, 'none')
   const both = [ver('3.3', half([pass, act('十字線上的明光', ['盜火者'], '2026/10/15')]))]
   const s = gachaBannerStatus('mech', '盜火者', both, NOW)
   assert.equal(s.current?.source, 'banner')
   assert.equal(s.title, '十字線上的明光')
+  assert.equal(s.past.length, 0)
 })
 
 test('已結束：最近一期可能是海運；次數依種類分開數', () => {
@@ -158,9 +157,9 @@ test('機師：角雕特遣看自選名單（退回半版本 pilotSelection）�
   assert.equal(gachaBannerStatus('pilot', '佐伊', ship, NOW).kind, 'none')
 })
 
-test('機師：戰令看 pilots；新機師看 half.pilots，標籤是「新機師」', () => {
-  const pass = pact('謀海魅影', ['維羅妮卡', '維娜'], '2026/10/08', 6, { type: 'battlePass', mechs: ['盜火者'] })
-  assert.equal(gachaBannerText('pilot', gachaBannerStatus('pilot', '維娜', [ver('3.3', half([pass]))], NOW), NOW).sub, '戰令「謀海魅影」')
+test('機師：戰令不算卡池；新機師看 half.pilots，標籤是「新機師」', () => {
+  const pass = pact('悖序之裁', ['佐伊'], '2026/09/10', 6, { type: 'battlePass' })
+  assert.equal(gachaBannerStatus('pilot', '佐伊', [ver('3.2', half([pass]))], NOW).kind, 'none')
   const nv = [ver('3.4', half([], { pilots: ['索妮婭'], cnDate: '2026/06/04', twDate: '2026/11/12' }))]
   const t = gachaBannerText('pilot', gachaBannerStatus('pilot', '索妮婭', nv, NOW), NOW)
   assert.equal(t.label, '新機師')

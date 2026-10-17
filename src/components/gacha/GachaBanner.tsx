@@ -12,7 +12,7 @@ import KeyArtViewer from './KeyArtViewer'
  * 圖鑑的卡池橫條（PLAN-063；機甲 10-18 先做、機師同日比照）：頁首下方一條，招募插畫裁成帶狀＋池名＋狀態，點一下展開全景（有動態就播）。
  *
  *   · 插畫：mechCardArt／pilotCardArt（靜態索引＋gameId），機甲 61／93 台、機師 62／92 位有；沒有的多半沒開過專屬卡池
- *   · 狀態：gachaBannerStatus——資料取自站內活動時間線（台服的專屬卡池／自選池／戰令＋半版本新增名單），不新增任何狀態欄位
+ *   · 狀態：gachaBannerStatus——資料取自站內活動時間線（台服的專屬卡池／自選池＋半版本新增名單；戰令不算卡池），不新增任何狀態欄位
  *   · 焦點：cardFocus（寬橫條只露出約 20% 的畫面高度，每張構圖不同）
  *
  * ⚠ 不讀 mechLore／pilotLore（故事館的資料；PLAN-042-B 決策 B-7、042-E 決策二）：池名取活動名，沒有紀錄就叫「招募插畫」——不用 lore 的 gachaTitle。
