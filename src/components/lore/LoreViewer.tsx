@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 
 /**
@@ -32,6 +32,11 @@ export interface LoreViewerProps {
   backdrop?: string
   /** 圖名，接在名字後面給讀屏與 alt（預設「全身立繪」） */
   label?: string
+  /**
+   * 疊在主圖正上方的動態層（機甲招募插畫的卡池動態，PLAN-042-B Phase J）。開場飛行播完才掛上、關閉一開始就卸載——
+   * 飛行中只有靜態那張在動，GPU 的貼圖上傳不會跟動畫搶同一格。回傳的元素要帶 `lore-viewer__live`（CSS 讓它和主圖完全重疊、一起放大）。
+   */
+  live?: (zoom: boolean) => ReactNode
 }
 
 const OPEN_MS = 680
@@ -65,9 +70,12 @@ function flipTransform(from: DOMRect, to: DOMRect): string {
   return `translate(${dx}px, ${dy}px) scale(${s})`
 }
 
-export default function LoreViewer({ src, name, onClose, children, originRect, closing = false, onClosed, backdrop, label = '全身立繪' }: LoreViewerProps) {
+export default function LoreViewer({ src, name, onClose, children, originRect, closing = false, onClosed, backdrop, label = '全身立繪', live }: LoreViewerProps) {
   const [zoom, setZoom] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
+  /** 開場飛行播完了（沒有飛行＝一開始就算落地）：動態層等這個才掛 */
+  const [landed, setLanded] = useState(() => !originRect || reducedMotion())
   const closeRef = useRef<HTMLButtonElement>(null)
   // 只有開啟時那張走 FLIP；換外觀後的新圖用 CSS 的縮放淡入
   const [flipSrc, setFlipSrc] = useState<string | null>(originRect ? src : null)
@@ -87,14 +95,15 @@ export default function LoreViewer({ src, name, onClose, children, originRect, c
   useLayoutEffect(() => {
     const img = imgRef.current
     const from = originRect?.()
-    if (!img || !from || !from.height || reducedMotion()) return
-    const anims: Animation[] = []
     let cancelled = false
+    const land = () => { if (!cancelled) setLanded(true) }
+    if (!img || !from || !from.height || reducedMotion()) { queueMicrotask(land); return () => { cancelled = true } }
+    const anims: Animation[] = []
     const run = () => {
       if (cancelled) return
       img.style.opacity = ''
       const to = layoutRect(img)
-      if (!to.width || !to.height) return
+      if (!to.width || !to.height) { land(); return }
       anims.push(
         img.animate([
           { transform: flipTransform(from, to), transformOrigin: '50% 0' },
@@ -103,6 +112,7 @@ export default function LoreViewer({ src, name, onClose, children, originRect, c
         // 先在舞台那張上面淡到全不透明，舞台那張才在底下消失
         img.animate([{ opacity: 0 }, { opacity: 1 }], { duration: OPEN_FADE_MS }),
       )
+      anims[0].finished.then(land, () => {})
     }
     if (img.complete && img.naturalWidth) run()
     else {
@@ -138,14 +148,23 @@ export default function LoreViewer({ src, name, onClose, children, originRect, c
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [closing])
 
+  // 動態層與主圖同一個框：放大的原點也要同步（含掛上的那一刻，使用者可能在飛行中就點了放大）
+  const syncLiveOrigin = useCallback(() => {
+    const el = rootRef.current?.querySelector<HTMLElement>(':scope > .lore-viewer__live')
+    if (el && imgRef.current) el.style.transformOrigin = imgRef.current.style.transformOrigin
+  }, [])
   const origin = (clientX: number, clientY: number) => {
     const r = imgRef.current?.getBoundingClientRect()
     if (!r) return
     imgRef.current!.style.transformOrigin = `${((clientX - r.left) / r.width) * 100}% ${((clientY - r.top) / r.height) * 100}%`
+    syncLiveOrigin()
   }
+  const showLive = !!live && landed && !closing
+  useLayoutEffect(() => { if (showLive) syncLiveOrigin() }, [showLive, syncLiveOrigin])
 
   return (
     <div
+      ref={rootRef}
       className={`lore-viewer${zoom ? ' is-zoom' : ''}${closing ? ' is-closing' : ''}${backdrop ? ' has-backdrop' : ''}`}
       style={backdrop ? ({ '--viewer-bg': `url("${backdrop}")` } as React.CSSProperties) : undefined}
       role="dialog"
@@ -159,6 +178,7 @@ export default function LoreViewer({ src, name, onClose, children, originRect, c
       onMouseMove={(e) => { if (zoom) origin(e.clientX, e.clientY) }}
     >
       <img key={src} ref={imgRef} src={src} alt={`${name} ${label}`} decoding="async" data-flip={src === flipSrc ? '' : undefined} />
+      {showLive && live(zoom)}
       <div className="lore-viewer__cap"><b>{name}</b><span>點一下放大，移動滑鼠檢視細節 · Esc 關閉</span></div>
       {children && <div className="lore-viewer__skins">{children}</div>}
       <button ref={closeRef} type="button" className="lore-viewer__close" onClick={onClose}>關閉 ✕</button>

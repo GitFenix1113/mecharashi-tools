@@ -49,6 +49,8 @@ export interface MechDossierProps {
    * 沒開過專屬卡池的機甲沒有（這張卡就不出現）
    */
   cardSrc?: string
+  /** 這台的招募插畫有卡池動態（PLAN-042-B Phase J）：卡片提示改成「看動態全景」 */
+  cardLive?: boolean
 }
 
 /** 招募插畫在鑑賞模式裡的名字；頁面拿它分辨「現在看的是不透明的插畫」 */
@@ -74,7 +76,7 @@ const KIND_LABEL: Record<MechRelationKind | 'mention', [string, string]> = {
 const KIND_CLASS: Record<MechRelationKind | 'mention', string> = { base: 'k-base', variant: 'k-base', rival: 'k-rival', series: 'k-series', mention: 'k-mention' }
 
 export default function MechDossier({
-  mech, lore, maker, status = 'ready', chapters, chapterHref, lineage, lineageHref, pilot, pilotHref, codexHref, onOpenPart, cardSrc,
+  mech, lore, maker, status = 'ready', chapters, chapterHref, lineage, lineageHref, pilot, pilotHref, codexHref, onOpenPart, cardSrc, cardLive,
 }: MechDossierProps) {
   const serial = mech.id.match(/^mech_(\d+)/)?.[1] ?? '—'
   const weight = mechWeightClassOf(mech.armorType)
@@ -294,7 +296,7 @@ export default function MechDossier({
           >
             {/* 卷宗最後一張、首屏看不到：lazy。一張約 200 KB */}
             <img src={cardSrc} alt="" loading="lazy" decoding="async" />
-            <span className="lore-gacha__cap">{CARD_LABEL}<small>點一下看全景</small></span>
+            <span className="lore-gacha__cap">{CARD_LABEL}<small>{cardLive ? '點一下看動態全景' : '點一下看全景'}</small></span>
           </button>
         </section>
       )}

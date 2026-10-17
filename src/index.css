@@ -1116,6 +1116,14 @@ html.lore-exiting::view-transition-new(root) { animation: lore-exit-shut 620ms c
 .lore-viewer > img[data-flip] { animation: none; }
 .lore-viewer.is-zoom { cursor: zoom-out; }
 .lore-viewer.is-zoom > img { transform: scale(2.1); transition: transform 380ms var(--lore-ease-out), transform-origin 0s; }
+/* 卡池動態（PLAN-042-B Phase J）：<canvas> 疊在招募插畫正上方。canvas 的固有比例＝插畫比例，套跟主圖同一套尺寸規則
+   （含 object-fit 留邊），兩者放在同一個格子裡就完全重疊；放大一起放大。第一格畫好才淡入（GachaFxLive 加 is-ready）。
+   點擊穿透到底下的主圖，LoreViewer 的放大原點照舊從主圖量 */
+.lore-viewer > img, .lore-viewer > .lore-viewer__live { grid-area: 1 / 1; }
+.lore-viewer > .lore-viewer__live { position: relative; height: calc((100vh - var(--lore-header-h, 2.5rem)) * 0.94); width: auto; max-width: 96vw; object-fit: contain;
+                                    pointer-events: none; opacity: 0; transition: transform 380ms var(--lore-ease-out), opacity 700ms ease; }
+.lore-viewer > .lore-viewer__live.is-ready { opacity: 1; }
+.lore-viewer.is-zoom > .lore-viewer__live { transform: scale(2.1); transition: transform 380ms var(--lore-ease-out), transform-origin 0s, opacity 700ms ease; }
 @keyframes lore-viewer-in { from { opacity: 0; transform: scale(0.94) translateY(12px); } to { opacity: 1; transform: none; } }
 @keyframes lore-fade-out { to { opacity: 0; } }
 /* 說明、外觀列、關閉鈕墊在圖上層：場景外觀的鑑賞版邊緣不透明，會蓋到它們（說明另加紙色光暈，壓在暗色畫面上也讀得到）。
@@ -1210,7 +1218,7 @@ html.lore-exiting::view-transition-new(root) { animation: lore-exit-shut 620ms c
   .lore-rg__grid { grid-template-columns: repeat(auto-fill, minmax(66px, 1fr)); }
   .lore-ra__img { width: 54px; height: 54px; }
   .lore-roster__foot { display: none; }
-  .lore-viewer > img { height: auto; width: 100%; max-height: calc((100svh - var(--lore-header-h, 2.5rem)) * 0.92); }
+  .lore-viewer > img, .lore-viewer > .lore-viewer__live { height: auto; width: 100%; max-height: calc((100svh - var(--lore-header-h, 2.5rem)) * 0.92); }
   .lore-viewer__skins { left: 16px; right: auto; bottom: 64px; }
 }
 

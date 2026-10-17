@@ -7,6 +7,8 @@ import LoreChapterPager from '../../components/lore/LoreChapterPager'
 import LoreChapterBody from '../../components/lore/LoreChapterBody'
 import LoreSkinPicker from '../../components/lore/LoreSkinPicker'
 import LoreViewer from '../../components/lore/LoreViewer'
+import GachaFxLive from '../../components/lore/gacha/GachaFxLive'
+import { hasGachaFx } from '../../components/lore/gacha/gachaFxRegistry'
 import LoreSwitcher, { type LoreRosterGroup } from '../../components/lore/LoreSwitcher'
 import { FactionLogo } from '../../components/icons/FactionLogo'
 import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
@@ -42,6 +44,16 @@ import { useLoreHall } from './useLoreHall'
 const rememberedSkins = new Map<string, string>()
 /** 鑑賞背景的偏好（同一個分頁內記住；預設廠商舞台＝遊戲內機甲圖鑑的樣子） */
 let viewerBgPref: 'stage' | 'paper' = 'stage'
+/**
+ * 招募插畫要不要播卡池動態（PLAN-042-B Phase J；同一個分頁內記住）。沒選過時：
+ * 系統要求減少動態、或開了省流量就預設靜態——使用者自己按「動態」才播。
+ */
+let gachaFxPref: boolean | null = null
+function gachaFxDefault(): boolean {
+  if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) return false
+  const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
+  return !conn?.saveData
+}
 
 interface MechStage { art: StageArt | null; skins: PilotSkinArt[]; skin: PilotSkinArt | null }
 const NO_SKINS: PilotSkinArt[] = []
@@ -128,6 +140,8 @@ export default function MechLorePage() {
   const [part, setPart] = useState<{ src: string; label: string; el: HTMLElement } | null>(null)
   const [viewerBg, setViewerBgState] = useState(viewerBgPref)
   const setViewerBg = useCallback((v: 'stage' | 'paper') => { viewerBgPref = v; setViewerBgState(v) }, [])
+  const [fxOn, setFxOnState] = useState(() => gachaFxPref ?? gachaFxDefault())
+  const setFxOn = useCallback((v: boolean) => { gachaFxPref = v; setFxOnState(v) }, [])
   const openPart = useCallback((src: string, el: HTMLElement, label: string) => {
     setPart({ src, label, el })
     openViewer()
@@ -168,6 +182,9 @@ export default function MechLorePage() {
   const stageBg = stageBgUrl ? assetUrl(stageBgUrl) : undefined
   // 招募插畫是整張場景（不透明）：背景切了也看不到，不給切
   const viewingCard = part?.label === CARD_LABEL
+  // 卡池動態：這台有資料（src/data/gachaFx/<wap>.json）才有，且只在看招募插畫時播
+  const fxWap = hasGachaFx(shown.gameId) ? shown.gameId : undefined
+  const fxSrc = viewingCard && fxWap && fxOn ? part?.src : undefined
   const skins = stage?.skins ?? NO_SKINS
 
   const tools = (
@@ -234,6 +251,7 @@ export default function MechLorePage() {
             codexHref={codexHref}
             onOpenPart={openPart}
             cardSrc={cardSrc}
+            cardLive={!!fxWap}
           />
         )}
       </main>
@@ -276,9 +294,18 @@ export default function MechLorePage() {
           originRect={part ? partRect : stageArtRect}
           closing={viewer === 'closing'}
           onClosed={() => { onViewerClosed(); setPart(null) }}
+          live={fxWap && fxSrc ? (zoom) => <GachaFxLive wap={fxWap} background={fxSrc} zoom={zoom} /> : undefined}
         >
-          {((stageBg && !viewingCard) || (!part && skins.length > 0)) && (
+          {((stageBg && !viewingCard) || (!part && skins.length > 0) || (viewingCard && fxWap)) && (
             <div className="lore-viewer__tools">
+              {viewingCard && fxWap && (
+                <div className="lore-skins lore-bgtoggle" role="radiogroup" aria-label="卡池動態">
+                  <span className="lore-skins__lbl">卡池</span>
+                  {([[true, '動態'], [false, '靜態']] as const).map(([v, t]) => (
+                    <button key={t} type="button" role="radio" aria-checked={fxOn === v} className="lore-bgopt" onClick={() => setFxOn(v)}>{t}</button>
+                  ))}
+                </div>
+              )}
               {stageBg && !viewingCard && (
                 <div className="lore-skins lore-bgtoggle" role="radiogroup" aria-label="背景">
                   <span className="lore-skins__lbl">背景</span>

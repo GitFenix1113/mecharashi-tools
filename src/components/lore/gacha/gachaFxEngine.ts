@@ -1,0 +1,257 @@
+// 機甲卡池動態（PLAN-042-B Phase J）：WebGL2 播放器。只在招募插畫的全景鑑賞裡用，由 GachaFxLive 動態載入。
+//
+// 畫面＝招募插畫（背景，不混色）＋粒子系統（Unity 的 UIFx_Alpha：SrcAlpha＋One 疊加）＋流動圖層（UI_CommonFlow 的重寫）。
+// 粒子模擬在 gachaFxSim.ts；這裡只管 GL 狀態、貼圖與每格把粒子組成四邊形。
+//
+// ── 和遊戲校準過的定值（10-16 芬里厄試作，站長判定「很像」）────────────────────────
+// 流動 shader 只有編譯版，公式照參數名推回。照字面套「噪聲溶解＋擾動 −0.3」會整塊閃（每格變化量 7.9，遊戲 1.5），
+// 所以這裡：不做溶解、擾動 ×0.1、沿 U（橫）推移且以 0.5 為中心、時間×1（_Time.y）、亮度 ×0.85（→ 1.6，平均色 117/55/85 對遊戲 113/53/77）。
+// 試作頁的「調校」面板可以切回字面公式比較；要改這些數字，先回試作頁對遊戲畫面。
+
+import { evalMinMax, evalMinMaxGradient, makePerlin, ParticleSim } from './gachaFxSim'
+import type { FxFlow, GachaFxData } from './gachaFxTypes'
+
+const FLOW_DISTURB_K = 0.1
+const FLOW_GAIN = 0.85
+
+export interface GachaFxOptions {
+  /** 招募插畫（2600×1080，與鑑賞模式那張 <img> 同一個網址：瀏覽器已經有快取） */
+  background: string
+  /** 特效貼圖官方檔名 → 網址 */
+  texUrl: (name: string) => string
+  /** 第一格畫好了（父層據此淡入，不會先看到一格黑） */
+  onFirstFrame?: () => void
+  /** GPU 把 context 收回去了（分頁在背景太久、驅動重置…）：父層退回靜態插畫 */
+  onLost?: () => void
+}
+
+export interface GachaFxHandle {
+  destroy: () => void
+}
+
+const VS = `#version 300 es
+in vec2 aPos; in vec2 aUV; in vec4 aCol; uniform vec4 uView; out vec2 vUV; out vec4 vCol;
+void main(){ vec2 c = (aPos - uView.xy) / uView.zw * 2.0 - 1.0; gl_Position = vec4(c, 0.0, 1.0); vUV = aUV; vCol = aCol; }`
+
+// 背景：不混色
+const FS_BG = `#version 300 es
+precision highp float; in vec2 vUV; in vec4 vCol; uniform sampler2D uTex; out vec4 o; void main(){ o = texture(uTex, vUV); }`
+
+// 粒子（UIFx_Alpha）：rgb×頂點色×顏色強度，alpha＝貼圖 a×頂點 a。uRot＝主貼圖旋轉（UI_CommonFlow 當粒子材質時用）
+const FS_PARTICLE = `#version 300 es
+precision highp float; in vec2 vUV; in vec4 vCol; uniform sampler2D uTex; uniform float uStr; uniform float uRot; out vec4 o;
+void main(){ vec2 uv = vUV - 0.5; float c = cos(uRot), s = sin(uRot); uv = vec2(c*uv.x - s*uv.y, s*uv.x + c*uv.y) + 0.5;
+  vec4 t = texture(uTex, uv); o = vec4(t.rgb * vCol.rgb * uStr, t.a * vCol.a); }`
+
+// 流動圖層（UI_CommonFlow，校準版）：擾動貼圖捲動、沿 U 推移主貼圖；不做溶解（見檔頭）
+const FS_FLOW = `#version 300 es
+precision highp float; in vec2 vUV; in vec4 vCol;
+uniform sampler2D uMain, uDst; uniform float uTime, uMainValue, uDstVal, uVRepeat;
+uniform vec2 uDstFlow; uniform vec4 uMainTO, uDstTO; out vec4 o;
+void main(){
+  float d = texture(uDst, vUV * uDstTO.xy + uDstTO.zw + uTime * uDstFlow).r;
+  vec2 muv = vUV * uMainTO.xy + uMainTO.zw;
+  muv.x = clamp(muv.x + (d - 0.5) * uDstVal, 0.0, 1.0);
+  muv.y = uVRepeat > 0.5 ? fract(muv.y) : clamp(muv.y, 0.0, 1.0);
+  vec4 m = texture(uMain, muv);
+  o = vec4(m.rgb * vCol.rgb * uMainValue, m.a * vCol.a);
+}`
+
+/** 動態頂點緩衝：每個頂點 pos2 uv2 col4＝8 個 float */
+const FLOATS = 8
+
+export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData, opts: GachaFxOptions): Promise<GachaFxHandle> {
+  const ctx = canvas.getContext('webgl2', { premultipliedAlpha: false, alpha: false, antialias: true })
+  if (!ctx) throw new Error('這個瀏覽器沒有 WebGL2（或關閉了硬體加速）')
+  const gl: WebGL2RenderingContext = ctx
+
+  // ── 程式 ──
+  const shader = (type: number, src: string) => {
+    const s = gl.createShader(type)!
+    gl.shaderSource(s, src)
+    gl.compileShader(s)
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) ?? 'shader 編譯失敗')
+    return s
+  }
+  const program = (fs: string) => {
+    const p = gl.createProgram()!
+    gl.attachShader(p, shader(gl.VERTEX_SHADER, VS))
+    gl.attachShader(p, shader(gl.FRAGMENT_SHADER, fs))
+    gl.linkProgram(p)
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p) ?? 'shader 連結失敗')
+    return p
+  }
+  const P_BG = program(FS_BG), P_PT = program(FS_PARTICLE), P_FLOW = program(FS_FLOW)
+  const U = (p: WebGLProgram, names: string[]) => Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(p, n)]))
+  const uBg = U(P_BG, ['uView', 'uTex'])
+  const uPt = U(P_PT, ['uView', 'uTex', 'uStr', 'uRot'])
+  const uFl = U(P_FLOW, ['uView', 'uMain', 'uDst', 'uTime', 'uMainValue', 'uDstVal', 'uVRepeat', 'uDstFlow', 'uMainTO', 'uDstTO'])
+
+  const vbo = gl.createBuffer(), vao = gl.createVertexArray()
+  gl.bindVertexArray(vao)
+  gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+  // 三支程式的屬性名稱一樣；同一個 VAO 照位置綁一次（各程式的位置不一定相同，所以三支都綁）
+  for (const p of [P_BG, P_PT, P_FLOW]) {
+    for (const [name, size, off] of [['aPos', 2, 0], ['aUV', 2, 8], ['aCol', 4, 16]] as const) {
+      const loc = gl.getAttribLocation(p, name)
+      if (loc < 0) continue
+      gl.enableVertexAttribArray(loc)
+      gl.vertexAttribPointer(loc, size, gl.FLOAT, false, FLOATS * 4, off)
+    }
+  }
+  let verts = new Float32Array(FLOATS * 6 * 1024), vn = 0
+  /** 四角（逆時針：左下、右下、右上、左上），整張貼圖 */
+  function quad(x0: number, y0: number, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, c: readonly number[]) {
+    if (vn + FLOATS * 6 > verts.length) { const nv = new Float32Array(verts.length * 2); nv.set(verts); verts = nv }
+    const P = [[x0, y0, 0, 0], [x1, y1, 1, 0], [x2, y2, 1, 1], [x0, y0, 0, 0], [x2, y2, 1, 1], [x3, y3, 0, 1]]
+    for (const q of P) { verts[vn++] = q[0]; verts[vn++] = q[1]; verts[vn++] = q[2]; verts[vn++] = q[3]; verts[vn++] = c[0]; verts[vn++] = c[1]; verts[vn++] = c[2]; verts[vn++] = c[3] }
+  }
+  function flush() {
+    if (!vn) return
+    gl.bufferData(gl.ARRAY_BUFFER, verts.subarray(0, vn), gl.DYNAMIC_DRAW)
+    gl.drawArrays(gl.TRIANGLES, 0, vn / FLOATS)
+    vn = 0
+  }
+
+  // ── 貼圖 ──
+  const textures: WebGLTexture[] = []
+  async function loadTex(url: string, repeat: boolean): Promise<WebGLTexture> {
+    const img = new Image()
+    img.decoding = 'async'
+    img.src = url
+    try { await img.decode() } catch { throw new Error(`貼圖讀不到：${url}`) }
+    const t = gl.createTexture()!
+    textures.push(t)
+    gl.bindTexture(gl.TEXTURE_2D, t)
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)   // Unity 的 UV 原點在左下
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
+    gl.generateMipmap(gl.TEXTURE_2D)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    const w = repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, w)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, w)
+    return t
+  }
+  const cache = new Map<string, Promise<WebGLTexture>>()
+  const fxTex = (name: string, repeat = false) => {
+    const key = `${name}#${repeat ? 'r' : 'c'}`
+    if (!cache.has(key)) cache.set(key, loadTex(opts.texUrl(name), repeat))
+    return cache.get(key)!
+  }
+
+  // ── 場景 ──
+  const perlin = makePerlin(Math.random)
+  const [W, H] = data.canvas, UNIT = data.unit
+  // 預熱在建構時跑（每個系統 duration×30 步）
+  const sims = data.systems.map((s) => new ParticleSim(s, Math.random, perlin))
+  const order = sims.map((s, i) => [s, i] as const).sort((a, b) => a[0].sys.order - b[0].sys.order || a[1] - b[1]).map((x) => x[0])
+  const [T_BG, drawList, flowTex] = await Promise.all([
+    loadTex(opts.background, false),
+    Promise.all(order.map(async (s) => ({ sim: s, tex: await fxTex(s.sys.material.tex) }))),
+    Promise.all(data.flows.map(async (f) => ({ f, main: await fxTex(f.mainTex, f.vRepeat), dst: await fxTex(f.disturbTex, true) }))),
+  ])
+
+  function drawParticles(sim: ParticleSim, tex: WebGLTexture) {
+    const S = sim.sys, C = S.colorOverLife, Z = S.sizeOverLife
+    gl.uniform1i(uPt.uTex, 0)
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, tex)
+    gl.uniform1f(uPt.uStr, S.material.strength)
+    gl.uniform1f(uPt.uRot, S.material.texRotate)
+    const maxPx = (S.render.maxSize || 1) * H
+    for (const q of sim.parts) {
+      const a = q.age / q.life
+      let c = q.col
+      if (C) { const g = evalMinMaxGradient(C, a, q.r[0]); c = [c[0] * g[0], c[1] * g[1], c[2] * g[2], c[3] * g[3]] }
+      let sx = q.size, sy = q.sizeY
+      if (Z) { const k = evalMinMax(Z.x, a, q.r[1]); sx *= k; sy *= Z.y ? evalMinMax(Z.y, a, q.r[1]) : k }
+      sx = Math.min(sx * UNIT, maxPx); sy = Math.min(sy * UNIT, maxPx)
+      const cx = S.pos[0] + q.pos[0] * UNIT, cy = S.pos[1] + q.pos[1] * UNIT
+      if (S.render.mode === 1) {
+        // 拉伸 billboard：沿速度方向，長度＝size×lengthScale＋速度×velocityScale
+        const vx = q.vel3[0], vy = q.vel3[1], sp = Math.hypot(vx, vy)
+        const dx = sp ? vx / sp : 1, dy = sp ? vy / sp : 0
+        const len = Math.min(sx * S.render.lengthScale + sp * UNIT * S.render.velocityScale, maxPx * 2), w = sx / 2
+        const tx = cx - dx * len, ty = cy - dy * len, nx = -dy * w, ny = dx * w
+        quad(tx + nx, ty + ny, cx + nx, cy + ny, cx - nx, cy - ny, tx - nx, ty - ny, c)
+      } else {
+        const co = Math.cos(q.rot), si = Math.sin(q.rot), hx = sx / 2, hy = sy / 2
+        const P = [[-hx, -hy], [hx, -hy], [hx, hy], [-hx, hy]].map(([x, y]) => [cx + x * co - y * si, cy + x * si + y * co])
+        quad(P[0][0], P[0][1], P[1][0], P[1][1], P[2][0], P[2][1], P[3][0], P[3][1], c)
+      }
+    }
+    flush()
+  }
+
+  function drawFlow(f: FxFlow, main: WebGLTexture, dst: WebGLTexture, time: number) {
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, main); gl.uniform1i(uFl.uMain, 0)
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, dst); gl.uniform1i(uFl.uDst, 1)
+    gl.uniform1f(uFl.uTime, time)
+    gl.uniform1f(uFl.uMainValue, f.mainValue * FLOW_GAIN)
+    gl.uniform1f(uFl.uDstVal, f.disturbValue * FLOW_DISTURB_K)
+    gl.uniform1f(uFl.uVRepeat, f.vRepeat ? 1 : 0)
+    gl.uniform2f(uFl.uDstFlow, f.disturbFlow[0], f.disturbFlow[1])
+    gl.uniform4fv(uFl.uMainTO, f.mainTO)
+    gl.uniform4fv(uFl.uDstTO, f.disturbTO)
+    const [x, y] = f.pos, hw = f.size[0] / 2, hh = f.size[1] / 2
+    quad(x - hw, y - hh, x + hw, y - hh, x + hw, y + hh, x - hw, y + hh, f.color)
+    flush()
+    gl.activeTexture(gl.TEXTURE0)
+  }
+
+  // ── 迴圈 ──
+  let raf = 0, time = 0, last = performance.now(), first = true, dead = false
+  function frame(now: number) {
+    if (dead) return
+    // 分頁切回來時 dt 可能是幾分鐘：一格最多走 1/20 秒，不會一口氣噴出一堆粒子
+    const dt = Math.min((now - last) / 1000, 1 / 20)
+    last = now
+    time += dt
+    for (const s of sims) s.update(dt)
+
+    gl.viewport(0, 0, canvas.width, canvas.height)
+    gl.clearColor(0, 0, 0, 1)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+    gl.bindVertexArray(vao)
+    const view = [-W / 2, -H / 2, W, H] as const
+
+    gl.disable(gl.BLEND)
+    gl.useProgram(P_BG)
+    gl.uniform4f(uBg.uView, ...view)
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, T_BG); gl.uniform1i(uBg.uTex, 0)
+    quad(-W / 2, -H / 2, W / 2, -H / 2, W / 2, H / 2, -W / 2, H / 2, [1, 1, 1, 1])
+    flush()
+
+    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE)
+    gl.useProgram(P_PT)
+    gl.uniform4f(uPt.uView, ...view)
+    for (const { sim, tex } of drawList) drawParticles(sim, tex)
+
+    gl.useProgram(P_FLOW)
+    gl.uniform4f(uFl.uView, ...view)
+    for (const { f, main, dst } of flowTex) drawFlow(f, main, dst, time)
+
+    if (first) { first = false; opts.onFirstFrame?.() }
+    raf = requestAnimationFrame(frame)
+  }
+
+  const onLost = (e: Event) => { e.preventDefault(); dead = true; cancelAnimationFrame(raf); opts.onLost?.() }
+  canvas.addEventListener('webglcontextlost', onLost)
+  raf = requestAnimationFrame(frame)
+
+  return {
+    destroy() {
+      dead = true
+      cancelAnimationFrame(raf)
+      canvas.removeEventListener('webglcontextlost', onLost)
+      if (gl.isContextLost()) return
+      for (const t of textures) gl.deleteTexture(t)
+      gl.deleteBuffer(vbo); gl.deleteVertexArray(vao)
+      for (const p of [P_BG, P_PT, P_FLOW]) gl.deleteProgram(p)
+      // 鑑賞一關就把 GPU 資源還回去：反覆開關不會累積 context（瀏覽器上限約 16 個）
+      gl.getExtension('WEBGL_lose_context')?.loseContext()
+    },
+  }
+}
