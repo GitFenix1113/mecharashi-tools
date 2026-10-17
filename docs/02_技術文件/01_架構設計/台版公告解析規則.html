@@ -139,7 +139,7 @@
     <strong>型別契約</strong>：<code>src/types/announcementStaging.ts</code>（本檔是契約的文件面）<br>
     <strong>單元測試</strong>：<code>scripts/lib/parseAnnouncement.test.mjs</code> —— 每一組回歸測試都對應一個真實踩過的錯<br>
     <strong>回歸語料</strong>：<code>scripts/fixtures/tw-announcements-2026-08/</code>（266 篇公告純文字快照）<br>
-    <strong>目前版本</strong>：<code>PARSER_VERSION 7</code>
+    <strong>目前版本</strong>：<code>PARSER_VERSION 10</code>
   </div>
 
   <p class="section-desc">
@@ -465,6 +465,7 @@
         <br>用 <strong>type 決定要找機師還是機甲那一句</strong>：同一篇兩句都在，只認關鍵字會讓特遣吞掉海運的名單。
         官方名單本身有重複項與空項（實測「夜天光、夜天光」「疾嘯、、影武者」），去重保序；
         <strong>錯字保留原樣</strong>並在後台提示人工核對 —— 擅自更正官方文字會讓資料再也分不出來源。
+        （機甲名單的已知異體字 v10 起改由解析器對照，見 v10。）
         <br>A/B：266 篇中 257 篇完全相同、9 篇僅多出 selection，零副作用。
       </div>
     </div>
@@ -477,6 +478,41 @@
         <code>description</code> 被機體故事文灌爆 —— 因為 <code>blockEnd</code> 用同一個判準函式。
         <br>A/B 累計：未認領行減少 153 行，活動數 / warnings / description 變動皆為 0。
         <br>實際庫存：89 行 → 44 行、24 篇 → 16 篇。
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">v8 · 2026-10-11</div>
+      <div class="timeline-title">常駐內容不收錄</div>
+      <div class="timeline-desc">
+        時間行寫「起（常駐）」的不是限時活動，放進甘特只能永遠隱藏（迷星所向／往日無戰事復刻）。
+        只擋「開放式 ＋ 常駐」，與儲值促銷一樣計入產出量分母。同版本搭配排程自動放行與卡池檔期推估
+        （規則在 <code>src/utils/announcementMerge.ts</code>，推估值標 <code>predicted</code>）。
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">v9 · 2026-10-11</div>
+      <div class="timeline-title">巔峰擂台收錄、「活動說明」條列</div>
+      <div class="timeline-desc">
+        巔峰擂台賽季整個寫在時間行上，直接從時間行取名（型別 <code>peakArena</code>）；
+        「活動說明」小標下的編號條列收進說明，不再被半形分號那行截斷（tw_1694）。
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">v10 · 2026-10-18</div>
+      <div class="timeline-title">機甲名對照資料庫用字、自選池不取 UP</div>
+      <div class="timeline-desc">
+        <code>normalizeMechName</code>：機甲池的 <code>mechs</code> 與跨域海運／自選池名單的 <code>selection</code>
+        改寫成資料庫用字（塔納托斯→塔納託斯、光輝→光暉、芬裡厄→芬里厄、巨象→巨像、奥德修斯→奧德修斯、
+        吉雨萊斯→吉爾萊斯、恐領→恐頜，並剝掉「｜輕型機甲」後綴）。時間線靠名字對機甲
+        （PLAN-063 卡池條、版本新池推估），差一字就當成另一台。
+        <br>這推翻了 v6「名單錯字保留原樣」：審核者本來就被要求改成站上用字，
+        官方原文仍在 <code>excerpt</code> 與草稿 <code>rawText</code>，來源不會遺失。
+        對照表只收語料實際出現過的寫法；機師名不在此列。
+        <br>自選池（<code>【自選】命定的相逢</code>、<code>【特選】獵豹特別訂單</code>，tw_642）的名單不再取第一個當 UP，
+        改進 <code>selection</code>、<code>mechs</code>／<code>pilots</code> 留空交給人，不列入 SectionNoName 告警分母。
+        <br>A/B（266 篇語料 ＋ 61 篇資料庫草稿）：316 篇完全相同、11 篇只動名稱或自選池名單，活動數 481 → 481。
+        <br>⚠ 2026/05～09 的 15 筆機甲池沒進時間線，原因<strong>不是</strong>解析器漏抓：它們早已正確產出、
+        停在「待確認」（已進過人工佇列的不自動升級），本版對它們沒有任何影響。
       </div>
     </div>
   </div>
