@@ -3,6 +3,9 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-17', type: 'feat', summary: '機甲故事館的<b>獵鬥士</b>招募插畫也會動了——卷宗最後的「卡池」點開全景就會播放卡池特效，'
+      + '目前共 24 台。' },
+
     { date: '2026-10-17', type: 'fix', summary: '機甲故事館<b>銜尾蛇、破曉者-02</b> 的卡池動態：刀光與煙流改回和遊戲一樣斜著畫，原本被擺成水平的。' },
 
     { date: '2026-10-17', type: 'feat', summary: '機甲故事館再加 <b>6 台會動的招募插畫</b>：暮色之牙、盜火者、XR、光暉、銀閃、裁決者——卷宗最後的「卡池」點開全景就會播放卡池特效，'

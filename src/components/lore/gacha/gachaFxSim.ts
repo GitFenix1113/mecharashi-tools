@@ -215,7 +215,7 @@ export class ParticleSim {
       const life = evalMinMax(I.lifetime, tn, R()), speed = evalMinMax(I.speed, tn, R())
       const size = evalMinMax(I.size, tn, R())
       const sizeY = I.sizeY ? evalMinMax(I.sizeY, tn, R()) || size : size
-      // 形狀：0 球、4 圓錐、8 圓錐體積（其餘當點）
+      // 形狀：0 球、4 圓錐、5 方塊、8 圓錐體積（其餘當點）
       let lp: Vec3 = [0, 0, 0]
       let dir = randUnit(R)
       if (sh && (sh.type === 4 || sh.type === 8)) {
@@ -229,6 +229,11 @@ export class ParticleSim {
         const u = randUnit(R), rr = sh.radius * Math.cbrt(lerp((1 - sh.thickness) ** 3, 1, R()))
         lp = [u[0] * rr, u[1] * rr, u[2] * rr]
         dir = u
+      } else if (sh && sh.type === 5) {
+        // 方塊（Unity 的 Box＝從體積發射）：邊長 1、以原點為中心，下面乘上形狀的 scale 就是方塊大小（Unity 編輯器的方塊 gizmo 也是
+        // size＝scale）。方向一律是形狀的前方 +z、不吃 scale，只跟著形狀旋轉（Unity 手冊：粒子沿發射器的 forward (Z) 移動）
+        lp = [R() - 0.5, R() - 0.5, R() - 0.5]
+        dir = [0, 0, 1]
       }
       if (sh) {
         if (sh.randomDir) { const d = dir; dir = norm3([0, 1, 2].map((i) => lerp(d[i], randUnit(R)[i], sh.randomDir)) as Vec3) }

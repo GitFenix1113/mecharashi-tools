@@ -103,7 +103,10 @@ export interface FxSystem {
   }
   /** null＝發射模組關閉 */
   emission: { rate: FxMinMax; bursts: FxBurst[] } | null
-  /** type：0 球、4 圓錐、8 圓錐體積；rotation 是尤拉角（度） */
+  /**
+   * type：0 球、4 圓錐、5 方塊（從體積發射，大小＝scale、以原點為中心，方向＋z）、8 圓錐體積；rotation 是尤拉角（度）。
+   * radius／thickness／angle／length 只有球與圓錐用得到
+   */
   shape?: { type: number; radius: number; thickness: number; angle: number; length: number; randomDir: number; scale: Vec3; rotation: Vec3; position: Vec3 }
   velocity?: { x: FxMinMax; y: FxMinMax; z: FxMinMax; world: boolean }
   force?: { x: FxMinMax; y: FxMinMax; z: FxMinMax; world: boolean }

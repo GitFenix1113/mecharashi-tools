@@ -30,14 +30,17 @@
  * ── 引擎不支援的東西會印出 ⚠ ──────────────────────────────────────────────
  * 試作只實作了芬里厄用到的功能（UIFx_Alpha／UI_CommonFlow、球／圓錐形狀、拉伸 billboard…），10-17 補了透明混色（_Dst3＝10）、
  * 序列幀（UVModule 的 Grid 模式、依壽命／依 fps）、流動圖層照 shader 規格的選填貼圖、主貼圖 tiling／旋轉／捲動與遮罩（見 UI_CommonFlow 的規格），
- * 以及祖先的位移／旋轉／縮放、錨點與 RectMask2D 裁切（見「版面」）、流動圖層的平面旋轉。
+ * 以及祖先的位移／旋轉／縮放、錨點與 RectMask2D 裁切（見「版面」）、流動圖層的平面旋轉、方塊發射形狀（Box，見 SUPPORTED_SHAPES）。
  * 下一台若用到拖尾、Flow1、序列幀的其他模式等，這裡會列出來——那是 J-1／J-2 要補的引擎功能，不要硬上。
- * 10-17 對 60 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run）：0 ⚠ 有 23 台＝2054、1011、1012、2017、2019、2022、3005、3017
+ * 10-17 對 61 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run；2060 彌造者的 prefab 官方拼成 …PoollItemPrefab，後來才補進來）：
+ * 0 ⚠ 有 24 台＝2054、1011、1012、2017、2019、2022、3005、3017
  * （以上透明混色就解開）＋1014、2042、2302（序列幀解開）＋1027、1040、1301（流動圖層缺擾動貼圖、遮罩、捲動解開）
- * ＋2071、3006、3019（不發射的系統略過就解開，見 isSilent；60 台共略過 37 個）＋1017、1034、2003、2047、2050、2052（累積祖先的變換解開）。
- * 剩下 37 台卡最多的是 Flow1 20、Box 18、其他 shader 12、流動材質當粒子 7、startDelay 7；
- * 只差一種的 14 台：Box 4、Flow1 4、startDelay 2、拖尾／流動材質當粒子／其他 shader（3010 的 UI_General）／Image 用 UIFx_Alpha 各 1。
- * 逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態_祖先位移/（更早的版本在同月的「不發射系統略過」「批次上站」「流動圖層預設貼圖」「序列幀」夾）。
+ * ＋2071、3006、3019（不發射的系統略過就解開，見 isSilent；60 台共略過 37 個）＋1017、1034、2003、2047、2050、2052（累積祖先的變換解開）
+ * ＋2053（方塊形狀解開）。
+ * 剩下 37 台卡最多的是 Flow1 21、速度模組的 orbital 等 17、startDelay 7、流動材質當粒子 7；只差一種的 17 台：
+ * Flow1 8（1028、1035、2027、2055、2060、2061、2070、3014）、startDelay 4、orbital 3（1052、2040、2043：方塊解開後只剩灰燼的 orbitalZ）、
+ * 拖尾 1、Image 用 UIFx_Alpha 1。Flow1 的材質會多報一條「主貼圖是空的」（貼圖屬性叫 _MainTex1），算台數時併進 Flow1。
+ * 逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態_Box形狀/（更早的版本在同月的「祖先位移」「不發射系統略過」「批次上站」「流動圖層預設貼圖」「序列幀」夾）。
  * 「·」開頭的是提示不是 ⚠（例：官方沒指定材質、或 emission 關又沒有 burst 的粒子會略過），照常可以上站。
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -80,6 +83,9 @@ function minMax(c) {
   if (c.minMaxState === 3) out.minScalar = num(c.minScalar)
   return out
 }
+
+/** MinMaxCurve 恆為 0（沒用到）：曲線模式只看 scalar（Unity 用它乘曲線）；兩值之間隨機的另一端是 minScalar。寧可多報不漏報 */
+const isZeroCurve = (c) => c == null || (num(c.scalar) === 0 && !((c.minMaxState === 2 || c.minMaxState === 3) && num(c.minScalar) !== 0))
 
 /** Unity Gradient：key0–7 只有前 m_NumColorKeys／m_NumAlphaKeys 個有效；時間是 0–65535 */
 function gradient(G) {
@@ -305,8 +311,14 @@ function uvModule(U, owner) {
 // ── 粒子系統 ──────────────────────────────────────────────────────────────
 /** 引擎實作了的模組；其他模組開著就提醒（UVModule 支援一部分，細項在 uvModule() 裡檢查） */
 const SUPPORTED_MODULES = new Set(['InitialModule', 'ShapeModule', 'EmissionModule', 'SizeModule', 'RotationModule', 'ColorModule', 'VelocityModule', 'ForceModule', 'ClampVelocityModule', 'NoiseModule', 'UVModule'])
-/** 0 球、4 圓錐、8 圓錐體積 */
-const SUPPORTED_SHAPES = new Set([0, 4, 8])
+/**
+ * 0 球、4 圓錐、5 方塊、8 圓錐體積。
+ * 方塊（10-17 J-1 補）：Unity 編輯器的「Emit from」不是另一個欄位，而是 type 本身——5＝Volume（Box）、15＝Shell（BoxShell）、
+ * 16＝Edge（BoxEdge），boxThickness 只在 Shell／Edge 才有作用（UnityCsReference 的 ParticleSystemEnums.cs、ShapeModuleUI.cs）。
+ * 所以 type 5 不必多輸出欄位：方塊大小就是形狀的 scale（以原點為中心），沿用既有的 scale／rotation／position。
+ * Shell／Edge 是 15／16，不在這裡、照舊報 ⚠（10-17 盤點 60 台的 22 個方塊全是 5，boxThickness 全是 0）。
+ */
+const SUPPORTED_SHAPES = new Set([0, 4, 5, 8])
 
 /**
  * 不發射的系統：emission 關、又沒有 burst（各台的 Particle_All／FU／Centre 容器、Glow06 的 Particle 外框常見）。
@@ -364,13 +376,27 @@ function particleSystem(n, at) {
   }
   if (S.enabled) {
     if (!SUPPORTED_SHAPES.has(S.type)) warn(`${n.name}：發射形狀 ${S.type} 引擎不支援（當成點）`)
+    // 每種形狀都有的進階選項，引擎都沒做（10-17 盤點 60 台一個都沒用到）
+    if (S.sphericalDirectionAmount) warn(`${n.name}：形狀的 Spherize Direction ${S.sphericalDirectionAmount} 引擎不支援`)
+    if (S.randomPositionAmount) warn(`${n.name}：形狀的 Randomize Position ${S.randomPositionAmount} 引擎不支援`)
+    if (S.alignToDirection) warn(`${n.name}：形狀的 Align To Direction 引擎不支援`)
+    if (S.m_Texture?.pid && S.m_Texture.pid !== '0') warn(`${n.name}：形狀有貼圖（依貼圖染色／剔除），引擎不支援`)
     sys.shape = {
       type: S.type, radius: num(S.radius?.value), thickness: num(S.radiusThickness ?? 1), angle: num(S.angle), length: num(S.length),
       randomDir: num(S.randomDirectionAmount), scale: vec3(S.m_Scale ?? { x: 1, y: 1, z: 1 }), rotation: vec3(S.m_Rotation), position: vec3(S.m_Position),
     }
   }
   const V = p.VelocityModule, F = p.ForceModule, L = p.ClampVelocityModule, N = p.NoiseModule, RM = p.RotationModule, C = p.ColorModule, Z = p.SizeModule, UV = p.UVModule
-  if (V?.enabled) sys.velocity = { x: minMax(V.x), y: minMax(V.y), z: minMax(V.z), world: !!V.inWorldSpace }
+  if (V?.enabled) {
+    sys.velocity = { x: minMax(V.x), y: minMax(V.y), z: minMax(V.z), world: !!V.inWorldSpace }
+    // 引擎只做線性的 x／y／z。orbital（繞軸轉）、offset（轉動中心）、radial（徑向）、speedModifier（速度倍率）沒做，10-17 前也沒檢查、
+    // 被默默忽略——方塊那 4 台（1052、2040、2043、2053）的灰燼就開了 orbitalZ＝1。orbital 的單位 Unity 文件與 C# reference 都沒寫
+    // （rad/s 還是 °/s），沒有官方依據或實測前不實作，見 _local-notes/2026-10/2026-10-17_卡池動態_Box形狀/
+    const used = ['orbitalX', 'orbitalY', 'orbitalZ', 'orbitalOffsetX', 'orbitalOffsetY', 'orbitalOffsetZ', 'radial'].filter((k) => !isZeroCurve(V[k]))
+    if (used.length) warn(`${n.name}：速度模組的 ${used.join('／')} 引擎不支援（會被忽略）`)
+    const sm = V.speedModifier
+    if (sm && !((sm.minMaxState === 0 || sm.minMaxState === 3) && num(sm.scalar) === 1 && (sm.minMaxState === 0 || num(sm.minScalar) === 1))) warn(`${n.name}：速度模組的 speedModifier 不是 1，引擎不支援（會被忽略）`)
+  }
   if (F?.enabled) sys.force = { x: minMax(F.x), y: minMax(F.y), z: minMax(F.z), world: !!F.inWorldSpace }
   if (L?.enabled) sys.clamp = { magnitude: minMax(L.magnitude), dampen: num(L.dampen) }
   if (N?.enabled) sys.noise = { frequency: num(N.frequency), scroll: minMax(N.scrollSpeed), strength: minMax(N.strength), amount: minMax(N.positionAmount) }

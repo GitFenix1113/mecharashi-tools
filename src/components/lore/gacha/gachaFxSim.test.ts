@@ -55,6 +55,59 @@ test('預熱：建構完就已經有粒子（開場不是空的）', () => {
   assert.ok(s.parts.length >= 25, `${s.parts.length} 顆`)
 })
 
+type Shape = NonNullable<FxSystem['shape']>
+const box = (over: Partial<Shape> = {}): Shape => ({
+  type: 5, radius: 1, thickness: 1, angle: 25, length: 5, randomDir: 0, scale: [1, 2.66, 8.52], rotation: [0, 0, 0], position: [0, 0, 0], ...over,
+})
+/** 發射 n 顆、速度 2 的粒子 */
+const emitBox = (shape: Shape, over: Partial<FxSystem> = {}, n = 400) => {
+  const base = sys()
+  const s = new ParticleSim(sys({ shape, initial: { ...base.initial, maxParticles: n, speed: { mode: 0, scalar: 2 } }, ...over }), seeded(5))
+  s.emit(n)
+  return s.parts
+}
+const close = (a: readonly number[], b: readonly number[], eps = 1e-9) => a.every((x, i) => Math.abs(x - b[i]) < eps)
+
+test('方塊（Box）：發射點落在以原點為中心、邊長＝scale 的方塊裡，而且整個體積都有（不是只在表面）', () => {
+  const parts = emitBox(box())
+  const half = [0.5, 1.33, 4.26]
+  for (const p of parts) assert.ok(p.pos.every((v, i) => Math.abs(v) <= half[i] + 1e-9), `${p.pos} 超出方塊`)
+  // 三軸各自分布到兩側；內側一半的小方塊（體積 1/8）也有粒子
+  for (let i = 0; i < 3; i++) {
+    assert.ok(parts.some((p) => p.pos[i] > half[i] * 0.8) && parts.some((p) => p.pos[i] < -half[i] * 0.8), `第 ${i} 軸沒有散開`)
+  }
+  const inner = parts.filter((p) => p.pos.every((v, i) => Math.abs(v) < half[i] / 2)).length
+  assert.ok(inner > parts.length / 16 && inner < parts.length / 4, `內側 ${inner}／${parts.length} 顆`)
+})
+
+test('方塊：初速一律沿形狀的 +z，不吃 scale；scale 某軸是 0 時那一軸壓扁（2053 獵鬥士的 x）', () => {
+  for (const p of emitBox(box())) assert.ok(close(p.vel, [0, 0, 2]), `${p.vel}`)
+  for (const p of emitBox(box({ scale: [0, 2.66, 8.52] }))) assert.equal(p.pos[0], 0)
+  // z 是 0 也一樣朝 +z（方向不吃 scale）
+  for (const p of emitBox(box({ scale: [1, 1, 0] }))) assert.ok(p.pos[2] === 0 && close(p.vel, [0, 0, 2]))
+})
+
+test('方塊：形狀的旋轉、位移套在方塊與方向上（繞 x 轉 −90° 後 +z 朝上）', () => {
+  for (const p of emitBox(box({ scale: [1, 1, 4], rotation: [-90, 0, 0], position: [3, 0, 0] }))) {
+    assert.ok(close(p.vel, [0, 2, 0]), `${p.vel}`)
+    // 長邊（z 4）轉成 y；位移把中心推到 x 3
+    assert.ok(Math.abs(p.pos[0] - 3) <= 0.5 + 1e-9 && Math.abs(p.pos[1]) <= 2 + 1e-9 && Math.abs(p.pos[2]) <= 0.5 + 1e-9, `${p.pos}`)
+  }
+})
+
+test('方塊：粒子系統節點的旋轉（1052 莫比烏斯X 的灰燼）——長邊在畫面上斜向左下，初速沿長邊', () => {
+  // Particle_Ash_01 的 m_LocalRotation：x 軸轉進螢幕深處，y → (0.40, −0.92)、z → (−0.92, −0.40)
+  const parts = emitBox(box(), { rot: [-0.69217, -0.14457, 0.69217, -0.14457] })
+  for (const p of parts) {
+    const d = p.vel.map((v) => v / 2)
+    assert.ok(close(d, [-0.916, -0.4, 0], 2e-3), `${d}`)
+  }
+  // 畫面上（x, y）的散布：沿長邊 ±4.26、沿短邊 ±1.33
+  const along = parts.map((p) => -0.916 * p.pos[0] - 0.4 * p.pos[1]), across = parts.map((p) => 0.4 * p.pos[0] - 0.916 * p.pos[1])
+  assert.ok(Math.max(...along.map(Math.abs)) > 3.5 && Math.max(...along.map(Math.abs)) <= 4.27)
+  assert.ok(Math.max(...across.map(Math.abs)) > 1 && Math.max(...across.map(Math.abs)) <= 1.34)
+})
+
 /** Unity 預設的序列幀：整張、依壽命、frameOverTime 是 0→0.9999 的直線 */
 const LINEAR = { mode: 1, scalar: 0.9999, maxCurve: [[0, 0, 0, 1], [1, 1, 1, 0]] } as const satisfies FxUV['frameOverTime']
 const uv = (over: Partial<FxUV> = {}): FxUV => ({ tilesX: 2, tilesY: 2, animationType: 0, timeMode: 0, frameOverTime: LINEAR, cycles: 1, startFrame: { mode: 0, scalar: 0 }, ...over })
