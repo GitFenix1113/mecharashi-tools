@@ -9,6 +9,7 @@
 /* 共用 style.css 未定義 red 變體（既有頁面多依賴其橘色預設，故不動共用檔），此處僅為本頁補上 */
 .hero-badge.red    { border-color: var(--accent-red); color: var(--accent-red); background: rgba(239,68,68,0.06); }
 .section-label.red { color: var(--accent-red); }
+.section-label.yellow { color: var(--accent-yellow); }
 
 .plan-meta {
   display: grid;
@@ -319,7 +320,7 @@
     <div class="meta-item"><div class="meta-label">建立日期</div><div class="meta-value ">2026-08-23</div></div>
     <div class="meta-item"><div class="meta-label">影響範圍</div><div class="meta-value purple">types/lore · pilotLore 集合 · pages/lore · Layout chromeMode · admin/lore · Worker routes</div></div>
     <div class="meta-item"><div class="meta-label">優先級</div><div class="meta-value yellow">MID</div></div>
-    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value orange">執行中 16／19（雛形已於 2026-10-03 合併回 main；<b>2026-10-13 對外開放</b>，經 PLAN-042-D 改版）</div></div>
+    <div class="meta-item"><div class="meta-label">狀態</div><div class="meta-value orange">執行中 19／24（雛形已於 2026-10-03 合併回 main；<b>2026-10-13 對外開放</b>，經 PLAN-042-D 改版；<b>2026-10-17 立 Phase J 卡池動態</b>）</div></div>
     <div class="meta-item"><div class="meta-label">前置依賴</div><div class="meta-value cyan">PLAN-042 總綱（共用決策）</div></div>
     <div class="meta-item"><div class="meta-label">角色</div><div class="meta-value green">共用元件的建立者</div></div>
   </div>
@@ -621,6 +622,49 @@
     </ul>
   </div>
 
+</section>
+
+<section class="section">
+  <div class="section-label yellow">Phase J</div>
+  <div class="section-title">卡池動態：招募插畫與官方特效（2026-10-17 立案）</div>
+
+  <div class="info-block">
+    <strong>起因：</strong>站長發現每位機師也有招募 ART（卡池頁的寬幅插畫），官方同樣做了動態特效，問能否比照
+    <a href="../PLAN-042-B_機甲故事館/計畫書.html" style="color:var(--accent-yellow);">042-B</a> 的 Phase J 處理。
+    評估（<code>_local-notes/2026-10/2026-10-17_機師卡池動態評估/評估.md</code>）的結論是<b>幾乎同一套東西</b>，站長拍板立案，先做 J-1～J-3。
+    階段代號刻意與 042-B 同用 <b>J</b>：兩館的「卡池動態」是同一條管線、同一個引擎。
+  </div>
+
+  <table class="layer-table">
+    <tr><th style="width:150px;">項目</th><th style="width:250px;">機甲（042-B J）</th><th>機師（本 Phase）</th></tr>
+    <tr><td>prefab</td><td><code>ui_prefabs_wapgacha_abs.b</code> 的 <code>WapGacha&lt;鍵&gt;PoolItemPrefab</code></td><td><code>ui_prefabs_pilotgacha_abs.b</code> 的 <code>PilotGacha&lt;鍵&gt;ItemPrefab</code>（72 個，單人機師 63）</td></tr>
+    <tr><td>畫布與背景</td><td>根節點 2500×1080；<code>Img_BG</code> 兩片 RawImage 1300×1080 → 2600×1080</td><td><b>完全相同</b>（背景貼圖由程式執行時指定，prefab 裡是空的）</td></tr>
+    <tr><td>特效</td><td>UIParticle＋ParticleSystem＋<code>UI_CommonFlow</code>／<code>UI/Flow1</code></td><td>同一套 shader 家族；1,116 個粒子系統</td></tr>
+    <tr><td>Spine</td><td>0</td><td>卡池頁 <b>0</b>——<code>FlatActorWrap</code> 只在自選／雙人池、且預設關閉 → <b>不受 Spine 授權卡住</b></td></tr>
+    <tr><td>Animator</td><td>3 台（維持靜態）</td><td>14 位，全是循環片段（1.3–8 秒）→ 留到 J-4</td></tr>
+    <tr><td>招募插畫</td><td>F 段已上站（<code>mechs/&lt;wap&gt;/card/</code>）</td><td>J-1 上站（<code>pilots/&lt;gameId&gt;/card/</code>）</td></tr>
+    <tr><td>卡池名稱</td><td><code>mechLore.gachaTitle</code> ← <code>specificMechBanner</code></td><td><code>pilotLore.gachaTitle</code> ← <code>specificPilotBanner</code></td></tr>
+  </table>
+
+  <div class="warn-block">
+    <strong>決策（站長 2026-10-17）</strong>
+    <ul>
+      <li><b>J-1：比照機甲。</b>招募插畫只當卷宗的附件卡＋點開全景鑑賞，不上舞台；動態只在全景裡播（同 042-B 決策 B-5 與 D-4；系統要求減少動態或省流量時預設靜態）。</li>
+      <li><b>J-2：卡池名稱存 <code>pilotLore.gachaTitle</code></b>（與機甲同名同義），後台從版本活動 <code>specificPilotBanner</code> 帶一鍵建議。</li>
+      <li><b>J-3：先上「現行引擎 0 ⚠」的 12 位</b>——安、零、貝爾莎、卡蜜拉、卡夏、迪恩、菲婭、芙烈達、虹、梅利莎、維娜、維羅妮卡。有 ⚠ 的照機甲的規矩一律不硬上。</li>
+      <li><b>J-4（引擎補功能）與 042-B J 續作一起排</b>：startDelay、圓形發射、流動材質當粒子、速度類模組、新 shader、Animator。引擎兩館共用，補一次兩館一起解鎖（評估：機師可到 41／49 位）。</li>
+      <li>卡池鍵與插畫鍵<b>不是一對一</b>，比照 <code>mechGachaCards.json</code> 建人工對照表 <code>scripts/lib/pilotGachaCards.json</code>（gameId → 卡池鍵，非一般命名的切片另列）。</li>
+    </ul>
+  </div>
+
+  <div class="info-block">
+    <strong>對照表的例外（2026-10-17 實測）：</strong>
+    插畫鍵 <code>Diracca</code>↔prefab <code>Diracca1</code>（迪拉卡 10103121）、<code>Hardaway</code>↔<code>VillarsHardaway</code>、<code>SylvieRoussel</code>↔<code>Sylvie</code>；
+    切片命名不同：虹 <code>Img_1_pilot_gacha_Hong_1／_2_Raw</code>、葉夫根尼 <code>Img_1_pilot_Yevgeny_001／002_Raw</code>、零 <code>Img_1_pilot_AyanamiRei1／2_Raw</code>、
+    明日香 <b><code>Img_1_pilot_Asuka3／4_Raw</code></b>（1／2 片不存在，3＋4 拼起來就是卡池背景，已目視確認）。
+    摩根娜（<code>MorganaSlyce</code>）站上還沒有 gameId 資料夾（機師卡 <code>Icon_item_13038A</code> 尚未匯入、DB 沒有 gameId），對照表先登記、匯入時報「站上沒有」。
+    雙人池（<code>EileenSylvie</code>、<code>HonSyl</code>、插畫 <code>EilLor</code>）與自選／兌換池不做，同機甲的「非單機池」。
+  </div>
 </section>
 
 
