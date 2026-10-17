@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-17', type: 'feat', summary: '故事館的名冊與館首頁多一種分組：機甲廳可<b>依類型</b>（輕型／中型／重型）、機師廳可<b>依駕照</b>排列，兩館共用同一個選擇。' },
+
     { date: '2026-10-17', type: 'feat', summary: '機甲圖鑑的名字旁多一顆<b>「故事館 ▸」</b>，原本頁面底部的「機體描述」搬進機甲故事館（技術檔案）；'
       + '在社群貼機甲故事館的連結，預覽卡會顯示「某某 的故事」、機甲主視覺與介紹。' },
 

@@ -34,12 +34,14 @@ export interface MechWeightClassMeta {
   /** 較實的框線（圓章外圈：疊在立繪上要看得出類型色） */
   borderStrong: string
   bar: string
+  /** 紙色故事館用的實色（CSS 值，與 pilotClasses.ts 同色相的 paper 一致）：名冊依輕／中／重分組時的組頭色 */
+  paper: string
 }
 
 export const MECH_WEIGHT_CLASSES: readonly MechWeightClassMeta[] = [
-  { armorType: ArmorType.LIGHT,  short: '輕型', full: '輕型機甲', icon: '001', text: 'text-accent-cyan',  bg: 'bg-accent-cyan/10',  border: 'border-accent-cyan/40',  borderStrong: 'border-accent-cyan/70',   bar: 'bg-accent-cyan' },
-  { armorType: ArmorType.MEDIUM, short: '中型', full: '中型機甲', icon: '002', text: 'text-accent-green', bg: 'bg-accent-green/10', border: 'border-accent-green/40', borderStrong: 'border-accent-green/70', bar: 'bg-accent-green' },
-  { armorType: ArmorType.HEAVY,  short: '重型', full: '重型機甲', icon: '003', text: 'text-accent-red',   bg: 'bg-accent-red/10',   border: 'border-accent-red/40',   borderStrong: 'border-accent-red/70',     bar: 'bg-accent-red' },
+  { armorType: ArmorType.LIGHT,  short: '輕型', full: '輕型機甲', icon: '001', text: 'text-accent-cyan',  bg: 'bg-accent-cyan/10',  border: 'border-accent-cyan/40',  borderStrong: 'border-accent-cyan/70',   bar: 'bg-accent-cyan',  paper: '#0e7f93' },
+  { armorType: ArmorType.MEDIUM, short: '中型', full: '中型機甲', icon: '002', text: 'text-accent-green', bg: 'bg-accent-green/10', border: 'border-accent-green/40', borderStrong: 'border-accent-green/70', bar: 'bg-accent-green', paper: '#1f8a4c' },
+  { armorType: ArmorType.HEAVY,  short: '重型', full: '重型機甲', icon: '003', text: 'text-accent-red',   bg: 'bg-accent-red/10',   border: 'border-accent-red/40',   borderStrong: 'border-accent-red/70',     bar: 'bg-accent-red',   paper: '#b42318' },
 ]
 
 /**

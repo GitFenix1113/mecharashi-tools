@@ -2,7 +2,7 @@ import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, 
 import type { ReactNode, Ref } from 'react'
 import { FallbackImage } from '../common/FallbackImage'
 import LoreExitLink from './LoreExitLink'
-import type { LoreSort } from './loreRoster'
+import { LORE_SORTS, type LoreSort } from './loreRoster'
 import { matchesSubjectQuery, type LoreSubject } from './loreSubject'
 
 /**
@@ -63,7 +63,7 @@ export interface LoreSwitcherProps {
   noun?: string
   /** 名冊搜尋框的提示字 */
   searchPlaceholder?: string
-  /** 分組按鈕的文字（機師廳＝職業／登場版本；機甲廳的 'class' 是廠商） */
+  /** 分組按鈕的文字（機師廳＝職業／登場版本／駕照；機甲廳的 'class' 是廠商、'weight' 是類型） */
   sortLabels?: Record<LoreSort, string>
   /** 「有外觀」「另有 N 套外觀」的用詞（機甲廳＝塗裝） */
   skinNoun?: string
@@ -78,7 +78,7 @@ export interface LoreSwitcherProps {
   codexName?: string
 }
 
-const DEFAULT_SORT_LABELS: Record<LoreSort, string> = { class: '職業', debut: '登場版本' }
+const DEFAULT_SORT_LABELS: Record<LoreSort, string> = { class: '職業', debut: '登場版本', weight: '駕照' }
 
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
 const isMobile = () => typeof matchMedia === 'function' && matchMedia('(max-width: 899px)').matches
@@ -446,8 +446,9 @@ export default function LoreSwitcher({
               </label>
               <span className="lore-seg">
                 <span className="lore-seg__lbl">分組</span>
-                <button type="button" aria-pressed={sort === 'class'} onClick={() => onSortChange('class')}>{sortLabels.class}</button>
-                <button type="button" aria-pressed={sort === 'debut'} onClick={() => onSortChange('debut')}>{sortLabels.debut}</button>
+                {LORE_SORTS.map((s) => (
+                  <button key={s} type="button" aria-pressed={sort === s} onClick={() => onSortChange(s)}>{sortLabels[s]}</button>
+                ))}
               </span>
               <button type="button" className="lore-chipbtn" aria-pressed={onlyCh} onClick={() => setOnlyCh((v) => !v)}>有逸聞 {totalCh}</button>
               <button type="button" className="lore-chipbtn" aria-pressed={onlySkin} onClick={() => setOnlySkin((v) => !v)}>有{skinNoun} {totalSkin}</button>

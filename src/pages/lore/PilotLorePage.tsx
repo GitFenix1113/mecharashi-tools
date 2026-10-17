@@ -8,6 +8,7 @@ import LoreSkinPicker from '../../components/lore/LoreSkinPicker'
 import LoreViewer from '../../components/lore/LoreViewer'
 import LoreSwitcher, { type LoreRosterGroup } from '../../components/lore/LoreSwitcher'
 import { ClassIcon } from '../../components/icons/ClassIcon'
+import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
 import { pilotClassMeta } from '../../data/pilotClasses'
 import { pilotSubject } from '../../components/lore/loreSubject'
 import { buildLoreGroups, readLoreSort, withLoreNames, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
@@ -81,7 +82,9 @@ export default function PilotLorePage() {
     key: g.key,
     label: g.label,
     tone: sort === 'class' ? (pilotClassMeta(g.key)?.paper ?? 'var(--lore-ink-2)') : 'var(--lore-ink-2)',
-    icon: sort === 'class' ? <ClassIcon pilotClass={g.key} size={18} decorative /> : undefined,
+    // 依駕照分組時圖示維持中性色：類型色會和頭像外圈的職業色撞（決策十）
+    icon: sort === 'class' ? <ClassIcon pilotClass={g.key} size={18} decorative />
+      : sort === 'weight' ? <MechTypeIcon type={g.key} size={18} decorative /> : undefined,
     items: g.items.map(pilotSubject),
   })), [groups, sort])
   const rosterOrder = useMemo(() => rosterGroups.flatMap((g) => g.items), [rosterGroups])

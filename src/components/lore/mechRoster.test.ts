@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { buildMechGroups, byMakerOrder, MAKER_UNKNOWN_GROUP } from './mechRoster.ts'
-import { UNVERSIONED } from './loreRoster.ts'
+import { UNVERSIONED, WEIGHT_UNKNOWN } from './loreRoster.ts'
 import type { MechMaker } from '../../types/index.ts'
 
 const M = (id: string, debutVersion?: string, maker?: string) => ({ id, debutVersion, maker })
@@ -39,4 +39,12 @@ test('依登場版本：版本遞減、未標註殿後', () => {
 test('byMakerOrder：沒填 order 的排在有值的後面，再依 id', () => {
   const s = [...makers].sort(byMakerOrder).map((m) => m.id)
   assert.deepEqual(s, ['Obsidian', 'Doll', 'AP', 'DONAU'])
+})
+
+test('依類型：輕→中→重；armorType 的「中甲」併成畫面短名「中型」；空值歸「類型未載」殿後', () => {
+  const T = (id: string, armorType: string | undefined, debutVersion?: string) => ({ id, debutVersion, armorType })
+  const g = buildMechGroups([T('a', '重型', '1.0'), T('b', '中甲', '1.0'), T('c', '輕型', '2.0'), T('d', '中甲', '3.6'), T('e', undefined)], 'weight', () => undefined, makers)
+  assert.deepEqual(g.map((x) => [x.key, x.label]), [['輕型', '輕型'], ['中型', '中型'], ['重型', '重型'], [WEIGHT_UNKNOWN, WEIGHT_UNKNOWN]])
+  assert.deepEqual(g[1].items.map((x) => x.id), ['d', 'b'])
+  assert.equal(g[0].maker, undefined, '依類型分組不帶廠商')
 })

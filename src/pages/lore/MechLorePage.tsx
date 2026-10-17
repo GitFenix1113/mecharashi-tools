@@ -9,6 +9,8 @@ import LoreSkinPicker from '../../components/lore/LoreSkinPicker'
 import LoreViewer from '../../components/lore/LoreViewer'
 import LoreSwitcher, { type LoreRosterGroup } from '../../components/lore/LoreSwitcher'
 import { FactionLogo } from '../../components/icons/FactionLogo'
+import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
+import { mechWeightClassOf } from '../../data/mechWeightClasses'
 import { mechSubject } from '../../components/lore/loreSubject'
 import { buildMechGroups } from '../../components/lore/mechRoster'
 import { readLoreSort, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
@@ -50,7 +52,7 @@ function stageArtFor(mech: Mech, skinKey: string, lore: MechLoreDoc | undefined)
   return { art: skin ? mechSkinStageArt(mech, skin) : mechStageArt(mech), skins, skin }
 }
 
-const SORT_LABELS: Record<LoreSort, string> = { class: '廠商', debut: '登場版本' }
+const SORT_LABELS: Record<LoreSort, string> = { class: '廠商', debut: '登場版本', weight: '類型' }
 
 export default function MechLorePage() {
   const { id: urlId } = useParams<{ id: string }>()
@@ -66,7 +68,7 @@ export default function MechLorePage() {
   // 官配機師（搭乘者卡）：pilots 讀不到只少一張卡，不看 loading／error
   const { data: pilots } = usePilots()
 
-  // ── 名冊（依廠商／登場版本；與機師廳共用同一個排序偏好）──────────────────────────
+  // ── 名冊（依廠商／登場版本／類型；與機師廳共用同一個排序偏好）────────────────────
   const [sort, setSortState] = useState<LoreSort>(readLoreSort)
   const setSort = useCallback((s: LoreSort) => { setSortState(s); writeLoreSort(s) }, [])
   const groups = useMemo(
@@ -78,12 +80,16 @@ export default function MechLorePage() {
     const lore = loreById.get(m.id)
     return mechSubject(m, lore, lore?.maker ? makerById.get(lore.maker) : null)
   }, [loreById, makerById])
+  // 組頭：依廠商放廠商徽章；依類型放 L／M／H 圖示並染上類型色（青／綠／紅，決策十）
   const rosterGroups = useMemo<LoreRosterGroup[]>(() => groups.map((g) => ({
     key: g.key,
     label: g.label,
-    icon: g.maker?.logo ? <FactionLogo logoKey={g.maker.logo} size={18} label={g.label} /> : undefined,
+    tone: sort === 'weight' ? mechWeightClassOf(g.key)?.paper : undefined,
+    icon: sort === 'weight'
+      ? <MechTypeIcon type={g.key} size={18} decorative />
+      : g.maker?.logo ? <FactionLogo logoKey={g.maker.logo} size={18} label={g.label} /> : undefined,
     items: g.items.map(subjectOf),
-  })), [groups, subjectOf])
+  })), [groups, sort, subjectOf])
   const rosterOrder = useMemo(() => rosterGroups.flatMap((g) => g.items), [rosterGroups])
   const chapterCounts = useMemo(() => new Map(loreDocs.map((d) => [d.id, publishedChapters(d.chapters).length])), [loreDocs])
   const chapterCount = useCallback((mid: string) => chapterCounts.get(mid) ?? 0, [chapterCounts])

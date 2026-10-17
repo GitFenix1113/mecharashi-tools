@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { buildLoreGroups, byDebutDesc, loreOrder, matchesLoreQuery, UNCLASSIFIED, UNVERSIONED, withLoreNames, type RosterPilot } from './loreRoster.ts'
+import { buildLoreGroups, byDebutDesc, loreOrder, matchesLoreQuery, UNCLASSIFIED, UNVERSIONED, WEIGHT_UNKNOWN, withLoreNames, type RosterPilot } from './loreRoster.ts'
 import type { Pilot } from '../../types'
 
 const P = (id: string, cls: string, debutVersion?: string, extra: Partial<RosterPilot> = {}): RosterPilot =>
@@ -58,4 +58,14 @@ test('withLoreNames：英文名從 pilotLore 依 id 併進來（PLAN-042-E）；
   assert.ok(matchesLoreQuery(out[0], 'rosa'))
   // pilotLore 讀不到（空陣列）→ 原樣回傳
   assert.deepEqual(withLoreNames(ps, []), ps)
+})
+
+test('依駕照：輕→中→重、認不得的殿後；組內新版本在前', () => {
+  const g = buildLoreGroups([
+    P('a', '格鬥家', '1.0', { license: '重型' }), P('b', '突擊手', '3.4', { license: '輕型' }),
+    P('c', '守護者', '1.0', { license: '輕型' }), P('d', '狙擊手', '2.0'), P('e', '戰術家', '3.6', { license: '重型' }),
+  ], 'weight')
+  assert.deepEqual(g.map((x) => x.label), ['輕型', '重型', WEIGHT_UNKNOWN], '沒有成員的「中型」不出現')
+  assert.deepEqual(g[0].items.map((p) => p.id), ['b', 'c'])
+  assert.deepEqual(g[1].items.map((p) => p.id), ['e', 'a'])
 })

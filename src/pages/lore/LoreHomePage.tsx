@@ -13,7 +13,7 @@ import { assetUrl, mechPortraitCandidates, pilotOfficialArt, pilotPortraitCandid
 import { mechCardArt } from '../../utils/gameArt'
 import { GAME_MECH_CARDS } from '../../data/gameArtIndex'
 import type { Mech, MechMaker, Pilot } from '../../types'
-import { buildLoreGroups, readLoreSort, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
+import { buildLoreGroups, LORE_SORTS, readLoreSort, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
 import { buildMechGroups } from '../../components/lore/mechRoster'
 import { publishedChapters } from '../../components/lore/loreText'
 import { pickHeroCast, pickMechHeroCard } from '../../components/lore/loreHeroCast'
@@ -83,9 +83,12 @@ function PilotHall() {
         <section key={g.key} className="mb-8 last:mb-0">
           <h2 className="mb-3 flex items-center gap-2">
             <span aria-hidden className={`h-4 w-[3px] ${toneBar(g.tone)}`} />
-            {/* 依職業分組時標題前放職業圖示（PLAN-059 C-4）；依版本分組時 key 不是職業，ClassIcon 什麼都不畫 */}
+            {/* 依職業分組時標題前放職業圖示（PLAN-059 C-4）；依版本分組時 key 不是職業，ClassIcon 什麼都不畫。
+                依駕照分組時放 L／M／H 圖示，中性色（決策十：類型色會和職業色撞） */}
             <span className={`inline-flex items-center gap-1.5 text-sm font-bold ${g.tone || 'text-text-secondary'}`}>
-              <ClassIcon pilotClass={g.key} size={16} decorative />
+              {sort === 'weight'
+                ? <MechTypeIcon type={g.key} size={16} decorative />
+                : <ClassIcon pilotClass={g.key} size={16} decorative />}
               {g.label}
             </span>
             <span className="text-xs text-text-dim">{g.items.length}</span>
@@ -106,7 +109,7 @@ function PilotHall() {
 
 /**
  * 結構照抄機師廳，差在三處：
- * ① 分組是「廠商／登場版本」（mechRoster.ts，與展廳名冊同一套），組頭放廠商徽章。
+ * ① 分組是「廠商／登場版本／類型」（mechRoster.ts，與展廳名冊同一套），組頭放廠商徽章或 L／M／H 圖示。
  * ② 廠商住在 mechLore.maker、名稱與徽章住在 mechMakers ⇒ 依廠商分組要等**這兩份都落定**才畫牆，
  *    否則先整面歸「廠商未載」、資料到了再重排，牆會跳一次。「落定」＝讀到或讀失敗（失敗時 loading 恆為 true，
  *    理由同機師廳的 usePilotLore）；讀失敗就照樣畫，全部歸未載那組，不擋牆。
@@ -128,7 +131,7 @@ function MechHall() {
     () => buildMechGroups(mechs, sort, (m) => loreById.get(m.id)?.maker, makers),
     [mechs, sort, loreById, makers],
   )
-  const settled = sort === 'debut' || ((!loreLoading || !!loreError) && (!makersLoading || !!makersError))
+  const settled = sort !== 'class' || ((!loreLoading || !!loreError) && (!makersLoading || !!makersError))
   const hero = <MechHero count={loading || error ? undefined : mechs.length} />
 
   if (error) return <PageFrame hero={hero}><LoadError message={error.message} /></PageFrame>
@@ -142,11 +145,15 @@ function MechHall() {
         <p className="mb-4 text-xs text-text-dim">機甲故事索引暫時讀不到：廠商分組、廠商徽章與章節數先不顯示。</p>
       )}
 
-      {groups.map((g) => (
+      {groups.map((g) => {
+        // 依類型分組時組頭染上類型色（青／綠／紅，與卡片色條同色）；其餘分組維持中性
+        const tone = sort === 'weight' ? (mechWeightClassOf(g.key)?.text ?? '') : ''
+        return (
         <section key={g.key} className="mb-8 last:mb-0">
           <h2 className="mb-3 flex items-center gap-2">
-            <span aria-hidden className={`h-4 w-[3px] ${toneBar('')}`} />
-            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-text-secondary">
+            <span aria-hidden className={`h-4 w-[3px] ${toneBar(tone)}`} />
+            <span className={`inline-flex items-center gap-1.5 text-sm font-bold ${tone || 'text-text-secondary'}`}>
+              {sort === 'weight' && <MechTypeIcon type={g.key} size={18} decorative />}
               {g.maker?.logo && <FactionLogo logoKey={g.maker.logo} size={18} />}
               {g.label}
               {/* 英文名與中文名相同（KATANA）就不重複 */}
@@ -159,8 +166,8 @@ function MechHall() {
 
           <div className={MECH_GRID}>
             {g.items.map((m) => {
-              // 依廠商分組時組頭已經有徽章，卡片再標一次只是重複；依登場版本時才在卡上標廠商
-              const makerId = sort === 'debut' ? loreById.get(m.id)?.maker : undefined
+              // 依廠商分組時組頭已經有徽章，卡片再標一次只是重複；依登場版本／類型時才在卡上標廠商
+              const makerId = sort !== 'class' ? loreById.get(m.id)?.maker : undefined
               return (
                 <MechCard
                   key={m.id}
@@ -172,7 +179,8 @@ function MechHall() {
             })}
           </div>
         </section>
-      ))}
+        )
+      })}
     </PageFrame>
   )
 }
@@ -193,12 +201,12 @@ const GRID = 'grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-
 /** 機甲卡是橫幅（28:17），一列放的比機師少 */
 const MECH_GRID = 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
 
-const PILOT_SORT_LABELS: Record<LoreSort, string> = { class: '依職業', debut: '依登場版本' }
-const MECH_SORT_LABELS: Record<LoreSort, string> = { class: '依廠商', debut: '依登場版本' }
+const PILOT_SORT_LABELS: Record<LoreSort, string> = { class: '依職業', debut: '依登場版本', weight: '依駕照' }
+const MECH_SORT_LABELS: Record<LoreSort, string> = { class: '依廠商', debut: '依登場版本', weight: '依類型' }
 
 /**
  * 排序是「名冊順序」（PLAN-042-D A-2）：詳情頁的切換列、名冊、‹ › 都照這個走，所以記在 sessionStorage。
- * 兩館共用同一個值：'class' 在機甲廳就是廠商（mechRoster.ts）。
+ * 兩館共用同一個值：'class' 在機甲廳就是廠商、'weight' 在機師廳是駕照（mechRoster.ts）。
  */
 function useLoreSortPref(): [LoreSort, (s: LoreSort) => void] {
   const [sort, setSortState] = useState<LoreSort>(readLoreSort)
@@ -275,7 +283,7 @@ function HallTabs({ hall, sort, onSort, sortLabels }: {
 
       <div className="ml-auto flex items-center gap-2">
         <span className="text-xs text-text-dim">排序</span>
-        {(['class', 'debut'] as const).map((s) => (
+        {LORE_SORTS.map((s) => (
           <button key={s} type="button" className={sortBtn(sort === s)} onClick={() => onSort(s)}>
             {sortLabels[s]}
           </button>

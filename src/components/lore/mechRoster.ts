@@ -1,9 +1,10 @@
 // PLAN-042-B D-5：機甲廳的名冊分組（純函式，理由同 loreRoster.ts：要能 node --test）。
 //
-// 機師廳依「職業／登場版本」分組；機甲廳依「廠商／登場版本」。兩館共用同一個 LoreSort 值：
-// 'class' 在機甲廳就是廠商（切換列的按鈕文字由頁面換掉），使用者在兩館切的是同一個偏好。
+// 機師廳依「職業／登場版本／駕照」分組；機甲廳依「廠商／登場版本／類型」。兩館共用同一個 LoreSort 值：
+// 'class' 在機甲廳就是廠商（切換列的按鈕文字由頁面換掉），'weight' 在機師廳是駕照、在機甲廳是 armorType，
+// 使用者在兩館切的是同一個偏好。
 
-import { byDebutDesc, UNVERSIONED, versionValue, type LoreGroup, type LoreSort } from './loreRoster.ts'
+import { buildWeightGroups, byDebutDesc, UNVERSIONED, versionValue, type LoreGroup, type LoreSort } from './loreRoster.ts'
 import type { MechMaker } from '../../types'
 
 /** 廠商未填或對不到 mechMakers 文件的那一組（決策 B-8：不留白） */
@@ -25,12 +26,13 @@ export function byMakerOrder(a: Pick<MechMaker, 'id' | 'order'>, b: Pick<MechMak
  * 分組。組內一律 `byDebutDesc`（新版本在前）。
  * @param makerIdOf 這台的廠商 ID（mechLore.maker）；對不到 makers 裡任何一家就歸「廠商未載」
  */
-export function buildMechGroups<T extends { id: string; debutVersion?: string }>(
+export function buildMechGroups<T extends { id: string; debutVersion?: string; armorType?: string }>(
   mechs: readonly T[],
   sort: LoreSort,
   makerIdOf: (m: T) => string | undefined,
   makers: readonly MechMaker[],
 ): MechRosterGroup<T>[] {
+  if (sort === 'weight') return buildWeightGroups(mechs, (m) => m.armorType)
   if (sort === 'debut') {
     const buckets = new Map<string, T[]>()
     for (const m of mechs) {

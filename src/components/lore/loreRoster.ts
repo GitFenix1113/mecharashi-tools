@@ -5,16 +5,23 @@
 // `node --test` 直接載入本檔跑 loreRoster.test.ts。
 
 import { PILOT_CLASS_NAMES, pilotClassMeta } from '../../data/pilotClasses.ts'
+import { MECH_WEIGHT_CLASSES, mechWeightClassOf } from '../../data/mechWeightClasses.ts'
 import type { LoreDoc, Pilot } from '../../types'
 
 /**
  * 分組維度。`faction` 刻意不列入選項：89 人散在 30 個值、18 個只有 1 人，
  * 還含未正規化的重複與複合值，分出來會是一堆單人區塊。`class` 是均勻的 7 類。
+ *
+ * `weight`＝輕／中／重：機師看駕照（license）、機甲看裝甲類型（armorType）——兩者是同一個概念
+ * （data/mechWeightClasses.ts：輕型駕照只能開輕型機甲）。兩館共用同一個偏好值，所以兩館都要認得它。
  */
-export type LoreSort = 'class' | 'debut'
+export type LoreSort = 'class' | 'debut' | 'weight'
+
+/** 分組按鈕的順序（館首頁與名冊共用） */
+export const LORE_SORTS: readonly LoreSort[] = ['class', 'debut', 'weight']
 
 /** 名冊與分組只需要這幾個欄位（測試不必湊整個 Pilot）。英文名來自 pilotLore，見 `withLoreNames` */
-export type RosterPilot = Pick<Pilot, 'id' | 'name' | 'class' | 'debutVersion' | 'fullName' | 'faction'> & { nameEn?: string }
+export type RosterPilot = Pick<Pilot, 'id' | 'name' | 'class' | 'debutVersion' | 'fullName' | 'faction'> & { nameEn?: string; license?: string }
 
 /**
  * 故事館視角的機師：pilots 文件＋pilotLore 的英文名。
@@ -43,6 +50,8 @@ export interface LoreGroup<T> {
 
 export const UNCLASSIFIED = '其他'
 export const UNVERSIONED = '未標註版本'
+/** 駕照／裝甲類型未填或認不得（資料實測值域乾淨，這組照理不會出現；出現了也不留白） */
+export const WEIGHT_UNKNOWN = '類型未載'
 
 /** `debutVersion` 轉可比較的數字；未填 → null（一律排最後，不當成 0）。 */
 export function versionValue(v: string | undefined): number | null {
@@ -63,10 +72,33 @@ export function byDebutDesc(a: Pick<Pilot, 'id' | 'debutVersion'>, b: Pick<Pilot
 }
 
 /**
+ * 依輕／中／重分組（兩館共用）：輕→中→重、認不得的殿後，組內 `byDebutDesc`。
+ * key 與標題都是畫面短名「輕型／中型／重型」（決策十）——機甲的「中甲」也併成「中型」，
+ * 頁面拿 key 丟給 `MechTypeIcon`／`mechWeightClassOf` 都認得。
+ * @param rawOf 這位的駕照或裝甲類型（資料裡 5 種寫法都吃，見 mechWeightClassOf）
+ */
+export function buildWeightGroups<T extends { id: string; debutVersion?: string }>(
+  items: readonly T[],
+  rawOf: (x: T) => string | null | undefined,
+): LoreGroup<T>[] {
+  const buckets = new Map<string, T[]>()
+  for (const x of items) {
+    const key = mechWeightClassOf(rawOf(x))?.short ?? WEIGHT_UNKNOWN
+    const bucket = buckets.get(key)
+    if (bucket) bucket.push(x)
+    else buckets.set(key, [x])
+  }
+  return [...MECH_WEIGHT_CLASSES.map((m) => m.short), WEIGHT_UNKNOWN]
+    .filter((k) => buckets.has(k))
+    .map((key) => ({ key, label: key, items: [...buckets.get(key)!].sort(byDebutDesc) }))
+}
+
+/**
  * 分組。職業依遊戲內篩選的順序（data/pilotClasses.ts，全站共用）、未知職業殿後；
- * 版本依數值遞減、未標註版本殿後。組內一律 `byDebutDesc`。
+ * 版本依數值遞減、未標註版本殿後；駕照見 `buildWeightGroups`。組內一律 `byDebutDesc`。
  */
 export function buildLoreGroups<T extends RosterPilot>(pilots: readonly T[], sort: LoreSort): LoreGroup<T>[] {
+  if (sort === 'weight') return buildWeightGroups(pilots, (p) => p.license)
   const buckets = new Map<string, T[]>()
   for (const p of pilots) {
     const key = sort === 'class'
@@ -106,14 +138,15 @@ export function matchesLoreQuery(p: RosterPilot, query: string): boolean {
   return fields.some((f) => typeof f === 'string' && f.toLowerCase().includes(q))
 }
 
-// ── 排序偏好：館首頁的「依職業／依登場版本」與名冊的分組是同一個選擇 ──────────────────
+// ── 排序偏好：館首頁的「依職業／依登場版本／依駕照」與名冊的分組是同一個選擇 ──────────────
 
 const SORT_KEY = 'mecharashi_lore_sort'
 
-/** 讀取這個分頁上次的排序；沒有、讀不到（無痕、被擋）一律 'class'。 */
+/** 讀取這個分頁上次的排序；沒有、讀不到（無痕、被擋）、認不得的值一律 'class'。 */
 export function readLoreSort(): LoreSort {
   try {
-    return sessionStorage.getItem(SORT_KEY) === 'debut' ? 'debut' : 'class'
+    const v = sessionStorage.getItem(SORT_KEY)
+    return LORE_SORTS.find((s) => s === v) ?? 'class'
   } catch {
     return 'class'
   }
