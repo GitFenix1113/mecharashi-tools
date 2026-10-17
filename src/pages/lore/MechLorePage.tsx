@@ -287,7 +287,8 @@ export default function MechLorePage() {
       {viewer !== 'closed' && art && (
         <LoreViewer
           src={part?.src ?? art.full}
-          name={part ? `${shown.name}・${part.label}` : stage?.skin ? `${shown.name}・${stage.skin.label}` : shown.name}
+          // 招募插畫的圖名用卡池名稱（mechLore.gachaTitle），沒填才叫「招募插畫」
+          name={part ? `${shown.name}・${(viewingCard && lore?.gachaTitle?.trim()) || part.label}` : stage?.skin ? `${shown.name}・${stage.skin.label}` : shown.name}
           label="鑑賞"
           backdrop={!viewingCard && viewerBg === 'stage' ? stageBg : undefined}
           onClose={closeViewer}

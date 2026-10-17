@@ -265,4 +265,10 @@ export interface MechLoreDoc extends LoreDocBase {
   specs?: LoreDossierField[]
   /** 系譜。**陣列順序＝顯示順序** */
   relations?: MechRelation[]
+  /**
+   * 卡池名稱：這台機甲專屬卡池的活動標題，例「可能性的彼端」（莫比烏斯X）——卷宗最後那張招募插畫卡的標題，
+   * 也是鑑賞時的圖名。台版公告「【特選】<卡池名> – S級…機甲「<機甲>」」的那一段，照錄不改字。
+   * 空＝前台標題退回「卡池」。新卡池的建議由後台從版本活動（`specificMechBanner`）帶出，站長按一下採用。
+   */
+  gachaTitle?: string
 }

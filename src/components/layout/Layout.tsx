@@ -86,7 +86,19 @@ const guidesGroup: NavGroup = {
   key: 'guides', label: '攻略/工具/文件',
   hint: `${contentNavItems.length} 個入口`, items: contentNavItems,
 }
-const NAV_GROUPS = [versionGroup, catalogGroup, guidesGroup]
+
+// 「故事館」的子項（站長 2026-10-17：比照資料圖鑑，機師／機甲分成兩個入口）。
+// ⚠ 只進 NAV_GROUPS（展開條），**不進 SUB_NAV_GROUPS**：館內是 immersive，不掛常駐分頁列；
+//    館內換館的入口在紙色細帶的館名旁（見下方 immersive header），等於故事館版的常駐分頁列。
+const loreNavItems: ContentNavItem[] = [
+  { to: '/lore', label: '機師故事館', icon: 'pilot', desc: '人物檔案、逸聞章節與外觀' },
+  { to: '/lore/mechs', label: '機甲故事館', icon: 'mech', desc: '技術檔案、系譜、塗裝與卡池' },
+]
+const loreGroup: NavGroup = {
+  key: 'lore', label: '故事館',
+  hint: `${loreNavItems.length} 館`, items: loreNavItems,
+}
+const NAV_GROUPS = [versionGroup, catalogGroup, loreGroup, guidesGroup]
 
 // 常駐分頁列（SubNavTabs）的候選群組：人在哪一群裡，那一群的成員就固定列在 header 下方。
 // 首頁與配裝模擬器不屬於任何群組，自然不會長出這條列。
@@ -113,10 +125,9 @@ function chromeModeFor(pathname: string): ChromeMode {
   return 'default'
 }
 
-// 故事館入口（PLAN-042-A）。刻意獨立於 NAV_GROUPS 三群之外：
-// SUB_NAV_GROUPS 與各 group 的 items 是**同一個陣列物件**（下方 pinned 靠參照相等），
-// 把它塞進任何一群都會讓 subNavItems 在 /lore 命中，館內長出圖鑑式分頁列、沉浸破功。
-const loreItem: ContentNavItem = { to: '/lore', label: '故事館', icon: 'lore' }
+// 故事館的兩館入口不得塞進既有三群的 items：SUB_NAV_GROUPS 與各 group 的 items 是**同一個陣列物件**
+// （下方 pinned 靠參照相等），塞進去會讓 subNavItems 在 /lore 命中，館內長出圖鑑式分頁列、沉浸破功。
+// 所以自成 loreGroup（見上方），也不列進 SUB_NAV_GROUPS。
 
 const tabBarItems: ContentNavItem[] = [
   { to: '/', label: '首頁', icon: 'home' },
@@ -135,7 +146,7 @@ const moreNavItemsHead = [
 ]
 // ⚠ 新建陣列而不是往 contentNavItems 本體 push：那個陣列物件同時是 guidesGroup.items
 //    與 SUB_NAV_GROUPS 的成員，改到它就等於把故事館塞進「攻略/工具/文件」那一群。
-const moreNavItemsTail = [...contentNavItems, loreItem]
+const moreNavItemsTail = [...contentNavItems, ...loreNavItems]
 
 export default function Layout() {
   const [moreOpen, setMoreOpen] = useState(false)
@@ -272,15 +283,35 @@ export default function Layout() {
         onMouseLeave={immersive ? undefined : scheduleClose}
       >
         {immersive ? (
-          /* 館內 header：只留館名、離館、字級三顆。
+          /* 館內 header：只留館名、換館、離館、字級三顆。
              登入／頭像／EN Wiki 都不是閱讀動作，一鍵離館即可（決策 G）。
+             換館（機師｜機甲）是故事館版的常駐分頁列（站長 2026-10-17：比照資料圖鑑把兩館分開）：
+             在館內任何一頁都能換到另一館的館首頁。手機寬度收掉館名文字，由換館鈕亮起的那一格表示身在哪一館。
              這段與下方預設 header 的字級區塊是**刻意的重複**——為此把預設 header
              抽成元件只會把回歸面擴大到全站。 */
           <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
-              <Link to={inMechHall ? '/lore/mechs' : '/lore'} className="no-underline text-text-primary font-bold tracking-wider whitespace-nowrap">
+              <Link to={inMechHall ? '/lore/mechs' : '/lore'} className="hidden sm:inline no-underline text-text-primary font-bold tracking-wider whitespace-nowrap">
                 {inMechHall ? '機甲故事館' : '機師故事館'}
               </Link>
+              <nav aria-label="切換館別" className="flex items-center bg-bg-card border border-border rounded-lg overflow-hidden shrink-0">
+                {loreNavItems.map((item) => {
+                  const current = (item.to === '/lore/mechs') === inMechHall
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      aria-current={current ? 'true' : undefined}
+                      title={item.label}
+                      className={`px-2.5 py-1 text-xs no-underline transition-colors whitespace-nowrap ${
+                        current ? 'bg-accent-orange/20 text-accent-orange font-bold' : 'text-text-dim hover:text-text-secondary'
+                      }`}
+                    >
+                      {item.label.replace('故事館', '')}
+                    </Link>
+                  )
+                })}
+              </nav>
               <LoreExitLink
                 to={loreExitTo}
                 title={loreExitTitle}
@@ -340,8 +371,13 @@ export default function Layout() {
                   {simulatorItem.label}
                 </NavLink>
               )}
-              {/* 故事館：頂層平鋪，不進任何 NavGroup（理由見檔案上緣的宣告處註解） */}
-              <NavLink to={loreItem.to} className={topNavClass}>{loreItem.label}</NavLink>
+              {/* 故事館：機師館／機甲館兩個入口（比照資料圖鑑）。館內是 immersive、不掛常駐分頁列，所以永遠不 pinned */}
+              <NavGroupTrigger
+                group={loreGroup}
+                isOpen={openGroup === loreGroup.key}
+                onOpen={() => openNavGroup(loreGroup.key)}
+                onToggle={() => (openGroup === loreGroup.key ? closeNavGroup() : openNavGroup(loreGroup.key))}
+              />
               <NavGroupTrigger
                 group={guidesGroup}
                 isOpen={openGroup === guidesGroup.key}
