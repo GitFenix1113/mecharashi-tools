@@ -9,10 +9,10 @@ r"""
   $PY = 'E:\Mecharashi_Data\unitypy-venv\Scripts\python.exe'
 
 ── 用法（PowerShell，repo 根目錄）──────────────────────────────────────────────
-  & $PY scripts\export-gacha-prefab.py --list                                          73 個卡池 prefab、對到哪台機甲、站上有沒有動態（✓）
+  & $PY scripts\export-gacha-prefab.py --list                                          74 個卡池 prefab、對到哪台機甲、站上有沒有動態（✓）
   & $PY scripts\export-gacha-prefab.py --wap 1011 --out E:\Mecharashi_Data\gacha-export      → gacha-export\1011\data.json＋tex\（約 5 秒）
   & $PY scripts\export-gacha-prefab.py --wap 1011 2003 --out E:\Mecharashi_Data\gacha-export 一次多台（各自一個子資料夾）
-  & $PY scripts\export-gacha-prefab.py --all --out E:\Mecharashi_Data\gacha-export           有對到機甲的 60 台全部匯出（批次盤點，約 20 秒）
+  & $PY scripts\export-gacha-prefab.py --all --out E:\Mecharashi_Data\gacha-export           有對到機甲的 61 台全部匯出（批次盤點，約 20 秒）
   & $PY scripts\export-gacha-prefab.py --prefab Light --out E:\Mecharashi_Data\gacha-export  依卡池鍵匯出（常駐／自選池這類沒有 wap 的）
 
   接著：node scripts/build-gacha-fx.mjs E:\Mecharashi_Data\gacha-export\1011 --wap 1011 --dry-run
@@ -38,7 +38,7 @@ r"""
 
 只讀封包，不改任何東西。
 """
-import argparse, csv, json, math, shutil, sys
+import argparse, csv, json, math, re, shutil, sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -81,8 +81,14 @@ norm = lambda s: s.lower().replace('-', '')
 WAP_OF = {norm(key): wap for wap, key in CARDS.items()}
 
 
+# 官方檔名有一個拼錯：彌造者是 WapGachaDemiurgePoollItemPrefab（Pool 多一個 l）。
+# 10-17 對過 74 個 WapGacha*TitleItemPrefab，只有它對不到 PoolItemPrefab；只認字面的話它會整台消失在 --list 裡。
+POOL_RE = re.compile(r'^WapGacha(.+?)Pool+ItemPrefab$')
+
+
 def prefab_key(name):
-    return name[len('WapGacha'):-len('PoolItemPrefab')]
+    m = POOL_RE.match(name)
+    return m and m.group(1)
 
 
 def has_fx(wap):
@@ -94,9 +100,9 @@ pre = UnityPy.load(str(ROOT / PREFAB_BUNDLE))
 POOLS = {}  # 卡池鍵 → GameObject 的 ObjectReader
 for o in pre.objects:
     if o.type.name == 'GameObject':
-        n = o.read().m_Name
-        if n.startswith('WapGacha') and n.endswith('PoolItemPrefab'):
-            POOLS[prefab_key(n)] = o
+        key = prefab_key(o.read().m_Name)
+        if key:
+            POOLS[key] = o
 
 if args.list:
     rows = sorted(POOLS, key=lambda key: (WAP_OF.get(norm(key)) is None, int(WAP_OF.get(norm(key)) or 0), key))
@@ -308,7 +314,7 @@ def export_one(folder, key):
             for ch in tf.read().m_Children:
                 walk(ch.deref().read().m_GameObject.deref(), idx, depth + 1)
 
-    target = f'WapGacha{key}PoolItemPrefab'
+    target = POOLS[key].read().m_Name  # 照官方檔名（彌造者是 …Pooll…）
     walk(POOLS[key])
     with open(out / 'data.json', 'w', encoding='utf-8') as f:
         json.dump({'prefab': target, 'nodes': nodes, 'materials': materials, 'textures': textures}, f, ensure_ascii=False, indent=1)
